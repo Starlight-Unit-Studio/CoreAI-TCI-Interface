@@ -71,7 +71,7 @@ run_install
 [[ "$(stat -c '%a' "$swapfile")" == '600' ]]
 grep -Fxq "$swapfile none swap sw 0 0" "$fstab"
 grep -Fxq 'vm.swappiness=10' "$sysctl_conf"
-grep -Fq 'sysctl vm.swappiness=10' "$COREUI_TEST_LOG"
+grep -Fq 'sysctl -w vm.swappiness=10' "$COREUI_TEST_LOG"
 [[ "$(grep -c '^fallocate$' "$COREUI_TEST_LOG")" -eq 1 ]]
 
 printf '[TEST] Repeat run makes no second swap\n'
