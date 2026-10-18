@@ -4,6 +4,7 @@ IFS=$'\n\t'
 umask 027
 
 PROJECT_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
+source "$PROJECT_ROOT/scripts/lib/host-swap.sh"
 CONFIG_FILE="$PROJECT_ROOT/api/config.local.php"
 COREUI_VERSION="$(tr -d '[:space:]' < "$PROJECT_ROOT/VERSION")"
 CONFIG_TMP=''
@@ -521,5 +522,7 @@ if curl -fsS --max-time 10 -H "Host: $HEALTH_HOST" 'http://127.0.0.1/api/health.
 else
   warn 'Der Nginx-Healthcheck ist noch nicht gruen. Fuehre scripts/preflight.sh aus und pruefe journalctl sowie logs/stu_error.log.'
 fi
+
+coreui_ensure_host_swap || warn 'Optionale Host-Swap-Einrichtung fehlgeschlagen.'
 
 log 'Sicherheitsnotiz: MariaDB, Ollama und SearXNG bleiben auf Loopback. Nach aussen werden nur HTTP und spaeter optional HTTPS benoetigt.'

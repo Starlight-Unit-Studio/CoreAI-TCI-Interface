@@ -370,6 +370,32 @@ The previous address `webui.starlight-unit.de` is no longer a current Ember Core
 
 If Docker is missing and `COREUI_INSTALL_DOCKER=1` is active, the installer installs and starts Docker. If Ollama is missing and `COREUI_INSTALL_OLLAMA=1` is active, it installs Ollama. Existing reachable services are not reconfigured.
 
+## Optionaler Host-Swap fuer E.M.B.E.R. und CoreUI
+
+CoreUI prueft nach erfolgreichem Docker- oder Native-Installationslauf den Swap-Zustand des **Linux-Hosts**, nicht eines Containers. Ist bereits eine aktive Swap-Datei, Swap-Partition oder zram vorhanden, wird diese unveraendert uebernommen. Dasselbe gilt fuer konfigurierte, aber inaktive Swap-Eintraege in `/etc/fstab` sowie fuer eine bereits vorhandene `/swapfile`.
+
+Nur wenn keine Swap-Konfiguration erkannt wird, erstellt der Installer standardmaessig eine **8-GiB-Notfall-Swapdatei** `/swapfile` auf ext4 oder XFS (mindestens 9 GiB Platz auf dem Dateisystem erforderlich). Die Datei erhaelt Modus `0600`, wird mit `mkswap` und `swapon` aktiviert und in `/etc/fstab` fuer Neustarts eingetragen. Nur bei einer solchen Neuanlage wird `vm.swappiness=10` unter `/etc/sysctl.d/99-stu-coreui-swap.conf` eingerichtet, sofern kein anderer Betreiberwert unter `/etc/sysctl.conf` oder `/etc/sysctl.d/*.conf` hinterlegt ist. Ein bereits eingerichteter Wert bleibt erhalten.
+
+Die Funktion ist idempotent und mit einem Host-Lock gegen zwei gleichzeitige CoreUI-Installerlaeufe abgesichert. Sie ersetzt **niemals** eine vorhandene Swap-Konfiguration des Game-/Repack-Installers. Nicht unterstuetzte Dateisysteme, zu wenig Platz oder Fehler bei der Anlage werden protokolliert, ohne die erfolgreiche CoreUI-Installation rueckgaengig zu machen. Der Swap ist Notfallreserve und kein Ersatz fuer ausreichenden RAM oder eine Begrenzung von LLM-Arbeitslasten.
+
+Fuer die erneute Swap-Pruefung ohne Neuinstallation:
+
+```bash
+sudo bash scripts/swap.sh status
+sudo bash scripts/swap.sh ensure
+```
+
+Optionale Umgebungsvariablen fuer beide Installer und `scripts/swap.sh ensure`:
+
+| Variable | Standard | Bedeutung |
+|---|---:|---|
+| `COREUI_SWAP_AUTOCREATE` | `1` | Auf `0` setzen, um jede automatische Swap-Anlage zu deaktivieren |
+| `COREUI_SWAP_SIZE_GIB` | `8` | Neue Swapdatei, 1 bis 64 GiB |
+| `COREUI_SWAP_SWAPPINESS` | `10` | Nur bei neuer Anlage, Bereich 0 bis 200 |
+
+Bei der Verwendung von `sudo` koennen abweichende Einstellungen mit `sudo --preserve-env=COREUI_SWAP_AUTOCREATE,COREUI_SWAP_SIZE_GIB,COREUI_SWAP_SWAPPINESS ...` uebergeben werden. `scripts/swap.sh status` ist nur lesend, `ensure` benoetigt Root-Rechte.
+
+**Release-Hinweis:** Der auf `0.5.3-alpha` festgelegte Downloader `setup.sh` verwendet ein bereits veroeffentlichtes ZIP/SHA-Paar. Diese Installer-Aenderung wird erst mit einem neu gebauten und veroeffentlichten Release-Archiv ueber den One-Liner verteilt; ein Quellcode-Commit allein aktualisiert das bestehende ZIP nicht.
 ## Installation process
 
 1. Validate the operating system, project path, and inputs.
