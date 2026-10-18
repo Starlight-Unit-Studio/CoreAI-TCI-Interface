@@ -4,6 +4,7 @@ IFS=$'\n\t'
 umask 027
 
 PROJECT_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
+source "$PROJECT_ROOT/scripts/lib/host-swap.sh"
 COREUI_VERSION="$(tr -d '[:space:]' < "$PROJECT_ROOT/VERSION")"
 COMPOSE_FILE="$PROJECT_ROOT/compose.yaml"
 ENV_FILE="$PROJECT_ROOT/var/compose.env"
@@ -687,6 +688,8 @@ chmod 0750 "$PROJECT_ROOT/scripts/install.sh" "$PROJECT_ROOT/scripts/preflight.s
   "$PROJECT_ROOT/scripts/stack.sh" "$PROJECT_ROOT/scripts/migrate.sh" 2>/dev/null || true
 
 log "Installation erfolgreich. Lokaler Endpunkt: http://127.0.0.1:$HTTP_PORT/"
+# Optional host safeguard after successful stack start; no existing swap is changed.
+coreui_ensure_host_swap || warn "Optionale Host-Swap-Einrichtung fehlgeschlagen."
 if [[ "$BIND_ADDRESS" == '127.0.0.1' ]]; then
   log "Zum sicheren Testen vom eigenen Rechner: ssh -L $HTTP_PORT:127.0.0.1:$HTTP_PORT USER@SERVER"
 fi

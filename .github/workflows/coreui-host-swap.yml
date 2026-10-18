@@ -1,0 +1,36 @@
+name: CoreUI Host Swap Regression
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/install.sh'
+      - 'scripts/install-native.sh'
+      - 'scripts/swap.sh'
+      - 'scripts/lib/host-swap.sh'
+      - 'tests/host-swap-selftest.sh'
+      - '.github/workflows/coreui-host-swap.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/install.sh'
+      - 'scripts/install-native.sh'
+      - 'scripts/swap.sh'
+      - 'scripts/lib/host-swap.sh'
+      - 'tests/host-swap-selftest.sh'
+      - '.github/workflows/coreui-host-swap.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  host-swap:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Validate shell syntax
+        run: |
+          bash -n setup.sh scripts/install.sh scripts/install-native.sh scripts/swap.sh scripts/lib/host-swap.sh tests/host-swap-selftest.sh
+      - name: Isolated host swap regression tests
+        run: bash tests/host-swap-selftest.sh
