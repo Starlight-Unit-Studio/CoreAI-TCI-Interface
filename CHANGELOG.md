@@ -2,11 +2,16 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
-## 0.5.5 - 20.10.2026
+## 0.5.6 - 20.10.2026
 
-- Cloud-Modell-Ausgaben (etwa Ollama Cloud gpt-oss:120b) koennen in der Python-Sandbox nun auch den kompatiblen Pfad `/mnt/data` verwenden. Er verweist auf denselben geschuetzten Job-Ausgabeordner wie `/work/output` und nicht auf Host- oder Nutzerdaten.
-- Bei echten Dateiauftraegen bestaetigt CoreUI Downloads nur nach einer erfolgreichen Worker-Dateiregistrierung. Nach `FileNotFoundError` ist ein einzelner korrigierter Python-Versuch zulaessig; vollstaendiges Modell-HTML kann alternativ sicher als Bytes uebernommen werden. Roher unvollstaendiger HTML-Code ist kein Download.
-- Veraltete stille 20.000-Zeichen-Kuerzung bei `[PY]` aufgehoben: groessere Skripte im dokumentierten Limit, uebergrosse Programme werden abgelehnt statt abgeschnitten. Verbindliche Version `0.5.5` bleibt rein numerisch.
+- PR #39: gpt-oss:120b Cloud-Dateierstellung ueber den isolierten Python-Worker verbessert. /mnt/data zeigt innerhalb der Sandbox auf denselben begrenzten Ausgabeordner wie /work/output; keine Nutzerdaten oder Hostverzeichnisse werden eingebunden.
+- PR #39: Eine echte Downloadkarte wird nur fuer vom Worker registrierte Dateien angeboten. Nach FileNotFoundError ist maximal ein serieller Korrekturversuch erlaubt. Vollstaendiger HTML-Quelltext kann alternativ als echte Datei gespeichert werden; unvollstaendige Ausgaben werden abgewiesen.
+- PR #39: Python-Code wird bei Ueberlaenge nicht mehr still gekuerzt. Regressionspruefungen fuer Cloud-Modell-Dateien erweitert.
+- Pflichtregel bestaetigt: JEDER Merge nach main erfordert bereits im selben PR einen numerischen Versionssprung in VERSION. PR #39 hatte diesen versaeumt; das wird hier nachvollziehbar berichtigt, ohne alte Releasearchive umzubenennen.
+- Aktive Versionsanzeigen, Readme, Versionspruefungen, eigenes TXT-Changelog und Uebergabeprotokoll auf 0.5.6 abgeglichen. Lokaler Pre-Merge-Guard hinzugefuegt. Keine GitHub Actions.
+- End-to-End-Livetest unter gpt-oss:120b und reales ZIP/SHA-Release weiterhin ausstehend. Issue #29 bleibt offen.
+
+## 0.5.5 - 20.10.2026
 
 - Numerische CoreUI-Version ohne Suffix wiederhergestellt. Die sechs aktiven HTML-Seiten und der JavaScript-Bootstrap zeigen konsistent `0.5.5`; das Versionsformat wird in Installer und Tests gesichert.
 - Cache-Busting von manuell gepflegten Versions- oder Textlabels entkoppelt. Jede CSS-/JS-Datei erhaelt bei der Installation einen eigenen, rein numerischen, aus SHA-256-Dateibytes abgeleiteten Fingerabdruck. Unveraenderter Inhalt bleibt cachebar, Aenderungen invalidieren den jeweiligen Asset-Cache.
@@ -15,7 +20,7 @@ Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versi
 - Gemeinsamer Masterplan, Roadmap und 82 erfasste Funktionen fuer OpenClaw, Open WebUI, CrewAI, LangGraph und AutoGen wurden in GitHub gesichert.
 - Gespeicherte Ausgabedateien, Chat-Dateikarten, geschuetzte Endpunkte und Migration 011 fuer Artefakte wurden zusammengefuehrt. Die eigentliche End-to-End-Abnahme auf dem Server und Issue #29 bleiben offen.
 - Berechtigungsfehler beim Checkout, Live-Updater, HTML-Data-Link-Ausgaben und ein veralteter SSE-Selbsttest wurden behandelt.
-- Quellenstand 0.5.5 ist aktuell auf `main`; ein neuer, eigenstaendig verifizierter Release-ZIP/SHA-256-Satz ist damit noch nicht behauptet. `0.5.4` war vorbereitet, aber nicht als eigenstaendiges Paket veroeffentlicht. Die historischen `-alpha`-Archive bleiben unveraendert erhalten.
+- Quellenstand 0.5.5 war der main-Stand nach PR #38; ein neuer, eigenstaendig verifizierter Release-ZIP/SHA-256-Satz ist damit noch nicht behauptet. `0.5.4` war vorbereitet, aber nicht als eigenstaendiges Paket veroeffentlicht. Die historischen `-alpha`-Archive bleiben unveraendert erhalten.
 - Keine GitHub Actions fuer diese Entwicklungs- und Live-Testschritte.
 
 

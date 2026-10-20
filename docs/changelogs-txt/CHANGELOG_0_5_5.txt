@@ -28,24 +28,9 @@ ZUSAMMENGEFUEHRTER FUNKTIONSSTAND SEIT DER LETZTEN VERSIONSDOKUMENTATION
 * Host-Swap-Erweiterung, Installer-Live-Update und Berechtigungskorrekturen.
 * HTML-Data-Link-Fehler behandelt und falschen SSE-Preflight-Alarm korrigiert.
 
-DATEIAUSGABE FUER CLOUD-MODELLE UND FEHLERBEHANDLUNG
-
-* Der isolierte Python-Worker stellt denselben Job-Ausgabeordner auch unter
-  /mnt/data bereit, sodass gaengige Coding-Modellpfade nicht mehr wegen
-  fehlender Verzeichnisse fehlschlagen.
-* E.M.B.E.R. darf eine Dateianforderung nur nach tatsaechlich vorhandenen,
-  an die Antwort gebundenen Dateien als erfolgreich melden.
-* Bei FileNotFoundError kann genau ein korrigierter Werkzeugaufruf erfolgen.
-  Vollstaendige HTML-Dokumente aus Modellantworten koennen ueber das
-  bestehende geschuetzte Dateipipeline-System gesichert werden.
-* Unvollstaendige HTML-Ausgaben werden nicht als fertige Dateien behauptet.
-* Python-Code wird nicht mehr stillschweigend auf 20000 Zeichen gekuerzt;
-  groessere Programme werden geprueft und uebergrosse abgelehnt.
-* Angepasste Regressionstests fuer Cloud-Pfade und HTML-Rueckgewinnung.
-
 STATUS UND HISTORIE
 
-Dies dokumentiert den aktuellen main-Quellstand 0.5.5 und keine behauptete
+Dies dokumentiert den main-Quellstand 0.5.5 nach PR #38 und keine behauptete
 abgeschlossene End-to-End-Abnahme oder bereits vorhandene neue ZIP-Datei.
 Ein 0.5.4-Paket wurde nicht offiziell veroeffentlicht. Die historischen
 0.5.3-alpha-Dateien sind Archivmaterial und nicht die aktuelle Version.
