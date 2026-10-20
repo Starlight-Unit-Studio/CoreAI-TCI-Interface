@@ -4,6 +4,7 @@ require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/ai_settings.php';
 require_once __DIR__ . '/console_attachment_store.php';
 require_once __DIR__ . '/console_artifact_store.php';
+require_once __DIR__ . '/console_work_store.php';
 require_once __DIR__ . '/console_data_link_bridge.php';
 require_once __DIR__ . '/console_session_store.php';
 require_once __DIR__ . '/profile_store.php';
@@ -2475,7 +2476,11 @@ function ember_py_run(PDO $pdo, string $code, string $channel = 'global', ?int $
   $code = trim($code);
   if ($code === '') return null;
   $ch = ($channel === 'console') ? 'console' : 'global';
-  if ($ch === 'console' && !coreui_console_artifact_schema_ready($pdo)) return null;
+  if ($ch === 'console' && !coreui_console_artifact_schema_ready($pdo)) {
+    coreui_work_record($pdo, 'tool', 'error', 'Python-Werkzeug nicht bereit',
+      ['reason'=>'artifact_schema_missing']);
+    return null;
+  }
   if ($ch !== 'console') ember_py_ensure_schema($pdo);
   $jobId = 0;
   $queueTransaction = false;
@@ -2496,9 +2501,12 @@ function ember_py_run(PDO $pdo, string $code, string $channel = 'global', ?int $
   } catch (Throwable $e) {
     if ($queueTransaction && $pdo->inTransaction()) $pdo->rollBack();
     ember_debug_log('ember_py_enqueue_fail', ['message' => $e->getMessage()]);
+    coreui_work_record($pdo, 'tool', 'error', 'Python-Job konnte nicht starten',
+      ['reason'=>'enqueue_failed']);
     return null;
   }
   if ($jobId <= 0) return null;
+  coreui_work_record($pdo, 'tool', 'running', 'Python-Job eingereiht', ['job_id'=>$jobId]);
 
   $deadline = microtime(true) + ember_py_wait_seconds();
   try {
@@ -2527,6 +2535,12 @@ function ember_py_run(PDO $pdo, string $code, string $channel = 'global', ?int $
         'duration_ms' => (int)($row['duration_ms'] ?? 0),
         'out_chars'   => strlen((string)($row['stdout'] ?? '')),
       ]);
+      $worked = $status === 'done' && (int)($row['exit_code'] ?? -1) === 0
+        && trim((string)($row['error'] ?? '')) === '';
+      coreui_work_record($pdo, 'tool', $worked ? 'success' : 'error',
+        $worked ? 'Python-Ausfuehrung beendet' : 'Python-Ausfuehrung fehlgeschlagen',
+        $worked ? ['job_id'=>$jobId,'exit_code'=>0,'duration_ms'=>(int)($row['duration_ms'] ?? 0)]
+          : coreui_work_python_diagnostic($row));
       return $row;
     }
   }
@@ -2542,6 +2556,8 @@ function ember_py_run(PDO $pdo, string $code, string $channel = 'global', ?int $
     $up->execute([$jobId]);
   } catch (Throwable $e) {}
   ember_debug_log('ember_py_wait_timeout', ['job_id' => $jobId, 'wait_s' => ember_py_wait_seconds()]);
+  coreui_work_record($pdo, 'tool', 'error', 'Python-Zeitlimit erreicht',
+    ['job_id'=>$jobId,'reason'=>'worker_timeout']);
   return null;
 }
 
@@ -4432,7 +4448,11 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
     $u .= "\n[Bild wurde mitgesendet - sieh es dir an und antworte als Ember.]";
   }
 
+  coreui_work_record($pdo, 'model', 'running', 'Modellaufruf gestartet', ['model'=>$primaryModel]);
   $out = ember_call_ollama($primaryModel, $sys, $u, ember_timeout_for_model($primaryModel), [], $imageUrl);
+  coreui_work_record($pdo, 'model', is_string($out) && trim($out) !== '' ? 'success' : 'error',
+    is_string($out) && trim($out) !== '' ? 'Modellantwort empfangen' : 'Modellaufruf ohne Antwort',
+    ['model'=>$primaryModel]);
   $finalPrompt = $u;
 
   // === Phase 2: Asynchroner Browse-Trigger ([BROWSE:]) - VOR der synchronen Websuche ===
@@ -4460,6 +4480,8 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         ember_debug_log('ember_inline_file_recovered', [
           'name'=>$inlineFile['name'], 'size_bytes'=>$inlineFile['size_bytes']
         ]);
+        coreui_work_record($pdo, 'artifact', 'info', 'HTML-Ausgabe erkannt',
+          ['file_name'=>(string)$inlineFile['name']]);
       }
     }
     if ($pyCode !== null) {
@@ -4475,6 +4497,8 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
           $pending = coreui_console_artifact_prepare_job($pdo, $consoleUid, (string)$consoleSessionId, $triggerMessageId, $triggerRevision, (int)$pyRes['id']);
           if ($pending['files'] !== []) {
             $GLOBALS['COREUI_PENDING_ARTIFACTS'] = $pending;
+            coreui_work_record($pdo, 'artifact', 'success', 'Downloaddateien gesichert',
+              ['file_count'=>count($pending['files'])]);
             $names = array_map(static fn(array $f): array => ['name'=>$f['name'],'size_bytes'=>$f['size_bytes'],'partial'=>$f['partial']], $pending['files']);
             $artifactNotice = "\nBestaetigte Ausgabedateien: " . json_encode($names, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE)
               . "\nDiese Dateien erscheinen automatisch als Downloadkarten. Erfinde keine URLs oder IDs.";
@@ -4483,6 +4507,8 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
           if (!empty($manifest['warnings'])) $artifactNotice .= "\nBei der Dateiuebernahme wurden weitere Ausgaben abgelehnt. Behaupte nicht, dass alle Dateien bereitstehen.";
         } catch (Throwable $artifactError) {
           ember_debug_log('artifact_prepare_failed', ['job_id'=>(int)$pyRes['id'], 'error'=>$artifactError->getMessage()]);
+          coreui_work_record($pdo, 'artifact', 'error', 'Dateiregistrierung fehlgeschlagen',
+            ['job_id'=>(int)$pyRes['id'],'reason'=>'artifact_registration_failed']);
           $artifactNotice = "\nDie Dateiausgabe konnte nicht bestaetigt werden. Melde den Fehler und erfinde keine Downloads.";
         }
       }
@@ -4535,9 +4561,15 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
           . "Nase gefallen ist, sag das einfach so wie du bist. Schreibe KEINEN [PY]-Block mehr. Antworte als Ember:";
       }
 
+      if ($needsFileRepair) coreui_work_record($pdo, 'tool', 'info', 'Korrekturversuch vorbereitet',
+        ['attempt'=>2,'reason'=>'FileNotFoundError']);
       ember_debug_log('ember_py_call2', ['u2_chars' => strlen($u2), 'file_repair' => $needsFileRepair]);
+      coreui_work_record($pdo, 'model', 'running', 'Folgeaufruf gestartet', ['model'=>$primaryModel]);
       $out2 = ember_call_ollama($primaryModel, $sys, $u2, ember_timeout_for_model($primaryModel), []);
       $out  = (is_string($out2) && trim($out2) !== '') ? $out2 : null;
+      coreui_work_record($pdo, 'model', $out !== null ? 'success' : 'error',
+        $out !== null ? 'Folgeantwort empfangen' : 'Folgeaufruf ohne Antwort',
+        ['model'=>$primaryModel]);
       $finalPrompt = $u2;
 
       // Cloud models sometimes provide an entire HTML document after the
@@ -4558,9 +4590,15 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
             try {
               $recovered = coreui_console_artifact_prepare_job($pdo, $consoleUid,
                 (string)$consoleSessionId, $triggerMessageId, $triggerRevision, (int)$recoveryResult['id']);
-              if ($recovered['files'] !== []) $GLOBALS['COREUI_PENDING_ARTIFACTS'] = $recovered;
+              if ($recovered['files'] !== []) {
+                $GLOBALS['COREUI_PENDING_ARTIFACTS'] = $recovered;
+                coreui_work_record($pdo, 'artifact', 'success', 'Reparierte Dateien gesichert',
+                  ['file_count'=>count($recovered['files'])]);
+              }
             } catch (Throwable $eRecovery) {
               ember_debug_log('artifact_recovery_failed', ['error'=>$eRecovery->getMessage()]);
+              coreui_work_record($pdo, 'artifact', 'error', 'Reparierte Datei nicht uebernommen',
+                ['reason'=>'artifact_registration_failed']);
             }
           }
         }
@@ -4577,6 +4615,8 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
           'first_exit' => is_array($pyRes) ? (int)($pyRes['exit_code'] ?? -1) : null,
           'recovery_attempted' => $recoveryCode !== null,
         ]);
+        coreui_work_record($pdo, 'artifact', 'error', 'Keine Downloaddatei bestaetigt',
+          ['reason'=>'output_missing']);
         return 'Die Datei konnte nicht als Download gespeichert werden. '
           . 'Die Python-Ausgabe ist fehlgeschlagen oder unvollstaendig; es wurde keine Datei bereitgestellt.';
       }

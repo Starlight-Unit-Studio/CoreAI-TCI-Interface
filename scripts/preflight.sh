@@ -119,6 +119,11 @@ UI_FILES=(
   database/migrations/008_message_actions.sql
   database/migrations/009_message_editing.sql
   database/migrations/011_console_artifacts.sql
+  database/migrations/012_console_work_events.sql
+  api/console_work_events.php
+  api/console_work_store.php
+  js/coreui-work-events.js
+  scripts/work-events-selftest.php
   api/console_artifact.php
   api/console_artifacts.php
   api/console_data_link_bridge.php
@@ -132,8 +137,8 @@ UI_FILES=(
   scripts/markdown-selftest.js
   scripts/branding-license-selftest.py
   scripts/cache-bust.py
-  docs/changelogs-txt/CHANGELOG_0_5_6.txt
-  docs/UEBERGABEPROTOKOLL_0_5_6.txt
+  docs/changelogs-txt/CHANGELOG_0_5_7.txt
+  docs/UEBERGABEPROTOKOLL_0_5_7.txt
   docker/pyworker/Dockerfile
   docker/pyworker/entrypoint.sh
   images/starlight_unit_studios_logo_original.png
@@ -339,6 +344,20 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     ok 'Migration 011: dauerhafte Chat-Dateiausgaben sind bereit.'
   else
     fail 'Migration 011 fehlt. Fuehre scripts/stack.sh migrate aus.'
+  fi
+
+  if compose exec -T php php -r \
+      'require "/var/www/coreui/api/db.php"; require "/var/www/coreui/api/console_work_store.php"; exit(coreui_work_schema_ready(stu_pdo()) ? 0 : 1);' \
+      >/dev/null 2>&1; then
+    ok 'Migration 012: persistente Arbeitsereignisse bereit.'
+  else
+    fail 'Migration 012 fehlt. Fuehre scripts/stack.sh migrate aus.'
+  fi
+
+  if compose exec -T php php scripts/work-events-selftest.php >/dev/null 2>&1; then
+    ok 'P06-Arbeitsereignisse und sichere Python-Fehlerklassen geprueft.'
+  else
+    fail 'P06-Arbeitsereignis-Selbsttest fehlgeschlagen.'
   fi
 
   for extension_name in curl dom gd mbstring pdo_mysql zip; do

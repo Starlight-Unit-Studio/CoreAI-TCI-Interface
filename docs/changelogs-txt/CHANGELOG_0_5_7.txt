@@ -1,0 +1,41 @@
+STΛRLIɢHT: EMBER COREUI BY STARLIGHT UNIT STUDIOS
+CHANGELOG 0.5.7
+STAND 20.10.2026
+
+P06: ARBEITSSCHRITTE SICHTBAR (ERSTE AUSBAUSTUFE)
+
+* Bisheriger synthetischer Denkstatus wird fuer neue P06-Turns durch
+  echte, vom Server bestaetigte Arbeitsschritte ersetzt.
+* Aufklappbarer Arbeitsverlauf mit Zeit, Zustand, Werkzeug-ID,
+  Exitcode, Fehlerklasse und getrennten technischen Details.
+* Dauerhafte Ereignisse in Migration 012_console_work_events.
+  Zuordnung zu Nutzer, Sitzung, Ausloesenachricht, Lauf/Antwort.
+* Geschuetzter Lesepfad console_work_events.php. Fremde Sitzungen
+  und Antworten duerfen niemals Ereignisse anderer Nutzer sehen.
+* Laufende Schritte per SSE. Nach Neuladen wird aus der
+  kontogebundenen Tabelle nachgeladen, ohne Roh-Thinking anzuzeigen.
+* Instrumentierung wirklicher Modell- und Python-Aufrufe,
+  Werkzeugende, begrenzten Reparaturversuchs und sicher registrierter
+  Dateien. Fehler wie FileNotFoundError erhalten verstaendliche Codes.
+* Keine Speicherung oder Ausgabe von Modellgedanken, Prompts,
+  vollem Python-Code, stdout, stderr, Geheimnissen oder HTML-Payloads.
+* Bedienung fuer mobile Browser mit ausklappbaren Schritt-Details.
+
+BEREITS VORHANDENE BASIS BLEIBT
+
+* gpt-oss:120b ueber den Ollama-Cloud-Adapter und der serielle
+  Modellbetrieb bleiben unveraendert; keine parallelen Modellaufrufe.
+* Original-One-Liner installiert wie gewohnt main. Keine Actions.
+* Versionsregel: Merge von 0.5.6 nach 0.5.7; nur Ziffern in VERSION.
+* JS-/CSS-Cachebusting weiterhin ueber Content-Fingerprints.
+
+OFFENE ABNAHME
+
+* PHP-Datei- und Diagnose-Selbsttests lokal geprueft, JavaScript-
+  Syntax lokal geprueft. Echter Docker/MariaDB- und Browserlauf
+  ist erst nach der Installation auf dem Liveserver bestaetigbar.
+* P06 insgesamt bleibt offen: ausfuehrbare, gespeicherte Plaene,
+  Provider-Reasoning-Anzeige, allgemeiner Agenten-Workflow und
+  vollstaendige Wiederaufnahme sind weitere Teilumsetzungen.
+* Bug #29 bleibt offen, bis eine HTML- und ZIP-Datei tatsaechlich
+  ueber den Chat heruntergeladen und auf Android geoeffnet wird.

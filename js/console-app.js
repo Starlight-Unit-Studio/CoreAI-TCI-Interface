@@ -744,9 +744,20 @@
       text = safeReplyText(text);
     }
 
-    // Denkstatus-Panel: falls laufendes Panel vorhanden, Text dort eintragen
-    // sonst neue Panel-Row bauen (für History)
-    if (role === 'ember' && thinkingText && thinkingText.trim()) {
+    // Saved operational steps are reloaded from the scoped database endpoint.
+    // The legacy canned thinking strings are not shown for new P06 turns.
+    var hasWorkPanel = role === 'ember' && record && Number(record.reply_to_id) > 0
+      && window.CoreUIWorkEvents && typeof window.CoreUIWorkEvents.create === 'function';
+    if (hasWorkPanel) {
+      content.appendChild(window.CoreUIWorkEvents.create({
+        sessionId: record.session_id || state.activeSessionId,
+        turnId: Number(record.reply_to_id),
+        responseId: Number(record.id),
+        apiBase: API_BASE,
+        expanded: uiPreferences.thinkingExpanded === true
+      }));
+    }
+    if (!hasWorkPanel && role === 'ember' && thinkingText && thinkingText.trim()) {
       if (state.thinkingPanelEl) {
         // Laufendes Panel befuellen und als abgeschlossen markieren (Toggle: DENKSTATUS)
         var existingBody = state.thinkingPanelEl.querySelector('.thinking-body');
@@ -1252,21 +1263,23 @@
     var panel = document.createElement('div');
     panel.className = 'thinking-panel';
     var toggle = document.createElement('button');
-    toggle.className = 'thinking-toggle running';
+    toggle.className = 'thinking-toggle running open';
+    toggle.setAttribute('aria-expanded', 'true');
     var icon = document.createElement('span');
     icon.className = 'thinking-toggle-icon';
     icon.textContent = '◌';
     var label = document.createElement('span');
-    label.textContent = 'DENKSTATUS AKTIV…';
+    label.textContent = 'ARBEITSSCHRITTE LIVE';
     toggle.appendChild(icon);
     toggle.appendChild(label);
     var body = document.createElement('div');
-    body.className = 'thinking-body';
-    body.textContent = 'ANFRAGE WIRD ANALYSIERT';
+    body.className = 'thinking-body open';
+    body.textContent = 'Warte auf bestaetigte Arbeitsschritte ...';
     toggle.addEventListener('click', function() {
       var isOpen = body.classList.contains('open');
       body.classList.toggle('open', !isOpen);
       toggle.classList.toggle('open', !isOpen);
+      toggle.setAttribute('aria-expanded', String(!isOpen));
       scrollToBottom();
     });
     panel.appendChild(toggle);
@@ -1885,14 +1898,15 @@
       // Rollendes Update mit einem aelteren Endpoint: Payload strikt ignorieren.
       armWatchdog();
     });
-    es.addEventListener('progress', function(ev) {
+    // Pre-P06 synthetic status labels are intentionally ignored.
+    es.addEventListener('progress', function() { armWatchdog(); });
+    es.addEventListener('work', function(ev) {
       armWatchdog();
       try {
-        if (!isActiveSession(sessionId)) return;
-        var d = JSON.parse(ev.data).text || '';
-        var b = panelBody();
-        if (b) {
-          appendSafeThinkingStatus(b, d);
+        if (!isActiveSession(sessionId) || !window.CoreUIWorkEvents) return;
+        var body = panelBody();
+        if (body) {
+          window.CoreUIWorkEvents.add(body, JSON.parse(ev.data));
           scrollToBottom();
         }
       } catch (e) {}
@@ -2031,7 +2045,11 @@
 
     // Thinking-Panel finalisieren
     if (state.thinkingPanelEl) {
-      if (thinking) {
+      if (window.CoreUIWorkEvents && state.thinkingPanelEl.querySelector('.work-entry')) {
+        // Keep genuine work steps until the persisted history panel replaces them.
+        var liveToggle = state.thinkingPanelEl.querySelector('.thinking-toggle');
+        if (liveToggle) liveToggle.classList.remove('running');
+      } else if (thinking && !window.CoreUIWorkEvents) {
         var body = state.thinkingPanelEl.querySelector('.thinking-body');
         if (body) body.textContent = thinking;
         var toggle = state.thinkingPanelEl.querySelector('.thinking-toggle');

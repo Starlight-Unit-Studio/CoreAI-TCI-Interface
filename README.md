@@ -7,7 +7,7 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 Ember CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current main-source version: `0.5.6` (numeric only). The previous verified ZIP remains archived under its original historical name.
+Current main-source version: `0.5.7` (numeric only). The previous verified ZIP remains archived under its original historical name.
 
 ## Development roadmap
 
@@ -29,15 +29,15 @@ A fresh interactive installation asks for the administrator email address and pa
 
 ## Mandatory version increment for every merge
 
-**Each PR merged into `main` MUST already include a numeric `VERSION` increment.** This applies to bugfixes, documentation, tests and any other changes, with no exceptions. Before merging, compare the PR's version against the existing `main` version using `python3 scripts/version-merge-check.py --base-version 0.5.5` (replace the base value with the one freshly read from `main`). The guard checks the increment, UI labels, selftests, and per-version changelog and handover. It requires no GitHub Actions. The complete rule is documented in [VERSIONING_POLICY.md](docs/VERSIONING_POLICY.md).
+**Each PR merged into `main` MUST already include a numeric `VERSION` increment.** This applies to bugfixes, documentation, tests and any other changes, with no exceptions. Before merging, compare the PR's version against the existing `main` version using `python3 scripts/version-merge-check.py --base-version 0.5.6` (replace the base value with the one freshly read from `main`). The guard checks the increment, UI labels, selftests, and per-version changelog and handover. It requires no GitHub Actions. The complete rule is documented in [VERSIONING_POLICY.md](docs/VERSIONING_POLICY.md).
 
 ## Numeric product version and automatic browser cache
 
-The canonical `VERSION` uses exactly `major.minor.patch` with numbers only, for example `0.5.6`. No words or suffixed states belong in the product version. The installer separately records the exact Git commit in `var/dev_source_commit` without changing the product version.
+The canonical `VERSION` uses exactly `major.minor.patch` with numbers only, for example `0.5.7`. No words or suffixed states belong in the product version. The installer separately records the exact Git commit in `var/dev_source_commit` without changing the product version.
 
 The same original one-liner calls `scripts/cache-bust.py` through the native or container installer. For each referenced CSS/JS file, the installer derives a fixed-length **numeric cache key from that file's actual SHA-256 content** and rewrites the static HTML URL. Unchanged assets keep the same key; changed assets get a different one even without a product version change. All HTML entry points are marked for revalidation at Nginx level, so browsers can discover new asset URLs. Preflight rejects stale or invalid keys.
 
-**Historical releases are not renamed.** The original verified `0.5.3-alpha` archive is retained for legacy rollback only. `0.5.4` was planned but not published as a release. `0.5.5` was the previous main-source checkpoint, and `0.5.6` is the current working version; a new verified ZIP/SHA pair must be built separately before presenting it as an archived release.
+**Historical releases are not renamed.** The original verified `0.5.3-alpha` archive is retained for legacy rollback only. `0.5.4` was planned but not published as a release. `0.5.5` and `0.5.6` were preceding main-source checkpoints, and `0.5.7` is the current working version; a new verified ZIP/SHA pair must be built separately before presenting it as an archived release.
 
 ## Independence and mandatory product name
 
@@ -59,9 +59,17 @@ Starting with `0.4.2-alpha`, the project's own code is licensed under the **Star
 
 Further details are provided in `LICENSE_HISTORY.md`, `TRADEMARKS.md`, `COMMUNITY_POLICY.md`, `NOTICE.md`, and `COPYRIGHT.md`. The license is Source Available and is not OSI-certified. Third-party components retain their own terms.
 
-## Current 0.5.6 main-source changes
+## Current 0.5.7 main-source changes
 
-The current branch includes persistent generated file downloads and chat output cards, the new artifact database migration 011, the browser data-link correction, the original one-liner live-update flow, the Nginx permission repair, the scoped SSE selftest update, and the numeric cache/version repair. The 0.5.6 merge also adds compatibility for `gpt-oss:120b` cloud-generated files under the isolated `/mnt/data` output alias, with bounded recovery after failed Python file creation. Real HTML/ZIP downloads still need end-to-end live verification. The full worker-to-mobile download acceptance and new ZIP/SHA packaging remain pending. See [CHANGELOG.md](CHANGELOG.md), [the 0.5.6 entry](docs/changelogs-txt/CHANGELOG_0_5_6.txt) and [handover](docs/UEBERGABEPROTOKOLL_0_5_6.txt).
+The current branch includes persistent generated file downloads and chat output cards, the new artifact database migration 011, the browser data-link correction, the original one-liner live-update flow, the Nginx permission repair, the scoped SSE selftest update, and the numeric cache/version repair. The 0.5.6 merge also adds compatibility for `gpt-oss:120b` cloud-generated files under the isolated `/mnt/data` output alias, with bounded recovery after failed Python file creation. Real HTML/ZIP downloads still need end-to-end live verification. The full worker-to-mobile download acceptance and new ZIP/SHA packaging remain pending. See [CHANGELOG.md](CHANGELOG.md), [the 0.5.7 entry](docs/changelogs-txt/CHANGELOG_0_5_7.txt) and [handover](docs/UEBERGABEPROTOKOLL_0_5_7.txt).
+
+## P06: Real work activity (first operational slice)
+
+In the private Console, the collapsible **ARBEITSSCHRITTE** view now presents actual, persisted server events for the current answer rather than invented thinking status lines. Real model starts/completions, Python job IDs, exit codes, recognized failure classes (such as `FileNotFoundError`), repair attempts, and registered downloads are displayed as separate steps. This includes cloud-provider use such as `gpt-oss:120b` through the existing Ollama adapter.
+
+Events are stored in migration `012_console_work_events`, scoped to account, session, triggering turn, and the saved reply. New activity is delivered through SSE; a read-only authenticated API reloads it after reconnect or page refresh. Raw chain-of-thought, prompts, script sources, complete stdout/stderr and secrets are never sent to the browser. Technical diagnostics are deliberately restricted to safe metadata.
+
+**Partial implementation only:** Full P05 run control, saved agent plans, multi-tool workflow replay and provider-dependent reasoning controls/display are still open in the roadmap. Issue #29 remains open until a real HTML/ZIP artifact downloads on Android Chrome. The prior one-liner and separate numeric product version rules are unchanged.
 
 ## Archived 0.5.3-alpha baseline
 
@@ -425,7 +433,7 @@ Bei der Verwendung von `sudo` koennen abweichende Einstellungen mit `sudo --pres
 
 Genau denselben One-Liner wie bei der Erstinstallation erneut ausfuehren. `setup.sh` laedt den neuesten Commit aus `main`, fuehrt den regulaeren Installer und die SQL-Migrationen aus und prueft die aktualisierte Installation. Der konfigurierte isolierte Betrieb bleibt bestehen; Benutzer, Sitzungen, Datenbank, Uploads und Geheimnisse bleiben erhalten. GitHub Actions werden nicht benoetigt.
 
-Der tatsaechlich installierte Commit wird am Ende ausgegeben und in `/opt/ember-coreui/var/dev_source_commit` gespeichert. Die aktuelle Produktversion in `VERSION` ist rein numerisch (`0.5.6`), unabhaengig von Commit und Cache-Schluessel. Fuer den exakten live installierten Quellstand ist die gesondert gespeicherte Commit-SHA massgeblich.
+Der tatsaechlich installierte Commit wird am Ende ausgegeben und in `/opt/ember-coreui/var/dev_source_commit` gespeichert. Die aktuelle Produktversion in `VERSION` ist rein numerisch (`0.5.7`), unabhaengig von Commit und Cache-Schluessel. Fuer den exakten live installierten Quellstand ist die gesondert gespeicherte Commit-SHA massgeblich.
 
 Wer stattdessen **explizit das alte gepruefte Release** installieren moechte, kann den Launcher unter `sudo` mit `COREUI_SETUP_SOURCE=release` ausfuehren. Nur dieser Modus benutzt das gepinnte ZIP mit SHA-256-Verifikation. Das bisherige `scripts/update-from-main.sh` ist nicht mehr als separater Update-Schritt erforderlich.
 

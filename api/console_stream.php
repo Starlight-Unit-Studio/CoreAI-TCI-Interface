@@ -317,6 +317,18 @@ try {
     }
   }
 
+  // P06: publish only real, server-observed operations. No raw reasoning.
+  $workRunKey = $generationRequestId !== '' ? $generationRequestId : 'base';
+  $GLOBALS['COREUI_WORK_CONTEXT'] = [
+    'user_id'=>(int)$uid, 'session_id'=>$sessionId, 'turn_id'=>$afterId,
+    'run_key'=>$workRunKey
+  ];
+  $GLOBALS['COREUI_WORK_PDO'] = $pdo;
+  $GLOBALS['COREUI_WORK_PUBLISH'] = static function (array $event): void {
+    sse_send('work', $event);
+  };
+  coreui_work_record($pdo, 'run', 'running', 'Auftrag gestartet');
+
   $exactCalculation = (!$isVisionTurn && $attachmentIds === [] && $generationMode !== 'continue')
     ? ember_exact_integer_calculation($promptMessage)
     : null;
@@ -366,6 +378,7 @@ try {
     $sys   = (string)($built['sys'] ?? '');
     $u     = (string)($built['u'] ?? '');
     $model = (string)($built['model'] ?? ember_model());
+    coreui_work_record($pdo, 'run', 'success', 'Kontext vorbereitet');
     console_stream_progress($thinkingEnabled, 'context');
     console_stream_progress($thinkingEnabled, 'compose');
 
@@ -413,6 +426,12 @@ try {
   $streamUnsafe = empty($acc['ok'])
     || empty($acc['done']);
   if ($hasMarker || $reply === '' || $streamUnsafe) {
+    if ($hasMarker) {
+      coreui_work_record($pdo, 'run', 'info', 'Werkzeuganforderung erkannt');
+    } elseif ($streamUnsafe) {
+      coreui_work_record($pdo, 'error', 'error', 'Modellstream unvollstaendig',
+        ['reason'=>'stream_incomplete']);
+    }
     console_stream_progress($thinkingEnabled, 'tool');
     // v1.1.1.94: $imageUrl statt hart null -> Vision funktioniert jetzt auch in der Console.
     $fallback = ember_generate_reply(
@@ -512,6 +531,15 @@ try {
     }
   }
 
+  if ($emberMsgId > 0) {
+    try {
+      coreui_work_bind_response($pdo, (int)$uid, $sessionId, $afterId, $workRunKey, $emberMsgId);
+      $GLOBALS['COREUI_WORK_CONTEXT']['response_message_id'] = $emberMsgId;
+    } catch (Throwable $eWork) {
+      error_log('[CoreUI] Work response association unavailable: ' . get_class($eWork));
+    }
+  }
+
   if ($generationRequest !== null) {
     if ($emberMsgId > 0) {
       coreui_console_generation_finish($pdo, (int)$uid, $generationRequestId, $emberMsgId);
@@ -521,6 +549,12 @@ try {
   }
 
   $elapsed = (int)round(microtime(true) - $start);
+  if ($browseJobId > 0) coreui_work_record($pdo, 'tool', 'running', 'Browserauftrag eingereiht',
+    ['job_id'=>$browseJobId]);
+  if ($emberMsgId > 0) coreui_work_record($pdo, 'run', 'success', 'Antwort gespeichert',
+    ['elapsed_ms'=>$elapsed * 1000]);
+  elseif ($browseJobId <= 0) coreui_work_record($pdo, 'run', 'error', 'Kein Antwortdatensatz gespeichert',
+    ['reason'=>'empty_response']);
   sse_send('done', [
     'text'          => $replyFinal,
     'thinking'      => $thinkingPublic,
@@ -553,8 +587,11 @@ try {
       'line'    => $e->getLine(),
     ]);
   }
+  coreui_work_record($pdo, 'error', 'error', 'Verarbeitung abgebrochen',
+    ['reason'=>'server_exception']);
   sse_send('error', ['error' => 'exception']);
 } finally {
+  unset($GLOBALS['COREUI_WORK_CONTEXT'], $GLOBALS['COREUI_WORK_PDO'], $GLOBALS['COREUI_WORK_PUBLISH']);
   ember_generation_lock_release($turnLock ?? null);
   // Console-AFK sofort zuruecknehmen -> Ember erscheint im Global wieder online.
   // (Bei [BROWSE:] haelt der Worker ueber sein eigenes Browse-Flag unabhaengig weiter AFK.)
@@ -633,6 +670,10 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
     if (isset($msg['content']) && is_string($msg['content'])) $contentAcc .= $msg['content'];
   };
 
+  $workDb = $GLOBALS['COREUI_WORK_PDO'] ?? null;
+  if ($workDb instanceof PDO) {
+    coreui_work_record($workDb, 'model', 'running', 'Modellstream gestartet', ['model'=>$model]);
+  }
   $ch = curl_init($url);
   curl_setopt_array($ch, [
     CURLOPT_POST           => true,
@@ -707,6 +748,12 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
     ]);
   }
 
+  if ($workDb instanceof PDO) {
+    coreui_work_record($workDb, 'model', $ok ? 'success' : 'error',
+      $ok ? 'Modellstream empfangen' : 'Modellstream fehlgeschlagen',
+      ['model'=>$model,'http_code'=>$httpCode,
+        'reason'=>$truncated ? 'output_truncated' : ($ok ? 'completed' : 'request_failed')]);
+  }
   return [
     'thinking' => $thinkingAcc,
     'content' => $contentAcc,

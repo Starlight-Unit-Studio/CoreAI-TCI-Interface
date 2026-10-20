@@ -446,6 +446,7 @@ ensure_ollama_model() {
 [[ -f "$PROJECT_ROOT/database/migrations/008_message_actions.sql" ]] || die 'SQL-Nachrichtenaktionsschema fehlt.'
 [[ -f "$PROJECT_ROOT/database/migrations/009_message_editing.sql" ]] || die 'SQL-Nachrichtenbearbeitungsschema fehlt.'
 [[ -f "$PROJECT_ROOT/database/migrations/011_console_artifacts.sql" ]] || die 'SQL-Dateiausgabeschema fehlt.'
+[[ -f "$PROJECT_ROOT/database/migrations/012_console_work_events.sql" ]] || die 'SQL-Arbeitsereignisse fehlen.'
 [[ "$PROJECT_ROOT" =~ ^/[A-Za-z0-9._/-]+$ ]] || die 'Der Projektpfad enthaelt nicht unterstuetzte Zeichen.'
 [[ "$PROJECT_ROOT" != /root/* ]] || die 'Bitte das Paket dauerhaft nach /opt/ember-coreui verschieben.'
 [[ "$PROJECT_ROOT" != /home/* ]] || die 'Bitte das Paket dauerhaft nach /opt/ember-coreui verschieben.'

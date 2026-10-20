@@ -2,6 +2,15 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.7 - 20.10.2026
+
+- P06-Ausbaustufe: Der bisherige synthetische Denkstatus wird bei neuen Console-Antworten durch gespeicherte, echte Arbeitsschritte abgeloest. Sie werden via SSE live gezeigt und nach Seitenreload aus der Datenbank nachgeladen.
+- Migration 012: Kontogebundene und antwortbezogene Modell-, Python-Werkzeug- und Dateiereignisse; eigener authentifizierter Lese-Endpunkt. Antwortvarianten erhalten getrennte Logs.
+- Echte Fehlerdiagnose: Python-Job-ID, Exitcode, Laufzeit, bekannte Fehlerklasse wie FileNotFoundError, optional sicherer Dateiname, Reparaturversuch und bestaetigte Dateiausgaben statt pauschaler Fehlermeldung.
+- Darstellungs- und Sicherheitsgrenzen: Kein Roh-Thinking, kein Prompt, kein Python-Quellcode, kein stdout/stderr oder Geheimnis im oeffentlichen Ereignisprotokoll. Ausklappbare Details auch auf Android.
+- Beide Installer/Preflights, geschuetzte Nginx-Routen, Branding, HTML/JS, README, Changelog-TXT und Uebergabe synchronisiert. Original-One-Liner und GitHub-Actions-Verzicht unveraendert.
+- Versionskanon: 0.5.6 -> 0.5.7 bei diesem Merge, ohne Suffix. Vollstaendige P05/P06/P07-Agentenfunktionen sowie Live-Abnahme der echten HTML-/ZIP-Downloads (#29) bleiben offen.
+
 ## 0.5.6 - 20.10.2026
 
 - PR #39: gpt-oss:120b Cloud-Dateierstellung ueber den isolierten Python-Worker verbessert. /mnt/data zeigt innerhalb der Sandbox auf denselben begrenzten Ausgabeordner wie /work/output; keine Nutzerdaten oder Hostverzeichnisse werden eingebunden.

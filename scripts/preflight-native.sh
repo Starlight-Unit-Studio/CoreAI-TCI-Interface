@@ -85,6 +85,11 @@ UI_FILES=(
   database/migrations/008_message_actions.sql
   database/migrations/009_message_editing.sql
   database/migrations/011_console_artifacts.sql
+  database/migrations/012_console_work_events.sql
+  api/console_work_events.php
+  api/console_work_store.php
+  js/coreui-work-events.js
+  scripts/work-events-selftest.php
   api/console_artifact.php
   api/console_artifacts.php
   api/console_data_link_bridge.php
@@ -98,8 +103,8 @@ UI_FILES=(
   scripts/markdown-selftest.js
   scripts/branding-license-selftest.py
   scripts/cache-bust.py
-  docs/changelogs-txt/CHANGELOG_0_5_6.txt
-  docs/UEBERGABEPROTOKOLL_0_5_6.txt
+  docs/changelogs-txt/CHANGELOG_0_5_7.txt
+  docs/UEBERGABEPROTOKOLL_0_5_7.txt
   images/starlight_unit_studios_logo_original.png
 )
 for ui_file in "${UI_FILES[@]}"; do
@@ -190,6 +195,12 @@ if command -v php >/dev/null 2>&1; then
     ok 'Alle paketierten PHP-Dateien bestehen den Syntaxcheck.'
   else
     fail 'Mindestens eine paketierte PHP-Datei hat einen Syntaxfehler.'
+  fi
+
+  if runuser -u www-data -- php "$PROJECT_ROOT/scripts/work-events-selftest.php" >/dev/null 2>&1; then
+    ok 'P06: Python-Fehlerklassifikation und Ereignisvertrag geprueft.'
+  else
+    fail 'P06-Arbeitsereignis-Selbsttest fehlgeschlagen.'
   fi
 
   thinking_selftest=''
@@ -283,6 +294,12 @@ if command -v php >/dev/null 2>&1; then
   fi
 
   if [[ -f "$CONFIG_FILE" ]]; then
+    if php -r "require '$PROJECT_ROOT/api/db.php'; require '$PROJECT_ROOT/api/console_work_store.php'; exit(coreui_work_schema_ready(stu_pdo()) ? 0 : 1);" >/dev/null 2>&1; then
+      ok 'Migration 012: persistente Arbeitsereignisse bereit.'
+    else
+      fail 'Migration 012: Ereignistabelle fehlt.'
+    fi
+
     if php -r "require '$PROJECT_ROOT/api/db.php'; echo (int)stu_pdo()->query('SELECT COUNT(*) FROM stu_schema_migrations')->fetchColumn();" >/dev/null 2>&1; then
       ok 'MariaDB-Verbindung und Core-Schema funktionieren.'
     else
