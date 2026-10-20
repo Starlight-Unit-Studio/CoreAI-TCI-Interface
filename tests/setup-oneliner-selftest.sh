@@ -58,6 +58,8 @@ set -Eeuo pipefail
 if [[ "$1" == clone ]]; then
   for last in "$@"; do :; done
   if [[ "${FAKE_FAIL_GIT:-}" == 1 ]]; then exit 17; fi
+  # Detect the real umask inherited by Git, independent of the mock checkout.
+  umask > "$FAKE_CLONE_UMASK_LOG"
   mkdir -p "$last"
   cp -a "$FAKE_REPO/." "$last/"
   mkdir -p "$last/.git"
@@ -89,6 +91,7 @@ esac
 CURL
 chmod 0755 "$WORK/bin/"*
 export FAKE_REPO="$WORK/fixture"
+export FAKE_CLONE_UMASK_LOG="$WORK/clone-umask"
 export COREUI_ADMIN_EMAIL='test@example.test'
 export COREUI_ADMIN_PASSWORD='non-production-password'
 export FAKE_ARCHIVE="$WORK/EMBER_COREUI_0_5_3_ALPHA.zip"
@@ -97,6 +100,9 @@ export PATH="$WORK/bin:$PATH"
 
 # New installation: the original oneliner now chooses main and tracks its commit.
 "$WORK/setup.sh" > "$WORK/install.log"
+# Git must be able to emit public source files readable by the isolated
+# nginx/php UID 33; the installer's own restrictive umask stays at 027.
+[[ "$(cat "$FAKE_CLONE_UMASK_LOG")" == '0022' ]]
 [[ "$(cat "$TARGET/var/dev_source_commit")" == '0000000000000000000000000000000000000007' ]]
 [[ "$(cat "$TARGET/var/test_installs")" == 'initial' ]]
 [[ ! -e "$TARGET/.git" && ! -e "$TARGET/.github" && ! -e "$TARGET/releases/huge.zip" ]]
@@ -149,4 +155,4 @@ if COREUI_SETUP_SOURCE='untrusted' "$WORK/setup.sh" > "$WORK/invalid.log" 2>&1; 
   exit 52
 fi
 
-echo 'PASS: unchanged one-liner source, safe update, failed fetch, pinned fallback, invalid mode'
+echo 'PASS: unchanged one-liner, readable main checkout mask, safe update, failed fetch, pinned fallback, invalid mode'
