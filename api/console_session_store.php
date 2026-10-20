@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/console_attachment_store.php';
+require_once __DIR__ . '/console_artifact_store.php';
 
 /**
  * Persistente Ember CoreUI-Sitzungslogik.
@@ -226,6 +227,23 @@ function coreui_console_session_delete_tx(PDO $pdo, int $uid, string $sessionId)
     if ($jobId > 0) $browseScreenshotPaths[] = 'uploads/ember_browse/job_' . $jobId . '.png';
   }
 
+  $artifactKeys = [];
+  $pythonJobsDeleted = 0;
+  $artifactSchemaReady = coreui_console_artifact_schema_ready($pdo);
+  if ($artifactSchemaReady) {
+    $stPython = $pdo->prepare("SELECT id,status,worker_pid,duration_ms FROM stu_ember_py_jobs WHERE channel='console' AND recipient_uid=? AND session_id=? FOR UPDATE");
+    $stPython->execute([$uid, $sessionId]);
+    foreach ($stPython->fetchAll(PDO::FETCH_ASSOC) as $job) {
+      if (in_array((string)$job['status'], ['queued','running'], true)
+          || ($job['status'] === 'error' && $job['worker_pid'] !== null && $job['duration_ms'] === null)) {
+        throw new RuntimeException('session_busy');
+      }
+    }
+    $stArtifacts = $pdo->prepare('SELECT storage_key FROM stu_console_artifacts WHERE user_id=? AND session_id=? FOR UPDATE');
+    $stArtifacts->execute([$uid, $sessionId]);
+    $artifactKeys = $stArtifacts->fetchAll(PDO::FETCH_COLUMN) ?: [];
+  }
+
   // Auch eine laufende Alternative oder Fortsetzung schreibt spaeter noch in
   // diese Sitzung. Sie darf deshalb nicht unter dem Stream geloescht werden.
   $stGenerations = $pdo->prepare(
@@ -299,6 +317,12 @@ function coreui_console_session_delete_tx(PDO $pdo, int $uid, string $sessionId)
   $stDeleteJobs->execute([$uid, $sessionId]);
   $counts['browse_jobs_deleted'] = $stDeleteJobs->rowCount();
 
+  if ($artifactSchemaReady) {
+    $stDeletePython = $pdo->prepare("DELETE FROM stu_ember_py_jobs WHERE channel='console' AND recipient_uid=? AND session_id=?");
+    $stDeletePython->execute([$uid, $sessionId]);
+    $pythonJobsDeleted = $stDeletePython->rowCount();
+  }
+
   $stDeleteMessages = $pdo->prepare(
     "DELETE FROM stu_chat_messages
       WHERE channel='console' AND user_id=? AND session_id=?"
@@ -331,7 +355,7 @@ function coreui_console_session_delete_tx(PDO $pdo, int $uid, string $sessionId)
   $stDeleteSession->execute([$sessionId, $uid]);
   if ($stDeleteSession->rowCount() !== 1) throw new RuntimeException('session_delete_conflict');
 
-  return $counts + ['file_paths' => array_merge($orphanedMediaPaths, $browseScreenshotPaths)];
+  return $counts + ['python_jobs_deleted'=>$pythonJobsDeleted, 'artifact_keys'=>$artifactKeys, 'file_paths' => array_merge($orphanedMediaPaths, $browseScreenshotPaths)];
 }
 
 /**
@@ -394,8 +418,11 @@ function coreui_console_session_delete(PDO $pdo, int $uid, string $sessionId): a
     throw $e;
   }
 
+  $artifactKeys = is_array($result['artifact_keys'] ?? null) ? $result['artifact_keys'] : [];
+  unset($result['artifact_keys']);
+  $artifactFiles = coreui_console_artifact_delete_files($artifactKeys);
   $paths = is_array($result['file_paths'] ?? null) ? $result['file_paths'] : [];
   unset($result['file_paths']);
   $files = coreui_console_session_delete_media_files($paths);
-  return $result + $files;
+  return $result + $files + $artifactFiles;
 }

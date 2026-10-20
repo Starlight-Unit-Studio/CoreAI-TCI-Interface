@@ -92,6 +92,7 @@ if ($generationRequestId !== '') {
         'thinking' => '',
         'elapsed' => 0,
         'id' => $doneId,
+        'artifacts' => coreui_console_artifact_for_message($pdo, (int)$uid, $doneId),
         'session_id' => $sessionId,
         'reply_to_id' => $afterId,
         'generation_request' => $generationRequestId,
@@ -136,7 +137,9 @@ if ($afterId <= 0 || trim($character_id) === '' || $sessionId === '') {
 try {
   coreui_console_session_require($pdo, (int)$uid, $sessionId, true);
   $stTurn = $pdo->prepare(
-    "SELECT id, message, file_uuid, image_url FROM stu_chat_messages
+    "SELECT id, message, file_uuid, image_url,
+       (SELECT COALESCE(MAX(r.revision_no),0) FROM stu_console_message_revisions r WHERE r.message_id=stu_chat_messages.id) AS trigger_revision
+     FROM stu_chat_messages
      WHERE id = ? AND channel = 'console' AND user_id = ? AND character_id = ?
        AND session_id = ? AND deleted_at IS NULL
      LIMIT 1"
@@ -152,6 +155,7 @@ if (!is_string($userMsgRaw)) {
   sse_send('error', ['error' => 'turn_not_found']);
   exit;
 }
+$triggerRevision = (int)($turnRow['trigger_revision'] ?? 0);
 $message = trim(chat_clean_console_message($userMsgRaw));
 $attachmentIds = coreui_console_attachment_ids_for_message(
   $pdo,
@@ -301,6 +305,7 @@ try {
             : '',
           'elapsed'  => 0,
           'id'       => (int)$existing['id'],
+          'artifacts' => coreui_console_artifact_for_message($pdo, (int)$uid, (int)$existing['id']),
           'session_id' => $sessionId,
           'reply_to_id' => $afterId,
         ]);
@@ -418,7 +423,9 @@ try {
       'console',
       (int)$uid,
       $sessionId,
-      $excludeReplyToId
+      $excludeReplyToId,
+      $afterId,
+      $triggerRevision
     );
     $enqueued = ember_browse_consume_request($pdo, $channel, (int)$uid, $sessionId, $afterId);
     if ($enqueued) {
@@ -466,6 +473,9 @@ try {
   if ($reply !== '') {
     $reply = trim((string)preg_replace('~\[(?:WEB|BROWSE):[^\]]*\]~i', '', $reply));
     $reply = trim((string)preg_replace('~\[/?PY\]~i', '', $reply));
+  }
+  if ($reply === '' && coreui_console_artifact_pending((int)$uid, $sessionId, $afterId)) {
+    $reply = 'Die erzeugten Dateien stehen unten zum Herunterladen bereit.';
   }
   $replyFinal = $reply;
   $thinkingPublic = ($thinkingEnabled && $replyFinal !== '')
@@ -516,6 +526,7 @@ try {
     'thinking'      => $thinkingPublic,
     'elapsed'       => $elapsed,
     'id'            => $emberMsgId,
+    'artifacts'     => coreui_console_artifact_for_message($pdo, (int)$uid, $emberMsgId),
     'browse_job_id' => $browseJobId,
     'session_id'    => $sessionId,
     'reply_to_id'   => $afterId,

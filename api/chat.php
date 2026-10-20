@@ -3,6 +3,7 @@ require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/ai_settings.php';
 require_once __DIR__ . '/console_attachment_store.php';
+require_once __DIR__ . '/console_artifact_store.php';
 require_once __DIR__ . '/console_session_store.php';
 require_once __DIR__ . '/profile_store.php';
 require_once __DIR__ . '/knowledge_store.php';
@@ -2396,8 +2397,10 @@ function ember_py_capability_hint(): string {
     . "Wenn du das brauchst, antworte AUSSCHLIESSLICH mit genau diesem Block und sonst gar nichts "
     . "(kein Zusatztext, keine Begruessung):\n"
     . "[PY]\ndein code\n[/PY]\n"
-    . "Wichtig: Du bekommst danach NUR das zurueck, was dein Code per print() ausgibt. "
-    . "Gib also alles aus, was du wissen willst. Danach antwortest du damit ganz normal als Ember. "
+    . "Ausgaben fuer den Benutzer schreibst du nach /work/output (EMBER_OUTPUT_DIR). "
+    . "HTML, ZIP und andere erzeugte Dateien werden dort gespeichert und als Downloadkarten an die Antwort angehaengt. "
+    . "Erfinde keine Downloadlinks oder Datei-IDs. Gib Rechenergebnisse per print() aus. "
+    . "Du erhaeltst danach stdout sowie bestaetigte Dateimetadaten und antwortest normal als Ember. "
     . "Fuer Smalltalk, Meinungen, Lore oder simples Kopfrechnen brauchst du KEIN Python.";
 }
 
@@ -2454,21 +2457,30 @@ function ember_py_ensure_schema(PDO $pdo): void {
 }
 
 // Job einreihen und auf das Ergebnis warten. Rueckgabe: Job-Zeile oder null (Timeout/Fehler).
-function ember_py_run(PDO $pdo, string $code, string $channel = 'global', ?int $uid = null): ?array {
+function ember_py_run(PDO $pdo, string $code, string $channel = 'global', ?int $uid = null, ?string $sessionId = null, int $triggerId = 0, int $triggerRevision = 0): ?array {
   $code = trim($code);
   if ($code === '') return null;
-  ember_py_ensure_schema($pdo);
-
   $ch = ($channel === 'console') ? 'console' : 'global';
+  if ($ch === 'console' && !coreui_console_artifact_schema_ready($pdo)) return null;
+  if ($ch !== 'console') ember_py_ensure_schema($pdo);
   $jobId = 0;
+  $queueTransaction = false;
   try {
-    $st = $pdo->prepare(
-      "INSERT INTO stu_ember_py_jobs (status, code, channel, trigger_user_id, recipient_uid)
-       VALUES ('queued', ?, ?, ?, ?)"
-    );
-    $st->execute([$code, $ch, $uid, ($ch === 'console' ? $uid : null)]);
+    if ($ch === 'console') {
+      if ($pdo->inTransaction()) throw new LogicException('python_enqueue_nested_transaction');
+      $pdo->beginTransaction();
+      $queueTransaction = true;
+      coreui_console_artifact_require_turn($pdo, (int)$uid, (string)$sessionId, $triggerId, $triggerRevision, true);
+      $st = $pdo->prepare("INSERT INTO stu_ember_py_jobs (status,code,channel,trigger_user_id,recipient_uid,session_id,trigger_message_id,trigger_revision) VALUES ('queued',?,?,?,?,?,?,?)");
+      $st->execute([$code, $ch, $uid, $uid, $sessionId, $triggerId, $triggerRevision]);
+    } else {
+      $st = $pdo->prepare("INSERT INTO stu_ember_py_jobs (status,code,channel,trigger_user_id,recipient_uid) VALUES ('queued',?,?,?,NULL)");
+      $st->execute([$code, $ch, $uid]);
+    }
     $jobId = (int)$pdo->lastInsertId();
+    if ($queueTransaction) $pdo->commit();
   } catch (Throwable $e) {
+    if ($queueTransaction && $pdo->inTransaction()) $pdo->rollBack();
     ember_debug_log('ember_py_enqueue_fail', ['message' => $e->getMessage()]);
     return null;
   }
@@ -2477,8 +2489,7 @@ function ember_py_run(PDO $pdo, string $code, string $channel = 'global', ?int $
   $deadline = microtime(true) + ember_py_wait_seconds();
   try {
     $sel = $pdo->prepare(
-      "SELECT id, status, stdout, stderr, exit_code, duration_ms, error
-       FROM stu_ember_py_jobs WHERE id = ? LIMIT 1"
+      "SELECT * FROM stu_ember_py_jobs WHERE id = ? LIMIT 1"
     );
   } catch (Throwable $e) {
     return null;
@@ -2507,8 +2518,8 @@ function ember_py_run(PDO $pdo, string $code, string $channel = 'global', ?int $
   }
 
   // Kein Ergebnis in der Wartezeit -> Job als Fehler markieren, damit er nicht
-  // spaeter noch als "offen" herumliegt. Ein danach eintreffendes Worker-Update
-  // ist harmlos, der Turn ist dann ohnehin durch.
+  // spaeter noch als "offen" herumliegt. Der Worker erhaelt den Fehlerstatus;
+  // spaet eintreffende Dateien werden nicht an eine schon beendete Antwort gehaengt.
   try {
     $up = $pdo->prepare(
       "UPDATE stu_ember_py_jobs SET status='error', error='php_wait_timeout', finished_at=NOW()
@@ -2789,6 +2800,9 @@ function ember_insert(
   $text = ($targetChannel === 'console')
     ? chat_clean_console_message($text)
     : chat_clean_message($text);
+  $pendingArtifacts = $targetChannel === 'console'
+    ? coreui_console_artifact_pending($uid, (string)$sessionId, (int)$replyToId) : null;
+  if ($text === '' && $pendingArtifacts !== null) $text = 'Die erzeugten Dateien stehen unten zum Herunterladen bereit.';
   if ($text === '') return 0;
   $max = ember_max_reply_chars();
   $textLen = function_exists('mb_strlen') ? mb_strlen($text, 'UTF-8') : strlen($text);
@@ -2824,6 +2838,11 @@ function ember_insert(
       $hasThinkCol = true;
     } catch (Throwable $e) {}
   }
+  $ownTransaction = $targetChannel === 'console' && !$pdo->inTransaction();
+  $savepoint = $targetChannel === 'console' && !$ownTransaction;
+  if ($ownTransaction) $pdo->beginTransaction();
+  elseif ($savepoint) $pdo->exec('SAVEPOINT coreui_artifact_message');
+  try {
   if ($targetChannel === 'console') {
     $st = $pdo->prepare(
       'INSERT INTO stu_chat_messages '
@@ -2851,7 +2870,19 @@ function ember_insert(
   }
   $insertedId = (int)$pdo->lastInsertId();
   if ($targetChannel === 'console' && $insertedId > 0 && $sessionId !== null) {
+    if ($pendingArtifacts !== null) coreui_console_artifact_attach($pdo, $uid, $sessionId, (int)$replyToId, $insertedId, $pendingArtifacts);
     coreui_console_session_touch($pdo, $uid, $sessionId, $insertedId);
+  }
+    if ($ownTransaction) $pdo->commit();
+    elseif ($savepoint) $pdo->exec('RELEASE SAVEPOINT coreui_artifact_message');
+    if ($pendingArtifacts !== null) unset($GLOBALS['COREUI_PENDING_ARTIFACTS']);
+  } catch (Throwable $e) {
+    if ($ownTransaction && $pdo->inTransaction()) $pdo->rollBack();
+    elseif ($savepoint && $pdo->inTransaction()) {
+      $pdo->exec('ROLLBACK TO SAVEPOINT coreui_artifact_message');
+      $pdo->exec('RELEASE SAVEPOINT coreui_artifact_message');
+    }
+    throw $e;
   }
   chat_time_tick_virtual_online($pdo, $uid);
   ember_self_xp_grant($pdo, ember_self_xp_amount_per_message(), 'chat_message');
@@ -4077,8 +4108,11 @@ function ember_generate_reply(
   string $channel = 'global',
   int $consoleUid = 0,
   ?string $consoleSessionId = null,
-  ?int $excludeReplyToId = null
+  ?int $excludeReplyToId = null,
+  int $triggerMessageId = 0,
+  int $triggerRevision = 0
 ): ?string {
+  unset($GLOBALS['COREUI_PENDING_ARTIFACTS']);
   // v1.1.1.07: Smalltalk-/Fast-Conversation-Routing und Tool-Fastpaths entfernt.
   // Jede @Ember-Nachricht bekommt jetzt vollen Kontext, Memory und Lore-Routing ohne
   // kuenstliche Kuerzung - verlaesslichere RAG-Treffer und konsistentere Ember-Stimme.
@@ -4410,7 +4444,24 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         'code_chars'   => strlen($pyCode),
         'code_preview' => mb_substr($pyCode, 0, 400, 'UTF-8'),
       ]);
-      $pyRes = ember_py_run($pdo, $pyCode, $channel, (int)($senderChar['user_id'] ?? 0));
+      $pyRes = ember_py_run($pdo, $pyCode, $channel, (int)($senderChar['user_id'] ?? 0), $consoleSessionId, $triggerMessageId, $triggerRevision);
+      $artifactNotice = '';
+      if ($channel === 'console' && is_array($pyRes)) {
+        try {
+          $pending = coreui_console_artifact_prepare_job($pdo, $consoleUid, (string)$consoleSessionId, $triggerMessageId, $triggerRevision, (int)$pyRes['id']);
+          if ($pending['files'] !== []) {
+            $GLOBALS['COREUI_PENDING_ARTIFACTS'] = $pending;
+            $names = array_map(static fn(array $f): array => ['name'=>$f['name'],'size_bytes'=>$f['size_bytes'],'partial'=>$f['partial']], $pending['files']);
+            $artifactNotice = "\nBestaetigte Ausgabedateien: " . json_encode($names, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE)
+              . "\nDiese Dateien erscheinen automatisch als Downloadkarten. Erfinde keine URLs oder IDs.";
+          }
+          $manifest = json_decode((string)($pyRes['artifacts_json'] ?? ''), true);
+          if (!empty($manifest['warnings'])) $artifactNotice .= "\nBei der Dateiuebernahme wurden weitere Ausgaben abgelehnt. Behaupte nicht, dass alle Dateien bereitstehen.";
+        } catch (Throwable $artifactError) {
+          ember_debug_log('artifact_prepare_failed', ['job_id'=>(int)$pyRes['id'], 'error'=>$artifactError->getMessage()]);
+          $artifactNotice = "\nDie Dateiausgabe konnte nicht bestaetigt werden. Melde den Fehler und erfinde keine Downloads.";
+        }
+      }
 
       // Lean-Base fuer Call #2 (identische Begruendung wie im Web-Pfad): Lore und
       // saemtliche Werkzeug-Hinweise raus, Verlauf/Memory bleiben. Sonst schleppt
@@ -4422,7 +4473,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       if (isset($pyHint)     && $pyHint     !== '') $uBase = str_replace($pyHint . "\n\n", '', $uBase);
 
       $u2 = $uBase
-        . "\n\n" . ember_py_result_block($pyCode, $pyRes) . "\n"
+        . "\n\n" . ember_py_result_block($pyCode, $pyRes) . $artifactNotice . "\n"
         . "\nAntworte jetzt normal als Ember und nutze das Ergebnis. Erklaere es in deinen eigenen Worten, "
         . "erfinde nichts dazu was nicht in der Ausgabe steht. Wenn nichts herauskam oder der Code auf die "
         . "Nase gefallen ist, sag das einfach so wie du bist. Schreibe KEINEN [PY]-Block mehr. Antworte als Ember:";
@@ -4486,15 +4537,14 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
     $out = preg_replace('~\[/?PY\]~iu', '', $out);
   }
 
-  if (!is_string($out) || trim($out) === '') {
-    // Gemma 4: stilles Versagen wenn nur Thinking aber keine Antwort generiert wurde.
-    return null;
-  }
+  $fileFallback = ($channel === 'console' && coreui_console_artifact_pending($consoleUid, (string)$consoleSessionId, $triggerMessageId))
+    ? 'Die erzeugten Dateien stehen unten zum Herunterladen bereit.' : null;
+  if (!is_string($out) || trim($out) === '') return $fileFallback;
   $out = ember_sanitize_public_reply(
     $out,
     (string)($GLOBALS['STU_EMBER_LAST_THINKING'] ?? '')
   );
-  if ($out === '') return null;
+  if ($out === '') return $fileFallback;
   $out = ($channel === 'console')
     ? chat_clean_console_message($out)
     : chat_clean_message($out);
@@ -4515,7 +4565,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
     if ($last !== '') {
       $a = function_exists('mb_strtolower') ? mb_strtolower($last, 'UTF-8') : strtolower($last);
       $b = function_exists('mb_strtolower') ? mb_strtolower($out, 'UTF-8') : strtolower($out);
-      if ($a === $b) return null;
+      if ($a === $b && $fileFallback === null) return null;
     }
   } catch (Throwable $e) { }
 
@@ -7776,7 +7826,10 @@ if ($action === 'send') {
       $generationImageUrl,
       $channel,
       (isset($uid) ? (int)$uid : 0),
-      $consoleSessionId
+      $consoleSessionId,
+      null,
+      (int)$id,
+      0
     );
     ember_browse_consume_request(
       $pdo,

@@ -104,6 +104,8 @@ if ($messageIds !== [] && coreui_console_attachment_schema_ready($pdo)) {
   }
 }
 
+$artifactMap = coreui_console_artifact_map($pdo, (int)$uid, $messageIds);
+
 $emberCid = strtolower(ember_character_id());
 $emberName = strtolower(ember_character_name());
 $showThinking = (bool)(coreui_ai_settings_load($pdo, (int)$uid)['thinking_enabled'] ?? true);
@@ -124,6 +126,7 @@ foreach ($rows as &$row) {
   if ($oldestId === 0 || ($id > 0 && $id < $oldestId)) $oldestId = $id;
   if ($id > $maxId) $maxId = $id;
   $row['id'] = $id;
+  $row['artifacts'] = $artifactMap[$id] ?? [];
   $row['reply_to_id'] = (int)($row['reply_to_id'] ?? 0);
   $isEmber = strtolower((string)($row['character_id'] ?? '')) === $emberCid
     || strtolower((string)($row['character_name'] ?? '')) === $emberName;

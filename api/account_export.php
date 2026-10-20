@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/ai_settings.php';
 require_once __DIR__ . '/profile_store.php';
+require_once __DIR__ . '/console_artifact_store.php';
 
 $pdo = stu_pdo();
 $uid = stu_require_user_id();
@@ -58,11 +59,14 @@ try {
     [$uid]
   );
   // thinking_content is deliberately never selected or exported.
+  $artifactMap = coreui_console_artifact_map($pdo, $uid, array_column($messages, 'id'));
+  foreach ($messages as &$message) $message['artifacts'] = $artifactMap[(int)$message['id']] ?? [];
+  unset($message);
 
   $export = [
     'format' => 'ember-coreui-account-export',
     'format_version' => 1,
-    'coreui_version' => '0.5.3-alpha',
+    'coreui_version' => trim((string)file_get_contents(dirname(__DIR__) . '/VERSION')),
     'generated_at' => gmdate('c'),
     'public_base_url' => defined('STU_PUBLIC_BASE_URL') ? (string)STU_PUBLIC_BASE_URL : '',
     'account' => $accountRows[0],
@@ -134,6 +138,8 @@ try {
       'thinking_content_exported' => false,
       'private_server_paths_exported' => false,
       'uploaded_document_binaries_exported' => false,
+      'generated_file_binaries_exported' => false,
+      'generated_file_links_require_login' => true,
     ],
   ];
 

@@ -1,0 +1,35 @@
+.msg-artifacts {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  margin: 10px 0;
+}
+.msg-artifact, .msg-artifact-link, .msg-artifact-link .msg-file-meta {
+  min-width: 0;
+  max-width: 100%;
+}
+.msg-artifact-link {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 48px;
+}
+.msg-artifact-link .msg-file-name, .msg-artifact-link .msg-file-sub {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.msg-artifact-link[aria-disabled="true"] { opacity: .65; }
+.msg-artifact-warning, .msg-artifact-status {
+  font-size: .82rem;
+  line-height: 1.4;
+  margin: 5px 0 0;
+  overflow-wrap: anywhere;
+}
+.msg-artifact-status:empty { display: none; }
+.msg-artifact-warning { font-weight: 600; }
+.msg-artifact-retry {
+  font: inherit;
+  min-height: 44px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
