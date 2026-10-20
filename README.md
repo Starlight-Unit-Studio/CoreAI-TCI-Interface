@@ -9,6 +9,12 @@ Ember CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, bro
 
 Current version: `0.5.3-alpha`
 
+## Development roadmap
+
+The [Ember CoreUI and E.M.B.E.R. master plan](docs/COREUI_MASTERPLAN.md) records the planned full agent, developer workspace, skill system, and independent implementation of the functionality inventoried from both OpenClaw and Open WebUI. The [feature matrix](docs/COREUI_FEATURE_MATRIX.md) tracks the reference coverage, existing foundations, open work, and acceptance criteria. These documents describe planned development, not features already shipped.
+
+Generated HTML, ZIP, and other output files must become real, persistent chat downloads. This remains an open, early implementation priority in [issue #29](https://github.com/Starlight-Unit-Studio/coreui/issues/29).
+
 ## Quick installation
 
 The installer downloads the archive and its SHA-256 file into a unique temporary directory, verifies both before changing `/opt/ember-coreui`, and preserves local configuration, database data, accounts, sessions, uploads, logs, chat media, and profile images during updates.
