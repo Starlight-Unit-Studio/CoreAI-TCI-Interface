@@ -2,6 +2,19 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.5 - 20.10.2026
+
+- Numerische CoreUI-Version ohne Suffix wiederhergestellt. Die sechs aktiven HTML-Seiten und der JavaScript-Bootstrap zeigen konsistent `0.5.5`; das Versionsformat wird in Installer und Tests gesichert.
+- Cache-Busting von manuell gepflegten Versions- oder Textlabels entkoppelt. Jede CSS-/JS-Datei erhaelt bei der Installation einen eigenen, rein numerischen, aus SHA-256-Dateibytes abgeleiteten Fingerabdruck. Unveraenderter Inhalt bleibt cachebar, Aenderungen invalidieren den jeweiligen Asset-Cache.
+- Beide Installer und Preflights verwenden denselben Cache-Buster. Nginx verlangt Revalidierung von HTML, waehrend Fingerprint-Assets weiterhin cachebar sind. Beim atomaren HTML-Update bleiben Leserechte und Eigentum erhalten.
+- One-Liner unveraendert; `main` ist die Quelle fuer Live-Updates. Der exakte Git-Commit bleibt separat nachweisbar, alte gepinnte Archive werden nicht umbenannt.
+- Gemeinsamer Masterplan, Roadmap und 82 erfasste Funktionen fuer OpenClaw, Open WebUI, CrewAI, LangGraph und AutoGen wurden in GitHub gesichert.
+- Gespeicherte Ausgabedateien, Chat-Dateikarten, geschuetzte Endpunkte und Migration 011 fuer Artefakte wurden zusammengefuehrt. Die eigentliche End-to-End-Abnahme auf dem Server und Issue #29 bleiben offen.
+- Berechtigungsfehler beim Checkout, Live-Updater, HTML-Data-Link-Ausgaben und ein veralteter SSE-Selbsttest wurden behandelt.
+- Quellenstand 0.5.5 ist aktuell auf `main`; ein neuer, eigenstaendig verifizierter Release-ZIP/SHA-256-Satz ist damit noch nicht behauptet. `0.5.4` war vorbereitet, aber nicht als eigenstaendiges Paket veroeffentlicht. Die historischen `-alpha`-Archive bleiben unveraendert erhalten.
+- Keine GitHub Actions fuer diese Entwicklungs- und Live-Testschritte.
+
+
 ## v0.5.3-alpha - 05.09.2026
 
 - Produktionspfad fuer Gemma 4 + Ollama auf das waehrend der mehrstuendigen CoreUI-Validierung ermittelte Minimalprofil ausgerichtet.

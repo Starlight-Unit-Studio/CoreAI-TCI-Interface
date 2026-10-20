@@ -1,0 +1,38 @@
+STΛRLIɢHT: EMBER COREUI BY STARLIGHT UNIT STUDIOS
+CHANGELOG 0.5.5
+STAND 20.10.2026
+
+NUMERISCHE VERSIONIERUNG UND CACHE-INVALIDIERUNG
+
+* Produktversion 0.5.5 ohne Textsuffix. Die alten Releasearchive werden
+  nicht nachtraeglich umbenannt und bleiben nur historische Artefakte.
+* Alle sichtbaren Versionsangaben auf Hauptseite, Login, Chat, Einstellungen
+  und Administration sowie im JavaScript-Bootstrap konsistent aktualisiert.
+* Ein inhaltsbasierter Cache-Buster erzeugt fuer jede CSS- und JavaScript-
+  Datei einen stabilen, ausschliesslich numerischen Schluessel aus SHA-256.
+  Die Produktversion ist nicht mehr die Cache-ID.
+* Die HTML-Einstiegsseiten werden durch Nginx bei Abruf neu validiert,
+  waehrend unveraenderte statische Dateien weiter gecacht werden duerfen.
+* Beide Installer berechnen Cache-Schluessel vor dem Start; beide Preflights
+  lehnen veraltete Schluessel ab. Dateiinhalt und Dateirechte bleiben gewahrt.
+* Neue Regressionstests pruefen identische Wiederholungen, gezielte
+  Invalidierung, fehlende Assets und die Ablehnung von Versionssuffixen.
+* Der unveraenderte One-Liner installiert weiterhin den aktuellen main-
+  Stand und zeigt den tatsaechlich installierten Git-Commit getrennt an.
+
+ZUSAMMENGEFUEHRTER FUNKTIONSSTAND SEIT DER LETZTEN VERSIONSDOKUMENTATION
+
+* Verbindlicher Masterplan, Funktionsmatrix und Roadmap fuer E.M.B.E.R.
+* Persistente Dateiartefakte, geschuetzte Downloads, Chat-Dateikarten,
+  Worker-Anbindung und Datenbankmigration 011_console_artifacts.
+* Host-Swap-Erweiterung, Installer-Live-Update und Berechtigungskorrekturen.
+* HTML-Data-Link-Fehler behandelt und falschen SSE-Preflight-Alarm korrigiert.
+
+STATUS UND HISTORIE
+
+Dies dokumentiert den aktuellen main-Quellstand 0.5.5 und keine behauptete
+abgeschlossene End-to-End-Abnahme oder bereits vorhandene neue ZIP-Datei.
+Ein 0.5.4-Paket wurde nicht offiziell veroeffentlicht. Die historischen
+0.5.3-alpha-Dateien sind Archivmaterial und nicht die aktuelle Version.
+Issue 29 bleibt bis zur echten HTML-/ZIP-Liveabnahme offen.
+GitHub Actions werden fuer die Live-Installation nicht verwendet.

@@ -18,7 +18,8 @@ sed "s|^TARGET_DIR='/opt/ember-coreui'$|TARGET_DIR='$TARGET'|" \
 bash -n "$WORK/setup.sh"
 chmod 0755 "$WORK/setup.sh"
 
-printf '%s\n' '0.5.3-alpha' > "$WORK/fixture/VERSION"
+printf '%s\n' '0.5.5' > "$WORK/fixture/VERSION"
+printf '%s\n' 'standalone cache tool' > "$WORK/fixture/scripts/cache-bust.py"
 printf '%s\n' 'test app' > "$WORK/fixture/app.html"
 printf '%s\n' 'test compose' > "$WORK/fixture/compose.yaml"
 printf '%s\n' 'test README' > "$WORK/fixture/README.md"
@@ -133,6 +134,7 @@ fi
 # Explicit pinned-release fallback is still verified by its original ZIP/SHA pair.
 mkdir -p "$WORK/package/EMBER_COREUI_0_5_3_ALPHA"
 cp -a "$WORK/fixture/." "$WORK/package/EMBER_COREUI_0_5_3_ALPHA/"
+printf '%s\n' '0.5.3-alpha' > "$WORK/package/EMBER_COREUI_0_5_3_ALPHA/VERSION"
 (cd "$WORK/package" && zip -qr "$FAKE_ARCHIVE" EMBER_COREUI_0_5_3_ALPHA)
 (cd "$WORK" && sha256sum EMBER_COREUI_0_5_3_ALPHA.zip > EMBER_COREUI_0_5_3_ALPHA.zip.sha256)
 COREUI_SETUP_SOURCE=release "$WORK/setup.sh" > "$WORK/release.log"

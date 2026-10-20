@@ -8,8 +8,8 @@ REPOSITORY='Starlight-Unit-Studio/coreui'
 # Entwicklungsstand. Das letzte veroeffentlichte und gepruefte ZIP bleibt ueber
 # COREUI_SETUP_SOURCE=release explizit verfuegbar.
 SOURCE_MODE="${COREUI_SETUP_SOURCE:-main}"
-VERSION='0.5.3-alpha'
-TAG="v${VERSION}"
+ARCHIVED_RELEASE_VERSION='0.5.3-alpha'
+TAG="v${ARCHIVED_RELEASE_VERSION}"
 ARCHIVE='EMBER_COREUI_0_5_3_ALPHA.zip'
 CHECKSUM="${ARCHIVE}.sha256"
 PACKAGE_ROOT='EMBER_COREUI_0_5_3_ALPHA'
@@ -107,7 +107,7 @@ if [[ "$SOURCE_MODE" == 'main' ]]; then
   done
   log "Aktueller GitHub-Commit: $SOURCE_COMMIT"
 else
-  log "Lade das unveraenderte, gepruefte Ember CoreUI-Release ${VERSION}."
+  log "Lade das unveraenderte archivierte Ember CoreUI-Release ${ARCHIVED_RELEASE_VERSION}."
   curl --fail --location --show-error --silent --retry 3 --retry-all-errors \
     --output "$TEMP_DIR/$ARCHIVE" "$DOWNLOAD_BASE/$ARCHIVE"
   curl --fail --location --show-error --silent --retry 3 --retry-all-errors \
@@ -118,13 +118,18 @@ else
   )
   unzip -q "$TEMP_DIR/$ARCHIVE" -d "$TEMP_DIR/unpacked"
   SOURCE_DIR="$TEMP_DIR/unpacked/$PACKAGE_ROOT"
-  [[ "$(tr -d '[:space:]' < "$SOURCE_DIR/VERSION")" == "$VERSION" ]] \
+  [[ "$(tr -d '[:space:]' < "$SOURCE_DIR/VERSION")" == "$ARCHIVED_RELEASE_VERSION" ]] \
     || die 'Paketversion und Setup-Version stimmen nicht ueberein.'
 fi
 
 for required in VERSION README.md compose.yaml scripts/install.sh scripts/stack.sh scripts/preflight.sh; do
   [[ -s "$SOURCE_DIR/$required" ]] || die "Der Quellstand ist unvollstaendig: $required fehlt."
 done
+SOURCE_VERSION="$(tr -d '[:space:]' < "$SOURCE_DIR/VERSION")"
+if [[ "$SOURCE_MODE" == 'main' ]]; then
+  [[ "$SOURCE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || die 'VERSION muss rein numerisch sein: Major.Minor.Patch.'
+  [[ -s "$SOURCE_DIR/scripts/cache-bust.py" ]] || die 'Cache-Buster-Installer fehlt.'
+fi
 
 if find "$SOURCE_DIR" -type f \
     \( -iname '*master*bibel*' -o -iname '*kompendium*v6*' \) -print -quit | grep -q .; then
@@ -179,8 +184,8 @@ if [[ "$SOURCE_MODE" == 'main' ]]; then
   printf '%s\n' "$SOURCE_COMMIT" > "$TARGET_DIR/var/dev_source_commit"
   chmod 0640 "$TARGET_DIR/var/dev_source_commit"
   log "Entwicklerstand erfolgreich installiert: $SOURCE_COMMIT"
-  log "Die Produkt-VERSION $VERSION bleibt bis zum naechsten offiziellen Release unveraendert."
+  log "Ember CoreUI $SOURCE_VERSION, GitHub-Commit $SOURCE_COMMIT."
 else
   rm -f -- "$TARGET_DIR/var/dev_source_commit"
-  log "Ember CoreUI Release ${VERSION} wurde geprueft installiert."
+  log "Archiviertes Ember CoreUI Release ${ARCHIVED_RELEASE_VERSION} wurde geprueft installiert."
 fi

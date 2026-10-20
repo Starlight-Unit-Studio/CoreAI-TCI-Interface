@@ -1,0 +1,56 @@
+STΛRLIɢHT: EMBER COREUI BY STARLIGHT UNIT STUDIOS
+UEBERGABEPROTOKOLL 0.5.5
+STAND 20.10.2026
+
+1. VERBINDLICHER AKTUELLER QUELLSTAND
+
+Repository: https://github.com/Starlight-Unit-Studio/coreui
+Standardbranch: main
+Produktversion: 0.5.5
+Versionsformat: genau drei numerische Komponenten, keine Textsuffixe.
+Quelle der Wahrheit: VERSION.
+Installierter exakter Build: var/dev_source_commit (Git-Commit-SHA).
+One-Liner: unveraenderter Befehl aus README, ruft main/setup.sh auf.
+
+2. CACHE-BUSTER-KANON
+
+Die Produktversion darf niemals als unveraenderlicher Cache-Buster fuer
+mehrere unterschiedlich gebaute JS-/CSS-Dateien missbraucht werden.
+scripts/cache-bust.py berechnet einen stabilen numerischen SHA-256-
+Dateifingerabdruck pro statischer Datei und setzt dessen Abfrageparameter
+?v=... in allen sechs HTML-Einstiegsseiten bei Installation bzw. Update.
+Aendert sich die Datei, aendert sich der Schluessel. Ungeaenderte
+Dateien behalten denselben Schluessel. --verify prueft dies im Preflight.
+Nginx verlangt Revalidierung von HTML und erlaubt Asset-Caching.
+Beim Umschreiben bleiben HTML-Dateirechte und Besitzer erhalten.
+
+3. RELEASE-HISTORIE
+
+Die alte 0.5.3-alpha-ZIP mit SHA-256 bleibt als historisch veroeffentlichtes
+Archiv unveraendert. Das fehlende 0.5.4-Artefakt darf nicht rueckwirkend
+als veroeffentlicht bezeichnet werden. Fuer Version 0.5.5 existiert derzeit
+noch kein konsistentes, freigegebenes ZIP/SHA-Paar. Dieser Punkt bleibt
+vor einem eigenstaendigen Archiv-Release zu erledigen. main ist der
+fuer Live-Tests vorgesehene Quellstand, nicht das alte gepinnte ZIP.
+
+4. ERHALT DER FUNKTIONEN
+
+Die Planung fuer OpenClaw, Open WebUI, CrewAI, LangGraph und AutoGen bleibt
+unveraendert. Migration 011 fuer Chatdateien bleibt aktiv, Migration 010
+bleibt fuer den vorbereiteten Werkzeugausbau reserviert. Konten,
+Datenbank, lokale Konfiguration, Uploads, Sitzungen und Memory duerfen
+vom Update nicht geloescht werden.
+Issue 29 fuer HTML-/ZIP-Downloads bleibt bis zur echten Serverabnahme offen.
+
+5. NAECHSTE ABNAHME
+
+- Unveraenderten One-Liner auf dem isolierten Liveserver ausfuehren.
+- VERSION und die numerische Anzeige in Chat, Einstellungen und Admin pruefen.
+- CSS/JS-URLs: ?v= mit ausschliesslich Ziffern, passende Datei-Fingerprints.
+- Erneute Installation: identische Datei erhaelt identischen Schluessel.
+- Codeaenderung: betroffene Assets erhalten neuen Schluessel.
+- HTML-Revalidierung, Webserver-Leserechte und Nginx-Healthcheck pruefen.
+- Anschliessend HTML-/ZIP-Downloadkette mit echtem Worker testen.
+- Fuer eine separate Releaseveroeffentlichung ZIP, SHA-256 und Quellen
+  auf exakt denselben freigegebenen Versionsstand bringen.
+Keine GitHub Actions verwenden.
