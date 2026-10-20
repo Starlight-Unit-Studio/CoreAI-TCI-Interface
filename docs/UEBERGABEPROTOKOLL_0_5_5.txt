@@ -42,7 +42,21 @@ Datenbank, lokale Konfiguration, Uploads, Sitzungen und Memory duerfen
 vom Update nicht geloescht werden.
 Issue 29 fuer HTML-/ZIP-Downloads bleibt bis zur echten Serverabnahme offen.
 
-5. NAECHSTE ABNAHME
+5. BEHEBUNG DES CLOUD-DATEIFEHLERS
+
+Live-Test vom 20.10.2026: Cloud-Modell gpt-oss:120b meldete beim
+Erzeugen von mini_game.html einen FileNotFoundError und gab stattdessen
+HTML-Code im Chat aus. Der genaue fehlerhafte Modell-Dateipfad wurde
+nicht aus der Worker-DB verifiziert. Die neue Sandbox bietet deshalb
+/work/output und /mnt/data als dieselbe
+geschuetzte, pro Job isolierte Ausgabe. Eine bestaetigte Datei beendet
+die Werkzeugphase direkt mit einem echten Downloadhinweis. Ohne Datei
+kann nach FileNotFoundError einmal ein korrigierter [PY]-Block ausgefuehrt
+werden; alternativ wird ein vollstaendiges HTML-Dokument als Bytes
+durch den vorhandenen Worker gespeichert. Fehlende Dateien werden
+nicht als Downloads angezeigt. Kein paralleler Modellaufruf.
+
+6. NAECHSTE ABNAHME
 
 - Unveraenderten One-Liner auf dem isolierten Liveserver ausfuehren.
 - VERSION und die numerische Anzeige in Chat, Einstellungen und Admin pruefen.
