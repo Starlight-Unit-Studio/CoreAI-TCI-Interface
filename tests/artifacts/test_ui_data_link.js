@@ -1,0 +1,16 @@
+'use strict';
+const fs = require('fs');
+const vm = require('vm');
+const assert = require('assert');
+const src = fs.readFileSync(require('path').join(__dirname, '../../js/console-app.js'), 'utf8');
+const begin = src.indexOf('  function safeReplyText(value) {');
+const end = src.indexOf('\n  }\n\n  //', begin);
+assert(begin >= 0 && end > begin);
+const safeReplyText = vm.runInNewContext('(' + src.slice(begin, end + 4).trim() + ')');
+const payload = 'Fertig, die Datei kommt: <a href="data:text/html;charset=utf-8,' + '%20'.repeat(1800) + '" download="minigame.html">Klick</a>';
+const preview = safeReplyText(payload);
+assert(!preview.includes('%20%20'));
+assert(preview.includes('keine echte Download-Datei'));
+assert(safeReplyText('Normale Antwort mit HTML-Code.') === 'Normale Antwort mit HTML-Code.');
+assert(safeReplyText('Beispiel: data:text/html,abc') === 'Beispiel: data:text/html,abc');
+console.log('PASS: giant historical inline download hidden; ordinary messages preserved.');

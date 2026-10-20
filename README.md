@@ -404,6 +404,17 @@ Optionale Umgebungsvariablen fuer beide Installer und `scripts/swap.sh ensure`:
 Bei der Verwendung von `sudo` koennen abweichende Einstellungen mit `sudo --preserve-env=COREUI_SWAP_AUTOCREATE,COREUI_SWAP_SIZE_GIB,COREUI_SWAP_SWAPPINESS ...` uebergeben werden. `scripts/swap.sh status` ist nur lesend, `ensure` benoetigt Root-Rechte.
 
 **Release-Hinweis:** Der auf `0.5.3-alpha` festgelegte Downloader `setup.sh` verwendet ein bereits veroeffentlichtes ZIP/SHA-Paar. Diese Installer-Aenderung wird erst mit einem neu gebauten und veroeffentlichten Release-Archiv ueber den One-Liner verteilt; ein Quellcode-Commit allein aktualisiert das bestehende ZIP nicht.
+## Entwicklerstand live pruefen (kein Release)
+
+Der normale `setup.sh` installiert das gepinnte und mit SHA-256 gepruefte Release-ZIP, **nicht** den aktuellen `main`-Branch. Fuer die laufenden Live-Tests nach einem Merge gibt es einen getrennten, ausdruecklich nur fuer Entwickler vorgesehenen Updateweg auf einer bereits eingerichteten isolierten CoreUI-Instanz. Er behaelt Konten, Datenbank, Sitzungen, Uploads, Medien und lokale Konfiguration bei. Er wird **nicht** automatisch ausgefuehrt und startet keine GitHub Actions.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Starlight-Unit-Studio/coreui/main/scripts/update-from-main.sh -o /tmp/ember-coreui-dev-update.sh
+sudo bash /tmp/ember-coreui-dev-update.sh
+```
+
+Der Befehl zeigt den eingespielten Commit an und prueft nach dem Update die aktuelle Datenbankmigration und die geschuetzten Download-Routen. Die Versionsdatei bleibt bis zum naechsten bewusst erstellten Release auf der letzten Release-Version; fuer die Live-Entwicklung ist der ausgegebene Commit massgeblich. Fuer offizielle Installationen weiterhin `setup.sh` mit dem Releasearchiv nutzen.
+
 ## Installation process
 
 1. Validate the operating system, project path, and inputs.
