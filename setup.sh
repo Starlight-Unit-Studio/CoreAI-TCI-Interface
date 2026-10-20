@@ -89,9 +89,14 @@ fi
 TEMP_DIR="$(mktemp -d /tmp/ember-coreui-setup.XXXXXX)"
 if [[ "$SOURCE_MODE" == 'main' ]]; then
   log 'Lade den neuesten Ember CoreUI-Entwicklungsstand aus main.'
-  git clone --quiet --depth 1 --single-branch --branch main -- \
-    "https://github.com/${REPOSITORY}.git" "$TEMP_DIR/source" \
-    || die 'GitHub-Quellstand konnte nicht geladen werden; die Installation bleibt unveraendert.'
+  # Das globale umask 027 schuetzt lokale Zugangsdaten, ist fuer den
+  # oeffentlichen Git-Checkout aber zu strikt: rsync -a uebernimmt 750/640
+  # root:root und der Webserver (UID 33) kann api/health.php nicht lesen.
+  # Nur beim Checkout 022 benutzen, niemals beim Schreiben lokaler Secrets.
+  ( umask 022
+    git clone --quiet --depth 1 --single-branch --branch main -- \
+      "https://github.com/${REPOSITORY}.git" "$TEMP_DIR/source"
+  ) || die 'GitHub-Quellstand konnte nicht geladen werden; die Installation bleibt unveraendert.'
   SOURCE_DIR="$TEMP_DIR/source"
   SOURCE_COMMIT="$(git -C "$SOURCE_DIR" rev-parse --verify HEAD)" \
     || die 'Der Quellstand enthaelt keinen gueltigen Commit.'
