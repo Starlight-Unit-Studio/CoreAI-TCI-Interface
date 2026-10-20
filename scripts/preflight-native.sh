@@ -84,6 +84,10 @@ UI_FILES=(
   database/migrations/007_remove_private_studio_lore.sql
   database/migrations/008_message_actions.sql
   database/migrations/009_message_editing.sql
+  database/migrations/011_console_artifacts.sql
+  api/console_artifact.php
+  api/console_artifacts.php
+  api/console_data_link_bridge.php
   scripts/session-selftest.php
   scripts/attachment-pipeline-selftest.php
   scripts/python-worker-selftest.php
@@ -102,6 +106,12 @@ for ui_file in "${UI_FILES[@]}"; do
     fail "Ember CoreUI-Oberflaechendatei fehlt oder ist leer: $ui_file"
   fi
 done
+if grep -Fq 'console_artifact|console_artifacts' "$PROJECT_ROOT/config/nginx.conf.template"; then
+  ok 'Nginx erlaubt geschuetzte Datei-Downloads und Metadaten-Endpunkt.'
+else
+  fail 'Nginx-Routing fuer Chat-Dateiausgaben fehlt.'
+fi
+
 if (( FAILURES == 0 )); then
   ok 'Ember-CoreUI-Branding, Lizenzunterlagen und Einstellungsoberflaeche sind paketiert.'
 fi
@@ -318,6 +328,12 @@ if command -v php >/dev/null 2>&1; then
       ok 'Migration 009: echte Nachrichtenbearbeitung und Kontext-Neustart sind bereit.'
     else
       fail 'Migration 009 fehlt.'
+    fi
+
+    if php -r "require '$PROJECT_ROOT/api/db.php'; require '$PROJECT_ROOT/api/console_artifact_store.php'; exit(coreui_console_artifact_schema_ready(stu_pdo()) ? 0 : 1);" >/dev/null 2>&1; then
+      ok 'Migration 011: dauerhafte Chat-Dateiausgaben sind bereit.'
+    else
+      fail 'Migration 011 fehlt.'
     fi
 
     if systemctl is-active --quiet ember-coreui-python.service; then

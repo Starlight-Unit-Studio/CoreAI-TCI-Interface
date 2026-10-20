@@ -4,6 +4,7 @@ require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/ai_settings.php';
 require_once __DIR__ . '/console_attachment_store.php';
 require_once __DIR__ . '/console_artifact_store.php';
+require_once __DIR__ . '/console_data_link_bridge.php';
 require_once __DIR__ . '/console_session_store.php';
 require_once __DIR__ . '/profile_store.php';
 require_once __DIR__ . '/knowledge_store.php';
@@ -2393,7 +2394,12 @@ function ember_py_capability_hint(): string {
     . "abgeschotteten Umgebung mit Internetzugang; numpy, pandas, requests, beautifulsoup4, "
     . "pillow und matplotlib sind da. Nutze das, wenn du etwas WIRKLICH ausrechnen, pruefen, "
     . "zaehlen, parsen oder testen willst statt zu schaetzen (Mathe, Datums-/Zeitrechnung, "
-    . "Textanalyse, JSON/CSV, kleine Skripte, API-Abfragen).\n"
+    . "Textanalyse, JSON/CSV, kleine Skripte, API-Abfragen und DATEIEN fuer den Benutzer).\n"
+    . "DATEIEN: Wenn jemand eine herunterladbare HTML-Seite, ein Minigame, eine ZIP- oder andere Datei "
+    . "erstellt haben moechte, MUSST du Python nutzen und die fertigen Bytes in /work/output speichern. "
+    . "Keine data:-Links, keine base64-Inline-URLs, keine rohen <a download>-Tags, keine "
+    . "angeblichen lokalen Pfade oder erfundenen Downloads. Die Chatoberflaeche zeigt echte "
+    . "Dateikarten nur fuer vom Worker bestaetigte Ausgabedateien.\n"
     . "Wenn du das brauchst, antworte AUSSCHLIESSLICH mit genau diesem Block und sonst gar nichts "
     . "(kein Zusatztext, keine Begruessung):\n"
     . "[PY]\ndein code\n[/PY]\n"
@@ -4438,6 +4444,16 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   $pyHandled = false;
   if (ember_py_enabled() && $imageUrl === null && is_string($out)) {
     $pyCode = ember_py_extract_marker($out);
+    $inlineFile = null;
+    if ($pyCode === null && $channel === 'console') {
+      $inlineFile = coreui_console_inline_file_python($out, $userMsg, ember_py_max_code_chars());
+      if ($inlineFile !== null) {
+        $pyCode = $inlineFile['code'];
+        ember_debug_log('ember_inline_file_recovered', [
+          'name'=>$inlineFile['name'], 'size_bytes'=>$inlineFile['size_bytes']
+        ]);
+      }
+    }
     if ($pyCode !== null) {
       ember_debug_log('ember_py_trigger', [
         'channel'      => $channel,
@@ -4461,6 +4477,12 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
           ember_debug_log('artifact_prepare_failed', ['job_id'=>(int)$pyRes['id'], 'error'=>$artifactError->getMessage()]);
           $artifactNotice = "\nDie Dateiausgabe konnte nicht bestaetigt werden. Melde den Fehler und erfinde keine Downloads.";
         }
+      }
+
+      // Rescue is only successful after worker output is registered for this turn.
+      // A missing migration, failed sandbox or partial model URI must not be called a download.
+      if ($inlineFile !== null && !coreui_console_artifact_pending($consoleUid, (string)$consoleSessionId, $triggerMessageId)) {
+        return 'Die Datei konnte noch nicht als Download gespeichert werden. Bitte starte die Dateierstellung erneut.';
       }
 
       // Lean-Base fuer Call #2 (identische Begruendung wie im Web-Pfad): Lore und
@@ -4548,6 +4570,13 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   $out = ($channel === 'console')
     ? chat_clean_console_message($out)
     : chat_clean_message($out);
+  // A data: link is not a registered download. Never store megabytes of
+  // percent-encoded model text in a user's chat as a supposed file.
+  if ($channel === 'console' && coreui_console_file_requested($userMsg)
+      && coreui_console_inline_link_present($out)) {
+    return $fileFallback ?? 'Die HTML-/ZIP-Datei konnte nicht als echter Download gespeichert werden. '
+      . 'Bitte versuche die Dateierstellung erneut.';
+  }
   $out = ember_normalize_reply_commands($out);
   $out = preg_replace('/^(assistant|ember)\s*:\s*/i', '', $out);
   $out = ember_strip_wrapping_quotes($out);

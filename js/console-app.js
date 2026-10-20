@@ -69,6 +69,17 @@
     if (/<\/think>/i.test(text)) text = text.replace(/^.*?<\/think>/is, '').trim();
     text = text.replace(/<think>[\s\S]*$/i, '').trim();
     text = text.replace(/\[(?:WEB|BROWSE):[^\]]*\]/gi, '').replace(/\[\/?PY\]/gi, '').trim();
+    // Historical model replies sometimes contain enormous percent-encoded
+    // data: HTML instead of a server-registered download. Keep the original
+    // stored message intact but do not render the payload as a wall of text.
+    if (text.length > 1800 && /href\s*=\s*["']?\s*data:(?:text\/html|application\/zip)/i.test(text)) {
+      var start = text.search(/<a\s[^>]*?href\s*=\s*["']?\s*data:/i);
+      if (start < 0) start = text.search(/href\s*=\s*["']?\s*data:/i);
+      if (start >= 0) {
+        return text.slice(0, Math.min(start, 650)).trim()
+          + '\n\n[Diese alte Antwort enthielt nur einen langen data:-Link, keine echte Download-Datei. Bitte die Datei erneut erstellen lassen.]';
+      }
+    }
 
     var head = text.slice(0, 900).replace(/^[*"'„“«\s]+/, '').toLowerCase();
     var startsInternal = /^(?:response draft|selected response|final answer|refined(?: response)?|draft(?:\s*\d+)?|alternative|final decision|checking constraints?|constraint check|analysis|reasoning|plan|tone|self-correction|antwortsentwurf|ausgew(?:ae|ä)hlte antwort|endg(?:ue|ü)ltige antwort|analyse|(?:ue|ü)berlegung|pr(?:ue|ü)fung|selbstkorrektur)\s*:/.test(head);
