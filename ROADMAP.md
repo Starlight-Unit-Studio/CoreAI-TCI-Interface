@@ -77,6 +77,8 @@ P05 bis P08 verbinden Laufsteuerung, sichtbare Arbeit, Werkzeuge und Chat. Der A
 | **P08: Chat und Arbeitsprofile konsistent machen** | P03, P05, P06 | Wiederverwendbare Arbeitsprofile und Promptvorlagen einschließlich Variablen sowie Import/Export inventarisieren und mit dem Laufmodell verbinden. Text, Formeln, Code, Quellen und Antwortvarianten konsistent darstellen. **Abnahme:** Profilwahl, erneutes Öffnen und Variantenwechsel behalten den zugehörigen Kontext. Kopierter Code und heruntergeladene Dateien entsprechen dem Ergebnis. | `CF-004`, `CF-009`, `CF-010` |
 
 
+**Zwischenstand 0.5.7 (P06, erste Teilumsetzung):** Der vorhandene Python- und Modellpfad erzeugt kontogebundene, antwortbezogene Arbeitsereignisse mit echter Ausfuehrungs- und Fehlerdiagnose (Migration 012). SSE zeigt diese live, nach Reload werden sie authentifiziert nachgeladen. Vollstaendige P05-Laufsteuerung, echte dauerhafte Plaene, Provider-Reasoning und allgemeine Werkzeugzyklen sind weiterhin offen. P06 ist damit **nicht vollstaendig abgenommen**; zuerst mit gpt-oss:120b und dem Fehlerfall aus Issue #29 live validieren.
+
 ### M2: Ergänzende Lieferungen für Teams und dauerhafte Workflows
 
 P26 bis P28 erweitern die Agentenbasis um die durch CrewAI, LangGraph und AutoGen konkretisierten Mechanismen. Die vorhandenen Paketnummern bleiben erhalten; die neuen Nummern sind keine starre chronologische Reihenfolge. **P02 bis P04 bleiben die erste Lieferung.** P09 bis P11 können auf der abgenommenen Basis aus P05 bis P08 starten, ohne den vollständigen erweiterten Workflowumfang abzuwarten.

@@ -1,0 +1,63 @@
+STΛRLIɢHT: EMBER COREUI BY STARLIGHT UNIT STUDIOS
+UEBERGABEPROTOKOLL 0.5.7
+STAND 20.10.2026
+
+1. VERSIONSKANON
+
+Vorherige VERSION: 0.5.6
+Neue VERSION: 0.5.7
+Kein Textsuffix und keine Aenderung am One-Liner.
+Historische ZIP/SHA-Artefakte bleiben unangetastet.
+Jeder Merge muss erneut einen numerischen Versionssprung enthalten.
+
+2. P06-EREIGNISVERTRAG (TEILUMSETZUNG)
+
+SQL Migration 012_console_work_events speichert:
+Nutzer, Sitzungs-ID, User-Turn-ID, Run-Key, zugehoerige Ember-Antwort-ID,
+Art, Zustand, feste Ereignisbezeichnung, gepruefte Metadaten und Zeit.
+
+SSE streamt das Ereignis unter dem Namen "work". Die private,
+ausschliesslich lesende API console_work_events.php erfordert Session,
+Turn und Antwort und verifiziert die Zuordnung bei jeder Abfrage.
+Die Frontend-Karte ARBEITSSCHRITTE verwendet ausschliesslich
+DOM textContent, keine rohen HTML-Einsaetze aus Modellantworten.
+
+Aktuell beobachtbare Ereignisse: Modellaufruf gestartet/beendet,
+realer Python-Job gestartet/beendet, Exitcode und Fehlerklasse,
+Reparaturversuch, erfolgreicher Dateitransfer oder fehlendes Artefakt.
+FileNotFoundError kann z.B. mit Dateiname und Job-ID angezeigt werden,
+ohne vollstaendigen Python-Traceback zu veroeffentlichen.
+
+Rohe Thinking-Tokens, Nutzerprompts, Quellcode und Worker-Ausgaben
+werden nicht in das Ereignisprotokoll geschrieben. Die eigentliche
+Reasoning-Anzeige ist vom oeffentlichen Werkzeugprotokoll getrennt.
+
+3. BESTEHENDE SYSTEME
+
+Keine Parallelisierung: E.M.B.E.R. verarbeitet weiterhin hoechstens
+eine Modellanfrage gleichzeitig. Konten, SQL-Daten, Attachments,
+Dateien, Memory, RAG und lokale Konfiguration bleiben erhalten.
+012 wird durch den bestehenden Migrationsweg ausgefuehrt.
+Der One-Liner und die Live-Test-Routine bleiben unveraendert.
+
+4. ABNAHME VOR DEM NAECHSTEN SCHRITT
+
+* One-Liner normal auf dem isolierten Server ausfuehren.
+* Preflight: Migration 012, PHP-Syntax, Work-Events-Selbsttest.
+* Chrome: 0.5.7 zeigen, Arbeitsblock auf-/zuklappen.
+* Mit gpt-oss:120b erneut Mini-Spiel als HTML-Download anfordern.
+* Ausgabe inspizieren: Modell, Python-Job, ggf. FileNotFoundError,
+  Exitcode, Reparatur, gesicherte Datei oder fehlender Download.
+* Antwort neu laden: derselbe reale Verlauf erneut sichtbar.
+* Mit einem anderen Konto/Sitzung unberechtigten Abruf verweigern.
+* Ein neuer Antwortversuch darf nicht die Ereignisse einer
+  vorherigen Antwort derselben Nutzernachricht vermischen.
+* P06 gesamt und Issue #29 nicht voreilig schliessen.
+
+5. WEITERE ARBEIT
+
+P05 dauerhafte Agentenlaeufe und globale Warteschlange ausbauen.
+P06 ergaenzen um wirklich gespeicherte Plaene/Kommentare,
+Provider-Faehigkeiten und geeignete Reasoning-Ansichten.
+P07 allgemeiner Werkzeugzyklus, Skills und IDE spaeter schrittweise.
+Kein GitHub Actions Workflow ausloesen.

@@ -70,6 +70,8 @@ Die Phasennummer in jeder Soll-Zelle benennt den vorgesehenen Schwerpunkt. Sie e
 
 ## 3. Agentenlauf, Thinking und sichtbare Arbeit
 
+**Teilstand 0.5.7:** CF-021 und CF-022 haben nun eine erste technische Grundlage: gespeicherte, antwortbezogene Ereignisse fuer wirkliche Modell- und Python-Aufrufe, Fehler und bestaetigte Dateien. Der Status bleibt **Teilbestand** bis die P05-Laufsteuerung, gespeicherte Plaene, Wiederaufnahme und allgemeine Werkzeuge hinzukommen. CF-023 und CF-024 (Denkaufwand und echte Provider-Reasoning-Darstellung) sind dadurch **nicht** fertig. Ausgaben enthalten keine rohen Modellgedanken oder geheimen Werkzeugdaten.
+
 | ID | Referenzfunktion / Quelle | CoreUI-Stand | Eigenes Soll mit Abnahme |
 |---|---|---|---|
 | CF-017 | Serielle E.M.B.E.R.-Ausführung [V], [C-R] | Teilbestand | **M2.** Eine gemeinsame Warteschlange für alle Modellaufrufe erzwingen. Abnahme: Zwei Chats, Unteraufgaben, Memory und Automation erzeugen zusammen zu keinem Zeitpunkt mehr als eine aktive Modellanfrage. |
