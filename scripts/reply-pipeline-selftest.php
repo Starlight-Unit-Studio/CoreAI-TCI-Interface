@@ -111,8 +111,19 @@ foreach (['console_stream_continue_truncated', 'continuation_segments', 'CURLOPT
 if (str_contains($streamSource, "|| !empty(\$acc['truncated']);")) {
   reply_test_fail('Ein Tokenlimit startet weiterhin die komplette Anfrage neu.');
 }
-if (str_contains($streamSource, "\$_GET['msg']") || !str_contains($streamSource, 'SELECT id, message, file_uuid, image_url FROM stu_chat_messages')) {
-  reply_test_fail('Der SSE-Pfad transportiert lange oder vertrauliche Nachrichten weiterhin in der URL.');
+// Die Turn-Abfrage darf weitere Spalten (z.B. trigger_revision) enthalten.
+// Entscheidend ist, dass die Nachricht aus dem gespeicherten, kontogebundenen
+// Turn stammt und nicht als GET-Text ueber die EventSource-URL ankommt.
+$storedTurnLookup = preg_match(
+  '~SELECT\s+id\s*,\s*message\s*,\s*file_uuid\s*,\s*image_url\b.*?\bFROM\s+stu_chat_messages\b\s+WHERE\s+id\s*=\s*\?\s+AND\s+channel\s*=\s*\'console\'\s+AND\s+user_id\s*=\s*\?\s+AND\s+character_id\s*=\s*\?\s+AND\s+session_id\s*=\s*\?~is',
+  $streamSource
+) === 1;
+$turnParametersBound = str_contains(
+  $streamSource,
+  '$stTurn->execute([$afterId, (int)$uid, $character_id, $sessionId])'
+);
+if (str_contains($streamSource, "\$_GET['msg']") || !$storedTurnLookup || !$turnParametersBound) {
+  reply_test_fail('Der SSE-Pfad liest die Nachricht nicht aus dem kontogebundenen gespeicherten Turn oder uebertraegt Text per URL.');
 }
 if (!str_contains($streamSource, "'think'    => ember_thinking_enabled()")
     || !str_contains($streamSource, "console_stream_progress(\$thinkingEnabled")) {
