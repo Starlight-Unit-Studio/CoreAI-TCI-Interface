@@ -1,16 +1,18 @@
 # Ember CoreUI: Umsetzungsroadmap
 
-Stand: 20.10.2026. Planungsbasis: [`5f1519d`](https://github.com/Starlight-Unit-Studio/coreui/commit/5f1519d2ee2b86327f0b72c3cfa78fc49dc7abf4).
+Stand: 20.10.2026. Planungsbasis: [`b4a5413`](https://github.com/Starlight-Unit-Studio/coreui/commit/b4a5413f8478119d749a54702c0e50acd3f0b517).
 
 **Nächste Umsetzung: P02 Arbeitsbasis und Schema klären, danach P03 Dateiausgabe und P04 Chat-Downloads abschließen.**
 
-Diese Roadmap ordnet die Anforderungen in **25 abschließbare Arbeitspakete** und nutzbare Lieferungen. Der [Masterplan](docs/COREUI_MASTERPLAN.md) hält Ziel und Architektur fest; die [Funktionsmatrix](docs/COREUI_FEATURE_MATRIX.md) führt Referenzen, bestehenden Teilbestand und Einzelabnahmen. Alle 72 derzeitigen Matrix-IDs sind einem Paket primär zugeordnet. Das bedeutet vollständige Zuordnung des Startbestands; die Tiefeninventur beider Referenzprojekte läuft weiter.
+Diese Roadmap ordnet die Anforderungen in **29 abschließbare Arbeitspakete** und nutzbare Lieferungen. Der [Masterplan](docs/COREUI_MASTERPLAN.md) hält Ziel und Architektur fest; die [Funktionsmatrix](docs/COREUI_FEATURE_MATRIX.md) führt Referenzen, bestehenden Teilbestand und Einzelabnahmen. Alle 82 derzeitigen Matrix-IDs sind einem Paket primär zugeordnet. Das bedeutet vollständige Zuordnung des erfassten Startbestands; die Tiefeninventur von **OpenClaw, Open WebUI, CrewAI, LangGraph und Microsoft AutoGen** läuft weiter.
 
 ## Aktueller Stand
 
 | Bereich | Status |
 |---|---|
-| Masterplan, Referenzstände und 72 Einträge | Durch [PR #30](https://github.com/Starlight-Unit-Studio/coreui/pull/30) im Repo gesichert |
+| Ursprünglicher Masterplan, Referenzstände und 72 Einträge | Durch [PR #30](https://github.com/Starlight-Unit-Studio/coreui/pull/30) im Repo gesichert |
+| Erste Umsetzungsroadmap | Durch [PR #31](https://github.com/Starlight-Unit-Studio/coreui/pull/31) im Repo gesichert |
+| Referenzerweiterung | CrewAI, LangGraph und AutoGen ergänzt; jetzt 82 CF-Einträge und 29 Pakete, vollständige Einzelinventur weiter offen |
 | Download-Bug | [Issue #29](https://github.com/Starlight-Unit-Studio/coreui/issues/29) offen, Ursache im Quellcode eingegrenzt |
 | Laufzeitfunktionen dieser Roadmap | Noch nicht durch diese Planungsarbeit umgesetzt oder abgenommen |
 | Technische Basis | `0.5.3-alpha`; die Details zum fehlenden vorbereiteten 0.5.4-Stand und zu `010_console_tools` stehen im Masterplan |
@@ -23,21 +25,21 @@ Die Paketnummern bleiben als Arbeitsreferenzen bestehen. Sämtliche Umsetzungspa
 | Etappe | Nutzbares Ergebnis | Abschlussnachweis |
 |---|---|---|
 | M1 | Erzeugte Dateien direkt im Chat herunterladen | HTML und ZIP funktionieren einschließlich Reload, Handy und dauerhafter Speicherung |
-| M2 | E.M.B.E.R. bearbeitet mehrstufige Aufträge | Ein Auftrag durchläuft echte Werkzeuge, Fehlerbearbeitung und nachvollziehbaren Abschluss |
+| M2 | E.M.B.E.R. bearbeitet mehrstufige Aufträge; ergänzend Teams, Graphen und dauerhafte Wiederaufnahme | Grundlauf durchläuft echte Werkzeuge und Fehlerbearbeitung; P26 bis P28 nehmen erweiterte Abläufe, Checkpoints und Reviews gesondert ab |
 | M3 | In einem dauerhaften Projekt entwickeln | Datei bearbeiten, Anwendung starten, prüfen, per Git sichern und als ZIP exportieren |
 | M4 | Erprobte Arbeit als Skills wiederverwenden | Skill samt Ressourcen und Versionen in einem neuen Auftrag nutzen; Plugin-Lebenszyklus funktioniert |
 | M5 | Mit Browser, Wissen und Gedächtnis arbeiten | Autorisierter Browserauftrag und eine belegte, später wiederaufgenommene Wissensaufgabe |
-| M6 | Medien, Automationen, Kanäle und Zusammenarbeit ergänzen | Jede Erweiterung erfüllt ihre eigene Matrixabnahme |
+| M6 | Medien, Automationen, Kanäle, Zusammenarbeit und visuelle Agentenentwicklung ergänzen | Jede Erweiterung erfüllt ihre eigene Matrixabnahme; P29 verbindet Editor, Playground und reale Laufinspektion |
 | M7 | Eine Teilversion oder den vollständig abgeglichenen Stand veröffentlichen | Tatsächliche Implementierung, Prüfung und auslieferbares Paket stimmen überein |
 
 Feste Termine und neue Releaseversionen werden nach dem technischen Abgleich und dem tatsächlichen Umfang einer Lieferung festgelegt. Die Reihenfolge gibt den vorgesehenen Schwerpunkt an; konkrete Paketabhängigkeiten erlauben frühere unabhängige Teilumsetzungen.
 
 ## Regeln für jede Lieferung
 
-- **Serieller Modellbetrieb:** Höchstens eine aktive Modellanfrage, gemeinsam für Gespräche, Unteraufgaben, Memory, Automationen und Medienmodelle. Paketplanung und die Zahl der Clients ändern diese Grenze nicht.
+- **Serieller Modellbetrieb:** Höchstens eine aktive Modellanfrage, gemeinsam für Gespräche, Unteraufgaben, Memory, Automationen und Medienmodelle. Auch Graphzweige, Manager, Sprecherwahl, Ergebnisprüfung, Embeddings, Replay und Evaluations-/Playgroundläufe nutzen dieselbe globale Warteschlange. Paketplanung und die Zahl der Clients ändern diese Grenze nicht.
 - **Mobile Nutzung ab dem ersten Paket:** Downloads, Fortschritt, wesentliche Bedienelemente und spätere Entwicklerwerkzeuge auf Android Chrome prüfen. P19 erweitert diesen Umfang; die Handy-Nutzung beginnt bereits in M1.
 - **Rechte und Datenerhalt ab dem ersten Paket:** Kontotrennung, reale Datei-IDs, Aufbewahrung, Löschung und Update-Persistenz gehören zur jeweiligen Umsetzung. P18 und P19 erweitern diese Grundlagen später.
-- **Eigene Umsetzung:** OpenClaw und Open WebUI werden vollständig als Referenzen inventarisiert. Fremder Code, Texte und Assets werden nicht übernommen. Modellabhängige oder experimentelle Referenzfunktionen behalten ihre Beleggrenzen.
+- **Eigene Umsetzung:** OpenClaw, Open WebUI, CrewAI, LangGraph und Microsoft AutoGen werden vollständig als Referenzen inventarisiert. Fremder Code, Texte und Assets werden nicht übernommen. Modellabhängige, experimentelle, kommerzielle oder nur historisch gepflegte Bestandteile behalten die im Quellenregister beschriebenen Beleggrenzen.
 - **Sichtbare, tatsächliche Arbeit:** Ein fertiger Plan, eine erfolgreich angelegte Datei oder ein beendeter Test braucht das passende reale Ereignis. Thinking-Anzeige und Modell-Denkaufwand bleiben getrennte Funktionen.
 - **Prüfung am betroffenen Verhalten:** Direkte lokale oder autorisierte Laufzeitprüfungen mit echtem Ergebnis dokumentieren. GitHub Actions nicht anfordern; nicht ausgeführte Prüfungen bleiben offen.
 
@@ -51,7 +53,7 @@ Die Startinventur ist vorhanden. P01 vertieft jeweils die Funktionen des nächst
 
 | Paket | Voraussetzung | Ergebnis und Abnahme | Matrix-IDs |
 |---|---|---|---|
-| **P01: Einzelfunktionen inventarisieren** | Vorhandene Referenzstände | Beide Referenzen und ihre Begleitprojekte in überprüfbare Einzelanforderungen zerlegen. Für jedes kommende Paket zuerst dessen konkrete Referenzoberflächen, Quellen und Voraussetzungen prüfen; neue Funktionen mit neuen CF-IDs ergänzen. **Abnahme:** Jede erfasste Funktion hat einen Beleg, eine eigene Sollbeschreibung und eine Zuordnung. Offene Detailprüfungen bleiben sichtbar. | `CF-001`, `CF-007` |
+| **P01: Einzelfunktionen inventarisieren** | Vorhandene Referenzstände | Alle fünf Referenzen und ihre Begleitprojekte in überprüfbare Einzelanforderungen zerlegen. Für jedes kommende Paket dessen Quellen, Voraussetzungen, Versionen, Lizenzen und Wartungsstand prüfen; neue Funktionen mit neuen CF-IDs ergänzen. **Abnahme:** Jede erfasste Funktion hat einen Beleg, eine eigene Sollbeschreibung und eine Zuordnung. Zusatzdienste und offene Detailprüfungen bleiben sichtbar. | `CF-001`, `CF-007` |
 
 ### M1: Erste Lieferung: echte Datei-Downloads
 
@@ -71,8 +73,21 @@ P05 bis P08 verbinden Laufsteuerung, sichtbare Arbeit, Werkzeuge und Chat. Der A
 |---|---|---|---|
 | **P05: Dauerhafte Agentenläufe und Modellwarteschlange** | P02 | Laufzustände, Kontextgrenzen, Providerfähigkeiten und eine zentrale serielle Modellwarteschlange schaffen. Zunächst den vorhandenen Modellweg sauber einordnen; weitere Adapter einzeln abnehmen. **Abnahme:** Konkurrierende Chats und Hintergrundaufträge erzeugen höchstens einen aktiven Modellaufruf. Abbruch und Neustart erzeugen keine Doppelaufrufe; ein ungeklärter Providerzustand wird vor Freigabe des nächsten Laufs geklärt. | `CF-003`, `CF-005`, `CF-006`, `CF-017`, `CF-018` |
 | **P06: Thinking, Plan und tatsächliche Arbeit anzeigen** | P05 | Gespeicherte Plan-, Kommentar- und Werkzeugereignisse zunächst an echten Aufrufen des vorhandenen Python-Pfads anzeigen. Denkaufwand und gelieferte Reasoning-Inhalte getrennt und entsprechend der Modellfähigkeiten behandeln. **Abnahme:** Jedes sichtbare Werkzeugereignis gehört zu einem tatsächlichen Aufruf. Nach Reload ist der wirkliche Stand sichtbar; Kommentare, Reasoning, Werkzeugereignisse und Antwort bleiben getrennt. | `CF-021`, `CF-022`, `CF-023`, `CF-024` |
-| **P07: Allgemeinen Werkzeugzyklus umsetzen** | P03, P05, P06 | Ein Toolregister mit Schema und Rechten sowie eine begrenzte Ausführungs- und Reparaturschleife aufbauen. Unteraufgaben mit eigener Rückgabe seriell bearbeiten. Das frühere geplante Werkzeugmenü und Quellenmetadaten hier einordnen. **Abnahme:** Ein mehrstufiger Auftrag verwendet echte Werkzeuge, verarbeitet einen Fehler und liefert ein überprüftes Ergebnis samt den tatsächlichen Ereignissen aus P06. Unteraufgaben beachten Rechte und die gemeinsame Modellwarteschlange. | `CF-019`, `CF-020`, `CF-041`, `CF-072` |
+| **P07: Allgemeinen Werkzeugzyklus umsetzen** | P03, P05, P06 | Ein Toolregister mit Schema und Rechten sowie eine begrenzte Ausführungs- und Reparaturschleife aufbauen. Unteraufgaben mit typisierten Nachrichten, Laufzuordnung und eigener Rückgabe seriell bearbeiten. Das frühere geplante Werkzeugmenü und Quellenmetadaten hier einordnen. **Abnahme:** Ein mehrstufiger Auftrag verwendet echte Werkzeuge, verarbeitet einen Fehler und liefert ein überprüftes Ergebnis samt den tatsächlichen Ereignissen aus P06. Unteraufgaben beachten Rechte und die gemeinsame Modellwarteschlange; fachliche und Transportfehler bleiben unterscheidbar. | `CF-019`, `CF-020`, `CF-041`, `CF-072` |
 | **P08: Chat und Arbeitsprofile konsistent machen** | P03, P05, P06 | Wiederverwendbare Arbeitsprofile und Promptvorlagen einschließlich Variablen sowie Import/Export inventarisieren und mit dem Laufmodell verbinden. Text, Formeln, Code, Quellen und Antwortvarianten konsistent darstellen. **Abnahme:** Profilwahl, erneutes Öffnen und Variantenwechsel behalten den zugehörigen Kontext. Kopierter Code und heruntergeladene Dateien entsprechen dem Ergebnis. | `CF-004`, `CF-009`, `CF-010` |
+
+
+### M2: Ergänzende Lieferungen für Teams und dauerhafte Workflows
+
+P26 bis P28 erweitern die Agentenbasis um die durch CrewAI, LangGraph und AutoGen konkretisierten Mechanismen. Die vorhandenen Paketnummern bleiben erhalten; die neuen Nummern sind keine starre chronologische Reihenfolge. **P02 bis P04 bleiben die erste Lieferung.** P09 bis P11 können auf der abgenommenen Basis aus P05 bis P08 starten, ohne den vollständigen erweiterten Workflowumfang abzuwarten.
+
+Der Checkpoint-/Schrittvertrag wird bei P26 vorbereitet und in P27 mit tatsächlichem Wiederanlauf abgenommen. CF-018 bleibt die Grundsteuerung; CF-075 bis CF-078 ergänzen detaillierte Persistenz, Replay und Rückmeldungen. Ein Versionswechsel im Workflow ist getrennt von einer neuen Skill-Revision zu behandeln.
+
+| Paket | Voraussetzung | Ergebnis und Abnahme | Matrix-IDs |
+|---|---|---|---|
+| **P26: Agenten, Teams und Flows definieren** | P07, P08 | Versionierte Rollen, Aufgaben, Ergebnisverträge und Teams mit expliziten Zustandsgraphen aufbauen. Übergänge, Schleifen, Unterabläufe, Zusammenführung, Sprecherwahl und Handoffs nachvollziehbar steuern. **Abnahme:** Ein verzweigter Teamauftrag folgt seiner gespeicherten Definition. Export/Import erhält sie; unzulässige Ziele und Zustandswechsel werden erkannt. Manager, Auswahlmodelle und Zweige laufen global seriell. | `CF-073`, `CF-074`, `CF-080` |
+| **P27: Läufe dauerhaft fortsetzen und verzweigen** | P26 | Laufzustand und übernommene Schrittergebnisse mit Versionsbezug dauerhaft sichern. Inspektion, kontrolliertes Replay, neue Laufzweige und begrenzte Wiederholungen ergänzen. **Abnahme:** Ein Prozessabbruch vor beziehungsweise nach der Ergebnisübernahme wird nachvollziehbar behandelt. Originalhistorie bleibt erhalten; Änderungen markieren abhängige Ergebnisse zur Neuberechnung. Unklare externe Effekte werden abgeglichen, inkompatible Zustände erklärt statt still geladen. | `CF-075`, `CF-076`, `CF-077` |
+| **P28: Ergebnisse prüfen und Menschen einbeziehen** | P27 | Schema-/Qualitätsprüfungen und begrenzte Überarbeitung mit dauerhaft gespeicherten Rückfragen verbinden. Freigabe, Ablehnung und Korrektur einer konkreten Revision ermöglichen. **Abnahme:** Eine Rückmeldung setzt den richtigen Lauf nach Reload/Neustart genau einmal fort; veraltete oder fremde Antworten greifen nicht. Bereits ausreichende Auftragsfreigaben gelten weiter, Prüfmodelle nutzen die gemeinsame Warteschlange. | `CF-078`, `CF-079` |
 
 ### M3: Dritte Lieferung: vollständiger Entwicklungsablauf
 
@@ -92,7 +107,7 @@ P12 bis P14 ergänzen einen vollständigen Skill-Lebenszyklus und installierbare
 |---|---|---|---|
 | **P12: Skills laden und anwenden** | P07, P09 | Skills mit Metadaten, Hauptanweisung und Ressourcen erstellen, suchen und für einen Arbeitskontext auswählen. Benötigte Inhalte gezielt laden und Voraussetzungen kenntlich machen. **Abnahme:** Ein Skill wird in einem neuen Auftrag mit seinen Referenzen und Vorlagen verwendet. Fehlende Ressourcen oder Werkzeuge werden erkannt; Ressourcen laden führt nicht automatisch Skripte aus. | `CF-042`, `CF-043`, `CF-044` |
 | **P13: Skill-Lebenszyklus vervollständigen** | P12 | Rechte, feste Revisionen, Vergleich, Import/Export, Konfliktbehandlung und Wiederherstellung ergänzen. Verbesserungen durch E.M.B.E.R. als nachvollziehbare Änderungen führen. **Abnahme:** Ein vollständiger Skill wird exportiert, wieder importiert und auf einen früheren Stand zurückgesetzt. Laufende Aufträge behalten ihre ausgewählte Revision samt Ressourcen. | `CF-045`, `CF-046`, `CF-047` |
-| **P14: Plugins und externe Fähigkeiten** | P05, P07, P12 | Installierbare Erweiterungen mit Abhängigkeiten, Konfiguration und Rechten einführen. Tools, Provider, Hooks, MCP-/OpenAPI-Anbindungen und weitere Erweiterungsarten einzeln inventarisieren. **Abnahme:** Eine Erweiterung lässt sich installieren, nutzen, aktualisieren, deaktivieren und entfernen. Verfügbare Fähigkeiten und Zugriffe folgen tatsächlich ihrem Zustand. | `CF-048` |
+| **P14: Plugins und externe Fähigkeiten** | P05, P07, P12 | Installierbare Erweiterungen mit Abhängigkeiten, Konfiguration und Rechten einführen. Tools, Provider, Hooks, MCP-/OpenAPI-Anbindungen und weitere Erweiterungsarten einzeln inventarisieren. **Abnahme:** Eine Erweiterung lässt sich installieren, nutzen, aktualisieren, deaktivieren und entfernen. Toolfilter, Konfigurations-/Verbindungsfehler und Zugriffe sind nachvollziehbar; zusätzliche Abhängigkeiten und Dienste werden einzeln ausgewiesen. | `CF-048` |
 
 ### M5: Fünfte Lieferung: Browser, Wissen und Gedächtnis
 
@@ -101,26 +116,27 @@ P15 bis P17 machen Recherche, Browseraktionen und dauerhaften Kontext zu nachvol
 | Paket | Voraussetzung | Ergebnis und Abnahme | Matrix-IDs |
 |---|---|---|---|
 | **P15: Recherche und Browseraktionen** | P03, P06, P07 | Die vorhandene Recherche ausbauen und den Browser-Action-Plan #25 umsetzen: getrennte autorisierte Sitzungen, Eingaben, Entwürfe, Uploads, sichtbare Schritte und menschliche Übergaben. **Abnahme:** Ein konkreter Browserauftrag lässt sich nach den Regeln von #25 vorbereiten, prüfen, ausführen und nach einer Übergabe fortsetzen. Quellen und Aktionen bleiben zuordenbar. | `CF-049`, `CF-050`, `CF-051` |
-| **P16: Wissen importieren und gezielt abrufen** | P07, P09, P14 | Dokumentextraktion, OCR, Sammlungen, hybride Suche, vollständigen Kontext und externe Wissensquellen einzeln ausbauen. Den bestehenden privaten RAG-Bestand weiterführen. **Abnahme:** Die Antwort verweist auf tatsächlich verwendete Quellen. Dokumentänderungen und entzogene Rechte wirken auf nachfolgende Abrufe. | `CF-052`, `CF-053`, `CF-054` |
-| **P17: Dauerhaftes Gedächtnis pflegen** | P05, P09, P16 | Erinnerungen, Präferenzen und Entscheidungen mit Herkunft, Projektzuordnung, Suche und Korrektur weiterentwickeln. Zusammenfassungen und Pflege in die zentrale Warteschlange einordnen. **Abnahme:** Eine passende Erinnerung wird nach Wiederaufnahme gefunden, eine gelöschte nicht. Widersprüche sind korrigierbar; Gedächtnispflege erzeugt keine parallelen Modellaufrufe. | `CF-055`, `CF-056` |
+| **P16: Wissen importieren und gezielt abrufen** | P07, P09, P14 | Dokumentextraktion, OCR, Sammlungen, hybride Suche, vollständigen Kontext und externe Wissensquellen einzeln ausbauen. Quellen Rollen oder Teams zuordnen und Index-/Embedding-Voraussetzungen kenntlich machen. Den bestehenden privaten RAG-Bestand weiterführen. **Abnahme:** Die Antwort verweist auf tatsächlich verwendete Quellen. Dokumentänderungen und entzogene Rechte wirken auf nachfolgende Abrufe; Modellarbeit bleibt seriell. | `CF-052`, `CF-053`, `CF-054` |
+| **P17: Dauerhaftes Gedächtnis pflegen** | P05, P09, P16 | Erinnerungen mit Herkunft, Bereichen, Suche, Korrektur und getrennten Schreibrechten weiterentwickeln. Laufzustand und langfristiges Memory trennen; Zusammenfassungen, Embeddings und Pflege in die zentrale Warteschlange einordnen. **Abnahme:** Eine passende Erinnerung wird im zulässigen Bereich gefunden, eine gelöschte nicht. Schreibabschluss und Fehler sind sichtbar; Gedächtnispflege erzeugt keine parallelen Modellaufrufe. | `CF-055`, `CF-056` |
 
 ### M6: Weitere Lieferungen: Funktionsbreite
 
-P18 bis P24 werden als getrennte Erweiterungen geliefert. Ihre Paketabhängigkeiten bestimmen die Reihenfolge innerhalb dieser Phase.
+P18 bis P24 und P29 werden als getrennte Erweiterungen geliefert. Ihre Paketabhängigkeiten bestimmen die Reihenfolge innerhalb dieser Phase.
 
 | Paket | Voraussetzung | Ergebnis und Abnahme | Matrix-IDs |
 |---|---|---|---|
-| **P18: Verwaltung und gemeinsame Ressourcen** | P07, P09, P13 | Vorhandene Konto- und Toolrechte um Rollen, Gruppen und geteilte Ressourcen erweitern. Zusätzliche Anmeldewege, API-Schlüssel und echte Nutzungs-/Modelldiagnose einzeln abnehmen. **Abnahme:** Entzogene Rechte wirken auf direkte Zugriffe. Modellvergleiche laufen seriell; Kennzahlen stammen aus tatsächlichen Läufen. | `CF-065`, `CF-066`, `CF-067` |
+| **P18: Verwaltung und gemeinsame Ressourcen** | P07, P09, P13 | Vorhandene Konto- und Toolrechte um Rollen, Gruppen und geteilte Ressourcen erweitern. Zusätzliche Anmeldewege, API-Schlüssel, Laufdiagnose und wiederholbare Evaluation mit dokumentierter Ausgangslage einzeln abnehmen. **Abnahme:** Entzogene Rechte wirken auf direkte Zugriffe. Traces sind realen Läufen zugeordnet; Modellvergleiche laufen seriell und nennen Definition, Modell sowie Bewertungsbedingungen. | `CF-065`, `CF-066`, `CF-067` |
 | **P19: Betrieb, mobile Bedienung und weitere Oberflächen** | P04, P11, P13 | Installation, Speicherbetrieb, Backup, Wiederherstellung, Sprachen, Tastaturbedienung und PWA-Umfang vervollständigen. Zusätzliche Prozesse respektieren die Modellgrenze. **Abnahme:** Ein gesicherter Stand lässt sich vollständig wiederherstellen. Kernabläufe sind auf Android Chrome ohne verdeckte Hauptaktionen bedienbar. | `CF-068`, `CF-069` |
 | **P20: Medien und Sprache ausbauen** | P03, P04, P05, P14 | Bild-, Video- und Dokumentverarbeitung, Transkription, TTS, geeignete Live-Medien und Generierungswege je Provider ergänzen. Alle Ergebnisse in den gemeinsamen Dateiweg aufnehmen. **Abnahme:** Unterstützte Medienabläufe funktionieren mit erkennbaren Modellgrenzen. Generierte Medien lassen sich wieder öffnen und herunterladen; beteiligte Modellanfragen bleiben seriell. | `CF-057`, `CF-058`, `CF-059` |
 | **P21: Automationen, Kalender und dauerhafte Aufträge** | P05, P06, P07, P18 (P18 für gemeinsame Ressourcen) | Einmalige und wiederkehrende Aufgaben, Kalender, Webhooks, dauerhafte Anweisungen, Ereignishooks und Heartbeats als eigene Mechanismen mit Historie anbieten. **Abnahme:** Auslösen, Ändern, Stoppen und Wiederaufnahme funktionieren mit korrekter Zeitzone. Ein Neustart verdoppelt keine Aufgabe; Modellarbeit wartet bei belegter Warteschlange. | `CF-060`, `CF-061`, `CF-064` |
 | **P22: Kanäle, Clients und Geräte** | P07, P14, P18 | Kommunikationskanäle, Gruppen, weitere Clients sowie Gerätefähigkeiten einzeln anbinden. Identität, Pairing, Sitzungszuordnung und Zugriffe festlegen. **Abnahme:** Eine Antwort erreicht den richtigen autorisierten Kanal. Kein Client oder Gerät eröffnet eine zweite gleichzeitige Modellanfrage. | `CF-062`, `CF-063` |
 | **P23: Zusammenarbeit und Austausch** | P08, P09, P18 | Gesprächsimport/-export, kontrollierte Freigaben, Notizen und gemeinsame Channels mit Antworten, Reaktionen und Pins ausbauen. **Abnahme:** Ein Gespräch lässt sich mit ausgewählten Ressourcen übertragen. Gemeinsame Arbeit beachtet Mitgliedschaft und widerrufene Freigaben. | `CF-014`, `CF-015`, `CF-016` |
 | **P24: Gesonderte Produktvorhaben** | Bestehende Regeln aus #23/#24 | Die bestehenden Vorhaben #23 und #24 in ihrer eigenen Begrenzung weiterführen: festgelegte Branding-Integrität und optionale Installationserfassung. Sie erhalten getrennte Umsetzung und Aktivierung. **Abnahme:** Nur bezeichnete Branding-Dateien werden geprüft. Die Installationserfassung bleibt ohne Opt-in aus und beeinflusst die Nutzbarkeit nicht. | `CF-070`, `CF-071` |
+| **P29: Abläufe visuell bauen und erproben** | P04, P09, P14, P18, P28 | Visuellen Team-/Ablaufeditor, gleichwertige deklarative Ansicht und wiederverwendbare Komponenten mit einem zugeordneten Playground verbinden. Reale Schritte, Zustand, Reviews, Fehler und Ergebnisse untersuchen. **Abnahme:** Ein Ablauf lässt sich auch auf dem Handy ohne Drag-and-drop bearbeiten, in beiden Ansichten verlustfrei wechseln und kontrolliert ausführen. Import startet keinen Code; Downloads und serielle Vergleichsläufe verwenden die vorhandenen gemeinsamen Verträge. | `CF-081`, `CF-082` |
 
 ### M7: Abnahme und Veröffentlichung
 
-P25 begleitet jede Teilveröffentlichung. Die abschließende Gesamtprüfung folgt auf die vollständige Einzelinventur und die zugehörigen Implementierungen.
+P25 begleitet jede Teilveröffentlichung. Die abschließende Gesamtprüfung folgt auf die vollständige Einzelinventur aller fünf Referenzen und die zugehörigen Implementierungen, einschließlich der ergänzten Pakete P26 bis P29. Eine nützliche Teilveröffentlichung benötigt nur ihre tatsächlich betroffenen und abgenommenen Funktionen.
 
 | Paket | Voraussetzung | Ergebnis und Abnahme | Matrix-IDs |
 |---|---|---|---|

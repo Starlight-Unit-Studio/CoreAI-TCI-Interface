@@ -4,13 +4,13 @@ Stand: 20.10.2026. Dieses Dokument hält das vereinbarte Ziel, die belegte Ausga
 
 Die [Funktionsmatrix](COREUI_FEATURE_MATRIX.md) ist das zugehörige Arbeitsregister. [Issue #29](https://github.com/Starlight-Unit-Studio/coreui/issues/29) führt den Fehler bei Downloads erzeugter Dateien. Beide Dokumente sollen bei Umsetzung und Übergaben gemeinsam aktualisiert werden.
 
-Die [Umsetzungsroadmap](../ROADMAP.md) ordnet diese Anforderungen in 25 Lieferpakete mit Abhängigkeiten, Abnahmen und dem konkret nächsten Arbeitsabschnitt.
+Die [Umsetzungsroadmap](../ROADMAP.md) ordnet diese Anforderungen in 29 Lieferpakete mit Abhängigkeiten, Abnahmen und dem konkret nächsten Arbeitsabschnitt.
 
 ## 1. Verbindliches Ziel
 
 **Ember CoreUI soll eine vollständige Arbeitsumgebung mit E.M.B.E.R. als ausführendem Agenten werden.** Dazu gehören mehrstufige Aufgaben, sichtbare Arbeitsschritte, ein echter Entwicklungsbereich, wiederverwendbare Skills und verlässliche Dateiausgabe.
 
-OpenClaw und Open WebUI werden beide systematisch untersucht. Ziel ist, sämtliche erfassten Funktionen durch eigene Implementierungen in Ember CoreUI abzudecken. Es werden keine fremden Quellcodeabschnitte, Oberflächentexte oder Assets übernommen. Referenzverhalten wird verstanden, als eigenständige Anforderung beschrieben und anhand eigener Abnahmekriterien umgesetzt. Ein vorgefertigter Klon ist kein Umsetzungsschritt.
+**OpenClaw, Open WebUI, CrewAI, LangGraph und Microsoft AutoGen** werden systematisch untersucht. Alle fünf Projekte gehören zum verbindlichen Referenzumfang. Ziel ist, sämtliche erfassten Funktionen durch eigene Implementierungen in Ember CoreUI abzudecken. Es werden keine fremden Quellcodeabschnitte, Oberflächentexte oder Assets übernommen. Referenzverhalten wird verstanden, als eigenständige Anforderung beschrieben und anhand eigener Abnahmekriterien umgesetzt. Ein vorgefertigter Klon ist kein Umsetzungsschritt.
 
 Die Gesamtinventur bleibt offen, bis auch Unterfunktionen, Einstellungen, Menüs, APIs, Voraussetzungen und relevante Begleitprojekte einzeln erfasst sind. Ein übernommener Familienname wie „Skills“ oder „Agent“ erfüllt diese Anforderung noch nicht. Notwendige Abweichungen werden ausdrücklich begründet und im Register erhalten, statt Funktionen stillschweigend zu streichen.
 
@@ -18,7 +18,7 @@ Für die Aufgabenbearbeitung dient der vom Betreiber gewünschte Arbeitsumfang v
 
 ### Feste Rahmenbedingungen
 
-- **Genau eine Modellanfrage gleichzeitig.** Alle interaktiven Aufträge, Unteraufgaben, Automationen, Gedächtnispflege und Zusammenfassungen verwenden dieselbe zentrale serielle Ausführung. Mehrere Rollen oder Agenten dürfen keine zusätzlichen parallelen Modellanfragen erzeugen.
+- **Höchstens eine Modellanfrage gleichzeitig.** Alle interaktiven Aufträge, Unteraufgaben, Automationen, Gedächtnispflege und Zusammenfassungen verwenden dieselbe zentrale serielle Ausführung. Mehrere Rollen oder Agenten dürfen keine zusätzlichen parallelen Modellanfragen erzeugen.
 - **Echte Arbeit muss sichtbar sein.** Geplante Schritte, tatsächliche Werkzeugereignisse und Ergebnisse haben getrennte Zustände. Statussätze dürfen nicht vortäuschen, dass ein Werkzeug bereits ausgeführt wurde.
 - **Eigenständiges Produkt.** Name, Branding, bestehende Lizenz- und Community-Regeln von Ember CoreUI bleiben maßgeblich. Die Referenzprodukte bestimmen weder Lizenzmodell noch Bezahlfunktionen der eigenen Umsetzung.
 - **Am Handy bedienbar.** Die zentralen Abläufe müssen in Android Chrome einschließlich Dateidownload, Wiederaufnahme, Editor, Terminalbedienung und Freigaben nutzbar sein.
@@ -52,7 +52,14 @@ Die Startinventur verwendet folgende reproduzierbare Quellen:
 |---|---|---|
 | OpenClaw | [`54417c68199f58e9b78fddff95c1ae6b610845fe`](https://github.com/openclaw/openclaw/commit/54417c68199f58e9b78fddff95c1ae6b610845fe), 20.10.2026 | Offizielle Dokumentation der Funktionsfamilien wurde gelesen; nicht jede Implementierung wurde ausgeführt oder geprüft. |
 | Open WebUI | [`91ea4e3421d1d8069f13d4a463fcb5986d94ea60`](https://github.com/open-webui/open-webui/commit/91ea4e3421d1d8069f13d4a463fcb5986d94ea60), 16.10.2026 | README und Repository-Struktur dienen als Einstieg. Die laufende Dokumentation wurde am 20.10.2026 gelesen und ist nicht an diesen Commit gebunden. |
+| CrewAI | [`4f4573706ea4afee6c4da4c31cfb9622a4495ab7`](https://github.com/crewAIInc/crewAI/commit/4f4573706ea4afee6c4da4c31cfb9622a4495ab7), 20.10.2026 | Aufgaben, Teams, Flows, Checkpoints, Ergebnisprüfung, Feedback, Wissen, Memory und Tools gezielt anhand der offiziellen Dokumentation geprüft. `docs/edge` an diesem Commit ist kein Nachweis derselben Funktionen in jedem veröffentlichten Paket. |
+| LangGraph | [`a24fc97778fca67cfac4cd3fc63e508ee1d29f59`](https://github.com/langchain-ai/langgraph/commit/a24fc97778fca67cfac4cd3fc63e508ee1d29f59), 20.10.2026 | Kern und zentrale Mechanismen gezielt geprüft. Die ausgelagerte offizielle Dokumentation ist separat auf [`332b12ee879b1d04ec47dec765627c009eb84b7a`](https://github.com/langchain-ai/docs/commit/332b12ee879b1d04ec47dec765627c009eb84b7a) festgeschrieben. |
+| Microsoft AutoGen | [`004749e6b7102c8fd317b9b1499ce5807223c278`](https://github.com/microsoft/autogen/commit/004749e6b7102c8fd317b9b1499ce5807223c278), 16.10.2026 | Core, AgentChat, Extensions, Studio und Evaluation gezielt über Dokumentation und Paketmetadaten eingeordnet. Keine vollständige API-, Sprach- oder Ausführungsprüfung. |
 | Open-WebUI-Begleitprojekte | [Open Terminal](https://github.com/open-webui/open-terminal), [Computer](https://github.com/open-webui/computer), [Terminals](https://github.com/open-webui/terminals), [OIKB](https://github.com/open-webui/oikb), [Desktop](https://github.com/open-webui/desktop) | Separate Projekte. Ihre vollständige Inventur und eigene feste Referenzstände stehen noch aus. |
+
+**Lizenz- und Produktzuordnung:** Der CrewAI-Kern und LangGraph stehen an den geprüften Ständen unter MIT. Die CrewAI-README grenzt die kommerzielle AMP Suite ab; LangSmith ist laut offizieller FAQ proprietär. Bei AutoGen steht der Code unter MIT, während Dokumentation und sonstige Inhalte CC BY 4.0 zugeordnet sind. Diese Aussagen gelten für die geprüften Dateien, nicht pauschal für optionale Abhängigkeiten, Dienste, Modelle oder Datensätze. Die genauen Lizenzdateien und Produktgrenzen stehen im [Quellenregister der Matrix](COREUI_FEATURE_MATRIX.md#quellenregister). Unsere eigenständige Umsetzung und die bestehenden CoreUI-Produktregeln bleiben maßgeblich.
+
+**AutoGen-Wartungsstand:** Die [geprüfte README](https://github.com/microsoft/autogen/blob/004749e6b7102c8fd317b9b1499ce5807223c278/README.md) meldet, dass Microsoft das Projekt nicht mehr pflegt. Das GitHub-Metadatenfeld `archived` stand beim Abruf am 20.10.2026 dagegen auf `false`; ältere Abschnitte sprechen noch von Wartung oder aktiver Studio-Entwicklung. Diese widersprüchlichen Hinweise werden als Beleggrenze erhalten. AutoGen bleibt eine vollständige Funktionsreferenz. Der dort genannte Microsoft Agent Framework wird dadurch nicht automatisch zum Ersatz oder zusätzlichen Referenzprojekt.
 
 Für jede Einzelanforderung werden Referenz, beobachtetes Verhalten, CoreUI-Beleg, eigener Zielumfang, Abhängigkeiten und Abnahme festgehalten. „Dokumentiert“, „im Code geprüft“ und „im Lauf geprüft“ bleiben unterschiedliche Belegstufen.
 
@@ -108,6 +115,20 @@ Das Werkzeugregister beschreibt Eingaben, Ergebnisse, Voraussetzungen, Berechtig
 
 Delegierte Unteraufgaben dürfen unterschiedliche Rollen und eigene Ergebnisse besitzen. Ihre Modellarbeit bleibt seriell. Elternaufgabe, Warteschlangenposition, Fortschritt, Abbruch und Rückgabe müssen sichtbar und nach einem Reload rekonstruierbar sein.
 
+### Teams, Zustandsgraphen und dauerhafte Wiederaufnahme
+
+CrewAI, LangGraph und AutoGen erweitern den Agentenumfang um ausdrücklich abnehmbare Mechanismen. Die [Matrix](COREUI_FEATURE_MATRIX.md) führt sie unter CF-073 bis CF-082; verwandte vorhandene Einträge für Tools, Memory, Ereignisse und Evaluation werden vertieft.
+
+- **Versionierte Agenten-, Aufgaben- und Teamdefinitionen:** Rollen, Ziele, Kontext, Abhängigkeiten sowie Ein- und Ausgabeformate werden nachvollziehbar konfiguriert. Ein laufender Auftrag behält seine Definition. Konfigurationsexport und gespeicherter Ausführungszustand sind unterschiedliche Daten.
+- **Explizite Abläufe:** Schritte, bedingte Übergänge, Schleifen und das Warten auf eines oder mehrere Ergebnisse erhalten definierte Regeln. Zustandsfelder und ihre Zusammenführung sowie Ein-/Ausgaben und Lebensdauer von Unterabläufen sind prüfbar. Mehrere bereite Zweige werden hinsichtlich ihrer Modellarbeit seriell abgearbeitet.
+- **Checkpoints und Wiederaufnahme:** Laufzustand, erledigte Schritte, übernommene Ergebnisse, Versionsbezug und Herkunft werden dauerhaft gespeichert. Nach einem Neustart wird vom bestätigten Stand fortgesetzt. Inkompatible Definitions- oder Zustandsänderungen benötigen einen geprüften Übergang oder einen sichtbar begründeten Stopp.
+- **Replay und neue Laufzweige:** Ein alter Zwischenstand lässt sich untersuchen und als neuer Laufzweig mit geändertem Ergebnis fortführen. Abhängige Folgeergebnisse werden neu berechnet; die ursprüngliche Historie bleibt erhalten. Erneute Modell- oder API-Aufrufe werden vor dem Start kenntlich gemacht. Git-Snapshots allein erfüllen diese Funktion nicht.
+- **Robuste Schritte und Ergebnisprüfung:** Wiederholungen, Fehlerpfade, geordnetes Stoppen und sofortiger Abbruch haben getrennte Regeln. Bereits bestätigte Ergebnisse werden wiederverwendet. Für unklar abgeschlossene externe Aktionen wird zuerst der tatsächliche Zustand geklärt; Checkpoints garantieren keine pauschale Einmalausführung. Schema- und Qualitätsprüfungen dürfen begrenzte Überarbeitung verlangen und dokumentieren ihre Entscheidung.
+- **Allgemeine menschliche Beteiligung:** E.M.B.E.R. kann konkrete Ergebnisse zur Prüfung vorlegen, Rückmeldung speichern und später fortfahren. Freigabe, Ablehnung und Überarbeitung beziehen sich auf die vorgelegte Revision. Bereits ausreichende Auftragsfreigaben gelten fort; eine Qualitätsprüfung ersetzt keine serverseitige Berechtigung.
+- **Teamsteuerung:** Feste oder regel-/modellgestützte Sprecherwahl, zulässige Übergaben, Rückgaben und kombinierte Stoppbedingungen steuern mehrere Rollen. Auch Manager, Auswahlmodelle, Ergebnisprüfer und Testläufe nutzen die eine globale Modellwarteschlange.
+
+P26 bis P28 vertiefen diese Mechanismen auf der Grundlage von P05 bis P08. Die erste Downloadlieferung und die grundlegende Entwicklerumgebung brauchen dafür nicht den gesamten erweiterten Workflowumfang abzuwarten.
+
 ## 6. Echte Entwicklerumgebung
 
 Ein Entwicklungsprojekt braucht einen dauerhaften Arbeitsbereich mit einem stabilen Bezug zu Gespräch, Auftrag und Repository. Der Umfang umfasst:
@@ -125,6 +146,8 @@ Ein Entwicklungsprojekt braucht einen dauerhaften Arbeitsbereich mit einem stabi
 Arbeitsverzeichnis, Prozessumgebung und Berechtigungsgrenze sind getrennte Konzepte. Die konkrete technische Umsetzung wird gegen den vorhandenen PHP-/Worker-Stack geprüft. Der Plan schreibt keine Übernahme der Referenzarchitektur vor.
 
 Die Referenzen [verwaltete Arbeitsstände in OpenClaw](https://github.com/openclaw/openclaw/blob/54417c68199f58e9b78fddff95c1ae6b610845fe/docs/concepts/managed-worktrees.md) und [Open Terminal](https://docs.openwebui.com/features/open-terminal/) begründen getrennte Inventuraufgaben. Funktionen aus Begleitprojekten werden nicht pauschal dem Open-WebUI-Hauptrepository zugeschrieben.
+
+Für Agentenentwicklung kommt in P29 ein eigener visueller Team-/Ablaufeditor mit gleichwertiger deklarativer Ansicht und wiederverwendbaren Komponenten hinzu. Ein Playground führt ausgewählte Definitionen in einem zugeordneten Testarbeitsraum aus und zeigt reale Schritte, Zustandsänderungen, Fehler, Unterbrechungen und Ergebnisvergleiche. Die Ausführungsgrenzen gelten auch dort. Importierte Konfigurationen starten keinen fremden Code allein durch das Öffnen; Zugangsdaten werden als Referenzen auf die eigene Konfiguration behandelt. Ein Testlauf erhält überprüfbare Ergebnisse und denselben Dateiweg wie andere Aufträge. Diese Anforderungen sind in CF-081/082 eingeordnet; der Skill-Lebenszyklus bleibt eine eigene Funktion.
 
 ## 7. Skills, Tools und Plugins
 
@@ -158,11 +181,11 @@ Die Reihenfolge beschreibt technische Abhängigkeiten. Sie setzt keine Veröffen
 |---|---|---|
 | M0: Plan und Inventur | Zusammenhängender Masterplan, Startmatrix, feste Referenzstände und offener Download-Bug | Dokumente sind im Repository erreichbar. Die vollständige Einzelinventur läuft weiter. |
 | M1: Versionsabgleich und Downloads | Alter 0.5.4-Stand ist abgeglichen oder die noch fehlenden Änderungen sind ausdrücklich benannt; gemeinsame Dateiausgabe behebt #29 | Das sind unabhängige Teilaufgaben. Fehlender Altcode blockiert die Downloadkorrektur nicht. Migrationen erst nach Schemaabgleich festlegen; HTML-/ZIP-Abnahme tatsächlich durchführen. |
-| M2: Agentenlauf und Ereignisse | Serielle Laufsteuerung, Werkzeugregister, mehrstufige Ausführung und gespeicherter sichtbarer Fortschritt | Gleichzeitige Anforderungen führen zu höchstens einem aktiven Modellaufruf. Abbruch, Fehler und Reload sind überprüft. |
+| M2: Agentenlauf und Ereignisse | Serielle Laufsteuerung, Werkzeugregister, mehrstufige Ausführung und sichtbarer Fortschritt; P26 bis P28 ergänzen Teams, Graphen, Checkpoints und Reviews | Gleichzeitige Anforderungen führen zu höchstens einem aktiven Modellaufruf. Abbruch, Fehler und Reload sind überprüft; erweiterte Wiederaufnahme und Ergebnisprüfung erhalten eigene Abnahmen. |
 | M3: Entwicklerumgebung | Persistente Projekte, Dateieditor, Terminal, Prozesse, Vorschau, Git und Prüfungen | Ein Beispielprojekt vollständig bearbeiten, ausführen, korrigieren, prüfen und als nutzbares Ergebnis exportieren. |
 | M4: Skills und Plugins | Vollständiger Skill-Lebenszyklus und installierbare Fähigkeitserweiterungen | Einen Skill mit Ressourcen erstellen, versionieren, in einem neuen Lauf verwenden und auf eine frühere Version zurücksetzen. |
 | M5: Browser, Wissen und Memory | Browser-Action-Plan sowie systematischer Wissens- und Kontextausbau | #25 schrittweise abnehmen; Quellen und Kontextzuordnung sowie echte Übergabe/Wiederaufnahme prüfen. |
-| M6: Breite Funktionen | Medien, Automationen, Kanäle, Zusammenarbeit, Verwaltung und ergänzende Clients | Jede Funktion durch Matrixeinträge und passende End-to-End-Szenarien nachweisen. Hintergrundarbeit respektiert dieselbe Modellwarteschlange. |
+| M6: Breite Funktionen | Medien, Automationen, Kanäle, Zusammenarbeit, Verwaltung, ergänzende Clients und visueller Agenten-/Workflowbereich | Jede Funktion durch Matrixeinträge und passende End-to-End-Szenarien nachweisen. Hintergrundarbeit und Playground respektieren dieselbe Modellwarteschlange. |
 | M7: Abdeckung und Release | Vollständige Funktionsinventur abgleichen und tatsächlich implementierten Stand paketieren | Offene Lücken explizit ausweisen. Quellstand, Migrationen, Releasearchiv, SHA-256, Installer, Changelog und Übergabe müssen denselben Stand beschreiben. |
 
 M7 begleitet auch frühere Teilreleases als Freigabedisziplin. Eine sichere, nützliche Teilfunktion muss nicht auf die gesamte Referenzabdeckung warten.
