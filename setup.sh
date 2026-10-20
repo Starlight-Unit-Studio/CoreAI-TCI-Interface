@@ -4,17 +4,20 @@ IFS=$'\n\t'
 umask 027
 
 REPOSITORY='Starlight-Unit-Studio/coreui'
+# Ein und derselbe One-Liner installiert und aktualisiert den jeweils gemergten
+# Entwicklungsstand. Das letzte veroeffentlichte und gepruefte ZIP bleibt ueber
+# COREUI_SETUP_SOURCE=release explizit verfuegbar.
+SOURCE_MODE="${COREUI_SETUP_SOURCE:-main}"
 VERSION='0.5.3-alpha'
 TAG="v${VERSION}"
 ARCHIVE='EMBER_COREUI_0_5_3_ALPHA.zip'
 CHECKSUM="${ARCHIVE}.sha256"
 PACKAGE_ROOT='EMBER_COREUI_0_5_3_ALPHA'
 TARGET_DIR='/opt/ember-coreui'
-# Release-Paare liegen absichtlich gemeinsam im Repository. Dadurch bleibt die
-# Blitzinstallation nutzbar, ohne dass ZIP und SHA-Datei aus zwei verschiedenen
-# oder veralteten GitHub-Releases gemischt werden koennen.
 DOWNLOAD_BASE="https://raw.githubusercontent.com/${REPOSITORY}/main/releases/${TAG}"
 TEMP_DIR=''
+SOURCE_DIR=''
+SOURCE_COMMIT=''
 
 log() {
   printf '[Ember CoreUI Setup] %s\n' "$*"
@@ -63,42 +66,64 @@ cleanup_legacy_release_dirs() {
 }
 
 [[ "${EUID:-$(id -u)}" -eq 0 ]] || die 'Bitte das heruntergeladene Setup mit sudo bash ausfuehren.'
+case "$SOURCE_MODE" in
+  main|release) ;;
+  *) die 'COREUI_SETUP_SOURCE muss main oder release sein.' ;;
+esac
 
 packages=()
 command -v curl >/dev/null 2>&1 || packages+=(ca-certificates curl)
 command -v sha256sum >/dev/null 2>&1 || packages+=(coreutils)
 command -v unzip >/dev/null 2>&1 || packages+=(unzip)
 command -v rsync >/dev/null 2>&1 || packages+=(rsync)
+if [[ "$SOURCE_MODE" == 'main' ]]; then
+  command -v git >/dev/null 2>&1 || packages+=(git)
+fi
 if (( ${#packages[@]} > 0 )); then
-  command -v apt-get >/dev/null 2>&1 || die 'curl, sha256sum, unzip oder rsync fehlt und apt-get ist nicht verfuegbar.'
+  command -v apt-get >/dev/null 2>&1 || die 'Benötigte Installationswerkzeuge fehlen und apt-get ist nicht verfuegbar.'
   export DEBIAN_FRONTEND=noninteractive
   apt-get update
   apt-get install -y "${packages[@]}"
 fi
 
 TEMP_DIR="$(mktemp -d /tmp/ember-coreui-setup.XXXXXX)"
-log "Lade Ember CoreUI ${VERSION} in ein temporaeres Verzeichnis."
-curl --fail --location --show-error --silent --retry 3 --retry-all-errors \
-  --output "$TEMP_DIR/$ARCHIVE" "$DOWNLOAD_BASE/$ARCHIVE"
-curl --fail --location --show-error --silent --retry 3 --retry-all-errors \
-  --output "$TEMP_DIR/$CHECKSUM" "$DOWNLOAD_BASE/$CHECKSUM"
+if [[ "$SOURCE_MODE" == 'main' ]]; then
+  log 'Lade den neuesten Ember CoreUI-Entwicklungsstand aus main.'
+  git clone --quiet --depth 1 --single-branch --branch main -- \
+    "https://github.com/${REPOSITORY}.git" "$TEMP_DIR/source" \
+    || die 'GitHub-Quellstand konnte nicht geladen werden; die Installation bleibt unveraendert.'
+  SOURCE_DIR="$TEMP_DIR/source"
+  SOURCE_COMMIT="$(git -C "$SOURCE_DIR" rev-parse --verify HEAD)" \
+    || die 'Der Quellstand enthaelt keinen gueltigen Commit.'
+  [[ "$SOURCE_COMMIT" =~ ^[a-f0-9]{40}$ ]] || die 'Ungueltiger Git-Commit.'
+  for required in api/console_artifact.php api/console_artifacts.php \
+      database/migrations/011_console_artifacts.sql; do
+    [[ -s "$SOURCE_DIR/$required" ]] || die "Unvollstaendiger main-Quellstand: $required fehlt."
+  done
+  log "Aktueller GitHub-Commit: $SOURCE_COMMIT"
+else
+  log "Lade das unveraenderte, gepruefte Ember CoreUI-Release ${VERSION}."
+  curl --fail --location --show-error --silent --retry 3 --retry-all-errors \
+    --output "$TEMP_DIR/$ARCHIVE" "$DOWNLOAD_BASE/$ARCHIVE"
+  curl --fail --location --show-error --silent --retry 3 --retry-all-errors \
+    --output "$TEMP_DIR/$CHECKSUM" "$DOWNLOAD_BASE/$CHECKSUM"
+  (
+    cd "$TEMP_DIR"
+    sha256sum -c "$CHECKSUM"
+  )
+  unzip -q "$TEMP_DIR/$ARCHIVE" -d "$TEMP_DIR/unpacked"
+  SOURCE_DIR="$TEMP_DIR/unpacked/$PACKAGE_ROOT"
+  [[ "$(tr -d '[:space:]' < "$SOURCE_DIR/VERSION")" == "$VERSION" ]] \
+    || die 'Paketversion und Setup-Version stimmen nicht ueberein.'
+fi
 
-(
-  cd "$TEMP_DIR"
-  sha256sum -c "$CHECKSUM"
-)
-
-unzip -q "$TEMP_DIR/$ARCHIVE" -d "$TEMP_DIR/unpacked"
-SOURCE_DIR="$TEMP_DIR/unpacked/$PACKAGE_ROOT"
 for required in VERSION README.md compose.yaml scripts/install.sh scripts/stack.sh scripts/preflight.sh; do
-  [[ -s "$SOURCE_DIR/$required" ]] || die "Das gepruefte Paket ist unvollstaendig: $required fehlt."
+  [[ -s "$SOURCE_DIR/$required" ]] || die "Der Quellstand ist unvollstaendig: $required fehlt."
 done
-[[ "$(tr -d '[:space:]' < "$SOURCE_DIR/VERSION")" == "$VERSION" ]] \
-  || die 'Paketversion und Setup-Version stimmen nicht ueberein.'
 
 if find "$SOURCE_DIR" -type f \
     \( -iname '*master*bibel*' -o -iname '*kompendium*v6*' \) -print -quit | grep -q .; then
-  die 'Das Release enthaelt gesperrtes privates Studio-Material.'
+  die 'Das Installationspaket enthaelt gesperrtes privates Studio-Material.'
 fi
 
 existing=0
@@ -110,6 +135,9 @@ fi
 install -d -m 0750 "$TARGET_DIR"
 cleanup_legacy_release_dirs
 rsync -a \
+  --exclude='.git/' \
+  --exclude='.github/' \
+  --exclude='releases/' \
   --exclude='api/config.local.php' \
   --exclude='var/' \
   --exclude='logs/' \
@@ -132,7 +160,7 @@ chmod 0750 \
 cd "$TARGET_DIR"
 if (( existing == 1 )); then
   COREUI_SKIP_BOOTSTRAP=1 ./scripts/install.sh
-elif [[ -r /dev/tty && -w /dev/tty ]]; then
+elif [[ -t 0 && -r /dev/tty && -w /dev/tty ]]; then
   ./scripts/install.sh </dev/tty
 else
   [[ -n "${COREUI_ADMIN_EMAIL:-}" && -n "${COREUI_ADMIN_PASSWORD:-}" ]] \
@@ -141,4 +169,13 @@ else
 fi
 
 ./scripts/preflight.sh
-log "Ember CoreUI ${VERSION} wurde geprueft installiert."
+if [[ "$SOURCE_MODE" == 'main' ]]; then
+  [[ ! -L "$TARGET_DIR/var/dev_source_commit" ]] || die 'Unsicherer Entwicklerstand-Markierungspfad.'
+  printf '%s\n' "$SOURCE_COMMIT" > "$TARGET_DIR/var/dev_source_commit"
+  chmod 0640 "$TARGET_DIR/var/dev_source_commit"
+  log "Entwicklerstand erfolgreich installiert: $SOURCE_COMMIT"
+  log "Die Produkt-VERSION $VERSION bleibt bis zum naechsten offiziellen Release unveraendert."
+else
+  rm -f -- "$TARGET_DIR/var/dev_source_commit"
+  log "Ember CoreUI Release ${VERSION} wurde geprueft installiert."
+fi
