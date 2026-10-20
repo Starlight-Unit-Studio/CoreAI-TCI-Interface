@@ -79,6 +79,8 @@ P05 bis P08 verbinden Laufsteuerung, sichtbare Arbeit, Werkzeuge und Chat. Der A
 
 **Zwischenstand 0.5.7 (P06, erste Teilumsetzung):** Der vorhandene Python- und Modellpfad erzeugt kontogebundene, antwortbezogene Arbeitsereignisse mit echter Ausfuehrungs- und Fehlerdiagnose (Migration 012). SSE zeigt diese live, nach Reload werden sie authentifiziert nachgeladen. Vollstaendige P05-Laufsteuerung, echte dauerhafte Plaene, Provider-Reasoning und allgemeine Werkzeugzyklen sind weiterhin offen. P06 ist damit **nicht vollstaendig abgenommen**; zuerst mit gpt-oss:120b und dem Fehlerfall aus Issue #29 live validieren.
 
+**Folgestand 0.5.8:** Die neue Arbeitschronik ist nur noch ein inline Element der E.M.B.E.R.-Nachricht. Authentifizierte Antwort-History enthaelt echte Ereignisse, die zuvor doppelte Anzeige und Zusatzabfrage im Chat entfallen. Bei generierten Dateien prueft der Worker jetzt auch Ausgaben ausserhalb des vorgesehenen Sandbox-Verzeichnisses und vollstaendige HTML-stdout-Ausgaben, bevor er eine Datei zur verifizierten Aufbewahrung uebernimmt. Bei fehlenden Ausgabebytes kann ein serieller Korrekturlauf erfolgen. Die echte Live-Abnahme von Issue #29 und die volle P06-Agentenabnahme bleiben ausdruecklich offen.
+
 ### M2: Ergänzende Lieferungen für Teams und dauerhafte Workflows
 
 P26 bis P28 erweitern die Agentenbasis um die durch CrewAI, LangGraph und AutoGen konkretisierten Mechanismen. Die vorhandenen Paketnummern bleiben erhalten; die neuen Nummern sind keine starre chronologische Reihenfolge. **P02 bis P04 bleiben die erste Lieferung.** P09 bis P11 können auf der abgenommenen Basis aus P05 bis P08 starten, ohne den vollständigen erweiterten Workflowumfang abzuwarten.

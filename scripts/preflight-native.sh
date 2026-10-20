@@ -90,6 +90,7 @@ UI_FILES=(
   api/console_work_store.php
   js/coreui-work-events.js
   scripts/work-events-selftest.php
+  scripts/workspace-output-selftest.py
   api/console_artifact.php
   api/console_artifacts.php
   api/console_data_link_bridge.php
@@ -103,8 +104,8 @@ UI_FILES=(
   scripts/markdown-selftest.js
   scripts/branding-license-selftest.py
   scripts/cache-bust.py
-  docs/changelogs-txt/CHANGELOG_0_5_7.txt
-  docs/UEBERGABEPROTOKOLL_0_5_7.txt
+  docs/changelogs-txt/CHANGELOG_0_5_8.txt
+  docs/UEBERGABEPROTOKOLL_0_5_8.txt
   images/starlight_unit_studios_logo_original.png
 )
 for ui_file in "${UI_FILES[@]}"; do
@@ -112,6 +113,12 @@ for ui_file in "${UI_FILES[@]}"; do
     fail "Ember CoreUI-Oberflaechendatei fehlt oder ist leer: $ui_file"
   fi
 done
+
+if python3 "$PROJECT_ROOT/scripts/workspace-output-selftest.py" >/dev/null 2>&1; then
+  ok 'Python-Worker: gerettete HTML/ZIP-Dateien und sichere Ausgabepfade geprueft.'
+else
+  fail 'Python-Ausgabedatei-Selbsttest fehlgeschlagen.'
+fi
 
 if python3 "$PROJECT_ROOT/scripts/cache-bust.py" --root "$PROJECT_ROOT" --verify > /dev/null; then
   ok 'HTML-Assets verwenden aktuelle numerische Content-Cache-Schluessel.'
