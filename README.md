@@ -11,9 +11,9 @@ Current version: `0.5.3-alpha`
 
 ## Development roadmap
 
-The [implementation roadmap](ROADMAP.md) organizes the work into 25 delivery packages with dependencies, acceptance criteria, and a concrete first implementation sequence for generated file downloads.
+The [implementation roadmap](ROADMAP.md) organizes the work into 29 delivery packages with dependencies, acceptance criteria, and a concrete first implementation sequence for generated file downloads.
 
-The [Ember CoreUI and E.M.B.E.R. master plan](docs/COREUI_MASTERPLAN.md) records the planned full agent, developer workspace, skill system, and independent implementation of the functionality inventoried from both OpenClaw and Open WebUI. The [feature matrix](docs/COREUI_FEATURE_MATRIX.md) tracks the reference coverage, existing foundations, open work, and acceptance criteria. These documents describe planned development, not features already shipped.
+The [Ember CoreUI and E.M.B.E.R. master plan](docs/COREUI_MASTERPLAN.md) records the planned full agent, developer workspace, skill system, and independent implementation of the functionality inventoried from OpenClaw, Open WebUI, CrewAI, LangGraph, and Microsoft AutoGen. The [feature matrix](docs/COREUI_FEATURE_MATRIX.md) tracks 82 stable requirements, reference coverage, existing foundations, open work, and acceptance criteria. The scope includes agent teams, stateful workflows, durable checkpoints, human review, result validation, and a visual workflow playground. These documents describe planned development, not features already shipped; the full reference inventory remains open.
 
 Generated HTML, ZIP, and other output files must become real, persistent chat downloads. This remains an open, early implementation priority in [issue #29](https://github.com/Starlight-Unit-Studio/coreui/issues/29).
 
