@@ -744,43 +744,15 @@
       text = safeReplyText(text);
     }
 
-    // Saved operational steps are reloaded from the scoped database endpoint.
-    // The legacy canned thinking strings are not shown for new P06 turns.
-    var hasWorkPanel = role === 'ember' && record && Number(record.reply_to_id) > 0
-      && window.CoreUIWorkEvents && typeof window.CoreUIWorkEvents.create === 'function';
-    if (hasWorkPanel) {
-      content.appendChild(window.CoreUIWorkEvents.create({
-        sessionId: record.session_id || state.activeSessionId,
-        turnId: Number(record.reply_to_id),
-        responseId: Number(record.id),
-        apiBase: API_BASE,
+    // One inline timeline per saved answer, from the already authenticated
+    // message-history response. No second network fetch or duplicate chat row.
+    if (role === 'ember' && record && Array.isArray(record.work_events)
+        && record.work_events.length > 0 && window.CoreUIWorkEvents) {
+      var workTimeline = window.CoreUIWorkEvents.create({
+        events: record.work_events,
         expanded: uiPreferences.thinkingExpanded === true
-      }));
-    }
-    if (!hasWorkPanel && role === 'ember' && thinkingText && thinkingText.trim()) {
-      if (state.thinkingPanelEl) {
-        // Laufendes Panel befuellen und als abgeschlossen markieren (Toggle: DENKSTATUS)
-        var existingBody = state.thinkingPanelEl.querySelector('.thinking-body');
-        if (existingBody) existingBody.textContent = thinkingText;
-        var runToggle = state.thinkingPanelEl.querySelector('.thinking-toggle');
-        if (runToggle) {
-          runToggle.classList.remove('running');
-          if (uiPreferences.thinkingExpanded === true) {
-            runToggle.classList.add('open');
-            runToggle.setAttribute('aria-expanded', 'true');
-            if (existingBody) existingBody.classList.add('open');
-          }
-          var runIcon = runToggle.querySelector('.thinking-toggle-icon');
-          var runLabel = runToggle.querySelector('span:last-child');
-          if (runIcon) runIcon.textContent = '▶';
-          if (runLabel) runLabel.textContent = 'DENKSTATUS';
-        }
-        state.thinkingPanelEl = null;
-      } else {
-        // History: neue Panel-Row vor dieser Bubble einfügen
-        var tp = buildThinkingPanel(thinkingText);
-        content.appendChild(tp);
-      }
+      });
+      if (workTimeline) content.appendChild(workTimeline);
     }
 
     var nameEl = document.createElement('div');
@@ -1247,61 +1219,29 @@
     return panel;
   }
 
-  // Sicherer Status-Platzhalter waehrend Ember antwortet
+  // A live timeline belongs to the SAME assistant message as the typing state.
+  // It is replaced by the persisted response row, never kept as a second row.
   function showThinkingRunning() {
     if (state.typingEl) return;
-
-    // Thinking-Panel als eigene persistente Row (bleibt nach Antwort)
-    var thinkRow = document.createElement('div');
-    thinkRow.className = 'msg-row ember';
-    var thinkAvatar = document.createElement('div');
-    thinkAvatar.className = 'msg-avatar';
-    applyMessageAvatar(thinkAvatar, 'ember', state.assistantName || 'Ember');
-    thinkRow.appendChild(thinkAvatar);
-    var thinkContent = document.createElement('div');
-    thinkContent.className = 'msg-content';
-    var panel = document.createElement('div');
-    panel.className = 'thinking-panel';
-    var toggle = document.createElement('button');
-    toggle.className = 'thinking-toggle running open';
-    toggle.setAttribute('aria-expanded', 'true');
-    var icon = document.createElement('span');
-    icon.className = 'thinking-toggle-icon';
-    icon.textContent = '◌';
-    var label = document.createElement('span');
-    label.textContent = 'ARBEITSSCHRITTE LIVE';
-    toggle.appendChild(icon);
-    toggle.appendChild(label);
-    var body = document.createElement('div');
-    body.className = 'thinking-body open';
-    body.textContent = 'Warte auf bestaetigte Arbeitsschritte ...';
-    toggle.addEventListener('click', function() {
-      var isOpen = body.classList.contains('open');
-      body.classList.toggle('open', !isOpen);
-      toggle.classList.toggle('open', !isOpen);
-      toggle.setAttribute('aria-expanded', String(!isOpen));
-      scrollToBottom();
-    });
-    panel.appendChild(toggle);
-    panel.appendChild(body);
-    thinkContent.appendChild(panel);
-    thinkRow.appendChild(thinkContent);
-    messagesInner.appendChild(thinkRow);
-    state.thinkingPanelEl = panel;
-
-    // Separate Typing-Row (wird nach Antwort entfernt)
     var row = document.createElement('div');
     row.className = 'msg-row ember';
     var avatar = document.createElement('div');
     avatar.className = 'msg-avatar';
     applyMessageAvatar(avatar, 'ember', state.assistantName || 'Ember');
     row.appendChild(avatar);
+
     var content = document.createElement('div');
     content.className = 'msg-content';
     var nameEl = document.createElement('div');
     nameEl.className = 'msg-name';
     nameEl.textContent = (state.assistantName || 'Ember').toUpperCase();
     content.appendChild(nameEl);
+
+    state.thinkingPanelEl = window.CoreUIWorkEvents
+      ? window.CoreUIWorkEvents.create({live:true,expanded:true})
+      : null;
+    if (state.thinkingPanelEl) content.appendChild(state.thinkingPanelEl);
+
     var bubble = document.createElement('div');
     bubble.className = 'msg-bubble';
     bubble.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
@@ -1317,29 +1257,11 @@
   }
 
   function removeTypingIndicator() {
-    // Typing-Row komplett entfernen - Thinking-Panel bleibt als eigene Row erhalten
     if (state.typingEl && state.typingEl.parentNode) {
       state.typingEl.parentNode.removeChild(state.typingEl);
     }
     state.typingEl = null;
-    // Running-Panel auf abgeschlossen setzen
-    if (state.thinkingPanelEl) {
-      var toggle = state.thinkingPanelEl.querySelector('.thinking-toggle');
-      var body = state.thinkingPanelEl.querySelector('.thinking-body');
-      if (toggle) {
-        toggle.classList.remove('running');
-        if (uiPreferences.thinkingExpanded === true) {
-          toggle.classList.add('open');
-          toggle.setAttribute('aria-expanded', 'true');
-          if (body) body.classList.add('open');
-        }
-        var icon = toggle.querySelector('.thinking-toggle-icon');
-        var label = toggle.querySelector('span:last-child');
-        if (icon) icon.textContent = '▶';
-        if (label) label.textContent = 'DENKSTATUS';
-      }
-      state.thinkingPanelEl = null;
-    }
+    state.thinkingPanelEl = null;
   }
 
   function scrollToBottom() {
@@ -1877,7 +1799,7 @@
 
     function panelBody() {
       return isActiveSession(sessionId) && state.thinkingPanelEl
-        ? state.thinkingPanelEl.querySelector('.thinking-body')
+        ? state.thinkingPanelEl.querySelector('.work-body')
         : null;
     }
     function fallbackPoll() {
@@ -2023,6 +1945,7 @@
         message: text,
         is_ember: true,
         thinking_content: thinking,
+        work_events: data && Array.isArray(data.work_events) ? data.work_events : [],
         generation: data && data.generation_mode ? {
           mode: data.generation_mode,
           source_response_id: data.source_response_id || 0
@@ -2043,35 +1966,8 @@
     }
     stopCountdown();
 
-    // Thinking-Panel finalisieren
-    if (state.thinkingPanelEl) {
-      if (window.CoreUIWorkEvents && state.thinkingPanelEl.querySelector('.work-entry')) {
-        // Keep genuine work steps until the persisted history panel replaces them.
-        var liveToggle = state.thinkingPanelEl.querySelector('.thinking-toggle');
-        if (liveToggle) liveToggle.classList.remove('running');
-      } else if (thinking && !window.CoreUIWorkEvents) {
-        var body = state.thinkingPanelEl.querySelector('.thinking-body');
-        if (body) body.textContent = thinking;
-        var toggle = state.thinkingPanelEl.querySelector('.thinking-toggle');
-        if (toggle) {
-          toggle.classList.remove('running');
-          if (uiPreferences.thinkingExpanded === true) {
-            toggle.classList.add('open');
-            toggle.setAttribute('aria-expanded', 'true');
-            if (body) body.classList.add('open');
-          }
-          var icon  = toggle.querySelector('.thinking-toggle-icon');
-          var label = toggle.querySelector('span:last-child');
-          if (icon)  icon.textContent  = '▶';
-          if (label) label.textContent = 'DENKSTATUS';
-        }
-      } else {
-        // Kein Thinking -> leere Panel-Row entfernen
-        var prow = state.thinkingPanelEl.parentNode ? state.thinkingPanelEl.parentNode.parentNode : null;
-        if (prow && prow.parentNode) prow.parentNode.removeChild(prow);
-      }
-      state.thinkingPanelEl = null;
-    }
+    // The live timeline is part of the typing row. renderHistory() replaces it
+    // with the saved reply and the matching immutable work events (no duplicate).
 
     // Eine gespeicherte Antwort wird aus dem sitzungseigenen Cache neu aufgebaut.
     // Dadurch verwenden Live-Antwort und History exakt denselben sicheren

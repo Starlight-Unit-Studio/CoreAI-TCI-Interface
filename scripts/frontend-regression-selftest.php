@@ -28,6 +28,8 @@ try {
   $console = frontend_test_read($root . '/js/console-app.js');
   $markdown = frontend_test_read($root . '/js/coreui-markdown.js');
   $css = frontend_test_read($root . '/css/console.css');
+  $workJs = frontend_test_read($root . '/js/coreui-work-events.js');
+  $messageApi = frontend_test_read($root . '/api/console_messages.php');
   $profileStore = frontend_test_read($root . '/api/profile_store.php');
   $profileMedia = frontend_test_read($root . '/api/profile_media.php');
 
@@ -93,6 +95,25 @@ try {
   frontend_test_assert(
     str_contains($css, '.composer-edit-state') && str_contains($css, '.msg-variant-nav'),
     'Darstellung fuer Bearbeitung oder Antwortvarianten fehlt.'
+  );
+
+  frontend_test_assert(
+    !str_contains($console, 'var thinkRow =')
+      && str_contains($console, "querySelector('.work-body')")
+      && str_contains($console, 'events: record.work_events'),
+    'Live-/History-Arbeitsschritte werden doppelt dargestellt.'
+  );
+  frontend_test_assert(
+    str_contains($messageApi, "coreui_work_map_for_responses(")
+      && str_contains($messageApi, "\$row['work_events']")
+      && !str_contains($workJs, 'fetch('),
+    'Arbeitsereignisse werden nicht ueber die authentifizierte Nachrichten-Historie transportiert.'
+  );
+  frontend_test_assert(
+    str_contains($css, '.msg-row.ember .msg-content')
+      && str_contains($css, '.msg-row.ember .msg-bubble')
+      && str_contains($css, '.msg-row.ember .work-panel'),
+    'Sprechblasenfreier Ember-Chat oder inline Arbeitsverlauf fehlt.'
   );
 
   fwrite(STDOUT, "Frontend-Regressions-Selftest OK: Navigation, Avatare, Markdown, Bearbeitung, Warteschlange und Varianten sind fehlersicher verdrahtet.\n");

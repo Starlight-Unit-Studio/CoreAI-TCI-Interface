@@ -2,6 +2,15 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.8 - 20.10.2026
+
+- Chatlayout wie bei ChatGPT/Claude: Nur Nutzernachrichten behalten Sprechblasen. E.M.B.E.R. antwortet als vollbreiter, freier Markdown-Text; auch auf Android. Der Live-Arbeitsverlauf ist Teil derselben Nachricht, kein zweiter "DENKSTATUS"-Kasten mehr.
+- P06-Verlauf wird in einem einzigen Schritt mit den authentifizierten `console_messages.php`-Antwortdaten geladen. Die fehlschlagende Extraabfrage fuer jede Antwort entfaellt aus dem Chat. SSE liefert die Ereignisse ebenfalls beim Abschluss. Ereignisse bleiben nach Benutzer, Sitzung und Antwort getrennt.
+- Python-Worker rettet regulaere Dateien aus dem eigenen isolierten Arbeitsverzeichnis, die Cloud-Modelle abweichend von `EMBER_OUTPUT_DIR` abgelegt haben. Vollstaendige HTML-stdout-Ausgaben koennen ebenfalls zu echten Downloads werden, aber nur ueber den vorhandenen validierten Artefaktpfad.
+- Das Ausbleiben einer Ausgabedatei loest bei expliziter Download-Anfrage auch nach Exitcode 0 einen begrenzten Korrekturversuch aus; vorheriger Python-Code wird dabei beruecksichtigt. Keine erfundenen Downloadlinks, keine parallelen Modellaufrufe.
+- Sicherer Offline-Workspace-/HTML-Test, Frontend- und Versionspruefer sowie 0.5.8-Release-TXT/Uebergabe. One-Liner unveraendert, GitHub Actions bleiben aus.
+- Live-Abnahme mit `gpt-oss:120b` und echten HTML-/ZIP-Downloads auf Android noch offen, Issue #29 bleibt bestehen.
+
 ## 0.5.7 - 20.10.2026
 
 - P06-Ausbaustufe: Der bisherige synthetische Denkstatus wird bei neuen Console-Antworten durch gespeicherte, echte Arbeitsschritte abgeloest. Sie werden via SSE live gezeigt und nach Seitenreload aus der Datenbank nachgeladen.

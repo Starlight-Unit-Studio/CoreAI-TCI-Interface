@@ -48,7 +48,10 @@ import subprocess
 import tempfile
 import traceback
 
-from ember_artifacts import collect_outputs, discard_outputs, empty_manifest
+from ember_artifacts import (
+    collect_outputs, discard_outputs, empty_manifest,
+    recover_workspace_outputs, recover_stdout_html,
+)
 
 try:
     import pymysql
@@ -285,7 +288,24 @@ def run_in_container(cfg, job_id, code, *, publish_outputs=False):
             err = "sandbox_stop_unconfirmed; temporary work retained for operator cleanup"
             manifest["warnings"].append("sandbox_stop_unconfirmed")
         elif publish_outputs:
+            recovered = 0
+            stdout_recovered = False
+            try:
+                # Many cloud coding models write ./mini_game.html or
+                # ./project/index.html despite the designated output path.
+                # Inspect only the stopped, isolated sandbox work directory.
+                recovered = recover_workspace_outputs(sandbox, output)
+                if recovered == 0 and rc == 0:
+                    stdout_recovered = recover_stdout_html(stdout, output)
+            except OSError:
+                manifest["warnings"].append("workspace_recovery_unavailable")
+            saved_warnings = list(manifest["warnings"])
             manifest = collect_outputs(output, base, int(job_id), partial=bool(err or rc != 0))
+            manifest["warnings"].extend(saved_warnings)
+            if recovered:
+                manifest["warnings"].append("workspace_output_recovered")
+            if stdout_recovered:
+                manifest["warnings"].append("stdout_html_recovered")
     finally:
         if stopped:
             shutil.rmtree(workdir, ignore_errors=True)

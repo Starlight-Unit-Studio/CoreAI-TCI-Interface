@@ -5942,3 +5942,134 @@ audio.msg-image {
     display: none;
   }
 }
+
+
+/* v0.5.8: ChatGPT/Claude-style reading flow. Only user messages are bubbles.
+   Assistant markdown and live/persisted tool steps occupy the full chat column. */
+.msg-row.ember .msg-content {
+  flex: 1 1 0;
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  align-items: stretch;
+}
+.msg-row.ember .msg-name {
+  margin: 0 0 7px;
+}
+.msg-row.ember .msg-bubble,
+.msg-row.system .msg-bubble {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  clip-path: none;
+  overflow-wrap: anywhere;
+}
+.msg-row.ember .msg-bubble::before,
+.msg-row.system .msg-bubble::before {
+  display: none;
+}
+.msg-row.ember .msg-markdown {
+  width: 100%;
+  min-width: 0;
+}
+.msg-row.ember .msg-markdown pre,
+.msg-row.ember .md-codeblock {
+  max-width: 100%;
+}
+/* The single, inline work timeline is not a panel, card or chat bubble. */
+.msg-row.ember .work-panel {
+  width: 100%;
+  margin: 2px 0 15px;
+  border: 0;
+  border-radius: 0;
+  clip-path: none;
+  overflow: visible;
+  background: transparent;
+  box-shadow: none;
+}
+.msg-row.ember .work-toggle {
+  width: max-content;
+  max-width: 100%;
+  min-height: 30px;
+  padding: 3px 0;
+  border: 0;
+  background: transparent;
+  color: #3869bd;
+  font: 600 12px "Rajdhani", sans-serif;
+  letter-spacing: .025em;
+  text-transform: none;
+  gap: 7px;
+}
+.msg-row.ember .work-toggle:hover {
+  color: #214c96;
+  text-decoration: underline;
+}
+.msg-row.ember .work-body {
+  max-height: none;
+  overflow: visible;
+  padding: 8px 0 2px 6px;
+  border: 0;
+  background: transparent;
+}
+.msg-row.ember .work-body[hidden] { display: none; }
+.msg-row.ember .work-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding-left: 6px;
+  border-left: 1px solid rgba(91,146,255,.20);
+}
+.msg-row.ember .work-entry {
+  display: grid;
+  grid-template-columns: 24px minmax(0,1fr) auto;
+  align-items: start;
+  gap: 7px;
+  padding: 7px 4px;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.msg-row.ember .work-entry.work-error { border: 0; }
+.msg-row.ember .work-state {
+  min-width: 21px;
+  height: 21px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  font-size: 13px;
+}
+.msg-row.ember .work-entry.work-running .work-state { animation: none; }
+.msg-row.ember .work-title {
+  font: 500 13px/1.45 "Rajdhani", sans-serif;
+}
+.msg-row.ember .work-time {
+  align-self: center;
+  color: #7e8b9f;
+}
+.msg-row.ember .work-detail {
+  margin-top: 3px;
+}
+.msg-row.ember .work-detail dl {
+  padding: 5px 0 0;
+  margin: 3px 0;
+}
+.msg-row.ember .work-empty {
+  margin: 0;
+  padding: 4px;
+}
+@media (max-width: 620px) {
+  .msg-row.ember .msg-content { max-width: calc(100% - 47px); }
+  .msg-row.ember .work-entry { grid-template-columns: 21px minmax(0,1fr); }
+  .msg-row.ember .work-time { grid-column: 2; }
+}
+@media (max-width: 420px) {
+  .msg-row.ember .msg-content { max-width: calc(100% - 43px); }
+}

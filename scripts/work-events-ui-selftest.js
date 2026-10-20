@@ -2,43 +2,84 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const path = require('node:path');
+
 class Element {
-  constructor(tag) { this.tag=tag; this.children=[]; this.attrs={}; this.className=''; this.handlers={}; this.hidden=false; this._text=''; }
-  set textContent(value) { this._text=String(value); this.children=[]; }
-  get textContent() { return this._text+this.children.map(x=>x.textContent).join(''); }
-  appendChild(child) { this.children.push(child); return child; }
-  setAttribute(k,v) { this.attrs[k]=String(v); }
-  addEventListener(name,fn) {this.handlers[name]=fn;}
-  querySelector(query) {
-    if(query[0]==='.') {let cl=query.slice(1); if(this.className.split(' ').includes(cl))return this;}
-    if(query.startsWith('[data-work-id=')) {let id=query.match(/"([^"]+)"/)[1]; if(this.attrs['data-work-id']===id)return this;}
-    for(let x of this.children){let found=x.querySelector(query); if(found)return found;}
+  constructor(tag) {
+    this.tag = tag;
+    this.children = [];
+    this.attributes = {};
+    this.className = '';
+    this.handlers = {};
+    this.hidden = false;
+    this._text = '';
+  }
+  set textContent(text) {
+    this._text = String(text);
+    this.children = [];
+  }
+  get textContent() {
+    return this._text + this.children.map(child => child.textContent).join('');
+  }
+  appendChild(child) {
+    this.children.push(child);
+    return child;
+  }
+  setAttribute(name, value) { this.attributes[name] = String(value); }
+  addEventListener(name, handler) { this.handlers[name] = handler; }
+  querySelector(selector) {
+    if (selector.startsWith('.')
+        && this.className.split(' ').includes(selector.slice(1))) return this;
+    if (selector.startsWith('[data-work-id=')
+        && this.attributes['data-work-id'] === selector.match(/"([^"]+)"/)[1]) return this;
+    for (const child of this.children) {
+      const result = child.querySelector(selector);
+      if (result) return result;
+    }
     return null;
   }
-  get firstChild(){return this.children[0];}
-  removeChild(c){this.children.splice(this.children.indexOf(c),1);}
+  get firstChild() { return this.children[0]; }
+  removeChild(child) { this.children.splice(this.children.indexOf(child), 1); }
 }
-const calls=[];
-const sandbox={window:{},document:{createElement:tag=>new Element(tag)},fetch:(url)=>{calls.push(url);return Promise.resolve({ok:true,json:()=>Promise.resolve({ok:true,events:[{id:2,kind:'tool',state:'error',title:'Python failed',meta:{error_type:'FileNotFoundError',exit_code:1},time:'23:10:00'}]})})}};
-vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../js/coreui-work-events.js'),'utf8'),sandbox);
-const w=sandbox.window.CoreUIWorkEvents;
-assert.equal(typeof w.create,'function');
-const body=new Element('div');
-w.add(body,{id:1,kind:'tool',state:'error',title:'<img src=x onerror=alert(1)>',meta:{stderr:'PASSWORD=123',error_type:'FileNotFoundError'}});
-assert.equal(body.querySelector('.work-entries').children.length,1);
-assert.equal(body.textContent.includes('<img src=x onerror=alert(1)>'),true);
-assert.equal(body.textContent.includes('PASSWORD=123'),false);
-w.add(body,{id:1,kind:'tool',state:'error',title:'duplicate'});
-assert.equal(body.querySelector('.work-entries').children.length,1);
-const panel=w.create({sessionId:'abc',turnId:7,responseId:13,apiBase:'/api',expanded:false});
-const toggle=panel.querySelector('.work-toggle');
-assert.equal(panel.querySelector('.work-body').hidden,true);
-toggle.handlers.click();
-assert.equal(panel.querySelector('.work-body').hidden,false);
-setImmediate(()=>{
-  assert.equal(calls.length,1);
-  assert(calls[0].includes('turn_id=7'));
-  assert(calls[0].includes('response_id=13'));
-  assert.equal(panel.querySelector('.work-entries').children.length,1);
-  console.log('P06 UI event test: OK');
+
+const sandbox = {
+  window: {},
+  document: {createElement: tag => new Element(tag)},
+  fetch: () => { throw new Error('Never perform separate work-history HTTP requests'); },
+};
+vm.runInNewContext(fs.readFileSync(
+  path.join(__dirname, '../js/coreui-work-events.js'), 'utf8'), sandbox);
+const work = sandbox.window.CoreUIWorkEvents;
+assert.equal(work.create({events: []}), null, 'no empty message card');
+const timeline = work.create({
+  expanded:false,
+  events:[
+    {id:1,kind:'tool',state:'running',title:'Python-Job eingereiht',
+      meta:{job_id:13},time:'2026-10-20T21:34:07+00:00'},
+    {id:2,kind:'tool',state:'error',title:'Python-Ausfuehrung fehlgeschlagen',
+      meta:{exit_code:1,error_type:'FileNotFoundError',stderr:'SECRET'},time:'2026-10-20T21:34:09+00:00'},
+  ],
 });
+assert(timeline);
+const body = timeline.querySelector('.work-body');
+assert.equal(body.hidden,true);
+assert.equal(body.querySelector('.work-entries').children.length,2);
+assert(!timeline.textContent.includes('SECRET'), 'never expose raw stderr');
+const toggle = timeline.querySelector('.work-toggle');
+toggle.handlers.click();
+assert.equal(body.hidden,false);
+toggle.handlers.click();
+assert.equal(body.hidden,true);
+work.add(body,{id:2,kind:'tool',state:'error',title:'Duplicated'});
+assert.equal(body.querySelector('.work-entries').children.length,2,'SSE dedup');
+work.add(body,{id:3,kind:'artifact',state:'info',
+  title:'<script>alert(1)</script>',meta:{error_type:'output_missing'}});
+assert(timeline.textContent.includes('<script>alert(1)</script>'));
+assert.equal(body.querySelector('.work-entries').children.length,3);
+const live=work.create({live:true,expanded:true});
+assert(live && !live.querySelector('.work-body').hidden);
+work.add(live.querySelector('.work-body'),{
+  id:4,kind:'artifact',state:'success',title:'Datei gesichert',meta:{file_count:3}
+});
+assert(live.textContent.includes('Datei gesichert'));
+console.log('P06 inline work-history UI selftest: OK');

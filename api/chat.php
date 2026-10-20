@@ -4504,7 +4504,16 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
               . "\nDiese Dateien erscheinen automatisch als Downloadkarten. Erfinde keine URLs oder IDs.";
           }
           $manifest = json_decode((string)($pyRes['artifacts_json'] ?? ''), true);
-          if (!empty($manifest['warnings'])) $artifactNotice .= "\nBei der Dateiuebernahme wurden weitere Ausgaben abgelehnt. Behaupte nicht, dass alle Dateien bereitstehen.";
+          $warnings = is_array($manifest['warnings'] ?? null) ? $manifest['warnings'] : [];
+          if (in_array('workspace_output_recovered', $warnings, true)) {
+            coreui_work_record($pdo, 'artifact', 'success', 'Datei aus Arbeitsordner uebernommen',
+              ['job_id'=>(int)$pyRes['id'], 'reason'=>'workspace_output_recovered']);
+          }
+          if (in_array('stdout_html_recovered', $warnings, true)) {
+            coreui_work_record($pdo, 'artifact', 'success', 'HTML-Ausgabe als Datei gesichert',
+              ['job_id'=>(int)$pyRes['id'], 'reason'=>'stdout_html_recovered']);
+          }
+          if ($warnings !== []) $artifactNotice .= "\nBei der Dateiuebernahme gab es Hinweise. Pruefe die Downloadkarten und behaupte nicht, dass alle Dateien bereitstehen.";
         } catch (Throwable $artifactError) {
           ember_debug_log('artifact_prepare_failed', ['job_id'=>(int)$pyRes['id'], 'error'=>$artifactError->getMessage()]);
           coreui_work_record($pdo, 'artifact', 'error', 'Dateiregistrierung fehlgeschlagen',
@@ -4529,11 +4538,14 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       // A failed file creation gets at most ONE bounded repair opportunity.
       // This is serial through the existing Ollama lock and the existing
       // per-turn, account-bound worker queue, never an untracked download.
-      $needsFileRepair = $requestedFile
-        && is_array($pyRes)
-        && (int)($pyRes['exit_code'] ?? -1) !== 0
-        && trim((string)($pyRes['error'] ?? '')) === ''
-        && str_contains((string)($pyRes['stderr'] ?? ''), 'FileNotFoundError');
+      $needsFileRepair = $requestedFile && $confirmedFile === null && is_array($pyRes);
+      $repairReason = is_array($pyRes)
+        && str_contains((string)($pyRes['stderr'] ?? ''), 'FileNotFoundError')
+          ? 'FileNotFoundError' : 'output_missing';
+      if ($needsFileRepair) {
+        coreui_work_record($pdo, 'artifact', 'error', 'Python hat keine Datei bereitgestellt',
+          ['job_id'=>(int)$pyRes['id'], 'reason'=>$repairReason]);
+      }
 
       // Lean-Base fuer Call #2 (identische Begruendung wie im Web-Pfad): Lore und
       // saemtliche Werkzeug-Hinweise raus, Verlauf/Memory bleiben. Sonst schleppt
@@ -4547,14 +4559,23 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       $u2 = $uBase
         . "\n\n" . ember_py_result_block($pyCode, $pyRes) . $artifactNotice . "\n";
       if ($needsFileRepair) {
-        $u2 .= "\nDie angefragte Datei fehlt noch. Der vorherige Python-Code hat einen FileNotFoundError "
-          . "ausgeloest. Liefere als Antwort ausschliesslich einen VOLLSTAENDIGEN, korrigierten "
-          . "[PY]-Block (kein Markdown, keine Erklaerung). Speichere die Datei mit pathlib in "
-          . "Path(os.environ['EMBER_OUTPUT_DIR']) / 'dateiname.html' oder bei ZIP entsprechend "
-          . "mit .zip. Erzeuge benoetigte Unterordner vor dem Schreiben mit "
-          . "mkdir(parents=True, exist_ok=True). In der Sandbox existiert /work/output; "
-          . "/mnt/data ist derselbe Ausgabebereich. Kein roher HTML-Quelltext und keine "
-          . "erfundenen Downloadlinks. Wiederhole keine externen Seiteneffekte.";
+        $previousCode = strlen($pyCode) <= 20000 ? $pyCode
+          : substr($pyCode, 0, 20000) . "\n[Vorheriger Code war laenger; bitte komplett neu erzeugen]";
+        $u2 .= "\nDie angefragte Datei wurde NICHT im Ausgabespeicher gefunden (Grund: "
+          . $repairReason . "). Auch Exitcode 0 bedeutet ohne gespeicherte Datei KEINEN Erfolg. "
+          . "Antworte ausschliesslich mit einem VOLLSTAENDIGEN, korrigierten [PY]-Block. "
+          . "Der Code muss alle benoetigten Inhalte selbst erzeugen; lies niemals eine "
+          . "Datei ein, die zuvor nicht selbst angelegt wurde. "
+          . "Schreibe fertige Dateien mit pathlib direkt in "
+          . "Path(os.environ['EMBER_OUTPUT_DIR']) oder in /mnt/data, "
+          . "erstelle benoetigte Unterordner, pruefe danach per is_file() und stat(). "
+          . "Fuer eine HTML-Seite erzeuge einen vollstaendigen HTML-Text und speichere ihn "
+          . "mit write_text(..., encoding='utf-8'). Fuer ein ZIP erzeuge "
+          . "alle Bestandteile mit Python und packe sie mit zipfile ins Ausgabeziel. "
+          . "Erfinde keine URLs, data:-Links oder nicht vorhandenen Dateien. "
+          . "Der naechste Lauf hat einen frischen, eigenen Sandbox-Ordner. "
+          . "Vorheriger Python-Code als Referenz (korrigieren oder ersetzen):\n"
+          . $previousCode . "\nENDE DES VORHERIGEN CODES.";
       } else {
         $u2 .= "\nAntworte jetzt normal als Ember und nutze das Ergebnis. Erklaere es in deinen eigenen Worten, "
           . "erfinde nichts dazu was nicht in der Ausgabe steht. Wenn nichts herauskam oder der Code auf die "
@@ -4562,7 +4583,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       }
 
       if ($needsFileRepair) coreui_work_record($pdo, 'tool', 'info', 'Korrekturversuch vorbereitet',
-        ['attempt'=>2,'reason'=>'FileNotFoundError']);
+        ['attempt'=>2,'reason'=>$repairReason]);
       ember_debug_log('ember_py_call2', ['u2_chars' => strlen($u2), 'file_repair' => $needsFileRepair]);
       coreui_work_record($pdo, 'model', 'running', 'Folgeaufruf gestartet', ['model'=>$primaryModel]);
       $out2 = ember_call_ollama($primaryModel, $sys, $u2, ember_timeout_for_model($primaryModel), []);

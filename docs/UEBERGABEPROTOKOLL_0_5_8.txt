@@ -1,0 +1,78 @@
+STΛRLIɢHT: EMBER COREUI BY STARLIGHT UNIT STUDIOS
+UEBERGABEPROTOKOLL 0.5.8
+STAND 20.10.2026
+
+1. AUSGANGSLAGE
+
+Die Bilder nach Version 0.5.7 zeigen zwei Statuskaesten:
+Live-DENKSTATUS und gespeicherte ARBEITSSCHRITTE, wobei die
+zweite API-Abfrage "Arbeitsverlauf gerade nicht abrufbar" meldet.
+Die Nutzeranforderung ist: nur Nutzer mit Sprechblase;
+E.M.B.E.R. als freier Text ueber den nutzbaren Chatbereich,
+Arbeitsverlauf aufklappbar, aber ohne extra Kasten.
+
+Der konkrete Downloadversuch mit gpt-oss:120b lieferte:
+Python Job 13, Exitcode 1, FileNotFoundError mini_game.html.
+Darauf folgte ein Reparaturversuch mit Python Exitcode 0
+aber ohne bestaetigte Download-Datei. Der zweite Speicherort
+wurde dabei nicht nachgewiesen; keine Vermutung als Fakt behandeln.
+
+2. CHAT-LAYOUT UND EREIGNISVERTRAG
+
+js/console-app.js erzeugt nur noch eine Live-E.M.B.E.R.-Zeile.
+Sie enthaelt das neue Work-Event-Element und den Platzhalter.
+Die Abschlussansicht wird aus derselben persistenten Chat-History
+rekonstruiert. Keine alten statusbehafteten Denkstatus-Kaesten.
+
+Nur .msg-row.user hat noch eine Sprechblasen-Gestaltung.
+.msg-row.ember bekommt 100 Prozent seiner nutzbaren Textspalte
+ohne Hintergrund, Umrandung oder Clip-Ecken. Arbeitschronik
+ebenfalls ohne Karten/Kastengestaltung, Details sind faltbar.
+
+api/console_messages.php laedt kontogebundene P06-Ereignisse
+gebuendelt mit den jeweiligen Antwortzeilen. SQL prueft
+Benutzer, Sitzung und konkrete Antwort. Die eigene API
+console_work_events.php bleibt unveraendert verfuegbar;
+der Chat ist nicht mehr von einem gesonderten Abruf abhaengig.
+SSE done liefert Arbeitsereignisse mit und vermeidet ein
+kurzzeitiges leeres Statuspanel nach Generierungsabschluss.
+Keine Roh-Reasoning-Tokens, Skriptquellen oder stderr-Leaks.
+
+3. DATEIRETTUNG UND GRENZEN
+
+tools/ember_py_worker.py uebernimmt nach Sandbox-Stopp zunaechst
+einfache, echte Ausgabe-Dateien aus isoliertem /work nach
+/work/output. tools/ember_artifacts.py prueft regulaere Dateien,
+Groesse, Anzahl, erlaubte Endungen, Verzeichnis-Tiefe,
+Hardlinks und Symlinks. main.py ist ausgeschlossen.
+Falls stdout ein vollstaendiges kleines HTML-Dokument enthaelt
+und keine Datei vorhanden ist, wird generated.html erzeugt.
+Danach folgt unveraendert die verifizierte Artefakt-Speicherung.
+
+Bei einer expliziten Datei-Download-Anfrage ohne echtes Artefakt
+gibt es auch nach Python-Exitcode 0 genau einen begrenzten
+Modell-Reparaturversuch. Voriger Quelltext ist bis zu 20K
+Zeichen als Kontext verfuegbar. Der Modell-Lock bleibt seriell.
+Nur bestaetigte Datei-Bytes werden als Download angeboten.
+
+4. INSTALLATION UND ABNAHME
+
+Mit dem unveraenderten One-Liner main aktualisieren.
+Neue VERSION 0.5.8 kontrollieren und Preflight laufen lassen.
+PHP/JS-, Worker-/Workspace- und Datenbank-Checks pruefen.
+Eine Benutzeranfrage als HTML und eine als 3-Dateien-ZIP
+auf Android Chrome ausfuehren.
+
+Erwartung: nur eine inline Chronik, freie E.M.B.E.R.-Antwort,
+keine zweite Box oder gesonderte API-Fehlermeldung.
+Beim Python-Test muessen echte Dateikarten erscheinen.
+Falls kein Artefakt erzeugt wird, genaue Arbeitsschritte
+mit Screenshot aufnehmen. Issue #29 erst nach echtem,
+oeffnungsfaehigem Download schliessen.
+Kein GitHub Actions ausloesen.
+
+5. WEITERER SCOPE
+
+P05/P06/P07: vollwertige Agentenlaeufe, Planungsereignisse,
+Provider-Reasoning-Anzeige, Developer-Workspace, Skills und
+allgemeine Werkzeugschleife weiterhin nicht vollstaendig.

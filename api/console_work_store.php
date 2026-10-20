@@ -74,7 +74,7 @@ function coreui_work_record(PDO $pdo, string $kind, string $state, string $title
       (string)($ctx['run_key'] ?? 'base'), isset($ctx['response_message_id']) ? (int)$ctx['response_message_id'] : null,
       $kind,$state,$title,json_encode($safe, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)]);
     $event = ['id'=>(int)$pdo->lastInsertId(),'kind'=>$kind,'state'=>$state,
-      'title'=>$title,'meta'=>$safe,'time'=>gmdate('H:i:s')];
+      'title'=>$title,'meta'=>$safe,'time'=>gmdate('c')];
     $publish = $GLOBALS['COREUI_WORK_PUBLISH'] ?? null;
     if (is_callable($publish)) $publish($event);
     return $event;
@@ -93,20 +93,49 @@ function coreui_work_bind_response(PDO $pdo, int $uid, string $sessionId, int $t
   $stmt->execute([$responseId,$uid,$sessionId,$turnId,$runKey]);
 }
 
+/** Whitelisted event payload, never raw stderr, prompts, or tool code. */
+function coreui_work_public_event(array $row): array {
+  $details = json_decode((string)($row['details_json'] ?? ''), true);
+  $epoch = (int)($row['unix_time'] ?? 0);
+  return [
+    'id'=>(int)$row['id'],
+    'kind'=>(string)$row['kind'],
+    'state'=>(string)$row['state'],
+    'title'=>(string)$row['title'],
+    'meta'=>coreui_work_safe_meta(is_array($details) ? $details : []),
+    'time'=>$epoch > 0 ? gmdate('c', $epoch) : '',
+  ];
+}
+
+/** Batch read: only messages already authorized by console_messages.php. */
+function coreui_work_map_for_responses(PDO $pdo, int $uid, string $sessionId, array $responseIds): array {
+  $ids = array_values(array_unique(array_filter(array_map('intval', $responseIds),
+    static fn(int $id): bool => $id > 0)));
+  if ($uid <= 0 || $sessionId === '' || !$ids || !coreui_work_schema_ready($pdo)) return [];
+  $ids = array_slice($ids, 0, 100);
+  $placeholder = implode(',', array_fill(0, count($ids), '?'));
+  $stmt = $pdo->prepare('SELECT id,response_message_id,kind,state,title,details_json,'
+    . ' UNIX_TIMESTAMP(created_at) AS unix_time FROM stu_console_work_events'
+    . ' WHERE user_id=? AND session_id=? AND response_message_id IN ('
+    . $placeholder . ') ORDER BY id ASC LIMIT 2000');
+  $stmt->execute(array_merge([$uid, $sessionId], $ids));
+  $map = [];
+  foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+    $responseId = (int)($row['response_message_id'] ?? 0);
+    if ($responseId <= 0) continue;
+    if (!isset($map[$responseId])) $map[$responseId] = [];
+    if (count($map[$responseId]) >= 150) continue;
+    $map[$responseId][] = coreui_work_public_event($row);
+  }
+  return $map;
+}
+
 function coreui_work_list(PDO $pdo, int $uid, string $sessionId, int $turnId, int $responseId): array {
   if ($uid <= 0 || $turnId <= 0 || $responseId <= 0 || $sessionId === '') return [];
-  $stmt = $pdo->prepare('SELECT id,kind,state,title,details_json,
-    created_at AS event_time
-    FROM stu_console_work_events
-    WHERE user_id=? AND session_id=? AND turn_id=? AND response_message_id=? ORDER BY id ASC LIMIT 150');
-  $stmt->execute([$uid,$sessionId,$turnId,$responseId]);
-  $result=[];
-  foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $r) {
-    $details=json_decode((string)($r['details_json'] ?? ''),true);
-    $result[]=['id'=>(int)$r['id'],'kind'=>(string)$r['kind'],
-      'state'=>(string)$r['state'],'title'=>(string)$r['title'],
-      'meta'=>coreui_work_safe_meta(is_array($details)?$details:[]),
-      'time'=>(string)$r['event_time']];
-  }
-  return $result;
+  $stmt = $pdo->prepare('SELECT id,kind,state,title,details_json,'
+    . ' UNIX_TIMESTAMP(created_at) AS unix_time FROM stu_console_work_events'
+    . ' WHERE user_id=? AND session_id=? AND turn_id=? AND response_message_id=?'
+    . ' ORDER BY id ASC LIMIT 150');
+  $stmt->execute([$uid, $sessionId, $turnId, $responseId]);
+  return array_map('coreui_work_public_event', $stmt->fetchAll(PDO::FETCH_ASSOC) ?: []);
 }

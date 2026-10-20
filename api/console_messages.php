@@ -106,6 +106,18 @@ if ($messageIds !== [] && coreui_console_attachment_schema_ready($pdo)) {
 
 $artifactMap = coreui_console_artifact_map($pdo, (int)$uid, $messageIds);
 
+// The private message-history response is already authorized. Send scoped work
+// events alongside the reply, avoiding a second fragile per-message fetch.
+$workMap = [];
+try {
+  if ($messageIds !== []) {
+    $workMap = coreui_work_map_for_responses($pdo, (int)$uid, $sessionId, $messageIds);
+  }
+} catch (Throwable $eWork) {
+  error_log('[CoreUI] Work-event history unavailable: ' . get_class($eWork));
+  // Chat messages remain available during rolling database upgrades.
+}
+
 $emberCid = strtolower(ember_character_id());
 $emberName = strtolower(ember_character_name());
 $showThinking = (bool)(coreui_ai_settings_load($pdo, (int)$uid)['thinking_enabled'] ?? true);
@@ -127,6 +139,7 @@ foreach ($rows as &$row) {
   if ($id > $maxId) $maxId = $id;
   $row['id'] = $id;
   $row['artifacts'] = $artifactMap[$id] ?? [];
+  $row['work_events'] = $workMap[$id] ?? [];
   $row['reply_to_id'] = (int)($row['reply_to_id'] ?? 0);
   $isEmber = strtolower((string)($row['character_id'] ?? '')) === $emberCid
     || strtolower((string)($row['character_name'] ?? '')) === $emberName;

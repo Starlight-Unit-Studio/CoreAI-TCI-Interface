@@ -222,3 +222,163 @@ def discard_outputs(base: str | Path, manifest: dict[str, Any]) -> None:
         if store_fd is not None:
             os.close(store_fd)
         os.close(base_fd)
+
+
+# Safe fallback for cloud models that write the requested files relative to
+# /work instead of EMBER_OUTPUT_DIR. The sandbox has already stopped, and only
+# regular, bounded user-output files are promoted. Never publish main.py.
+WORKSPACE_EXPORT_EXTENSIONS = {
+    ".html", ".htm", ".css", ".js", ".json", ".zip", ".txt", ".md",
+    ".svg", ".png", ".jpg", ".jpeg", ".webp", ".gif", ".csv",
+    ".xml", ".pdf", ".mp3", ".wav", ".mp4", ".webm", ".glb",
+    ".obj", ".wasm", ".py",
+}
+
+
+def recover_workspace_outputs(workspace: str | Path, output: str | Path) -> int:
+    """Promote only safe named regular files from /work, never source main.py.
+
+    No links, special files, or traversal are followed. Both path roots must
+    be actual directories; the generated code never sees the durable store.
+    """
+    copied = 0
+    examined = 0
+    total = 0
+    out_fd = os.open(os.fspath(output), DIR_FLAGS)
+    try:
+        root_fd = os.open(os.fspath(workspace), DIR_FLAGS)
+        try:
+            def visit(directory_fd: int, depth: int) -> None:
+                nonlocal copied, examined, total
+                with os.scandir(directory_fd) as entries:
+                    for entry in entries:
+                        if copied >= MAX_FILES or examined >= MAX_ENTRIES:
+                            return
+                        examined += 1
+                        name = entry.name
+                        if name.startswith(".") or not valid_name(name):
+                            continue
+                        if depth == 0 and name in ("output", "main.py"):
+                            continue
+                        try:
+                            info = os.stat(name, dir_fd=directory_fd, follow_symlinks=False)
+                        except OSError:
+                            continue
+                        if stat.S_ISDIR(info.st_mode):
+                            if depth >= 3 or name in ("__pycache__", "node_modules", "tmp"):
+                                continue
+                            try:
+                                child = os.open(name, DIR_FLAGS, dir_fd=directory_fd)
+                                try:
+                                    actual = os.fstat(child)
+                                    if (actual.st_dev, actual.st_ino) == (info.st_dev, info.st_ino):
+                                        visit(child, depth + 1)
+                                finally:
+                                    os.close(child)
+                            except OSError:
+                                continue
+                            continue
+                        if (not stat.S_ISREG(info.st_mode) or info.st_nlink != 1
+                                or Path(name).suffix.lower() not in WORKSPACE_EXPORT_EXTENSIONS
+                                or info.st_size > MAX_FILE_BYTES
+                                or total + info.st_size > MAX_TOTAL_BYTES):
+                            continue
+                        source = destination = None
+                        accepted = False
+                        try:
+                            source = os.open(name, FILE_FLAGS, dir_fd=directory_fd)
+                            opened = os.fstat(source)
+                            if (not stat.S_ISREG(opened.st_mode) or opened.st_nlink != 1
+                                    or (opened.st_dev, opened.st_ino) != (info.st_dev, info.st_ino)):
+                                continue
+                            destination = os.open(name,
+                                os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW | os.O_CLOEXEC,
+                                0o640, dir_fd=out_fd)
+                            written = 0
+                            while True:
+                                part = os.read(source, BLOCK_SIZE)
+                                if not part:
+                                    break
+                                written += len(part)
+                                if written > MAX_FILE_BYTES or total + written > MAX_TOTAL_BYTES:
+                                    raise OSError("output_limit")
+                                view = memoryview(part)
+                                while view:
+                                    count = os.write(destination, view)
+                                    if count <= 0:
+                                        raise OSError("short_write")
+                                    view = view[count:]
+                            after = os.fstat(source)
+                            if written != opened.st_size or after.st_size != opened.st_size:
+                                raise OSError("source_changed")
+                            os.fsync(destination)
+                            copied += 1
+                            total += written
+                            accepted = True
+                        except (FileExistsError, OSError):
+                            pass
+                        finally:
+                            if source is not None:
+                                os.close(source)
+                            if destination is not None:
+                                os.close(destination)
+                            if destination is not None and not accepted:
+                                try:
+                                    os.unlink(name, dir_fd=out_fd)
+                                except OSError:
+                                    pass
+
+            visit(root_fd, 0)
+        finally:
+            os.close(root_fd)
+    finally:
+        os.close(out_fd)
+    return copied
+
+
+def recover_stdout_html(stdout: str, output: str | Path) -> bool:
+    """Accept a complete, bounded HTML document printed instead of saved.
+
+    This does not interpret links or model assertions as files. The resulting
+    bytes must still pass the normal durable worker manifest validation.
+    """
+    if not isinstance(stdout, str):
+        return False
+    body = stdout.strip()
+    data = body.encode("utf-8", "strict")
+    if not 50 <= len(data) <= 1024 * 1024:
+        return False
+    if (not re.match(r"(?is)^<(?:!doctype\s+html\b|html\b)", body)
+            or not re.search(r"(?is)<html(?:\s|>)", body[:3000])
+            or not re.search(r"(?is)</html\s*>\s*$", body)):
+        return False
+    out_fd = os.open(os.fspath(output), DIR_FLAGS)
+    target = None
+    saved = False
+    try:
+        with os.scandir(out_fd) as entries:
+            if any(True for _ in entries):
+                return False
+        target = os.open("generated.html",
+            os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW | os.O_CLOEXEC,
+            0o640, dir_fd=out_fd)
+        view = memoryview(data)
+        while view:
+            count = os.write(target, view)
+            if count <= 0:
+                raise OSError("short_write")
+            view = view[count:]
+        os.fsync(target)
+        saved = True
+    except (FileExistsError, OSError):
+        pass
+    finally:
+        if target is not None:
+            os.close(target)
+        if target is not None and not saved:
+            try:
+                os.unlink("generated.html", dir_fd=out_fd)
+            except OSError:
+                pass
+        os.close(out_fd)
+    return saved

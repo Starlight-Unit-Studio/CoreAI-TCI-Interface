@@ -555,7 +555,16 @@ try {
     ['elapsed_ms'=>$elapsed * 1000]);
   elseif ($browseJobId <= 0) coreui_work_record($pdo, 'run', 'error', 'Kein Antwortdatensatz gespeichert',
     ['reason'=>'empty_response']);
+  $workEvents = [];
+  if ($emberMsgId > 0) {
+    try {
+      $workEvents = coreui_work_list($pdo, (int)$uid, $sessionId, $afterId, $emberMsgId);
+    } catch (Throwable $eWork) {
+      error_log('[CoreUI] Work events not ready: ' . get_class($eWork));
+    }
+  }
   sse_send('done', [
+    'work_events'   => $workEvents,
     'text'          => $replyFinal,
     'thinking'      => $thinkingPublic,
     'elapsed'       => $elapsed,

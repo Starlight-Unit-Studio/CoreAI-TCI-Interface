@@ -1,124 +1,116 @@
-// Ember CoreUI P06: visible *operational* steps, never raw model reasoning.
+// P06: operational events live inline in E.M.B.E.R.'s normal chat answer.
+// Events are supplied by the authenticated message history (or SSE), not a
+// second per-message HTTP request. Never render model-authored HTML here.
 (function () {
   'use strict';
 
-  var VALID_STATES = {running:true,success:true,error:true,info:true};
-  var VALID_KINDS = {run:true,model:true,tool:true,artifact:true,error:true};
-  var META_LABELS = {
+  var STATES = {running:true,success:true,error:true,info:true};
+  var KINDS = {run:true,model:true,tool:true,artifact:true,error:true};
+  var DETAIL_LABELS = {
     model:'Modell', job_id:'Job', exit_code:'Exitcode', duration_ms:'Laufzeit (ms)',
     error_type:'Fehlertyp', file_name:'Datei', file_count:'Dateien', attempt:'Versuch',
     http_code:'HTTP', reason:'Grund', source:'Quelle', elapsed_ms:'Dauer (ms)'
   };
 
-  function text(tag, className, value) {
-    var el = document.createElement(tag);
-    if (className) el.className = className;
-    el.textContent = String(value == null ? '' : value);
-    return el;
+  function el(tag, cls, value) {
+    var item = document.createElement(tag);
+    if (cls) item.className = cls;
+    if (value !== undefined) item.textContent = String(value);
+    return item;
   }
+
   function normalize(raw) {
-    if (!raw || !VALID_STATES[raw.state] || !VALID_KINDS[raw.kind]) return null;
+    if (!raw || !STATES[raw.state] || !KINDS[raw.kind]) return null;
     var title = String(raw.title || '').slice(0, 120);
     if (!title) return null;
     var meta = {};
     if (raw.meta && typeof raw.meta === 'object' && !Array.isArray(raw.meta)) {
-      Object.keys(META_LABELS).forEach(function (key) {
+      Object.keys(DETAIL_LABELS).forEach(function (key) {
         var value = raw.meta[key];
         if (typeof value === 'string' || (typeof value === 'number' && Number.isFinite(value))) {
           meta[key] = String(value).slice(0, 110);
         }
       });
     }
-    return {id:Number(raw.id) || 0,kind:raw.kind,state:raw.state,
-      title:title,time:String(raw.time || '').slice(0, 30),meta:meta};
+    return {
+      id:Number(raw.id) || 0,kind:raw.kind,state:raw.state,
+      title:title,meta:meta,time:String(raw.time || '').slice(0, 40)
+    };
   }
+
+  function localTime(raw) {
+    if (!raw) return '';
+    var when = new Date(raw);
+    if (!Number.isNaN(when.getTime())) {
+      return when.toLocaleTimeString('de-DE', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    }
+    return /^\d\d:\d\d(?::\d\d)?$/.test(raw) ? raw : '';
+  }
+
   function add(body, raw) {
-    if (!body) return;
+    if (!body) return false;
     var event = normalize(raw);
-    if (!event) return;
-    var log = body.querySelector('.work-entries');
-    if (!log) {
+    if (!event) return false;
+    var entries = body.querySelector('.work-entries');
+    if (!entries) {
       body.textContent = '';
-      log = text('div', 'work-entries', '');
-      body.appendChild(log);
+      entries = el('div', 'work-entries');
+      body.appendChild(entries);
     }
-    if (event.id && log.querySelector('[data-work-id="' + String(event.id) + '"]')) return;
-    var line = text('div', 'work-entry work-' + event.state, '');
-    if (event.id) line.setAttribute('data-work-id', String(event.id));
-    line.appendChild(text('span','work-state',
-      event.state === 'running' ? '...' : event.state === 'success' ? 'OK' : event.state === 'error' ? '!' : 'i'));
-    var info = text('div','work-info','');
-    info.appendChild(text('div','work-title',event.title));
-    var labels = Object.keys(event.meta);
-    if (labels.length) {
-      var detail = document.createElement('details');
-      detail.className = 'work-detail';
-      detail.appendChild(text('summary', '', 'Technische Details'));
-      var dl = document.createElement('dl');
-      labels.forEach(function (key) {
-        var dt = text('dt','',META_LABELS[key]);
-        var dd = text('dd','',event.meta[key]);
-        dl.appendChild(dt);
-        dl.appendChild(dd);
+    if (event.id && entries.querySelector('[data-work-id="' + event.id + '"]')) return false;
+
+    var entry = el('div', 'work-entry work-' + event.state);
+    if (event.id) entry.setAttribute('data-work-id', String(event.id));
+    entry.appendChild(el('span', 'work-state',
+      event.state === 'success' ? '\u2713' :
+      event.state === 'error' ? '!' : event.state === 'running' ? '\u2022' : 'i'));
+    var info = el('div', 'work-info');
+    info.appendChild(el('div','work-title',event.title));
+    var keys = Object.keys(event.meta);
+    if (keys.length) {
+      var details = el('details','work-detail');
+      details.appendChild(el('summary','', 'Technische Details'));
+      var definition = el('dl','');
+      keys.forEach(function (key) {
+        definition.appendChild(el('dt','',DETAIL_LABELS[key]));
+        definition.appendChild(el('dd','',event.meta[key]));
       });
-      detail.appendChild(dl);
-      info.appendChild(detail);
+      details.appendChild(definition);
+      info.appendChild(details);
     }
-    line.appendChild(info);
-    if (event.time) line.appendChild(text('time','work-time',event.time));
-    log.appendChild(line);
-    while (log.children.length > 150) log.removeChild(log.firstChild);
+    entry.appendChild(info);
+    if (event.time) entry.appendChild(el('time','work-time',localTime(event.time)));
+    entries.appendChild(entry);
+    while (entries.children.length > 150) entries.removeChild(entries.firstChild);
+    return true;
   }
 
   function create(options) {
     options = options || {};
-    var panel = text('section','work-panel','');
-    panel.setAttribute('aria-label','Arbeitsverlauf von E.M.B.E.R.');
-    var toggle = text('button','work-toggle','');
+    var events = Array.isArray(options.events) ? options.events : [];
+    var live = !!options.live;
+    if (!live && events.length === 0) return null;
+    var timeline = el('section','work-panel');
+    timeline.setAttribute('aria-label','E.M.B.E.R. Arbeitsschritte');
+    var toggle = el('button','work-toggle');
     toggle.type = 'button';
-    var open = !!options.expanded;
-    toggle.setAttribute('aria-expanded',String(open));
-    var icon = text('span','work-chevron','\u25b8');
-    var title = text('span','work-caption','ARBEITSSCHRITTE');
-    toggle.appendChild(icon);
-    toggle.appendChild(title);
-    var body = text('div','work-body','');
-    body.hidden = !open;
-    body.appendChild(text('div','work-empty','Arbeitsereignisse laden ...'));
-    panel.appendChild(toggle);
-    panel.appendChild(body);
-    var loaded = false;
-    var loading = false;
-
-    function load() {
-      if (loaded || loading || !options.turnId || !options.responseId || !options.sessionId || !options.apiBase) return;
-      loading = true;
-      var url = options.apiBase + '/console_work_events.php?session_id='
-        + encodeURIComponent(String(options.sessionId)) + '&turn_id=' + encodeURIComponent(String(options.turnId))
-        + '&response_id=' + encodeURIComponent(String(options.responseId));
-      fetch(url, {credentials:'include',cache:'no-store'})
-        .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-        .then(function (result) {
-          if (!result || !result.ok || !Array.isArray(result.events)) throw new Error('events_unavailable');
-          body.textContent = '';
-          if (!result.events.length) body.appendChild(text('div','work-empty','Fuer diesen Turn sind keine Arbeitsereignisse vorhanden.'));
-          result.events.forEach(function (event) { add(body,event); });
-          loaded = true;
-        })
-        .catch(function () {
-          body.textContent = '';
-          body.appendChild(text('div','work-empty','Arbeitsverlauf gerade nicht abrufbar. Erneut aufklappen.'));
-        })
-        .finally(function () { loading = false; });
-    }
+    var expanded = options.expanded === true || live;
+    toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    toggle.appendChild(el('span','work-chevron','\u25b8'));
+    toggle.appendChild(el('span','work-caption',live ? 'E.M.B.E.R. arbeitet' : 'Arbeitsschritte'));
+    var body = el('div','work-body');
+    body.hidden = !expanded;
+    if (live) body.appendChild(el('p','work-empty','Warte auf den ersten Arbeitsschritt ...'));
+    events.forEach(function (event) { add(body,event); });
     toggle.addEventListener('click',function () {
-      open = !open;
-      toggle.setAttribute('aria-expanded',String(open));
-      body.hidden = !open;
-      if (open) load();
+      expanded = !expanded;
+      toggle.setAttribute('aria-expanded',expanded ? 'true' : 'false');
+      body.hidden = !expanded;
     });
-    if (open) load();
-    return panel;
+    timeline.appendChild(toggle);
+    timeline.appendChild(body);
+    return timeline;
   }
+
   window.CoreUIWorkEvents = {create:create,add:add};
 }());

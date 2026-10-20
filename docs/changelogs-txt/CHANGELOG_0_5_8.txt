@@ -1,0 +1,47 @@
+STΛRLIɢHT: EMBER COREUI BY STARLIGHT UNIT STUDIOS
+CHANGELOG 0.5.8
+STAND 20.10.2026
+
+CORE CHANNEL: INLINE-CHAT STATT DOPPELTER THINKING-KAESTEN
+
+* Nur Benutzernachrichten bleiben Sprechblasen.
+  E.M.B.E.R.-Antworten werden als freier Markdown-Text mit voller
+  nutzbarer Chatbreite dargestellt, auch mobil.
+* Live-Arbeitsschritte sind Teil EINER Ember-Nachricht und verschwinden
+  mit der Platzhalter-Nachricht beim Abschluss. Kein zweiter Live-Kasten.
+* Echte Arbeitsschritte erscheinen in der gespeicherten Antwort als
+  ungerahmte, aufklappbare Chronik mit sicherem Detailzugriff.
+* Gespeicherte Arbeitsereignisse werden als kontogebundene Antwortdaten
+  durch console_messages.php uebertragen. Die gesonderte Abfrage, die
+  zuletzt "Arbeitsverlauf nicht abrufbar" meldete, wird fuer die
+  Chatoberflaeche nicht mehr benoetigt.
+* Uhrzeiten werden als UTC-ISO-Daten transportiert und vom Client
+  in die lokale Zeitzone umgerechnet.
+* Eigene UI- und PHP-Regressionspruefungen verhindern neue
+  doppelte Statuszeilen und versteckte Netzwerkabfragen.
+
+DATEIEN: CLOUD-MODELL UND PYTHON-WORKER
+
+* Python-Worker rettet nach bestaetigtem Sandbox-Stop echte
+  Ausgabedateien aus /work, auch aus flachen Unterordnern, wenn
+  das Modell nicht nach EMBER_OUTPUT_DIR geschrieben hat.
+* Sicherer Fallback fuer vollstaendige HTML-Dokumente, die
+  Python nur nach stdout ausgibt. Kein Download aus Textbehauptungen.
+* Keine Symlinks, keine Quelle main.py, keine versteckten oder
+  uebergrossen Ausgaben. Maximale Anzahl und SHA-Verifikation bleiben.
+* Wenn keine registrierte Ausgabedatei vorliegt, wird auch bei
+  Python-Exitcode 0 EIN begrenzter, serieller Korrekturversuch
+  ermoeglicht, unter Beruecksichtigung des vorherigen Quellcodes.
+* Technische Ereignisse kennzeichnen fehlende Ausgaben sowie
+  aus Arbeitsordner oder stdout gerettete Dateien.
+* Regressionstest prueft Datei-Bytes, Manifest, SHA, Ausschluss
+  von Source-Datei und Symlink, und HTML-stdout-Wiederherstellung.
+
+BETRIEB UND OFFENE PRUEFUNG
+
+* Numerischer Versionssprung 0.5.7 auf 0.5.8 fuer diesen Merge.
+* Original-One-Liner, bestehende Nutzer-/Sitzungsdaten, Isolation,
+  serialisierte Modellaufrufe und GitHub-Actions-Verzicht unveraendert.
+* Neue Tests muessen beim Installer-Preflight bestehen.
+* Echter Live-Test mit gpt-oss:120b, HTML/ZIP-Download und Android
+  steht noch aus. Issue #29 bleibt bis zur Liveabnahme offen.
