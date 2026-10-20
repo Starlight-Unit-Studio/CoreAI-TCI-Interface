@@ -4,6 +4,8 @@ Stand: 20.10.2026. Status dieses Dokuments: Planung. Durch diese Matrix wurde ke
 
 Der [Masterplan](COREUI_MASTERPLAN.md) beschreibt die gemeinsame Zielarchitektur, die technische Ausgangslage und die Reihenfolge der Umsetzung.
 
+Die [Umsetzungsroadmap](../ROADMAP.md) ordnet alle derzeitigen CF-IDs in konkrete Lieferpakete ein. Die dortigen Paketstände ersetzen die Einzelabnahmen dieser Matrix nicht.
+
 ## Ziel und Aussagegrenze
 
 Ziel ist die vollständige funktionale Bestandsaufnahme von **OpenClaw und Open WebUI** und die eigenständige Umsetzung ihrer Funktionen in Ember CoreUI. Beide Referenzen gehören zum Umfang. Diese erste Matrix enthält **72 stabile Einträge** als Ausgangspunkt; sie ist weder eine abgeschlossene Vollinventur noch ein Nachweis vollständiger Gleichwertigkeit. Bei der Tiefenprüfung werden weitere Einzelanforderungen ergänzt, ohne bestehende IDs umzunummerieren.

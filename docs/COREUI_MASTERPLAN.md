@@ -4,6 +4,8 @@ Stand: 20.10.2026. Dieses Dokument hält das vereinbarte Ziel, die belegte Ausga
 
 Die [Funktionsmatrix](COREUI_FEATURE_MATRIX.md) ist das zugehörige Arbeitsregister. [Issue #29](https://github.com/Starlight-Unit-Studio/coreui/issues/29) führt den Fehler bei Downloads erzeugter Dateien. Beide Dokumente sollen bei Umsetzung und Übergaben gemeinsam aktualisiert werden.
 
+Die [Umsetzungsroadmap](../ROADMAP.md) ordnet diese Anforderungen in 25 Lieferpakete mit Abhängigkeiten, Abnahmen und dem konkret nächsten Arbeitsabschnitt.
+
 ## 1. Verbindliches Ziel
 
 **Ember CoreUI soll eine vollständige Arbeitsumgebung mit E.M.B.E.R. als ausführendem Agenten werden.** Dazu gehören mehrstufige Aufgaben, sichtbare Arbeitsschritte, ein echter Entwicklungsbereich, wiederverwendbare Skills und verlässliche Dateiausgabe.
