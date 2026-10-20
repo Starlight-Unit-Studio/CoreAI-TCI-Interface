@@ -19,13 +19,13 @@ Generated HTML, ZIP, and other output files must become real, persistent chat do
 
 ## Quick installation
 
-The installer downloads the archive and its SHA-256 file into a unique temporary directory, verifies both before changing `/opt/ember-coreui`, and preserves local configuration, database data, accounts, sessions, uploads, logs, chat media, and profile images during updates.
+**The same one-liner now installs and updates the latest merged `main` development source**, without a separate updater or GitHub Actions. It downloads the GitHub branch into a unique temporary directory, records the exact commit, and preserves local configuration, database data, accounts, sessions, uploads, logs, chat media, and profile images. The previous pinned, SHA-256-verified release ZIP remains available as an explicit opt-in via `COREUI_SETUP_SOURCE=release`.
 
 ```bash
 ( setup_file="$(mktemp)" && trap 'rm -f -- "$setup_file"' EXIT && curl -fsSL https://raw.githubusercontent.com/Starlight-Unit-Studio/coreui/main/setup.sh -o "$setup_file" && sudo bash "$setup_file" )
 ```
 
-A fresh interactive installation asks for the administrator email address and password at the real terminal. The one-line SSH command stores the launcher in a protected, uniquely named temporary file and removes it on exit. The setup explicitly connects the account bootstrap to `/dev/tty`, while non-interactive Docker Compose calls run without a TTY requirement. Its verified archive, checksum, and unpacked files use a separate unique temporary directory that is also removed automatically. For unattended first installation, provide `COREUI_ADMIN_EMAIL` and `COREUI_ADMIN_PASSWORD` as environment variables.
+A fresh interactive installation asks for the administrator email address and password at the real terminal. The one-line SSH command stores the launcher in a protected, uniquely named temporary file and removes it on exit. The setup explicitly connects the account bootstrap to `/dev/tty`, while non-interactive Docker Compose calls run without a TTY requirement. The cloned checkout and its Git metadata stay in a unique temporary directory and are removed automatically; the installed tree excludes `.git`, `.github`, and bundled `releases`. For unattended first installation, provide `COREUI_ADMIN_EMAIL` and `COREUI_ADMIN_PASSWORD` as environment variables.
 
 ## Independence and mandatory product name
 
@@ -284,7 +284,7 @@ SearXNG Docker documentation: <https://docs.searxng.org/admin/installation-docke
 
 ## Safe parallel installation via SSH
 
-The same verified flow used by the quick installer can be run manually:
+The **archived pinned release**, rather than the current `main` development tree, can still be installed manually through its verified ZIP/SHA-256 pair:
 
 ```bash
 cd /home/users/game/tmp
@@ -303,7 +303,7 @@ sudo ./scripts/install.sh
 
 The installer asks for the administrator email address, a password of at least 12 characters, and an optional display name through `COREUI_ADMIN_NAME`.
 
-## Update to 0.5.3-alpha
+## Manual update using the archived 0.5.3-alpha ZIP
 
 The existing database, accounts, sessions, uploads, and protected credentials are preserved. The package is copied only over static project files and templates.
 
@@ -403,17 +403,15 @@ Optionale Umgebungsvariablen fuer beide Installer und `scripts/swap.sh ensure`:
 
 Bei der Verwendung von `sudo` koennen abweichende Einstellungen mit `sudo --preserve-env=COREUI_SWAP_AUTOCREATE,COREUI_SWAP_SIZE_GIB,COREUI_SWAP_SWAPPINESS ...` uebergeben werden. `scripts/swap.sh status` ist nur lesend, `ensure` benoetigt Root-Rechte.
 
-**Release-Hinweis:** Der auf `0.5.3-alpha` festgelegte Downloader `setup.sh` verwendet ein bereits veroeffentlichtes ZIP/SHA-Paar. Diese Installer-Aenderung wird erst mit einem neu gebauten und veroeffentlichten Release-Archiv ueber den One-Liner verteilt; ein Quellcode-Commit allein aktualisiert das bestehende ZIP nicht.
-## Entwicklerstand live pruefen (kein Release)
+**Release-Hinweis:** Der unveraenderte One-Liner unter „Quick installation“ nutzt standardmaessig den neuesten GitHub-`main`-Stand. Fuer den laufenden Live-Testbetrieb muss nach dem Merge weder ein Release-ZIP neu gebaut noch ein zweiter Updater aufgerufen werden.
 
-Der normale `setup.sh` installiert das gepinnte und mit SHA-256 gepruefte Release-ZIP, **nicht** den aktuellen `main`-Branch. Fuer die laufenden Live-Tests nach einem Merge gibt es einen getrennten, ausdruecklich nur fuer Entwickler vorgesehenen Updateweg auf einer bereits eingerichteten isolierten CoreUI-Instanz. Er behaelt Konten, Datenbank, Sitzungen, Uploads, Medien und lokale Konfiguration bei. Er wird **nicht** automatisch ausgefuehrt und startet keine GitHub Actions.
+## Live-Entwicklerstand mit dem bestehenden One-Liner
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/Starlight-Unit-Studio/coreui/main/scripts/update-from-main.sh -o /tmp/ember-coreui-dev-update.sh
-sudo bash /tmp/ember-coreui-dev-update.sh
-```
+Genau denselben One-Liner wie bei der Erstinstallation erneut ausfuehren. `setup.sh` laedt den neuesten Commit aus `main`, fuehrt den regulaeren Installer und die SQL-Migrationen aus und prueft die aktualisierte Installation. Der konfigurierte isolierte Betrieb bleibt bestehen; Benutzer, Sitzungen, Datenbank, Uploads und Geheimnisse bleiben erhalten. GitHub Actions werden nicht benoetigt.
 
-Der Befehl zeigt den eingespielten Commit an und prueft nach dem Update die aktuelle Datenbankmigration und die geschuetzten Download-Routen. Die Versionsdatei bleibt bis zum naechsten bewusst erstellten Release auf der letzten Release-Version; fuer die Live-Entwicklung ist der ausgegebene Commit massgeblich. Fuer offizielle Installationen weiterhin `setup.sh` mit dem Releasearchiv nutzen.
+Der tatsaechlich installierte Commit wird am Ende ausgegeben und in `/opt/ember-coreui/var/dev_source_commit` gespeichert. Das Produktfeld `VERSION` bleibt bis zu einem separat freigegebenen Release auf `0.5.3-alpha`; fuer einen Live-Entwicklungsstand ist die Commit-SHA massgeblich.
+
+Wer stattdessen **explizit das alte gepruefte Release** installieren moechte, kann den Launcher unter `sudo` mit `COREUI_SETUP_SOURCE=release` ausfuehren. Nur dieser Modus benutzt das gepinnte ZIP mit SHA-256-Verifikation. Das bisherige `scripts/update-from-main.sh` ist nicht mehr als separater Update-Schritt erforderlich.
 
 ## Installation process
 
