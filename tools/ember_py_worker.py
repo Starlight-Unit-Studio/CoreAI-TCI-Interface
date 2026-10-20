@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-STU - Ember Python-Worker (v1.1.1.87)
+Ember CoreUI - Python worker with durable generated outputs
 =====================================
 Fuehrt den Code aus, den Ember per [PY]...[/PY] im Chat erzeugt.
 
@@ -9,7 +9,8 @@ Was es tut:
   1. Pollt stu_ember_py_jobs nach 'queued' Jobs (atomar geclaimt, wie der Browse-Worker).
   2. Schreibt den Code in ein temporaeres Arbeitsverzeichnis ausserhalb von www.
   3. Startet einen wegwerfbaren Docker-Container und laesst den Code dort laufen.
-  4. Schreibt stdout/stderr/Exitcode/Dauer zurueck in die Job-Zeile.
+  4. Uebernimmt Ausgabedateien vor der Bereinigung in den dauerhaften Store.
+  5. Speichert stdout/stderr/Exitcode/Dauer und das Dateimanifest atomar.
 
 Warum Docker und nicht einfach subprocess:
   Der Worker laeuft als root (er braucht den Docker-Socket). Der Code, den Ember
@@ -35,6 +36,8 @@ Start:
 """
 
 import os
+import json
+import secrets
 import re
 import sys
 import time
@@ -45,10 +48,12 @@ import subprocess
 import tempfile
 import traceback
 
+from ember_artifacts import collect_outputs, discard_outputs, empty_manifest
+
 try:
     import pymysql
 except ImportError:
-    sys.exit("Fehlt: pip install pymysql")
+    pymysql = None
 
 # ----------------------------------------------------------------------------- config
 
@@ -110,6 +115,8 @@ def parse_php_config(path):
 
 
 def db_connect(cfg):
+    if pymysql is None:
+        raise RuntimeError("Fehlt: pip install pymysql")
     return pymysql.connect(
         host=cfg["STU_DB_HOST"],
         user=cfg["STU_DB_USER"],
@@ -167,7 +174,7 @@ def claim_next_job(conn):
 
 
 def finish_job(conn, job_id, status, stdout="", stderr="", exit_code=None,
-               duration_ms=0, error=None, limit=16000):
+               duration_ms=0, error=None, limit=16000, manifest=None):
     def clip(s):
         s = s or ""
         if len(s) <= limit:
@@ -178,80 +185,107 @@ def finish_job(conn, job_id, status, stdout="", stderr="", exit_code=None,
     with conn.cursor() as cur:
         cur.execute(
             "UPDATE stu_ember_py_jobs SET status=%s, stdout=%s, stderr=%s, exit_code=%s, "
-            "duration_ms=%s, error=%s, finished_at=NOW() WHERE id=%s",
-            (status, clip(stdout), clip(stderr), exit_code, int(duration_ms), error, job_id),
+            "duration_ms=%s, error=%s, artifacts_json=%s, finished_at=NOW() "
+            "WHERE id=%s AND status='running' AND worker_pid=%s",
+            (status, clip(stdout), clip(stderr), exit_code, int(duration_ms), error,
+             json.dumps(manifest or empty_manifest(), ensure_ascii=True, separators=(",", ":")),
+             job_id, os.getpid()),
         )
+        return cur.rowcount == 1
 
 
 # ----------------------------------------------------------------------------- ausfuehrung
 
 
-def run_in_container(cfg, job_id, code):
-    """Fuehrt den Code im Container aus. Rueckgabe: (stdout, stderr, exit_code, dauer_ms, fehler)."""
+def work_base(cfg):
     base = cfg.get("STU_EMBER_PY_WORKDIR") or os.path.join(PROJECT_ROOT, "var", "ember_py")
+    return base if os.path.isabs(base) else os.path.join(PROJECT_ROOT, base)
+
+
+def stop_container(container):
+    """Confirm quiescence before collecting or removing the sandbox directory."""
+    try:
+        result = subprocess.run(["docker", "rm", "--force", container],
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=15)
+        missing = b"No such container" in result.stderr or b"No such object" in result.stderr
+        return result.returncode == 0 or missing
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+
+
+def run_in_container(cfg, job_id, code, *, publish_outputs=False):
+    """Return stdout, stderr, exit code, duration, error and a v1 manifest.
+
+    The separate output bind mount prevents replacing its host-side root with a
+    link. The durable store is never exposed to model code. A container whose
+    shutdown cannot be confirmed yields no outputs and retains its temporary work.
+    """
+    base = work_base(cfg)
     os.makedirs(base, exist_ok=True)
     workdir = tempfile.mkdtemp(prefix="job%d_" % job_id, dir=base)
-    container = "ember-py-%d" % job_id
+    sandbox = os.path.join(workdir, "work")
+    output = os.path.join(workdir, "output")
+    container = "ember-py-%d-%s" % (job_id, secrets.token_hex(6))
     timeout = int(float(cfg.get("STU_EMBER_PY_EXEC_TIMEOUT", "60")))
-
+    stdout, stderr, rc, dur, err = "", "", None, 0, None
+    manifest = empty_manifest()
+    stopped = True
     try:
-        script = os.path.join(workdir, "main.py")
+        os.mkdir(sandbox, 0o777)
+        os.mkdir(output, 0o777)
+        os.chmod(sandbox, 0o777)
+        os.chmod(output, 0o777)
+        os.mkdir(os.path.join(sandbox, "output"), 0o755)
+        script = os.path.join(sandbox, "main.py")
         with open(script, "w", encoding="utf-8") as fh:
             fh.write(code)
-        # Der Container laeuft unprivilegiert (65534) und muss ins Arbeitsverzeichnis
-        # schreiben duerfen, falls Ember Dateien anlegt.
-        os.chmod(workdir, 0o777)
         os.chmod(script, 0o644)
-
         cmd = [
-            "docker", "run", "--rm",
-            "--name", container,
-            "--network", "bridge",          # volles Internet, aber kein Host-Loopback
+            "docker", "run", "--rm", "--name", container,
+            "--network", "bridge",
             "--memory", str(cfg.get("STU_EMBER_PY_MEMORY", "512m")),
             "--memory-swap", str(cfg.get("STU_EMBER_PY_MEMORY", "512m")),
             "--cpus", str(cfg.get("STU_EMBER_PY_CPUS", "1.0")),
             "--pids-limit", str(cfg.get("STU_EMBER_PY_PIDS", "128")),
-            "--cap-drop", "ALL",
-            "--security-opt", "no-new-privileges",
-            "--read-only",
+            "--cap-drop", "ALL", "--security-opt", "no-new-privileges", "--read-only",
             "--tmpfs", "/tmp:rw,noexec,nosuid,size=%s" % cfg.get("STU_EMBER_PY_TMPFS_SIZE", "64m"),
             "--user", "65534:65534",
-            "-v", "%s:/work:rw" % workdir,
-            "-w", "/work",
-            "-e", "HOME=/tmp",
-            "-e", "MPLBACKEND=Agg",
-            "-e", "PYTHONUNBUFFERED=1",
+            "-v", "%s:/work:rw" % sandbox,
+            "-v", "%s:/work/output:rw" % output,
+            "-w", "/work", "-e", "HOME=/tmp", "-e", "MPLBACKEND=Agg",
+            "-e", "PYTHONUNBUFFERED=1", "-e", "EMBER_OUTPUT_DIR=/work/output",
             str(cfg.get("STU_EMBER_PY_IMAGE", "ember-py:1")),
             "python", "-I", "/work/main.py",
         ]
-
-        started = time.time()
+        started = time.monotonic()
+        stopped = False
         try:
-            proc = subprocess.run(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                timeout=timeout + 10,   # Reserve fuer Containerstart/-abbau
-            )
-            dur = int((time.time() - started) * 1000)
-            return (
-                proc.stdout.decode("utf-8", "replace"),
-                proc.stderr.decode("utf-8", "replace"),
-                proc.returncode,
-                dur,
-                None,
-            )
-        except subprocess.TimeoutExpired:
-            dur = int((time.time() - started) * 1000)
-            # Container haengt -> hart abraeumen, sonst laeuft er weiter.
-            subprocess.run(["docker", "kill", container],
-                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            return ("", "", None, dur,
-                    "timeout nach %ds - der Code lief zu lange" % timeout)
+            proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=timeout + 10)
+            stdout = proc.stdout.decode("utf-8", "replace")
+            stderr = proc.stderr.decode("utf-8", "replace")
+            rc = proc.returncode
+            stopped = stop_container(container)
+            if not 0 <= rc < 125:
+                err = "docker_runtime_error"
+        except subprocess.TimeoutExpired as exc:
+            stdout = (exc.stdout or b"").decode("utf-8", "replace")
+            stderr = (exc.stderr or b"").decode("utf-8", "replace")
+            stopped = stop_container(container)
+            err = "timeout nach %ds - der Code lief zu lange" % timeout
         except FileNotFoundError:
-            return ("", "", None, 0, "docker ist auf diesem Host nicht installiert/erreichbar")
+            stopped = True
+            err = "docker ist auf diesem Host nicht installiert/erreichbar"
+        finally:
+            dur = int((time.monotonic() - started) * 1000)
+        if not stopped:
+            err = "sandbox_stop_unconfirmed; temporary work retained for operator cleanup"
+            manifest["warnings"].append("sandbox_stop_unconfirmed")
+        elif publish_outputs:
+            manifest = collect_outputs(output, base, int(job_id), partial=bool(err or rc != 0))
     finally:
-        shutil.rmtree(workdir, ignore_errors=True)
+        if stopped:
+            shutil.rmtree(workdir, ignore_errors=True)
+    return stdout, stderr, rc, dur, err, manifest
 
 
 def process_job(conn, cfg, job):
@@ -259,19 +293,17 @@ def process_job(conn, cfg, job):
     code = job.get("code") or ""
     limit = int(cfg.get("STU_EMBER_PY_STORE_CHARS", "16000"))
     print("[job %d] starte (%d Zeichen Code)" % (job_id, len(code)), flush=True)
-
-    stdout, stderr, rc, dur, err = run_in_container(cfg, job_id, code)
-
-    if err:
-        finish_job(conn, job_id, "error", stdout, stderr, rc, dur, err, limit)
-        print("[job %d] FEHLER: %s" % (job_id, err), flush=True)
-        return
-
-    # Auch ein Exitcode != 0 ist ein gueltiges Ergebnis: Ember soll den Traceback
-    # sehen und selbst darauf reagieren duerfen, statt nur "ging nicht" zu hoeren.
-    finish_job(conn, job_id, "done", stdout, stderr, rc, dur, None, limit)
-    print("[job %d] fertig rc=%s in %dms (%d Zeichen stdout)"
-          % (job_id, rc, dur, len(stdout)), flush=True)
+    bound = (job.get("channel") == "console" and int(job.get("recipient_uid") or 0) > 0
+             and bool(job.get("session_id")) and int(job.get("trigger_message_id") or 0) > 0)
+    stdout, stderr, rc, dur, err, manifest = run_in_container(cfg, job_id, code, publish_outputs=bound)
+    # A PHP timeout/cancellation wins. Do not overwrite it. If the DB throws,
+    # commit outcome is unknown: retain copies rather than deleting live files.
+    accepted = finish_job(conn, job_id, "error" if err else "done", stdout, stderr, rc, dur,
+                          err, limit, manifest)
+    if not accepted and manifest["files"]:
+        discard_outputs(work_base(cfg), manifest)
+    print("[job %d] %s rc=%s in %dms (%d Dateien)" %
+          (job_id, "fertig" if accepted else "verworfen", rc, dur, len(manifest["files"])), flush=True)
 
 
 # ----------------------------------------------------------------------------- main
@@ -298,6 +330,9 @@ def main():
 
     conn = db_connect(cfg)
     ensure_jobs_table(conn)
+    with conn.cursor() as cur:
+        # Installer migration 011 must precede worker startup.
+        cur.execute("SELECT artifacts_json,session_id,trigger_message_id,trigger_revision FROM stu_ember_py_jobs LIMIT 0")
     print("[worker] startet. Image=%s DB=%s Timeout=%ss"
           % (cfg.get("STU_EMBER_PY_IMAGE"), cfg.get("STU_DB_NAME"),
              cfg.get("STU_EMBER_PY_EXEC_TIMEOUT")), flush=True)
