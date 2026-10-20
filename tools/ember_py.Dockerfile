@@ -38,6 +38,10 @@ RUN MPLCONFIGDIR=/opt/mplcache python -c "import matplotlib.pyplot" \
  && chmod -R a+rX /opt/mplcache
 ENV MPLCONFIGDIR=/opt/mplcache
 
+# The worker mounts the same isolated job output at /work/output and
+# /mnt/data for compatibility with coding/cloud models.
+RUN mkdir -p /work /mnt/data
+
 WORKDIR /work
 USER 65534:65534
 CMD ["python3"]

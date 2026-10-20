@@ -252,6 +252,10 @@ def run_in_container(cfg, job_id, code, *, publish_outputs=False):
             "--user", "65534:65534",
             "-v", "%s:/work:rw" % sandbox,
             "-v", "%s:/work/output:rw" % output,
+            # Cloud/coding models often use /mnt/data for generated files.
+            # This is the SAME bounded per-job output dir, not a host /mnt/data
+            # mount and never the persistent artifact store.
+            "-v", "%s:/mnt/data:rw" % output,
             "-w", "/work", "-e", "HOME=/tmp", "-e", "MPLBACKEND=Agg",
             "-e", "PYTHONUNBUFFERED=1", "-e", "EMBER_OUTPUT_DIR=/work/output",
             str(cfg.get("STU_EMBER_PY_IMAGE", "ember-py:1")),

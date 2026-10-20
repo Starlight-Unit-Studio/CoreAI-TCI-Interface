@@ -9,6 +9,12 @@ function coreui_console_file_requested(string $request): bool {
   return preg_match('~\b(?:html|htm|zip|minigame|mini-game|download(?:en)?|datei(?:en)?|webseite|webapp|spiel(?:chen)?|erstell(?:en|e|st|t)?|generier(?:en|e|st|t)?|programmier(?:en|e|st|t)?)\b~iu', $request) === 1;
 }
 
+/** An explicit creation+download request, not ordinary discussion of files. */
+function coreui_console_download_requested(string $request): bool {
+  return preg_match('~\\b(?:download\\w*|herunterlad\\w*)\\b~iu', $request) === 1
+    && preg_match('~\\b(?:erstell\\w*|generier\\w*|erzeug\\w*|programmier\\w*|schreib\\w*|speicher\\w*|liefer\\w*|bekomm\\w*|mach\\w*|bereitstell\\w*)\\b~iu', $request) === 1;
+}
+
 function coreui_console_inline_link_present(string $reply): bool {
   return preg_match('~\bhref\s*=\s*["\']?\s*data:(?:text/html|application/zip|text/plain|application/json|text/css|image/svg\+xml)\b~i', $reply) === 1;
 }
@@ -64,6 +70,33 @@ function coreui_console_inline_file_python(string $reply, string $request, int $
     $mime = 'text/html';
     $bytes = trim($fence[1]);
     $filename = 'minigame.html';
+  }
+  // Cloud coding models sometimes return complete standalone HTML with prose
+  // instead of a fenced block. Recover ONLY a closed document, not partial code.
+  // The original chat response is never interpreted as a trusted download URL.
+  if ($bytes === null && preg_match('~\\b(?:html|htm|minigame|mini.game|webseite)\\b~iu', $request)
+      && preg_match('~\\b(?:erstell\\w*|generier\\w*|erzeug\\w*|programmier\\w*|schreib\\w*|speicher\\w*|liefer\\w*|mach\\w*|bau\\w*|bereitstell\\w*)\\b~iu', $request)) {
+    $start = false;
+    if (preg_match('~<!doctype\\s+html\\b~i', $reply, $doctype, PREG_OFFSET_CAPTURE)) {
+      $start = $doctype[0][1];
+    } elseif (preg_match('~(?:^|[\\r\\n])\\s*<html(?:\\s|>)~i', $reply, $html, PREG_OFFSET_CAPTURE)) {
+      $rawMatch = $html[0][0];
+      $localStart = stripos($rawMatch, '<html');
+      $start = $html[0][1] + $localStart;
+    }
+    $end = strripos($reply, '</html>');
+    if ($start !== false && $end !== false && $end > $start) {
+      $candidate = trim(substr($reply, $start, $end + strlen('</html>') - $start));
+      if ($candidate !== '' && strlen($candidate) <= 1024 * 1024
+          && preg_match('~<html(?:\\s|>)~i', substr($candidate, 0, 3000))) {
+        $mime = 'text/html';
+        $bytes = $candidate;
+        $filename = 'minigame.html';
+        if (preg_match('~\\b([A-Za-z0-9][A-Za-z0-9._-]{0,100}\\.html?)\\b~i', $request, $requestedName)) {
+          $filename = $requestedName[1];
+        }
+      }
+    }
   }
   if (!is_string($bytes) || $bytes === '' || strlen($bytes) > 1024 * 1024) return null;
   if ($mime === 'text/html' && (!preg_match('~<(!doctype\s+html|html\b)~i', substr($bytes, 0, 3000))

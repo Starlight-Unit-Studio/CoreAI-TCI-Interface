@@ -23,3 +23,22 @@ check_case(coreui_console_inline_file_python('<a href="data:text/html,%3Chtml%3E
 $fenced = "Hier das Beispiel:\n```html\n".$html."\n```";
 check_case(is_array(coreui_console_inline_file_python($fenced, 'HTML-Minispiel erstellen', 20000)), 'fenced complete HTML fallback');
 check_case(coreui_console_inline_file_python('ein normaler Satz', 'HTML erstellen', 20000)===null, 'no phantom file');
+$cloudReply = "Der erste Versuch ergab FileNotFoundError. Hier die Datei:\\n"
+  . $html . "\\nKopieren ist nicht noetig.";
+$raw = coreui_console_inline_file_python($cloudReply, 'Erstelle mini_game.html zum Download', 20000);
+check_case(is_array($raw) && $raw['name'] === 'mini_game.html', 'recover complete raw cloud HTML with filename');
+check_case($raw['size_bytes'] === strlen($html), 'recovered byte count matches full document');
+check_case(coreui_console_inline_file_python(
+  "FileNotFoundError\\n<!doctype html><html><body>unvollstaendig",
+  'HTML-Minispiel als Datei', 20000
+) === null, 'partial cloud HTML must never become a file');
+check_case(coreui_console_inline_file_python(
+  "Nur Text: <html><body>abc</body></html>", 'Was ist HTML?', 20000
+) === null, 'not a download when asking a general HTML question');
+
+check_case(coreui_console_download_requested('Kannst du eine HTML-Datei erstellen und mir hier zum Download bereitstellen?'),
+  'explicit file creation and download recognized');
+check_case(!coreui_console_download_requested('Warum klappt mein Download nicht?'),
+  'ordinary download debugging must not be mistaken for file creation');
+check_case(!coreui_console_download_requested('Zeige mir bitte HTML-Code im Chat.'),
+  'inline code explanation is not forced into a download');

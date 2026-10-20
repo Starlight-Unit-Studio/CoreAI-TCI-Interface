@@ -2385,7 +2385,7 @@ function ember_py_max_chars(): int {
 }
 
 function ember_py_max_code_chars(): int {
-  return max(500, min(40000, (int)ember_cfg('STU_EMBER_PY_MAX_CODE_CHARS', 20000)));
+  return max(500, min(200000, (int)ember_cfg('STU_EMBER_PY_MAX_CODE_CHARS', 100000)));
 }
 
 // Capability-Hinweis fuer $u (Call #1).
@@ -2403,7 +2403,10 @@ function ember_py_capability_hint(): string {
     . "Wenn du das brauchst, antworte AUSSCHLIESSLICH mit genau diesem Block und sonst gar nichts "
     . "(kein Zusatztext, keine Begruessung):\n"
     . "[PY]\ndein code\n[/PY]\n"
-    . "Ausgaben fuer den Benutzer schreibst du nach /work/output (EMBER_OUTPUT_DIR). "
+    . "Der Ausgabepfad existiert bereits: /work/output (EMBER_OUTPUT_DIR). "
+    . "Fuer Cloud-/Coding-Modelle wird derselbe Ausgabeordner auch unter /mnt/data eingebunden. "
+    . "Wenn du weitere Unterverzeichnisse nutzt, erstelle sie VOR dem Dateischreiben. "
+    . "Verwende pathlib.Path(os.environ['EMBER_OUTPUT_DIR']) / 'datei.html' und .write_text(...). "
     . "HTML, ZIP und andere erzeugte Dateien werden dort gespeichert und als Downloadkarten an die Antwort angehaengt. "
     . "Erfinde keine Downloadlinks oder Datei-IDs. Gib Rechenergebnisse per print() aus. "
     . "Du erhaeltst danach stdout sowie bestaetigte Dateimetadaten und antwortest normal als Ember. "
@@ -2428,7 +2431,12 @@ function ember_py_extract_marker(string $s): ?string {
   $code = trim((string)$code);
   if ($code === '') return null;
   $max = ember_py_max_code_chars();
-  if (strlen($code) > $max) $code = substr($code, 0, $max);
+  // Never execute a truncated Python program: that can create corrupt files,
+  // Python syntax errors or a misleading FileNotFoundError in the follow-up.
+  if (strlen($code) > $max) {
+    ember_debug_log('ember_py_code_oversize', ['bytes'=>strlen($code), 'max'=>$max]);
+    return null;
+  }
   return $code;
 }
 
@@ -4479,11 +4487,27 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         }
       }
 
-      // Rescue is only successful after worker output is registered for this turn.
-      // A missing migration, failed sandbox or partial model URI must not be called a download.
-      if ($inlineFile !== null && !coreui_console_artifact_pending($consoleUid, (string)$consoleSessionId, $triggerMessageId)) {
-        return 'Die Datei konnte noch nicht als Download gespeichert werden. Bitte starte die Dateierstellung erneut.';
+      // For a file request, trusted worker bytes are the success criterion.
+      // Do not spend another cloud model call or risk a fabricated explanation
+      // after the actual downloadable files have already been registered.
+      $requestedFile = $channel === 'console' && coreui_console_download_requested($userMsg);
+      $confirmedFile = $requestedFile
+        ? coreui_console_artifact_pending($consoleUid, (string)$consoleSessionId, $triggerMessageId) : null;
+      if ($confirmedFile !== null) {
+        $anyPartial = (bool)array_filter($confirmedFile['files'], static fn(array $f): bool => !empty($f['partial']));
+        return $anyPartial
+          ? 'Ich konnte Dateien als Teilergebnis sichern. Bitte pruefe die Warnhinweise an den Downloadkarten.'
+          : 'Die Datei ist erstellt und steht unten als echter Download bereit.';
       }
+
+      // A failed file creation gets at most ONE bounded repair opportunity.
+      // This is serial through the existing Ollama lock and the existing
+      // per-turn, account-bound worker queue, never an untracked download.
+      $needsFileRepair = $requestedFile
+        && is_array($pyRes)
+        && (int)($pyRes['exit_code'] ?? -1) !== 0
+        && trim((string)($pyRes['error'] ?? '')) === ''
+        && str_contains((string)($pyRes['stderr'] ?? ''), 'FileNotFoundError');
 
       // Lean-Base fuer Call #2 (identische Begruendung wie im Web-Pfad): Lore und
       // saemtliche Werkzeug-Hinweise raus, Verlauf/Memory bleiben. Sonst schleppt
@@ -4495,15 +4519,67 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       if (isset($pyHint)     && $pyHint     !== '') $uBase = str_replace($pyHint . "\n\n", '', $uBase);
 
       $u2 = $uBase
-        . "\n\n" . ember_py_result_block($pyCode, $pyRes) . $artifactNotice . "\n"
-        . "\nAntworte jetzt normal als Ember und nutze das Ergebnis. Erklaere es in deinen eigenen Worten, "
-        . "erfinde nichts dazu was nicht in der Ausgabe steht. Wenn nichts herauskam oder der Code auf die "
-        . "Nase gefallen ist, sag das einfach so wie du bist. Schreibe KEINEN [PY]-Block mehr. Antworte als Ember:";
+        . "\n\n" . ember_py_result_block($pyCode, $pyRes) . $artifactNotice . "\n";
+      if ($needsFileRepair) {
+        $u2 .= "\nDie angefragte Datei fehlt noch. Der vorherige Python-Code hat einen FileNotFoundError "
+          . "ausgeloest. Liefere als Antwort ausschliesslich einen VOLLSTAENDIGEN, korrigierten "
+          . "[PY]-Block (kein Markdown, keine Erklaerung). Speichere die Datei mit pathlib in "
+          . "Path(os.environ['EMBER_OUTPUT_DIR']) / 'dateiname.html' oder bei ZIP entsprechend "
+          . "mit .zip. Erzeuge benoetigte Unterordner vor dem Schreiben mit "
+          . "mkdir(parents=True, exist_ok=True). In der Sandbox existiert /work/output; "
+          . "/mnt/data ist derselbe Ausgabebereich. Kein roher HTML-Quelltext und keine "
+          . "erfundenen Downloadlinks. Wiederhole keine externen Seiteneffekte.";
+      } else {
+        $u2 .= "\nAntworte jetzt normal als Ember und nutze das Ergebnis. Erklaere es in deinen eigenen Worten, "
+          . "erfinde nichts dazu was nicht in der Ausgabe steht. Wenn nichts herauskam oder der Code auf die "
+          . "Nase gefallen ist, sag das einfach so wie du bist. Schreibe KEINEN [PY]-Block mehr. Antworte als Ember:";
+      }
 
-      ember_debug_log('ember_py_call2', ['u2_chars' => strlen($u2)]);
+      ember_debug_log('ember_py_call2', ['u2_chars' => strlen($u2), 'file_repair' => $needsFileRepair]);
       $out2 = ember_call_ollama($primaryModel, $sys, $u2, ember_timeout_for_model($primaryModel), []);
       $out  = (is_string($out2) && trim($out2) !== '') ? $out2 : null;
       $finalPrompt = $u2;
+
+      // Cloud models sometimes provide an entire HTML document after the
+      // first sandbox failure. Recover a complete document as inert bytes;
+      // otherwise execute ONE corrected tool block for FileNotFoundError.
+      // Neither case lets model-supplied URLs become a download.
+      if ($requestedFile) {
+        $repairCode = $needsFileRepair && is_string($out) ? ember_py_extract_marker($out) : null;
+        // Never interpret Python source containing a HTML string as an entire
+        // standalone HTML document when the model explicitly chose [PY].
+        $safeInline = $repairCode === null && is_string($out)
+          ? coreui_console_inline_file_python($out, $userMsg, ember_py_max_code_chars()) : null;
+        $recoveryCode = $repairCode ?? (is_array($safeInline) ? $safeInline['code'] : null);
+        if ($recoveryCode !== null) {
+          $recoveryResult = ember_py_run($pdo, $recoveryCode, $channel, (int)($senderChar['user_id'] ?? 0),
+            $consoleSessionId, $triggerMessageId, $triggerRevision);
+          if (is_array($recoveryResult)) {
+            try {
+              $recovered = coreui_console_artifact_prepare_job($pdo, $consoleUid,
+                (string)$consoleSessionId, $triggerMessageId, $triggerRevision, (int)$recoveryResult['id']);
+              if ($recovered['files'] !== []) $GLOBALS['COREUI_PENDING_ARTIFACTS'] = $recovered;
+            } catch (Throwable $eRecovery) {
+              ember_debug_log('artifact_recovery_failed', ['error'=>$eRecovery->getMessage()]);
+            }
+          }
+        }
+        $confirmed = coreui_console_artifact_pending($consoleUid, (string)$consoleSessionId, $triggerMessageId);
+        if ($confirmed !== null) {
+          $anyPartial = (bool)array_filter($confirmed['files'], static fn(array $f): bool => !empty($f['partial']));
+          return $anyPartial
+            ? 'Die Datei wurde nur teilweise erzeugt und ist als Teilergebnis zum Download verfuegbar.'
+            : 'Die Datei wurde gespeichert und steht unten als echter Download bereit.';
+        }
+        // A filename in the LLM text is NOT a real file. Never dump an HTML
+        // document or claim success after a failed tool run.
+        ember_debug_log('artifact_file_request_failed', [
+          'first_exit' => is_array($pyRes) ? (int)($pyRes['exit_code'] ?? -1) : null,
+          'recovery_attempted' => $recoveryCode !== null,
+        ]);
+        return 'Die Datei konnte nicht als Download gespeichert werden. '
+          . 'Die Python-Ausgabe ist fehlgeschlagen oder unvollstaendig; es wurde keine Datei bereitgestellt.';
+      }
       $pyHandled = true;
     }
   }
@@ -4562,6 +4638,14 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   $fileFallback = ($channel === 'console' && coreui_console_artifact_pending($consoleUid, (string)$consoleSessionId, $triggerMessageId))
     ? 'Die erzeugten Dateien stehen unten zum Herunterladen bereit.' : null;
   if (!is_string($out) || trim($out) === '') return $fileFallback;
+  // A requested downloadable output is not a plain-text code tutorial.
+  // If there are no registered bytes, report the missing file truthfully
+  // instead of returning a potentially enormous or truncated HTML snippet.
+  if ($channel === 'console' && $fileFallback === null
+      && coreui_console_download_requested($userMsg)) {
+    return 'Ich konnte die angeforderte Datei noch nicht als Download erstellen. '
+      . 'Es wurde keine bestaetigte Ausgabedatei gespeichert.';
+  }
   $out = ember_sanitize_public_reply(
     $out,
     (string)($GLOBALS['STU_EMBER_LAST_THINKING'] ?? '')

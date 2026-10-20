@@ -221,15 +221,24 @@ class WorkerTests(unittest.TestCase):
             if cmd[1] == 'rm':
                 return subprocess.CompletedProcess(cmd,0 if stop else 1,b'',b'engine unavailable' if not stop else b'')
             mounts = [cmd[i+1] for i,word in enumerate(cmd[:-1]) if word == '-v']
-            self.assertEqual(len(mounts),2)
+            self.assertEqual(len(mounts), 3)
             mount = next(x for x in mounts if x.endswith(':/work/output:rw'))
             output = Path(mount[:-len(':/work/output:rw')])
-            self.assertIn('EMBER_OUTPUT_DIR=/work/output',cmd)
+            self.assertIn(str(output) + ':/mnt/data:rw', mounts)
+            self.assertIn('EMBER_OUTPUT_DIR=/work/output', cmd)
             self.assertTrue(all('/artifacts' not in x for x in mounts))
             (output / 'test.html').write_text('<html>real bytes</html>')
             if mode == 'timeout': raise subprocess.TimeoutExpired(cmd,1,b'partial stdout',b'partial stderr')
             return subprocess.CompletedProcess(cmd,1 if mode == 'error' else 0,b'output',b'')
         return run
+
+    def test_cloud_compatible_output_alias(self):
+        # Both output paths bind the same per-job directory. A model writing
+        # /mnt/data/mini_game.html therefore produces a real downloadable file.
+        with mock.patch.object(worker.subprocess, 'run', side_effect=self.docker_double()):
+            result = worker.run_in_container(self.cfg, 12, 'pass', publish_outputs=True)
+        self.assertEqual(len(result[5]['files']), 1)
+        self.assertTrue((self.base / 'artifacts' / result[5]['files'][0]['storage_key']).is_file())
 
     def test_collect_before_cleanup(self):
         with mock.patch.object(worker.subprocess,'run',side_effect=self.docker_double()):

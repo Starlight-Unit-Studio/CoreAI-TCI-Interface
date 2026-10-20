@@ -4,6 +4,10 @@ Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versi
 
 ## 0.5.5 - 20.10.2026
 
+- Cloud-Modell-Ausgaben (etwa Ollama Cloud gpt-oss:120b) koennen in der Python-Sandbox nun auch den kompatiblen Pfad `/mnt/data` verwenden. Er verweist auf denselben geschuetzten Job-Ausgabeordner wie `/work/output` und nicht auf Host- oder Nutzerdaten.
+- Bei echten Dateiauftraegen bestaetigt CoreUI Downloads nur nach einer erfolgreichen Worker-Dateiregistrierung. Nach `FileNotFoundError` ist ein einzelner korrigierter Python-Versuch zulaessig; vollstaendiges Modell-HTML kann alternativ sicher als Bytes uebernommen werden. Roher unvollstaendiger HTML-Code ist kein Download.
+- Veraltete stille 20.000-Zeichen-Kuerzung bei `[PY]` aufgehoben: groessere Skripte im dokumentierten Limit, uebergrosse Programme werden abgelehnt statt abgeschnitten. Verbindliche Version `0.5.5` bleibt rein numerisch.
+
 - Numerische CoreUI-Version ohne Suffix wiederhergestellt. Die sechs aktiven HTML-Seiten und der JavaScript-Bootstrap zeigen konsistent `0.5.5`; das Versionsformat wird in Installer und Tests gesichert.
 - Cache-Busting von manuell gepflegten Versions- oder Textlabels entkoppelt. Jede CSS-/JS-Datei erhaelt bei der Installation einen eigenen, rein numerischen, aus SHA-256-Dateibytes abgeleiteten Fingerabdruck. Unveraenderter Inhalt bleibt cachebar, Aenderungen invalidieren den jeweiligen Asset-Cache.
 - Beide Installer und Preflights verwenden denselben Cache-Buster. Nginx verlangt Revalidierung von HTML, waehrend Fingerprint-Assets weiterhin cachebar sind. Beim atomaren HTML-Update bleiben Leserechte und Eigentum erhalten.
