@@ -1,0 +1,41 @@
+STΛRLIɢHT: EMBER COREUI BY STARLIGHT UNIT STUDIOS
+CHANGELOG 0.5.6
+STAND 20.10.2026
+
+VERSIONIERUNG (VERBINDLICHER KANON)
+
+* Jeder Merge nach main braucht einen eigenen numerischen Versionssprung
+  in VERSION, bereits im betroffenen PR.
+* Keine Alpha-, Dev-, Hotfix- oder sonstigen Textsuffixe.
+* 0.5.5 war der numerische Stand nach PR #38. PR #39 hat leider
+  ohne Versionssprung gemergt. Der Fehler wird mit 0.5.6 berichtigt.
+* Alle aktiven Seiten, JavaScript-Bootstrap, Selbsttests, README,
+  Index und Uebergabeprotokoll wurden auf 0.5.6 abgeglichen.
+* Eine offline ausfuehrbare Pre-Merge-Versionspruefung ist ergaenzt.
+  GitHub Actions sind dafuer nicht erforderlich.
+
+CLOUD-MODELLE UND GESCHUETZTE DATEIAUSGABE (PR #39)
+
+* Ember CoreUI kann den Ollama-Cloud-Modellpfad gpt-oss:120b nutzen.
+* Der Python-Worker bietet denselben geschuetzten Job-Ausgabeordner
+  unter /work/output und /mnt/data an. Keiner dieser Pfade gewaehrt
+  Zugriff auf fremde Hostdateien oder den dauerhaften Artifact-Store.
+* Ein Download ist nur erfolgreich, wenn der Worker reale Bytes als
+  bestaetigtes Dateiartefakt zu einer Chatantwort registriert.
+* Bei FileNotFoundError ist ein einzelner serieller Reparaturversuch
+  vorgesehen. Vollstaendiges HTML kann ueber den Worker als echte
+  Datei gespeichert werden. Keine rohen data-Links, keine erfundenen
+  Datei-IDs und kein unvollstaendiges HTML als angeblicher Download.
+* Python-Skripte werden nicht mehr still auf 20000 Zeichen gekappt;
+  groessere erlaubte Ausgaben und Ablehnung zu langer Skripte.
+* Regressionsfaelle fuer Pfadalias und HTML-Rueckgewinnung ergaenzt.
+
+AKTUELLER STATUS
+
+Quellstand auf main, Produktversion 0.5.6. Der zugehoerige exakte
+Installations-Commit wird separat in var/dev_source_commit gespeichert.
+Der bisherige One-Liner bleibt unveraendert; kein GitHub Actions.
+End-to-End-Test mit echtem Cloud-Modell, Worker und Android-Chrome-
+Download ist weiterhin offen (Issue #29). Ein separates vollstaendig
+geprueftes 0.5.6-Release-ZIP mit SHA-256 wird hier nicht behauptet.
+Alte gepinnte Releasearchive werden nicht umbenannt.
