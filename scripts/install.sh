@@ -608,6 +608,8 @@ fi
 log "Bereite den isolierten Parallelbetrieb fuer Ember CoreUI $COREUI_VERSION vor."
 ensure_docker
 prepare_permissions
+log 'Aktualisiere numerische Content-Cache-Schluessel fuer CSS und JavaScript.'
+python3 "$PROJECT_ROOT/scripts/cache-bust.py" --root "$PROJECT_ROOT" || die 'Asset-Cache-Buster fehlgeschlagen.'
 assert_stack_identity
 assert_ports_available
 write_runtime_files

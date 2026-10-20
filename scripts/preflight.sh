@@ -131,8 +131,9 @@ UI_FILES=(
   scripts/message-actions-selftest.php
   scripts/markdown-selftest.js
   scripts/branding-license-selftest.py
-  docs/changelogs-txt/CHANGELOG_0_5_3_ALPHA.txt
-  docs/UEBERGABEPROTOKOLL_0_5_3_ALPHA.txt
+  scripts/cache-bust.py
+  docs/changelogs-txt/CHANGELOG_0_5_5.txt
+  docs/UEBERGABEPROTOKOLL_0_5_5.txt
   docker/pyworker/Dockerfile
   docker/pyworker/entrypoint.sh
   images/starlight_unit_studios_logo_original.png
@@ -142,6 +143,12 @@ for ui_file in "${UI_FILES[@]}"; do
     fail "Ember CoreUI-Oberflaechendatei fehlt oder ist leer: $ui_file"
   fi
 done
+
+if python3 "$PROJECT_ROOT/scripts/cache-bust.py" --root "$PROJECT_ROOT" --verify > /dev/null; then
+  ok 'HTML-Assets verwenden aktuelle numerische Content-Cache-Schluessel.'
+else
+  fail 'Veraltete Asset-Cache-Schluessel oder ungueltige VERSION. Installer erneut ausfuehren.'
+fi
 if grep -Fq 'console_artifact|console_artifacts' "$PROJECT_ROOT/config/runtime/nginx.conf.template"; then
   ok 'Nginx erlaubt geschuetzte Datei-Downloads und Metadaten-Endpunkt.'
 else

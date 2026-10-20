@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-EXPECTED_VERSION = "0.5.3-alpha"
+EXPECTED_VERSION = "0.5.5"
 PUBLIC_PAGES = (
     "index.html",
     "login.html",
@@ -27,8 +27,8 @@ REQUIRED_FILES = (
     "COMMUNITY_POLICY.md",
     "NOTICE.md",
     "COPYRIGHT.md",
-    "docs/changelogs-txt/CHANGELOG_0_5_3_ALPHA.txt",
-    "docs/UEBERGABEPROTOKOLL_0_5_3_ALPHA.txt",
+    "docs/changelogs-txt/CHANGELOG_0_5_5.txt",
+    "docs/UEBERGABEPROTOKOLL_0_5_5.txt",
 )
 
 
@@ -45,7 +45,10 @@ def require(condition: bool, message: str) -> None:
 
 
 def main() -> int:
-    require(read("VERSION").strip() == EXPECTED_VERSION, "VERSION mismatch")
+    version = read("VERSION").strip()
+    require(re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", version) is not None,
+            "VERSION must be numeric-only")
+    require(version == EXPECTED_VERSION, "VERSION mismatch")
 
     for relative_path in REQUIRED_FILES:
         read(relative_path)
@@ -65,6 +68,14 @@ def main() -> int:
 
     for relative_path in PUBLIC_PAGES:
         page = read(relative_path)
+        require("0.5.3-alpha" not in page, f"Outdated active version: {relative_path}")
+        asset_keys = re.findall(
+            r'(?:href|src)="(?:\./|\.\./)(?:css|js)/[^"]+\?v=([^"]+)"',
+            page
+        )
+        require(bool(asset_keys), f"Asset cache keys missing: {relative_path}")
+        require(all(re.fullmatch(r"(?:[0-9]+\.[0-9]+\.[0-9]+|[0-9]{25})", key)
+                    for key in asset_keys), f"Cache key is not numeric: {relative_path}")
         require(
             re.search(
                 r'<meta\s+name="application-name"\s+content="[^"]*Ember CoreUI[^"]*"',

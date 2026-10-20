@@ -182,6 +182,9 @@ command -v php >/dev/null || die 'PHP wurde nicht gefunden.'
 command -v mariadb >/dev/null || die 'MariaDB-Client wurde nicht gefunden.'
 command -v nginx >/dev/null || die 'Nginx wurde nicht gefunden.'
 
+log 'Aktualisiere numerische Content-Cache-Schluessel fuer CSS und JavaScript.'
+python3 "$PROJECT_ROOT/scripts/cache-bust.py" --root "$PROJECT_ROOT" || die 'Asset-Cache-Buster fehlgeschlagen.'
+
 log 'Pruefe die paketierten PHP- und Python-Quellen.'
 while IFS= read -r -d '' php_file; do
   php -l "$php_file" >/dev/null || die "PHP-Syntaxfehler in $php_file"
