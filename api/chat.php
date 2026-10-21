@@ -540,8 +540,8 @@ function ember_num_ctx(): int {
 }
 
 function ember_num_ctx_for_model(string $model): int {
-  // v1.1.1.93: zweiter Deckel entfernt (siehe ember_num_ctx). Gemma 4 traegt
-  // laut Modelfile 16384; der konfigurierte Wert entscheidet jetzt wirklich.
+  // Context tuning remains available ONLY to explicitly enabled non-Gemma
+  // adapters. Gemma 4 and the Ember-local alias use model-managed context.
   $n = ember_num_ctx();
   return max(512, min(65536, $n));
 }
@@ -8263,7 +8263,6 @@ if ($action === 'ember_warmup') {
       ember_call_ollama(ember_model(), "DU BIST EMBER. Antworte exakt mit ok.", "ok", 8, [
         '__suppress_fail_log' => 1,
         'num_predict' => 8,
-        'num_ctx' => 512,
         'temperature' => 0.1,
         'top_p' => 0.5,
       ]);
