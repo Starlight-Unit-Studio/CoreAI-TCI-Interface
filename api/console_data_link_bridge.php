@@ -60,6 +60,28 @@ function coreui_console_project_fences_python(string $reply, string $request, in
       $heading = trim((string)$heading, " \t`*:");
       if (preg_match('~^' . $namePattern . '$~i', $heading)) $name = $heading;
     }
+    // Small local models often omit file headings. Infer only when a language
+    // fence maps to exactly one still-missing filename explicitly requested
+    // by the user. Ambiguous or unnamed outputs remain untrusted.
+    if ($name === '' && $requested !== []) {
+      $languageParts = preg_split('~\s+~', strtolower($info));
+      $language = (string)($languageParts[0] ?? '');
+      $extensions = [
+        'html'=>'html','htm'=>'html','css'=>'css','js'=>'js','javascript'=>'js',
+        'json'=>'json','python'=>'py','py'=>'py','markdown'=>'md','md'=>'md',
+        'svg'=>'svg','text'=>'txt','txt'=>'txt',
+      ];
+      $ext = $extensions[$language] ?? '';
+      if ($ext !== '') {
+        $matches = [];
+        foreach ($requested as $wanted) {
+          $wantedExt = strtolower(pathinfo($wanted, PATHINFO_EXTENSION));
+          if ($wantedExt === 'htm') $wantedExt = 'html';
+          if ($wantedExt === $ext && !isset($files[$wanted])) $matches[] = $wanted;
+        }
+        if (count($matches) === 1) $name = $matches[0];
+      }
+    }
     if ($name === '') continue;
     $key = strtolower($name);
     if (isset($files[$key]) || $body === '' || strlen($body) > 150000) return null;
