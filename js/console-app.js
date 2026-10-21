@@ -796,6 +796,68 @@
     image.src = String(url);
   }
 
+  // Suggested follow-ups are ordinary user questions presented as buttons.
+  // Intentionally conservative: only the explicit closing question section,
+  // never arbitrary lists in a model answer, is treated as interactive UI.
+  function extractSuggestedReplies(markdown) {
+    var source = String(markdown || '');
+    if (!source || source.length > 18000) return [];
+    var lines = source.split(/\r?\n/);
+    var start = -1;
+    for (var i = Math.max(0, lines.length - 18); i < lines.length; i++) {
+      var heading = lines[i].trim().replace(/^#{1,6}\s*/, '').replace(/\*\*/g, '').replace(/^\d+[.)]\s*/, '');
+      if (/^(?:was moechtest du als naechstes|was möchtest du als nächstes|wie soll es weitergehen|womit soll ich fortfahren|moechtest du als naechstes|möchtest du als nächstes)/i.test(heading)) start = i;
+    }
+    if (start < 0) return [];
+    var choices = [];
+    for (var j = start + 1; j < lines.length && j <= start + 12; j++) {
+      var line = lines[j].trim();
+      if (!line) continue;
+      var match = line.match(/^(?:[-*•]|\d+[.)])\s+(.+)$/);
+      if (!match) break;
+      var label = match[1].replace(/\*\*/g, '').trim();
+      if (!label || label.length > 180 || /[<>\[\]{}]/.test(label)) return [];
+      if (!/[?？]$/.test(label)) label += '?';
+      if (!choices.includes(label)) choices.push(label);
+      if (choices.length >= 4) break;
+    }
+    // Only a closing suggestion block may become a control; narrative
+    // continuing after the list is never interpreted as an action.
+    var remainder = lines.slice(start + 1).filter(function (line) {
+      return line.trim() && !/^(?:[-*•]|\d+[.)])\s+/.test(line.trim());
+    });
+    if (remainder.length) return [];
+    return choices.length >= 2 ? choices : [];
+  }
+
+  function buildSuggestedReplyButtons(markdown, sessionId) {
+    if (!sessionId) return null;
+    var options = extractSuggestedReplies(markdown);
+    if (!options.length) return null;
+    var wrapper = document.createElement('div');
+    wrapper.className = 'ember-suggested-replies';
+    wrapper.setAttribute('role', 'group');
+    wrapper.setAttribute('aria-label', 'Vorgeschlagene Antworten');
+    options.forEach(function (label) {
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'ember-suggested-reply';
+      button.textContent = label;
+      button.addEventListener('click', function () {
+        var ses = activeSession();
+        if (!ses || String(ses.id) !== String(sessionId)) return;
+        if (state.editingMessage) {
+          clearMessageEdit(false);
+          updateActivePendingUi();
+        }
+        if (inputEl) inputEl.value = label;
+        sendMessage(label);
+      });
+      wrapper.appendChild(button);
+    });
+    return wrapper;
+  }
+
   // ── DOM: Nachricht einfügen ──────────────────────────────
   function appendMessageEl(role, text, name, thinkingText, attachment, createdAt, record) {
     var row = document.createElement('div');
@@ -857,6 +919,10 @@
     var attachments = Array.isArray(attachment) ? attachment : (attachment ? [attachment] : []);
     // Leere Blase unterdruecken, wenn nur Anhaenge gesendet wurden.
     if (text || attachments.length === 0) content.appendChild(bubble);
+    if (role === 'ember' && messageId > 0 && record && Number(record.reply_to_id) > 0) {
+      var suggestionRow = buildSuggestedReplyButtons(text, String(record.session_id || (activeSession() && activeSession().id) || ''));
+      if (suggestionRow) content.appendChild(suggestionRow);
+    }
 
     // v1.1.1.89: Anhang darstellen. Bilder direkt, alles andere als Karte
     // mit Link auf den authentifizierten Auslieferungs-Endpunkt.

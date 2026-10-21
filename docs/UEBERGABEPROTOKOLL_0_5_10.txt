@@ -1,0 +1,42 @@
+STΛRLIɢHT: EMBER COREUI BY STARLIGHT UNIT STUDIOS
+UEBERGABEPROTOKOLL 0.5.10
+STAND 21.10.2026
+
+1. BASIS
+Version 0.5.9 wurde nach Nutzerangabe serverseitig getestet.
+Dieses Update erweitert nur den Chat-Client und die Planung.
+Migration 013 und Installer-One-Liner bleiben unveraendert.
+Releaseversion 0.5.10 ist numerisch und umfasst Pflichtlabels.
+
+2. ANKLICKBARE FOLGEFRAGEN
+js/console-app.js erkennt am Ende einer gespeicherten
+E.M.B.E.R.-Nachricht die ausdrueckliche Frage nach dem naechsten
+Schritt und die direkt folgenden 2 bis 4 Fragen in einer Liste.
+Daraus entstehen Textbuttons unter derselben Antwort. Text wird
+nur mit textContent angezeigt, nie als HTML interpretiert.
+Klick nutzt sendMessage und damit bestehende Konto-/Chat-/SSE-
+Warteschlangenregeln. Bei Sitzungswechsel verworfen. Keine
+separate Modellgenerierung fuer Vorschlagskarten.
+CSS mobil und per Tastatur bedienbar; Reload rekonstruiert
+die Vorschlaege aus dem gespeicherten Antworttext.
+Nicht alle freien Modellantworten sind erkennbar:
+Ohne eindeutige Abschlussfrage werden keine Buttons erfunden.
+
+3. ZUSAETZLICHE P20-PLANUNG
+docs/COREUI_IMAGE_ENGINE_PLAN.md konkretisiert einen eigenen
+native CPU-Bildgenerator als spaetere Erweiterung.
+stable-diffusion.cpp, FLUX.1-schnell und SDXL-Turbo sind
+unverbindliche Kandidaten. Lizenz, Modellformate, Encoder/VAE,
+Ressourcenlimits und Benchmarks vor Freigabe pruefen.
+Native Bildjobs duerfen den einen globalen Modellslot
+niemals umgehen. Keine Gewichte, Runner oder GPU-Pflichten
+durch dieses UI-/Dokumentationsupdate eingefuehrt.
+
+4. OFFENE ABNAHME
+Browser: Desktop und Android Chrome, Vorschlaege nach Reload,
+Klick waehrend laufender Antwort und Kontowechsel testen.
+Node/JS-Syntax, bestehende Markdown- und PHP-Selbsttests und
+Versionsguard ohne GitHub Actions lokal pruefen.
+Native Image Engine spaeter getrennt nach P20 implementieren.
+HTML-Download in 0.5.8 bestaetigt; ZIP-Abnahme Issue #29 offen.
+Kein neues ZIP/SHA-Release behaupten.

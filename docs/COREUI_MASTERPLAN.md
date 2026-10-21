@@ -173,6 +173,10 @@ Die Matrix führt Chatorganisation und Projekte, Prompt-/Modellprofile, Wissen u
 
 Breite Funktionsabdeckung bedeutet auch, Voraussetzungen sichtbar zu machen: Nicht jeder lokale Modellprovider bietet dieselben Medien-, Tool- oder Reasoning-Funktionen. Fehlende Fähigkeiten werden nachvollziehbar angezeigt und über passende eigene Integrationen ergänzt.
 
+### Native CPU-Bildgenerierung als P20-Unterarchitektur
+
+Die [Ember Image Engine Planung](COREUI_IMAGE_ENGINE_PLAN.md) dokumentiert einen eigenen C/C++-basierten Bildpfad. stable-diffusion.cpp ist Referenz und moegliche native Runtime, FLUX.1-schnell und SDXL-Turbo sind nicht vorausgewaehlte, noch zu benchmarkende Modellkandidaten. Alle Bildjobs teilen denselben provideruebergreifenden Modellslot wie Ollama und werden mit echten Bilddateien im Artefaktregister gespeichert. Gewichte, Textencoder, VAE, Lizenzen, AVX-512-/CPU-Faehigkeiten, Speicherverbrauch und Laufzeit werden vor Freigabe auf dem Zielserver geprueft. Ein GGUF-Modell allein ergibt keine lauffaehige Pipeline.
+
 ## 9. Reihenfolge und überprüfbare Meilensteine
 
 Die Reihenfolge beschreibt technische Abhängigkeiten. Sie setzt keine Veröffentlichungstermine fest und vergibt keine neuen Versionsnummern. Einzelne unabhängige Aufgaben können vorbereitet werden; E.M.B.E.R.s Modellverarbeitung bleibt in allen Phasen seriell.
