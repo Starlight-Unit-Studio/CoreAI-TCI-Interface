@@ -63,6 +63,13 @@ function coreui_model_queue_acquire(
              WHERE status='running' AND started_at < DATE_SUB(NOW(3),INTERVAL 3 SECOND)"
           );
         }
+        // Keep the queue bounded; active and waiting tickets are never pruned.
+        $pdo->exec(
+          "DELETE FROM stu_console_model_queue
+           WHERE status IN ('completed','cancelled','timed_out','interrupted')
+             AND finished_at < DATE_SUB(NOW(3),INTERVAL 7 DAY)
+           LIMIT 100"
+        );
         $lastCleanup = $now;
       }
       $head = $pdo->query(
@@ -98,7 +105,7 @@ function coreui_model_queue_acquire(
           }
         }
       }
-      if (function_exists('sse_comment') && $now - $lastHeartbeat >= 0) {
+      if (function_exists('sse_comment')) {
         // The stream also emits heartbeat events while the provider is active.
         // Keep queue comments bounded; no user prompts or model data.
         if (!isset($GLOBALS['COREUI_QUEUE_SSE_AT']) || $now - (float)$GLOBALS['COREUI_QUEUE_SSE_AT'] >= 10) {
