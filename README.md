@@ -7,7 +7,11 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 Ember CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.13` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.14` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## PHP/MariaDB runtime validation (0.5.14)
+
+The Docker-based installer verifies that the newly built PHP image actually loads `pdo_mysql` before starting services, then force-recreates the dedicated PHP and web containers using the validated image. Both runtime variants now check extensions via PHP's `extension_loaded()` rather than piping `php -m` through `grep -q`, which can report a false negative with `pipefail`. If the PDO driver is truly unavailable, deployment fails visibly, not silently. MariaDB data, accounts, uploads and configuration remain unchanged. Re-run the existing setup one-liner to apply the repaired installer; check the preflight on the server.
 
 ## Local file generation with Ollama models
 
