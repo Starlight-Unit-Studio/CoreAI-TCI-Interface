@@ -2,6 +2,15 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.13 - 21.10.2026
+
+- Lokale Ollama-Dateiauftraege gehen unmittelbar in den bestehenden isolierten Python-Werkzeugpfad. Der zuvor ueberfluessige erste allgemeine SSE-Modellstream entfaellt bei expliziter Dateierstellung mit Downloadwunsch. Alle Modellaufrufe bleiben in derselben globalen seriellen Warteschlange.
+- Der Werkzeugaufruf verlangt einen vollstaendigen `[PY]`-Block. Fehlt ein ausfuehrbarer Auftrag, erfolgt maximal ein kurzer, fokussierter Zweitversuch. Bei `ember-coreui:*` und `gemma4:*` laeuft die reine Dateicode-Erzeugung standardmaessig mit `think:false` (optional `STU_EMBER_LOCAL_FILE_THINK=true`). Andere Provider behalten ihre bisherige Einstellung.
+- Ein vollstaendiger Python-Codeblock kann bei ausdruecklicher Downloadanforderung sicher im bestehenden Worker ausgefuehrt werden. Benannte oder eindeutig zuordenbare HTML/CSS/JS-Fences werden stattdessen als inerte Dateibytes geschrieben. Ein verlangtes ZIP wird im Sandbox-Worker erstellt und mit `zipfile` geprueft.
+- Der Chat meldet keinen vollstaendigen Dateierfolg, wenn im Nutzerauftrag explizit benannte Ausgabedateien oder das ZIP fehlen. Fehlende Werkzeuginstruktionen werden im gespeicherten Arbeitsweg als Fehler ausgewiesen, statt einen Download zu erfinden.
+- Neuer PHP-Selbsttest fuer mehrteilige Projekte, ZIP und Dateivollstaendigkeit, in beide Preflights integriert; Frontend-Vertrag geprueft. Ein lokaler isolierter Python-ZIP-Probelauf war erfolgreich. Echte `ember-coreui:latest`-Live-Abnahme bleibt offen.
+- Keine Migration, keine Aenderung des Installer-One-Liners, keine GitHub Actions und kein neues geprueftes ZIP/SHA-Release.
+
 ## 0.5.12 - 21.10.2026
 
 - Der Info-Schalter unter gespeicherten E.M.B.E.R.-Antworten zeigt wieder die **GESAMTDAUER**, auch nach Chatwechsel und Browser-Reload. Bisher war die Antwortzeit nur fluechtig an den Nachrichtentimestamp gebunden.
