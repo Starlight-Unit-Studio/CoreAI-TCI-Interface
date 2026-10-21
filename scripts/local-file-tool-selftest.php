@@ -33,6 +33,22 @@ local_file_test(str_contains($script, 'zipfile.ZipFile') && str_contains($script
   && str_contains($script, "Path('/work/output')"), 'sandbox ZIP validation missing');
 local_file_test(!str_contains($script, "console.log('Snake')"),
   'model source must be inert encoded data, not executable Python');
+// Regression for PHP JSON's default '/' escaping: JSON accepts it, but
+// Python base64 strings retain the backslash and fail with
+// binascii.Error: Only base64 data is allowed.
+$slashHtml = '<!DOCTYPE html><html lang="de"><head><link rel="stylesheet" href="style.css"></head><body><script src="game.js"></script></body></html>';
+$slashPayload = base64_encode(gzcompress($slashHtml, 6));
+local_file_test(str_contains($slashPayload, '/'), 'base64 slash fixture is not representative');
+$slashReply = "### index.html\n```html\n" . $slashHtml . "\n```\n"
+  . "### style.css\n```css\nbody{background:black;color:lime}\n```\n"
+  . "### game.js\n```javascript\nconsole.log('snake')\n```\n";
+$slashProject = coreui_console_project_fences_python($slashReply, $request, 100000);
+local_file_test(is_array($slashProject), 'slash fixture must produce ZIP wrapper');
+$slashCode = (string)$slashProject['code'];
+local_file_test(str_contains($slashCode, $slashPayload),
+  'bridge must preserve exact base64 content in Python literal');
+local_file_test(!str_contains($slashCode, '\\' . '/'),
+  'bridge must not inject JSON slash escapes into Python base64');
 $unnamed = "```html\n<html><body>Snake</body></html>\n```\n"
   . "```css\nbody{color:white}\n```\n"
   . "```javascript\nconsole.log(1)\n```";
