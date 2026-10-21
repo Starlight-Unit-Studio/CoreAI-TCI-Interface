@@ -1973,7 +1973,7 @@
       try { es.close(); } catch (e) {}
       var data = {};
       try { data = JSON.parse(ev.data) || {}; } catch (e) {}
-      clearAgentRun(sessionId);
+      if (!(data && Number(data.browse_job_id) > 0)) clearAgentRun(sessionId);
       finalizeStream(data, ses, userMsgId, generationRequest || null);
     });
     es.addEventListener('error', function() {
@@ -2155,6 +2155,15 @@
   // Klickkoordinaten loesen einen Klickimpuls aus.
   function openBrowseWindow(jobId, sessionId) {
     var panel       = buildBrowsePanel();
+    var browseStop = document.createElement('button');
+    browseStop.type = 'button';
+    browseStop.className = 'agent-stop-button';
+    browseStop.hidden = true;
+    browseStop.textContent = '■ Auftrag abbrechen';
+    browseStop.addEventListener('click',requestActiveRunCancel);
+    if (panel.parentNode) panel.parentNode.appendChild(browseStop);
+    state.agentStopEl = browseStop;
+    updateAgentCancelControl();
     var head        = panel.querySelector('.browse-live-state');
     var urlLabel    = panel.querySelector('.browse-live-url');
     var status      = panel.querySelector('.browse-live-status');
@@ -2405,6 +2414,7 @@
       ingestNewMessages(ses, d.messages);
 
       if (found) {
+        clearAgentRun(sessionId);
         delete state.pendingBySession[sessionId];
         delete state.pollTimers[sessionId];
         if (isActiveSession(sessionId)) {
@@ -2455,6 +2465,7 @@
       });
       ingestNewMessages(ses, d.messages);
       if (receivedReply && state.pendingBySession[sessionId]) {
+        clearAgentRun(sessionId);
         delete state.pendingBySession[sessionId];
         if (isActiveSession(sessionId)) {
           stopCountdown();
