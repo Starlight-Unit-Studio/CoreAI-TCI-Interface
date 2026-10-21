@@ -2118,6 +2118,7 @@
     if (state.generationPollTimers[sessionId]) clearTimeout(state.generationPollTimers[sessionId]);
     delete state.generationPollTimers[sessionId];
     delete state.pendingBySession[sessionId];
+    delete state.liveWorkEventsBySession[sessionId];
     clearAgentRun(sessionId);
     if (!isActiveSession(sessionId)) return;
     stopCountdown();
@@ -2502,7 +2503,12 @@
       var id = Number(m.id) || 0;
       if (id > newest) newest = id;
       if (!known[String(id)] && isActiveSession(ses.id) && !state.streamedIds[id]) {
-        renderMessageRecord(m);
+        // Render the merged, verified record, not the pre-merge HTTP object:
+        // it may be missing SSE work steps recovered from the live timeline.
+        var saved = (state.messageCacheBySession[ses.id] || []).find(function(row) {
+          return Number(row.id) === id;
+        });
+        renderMessageRecord(saved || m);
       }
     });
     ses.client_cursor = newest;
@@ -2526,6 +2532,7 @@
     var sessionId = String(ses.id);
     state.pollAttemptsBySession[sessionId] = Number(state.pollAttemptsBySession[sessionId] || 0) + 1;
     if (state.pollAttemptsBySession[sessionId] > MAX_POLL_ATTEMPTS) {
+      delete state.liveWorkEventsBySession[sessionId];
       delete state.pendingBySession[sessionId];
       delete state.pollTimers[sessionId];
       if (isActiveSession(sessionId)) {
