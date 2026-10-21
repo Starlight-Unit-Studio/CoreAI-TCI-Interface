@@ -1,0 +1,59 @@
+STΛRLIɢHT: EMBER COREUI BY STARLIGHT UNIT STUDIOS
+UEBERGABEPROTOKOLL 0.5.12
+STAND 21.10.2026
+
+1. ANLASS
+Nutzerbestaetigung 21.10.2026: P06-Arbeitsweg aus 0.5.11
+bleibt auch nach Chatwechsel erhalten. Der Info-Schalter
+unter der fertigen Antwort zeigte jedoch nur noch
+Typ, Nachricht-ID und Turn-ID, keine Antwortdauer.
+
+2. URSACHE
+js/console-app.js/showResponseTime() schrieb eine
+fluechtige clientseitige Stoppuhr in den Zeitstempel.
+Beim Neurendern von Verlauf/Antwort verschwand dieser
+Wert. buildMessageDetails() las keine persistierten
+Laufzeit-Metadaten.
+
+3. KORREKTUR
+api/console_stream.php:
+- Millisekundengenaue Server-Gesamtdauer als elapsed_ms
+  in vorhandenen Work-Event-Metadaten und SSE done.
+- Gemessene HTTP-Modellstream-Dauer als duration_ms
+  in vorhandenen Work-Event-Metadaten. Ohne Queuezeit.
+api/console_agent_runs.php:
+- Kontogebundene, persistierte Agentenlaufzeit aus
+  TIMESTAMPDIFF(MICROSECOND,started_at,finished_at),
+  als fallback duration_ms fuer autorisierte History.
+js/console-app.js:
+- buildMessageDetails zeigt Gesamtdauer und, falls
+  gemessen, reine Modellzeit im Infofeld.
+- Alte 0.5.11-Antworten mit Work-Event elapsed_ms
+  zeigen wieder ihre Gesamtdauer nach Reload.
+- Fehlt die Work-Event-Dauer, wird die klar bezeichnete
+  Agentenlaufzeit genutzt. Fehlende Werte bleiben leer.
+- Kein Auslesen von rohem Thinking oder Providertext.
+
+4. TESTS UND LIVE-ABNAHME
+scripts/response-timing-ui-selftest.js prueft das
+Zeitformat, Legacy-Events, Modellzeit und Fallback.
+scripts/agent-runs-selftest.php prueft die
+kontogebundene Zeituebergabe.
+scripts/frontend-regression-selftest.php prueft
+die API- und UI-Verkabelung. Beide Preflights pruefen
+die neue Datei und fuehren Node-Test optional aus.
+Live-Test: Eine neue Modellantwort mit Werkzeugen
+erzeugen. Im Infofeld sollten Gesamtdauer und
+Modellzeit erscheinen. Chat wechseln und zurueck,
+Browser neu laden und die gleichen Angaben pruefen.
+Bei der vorhandenen Snake-Antwort aus 0.5.11 sollte
+mindestens die gespeicherte Gesamtdauer erscheinen,
+falls das Work-Event vorhanden ist.
+
+5. GRENZEN
+Eine Modellzeit fuer fruehere Antworten kann nicht
+nachtraeglich exakt rekonstruiert werden, wenn keine
+separate Modellmessung gespeichert wurde.
+Eine Live-Messung auf dem Zielserver steht noch aus.
+Kein Datenbankschema, Installer-One-Liner oder
+historisches ZIP/SHA-Release wurde veraendert.
