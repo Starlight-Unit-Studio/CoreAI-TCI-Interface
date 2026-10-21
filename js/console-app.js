@@ -128,6 +128,8 @@
     activeAgentRunsBySession: {},
     agentStopEl: null,
     messageCacheBySession: {},
+    liveWorkEventsBySession: {},
+    lastCompletedWorkMessageBySession: {},
     historyHasMoreBySession: {},
     historyOldestBySession: {},
     generationPollTimers: {},
@@ -581,10 +583,52 @@
     loadChatHistory(ses).then(function () { drainQueuedTurn(ses.id); });
   }
 
+  function workEventMerge(serverEvents, liveEvents) {
+    if (!window.CoreUIWorkEvents || !window.CoreUIWorkEvents.merge) {
+      return Array.isArray(serverEvents) ? serverEvents : [];
+    }
+    return window.CoreUIWorkEvents.merge(serverEvents, liveEvents);
+  }
+
+  function rememberLiveWorkEvent(sessionId, turnId, runKey, raw) {
+    if (!window.CoreUIWorkEvents || !window.CoreUIWorkEvents.normalize) return null;
+    var event = window.CoreUIWorkEvents.normalize(raw);
+    if (!event) return null;
+    var bucket = state.liveWorkEventsBySession[sessionId];
+    if (!bucket || bucket.turnId !== turnId || bucket.runKey !== runKey) {
+      bucket = {turnId:turnId,runKey:runKey,events:[]};
+      state.liveWorkEventsBySession[sessionId] = bucket;
+    }
+    bucket.events = workEventMerge(bucket.events,[event]);
+    return event;
+  }
+
+  function liveWorkForReply(sessionId, turnId, runKey) {
+    var bucket = state.liveWorkEventsBySession[sessionId];
+    return bucket && bucket.turnId === turnId && bucket.runKey === runKey
+      ? bucket.events : [];
+  }
+
   function mergeSessionMessages(sessionId, rows) {
     var merged = {};
     (state.messageCacheBySession[sessionId] || []).concat(rows || []).forEach(function(m) {
-      if (m && Number(m.id) > 0) merged[String(m.id)] = m;
+      if (!m || Number(m.id) <= 0) return;
+      var id = String(m.id);
+      var prior = merged[id];
+      if (isEmberMsg(m)) {
+        var turnId = Number(m.reply_to_id) || 0;
+        var pendingTurn = Number(state.pendingBySession[sessionId]) || 0;
+        var bucket = state.liveWorkEventsBySession[sessionId];
+        var liveEvents = bucket && pendingTurn === turnId && bucket.turnId === turnId
+          ? bucket.events : [];
+        var oldEvents = prior && Array.isArray(prior.work_events) ? prior.work_events : [];
+        var combined = workEventMerge(m.work_events, workEventMerge(oldEvents,liveEvents));
+        if (combined.length) {
+          m = Object.assign({},m,{work_events:combined});
+          if (liveEvents.length) state.lastCompletedWorkMessageBySession[sessionId] = Number(m.id);
+        }
+      }
+      merged[id] = m;
     });
     state.messageCacheBySession[sessionId] = Object.keys(merged).map(function(id) {
       return merged[id];
@@ -898,6 +942,9 @@
       var workTimeline = window.CoreUIWorkEvents.create({
         events: record.work_events,
         expanded: uiPreferences.thinkingExpanded === true
+          || Number(record.id) === Number(state.lastCompletedWorkMessageBySession[
+            String(record.session_id || (activeSession() && activeSession().id) || '')
+          ])
       });
       if (workTimeline) content.appendChild(workTimeline);
     }
@@ -1388,8 +1435,14 @@
     nameEl.textContent = (state.assistantName || 'Ember').toUpperCase();
     content.appendChild(nameEl);
 
+    var session = activeSession();
+    var bucket = session && state.liveWorkEventsBySession[String(session.id)];
     state.thinkingPanelEl = window.CoreUIWorkEvents
-      ? window.CoreUIWorkEvents.create({live:true,expanded:true})
+      ? window.CoreUIWorkEvents.create({
+          live:true,expanded:true,
+          events: bucket && bucket.turnId === Number(state.pendingBySession[String(session.id)])
+            ? bucket.events : []
+        })
       : null;
     if (state.thinkingPanelEl) content.appendChild(state.thinkingPanelEl);
     var stop = document.createElement('button');
@@ -1957,6 +2010,15 @@
     }
 
     var streamDone = false;
+    var workRunKey = generationRequest && generationRequest.id
+      ? String(generationRequest.id) : 'base';
+    var activeBucket = state.liveWorkEventsBySession[sessionId];
+    if (!activeBucket || activeBucket.turnId !== Number(userMsgId)
+        || activeBucket.runKey !== workRunKey) {
+      state.liveWorkEventsBySession[sessionId] = {
+        turnId:Number(userMsgId),runKey:workRunKey,events:[]
+      };
+    }
 
     function panelBody() {
       return isActiveSession(sessionId) && state.thinkingPanelEl
@@ -1987,9 +2049,11 @@
       armWatchdog();
       try {
         if (!isActiveSession(sessionId) || !window.CoreUIWorkEvents) return;
+        var event = rememberLiveWorkEvent(sessionId,Number(userMsgId),
+          workRunKey,JSON.parse(ev.data));
         var body = panelBody();
-        if (body) {
-          window.CoreUIWorkEvents.add(body, JSON.parse(ev.data));
+        if (body && event) {
+          window.CoreUIWorkEvents.add(body,event);
           scrollToBottom();
         }
       } catch (e) {}
@@ -2123,6 +2187,13 @@
     );
     var emberId  = (data && data.id) ? (data.id | 0) : 0;
     var browseJobId = (data && data.browse_job_id) ? (data.browse_job_id | 0) : 0;
+    var workRunKey = generationRequest && generationRequest.id
+      ? String(generationRequest.id) : 'base';
+    var savedWork = workEventMerge(data && data.work_events,
+      liveWorkForReply(sessionId,Number(userMsgId),workRunKey));
+    if (emberId > 0 && savedWork.length) {
+      state.lastCompletedWorkMessageBySession[sessionId] = emberId;
+    }
     if (browseJobId <= 0) delete state.pendingBySession[sessionId];
     if (emberId > 0) state.streamedIds[emberId] = true; // Poll darf diese ID nicht doppelt rendern
     if (emberId > 0 && text) {
@@ -2135,7 +2206,7 @@
         message: text,
         is_ember: true,
         thinking_content: thinking,
-        work_events: data && Array.isArray(data.work_events) ? data.work_events : [],
+        work_events: savedWork,
         generation: data && data.generation_mode ? {
           mode: data.generation_mode,
           source_response_id: data.source_response_id || 0
@@ -2147,6 +2218,9 @@
       if (data && (data.generation_mode === 'regenerate' || data.generation_mode === 'edit')) {
         variantSelectionForSession(sessionId)[String(Number(userMsgId) || 0)] = emberId;
       }
+    }
+    if (emberId > 0 && browseJobId <= 0) {
+      delete state.liveWorkEventsBySession[sessionId];
     }
     if (emberId > Number(ses.last_message_id || 0)) ses.last_message_id = emberId;
 
@@ -2480,6 +2554,7 @@
       ingestNewMessages(ses, d.messages);
 
       if (found) {
+        delete state.liveWorkEventsBySession[sessionId];
         clearAgentRun(sessionId);
         delete state.pendingBySession[sessionId];
         delete state.pollTimers[sessionId];
@@ -2531,6 +2606,7 @@
       });
       ingestNewMessages(ses, d.messages);
       if (receivedReply && state.pendingBySession[sessionId]) {
+        delete state.liveWorkEventsBySession[sessionId];
         clearAgentRun(sessionId);
         delete state.pendingBySession[sessionId];
         if (isActiveSession(sessionId)) {
