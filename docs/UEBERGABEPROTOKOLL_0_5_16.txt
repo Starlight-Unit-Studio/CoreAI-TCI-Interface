@@ -1,0 +1,50 @@
+STΛRLIɢHT: EMBER COREUI BY STARLIGHT UNIT STUDIOS
+UEBERGABEPROTOKOLL 0.5.16
+STAND 21.10.2026
+
+1. ANLASS
+Beim lokalen Modell ember-coreui:latest zeigte der live
+gespeicherte Arbeitsweg waehrend einer Snake-Spiel-ZIP-Aufgabe
+zwei Werkzeuglaeufe. Job 35: SyntaxError, exit 1; Job 36:
+exit 0, aber output_missing. Das System vermied eine falsche
+Download-Bestaetigung. Die Python-Werkzeuginfrastruktur selbst
+war erreichbar; das Problem lag beim unzuverlaessigen
+modellerzeugten Dateischreibcode.
+
+2. IMPLEMENTIERUNG
+api/console_data_link_bridge.php:
+  coreui_console_multifile_source_directive() erkennt
+  explizite ZIP-Downloads mit 2 bis 9 konkret genannten
+  Quelldateien und erstellt eine klare Modell-Instruktion
+  zum Ausgeben kompletter benannter Markdown-Quelltextbloecke.
+api/chat.php:
+  ember_generate_reply() entfernt fuer diese Route
+  widersprechende allgemeine Python-/Web-/Browse-Hinweise,
+  reicht den Quelltextvertrag stattdessen an das lokale Modell
+  und akzeptiert ausschliesslich vollstaendige Source-Fences.
+  Der vorhandene getestete Bridge-Code speichert die Texte
+  als inerte Bytes und stellt selbst den kontrollierten
+  Python-Wrapper mit Dateipruefung und ZIP-Test bereit.
+  Bei fehlenden Dateien ein kurzer Quelltext-Retry.
+  Scheitert nach erfolgreichem Parsing der echte Worker,
+  wird die teure zweite Python-Modellkorrektur uebersprungen.
+scripts/local-file-tool-selftest.php:
+  Neues Vertrags-/Grenzregressionstestset neben dem
+  bestehenden Test fuer Source-Fences und ZIP-Pruefung.
+
+3. NICHT VERAENDERT
+Local-Gemma-Modellparameter, Thinking-Schalter, globale
+Modellwarteschlange, Python-Sandbox, Artifakt-Ownership,
+Kontentrennung, Dateigroessen- und Pfadkontrolle, Installer,
+bestehender One-Liner, Datenbank und andere Modelle.
+Eine Quelltext-Ausgabe ist noch kein Laufzeittest des Spiels.
+
+4. LIVE-ABNAHME
+Unveraenderten One-Liner erneut ausfuehren.
+Erneut Snake-Projekt mit index.html, style.css, game.js
+und snake-game.zip anfordern. Arbeitsweg und echte
+Downloadkarten kontrollieren. ZIP muss alle drei Dateien
+enthalten. Danach Spiel auf Android/Chrome testen,
+gegebenenfalls gezielte JavaScript-Validierung nachziehen.
+Ollama-CPU-Probleme beim Modellwechsel sind weiterhin
+separat unter GitHub Issue #52 zu diagnostizieren.
