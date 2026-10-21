@@ -825,6 +825,7 @@
   }
 
   function buildSuggestedReplyButtons(markdown, sessionId) {
+    if (!sessionId) return null;
     var options = extractSuggestedReplies(markdown);
     if (!options.length) return null;
     var wrapper = document.createElement('div');
