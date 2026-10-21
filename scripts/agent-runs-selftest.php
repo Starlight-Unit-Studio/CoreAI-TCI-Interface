@@ -19,6 +19,9 @@ class CoreuiAgentFakeStatement extends PDOStatement {
       if ($p === ['session_demo', 7]) $this->rows = [['id'=>'session_demo']];
     } elseif (str_contains($this->sql, 'SELECT id FROM stu_chat_messages')) {
       if ($p === [23,7,'session_demo']) $this->rows = [['id'=>23]];
+      elseif (str_contains($this->sql,"WHERE channel='console'")
+          && ($p[0]??0)===7 && ($p[1]??'')==='session_demo'
+          && ($p[2]??0)===23) $this->rows = [['id'=>24]];
     } elseif (str_contains($this->sql, 'INSERT INTO stu_console_agent_runs')) {
       [$id,$uid,$session,$turn,$key] = $p;
       $index = "$uid/$session/$turn/$key";
