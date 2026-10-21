@@ -1,0 +1,37 @@
+STΛRLIɢHT: EMBER COREUI BY STARLIGHT UNIT STUDIOS
+CHANGELOG 0.5.16
+STAND 21.10.2026
+
+1. LOKALE MEHRDATEIEN-PROJEKTE
+   - Explizite Downloadauftraege mit mindestens zwei konkret
+     benannten Quelldateien und einem ZIP verwenden fuer
+     ember-coreui:latest/Gemma4 die Quelltext-Werkzeugspur.
+   - E.M.B.E.R. liefert HTML/CSS/JS und andere benannte
+     Dateien als einzelne Markdown-Codebloecke.
+   - Der vorhandene serverseitige Quelltext-Bridge erstellt
+     aus diesen Bytes ein festes Python-Schreibskript und
+     packt/validiert das ZIP im isolierten Worker.
+   - Keine durch das Modell erfundenen Dateischreibprogramme
+     mehr fuer diese klar abgrenzbaren Mehrdateien-Auftraege.
+   - Unvollstaendige Dateibloecke erhalten einmalig eine
+     gezielte Wiederholungsanfrage, ohne kaputte Teilpakete
+     als fertige Downloads auszugeben.
+
+2. FEHLERBEHANDLUNG
+   - Schlaegt ein korrekt zusammengebauter Projekt-Wrapper
+     bei Worker/Output-Validierung fehl, gibt es keine
+     zweite teure Modellanfrage fuer Python-Reparaturcode.
+   - Der Fehler bleibt im gespeicherten Arbeitsweg und es
+     werden keine erfundenen Downloadkarten angezeigt.
+   - Single-File-Python und bestehende andere Toolpfade
+     bleiben unveraendert.
+
+3. TESTS UND BETRIEB
+   - Vertragstests fuer ZIP-Quelldatei-Protokoll und Grenzen.
+   - Numerischer Versionssprung von 0.5.15 auf 0.5.16.
+   - Alle sichtbaren UI-, Cache-/Preflight-Metadaten, README
+     und Versionierung synchronisiert.
+   - Keine Migration, kein veränderter One-Liner, keine
+     GitHub Actions und kein neues ZIP/SHA-Release.
+   - Modellqualitaet, Spielbarkeit und Verhalten von Ollama
+     beim Modellwechsel sind separat live zu pruefen.
