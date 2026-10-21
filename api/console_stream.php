@@ -419,6 +419,10 @@ try {
   } elseif ($fileToolTurn) {
     // A real model call and any Python job are performed by ember_generate_reply.
     // This synthetic accumulator is only a routing signal, not a model success.
+    ember_console_afk_set($pdo, time() + 930);
+    $consoleAfkOwned = true;
+    ember_console_afk_announce($pdo);
+    ember_prepare_background_runtime();
     coreui_work_record($pdo, 'tool', 'info', 'Dateiwerkzeug vorbereitet');
     console_stream_progress($thinkingEnabled, 'tool');
     $acc = ['thinking'=>'', 'content'=>'', 'ok'=>true,
