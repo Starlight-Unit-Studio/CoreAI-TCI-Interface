@@ -2,6 +2,15 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.15 - 21.10.2026
+
+- Gemma 4: `PARAMETER num_ctx` ersatzlos aus dem automatischen Modelfile entfernt. `temperature`, `top_p`, `top_k` und `repeat_penalty` sind unveraendert. Native und Compose-Installer verhindern eine versehentliche Wiedereinfuehrung und erstellen das CoreUI-eigene lokale Ollama-Modell erneut.
+- Ollama-Anfragen fuer `gemma4:*` und `ember-coreui:*` enthalten niemals `num_ctx`, auch nicht bei aktivierter experimenteller Konfiguration oder expliziten Overrides. Neue generierte PHP-Konfigurationen lassen `STU_EMBER_NUM_CTX` weg; vorhandene lokale Konfigurationen bleiben geschuetzt. Warmup-Override bereinigt.
+- Langlebiger Python-Worker: begrenzte MariaDB-Verbindungs-/Lese-/Schreibzeitlimits und Verbindungspruefung/-wiederaufbau vor Jobannahme und Ergebnisspeicherung. Keine automatische Wiederholung unklarer Jobs.
+- Read-only-Diagnosewerkzeug fuer Python-Dienst und Jobzustaende ohne private Code-/Promptdaten. Neue PHP- und Python-Regressionstests sowie erweiterte Native-/Compose-Preflights.
+- Keine Migration, kein neuer Installer-One-Liner, keine GitHub Actions und kein neues geprueftes ZIP/SHA.
+- Offen: Die genaue Ursache des zeitweisen Hangs vor der Python-Ausfuehrung ist ohne Live-Serverlogs nicht belegt; die neue Stabilitaet erfordert einen Server-Livetest.
+
 ## 0.5.14 - 21.10.2026
 
 - PHP-/MariaDB-Installationsfix: Der Dockerfile-Build und Installer pruefen `pdo_mysql` direkt mit `extension_loaded()` im frischen PHP-Image. Ein Image ohne den Treiber wird nicht als erfolgreich installiert gemeldet.
