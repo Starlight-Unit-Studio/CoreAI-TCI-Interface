@@ -6099,3 +6099,35 @@ audio.msg-image {
   cursor: wait;
   opacity: .7;
 }
+
+/* v0.5.10: optional, accessible suggested replies, inline with the saved answer. */
+.ember-suggested-replies {
+  display: flex;
+  align-items: stretch;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+  margin: 15px 0 10px;
+}
+.ember-suggested-reply {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid rgba(70, 114, 183, .42);
+  border-radius: 11px;
+  background: rgba(248, 251, 255, .78);
+  color: #285180;
+  font: 600 13px/1.45 "Rajdhani", sans-serif;
+  text-align: left;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+  transition: background .14s, border-color .14s;
+}
+.ember-suggested-reply:hover { background: rgba(222, 237, 255, .9); border-color: #4a7bc2; }
+.ember-suggested-reply:focus-visible { outline: 2px solid #245ca9; outline-offset: 2px; }
+@media (max-width: 620px) {
+  .ember-suggested-replies { flex-direction: column; }
+  .ember-suggested-reply { width: 100%; }
+}
