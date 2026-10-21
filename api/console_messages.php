@@ -121,6 +121,9 @@ try {
 
 $agentRunMap = [];
 try {
+  if (coreui_agent_run_schema_ready($pdo)) {
+    coreui_agent_run_reconcile_session($pdo,(int)$uid,$sessionId);
+  }
   if ($messageIds !== [] && coreui_agent_run_schema_ready($pdo)) {
     $agentRunMap = coreui_agent_run_map_for_responses($pdo, (int)$uid, $sessionId, $messageIds);
   }
