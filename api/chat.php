@@ -4694,7 +4694,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       // Do not spend another multi-minute local model call explaining it.
       if ($fileTask && !is_array($pyRes)) {
         coreui_work_record($pdo, 'tool', 'error', 'Dateiworker nicht erreichbar',
-          ['reason'=>'worker_timeout']);
+          ['reason'=>'worker_unavailable']);
         return 'Der isolierte Python-Worker hat keinen bestaetigten Abschluss geliefert. '
           . 'Es wurde keine Downloaddatei gespeichert. Bitte pruefe den Workerstatus.';
       }
