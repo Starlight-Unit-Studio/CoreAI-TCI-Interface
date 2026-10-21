@@ -42,6 +42,15 @@ function sse_send(string $event, $data): void {
   @flush();
 }
 function sse_comment(string $c): void { echo ': ' . $c . "\n\n"; @flush(); }
+function console_stream_saved_work_events(PDO $pdo, int $uid, string $sessionId,
+                                          int $turnId, int $responseId): array {
+  try {
+    return coreui_work_list($pdo, $uid, $sessionId, $turnId, $responseId);
+  } catch (Throwable $e) {
+    error_log('[CoreUI] Work timeline recovery unavailable: ' . get_class($e));
+    return [];
+  }
+}
 function console_stream_progress(bool $enabled, string $stage): void {
   if (!$enabled) return;
   sse_send('progress', [
@@ -89,6 +98,7 @@ if ($generationRequestId !== '') {
       $doneId = (int)$generationRequest['response_message_id'];
       $doneRow = coreui_console_action_message($pdo, (int)$uid, $sessionId, $doneId, true);
       sse_send('done', [
+        'work_events' => console_stream_saved_work_events($pdo,(int)$uid,$sessionId,$afterId,$doneId),
         'text' => ember_sanitize_public_reply((string)($doneRow['message'] ?? ''), ''),
         'thinking' => '',
         'elapsed' => 0,
@@ -301,6 +311,8 @@ try {
           $existingText = 'Diese ältere Antwort wurde vom Ember CoreUI-Sicherheitsfilter ausgeblendet.';
         }
         sse_send('done', [
+          'work_events' => console_stream_saved_work_events($pdo,(int)$uid,$sessionId,
+            $afterId,(int)$existing['id']),
           'text'     => $existingText,
           'thinking' => $thinkingEnabled
             ? ember_public_thinking_from_storage(isset($existing['thinking_content']) ? (string)$existing['thinking_content'] : null)
