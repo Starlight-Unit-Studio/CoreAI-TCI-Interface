@@ -87,6 +87,7 @@ wait_http() {
 [[ -f "$PROJECT_ROOT/database/migrations/009_message_editing.sql" ]] || die 'SQL-Nachrichtenbearbeitungsschema fehlt.'
 [[ -f "$PROJECT_ROOT/database/migrations/011_console_artifacts.sql" ]] || die 'SQL-Dateiausgabeschema fehlt.'
 [[ -f "$PROJECT_ROOT/database/migrations/012_console_work_events.sql" ]] || die 'SQL-Arbeitsereignisse fehlen.'
+[[ -f "$PROJECT_ROOT/database/migrations/013_console_agent_runs.sql" ]] || die 'SQL-Agentenlauf-Schema fehlt.'
 [[ "$PROJECT_ROOT" =~ ^/[A-Za-z0-9._/-]+$ ]] || die 'Der Projektpfad darf nur Buchstaben, Zahlen, Punkt, Unterstrich, Bindestrich und Slash enthalten.'
 [[ "$PROJECT_ROOT" != /root/* ]] || die 'Bitte das Paket zuerst nach /opt/ember-coreui verschieben. Nginx darf Verzeichnisse unter /root nicht ausliefern.'
 [[ "$PROJECT_ROOT" != /home/* ]] || die 'Bitte das Paket zuerst nach /opt/ember-coreui verschieben. Der gehaertete Worker kapselt Benutzerverzeichnisse.'
@@ -364,6 +365,7 @@ mariadb --defaults-extra-file="$DB_CLIENT_TMP" "$DB_NAME" < "$PROJECT_ROOT/datab
 mariadb --defaults-extra-file="$DB_CLIENT_TMP" "$DB_NAME" < "$PROJECT_ROOT/database/migrations/009_message_editing.sql"
 mariadb --defaults-extra-file="$DB_CLIENT_TMP" "$DB_NAME" < "$PROJECT_ROOT/database/migrations/011_console_artifacts.sql"
 mariadb --defaults-extra-file="$DB_CLIENT_TMP" "$DB_NAME" < "$PROJECT_ROOT/database/migrations/012_console_work_events.sql"
+mariadb --defaults-extra-file="$DB_CLIENT_TMP" "$DB_NAME" < "$PROJECT_ROOT/database/migrations/013_console_agent_runs.sql"
 
 log 'Initialisiere Ember und das Administratorkonto.'
 COREUI_ADMIN_EMAIL="$ADMIN_EMAIL" \

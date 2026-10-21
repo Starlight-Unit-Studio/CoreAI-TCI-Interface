@@ -120,10 +120,13 @@ UI_FILES=(
   database/migrations/009_message_editing.sql
   database/migrations/011_console_artifacts.sql
   database/migrations/012_console_work_events.sql
+  database/migrations/013_console_agent_runs.sql
   api/console_work_events.php
   api/console_work_store.php
+  api/console_agent_runs.php
   js/coreui-work-events.js
   scripts/work-events-selftest.php
+  scripts/agent-runs-selftest.php
   scripts/workspace-output-selftest.py
   api/console_artifact.php
   api/console_artifacts.php
@@ -359,6 +362,20 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     ok 'Migration 012: persistente Arbeitsereignisse bereit.'
   else
     fail 'Migration 012 fehlt. Fuehre scripts/stack.sh migrate aus.'
+  fi
+
+  if compose exec -T php php -r \
+      'require "/var/www/coreui/api/db.php"; require "/var/www/coreui/api/console_agent_runs.php"; exit(coreui_agent_run_schema_ready(stu_pdo()) ? 0 : 1);' \
+      >/dev/null 2>&1; then
+    ok 'Migration 013: dauerhafte Agentenlaeufe bereit.'
+  else
+    fail 'Migration 013 fehlt. Fuehre scripts/stack.sh migrate aus.'
+  fi
+
+  if compose exec -T php php scripts/agent-runs-selftest.php >/dev/null 2>&1; then
+    ok 'P05: Agentenlauf-Idempotenz und Kontotrennung offline geprueft.'
+  else
+    fail 'P05-Agentenlauf-Selbsttest fehlgeschlagen.'
   fi
 
   if compose exec -T php php scripts/work-events-selftest.php >/dev/null 2>&1; then
