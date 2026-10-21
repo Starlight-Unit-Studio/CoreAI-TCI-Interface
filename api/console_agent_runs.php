@@ -113,3 +113,33 @@ function coreui_agent_run_bind_response(
   $stmt->execute([$responseId,$runId,$uid,$sessionId,$responseId]);
   return $stmt->rowCount() === 1;
 }
+
+/** Lightweight run state for already authorized chat history responses. */
+function coreui_agent_run_map_for_responses(
+  PDO $pdo, int $uid, string $sessionId, array $responseIds
+): array {
+  $ids = array_values(array_unique(array_filter(array_map('intval', $responseIds),
+    static fn(int $id): bool => $id > 0)));
+  if ($uid <= 0 || $sessionId === '' || $ids === [] || count($ids) > 100) return [];
+  $placeholders = implode(',', array_fill(0, count($ids), '?'));
+  $stmt = $pdo->prepare(
+    'SELECT run_id,run_key,response_message_id,status,error_code,created_at,started_at,finished_at '
+    . 'FROM stu_console_agent_runs WHERE user_id=? AND session_id=? '
+    . 'AND response_message_id IN (' . $placeholders . ')'
+  );
+  $stmt->execute(array_merge([$uid,$sessionId], $ids));
+  $map = [];
+  foreach (($stmt->fetchAll(PDO::FETCH_ASSOC) ?: []) as $row) {
+    $messageId = (int)($row['response_message_id'] ?? 0);
+    if ($messageId <= 0) continue;
+    $map[$messageId] = [
+      'id'=>(string)$row['run_id'],
+      'key'=>(string)$row['run_key'],
+      'status'=>(string)$row['status'],
+      'error_code'=>$row['error_code'] !== null ? (string)$row['error_code'] : null,
+      'started_at'=>$row['started_at'],
+      'finished_at'=>$row['finished_at'],
+    ];
+  }
+  return $map;
+}
