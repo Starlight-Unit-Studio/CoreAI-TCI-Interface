@@ -804,13 +804,13 @@
     if (!source || source.length > 18000) return [];
     var lines = source.split(/\r?\n/);
     var start = -1;
-    for (var i = Math.max(0, lines.length - 17); i < lines.length; i++) {
+    for (var i = Math.max(0, lines.length - 18); i < lines.length; i++) {
       var heading = lines[i].trim().replace(/^#{1,6}\s*/, '').replace(/\*\*/g, '');
-      if (/^(was moechtest du als naechstes|was möchtest du als nächstes|wie soll es weitergehen|womit soll ich fortfahren|moechtest du als naechstes|möchtest du als nächstes)/i.test(heading)) start = i;
+      if (/^(?:was moechtest du als naechstes|was möchtest du als nächstes|wie soll es weitergehen|womit soll ich fortfahren|moechtest du als naechstes|möchtest du als nächstes)/i.test(heading)) start = i;
     }
     if (start < 0) return [];
     var choices = [];
-    for (var j = start + 1; j < lines.length && j <= start + 10; j++) {
+    for (var j = start + 1; j < lines.length && j <= start + 12; j++) {
       var line = lines[j].trim();
       if (!line) continue;
       var match = line.match(/^(?:[-*•]|\d+[.)])\s+(.+)$/);
