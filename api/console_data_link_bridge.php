@@ -19,6 +19,95 @@ function coreui_console_inline_link_present(string $reply): bool {
   return preg_match('~\bhref\s*=\s*["\']?\s*data:(?:text/html|application/zip|text/plain|application/json|text/css|image/svg\+xml)\b~i', $reply) === 1;
 }
 
+/**
+ * Turn a model's complete, named fenced source files into inert sandbox
+ * outputs. Small local models may provide HTML/CSS/JS source instead of a
+ * [PY] tool call. Never execute the fenced source: the isolated Python worker
+ * only writes its bytes and optionally creates/verifies a ZIP archive.
+ */
+function coreui_console_project_fences_python(string $reply, string $request, int $maxCodeChars = 100000): ?array {
+  if (!coreui_console_download_requested($request) || strlen($reply) > 250000
+      || $maxCodeChars < 500) return null;
+  $namePattern = '[A-Za-z0-9][A-Za-z0-9._-]{0,90}\.(?:html?|css|js|json|txt|md|svg|py)';
+  preg_match_all('~(?<![A-Za-z0-9._-])(' . $namePattern . ')(?![A-Za-z0-9._-])~i',
+    $request, $requestedMatches);
+  $requested = array_values(array_unique(array_map('strtolower', $requestedMatches[1] ?? [])));
+  if (count($requested) > 10) return null;
+
+  $zipRequested = preg_match('~\b(?:zip|archiv)\b~iu', $request) === 1;
+  $zipName = 'projekt.zip';
+  if (preg_match('~(?<![A-Za-z0-9._-])([A-Za-z0-9][A-Za-z0-9._-]{0,90}\.zip)(?![A-Za-z0-9._-])~i',
+      $request, $zipMatch)) $zipName = $zipMatch[1];
+
+  if (!preg_match_all('~```([^\r\n`]{0,150})\r?\n(.*?)\r?\n```~s',
+      $reply, $fences, PREG_SET_ORDER | PREG_OFFSET_CAPTURE)) return null;
+  $files = [];
+  $total = 0;
+  foreach ($fences as $fence) {
+    $info = trim($fence[1][0]);
+    $body = (string)$fence[2][0];
+    $name = '';
+    if (preg_match('~(?:^|[\s=:])["`]?(' . $namePattern . ')["`]?(?:\s|$)~i',
+        $info, $match)) {
+      $name = $match[1];
+    } else {
+      $offset = (int)$fence[0][1];
+      $prefix = rtrim(substr($reply, max(0, $offset - 250), min(250, $offset)));
+      $headLines = preg_split('~\r?\n~', $prefix);
+      $heading = trim((string)end($headLines));
+      $heading = preg_replace('~^(?:#{1,6}\s*|(?:Datei|File)\s*:\s*|[-*]\s+)~i',
+        '', $heading);
+      $heading = trim((string)$heading, " \t`*:");
+      if (preg_match('~^' . $namePattern . '$~i', $heading)) $name = $heading;
+    }
+    if ($name === '') continue;
+    $key = strtolower($name);
+    if (isset($files[$key]) || $body === '' || strlen($body) > 150000) return null;
+    $total += strlen($body);
+    if ($total > 512000 || count($files) >= 10) return null;
+    $files[$key] = ['name'=>$name,'bytes'=>$body];
+  }
+  if ($files === []) return null;
+  foreach ($requested as $name) {
+    if (!isset($files[$name])) return null; // Never advertise an incomplete project.
+  }
+  if ($zipRequested && count($files) > 9) return null; // 10 files per job, including ZIP.
+
+  $code = "from pathlib import Path\nimport base64, zlib, zipfile\n"
+    . "out = Path('/work/output')\nout.mkdir(parents=True, exist_ok=True)\nfiles = {\n";
+  foreach ($files as $file) {
+    $bytes = $file['bytes'];
+    $packed = function_exists('gzcompress') ? gzcompress($bytes, 6) : false;
+    $compressed = is_string($packed) && strlen($packed) < strlen($bytes);
+    $encoded = base64_encode($compressed ? $packed : $bytes);
+    $code .= '    ' . json_encode($file['name'], JSON_THROW_ON_ERROR)
+      . ': (' . json_encode($compressed ? 'z' : 'b', JSON_THROW_ON_ERROR)
+      . ', ' . json_encode($encoded, JSON_THROW_ON_ERROR) . "),\n";
+  }
+  $code .= "}\nfor name, (mode, data) in files.items():\n"
+    . "    raw = base64.b64decode(data, validate=True)\n"
+    . "    if mode == 'z': raw = zlib.decompress(raw)\n"
+    . "    target = out / name\n"
+    . "    target.write_bytes(raw)\n"
+    . "    assert target.is_file() and target.stat().st_size == len(raw)\n";
+  if ($zipRequested) {
+    $code .= 'archive = out / ' . json_encode($zipName, JSON_THROW_ON_ERROR) . "\n"
+      . "with zipfile.ZipFile(archive, 'w', compression=zipfile.ZIP_DEFLATED) as bundle:\n"
+      . "    for name in sorted(files): bundle.write(out / name, arcname=name)\n"
+      . "with zipfile.ZipFile(archive) as check:\n"
+      . "    assert check.namelist() == sorted(files) and check.testzip() is None\n"
+      . "assert archive.is_file() and archive.stat().st_size > 0\n";
+  }
+  $code .= "print('Erzeugte Dateien:', ', '.join(sorted(p.name for p in out.iterdir() if p.is_file())))\n";
+  if (strlen($code) > $maxCodeChars) return null;
+  return [
+    'code'=>$code,
+    'name'=>$zipRequested ? $zipName : reset($files)['name'],
+    'size_bytes'=>$total,
+    'file_count'=>count($files) + ($zipRequested ? 1 : 0),
+  ];
+}
+
 /** Decodes a single complete inline download, or a complete fenced HTML page. */
 function coreui_console_inline_file_python(string $reply, string $request, int $maxCodeChars = 20000): ?array {
   if (!coreui_console_file_requested($request) || strlen($reply) > 220000 || $maxCodeChars < 500) return null;
