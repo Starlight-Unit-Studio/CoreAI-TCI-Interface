@@ -914,7 +914,7 @@
     // Leere Blase unterdruecken, wenn nur Anhaenge gesendet wurden.
     if (text || attachments.length === 0) content.appendChild(bubble);
     if (role === 'ember' && messageId > 0 && record && Number(record.reply_to_id) > 0) {
-      var suggestionRow = buildSuggestedReplyButtons(text, String(record.session_id || ''));
+      var suggestionRow = buildSuggestedReplyButtons(text, String(record.session_id || (activeSession() && activeSession().id) || ''));
       if (suggestionRow) content.appendChild(suggestionRow);
     }
 
