@@ -93,6 +93,32 @@ function coreui_console_multifile_python(string $reply, string $request, int $ma
   return ['code'=>$code,'files'=>array_keys($files),'zip'=>$zipName];
 }
 
+/** A file is complete only when every explicitly requested output is present. */
+function coreui_console_expected_output_names(string $request): array {
+  preg_match_all('~\b[A-Za-z0-9][A-Za-z0-9._-]{0,79}\.(?:html?|css|js|json|txt|md|zip)\b~iu', $request, $matches);
+  return array_values(array_unique($matches[0] ?? []));
+}
+
+function coreui_console_artifact_matches_request(array $files, string $request): bool {
+  if ($files === []) return false;
+  $present = [];
+  foreach ($files as $file) {
+    if (is_array($file) && is_string($file['name'] ?? null)) {
+      $present[strtolower((string)$file['name'])] = true;
+    }
+  }
+  foreach (coreui_console_expected_output_names($request) as $name) {
+    if (!isset($present[strtolower($name)])) return false;
+  }
+  if (preg_match('~\bzip\b~iu', $request) === 1) {
+    foreach (array_keys($present) as $name) {
+      if (str_ends_with($name, '.zip')) return true;
+    }
+    return false;
+  }
+  return true;
+}
+
 function coreui_console_inline_link_present(string $reply): bool {
   return preg_match('~\bhref\s*=\s*["\']?\s*data:(?:text/html|application/zip|text/plain|application/json|text/css|image/svg\+xml)\b~i', $reply) === 1;
 }
