@@ -1,0 +1,67 @@
+STΛRLIɢHT: EMBER COREUI BY STARLIGHT UNIT STUDIOS
+UEBERGABEPROTOKOLL 0.5.16
+STAND 21.10.2026
+
+AUSGANG
+Vom Betreiber gemeldet: lokal haengen Modell/Python
+mitunter bis zum kompletten Serverneustart.
+Ausserdem: PARAMETER num_ctx ist fuer Gemma tabu.
+Alle anderen Gemma-Modelfile-PARAMETER sollen
+unveraendert bleiben.
+
+KONFLIKT 0.5.15
+Ein paralleler Merge 0.5.15 hat alle PARAMETER-Zeilen
+entfernt und auch alle lokalen Gemma-API-Optionen
+unterbunden. Der Hauptzweig wurde waehrend unserer
+Arbeit aktualisiert. Der alte 0.5.15-Arbeitsbranch
+wurde deshalb NICHT gemergt.
+0.5.16 baut auf dem neuen main auf.
+
+KORREKTUR
+config/Modelfile.template enthaelt wieder die vier
+ausdruecklich freigegebenen Parameter:
+temperature 1.0, top_p 0.95, top_k 64,
+repeat_penalty 1.08, sonst keine PARAMETER.
+Beide Installer sperren ausschliesslich eine
+num_ctx-Zeile im erzeugten Modelfile.
+Die neue Gemma-Requestpolicy 0.5.15 bleibt
+unveraendert. Lokale Gemma-API-Aufrufe enthalten
+keine gesonderten Optionen, waehrend das
+Modelfile die vier freigegebenen Parameter setzt.
+Die Cloud-/Fremdmodell-Pfade bleiben erhalten.
+Alte private config.local.php wird nicht
+automatisch veraendert; num_ctx darin wird
+lokal nicht mehr als Ollama-Option angewendet.
+
+PYTHON
+Der persistente DB-Client des Python-Workers hat
+connect_timeout=5, read_timeout=20 und
+write_timeout=20. Vor der Queue-Abfrage und
+nach laengerer isolierter Python-Ausfuehrung
+wird die DB-Verbindung mit ping(reconnect=True)
+neu abgesichert. Es gibt keine automatische
+Wiederholung eines unbekannt beendeten Jobs.
+scripts/diagnose-pyworker.sh prueft den Dienst,
+und scripts/pyworker-diagnostics.php zeigt die
+Queue ohne Quellen-/Prompt-/Stdout-/Stderrtexte.
+scripts/pyworker-connection-selftest.py testet
+die Robustheitsregeln offline.
+
+INSTALLATION UND LIVE-ABNAHME
+VERSION=0.5.16, alle Versions-/Cache-Marker und
+Releasepfade werden synchronisiert.
+Keine Migration, keine Actions, alter One-Liner
+unveraendert.
+Nach regulaerem Update:
+- ollama show --modelfile ember-coreui:latest
+  auf temperature/top_p/top_k/repeat_penalty und
+  fehlendes num_ctx pruefen.
+- Lokales Gemma-Datei-/ZIP-Szenario ausprobieren.
+- Wenn Modellstream >2 Minuten haengt: VOR
+  Neustart den Arbeitsweg und das lokale
+  Diagnose-Skript pruefen.
+- Browser/Server-/CPU-Last und Ollama-Logs zur
+  Ursache untersuchen; nicht blind wiederholen.
+Ohne Hostlogs kann weder bewiesen werden, dass
+num_ctx die Haenger ausloeste, noch dass
+die Verbindungsaenderung alle Faelle loest.
