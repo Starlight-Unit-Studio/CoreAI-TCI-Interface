@@ -15,6 +15,8 @@ The CoreUI-owned `ember-coreui:latest` model is re-created from `config/Modelfil
 
 For local `ember-coreui:*` and `gemma4:*`, both streaming and synchronous Ollama API calls omit the `options` object entirely, including on older installations where a preserved `api/config.local.php` still declares `STU_EMBER_NUM_CTX` or experimental tuning. Other models retain their separate, existing settings policy. The top-level `think` switch and the requested model/stream flags are **not** Modelfile `PARAMETER` directives.
 
+The previous eight-second synthetic warmup is disabled for local Gemma: it could time out while loading a CPU model and contend with a real chat request. No automatic Ollama/service restart is introduced.
+
 The base Gemma model can have its own inherited defaults, and `ollama show --modelfile` may display upstream settings not authored by CoreUI. Updating CoreUI does not alter the shared upstream model or prove that occasional Ollama stalls have stopped. The update includes CLI regression checks and separate Compose/Native preflights.
 
 ## PHP/MariaDB runtime validation (0.5.14)
