@@ -21,6 +21,7 @@ declare(strict_types=1);
 define('STU_CHAT_LIB', 1);
 require __DIR__ . '/chat.php';
 require_once __DIR__ . '/console_action_store.php';
+require_once __DIR__ . '/console_agent_runs.php';
 
 // ── SSE-Ausgabe vorbereiten: jegliches Buffering AUS, lange Laufzeit erlauben ──
 @ini_set('zlib.output_compression', '0');
@@ -276,6 +277,7 @@ $thinkingAll = '';
 $thinkingPublic = '';
 $browseJobId = 0;
 $consoleAfkOwned = false;
+$agentRunId = '';
 
 try {
   // Idempotenz: Hat ein frueherer Request fuer GENAU diesen Turn schon geantwortet?
@@ -317,8 +319,47 @@ try {
     }
   }
 
-  // P06: publish only real, server-observed operations. No raw reasoning.
+  // P05: an action/turn is never replayed merely because SSE reconnected.
+  // The per-turn lock was acquired above, so an existing "running" row
+  // means the prior worker disappeared or its outcome is uncertain.
+  if (!coreui_agent_run_schema_ready($pdo)) {
+    sse_send('error', ['error'=>'agent_runs_migration_required']);
+    ember_generation_lock_release($turnLock);
+    exit;
+  }
   $workRunKey = $generationRequestId !== '' ? $generationRequestId : 'base';
+  $agentRun = coreui_agent_run_ensure($pdo, (int)$uid, $sessionId, $afterId, $workRunKey);
+  $agentRunId = (string)$agentRun['run_id'];
+  $priorState = (string)$agentRun['status'];
+  if ($priorState === 'running') {
+    coreui_agent_run_transition($pdo, (int)$uid, $sessionId, $agentRunId,
+      'running', 'interrupted', 'unconfirmed_restart');
+    $priorState = 'interrupted';
+  }
+  if ($priorState !== 'queued') {
+    if ($priorState === 'waiting_tool') {
+      sse_send('busy', ['note'=>'agent_waiting_tool']);
+    } else {
+      sse_send('error', ['error'=>'agent_run_' . $priorState]);
+    }
+    ember_generation_lock_release($turnLock);
+    exit;
+  }
+  if (!coreui_agent_run_transition($pdo, (int)$uid, $sessionId, $agentRunId,
+      'queued', 'running')) {
+    sse_send('busy', ['note'=>'agent_run_claimed']);
+    ember_generation_lock_release($turnLock);
+    exit;
+  }
+  // Fatal errors can leave the provider outcome uncertain. Never auto-retry.
+  register_shutdown_function(static function () use ($pdo, $uid, $sessionId, $agentRunId): void {
+    try {
+      coreui_agent_run_transition($pdo, (int)$uid, $sessionId, $agentRunId,
+        'running', 'interrupted', 'worker_exit');
+    } catch (Throwable $ignored) {}
+  });
+
+  // P06: publish only real, server-observed operations.
   $GLOBALS['COREUI_WORK_CONTEXT'] = [
     'user_id'=>(int)$uid, 'session_id'=>$sessionId, 'turn_id'=>$afterId,
     'run_key'=>$workRunKey
@@ -551,6 +592,22 @@ try {
     }
   }
 
+  if ($emberMsgId > 0) {
+    if (!coreui_agent_run_bind_response($pdo, (int)$uid, $sessionId, $agentRunId, $emberMsgId)) {
+      throw new RuntimeException('agent_response_binding_failed');
+    }
+    if (!coreui_agent_run_transition($pdo, (int)$uid, $sessionId, $agentRunId,
+        'running', 'completed')) {
+      throw new RuntimeException('agent_run_finish_conflict');
+    }
+  } elseif ($browseJobId > 0) {
+    coreui_agent_run_transition($pdo, (int)$uid, $sessionId, $agentRunId,
+      'running', 'waiting_tool');
+  } else {
+    coreui_agent_run_transition($pdo, (int)$uid, $sessionId, $agentRunId,
+      'running', 'failed', 'empty_response');
+  }
+
   $elapsed = (int)round(microtime(true) - $start);
   if ($browseJobId > 0) coreui_work_record($pdo, 'tool', 'running', 'Browserauftrag eingereiht',
     ['job_id'=>$browseJobId]);
@@ -568,6 +625,7 @@ try {
   }
   sse_send('done', [
     'work_events'   => $workEvents,
+    'agent_run_id'  => $agentRunId,
     'text'          => $replyFinal,
     'thinking'      => $thinkingPublic,
     'elapsed'       => $elapsed,
@@ -581,6 +639,12 @@ try {
     'source_response_id' => $sourceResponseId > 0 ? $sourceResponseId : null,
   ]);
 } catch (Throwable $e) {
+  if ($agentRunId !== '') {
+    try {
+      coreui_agent_run_transition($pdo, (int)$uid, $sessionId, $agentRunId,
+        'running', 'interrupted', 'request_interrupted');
+    } catch (Throwable $ignored) {}
+  }
   if ($generationRequest !== null) {
     try {
       coreui_console_generation_finish(
@@ -601,7 +665,9 @@ try {
   }
   coreui_work_record($pdo, 'error', 'error', 'Verarbeitung abgebrochen',
     ['reason'=>'server_exception']);
-  sse_send('error', ['error' => 'exception']);
+  $publicError = $e->getMessage() === 'model_queue_timeout'
+    ? 'model_queue_timeout' : 'exception';
+  sse_send('error', ['error' => $publicError]);
 } finally {
   unset($GLOBALS['COREUI_WORK_CONTEXT'], $GLOBALS['COREUI_WORK_PDO'], $GLOBALS['COREUI_WORK_PUBLISH']);
   ember_generation_lock_release($turnLock ?? null);
