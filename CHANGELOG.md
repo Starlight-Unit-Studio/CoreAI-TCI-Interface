@@ -2,6 +2,14 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.11 - 21.10.2026
+
+- P06: Live-Arbeitsschritte bleiben nach der fertigen E.M.B.E.R.-Antwort direkt in derselben Nachricht erhalten. Der zuletzt beendete Arbeitsweg ist zunaechst aufgeklappt; ältere Nachrichten besitzen den deutlichen Schalter `Arbeitsweg (N Schritte) anzeigen`.
+- Der Chat kombiniert ausschliesslich bereinigte, tatsaechlich aufgezeichnete SSE-Ereignisse mit der authentifizierten Datenbank-History. Antwortwechsel, Polling und Reload verlieren die Chronik nicht; Ereignis-IDs werden ohne Doppelanzeige zusammengefuehrt.
+- Serverseitige Antwortzuordnung nutzt bei unterbrochener separater Event-Bindung den bereits kontogebundenen Agentenlauf, ohne Turn-, Sitzungs- oder Variantenvermischung. SSE-Reconnect und bereits abgeschlossene Aktionen liefern die vorhandenen Arbeitsschritte erneut, ohne das Modell zu wiederholen.
+- P06-UI- und PHP-Persistenzregressionen sowie Native-/Compose-Preflight erweitert. Keine Migration, kein neuer Hintergrunddienst und keine Aenderung des Installer-One-Liners.
+- Sichtbar sind operative Arbeitsschritte, keine rohen Modellgedanken oder vertraulichen Werkzeugdaten. GitHub Actions nicht gestartet; Live-Abnahme auf dem Server noch ausstehend.
+
 ## 0.5.10 - 21.10.2026
 
 - Optional anklickbare Folgefragen unter gespeicherten Ember-Antworten, wenn die Antwort mit einer expliziten Auswahlfrage und 2 bis 4 Stichpunkten endet. Schaltflaechen verwenden die normale Chat-Sendefunktion und erlauben keine HTML-/Codeausfuehrung.
