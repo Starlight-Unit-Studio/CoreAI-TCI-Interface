@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 IFS=$'\n\t'
 
-ROOT="$(cd -- "$(dirname -- "\${BASH_SOURCE[0]}")/.." && pwd -P)"
+ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
 printf 'Ember CoreUI Python-Werkzeugdiagnose (nur Status, keine Dateiinhalte)\n'
 
 if [[ -f "$ROOT/var/compose.env" ]]; then
@@ -15,11 +15,11 @@ if [[ -f "$ROOT/var/compose.env" ]]; then
     exit 1
   fi
   printf '\n[1] Compose-Python-Worker\n'
-  "\${COMPOSE[@]}" --project-name ember-coreui \
+  "${COMPOSE[@]}" --project-name ember-coreui \
     --env-file "$ROOT/var/compose.env" --file "$ROOT/compose.yaml" \
     ps --all pyworker
   printf '\n[2] Python-Jobzustand (DB, keine privaten Daten)\n'
-  "\${COMPOSE[@]}" --project-name ember-coreui \
+  "${COMPOSE[@]}" --project-name ember-coreui \
     --env-file "$ROOT/var/compose.env" --file "$ROOT/compose.yaml" \
     exec -T php php scripts/pyworker-diagnostics.php
   printf '\nWorker-Logs fuer lokale Pruefung: docker compose --project-name ember-coreui '
