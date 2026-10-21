@@ -170,12 +170,6 @@ else
   fail 'Python-Worker-Liveness-Selbsttest fehlgeschlagen.'
 fi
 
-if php "$PROJECT_ROOT/scripts/gemma-modelfile-selftest.php" >/dev/null 2>&1; then
-  ok 'Gemma: kein num_ctx im Modelfile oder Ollama-Request, andere Parameter unveraendert.'
-else
-  fail 'Gemma-Modelfile-Selbsttest fehlgeschlagen.'
-fi
-
 if [[ -f "$PROJECT_ROOT/var/Modelfile.generated" ]] \
     && grep -Eiq '^[[:space:]]*PARAMETER[[:space:]]+num_ctx([[:space:]]|$)' \
        "$PROJECT_ROOT/var/Modelfile.generated"; then
@@ -425,6 +419,12 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     ok 'P05: Modell-FIFO, Timeout, Abbruch und Sperrenfreigabe offline geprueft.'
   else
     fail 'P05-Modellwarteschlangen-Selbsttest fehlgeschlagen.'
+  fi
+
+  if compose exec -T php php scripts/gemma-modelfile-selftest.php >/dev/null 2>&1; then
+    ok 'Gemma: kein num_ctx im Modelfile oder Ollama-Request, andere Parameter unveraendert.'
+  else
+    fail 'Gemma-Modelfile-Selbsttest fehlgeschlagen.'
   fi
 
   if compose exec -T php php scripts/work-events-selftest.php >/dev/null 2>&1; then
