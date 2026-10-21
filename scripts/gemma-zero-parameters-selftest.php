@@ -21,10 +21,18 @@ coreui_gemma_assert(str_contains($template, 'FROM {{BASE_MODEL}}'),
   'missing FROM base model');
 coreui_gemma_assert(str_contains($template, 'SYSTEM """'),
   'must retain Ember system instructions');
-coreui_gemma_assert(
-  preg_match('/^[ \t]*PARAMETER(?:[ \t]|$)/im',$template) !== 1,
-  'CoreUI template must not define Ollama PARAMETER lines'
-);
+// The operator explicitly approved these four lines. They must survive
+// installation; only the Gemma context directive is forbidden.
+$expectedParameters = [
+  'PARAMETER temperature 1.0',
+  'PARAMETER top_p 0.95',
+  'PARAMETER top_k 64',
+  'PARAMETER repeat_penalty 1.08',
+];
+preg_match_all('/^[ \t]*PARAMETER[ \t]+[^\r\n]+/im',$template,$matches);
+$actualParameters = array_map('trim',$matches[0] ?? []);
+coreui_gemma_assert($actualParameters === $expectedParameters,
+  'Gemma template must retain exactly four approved settings, no num_ctx');
 
 foreach (['ember-coreui:latest','ember-coreui','gemma4:e4b','gemma4:latest','gemma3:latest','gemma2:latest','gemma:latest'] as $model) {
   coreui_gemma_assert(ember_model_is_parameter_free_gemma($model),
@@ -46,11 +54,16 @@ $cloud = ember_ollama_known_good_options('gpt-oss:120b');
 coreui_gemma_assert(isset($cloud['temperature'],$cloud['top_p'],$cloud['top_k']),
   'Cloud sampler defaults unexpectedly removed');
 
-$installer = (string)file_get_contents($root . '/scripts/install.sh');
-coreui_gemma_assert(str_contains($installer, 'grep -Eiq')
-  && str_contains($installer, 'Modelfile.generated')
-  && str_contains($installer, 'ollama create "$MODEL_NAME"'),
-  'Installer must validate and rebuild owned Gemma model on update');
+foreach (['scripts/install.sh','scripts/install-native.sh'] as $installerPath) {
+  $installer = (string)file_get_contents($root . '/' . $installerPath);
+  coreui_gemma_assert(str_contains($installer, 'grep -Eiq')
+    && str_contains($installer, 'PARAMETER[[:space:]]+num_ctx')
+    && str_contains($installer, 'Modelfile.generated')
+    && str_contains($installer, 'ollama create "$MODEL_NAME"'),
+    'Installer must forbid only num_ctx and rebuild its Gemma model: ' . $installerPath);
+  coreui_gemma_assert(!str_contains($installer, "define('STU_EMBER_NUM_CTX',"),
+    'Fresh Gemma config should not explicitly pin num_ctx: ' . $installerPath);
+}
 
 $stream = (string)file_get_contents($root . '/api/console_stream.php');
 $chat = (string)file_get_contents($root . '/api/chat.php');
@@ -63,7 +76,8 @@ coreui_gemma_assert(str_contains($stream, "if (\$options !== []) \$payload['opti
 $installedFile = $root . '/var/Modelfile.generated';
 if (is_file($installedFile)) {
   $saved = (string)file_get_contents($installedFile);
-  coreui_gemma_assert(preg_match('/^[ \t]*PARAMETER(?:[ \t]|$)/im',$saved) !== 1,
-    'existing generated Modelfile still contains user-forbidden parameters');
+  preg_match_all('/^[ \t]*PARAMETER[ \t]+[^\r\n]+/im',$saved,$savedMatches);
+  coreui_gemma_assert(array_map('trim',$savedMatches[0] ?? []) === $expectedParameters,
+    'existing generated Modelfile does not match approved four parameters');
 }
-echo "CoreUI Gemma no-parameter model and API selftest: OK\n";
+echo "CoreUI Gemma approved sampler settings and no-context-override selftest: OK\n";
