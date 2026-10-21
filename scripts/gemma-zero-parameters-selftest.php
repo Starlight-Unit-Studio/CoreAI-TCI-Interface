@@ -26,7 +26,7 @@ coreui_gemma_assert(
   'CoreUI template must not define Ollama PARAMETER lines'
 );
 
-foreach (['ember-coreui:latest','ember-coreui','gemma4:e4b','gemma4:latest'] as $model) {
+foreach (['ember-coreui:latest','ember-coreui','gemma4:e4b','gemma4:latest','gemma3:latest','gemma2:latest','gemma:latest'] as $model) {
   coreui_gemma_assert(ember_model_is_parameter_free_gemma($model),
     'local Gemma model not recognized: ' . $model);
   coreui_gemma_assert(ember_ollama_known_good_options($model) === [],
@@ -45,6 +45,9 @@ foreach (['gpt-oss:120b','llama3.2:latest','my-ember-coreui:latest'] as $other) 
 $cloud = ember_ollama_known_good_options('gpt-oss:120b');
 coreui_gemma_assert(isset($cloud['temperature'],$cloud['top_p'],$cloud['top_k']),
   'Cloud sampler defaults unexpectedly removed');
+
+coreui_gemma_assert(str_contains($chat, 'gemma_synthetic_warmup_disabled'),
+  'do not start tiny forced-parameter warmup on heavy local Gemma');
 
 $installer = (string)file_get_contents($root . '/scripts/install.sh');
 coreui_gemma_assert(str_contains($installer, 'grep -Eiq')
