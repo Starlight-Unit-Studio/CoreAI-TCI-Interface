@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/console_attachment_store.php';
 require_once __DIR__ . '/console_artifact_store.php';
+require_once __DIR__ . '/console_agent_runs.php';
 
 /**
  * Persistente Ember CoreUI-Sitzungslogik.
@@ -253,6 +254,17 @@ function coreui_console_session_delete_tx(PDO $pdo, int $uid, string $sessionId)
   );
   $stGenerations->execute([$uid, $sessionId]);
   if ($stGenerations->fetchColumn()) throw new RuntimeException('session_busy');
+
+  // P05: an active run also owns this session even without a generation action.
+  // A stopped/interrupted run can be deleted, but a running one cannot.
+  if (coreui_agent_run_schema_ready($pdo)) {
+    $stAgent = $pdo->prepare(
+      "SELECT run_id FROM stu_console_agent_runs WHERE user_id=? AND session_id=? "
+      . "AND status IN ('queued','running','waiting_tool') LIMIT 1 FOR UPDATE"
+    );
+    $stAgent->execute([$uid,$sessionId]);
+    if ($stAgent->fetchColumn()) throw new RuntimeException('session_busy');
+  }
 
   // Nur Medien erfassen, die dem Benutzer gehoeren und in genau dieser
   // Sitzung referenziert werden. Ob sie nachher wirklich verwaist sind, wird
