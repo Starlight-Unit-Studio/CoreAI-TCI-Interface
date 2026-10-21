@@ -52,7 +52,7 @@ function coreui_console_multifile_source_directive(string $request): ?string {
  * [PY] tool call. Never execute the fenced source: the isolated Python worker
  * only writes its bytes and optionally creates/verifies a ZIP archive.
  */
-function coreui_console_project_fences_python(string $reply, string $request, int $maxCodeChars = 100000): ?array {
+function coreui_console_project_fences_python(string $reply, string $request, int $maxCodeChars = 100000, bool $collectOnly = false): ?array {
   if (!coreui_console_download_requested($request) || strlen($reply) > 250000
       || $maxCodeChars < 500) return null;
   $namePattern = '[A-Za-z0-9][A-Za-z0-9._-]{0,90}\.(?:html?|css|js|json|txt|md|svg|py)';
@@ -120,6 +120,9 @@ function coreui_console_project_fences_python(string $reply, string $request, in
     $files[$key] = ['name'=>$name,'bytes'=>$body];
   }
   if ($files === []) return null;
+  // Parse trusted-inert fragments without prematurely executing an incomplete project.
+  // Used only to combine at most two model responses during the bounded retry.
+  if ($collectOnly) return ['source_files'=>$files];
   foreach ($requested as $name) {
     if (!isset($files[$name])) return null; // Never advertise an incomplete project.
   }
@@ -160,6 +163,44 @@ function coreui_console_project_fences_python(string $reply, string $request, in
     'size_bytes'=>$total,
     'file_count'=>count($files) + ($zipRequested ? 1 : 0),
   ];
+}
+
+/**
+ * Combine safe, named source blocks from the initial response and the single
+ * bounded repair response. Never run a partial project or trust model links.
+ *
+ * The second response wins a duplicate filename, while each file must be an
+ * explicitly requested basename. The final result passes the exact same
+ * validation and server-owned ZIP creation used for a one-shot response.
+ */
+function coreui_console_merge_project_fences(string $first, string $second, string $request, int $maxCodeChars = 100000): ?array {
+  if (strlen($first) + strlen($second) > 400000) return null;
+  $one = coreui_console_project_fences_python($first, $request, $maxCodeChars, true);
+  $two = coreui_console_project_fences_python($second, $request, $maxCodeChars, true);
+  if ($one === null || $two === null) return null;
+
+  $namePattern = '[A-Za-z0-9][A-Za-z0-9._-]{0,90}\.(?:html?|css|js|json|txt|md|svg|py)';
+  preg_match_all('~(?<![A-Za-z0-9._-])(' . $namePattern . ')(?![A-Za-z0-9._-])~i', $request, $matches);
+  $wanted = array_values(array_unique(array_map('strtolower', $matches[1] ?? [])));
+  if (count($wanted) < 2 || count($wanted) > 9) return null;
+
+  $merged = [];
+  foreach ([$one['source_files'], $two['source_files']] as $batch) {
+    foreach ($batch as $key => $file) {
+      if (in_array($key, $wanted, true) && is_string($file['bytes'] ?? null)) {
+        $merged[$key] = $file;
+      }
+    }
+  }
+  if (count($merged) !== count($wanted)) return null;
+  $text = '';
+  foreach ($wanted as $key) {
+    $body = (string)$merged[$key]['bytes'];
+    if ($body === '' || strlen($body) > 150000) return null;
+    $text .= '### ' . $key . "\n```text\n" . $body . "\n```\n";
+    if (strlen($text) > 250000) return null;
+  }
+  return coreui_console_project_fences_python($text, $request, $maxCodeChars);
 }
 
 /**
