@@ -140,6 +140,10 @@ UI_FILES=(
   scripts/session-selftest.php
   scripts/attachment-pipeline-selftest.php
   scripts/python-worker-selftest.php
+  scripts/pyworker-diagnostics.php
+  scripts/diagnose-pyworker.sh
+  scripts/pyworker-connection-selftest.py
+  scripts/gemma-modelfile-selftest.php
   scripts/profile-knowledge-selftest.php
   scripts/account-security-selftest.php
   scripts/frontend-regression-selftest.php
@@ -159,6 +163,24 @@ for ui_file in "${UI_FILES[@]}"; do
     fail "Ember CoreUI-Oberflaechendatei fehlt oder ist leer: $ui_file"
   fi
 done
+
+if python3 "$PROJECT_ROOT/scripts/pyworker-connection-selftest.py" >/dev/null 2>&1; then
+  ok 'Python-Werkzeug: Datenbank-Reconnect und endliche Socket-Zeitlimits geprueft.'
+else
+  fail 'Python-Worker-Liveness-Selbsttest fehlgeschlagen.'
+fi
+
+if php "$PROJECT_ROOT/scripts/gemma-modelfile-selftest.php" >/dev/null 2>&1; then
+  ok 'Gemma: kein num_ctx im Modelfile oder Ollama-Request, andere Parameter unveraendert.'
+else
+  fail 'Gemma-Modelfile-Selbsttest fehlgeschlagen.'
+fi
+
+if [[ -f "$PROJECT_ROOT/var/Modelfile.generated" ]] \
+    && grep -Eiq '^[[:space:]]*PARAMETER[[:space:]]+num_ctx([[:space:]]|$)' \
+       "$PROJECT_ROOT/var/Modelfile.generated"; then
+  fail 'Generiertes Gemma-Modelfile enthaelt weiterhin num_ctx; Installer erneut ausfuehren.'
+fi
 
 if python3 "$PROJECT_ROOT/scripts/pdo-mysql-installer-selftest.py" >/dev/null 2>&1; then
   ok 'PHP-PDO-MariaDB: Image-Build, Installer-Recreation und Preflight-Vertrag geprueft.'
