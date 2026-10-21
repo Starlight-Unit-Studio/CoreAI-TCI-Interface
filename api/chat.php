@@ -3000,7 +3000,7 @@ function ember_should_reply(string $userMsg): bool {
 // experimental tuning flag was switched on. Other providers retain their
 // previously validated and explicitly configurable option policies.
 function ember_model_is_parameter_free_gemma(string $model): bool {
-  return preg_match('~^(?:ember-coreui|gemma4)(?::|$)~i', trim($model)) === 1;
+  return preg_match('~^(?:ember-coreui|gemma[0-9]*)(?::|$)~i', trim($model)) === 1;
 }
 
 function ember_ollama_known_good_options(string $model, array $optionOverrides = []): array {
@@ -8249,6 +8249,12 @@ if ($action === 'send') {
 
 if ($action === 'ember_warmup') {
   if ($method !== 'POST') stu_json(['ok'=>false,'error'=>'method_not_allowed'], 405);
+  // Gemma with native defaults can spend longer than the old 8s timeout just
+  // loading its model. Never launch a short-lived synthetic generation that can
+  // outlive its HTTP transport and contend with the user's real request.
+  if (ember_model_is_parameter_free_gemma(ember_model())) {
+    stu_json(['ok'=>true,'queued'=>false,'reason'=>'gemma_synthetic_warmup_disabled']);
+  }
   http_response_code(200);
   header('Content-Type: application/json; charset=utf-8');
   header('Cache-Control: no-store');
