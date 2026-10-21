@@ -47,6 +47,8 @@ CREATE TABLE IF NOT EXISTS stu_console_model_queue (
   UNIQUE KEY uq_model_ticket (ticket_id),
   KEY idx_model_fifo (status,queue_id),
   KEY idx_model_run (run_id,status),
+  CONSTRAINT fk_model_user FOREIGN KEY (user_id) REFERENCES stu_users(id)
+    ON DELETE SET NULL,
   CONSTRAINT fk_model_run FOREIGN KEY (run_id) REFERENCES stu_console_agent_runs(run_id)
     ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
