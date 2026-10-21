@@ -1,0 +1,51 @@
+STΛRLIɢHT: EMBER COREUI BY STARLIGHT UNIT STUDIOS
+UEBERGABEPROTOKOLL 0.5.11
+STAND 21.10.2026
+
+1. GRUND UND ZIEL
+Nach der erfolgreich getesteten Version 0.5.10 wurde gemeldet,
+dass die Live-Anzeige fuer Thinking/Arbeitsweg mit der fertigen
+Antwort verschwindet. Ursache im Client: Live-Zeile wird bei
+Fertigstellung entfernt, Antwort aus History neu aufgebaut.
+Bei fehlenden Ereignissen oder geschlossenem Standardzustand
+war der Verlauf nicht mehr erkennbar.
+
+2. IMPLEMENTIERUNG
+js/coreui-work-events.js: normalize/merge mit strenger
+Whiteliste, ID-Deduplikation, Servervorrang und 150-Ereignislimit.
+Persistierter Verlauf besitzt beschrifteten Aufklappschalter.
+js/console-app.js: Laufende Ereignisse nur pro Sitzung,
+Turn und Run-Key puffern. SSE-Abschluss, normales Polling und
+History-Rebuild erhalten diese Ereignisse in derselben
+Antwortzeile. Die zuletzt beendete Zeitleiste ist offen.
+Nach Browser-Reload bleiben gespeicherte Ereignisse
+ueber den klaren Schalter lesbar.
+api/console_work_store.php: Antwortgebundene Ereignisse
+werden auch dann ueber den autoritativen Agentenlauf
+gelesen, wenn die separate Ereignis-Bindung fehlte.
+Die Zuordnung prueft Besitzer, Sitzung, Turn und Run-Key;
+Regenerationsvarianten bleiben strikt getrennt.
+api/console_stream.php: Reconnect und abgeschlossene
+Aktionsaufrufe liefern gespeicherte Arbeitsschritte mit.
+Keine zweite Chatzeile, kein zusaetzlicher HTTP-Endpunkt,
+keine Modellwiederholung und keine rohen Gedanken.
+
+3. TESTS
+scripts/work-events-ui-selftest.js testet UI-Event-Merge,
+Servervorrang, Datenschutz, Abschluss und Reload.
+scripts/work-events-persistence-selftest.php testet
+kontogebundene Antwortzuordnung mit PDO-Testdouble.
+scripts/frontend-regression-selftest.php prueft Integration.
+Native/Compose-Preflight verlangen die neuen Tests.
+Versionssprung 0.5.10 -> 0.5.11 mit Pflichtdateien.
+
+4. ABNAHME AUF DEM ZIELSERVER
+One-Liner unveraendert. Neue Modellantwort erzeugen,
+Arbeitsschritte im Live-Modus lesen, nach Abschluss
+aufgeklappt behalten, schliessen und wieder oeffnen.
+Browserseite neu laden: dieselbe Nachricht besitzt
+"Arbeitsweg (N Schritte) anzeigen" und alle Schritte.
+Sitzung wechseln und wiederkommen; ggf. Regenerierung
+und SSE-Verbindungsabbruch testen. Echte MariaDB- und
+Android-Chrome-Abnahme bleibt bis Nutzerbestaetigung offen.
+Bestehende Daten und Migration 013 unveraendert.
