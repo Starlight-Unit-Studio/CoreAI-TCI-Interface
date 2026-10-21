@@ -4646,18 +4646,21 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       $requestedFile = $channel === 'console' && coreui_console_download_requested($userMsg);
       $confirmedFile = $requestedFile
         ? coreui_console_artifact_pending($consoleUid, (string)$consoleSessionId, $triggerMessageId) : null;
-      if ($confirmedFile !== null) {
-        $anyPartial = (bool)array_filter($confirmedFile['files'], static fn(array $f): bool => !empty($f['partial']))
-          || !coreui_console_artifact_matches_request($confirmedFile['files'], $userMsg);
-        return $anyPartial
-          ? 'Ich konnte Dateien als Teilergebnis sichern. Bitte pruefe die Warnhinweise an den Downloadkarten.'
-          : 'Die Datei ist erstellt und steht unten als echter Download bereit.';
+      $anyPartial = $confirmedFile !== null
+        && ((bool)array_filter($confirmedFile['files'], static fn(array $f): bool => !empty($f['partial']))
+          || !coreui_console_artifact_matches_request($confirmedFile['files'], $userMsg));
+      if ($confirmedFile !== null && !$anyPartial) {
+        return 'Die Datei ist erstellt und steht unten als echter Download bereit.';
+      }
+      if ($anyPartial) {
+        coreui_work_record($pdo, 'artifact', 'info', 'Ausgabedateien unvollstaendig',
+          ['reason'=>'requested_files_missing']);
       }
 
-      // A failed file creation gets at most ONE bounded repair opportunity.
-      // This is serial through the existing Ollama lock and the existing
-      // per-turn, account-bound worker queue, never an untracked download.
-      $needsFileRepair = $requestedFile && $confirmedFile === null && is_array($pyRes);
+      // A failed or incomplete file creation gets at most ONE bounded repair.
+      // It remains serial through the same Ollama and worker queues.
+      $needsFileRepair = $requestedFile
+        && ($confirmedFile === null || $anyPartial) && is_array($pyRes);
       $repairReason = is_array($pyRes)
         && str_contains((string)($pyRes['stderr'] ?? ''), 'FileNotFoundError')
           ? 'FileNotFoundError' : 'output_missing';
