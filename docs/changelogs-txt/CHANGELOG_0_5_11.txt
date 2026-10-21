@@ -1,0 +1,30 @@
+STΛRLIɢHT: EMBER COREUI BY STARLIGHT UNIT STUDIOS
+CHANGELOG 0.5.11
+STAND 21.10.2026
+
+1. ARBEITSWEG BLEIBT NACH DER ANTWORT SICHTBAR
+   - Live-Arbeitsereignisse werden sicher zwischengespeichert.
+   - Nach der Antwort bleiben sie direkt an der Antwort haengen.
+   - Die gerade abgeschlossene Zeitleiste bleibt zunaechst offen.
+   - Alte Antworten haben einen deutlich bezeichneten Schalter
+     "Arbeitsweg (N Schritte) anzeigen".
+   - Nach Reload kommen Ereignisse aus der authentifizierten History.
+
+2. SICHERE WIEDERHERSTELLUNG
+   - Server ordnet auch nicht abschliessend verknuepfte Ereignisse
+     ueber die bestehende Agentenlauf-Antwortbindung zu.
+   - Konten, Sitzungen, Turns und Regenerationsvarianten bleiben getrennt.
+   - SSE-Reconnect und beendete Aktionsaufrufe liefern die vorhandenen
+     Ereignisse erneut, ohne die Modellarbeit zu wiederholen.
+   - Polling rendert die zusammengefuehrte Antwort statt einer
+     veralteten ungeprueften Netzwerkzeile.
+   - Keine Rohgedanken, Prompts oder geheimen Werkzeugausgaben.
+
+3. PRUEFUNG UND KOMPATIBILITAET
+   - UI-Selbsttest: Server- und Live-Ereignisse, Dubletten,
+     offener Abschluss, geschlossener Reload und Datenschutz.
+   - PHP-Selbsttest: Event- und Run-Zuordnung, Konto-,
+     Sitzungs- und Variantenisolation.
+   - Native und Compose-Preflight umfassen den neuen Test.
+   - Keine Migration, keine Installer-One-Liner-Aenderung.
+   - Keine GitHub Actions und kein neues ZIP/SHA-Release.
