@@ -68,7 +68,7 @@ class CoreuiAgentFakeStatement extends PDOStatement {
       }
       unset($row);
     } elseif (str_contains($this->sql, 'response_message_id IN (')) {
-      [$uid,$session,...$ids] = $p;
+      $uid = $p[0]; $session = $p[1]; $ids = array_slice($p, 2);
       foreach ($this->db->runs as $index=>$row) {
         if (str_starts_with($index,"$uid/$session/")
             && in_array($row['response_message_id'],$ids,true)) $this->rows[] = $row;
