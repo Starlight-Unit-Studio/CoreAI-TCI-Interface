@@ -1,0 +1,68 @@
+STΛRLIɢHT: EMBER COREUI BY STARLIGHT UNIT STUDIOS
+UEBERGABEPROTOKOLL 0.5.13
+STAND 21.10.2026
+
+1. AUSGANGSLAGE
+Der Betreiber bestaetigte die P06-Arbeitschronik und Downloads mit
+einem GPT-Modell, auch nach Sitzungswechsel. Ein anschliessender
+Dateitest mit dem lokalen ember-coreui:latest schlug fehl.
+Der Screenshot zeigte zwei Modellaufrufe ueber mehrere Minuten,
+aber keinen Python-Job und keine bestaetigte Ausgabedatei.
+Die Ursache ist daher zumindest im gezeigten Lauf eine
+fehlende Werkzeuganforderung und nicht allein der Downloadlink.
+Die gespeicherte Antwortzeit wurde separat in 0.5.12 korrigiert.
+
+2. UMSETZUNG
+api/console_stream.php:
+  - Explizite Dateierstellung/Download ohne Vision oder Attachments
+    wird direkt in den vorhandenen Werkzeug-/Antwortpfad geleitet.
+  - Kein redundanter erster allgemeiner Modellstream.
+  - Bestehende Run-, Antwort-, Artefakt- und SSE-Bindungen bleiben.
+
+api/chat.php:
+  - Verbindlicher Dateiauftrag mit [PY] und /work/output.
+  - Bei fehlendem Werkzeugcode nur ein kompakter Zweitversuch.
+  - Gemma-4-/ember-coreui-Modelle: think:false im reinen
+    Dateicode-Aufruf; optional STU_EMBER_LOCAL_FILE_THINK=true.
+  - Bei Werkzeugausfuehrung unveraenderte isolierte Python-Queue.
+  - Fences und verifizierte Dateibytes statt erfundener Links.
+  - Vollstaendigkeit benannter Dateien und ZIP wird geprueft.
+
+api/console_data_link_bridge.php:
+  - Nur ausdrueckliche Datei-/Downloadanfragen duerfen
+    Markdown-Python-Fences in isolierten Code umwandeln.
+  - HTML/CSS/JS und weitere benannte Fences werden inert in
+    Ausgabedateien ueberfuehrt. Eindeutige, verlangte Namen
+    duerfen aus der Sprache des Codeblocks folgen.
+  - ZIP-Erzeugung und ZIP-Test erfolgen durch Python zipfile.
+  - Fehlende verlangte Dateinamen blockieren Erfolgsbehauptungen.
+
+3. SICHERHEIT UND KOMPATIBILITAET
+Keine direkten Shellaufrufe aus dem PHP-Chat und keine
+Codeausfuehrung im Webserver. Modelltext kann keine
+Download-ID, keinen Dateipfad ausserhalb des Sandboxes und
+keine Fremdkonto-Artefakte registrieren. Globale serielle
+Ollama-Modellwarteschlange, Run-Idempotenz und Stop bleiben.
+Keine neue Datenbankmigration, keine Aenderung des One-Liners.
+Alte ZIP/SHA-Paare bleiben unangetastet.
+
+4. PRUEFUNG
+Neuer PHP-Selbsttest:
+  scripts/local-file-tool-selftest.php
+Ausfuehrung in beiden Preflights; Frontend-Guard erweitert.
+Ein lokaler isolierter Parser- und ZIP-Test mit drei
+Quelldateien und echtem ZIP (testzip OK) war erfolgreich.
+Der echte PHP-/MariaDB-/Ollama-Live-Test bleibt offen.
+
+5. LIVE-ABNAHME
+Nach Update auf 0.5.13 dieselbe Snake-Anfrage einmal mit
+ember-coreui:latest stellen. Erwartet werden ein tatsaechlich
+eingereihter Python-Job, die Werkzeugschritte und Dateien
+index.html, style.css, game.js und snake-game.zip.
+Die ZIP muss diese drei Dateien enthalten, sich herunterladen
+lassen und nach Reload im Chat erhalten bleiben.
+Wird nach maximal einem kompakten Protokollretry kein
+ausfuehrbarer Code geliefert, erscheint eine ehrliche
+Fehlermeldung ohne erfundene Datei.
+Laufzeiten sind modell- und hardwareabhaengig; kein
+5-Sekunden-Versprechen fuer lokale CPU-Inferenz.
