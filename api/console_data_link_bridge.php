@@ -45,6 +45,8 @@ function coreui_console_project_fences_python(string $reply, string $request, in
   $total = 0;
   foreach ($fences as $fence) {
     $info = trim($fence[1][0]);
+    // Never infer a safe basename from an explicit unsafe path.
+    if (str_contains($info, '/') || str_contains($info, '\\')) return null;
     $body = (string)$fence[2][0];
     $name = '';
     if (preg_match('~(?:^|[\s=:])["`]?(' . $namePattern . ')["`]?(?:\s|$)~i',
@@ -58,6 +60,7 @@ function coreui_console_project_fences_python(string $reply, string $request, in
       $heading = preg_replace('~^(?:#{1,6}\s*|(?:Datei|File)\s*:\s*|[-*]\s+)~i',
         '', $heading);
       $heading = trim((string)$heading, " \t`*:");
+      if (str_contains($heading, '/') || str_contains($heading, '\\')) return null;
       if (preg_match('~^' . $namePattern . '$~i', $heading)) $name = $heading;
     }
     // Small local models often omit file headings. Infer only when a language
