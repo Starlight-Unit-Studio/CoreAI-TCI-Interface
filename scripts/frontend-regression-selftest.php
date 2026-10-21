@@ -163,6 +163,8 @@ try {
   );
   frontend_test_assert(
     str_contains($streamApi, '$fileTaskHandled = !$isVisionTurn')
+      && str_contains($streamApi, 'ember_console_file_tool_is_local(ember_model())')
+      && str_contains($chatApi, 'ember_console_file_tool_is_local($primaryModel)')
       && str_contains($streamApi, '} elseif ($fileTaskHandled) {')
       && str_contains($streamApi, 'if (!$fileTaskHandled && ($hasMarker')
       && str_contains($chatApi, 'function ember_console_file_tool_directive()')
