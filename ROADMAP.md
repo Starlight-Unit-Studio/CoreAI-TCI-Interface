@@ -2,7 +2,7 @@
 
 Stand: 20.10.2026. Planungsbasis: [`b4a5413`](https://github.com/Starlight-Unit-Studio/coreui/commit/b4a5413f8478119d749a54702c0e50acd3f0b517).
 
-**Aktuelle Umsetzung: P05 Agentenlaufzeit im Entwicklungsbranch 0.5.9; P06/P07 folgen. HTML-Download live bestaetigt, ZIP-Endabnahme noch offen.**
+**Aktueller Entwicklungsstand: P05-Agentenlaufzeit in 0.5.9; Live-Abnahme steht aus. P06/P07 folgen. HTML-Download live bestaetigt, ZIP-Endabnahme noch offen.**
 
 Diese Roadmap ordnet die Anforderungen in **29 abschließbare Arbeitspakete** und nutzbare Lieferungen. Der [Masterplan](docs/COREUI_MASTERPLAN.md) hält Ziel und Architektur fest; die [Funktionsmatrix](docs/COREUI_FEATURE_MATRIX.md) führt Referenzen, bestehenden Teilbestand und Einzelabnahmen. Alle 82 derzeitigen Matrix-IDs sind einem Paket primär zugeordnet. Das bedeutet vollständige Zuordnung des erfassten Startbestands; die Tiefeninventur von **OpenClaw, Open WebUI, CrewAI, LangGraph und Microsoft AutoGen** läuft weiter.
 
@@ -15,7 +15,7 @@ Diese Roadmap ordnet die Anforderungen in **29 abschließbare Arbeitspakete** un
 | Referenzerweiterung | CrewAI, LangGraph und AutoGen ergänzt; jetzt 82 CF-Einträge und 29 Pakete, vollständige Einzelinventur weiter offen |
 | Download-Bug | HTML-Datei wurde live heruntergeladen; [Issue #29](https://github.com/Starlight-Unit-Studio/coreui/issues/29) bleibt fuer ZIP-Abnahme offen |
 | Laufzeitfunktionen dieser Roadmap | Noch nicht durch diese Planungsarbeit umgesetzt oder abgenommen |
-| Technische Basis | `main` auf `0.5.8`; P05-Entwicklungsbranch auf `0.5.9` mit Migration 013 und globaler FIFO-Modellwarteschlange |
+| Technische Basis | `0.5.9` mit Migration 013 und globaler FIFO-Modellwarteschlange; Server-Liveabnahme ausstehend |
 | GitHub Actions | Wegen ausgeschöpften Kontingents auf Nutzerwunsch ausgelassen |
 
 Die Paketnummern bleiben als Arbeitsreferenzen bestehen. Sämtliche Umsetzungspakete sind zunächst **offen**; vorhandene Teilfunktionen behalten ihren differenzierten Status in der Matrix. M0 und M7 begleiten die Entwicklung. Sie sind keine Wartephase vor der ersten nutzbaren Korrektur.
