@@ -427,11 +427,16 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     warn 'Node nicht installiert: optionaler Antwortdauer-JavaScript-Test uebersprungen.'
   fi
 
+  # Test the actual PHP runtime directly. Under pipefail, a "php -m |
+  # grep -q" probe can mistake an early-closing pipe for a missing module.
   for extension_name in curl dom gd mbstring pdo_mysql zip; do
-    if compose exec -T php php -m 2>/dev/null | grep -Fxq "$extension_name"; then
+    if compose exec -T php php -r 'exit(extension_loaded($argv[1]) ? 0 : 1);' "$extension_name" 2>/dev/null; then
       ok "PHP-Erweiterung aktiv: $extension_name"
     else
       fail "PHP-Erweiterung fehlt: $extension_name"
+      if [[ "$extension_name" == 'pdo_mysql' ]]; then
+        warn 'PDO-Treiber fehlt im LAUFENDEN PHP-Container. Installer erneut starten, damit das Image neu gebaut und PHP neu erstellt wird.'
+      fi
     fi
   done
 
