@@ -108,6 +108,20 @@ function coreui_console_project_fences_python(string $reply, string $request, in
   ];
 }
 
+/**
+ * A local model may output a single Python script in a Markdown fence instead
+ * of [PY]. Execute it only for an explicit requested download, and only in the
+ * existing isolated Python worker. A prose-only answer is never executable.
+ */
+function coreui_console_python_fence_code(string $reply, string $request, int $maxCodeChars = 100000): ?string {
+  if (!coreui_console_download_requested($request) || strlen($reply) > 220000
+      || $maxCodeChars < 500) return null;
+  if (!preg_match('~(?:^|\r?\n)```(?:python|py)[ \t]*\r?\n(.*?)\r?\n```\s*$~is',
+      $reply, $match)) return null;
+  $code = trim((string)$match[1]);
+  return $code !== '' && strlen($code) <= $maxCodeChars ? $code : null;
+}
+
 /** Decodes a single complete inline download, or a complete fenced HTML page. */
 function coreui_console_inline_file_python(string $reply, string $request, int $maxCodeChars = 20000): ?array {
   if (!coreui_console_file_requested($request) || strlen($reply) > 220000 || $maxCodeChars < 500) return null;
