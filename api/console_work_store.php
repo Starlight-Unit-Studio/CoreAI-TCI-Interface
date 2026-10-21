@@ -114,11 +114,21 @@ function coreui_work_map_for_responses(PDO $pdo, int $uid, string $sessionId, ar
   if ($uid <= 0 || $sessionId === '' || !$ids || !coreui_work_schema_ready($pdo)) return [];
   $ids = array_slice($ids, 0, 100);
   $placeholder = implode(',', array_fill(0, count($ids), '?'));
-  $stmt = $pdo->prepare('SELECT id,response_message_id,kind,state,title,details_json,'
-    . ' UNIX_TIMESTAMP(created_at) AS unix_time FROM stu_console_work_events'
-    . ' WHERE user_id=? AND session_id=? AND response_message_id IN ('
-    . $placeholder . ') ORDER BY id ASC LIMIT 2000');
-  $stmt->execute(array_merge([$uid, $sessionId], $ids));
+  // P06: A response may be committed even when the separate work-event
+  // response binding update was interrupted. The agent run already stores
+  // the authoritative response ID for this exact owner/session/turn/run_key.
+  // Read it through the JOIN without mutating chat history or sharing events
+  // across regeneration variants.
+  $stmt = $pdo->prepare('SELECT w.id,'
+    . ' COALESCE(w.response_message_id,r.response_message_id) AS response_message_id,'
+    . ' w.kind,w.state,w.title,w.details_json,'
+    . ' UNIX_TIMESTAMP(w.created_at) AS unix_time FROM stu_console_work_events w'
+    . ' LEFT JOIN stu_console_agent_runs r ON r.user_id=w.user_id'
+    . ' AND r.session_id=w.session_id AND r.turn_id=w.turn_id AND BINARY r.run_key=BINARY w.run_key'
+    . ' WHERE w.user_id=? AND w.session_id=? AND (w.response_message_id IN ('
+    . $placeholder . ') OR (w.response_message_id IS NULL AND r.response_message_id IN ('
+    . $placeholder . '))) ORDER BY w.id ASC LIMIT 2000');
+  $stmt->execute(array_merge([$uid, $sessionId], $ids, $ids));
   $map = [];
   foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
     $responseId = (int)($row['response_message_id'] ?? 0);
@@ -132,10 +142,13 @@ function coreui_work_map_for_responses(PDO $pdo, int $uid, string $sessionId, ar
 
 function coreui_work_list(PDO $pdo, int $uid, string $sessionId, int $turnId, int $responseId): array {
   if ($uid <= 0 || $turnId <= 0 || $responseId <= 0 || $sessionId === '') return [];
-  $stmt = $pdo->prepare('SELECT id,kind,state,title,details_json,'
-    . ' UNIX_TIMESTAMP(created_at) AS unix_time FROM stu_console_work_events'
-    . ' WHERE user_id=? AND session_id=? AND turn_id=? AND response_message_id=?'
-    . ' ORDER BY id ASC LIMIT 150');
-  $stmt->execute([$uid, $sessionId, $turnId, $responseId]);
+  $stmt = $pdo->prepare('SELECT w.id,w.kind,w.state,w.title,w.details_json,'
+    . ' UNIX_TIMESTAMP(w.created_at) AS unix_time FROM stu_console_work_events w'
+    . ' LEFT JOIN stu_console_agent_runs r ON r.user_id=w.user_id'
+    . ' AND r.session_id=w.session_id AND r.turn_id=w.turn_id AND BINARY r.run_key=BINARY w.run_key'
+    . ' WHERE w.user_id=? AND w.session_id=? AND w.turn_id=?'
+    . ' AND (w.response_message_id=? OR (w.response_message_id IS NULL'
+    . ' AND r.response_message_id=?)) ORDER BY w.id ASC LIMIT 150');
+  $stmt->execute([$uid, $sessionId, $turnId, $responseId, $responseId]);
   return array_map('coreui_work_public_event', $stmt->fetchAll(PDO::FETCH_ASSOC) ?: []);
 }

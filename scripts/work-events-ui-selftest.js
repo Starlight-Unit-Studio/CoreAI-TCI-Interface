@@ -82,4 +82,30 @@ work.add(live.querySelector('.work-body'),{
   id:4,kind:'artifact',state:'success',title:'Datei gesichert',meta:{file_count:3}
 });
 assert(live.textContent.includes('Datei gesichert'));
+// The final answer replaces the live row, but the sanitized SSE events must
+// remain available even when the first authenticated history response is empty.
+const recovered = work.merge([], [
+  {id:31,kind:'run',state:'running',title:'Auftrag gestartet',
+    meta:{stderr:'SECRET'},time:'2026-10-21T08:00:00Z'},
+  {id:32,kind:'model',state:'success',title:'Modellantwort erhalten',
+    meta:{model:'gpt-oss:120b'},time:'2026-10-21T08:00:02Z'},
+]);
+assert.equal(recovered.length,2,'SSE snapshot preserved');
+assert(!JSON.stringify(recovered).includes('SECRET'),'snapshot is sanitized');
+const serverFirst = work.merge([
+  {id:31,kind:'run',state:'success',title:'Serverseitig bestaetigt',
+    meta:{},time:'2026-10-21T08:00:03Z'}
+],recovered);
+assert.equal(serverFirst.length,2,'server and live events deduplicated');
+assert.equal(serverFirst[0].title,'Serverseitig bestaetigt','server wins duplicate ID');
+const saved = work.create({events:serverFirst,expanded:true});
+assert(saved,'completed message keeps its timeline');
+assert.equal(saved.querySelector('.work-body').hidden,false,'just-finished work stays open');
+assert(saved.textContent.includes('Arbeitsweg (2 Schritte) ausblenden'));
+saved.querySelector('.work-toggle').handlers.click();
+assert(saved.textContent.includes('Arbeitsweg (2 Schritte) anzeigen'));
+assert.equal(saved.querySelector('.work-body').hidden,true);
+const reloaded = work.create({events:serverFirst,expanded:false});
+assert(reloaded.textContent.includes('Arbeitsweg (2 Schritte) anzeigen'),
+  'history after reload has an explicit reopen control');
 console.log('P06 inline work-history UI selftest: OK');

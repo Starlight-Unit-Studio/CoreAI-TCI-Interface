@@ -1,6 +1,6 @@
 # Verbindliche Versionierung von Ember CoreUI
 
-Stand: 20.10.2026
+Stand: 21.10.2026
 
 ## Unveraenderliche Regeln
 
@@ -8,7 +8,10 @@ Stand: 20.10.2026
    Quellbranch muss `VERSION` groesser als der aktuelle `main`-Wert sein.
    Das gilt fuer Bugfixes, Refactoring, UI, Tests, Dokumentation und Tools.
 2. `VERSION` besteht ausschliesslich aus `Major.Minor.Patch`, also drei
-   dezimalen Zahlen. Keine Textsuffixe wie alpha, dev, test oder hotfix.
+   dezimalen Zahlen. Die Zaehlerbereiche sind verbindlich:
+   `Major = 0..999`, `Minor = 0..9`, `Patch = 0..99`.
+   Nach `0.5.99` folgt `0.6.0`, nach `0.9.99` folgt `1.0.0`.
+   Es gibt keine Textsuffixe wie alpha, dev, test oder hotfix.
 3. Ein neuer Stand muss zeitgleich aktualisieren: `VERSION`, sichtbare
    Versionsangaben in allen sechs HTML-Oberflaechen, JavaScript-Bootstrap,
    `README.md`, `CHANGELOG.md`, `docs/changelogs-txt/INDEX.txt`, eine neue
