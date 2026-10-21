@@ -4609,13 +4609,15 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   if ($fileTask && $fileToolCandidate === null) {
     // At most one compact retry for missing [PY]/fenced source. Never claim
     // a file exists unless the isolated worker actually registered its bytes.
-    coreui_work_record($pdo, 'tool', 'info', 'Dateiwerkzeug erneut angefordert',
-      ['reason'=>'tool_protocol_missing','attempt'=>2]);
+    coreui_work_record($pdo, 'tool', 'info',
+      $sourceProjectMode ? 'Quelldateien erneut angefordert' : 'Dateiwerkzeug erneut angefordert',
+      ['reason'=>$sourceProjectMode ? 'source_files_incomplete' : 'tool_protocol_missing','attempt'=>2]);
     $compactRequest = function_exists('mb_substr')
       ? mb_substr($userMsg, 0, 12000, 'UTF-8') : substr($userMsg, 0, 12000);
     $compactPrompt = "BENUTZER-DATEIAUFTRAG:\n" . $compactRequest . "\n\n"
       . ($sourceProjectDirective ?? ember_console_file_tool_directive());
-    coreui_work_record($pdo, 'model', 'running', 'Dateicode erneut angefordert',
+    coreui_work_record($pdo, 'model', 'running',
+      $sourceProjectMode ? 'Quelltexte erneut angefordert' : 'Dateicode erneut angefordert',
       ['model'=>$primaryModel]);
     $retry = ember_call_ollama($primaryModel, '', $compactPrompt,
       ember_timeout_for_model($primaryModel), [], null, $fileToolThink);
@@ -4625,8 +4627,15 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
     $fileToolCandidate = is_string($retry)
       ? ember_console_file_tool_candidate($retry, $userMsg, $sourceProjectMode) : null;
     if ($fileToolCandidate === null) {
-      coreui_work_record($pdo, 'tool', 'error', 'Kein ausfuehrbarer Datei-Auftrag',
-        ['reason'=>'tool_protocol_missing']);
+      coreui_work_record($pdo, 'tool', 'error',
+        $sourceProjectMode ? 'Quelldateipaket unvollstaendig' : 'Kein ausfuehrbarer Datei-Auftrag',
+        ['reason'=>$sourceProjectMode ? 'source_files_incomplete' : 'tool_protocol_missing']);
+      if ($sourceProjectMode) {
+        return 'Das lokale Modell hat nicht alle verlangten Quelltextdateien '
+          . 'vollstaendig geliefert. Es wurde kein Python-Job gestartet und '
+          . 'keine ZIP-Datei bereitgestellt. Bitte versuche es mit einem '
+          . 'kleineren Projekt oder einem Coding-Modell.';
+      }
       return 'Das lokale Modell hat keinen ausfuehrbaren Datei-Auftrag geliefert. '
         . 'Es wurde kein Python-Job gestartet und keine Downloaddatei gespeichert. '
         . 'Bitte versuche einen kleineren Datei-Auftrag oder ein Coding-Modell.';
