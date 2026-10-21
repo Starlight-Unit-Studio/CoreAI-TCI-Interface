@@ -32,6 +32,8 @@ try {
   $messageApi = frontend_test_read($root . '/api/console_messages.php');
   $workStore = frontend_test_read($root . '/api/console_work_store.php');
   $streamApi = frontend_test_read($root . '/api/console_stream.php');
+  $chatApi = frontend_test_read($root . '/api/chat.php');
+  $fileBridge = frontend_test_read($root . '/api/console_data_link_bridge.php');
   $agentRuns = frontend_test_read($root . '/api/console_agent_runs.php');
   $profileStore = frontend_test_read($root . '/api/profile_store.php');
   $profileMedia = frontend_test_read($root . '/api/profile_media.php');
@@ -159,6 +161,22 @@ try {
       && str_contains($css, '.ember-suggested-reply { width: 100%; }'),
     'Vorschlagsantworten sind nicht mobil und tastaturzugaenglich.'
   );
+  frontend_test_assert(
+    str_contains($streamApi, '$fileTaskHandled = !$isVisionTurn')
+      && str_contains($streamApi, 'ember_console_file_tool_is_local(ember_model())')
+      && str_contains($chatApi, 'ember_console_file_tool_is_local($primaryModel)')
+      && str_contains($streamApi, '} elseif ($fileTaskHandled) {')
+      && str_contains($streamApi, 'if (!$fileTaskHandled && ($hasMarker')
+      && str_contains($chatApi, 'function ember_console_file_tool_directive()')
+      && str_contains($chatApi, 'function ember_console_file_tool_candidate(')
+      && str_contains($chatApi, "'reason'=>'tool_protocol_missing'")
+      && str_contains($chatApi, 'coreui_console_missing_requested_artifacts(')
+      && str_contains($fileBridge, 'function coreui_console_project_fences_python(')
+      && str_contains($fileBridge, 'function coreui_console_python_fence_code(')
+      && str_contains($fileBridge, 'function coreui_console_missing_requested_artifacts('),
+    'Lokales Modell verwendet weiterhin einen doppelten Textaufruf statt echten Dateitools.'
+  );
+
   fwrite(STDOUT, "Frontend-Regressions-Selftest OK: Navigation, Avatare, Markdown, Bearbeitung, Warteschlange und Varianten sind fehlersicher verdrahtet.\n");
 } catch (Throwable $e) {
   fwrite(STDERR, 'Frontend-Regressions-Selftest FEHLER: ' . $e->getMessage() . "\n");

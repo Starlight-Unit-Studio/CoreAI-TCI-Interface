@@ -7,7 +7,13 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 Ember CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.12` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.13` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Local file generation with Ollama models
+
+Version 0.5.13 routes explicit file/download requests directly to the isolated Python tool path instead of spending a generic streaming inference first. The model receives a clear, executable `[PY]` file-tool contract and, if it produces no executable instruction, at most one shorter retry. For local `ember-coreui:*` and `gemma4:*` models, pure file-code calls default to `think:false` to avoid expensive analysis-only generations; define `STU_EMBER_LOCAL_FILE_THINK` as `true` in the server-side PHP configuration (for example `define('STU_EMBER_LOCAL_FILE_THINK', true);` in `api/config.local.php`) to opt in to reasoning for these calls. Other models keep their configured thinking behavior.
+
+When a small model emits complete named HTML/CSS/JS code fences rather than a tool marker, the server can convert them into inert source files inside the existing isolated worker and build/verify a ZIP. Filename inference is limited to uniquely named files explicitly requested by the user. A complete project is never claimed when requested filenames or the requested ZIP are missing. Unconfirmed output remains an error, not a fabricated download. Real local-model performance and successful generation must be checked on the target server; this update does not guarantee any fixed latency.
 
 ## Persistent response and model timing
 
@@ -49,11 +55,11 @@ A fresh interactive installation asks for the administrator email address and pa
 
 ## Numeric product version and automatic browser cache
 
-The canonical `VERSION` uses exactly `major.minor.patch` with numbers only, for example `0.5.12`. No words or suffixed states belong in the product version. The installer separately records the exact Git commit in `var/dev_source_commit` without changing the product version.
+The canonical `VERSION` uses exactly `major.minor.patch` with numbers only, for example `0.5.13`. No words or suffixed states belong in the product version. The installer separately records the exact Git commit in `var/dev_source_commit` without changing the product version.
 
 The same original one-liner calls `scripts/cache-bust.py` through the native or container installer. For each referenced CSS/JS file, the installer derives a fixed-length **numeric cache key from that file's actual SHA-256 content** and rewrites the static HTML URL. Unchanged assets keep the same key; changed assets get a different one even without a product version change. All HTML entry points are marked for revalidation at Nginx level, so browsers can discover new asset URLs. Preflight rejects stale or invalid keys.
 
-**Historical releases are not renamed.** The original verified `0.5.3-alpha` archive is retained for legacy rollback only. `0.5.4` was planned but not published as a release. `0.5.5`, `0.5.6`, and `0.5.7` were preceding main-source checkpoints, and `0.5.8` was the previous checkpoint; `0.5.12` is the current working version; a new verified ZIP/SHA pair must be built separately before presenting it as an archived release.
+**Historical releases are not renamed.** The original verified `0.5.3-alpha` archive is retained for legacy rollback only. `0.5.4` was planned but not published as a release. `0.5.5`, `0.5.6`, and `0.5.7` were preceding main-source checkpoints, and `0.5.8` was the previous checkpoint; `0.5.13` is the current working version; a new verified ZIP/SHA pair must be built separately before presenting it as an archived release.
 
 ## Independence and mandatory product name
 
@@ -75,9 +81,9 @@ Starting with `0.4.2-alpha`, the project's own code is licensed under the **Star
 
 Further details are provided in `LICENSE_HISTORY.md`, `TRADEMARKS.md`, `COMMUNITY_POLICY.md`, `NOTICE.md`, and `COPYRIGHT.md`. The license is Source Available and is not OSI-certified. Third-party components retain their own terms.
 
-## Current 0.5.12 main-source changes
+## Existing file-output foundation and 0.5.13 local-model fix
 
-The current branch includes persistent generated file downloads and chat output cards, the new artifact database migration 011, the browser data-link correction, the original one-liner live-update flow, the Nginx permission repair, the scoped SSE selftest update, and the numeric cache/version repair. The 0.5.6 merge also adds compatibility for `gpt-oss:120b` cloud-generated files under the isolated `/mnt/data` output alias, with bounded recovery after failed Python file creation. Real HTML/ZIP downloads still need end-to-end live verification. The full worker-to-mobile download acceptance and new ZIP/SHA packaging remain pending. See [CHANGELOG.md](CHANGELOG.md), [the 0.5.9 entry](docs/changelogs-txt/CHANGELOG_0_5_9.txt) and [handover](docs/UEBERGABEPROTOKOLL_0_5_9.txt).
+Version 0.5.13 adds a dedicated file-tool path for local Ollama models, including a bounded missing-marker retry and verified ZIP assembly from named source fences. The existing foundation includes persistent generated file downloads and chat output cards, the new artifact database migration 011, the browser data-link correction, the original one-liner live-update flow, the Nginx permission repair, the scoped SSE selftest update, and the numeric cache/version repair. The 0.5.6 merge also adds compatibility for `gpt-oss:120b` cloud-generated files under the isolated `/mnt/data` output alias, with bounded recovery after failed Python file creation. Real HTML/ZIP downloads still need end-to-end live verification. The full worker-to-mobile download acceptance and new ZIP/SHA packaging remain pending. See [CHANGELOG.md](CHANGELOG.md), [the 0.5.9 entry](docs/changelogs-txt/CHANGELOG_0_5_9.txt) and [handover](docs/UEBERGABEPROTOKOLL_0_5_9.txt).
 
 ## 0.5.9: P05 agent runs, FIFO model admission and cooperative cancellation
 
@@ -463,7 +469,7 @@ Bei der Verwendung von `sudo` koennen abweichende Einstellungen mit `sudo --pres
 
 Genau denselben One-Liner wie bei der Erstinstallation erneut ausfuehren. `setup.sh` laedt den neuesten Commit aus `main`, fuehrt den regulaeren Installer und die SQL-Migrationen aus und prueft die aktualisierte Installation. Der konfigurierte isolierte Betrieb bleibt bestehen; Benutzer, Sitzungen, Datenbank, Uploads und Geheimnisse bleiben erhalten. GitHub Actions werden nicht benoetigt.
 
-Der tatsaechlich installierte Commit wird am Ende ausgegeben und in `/opt/ember-coreui/var/dev_source_commit` gespeichert. Die aktuelle Produktversion in `VERSION` ist rein numerisch (`0.5.12`), unabhaengig von Commit und Cache-Schluessel. Fuer den exakten live installierten Quellstand ist die gesondert gespeicherte Commit-SHA massgeblich.
+Der tatsaechlich installierte Commit wird am Ende ausgegeben und in `/opt/ember-coreui/var/dev_source_commit` gespeichert. Die aktuelle Produktversion in `VERSION` ist rein numerisch (`0.5.13`), unabhaengig von Commit und Cache-Schluessel. Fuer den exakten live installierten Quellstand ist die gesondert gespeicherte Commit-SHA massgeblich.
 
 Wer stattdessen **explizit das alte gepruefte Release** installieren moechte, kann den Launcher unter `sudo` mit `COREUI_SETUP_SOURCE=release` ausfuehren. Nur dieser Modus benutzt das gepinnte ZIP mit SHA-256-Verifikation. Das bisherige `scripts/update-from-main.sh` ist nicht mehr als separater Update-Schritt erforderlich.
 

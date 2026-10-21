@@ -1,0 +1,42 @@
+STΛRLIɢHT: EMBER COREUI BY STARLIGHT UNIT STUDIOS
+CHANGELOG 0.5.13
+STAND 21.10.2026
+
+1. LOKALE MODELLE UND DATEIWERKZEUGE
+   - Explizite Download-/Erstellauftraege nutzen unmittelbar den
+     synchronen, isolierten Python-Werkzeugpfad.
+   - Der vorherige redundante generische Modellstream entfaellt
+     bei diesen Datei-Auftraegen; die globale serielle Modell-
+     warteschlange und die Antwort-/Kontobindung bleiben bestehen.
+   - Der erste Aufruf verlangt ausdruecklich einen vollstaendigen
+     [PY]-Werkzeugauftrag statt einer bloessen Textantwort.
+   - Fehlt ein ausfuehrbarer Auftrag, folgt maximal ein kurzer,
+     fokussierter Protokollversuch; keine endlose Modellschleife.
+   - Fuer ember-coreui:* und gemma4:* ist Thinking beim reinen
+     Dateicode-Aufruf standardmaessig deaktiviert. Optional kann
+     STU_EMBER_LOCAL_FILE_THINK auf true gesetzt werden.
+     Andere Modellfamilien behalten ihre Thinking-Einstellung.
+
+2. DATEI-BRIDGE FUER KLEINERE MODELLE
+   - Ein kompletter Python-Codeblock darf nur bei ausdruecklicher
+     Datei-/Downloadanfrage an den isolierten Worker gehen.
+   - Vollstaendige HTML/CSS/JS-Quellcode-Fences werden als reine
+     Dateibytes behandelt, nicht im PHP-Prozess ausgefuehrt.
+   - Eindeutige Dateinamen aus dem Benutzerauftrag duerfen anhand
+     der Code-Fence-Sprache zugeordnet werden.
+   - Ein verlangtes ZIP wird mit Python zipfile erzeugt und sein
+     Inhalt per namelist()/testzip() im Worker-Skript geprueft.
+   - Fehlende angeforderte Dateinamen werden als Teilergebnis
+     statt als vollstaendiger Erfolg gemeldet.
+   - Downloads bleiben kontogebunden, authentifiziert und durch
+     das bestehende Artefaktregister mit SHA-256 verifiziert.
+
+3. TESTS UND GRENZEN
+   - PHP-Regression fuer lokale Fences, ZIP und Vollstaendigkeit
+     neu, in Native- und Compose-Preflight eingebunden.
+   - Frontend-/SSE-Integrationsregression ergaenzt.
+   - Ein lokaler isolierter Parser-/ZIP-Probelauf war erfolgreich.
+   - Der Live-Lauf mit ember-coreui:latest muss noch auf dem
+     Zielserver abgenommen werden; Modellqualitaet nicht garantiert.
+   - Keine Migration, keine Aenderung des Installer-One-Liners,
+     keine GitHub Actions und kein neues ZIP/SHA-Release.

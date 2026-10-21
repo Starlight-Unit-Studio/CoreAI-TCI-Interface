@@ -2414,6 +2414,54 @@ function ember_py_capability_hint(): string {
     . "Fuer Smalltalk, Meinungen, Lore oder simples Kopfrechnen brauchst du KEIN Python.";
 }
 
+// The file-task protocol is a tool contract, not a natural-language suggestion.
+// Local models often answer in prose or code fences instead of emitting [PY].
+function ember_console_file_tool_directive(): string {
+  return "COREUI DATEIWERKZEUG: Der Benutzer verlangt echte herunterladbare Dateien. "
+    . "Antworte AUSSCHLIESSLICH mit einem vollstaendigen Python-Skript zwischen [PY] und [/PY]. "
+    . "Keine Erklaerung, keine Markdown-Codefences, keine URLs und kein blosses Codebeispiel. "
+    . "Schreibe jede verlangte Datei mit pathlib.Path in Path('/work/output'). "
+    . "Wenn mehrere HTML/CSS/JS-Dateien verlangt werden, schreibe ALLE einzeln. "
+    . "Wenn ein ZIP verlangt wird, erstelle es anschliessend mit zipfile im selben Ordner. "
+    . "Pruefe jede Datei mit is_file() und stat(); pruefe ZIP-Inhalt mit namelist() und testzip(). "
+    . "Verlasse dich nicht auf Dateien aus frueheren Werkzeuglaeufen, jeder Lauf ist isoliert. "
+    . "Verwende nur Standardbibliothek fuer Dateierstellung, Code darf vollstaendig und kompakt sein. "
+    . "Erst wenn die Werkzeuglaufzeit echte Dateien bestaetigt, werden Downloadkarten angezeigt.";
+}
+
+// Disable expensive reasoning only for the dedicated local Gemma file-code
+// request. Other provider/model settings are left untouched.
+function ember_console_file_tool_is_local(string $model): bool {
+  return preg_match('~^(?:ember-coreui|gemma4)(?::|$)~i', trim($model)) === 1;
+}
+
+function ember_console_file_tool_think(string $model): ?bool {
+  return ember_console_file_tool_is_local($model)
+    ? (bool)ember_cfg('STU_EMBER_LOCAL_FILE_THINK', false)
+    : null;
+}
+
+function ember_console_file_tool_candidate(string $reply, string $request): ?array {
+  $max = ember_py_max_code_chars();
+  $py = ember_py_extract_marker($reply);
+  if ($py !== null) return ['code'=>$py,'kind'=>'marker'];
+  // Prefer an inert source file if the user explicitly requested a .py
+  // download. Only otherwise execute a standalone Python tool fence.
+  $project = coreui_console_project_fences_python($reply, $request, $max);
+  if ($project !== null) return ['code'=>$project['code'],'kind'=>'project','meta'=>$project];
+  $py = coreui_console_python_fence_code($reply, $request, $max);
+  if ($py !== null) return ['code'=>$py,'kind'=>'python_fence'];
+  // A single recovered HTML page must not suppress the repair attempt when
+  // the user explicitly requested several separate files and/or a ZIP.
+  $wanted = coreui_console_missing_requested_artifacts($request, []);
+  if (count($wanted) > 1) return null;
+  $inline = coreui_console_inline_file_python($reply, $request, $max);
+  if ($inline !== null && preg_match('~\bzip\b~i', $request) === 1
+      && ($inline['mime_type'] ?? '') !== 'application/zip') return null;
+  if ($inline !== null) return ['code'=>$inline['code'],'kind'=>'inline','meta'=>$inline];
+  return null;
+}
+
 // Code aus [PY]...[/PY] ziehen. Robust gegen fehlendes Schluss-Tag und Markdown-Fences,
 // weil Gemma 4 beides regelmaessig verschludert.
 function ember_py_extract_marker(string $s): ?string {
@@ -4510,17 +4558,59 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
     $u .= "\n[Bild wurde mitgesendet - sieh es dir an und antworte als Ember.]";
   }
 
+  // Explicit file tasks must produce executable sandbox work, not a prose
+  // answer. Avoid a redundant SSE model call before this tool-oriented request.
+  $fileTask = $channel === 'console' && $imageUrl === null && ember_py_enabled()
+    && ember_console_file_tool_is_local($primaryModel)
+    && coreui_console_download_requested($userMsg);
+  $fileToolThink = $fileTask ? ember_console_file_tool_think($primaryModel) : null;
+  if ($fileTask) {
+    $u .= "\n\n" . ember_console_file_tool_directive();
+    coreui_work_record($pdo, 'tool', 'info', 'Dateiwerkzeug angefordert',
+      ['reason'=>'file_task']);
+  }
   coreui_work_record($pdo, 'model', 'running', 'Modellaufruf gestartet', ['model'=>$primaryModel]);
-  $out = ember_call_ollama($primaryModel, $sys, $u, ember_timeout_for_model($primaryModel), [], $imageUrl);
+  $out = ember_call_ollama($primaryModel, $sys, $u, ember_timeout_for_model($primaryModel),
+    [], $imageUrl, $fileToolThink);
   coreui_work_record($pdo, 'model', is_string($out) && trim($out) !== '' ? 'success' : 'error',
     is_string($out) && trim($out) !== '' ? 'Modellantwort empfangen' : 'Modellaufruf ohne Antwort',
     ['model'=>$primaryModel]);
   $finalPrompt = $u;
+  $fileToolCandidate = $fileTask && is_string($out)
+    ? ember_console_file_tool_candidate($out, $userMsg) : null;
+  if ($fileTask && $fileToolCandidate === null) {
+    // At most one compact retry for missing [PY]/fenced source. Never claim
+    // a file exists unless the isolated worker actually registered its bytes.
+    coreui_work_record($pdo, 'tool', 'info', 'Dateiwerkzeug erneut angefordert',
+      ['reason'=>'tool_protocol_missing','attempt'=>2]);
+    $compactRequest = function_exists('mb_substr')
+      ? mb_substr($userMsg, 0, 12000, 'UTF-8') : substr($userMsg, 0, 12000);
+    $compactPrompt = "BENUTZER-DATEIAUFTRAG:\n" . $compactRequest . "\n\n"
+      . ember_console_file_tool_directive();
+    coreui_work_record($pdo, 'model', 'running', 'Dateicode erneut angefordert',
+      ['model'=>$primaryModel]);
+    $retry = ember_call_ollama($primaryModel, '', $compactPrompt,
+      ember_timeout_for_model($primaryModel), [], null, $fileToolThink);
+    coreui_work_record($pdo, 'model', is_string($retry) && trim($retry) !== '' ? 'success' : 'error',
+      is_string($retry) && trim($retry) !== '' ? 'Dateicode empfangen' : 'Dateicode ausgeblieben',
+      ['model'=>$primaryModel]);
+    $fileToolCandidate = is_string($retry)
+      ? ember_console_file_tool_candidate($retry, $userMsg) : null;
+    if ($fileToolCandidate === null) {
+      coreui_work_record($pdo, 'tool', 'error', 'Kein ausfuehrbarer Datei-Auftrag',
+        ['reason'=>'tool_protocol_missing']);
+      return 'Das lokale Modell hat keinen ausfuehrbaren Datei-Auftrag geliefert. '
+        . 'Es wurde kein Python-Job gestartet und keine Downloaddatei gespeichert. '
+        . 'Bitte versuche einen kleineren Datei-Auftrag oder ein Coding-Modell.';
+    }
+    $out = $retry;
+    $finalPrompt = $compactPrompt;
+  }
 
   // === Phase 2: Asynchroner Browse-Trigger ([BROWSE:]) - VOR der synchronen Websuche ===
   // Hat Ember [BROWSE:] gesetzt, gibt es keine sofortige Antwort: der Worker meldet sich
   // asynchron mit dem Ergebnis. Der Aufrufer reiht den Job via ember_browse_consume_request() ein.
-  if (ember_browse_enabled() && $imageUrl === null && is_string($out)) {
+  if (!$fileTask && ember_browse_enabled() && $imageUrl === null && is_string($out)) {
     $browseGoal = ember_extract_browse_marker($out);
     if ($browseGoal !== null) {
       ember_debug_log('ember_browse_trigger', ['goal' => $browseGoal]);
@@ -4533,18 +4623,21 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   // Genau EINE Ausfuehrung pro Turn: keine PY->PY-Schleife.
   $pyHandled = false;
   if (ember_py_enabled() && $imageUrl === null && is_string($out)) {
-    $pyCode = ember_py_extract_marker($out);
-    $inlineFile = null;
+    $pyCode = $fileTask && is_array($fileToolCandidate)
+      ? (string)$fileToolCandidate['code'] : ember_py_extract_marker($out);
+    $inlineFile = $fileTask && is_array($fileToolCandidate)
+      ? ($fileToolCandidate['meta'] ?? null) : null;
     if ($pyCode === null && $channel === 'console') {
       $inlineFile = coreui_console_inline_file_python($out, $userMsg, ember_py_max_code_chars());
-      if ($inlineFile !== null) {
-        $pyCode = $inlineFile['code'];
-        ember_debug_log('ember_inline_file_recovered', [
-          'name'=>$inlineFile['name'], 'size_bytes'=>$inlineFile['size_bytes']
-        ]);
-        coreui_work_record($pdo, 'artifact', 'info', 'HTML-Ausgabe erkannt',
-          ['file_name'=>(string)$inlineFile['name']]);
-      }
+      if ($inlineFile !== null) $pyCode = $inlineFile['code'];
+    }
+    if (is_array($inlineFile)) {
+      ember_debug_log('ember_inline_file_recovered', [
+        'name'=>$inlineFile['name'], 'size_bytes'=>$inlineFile['size_bytes']
+      ]);
+      coreui_work_record($pdo, 'artifact', 'info', 'Dateiausgabe erkannt',
+        ['file_name'=>(string)$inlineFile['name'],
+          'file_count'=>(int)($inlineFile['file_count'] ?? 1)]);
     }
     if ($pyCode !== null) {
       ember_debug_log('ember_py_trigger', [
@@ -4591,10 +4684,26 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       $confirmedFile = $requestedFile
         ? coreui_console_artifact_pending($consoleUid, (string)$consoleSessionId, $triggerMessageId) : null;
       if ($confirmedFile !== null) {
+        $missing = coreui_console_missing_requested_artifacts($userMsg, $confirmedFile['files']);
+        if ($missing !== []) {
+          coreui_work_record($pdo, 'artifact', 'error', 'Dateipaket unvollstaendig',
+            ['reason'=>'output_incomplete','file_count'=>count($confirmedFile['files'])]);
+          return 'Ich konnte nur einen Teil der angefragten Dateien sichern. Es fehlen: '
+            . implode(', ', $missing) . '. Die vorhandenen Dateien stehen als Download bereit.';
+        }
         $anyPartial = (bool)array_filter($confirmedFile['files'], static fn(array $f): bool => !empty($f['partial']));
         return $anyPartial
           ? 'Ich konnte Dateien als Teilergebnis sichern. Bitte pruefe die Warnhinweise an den Downloadkarten.'
           : 'Die Datei ist erstellt und steht unten als echter Download bereit.';
+      }
+
+      // A timed-out or unavailable worker has no verified result to repair.
+      // Do not spend another multi-minute local model call explaining it.
+      if ($fileTask && !is_array($pyRes)) {
+        coreui_work_record($pdo, 'tool', 'error', 'Dateiworker nicht erreichbar',
+          ['reason'=>'worker_unavailable']);
+        return 'Der isolierte Python-Worker hat keinen bestaetigten Abschluss geliefert. '
+          . 'Es wurde keine Downloaddatei gespeichert. Bitte pruefe den Workerstatus.';
       }
 
       // A failed file creation gets at most ONE bounded repair opportunity.
@@ -4648,7 +4757,8 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         ['attempt'=>2,'reason'=>$repairReason]);
       ember_debug_log('ember_py_call2', ['u2_chars' => strlen($u2), 'file_repair' => $needsFileRepair]);
       coreui_work_record($pdo, 'model', 'running', 'Folgeaufruf gestartet', ['model'=>$primaryModel]);
-      $out2 = ember_call_ollama($primaryModel, $sys, $u2, ember_timeout_for_model($primaryModel), []);
+      $out2 = ember_call_ollama($primaryModel, $sys, $u2,
+        ember_timeout_for_model($primaryModel), [], null, $fileToolThink);
       $out  = (is_string($out2) && trim($out2) !== '') ? $out2 : null;
       coreui_work_record($pdo, 'model', $out !== null ? 'success' : 'error',
         $out !== null ? 'Folgeantwort empfangen' : 'Folgeaufruf ohne Antwort',
@@ -4660,12 +4770,10 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       // otherwise execute ONE corrected tool block for FileNotFoundError.
       // Neither case lets model-supplied URLs become a download.
       if ($requestedFile) {
-        $repairCode = $needsFileRepair && is_string($out) ? ember_py_extract_marker($out) : null;
-        // Never interpret Python source containing a HTML string as an entire
-        // standalone HTML document when the model explicitly chose [PY].
-        $safeInline = $repairCode === null && is_string($out)
-          ? coreui_console_inline_file_python($out, $userMsg, ember_py_max_code_chars()) : null;
-        $recoveryCode = $repairCode ?? (is_array($safeInline) ? $safeInline['code'] : null);
+        $recoveryCandidate = is_string($out)
+          ? ember_console_file_tool_candidate($out, $userMsg) : null;
+        $recoveryCode = $needsFileRepair && is_array($recoveryCandidate)
+          ? (string)$recoveryCandidate['code'] : null;
         if ($recoveryCode !== null) {
           $recoveryResult = ember_py_run($pdo, $recoveryCode, $channel, (int)($senderChar['user_id'] ?? 0),
             $consoleSessionId, $triggerMessageId, $triggerRevision);
@@ -4687,6 +4795,13 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         }
         $confirmed = coreui_console_artifact_pending($consoleUid, (string)$consoleSessionId, $triggerMessageId);
         if ($confirmed !== null) {
+          $missing = coreui_console_missing_requested_artifacts($userMsg, $confirmed['files']);
+          if ($missing !== []) {
+            coreui_work_record($pdo, 'artifact', 'error', 'Dateipaket unvollstaendig',
+              ['reason'=>'output_incomplete','file_count'=>count($confirmed['files'])]);
+            return 'Nur ein Teil der Dateien wurde gespeichert. Es fehlen: '
+              . implode(', ', $missing) . '. Die vorhandenen Dateien stehen zum Download bereit.';
+          }
           $anyPartial = (bool)array_filter($confirmed['files'], static fn(array $f): bool => !empty($f['partial']));
           return $anyPartial
             ? 'Die Datei wurde nur teilweise erzeugt und ist als Teilergebnis zum Download verfuegbar.'

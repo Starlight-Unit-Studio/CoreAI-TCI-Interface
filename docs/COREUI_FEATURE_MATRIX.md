@@ -89,6 +89,8 @@ Die Phasennummer in jeder Soll-Zelle benennt den vorgesehenen Schwerpunkt. Sie e
 
 **Folgestand 0.5.8:** Sichtbare Arbeitsschritte sind Bestandteil derselben ungerahmten Chatantwort. Der zuvor fehlerhafte zweite Verlaufabruf wird im Chat durch die bereits authentifizierte Antwort-History ersetzt. Echte Python-Dateiausgaben aus dem isolierten Arbeitsbereich und vollstaendiges HTML-stdout koennen nun registriert werden; ein fehlendes Ausgabe-Artefakt (auch bei Exitcode 0) fuehrt zu genau einem begrenzten Reparaturversuch. Vollstaendige P05-/P06-Agentenabnahme und Live-Downloadtest bleiben offen.
 
+**Lokaler Modellpfad 0.5.13:** CF-028 bis CF-032 erhalten eine weitere Teilimplementierung. Bei expliziter Dateierstellung wird das lokale Modell ohne vorangehenden generischen Textstream direkt fuer einen Python-Werkzeugauftrag aufgerufen. Eine einmalige, kompakte Protokollkorrektur sowie die sichere Uebernahme benannter HTML/CSS/JS-Fences inklusive ZIP-Erzeugung reduzieren Abhaengigkeit von `[PY]`-Formatdisziplin. Nur bestaetigte, kontogebundene Worker-Ausgaben werden angezeigt; fehlende benannte Dateien werden nicht als vollstaendiger Erfolg gemeldet. Live-Test und ZIP-Endabnahme mit `ember-coreui:latest` stehen aus. Die CF-Zeilen bleiben deshalb vorerst im bisherigen Status.
+
 ## 4. Dateien, Downloads und Artefakte
 
 | ID | Referenzfunktion / Quelle | CoreUI-Stand | Eigenes Soll mit Abnahme |
