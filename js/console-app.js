@@ -821,6 +821,12 @@
       if (!choices.includes(label)) choices.push(label);
       if (choices.length >= 4) break;
     }
+    // Only a closing suggestion block may become a control; narrative
+    // continuing after the list is never interpreted as an action.
+    var remainder = lines.slice(start + 1).filter(function (line) {
+      return line.trim() && !/^(?:[-*•]|\d+[.)])\s+/.test(line.trim());
+    });
+    if (remainder.length) return [];
     return choices.length >= 2 ? choices : [];
   }
 
