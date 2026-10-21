@@ -4,6 +4,7 @@ declare(strict_types=1);
 define('STU_CHAT_LIB', 1);
 require __DIR__ . '/chat.php';
 require_once __DIR__ . '/console_action_store.php';
+require_once __DIR__ . '/console_agent_runs.php';
 
 $pdo = stu_pdo();
 $uid = stu_require_user_id();
@@ -20,6 +21,17 @@ try {
     $sessionId = coreui_console_session_normalize_id($_GET['session_id'] ?? '');
     if ($sessionId === '' || !hash_equals((string)$request['session_id'], $sessionId)) {
       stu_json(['ok'=>false, 'error'=>'generation_request_not_found'], 404);
+    }
+    if (coreui_agent_run_schema_ready($pdo)) {
+      $runStmt = $pdo->prepare(
+        "SELECT run_id FROM stu_console_agent_runs
+         WHERE user_id=? AND session_id=? AND run_key=? AND status='waiting_tool' LIMIT 1"
+      );
+      $runStmt->execute([(int)$uid,$sessionId,$requestId]);
+      $runId = (string)($runStmt->fetchColumn() ?: '');
+      if ($runId !== '') {
+        coreui_agent_run_reconcile_waiting_tool($pdo,(int)$uid,$sessionId,$runId);
+      }
     }
     $request = coreui_console_generation_reconcile($pdo, (int)$uid, $requestId, $request);
     coreui_console_generation_expire($pdo, (int)$uid);
@@ -45,6 +57,18 @@ try {
   $action = strtolower(trim((string)($body['action'] ?? '')));
   $sessionId = coreui_console_session_normalize_id($body['session_id'] ?? '');
   if ($sessionId === '') stu_json(['ok'=>false, 'error'=>'invalid_session'], 400);
+
+  if ($action === 'cancel_run') {
+    if (!coreui_agent_run_schema_ready($pdo)) {
+      stu_json(['ok'=>false,'error'=>'agent_runs_migration_required'],503);
+    }
+    $runId = strtolower(trim((string)($body['run_id'] ?? '')));
+    if (!preg_match('/^[a-f0-9]{32}$/D',$runId)) {
+      stu_json(['ok'=>false,'error'=>'invalid_agent_run'],400);
+    }
+    $result = coreui_agent_run_request_cancel($pdo,(int)$uid,$sessionId,$runId);
+    stu_json(['ok'=>true,'run_id'=>$runId] + $result);
+  }
 
   if ($action === 'feedback') {
     $messageId = (int)($body['message_id'] ?? 0);
@@ -102,7 +126,7 @@ try {
   $error = $e->getMessage();
   $status = str_contains($error, 'not_found') ? 404
     : (in_array($error, ['generation_busy', 'session_busy'], true) ? 409
-      : (in_array($error, ['message_actions_migration_required', 'message_editing_migration_required'], true) ? 503 : 400));
+      : (in_array($error, ['message_actions_migration_required', 'message_editing_migration_required', 'agent_runs_migration_required'], true) ? 503 : 400));
   stu_json(['ok'=>false, 'error'=>$error], $status);
 } catch (Throwable $e) {
   if (function_exists('stu__log_error')) {
