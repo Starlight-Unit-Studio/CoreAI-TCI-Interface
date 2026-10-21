@@ -4631,6 +4631,14 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       ['model'=>$primaryModel]);
     $fileToolCandidate = is_string($retry)
       ? ember_console_file_tool_candidate($retry, $userMsg, $sourceProjectMode) : null;
+    if ($sourceProjectMode && $fileToolCandidate === null && is_string($out) && is_string($retry)) {
+      $mergedProject = coreui_console_merge_project_fences($out, $retry, $userMsg, ember_py_max_code_chars());
+      if (is_array($mergedProject)) {
+        $fileToolCandidate = ['code'=>$mergedProject['code'],'kind'=>'project','meta'=>$mergedProject];
+        coreui_work_record($pdo, 'artifact', 'info', 'Quelldateien aus zwei Antworten vervollstaendigt',
+          ['file_count'=>(int)$mergedProject['file_count']]);
+      }
+    }
     if ($fileToolCandidate === null) {
       coreui_work_record($pdo, 'tool', 'error',
         $sourceProjectMode ? 'Quelldateipaket unvollstaendig' : 'Kein ausfuehrbarer Datei-Auftrag',
