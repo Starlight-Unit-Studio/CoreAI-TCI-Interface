@@ -196,11 +196,16 @@ else
 fi
 
 if command -v php >/dev/null 2>&1; then
+  # Test the actual PHP runtime directly. Under pipefail, a "php -m |
+  # grep -q" probe can mistake an early-closing pipe for a missing module.
   for extension_name in curl dom gd mbstring pdo_mysql zip; do
-    if php -m | grep -Fxq "$extension_name"; then
+    if php -r 'exit(extension_loaded($argv[1]) ? 0 : 1);' "$extension_name" 2>/dev/null; then
       ok "PHP-Erweiterung aktiv: $extension_name"
     else
       fail "PHP-Erweiterung fehlt: $extension_name"
+      if [[ "$extension_name" == 'pdo_mysql' ]]; then
+        warn 'PHP-CLI/PHP-FPM-Versionen und installiertes php-mysql-Paket kontrollieren.'
+      fi
     fi
   done
 
