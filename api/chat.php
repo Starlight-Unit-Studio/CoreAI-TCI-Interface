@@ -3009,7 +3009,9 @@ function ember_ollama_known_good_options(string $model, array $optionOverrides =
     if (defined('STU_EMBER_NUM_THREAD'))     $options['num_thread'] = ember_num_thread();
     if (defined('STU_EMBER_REPEAT_PENALTY')) $options['repeat_penalty'] = ember_repeat_penalty();
     if (defined('STU_EMBER_NUM_PREDICT'))    $options['num_predict'] = ember_num_predict_for_model($model);
-    if (defined('STU_EMBER_NUM_CTX'))        $options['num_ctx'] = ember_num_ctx_for_model($model);
+    if (defined('STU_EMBER_NUM_CTX') && !ember_console_file_tool_is_local($model)) {
+      $options['num_ctx'] = ember_num_ctx_for_model($model);
+    }
     if (defined('STU_EMBER_STOP'))           $options['stop'] = ember_stop_tokens_for_model($model);
     if (defined('STU_EMBER_SEED'))           $options['seed'] = ember_seed_for_model($model);
     if (defined('STU_EMBER_REPEAT_LAST_N'))  $options['repeat_last_n'] = ember_repeat_last_n();
@@ -3022,6 +3024,9 @@ function ember_ollama_known_good_options(string $model, array $optionOverrides =
     }
     $options[$k] = $v;
   }
+  // Gemma 4 and its installed Ember alias manage context internally. Even an
+  // experimental option override must never reintroduce num_ctx for them.
+  if (ember_console_file_tool_is_local($model)) unset($options['num_ctx']);
   return $options;
 }
 function ember_call_ollama(string $model, string $systemPrompt, string $userPrompt, int $timeoutSec = 12, array $optionOverrides = [], $imageUrl = null, ?bool $thinkOverride = null): ?string {
