@@ -2,6 +2,14 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.15 - 21.10.2026
+
+- `config/Modelfile.template` enthaelt fuer das CoreUI-eigene lokale Gemma-Modell keine `PARAMETER`-Zeilen mehr. `temperature`, `top_p`, `top_k`, `repeat_penalty` und insbesondere `num_ctx 32768` werden nicht mehr automatisch festgeschrieben.
+- Der Installer erstellt bei jedem Update das eigene `ember-coreui:latest` neu und blockiert eine generierte Modelfile mit eigenen `PARAMETER`-Direktiven vor `ollama create`. Das gemeinsam verwendete Basismodell, fremde Modelle und bestehende Nutzerkonfigurationen bleiben unveraendert.
+- Bei frisch erzeugter `api/config.local.php` wird `STU_EMBER_NUM_CTX` nicht mehr hinterlegt. Selbst wenn alte Installationen diesen Wert behalten, geben der synchrone PHP-Pfad und der SSE-Pfad fuer lokale `ember-coreui:*`/`gemma4:*` keinerlei `options`-Tuning an Ollama weiter. Andere Modelle, etwa Cloud-GPT, behalten ihre eigenen Einstellungen.
+- Neuer PHP-Regressionscheck fuer Template, generierte Datei, Installer-Guard, Sync/SSE-Modellpayload, Modellfamilien und Cloud-Isolation; beide Preflights verlangen diesen Test.
+- Wiederholt beobachtete lokale Modellstillstaende nach einiger Laufzeit sind noch nicht ursachlich bewiesen. Die Konfigurationsbereinigung wird nicht als garantierte Behebung eines Ollama-/Worker-Defekts ausgegeben. Keine neue Migration, keine Aenderung des Einzeilers, keine GitHub Actions und kein neues ZIP/SHA-Release.
+
 ## 0.5.14 - 21.10.2026
 
 - PHP-/MariaDB-Installationsfix: Der Dockerfile-Build und Installer pruefen `pdo_mysql` direkt mit `extension_loaded()` im frischen PHP-Image. Ein Image ohne den Treiber wird nicht als erfolgreich installiert gemeldet.
