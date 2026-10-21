@@ -17,7 +17,7 @@ When a small model emits complete named HTML/CSS/JS code fences rather than a to
 
 ## Persistent response and model timing
 
-Version 0.5.13 restores the duration in the assistant message's information (ⓘ) panel. It displays **GESAMTDAUER** from the persisted server-side work event and, for newly measured model requests, **MODELLZEIT** separately. Both survive chat switches and reloads. Older 0.5.11 answers can show their previously recorded total time; model-only time is never guessed retroactively. When no saved work-event duration exists, a clearly labelled **AGENTENLAUFZEIT** is computed from the scoped, durable run timestamps. No new migration is needed.
+Version 0.5.12 restores the duration in the assistant message's information (ⓘ) panel. It displays **GESAMTDAUER** from the persisted server-side work event and, for newly measured model requests, **MODELLZEIT** separately. Both survive chat switches and reloads. Older 0.5.11 answers can show their previously recorded total time; model-only time is never guessed retroactively. When no saved work-event duration exists, a clearly labelled **AGENTENLAUFZEIT** is computed from the scoped, durable run timestamps. No new migration is needed.
 
 ## Persistent work timeline after E.M.B.E.R. replies
 
@@ -81,9 +81,9 @@ Starting with `0.4.2-alpha`, the project's own code is licensed under the **Star
 
 Further details are provided in `LICENSE_HISTORY.md`, `TRADEMARKS.md`, `COMMUNITY_POLICY.md`, `NOTICE.md`, and `COPYRIGHT.md`. The license is Source Available and is not OSI-certified. Third-party components retain their own terms.
 
-## Current 0.5.13 main-source changes
+## Existing file-output foundation and 0.5.13 local-model fix
 
-The current branch includes persistent generated file downloads and chat output cards, the new artifact database migration 011, the browser data-link correction, the original one-liner live-update flow, the Nginx permission repair, the scoped SSE selftest update, and the numeric cache/version repair. The 0.5.6 merge also adds compatibility for `gpt-oss:120b` cloud-generated files under the isolated `/mnt/data` output alias, with bounded recovery after failed Python file creation. Real HTML/ZIP downloads still need end-to-end live verification. The full worker-to-mobile download acceptance and new ZIP/SHA packaging remain pending. See [CHANGELOG.md](CHANGELOG.md), [the 0.5.9 entry](docs/changelogs-txt/CHANGELOG_0_5_9.txt) and [handover](docs/UEBERGABEPROTOKOLL_0_5_9.txt).
+Version 0.5.13 adds a dedicated file-tool path for local Ollama models, including a bounded missing-marker retry and verified ZIP assembly from named source fences. The existing foundation includes persistent generated file downloads and chat output cards, the new artifact database migration 011, the browser data-link correction, the original one-liner live-update flow, the Nginx permission repair, the scoped SSE selftest update, and the numeric cache/version repair. The 0.5.6 merge also adds compatibility for `gpt-oss:120b` cloud-generated files under the isolated `/mnt/data` output alias, with bounded recovery after failed Python file creation. Real HTML/ZIP downloads still need end-to-end live verification. The full worker-to-mobile download acceptance and new ZIP/SHA packaging remain pending. See [CHANGELOG.md](CHANGELOG.md), [the 0.5.9 entry](docs/changelogs-txt/CHANGELOG_0_5_9.txt) and [handover](docs/UEBERGABEPROTOKOLL_0_5_9.txt).
 
 ## 0.5.9: P05 agent runs, FIFO model admission and cooperative cancellation
 
