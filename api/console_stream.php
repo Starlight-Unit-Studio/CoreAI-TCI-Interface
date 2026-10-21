@@ -766,8 +766,9 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
     'stream'   => true,
     'think'    => ember_thinking_enabled(),
     'messages' => $messages,
-    'options'  => $options,
   ];
+  // Do not send an empty options object for native Gemma defaults.
+  if ($options !== []) $payload['options'] = $options;
   if ($keepAlive !== null) $payload['keep_alive'] = $keepAlive;
 
   $flags = JSON_UNESCAPED_UNICODE;

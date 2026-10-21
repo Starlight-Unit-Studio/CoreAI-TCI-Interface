@@ -129,6 +129,8 @@ UI_FILES=(
   scripts/work-events-selftest.php
   scripts/work-events-persistence-selftest.php
   scripts/local-file-tool-selftest.php
+  scripts/gemma-zero-parameters-selftest.php
+  config/Modelfile.template
   scripts/response-timing-ui-selftest.js
   scripts/agent-runs-selftest.php
   scripts/model-queue-selftest.php
@@ -147,9 +149,9 @@ UI_FILES=(
   scripts/markdown-selftest.js
   scripts/branding-license-selftest.py
   scripts/cache-bust.py
-  docs/changelogs-txt/CHANGELOG_0_5_14.txt
+  docs/changelogs-txt/CHANGELOG_0_5_15.txt
   docs/COREUI_IMAGE_ENGINE_PLAN.md
-  docs/UEBERGABEPROTOKOLL_0_5_14.txt
+  docs/UEBERGABEPROTOKOLL_0_5_15.txt
   docker/pyworker/Dockerfile
   docker/pyworker/entrypoint.sh
   images/starlight_unit_studios_logo_original.png
@@ -414,6 +416,12 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     ok 'P06: Arbeitsweg nach Antwort, Reload, Varianten und Kontotrennung geprueft.'
   else
     fail 'P06-Arbeitsweg-Persistenz-Selbsttest fehlgeschlagen.'
+  fi
+
+  if compose exec -T php php scripts/gemma-zero-parameters-selftest.php >/dev/null 2>&1; then
+    ok 'Gemma: kein CoreUI-PARAMETER in Modelfile und lokalen Ollama-Anfragen.'
+  else
+    fail 'Gemma-Modelfile-/Ollama-Parametervertrag fehlgeschlagen.'
   fi
 
   # Node is optional for PHP installations. Run the real JS unit test when

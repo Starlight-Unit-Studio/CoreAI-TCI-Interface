@@ -1,0 +1,39 @@
+STΛRLIɢHT: EMBER COREUI BY STARLIGHT UNIT STUDIOS
+CHANGELOG 0.5.15
+STAND 21.10.2026
+
+1. LOKALES GEMMA OHNE PARAMETER
+   - Alle PARAMETER-Direktiven aus config/Modelfile.template
+     entfernt: temperature, top_p, top_k, repeat_penalty, num_ctx.
+   - Installer erzeugt das eigene Modell bei einem Update erneut.
+     Das gemeinsam benutzte Basis-Gemma bleibt unveraendert.
+   - Vor ollama create prueft ein Guard die generierte
+     Modelfile-Datei und bricht bei eigenen PARAMETER-Zeilen ab.
+   - Frische lokale config.local.php setzt STU_EMBER_NUM_CTX
+     nicht mehr; erhaltene Installationskonfiguration bleibt
+     unangetastet.
+
+2. API-PFADE
+   - Fuer ember-coreui:* und gemma4:* unterbindet der gemeinsame
+     Ollama-Adapter saemtliche CoreUI-injizierten Modelloptionen.
+   - Streaming und synchroner Pfad senden nicht einmal ein
+     leeres options-Objekt.
+   - Der Top-Level-think-Schalter bleibt unabhaengig erhalten.
+   - Lokale Gemma-Modelle starten keinen kuenstlichen Acht-
+     Sekunden-Warmup-Aufruf mehr; ein solcher Call konnte
+     bereits bei der CPU-Ladezeit abbrechen.
+   - Andere Modellfamilien, etwa gpt-oss, behalten ihre
+     bisherigen Provideroptionen.
+   - Bereits konfigurierte EXPERIMENTAL-/NUM_CTX-Werte koennen
+     lokale Gemma-Modelle nicht erneut ueberschreiben.
+
+3. TESTS UND GRENZEN
+   - Neuer PHP-Vertragstest prueft lokale Modellfamilie,
+     Template ohne PARAMETER, Installer-Neuaufbau, Synchron-/
+     SSE-Ausgabe und Unabhaengigkeit von Cloud-Modellen.
+   - Native-/Compose-Preflight erfordern den Test.
+   - Es gibt noch keine Diagnose der sporadischen Host- oder
+     Ollama-Stillstaende; nach Neustart erfolgreiche Anfragen
+     beweisen keinen dauerhaften Fix.
+   - Keine Migration, kein geaenderter One-Liner, keine
+     GitHub Actions und kein neues verifiziertes ZIP/SHA.

@@ -329,7 +329,6 @@ define('STU_EMBER_MODEL', '$model_php');
 define('STU_EMBER_OLLAMA_URL', 'http://127.0.0.1:11434/api/chat');
 define('STU_EMBER_LOCK_NAMESPACE', '$lock_namespace_php');
 define('STU_EMBER_NUM_THREAD', $THREADS);
-define('STU_EMBER_NUM_CTX', 32768);
 define('STU_EMBER_NUM_PREDICT', 6500);
 define('STU_EMBER_TIMEOUT', 600);
 define('STU_EMBER_TIMEOUT_RETRY', 600);
@@ -420,11 +419,19 @@ ensure_ollama_model() {
 
   sed "s|{{BASE_MODEL}}|$BASE_MODEL|g" \
     "$PROJECT_ROOT/config/Modelfile.template" > "$PROJECT_ROOT/var/Modelfile.generated"
+  # Strict Gemma policy: never inject PARAMETER lines into the owned Ollama
+  # model. Recheck after substitution so this cannot silently regress on update.
+  if grep -Eiq '^[[:space:]]*PARAMETER([[:space:]]|$)' "$PROJECT_ROOT/var/Modelfile.generated"; then
+    die 'Gemma-Modelfile enthaelt verbotene PARAMETER-Zeilen. Modell wurde nicht veraendert.'
+  fi
   chown root:33 "$PROJECT_ROOT/var/Modelfile.generated"
   chmod 0640 "$PROJECT_ROOT/var/Modelfile.generated"
 
   log "Erzeuge das getrennte Ollama-Modell $MODEL_NAME aus $BASE_MODEL."
   ollama create "$MODEL_NAME" -f "$PROJECT_ROOT/var/Modelfile.generated"
+  log "Eigene Ollama-Modellvorlage fuer $MODEL_NAME enthaelt keine PARAMETER-Vorgaben."
+  # The upstream FROM model may itself carry defaults, which Ollama can
+  # display in 'show --modelfile'. Those are not injected by CoreUI.
   printf '%s\n' "$MODEL_NAME" > "$MODEL_OWNER_FILE"
   chown root:33 "$MODEL_OWNER_FILE"
   chmod 0640 "$MODEL_OWNER_FILE"
