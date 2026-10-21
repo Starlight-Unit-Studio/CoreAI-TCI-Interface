@@ -169,12 +169,16 @@ try {
       && str_contains($streamApi, 'if (!$fileTaskHandled && ($hasMarker')
       && str_contains($chatApi, 'function ember_console_file_tool_directive()')
       && str_contains($chatApi, 'function ember_console_file_tool_candidate(')
-      && str_contains($chatApi, "'reason'=>'tool_protocol_missing'")
+      && str_contains($chatApi, "'tool_protocol_missing'")
+      && str_contains($chatApi, "'source_files_incomplete'")
+      && str_contains($chatApi, 'coreui_console_multifile_source_directive($userMsg)')
+      && str_contains($streamApi, 'coreui_console_multifile_source_directive($promptMessage)')
       && str_contains($chatApi, 'coreui_console_missing_requested_artifacts(')
+      && str_contains($fileBridge, 'JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR')
       && str_contains($fileBridge, 'function coreui_console_project_fences_python(')
       && str_contains($fileBridge, 'function coreui_console_python_fence_code(')
       && str_contains($fileBridge, 'function coreui_console_missing_requested_artifacts('),
-    'Lokales Modell verwendet weiterhin einen doppelten Textaufruf statt echten Dateitools.'
+    'Mehrdateien-Werkzeugpfad, kodierte Dateien oder gemeinsame Cloud-/Lokalroute fehlen.'
   );
 
   fwrite(STDOUT, "Frontend-Regressions-Selftest OK: Navigation, Avatare, Markdown, Bearbeitung, Warteschlange und Varianten sind fehlersicher verdrahtet.\n");
