@@ -323,6 +323,10 @@ try {
   // The per-turn lock was acquired above, so an existing "running" row
   // means the prior worker disappeared or its outcome is uncertain.
   if (!coreui_agent_run_schema_ready($pdo)) {
+    if ($generationRequest !== null) {
+      coreui_console_generation_finish($pdo, (int)$uid, $generationRequestId,
+        0, 'agent_runs_migration_required');
+    }
     sse_send('error', ['error'=>'agent_runs_migration_required']);
     ember_generation_lock_release($turnLock);
     exit;
@@ -750,7 +754,7 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
 
   $workDb = $GLOBALS['COREUI_WORK_PDO'] ?? null;
   if ($workDb instanceof PDO) {
-    coreui_work_record($workDb, 'model', 'running', 'Modellstream gestartet', ['model'=>$model]);
+    coreui_work_record($workDb, 'model', 'info', 'Modellstream vorbereitet', ['model'=>$model]);
   }
   $ch = curl_init($url);
   curl_setopt_array($ch, [
@@ -803,6 +807,9 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
       'truncated'=>false,'error'=>'model_queue_timeout'];
   }
   try {
+    if ($workDb instanceof PDO) {
+      coreui_work_record($workDb, 'model', 'running', 'Modellstream gestartet', ['model'=>$model]);
+    }
     $curlOk = curl_exec($ch);
     if (trim($buf) !== '') $consumeLine($buf);
     $curlErrno = curl_errno($ch);
