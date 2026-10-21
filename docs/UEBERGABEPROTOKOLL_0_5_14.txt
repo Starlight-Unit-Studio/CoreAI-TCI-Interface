@@ -1,0 +1,41 @@
+STΛRLIɢHT: EMBER COREUI BY STARLIGHT UNIT STUDIOS
+UEBERGABEPROTOKOLL 0.5.14
+STAND 21.10.2026
+
+1. FEHLERBILD
+Beim Betreiber meldete die Installation des Stands 0.5.12 am Ende:
+[FEHLER] PHP-Erweiterung fehlt: pdo_mysql
+Preflight fehlgeschlagen: 1 Problem(e).
+Einige andere PHP-Module und Selftests waren erfolgreich.
+Die exakte Ursache war anhand des Screenshots nicht eindeutig:
+entweder veralteter PHP-Service, fehlender Treiber oder
+fehleranfaellige Modullisten-Pipeline.
+
+2. REPARATUR
+Die aktuelle Ausgangsbasis in GitHub ist 0.5.13.
+Dieses Update ist 0.5.14, kein Rueckbau auf 0.5.12.
+- docker/php/Dockerfile prueft pdo_mysql unmittelbar beim Build.
+- scripts/install.sh prueft den frisch gebauten Container separat,
+  erneuert danach ausschliesslich php und web in eigenem Compose-Projekt
+  und prueft den dann laufenden PHP-Container nochmals.
+- scripts/preflight.sh und scripts/preflight-native.sh verwenden
+  extension_loaded() statt php -m | grep -Fxq (pipefail).
+- scripts/pdo-mysql-installer-selftest.py prueft diese Vertraege offline.
+- Fehlende PDO-Unterstuetzung bleibt ein Blocker.
+
+3. VERSION UND INTEGRITAET
+VERSION 0.5.14, sechs HTML-Dateien, Bootstrap- und Branding-Pruefer,
+Preflights, README, CHANGELOG und Versionsarchiv angepasst.
+Kein neues Schema, keine SQL-Migration, keine Anpassung des
+bestehenden Installer-One-Liners.
+Keine fremden Container oder Hosts konfigurieren.
+Historische Release-ZIPs und Checksummen bleiben unveraendert.
+
+4. LIVE-ABNAHME
+Original-Setup-One-Liner als Betreiber erneut ausfuehren.
+Preflight muss explizit die Zeile
+  [OK] PHP-Erweiterung aktiv: pdo_mysql
+zeigen und mit null Problemen enden.
+Wenn weiterhin ein Problem auftritt, den PHP-Container und dessen
+geladenen Extensionzustand untersuchen. Kein blindes Ignorieren.
+Docker und PHP-Server-Livepruefung ist bis zur Betreiberabnahme offen.
