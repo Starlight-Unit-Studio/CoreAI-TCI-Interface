@@ -395,6 +395,13 @@ try {
     : null;
   console_stream_progress($thinkingEnabled, 'request');
 
+  // Explicit file requests use the verified synchronous Python-tool pipeline.
+  // Streaming first and then calling ember_generate_reply() again would waste
+  // a full local CPU model pass whenever the first stream emits [PY].
+  $fileToolTurn = !$isVisionTurn && $attachmentIds === []
+    && $generationMode !== 'continue' && ember_py_enabled()
+    && coreui_console_download_requested($promptMessage);
+
   // v1.1.1.94: Vision-Turns nehmen NICHT den Streaming-Pfad. console_stream_ollama()
   // baut den Payload ohne images-Feld, ein Bild kaeme dort gar nicht an. Stattdessen
   // faellt der Turn unten in den Sync-Pfad, der den fertigen Vision-Zweig hat.
@@ -409,6 +416,13 @@ try {
       'done' => true,
       'truncated' => false,
     ];
+  } elseif ($fileToolTurn) {
+    // A real model call and any Python job are performed by ember_generate_reply.
+    // This synthetic accumulator is only a routing signal, not a model success.
+    coreui_work_record($pdo, 'tool', 'info', 'Dateiwerkzeug vorbereitet');
+    console_stream_progress($thinkingEnabled, 'tool');
+    $acc = ['thinking'=>'', 'content'=>'', 'ok'=>true,
+      'done'=>true, 'truncated'=>false];
   } elseif ($isVisionTurn) {
     // Console-AFK nur setzen, wenn wirklich ein Modell- oder Werkzeuglauf startet.
     ember_console_afk_set($pdo, time() + 930);
