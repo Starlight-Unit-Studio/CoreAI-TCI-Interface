@@ -625,6 +625,12 @@ done < <(find "$PROJECT_ROOT/tools" -type f -name '*.py' -print0)
 
 log 'Baue die isolierten PHP-, Python-Worker- und optionalen Browse-Images.'
 compose build php pyworker
+# Verify the freshly BUILT image, not only the existing php service.
+# A stale container may still run an older image with missing PDO support.
+log 'Pruefe pdo_mysql im frisch gebauten PHP-Image.'
+if ! compose run -T --rm --no-deps php php -r 'exit(extension_loaded("pdo_mysql") ? 0 : 1)'; then
+  die 'pdo_mysql fehlt im frisch gebauten PHP-Image. PHP-Build fehlgeschlagen; bestehende Daten unveraendert.'
+fi
 if is_enabled "$INSTALL_BROWSE"; then
   compose build browse
 fi
@@ -668,7 +674,13 @@ else
 fi
 
 log "Starte Ember CoreUI-Web und PHP auf $BIND_ADDRESS:$HTTP_PORT."
-compose up -d php web
+# Force the running PHP service to use the just validated image. Volumes,
+# MariaDB, uploads and all other Compose stacks are preserved.
+compose up -d --force-recreate php web
+if ! compose exec -T php php -r 'exit(extension_loaded("pdo_mysql") ? 0 : 1)'; then
+  compose logs --tail=100 php >&2 || true
+  die 'pdo_mysql fehlt weiterhin im laufenden PHP-Container nach der Aktualisierung.'
+fi
 if ! wait_healthy php 45; then
   compose logs --tail=100 php >&2 || true
   die 'Der isolierte Ember CoreUI-PHP-Dienst wurde nicht gesund.'
