@@ -1,0 +1,61 @@
+STΛRLIɢHT: EMBER COREUI BY STARLIGHT UNIT STUDIOS
+UEBERGABEPROTOKOLL 0.5.15
+STAND 21.10.2026
+
+1. ANLASS
+Betreiber testete abwechselnd gpt-oss:120b (Ollama Cloud)
+und das eigene lokale Modell ember-coreui:latest.
+Zweimal gab es lange lokale Generierungszeiten mit
+zeitweilig fehlender Dateierstellung, nach einem
+Server-Neustart lief es wieder. Ursache nicht bewiesen.
+Im angezeigten automatisch erstellten Modelfile waren
+noch CoreUI-Overrides, insbesondere num_ctx 32768,
+sichtbar. Betreiber verlangt keine PARAMETER-Direktiven
+fuer lokale Gemma-Modelle.
+
+2. VERBINDLICHE KORREKTUR
+config/Modelfile.template enthaelt ausschliesslich
+FROM und die bisherigen SYSTEM-Anweisungen.
+scripts/install.sh regeneriert var/Modelfile.generated
+mit Verbot von PARAMETER-Direktiven vor dem Aufruf von
+ollama create. Das Modell wird auf jedem Update unter
+seinem CoreUI-eigenen Namen neu erzeugt.
+Der Vorbesitzschutz gegen fremde Modelle bleibt erhalten;
+das vorhandene Basismodell wird nicht umkonfiguriert.
+Bei neuen Installationen wird STU_EMBER_NUM_CTX nicht
+mehr generiert; vorhandene config.local.php bleibt
+unangetastet und wird nicht blind ueberschrieben.
+api/chat.php erklaert ember-coreui:* und gemma4:*
+als strikt parameterfreie Modelle. Das gilt auch dann,
+wenn ein altes Config-Flag experimentelle Tuningwerte
+aktiviert oder interne Overrides uebergeben werden.
+api/console_stream.php sendet wie der synchrone Weg
+keine Ollama options fuer diese lokale Modellfamilie.
+Cloud-GPT und andere Modellfamilien bleiben unveraendert.
+
+3. VERIFIKATION
+scripts/gemma-zero-parameters-selftest.php prueft
+die PHP-Modelloptionen, die Template-Datei, Installer-
+Guard, API-Payload und separate Nicht-Gemma-Defaults.
+Beide Preflight-Varianten verlangen diesen Test.
+Quellversionsprung 0.5.14 nach 0.5.15 mit Pflichtdateien.
+Keine SQL-Migration und keine neue externe Ressource.
+
+4. INSTALLATIONS- UND LIVE-ABNAHME
+Original-One-Liner unveraendert auf dem Server
+ausfuehren. Installer muss ollama create fuer das
+CoreUI-eigene Modell durchfuehren und den erfolgreichen
+Parameter-Guard melden. Danach:
+- var/Modelfile.generated enthaelt keine PARAMETER-Zeile.
+- ollama show --modelfile ember-coreui:latest kontrollieren.
+  VON DER BASIS geerbte Parameter duerfen nicht
+  als vom CoreUI-Template gesetzte Werte missverstanden
+  werden; deren Herkunft separat pruefen.
+- Kurzer lokaler Chat- und lokaler Python-/ZIP-Test;
+  danach dieselben Tests mit Cloudmodell als Regression.
+- Bei erneutem Stillstand: VOR jedem Server-Neustart
+  Ollama-Prozesszustand, Logs, freien Arbeitsspeicher,
+  Modellbelegung und einen realen Tooljob dokumentieren.
+Bei spaeterem Update keine bestaetigte Dauerheilung
+behaupten, bevor die sporadischen Stopps wegbleiben.
+Keine GitHub Actions starten. Kein ZIP/SHA-Build behaupten.
