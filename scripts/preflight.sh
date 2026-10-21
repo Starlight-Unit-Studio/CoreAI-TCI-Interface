@@ -128,6 +128,7 @@ UI_FILES=(
   js/coreui-work-events.js
   scripts/work-events-selftest.php
   scripts/work-events-persistence-selftest.php
+  scripts/local-file-tool-selftest.php
   scripts/response-timing-ui-selftest.js
   scripts/agent-runs-selftest.php
   scripts/model-queue-selftest.php
@@ -410,6 +411,12 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
 
   # Node is optional for PHP installations. Run the real JS unit test when
   # present on the host; the PHP frontend guard always checks integration.
+  if compose exec -T php php scripts/local-file-tool-selftest.php >/dev/null 2>&1; then
+    ok 'Lokale Dateiauftraege: Python-Fences, mehrteilige Projekte, ZIP und Vollstaendigkeit geprueft.'
+  else
+    fail 'Lokaler Dateiwerkzeug-Selbsttest fehlgeschlagen.'
+  fi
+
   if command -v node >/dev/null 2>&1; then
     if node "$PROJECT_ROOT/scripts/response-timing-ui-selftest.js" >/dev/null 2>&1; then
       ok 'Antwortdauer: gespeicherte Gesamt- und Modellzeit in der Infoanzeige geprueft.'
