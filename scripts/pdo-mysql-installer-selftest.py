@@ -25,11 +25,11 @@ require('extension_loaded("pdo_mysql")' in image,
         "built PHP image must validate that PDO MySQL actually loaded")
 require('compose build php pyworker' in installer,
         "installer must rebuild its PHP service")
-require("compose run -T --rm --no-deps php php -r 'exit(extension_loaded(\"pdo_mysql\") ? 0 : 1)'" in installer,
+require("compose run -T --rm --no-deps php php -r 'exit(extension_loaded(\"pdo_mysql\") ? 0 : 1);'" in installer,
         "installer must probe the newly built image before starting PHP service")
 require('compose up -d --force-recreate php web' in installer,
         "updater must actually replace stale running PHP service")
-require("compose exec -T php php -r 'exit(extension_loaded(\"pdo_mysql\") ? 0 : 1)'" in installer,
+require("compose exec -T php php -r 'exit(extension_loaded(\"pdo_mysql\") ? 0 : 1);'" in installer,
         "installer must validate the running service")
 for name, contents in (
     ("Compose", compose_preflight),
