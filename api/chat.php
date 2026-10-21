@@ -2445,10 +2445,12 @@ function ember_console_file_tool_candidate(string $reply, string $request): ?arr
   $max = ember_py_max_code_chars();
   $py = ember_py_extract_marker($reply);
   if ($py !== null) return ['code'=>$py,'kind'=>'marker'];
-  $py = coreui_console_python_fence_code($reply, $request, $max);
-  if ($py !== null) return ['code'=>$py,'kind'=>'python_fence'];
+  // Prefer an inert source file if the user explicitly requested a .py
+  // download. Only otherwise execute a standalone Python tool fence.
   $project = coreui_console_project_fences_python($reply, $request, $max);
   if ($project !== null) return ['code'=>$project['code'],'kind'=>'project','meta'=>$project];
+  $py = coreui_console_python_fence_code($reply, $request, $max);
+  if ($py !== null) return ['code'=>$py,'kind'=>'python_fence'];
   // A single recovered HTML page must not suppress the repair attempt when
   // the user explicitly requested several separate files and/or a ZIP.
   $wanted = coreui_console_missing_requested_artifacts($request, []);
