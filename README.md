@@ -7,7 +7,13 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 Ember CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.14` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.15` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Gemma 4 without context override and Python worker diagnosis (0.5.15)
+
+The `config/Modelfile.template` used to create `ember-coreui:latest` no longer contains `PARAMETER num_ctx`. The regular setup/update re-creates the CoreUI-owned Ollama model without that line. Other tuning values (`temperature 1.0`, `top_p 0.95`, `top_k 64`, `repeat_penalty 1.08`) remain unchanged. Fresh generated PHP configurations omit `STU_EMBER_NUM_CTX`; existing private configurations are preserved. For `gemma4:*` and `ember-coreui:*`, the request builder strips `num_ctx`, including explicit overrides. Other models are unaffected. Verify with `ollama show --modelfile ember-coreui:latest` after updating.
+
+The long-running Python worker now uses finite PyMySQL network timeouts and reconnects before accepting work and after isolated execution. It never blindly retries an uncertain job. If another hang occurs, **before rebooting**, run `sudo bash /opt/ember-coreui/scripts/diagnose-pyworker.sh` (adjust installation path as needed). It shows service and queue state without prompts, source code or secrets. When the timeline stops at "Modellstream gestartet" before a Python job appears, check Ollama/model inference separately; worker status alone cannot identify the cause.
 
 ## PHP/MariaDB runtime validation (0.5.14)
 
