@@ -4671,6 +4671,13 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       $confirmedFile = $requestedFile
         ? coreui_console_artifact_pending($consoleUid, (string)$consoleSessionId, $triggerMessageId) : null;
       if ($confirmedFile !== null) {
+        $missing = coreui_console_missing_requested_artifacts($userMsg, $confirmedFile['files']);
+        if ($missing !== []) {
+          coreui_work_record($pdo, 'artifact', 'error', 'Dateipaket unvollstaendig',
+            ['reason'=>'output_incomplete','file_count'=>count($confirmedFile['files'])]);
+          return 'Ich konnte nur einen Teil der angefragten Dateien sichern. Es fehlen: '
+            . implode(', ', $missing) . '. Die vorhandenen Dateien stehen als Download bereit.';
+        }
         $anyPartial = (bool)array_filter($confirmedFile['files'], static fn(array $f): bool => !empty($f['partial']));
         return $anyPartial
           ? 'Ich konnte Dateien als Teilergebnis sichern. Bitte pruefe die Warnhinweise an den Downloadkarten.'
@@ -4766,6 +4773,13 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         }
         $confirmed = coreui_console_artifact_pending($consoleUid, (string)$consoleSessionId, $triggerMessageId);
         if ($confirmed !== null) {
+          $missing = coreui_console_missing_requested_artifacts($userMsg, $confirmed['files']);
+          if ($missing !== []) {
+            coreui_work_record($pdo, 'artifact', 'error', 'Dateipaket unvollstaendig',
+              ['reason'=>'output_incomplete','file_count'=>count($confirmed['files'])]);
+            return 'Nur ein Teil der Dateien wurde gespeichert. Es fehlen: '
+              . implode(', ', $missing) . '. Die vorhandenen Dateien stehen zum Download bereit.';
+          }
           $anyPartial = (bool)array_filter($confirmed['files'], static fn(array $f): bool => !empty($f['partial']));
           return $anyPartial
             ? 'Die Datei wurde nur teilweise erzeugt und ist als Teilergebnis zum Download verfuegbar.'
