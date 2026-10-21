@@ -4690,6 +4690,15 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
           : 'Die Datei ist erstellt und steht unten als echter Download bereit.';
       }
 
+      // A timed-out or unavailable worker has no verified result to repair.
+      // Do not spend another multi-minute local model call explaining it.
+      if ($fileTask && !is_array($pyRes)) {
+        coreui_work_record($pdo, 'tool', 'error', 'Dateiworker nicht erreichbar',
+          ['reason'=>'worker_timeout']);
+        return 'Der isolierte Python-Worker hat keinen bestaetigten Abschluss geliefert. '
+          . 'Es wurde keine Downloaddatei gespeichert. Bitte pruefe den Workerstatus.';
+      }
+
       // A failed file creation gets at most ONE bounded repair opportunity.
       // This is serial through the existing Ollama lock and the existing
       // per-turn, account-bound worker queue, never an untracked download.
