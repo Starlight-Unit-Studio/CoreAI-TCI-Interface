@@ -204,7 +204,7 @@ if command -v php >/dev/null 2>&1; then
     else
       fail "PHP-Erweiterung fehlt: $extension_name"
       if [[ "$extension_name" == 'pdo_mysql' ]]; then
-        warn 'PHP-CLI/PHP-FPM-Versionen und installiertes php-mysql-Paket kontrollieren.'
+        printf '[HINWEIS] CLI-/FPM-Versionen und installiertes php-mysql-Paket kontrollieren.\n' >&2
       fi
     fi
   done
