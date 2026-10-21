@@ -4543,8 +4543,10 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       return is_array($multi) ? (string)$multi['code'] : null;
     };
     $recoveredCode = $recoverCode($out);
-    $inlineAvailable = is_string($out)
-      && coreui_console_inline_file_python($out, $userMsg, ember_py_max_code_chars()) !== null;
+    $inline = is_string($out)
+      ? coreui_console_inline_file_python($out, $userMsg, ember_py_max_code_chars()) : null;
+    $inlineAvailable = is_array($inline)
+      && coreui_console_artifact_matches_request([['name'=>$inline['name']]], $userMsg);
     if ($recoveredCode === null && !$inlineAvailable) {
       coreui_work_record($pdo, 'tool', 'info', 'Lokales Dateiwerkzeug angefordert',
         ['reason'=>'tool_marker_missing']);
@@ -4554,8 +4556,10 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       $toolReply = ember_call_ollama($primaryModel, $sys, $toolPrompt,
         ember_timeout_for_model($primaryModel), []);
       $recoveredCode = $recoverCode($toolReply);
-      $inlineAvailable = is_string($toolReply)
-        && coreui_console_inline_file_python($toolReply, $userMsg, ember_py_max_code_chars()) !== null;
+      $inline = is_string($toolReply)
+        ? coreui_console_inline_file_python($toolReply, $userMsg, ember_py_max_code_chars()) : null;
+      $inlineAvailable = is_array($inline)
+        && coreui_console_artifact_matches_request([['name'=>$inline['name']]], $userMsg);
       coreui_work_record($pdo, 'model',
         $recoveredCode !== null || $inlineAvailable ? 'success' : 'error',
         $recoveredCode !== null || $inlineAvailable
@@ -4643,7 +4647,8 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       $confirmedFile = $requestedFile
         ? coreui_console_artifact_pending($consoleUid, (string)$consoleSessionId, $triggerMessageId) : null;
       if ($confirmedFile !== null) {
-        $anyPartial = (bool)array_filter($confirmedFile['files'], static fn(array $f): bool => !empty($f['partial']));
+        $anyPartial = (bool)array_filter($confirmedFile['files'], static fn(array $f): bool => !empty($f['partial']))
+          || !coreui_console_artifact_matches_request($confirmedFile['files'], $userMsg);
         return $anyPartial
           ? 'Ich konnte Dateien als Teilergebnis sichern. Bitte pruefe die Warnhinweise an den Downloadkarten.'
           : 'Die Datei ist erstellt und steht unten als echter Download bereit.';
@@ -4739,7 +4744,8 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         }
         $confirmed = coreui_console_artifact_pending($consoleUid, (string)$consoleSessionId, $triggerMessageId);
         if ($confirmed !== null) {
-          $anyPartial = (bool)array_filter($confirmed['files'], static fn(array $f): bool => !empty($f['partial']));
+          $anyPartial = (bool)array_filter($confirmed['files'], static fn(array $f): bool => !empty($f['partial']))
+            || !coreui_console_artifact_matches_request($confirmed['files'], $userMsg);
           return $anyPartial
             ? 'Die Datei wurde nur teilweise erzeugt und ist als Teilergebnis zum Download verfuegbar.'
             : 'Die Datei wurde gespeichert und steht unten als echter Download bereit.';
@@ -4812,7 +4818,12 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
 
   $fileFallback = ($channel === 'console' && coreui_console_artifact_pending($consoleUid, (string)$consoleSessionId, $triggerMessageId))
     ? 'Die erzeugten Dateien stehen unten zum Herunterladen bereit.' : null;
-  if (!is_string($out) || trim($out) === '') return $fileFallback;
+  if (!is_string($out) || trim($out) === '') {
+    return $fileFallback ?? ($fileToolTurn
+      ? 'Das lokale Modell hat keinen ausfuehrbaren Dateiwerkzeug-Code geliefert. '
+        . 'Es wurde keine Datei gespeichert.'
+      : null);
+  }
   // A requested downloadable output is not a plain-text code tutorial.
   // If there are no registered bytes, report the missing file truthfully
   // instead of returning a potentially enormous or truncated HTML snippet.
