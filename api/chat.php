@@ -4574,11 +4574,16 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
 
   // Explicit file tasks must produce executable sandbox work, not a prose
   // answer. Avoid a redundant SSE model call before this tool-oriented request.
+  // Keep single-file/cloud free-text routing unchanged. Multi-file ZIPs
+  // use the same complete, validated project bridge for ALL model providers.
+  $requestedSourceProject = $channel === 'console' && $imageUrl === null
+    && ember_py_enabled() && coreui_console_download_requested($userMsg)
+      ? coreui_console_multifile_source_directive($userMsg) : null;
   $fileTask = $channel === 'console' && $imageUrl === null && ember_py_enabled()
-    && ember_console_file_tool_is_local($primaryModel)
-    && coreui_console_download_requested($userMsg);
-  $sourceProjectDirective = $fileTask
-    ? coreui_console_multifile_source_directive($userMsg) : null;
+    && coreui_console_download_requested($userMsg)
+    && (ember_console_file_tool_is_local($primaryModel)
+      || $requestedSourceProject !== null);
+  $sourceProjectDirective = $fileTask ? $requestedSourceProject : null;
   $sourceProjectMode = $sourceProjectDirective !== null;
   $fileToolThink = $fileTask ? ember_console_file_tool_think($primaryModel) : null;
   if ($fileTask) {
