@@ -24,7 +24,10 @@ REQUIRED_ACTIVE = ("README.md", "CHANGELOG.md",
 def numeric(value: str) -> tuple[int, int, int]:
     if not TRIPLE.fullmatch(value):
         raise ValueError("Version must have three numbers and no suffix: " + repr(value))
-    return tuple(map(int, value.split(".")))
+    parts = tuple(map(int, value.split(".")))
+    if not (0 <= parts[0] <= 999 and 0 <= parts[1] <= 9 and 0 <= parts[2] <= 99):
+        raise ValueError("Version counters must stay within 0..999 / 0..9 / 0..99")
+    return parts
 
 
 def validate(root: Path, base: str) -> str:
