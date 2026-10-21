@@ -94,6 +94,7 @@ UI_FILES=(
   js/coreui-work-events.js
   scripts/work-events-selftest.php
   scripts/work-events-persistence-selftest.php
+  scripts/response-timing-ui-selftest.js
   scripts/agent-runs-selftest.php
   scripts/model-queue-selftest.php
   scripts/workspace-output-selftest.py
@@ -232,6 +233,16 @@ if command -v php >/dev/null 2>&1; then
     ok 'P06: Arbeitsweg nach Antwort, Reload, Varianten und Kontotrennung geprueft.'
   else
     fail 'P06-Arbeitsweg-Persistenz-Selbsttest fehlgeschlagen.'
+  fi
+
+  if command -v node >/dev/null 2>&1; then
+    if node "$PROJECT_ROOT/scripts/response-timing-ui-selftest.js" >/dev/null 2>&1; then
+      ok 'Antwortdauer: gespeicherte Gesamt- und Modellzeit in der Infoanzeige geprueft.'
+    else
+      fail 'Antwortdauer-JavaScript-Selbsttest fehlgeschlagen.'
+    fi
+  else
+    printf '[INFO] Node nicht installiert: optionaler Antwortdauer-JavaScript-Test uebersprungen.\n'
   fi
 
   thinking_selftest=''
