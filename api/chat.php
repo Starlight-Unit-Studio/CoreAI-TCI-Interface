@@ -3156,10 +3156,27 @@ function ember_call_ollama(string $model, string $systemPrompt, string $userProm
     CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
     CURLOPT_NOSIGNAL => true,
   ]);
-  $raw = curl_exec($ch);
-  $err = curl_error($ch);
-  $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-  curl_close($ch);
+  // Guard the actual provider request, not just the outer chat turn. This
+  // includes warmup, reflection, follow-up calls and private SSE fallbacks.
+  $modelSlot = ember_global_lock_acquire();
+  if ($modelSlot === false) {
+    curl_close($ch);
+    $GLOBALS['STU_EMBER_LAST_CALL'] = [
+      'ok'=>false, 'model'=>$model, 'url'=>$url, 'code'=>0,
+      'err'=>'model_queue_timeout', 'done_seen'=>false, 'done'=>null,
+      'done_reason'=>'', 'eval_count'=>0, 'prompt_eval_count'=>0,
+      'num_predict'=>(int)($options['num_predict'] ?? 0),
+    ];
+    return null;
+  }
+  try {
+    $raw = curl_exec($ch);
+    $err = curl_error($ch);
+    $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+  } finally {
+    curl_close($ch);
+    ember_generation_lock_release($modelSlot);
+  }
 
   $GLOBALS['STU_EMBER_LAST_CALL'] = [
     'ok' => ($raw !== false && $raw !== '' && $code >= 200 && $code < 300),
@@ -3501,14 +3518,14 @@ function ember_generation_lock_acquire(string $channel, int $afterId, array $sen
 
 function ember_generation_lock_release($fp): void {
   if ($fp === 'db_lock') {
-    // MariaDB-Lock freigeben
     try {
       global $pdo;
-      if (isset($pdo) && $pdo instanceof PDO) {
-        $stUnlock = $pdo->prepare('SELECT RELEASE_LOCK(?)');
-        $stUnlock->execute([ember_lock_name('global_ollama')]);
-      }
-    } catch (Throwable $e) {}
+      $connection = isset($pdo) && $pdo instanceof PDO ? $pdo : stu_pdo();
+      $stUnlock = $connection->prepare('SELECT RELEASE_LOCK(?)');
+      $stUnlock->execute([ember_lock_name('global_ollama')]);
+    } catch (Throwable $e) {
+      // Closing the connection also releases its named locks.
+    }
     return;
   }
   if (!is_resource($fp)) return;
@@ -3516,26 +3533,27 @@ function ember_generation_lock_release($fp): void {
   @fclose($fp);
 }
 
-// Global Ollama lock: max 1 simultaneous generation
-function ember_global_lock_acquire(): mixed {
-  // MariaDB GET_LOCK statt flock - atomar ueber alle PHP-FPM-Worker hinweg.
-  // flock() ist unter PHP-FPM nicht zuverlaessig atomar wenn mehrere Worker
-  // fast gleichzeitig denselben Lock anfordern.
+// Single admission point for every Ollama model HTTP call (including Cloud).
+// All PHP workers use the SAME MariaDB named lock. Never mix a local flock
+// fallback with the DB lock: that would create two independent model lanes.
+// A timed wait is only an admission gate, not yet the durable P05 job queue.
+function ember_global_lock_acquire(int $timeoutSeconds = 90): mixed {
   try {
     global $pdo;
-    if (!isset($pdo) || !($pdo instanceof PDO)) {
-      // Fallback auf flock wenn PDO nicht verfuegbar
-      $path = ember_generation_lock_dir() . DIRECTORY_SEPARATOR . 'global_ollama.lock';
-      $fp = @fopen($path, 'c+');
-      if (!$fp) return false;
-      if (!@flock($fp, LOCK_EX | LOCK_NB)) { @fclose($fp); return false; }
-      return $fp;
-    }
-    $st = $pdo->prepare('SELECT GET_LOCK(?, 0)');
-    $st->execute([ember_lock_name('global_ollama')]);
-    $got = $st ? (int)$st->fetchColumn() : 0;
-    if ($got !== 1) return false;
-    return 'db_lock';
+    $connection = isset($pdo) && $pdo instanceof PDO ? $pdo : stu_pdo();
+    $name = ember_lock_name('global_ollama');
+    $deadline = microtime(true) + max(0, min(600, $timeoutSeconds));
+    $lastHeartbeat = microtime(true);
+    do {
+      $st = $connection->prepare('SELECT GET_LOCK(?, 1)');
+      $st->execute([$name]);
+      if ($st && (int)$st->fetchColumn() === 1) return 'db_lock';
+      if (function_exists('sse_comment') && microtime(true) - $lastHeartbeat >= 10) {
+        sse_comment('waiting-for-model-slot');
+        $lastHeartbeat = microtime(true);
+      }
+    } while (microtime(true) < $deadline);
+    return false;
   } catch (Throwable $e) {
     return false;
   }

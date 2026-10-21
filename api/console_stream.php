@@ -386,6 +386,9 @@ try {
     // Erst die vollstaendige, validierte Antwort darf den Browser erreichen.
     $acc   = console_stream_ollama($model, $sys, $u);
   }
+  if (($acc['error'] ?? '') === 'model_queue_timeout') {
+    throw new RuntimeException('model_queue_timeout');
+  }
   $thinkingAll = (string)($acc['thinking'] ?? '');
   $contentAll  = (string)($acc['content'] ?? '');
 
@@ -723,12 +726,26 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
       return strlen($chunk);
     },
   ]);
-  $curlOk = curl_exec($ch);
-  if (trim($buf) !== '') $consumeLine($buf);
-  $curlErrno = curl_errno($ch);
-  $curlError = curl_error($ch);
-  $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-  curl_close($ch);
+  $modelSlot = ember_global_lock_acquire();
+  if ($modelSlot === false) {
+    curl_close($ch);
+    if ($workDb instanceof PDO) {
+      coreui_work_record($workDb, 'model', 'error', 'Modellwarteschlange nicht verfuegbar',
+        ['reason'=>'model_queue_timeout']);
+    }
+    return ['thinking'=>'','content'=>'','ok'=>false,'done'=>false,
+      'truncated'=>false,'error'=>'model_queue_timeout'];
+  }
+  try {
+    $curlOk = curl_exec($ch);
+    if (trim($buf) !== '') $consumeLine($buf);
+    $curlErrno = curl_errno($ch);
+    $curlError = curl_error($ch);
+    $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+  } finally {
+    curl_close($ch);
+    ember_generation_lock_release($modelSlot);
+  }
 
   $numPredict = (int)($options['num_predict'] ?? 0);
   $reasonLower = strtolower($doneReason);
