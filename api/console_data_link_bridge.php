@@ -122,6 +122,22 @@ function coreui_console_python_fence_code(string $reply, string $request, int $m
   return $code !== '' && strlen($code) <= $maxCodeChars ? $code : null;
 }
 
+/** A successful worker run is not a complete project if named outputs are missing. */
+function coreui_console_missing_requested_artifacts(string $request, array $files): array {
+  $pattern = '[A-Za-z0-9][A-Za-z0-9._-]{0,90}\.(?:html?|css|js|json|txt|md|svg|py|zip)';
+  preg_match_all('~(?<![A-Za-z0-9._-])(' . $pattern . ')(?![A-Za-z0-9._-])~i',
+    $request, $matches);
+  $wanted = array_values(array_unique(array_map('strtolower', $matches[1] ?? [])));
+  if ($wanted === []) return [];
+  $present = [];
+  foreach ($files as $file) {
+    if (is_array($file) && is_string($file['name'] ?? null)) {
+      $present[strtolower($file['name'])] = true;
+    }
+  }
+  return array_values(array_filter($wanted, static fn(string $name): bool => !isset($present[$name])));
+}
+
 /** Decodes a single complete inline download, or a complete fenced HTML page. */
 function coreui_console_inline_file_python(string $reply, string $request, int $maxCodeChars = 20000): ?array {
   if (!coreui_console_file_requested($request) || strlen($reply) > 220000 || $maxCodeChars < 500) return null;
