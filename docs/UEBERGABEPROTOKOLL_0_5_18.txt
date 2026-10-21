@@ -1,0 +1,167 @@
+STΛRLIɢHT: EMBER COREUI BY STARLIGHT UNIT STUDIOS
+UEBERGABEPROTOKOLL 0.5.18
+STAND 21.10.2026
+
+======================================================================
+1. ZWECK UND AUSGANGSLAGE
+======================================================================
+
+Version 0.5.18 setzt den Mehrdateien-/ZIP-Fix aus 0.5.17 fort.
+Der reale Problemfall ist ein angefordertes Browserprojekt mit
+index.html, style.css, game.js und snake-game.zip. Modelle koennen
+eine teilweise gueltige erste Antwort und eine ergaenzende zweite
+Antwort liefern. Bisher wurden beide Antworten getrennt bewertet,
+wodurch bereits vorhandene sichere Quelldateien verloren gingen.
+
+Vorgaenger auf main: 0.5.17.
+Arbeitsbranch: fix/partial-source-recovery-0.5.18.
+Keine Datenbankmigration fuer 0.5.18.
+Der vorhandene One-Liner bleibt unveraendert.
+GitHub Actions werden wegen des ausgeschoepften Kontingents nicht
+gestartet. Die eigentliche Produktionsabnahme erfolgt live.
+
+======================================================================
+2. IMPLEMENTIERTE WIEDERAUFNAHME
+======================================================================
+
+api/console_data_link_bridge.php:
+- Teilantworten werden nur im collectOnly-Modus als inerte,
+  validierte Quelldateien erfasst.
+- Erste und zweite Antwort werden nur fuer explizit verlangte
+  sichere Basenames kombiniert.
+- Bei einem Dateiduplikat ueber beide Antworten gewinnt die
+  zweite Antwort.
+- Ein Worker-Skript wird erst erzeugt, wenn alle verlangten
+  Quelldateien vorhanden sind.
+- Der Merge baut den kontrollierten Python-Schreiber direkt aus
+  validierten Bytes. Er serialisiert die Inhalte nicht erneut
+  durch einen kuenstlichen Markdown-Text.
+
+api/chat.php:
+- Bei einem expliziten Mehrdateien-ZIP-Auftrag bleibt es bei
+  hoechstens zwei seriellen Modellantworten.
+- Ist keine Antwort allein vollstaendig, versucht CoreUI den
+  sicheren Merge beider Antworten.
+- Ein erfolgreicher Merge wird als tatsaechlicher Arbeitsschritt
+  protokolliert.
+- Bleibt das Paket unvollstaendig, gibt es keinen Python-Job,
+  kein ZIP und keine erfundene Downloadmeldung.
+
+======================================================================
+3. SICHERHEIT UND GRENZEN
+======================================================================
+
+- Modellinhalte bleiben Daten und werden nicht als Python des
+  Modells ausgefuehrt.
+- Nicht angeforderte Zusatzdateien werden herausgefiltert.
+- Absolute Pfade, Traversal und Pfadtrenner bleiben unzulaessig.
+- Duplikate innerhalb einer einzelnen Antwort werden abgewiesen.
+- Dateinamen werden case-insensitiv zugeordnet, aber in der vom
+  Nutzer verlangten Schreibweise erzeugt.
+- Ungeschlossene Markdown-Fences werden nicht akzeptiert.
+- Markdown-Dateien mit eigenen Drei-Backtick-Bloecken koennen
+  ueber einen laengeren aeusseren Fence bytegetreu ankommen.
+- Hoechstens zehn Artefakte je Job, bei ZIP somit maximal neun
+  Quelldateien plus Archiv.
+- Vorhandene Grenzen: 150000 Bytes je Quellblock, 512000 Bytes
+  Gesamtquelltext, begrenzte Modellantwort und begrenzter
+  generierter Python-Code.
+- Downloadfreigabe bleibt an Konto, Sitzung, Turn, Revision,
+  Workerjob und bestaetigte Artefakte gebunden.
+
+======================================================================
+4. OFFLINE-PRUEFUNGEN
+======================================================================
+
+Bereits erfolgreich ausgefuehrt:
+- Syntaxchecks: 65 PHP-, 11 JavaScript-, 8 Python- und
+  14 Shell-Dateien.
+- scripts/local-file-tool-selftest.php
+- scripts/frontend-regression-selftest.php
+- scripts/gemma-zero-parameters-selftest.php
+- scripts/reply-pipeline-selftest.php
+- scripts/thinking-sanitize-selftest.php
+- scripts/branding-license-selftest.py
+- scripts/workspace-output-selftest.py
+- scripts/pdo-mysql-installer-selftest.py
+- scripts/markdown-selftest.js
+- scripts/response-timing-ui-selftest.js
+- scripts/work-events-ui-selftest.js
+- scripts/agent-runs-selftest.php
+- scripts/model-queue-selftest.php
+- scripts/session-selftest.php
+- scripts/logo-alpha-selftest.php
+- scripts/pdf-selftest.php
+- scripts/video-selftest.php
+- scripts/work-events-persistence-selftest.php
+- scripts/work-events-selftest.php
+- scripts/cache-bust.py --root . --verify
+- python3 scripts/version-merge-check.py --base-version 0.5.17
+- git diff --check
+
+Der erweiterte Selftest deckt ab:
+- vollstaendige Einmalantwort
+- erste Teilantwort plus zweite Teilantwort
+- weiterhin fehlende Datei nach beiden Antworten
+- Vorrang der zweiten Antwort bei Duplikaten
+- case-insensitive Dateinamen und kanonische Ausgabe
+- Ausschluss nicht angeforderter Zusatzdateien
+- Markdown-Inhalt mit eingebetteten Backticks
+- ungeschlossene Fences
+- Duplikate innerhalb einer Antwort
+- Einzeldatei-, Gesamt-, Artefakt- und Codegroessengrenzen
+- Base64-Schraegstrich-Regressionsfall aus 0.5.17
+
+Der aus zwei Teilantworten erzeugte kontrollierte Python-Schreiber
+wurde zusaetzlich wirklich ausgefuehrt. Er schrieb index.html,
+style.css, game.js und snake-game.zip. ZIP-CRC und Dateiliste waren
+gueltig; alle drei Eintraege waren bytegleich zu den Einzeldateien.
+
+Umgebungsgrenzen:
+- In der Arbeitsumgebung fehlen Docker, produktive
+  api/config.local.php und die CoreUI-MariaDB.
+- Der vollstaendige Compose-/Native-Preflight und der
+  datenbankgebundene Python-Worker-Selftest sind deshalb hier nicht
+  als bestanden behauptet. Der Worker-Test endete erwartungsgemaess
+  mit Connection refused gegen die nicht vorhandene MariaDB.
+- Der Account-Security-Test bestand 12 statische Pruefungen und
+  uebersprang seinen DB-Teil ohne lokale Konfiguration.
+- Die dienstgebundenen Tests werden mit dem unveraenderten
+  Installer-One-Liner auf dem Live-System nachgeholt.
+
+======================================================================
+5. LIVE-ABNAHME NACH DEM MERGE
+======================================================================
+
+1. Den unveraenderten offiziellen setup.sh-One-Liner ausfuehren.
+2. Den abschliessenden Preflight komplett lesen. Ein Fehler am Ende
+   ist kein erfolgreicher Teillauf.
+3. Den identischen Snake-Auftrag mit ember-coreui:latest, Qwen und
+   Cloud GPT ausfuehren.
+4. Erwartet werden vier echte, authentifizierte Downloadkarten:
+   index.html, style.css, game.js und snake-game.zip.
+5. ZIP oeffnen, Dateiliste und Inhalte gegen die Einzeldateien
+   vergleichen und das Spiel in Chrome auf Android starten.
+6. Chatwechsel und Browser-Reload pruefen. Downloads und gespeicherter
+   Arbeitsweg muessen weiterhin zum richtigen Turn gehoeren.
+7. Bei Fehlern die echten Daten verwenden: Job-ID, status, exit_code,
+   duration_ms, sichere Fehlerklasse, Manifestwarnungen und Dateinamen.
+   Keine Ursache aus nachtraeglicher Modellprosa ableiten.
+
+======================================================================
+6. WEITERER PLAN
+======================================================================
+
+Erst nach der Live-Abnahme dieses Fixes mit P07 und dem weiteren
+Agenten-/Entwicklerumgebungs-Ausbau fortfahren. Open WebUI,
+OpenClaw, CrewAI, LangGraph und Microsoft AutoGen bleiben
+Funktionsreferenzen. Es wird kein fremder Quellcode, Text oder
+Asset uebernommen. E.M.B.E.R. behaelt global genau einen
+gemeinsamen Modellslot und fuehrt Modellanfragen strikt seriell aus.
+
+Separat offen bleibt GitHub Issue #52 zum Ollama-Modellwechsel.
+Dieser Betriebsfehler ist nicht mit der Datei-Bridge gleichzusetzen.
+
+======================================================================
+ENDE DES UEBERGABEPROTOKOLLS
+======================================================================

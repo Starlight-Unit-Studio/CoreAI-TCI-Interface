@@ -2,6 +2,16 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.18 - 21.10.2026
+
+- Unvollstaendige, aber jeweils sichere Mehrdateien-Antworten koennen jetzt ueber genau einen seriellen Modell-Wiederholungsversuch zusammengefuehrt werden. Die erste und zweite Antwort werden nur als inerte Quelltextfragmente gelesen; der Worker startet erst, wenn alle ausdruecklich verlangten Dateien vorhanden sind.
+- Bei demselben Dateinamen gewinnt die zweite Antwort. Gross-/Kleinschreibung wird sicher normalisiert, waehrend die vom Nutzer angeforderte Schreibweise fuer die erzeugte Datei erhalten bleibt.
+- Nicht angeforderte Zusatzdateien des Modells gelangen weder in die Ausgabe noch in das ZIP. Unsichere Pfade, Duplikate innerhalb einer Antwort, ungeschlossene Fences, unvollstaendige Pakete sowie Datei-, Gesamt- und Artefaktgrenzen bleiben harte Ablehnungsgruende.
+- Markdown-Quellen mit eigenen Drei-Backtick-Bloecken koennen ueber laengere aeussere Fences bytegetreu verarbeitet werden. Der Merge baut den kontrollierten Python-Schreiber direkt aus validierten Bytes und serialisiert Quelltext nicht erneut durch Markdown.
+- PHP-8.3-Syntaxpruefung und erweiterter Offline-Selftest fuer Teilantworten, Zweitantwort-Vorrang, Zusatzdateien, Schreibweise, Backticks, ungeschlossene Fences, Duplikate und Grenzwerte erfolgreich. Versionsguard und beide Preflight-Dateilisten auf 0.5.18 synchronisiert.
+- Der aus zwei Teilantworten erzeugte servereigene Python-Schreiber wurde isoliert ausgefuehrt: drei Einzeldateien und snake-game.zip, fehlerfreie ZIP-CRC sowie bytegleiche ZIP-Eintraege.
+- Keine Datenbankmigration, kein geaenderter Installer-One-Liner, keine GitHub Actions und kein neues archiviertes ZIP/SHA-Paar. Die Produktion wird nach dem Merge mit Gemma, Qwen und Cloud GPT live getestet.
+
 ## 0.5.17 - 21.10.2026
 
 - Modellunabhaengiger Mehrdateien-Download: explizite ZIP-Projekte mit mindestens zwei benannten Quelldateien gehen jetzt sowohl bei lokalen Ollama-Modellen als auch bei Cloud/API-Modellen ueber denselben sicheren Quelltext-zu-Artefakt-Werkzeugpfad. Keine stillen Teilergebnisse als angeblich fertiges ZIP.
