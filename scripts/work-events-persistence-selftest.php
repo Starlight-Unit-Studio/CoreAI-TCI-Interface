@@ -14,7 +14,7 @@ class WorkPersistFakeStatement extends PDOStatement {
     $p = $params ?? [];
     if (!str_contains($this->sql, 'FROM stu_console_work_events w')) return true;
     work_persist_assert(str_contains($this->sql, 'LEFT JOIN stu_console_agent_runs r')
-      && str_contains($this->sql, 'r.run_key=w.run_key'), 'owner-scoped run join missing');
+      && str_contains($this->sql, 'BINARY r.run_key=BINARY w.run_key'), 'owner-scoped run join missing');
     $single = str_contains($this->sql, 'w.turn_id=?');
     $uid = (int)($p[0] ?? 0);
     $session = (string)($p[1] ?? '');
