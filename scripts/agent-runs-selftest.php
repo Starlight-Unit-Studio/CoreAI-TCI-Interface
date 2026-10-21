@@ -77,11 +77,33 @@ class CoreuiAgentFakeStatement extends PDOStatement {
         }
       }
       unset($row);
+    } elseif (str_contains($this->sql,'SET r.browse_job_id=?')) {
+      [$job,$id,$uid,$session,$verifyJob] = $p;
+      foreach ($this->db->runs as $index=>&$row) {
+        if (str_starts_with($index,"$uid/$session/") && $row['run_id']===$id
+            && $row['status']==='running' && $job===$verifyJob
+            && isset($this->db->browseJobs[$job])) {
+          $row['browse_job_id']=$job;
+          $this->changed=1;
+        }
+      }
+      unset($row);
+    } elseif (str_contains($this->sql,'SELECT status,finished_at FROM stu_ember_browse_jobs')) {
+      $job=(int)$p[0];
+      if (isset($this->db->browseJobs[$job]) && $p[1]===7
+          && $p[2]==='session_demo' && $p[3]===23) {
+        $this->rows=[$this->db->browseJobs[$job]];
+      }
+    } elseif (str_contains($this->sql,'SELECT id FROM stu_chat_messages WHERE channel=')) {
+      if ($p[0]===7 && $p[1]==='session_demo' && $p[2]===23) {
+        $this->rows=[['id'=>24]];
+      }
     } elseif (str_contains($this->sql, 'SET r.response_message_id=?')) {
       [$reply,$id,$uid,$session,$verifiedReply] = $p;
       foreach ($this->db->runs as $index=>&$row) {
         if (str_starts_with($index,"$uid/$session/") && $row['run_id'] === $id
-            && $row['status'] === 'running' && $row['response_message_id'] === null
+            && in_array($row['status'],['running','waiting_tool'],true)
+            && $row['response_message_id'] === null
             && $reply === 24 && $verifiedReply === 24) {
           $row['response_message_id'] = $reply;
           $this->changed = 1;
@@ -111,6 +133,7 @@ class CoreuiAgentFakeStatement extends PDOStatement {
 }
 class CoreuiAgentFakePDO extends PDO {
   public array $runs = [];
+  public array $browseJobs = [];
   public array $queries = [];
   public function __construct() {}
   public function prepare(string $query, array $options = []): PDOStatement|false {
@@ -171,6 +194,17 @@ try {
 } catch (RuntimeException $e) {
   agent_check($e->getMessage()==='agent_run_not_found','foreign cancel isolated');
 }
+$browser = coreui_agent_run_ensure($db,7,'session_demo',23,'browser_case');
+agent_check(coreui_agent_run_transition($db,7,'session_demo',$browser['run_id'],
+  'queued','running'),'browser run claimed');
+$db->browseJobs[55]=['status'=>'done','finished_at'=>'now'];
+agent_check(coreui_agent_run_attach_browse($db,7,'session_demo',$browser['run_id'],55),
+  'browser job bound to owned run');
+agent_check(coreui_agent_run_transition($db,7,'session_demo',$browser['run_id'],
+  'running','waiting_tool'),'browser delegated');
+$resolved = coreui_agent_run_reconcile_waiting_tool($db,7,'session_demo',$browser['run_id']);
+agent_check(($resolved['status']??'')==='completed'
+  && (int)($resolved['response_message_id']??0)===24,'browser result reconciled');
 $schema = file_get_contents(dirname(__DIR__) . '/database/migrations/013_console_agent_runs.sql');
 agent_check(is_string($schema) && str_contains($schema,'UNIQUE KEY uq_agent_turn'),'DB idempotency index');
 agent_check(str_contains($schema,'FOREIGN KEY (turn_id)'), 'DB turn reference');
