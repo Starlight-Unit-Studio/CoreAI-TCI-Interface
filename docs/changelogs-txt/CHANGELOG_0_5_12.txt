@@ -1,0 +1,39 @@
+STΛRLIɢHT: EMBER COREUI BY STARLIGHT UNIT STUDIOS
+CHANGELOG 0.5.12
+STAND 21.10.2026
+
+1. ANTWORTDETAILS: DAUER WIEDER SICHTBAR
+   - Das Info-Symbol unter E.M.B.E.R.-Antworten zeigt die
+     serverseitig gemessene GESAMTDAUER.
+   - Bei neuen Modellstreams erscheint zusaetzlich die
+     MODELLZEIT (Dauer der Ollama-/Provideranfrage).
+   - Gesamtdauer und Modellzeit werden nicht vermischt.
+   - Die Zeitangaben bleiben nach Chatwechsel, Browser-Reload
+     und erneuter Anzeige derselben Antwort erhalten.
+   - Vorhandene Antworten aus 0.5.11 erhalten ihre
+     Gesamtdauer aus dem bereits gespeicherten Arbeitsevent,
+     sofern vorhanden. Aeltere Antworten ohne Messwert
+     bekommen keine erfundene Zeit.
+
+2. TECHNIK UND KOMPATIBILITAET
+   - Gesamtzeit in Millisekunden im bereits existierenden
+     whitelisted Ereignis 'Antwort gespeichert' abgelegt.
+   - Modellzeit als duration_ms am Ereignis
+     'Modellstream empfangen' abgelegt.
+   - Bei fehlendem Ereignis ist die aus der Datenbank
+     berechnete Agentenlaufzeit als gekennzeichneter
+     Fallback nutzbar.
+   - Keine neue Datenbankmigration, keine zusaetzlichen
+     Modellanfragen, keine vertraulichen Gedanken.
+   - Zeitwerte werden begrenzt und als de-DE formatiert.
+
+3. PRUEFUNGEN
+   - JavaScript-Selbsttest prueft Legacy-Metadaten, neue
+     Modellzeit, Mehrfachaufrufe, DB-Fallback, Formatierung
+     und fehlende/ungueltige Werte.
+   - PHP-Agentenlauf-Selbsttest und Frontend-Regressions-
+     pruefung erweitert. Beide Preflights koennen den
+     optionalen Node-Test ausfuehren.
+   - GitHub Actions nicht gestartet.
+   - Keine Aenderung des Installations-One-Liners und
+     keine neue ZIP/SHA-Verifikation.

@@ -1208,6 +1208,60 @@
     });
   }
 
+  // Timings are taken from server-observed events, never from a client-only
+  // stopwatch. A saved event survives chat switches and browser reloads.
+  function validDurationMs(value) {
+    if (value === null || value === undefined || value === '') return null;
+    var ms = Number(value);
+    return Number.isFinite(ms) && ms > 0 && ms <= 100000000 ? Math.round(ms) : null;
+  }
+
+  function formatResponseDuration(ms) {
+    var seconds = Number(ms) / 1000;
+    var number = function (n) {
+      return n.toLocaleString('de-DE', {minimumFractionDigits:1,maximumFractionDigits:1});
+    };
+    if (seconds < 60) return number(seconds) + ' s';
+    var minutes = Math.floor(seconds / 60);
+    return minutes + ' min ' + number(seconds - minutes * 60) + ' s';
+  }
+
+  function responseTimings(record) {
+    var totalMs = validDurationMs(record && record.elapsed_ms);
+    var totalLabel = 'GESAMTDAUER';
+    var modelMs = 0;
+    var hasModel = false;
+    var events = record && Array.isArray(record.work_events) ? record.work_events : [];
+    events.forEach(function (event) {
+      var meta = event && event.meta && typeof event.meta === 'object' ? event.meta : {};
+      if (event && event.kind === 'run' && event.state === 'success'
+          && event.title === 'Antwort gespeichert') {
+        var recorded = validDurationMs(meta.elapsed_ms);
+        if (recorded !== null) totalMs = recorded;
+      }
+      if (event && event.kind === 'model' && event.state === 'success'
+          && event.title === 'Modellstream empfangen') {
+        var measured = validDurationMs(meta.duration_ms);
+        if (measured !== null) {
+          hasModel = true;
+          modelMs += measured;
+        }
+      }
+    });
+    if (totalMs === null) {
+      var agentDuration = validDurationMs(record && record.agent_run
+        && record.agent_run.duration_ms);
+      if (agentDuration !== null) {
+        totalMs = agentDuration;
+        totalLabel = 'AGENTENLAUFZEIT';
+      }
+    }
+    return {
+      total_ms:totalMs,total_label:totalLabel,
+      model_ms:hasModel ? modelMs : null
+    };
+  }
+
   function buildMessageDetails(record) {
     var details = document.createElement('div');
     details.className = 'msg-action-details';
@@ -1216,11 +1270,18 @@
     var modeLabel = mode === 'regenerate' ? 'ALTERNATIVE ANTWORT'
       : (mode === 'edit' ? 'NACH BEARBEITUNG NEU ERZEUGT'
       : (mode === 'continue' ? 'FORTSETZUNG' : 'NORMALE ANTWORT'));
-    var values = [
-      ['TYP', modeLabel],
+    var timings = responseTimings(record);
+    var values = [['TYP', modeLabel]];
+    if (timings.total_ms !== null) {
+      values.push([timings.total_label, formatResponseDuration(timings.total_ms)]);
+    }
+    if (timings.model_ms !== null) {
+      values.push(['MODELLZEIT', formatResponseDuration(timings.model_ms)]);
+    }
+    values.push(
       ['NACHRICHT', '#' + String(Number(record && record.id) || 0)],
       ['TURN', '#' + String(Number(record && record.reply_to_id) || 0)]
-    ];
+    );
     values.forEach(function (entry) {
       var line = document.createElement('span');
       var key = document.createElement('b');
@@ -2208,6 +2269,7 @@
         is_ember: true,
         thinking_content: thinking,
         work_events: savedWork,
+        elapsed_ms: data && data.elapsed_ms,
         generation: data && data.generation_mode ? {
           mode: data.generation_mode,
           source_response_id: data.source_response_id || 0

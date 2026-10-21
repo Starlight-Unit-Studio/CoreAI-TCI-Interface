@@ -635,11 +635,14 @@ try {
       'running', 'failed', 'empty_response');
   }
 
-  $elapsed = (int)round(microtime(true) - $start);
+  // Persist the measured server-side duration at millisecond resolution.
+  // The previous transient browser stopwatch disappeared on history redraw.
+  $elapsedMs = max(0, (int)round((microtime(true) - $start) * 1000));
+  $elapsed = (int)round($elapsedMs / 1000);
   if ($browseJobId > 0) coreui_work_record($pdo, 'tool', 'running', 'Browserauftrag eingereiht',
     ['job_id'=>$browseJobId]);
   if ($emberMsgId > 0) coreui_work_record($pdo, 'run', 'success', 'Antwort gespeichert',
-    ['elapsed_ms'=>$elapsed * 1000]);
+    ['elapsed_ms'=>$elapsedMs]);
   elseif ($browseJobId <= 0) coreui_work_record($pdo, 'run', 'error', 'Kein Antwortdatensatz gespeichert',
     ['reason'=>'empty_response']);
   $workEvents = [];
@@ -656,6 +659,7 @@ try {
     'text'          => $replyFinal,
     'thinking'      => $thinkingPublic,
     'elapsed'       => $elapsed,
+    'elapsed_ms'    => $elapsedMs,
     'id'            => $emberMsgId,
     'artifacts'     => coreui_console_artifact_for_message($pdo, (int)$uid, $emberMsgId),
     'browse_job_id' => $browseJobId,
@@ -838,6 +842,7 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
     return ['thinking'=>'','content'=>'','ok'=>false,'done'=>false,
       'truncated'=>false,'error'=>'model_queue_timeout'];
   }
+  $modelStartedAt = microtime(true);
   try {
     if ($workDb instanceof PDO) {
       coreui_work_record($workDb, 'model', 'running', 'Modellstream gestartet', ['model'=>$model]);
@@ -851,6 +856,8 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
     curl_close($ch);
     ember_generation_lock_release($modelSlot);
   }
+  // Model time covers the actual provider request, not the preceding queue.
+  $modelDurationMs = max(0, (int)round((microtime(true) - $modelStartedAt) * 1000));
 
   $numPredict = (int)($options['num_predict'] ?? 0);
   $reasonLower = strtolower($doneReason);
@@ -882,7 +889,7 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
   if ($workDb instanceof PDO) {
     coreui_work_record($workDb, 'model', $ok ? 'success' : 'error',
       $ok ? 'Modellstream empfangen' : 'Modellstream fehlgeschlagen',
-      ['model'=>$model,'http_code'=>$httpCode,
+      ['model'=>$model,'http_code'=>$httpCode,'duration_ms'=>$modelDurationMs,
         'reason'=>$truncated ? 'output_truncated' : ($ok ? 'completed' : 'request_failed')]);
   }
   return [

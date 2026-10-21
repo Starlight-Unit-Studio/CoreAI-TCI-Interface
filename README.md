@@ -7,7 +7,11 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 Ember CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.11` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.12` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Persistent response and model timing
+
+Version 0.5.12 restores the duration in the assistant message's information (ⓘ) panel. It displays **GESAMTDAUER** from the persisted server-side work event and, for newly measured model requests, **MODELLZEIT** separately. Both survive chat switches and reloads. Older 0.5.11 answers can show their previously recorded total time; model-only time is never guessed retroactively. When no saved work-event duration exists, a clearly labelled **AGENTENLAUFZEIT** is computed from the scoped, durable run timestamps. No new migration is needed.
 
 ## Persistent work timeline after E.M.B.E.R. replies
 
@@ -45,11 +49,11 @@ A fresh interactive installation asks for the administrator email address and pa
 
 ## Numeric product version and automatic browser cache
 
-The canonical `VERSION` uses exactly `major.minor.patch` with numbers only, for example `0.5.11`. No words or suffixed states belong in the product version. The installer separately records the exact Git commit in `var/dev_source_commit` without changing the product version.
+The canonical `VERSION` uses exactly `major.minor.patch` with numbers only, for example `0.5.12`. No words or suffixed states belong in the product version. The installer separately records the exact Git commit in `var/dev_source_commit` without changing the product version.
 
 The same original one-liner calls `scripts/cache-bust.py` through the native or container installer. For each referenced CSS/JS file, the installer derives a fixed-length **numeric cache key from that file's actual SHA-256 content** and rewrites the static HTML URL. Unchanged assets keep the same key; changed assets get a different one even without a product version change. All HTML entry points are marked for revalidation at Nginx level, so browsers can discover new asset URLs. Preflight rejects stale or invalid keys.
 
-**Historical releases are not renamed.** The original verified `0.5.3-alpha` archive is retained for legacy rollback only. `0.5.4` was planned but not published as a release. `0.5.5`, `0.5.6`, and `0.5.7` were preceding main-source checkpoints, and `0.5.8` was the previous checkpoint; `0.5.11` is the current working version; a new verified ZIP/SHA pair must be built separately before presenting it as an archived release.
+**Historical releases are not renamed.** The original verified `0.5.3-alpha` archive is retained for legacy rollback only. `0.5.4` was planned but not published as a release. `0.5.5`, `0.5.6`, and `0.5.7` were preceding main-source checkpoints, and `0.5.8` was the previous checkpoint; `0.5.12` is the current working version; a new verified ZIP/SHA pair must be built separately before presenting it as an archived release.
 
 ## Independence and mandatory product name
 
@@ -71,11 +75,11 @@ Starting with `0.4.2-alpha`, the project's own code is licensed under the **Star
 
 Further details are provided in `LICENSE_HISTORY.md`, `TRADEMARKS.md`, `COMMUNITY_POLICY.md`, `NOTICE.md`, and `COPYRIGHT.md`. The license is Source Available and is not OSI-certified. Third-party components retain their own terms.
 
-## Current 0.5.11 main-source changes
+## Current 0.5.12 main-source changes
 
-The current branch includes persistent generated file downloads and chat output cards, the new artifact database migration 011, the browser data-link correction, the original one-liner live-update flow, the Nginx permission repair, the scoped SSE selftest update, and the numeric cache/version repair. The 0.5.6 merge also adds compatibility for `gpt-oss:120b` cloud-generated files under the isolated `/mnt/data` output alias, with bounded recovery after failed Python file creation. Real HTML/ZIP downloads still need end-to-end live verification. The full worker-to-mobile download acceptance and new ZIP/SHA packaging remain pending. See [CHANGELOG.md](CHANGELOG.md), [the 0.5.11 entry](docs/changelogs-txt/CHANGELOG_0_5_9.txt) and [handover](docs/UEBERGABEPROTOKOLL_0_5_9.txt).
+The current branch includes persistent generated file downloads and chat output cards, the new artifact database migration 011, the browser data-link correction, the original one-liner live-update flow, the Nginx permission repair, the scoped SSE selftest update, and the numeric cache/version repair. The 0.5.6 merge also adds compatibility for `gpt-oss:120b` cloud-generated files under the isolated `/mnt/data` output alias, with bounded recovery after failed Python file creation. Real HTML/ZIP downloads still need end-to-end live verification. The full worker-to-mobile download acceptance and new ZIP/SHA packaging remain pending. See [CHANGELOG.md](CHANGELOG.md), [the 0.5.9 entry](docs/changelogs-txt/CHANGELOG_0_5_9.txt) and [handover](docs/UEBERGABEPROTOKOLL_0_5_9.txt).
 
-## 0.5.11: P05 agent runs, FIFO model admission and cooperative cancellation
+## 0.5.9: P05 agent runs, FIFO model admission and cooperative cancellation
 
 The private SSE chat now creates a durable, account- and session-scoped agent run for each turn or explicit generation action (migration `013_console_agent_runs`). The run is claimed atomically, transitions through explicit states, and binds only to a real response belonging to the original turn. The authenticated chat history includes the run's safe state metadata. Reconnected requests do not silently repeat an uncertain provider call; such runs are marked interrupted for inspection.
 
@@ -459,7 +463,7 @@ Bei der Verwendung von `sudo` koennen abweichende Einstellungen mit `sudo --pres
 
 Genau denselben One-Liner wie bei der Erstinstallation erneut ausfuehren. `setup.sh` laedt den neuesten Commit aus `main`, fuehrt den regulaeren Installer und die SQL-Migrationen aus und prueft die aktualisierte Installation. Der konfigurierte isolierte Betrieb bleibt bestehen; Benutzer, Sitzungen, Datenbank, Uploads und Geheimnisse bleiben erhalten. GitHub Actions werden nicht benoetigt.
 
-Der tatsaechlich installierte Commit wird am Ende ausgegeben und in `/opt/ember-coreui/var/dev_source_commit` gespeichert. Die aktuelle Produktversion in `VERSION` ist rein numerisch (`0.5.11`), unabhaengig von Commit und Cache-Schluessel. Fuer den exakten live installierten Quellstand ist die gesondert gespeicherte Commit-SHA massgeblich.
+Der tatsaechlich installierte Commit wird am Ende ausgegeben und in `/opt/ember-coreui/var/dev_source_commit` gespeichert. Die aktuelle Produktversion in `VERSION` ist rein numerisch (`0.5.12`), unabhaengig von Commit und Cache-Schluessel. Fuer den exakten live installierten Quellstand ist die gesondert gespeicherte Commit-SHA massgeblich.
 
 Wer stattdessen **explizit das alte gepruefte Release** installieren moechte, kann den Launcher unter `sudo` mit `COREUI_SETUP_SOURCE=release` ausfuehren. Nur dieser Modus benutzt das gepinnte ZIP mit SHA-256-Verifikation. Das bisherige `scripts/update-from-main.sh` ist nicht mehr als separater Update-Schritt erforderlich.
 

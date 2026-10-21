@@ -32,6 +32,7 @@ try {
   $messageApi = frontend_test_read($root . '/api/console_messages.php');
   $workStore = frontend_test_read($root . '/api/console_work_store.php');
   $streamApi = frontend_test_read($root . '/api/console_stream.php');
+  $agentRuns = frontend_test_read($root . '/api/console_agent_runs.php');
   $profileStore = frontend_test_read($root . '/api/profile_store.php');
   $profileMedia = frontend_test_read($root . '/api/profile_media.php');
 
@@ -130,6 +131,18 @@ try {
       && str_contains($workStore, 'BINARY r.run_key=BINARY w.run_key')
       && str_contains($streamApi, 'console_stream_saved_work_events('),
     'Arbeitsweg wird nach dem Stream oder beim Neuladen nicht sicher erhalten.'
+  );
+
+  frontend_test_assert(
+    str_contains($console, 'function responseTimings(record)')
+      && str_contains($console, 'function formatResponseDuration(ms)')
+      && str_contains($console, "values.push(['MODELLZEIT'")
+      && str_contains($console, "elapsed_ms: data && data.elapsed_ms")
+      && str_contains($streamApi, "'elapsed_ms'    => " . '$elapsedMs')
+      && str_contains($streamApi, "'duration_ms'=>" . '$modelDurationMs')
+      && str_contains($agentRuns, 'TIMESTAMPDIFF(MICROSECOND,started_at,finished_at)')
+      && str_contains($agentRuns, "'duration_ms'=>isset(" . '$row' . "['duration_us'])"),
+    'Persistente Gesamt- und Modelllaufzeit im Antwort-Infofeld fehlt.'
   );
 
   frontend_test_assert(

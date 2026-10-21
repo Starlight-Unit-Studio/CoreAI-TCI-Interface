@@ -35,6 +35,7 @@ Enthaltene Versionen:
 * CHANGELOG_0_5_9.txt
 * CHANGELOG_0_5_10.txt
 * CHANGELOG_0_5_11.txt
+* CHANGELOG_0_5_12.txt
 
-Quelle: CHANGELOG.md aus Ember CoreUI 0.5.11 (main)
+Quelle: CHANGELOG.md aus Ember CoreUI 0.5.12 (main)
 Jede Version liegt als eigenstaendige UTF-8-TXT-Datei vor.

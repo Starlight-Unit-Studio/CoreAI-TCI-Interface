@@ -118,7 +118,10 @@ class CoreuiAgentFakeStatement extends PDOStatement {
       $uid = $p[0]; $session = $p[1]; $ids = array_slice($p, 2);
       foreach ($this->db->runs as $index=>$row) {
         if (str_starts_with($index,"$uid/$session/")
-            && in_array($row['response_message_id'],$ids,true)) $this->rows[] = $row;
+            && in_array($row['response_message_id'],$ids,true)) {
+          if ($row['response_message_id'] === 24) $row['duration_us'] = 5890000;
+          $this->rows[] = $row;
+        }
       }
     }
     return true;
@@ -176,6 +179,12 @@ agent_check(coreui_agent_run_get($db,8,'session_demo',$id)===null,'foreign run i
 agent_check(coreui_agent_run_get($db,7,'session_demo',$id)['status']==='completed','owner read');
 $map = coreui_agent_run_map_for_responses($db,7,'session_demo',[24,24,99]);
 agent_check(($map[24]['status']??'')==='completed' && !isset($map[99]),'scoped history');
+agent_check(($map[24]['duration_ms'] ?? null)===5890,
+  'stored run duration is available after reload in milliseconds');
+$runSource = file_get_contents(dirname(__DIR__) . '/api/console_agent_runs.php');
+agent_check(is_string($runSource)
+  && str_contains($runSource, 'TIMESTAMPDIFF(MICROSECOND,started_at,finished_at)'),
+  'agent duration must be measured from database timestamps');
 $queuedCancel = coreui_agent_run_ensure($db,7,'session_demo',23,'cancel_queued');
 $cancelled = coreui_agent_run_request_cancel($db,7,'session_demo',$queuedCancel['run_id']);
 agent_check($cancelled['status']==='cancelled','queued run cancelled');

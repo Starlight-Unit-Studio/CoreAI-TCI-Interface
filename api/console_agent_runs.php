@@ -123,7 +123,8 @@ function coreui_agent_run_map_for_responses(
   if ($uid <= 0 || $sessionId === '' || $ids === [] || count($ids) > 100) return [];
   $placeholders = implode(',', array_fill(0, count($ids), '?'));
   $stmt = $pdo->prepare(
-    'SELECT run_id,run_key,response_message_id,status,cancel_requested_at,error_code,created_at,started_at,finished_at '
+    'SELECT run_id,run_key,response_message_id,status,cancel_requested_at,error_code,created_at,started_at,finished_at, '
+    . 'TIMESTAMPDIFF(MICROSECOND,started_at,finished_at) AS duration_us '
     . 'FROM stu_console_agent_runs WHERE user_id=? AND session_id=? '
     . 'AND response_message_id IN (' . $placeholders . ')'
   );
@@ -140,6 +141,10 @@ function coreui_agent_run_map_for_responses(
       'error_code'=>$row['error_code'] !== null ? (string)$row['error_code'] : null,
       'started_at'=>$row['started_at'],
       'finished_at'=>$row['finished_at'],
+      // Millisecond-precision completed run time; null means not measured.
+      'duration_ms'=>isset($row['duration_us']) && is_numeric($row['duration_us'])
+        ? max(0, min(100000000, (int)round((float)$row['duration_us'] / 1000)))
+        : null,
     ];
   }
   return $map;
