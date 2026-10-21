@@ -25,5 +25,4 @@ PARAMETER temperature 1.0
 PARAMETER top_p 0.95
 PARAMETER top_k 64
 PARAMETER repeat_penalty 1.08
-PARAMETER num_ctx 32768
 
