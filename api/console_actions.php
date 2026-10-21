@@ -13,6 +13,21 @@ $method = strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET'));
 
 try {
   if ($method === 'GET') {
+    if (strtolower(trim((string)($_GET['action'] ?? ''))) === 'run_status') {
+      if (!coreui_agent_run_schema_ready($pdo)) {
+        stu_json(['ok'=>false,'error'=>'agent_runs_migration_required'],503);
+      }
+      $sessionId = coreui_console_session_normalize_id($_GET['session_id'] ?? '');
+      $runId = strtolower(trim((string)($_GET['run_id'] ?? '')));
+      $run = coreui_agent_run_get($pdo,(int)$uid,$sessionId,$runId);
+      if ($run === null) stu_json(['ok'=>false,'error'=>'agent_run_not_found'],404);
+      if ((string)$run['status'] === 'waiting_tool') {
+        $run = coreui_agent_run_reconcile_waiting_tool($pdo,(int)$uid,$sessionId,$runId);
+      }
+      stu_json(['ok'=>true,'run_id'=>$runId,'status'=>(string)$run['status'],
+        'cancel_requested'=>!empty($run['cancel_requested_at']),
+        'error_code'=>$run['error_code'] ?? null]);
+    }
     if (!coreui_console_actions_schema_ready($pdo)) {
       stu_json(['ok'=>false, 'error'=>'message_actions_migration_required'], 503);
     }
