@@ -127,6 +127,7 @@ UI_FILES=(
   api/console_model_queue.php
   js/coreui-work-events.js
   scripts/work-events-selftest.php
+  scripts/work-events-persistence-selftest.php
   scripts/agent-runs-selftest.php
   scripts/model-queue-selftest.php
   scripts/workspace-output-selftest.py
@@ -399,6 +400,11 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     ok 'P06-Arbeitsereignisse und sichere Python-Fehlerklassen geprueft.'
   else
     fail 'P06-Arbeitsereignis-Selbsttest fehlgeschlagen.'
+  fi
+  if compose exec -T php php scripts/work-events-persistence-selftest.php >/dev/null 2>&1; then
+    ok 'P06: Arbeitsweg nach Antwort, Reload, Varianten und Kontotrennung geprueft.'
+  else
+    fail 'P06-Arbeitsweg-Persistenz-Selbsttest fehlgeschlagen.'
   fi
 
   for extension_name in curl dom gd mbstring pdo_mysql zip; do
