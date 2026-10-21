@@ -1,0 +1,27 @@
+STΛRLIɢHT: EMBER COREUI BY STARLIGHT UNIT STUDIOS
+CHANGELOG 0.5.10
+STAND 21.10.2026
+
+1. CHAT-FOLGEFRAGEN
+   - Kurze Auswahlfragen am Ende der gespeicherten E.M.B.E.R.-Antwort
+     erscheinen zusaetzlich als anklickbare Optionen.
+   - 2 bis 4 Optionen, nur bei expliziter Abschlussfrage und Liste.
+   - Klick verwendet den normalen geschuetzten Chat-Sendepfad.
+   - Fuer mobile Ansicht einspaltig, mit Tastaturfokus.
+   - Ein Klick ist eine reale neue Nachricht, keine automatische
+     Ausfuehrung von unsicherem HTML oder Javascript.
+
+2. NATIVE BILDERZEUGUNG (NUR PLANUNG)
+   - P20-Ausbaustufe mit separatem Technikplan.
+   - stable-diffusion.cpp als pruefbare C/C++-Referenz.
+   - FLUX.1-schnell und SDXL-Turbo als Kandidaten.
+   - Gemeinsame serielle Modellwarteschlange verpflichtend.
+   - Lizenz-/Format-/Hashkontrolle, RAM-Limits und reale Benchmarks
+     sind Voraussetzung. Keine zugesagte Bildlaufzeit.
+   - Keine Runtime, Gewichte oder Inferenz in 0.5.10 installiert.
+
+3. RELEASE UND TESTS
+   - Numerische Versionsanhebung von 0.5.9 auf 0.5.10.
+   - Chat-Frontend-Regressionspruefung erweitert.
+   - Roadmap, Masterplan, Matrix, README und Uebergabe ergaenzt.
+   - Keine GitHub Actions und kein neues geprueftes ZIP/SHA.
