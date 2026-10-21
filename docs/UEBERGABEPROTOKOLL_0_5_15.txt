@@ -32,6 +32,11 @@ aktiviert oder interne Overrides uebergeben werden.
 api/console_stream.php sendet wie der synchrone Weg
 keine Ollama options fuer diese lokale Modellfamilie.
 Cloud-GPT und andere Modellfamilien bleiben unveraendert.
+Die kuenstliche Acht-Sekunden-Warmup-Anfrage wird bei lokaler
+Gemma-Familie nicht mehr erzeugt, weil das Laden des Modells
+diese Frist bereits ueberschreiten kann. Der Warmup-Endpoint
+meldet dann keinen Modelljob als eingereiht. Normale Nutzer-
+anfragen bleiben in der FIFO-Modellwarteschlange.
 
 3. VERIFIKATION
 scripts/gemma-zero-parameters-selftest.php prueft
