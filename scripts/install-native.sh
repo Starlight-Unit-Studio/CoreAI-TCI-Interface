@@ -305,7 +305,6 @@ define('STU_EMBER_OLLAMA_URL', 'http://127.0.0.1:11434/api/chat');
 define('STU_EMBER_LOCK_NAMESPACE', '$LOCK_NAMESPACE');
 define('STU_EMBER_NUM_THREAD', $THREADS);
 define('STU_EMBER_NUM_PREDICT', 6500);
-define('STU_EMBER_NUM_CTX', 32768);
 define('STU_EMBER_TEMPERATURE', 1.0);
 define('STU_EMBER_TOP_P', 0.95);
 define('STU_EMBER_TOP_K', 64);
@@ -407,6 +406,9 @@ fi
 if [[ "$MODEL_NAME" != "$BASE_MODEL" ]]; then
   MODELFILE_GENERATED="$PROJECT_ROOT/var/Modelfile.generated"
   sed "s|{{BASE_MODEL}}|$BASE_MODEL|g" "$PROJECT_ROOT/config/Modelfile.template" > "$MODELFILE_GENERATED"
+  if grep -Eiq '^[[:space:]]*PARAMETER[[:space:]]+num_ctx([[:space:]]|$)' "$MODELFILE_GENERATED"; then
+    die 'Gemma-Modelfile enthaelt den verbotenen PARAMETER num_ctx.'
+  fi
   log "Erzeuge lokales Ember CoreUI-Modell $MODEL_NAME aus $BASE_MODEL."
   ollama create "$MODEL_NAME" -f "$MODELFILE_GENERATED"
 else
