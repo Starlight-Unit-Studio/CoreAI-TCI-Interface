@@ -21,6 +21,12 @@ local_file_test(str_contains($script, 'zipfile.ZipFile') && str_contains($script
   && str_contains($script, "Path('/work/output')"), 'sandbox ZIP validation missing');
 local_file_test(!str_contains($script, "console.log('Snake')"),
   'model source must be inert encoded data, not executable Python');
+$unnamed = "```html\n<html><body>Snake</body></html>\n```\n"
+  . "```css\nbody{color:white}\n```\n"
+  . "```javascript\nconsole.log(1)\n```";
+$inferred = coreui_console_project_fences_python($unnamed, $request, 100000);
+local_file_test(is_array($inferred) && ($inferred['file_count'] ?? 0) === 4,
+  'unique requested filenames must be inferred from fence languages');
 local_file_test(coreui_console_project_fences_python(
   "### index.html\n```html\n<html></html>\n```", $request) === null,
   'must reject incomplete project without CSS/JS');
