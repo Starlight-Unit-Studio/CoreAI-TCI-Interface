@@ -138,10 +138,10 @@ try {
       && str_contains($console, 'function formatResponseDuration(ms)')
       && str_contains($console, "values.push(['MODELLZEIT'")
       && str_contains($console, "elapsed_ms: data && data.elapsed_ms")
-      && str_contains($streamApi, "'elapsed_ms'    => $elapsedMs")
-      && str_contains($streamApi, "'duration_ms'=>$modelDurationMs")
+      && str_contains($streamApi, "'elapsed_ms'    => " . '$elapsedMs')
+      && str_contains($streamApi, "'duration_ms'=>" . '$modelDurationMs')
       && str_contains($agentRuns, 'TIMESTAMPDIFF(MICROSECOND,started_at,finished_at)')
-      && str_contains($agentRuns, "'duration_ms'=>isset($row['duration_us'])"),
+      && str_contains($agentRuns, "'duration_ms'=>isset(" . '$row' . "['duration_us'])"),
     'Persistente Gesamt- und Modelllaufzeit im Antwort-Infofeld fehlt.'
   );
 
