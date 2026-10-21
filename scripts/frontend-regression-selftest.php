@@ -30,6 +30,8 @@ try {
   $css = frontend_test_read($root . '/css/console.css');
   $workJs = frontend_test_read($root . '/js/coreui-work-events.js');
   $messageApi = frontend_test_read($root . '/api/console_messages.php');
+  $workStore = frontend_test_read($root . '/api/console_work_store.php');
+  $streamApi = frontend_test_read($root . '/api/console_stream.php');
   $profileStore = frontend_test_read($root . '/api/profile_store.php');
   $profileMedia = frontend_test_read($root . '/api/profile_media.php');
 
@@ -114,6 +116,20 @@ try {
       && str_contains($css, '.msg-row.ember .msg-bubble')
       && str_contains($css, '.msg-row.ember .work-panel'),
     'Sprechblasenfreier Ember-Chat oder inline Arbeitsverlauf fehlt.'
+  );
+
+  frontend_test_assert(
+    str_contains($console, 'function rememberLiveWorkEvent(')
+      && str_contains($console, 'liveWorkEventsBySession')
+      && str_contains($console, 'lastCompletedWorkMessageBySession')
+      && str_contains($console, 'work_events: savedWork')
+      && str_contains($console, 'renderMessageRecord(saved || m)')
+      && str_contains($workJs, 'function merge(serverEvents, liveEvents)')
+      && str_contains($workJs, 'Arbeitsweg (')
+      && str_contains($workStore, 'LEFT JOIN stu_console_agent_runs r')
+      && str_contains($workStore, 'r.run_key=w.run_key')
+      && str_contains($streamApi, 'console_stream_saved_work_events('),
+    'Arbeitsweg wird nach dem Stream oder beim Neuladen nicht sicher erhalten.'
   );
 
   frontend_test_assert(
