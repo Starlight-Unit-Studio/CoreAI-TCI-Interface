@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-EXPECTED_VERSION = "0.5.17"
+EXPECTED_VERSION = "0.5.18"
 PUBLIC_PAGES = (
     "index.html",
     "login.html",
@@ -27,8 +27,8 @@ REQUIRED_FILES = (
     "COMMUNITY_POLICY.md",
     "NOTICE.md",
     "COPYRIGHT.md",
-    "docs/changelogs-txt/CHANGELOG_0_5_17.txt",
-    "docs/UEBERGABEPROTOKOLL_0_5_17.txt",
+    "docs/changelogs-txt/CHANGELOG_0_5_18.txt",
+    "docs/UEBERGABEPROTOKOLL_0_5_18.txt",
 )
 
 

@@ -37,13 +37,106 @@ function coreui_console_multifile_source_directive(string $request): ?string {
     . implode(', ', $names) . ". Fuer JEDE der genannten Dateien schreibe "
     . "eine Ueberschrift '### ' gefolgt vom jeweiligen echten Dateinamen, " 
     . "darunter einen Markdown-Codeblock in der passenden Sprache (html, css, "
-    . "javascript, json, python oder text). Zwischen zwei Dateien schliesse "
-    . "den vorherigen Codeblock immer mit drei Backticks. Keine Platzhalter, "
+    . "javascript, json, python oder text). Verwende mindestens drei Backticks; "
+    . "enthaelt der Quelltext selbst Backticks, muss der aeussere Block laenger "
+    . "sein. Zwischen zwei Dateien schliesse den vorherigen Block. Keine Platzhalter, "
     . "keine ausgelassenen Dateien, keine Erklaerung und KEINE Python-Skripte "
     . "zum Schreiben der Dateien, keine [PY]-Tags. Der CoreUI-Server uebernimmt "
     . "die Quelltexte danach unveraendert als Dateien und erstellt, prueft und "
     . "liefert das angeforderte ZIP AUTOMATISCH ueber sein eigenes Werkzeug. "
     . "Erfinde keine Downloadlinks. Antworte NUR mit den Dateibloecken.";
+}
+
+/** Parse the explicitly requested project files and optional ZIP target once. */
+function coreui_console_project_request_spec(string $request): ?array {
+  $namePattern = '[A-Za-z0-9][A-Za-z0-9._-]{0,90}\.(?:html?|css|js|json|txt|md|svg|py)';
+  preg_match_all('~(?<![A-Za-z0-9._-])(' . $namePattern . ')(?![A-Za-z0-9._-])~i',
+    $request, $requestedMatches);
+  $requested = [];
+  foreach ($requestedMatches[1] ?? [] as $name) {
+    $key = strtolower((string)$name);
+    if (!isset($requested[$key])) $requested[$key] = (string)$name;
+  }
+  if (count($requested) > 10) return null;
+
+  $zipRequested = preg_match('~\b(?:zip|archiv)\b~iu', $request) === 1;
+  if ($zipRequested && count($requested) > 9) return null;
+  $zipName = 'projekt.zip';
+  if (preg_match('~(?<![A-Za-z0-9._-])([A-Za-z0-9][A-Za-z0-9._-]{0,90}\.zip)(?![A-Za-z0-9._-])~i',
+      $request, $zipMatch)) $zipName = $zipMatch[1];
+
+  return [
+    'requested'=>$requested,
+    'zip_requested'=>$zipRequested,
+    'zip_name'=>$zipName,
+  ];
+}
+
+/** Build the server-owned writer from already parsed, inert source bytes. */
+function coreui_console_project_files_python(array $files, array $spec, int $maxCodeChars): ?array {
+  if ($files === [] || $maxCodeChars < 500) return null;
+  $requested = is_array($spec['requested'] ?? null) ? $spec['requested'] : [];
+  $zipRequested = ($spec['zip_requested'] ?? false) === true;
+  $zipName = is_string($spec['zip_name'] ?? null) ? $spec['zip_name'] : 'projekt.zip';
+  $namePattern = '~^[A-Za-z0-9][A-Za-z0-9._-]{0,90}\.(?:html?|css|js|json|txt|md|svg|py)$~i';
+
+  $selected = [];
+  if ($requested !== []) {
+    foreach ($requested as $key => $canonicalName) {
+      if (!isset($files[$key]) || !is_array($files[$key])) return null;
+      $selected[$key] = $files[$key];
+      $selected[$key]['name'] = $canonicalName;
+    }
+  } else {
+    $selected = $files;
+  }
+  if (count($selected) > ($zipRequested ? 9 : 10)) return null;
+
+  $total = 0;
+  foreach ($selected as $key => $file) {
+    $name = $file['name'] ?? null;
+    $bytes = $file['bytes'] ?? null;
+    if (!is_string($key) || !is_string($name) || !is_string($bytes)
+        || strtolower($name) !== $key || preg_match($namePattern, $name) !== 1
+        || $bytes === '' || strlen($bytes) > 150000) return null;
+    $total += strlen($bytes);
+    if ($total > 512000) return null;
+  }
+
+  $code = "from pathlib import Path\nimport base64, zlib, zipfile\n"
+    . "out = Path('/work/output')\nout.mkdir(parents=True, exist_ok=True)\nfiles = {\n";
+  foreach ($selected as $file) {
+    $bytes = $file['bytes'];
+    $packed = function_exists('gzcompress') ? gzcompress($bytes, 6) : false;
+    $compressed = is_string($packed) && strlen($packed) < strlen($bytes);
+    $encoded = base64_encode($compressed ? $packed : $bytes);
+    // JSON normally escapes '/' as '\/' which is not valid base64 in Python.
+    $code .= '    ' . json_encode($file['name'], JSON_THROW_ON_ERROR)
+      . ': (' . json_encode($compressed ? 'z' : 'b', JSON_THROW_ON_ERROR)
+      . ', ' . json_encode($encoded, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "),\n";
+  }
+  $code .= "}\nfor name, (mode, data) in files.items():\n"
+    . "    raw = base64.b64decode(data, validate=True)\n"
+    . "    if mode == 'z': raw = zlib.decompress(raw)\n"
+    . "    target = out / name\n"
+    . "    target.write_bytes(raw)\n"
+    . "    assert target.is_file() and target.stat().st_size == len(raw)\n";
+  if ($zipRequested) {
+    $code .= 'archive = out / ' . json_encode($zipName, JSON_THROW_ON_ERROR) . "\n"
+      . "with zipfile.ZipFile(archive, 'w', compression=zipfile.ZIP_DEFLATED) as bundle:\n"
+      . "    for name in sorted(files): bundle.write(out / name, arcname=name)\n"
+      . "with zipfile.ZipFile(archive) as check:\n"
+      . "    assert check.namelist() == sorted(files) and check.testzip() is None\n"
+      . "assert archive.is_file() and archive.stat().st_size > 0\n";
+  }
+  $code .= "print('Erzeugte Dateien:', ', '.join(sorted(p.name for p in out.iterdir() if p.is_file())))\n";
+  if (strlen($code) > $maxCodeChars) return null;
+  return [
+    'code'=>$code,
+    'name'=>$zipRequested ? $zipName : reset($selected)['name'],
+    'size_bytes'=>$total,
+    'file_count'=>count($selected) + ($zipRequested ? 1 : 0),
+  ];
 }
 
 /**
@@ -52,29 +145,23 @@ function coreui_console_multifile_source_directive(string $request): ?string {
  * [PY] tool call. Never execute the fenced source: the isolated Python worker
  * only writes its bytes and optionally creates/verifies a ZIP archive.
  */
-function coreui_console_project_fences_python(string $reply, string $request, int $maxCodeChars = 100000): ?array {
+function coreui_console_project_fences_python(string $reply, string $request, int $maxCodeChars = 100000, bool $collectOnly = false): ?array {
   if (!coreui_console_download_requested($request) || strlen($reply) > 250000
       || $maxCodeChars < 500) return null;
+  $spec = coreui_console_project_request_spec($request);
+  if ($spec === null) return null;
   $namePattern = '[A-Za-z0-9][A-Za-z0-9._-]{0,90}\.(?:html?|css|js|json|txt|md|svg|py)';
-  preg_match_all('~(?<![A-Za-z0-9._-])(' . $namePattern . ')(?![A-Za-z0-9._-])~i',
-    $request, $requestedMatches);
-  $requested = array_values(array_unique(array_map('strtolower', $requestedMatches[1] ?? [])));
-  if (count($requested) > 10) return null;
+  $requested = $spec['requested'];
 
-  $zipRequested = preg_match('~\b(?:zip|archiv)\b~iu', $request) === 1;
-  $zipName = 'projekt.zip';
-  if (preg_match('~(?<![A-Za-z0-9._-])([A-Za-z0-9][A-Za-z0-9._-]{0,90}\.zip)(?![A-Za-z0-9._-])~i',
-      $request, $zipMatch)) $zipName = $zipMatch[1];
-
-  if (!preg_match_all('~```([^\r\n`]{0,150})\r?\n(.*?)\r?\n```~s',
+  if (!preg_match_all('~(?<ticks>`{3,})(?<info>[^\r\n`]{0,150})\r?\n(?<body>.*?)\r?\n\k<ticks>(?!`)~s',
       $reply, $fences, PREG_SET_ORDER | PREG_OFFSET_CAPTURE)) return null;
   $files = [];
   $total = 0;
   foreach ($fences as $fence) {
-    $info = trim($fence[1][0]);
+    $info = trim($fence['info'][0]);
     // Never infer a safe basename from an explicit unsafe path.
     if (str_contains($info, '/') || str_contains($info, '\\')) return null;
-    $body = (string)$fence[2][0];
+    $body = (string)$fence['body'][0];
     $name = '';
     if (preg_match('~(?:^|[\s=:])["`]?(' . $namePattern . ')["`]?(?:\s|$)~i',
         $info, $match)) {
@@ -104,7 +191,7 @@ function coreui_console_project_fences_python(string $reply, string $request, in
       $ext = $extensions[$language] ?? '';
       if ($ext !== '') {
         $matches = [];
-        foreach ($requested as $wanted) {
+        foreach (array_keys($requested) as $wanted) {
           $wantedExt = strtolower(pathinfo($wanted, PATHINFO_EXTENSION));
           if ($wantedExt === 'htm') $wantedExt = 'html';
           if ($wantedExt === $ext && !isset($files[$wanted])) $matches[] = $wanted;
@@ -114,52 +201,49 @@ function coreui_console_project_fences_python(string $reply, string $request, in
     }
     if ($name === '') continue;
     $key = strtolower($name);
+    // Model-supplied extras are inert but are not part of the user's project.
+    if ($requested !== [] && !isset($requested[$key])) continue;
     if (isset($files[$key]) || $body === '' || strlen($body) > 150000) return null;
     $total += strlen($body);
     if ($total > 512000 || count($files) >= 10) return null;
-    $files[$key] = ['name'=>$name,'bytes'=>$body];
+    $files[$key] = ['name'=>$requested[$key] ?? $name,'bytes'=>$body];
   }
   if ($files === []) return null;
-  foreach ($requested as $name) {
-    if (!isset($files[$name])) return null; // Never advertise an incomplete project.
-  }
-  if ($zipRequested && count($files) > 9) return null; // 10 files per job, including ZIP.
+  // Parse trusted-inert fragments without prematurely executing an incomplete project.
+  // Used only to combine at most two model responses during the bounded retry.
+  if ($collectOnly) return ['source_files'=>$files];
+  return coreui_console_project_files_python($files, $spec, $maxCodeChars);
+}
 
-  $code = "from pathlib import Path\nimport base64, zlib, zipfile\n"
-    . "out = Path('/work/output')\nout.mkdir(parents=True, exist_ok=True)\nfiles = {\n";
-  foreach ($files as $file) {
-    $bytes = $file['bytes'];
-    $packed = function_exists('gzcompress') ? gzcompress($bytes, 6) : false;
-    $compressed = is_string($packed) && strlen($packed) < strlen($bytes);
-    $encoded = base64_encode($compressed ? $packed : $bytes);
-    // JSON normally escapes '/' as '\\/' which is NOT a valid Python base64
-    // literal (Python leaves the backslash in place). Never escape slashes.
-    $code .= '    ' . json_encode($file['name'], JSON_THROW_ON_ERROR)
-      . ': (' . json_encode($compressed ? 'z' : 'b', JSON_THROW_ON_ERROR)
-      . ', ' . json_encode($encoded, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "),\n";
+/**
+ * Combine safe, named source blocks from the initial response and the single
+ * bounded repair response. Never run a partial project or trust model links.
+ *
+ * The second response wins a duplicate filename, while each file must be an
+ * explicitly requested basename. The final result passes the exact same
+ * validation and server-owned ZIP creation used for a one-shot response.
+ */
+function coreui_console_merge_project_fences(string $first, string $second, string $request, int $maxCodeChars = 100000): ?array {
+  if (strlen($first) + strlen($second) > 400000) return null;
+  $spec = coreui_console_project_request_spec($request);
+  if ($spec === null) return null;
+  $one = coreui_console_project_fences_python($first, $request, $maxCodeChars, true);
+  $two = coreui_console_project_fences_python($second, $request, $maxCodeChars, true);
+  if ($one === null || $two === null) return null;
+
+  $wanted = array_keys($spec['requested']);
+  if (count($wanted) < 2 || count($wanted) > 9) return null;
+
+  $merged = [];
+  foreach ([$one['source_files'], $two['source_files']] as $batch) {
+    foreach ($batch as $key => $file) {
+      if (in_array($key, $wanted, true) && is_string($file['bytes'] ?? null)) {
+        $merged[$key] = $file;
+      }
+    }
   }
-  $code .= "}\nfor name, (mode, data) in files.items():\n"
-    . "    raw = base64.b64decode(data, validate=True)\n"
-    . "    if mode == 'z': raw = zlib.decompress(raw)\n"
-    . "    target = out / name\n"
-    . "    target.write_bytes(raw)\n"
-    . "    assert target.is_file() and target.stat().st_size == len(raw)\n";
-  if ($zipRequested) {
-    $code .= 'archive = out / ' . json_encode($zipName, JSON_THROW_ON_ERROR) . "\n"
-      . "with zipfile.ZipFile(archive, 'w', compression=zipfile.ZIP_DEFLATED) as bundle:\n"
-      . "    for name in sorted(files): bundle.write(out / name, arcname=name)\n"
-      . "with zipfile.ZipFile(archive) as check:\n"
-      . "    assert check.namelist() == sorted(files) and check.testzip() is None\n"
-      . "assert archive.is_file() and archive.stat().st_size > 0\n";
-  }
-  $code .= "print('Erzeugte Dateien:', ', '.join(sorted(p.name for p in out.iterdir() if p.is_file())))\n";
-  if (strlen($code) > $maxCodeChars) return null;
-  return [
-    'code'=>$code,
-    'name'=>$zipRequested ? $zipName : reset($files)['name'],
-    'size_bytes'=>$total,
-    'file_count'=>count($files) + ($zipRequested ? 1 : 0),
-  ];
+  if (count($merged) !== count($wanted)) return null;
+  return coreui_console_project_files_python($merged, $spec, $maxCodeChars);
 }
 
 /**

@@ -1,0 +1,62 @@
+STΛRLIɢHT: EMBER COREUI BY STARLIGHT UNIT STUDIOS
+CHANGELOG 0.5.18
+STAND 21.10.2026
+
+1. TEILGUELTIGE QUELLTEXTANTWORTEN
+   - Ein Mehrdateien-ZIP-Auftrag darf weiterhin hoechstens
+     einen seriellen Modell-Wiederholungsversuch ausloesen.
+   - Liefert die erste Antwort nur einen Teil und die zweite
+     Antwort die restlichen verlangten Dateien, kombiniert
+     CoreUI ausschliesslich die validierten Quelltextbloecke.
+   - Der isolierte Worker startet erst, wenn alle vom Nutzer
+     benannten Quelldateien vorhanden sind.
+   - Fehlt danach weiterhin eine Datei, wird kein Python-Job
+     gestartet und kein fertiges ZIP behauptet.
+
+2. DATEI- UND INHALTSSICHERHEIT
+   - Die zweite Antwort ersetzt bei demselben Dateinamen den
+     Inhalt aus der ersten Antwort.
+   - Dateinamen werden ohne Beachtung der Gross-/Kleinschreibung
+     abgeglichen. Die angeforderte Schreibweise bleibt erhalten.
+   - Nicht angeforderte Zusatzdateien des Modells werden weder
+     geschrieben noch in das ZIP aufgenommen.
+   - Unsichere Pfade, Duplikate innerhalb derselben Antwort,
+     leere Dateien, ungeschlossene Fences und unvollstaendige
+     Pakete werden abgewiesen.
+   - Die vorhandenen Grenzen fuer Dateizahl, Einzelgroesse,
+     Gesamtgroesse und erzeugten Python-Code bleiben aktiv.
+
+3. MARKDOWN UND SERVERSEITIGER SCHREIBER
+   - Aeussere Markdown-Fences duerfen laenger als drei Backticks
+     sein. Dadurch bleiben Markdown-Dateien mit eigenen
+     Drei-Backtick-Beispielen unveraendert erhalten.
+   - Der Wiederaufnahme-Merge reicht validierte Bytes direkt an
+     den servereigenen Schreiber weiter. Inhalte werden nicht
+     erneut in Markdown eingebettet und nicht als Modellcode
+     ausgefuehrt.
+   - Dateien und ZIP werden weiterhin erst nach erfolgreicher
+     Worker- und Artefaktpruefung als Downloads registriert.
+
+4. PRUEFUNGEN UND VERSION
+   - PHP-8.3-Syntaxpruefung fuer Bridge, Chatpfad und Selftest.
+   - Erweiterter Offline-Selftest fuer zwei Teilantworten,
+     unvollstaendige Pakete, Zweitantwort-Vorrang,
+     Zusatzdateien, Schreibweise, Backticks, ungeschlossene
+     Fences, Duplikate und Grenzwerte.
+   - Der erzeugte kontrollierte Python-Schreiber lief isoliert:
+     drei Quelldateien und snake-game.zip, gueltige ZIP-CRC
+     und bytegleiche Inhalte.
+   - Numerischer Versionssprung: 0.5.17 -> 0.5.18.
+   - Compose- und Native-Preflight verlangen die neuen
+     0.5.18-Dokumente.
+
+5. BETRIEB UND OFFENE LIVE-ABNAHME
+   - Keine Datenbankmigration und keine Aenderung des
+     bestehenden Installer-One-Liners.
+   - Keine GitHub Actions, da das Actions-Kontingent
+     aufgebraucht ist.
+   - Kein neues verifiziertes ZIP/SHA-Release behauptet.
+   - Nach dem Merge folgen Live-Tests mit ember-coreui:latest,
+     Qwen und Cloud GPT sowie Kontrolle der vier echten
+     Downloadkarten, des ZIP-Inhalts und des Spiels unter
+     Chrome auf Android.

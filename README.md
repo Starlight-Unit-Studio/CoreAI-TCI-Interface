@@ -7,7 +7,15 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 Ember CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.17` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.18` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Incremental multi-file source recovery (0.5.18)
+
+When the first model response and the single bounded retry each contain only part of an explicitly requested multi-file ZIP project, Ember now combines the safe named source blocks from both responses before invoking the existing deterministic writer. The second response replaces an earlier version of the same requested filename. The bridge still starts no worker unless every requested source is present, and it never adds model-supplied files that the user did not request.
+
+The parser accepts longer outer Markdown fences so Markdown files can safely contain their own triple-backtick examples. It rejects unclosed fences, duplicate files inside one response, unsafe paths, incomplete projects, oversized payloads and jobs that would exceed the ten-artifact limit. Filename matching is case-insensitive while emitted names retain the spelling from the user request. Source bytes remain inert and are written only by the server-owned Python wrapper.
+
+The PHP 8.3 syntax checks and expanded offline file-tool regression pass locally. GitHub Actions were not run because the available Actions quota is exhausted. Production acceptance with local Gemma, Qwen and Cloud GPT, actual authenticated download cards, ZIP inspection and Chrome/Android gameplay remains a required live test after the merge.
 
 ## Multi-model file export repair (0.5.17)
 
@@ -77,7 +85,7 @@ A fresh interactive installation asks for the administrator email address and pa
 
 ## Mandatory version increment for every merge
 
-**Each PR merged into `main` MUST already include a numeric `VERSION` increment.** This applies to bugfixes, documentation, tests and any other changes, with no exceptions. Before merging, compare the PR's version against the existing `main` version using `python3 scripts/version-merge-check.py --base-version 0.5.7` (replace the base value with the one freshly read from `main`). The guard checks the increment, UI labels, selftests, and per-version changelog and handover. It requires no GitHub Actions. The complete rule is documented in [VERSIONING_POLICY.md](docs/VERSIONING_POLICY.md).
+**Each PR merged into `main` MUST already include a numeric `VERSION` increment.** This applies to bugfixes, documentation, tests and any other changes, with no exceptions. Before merging, compare the PR's version against the existing `main` version using `python3 scripts/version-merge-check.py --base-version 0.5.17` (replace the base value with the one freshly read from `main`). The guard checks the increment, UI labels, selftests, and per-version changelog and handover. It requires no GitHub Actions. The complete rule is documented in [VERSIONING_POLICY.md](docs/VERSIONING_POLICY.md).
 
 ## Numeric product version and automatic browser cache
 
@@ -85,7 +93,7 @@ The canonical `VERSION` uses exactly `major.minor.patch` with numbers only, for 
 
 The same original one-liner calls `scripts/cache-bust.py` through the native or container installer. For each referenced CSS/JS file, the installer derives a fixed-length **numeric cache key from that file's actual SHA-256 content** and rewrites the static HTML URL. Unchanged assets keep the same key; changed assets get a different one even without a product version change. All HTML entry points are marked for revalidation at Nginx level, so browsers can discover new asset URLs. Preflight rejects stale or invalid keys.
 
-**Historical releases are not renamed.** The original verified `0.5.3-alpha` archive is retained for legacy rollback only. `0.5.4` was planned but not published as a release. `0.5.5`, `0.5.6`, and `0.5.7` were preceding main-source checkpoints, and `0.5.8` was the previous checkpoint; `0.5.17` is the current working version; a new verified ZIP/SHA pair must be built separately before presenting it as an archived release.
+**Historical releases are not renamed.** The original verified `0.5.3-alpha` archive is retained for legacy rollback only. `0.5.4` was planned but not published as a release. Versions `0.5.5` through `0.5.17` are preceding main-source checkpoints; `0.5.18` is the current working version. A new verified ZIP/SHA pair must be built separately before presenting it as an archived release.
 
 ## Independence and mandatory product name
 
