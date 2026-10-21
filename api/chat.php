@@ -2414,6 +2414,42 @@ function ember_py_capability_hint(): string {
     . "Fuer Smalltalk, Meinungen, Lore oder simples Kopfrechnen brauchst du KEIN Python.";
 }
 
+// The file-task protocol is a tool contract, not a natural-language suggestion.
+// Local models often answer in prose or code fences instead of emitting [PY].
+function ember_console_file_tool_directive(): string {
+  return "COREUI DATEIWERKZEUG: Der Benutzer verlangt echte herunterladbare Dateien. "
+    . "Antworte AUSSCHLIESSLICH mit einem vollstaendigen Python-Skript zwischen [PY] und [/PY]. "
+    . "Keine Erklaerung, keine Markdown-Codefences, keine URLs und kein blosses Codebeispiel. "
+    . "Schreibe jede verlangte Datei mit pathlib.Path in Path('/work/output'). "
+    . "Wenn mehrere HTML/CSS/JS-Dateien verlangt werden, schreibe ALLE einzeln. "
+    . "Wenn ein ZIP verlangt wird, erstelle es anschliessend mit zipfile im selben Ordner. "
+    . "Pruefe jede Datei mit is_file() und stat(); pruefe ZIP-Inhalt mit namelist() und testzip(). "
+    . "Verlasse dich nicht auf Dateien aus frueheren Werkzeuglaeufen, jeder Lauf ist isoliert. "
+    . "Verwende nur Standardbibliothek fuer Dateierstellung, Code darf vollstaendig und kompakt sein. "
+    . "Erst wenn die Werkzeuglaufzeit echte Dateien bestaetigt, werden Downloadkarten angezeigt.";
+}
+
+// Disable expensive reasoning only for the dedicated local Gemma file-code
+// request. Other provider/model settings are left untouched.
+function ember_console_file_tool_think(string $model): ?bool {
+  return preg_match('~^(?:ember-coreui|gemma4)(?::|$)~i', trim($model)) === 1
+    ? (bool)ember_cfg('STU_EMBER_LOCAL_FILE_THINK', false)
+    : null;
+}
+
+function ember_console_file_tool_candidate(string $reply, string $request): ?array {
+  $max = ember_py_max_code_chars();
+  $py = ember_py_extract_marker($reply);
+  if ($py !== null) return ['code'=>$py,'kind'=>'marker'];
+  $py = coreui_console_python_fence_code($reply, $request, $max);
+  if ($py !== null) return ['code'=>$py,'kind'=>'python_fence'];
+  $project = coreui_console_project_fences_python($reply, $request, $max);
+  if ($project !== null) return ['code'=>$project['code'],'kind'=>'project','meta'=>$project];
+  $inline = coreui_console_inline_file_python($reply, $request, $max);
+  if ($inline !== null) return ['code'=>$inline['code'],'kind'=>'inline','meta'=>$inline];
+  return null;
+}
+
 // Code aus [PY]...[/PY] ziehen. Robust gegen fehlendes Schluss-Tag und Markdown-Fences,
 // weil Gemma 4 beides regelmaessig verschludert.
 function ember_py_extract_marker(string $s): ?string {
