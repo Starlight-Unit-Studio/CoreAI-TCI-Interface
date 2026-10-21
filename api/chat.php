@@ -2431,8 +2431,12 @@ function ember_console_file_tool_directive(): string {
 
 // Disable expensive reasoning only for the dedicated local Gemma file-code
 // request. Other provider/model settings are left untouched.
+function ember_console_file_tool_is_local(string $model): bool {
+  return preg_match('~^(?:ember-coreui|gemma4)(?::|$)~i', trim($model)) === 1;
+}
+
 function ember_console_file_tool_think(string $model): ?bool {
-  return preg_match('~^(?:ember-coreui|gemma4)(?::|$)~i', trim($model)) === 1
+  return ember_console_file_tool_is_local($model)
     ? (bool)ember_cfg('STU_EMBER_LOCAL_FILE_THINK', false)
     : null;
 }
@@ -4555,6 +4559,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   // Explicit file tasks must produce executable sandbox work, not a prose
   // answer. Avoid a redundant SSE model call before this tool-oriented request.
   $fileTask = $channel === 'console' && $imageUrl === null && ember_py_enabled()
+    && ember_console_file_tool_is_local($primaryModel)
     && coreui_console_download_requested($userMsg);
   $fileToolThink = $fileTask ? ember_console_file_tool_think($primaryModel) : null;
   if ($fileTask) {
