@@ -224,10 +224,6 @@ function coreui_agent_run_reconcile_waiting_tool(
   $jobStatus = (string)$jobRow['status'];
   if (!in_array($jobStatus,['done','error'],true)) return $run;
 
-  if (!empty($run['cancel_requested_at'])) {
-    coreui_agent_run_transition($pdo,$uid,$sessionId,$runId,'waiting_tool','cancelled');
-    return coreui_agent_run_get($pdo,$uid,$sessionId,$runId);
-  }
   if ($jobStatus === 'error') {
     coreui_agent_run_transition($pdo,$uid,$sessionId,$runId,'waiting_tool','failed','browse_failed');
     return coreui_agent_run_get($pdo,$uid,$sessionId,$runId);
@@ -256,7 +252,10 @@ function coreui_agent_run_reconcile_waiting_tool(
     $responseId = (int)($reply->fetchColumn() ?: 0);
   }
   if ($responseId > 0 && coreui_agent_run_bind_response($pdo,$uid,$sessionId,$runId,$responseId)) {
+    // A completed, saved answer wins a race against a late cancel request.
     coreui_agent_run_transition($pdo,$uid,$sessionId,$runId,'waiting_tool','completed');
+  } elseif (!empty($run['cancel_requested_at'])) {
+    coreui_agent_run_transition($pdo,$uid,$sessionId,$runId,'waiting_tool','cancelled');
   } elseif ($responseId <= 0 && !empty($jobRow['finished_at'])
       && strtotime((string)$jobRow['finished_at']) < time() - 60) {
     coreui_agent_run_transition($pdo,$uid,$sessionId,$runId,
