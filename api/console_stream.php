@@ -394,6 +394,11 @@ try {
     ? ember_exact_integer_calculation($promptMessage)
     : null;
   console_stream_progress($thinkingEnabled, 'request');
+  // A download request needs the Python worker, not a first generic model
+  // stream followed by another full inference because no public text appeared.
+  $fileTaskHandled = !$isVisionTurn && $attachmentIds === []
+    && $generationMode !== 'continue' && ember_py_enabled()
+    && coreui_console_download_requested($promptMessage);
 
   // v1.1.1.94: Vision-Turns nehmen NICHT den Streaming-Pfad. console_stream_ollama()
   // baut den Payload ohne images-Feld, ein Bild kaeme dort gar nicht an. Stattdessen
@@ -408,6 +413,26 @@ try {
       'ok' => true,
       'done' => true,
       'truncated' => false,
+    ];
+  } elseif ($fileTaskHandled) {
+    // Exactly one initial file-code request. The shared reply function checks
+    // the real worker manifest and permits only one compact protocol retry.
+    // Keep the SSE response/DB/run/artifact binding identical to text turns.
+    ember_console_afk_set($pdo, time() + 930);
+    $consoleAfkOwned = true;
+    ember_console_afk_announce($pdo);
+    ember_prepare_background_runtime();
+    coreui_work_record($pdo, 'run', 'info', 'Datei-Auftrag an Werkzeugpfad');
+    console_stream_progress($thinkingEnabled, 'tool');
+    $fileReply = ember_generate_reply(
+      $pdo, $char, $promptMessage, null, 'console', (int)$uid,
+      $sessionId, $excludeReplyToId, $afterId, $triggerRevision
+    );
+    $acc = [
+      'thinking'=>'',
+      'content'=>is_string($fileReply) && trim($fileReply) !== ''
+        ? trim($fileReply) : 'Die Dateierstellung konnte nicht bestaetigt werden.',
+      'ok'=>true,'done'=>true,'truncated'=>false,
     ];
   } elseif ($isVisionTurn) {
     // Console-AFK nur setzen, wenn wirklich ein Modell- oder Werkzeuglauf startet.
@@ -470,7 +495,7 @@ try {
             || (ember_extract_browse_marker($reply) !== null)
             || (function_exists('ember_py_extract_marker') && ember_py_extract_marker($reply) !== null);
 
-  if (!$isVisionTurn
+  if (!$isVisionTurn && !$fileTaskHandled
       && !$hasMarker
       && $reply !== ''
       && !empty($acc['ok'])
@@ -490,7 +515,7 @@ try {
 
   $streamUnsafe = empty($acc['ok'])
     || empty($acc['done']);
-  if ($hasMarker || $reply === '' || $streamUnsafe) {
+  if (!$fileTaskHandled && ($hasMarker || $reply === '' || $streamUnsafe)) {
     if ($hasMarker) {
       coreui_work_record($pdo, 'run', 'info', 'Werkzeuganforderung erkannt');
     } elseif ($streamUnsafe) {
