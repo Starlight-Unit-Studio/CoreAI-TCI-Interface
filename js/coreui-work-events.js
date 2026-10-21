@@ -38,6 +38,28 @@
     };
   }
 
+  // Merge authenticated history with the SSE snapshot. Keep the server copy
+  // authoritative, but do not lose live events if a reconnect returned no
+  // timeline. Both sources pass the same strict public-event whitelist.
+  function merge(serverEvents, liveEvents) {
+    var combined = [];
+    var seen = {};
+    [serverEvents, liveEvents].forEach(function (source) {
+      if (!Array.isArray(source)) return;
+      source.forEach(function (raw) {
+        var event = normalize(raw);
+        if (!event) return;
+        var key = event.id > 0
+          ? 'id:' + event.id
+          : [event.kind,event.state,event.title,event.time].join('|');
+        if (seen[key]) return;
+        seen[key] = true;
+        combined.push(event);
+      });
+    });
+    return combined.slice(-150);
+  }
+
   function localTime(raw) {
     if (!raw) return '';
     var when = new Date(raw);
@@ -87,7 +109,7 @@
 
   function create(options) {
     options = options || {};
-    var events = Array.isArray(options.events) ? options.events : [];
+    var events = merge(options.events, []);
     var live = !!options.live;
     if (!live && events.length === 0) return null;
     var timeline = el('section','work-panel');
@@ -97,7 +119,14 @@
     var expanded = options.expanded === true || live;
     toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
     toggle.appendChild(el('span','work-chevron','\u25b8'));
-    toggle.appendChild(el('span','work-caption',live ? 'E.M.B.E.R. arbeitet' : 'Arbeitsschritte'));
+    var caption = el('span','work-caption');
+    function updateCaption() {
+      caption.textContent = live ? 'E.M.B.E.R. arbeitet'
+        : 'Arbeitsweg (' + events.length + ' Schritte) ' + (expanded ? 'ausblenden' : 'anzeigen');
+      toggle.setAttribute('aria-label', caption.textContent);
+    }
+    updateCaption();
+    toggle.appendChild(caption);
     var body = el('div','work-body');
     body.hidden = !expanded;
     if (live) body.appendChild(el('p','work-empty','Warte auf den ersten Arbeitsschritt ...'));
@@ -106,11 +135,12 @@
       expanded = !expanded;
       toggle.setAttribute('aria-expanded',expanded ? 'true' : 'false');
       body.hidden = !expanded;
+      updateCaption();
     });
     timeline.appendChild(toggle);
     timeline.appendChild(body);
     return timeline;
   }
 
-  window.CoreUIWorkEvents = {create:create,add:add};
+  window.CoreUIWorkEvents = {create:create,add:add,normalize:normalize,merge:merge};
 }());
