@@ -7,7 +7,7 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 Ember CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current main-source version: `0.5.9` (numeric only). The previous verified ZIP remains archived under its original historical name.
+Current development-branch version: `0.5.9` (numeric only); merged `main` remains `0.5.8` until this PR is accepted. The previous verified ZIP remains archived under its original historical name.
 
 ## Development roadmap
 
@@ -59,15 +59,15 @@ Starting with `0.4.2-alpha`, the project's own code is licensed under the **Star
 
 Further details are provided in `LICENSE_HISTORY.md`, `TRADEMARKS.md`, `COMMUNITY_POLICY.md`, `NOTICE.md`, and `COPYRIGHT.md`. The license is Source Available and is not OSI-certified. Third-party components retain their own terms.
 
-## Current 0.5.9 main-source changes
+## Current 0.5.9 development changes
 
 The current branch includes persistent generated file downloads and chat output cards, the new artifact database migration 011, the browser data-link correction, the original one-liner live-update flow, the Nginx permission repair, the scoped SSE selftest update, and the numeric cache/version repair. The 0.5.6 merge also adds compatibility for `gpt-oss:120b` cloud-generated files under the isolated `/mnt/data` output alias, with bounded recovery after failed Python file creation. Real HTML/ZIP downloads still need end-to-end live verification. The full worker-to-mobile download acceptance and new ZIP/SHA packaging remain pending. See [CHANGELOG.md](CHANGELOG.md), [the 0.5.9 entry](docs/changelogs-txt/CHANGELOG_0_5_9.txt) and [handover](docs/UEBERGABEPROTOKOLL_0_5_9.txt).
 
-## 0.5.9: P05 agent run foundation and model admission
+## 0.5.9: P05 agent runs, FIFO model admission and cooperative cancellation
 
 The private SSE chat now creates a durable, account- and session-scoped agent run for each turn or explicit generation action (migration `013_console_agent_runs`). The run is claimed atomically, transitions through explicit states, and binds only to a real response belonging to the original turn. The authenticated chat history includes the run's safe state metadata. Reconnected requests do not silently repeat an uncertain provider call; such runs are marked interrupted for inspection.
 
-Every Ollama HTTP call, including private streaming, synchronous follow-ups, warmup and reflection, now passes the same MariaDB named model lock. A bounded wait keeps the ordinary paths serial; no alternate file-lock lane can bypass the database lock. This is **not yet a durable, fair background job queue**, and provider-side work after a broken transport connection remains a recovery risk. Cancellation, cross-process provider reconciliation, full workflow resume and provider capability adapters are future P05 steps. A live two-session concurrency and restart test is still required. No GitHub Actions were used.
+Every Ollama HTTP call, including private streaming, synchronous follow-ups, warmup and reflection, now passes the same MariaDB named model lock. A bounded wait keeps the ordinary paths serial; no alternate file-lock lane can bypass the database lock. Migration 013 also adds a **durable FIFO admission queue** for Ollama calls, including nested requests that share one connection-bound model slot. Queued runs can be cancelled immediately, active private runs receive a cooperative stop request via the CSRF-protected chat action, and browser jobs can be reconciled to saved replies without replaying the model. A cloud provider may continue working after the HTTP transport ends; provider-side reconciliation, a persistent background scheduler, complete workflow resume, and provider capability adapters remain future steps. A live two-session concurrency and restart test is still required. No GitHub Actions were used.
 
 ## 0.5.8: Inline work events and file-output recovery
 
