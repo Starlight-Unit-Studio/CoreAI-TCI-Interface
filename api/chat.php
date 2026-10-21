@@ -2445,7 +2445,13 @@ function ember_console_file_tool_candidate(string $reply, string $request): ?arr
   if ($py !== null) return ['code'=>$py,'kind'=>'python_fence'];
   $project = coreui_console_project_fences_python($reply, $request, $max);
   if ($project !== null) return ['code'=>$project['code'],'kind'=>'project','meta'=>$project];
+  // A single recovered HTML page must not suppress the repair attempt when
+  // the user explicitly requested several separate files and/or a ZIP.
+  $wanted = coreui_console_missing_requested_artifacts($request, []);
+  if (count($wanted) > 1) return null;
   $inline = coreui_console_inline_file_python($reply, $request, $max);
+  if ($inline !== null && preg_match('~\bzip\b~i', $request) === 1
+      && ($inline['mime_type'] ?? '') !== 'application/zip') return null;
   if ($inline !== null) return ['code'=>$inline['code'],'kind'=>'inline','meta'=>$inline];
   return null;
 }
