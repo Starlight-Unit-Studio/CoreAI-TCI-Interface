@@ -1,0 +1,40 @@
+STΛRLIɢHT: EMBER COREUI BY STARLIGHT UNIT STUDIOS
+CHANGELOG 0.5.17
+STAND 21.10.2026
+
+1. FEHLERBEHEBUNG FUER ALLE MODELLE
+   - Lokale Ollama-Modelle und Ollama Cloud/API-Modelle benutzen
+     bei expliziten Mehrdatei-ZIP-Auftraegen denselben sicheren
+     CoreUI-Dateiweg.
+   - Das Modell liefert die einzelnen Quelltexte. Der Server
+     erstellt daraus im vorhandenen isolierten Python-Worker
+     echte Dateien und prueft Inhalt und Vollstaendigkeit
+     der ZIP-Datei.
+   - Unvollstaendige Ergebnisse werden niemals als komplette
+     Downloads ausgegeben.
+
+2. REPRODUZIERTER KODIERUNGSFEHLER
+   - PHP json_encode() maskierte Base64-Schraegstriche als \/.
+   - Python behaelt diesen Backslash im String und
+     base64.b64decode(...,validate=True) schlug fehl.
+   - Die Projektexport-Bruecke nutzt jetzt
+     JSON_UNESCAPED_SLASHES.
+   - Ein isolierter PHP/Python-Test erzeugte und pruefte
+     index.html, style.css, game.js und snake-game.zip.
+
+3. PREFLIGHT UND RELEASE
+   - Die veraltete Pruefung auf einen exakten Fehlergrund
+     wurde an den aktuellen Datei-Werkzeugvertrag angepasst.
+   - PHP-Selbsttest prueft den Base64-Slash-Fall.
+   - Numerischer Versionssprung: 0.5.16 -> 0.5.17.
+   - Keine GitHub Actions, kein neuer ZIP/SHA-Artefaktstand
+     und keine Aenderung des Installer-One-Liners.
+   - Die echte Produktion mit Gemma, Qwen und GPT Cloud
+     bleibt bis zum naechsten Live-Test offen.
+
+4. OFFENE ARBEIT
+   - Qualitaet des modellgenerierten HTML/CSS/JS gesondert
+     testen; gueltige ZIP bedeutet nicht automatisch
+     spielbares Spiel.
+   - Ollama-CPU-Betriebsfehler beim Modellwechsel separat
+     unter Issue #52 untersuchen.
