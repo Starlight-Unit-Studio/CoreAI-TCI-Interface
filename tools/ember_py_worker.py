@@ -128,6 +128,11 @@ def db_connect(cfg):
         port=int(cfg.get("STU_DB_PORT", "13306") or "13306"),
         charset="utf8mb4",
         autocommit=True,
+        # A lost MariaDB socket must fail in finite time, not leave the only
+        # serial Python worker blocked until a complete server restart.
+        connect_timeout=5,
+        read_timeout=20,
+        write_timeout=20,
         cursorclass=pymysql.cursors.DictCursor,
     )
 
@@ -320,6 +325,10 @@ def process_job(conn, cfg, job):
     bound = (job.get("channel") == "console" and int(job.get("recipient_uid") or 0) > 0
              and bool(job.get("session_id")) and int(job.get("trigger_message_id") or 0) > 0)
     stdout, stderr, rc, dur, err, manifest = run_in_container(cfg, job_id, code, publish_outputs=bound)
+    # Local Python / Docker may run longer than the DB's idle connection
+    # timeout. Reopen the socket BEFORE persisting the already finished job;
+    # never re-execute model code or issue a second sandbox job.
+    conn.ping(reconnect=True)
     # A PHP timeout/cancellation wins. Do not overwrite it. If the DB throws,
     # commit outcome is unknown: retain copies rather than deleting live files.
     accepted = finish_job(conn, job_id, "error" if err else "done", stdout, stderr, rc, dur,
@@ -363,6 +372,9 @@ def main():
 
     while not _STOP:
         try:
+            # PyMySQL is a persistent connection in this long-running loop.
+            # Detect a half-open or expired socket BEFORE claiming queued work.
+            conn.ping(reconnect=True)
             job = claim_next_job(conn)
         except Exception as exc:
             print("[worker] DB-Problem: %s - verbinde neu" % exc, flush=True)
