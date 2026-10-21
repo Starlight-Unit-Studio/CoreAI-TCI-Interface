@@ -128,6 +128,7 @@ UI_FILES=(
   js/coreui-work-events.js
   scripts/work-events-selftest.php
   scripts/work-events-persistence-selftest.php
+  scripts/response-timing-ui-selftest.js
   scripts/agent-runs-selftest.php
   scripts/model-queue-selftest.php
   scripts/workspace-output-selftest.py
@@ -405,6 +406,18 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     ok 'P06: Arbeitsweg nach Antwort, Reload, Varianten und Kontotrennung geprueft.'
   else
     fail 'P06-Arbeitsweg-Persistenz-Selbsttest fehlgeschlagen.'
+  fi
+
+  # Node is optional for PHP installations. Run the real JS unit test when
+  # present on the host; the PHP frontend guard always checks integration.
+  if command -v node >/dev/null 2>&1; then
+    if node "$PROJECT_ROOT/scripts/response-timing-ui-selftest.js" >/dev/null 2>&1; then
+      ok 'Antwortdauer: gespeicherte Gesamt- und Modellzeit in der Infoanzeige geprueft.'
+    else
+      fail 'Antwortdauer-JavaScript-Selbsttest fehlgeschlagen.'
+    fi
+  else
+    warn 'Node nicht installiert: optionaler Antwortdauer-JavaScript-Test uebersprungen.'
   fi
 
   for extension_name in curl dom gd mbstring pdo_mysql zip; do
