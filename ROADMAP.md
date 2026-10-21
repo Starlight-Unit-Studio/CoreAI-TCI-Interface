@@ -2,7 +2,7 @@
 
 Stand: 20.10.2026. Planungsbasis: [`b4a5413`](https://github.com/Starlight-Unit-Studio/coreui/commit/b4a5413f8478119d749a54702c0e50acd3f0b517).
 
-**Aktueller Stand: P05-Agentenlaufzeit und anklickbare Folgefragen in 0.5.10 auf dem Zielserver getestet. In 0.5.11 wurde P06 um dauerhaft lesbare, antwortgebundene Arbeitsschritte erweitert; die Live-Abnahme steht aus. P20 plant eine native CPU-Bildengine. Weitere P06-/P07-Agentenfunktionen folgen.**
+**Aktueller Stand: P05-/P06-Grundfunktionen und Arbeitschronik sowie lokale Dateiwerkzeuge sind in Teilständen umgesetzt. Version 0.5.15 entfernt die CoreUI-eigenen Ollama-Parameter fuer Gemma und den kurzlebigen synthetischen Warmup. Der wiederkehrende lokale Inferenzstillstand bleibt bis zur Server-Liveabnahme und technischen Diagnose offen. P20 plant die native CPU-Bildengine; allgemeine P06-/P07-Agentenfunktionen folgen.**
 
 Diese Roadmap ordnet die Anforderungen in **29 abschließbare Arbeitspakete** und nutzbare Lieferungen. Der [Masterplan](docs/COREUI_MASTERPLAN.md) hält Ziel und Architektur fest; die [Funktionsmatrix](docs/COREUI_FEATURE_MATRIX.md) führt Referenzen, bestehenden Teilbestand und Einzelabnahmen. Alle 82 derzeitigen Matrix-IDs sind einem Paket primär zugeordnet. Das bedeutet vollständige Zuordnung des erfassten Startbestands; die Tiefeninventur von **OpenClaw, Open WebUI, CrewAI, LangGraph und Microsoft AutoGen** läuft weiter.
 
@@ -15,7 +15,7 @@ Diese Roadmap ordnet die Anforderungen in **29 abschließbare Arbeitspakete** un
 | Referenzerweiterung | CrewAI, LangGraph und AutoGen ergänzt; jetzt 82 CF-Einträge und 29 Pakete, vollständige Einzelinventur weiter offen |
 | Download-Bug | HTML-Datei wurde live heruntergeladen; [Issue #29](https://github.com/Starlight-Unit-Studio/coreui/issues/29) bleibt fuer ZIP-Abnahme offen |
 | Laufzeitfunktionen dieser Roadmap | Noch nicht durch diese Planungsarbeit umgesetzt oder abgenommen |
-| Technische Basis | `0.5.13` mit Migration 013, globaler FIFO-Modellwarteschlange, auf dem Server bestaetigter P06-Arbeitschronik und erweitertem lokalem Dateiwerkzeug; lokale ZIP-Liveabnahme ausstehend |
+| Technische Basis | `0.5.15` mit Migration 013, globaler FIFO-Modellwarteschlange, bestaetigter P06-Arbeitschronik, lokalem Dateipfad und strikt parameterfreier Gemma-Anbindung; lokale Inferenzhaenger und ZIP-Endabnahme weiter zu pruefen |
 | GitHub Actions | Wegen ausgeschöpften Kontingents auf Nutzerwunsch ausgelassen |
 
 Die Paketnummern bleiben als Arbeitsreferenzen bestehen. Sämtliche Umsetzungspakete sind zunächst **offen**; vorhandene Teilfunktionen behalten ihren differenzierten Status in der Matrix. M0 und M7 begleiten die Entwicklung. Sie sind keine Wartephase vor der ersten nutzbaren Korrektur.
