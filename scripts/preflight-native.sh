@@ -108,6 +108,9 @@ UI_FILES=(
   scripts/session-selftest.php
   scripts/attachment-pipeline-selftest.php
   scripts/python-worker-selftest.php
+  scripts/pyworker-diagnostics.php
+  scripts/diagnose-pyworker.sh
+  scripts/pyworker-connection-selftest.py
   scripts/profile-knowledge-selftest.php
   scripts/account-security-selftest.php
   scripts/frontend-regression-selftest.php
@@ -125,6 +128,12 @@ for ui_file in "${UI_FILES[@]}"; do
     fail "Ember CoreUI-Oberflaechendatei fehlt oder ist leer: $ui_file"
   fi
 done
+
+if python3 "$PROJECT_ROOT/scripts/pyworker-connection-selftest.py" >/dev/null 2>&1; then
+  ok 'Python-Worker: MariaDB-Socket-Zeitlimits und Reconnect abgesichert.'
+else
+  fail 'Python-Worker-Verbindungs-Selbsttest fehlgeschlagen.'
+fi
 
 if python3 "$PROJECT_ROOT/scripts/pdo-mysql-installer-selftest.py" >/dev/null 2>&1; then
   ok 'PHP-PDO-MariaDB: Image-Build, Installer-Recreation und Preflight-Vertrag geprueft.'
@@ -257,7 +266,7 @@ if command -v php >/dev/null 2>&1; then
   fi
 
   if runuser -u www-data -- php "$PROJECT_ROOT/scripts/gemma-zero-parameters-selftest.php" >/dev/null 2>&1; then
-    ok 'Gemma: kein CoreUI-PARAMETER in Modelfile und lokalen Ollama-Anfragen.'
+    ok 'Gemma: vier freigegebene Modelfile-Parameter, kein num_ctx im lokalen API-Request.'
   else
     fail 'Gemma-Modelfile-/Ollama-Parametervertrag fehlgeschlagen.'
   fi
@@ -324,6 +333,7 @@ if command -v php >/dev/null 2>&1; then
   else
     python_worker_selftest="${python_worker_selftest//$'\r'/}"
     fail "$python_worker_selftest"
+    printf '[HINWEIS] Sichere Diagnose vor Neustart: bash %s/scripts/diagnose-pyworker.sh\n' "$PROJECT_ROOT" >&2
   fi
 
   account_security_selftest=''
