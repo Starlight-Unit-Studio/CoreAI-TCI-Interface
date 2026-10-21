@@ -419,17 +419,17 @@ ensure_ollama_model() {
 
   sed "s|{{BASE_MODEL}}|$BASE_MODEL|g" \
     "$PROJECT_ROOT/config/Modelfile.template" > "$PROJECT_ROOT/var/Modelfile.generated"
-  # Strict Gemma policy: never inject PARAMETER lines into the owned Ollama
-  # model. Recheck after substitution so this cannot silently regress on update.
-  if grep -Eiq '^[[:space:]]*PARAMETER([[:space:]]|$)' "$PROJECT_ROOT/var/Modelfile.generated"; then
-    die 'Gemma-Modelfile enthaelt verbotene PARAMETER-Zeilen. Modell wurde nicht veraendert.'
+  # Preserve the four approved Gemma sampler parameters. Only num_ctx
+  # is prohibited in CoreUI's auto-generated Ollama Modelfile.
+  if grep -Eiq '^[[:space:]]*PARAMETER[[:space:]]+num_ctx([[:space:]]|$)' "$PROJECT_ROOT/var/Modelfile.generated"; then
+    die 'Gemma-Modelfile enthaelt das verbotene PARAMETER num_ctx. Modell wurde nicht veraendert.'
   fi
   chown root:33 "$PROJECT_ROOT/var/Modelfile.generated"
   chmod 0640 "$PROJECT_ROOT/var/Modelfile.generated"
 
   log "Erzeuge das getrennte Ollama-Modell $MODEL_NAME aus $BASE_MODEL."
   ollama create "$MODEL_NAME" -f "$PROJECT_ROOT/var/Modelfile.generated"
-  log "Eigene Ollama-Modellvorlage fuer $MODEL_NAME enthaelt keine PARAMETER-Vorgaben."
+  log "Gemma-Modelfile fuer $MODEL_NAME: vier freigegebene Sampling-Parameter, kein num_ctx."
   # The upstream FROM model may itself carry defaults, which Ollama can
   # display in 'show --modelfile'. Those are not injected by CoreUI.
   printf '%s\n' "$MODEL_NAME" > "$MODEL_OWNER_FILE"
