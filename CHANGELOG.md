@@ -2,6 +2,13 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.10 - 21.10.2026
+
+- Optional anklickbare Folgefragen unter gespeicherten Ember-Antworten, wenn die Antwort mit einer expliziten Auswahlfrage und 2 bis 4 Stichpunkten endet. Schaltflaechen verwenden die normale Chat-Sendefunktion und erlauben keine HTML-/Codeausfuehrung.
+- Mobile und Desktop: skalierende, per Tastatur bedienbare Vorschlags-Schaltflaechen; keine gesonderte Modellanfrage bei der Anzeige.
+- Roadmap P20: Eigener Plan fuer native CPU-Bildgenerierung mit stable-diffusion.cpp als C/C++-Referenz, FLUX.1-schnell/SDXL-Turbo als Kandidaten, Lizenz-/Formatpruefung, globaler serieller Modellslot, getrennten Ressourcenbudgets und echten Benchmarks.
+- Keine Bildengine/Modellgewichte ausgerollt. Bestehende Downloads, Sitzungen, Installationsschema und Modellbetrieb unveraendert. GitHub Actions nicht gestartet.
+
 ## 0.5.9 - 21.10.2026
 
 - P05: Migration 013 speichert private Agentenlaeufe und eine globale persistente FIFO-Warteschlange fuer alle Ollama-HTTP-Aufrufe. Ein MariaDB GET_LOCK bleibt die verbindliche Grenze fuer genau einen gleichzeitigen Modellaufruf.
