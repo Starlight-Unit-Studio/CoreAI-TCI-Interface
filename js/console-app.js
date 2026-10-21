@@ -805,7 +805,7 @@
     var lines = source.split(/\r?\n/);
     var start = -1;
     for (var i = Math.max(0, lines.length - 18); i < lines.length; i++) {
-      var heading = lines[i].trim().replace(/^#{1,6}\s*/, '').replace(/\*\*/g, '');
+      var heading = lines[i].trim().replace(/^#{1,6}\s*/, '').replace(/\*\*/g, '').replace(/^\d+[.)]\s*/, '');
       if (/^(?:was moechtest du als naechstes|was möchtest du als nächstes|wie soll es weitergehen|womit soll ich fortfahren|moechtest du als naechstes|möchtest du als nächstes)/i.test(heading)) start = i;
     }
     if (start < 0) return [];
