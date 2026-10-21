@@ -94,6 +94,7 @@ UI_FILES=(
   js/coreui-work-events.js
   scripts/work-events-selftest.php
   scripts/work-events-persistence-selftest.php
+  scripts/local-file-tool-selftest.php
   scripts/response-timing-ui-selftest.js
   scripts/agent-runs-selftest.php
   scripts/model-queue-selftest.php
@@ -233,6 +234,12 @@ if command -v php >/dev/null 2>&1; then
     ok 'P06: Arbeitsweg nach Antwort, Reload, Varianten und Kontotrennung geprueft.'
   else
     fail 'P06-Arbeitsweg-Persistenz-Selbsttest fehlgeschlagen.'
+  fi
+
+  if runuser -u www-data -- php "$PROJECT_ROOT/scripts/local-file-tool-selftest.php" >/dev/null 2>&1; then
+    ok 'Lokale Dateiauftraege: Python-Fences, mehrteilige Projekte, ZIP und Vollstaendigkeit geprueft.'
+  else
+    fail 'Lokaler Dateiwerkzeug-Selbsttest fehlgeschlagen.'
   fi
 
   if command -v node >/dev/null 2>&1; then
