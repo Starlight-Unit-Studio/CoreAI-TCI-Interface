@@ -3550,10 +3550,11 @@ function ember_generation_lock_release($fp): void {
       return;
     }
     $ticket = (string)($GLOBALS['COREUI_MODEL_QUEUE_TICKET'] ?? '');
-    unset($GLOBALS['COREUI_MODEL_LOCK_DEPTH'],$GLOBALS['COREUI_MODEL_QUEUE_TICKET']);
+    $connection = $GLOBALS['COREUI_MODEL_LOCK_PDO'] ?? null;
+    unset($GLOBALS['COREUI_MODEL_LOCK_DEPTH'],$GLOBALS['COREUI_MODEL_QUEUE_TICKET'],
+      $GLOBALS['COREUI_MODEL_LOCK_PDO']);
     try {
-      global $pdo;
-      $connection = isset($pdo) && $pdo instanceof PDO ? $pdo : stu_pdo();
+      if (!$connection instanceof PDO) throw new RuntimeException('model_lock_connection_missing');
       coreui_model_queue_release($connection,ember_lock_name('global_ollama'),$ticket);
     } catch (Throwable $e) {
       // Closing the connection also releases the named lock. Never create
@@ -3589,6 +3590,7 @@ function ember_global_lock_acquire(int $timeoutSeconds = 90): mixed {
     );
     if ($ticket === false) return false;
     $GLOBALS['COREUI_MODEL_QUEUE_TICKET'] = $ticket;
+    $GLOBALS['COREUI_MODEL_LOCK_PDO'] = $connection;
     $GLOBALS['COREUI_MODEL_LOCK_DEPTH'] = 1;
     return 'db_lock';
   } catch (RuntimeException $e) {
