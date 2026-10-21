@@ -19,6 +19,9 @@ STAND 21.10.2026
    - Streaming und synchroner Pfad senden nicht einmal ein
      leeres options-Objekt.
    - Der Top-Level-think-Schalter bleibt unabhaengig erhalten.
+   - Lokale Gemma-Modelle starten keinen kuenstlichen Acht-
+     Sekunden-Warmup-Aufruf mehr; ein solcher Call konnte
+     bereits bei der CPU-Ladezeit abbrechen.
    - Andere Modellfamilien, etwa gpt-oss, behalten ihre
      bisherigen Provideroptionen.
    - Bereits konfigurierte EXPERIMENTAL-/NUM_CTX-Werte koennen
