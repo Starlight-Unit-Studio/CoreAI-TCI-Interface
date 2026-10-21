@@ -2,6 +2,14 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.14 - 21.10.2026
+
+- PHP-/MariaDB-Installationsfix: Der Dockerfile-Build und Installer pruefen `pdo_mysql` direkt mit `extension_loaded()` im frischen PHP-Image. Ein Image ohne den Treiber wird nicht als erfolgreich installiert gemeldet.
+- Vor dem Abschluss werden ausschliesslich die eigenen CoreUI-PHP-/Web-Container mit dem gebauten Image neu erstellt und `pdo_mysql` erneut im laufenden PHP geprueft. Datenbank, Nutzer, Uploads, lokale Konfiguration und andere Dienste bleiben erhalten.
+- Compose- und Native-Preflight benutzen PHPs Extension-API statt der potenziell fehleranfaelligen Pipeline `php -m | grep -q`; fehlende Module bleiben ein harter Fehler mit zielgerichteter Diagnose.
+- Offline-Vertragstest fuer Dockerfile, Installer und Preflights ergaenzt. Keine Migration und keine Veraenderung des unveraenderten Installer-One-Liners; keine GitHub Actions.
+- Echte Serverabnahme steht aus. Kein neues offizielles ZIP-/SHA-Release erzeugt.
+
 ## 0.5.13 - 21.10.2026
 
 - Lokale Ollama-Dateiauftraege gehen unmittelbar in den bestehenden isolierten Python-Werkzeugpfad. Der zuvor ueberfluessige erste allgemeine SSE-Modellstream entfaellt bei expliziter Dateierstellung mit Downloadwunsch. Alle Modellaufrufe bleiben in derselben globalen seriellen Warteschlange.

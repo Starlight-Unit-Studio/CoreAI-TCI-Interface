@@ -133,6 +133,7 @@ UI_FILES=(
   scripts/agent-runs-selftest.php
   scripts/model-queue-selftest.php
   scripts/workspace-output-selftest.py
+  scripts/pdo-mysql-installer-selftest.py
   api/console_artifact.php
   api/console_artifacts.php
   api/console_data_link_bridge.php
@@ -146,9 +147,9 @@ UI_FILES=(
   scripts/markdown-selftest.js
   scripts/branding-license-selftest.py
   scripts/cache-bust.py
-  docs/changelogs-txt/CHANGELOG_0_5_13.txt
+  docs/changelogs-txt/CHANGELOG_0_5_14.txt
   docs/COREUI_IMAGE_ENGINE_PLAN.md
-  docs/UEBERGABEPROTOKOLL_0_5_13.txt
+  docs/UEBERGABEPROTOKOLL_0_5_14.txt
   docker/pyworker/Dockerfile
   docker/pyworker/entrypoint.sh
   images/starlight_unit_studios_logo_original.png
@@ -158,6 +159,12 @@ for ui_file in "${UI_FILES[@]}"; do
     fail "Ember CoreUI-Oberflaechendatei fehlt oder ist leer: $ui_file"
   fi
 done
+
+if python3 "$PROJECT_ROOT/scripts/pdo-mysql-installer-selftest.py" >/dev/null 2>&1; then
+  ok 'PHP-PDO-MariaDB: Image-Build, Installer-Recreation und Preflight-Vertrag geprueft.'
+else
+  fail 'PHP-PDO-MariaDB-Installer-Selbsttest fehlgeschlagen.'
+fi
 
 if python3 "$PROJECT_ROOT/scripts/workspace-output-selftest.py" >/dev/null 2>&1; then
   ok 'Python-Worker: gerettete HTML/ZIP-Dateien und sichere Ausgabepfade geprueft.'
@@ -427,11 +434,16 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     warn 'Node nicht installiert: optionaler Antwortdauer-JavaScript-Test uebersprungen.'
   fi
 
+  # Test the actual PHP runtime directly. Under pipefail, a "php -m |
+  # grep -q" probe can mistake an early-closing pipe for a missing module.
   for extension_name in curl dom gd mbstring pdo_mysql zip; do
-    if compose exec -T php php -m 2>/dev/null | grep -Fxq "$extension_name"; then
+    if compose exec -T php php -r 'exit(extension_loaded($argv[1]) ? 0 : 1);' "$extension_name" 2>/dev/null; then
       ok "PHP-Erweiterung aktiv: $extension_name"
     else
       fail "PHP-Erweiterung fehlt: $extension_name"
+      if [[ "$extension_name" == 'pdo_mysql' ]]; then
+        warn 'PDO-Treiber fehlt im LAUFENDEN PHP-Container. Installer erneut starten, damit das Image neu gebaut und PHP neu erstellt wird.'
+      fi
     fi
   done
 

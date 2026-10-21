@@ -1,0 +1,28 @@
+STΛRLIɢHT: EMBER COREUI BY STARLIGHT UNIT STUDIOS
+CHANGELOG 0.5.14
+STAND 21.10.2026
+
+1. INSTALLATION: PDO MYSQL PRUEFUNG
+   - Auch im frisch gebauten PHP-Container-Image ist pdo_mysql jetzt
+     explizit Pflicht und wird vor dem Dienststart mit extension_loaded
+     geprueft.
+   - Der Installer erstellt ausschliesslich die isolierten Ember CoreUI
+     Dienste php/web mit dem validierten Image neu.
+   - Anschliessend bestaetigt der Installer erneut den geladenen
+     PDO-MariaDB-Treiber im laufenden PHP-Service.
+   - Fehlender Treiber bleibt ein echter Fehler und wird nicht
+     durch Unterdruecken des Preflights kaschiert.
+
+2. PREFLIGHT-REGRESSION
+   - Compose- und Native-Preflight testen PHP-Erweiterungen direkt ueber
+     extension_loaded und nicht mit php -m | grep -q.
+   - Zielgerichtete Hinweise bei fehlendem PDO-MariaDB-Treiber.
+   - Offline-Test prueft Dockerfile, Installer und Preflight-Vertrag.
+
+3. DATENSCHUTZ / KOMPATIBILITAET
+   - MariaDB-Daten, Accounts, Uploads und CoreUI-Konfiguration
+     bleiben erhalten; keine SQL-Migration.
+   - Keine anderen Container-Stacks oder Hostdienste veraendert.
+   - Einziger bestehender Setup-One-Liner unveraendert.
+   - Keine GitHub Actions ausgeloest und kein neues ZIP/SHA-Release.
+   - Echte Betreiber-Liveabnahme noch offen.

@@ -15,6 +15,7 @@ RUN apt-get update \
         unzip \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j"$(nproc)" curl dom gd mbstring opcache pdo_mysql zip \
+    && php -r 'if (!extension_loaded("pdo_mysql")) { fwrite(STDERR, "FATAL: pdo_mysql fehlt im neu gebauten PHP-Image\n"); exit(1); }' \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
