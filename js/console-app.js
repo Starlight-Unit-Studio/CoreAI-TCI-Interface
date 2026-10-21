@@ -234,7 +234,8 @@
     fetch(url, { credentials:'include', cache:'no-store' })
       .then(function(r) { return r.json(); })
       .then(function(data) {
-        if (!data || !data.ok) return;
+        var latest = state.activeAgentRunsBySession[sessionId];
+        if (!latest || latest.id !== runId || !data || !data.ok) return;
         if (data.status === 'cancelled' || data.status === 'failed'
             || data.status === 'interrupted') {
           clearAgentRun(sessionId);
@@ -1936,11 +1937,17 @@
         updateAgentCancelControl();
       } catch (e) {}
     });
-    es.addEventListener('cancelled', function() {
+    es.addEventListener('cancelled', function(ev) {
       if (streamDone) return;
       streamDone = true;
       clearTimeout(watchdog);
       try { es.close(); } catch (e) {}
+      var info = {};
+      try { info = JSON.parse(ev.data) || {}; } catch (e) {}
+      var current = state.activeAgentRunsBySession[sessionId];
+      if (current && info.agent_run_id && current.id !== String(info.agent_run_id)) return;
+      // The POST handler or status poll may have already completed the UI.
+      if (!state.pendingBySession[sessionId]) return;
       clearAgentRun(sessionId);
       resetGenerationUi(ses,null);
       if (isActiveSession(sessionId)) {
