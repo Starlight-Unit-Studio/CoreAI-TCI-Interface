@@ -15,6 +15,84 @@ function coreui_console_download_requested(string $request): bool {
     && preg_match('~\\b(?:erstell\\w*|generier\\w*|erzeug\\w*|programmier\\w*|schreib\\w*|speicher\\w*|liefer\\w*|bekomm\\w*|mach\\w*|bereitstell\\w*)\\b~iu', $request) === 1;
 }
 
+/** Local models may omit [PY]. Request one explicit tool-only response. */
+function coreui_console_file_tool_prompt(string $request): string {
+  $task = trim($request);
+  if (strlen($task) > 8000) $task = substr($task, 0, 8000);
+  return "DU BIST EIN CODE-GENERATOR FUER EIN ISOLIERTES PYTHON-WERKZEUG.\n"
+    . "AUFGABE:\n" . $task . "\nENDE AUFGABE\n\n"
+    . "Gib AUSSCHLIESSLICH einen vollstaendigen [PY]...[/PY]-Block mit ausfuehrbarem Python 3 aus. "
+    . "Keine Erklaerung, kein Markdown, keine erfundenen Links. "
+    . "Benutze pathlib.Path(os.environ['EMBER_OUTPUT_DIR']) fuer ALLE Ergebnisdateien. "
+    . "Erzeuge alle geforderten Dateien selbst. Fuer ZIP: erst Quelldateien schreiben, "
+    . "dann zipfile.ZipFile benutzen und ZIP mit testzip() und namelist() pruefen. "
+    . "Lies keine angeblich vorhandenen Dateien ein. Keine Platzhalter. "
+    . "Antworte nur mit [PY] gefolgt vom Python-Code und [/PY].";
+}
+
+/** Only recover one complete Python fence from an actual file request. */
+function coreui_console_fenced_python(string $reply, string $request, int $maxCodeChars): ?string {
+  if (!coreui_console_download_requested($request) || strlen($reply) > 220000) return null;
+  if (preg_match_all('~(?:^|\r?\n)[ \t]*```(?:python|py)[ \t]*\r?\n(.*?)\r?\n```[ \t]*(?=\r?\n|$)~siu', $reply, $matches) !== 1) return null;
+  $code = trim((string)$matches[1][0]);
+  if ($code === '' || strlen($code) > $maxCodeChars) return null;
+  if (!str_contains($code, 'EMBER_OUTPUT_DIR')
+      && !str_contains($code, '/work/output')
+      && !str_contains($code, '/mnt/data')) return null;
+  return $code;
+}
+
+/**
+ * Recover complete, explicitly labelled multi-file source as inert bytes.
+ * A worker writes the files and checks the ZIP. Missing files are never invented.
+ */
+function coreui_console_multifile_python(string $reply, string $request, int $maxCodeChars): ?array {
+  if (!coreui_console_download_requested($request)
+      || preg_match('~\bzip\b~iu', $request) !== 1
+      || strlen($reply) > 220000 || $maxCodeChars < 500) return null;
+  $pattern = '~(?:^|\r?\n)[ \t]*(?:#{1,6}[ \t]*)?(?:\*\*|`)?'
+    . '([A-Za-z0-9][A-Za-z0-9._-]{0,79}\.(?:html?|css|js|json|txt|md))'
+    . '(?:\*\*|`)?[ \t]*:?[ \t]*\r?\n[ \t]*```(?:html?|css|javascript|js|json|text|txt|markdown|md)?[ \t]*\r?\n'
+    . '(.*?)\r?\n```[ \t]*(?=\r?\n|$)~siu';
+  if (preg_match_all($pattern, $reply, $matches, PREG_SET_ORDER) < 2) return null;
+  $files = [];
+  $total = 0;
+  foreach ($matches as $m) {
+    $name = (string)$m[1];
+    $body = (string)$m[2];
+    if ($body === '' || strlen($body) > 120000 || isset($files[$name])) return null;
+    $total += strlen($body);
+    if ($total > 180000 || count($files) >= 8) return null;
+    $files[$name] = base64_encode($body);
+  }
+  preg_match_all('~\b[A-Za-z0-9][A-Za-z0-9._-]{0,79}\.(?:html?|css|js|json|txt|md)\b~iu', $request, $names);
+  foreach (array_unique($names[0] ?? []) as $name) {
+    if (!array_key_exists($name, $files)) return null;
+  }
+  $zipName = 'projekt.zip';
+  if (preg_match('~\b([A-Za-z0-9][A-Za-z0-9._-]{0,79}\.zip)\b~i', $request, $zipMatch)) {
+    $zipName = (string)$zipMatch[1];
+  }
+  $json = json_encode($files, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+  $encodedJson = json_encode($json, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+  $encodedZip = json_encode($zipName, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+  $code = "from pathlib import Path\nimport os, json, base64, zipfile\n"
+    . "out = Path(os.environ['EMBER_OUTPUT_DIR'])\nout.mkdir(parents=True, exist_ok=True)\n"
+    . "files = json.loads(" . $encodedJson . ")\n"
+    . "for name, encoded in files.items():\n"
+    . "    (out / name).write_bytes(base64.b64decode(encoded, validate=True))\n"
+    . "zip_path = out / " . $encodedZip . "\n"
+    . "with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as archive:\n"
+    . "    for name in files:\n"
+    . "        archive.write(out / name, arcname=name)\n"
+    . "with zipfile.ZipFile(zip_path, 'r') as archive:\n"
+    . "    assert archive.testzip() is None\n"
+    . "    assert sorted(archive.namelist()) == sorted(files)\n"
+    . "print('ZIP geprueft:', zip_path.name, len(files), 'Dateien')\n";
+  if (strlen($code) > $maxCodeChars) return null;
+  return ['code'=>$code,'files'=>array_keys($files),'zip'=>$zipName];
+}
+
 function coreui_console_inline_link_present(string $reply): bool {
   return preg_match('~\bhref\s*=\s*["\']?\s*data:(?:text/html|application/zip|text/plain|application/json|text/css|image/svg\+xml)\b~i', $reply) === 1;
 }
