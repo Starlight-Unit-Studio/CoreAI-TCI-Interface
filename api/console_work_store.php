@@ -124,7 +124,7 @@ function coreui_work_map_for_responses(PDO $pdo, int $uid, string $sessionId, ar
     . ' w.kind,w.state,w.title,w.details_json,'
     . ' UNIX_TIMESTAMP(w.created_at) AS unix_time FROM stu_console_work_events w'
     . ' LEFT JOIN stu_console_agent_runs r ON r.user_id=w.user_id'
-    . ' AND r.session_id=w.session_id AND r.turn_id=w.turn_id AND r.run_key=w.run_key'
+    . ' AND r.session_id=w.session_id AND r.turn_id=w.turn_id AND BINARY r.run_key=BINARY w.run_key'
     . ' WHERE w.user_id=? AND w.session_id=? AND (w.response_message_id IN ('
     . $placeholder . ') OR (w.response_message_id IS NULL AND r.response_message_id IN ('
     . $placeholder . '))) ORDER BY w.id ASC LIMIT 2000');
@@ -145,7 +145,7 @@ function coreui_work_list(PDO $pdo, int $uid, string $sessionId, int $turnId, in
   $stmt = $pdo->prepare('SELECT w.id,w.kind,w.state,w.title,w.details_json,'
     . ' UNIX_TIMESTAMP(w.created_at) AS unix_time FROM stu_console_work_events w'
     . ' LEFT JOIN stu_console_agent_runs r ON r.user_id=w.user_id'
-    . ' AND r.session_id=w.session_id AND r.turn_id=w.turn_id AND r.run_key=w.run_key'
+    . ' AND r.session_id=w.session_id AND r.turn_id=w.turn_id AND BINARY r.run_key=BINARY w.run_key'
     . ' WHERE w.user_id=? AND w.session_id=? AND w.turn_id=?'
     . ' AND (w.response_message_id=? OR (w.response_message_id IS NULL'
     . ' AND r.response_message_id=?)) ORDER BY w.id ASC LIMIT 150');
