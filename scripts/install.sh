@@ -329,7 +329,6 @@ define('STU_EMBER_MODEL', '$model_php');
 define('STU_EMBER_OLLAMA_URL', 'http://127.0.0.1:11434/api/chat');
 define('STU_EMBER_LOCK_NAMESPACE', '$lock_namespace_php');
 define('STU_EMBER_NUM_THREAD', $THREADS);
-define('STU_EMBER_NUM_CTX', 32768);
 define('STU_EMBER_NUM_PREDICT', 6500);
 define('STU_EMBER_TIMEOUT', 600);
 define('STU_EMBER_TIMEOUT_RETRY', 600);
@@ -420,6 +419,9 @@ ensure_ollama_model() {
 
   sed "s|{{BASE_MODEL}}|$BASE_MODEL|g" \
     "$PROJECT_ROOT/config/Modelfile.template" > "$PROJECT_ROOT/var/Modelfile.generated"
+  if grep -Eiq '^[[:space:]]*PARAMETER[[:space:]]+num_ctx([[:space:]]|$)' "$PROJECT_ROOT/var/Modelfile.generated"; then
+    die 'Gemma-Modelfile enthaelt den verbotenen PARAMETER num_ctx.'
+  fi
   chown root:33 "$PROJECT_ROOT/var/Modelfile.generated"
   chmod 0640 "$PROJECT_ROOT/var/Modelfile.generated"
 
