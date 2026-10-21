@@ -7,7 +7,13 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 Ember CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.15` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.16` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Reliable local multi-file ZIP creation (0.5.16)
+
+For an explicit local-model request naming two or more separate source files **and** a ZIP download, Ember now requests **one complete fenced source block per file** instead of demanding that Gemma invent a Python program to generate all the files. The existing vetted project bridge converts the inert source blocks into exact file bytes and runs only its own deterministic file-writing/ZIP-validation script in the isolated Python worker. The user receives only actually confirmed download artifacts. Incomplete responses get at most one focused re-prompt; a failed deterministic worker or artifact registration never triggers another expensive model-generated Python repair attempt. Single-file and unrelated Python tasks retain their existing behavior.
+
+This addresses the `SyntaxError` / exit-code-0-but-`output_missing` failure class seen during a local Snake ZIP request. It does not guarantee that model-generated game logic works: actual HTML/CSS/JS validation and browser gameplay still need a live check. It also does not establish the cause of unrelated Ollama CPU stalls after switching models.
 
 ## Gemma 4: strictly no CoreUI inference parameters (0.5.15)
 
@@ -73,7 +79,7 @@ The canonical `VERSION` uses exactly `major.minor.patch` with numbers only, for 
 
 The same original one-liner calls `scripts/cache-bust.py` through the native or container installer. For each referenced CSS/JS file, the installer derives a fixed-length **numeric cache key from that file's actual SHA-256 content** and rewrites the static HTML URL. Unchanged assets keep the same key; changed assets get a different one even without a product version change. All HTML entry points are marked for revalidation at Nginx level, so browsers can discover new asset URLs. Preflight rejects stale or invalid keys.
 
-**Historical releases are not renamed.** The original verified `0.5.3-alpha` archive is retained for legacy rollback only. `0.5.4` was planned but not published as a release. `0.5.5`, `0.5.6`, and `0.5.7` were preceding main-source checkpoints, and `0.5.8` was the previous checkpoint; `0.5.13` is the current working version; a new verified ZIP/SHA pair must be built separately before presenting it as an archived release.
+**Historical releases are not renamed.** The original verified `0.5.3-alpha` archive is retained for legacy rollback only. `0.5.4` was planned but not published as a release. `0.5.5`, `0.5.6`, and `0.5.7` were preceding main-source checkpoints, and `0.5.8` was the previous checkpoint; `0.5.16` is the current working version; a new verified ZIP/SHA pair must be built separately before presenting it as an archived release.
 
 ## Independence and mandatory product name
 
