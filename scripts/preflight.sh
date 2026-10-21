@@ -528,6 +528,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   else
     python_worker_selftest="${python_worker_selftest//$'\r'/}"
     fail "$python_worker_selftest"
+    printf '[HINWEIS] Erst Diagnose ausfuehren: bash %s/scripts/diagnose-pyworker.sh\n' "$PROJECT_ROOT" >&2
   fi
 
   account_security_selftest=''
