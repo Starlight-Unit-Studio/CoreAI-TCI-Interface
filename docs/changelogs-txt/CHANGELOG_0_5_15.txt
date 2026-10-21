@@ -1,0 +1,41 @@
+STΛRLIɢHT: EMBER COREUI BY STARLIGHT UNIT STUDIOS
+CHANGELOG 0.5.15
+STAND 21.10.2026
+
+1. GEMMA-4-MODELFILE OHNE num_ctx
+   - PARAMETER num_ctx aus der Modellvorlage entfernt.
+   - Temperatur, top_p, top_k und repeat_penalty unveraendert.
+   - Native und Compose-Installer pruefen, dass der
+     generierte Modelfile kein PARAMETER num_ctx enthaelt.
+   - Die frisch erzeugte Konfiguration definiert
+     STU_EMBER_NUM_CTX nicht mehr.
+   - Fuer ember-coreui:* / gemma4:* wird num_ctx auch bei
+     aktivierten experimentellen Ollama-Optionen oder
+     expliziten Overrides niemals an die API uebertragen.
+   - Ueberfluessiger Warmup-num_ctx-Eintrag entfernt.
+   - Andere Modellfamilien behalten eigene optionale
+     experimentelle Kontextsteuerung.
+   - Der bestehende Installer erzeugt ember-coreui:latest
+     beim regulaeren Update neu. Lokale Daten bleiben erhalten.
+
+2. PYTHON-WORKER-STABILITAET UND DIAGNOSE
+   - PyMySQL Connect-, Lese- und Schreiboperationen haben
+     endliche Zeitlimits.
+   - Der langfristig laufende Worker prueft/repariert seine
+     DB-Verbindung vor Jobannahme und Ergebnisspeicherung.
+   - Python-Dateiausfuehrung wird bei Verbindungsverlust
+     nicht blind oder doppelt gestartet.
+   - Neues read-only Werkzeug scripts/diagnose-pyworker.sh
+     und scripts/pyworker-diagnostics.php zeigt die
+     Dienst- und Jobzustaende ohne private Code-/Promptdaten.
+   - Beide Preflights nennen das Diagnosewerkzeug bei Fehlern.
+
+3. ABNAHME
+   - Gemma-Modelfile und tatsaechliche Ollama-Optionen:
+     Offline-PHP-Selbsttest eingefuehrt.
+   - Python-DB-Liveness: reiner AST-Selbsttest.
+   - Native/Compose-Preflights erweitert.
+   - Kein GitHub Actions; keine Schema-Migration,
+     keine Installer-One-Liner-Aenderung, kein neues ZIP/SHA.
+   - Ursache des vom Betreiber beobachteten lokalen
+     Modell-/Python-Haengers noch nicht durch Hostlogs bewiesen.
