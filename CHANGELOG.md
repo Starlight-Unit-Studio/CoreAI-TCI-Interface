@@ -2,6 +2,13 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.12 - 21.10.2026
+
+- Der Info-Schalter unter gespeicherten E.M.B.E.R.-Antworten zeigt wieder die **GESAMTDAUER**, auch nach Chatwechsel und Browser-Reload. Bisher war die Antwortzeit nur fluechtig an den Nachrichtentimestamp gebunden.
+- Neue Modellstreams speichern zusaetzlich die **MODELLZEIT** (nur Provider-HTTP-Anfrage, ohne Warteschlange), getrennt von der Gesamtverarbeitung mit Werkzeugen, Dateierstellung und Speicherung.
+- Bereits vorhandene 0.5.11-Arbeitsevents liefern weiterhin ihre gespeicherte Gesamtdauer. Bei fehlender Eventdauer steht die gekennzeichnete, aus autorisierten Agentenlauf-Timestamps berechnete **AGENTENLAUFZEIT** zur Verfuegung. Fehlende Modellzeiten werden nicht erfunden.
+- JavaScript-UI-Selbsttest, PHP-Agentenlauf-Test, Frontend-Regressionspruefung und beide Preflights erweitert. Keine Migration, keine Installer-One-Liner-Aenderung, keine GitHub Actions.
+
 ## 0.5.11 - 21.10.2026
 
 - P06: Live-Arbeitsschritte bleiben nach der fertigen E.M.B.E.R.-Antwort direkt in derselben Nachricht erhalten. Der zuletzt beendete Arbeitsweg ist zunaechst aufgeklappt; ältere Nachrichten besitzen den deutlichen Schalter `Arbeitsweg (N Schritte) anzeigen`.
