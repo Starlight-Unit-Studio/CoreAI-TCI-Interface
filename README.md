@@ -7,7 +7,13 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 Ember CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.16` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.17` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Multi-model file export repair (0.5.17)
+
+Both Ollama Cloud/API models and local Ollama models now use the same verified server-side project source-to-artifact route when the user explicitly requests a ZIP containing two or more named files. Neither provider is trusted to invent server download URLs, ZIP manifests or Python file-writing scripts. The backend assembles actual source blocks, writes files in the existing isolated worker, verifies the ZIP, and only then registers account-scoped download cards.
+
+A confirmed cross-provider failure was the PHP `json_encode()` default slash escaping for base64 payloads: Python received strings containing `\\/` and rejected them with `binascii.Error: Only base64 data is allowed`. The fixed bridge uses `JSON_UNESCAPED_SLASHES` to preserve the exact bytes. The previously stale frontend regression guard now matches the valid missing-file protocol in the backend. An offline PHP-to-Python reproduction created all three Snake source files and a verified `snake-game.zip`; production Ollama, artifact-DB and mobile-browser acceptance is still required.
 
 ## Reliable local multi-file ZIP creation (0.5.16)
 
@@ -79,7 +85,7 @@ The canonical `VERSION` uses exactly `major.minor.patch` with numbers only, for 
 
 The same original one-liner calls `scripts/cache-bust.py` through the native or container installer. For each referenced CSS/JS file, the installer derives a fixed-length **numeric cache key from that file's actual SHA-256 content** and rewrites the static HTML URL. Unchanged assets keep the same key; changed assets get a different one even without a product version change. All HTML entry points are marked for revalidation at Nginx level, so browsers can discover new asset URLs. Preflight rejects stale or invalid keys.
 
-**Historical releases are not renamed.** The original verified `0.5.3-alpha` archive is retained for legacy rollback only. `0.5.4` was planned but not published as a release. `0.5.5`, `0.5.6`, and `0.5.7` were preceding main-source checkpoints, and `0.5.8` was the previous checkpoint; `0.5.16` is the current working version; a new verified ZIP/SHA pair must be built separately before presenting it as an archived release.
+**Historical releases are not renamed.** The original verified `0.5.3-alpha` archive is retained for legacy rollback only. `0.5.4` was planned but not published as a release. `0.5.5`, `0.5.6`, and `0.5.7` were preceding main-source checkpoints, and `0.5.8` was the previous checkpoint; `0.5.17` is the current working version; a new verified ZIP/SHA pair must be built separately before presenting it as an archived release.
 
 ## Independence and mandatory product name
 
