@@ -1,0 +1,66 @@
+STΛRLIɢHT: EMBER COREUI BY STARLIGHT UNIT STUDIOS
+UEBERGABEPROTOKOLL 0.5.15
+STAND 21.10.2026
+
+1. PROBLEM
+Ein lokaler Gemma-4-Lauf benoetigte wiederholt einen
+Serverneustart, bevor Dateiauftraege/Python funktionierten.
+Im Screenshot haengt die Livezeitleiste beim
+"Modellstream gestartet"; es ist dort noch kein Python-Job
+belegt. Die exakte Ursache bleibt daher offen.
+Ausserdem generierte die Installation weiterhin ein
+Modelfile mit PARAMETER num_ctx 32768, das der
+Betreiber fuer Gemma ausdruecklich verboten hat.
+
+2. MODELFILE-FIX
+config/Modelfile.template: num_ctx entfernt,
+temperature 1.0, top_p 0.95, top_k 64 und
+repeat_penalty 1.08 unveraendert.
+scripts/install.sh und scripts/install-native.sh
+erstellen dasselbe modelfile und brechen bei
+erneuter num_ctx-Zeile vor ollama create ab.
+Neue lokale PHP-Konfigurationen definieren keine
+STU_EMBER_NUM_CTX-Konstante mehr. Bestehende
+config.local.php bleibt beim Update unveraendert.
+api/chat.php filtert num_ctx fuer Gemma4 und
+ember-coreui-Aliase unabhaengig von experimentellem
+Schalter und expliziten Overrides; andere Modelle
+bleiben davon unberuehrt. Der Warmup-Override
+num_ctx=512 ist entfernt.
+
+3. ROBUSTHEIT PYTHON-WERKZEUG
+tools/ember_py_worker.py:
+connect_timeout=5, read_timeout=20,
+write_timeout=20 und conn.ping(reconnect=True)
+vor Jobannahme/nach Containerlauf.
+Keine automatische Neuausfuehrung fehlgeschlagener
+Skripte. scripts/diagnose-pyworker.sh gibt
+Dienststatus/DB-Queue ohne Code/Prompts aus.
+Beide Preflights testen die Schutzregeln und
+geben den Diagnosebefehl bei Python-Fehlern aus.
+
+4. VERSION, TESTS UND INSTALLATION
+VERSION=0.5.15 nach 0.5.14, synchronisierte
+HTML-/JS-Marker, README, CHANGELOG, INDEX,
+Versionstests und Uebergabe.
+Gemma-PHP-Modelfile-Selbsttest und
+Python-Worker-Verbindungs-Selbsttest im Repo.
+Installer-One-Liner unveraendert, keine Actions.
+Keine DB-Migration oder neue Provider.
+Bereits installierte Modellmetadaten muessen
+durch das normale Update neu geschrieben werden,
+wenn die alte Modelfile-Zeile verschwinden soll.
+
+5. LIVE-ABNAHME
+- Nach Update: ollama show --modelfile ember-coreui:latest
+  kontrollieren, dass keine PARAMETER num_ctx-Zeile existiert.
+- Gemma4 ueber CoreUI fuer Datei-/ZIP-Test verwenden.
+- Arbeitsweg pruefen: frueher "Modellstream
+  gestartet", dann Python-Werkzeug und Datei-Output.
+- Bei erneutem Haenger VOR dem Neustart
+  bash /opt/ember-coreui/scripts/diagnose-pyworker.sh
+  ausfuehren und getrennt Ollama-/PHP-Logs pruefen.
+  Keine privaten Prompts oder Tokens posten.
+- Diagnose kann Modellstream-/Ollama-Probleme
+  nicht allein identifizieren. Kein garantierter Fix
+  des ohne Hostlogs unbewiesenen Modell-Haengers.
