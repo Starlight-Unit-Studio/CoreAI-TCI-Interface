@@ -3155,6 +3155,10 @@ function ember_call_ollama(string $model, string $systemPrompt, string $userProm
     CURLOPT_TIMEOUT => max(3, min(900, $timeoutSec)),
     CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
     CURLOPT_NOSIGNAL => true,
+    CURLOPT_NOPROGRESS => false,
+    CURLOPT_XFERINFOFUNCTION => static function (): int {
+      return ember_agent_cancel_requested() ? 1 : 0;
+    },
   ]);
   // Guard the actual provider request, not just the outer chat turn. This
   // includes warmup, reflection, follow-up calls and private SSE fallbacks.
@@ -3516,15 +3520,45 @@ function ember_generation_lock_acquire(string $channel, int $afterId, array $sen
   return $fp;
 }
 
+require_once __DIR__ . '/console_model_queue.php';
+
+/** Only the scoped private agent may request cooperative cancellation. */
+function ember_agent_cancel_requested(bool $force = false): bool {
+  $ctx = $GLOBALS['COREUI_WORK_CONTEXT'] ?? null;
+  if (!is_array($ctx) || empty($ctx['agent_run_id'])
+      || !function_exists('coreui_agent_run_cancel_requested')) return false;
+  $now = microtime(true);
+  if (!empty($GLOBALS['COREUI_AGENT_CANCEL_SEEN'])) return true;
+  if (!$force && $now - (float)($GLOBALS['COREUI_AGENT_CANCEL_CHECK_AT'] ?? 0) < 1.0) {
+    return false;
+  }
+  $GLOBALS['COREUI_AGENT_CANCEL_CHECK_AT'] = $now;
+  $db = $GLOBALS['COREUI_WORK_PDO'] ?? null;
+  if (!$db instanceof PDO) return false;
+  $requested = coreui_agent_run_cancel_requested(
+    $db,(int)$ctx['user_id'],(string)$ctx['session_id'],(string)$ctx['agent_run_id']
+  );
+  if ($requested) $GLOBALS['COREUI_AGENT_CANCEL_SEEN'] = true;
+  return $requested;
+}
+
 function ember_generation_lock_release($fp): void {
   if ($fp === 'db_lock') {
+    $depth = (int)($GLOBALS['COREUI_MODEL_LOCK_DEPTH'] ?? 0);
+    if ($depth > 1) {
+      $GLOBALS['COREUI_MODEL_LOCK_DEPTH'] = $depth - 1;
+      return;
+    }
+    $ticket = (string)($GLOBALS['COREUI_MODEL_QUEUE_TICKET'] ?? '');
+    unset($GLOBALS['COREUI_MODEL_LOCK_DEPTH'],$GLOBALS['COREUI_MODEL_QUEUE_TICKET']);
     try {
       global $pdo;
       $connection = isset($pdo) && $pdo instanceof PDO ? $pdo : stu_pdo();
-      $stUnlock = $connection->prepare('SELECT RELEASE_LOCK(?)');
-      $stUnlock->execute([ember_lock_name('global_ollama')]);
+      coreui_model_queue_release($connection,ember_lock_name('global_ollama'),$ticket);
     } catch (Throwable $e) {
-      // Closing the connection also releases its named locks.
+      // Closing the connection also releases the named lock. Never create
+      // a second, unguarded model lane after a release error.
+      error_log('[CoreUI] Model queue release failed: ' . get_class($e));
     }
     return;
   }
@@ -3533,28 +3567,36 @@ function ember_generation_lock_release($fp): void {
   @fclose($fp);
 }
 
-// Single admission point for every Ollama model HTTP call (including Cloud).
-// All PHP workers use the SAME MariaDB named lock. Never mix a local flock
-// fallback with the DB lock: that would create two independent model lanes.
-// A timed wait is only an admission gate, not yet the durable P05 job queue.
+/**
+ * A single FIFO queue covers every Ollama HTTP request. The connection-bound
+ * MariaDB named lock still enforces exactly one concurrent provider call.
+ * Nested calls on the same PDO share the existing slot (reference counted).
+ */
 function ember_global_lock_acquire(int $timeoutSeconds = 90): mixed {
+  if (ember_agent_cancel_requested(true)) throw new RuntimeException('agent_cancelled');
+  $depth = (int)($GLOBALS['COREUI_MODEL_LOCK_DEPTH'] ?? 0);
+  if ($depth > 0) {
+    $GLOBALS['COREUI_MODEL_LOCK_DEPTH'] = $depth + 1;
+    return 'db_lock';
+  }
   try {
     global $pdo;
     $connection = isset($pdo) && $pdo instanceof PDO ? $pdo : stu_pdo();
-    $name = ember_lock_name('global_ollama');
-    $deadline = microtime(true) + max(0, min(600, $timeoutSeconds));
-    $lastHeartbeat = microtime(true);
-    do {
-      $st = $connection->prepare('SELECT GET_LOCK(?, 1)');
-      $st->execute([$name]);
-      if ($st && (int)$st->fetchColumn() === 1) return 'db_lock';
-      if (function_exists('sse_comment') && microtime(true) - $lastHeartbeat >= 10) {
-        sse_comment('waiting-for-model-slot');
-        $lastHeartbeat = microtime(true);
-      }
-    } while (microtime(true) < $deadline);
+    if (!coreui_model_queue_schema_ready($connection)) return false;
+    $ticket = coreui_model_queue_acquire(
+      $connection,ember_lock_name('global_ollama'),$timeoutSeconds,
+      static fn(): bool => ember_agent_cancel_requested()
+    );
+    if ($ticket === false) return false;
+    $GLOBALS['COREUI_MODEL_QUEUE_TICKET'] = $ticket;
+    $GLOBALS['COREUI_MODEL_LOCK_DEPTH'] = 1;
+    return 'db_lock';
+  } catch (RuntimeException $e) {
+    if ($e->getMessage() === 'agent_cancelled') throw $e;
+    error_log('[CoreUI] Model queue unavailable: ' . get_class($e));
     return false;
   } catch (Throwable $e) {
+    error_log('[CoreUI] Model queue unavailable: ' . get_class($e));
     return false;
   }
 }
