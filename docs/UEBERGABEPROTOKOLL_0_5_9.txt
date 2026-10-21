@@ -1,0 +1,54 @@
+STΛRLIɢHT: EMBER COREUI BY STARLIGHT UNIT STUDIOS
+UEBERGABEPROTOKOLL 0.5.9
+STAND 21.10.2026
+
+1. BASIS
+main vor P05: VERSION 0.5.8, Migration 012 vorhanden.
+Arbeitsbranch: feature/p05-agent-runtime-0.5.9.
+Dieser Stand ist eine P05-Teilumsetzung, kein geprueftes ZIP-Release.
+
+2. AGENTENLAUF
+Migration 013: stu_console_agent_runs. UNIQUE pro Benutzer, Sitzung,
+Turn und run_key (base oder generation_request). Run-ID zufaellig,
+Zustaende mit atomarem Compare-and-Swap. Ein bestehender laufender
+Turn darf nach SSE-Neuverbindung nicht still erneut starten.
+Ein nicht bestaetigter Lauf wird interrupted und muss geprueft werden.
+Fuer Browser-Delegation existiert waiting_tool, die komplette
+Wiederaufnahme-/Worker-Abschlussintegration ist noch offen.
+
+api/console_agent_runs.php validiert Kontozugehoerigkeit,
+Sitzung, Turn und Antwort. Keine Prompts, Rohgedanken oder
+Tool-Ausgaben im Run-Datensatz. api/console_messages.php liefert
+den sicheren Laufstatus mit der bereits autorisierten History.
+api/console_stream.php startet, beendet oder unterbricht den Run.
+
+3. MODELLZUGRIFF
+api/chat.php und api/console_stream.php verwenden eine gemeinsame
+MariaDB GET_LOCK-Sperre fuer jede Ollama-HTTP-Modellanfrage.
+Dies gilt auch fuer gpt-oss:120b via Ollama Cloud, Reflect,
+Warmup, SSE und synchrone Werkzeug-Folgeaufrufe.
+Der alte alternative globale flock-Pfad ist entfernt.
+Der begrenzte Wartezugang ist noch KEINE dauerhafte, faire Queue.
+Bei abgebrochener HTTP-Verbindung kann Provider-Arbeit weiterlaufen.
+Ohne Provider-Bestaetigung keine automatische Wiederholung.
+
+4. INSTALLATION
+Der bisherige One-Liner bleibt unveraendert.
+Native Installation spielt Migration 013 ein; Docker-Migration
+verwendet den bestehenden SQL-Glob. Preflights pruefen Schema,
+Pflichtdateien, PHP-Syntax und P05-Offline-Selbsttest.
+GitHub Actions nicht verwenden.
+
+5. ABNAHME
+P05-Offline-Selbsttest prueft Zustandsvertrag, Idempotenz,
+Kontozuordnung und Antwortbindung mit einem PDO-Testdouble.
+Ein Testdouble ersetzt KEINE echte MariaDB, keinen Ollama-Cloud-
+Aufruf, keine konkurrierenden PHP-FPM-Prozesse und keinen Restart.
+Diese Livepruefungen muessen nach Installation erfolgen.
+
+6. NAECHSTE ARBEIT
+Persistente faire Warteschlange und Besitzer-Lease mit
+Provider-Reconciliation; Abbruch und kontrollierte Fortsetzung;
+Worker-Abschluss fuer waiting_tool; Providerfaehigkeiten und
+Kontext-/Tokenbudgets; Agentenplan und Werkzeugschleife P06/P07.
+Issue #29 bleibt unabhaengig bis zur kompletten Live-Abnahme offen.

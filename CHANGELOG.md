@@ -2,6 +2,14 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.9 - 21.10.2026
+
+- P05-Grundlage: Migration 013 speichert private Agentenlaeufe kontogebunden, sitzungsgebunden und pro Turn/Aktion eindeutig. Atomare Zustandswechsel und Antwortbindung verhindern unbeabsichtigte doppelte Ausfuehrung bei SSE-Reconnect.
+- Der authentifizierte Chatverlauf liefert zu gespeicherten Antworten den echten Laufstatus. Unterbrochene Laeufe werden nicht automatisch neu an einen Provider geschickt.
+- Alle Ollama-Modellanfragen, auch gpt-oss:120b Cloud ueber Ollama, Streaming, Folgemodellaufrufe, Reflect und Warmup, nutzen nun dieselbe MariaDB-Modellsperre mit begrenzter Wartezeit. Kein zweiter flock-Ersatzpfad.
+- Native und Compose-Installation/Preflight um Migration 013, P05-PHP und Offline-Selbsttest ergaenzt. Versionsanzeige, Cache-Platzhalter, README, TXT-Changelog und Uebergabe auf 0.5.9 synchronisiert.
+- **Teilumsetzung:** Noch keine dauerhafte, faire Job-Warteschlange, kein automatisches Wiederaufnehmen unklarer Provideraufrufe, kein vollstaendiger Abbruch-/Checkpoint-Zyklus. MariaDB-, Cloud-, Neustart- und Android-Livepruefung offen. Keine GitHub Actions, kein neues geprueftes ZIP/SHA-Release.
+
 ## 0.5.8 - 20.10.2026
 
 - Chatlayout wie bei ChatGPT/Claude: Nur Nutzernachrichten behalten Sprechblasen. E.M.B.E.R. antwortet als vollbreiter, freier Markdown-Text; auch auf Android. Der Live-Arbeitsverlauf ist Teil derselben Nachricht, kein zweiter "DENKSTATUS"-Kasten mehr.
