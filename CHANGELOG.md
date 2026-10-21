@@ -2,6 +2,15 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.17 - 21.10.2026
+
+- Modellunabhaengiger Mehrdateien-Download: explizite ZIP-Projekte mit mindestens zwei benannten Quelldateien gehen jetzt sowohl bei lokalen Ollama-Modellen als auch bei Cloud/API-Modellen ueber denselben sicheren Quelltext-zu-Artefakt-Werkzeugpfad. Keine stillen Teilergebnisse als angeblich fertiges ZIP.
+- Tatsachenbasierter Fehlerfix im CoreUI-Backend: `json_encode()` maskierte `/` in Base64-Payloads als `\\/`. In einem Python-String bleiben diese Backslashes erhalten und `base64.b64decode(...,validate=True)` scheitert mit `binascii.Error`. Der Wrapper verwendet jetzt `JSON_UNESCAPED_SLASHES`.
+- Isolierter PHP-/Python-Nachbau: mit dem alten Encoding nachweisbarer Fehler, nach Korrektur drei vollstaendige Quelldateien und gueltige `snake-game.zip` (ZIP-Inhaltsvergleich und CRC-Pruefung).
+- Veraltete Frontend-Regression angepasst: der Test prueft den tatsaechlichen Datei-Protokollvertrag, den neuen Cloud/Lokal-Sonderpfad und die sichere Base64-Kodierung, statt eine im vorherigen Release geaenderte Fehlermeldung wortwoertlich zu verlangen.
+- Weiterhin streng: Downloads nur bei vorhandenen, geprueften Dateien; bestehende Nutzer-/Sitzungszuordnung, globale Modellwarteschlange, isolierter Worker und unveraenderter Installer-One-Liner. Keine Datenbankmigration, keine GitHub Actions und kein neues archiviertes ZIP/SHA-Paar.
+- Produktions-Abnahme fuer Gemma, Qwen und GPT Cloud steht aus; der frühere modellgenerierte Fehlerbericht ist kein Server-Traceback.
+
 ## 0.5.16 - 21.10.2026
 
 - Lokale Mehrdateien-ZIP-Auftraege mit zwei bis neun explizit benannten Quelltext-Dateien werden als komplette benannte HTML/CSS/JS- und andere Quelltextbloecke vom Modell angefordert. Ein Modell muss fuer diese Auftraege keinen zusaetzlichen Python-Dateischreibcode mehr erfinden.

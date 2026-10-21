@@ -132,9 +132,11 @@ function coreui_console_project_fences_python(string $reply, string $request, in
     $packed = function_exists('gzcompress') ? gzcompress($bytes, 6) : false;
     $compressed = is_string($packed) && strlen($packed) < strlen($bytes);
     $encoded = base64_encode($compressed ? $packed : $bytes);
+    // JSON normally escapes '/' as '\\/' which is NOT a valid Python base64
+    // literal (Python leaves the backslash in place). Never escape slashes.
     $code .= '    ' . json_encode($file['name'], JSON_THROW_ON_ERROR)
       . ': (' . json_encode($compressed ? 'z' : 'b', JSON_THROW_ON_ERROR)
-      . ', ' . json_encode($encoded, JSON_THROW_ON_ERROR) . "),\n";
+      . ', ' . json_encode($encoded, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "),\n";
   }
   $code .= "}\nfor name, (mode, data) in files.items():\n"
     . "    raw = base64.b64decode(data, validate=True)\n"

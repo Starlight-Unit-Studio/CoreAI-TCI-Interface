@@ -1,0 +1,62 @@
+STΛRLIɢHT: EMBER COREUI BY STARLIGHT UNIT STUDIOS
+UEBERGABEPROTOKOLL 0.5.17
+STAND 21.10.2026
+
+AUSGANGSLAGE
+Beim Snake-Projekt zeigten mehrere lokale und Cloud-Modelle
+fehlende Ausgabedateien, Python-Fehler oder nur index.html.
+Das Frontend-Preflight scheiterte zudem an einer veralteten
+Zeichenketten-Pruefung.
+Ein alter E.M.B.E.R.-Chat diagnostizierte vermeintlich
+nicht angelegte Verzeichnisse und fehlerhaftes JS-Templating.
+Diese nachtraegliche Freitext-Diagnose ist kein echter
+gespeicherter Python-Traceback.
+
+BELEGTE TECHNISCHE URSACHE
+api/console_data_link_bridge.php verpackte Modell-Quelltexte
+als Base64 in ein kontrolliertes Python-Skript.
+PHP json_encode($encoded) ersetzte Schraegstriche '/' durch
+'\/' und Python uebersetzte diesen ungueltigen Escape nicht.
+Der isolierte Reproduktionstest zeigte:
+  ALT: binascii.Error: Only base64 data is allowed
+  NEU: Python schreibt 3 Dateien und prueft die ZIP-Datei.
+Die neue Kodierung lautet JSON_UNESCAPED_SLASHES.
+
+MODELLE UND DATEI-PIPELINE
+api/console_stream.php erkennt explizite ZIP-Projekte mit
+mehreren benannten Quelldateien provideruebergreifend.
+api/chat.php fordert dafuer vollstaendige, benannte
+Quelltext-Codebloecke statt modellgenerierter
+Dateischreib-Python-Skripte an.
+Der serverseitige Quelltext-Bridge wandelt diese in
+kontrollierte Ausgabeoperationen um, prueft ZIP-Inhalt
+und stellt nur echte Dateien ueber das kontogebundene
+Artefaktregister bereit.
+Single-File-, normale Python- und andere Chat-Aufgaben
+bleiben unveraendert.
+
+KORREKTE PRUEFUNGEN
+scripts/frontend-regression-selftest.php prueft den
+aktuellen gemeinsamen Modell- und Werkzeugvertrag
+statt eines veralteten exakten Error-Strings.
+scripts/local-file-tool-selftest.php prueft
+den fehlerhaften Base64-Slash-Fall explizit.
+Der isolierte PHP->Python-Test erzeugte gueltige Quellen
+und das ZIP. Diese Tests ersetzen NICHT die MariaDB-,
+Worker- oder Live-Ollama-Abnahme auf dem Zielserver.
+
+VERSION UND BETRIEB
+Vorgaenger 0.5.16, aktuelle Arbeitsversion 0.5.17.
+Keine neue Migration, kein geaenderter One-Liner, keine
+GitHub Actions. Bestehende ZIP-/SHA-Archivstaende bleiben
+unveraendert.
+
+LIVE-ABNAHME
+Den bisherigen setup.sh-One-Liner erneut ausfuehren.
+Preflight muss gruen sein. Mit lokalem ember-coreui:latest,
+Qwen und dem Cloud-Modell den gleichen Snake-Auftrag
+testen. Die ZIP muss exakt index.html, style.css,
+game.js enthalten. Danach die Spielbarkeit im Browser
+pruefen. Bei Fehlern die wirklichen Job-Exitcodes,
+sicheren Fehlerklassen und gemeldeten Dateien aus
+dem gespeicherten Arbeitsweg auswerten.
