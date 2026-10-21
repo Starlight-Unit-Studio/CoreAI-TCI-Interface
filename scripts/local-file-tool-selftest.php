@@ -63,4 +63,11 @@ local_file_test(coreui_console_missing_requested_artifacts($request, [
   ['name'=>'index.html'],['name'=>'style.css'],['name'=>'game.js'],
   ['name'=>'snake-game.zip'],
 ]) === [], 'complete project rejected');
+$handler = file_get_contents(dirname(__DIR__) . '/api/chat.php');
+local_file_test(is_string($handler)
+  && str_contains($handler, 'ember_console_file_tool_candidate(string $reply, string $request, bool $sourceOnly = false)')
+  && str_contains($handler, 'coreui_console_multifile_source_directive($userMsg)')
+  && str_contains($handler, 'ember_console_file_tool_candidate($out, $userMsg, $sourceProjectMode)')
+  && str_contains($handler, 'if ($sourceProjectMode && $needsFileRepair)'),
+  'local project sources must bypass model-generated Python and costly worker-failure retries');
 echo "CoreUI local file tool selftest: OK\n";
