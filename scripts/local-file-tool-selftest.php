@@ -37,7 +37,16 @@ local_file_test(!str_contains($script, "console.log('Snake')"),
 // Python base64 strings retain the backslash and fail with
 // binascii.Error: Only base64 data is allowed.
 $slashHtml = '<!DOCTYPE html><html lang="de"><head><link rel="stylesheet" href="style.css"></head><body><script src="game.js"></script></body></html>';
-$slashPayload = base64_encode(gzcompress($slashHtml, 6));
+// Generate a payload with '/' on every zlib variant. The old bug needs
+// that character, so a fixed, platform-dependent compressed blob is unsafe.
+$slashPayload = '';
+for ($variant = 0; $variant < 128; $variant++) {
+  $candidate = function_exists('gzcompress') ? gzcompress($slashHtml, 6) : false;
+  $packed = is_string($candidate) && strlen($candidate) < strlen($slashHtml);
+  $slashPayload = base64_encode($packed ? $candidate : $slashHtml);
+  if (str_contains($slashPayload, '/')) break;
+  $slashHtml .= '???';
+}
 local_file_test(str_contains($slashPayload, '/'), 'base64 slash fixture is not representative');
 $slashReply = "### index.html\n```html\n" . $slashHtml . "\n```\n"
   . "### style.css\n```css\nbody{background:black;color:lime}\n```\n"
