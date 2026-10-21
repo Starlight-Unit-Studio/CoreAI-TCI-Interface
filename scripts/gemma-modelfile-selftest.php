@@ -48,6 +48,9 @@ try {
 
   $source = file_get_contents($root . '/api/chat.php');
   gemma_test_assert(is_string($source),'chat.php missing.');
+  gemma_test_assert(!str_contains($source,"'num_ctx' => 512"),
+    'Old warmup request still contains num_ctx.');
+
   $localBegin = strpos($source,'function ember_console_file_tool_is_local(');
   $localEnd = strpos($source,'function ember_console_file_tool_think(', (int)$localBegin);
   gemma_test_assert($localBegin !== false && $localEnd !== false
