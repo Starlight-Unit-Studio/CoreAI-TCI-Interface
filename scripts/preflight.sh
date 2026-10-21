@@ -124,9 +124,11 @@ UI_FILES=(
   api/console_work_events.php
   api/console_work_store.php
   api/console_agent_runs.php
+  api/console_model_queue.php
   js/coreui-work-events.js
   scripts/work-events-selftest.php
   scripts/agent-runs-selftest.php
+  scripts/model-queue-selftest.php
   scripts/workspace-output-selftest.py
   api/console_artifact.php
   api/console_artifacts.php
@@ -372,10 +374,24 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail 'Migration 013 fehlt. Fuehre scripts/stack.sh migrate aus.'
   fi
 
+  if compose exec -T php php -r \
+      'require "/var/www/coreui/api/db.php"; require "/var/www/coreui/api/console_model_queue.php"; exit(coreui_model_queue_schema_ready(stu_pdo()) ? 0 : 1);' \
+      >/dev/null 2>&1; then
+    ok 'Migration 013: globale FIFO-Modellwarteschlange bereit.'
+  else
+    fail 'Migration 013: Modellwarteschlange fehlt.'
+  fi
+
   if compose exec -T php php scripts/agent-runs-selftest.php >/dev/null 2>&1; then
     ok 'P05: Agentenlauf-Idempotenz und Kontotrennung offline geprueft.'
   else
     fail 'P05-Agentenlauf-Selbsttest fehlgeschlagen.'
+  fi
+
+  if compose exec -T php php scripts/model-queue-selftest.php >/dev/null 2>&1; then
+    ok 'P05: Modell-FIFO, Timeout, Abbruch und Sperrenfreigabe offline geprueft.'
+  else
+    fail 'P05-Modellwarteschlangen-Selbsttest fehlgeschlagen.'
   fi
 
   if compose exec -T php php scripts/work-events-selftest.php >/dev/null 2>&1; then
