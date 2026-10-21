@@ -4,11 +4,13 @@ Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versi
 
 ## 0.5.9 - 21.10.2026
 
-- P05-Grundlage: Migration 013 speichert private Agentenlaeufe kontogebunden, sitzungsgebunden und pro Turn/Aktion eindeutig. Atomare Zustandswechsel und Antwortbindung verhindern unbeabsichtigte doppelte Ausfuehrung bei SSE-Reconnect.
-- Der authentifizierte Chatverlauf liefert zu gespeicherten Antworten den echten Laufstatus. Unterbrochene Laeufe werden nicht automatisch neu an einen Provider geschickt.
-- Alle Ollama-Modellanfragen, auch gpt-oss:120b Cloud ueber Ollama, Streaming, Folgemodellaufrufe, Reflect und Warmup, nutzen nun dieselbe MariaDB-Modellsperre mit begrenzter Wartezeit. Kein zweiter flock-Ersatzpfad.
-- Native und Compose-Installation/Preflight um Migration 013, P05-PHP und Offline-Selbsttest ergaenzt. Versionsanzeige, Cache-Platzhalter, README, TXT-Changelog und Uebergabe auf 0.5.9 synchronisiert.
-- **Teilumsetzung:** Noch keine dauerhafte, faire Job-Warteschlange, kein automatisches Wiederaufnehmen unklarer Provideraufrufe, kein vollstaendiger Abbruch-/Checkpoint-Zyklus. MariaDB-, Cloud-, Neustart- und Android-Livepruefung offen. Keine GitHub Actions, kein neues geprueftes ZIP/SHA-Release.
+- P05: Migration 013 speichert private Agentenlaeufe und eine globale persistente FIFO-Warteschlange fuer alle Ollama-HTTP-Aufrufe. Ein MariaDB GET_LOCK bleibt die verbindliche Grenze fuer genau einen gleichzeitigen Modellaufruf.
+- Kontogebundene Run-IDs, atomare Zustandswechsel, deduplizierte SSE-Wiederverbindungen und sichere Antwortbindung; keine stillen Wiederholungen unklarer Provideraufrufe.
+- Die neue Chat-Stop-Schaltflaeche fordert ueber einen CSRF-geschuetzten Endpunkt Abbruch an. Wartende Runs stoppen sofort; laufende Aufrufe werden kooperativ abgebrochen. Ein beendeter HTTP-Transport beweist nicht das Ende einer Cloudprovider-internen Arbeit.
+- Browser-Jobs werden an den eigenen Run gebunden und nach Abschluss mit gespeicherten Antworten abgeglichen, ohne das Modell automatisch neu zu starten.
+- FIFO-Tickets besitzen Warte-Heartbeat, Besitzerverbindung, begrenzte Wartezeit und sichere Freigabe. Alte abgeschlossene Tickets werden bereinigt. Verschachtelte Aufrufe teilen denselben Modellslot.
+- Native und Compose-Preflight pruefen beide P05-Schemata, PHP-Syntax und Offline-Regressionen fuer Agentenstatus, Kontotrennung, FIFO, Timeout und Abbruch.
+- **Noch offen:** Echte MariaDB-/Cloud-/Neustart-/Android-Abnahme, providerseitige Reconciliation unklarer Remoteanfragen, unbegrenzte Hintergrundwarteschlange und allgemeine P07/P26-Checkpoint-Fortsetzung. Keine GitHub Actions und kein neues geprueftes ZIP/SHA-Release.
 
 ## 0.5.8 - 20.10.2026
 
