@@ -7,48 +7,69 @@ main vor P05: VERSION 0.5.8, Migration 012 vorhanden.
 Arbeitsbranch: feature/p05-agent-runtime-0.5.9.
 Dieser Stand ist eine P05-Teilumsetzung, kein geprueftes ZIP-Release.
 
-2. AGENTENLAUF
-Migration 013: stu_console_agent_runs. UNIQUE pro Benutzer, Sitzung,
-Turn und run_key (base oder generation_request). Run-ID zufaellig,
-Zustaende mit atomarem Compare-and-Swap. Ein bestehender laufender
-Turn darf nach SSE-Neuverbindung nicht still erneut starten.
-Ein nicht bestaetigter Lauf wird interrupted und muss geprueft werden.
-Fuer Browser-Delegation existiert waiting_tool, die komplette
-Wiederaufnahme-/Worker-Abschlussintegration ist noch offen.
+2. AGENTENLAUF UND ABBRUCH
+Migration 013: stu_console_agent_runs mit eindeutiger Run-ID pro Benutzer,
+Sitzung, Turn und Aktion. Zustaende atomar; SSE-Reconnect wiederholt
+keine unbestaetigten Modellaufrufe. Antworten werden nur an einen
+tatsaechlichen eigenen Turn gebunden.
 
-api/console_agent_runs.php validiert Kontozugehoerigkeit,
-Sitzung, Turn und Antwort. Keine Prompts, Rohgedanken oder
-Tool-Ausgaben im Run-Datensatz. api/console_messages.php liefert
-den sicheren Laufstatus mit der bereits autorisierten History.
-api/console_stream.php startet, beendet oder unterbricht den Run.
+Abbruch: api/console_actions.php akzeptiert POST cancel_run mit CSRF,
+Sitzung und eigener Run-ID. Wartende Runs werden direkt cancelled;
+laufende und Browser-Runs erhalten cancel_requested_at. Der Server
+prueft das Flag an Modell-/Werkzeuggrenzen und in cURL-Fortschritt.
+Der Transportabbruch beweist NICHT, dass ein Cloudprovider intern
+sofort die Arbeit beendet. Keine automatische Wiederholung.
 
-3. MODELLZUGRIFF
-api/chat.php und api/console_stream.php verwenden eine gemeinsame
-MariaDB GET_LOCK-Sperre fuer jede Ollama-HTTP-Modellanfrage.
-Dies gilt auch fuer gpt-oss:120b via Ollama Cloud, Reflect,
-Warmup, SSE und synchrone Werkzeug-Folgeaufrufe.
-Der alte alternative globale flock-Pfad ist entfernt.
-Der begrenzte Wartezugang ist noch KEINE dauerhafte, faire Queue.
-Bei abgebrochener HTTP-Verbindung kann Provider-Arbeit weiterlaufen.
-Ohne Provider-Bestaetigung keine automatische Wiederholung.
+Die Chatoberflaeche zeigt beim laufenden Run eine Stop-Schaltflaeche
+und kann dessen sicheren Status per GET run_status abfragen.
+Die Timeline bleibt unveraendert kontogebunden; keine rohen Gedanken,
+Prompts, Werkzeugsourcen oder geheimen Fehlerausgaben werden geteilt.
+
+Browser-Delegation bindet browse_job_id an den eigenen Agentenlauf.
+Nach Jobabschluss werden echte gespeicherte Antworten mit dem Run
+verknuepft oder der Run mit failed/interrupted/cancelled markiert.
+Keine automatische Wiederaufnahme eines unklar beendeten Cloudaufrufs.
+Eine allgemeine mehrstufige Werkzeug-Checkpoint-Fortsetzung ist P07/P26.
+
+3. GLOBALE SERIELLE MODELLWARTESCHLANGE
+Migration 013: stu_console_model_queue mit monotoner queue_id,
+FIFO-Ticket, optionalem Agentenlauf, Eigentuemerverbindung,
+Zeitstempeln und Endstatus. Jeder Ollama-HTTP-Modellaufruf nutzt
+diese Warteschlange und denselben MariaDB GET_LOCK.
+Warte-Tickets werden per Heartbeat erneuert, abgestorbene Wartende
+werden markiert. Eine GET_LOCK-Verbindung bleibt die einzige
+autoritative Modellspur, auch fuer gpt-oss:120b via Ollama Cloud,
+Reflect, Warmup, SSE und synchrone Folgeaufrufe.
+Verschachtelte Aufrufe im selben PHP-Worker sind referenzgezaehlt.
+Terminale Tickets werden nach sieben Tagen begrenzt bereinigt.
+
+Wartezeit derzeit auf 90 Sekunden begrenzt; bei voller Warteschlange
+kann der Aufruf scheitern. Noch KEIN unabhaengiger Hintergrund-Scheduler.
+Ein abgestuerzter PHP-Prozess verliert seine DB-Sperre; der Zustand
+einer bereits gestarteten Remote-Cloudanfrage kann dabei unbekannt
+bleiben. Solche Agentenlaeufe werden nicht automatisch erneut gestartet.
 
 4. INSTALLATION
 Der bisherige One-Liner bleibt unveraendert.
 Native Installation spielt Migration 013 ein; Docker-Migration
-verwendet den bestehenden SQL-Glob. Preflights pruefen Schema,
-Pflichtdateien, PHP-Syntax und P05-Offline-Selbsttest.
+verwendet den bestehenden SQL-Glob. Preflights pruefen Agentenlauf- und Queue-Schema,
+Pflichtdateien, PHP-Syntax und zwei P05-Offline-Selbsttests.
 GitHub Actions nicht verwenden.
 
 5. ABNAHME
-P05-Offline-Selbsttest prueft Zustandsvertrag, Idempotenz,
-Kontozuordnung und Antwortbindung mit einem PDO-Testdouble.
+P05-Offline-Selbsttests pruefen Zustandsvertrag, Idempotenz,
+Kontozuordnung, Antwortbindung, FIFO-Tickets, Timeout, Abbruch und
+Sperrenfreigabe mit PDO-Testdoubles.
 Ein Testdouble ersetzt KEINE echte MariaDB, keinen Ollama-Cloud-
 Aufruf, keine konkurrierenden PHP-FPM-Prozesse und keinen Restart.
 Diese Livepruefungen muessen nach Installation erfolgen.
 
 6. NAECHSTE ARBEIT
-Persistente faire Warteschlange und Besitzer-Lease mit
-Provider-Reconciliation; Abbruch und kontrollierte Fortsetzung;
-Worker-Abschluss fuer waiting_tool; Providerfaehigkeiten und
-Kontext-/Tokenbudgets; Agentenplan und Werkzeugschleife P06/P07.
-Issue #29 bleibt unabhaengig bis zur kompletten Live-Abnahme offen.
+Livepruefung nach Installation: Migration 013 in echter MariaDB,
+zwei parallele Modellaufrufe, FIFO-Reihenfolge, Stop vor und waehrend
+Ollama Cloud, Browserabschluss, PHP-FPM-Neustart, Android Chrome.
+Ausserdem Provider-Reconciliation unklarer Remoteanfragen, echte
+dauerhafte Hintergrund-Scheduler und allgemeine P07-Checkpoint-/
+Werkzeugschleife, P06-Plananzeige und Modellfaehigkeiten.
+Issue #29 bleibt unabhaengig bis zur vollstaendigen ZIP-Live-Abnahme
+offen. Kein GitHub Actions und kein geprueftes neues ZIP/SHA-Release.
