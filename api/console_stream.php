@@ -21,6 +21,7 @@ declare(strict_types=1);
 define('STU_CHAT_LIB', 1);
 require __DIR__ . '/chat.php';
 require_once __DIR__ . '/console_action_store.php';
+require_once __DIR__ . '/console_agent_runs.php';
 
 // ── SSE-Ausgabe vorbereiten: jegliches Buffering AUS, lange Laufzeit erlauben ──
 @ini_set('zlib.output_compression', '0');
@@ -276,6 +277,7 @@ $thinkingAll = '';
 $thinkingPublic = '';
 $browseJobId = 0;
 $consoleAfkOwned = false;
+$agentRunId = '';
 
 try {
   // Idempotenz: Hat ein frueherer Request fuer GENAU diesen Turn schon geantwortet?
@@ -317,13 +319,60 @@ try {
     }
   }
 
-  // P06: publish only real, server-observed operations. No raw reasoning.
+  // P05: an action/turn is never replayed merely because SSE reconnected.
+  // The per-turn lock was acquired above, so an existing "running" row
+  // means the prior worker disappeared or its outcome is uncertain.
+  if (!coreui_agent_run_schema_ready($pdo)) {
+    if ($generationRequest !== null) {
+      coreui_console_generation_finish($pdo, (int)$uid, $generationRequestId,
+        0, 'agent_runs_migration_required');
+    }
+    sse_send('error', ['error'=>'agent_runs_migration_required']);
+    ember_generation_lock_release($turnLock);
+    exit;
+  }
   $workRunKey = $generationRequestId !== '' ? $generationRequestId : 'base';
+  $agentRun = coreui_agent_run_ensure($pdo, (int)$uid, $sessionId, $afterId, $workRunKey);
+  $agentRunId = (string)$agentRun['run_id'];
+  $priorState = (string)$agentRun['status'];
+  if ($priorState === 'running') {
+    coreui_agent_run_transition($pdo, (int)$uid, $sessionId, $agentRunId,
+      'running', 'interrupted', 'unconfirmed_restart');
+    $priorState = 'interrupted';
+  }
+  if ($priorState !== 'queued') {
+    if ($priorState === 'cancelled') {
+      sse_send('cancelled', ['agent_run_id'=>$agentRunId,'status'=>'cancelled']);
+    } elseif ($priorState === 'waiting_tool') {
+      sse_send('busy', ['note'=>'agent_waiting_tool']);
+    } else {
+      sse_send('error', ['error'=>'agent_run_' . $priorState]);
+    }
+    ember_generation_lock_release($turnLock);
+    exit;
+  }
+  if (!coreui_agent_run_transition($pdo, (int)$uid, $sessionId, $agentRunId,
+      'queued', 'running')) {
+    sse_send('busy', ['note'=>'agent_run_claimed']);
+    ember_generation_lock_release($turnLock);
+    exit;
+  }
+  // Fatal errors can leave the provider outcome uncertain. Never auto-retry.
+  register_shutdown_function(static function () use ($pdo, $uid, $sessionId, $agentRunId): void {
+    try {
+      coreui_agent_run_transition($pdo, (int)$uid, $sessionId, $agentRunId,
+        'running', 'interrupted', 'worker_exit');
+    } catch (Throwable $ignored) {}
+  });
+
+  // P06: publish only real, server-observed operations.
   $GLOBALS['COREUI_WORK_CONTEXT'] = [
     'user_id'=>(int)$uid, 'session_id'=>$sessionId, 'turn_id'=>$afterId,
     'run_key'=>$workRunKey
   ];
+  $GLOBALS['COREUI_WORK_CONTEXT']['agent_run_id'] = $agentRunId;
   $GLOBALS['COREUI_WORK_PDO'] = $pdo;
+  sse_send('agent_run', ['id'=>$agentRunId,'status'=>'running']);
   $GLOBALS['COREUI_WORK_PUBLISH'] = static function (array $event): void {
     sse_send('work', $event);
   };
@@ -386,6 +435,10 @@ try {
     // Erst die vollstaendige, validierte Antwort darf den Browser erreichen.
     $acc   = console_stream_ollama($model, $sys, $u);
   }
+  if (ember_agent_cancel_requested(true)) throw new RuntimeException('agent_cancelled');
+  if (($acc['error'] ?? '') === 'model_queue_timeout') {
+    throw new RuntimeException('model_queue_timeout');
+  }
   $thinkingAll = (string)($acc['thinking'] ?? '');
   $contentAll  = (string)($acc['content'] ?? '');
 
@@ -434,6 +487,7 @@ try {
     }
     console_stream_progress($thinkingEnabled, 'tool');
     // v1.1.1.94: $imageUrl statt hart null -> Vision funktioniert jetzt auch in der Console.
+    if (ember_agent_cancel_requested(true)) throw new RuntimeException('agent_cancelled');
     $fallback = ember_generate_reply(
       $pdo,
       $char,
@@ -480,6 +534,7 @@ try {
     if (!empty($GLOBALS['STU_EMBER_LAST_THINKING'])) {
       $thinkingAll = (string)$GLOBALS['STU_EMBER_LAST_THINKING'];
     }
+    if (ember_agent_cancel_requested(true)) throw new RuntimeException('agent_cancelled');
     $reply = is_string($fallback) ? trim($fallback) : '';
   }
 
@@ -501,6 +556,7 @@ try {
     ? ember_public_thinking_status('complete')
     : '';
 
+  if (ember_agent_cancel_requested(true)) throw new RuntimeException('agent_cancelled');
   if ($replyFinal !== '') {
     $emberMsgId = ember_insert(
       $pdo,
@@ -548,6 +604,25 @@ try {
     }
   }
 
+  if ($emberMsgId > 0) {
+    if (!coreui_agent_run_bind_response($pdo, (int)$uid, $sessionId, $agentRunId, $emberMsgId)) {
+      throw new RuntimeException('agent_response_binding_failed');
+    }
+    if (!coreui_agent_run_transition($pdo, (int)$uid, $sessionId, $agentRunId,
+        'running', 'completed')) {
+      throw new RuntimeException('agent_run_finish_conflict');
+    }
+  } elseif ($browseJobId > 0) {
+    if (!coreui_agent_run_attach_browse($pdo,(int)$uid,$sessionId,$agentRunId,$browseJobId)) {
+      throw new RuntimeException('agent_browse_binding_failed');
+    }
+    coreui_agent_run_transition($pdo, (int)$uid, $sessionId, $agentRunId,
+      'running', 'waiting_tool');
+  } else {
+    coreui_agent_run_transition($pdo, (int)$uid, $sessionId, $agentRunId,
+      'running', 'failed', 'empty_response');
+  }
+
   $elapsed = (int)round(microtime(true) - $start);
   if ($browseJobId > 0) coreui_work_record($pdo, 'tool', 'running', 'Browserauftrag eingereiht',
     ['job_id'=>$browseJobId]);
@@ -565,6 +640,7 @@ try {
   }
   sse_send('done', [
     'work_events'   => $workEvents,
+    'agent_run_id'  => $agentRunId,
     'text'          => $replyFinal,
     'thinking'      => $thinkingPublic,
     'elapsed'       => $elapsed,
@@ -578,6 +654,14 @@ try {
     'source_response_id' => $sourceResponseId > 0 ? $sourceResponseId : null,
   ]);
 } catch (Throwable $e) {
+  $cancelled = $e->getMessage() === 'agent_cancelled';
+  if ($agentRunId !== '') {
+    try {
+      coreui_agent_run_transition($pdo, (int)$uid, $sessionId, $agentRunId,
+        'running', $cancelled ? 'cancelled' : 'interrupted',
+        $cancelled ? null : 'request_interrupted');
+    } catch (Throwable $ignored) {}
+  }
   if ($generationRequest !== null) {
     try {
       coreui_console_generation_finish(
@@ -585,7 +669,7 @@ try {
         (int)$uid,
         $generationRequestId,
         0,
-        'generation_failed'
+        $cancelled ? 'agent_cancelled' : 'generation_failed'
       );
     } catch (Throwable $ignored) {}
   }
@@ -596,9 +680,17 @@ try {
       'line'    => $e->getLine(),
     ]);
   }
-  coreui_work_record($pdo, 'error', 'error', 'Verarbeitung abgebrochen',
-    ['reason'=>'server_exception']);
-  sse_send('error', ['error' => 'exception']);
+  if ($cancelled) {
+    coreui_work_record($pdo, 'run', 'info', 'Auftrag auf Wunsch abgebrochen',
+      ['reason'=>'user_cancelled']);
+    sse_send('cancelled', ['agent_run_id'=>$agentRunId,'status'=>'cancelled']);
+  } else {
+    coreui_work_record($pdo, 'error', 'error', 'Verarbeitung abgebrochen',
+      ['reason'=>'server_exception']);
+    $publicError = $e->getMessage() === 'model_queue_timeout'
+      ? 'model_queue_timeout' : 'exception';
+    sse_send('error', ['error' => $publicError]);
+  }
 } finally {
   unset($GLOBALS['COREUI_WORK_CONTEXT'], $GLOBALS['COREUI_WORK_PDO'], $GLOBALS['COREUI_WORK_PUBLISH']);
   ember_generation_lock_release($turnLock ?? null);
@@ -681,7 +773,7 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
 
   $workDb = $GLOBALS['COREUI_WORK_PDO'] ?? null;
   if ($workDb instanceof PDO) {
-    coreui_work_record($workDb, 'model', 'running', 'Modellstream gestartet', ['model'=>$model]);
+    coreui_work_record($workDb, 'model', 'info', 'Modellstream vorbereitet', ['model'=>$model]);
   }
   $ch = curl_init($url);
   curl_setopt_array($ch, [
@@ -700,6 +792,7 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
       $uploadTotal,
       $uploadNow
     ) use (&$lastHeartbeat): int {
+      if (ember_agent_cancel_requested()) return 1;
       $now = microtime(true);
       if (($now - $lastHeartbeat) >= 10.0) {
         $lastHeartbeat = $now;
@@ -723,12 +816,29 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
       return strlen($chunk);
     },
   ]);
-  $curlOk = curl_exec($ch);
-  if (trim($buf) !== '') $consumeLine($buf);
-  $curlErrno = curl_errno($ch);
-  $curlError = curl_error($ch);
-  $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-  curl_close($ch);
+  $modelSlot = ember_global_lock_acquire();
+  if ($modelSlot === false) {
+    curl_close($ch);
+    if ($workDb instanceof PDO) {
+      coreui_work_record($workDb, 'model', 'error', 'Modellwarteschlange nicht verfuegbar',
+        ['reason'=>'model_queue_timeout']);
+    }
+    return ['thinking'=>'','content'=>'','ok'=>false,'done'=>false,
+      'truncated'=>false,'error'=>'model_queue_timeout'];
+  }
+  try {
+    if ($workDb instanceof PDO) {
+      coreui_work_record($workDb, 'model', 'running', 'Modellstream gestartet', ['model'=>$model]);
+    }
+    $curlOk = curl_exec($ch);
+    if (trim($buf) !== '') $consumeLine($buf);
+    $curlErrno = curl_errno($ch);
+    $curlError = curl_error($ch);
+    $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+  } finally {
+    curl_close($ch);
+    ember_generation_lock_release($modelSlot);
+  }
 
   $numPredict = (int)($options['num_predict'] ?? 0);
   $reasonLower = strtolower($doneReason);

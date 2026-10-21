@@ -2,6 +2,16 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.9 - 21.10.2026
+
+- P05: Migration 013 speichert private Agentenlaeufe und eine globale persistente FIFO-Warteschlange fuer alle Ollama-HTTP-Aufrufe. Ein MariaDB GET_LOCK bleibt die verbindliche Grenze fuer genau einen gleichzeitigen Modellaufruf.
+- Kontogebundene Run-IDs, atomare Zustandswechsel, deduplizierte SSE-Wiederverbindungen und sichere Antwortbindung; keine stillen Wiederholungen unklarer Provideraufrufe.
+- Die neue Chat-Stop-Schaltflaeche fordert ueber einen CSRF-geschuetzten Endpunkt Abbruch an. Wartende Runs stoppen sofort; laufende Aufrufe werden kooperativ abgebrochen. Ein beendeter HTTP-Transport beweist nicht das Ende einer Cloudprovider-internen Arbeit.
+- Browser-Jobs werden an den eigenen Run gebunden und nach Abschluss mit gespeicherten Antworten abgeglichen, ohne das Modell automatisch neu zu starten.
+- FIFO-Tickets besitzen Warte-Heartbeat, Besitzerverbindung, begrenzte Wartezeit und sichere Freigabe. Alte abgeschlossene Tickets werden bereinigt. Verschachtelte Aufrufe teilen denselben Modellslot.
+- Native und Compose-Preflight pruefen beide P05-Schemata, PHP-Syntax und Offline-Regressionen fuer Agentenstatus, Kontotrennung, FIFO, Timeout und Abbruch.
+- **Noch offen:** Echte MariaDB-/Cloud-/Neustart-/Android-Abnahme, providerseitige Reconciliation unklarer Remoteanfragen, unbegrenzte Hintergrundwarteschlange und allgemeine P07/P26-Checkpoint-Fortsetzung. Keine GitHub Actions und kein neues geprueftes ZIP/SHA-Release.
+
 ## 0.5.8 - 20.10.2026
 
 - Chatlayout wie bei ChatGPT/Claude: Nur Nutzernachrichten behalten Sprechblasen. E.M.B.E.R. antwortet als vollbreiter, freier Markdown-Text; auch auf Android. Der Live-Arbeitsverlauf ist Teil derselben Nachricht, kein zweiter "DENKSTATUS"-Kasten mehr.

@@ -125,6 +125,8 @@
     countdownTimer:  null,
     streamedIds:     {},
     pendingBySession: {},
+    activeAgentRunsBySession: {},
+    agentStopEl: null,
     messageCacheBySession: {},
     historyHasMoreBySession: {},
     historyOldestBySession: {},
@@ -205,6 +207,88 @@
     return state.sessions.find(function(s) { return String(s.id) === id; }) || null;
   }
 
+  function updateAgentCancelControl() {
+    var ses = activeSession();
+    var run = ses && state.activeAgentRunsBySession[String(ses.id)];
+    if (!state.agentStopEl) return;
+    state.agentStopEl.hidden = !run || !state.waitingEmber;
+    state.agentStopEl.disabled = !!(run && run.cancel_requested);
+    state.agentStopEl.textContent = run && run.cancel_requested
+      ? 'Abbruch angefordert ...'
+      : '■ Auftrag abbrechen';
+  }
+
+  function clearAgentRun(sessionId) {
+    delete state.activeAgentRunsBySession[String(sessionId)];
+    updateAgentCancelControl();
+  }
+
+  function pollCancelledRun(ses, runId, attempt) {
+    if (!ses || attempt > 90) return;
+    var sessionId = String(ses.id);
+    var current = state.activeAgentRunsBySession[sessionId];
+    if (!current || current.id !== runId) return;
+    var url = API_BASE + '/console_actions.php?action=run_status'
+      + '&session_id=' + encodeURIComponent(sessionId)
+      + '&run_id=' + encodeURIComponent(runId);
+    fetch(url, { credentials:'include', cache:'no-store' })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var latest = state.activeAgentRunsBySession[sessionId];
+        if (!latest || latest.id !== runId || !data || !data.ok) return;
+        if (data.status === 'cancelled' || data.status === 'failed'
+            || data.status === 'interrupted') {
+          clearAgentRun(sessionId);
+          resetGenerationUi(ses, null);
+          if (isActiveSession(sessionId)) {
+            appendMessageEl('system', data.status === 'cancelled'
+              ? 'Auftrag abgebrochen.' : 'Der Auftrag wurde unterbrochen.');
+            scrollToBottom();
+          }
+          return;
+        }
+        if (data.status === 'completed') {
+          clearAgentRun(sessionId);
+          return; // The normal reply poll delivers the persisted answer.
+        }
+        setTimeout(function() { pollCancelledRun(ses,runId,attempt+1); }, 1500);
+      }).catch(function() {
+        setTimeout(function() { pollCancelledRun(ses,runId,attempt+1); }, 1500);
+      });
+  }
+
+  function requestActiveRunCancel() {
+    var ses = activeSession();
+    var run = ses && state.activeAgentRunsBySession[String(ses.id)];
+    if (!ses || !run || run.cancel_requested) return;
+    var sessionId = String(ses.id);
+    var runId = String(run.id);
+    run.cancel_requested = true;
+    updateAgentCancelControl();
+    postConsoleAction({
+      action:'cancel_run',session_id:sessionId,run_id:runId
+    }).then(function(data) {
+      var current = state.activeAgentRunsBySession[sessionId];
+      if (!current || current.id !== runId) return;
+      current.cancel_requested = !!data.cancel_requested;
+      updateAgentCancelControl();
+      if (data.status === 'cancelled') {
+        clearAgentRun(sessionId);
+        resetGenerationUi(ses,null);
+        if (isActiveSession(sessionId)) appendMessageEl('system','Auftrag abgebrochen.');
+      } else if (data.status === 'running' || data.status === 'waiting_tool') {
+        pollCancelledRun(ses,runId,0);
+      } else {
+        clearAgentRun(sessionId);
+      }
+    }).catch(function(error) {
+      var current = state.activeAgentRunsBySession[sessionId];
+      if (current && current.id === runId) current.cancel_requested = false;
+      updateAgentCancelControl();
+      generationActionError(error && error.message ? error.message : 'console_action_failed');
+    });
+  }
+
   function updateActivePendingUi() {
     var ses = activeSession();
     state.waitingEmber = !!(ses && state.pendingBySession[ses.id]);
@@ -214,6 +298,7 @@
     btnSend.setAttribute('aria-label', state.waitingEmber
       ? 'Nachricht nach der laufenden Antwort senden'
       : (state.editingMessage ? 'Bearbeitete Nachricht speichern' : 'Nachricht senden'));
+    updateAgentCancelControl();
   }
 
   // ── DB: Sessions laden ───────────────────────────────────
@@ -1241,6 +1326,15 @@
       ? window.CoreUIWorkEvents.create({live:true,expanded:true})
       : null;
     if (state.thinkingPanelEl) content.appendChild(state.thinkingPanelEl);
+    var stop = document.createElement('button');
+    stop.type = 'button';
+    stop.className = 'agent-stop-button';
+    stop.hidden = true;
+    stop.textContent = '■ Auftrag abbrechen';
+    stop.addEventListener('click',requestActiveRunCancel);
+    content.appendChild(stop);
+    state.agentStopEl = stop;
+    updateAgentCancelControl();
 
     var bubble = document.createElement('div');
     bubble.className = 'msg-bubble';
@@ -1262,6 +1356,7 @@
     }
     state.typingEl = null;
     state.thinkingPanelEl = null;
+    state.agentStopEl = null;
   }
 
   function scrollToBottom() {
@@ -1833,6 +1928,33 @@
         }
       } catch (e) {}
     });
+    es.addEventListener('agent_run', function(ev) {
+      armWatchdog();
+      try {
+        var info = JSON.parse(ev.data) || {};
+        if (!/^[a-f0-9]{32}$/.test(String(info.id || ''))) return;
+        state.activeAgentRunsBySession[sessionId] = {id:String(info.id),cancel_requested:false};
+        updateAgentCancelControl();
+      } catch (e) {}
+    });
+    es.addEventListener('cancelled', function(ev) {
+      if (streamDone) return;
+      streamDone = true;
+      clearTimeout(watchdog);
+      try { es.close(); } catch (e) {}
+      var info = {};
+      try { info = JSON.parse(ev.data) || {}; } catch (e) {}
+      var current = state.activeAgentRunsBySession[sessionId];
+      if (current && info.agent_run_id && current.id !== String(info.agent_run_id)) return;
+      // The POST handler or status poll may have already completed the UI.
+      if (!state.pendingBySession[sessionId]) return;
+      clearAgentRun(sessionId);
+      resetGenerationUi(ses,null);
+      if (isActiveSession(sessionId)) {
+        appendMessageEl('system','Auftrag abgebrochen.');
+        scrollToBottom();
+      }
+    });
     es.addEventListener('heartbeat', function() {
       armWatchdog();
     });
@@ -1851,6 +1973,7 @@
       try { es.close(); } catch (e) {}
       var data = {};
       try { data = JSON.parse(ev.data) || {}; } catch (e) {}
+      if (!(data && Number(data.browse_job_id) > 0)) clearAgentRun(sessionId);
       finalizeStream(data, ses, userMsgId, generationRequest || null);
     });
     es.addEventListener('error', function() {
@@ -1865,6 +1988,7 @@
     if (state.generationPollTimers[sessionId]) clearTimeout(state.generationPollTimers[sessionId]);
     delete state.generationPollTimers[sessionId];
     delete state.pendingBySession[sessionId];
+    clearAgentRun(sessionId);
     if (!isActiveSession(sessionId)) return;
     stopCountdown();
     removeTypingIndicator();
@@ -2031,6 +2155,15 @@
   // Klickkoordinaten loesen einen Klickimpuls aus.
   function openBrowseWindow(jobId, sessionId) {
     var panel       = buildBrowsePanel();
+    var browseStop = document.createElement('button');
+    browseStop.type = 'button';
+    browseStop.className = 'agent-stop-button';
+    browseStop.hidden = true;
+    browseStop.textContent = '■ Auftrag abbrechen';
+    browseStop.addEventListener('click',requestActiveRunCancel);
+    if (panel.parentNode) panel.parentNode.appendChild(browseStop);
+    state.agentStopEl = browseStop;
+    updateAgentCancelControl();
     var head        = panel.querySelector('.browse-live-state');
     var urlLabel    = panel.querySelector('.browse-live-url');
     var status      = panel.querySelector('.browse-live-status');
@@ -2281,6 +2414,7 @@
       ingestNewMessages(ses, d.messages);
 
       if (found) {
+        clearAgentRun(sessionId);
         delete state.pendingBySession[sessionId];
         delete state.pollTimers[sessionId];
         if (isActiveSession(sessionId)) {
@@ -2331,6 +2465,7 @@
       });
       ingestNewMessages(ses, d.messages);
       if (receivedReply && state.pendingBySession[sessionId]) {
+        clearAgentRun(sessionId);
         delete state.pendingBySession[sessionId];
         if (isActiveSession(sessionId)) {
           stopCountdown();

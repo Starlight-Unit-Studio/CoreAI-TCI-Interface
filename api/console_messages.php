@@ -5,6 +5,7 @@ define('STU_CHAT_LIB', 1);
 require __DIR__ . '/chat.php';
 require_once __DIR__ . '/console_session_store.php';
 require_once __DIR__ . '/console_action_store.php';
+require_once __DIR__ . '/console_agent_runs.php';
 
 $pdo = stu_pdo();
 $uid = stu_require_user_id();
@@ -118,6 +119,18 @@ try {
   // Chat messages remain available during rolling database upgrades.
 }
 
+$agentRunMap = [];
+try {
+  if (coreui_agent_run_schema_ready($pdo)) {
+    coreui_agent_run_reconcile_session($pdo,(int)$uid,$sessionId);
+  }
+  if ($messageIds !== [] && coreui_agent_run_schema_ready($pdo)) {
+    $agentRunMap = coreui_agent_run_map_for_responses($pdo, (int)$uid, $sessionId, $messageIds);
+  }
+} catch (Throwable $eAgent) {
+  error_log('[CoreUI] Agent-run history unavailable: ' . get_class($eAgent));
+}
+
 $emberCid = strtolower(ember_character_id());
 $emberName = strtolower(ember_character_name());
 $showThinking = (bool)(coreui_ai_settings_load($pdo, (int)$uid)['thinking_enabled'] ?? true);
@@ -155,6 +168,7 @@ foreach ($rows as &$row) {
     : null;
   $row['feedback'] = $isEmber ? ($feedbackMap[$id] ?? null) : null;
   $row['generation'] = $isEmber ? ($generationMap[$id] ?? null) : null;
+  $row['agent_run'] = $isEmber ? ($agentRunMap[$id] ?? null) : null;
 
   $attachments = $attachmentMap[$id] ?? [];
   $fileUuid = trim((string)($row['file_uuid'] ?? ''));

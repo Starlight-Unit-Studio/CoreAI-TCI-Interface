@@ -86,10 +86,15 @@ UI_FILES=(
   database/migrations/009_message_editing.sql
   database/migrations/011_console_artifacts.sql
   database/migrations/012_console_work_events.sql
+  database/migrations/013_console_agent_runs.sql
   api/console_work_events.php
   api/console_work_store.php
+  api/console_agent_runs.php
+  api/console_model_queue.php
   js/coreui-work-events.js
   scripts/work-events-selftest.php
+  scripts/agent-runs-selftest.php
+  scripts/model-queue-selftest.php
   scripts/workspace-output-selftest.py
   api/console_artifact.php
   api/console_artifacts.php
@@ -104,8 +109,8 @@ UI_FILES=(
   scripts/markdown-selftest.js
   scripts/branding-license-selftest.py
   scripts/cache-bust.py
-  docs/changelogs-txt/CHANGELOG_0_5_8.txt
-  docs/UEBERGABEPROTOKOLL_0_5_8.txt
+  docs/changelogs-txt/CHANGELOG_0_5_9.txt
+  docs/UEBERGABEPROTOKOLL_0_5_9.txt
   images/starlight_unit_studios_logo_original.png
 )
 for ui_file in "${UI_FILES[@]}"; do
@@ -202,6 +207,18 @@ if command -v php >/dev/null 2>&1; then
     ok 'Alle paketierten PHP-Dateien bestehen den Syntaxcheck.'
   else
     fail 'Mindestens eine paketierte PHP-Datei hat einen Syntaxfehler.'
+  fi
+
+  if runuser -u www-data -- php "$PROJECT_ROOT/scripts/agent-runs-selftest.php" >/dev/null 2>&1; then
+    ok 'P05: Agentenlauf-Idempotenz und Kontotrennung offline geprueft.'
+  else
+    fail 'P05-Agentenlauf-Selbsttest fehlgeschlagen.'
+  fi
+
+  if runuser -u www-data -- php "$PROJECT_ROOT/scripts/model-queue-selftest.php" >/dev/null 2>&1; then
+    ok 'P05: Modell-FIFO, Timeout, Abbruch und Sperrenfreigabe offline geprueft.'
+  else
+    fail 'P05-Modellwarteschlangen-Selbsttest fehlgeschlagen.'
   fi
 
   if runuser -u www-data -- php "$PROJECT_ROOT/scripts/work-events-selftest.php" >/dev/null 2>&1; then
@@ -301,6 +318,18 @@ if command -v php >/dev/null 2>&1; then
   fi
 
   if [[ -f "$CONFIG_FILE" ]]; then
+    if php -r "require '$PROJECT_ROOT/api/db.php'; require '$PROJECT_ROOT/api/console_agent_runs.php'; exit(coreui_agent_run_schema_ready(stu_pdo()) ? 0 : 1);" >/dev/null 2>&1; then
+      ok 'Migration 013: dauerhafte Agentenlaeufe bereit.'
+    else
+      fail 'Migration 013: Agentenlauf-Tabelle fehlt.'
+    fi
+
+    if php -r "require '$PROJECT_ROOT/api/db.php'; require '$PROJECT_ROOT/api/console_model_queue.php'; exit(coreui_model_queue_schema_ready(stu_pdo()) ? 0 : 1);" >/dev/null 2>&1; then
+      ok 'Migration 013: FIFO-Modellwarteschlange bereit.'
+    else
+      fail 'Migration 013: Modellwarteschlange fehlt.'
+    fi
+
     if php -r "require '$PROJECT_ROOT/api/db.php'; require '$PROJECT_ROOT/api/console_work_store.php'; exit(coreui_work_schema_ready(stu_pdo()) ? 0 : 1);" >/dev/null 2>&1; then
       ok 'Migration 012: persistente Arbeitsereignisse bereit.'
     else

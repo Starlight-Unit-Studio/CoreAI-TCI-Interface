@@ -1,0 +1,34 @@
+STΛRLIɢHT: EMBER COREUI BY STARLIGHT UNIT STUDIOS
+CHANGELOG 0.5.9
+STAND 21.10.2026
+
+1. P05: Persistente Agentenlaeufe (Migration 013)
+   - Eindeutiger Run je Benutzer, Sitzung, Turn und Aktion.
+   - Status: queued, running, waiting_tool, interrupted,
+     completed, failed, cancelled.
+   - Atomare Uebergaenge, keine stillen Wiederholungen bei SSE-Reconnect.
+   - Antwortbindung nur an echte, kontogebundene Chatantworten.
+   - Laufstatus wird in authentifizierter Antwort-History mitgeliefert.
+
+2. Globale Modellwarteschlange
+   - Dauerhafte FIFO-Tickets in Migration 013 mit monotoner Reihenfolge.
+   - Alle Ollama-Aufrufe teilen MariaDB GET_LOCK; keine zweite Modellspur.
+   - Verschachtelte Aufrufe referenzgezaehlt; Heartbeat im SSE.
+   - Begrenztes Warten, sichere Freigabe und Ticket-Bereinigung.
+   - CSRF-geschuetzte Abbruchanforderungen mit Kontotrennung, Stop im Chat.
+   - Browserauftraege nach Abschluss ohne automatischen Replay abgleichen.
+
+3. Installation und Tests
+   - Migration 013 in nativer Installation und Compose-Migration.
+   - Beide Preflights pruefen Agentenlauf/Queue und P05-Selbsttests.
+   - Sechs HTML-Versionen, JS-Bootstrap, README und Changelog
+     numerisch auf 0.5.9 nachgezogen.
+   - Kein GitHub Actions; kein neues geprueftes Release-ZIP.
+
+4. Noch offen
+   - MariaDB, gleichzeitige Chats, Ollama Cloud, Neustart und Android
+     Chrome live pruefen. Keine GitHub Actions, kein geprueftes ZIP/SHA.
+   - Providerseitiger Status kann nach Transportabbruch unklar bleiben;
+     solche Modelllaeufe werden niemals still erneut ausgefuehrt.
+   - Vollstaendiger Hintergrund-Scheduler und Workflow-Checkpoints
+     folgen als eigenstaendige P07/P26-Umsetzungen.

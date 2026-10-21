@@ -3155,11 +3155,32 @@ function ember_call_ollama(string $model, string $systemPrompt, string $userProm
     CURLOPT_TIMEOUT => max(3, min(900, $timeoutSec)),
     CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
     CURLOPT_NOSIGNAL => true,
+    CURLOPT_NOPROGRESS => false,
+    CURLOPT_XFERINFOFUNCTION => static function (): int {
+      return ember_agent_cancel_requested() ? 1 : 0;
+    },
   ]);
-  $raw = curl_exec($ch);
-  $err = curl_error($ch);
-  $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-  curl_close($ch);
+  // Guard the actual provider request, not just the outer chat turn. This
+  // includes warmup, reflection, follow-up calls and private SSE fallbacks.
+  $modelSlot = ember_global_lock_acquire();
+  if ($modelSlot === false) {
+    curl_close($ch);
+    $GLOBALS['STU_EMBER_LAST_CALL'] = [
+      'ok'=>false, 'model'=>$model, 'url'=>$url, 'code'=>0,
+      'err'=>'model_queue_timeout', 'done_seen'=>false, 'done'=>null,
+      'done_reason'=>'', 'eval_count'=>0, 'prompt_eval_count'=>0,
+      'num_predict'=>(int)($options['num_predict'] ?? 0),
+    ];
+    return null;
+  }
+  try {
+    $raw = curl_exec($ch);
+    $err = curl_error($ch);
+    $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+  } finally {
+    curl_close($ch);
+    ember_generation_lock_release($modelSlot);
+  }
 
   $GLOBALS['STU_EMBER_LAST_CALL'] = [
     'ok' => ($raw !== false && $raw !== '' && $code >= 200 && $code < 300),
@@ -3499,16 +3520,47 @@ function ember_generation_lock_acquire(string $channel, int $afterId, array $sen
   return $fp;
 }
 
+require_once __DIR__ . '/console_model_queue.php';
+
+/** Only the scoped private agent may request cooperative cancellation. */
+function ember_agent_cancel_requested(bool $force = false): bool {
+  $ctx = $GLOBALS['COREUI_WORK_CONTEXT'] ?? null;
+  if (!is_array($ctx) || empty($ctx['agent_run_id'])
+      || !function_exists('coreui_agent_run_cancel_requested')) return false;
+  $now = microtime(true);
+  if (!empty($GLOBALS['COREUI_AGENT_CANCEL_SEEN'])) return true;
+  if (!$force && $now - (float)($GLOBALS['COREUI_AGENT_CANCEL_CHECK_AT'] ?? 0) < 1.0) {
+    return false;
+  }
+  $GLOBALS['COREUI_AGENT_CANCEL_CHECK_AT'] = $now;
+  $db = $GLOBALS['COREUI_WORK_PDO'] ?? null;
+  if (!$db instanceof PDO) return false;
+  $requested = coreui_agent_run_cancel_requested(
+    $db,(int)$ctx['user_id'],(string)$ctx['session_id'],(string)$ctx['agent_run_id']
+  );
+  if ($requested) $GLOBALS['COREUI_AGENT_CANCEL_SEEN'] = true;
+  return $requested;
+}
+
 function ember_generation_lock_release($fp): void {
   if ($fp === 'db_lock') {
-    // MariaDB-Lock freigeben
+    $depth = (int)($GLOBALS['COREUI_MODEL_LOCK_DEPTH'] ?? 0);
+    if ($depth > 1) {
+      $GLOBALS['COREUI_MODEL_LOCK_DEPTH'] = $depth - 1;
+      return;
+    }
+    $ticket = (string)($GLOBALS['COREUI_MODEL_QUEUE_TICKET'] ?? '');
+    $connection = $GLOBALS['COREUI_MODEL_LOCK_PDO'] ?? null;
+    unset($GLOBALS['COREUI_MODEL_LOCK_DEPTH'],$GLOBALS['COREUI_MODEL_QUEUE_TICKET'],
+      $GLOBALS['COREUI_MODEL_LOCK_PDO']);
     try {
-      global $pdo;
-      if (isset($pdo) && $pdo instanceof PDO) {
-        $stUnlock = $pdo->prepare('SELECT RELEASE_LOCK(?)');
-        $stUnlock->execute([ember_lock_name('global_ollama')]);
-      }
-    } catch (Throwable $e) {}
+      if (!$connection instanceof PDO) throw new RuntimeException('model_lock_connection_missing');
+      coreui_model_queue_release($connection,ember_lock_name('global_ollama'),$ticket);
+    } catch (Throwable $e) {
+      // Closing the connection also releases the named lock. Never create
+      // a second, unguarded model lane after a release error.
+      error_log('[CoreUI] Model queue release failed: ' . get_class($e));
+    }
     return;
   }
   if (!is_resource($fp)) return;
@@ -3516,27 +3568,37 @@ function ember_generation_lock_release($fp): void {
   @fclose($fp);
 }
 
-// Global Ollama lock: max 1 simultaneous generation
-function ember_global_lock_acquire(): mixed {
-  // MariaDB GET_LOCK statt flock - atomar ueber alle PHP-FPM-Worker hinweg.
-  // flock() ist unter PHP-FPM nicht zuverlaessig atomar wenn mehrere Worker
-  // fast gleichzeitig denselben Lock anfordern.
+/**
+ * A single FIFO queue covers every Ollama HTTP request. The connection-bound
+ * MariaDB named lock still enforces exactly one concurrent provider call.
+ * Nested calls on the same PDO share the existing slot (reference counted).
+ */
+function ember_global_lock_acquire(int $timeoutSeconds = 90): mixed {
+  if (ember_agent_cancel_requested(true)) throw new RuntimeException('agent_cancelled');
+  $depth = (int)($GLOBALS['COREUI_MODEL_LOCK_DEPTH'] ?? 0);
+  if ($depth > 0) {
+    $GLOBALS['COREUI_MODEL_LOCK_DEPTH'] = $depth + 1;
+    return 'db_lock';
+  }
   try {
     global $pdo;
-    if (!isset($pdo) || !($pdo instanceof PDO)) {
-      // Fallback auf flock wenn PDO nicht verfuegbar
-      $path = ember_generation_lock_dir() . DIRECTORY_SEPARATOR . 'global_ollama.lock';
-      $fp = @fopen($path, 'c+');
-      if (!$fp) return false;
-      if (!@flock($fp, LOCK_EX | LOCK_NB)) { @fclose($fp); return false; }
-      return $fp;
-    }
-    $st = $pdo->prepare('SELECT GET_LOCK(?, 0)');
-    $st->execute([ember_lock_name('global_ollama')]);
-    $got = $st ? (int)$st->fetchColumn() : 0;
-    if ($got !== 1) return false;
+    $connection = isset($pdo) && $pdo instanceof PDO ? $pdo : stu_pdo();
+    if (!coreui_model_queue_schema_ready($connection)) return false;
+    $ticket = coreui_model_queue_acquire(
+      $connection,ember_lock_name('global_ollama'),$timeoutSeconds,
+      static fn(): bool => ember_agent_cancel_requested()
+    );
+    if ($ticket === false) return false;
+    $GLOBALS['COREUI_MODEL_QUEUE_TICKET'] = $ticket;
+    $GLOBALS['COREUI_MODEL_LOCK_PDO'] = $connection;
+    $GLOBALS['COREUI_MODEL_LOCK_DEPTH'] = 1;
     return 'db_lock';
+  } catch (RuntimeException $e) {
+    if ($e->getMessage() === 'agent_cancelled') throw $e;
+    error_log('[CoreUI] Model queue unavailable: ' . get_class($e));
+    return false;
   } catch (Throwable $e) {
+    error_log('[CoreUI] Model queue unavailable: ' . get_class($e));
     return false;
   }
 }

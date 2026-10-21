@@ -2,7 +2,7 @@
 
 Stand: 20.10.2026. Planungsbasis: [`b4a5413`](https://github.com/Starlight-Unit-Studio/coreui/commit/b4a5413f8478119d749a54702c0e50acd3f0b517).
 
-**Nächste Umsetzung: P02 Arbeitsbasis und Schema klären, danach P03 Dateiausgabe und P04 Chat-Downloads abschließen.**
+**Aktueller Entwicklungsstand: P05-Agentenlaufzeit in 0.5.9; Live-Abnahme steht aus. P06/P07 folgen. HTML-Download live bestaetigt, ZIP-Endabnahme noch offen.**
 
 Diese Roadmap ordnet die Anforderungen in **29 abschließbare Arbeitspakete** und nutzbare Lieferungen. Der [Masterplan](docs/COREUI_MASTERPLAN.md) hält Ziel und Architektur fest; die [Funktionsmatrix](docs/COREUI_FEATURE_MATRIX.md) führt Referenzen, bestehenden Teilbestand und Einzelabnahmen. Alle 82 derzeitigen Matrix-IDs sind einem Paket primär zugeordnet. Das bedeutet vollständige Zuordnung des erfassten Startbestands; die Tiefeninventur von **OpenClaw, Open WebUI, CrewAI, LangGraph und Microsoft AutoGen** läuft weiter.
 
@@ -13,9 +13,9 @@ Diese Roadmap ordnet die Anforderungen in **29 abschließbare Arbeitspakete** un
 | Ursprünglicher Masterplan, Referenzstände und 72 Einträge | Durch [PR #30](https://github.com/Starlight-Unit-Studio/coreui/pull/30) im Repo gesichert |
 | Erste Umsetzungsroadmap | Durch [PR #31](https://github.com/Starlight-Unit-Studio/coreui/pull/31) im Repo gesichert |
 | Referenzerweiterung | CrewAI, LangGraph und AutoGen ergänzt; jetzt 82 CF-Einträge und 29 Pakete, vollständige Einzelinventur weiter offen |
-| Download-Bug | [Issue #29](https://github.com/Starlight-Unit-Studio/coreui/issues/29) offen, Ursache im Quellcode eingegrenzt |
+| Download-Bug | HTML-Datei wurde live heruntergeladen; [Issue #29](https://github.com/Starlight-Unit-Studio/coreui/issues/29) bleibt fuer ZIP-Abnahme offen |
 | Laufzeitfunktionen dieser Roadmap | Noch nicht durch diese Planungsarbeit umgesetzt oder abgenommen |
-| Technische Basis | `0.5.3-alpha`; die Details zum fehlenden vorbereiteten 0.5.4-Stand und zu `010_console_tools` stehen im Masterplan |
+| Technische Basis | `0.5.9` mit Migration 013 und globaler FIFO-Modellwarteschlange; Server-Liveabnahme ausstehend |
 | GitHub Actions | Wegen ausgeschöpften Kontingents auf Nutzerwunsch ausgelassen |
 
 Die Paketnummern bleiben als Arbeitsreferenzen bestehen. Sämtliche Umsetzungspakete sind zunächst **offen**; vorhandene Teilfunktionen behalten ihren differenzierten Status in der Matrix. M0 und M7 begleiten die Entwicklung. Sie sind keine Wartephase vor der ersten nutzbaren Korrektur.
@@ -78,6 +78,8 @@ P05 bis P08 verbinden Laufsteuerung, sichtbare Arbeit, Werkzeuge und Chat. Der A
 
 
 **Zwischenstand 0.5.7 (P06, erste Teilumsetzung):** Der vorhandene Python- und Modellpfad erzeugt kontogebundene, antwortbezogene Arbeitsereignisse mit echter Ausfuehrungs- und Fehlerdiagnose (Migration 012). SSE zeigt diese live, nach Reload werden sie authentifiziert nachgeladen. Vollstaendige P05-Laufsteuerung, echte dauerhafte Plaene, Provider-Reasoning und allgemeine Werkzeugzyklen sind weiterhin offen. P06 ist damit **nicht vollstaendig abgenommen**; zuerst mit gpt-oss:120b und dem Fehlerfall aus Issue #29 live validieren.
+
+**P05-Teilstand 0.5.9:** Ein persistenter Run pro privatem Turn/Aktion (Migration 013), atomare Zustandswechsel, sichere Antwortbindung und mitgelieferter Laufstatus in der authentifizierten History. Alle Ollama-HTTP-Modellaufrufe verwenden dieselbe MariaDB-Namenssperre mit begrenzter Wartezeit. Reconnects starten einen unklar unterbrochenen Run nicht erneut. Eine dauerhafte faire Job-Warteschlange, sichere Provider-Reconciliation nach Transportabbruch, aktive Abbruchsteuerung, Checkpoints und Mehrprovideradapter fehlen noch. P05 ist **in Arbeit**, nicht abgenommen. Echte Parallel- und Neustarttests stehen aus.
 
 **Folgestand 0.5.8:** Die neue Arbeitschronik ist nur noch ein inline Element der E.M.B.E.R.-Nachricht. Authentifizierte Antwort-History enthaelt echte Ereignisse, die zuvor doppelte Anzeige und Zusatzabfrage im Chat entfallen. Bei generierten Dateien prueft der Worker jetzt auch Ausgaben ausserhalb des vorgesehenen Sandbox-Verzeichnisses und vollstaendige HTML-stdout-Ausgaben, bevor er eine Datei zur verifizierten Aufbewahrung uebernimmt. Bei fehlenden Ausgabebytes kann ein serieller Korrekturlauf erfolgen. Die echte Live-Abnahme von Issue #29 und die volle P06-Agentenabnahme bleiben ausdruecklich offen.
 
