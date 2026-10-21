@@ -4661,9 +4661,10 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       // It remains serial through the same Ollama and worker queues.
       $needsFileRepair = $requestedFile
         && ($confirmedFile === null || $anyPartial) && is_array($pyRes);
-      $repairReason = is_array($pyRes)
-        && str_contains((string)($pyRes['stderr'] ?? ''), 'FileNotFoundError')
-          ? 'FileNotFoundError' : 'output_missing';
+      $repairReason = $anyPartial ? 'requested_files_missing'
+        : (is_array($pyRes)
+          && str_contains((string)($pyRes['stderr'] ?? ''), 'FileNotFoundError')
+            ? 'FileNotFoundError' : 'output_missing');
       if ($needsFileRepair) {
         coreui_work_record($pdo, 'artifact', 'error', 'Python hat keine Datei bereitgestellt',
           ['job_id'=>(int)$pyRes['id'], 'reason'=>$repairReason]);
@@ -4683,7 +4684,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       if ($needsFileRepair) {
         $previousCode = strlen($pyCode) <= 20000 ? $pyCode
           : substr($pyCode, 0, 20000) . "\n[Vorheriger Code war laenger; bitte komplett neu erzeugen]";
-        $u2 .= "\nDie angefragte Datei wurde NICHT im Ausgabespeicher gefunden (Grund: "
+        $u2 .= "\nDie angefragte Dateiausgabe ist fehlgeschlagen oder unvollstaendig (Grund: "
           . $repairReason . "). Auch Exitcode 0 bedeutet ohne gespeicherte Datei KEINEN Erfolg. "
           . "Antworte ausschliesslich mit einem VOLLSTAENDIGEN, korrigierten [PY]-Block. "
           . "Der Code muss alle benoetigten Inhalte selbst erzeugen; lies niemals eine "
