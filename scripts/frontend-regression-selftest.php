@@ -127,7 +127,7 @@ try {
       && str_contains($workJs, 'function merge(serverEvents, liveEvents)')
       && str_contains($workJs, 'Arbeitsweg (')
       && str_contains($workStore, 'LEFT JOIN stu_console_agent_runs r')
-      && str_contains($workStore, 'r.run_key=w.run_key')
+      && str_contains($workStore, 'BINARY r.run_key=BINARY w.run_key')
       && str_contains($streamApi, 'console_stream_saved_work_events('),
     'Arbeitsweg wird nach dem Stream oder beim Neuladen nicht sicher erhalten.'
   );
