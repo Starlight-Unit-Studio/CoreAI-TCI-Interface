@@ -58,6 +58,15 @@ local_file_test(str_contains($slashCode, $slashPayload),
   'bridge must preserve exact base64 content in Python literal');
 local_file_test(!str_contains($slashCode, '\\' . '/'),
   'bridge must not inject JSON slash escapes into Python base64');
+$firstHalf = "### index.html\n```html\n<html><body>Snake</body></html>\n```\n";
+$secondHalf = "### style.css\n```css\nbody{color:lime}\n```\n"
+  . "### game.js\n```javascript\nconsole.log(1)\n```\n";
+$merged = coreui_console_merge_project_fences($firstHalf, $secondHalf, $request, 100000);
+local_file_test(is_array($merged) && ($merged['file_count'] ?? 0) === 4,
+  'two incomplete responses must produce one complete verified ZIP project');
+local_file_test(coreui_console_merge_project_fences($firstHalf,
+  "### style.css\n```css\nbody{color:lime}\n```\n", $request) === null,
+  'missing JS must never create a partial ZIP');
 $unnamed = "```html\n<html><body>Snake</body></html>\n```\n"
   . "```css\nbody{color:white}\n```\n"
   . "```javascript\nconsole.log(1)\n```";
