@@ -4387,6 +4387,17 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   ];
 
   $primaryModel = ember_model();
+  $fileToolTurn = $channel === 'console' && $imageUrl === null
+    && ember_py_enabled() && coreui_console_download_requested($userMsg);
+  if ($fileToolTurn) {
+    // Local Modelfiles can strongly prefer a conversational answer over the
+    // [PY] marker. State the output contract at the end of the first prompt.
+    $u .= "\n\nDATEI-WERKZEUGMODUS: Fuer diese Anfrage ist eine echte "
+      . "herunterladbare Datei verlangt. Antworte zuerst ausschliesslich mit "
+      . "[PY]...[/PY], Python-Code der alle Quelldateien und ggf. das ZIP in "
+      . "Path(os.environ['EMBER_OUTPUT_DIR']) erzeugt und prueft. "
+      . "Keine Erklaerung und keine erfundenen Downloadlinks vor dem Werkzeuglauf.";
+  }
 
   // Vision-Handling: Gemma 4 ist nativ multimodal - direkt mit Bild ansprechen.
   if ($imageUrl !== null) {
@@ -4516,6 +4527,47 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
     is_string($out) && trim($out) !== '' ? 'Modellantwort empfangen' : 'Modellaufruf ohne Antwort',
     ['model'=>$primaryModel]);
   $finalPrompt = $u;
+
+  // P06: For local Ollama models, recover complete Python/code-fence outputs
+  // or ask ONCE for a strict tool block. The worker remains the only source
+  // of downloadable files. This also works when the model ignores its Modelfile
+  // tool instructions and responds in ordinary prose.
+  if ($fileToolTurn) {
+    $recoverCode = static function (?string $answer) use ($userMsg): ?string {
+      if (!is_string($answer) || trim($answer) === '') return null;
+      $marker = ember_py_extract_marker($answer);
+      if ($marker !== null) return $marker;
+      $fenced = coreui_console_fenced_python($answer, $userMsg, ember_py_max_code_chars());
+      if ($fenced !== null) return $fenced;
+      $multi = coreui_console_multifile_python($answer, $userMsg, ember_py_max_code_chars());
+      return is_array($multi) ? (string)$multi['code'] : null;
+    };
+    $recoveredCode = $recoverCode($out);
+    $inlineAvailable = is_string($out)
+      && coreui_console_inline_file_python($out, $userMsg, ember_py_max_code_chars()) !== null;
+    if ($recoveredCode === null && !$inlineAvailable) {
+      coreui_work_record($pdo, 'tool', 'info', 'Lokales Dateiwerkzeug angefordert',
+        ['reason'=>'tool_marker_missing']);
+      $toolPrompt = coreui_console_file_tool_prompt($userMsg);
+      coreui_work_record($pdo, 'model', 'running', 'Dateiwerkzeug-Aufruf gestartet',
+        ['model'=>$primaryModel]);
+      $toolReply = ember_call_ollama($primaryModel, $sys, $toolPrompt,
+        ember_timeout_for_model($primaryModel), []);
+      $recoveredCode = $recoverCode($toolReply);
+      $inlineAvailable = is_string($toolReply)
+        && coreui_console_inline_file_python($toolReply, $userMsg, ember_py_max_code_chars()) !== null;
+      coreui_work_record($pdo, 'model',
+        $recoveredCode !== null || $inlineAvailable ? 'success' : 'error',
+        $recoveredCode !== null || $inlineAvailable
+          ? 'Dateiwerkzeug-Code empfangen' : 'Lokales Modell lieferte keinen Werkzeugcode',
+        ['model'=>$primaryModel]);
+      $out = $toolReply;
+      $finalPrompt = $toolPrompt;
+    }
+    if ($recoveredCode !== null) {
+      $out = "[PY]\n" . $recoveredCode . "\n[/PY]";
+    }
+  }
 
   // === Phase 2: Asynchroner Browse-Trigger ([BROWSE:]) - VOR der synchronen Websuche ===
   // Hat Ember [BROWSE:] gesetzt, gibt es keine sofortige Antwort: der Worker meldet sich
