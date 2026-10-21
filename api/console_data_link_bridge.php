@@ -35,7 +35,7 @@ function coreui_console_multifile_source_directive(string $request): ?string {
   return "COREUI QUELLDATEIEN: Erzeuge fuer diesen Dateiauftrag die VOLLSTAENDIGEN "
     . "Quelltexte als separate Markdown-Codebloecke. Pflichtdateien: "
     . implode(', ', $names) . ". Fuer JEDE der genannten Dateien schreibe "
-    . "eine Ueberschrift genau als '### dateiname.ext' mit ihrem exakten Namen, "
+    . "eine Ueberschrift '### ' gefolgt vom jeweiligen echten Dateinamen, " 
     . "darunter einen Markdown-Codeblock in der passenden Sprache (html, css, "
     . "javascript, json, python oder text). Zwischen zwei Dateien schliesse "
     . "den vorherigen Codeblock immer mit drei Backticks. Keine Platzhalter, "
