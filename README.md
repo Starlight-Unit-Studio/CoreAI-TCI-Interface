@@ -7,7 +7,7 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 Ember CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current development-branch version: `0.5.9` (numeric only); merged `main` remains `0.5.8` until this PR is accepted. The previous verified ZIP remains archived under its original historical name.
+Current main-source version: `0.5.9` (numeric only). The prior verified ZIP remains archived under its original historical name. The previous verified ZIP remains archived under its original historical name.
 
 ## Development roadmap
 
@@ -59,7 +59,7 @@ Starting with `0.4.2-alpha`, the project's own code is licensed under the **Star
 
 Further details are provided in `LICENSE_HISTORY.md`, `TRADEMARKS.md`, `COMMUNITY_POLICY.md`, `NOTICE.md`, and `COPYRIGHT.md`. The license is Source Available and is not OSI-certified. Third-party components retain their own terms.
 
-## Current 0.5.9 development changes
+## Current 0.5.9 main-source changes
 
 The current branch includes persistent generated file downloads and chat output cards, the new artifact database migration 011, the browser data-link correction, the original one-liner live-update flow, the Nginx permission repair, the scoped SSE selftest update, and the numeric cache/version repair. The 0.5.6 merge also adds compatibility for `gpt-oss:120b` cloud-generated files under the isolated `/mnt/data` output alias, with bounded recovery after failed Python file creation. Real HTML/ZIP downloads still need end-to-end live verification. The full worker-to-mobile download acceptance and new ZIP/SHA packaging remain pending. See [CHANGELOG.md](CHANGELOG.md), [the 0.5.9 entry](docs/changelogs-txt/CHANGELOG_0_5_9.txt) and [handover](docs/UEBERGABEPROTOKOLL_0_5_9.txt).
 
