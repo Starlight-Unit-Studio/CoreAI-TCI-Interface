@@ -6,6 +6,18 @@ function local_file_test(bool $ok, string $message): void {
   if (!$ok) { fwrite(STDERR, "Local file tool FAIL: $message\n"); exit(1); }
 }
 $request = 'Erstelle index.html, style.css und game.js, packe sie in snake-game.zip und stelle einen Download bereit.';
+$directive = coreui_console_multifile_source_directive($request);
+local_file_test(is_string($directive), 'local ZIP project must use source-file protocol');
+local_file_test(str_contains($directive, 'index.html')
+  && str_contains($directive, 'style.css')
+  && str_contains($directive, 'game.js')
+  && str_contains($directive, 'keine [PY]-Tags'), 'model must receive named source contract');
+local_file_test(coreui_console_multifile_source_directive(
+  'Schreibe mir eine einzige app.html als Download.') === null,
+  'single-file requests must keep their existing tool path');
+local_file_test(coreui_console_multifile_source_directive(
+  'Erklaere mir index.html, style.css und game.js in einem ZIP.') === null,
+  'plain explanation must not trigger file execution');
 $reply = "### index.html\n```html\n<!doctype html><html><body><script src=\"game.js\"></script></body></html>\n```\n"
   . "### style.css\n```css\nbody { background: #000; }\n```\n"
   . "### game.js\n```javascript\nconsole.log('Snake');\n```";
@@ -51,4 +63,11 @@ local_file_test(coreui_console_missing_requested_artifacts($request, [
   ['name'=>'index.html'],['name'=>'style.css'],['name'=>'game.js'],
   ['name'=>'snake-game.zip'],
 ]) === [], 'complete project rejected');
+$handler = file_get_contents(dirname(__DIR__) . '/api/chat.php');
+local_file_test(is_string($handler)
+  && str_contains($handler, 'ember_console_file_tool_candidate(string $reply, string $request, bool $sourceOnly = false)')
+  && str_contains($handler, 'coreui_console_multifile_source_directive($userMsg)')
+  && str_contains($handler, 'ember_console_file_tool_candidate($out, $userMsg, $sourceProjectMode)')
+  && str_contains($handler, 'if ($sourceProjectMode && $needsFileRepair)'),
+  'local project sources must bypass model-generated Python and costly worker-failure retries');
 echo "CoreUI local file tool selftest: OK\n";

@@ -2,6 +2,14 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.16 - 21.10.2026
+
+- Lokale Mehrdateien-ZIP-Auftraege mit zwei bis neun explizit benannten Quelltext-Dateien werden als komplette benannte HTML/CSS/JS- und andere Quelltextbloecke vom Modell angefordert. Ein Modell muss fuer diese Auftraege keinen zusaetzlichen Python-Dateischreibcode mehr erfinden.
+- Der bereits vorhandene getestete Quelltext-Bridge schreibt ausschliesslich die bestaetigten Source-Bytes im isolierten Python-Worker und erstellt das ZIP deterministisch, mit `is_file()`-/Groessen- und ZIP-Inhaltstest. Das Modell kann keine lokalen Dateinamen, Download-URLs oder Skript-Ausfuehrungen allein durch Behauptung freigeben.
+- Widersprechende allgemeine `[PY]`-Hinweise werden nur im gezielten lokalen Quelltextprojekt-Modus entfernt. Fehlende Source-Bloecke duerfen einmalig gezielt neu angefordert werden; scheitert der kontrollierte Dateischreiber oder Artefaktspeicher, erfolgt kein weiterer teurer modellgenerierter Python-Reparaturlauf.
+- Bestehende Single-File-, generische Python-, Cloud- und Downloadpfade bleiben unveraendert. Neuer lokaler Quelltextvertrags-Selbsttest neben den vorhandenen ZIP-Pruefungen.
+- Numerischer Versionssprung `0.5.15 -> 0.5.16`; keine Migration, kein veraenderter Installer-Einzeiler, keine GitHub Actions und kein neues offizielles ZIP/SHA-Paket. Eine echte lokale Gemma- und Browser-Abnahme steht aus; Issue #52 zum Ollama-Modellwechsel bleibt separat offen.
+
 ## 0.5.15 - 21.10.2026
 
 - `config/Modelfile.template` enthaelt fuer das CoreUI-eigene lokale Gemma-Modell keine `PARAMETER`-Zeilen mehr. `temperature`, `top_p`, `top_k`, `repeat_penalty` und insbesondere `num_ctx 32768` werden nicht mehr automatisch festgeschrieben.

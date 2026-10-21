@@ -20,6 +20,33 @@ function coreui_console_inline_link_present(string $reply): bool {
 }
 
 /**
+ * Dedicated, bounded contract for a requested multi-file ZIP project. The
+ * language model writes source files, not an additional Python program to
+ * create those files. Our existing inert source bridge handles verification,
+ * writing and ZIP packaging. Single-file/generic Python tasks are untouched.
+ */
+function coreui_console_multifile_source_directive(string $request): ?string {
+  if (!coreui_console_download_requested($request)
+      || preg_match('~\b(?:zip|archiv)\b~iu', $request) !== 1) return null;
+  $pattern = '[A-Za-z0-9][A-Za-z0-9._-]{0,90}\.(?:html?|css|js|json|txt|md|svg|py)';
+  preg_match_all('~(?<![A-Za-z0-9._-])(' . $pattern . ')(?![A-Za-z0-9._-])~i', $request, $found);
+  $names = array_values(array_unique(array_map('strtolower', $found[1] ?? [])));
+  if (count($names) < 2 || count($names) > 9) return null;
+  return "COREUI QUELLDATEIEN: Erzeuge fuer diesen Dateiauftrag die VOLLSTAENDIGEN "
+    . "Quelltexte als separate Markdown-Codebloecke. Pflichtdateien: "
+    . implode(', ', $names) . ". Fuer JEDE der genannten Dateien schreibe "
+    . "eine Ueberschrift '### ' gefolgt vom jeweiligen echten Dateinamen, " 
+    . "darunter einen Markdown-Codeblock in der passenden Sprache (html, css, "
+    . "javascript, json, python oder text). Zwischen zwei Dateien schliesse "
+    . "den vorherigen Codeblock immer mit drei Backticks. Keine Platzhalter, "
+    . "keine ausgelassenen Dateien, keine Erklaerung und KEINE Python-Skripte "
+    . "zum Schreiben der Dateien, keine [PY]-Tags. Der CoreUI-Server uebernimmt "
+    . "die Quelltexte danach unveraendert als Dateien und erstellt, prueft und "
+    . "liefert das angeforderte ZIP AUTOMATISCH ueber sein eigenes Werkzeug. "
+    . "Erfinde keine Downloadlinks. Antworte NUR mit den Dateibloecken.";
+}
+
+/**
  * Turn a model's complete, named fenced source files into inert sandbox
  * outputs. Small local models may provide HTML/CSS/JS source instead of a
  * [PY] tool call. Never execute the fenced source: the isolated Python worker

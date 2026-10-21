@@ -2441,8 +2441,15 @@ function ember_console_file_tool_think(string $model): ?bool {
     : null;
 }
 
-function ember_console_file_tool_candidate(string $reply, string $request): ?array {
+function ember_console_file_tool_candidate(string $reply, string $request, bool $sourceOnly = false): ?array {
   $max = ember_py_max_code_chars();
+  // Named source projects are data, never model-authored Python scripts.
+  // Only the vetted bridge may generate a Python file-writing wrapper.
+  if ($sourceOnly) {
+    $project = coreui_console_project_fences_python($reply, $request, $max);
+    return $project !== null
+      ? ['code'=>$project['code'],'kind'=>'project','meta'=>$project] : null;
+  }
   $py = ember_py_extract_marker($reply);
   if ($py !== null) return ['code'=>$py,'kind'=>'marker'];
   // Prefer an inert source file if the user explicitly requested a .py
@@ -4570,11 +4577,25 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   $fileTask = $channel === 'console' && $imageUrl === null && ember_py_enabled()
     && ember_console_file_tool_is_local($primaryModel)
     && coreui_console_download_requested($userMsg);
+  $sourceProjectDirective = $fileTask
+    ? coreui_console_multifile_source_directive($userMsg) : null;
+  $sourceProjectMode = $sourceProjectDirective !== null;
   $fileToolThink = $fileTask ? ember_console_file_tool_think($primaryModel) : null;
   if ($fileTask) {
-    $u .= "\n\n" . ember_console_file_tool_directive();
-    coreui_work_record($pdo, 'tool', 'info', 'Dateiwerkzeug angefordert',
-      ['reason'=>'file_task']);
+    if ($sourceProjectMode) {
+      // The generic hints demand a [PY] script. Remove these mutually
+      // incompatible instructions before asking the local model for sources.
+      foreach ([$webHint,$browseHint,$pyHint] as $hint) {
+        if ($hint !== '') $u = str_replace($hint . "\n\n", '', $u);
+      }
+      if (str_ends_with($u, 'Antworte als Ember:')) {
+        $u = substr($u,0,-strlen('Antworte als Ember:'));
+      }
+    }
+    $u .= "\n\n" . ($sourceProjectDirective ?? ember_console_file_tool_directive());
+    coreui_work_record($pdo, 'tool', 'info',
+      $sourceProjectMode ? 'Quelltextdateien angefordert' : 'Dateiwerkzeug angefordert',
+      ['reason'=>$sourceProjectMode ? 'source_file_project' : 'file_task']);
   }
   coreui_work_record($pdo, 'model', 'running', 'Modellaufruf gestartet', ['model'=>$primaryModel]);
   $out = ember_call_ollama($primaryModel, $sys, $u, ember_timeout_for_model($primaryModel),
@@ -4584,17 +4605,19 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
     ['model'=>$primaryModel]);
   $finalPrompt = $u;
   $fileToolCandidate = $fileTask && is_string($out)
-    ? ember_console_file_tool_candidate($out, $userMsg) : null;
+    ? ember_console_file_tool_candidate($out, $userMsg, $sourceProjectMode) : null;
   if ($fileTask && $fileToolCandidate === null) {
     // At most one compact retry for missing [PY]/fenced source. Never claim
     // a file exists unless the isolated worker actually registered its bytes.
-    coreui_work_record($pdo, 'tool', 'info', 'Dateiwerkzeug erneut angefordert',
-      ['reason'=>'tool_protocol_missing','attempt'=>2]);
+    coreui_work_record($pdo, 'tool', 'info',
+      $sourceProjectMode ? 'Quelldateien erneut angefordert' : 'Dateiwerkzeug erneut angefordert',
+      ['reason'=>$sourceProjectMode ? 'source_files_incomplete' : 'tool_protocol_missing','attempt'=>2]);
     $compactRequest = function_exists('mb_substr')
       ? mb_substr($userMsg, 0, 12000, 'UTF-8') : substr($userMsg, 0, 12000);
     $compactPrompt = "BENUTZER-DATEIAUFTRAG:\n" . $compactRequest . "\n\n"
-      . ember_console_file_tool_directive();
-    coreui_work_record($pdo, 'model', 'running', 'Dateicode erneut angefordert',
+      . ($sourceProjectDirective ?? ember_console_file_tool_directive());
+    coreui_work_record($pdo, 'model', 'running',
+      $sourceProjectMode ? 'Quelltexte erneut angefordert' : 'Dateicode erneut angefordert',
       ['model'=>$primaryModel]);
     $retry = ember_call_ollama($primaryModel, '', $compactPrompt,
       ember_timeout_for_model($primaryModel), [], null, $fileToolThink);
@@ -4602,10 +4625,17 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       is_string($retry) && trim($retry) !== '' ? 'Dateicode empfangen' : 'Dateicode ausgeblieben',
       ['model'=>$primaryModel]);
     $fileToolCandidate = is_string($retry)
-      ? ember_console_file_tool_candidate($retry, $userMsg) : null;
+      ? ember_console_file_tool_candidate($retry, $userMsg, $sourceProjectMode) : null;
     if ($fileToolCandidate === null) {
-      coreui_work_record($pdo, 'tool', 'error', 'Kein ausfuehrbarer Datei-Auftrag',
-        ['reason'=>'tool_protocol_missing']);
+      coreui_work_record($pdo, 'tool', 'error',
+        $sourceProjectMode ? 'Quelldateipaket unvollstaendig' : 'Kein ausfuehrbarer Datei-Auftrag',
+        ['reason'=>$sourceProjectMode ? 'source_files_incomplete' : 'tool_protocol_missing']);
+      if ($sourceProjectMode) {
+        return 'Das lokale Modell hat nicht alle verlangten Quelltextdateien '
+          . 'vollstaendig geliefert. Es wurde kein Python-Job gestartet und '
+          . 'keine ZIP-Datei bereitgestellt. Bitte versuche es mit einem '
+          . 'kleineren Projekt oder einem Coding-Modell.';
+      }
       return 'Das lokale Modell hat keinen ausfuehrbaren Datei-Auftrag geliefert. '
         . 'Es wurde kein Python-Job gestartet und keine Downloaddatei gespeichert. '
         . 'Bitte versuche einen kleineren Datei-Auftrag oder ein Coding-Modell.';
@@ -4717,6 +4747,16 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       // This is serial through the existing Ollama lock and the existing
       // per-turn, account-bound worker queue, never an untracked download.
       $needsFileRepair = $requestedFile && $confirmedFile === null && is_array($pyRes);
+      // The safe project wrapper was generated by CoreUI, not the model.
+      // Re-generating that Python code cannot fix a failed worker, broken
+      // volume or artifact registration and wastes another large CPU call.
+      if ($sourceProjectMode && $needsFileRepair) {
+        coreui_work_record($pdo, 'artifact', 'error', 'Dateipaket nicht bereitgestellt',
+          ['job_id'=>(int)$pyRes['id'],'reason'=>'source_project_output_missing']);
+        return 'Die Quelltexte wurden empfangen, aber der Dateiworker konnte kein '
+          . 'vollstaendiges Downloadpaket bestaetigen. Es wurde keine ZIP-Datei '
+          . 'bereitgestellt. Bitte pruefe die technischen Details des Python-Jobs.';
+      }
       $repairReason = is_array($pyRes)
         && str_contains((string)($pyRes['stderr'] ?? ''), 'FileNotFoundError')
           ? 'FileNotFoundError' : 'output_missing';
