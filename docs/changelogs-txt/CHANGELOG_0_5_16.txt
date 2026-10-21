@@ -1,0 +1,42 @@
+STΛRLIɢHT: EMBER COREUI BY STARLIGHT UNIT STUDIOS
+CHANGELOG 0.5.16
+STAND 21.10.2026
+
+1. GEMMA-MODELFILE: NUR num_ctx VERBOTEN
+   - Das 0.5.15-Update entfernte versehentlich auch
+     die vom Betreiber freigegebenen Parameter.
+   - Korrekt bleiben exakt:
+       PARAMETER temperature 1.0
+       PARAMETER top_p 0.95
+       PARAMETER top_k 64
+       PARAMETER repeat_penalty 1.08
+   - PARAMETER num_ctx wird NICHT gesetzt.
+   - Compose- UND Native-Installer pruefen genau
+     den verbotenen num_ctx-Parameter.
+   - Beide Installer erzeugen das lokale Ollama-
+     Modelfile mit den vier freigegebenen Werten.
+   - Die strengere API-Request-Policy aus 0.5.15
+     bleibt unveraendert: lokale Gemma-Familie
+     erhaelt keine CoreUI-option-Overrides.
+   - Andere Modelle und ihre Konfiguration
+     bleiben davon unberuehrt.
+
+2. PYTHON-WERKZEUGVERBINDUNG
+   - Endliche PyMySQL-Verbindungs-/Lese-/Schreib-
+     Zeitlimits statt moeglicher endloser DB-Wartezeit.
+   - DB-Reconnect vor Jobannahme und bevor ein
+     fertiges Skriptergebnis in der DB gespeichert wird.
+   - Keine Wiederholung von unsicher beendeten
+     Modell- oder Python-Jobs.
+   - Neue read-only Diagnose fuer Worker und Queue;
+     Code, Prompts, stdout, stderr nicht angezeigt.
+   - Preflights und Regressionen erweitert.
+
+3. VERIFICATION UND AUSSTEHEND
+   - Gemma-Selbsttest verlangt die vier Parameter
+     und testet lokale API-Payload-Isolation.
+   - Python-Verbindungs-Selbsttest fuer Reconnect.
+   - Keine Migration, kein neuer Installer-One-Liner,
+     keine GitHub Actions, kein neues ZIP/SHA.
+   - Wiederkehrende lokale Modellhaenger sind
+     ohne echte Hostlogs nicht abschliessend erklaert.
