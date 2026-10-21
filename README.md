@@ -15,7 +15,7 @@ Version 0.5.12 restores the duration in the assistant message's information (ⓘ
 
 ## Persistent work timeline after E.M.B.E.R. replies
 
-Version 0.5.12 keeps the public, server-observed operational work timeline attached to the assistant's completed message. The just-finished timeline stays expanded; older answers expose a clearly labelled **Arbeitsweg (N Schritte) anzeigen** control after reload. The browser combines authenticated saved events with a sanitized live SSE snapshot, including reconnect and polling fallbacks. The backend can recover events through the exact account/session/turn/run-key agent-run binding if the separate response-event association was interrupted. This is an operational audit trail, **not** private model chain-of-thought.
+Version 0.5.11 keeps the public, server-observed operational work timeline attached to the assistant's completed message. The just-finished timeline stays expanded; older answers expose a clearly labelled **Arbeitsweg (N Schritte) anzeigen** control after reload. The browser combines authenticated saved events with a sanitized live SSE snapshot, including reconnect and polling fallbacks. The backend can recover events through the exact account/session/turn/run-key agent-run binding if the separate response-event association was interrupted. This is an operational audit trail, **not** private model chain-of-thought.
 
 ## Clickable conversation follow-ups
 
@@ -77,9 +77,9 @@ Further details are provided in `LICENSE_HISTORY.md`, `TRADEMARKS.md`, `COMMUNIT
 
 ## Current 0.5.12 main-source changes
 
-The current branch includes persistent generated file downloads and chat output cards, the new artifact database migration 011, the browser data-link correction, the original one-liner live-update flow, the Nginx permission repair, the scoped SSE selftest update, and the numeric cache/version repair. The 0.5.6 merge also adds compatibility for `gpt-oss:120b` cloud-generated files under the isolated `/mnt/data` output alias, with bounded recovery after failed Python file creation. Real HTML/ZIP downloads still need end-to-end live verification. The full worker-to-mobile download acceptance and new ZIP/SHA packaging remain pending. See [CHANGELOG.md](CHANGELOG.md), [the 0.5.12 entry](docs/changelogs-txt/CHANGELOG_0_5_9.txt) and [handover](docs/UEBERGABEPROTOKOLL_0_5_9.txt).
+The current branch includes persistent generated file downloads and chat output cards, the new artifact database migration 011, the browser data-link correction, the original one-liner live-update flow, the Nginx permission repair, the scoped SSE selftest update, and the numeric cache/version repair. The 0.5.6 merge also adds compatibility for `gpt-oss:120b` cloud-generated files under the isolated `/mnt/data` output alias, with bounded recovery after failed Python file creation. Real HTML/ZIP downloads still need end-to-end live verification. The full worker-to-mobile download acceptance and new ZIP/SHA packaging remain pending. See [CHANGELOG.md](CHANGELOG.md), [the 0.5.9 entry](docs/changelogs-txt/CHANGELOG_0_5_9.txt) and [handover](docs/UEBERGABEPROTOKOLL_0_5_9.txt).
 
-## 0.5.12: P05 agent runs, FIFO model admission and cooperative cancellation
+## 0.5.9: P05 agent runs, FIFO model admission and cooperative cancellation
 
 The private SSE chat now creates a durable, account- and session-scoped agent run for each turn or explicit generation action (migration `013_console_agent_runs`). The run is claimed atomically, transitions through explicit states, and binds only to a real response belonging to the original turn. The authenticated chat history includes the run's safe state metadata. Reconnected requests do not silently repeat an uncertain provider call; such runs are marked interrupted for inspection.
 
