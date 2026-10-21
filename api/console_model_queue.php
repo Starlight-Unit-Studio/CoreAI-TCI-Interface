@@ -105,13 +105,12 @@ function coreui_model_queue_acquire(
           }
         }
       }
-      if (function_exists('sse_comment')) {
-        // The stream also emits heartbeat events while the provider is active.
-        // Keep queue comments bounded; no user prompts or model data.
-        if (!isset($GLOBALS['COREUI_QUEUE_SSE_AT']) || $now - (float)$GLOBALS['COREUI_QUEUE_SSE_AT'] >= 10) {
-          sse_comment('waiting-for-model-slot');
-          $GLOBALS['COREUI_QUEUE_SSE_AT'] = $now;
-        }
+      if (function_exists('sse_send')
+          && (!isset($GLOBALS['COREUI_QUEUE_SSE_AT'])
+              || $now - (float)$GLOBALS['COREUI_QUEUE_SSE_AT'] >= 10)) {
+        // A real SSE event keeps the browser watchdog alive while queued.
+        sse_send('heartbeat', ['ok'=>true,'stage'=>'model_queue']);
+        $GLOBALS['COREUI_QUEUE_SSE_AT'] = $now;
       }
       usleep(250000);
     } while (microtime(true) < $deadline);
