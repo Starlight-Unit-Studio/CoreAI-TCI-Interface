@@ -93,6 +93,7 @@ UI_FILES=(
   api/console_model_queue.php
   js/coreui-work-events.js
   scripts/work-events-selftest.php
+  scripts/work-events-persistence-selftest.php
   scripts/agent-runs-selftest.php
   scripts/model-queue-selftest.php
   scripts/workspace-output-selftest.py
@@ -226,6 +227,11 @@ if command -v php >/dev/null 2>&1; then
     ok 'P06: Python-Fehlerklassifikation und Ereignisvertrag geprueft.'
   else
     fail 'P06-Arbeitsereignis-Selbsttest fehlgeschlagen.'
+  fi
+  if runuser -u www-data -- php "$PROJECT_ROOT/scripts/work-events-persistence-selftest.php" >/dev/null 2>&1; then
+    ok 'P06: Arbeitsweg nach Antwort, Reload, Varianten und Kontotrennung geprueft.'
+  else
+    fail 'P06-Arbeitsweg-Persistenz-Selbsttest fehlgeschlagen.'
   fi
 
   thinking_selftest=''
