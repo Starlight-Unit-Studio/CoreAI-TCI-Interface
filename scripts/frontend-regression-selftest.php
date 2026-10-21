@@ -116,6 +116,20 @@ try {
     'Sprechblasenfreier Ember-Chat oder inline Arbeitsverlauf fehlt.'
   );
 
+  frontend_test_assert(
+    str_contains($console, 'function extractSuggestedReplies(markdown)')
+      && str_contains($console, 'function buildSuggestedReplyButtons(markdown, sessionId)')
+      && str_contains($console, "button.addEventListener('click'")
+      && str_contains($console, 'sendMessage(label);')
+      && str_contains($console, 'state.pendingBySession[ses.id]'),
+    'Anklickbare Vorschlagsantworten fehlen oder umgehen den Chat-Sendepfad.'
+  );
+  frontend_test_assert(
+    str_contains($css, '.ember-suggested-replies')
+      && str_contains($css, '.ember-suggested-reply:focus-visible')
+      && str_contains($css, '.ember-suggested-reply { width: 100%; }'),
+    'Vorschlagsantworten sind nicht mobil und tastaturzugaenglich.'
+  );
   fwrite(STDOUT, "Frontend-Regressions-Selftest OK: Navigation, Avatare, Markdown, Bearbeitung, Warteschlange und Varianten sind fehlersicher verdrahtet.\n");
 } catch (Throwable $e) {
   fwrite(STDERR, 'Frontend-Regressions-Selftest FEHLER: ' . $e->getMessage() . "\n");
