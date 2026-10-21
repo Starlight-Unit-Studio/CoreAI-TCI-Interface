@@ -14,10 +14,6 @@ function ember_temperature(): float { return 1.0; }
 function ember_top_p(): float { return 0.95; }
 function ember_top_k(): int { return 64; }
 function ember_num_ctx_for_model(string $model): int { return 32768; }
-function ember_console_file_tool_is_local(string $model): bool {
-  return preg_match('~^(?:ember-coreui|gemma4)(?::|$)~i', trim($model)) === 1;
-}
-
 try {
   $root = dirname(__DIR__);
   $template = file_get_contents($root . '/config/Modelfile.template');
@@ -52,6 +48,12 @@ try {
 
   $source = file_get_contents($root . '/api/chat.php');
   gemma_test_assert(is_string($source),'chat.php missing.');
+  $localBegin = strpos($source,'function ember_console_file_tool_is_local(');
+  $localEnd = strpos($source,'function ember_console_file_tool_think(', (int)$localBegin);
+  gemma_test_assert($localBegin !== false && $localEnd !== false
+    && $localEnd > $localBegin, 'Gemma alias detection helper is missing.');
+  eval(substr($source,$localBegin,$localEnd-$localBegin));
+
   $begin = strpos($source,'function ember_ollama_known_good_options(');
   $end = strpos($source,'function ember_call_ollama(', (int)$begin);
   gemma_test_assert($begin !== false && $end !== false && $end > $begin,
