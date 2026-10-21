@@ -133,6 +133,7 @@ UI_FILES=(
   scripts/agent-runs-selftest.php
   scripts/model-queue-selftest.php
   scripts/workspace-output-selftest.py
+  scripts/pdo-mysql-installer-selftest.py
   api/console_artifact.php
   api/console_artifacts.php
   api/console_data_link_bridge.php
@@ -158,6 +159,12 @@ for ui_file in "${UI_FILES[@]}"; do
     fail "Ember CoreUI-Oberflaechendatei fehlt oder ist leer: $ui_file"
   fi
 done
+
+if python3 "$PROJECT_ROOT/scripts/pdo-mysql-installer-selftest.py" >/dev/null 2>&1; then
+  ok 'PHP-PDO-MariaDB: Image-Build, Installer-Recreation und Preflight-Vertrag geprueft.'
+else
+  fail 'PHP-PDO-MariaDB-Installer-Selbsttest fehlgeschlagen.'
+fi
 
 if python3 "$PROJECT_ROOT/scripts/workspace-output-selftest.py" >/dev/null 2>&1; then
   ok 'Python-Worker: gerettete HTML/ZIP-Dateien und sichere Ausgabepfade geprueft.'
