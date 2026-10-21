@@ -10,22 +10,25 @@ STAND 21.10.2026
    - Antwortbindung nur an echte, kontogebundene Chatantworten.
    - Laufstatus wird in authentifizierter Antwort-History mitgeliefert.
 
-2. Modell-Admission
-   - Einheitliche MariaDB-Namenssperre fuer Ollama-HTTP-Aufrufe,
-     auch Cloudmodelle, Streaming, Follow-up, Reflect und Warmup.
-   - Begrenztes Warten; keine zweite unabhängige flock-Modellspur.
-   - Eine dauerhafte faire Job-Warteschlange bleibt offen.
+2. Globale Modellwarteschlange
+   - Dauerhafte FIFO-Tickets in Migration 013 mit monotoner Reihenfolge.
+   - Alle Ollama-Aufrufe teilen MariaDB GET_LOCK; keine zweite Modellspur.
+   - Verschachtelte Aufrufe referenzgezaehlt; Heartbeat im SSE.
+   - Begrenztes Warten, sichere Freigabe und Ticket-Bereinigung.
+   - CSRF-geschuetzte Abbruchanforderungen mit Kontotrennung, Stop im Chat.
+   - Browserauftraege nach Abschluss ohne automatischen Replay abgleichen.
 
 3. Installation und Tests
    - Migration 013 in nativer Installation und Compose-Migration.
-   - Beide Preflights pruefen Schema und P05-Offline-Selbsttest.
+   - Beide Preflights pruefen Agentenlauf/Queue und P05-Selbsttests.
    - Sechs HTML-Versionen, JS-Bootstrap, README und Changelog
      numerisch auf 0.5.9 nachgezogen.
    - Kein GitHub Actions; kein neues geprueftes Release-ZIP.
 
 4. Noch offen
-   - MariaDB-Integration, echte gleichzeitige Chats, Provider-Abbruch,
-     Neustart und Android Chrome live testen.
-   - Sichere Reconciliation unklar beendeter Cloudanfragen,
-     dauerhafte Queue, Cancel/Resume und Checkpoints implementieren.
-   - P05 ist nicht vollstaendig abgenommen.
+   - MariaDB, gleichzeitige Chats, Ollama Cloud, Neustart und Android
+     Chrome live pruefen. Keine GitHub Actions, kein geprueftes ZIP/SHA.
+   - Providerseitiger Status kann nach Transportabbruch unklar bleiben;
+     solche Modelllaeufe werden niemals still erneut ausgefuehrt.
+   - Vollstaendiger Hintergrund-Scheduler und Workflow-Checkpoints
+     folgen als eigenstaendige P07/P26-Umsetzungen.
