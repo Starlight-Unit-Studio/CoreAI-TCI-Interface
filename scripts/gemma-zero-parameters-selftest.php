@@ -46,9 +46,6 @@ $cloud = ember_ollama_known_good_options('gpt-oss:120b');
 coreui_gemma_assert(isset($cloud['temperature'],$cloud['top_p'],$cloud['top_k']),
   'Cloud sampler defaults unexpectedly removed');
 
-coreui_gemma_assert(str_contains($chat, 'gemma_synthetic_warmup_disabled'),
-  'do not start tiny forced-parameter warmup on heavy local Gemma');
-
 $installer = (string)file_get_contents($root . '/scripts/install.sh');
 coreui_gemma_assert(str_contains($installer, 'grep -Eiq')
   && str_contains($installer, 'Modelfile.generated')
@@ -57,6 +54,8 @@ coreui_gemma_assert(str_contains($installer, 'grep -Eiq')
 
 $stream = (string)file_get_contents($root . '/api/console_stream.php');
 $chat = (string)file_get_contents($root . '/api/chat.php');
+coreui_gemma_assert(str_contains($chat, 'gemma_synthetic_warmup_disabled'),
+  'do not start tiny forced-parameter warmup on heavy local Gemma');
 coreui_gemma_assert(str_contains($stream, "if (\$options !== []) \$payload['options'] = \$options;")
   && str_contains($chat, "if (\$options !== []) \$payload['options'] = \$options;"),
   'SSE and sync payloads must omit options entirely for Gemma');
