@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Deterministic release checks for Ember CoreUI branding and licensing."""
+"""Deterministic release checks for E.M.B.E.R. CoreUI branding and licensing."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-EXPECTED_VERSION = "0.5.24"
+EXPECTED_VERSION = "0.5.25"
 PUBLIC_PAGES = (
     "index.html",
     "login.html",
@@ -57,14 +57,14 @@ def main() -> int:
     policy = read("COMMUNITY_POLICY.md")
     trademarks = read("TRADEMARKS.md")
     require(
-        "Starlight Unit Studios Ember CoreUI Community Source Lizenz 1.0"
+        "Starlight Unit Studios E.M.B.E.R. CoreUI Community Source Lizenz 1.0"
         in german_license,
         "controlling license name missing",
     )
     require("keine Nutzergrenze" in german_license, "no-user-limit rule missing")
     require("no paid license tier" in policy, "free community policy incomplete")
     require("no license phone-home" in policy, "no-telemetry policy incomplete")
-    require("Ember CoreUI" in trademarks, "trademark naming rule missing")
+    require("E.M.B.E.R. CoreUI" in trademarks, "trademark naming rule missing")
 
     for relative_path in PUBLIC_PAGES:
         page = read(relative_path)
@@ -78,12 +78,12 @@ def main() -> int:
                     for key in asset_keys), f"Cache key is not numeric: {relative_path}")
         require(
             re.search(
-                r'<meta\s+name="application-name"\s+content="[^"]*Ember CoreUI[^"]*"',
+                r'<meta\s+name="application-name"\s+content="[^"]*E\.M\.B\.E\.R\. CoreUI[^"]*"',
                 page,
                 re.IGNORECASE,
             )
             is not None,
-            f"Ember CoreUI application-name missing: {relative_path}",
+            f"E.M.B.E.R. CoreUI application-name missing: {relative_path}",
         )
 
     landing_page = read("index.html")
@@ -95,7 +95,23 @@ def main() -> int:
     require(structured_match is not None, "structured software metadata missing")
     structured_data = json.loads(structured_match.group(1))
     require(structured_data.get("@type") == "SoftwareApplication", "structured software type mismatch")
-    require(structured_data.get("name") == "Ember CoreUI", "structured product name mismatch")
+    require(structured_data.get("name") == "E.M.B.E.R. CoreUI", "structured product name mismatch")
+    for installer in ("setup.sh", "scripts/install.sh", "scripts/install-native.sh"):
+        source = read(installer)
+        require("E.M.B.E.R. CoreUI" in source,
+                f"official acronym missing from installer text: {installer}")
+        require("Ember CoreUI" not in source,
+                f"obsolete character-style product name in installer: {installer}")
+
+    for current in PUBLIC_PAGES:
+        require("Ember CoreUI" not in read(current),
+                f"obsolete product branding in active page: {current}")
+    model = read("config/Modelfile.template")
+    require("E.M.B.E.R. CoreUI" in model and "CoreAI namens Ember" in model,
+            "Modelfile conflates framework, terminal and Ember character")
+    require("PARAMETER num_ctx" not in model and "PARAMETER num_predict" not in model,
+            "Gemma Modelfile parameter restrictions regressed")
+
     require(
         structured_data.get("publisher", {}).get("name") == "Starlight Unit Studios",
         "structured publisher mismatch",
@@ -104,8 +120,8 @@ def main() -> int:
 
     settings = read("js/settings.js")
     profile_store = read("api/profile_store.php")
-    require("EMBER COREUI-DATENBANK" in settings, "database label is not fully branded")
-    require("--- EMBER COREUI-PROFIL ---" in profile_store, "profile marker is not fully branded")
+    require("E.M.B.E.R. COREUI-DATENBANK" in settings, "database label is not fully branded")
+    require("--- MARA COREAI-PROFIL ---" in profile_store, "CoreAI profile marker must name Mara")
     require("--- COREUI-PROFIL ---" not in profile_store, "legacy profile marker remains")
 
     text_extensions = {
@@ -117,7 +133,7 @@ def main() -> int:
             content = path.read_text(encoding="utf-8")
             require("\u2014" not in content, f"Unicode em dash found: {path.relative_to(ROOT)}")
 
-    print("Ember CoreUI branding and license selftest: OK")
+    print("E.M.B.E.R. CoreUI branding and license selftest: OK")
     return 0
 
 
@@ -125,5 +141,5 @@ if __name__ == "__main__":
     try:
         raise SystemExit(main())
     except (AssertionError, UnicodeDecodeError, json.JSONDecodeError) as exc:
-        print(f"Ember CoreUI branding and license selftest: FAIL: {exc}", file=sys.stderr)
+        print(f"E.M.B.E.R. CoreUI branding and license selftest: FAIL: {exc}", file=sys.stderr)
         raise SystemExit(1)
