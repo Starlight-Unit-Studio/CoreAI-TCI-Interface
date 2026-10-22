@@ -111,6 +111,16 @@ def main() -> int:
             "Modelfile conflates framework, terminal and Ember character")
     require("PARAMETER num_ctx" not in model and "PARAMETER num_predict" not in model,
             "Gemma Modelfile parameter restrictions regressed")
+    require("PARAMETER draft_num_predict 0" in model,
+            "approved Gemma draft parameter must remain untouched")
+    require("VALUES (?, ?, 'Mara', NOW(), NOW())" in read("scripts/bootstrap.php"),
+            "administrator bootstrap would incorrectly name CoreAI Ember")
+    require("VALUES (?, ?, 'Mara', NOW(), NOW())" in read("api/account_store.php"),
+            "new accounts would incorrectly name CoreAI Ember")
+    for installer in ("scripts/install.sh", "scripts/install-native.sh"):
+        require("STU_EMBER_CHARACTER_NAME', 'Mara'" in read(installer),
+                f"installer would still initialize the wrong CoreAI name: {installer}")
+
 
     require(
         structured_data.get("publisher", {}).get("name") == "Starlight Unit Studios",
