@@ -2,6 +2,16 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.25 - 22.10.2026
+
+- Offizielle Produktbezeichnung auf **E.M.B.E.R. CoreUI** korrigiert. E.M.B.E.R. ist das Framework, Backend und System; Ember bezeichnet dagegen die eigenstaendige CoreAI der *Starlight Ember*. Mara Thorne bleibt TCI/CoreAI der *Ravager Thorn*. Diese Begriffe werden nicht mehr vertauscht.
+- Beide Installer, One-Liner-Launcher, Preflights, Browser-Metadaten, Startbildschirm, Login, Settings, Admin, Runtime-Meldungen, Healthcheck und Dokumentation verwenden die gepunktete E.M.B.E.R.-Schreibweise.
+- Lokale Ollama-Modellnamen, technischen IDs, Datenbankschemas, Dienste, Verzeichnisse und Installationspfade bleiben unveraendert. Kein Umbenennen von `ember-coreui:latest` und keine Datenmigration.
+- Neue Accounts und frische Installationen erhalten **Mara** als Standard-CoreAI-Namen; alte Profile mit Standardname Ember werden wie bisher nur bei der Anzeige als Mara behandelt. Individuelle andere Namen bleiben erhalten.
+- Maras Modelfile stellt E.M.B.E.R.-Framework, CoreUI-Terminal und separate STU-CoreAI Ember ausdruecklich richtig. `draft_num_predict 0` bleibt, kein `num_predict` oder `num_ctx` im Modelfile.
+- Lizenz-/Trademark-Texte enthalten weiterhin die alte Schreibweise als historischen Alias fuer Releases bis 0.5.24. Lizenzversion 1.0 und ihre materiellen Nutzungsbedingungen wurden nicht geaendert.
+- Brandingtests, Versions- und Cache-Pruefungen angepasst. GitHub Actions nicht ausgefuehrt; produktive Abnahme noch offen. [skip ci]
+
 ## 0.5.24 - 22.10.2026
 
 - Rollen sauber getrennt: TSA-Thorn CoreUI ist das Terminal; Mara Thorne die TCI und CoreAI. Bestehende interne Ember-IDs, Tabellen und Pfade bleiben aus Kompatibilitaetsgruenden erhalten.
