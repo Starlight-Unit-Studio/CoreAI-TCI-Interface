@@ -9,7 +9,9 @@
   var DETAIL_LABELS = {
     model:'Modell', job_id:'Job', exit_code:'Exitcode', duration_ms:'Laufzeit (ms)',
     error_type:'Fehlertyp', file_name:'Datei', file_count:'Dateien', attempt:'Versuch',
-    http_code:'HTTP', reason:'Grund', source:'Quelle', elapsed_ms:'Dauer (ms)'
+    http_code:'HTTP', reason:'Grund', source:'Quelle', elapsed_ms:'Dauer (ms)',
+    source_chars:'Quelltext (Zeichen)', eval_count:'Ausgabe-Tokens',
+    prompt_eval_count:'Eingabe-Tokens'
   };
 
   function el(tag, cls, value) {
