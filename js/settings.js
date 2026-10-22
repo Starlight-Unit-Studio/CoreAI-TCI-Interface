@@ -1,4 +1,4 @@
-/* Project STΛRLIɢHT: Ember CoreUI settings controller. */
+/* Project STΛRLIɢHT: E.M.B.E.R. CoreUI settings controller. */
 (function () {
   'use strict';
 
@@ -132,7 +132,7 @@
     if (!healthChecks) return;
     healthChecks.innerHTML = '';
     var names = {
-      database: 'EMBER COREUI-DATENBANK',
+      database: 'E.M.B.E.R. COREUI-DATENBANK',
       schema: 'DATENSCHEMA',
       ollama: 'OLLAMA-KERN',
       storage: 'RUNTIME-SPEICHER'
@@ -325,7 +325,7 @@
       if (externalNote) {
         var p = externalNote.querySelector('p');
         if (p && data.external && data.external.enabled && !externalConfigured) {
-          p.textContent = 'Der externe Adapter ist im Adminbereich aktiviert, aber noch nicht vollständig mit HTTPS-Endpunkt, Modell und serverseitigem Schlüssel konfiguriert. Ember CoreUI bleibt deshalb sicher auf lokalem Ollama.';
+          p.textContent = 'Der externe Adapter ist im Adminbereich aktiviert, aber noch nicht vollständig mit HTTPS-Endpunkt, Modell und serverseitigem Schlüssel konfiguriert. E.M.B.E.R. CoreUI bleibt deshalb sicher auf lokalem Ollama.';
         }
       }
       updatePromptCounter();
@@ -509,7 +509,7 @@
   }
 
   function revokeOtherLoginSessions() {
-    if (!window.confirm('Alle anderen Geräte sofort von Ember CoreUI abmelden?')) return;
+    if (!window.confirm('Alle anderen Geräte sofort von E.M.B.E.R. CoreUI abmelden?')) return;
     if (revokeOtherSessionsButton) revokeOtherSessionsButton.disabled = true;
     api('./api/account_security.php', {
       method: 'POST',
