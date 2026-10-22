@@ -4609,7 +4609,8 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
           $accepted !== null ? 'Quelldatei empfangen' : 'Quelldatei nicht lesbar',
           ['file_name'=>(string)$name, 'model'=>$primaryModel,
             'reason'=>$accepted !== null ? 'source_ready'
-              : ($truncated ? 'model_output_truncated' : 'source_format_unrecognized')]);
+              : ($truncated ? 'model_output_truncated'
+              : (!is_string($modelSource) ? 'model_response_missing' : 'source_format_unrecognized'))]);
         if ($accepted !== null) break;
       }
       if ($accepted === null) {
