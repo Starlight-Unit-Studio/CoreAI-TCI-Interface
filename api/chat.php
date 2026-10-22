@@ -2435,6 +2435,13 @@ function ember_console_file_tool_is_local(string $model): bool {
   return preg_match('~^(?:ember-coreui|gemma4)(?::|$)~i', trim($model)) === 1;
 }
 
+// Ollama Cloud tags may also begin with gemma4:. Distinguish them without
+// changing the existing cloud think settings or established ZIP pathway.
+function ember_console_file_tool_is_device_local(string $model): bool {
+  if (!ember_console_file_tool_is_local($model)) return false;
+  return preg_match('~(?:^|[:._-])cloud(?:$|[:._-])~i', trim($model)) !== 1;
+}
+
 function ember_console_file_tool_think(string $model): ?bool {
   return ember_console_file_tool_is_local($model)
     ? (bool)ember_cfg('STU_EMBER_LOCAL_FILE_THINK', false)
@@ -4584,7 +4591,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   // Gemma route needs smaller, raw per-file source requests without the
   // regular conversation's competing [PY] tool hints.
   $localDirectSources = $requestedSourceProject !== null
-    && ember_console_file_tool_is_local($primaryModel);
+    && ember_console_file_tool_is_device_local($primaryModel);
   if ($localDirectSources) {
     $sourceSpec = coreui_console_project_request_spec($userMsg);
     $sourceFiles = [];
