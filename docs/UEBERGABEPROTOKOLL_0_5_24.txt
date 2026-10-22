@@ -1,0 +1,65 @@
+EMBER COREUI UEBERGABEPROTOKOLL 0.5.24
+Stand: 22.10.2026
+Branch: feat/mara-thorne-coreai-identity-0.5.24
+
+KONZEPT
+Ember CoreUI ist das eigenstaendige Terminal und Produkt. Mara Thorne ist
+die TCI / CoreAI der Ravager Thorn (Tri-Solaris-Allianz). Die vorhandene
+technische ID ember, die SQL- und PHP-Identifier sowie das eigene
+Ollama-Modell ember-coreui:latest bleiben unveraendert, um Bestand,
+Gespräche, Werkzeuge und Konten nicht zu beschaedigen.
+
+MODELFILE
+config/Modelfile.template bleibt mit FROM gemma4:e4b,
+TEMPLATE {{ .Prompt }}, RENDERER gemma4, PARSER gemma4 erhalten.
+Das SYSTEM definiert Mara Thorne und ihren natuerlichen, direkten,
+persoenlichen Gamer-Ton aus der alten Bilderkennungs-Persona.
+Die Bilddaten-spezifischen Beobachtungsregeln (keine erfundenen Details)
+bleiben im Vision-Zweig. Alte Sandra Jansen/Ember Caldwell-Identitaet ist
+nicht mehr Teil des Bild-Systemprompts.
+Freigegebene PARAMETER: temperature 1, top_k 64, top_p 0.95,
+draft_num_predict 0. PARAMETER num_predict -1 ist ENTFERNT,
+PARAMETER num_ctx wird NICHT hinzugefuegt. Lokale Gemma-API-Aufrufe
+erhalten weiterhin kein CoreUI-options-Objekt; veraltete Config-Werte
+koennen dies nicht umgehen.
+
+IDENTITAET IM COREUI
+- Defaults fuer Profile, Accountanlage, Installer-Config und Bot-Charakter
+  erscheinen als Mara. Eigene abweichende Anzeigenamen bleiben erhalten.
+- @Mara wird neben dem bisherigen @Ember akzeptiert.
+- Header: CoreUI PRIVATE INTERFACE, MARA COREAI als Status-Kennung.
+- Workpanel: E.M.B.E.R CoreAI arbeitet waehrend live work.
+- Historische Defaultnamen von Ember werden ueber Migration 014
+  ausschliesslich in Anzeige-Spalten aktualisiert. Kein Eingriff in
+  die Inhalte von Nutzernachrichten oder in die stabile char-ID ember.
+- Alte per Installer geschriebene STU_EMBER_CHARACTER_NAME='Ember'
+  wird serverseitig zum sichtbaren Mara-Namen normalisiert.
+- Produkttitel, Dateinamen, Datenbankidentifikatoren und Modell-Tag
+  bleiben Ember CoreUI bzw. ember.
+
+BETROFFENE STELLEN
+config/Modelfile.template, api/chat.php (Vision, Name, Anrede, Prompts),
+api/profile_store.php, api/account_store.php, api/config.php,
+api/console_session_store.php, js/console-app.js, js/settings.js,
+js/coreui-work-events.js, app.html, settings.html,
+scripts/bootstrap.php, scripts/install.sh, scripts/install-native.sh,
+database/migrations/014_coreai_mara_identity.sql,
+scripts/gemma-zero-parameters-selftest.php,
+scripts/coreai-identity-selftest.php, beide Preflights,
+VERSION, Bootstrap und statische Browser-Cache-Keys,
+README und CHANGELOG.
+
+TEST/ABNAHME
+1. Kein GitHub Actions Kontingent verbrauchen.
+2. Beide Preflight-Pfade muessen die Modelfile-, Profile- und UI-Pruefungen
+   erfolgreich durchlaufen; Migration 014 wird einmalig angewandt.
+3. Mit bestehendem One-Liner die 0.5.24 ueber main installieren.
+4. ollama show ember-coreui:latest --modelfile gegen Parameterpolicy
+   und Mara SYSTEM pruefen.
+5. Normale Chatantwort, Bild, Video/PDF und @Mara testen.
+6. Arbeitsweg muss beim Live-Generieren E.M.B.E.R CoreAI arbeitet zeigen.
+7. Konten mit eigenem Assistenten-Anzeigenamen muessen ihren Namen
+   behalten; zuvor im Standard Ember benannte CoreAI erscheint als Mara.
+8. Die Engine-/Dateipfad-Reparatur aus 0.5.23 ist davon unabhaengig und
+   muss separat live bestaetigt werden.
+Keine behauptete Live- oder GitHub-Actions-Abnahme.
