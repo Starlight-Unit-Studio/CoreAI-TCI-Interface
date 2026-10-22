@@ -317,11 +317,14 @@ function coreui_console_local_js_fragment(string $reply, string $filename, bool 
   if (strlen($reply) < 1 || strlen($reply) > 110000
       || str_contains($reply, "\0")
       || preg_match('~\[(?:/)?(?:PY|WEB|BROWSE)(?::[^\]]*)?\]~i', $reply)) return null;
-  $raw = ltrim($reply);
+  $probe = ltrim($reply);
   $heading = '~^#{1,6}[ \t]+' . preg_quote($filename, '~') . '[ \t]*\r?\n~i';
-  $raw = preg_replace($heading, '', $raw, 1);
-  $raw = ltrim((string)$raw);
   $ticks = str_repeat(chr(96), 3);
+  // Keep raw continuation whitespace: a newline after a // comment can
+  // change the meaning of the concatenated JavaScript source.
+  $raw = ($first || preg_match($heading, $probe) === 1
+      || str_starts_with($probe, $ticks)) ? $probe : $reply;
+  $raw = preg_replace($heading, '', $raw, 1);
   if (str_starts_with($raw, $ticks)) {
     $nl = strpos($raw, "\n");
     if ($nl === false || $nl > 160) return null;
@@ -330,8 +333,8 @@ function coreui_console_local_js_fragment(string $reply, string $filename, bool 
     $raw = substr($raw, $nl + 1);
     $raw = preg_replace('~\r?\n' . preg_quote($ticks, '~') . '\s*$~', '', $raw, 1);
   }
-  $raw = rtrim((string)$raw);
-  if ($raw === '' || strlen($raw) > 110000 || str_contains($raw, $ticks)) return null;
+  $raw = rtrim((string)$raw, "\r");
+  if (trim($raw) === '' || strlen($raw) > 110000 || str_contains($raw, $ticks)) return null;
   if ($first && !preg_match(
       '~^\s*(?:(?://[^\r\n]*\r?\n|/\*.*?\*/\s*)*)(?:const\b|let\b|var\b|function\b|class\b|import\b|export\b|async\b|document\b|window\b|console\b|["\x27]use strict["\x27]|(?:\(\s*(?:function|async|\(?\s*\)?\s*=>)))~s',
       $raw)) return null;
