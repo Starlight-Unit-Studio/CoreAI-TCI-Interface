@@ -87,6 +87,7 @@ UI_FILES=(
   database/migrations/011_console_artifacts.sql
   database/migrations/012_console_work_events.sql
   database/migrations/013_console_agent_runs.sql
+  database/migrations/014_coreai_mara_identity.sql
   api/console_work_events.php
   api/console_work_store.php
   api/console_agent_runs.php
@@ -96,6 +97,7 @@ UI_FILES=(
   scripts/work-events-persistence-selftest.php
   scripts/local-file-tool-selftest.php
   scripts/gemma-zero-parameters-selftest.php
+  scripts/coreai-identity-selftest.php
   config/Modelfile.template
   scripts/response-timing-ui-selftest.js
   scripts/agent-runs-selftest.php
@@ -260,6 +262,11 @@ if command -v php >/dev/null 2>&1; then
     ok 'Gemma: freigegebenes Modelfile und keine API-Parameterueberschreibung.'
   else
     fail 'Gemma-Modelfile-/Ollama-Parametervertrag fehlgeschlagen.'
+  fi
+  if runuser -u www-data -- php "$PROJECT_ROOT/scripts/coreai-identity-selftest.php" >/dev/null 2>&1; then
+    ok 'Mara CoreAI: Identitaet, Bildstil, Altprofil-Migration und Namensanzeige geprueft.'
+  else
+    fail 'Mara-CoreAI-Identitaets-Selbsttest fehlgeschlagen.'
   fi
 
   if command -v node >/dev/null 2>&1; then
