@@ -7,7 +7,11 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 Ember CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.20` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.21` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Source-first browser-game ZIP exports (0.5.21)
+
+For explicit multi-file ZIP projects with named sources (or an unnamed Snake/browser-game ZIP), the model is asked to return complete HTML/CSS/JS source files in inert fenced blocks. Missing sources are requested one at a time, using a bounded sequence. CoreUI then prepares a deterministic Python writer and verifies each emitted file plus the ZIP in the existing sandbox. Model-authored [PY] scripts are not executed on this specific path; generic Python and single-file tasks keep their existing routes. Incomplete source collections fail without a fake download. Actual Ollama output, PHP/DB/worker integration, verified download cards and browser gameplay still need acceptance on the live host.
 
 ## File tool routing restored (0.5.19)
 
