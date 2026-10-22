@@ -1,0 +1,38 @@
+EMBER COREUI UEBERGABE 0.5.20
+22.10.2026. Vor Merge. Live-Abnahme offen.
+Basis main: 59922334966aa06ac211440e6dbe29769ddd0478 (0.5.19).
+Branch: fix/restore-modelfile-0.5.20.
+
+ANFORDERUNG
+Nutzer hat ein vollstaendiges Modelfile vorgegeben. config/Modelfile.template
+enthaelt diesen Text wortgetreu einschliesslich Mara Thorne / TSA-Thorn.
+FROM gemma4:e4b, TEMPLATE {{ .Prompt }}, RENDERER gemma4, PARSER gemma4.
+PARAMETER temperature 1
+PARAMETER top_k 64
+PARAMETER top_p 0.95
+PARAMETER draft_num_predict 0
+PARAMETER num_predict -1
+
+INTEGRATION
+Compose-Installer lehnt PARAMETER nicht mehr ab. Beide Installer waehlen
+gemma4:e4b als Standard und ersetzen nur FROM bei explizitem COREUI_BASE_MODEL.
+Das getrennte CoreUI-Modell wird beim Update neu erstellt; Basismodell bleibt.
+Lokale Gemma-API-Aufrufe senden keine options und ueberschreiben daher die
+Modelfile-Werte nicht. Bestehende Thinking-Schalter bleiben separat erhalten.
+Keine globale Umbenennung der App oder vorhandenen CoreUI-Systemprompts.
+Keine Migration. One-Liner unveraendert. Modellanfragen weiterhin seriell.
+
+PRUEFUNGEN
+Wortgetreuer Vergleich zur Nutzervorlage; Gemma-Modelfile-/API-Selftest,
+Shell-Syntax beider Installer/Preflights, Branding, Version und Cache-Hashes.
+Kein laufendes Ollama in dieser Arbeitsumgebung. Modellneubau und Wirkung
+auf reale Modellantworten nicht lokal bestaetigt. Keine Actions.
+
+LIVE
+Installer ausfuehren; ollama show ember-coreui:latest --modelfile kontrollieren.
+Falls ein eigener COREUI_MODEL_NAME gesetzt ist, diesen Modellnamen nutzen.
+Ollama muss TEMPLATE/RENDERER/PARSER akzeptieren. Anschliessend denselben
+Snake-Auftrag testen und Python-Job sowie echte Downloads/ZIP pruefen.
+P07 bleibt bis zur Live-Abnahme offen, Issue #52 separat.
+Nach jedem Merge TXT-Protokoll. Dauerfreigabe fuer beauftragte CoreUI-Arbeiten,
+Veroeffentlichung, PR und Merge liegt vor. Version pro Merge numerisch erhoehen.

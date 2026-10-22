@@ -17,14 +17,20 @@ function coreui_gemma_assert(bool $condition, string $error): void {
 
 $root = dirname(__DIR__);
 $template = (string)file_get_contents($root . '/config/Modelfile.template');
-coreui_gemma_assert(str_contains($template, 'FROM {{BASE_MODEL}}'),
+coreui_gemma_assert(str_contains($template, 'FROM gemma4:e4b'),
   'missing FROM base model');
 coreui_gemma_assert(str_contains($template, 'SYSTEM """'),
   'must retain Ember system instructions');
-coreui_gemma_assert(
-  preg_match('/^[ \t]*PARAMETER(?:[ \t]|$)/im',$template) !== 1,
-  'CoreUI template must not define Ollama PARAMETER lines'
-);
+function coreui_gemma_modelfile_parameters(string $file): array {
+  preg_match_all('/^PARAMETER[ \t]+(\S+)[ \t]+([^\r\n]+)$/m', $file, $matches, PREG_SET_ORDER);
+  return array_map(static fn(array $line): string => $line[1] . ' ' . trim($line[2]), $matches);
+}
+$expectedParameters = ['temperature 1','top_k 64','top_p 0.95','draft_num_predict 0','num_predict -1'];
+coreui_gemma_assert(coreui_gemma_modelfile_parameters($template) === $expectedParameters,
+  'must retain exactly the owner-approved Modelfile parameters');
+foreach (['TEMPLATE {{ .Prompt }}','RENDERER gemma4','PARSER gemma4','Du bist Mara Thorne,','TSA-Thorn CoreUI'] as $required) {
+  coreui_gemma_assert(str_contains($template, $required), 'missing approved directive: ' . $required);
+}
 
 foreach (['ember-coreui:latest','ember-coreui','gemma4:e4b','gemma4:latest','gemma3:latest','gemma2:latest','gemma:latest'] as $model) {
   coreui_gemma_assert(ember_model_is_parameter_free_gemma($model),
@@ -47,7 +53,7 @@ coreui_gemma_assert(isset($cloud['temperature'],$cloud['top_p'],$cloud['top_k'])
   'Cloud sampler defaults unexpectedly removed');
 
 $installer = (string)file_get_contents($root . '/scripts/install.sh');
-coreui_gemma_assert(str_contains($installer, 'grep -Eiq')
+coreui_gemma_assert(!str_contains($installer, 'verbotene PARAMETER-Zeilen')
   && str_contains($installer, 'Modelfile.generated')
   && str_contains($installer, 'ollama create "$MODEL_NAME"'),
   'Installer must validate and rebuild owned Gemma model on update');
@@ -63,7 +69,7 @@ coreui_gemma_assert(str_contains($stream, "if (\$options !== []) \$payload['opti
 $installedFile = $root . '/var/Modelfile.generated';
 if (is_file($installedFile)) {
   $saved = (string)file_get_contents($installedFile);
-  coreui_gemma_assert(preg_match('/^[ \t]*PARAMETER(?:[ \t]|$)/im',$saved) !== 1,
-    'existing generated Modelfile still contains user-forbidden parameters');
+  coreui_gemma_assert(coreui_gemma_modelfile_parameters($saved) === $expectedParameters,
+    'generated Modelfile differs from approved parameters; rebuild the owned model');
 }
-echo "CoreUI Gemma no-parameter model and API selftest: OK\n";
+echo "CoreUI Gemma approved Modelfile and API inheritance selftest: OK\n";

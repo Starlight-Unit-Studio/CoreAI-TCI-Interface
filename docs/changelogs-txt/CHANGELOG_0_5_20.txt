@@ -1,0 +1,10 @@
+EMBER COREUI 0.5.20
+
+## 0.5.20 - 22.10.2026
+
+- Vom Nutzer geliefertes Modelfile wortgetreu uebernommen, inklusive Mara Thorne / TSA-Thorn SYSTEM, TEMPLATE, RENDERER und PARSER.
+- Parameter wiederhergestellt: temperature 1, top_k 64, top_p 0.95, draft_num_predict 0, num_predict -1.
+- Beide Installer verwenden standardmaessig gemma4:e4b. Explizites COREUI_BASE_MODEL ersetzt ausschliesslich die FROM-Zeile. PARAMETER-Verbot im Compose-Installer entfernt.
+- Lokale Gemma-API-Aufrufe senden weiterhin keine options-Ueberschreibungen. Preflight und Regression pruefen nun die freigegebenen Modelfile-Parameter statt deren Abwesenheit.
+- Keine Migration oder Aenderung am Installer-One-Liner. Ollama-Neuerstellung und Modellverhalten muessen live bestaetigt werden; GitHub Actions bleiben uebersprungen.
+

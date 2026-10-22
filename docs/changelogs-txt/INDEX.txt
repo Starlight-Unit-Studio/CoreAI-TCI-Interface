@@ -47,3 +47,5 @@ Quelle: CHANGELOG.md aus Ember CoreUI 0.5.18 (main)
 Jede Version liegt als eigenstaendige UTF-8-TXT-Datei vor.
 
 * CHANGELOG_0_5_19.txt
+
+* CHANGELOG_0_5_20.txt
