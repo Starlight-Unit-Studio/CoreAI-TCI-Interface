@@ -1,0 +1,53 @@
+EMBER COREUI UEBERGABEPROTOKOLL 0.5.24
+Stand 22.10.2026
+Basis 0.5.23 main cb4cd5748e23f73d4976db65cf56d0607fd7f619
+Branch fix/mara-tci-persona-and-model-routing-0.5.24
+
+BENUTZERFREIGABE
+Das Modelfile darf geaendert werden. Einzige feste Verbotsregel:
+Bei Gemma niemals num_ctx im Modelfile oder in Ollama-Requests setzen.
+PARAMETER num_predict -1 darf aus dem Modelfile entfernt werden.
+PARAMETER draft_num_predict 0 bleibt. Die uebrigen Samplerwerte unveraendert.
+Die TCI heisst Mara Thorne (Ravager Thorn); CoreUI ist nur das Terminal,
+E.M.B.E.R. CoreAI die technische KI-Dienstbezeichnung.
+Gewaenscht ist Maras lockere, charaktervolle Chatstimme aus dem zuvor
+getrennten Bilderkennungs-Prompt.
+Live-Arbeitsanzeige: E.M.B.E.R. CoreAI arbeitet.
+
+REGRESSIONSHINWEIS
+Der Benutzer bestaetigt, dass vor dem spaeteren Arbeitsweg-Umbau bereits
+lokales Qwen 3.6 (35b, quantisiert, bevorzugtes Coding-/Agent-Modell)
+ZIP-Dateien erfolgreich erzeugte. Daraus folgt KEIN Hardware-Beleg fuer
+den lokalen Gemma-Fehler. Fuer lokale Qwen-Coding-Modelle wird der
+bereits bekannte [PY]-Werkzeugauftrag im isolierten Worker priorisiert
+und nicht mehr der spaetere strict source-first ZIP-Fence-Pfad.
+Cloud-Modelle behalten ihren funktionierenden Weg; Gemma behaelt die
+eigene fortsetzbare lokale Quellcodegenerierung. Der voruebergehende
+Patch ist ein Routing-Rollback, noch kein bestaetigter Live-Erfolg.
+
+DATEIEN
+config/Modelfile.template: Persona-Stil, Identitaet Mara TCI, kein num_ctx,
+num_predict -1 entfernt, draft_num_predict 0 erhalten.
+api/chat.php: Mara bei Text, Vision, Werkzeugen; lokaler Qwen-Pfad.
+api/profile_store.php, api/config.php, js/console-app.js, js/settings.js:
+Mara als Standardanzeigename; alte Standardwerte Ember beim Anzeigen
+abgebildet, benutzerdefinierte andere Namen nicht ueberschreiben.
+js/coreui-work-events.js: E.M.B.E.R. CoreAI arbeitet.
+scripts/gemma-zero-parameters-selftest.php und
+scripts/local-file-tool-selftest.php: passende Regressionen.
+VERSION, Frontend-Versionslabels, Cache-Fingerprints, README,
+Changelog, Preflights und Handover.
+
+TECHNISCHE BEGRENZUNG
+Bestehende interne Funktionsnamen, API-IDs und Datenbanktabellen mit
+ember werden absichtlich NICHT umbenannt, um Installs und Sessions
+kompatibel zu halten. Kein neuer Installer-Befehl oder DB-Migration.
+Keine GitHub Actions; Live-Abnahme noch offen.
+
+ABNAHME
+Bestehenden One-Liner aus main verwenden, Version 0.5.24 bestaetigen.
+Pruefen: Mara spricht im normalen Chat und Vision-Modus locker;
+Aktive Arbeitszeile E.M.B.E.R. CoreAI arbeitet; Nutzerprofil Mara;
+Qwen 3.6 lokal erstellt echten spielbaren ZIP-Download wieder.
+Separat Gemma lokal testen, falls gewuenscht.
+Fehlerdetails dokumentieren; keine erfundenen Download-Erfolge.
