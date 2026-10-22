@@ -2,7 +2,7 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
-## 0.5.23 - 22.10.2026
+undefined## 0.5.23 - 22.10.2026
 
 - Livebefund aus 0.5.22: HTML und CSS erfolgreich erkannt; `game.js` in zwei lokalen Gemma-Aufrufen mit `model_output_truncated` beendet. Das ist eine Ollama-Ausgabelimitierung, kein belegter Parser- oder ZIP-Worker-Defekt.
 - Lokale JavaScript-Quelltexte werden bei `done_reason=length` nicht mehr verworfen: Maximal zwei serielle Fortsetzungsanfragen vervollstaendigen den vorhandenen Quelltext in derselben privaten Sitzung.
