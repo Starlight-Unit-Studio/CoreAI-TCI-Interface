@@ -105,7 +105,7 @@
     characterId:  null,
     charName:     null,
     userDisplayName: null,
-    assistantName: 'Ember',
+    assistantName: 'Mara',
     userAvatarUrl: null,
     assistantAvatarUrl: null,
     csrfToken:     '',
@@ -738,12 +738,12 @@
     }
     renderConversationRows(ses);
     if (!state.messageCacheBySession[ses.id] || !state.messageCacheBySession[ses.id].length) {
-      appendMessageEl('system', 'ARCHNET VERBINDUNG HERGESTELLT. EMBER INTERFACE AKTIV.');
+      appendMessageEl('system', 'ARCHNET VERBINDUNG HERGESTELLT. COREUI TERMINAL AKTIV.');
     }
     if (state.pendingBySession[ses.id]) {
       showTypingIndicator();
       startCountdown();
-      setStatus('waiting', 'EMBER ANTWORTET\u2026');
+      setStatus('waiting', 'MARA ANTWORTET\u2026');
     }
     renderQueuedTurns(ses);
   }
@@ -800,13 +800,14 @@
 
   // ── Hilfsfunktionen ──────────────────────────────────────
   function isEmberMsg(m) {
-    return (m.character_name && m.character_name.toLowerCase() === 'ember') ||
+    return (m.character_id && m.character_id.toLowerCase() === 'ember') ||
+           (m.character_name && m.character_name.toLowerCase() === 'ember') ||
            m.is_ember === true;
   }
 
   function stripEmberPrefix(text) {
-    // "@Ember " am Anfang entfernen (case-insensitive)
-    return text.replace(/^@ember\s*/i, '');
+    // "@Mara" sowie den bisherigen Alias "@Ember" am Anfang entfernen.
+    return text.replace(/^@(?:mara|ember)\s*/i, '');
   }
 
   function profileInitials(value, fallback) {
@@ -820,7 +821,7 @@
   function applyMessageAvatar(element, role, name) {
     var isUser = role === 'user';
     var url = isUser ? state.userAvatarUrl : state.assistantAvatarUrl;
-    element.textContent = profileInitials(name, isUser ? 'DU' : 'EM');
+    element.textContent = profileInitials(name, isUser ? 'DU' : 'MA');
     element.classList.remove('has-image');
     if (!url) return;
 
@@ -923,7 +924,7 @@
     avatar.className = 'msg-avatar';
     applyMessageAvatar(avatar, role, role === 'user'
       ? (name || state.userDisplayName || state.charName || 'DU')
-      : (state.assistantName || 'Ember'));
+      : (state.assistantName || 'Mara'));
     row.appendChild(avatar);
 
     // Content wrapper
@@ -953,7 +954,7 @@
     nameEl.className = 'msg-name';
     nameEl.textContent = role === 'user'
       ? (name || state.userDisplayName || state.charName || 'DU').toUpperCase()
-      : (state.assistantName || 'Ember').toUpperCase();
+      : (state.assistantName || 'Mara').toUpperCase();
     content.appendChild(nameEl);
 
     var bubble = document.createElement('div');
@@ -1197,7 +1198,7 @@
       if (!request.id) throw new Error('generation_request_missing');
       state.pendingBySession[ses.id] = Number(request.trigger_message_id) || true;
       updateActivePendingUi();
-      setStatus('waiting', mode === 'continue' ? 'EMBER SETZT FORT\u2026' : 'EMBER ERZEUGT ALTERNATIVE\u2026');
+      setStatus('waiting', mode === 'continue' ? 'MARA SETZT FORT\u2026' : 'MARA ERZEUGT ALTERNATIVE\u2026');
       showTypingIndicator();
       startCountdown();
       openStreamForReply(ses, Number(request.trigger_message_id) || 0, request);
@@ -1298,7 +1299,7 @@
     var actions = document.createElement('div');
     actions.className = 'msg-actions';
     actions.setAttribute('role', 'toolbar');
-    actions.setAttribute('aria-label', role === 'ember' ? 'Aktionen fuer Ember-Antwort' : 'Aktionen fuer Benutzernachricht');
+    actions.setAttribute('aria-label', role === 'ember' ? 'Aktionen fuer Mara-Antwort' : 'Aktionen fuer Benutzernachricht');
 
     var copy = createActionButton('copy', 'Nachricht kopieren');
     copy.addEventListener('click', function () { copyMessageText(copy, text); });
@@ -1486,14 +1487,14 @@
     row.className = 'msg-row ember';
     var avatar = document.createElement('div');
     avatar.className = 'msg-avatar';
-    applyMessageAvatar(avatar, 'ember', state.assistantName || 'Ember');
+    applyMessageAvatar(avatar, 'ember', state.assistantName || 'Mara');
     row.appendChild(avatar);
 
     var content = document.createElement('div');
     content.className = 'msg-content';
     var nameEl = document.createElement('div');
     nameEl.className = 'msg-name';
-    nameEl.textContent = (state.assistantName || 'Ember').toUpperCase();
+    nameEl.textContent = (state.assistantName || 'Mara').toUpperCase();
     content.appendChild(nameEl);
 
     var session = activeSession();
@@ -1775,7 +1776,7 @@
     var selected = Array.prototype.slice.call(fileList || []);
     if (!selected.length) return;
     if (state.waitingEmber) {
-      appendMessageEl('system', '\u231b Ember antwortet gerade\u2026 Anhaenge bitte danach.');
+      appendMessageEl('system', '\u231b Mara antwortet gerade\u2026 Anhaenge bitte danach.');
       scrollToBottom();
       return;
     }
@@ -1874,7 +1875,7 @@
       state.sendTimestampBySession[ses.id] = Date.now();
       updateActivePendingUi();
       renderHistory(ses);
-      setStatus('waiting', 'EMBER VERARBEITET DIE AENDERUNG…');
+      setStatus('waiting', 'MARA VERARBEITET DIE AENDERUNG…');
       showTypingIndicator();
       startCountdown();
       scrollToBottom();
@@ -1931,7 +1932,7 @@
     if (!options.from_queue) clearAttachments();
     scrollToBottom();
 
-    setStatus('waiting', 'EMBER ANTWORTET\u2026');
+    setStatus('waiting', 'MARA ANTWORTET\u2026');
     state.pendingBySession[sessionId] = true;
     state.waitingEmber = true;
     state.sendTimestamp = Date.now();
@@ -2264,7 +2265,7 @@
         session_id: sessionId,
         reply_to_id: Number(userMsgId) || 0,
         character_id: 'ember',
-        character_name: 'Ember',
+        character_name: 'Mara',
         message: text,
         is_ember: true,
         thinking_content: thinking,
@@ -2337,7 +2338,7 @@
     if (browseJobId > 0) {
       // Die FINALE Antwort kommt erst NACH dem Surfen (per Hintergrund-Poll). Bis dahin arbeitet
       // Ember weiter -> Status sichtbar "arbeitet" (amber) lassen, NICHT vorschnell auf grün.
-      setStatus('waiting', 'EMBER ANTWORTET\u2026');
+      setStatus('waiting', 'MARA ANTWORTET\u2026');
       openBrowseWindow(browseJobId, sessionId);
       if (data && data.generation_request) {
         startGenerationStatusPoll(ses, { id: data.generation_request });
@@ -2509,7 +2510,7 @@
 
     var avatar = document.createElement('div');
     avatar.className = 'msg-avatar';
-    applyMessageAvatar(avatar, 'ember', state.assistantName || 'Ember');
+    applyMessageAvatar(avatar, 'ember', state.assistantName || 'Mara');
     row.appendChild(avatar);
 
     var content = document.createElement('div');
@@ -2527,7 +2528,7 @@
       + '<div class="browse-live-stage">'
       +   '<div class="browse-live-placeholder"><span class="browse-live-orbit"></span>'
       +     '<strong>BROWSERKANAL WIRD SYNCHRONISIERT</strong><small>PLAYWRIGHT // SECURE VIEW</small></div>'
-      +   '<img class="browse-live-shot" alt="Aktuelle Browseransicht von Embers Recherche" draggable="false">'
+      +   '<img class="browse-live-shot" alt="Aktuelle Browseransicht von Maras Recherche" draggable="false">'
       +   '<span class="browse-scanline" aria-hidden="true"></span>'
       +   '<span class="browse-ghost-cursor active" aria-hidden="true"></span>'
       + '</div>'
@@ -2602,7 +2603,7 @@
         removeTypingIndicator();
         updateActivePendingUi();
         setStatus('online', 'VERBUNDEN');
-        appendMessageEl('system', '\u231b Ember hat nicht geantwortet.');
+        appendMessageEl('system', '\u231b Mara hat nicht geantwortet.');
         scrollToBottom();
       }
       drainQueuedTurn(sessionId);
@@ -2702,7 +2703,7 @@
         state.uid = d.user_id;
         state.csrfToken = d.csrf_token || '';
         state.userDisplayName = d.display_name || null;
-        state.assistantName = d.assistant_name || 'Ember';
+        state.assistantName = d.assistant_name || 'Mara';
         state.userAvatarUrl = d.avatars && d.avatars.user ? d.avatars.user : null;
         state.assistantAvatarUrl = d.avatars && d.avatars.assistant ? d.avatars.assistant : null;
         if (inputEl) inputEl.placeholder = 'Nachricht an ' + state.assistantName + '…';
@@ -2716,7 +2717,7 @@
       .then(function(d) {
         if (!d.ok || !d.profile) return;
         state.userDisplayName = d.profile.display_name || state.userDisplayName;
-        state.assistantName = d.profile.assistant_name || state.assistantName || 'Ember';
+        state.assistantName = d.profile.assistant_name || state.assistantName || 'Mara';
         state.userAvatarUrl = d.profile.avatars && d.profile.avatars.user ? d.profile.avatars.user : null;
         state.assistantAvatarUrl = d.profile.avatars && d.profile.avatars.assistant ? d.profile.avatars.assistant : null;
         if (inputEl) inputEl.placeholder = 'Nachricht an ' + state.assistantName + '…';
@@ -2862,7 +2863,7 @@
             var preferred = rememberedActiveSession();
             var ses = sessionById(preferred) || state.sessions[0] || null;
             if (!ses) {
-              appendMessageEl('system', 'ARCHNET VERBINDUNG HERGESTELLT. EMBER INTERFACE AKTIV.');
+              appendMessageEl('system', 'ARCHNET VERBINDUNG HERGESTELLT. COREUI TERMINAL AKTIV.');
               scrollToBottom();
               setStatus('online', 'VERBUNDEN');
               return;
