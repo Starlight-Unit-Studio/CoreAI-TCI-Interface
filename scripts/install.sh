@@ -423,7 +423,7 @@ ensure_ollama_model() {
 
   log "Erzeuge das getrennte Ollama-Modell $MODEL_NAME aus $BASE_MODEL."
   ollama create "$MODEL_NAME" -f "$PROJECT_ROOT/var/Modelfile.generated"
-  log "Eigene Ollama-Modellvorlage fuer $MODEL_NAME enthaelt keine PARAMETER-Vorgaben."
+  log "Eigene Ollama-Modellvorlage fuer $MODEL_NAME nutzt die freigegebenen Modelfile-Parameter ohne num_ctx/num_predict."
   # The upstream FROM model may itself carry defaults, which Ollama can
   # display in 'show --modelfile'. Those are not injected by CoreUI.
   printf '%s\n' "$MODEL_NAME" > "$MODEL_OWNER_FILE"
