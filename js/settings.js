@@ -221,10 +221,10 @@
   function applyProfile(profile) {
     profile = profile || {};
     if (profileDisplayName) profileDisplayName.value = profile.display_name || '';
-    if (assistantDisplayName) assistantDisplayName.value = profile.assistant_name || 'Ember';
+    if (assistantDisplayName) assistantDisplayName.value = profile.assistant_name || 'Mara';
     var avatars = profile.avatars || {};
     setAvatarPreview(userAvatarPreview, avatars.user, profile.display_name || 'Operator');
-    setAvatarPreview(assistantAvatarPreview, avatars.assistant, profile.assistant_name || 'Ember');
+    setAvatarPreview(assistantAvatarPreview, avatars.assistant, profile.assistant_name || 'Mara');
     setAvatarPreview(accountAvatar, avatars.user, profile.display_name || 'Operator');
     if (accountDisplayName) accountDisplayName.textContent = (profile.display_name || 'ANGEMELDETER OPERATOR').toUpperCase();
   }
@@ -246,7 +246,7 @@
       body: JSON.stringify({
         action: 'save',
         display_name: profileDisplayName ? profileDisplayName.value : '',
-        assistant_name: assistantDisplayName ? assistantDisplayName.value : 'Ember'
+        assistant_name: assistantDisplayName ? assistantDisplayName.value : 'Mara'
       })
     }).then(function (data) {
       applyProfile(data.profile || {});
