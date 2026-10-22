@@ -257,6 +257,15 @@ $localPrompt = coreui_console_local_source_prompt($implicitRequest, 'game.js', [
 local_file_test(is_string($localPrompt) && str_contains($localPrompt, 'KEINE Python-Ausfuehrung')
   && str_contains($localPrompt, 'game.js') && str_contains($localPrompt, 'id="game"')
   && str_contains($localPrompt, 'ohne Markdown'), 'Gemma file prompt must be compact and raw-only');
+$jsCompactPrompt = coreui_console_local_source_prompt($implicitRequest, 'game.js', [
+  'index.html'=>['name'=>'index.html','bytes'=>$localHtml],
+  'style.css'=>['name'=>'style.css','bytes'=>$localCss],
+], false);
+local_file_test(is_string($jsCompactPrompt)
+  && str_contains($jsCompactPrompt, 'id="game"')
+  && !str_contains($jsCompactPrompt, 'color:white'),
+  'Gemma JavaScript prompt must retain DOM references but avoid CSS source bulk');
+
 foreach (['index.html'=>$localHtml,'style.css'=>$localCss,'game.js'=>$localJs] as $localName=>$localCode) {
   $file = coreui_console_local_source_reply($localCode, $implicitRequest, $localName);
   local_file_test(is_array($file) && $file['name'] === $localName
