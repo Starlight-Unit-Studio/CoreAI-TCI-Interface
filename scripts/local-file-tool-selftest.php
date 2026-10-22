@@ -240,6 +240,57 @@ $incomplete = coreui_console_project_source_progress(
   $implicitRequest);
 local_file_test(is_array($incomplete) && $incomplete['project'] === null,
   'unclosed source fence must never be executed');
+// Local Gemma ZIP export uses one raw source per model call and must not
+// execute model-authored [PY] code or depend on closing Markdown fences.
+$localHtml = "<!DOCTYPE html><html><head><link rel=\"stylesheet\" href=\"style.css\"></head>"
+  . "<body><canvas id=\"game\"></canvas><script src=\"game.js\"></script></body></html>";
+$localCss = "body { margin:0; color:white; }";
+$localJs = "const canvas = document.getElementById('game');\n"
+  . "function tick(){ canvas.width = 400; }\ntick();";
+$localSpec = coreui_console_project_request_spec($implicitRequest);
+local_file_test(coreui_console_local_source_prompt($implicitRequest, 'game.js', [
+  'index.html'=>['name'=>'index.html','bytes'=>$localHtml],
+], false) !== null, 'local raw one-file prompt must be available');
+$localPrompt = coreui_console_local_source_prompt($implicitRequest, 'game.js', [
+  'index.html'=>['name'=>'index.html','bytes'=>$localHtml],
+], true);
+local_file_test(is_string($localPrompt) && str_contains($localPrompt, 'KEINE Python-Ausfuehrung')
+  && str_contains($localPrompt, 'game.js') && str_contains($localPrompt, 'id="game"')
+  && str_contains($localPrompt, 'ohne Markdown'), 'Gemma file prompt must be compact and raw-only');
+foreach (['index.html'=>$localHtml,'style.css'=>$localCss,'game.js'=>$localJs] as $localName=>$localCode) {
+  $file = coreui_console_local_source_reply($localCode, $implicitRequest, $localName);
+  local_file_test(is_array($file) && $file['name'] === $localName
+    && $file['bytes'] === $localCode, 'local raw source rejected: ' . $localName);
+}
+$localFence = chr(96).chr(96).chr(96);
+local_file_test(
+  coreui_console_local_source_reply($localFence . "javascript\n" . $localJs,
+    $implicitRequest, 'game.js')['bytes'] === $localJs,
+  'an unclosed sole JavaScript fence must be recoverable as inert source');
+local_file_test(
+  coreui_console_local_source_reply("### game.js\n" . $localFence
+    . "javascript\n" . $localJs . "\n" . $localFence,
+    $implicitRequest, 'game.js')['bytes'] === $localJs,
+  'original Markdown fenced source must remain supported');
+foreach ([
+  ["[PY]print('invalid')[/PY]",'game.js'],
+  ['Hier ist deine fertige Datei, viel Spass!','game.js'],
+  ['const x = 1;','index.html'],
+  ["<!DOCTYPE html><html><body>unfinished",'index.html'],
+  ["body { color:red;",'style.css'],
+] as [$badSource,$badFilename]) {
+  local_file_test(coreui_console_local_source_reply(
+    $badSource,$implicitRequest,$badFilename) === null,
+    'invalid local source must not be packaged: ' . $badFilename);
+}
+$localReady = [];
+foreach (['index.html'=>$localHtml,'style.css'=>$localCss,'game.js'=>$localJs] as $name=>$bytes) {
+  $localReady[$name] = coreui_console_local_source_reply($bytes, $implicitRequest, $name);
+}
+$localWriter = coreui_console_project_files_python($localReady,$localSpec,100000);
+local_file_test(is_array($localWriter) && $localWriter['file_count'] === 4
+  && str_contains($localWriter['code'],'zipfile.ZipFile'),
+  'three local raw sources must form complete deterministic ZIP job');
 $handler = file_get_contents(dirname(__DIR__) . '/api/chat.php');
 // Load only pure production helpers, without booting the HTTP/DB endpoint.
 function ember_cfg(string $key, mixed $default = null): mixed { return $default; }
