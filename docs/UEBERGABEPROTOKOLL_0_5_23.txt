@@ -1,0 +1,70 @@
+EMBER COREUI UEBERGABEPROTOKOLL 0.5.23
+Datum 22.10.2026
+Ausgangsstand main: bab2d6838bca534297c4ec6f52f1aa02bce1c523 (0.5.22).
+Arbeitsbranch: fix/local-gemma-js-resume-0.5.23
+
+FEHLERBEFUND
+Live-Screenshot 0.5.22: index.html und style.css vom lokalen
+ember-coreui:latest erkannt. Fuer game.js erste Fehlermeldung
+12:22:17 und zweite 12:23:52, beide:
+Grund model_output_truncated.
+Danach source_files_incomplete fuer game.js.
+Daraus folgt: Lokale Ollama-Generierung wird vor Abschluss der
+komplexeren JavaScript-Datei beendet. Die exakte interne Ursache
+(Kontextfenster oder anderer Ausgabedeckel) ist durch die sichtbaren
+Daten nicht festgestellt. Parser und Worker sind nicht als Ursache
+dieses Abbruchs belegt.
+Cloud-GPT und Ollama Gemma 4 Cloud erstellten in 0.5.21 bereits
+echte Quell- und ZIP-Downloads.
+
+UMSETZUNG
+Bei lokalen, explizit zum Download angeforderten Mehrdateien-ZIPs
+bleibt die voneinander getrennte HTML-/CSS-/JS-Erzeugung erhalten.
+Wenn ein lokaler JS-Aufruf mit done_reason=length endet, wird seine
+Teil-Ausgabe sicher und nur fuer den aktuellen privaten Turn bewahrt,
+anstatt erneut die gesamte game.js zu erzeugen.
+Maximal zwei direkte Fortsetzungsanfragen bekommen den Benutzerauftrag
+und einen begrenzten Suffix des bereits generierten JavaScript-Codes.
+Der Quelltext wird mit einem gebundenen JS-Fragmentparser geprueft,
+exakte gedoppelte Textueberlappungen werden nur einmal uebernommen.
+Unbrauchbare Fortsetzungen und reine Wiederholungen werden abgelehnt.
+Erst eine nicht mehr abgeschnittene, vom vorhandenen Source-Validator
+akzeptierte Gesamtdatei geht mit den anderen Quellen an den
+servereigenen verifizierten Python-/ZIP-Writer.
+Durch die Fortsetzung entstehen weder neue globale Einstellungen
+noch Aenderungen am Modelfile. Alle Ollama-Aufrufe bleiben seriell.
+Der normale lokale JavaScript-Prompt behaelt HTML-Elementreferenzen,
+laesst aber volle CSS-Quelltexte fort, um Kontextplatz zu sparen.
+Arbeitsereignisse enthaelt nur whitelisted Laengen- und Tokenzaehler
+sowie sicher gepruefte Metadaten, keine Prompts oder generierten Codes.
+Es werden keinerlei Geheimnisse oder Modellantworten persistiert.
+
+DATEIEN
+- api/chat.php: begrenzte Fortsetzungsaufrufe nur fuer lokale JS-Dateien.
+- api/console_data_link_bridge.php: Fragmentparser, Fortsetzungsprompt,
+  sichere Zusammenfuehrung und kuerzerer JS-Erstprompt.
+- api/console_work_store.php: source_chars/eval_count/prompt_eval_count.
+- scripts/local-file-tool-selftest.php: Truncation-/Overlap-Regressionen.
+- scripts/work-events-selftest.php: sichere Zaehler-Regression.
+- VERSION, sechs HTML-Seiten, Bootstrap-Cache-Fingerprint, Branding,
+  Preflights, README, Changelog, TXT-Index und neues Uebergabeprotokoll.
+
+REGELN
+- config/Modelfile.template bleibt wortgetreu unveraendert:
+  draft_num_predict 0 und num_predict -1, keine num_ctx-Injektion.
+- Cloud-Modelle und andere Python-/Einzeldateiwerkzeuge bleiben unveraendert.
+- Kein neuer Installer-One-Liner; keine Migration.
+- Kein Einsatz von GitHub Actions, da das Kontingent aufgebraucht ist.
+- Die gesamte Laufzeit und echte lokale Gemma-Fortsetzung sind nicht
+  auf dem Entwicklungsrechner nachgestellt; Live-Abnahme ausstehend.
+
+LIVE
+Bestehenden One-Liner aus main verwenden. Version 0.5.23 bestaetigen.
+Denselben lokalen Snake-ZIP-Auftrag ausfuehren. Sollte die JS-Ausgabe
+abgeschnitten werden, muessen nun Ereignisse zur JavaScript-Fortsetzung
+erscheinen. Bei erfolgreicher Generierung muessen game.js, index.html,
+style.css und das gewuenschte ZIP als echte Downloads erscheinen.
+Die Dateien entpacken und das Snake-Spiel im Browser testen.
+Bei erneutem Fehler die Details mit Grund, eval_count,
+prompt_eval_count und source_chars aus dem Arbeitsweg dokumentieren.
+Das Issue #52 zur Modell-Umschaltung ist separat.

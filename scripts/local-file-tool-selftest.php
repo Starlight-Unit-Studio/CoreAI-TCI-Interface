@@ -257,6 +257,15 @@ $localPrompt = coreui_console_local_source_prompt($implicitRequest, 'game.js', [
 local_file_test(is_string($localPrompt) && str_contains($localPrompt, 'KEINE Python-Ausfuehrung')
   && str_contains($localPrompt, 'game.js') && str_contains($localPrompt, 'id="game"')
   && str_contains($localPrompt, 'ohne Markdown'), 'Gemma file prompt must be compact and raw-only');
+$jsCompactPrompt = coreui_console_local_source_prompt($implicitRequest, 'game.js', [
+  'index.html'=>['name'=>'index.html','bytes'=>$localHtml],
+  'style.css'=>['name'=>'style.css','bytes'=>$localCss],
+], false);
+local_file_test(is_string($jsCompactPrompt)
+  && str_contains($jsCompactPrompt, 'id="game"')
+  && !str_contains($jsCompactPrompt, 'color:white'),
+  'Gemma JavaScript prompt must retain DOM references but avoid CSS source bulk');
+
 foreach (['index.html'=>$localHtml,'style.css'=>$localCss,'game.js'=>$localJs] as $localName=>$localCode) {
   $file = coreui_console_local_source_reply($localCode, $implicitRequest, $localName);
   local_file_test(is_array($file) && $file['name'] === $localName
@@ -291,13 +300,65 @@ $localWriter = coreui_console_project_files_python($localReady,$localSpec,100000
 local_file_test(is_array($localWriter) && $localWriter['file_count'] === 4
   && str_contains($localWriter['code'],'zipfile.ZipFile'),
   'three local raw sources must form complete deterministic ZIP job');
+// Continuation regression: do not lose an expensive local JavaScript answer
+// when Ollama stops on done_reason=length. Compose bounded inert fragments.
+$cutJs = "const canvas = document.getElementById('game');\n"
+  . "function tick(){ canvas";
+$jsRest = ".width=400; }\ntick();";
+$jsResume = coreui_console_local_js_resume_prompt(
+  $implicitRequest, 'game.js', $cutJs, 1);
+local_file_test(is_string($jsResume) && str_contains($jsResume, $cutJs)
+  && str_contains($jsResume, 'TEIL 2')
+  && !str_contains($jsResume, 'num_ctx')
+  && !str_contains($jsResume, 'num_predict')
+  && strlen($jsResume) < 6000,
+  'local JS must resume a short suffix without changing Ollama parameters');
+local_file_test(coreui_console_local_js_resume_prompt(
+  $implicitRequest, 'index.html', $cutJs, 1) === null,
+  'only JavaScript gets the dedicated continuation');
+local_file_test(coreui_console_local_js_resume_prompt(
+  $implicitRequest, 'game.js', $cutJs, 3) === null,
+  'continuations must remain strictly bounded');
+$cutRaw = coreui_console_local_js_fragment($cutJs, 'game.js', true);
+local_file_test($cutRaw === $cutJs, 'valid truncated raw JS must be retained');
+local_file_test(coreui_console_local_js_fragment(
+  "### game.js\n" . $localFence . "javascript\n" . $cutJs,
+  'game.js', true) === $cutJs,
+  'one unclosed outer JS fence should retain inert code for continuation');
+local_file_test(coreui_console_local_js_fragment(
+  "[PY]print(1)[/PY]", 'game.js', true) === null,
+  'Python tools must never become JS continuations');
+$combinedJs = coreui_console_local_js_append($cutJs, $jsRest);
+local_file_test($combinedJs === $cutJs . $jsRest
+  && coreui_console_local_source_reply(
+    $combinedJs, $implicitRequest, 'game.js')['bytes'] === $combinedJs,
+  'an Ollama-length-stopped JS body must become a full requested source after continuation');
+$echoedRest = substr($cutJs, -32) . $jsRest;
+local_file_test(coreui_console_local_js_append($cutJs, $echoedRest) === $combinedJs,
+  'echoed overlap from Gemma must not duplicate source code');
+$commentCut = "const x=1;\n// previous line comment\n";
+$commentNext = "\nfunction boot(){return x;}\nboot();";
+local_file_test(coreui_console_local_js_fragment($commentCut, 'game.js', true) === $commentCut,
+  'truncated source must preserve its trailing newline after a line comment');
+local_file_test(coreui_console_local_js_fragment($commentNext, 'game.js', false) === $commentNext,
+  'a continuation must preserve leading newlines in raw source');
+local_file_test(coreui_console_local_js_append($commentCut, $commentNext)
+  === $commentCut . $commentNext,
+  'line-comment boundaries must not swallow appended JavaScript');
+
+local_file_test(coreui_console_local_js_append($cutJs, $cutJs) === null,
+  'a pure restart without new content is not progress');
+local_file_test(coreui_console_local_js_append($cutJs, '') === null
+  && coreui_console_local_js_append(str_repeat('x', 149999), $jsRest) === null,
+  'empty or oversized continuations must be rejected');
 $handler = file_get_contents(dirname(__DIR__) . '/api/chat.php');
 // Load only pure production helpers, without booting the HTTP/DB endpoint.
 function ember_cfg(string $key, mixed $default = null): mixed { return $default; }
 function ember_debug_log(string $event, array $meta): void {}
 $tokens = token_get_all($handler);
 $wantedFunctions = ['ember_py_max_code_chars','ember_py_extract_marker',
-  'ember_console_file_tool_candidate','ember_console_file_tool_directive'];
+  'ember_console_file_tool_candidate','ember_console_file_tool_directive',
+  'ember_console_file_tool_is_local','ember_console_file_tool_is_device_local'];
 for ($i = 0; $i < count($tokens); $i++) {
   if (!is_array($tokens[$i]) || $tokens[$i][0] !== T_FUNCTION) continue;
   $j = $i + 1;
@@ -313,6 +374,14 @@ for ($i = 0; $i < count($tokens); $i++) {
   }
   eval($code);
 }
+local_file_test(ember_console_file_tool_is_device_local('ember-coreui:latest')
+  && ember_console_file_tool_is_device_local('gemma4:e4b'),
+  'device-local Gemma and CoreUI models must use resumable local source mode');
+local_file_test(!ember_console_file_tool_is_device_local('gemma4:26b-cloud')
+  && !ember_console_file_tool_is_device_local('gemma4:31b-cloud')
+  && !ember_console_file_tool_is_device_local('gpt-oss:120b-cloud'),
+  'Ollama Cloud models must keep the already working Cloud ZIP route');
+
 $toolCode = "from pathlib import Path\nPath('/work/output/index.html').write_text('Snake')";
 $marked = ember_console_file_tool_candidate('[PY]' . $toolCode . '[/PY]', $request);
 local_file_test(($marked['kind'] ?? '') === 'marker' && $marked['code'] === $toolCode,

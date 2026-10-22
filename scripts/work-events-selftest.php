@@ -16,5 +16,15 @@ $safe = coreui_work_safe_meta(['model'=>'gpt-oss:120b', 'stderr'=>'sensitive', '
 check_work(($safe['model'] ?? '') === 'gpt-oss:120b', 'cloud model metadata');
 check_work(($safe['file_name'] ?? '') === 'test.zip', 'basename only');
 check_work(!isset($safe['stderr']), 'raw stderr suppressed');
+$counts = coreui_work_safe_meta([
+  'source_chars'=>3816, 'eval_count'=>2734, 'prompt_eval_count'=>726,
+  'code'=>'secret:model:content','prompt'=>'private instructions',
+]);
+check_work(($counts['source_chars'] ?? 0) === 3816
+  && ($counts['eval_count'] ?? 0) === 2734
+  && ($counts['prompt_eval_count'] ?? 0) === 726,
+  'bounded model output length diagnostics preserved');
+check_work(!isset($counts['code']) && !isset($counts['prompt']),
+  'model code and private prompts are never exposed in work events');
 check_work(($s = coreui_work_python_diagnostic(null)) && ($s['error_type'] ?? '') === 'worker_timeout', 'worker timeout classified');
 echo "CoreUI P06 work events selftest: OK\n";
