@@ -7,7 +7,15 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 Ember CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.22` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.23` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Bounded local JavaScript continuation (0.5.23)
+
+The production test of 0.5.22 narrowed the failure to local `game.js`: HTML and CSS were accepted, but both JavaScript attempts terminated with `model_output_truncated`. This is an Ollama output-limit signal, not a proven source-parser defect. The browser ZIP pipeline and Cloud-provider exports remain unaffected.
+
+When a local Gemma JavaScript source is stopped by the output limit, CoreUI retains the inert generated source **within the same private turn**, strips only an optional outer JavaScript fence, and requests up to **two** short source continuations. Each continuation receives the task and only a bounded exact suffix of existing JavaScript instead of the entire preceding source. Repeated overlaps are removed, full restarts with no progress and unsafe/tool-marker replies are rejected, and the complete concatenation must still satisfy the existing source validator before the ordinary sandbox writer can create any files. Failed or cancelled repairs never fabricate download cards. Non-JS files, Cloud-model exports, model defaults and the owner-approved Modelfile remain unchanged.
+
+The local JavaScript source prompt no longer attaches the full CSS file, retaining the HTML DOM reference while reducing prompt length. Work events now expose only safe `source_chars`, `eval_count` and `prompt_eval_count` counts, never raw prompts, code or private data. The source size budget and two-continuation limit bound work. No migration, model-parameter change, or installer command change. This release needs a live Gemma verification to establish whether it resolves the original Snake request. It does not certify gameplay or JavaScript syntax without browser verification.
 
 ## Focused local Gemma ZIP output (0.5.22)
 
