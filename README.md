@@ -7,7 +7,7 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 Ember CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.19` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.20` (numeric only). The last verified ZIP remains archived under its original historical name.
 
 ## File tool routing restored (0.5.19)
 
@@ -35,9 +35,11 @@ For an explicit local-model request naming two or more separate source files **a
 
 This addresses the `SyntaxError` / exit-code-0-but-`output_missing` failure class seen during a local Snake ZIP request. It does not guarantee that model-generated game logic works: actual HTML/CSS/JS validation and browser gameplay still need a live check. It also does not establish the cause of unrelated Ollama CPU stalls after switching models.
 
-## Gemma 4: strictly no CoreUI inference parameters (0.5.15)
+## Owner-approved Gemma 4 Modelfile (0.5.20)
 
-The CoreUI-owned `ember-coreui:latest` model is re-created from `config/Modelfile.template` on each installation or update. The template now contains **no `PARAMETER` directives**, including no `num_ctx`. The installer refuses to create the model if parameter directives reappear after template substitution.
+`config/Modelfile.template` now reproduces the owner's supplied Mara Thorne / TSA-Thorn Modelfile verbatim: `FROM gemma4:e4b`, `TEMPLATE {{ .Prompt }}`, `RENDERER gemma4`, `PARSER gemma4`, temperature 1, top_k 64, top_p 0.95, draft_num_predict 0 and num_predict -1. This supersedes the parameter-free template policy introduced in 0.5.15.
+
+Both installers default to gemma4:e4b and rebuild the separate CoreUI model from this file. An explicit COREUI_BASE_MODEL setting still overrides only the FROM line. The installer no longer rejects PARAMETER directives. The existing model name and installer command remain unchanged.
 
 For local `ember-coreui:*` and `gemma4:*`, both streaming and synchronous Ollama API calls omit the `options` object entirely, including on older installations where a preserved `api/config.local.php` still declares `STU_EMBER_NUM_CTX` or experimental tuning. Other models retain their separate, existing settings policy. The top-level `think` switch and the requested model/stream flags are **not** Modelfile `PARAMETER` directives.
 
@@ -99,7 +101,7 @@ The canonical `VERSION` uses exactly `major.minor.patch` with numbers only, for 
 
 The same original one-liner calls `scripts/cache-bust.py` through the native or container installer. For each referenced CSS/JS file, the installer derives a fixed-length **numeric cache key from that file's actual SHA-256 content** and rewrites the static HTML URL. Unchanged assets keep the same key; changed assets get a different one even without a product version change. All HTML entry points are marked for revalidation at Nginx level, so browsers can discover new asset URLs. Preflight rejects stale or invalid keys.
 
-**Historical releases are not renamed.** The original verified `0.5.3-alpha` archive is retained for legacy rollback only. `0.5.4` was planned but not published as a release. Versions `0.5.5` through `0.5.17` are preceding main-source checkpoints; `0.5.19` is the current working version. A new verified ZIP/SHA pair must be built separately before presenting it as an archived release.
+**Historical releases are not renamed.** The original verified `0.5.3-alpha` archive is retained for legacy rollback only. `0.5.4` was planned but not published as a release. Versions `0.5.5` through `0.5.17` are preceding main-source checkpoints; `0.5.20` is the current working version. A new verified ZIP/SHA pair must be built separately before presenting it as an archived release.
 
 ## Independence and mandatory product name
 

@@ -397,8 +397,7 @@ ensure_ollama_model() {
     || die 'Ollama antwortet nicht auf 127.0.0.1:11434. Ein vorhandener Ollama-Dienst wird vom Parallelinstaller nicht umkonfiguriert.'
 
   if [[ -z "$BASE_MODEL" ]]; then
-    BASE_MODEL="$(ollama list 2>/dev/null | awk 'NR > 1 && $1 ~ /^gemma4:/ {print $1; exit}')"
-    BASE_MODEL="${BASE_MODEL:-gemma4:e4b}"
+    BASE_MODEL="gemma4:e4b"
   fi
   [[ "$MODEL_NAME" != "$BASE_MODEL" ]] \
     || die 'COREUI_MODEL_NAME darf im Isolationsmodus nicht dem Basismodell entsprechen.'
@@ -417,13 +416,8 @@ ensure_ollama_model() {
     die "Das Modell $MODEL_NAME existiert bereits, ist aber nicht als Ember CoreUI-eigen markiert. Waehle einen anderen Namen oder setze COREUI_ADOPT_MODEL=1 bewusst."
   fi
 
-  sed "s|{{BASE_MODEL}}|$BASE_MODEL|g" \
+  sed "s|^FROM gemma4:e4b$|FROM $BASE_MODEL|" \
     "$PROJECT_ROOT/config/Modelfile.template" > "$PROJECT_ROOT/var/Modelfile.generated"
-  # Strict Gemma policy: never inject PARAMETER lines into the owned Ollama
-  # model. Recheck after substitution so this cannot silently regress on update.
-  if grep -Eiq '^[[:space:]]*PARAMETER([[:space:]]|$)' "$PROJECT_ROOT/var/Modelfile.generated"; then
-    die 'Gemma-Modelfile enthaelt verbotene PARAMETER-Zeilen. Modell wurde nicht veraendert.'
-  fi
   chown root:33 "$PROJECT_ROOT/var/Modelfile.generated"
   chmod 0640 "$PROJECT_ROOT/var/Modelfile.generated"
 

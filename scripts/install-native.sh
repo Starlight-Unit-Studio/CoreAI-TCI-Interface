@@ -392,8 +392,7 @@ fi
 wait_http 'http://127.0.0.1:11434/api/tags' 30 || die 'Ollama antwortet nicht auf 127.0.0.1:11434.'
 
 if [[ -z "$BASE_MODEL" ]]; then
-  BASE_MODEL="$(ollama list 2>/dev/null | awk 'NR > 1 && $1 ~ /^gemma4:/ {print $1; exit}')"
-  BASE_MODEL="${BASE_MODEL:-gemma4:e4b}"
+  BASE_MODEL="gemma4:e4b"
 fi
 [[ "$BASE_MODEL" =~ ^gemma4: ]] || warn "Basismodell $BASE_MODEL ist kein gemma4-Tag. Die Installation wird trotzdem fortgesetzt."
 
@@ -406,7 +405,7 @@ fi
 
 if [[ "$MODEL_NAME" != "$BASE_MODEL" ]]; then
   MODELFILE_GENERATED="$PROJECT_ROOT/var/Modelfile.generated"
-  sed "s|{{BASE_MODEL}}|$BASE_MODEL|g" "$PROJECT_ROOT/config/Modelfile.template" > "$MODELFILE_GENERATED"
+  sed "s|^FROM gemma4:e4b$|FROM $BASE_MODEL|" "$PROJECT_ROOT/config/Modelfile.template" > "$MODELFILE_GENERATED"
   log "Erzeuge lokales Ember CoreUI-Modell $MODEL_NAME aus $BASE_MODEL."
   ollama create "$MODEL_NAME" -f "$MODELFILE_GENERATED"
 else
