@@ -291,6 +291,47 @@ $localWriter = coreui_console_project_files_python($localReady,$localSpec,100000
 local_file_test(is_array($localWriter) && $localWriter['file_count'] === 4
   && str_contains($localWriter['code'],'zipfile.ZipFile'),
   'three local raw sources must form complete deterministic ZIP job');
+// Continuation regression: do not lose an expensive local JavaScript answer
+// when Ollama stops on done_reason=length. Compose bounded inert fragments.
+$cutJs = "const canvas = document.getElementById('game');\n"
+  . "function tick(){ canvas";
+$jsRest = ".width=400; }\ntick();";
+$jsResume = coreui_console_local_js_resume_prompt(
+  $implicitRequest, 'game.js', $cutJs, 1);
+local_file_test(is_string($jsResume) && str_contains($jsResume, $cutJs)
+  && str_contains($jsResume, 'TEIL 2')
+  && !str_contains($jsResume, 'num_ctx')
+  && !str_contains($jsResume, 'num_predict')
+  && strlen($jsResume) < 6000,
+  'local JS must resume a short suffix without changing Ollama parameters');
+local_file_test(coreui_console_local_js_resume_prompt(
+  $implicitRequest, 'index.html', $cutJs, 1) === null,
+  'only JavaScript gets the dedicated continuation');
+local_file_test(coreui_console_local_js_resume_prompt(
+  $implicitRequest, 'game.js', $cutJs, 3) === null,
+  'continuations must remain strictly bounded');
+$cutRaw = coreui_console_local_js_fragment($cutJs, 'game.js', true);
+local_file_test($cutRaw === $cutJs, 'valid truncated raw JS must be retained');
+local_file_test(coreui_console_local_js_fragment(
+  "### game.js\n" . $localFence . "javascript\n" . $cutJs,
+  'game.js', true) === $cutJs,
+  'one unclosed outer JS fence should retain inert code for continuation');
+local_file_test(coreui_console_local_js_fragment(
+  "[PY]print(1)[/PY]", 'game.js', true) === null,
+  'Python tools must never become JS continuations');
+$combinedJs = coreui_console_local_js_append($cutJs, $jsRest);
+local_file_test($combinedJs === $cutJs . $jsRest
+  && coreui_console_local_source_reply(
+    $combinedJs, $implicitRequest, 'game.js')['bytes'] === $combinedJs,
+  'an Ollama-length-stopped JS body must become a full requested source after continuation');
+$echoedRest = substr($cutJs, -32) . $jsRest;
+local_file_test(coreui_console_local_js_append($cutJs, $echoedRest) === $combinedJs,
+  'echoed overlap from Gemma must not duplicate source code');
+local_file_test(coreui_console_local_js_append($cutJs, $cutJs) === null,
+  'a pure restart without new content is not progress');
+local_file_test(coreui_console_local_js_append($cutJs, '') === null
+  && coreui_console_local_js_append(str_repeat('x', 149999), $jsRest) === null,
+  'empty or oversized continuations must be rejected');
 $handler = file_get_contents(dirname(__DIR__) . '/api/chat.php');
 // Load only pure production helpers, without booting the HTTP/DB endpoint.
 function ember_cfg(string $key, mixed $default = null): mixed { return $default; }
