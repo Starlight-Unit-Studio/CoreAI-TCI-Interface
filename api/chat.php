@@ -2437,6 +2437,14 @@ function ember_console_file_tool_is_local(string $model): bool {
 
 // Ollama Cloud tags may also begin with gemma4:. Distinguish them without
 // changing the existing cloud think settings or established ZIP pathway.
+// Preserve the established Python sandbox writer for local Qwen coding models.
+// The strict HTML/CSS/JS source-first path was introduced after that workflow.
+function ember_console_file_tool_is_local_qwen_coder(string $model): bool {
+  $model = trim($model);
+  return preg_match('~^qwen[0-9a-z.:-]+$~i', $model) === 1
+    && preg_match('~(?:^|[:._-])cloud(?:$|[:._-])~i', $model) !== 1;
+}
+
 function ember_console_file_tool_is_device_local(string $model): bool {
   if (!ember_console_file_tool_is_local($model)) return false;
   return preg_match('~(?:^|[:._-])cloud(?:$|[:._-])~i', trim($model)) !== 1;
@@ -4705,7 +4713,9 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       ['file_count'=>(int)$sourceProject['file_count']]);
   } else {
   if ($fileTask) {
-    $u .= "\n\n" . ($requestedSourceProject ?? ember_console_file_tool_directive());
+    $u .= "\n\n" . (ember_console_file_tool_is_local_qwen_coder($primaryModel)
+      ? ember_console_file_tool_directive()
+      : ($requestedSourceProject ?? ember_console_file_tool_directive()));
     coreui_work_record($pdo, 'tool', 'info', 'Dateiwerkzeug angefordert',
       ['reason'=>'file_task']);
   }
@@ -4718,7 +4728,8 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   $finalPrompt = $u;
   // For explicitly named/inferred browser-game ZIP sources, accept only
   // complete inert source files; never run an incomplete LLM Python writer.
-  $sourceFirst = $fileTask && $requestedSourceProject !== null;
+  $sourceFirst = $fileTask && $requestedSourceProject !== null
+    && !ember_console_file_tool_is_local_qwen_coder($primaryModel);
   $sourceReplies = [];
   $sourceCandidate = null;
   $fileToolCandidate = null;
