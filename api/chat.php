@@ -50,9 +50,11 @@ function ember_character_id(): string {
 }
 
 function ember_character_name(): string {
-  $n = (string)ember_cfg('STU_EMBER_CHARACTER_NAME', 'Ember');
-  $n = trim($n);
-  return $n !== '' ? $n : 'Ember';
+  $n = trim((string)ember_cfg('STU_EMBER_CHARACTER_NAME', 'Mara'));
+  // Legacy config.local.php may still store the old default from previous releases.
+  // Keep stable internal character IDs while mapping only its public display name.
+  if ($n === '' || strcasecmp($n, 'Ember') === 0) return 'Mara';
+  return $n;
 }
 
 function ember_model(): string {
