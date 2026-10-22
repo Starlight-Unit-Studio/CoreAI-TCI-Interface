@@ -13,7 +13,8 @@ function coreui_work_schema_ready(PDO $pdo): bool {
 }
 
 function coreui_work_safe_meta(array $raw): array {
-  $allowedNumbers = ['job_id','exit_code','duration_ms','file_count','attempt','http_code','elapsed_ms'];
+  $allowedNumbers = ['job_id','exit_code','duration_ms','file_count','attempt','http_code','elapsed_ms',
+    'source_chars','eval_count','prompt_eval_count'];
   $allowedStrings = ['model','error_type','file_name','reason','source'];
   $safe = [];
   foreach ($allowedNumbers as $key) {
