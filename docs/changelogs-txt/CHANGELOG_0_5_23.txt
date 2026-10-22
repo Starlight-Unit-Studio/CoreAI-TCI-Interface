@@ -1,0 +1,12 @@
+EMBER COREUI 0.5.23
+22.10.2026. Live-Abnahme offen.
+
+- Nach 0.5.22: lokale index.html und style.css erfolgreich; game.js wurde in beiden lokalen Ollama-Versuchen mit model_output_truncated abgebrochen. Das belegt die Output-Limitierung, nicht deren interne Ursache.
+- Wenn ein lokaler JavaScript-Quelldateiauftrag an das Ollama-Ausgabelimit geraet, bewahrt CoreUI das unvollstaendige Fragment im aktuellen Turn auf und fordert bis zu zwei kleine JavaScript-Fortsetzungen seriell an.
+- Der Server fuegt nur rohe, gebundene JS-Fragmente zusammen und entfernt wiederholte identische Ueberlappungen. Keine [PY]-Skripte, kein Ausfuehren unvollstaendiger Quelldateien und keine fiktiven Downloads.
+- Nur nach erfolgreicher Zusammensetzung erfolgt die bestehende Source-Validierung; der isolierte Python-Worker schreibt und verifiziert Dateien und ZIP wie gehabt.
+- Das lokale JavaScript-Prompt fuehrt HTML-DOM als Referenz weiter, verzichtet aber auf den gesamten CSS-Quelltext, um Tokenplatz zu sparen.
+- Sichere Ereignis-Metadaten nennen source_chars, eval_count und prompt_eval_count; Modellcode, Thinking, Prompts und private Daten werden nicht in den Arbeitsereignissen gespeichert.
+- Modelfile und die Werte temperature 1, top_k 64, top_p 0.95, draft_num_predict 0, num_predict -1 unveraendert. Kein num_ctx-Override fuer Gemma.
+- Cloud-Exportpfad, andere Werkzeuge, Installationsbefehl und serielle Modellqueue unveraendert. Keine Migration. Keine GitHub Actions.
+- Live-Test mit lokalem Gemma, tatsaechlichen vier Downloads und Spielbarkeit bleibt erforderlich.
