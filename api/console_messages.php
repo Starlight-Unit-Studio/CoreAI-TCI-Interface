@@ -132,7 +132,8 @@ try {
 }
 
 $emberCid = strtolower(ember_character_id());
-$emberName = strtolower(ember_character_name());
+// Authenticated CoreAI messages must be identified by stable character ID,
+// never by a display name that may belong to a real human user.
 $showThinking = (bool)(coreui_ai_settings_load($pdo, (int)$uid)['thinking_enabled'] ?? true);
 $feedbackMap = [];
 $generationMap = [];
@@ -154,8 +155,7 @@ foreach ($rows as &$row) {
   $row['artifacts'] = $artifactMap[$id] ?? [];
   $row['work_events'] = $workMap[$id] ?? [];
   $row['reply_to_id'] = (int)($row['reply_to_id'] ?? 0);
-  $isEmber = strtolower((string)($row['character_id'] ?? '')) === $emberCid
-    || strtolower((string)($row['character_name'] ?? '')) === $emberName;
+  $isEmber = strtolower((string)($row['character_id'] ?? '')) === $emberCid;
   $row['is_ember'] = $isEmber;
   $text = chat_console_transport_text((string)($row['message'] ?? ''));
   if ($isEmber) {
