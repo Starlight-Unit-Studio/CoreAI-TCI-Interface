@@ -156,7 +156,7 @@ function coreui_console_session_auto_title(
   $current = trim((string)($session['title'] ?? ''));
   if ($current !== '' && !preg_match('~^(?:SITZUNG\s+\d+|NEUE SITZUNG)$~iu', $current)) return $current;
 
-  $title = preg_replace('~^@ember\s*~iu', '', trim($message));
+  $title = preg_replace('~^@(?:mara|ember)\s*~iu', '', trim($message));
   $title = preg_replace('~\[(?:img|file):[^\]]+\]~iu', ' ', (string)$title);
   $title = trim((string)preg_replace('~\s+~u', ' ', (string)$title));
   if ($title === '') $title = 'ANHANG';
