@@ -49,7 +49,7 @@ try {
 
   $emberCharacter = [
     'id' => 'ember',
-    'name' => 'Ember',
+    'name' => 'Mara',
     'level' => 73,
     'lv' => 73,
     'xp' => 0,
@@ -60,8 +60,8 @@ try {
   $stEmberChar = $pdo->prepare(
     "INSERT INTO stu_characters
        (id, user_id, alliance_id, name, name_norm, world_id, portrait_index, portrait_path, gender, created_at)
-     VALUES ('ember', 1, NULL, 'Ember', 'ember', 1, 0, '', 'f', NOW())
-     ON DUPLICATE KEY UPDATE user_id = 1, name = 'Ember', name_norm = 'ember', gender = 'f'"
+     VALUES ('ember', 1, NULL, 'Mara', 'ember', 1, 0, '', 'f', NOW())
+     ON DUPLICATE KEY UPDATE user_id = 1, name = 'Mara', name_norm = 'ember', gender = 'f'"
   );
   $stEmberChar->execute();
 
@@ -120,7 +120,7 @@ try {
 
   $stProfile = $pdo->prepare(
     "INSERT INTO stu_coreui_profiles (user_id, display_name, assistant_name, created_at, updated_at)
-     VALUES (?, ?, 'Ember', NOW(), NOW())
+     VALUES (?, ?, 'Mara', NOW(), NOW())
      ON DUPLICATE KEY UPDATE display_name = VALUES(display_name), updated_at = NOW()"
   );
   $stProfile->execute([$adminId, $name]);
