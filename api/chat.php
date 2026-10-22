@@ -4674,8 +4674,9 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         coreui_work_record($pdo, 'artifact', 'error', 'Projektquellen unvollstaendig',
           ['reason'=>'source_files_incomplete','file_name'=>(string)$name]);
         return 'Die lokale Modellausgabe konnte fuer ' . $name
-          . ' auch nach einer gezielten Wiederholung nicht als vollstaendige '
-          . 'Quelldatei gelesen werden. Es wurde keine ZIP-Datei vorgetaeuscht.';
+          . ' auch nach begrenzten Wiederholungs- oder Fortsetzungsversuchen '
+          . 'nicht als vollstaendige Quelldatei gelesen werden. '
+          . 'Es wurde keine ZIP-Datei vorgetaeuscht.';
       }
       $sourceFiles[strtolower((string)$name)] = $accepted;
       coreui_work_record($pdo, 'artifact', 'info', 'Quelldatei erkannt',
