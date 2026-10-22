@@ -1,0 +1,11 @@
+EMBER COREUI 0.5.24
+22.10.2026
+
+- Mara Thorne ist der sichtbare Standardname der TCI und CoreAI der Ravager Thorn. Das Projekt und Terminal heisst weiterhin Ember CoreUI.
+- Der lockere, direkte Gamer-Stil (2003-Style) aus dem bisherigen Bildanalyse-Systemprompt ist in Maras dauerhaftes Ollama-Modelfile uebernommen. Der alte personenbezogene Vision-Systemprompt ist entfernt; Bild-, Video- und PDF-Analyse bleibt unveraendert quellenorientiert.
+- Modelfile: PARAMETER num_predict -1 entfällt. PARAMETER draft_num_predict 0 bleibt. PARAMETER num_ctx bleibt strikt ausgeschlossen, ebenso Gemma-seitige API-Overrides.
+- CoreAI-Anzeigenamen, Status und Chattexte zeigen Mara. Der Live-Arbeitsweg zeigt E.M.B.E.R CoreAI arbeitet.
+- Migration 014 aktualisiert nur den bisherigen Standardnamen Ember in CoreAI-Profilen, Bot-Charakter und Anzeigeattributen, ohne die technische ID ember und ohne andere selbstgewaehlte Anzeigenamen anzufassen.
+- @Mara wird neben @Ember als Alt-Alias unterstuetzt.
+- Bestehender Installer baut das eigenstaendige Ollama-Modell erneut aus der aktualisierten Vorlage. Kein neuer One-Liner, keine Cloud-Aenderungen, keine weitere Datenbankstruktur.
+- Zusätzliche Identitaets- und Modelfile-Pruefungen in beiden Preflights. Keine GitHub Actions. Produktive Abnahme offen.
