@@ -2442,6 +2442,16 @@ function ember_console_file_tool_is_device_local(string $model): bool {
   return preg_match('~(?:^|[:._-])cloud(?:$|[:._-])~i', trim($model)) !== 1;
 }
 
+// The local Qwen3.6 coding model historically created ZIPs through [PY]
+// and the sandbox worker. Preserve that verified route instead of forcing
+// browser-game ZIP requests through the later source-first protocol.
+// Ollama Cloud tags and other providers retain their current behavior.
+function ember_console_file_tool_prefers_python(string $model): bool {
+  $name = trim($model);
+  return preg_match('~^qwen3\\.6(?::|$)~i', $name) === 1
+    && preg_match('~(?:^|[:._-])cloud(?:$|[:._-])~i', $name) !== 1;
+}
+
 function ember_console_file_tool_think(string $model): ?bool {
   return ember_console_file_tool_is_local($model)
     ? (bool)ember_cfg('STU_EMBER_LOCAL_FILE_THINK', false)
@@ -4589,7 +4599,8 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   $fileTask = $channel === 'console' && $imageUrl === null && ember_py_enabled()
     && coreui_console_download_requested($userMsg)
     && (ember_console_file_tool_is_local($primaryModel)
-      || $requestedSourceProject !== null);
+      || $requestedSourceProject !== null
+      || ember_console_file_tool_prefers_python($primaryModel));
   $fileToolThink = $fileTask ? ember_console_file_tool_think($primaryModel) : null;
   // The cloud/source-fence path already creates verified ZIPs. Only the local
   // Gemma route needs smaller, raw per-file source requests without the
@@ -4709,7 +4720,9 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       ['file_count'=>(int)$sourceProject['file_count']]);
   } else {
   if ($fileTask) {
-    $u .= "\n\n" . ($requestedSourceProject ?? ember_console_file_tool_directive());
+    $u .= "\n\n" . (ember_console_file_tool_prefers_python($primaryModel)
+      ? ember_console_file_tool_directive()
+      : ($requestedSourceProject ?? ember_console_file_tool_directive()));
     coreui_work_record($pdo, 'tool', 'info', 'Dateiwerkzeug angefordert',
       ['reason'=>'file_task']);
   }
@@ -4722,7 +4735,8 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   $finalPrompt = $u;
   // For explicitly named/inferred browser-game ZIP sources, accept only
   // complete inert source files; never run an incomplete LLM Python writer.
-  $sourceFirst = $fileTask && $requestedSourceProject !== null;
+  $sourceFirst = $fileTask && $requestedSourceProject !== null
+    && !ember_console_file_tool_prefers_python($primaryModel);
   $sourceReplies = [];
   $sourceCandidate = null;
   $fileToolCandidate = null;
