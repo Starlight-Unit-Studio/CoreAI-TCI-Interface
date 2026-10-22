@@ -2,6 +2,14 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.21 - 22.10.2026
+
+- Mehrdateien-ZIP-Dateiauftraege verwenden vollstaendige, inerte Quelldateien statt fehleranfaelliger vom Modell erzeugter Python-Schreibskripte. Ohne Dateinamen wird dieser Pfad nur fuer ausdruecklich verlangte Snake-/Browser-Spiel-ZIPs erkannt.
+- CoreUI fordert fehlende Quellen begrenzt einzeln nach. Erst bei vollstaendigen HTML-/CSS-/JS-Quellen erstellt der bestehende isolierte Worker echte Dateien, prueft das ZIP und registriert Downloadkarten.
+- Unvollstaendige Quelltexte fuehren weder zu Python-Ausfuehrung noch zu scheinbaren Downloads. Generische Python-Werkzeuge und Einzeldateien bleiben auf ihrem bisherigen Pfad.
+- Offline-Regressionstests fuer Source-Fortschritt, fehlende Dateinamen, abgegrenzte ZIP-Routen und nicht geschlossene Fences ergaenzt; keine Datenbankmigration, kein neuer Installer-One-Liner.
+- GitHub Actions wegen aufgebrauchtem Kontingent nicht ausgefuehrt. Live-Abnahme mit lokalem Gemma, Cloud-Modellen, echtem ZIP-Download und Spielbarkeit noch offen. [skip ci]
+
 ## 0.5.20 - 22.10.2026
 
 - Vom Nutzer geliefertes Modelfile wortgetreu uebernommen, inklusive Mara Thorne / TSA-Thorn SYSTEM, TEMPLATE, RENDERER und PARSER.
