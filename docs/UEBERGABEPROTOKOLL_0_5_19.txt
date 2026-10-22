@@ -1,0 +1,41 @@
+EMBER COREUI UEBERGABEPROTOKOLL 0.5.19
+Stand: 22.10.2026. Vor Merge, Live-Abnahme offen.
+Basis: main 6655eeeb862b0c8d7b6399f2e0e93e1d513829ed, Version 0.5.18.
+Branch: fix/file-tool-routing-0.5.19.
+
+PROBLEM
+Live-Screenshots zeigen zwei empfangene Modellantworten und anschliessend
+source_files_incomplete. Es wurde noch kein Python-Job gestartet.
+Die Modellantworten selbst liegen nicht vor. Die konkrete Parserabweichung
+ist nicht belegt. Nachweisbar schliesst der Sourcefile-Modus seit 0.5.16
+sowohl [PY]-Werkzeugcode als auch Python-Werkzeugfences aus.
+
+KORREKTUR
+Mehrdateien-ZIP-Auftraege verwenden wieder den bestehenden Python-Vertrag.
+Der Parser akzeptiert [PY], vollstaendige inerte Quelldateien und Python-Fences.
+Teilweise Quelldateien bleiben bis zur sicheren Vervollstaendigung gesperrt.
+Prosa und behauptete Downloads werden nicht ausgefuehrt.
+Worker-Reparatur orientiert sich am tatsaechlichen Kandidatentyp.
+Bestehende Sandbox, Artefaktkontrolle und globale serielle Modellqueue bleiben.
+Keine Migration. Keine Aenderung am offiziellen Installer-One-Liner.
+
+PRUEFUNG
+Regressionstest ruft die echten produktiven Parserfunktionen auf, ohne den
+HTTP-/Datenbank-Endpunkt zu starten. Prueft [PY], Python-Fence, komplette
+Quellen, unvollstaendige Quellen und reine Prosa fuer denselben ZIP-Auftrag.
+Bestanden mit PHP 8.3.6: local-file-tool-selftest und frontend-regression-selftest.
+PHP-Syntax von chat.php und local-file-tool-selftest bestanden.
+Shell-Syntax beider Preflights, Branding-Test, Versionsguard 0.5.18 -> 0.5.19,
+Cache-Hash-Pruefung und git diff --check bestanden.
+Produktiver Worker, Datenbank und echte Modellantworten hier nicht getestet.
+Merge-Referenzen werden im Abschlussprotokoll ergaenzt.
+Keine GitHub Actions wegen aufgebrauchtem Kontingent.
+
+NAECHSTER SCHRITT
+Nach Merge unveraenderten Installer nutzen. Identischen Snake-Auftrag testen,
+Python-Jobstatus und vier echte Downloadkarten pruefen, ZIP-Inhalt oeffnen.
+Lokales Ember, Qwen und Cloud GPT einzeln testen. Bei Fehlern technische
+Details des tatsaechlichen Jobs sammeln, keine Modellprosa als Traceback werten.
+P07 erst nach Live-Abnahme fortsetzen. Issue #52 bleibt separat.
+OpenClaw und weitere Referenzen dienen als Funktionsvorbilder fuer eigenen Code.
+Nach jedem Merge neues TXT-Protokoll. Pro Merge numerische Version erhoehen.

@@ -1,0 +1,11 @@
+EMBER COREUI CHANGELOG 0.5.19
+
+ - 22.10.2026
+
+- Dateiwerkzeug fuer Mehrdateien-ZIP-Auftraege wiederhergestellt: [PY]-Skripte und Python-Fences werden wieder vom bestehenden isolierten Worker verarbeitet.
+- Der seit 0.5.16 erzwungene Sourcefile-Modus wird nicht mehr als Prompt-/Parser-Sperre verwendet. Vollstaendige Quelltextbloecke und der begrenzte Merge aus 0.5.18 bleiben optionale Wiederherstellungspfade.
+- Reparatur bei fehlenden Worker-Ausgaben richtet sich nach dem tatsaechlichen Kandidatentyp. Modellskripte behalten ihren begrenzten Reparaturversuch; servereigene Quelltext-Wrapper werden nicht sinnlos vom Modell neu geschrieben.
+- Live-Screenshots von 0.5.18 zeigen source_files_incomplete vor dem Workerstart. Die tatsaechlichen Modellantworten liegen nicht vor; deren konkreter Formatfehler wird daher nicht behauptet.
+- PHP-8.3.6-Dateiwerkzeugtest mit echten Parserfunktionen, Frontend-Regression, PHP-/Shell-Syntax, Branding, Versionsguard und Cache-Hashes lokal bestanden.
+- Keine Migration, keine Aenderung am Installer-One-Liner, globale Modellverarbeitung weiterhin seriell. GitHub Actions uebersprungen; erneute Live-Abnahme offen.
+
