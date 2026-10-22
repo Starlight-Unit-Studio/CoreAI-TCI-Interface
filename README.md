@@ -9,9 +9,15 @@ E.M.B.E.R. CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG
 
 Current source version: `0.5.25` (numeric only). The last verified ZIP remains archived under its original historical name.
 
+## E.M.B.E.R. acronym and official terminal branding (0.5.25)
+
+**E.M.B.E.R.** names the framework, backend and system. Its standalone terminal is **E.M.B.E.R. CoreUI**, and **Mara Thorne** is the TCI/CoreAI of the *Ravager Thorn*. **Ember**, by contrast, is a separate CoreAI of the *Starlight Ember*, linked to the later Sandra-engram storyline. These entities are deliberately not interchangeable.
+
+In releases through `0.5.24`, the product display name `Ember CoreUI` was used incorrectly. From `0.5.25` onward, all current installer messages, user-facing product labels, metadata and branding policy use the correct dotted spelling. The former spelling is retained only as a historical project alias where needed to interpret old releases and license records. Existing technical identifiers such as `ember-coreui:latest`, `/opt/ember-coreui`, environment variables and database IDs are unchanged. No software logic or lore canon outside this naming clarification is altered.
+
 ## Mara Thorne CoreAI identity and Qwen compatibility (0.5.24)
 
-**E.M.B.E.R.** is the framework, backend and system. **E.M.B.E.R. CoreUI** is its standalone terminal. **Mara Thorne** is the TCI/CoreAI of the *Ravager Thorn*. **Ember** is a different, lore-specific CoreAI of the *Starlight Ember*, not the terminal's name or Mara's identity. The local Gemma Modelfile now uses Mara's more relaxed, spontaneous 2000s gamer-style voice inspired by the native image response style; the separate vision prompt also uses Mara and no longer claims a human biography. Technical file IDs, database tables, endpoints and environment variable names remain untouched to preserve installed data. The user's existing custom assistant display names continue to work, with the old default Ember displayed as Mara.
+The local Gemma Modelfile now uses Mara's more relaxed, spontaneous 2000s gamer-style voice inspired by the native image response style; the separate vision prompt also uses Mara and no longer claims a human biography. Technical file IDs, database tables, endpoints and environment variable names remain untouched to preserve installed data. The user's existing custom assistant display names continue to work, with the old default Ember displayed as Mara.
 
 Gemma's `num_ctx` prohibition is retained: no Modelfile line and no Gemma request override. The accidentally retained `PARAMETER num_predict -1` Modelfile line is deleted as requested; `PARAMETER draft_num_predict 0` remains. Other approved sampling parameters stay as before.
 
