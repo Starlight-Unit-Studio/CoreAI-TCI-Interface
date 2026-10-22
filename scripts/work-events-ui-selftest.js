@@ -82,6 +82,18 @@ work.add(live.querySelector('.work-body'),{
   id:4,kind:'artifact',state:'success',title:'Datei gesichert',meta:{file_count:3}
 });
 assert(live.textContent.includes('Datei gesichert'));
+work.add(live.querySelector('.work-body'),{
+  id:5,kind:'model',state:'error',title:'JavaScript-Ausgabe abgeschnitten',
+  meta:{file_name:'game.js',source_chars:4203,eval_count:1900,
+    prompt_eval_count:733,code:'NEVER_DISPLAY_PRIVATE_SOURCE'}
+});
+assert(live.textContent.includes('Quelltext (Zeichen)4203'),
+  'safe source length must be visible in technical details');
+assert(live.textContent.includes('Ausgabe-Tokens1900')
+  && live.textContent.includes('Eingabe-Tokens733'),
+  'Ollama context/output counters must be visible');
+assert(!live.textContent.includes('NEVER_DISPLAY_PRIVATE_SOURCE'),
+  'private model source must be excluded by the work UI whitelist');
 // The final answer replaces the live row, but the sanitized SSE events must
 // remain available even when the first authenticated history response is empty.
 const recovered = work.merge([], [
