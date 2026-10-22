@@ -219,6 +219,7 @@ function coreui_profile_prompt_block(PDO $pdo, int $uid): string {
   try {
     $profile = coreui_profile_load($pdo, $uid);
     $assistantName = coreui_profile_name((string)($profile['assistant_name'] ?? ''), 'Mara');
+    if (strcasecmp($assistantName, 'Ember') === 0) $assistantName = 'Mara';
     $displayName = coreui_profile_name((string)($profile['display_name'] ?? ''), 'Operator');
     return "\n\n--- MARA COREAI-PROFIL ---\n"
       . 'Der aktuelle Benutzer wird in dieser privaten Oberfläche als "' . $displayName . '" angezeigt. ' 
