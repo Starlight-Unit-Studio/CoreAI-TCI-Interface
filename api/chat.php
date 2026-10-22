@@ -4093,7 +4093,7 @@ function ember_build_context(
     // Ohne sie sah Ember nur offene Fremd-Nachrichten ohne ihre Antworten dazwischen und
     // beantwortete bereits Beantwortetes erneut (Wiederholungs-Bug). Markiert als "(du)".
     $isEmberRow = ($emberUid > 0 && $uid === $emberUid) || ($emberCid !== '' && $cid === $emberCid);
-    $name = (string)($r['character_name'] ?? '');
+    $name = $isEmberRow ? ember_character_name() : (string)($r['character_name'] ?? '');
     $msg = (string)($r['message'] ?? '');
     $msg = ($channel === 'console')
       ? chat_clean_console_message($msg)
@@ -4109,7 +4109,7 @@ function ember_build_context(
     $lineLimit = ($channel === 'console') ? 1200 : 120;
     if (function_exists('mb_substr')) $msg = mb_substr($msg, 0, $lineLimit, 'UTF-8');
     else $msg = substr($msg, 0, $lineLimit);
-    $lines[] = ($isEmberRow ? (($name !== '' ? $name : 'Ember') . ' (du)') : $name) . ': ' . $msg;
+    $lines[] = ($isEmberRow ? (($name !== '' ? $name : 'Mara') . ' (du)') : $name) . ': ' . $msg;
   }
   return implode("\n", $lines);
 }
@@ -5399,7 +5399,7 @@ function ember_execute_generated_command(PDO $pdo, string $line): array {
       return [
         'handled'=>true,
         'ok'=>true,
-        'system'=> (string)$target['name'] . ' wurde von Ember entmutet.'
+        'system'=> (string)$target['name'] . ' wurde von Mara entmutet.'
       ];
     }
 
@@ -5425,7 +5425,7 @@ function ember_execute_generated_command(PDO $pdo, string $line): array {
     return [
       'handled'=>true,
       'ok'=>true,
-      'system'=> (string)$target['name'] . ' wurde für ' . $mins . 'm von Ember gemutet' . ($reason !== '' ? (' (' . $reason . ')') : '') . '.'
+      'system'=> (string)$target['name'] . ' wurde für ' . $mins . 'm von Mara gemutet' . ($reason !== '' ? (' (' . $reason . ')') : '') . '.'
     ];
   }
 
@@ -5448,7 +5448,7 @@ function ember_execute_generated_command(PDO $pdo, string $line): array {
       return [
         'handled'=>true,
         'ok'=>true,
-        'system'=> chat_ban_target_label($target) . ' wurde von Ember entbannt.'
+        'system'=> chat_ban_target_label($target) . ' wurde von Mara entbannt.'
       ];
     }
 
@@ -5475,7 +5475,7 @@ function ember_execute_generated_command(PDO $pdo, string $line): array {
     return [
       'handled'=>true,
       'ok'=>true,
-      'system'=> chat_ban_target_label($target) . ' wurde von Ember gebannt' . ($reasonPublic !== '' ? (' (' . $reasonPublic . ')') : '') . '.'
+      'system'=> chat_ban_target_label($target) . ' wurde von Mara gebannt' . ($reasonPublic !== '' ? (' (' . $reasonPublic . ')') : '') . '.'
     ];
   }
 
@@ -6114,7 +6114,7 @@ function ember_exec_news_reaction(PDO $pdo, array $ctx): bool {
   if ($relevance === 'deep') {
     // Echte Recherche: bestehenden Browse-Worker nutzen, gleiche Pipeline wie bei einer
     // normalen [BROWSE:]-Anfrage im Chat, nur selbst ausgeloest statt von einem Spieler.
-    $goal = "Ember ist von sich aus neugierig auf \"{$query}\" geworden und moechte mehr dazu erfahren. Recherchiere und fasse zusammen.";
+    $goal = "Mara ist von sich aus neugierig auf \"{$query}\" geworden und moechte mehr dazu erfahren. Recherchiere und fasse zusammen.";
     return ember_browse_enqueue($pdo, $goal, 'global', null, null);
   }
 
