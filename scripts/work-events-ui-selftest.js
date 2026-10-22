@@ -77,6 +77,8 @@ work.add(body,{id:3,kind:'artifact',state:'info',
 assert(timeline.textContent.includes('<script>alert(1)</script>'));
 assert.equal(body.querySelector('.work-entries').children.length,3);
 const live=work.create({live:true,expanded:true});
+assert(live.textContent.includes('E.M.B.E.R. CoreAI arbeitet'),
+  'live operational header must identify CoreAI rather than terminal');
 assert(live && !live.querySelector('.work-body').hidden);
 work.add(live.querySelector('.work-body'),{
   id:4,kind:'artifact',state:'success',title:'Datei gesichert',meta:{file_count:3}
