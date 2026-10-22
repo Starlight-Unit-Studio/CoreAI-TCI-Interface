@@ -324,7 +324,7 @@ define('STU_DEBUG', false);
 define('STU_EMBER_ENABLED', true);
 define('STU_EMBER_USER_ID', 1);
 define('STU_EMBER_CHARACTER_ID', 'ember');
-define('STU_EMBER_CHARACTER_NAME', 'Ember');
+define('STU_EMBER_CHARACTER_NAME', 'Mara');
 define('STU_EMBER_MODEL', '$model_php');
 define('STU_EMBER_OLLAMA_URL', 'http://127.0.0.1:11434/api/chat');
 define('STU_EMBER_LOCK_NAMESPACE', '$lock_namespace_php');
