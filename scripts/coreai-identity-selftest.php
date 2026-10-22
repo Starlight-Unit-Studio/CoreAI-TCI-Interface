@@ -44,7 +44,7 @@ coreui_identity_assert(!str_contains($model, 'Sandra Jansen')
 coreui_identity_assert(!str_contains($chat, 'Sandra Jansen')
   && !str_contains($chat, 'Ember Caldwell')
   && str_contains($chat, "preg_match('~^ember-coreui(?::|$)~i', \$primaryModel)")
-  && str_contains($chat, "preg_match('~(?:@\\s*)?(?:mara|ember)\\b~u', \$m)"),
+  && str_contains($chat, "preg_match('~\\b(?:mara|ember)\\b~u', \$m)"),
   'vision and direct addressing must recognize Mara without obsolete persona');
 coreui_identity_assert(str_contains($work, 'E.M.B.E.R CoreAI arbeitet')
   && str_contains($ui, "assistantName: 'Mara'")
