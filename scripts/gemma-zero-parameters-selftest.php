@@ -20,15 +20,17 @@ $template = (string)file_get_contents($root . '/config/Modelfile.template');
 coreui_gemma_assert(str_contains($template, 'FROM gemma4:e4b'),
   'missing FROM base model');
 coreui_gemma_assert(str_contains($template, 'SYSTEM """'),
-  'must retain Ember system instructions');
+  'must retain Mara system instructions');
 function coreui_gemma_modelfile_parameters(string $file): array {
   preg_match_all('/^PARAMETER[ \t]+(\S+)[ \t]+([^\r\n]+)$/m', $file, $matches, PREG_SET_ORDER);
   return array_map(static fn(array $line): string => $line[1] . ' ' . trim($line[2]), $matches);
 }
-$expectedParameters = ['temperature 1','top_k 64','top_p 0.95','draft_num_predict 0','num_predict -1'];
+$expectedParameters = ['temperature 1','top_k 64','top_p 0.95','draft_num_predict 0'];
 coreui_gemma_assert(coreui_gemma_modelfile_parameters($template) === $expectedParameters,
-  'must retain exactly the owner-approved Modelfile parameters');
-foreach (['TEMPLATE {{ .Prompt }}','RENDERER gemma4','PARSER gemma4','Du bist Mara Thorne,','TSA-Thorn CoreUI'] as $required) {
+  'must retain current owner-approved Modelfile parameters without num_ctx or num_predict');
+coreui_gemma_assert(!preg_match('/^PARAMETER[ \\t]+(?:num_ctx|num_predict)[ \\t]/mi', $template),
+  'Gemma Modelfile must never inject num_ctx or num_predict');
+foreach (['TEMPLATE {{ .Prompt }}','RENDERER gemma4','PARSER gemma4','Du bist Mara Thorne,','TSA-Thorn CoreUI','CoreAI der Ravager Thorn','Gamer-Schreibweise'] as $required) {
   coreui_gemma_assert(str_contains($template, $required), 'missing approved directive: ' . $required);
 }
 
