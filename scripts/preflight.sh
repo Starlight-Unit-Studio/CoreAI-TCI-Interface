@@ -57,7 +57,7 @@ check_service() {
   fi
 }
 
-printf 'Ember CoreUI Compose-Preflight, Version %s\n\n' "$VERSION"
+printf 'E.M.B.E.R. CoreUI Compose-Preflight, Version %s\n\n' "$VERSION"
 
 if [[ ! -f "$ENV_FILE" ]]; then
   fail 'var/compose.env fehlt. Fuehre scripts/install.sh aus.'
@@ -158,7 +158,7 @@ UI_FILES=(
 )
 for ui_file in "${UI_FILES[@]}"; do
   if [[ ! -s "$PROJECT_ROOT/$ui_file" ]]; then
-    fail "Ember CoreUI-Oberflaechendatei fehlt oder ist leer: $ui_file"
+    fail "E.M.B.E.R. CoreUI-Oberflaechendatei fehlt oder ist leer: $ui_file"
   fi
 done
 
@@ -186,7 +186,7 @@ else
 fi
 
 if (( FAILURES == 0 )); then
-  ok 'Ember-CoreUI-Branding, Lizenzunterlagen, KI-Einstellungen und Admin Core sind paketiert.'
+  ok 'E.M.B.E.R.-CoreUI-Branding, Lizenzunterlagen, KI-Einstellungen und Admin Core sind paketiert.'
 fi
 
 PRIVATE_RELEASE_FILES=()
@@ -280,23 +280,23 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail 'Compose-Konfiguration ist ungueltig.'
   fi
 
-  check_service database 'Ember CoreUI-MariaDB'
-  check_service php 'Ember CoreUI-PHP-FPM'
-  check_service web 'Ember CoreUI-Nginx'
-  check_service pyworker 'Ember CoreUI-Python-Worker'
+  check_service database 'E.M.B.E.R. CoreUI-MariaDB'
+  check_service php 'E.M.B.E.R. CoreUI-PHP-FPM'
+  check_service web 'E.M.B.E.R. CoreUI-Nginx'
+  check_service pyworker 'E.M.B.E.R. CoreUI-Python-Worker'
   if is_enabled "${COREUI_INSTALL_SEARXNG:-0}"; then
-    check_service searxng 'Ember CoreUI-SearXNG'
+    check_service searxng 'E.M.B.E.R. CoreUI-SearXNG'
   fi
   if is_enabled "${COREUI_INSTALL_BROWSE:-0}"; then
-    check_service browse 'Ember CoreUI-Browse-Worker'
+    check_service browse 'E.M.B.E.R. CoreUI-Browse-Worker'
   fi
 
   if compose exec -T php php -r \
       'require "/var/www/coreui/api/db.php"; echo (int)stu_pdo()->query("SELECT COUNT(*) FROM stu_schema_migrations")->fetchColumn();' \
       >/dev/null 2>&1; then
-    ok 'Eigene MariaDB-Verbindung und Ember CoreUI-Schema funktionieren.'
+    ok 'Eigene MariaDB-Verbindung und E.M.B.E.R. CoreUI-Schema funktionieren.'
   else
-    fail 'Eigene MariaDB-Verbindung oder Ember CoreUI-Schema ist fehlerhaft.'
+    fail 'Eigene MariaDB-Verbindung oder E.M.B.E.R. CoreUI-Schema ist fehlerhaft.'
   fi
 
   if compose exec -T php php -r \
@@ -576,7 +576,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if [[ -n "$LOCK_NAMESPACE" && "$LOCK_NAMESPACE" != 'ember' && "$LOCK_NAMESPACE" != 'stu' ]]; then
     ok "Eigener MariaDB-Lock-Namespace aktiv: $LOCK_NAMESPACE"
   else
-    fail 'Kein sicherer Ember CoreUI-Lock-Namespace aktiv.'
+    fail 'Kein sicherer E.M.B.E.R. CoreUI-Lock-Namespace aktiv.'
   fi
 
   for writable_dir in \
@@ -618,21 +618,21 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
 fi
 
 if curl -fsS --max-time 10 "http://127.0.0.1:${COREUI_HTTP_PORT}/api/health.php" >/dev/null 2>&1; then
-  ok "Ember CoreUI-Healthcheck antwortet auf Loopback-Port ${COREUI_HTTP_PORT}."
+  ok "E.M.B.E.R. CoreUI-Healthcheck antwortet auf Loopback-Port ${COREUI_HTTP_PORT}."
 else
-  fail "Ember CoreUI-Healthcheck antwortet nicht auf Port ${COREUI_HTTP_PORT}."
+  fail "E.M.B.E.R. CoreUI-Healthcheck antwortet nicht auf Port ${COREUI_HTTP_PORT}."
 fi
 
 if curl -fsS --max-time 10 "http://127.0.0.1:${COREUI_HTTP_PORT}/settings.html" \
     | grep -Fq 'EINSTELLUNGEN'; then
-  ok 'Ember CoreUI-Einstellungen werden vom isolierten Webserver ausgeliefert.'
+  ok 'E.M.B.E.R. CoreUI-Einstellungen werden vom isolierten Webserver ausgeliefert.'
 else
-  fail 'Ember CoreUI-Einstellungen sind nicht erreichbar. Fuehre scripts/stack.sh refresh-runtime und danach scripts/stack.sh restart web aus.'
+  fail 'E.M.B.E.R. CoreUI-Einstellungen sind nicht erreichbar. Fuehre scripts/stack.sh refresh-runtime und danach scripts/stack.sh restart web aus.'
 fi
 
 if curl -fsS --max-time 10 "http://127.0.0.1:${COREUI_HTTP_PORT}/admin/index.html" \
     | grep -Fq 'ADMIN CORE'; then
-  ok 'Das isolierte Admin Core wird vom Ember CoreUI-Webserver ausgeliefert.'
+  ok 'Das isolierte Admin Core wird vom E.M.B.E.R. CoreUI-Webserver ausgeliefert.'
 else
   fail 'Admin Core ist nicht erreichbar.'
 fi
@@ -640,7 +640,7 @@ fi
 SESSION_ROUTE_STATUS="$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' \
   "http://127.0.0.1:${COREUI_HTTP_PORT}/api/console_messages.php" 2>/dev/null || true)"
 if [[ "$SESSION_ROUTE_STATUS" == '401' || "$SESSION_ROUTE_STATUS" == '400' ]]; then
-  ok 'Der authentifizierte Sitzungs-History-Endpunkt wird vom Ember CoreUI-Webserver erreicht.'
+  ok 'Der authentifizierte Sitzungs-History-Endpunkt wird vom E.M.B.E.R. CoreUI-Webserver erreicht.'
 else
   fail "Sitzungs-History-Endpunkt nicht korrekt geroutet (HTTP ${SESSION_ROUTE_STATUS:-000})."
 fi
@@ -649,9 +649,9 @@ for private_route in profile knowledge profile_media account_security account_ex
   route_status="$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' \
     "http://127.0.0.1:${COREUI_HTTP_PORT}/api/${private_route}.php" 2>/dev/null || true)"
   if [[ "$route_status" == '401' ]]; then
-    ok "Privater Ember CoreUI-Endpunkt korrekt geroutet: ${private_route}.php"
+    ok "Privater E.M.B.E.R. CoreUI-Endpunkt korrekt geroutet: ${private_route}.php"
   else
-    fail "Ember CoreUI-Endpunkt ${private_route}.php nicht korrekt geroutet (HTTP ${route_status:-000})."
+    fail "E.M.B.E.R. CoreUI-Endpunkt ${private_route}.php nicht korrekt geroutet (HTTP ${route_status:-000})."
   fi
 done
 
@@ -659,7 +659,7 @@ if command -v ollama >/dev/null 2>&1 \
     && ollama show "${COREUI_MODEL_NAME}" >/dev/null 2>&1; then
   ok "Getrenntes Ollama-Modell vorhanden: ${COREUI_MODEL_NAME}"
 else
-  fail "Ember CoreUI-Ollama-Modell fehlt: ${COREUI_MODEL_NAME}"
+  fail "E.M.B.E.R. CoreUI-Ollama-Modell fehlt: ${COREUI_MODEL_NAME}"
 fi
 
 if is_enabled "${COREUI_INSTALL_SEARXNG:-0}"; then
@@ -674,13 +674,13 @@ fi
 if [[ "${COREUI_BIND_ADDRESS:-127.0.0.1}" == '127.0.0.1' ]]; then
   ok 'Webzugriff ist standardmaessig auf Loopback begrenzt.'
 else
-  warn 'Ember CoreUI lauscht bewusst auf 0.0.0.0. Firewall und TLS muessen separat geprueft werden.'
+  warn 'E.M.B.E.R. CoreUI lauscht bewusst auf 0.0.0.0. Firewall und TLS muessen separat geprueft werden.'
 fi
 
 if [[ -L /etc/nginx/sites-enabled/default || -e /etc/nginx/sites-enabled/default ]]; then
   ok 'Eine bestehende Nginx-Default-Site wurde nicht entfernt.'
 else
-  warn 'Keine Nginx-Default-Site gefunden. Ember CoreUI veraendert diesen Zustand nicht.'
+  warn 'Keine Nginx-Default-Site gefunden. E.M.B.E.R. CoreUI veraendert diesen Zustand nicht.'
 fi
 
 if (( FAILURES > 0 )); then
@@ -688,4 +688,4 @@ if (( FAILURES > 0 )); then
   exit 1
 fi
 
-printf '\nPreflight erfolgreich. Ember CoreUI laeuft im isolierten Parallelmodus.\n'
+printf '\nPreflight erfolgreich. E.M.B.E.R. CoreUI laeuft im isolierten Parallelmodus.\n'
