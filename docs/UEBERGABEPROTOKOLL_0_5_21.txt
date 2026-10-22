@@ -1,0 +1,53 @@
+EMBER COREUI UEBERGABEPROTOKOLL 0.5.21
+Stand: 22.10.2026. Live-Abnahme offen.
+Basis: main 4b840b82dad8a7d545a5a102afc863a4d49152ce, Version 0.5.20.
+Branch: fix/source-first-file-artifacts-0.5.21.
+
+AUSGANGSLAGE
+Screenshot der Live-Oberflaeche nach Update auf 0.5.20: Python-Job 52 wurde
+eingereiht und nach ca. 406ms mit SyntaxError und Exitcode 1 beendet.
+Anschliessend output_missing und keine Downloaddatei. Der Python-Worker
+selbst laeuft. Vollstaendiger Python-Traceback und rohe Modellantwort
+liegen nicht vor; eine genaue SyntaxError-Zeile ist nicht belegt.
+
+URSACHE / ABHILFE
+Bei Mehrdateien-ZIP-Auftraegen verlangt CoreUI bislang bei lokaler Gemma
+ein vollstaendiges Python-Skript als Werkzeugauftrag. Ein syntaktisch
+fehlerhaftes Modell-Skript erreicht den Worker. 0.5.21 priorisiert bei
+benannten ZIP-Quellen und expliziten Snake-/Browser-Game-ZIPs dagegen
+vollstaendige inerte Quelltexte, nicht Python-Writer.
+
+Modellantworten werden begrenzt als geschlossene Markdown-Codebloecke
+gesammelt. Fehlende Quelldateien werden jeweils gezielt nachgefordert.
+Erst nach vollstaendiger Quellenpruefung laeuft der servereigene
+deterministische Python-Writer im vorhandenen isolierten Worker. ZIP
+und Einzeldateien werden wie bisher tatsaechlich registriert.
+Unvollstaendige Antworten werden NICHT ausgefuehrt oder als Download
+ausgegeben. Andere Python-Werkzeug- und Einzeldatei-Auftraege bleiben
+erhalten. Globale Modellqueue bleibt seriell.
+
+TECHNISCHE AENDERUNGEN
+- api/console_data_link_bridge.php: ZIP-Spec fuer unbenannte Browser-Spiele,
+  source_progress und single_source_directive, unveraenderte Sandbox.
+- api/chat.php: source-first Routing bei passenden ZIP-Auftraegen,
+  begrenzte Nachforderung fehlender Dateien.
+- scripts/local-file-tool-selftest.php: Offline-Regression fuer Source-Fortschritt,
+  Inferenz benannter Dateien und ungeschlossene Fences.
+- VERSION, sechs HTML-Seiten, JS-Bootstrap, README, CHANGELOG, TXT-Index,
+  beide Preflights und Branding auf 0.5.21.
+
+ABNAHME
+GitHub Actions bleiben deaktiviert, Kontingent verbraucht.
+Kein direkter Zugriff auf Live-Ollama, MariaDB oder den produktiven
+Sandbox-Worker aus dieser Arbeitsumgebung. Daher keine behauptete
+Produktiv-Funktionsabnahme.
+Zum Live-Test unveraenderten Installer verwenden. Danach denselben
+Snake-Auftrag wiederholen: index.html, style.css, game.js und das
+gepruefte ZIP muessen als echte Downloaddateien verfuegbar sein.
+ZIP entpacken, HTML starten und Spielbedienung pruefen.
+Ggf. vollstaendige Fehlerausgabe des Jobstatus sichern, keine
+vertraulichen Prompts oder Zugangsdaten teilen.
+Issue #52 (Modellwechsel/Ollama-Lifecycle) bleibt davon unabhaengig.
+Keine Datenbankmigration. Modelfile und Ollama-Parameter bleiben erhalten.
+
+Merge-SHA nach Merge gesondert festhalten.
