@@ -2995,7 +2995,7 @@ function ember_is_direct_invocation(string $userMsg): bool {
   $m = trim(ember_msg_lower($userMsg));
   if ($m === '') return false;
   // Direkte Anrede: Mara; der alte Name Ember bleibt als technischer Alias erhalten.
-  if (preg_match('~(?:@\s*)?(?:mara|ember)\b~u', $m)) return true;
+  if (preg_match('~\b(?:mara|ember)\b~u', $m)) return true;
   return false;
 }
 
