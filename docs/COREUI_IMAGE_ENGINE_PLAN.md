@@ -1,6 +1,6 @@
 # Native Bildgenerierung: Ember Image Engine (Planungsstand 21.10.2026)
 
-**Status: geplant, nicht implementiert und nicht live gemessen.** Die Engine ist ein eigener Medienpfad im Ember CoreUI. Sie ist kein Aufruf von ComfyUI, kein Wechsel der Textmodell-Laufzeit und kein fertiges Bildmodell. Schnittstellen, Gewichte und Lizenzbedingungen werden vor einer Aktivierung überprüft.
+**Status: geplant, nicht implementiert und nicht live gemessen.** Die Engine ist ein eigener Medienpfad im E.M.B.E.R. CoreUI. Sie ist kein Aufruf von ComfyUI, kein Wechsel der Textmodell-Laufzeit und kein fertiges Bildmodell. Schnittstellen, Gewichte und Lizenzbedingungen werden vor einer Aktivierung überprüft.
 
 ## Ziel und Einbindung
 
