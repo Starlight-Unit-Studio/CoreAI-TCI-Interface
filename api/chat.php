@@ -1892,7 +1892,7 @@ function ember_tool_strip_addressing(string $msg): string {
 
   $patterns = [
     '~^\s*(?:hey|hi|hallo|moin|eh|yo|ok(?:ay)?)\s+(?:@\s*)?(?:mara|ember)\b[\s,:;\-–-]*~iu',
-    '~^\s*(?:@\s*)?ember\b[\s,:;\-–-]*~iu',
+    '~^\s*(?:@\s*)?(?:mara|ember)\b[\s,:;\-–-]*~iu',
   ];
   foreach ($patterns as $rx) {
     $s = preg_replace($rx, '', $s, 1);
@@ -2994,7 +2994,7 @@ function ember_is_fail_message(?string $msg): bool {
 function ember_is_direct_invocation(string $userMsg): bool {
   $m = trim(ember_msg_lower($userMsg));
   if ($m === '') return false;
-  // Direkte Anrede: @Ember oder "ember" irgendwo im Text.
+  // Direkte Anrede: Mara; der alte Name Ember bleibt als technischer Alias erhalten.
   if (preg_match('~(?:@\s*)?(?:mara|ember)\b~u', $m)) return true;
   return false;
 }
