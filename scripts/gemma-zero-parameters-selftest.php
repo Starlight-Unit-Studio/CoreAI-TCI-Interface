@@ -32,7 +32,7 @@ coreui_gemma_assert(!preg_match('/^PARAMETER[ \t]+(?:num_ctx|num_predict)\b/m', 
   'Modelfile must omit forbidden num_ctx and unintended num_predict');
 coreui_gemma_assert(str_contains($template, 'CoreAI') && str_contains($template, 'Gamer-Note'),
   'Mara TCI and natural vision-inspired style must be present');
-foreach (['TEMPLATE {{ .Prompt }}','RENDERER gemma4','PARSER gemma4','Du bist Mara Thorne,','TSA-Thorn CoreUI'] as $required) {
+foreach (['TEMPLATE {{ .Prompt }}','RENDERER gemma4','PARSER gemma4','Du bist Mara Thorne,','E.M.B.E.R. CoreUI','E.M.B.E.R.-Framework','CoreAI namens Ember'] as $required) {
   coreui_gemma_assert(str_contains($template, $required), 'missing approved directive: ' . $required);
 }
 

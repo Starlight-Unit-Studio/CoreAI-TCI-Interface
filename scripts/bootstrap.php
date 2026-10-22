@@ -120,7 +120,7 @@ try {
 
   $stProfile = $pdo->prepare(
     "INSERT INTO stu_coreui_profiles (user_id, display_name, assistant_name, created_at, updated_at)
-     VALUES (?, ?, 'Ember', NOW(), NOW())
+     VALUES (?, ?, 'Mara', NOW(), NOW())
      ON DUPLICATE KEY UPDATE display_name = VALUES(display_name), updated_at = NOW()"
   );
   $stProfile->execute([$adminId, $name]);
@@ -133,7 +133,7 @@ try {
 
   $pdo->commit();
 
-  echo "Ember CoreUI wurde initialisiert.\n";
+  echo "E.M.B.E.R. CoreUI wurde initialisiert.\n";
   echo "Admin-ID: " . $adminId . "\n";
   echo "Charakter-ID: " . $characterId . "\n";
 } catch (Throwable $e) {

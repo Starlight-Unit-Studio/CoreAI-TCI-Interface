@@ -6,7 +6,7 @@ require_once __DIR__ . '/console_artifact_store.php';
 require_once __DIR__ . '/console_agent_runs.php';
 
 /**
- * Persistente Ember CoreUI-Sitzungslogik.
+ * Persistente E.M.B.E.R. CoreUI-Sitzungslogik.
  *
  * Eine Sitzung ist ein echter Nachrichten-Scope. since_id bleibt nur als
  * Kompatibilitaetsfeld fuer alte Clients bestehen und definiert niemals mehr

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Ember CoreUI - Python worker with durable generated outputs
+E.M.B.E.R. CoreUI - Python worker with durable generated outputs
 =====================================
 Fuehrt den Code aus, den Ember per [PY]...[/PY] im Chat erzeugt.
 
@@ -15,7 +15,7 @@ Was es tut:
 Warum Docker und nicht einfach subprocess:
   Der Worker laeuft als root (er braucht den Docker-Socket). Der Code, den Ember
   schreibt, laeuft NIEMALS in diesem Prozess, sondern nur im Container:
-    - kein Mount des Ember-CoreUI-Projekts, daher keine Konfigurationsdatei im Container
+    - kein Mount des E.M.B.E.R.-CoreUI-Projekts, daher keine Konfigurationsdatei im Container
     - --network bridge: volles Internet, aber die Loopback-Dienste des Hosts
       (MariaDB, Ollama, SearXNG auf 127.0.0.1) sind aus dem Container nicht erreichbar
     - --read-only Rootfs, Schreiben nur im Job-Verzeichnis und in /tmp (tmpfs)

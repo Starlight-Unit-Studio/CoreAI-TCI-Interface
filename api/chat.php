@@ -182,7 +182,7 @@ function ember_internal_meta_label_pattern(): string {
     . 'analyse|(?:ue|ü)berlegung|pr(?:ue|ü)fung|selbstkorrektur)';
 }
 
-// Ember CoreUI zeigt niemals rohe Modellgedanken. Das Panel bleibt als sichere,
+// E.M.B.E.R. CoreUI zeigt niemals rohe Modellgedanken. Das Panel bleibt als sichere,
 // deterministische Fortschrittsanzeige erhalten. Die Texte werden vom Server
 // vorgegeben und enthalten weder Promptteile noch Entwuerfe oder Identitaetsdaten.
 function ember_public_thinking_status(string $stage = 'complete'): string {
@@ -515,7 +515,7 @@ function ember_num_predict(): int {
     : (int)ember_cfg('STU_EMBER_NUM_PREDICT', 6500);
   if ($n === -1) return -1;
   // Gemma 4 benoetigt Budget fuer Thinking und Antwort. Der alte 1000er-Deckel
-  // machte die Ember CoreUI-Konfiguration wirkungslos und kappte lange Antworten.
+  // machte die E.M.B.E.R. CoreUI-Konfiguration wirkungslos und kappte lange Antworten.
   return max(40, min(32768, $n));
 }
 
@@ -536,7 +536,7 @@ function ember_num_ctx(): int {
   // ins Fenster, die Generierung brach mitten in der Denkphase ab.
   // Achtung: es gab einen ZWEITEN Deckel in ember_num_ctx_for_model() -- gleiches
   // Doppelclamp-Muster wie beim num_predict-Bug aus v1.1.1.57. Beide sind geoeffnet.
-  // 32k bleibt der konservative Ember CoreUI-Standard fuer lokale Gemma-4-Varianten.
+  // 32k bleibt der konservative E.M.B.E.R. CoreUI-Standard fuer lokale Gemma-4-Varianten.
   $n = (int)ember_cfg('STU_EMBER_NUM_CTX', 16384);
   return max(512, min(65536, $n));
 }
@@ -2889,7 +2889,7 @@ function ember_insert(
     }
   }
   // Defense in depth: Auch ein kuenftiger Aufrufer, der die gemeinsame
-  // Antwortschranke vergisst, darf im privaten Ember CoreUI-Kanal kein internes
+  // Antwortschranke vergisst, darf im privaten E.M.B.E.R. CoreUI-Kanal kein internes
   // Modell-Meta als sichtbare Nachricht persistieren.
   if ($targetChannel === 'console') {
     $text = ember_sanitize_public_reply($text, '');
@@ -3091,7 +3091,7 @@ function ember_call_ollama(string $model, string $systemPrompt, string $userProm
         }
       }
       if ($runtimeImagePath !== '') {
-        // Nur serverseitig erzeugte Dateien aus den beiden Ember CoreUI-Runtime-Pfaden.
+        // Nur serverseitig erzeugte Dateien aus den beiden E.M.B.E.R. CoreUI-Runtime-Pfaden.
         $localPath = $runtimeImagePath;
       } else {
         // Public image URLs may contain a deployment subpath. Only resolve files
@@ -3172,7 +3172,7 @@ function ember_call_ollama(string $model, string $systemPrompt, string $userProm
   if ($options !== []) $payload['options'] = $options;
 
   // Explizite interne Overrides (z.B. Reflect) haben Vorrang. Hauptantworten
-  // folgen dem kontobezogenen Ember CoreUI-Schalter und deaktivieren Thinking damit
+  // folgen dem kontobezogenen E.M.B.E.R. CoreUI-Schalter und deaktivieren Thinking damit
   // wirklich im Ollama-Request, statt lediglich das Statuspanel auszublenden.
   $payload['think'] = $thinkOverride !== null
     ? (bool)$thinkOverride
@@ -4067,7 +4067,7 @@ function ember_build_context(
   try { $pdo->query('SELECT 1 FROM stu_chat_messages LIMIT 1'); } catch (Throwable $e) { return ''; }
   if ($channel === 'console' && $consoleUid > 0) {
     // Privater Kontext ist nicht nur benutzerbezogen, sondern zwingend an eine
-    // echte Ember CoreUI-Sitzung gebunden. Ohne gueltige ID lieber leerer Kontext als
+    // echte E.M.B.E.R. CoreUI-Sitzung gebunden. Ohne gueltige ID lieber leerer Kontext als
     // ein Vermischen zweier Unterhaltungen.
     $sessionId = coreui_console_session_normalize_id($consoleSessionId ?? '');
     if ($sessionId === '') return '';
@@ -4114,12 +4114,12 @@ function ember_build_context(
       $msg = ember_sanitize_public_reply($msg, '');
     }
     if ($name === '' || $msg === '') continue;
-    // Der private Ember CoreUI-Dialog braucht echten Arbeitskontext. Das alte
+    // Der private E.M.B.E.R. CoreUI-Dialog braucht echten Arbeitskontext. Das alte
     // Global-Chat-Limit von 120 Zeichen bleibt nur fuer den oeffentlichen Kanal.
     $lineLimit = ($channel === 'console') ? 1200 : 120;
     if (function_exists('mb_substr')) $msg = mb_substr($msg, 0, $lineLimit, 'UTF-8');
     else $msg = substr($msg, 0, $lineLimit);
-    $lines[] = ($isEmberRow ? (($name !== '' ? $name : 'Ember') . ' (du)') : $name) . ': ' . $msg;
+    $lines[] = ($isEmberRow ? (($name !== '' ? $name : 'Mara') . ' (du)') : $name) . ': ' . $msg;
   }
   return implode("\n", $lines);
 }
@@ -5408,7 +5408,7 @@ function ember_execute_generated_command(PDO $pdo, string $line): array {
       return [
         'handled'=>true,
         'ok'=>true,
-        'system'=> (string)$target['name'] . ' wurde von Ember entmutet.'
+        'system'=> (string)$target['name'] . ' wurde von Mara entmutet.'
       ];
     }
 
@@ -5434,7 +5434,7 @@ function ember_execute_generated_command(PDO $pdo, string $line): array {
     return [
       'handled'=>true,
       'ok'=>true,
-      'system'=> (string)$target['name'] . ' wurde für ' . $mins . 'm von Ember gemutet' . ($reason !== '' ? (' (' . $reason . ')') : '') . '.'
+      'system'=> (string)$target['name'] . ' wurde für ' . $mins . 'm von Mara gemutet' . ($reason !== '' ? (' (' . $reason . ')') : '') . '.'
     ];
   }
 
@@ -5457,7 +5457,7 @@ function ember_execute_generated_command(PDO $pdo, string $line): array {
       return [
         'handled'=>true,
         'ok'=>true,
-        'system'=> chat_ban_target_label($target) . ' wurde von Ember entbannt.'
+        'system'=> chat_ban_target_label($target) . ' wurde von Mara entbannt.'
       ];
     }
 
@@ -5484,7 +5484,7 @@ function ember_execute_generated_command(PDO $pdo, string $line): array {
     return [
       'handled'=>true,
       'ok'=>true,
-      'system'=> chat_ban_target_label($target) . ' wurde von Ember gebannt' . ($reasonPublic !== '' ? (' (' . $reasonPublic . ')') : '') . '.'
+      'system'=> chat_ban_target_label($target) . ' wurde von Mara gebannt' . ($reasonPublic !== '' ? (' (' . $reasonPublic . ')') : '') . '.'
     ];
   }
 
@@ -6123,7 +6123,7 @@ function ember_exec_news_reaction(PDO $pdo, array $ctx): bool {
   if ($relevance === 'deep') {
     // Echte Recherche: bestehenden Browse-Worker nutzen, gleiche Pipeline wie bei einer
     // normalen [BROWSE:]-Anfrage im Chat, nur selbst ausgeloest statt von einem Spieler.
-    $goal = "Ember ist von sich aus neugierig auf \"{$query}\" geworden und moechte mehr dazu erfahren. Recherchiere und fasse zusammen.";
+    $goal = "Mara ist von sich aus neugierig auf \"{$query}\" geworden und moechte mehr dazu erfahren. Recherchiere und fasse zusammen.";
     return ember_browse_enqueue($pdo, $goal, 'global', null, null);
   }
 
@@ -7825,7 +7825,7 @@ if ($channel === 'global') {
         $safeStoredReply = ember_sanitize_public_reply((string)$r['message'], '');
         $r['message'] = $safeStoredReply !== ''
           ? $safeStoredReply
-          : 'Diese ältere Antwort wurde vom Ember CoreUI-Sicherheitsfilter ausgeblendet.';
+          : 'Diese ältere Antwort wurde vom E.M.B.E.R. CoreUI-Sicherheitsfilter ausgeblendet.';
       }
       if ($channel === 'console' && array_key_exists('thinking_content', $r)) {
         $r['thinking_content'] = ember_public_thinking_from_storage(
@@ -8055,7 +8055,7 @@ if ($action === 'send') {
   $message = coreui_console_attachment_strip_markers($message);
   $isImageMsg = ($image_url !== null);
   $isFileMsg  = ($attachmentIds !== []);
-  // Der private Ember CoreUI-Kanal ist eine Arbeitsoberflaeche und darf nicht am
+  // Der private E.M.B.E.R. CoreUI-Kanal ist eine Arbeitsoberflaeche und darf nicht am
   // kurzen Game-Chat-Limit haengen. Globale und Allianzkanäle behalten ihre
   // bisherigen Grenzen.
   $maxLen = ($channel === 'console')
@@ -8147,7 +8147,7 @@ if ($action === 'send') {
 
   // Commands (moderation, utilities). Commands do NOT get stored as chat messages.
   // Game-Chat-Kommandos arbeiten auf einem ganzen Kanal und duerfen deshalb
-  // niemals aus einer privaten, sitzungsgebundenen Ember CoreUI-Unterhaltung laufen.
+  // niemals aus einer privaten, sitzungsgebundenen E.M.B.E.R. CoreUI-Unterhaltung laufen.
   // Verwaltung erfolgt im isolierten Admin Core; Texte mit Punkt oder Slash
   // bleiben in der Console normale Modellnachrichten.
   $cmdRes = ($channel === 'console')
@@ -8402,7 +8402,7 @@ if ($action === 'send') {
     if (is_string($reply) && trim($reply) !== '') {
       [$cmdLine, $replyBody] = ember_reply_command_and_body($reply);
       // Generierte Game-Kommandos sind ausschliesslich im globalen Game-Pfad
-      // zulaessig. Eine private Ember CoreUI-Sitzung darf niemals globale Moderation,
+      // zulaessig. Eine private E.M.B.E.R. CoreUI-Sitzung darf niemals globale Moderation,
       // Pruning oder andere kanalweite Seiteneffekte ausloesen.
       if ($channel !== 'console' && $cmdLine !== '') {
         $cmdRes = ember_execute_generated_command($pdo, $cmdLine);

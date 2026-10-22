@@ -1,4 +1,4 @@
-# Ember CoreUI: Funktionsmatrix und überprüfbare Startinventur
+# E.M.B.E.R. CoreUI: Funktionsmatrix und überprüfbare Startinventur
 
 Stand: 20.10.2026. Status dieses Dokuments: Planung. Durch diese Matrix wurde keine der beschriebenen Funktionen neu implementiert.
 
@@ -8,7 +8,7 @@ Die [Umsetzungsroadmap](../ROADMAP.md) ordnet alle derzeitigen CF-IDs in konkret
 
 ## Ziel und Aussagegrenze
 
-Ziel ist die vollständige funktionale Bestandsaufnahme von **OpenClaw, Open WebUI, CrewAI, LangGraph und Microsoft AutoGen** und die eigenständige Umsetzung ihrer Funktionen in Ember CoreUI. Alle fünf Referenzen gehören zum Umfang. Diese erweiterte Startmatrix enthält **82 stabile Einträge**; sie ist weder eine abgeschlossene Vollinventur noch ein Nachweis vollständiger Gleichwertigkeit. CF-001 bis CF-072 behalten ihre IDs, CF-073 bis CF-082 ergänzen konkrete Agenten- und Workflowmechanismen. Bei der Tiefenprüfung werden weitere Einzelanforderungen ergänzt, ohne bestehende IDs umzunummerieren.
+Ziel ist die vollständige funktionale Bestandsaufnahme von **OpenClaw, Open WebUI, CrewAI, LangGraph und Microsoft AutoGen** und die eigenständige Umsetzung ihrer Funktionen in E.M.B.E.R. CoreUI. Alle fünf Referenzen gehören zum Umfang. Diese erweiterte Startmatrix enthält **82 stabile Einträge**; sie ist weder eine abgeschlossene Vollinventur noch ein Nachweis vollständiger Gleichwertigkeit. CF-001 bis CF-072 behalten ihre IDs, CF-073 bis CF-082 ergänzen konkrete Agenten- und Workflowmechanismen. Bei der Tiefenprüfung werden weitere Einzelanforderungen ergänzt, ohne bestehende IDs umzunummerieren.
 
 Die Spalte „Referenzfunktion“ enthält knappe, paraphrasierte Beleg-Keywords. Die Spalte „Eigenes Soll mit Abnahme“ beschreibt unsere eigenen Anforderungen und zukünftige Prüfungen. Eine dort formulierte Abnahme gilt noch nicht als bestanden. Quellcode, Fremdtexte, Designs und Assets der Referenzprojekte werden nicht übernommen. Eine dokumentierte Referenzfunktion beweist auch nicht, dass sie in jeder Edition, Installation oder Modellverbindung verfügbar ist.
 

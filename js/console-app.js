@@ -1,4 +1,4 @@
-// Ember CoreUI - console-app.js
+// E.M.B.E.R. CoreUI - console-app.js
 // Session-Persistenz via MariaDB (api/console_sessions.php)
 // Nachrichten kommen aus stu_chat_messages via SSE und Fetch-Poll.
 // Rohe Modellgedanken werden weder angezeigt noch aus der Historie uebernommen.
@@ -501,7 +501,7 @@
           ev.stopPropagation();
           var title = String(s.title || 'Sitzung');
           if (!window.confirm(
-            'Sitzung "' + title + '" endgültig löschen? Nachrichten, Browser-Recherchen und zugehörige Uploads werden aus Ember CoreUI entfernt.'
+            'Sitzung "' + title + '" endgültig löschen? Nachrichten, Browser-Recherchen und zugehörige Uploads werden aus E.M.B.E.R. CoreUI entfernt.'
           )) return;
           var proof = window.prompt('Zur Bestätigung LÖSCHEN eingeben:');
           proof = String(proof || '').trim().toLocaleUpperCase('de-DE');
@@ -2862,7 +2862,7 @@
             var preferred = rememberedActiveSession();
             var ses = sessionById(preferred) || state.sessions[0] || null;
             if (!ses) {
-              appendMessageEl('system', 'ARCHNET VERBINDUNG HERGESTELLT. EMBER INTERFACE AKTIV.');
+              appendMessageEl('system', 'ARCHNET VERBINDUNG HERGESTELLT. E.M.B.E.R. COREUI AKTIV.');
               scrollToBottom();
               setStatus('online', 'VERBUNDEN');
               return;

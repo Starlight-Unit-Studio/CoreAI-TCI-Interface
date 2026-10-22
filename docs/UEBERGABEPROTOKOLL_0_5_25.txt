@@ -1,0 +1,54 @@
+E.M.B.E.R. COREUI UEBERGABEPROTOKOLL 0.5.25
+Stand 22.10.2026
+Basis main 0.5.24 a27973517c0d9164e5fa7d4cad6c3ada353aa01e
+Branch fix/ember-acronym-branding-0.5.25
+
+KANONISCHE NAMEN
+- E.M.B.E.R. = Framework, Backend und uebergeordnetes System.
+- E.M.B.E.R. CoreUI = eigenstaendiges Terminal.
+- Mara Thorne = TCI und CoreAI der Ravager Thorn.
+- Ember = eigenstaendige CoreAI der Starlight Ember; die spaetere Aktivierung von Sandras Engramm gehoert zu ihrer getrennten STU-Lore.
+- E.M.B.E.R. ist weder der Eigenname von Mara noch die separate CoreAI namens Ember.
+
+KORREKTUR
+Alte offizielle Anzeige Ember CoreUI war lore-seitig irrefuehrend.
+Ab 0.5.25 wird E.M.B.E.R. CoreUI als Produkt- und UI-Name
+verwendet, etwa [E.M.B.E.R. CoreUI Setup] im One-Liner,
+[E.M.B.E.R. CoreUI] im Installer, HTML-Metadaten, JSON-LD,
+Splashscreen, Settings, Login, Admin, Protokollen, Gesundheitstest,
+Runtime-Meldungen, Mailabsender und aktuellem README.
+Das Live-Panel mit der zuvor ausdruecklich gewuenschten Zeile
+E.M.B.E.R. CoreAI arbeitet bleibt unveraendert als technische
+Arbeitstitel-Kennung; es benennt nicht die eigenstaendige CoreAI Ember.
+
+TECHNISCHE KOMPATIBILITAET
+Nicht umbenannt: Modell ember-coreui:latest, Verzeichnis
+/opt/ember-coreui, Skript-/Dateinamen, DB-Tabellen, Kennungen,
+API-Variablen und technische Character-ID ember.
+Neue Konten und frische Bootstrap-Profile verwenden als CoreAI-
+Standardnamen Mara; alte Standardprofile werden beim Anzeigen
+weiter zu Mara normalisiert. Andere benutzerdefinierte Namen
+bleiben erhalten. Keine Datenmigration erforderlich.
+Gemaess Benutzerregel bleiben num_ctx und num_predict aus dem
+Gemma-Modelfile ausgeschlossen; draft_num_predict 0 bleibt.
+Qwen-Code-/ZIP-Routing, Cloud-ZIP und serieller Agentenfluss werden
+durch diesen Branding-Patch nicht umgestellt.
+
+RECHTLICHE NAMENSKORREKTUR
+LICENSE.de.md bleibt massgeblich. Die Texte zu geschuetztem
+Branding und verpflichtendem aktuellem Produktnamen werden
+auf E.M.B.E.R. CoreUI angepasst; der alte Name Ember CoreUI bleibt
+fuer die historischen Versionen bis einschliesslich 0.5.24 als
+frueherer Projektname erkennbar. Lizenzversion 1.0 und sonstige
+rechtliche Regeln bleiben inhaltlich unveraendert. Eine gesonderte
+juristische Pruefung ist damit nicht ersetzt.
+
+ABNAHME
+Kein GitHub Actions Einsatz wegen des ausgeschöpften Kontingents.
+Repo-/Branding-Pruefungen und PHP-/JS-/Shell-Syntax kontrollieren.
+Gleichen bestehenden One-Liner ueber main ausfuehren,
+Version 0.5.25 und Logpraefix [E.M.B.E.R. CoreUI Setup] pruefen.
+Anschliessend Seiten-/Mail-/UI-Namen pruefen; Mara als TCI und
+E.M.B.E.R.-Framework auseinanderhalten.
+Serverseitige Live-Abnahme und Qwen-/Gemma-Downloads sind nicht
+durch eine reine Branding-Implementierung bestaetigt.

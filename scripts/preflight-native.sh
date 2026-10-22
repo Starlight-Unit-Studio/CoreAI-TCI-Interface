@@ -36,7 +36,7 @@ read_constant() {
   '
 }
 
-printf 'Ember CoreUI Native-Preflight, Version %s\n' "$VERSION"
+printf 'E.M.B.E.R. CoreUI Native-Preflight, Version %s\n' "$VERSION"
 
 UI_FILES=(
   LICENSE.de.md
@@ -115,14 +115,14 @@ UI_FILES=(
   scripts/markdown-selftest.js
   scripts/branding-license-selftest.py
   scripts/cache-bust.py
-  docs/changelogs-txt/CHANGELOG_0_5_24.txt
+  docs/changelogs-txt/CHANGELOG_0_5_25.txt
   docs/COREUI_IMAGE_ENGINE_PLAN.md
-  docs/UEBERGABEPROTOKOLL_0_5_24.txt
+  docs/UEBERGABEPROTOKOLL_0_5_25.txt
   images/starlight_unit_studios_logo_original.png
 )
 for ui_file in "${UI_FILES[@]}"; do
   if [[ ! -s "$PROJECT_ROOT/$ui_file" ]]; then
-    fail "Ember CoreUI-Oberflaechendatei fehlt oder ist leer: $ui_file"
+    fail "E.M.B.E.R. CoreUI-Oberflaechendatei fehlt oder ist leer: $ui_file"
   fi
 done
 
@@ -150,7 +150,7 @@ else
 fi
 
 if (( FAILURES == 0 )); then
-  ok 'Ember-CoreUI-Branding, Lizenzunterlagen und Einstellungsoberflaeche sind paketiert.'
+  ok 'E.M.B.E.R.-CoreUI-Branding, Lizenzunterlagen und Einstellungsoberflaeche sind paketiert.'
 fi
 
 if find "$PROJECT_ROOT" -type f \
@@ -442,9 +442,9 @@ if command -v php >/dev/null 2>&1; then
     fi
 
     if systemctl is-active --quiet ember-coreui-python.service; then
-      ok 'Ember CoreUI-Python-Worker ist aktiv.'
+      ok 'E.M.B.E.R. CoreUI-Python-Worker ist aktiv.'
     else
-      fail 'Ember CoreUI-Python-Worker ist nicht aktiv.'
+      fail 'E.M.B.E.R. CoreUI-Python-Worker ist nicht aktiv.'
     fi
 
     MODEL_NAME="$(read_constant STU_EMBER_MODEL || true)"
@@ -535,4 +535,4 @@ if (( FAILURES > 0 )); then
   exit 1
 fi
 
-printf '\nPreflight erfolgreich. Ember CoreUI ist betriebsbereit.\n'
+printf '\nPreflight erfolgreich. E.M.B.E.R. CoreUI ist betriebsbereit.\n'

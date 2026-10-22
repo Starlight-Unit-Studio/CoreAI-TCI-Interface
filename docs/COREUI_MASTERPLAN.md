@@ -1,4 +1,4 @@
-# Masterplan für Ember CoreUI und E.M.B.E.R.
+# Masterplan für E.M.B.E.R. CoreUI und E.M.B.E.R.
 
 Stand: 20.10.2026. Dieses Dokument hält das vereinbarte Ziel, die belegte Ausgangslage und die Reihenfolge der Entwicklung fest. Es beschreibt geplante Arbeit; die Aufnahme einer Funktion ist kein Nachweis ihrer Implementierung.
 
@@ -8,9 +8,9 @@ Die [Umsetzungsroadmap](../ROADMAP.md) ordnet diese Anforderungen in 29 Lieferpa
 
 ## 1. Verbindliches Ziel
 
-**Ember CoreUI soll eine vollständige Arbeitsumgebung mit E.M.B.E.R. als ausführendem Agenten werden.** Dazu gehören mehrstufige Aufgaben, sichtbare Arbeitsschritte, ein echter Entwicklungsbereich, wiederverwendbare Skills und verlässliche Dateiausgabe.
+**E.M.B.E.R. CoreUI soll eine vollständige Arbeitsumgebung mit dem E.M.B.E.R.-Framework und Mara als ausführender TCI werden.** Dazu gehören mehrstufige Aufgaben, sichtbare Arbeitsschritte, ein echter Entwicklungsbereich, wiederverwendbare Skills und verlässliche Dateiausgabe.
 
-**OpenClaw, Open WebUI, CrewAI, LangGraph und Microsoft AutoGen** werden systematisch untersucht. Alle fünf Projekte gehören zum verbindlichen Referenzumfang. Ziel ist, sämtliche erfassten Funktionen durch eigene Implementierungen in Ember CoreUI abzudecken. Es werden keine fremden Quellcodeabschnitte, Oberflächentexte oder Assets übernommen. Referenzverhalten wird verstanden, als eigenständige Anforderung beschrieben und anhand eigener Abnahmekriterien umgesetzt. Ein vorgefertigter Klon ist kein Umsetzungsschritt.
+**OpenClaw, Open WebUI, CrewAI, LangGraph und Microsoft AutoGen** werden systematisch untersucht. Alle fünf Projekte gehören zum verbindlichen Referenzumfang. Ziel ist, sämtliche erfassten Funktionen durch eigene Implementierungen in E.M.B.E.R. CoreUI abzudecken. Es werden keine fremden Quellcodeabschnitte, Oberflächentexte oder Assets übernommen. Referenzverhalten wird verstanden, als eigenständige Anforderung beschrieben und anhand eigener Abnahmekriterien umgesetzt. Ein vorgefertigter Klon ist kein Umsetzungsschritt.
 
 Die Gesamtinventur bleibt offen, bis auch Unterfunktionen, Einstellungen, Menüs, APIs, Voraussetzungen und relevante Begleitprojekte einzeln erfasst sind. Ein übernommener Familienname wie „Skills“ oder „Agent“ erfüllt diese Anforderung noch nicht. Notwendige Abweichungen werden ausdrücklich begründet und im Register erhalten, statt Funktionen stillschweigend zu streichen.
 
@@ -20,7 +20,7 @@ Für die Aufgabenbearbeitung dient der vom Betreiber gewünschte Arbeitsumfang v
 
 - **Höchstens eine Modellanfrage gleichzeitig.** Alle interaktiven Aufträge, Unteraufgaben, Automationen, Gedächtnispflege und Zusammenfassungen verwenden dieselbe zentrale serielle Ausführung. Mehrere Rollen oder Agenten dürfen keine zusätzlichen parallelen Modellanfragen erzeugen.
 - **Echte Arbeit muss sichtbar sein.** Geplante Schritte, tatsächliche Werkzeugereignisse und Ergebnisse haben getrennte Zustände. Statussätze dürfen nicht vortäuschen, dass ein Werkzeug bereits ausgeführt wurde.
-- **Eigenständiges Produkt.** Name, Branding, bestehende Lizenz- und Community-Regeln von Ember CoreUI bleiben maßgeblich. Die Referenzprodukte bestimmen weder Lizenzmodell noch Bezahlfunktionen der eigenen Umsetzung.
+- **Eigenständiges Produkt.** Name, Branding, bestehende Lizenz- und Community-Regeln von E.M.B.E.R. CoreUI bleiben maßgeblich. Die Referenzprodukte bestimmen weder Lizenzmodell noch Bezahlfunktionen der eigenen Umsetzung.
 - **Am Handy bedienbar.** Die zentralen Abläufe müssen in Android Chrome einschließlich Dateidownload, Wiederaufnahme, Editor, Terminalbedienung und Freigaben nutzbar sein.
 - **Vorhandene Arbeit erhalten.** Konten, Gespräche, Uploads, Wissensdaten, Konfiguration und später Projekte, Skills sowie erzeugte Dateien brauchen einen konsistenten Update-, Export- und Wiederherstellungsweg.
 - **Freigaben im Auftragskontext beachten.** Bereits autorisierte Arbeit soll fortgesetzt werden. Eine menschliche Übergabe braucht einen konkreten Grund und einen überprüfbaren nächsten Schritt.
@@ -161,7 +161,7 @@ Ein Skill ist kein Ersatz für ein fehlendes ausführbares Werkzeug. Ein Skill k
 
 Das Skillsystem benötigt Erstellung und Bearbeitung, Suche, persönliche und gemeinsame Geltungsbereiche, Auswahl für Projekt/Modell/Gespräch, Import und Export, feste Versionen, Vergleich, Wiederherstellung und Konfliktbehandlung. Ein Agent soll geeignete erprobte Abläufe mit nachvollziehbarer Herkunft als Skills weiterentwickeln können. Die tatsächlich verwendete Skill-Version bleibt einem Lauf zugeordnet.
 
-Die Quellen [OpenClaw Skills](https://github.com/openclaw/openclaw/blob/54417c68199f58e9b78fddff95c1ae6b610845fe/docs/tools/skills.md) und [Open WebUI Skills](https://docs.openwebui.com/features/workspace/skills/) sind Vergleichsgrundlagen. Die eigene Struktur und Implementierung werden für Ember CoreUI festgelegt.
+Die Quellen [OpenClaw Skills](https://github.com/openclaw/openclaw/blob/54417c68199f58e9b78fddff95c1ae6b610845fe/docs/tools/skills.md) und [Open WebUI Skills](https://docs.openwebui.com/features/workspace/skills/) sind Vergleichsgrundlagen. Die eigene Struktur und Implementierung werden für E.M.B.E.R. CoreUI festgelegt.
 
 ## 8. Weitere verbindliche Ausbauflächen
 

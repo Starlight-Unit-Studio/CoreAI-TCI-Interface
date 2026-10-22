@@ -1,17 +1,23 @@
-# Project STΛRLIɢHT: Ember CoreUI
+# Project STΛRLIɢHT: E.M.B.E.R. CoreUI
 [![DOI](https://zenodo.org/badge/1349352973.svg)](https://doi.org/10.5281/zenodo.22201310)
 
-**Ember CoreUI** is an independent local AI WebUI and control environment by **Starlight Unit Studios**, designed for local **Gemma 4 models via Ollama** and the E.M.B.E.R. cognitive architecture.
+**E.M.B.E.R. CoreUI** is an independent local AI WebUI and control environment by **Starlight Unit Studios**, designed for local **Gemma 4 models via Ollama** and the E.M.B.E.R. cognitive architecture.
 
 It combines private conversations and sessions, user-scoped RAG-Lite, local long-term memory, Playwright-based browser research with SearXNG, isolated Python execution, multimodal file handling, deterministic exact integer calculations, and strict separation of internal model analysis from visible answers.
 
-Ember CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
+E.M.B.E.R. CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.24` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.25` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## E.M.B.E.R. acronym and official terminal branding (0.5.25)
+
+**E.M.B.E.R.** names the framework, backend and system. Its standalone terminal is **E.M.B.E.R. CoreUI**, and **Mara Thorne** is the TCI/CoreAI of the *Ravager Thorn*. **Ember**, by contrast, is a separate CoreAI of the *Starlight Ember*, linked to the later Sandra-engram storyline. These entities are deliberately not interchangeable.
+
+In releases through `0.5.24`, the product display name `Ember CoreUI` was used incorrectly. From `0.5.25` onward, all current installer messages, user-facing product labels, metadata and branding policy use the correct dotted spelling. The former spelling is retained only as a historical project alias where needed to interpret old releases and license records. Existing technical identifiers such as `ember-coreui:latest`, `/opt/ember-coreui`, environment variables and database IDs are unchanged. No software logic or lore canon outside this naming clarification is altered.
 
 ## Mara Thorne CoreAI identity and Qwen compatibility (0.5.24)
 
-The CoreUI remains the terminal, while Mara Thorne is its TCI and CoreAI persona (E.M.B.E.R. CoreAI). The local Gemma Modelfile now uses Mara's more relaxed, spontaneous 2000s gamer-style voice inspired by the native image response style; the separate vision prompt also uses Mara and no longer claims a human biography. Technical file IDs, database tables, endpoints and environment variable names remain untouched to preserve installed data. The user's existing custom assistant display names continue to work, with the old default Ember displayed as Mara.
+The local Gemma Modelfile now uses Mara's more relaxed, spontaneous 2000s gamer-style voice inspired by the native image response style; the separate vision prompt also uses Mara and no longer claims a human biography. Technical file IDs, database tables, endpoints and environment variable names remain untouched to preserve installed data. The user's existing custom assistant display names continue to work, with the old default Ember displayed as Mara.
 
 Gemma's `num_ctx` prohibition is retained: no Modelfile line and no Gemma request override. The accidentally retained `PARAMETER num_predict -1` Modelfile line is deleted as requested; `PARAMETER draft_num_predict 0` remains. Other approved sampling parameters stay as before.
 
@@ -105,7 +111,7 @@ The [Ember Image Engine plan](docs/COREUI_IMAGE_ENGINE_PLAN.md) adds a native C/
 
 The [implementation roadmap](ROADMAP.md) organizes the work into 29 delivery packages with dependencies, acceptance criteria, and a concrete first implementation sequence for generated file downloads.
 
-The [Ember CoreUI and E.M.B.E.R. master plan](docs/COREUI_MASTERPLAN.md) records the planned full agent, developer workspace, skill system, and independent implementation of the functionality inventoried from OpenClaw, Open WebUI, CrewAI, LangGraph, and Microsoft AutoGen. The [native image engine plan](docs/COREUI_IMAGE_ENGINE_PLAN.md) specifies a future CPU-only C/C++ diffusion adapter, shared model admission, explicit weight licensing and real benchmarks. No image generation runtime is claimed as shipped yet. The [feature matrix](docs/COREUI_FEATURE_MATRIX.md) tracks 82 stable requirements, reference coverage, existing foundations, open work, and acceptance criteria. The scope includes agent teams, stateful workflows, durable checkpoints, human review, result validation, and a visual workflow playground. These documents describe planned development, not features already shipped; the full reference inventory remains open.
+The [E.M.B.E.R. CoreUI and E.M.B.E.R. master plan](docs/COREUI_MASTERPLAN.md) records the planned full agent, developer workspace, skill system, and independent implementation of the functionality inventoried from OpenClaw, Open WebUI, CrewAI, LangGraph, and Microsoft AutoGen. The [native image engine plan](docs/COREUI_IMAGE_ENGINE_PLAN.md) specifies a future CPU-only C/C++ diffusion adapter, shared model admission, explicit weight licensing and real benchmarks. No image generation runtime is claimed as shipped yet. The [feature matrix](docs/COREUI_FEATURE_MATRIX.md) tracks 82 stable requirements, reference coverage, existing foundations, open work, and acceptance criteria. The scope includes agent teams, stateful workflows, durable checkpoints, human review, result validation, and a visual workflow playground. These documents describe planned development, not features already shipped; the full reference inventory remains open.
 
 Generated HTML, ZIP, and other output files must become real, persistent chat downloads. This remains an open, early implementation priority in [issue #29](https://github.com/Starlight-Unit-Studio/coreui/issues/29).
 
@@ -129,23 +135,23 @@ The canonical `VERSION` uses exactly `major.minor.patch` with numbers only, for 
 
 The same original one-liner calls `scripts/cache-bust.py` through the native or container installer. For each referenced CSS/JS file, the installer derives a fixed-length **numeric cache key from that file's actual SHA-256 content** and rewrites the static HTML URL. Unchanged assets keep the same key; changed assets get a different one even without a product version change. All HTML entry points are marked for revalidation at Nginx level, so browsers can discover new asset URLs. Preflight rejects stale or invalid keys.
 
-**Historical releases are not renamed.** The original verified `0.5.3-alpha` archive is retained for legacy rollback only. `0.5.4` was planned but not published as a release. Versions `0.5.5` through `0.5.17` are preceding main-source checkpoints; `0.5.20` is the current working version. A new verified ZIP/SHA pair must be built separately before presenting it as an archived release.
+**Historical releases are not renamed.** The original verified `0.5.3-alpha` archive is retained for legacy rollback only. `0.5.4` was planned but not published as a release. Versions `0.5.5` through `0.5.17` are preceding main-source checkpoints; `0.5.25` is the current development version. A new verified ZIP/SHA pair must be built separately before presenting it as an archived release.
 
 ## Independence and mandatory product name
 
-The product name is always **Ember CoreUI**. The full designation is **STΛRLIɢHT: Ember CoreUI by Starlight Unit Studios**. The standalone designation `CoreUI` is not used as a product name for this project.
+From version `0.5.25`, the correct product name is **E.M.B.E.R. CoreUI**. The full designation is **STΛRLIɢHT: E.M.B.E.R. CoreUI by Starlight Unit Studios**. The standalone designation `CoreUI` is not used as a product name for this project.
 
-Ember CoreUI is independently developed. The project is not a fork of the separate admin template and UI component project at `coreui.io`, contains no dependency on it, and is neither affiliated with, sponsored by, nor endorsed by it. Technical compatibility names such as `coreui`, `COREUI_*`, `ember-coreui`, `/opt/ember-coreui`, repository components, and domain components remain purely machine identifiers.
+E.M.B.E.R. CoreUI is independently developed. The project is not a fork of the separate admin template and UI component project at `coreui.io`, contains no dependency on it, and is neither affiliated with, sponsored by, nor endorsed by it. Technical compatibility names such as `coreui`, `COREUI_*`, `ember-coreui`, `/opt/ember-coreui`, repository components, and domain components remain purely machine identifiers.
 
 ## License and free community model
 
-Starting with `0.4.2-alpha`, the project's own code is licensed under the **Starlight Unit Studios Ember CoreUI Community Source License 1.0**. The legally authoritative German version is located in `LICENSE.de.md`; `LICENSE.md` is the English translation.
+Starting with `0.4.2-alpha`, the project's own code is licensed under the **Starlight Unit Studios E.M.B.E.R. CoreUI Community Source License 1.0**. The legally authoritative German version is located in `LICENSE.de.md`; `LICENSE.md` is the English translation.
 
 - private, community, and internal use remains free
-- internal use by companies remains free with visible Ember CoreUI branding
+- internal use by companies remains free with visible E.M.B.E.R. CoreUI branding
 - no user limit and no license telemetry
-- no paid licensing, white-label, donation, advertising, or support program for the official Ember CoreUI project
-- Ember CoreUI may not be sold by third parties as a paid SaaS or managed service
+- no paid licensing, white-label, donation, advertising, or support program for the official E.M.B.E.R. CoreUI project
+- E.M.B.E.R. CoreUI may not be sold by third parties as a paid SaaS or managed service
 - branding changes always require prior written case-by-case approval
 - modified redistributions must retain source code, license, attribution notices, and branding
 
@@ -227,7 +233,7 @@ All installer, privacy, upload, profile, navigation, private RAG-Lite, and Pytho
 - Private RAG-Lite now uses the same shared extraction, normalization, chunking, query, and ranking engine as the operator RAG path, while keeping every source and chunk in user-scoped tables.
 - Private knowledge uploads additionally accept common source and data formats such as Python, CSV, JSON, XML, YAML, PHP, JavaScript, HTML, CSS, and SQL.
 - A dedicated Compose Python queue worker and sandbox self-test close the previously incomplete execution path. Generated code runs only in a disposable restricted container.
-- No private Starlight Unit manuscript is bundled or imported. Migration `007_remove_private_studio_lore` removes only the two historic accidental global source IDs from already-updated Ember CoreUI databases.
+- No private Starlight Unit manuscript is bundled or imported. Migration `007_remove_private_studio_lore` removes only the two historic accidental global source IDs from already-updated E.M.B.E.R. CoreUI databases.
 - The production address remains `https://core.starlight-unit.de`.
 
 The session scopes, exact turn assignments, lossless legacy history, controlled session deletion, Thinking protection, profiles, user settings, and Admin Core from the preceding releases remain included. Game, homepage, Apache, KeyHelp, host PHP, Repack paths, and the existing STU database remain untouched.
@@ -255,7 +261,7 @@ Before `0.3.1-alpha`, a session consisted only of a title and `since_id`. All pr
 
 ## Secure thinking status and cleanup of old sessions
 
-Ember CoreUI strictly separates transient internal model analysis from the visible interface:
+E.M.B.E.R. CoreUI strictly separates transient internal model analysis from the visible interface:
 
 - During generation, SSE returns only fixed status stages such as `KONTEXT WIRD ABGEGLICHEN` and `ANTWORT WIRD FORMULIERT`.
 - `message.content` and `message.thinking` are collected in full and processed only after the shared safety check.
@@ -265,10 +271,10 @@ Ember CoreUI strictly separates transient internal model analysis from the visib
 - The browser has an additional whitelist and does not write arbitrary Thinking text into the DOM.
 - The response budget is passed to Ollama per user. A detected token limit continues from the existing response instead of restarting the entire generation.
 - Private Console messages may contain up to 12000 characters, or up to 20000 characters with attachments. Line breaks and code indentation are preserved.
-- The SSE call passes only the authenticated turn ID. The message text is loaded from the Ember CoreUI database and does not appear in the EventSource URL or in proxy access logs.
+- The SSE call passes only the authenticated turn ID. The message text is loaded from the E.M.B.E.R. CoreUI database and does not appear in the EventSource URL or in proxy access logs.
 - The message column is expanded to `MEDIUMTEXT` by migration `002_coreui_management`.
 
-After the update, existing raw blocks can be replaced once in the isolated Ember CoreUI database:
+After the update, existing raw blocks can be replaced once in the isolated E.M.B.E.R. CoreUI database:
 
 ```bash
 cd /opt/ember-coreui
@@ -277,7 +283,7 @@ sudo ./scripts/stack.sh scrub-thinking
 
 The command changes neither the Game database nor the Global Chat.
 
-Only Ollama is shared as an already existing local model interface. Ember CoreUI creates the separate model `ember-coreui:latest` for this purpose. An existing STU model such as `gemma4:26b` is neither replaced nor reconfigured.
+Only Ollama is shared as an already existing local model interface. E.M.B.E.R. CoreUI creates the separate model `ember-coreui:latest` for this purpose. An existing STU model such as `gemma4:26b` is neither replaced nor reconfigured.
 
 ## Profiles, AI settings, and private knowledge
 
@@ -286,7 +292,7 @@ Only Ollama is shared as an already existing local model interface. Ember CoreUI
 - custom visible username without changing the login email or internal user ID
 - private user profile image as a server-side re-rendered PNG file
 - custom visible CoreAI name and separate CoreAI profile image per account
-- custom system prompt for style and working method within the unchanged Ember CoreUI safety and identity rules
+- custom system prompt for style and working method within the unchanged E.M.B.E.R. CoreUI safety and identity rules
 - Memory on or off and configurable Memory limit
 - model Thinking on or off per account; raw thought processes remain private in both settings
 - response budget from 256 to 16384 Ollama tokens
@@ -305,7 +311,7 @@ The prepared external provider adapter remains disabled by default. API keys are
 
 ## Admin Core
 
-`admin/index.html` is accessible only to permission levels 0 and 1 and operates exclusively against the Ember CoreUI database. It includes:
+`admin/index.html` is accessible only to permission levels 0 and 1 and operates exclusively against the E.M.B.E.R. CoreUI database. It includes:
 
 - overview for accounts, sessions, messages, Memories, Lore, browse jobs, and logs
 - create new user accounts with display name, login email, initial password, and permitted role
@@ -334,7 +340,7 @@ With `sudo ./scripts/stack.sh up -d --build --force-recreate php web browse pywo
 
 ## Isolation boundaries
 
-| Area | Ember CoreUI parallel operation |
+| Area | E.M.B.E.R. CoreUI parallel operation |
 |---|---|
 | Project files | Exclusively under `/opt/ember-coreui` |
 | Web server | Dedicated Nginx container on `127.0.0.1:9080` |
@@ -343,27 +349,27 @@ With `sudo ./scripts/stack.sh up -d --build --force-recreate php web browse pywo
 | Web search | Dedicated SearXNG container on `127.0.0.1:18889` |
 | Browser research | Dedicated Playwright container |
 | Python queue | Dedicated trusted worker; generated code runs in a disposable restricted sandbox container |
-| Live browser images | Private Ember CoreUI database, authenticated job SSE, automatic cleanup |
+| Live browser images | Private E.M.B.E.R. CoreUI database, authenticated job SSE, automatic cleanup |
 | Model | Dedicated Ollama model `ember-coreui:latest` |
 | Login sessions | Dedicated cookie name `EMBERCOREUISESSID` |
-| Chat sessions | Dedicated `session_id`, exact history, and turn assignment in the Ember CoreUI database |
-| Profiles | Account-specific names and private media metadata in the Ember CoreUI database |
+| Chat sessions | Dedicated `session_id`, exact history, and turn assignment in the E.M.B.E.R. CoreUI database |
+| Profiles | Account-specific names and private media metadata in the E.M.B.E.R. CoreUI database |
 | Profile images | Authenticated delivery from `var/profile_media`, no direct web path |
 | Private RAG-Lite | User-bound sources and chunks in migration 004, originals under `var/knowledge_uploads` |
 | Locks | Dedicated namespace `ember_coreui:*` |
 | Runtime data | Local directories `var/`, `logs/`, `uploads/`, and `assets/chat_media/` |
 | PDF page images | Dedicated short-lived runtime path `var/pdf_pages` |
 
-On Linux, the containers use the host network so that they can reach Ollama at `127.0.0.1:11434` without rebinding the existing Ollama service to `0.0.0.0`. All Ember CoreUI services receive dedicated loopback ports that are checked before installation.
+On Linux, the containers use the host network so that they can reach Ollama at `127.0.0.1:11434` without rebinding the existing Ollama service to `0.0.0.0`. All E.M.B.E.R. CoreUI services receive dedicated loopback ports that are checked before installation.
 
 Shared Ollama usage still means shared CPU, RAM, and GPU resources. This is not data or configuration coupling, but simultaneous generations can affect the response time of both interfaces.
 
-## Let Game and Ember CoreUI respond simultaneously
+## Let Game and E.M.B.E.R. CoreUI respond simultaneously
 
-Game and Ember CoreUI already do not block each other at the application level:
+Game and E.M.B.E.R. CoreUI already do not block each other at the application level:
 
 - The Game uses its existing STU database and the lock `ember_global_ollama`.
-- Ember CoreUI uses its own MariaDB instance and, by default, the lock `ember_coreui:global_ollama`.
+- E.M.B.E.R. CoreUI uses its own MariaDB instance and, by default, the lock `ember_coreui:global_ollama`.
 - Chat histories, sessions, uploads, Memories, and RAG data remain separate.
 - Only the local Ollama service at `127.0.0.1:11434` is shared.
 
@@ -388,13 +394,13 @@ sudo systemctl restart ollama
 ollama ps
 ```
 
-Without a custom limit, Ollama already allows at least three loaded models by default according to the official documentation. The drop-in is therefore needed only if the report shows a different existing limit or if the upper limit is intentionally fixed at exactly two. `OLLAMA_NUM_PARALLEL=1` applies per loaded model and avoids additional context copies. If Game and Ember CoreUI are later intended to use the same model name, `OLLAMA_NUM_PARALLEL=2` may be necessary. However, this multiplies the memory requirement of the context and should be set only after a RAM/VRAM test. If there is not enough memory, Ollama queues requests instead of forcing true concurrency.
+Without a custom limit, Ollama already allows at least three loaded models by default according to the official documentation. The drop-in is therefore needed only if the report shows a different existing limit or if the upper limit is intentionally fixed at exactly two. `OLLAMA_NUM_PARALLEL=1` applies per loaded model and avoids additional context copies. If Game and E.M.B.E.R. CoreUI are later intended to use the same model name, `OLLAMA_NUM_PARALLEL=2` may be necessary. However, this multiplies the memory requirement of the context and should be set only after a RAM/VRAM test. If there is not enough memory, Ollama queues requests instead of forcing true concurrency.
 
-The Ember CoreUI installer deliberately does not write this system-wide Ollama configuration itself. The Ollama service is the only shared resource and remains under the control of the server operator.
+The E.M.B.E.R. CoreUI installer deliberately does not write this system-wide Ollama configuration itself. The Ollama service is the only shared resource and remains under the control of the server operator.
 
 Official reference: <https://docs.ollama.com/faq#how-does-ollama-handle-concurrent-requests>
 
-The internal STU Console was already removed from the Game with Alpha `v1.1.1.98` on 20 August 2026. Ember CoreUI is its independent successor and reference interface; it does not replace the Global Chat. This standalone package deletes no Repack files and changes no Game routes.
+The internal STU Console was already removed from the Game with Alpha `v1.1.1.98` on 20 August 2026. E.M.B.E.R. CoreUI is its independent successor and reference interface; it does not replace the Global Chat. This standalone package deletes no Repack files and changes no Game routes.
 
 ## Supported target systems
 
@@ -465,7 +471,7 @@ The first Python sandbox image build can take several minutes. Regenerating the 
 
 ## Testing without affecting existing domains
 
-By default, Ember CoreUI listens only on `127.0.0.1:9080`. An SSH tunnel is opened from the local computer:
+By default, E.M.B.E.R. CoreUI listens only on `127.0.0.1:9080`. An SSH tunnel is opened from the local computer:
 
 ```bash
 ssh -L 9080:127.0.0.1:9080 DEIN_SSH_USER@DEIN_SERVER
@@ -493,7 +499,7 @@ The reverse proxy continues to forward this domain internally to `http://127.0.0
 define('STU_PUBLIC_BASE_URL', 'https://coreui.starlight-unit.de');
 ```
 
-The previous address `webui.starlight-unit.de` is no longer a current Ember CoreUI base address. Because `config.local.php` is deliberately excluded from updates, the release does not automatically change this local operator configuration.
+The previous address `webui.starlight-unit.de` is no longer a current E.M.B.E.R. CoreUI base address. Because `config.local.php` is deliberately excluded from updates, the release does not automatically change this local operator configuration.
 
 ## What the standard installer does not do
 
@@ -564,7 +570,7 @@ The password should not appear as plain text in the shell history:
 ```bash
 cd /opt/ember-coreui
 export COREUI_ADMIN_EMAIL='admin@example.org'
-read -r -s -p 'Ember CoreUI Admin-Passwort: ' COREUI_ADMIN_PASSWORD
+read -r -s -p 'E.M.B.E.R. CoreUI Admin-Passwort: ' COREUI_ADMIN_PASSWORD
 printf '\n'
 export COREUI_ADMIN_PASSWORD
 export COREUI_ADMIN_NAME='Operator'
@@ -582,7 +588,7 @@ unset COREUI_ADMIN_PASSWORD
 | `COREUI_SEARXNG_PORT` | `18889` | Dedicated SearXNG port |
 | `COREUI_BIND_ADDRESS` | `127.0.0.1` | Secure web bind address |
 | `COREUI_BASE_MODEL` | existing `gemma4:*`, otherwise `gemma4:e4b` | Ollama base model |
-| `COREUI_MODEL_NAME` | `ember-coreui:latest` | Separate Ember CoreUI model name |
+| `COREUI_MODEL_NAME` | `ember-coreui:latest` | Separate E.M.B.E.R. CoreUI model name |
 | `COREUI_LOCK_NAMESPACE` | `ember_coreui` | Dedicated MariaDB lock namespace |
 | `COREUI_VIDEO_FRAMES` | `6` | Evenly distributed frames per video, maximum 32 |
 | `COREUI_VIDEO_FRAME_PX` | `512` | Maximum width and height of a vision frame |
@@ -595,7 +601,7 @@ unset COREUI_ADMIN_PASSWORD
 | `COREUI_SKIP_BOOTSTRAP` | `0` | Skips Admin and Ember bootstrap |
 | `COREUI_FORCE_CONFIG` | `0` | Regenerates `api/config.local.php` |
 
-Any port collision causes the process to abort before the Ember CoreUI containers are started. Existing third-party containers with the Compose project name `ember-coreui` are likewise not adopted.
+Any port collision causes the process to abort before the E.M.B.E.R. CoreUI containers are started. Existing third-party containers with the Compose project name `ember-coreui` are likewise not adopted.
 
 ## PDF detection
 
@@ -727,7 +733,7 @@ These commands apply to the standard isolated Compose installation. The native i
 
 On an otherwise clean supported server, the standard installer installs Docker and Docker Compose when they are missing, installs Ollama through its official Linux installer when required, pulls `gemma4:e4b` when no selected Gemma 4 base model is available, and creates the dedicated CoreUI model. Nginx, PHP-FPM, MariaDB, SearXNG, and the workers run as containers; the standard installer does not install or reconfigure a host web server. Docker, Ollama, and the base model remain after uninstallation even when CoreUI originally installed or downloaded them, because they may have become shared dependencies. Only the model recorded by CoreUI in `var/model.owner` is treated as installer-owned and removed by the complete procedure below.
 
-To remove the running Ember CoreUI services while retaining all accounts, database data, uploads, configuration, images, and the dedicated Ollama model for a later reinstall:
+To remove the running E.M.B.E.R. CoreUI services while retaining all accounts, database data, uploads, configuration, images, and the dedicated Ollama model for a later reinstall:
 
 ```bash
 cd /opt/ember-coreui
@@ -751,11 +757,11 @@ The following complete removal is irreversible. Create the backup described abov
 )
 ```
 
-The base Gemma model, Docker, Ollama, host web servers, other applications, and manually created reverse-proxy configuration remain untouched. A reverse-proxy entry that points to Ember CoreUI can be removed separately by its operator after the service has been uninstalled.
+The base Gemma model, Docker, Ollama, host web servers, other applications, and manually created reverse-proxy configuration remain untouched. A reverse-proxy entry that points to E.M.B.E.R. CoreUI can be removed separately by its operator after the service has been uninstalled.
 
 ### Additional cleanup for a CoreUI-only server
 
-Use this final cleanup only after the complete removal above and only when the server was prepared exclusively for Ember CoreUI. It removes all remaining Ollama models and data, Ollama itself, Docker, Docker Compose, and all Docker image and volume data. It must not be used on a server that runs another container or uses Ollama for another application.
+Use this final cleanup only after the complete removal above and only when the server was prepared exclusively for E.M.B.E.R. CoreUI. It removes all remaining Ollama models and data, Ollama itself, Docker, Docker Compose, and all Docker image and volume data. It must not be used on a server that runs another container or uses Ollama for another application.
 
 The block refuses to continue while any Docker container still exists, displays the remaining Ollama models, and requires the exact confirmation `REMOVE COREUI HOST`:
 
@@ -841,7 +847,7 @@ ember-coreui/
   assets/              local fonts and chat media
   config/              runtime, Modelfile, and native templates
   css/                 independent Holo HUD design
-  database/migrations/ complete Ember CoreUI schema
+  database/migrations/ complete E.M.B.E.R. CoreUI schema
   docker/              dedicated PHP, Playwright, and Python-worker images
   docs/                detailed public release changelogs
   images/              local UI images
@@ -855,16 +861,16 @@ ember-coreui/
 
 ## Separate versioning
 
-Ember CoreUI versions are not equivalent to Repack versions. The mobile fix from Repack patch `v1.1.1.96` is included, but does not determine the Ember CoreUI release sequence.
+E.M.B.E.R. CoreUI versions are not equivalent to Repack versions. The mobile fix from Repack patch `v1.1.1.96` is included, but does not determine the E.M.B.E.R. CoreUI release sequence.
 
 ## Copyright and legal finalization
 
 Copyright: `© 2026 Patrick Schildgen, Starlight Unit Studios.`
 
-The studio logo is used byte-for-byte from the approved original PNG supplied by Starlight Unit Studios. Ember CoreUI does not redraw its contours or add a dark outline. The approved SHA-256 fingerprint is enforced by the release self-test. The licenses of the locally bundled fonts are documented separately under `assets/fonts/LICENSES.md`. The new license does not replace the still-pending legal review of a later final release.
+The studio logo is used byte-for-byte from the approved original PNG supplied by Starlight Unit Studios. E.M.B.E.R. CoreUI does not redraw its contours or add a dark outline. The approved SHA-256 fingerprint is enforced by the release self-test. The licenses of the locally bundled fonts are documented separately under `assets/fonts/LICENSES.md`. The new license does not replace the still-pending legal review of a later final release.
 
 A complete German legal notice and a final privacy policy are deliberately not yet included as finished legal pages. Before the public final release, the actual operator information, serviceable address, representation details, contact channels, hosting data-processing arrangement, and desired privacy texts must be established. The package does not invent such information.
 
 ## Alpha status
 
-`0.5.3-alpha` completes exact single-expression integer calculations locally so a model or Python timeout cannot leave the private Core Channel waiting without an answer. Persistent feedback, alternative-answer navigation, true in-place editing, queued follow-up text, safe local Markdown, code blocks, continuations, response details, profile images, TXT decoding, installer verification, attachment reconstruction, private RAG-Lite retrieval, and isolated Python execution remain included. Speech input, native model audio transport, and spoken TTS output remain scheduled for the separate audio stage. The free Ember CoreUI Community Source License introduced in `0.4.2-alpha` remains unchanged. There is no user counting, phone-home, license key, paywall, or paid Ember CoreUI offering.
+`0.5.3-alpha` completes exact single-expression integer calculations locally so a model or Python timeout cannot leave the private Core Channel waiting without an answer. Persistent feedback, alternative-answer navigation, true in-place editing, queued follow-up text, safe local Markdown, code blocks, continuations, response details, profile images, TXT decoding, installer verification, attachment reconstruction, private RAG-Lite retrieval, and isolated Python execution remain included. Speech input, native model audio transport, and spoken TTS output remain scheduled for the separate audio stage. The free E.M.B.E.R. CoreUI Community Source License introduced in `0.4.2-alpha` remains unchanged. There is no user counting, phone-home, license key, paywall, or paid E.M.B.E.R. CoreUI offering.
