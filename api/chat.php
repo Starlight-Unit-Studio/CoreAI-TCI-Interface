@@ -2441,7 +2441,7 @@ function ember_console_file_tool_is_local(string $model): bool {
 // The strict HTML/CSS/JS source-first path was introduced after that workflow.
 function ember_console_file_tool_is_local_qwen_coder(string $model): bool {
   $model = trim($model);
-  return preg_match('~^qwen[0-9a-z.:-]+$~i', $model) === 1
+  return preg_match('~^qwen[0-9a-z._:-]+$~i', $model) === 1
     && preg_match('~(?:^|[:._-])cloud(?:$|[:._-])~i', $model) !== 1;
 }
 
