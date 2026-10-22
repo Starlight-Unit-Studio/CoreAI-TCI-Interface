@@ -105,7 +105,7 @@
     characterId:  null,
     charName:     null,
     userDisplayName: null,
-    assistantName: 'Ember',
+    assistantName: 'Mara',
     userAvatarUrl: null,
     assistantAvatarUrl: null,
     csrfToken:     '',
@@ -743,7 +743,7 @@
     if (state.pendingBySession[ses.id]) {
       showTypingIndicator();
       startCountdown();
-      setStatus('waiting', 'EMBER ANTWORTET\u2026');
+      setStatus('waiting', 'MARA ANTWORTET\u2026');
     }
     renderQueuedTurns(ses);
   }
@@ -923,7 +923,7 @@
     avatar.className = 'msg-avatar';
     applyMessageAvatar(avatar, role, role === 'user'
       ? (name || state.userDisplayName || state.charName || 'DU')
-      : (state.assistantName || 'Ember'));
+      : (state.assistantName || 'Mara'));
     row.appendChild(avatar);
 
     // Content wrapper
@@ -953,7 +953,7 @@
     nameEl.className = 'msg-name';
     nameEl.textContent = role === 'user'
       ? (name || state.userDisplayName || state.charName || 'DU').toUpperCase()
-      : (state.assistantName || 'Ember').toUpperCase();
+      : (state.assistantName || 'Mara').toUpperCase();
     content.appendChild(nameEl);
 
     var bubble = document.createElement('div');
@@ -1197,7 +1197,7 @@
       if (!request.id) throw new Error('generation_request_missing');
       state.pendingBySession[ses.id] = Number(request.trigger_message_id) || true;
       updateActivePendingUi();
-      setStatus('waiting', mode === 'continue' ? 'EMBER SETZT FORT\u2026' : 'EMBER ERZEUGT ALTERNATIVE\u2026');
+      setStatus('waiting', mode === 'continue' ? 'MARA SETZT FORT\u2026' : 'MARA ERZEUGT ALTERNATIVE\u2026');
       showTypingIndicator();
       startCountdown();
       openStreamForReply(ses, Number(request.trigger_message_id) || 0, request);
@@ -1298,7 +1298,7 @@
     var actions = document.createElement('div');
     actions.className = 'msg-actions';
     actions.setAttribute('role', 'toolbar');
-    actions.setAttribute('aria-label', role === 'ember' ? 'Aktionen fuer Ember-Antwort' : 'Aktionen fuer Benutzernachricht');
+    actions.setAttribute('aria-label', role === 'ember' ? 'Aktionen fuer Mara-Antwort' : 'Aktionen fuer Benutzernachricht');
 
     var copy = createActionButton('copy', 'Nachricht kopieren');
     copy.addEventListener('click', function () { copyMessageText(copy, text); });
@@ -1486,14 +1486,14 @@
     row.className = 'msg-row ember';
     var avatar = document.createElement('div');
     avatar.className = 'msg-avatar';
-    applyMessageAvatar(avatar, 'ember', state.assistantName || 'Ember');
+    applyMessageAvatar(avatar, 'ember', state.assistantName || 'Mara');
     row.appendChild(avatar);
 
     var content = document.createElement('div');
     content.className = 'msg-content';
     var nameEl = document.createElement('div');
     nameEl.className = 'msg-name';
-    nameEl.textContent = (state.assistantName || 'Ember').toUpperCase();
+    nameEl.textContent = (state.assistantName || 'Mara').toUpperCase();
     content.appendChild(nameEl);
 
     var session = activeSession();
@@ -1874,7 +1874,7 @@
       state.sendTimestampBySession[ses.id] = Date.now();
       updateActivePendingUi();
       renderHistory(ses);
-      setStatus('waiting', 'EMBER VERARBEITET DIE AENDERUNG…');
+      setStatus('waiting', 'MARA VERARBEITET DIE AENDERUNG…');
       showTypingIndicator();
       startCountdown();
       scrollToBottom();
@@ -1931,7 +1931,7 @@
     if (!options.from_queue) clearAttachments();
     scrollToBottom();
 
-    setStatus('waiting', 'EMBER ANTWORTET\u2026');
+    setStatus('waiting', 'MARA ANTWORTET\u2026');
     state.pendingBySession[sessionId] = true;
     state.waitingEmber = true;
     state.sendTimestamp = Date.now();
@@ -2264,7 +2264,7 @@
         session_id: sessionId,
         reply_to_id: Number(userMsgId) || 0,
         character_id: 'ember',
-        character_name: 'Ember',
+        character_name: 'Mara',
         message: text,
         is_ember: true,
         thinking_content: thinking,
@@ -2337,7 +2337,7 @@
     if (browseJobId > 0) {
       // Die FINALE Antwort kommt erst NACH dem Surfen (per Hintergrund-Poll). Bis dahin arbeitet
       // Ember weiter -> Status sichtbar "arbeitet" (amber) lassen, NICHT vorschnell auf grün.
-      setStatus('waiting', 'EMBER ANTWORTET\u2026');
+      setStatus('waiting', 'MARA ANTWORTET\u2026');
       openBrowseWindow(browseJobId, sessionId);
       if (data && data.generation_request) {
         startGenerationStatusPoll(ses, { id: data.generation_request });
@@ -2509,7 +2509,7 @@
 
     var avatar = document.createElement('div');
     avatar.className = 'msg-avatar';
-    applyMessageAvatar(avatar, 'ember', state.assistantName || 'Ember');
+    applyMessageAvatar(avatar, 'ember', state.assistantName || 'Mara');
     row.appendChild(avatar);
 
     var content = document.createElement('div');
@@ -2716,7 +2716,7 @@
       .then(function(d) {
         if (!d.ok || !d.profile) return;
         state.userDisplayName = d.profile.display_name || state.userDisplayName;
-        state.assistantName = d.profile.assistant_name || state.assistantName || 'Ember';
+        state.assistantName = d.profile.assistant_name || state.assistantName || 'Mara';
         state.userAvatarUrl = d.profile.avatars && d.profile.avatars.user ? d.profile.avatars.user : null;
         state.assistantAvatarUrl = d.profile.avatars && d.profile.avatars.assistant ? d.profile.avatars.assistant : null;
         if (inputEl) inputEl.placeholder = 'Nachricht an ' + state.assistantName + '…';
