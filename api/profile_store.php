@@ -21,6 +21,12 @@ function coreui_profile_name(string $value, string $fallback): string {
     : substr($value, 0, 64);
 }
 
+/** Display Mara for the historical default while retaining deliberate custom names. */
+function coreui_profile_coreai_name(string $value): string {
+  $name = coreui_profile_name($value, 'Mara');
+  return strcasecmp($name, 'Ember') === 0 ? 'Mara' : $name;
+}
+
 function coreui_profile_fallback_display(string $username): string {
   $local = trim((string)strtok($username, '@'));
   $local = str_replace(['.', '_', '-'], ' ', $local);
@@ -34,7 +40,7 @@ function coreui_profile_load(PDO $pdo, int $uid): array {
   $stUser->execute([$uid]);
   $username = (string)($stUser->fetchColumn() ?: '');
   $displayName = coreui_profile_fallback_display($username);
-  $assistantName = 'Ember';
+  $assistantName = 'Mara';
   $updatedAt = null;
 
   if (coreui_profile_schema_ready($pdo)) {
@@ -43,7 +49,7 @@ function coreui_profile_load(PDO $pdo, int $uid): array {
     $row = $st->fetch(PDO::FETCH_ASSOC);
     if ($row) {
       $displayName = coreui_profile_name((string)($row['display_name'] ?? ''), $displayName);
-      $assistantName = coreui_profile_name((string)($row['assistant_name'] ?? ''), 'Ember');
+      $assistantName = coreui_profile_coreai_name((string)($row['assistant_name'] ?? ''));
       $updatedAt = $row['updated_at'] ?? null;
     }
   }
@@ -77,7 +83,7 @@ function coreui_profile_load(PDO $pdo, int $uid): array {
 function coreui_profile_save(PDO $pdo, int $uid, string $displayName, string $assistantName): array {
   if (!coreui_profile_schema_ready($pdo)) throw new RuntimeException('missing_schema_004');
   $displayName = coreui_profile_name($displayName, 'Operator');
-  $assistantName = coreui_profile_name($assistantName, 'Ember');
+  $assistantName = coreui_profile_coreai_name($assistantName);
   $st = $pdo->prepare(
     'INSERT INTO stu_coreui_profiles (user_id, display_name, assistant_name, created_at, updated_at) '
     . 'VALUES (?, ?, ?, NOW(), NOW()) '
@@ -217,7 +223,7 @@ function coreui_profile_prompt_block(PDO $pdo, int $uid): string {
   if ($uid <= 0 || !coreui_profile_schema_ready($pdo)) return '';
   try {
     $profile = coreui_profile_load($pdo, $uid);
-    $assistantName = coreui_profile_name((string)($profile['assistant_name'] ?? ''), 'Ember');
+    $assistantName = coreui_profile_coreai_name((string)($profile['assistant_name'] ?? ''));
     $displayName = coreui_profile_name((string)($profile['display_name'] ?? ''), 'Operator');
     return "\n\n--- EMBER COREUI-PROFIL ---\n"
       . 'Der aktuelle Benutzer wird in dieser privaten Oberfläche als "' . $displayName . '" angezeigt. ' 
