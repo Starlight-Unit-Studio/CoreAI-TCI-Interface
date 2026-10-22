@@ -1,0 +1,13 @@
+EMBER COREUI 0.5.24
+22.10.2026
+
+- CoreUI ist das Terminal. Mara Thorne ist dessen TCI und CoreAI (E.M.B.E.R. CoreAI).
+- Modelfile: Maras lebendige, lockere 2000er-Gamer-Chat-Stimme aus dem ehemaligen Vision-Stil uebernommen, ohne erfundene menschliche Biografie.
+- Vision-Systemprompt fuer Bilder, Videos und PDFs auf Mara als TCI umgestellt, mit natuerlicher Bildreaktion und ehrlicher Unsicherheit.
+- PARAMETER num_predict -1 aus dem Modelfile geloescht, da versehentlich hinzugefuegt. draft_num_predict 0 bleibt. Keine num_ctx-Vorgabe fuer Gemma.
+- Sichtbare CoreAI-Standardnamen und Texte werden Mara, alter gespeicherter Standardname Ember beim Laden als Mara dargestellt, andere eigene Profile bleiben unveraendert.
+- Arbeitsweg: E.M.B.E.R. CoreAI arbeitet.
+- Lokale Qwen-3.6-Coding-Modelle verwenden fuer Multi-Datei-ZIP-Auftraege wieder den frueheren [PY]-Sandbox-Weg statt des spaeteren source-first-Protokolls.
+- Keine interne Umbenennung von Datenbank-Tabellen, Endpunkten, Rollenkennungen oder Dateiordnern. Keine Migration.
+- Die Cloud-Routen, lokalen Gemma-Datei-Fortsetzungen und die serielle Modell-Queue bleiben erhalten.
+- GitHub Actions wegen aufgebrauchtem Kontingent nicht gestartet. Produktive Abnahme von Mara-Stimme, Qwen-Snake-ZIP und Gemma-Dateien noch offen.

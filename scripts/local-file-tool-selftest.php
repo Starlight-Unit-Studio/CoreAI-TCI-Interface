@@ -358,7 +358,7 @@ function ember_debug_log(string $event, array $meta): void {}
 $tokens = token_get_all($handler);
 $wantedFunctions = ['ember_py_max_code_chars','ember_py_extract_marker',
   'ember_console_file_tool_candidate','ember_console_file_tool_directive',
-  'ember_console_file_tool_is_local','ember_console_file_tool_is_device_local'];
+  'ember_console_file_tool_is_local','ember_console_file_tool_is_device_local','ember_console_file_tool_is_local_qwen_coder'];
 for ($i = 0; $i < count($tokens); $i++) {
   if (!is_array($tokens[$i]) || $tokens[$i][0] !== T_FUNCTION) continue;
   $j = $i + 1;
@@ -382,6 +382,12 @@ local_file_test(!ember_console_file_tool_is_device_local('gemma4:26b-cloud')
   && !ember_console_file_tool_is_device_local('gpt-oss:120b-cloud'),
   'Ollama Cloud models must keep the already working Cloud ZIP route');
 
+local_file_test(ember_console_file_tool_is_local_qwen_coder('qwen3.6:35b-a3e-q4_K_M')
+  && ember_console_file_tool_is_local_qwen_coder('qwen3.6:35b-a3b-q4_K_M'),
+  'local quantized Qwen 3.6 must use the previously working Python sandbox route');
+local_file_test(!ember_console_file_tool_is_local_qwen_coder('qwen3.6:35b-cloud')
+  && !ember_console_file_tool_is_local_qwen_coder('gemma4:e4b'),
+  'cloud and Gemma models must retain their existing ZIP routing');
 $toolCode = "from pathlib import Path\nPath('/work/output/index.html').write_text('Snake')";
 $marked = ember_console_file_tool_candidate('[PY]' . $toolCode . '[/PY]', $request);
 local_file_test(($marked['kind'] ?? '') === 'marker' && $marked['code'] === $toolCode,

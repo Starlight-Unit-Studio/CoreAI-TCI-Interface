@@ -34,7 +34,7 @@ function coreui_profile_load(PDO $pdo, int $uid): array {
   $stUser->execute([$uid]);
   $username = (string)($stUser->fetchColumn() ?: '');
   $displayName = coreui_profile_fallback_display($username);
-  $assistantName = 'Ember';
+  $assistantName = 'Mara';
   $updatedAt = null;
 
   if (coreui_profile_schema_ready($pdo)) {
@@ -43,7 +43,8 @@ function coreui_profile_load(PDO $pdo, int $uid): array {
     $row = $st->fetch(PDO::FETCH_ASSOC);
     if ($row) {
       $displayName = coreui_profile_name((string)($row['display_name'] ?? ''), $displayName);
-      $assistantName = coreui_profile_name((string)($row['assistant_name'] ?? ''), 'Ember');
+      $assistantName = coreui_profile_name((string)($row['assistant_name'] ?? ''), 'Mara');
+      if (strcasecmp($assistantName, 'Ember') === 0) $assistantName = 'Mara';
       $updatedAt = $row['updated_at'] ?? null;
     }
   }
@@ -77,7 +78,7 @@ function coreui_profile_load(PDO $pdo, int $uid): array {
 function coreui_profile_save(PDO $pdo, int $uid, string $displayName, string $assistantName): array {
   if (!coreui_profile_schema_ready($pdo)) throw new RuntimeException('missing_schema_004');
   $displayName = coreui_profile_name($displayName, 'Operator');
-  $assistantName = coreui_profile_name($assistantName, 'Ember');
+  $assistantName = coreui_profile_name($assistantName, 'Mara');
   $st = $pdo->prepare(
     'INSERT INTO stu_coreui_profiles (user_id, display_name, assistant_name, created_at, updated_at) '
     . 'VALUES (?, ?, ?, NOW(), NOW()) '
@@ -217,13 +218,14 @@ function coreui_profile_prompt_block(PDO $pdo, int $uid): string {
   if ($uid <= 0 || !coreui_profile_schema_ready($pdo)) return '';
   try {
     $profile = coreui_profile_load($pdo, $uid);
-    $assistantName = coreui_profile_name((string)($profile['assistant_name'] ?? ''), 'Ember');
+    $assistantName = coreui_profile_name((string)($profile['assistant_name'] ?? ''), 'Mara');
+    if (strcasecmp($assistantName, 'Ember') === 0) $assistantName = 'Mara';
     $displayName = coreui_profile_name((string)($profile['display_name'] ?? ''), 'Operator');
-    return "\n\n--- EMBER COREUI-PROFIL ---\n"
+    return "\n\n--- MARA COREAI-PROFIL ---\n"
       . 'Der aktuelle Benutzer wird in dieser privaten Oberfläche als "' . $displayName . '" angezeigt. ' 
       . 'Dein frei gewählter Anzeigename in diesem Konto ist "' . $assistantName . '". '
       . 'Deine feste technische Identität und alle Sicherheitsregeln bleiben unverändert.\n'
-      . "--- ENDE EMBER COREUI-PROFIL ---";
+      . "--- ENDE MARA COREAI-PROFIL ---";
   } catch (Throwable $e) {
     return '';
   }

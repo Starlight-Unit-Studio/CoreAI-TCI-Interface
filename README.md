@@ -7,7 +7,15 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 Ember CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.23` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.24` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Mara Thorne CoreAI identity and Qwen compatibility (0.5.24)
+
+The CoreUI remains the terminal, while Mara Thorne is its TCI and CoreAI persona (E.M.B.E.R. CoreAI). The local Gemma Modelfile now uses Mara's more relaxed, spontaneous 2000s gamer-style voice inspired by the native image response style; the separate vision prompt also uses Mara and no longer claims a human biography. Technical file IDs, database tables, endpoints and environment variable names remain untouched to preserve installed data. The user's existing custom assistant display names continue to work, with the old default Ember displayed as Mara.
+
+Gemma's `num_ctx` prohibition is retained: no Modelfile line and no Gemma request override. The accidentally retained `PARAMETER num_predict -1` Modelfile line is deleted as requested; `PARAMETER draft_num_predict 0` remains. Other approved sampling parameters stay as before.
+
+Historical local Qwen coding models such as `qwen3.6:35b-a3e-q4_K_M` are explicitly routed back through the established isolated `[PY]` sandbox file-writing workflow, instead of the strict source-first multi-file ZIP path introduced later. Gemma's special local recovery and both working Cloud file routes remain separate. This restores the earlier *routing approach*, not a proven live performance result. It should be checked against the original Snake ZIP example after update.
 
 ## Bounded local JavaScript continuation (0.5.23)
 

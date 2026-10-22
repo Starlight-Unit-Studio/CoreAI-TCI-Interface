@@ -2,6 +2,15 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.24 - 22.10.2026
+
+- Rollen sauber getrennt: TSA-Thorn CoreUI ist das Terminal; Mara Thorne die TCI und CoreAI. Bestehende interne Ember-IDs, Tabellen und Pfade bleiben aus Kompatibilitaetsgruenden erhalten.
+- Lokales Gemma Modelfile um lockere, spontane Gamer-Chat-Stimme aus dem bisherigen Bildantwort-Stil erweitert; separate Bild-/Video-/PDF-Vision-Anweisungen ebenfalls auf Mara statt alter Menschenidentitaet umgestellt.
+- Unbeabsichtigt verbliebenes `PARAMETER num_predict -1` aus dem Modelfile entfernt. `draft_num_predict 0` und die uebrigen freigegebenen Werte bleiben, `num_ctx` bleibt bei Gemma ausnahmslos tabu.
+- Sichtbare CoreAI-Bezeichnungen, Standardprofilname, Antwort- und Warteanzeigen auf Mara angepasst. Der Live-Arbeitsweg lautet `E.M.B.E.R. CoreAI arbeitet`. Gespeicherte alte Standardnamen Ember werden beim Anzeigen als Mara dargestellt; andere individuelle Anzeigenamen bleiben erhalten.
+- Lokale Qwen-3.6-Coding-Modelle erhalten wieder den historischen `[PY]`-Sandbox-Auftragsweg fuer echte ZIP-Dateien statt des spaeteren strengen Quellen-ZIP-Pfads. Keine Zusage ueber den noch ungetesteten produktiven Qwen-Regressionstest.
+- Cloud-Ausgabe, aktuelle lokale Gemma-Recovery, unveraenderter Installer-One-Liner und serielle Queue bleiben erhalten. Keine Migration, keine GitHub Actions. [skip ci]
+
 ## 0.5.23 - 22.10.2026
 
 - Livebefund aus 0.5.22: HTML und CSS erfolgreich erkannt; `game.js` in zwei lokalen Gemma-Aufrufen mit `model_output_truncated` beendet. Das ist eine Ollama-Ausgabelimitierung, kein belegter Parser- oder ZIP-Worker-Defekt.

@@ -115,7 +115,7 @@
     var live = !!options.live;
     if (!live && events.length === 0) return null;
     var timeline = el('section','work-panel');
-    timeline.setAttribute('aria-label','E.M.B.E.R. Arbeitsschritte');
+    timeline.setAttribute('aria-label','E.M.B.E.R. CoreAI Arbeitsschritte');
     var toggle = el('button','work-toggle');
     toggle.type = 'button';
     var expanded = options.expanded === true || live;
@@ -123,7 +123,7 @@
     toggle.appendChild(el('span','work-chevron','\u25b8'));
     var caption = el('span','work-caption');
     function updateCaption() {
-      caption.textContent = live ? 'E.M.B.E.R. arbeitet'
+      caption.textContent = live ? 'E.M.B.E.R. CoreAI arbeitet'
         : 'Arbeitsweg (' + events.length + ' Schritte) ' + (expanded ? 'ausblenden' : 'anzeigen');
       toggle.setAttribute('aria-label', caption.textContent);
     }
