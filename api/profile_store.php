@@ -44,6 +44,7 @@ function coreui_profile_load(PDO $pdo, int $uid): array {
     if ($row) {
       $displayName = coreui_profile_name((string)($row['display_name'] ?? ''), $displayName);
       $assistantName = coreui_profile_name((string)($row['assistant_name'] ?? ''), 'Mara');
+      if (strcasecmp($assistantName, 'Ember') === 0) $assistantName = 'Mara';
       $updatedAt = $row['updated_at'] ?? null;
     }
   }
