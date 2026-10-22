@@ -4580,6 +4580,64 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
     && (ember_console_file_tool_is_local($primaryModel)
       || $requestedSourceProject !== null);
   $fileToolThink = $fileTask ? ember_console_file_tool_think($primaryModel) : null;
+  // The cloud/source-fence path already creates verified ZIPs. Only the local
+  // Gemma route needs smaller, raw per-file source requests without the
+  // regular conversation's competing [PY] tool hints.
+  $localDirectSources = $requestedSourceProject !== null
+    && ember_console_file_tool_is_local($primaryModel);
+  if ($localDirectSources) {
+    $sourceSpec = coreui_console_project_request_spec($userMsg);
+    $sourceFiles = [];
+    if (!is_array($sourceSpec)) return 'Ungueltiger Dateiauftrag.';
+    foreach ($sourceSpec['requested'] as $name) {
+      $accepted = null;
+      for ($attempt = 1; $attempt <= 2; $attempt++) {
+        if (ember_agent_cancel_requested()) return null;
+        $singlePrompt = coreui_console_local_source_prompt(
+          $userMsg, (string)$name, $sourceFiles, $attempt > 1);
+        if ($singlePrompt === null) break;
+        coreui_work_record($pdo, 'tool', 'info', 'Einzeldatei angefordert',
+          ['file_name'=>(string)$name,'attempt'=>$attempt]);
+        coreui_work_record($pdo, 'model', 'running', 'Quelldatei wird erzeugt',
+          ['file_name'=>(string)$name,'model'=>$primaryModel]);
+        $modelSource = ember_call_ollama($primaryModel, '', $singlePrompt,
+          ember_timeout_for_model($primaryModel), [], null, $fileToolThink);
+        $truncated = ember_last_call_was_truncated();
+        $accepted = !$truncated && is_string($modelSource)
+          ? coreui_console_local_source_reply($modelSource, $userMsg, (string)$name) : null;
+        coreui_work_record($pdo, 'model', $accepted !== null ? 'success' : 'error',
+          $accepted !== null ? 'Quelldatei empfangen' : 'Quelldatei nicht lesbar',
+          ['file_name'=>(string)$name, 'model'=>$primaryModel,
+            'reason'=>$accepted !== null ? 'source_ready'
+              : ($truncated ? 'model_output_truncated' : 'source_format_unrecognized')]);
+        if ($accepted !== null) break;
+      }
+      if ($accepted === null) {
+        coreui_work_record($pdo, 'artifact', 'error', 'Projektquellen unvollstaendig',
+          ['reason'=>'source_files_incomplete','file_name'=>(string)$name]);
+        return 'Die lokale Modellausgabe konnte fuer ' . $name
+          . ' auch nach einer gezielten Wiederholung nicht als vollstaendige '
+          . 'Quelldatei gelesen werden. Es wurde keine ZIP-Datei vorgetaeuscht.';
+      }
+      $sourceFiles[strtolower((string)$name)] = $accepted;
+      coreui_work_record($pdo, 'artifact', 'info', 'Quelldatei erkannt',
+        ['file_name'=>(string)$name]);
+    }
+    $sourceProject = coreui_console_project_files_python(
+      $sourceFiles, $sourceSpec, ember_py_max_code_chars());
+    if (!is_array($sourceProject)) {
+      coreui_work_record($pdo, 'artifact', 'error', 'Projektdateien konnten nicht gepackt werden',
+        ['reason'=>'source_project_size_limit']);
+      return 'Alle Quelltexte wurden empfangen, das Dateipaket konnte aber '
+        . 'nicht innerhalb der festgelegten Groessenlimits vorbereitet werden.';
+    }
+    $fileToolCandidate = ['code'=>$sourceProject['code'], 'kind'=>'project',
+      'meta'=>$sourceProject];
+    $out = '[COREUI QUELLDATEIEN VOLLSTAENDIG]';
+    $finalPrompt = $userMsg;
+    coreui_work_record($pdo, 'artifact', 'info', 'Projektquellen vollstaendig',
+      ['file_count'=>(int)$sourceProject['file_count']]);
+  } else {
   if ($fileTask) {
     $u .= "\n\n" . ($requestedSourceProject ?? ember_console_file_tool_directive());
     coreui_work_record($pdo, 'tool', 'info', 'Dateiwerkzeug angefordert',
@@ -4666,6 +4724,8 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       $out = $retry;
       $finalPrompt = $compactPrompt;
     }
+  }
+
   }
 
   // === Phase 2: Asynchroner Browse-Trigger ([BROWSE:]) - VOR der synchronen Websuche ===
