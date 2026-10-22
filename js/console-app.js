@@ -800,9 +800,8 @@
 
   // ── Hilfsfunktionen ──────────────────────────────────────
   function isEmberMsg(m) {
-    return (m.character_id && m.character_id.toLowerCase() === 'ember') ||
-           (m.character_name && m.character_name.toLowerCase() === 'ember') ||
-           m.is_ember === true;
+    return m.is_ember === true ||
+           (m.character_id && String(m.character_id).toLowerCase() === 'ember');
   }
 
   function stripEmberPrefix(text) {
