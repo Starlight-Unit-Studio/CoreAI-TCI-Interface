@@ -78,6 +78,8 @@ assert(timeline.textContent.includes('<script>alert(1)</script>'));
 assert.equal(body.querySelector('.work-entries').children.length,3);
 const live=work.create({live:true,expanded:true});
 assert(live && !live.querySelector('.work-body').hidden);
+assert(live.textContent.includes('E.M.B.E.R CoreAI arbeitet'),
+  'work caption must identify the Mara CoreAI active generation');
 work.add(live.querySelector('.work-body'),{
   id:4,kind:'artifact',state:'success',title:'Datei gesichert',meta:{file_count:3}
 });
