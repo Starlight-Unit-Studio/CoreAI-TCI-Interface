@@ -201,6 +201,45 @@ local_file_test(coreui_console_missing_requested_artifacts($request, [
   ['name'=>'index.html'],['name'=>'style.css'],['name'=>'game.js'],
   ['name'=>'snake-game.zip'],
 ]) === [], 'complete project rejected');
+// Source-first browser game ZIPs do not require an LLM-generated Python writer.
+// The parser must infer the standard filenames only for an explicit ZIP game.
+$implicitRequest = 'Erstelle ein vollstaendig spielbares Snake-Spiel und liefere es als ZIP-Download.';
+$implicitSpec = coreui_console_project_request_spec($implicitRequest);
+local_file_test(is_array($implicitSpec) && array_keys($implicitSpec['requested'])
+  === ['index.html','style.css','game.js'], 'unnamed Snake ZIP must infer three sources');
+local_file_test(coreui_console_multifile_source_directive($implicitRequest) !== null,
+  'unnamed Snake ZIP must use source-first route');
+local_file_test(coreui_console_multifile_source_directive(
+  'Erstelle ein Archiv zum Download.') === null,
+  'unrelated ZIP must not infer a browser game');
+$firstSource = "### index.html\n" . chr(96).chr(96).chr(96)
+  . "html\n<!DOCTYPE html><script src=\"game.js\"></script>\n"
+  . chr(96).chr(96).chr(96);
+$cssSource = "### style.css\n" . chr(96).chr(96).chr(96)
+  . "css\nbody{margin:0}\n" . chr(96).chr(96).chr(96);
+$jsSource = "### game.js\n" . chr(96).chr(96).chr(96)
+  . "javascript\nconsole.log('snake')\n" . chr(96).chr(96).chr(96);
+$progress = coreui_console_project_source_progress([$firstSource], $implicitRequest);
+local_file_test(is_array($progress) && $progress['missing'] === ['style.css','game.js']
+  && $progress['project'] === null, 'incomplete source project must remain inert');
+$cssPrompt = coreui_console_project_single_source_directive(
+  $implicitRequest,'style.css',$progress['source_files']);
+local_file_test(is_string($cssPrompt) && str_contains($cssPrompt, '### style.css')
+  && !str_contains($cssPrompt, '[PY]-Block'),
+  'missing-source retry must request an inert named file');
+$progress = coreui_console_project_source_progress(
+  [$firstSource, '[PY]' . "print('ignore')" . '[/PY]', $cssSource, $jsSource],
+  $implicitRequest);
+local_file_test(is_array($progress) && $progress['missing'] === []
+  && is_array($progress['project'])
+  && $progress['project']['file_count'] === 4
+  && str_contains($progress['project']['code'], 'zipfile.ZipFile'),
+  'complete inert sources must create deterministic ZIP wrapper');
+$incomplete = coreui_console_project_source_progress(
+  [$firstSource, "### game.js\n".chr(96).chr(96).chr(96)."javascript\nconsole.log(1)"],
+  $implicitRequest);
+local_file_test(is_array($incomplete) && $incomplete['project'] === null,
+  'unclosed source fence must never be executed');
 $handler = file_get_contents(dirname(__DIR__) . '/api/chat.php');
 // Load only pure production helpers, without booting the HTTP/DB endpoint.
 function ember_cfg(string $key, mixed $default = null): mixed { return $default; }
