@@ -317,7 +317,7 @@ function coreui_console_local_source_reply(string $reply, string $request, strin
   $spec = coreui_console_project_request_spec($request);
   $key = strtolower($filename);
   if ($spec === null || !isset($spec['requested'][$key])) return null;
-  if (strlen($reply) < 8 || strlen($reply) > 160000
+  if (trim($reply) === '' || strlen($reply) > 160000
       || preg_match('~\[(?:/)?PY\]~i', $reply)) return null;
 
   // Keep accepting the existing, stricter fenced multi-source protocol.
@@ -361,10 +361,10 @@ function coreui_console_local_source_reply(string $reply, string $request, strin
         || !preg_match('~</html>\s*$~i', $bytes)) return null;
   } elseif ($ext === 'css') {
     if (!preg_match('~^[\s]*(?:/\*.*?\*/\s*)?[@.#*:[a-z_-]~is', $bytes)
-        || !preg_match('~\{[^{}]*:[^{}]*\}~s', $bytes)
+        || !preg_match('~\{[^{}]*\}~s', $bytes)
         || substr_count($bytes, '{') !== substr_count($bytes, '}')) return null;
   } elseif ($ext === 'js') {
-    if (!preg_match('~^\s*(?:(?://[^\r\n]*\r?\n|/\*.*?\*/\s*)*)(?:["\x27]use strict["\x27]\s*;?\s*)?(?:const\b|let\b|var\b|function\b|class\b|import\b|export\b|async\b|document\b|window\b|\(\s*(?:function|\(?\s*\)?\s*=>))~s', $bytes)
+    if (!preg_match('~^\s*(?:(?://[^\r\n]*\r?\n|/\*.*?\*/\s*)*)(?:["\x27]use strict["\x27]\s*;?\s*)?(?:const\b|let\b|var\b|function\b|class\b|import\b|export\b|async\b|document\b|window\b|console\b|alert\b|globalThis\b|requestAnimationFrame\b|setTimeout\b|\(\s*(?:function|\(?\s*\)?\s*=>))~s', $bytes)
         || !preg_match('~[;})]\s*$~s', $bytes)) return null;
   } elseif ($ext === 'json') {
     json_decode($bytes, true);
