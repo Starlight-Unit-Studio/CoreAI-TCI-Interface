@@ -81,7 +81,7 @@ function coreui_account_provision(PDO $pdo, int $uid, string $email, string $dis
 
   $stProfile = $pdo->prepare(
     "INSERT INTO stu_coreui_profiles (user_id, display_name, assistant_name, created_at, updated_at)
-     VALUES (?, ?, 'Ember', NOW(), NOW())
+     VALUES (?, ?, 'Mara', NOW(), NOW())
      ON DUPLICATE KEY UPDATE display_name = IF(display_name='', VALUES(display_name), display_name), updated_at = NOW()"
   );
   $stProfile->execute([$uid, $displayName]);
