@@ -348,7 +348,8 @@ function ember_cfg(string $key, mixed $default = null): mixed { return $default;
 function ember_debug_log(string $event, array $meta): void {}
 $tokens = token_get_all($handler);
 $wantedFunctions = ['ember_py_max_code_chars','ember_py_extract_marker',
-  'ember_console_file_tool_candidate','ember_console_file_tool_directive'];
+  'ember_console_file_tool_candidate','ember_console_file_tool_directive',
+  'ember_console_file_tool_is_local','ember_console_file_tool_is_device_local'];
 for ($i = 0; $i < count($tokens); $i++) {
   if (!is_array($tokens[$i]) || $tokens[$i][0] !== T_FUNCTION) continue;
   $j = $i + 1;
@@ -364,6 +365,14 @@ for ($i = 0; $i < count($tokens); $i++) {
   }
   eval($code);
 }
+local_file_test(ember_console_file_tool_is_device_local('ember-coreui:latest')
+  && ember_console_file_tool_is_device_local('gemma4:e4b'),
+  'device-local Gemma and CoreUI models must use resumable local source mode');
+local_file_test(!ember_console_file_tool_is_device_local('gemma4:26b-cloud')
+  && !ember_console_file_tool_is_device_local('gemma4:31b-cloud')
+  && !ember_console_file_tool_is_device_local('gpt-oss:120b-cloud'),
+  'Ollama Cloud models must keep the already working Cloud ZIP route');
+
 $toolCode = "from pathlib import Path\nPath('/work/output/index.html').write_text('Snake')";
 $marked = ember_console_file_tool_candidate('[PY]' . $toolCode . '[/PY]', $request);
 local_file_test(($marked['kind'] ?? '') === 'marker' && $marked['code'] === $toolCode,
