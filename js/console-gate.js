@@ -1,4 +1,4 @@
-/* Ember CoreUI standalone bootstrap.
+/* E.M.B.E.R. CoreUI standalone bootstrap.
    Browser, PWA and WebView are gleichberechtigte Clients. Eine fremde
    Root-Seite oder ein STU-Host wird bewusst nicht vorausgesetzt. */
 (function () {
