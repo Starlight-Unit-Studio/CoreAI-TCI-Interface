@@ -4581,7 +4581,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       || $requestedSourceProject !== null);
   $fileToolThink = $fileTask ? ember_console_file_tool_think($primaryModel) : null;
   if ($fileTask) {
-    $u .= "\n\n" . ember_console_file_tool_directive();
+    $u .= "\n\n" . ($requestedSourceProject ?? ember_console_file_tool_directive());
     coreui_work_record($pdo, 'tool', 'info', 'Dateiwerkzeug angefordert',
       ['reason'=>'file_task']);
   }
@@ -4592,43 +4592,80 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
     is_string($out) && trim($out) !== '' ? 'Modellantwort empfangen' : 'Modellaufruf ohne Antwort',
     ['model'=>$primaryModel]);
   $finalPrompt = $u;
-  $fileToolCandidate = $fileTask && is_string($out)
-    ? ember_console_file_tool_candidate($out, $userMsg) : null;
-  if ($fileTask && $fileToolCandidate === null) {
-    // At most one compact retry for missing [PY]/fenced source. Never claim
-    // a file exists unless the isolated worker actually registered its bytes.
-    coreui_work_record($pdo, 'tool', 'info', 'Dateiwerkzeug erneut angefordert',
-      ['reason'=>'tool_protocol_missing','attempt'=>2]);
-    $compactRequest = function_exists('mb_substr')
-      ? mb_substr($userMsg, 0, 12000, 'UTF-8') : substr($userMsg, 0, 12000);
-    $compactPrompt = "BENUTZER-DATEIAUFTRAG:\n" . $compactRequest . "\n\n"
-      . ember_console_file_tool_directive();
-    coreui_work_record($pdo, 'model', 'running', 'Dateicode erneut angefordert',
-      ['model'=>$primaryModel]);
-    $retry = ember_call_ollama($primaryModel, '', $compactPrompt,
-      ember_timeout_for_model($primaryModel), [], null, $fileToolThink);
-    coreui_work_record($pdo, 'model', is_string($retry) && trim($retry) !== '' ? 'success' : 'error',
-      is_string($retry) && trim($retry) !== '' ? 'Dateicode empfangen' : 'Dateicode ausgeblieben',
-      ['model'=>$primaryModel]);
-    $fileToolCandidate = is_string($retry)
-      ? ember_console_file_tool_candidate($retry, $userMsg) : null;
-    if ($requestedSourceProject !== null && $fileToolCandidate === null && is_string($out) && is_string($retry)) {
-      $mergedProject = coreui_console_merge_project_fences($out, $retry, $userMsg, ember_py_max_code_chars());
-      if (is_array($mergedProject)) {
-        $fileToolCandidate = ['code'=>$mergedProject['code'],'kind'=>'project','meta'=>$mergedProject];
-        coreui_work_record($pdo, 'artifact', 'info', 'Quelldateien aus zwei Antworten vervollstaendigt',
-          ['file_count'=>(int)$mergedProject['file_count']]);
+  // For explicitly named/inferred browser-game ZIP sources, accept only
+  // complete inert source files; never run an incomplete LLM Python writer.
+  $sourceFirst = $fileTask && $requestedSourceProject !== null;
+  $sourceReplies = [];
+  $sourceCandidate = null;
+  $fileToolCandidate = null;
+  if ($sourceFirst) {
+    if (is_string($out)) $sourceReplies[] = $out;
+    $progress = coreui_console_project_source_progress($sourceReplies, $userMsg,
+      ember_py_max_code_chars());
+    $sourceCandidate = is_array($progress) ? ($progress['project'] ?? null) : null;
+    // At most one targeted request per missing source. No [PY] execution on
+    // this route, and no fabricated success on incomplete source collections.
+    $missingNames = is_array($progress) ? $progress['missing'] : [];
+    foreach ($missingNames as $missingName) {
+      if (is_array($sourceCandidate)) break;
+      $prompt = coreui_console_project_single_source_directive($userMsg,
+        (string)$missingName, is_array($progress) ? $progress['source_files'] : []);
+      if ($prompt === null) break;
+      coreui_work_record($pdo, 'tool', 'info', 'Fehlende Quelldatei angefordert',
+        ['reason'=>'source_file_missing']);
+      coreui_work_record($pdo, 'model', 'running', 'Quelldatei wird erzeugt',
+        ['model'=>$primaryModel]);
+      $piece = ember_call_ollama($primaryModel, '', $prompt,
+        ember_timeout_for_model($primaryModel), [], null, $fileToolThink);
+      coreui_work_record($pdo, 'model',
+        is_string($piece) && trim($piece) !== '' ? 'success' : 'error',
+        is_string($piece) && trim($piece) !== '' ? 'Quelldatei empfangen' : 'Quelldatei ausgeblieben',
+        ['model'=>$primaryModel]);
+      if (is_string($piece)) $sourceReplies[] = $piece;
+      $progress = coreui_console_project_source_progress($sourceReplies, $userMsg,
+        ember_py_max_code_chars());
+      $sourceCandidate = is_array($progress) ? ($progress['project'] ?? null) : null;
+    }
+    if (is_array($sourceCandidate)) {
+      $fileToolCandidate = ['code'=>$sourceCandidate['code'],
+        'kind'=>'project','meta'=>$sourceCandidate];
+      coreui_work_record($pdo, 'artifact', 'info', 'Projektquellen vollstaendig',
+        ['file_count'=>(int)$sourceCandidate['file_count']]);
+    } else {
+      coreui_work_record($pdo, 'artifact', 'error', 'Projektquellen unvollstaendig',
+        ['reason'=>'source_files_incomplete']);
+      return 'Die Quelldateien konnten nicht vollstaendig erzeugt werden. '
+        . 'Es wurde deshalb kein unvollstaendiges Python-Skript ausgefuehrt '
+        . 'und kein Download vorgetaeuscht.';
+    }
+  } else {
+    $fileToolCandidate = $fileTask && is_string($out)
+      ? ember_console_file_tool_candidate($out, $userMsg) : null;
+    if ($fileTask && $fileToolCandidate === null) {
+      coreui_work_record($pdo, 'tool', 'info', 'Dateiwerkzeug erneut angefordert',
+        ['reason'=>'tool_protocol_missing','attempt'=>2]);
+      $compactRequest = function_exists('mb_substr')
+        ? mb_substr($userMsg, 0, 12000, 'UTF-8') : substr($userMsg, 0, 12000);
+      $compactPrompt = "BENUTZER-DATEIAUFTRAG:\n" . $compactRequest . "\n\n"
+        . ember_console_file_tool_directive();
+      coreui_work_record($pdo, 'model', 'running', 'Dateicode erneut angefordert',
+        ['model'=>$primaryModel]);
+      $retry = ember_call_ollama($primaryModel, '', $compactPrompt,
+        ember_timeout_for_model($primaryModel), [], null, $fileToolThink);
+      coreui_work_record($pdo, 'model', is_string($retry) && trim($retry) !== '' ? 'success' : 'error',
+        is_string($retry) && trim($retry) !== '' ? 'Dateicode empfangen' : 'Dateicode ausgeblieben',
+        ['model'=>$primaryModel]);
+      $fileToolCandidate = is_string($retry)
+        ? ember_console_file_tool_candidate($retry, $userMsg) : null;
+      if ($fileToolCandidate === null) {
+        coreui_work_record($pdo, 'tool', 'error', 'Kein ausfuehrbarer Datei-Auftrag',
+          ['reason'=>'tool_protocol_missing']);
+        return 'Die Modellantwort konnte nicht als ausfuehrbarer Datei-Auftrag verarbeitet werden. '
+          . 'Es wurde kein Python-Job gestartet und keine Downloaddatei gespeichert.';
       }
+      $out = $retry;
+      $finalPrompt = $compactPrompt;
     }
-    if ($fileToolCandidate === null) {
-      coreui_work_record($pdo, 'tool', 'error', 'Kein ausfuehrbarer Datei-Auftrag',
-        ['reason'=>'tool_protocol_missing']);
-      return 'Die Modellantwort konnte nicht als ausfuehrbarer Datei-Auftrag verarbeitet werden. '
-        . 'Es wurde kein Python-Job gestartet und keine Downloaddatei gespeichert. '
-        . 'Bitte versuche einen kleineren Datei-Auftrag oder ein Coding-Modell.';
-    }
-    $out = $retry;
-    $finalPrompt = $compactPrompt;
   }
 
   // === Phase 2: Asynchroner Browse-Trigger ([BROWSE:]) - VOR der synchronen Websuche ===
