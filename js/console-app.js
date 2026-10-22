@@ -738,7 +738,7 @@
     }
     renderConversationRows(ses);
     if (!state.messageCacheBySession[ses.id] || !state.messageCacheBySession[ses.id].length) {
-      appendMessageEl('system', 'ARCHNET VERBINDUNG HERGESTELLT. EMBER INTERFACE AKTIV.');
+      appendMessageEl('system', 'ARCHNET VERBINDUNG HERGESTELLT. COREUI TERMINAL AKTIV.');
     }
     if (state.pendingBySession[ses.id]) {
       showTypingIndicator();
@@ -1775,7 +1775,7 @@
     var selected = Array.prototype.slice.call(fileList || []);
     if (!selected.length) return;
     if (state.waitingEmber) {
-      appendMessageEl('system', '\u231b Ember antwortet gerade\u2026 Anhaenge bitte danach.');
+      appendMessageEl('system', '\u231b Mara antwortet gerade\u2026 Anhaenge bitte danach.');
       scrollToBottom();
       return;
     }
