@@ -358,7 +358,8 @@ function ember_debug_log(string $event, array $meta): void {}
 $tokens = token_get_all($handler);
 $wantedFunctions = ['ember_py_max_code_chars','ember_py_extract_marker',
   'ember_console_file_tool_candidate','ember_console_file_tool_directive',
-  'ember_console_file_tool_is_local','ember_console_file_tool_is_device_local'];
+  'ember_console_file_tool_is_local','ember_console_file_tool_is_device_local',
+  'ember_console_file_tool_prefers_python'];
 for ($i = 0; $i < count($tokens); $i++) {
   if (!is_array($tokens[$i]) || $tokens[$i][0] !== T_FUNCTION) continue;
   $j = $i + 1;
@@ -381,6 +382,27 @@ local_file_test(!ember_console_file_tool_is_device_local('gemma4:26b-cloud')
   && !ember_console_file_tool_is_device_local('gemma4:31b-cloud')
   && !ember_console_file_tool_is_device_local('gpt-oss:120b-cloud'),
   'Ollama Cloud models must keep the already working Cloud ZIP route');
+
+// Regression: before P06, the local Qwen coding model generated working
+// ZIPs through [PY]. Do not force it through the newer per-file source path.
+local_file_test(
+  ember_console_file_tool_prefers_python('qwen3.6:35b-a3e-q4_K_M')
+  && ember_console_file_tool_prefers_python('qwen3.6:latest'),
+  'local Qwen3.6 must retain the Python sandbox ZIP writer');
+local_file_test(
+  !ember_console_file_tool_prefers_python('qwen3.6:35b-cloud')
+  && !ember_console_file_tool_prefers_python('ember-coreui:latest')
+  && !ember_console_file_tool_prefers_python('gemma4:e4b')
+  && !ember_console_file_tool_prefers_python('gpt-oss:120b-cloud'),
+  'Qwen restoration must not hijack Gemma or Cloud exports');
+local_file_test(
+  str_contains($handler, 'ember_console_file_tool_prefers_python($primaryModel)')
+  && str_contains($handler, '&& !ember_console_file_tool_prefers_python($primaryModel)'),
+  'Qwen file requests must skip the source-first generation and retain [PY]');
+local_file_test(
+  str_contains((string)file_get_contents(dirname(__DIR__).'/api/console_stream.php'),
+    'ember_console_file_tool_prefers_python(ember_model())'),
+  'Qwen ZIP request must use the verified worker route even when streaming');
 
 $toolCode = "from pathlib import Path\nPath('/work/output/index.html').write_text('Snake')";
 $marked = ember_console_file_tool_candidate('[PY]' . $toolCode . '[/PY]', $request);
