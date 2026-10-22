@@ -2,7 +2,18 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
-undefined## 0.5.23 - 22.10.2026
+## 0.5.24 - 22.10.2026
+
+- Mara Thorne ist die TCI/CoreAI der Ravager Thorn. Ember CoreUI bleibt das getrennte Terminal und der Produktname; bestehende IDs und technische Bezeichner bleiben unveraendert.
+- Den lockeren, direkten Gamer-Sprachstil (2003-Style) aus dem frueheren Vision-Systemprompt in das eigene Ollama-Modelfile uebernommen. Die alte fremde Bildanalyse-Identitaet wird nicht mehr gesetzt. Bild-, Video- und PDF-Beobachtungsregeln bleiben erhalten.
+- Den irrtuemlich gesetzten Eintrag `PARAMETER num_predict -1` aus dem Modelfile entfernt. `PARAMETER draft_num_predict 0` bleibt erhalten. Kein `PARAMETER num_ctx`, keine num_ctx-Overrides fuer Gemma.
+- Mara ist Standard fuer CoreAI-Profile, neue Konten, Konsole, Statusanzeige, Antworten, Avatare und direkte Ansprache. Bestehendes @Ember bleibt als technischer Alias gueltig.
+- Der Live-Arbeitsweg lautet jetzt exakt `E.M.B.E.R CoreAI arbeitet`.
+- Migration 014 aktualisiert nur alte Default-Anzeigenamen Ember auf Mara und erhaelt abweichende persoenliche Anzeigenamen sowie die unveraenderte ID `ember`.
+- Gemma-Regeln, CoreAI-Identitaetstest, beide Preflights, Version und Cache-Fingerprints aktualisiert; der bestehende Installer baut das eigene Modell aus dem neuen Modelfile.
+- Keine Aenderung der Modellqueue, der Cloud-Downloads oder des One-Liners. Kein GitHub Actions Einsatz; produktive Abnahme noch offen. [skip ci]
+
+## 0.5.23 - 22.10.2026
 
 - Livebefund aus 0.5.22: HTML und CSS erfolgreich erkannt; `game.js` in zwei lokalen Gemma-Aufrufen mit `model_output_truncated` beendet. Das ist eine Ollama-Ausgabelimitierung, kein belegter Parser- oder ZIP-Worker-Defekt.
 - Lokale JavaScript-Quelltexte werden bei `done_reason=length` nicht mehr verworfen: Maximal zwei serielle Fortsetzungsanfragen vervollstaendigen den vorhandenen Quelltext in derselben privaten Sitzung.
