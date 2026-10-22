@@ -7,15 +7,15 @@ Dediziertes Subsystem ausserhalb des PHP-Request-Pfads.
 
 Was es tut:
   1. Pollt die Tabelle stu_ember_browse_jobs nach 'queued' Jobs (atomar geclaimt).
-  2. Haelt einen Ember CoreUI-namespaceten Ollama-Lock auf der EIGENEN
+  2. Haelt einen E.M.B.E.R. CoreUI-namespaceten Ollama-Lock auf der EIGENEN
      DB-Session -> stirbt der Worker, gibt MariaDB den Lock automatisch frei.
   3. Flippt Embers Presence auf AFK ("im Netz unterwegs") via stu_kv-Flag + Chat-Systemmeldung.
   4. Browst headless mit Playwright ueber den Accessibility-Tree (Rolle+Name, kein Vision-Loop).
-  5. Fragt pro Schritt dasselbe lokale Ember CoreUI-Modell im nuechternen Aktions-Modus nach der naechsten Aktion.
+  5. Fragt pro Schritt dasselbe lokale E.M.B.E.R. CoreUI-Modell im nuechternen Aktions-Modus nach der naechsten Aktion.
   6. Postet das Ergebnis als Ember in den Global-Chat (ein lockerer Report-Call, Embers Stil).
   7. Rueckkehr ist STILL (kein "wieder da") - nur das AFK-Flag wird geloescht.
 
-Single-LLM: dasselbe Ember CoreUI-Modell, nur zwei Prompt-Modi (Aktion = nuechtern/JSON, Report = locker).
+Single-LLM: dasselbe E.M.B.E.R. CoreUI-Modell, nur zwei Prompt-Modi (Aktion = nuechtern/JSON, Report = locker).
 
 Konfiguration wird zur LAUFZEIT aus api/config.local.php gelesen (eine Quelle der Wahrheit,
 keine duplizierten Creds). config.local.php ist NICHT Teil des ZIP.
@@ -227,7 +227,7 @@ def ensure_steps_table(conn):
 
 
 def ensure_frames_table(conn):
-    """Private JPEG-Frames fuer die authentifizierte Ember CoreUI-Agentenansicht.
+    """Private JPEG-Frames fuer die authentifizierte E.M.B.E.R. CoreUI-Agentenansicht.
     Die Bilder liegen absichtlich nicht in einem oeffentlichen Webverzeichnis."""
     with conn.cursor() as cur:
         cur.execute("""
@@ -1170,7 +1170,7 @@ def _stop(*_):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Ember CoreUI Browse-Worker")
+    ap = argparse.ArgumentParser(description="E.M.B.E.R. CoreUI Browse-Worker")
     here = os.path.dirname(os.path.abspath(__file__))
     ap.add_argument("--config", default=os.environ.get(
         "STU_CONFIG", os.path.join(here, "..", "api", "config.local.php")))
