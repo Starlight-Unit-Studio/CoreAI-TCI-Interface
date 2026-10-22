@@ -1,0 +1,72 @@
+EMBER COREUI UEBERGABEPROTOKOLL 0.5.22
+Stand 22.10.2026
+Basis main: 2cd4707c767fcfc37aff9eeb4aa7fae2c4f8c41a (0.5.21)
+Arbeitsbranch: fix/local-gemma-raw-source-zip-0.5.22
+
+LIVE-ERGEBNIS 0.5.21
+Screenshot 1: Lokales Modell erreicht Quelle empfangen, fordert fehlende
+Quelldateien an, beantwortet die Nachforderungen, endet aber bei
+Projektquellen unvollstaendig (source_files_incomplete).
+Screenshots 2 und 3: Dasselbe Snake-Projekt mit GPT Cloud erreicht
+Python-Ausfuehrung beendet, Downloaddateien gesichert. UI zeigt
+game.js (4.8 kB), index.html (517 B), style.css (1.1 kB) und
+snake-game.zip (2.3 kB). Ein erfolgreiches Browser-Spiel wurde nicht
+separat nachgewiesen; nur die echten Datei-Downloads.
+Daraus folgt: Servereigener Sandbox-/ZIP-/Artefaktpfad funktioniert
+mindestens fuer den getesteten Cloud-Anbieter. Der Fehler ist auf
+den lokalen Erzeugungs-/Parsingpfad eingegrenzt. Die tatsaechlichen
+rohen Gemma-Antworten liegen nicht vor, deshalb keine weitere
+unbelegte Behauptung ueber ihren Wortlaut.
+
+ABHILFE
+Bei lokalem ember-coreui/gemma4 und einem expliziten Mehrdateien-ZIP
+nutzt CoreUI jetzt einzelne kurze Ollama-Calls fuer jedes angeforderte
+Quellfile (beim unbenannten Snake-/Browser-Game standardmaessig
+index.html, style.css, game.js). Der reguläre Konversations-Prompt
+inklusive konkurrierendem Python-Werkzeughinweis wird fuer diese
+Spezialaufrufe nicht verwendet. Die Modelfile-SYSTEM-Anweisungen
+bleiben in Ollama unveraendert.
+Gemma soll pro Aufruf direkt den Rohtext der einzelnen Datei erzeugen,
+ohne Markdown-, ZIP- oder Python-Writer-Verpackung. Der neue lokale
+Parser akzeptiert fertige Raw-Dateien und Einzelfences, einschliesslich
+fehlender Schluss-Backticks bei plausibel vollstaendigem Quelltext.
+Fehlerhafte Antwortformate, unvollstaendiges HTML, unausgeglichene
+CSS-Klammern und Werkzeugmarker werden nicht als Datei akzeptiert.
+Eine Nachforderung pro Datei ist zugelassen. Danach werden nur
+vollstaendige Pakete in den bestehenden isolierten Worker gereicht,
+der ZIP, einzelne Quelldateien und Dateikarten tatsaechlich prueft.
+Dateispezifische, sicher gefilterte Arbeitsereignisse lokalisieren
+Fehler; keine persistierten Rohantworten im Arbeitsweg.
+
+AENDERUNGEN
+- api/chat.php: lokaler, dateiweise fokussierter Modellpfad;
+  Cloud-Quelldateipfad unter else unveraendert.
+- api/console_data_link_bridge.php: lokale Raw-Datei-Prompts und Parser,
+  bestehender sicherer ZIP-Writer unveraendert.
+- scripts/local-file-tool-selftest.php: Raw-/Fenced-Parser-Regression.
+- VERSION, alle sechs HTML-Oberflaechen, Bootstrap-Cache-Fingerprint,
+  Preflights, Brandingtest und Changelog auf 0.5.22 nachgezogen.
+- Kein Eingriff in config/Modelfile.template und dessen Parameter:
+  temperature 1, top_k 64, top_p 0.95, draft_num_predict 0,
+  num_predict -1. num_ctx weiterhin nicht hinzufuegen.
+- Keine Migration, keine GitHub Actions, kein neuer One-Liner.
+
+PRUEFUNG
+In dieser Umgebung ist Ollama/CoreUI Live-Host nicht erreichbar.
+Lokaler PHP-8.4-Teilharness mit Spiegel der Parserfunktion und
+12 Raw-Source-Positiv-/Negativtests bestanden. Repository-Laufzeittests
+und echte Gemma-Ausgaben bleiben bis zum Update auf dem Host offen.
+Commit/PR/Merge-Referenzen sind nach Abschluss separat zu ergaenzen.
+
+LIVE-ABNAHME
+1. Unveraenderten Original-Installer aus main ausfuehren.
+2. Anzeigen und Modellversion 0.5.22 pruefen.
+3. Mit lokalem ember-coreui denselben Snake-ZIP-Download anfordern.
+4. Arbeitsweg: Quelle je Datei erkannt, Projektquellen vollstaendig,
+   Python-Ausfuehrung beendet, Downloaddateien gesichert.
+5. Vier echte Downloads inkl. snake-game.zip; ZIP-CRC und Inhalt,
+   Browser-Spiel und Steuerung pruefen.
+6. Bei erneutem Fehler sollen die neuen Arbeitsdetails nun den
+   konkreten Dateinamen und source_format_unrecognized oder
+   model_output_truncated nennen.
+Issue #52 (Ollama-Modellwechsel) ist davon getrennt.

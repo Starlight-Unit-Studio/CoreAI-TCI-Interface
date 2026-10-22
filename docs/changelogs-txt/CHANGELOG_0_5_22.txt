@@ -1,0 +1,12 @@
+EMBER COREUI 0.5.22
+
+## 0.5.22 - 22.10.2026
+
+- Produktionsbilder von 0.5.21: Die lokale Gemma-Ausgabe scheitert nach drei Modellantworten mit source_files_incomplete. GPT Cloud erzeugt dagegen erfolgreich game.js, index.html, style.css und snake-game.zip.
+- Lokale Gemma-Datei-Auftraege mit explizitem Mehrdateien-ZIP werden nun in jeweils unabhaengigen, kurzen Ollama-Nachrichten pro einzelner Quelldatei bearbeitet.
+- Die lokalen Antworten sollen nur den rohen Quelldateiinhalt enthalten, ohne Python-Writer oder konkurrierende Werkzeug-/Markdown-Anweisungen.
+- Der Parser akzeptiert fertige Rohquelldateien, bereits korrekt benannte Fences und einen einzelnen ungeschlossenen Fence bei vollstaendigem Quelltext. Formatfehler erhalten maximal eine Nachforderung pro Datei.
+- Erst ein vollstaendiger Quellsatz wird ueber den bestehenden verifizierten Sandbox-Writer erstellt und gepackt. Keine erfundenen Downloads.
+- Cloud-Dateipfad, generische Python-/Einzeldatei-Werkzeuge, Modelfile, Ollama-Parameter, sequentielle Modellqueue und Installer-One-Liner bleiben unveraendert.
+- Safe-Metadaten dokumentieren benoetigte Dateinamen und Gruende, ohne rohe Modellantworten in den Arbeitsweg zu schreiben.
+- PHP-8.4-Parser-Mirrortests fuer Rohformate, invalides HTML, Marker und ZIP-Grenzen lokal bestanden. GitHub Actions nicht ausgefuehrt; echte Live-Abnahme bleibt offen.

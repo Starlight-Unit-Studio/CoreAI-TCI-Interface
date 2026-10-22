@@ -7,7 +7,15 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 Ember CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.21` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.22` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Focused local Gemma ZIP output (0.5.22)
+
+Production screenshots of 0.5.21 showed local Gemma repeatedly returning responses that the strict multi-source Markdown parser could not complete (`source_files_incomplete`). The same Snake ZIP request succeeded on GPT Cloud, proving that the Python sandbox, archive creation and authenticated download cards are operational.
+
+For local `ember-coreui` / `gemma4` models and explicitly requested multi-file ZIPs, the pipeline now requests exactly one source file at a time in a short, independent Ollama message. These calls do NOT append the conversation's general Python tool hint, and the model is asked for raw HTML, CSS, JavaScript or another requested source type, not a `[PY]` writer or Markdown wrapper. Full raw sources, correctly fenced files, and one incomplete enclosing fence with a complete source body can be accepted. Invalid formats and incomplete HTML/CSS/JS are rejected. Each file receives at most one focused retry. The trusted server-owned Python writer then packages the complete source set in the existing isolated sandbox, unchanged.
+
+Cloud models retain their already working 0.5.21 multi-file route. Single-file and other Python tasks also remain unchanged. The original Gemma Modelfile and its owner-approved parameters are not edited. Private data, scripts and raw model outputs are not included in user-facing work events. Source files and reasons are identified by safe metadata to locate future failures without leaking content. No database migration, no change to the original installer command. Production verification of local generation and actual gameplay is pending.
 
 ## Source-first browser-game ZIP exports (0.5.21)
 
