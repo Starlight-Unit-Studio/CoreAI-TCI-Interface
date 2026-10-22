@@ -6,20 +6,20 @@ config_file="${STU_CONFIG:-$project_root/api/config.local.php}"
 sandbox_image="${STU_EMBER_PY_IMAGE:-ember-py:1}"
 
 test -S /var/run/docker.sock || {
-  echo '[Ember CoreUI Python] Docker-Socket fehlt.' >&2
+  echo '[E.M.B.E.R. CoreUI Python] Docker-Socket fehlt.' >&2
   exit 1
 }
 test -r "$config_file" || {
-  echo '[Ember CoreUI Python] Geschuetzte Laufzeitkonfiguration fehlt.' >&2
+  echo '[E.M.B.E.R. CoreUI Python] Geschuetzte Laufzeitkonfiguration fehlt.' >&2
   exit 1
 }
 test -r "$project_root/tools/ember_py_worker.py" || {
-  echo '[Ember CoreUI Python] Worker-Quelle fehlt.' >&2
+  echo '[E.M.B.E.R. CoreUI Python] Worker-Quelle fehlt.' >&2
   exit 1
 }
 
 if ! docker image inspect "$sandbox_image" >/dev/null 2>&1; then
-  echo "[Ember CoreUI Python] Baue einmalig das Sandbox-Image $sandbox_image."
+  echo "[E.M.B.E.R. CoreUI Python] Baue einmalig das Sandbox-Image $sandbox_image."
   docker build \
     --tag "$sandbox_image" \
     --file "$project_root/tools/ember_py.Dockerfile" \
