@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Ember CoreUI developer update: intentionally installs source from main, NOT a release ZIP.
+# E.M.B.E.R. CoreUI developer update: intentionally installs source from main, NOT a release ZIP.
 set -Eeuo pipefail
 IFS=$'\n\t'
 umask 027
@@ -8,8 +8,8 @@ REPOSITORY='https://github.com/Starlight-Unit-Studio/coreui.git'
 TARGET_DIR='/opt/ember-coreui'
 TMP_DIR=''
 
-log() { printf '[Ember CoreUI DEV] %s\n' "$*"; }
-die() { printf '[Ember CoreUI DEV] FEHLER: %s\n' "$*" >&2; exit 1; }
+log() { printf '[E.M.B.E.R. CoreUI DEV] %s\n' "$*"; }
+die() { printf '[E.M.B.E.R. CoreUI DEV] FEHLER: %s\n' "$*" >&2; exit 1; }
 cleanup() {
   if [[ -n "$TMP_DIR" && -d "$TMP_DIR" && "$TMP_DIR" == /tmp/ember-coreui-dev.* ]]; then
     rm -rf -- "$TMP_DIR"
