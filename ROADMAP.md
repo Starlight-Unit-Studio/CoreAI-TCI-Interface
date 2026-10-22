@@ -1,4 +1,4 @@
-# Ember CoreUI: Umsetzungsroadmap
+# E.M.B.E.R. CoreUI: Umsetzungsroadmap
 
 Stand: 20.10.2026. Planungsbasis: [`b4a5413`](https://github.com/Starlight-Unit-Studio/coreui/commit/b4a5413f8478119d749a54702c0e50acd3f0b517).
 
