@@ -7,7 +7,15 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 Ember CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.23` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.24` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Mara Thorne as CoreAI (0.5.24)
+
+The local assistant's canonical visible identity is **Mara Thorne**, the TCI/CoreAI of the Ravager Thorn. **Ember CoreUI** remains the private terminal and installed product. The technical character ID `ember`, existing PHP/SQL identifiers, account references, Ollama model tag `ember-coreui:latest`, and repository name are intentionally stable. The work panel reads `E.M.B.E.R CoreAI arbeitet` while a generation is running, and the normal chat display/default name is Mara.
+
+The approved Modelfile now incorporates the natural, direct 2003-style gamer tone previously used only by the image-system prompt. The obsolete Sandra Jansen/Ember Caldwell image identity is removed; the owned model receives no overriding vision SYSTEM message, while third-party/cloud models receive a matching short Mara identity hint. Image, video, PDF accuracy instructions remain. The accidentally added `PARAMETER num_predict -1` is removed from the Modelfile; `draft_num_predict 0` remains. `num_ctx` is never added to the Modelfile nor injected into Gemma's API `options`.
+
+Migration 014 upgrades only the old default visible name Ember to Mara in assistant profiles, the bot display attribution and its JSON character cache; custom CoreAI profile names and the stable `ember` ID are preserved. Runtime also translates an old configured `COREUI_EMBER_CHARACTER_NAME=Ember` to Mara. Fresh installs use Mara defaults. The model is rebuilt using the existing installer, without changing the One-Liner. No GitHub Actions are required or run. Run the preflight and check chat, vision and the work panel after installation; live model acceptance remains outstanding.
 
 ## Bounded local JavaScript continuation (0.5.23)
 
