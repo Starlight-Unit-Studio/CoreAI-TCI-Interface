@@ -2,6 +2,15 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.23 - 22.10.2026
+
+- Livebefund aus 0.5.22: HTML und CSS erfolgreich erkannt; `game.js` in zwei lokalen Gemma-Aufrufen mit `model_output_truncated` beendet. Das ist eine Ollama-Ausgabelimitierung, kein belegter Parser- oder ZIP-Worker-Defekt.
+- Lokale JavaScript-Quelltexte werden bei `done_reason=length` nicht mehr verworfen: Maximal zwei serielle Fortsetzungsanfragen vervollstaendigen den vorhandenen Quelltext in derselben privaten Sitzung.
+- Ein reiner JavaScript-Fragmentparser entfernt optionale einfache Codefences; wiederholte Textueberlappungen werden abgeglichen. Vollstaendige Daten gehen ausschliesslich durch den vorhandenen sicheren Quellcode- und ZIP-Writer. Unvollstaendige Dateien bleiben ohne Download.
+- Der lokale JavaScript-Prompt uebergibt weiter die HTML-Struktur, nicht mehr den vollstaendigen CSS-Inhalt, um Ausgabeplatz einzusparen.
+- Arbeitsweg zeigt nur sichere Quelltext- und Modelltoken-Zaehler, ohne geheime Inhalte. Weitere Offline-Regressionstests fuer fortgesetzte JavaScript-Dateien und Safe-Metadata ergaenzt.
+- Modelfile (einschliesslich `draft_num_predict 0`, `num_predict -1`), Cloud-Dateipfad, lokale Einzeldateien, Modellqueue und Installer-One-Liner unveraendert. Keine Migration, keine GitHub Actions; produktive Live-Abnahme offen. [skip ci]
+
 ## 0.5.22 - 22.10.2026
 
 - Nach Live-Test: GPT Cloud erzeugt erfolgreich vier echte Snake-Downloads, lokales Gemma scheitert weiterhin mit `source_files_incomplete`; dies ist kein belegter Workerdefekt.
