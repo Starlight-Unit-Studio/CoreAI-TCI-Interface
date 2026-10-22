@@ -2,6 +2,14 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.22 - 22.10.2026
+
+- Nach Live-Test: GPT Cloud erzeugt erfolgreich vier echte Snake-Downloads, lokales Gemma scheitert weiterhin mit `source_files_incomplete`; dies ist kein belegter Workerdefekt.
+- Lokale Gemma-/Ember-CoreUI-Mehrdateien-ZIP-Auftraege fragen jetzt jede Quelldatei in einem kurzen eigenstaendigen Modellaufruf als rohen Quelltext an, statt gleichzeitig Python-Werkzeug- und Markdown-Projektanweisungen zu mischen.
+- Der lokale Parser uebernimmt begrenzt vollstaendige Rohdateien oder einzelne Codebloecke, erkennt fehlenden Schluss-Fence bei nachweislich vollstaendigem Dateiinhalt, lehnt Python-Marker/Prosa/ungueltige Inhalte ab und wiederholt hoechstens einmal pro Datei.
+- Nach vollstaendiger Erfassung erstellt und prueft ausschliesslich der vorhandene servereigene Worker die Dateien und das ZIP. Der bewiesenermassen funktionierende Cloud-Pfad bleibt unveraendert; Modelfile, API-Parameter, globale serielle Queue und Installer-Befehl bleiben unberuehrt.
+- Lokale Parserregressionen fuer HTML/CSS/JS, kurze Quelldateien, fehlende Fences, Python-Marker und ZIP-Writer ergaenzt. Keine Migration. Offline-Parser-Teiltest mit PHP 8.4 bestanden; keine GitHub Actions, Live-Abnahme noch offen. [skip ci]
+
 ## 0.5.21 - 22.10.2026
 
 - Mehrdateien-ZIP-Dateiauftraege verwenden vollstaendige, inerte Quelldateien statt fehleranfaelliger vom Modell erzeugter Python-Schreibskripte. Ohne Dateinamen wird dieser Pfad nur fuer ausdruecklich verlangte Snake-/Browser-Spiel-ZIPs erkannt.
