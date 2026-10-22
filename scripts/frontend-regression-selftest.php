@@ -170,7 +170,6 @@ try {
       && str_contains($chatApi, 'function ember_console_file_tool_directive()')
       && str_contains($chatApi, 'function ember_console_file_tool_candidate(')
       && str_contains($chatApi, "'tool_protocol_missing'")
-      && str_contains($chatApi, "'source_files_incomplete'")
       && str_contains($chatApi, 'coreui_console_multifile_source_directive($userMsg)')
       && str_contains($streamApi, 'coreui_console_multifile_source_directive($promptMessage)')
       && str_contains($chatApi, 'coreui_console_missing_requested_artifacts(')

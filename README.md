@@ -7,7 +7,13 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 Ember CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.18` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.19` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## File tool routing restored (0.5.19)
+
+Live testing of 0.5.18 still stopped before the worker with `source_files_incomplete`. Multi-file ZIP requests now use the established Python sandbox tool contract again. Both marker-wrapped and fenced Python tool scripts are accepted. Complete named source blocks and bounded two-response source merging remain optional recovery paths. The source-only restriction introduced in 0.5.16 no longer blocks the existing tool protocol. Worker verification, account-scoped artifacts and serial model requests remain required.
+
+The following sections describe historical changes; their source-only routing is superseded by 0.5.19. Production acceptance remains pending.
 
 ## Incremental multi-file source recovery (0.5.18)
 
@@ -93,7 +99,7 @@ The canonical `VERSION` uses exactly `major.minor.patch` with numbers only, for 
 
 The same original one-liner calls `scripts/cache-bust.py` through the native or container installer. For each referenced CSS/JS file, the installer derives a fixed-length **numeric cache key from that file's actual SHA-256 content** and rewrites the static HTML URL. Unchanged assets keep the same key; changed assets get a different one even without a product version change. All HTML entry points are marked for revalidation at Nginx level, so browsers can discover new asset URLs. Preflight rejects stale or invalid keys.
 
-**Historical releases are not renamed.** The original verified `0.5.3-alpha` archive is retained for legacy rollback only. `0.5.4` was planned but not published as a release. Versions `0.5.5` through `0.5.17` are preceding main-source checkpoints; `0.5.18` is the current working version. A new verified ZIP/SHA pair must be built separately before presenting it as an archived release.
+**Historical releases are not renamed.** The original verified `0.5.3-alpha` archive is retained for legacy rollback only. `0.5.4` was planned but not published as a release. Versions `0.5.5` through `0.5.17` are preceding main-source checkpoints; `0.5.19` is the current working version. A new verified ZIP/SHA pair must be built separately before presenting it as an archived release.
 
 ## Independence and mandatory product name
 

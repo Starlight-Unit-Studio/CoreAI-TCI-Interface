@@ -7,7 +7,7 @@ function local_file_test(bool $ok, string $message): void {
 }
 $request = 'Erstelle index.html, style.css und game.js, packe sie in snake-game.zip und stelle einen Download bereit.';
 $directive = coreui_console_multifile_source_directive($request);
-local_file_test(is_string($directive), 'local ZIP project must use source-file protocol');
+local_file_test(is_string($directive), 'named ZIP project must be recognized');
 local_file_test(str_contains($directive, 'index.html')
   && str_contains($directive, 'style.css')
   && str_contains($directive, 'game.js')
@@ -202,10 +202,42 @@ local_file_test(coreui_console_missing_requested_artifacts($request, [
   ['name'=>'snake-game.zip'],
 ]) === [], 'complete project rejected');
 $handler = file_get_contents(dirname(__DIR__) . '/api/chat.php');
-local_file_test(is_string($handler)
-  && str_contains($handler, 'ember_console_file_tool_candidate(string $reply, string $request, bool $sourceOnly = false)')
-  && str_contains($handler, 'coreui_console_multifile_source_directive($userMsg)')
-  && str_contains($handler, 'ember_console_file_tool_candidate($out, $userMsg, $sourceProjectMode)')
-  && str_contains($handler, 'if ($sourceProjectMode && $needsFileRepair)'),
-  'local project sources must bypass model-generated Python and costly worker-failure retries');
+// Load only pure production helpers, without booting the HTTP/DB endpoint.
+function ember_cfg(string $key, mixed $default = null): mixed { return $default; }
+function ember_debug_log(string $event, array $meta): void {}
+$tokens = token_get_all($handler);
+$wantedFunctions = ['ember_py_max_code_chars','ember_py_extract_marker',
+  'ember_console_file_tool_candidate','ember_console_file_tool_directive'];
+for ($i = 0; $i < count($tokens); $i++) {
+  if (!is_array($tokens[$i]) || $tokens[$i][0] !== T_FUNCTION) continue;
+  $j = $i + 1;
+  while (is_array($tokens[$j]) && $tokens[$j][0] === T_WHITESPACE) $j++;
+  if (!is_array($tokens[$j]) || !in_array($tokens[$j][1], $wantedFunctions, true)) continue;
+  $code = ''; $depth = 0; $opened = false;
+  for (; $i < count($tokens); $i++) {
+    $token = $tokens[$i];
+    $code .= is_array($token) ? $token[1] : $token;
+    if ($token === '{') { $depth++; $opened = true; }
+    if ($token === '}') $depth--;
+    if ($opened && $depth === 0) break;
+  }
+  eval($code);
+}
+$toolCode = "from pathlib import Path\nPath('/work/output/index.html').write_text('Snake')";
+$marked = ember_console_file_tool_candidate('[PY]' . $toolCode . '[/PY]', $request);
+local_file_test(($marked['kind'] ?? '') === 'marker' && $marked['code'] === $toolCode,
+  'named ZIP requests must accept the established Python marker protocol');
+$fenced = ember_console_file_tool_candidate("```python\n" . $toolCode . "\n```", $request);
+local_file_test(($fenced['kind'] ?? '') === 'python_fence',
+  'named ZIP requests must also accept a Python tool fence');
+local_file_test((ember_console_file_tool_candidate($reply, $request)['kind'] ?? '') === 'project',
+  'complete inert sources must remain a fallback');
+local_file_test(ember_console_file_tool_candidate($firstHalf, $request) === null,
+  'incomplete source text must not become executable code');
+local_file_test(ember_console_file_tool_candidate('Hier ist dein Download: snake-game.zip', $request) === null,
+  'prose must never be treated as a tool result');
+local_file_test(str_contains(ember_console_file_tool_directive(), '[PY]')
+  && !str_contains($handler, '$sourceProjectMode')
+  && !str_contains($handler, '$sourceOnly'),
+  'source-only routing must not suppress the established sandbox tool');
 echo "CoreUI local file tool selftest: OK\n";
