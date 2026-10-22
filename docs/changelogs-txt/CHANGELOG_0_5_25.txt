@@ -1,0 +1,12 @@
+E.M.B.E.R. CoreUI 0.5.25
+22.10.2026
+
+- Offizielle Schreibweise E.M.B.E.R. CoreUI statt der verwechselbaren bisherigen Anzeige Ember CoreUI.
+- E.M.B.E.R. bezeichnet ausschliesslich Framework, Backend und System.
+- Ember ist eine andere STU-CoreAI der Starlight Ember; Mara Thorne ist die TCI/CoreAI der Ravager Thorn. Das CoreUI ist Maras Terminal und nicht die CoreAI Ember.
+- Installer (Compose, Native, One-Liner), Startscreen, Login, Settings, Admin, Protokolle, Healthcheck, Mailabsender und Runtime-Logausgaben verwenden die neue Darstellung.
+- Maras lokales Modelfile unterscheidet E.M.B.E.R.-Framework, E.M.B.E.R. CoreUI und die eigenstaendige CoreAI Ember; freigegebene Gemma-Parameter bleiben unveraendert. num_ctx bleibt ausgeschlossen.
+- Neue Konten und neue Installationen erhalten den Standardnamen Mara statt Ember. Aeltere Standardprofile werden wie bisher nur sichtbar auf Mara normalisiert; andere Namen bleiben erhalten.
+- Technische Identifikatoren, Tabellen, Dienstnamen, Dateipfade, Ollama-Modellname ember-coreui:latest und Einzeiler bleiben unveraendert. Keine Migration.
+- Lizenz-/Markenpolitik korrigiert aktuelle Schreibweise und schuetzt den frueheren Namen Ember CoreUI als historischen Alias. Lizenzversion 1.0 und materielle Lizenzregeln unveraendert.
+- Browser-Asset-Fingerprints und Branding-/Modelfile-Regressionen aktualisiert. Keine GitHub Actions. Live-Abnahme auf dem produktiven Server noch offen.
