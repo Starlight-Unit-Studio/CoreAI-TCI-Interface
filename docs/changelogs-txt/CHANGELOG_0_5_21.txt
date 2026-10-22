@@ -1,0 +1,11 @@
+EMBER COREUI 0.5.21
+
+## 0.5.21 - 22.10.2026
+
+- Fuer vollstaendige Mehrdateien-ZIP-Auftraege bevorzugt CoreUI inerte Quelldateien (HTML, CSS, JS usw.) statt vom LLM entworfene Python-Dateischreibprogramme.
+- Ein Snake-/Browserspiel im ZIP ohne ausdruecklich genannte Dateinamen erhaelt standardmaessig index.html, style.css und game.js.
+- Fehlende Quelldateien werden im selben, seriellen Turn gezielt einzeln nachgefordert; nur ein vollstaendiges Quellenpaket wird vom vorhandenen Sandbox-Worker geschrieben, geprueft und als Download bereitgestellt.
+- Nicht geschlossene Codebloecke und fehlende Quelldateien bleiben unausgefuehrt; keine erfundenen Downloads.
+- Generische Python-Auftraege, Einzeldateien, Modelfile und Installer-Befehl bleiben unveraendert.
+- Neue Offline-Regressionen und Preflight-/Branding-Versionen nachgezogen. Keine GitHub Actions wegen ausgeschöpftem Kontingent.
+- Live-Pruefung des Snake-ZIP-Workflows auf dem produktiven CoreUI-Server noch erforderlich.
