@@ -327,6 +327,16 @@ local_file_test($combinedJs === $cutJs . $jsRest
 $echoedRest = substr($cutJs, -32) . $jsRest;
 local_file_test(coreui_console_local_js_append($cutJs, $echoedRest) === $combinedJs,
   'echoed overlap from Gemma must not duplicate source code');
+$commentCut = "const x=1;\n// previous line comment\n";
+$commentNext = "\nfunction boot(){return x;}\nboot();";
+local_file_test(coreui_console_local_js_fragment($commentCut, 'game.js', true) === $commentCut,
+  'truncated source must preserve its trailing newline after a line comment');
+local_file_test(coreui_console_local_js_fragment($commentNext, 'game.js', false) === $commentNext,
+  'a continuation must preserve leading newlines in raw source');
+local_file_test(coreui_console_local_js_append($commentCut, $commentNext)
+  === $commentCut . $commentNext,
+  'line-comment boundaries must not swallow appended JavaScript');
+
 local_file_test(coreui_console_local_js_append($cutJs, $cutJs) === null,
   'a pure restart without new content is not progress');
 local_file_test(coreui_console_local_js_append($cutJs, '') === null
