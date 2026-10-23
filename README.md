@@ -7,7 +7,13 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 E.M.B.E.R. CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.26` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.27` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Safe standalone HTML homepage downloads (0.5.27)
+
+An explicit downloadable standalone HTML homepage now uses a source-first path. Rather than asking the selected model to author a fragile Python writer that may fail with `SyntaxError`, E.M.B.E.R. CoreUI asks for the complete inert HTML5 document, validates it and runs a deterministic CoreUI-owned Python writer to save the real account-scoped file. CSS and JavaScript must be embedded directly into the HTML; a requested ZIP contains the validated HTML file. Local asset dependencies, unclosed HTML, tool markers and incomplete files are rejected before a sandbox job. One bounded source retry is allowed. Real Python tasks remain available.
+
+The new route applies to explicit single-homepage downloads for local Gemma and non-Qwen Cloud models, retaining the established local Qwen coding workflow, multi-file ZIP generation, isolated Python worker and serial model queue. Python failures can now show a safe traceback line number without revealing source or stderr, and the previous raw 400-character Python debug preview has been removed. Gemma's Modelfile and banned `num_ctx`/`num_predict` overrides remain untouched. No migration or new installer command. The reported homepage request needs a live post-update verification before claiming a successful download.
 
 ## Faster local browser ZIP generation (0.5.26)
 
