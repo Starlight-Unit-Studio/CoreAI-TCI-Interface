@@ -2,6 +2,8 @@ E.M.B.E.R. COREUI UEBERGABEPROTOKOLL 0.5.26
 Stand 23.10.2026
 Basis main 0.5.25 53dab3f6d78e0cd626824aa3ca883f441a7f193f
 Branch perf/local-html-css-pair-0.5.26
+Pull Request https://github.com/Starlight-Unit-Studio/coreui/pull/63
+PR-Verlauf und finaler Merge-Commit sind ueber diese URL nachvollziehbar.
 
 KANONISCHE NAMEN
 - E.M.B.E.R. = Framework, Backend und uebergeordnetes System.
