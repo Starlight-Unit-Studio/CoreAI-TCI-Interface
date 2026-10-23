@@ -1,0 +1,48 @@
+E.M.B.E.R. CoreUI 0.5.28
+23.10.2026
+
+ANLASS
+- Nach 0.5.27 bleiben allgemeine Python-Codeauftraege ohne generische Syntaxvorpruefung. Ein einzelner Homepage-Sonderweg reicht nicht.
+- Livebefund des vorherigen Jobs 69: Python SyntaxError, Exitcode 1, 482 ms und keine Downloaddatei.
+- Strukturentscheidung: Vorabpruefung zentral im einzigen vorhandenen Python-Worker statt weiterer Dateityp-Ausnahmen.
+
+NEUER ALLGEMEINER PYTHON-PFAD
+- JEDER Python-Job bekommt im selben isolierten Docker-Container eine
+  reine Syntaxpruefung mit compile(), bevor der eigentliche Modellcode laeuft.
+- Bei Erfolg startet die originale Python-CLI per os.execv mit unveraendertem
+  Interpreter und `python -I /work/main.py`-Argumenten.
+- Bei SyntaxError, IndentationError, TabError wird EXIT 88 und eine private
+  rein strukturierte Fehlerkennung mit Klasse, Zeile und Spalte ausgegeben.
+  Der ungueltige Code wurde bis dahin NICHT ausgefuehrt.
+- Nur Modell-generierte Python-Programme erhalten eine einzige gezielte,
+  serielle Korrekturanfrage mit vollem Code, Originalauftrag und Diagnose.
+  Der Code ist dafuer auf 24.000 Byte beschraenkt. Danach erneut exakt
+  dieselbe Sandbox-Vorpruefung; kein dritter Modellversuch.
+- Backend-eigene Writer/ZIP-Skripte werden bei internem Syntaxfehler NICHT
+  durch beliebigen Modellcode ersetzt.
+- Nach einer Syntaxkorrektur darf der allgemeine Datei-Retry-Pfad keine
+  zusaetzliche Reparaturanfrage starten.
+
+DIAGNOSE / SICHERHEIT
+- Work-Events zeigen nur sichere Fehlerart und Zeilennummer.
+- Kein Rohcode, keine stderr-Inhalte, keine privaten Dateipfade in Public-Events.
+- Das Modell erhaelt die Diagnose innerhalb des erlaubten privaten Runs.
+- Die globale serielle Modellqueue bleibt unveraendert.
+- Docker-Isolation, Ressourcengrenzen, Netz-/Mount-Konzept, Artefaktpruefung
+  und Dateidownload-Manifeste bleiben unveraendert.
+- Code ist nicht allein wegen erfolgreichem compile() funktional korrekt;
+  Laufzeitfehler und Logikfehler werden weiterhin als getrennte Fehler behandelt.
+- Javascript, CSS und HTML erfordern zusaetzliche sprachspezifische
+  Validatoren, ehe eine Garantie fuer ALLE Sprachen moeglich ist.
+
+REGRESSION / KOMPATIBILITAET
+- Zwei neue Offline-Selbsttests (Python und PHP) pruefen den gemeinsamen
+  Parser und die Korrektur. Beide Preflights enthalten sie als Pflicht.
+- Lokale isolierte Python-Testfaelle: gueltiges Skript, Unicode, SyntaxError
+  ohne Seiteneffekte, IndentationError und RuntimeError getrennt bestanden.
+- Lokale PHP-8.4-Syntax/Prompt-Tests bestanden; produktiver
+  Zusammenschluss mit Datenbank, Ollama und Docker bleibt offen.
+- Qwen-[PY], Gemma-Quellen, Cloud-Dateien und HTML-Quellrouten bleiben erhalten.
+- Kein num_ctx, kein num_predict, kein Modelfile-Wechsel.
+- Keine Migration, kein geaenderter Installer-One-Liner.
+- GitHub Actions wegen aufgebrauchten Kontingents nicht gestartet. [skip ci]
