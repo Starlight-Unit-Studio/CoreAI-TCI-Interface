@@ -2,6 +2,15 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.28 - 23.10.2026
+
+- Generische Python-Syntaxvorpruefung im gemeinsamen Sandbox-Worker: JEDER Python-Job wird innerhalb desselben isolierten Docker-Containers vor der eigentlichen Codeausfuehrung mit compile() prueft. Nur syntaktisch gueltige Dateien werden danach mit dem bisherigen python -I /work/main.py gestartet.
+- SyntaxError, IndentationError und TabError liefern strukturierte, sichere Fehlerklasse, Zeile und Spalte. Der fehlerhafte Modellcode wird dabei nicht ausgefuehrt und kann keine Nebenwirkungen erzeugen. Der Work-Event zeigt keine raw stderr- oder Quelltexte.
+- Eine begrenzte serielle Korrekturanfrage fuer modellgenerierten Python-Code (max. 24.000 Byte Ausgangscode), danach dieselbe Syntaxvorpruefung. Nach zweitem Syntaxfehler wird kontrolliert abgebrochen. Bei gueltigem Code keine zusaetzliche Modellanfrage. Kein unendlicher Reparatur-Loop; bestehende Datei-Retry-Route nach einer Syntaxkorrektur gesperrt.
+- Deterministische, CoreUI-eigene ZIP-/HTML-Schreibskripte werden bei Backend-Syntaxfehlern nicht von einem LLM ueberschrieben. Bereits funktionierende Source-first-, Qwen-[PY]-, Cloud- und andere Python-Routen bleiben erhalten.
+- Offline-Regressionen fuer syntaktisch gueltiges Python, SyntaxError ohne Seiteneffekt, IndentationError, UTF-8, getrennte Runtime-Fehler sowie begrenzte PHP-Korrektur-Prompts ergaenzt; beide Installations-Preflights fuehren die Tests aus.
+- VERSION 0.5.28, numerische Asset-Cache-Fingerprints, UI-Metadaten, README, Release-TXT und Uebergabe abgeglichen. Keine Datenbank-Migration, kein Installer-One-Liner-Wechsel, keine Modelfile-Aenderung, kein Gemma-num_ctx/num_predict. Syntaxgueltigkeit ist keine Gewaehr fuer fehlerfreie Programmlogik. Keine GitHub Actions aufgrund Kontingent. [skip ci]
+
 ## 0.5.27 - 23.10.2026
 
 - Python-SyntaxError bei generierten Homepage-Downloads systemisch umgangen: Eine explizit angeforderte einzelne HTML-Webseite wird als roher HTML5-Quelltext erzeugt und validiert. Der CoreUI-eigene deterministische Python-Writer speichert anschliessend die Datei, statt modellgeneriertes Python mit potenziell fehlerhaften HTML-String-Literalen auszufuehren.

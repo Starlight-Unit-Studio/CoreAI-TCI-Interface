@@ -142,6 +142,8 @@ UI_FILES=(
   scripts/session-selftest.php
   scripts/attachment-pipeline-selftest.php
   scripts/python-worker-selftest.php
+  scripts/python-syntax-preflight-selftest.py
+  scripts/python-syntax-preflight-selftest.php
   scripts/profile-knowledge-selftest.php
   scripts/account-security-selftest.php
   scripts/frontend-regression-selftest.php
@@ -149,9 +151,9 @@ UI_FILES=(
   scripts/markdown-selftest.js
   scripts/branding-license-selftest.py
   scripts/cache-bust.py
-  docs/changelogs-txt/CHANGELOG_0_5_27.txt
+  docs/changelogs-txt/CHANGELOG_0_5_28.txt
   docs/COREUI_IMAGE_ENGINE_PLAN.md
-  docs/UEBERGABEPROTOKOLL_0_5_27.txt
+  docs/UEBERGABEPROTOKOLL_0_5_28.txt
   docker/pyworker/Dockerfile
   docker/pyworker/entrypoint.sh
   images/starlight_unit_studios_logo_original.png
@@ -430,6 +432,17 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     ok 'Lokale Dateiauftraege: Python-Fences, mehrteilige Projekte, ZIP und Vollstaendigkeit geprueft.'
   else
     fail 'Lokaler Dateiwerkzeug-Selbsttest fehlgeschlagen.'
+  fi
+
+  if compose exec -T php php scripts/python-syntax-preflight-selftest.php >/dev/null 2>&1; then
+    ok 'Universelle Python-Syntaxkorrektur und geschuetzte Diagnose geprueft.'
+  else
+    fail 'Allgemeiner Python-Syntax-Selbsttest PHP fehlgeschlagen.'
+  fi
+  if compose exec -T pyworker sh -ec 'python3 "$COREUI_PROJECT_ROOT/scripts/python-syntax-preflight-selftest.py"' >/dev/null 2>&1; then
+    ok 'Python-Worker: Syntaxpreflight vor Ausfuehrung ohne Nebeneffekte geprueft.'
+  else
+    fail 'Allgemeiner Python-Syntax-Selbsttest im Worker fehlgeschlagen.'
   fi
 
   if command -v node >/dev/null 2>&1; then

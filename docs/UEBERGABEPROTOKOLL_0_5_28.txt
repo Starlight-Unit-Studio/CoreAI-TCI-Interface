@@ -1,0 +1,75 @@
+E.M.B.E.R. COREUI UEBERGABEPROTOKOLL 0.5.28
+Stand 23.10.2026
+Basis main 0.5.27 2b986e68b5a5426b63379c2a56a9437090e593ba
+Branch fix/general-python-syntax-preflight-0.5.28
+Pull Request https://github.com/Starlight-Unit-Studio/coreui/pull/65
+
+PROJEKTREGELN
+E.M.B.E.R. = Framework, Backend, System.
+E.M.B.E.R. CoreUI = Terminal.
+Mara Thorne = TCI/CoreAI der Ravager Thorn.
+Ember = getrennte CoreAI der Starlight Ember.
+E.M.B.E.R. verarbeitet niemals mehrere Modellanfragen gleichzeitig.
+Gemma: kein num_ctx, kein num_predict. Modelfile bleibt unveraendert.
+
+ANLASS
+Nach 0.5.27 berechtigter Architektureinwand des Auftraggebers:
+Nur einzelne Homepage-Downloads gegen fehlerhaftes generiertes Python
+abzusichern ist keine zentrale, allgemein nutzbare Loesung.
+0.5.27 bleibt fuer validierte HTML-Quelldaten sinnvoll, aber generischer
+Python-Code braucht eine eigene systemweite Sicherung.
+
+ARCHITEKTUR DER KORREKTUR
+- Der EINZIGE Python-Worker tools/ember_py_worker.py wird von Native
+  und Compose mit identischem Code genutzt.
+- Jeder Worker-Job startet im BISHERIGEN isolierten Docker-Container
+  zuerst ein vertrauenswuerdiges Python-Preflight-Bootstrap.
+- Das Bootstrap prueft den vollstaendigen Script-Quelltext mit
+  Python compile() ohne ihn auszufuehren.
+- Syntaktisch gueltiger Code startet sofort mit os.execv die bisherige
+  Python-CLI (python -I /work/main.py), ohne neuen Modellaufruf.
+- Bei SyntaxError/IndentationError/TabError wird mit einem speziellen
+  Exitcode und einer begrenzten Metadatennachricht abgebrochen.
+- Kein ungueltiger Python-Code erreicht die eigentliche Ausfuehrung.
+  Das gilt ebenfalls bei Modellen, die [PY] und Python-Fences erzeugen.
+- Bei modellgeneriertem Code wird hoechstens EIN zusätzlicher serieller
+  Korrekturaufruf angefordert; er enthaelt Originalauftrag, originalen
+  Script-Text und die sichere Fehlermetadatenposition.
+- Nur Ausgangsskripte bis 24000 Bytes werden automatisch korrigiert.
+  Groessere bleiben unveraendert gestoppt.
+- Zweiter Syntaxfehler: Abbruch statt weiterer Modellanfragen.
+- Nach einer Syntaxkorrektur werden bestehende Datei-Reparaturaufrufe
+  nicht nochmal angeschlossen (kein mehrfaches Modell-Looping).
+- Backendgenerierte HTML/ZIP-Writer duerfen nicht vom LLM ersetzt werden.
+
+SICHERHEIT
+- Compiler im eingeschraenkten Sandbox-Container, niemals auf dem
+  produktiven Host ausserhalb der Sandbox.
+- Unveraenderte Isolation (Ressourcen, Docker-Netz, Laufzeitlimits).
+- Kein raw Python-Code oder stderr in nutzerseitigen Work-Events.
+- Nur Fehlertyp und Zeilennummer sind im oeffentlichen Protokoll erlaubt.
+- Fehlerfreie Syntax ist keine Garantie fuer Laufzeit- oder Logikfehler.
+
+TESTS
+- Neues scripts/python-syntax-preflight-selftest.py:
+  gueltiges Python, Unicode, SyntaxError ohne Seiteneffekte,
+  IndentationError, und echte RuntimeError getrennt.
+- Neues scripts/python-syntax-preflight-selftest.php:
+  strukturierter Fehlerparser, Fehler/Zeile im Work-Event, begrenzte
+  Reparaturinstruktion und Abwehr untrusted Diagnosedaten.
+- Beide Pflicht in Native- und Compose-Preflight.
+- Python-Isolationstest und PHP 8.4 Helper-Test lokal bestanden.
+- Keine GitHub Actions. Vollstaendiger DB/Ollama/Docker-Livetest noch offen.
+
+ABNAHME NACH MAIN-MERGE
+- Standard-One-Liner wie bisher, VERSION 0.5.28 kontrollieren.
+- Mit normalem [PY] Tool einen gueltigen Job ausfuehren.
+  Erwartung: kein zweiter Modellaufruf zur Syntaxkorrektur.
+- Einen syntaktisch ungueltigen Python-Job erzeugen lassen.
+  Erwartung: keine Codeausfuehrung, Fehlermetadaten, ein einziger
+  serieller Modell-Korrekturaufruf, erneute Preflight-Pruefung.
+- Echten File-Download (ZIP/HTML) pruefen und bei erfolgreicher Ausgabe
+  bestaetigte Downloadkarten kontrollieren.
+- Weiterhin Python-Runtime-Fehler separat behandeln; JS/CSS/HTML-
+  Sprachevalidierung in eigener Phase ergaenzen, falls erforderlich.
+

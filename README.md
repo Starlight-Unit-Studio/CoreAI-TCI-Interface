@@ -7,7 +7,15 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 E.M.B.E.R. CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.27` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.28` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## General Python syntax preflight and bounded repair (0.5.28)
+
+Every Python program scheduled through the central `ember_py_run()` queue now receives a syntax-only preflight **inside the same restricted Docker sandbox** before any of the model-generated Python code is executed. The trusted worker invokes `compile()` on the complete script. When valid, it replaces its own process with the original `python -I /work/main.py` execution, preserving the existing isolated run environment and output/artifact workflow. This applies to normal Python tools, code supplied through [PY] or Markdown fences, local coding models and general programmatic file generation, not just HTML homepages.
+
+A `SyntaxError`, `IndentationError` or `TabError` is rejected with a private structured diagnostic (class, line and column), without running any of the faulty script. A single additional **serial** Ollama request can regenerate the full script when the existing source is within the bounded 24,000-byte repair budget. The corrected script is checked by the exact same sandbox entrypoint; a second syntax failure stops cleanly. Valid code never triggers this repair model call. The existing file-creation retry cannot run a second time after a syntax repair, preventing repeated expensive attempts. Framework-generated deterministic ZIP writers are not rewritten by the model.
+
+The user-visible work timeline includes safe error type and line number but never private source snippets or raw stderr. This is syntax validation, **not** a guarantee of correct output or the absence of runtime exceptions, dependency errors or incomplete application behavior. Other generated languages such as JavaScript, HTML and CSS require their own language-specific validators before a general all-language guarantee can be made. Both native and Compose worker installations share the same Python worker entrypoint and now require the offline Python/PHP syntax regression checks in preflight. Existing Qwen, Cloud, Gemma and source-first HTML/ZIP routing remain unchanged; in particular, no Gemma `num_ctx` or `num_predict` override and no modifications to the approved Modelfile. No database migration or change to the installer one-liner. Live deployment and actual Ollama correction still require acceptance after merge.
 
 ## Safe standalone HTML homepage downloads (0.5.27)
 

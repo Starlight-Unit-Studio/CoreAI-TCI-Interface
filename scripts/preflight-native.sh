@@ -108,6 +108,8 @@ UI_FILES=(
   scripts/session-selftest.php
   scripts/attachment-pipeline-selftest.php
   scripts/python-worker-selftest.php
+  scripts/python-syntax-preflight-selftest.py
+  scripts/python-syntax-preflight-selftest.php
   scripts/profile-knowledge-selftest.php
   scripts/account-security-selftest.php
   scripts/frontend-regression-selftest.php
@@ -115,9 +117,9 @@ UI_FILES=(
   scripts/markdown-selftest.js
   scripts/branding-license-selftest.py
   scripts/cache-bust.py
-  docs/changelogs-txt/CHANGELOG_0_5_27.txt
+  docs/changelogs-txt/CHANGELOG_0_5_28.txt
   docs/COREUI_IMAGE_ENGINE_PLAN.md
-  docs/UEBERGABEPROTOKOLL_0_5_27.txt
+  docs/UEBERGABEPROTOKOLL_0_5_28.txt
   images/starlight_unit_studios_logo_original.png
 )
 for ui_file in "${UI_FILES[@]}"; do
@@ -254,6 +256,17 @@ if command -v php >/dev/null 2>&1; then
     ok 'Lokale Dateiauftraege: Python-Fences, mehrteilige Projekte, ZIP und Vollstaendigkeit geprueft.'
   else
     fail 'Lokaler Dateiwerkzeug-Selbsttest fehlgeschlagen.'
+  fi
+
+  if runuser -u www-data -- php "$PROJECT_ROOT/scripts/python-syntax-preflight-selftest.php" >/dev/null 2>&1; then
+    ok 'Universelle Python-Syntaxkorrektur und geschuetzte Diagnose geprueft.'
+  else
+    fail 'Allgemeiner Python-Syntax-Selbsttest PHP fehlgeschlagen.'
+  fi
+  if python3 "$PROJECT_ROOT/scripts/python-syntax-preflight-selftest.py" >/dev/null 2>&1; then
+    ok 'Python-Worker: Syntaxpreflight vor Ausfuehrung ohne Nebeneffekte geprueft.'
+  else
+    fail 'Allgemeiner Python-Syntax-Selbsttest im Worker fehlgeschlagen.'
   fi
 
   if runuser -u www-data -- php "$PROJECT_ROOT/scripts/gemma-zero-parameters-selftest.php" >/dev/null 2>&1; then
