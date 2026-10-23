@@ -2,6 +2,14 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.26 - 23.10.2026
+
+- Lokale Gemma-Dateiausgabe fuer HTML/CSS/JS-ZIP-Projekte optimiert: gemeinsamer HTML/CSS-Quelltextaufruf, danach JavaScript wie bisher einzeln. Im Erfolgsfall zwei statt drei initiale SERIELLE Ollama-Calls.
+- Gemeinsame Antwort wird als inerter, benannter und geschlossener HTML/CSS-Quelltext validiert. HTML muss die verlangten CSS/JS-Dateien referenzieren. Fehlende Quellen werden durch den bisherigen Einzeldatei-Pfad erzeugt, gueltige Quellen bleiben erhalten.
+- Bestehende begrenzte JS-Fortsetzungen, Quelltextlimits, sicherer isolierter ZIP-Worker, Artefakte, globale serielle Modellqueue, lokale Qwen-Python- und Cloud-ZIP-Workflows bleiben unveraendert.
+- Work-Event-Metadaten berichten Dauer und Modell-Tokenzaehler der Paarerzeugung sowie die Dauer der lokalen Quellphase, nicht jedoch interne Prompts, Thinking oder Quellcode.
+- Abschaltbar ueber STU_EMBER_LOCAL_PAIR_ENABLED=false; kein DB-Upgrade, kein Installer- oder Modelfile-Wechsel, kein Gemma-num_ctx/num_predict-Override. Regressionstests erweitert. Produktive Geschwindigkeitsmessung und Android-Chrome-Spieltest noch offen. GitHub Actions nicht gestartet (Kontingent aufgebraucht). [skip ci]
+
 ## 0.5.25 - 22.10.2026
 
 - Offizielle Produktbezeichnung auf **E.M.B.E.R. CoreUI** korrigiert. E.M.B.E.R. ist das Framework, Backend und System; Ember bezeichnet dagegen die eigenstaendige CoreAI der *Starlight Ember*. Mara Thorne bleibt TCI/CoreAI der *Ravager Thorn*. Diese Begriffe werden nicht mehr vertauscht.
