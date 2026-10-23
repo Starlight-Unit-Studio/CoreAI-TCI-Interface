@@ -14,7 +14,7 @@ function coreui_work_schema_ready(PDO $pdo): bool {
 
 function coreui_work_safe_meta(array $raw): array {
   $allowedNumbers = ['job_id','exit_code','duration_ms','file_count','attempt','http_code','elapsed_ms',
-    'source_chars','eval_count','prompt_eval_count','line_number'];
+    'source_chars','eval_count','prompt_eval_count'];
   $allowedStrings = ['model','error_type','file_name','reason','source'];
   $safe = [];
   foreach ($allowedNumbers as $key) {
@@ -40,7 +40,7 @@ function coreui_work_python_diagnostic(?array $result): array {
   ];
   $stderr = (string)($result['stderr'] ?? '');
   $known = ['FileNotFoundError', 'PermissionError', 'ModuleNotFoundError',
-            'SyntaxError', 'IndentationError', 'TabError', 'NameError', 'ImportError',
+            'SyntaxError', 'IndentationError', 'NameError', 'ImportError',
             'TimeoutError', 'TypeError', 'ValueError', 'OSError'];
   foreach ($known as $name) {
     if (str_contains($stderr, $name)) {
@@ -51,19 +51,6 @@ function coreui_work_python_diagnostic(?array $result): array {
   if (!isset($meta['error_type'])) {
     $code = (string)($result['error'] ?? '');
     $meta['error_type'] = preg_match('/^[a-z_]{1,60}$/', $code) ? $code : 'execution_failed';
-  }
-  // The universal sandbox preflight provides a structured numeric location,
-  // not a source excerpt. Keep it within the existing metadata whitelist.
-  if ((string)($result['error'] ?? '') === 'syntax_preflight_failed'
-      && preg_match(
-        '~^COREUI_PY_SYNTAX_ERROR:(SyntaxError|IndentationError|TabError):([0-9]{1,6}):[0-9]{1,6}\r?\n?$~D',
-        $stderr, $preflight)) {
-    $meta['error_type'] = $preflight[1];
-    $meta['line_number'] = (int)$preflight[2];
-  }
-  // Show only the traceback line number, never the file path, source or stderr.
-  if (preg_match('~\bFile\s+"[^"\r\n]{1,250}",\s*line\s+([1-9][0-9]{0,5})~', $stderr, $line)) {
-    $meta['line_number'] = (int)$line[1];
   }
   if ($meta['error_type'] === 'FileNotFoundError'
       && preg_match('/FileNotFoundError:[^\r\n]*[\x27\x22]([^\x27\x22\r\n]{1,180})[\x27\x22]/', $stderr, $m)) {

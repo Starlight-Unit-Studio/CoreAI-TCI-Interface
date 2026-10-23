@@ -400,9 +400,7 @@ try {
     && $generationMode !== 'continue' && ember_py_enabled()
     && coreui_console_download_requested($promptMessage)
     && (ember_console_file_tool_is_local(ember_model())
-      || coreui_console_multifile_source_directive($promptMessage) !== null
-      || (!ember_console_file_tool_is_local_qwen_coder(ember_model())
-        && coreui_console_single_html_source_plan($promptMessage) !== null));
+      || coreui_console_multifile_source_directive($promptMessage) !== null);
 
   // v1.1.1.94: Vision-Turns nehmen NICHT den Streaming-Pfad. console_stream_ollama()
   // baut den Payload ohne images-Feld, ein Bild kaeme dort gar nicht an. Stattdessen

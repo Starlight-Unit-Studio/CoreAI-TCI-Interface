@@ -1,0 +1,65 @@
+E.M.B.E.R. COREUI UEBERGABEPROTOKOLL 0.5.29
+Stand 23.10.2026
+
+ZIEL
+Rueckkehr zum letzten Stand vor den nachfolgenden Optimierungen,
+nachdem der Livebetrieb mit 0.5.26, 0.5.27 und 0.5.28
+nach Aussage des Nutzers zunehmend unzuverlaessig wurde.
+
+QUELLCODE BASIS
+Stabilitaetsreferenz: 0.5.25
+Commit: 53dab3f6d78e0cd626824aa3ca883f441a7f193f
+Rollback-Basis: Main 0.5.28
+Commit: 1f0d2351c0313189343a2e99b4f0d8007e4e7cee
+Sicherung: backup/coreui-0.5.28-pre-rollback
+Rollback-Branch: rollback/stable-0.5.25-as-0.5.29
+
+WIEDERHERGESTELLT
+- Gesamter funktionaler Quellbaum exakt aus 0.5.25,
+  darunter api/chat.php, api/console_data_link_bridge.php,
+  api/console_stream.php und tools/ember_py_worker.py.
+- Lokales Gemma- und Qwen-Routing wie in 0.5.25.
+- Alte Python-Sandbox- und Datei-Downloadlogik von 0.5.25.
+- Unveraendertes genehmigtes Gemma-Modelfile.
+- Bisherige globale serielle Modellverarbeitung: niemals
+  parallele E.M.B.E.R.-Anfragen.
+- Alle von 0.5.25 unveraenderten DB-Migrationen und Installer.
+
+VOLLSTAENDIG ZURUECKGENOMMEN
+0.5.26: HTML/CSS-Paaroptimierung und Work-Messungen
+0.5.27: Single-HTML-Sonderroute und zugehoerige Diagnose
+0.5.28: generische Python-compile-Vorpruefung, Syntaxrepair
+und deren zusätzliche Preflight-Tests.
+
+ABSICHTLICHE METADATENABWEICHUNGEN ZU 0.5.25
+- VERSION wird 0.5.29, nicht 0.5.25, da neue Merges stets
+  aufsteigende numerische Versionen erhalten.
+- Versionsanzeigen auf sechs HTML-Oberflaechen und im
+  js/console-gate.js Bootstrap entsprechend 0.5.29.
+- Content-Cache-Schluessel basierend auf SHA-256 des
+  bootstrap-Codes und unveraenderter Cache-Buster-Logik.
+- Branding-Versionscheck, README, CHANGELOG, TXT-Archiv,
+  und die Dateireferenzen in beiden Preflight-Skripten.
+
+DATENSCHUTZ UND UPDATE
+- Keine neue Migration und kein Code zum Zuruecksetzen von
+  Konten, Chats, Medien, RAG, Datenbanken oder Einstellungen.
+- Das vorhandene scripts/update-from-main.sh schliesst beim
+  rsync lokale api/config.local.php, var/, logs/, uploads/,
+  assets/chat_media/ und assets/profile_photos/ aus.
+- Der bestehende Installer muss nach dem Source-Sync wie
+  vorgesehen selbst die PHP- und Worker-Dienste aktualisieren.
+- GitHub-Merge allein aktualisiert KEINEN Netcup-Server.
+
+ABNAHME
+1. Nach Merge main/version 0.5.29 und Quellbaumvergleich pruefen.
+2. Vor Ort den bisherigen Update-Einzeiler nutzen.
+3. Aktive CoreUI-Version im Browser/Healthcheck verifizieren.
+4. HTML-Download, ZIP mit drei Dateien und normales Python
+   separat testen; keine automatische Optimierung erwartet.
+5. Gespeicherte Chats, User-Profile und lokale Einstellungen
+   nach Update kontrollieren.
+6. Keine GitHub Actions ausfuehren (Kontingent aufgebraucht).
+7. Echte Live-Stabilitaet erst nach erfolgreichem Vor-Ort-Test
+   bestaetigen, nicht aus dem Repository-Merge ableiten.
+

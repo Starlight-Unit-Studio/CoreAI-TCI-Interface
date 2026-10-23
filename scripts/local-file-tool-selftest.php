@@ -266,116 +266,6 @@ local_file_test(is_string($jsCompactPrompt)
   && !str_contains($jsCompactPrompt, 'color:white'),
   'Gemma JavaScript prompt must retain DOM references but avoid CSS source bulk');
 
-// v0.5.27: a single downloadable homepage is HTML data, never
-// a model-authored Python writer with fragile quoting.
-$homeRequest = 'Heyhoo, bitte erstelle eine private Homepage als HTML-Download.';
-$homePlan = coreui_console_single_html_source_plan($homeRequest);
-local_file_test(is_array($homePlan)
-  && $homePlan['filename'] === 'index.html'
-  && $homePlan['writer_spec']['zip_requested'] === false
-  && str_contains($homePlan['prompt'], '<!DOCTYPE html>')
-  && str_contains($homePlan['prompt'], '<style>')
-  && str_contains($homePlan['prompt'], '<script>'),
-  'standalone homepage must use safe HTML source instead of Python generation');
-local_file_test(isset(coreui_console_project_request_spec($homePlan['source_request'])['requested']['index.html']),
-  'internal synthetic request must keep index.html visible to safe source parser');
-$homeHtml = '<!DOCTYPE html><html><head><style>body{color:white}</style></head>'
-  . '<body><h1>Private Homepage</h1><script>console.log("ok")</script></body></html>';
-$homeSource = coreui_console_single_html_source_reply($homeHtml, $homePlan);
-local_file_test(is_array($homeSource)
-  && $homeSource['name'] === 'index.html'
-  && $homeSource['bytes'] === $homeHtml,
-  'complete raw standalone HTML must be accepted');
-$homeFence = str_repeat(chr(96), 3);
-local_file_test(is_array(coreui_console_single_html_source_reply(
-  $homeFence . "html\n" . $homeHtml . "\n" . $homeFence, $homePlan)),
-  'complete single HTML fence is safe to recover');
-local_file_test(coreui_console_single_html_source_reply(
-  '[PY]print("bad")[/PY]', $homePlan) === null,
-  'model Python markers must not be accepted as homepage bytes');
-local_file_test(coreui_console_single_html_source_reply(
-  '<!DOCTYPE html><html><body>unclosed', $homePlan) === null,
-  'truncated HTML must never be packaged');
-local_file_test(coreui_console_single_html_source_reply(
-  '<!DOCTYPE html><html><head><link href="style.css" rel="stylesheet"></head>'
-  . '<body><script src="main.js"></script></body></html>', $homePlan) === null,
-  'a single HTML download must not claim missing asset dependencies');
-$homeWriter = coreui_console_project_files_python(
-  ['index.html'=>$homeSource], $homePlan['writer_spec'], 100000);
-local_file_test(is_array($homeWriter) && $homeWriter['file_count'] === 1
-  && !str_contains($homeWriter['code'], 'zipfile.ZipFile('),
-  'trusted writer must produce exactly one real HTML file');
-$homeZip = coreui_console_single_html_source_plan(
-  'Erstelle eine Homepage als ZIP-Download: private-site.zip.');
-local_file_test(is_array($homeZip)
-  && $homeZip['writer_spec']['zip_requested'] === true
-  && $homeZip['writer_spec']['zip_name'] === 'private-site.zip',
-  'single HTML source may also be bundled as a requested ZIP');
-$homeZipWriter = coreui_console_project_files_python(
-  ['index.html'=>coreui_console_single_html_source_reply($homeHtml, $homeZip)],
-  $homeZip['writer_spec'], 100000);
-local_file_test(is_array($homeZipWriter)
-  && $homeZipWriter['file_count'] === 2,
-  'HTML plus requested ZIP must use the existing verified sandbox writer');
-local_file_test(coreui_console_single_html_source_plan(
-  'Schreibe index.html und style.css als ZIP-Download.') === null
-  && coreui_console_single_html_source_plan(
-    'Erstelle eine Homepage mit drei separaten Dateien zum Download.') === null
-  && coreui_console_single_html_source_plan(
-    'Bitte erklaere mir eine Homepage.') === null,
-  'multi-source or explanation requests must not be intercepted');
-local_file_test(coreui_console_single_html_source_plan(
-  'Schreibe mir ein Python-Skript zum Download.') === null,
-  'real Python tasks must keep their Python tool path');
-
-// v0.5.26: batch HTML+CSS for the common explicit three-source browser ZIP.
-// The old individual retries and bounded JS continuation remain functional.
-$pairPlan = coreui_console_local_web_pair_plan($implicitRequest);
-local_file_test(is_array($pairPlan)
-  && $pairPlan['html'] === 'index.html'
-  && $pairPlan['css'] === 'style.css'
-  && $pairPlan['js'] === 'game.js'
-  && str_contains($pairPlan['prompt'], '### index.html')
-  && str_contains($pairPlan['prompt'], '### style.css'),
-  'three-source ZIP must have a focused HTML/CSS prompt');
-local_file_test(coreui_console_local_web_pair_plan(
-  'Erstelle index.html und style.css und liefere das ZIP zum Download.') === null,
-  'no batching for a two-source project');
-local_file_test(coreui_console_local_web_pair_plan(
-  'Erstelle index.html, style.css, game.js und README.md im ZIP zum Download.') === null,
-  'no batching when a fourth file is requested');
-$pairFence = str_repeat(chr(96), 3);
-$pairReply = "### index.html\n" . $pairFence . "html\n" . $localHtml
-  . "\n" . $pairFence . "\n### style.css\n" . $pairFence
-  . "css\n" . $localCss . "\n" . $pairFence;
-$pairSources = coreui_console_local_web_pair_sources($pairReply, $implicitRequest, $pairPlan);
-local_file_test(count($pairSources) === 2
-  && ($pairSources['index.html']['bytes'] ?? null) === $localHtml
-  && ($pairSources['style.css']['bytes'] ?? null) === $localCss,
-  'two independently validated inert sources must be recovered');
-$pairPart = coreui_console_local_web_pair_sources(
-  "### index.html\n" . $pairFence . "html\n" . $localHtml
-    . "\n" . $pairFence . "\n### style.css\n" . $pairFence . "css\nbody {",
-  $implicitRequest, $pairPlan);
-local_file_test(count($pairPart) === 1 && isset($pairPart['index.html']),
-  'truncated CSS must preserve complete HTML but never partial CSS');
-$pairNoLinks = str_replace(' href="style.css"', ' href="missing.css"', $localHtml);
-$pairFallback = coreui_console_local_web_pair_sources(
-  str_replace($localHtml, $pairNoLinks, $pairReply), $implicitRequest, $pairPlan);
-local_file_test(count($pairFallback) === 1 && isset($pairFallback['style.css'])
-  && !isset($pairFallback['index.html']),
-  'HTML without requested asset links requires individual fallback');
-local_file_test(coreui_console_local_web_pair_sources(
-  $pairReply . "\n[PY]print(1)[/PY]", $implicitRequest, $pairPlan) === [],
-  'unsafe tool markers must reject the pair response');
-$pairedProject = $pairSources;
-$pairedProject['game.js'] = coreui_console_local_source_reply(
-  $localJs, $implicitRequest, 'game.js');
-$pairedWriter = coreui_console_project_files_python(
-  $pairedProject, $localSpec, 100000);
-local_file_test(is_array($pairedWriter) && $pairedWriter['file_count'] === 4,
-  'recovered pair plus normal JS must feed the verified original ZIP writer');
-
 foreach (['index.html'=>$localHtml,'style.css'=>$localCss,'game.js'=>$localJs] as $localName=>$localCode) {
   $file = coreui_console_local_source_reply($localCode, $implicitRequest, $localName);
   local_file_test(is_array($file) && $file['name'] === $localName
@@ -462,8 +352,6 @@ local_file_test(coreui_console_local_js_append($cutJs, '') === null
   && coreui_console_local_js_append(str_repeat('x', 149999), $jsRest) === null,
   'empty or oversized continuations must be rejected');
 $handler = file_get_contents(dirname(__DIR__) . '/api/chat.php');
-local_file_test(!str_contains($handler, "'code_preview'"),
-  'private model-generated tool source must never enter PHP debug previews');
 // Load only pure production helpers, without booting the HTTP/DB endpoint.
 function ember_cfg(string $key, mixed $default = null): mixed { return $default; }
 function ember_debug_log(string $event, array $meta): void {}
