@@ -2,30 +2,13 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
-## 0.5.28 - 23.10.2026
+## 0.5.29 - 23.10.2026
 
-- Generische Python-Syntaxvorpruefung im gemeinsamen Sandbox-Worker: JEDER Python-Job wird innerhalb desselben isolierten Docker-Containers vor der eigentlichen Codeausfuehrung mit compile() prueft. Nur syntaktisch gueltige Dateien werden danach mit dem bisherigen python -I /work/main.py gestartet.
-- SyntaxError, IndentationError und TabError liefern strukturierte, sichere Fehlerklasse, Zeile und Spalte. Der fehlerhafte Modellcode wird dabei nicht ausgefuehrt und kann keine Nebenwirkungen erzeugen. Der Work-Event zeigt keine raw stderr- oder Quelltexte.
-- Eine begrenzte serielle Korrekturanfrage fuer modellgenerierten Python-Code (max. 24.000 Byte Ausgangscode), danach dieselbe Syntaxvorpruefung. Nach zweitem Syntaxfehler wird kontrolliert abgebrochen. Bei gueltigem Code keine zusaetzliche Modellanfrage. Kein unendlicher Reparatur-Loop; bestehende Datei-Retry-Route nach einer Syntaxkorrektur gesperrt.
-- Deterministische, CoreUI-eigene ZIP-/HTML-Schreibskripte werden bei Backend-Syntaxfehlern nicht von einem LLM ueberschrieben. Bereits funktionierende Source-first-, Qwen-[PY]-, Cloud- und andere Python-Routen bleiben erhalten.
-- Offline-Regressionen fuer syntaktisch gueltiges Python, SyntaxError ohne Seiteneffekt, IndentationError, UTF-8, getrennte Runtime-Fehler sowie begrenzte PHP-Korrektur-Prompts ergaenzt; beide Installations-Preflights fuehren die Tests aus.
-- VERSION 0.5.28, numerische Asset-Cache-Fingerprints, UI-Metadaten, README, Release-TXT und Uebergabe abgeglichen. Keine Datenbank-Migration, kein Installer-One-Liner-Wechsel, keine Modelfile-Aenderung, kein Gemma-num_ctx/num_predict. Syntaxgueltigkeit ist keine Gewaehr fuer fehlerfreie Programmlogik. Keine GitHub Actions aufgrund Kontingent. [skip ci]
-
-## 0.5.27 - 23.10.2026
-
-- Python-SyntaxError bei generierten Homepage-Downloads systemisch umgangen: Eine explizit angeforderte einzelne HTML-Webseite wird als roher HTML5-Quelltext erzeugt und validiert. Der CoreUI-eigene deterministische Python-Writer speichert anschliessend die Datei, statt modellgeneriertes Python mit potenziell fehlerhaften HTML-String-Literalen auszufuehren.
-- HTML muss vollstaendig sein; lokales CSS/JavaScript wird inline eingebettet. Externe lokale Asset-Abhaengigkeiten, unvollstaendiger Code und [PY]-Marker werden abgewiesen; hoechstens ein Quelltext-Retry. Einzelne Homepage kann auch in ein angefordertes ZIP gepackt werden.
-- Spezialweg fuer lokales Gemma und nicht-Qwen Cloud-Provider bei expliziten Single-HTML-Dateiauftraegen. Mehrdateien-Projekte, lokales Qwen-[PY] und allgemeine echte Python-Aufgaben bleiben getrennt.
-- Python-Fehlerprotokoll kann fuer Tracebacks nur eine harmlose Zeilennummer anzeigen; private stderr- und Quelltextdaten bleiben gesperrt. Der Debug-Log-Quelltextauszug der Python-Anforderung wurde entfernt.
-- PHP-Regressionen erweitert, numerische VERSION 0.5.27, Browser-Cachefingerprints, Preflights und TXT-Uebergabe abgeglichen. Kein Gemma-num_ctx/num_predict, kein Modelfile-Wechsel, keine DB-Migration oder geaenderter Installer-Einzeiler. Keine GitHub Actions wegen aufgebrauchten Kontingents. Produktionsabnahme ausstehend. [skip ci]
-
-## 0.5.26 - 23.10.2026
-
-- Lokale Gemma-Dateiausgabe fuer HTML/CSS/JS-ZIP-Projekte optimiert: gemeinsamer HTML/CSS-Quelltextaufruf, danach JavaScript wie bisher einzeln. Im Erfolgsfall zwei statt drei initiale SERIELLE Ollama-Calls.
-- Gemeinsame Antwort wird als inerter, benannter und geschlossener HTML/CSS-Quelltext validiert. HTML muss die verlangten CSS/JS-Dateien referenzieren. Fehlende Quellen werden durch den bisherigen Einzeldatei-Pfad erzeugt, gueltige Quellen bleiben erhalten.
-- Bestehende begrenzte JS-Fortsetzungen, Quelltextlimits, sicherer isolierter ZIP-Worker, Artefakte, globale serielle Modellqueue, lokale Qwen-Python- und Cloud-ZIP-Workflows bleiben unveraendert.
-- Work-Event-Metadaten berichten Dauer und Modell-Tokenzaehler der Paarerzeugung sowie die Dauer der lokalen Quellphase, nicht jedoch interne Prompts, Thinking oder Quellcode.
-- Abschaltbar ueber STU_EMBER_LOCAL_PAIR_ENABLED=false; kein DB-Upgrade, kein Installer- oder Modelfile-Wechsel, kein Gemma-num_ctx/num_predict-Override. Regressionstests erweitert. Produktive Geschwindigkeitsmessung und Android-Chrome-Spieltest noch offen. GitHub Actions nicht gestartet (Kontingent aufgebraucht). [skip ci]
+- Stabilitaets-Rollback auf den gesamten funktionalen Quellstand von **0.5.25** aus Commit `53dab3f6d78e0cd626824aa3ca883f441a7f193f`, vor den PRs #63 (0.5.26), #64 (0.5.27) und #65 (0.5.28).
+- Ruecknahme der gemeinsamen HTML/CSS-Modellausgabe, der HTML-Sonderbehandlung und der generischen Python-Syntaxvorpruefung. Wiederhergestellt sind der alte Python-Worker, das originale Chat-Routing und die Dateiausgabe samt Qwen-Verhalten aus 0.5.25. Keine selektiven Feature-Uebernahmen.
+- Ueber 0.5.25 hinaus aendern sich ausschliesslich die numerische Release-Version 0.5.29, sichtbare UI-Versionslabels, der dazu passende inhaltsbasierte Bootstrap-Cache-Schluessel sowie README, Changelog, TXT-Uebergabe, Versionspruefung und Preflight-Dateireferenzen.
+- Kein Eingriff in Datenbanken, Nutzerkonten, bestehende Migrationen, gespeicherte Konfigurationen, Ollama-Modelfile oder Installerskripte. Vorheriger 0.5.28-Stand ist auf dem Sicherungsbranch `backup/coreui-0.5.28-pre-rollback` archiviert.
+- Kein GitHub Actions Start (Kontingent aufgebraucht). Wiederherstellung auf dem Server erfolgt separat ueber den bewaehrten bestehenden Update-Einzeiler; Repo-Merge ist keine Live-Ausfuehrung. [skip ci]
 
 ## 0.5.25 - 22.10.2026
 

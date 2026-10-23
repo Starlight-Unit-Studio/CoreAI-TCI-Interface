@@ -216,41 +216,6 @@ def stop_container(container):
         return False
 
 
-
-# One inexpensive syntax-only check in the SAME restricted Docker container,
-# immediately followed by the original Python script if valid.
-# The validator never evaluates model source on the host or runs side effects.
-SYNTAX_PREFLIGHT_EXIT = 88
-SYNTAX_PREFLIGHT_PREFIX = "COREUI_PY_SYNTAX_ERROR:"
-
-
-def python_syntax_preflight_bootstrap(script="/work/main.py"):
-    """Build only trusted entry code; script is a fixed sandbox path."""
-    return (
-        "import os, sys\n"
-        "script = " + repr(script) + "\n"
-        "try:\n"
-        "    with open(script, 'rb') as source:\n"
-        "        compile(source.read(), script, 'exec', dont_inherit=True)\n"
-        "except SyntaxError as exc:\n"
-        "    sys.stderr.write('COREUI_PY_SYNTAX_ERROR:%s:%d:%d\\n' % "
-        "(type(exc).__name__, int(exc.lineno or 0), int(exc.offset or 0)))\n"
-        "    sys.exit(88)\n"
-        "os.execv(sys.executable, [sys.executable, '-I', script])\n"
-    )
-
-
-def is_syntax_preflight_failure(rc, stderr):
-    """Distinguish a real rejected program from an arbitrary runtime failure."""
-    return (
-        rc == SYNTAX_PREFLIGHT_EXIT
-        and re.fullmatch(
-            r"COREUI_PY_SYNTAX_ERROR:(?:SyntaxError|IndentationError|TabError):"
-            r"[0-9]{1,6}:[0-9]{1,6}\n?",
-            stderr,
-        ) is not None
-    )
-
 def run_in_container(cfg, job_id, code, *, publish_outputs=False):
     """Return stdout, stderr, exit code, duration, error and a v1 manifest.
 
@@ -297,7 +262,7 @@ def run_in_container(cfg, job_id, code, *, publish_outputs=False):
             "-w", "/work", "-e", "HOME=/tmp", "-e", "MPLBACKEND=Agg",
             "-e", "PYTHONUNBUFFERED=1", "-e", "EMBER_OUTPUT_DIR=/work/output",
             str(cfg.get("STU_EMBER_PY_IMAGE", "ember-py:1")),
-            "python", "-I", "-c", python_syntax_preflight_bootstrap(),
+            "python", "-I", "/work/main.py",
         ]
         started = time.monotonic()
         stopped = False
@@ -306,8 +271,6 @@ def run_in_container(cfg, job_id, code, *, publish_outputs=False):
             stdout = proc.stdout.decode("utf-8", "replace")
             stderr = proc.stderr.decode("utf-8", "replace")
             rc = proc.returncode
-            if is_syntax_preflight_failure(rc, stderr):
-                err = "syntax_preflight_failed"
             stopped = stop_container(container)
             if not 0 <= rc < 125:
                 err = "docker_runtime_error"

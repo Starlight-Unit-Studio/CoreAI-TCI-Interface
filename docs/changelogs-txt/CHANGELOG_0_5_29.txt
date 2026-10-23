@@ -1,0 +1,27 @@
+E.M.B.E.R. CoreUI 0.5.29
+23.10.2026
+
+STABILITAETS-ROLLBACK AUF 0.5.25
+
+- Ausgangsbasis des Funktionscodes:
+  53dab3f6d78e0cd626824aa3ca883f441a7f193f (Version 0.5.25).
+- Zurueckgenommen: PR #63 / 0.5.26, PR #64 / 0.5.27,
+  PR #65 / 0.5.28.
+- Entfernt: lokale HTML/CSS-Paarerzeugung, Sonderroute fuer einen
+  HTML-Homepage-Download, generische Python-Syntaxvorpruefung
+  und die dazugehoerigen Korrektur-/Retry-Aenderungen.
+- Der Python-Worker, allgemeiner [PY]-Pfad, lokaler Qwen-Codepfad,
+  Gemma-Dateiausgabe und alle anderen Funktionsdateien werden
+  exakt von 0.5.25 uebernommen.
+- Numerische VERSION 0.5.29 bewahrt die aufsteigende Versionierung.
+  Angepasst wurden nur Release-Anzeige, sechs HTML-Metadaten,
+  der Inhalts-Cachefingerprint, Versions-/Branding-Checks,
+  README, Changelog und Preflight-Pfade zu diesem TXT.
+- Keine Datenbankmigration, Modelfile-Aenderung, neuer Installer
+  oder Aenderung an lokal gespeicherten Daten.
+- Die fruehere 0.5.28 ist auf backup/coreui-0.5.28-pre-rollback
+  gesichert; alte PRs bleiben in GitHub nachvollziehbar.
+- GitHub Actions werden nicht gestartet [skip ci].
+- Repo-Rollback ist nicht gleich Live-Deployment. Bestehenden
+  Update-from-main-One-Liner ausfuehren und Server pruefen.
+

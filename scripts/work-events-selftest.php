@@ -8,17 +8,6 @@ $d = coreui_work_python_diagnostic([
   'id'=>42,'exit_code'=>1,'duration_ms'=>302,
   'stderr'=>"Traceback\nFileNotFoundError: [Errno 2] No such file or directory: '/mnt/data/demo/mini_game.html'\nSECRET=DO_NOT_SHOW"
 ]);
-$syntax = coreui_work_python_diagnostic([
-  'id'=>69,'exit_code'=>1,'duration_ms'=>482,
-  'stderr'=>"Traceback (most recent call last):\n  File \"/work/main.py\", line 17\n"
-    . "    invalid python code here\nSyntaxError: invalid syntax\nSECRET=PRIVATE_HOME_PAGE",
-]);
-check_work(($syntax['error_type'] ?? '') === 'SyntaxError'
-  && ($syntax['line_number'] ?? 0) === 17
-  && ($syntax['duration_ms'] ?? 0) === 482, 'safe syntax line diagnostics');
-check_work(!str_contains(json_encode($syntax), 'SECRET')
-  && !str_contains(json_encode($syntax), '/work/main.py'),
-  'private Python code and paths must not be leaked');
 check_work(($d['error_type'] ?? '') === 'FileNotFoundError', 'meaningful error type');
 check_work(($d['file_name'] ?? '') === 'mini_game.html', 'safe filename');
 check_work(!str_contains(json_encode($d), 'SECRET'), 'raw stderr must not be exposed');
