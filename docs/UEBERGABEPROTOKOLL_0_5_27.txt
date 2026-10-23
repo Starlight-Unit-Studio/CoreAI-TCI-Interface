@@ -2,6 +2,7 @@ E.M.B.E.R. COREUI UEBERGABEPROTOKOLL 0.5.27
 Stand 23.10.2026
 Basis main 0.5.26 a3876ddb54c65345790b479a3e7ed72753dd40c6
 Branch fix/single-html-source-first-0.5.27
+PR https://github.com/Starlight-Unit-Studio/coreui/pull/64
 
 KANONISCHE IDENTITAETEN
 - E.M.B.E.R.: Framework, Backend und System.
@@ -49,7 +50,13 @@ SICHERHEIT UND DIAGNOSE
 - Keine Migration und kein neuer Installer-Befehl.
 
 ABNAHME
-- Regessionstests fuer Single-HTML und Syntax-Fehlerdiagnosen ergaenzt.
+- Isolierte PHP-8.4-Syntax-/Routingtests: Single-HTML, Sicherheitsfaelle,
+  ZIP-Dateiname mit Satzpunkt und Quellformat bestanden.
+- Isolierter SyntaxError-Tracebacktest: numerische Zeile ohne Quelltext
+  und ohne internen Dateipfad erfolgreich.
+- Produktionsfoermiger PHP-Writer lokal ausgefuehrt: eine echte HTML-
+  Datei und ein echtes ZIP geschrieben, Inhalt, CRC und Dateiliste geprueft.
+- Vollstaendiges Repo/PHP-DB/Ollama-End-to-End nicht ausgefuehrt.
 - Lokalen PHP-Syntaxtest, Version-/Fingerprintpruefung und Safe-Output
   kontrollieren. GitHub Actions wegen aufgebrauchtem Kontingent aus.
 - Update via bestehendem One-Liner aus main nach Merge.
