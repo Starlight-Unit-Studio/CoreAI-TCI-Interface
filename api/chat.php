@@ -4924,7 +4924,6 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       ember_debug_log('ember_py_trigger', [
         'channel'      => $channel,
         'code_chars'   => strlen($pyCode),
-        'code_preview' => mb_substr($pyCode, 0, 400, 'UTF-8'),
       ]);
       $pyRes = ember_py_run($pdo, $pyCode, $channel, (int)($senderChar['user_id'] ?? 0), $consoleSessionId, $triggerMessageId, $triggerRevision);
       $artifactNotice = '';

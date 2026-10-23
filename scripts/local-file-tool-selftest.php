@@ -460,6 +460,8 @@ local_file_test(coreui_console_local_js_append($cutJs, '') === null
   && coreui_console_local_js_append(str_repeat('x', 149999), $jsRest) === null,
   'empty or oversized continuations must be rejected');
 $handler = file_get_contents(dirname(__DIR__) . '/api/chat.php');
+local_file_test(!str_contains($handler, "'code_preview'"),
+  'private model-generated tool source must never enter PHP debug previews');
 // Load only pure production helpers, without booting the HTTP/DB endpoint.
 function ember_cfg(string $key, mixed $default = null): mixed { return $default; }
 function ember_debug_log(string $event, array $meta): void {}
