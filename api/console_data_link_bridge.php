@@ -546,14 +546,16 @@ function coreui_console_local_web_pair_sources(string $reply, string $request, a
 function coreui_console_single_html_source_plan(string $request): ?array {
   if (!coreui_console_download_requested($request)
       || preg_match('~\b(?:homepage|webseite|webpage|website|html|landingpage|startseite)\b~iu', $request) !== 1) return null;
-  $spec = coreui_console_project_request_spec($request);
+  // The existing filename parser regards a terminal period as part of the
+  // filename. Trim only sentence punctuation for this standalone route.
+  $spec = coreui_console_project_request_spec(rtrim($request, " \t\n\r\0\x0B.,!?;:"));
   if (!is_array($spec)) return null;
   $requested = $spec['requested'] ?? [];
   if (!is_array($requested) || count($requested) > 1) return null;
   if (preg_match('~\b(?:separat\w*|getrennt\w*|mehrer\w*|eigen\w*|drei|3)\b.{0,55}\b(?:datei\w*|files?)\b~iu', $request) === 1) return null;
   $filename = count($requested) === 1 ? (string)reset($requested) : 'index.html';
   if (!in_array(strtolower(pathinfo($filename, PATHINFO_EXTENSION)), ['html', 'htm'], true)) return null;
-  $sourceRequest = $request . "\nAusgabedatei: " . $filename . ".";
+  $sourceRequest = $request . "\nAusgabedatei: " . $filename;
   $task = function_exists('mb_substr')
     ? mb_substr($request, 0, 5000, 'UTF-8') : substr($request, 0, 5000);
   $prompt = "COREUI HTML-QUELLDATEN (KEINE Python-Ausfuehrung):\n"

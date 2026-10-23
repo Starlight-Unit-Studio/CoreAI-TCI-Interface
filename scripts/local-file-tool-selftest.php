@@ -277,6 +277,8 @@ local_file_test(is_array($homePlan)
   && str_contains($homePlan['prompt'], '<style>')
   && str_contains($homePlan['prompt'], '<script>'),
   'standalone homepage must use safe HTML source instead of Python generation');
+local_file_test(isset(coreui_console_project_request_spec($homePlan['source_request'])['requested']['index.html']),
+  'internal synthetic request must keep index.html visible to safe source parser');
 $homeHtml = '<!DOCTYPE html><html><head><style>body{color:white}</style></head>'
   . '<body><h1>Private Homepage</h1><script>console.log("ok")</script></body></html>';
 $homeSource = coreui_console_single_html_source_reply($homeHtml, $homePlan);
