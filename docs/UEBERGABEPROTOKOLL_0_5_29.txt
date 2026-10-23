@@ -13,6 +13,7 @@ Rollback-Basis: Main 0.5.28
 Commit: 1f0d2351c0313189343a2e99b4f0d8007e4e7cee
 Sicherung: backup/coreui-0.5.28-pre-rollback
 Rollback-Branch: rollback/stable-0.5.25-as-0.5.29
+GitHub-PR: https://github.com/Starlight-Unit-Studio/coreui/pull/66
 
 WIEDERHERGESTELLT
 - Gesamter funktionaler Quellbaum exakt aus 0.5.25,
