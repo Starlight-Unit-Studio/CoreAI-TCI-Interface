@@ -266,6 +266,54 @@ local_file_test(is_string($jsCompactPrompt)
   && !str_contains($jsCompactPrompt, 'color:white'),
   'Gemma JavaScript prompt must retain DOM references but avoid CSS source bulk');
 
+// v0.5.26: batch HTML+CSS for the common explicit three-source browser ZIP.
+// The old individual retries and bounded JS continuation remain functional.
+$pairPlan = coreui_console_local_web_pair_plan($implicitRequest);
+local_file_test(is_array($pairPlan)
+  && $pairPlan['html'] === 'index.html'
+  && $pairPlan['css'] === 'style.css'
+  && $pairPlan['js'] === 'game.js'
+  && str_contains($pairPlan['prompt'], '### index.html')
+  && str_contains($pairPlan['prompt'], '### style.css'),
+  'three-source ZIP must have a focused HTML/CSS prompt');
+local_file_test(coreui_console_local_web_pair_plan(
+  'Erstelle index.html und style.css und liefere das ZIP zum Download.') === null,
+  'no batching for a two-source project');
+local_file_test(coreui_console_local_web_pair_plan(
+  'Erstelle index.html, style.css, game.js und README.md im ZIP zum Download.') === null,
+  'no batching when a fourth file is requested');
+$pairFence = str_repeat(chr(96), 3);
+$pairReply = "### index.html\n" . $pairFence . "html\n" . $localHtml
+  . "\n" . $pairFence . "\n### style.css\n" . $pairFence
+  . "css\n" . $localCss . "\n" . $pairFence;
+$pairSources = coreui_console_local_web_pair_sources($pairReply, $implicitRequest, $pairPlan);
+local_file_test(count($pairSources) === 2
+  && ($pairSources['index.html']['bytes'] ?? null) === $localHtml
+  && ($pairSources['style.css']['bytes'] ?? null) === $localCss,
+  'two independently validated inert sources must be recovered');
+$pairPart = coreui_console_local_web_pair_sources(
+  "### index.html\n" . $pairFence . "html\n" . $localHtml
+    . "\n" . $pairFence . "\n### style.css\n" . $pairFence . "css\nbody {",
+  $implicitRequest, $pairPlan);
+local_file_test(count($pairPart) === 1 && isset($pairPart['index.html']),
+  'truncated CSS must preserve complete HTML but never partial CSS');
+$pairNoLinks = str_replace(' href="style.css"', ' href="missing.css"', $localHtml);
+$pairFallback = coreui_console_local_web_pair_sources(
+  str_replace($localHtml, $pairNoLinks, $pairReply), $implicitRequest, $pairPlan);
+local_file_test(count($pairFallback) === 1 && isset($pairFallback['style.css'])
+  && !isset($pairFallback['index.html']),
+  'HTML without requested asset links requires individual fallback');
+local_file_test(coreui_console_local_web_pair_sources(
+  $pairReply . "\n[PY]print(1)[/PY]", $implicitRequest, $pairPlan) === [],
+  'unsafe tool markers must reject the pair response');
+$pairedProject = $pairSources;
+$pairedProject['game.js'] = coreui_console_local_source_reply(
+  $localJs, $implicitRequest, 'game.js');
+$pairedWriter = coreui_console_project_files_python(
+  $pairedProject, $localSpec, 100000);
+local_file_test(is_array($pairedWriter) && $pairedWriter['file_count'] === 4,
+  'recovered pair plus normal JS must feed the verified original ZIP writer');
+
 foreach (['index.html'=>$localHtml,'style.css'=>$localCss,'game.js'=>$localJs] as $localName=>$localCode) {
   $file = coreui_console_local_source_reply($localCode, $implicitRequest, $localName);
   local_file_test(is_array($file) && $file['name'] === $localName

@@ -7,7 +7,15 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 E.M.B.E.R. CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.25` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.26` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Faster local browser ZIP generation (0.5.26)
+
+For explicit downloadable ZIP projects containing exactly one HTML, one CSS and one JavaScript source, device-local Gemma can now generate the HTML/CSS scaffold in a single serial Ollama call, followed by the existing separate JavaScript generation. A valid paired response needs only two initial calls instead of three. If only one scaffold source parses and validates, that source is kept and only the missing sources use the existing focused per-file path. This is a bounded optimization, not a change to the global one-model-at-a-time rule.
+
+The pair response must contain complete named and closed Markdown code fences. A trusted parser checks the inert HTML/CSS source and the HTML links to the requested CSS and JS filenames before including it in the existing verified sandbox ZIP writer. Existing JS truncation continuations, safe account-scoped artifacts and downloads remain unchanged. The opt-out constant `STU_EMBER_LOCAL_PAIR_ENABLED` may be set to `false` in `api/config.local.php` to restore serial per-file generation. Cloud ZIPs, local Qwen coding, generic Python, the approved Gemma Modelfile and all installer/model options are unaffected. Neither `num_ctx` nor `num_predict` is injected into Gemma.
+
+The work timeline records harmless pair duration and token counts plus source-generation elapsed time; it does not expose private reasoning or generated code. Offline code and parser regressions were added, but the actual speedup and resulting JavaScript gameplay still require a live Ollama/Android-Chrome acceptance test. No new migration or installer command.
 
 ## E.M.B.E.R. acronym and official terminal branding (0.5.25)
 
