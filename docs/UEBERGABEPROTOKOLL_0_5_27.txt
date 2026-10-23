@@ -1,0 +1,69 @@
+E.M.B.E.R. COREUI UEBERGABEPROTOKOLL 0.5.27
+Stand 23.10.2026
+Basis main 0.5.26 a3876ddb54c65345790b479a3e7ed72753dd40c6
+Branch fix/single-html-source-first-0.5.27
+PR https://github.com/Starlight-Unit-Studio/coreui/pull/64
+
+KANONISCHE IDENTITAETEN
+- E.M.B.E.R.: Framework, Backend und System.
+- E.M.B.E.R. CoreUI: eigenstaendiges Terminal.
+- Mara Thorne: TCI/CoreAI der Ravager Thorn.
+- Ember: andere CoreAI der Starlight Ember, nicht Mara Thorne.
+
+ANLASS UND NACHWEISGRENZE
+- Screenshot am 23.10.2026: Python-Ausfuehrung fehlgeschlagen,
+  Job 69, Exitcode 1, 482 ms, Fehlertyp SyntaxError.
+- Danach Python hat keine Datei bereitgestellt, output_missing,
+  Korrekturversuch vorbereitet und Folgeaufruf gestartet.
+- Kein unveraenderter raw stderr/gescheiterter Python-Quelltext aus
+  der Datenbank vorhanden; exakte fehlerhafte Syntax bleibt unbekannt.
+- PHP kann ein korrektes Worker-Ergebnis erhalten, obwohl Modell-Python
+  fehlerhaft ist. Der sichtbare Fehler allein belegt keinen Defekt der
+  Worker-Infrastruktur.
+
+IMPLEMENTIERUNG
+- Fuer explizite einzelne Homepage-/HTML-Downloads wird nicht mehr
+  modellgeneriertes Python als erstes Werkzeug ausgefuehrt.
+- Das Modell liefert ausschliesslich HTML-Quelldaten; CSS und JS inline.
+- CoreUI normalisiert standardmaessig auf index.html, sofern kein
+  einzelner anderer HTML-Name angefordert wurde.
+- Vollstaendiges HTML5 und keine separaten lokalen Asset-Abhaengigkeiten
+  sind Voraussetzung. Ungueltige Quellen gehen nicht zum Python-Worker.
+- Maximal ein zweiter, serieller Modellversuch bei fehlerhaftem HTML.
+- Der bisherige vertrauenswuerdige eigene Python-Writer erstellt
+  die Datei und optional ein bestaetigtes ZIP in der Sandbox.
+- Die echten Downloadkarten bleiben kontobezogen und manifestgeprueft.
+- Mehrere gewuenschte Quelldateien bleiben im bestehenden ZIP-Pfad.
+- Lokal Qwen bleibt auf dem historischen [PY]-Coding-Weg.
+- Nicht-Qwen Cloud sowie lokales Gemma erhalten den HTML-Sonderpfad.
+- Allgemeine Python-Tools sind weiterhin nutzbar und unmodifiziert.
+- E.M.B.E.R.-Modellaufrufe bleiben streng seriell.
+
+SICHERHEIT UND DIAGNOSE
+- Python-Syntaxfehler zeigen im Arbeitsprotokoll bei vorhandener
+  Traceback-Zeile die reine numerische Zeilennummer an.
+- Weder stderr noch Sourcecode noch Dateipfade werden in die
+  Work-Event-Metadaten uebernommen.
+- Bestehender Python-Debug-Codeauszug (400 Zeichen) ist entfernt.
+- Modelfile, draft_num_predict 0, Gemma-num_ctx-Verbot und Verzicht
+  auf num_predict bleiben unveraendert.
+- Keine Migration und kein neuer Installer-Befehl.
+
+ABNAHME
+- Isolierte PHP-8.4-Syntax-/Routingtests: Single-HTML, Sicherheitsfaelle,
+  ZIP-Dateiname mit Satzpunkt und Quellformat bestanden.
+- Isolierter SyntaxError-Tracebacktest: numerische Zeile ohne Quelltext
+  und ohne internen Dateipfad erfolgreich.
+- Produktionsfoermiger PHP-Writer lokal ausgefuehrt: eine echte HTML-
+  Datei und ein echtes ZIP geschrieben, Inhalt, CRC und Dateiliste geprueft.
+- Vollstaendiges Repo/PHP-DB/Ollama-End-to-End nicht ausgefuehrt.
+- Lokalen PHP-Syntaxtest, Version-/Fingerprintpruefung und Safe-Output
+  kontrollieren. GitHub Actions wegen aufgebrauchtem Kontingent aus.
+- Update via bestehendem One-Liner aus main nach Merge.
+- Gleichen privaten Homepage-Auftrag erneut durchfuehren und echte
+  Downloaddatei aus Worker-Manifests bestaetigen.
+- HTML in Android-Chrome auf Funktionalitaet kontrollieren.
+- Python-Ausfuehrung bei allgemeinen echten Python-Aufgaben separat
+  testen. Ein Fehler dort ist weiterhin moeglich und sollte anhand
+  der nun sichtbaren Zeilennummer untersucht werden.
+

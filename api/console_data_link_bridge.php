@@ -538,6 +538,66 @@ function coreui_console_local_web_pair_sources(string $reply, string $request, a
   return $safe;
 }
 
+/**
+ * A standalone HTML/website download is content, not Python source code.
+ * Ask the model for inert HTML, then use our existing trusted sandbox writer.
+ * Do not intercept multi-source projects or requests for separate assets.
+ */
+function coreui_console_single_html_source_plan(string $request): ?array {
+  if (!coreui_console_download_requested($request)
+      || preg_match('~\b(?:homepage|webseite|webpage|website|html|landingpage|startseite)\b~iu', $request) !== 1) return null;
+  // The existing filename parser regards a terminal period as part of the
+  // filename. Trim only sentence punctuation for this standalone route.
+  $spec = coreui_console_project_request_spec(rtrim($request, " \t\n\r\0\x0B.,!?;:"));
+  if (!is_array($spec)) return null;
+  $requested = $spec['requested'] ?? [];
+  if (!is_array($requested) || count($requested) > 1) return null;
+  if (preg_match('~\b(?:separat\w*|getrennt\w*|mehrer\w*|eigen\w*|drei|3)\b.{0,55}\b(?:datei\w*|files?)\b~iu', $request) === 1) return null;
+  $filename = count($requested) === 1 ? (string)reset($requested) : 'index.html';
+  if (!in_array(strtolower(pathinfo($filename, PATHINFO_EXTENSION)), ['html', 'htm'], true)) return null;
+  $sourceRequest = $request . "\nAusgabedatei: " . $filename;
+  $task = function_exists('mb_substr')
+    ? mb_substr($request, 0, 5000, 'UTF-8') : substr($request, 0, 5000);
+  $prompt = "COREUI HTML-QUELLDATEN (KEINE Python-Ausfuehrung):\n"
+    . "Benutzerauftrag: " . $task . "\n"
+    . "Erzeuge den VOLLSTAENDIGEN Inhalt der einzigen Datei " . $filename . ". "
+    . "CoreUI selbst speichert die Datei und erstellt gegebenenfalls das ZIP. "
+    . "Schreibe KEIN Python-Skript, KEINE Dateispeicherbefehle, KEINE [PY]- oder Werkzeugmarker. "
+    . "Gib NUR einen eigenstaendigen, lauffaehigen HTML5-Quelltext aus, "
+    . "begonnen mit <!DOCTYPE html> und abgeschlossen mit </html>. "
+    . "Bette CSS in <style> und bei Bedarf JavaScript in <script> direkt in diese HTML-Datei ein. "
+    . "Keine externen lokalen CSS- oder JS-Dateien erzeugen oder referenzieren. "
+    . "Keine Markdown-Fences, keine Einleitung, keine Platzhalter, kein Nachwort. "
+    . "Vollstaendige HTML-Struktur mit head, body und geschlossenen Tags.";
+  $key = strtolower($filename);
+  return [
+    'filename'=>$filename,
+    'source_request'=>$sourceRequest,
+    'writer_spec'=>[
+      'requested'=>[$key=>$filename],
+      'zip_requested'=>($spec['zip_requested'] ?? false) === true,
+      'zip_name'=>(string)($spec['zip_name'] ?? 'projekt.zip'),
+    ],
+    'prompt'=>$prompt,
+  ];
+}
+
+/** Validate exactly one standalone HTML file as inert data. */
+function coreui_console_single_html_source_reply(string $reply, array $plan): ?array {
+  $filename = $plan['filename'] ?? null;
+  $request = $plan['source_request'] ?? null;
+  if (!is_string($filename) || !is_string($request)
+      || strlen($reply) > 160000 || str_contains($reply, "\0")
+      || preg_match('~\[(?:/)?(?:PY|WEB|BROWSE)(?::[^\]]*)?\]~i', $reply)) return null;
+  $file = coreui_console_local_source_reply($reply, $request, $filename);
+  if (!is_array($file)) return null;
+  $bytes = (string)$file['bytes'];
+  // Fail closed if the model still refers to files the one-file writer
+  // will never create. Inline JS/CSS stays inside this HTML document.
+  if (preg_match('~<(?:script|link)\b[^>]*(?:src|href)\s*=\s*["\x27](?!https?://|data:|#)([^"\x27]+)["\x27]~i', $bytes)) return null;
+  return $file;
+}
+
 /** Fresh focused request, independent of the normal chat tool hints. */
 function coreui_console_local_source_prompt(
   string $request, string $filename, array $existing = [], bool $retry = false

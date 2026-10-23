@@ -14,7 +14,7 @@ function coreui_work_schema_ready(PDO $pdo): bool {
 
 function coreui_work_safe_meta(array $raw): array {
   $allowedNumbers = ['job_id','exit_code','duration_ms','file_count','attempt','http_code','elapsed_ms',
-    'source_chars','eval_count','prompt_eval_count'];
+    'source_chars','eval_count','prompt_eval_count','line_number'];
   $allowedStrings = ['model','error_type','file_name','reason','source'];
   $safe = [];
   foreach ($allowedNumbers as $key) {
@@ -51,6 +51,10 @@ function coreui_work_python_diagnostic(?array $result): array {
   if (!isset($meta['error_type'])) {
     $code = (string)($result['error'] ?? '');
     $meta['error_type'] = preg_match('/^[a-z_]{1,60}$/', $code) ? $code : 'execution_failed';
+  }
+  // Show only the traceback line number, never the file path, source or stderr.
+  if (preg_match('~\bFile\s+"[^"\r\n]{1,250}",\s*line\s+([1-9][0-9]{0,5})~', $stderr, $line)) {
+    $meta['line_number'] = (int)$line[1];
   }
   if ($meta['error_type'] === 'FileNotFoundError'
       && preg_match('/FileNotFoundError:[^\r\n]*[\x27\x22]([^\x27\x22\r\n]{1,180})[\x27\x22]/', $stderr, $m)) {

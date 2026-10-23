@@ -2,6 +2,14 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.27 - 23.10.2026
+
+- Python-SyntaxError bei generierten Homepage-Downloads systemisch umgangen: Eine explizit angeforderte einzelne HTML-Webseite wird als roher HTML5-Quelltext erzeugt und validiert. Der CoreUI-eigene deterministische Python-Writer speichert anschliessend die Datei, statt modellgeneriertes Python mit potenziell fehlerhaften HTML-String-Literalen auszufuehren.
+- HTML muss vollstaendig sein; lokales CSS/JavaScript wird inline eingebettet. Externe lokale Asset-Abhaengigkeiten, unvollstaendiger Code und [PY]-Marker werden abgewiesen; hoechstens ein Quelltext-Retry. Einzelne Homepage kann auch in ein angefordertes ZIP gepackt werden.
+- Spezialweg fuer lokales Gemma und nicht-Qwen Cloud-Provider bei expliziten Single-HTML-Dateiauftraegen. Mehrdateien-Projekte, lokales Qwen-[PY] und allgemeine echte Python-Aufgaben bleiben getrennt.
+- Python-Fehlerprotokoll kann fuer Tracebacks nur eine harmlose Zeilennummer anzeigen; private stderr- und Quelltextdaten bleiben gesperrt. Der Debug-Log-Quelltextauszug der Python-Anforderung wurde entfernt.
+- PHP-Regressionen erweitert, numerische VERSION 0.5.27, Browser-Cachefingerprints, Preflights und TXT-Uebergabe abgeglichen. Kein Gemma-num_ctx/num_predict, kein Modelfile-Wechsel, keine DB-Migration oder geaenderter Installer-Einzeiler. Keine GitHub Actions wegen aufgebrauchten Kontingents. Produktionsabnahme ausstehend. [skip ci]
+
 ## 0.5.26 - 23.10.2026
 
 - Lokale Gemma-Dateiausgabe fuer HTML/CSS/JS-ZIP-Projekte optimiert: gemeinsamer HTML/CSS-Quelltextaufruf, danach JavaScript wie bisher einzeln. Im Erfolgsfall zwei statt drei initiale SERIELLE Ollama-Calls.

@@ -4592,17 +4592,68 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   $requestedSourceProject = $channel === 'console' && $imageUrl === null
     && ember_py_enabled() && coreui_console_download_requested($userMsg)
       ? coreui_console_multifile_source_directive($userMsg) : null;
+  $singleHtmlPlan = $channel === 'console' && $imageUrl === null
+    && ember_py_enabled() && coreui_console_download_requested($userMsg)
+    && !ember_console_file_tool_is_local_qwen_coder($primaryModel)
+      ? coreui_console_single_html_source_plan($userMsg) : null;
   $fileTask = $channel === 'console' && $imageUrl === null && ember_py_enabled()
     && coreui_console_download_requested($userMsg)
     && (ember_console_file_tool_is_local($primaryModel)
-      || $requestedSourceProject !== null);
+      || $requestedSourceProject !== null || $singleHtmlPlan !== null);
   $fileToolThink = $fileTask ? ember_console_file_tool_think($primaryModel) : null;
   // The cloud/source-fence path already creates verified ZIPs. Only the local
   // Gemma route needs smaller, raw per-file source requests without the
   // regular conversation's competing [PY] tool hints.
   $localDirectSources = $requestedSourceProject !== null
     && ember_console_file_tool_is_device_local($primaryModel);
-  if ($localDirectSources) {
+  // Generate a standalone website's HTML as inert source, not as a
+  // model-authored Python program prone to SyntaxError on quoted markup.
+  // Preserve the native Qwen Python route and all multi-file ZIP workflows.
+  if (is_array($singleHtmlPlan)) {
+    $singleFile = null;
+    for ($attempt = 1; $attempt <= 2; $attempt++) {
+      if (ember_agent_cancel_requested()) return null;
+      coreui_work_record($pdo, 'model', 'running', 'HTML-Quelltext wird erzeugt',
+        ['file_name'=>(string)$singleHtmlPlan['filename'],
+          'model'=>$primaryModel, 'attempt'=>$attempt]);
+      $rawHtml = ember_call_ollama($primaryModel, '', $singleHtmlPlan['prompt']
+        . ($attempt > 1 ? "\nWIEDERHOLUNG: Gib eine einzige vollstaendige HTML-Datei ohne Python oder externe lokale Assets aus." : ''),
+        ember_timeout_for_model($primaryModel), [], null, $fileToolThink);
+      $wasTruncated = ember_last_call_was_truncated();
+      $singleFile = is_string($rawHtml) && !$wasTruncated
+        ? coreui_console_single_html_source_reply($rawHtml, $singleHtmlPlan)
+        : null;
+      coreui_work_record($pdo, 'model', is_array($singleFile) ? 'success' : 'error',
+        is_array($singleFile) ? 'HTML-Quelltext empfangen' : 'HTML-Quelltext unvollstaendig',
+        ['file_name'=>(string)$singleHtmlPlan['filename'],
+          'model'=>$primaryModel, 'attempt'=>$attempt,
+          'reason'=>is_array($singleFile) ? 'source_ready'
+            : ($wasTruncated ? 'model_output_truncated' : 'source_format_unrecognized')]);
+      if (is_array($singleFile)) break;
+    }
+    if (!is_array($singleFile)) {
+      coreui_work_record($pdo, 'artifact', 'error', 'HTML-Datei nicht vollstaendig',
+        ['reason'=>'source_files_incomplete']);
+      return 'Die HTML-Datei konnte nicht vollstaendig erzeugt werden. '
+        . 'Es wurde deshalb kein fehlerhaftes Python-Skript ausgefuehrt '
+        . 'und kein Download vorgetaeuscht.';
+    }
+    $htmlWriter = coreui_console_project_files_python(
+      [strtolower((string)$singleHtmlPlan['filename'])=>$singleFile],
+      $singleHtmlPlan['writer_spec'], ember_py_max_code_chars());
+    if (!is_array($htmlWriter)) {
+      coreui_work_record($pdo, 'artifact', 'error', 'HTML-Datei zu gross',
+        ['reason'=>'source_project_size_limit']);
+      return 'Die HTML-Datei ueberschreitet die sichere Ausgabegroesse.';
+    }
+    $fileToolCandidate = ['kind'=>'project', 'code'=>$htmlWriter['code'],
+      'meta'=>$htmlWriter];
+    $out = '[COREUI HTML-QUELLDATEN VOLLSTAENDIG]';
+    $finalPrompt = $userMsg;
+    coreui_work_record($pdo, 'artifact', 'info', 'HTML-Quelldatei vollstaendig',
+      ['file_name'=>(string)$singleHtmlPlan['filename'],
+        'file_count'=>(int)$htmlWriter['file_count']]);
+  } elseif ($localDirectSources) {
     $sourceSpec = coreui_console_project_request_spec($userMsg);
     $sourceFiles = [];
     if (!is_array($sourceSpec)) return 'Ungueltiger Dateiauftrag.';
@@ -4873,7 +4924,6 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       ember_debug_log('ember_py_trigger', [
         'channel'      => $channel,
         'code_chars'   => strlen($pyCode),
-        'code_preview' => mb_substr($pyCode, 0, 400, 'UTF-8'),
       ]);
       $pyRes = ember_py_run($pdo, $pyCode, $channel, (int)($senderChar['user_id'] ?? 0), $consoleSessionId, $triggerMessageId, $triggerRevision);
       $artifactNotice = '';
