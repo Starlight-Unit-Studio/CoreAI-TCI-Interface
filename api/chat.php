@@ -4606,7 +4606,36 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
     $sourceSpec = coreui_console_project_request_spec($userMsg);
     $sourceFiles = [];
     if (!is_array($sourceSpec)) return 'Ungueltiger Dateiauftrag.';
+    // For an explicit three-source browser ZIP, one serial Gemma call can
+    // provide the small HTML/CSS scaffold; JS retains its own focused prompt.
+    $localStartedAt = microtime(true);
+    $pairPlan = (bool)ember_cfg('STU_EMBER_LOCAL_PAIR_ENABLED', true)
+      ? coreui_console_local_web_pair_plan($userMsg) : null;
+    if (is_array($pairPlan)) {
+      if (ember_agent_cancel_requested()) return null;
+      coreui_work_record($pdo, 'tool', 'info', 'HTML und CSS gemeinsam angefordert',
+        ['file_count'=>2]);
+      coreui_work_record($pdo, 'model', 'running', 'HTML und CSS werden erzeugt',
+        ['model'=>$primaryModel, 'file_count'=>2]);
+      $pairStartedAt = microtime(true);
+      $pairReply = ember_call_ollama($primaryModel, '', $pairPlan['prompt'],
+        ember_timeout_for_model($primaryModel), [], null, $fileToolThink);
+      $pairDurationMs = max(0, (int)round((microtime(true) - $pairStartedAt) * 1000));
+      $pairMeta = ember_last_call_meta();
+      if (is_string($pairReply)) {
+        $sourceFiles = coreui_console_local_web_pair_sources($pairReply, $userMsg, $pairPlan);
+      }
+      $pairCount = count($sourceFiles);
+      coreui_work_record($pdo, 'model', $pairCount > 0 ? 'success' : 'info',
+        $pairCount > 0 ? 'HTML CSS Quelltexte empfangen' : 'Einzeldatei Fallback verwendet',
+        ['model'=>$primaryModel, 'file_count'=>$pairCount, 'duration_ms'=>$pairDurationMs,
+          'eval_count'=>(int)($pairMeta['eval_count'] ?? 0),
+          'prompt_eval_count'=>(int)($pairMeta['prompt_eval_count'] ?? 0),
+          'reason'=>$pairCount === 2 ? 'pair_complete'
+            : ($pairCount === 1 ? 'pair_partial' : 'pair_fallback')]);
+    }
     foreach ($sourceSpec['requested'] as $name) {
+      if (isset($sourceFiles[strtolower((string)$name)])) continue;
       $accepted = null;
       for ($attempt = 1; $attempt <= 2; $attempt++) {
         if (ember_agent_cancel_requested()) return null;
@@ -4712,7 +4741,8 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
     $out = '[COREUI QUELLDATEIEN VOLLSTAENDIG]';
     $finalPrompt = $userMsg;
     coreui_work_record($pdo, 'artifact', 'info', 'Projektquellen vollstaendig',
-      ['file_count'=>(int)$sourceProject['file_count']]);
+      ['file_count'=>(int)$sourceProject['file_count'],
+       'elapsed_ms'=>max(0, (int)round((microtime(true) - $localStartedAt) * 1000))]);
   } else {
   if ($fileTask) {
     $u .= "\n\n" . (ember_console_file_tool_is_local_qwen_coder($primaryModel)

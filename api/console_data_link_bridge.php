@@ -464,6 +464,80 @@ function coreui_console_local_source_reply(string $reply, string $request, strin
   return ['name'=>$spec['requested'][$key], 'bytes'=>$bytes];
 }
 
+/**
+ * Optional serial inference shortcut: source HTML and CSS for a simple local
+ * HTML/CSS/JS ZIP in one call. Never batch the global model queue itself.
+ */
+function coreui_console_local_web_pair_plan(string $request): ?array {
+  $spec = coreui_console_project_request_spec($request);
+  if (!is_array($spec) || ($spec['zip_requested'] ?? false) !== true
+      || count($spec['requested'] ?? []) !== 3) return null;
+  $names = [];
+  foreach ($spec['requested'] as $name) {
+    $ext = strtolower(pathinfo((string)$name, PATHINFO_EXTENSION));
+    $kind = in_array($ext, ['html', 'htm'], true) ? 'html'
+      : ($ext === 'css' ? 'css' : ($ext === 'js' ? 'js' : ''));
+    if ($kind === '' || isset($names[$kind])) return null;
+    $names[$kind] = (string)$name;
+  }
+  if (count($names) !== 3) return null;
+  $task = function_exists('mb_substr')
+    ? mb_substr($request, 0, 5000, 'UTF-8') : substr($request, 0, 5000);
+  $prompt = "COREUI ZWEI QUELLDATEIEN (keine Python-Ausfuehrung):\n"
+    . "Auftrag: " . $task . "\n"
+    . "Das komplette Projekt besteht aus " . implode(', ', array_values($spec['requested'])) . ".\n"
+    . "Erzeuge in EINER Antwort genau ZWEI vollstaendige Dateien: "
+    . $names['html'] . " und " . $names['css'] . ".\n"
+    . "Zuerst ### " . $names['html'] . ", gefolgt von einem GESCHLOSSENEN "
+    . "Markdown-Codeblock mit Sprache html. Danach ### " . $names['css']
+    . ", gefolgt von einem GESCHLOSSENEN Codeblock mit Sprache css.\n"
+    . "Die HTML-Seite MUSS per href=\"" . $names['css'] . "\" die CSS-Datei und "
+    . "per src=\"" . $names['js'] . "\" die spaetere JavaScript-Datei laden. "
+    . "Sie muss mit <!DOCTYPE html> beginnen und mit </html> enden. "
+    . "Nutze konkrete HTML-Element-IDs fuer die spaetere Spiellogik. "
+    . "CSS-Regeln muessen vollstaendig geschlossen sein.\n"
+    . "Noch KEINEN JavaScript-Inhalt erzeugen. Kein ZIP, kein Python, "
+    . "keine [PY]-Marker, keine Erklaerung und keine weiteren Dateien. "
+    . "Antworte ausschliesslich mit beiden benannten, geschlossenen Codebloecken.";
+  return ['html'=>$names['html'], 'css'=>$names['css'],
+    'js'=>$names['js'], 'prompt'=>$prompt];
+}
+
+/**
+ * Retain only independently valid inert files from a multi-file response.
+ * Missing or invalid sources still go through the previous per-file path.
+ * Never run model-authored Python or package incomplete ZIPs.
+ */
+function coreui_console_local_web_pair_sources(string $reply, string $request, array $plan): array {
+  if (strlen($reply) > 250000 || str_contains($reply, "\0")
+      || preg_match('~\[(?:/)?(?:PY|WEB|BROWSE)(?::[^\]]*)?\]~i', $reply)) return [];
+  $parsed = coreui_console_project_fences_python($reply, $request, 200000, true);
+  if (!is_array($parsed) || !is_array($parsed['source_files'] ?? null)) return [];
+  $safe = [];
+  foreach (['html', 'css'] as $kind) {
+    $name = $plan[$kind] ?? null;
+    if (!is_string($name)) continue;
+    $candidate = $parsed['source_files'][strtolower($name)] ?? null;
+    if (!is_array($candidate) || !is_string($candidate['bytes'] ?? null)) continue;
+    $checked = coreui_console_local_source_reply($candidate['bytes'], $request, $name);
+    if (is_array($checked)) $safe[strtolower($name)] = $checked;
+  }
+  $htmlName = strtolower((string)($plan['html'] ?? ''));
+  if (isset($safe[$htmlName])) {
+    $html = $safe[$htmlName]['bytes'];
+    foreach (['css'=>'href', 'js'=>'src'] as $type => $attribute) {
+      $name = $plan[$type] ?? null;
+      if (!is_string($name) || preg_match(
+          '~\b' . $attribute . '\s*=\s*["\x27](?:\./)?'
+          . preg_quote($name, '~') . '["\x27]~i', $html) !== 1) {
+        unset($safe[$htmlName]);
+        break;
+      }
+    }
+  }
+  return $safe;
+}
+
 /** Fresh focused request, independent of the normal chat tool hints. */
 function coreui_console_local_source_prompt(
   string $request, string $filename, array $existing = [], bool $retry = false
