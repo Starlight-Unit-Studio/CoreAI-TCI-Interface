@@ -119,9 +119,19 @@ serial through the existing Ollama queue.
     php -l api/console_stream.php
     php scripts/universal-source-protocol-selftest.php
     php scripts/universal-project-agent-selftest.php
-    php scripts/universal-project-writer-selftest.php
+    php scripts/universal-project-writer-selftest.php --emit-payload | python3 scripts/universal-project-writer-selftest.py
     php scripts/local-file-tool-selftest.php
 
+
+The Docker preflight sends the synthetic writer payload from its PHP service
+through a pipe to the existing Python 3 browser service. The PHP image does
+not install Python 3; this avoids adding a new server dependency and avoids
+a false preflight failure. Native installs pipe from PHP to their existing
+Python 3 interpreter. Both scripts use pipefail.
+A stand-alone source protocol test (PHP 8.4) and a synthetic Python
+ZIP-byte verifier were actually run successfully outside the repository.
+The **full** project-agent test suite and real Docker/live Ollama runs remain
+pending.
 
 The writer test invokes Python 3 in a disposable temporary directory, reads the
 ZIP back, compares every member against the expected original UTF-8 bytes and
