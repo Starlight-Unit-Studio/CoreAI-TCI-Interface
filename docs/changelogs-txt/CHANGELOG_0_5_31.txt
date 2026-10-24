@@ -1,0 +1,55 @@
+E.M.B.E.R. CoreUI 0.5.31
+24.10.2026
+
+ZWECK
+Minimaler Routing-Fix fuer geraetelokale Gemma-Homepage-ZIP-Auftraege
+ohne ausdruecklich benannte Quell-Dateinamen. Bestehende Wege erhalten.
+
+REPRODUZIERTER FEHLER
+- Originalauftrag: private Anime-Videospiel-Homepage mit HTML/CSS/
+  weiteren Dateien und ZIP-Download, jedoch ohne konkrete Dateinamen.
+- Version 0.5.30: Modell ember-coreui:latest gab auch beim zweiten
+  Anfrageversuch `ollama_truncated_py_open` aus, rund 3.005
+  Ausgabetokens und 6.456 Zeichen, kein Python-Job und kein Download.
+- Ursache des falschen Routenwegs aus Repo-Code nachgewiesen:
+  coreui_console_project_request_spec erkennt benannte Dateien oder
+  bestimmte Web-Spielbegriffe, aber keine generische "Homepage" als
+  dreiteiliges Quellprojekt ohne benannte Dateien. Deshalb [PY]-Fallback.
+- Die sichtbaren zwei Antworten (1/2 und 2/2) sind Varianten derselben
+  Chat-Anfrage, nicht zwei unterschiedliche Benutzerauftraege.
+
+AENDERUNG
+- Neuer eng begrenzter Normalisierungshelfer im vorhandenen
+  api/console_data_link_bridge.php:
+  coreui_console_local_homepage_zip_request
+- Nur wenn lokales Gemma, explizit Download+Erstellen, ZIP,
+  Homepage/Webseite/Startseite und HTML/CSS-Dateiinhalt genannt sind,
+  ohne schon benoetigte Namen oder explizite Einzeldatei:
+  fuege intern index.html, style.css, main.js an den Projektauftrag an.
+- api/chat.php nutzt den normalisierten Auftrag ausschliesslich
+  fuer diese lokale Quellprojekt-Routenerkennung und zugehoerige
+  Dateiquell-Validierung. Die originale Chat-Nachricht bleibt erhalten.
+- Vorhandener serielle lokale Quell-Datei-Weg arbeitet dann pro Datei.
+  Der bestehende CoreUI-eigene Python-Writer prueft und packt das ZIP.
+- Kein neues Python, keine zweite Dateierstellungsarchitektur, keine
+  Umleitung des funktionierenden gemma4:31b-cloud (ueber lokales
+  Ollama-Modellverzeichnis), keine Aenderung an Qwen.
+
+TESTS
+- Originalauftrag als Regression im bestehenden
+  scripts/local-file-tool-selftest.php eingefuegt.
+- PHP 8.4 isolierter Routingtest mit Originalauftrag: erfolgreich.
+- Negative Tests: reine Erklaerung, explizite Dateinamen,
+  einzelne HTML-Datei als ZIP, unrelated ZIP unveraendert.
+- Bestehende HTML/CSS/JS-Quelldatei-Validierung und ZIP-Erzeugung
+  bleibt zwingend; unvollstaendige Quellen werden weiterhin abgelehnt.
+- Produktive Netcup-Ollama-End-to-End-Abnahme steht noch aus.
+
+KOMPATIBILITAET
+- E.M.B.E.R.-Modellaufrufe strikt seriell.
+- Kein Modelfile-Wechsel, kein num_ctx oder num_predict bei Gemma.
+- Keine Datenbankmigration, keine Aenderung am Python-Worker
+  oder Installer-One-Liner.
+- Versionsmetadaten 0.5.31, 6 Browser-Cache-Fingerprints,
+  Preflights/README/CHANGELOG/Archiv und Uebergabe synchron.
+- GitHub Actions nicht starten, Kontingent aufgebraucht. [skip ci]

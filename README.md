@@ -7,7 +7,15 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 E.M.B.E.R. CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.30` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.31` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Homepage ZIP routing for device-local Gemma (0.5.31)
+
+Version 0.5.30 established the exact failure condition `ollama_truncated_py_open` after 3,005 local generation tokens: the user's **unnamed multi-source anime homepage ZIP request** was not recognized as an existing multi-file project and fell into the older huge model-generated [PY] file writer, which was truncated. The screenshot also shows two answer **versions** (`1/2`, `2/2`) of the same user turn, not two different user prompts.
+
+0.5.31 fixes that **routing gap**, without introducing a new file creation architecture. Only for a **device-local Gemma** ZIP homepage request with explicit download/creation intent, no named source files and no single-file instruction, CoreUI internally adds the conservative canonical source set `index.html`, `style.css`, `main.js`. It then uses the already-established local **one-source-per-Ollama-call** path with bounded validations and the CoreUI-owned deterministic ZIP writer. The original request remains otherwise unchanged. Named projects, standalone HTML files, unrelated archives, local Qwen, Ollama Cloud models (`gemma4:31b-cloud` included) and ordinary Python tasks retain their existing routes. All Ollama models remain selected via the locally configured Ollama instance, not a separate API integration.
+
+The original request and negative routing cases have been added to the existing PHP regression suite; a focused PHP 8.4 reproduction verified the three inferred filenames, single-file preservation and unrelated archives. The next server run must confirm the actual three source requests, verified ZIP contents and working homepage in Android Chrome. An excessive or unclosed HTML/CSS/JS output may still fail its existing bounded validation; this release does not bypass those checks or promise full application quality. There is no Gemma Modelfile change, `num_ctx`, `num_predict`, database migration, change to global serial processing, or installer one-liner.
 
 ## Ollama file-completion diagnostics (0.5.30)
 

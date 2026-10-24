@@ -2,6 +2,15 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.31 - 24.10.2026
+
+- Reproduzierter Routingfehler der privaten Anime-Videospiel-Homepage: Der Benutzer forderte HTML, CSS und weitere Quelldateien im ZIP als Download, nannte aber keine expliziten Dateinamen. Bisher erkennt der bestehende Quell-ZIP-Pfad nur benannte Dateien oder besondere Browserspielwoerter. Der Auftrag landete deshalb im langen modellgenerierten [PY]-Skript, das bei 3.005 lokalen Ausgabetokens als `ollama_truncated_py_open` abbrach.
+- Nur fuer geraetelokale Gemma-Modelle wird bei einer solchen ZIP-Homepage ohne Dateinamen die kleinstmoegliche Projektstruktur inferiert: `index.html`, `style.css`, `main.js`. Kein Eingriff in andere Datei- oder Python-Auftraege. Explizite Dateinamen und Einzeldateien behalten ihre Route.
+- Die bereits seit 0.5.16/0.5.21 vorhandene verifizierte Einzel-Quelltext-Erzeugung mit anschliessendem CoreUI-eigenem ZIP-Schreiber wird nun auch fuer diesen Homepage-Fall erreicht. Modellgenerierter Python-Writer ist dafuer nicht mehr noetig; jede Quelldatei wird einzeln, streng seriell und mit den bestehenden Grenzen geprueft.
+- Ollama Cloud (`gemma4:31b-cloud` wird weiterhin aus der lokalen Ollama-Liste gewaehlt), Qwen und die allgemeine Python-Sandbox bleiben komplett auf ihrem bisherigen Routing. Keine eigene API-Integration.
+- Originalauftrag als Regression, negative Faelle fuer Single-HTML, benannte Dateien, Erklaerungen und fremde ZIP-Formate hinzugefuegt. Ein lokaler isolierter PHP-8.4-Routingtest des Originalauftrags war erfolgreich. Kein produktiver Netcup/Ollama-Datei-End-to-End-Test behauptet.
+- Versionsmetadaten auf 0.5.31, sechs Browser-Cache-Fingerprints, Preflights und TXT-Uebergabe synchronisiert. Keine Modelfile- oder Worker-Aenderung, kein `num_ctx`/`num_predict`, keine Migration oder veraenderter Installer. GitHub Actions wegen fehlendem Kontingent nicht ausfuehren. [skip ci]
+
 ## 0.5.30 - 24.10.2026
 
 - Eng begrenzter Ollama-Dateiantwort-Diagnosepatch auf Basis 0.5.29. Kein neuer Python-Datei-Writer, kein Aendern des Python-Workers oder der Modell-Routen.

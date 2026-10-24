@@ -1,0 +1,87 @@
+E.M.B.E.R. COREUI UEBERGABEPROTOKOLL 0.5.31
+Stand: 24.10.2026
+Basis main 0.5.30: d38908a436525594f047c6d48d638d85772d8e85
+Branch: fix/local-homepage-zip-routing-0.5.31
+
+PROJEKTKONSTANTEN
+E.M.B.E.R. = Framework und Backend
+E.M.B.E.R. CoreUI = Terminal
+Mara Thorne = TCI/CoreAI der Ravager Thorn
+Ember = getrennte CoreAI der Starlight Ember
+Strikt serielle LLM-Aufrufe, keine parallele Inferenz.
+Gemma Modelfile unveraendert, num_ctx und num_predict tabu.
+
+LIVEBEFUND
+Nach Update auf 0.5.30 wurde der originale Auftrag erneut
+ausgefuehrt: ein ZIP mit HTML/CSS/usw. fuer eine private
+Anime-Videospiel-Homepage. Modell lokal "ember-coreui:latest".
+Erster Modellaufruf und ein erneuter Dateicodeversuch erfolgten.
+Der erneute Versuch meldete:
+  reason: ollama_truncated_py_open
+  source_chars: 6456
+  eval_count: 3005
+  prompt_eval_count: 1091
+Danach "Kein ausfuehrbarer Datei-Auftrag" und kein Python-Job.
+Der Schutz von 0.5.30 arbeitet damit korrekt, erzeugt
+aber noch keine Dateien.
+
+NACHGEWIESENE ROUTENLUECKE
+coreui_console_project_request_spec() erkennt konkrete Dateinamen
+oder Web-Spiel-Stichwoerter (z.B. Snake). Die natuerliche
+Formulierung "private Homepage", "alle benoetigten HTML Dateien
+css usw." mit ZIP gab `requested=[]` zurueck. Damit wurde
+coreui_console_multifile_source_directive() nicht aktiv,
+und die lokale Gemma-Laufzeit sollte einen grossen [PY]-
+Datei-Writer selbst generieren. Dessen Antwort war abgeschnitten.
+
+BEHEBUNG 0.5.31
+coreui_console_local_homepage_zip_request($request) macht nur
+fuer lokale Gemma-Homepage-ZIP-Requests ohne Dateinamen die
+schmalste moegliche Projektnormalisierung:
+- index.html
+- style.css
+- main.js
+Nur diese modifizierte Quell-Projektanfrage geht in den
+bestehenden Local-Source-Pfad von api/chat.php.
+Der globale Parser selbst bleibt unveraendert.
+Der bereits bestehende serialisierte Quellgenerator fordert
+jede Datei gesondert an, validiert sie und baut mit dem
+deterministischen Python-Writer den ZIP-Download.
+Cloud-Modelle werden WEITERHIN aus dem lokal konfigurierten
+Ollama-Modellverzeichnis gewaehlt, ohne separate API.
+Qwen und sonstige Datei- bzw. Python-Auftraege behalten
+ihre urspruenglichen Pfade.
+
+ZWEI ANTWORTEN IM SCREENSHOT
+Die sichtbaren UI-Zeiger 1/2 und 2/2 weisen auf zwei
+Antwortversionen zum selben Prompt (Regenerate/Alternative)
+hin. Kein Beleg fuer doppelt abgeschickte Nutzeranfragen.
+Das Antwortversionssystem wird hier nicht geaendert.
+
+TESTS
+- Originalauftrag in PHP-Dateiwerkzeug-Regression aufgenommen.
+- Isolierter PHP 8.4-Routingtest: PASS fuer Homepage, explizit
+  genannte Dateinamen, Einzel-HTML, andere ZIP-Dateitypen.
+- Kein vollstaendiger produktiver Ollama-/Worker-/Browser-Test.
+- Keine GitHub Actions, da Kontingent aufgebraucht.
+
+ABNAHME AUF NETCUP
+1. Mit bestehendem One-Liner 0.5.31 installieren.
+2. Exakt den urspruenglichen Homepage-ZIP-Auftrag mit
+   lokalem Modell ember-coreui:latest wiederholen.
+3. In Arbeitsweg "Homepage-Projektdateien erkannt" sehen.
+4. Danach separate Versuche fuer index.html, style.css,
+   main.js (mit sicherer Quellcode-Validierung).
+5. ZIP erst nach bestaetigtem Sandbox-Manifest und
+   erfolgreicher Dateiliste herunterladen. Vollstaendigkeit
+   und Verlinkungen in Android Chrome pruefen.
+6. gemma4:31b-cloud und Qwen nur bei Bedarf als
+   Kontrollfaelle. Das Cloud-Routing ist nicht angepasst.
+7. Falls eine einzelne Datei abgeschnitten wird, nur
+   deren sichere Statusdaten pruefen und nicht ohne
+   Befund weitere globale Optimierungen einbauen.
+
+NICHT BEHAUPTEN
+Keinen produktiven Erfolg / neun Sekunden fuer lokale
+Modelle, keinen vollstaendigen Browser-Test. Die bisher
+vorhandenen Source-Limits bleiben wirksam.
