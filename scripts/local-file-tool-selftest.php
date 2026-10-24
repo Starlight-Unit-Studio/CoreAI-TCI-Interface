@@ -443,9 +443,7 @@ local_file_test(str_contains($handler, '$fileModelTruncated = $fileTask && ember
   && str_contains($handler, '$followTruncated = $fileTask && ember_last_call_was_truncated()')
   && str_contains($handler, '$recoveryCandidate = is_string($out) && !$followIncomplete'),
   'the initial, protocol-retry and post-worker repair paths must all be covered');
-local_file_test(!str_contains(implode(' ', array_keys($okStatus)), 'code')
-  && !str_contains(implode(' ', array_keys($okStatus)), 'prompt')
-    || array_keys($okStatus) === ['reason','source_chars','eval_count','prompt_eval_count'],
-  'the diagnostic must contain only whitelisted non-content fields');
+local_file_test(array_keys($okStatus) === ['reason','source_chars','eval_count','prompt_eval_count'],
+  'the diagnostic must contain only approved non-content fields');
 
 echo "CoreUI local file tool selftest: OK\n";
