@@ -77,6 +77,29 @@ function coreui_console_project_request_spec(string $request): ?array {
   ];
 }
 
+
+/**
+ * A user can request a complete downloadable homepage without inventing
+ * technical filenames. Infer the minimum three real browser sources ONLY for
+ * the device-local Gemma project route. The original message is retained and
+ * all actual files still pass the existing bounded source validators/ZIP writer.
+ * Explicit filenames, single-file requests and unrelated archives are untouched.
+ */
+function coreui_console_local_homepage_zip_request(string $request): string {
+  if (!coreui_console_download_requested($request)) return $request;
+  $spec = coreui_console_project_request_spec($request);
+  if (!is_array($spec) || ($spec['zip_requested'] ?? false) !== true
+      || !empty($spec['requested'])) return $request;
+  if (preg_match('~\b(?:homepage|home[\s-]*page|startseite|webseite|website|landing[\s-]*page)\b~iu',
+      $request) !== 1) return $request;
+  if (preg_match('~\b(?:html|css|javascript|js|datei(?:en)?|quelltexte?|webprojekt)\b~iu',
+      $request) !== 1) return $request;
+  // "Only one HTML file in a ZIP" must not silently gain CSS and JS files.
+  if (preg_match('~\b(?:nur|einzig(?:e|es)?|ein(?:e|en|em|er)?)\b.{0,32}\b(?:html|datei)\b~iu',
+      $request) === 1) return $request;
+  return rtrim($request) . "\nPflichtdateien fuer das ZIP-Projekt: index.html, style.css, main.js";
+}
+
 /** Build the server-owned writer from already parsed, inert source bytes. */
 function coreui_console_project_files_python(array $files, array $spec, int $maxCodeChars): ?array {
   if ($files === [] || $maxCodeChars < 500) return null;

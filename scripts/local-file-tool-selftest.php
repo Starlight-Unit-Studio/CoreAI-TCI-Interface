@@ -18,6 +18,64 @@ local_file_test(coreui_console_multifile_source_directive(
 local_file_test(coreui_console_multifile_source_directive(
   'Erklaere mir index.html, style.css und game.js in einem ZIP.') === null,
   'plain explanation must not trigger file execution');
+
+// 0.5.31: The original user request did not name source filenames. On
+// device-local Gemma, a genuine multi-source homepage ZIP must use the
+// EXISTING safe source-file/ZIP route rather than a long generated [PY] writer.
+$homepageOriginal = 'Heyhoo, alles gut? Ich brauche eine private homepage für ein Videospiel :D '
+  . 'es soll die persönliche Homepage eines fabel Mädchens sein das total in anime '
+  . 'vernarrt ist und auch in solch einer welt lebt. Kriegen wir das hin? '
+  . 'Erstelle alle dafür benötigten HTML Dateien css usw. '
+  . 'Und Gib sie hier bitte im chat als zip zum Download aus. Danke :D';
+local_file_test(coreui_console_multifile_source_directive($homepageOriginal) === null,
+  'historical unnamed homepage request must expose the old route gap');
+$homepageRequest = coreui_console_local_homepage_zip_request($homepageOriginal);
+$homepageSpec = coreui_console_project_request_spec($homepageRequest);
+$homepageDirective = coreui_console_multifile_source_directive($homepageRequest);
+local_file_test($homepageRequest !== $homepageOriginal
+  && is_array($homepageSpec)
+  && $homepageSpec['zip_requested'] === true
+  && array_values($homepageSpec['requested']) === ['index.html','style.css','main.js']
+  && $homepageSpec['zip_name'] === 'projekt.zip',
+  'unnamed downloadable homepage ZIP must infer just three real web sources');
+local_file_test(is_string($homepageDirective)
+  && str_contains($homepageDirective, 'index.html')
+  && str_contains($homepageDirective, 'style.css')
+  && str_contains($homepageDirective, 'main.js')
+  && str_contains($homepageDirective, 'KEINE Python-Skripte'),
+  'local homepage must route into existing inert multi-source ZIP protocol');
+$homeHtml = '<!DOCTYPE html><html><head><link rel="stylesheet" href="style.css">'
+  . '</head><body><main id="app">Anime world</main><script src="main.js"></script></body></html>';
+$homeCSS = 'body { color: #fff; background: #303; }';
+$homeJS = 'document.querySelector("#app").classList.add("ready");';
+$homeFiles = [
+  'index.html'=>coreui_console_local_source_reply($homeHtml, $homepageRequest, 'index.html'),
+  'style.css'=>coreui_console_local_source_reply($homeCSS, $homepageRequest, 'style.css'),
+  'main.js'=>coreui_console_local_source_reply($homeJS, $homepageRequest, 'main.js'),
+];
+local_file_test(!in_array(null, array_values($homeFiles), true),
+  'original homepage request must accept separate real HTML/CSS/JS sources');
+$homeWriter = coreui_console_project_files_python(
+  $homeFiles, $homepageSpec, 100000);
+local_file_test(is_array($homeWriter) && $homeWriter['file_count'] === 4
+  && $homeWriter['name'] === 'projekt.zip'
+  && str_contains($homeWriter['code'], "zipfile.ZipFile")
+  && !str_contains($homeWriter['code'], $homeHtml),
+  'existing deterministic sandbox writer must create and verify real homepage ZIP');
+local_file_test(coreui_console_local_homepage_zip_request(
+  'Erkläre mir, wie man eine Homepage mit HTML und CSS als ZIP erstellt.') ===
+  'Erkläre mir, wie man eine Homepage mit HTML und CSS als ZIP erstellt.',
+  'explanation without requested download must not be intercepted');
+$explicitHome = 'Erstelle index.html, style.css, main.js und sende das ZIP zum Download.';
+local_file_test(coreui_console_local_homepage_zip_request($explicitHome) === $explicitHome,
+  'explicit filenames must retain existing route and naming');
+$singleHome = 'Erstelle mir nur eine HTML-Datei als Homepage und schicke sie als ZIP zum Download.';
+local_file_test(coreui_console_local_homepage_zip_request($singleHome) === $singleHome,
+  'single-file ZIP must not be converted to an automatic multi-source project');
+$unrelatedZip = 'Erstelle mir einen Bericht mit txt Dateien als ZIP zum Download.';
+local_file_test(coreui_console_local_homepage_zip_request($unrelatedZip) === $unrelatedZip,
+  'non-homepage ZIPs must not infer HTML/CSS/JS files');
+
 $reply = "### index.html\n```html\n<!doctype html><html><body><script src=\"game.js\"></script></body></html>\n```\n"
   . "### style.css\n```css\nbody { background: #000; }\n```\n"
   . "### game.js\n```javascript\nconsole.log('Snake');\n```";
@@ -352,6 +410,12 @@ local_file_test(coreui_console_local_js_append($cutJs, '') === null
   && coreui_console_local_js_append(str_repeat('x', 149999), $jsRest) === null,
   'empty or oversized continuations must be rejected');
 $handler = file_get_contents(dirname(__DIR__) . '/api/chat.php');
+local_file_test(str_contains($handler, 'ember_console_file_tool_is_device_local($primaryModel)')
+  && str_contains($handler, 'coreui_console_local_homepage_zip_request($userMsg)')
+  && str_contains($handler, 'coreui_console_local_source_reply($modelSource, $sourceProjectRequest,')
+  && str_contains($handler, 'coreui_console_local_source_reply($combined, $sourceProjectRequest,'),
+  'local Gemma only normalization must reach initial/continued sources without changing Cloud');
+
 // Load only pure production helpers, without booting the HTTP/DB endpoint.
 function ember_cfg(string $key, mixed $default = null): mixed { return $default; }
 function ember_debug_log(string $event, array $meta): void {}
