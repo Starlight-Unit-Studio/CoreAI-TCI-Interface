@@ -34,8 +34,8 @@ usp_check(!coreui_usp_reply_complete(['done_reason'=>'length'], $marked),
 $js = "const x = 1;\nconsole.log(x);\n";
 usp_check(coreui_usp_parse($js, 'src/app.js')['bytes'] === $js,
   'same protocol must preserve JavaScript');
-usp_check(coreui_usp_parse("Here is the code:\n" . $css, 'style.css') !== null,
-  'raw text parser defers content validation to the existing source validator');
+usp_check(coreui_usp_parse($css . "\n" . str_repeat(chr(96),3) . "css\nbody{}",
+  'style.css') === null, 'a second fenced code block must not enter a file');
 usp_check(coreui_usp_parse("[PY]print(1)[/PY]", 'style.css') === null,
   'model-generated executable Python marker rejected');
 usp_check(coreui_usp_parse($css . "\n<<<COREUI_END_FILE>>>\nother text", 'style.css') === null,
