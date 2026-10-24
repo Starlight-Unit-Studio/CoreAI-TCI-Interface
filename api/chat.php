@@ -2458,6 +2458,38 @@ function ember_console_file_tool_think(string $model): ?bool {
     : null;
 }
 
+/**
+ * Private-free Ollama diagnostics for a file-source response. Keep only
+ * completion class, marker state and numeric token/length counters.
+ * Never put generated Python, prompts, or raw Ollama response into work events.
+ */
+function ember_console_file_model_status(?string $reply, array $meta, bool $truncated): array {
+  $doneReason = strtolower(trim((string)($meta['done_reason'] ?? '')));
+  $completion = $truncated ? 'truncated'
+    : ($doneReason === 'stop' ? 'stop' : ($doneReason === '' ? 'unknown' : 'other'));
+  $hasOpen = is_string($reply) && stripos($reply, '[PY]') !== false;
+  $hasClosed = $hasOpen && preg_match('~\[PY\].*?\[/PY\]~is', $reply) === 1;
+  $marker = !$hasOpen ? 'none' : ($hasClosed ? 'closed' : 'open');
+  return [
+    'reason'=>'ollama_' . $completion . '_py_' . $marker,
+    'source_chars'=>is_string($reply) ? strlen($reply) : 0,
+    'eval_count'=>max(0, (int)($meta['eval_count'] ?? 0)),
+    'prompt_eval_count'=>max(0, (int)($meta['prompt_eval_count'] ?? 0)),
+  ];
+}
+
+/**
+ * Fail closed only for device-local Gemma file-code replies that are known
+ * to be truncated or contain an unclosed [PY] tool marker. The established
+ * Ollama Cloud and Qwen paths retain their behavior.
+ */
+function ember_console_local_gemma_file_incomplete(string $model, ?string $reply, bool $truncated): bool {
+  if (!ember_console_file_tool_is_device_local($model)) return false;
+  if ($truncated) return true;
+  return is_string($reply) && stripos($reply, '[PY]') !== false
+    && preg_match('~\[PY\].*?\[/PY\]~is', $reply) !== 1;
+}
+
 function ember_console_file_tool_candidate(string $reply, string $request): ?array {
   $max = ember_py_max_code_chars();
   // Keep the established sandbox tool protocol available for every file task.
@@ -4724,9 +4756,12 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   coreui_work_record($pdo, 'model', 'running', 'Modellaufruf gestartet', ['model'=>$primaryModel]);
   $out = ember_call_ollama($primaryModel, $sys, $u, ember_timeout_for_model($primaryModel),
     [], $imageUrl, $fileToolThink);
+  $fileModelTruncated = $fileTask && ember_last_call_was_truncated();
+  $fileModelStatus = $fileTask
+    ? ember_console_file_model_status($out, ember_last_call_meta(), $fileModelTruncated) : [];
   coreui_work_record($pdo, 'model', is_string($out) && trim($out) !== '' ? 'success' : 'error',
     is_string($out) && trim($out) !== '' ? 'Modellantwort empfangen' : 'Modellaufruf ohne Antwort',
-    ['model'=>$primaryModel]);
+    ['model'=>$primaryModel] + $fileModelStatus);
   $finalPrompt = $u;
   // For explicitly named/inferred browser-game ZIP sources, accept only
   // complete inert source files; never run an incomplete LLM Python writer.
@@ -4776,7 +4811,9 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         . 'und kein Download vorgetaeuscht.';
     }
   } else {
-    $fileToolCandidate = $fileTask && is_string($out)
+    $localIncomplete = $fileTask
+      && ember_console_local_gemma_file_incomplete($primaryModel, $out, $fileModelTruncated);
+    $fileToolCandidate = $fileTask && is_string($out) && !$localIncomplete
       ? ember_console_file_tool_candidate($out, $userMsg) : null;
     if ($fileTask && $fileToolCandidate === null) {
       coreui_work_record($pdo, 'tool', 'info', 'Dateiwerkzeug erneut angefordert',
@@ -4789,16 +4826,24 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         ['model'=>$primaryModel]);
       $retry = ember_call_ollama($primaryModel, '', $compactPrompt,
         ember_timeout_for_model($primaryModel), [], null, $fileToolThink);
+      $retryTruncated = ember_last_call_was_truncated();
+      $retryStatus = ember_console_file_model_status($retry, ember_last_call_meta(), $retryTruncated);
       coreui_work_record($pdo, 'model', is_string($retry) && trim($retry) !== '' ? 'success' : 'error',
         is_string($retry) && trim($retry) !== '' ? 'Dateicode empfangen' : 'Dateicode ausgeblieben',
-        ['model'=>$primaryModel]);
-      $fileToolCandidate = is_string($retry)
+        ['model'=>$primaryModel, 'attempt'=>2] + $retryStatus);
+      $retryIncomplete = ember_console_local_gemma_file_incomplete(
+        $primaryModel, $retry, $retryTruncated);
+      $fileToolCandidate = is_string($retry) && !$retryIncomplete
         ? ember_console_file_tool_candidate($retry, $userMsg) : null;
       if ($fileToolCandidate === null) {
         coreui_work_record($pdo, 'tool', 'error', 'Kein ausfuehrbarer Datei-Auftrag',
           ['reason'=>'tool_protocol_missing']);
-        return 'Die Modellantwort konnte nicht als ausfuehrbarer Datei-Auftrag verarbeitet werden. '
-          . 'Es wurde kein Python-Job gestartet und keine Downloaddatei gespeichert.';
+        return $retryIncomplete
+          ? 'Die lokale Gemma-Dateiausgabe wurde abgeschnitten oder der [PY]-Block '
+            . 'nicht geschlossen. Nach einem erneuten Versuch wird kein '
+            . 'unvollstaendiger Python-Code ausgefuehrt und kein Download vorgetaeuscht.'
+          : 'Die Modellantwort konnte nicht als ausfuehrbarer Datei-Auftrag verarbeitet werden. '
+            . 'Es wurde kein Python-Job gestartet und keine Downloaddatei gespeichert.';
       }
       $out = $retry;
       $finalPrompt = $compactPrompt;
@@ -4969,10 +5014,13 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       coreui_work_record($pdo, 'model', 'running', 'Folgeaufruf gestartet', ['model'=>$primaryModel]);
       $out2 = ember_call_ollama($primaryModel, $sys, $u2,
         ember_timeout_for_model($primaryModel), [], null, $fileToolThink);
+      $followTruncated = $fileTask && ember_last_call_was_truncated();
+      $followStatus = $fileTask
+        ? ember_console_file_model_status($out2, ember_last_call_meta(), $followTruncated) : [];
       $out  = (is_string($out2) && trim($out2) !== '') ? $out2 : null;
       coreui_work_record($pdo, 'model', $out !== null ? 'success' : 'error',
         $out !== null ? 'Folgeantwort empfangen' : 'Folgeaufruf ohne Antwort',
-        ['model'=>$primaryModel]);
+        ['model'=>$primaryModel, 'attempt'=>2] + $followStatus);
       $finalPrompt = $u2;
 
       // Cloud models sometimes provide an entire HTML document after the
@@ -4980,7 +5028,9 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       // otherwise execute ONE corrected tool block for FileNotFoundError.
       // Neither case lets model-supplied URLs become a download.
       if ($requestedFile) {
-        $recoveryCandidate = is_string($out)
+        $followIncomplete = $fileTask
+          && ember_console_local_gemma_file_incomplete($primaryModel, $out, $followTruncated);
+        $recoveryCandidate = is_string($out) && !$followIncomplete
           ? ember_console_file_tool_candidate($out, $userMsg) : null;
         $recoveryCode = $needsFileRepair && is_array($recoveryCandidate)
           ? (string)$recoveryCandidate['code'] : null;
