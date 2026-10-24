@@ -37,6 +37,54 @@ A strictly unique search/replace function is provided as a primitive for a
 later Aider-style edit operation. It is not yet an autonomous multi-step
 project revision loop.
 
+
+## 24 October 2026: adapting proven coding-agent file protocols
+
+The productive 0.5.32 screenshot demonstrates that a multi-file homepage ZIP is
+now detected, but the first CSS file may be rejected after two model calls.
+"Quelle nicht lesbar" alone does **not** prove whether the model reached an
+Ollama output limit, returned a normal but unconventional code format, or
+produced invalid CSS. The historical JavaScript-only continuation cannot
+repair a truncated CSS/Python/HTML source.
+
+Relevant upstream design references:
+- OpenCode: its generic read/write/edit/patch tools let the program own the
+  file operations rather than asking the LLM to generate file-writing Python.
+  https://docs.opencode.ai/docs/tools/
+- Aider: whole-file, fenced and search/replace formats are interchangeable
+  model adapters; architect mode separates intent from concrete edits.
+  https://aider.chat/docs/more/edit-formats.html
+- OpenHands: the structured str-replace editor uses explicit file paths and
+  one-match edits, with inspect/create/edit operations instead of a separate
+  protocol for every project type.
+  https://github.com/OpenHands/openhands-aci
+- Ollama: the EXISTING local /api/chat endpoint exposes done_reason=stop and
+  done_reason=length, including for locally selected Cloud model tags.
+  https://github.com/ollama/ollama/blob/main/docs/api.md
+
+Pilot improvement:
+- New reusable inert source protocol in
+  api/console_universal_source_protocol.php.
+- Accept raw, once-fenced or explicitly marked text from **any** supported
+  project extension only after a trusted normal Ollama stop or unambiguous
+  completion marker and the existing type-aware source check.
+- A confirmed length stop retains the source bytes for up to two bounded
+  continuation calls without restarting the whole file. This also covers CSS,
+  Python, HTML and TypeScript, not just JavaScript.
+- Reject tool markers and suspicious extra fences. Do not accept unknown
+  unmarked completions or falsely package truncated sources.
+- The completion reason is taken from the SAME Ollama call; no new API,
+  no changed Gemma Modelfile parameters, and no parallel model calls.
+- The existing planner and deterministic ZIP writer remain separate.
+- Regression coverage includes raw CSS without a marker, CSS continuation,
+  fenced sources, no-result retry, and truncated plans. A focused standalone
+  PHP 8.4 test of the source protocol completed successfully. The full repo,
+  Python-worker and live-Ollama tests are still pending.
+
+This is an **experimental adapter**, not proof that all generated CSS/JS/Python
+is valid. It cannot replace actual language parsers and runtime/browser
+verification. No user-facing production release has been published.
+
 ## Current limits (intentionally conservative)
 
 - Exactly one explicit ZIP project request per turn.
@@ -69,6 +117,7 @@ serial through the existing Ollama queue.
     php -l api/console_universal_project.php
     php -l api/chat.php
     php -l api/console_stream.php
+    php scripts/universal-source-protocol-selftest.php
     php scripts/universal-project-agent-selftest.php
     php scripts/universal-project-writer-selftest.php
     php scripts/local-file-tool-selftest.php
