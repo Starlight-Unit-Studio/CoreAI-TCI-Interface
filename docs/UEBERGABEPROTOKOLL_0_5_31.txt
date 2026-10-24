@@ -2,6 +2,7 @@ E.M.B.E.R. COREUI UEBERGABEPROTOKOLL 0.5.31
 Stand: 24.10.2026
 Basis main 0.5.30: d38908a436525594f047c6d48d638d85772d8e85
 Branch: fix/local-homepage-zip-routing-0.5.31
+Pull Request: https://github.com/Starlight-Unit-Studio/coreui/pull/68
 
 PROJEKTKONSTANTEN
 E.M.B.E.R. = Framework und Backend
