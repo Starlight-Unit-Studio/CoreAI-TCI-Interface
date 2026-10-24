@@ -1,0 +1,57 @@
+E.M.B.E.R. CoreUI 0.5.32
+24.10.2026
+
+RELEASE: REINER PREFLIGHT-TEST-HOTFIX
+
+AUSGANGSSITUATION
+- Auf dem Netcup-Server schlug der bestehende CoreUI-Preflight mit
+  genau einem Problem fehl.
+- Fehlermeldung: Frontend-Regressions-Selbsttest FEHLER:
+  Mehrdateien-Werkzeugpfad, kodierte Dateien oder gemeinsame Cloud-/
+  Lokalroute fehlen.
+- Dagegen waren u.a. PHP-Syntaxchecks, Python-Worker, Benutzer-
+  isolierung, Account-Security, Datenbank-/Ollama-Endpunkte und
+  die sonstigen angezeigten Tests erfolgreich.
+- Node.js fehlte nur fuer einen optionalen Test; die fehlende
+  Nginx-Default-Site war ebenfalls lediglich eine Warnung.
+
+NACHGEWIESENE URSACHE
+- frontend-regression-selftest.php suchte nach dem LITERAL:
+  coreui_console_multifile_source_directive($userMsg)
+- Seit 0.5.31 ist der korrekte Code:
+  coreui_console_multifile_source_directive($sourceProjectRequest)
+- $sourceProjectRequest stammt aus der gezielt auf device-local
+  Gemma beschraenkten Homepage-Projekt-Normalisierung. Die urspruengliche
+  $userMsg bleibt fuer den eigentlichen Auftrag erhalten.
+- Vergleich der 15 beteiligten Testbedingungen mit GitHub main:
+  14/15 stimmten, nur der alte Variablenname war veraltet.
+
+BEHEBUNG
+- Ausschliesslich den Frontend-Regressions-Selbsttest auf den
+  tatsaechlichen aktuellen Aufruf umgestellt.
+- Zwei weitere Erwartungen pruefen nun, dass
+  coreui_console_local_homepage_zip_request($userMsg) und
+  ember_console_file_tool_is_device_local($primaryModel) erhalten
+  bleiben. Damit wird nicht blind auf einen kleineren Test reduziert.
+- KEIN Eingriff in produktive Dateienerstellung, Chatlogik,
+  Python-Worker, Cloud-/Qwen-Routing, Ollama, Modelfile oder DB.
+- Der universelle Projekt-Agent bleibt Draft-PR #69 und ist
+  weiterhin standardmaessig deaktiviert.
+- Das Problem ist ein falscher Testalarm, kein Beleg fuer eine
+  ausgefallene CoreUI-Funktion.
+
+VERSIONSREGEL
+- Da jeder Merge nach main eine neue VERSION erhalten muss, wurde
+  Version 0.5.32 mit allen sechs HTML-Anzeigen, content-basiertem
+  numerischen Bootstrap-Fingerprint, Tests, README, CHANGELOG,
+  Preflight-Pfaden und TXT-Archiv synchronisiert.
+- Kein neues Installerverhalten oder Schema. Kein num_ctx/num_predict.
+- GitHub Actions nicht starten. [skip ci]
+
+ABNAHME
+- Nach Merge Standard-One-Liner auf Netcup laufen lassen.
+- Die korrigierte Frontend-Regression soll dann den alten falschen
+  Variablennamen nicht mehr erwarten.
+- Den bestehenden Preflight erneut komplett ausfuehren.
+- Erst wenn dort kein Fehler erscheint, den Updatezustand
+  als erfolgreich bestaetigen. Keinen produktiven Pass vortaeuschen.
