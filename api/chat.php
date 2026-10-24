@@ -4946,11 +4946,10 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
           'file_count'=>(int)($inlineFile['file_count'] ?? 1)]);
     }
     if ($pyCode !== null) {
-      ember_debug_log('ember_py_trigger', [
-        'channel'      => $channel,
-        'code_chars'   => strlen($pyCode),
-        'code_preview' => mb_substr($pyCode, 0, 400, 'UTF-8'),
-      ]);
+      $triggerMeta = ['channel'=>$channel,'code_chars'=>strlen($pyCode)];
+      // Universal-project encoded source bytes never enter debug previews.
+      if (!$universalPilot) $triggerMeta['code_preview'] = mb_substr($pyCode, 0, 400, 'UTF-8');
+      ember_debug_log('ember_py_trigger', $triggerMeta);
       $pyRes = ember_py_run($pdo, $pyCode, $channel, (int)($senderChar['user_id'] ?? 0), $consoleSessionId, $triggerMessageId, $triggerRevision);
       $artifactNotice = '';
       if ($channel === 'console' && is_array($pyRes)) {
@@ -4990,6 +4989,24 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       $confirmedFile = $requestedFile
         ? coreui_console_artifact_pending($consoleUid, (string)$consoleSessionId, $triggerMessageId) : null;
       if ($confirmedFile !== null) {
+        if ($universalPilot) {
+          // Model-selected project ZIP may contain user-named source paths.
+          // Confirm the ONE real archive, not loose workspace source files.
+          $archiveName = (string)($fileToolCandidate['meta']['name'] ?? '');
+          $actual = $confirmedFile['files'];
+          $zipValid = count($actual) === 1 && $archiveName !== ''
+            && strcasecmp((string)($actual[0]['name'] ?? ''), $archiveName) === 0
+            && empty($actual[0]['partial'])
+            && (int)($actual[0]['size_bytes'] ?? 0) > 0;
+          if (!$zipValid) {
+            coreui_work_record($pdo, 'artifact', 'error', 'Universelles ZIP nicht bestaetigt',
+              ['reason'=>'universal_zip_incomplete']);
+            return 'Das Projekt-ZIP wurde nicht vollstaendig bestaetigt. '
+              . 'Es wurde kein erfolgreicher Download behauptet.';
+          }
+          return 'Das verifizierte Projekt-ZIP wurde gespeichert und steht als '
+            . 'echter Download bereit.';
+        }
         $missing = coreui_console_missing_requested_artifacts($userMsg, $confirmedFile['files']);
         if ($missing !== []) {
           coreui_work_record($pdo, 'artifact', 'error', 'Dateipaket unvollstaendig',
