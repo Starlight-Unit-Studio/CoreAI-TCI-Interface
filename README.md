@@ -7,7 +7,15 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 E.M.B.E.R. CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.29` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.30` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Ollama file-completion diagnostics (0.5.30)
+
+This is a narrow diagnostic and safety patch over the 0.5.29 rollback, not a new file-generation architecture. Existing model timeline entries now carry a safe Ollama completion label such as `ollama_stop_py_closed` or `ollama_truncated_py_open`, returned content size, `eval_count`, and `prompt_eval_count`. Raw prompts, Python, stderr, and private reasoning are never included.
+
+For device-local Gemma 4 (`gemma4:e4b` and `gemma4:26b`), responses reported as truncated by Ollama or containing an unclosed [PY] marker cannot reach the Python worker. The existing single protocol retry remains; the post-worker recovery reply receives the same guard. `gemma4:31b-cloud` is still selected from local Ollama's model list and routed through that very same local Ollama endpoint. Cloud and Qwen workflows are not rerouted.
+
+This does not guarantee that syntactically incorrect but fully marked Python is fixed. A controlled live retest should compare local Gemma to `gemma4:31b-cloud` and inspect the new completion label in the existing work timeline. There are no Gemma Modelfile changes, no `num_ctx` or `num_predict` overrides, no worker changes, no database migration, and no new installer command. Isolated local PHP validation passed; a full productive server acceptance remains open.
 
 ## Stability rollback to the pre-optimization 0.5.25 source (0.5.29)
 

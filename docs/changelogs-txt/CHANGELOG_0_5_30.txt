@@ -1,0 +1,51 @@
+E.M.B.E.R. COREUI 0.5.30
+24.10.2026
+
+ZWECK
+Diagnose und minimaler Sicherheitsguard fuer Ollama-Dateiauftraege.
+Ausgangsbasis ist der Rollback 0.5.29. Keine neue Dateierzeugung.
+
+BEOBACHTUNG
+- gemma4:e4b und gemma4:26b (lokale Inferenz): Python SyntaxError.
+- Job 72: offene mehrzeilige Zeichenkette, Fehlerzeile 10, 81 Codezeilen.
+- Job 73: offene mehrzeilige Zeichenkette, Fehlerzeile 12, 32 Codezeilen.
+- gemma4:31b-cloud: gleicher Auftrag in ca. neun Sekunden erfolgreich.
+- Alle Modelle kommen aus der lokal konfigurierten Ollama-Modellliste.
+  Cloud-Inferenz wird von Ollama weitergeleitet, keine getrennte API.
+- Unbekannt war, ob done_reason=length oder done_reason=stop.
+
+AENDERUNGEN
+- Die vorhandenen Arbeitsschritte fuer initialen Modellaufruf,
+  einen Protokoll-Retry und den Folgeaufruf nach Python-Arbeit erhalten
+  jetzt sichere Diagnose-Metadaten.
+- Nur erlaubte Werte: reason als feste Klasse, source_chars,
+  eval_count, prompt_eval_count. Keine generierten Python-Skripte,
+  keine privaten Prompts, keine Modell-Think-Texte, keine stderr-Bytes.
+- Beispiele fuer reason:
+  ollama_truncated_py_open = Ollama-Ausgabe abgebrochen, PY nicht geschlossen.
+  ollama_stop_py_open = Ollama regulär beendet, PY aber nicht geschlossen.
+  ollama_stop_py_closed = Modell beendete die Ausgabe mit komplettem
+                          Tool-Marker; Python-Inhalt kann dennoch fehlerhaft sein.
+  ollama_unknown_py_open = Abschlussgrund nicht eindeutig.
+- Nur lokal laufende Gemma-4-Modelle blockieren unvollstaendige [PY]-
+  Antworten oder nachweislich abgeschnittene Modellantworten vor
+  Python-Ausfuehrung. Der bisherige hoechstens einmalige Protokoll-
+  Wiederholungsversuch bleibt, ebenso die serielle Modellqueue.
+- Der funktionierende Ollama-Cloud-Dateipfad und Qwen-Python-Pfad
+  bekommen keine neue Annahmelogik oder API-Integration.
+
+REGRESSION
+- Der bestehende lokale Dateiwerkzeug-Selbsttest prueft:
+  gemma4:e4b, gemma4:26b, gemma4:31b-cloud, lokale Qwen-Route,
+  geschlossene/offene [PY]-Tags, abgebrochene/regelmaessige
+  Antworten und Metadaten ohne Textinhalte.
+- PHP 8.4 isolierter Testsatz mit den Produktions-Helferlogiken bestanden.
+- Vollstaendiger produktiver PHP/Ollama/Python-Worker-Integrationstest
+  ist noch NICHT durchgefuehrt.
+
+KOMPATIBILITAET
+- Kein Gemma num_ctx/num_predict; Modelfile unveraendert.
+- Keine DB-Migration, keine neuen Tabellen, kein geaenderter Installer.
+- Keine parallelen LLM-Anfragen.
+- Keine GitHub Actions (Kontingent aufgebraucht). [skip ci]
+
