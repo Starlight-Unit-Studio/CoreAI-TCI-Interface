@@ -2,6 +2,7 @@ E.M.B.E.R. COREUI UEBERGABEPROTOKOLL 0.5.30
 Stand 24.10.2026
 Basis main 0.5.29: 5084e0310e06dccc5c4aafb477625f85ffc54f49
 Branch fix/ollama-file-completion-diagnostics-0.5.30
+Pull Request https://github.com/Starlight-Unit-Studio/coreui/pull/67
 
 KANONISCHE BEZEICHNUNGEN
 E.M.B.E.R.: Framework und Backend.
