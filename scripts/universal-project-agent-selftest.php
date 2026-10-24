@@ -99,6 +99,12 @@ up_test(coreui_up_append($cut['bytes'],$tail['bytes'])
   'safe bounded continuation append');
 up_test(coreui_up_chunk("[PY]evil[/PY]\n<<<COREUI_END_FILE>>>",true)===null,
   'never execute model-generated tool code');
+up_test(coreui_up_source_valid('assets/theme.css', $sources['assets/theme.css'])
+  && coreui_up_source_valid('assets/theme.css', '@import url("theme.css");')
+  && !coreui_up_source_valid('assets/theme.css', 'Here is your stylesheet')
+  && !coreui_up_source_valid('assets/theme.css', '/* only commentary */')
+  && !coreui_up_source_valid('assets/theme.css', 'body { color: red;'),
+  'language-level CSS validation rejects prose and open blocks without homepage rules');
 up_test(coreui_up_source_valid('index.html',$sources['index.html'])
   && coreui_up_source_valid('src/app.js',$sources['src/app.js'])
   && coreui_up_source_valid('config.json','{"valid":true}')
