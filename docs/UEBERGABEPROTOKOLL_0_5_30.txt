@@ -1,0 +1,74 @@
+E.M.B.E.R. COREUI UEBERGABEPROTOKOLL 0.5.30
+Stand 24.10.2026
+Basis main 0.5.29: 5084e0310e06dccc5c4aafb477625f85ffc54f49
+Branch fix/ollama-file-completion-diagnostics-0.5.30
+Pull Request https://github.com/Starlight-Unit-Studio/coreui/pull/67
+
+KANONISCHE BEZEICHNUNGEN
+E.M.B.E.R.: Framework und Backend.
+E.M.B.E.R. CoreUI: eigenstaendiges Terminal.
+Mara Thorne: TCI/CoreAI der Ravager Thorn.
+Ember: separate CoreAI der Starlight Ember.
+
+NACHGEWIESENE AUSGANGSLAGE
+- Beide lokal ausgefuehrten Modelle gemma4:e4b und gemma4:26b
+  scheitern bei einer privaten HTML-Homepage an SyntaxError.
+- Python-Job 72 und 73 enthalten offene dreifache Anfuehrungszeichen.
+  Der Fehler liegt nicht nahe dem Ende, aber die String-Oeffnung
+  bezeichnet nicht notwendig die fehlende Schliessposition.
+- Cloud-Modell gemma4:31b-cloud erledigt denselben Auftrag in neun
+  Sekunden erfolgreich.
+- Alle Modelle kommen aus der lokalen Ollama-Tags-Liste und werden
+  durch denselben lokal konfigurierten Ollama-/api/chat-Endpunkt
+  adressiert. KEINE getrennte API-Anbindung durch CoreUI.
+- Der Ollama-Abschlussgrund der alten Jobs ist nicht mehr allein
+  aus den Jobdaten ableitbar. Vorher keine sichere Unterscheidung
+  zwischen Modell-Ende mit fehlerhaftem Code oder Ausgabelimit.
+
+UMSETZUNG IN 0.5.30
+- In api/chat.php zwei reine Helfer fuer Metadatenklassifikation
+  und eine eng begrenzte lokale Gemma-Datei-Antwortsperre.
+- Die bestehenden Model-Arbeitseintraege speichern nun:
+  reason: ollama_stop_py_closed/ollama_stop_py_open/
+          ollama_truncated_py_closed/ollama_truncated_py_open/
+          ollama_unknown_py_.../ollama_other_py_...
+  source_chars: Anzahl Ausgabezeichen/Bytes,
+  eval_count, prompt_eval_count als sichere Zaehler.
+- Keine Speicherung von Prompts, Antworten, Source oder Thinking
+  in der Benutzer-Arbeitstimeline. DB-Schema bleibt unveraendert.
+- Bei device-lokalem Gemma wird ein als abgeschnitten bestaetigter
+  Modelloutput oder offener [PY]-Marker NICHT an Python ausgegeben.
+- Erster Datei-Protokollaufruf, genau ein Protokoll-Retry und
+  Folgeaufruf nach einer Python-Ausfuehrung sind abgedeckt.
+- gemma4:31b-cloud und lokale Qwen bleiben auf ihren bisherigen
+  Dateirouten, kein Cloud-API-Client wurde eingefuehrt.
+- Keine Aenderung an serialisierter Modellqueue, Worker, Sandbox,
+  Artefaktmanifest, Download, Gemma-Modelfile oder Installer.
+
+ABNAHME NACH MAIN-MERGE
+1. Gewoehnlichen bestehenden Update-One-Liner ausfuehren.
+2. Browser zeigt Version 0.5.30. Profil/Chats bleiben vorhanden.
+3. Den IDENTISCHEN HTML-Homepage-Auftrag lokal mit gemma4:e4b oder
+   gemma4:26b wiederholen.
+4. Unter 'Modellantwort empfangen' in Technische Details auf
+   reason, source_chars, eval_count, prompt_eval_count achten.
+5. Bei 'ollama_truncated_py_open' ist Ausgabe-Limit nachgewiesen.
+   Bei 'ollama_stop_py_open' hat das Modell regulaer eine offene
+   Ausgabe beendet.
+   Bei 'ollama_stop_py_closed' ist eine volle Tool-Huelle da;
+   der innere Python-Code kann trotzdem syntaktisch defekt sein.
+6. Vergleich mit gemma4:31b-cloud ueber DIESELBE lokale Modellliste.
+   Keine separate API-Konfiguration erforderlich.
+7. Keine falschen Downloadkarten und kein weiterer unbeschraenkter
+   Reparaturzyklus.
+8. Ein voller produktiver Ollama-/Worker-Lauf ist vor Ort offen.
+9. Ggf. anhand der echten Abschlusskategorie den nachfolgenden
+   minimalen Fix entwickeln, nicht vorher am Gemma-Modelfile drehen.
+
+AUSDRUECKLICH NICHT GELIEFERT
+- Keine allgemeine SyntaxError-Heilung fuer komplett markierten,
+  aber ungueltigen Python-Code.
+- Keine neue Python- oder HTML-Dateiarchitektur und kein
+  voreiliger Anspruch auf geloestes Live-Problem.
+- Keine GitHub Actions. [skip ci]
+

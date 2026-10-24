@@ -2,6 +2,15 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.30 - 24.10.2026
+
+- Eng begrenzter Ollama-Dateiantwort-Diagnosepatch auf Basis 0.5.29. Kein neuer Python-Datei-Writer, kein Aendern des Python-Workers oder der Modell-Routen.
+- Modell-Arbeitsereignisse zeigen ausschliesslich sichere Abschlussklassen (z.B. `ollama_stop_py_closed`, `ollama_truncated_py_open`) und Zahlwerte fuer Ausgabezeichen, `eval_count` und `prompt_eval_count`; keine Prompts, Quelltexte, Thinking oder stderr.
+- Nur lokal laufende Gemma-4-Modelle weisen nachweislich abgeschnittene Antworten oder nicht geschlossene [PY]-Bloecke vor der Python-Ausfuehrung ab. Bestehender einmaliger Protokoll-Retry sowie spaeterer Korrekturversuch sind abgedeckt. Kein unbegrenzter Retry.
+- Ollama Cloud wie `gemma4:31b-cloud` bleibt ueber die lokal konfigurierte Ollama-Modellliste und denselben lokalen Endpunkt erreichbar, ohne separate Cloud-API. Qwen unveraendert.
+- Isolierte PHP-8.4-Testlaeufe und aktualisierte lokale Dateiwerkzeugregression bestanden. Produktions-Ollama-End-to-End offen. Kein `num_ctx` / `num_predict` fuer Gemma, keine Modelfile- oder Migrationsaenderung, kein neuer Installer. GitHub Actions nicht gestartet. [skip ci]
+- Vollstaendig markierter aber intern ungueltiger Python-Code kann weiterhin einen SyntaxError haben. Die Diagnose soll erst den Ollama-Abschlussgrund nachweisen.
+
 ## 0.5.29 - 23.10.2026
 
 - Stabilitaets-Rollback auf den gesamten funktionalen Quellstand von **0.5.25** aus Commit `53dab3f6d78e0cd626824aa3ca883f441a7f193f`, vor den PRs #63 (0.5.26), #64 (0.5.27) und #65 (0.5.28).

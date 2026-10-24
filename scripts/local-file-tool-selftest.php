@@ -358,7 +358,8 @@ function ember_debug_log(string $event, array $meta): void {}
 $tokens = token_get_all($handler);
 $wantedFunctions = ['ember_py_max_code_chars','ember_py_extract_marker',
   'ember_console_file_tool_candidate','ember_console_file_tool_directive',
-  'ember_console_file_tool_is_local','ember_console_file_tool_is_device_local','ember_console_file_tool_is_local_qwen_coder'];
+  'ember_console_file_tool_is_local','ember_console_file_tool_is_device_local','ember_console_file_tool_is_local_qwen_coder',
+  'ember_console_file_model_status','ember_console_local_gemma_file_incomplete'];
 for ($i = 0; $i < count($tokens); $i++) {
   if (!is_array($tokens[$i]) || $tokens[$i][0] !== T_FUNCTION) continue;
   $j = $i + 1;
@@ -405,4 +406,44 @@ local_file_test(str_contains(ember_console_file_tool_directive(), '[PY]')
   && !str_contains($handler, '$sourceProjectMode')
   && !str_contains($handler, '$sourceOnly'),
   'source-only routing must not suppress the established sandbox tool');
+// 0.5.30: diagnostics stay metadata-only; prevent truncated/open Gemma [PY]
+// from reaching the sandbox without affecting Ollama Cloud or local Qwen.
+$completePy = "[PY]\nprint('ok')\n[/PY]";
+$openPy = "[PY]\nhtml = \"\"\"\n<html><body>incomplete";
+$stopMeta = ['done_seen'=>true,'done'=>true,'done_reason'=>'stop',
+  'eval_count'=>308,'prompt_eval_count'=>84];
+$lengthMeta = ['done_seen'=>true,'done'=>true,'done_reason'=>'length',
+  'eval_count'=>6500,'prompt_eval_count'=>90];
+$okStatus = ember_console_file_model_status($completePy, $stopMeta, false);
+local_file_test(($okStatus['reason'] ?? '') === 'ollama_stop_py_closed'
+  && ($okStatus['source_chars'] ?? 0) === strlen($completePy)
+  && ($okStatus['eval_count'] ?? 0) === 308
+  && ($okStatus['prompt_eval_count'] ?? 0) === 84,
+  'complete Ollama stop response must log safe diagnostic counters');
+$lengthStatus = ember_console_file_model_status($openPy, $lengthMeta, true);
+local_file_test(($lengthStatus['reason'] ?? '') === 'ollama_truncated_py_open',
+  'unfinished local model response must retain truncated and open-marker state');
+$unknownStatus = ember_console_file_model_status($openPy, [], false);
+local_file_test(($unknownStatus['reason'] ?? '') === 'ollama_unknown_py_open',
+  'missing Ollama done_reason must be recorded as unknown, not assumed truncated');
+local_file_test(ember_console_local_gemma_file_incomplete('gemma4:e4b', $openPy, false)
+  && ember_console_local_gemma_file_incomplete('gemma4:26b', $openPy, false)
+  && ember_console_local_gemma_file_incomplete('gemma4:e4b', $completePy, true)
+  && ember_console_local_gemma_file_incomplete('gemma4:26b', $completePy, true),
+  'local Gemma must reject any open marker or confirmed truncated reply');
+local_file_test(!ember_console_local_gemma_file_incomplete('gemma4:e4b', $completePy, false)
+  && !ember_console_local_gemma_file_incomplete('gemma4:26b', $completePy, false),
+  'complete local Gemma Python reply must retain original execution path');
+local_file_test(!ember_console_local_gemma_file_incomplete('gemma4:31b-cloud', $openPy, true)
+  && !ember_console_local_gemma_file_incomplete('gpt-oss:120b-cloud', $openPy, true)
+  && !ember_console_local_gemma_file_incomplete('qwen3.6:35b-a3e-q4_K_M', $openPy, true),
+  'Cloud models selected through Ollama and local Qwen must remain unchanged');
+local_file_test(str_contains($handler, '$fileModelTruncated = $fileTask && ember_last_call_was_truncated()')
+  && str_contains($handler, '$retryTruncated = ember_last_call_was_truncated()')
+  && str_contains($handler, '$followTruncated = $fileTask && ember_last_call_was_truncated()')
+  && str_contains($handler, '$recoveryCandidate = is_string($out) && !$followIncomplete'),
+  'the initial, protocol-retry and post-worker repair paths must all be covered');
+local_file_test(array_keys($okStatus) === ['reason','source_chars','eval_count','prompt_eval_count'],
+  'the diagnostic must contain only approved non-content fields');
+
 echo "CoreUI local file tool selftest: OK\n";
