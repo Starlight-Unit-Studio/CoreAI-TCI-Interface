@@ -70,7 +70,15 @@ serial through the existing Ollama queue.
     php -l api/chat.php
     php -l api/console_stream.php
     php scripts/universal-project-agent-selftest.php
+    php scripts/universal-project-writer-selftest.php
     php scripts/local-file-tool-selftest.php
+
+
+The writer test invokes Python 3 in a disposable temporary directory, reads the
+ZIP back, compares every member against the expected original UTF-8 bytes and
+checks the archive CRC. Both existing Docker/native preflight scripts now
+include this test and the planner regression, even while the pilot flag is off.
+These checks have been **added but not executed on the target machine yet**.
 
 The new selftest fakes model replies and validates a browser project and
 a completely different Python-CLI project. It also checks dependency
