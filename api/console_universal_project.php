@@ -302,6 +302,7 @@ function coreui_up_build(string $request, callable $modelCall, int $maxCodeChars
         ?coreui_usp_parse($answer['text'],$entry['path'],true):null;
       if (!is_array($chunk)) continue;
       $bytes=$chunk['bytes'];
+      $openFenceTicks=(int)($chunk['fence_ticks'] ?? 0);
       // Aider-style raw/whole and fenced responses are accepted only with
       // a safe Ollama stop or an explicit closed response. File validation
       // still decides whether the bytes are an eligible source.
@@ -311,11 +312,12 @@ function coreui_up_build(string $request, callable $modelCall, int $maxCodeChars
         $more=$modelCall(coreui_up_continue_prompt($request,$entry,$bytes,$segment),
           'continue',$entry['path'],$segment);
         $part=is_array($more)&&is_string($more['text']??null)
-          ?coreui_usp_parse($more['text'],$entry['path'],false):null;
+          ?coreui_usp_parse($more['text'],$entry['path'],false,$openFenceTicks):null;
         if (!is_array($part)) break;
         $joined=coreui_up_append($bytes,$part['bytes']);
         if ($joined===null) break;
         $bytes=$joined;
+        if (($part['fence_closed'] ?? false) === true) $openFenceTicks=0;
         $done=coreui_usp_reply_complete($more,$part);
         $needsMore=coreui_usp_reply_truncated($more);
       }
