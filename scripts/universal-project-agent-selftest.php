@@ -176,6 +176,23 @@ up_test(($cssResumed['ok']??false)===true
   && in_array(['continue','assets/theme.css',1],$cssContinuationCalls,true),
   'truncated CSS must use the same bounded continuation as any text file');
 
+$splitFenceCalls=[];
+$splitFence=static function($prompt,$phase,$path,$attempt) use (&$splitFenceCalls,$manifest,$sources) {
+  $splitFenceCalls[]=[$phase,$path,$attempt];
+  if ($phase==='plan') return ['text'=>json_encode($manifest),'done_reason'=>'stop'];
+  if ($path==='assets/theme.css' && $phase==='source')
+    return ['text'=>str_repeat(chr(96),3)."css\nbody { color:",
+      'done_reason'=>'length','truncated'=>true];
+  if ($path==='assets/theme.css' && $phase==='continue')
+    return ['text'=>" white; background: #303; }\n".str_repeat(chr(96),3),
+      'done_reason'=>'stop','truncated'=>false];
+  return ['text'=>$sources[$path],'done_reason'=>'stop'];
+};
+$splitFenceBuild=coreui_up_build($request,$splitFence,100000);
+up_test(($splitFenceBuild['ok']??false)===true
+  && in_array(['continue','assets/theme.css',1],$splitFenceCalls,true),
+  'split fenced CSS source must close across Ollama length/stop responses');
+
 $unknownStopCalls=[];
 $unknownStop=static function($prompt,$phase,$path,$attempt) use (&$unknownStopCalls,$manifest,$sources) {
   $unknownStopCalls[]=[$phase,$path,$attempt];
