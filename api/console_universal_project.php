@@ -143,3 +143,186 @@ function coreui_up_continue_prompt(string $request, array $entry, string $bytes,
     . "\nQuelltext-Ende als reine Referenzdaten:\n" . substr($bytes,-2200)
     . "\nENDE REFERENZ\n";
 }
+
+/** Text chunks are inert; the completion marker is required for every file. */
+function coreui_up_chunk(string $reply, bool $first): ?array {
+  if ($reply === '' || strlen($reply) > 140000 || str_contains($reply,"\0")
+      || preg_match('~\[(?:/)?PY\]~i', $reply)) return null;
+  $raw = $reply;
+  if ($first && preg_match('~^\s*\x60{3,}[A-Za-z0-9_+.-]{0,28}\s*\r?\n~', $raw, $wrap))
+    $raw = substr($raw, strlen($wrap[0]));
+  $complete = preg_match('~(?:^|\r?\n)<<<COREUI_END_FILE>>>\s*$~D',
+    $raw, $match, PREG_OFFSET_CAPTURE) === 1;
+  if ($complete) $raw = substr($raw, 0, (int)$match[0][1]);
+  if (str_contains($raw, '<<<COREUI_END_FILE>>>')) return null;
+  if ($complete) $raw = (string)preg_replace('~\r?\n\x60{3,}\s*$~D', '', $raw);
+  if ($raw === '' || strlen($raw) > 120000) return null;
+  return ['bytes'=>$raw,'complete'=>$complete];
+}
+/** Suppress known repeated suffix on a continuation, without silent restarts. */
+function coreui_up_append(string $before, string $next): ?string {
+  if ($before === '' || $next === '' || strlen($before) + strlen($next) > 120000
+      || $before === $next || str_starts_with($next, substr($before,0,64))) return null;
+  $limit = min(2200, strlen($before), strlen($next)); $overlap = 0;
+  for ($n=$limit; $n>=12; $n--) {
+    if (substr($before,-$n) === substr($next,0,$n)) { $overlap=$n; break; }
+  }
+  $joined = $before . substr($next,$overlap);
+  return strlen($joined) > strlen($before) ? $joined : null;
+}
+function coreui_up_source_valid(string $path, string $source): bool {
+  if (!coreui_up_path_ok($path) || $source === '' || strlen($source) > 120000
+      || str_contains($source,"\0") || preg_match('//u',$source) !== 1) return false;
+  $ext = strtolower((string)pathinfo($path,PATHINFO_EXTENSION));
+  if (in_array($ext,['html','htm'],true))
+    return preg_match('~^\s*(?:<!doctype\s+html[^>]*>\s*)?<html\b~i',$source) === 1
+      && preg_match('~</html>\s*$~i',$source) === 1;
+  if ($ext === 'svg')
+    return preg_match('~^\s*<svg\b~i',$source) === 1
+      && preg_match('~</svg>\s*$~i',$source) === 1;
+  if ($ext === 'json') {
+    json_decode($source,true);
+    return json_last_error() === JSON_ERROR_NONE;
+  }
+  if ($ext === 'css') return substr_count($source,'{') === substr_count($source,'}');
+  // Other languages must be checked with their own non-executing linters.
+  return true;
+}
+/** Relative web resource resolution; null is returned for out-of-tree paths. */
+function coreui_up_relative(string $origin, string $link): ?string {
+  if ($link === '' || preg_match('~^(?:[a-z][a-z0-9+.-]*:|//|/|#)~i',$link)) return null;
+  $base = dirname($origin);
+  $segments = $base === '.' ? [] : explode('/',$base);
+  $reference = explode('?',explode('#',$link,2)[0],2)[0];
+  foreach (explode('/',$reference) as $segment) {
+    if ($segment === '' || $segment === '.') continue;
+    if ($segment === '..') {
+      if ($segments === []) return null;
+      array_pop($segments); continue;
+    }
+    $segments[]=$segment;
+  }
+  return implode('/',$segments);
+}
+function coreui_up_project_valid(array $plan, array $files): bool {
+  $wanted = [];
+  foreach ($plan['files'] as $entry) $wanted[strtolower($entry['path'])]=$entry['path'];
+  if (count($wanted) !== count($files)) return false;
+  $total=0;
+  foreach ($wanted as $key=>$path) {
+    $source=$files[$key] ?? null;
+    if (!is_string($source) || !coreui_up_source_valid($path,$source)) return false;
+    $total += strlen($source);
+    if ($total > 400000) return false;
+    if (!in_array(strtolower((string)pathinfo($path,PATHINFO_EXTENSION)),['html','htm'],true))
+      continue;
+    if (preg_match_all('~<(?:script|link)\b[^>]*\b(?:src|href)\s*=\s*["\x27]([^"\x27]+)["\x27]~i',
+      $source,$refs)) {
+      foreach ($refs[1] as $link) {
+        if (preg_match('~^(?:[a-z][a-z0-9+.-]*:|//|/|#)~i',$link)) continue;
+        $target=coreui_up_relative($path,$link);
+        if ($target===null || !isset($wanted[strtolower($target)])) return false;
+      }
+    }
+  }
+  return true;
+}
+/** Only the trusted backend script executes; model output is encoded as DATA. */
+function coreui_up_writer(array $plan, array $files, int $maxCodeChars): ?array {
+  if ($maxCodeChars < 500 || !coreui_up_project_valid($plan,$files)) return null;
+  $packed=[]; $total=0;
+  foreach ($plan['files'] as $entry) {
+    $path=$entry['path']; $source=$files[strtolower($path)];
+    $total += strlen($source);
+    $compressed=gzcompress($source,6);
+    $useZip=is_string($compressed) && strlen($compressed)<strlen($source);
+    $packed[$path]=[$useZip?'z':'b',base64_encode($useZip?$compressed:$source)];
+  }
+  $json=json_encode($packed,JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);
+  $archive=json_encode($plan['archive'],JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);
+  $script="from pathlib import Path\nimport base64, zlib, zipfile, tempfile\n"
+    ."output = Path('/work/output')\noutput.mkdir(parents=True, exist_ok=True)\n"
+    ."sources = ".$json."\narchive = output / ".$archive."\n"
+    ."with tempfile.TemporaryDirectory(prefix='coreui_project_') as temp:\n"
+    ."    root = Path(temp)\n"
+    ."    for name, pair in sources.items():\n"
+    ."        mode, data = pair\n"
+    ."        raw = base64.b64decode(data, validate=True)\n"
+    ."        if mode == 'z': raw = zlib.decompress(raw)\n"
+    ."        dest = root.joinpath(*name.split('/'))\n"
+    ."        dest.parent.mkdir(parents=True, exist_ok=True)\n"
+    ."        dest.write_bytes(raw)\n"
+    ."        assert dest.is_file() and dest.stat().st_size == len(raw)\n"
+    ."    with zipfile.ZipFile(archive, 'w', compression=zipfile.ZIP_DEFLATED) as z:\n"
+    ."        for name in sorted(sources):\n"
+    ."            z.write(root.joinpath(*name.split('/')), arcname=name)\n"
+    ."    with zipfile.ZipFile(archive) as z:\n"
+    ."        assert z.namelist() == sorted(sources)\n"
+    ."        assert z.testzip() is None\n"
+    ."        for name in sources:\n"
+    ."            assert z.read(name) == root.joinpath(*name.split('/')).read_bytes()\n"
+    ."assert archive.is_file() and archive.stat().st_size > 0\n"
+    ."print('ZIP verified:', archive.name, len(sources))\n";
+  if (strlen($script)>$maxCodeChars) return null;
+  return ['code'=>$script,'name'=>$plan['archive'],'file_count'=>1,
+    'source_count'=>count($files),'size_bytes'=>$total];
+}
+/**
+ * Serial model adapter contract:
+ * fn(prompt, phase, path, attempt) => ['text'=>string,'truncated'=>bool].
+ * No persistence or executable model code; the caller verifies worker outputs.
+ */
+function coreui_up_build(string $request, callable $modelCall, int $maxCodeChars=100000,
+                         ?callable $progress=null): array {
+  if (!coreui_up_requested($request)) return ['ok'=>false,'reason'=>'not_project_request'];
+  $emit=static function(string $stage,array $meta=[]) use($progress): void {
+    if ($progress!==null) $progress($stage,$meta);
+  };
+  $plan=null;
+  for ($attempt=1;$attempt<=2;$attempt++) {
+    $emit('plan_requested',['attempt'=>$attempt]);
+    $answer=$modelCall(coreui_up_plan_prompt($request),'plan','',$attempt);
+    $text=is_array($answer)?($answer['text']??null):null;
+    $truncated=is_array($answer)&&($answer['truncated']??false)===true;
+    $plan=is_string($text)&&!$truncated?coreui_up_plan_parse($text,$request):null;
+    if ($plan!==null) break;
+  }
+  if (!is_array($plan)) return ['ok'=>false,'reason'=>'project_plan_invalid'];
+  $emit('plan_ready',['file_count'=>count($plan['files'])]);
+  $files=[];
+  foreach ($plan['files'] as $entry) {
+    $key=strtolower($entry['path']); $accepted=null;
+    for ($attempt=1;$attempt<=2;$attempt++) {
+      $emit('source_requested',['file_name'=>basename($entry['path']),'attempt'=>$attempt]);
+      $answer=$modelCall(coreui_up_source_prompt($request,$plan,$entry,$files,$attempt>1),
+        'source',$entry['path'],$attempt);
+      $chunk=is_array($answer)&&is_string($answer['text']??null)
+        ?coreui_up_chunk($answer['text'],true):null;
+      if (!is_array($chunk)) continue;
+      $bytes=$chunk['bytes'];
+      $done=$chunk['complete']&&($answer['truncated']??false)!==true;
+      for ($segment=1;!$done&&$segment<=2;$segment++) {
+        $more=$modelCall(coreui_up_continue_prompt($request,$entry,$bytes,$segment),
+          'continue',$entry['path'],$segment);
+        $part=is_array($more)&&is_string($more['text']??null)
+          ?coreui_up_chunk($more['text'],false):null;
+        if (!is_array($part)) break;
+        $joined=coreui_up_append($bytes,$part['bytes']);
+        if ($joined===null) break;
+        $bytes=$joined;
+        $done=$part['complete']&&($more['truncated']??false)!==true;
+      }
+      if ($done&&coreui_up_source_valid($entry['path'],$bytes)) {
+        $accepted=$bytes; break;
+      }
+    }
+    if ($accepted===null) return ['ok'=>false,'reason'=>'source_incomplete',
+      'file_name'=>basename($entry['path'])];
+    $files[$key]=$accepted;
+    $emit('source_ready',['file_name'=>basename($entry['path'])]);
+  }
+  $writer=coreui_up_writer($plan,$files,$maxCodeChars);
+  if (!is_array($writer)) return ['ok'=>false,'reason'=>'project_validation_failed'];
+  return ['ok'=>true,'plan'=>$plan,'writer'=>$writer,
+    'source_count'=>count($files)];
+}
