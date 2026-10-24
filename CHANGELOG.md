@@ -2,6 +2,13 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.32 - 24.10.2026
+
+- **Nur Preflight-Testkorrektur:** Der Frontend-Regressions-Selbsttest suchte noch den alten Aufruf `coreui_console_multifile_source_directive($userMsg)`. Der Code aus 0.5.31 verwendet stattdessen korrekt `$sourceProjectRequest` fuer lokal normalisierte Gemma-Mehrdatei-Auftraege. Dadurch meldete der Test trotz vorhandener Funktion faelschlich einen Fehler.
+- Erwartung auf `coreui_console_multifile_source_directive($sourceProjectRequest)` umgestellt; die neue lokale Homepage-Normalisierung und die device-local-Modellbeschraenkung werden ausdruecklich mitgeprueft. Die restlichen 14 Routenbedingungen bleiben erhalten.
+- Keine Aenderung an `api/chat.php`, Dateiwerkzeug, Python-Worker, Ollama, Gemma-Modelfile, Cloud-/Qwen-Pfaden, Modellparametern, serialisierter Inferenz, Datenbanken oder Installern. Der universelle Projekt-Agent verbleibt als **Draft PR #69**, unveroeffentlicht und standardmaessig deaktiviert.
+- Pflichtgemaesse Versionspflege 0.5.32 mit sichtbaren UI-Metadaten, numerischem inhaltsbasiertem Cache-Key, README, CHANGELOG, TXT-Protokoll und Preflight-Releasepfaden. GitHub Actions nicht gestartet [skip ci]. Auf dem Server bleibt die tatsaechliche Preflight-Nachkontrolle erforderlich.
+
 ## 0.5.31 - 24.10.2026
 
 - Reproduzierter Routingfehler der privaten Anime-Videospiel-Homepage: Der Benutzer forderte HTML, CSS und weitere Quelldateien im ZIP als Download, nannte aber keine expliziten Dateinamen. Bisher erkennt der bestehende Quell-ZIP-Pfad nur benannte Dateien oder besondere Browserspielwoerter. Der Auftrag landete deshalb im langen modellgenerierten [PY]-Skript, das bei 3.005 lokalen Ausgabetokens als `ollama_truncated_py_open` abbrach.

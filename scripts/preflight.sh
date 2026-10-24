@@ -149,9 +149,9 @@ UI_FILES=(
   scripts/markdown-selftest.js
   scripts/branding-license-selftest.py
   scripts/cache-bust.py
-  docs/changelogs-txt/CHANGELOG_0_5_31.txt
+  docs/changelogs-txt/CHANGELOG_0_5_32.txt
   docs/COREUI_IMAGE_ENGINE_PLAN.md
-  docs/UEBERGABEPROTOKOLL_0_5_31.txt
+  docs/UEBERGABEPROTOKOLL_0_5_32.txt
   docker/pyworker/Dockerfile
   docker/pyworker/entrypoint.sh
   images/starlight_unit_studios_logo_original.png
