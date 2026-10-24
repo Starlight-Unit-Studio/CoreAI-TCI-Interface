@@ -4621,9 +4621,14 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   // Keep single-file/cloud free-text routing unchanged. Multi-file ZIPs
   // use the same sandbox tool contract for all model providers, with named
   // source recovery available when a model returns sources instead of Python.
+  // Local Gemma: a complete homepage ZIP can be requested without the user
+  // spelling out index.html/style.css/main.js. Retain the original message
+  // everywhere else, especially for Ollama Cloud and local Qwen.
+  $sourceProjectRequest = ember_console_file_tool_is_device_local($primaryModel)
+    ? coreui_console_local_homepage_zip_request($userMsg) : $userMsg;
   $requestedSourceProject = $channel === 'console' && $imageUrl === null
     && ember_py_enabled() && coreui_console_download_requested($userMsg)
-      ? coreui_console_multifile_source_directive($userMsg) : null;
+      ? coreui_console_multifile_source_directive($sourceProjectRequest) : null;
   $fileTask = $channel === 'console' && $imageUrl === null && ember_py_enabled()
     && coreui_console_download_requested($userMsg)
     && (ember_console_file_tool_is_local($primaryModel)
@@ -4635,7 +4640,11 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   $localDirectSources = $requestedSourceProject !== null
     && ember_console_file_tool_is_device_local($primaryModel);
   if ($localDirectSources) {
-    $sourceSpec = coreui_console_project_request_spec($userMsg);
+    if ($sourceProjectRequest !== $userMsg) {
+      coreui_work_record($pdo, 'tool', 'info', 'Homepage-Projektdateien erkannt',
+        ['reason'=>'homepage_zip_inferred', 'file_count'=>3]);
+    }
+    $sourceSpec = coreui_console_project_request_spec($sourceProjectRequest);
     $sourceFiles = [];
     if (!is_array($sourceSpec)) return 'Ungueltiger Dateiauftrag.';
     foreach ($sourceSpec['requested'] as $name) {
@@ -4643,7 +4652,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       for ($attempt = 1; $attempt <= 2; $attempt++) {
         if (ember_agent_cancel_requested()) return null;
         $singlePrompt = coreui_console_local_source_prompt(
-          $userMsg, (string)$name, $sourceFiles, $attempt > 1);
+          $sourceProjectRequest, (string)$name, $sourceFiles, $attempt > 1);
         if ($singlePrompt === null) break;
         coreui_work_record($pdo, 'tool', 'info', 'Einzeldatei angefordert',
           ['file_name'=>(string)$name,'attempt'=>$attempt]);
@@ -4655,7 +4664,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         $lastMeta = ember_last_call_meta();
         $sourceChars = is_string($modelSource) ? strlen($modelSource) : 0;
         $accepted = !$truncated && is_string($modelSource)
-          ? coreui_console_local_source_reply($modelSource, $userMsg, (string)$name) : null;
+          ? coreui_console_local_source_reply($modelSource, $sourceProjectRequest, (string)$name) : null;
         $resumed = false;
         // An Ollama done_reason=length is not a malformed JS file. Preserve
         // the partial source in this private turn and request at most two
@@ -4698,7 +4707,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
                   'prompt_eval_count'=>(int)($lastMeta['prompt_eval_count'] ?? 0),
                   'reason'=>$truncated ? 'model_output_truncated' : 'model_reply_complete']);
               if (!$truncated) {
-                $accepted = coreui_console_local_source_reply($combined, $userMsg, (string)$name);
+                $accepted = coreui_console_local_source_reply($combined, $sourceProjectRequest, (string)$name);
                 if (is_array($accepted)) break;
               }
             }
