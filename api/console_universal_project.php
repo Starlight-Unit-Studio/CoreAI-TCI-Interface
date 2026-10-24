@@ -62,7 +62,7 @@ function coreui_up_plan_parse(string $reply, string $request): ?array {
   $list = $data['files'] ?? null;
   if (!is_array($list) || !array_is_list($list)
       || count($list) < 1 || count($list) > 10) return null;
-  $files = []; $basenames = [];
+  $files = [];
   foreach ($list as $entry) {
     if (!is_array($entry) || array_is_list($entry)) return null;
     $path = $entry['path'] ?? null;
@@ -72,9 +72,10 @@ function coreui_up_plan_parse(string $reply, string $request): ?array {
         || !is_string($purpose) || trim($purpose) === '' || strlen($purpose) > 200
         || !is_array($dependencies) || !array_is_list($dependencies)
         || count($dependencies) > 10) return null;
-    $key = strtolower($path); $basename = strtolower(basename($path));
-    if (isset($files[$key]) || isset($basenames[$basename])) return null;
-    $basenames[$basename] = true; $deps = [];
+    $key = strtolower($path);
+    // Only the ZIP is published. Different directories may share basenames.
+    if (isset($files[$key])) return null;
+    $deps = [];
     foreach ($dependencies as $dependency) {
       if (!is_string($dependency) || !coreui_up_path_ok($dependency)
           || strtolower($dependency) === $key) return null;
@@ -325,4 +326,16 @@ function coreui_up_build(string $request, callable $modelCall, int $maxCodeChars
   if (!is_array($writer)) return ['ok'=>false,'reason'=>'project_validation_failed'];
   return ['ok'=>true,'plan'=>$plan,'writer'=>$writer,
     'source_count'=>count($files)];
+}
+
+/**
+ * An Aider-style exact edit primitive for later file repairs.
+ * No fuzzy replacements: ambiguous matches MUST fail closed.
+ */
+function coreui_up_edit_once(string $previous, string $search, string $replace): ?string {
+  if ($search === '' || strlen($previous) > 120000 || strlen($search) > 24000
+      || strlen($replace) > 60000 || str_contains($previous, "\0")
+      || substr_count($previous, $search) !== 1) return null;
+  $updated = str_replace($search, $replace, $previous);
+  return $updated !== '' && strlen($updated) <= 120000 ? $updated : null;
 }
