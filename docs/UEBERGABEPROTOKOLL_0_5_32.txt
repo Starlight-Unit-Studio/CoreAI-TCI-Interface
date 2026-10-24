@@ -3,6 +3,7 @@ Stand: 24.10.2026
 Basis: main 0.5.31
 Basis-Commit: f4121a4b634af2082c5f2478b35685b071b41262
 Branch: fix/frontend-selftest-routing-0.5.32
+Pull Request: https://github.com/Starlight-Unit-Studio/coreui/pull/70
 
 SCHWERPUNKT
 Reiner Hotfix fuer einen veralteten, zu eng formulierten
