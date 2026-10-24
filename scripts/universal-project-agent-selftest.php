@@ -137,6 +137,65 @@ up_test(($resumed['ok']??false)===true
   && in_array(['continue','src/app.js',1],$more,true),
   'model output may be continued without restarting all files');
 
+// Model-independent source format adapters: Aider-style whole/raw and a
+// single fenced source no longer require the model to invent a magic marker.
+$plainCalls=[];
+$plainFake=static function($prompt,$phase,$path,$attempt) use (&$plainCalls,$manifest,$sources) {
+  $plainCalls[]=[$phase,$path,$attempt];
+  if ($phase==='plan') return ['text'=>json_encode($manifest),'done_reason'=>'stop','truncated'=>false];
+  return ['text'=>$sources[$path],'done_reason'=>'stop','truncated'=>false];
+};
+$plainBuild=coreui_up_build($request,$plainFake,100000);
+up_test(($plainBuild['ok']??false)===true && count($plainCalls)===4,
+  'normal Ollama stop must accept unwrapped HTML, CSS and JS in one call per source');
+
+$fenceCalls=[];
+$fenceFake=static function($prompt,$phase,$path,$attempt) use (&$fenceCalls,$manifest,$sources) {
+  $fenceCalls[]=[$phase,$path,$attempt];
+  if ($phase==='plan') return ['text'=>json_encode($manifest),'done_reason'=>'stop'];
+  $language=strtolower((string)pathinfo($path, PATHINFO_EXTENSION));
+  return ['text'=>str_repeat(chr(96),3).$language."\n"
+    .$sources[$path]."\n".str_repeat(chr(96),3),'done_reason'=>'stop'];
+};
+$fencedBuild=coreui_up_build($request,$fenceFake,100000);
+up_test(($fencedBuild['ok']??false)===true && count($fenceCalls)===4,
+  'whole fenced files must be accepted without the terminal marker');
+
+$cssContinuationCalls=[];
+$cssContinuation=static function($prompt,$phase,$path,$attempt) use (&$cssContinuationCalls,$manifest,$sources) {
+  $cssContinuationCalls[]=[$phase,$path,$attempt];
+  if ($phase==='plan') return ['text'=>json_encode($manifest),'done_reason'=>'stop'];
+  if ($path==='assets/theme.css' && $phase==='source')
+    return ['text'=>'body { color: ','done_reason'=>'length','truncated'=>true];
+  if ($path==='assets/theme.css' && $phase==='continue')
+    return ['text'=>'white; background: #303; }','done_reason'=>'stop','truncated'=>false];
+  return ['text'=>$sources[$path],'done_reason'=>'stop','truncated'=>false];
+};
+$cssResumed=coreui_up_build($request,$cssContinuation,100000);
+up_test(($cssResumed['ok']??false)===true
+  && in_array(['continue','assets/theme.css',1],$cssContinuationCalls,true),
+  'truncated CSS must use the same bounded continuation as any text file');
+
+$unknownStopCalls=[];
+$unknownStop=static function($prompt,$phase,$path,$attempt) use (&$unknownStopCalls,$manifest,$sources) {
+  $unknownStopCalls[]=[$phase,$path,$attempt];
+  if ($phase==='plan') return ['text'=>json_encode($manifest),'done_reason'=>'stop'];
+  return ['text'=>$sources[$path],'done_reason'=>'','truncated'=>false];
+};
+$unknownBuild=coreui_up_build($request,$unknownStop,100000);
+up_test(($unknownBuild['ok']??true)===false
+  && ($unknownBuild['reason']??'')==='source_incomplete'
+  && count($unknownStopCalls)===3,
+  'unknown finish without a marker must fail closed after one bounded retry');
+
+$lengthPlan=static function($prompt,$phase,$path,$attempt) use($manifest) {
+  return ['text'=>json_encode($manifest),'done_reason'=>'length','truncated'=>false];
+};
+$rejectedPlan=coreui_up_build($request,$lengthPlan,100000);
+up_test(($rejectedPlan['ok']??true)===false
+  && ($rejectedPlan['reason']??'')==='project_plan_invalid',
+  'length-stopped planning response must not be promoted to a valid manifest');
+
 up_test(coreui_up_edit_once("alpha beta gamma","beta","BETA") === "alpha BETA gamma"
   && coreui_up_edit_once("repeat repeat","repeat","X") === null
   && coreui_up_edit_once("code","absent","X") === null,
