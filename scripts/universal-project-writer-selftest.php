@@ -6,9 +6,6 @@ require_once dirname(__DIR__) . '/api/console_universal_project.php';
 function writer_assert(bool $ok, string $msg): void {
   if (!$ok) { fwrite(STDERR, "universal ZIP writer FAIL: ".$msg."\n"); exit(1); }
 }
-if (!function_exists('proc_open')) {
-  fwrite(STDERR,"universal ZIP writer FAIL: proc_open unavailable\n"); exit(1);
-}
 $request = 'Erstelle ein Browser-Projekt als ZIP zum Download';
 $manifest = ['archive'=>'demo.zip','files'=>[
   ['path'=>'src/app.js','purpose'=>'Script','depends_on'=>[]],
@@ -25,6 +22,14 @@ $sources = [
 ];
 $writer = coreui_up_writer($spec,array_change_key_case($sources,CASE_LOWER),100000);
 writer_assert(is_array($writer),'trusted writer invalid');
+if (($argv[1] ?? '') === '--emit-payload') {
+  echo json_encode(['code'=>$writer['code'],'expected'=>$sources,
+    'archive'=>$writer['name']], JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+  exit(0);
+}
+if (!function_exists('proc_open')) {
+  fwrite(STDERR,"universal ZIP writer FAIL: proc_open unavailable\n"); exit(1);
+}
 $temp = sys_get_temp_dir() . '/coreui_pilot_' . bin2hex(random_bytes(10));
 writer_assert(mkdir($temp,0700),'cannot make temporary directory');
 try {
