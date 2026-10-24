@@ -261,4 +261,37 @@ up_test(coreui_up_plan_parse(json_encode($traversalArchive),$request)===null,
 up_test(!coreui_up_project_valid($plan, ['assets/theme.css'=>$sources['assets/theme.css']]),
   'missing declared sources can never be packaged');
 
+
+// Regression: user-observed 0.5.32 failure at style.css must use the same
+// bounded continuation protocol as every other text source, not a CSS hack.
+$cssRecoverCalls=[];
+$cssRecover=static function($prompt,$phase,$path,$attempt) use ($manifest,$sources,&$cssRecoverCalls) {
+  $cssRecoverCalls[]=[$phase,$path,$attempt];
+  if ($phase==='plan') return ['text'=>json_encode($manifest),'done_reason'=>'stop'];
+  if ($path==='assets/theme.css' && $phase==='source') {
+    return ['text'=>"body { color: white; background: ", 'done_reason'=>'length'];
+  }
+  if ($path==='assets/theme.css' && $phase==='continue') {
+    return ['text'=>"#303; }\n", 'done_reason'=>'stop'];
+  }
+  return ['text'=>$sources[$path], 'done_reason'=>'stop'];
+};
+$cssRecovered=coreui_up_build($request,$cssRecover,100000);
+up_test(($cssRecovered['ok']??false)===true
+  && in_array(['continue','assets/theme.css',1],$cssRecoverCalls,true),
+  'truncated CSS must resume and validate via universal source protocol');
+
+$cssRejectedCalls=[];
+$cssRejected=static function($prompt,$phase,$path,$attempt) use($manifest,$sources,&$cssRejectedCalls) {
+  $cssRejectedCalls[]=[$phase,$path,$attempt];
+  if ($phase==='plan') return ['text'=>json_encode($manifest),'done_reason'=>'stop'];
+  if ($path==='assets/theme.css') return ['text'=>"body { color: white;", 'done_reason'=>'length'];
+  return ['text'=>$sources[$path], 'done_reason'=>'stop'];
+};
+$cssFailed=coreui_up_build($request,$cssRejected,100000);
+up_test(($cssFailed['ok']??true)===false
+  && ($cssFailed['reason']??'')==='source_incomplete'
+  && count($cssRejectedCalls) <= 10,
+  'unrecoverable CSS must stop in bounded calls and never publish ZIP');
+
 echo "CoreUI universal project pilot selftest: OK\n";
