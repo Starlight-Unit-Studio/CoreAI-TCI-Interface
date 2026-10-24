@@ -161,4 +161,22 @@ up_test(($pyResult['ok']??false)===true
   && array_column($pyResult['plan']['files'],'path')===['src/tool.py','README.md'],
   'universal project tool must work beyond HTML, CSS and JavaScript');
 
+
+$controller = file_get_contents(dirname(__DIR__).'/api/chat.php');
+$stream = file_get_contents(dirname(__DIR__).'/api/console_stream.php');
+up_test(is_string($controller)
+  && str_contains($controller,'require_once __DIR__ . \'/console_universal_project.php\';')
+  && str_contains($controller,'coreui_up_build($userMsg, $call,')
+  && str_contains($controller,"'universal_zip_incomplete'")
+  && str_contains($controller,'if (!$universalPilot) $triggerMeta'),
+  'pilot integration must use verified artifacts without source debug logging');
+up_test(is_string($stream)
+  && str_contains($stream,'coreui_up_enabled() && coreui_up_requested($promptMessage)'),
+  'pilot streaming turn must route to existing serialized tool path');
+$traversalArchive=['archive'=>'../../escape.zip','files'=>$manifest['files']];
+up_test(coreui_up_plan_parse(json_encode($traversalArchive),$request)===null,
+  'model cannot choose out-of-tree ZIP destination');
+up_test(!coreui_up_project_valid($plan, ['assets/theme.css'=>$sources['assets/theme.css']]),
+  'missing declared sources can never be packaged');
+
 echo "CoreUI universal project pilot selftest: OK\n";
