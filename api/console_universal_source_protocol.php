@@ -7,7 +7,8 @@ declare(strict_types=1);
  * An optional COREUI marker is accepted, but is never the only way to
  * establish that an Ollama reply finished. No user source is executed here.
  */
-function coreui_usp_parse(string $reply, string $filename, bool $first = true): ?array {
+function coreui_usp_parse(string $reply, string $filename, bool $first = true,
+                         int $continuationFenceTicks = 0): ?array {
   if ($reply === '' || strlen($reply) > 140000 || str_contains($reply, "\0")
       || preg_match('~\[(?:/)?(?:PY|WEB|BROWSE)(?::[^\]]*)?\]~i', $reply)) return null;
   $raw = $reply;
@@ -21,11 +22,23 @@ function coreui_usp_parse(string $reply, string $filename, bool $first = true): 
   if (str_contains($raw, '<<<COREUI_END_FILE>>>')) return null;
   $fenced = false;
   $fenceClosed = false;
+  $fenceTicks = 0;
   if ($first && preg_match('~^\s*(\x60{3,})(?:[A-Za-z0-9_.+#-]{0,48})[ \t]*\r?\n~',
       $raw, $start) === 1) {
     $fenced = true;
     $ticks = $start[1];
+    $fenceTicks = strlen($ticks);
     $raw = substr($raw, strlen($start[0]));
+    $close = '~(?:^|\r?\n)' . preg_quote($ticks, '~') . '[ \t]*\r?\n?\s*$~D';
+    if (preg_match($close, $raw, $end, PREG_OFFSET_CAPTURE) === 1) {
+      $fenceClosed = true;
+      $fenceTicks = 0;
+      $raw = substr($raw, 0, (int)$end[0][1]);
+    }
+  }
+  // The closing fence may arrive in a later Ollama chunk.
+  if (!$first && $continuationFenceTicks >= 3 && $continuationFenceTicks <= 12) {
+    $ticks = str_repeat(chr(96), $continuationFenceTicks);
     $close = '~(?:^|\r?\n)' . preg_quote($ticks, '~') . '[ \t]*\r?\n?\s*$~D';
     if (preg_match($close, $raw, $end, PREG_OFFSET_CAPTURE) === 1) {
       $fenceClosed = true;
@@ -36,7 +49,7 @@ function coreui_usp_parse(string $reply, string $filename, bool $first = true): 
   if (preg_match('~(?:^|\r?\n)\s*\x60{3,}~', $raw)) return null;
   if (trim($raw) === '' || strlen($raw) > 120000) return null;
   return ['bytes'=>$raw, 'marked'=>$marked, 'fenced'=>$fenced,
-    'fence_closed'=>$fenceClosed];
+    'fence_closed'=>$fenceClosed, 'fence_ticks'=>$fenceTicks];
 }
 
 /** Preserve complete normal Ollama replies even if the model omits markers. */
