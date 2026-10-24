@@ -186,7 +186,20 @@ function coreui_up_source_valid(string $path, string $source): bool {
     json_decode($source,true);
     return json_last_error() === JSON_ERROR_NONE;
   }
-  if ($ext === 'css') return substr_count($source,'{') === substr_count($source,'}');
+  if ($ext === 'css') {
+    // A zero-brace conversational answer is not a stylesheet. The
+    // validation is per language, never per homepage or project layout.
+    $open=substr_count($source,'{');
+    $closed=substr_count($source,'}');
+    if ($open !== $closed) return false;
+    $withoutComments=(string)preg_replace('~/\*.*?\*/~s','',$source);
+    if (trim($withoutComments)==='') return false;
+    if ($open===0) {
+      return preg_match('~^\s*@(?:charset|import|namespace|layer)\b[^{}]*;\s*$~is',
+        $withoutComments) === 1;
+    }
+    return preg_match('~\{[^{}]*\}~s',$withoutComments) === 1;
+  }
   // Other languages must be checked with their own non-executing linters.
   return true;
 }
