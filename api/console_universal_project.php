@@ -285,7 +285,7 @@ function coreui_up_build(string $request, callable $modelCall, int $maxCodeChars
     $emit('plan_requested',['attempt'=>$attempt]);
     $answer=$modelCall(coreui_up_plan_prompt($request),'plan','',$attempt);
     $text=is_array($answer)?($answer['text']??null):null;
-    $truncated=is_array($answer)&&($answer['truncated']??false)===true;
+    $truncated=is_array($answer)&&coreui_usp_reply_truncated($answer);
     $plan=is_string($text)&&!$truncated?coreui_up_plan_parse($text,$request):null;
     if ($plan!==null) break;
   }
