@@ -74,9 +74,11 @@ $bad['files'][2]['depends_on']=['index.html'];
 up_test(coreui_up_plan_parse(json_encode($bad),$request)===null,'reject circular references');
 $sharedNames = $manifest;
 $sharedNames['files'][1]['path']='other/index.html';
+$sharedNames['files'][0]['depends_on']=['other/index.html','src/app.js'];
 up_test(coreui_up_plan_parse(json_encode($sharedNames),$request)!==null,
   'different project folders may contain the same basename in one ZIP');
 $bad = $manifest;
+$bad['files'][0]['depends_on']=['src/app.js'];
 $bad['files'][1]['path']='INDEX.HTML';
 up_test(coreui_up_plan_parse(json_encode($bad),$request)===null,
   'reject duplicate paths regardless of case');
