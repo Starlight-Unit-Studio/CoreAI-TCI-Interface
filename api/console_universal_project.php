@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__ . '/console_universal_source_protocol.php';
 
 /**
  * Opt-in generic TEXT project tool. All inference still uses the configured
@@ -270,7 +271,7 @@ function coreui_up_writer(array $plan, array $files, int $maxCodeChars): ?array 
 }
 /**
  * Serial model adapter contract:
- * fn(prompt, phase, path, attempt) => ['text'=>string,'truncated'=>bool].
+ * fn(prompt, phase, path, attempt) => ['text'=>string,'truncated'=>bool,'done_reason'=>string].
  * No persistence or executable model code; the caller verifies worker outputs.
  */
 function coreui_up_build(string $request, callable $modelCall, int $maxCodeChars=100000,
@@ -298,20 +299,25 @@ function coreui_up_build(string $request, callable $modelCall, int $maxCodeChars
       $answer=$modelCall(coreui_up_source_prompt($request,$plan,$entry,$files,$attempt>1),
         'source',$entry['path'],$attempt);
       $chunk=is_array($answer)&&is_string($answer['text']??null)
-        ?coreui_up_chunk($answer['text'],true):null;
+        ?coreui_usp_parse($answer['text'],$entry['path'],true):null;
       if (!is_array($chunk)) continue;
       $bytes=$chunk['bytes'];
-      $done=$chunk['complete']&&($answer['truncated']??false)!==true;
-      for ($segment=1;!$done&&$segment<=2;$segment++) {
+      // Aider-style raw/whole and fenced responses are accepted only with
+      // a safe Ollama stop or an explicit closed response. File validation
+      // still decides whether the bytes are an eligible source.
+      $done=coreui_usp_reply_complete($answer,$chunk);
+      $needsMore=coreui_usp_reply_truncated($answer);
+      for ($segment=1;!$done&&$needsMore&&$segment<=2;$segment++) {
         $more=$modelCall(coreui_up_continue_prompt($request,$entry,$bytes,$segment),
           'continue',$entry['path'],$segment);
         $part=is_array($more)&&is_string($more['text']??null)
-          ?coreui_up_chunk($more['text'],false):null;
+          ?coreui_usp_parse($more['text'],$entry['path'],false):null;
         if (!is_array($part)) break;
         $joined=coreui_up_append($bytes,$part['bytes']);
         if ($joined===null) break;
         $bytes=$joined;
-        $done=$part['complete']&&($more['truncated']??false)!==true;
+        $done=coreui_usp_reply_complete($more,$part);
+        $needsMore=coreui_usp_reply_truncated($more);
       }
       if ($done&&coreui_up_source_valid($entry['path'],$bytes)) {
         $accepted=$bytes; break;
