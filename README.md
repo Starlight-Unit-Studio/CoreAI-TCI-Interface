@@ -7,7 +7,13 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 E.M.B.E.R. CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.31` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.32` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Frontend preflight regression assertion repair (0.5.32)
+
+This is a **test-only stability hotfix**, not a new file-generation route or an optimization. The frontend regression suite still expected `coreui_console_multifile_source_directive($userMsg)`, but 0.5.31 intentionally changed the private local Gemma route to the already validated `$sourceProjectRequest`, retaining `$userMsg` as the original user message. The runtime code was correct; the stale exact-source-string assertion caused the deploy preflight to fail even when its other 14 route conditions passed.
+
+The refreshed assertion checks the actual normalized multi-source call **and** the device-local Gemma guard. Existing authenticated download checks, Cloud routing, ZIP writer, worker, Modelfile and model parameters are unchanged. No database migration, installer behavior change or activation of the separate universal-project pilot. Draft PR #69 remains disabled and unmerged. The new selftest must pass in the normal server preflight before a successful live update can be claimed.
 
 ## Homepage ZIP routing for device-local Gemma (0.5.31)
 

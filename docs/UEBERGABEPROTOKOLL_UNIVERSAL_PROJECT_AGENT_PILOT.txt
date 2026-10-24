@@ -1,3 +1,12 @@
+AKTUALISIERUNG 24.10.2026
+Die historischen Testluecken unten sind teilweise geschlossen:
+Vollstaendiger Checkout auf Basis main 0.5.32, PHP-/Offline-/echte
+ZIP-Writer-Tests bestanden. Docker-Integration und Live-Abnahme offen.
+Neuestes Protokoll: UEBERGABEPROTOKOLL_PILOT_OFFLINE_2026_10_24.txt
+Der Endmarker ist im aktuellen gemeinsamen Adapter optional, wenn
+Ollama einen normalen Abschluss liefert und die Quelle validiert wird.
+PR #69 bleibt DRAFT, Feature AUS, kein main-Merge.
+
 E.M.B.E.R. COREUI UEBERGABEPROTOKOLL: UNIVERSAL PROJECT AGENT PILOT
 Stand: 24.10.2026
 Status: EXPERIMENTELL / DRAFT / NICHT PRODUKTIV FREIGEGEBEN

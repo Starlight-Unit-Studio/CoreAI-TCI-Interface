@@ -1,0 +1,62 @@
+E.M.B.E.R. CoreUI UEBERGABEPROTOKOLL 0.5.32
+Stand: 24.10.2026
+Basis: main 0.5.31
+Basis-Commit: f4121a4b634af2082c5f2478b35685b071b41262
+Branch: fix/frontend-selftest-routing-0.5.32
+Pull Request: https://github.com/Starlight-Unit-Studio/coreui/pull/70
+
+SCHWERPUNKT
+Reiner Hotfix fuer einen veralteten, zu eng formulierten
+statischen Preflight-Test. KEINE neue Projektarchitektur.
+
+KONKRETER SERVER-BEFUND
+Sichtbarer Preflight: 1 Problem:
+  Frontend-Regressions-Selbsttest FEHLER:
+  Mehrdateien-Werkzeugpfad, kodierte Dateien oder gemeinsame
+  Cloud-/Lokalroute fehlen.
+PHP, Python-Worker, Benutzer-/Account-Security, mehrere
+Medien- und Webserver-Checks erfolgreich. Node- und
+Nginx-Default-Site-Hinweise nur WARN.
+
+ROOT CAUSE
+In scripts/frontend-regression-selftest.php wird im letzten
+Pruefabschnitt ein genauer Quelltext-String gesucht.
+Alt: coreui_console_multifile_source_directive($userMsg)
+Aktuell: coreui_console_multifile_source_directive($sourceProjectRequest)
+Die Aktualisierung auf $sourceProjectRequest erfolgte 0.5.31 fuer
+die lokalen, konkret normalisierten Gemma-Homepage-ZIP-Projekte.
+Die unveraenderte Pruefung meldete seither einen False Negative.
+
+AENDERUNG
+- Test erwartet nun den echten Aufruf mit $sourceProjectRequest.
+- Test erwartet zusaetzlich die device-local-Guard-Bedingung und
+  die Homepage-Normalisierung fuer den Originalauftrag.
+- Keine Runtime-Datei veraendert.
+- Modelfile, Qwen, Cloud-Modellauswahl ueber lokale Ollama-Liste,
+  allgemeiner Python-Worker und die serielle Verarbeitung unveraendert.
+- Draft PR #69 des universellen Projekt-Agenten NICHT gemergt,
+  Feature weiterhin nicht aktiv.
+
+VERIFIKATION
+- Aus dem aktuellen GitHub-Quellstand wurden alle 15 urspruenglichen
+  Teilbedingungen des fehlschlagenden Testblocks einzeln verglichen.
+  Einziger Mismatch war der alte Variablenname.
+- Neue Bedingungen sichern die bestehenden echten Codepfade ab.
+- GitHub Actions nicht ausfuehren (Kontingent aufgebraucht).
+- Ein vollstaendiger Server-Preflight nach Installation von 0.5.32
+  ist NOCH OFFEN und MUSS nachgeholt werden.
+
+RELEASE
+VERSION 0.5.32, sechs UI-Seiten, inhaltsbasierter numerischer
+JS-Bootstrap-Cache-Key, README, CHANGELOG, TXT-Protokoll,
+Branding-Test und beide Preflight-Release-Dateireferenzen.
+Keine Datenbankmigration. Standard-One-Liner unveraendert.
+
+PRODUKTIVABNAHME
+1. 0.5.32 mit gewohntem Setup-One-Liner aktualisieren.
+2. Frontend-Regressions-Selbsttest muss PASS melden.
+3. Danach kompletter Preflight ohne Fehler, ausser ggf.
+   optionalen Warnungen fuer Node/Nginx.
+4. Falls eine andere Assertion scheitert, deren konkrete
+   Diagnose pruefen; keine weitere Dateiwerkzeug-Architektur
+   auf Verdacht umbauen.

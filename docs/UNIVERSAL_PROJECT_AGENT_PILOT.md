@@ -3,7 +3,7 @@
 Status: **experimental, opt-in, NOT enabled in production**.
 
 Standard-TXT-Uebergabe: [UEBERGABEPROTOKOLL_UNIVERSAL_PROJECT_AGENT_PILOT.txt](UEBERGABEPROTOKOLL_UNIVERSAL_PROJECT_AGENT_PILOT.txt), inklusive aktuellem produktiven style.css-Befund und offener Testabnahme.
-Baseline: CoreUI 0.5.31.
+Baseline: CoreUI 0.5.32 (main integrated on 24 October 2026).
 This is a staged replacement design for the numerous ZIP/file-type routing exceptions,
 not a claim that every generated language or media type is now supported.
 
@@ -22,9 +22,9 @@ Architecture, strictly serial per E.M.B.E.R.:
    server-side \`format\` schemas**.
 2. CoreUI validates every relative path, extension, unique filename, count,
    dependency, and cycle. It sorts the files in dependency order.
-3. CoreUI requests just **one text file per serial model call**. Every file
-   requires an unambiguous terminal marker; a missing marker triggers at most
-   two incremental continuation calls before a bounded complete-file retry.
+3. CoreUI requests just **one text file per serial model call**. Raw, fenced
+   and optionally marked sources use the common completion adapter. Confirmed
+   truncation allows at most two continuations per bounded file attempt.
 4. Source bytes are held as inert PHP data. There is no generated Python
    file-writing code, shell command, or model-defined executable tool call.
 5. Generic source checks plus HTML asset-reference checks must pass. The
@@ -109,7 +109,7 @@ defines this constant:
 
     define('STU_EMBER_UNIVERSAL_FILES_ENABLED', true);
 
-Without that switch, 0.5.31 routing and downloads run unchanged.
+Without that switch, 0.5.32 routing and downloads run unchanged.
 Opt-in does not edit the approved Gemma Modelfile. Neither \`num_ctx\` nor
 \`num_predict\` is added to Gemma requests. Model calls stay strictly
 serial through the existing Ollama queue.
@@ -161,3 +161,17 @@ relative asset paths, encoded writer data and unique edits.
 
 No GitHub Actions are required to create the branch or PR; do not trigger
 GitHub Actions while the account's quota is exhausted.
+
+
+## Full-checkout offline acceptance, 24 October 2026
+
+The pilot has now been synchronized with main 0.5.32. PHP 8.3.6 syntax,
+source protocol, project agent, both real ZIP writer tests, the PHP-to-Python
+payload pipeline, existing local-file/frontend/Gemma regressions, preflight
+shell syntax, branding and cache checks passed on the complete checkout.
+These used synthetic model fixtures and temporary host directories, not the
+production Docker worker or real Ollama inference. Docker/account-scoped
+artifact integration and staging model/browser acceptance remain open.
+PR #69 stays draft and the feature stays disabled by default.
+
+Current handover: [UEBERGABEPROTOKOLL_PILOT_OFFLINE_2026_10_24.txt](UEBERGABEPROTOKOLL_PILOT_OFFLINE_2026_10_24.txt).
