@@ -72,10 +72,14 @@ up_test(coreui_up_plan_parse(json_encode($bad),$request)===null,'reject traversa
 $bad = $manifest;
 $bad['files'][2]['depends_on']=['index.html'];
 up_test(coreui_up_plan_parse(json_encode($bad),$request)===null,'reject circular references');
+$sharedNames = $manifest;
+$sharedNames['files'][1]['path']='other/index.html';
+up_test(coreui_up_plan_parse(json_encode($sharedNames),$request)!==null,
+  'different project folders may contain the same basename in one ZIP');
 $bad = $manifest;
-$bad['files'][1]['path']='other/index.html';
+$bad['files'][1]['path']='INDEX.HTML';
 up_test(coreui_up_plan_parse(json_encode($bad),$request)===null,
-  'avoid duplicate downloadable basenames');
+  'reject duplicate paths regardless of case');
 $bad = $manifest;
 $bad['files'][0]['depends_on']=['missing.js'];
 up_test(coreui_up_plan_parse(json_encode($bad),$request)===null,
@@ -130,4 +134,29 @@ $resumed=coreui_up_build($request,$truncated,100000);
 up_test(($resumed['ok']??false)===true
   && in_array(['continue','src/app.js',1],$more,true),
   'model output may be continued without restarting all files');
+
+up_test(coreui_up_edit_once("alpha beta gamma","beta","BETA") === "alpha BETA gamma"
+  && coreui_up_edit_once("repeat repeat","repeat","X") === null
+  && coreui_up_edit_once("code","absent","X") === null,
+  'exact unique search-replace edit, never ambiguous fuzzy patch');
+
+$pythonRequest='Schreibe ein kleines Python-Paket mit README als ZIP zum Download.';
+$pythonPlan=['archive'=>'python-tool.zip','files'=>[
+  ['path'=>'src/tool.py','purpose'=>'CLI tool','depends_on'=>[]],
+  ['path'=>'README.md','purpose'=>'Documentation','depends_on'=>['src/tool.py']],
+]];
+$pythonSource=[
+  'src/tool.py'=>"def main():\n    print('Hello')\n\nif __name__ == '__main__':\n    main()\n",
+  'README.md'=>"# Small CLI\nRun python src/tool.py\n"
+];
+$pyFake=static function($prompt,$phase,$path,$attempt) use($pythonPlan,$pythonSource) {
+  return ['text'=>$phase==='plan' ? json_encode($pythonPlan)
+    : $pythonSource[$path]."\n<<<COREUI_END_FILE>>>",'truncated'=>false];
+};
+$pyResult=coreui_up_build($pythonRequest,$pyFake,100000);
+up_test(($pyResult['ok']??false)===true
+  && ($pyResult['plan']['archive']??'')==='python-tool.zip'
+  && array_column($pyResult['plan']['files'],'path')===['src/tool.py','README.md'],
+  'universal project tool must work beyond HTML, CSS and JavaScript');
+
 echo "CoreUI universal project pilot selftest: OK\n";
