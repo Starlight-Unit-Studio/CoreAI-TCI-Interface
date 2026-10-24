@@ -131,6 +131,7 @@ UI_FILES=(
   scripts/local-file-tool-selftest.php
   scripts/universal-project-agent-selftest.php
   scripts/universal-project-writer-selftest.php
+  scripts/universal-project-writer-selftest.py
   api/console_universal_project.php
   api/console_universal_source_protocol.php
   scripts/universal-source-protocol-selftest.php
@@ -447,7 +448,8 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   else
     fail 'Universeller Projekt-Agent Selbsttest fehlgeschlagen.'
   fi
-  if compose exec -T php php scripts/universal-project-writer-selftest.php >/dev/null 2>&1; then
+  if compose exec -T php php scripts/universal-project-writer-selftest.php --emit-payload \
+      | compose exec -T browse python3 scripts/universal-project-writer-selftest.py >/dev/null 2>&1; then
     ok 'Universelles ZIP: Python-Writer, verschachtelte Pfade und Inhaltsvergleich geprueft.'
   else
     fail 'Universeller ZIP-Writer Selbsttest fehlgeschlagen.'
