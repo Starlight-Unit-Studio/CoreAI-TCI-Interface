@@ -42,4 +42,15 @@ usp_check(coreui_usp_parse($css . "\n<<<COREUI_END_FILE>>>\nother text", 'style.
   'trailing text after explicit completion marker rejected');
 usp_check(!coreui_usp_reply_complete([], $raw),
   'unknown finish without explicit end is never silently accepted');
+$fencedPart1=coreui_usp_parse(str_repeat(chr(96),3)."css\nbody { color:", 'style.css');
+usp_check(is_array($fencedPart1) && $fencedPart1['fence_ticks']===3,
+  'unclosed code block keeps its fence length for continuation');
+$fencedPart2=coreui_usp_parse(" red; }\n".str_repeat(chr(96),3), 'style.css',
+  false, $fencedPart1['fence_ticks']);
+usp_check(is_array($fencedPart2) && $fencedPart2['fence_closed']
+  && $fencedPart2['bytes']===' red; }',
+  'continuation strips only the matching closing fence');
+usp_check(coreui_usp_parse(" red; }\n".str_repeat(chr(96),3), 'style.css',false,0)===null,
+  'unmatched closing fence cannot enter an unfenced source');
+
 echo "CoreUI universal source protocol selftest: OK\n";
