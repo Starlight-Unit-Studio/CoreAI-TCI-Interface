@@ -1,6 +1,8 @@
 # E.M.B.E.R. CoreUI: Universal Project Agent Pilot
 
 Status: **experimental, opt-in, NOT enabled in production**.
+
+Standard-TXT-Uebergabe: [UEBERGABEPROTOKOLL_UNIVERSAL_PROJECT_AGENT_PILOT.txt](UEBERGABEPROTOKOLL_UNIVERSAL_PROJECT_AGENT_PILOT.txt), inklusive aktuellem produktiven style.css-Befund und offener Testabnahme.
 Baseline: CoreUI 0.5.31.
 This is a staged replacement design for the numerous ZIP/file-type routing exceptions,
 not a claim that every generated language or media type is now supported.
