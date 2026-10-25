@@ -5261,7 +5261,10 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   if (is_string($out) && trim($out) !== ''
       && ember_extract_web_marker($out) === null
       && ember_extract_browse_marker($out) === null
-      && (!function_exists('ember_py_extract_marker') || ember_py_extract_marker($out) === null)) {
+      && (!function_exists('ember_py_extract_marker') || ember_py_extract_marker($out) === null)
+      && !coreui_native_plan_marker_attempt($out)) {
+    // Preserve a plan draft immediately; the model-selected planner manages
+    // its own smaller, checkpointed continuation calls.
     $out = ember_continue_truncated_reply($primaryModel, $sys, $finalPrompt, $out, null);
   }
   // A long Markdown plan may need Ollama's normal continuation first.

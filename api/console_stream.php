@@ -505,7 +505,10 @@ try {
       && $reply !== ''
       && !empty($acc['ok'])
       && !empty($acc['done'])
-      && !empty($acc['truncated'])) {
+      && !empty($acc['truncated'])
+      && !coreui_native_plan_marker_attempt($reply)) {
+    // Model-selected plan drafts are checkpointed directly. Do not risk
+    // duplicate prose via the generic long-reply continuation path.
     console_stream_progress($thinkingEnabled, 'compose');
     $continued = console_stream_continue_truncated($model, $sys, $u, $reply, $thinkingAll, $acc);
     $reply = (string)($continued['reply'] ?? $reply);
