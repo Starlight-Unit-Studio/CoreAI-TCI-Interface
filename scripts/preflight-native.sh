@@ -117,6 +117,8 @@ UI_FILES=(
   scripts/profile-knowledge-selftest.php
   scripts/account-security-selftest.php
   scripts/frontend-regression-selftest.php
+  scripts/long-chat-selftest.cjs
+  database/migrations/015_long_chat_messages.sql
   scripts/chat-navigation-recovery-selftest.cjs
   scripts/message-actions-selftest.php
   scripts/markdown-selftest.js
@@ -280,6 +282,11 @@ if command -v php >/dev/null 2>&1; then
     else
       fail 'Chat-Navigation: Wiederherstellungs-Selbsttest fehlgeschlagen.'
     fi
+    if node "$PROJECT_ROOT/scripts/long-chat-selftest.cjs" >/dev/null 2>&1; then
+      ok 'Lange Texte: Markdown-Dateianhang und Originalbytes geprueft.'
+    else
+      fail 'Lange Texte: automatischer Anhang ist fehlerhaft.'
+    fi
   else
     printf '[INFO] Node nicht installiert: optionaler Antwortdauer-JavaScript-Test uebersprungen.\n'
   fi
@@ -403,6 +410,16 @@ if command -v php >/dev/null 2>&1; then
       ok 'Migration 014: kontobezogene Skills bereit.'
     else
       fail 'Migration 014: Skills-Tabelle fehlt.'
+    fi
+
+    if COREUI_PREFLIGHT_ROOT="$PROJECT_ROOT" php -r '
+      require getenv("COREUI_PREFLIGHT_ROOT") . "/api/db.php";
+      $p=stu_pdo();
+      $t=$p->query("SELECT DATA_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=\"stu_chat_messages\" AND COLUMN_NAME=\"message\"")->fetchColumn();
+      exit(strtolower((string)$t)==="longtext" ? 0 : 1);' >/dev/null 2>&1; then
+      ok 'Migration 015: lange Chat-Antworten dauerhaft speicherbar.'
+    else
+      fail 'Migration 015 fehlt: stu_chat_messages.message ist nicht LONGTEXT.'
     fi
 
     if php -r "require '$PROJECT_ROOT/api/db.php'; echo (int)stu_pdo()->query('SELECT COUNT(*) FROM stu_schema_migrations')->fetchColumn();" >/dev/null 2>&1; then

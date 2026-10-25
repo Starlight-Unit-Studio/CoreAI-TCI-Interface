@@ -183,6 +183,20 @@ try {
   );
 
   frontend_test_assert(
+    str_contains($appHtml, '<textarea')
+      && str_contains($appHtml, 'id="inputMessage"')
+      && !str_contains($appHtml, 'maxlength="12000"')
+      && str_contains($console, 'function makeAutoPasteFile(text)')
+      && str_contains($console, 'function queueAutoTextAttachment(text)')
+      && str_contains($console, 'function restoreFailedAutoPaste(file)')
+      && str_contains($console, 'function sendAfterCompletedUpload()')
+      && str_contains($console, "inputEl.addEventListener('paste'")
+      && str_contains($console, 'keepalive: new TextEncoder().encode(postBody).length < 60000')
+      && str_contains($css, 'max-height: 128px'),
+    'Mehrzeiliger Composer oder automatische verlustfreie Markdown-Anhaenge fehlen.'
+  );
+
+  frontend_test_assert(
     str_contains($console, 'function recoverActiveRun(ses, data)')
       && str_contains($console, 'var resumed = !prepend && recoverActiveRun(ses, d);')
       && str_contains($console, 'var resumed = recoverActiveRun(ses, d);')

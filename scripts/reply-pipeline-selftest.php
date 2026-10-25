@@ -151,8 +151,17 @@ if (str_contains($clientSource, "'&msg='")) {
   reply_test_fail('Der Browser schreibt die Nachricht weiterhin in die EventSource-URL.');
 }
 $appHtml = (string)file_get_contents(dirname(__DIR__) . '/app.html');
-if (!str_contains($appHtml, 'maxlength="12000"')) {
-  reply_test_fail('Das Ember CoreUI-Eingabefeld besitzt weiterhin ein altes Kurzlimit.');
+if (!str_contains($appHtml, '<textarea')
+    || !str_contains($appHtml, 'id="inputMessage"')
+    || str_contains($appHtml, 'maxlength="12000"')) {
+  reply_test_fail('Der private CoreUI-Composer erlaubt kein mehrzeiliges, langes Einfuegen.');
+}
+if (!str_contains($clientSource, 'function queueAutoTextAttachment(text)')
+    || !str_contains($clientSource, 'function sendAfterCompletedUpload()')
+    || !str_contains($clientSource, 'function restoreFailedAutoPaste(file)')
+    || !str_contains($clientSource, "inputEl.addEventListener('paste'")
+    || !str_contains($clientSource, 'var pendingSendAfterUpload = null')) {
+  reply_test_fail('Lange eingefuegte Texte werden nicht verlustfrei als Anhang gesichert.');
 }
 if (!str_contains($appHtml, 'id="fileInput"') || !str_contains($appHtml, 'multiple')) {
   reply_test_fail('Die Dateiauswahl erlaubt keine Mehrfachauswahl.');
