@@ -65,6 +65,12 @@ UI_FILES=(
   api/auth_session_store.php
   api/account_security.php
   api/account_export.php
+  api/skills.php
+  api/user_skills.php
+  skills/catalog.json
+  js/skills-settings.js
+  scripts/skills-selftest.php
+  database/migrations/014_user_skills.sql
   api/console_attachment_store.php
   api/console_session_store.php
   api/console_sessions.php
@@ -115,9 +121,9 @@ UI_FILES=(
   scripts/markdown-selftest.js
   scripts/branding-license-selftest.py
   scripts/cache-bust.py
-  docs/changelogs-txt/CHANGELOG_0_5_32.txt
+  docs/changelogs-txt/CHANGELOG_0_5_33.txt
   docs/COREUI_IMAGE_ENGINE_PLAN.md
-  docs/UEBERGABEPROTOKOLL_0_5_32.txt
+  docs/UEBERGABEPROTOKOLL_0_5_33.txt
   images/starlight_unit_studios_logo_original.png
 )
 for ui_file in "${UI_FILES[@]}"; do
@@ -299,6 +305,12 @@ if command -v php >/dev/null 2>&1; then
     fail "$session_selftest"
   fi
 
+  if skills_selftest="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/skills-selftest.php" 2>&1)"; then
+    ok "$skills_selftest"
+  else
+    fail "$skills_selftest"
+  fi
+
   profile_knowledge_selftest=''
   if profile_knowledge_selftest="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/profile-knowledge-selftest.php" 2>&1)"; then
     profile_knowledge_selftest="${profile_knowledge_selftest//$'\r'/}"
@@ -379,6 +391,12 @@ if command -v php >/dev/null 2>&1; then
       ok 'Migration 012: persistente Arbeitsereignisse bereit.'
     else
       fail 'Migration 012: Ereignistabelle fehlt.'
+    fi
+
+    if php -r "require '$PROJECT_ROOT/api/db.php'; require '$PROJECT_ROOT/api/skills.php'; exit(coreui_skills_schema_ready(stu_pdo()) ? 0 : 1);" >/dev/null 2>&1; then
+      ok 'Migration 014: kontobezogene Skills bereit.'
+    else
+      fail 'Migration 014: Skills-Tabelle fehlt.'
     fi
 
     if php -r "require '$PROJECT_ROOT/api/db.php'; echo (int)stu_pdo()->query('SELECT COUNT(*) FROM stu_schema_migrations')->fetchColumn();" >/dev/null 2>&1; then

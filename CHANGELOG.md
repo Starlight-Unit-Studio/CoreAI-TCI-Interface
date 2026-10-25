@@ -2,6 +2,15 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.33 - 25.10.2026
+
+- Neues kontobezogenes Skills-System mit 32 eigenen SKILL.md-Paketen, einzeln schaltbar, durchsuchbar und mit Alle-aktivieren/Alle-deaktivieren sowie Quellen und Prüfdatum.
+- Migration 014 speichert die Auswahl pro Konto. Authentifizierte API mit CSRF, strenger Kennungs-/Bool-Prüfung und transaktionalem Speichern. Neue Skills bleiben ausgeschaltet. Kontoexport ergänzt.
+- Höchstens vier passende aktivierte Skills je Anfrage; explizite Priorisierung über /skill kennung. Gemeinsame Prompt-Anreicherung für synchrone Ollama-Aufrufe und SSE, einschließlich Fortsetzungen. Arbeitsereignisse melden geladene Kennungen.
+- Keine Änderung an Gemma-Modelfile, Modellparametern oder serieller Warteschlange. Skills ergänzen den Nutzerkontext und ersetzen keine SYSTEM-Anweisung, Werkzeuge oder echte Dateiprüfung.
+- Quellen am 25.10.2026 geprüft, Anleitungen selbst verfasst. Keine fremden Skripte importiert. Der universelle Projekt-Agent bleibt separat in Draft PR #69.
+- Offline-Tests und Live-Abnahme sind im Übergabeprotokoll getrennt aufgeführt. GitHub Actions gemäß Vorgabe übersprungen [skip ci].
+
 ## 0.5.32 - 24.10.2026
 
 - **Nur Preflight-Testkorrektur:** Der Frontend-Regressions-Selbsttest suchte noch den alten Aufruf `coreui_console_multifile_source_directive($userMsg)`. Der Code aus 0.5.31 verwendet stattdessen korrekt `$sourceProjectRequest` fuer lokal normalisierte Gemma-Mehrdatei-Auftraege. Dadurch meldete der Test trotz vorhandener Funktion faelschlich einen Fehler.

@@ -752,6 +752,7 @@ exit;
 // Der kontobezogene Thinking-Schalter wird als echter Ollama-Parameter gesendet.
 // ─────────────────────────────────────────────────────────────────────────────
 function console_stream_ollama(string $model, string $systemPrompt, string $userPrompt): array {
+  $userPrompt = coreui_skills_augment($userPrompt);
   $url       = ember_url();
   $keepAlive = ember_keep_alive();
 

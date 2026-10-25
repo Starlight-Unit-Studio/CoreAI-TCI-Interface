@@ -1,0 +1,575 @@
+[
+  {
+    "id": "project-planning",
+    "title": "Projektplanung",
+    "category": "Arbeitsweise",
+    "description": "Für neue Projekte: Ziel, Dateien, Abhängigkeiten und Abnahme vor dem Schreiben klären.",
+    "triggers": [
+      "projekt",
+      "project",
+      "app",
+      "website",
+      "homepage",
+      "implementiere",
+      "implement",
+      "entwickle"
+    ],
+    "sources": [
+      "https://aider.chat/docs/more/edit-formats.html"
+    ],
+    "reviewed": "2026-10-25",
+    "version": "1.0.0"
+  },
+  {
+    "id": "code-editing",
+    "title": "Gezielte Codeänderungen",
+    "category": "Arbeitsweise",
+    "description": "Für Änderungen an vorhandenem Code mit kleinen, überprüfbaren Diffs.",
+    "triggers": [
+      "refactor",
+      "refactoring",
+      "patch",
+      "ändere",
+      "aendere",
+      "code ändern",
+      "code edit",
+      "umbauen"
+    ],
+    "sources": [
+      "https://aider.chat/docs/more/edit-formats.html"
+    ],
+    "reviewed": "2026-10-25",
+    "version": "1.0.0"
+  },
+  {
+    "id": "debugging",
+    "title": "Fehleranalyse",
+    "category": "Arbeitsweise",
+    "description": "Für reproduzierbare Fehler, Exceptions und fehlgeschlagene Abläufe.",
+    "triggers": [
+      "bug",
+      "debug",
+      "debugging",
+      "fehler",
+      "kaputt",
+      "repariere",
+      "funktioniert nicht",
+      "traceback"
+    ],
+    "sources": [
+      "https://docs.python.org/3/tutorial/errors.html"
+    ],
+    "reviewed": "2026-10-25",
+    "version": "1.0.0"
+  },
+  {
+    "id": "html-semantics",
+    "title": "HTML und Formulare",
+    "category": "Frontend",
+    "description": "Für semantische Webseiten, Formulare und klare Dokumentstruktur.",
+    "triggers": [
+      "html",
+      "formular",
+      "form",
+      "website",
+      "homepage",
+      "landingpage"
+    ],
+    "sources": [
+      "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Accessibility"
+    ],
+    "reviewed": "2026-10-25",
+    "version": "1.0.0"
+  },
+  {
+    "id": "responsive-css",
+    "title": "Responsives CSS",
+    "category": "Frontend",
+    "description": "Für Layouts, die auf kleinen und großen Bildschirmen funktionieren.",
+    "triggers": [
+      "css",
+      "responsive",
+      "layout",
+      "mobile",
+      "mobil",
+      "stylesheet"
+    ],
+    "sources": [
+      "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/CSS_layout/Responsive_Design"
+    ],
+    "reviewed": "2026-10-25",
+    "version": "1.0.0"
+  },
+  {
+    "id": "javascript",
+    "title": "JavaScript",
+    "category": "Frontend",
+    "description": "Für Browserlogik, Ereignisse und robuste JavaScript-Funktionen.",
+    "triggers": [
+      "javascript",
+      "js",
+      "dom",
+      "eventlistener"
+    ],
+    "sources": [
+      "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide"
+    ],
+    "reviewed": "2026-10-25",
+    "version": "1.0.0"
+  },
+  {
+    "id": "typescript",
+    "title": "TypeScript",
+    "category": "Frontend",
+    "description": "Für nachvollziehbare Typen und sichere Datengrenzen in TypeScript.",
+    "triggers": [
+      "typescript",
+      "ts",
+      "tsx",
+      "typisierung"
+    ],
+    "sources": [
+      "https://www.typescriptlang.org/docs/handbook/2/everyday-types.html"
+    ],
+    "reviewed": "2026-10-25",
+    "version": "1.0.0"
+  },
+  {
+    "id": "react",
+    "title": "React-Komponenten",
+    "category": "Frontend",
+    "description": "Für React-Oberflächen mit konsistentem State und Komponenten.",
+    "triggers": [
+      "react",
+      "jsx",
+      "reactjs"
+    ],
+    "sources": [
+      "https://react.dev/learn/thinking-in-react"
+    ],
+    "reviewed": "2026-10-25",
+    "version": "1.0.0"
+  },
+  {
+    "id": "vue",
+    "title": "Vue-Komponenten",
+    "category": "Frontend",
+    "description": "Für Vue-Komponenten und zuverlässige reaktive Zustände.",
+    "triggers": [
+      "vue",
+      "vuejs",
+      "vue.js"
+    ],
+    "sources": [
+      "https://vuejs.org/guide/essentials/reactivity-fundamentals.html"
+    ],
+    "reviewed": "2026-10-25",
+    "version": "1.0.0"
+  },
+  {
+    "id": "nextjs",
+    "title": "Next.js",
+    "category": "Frontend",
+    "description": "Für Next.js mit passenden Server- und Client-Grenzen.",
+    "triggers": [
+      "nextjs",
+      "next.js",
+      "next js"
+    ],
+    "sources": [
+      "https://nextjs.org/docs/app/getting-started/server-and-client-components"
+    ],
+    "reviewed": "2026-10-25",
+    "version": "1.0.0"
+  },
+  {
+    "id": "accessibility",
+    "title": "Barrierefreiheit",
+    "category": "Qualität",
+    "description": "Für Tastaturbedienung, verständliche Labels und zugängliche Zustände.",
+    "triggers": [
+      "barrierefrei",
+      "accessibility",
+      "a11y",
+      "screenreader",
+      "tastatur"
+    ],
+    "sources": [
+      "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Accessibility"
+    ],
+    "reviewed": "2026-10-25",
+    "version": "1.0.0"
+  },
+  {
+    "id": "assets",
+    "title": "Bilder und Projektressourcen",
+    "category": "Frontend",
+    "description": "Für vollständige Bildressourcen und funktionierende lokale Verweise.",
+    "triggers": [
+      "bilder",
+      "images",
+      "assets",
+      "grafiken",
+      "image",
+      "bilddateien"
+    ],
+    "sources": [
+      "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Structuring_content/HTML_images"
+    ],
+    "reviewed": "2026-10-25",
+    "version": "1.0.0"
+  },
+  {
+    "id": "fetch-api",
+    "title": "HTTP-Client und Fetch",
+    "category": "Backend",
+    "description": "Für HTTP-Aufrufe mit expliziten Fehlern und Abbruchverhalten.",
+    "triggers": [
+      "fetch",
+      "http client",
+      "api aufrufen",
+      "rest client",
+      "netzwerkfehler"
+    ],
+    "sources": [
+      "https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch"
+    ],
+    "reviewed": "2026-10-25",
+    "version": "1.0.0"
+  },
+  {
+    "id": "rest-api",
+    "title": "REST-Endpunkte",
+    "category": "Backend",
+    "description": "Für konsistente API-Verträge und nachvollziehbare Fehlerantworten.",
+    "triggers": [
+      "rest",
+      "endpoint",
+      "endpunkt",
+      "api design",
+      "http status"
+    ],
+    "sources": [
+      "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status"
+    ],
+    "reviewed": "2026-10-25",
+    "version": "1.0.0"
+  },
+  {
+    "id": "php-pdo",
+    "title": "PHP und PDO",
+    "category": "Backend",
+    "description": "Für PHP-Backends mit vorbereiteten SQL-Anweisungen.",
+    "triggers": [
+      "php",
+      "pdo",
+      "mariadb"
+    ],
+    "sources": [
+      "https://www.php.net/manual/en/pdo.prepared-statements.php"
+    ],
+    "reviewed": "2026-10-25",
+    "version": "1.0.0"
+  },
+  {
+    "id": "python",
+    "title": "Python-Programme",
+    "category": "Backend",
+    "description": "Für wartbare Python-Skripte und gezielte Fehlerbehandlung.",
+    "triggers": [
+      "python",
+      "py",
+      "script",
+      "skript"
+    ],
+    "sources": [
+      "https://docs.python.org/3/tutorial/errors.html"
+    ],
+    "reviewed": "2026-10-25",
+    "version": "1.0.0"
+  },
+  {
+    "id": "sql-security",
+    "title": "SQL-Sicherheit",
+    "category": "Sicherheit",
+    "description": "Für sichere Datenbankabfragen und begrenzte Datenzugriffe.",
+    "triggers": [
+      "sql",
+      "sql injection",
+      "datenbank",
+      "database"
+    ],
+    "sources": [
+      "https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html"
+    ],
+    "reviewed": "2026-10-25",
+    "version": "1.0.0"
+  },
+  {
+    "id": "xss-prevention",
+    "title": "XSS-Schutz",
+    "category": "Sicherheit",
+    "description": "Für sichere Darstellung fremder Texte und erlaubter HTML-Inhalte.",
+    "triggers": [
+      "xss",
+      "innerhtml",
+      "html injection",
+      "sanitizer"
+    ],
+    "sources": [
+      "https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html"
+    ],
+    "reviewed": "2026-10-25",
+    "version": "1.0.0"
+  },
+  {
+    "id": "authorization",
+    "title": "Konten und Zugriffsrechte",
+    "category": "Sicherheit",
+    "description": "Für serverseitige Rechteprüfung und strikte Trennung von Konten.",
+    "triggers": [
+      "authorization",
+      "berechtigung",
+      "auth",
+      "login",
+      "konten",
+      "user isolation"
+    ],
+    "sources": [
+      "https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html"
+    ],
+    "reviewed": "2026-10-25",
+    "version": "1.0.0"
+  },
+  {
+    "id": "browser-testing",
+    "title": "Browser-Tests",
+    "category": "Qualität",
+    "description": "Für reproduzierbare Tests aus Sicht der Benutzer.",
+    "triggers": [
+      "playwright",
+      "browser test",
+      "e2e",
+      "end-to-end"
+    ],
+    "sources": [
+      "https://playwright.dev/docs/best-practices"
+    ],
+    "reviewed": "2026-10-25",
+    "version": "1.0.0"
+  },
+  {
+    "id": "unit-testing",
+    "title": "Unit- und Regressionstests",
+    "category": "Qualität",
+    "description": "Für kleine, unabhängige Tests an relevanten Verhaltensgrenzen.",
+    "triggers": [
+      "pytest",
+      "unittest",
+      "unit test",
+      "regression",
+      "tests"
+    ],
+    "sources": [
+      "https://docs.pytest.org/en/stable/how-to/fixtures.html"
+    ],
+    "reviewed": "2026-10-25",
+    "version": "1.0.0"
+  },
+  {
+    "id": "docker",
+    "title": "Docker und Container",
+    "category": "Betrieb",
+    "description": "Für reproduzierbare Container mit begrenzten Abhängigkeiten.",
+    "triggers": [
+      "docker",
+      "dockerfile",
+      "container",
+      "compose"
+    ],
+    "sources": [
+      "https://docs.docker.com/build/building/best-practices/"
+    ],
+    "reviewed": "2026-10-25",
+    "version": "1.0.0"
+  },
+  {
+    "id": "git-review",
+    "title": "Git und Code-Review",
+    "category": "Arbeitsweise",
+    "description": "Für nachvollziehbare Änderungen und gezielte Prüfung vor Veröffentlichung.",
+    "triggers": [
+      "git",
+      "diff",
+      "pull request",
+      "commit",
+      "review",
+      "merge"
+    ],
+    "sources": [
+      "https://git-scm.com/docs/git-diff"
+    ],
+    "reviewed": "2026-10-25",
+    "version": "1.0.0"
+  },
+  {
+    "id": "zip-delivery",
+    "title": "ZIP und Dateiauslieferung",
+    "category": "Dateien",
+    "description": "Für vollständige Archive mit überprüften Dateien und Verweisen.",
+    "triggers": [
+      "zip",
+      "download",
+      "archiv",
+      "archive",
+      "dateipaket"
+    ],
+    "sources": [
+      "https://docs.python.org/3/library/zipfile.html"
+    ],
+    "reviewed": "2026-10-25",
+    "version": "1.0.0"
+  },
+  {
+    "id": "csv-data",
+    "title": "CSV und Datenimport",
+    "category": "Dateien",
+    "description": "Für zuverlässigen Import und Export strukturierter Textdaten.",
+    "triggers": [
+      "csv",
+      "datenimport",
+      "data import",
+      "tabellendaten"
+    ],
+    "sources": [
+      "https://docs.python.org/3/library/csv.html"
+    ],
+    "reviewed": "2026-10-25",
+    "version": "1.0.0"
+  },
+  {
+    "id": "async-jobs",
+    "title": "Asynchrone Jobs",
+    "category": "Backend",
+    "description": "Für kontrollierte Nebenläufigkeit, Abbruch und Hintergrundaufgaben.",
+    "triggers": [
+      "asyncio",
+      "async",
+      "queue",
+      "warteschlange",
+      "hintergrundjob"
+    ],
+    "sources": [
+      "https://docs.python.org/3/library/asyncio-task.html"
+    ],
+    "reviewed": "2026-10-25",
+    "version": "1.0.0"
+  },
+  {
+    "id": "sse-streaming",
+    "title": "SSE und Streaming",
+    "category": "Backend",
+    "description": "Für robuste Ereignisströme, Wiederverbindung und Abschlusszustände.",
+    "triggers": [
+      "sse",
+      "streaming",
+      "eventsource",
+      "server-sent"
+    ],
+    "sources": [
+      "https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events"
+    ],
+    "reviewed": "2026-10-25",
+    "version": "1.0.0"
+  },
+  {
+    "id": "observability",
+    "title": "Logs und Diagnose",
+    "category": "Betrieb",
+    "description": "Für nachvollziehbare Ereignisse ohne unnötige sensible Inhalte.",
+    "triggers": [
+      "logging",
+      "logs",
+      "diagnose",
+      "observability",
+      "monitoring"
+    ],
+    "sources": [
+      "https://docs.python.org/3/library/logging.html"
+    ],
+    "reviewed": "2026-10-25",
+    "version": "1.0.0"
+  },
+  {
+    "id": "canvas-games",
+    "title": "Canvas und kleine Spiele",
+    "category": "Frontend",
+    "description": "Für Canvas-Darstellung und kleine interaktive Spiele.",
+    "triggers": [
+      "canvas",
+      "spiel",
+      "game",
+      "animation",
+      "2d"
+    ],
+    "sources": [
+      "https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial"
+    ],
+    "reviewed": "2026-10-25",
+    "version": "1.0.0"
+  },
+  {
+    "id": "release-handover",
+    "title": "Release und Übergabe",
+    "category": "Betrieb",
+    "description": "Für konsistente Versionsstände und fortsetzbare Übergaben.",
+    "triggers": [
+      "release",
+      "version",
+      "changelog",
+      "übergabe",
+      "uebergabe",
+      "handover"
+    ],
+    "sources": [
+      "https://semver.org/"
+    ],
+    "reviewed": "2026-10-25",
+    "version": "1.0.0"
+  },
+  {
+    "id": "ollama-integration",
+    "title": "Ollama und Modellanbindung",
+    "category": "Backend",
+    "description": "Für CoreUI-Modellanbindung unter Erhalt der projektspezifischen Parameter.",
+    "triggers": [
+      "ollama",
+      "gemma",
+      "modelfile",
+      "inferenz",
+      "llm"
+    ],
+    "sources": [
+      "https://docs.ollama.com/api/introduction"
+    ],
+    "reviewed": "2026-10-25",
+    "version": "1.0.0"
+  },
+  {
+    "id": "skill-authoring",
+    "title": "Eigene CoreUI-Skills",
+    "category": "Arbeitsweise",
+    "description": "Für kompakte, geprüfte und erweiterbare CoreUI-Arbeitsanleitungen.",
+    "triggers": [
+      "skill",
+      "skills",
+      "skill.md",
+      "anleitungspaket"
+    ],
+    "sources": [
+      "https://agentskills.io/specification"
+    ],
+    "reviewed": "2026-10-25",
+    "version": "1.0.0"
+  }
+]

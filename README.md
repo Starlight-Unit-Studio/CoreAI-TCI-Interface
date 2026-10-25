@@ -7,7 +7,11 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 E.M.B.E.R. CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.32` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.33` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Skills (0.5.33)
+
+32 eigene Arbeitsanleitungen mit Quellen, Suchfunktion und eigenen Schaltern unter Einstellungen → MEINE SKILLS. Migration 014 einspielen, Skills auswählen und speichern. Pro Anfrage werden bis zu vier passende aktivierte Pakete geladen; `/skill kennung` priorisiert ein Paket. Siehe [Skills-Dokumentation](docs/COREUI_SKILLS.md) für Grenzen, Quellen und Live-Abnahme. Der universelle Projekt-Agent bleibt separat in Draft PR #69.
 
 ## Frontend preflight regression assertion repair (0.5.32)
 

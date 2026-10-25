@@ -6131,3 +6131,13 @@ audio.msg-image {
   .ember-suggested-replies { flex-direction: column; }
   .ember-suggested-reply { width: 100%; }
 }
+
+/* Per-account skill catalog. */
+.skills-actions { display:flex; flex-wrap:wrap; gap:10px; margin:16px 0; }
+.skill-card { border-bottom:1px solid rgba(128,180,200,.2); padding:12px 0; }
+.skill-card .setting-row { margin:0; }
+.skill-card details { font-size:.85rem; margin:8px 0; overflow-wrap:anywhere; }
+.skill-card summary { cursor:pointer; }
+.skill-card details a { display:inline-block; margin-right:12px; }
+#skillsList { max-height:65vh; overflow-y:auto; padding-right:8px; }
+#skillsStatus { min-height:1.5em; }
