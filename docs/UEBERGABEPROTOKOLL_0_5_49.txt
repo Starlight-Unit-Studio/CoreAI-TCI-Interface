@@ -1,0 +1,91 @@
+E.M.B.E.R. COREUI 0.5.49 - UEBERGABEPROTOKOLL
+Datum: 25.10.2026
+Ausgangsversion: main 0.5.48, Commit 9fcabfa491745dbde40b77c733e6f13413310f53
+Branch: fix/plan-continue-marker-recovery-0.5.49
+
+LIVE-BEFUND
+Nach der Freigabe 0.5.48 trat beim Weiterbearbeiten der
+bereits als projektplan-v1.md gespeicherten Homepage-Planung
+erneut ein Fehler auf. Der CoreUI-Arbeitsweg im Screenshot
+zeigt Skill-Ladungen, vorbereiteten Kontext, Modellstream
+gestartet, Modellstream empfangen und Antwort gespeichert.
+Anschliessend: "Maras Werkzeugantwort war unvollstaendig oder
+nicht gueltig. Es wurde weder ein Plan gespeichert noch ein
+Projekt erstellt." Im Arbeitsverlauf ist kein erfolgreich
+erkanntes natives Werkzeug sichtbar.
+
+BELEGBARER URSACHENPFAD
+api/console_native_tools.php akzeptierte PLAN_CONTINUE aus
+0.5.48 nur mit exakt geschlossenem [COREUI_PLAN_CONTINUE]
+und [/COREUI_PLAN_CONTINUE] ohne vorangestellten Text.
+Anders als bei PLAN_SAVE gab es fuer ungeschlossene oder
+leicht anders formatierte Fortsetzungsmarker keinen
+Wiederherstellungspfad.
+api/console_stream.php und api/chat.php erzeugten daher
+die pauschale Fehlermeldung bei einem ungelesenen Marker.
+
+WICHTIGE EINSCHRAENKUNG
+Der Rohtext des konkreten Ollama-Modellturns liegt NICHT im
+Screenshot. Die exakte Schreibweise, die zum Fehler fuehrte,
+kann daher nicht mit Gewissheit behauptet werden. Repariert
+wurde eine nachgewiesene Parserluecke fuer entsprechende
+fehlformatierte, vom Modell gewaehlte Fortsetzungen.
+
+AENDERUNGEN
+- Erkennung von genau einem PLAN_CONTINUE-Aufruf, auch ohne
+  Abschlussmarker, mit kurzer Einleitung oder Slash-Variante.
+- Nach dem Marker darf das Modell bereits laengere Markdown-
+  Abschnitte generiert haben. Sie werden NICHT als Befehl oder
+  ungepruefter Plan-Nachtrag verarbeitet. Der Planner greift
+  auf die letzte sichere Datenbank-Version zurueck.
+- Mehrfache Marker, gemischte Werkzeuge, Codefences, Zitate
+  und ungueltige UTF-8-Ausgaben bleiben ausgeschlossen.
+- Nur PLAN_SAVE oder PLAN_CONTINUE duerfen nach einem
+  Modell-Abbruch im gesicherten Planungsmodus fortfahren.
+  PROJECT_BUILD und PLAN_AND_BUILD werden nie durch einen
+  unvollstaendigen Modellaufruf ausgefuehrt.
+- SSE und synchroner Chat umgehen die allgemeine
+  Antwortfortsetzung bei angefangenen PLAN_CONTINUE-Bloecken.
+- Neue datensparsame Arbeitsereignisse dokumentieren
+  die Wiederherstellung oder verbleibende Parserfehler.
+- native-tools-selftest und plan-autocontinue-selftest
+  testen diese Faelle und die nicht ausgefuehrte Build-Callback.
+- Keine Migration, keine neue Nutzeroption, kein Host-Kommando.
+
+BETROFFENE DATEIEN
+api/console_native_tools.php
+api/console_stream.php
+api/chat.php
+scripts/native-tools-selftest.php
+scripts/plan-autocontinue-selftest.php
+VERSION / README.md / CHANGELOG.md
+docs/changelogs-txt/CHANGELOG_0_5_49.txt und INDEX.txt
+docs/UEBERGABEPROTOKOLL_0_5_49.txt
+scripts/preflight-native.sh und scripts/preflight.sh
+6 HTML-Versionsanzeigen
+
+UNVERAENDERT
+config/Modelfile.template (SHA ec01a9540ff668230e6ac0a7e23ffab305d54415)
+Ollama-Modellwahl und Sampler, globale FIFO,
+Kern-Installer und One-Liner, Plan-Datenbank und
+Migrationen, Dateigenerator, ZIP-Pipeline und Python-Sandbox.
+GitHub Actions NICHT gestartet.
+
+TESTSTAND
+Isolierter PHP-Parser-Test mit sieben gueltigen und sieben
+ungueltigen Modellantworten bestanden; PHP-Syntaxpruefung des
+Testskripts bestanden. Produktiver Netcup-Preflight und
+echter autonomer Gemma-4-Planungstest stehen weiterhin aus.
+
+ABNAHME NACH DEPLOYMENT
+1. Bestehenden Update-One-Liner verwenden.
+2. Preflight auf Native Tools, autonome Markdown-Planung,
+   Antwortpipeline, Frontend-Regression und Endstatus pruefen.
+3. Im bisherigen privaten Chat Mara bitten, die bereits
+   gespeicherte Homepage-Planung weiterzufuehren.
+4. Auf "Fortsetzungswerkzeug trotz unvollstaendigem Marker
+   erkannt", neue Markdown-Versionen und korrekten
+   unvollstaendig/fertig-Status achten.
+5. Falls ein Marker weiter abgelehnt wird, nur datensparsame
+   Arbeitsereignisse und gewaehlten Modelltyp analysieren,
+   keine Modelfile-Aenderungen als Parser-Workaround.

@@ -2,6 +2,15 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.49 - 25.10.2026
+
+- Behebt eine Parserluecke bei der Wiederaufnahme schon gespeicherter Markdown-Planentwuerfe: ein einzelner, vom Modell gewaehlter PLAN_CONTINUE-Marker wird jetzt auch mit kurzer Einleitung, Slash-Schreibweise, fehlendem Abschluss oder zusaetzlichem Modelltext erkannt.
+- Im Recovery-Fall wird ausschliesslich die neueste private, authentifizierte Planversion aus der Datenbank als Ausgangspunkt verwendet. Unbestaetigte Modelltexte werden nicht ungeprueft angehaengt, Python/Projekt-Build-Werkzeuge werden nicht gestartet.
+- SSE- und Sync-Antwortweg umgehen die allgemeine lange Antwortfortsetzung fuer diese Marker und erlauben ein sicheres PLAN_CONTINUE selbst nach abgebrochener Ollama-Generation. Sicherheitsregeln fuer PROJECT_BUILD, PLAN_AND_BUILD und gemischte Marker bleiben streng.
+- Technische Work-Events weisen eine tolerante Wiederherstellung oder einen unlesbaren Fortsetzungsmarker mit Groessenangabe aus, ohne Planinhalt zu loggen.
+- Neue Regressionstests fuer offene und geschlossene Modellmarker, zusaetzliche Einleitungen, lange Markdown-Bloecke, Mehrfachmarker, eingebettete Code-Beispiele, gemischte Werkzeuge und das sichere Wiederaufnehmen bereits gespeicherter Plaene.
+- Vollstaendiger Netcup-/Gemma-Livetest steht aus; der konkrete Rohtext des fehlgeschlagenen Turns ist nicht verfuegbar. Betreiber-Modelfile, Ollama-Sampler und die bestehenden Datei-/ZIP-Werkzeuge sind unveraendert.
+
 ## 0.5.48 - 25.10.2026
 
 - Autonome, serielle Projektplanung: Bei einem Modell-gewaehlten offenen PLAN_SAVE-Block wird der sofort gespeicherte Markdown-Entwurf innerhalb desselben Turns in bis zu vier fokussierten Modellaufrufen weitergeschrieben. Nach jedem verwertbaren Abschnitt wird eine neue private, unveraenderliche .md-Version gesichert.

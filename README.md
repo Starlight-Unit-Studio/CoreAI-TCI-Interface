@@ -7,7 +7,44 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 E.M.B.E.R. CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.48` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.49` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Robustere Modellwerkzeug-Erkennung bei Plan-Fortsetzungen (0.5.49)
+
+Beim ersten produktiven PLAN_CONTINUE-Test nach 0.5.48 schrieb Mara
+eine vom Server als unvollstaendig oder ungueltig gewertete
+Werkzeugantwort. Der Browser zeigte keine neuen Markdown-Versionen,
+obwohl der Modellstream erfolgreich empfangen worden war.
+Die tatsaechliche rohe Werkzeugausgabe war im Screenshot nicht
+sichtbar. Feststellbar war jedoch: 0.5.48 akzeptierte PLAN_CONTINUE
+nur mit einem exakt geschlossenen Block ohne davorstehenden Kommentar.
+Fuer PLAN_SAVE gab es bereits eine tolerante Rettung, fuer CONTINUE nicht.
+
+Die neue, strikt auf **planende** Modellwerkzeuge begrenzte
+Erkennung behandelt deshalb auch einen einzelnen ungeschlossenen
+PLAN_CONTINUE-Aufruf als fortsetzbaren Auftrag, selbst wenn Mara
+vorher einen kurzen Satz oder danach Markdown ausgibt.
+Der Inhalt dieser ungesicherten Modellantwort wird **nicht**
+blind an den Plan angehaengt. Stattdessen wird die letzte
+authentifizierte, kontobezogene Markdown-Version geladen und die
+bestehende serielle Planungs-Engine gestartet. Auch nach
+Ollama-Abbruch darf nur diese reine Plan-Fortsetzung weiterlaufen.
+Projekt-Builds und gemischte Werkzeuge bleiben gesperrt.
+
+Beide Wege, SSE und synchroner Chat, erkennen diese Aufrufe,
+ohne eine weitere generische Textfortsetzung mit Wiederholungsgefahr
+zu starten. Die Arbeitsereignisse enthalten nur technische
+Statusinformationen und Groessen, nicht den privaten Modelltext.
+Neue Regressionstests pruefen offene und abgeschlossene Marker,
+Slash-Schreibweisen, kurze Einleitungen, abgebrochene Generierungen,
+mehrzeilige Inhalte und die Ablehnung gemischter oder zitierter
+Werkzeugaufrufe.
+
+**Keine Anpassung** an `config/Modelfile.template`, Ollama-Optionen,
+Projekt-Writer, Datei-/ZIP-Werkzeuge oder den Installer.
+Siehe `docs/UEBERGABEPROTOKOLL_0_5_49.txt`.
+Die genaue Rohausgabe des fehlgeschlagenen Netcup-Turns ist nicht
+vorhanden; der wirkliche Netcup-Livetest bleibt erforderlich.
 
 ## Autonome mehrstufige Markdown-Projektplanung (0.5.48)
 
