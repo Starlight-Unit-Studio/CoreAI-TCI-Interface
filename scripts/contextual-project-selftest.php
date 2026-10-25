@@ -121,8 +121,8 @@ if (in_array('sqlite', PDO::getAvailableDrivers(), true)) {
     'Cross-account project plan leaked into model task');
   dispatch_assert(coreui_native_tool_build_request($pdo,$uid,$session,'React Projekt')===null,
     'Unsupported React framework was silently treated as static HTML');
-  // Never invent a complete build from a truncated 7k-byte plan.
-  $oversized=str_repeat('X',7000);
+  // Never invent a complete build from a truncated 13k-byte plan.
+  $oversized=str_repeat('X',13000);
   $stmt->execute([
     str_repeat('b',32),$uid,$session,102,null,2,'Long Plan',
     $oversized,strlen($oversized),hash('sha256',$oversized)
