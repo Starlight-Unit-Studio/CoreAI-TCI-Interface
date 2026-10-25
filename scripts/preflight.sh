@@ -165,9 +165,9 @@ UI_FILES=(
   scripts/markdown-selftest.js
   scripts/branding-license-selftest.py
   scripts/cache-bust.py
-  docs/changelogs-txt/CHANGELOG_0_5_39.txt
+  docs/changelogs-txt/CHANGELOG_0_5_40.txt
   docs/COREUI_IMAGE_ENGINE_PLAN.md
-  docs/UEBERGABEPROTOKOLL_0_5_39.txt
+  docs/UEBERGABEPROTOKOLL_0_5_40.txt
   docker/pyworker/Dockerfile
   docker/pyworker/entrypoint.sh
   images/starlight_unit_studios_logo_original.png
@@ -472,10 +472,11 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail "Native Tools: $native_test"
   fi
 
-  if compose exec -T php php scripts/contextual-project-selftest.php >/dev/null 2>&1; then
-    ok 'Projektfreigabe aus laufender Sitzung aktiviert den verifizierten Dateiweg.'
+  project_test=''
+  if project_test="$(compose exec -T php php scripts/contextual-project-selftest.php 2>&1)"; then
+    ok "$project_test"
   else
-    fail 'Projektfreigabe: Chat-Plan konnte nicht sicher an Dateierstellung uebergeben werden.'
+    fail "Modellgesteuerte Projektuebergabe: ${project_test:-Unbekannter Fehler}"
   fi
 
   if compose exec -T php php scripts/local-file-tool-selftest.php >/dev/null 2>&1; then

@@ -131,9 +131,9 @@ UI_FILES=(
   scripts/markdown-selftest.js
   scripts/branding-license-selftest.py
   scripts/cache-bust.py
-  docs/changelogs-txt/CHANGELOG_0_5_39.txt
+  docs/changelogs-txt/CHANGELOG_0_5_40.txt
   docs/COREUI_IMAGE_ENGINE_PLAN.md
-  docs/UEBERGABEPROTOKOLL_0_5_39.txt
+  docs/UEBERGABEPROTOKOLL_0_5_40.txt
   images/starlight_unit_studios_logo_original.png
 )
 for ui_file in "${UI_FILES[@]}"; do
@@ -279,10 +279,11 @@ if command -v php >/dev/null 2>&1; then
     fail "Native Tools: $native_test"
   fi
 
-  if runuser -u www-data -- php "$PROJECT_ROOT/scripts/contextual-project-selftest.php" >/dev/null 2>&1; then
-    ok 'Projektfreigabe aus laufender Sitzung aktiviert den verifizierten Dateiweg.'
+  project_test=''
+  if project_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/contextual-project-selftest.php" 2>&1)"; then
+    ok "$project_test"
   else
-    fail 'Projektfreigabe: Chat-Plan konnte nicht sicher an Dateierstellung uebergeben werden.'
+    fail "Modellgesteuerte Projektuebergabe: ${project_test:-Unbekannter Fehler}"
   fi
 
   if runuser -u www-data -- php "$PROJECT_ROOT/scripts/local-file-tool-selftest.php" >/dev/null 2>&1; then

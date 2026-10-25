@@ -17,7 +17,7 @@ function coreui_native_tools_prompt(): string {
     . "[COREUI_PLAN_APPEND]\n...neue Markdown-Abschnitte...\n[/COREUI_PLAN_APPEND]\n"
     . "[COREUI_PLAN_AND_BUILD]\n# Projektplan\n...vollstaendiges Markdown...\n[/COREUI_PLAN_AND_BUILD]\n"
     . "[COREUI_PROJECT_BUILD]\nBeschreibe das zu erzeugende Projekt und benoetigte Quelldateien "
-    . "(z.B. index.html, style.css, main.js).\\n[/COREUI_PROJECT_BUILD]\n"
+    . "(z.B. index.html, style.css, main.js).\n[/COREUI_PROJECT_BUILD]\n"
     . "PLAN_SAVE speichert eine echte Markdown-Datei dauerhaft und zeigt sie im Chat als Download. "
     . "PLAN_APPEND schreibt eine neue Version, ohne aeltere Fassungen zu verlieren. "
     . "PLAN_AND_BUILD speichert zuerst und startet danach den Projekt-Writer. "
