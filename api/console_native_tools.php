@@ -208,8 +208,8 @@ function coreui_native_tool_build_request(PDO $pdo, int $uid, string $sessionId,
     ? (string)$plan['markdown'] : '';
   if ($source !== '' && coreui_plan_is_draft_markdown($source)) return null;
   // Never silently omit part of an approved plan; explicit guidance to split.
-  // Each local source request retains at most 9000 task characters.
-  // Reject an oversized plan rather than silently losing requirements.
+  // Keep the complete approved plan in each bounded, serial source task.
+  // Reject oversized plans rather than silently dropping requirements.
   if (strlen($source) > 12000) return null;
   // Fail closed on unsupported app stacks. Do not quietly relabel React,
   // server code or a mobile APK as a working static three-file ZIP.
