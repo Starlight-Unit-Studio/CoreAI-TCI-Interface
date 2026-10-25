@@ -3457,8 +3457,11 @@ function ember_join_continuation(string $head, string $tail): string {
       && str_starts_with($tail, $headStart)) return $head;
   $tailStart = function_exists('mb_substr') ? mb_substr($tail, 0, 100, 'UTF-8') : substr($tail, 0, 100);
   $earlier = strpos($head, $tailStart);
-  if ($earlier !== false && strlen($tailStart) >= 80
-      && $earlier < strlen($head) - 320) return $head;
+  if ($earlier !== false && strlen($tailStart) >= 80) {
+    $headRemainder = substr($head, $earlier);
+    $repeatsSuffix = str_starts_with($tail, $headRemainder);
+    if (!$repeatsSuffix && $earlier < strlen($head) - 320) return $head;
+  }
 
   // Large Markdown overlaps often exceed the former 400-character window.
   $max = min(2600, ember_msg_len($head), ember_msg_len($tail));
