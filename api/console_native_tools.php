@@ -128,7 +128,8 @@ function coreui_native_tool_build_request(PDO $pdo, int $uid, string $sessionId,
  */
 function coreui_native_tool_apply(
   PDO $pdo,int $uid,string $sessionId,int $turnId,string $reply,callable $build,
-  bool $modelWasTruncated = false
+  bool $modelWasTruncated = false, ?callable $planGenerate = null,
+  string $planGoal = ''
 ): ?string {
   if (!empty($GLOBALS['COREUI_NATIVE_TOOL_REENTRY'])) return null;
   $tool = coreui_native_tool_parse($reply);
@@ -141,11 +142,22 @@ function coreui_native_tool_apply(
       . 'Keine Aktion ausgefuehrt, kein Download vorgetaeuscht.';
   }
   $draft = $kind === 'PLAN_SAVE' && (!empty($tool['draft']) || $modelWasTruncated);
-  if (in_array($kind,['PLAN_SAVE','PLAN_APPEND','PLAN_AND_BUILD'],true)) {
+  if (in_array($kind,['PLAN_SAVE','PLAN_APPEND','PLAN_CONTINUE','PLAN_AND_BUILD'],true)) {
     try {
-      $planText = $draft ? COREUI_PLAN_DRAFT_MARKER . "\n\n" . $tool['body'] : $tool['body'];
-      $saved = coreui_plan_save($pdo,$uid,$sessionId,$turnId,$planText,
-        $kind==='PLAN_APPEND');
+      if ($kind === 'PLAN_CONTINUE') {
+        $saved = coreui_plan_latest($pdo,$uid,$sessionId);
+        if (!is_array($saved)) return 'Hier ist noch kein Projektplan gespeichert.';
+        if (!coreui_plan_is_draft_markdown((string)$saved['markdown']))
+          return 'Der letzte Projektplan ist bereits abgeschlossen.';
+        if ($planGenerate === null)
+          return 'Der Entwurf ist erhalten, aber die Fortsetzung ist momentan nicht verfuegbar.';
+        $saved = coreui_plan_save($pdo,$uid,$sessionId,$turnId,
+          (string)$saved['markdown'],false);
+      } else {
+        $planText = $draft ? COREUI_PLAN_DRAFT_MARKER . "\n\n" . $tool['body'] : $tool['body'];
+        $saved = coreui_plan_save($pdo,$uid,$sessionId,$turnId,$planText,
+          $kind==='PLAN_APPEND');
+      }
     } catch (Throwable $e) {
       error_log('[CoreUI] Native plan save failed: '.get_class($e));
       return 'Ich konnte den Markdown-Projektplan nicht dauerhaft speichern. '
