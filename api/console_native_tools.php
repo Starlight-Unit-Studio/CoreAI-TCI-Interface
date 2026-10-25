@@ -68,8 +68,7 @@ function coreui_native_tool_parse(string $reply): ?array {
  */
 function coreui_native_plan_continue_recover_model_reply(string $reply): ?array {
   if (strlen($reply) > 300000 || preg_match('//u', $reply) !== 1
-      || str_contains($reply, "\0")
-      || str_contains($reply, str_repeat(chr(96), 3))) return null;
+      || str_contains($reply, "\0")) return null;
   $open = '~(?mi)^[ \t]*\[(?:COREUI_PLAN_CONTINUE|COREUI_PLANCONTINUE|COREUI/PLANCONTINUE|COREUI/PLAN_CONTINUE)\][ \t]*\r?$~';
   $matches = [];
   if (preg_match_all($open, $reply, $matches, PREG_OFFSET_CAPTURE) !== 1)
@@ -77,7 +76,10 @@ function coreui_native_plan_continue_recover_model_reply(string $reply): ?array 
   $opening = (string)$matches[0][0][0];
   $offset = (int)$matches[0][0][1];
   $intro = trim(substr($reply, 0, $offset));
-  if (strlen($intro) > 640 || str_contains($intro, '[')
+  // Never trigger a tool if its marker was merely illustrated inside a
+  // Markdown code fence, while allowing harmless code in the ignored body.
+  if (strlen($intro) > 640 || str_contains($intro, str_repeat(chr(96), 3))
+      || str_contains($intro, '[')
       || str_contains($intro, ']')
       || preg_match('~\b(?:Beispiel|Syntax|Codeblock|Zitat)\s*:\s*$~iu',$intro))
     return null;
