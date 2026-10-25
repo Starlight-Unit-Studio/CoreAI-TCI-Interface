@@ -139,9 +139,11 @@ UI_FILES=(
   scripts/work-events-persistence-selftest.php
   scripts/local-file-tool-selftest.php
   scripts/contextual-project-selftest.php
+  scripts/model-project-intent-selftest.php
   scripts/native-tools-selftest.php
   scripts/plan-autocontinue-selftest.php
   api/console_native_tools.php
+  api/console_build_intent.php
   api/console_plan_store.php
   api/console_plan_autorun.php
   api/console_plan.php
@@ -180,6 +182,7 @@ UI_FILES=(
   docs/changelogs-txt/CHANGELOG_0_5_48.txt
   docs/changelogs-txt/CHANGELOG_0_5_49.txt
   docs/changelogs-txt/CHANGELOG_0_5_50.txt
+  docs/changelogs-txt/CHANGELOG_0_5_51.txt
   docs/COREUI_IMAGE_ENGINE_PLAN.md
   docs/UEBERGABEPROTOKOLL_0_5_43.txt
   docs/UEBERGABEPROTOKOLL_0_5_44.txt
@@ -189,6 +192,7 @@ UI_FILES=(
   docs/UEBERGABEPROTOKOLL_0_5_48.txt
   docs/UEBERGABEPROTOKOLL_0_5_49.txt
   docs/UEBERGABEPROTOKOLL_0_5_50.txt
+  docs/UEBERGABEPROTOKOLL_0_5_51.txt
   docker/pyworker/Dockerfile
   docker/pyworker/entrypoint.sh
   images/starlight_unit_studios_logo_original.png
@@ -498,6 +502,13 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     ok "$native_test"
   else
     fail "Native Tools: $native_test"
+  fi
+
+  project_intent_test=''
+  if project_intent_test="$(compose exec -T php php scripts/model-project-intent-selftest.php 2>&1)"; then
+    ok "$project_intent_test"
+  else
+    fail "Modellgesteuerte Projektumsetzung: ${project_intent_test:-Unbekannter Fehler}"
   fi
 
   plan_auto_test=''

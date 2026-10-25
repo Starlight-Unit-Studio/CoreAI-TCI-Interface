@@ -2,6 +2,7 @@
 declare(strict_types=1);
 require_once __DIR__ . '/console_plan_store.php';
 require_once __DIR__ . '/console_plan_autorun.php';
+require_once __DIR__ . '/console_build_intent.php';
 require_once __DIR__ . '/console_data_link_bridge.php';
 
 /**
@@ -156,6 +157,58 @@ function coreui_native_plan_marker_attempt(string $reply): bool {
     substr($reply, 0, 1800)) === 1;
 }
 
+/**
+ * Extract only explicit, safe source filenames from an approved plan.
+ * Do not silently reduce a planned six-page website to three generic files.
+ * Inert flat filenames only: no PHP, paths, shells, symlinks or dotfiles.
+ */
+function coreui_native_plan_source_manifest(string $markdown): ?array {
+  $hits = [];
+  preg_match_all(
+    '~(?<![A-Za-z0-9._/-])([A-Za-z0-9][A-Za-z0-9._-]{0,90}\.(?:html?|css|js|json|txt|md|svg))(?![A-Za-z0-9._/-])~i',
+    $markdown, $hits
+  );
+  $files = [];
+  $seen = [];
+  foreach ($hits[1] ?? [] as $raw) {
+    $name = (string)$raw;
+    if (preg_match('~^projektplan-v[0-9]+[.]md$~i', $name)) continue;
+    $lower = strtolower($name);
+    if (isset($seen[$lower])) continue;
+    $seen[$lower] = true;
+    $files[] = $name;
+    if (count($files) > 9) return null;
+  }
+  if ($files === []) return [];
+  $hasHtml = (bool)array_filter($files,
+    static fn(string $name): bool => preg_match('~[.]html?$~i',$name) === 1);
+  if (!$hasHtml) return []; // No ungrounded page manifest from CSS-only prose.
+  // Keep the user's actual asset filenames, e.g. styles.css / app.js.
+  // Only invent the standard CSS/JS names when the plan names none at all.
+  $requires = [];
+  if (!isset($seen['index.html'])) $requires[] = 'index.html';
+  if (!array_filter($files,
+      static fn(string $name): bool => preg_match('~[.]css$~i',$name) === 1)) {
+    $requires[] = 'style.css';
+  }
+  if (!array_filter($files,
+      static fn(string $name): bool => preg_match('~[.]js$~i',$name) === 1)) {
+    $requires[] = 'main.js';
+  }
+  foreach ($requires as $name) {
+    $files[] = $name;
+    $seen[$name] = true;
+  }
+  if (count($files) > 9) return null;
+  // Deterministic output order, even if the plan first mentions about.html.
+  usort($files, static function(string $a,string $b): int {
+    if (strcasecmp($a,'index.html')===0) return -1;
+    if (strcasecmp($b,'index.html')===0) return 1;
+    return 0;
+  });
+  return $files;
+}
+
 function coreui_native_tool_build_request(PDO $pdo, int $uid, string $sessionId,
                                            string $description): ?string {
   $description = trim($description);
@@ -165,9 +218,9 @@ function coreui_native_tool_build_request(PDO $pdo, int $uid, string $sessionId,
     ? (string)$plan['markdown'] : '';
   if ($source !== '' && coreui_plan_is_draft_markdown($source)) return null;
   // Never silently omit part of an approved plan; explicit guidance to split.
-  // Each local source request retains at most 9000 task characters.
-  // Reject an oversized plan rather than silently losing requirements.
-  if (strlen($source) > 6500) return null;
+  // Keep the complete approved plan in each bounded, serial source task.
+  // Reject oversized plans rather than silently dropping requirements.
+  if (strlen($source) > 12000) return null;
   // Fail closed on unsupported app stacks. Do not quietly relabel React,
   // server code or a mobile APK as a working static three-file ZIP.
   if (preg_match('~\b(?:react|next[.]?js|vue|angular|svelte|wordpress|vite|php|mysql|postgres|laravel|apk|android\s+native|typescript)\b~iu',
@@ -175,9 +228,13 @@ function coreui_native_tool_build_request(PDO $pdo, int $uid, string $sessionId,
   $spec = coreui_console_project_request_spec($description);
   if (!is_array($spec)) return null;
   $files = array_values($spec['requested']);
+  // A completed private plan with explicit filenames takes precedence.
+  // This list comes from checked plan bytes, never a user-keyword trigger.
+  $plannedFiles = $source !== '' ? coreui_native_plan_source_manifest($source) : [];
+  if ($plannedFiles === null) return null;
+  if ($plannedFiles !== []) $files = $plannedFiles;
   if (count($files) === 0) {
-    // The MODEL has requested a static web project, so the server picks a
-    // minimal portable source set. This is not a user-message keyword gate.
+    // No filenames in the plan: preserve the legacy minimal static bundle.
     $files = ['index.html','style.css','main.js'];
   }
   if (count($files) < 2 || count($files) > 9) return null;
@@ -294,13 +351,25 @@ function coreui_native_tool_apply(
         . 'Ich starte damit keine Dateierstellung und gebe keinen fertigen ZIP-Download vor. '
         . 'Zuerst muss die Planung abgeschlossen und als neue fertige Version gespeichert werden.';
     }
+    if ($lastPlan && strlen((string)$lastPlan['markdown']) > 12000) {
+      return 'Der fertig gespeicherte Projektplan umfasst '
+        . strlen((string)$lastPlan['markdown']) . ' Bytes und ueberschreitet '
+        . 'das derzeitige Limit von 12000 Bytes pro Projektauftrag. '
+        . 'Ich schneide ihn nicht ab und gebe kein unvollstaendiges ZIP aus. '
+        . 'Die Umsetzung muss in kleinere Projektabschnitte aufgeteilt werden.';
+    }
+    if ($lastPlan && coreui_native_plan_source_manifest((string)$lastPlan['markdown']) === null) {
+      return 'Der Projektplan enthaelt mehr als neun unterschiedliche Quelldateien. '
+        . 'Der Dateigenerator nimmt hoechstens neun sichere Dateien pro ZIP an. '
+        . 'Die Planung muss in mehrere verifizierbare Dateipakete aufgeteilt werden.';
+    }
     return 'Die Projektquellen konnten nicht sicher zusammengestellt werden. '
       . 'Entweder ist die Dateiliste ungueltig oder der gespeicherte Plan '
       . 'ist zu gross fuer eine einzelne Modellgenerierung. Die Markdown-Datei bleibt erhalten.';
   }
   if (function_exists('coreui_work_record')) {
     coreui_work_record($pdo,'tool','info','Mara hat selbst den Projekt-Writer aufgerufen',
-      ['reason'=>'model_requested_project_build','file_count'=>3]);
+      ['reason'=>'model_requested_project_build']);
   }
   $GLOBALS['COREUI_NATIVE_TOOL_REENTRY'] = true;
   try {

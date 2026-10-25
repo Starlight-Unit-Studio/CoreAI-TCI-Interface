@@ -7,7 +7,67 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 E.M.B.E.R. CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.50` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.51` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Modellgesteuerte Umsetzung gespeicherter Projektplaene (0.5.51)
+
+Der Netcup-Livetest nach 0.5.50 zeigte beim Nutzerauftrag
+"Lass mal den Plan umsetzen" keinen Build. Der komplette
+Streaming-Antworttext umfasste nur 33 Zeichen, danach meldete
+der Arbeitsverlauf `continuation_limit`. Ohne ein vom Modell
+gewaehltes `PROJECT_BUILD`-Werkzeug blieb der bereits fertige
+Markdown-Plan zwar erhalten, aber die Projektdateien wurden
+nicht erzeugt.
+
+Neu: Ist in genau diesem authentifizierten privaten Chat bereits
+ein fertiger, SHA256-verifizierter Projektplan vorhanden, trifft
+Mara **vor** einer grossen Chat-Antwort eine kurze eigene
+Modellentscheidung: `START_BUILD` oder `CHAT`. Die
+Entscheidung verwendet den vorhandenen Modellnamen mit
+`think:false` **nur fuer diesen einzelnen Klassifikationsaufruf**,
+ohne SKILL-Dokument-Wiederholung oder Aenderungen am Modelfile
+und an den Ollama-Sampleroptionen. Keine Regex auf
+"umsetzen", "los" oder andere Woerter des Nutzers.
+Eine bestaetigte Build-Wahl wird als echter `PROJECT_BUILD`-
+Aufruf in den bisherigen geprueften Native-Tool-/Python-/
+ZIP-Pfad uebergeben. Rueckfragen, Entwurfsplaene,
+fremde Konten sowie fehlerhafte/abgeschnittene Entscheidungen
+duerfen diesen Weg nicht starten und laufen normal als Chat.
+
+Der Projekt-Writer beruecksichtigt jetzt bis zu **neun**
+ausdruecklich im fertig gespeicherten Plan genannte
+sichere, flache Quelldateinamen. Beispiel: sechs
+`.html`-Seiten, `style.css` und `main.js`.
+Er erzeugt nicht mehr standardmaessig nur drei Dateien,
+wenn der Plan weitere benannte Unterseiten verlangt.
+Die zuvor harte 6500-Byte-Planbegrenzung liegt jetzt bei
+12000 Bytes ohne stilles Beschneiden. Bei Ueberschreitung
+von Groesse oder Dateianzahl erscheint eine
+konkrete, nicht als Erfolg ausgegebene Blockermeldung.
+Andere Frameworks bleiben ausserhalb des begrenzten
+statischen Website-Writers.
+
+Unvollstaendige Ollama-Antworten hinterlassen jetzt
+`done_reason`, Tokenzaehler, Thinking- und Textlaengen
+als **private technische Arbeitsereignisse**, ohne
+den eigentlichen Antworttext mitzuschreiben.
+Die Meldung ueber ein Antwortlimit wird fuer
+normale Gespräche nicht mehr faelschlich als
+"nicht freigegebener Gesamtplan" bezeichnet.
+
+Regressionen fuer die modellwaehlbare Freigabe, die
+vollstaendige Dateiliste, Kontotrennung, Entwurfsverbot,
+Einmal-Ausfuehrung, unvollstaendige Token und die
+zwei Chatpfade liegen in
+`scripts/model-project-intent-selftest.php` und
+sind an beide Preflight-Varianten angeschlossen.
+
+**Unveraendert:** `config/Modelfile.template`,
+Modell-/Sampler-Konfiguration, persistierte Plaene und
+Datenbankmigrationen, Python-Sandbox, ZIP-Writer,
+Installer und globale serielle Ollama-Warteschlange.
+Siehe `docs/UEBERGABEPROTOKOLL_0_5_51.txt`.
+Ein echter Netcup-/Gemma-Livetest steht noch aus.
 
 ## Integrierte Markdown-Vorschau im Chat (0.5.50)
 

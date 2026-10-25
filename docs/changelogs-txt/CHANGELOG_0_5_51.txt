@@ -1,0 +1,10 @@
+## 0.5.51 - 25.10.2026
+
+- Fehlerbehebung fuer "Lass mal den Plan umsetzen": 0.5.50 erzeugte statt Projektdateien nur 33 Zeichen Modelltext und danach `continuation_limit`. Der native Build wurde mangels erkanntem Modellwerkzeug gar nicht aufgerufen.
+- Neue kurze, **modellgesteuerte** Werkzeugentscheidung bei vorhandenem vollstaendigem Privatplan vor dem grossen Antwortlauf. Dasselbe konfigurierte Modell entscheidet ohne User-Keyword-Router, ob START_BUILD oder normaler CHAT. Nur eine vollstaendig bestaetigte Modellwahl darf den vorhandenen geschuetzten `PROJECT_BUILD`-Pfad ausfuehren. Thinking ist ausschliesslich fuer diese kurze Entscheidung deaktiviert, die urspruengliche Modellkonfiguration bleibt bestehen.
+- Sync- und SSE-Routen identisch angebunden; vorhandener Native-Tool-/Datei-/ZIP-Writer wird erneut verwendet, keine parallelen Modellaufrufe und kein zweiter Projektbau bei Wiederaufrufen desselben Turns.
+- Projekt-Build kann nun bis zu neun explizite sichere Quelldateien aus dem gespeicherten Plan uebernehmen. Sechs HTML-Unterseiten plus CSS und JS werden nicht auf ein dreiteiliges Standardpaket reduziert. Der Plan wird bis 12000 Bytes vollstaendig uebergeben und niemals still beschnitten; Fehler wegen zu vieler Dateien/grossem Plan werden konkret benannt.
+- Weitere datensparsame Ollama-Arbeitsereignisse: done_reason, eval_count, prompt_eval_count, Thinking-/Textlaenge und Fortsetzungszaehler. Der 33-Zeichen-Abbruch kann so kuenftig ohne private Modelltexte genauer eingegrenzt werden.
+- Neuer `scripts/model-project-intent-selftest.php` mit simulierter Modellentscheidung, SQL-Fixures, Kontotrennung, abgebrochenen Antworten und verifiziertem Sechs-Seiten-ZIP-Auftrag. Beide Preflight-Varianten und bisherige SSE-/Laengentests synchronisiert.
+- Betreiber-Modelfile, Ollama-Optionspolitik, SQL-Migrationen, Installer, Python-Sandbox und eigentlicher ZIP-Writer unveraendert. Vollstaendige Netcup-Preflight- und Live-Gemma-Abnahme noch offen.
+

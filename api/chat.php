@@ -4723,6 +4723,40 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
     && (ember_console_file_tool_is_local($primaryModel)
       || $requestedSourceProject !== null);
   $fileToolThink = $fileTask ? ember_console_file_tool_think($primaryModel) : null;
+  // The synchronous fallback must share the SSE model-selected execution
+  // contract. This is not keyword routing and does not touch the Modelfile.
+  if ($channel === 'console' && !$fileTask && $imageUrl === null
+      && trim($attachBlock) === '' && ember_py_enabled()
+      && empty($GLOBALS['COREUI_NATIVE_TOOL_REENTRY'])
+      && $consoleUid > 0 && $consoleSessionId !== null
+      && $triggerMessageId > 0) {
+    $choice = coreui_build_intent_select(
+      $pdo,$consoleUid,(string)$consoleSessionId,$triggerMessageId,$userMsg,
+      static function (string $decisionPrompt) use ($primaryModel): array {
+        $raw = ember_call_ollama($primaryModel,'',$decisionPrompt,90,
+          [],null,false,false);
+        $meta = ember_last_call_meta();
+        return ['text'=>is_string($raw) ? trim($raw) : '',
+          'ok'=>is_string($raw) && !empty($meta['ok'])
+            && !ember_last_call_was_truncated()];
+      }
+    );
+    if (($choice['status'] ?? '') === 'build' && is_string($choice['tool'])) {
+      coreui_work_record($pdo,'tool','info',
+        'Mara hat die Umsetzung des gespeicherten Plans gewaehlt',
+        ['reason'=>'model_selected_saved_plan_build',
+         'plan_version'=>(int)$choice['plan_version']]);
+      $result = coreui_native_tool_apply(
+        $pdo,$consoleUid,(string)$consoleSessionId,$triggerMessageId,$choice['tool'],
+        static function (string $task) use ($pdo,$senderChar,$consoleUid,$consoleSessionId,
+          $excludeReplyToId,$triggerMessageId,$triggerRevision): ?string {
+          return ember_generate_reply($pdo,$senderChar,$task,null,'console',
+            $consoleUid,$consoleSessionId,$excludeReplyToId,$triggerMessageId,$triggerRevision);
+        },false,null,$userMsg
+      );
+      if (is_string($result)) return $result;
+    }
+  }
   // The cloud/source-fence path already creates verified ZIPs. Only the local
   // Gemma route needs smaller, raw per-file source requests without the
   // regular conversation's competing [PY] tool hints.
