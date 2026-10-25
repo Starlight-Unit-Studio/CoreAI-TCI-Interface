@@ -2,6 +2,12 @@
 declare(strict_types=1);
 
 /** Protected, immutable Markdown versions belonging to one account + chat. */
+const COREUI_PLAN_DRAFT_MARKER = '<!-- COREUI_PLAN_DRAFT -->';
+
+function coreui_plan_is_draft_markdown(string $markdown): bool {
+  return str_starts_with($markdown, COREUI_PLAN_DRAFT_MARKER);
+}
+
 function coreui_plan_schema_ready(PDO $pdo): bool {
   try {
     $pdo->query('SELECT id,user_id,session_id,source_turn_id,response_message_id,version,title,markdown,byte_size,sha256 FROM stu_console_project_plans LIMIT 0');
@@ -43,7 +49,9 @@ function coreui_plan_save(
   }
   $version = $previous === null ? 1 : ((int)$previous['version'] + 1);
   $title = 'Projektplan';
-  if (preg_match('~^#\s+([^\r\n]{1,160})~u', $markdown, $m)) {
+  $titleSource = coreui_plan_is_draft_markdown($markdown)
+    ? ltrim(substr($markdown, strlen(COREUI_PLAN_DRAFT_MARKER))) : $markdown;
+  if (preg_match('~^#\s+([^\r\n]{1,160})~u', $titleSource, $m)) {
     $title = trim((string)$m[1]);
   } elseif ($previous !== null) {
     $title = (string)$previous['title'];
@@ -100,11 +108,14 @@ function coreui_plan_prompt_block(PDO $pdo, int $uid, string $sessionId): string
   $body = (string)$plan['markdown'];
   // Do not turn every ordinary chat exchange into a giant plan re-prompt.
   // The original Markdown remains complete in persistent storage/downloads.
+  $isDraft = coreui_plan_is_draft_markdown($body);
   $cut = strlen($body) > 3200;
   if ($cut) $body = substr($body,0,2200) . "\n[MITTELTEIL NICHT IM KONTEXT]\n" . substr($body,-700);
   return "\n\n[DAUERHAFT GESPEICHERTER PROJEKTPLAN v".(int)$plan['version']."]\n"
     . "Titel: ".(string)$plan['title']."\n"
-    . "Datei vollstaendig gespeichert: ".(int)$plan['byte_size']." Bytes. "
+    . "Datei bytegenau gespeichert: ".(int)$plan['byte_size']." Bytes. "
+    . ($isDraft ? "STATUS: UNVOLLSTAENDIGER ENTWURF, noch nicht zum Bau freigegeben. "
+      . "Nicht behaupten, dass der Plan abgeschlossen ist.\n" : "")
     . ($cut ? "Der folgende Text ist NUR EIN AUSZUG; fehlende Abschnitte nicht erfinden.\n"
       : "Vollstaendiger Inhalt:\n")
     . $body . "\n[ENDE PROJEKTPLAN]\n";
