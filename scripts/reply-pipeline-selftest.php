@@ -138,7 +138,10 @@ if (!str_contains($transport, "\n  code_block()\n\n")) {
 }
 
 $streamSource = (string)file_get_contents(dirname(__DIR__) . '/api/console_stream.php');
-foreach (['console_stream_continue_truncated', 'continuation_segments', 'CURLOPT_TIMEOUT        => max(30, min(900'] as $needle) {
+foreach (['console_stream_continue_truncated', 'continuation_segments',
+  'CURLOPT_TIMEOUT        => $timeoutOverride === null',
+  'min(900, ember_timeout_for_model($model))',
+  'max(30, min(240, $timeoutOverride))'] as $needle) {
   if (!str_contains($streamSource, $needle)) {
     reply_test_fail('Stream-Fortsetzung oder 900-Sekunden-Laufzeit fehlt: ' . $needle);
   }
