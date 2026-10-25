@@ -42,8 +42,10 @@ $chat=(string)file_get_contents(dirname(__DIR__).'/api/chat.php');
 intent_assert(str_contains($stream,'coreui_build_intent_select(')
   && str_contains($chat,'coreui_build_intent_select(')
   && str_contains($stream,'false, 90, false)')
-  && str_contains($chat,'[],null,false,false)'),
-  'Sync/SSE no-thinking model decision not wired');
+  && str_contains($chat,'[],null,false,false)')
+  && str_contains($stream,'$nativeToolHandled = $preselectedBuildHandled;')
+  && str_contains($stream,'if (!$fileTaskHandled && !$nativeToolHandled'),
+  'Sync/SSE no-thinking selection and single-tool dispatch not wired');
 intent_assert(!str_contains($stream,'coreui_console_web_project_resolve(')
   && !str_contains($chat,'coreui_console_web_project_resolve('),
   'Old keyword router returned');
