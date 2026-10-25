@@ -117,6 +117,7 @@ UI_FILES=(
   scripts/profile-knowledge-selftest.php
   scripts/account-security-selftest.php
   scripts/frontend-regression-selftest.php
+  scripts/chat-navigation-recovery-selftest.cjs
   scripts/message-actions-selftest.php
   scripts/markdown-selftest.js
   scripts/branding-license-selftest.py
@@ -273,6 +274,11 @@ if command -v php >/dev/null 2>&1; then
       ok 'Antwortdauer: gespeicherte Gesamt- und Modellzeit in der Infoanzeige geprueft.'
     else
       fail 'Antwortdauer-JavaScript-Selbsttest fehlgeschlagen.'
+    fi
+    if node "$PROJECT_ROOT/scripts/chat-navigation-recovery-selftest.cjs" >/dev/null 2>&1; then
+      ok 'Chat-Navigation: bestehender Modellauftrag ohne erneute Generierung wiederhergestellt.'
+    else
+      fail 'Chat-Navigation: Wiederherstellungs-Selbsttest fehlgeschlagen.'
     fi
   else
     printf '[INFO] Node nicht installiert: optionaler Antwortdauer-JavaScript-Test uebersprungen.\n'
