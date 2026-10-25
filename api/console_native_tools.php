@@ -83,9 +83,21 @@ function coreui_native_plan_continue_recover_model_reply(string $reply): ?array 
     return null;
 
   $body = trim(substr($reply, $offset + strlen($opening)));
-  $closing = '~(?:^|\r?\n)[ \t]*\[/COREUI(?:_PLAN_CONTINUE|_PLANCONTINUE|/PLANCONTINUE|/PLAN_CONTINUE)\][ \t]*$~i';
-  $closed = preg_match($closing, $body, $end, PREG_OFFSET_CAPTURE) === 1;
-  if ($closed) $body = trim(substr($body, 0, (int)$end[0][1]));
+  $closing = '~(?:^|\r?\n)[ \t]*\[/COREUI(?:_PLAN_CONTINUE|_PLANCONTINUE|/PLANCONTINUE|/PLAN_CONTINUE)\][ \t]*(?=\r?\n|$)~i';
+  $end = [];
+  $closingCount = preg_match_all($closing, $body, $end, PREG_OFFSET_CAPTURE);
+  if ($closingCount === false || $closingCount > 1) return null;
+  $closed = $closingCount === 1;
+  if ($closed) {
+    $endOffset = (int)$end[0][0][1];
+    $endBytes = strlen((string)$end[0][0][0]);
+    $trailing = trim(substr($body, $endOffset + $endBytes));
+    // Do not lose a tool request just because the model adds a short,
+    // non-tool sentence AFTER an otherwise valid closing delimiter.
+    if (strlen($trailing) > 640 || str_contains($trailing, '[')
+        || str_contains($trailing, ']')) return null;
+    $body = trim(substr($body, 0, $endOffset));
+  }
   // Gemma may have written an entire Markdown section after this marker.
   // This is NOT executed or appended blindly: recovery uses the last
   // authenticated checkpoint, then generates validated new sections.
