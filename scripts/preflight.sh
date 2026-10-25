@@ -167,8 +167,12 @@ UI_FILES=(
   scripts/branding-license-selftest.py
   scripts/cache-bust.py
   docs/changelogs-txt/CHANGELOG_0_5_43.txt
+  docs/changelogs-txt/CHANGELOG_0_5_44.txt
+  docs/changelogs-txt/CHANGELOG_0_5_45.txt
   docs/COREUI_IMAGE_ENGINE_PLAN.md
   docs/UEBERGABEPROTOKOLL_0_5_43.txt
+  docs/UEBERGABEPROTOKOLL_0_5_44.txt
+  docs/UEBERGABEPROTOKOLL_0_5_45.txt
   docker/pyworker/Dockerfile
   docker/pyworker/entrypoint.sh
   images/starlight_unit_studios_logo_original.png
@@ -465,10 +469,11 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail 'Modelfile-Audit: Offline-Selbsttest fehlgeschlagen.'
   fi
 
-  if compose exec -T php php scripts/gemma-zero-parameters-selftest.php >/dev/null 2>&1; then
-    ok 'Gemma: freigegebenes Modelfile und keine API-Parameterueberschreibung.'
+  gemma_test=''
+  if gemma_test="$(compose exec -T php php scripts/gemma-zero-parameters-selftest.php 2>&1)"; then
+    ok 'Gemma: aktives Modelfile, Dateiabgleich und keine API-Parameterueberschreibung.'
   else
-    fail 'Gemma-Modelfile-/Ollama-Parametervertrag fehlgeschlagen.'
+    fail "Gemma-Modelfile-/Ollama-Parametervertrag: ${gemma_test:-Unbekannter Fehler}"
   fi
 
   # Node is optional for PHP installations. Run the real JS unit test when

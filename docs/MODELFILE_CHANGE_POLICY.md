@@ -6,9 +6,9 @@ Stand: 2026-10-25. Verbindlich fuer CoreUI-Entwicklung.
 
 - Das vom Betreiber gepostete E2B-`ollama show`-Modelfile liegt als archivierter Inhalt unter `docs/references/MODELFILE_E2B_USER_EXPORT_2026_10_25.txt`. Markdown-Darstellungs-Escapes der Nachricht wurden entfernt. Git-Blob-SHA-1: `bdf70ae29fde3d9172d823720be0f002fa518549`.
 - Die archivierten absoluten `FROM`- und `DRAFT`-Blobpfade gehoeren zu diesem E2B-Export. Sie duerfen **nicht** als E4B-Basismodell in `config/Modelfile.template` eingesetzt werden. Das Archiv wird nicht vom Installer geladen.
-- Auf ausdruecklichen Betreiberwunsch ist ab 0.5.43 der originale Mara-SYSTEM-Text aus dem archivierten E2B-Export wieder aktiv. Die vier PARAMETER-Zeilen bleiben exakt in Originalreihenfolge; FROM ist als portables gemma4:e4b gesetzt, die exportierten Blobpfade werden nicht eingesetzt.
+- 0.5.43 stellte den archivierten Originaltext voruebergehend wieder her. Seit dem anschliessenden Betreiber-Commit vom 25.10.2026 ist die aktive Vorlage bewusst eigenstaendig bearbeitet. Sie ist die massgebliche Quelle fuer Mara-SYSTEM und Ollama-PARAMETER, nicht der archivierte E2B-Export.
 - Keine Skills, langen Coding-Anleitungen, RAG-Texte oder anderen dynamischen Kontexte in SYSTEM oder Modelfile einbauen. Neue Werkzeuge und Validierung zuerst im Backend umsetzen, sodass nur passende Skilltexte pro Anfrage geladen werden.
-- Die aktive Vorlage fuegt weder num_ctx noch num_predict hinzu. Das Runtime-Werkzeugprotokoll bleibt ausserhalb des Modelfiles.
+- Ollama-Parameter aus der aktiven Betreiber-Vorlage, einschliesslich eines gegebenenfalls gesetzten num_predict, sind zu respektieren. CoreUI fuegt fuer lokale Gemma-Aufrufe keine eigenen Sampler-, Kontext- oder Token-Overrides im API-Payload hinzu. Das Runtime-Werkzeugprotokoll bleibt ausserhalb des Modelfiles.
 
 ## Gezielte Werkzeug-Ausnahme
 
@@ -23,6 +23,6 @@ Stand: 2026-10-25. Verbindlich fuer CoreUI-Entwicklung.
 
 ## Pruefung und Grenzen
 
-Der bestehende `scripts/gemma-zero-parameters-selftest.php` prueft den historischen Export auf Unveraendertheit und den aktiven SYSTEM-Text auf Gleichheit mit der Betreiber-Vorlage, einschliesslich exakter Parameterreihenfolge. Der neue `scripts/model-live-audit.php` vergleicht zusaetzlich den tatsaechlich geladenen Ollama-SYSTEM-Text mit der aktuellen Vorlage. Diese Pruefung allein beweist keine produktive Ollama-/Netcup-Funktion. E2B-Erfolge beweisen keine gleichwertige E4B-Ausgabe. Die universelle Dateifortsetzung befindet sich separat in Draft PR #69.
+Der `scripts/gemma-zero-parameters-selftest.php` prueft den archivierten E2B-Export nur auf Unveraendertheit, die aktive Betreiber-Vorlage auf Struktur und gueltige Parameter sowie ein vorhandenes `var/Modelfile.generated` auf Uebereinstimmung mit der aktiven Fassung. Er verlangt keinen historischen SYSTEM-Text und keine historischen vier PARAMETER-Zeilen mehr. Der `scripts/model-live-audit.php` vergleicht weiterhin das tatsaechlich geladene Ollama-SYSTEM mit der aktuellen Vorlage. Diese Pruefung allein beweist keine produktive Ollama-/Netcup-Funktion. E2B-Erfolge beweisen keine gleichwertige E4B-Ausgabe. Die universelle Dateifortsetzung befindet sich separat in Draft PR #69.
 
 Versionierung gemaess `docs/VERSIONING_POLICY.md`; keine GitHub Actions waehrend das Kontingent aufgebraucht ist.

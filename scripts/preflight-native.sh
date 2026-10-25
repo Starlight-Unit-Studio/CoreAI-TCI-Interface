@@ -133,8 +133,12 @@ UI_FILES=(
   scripts/branding-license-selftest.py
   scripts/cache-bust.py
   docs/changelogs-txt/CHANGELOG_0_5_43.txt
+  docs/changelogs-txt/CHANGELOG_0_5_44.txt
+  docs/changelogs-txt/CHANGELOG_0_5_45.txt
   docs/COREUI_IMAGE_ENGINE_PLAN.md
   docs/UEBERGABEPROTOKOLL_0_5_43.txt
+  docs/UEBERGABEPROTOKOLL_0_5_44.txt
+  docs/UEBERGABEPROTOKOLL_0_5_45.txt
   images/starlight_unit_studios_logo_original.png
 )
 for ui_file in "${UI_FILES[@]}"; do
@@ -300,10 +304,11 @@ if command -v php >/dev/null 2>&1; then
     fail 'Modelfile-Audit: Offline-Selbsttest fehlgeschlagen.'
   fi
 
-  if runuser -u www-data -- php "$PROJECT_ROOT/scripts/gemma-zero-parameters-selftest.php" >/dev/null 2>&1; then
-    ok 'Gemma: freigegebenes Modelfile und keine API-Parameterueberschreibung.'
+  gemma_test=''
+  if gemma_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/gemma-zero-parameters-selftest.php" 2>&1)"; then
+    ok 'Gemma: aktives Modelfile, Dateiabgleich und keine API-Parameterueberschreibung.'
   else
-    fail 'Gemma-Modelfile-/Ollama-Parametervertrag fehlgeschlagen.'
+    fail "Gemma-Modelfile-/Ollama-Parametervertrag: ${gemma_test:-Unbekannter Fehler}"
   fi
 
   if command -v node >/dev/null 2>&1; then

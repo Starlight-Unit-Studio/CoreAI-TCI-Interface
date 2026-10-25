@@ -1,0 +1,64 @@
+E.M.B.E.R. COREUI 0.5.45 - UEBERGABEPROTOKOLL
+Datum: 25.10.2026
+Basis: main 0.5.44 und nachfolgender Betreiber-Commit
+023257acec305b8e8d151a059992ae067c12dd54
+Branch: fix/gemma-preflight-active-modelfile-0.5.45
+
+NETCUP-BEFUND
+Preflight meldet 1 Fehler: Gemma-Modelfile-/Ollama-Parametervertrag.
+Die in 0.5.44 behobenen drei Tests (Native Tools, Projektuebergabe,
+lokale Dateiauftraege) sind jetzt erfolgreich.
+Der read-only Ollama-Live-Audit meldet das aktive SYSTEM identisch
+zur Vorlage (laut Screenshot 1508 Bytes).
+
+FEHLERURSACHE
+Der Betreiber hat die aktive config/Modelfile.template nach 0.5.44
+selbst aktualisiert. scripts/gemma-zero-parameters-selftest.php
+erwartete weiter den genauen historischen E2B-SYSTEM-Text und
+vier Parameter in fixierter Reihenfolge. Der aktiv gepflegte Stand
+hat einen veraenderten SYSTEM-Text und fuenf Parameter, darunter
+num_predict -1. Die Folge war ein Konflikt im TEST, nicht der
+Nachweis eines defekten live geladenen Ollama-Modells.
+scripts/branding-license-selftest.py hatte zusaetzlich
+veraltete Wortlaut- und num_predict-Verbote.
+
+KORREKTUR
+- scripts/gemma-zero-parameters-selftest.php validiert jetzt
+  SYSTEM-Rahmen, Gemma-Renderer/Parser und Parameterwerte aus
+  der AKTIVEN Vorlage ohne historische Vier-Parameter-Annahmen.
+- E2B-Original bleibt historisch archiviert und separat mit
+  unveraendertem Blob-SHA geprueft, ohne als Live-SYSTEM zu gelten.
+- Wenn var/Modelfile.generated existiert, muessen SYSTEM und
+  PARAMETER-Zeilen der aktuell aktiven Vorlage entsprechen.
+- Die produktiven API-Calls duerfen lokale Gemma-Parameter
+  weiterhin nicht ueberschreiben.
+- Branding-Selbsttest testet Mara und CoreUI, keine
+  historischen Modelfile-Wortlaute und keine Parameter-Sperre.
+- Native/Compose-Preflight zeigt bei Gemma-Fehlschlag echte
+  PHP-Diagnose statt einer generischen Fehlermeldung.
+
+ABSICHTLICH NICHT ANGEFASST
+config/Modelfile.template, Git-Blob-SHA:
+ec01a9540ff668230e6ac0a7e23ffab305d54415
+Unveraendert bleiben: Installer, One-Liner, API, Ollama-Sampler,
+FIFO-Queue, Python-Sandbox, native Tools und Projekt-Writer.
+Keine GitHub Actions.
+
+AENDERUNGEN UND VERSION
+Tests: scripts/gemma-zero-parameters-selftest.php,
+scripts/branding-license-selftest.py,
+scripts/preflight-native.sh, scripts/preflight.sh.
+Dokumentation: docs/MODELFILE_CHANGE_POLICY.md,
+docs/UEBERGABEPROTOKOLL_0_5_45.txt, README.md, CHANGELOG.md,
+Changelog-TXT/Index sowie die sechs HTML-Versionsanzeigen.
+Version 0.5.45.
+
+TESTSTATUS UND ABNAHME
+Ursache aus aktuellem Repository und Screenshot identifiziert.
+Ein vollstaendiger Netcup-/E4B-Livetest wurde nicht behauptet.
+Nach bestehendem One-Liner Preflight neu laufen lassen.
+Bei erneutem Gemma-Fehler die nun sichtbare konkrete
+Fehlermeldung lesen, nicht das Modelfile automatisch ueberschreiben.
+Danach einen kleinen echten HTML/CSS/JS+ZIP-Auftrag mit Mara
+und Ollama pruefen. Ein erfolgreicher SYSTEM-Audit reicht als
+Funktionsbeleg allein nicht aus.

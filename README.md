@@ -7,7 +7,23 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 E.M.B.E.R. CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.44` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.45` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Betreiber-Modelfile und Preflight-Abgleich (0.5.45)
+
+Die aktive `config/Modelfile.template` ist die massgebliche, vom
+Betreiber selbst veraenderbare Mara- und Ollama-Konfiguration. Der
+Gemma-Selbsttest verlangt nicht mehr die vier Parameter und die
+alte SYSTEM-Passage des archivierten E2B-Exports. Geprueft werden
+stattdessen die Gemma-Struktur, Parameter-Syntax, der Abgleich mit
+`var/Modelfile.generated` (falls vorhanden), die Unveraendertheit
+des historischen Archivs und fehlende API-Overrides fuer lokale Gemma.
+Auch der Branding-Test erzwingt keine historischen Parameter.
+Die Preflights zeigen bei Gemma-Fehlern jetzt den konkreten Grund.
+
+Das aktive Modelfile selbst und der Ollama-Installer wurden nicht
+veraendert. Ein gleicher SYSTEM-Text beim Live-Audit beweist noch
+keinen erfolgreichen E4B-HTML/CSS/JS+ZIP-Auftrag.
 
 ## Ollama-Modell-Audit und lokale Quelldateien (0.5.42)
 
