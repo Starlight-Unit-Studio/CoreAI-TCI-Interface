@@ -6,12 +6,12 @@
   <meta name="language" content="de-DE" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#f0f4fa" />
-  <meta name="application-version" content="0.5.32" />
+  <meta name="application-version" content="0.5.33" />
   <meta name="application-name" content="E.M.B.E.R. CoreUI" />
   <meta name="robots" content="noindex,nofollow" />
   <title>E.M.B.E.R. CoreUI - Einstellungen</title>
-  <link rel="stylesheet" href="./css/console.css?v=1044166131591729354964431" />
-  <script src="./js/console-gate.js?v=0141675170036222692907904"></script>
+  <link rel="stylesheet" href="./css/console.css?v=0540493412957689497789426" />
+  <script src="./js/console-gate.js?v=0065862856269195632697386"></script>
   <script src="./js/coreui-preferences.js?v=0408182548343544002678570"></script>
 </head>
 <body class="settings-body">
@@ -27,7 +27,7 @@
           <h1>EINSTELLUNGEN</h1>
         </div>
       </div>
-      <div class="settings-version">E.M.B.E.R. COREUI // v0.5.32</div>
+      <div class="settings-version">E.M.B.E.R. COREUI // v0.5.33</div>
     </header>
 
     <main class="settings-grid">
@@ -173,6 +173,19 @@
         </div>
       </section>
 
+      <section class="settings-panel" aria-labelledby="skillsTitle">
+        <div class="settings-panel-head"><div><span>ARBEITSANLEITUNGEN</span><h2 id="skillsTitle">MEINE SKILLS</h2></div></div>
+        <p>Jeder Skill hat einen eigenen Schalter. Aktivierte Skills stehen dem gewählten Modell zur Verfügung; bis zu vier passende Anleitungen werden pro Anfrage geladen. Gezielt wählen: <code>/skill kennung</code>. Das schaltet keine Werkzeuge frei.</p>
+        <label class="settings-field" for="skillsSearch"><span>SKILLS SUCHEN</span><input id="skillsSearch" type="search" placeholder="Name, Kategorie oder Aufgabe" /></label>
+        <div class="skills-actions">
+          <button class="settings-action" id="enableAllSkills" type="button" disabled>ALLE AKTIVIEREN</button>
+          <button class="settings-action" id="disableAllSkills" type="button" disabled>ALLE DEAKTIVIEREN</button>
+          <button class="settings-action" id="saveSkills" type="button" disabled>AUSWAHL SPEICHERN</button>
+        </div>
+        <p id="skillsStatus" role="status">Skills werden geladen …</p>
+        <div id="skillsList"></div>
+      </section>
+
       <section class="settings-panel settings-panel-knowledge" aria-labelledby="knowledgeTitle">
         <header class="settings-panel-head">
           <span class="settings-panel-glyph green" aria-hidden="true">⌁</span>
@@ -305,6 +318,7 @@
     <div class="settings-save-state" id="settingsSaveState" role="status" aria-live="polite">LOKAL GESPEICHERT</div>
   </div>
 
+  <script src="./js/skills-settings.js?v=0955646884616369386883139"></script>
   <script src="./js/settings.js?v=0008949398227938228771928"></script>
 </body>
 </html>

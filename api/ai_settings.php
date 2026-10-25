@@ -181,6 +181,7 @@ function coreui_operator_runtime_load(PDO $pdo): array {
 }
 
 function coreui_ai_runtime_apply(PDO $pdo, int $uid): array {
+  unset($GLOBALS['COREUI_SKILLS_BLOCK']);
   $settings = coreui_ai_settings_load($pdo, $uid);
   $GLOBALS['COREUI_AI_RUNTIME_SETTINGS'] = $settings;
   $GLOBALS['COREUI_OPERATOR_RUNTIME_SETTINGS'] = coreui_operator_runtime_load($pdo);

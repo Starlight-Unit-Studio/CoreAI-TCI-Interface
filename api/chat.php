@@ -2,6 +2,7 @@
 require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/ai_settings.php';
+require_once __DIR__ . '/skills.php';
 require_once __DIR__ . '/console_attachment_store.php';
 require_once __DIR__ . '/console_artifact_store.php';
 require_once __DIR__ . '/console_work_store.php';
@@ -3082,6 +3083,7 @@ function ember_ollama_known_good_options(string $model, array $optionOverrides =
   return $options;
 }
 function ember_call_ollama(string $model, string $systemPrompt, string $userPrompt, int $timeoutSec = 12, array $optionOverrides = [], $imageUrl = null, ?bool $thinkOverride = null): ?string {
+  $userPrompt = coreui_skills_augment($userPrompt);
   // Thinking ist strikt an genau diesen Modellaufruf gebunden. Ohne Reset koennte ein
   // spaeterer Call ohne message.thinking versehentlich einen alten Entwurf retten.
   $GLOBALS['STU_EMBER_LAST_THINKING'] = '';
@@ -4192,6 +4194,7 @@ function ember_build_chat_prompt(
   $uid = (int)($senderChar['user_id'] ?? 0);
   $cid = (string)($senderChar['id'] ?? '');
   if (function_exists('coreui_ai_runtime_apply')) coreui_ai_runtime_apply($pdo, $uid);
+  coreui_skills_prepare($pdo, $uid, $userMsg);
   try {
     if ($uid > 0 && coreui_profile_schema_ready($pdo)) {
       $profile = coreui_profile_load($pdo, $uid);
@@ -4379,6 +4382,7 @@ function ember_generate_reply(
   $uid = (int)($senderChar['user_id'] ?? 0);
   $cid = (string)($senderChar['id'] ?? '');
   if (function_exists('coreui_ai_runtime_apply')) coreui_ai_runtime_apply($pdo, $uid);
+  coreui_skills_prepare($pdo, $uid, $userMsg);
   try {
     if ($uid > 0 && coreui_profile_schema_ready($pdo)) {
       $profile = coreui_profile_load($pdo, $uid);
@@ -5217,6 +5221,7 @@ function ember_should_reflect_exchange(string $userMsg, string $emberReply): boo
 }
 
 function ember_after_insert_tasks(PDO $pdo, array $senderChar, string $userMsg, string $emberReply): void {
+  unset($GLOBALS['COREUI_SKILLS_BLOCK']); // Do not influence memory/reflection jobs.
   $uid = (int)($senderChar['user_id'] ?? 0);
   $cid = (string)($senderChar['id'] ?? '');
   if (ember_is_fail_message($emberReply)) return;

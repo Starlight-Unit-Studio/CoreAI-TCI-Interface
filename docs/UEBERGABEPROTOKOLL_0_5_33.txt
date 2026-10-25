@@ -1,0 +1,38 @@
+E.M.B.E.R. COREUI 0.5.33 - UEBERGABEPROTOKOLL
+Stand: 2026-10-25, Vorbereitung vor Merge
+Basis: main 000c3a6673fdcfd90140f75f7950eeb2287e550c (0.5.32)
+Branch: feat/skills-catalog
+
+AUFTRAG
+Skills-System mit einzelnen Schaltern und breiter aktueller Sammlung.
+32 eigene Anleitungen; Quellenpruefung 2026-10-25, keine Vollstaendigkeitsbehauptung.
+
+UMSETZUNG
+api/skills.php, api/user_skills.php, Migration 014_user_skills.sql,
+js/skills-settings.js, Einstellungen, Katalog und 32 SKILL.md-Dateien.
+Opt-in pro Konto. Maximal vier Skills je Anfrage per Keyword oder /skill ID.
+Sync und SSE nutzen dieselbe Anreicherung des Nutzerkontexts.
+Keine nativen autonomen Skill-Tool-Aufrufe; siehe docs/COREUI_SKILLS.md.
+Keine Aenderungen an Modelfile/SYSTEM, Gemma-Parametern oder Modellqueue.
+Account-Export und Preflight um Skills ergaenzt.
+
+PRUEFUNGEN
+PHP-Syntax der geaenderten APIs, Skills-Katalog/Routing/Grenzen bestanden.
+SQLite-Testadapter: Speichern/Lesen, Konto-Isolation, partielle Updates,
+Rollback und fehlende Migration bestanden. Kein MariaDB-Migrationstest.
+Gemma-Policy und bestehende Frontend-Regressionspruefung bestanden.
+Playwright/Chromium mit gemockter API: 32 Schalter, Filter, Speichern,
+Neuladen, CSRF-Header, Fehlerbehandlung, mobile Breite, Migrationssperre bestanden.
+Bestehender Dateiwerkzeug-Selbsttest, Branding, Cache-Fingerprints,
+Versionssprung 0.5.32 -> 0.5.33 und Shell-Syntax bestanden.
+Kein Zugriff auf produktives Docker/Ollama; Live-Abnahme offen.
+
+NAECHSTER SCHRITT
+Migration 014 mit bestehendem Runner, Skills aktivieren und speichern.
+Einen kleinen Python/ZIP-Auftrag pruefen, dann deaktivierte Skills und
+zweites Konto pruefen. Dateiinhalt und Download tatsaechlich kontrollieren.
+GitHub Actions wegen Kontingent auslassen. Nach Merge neues TXT mit
+Merge-SHA, PR, Pruefergebnissen und offenen Punkten anlegen.
+
+SEPARATER PILOT
+PR #69 bleibt Draft; keine Freigabe oder Live-Erfolg fuer diesen Agenten behaupten.

@@ -90,6 +90,12 @@ UI_FILES=(
   js/admin.js
   setup.sh
   api/rag_lite.php
+  api/skills.php
+  api/user_skills.php
+  skills/catalog.json
+  js/skills-settings.js
+  scripts/skills-selftest.php
+  database/migrations/014_user_skills.sql
   api/user_settings.php
   api/model_catalog.php
   api/models.php
@@ -149,9 +155,9 @@ UI_FILES=(
   scripts/markdown-selftest.js
   scripts/branding-license-selftest.py
   scripts/cache-bust.py
-  docs/changelogs-txt/CHANGELOG_0_5_32.txt
+  docs/changelogs-txt/CHANGELOG_0_5_33.txt
   docs/COREUI_IMAGE_ENGINE_PLAN.md
-  docs/UEBERGABEPROTOKOLL_0_5_32.txt
+  docs/UEBERGABEPROTOKOLL_0_5_33.txt
   docker/pyworker/Dockerfile
   docker/pyworker/entrypoint.sh
   images/starlight_unit_studios_logo_original.png
@@ -380,6 +386,14 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   fi
 
   if compose exec -T php php -r \
+      'require "/var/www/coreui/api/db.php"; require "/var/www/coreui/api/skills.php"; exit(coreui_skills_schema_ready(stu_pdo()) ? 0 : 1);' \
+      >/dev/null 2>&1; then
+    ok 'Migration 014: kontobezogene Skills bereit.'
+  else
+    fail 'Migration 014 fehlt. Fuehre scripts/stack.sh migrate aus.'
+  fi
+
+  if compose exec -T php php -r \
       'require "/var/www/coreui/api/db.php"; require "/var/www/coreui/api/console_agent_runs.php"; exit(coreui_agent_run_schema_ready(stu_pdo()) ? 0 : 1);' \
       >/dev/null 2>&1; then
     ok 'Migration 013: dauerhafte Agentenlaeufe bereit.'
@@ -487,6 +501,12 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   else
     session_selftest="${session_selftest//$'\r'/}"
     fail "$session_selftest"
+  fi
+
+  if skills_selftest="$(compose exec -T -u 33:33 php php scripts/skills-selftest.php 2>&1)"; then
+    ok "$skills_selftest"
+  else
+    fail "$skills_selftest"
   fi
 
   profile_knowledge_selftest=''
