@@ -174,6 +174,7 @@ UI_FILES=(
   docs/changelogs-txt/CHANGELOG_0_5_46.txt
   docs/changelogs-txt/CHANGELOG_0_5_47.txt
   docs/changelogs-txt/CHANGELOG_0_5_48.txt
+  docs/changelogs-txt/CHANGELOG_0_5_49.txt
   docs/COREUI_IMAGE_ENGINE_PLAN.md
   docs/UEBERGABEPROTOKOLL_0_5_43.txt
   docs/UEBERGABEPROTOKOLL_0_5_44.txt
@@ -181,6 +182,7 @@ UI_FILES=(
   docs/UEBERGABEPROTOKOLL_0_5_46.txt
   docs/UEBERGABEPROTOKOLL_0_5_47.txt
   docs/UEBERGABEPROTOKOLL_0_5_48.txt
+  docs/UEBERGABEPROTOKOLL_0_5_49.txt
   docker/pyworker/Dockerfile
   docker/pyworker/entrypoint.sh
   images/starlight_unit_studios_logo_original.png
