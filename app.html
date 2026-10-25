@@ -354,15 +354,14 @@
 
           <label class="composer-field" for="inputMessage">
             <span class="composer-field-label">TRANSMISSION</span>
-            <input
+            <textarea
               id="inputMessage"
-              type="text"
               class="composer-input"
-              placeholder="Nachricht an Ember…"
-              autocomplete="off"
-              maxlength="12000"
+              rows="1"
+              placeholder="Nachricht an Mara…"
               aria-describedby="composerHint"
-            />
+              aria-label="Nachricht an Mara, langer Text wird automatisch als Markdown angehängt"
+            ></textarea>
           </label>
 
           <button class="composer-send" id="btnSend" type="button" aria-label="Nachricht senden">
@@ -378,7 +377,7 @@
       <div class="composer-footer-line" id="composerHint">
         <span>PRIVATE CORE LINK</span>
         <i aria-hidden="true"></i>
-        <span>ENTER SENDEN</span>
+        <span>ENTER SENDEN · SHIFT+ENTER ZEILENUMBRUCH · LANGER TEXT ALS .MD</span>
         <span class="composer-glyphs" aria-hidden="true">⌬ 73 ⟐</span>
       </div>
     </footer>

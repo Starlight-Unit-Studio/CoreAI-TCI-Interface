@@ -176,9 +176,16 @@ if (!str_contains($chatSource, '($isConsoleChannel || ember_should_reply($messag
   reply_test_fail('Der private Kanal adressiert Ember nicht serverseitig.');
 }
 
-$migration = (string)file_get_contents(dirname(__DIR__) . '/database/migrations/002_coreui_management.sql');
-if (!str_contains($migration, 'ALTER TABLE stu_chat_messages MODIFY COLUMN message MEDIUMTEXT NOT NULL')) {
-  reply_test_fail('Die Nachrichtenspalte ist nicht fuer lange Antworten migriert.');
+$migration = (string)file_get_contents(dirname(__DIR__) . '/database/migrations/015_long_chat_messages.sql');
+if (!str_contains($migration, 'ALTER TABLE stu_chat_messages MODIFY COLUMN message LONGTEXT NOT NULL')) {
+  reply_test_fail('Die Nachrichtenspalte erlaubt keine vollstaendigen langen Antworten.');
+}
+$insertAt = strpos($chatSource, 'function ember_insert(');
+$limitAt = $insertAt === false ? false : strpos($chatSource, "if (\$targetChannel !== 'console') {", $insertAt);
+$oldCapAt = $insertAt === false ? false : strpos($chatSource, 'if ($textLen > $max)', $insertAt);
+if ($insertAt === false || $limitAt === false || $oldCapAt === false || $oldCapAt < $limitAt
+    || $oldCapAt - $limitAt > 550) {
+  reply_test_fail('Die alte 60k-Antwortkuerzung wird im privaten Chat noch angewandt.');
 }
 
-fwrite(STDOUT, "Reply-Pipeline-Selftest OK: exakte Ganzzahlrechnung, Budget, Thinking-Wahl, zehn Anhaenge, Fortsetzung und MEDIUMTEXT aktiv.\n");
+fwrite(STDOUT, "Reply-Pipeline-Selftest OK: exakte Ganzzahlrechnung, Budget, Thinking-Wahl, zehn Anhaenge, Fortsetzung und LONGTEXT fuer vollstaendige Antworten aktiv.\n");
