@@ -288,6 +288,7 @@ $thinkingPublic = '';
 $browseJobId = 0;
 $consoleAfkOwned = false;
 $agentRunId = '';
+$preselectedBuildHandled = false;
 
 try {
   // Idempotenz: Hat ein frueherer Request fuer GENAU diesen Turn schon geantwortet?
@@ -513,6 +514,7 @@ try {
     // Only a successful, verified decision invokes the build. Otherwise the
     // regular chat remains intact with its original model and options.
     if (is_string($selectedBuildResult)) {
+      $preselectedBuildHandled = true;
       $acc = ['thinking'=>'','content'=>$selectedBuildResult,
         'ok'=>true,'done'=>true,'truncated'=>false,
         'done_reason'=>'tool_dispatch'];
@@ -572,7 +574,7 @@ try {
   // A plan with an unfinished marker may be stored as an explicitly marked
   // draft after its bounded continuations. No truncated build can run.
   $nativeTool = coreui_native_tool_parse($reply);
-  $nativeToolHandled = false;
+  $nativeToolHandled = $preselectedBuildHandled;
   $streamComplete = !empty($acc['ok']) && !empty($acc['done'])
     && empty($acc['truncated']);
   $safePlanRecovery = is_array($nativeTool)
@@ -580,7 +582,8 @@ try {
       ['PLAN_SAVE','PLAN_CONTINUE'],true);
   // Even after a failed Ollama transport, preserve a substantial model-
   // selected Markdown plan as a DRAFT, never as an approved tool action.
-  if (!$fileTaskHandled && !$isVisionTurn && $attachmentIds === []
+  if (!$fileTaskHandled && !$nativeToolHandled
+      && !$isVisionTurn && $attachmentIds === []
       && $generationMode !== 'continue'
       && is_array($nativeTool)
       && ($streamComplete || $safePlanRecovery)) {
