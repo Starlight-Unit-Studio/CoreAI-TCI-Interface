@@ -30,6 +30,34 @@ foreach ([
 ] as $invalid) native_assert(coreui_native_tool_parse($invalid) === null,
   'Multi-action/malformed protocol should not run');
 
+
+// Screenshot regression: Gemma writes [COREUI/PLANSAVE] after normal prose
+// and often omits the closing marker. Never mistake that for a finished plan.
+$planBody = "# Projekt: Anime-Welt Tagebuch\n\n## Ziel\nSechs miteinander "
+  . "verknuepfte Seiten, klare Navigation und konsistentes Design.\n\n"
+  . "## Unterseiten\n- index.html\n- about.html\n- gallery.html\n- blog.html\n"
+  . "- contact.html\n- links.html\n\n## Abnahme\nAlle Links funktionieren.";
+$malformed = "Ich werde den Projektplan nun erstellen und speichern.\n\n"
+  . "[COREUI/PLANSAVE]\n" . $planBody;
+$recovered = coreui_native_tool_parse($malformed);
+native_assert(is_array($recovered) && $recovered['type']==='PLAN_SAVE'
+  && !empty($recovered['draft']) && $recovered['body']===$planBody,
+  'Malformed model PLAN_SAVE from the screenshot must be preserved as draft');
+$closed = coreui_native_tool_parse("Ich speichere ihn jetzt.\n\n"
+  . "[COREUI/PLANSAVE]\n" . $planBody . "\n[/COREUI/PLANSAVE]");
+native_assert(is_array($closed) && empty($closed['draft']) && $closed['body']===$planBody,
+  'Completed slash-spelled PLAN_SAVE must be normalized without a draft flag');
+foreach ([
+  "Beispiel:\n" . str_repeat('A', 1000) . "\n[COREUI/PLANSAVE]\n".$planBody,
+  "[COREUI/PLANSAVE]\n# Kurz\nSatz.",
+  "[COREUI/PLANSAVE]\n".$planBody."\n[COREUI_PROJECT_BUILD]\nx\n[/COREUI_PROJECT_BUILD]",
+  "Text mit eingebettetem Code-Block:\n".str_repeat(chr(96),3)."\n"
+    ."[COREUI/PLANSAVE]\n".$planBody,
+] as $unsafePlan) {
+  native_assert(coreui_native_tool_parse($unsafePlan)===null,
+    'Quoted, incomplete or mixed model tool output must never be saved');
+}
+
 $toolPrompt = coreui_native_tools_prompt();
 $buildExample = [];
 native_assert(preg_match('~(\[COREUI_PROJECT_BUILD\]\n[^\r\n]+\n\[/COREUI_PROJECT_BUILD\])~',
@@ -114,6 +142,19 @@ if (in_array('sqlite',PDO::getAvailableDrivers(),true)) {
   $hint=coreui_plan_prompt_block($pdo,1,$sid);
   native_assert(str_contains($hint,'v2') && str_contains($hint,'Nachtrag'),
     'Current persisted plan not visible to Mara');
+  $draftResult = coreui_native_tool_apply($pdo,1,$sid,11,$malformed,
+    static fn(string $task): string => 'BUILD MUST NOT RUN');
+  native_assert(is_string($draftResult)
+    && str_contains($draftResult,'UNVOLLSTAENDIGEN Markdown-Entwurf'),
+    'Recoverable screenshot plan must be saved as explicitly incomplete');
+  $draftRow = coreui_plan_latest($pdo,1,$sid);
+  native_assert(is_array($draftRow) && coreui_plan_is_draft_markdown($draftRow['markdown'])
+    && str_contains($draftRow['markdown'],$planBody),
+    'Entire model-produced plan content must survive in the private draft');
+  native_assert(coreui_native_tool_build_request($pdo,1,$sid,'Homepage') === null,
+    'Unfinished plan draft must never be passed to the project builder');
+  native_assert(str_contains(coreui_plan_prompt_block($pdo,1,$sid),'UNVOLLSTAENDIGER ENTWURF'),
+    'Next model turn must know the saved draft is not approved');
   echo "Plan persistence (SQLite fixture): OK\n";
 } else {
   echo "Plan persistence SQLite fixture: SKIP (pdo_sqlite unavailable)\n";
