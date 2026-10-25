@@ -69,6 +69,9 @@ $cont = "[COREUI_PLAN_CONTINUE]\nJetzt den gespeicherten Entwurf erweitern.\n[/C
 plan_auto_assert(str_contains($toolPrompt,'[COREUI_PLAN_CONTINUE]')
   && (coreui_native_tool_parse($cont)['type'] ?? '') === 'PLAN_CONTINUE',
   'Mara must be able to select a plan continuation without user-side keywords');
+$slashCont = "[COREUI/PLANCONTINUE]\nDen bereits gespeicherten Plan ergaenzen.\n[/COREUI/PLANCONTINUE]";
+plan_auto_assert((coreui_native_tool_parse($slashCont)['type'] ?? '') === 'PLAN_CONTINUE',
+  'Gemma slash alias must safely resume an existing private draft');
 
 $chatSource = (string)file_get_contents(dirname(__DIR__) . '/api/chat.php');
 $streamSource = (string)file_get_contents(dirname(__DIR__) . '/api/console_stream.php');
