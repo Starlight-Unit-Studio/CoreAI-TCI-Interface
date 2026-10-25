@@ -69,6 +69,9 @@ foreach ([
     . "[COREUI_PLAN_CONTINUE]\n## Weitere Unterseiten\n"
     . str_repeat("- Geforderte Navigation und Bedienbarkeit.\n",160),
   "[COREUI/PLANCONTINUE]\nProjektplan ergaenzen.",
+  "[COREUI_PLAN_CONTINUE]\n## Neue Seite\n"
+    . str_repeat(chr(96),3) . "html\n<main>Preview</main>\n"
+    . str_repeat(chr(96),3),
   "[COREUI_PLAN_CONTINUE]\nProjektplan weiterfuehren.\n"
     . "[/COREUI_PLAN_CONTINUE]\nIch bearbeite die gespeicherte Markdown-Version.",
   "Ich setze die Planung fort.\n[COREUI/PLAN_CONTINUE]\n"
