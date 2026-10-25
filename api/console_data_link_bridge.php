@@ -53,7 +53,10 @@ function coreui_console_project_request_spec(string $request): ?array {
   $marker = strpos($request, "\n[COREUI_PLANUNGSKONTEXT]\n");
   if ($marker !== false) $request = substr($request, 0, $marker);
   $namePattern = '[A-Za-z0-9][A-Za-z0-9._-]{0,90}\.(?:html?|css|js|json|txt|md|svg|py)';
-  preg_match_all('~(?<![A-Za-z0-9._-])(' . $namePattern . ')(?![A-Za-z0-9._-])~i',
+  // Accept a terminal sentence period but reject extra suffixes such as
+  // main.js.backup and main.js.old (not valid requested source files).
+  $fileEnd = '(?![A-Za-z0-9_-]|\.[A-Za-z0-9_.-])';
+  preg_match_all('~(?<![A-Za-z0-9._-])(' . $namePattern . ')' . $fileEnd . '~i',
     $request, $requestedMatches);
   $requested = [];
   foreach ($requestedMatches[1] ?? [] as $name) {
@@ -71,7 +74,7 @@ function coreui_console_project_request_spec(string $request): ?array {
   }
   if ($zipRequested && count($requested) > 9) return null;
   $zipName = 'projekt.zip';
-  if (preg_match('~(?<![A-Za-z0-9._-])([A-Za-z0-9][A-Za-z0-9._-]{0,90}\.zip)(?![A-Za-z0-9._-])~i',
+  if (preg_match('~(?<![A-Za-z0-9._-])([A-Za-z0-9][A-Za-z0-9._-]{0,90}\.zip)' . $fileEnd . '~i',
       $request, $zipMatch)) $zipName = $zipMatch[1];
 
   return [

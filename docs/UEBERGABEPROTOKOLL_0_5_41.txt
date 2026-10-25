@@ -1,0 +1,61 @@
+E.M.B.E.R. CoreUI 0.5.41 - UEBERGABEPROTOKOLL
+Datum: 25.10.2026
+Basis: main 0.5.40, 8861502f8133d791c3d6ab9102ed8a6f1842126e
+Branch: fix/project-filename-punctuation-0.5.41
+
+GEMELDETER NETCUP-BEFUND
+Nach erfolgreicher Installation und Migration 016 meldet der
+Compose-Preflight nur noch:
+[FEHLER] Modellgesteuerte Projektuebergabe: Model project dispatch FAIL:
+Worker did not get exactly the validated static source manifest.
+Der isolierte Native-Tools- und Markdown-Plan-Test war hingegen OK.
+Die Node-Warnung im Screenshot ist nur fuer optionale Tests relevant.
+
+REPRODUZIERTE URSACHE
+coreui_native_tool_build_request() erzeugte:
+  Erstelle ... index.html, style.css, main.js. Erstelle projekt.zip.
+api/console_data_link_bridge.php hatte fuer Dateinamen
+  (?![A-Za-z0-9._-])
+als Abschluss. Das ist bei main.js. FALSCH: der nachgestellte Punkt
+ist ein Satzzeichen, der Parser verlangte aber, dass auch kein Punkt
+folgen darf. PHP-Test: index.html und style.css erkannt, main.js
+fehlte. Somit traf genau die zuvor sichtbare Manifest-Assertion zu.
+
+GEZIELTE KORREKTUR
+- Dateinamen- und ZIP-Namen-Parser unterscheiden ab sofort
+  terminale Satzpunkte von echten Suffixen. main.js. / homepage.zip.
+  sind erlaubt, main.js.backup und homepage.zip.tmp nicht.
+- Der vom Server erzeugte verbindliche Dateiauftrags-Kopf trennt
+  die Liste und den nachfolgenden Satz zusaetzlich mit Zeilenumbruch.
+- scripts/contextual-project-selftest.php prueft vollstaendige
+  Dateiliste, ZIP-Name und sichere ZIP-Quelltextdirektive.
+- scripts/local-file-tool-selftest.php prueft dieselben Grenzfaelle
+  unmittelbar, ohne einen PDO-SQLite-Fixture-Test vorauszusetzen.
+
+TESTS
+- Isolierter PHP 8.4 Test nach dem Originalformat: alte Regex
+  reproduziert 2 statt 3 Quelldateien; korrigierter Parser erkennt
+  index.html, style.css, main.js sowie benanntes ZIP.
+- Regressioncases: Satzpunkt an Dateiname/ZIP, Zeilenumbruch in
+  Aufgabenbeschreibung, mehrere gueltige Dateitypen und Ablehnung
+  ungueltiger Extra-Suffixe. PHP-Syntaxpruefung des Test-Skripts OK.
+- Die neuen Selftests sind an die bisherigen Compose-/Native-
+  Preflightschritte angeschlossen. Die Tests und Quell-/Version-Checks
+  sind statisch geprueft; vollstaendiger Netcup-PHP-/SQL-/Ollama-Test
+  hier nicht moeglich und darf nicht als bestanden gelten.
+
+ABSICHTLICH UNVERAENDERT
+setup.sh, scripts/install.sh, scripts/install-native.sh,
+scripts/preflight.sh (nur Versionsreferenz), scripts/stack.sh,
+scripts/migrate.sh, config/Modelfile.template, Ollama-Parameter,
+Skills, Runtime-Agentenauswahl, Project-Sandbox und Modell-FIFO.
+Keine neuen Datenbankmigrationen. Keine GitHub Actions.
+
+ABNAHME
+1. Bestehenden One-Liner normal nutzen.
+2. Preflight: Modellgesteuerte Projektuebergabe und lokale
+   Dateiauftraege muessen jetzt beide erfolgreich laufen.
+3. Danach Mara einen Plan speichern und ein statisches Webprojekt
+   bauen lassen. Reale Downloadkarten und ZIP-Inhalte pruefen.
+4. Wenn ein weiterer Fehler erscheint, konkrete neue Assertion
+   statt pauschaler Erfolgsmeldung zur Ursachenanalyse nutzen.

@@ -7,7 +7,11 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 E.M.B.E.R. CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.40` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.41` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Projektdateien und Satzzeichen (0.5.41)
+
+The project source-file parser no longer drops the last source filename when it is followed by an ordinary sentence-ending period. This caused the 0.5.40 live preflight to see only `index.html` and `style.css` instead of all three files, including `main.js`. The ZIP filename matcher now makes the same distinction for names such as `homepage.zip.`, while rejecting true extra extensions such as `main.js.backup`. The model-selected tool handoff, owner Modelfile and existing installer remain unchanged. See `docs/UEBERGABEPROTOKOLL_0_5_41.txt`.
 
 ## Projekt-Agent-Preflight und Werkzeugmarker (0.5.40)
 

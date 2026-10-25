@@ -66,6 +66,23 @@ local_file_test(coreui_console_local_homepage_zip_request(
   'Erkläre mir, wie man eine Homepage mit HTML und CSS als ZIP erstellt.') ===
   'Erkläre mir, wie man eine Homepage mit HTML und CSS als ZIP erstellt.',
   'explanation without requested download must not be intercepted');
+// Regression 0.5.41: a sentence-final full stop after a filename must not
+// make the secure manifest silently lose its last JavaScript source.
+$sentenceFiles = 'Erstelle index.html, style.css, main.js. Erstelle webseite.zip zum Download.';
+$sentenceSpec = coreui_console_project_request_spec($sentenceFiles);
+local_file_test(is_array($sentenceSpec)
+  && $sentenceSpec['zip_requested'] === true
+  && array_values($sentenceSpec['requested']) === ['index.html','style.css','main.js']
+  && $sentenceSpec['zip_name'] === 'webseite.zip'
+  && coreui_console_multifile_source_directive($sentenceFiles) !== null,
+  'Punctuation after a source filename or ZIP name changed the validated manifest');
+$notSource = coreui_console_project_request_spec(
+  'Erstelle index.html, style.css, main.js.backup und webseite.zip.tmp zum Download.');
+local_file_test(is_array($notSource)
+  && !in_array('main.js', array_values($notSource['requested']), true)
+  && $notSource['zip_name'] === 'projekt.zip',
+  'Unsafe extension suffix may not be parsed as a complete source or ZIP filename');
+
 $explicitHome = 'Erstelle index.html, style.css, main.js und sende das ZIP zum Download.';
 local_file_test(coreui_console_local_homepage_zip_request($explicitHome) === $explicitHome,
   'explicit filenames must retain existing route and naming');

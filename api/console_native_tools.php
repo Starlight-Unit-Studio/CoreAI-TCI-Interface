@@ -72,7 +72,7 @@ function coreui_native_tool_build_request(PDO $pdo, int $uid, string $sessionId,
       return null;
   }
   $header = 'Erstelle die folgenden vollstaendigen Projektdateien und stelle '
-    . 'ein ZIP zum Download bereit: ' . implode(', ',$files) . '. '
+    . 'ein ZIP zum Download bereit: ' . implode(', ',$files) . "\n"
     . 'Erstelle projekt.zip. Keine Platzhalter und keine erfundenen Dateilinks.'
     . "\n[COREUI_PLANUNGSKONTEXT]\n"
     . "Ausfuehrungsauftrag vom Modell, als Projektanforderungen behandeln:\n"
