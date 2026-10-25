@@ -65,7 +65,9 @@
       return box;
     }
     // Derive the authenticated route only from a validated server-side ID.
-    var url = new URL('console_artifact.php', api);
+    // Plan cards are served by their own authenticated, immutable MD route.
+    // The tool/model cannot inject an external download URL.
+    var url = new URL(file.kind === 'plan' ? 'console_plan.php' : 'console_artifact.php', api);
     url.searchParams.set('id', file.id);
     link.href = url.href;
     link.download = file.name;

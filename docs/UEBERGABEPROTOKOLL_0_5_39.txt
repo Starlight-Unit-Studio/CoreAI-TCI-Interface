@@ -1,0 +1,89 @@
+E.M.B.E.R. COREUI 0.5.39 - UEBERGABEPROTOKOLL
+Datum: 25.10.2026
+Basis: main 0.5.38, SHA e9c7e16fc44cc071c1e5a484bae51e411b01d643
+Branch: feat/model-driven-tools-and-durable-plans-0.5.39
+Status: Quellstand vorbereitet, Netcup-Liveabnahme offen.
+
+AUSGANGSBEFUND
+Die freigegebenen Chat-Webprojekte wurden in 0.5.38 noch immer per
+Worterkennung an den Projekt-Agenten geleitet. Der bisherige Chatverlauf
+kuerzt alte Turns auf 1200 Zeichen. Benutzer verlangt eine echte
+modellgesteuerte Werkzeugwahl und dauerhafte .md-Planung.
+
+PRE-FLIGHT BEFUND / SCREENSHOT
+Installer meldet "xargs: php: exited with status 255; aborting".
+xargs verschluckte den verursachenden Dateinamen; stderr aus php -l
+wurde beim Syntaxcheck nicht angezeigt. In 0.5.37 war ausserdem ein
+malformes PHP-Stringliteral in scripts/skills-selftest.php entstanden,
+das erst mit Release 0.5.38 repariert wurde. Das ist die konkrete
+naheliegende Ursache des gezeigten vorherigen Installationsversuchs.
+In 0.5.39 meldet derselbe Lintschritt mit dem gleichen Abbruchverhalten
+die exakte Datei samt PHP-Fehlermeldung. Keine Installationsschritte,
+Install-Reihenfolge oder One-Liner wurden geaendert.
+
+NEUE RUNTIME-WERKZEUGE (ohne Modelfile-Aenderung)
+- api/console_native_tools.php gibt den Modellen kompakte, eindeutige
+  Werkzeugvertraege:
+  COREUI_PLAN_SAVE, COREUI_PLAN_APPEND, COREUI_PLAN_AND_BUILD,
+  COREUI_PROJECT_BUILD.
+- Die MODELLausgabe, nicht eine Liste der Nutzer-Schluesselwoerter,
+  waehlt das Werkzeug. Nur EIN gueltiger kompletter Werkzeugblock pro
+  Chat-Turn wird verarbeitet; Chat-Fragen duerfen normal beantwortet werden.
+- Vorherige Sonderfunktion coreui_console_web_project_resolve() wird
+  nicht mehr in chat.php oder console_stream.php aufgerufen.
+- Runtime-Einbau in beide Chat-Pfade, ohne zweite parallele
+  Modellanfrage. Die Projektgenerierung ist ein nacheinander ausgefuehrter
+  Folgeschritt im SELBEN serverseitigen Chat-Run.
+- Build nutzt bestehende verifizierte Quelltext-/Python-/ZIP-Pipeline.
+  Der Modelltext wird weder als Shell-Befehl noch als beliebiges PHP/SQL
+  interpretiert. Unterstuetzte Source-Endungen: HTML/CSS/JS/JSON,
+  MD/TXT/SVG/PY. Kein Versprechen fuer APK-/React-Builds.
+
+DAUERHAFTER PLAN-SPEICHER
+- Migration 016_console_project_plans.sql erzeugt nutzer-/sitzungsgebundene
+  immutable Markdown-Revisionen bis 256 KiB pro Datei.
+- Benutzerturn wird via DB geprueft, vorherige Version bleibt erhalten,
+  angehaengte neue Inhalte erzeugen Versionszaehler + echte .md-Datei.
+- Antwort in ember_insert() bindet die gespeicherte Fassung an ihre
+  tatsaechliche Mara-Nachricht; vorhandene Downloadkarten zeigen sie,
+  spaeter auch nach dem Reload.
+- api/console_plan.php: user-ID, Session-Owner, byte_size und SHA256
+  werden vor Download geprueft, MIME application/octet-stream.
+  Beide Nginx-Allowlists lassen nur diese zusaetzliche Route frei.
+- Planhint im laufenden Prompt begrenzt (~3000 Zeichen), Original
+  bleibt vollstaendig in der DB. Bei sehr grossen Plaenen nicht
+  behaupten, das Modell habe den ganzen Inhalt gelesen.
+- Der bestehende Source-Writer gibt lieber einen transparenten Fehler
+  aus als eine still kuerzende Generierung fuer Planungen >6.5k Bytes.
+  Abschnittsweises Re-Read/long plan RAG ist noch nicht umgesetzt.
+
+REGRESSIONEN
+- scripts/native-tools-selftest.php: marker, Grenzen,
+  SQLite-Adaptertest fuer Versionen/Owner/Download; optional wenn
+  PDO SQLite fehlt.
+- Korrigiert: scripts/contextual-project-selftest.php fordert keinen
+  veralteten Keyword-Handler mehr; scripts/frontend-regression-selftest.php
+  erkennt den aktuellen Streamparameter und Upload-Signatur;
+  scripts/reply-pipeline-selftest.php nutzt ebenfalls die aktuelle Signatur.
+- Compose/Native Preflight haben neue Test- und Migrationchecks.
+- Version, sechs HTML-Seiten, Cache-Fingerprints und Changelog konsistent.
+- PHP-/Nginx-/MariaDB-/Ollama-Netcup-Live-Lauf nicht aus dieser
+  Umgebung durchgefuehrt, daher kein behaupteter Ende-zu-Ende-Erfolg.
+
+ABSICHTLICH UNVERAENDERT
+Owner Modelfile, Ollama-Parameter und Modelltemplates, serielle FIFO
+Modellqueue, One-Liner, Setup-Sequenz, restliche Installer-Logik.
+Github Actions nicht gestartet, Kontingent aufgebraucht.
+
+ABNAHME
+1. Mit vorhandenem One-Liner aktualisieren. Falls php -l fehlschlaegt,
+   muessen jetzt Dateiname und originale Fehlermeldung sichtbar sein.
+2. Compose/Native Preflight inkl. Migration 016 und Native Tools Test.
+3. Im selben Chat ohne "Download/ZIP"-Schluesselwoerter Mara um einen
+   Projektplan bitten. Modell soll PLAN_SAVE waehlen, sichere
+   projektplan-v1.md-Downloadkarte erzeugen, spaeter v2 usw.
+4. Danach "Nun setze den Plan um" -> Modell waehlt selbst BUILD;
+   sicherer ZIP-Writer mit verifizierten Dateien; keine Doppelantwort.
+5. Einfache Fragen duerfen keinen Plan oder Build ausloesen.
+6. User- und Sessionwechsel: keine Fremdplan-Downloads, kein Leck
+   durch Archivierung.

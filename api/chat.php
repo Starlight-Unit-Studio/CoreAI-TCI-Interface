@@ -8,6 +8,7 @@ require_once __DIR__ . '/console_artifact_store.php';
 require_once __DIR__ . '/console_work_store.php';
 require_once __DIR__ . '/console_data_link_bridge.php';
 require_once __DIR__ . '/console_project_handoff.php';
+require_once __DIR__ . '/console_native_tools.php';
 require_once __DIR__ . '/console_session_store.php';
 require_once __DIR__ . '/profile_store.php';
 require_once __DIR__ . '/knowledge_store.php';
@@ -3009,6 +3010,7 @@ function ember_insert(
   $insertedId = (int)$pdo->lastInsertId();
   if ($targetChannel === 'console' && $insertedId > 0 && $sessionId !== null) {
     if ($pendingArtifacts !== null) coreui_console_artifact_attach($pdo, $uid, $sessionId, (int)$replyToId, $insertedId, $pendingArtifacts);
+    if ((int)$replyToId > 0) coreui_plan_bind_response($pdo,$uid,$sessionId,(int)$replyToId,$insertedId);
     coreui_console_session_touch($pdo, $uid, $sessionId, $insertedId);
   }
     if ($ownTransaction) $pdo->commit();
@@ -4263,7 +4265,12 @@ function ember_build_chat_prompt(
   $playerStateBlock = ($playerStateHint !== '') ? ("\n\n" . trim($playerStateHint)) : '';
   $userPromptBlock = function_exists('coreui_ai_user_prompt_block') ? coreui_ai_user_prompt_block() : '';
   $profilePromptBlock = function_exists('coreui_profile_prompt_block') ? coreui_profile_prompt_block($pdo, $uid) : '';
-  $u = "[SERVERZEIT (nur dein Hintergrundwissen - Datum/Uhrzeit NUR nennen, wenn in der NEU-Nachricht danach gefragt wird): {$emberZeit}]{$memBlock}{$repBlock}{$playerStateBlock}{$attachBlock}{$userPromptBlock}{$profilePromptBlock}{$privateKnowledgeBlock}\n" . "Kontext (letzte Zeilen - Zeilen mit (du) sind DEINE eigenen, bereits gesendeten Antworten; beantworte sie NICHT erneut):\n" . ($ctx !== '' ? $ctx : "(leer)")
+  $nativeToolHint = ($channel === 'console' && $imageUrl === null
+      && empty($GLOBALS['COREUI_NATIVE_TOOL_REENTRY']))
+    ? coreui_native_tools_prompt() : '';
+  $savedPlanBlock = ($channel === 'console' && $consoleSessionId !== null)
+    ? coreui_plan_prompt_block($pdo,$uid,(string)$consoleSessionId) : '';
+  $u = "[SERVERZEIT (nur dein Hintergrundwissen - Datum/Uhrzeit NUR nennen, wenn in der NEU-Nachricht danach gefragt wird): {$emberZeit}]{$memBlock}{$repBlock}{$playerStateBlock}{$attachBlock}{$userPromptBlock}{$profilePromptBlock}{$privateKnowledgeBlock}{$savedPlanBlock}\n" . "Kontext (letzte Zeilen - Zeilen mit (du) sind DEINE eigenen, bereits gesendeten Antworten; beantworte sie NICHT erneut):\n" . ($ctx !== '' ? $ctx : "(leer)")
    . $loreBlock
    . "
 
@@ -4280,6 +4287,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
    . ($webHint !== '' ? ($webHint . "\n\n") : "")
    . ($browseHint !== '' ? ($browseHint . "\n\n") : "")
    . ($pyHint !== '' ? ($pyHint . "\n\n") : "")
+   . $nativeToolHint
    . "Antworte als Mara:"
    . ($imageUrl !== null ? "\n[Bild wurde mitgesendet - beschreibe und kommentiere es als Mara.]" : "");
 
@@ -4374,22 +4382,7 @@ function ember_generate_reply(
     }
   }
 
-  // An explicit "setze unseren Plan um" in THIS private session may activate
-  // the existing validated file agent. This only enriches the task for the
-  // current inference. The original user message stays unmodified in the DB.
-  if ($channel === 'console' && $imageUrl === null && trim($attachBlock) === ''
-      && $consoleUid > 0 && $consoleSessionId !== null
-      && $triggerMessageId > 0 && ember_py_enabled()) {
-    $resolvedProject = coreui_console_web_project_resolve(
-      $pdo, $consoleUid, (string)$consoleSessionId, $triggerMessageId, $userMsg
-    );
-    if (is_string($resolvedProject)) {
-      $userMsg = $resolvedProject;
-      coreui_work_record($pdo, 'tool', 'info', 'Gespraechsplan als Dateiauftrag erkannt',
-        ['reason'=>'contextual_project_handoff','files'=>3]);
-    }
-  }
-
+  // No forced user-keyword project handoff; Mara selects a tool herself.
   $heavyModel = ember_model_is_heavy(ember_model());
   // Lore-Gate erst NACH dem Entfernen des Markers pruefen: der Hex-String haette
   // sonst als Suchbegriff im Kanon gelandet.
@@ -4887,6 +4880,22 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
     }
   }
 
+  }
+
+  // At most one native model-selected tool per turn.
+  if ($channel === 'console' && !$fileTask && $imageUrl === null
+      && empty($GLOBALS['COREUI_NATIVE_TOOL_REENTRY'])
+      && is_string($out) && $consoleUid > 0 && $consoleSessionId !== null
+      && $triggerMessageId > 0) {
+    $nativeResult = coreui_native_tool_apply(
+      $pdo,$consoleUid,(string)$consoleSessionId,$triggerMessageId,$out,
+      static function (string $task) use ($pdo,$senderChar,$consoleUid,$consoleSessionId,
+        $excludeReplyToId,$triggerMessageId,$triggerRevision): ?string {
+        return ember_generate_reply($pdo,$senderChar,$task,null,'console',
+          $consoleUid,$consoleSessionId,$excludeReplyToId,$triggerMessageId,$triggerRevision);
+      }
+    );
+    if (is_string($nativeResult)) return $nativeResult;
   }
 
   // === Phase 2: Asynchroner Browse-Trigger ([BROWSE:]) - VOR der synchronen Websuche ===

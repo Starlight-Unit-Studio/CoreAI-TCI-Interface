@@ -638,8 +638,18 @@ fi
 log 'Baue das wegwerfbare Python-Sandbox-Image ohne Projekt- oder Geheimnis-Mounts.'
 docker build -t ember-py:1 -f "$PROJECT_ROOT/tools/ember_py.Dockerfile" "$PROJECT_ROOT/tools"
 
-compose run -T --rm --no-deps php sh -ec \
-  'find api scripts tools -type f -name "*.php" -print0 | xargs -0 -r -n1 php -l >/dev/null'
+# Same PHP lint stage and order; report exact file and PHP parser failure.
+compose run -T --rm --no-deps php sh -ec '
+  find api scripts tools -type f -name "*.php" -exec sh -c '\'' 
+    for file do
+      if ! php -l "$file" >/dev/null 2>&1; then
+        printf "[PHP-SYNTAXFEHLER] %s\\n" "$file" >&2
+        php -l "$file" >&2 || true
+        exit 1
+      fi
+    done
+  '\'' sh {} +
+' || die 'PHP-Syntaxpruefung fehlgeschlagen; Dateiname und Fehler stehen oben.'
 
 ensure_ollama_model
 

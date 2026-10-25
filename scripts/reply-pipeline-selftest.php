@@ -156,7 +156,7 @@ if (!str_contains($appHtml, '<textarea')
     || str_contains($appHtml, 'maxlength="12000"')) {
   reply_test_fail('Der private CoreUI-Composer erlaubt kein mehrzeiliges, langes Einfuegen.');
 }
-if (!str_contains($clientSource, 'function queueAutoTextAttachment(text)')
+if (!str_contains($clientSource, 'function queueAutoTextAttachment(text, reportUnavailable)')
     || !str_contains($clientSource, 'function sendAfterCompletedUpload()')
     || !str_contains($clientSource, 'function restoreFailedAutoPaste(file)')
     || !str_contains($clientSource, "inputEl.addEventListener('paste'")

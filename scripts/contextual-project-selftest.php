@@ -88,12 +88,11 @@ foreach ([
   'Session/turn ownership guard missing: ' . $required);
 $stream = (string)file_get_contents(dirname(__DIR__) . '/api/console_stream.php');
 $chat = (string)file_get_contents(dirname(__DIR__) . '/api/chat.php');
-handoff_assert(str_contains($stream, '$fileTaskPrompt = $resolvedProject;')
-  && str_contains($stream, 'coreui_console_download_requested($fileTaskPrompt)')
-  && str_contains($stream, '$pdo, $char, $fileTaskPrompt, null'),
-  'Streaming route did not use the resolved, agreed project');
-handoff_assert(str_contains($chat, 'coreui_console_web_project_resolve(')
-  && str_contains($chat, "require_once __DIR__ . '/console_project_handoff.php';"),
-  'Synchronous route did not use the resolver');
+handoff_assert(str_contains($stream, 'coreui_native_tool_apply(')
+  && !str_contains($stream, 'coreui_console_web_project_resolve('),
+  'Streaming route must use model-selected tools instead of keyword routing');
+handoff_assert(str_contains($chat, 'coreui_native_tool_apply(')
+  && !str_contains($chat, 'coreui_console_web_project_resolve('),
+  'Synchronous route must use model-selected tools instead of keyword routing');
 
 echo "CoreUI project handoff: contextual site/game ZIP, explicit execution, negative intentions, session isolation OK\n";
