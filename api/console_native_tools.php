@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__ . '/console_plan_store.php';
+require_once __DIR__ . '/console_plan_autorun.php';
 require_once __DIR__ . '/console_data_link_bridge.php';
 
 /**
@@ -15,6 +16,7 @@ function coreui_native_tools_prompt(): string {
     . "Antworte normal ODER mit genau EINEM vollstaendigen Block, ohne weiteren Text:\n"
     . "[COREUI_PLAN_SAVE]\n# Titel\nVollstaendiger Markdown-Plan\n[/COREUI_PLAN_SAVE]\n"
     . "[COREUI_PLAN_APPEND]\nNeue Markdown-Abschnitte\n[/COREUI_PLAN_APPEND]\n"
+    . "[COREUI_PLAN_CONTINUE]\nVorhandenen Markdown-Entwurf fortsetzen\n[/COREUI_PLAN_CONTINUE]\n"
     . "[COREUI_PLAN_AND_BUILD]\n# Titel\nVollstaendiger Markdown-Plan\n[/COREUI_PLAN_AND_BUILD]\n"
     . "[COREUI_PROJECT_BUILD]\nProjektauftrag mit benoetigten Quelldateien\n[/COREUI_PROJECT_BUILD]\n"
     . "SAVE speichert eine .md-Datei, APPEND versioniert sie, AND_BUILD speichert und baut, "
@@ -25,13 +27,14 @@ function coreui_native_tools_prompt(): string {
     . "mit [/COREUI_PLAN_SAVE] abschliessen, ohne vorangestellten Kommentar. "
     . "Beginne mit einem kompakten speicherbaren Grundplan und ergaenze "
     . "weitere Abschnitte spaeter ueber PLAN_APPEND. Ein ungeschlossener "
-    . "Block ist ausschliesslich ein unvollstaendiger Entwurf. "
+    . "Block bleibt ein Entwurf. Setze ihn mit begrenzten Modellschritten selbststaendig fort. "
+    . "Vorhandene Entwuerfe kann PLAN_CONTINUE weiterbearbeiten. "
     . "Keine erfundenen Dateien oder Links. Keine Host-Befehle.\n";
 }
 
 function coreui_native_tool_parse(string $reply): ?array {
   if (strlen($reply) > 300000) return null;
-  $types = ['PLAN_SAVE','PLAN_APPEND','PLAN_AND_BUILD','PROJECT_BUILD'];
+  $types = ['PLAN_SAVE','PLAN_APPEND','PLAN_CONTINUE','PLAN_AND_BUILD','PROJECT_BUILD'];
   foreach ($types as $type) {
     if (preg_match('~^\s*\[COREUI_' . $type . '\]\s*\n([\s\S]*?)\n\[/COREUI_'
         . $type . '\]\s*$~u', $reply, $m) !== 1) continue;
