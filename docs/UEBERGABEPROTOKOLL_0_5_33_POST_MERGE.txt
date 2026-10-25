@@ -1,0 +1,74 @@
+E.M.B.E.R. COREUI 0.5.33 - POST-MERGE-UEBERGABEPROTOKOLL
+Stand: 25.10.2026
+Repository: Starlight-Unit-Studio/coreui
+Produktversion in main: 0.5.33
+PR: https://github.com/Starlight-Unit-Studio/coreui/pull/71
+PR-Status: MERGED (25.10.2026 08:39:44 UTC)
+Merge-Commit: 7e588252ba83528fdafff70bbd1e4d70befdec6f
+Vorheriger main-Stand: 000c3a6673fdcfd90140f75f7950eeb2287e550c (0.5.32)
+Feature-Branch: feat/skills-catalog-0.5.33
+
+TATSAECHLICHER MERGE-INHALT
+- 32 quelloffen im Repository abgelegte, selbst verfasste SKILL.md-Anleitungen,
+  inklusive kontrolliertem skills/catalog.json mit Quellen und Pruefdatum.
+- Einstellungsoberflaeche mit Suche, Einzelschaltern, Alle-an/Alle-aus,
+  explizitem Speichern und sichtbarer Fehlerbehandlung.
+- Pro-Konto-Opt-in in stu_user_skills, Datenbankmigration 014_user_skills.sql.
+  Frisch hinzugefuegte Skills starten immer deaktiviert.
+- API: api/user_skills.php (Anmeldung, CSRF-Schutz, Speicherung in Transaktion).
+- Gemeinsamer Skill-Kontext fuer die vorhandenen synchronen und SSE-Modellpfade.
+  Backend-Routing anhand von Anfrage-Keywords; maximal vier geladene Skills.
+  Expliziter Aufruf via /skill <id> oder $<id> nur fuer aktivierte Skills.
+- Anzeige der geladenen Skill-ID im CoreUI-Arbeitsverlauf.
+- Account-Export, Preflight und Selbsttests erweitert.
+
+WICHTIGE ARCHITEKTURGRENZEN
+- Skills sind Anleitungen im Kontext, keine neuen ausfuehrbaren Werkzeuge.
+- Keine automatischen Online-Imports, keine fremden Skripte, keine automatische
+  Ausfuehrung und keine heimliche Freigabe von Netzwerk/Datei-Berechtigungen.
+- Modelfile, SYSTEM, DRAFT/Parameter, Renderer/Parser, Ollama-Modellauswahl
+  und globale serielle Modellwarteschlange blieben unveraendert.
+- Die Skill-Auswahl ist deterministisch und aufgabenspezifisch;
+  keine native autonome Tool-/Skill-Discovery durch Gemma implementiert.
+- Skills beheben nicht automatisch model_output_truncated oder fehlerhafte
+  Quelldateien. Zuverlaessige ZIP-/Dateipruefung bleibt eine separate Aufgabe.
+
+VERIFIKATIONSGRENZE
+Der zusammengefuehrte PR dokumentiert bestandene Offlinepruefungen:
+PHP-Syntax, alle 32 Skill-Aufrufe, Opt-out, Kontextbegrenzung,
+SQLite-Testadapter fuer Kontentrennung/Speichern/Rollback,
+Playwright/Chromium mit gemockter API fuer Schalter/CSRF/Mobilansicht,
+sowie bestehende Frontend-/Gemma-/Dateiwerkzeug-Pruefungen.
+Diese PR-Pruefungen sind dokumentiert; es wurde fuer dieses
+Post-Merge-Protokoll kein neuer produktiver Test ausgefuehrt.
+Insbesondere NICHT als bestaetigt gelten:
+- echte MariaDB-Migration und Speicherung auf dem Netcup-Server,
+- produktive Docker-/Ollama-/Android-Chrome-End-to-End-Pruefung,
+- korrekte Ausfuehrung eines durch Skills begleiteten Python-/ZIP-Auftrags.
+
+LIVE-ABNAHME (NOCH OFFEN)
+1. Bestehenden CoreUI-One-Liner fuer main/0.5.33 verwenden.
+2. Migration 014 ueber bestehenden Runner anwenden:
+   scripts/stack.sh migrate (Compose-Installation).
+3. Preflight pruefen, besonders Migration 014 und skills-selftest.php.
+4. Einstellungen -> MEINE SKILLS oeffnen; zunaechst nur Python und
+   ZIP/Dateiauslieferung aktivieren, speichern, Seite neu laden.
+5. Echten kleinen Python- und ZIP-Auftrag ausloesen, Skill-Events,
+   entstehende Dateien, ZIP-Eintraege und Inhalte kontrollieren.
+6. ZIP-Skill deaktivieren; /skill zip-delivery darf dann nicht laden.
+7. SSE/synchronen Pfad und zweites Benutzerkonto auf Isolation pruefen.
+   Ergebnis und Befunde als neues serverbezogenes Abnahmeprotokoll festhalten.
+
+ABGRENZUNG ZU PR #69
+https://github.com/Starlight-Unit-Studio/coreui/pull/69
+Der universelle Projekt-Agent mit dateitypunabhaengiger Fortsetzung
+ist weiterhin ein separater, deaktivierter DRAFT-PR. Er wurde NICHT
+mit PR #71 gemergt. Fuer abgeschnittene CSS-Ausgaben existiert
+deshalb noch keine nachgewiesene produktive Loesung.
+
+CI-REGEL
+GitHub Actions NICHT ausfuehren (Kontingent erschoepft).
+Nur Offline-/Live-Abnahme gemaess vorhandenem Ablauf.
+Dieses Protokoll erzeugt keine neue Produktversion und ist
+die nachgelagerte, von PR #71 ausdruecklich vorgesehene
+Dokumentation des bereits erfolgten Merge-Commits.
