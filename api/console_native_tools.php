@@ -65,7 +65,7 @@ function coreui_native_tool_parse(string $reply): ?array {
  * It must not be inferred from the user's words or generic discussion.
  */
 function coreui_native_plan_continue_recover_model_reply(string $reply): ?array {
-  if (strlen($reply) > 12000 || preg_match('//u', $reply) !== 1
+  if (strlen($reply) > 300000 || preg_match('//u', $reply) !== 1
       || str_contains($reply, "\0")
       || str_contains($reply, str_repeat(chr(96), 3))) return null;
   $open = '~(?mi)^[ \t]*\[(?:COREUI_PLAN_CONTINUE|COREUI_PLANCONTINUE|COREUI/PLANCONTINUE|COREUI/PLAN_CONTINUE)\][ \t]*\r?$~';
@@ -76,15 +76,19 @@ function coreui_native_plan_continue_recover_model_reply(string $reply): ?array 
   $offset = (int)$matches[0][0][1];
   $intro = trim(substr($reply, 0, $offset));
   if (strlen($intro) > 640 || str_contains($intro, '[')
-      || str_contains($intro, ']')) return null;
+      || str_contains($intro, ']')
+      || preg_match('~\b(?:Beispiel|Syntax|Codeblock|Zitat)\s*:\s*$~iu',$intro))
+    return null;
 
   $body = trim(substr($reply, $offset + strlen($opening)));
   $closing = '~(?:^|\r?\n)[ \t]*\[/COREUI(?:_PLAN_CONTINUE|_PLANCONTINUE|/PLANCONTINUE|/PLAN_CONTINUE)\][ \t]*$~i';
   $closed = preg_match($closing, $body, $end, PREG_OFFSET_CAPTURE) === 1;
   if ($closed) $body = trim(substr($body, 0, (int)$end[0][1]));
-  if (strlen($body) > 2000
-      || preg_match('~\[(?:/?COREUI[/_])[A-Z_]+\]~i', $body)
-      || preg_match('~(?m)^#{1,4}[ \t]+\S~u', $body)) return null;
+  // Gemma may have written an entire Markdown section after this marker.
+  // This is NOT executed or appended blindly: recovery uses the last
+  // authenticated checkpoint, then generates validated new sections.
+  if (strlen($body) > 262144
+      || preg_match('~\[(?:/?COREUI[/_])[A-Z_]+\]~i', $body)) return null;
   // No submitted prompt is used as a write/build instruction. This string is
   // descriptive only, the planner loads the owner's saved plan from the DB.
   return [
@@ -194,6 +198,14 @@ function coreui_native_tool_apply(
   if ($uid <= 0 || $turnId <= 0 || !preg_match('~^[A-Za-z0-9_-]{8,40}$~D',$sessionId))
     return 'Der Werkzeugauftrag besitzt keinen gueltigen privaten Chatkontext.';
   $kind = $tool['type'];
+  if ($kind === 'PLAN_CONTINUE' && !empty($tool['recovered'])
+      && function_exists('coreui_work_record')) {
+    coreui_work_record($pdo,'tool','info',
+      'Fortsetzungswerkzeug trotz unvollstaendigem Marker erkannt',
+      ['reason'=>'recovered_plan_continue',
+       'marker_incomplete'=>!empty($tool['incomplete']),
+       'discarded_tool_body_bytes'=>strlen((string)$tool['body'])]);
+  }
   // PLAN_CONTINUE has no executable body: it only resumes the already
   // authenticated, saved draft. A truncated marker is safe to recover.
   if ($modelWasTruncated && !in_array($kind,['PLAN_SAVE','PLAN_CONTINUE'],true)) {
