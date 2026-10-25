@@ -30,6 +30,8 @@ foreach ([
 ] as $invalid) native_assert(coreui_native_tool_parse($invalid) === null,
   'Multi-action/malformed protocol should not run');
 
+native_assert(str_contains(coreui_native_tools_prompt(), "main.js).\n[/COREUI_PROJECT_BUILD]"),
+  'PROJECT_BUILD tool example must use a real newline before closing marker');
 native_assert(str_contains(coreui_native_tools_prompt(), '[COREUI_PLAN_SAVE]')
   && str_contains(coreui_native_tools_prompt(), '[COREUI_PROJECT_BUILD]')
   && str_contains(coreui_native_tools_prompt(), 'Du DARFST selbst entscheiden'),
