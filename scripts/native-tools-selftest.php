@@ -155,6 +155,20 @@ if (in_array('sqlite',PDO::getAvailableDrivers(),true)) {
     'Unfinished plan draft must never be passed to the project builder');
   native_assert(str_contains(coreui_plan_prompt_block($pdo,1,$sid),'UNVOLLSTAENDIGER ENTWURF'),
     'Next model turn must know the saved draft is not approved');
+  native_assert($draftRow['title']==='Projekt: Anime-Welt Tagebuch',
+    'Recovered draft must retain its meaningful Markdown title');
+  $properPlan = "[COREUI_PLAN_SAVE]\n" . $planBody . "\n[/COREUI_PLAN_SAVE]";
+  $truncatedReply = coreui_native_tool_apply($pdo,1,$sid,11,$properPlan,
+    static fn(string $task): string => 'BUILD MUST NOT RUN',true);
+  $newDraft = coreui_plan_latest($pdo,1,$sid);
+  native_assert(is_string($truncatedReply)
+    && coreui_plan_is_draft_markdown((string)$newDraft['markdown']),
+    'A length-stopped model plan must still be saved only as an incomplete draft');
+  $noBuild = coreui_native_tool_apply($pdo,1,$sid,11,
+    "[COREUI_PROJECT_BUILD]\nBuild webpage\n[/COREUI_PROJECT_BUILD]",
+    static fn(string $task): string => 'BUILD MUST NOT RUN',true);
+  native_assert(is_string($noBuild) && str_contains($noBuild,'vorzeitig abgebrochen'),
+    'Truncated PROJECT_BUILD calls must never execute');
   echo "Plan persistence (SQLite fixture): OK\n";
 } else {
   echo "Plan persistence SQLite fixture: SKIP (pdo_sqlite unavailable)\n";
