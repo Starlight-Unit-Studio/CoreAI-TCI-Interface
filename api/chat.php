@@ -3450,18 +3450,49 @@ function ember_join_continuation(string $head, string $tail): string {
   if ($head === '') return $tail;
   if ($tail === '') return $head;
 
-  $max = min(400, ember_msg_len($head), ember_msg_len($tail));
+  // Never concatenate a resumed model restart on top of its original sections.
+  if (ember_msg_len($tail) >= 120 && str_contains($head, $tail)) return $head;
+  $headStart = function_exists('mb_substr') ? mb_substr($head, 0, 100, 'UTF-8') : substr($head, 0, 100);
+  if (ember_msg_len($head) >= 300 && ember_msg_len($tail) >= 100
+      && str_starts_with($tail, $headStart)) return $head;
+  $tailStart = function_exists('mb_substr') ? mb_substr($tail, 0, 100, 'UTF-8') : substr($tail, 0, 100);
+  $earlier = strpos($head, $tailStart);
+  if ($earlier !== false && strlen($tailStart) >= 80
+      && $earlier < strlen($head) - 320) return $head;
+
+  // Large Markdown overlaps often exceed the former 400-character window.
+  $max = min(2600, ember_msg_len($head), ember_msg_len($tail));
   for ($len = $max; $len >= 20; $len--) {
     $suffix = function_exists('mb_substr') ? mb_substr($head, -$len, null, 'UTF-8') : substr($head, -$len);
     $prefix = function_exists('mb_substr') ? mb_substr($tail, 0, $len, 'UTF-8') : substr($tail, 0, $len);
-    $suffixCmp = function_exists('mb_strtolower') ? mb_strtolower($suffix, 'UTF-8') : strtolower($suffix);
-    $prefixCmp = function_exists('mb_strtolower') ? mb_strtolower($prefix, 'UTF-8') : strtolower($prefix);
-    if ($suffixCmp === $prefixCmp) {
-      $tail = function_exists('mb_substr') ? mb_substr($tail, $len, null, 'UTF-8') : substr($tail, $len);
-      break;
+    if ($suffix === $prefix) {
+      $remain = function_exists('mb_substr') ? mb_substr($tail, $len, null, 'UTF-8') : substr($tail, $len);
+      return $head . $remain;
     }
   }
-  return trim($head . (preg_match('~\s$~u', $head) ? '' : ' ') . ltrim($tail));
+  if (preg_match('~^(?:#{1,6}[ \t]+|[-*][ \t]+|[0-9]+[.][ \t]+)~u', $tail) === 1)
+    return $head . "\n\n" . $tail;
+  return $head . ' ' . $tail;
+}
+
+/** Pass a rolling tail, not the complete previous answer, into each retry. */
+function ember_continuation_prompt(string $userPrompt, string $partial): string {
+  $tail = function_exists('mb_substr')
+    ? mb_substr($partial, -2400, null, 'UTF-8') : substr($partial, -2400);
+  $planHint = function_exists('coreui_native_plan_marker_attempt')
+    && coreui_native_plan_marker_attempt($partial)
+    ? "Bei einer laufenden PLAN_SAVE-Ausgabe keinen zweiten Startmarker schreiben. "
+      . "Fuehre den begonnenen Markdown-Plan fort und schliesse mit [/COREUI_PLAN_SAVE]. "
+    : '';
+  return $userPrompt
+    . "\n\n--- LETZTE ZEICHEN DER BEREITS ERZEUGTEN ANTWORT ---\n"
+    . $tail
+    . "\n--- ENDE DES AUSZUGS ---\n"
+    . "Die Antwort hat bereits " . strlen($partial) . " Bytes. "
+    . "Setze GENAU danach fort. Beginne NICHT von vorne und wiederhole keine "
+    . "bereits geschriebenen Abschnitte oder Ueberschriften. "
+    . $planHint
+    . "Gib ausschliesslich den fehlenden Folgetext aus, ohne neue Einleitung.";
 }
 
 function ember_continue_truncated_reply(
@@ -3476,9 +3507,11 @@ function ember_continue_truncated_reply(
   $joined = trim($partial);
   $segments = 0;
 
-  // Zwei gezielte Folgefenster reichen selbst fuer lange Antworten, ohne bei
-  // einem Tokenlimit die gesamte Generierung noch einmal von vorn zu starten.
-  while (ember_last_call_was_truncated() && $segments < 2) {
+  // Planblöcke duerfen mehr Fortsetzungen brauchen, bleiben aber streng begrenzt.
+  $maxSegments = (function_exists('coreui_native_plan_marker_attempt')
+    && coreui_native_plan_marker_attempt($joined)) ? 4 : 2;
+  while (ember_last_call_was_truncated() && $segments < $maxSegments
+      && strlen($joined) < 262000) {
     $previousMeta = $GLOBALS['STU_EMBER_LAST_CALL'] ?? [];
     ember_debug_log('ember_reply_truncated', [
       'model' => $model,
@@ -3488,12 +3521,7 @@ function ember_continue_truncated_reply(
       'num_predict' => (int)($previousMeta['num_predict'] ?? 0),
     ]);
 
-    $continuationPrompt = $userPrompt
-      . "\n\n--- BEREITS ERZEUGTE ANTWORT ---\n"
-      . $joined
-      . "\n--- ENDE BEREITS ERZEUGTE ANTWORT ---\n"
-      . "Setze exakt an der abgebrochenen Stelle fort. Wiederhole keinen bereits ausgegebenen Text. "
-      . "Gib nur die Fortsetzung aus, ohne Analyse, Label, Einleitung oder Kommentar.";
+    $continuationPrompt = ember_continuation_prompt($userPrompt, $joined);
 
     $tail = ember_call_ollama(
       $model,
@@ -3513,7 +3541,13 @@ function ember_continue_truncated_reply(
       $GLOBALS['STU_EMBER_LAST_CALL'] = $previousMeta;
       break;
     }
-    $joined = ember_join_continuation($joined, $tail);
+    $newReply = ember_join_continuation($joined, $tail);
+    if ($newReply === $joined) {
+      // The model restarted earlier content, so this is not a continuation.
+      $GLOBALS['STU_EMBER_LAST_CALL'] = $previousMeta;
+      break;
+    }
+    $joined = $newReply;
     $segments++;
   }
 
@@ -4923,7 +4957,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   if ($channel === 'console' && !$fileTask && $imageUrl === null
       && empty($GLOBALS['COREUI_NATIVE_TOOL_REENTRY'])
       && is_string($out) && $consoleUid > 0 && $consoleSessionId !== null
-      && $triggerMessageId > 0) {
+      && $triggerMessageId > 0 && !ember_last_call_was_truncated()) {
     $nativeResult = coreui_native_tool_apply(
       $pdo,$consoleUid,(string)$consoleSessionId,$triggerMessageId,$out,
       static function (string $task) use ($pdo,$senderChar,$consoleUid,$consoleSessionId,
@@ -5222,11 +5256,13 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         $excludeReplyToId,$triggerMessageId,$triggerRevision): ?string {
         return ember_generate_reply($pdo,$senderChar,$task,null,'console',
           $consoleUid,$consoleSessionId,$excludeReplyToId,$triggerMessageId,$triggerRevision);
-      }
+      }, ember_last_call_was_truncated()
     );
     if (is_string($nativeResult)) return $nativeResult;
   }
-  if (is_string($out) && preg_match('~^\s*\[COREUI_[A-Z_]+\]~u', $out)
+  if (is_string($out)
+      && (preg_match('~^\s*\[COREUI_[A-Z_]+\]~u', $out)
+        || coreui_native_plan_marker_attempt($out))
       && coreui_native_tool_parse($out) === null) {
     return 'Maras Werkzeugantwort war unvollstaendig oder nicht gueltig. '
       . 'Es wurde weder ein Plan als fertig gespeichert noch ein Projekt erstellt.';
@@ -5237,6 +5273,13 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
     $out = preg_replace('~\[WEB:\s*.*?\]~iu', '', $out);
     $out = preg_replace('~\[BROWSE:\s*.*?\]~iu', '', $out);
     $out = preg_replace('~\[/?PY\]~iu', '', $out);
+  }
+
+  if ($channel === 'console' && !$fileTask && is_string($out) && trim($out) !== ''
+      && ember_last_call_was_truncated()) {
+    $out = rtrim($out) . "\n\n> **Unvollstaendige Modellausgabe:** "
+      . "Das Tokenlimit wurde trotz Fortsetzung erreicht. Der vorhandene "
+      . "Text wurde nicht als abgeschlossen gekennzeichnet.";
   }
 
   $fileFallback = ($channel === 'console' && coreui_console_artifact_pending($consoleUid, (string)$consoleSessionId, $triggerMessageId))
