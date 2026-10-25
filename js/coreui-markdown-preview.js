@@ -7,6 +7,7 @@
   var maxPreviewBytes = 512 * 1024;
   var draftMarker = '<!-- COREUI_PLAN_DRAFT -->';
   var waiting = new Set();
+  var openDialogs = new Set();
   var observer = typeof IntersectionObserver === 'function'
     ? new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {
@@ -263,6 +264,9 @@
       if (modal) modal.remove();
       modal = null;
       anchorMarker = null;
+      openDialogs.delete(frame);
+      delete frame._mdPreviewAnchor;
+      delete frame._mdPreviewClose;
       frame.classList.remove('md-preview-fullscreen');
       frame.classList.remove('md-preview-fallback');
       expand.title = 'Vorschau vergroessern';
@@ -285,6 +289,9 @@
       }
       anchorMarker = document.createComment('Markdown preview location');
       frame.parentNode.insertBefore(anchorMarker, frame);
+      frame._mdPreviewAnchor = anchorMarker;
+      frame._mdPreviewClose = closeModal;
+      openDialogs.add(frame);
       modal = document.createElement('dialog');
       modal.className = 'md-preview-modal';
       modal.setAttribute('aria-label', 'Markdown-Dokument ' + file.name);
@@ -314,6 +321,14 @@
   }
 
   function cleanup() {
+    // A logout, account change or switched chat must not leave a detached
+    // document visible inside a fullscreen modal.
+    openDialogs.forEach(function (node) {
+      if (!node._mdPreviewAnchor || !node._mdPreviewAnchor.isConnected) {
+        if (typeof node._mdPreviewClose === 'function') node._mdPreviewClose();
+        openDialogs.delete(node);
+      }
+    });
     if (!observer) return;
     waiting.forEach(function (node) {
       if (!node.isConnected) {
