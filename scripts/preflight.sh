@@ -135,6 +135,8 @@ UI_FILES=(
   scripts/work-events-selftest.php
   scripts/work-events-persistence-selftest.php
   scripts/local-file-tool-selftest.php
+  scripts/contextual-project-selftest.php
+  api/console_project_handoff.php
   scripts/gemma-zero-parameters-selftest.php
   config/Modelfile.template
   scripts/response-timing-ui-selftest.js
@@ -451,6 +453,12 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
 
   # Node is optional for PHP installations. Run the real JS unit test when
   # present on the host; the PHP frontend guard always checks integration.
+  if compose exec -T php php scripts/contextual-project-selftest.php >/dev/null 2>&1; then
+    ok 'Projektfreigabe aus laufender Sitzung aktiviert den verifizierten Dateiweg.'
+  else
+    fail 'Projektfreigabe: Chat-Plan konnte nicht sicher an Dateierstellung uebergeben werden.'
+  fi
+
   if compose exec -T php php scripts/local-file-tool-selftest.php >/dev/null 2>&1; then
     ok 'Lokale Dateiauftraege: Python-Fences, mehrteilige Projekte, ZIP und Vollstaendigkeit geprueft.'
   else

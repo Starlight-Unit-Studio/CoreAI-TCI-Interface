@@ -75,6 +75,9 @@ foreach (['config/runtime/nginx.conf.template','config/nginx.conf.template'] as 
   $nginxSource = (string)file_get_contents($root . '/' . $nginxFile);
   skill_assert(str_contains($nginxSource,'|user_skills|')
       && str_contains($nginxSource,'location ~ \\.php
+    'Skills API denied by Nginx allowlist: ' . $nginxFile);
+}
+echo "CoreUI skills catalog, routing, opt-out and context: OK\n";
 ),
     'Skills API denied by Nginx allowlist: ' . $nginxFile);
 }

@@ -48,6 +48,10 @@ function coreui_console_multifile_source_directive(string $request): ?string {
 
 /** Parse the explicitly requested project files and optional ZIP target once. */
 function coreui_console_project_request_spec(string $request): ?array {
+  // Server-only plan excerpts are contextual requirements, NOT a filename
+  // manifest. Only the explicit approved header selects package contents.
+  $marker = strpos($request, "\n[COREUI_PLANUNGSKONTEXT]\n");
+  if ($marker !== false) $request = substr($request, 0, $marker);
   $namePattern = '[A-Za-z0-9][A-Za-z0-9._-]{0,90}\.(?:html?|css|js|json|txt|md|svg|py)';
   preg_match_all('~(?<![A-Za-z0-9._-])(' . $namePattern . ')(?![A-Za-z0-9._-])~i',
     $request, $requestedMatches);
@@ -495,8 +499,11 @@ function coreui_console_local_source_prompt(
   $key = strtolower($filename);
   if ($spec === null || !isset($spec['requested'][$key])) return null;
   $names = array_values($spec['requested']);
+  // A jointly agreed plan needs more than the default short one-shot task
+  // excerpt, but still stays bounded for local models.
+  $taskChars = str_contains($request, "\n[COREUI_PLANUNGSKONTEXT]\n") ? 9000 : 5000;
   $task = function_exists('mb_substr')
-    ? mb_substr($request, 0, 5000, 'UTF-8') : substr($request, 0, 5000);
+    ? mb_substr($request, 0, $taskChars, 'UTF-8') : substr($request, 0, $taskChars);
   $prompt = "DATEI-ERZEUGUNG (KEINE Python-Ausfuehrung):\n"
     . "Auftrag: " . $task . "\n"
     . "Die ZIP-Datei wird vom CoreUI-Server erstellt. Erzeuge NUR den fertigen "
