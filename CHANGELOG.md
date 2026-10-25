@@ -2,6 +2,13 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.45 - 25.10.2026
+
+- Gemma-Preflight prueft die vom Betreiber nach 0.5.44 aktualisierte aktive Modelfile-Vorlage statt der archivierten E2B-SYSTEM-Passage und der damaligen festgelegten Vier-Parameter-Reihenfolge.
+- Syntax und numerische Werte der aktiven Parameter, optionales generiertes Modelfile und weiterhin fehlende API-Overrides fuer lokale Gemma-Modelle werden kontrolliert. Das archivierte E2B-Original bleibt unveraendert pruefbar.
+- Branding-Selbsttest und Native-/Compose-Diagnose aktualisiert. Konkrete Gemma-Testfehler werden ausgegeben statt verschluckt.
+- config/Modelfile.template, Installer, One-Liner, Ollama-Runtime, FIFO, Dateisandbox und Tool-System unveraendert. E4B-/Netcup-Liveabnahme offen.
+
 ## 0.5.44 - 25.10.2026
 
 - Drei 0.5.43-Preflight-Regressionen korrigiert: zwei veraltete PROJECT_BUILD-Testformulierungen und ein fehlender Funktionsimport im isolierten Datei-Selbsttest.
