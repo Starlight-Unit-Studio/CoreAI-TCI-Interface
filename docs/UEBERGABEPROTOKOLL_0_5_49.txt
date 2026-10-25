@@ -38,8 +38,11 @@ AENDERUNGEN
   Abschnitte generiert haben. Sie werden NICHT als Befehl oder
   ungepruefter Plan-Nachtrag verarbeitet. Der Planner greift
   auf die letzte sichere Datenbank-Version zurueck.
-- Mehrfache Marker, gemischte Werkzeuge, Codefences, Zitate
-  und ungueltige UTF-8-Ausgaben bleiben ausgeschlossen.
+- Mehrfache Marker, gemischte Werkzeuge und zitierte
+  Werkzeugmarker innerhalb von Codefences bleiben ausgeschlossen.
+  Codefences erst NACH einem eindeutigen Werkzeugmarker werden
+  als ungepruefter Text ignoriert, aber nicht ausgefuehrt.
+  Ungueltige UTF-8-Ausgaben bleiben ausgeschlossen.
 - Nur PLAN_SAVE oder PLAN_CONTINUE duerfen nach einem
   Modell-Abbruch im gesicherten Planungsmodus fortfahren.
   PROJECT_BUILD und PLAN_AND_BUILD werden nie durch einen
