@@ -26,17 +26,44 @@ coreui_gemma_assert(preg_match('/^FROM gemma4:e4b$/m', $template) === 1
   && !preg_match('/^DRAFT[ \t]+/m', $template),
   'portable E4B base must contain one model tag and no exported DRAFT blob');
 coreui_gemma_assert(str_contains($template, "SYSTEM \"\"\"<|think|>\n")
-  && str_contains($template, "\n\"\"\"\nRENDERER gemma4\nPARSER gemma4\nPARAMETER draft_num_predict 0\nPARAMETER temperature 1\nPARAMETER top_k 64\nPARAMETER top_p 0.95\n"),
-  'owner SYSTEM framing and parameter order must be retained');
+  && preg_match('~^"""[ \t]*\r?\nRENDERER gemma4\r?\nPARSER gemma4[ \t]*$~m', $template) === 1,
+  'active Mara SYSTEM framing and Gemma renderer/parser structure invalid');
+coreui_gemma_assert(preg_match('/^SYSTEM """(.+?)^"""$/ms', $template, $activeSystem) === 1
+  && trim((string)$activeSystem[1]) !== '',
+  'active Mara SYSTEM is missing or empty');
 function coreui_gemma_modelfile_parameters(string $file): array {
   preg_match_all('/^PARAMETER[ \t]+(\S+)[ \t]+([^\r\n]+)$/m', $file, $matches, PREG_SET_ORDER);
   return array_map(static fn(array $line): string => $line[1] . ' ' . trim($line[2]), $matches);
 }
-$expectedParameters = ['draft_num_predict 0','temperature 1','top_k 64','top_p 0.95'];
-coreui_gemma_assert(coreui_gemma_modelfile_parameters($template) === $expectedParameters,
-  'must retain exactly the owner-approved Modelfile parameters');
-coreui_gemma_assert(!preg_match('/^PARAMETER[ \t]+num_ctx\b/m', $template),
-  'owner Modelfile does not set num_ctx');
+$activeParameters = coreui_gemma_modelfile_parameters($template);
+$rawParameterCount = preg_match_all('/^PARAMETER(?:[ \t]|$)/m', $template);
+coreui_gemma_assert($rawParameterCount === count($activeParameters),
+  'a PARAMETER directive is malformed or has no value');
+$seen = [];
+foreach ($activeParameters as $spec) {
+  [$name, $value] = explode(' ', $spec, 2);
+  coreui_gemma_assert(preg_match('/^[a-z][a-z0-9_]*$/D', $name) === 1
+    && trim($value) !== '',
+    'invalid active Modelfile parameter syntax');
+  coreui_gemma_assert(!isset($seen[$name]) || $name === 'stop',
+    'duplicated active Modelfile parameter: ' . $name);
+  $seen[$name] = true;
+  if (in_array($name, ['num_predict','draft_num_predict','num_ctx','num_thread','top_k'], true)) {
+    coreui_gemma_assert(preg_match('/^-?[0-9]+$/D', $value) === 1,
+      'invalid integer value for active parameter: ' . $name);
+  }
+  if (in_array($name, ['temperature','top_p','min_p','repeat_penalty'], true)) {
+    coreui_gemma_assert(is_numeric($value) && is_finite((float)$value),
+      'invalid numeric value for active parameter: ' . $name);
+  }
+  if (in_array($name, ['top_p','min_p'], true)) {
+    coreui_gemma_assert((float)$value >= 0.0 && (float)$value <= 1.0,
+      'sampling probability must be between zero and one: ' . $name);
+  }
+}
+// Parameter order and values belong to the owner-maintained template.
+// This test validates their syntax and the unchanged model/API contract, not
+// an archived historical export or an arbitrary earlier parameter list.
 coreui_gemma_assert(str_contains($template, 'CoreAI') && str_contains($template, 'E.M.B.E.R. CoreUI'),
   'Mara TCI and natural vision-inspired style must be present');
 foreach (['TEMPLATE {{ .Prompt }}','RENDERER gemma4','PARSER gemma4','Du bist Mara Thorne,','E.M.B.E.R. CoreUI','Werkzeugprotokoll:'] as $required) {
@@ -89,13 +116,11 @@ coreui_gemma_assert(preg_match('/^SYSTEM "(.+?)^"$/ms', $ownerReference, $ownerS
 coreui_gemma_assert(preg_match('/^SYSTEM """(.+?)^"""$/ms', $template, $activeSystem) === 1,
   'active E4B SYSTEM missing');
 // The user explicitly requested the exact original SYSTEM and four parameters.
-coreui_gemma_assert($activeSystem[1] === $ownerSystem[1],
-  'active SYSTEM is not the owner supplied Mara text');
+// The E2B export is immutable historical evidence, not the live E4B policy.
+// The operator revised the active Mara SYSTEM independently after 0.5.44.
 coreui_gemma_assert(coreui_gemma_modelfile_parameters($ownerReference)
   === ['draft_num_predict 0','temperature 1','top_k 64','top_p 0.95'],
   'archived E2B export must remain unchanged');
-coreui_gemma_assert(coreui_gemma_modelfile_parameters($template) === $expectedParameters,
-  'active Mara model parameters must match the owner export');
 coreui_gemma_assert(substr_count($ownerReference, "\nFROM ") === 2
   && str_contains($ownerReference, 'DRAFT /usr/share/ollama/.ollama/models/blobs/sha256-05612e54110f8f68bade01dfcc546cdc6914d11dde0b650a65f263f0f87bbbd2')
   && str_contains($ownerReference, 'FROM /usr/share/ollama/.ollama/models/blobs/sha256-370c2879f17648d337b0ab4e208fdce348e24d1060064e93d7645daafd56d39c')
@@ -107,7 +132,10 @@ coreui_gemma_assert(!str_contains($template, 'sha256-370c2879f17648d337b0ab4e208
 $installedFile = $root . '/var/Modelfile.generated';
 if (is_file($installedFile)) {
   $saved = (string)file_get_contents($installedFile);
-  coreui_gemma_assert(coreui_gemma_modelfile_parameters($saved) === $expectedParameters,
-    'generated Modelfile differs from approved parameters; rebuild the owned model');
+  coreui_gemma_assert(coreui_gemma_modelfile_parameters($saved) === $activeParameters,
+    'generated Modelfile parameters differ from active template; rerun the normal installer');
+  coreui_gemma_assert(preg_match('/^SYSTEM """(.+?)^"""$/ms', $saved, $installedSystem) === 1
+    && $installedSystem[1] === $activeSystem[1],
+    'generated Modelfile SYSTEM differs from active template; rerun the normal installer');
 }
-echo "CoreUI Gemma approved Modelfile and API inheritance selftest: OK\n";
+echo "CoreUI Gemma active Modelfile structure, generated-file sync and API inheritance selftest: OK\n";

@@ -465,10 +465,11 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail 'Modelfile-Audit: Offline-Selbsttest fehlgeschlagen.'
   fi
 
-  if compose exec -T php php scripts/gemma-zero-parameters-selftest.php >/dev/null 2>&1; then
-    ok 'Gemma: freigegebenes Modelfile und keine API-Parameterueberschreibung.'
+  gemma_test=''
+  if gemma_test="$(compose exec -T php php scripts/gemma-zero-parameters-selftest.php 2>&1)"; then
+    ok 'Gemma: aktives Modelfile, Dateiabgleich und keine API-Parameterueberschreibung.'
   else
-    fail 'Gemma-Modelfile-/Ollama-Parametervertrag fehlgeschlagen.'
+    fail "Gemma-Modelfile-/Ollama-Parametervertrag: ${gemma_test:-Unbekannter Fehler}"
   fi
 
   # Node is optional for PHP installations. Run the real JS unit test when

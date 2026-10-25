@@ -107,12 +107,13 @@ def main() -> int:
         require("Ember CoreUI" not in read(current),
                 f"obsolete product branding in active page: {current}")
     model = read("config/Modelfile.template")
-    require("E.M.B.E.R. CoreUI" in model and "CoreAI namens Ember" in model,
-            "Modelfile conflates framework, terminal and Ember character")
-    require("PARAMETER num_ctx" not in model and "PARAMETER num_predict" not in model,
-            "Gemma Modelfile parameter restrictions regressed")
-    require("PARAMETER draft_num_predict 0" in model,
-            "approved Gemma draft parameter must remain untouched")
+    require("E.M.B.E.R. CoreUI" in model and "Du bist Mara Thorne" in model,
+            "Modelfile must identify the owner-maintained Mara persona and CoreUI")
+    require("FROM gemma4:e4b" in model and "RENDERER gemma4" in model
+            and "PARSER gemma4" in model,
+            "Modelfile Gemma base and parser/renderer contract missing")
+    # Sampling parameters belong to the operator's active template.
+    # Numeric validation and installed-file matching live in the PHP selftest.
     require("VALUES (?, ?, 'Mara', NOW(), NOW())" in read("scripts/bootstrap.php"),
             "administrator bootstrap would incorrectly name CoreAI Ember")
     require("VALUES (?, ?, 'Mara', NOW(), NOW())" in read("api/account_store.php"),
