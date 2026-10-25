@@ -1,0 +1,38 @@
+E.M.B.E.R. COREUI 0.5.34 - UEBERGABEPROTOKOLL
+Stand: 25.10.2026, vor Merge
+Branch: feat/modelfile-reference-contract-0.5.34
+Basis: main 0.5.33 (efc49ebcd45c6cd7d85b9fbefa369fc7aa3c3de3)
+
+AUFTRAG
+Vom Eigentuemer gepostetes Modelfile inhaltlich unveraenderlich archivieren.
+E.M.B.E.R. CoreUI soll die Modelfile-Anweisungen schlank halten; nur
+erforderliche Werkzeugprotokollanpassungen duerfen gezielt vorgenommen
+werden. Der bestehende Installations-/Updateablauf bleibt UNVERAENDERT.
+
+IMPLEMENTIERT
+- docs/references/MODELFILE_E2B_USER_EXPORT_2026_10_25.txt:
+  Export aus dem Benutzerchat mit entfernten Markdown-Escapes, beiden
+  Original-FROM-Zeilen und DRAFT. E2B bleibt als Referenz erkennbar.
+  Git-Blob SHA-1: bdf70ae29fde3d9172d823720be0f002fa518549.
+- docs/MODELFILE_CHANGE_POLICY.md dokumentiert Modellbasis, Tool-Ausnahme,
+  Parametervertrag und Trennung vom Backend.
+- skills/ollama-integration/SKILL.md erweitert.
+- scripts/gemma-zero-parameters-selftest.php prueft Ref-Blob-Checksumme,
+  Mara-Persona ausserhalb der Werkzeugsektion, Parameter und E2B/E4B-Trennung.
+- VERSION 0.5.34, alle sechs aktiven HTML-Seiten, console-gate.js,
+  numerische Cache-Schluessel, README, CHANGELOG, Versionstest,
+  TXT-Changelog und Preflight-Releasepfade synchronisiert.
+
+ABSICHTLICH NICHT VERAENDERT
+config/Modelfile.template, setup.sh, scripts/install.sh,
+scripts/install-native.sh, scripts/stack.sh, One-Liner,
+Ollama-Modellerstellung, API-Modellparameter, globale serielle Modellqueue,
+Docker/Netcup-Konfiguration, DB-Migrationen und Pilot PR #69.
+
+PRUEFUNGEN
+Vor Merge: PHP-Syntax/Quellvertrag, Version-0.5.33->0.5.34-Gate,
+Cache-Fingerprints, Branding und Dateidiff ohne Installer pruefen.
+Ohne produktives Docker/Ollama keine Netcup-Live-Erfolge behaupten.
+GitHub Actions wegen Kontingent nicht starten.
+
+Nach Merge den tatsaechlichen Merge-SHA im GitHub-PR protokollieren.
