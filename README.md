@@ -1,4 +1,4 @@
-# Project STΛRLIɢHT: E.M.B.E.R. CoreUI
+# Project: E.M.B.E.R. CoreUI
 [![DOI](https://zenodo.org/badge/1349352973.svg)](https://doi.org/10.5281/zenodo.22201310)
 
 **E.M.B.E.R. CoreUI** is your powerful, 100% free and private alternative to ChatGPT Pro and Claude.ai. Run advanced AI tasks locally or in the cloud without subscriptions, data tracking, or limits.
