@@ -5262,7 +5262,8 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       && ember_extract_web_marker($out) === null
       && ember_extract_browse_marker($out) === null
       && (!function_exists('ember_py_extract_marker') || ember_py_extract_marker($out) === null)
-      && !coreui_native_plan_marker_attempt($out)) {
+      && !coreui_native_plan_marker_attempt($out)
+      && !coreui_native_plan_continue_marker_attempt($out)) {
     // Preserve a plan draft immediately; the model-selected planner manages
     // its own smaller, checkpointed continuation calls.
     $out = ember_continue_truncated_reply($primaryModel, $sys, $finalPrompt, $out, null);
@@ -5298,8 +5299,14 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   }
   if (is_string($out)
       && (preg_match('~^\s*\[COREUI_[A-Z_]+\]~u', $out)
-        || coreui_native_plan_marker_attempt($out))
+        || coreui_native_plan_marker_attempt($out)
+        || coreui_native_plan_continue_marker_attempt($out))
       && coreui_native_tool_parse($out) === null) {
+    if (coreui_native_plan_continue_marker_attempt($out)) {
+      coreui_work_record($pdo,'tool','error',
+        'Plan-Fortsetzungsmarker nicht lesbar',
+        ['reason'=>'invalid_plan_continue_marker','response_bytes'=>strlen($out)]);
+    }
     return 'Maras Werkzeugantwort war unvollstaendig oder nicht gueltig. '
       . 'Es wurde weder ein Plan als fertig gespeichert noch ein Projekt erstellt.';
   }
