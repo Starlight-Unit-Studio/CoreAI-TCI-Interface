@@ -440,7 +440,8 @@ $tokens = token_get_all($handler);
 $wantedFunctions = ['ember_py_max_code_chars','ember_py_extract_marker',
   'ember_console_file_tool_candidate','ember_console_file_tool_directive',
   'ember_console_file_tool_is_local','ember_console_file_tool_is_device_local','ember_console_file_tool_is_local_qwen_coder',
-  'ember_console_file_model_status','ember_console_local_gemma_file_incomplete'];
+  'ember_console_file_model_status','ember_console_local_source_failure',
+  'ember_console_local_gemma_file_incomplete'];
 for ($i = 0; $i < count($tokens); $i++) {
   if (!is_array($tokens[$i]) || $tokens[$i][0] !== T_FUNCTION) continue;
   $j = $i + 1;

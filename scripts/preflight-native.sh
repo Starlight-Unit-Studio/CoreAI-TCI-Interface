@@ -287,10 +287,11 @@ if command -v php >/dev/null 2>&1; then
     fail "Modellgesteuerte Projektuebergabe: ${project_test:-Unbekannter Fehler}"
   fi
 
-  if runuser -u www-data -- php "$PROJECT_ROOT/scripts/local-file-tool-selftest.php" >/dev/null 2>&1; then
+  file_test=''
+  if file_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/local-file-tool-selftest.php" 2>&1)"; then
     ok 'Lokale Dateiauftraege: Python-Fences, mehrteilige Projekte, ZIP und Vollstaendigkeit geprueft.'
   else
-    fail 'Lokaler Dateiwerkzeug-Selbsttest fehlgeschlagen.'
+    fail "Lokaler Dateiwerkzeug-Selbsttest: ${file_test:-Unbekannter Fehler}"
   fi
 
   if runuser -u www-data -- php "$PROJECT_ROOT/scripts/model-live-audit.php" --selftest >/dev/null 2>&1; then

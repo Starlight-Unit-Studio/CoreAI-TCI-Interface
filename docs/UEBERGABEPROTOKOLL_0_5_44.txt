@@ -1,0 +1,26 @@
+E.M.B.E.R. COREUI 0.5.44 - UEBERGABEPROTOKOLL
+Datum: 25.10.2026
+Basis: main 0.5.43 943083d376126a5df1ed7091a55899bb27545c4e
+
+NETCUP-PREFLIGHT FEHLER (3)
+1. Native-Tools-Selbsttest: veralteter PROJECT_BUILD-Beispielwortlaut.
+2. Modell-Projekttest: dieselbe veraltete Beispielannahme.
+3. Datei-Selbsttest: Funktion ember_console_local_source_failure()
+   wird aufgerufen, fehlt aber in der isolierten $wantedFunctions-Liste.
+
+REPARATUR
+- Beide Projekt-Tests pruefen echte Zeilenumbrueche und die
+  Parser-Gueltigkeit des tatsaechlichen PROJECT_BUILD-Prompts.
+- Datei-Selbsttest importiert den bestehenden Ollama-Fehlerklassifizierer.
+- Compose- und Native-Preflight zeigen Datei-Testfehler im Klartext.
+
+UNVERAENDERT
+Freigegebenes Mara-Modelfile, Ollama-Parameter, FIFO, Installer,
+Runtime-Projekterstellung, SQL, Python-Sandbox und Produktions-API.
+Keine GitHub Actions (Kontingent erschoepft).
+
+VERIFIKATION
+Quellcode-Ursachen konkret identifiziert. Vollstaendige Netcup- und
+Ollama-Liveabnahme steht aus. Nach Update Preflight und einen
+HTML/CSS/JS+ZIP-Testauftrag ausfuehren. Bei weiterem E4B-Fehler
+http_code, elapsed_ms, done_reason und eval_count auswerten.

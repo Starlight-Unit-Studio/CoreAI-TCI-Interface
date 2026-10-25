@@ -19,8 +19,12 @@ dispatch_assert(coreui_native_tool_parse('Wir besprechen die Idee noch weiter.')
   'Ordinary discussion must not execute a tool');
 dispatch_assert(coreui_native_tool_parse("[COREUI_PROJECT_BUILD]\nUnvollstaendig") === null,
   'Incomplete tool marker must never execute');
-dispatch_assert(str_contains(coreui_native_tools_prompt(), "main.js).\n[/COREUI_PROJECT_BUILD]"),
-  'Build tool example contains escaped instead of actual newline');
+$toolPrompt = coreui_native_tools_prompt();
+$buildExample = [];
+dispatch_assert(preg_match('~(\[COREUI_PROJECT_BUILD\]\n[^\r\n]+\n\[/COREUI_PROJECT_BUILD\])~',
+  $toolPrompt, $buildExample) === 1
+  && (coreui_native_tool_parse($buildExample[1])['type'] ?? null) === 'PROJECT_BUILD',
+  'Runtime PROJECT_BUILD example must contain real newlines and parse');
 
 $legacy = 'Erstelle index.html, style.css und main.js, liefere das ZIP zum Download.';
 dispatch_assert(coreui_console_download_requested($legacy)

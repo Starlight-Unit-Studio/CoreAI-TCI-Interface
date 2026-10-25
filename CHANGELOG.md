@@ -2,6 +2,13 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.44 - 25.10.2026
+
+- Drei 0.5.43-Preflight-Regressionen korrigiert: zwei veraltete PROJECT_BUILD-Testformulierungen und ein fehlender Funktionsimport im isolierten Datei-Selbsttest.
+- Compose- und Native-Preflight zeigen jetzt bei Datei-Selbsttestfehlern die reale PHP-Ausgabe.
+- Original-Mara-Modelfile, Ollama-Optionen, FIFO, Installer und produktive Projektpipeline unveraendert; Netcup/E4B-Livetest weiter ausstehend.
+- Uebergabeprotokoll: docs/UEBERGABEPROTOKOLL_0_5_44.txt.
+
 ## 0.5.43 - 25.10.2026
 
 - Aktive Mara-Vorlage auf den vollstaendigen vom Betreiber bereitgestellten SYSTEM-Text zurueckgestellt. Nur portable FROM-Basis und Ollama-konforme dreifache SYSTEM-Anfuehrung statt ollama-show-Blobpfaden. Vier Originalparameter, kein num_predict -1, kein num_ctx.
