@@ -24,6 +24,12 @@ intent_assert(coreui_native_plan_source_manifest(
   )===['index.html','about.html','style.css','main.js'],
   'Duplicate page names and missing shared asset');
 intent_assert(coreui_native_plan_source_manifest(
+  "# Projekt\n- index.html\n- about.html\n- gallery.html\n- portfolio.html\n"
+  . "- faq.html\n- contact.html\n- styles.css\n- app.js"
+  )===['index.html','about.html','gallery.html','portfolio.html',
+    'faq.html','contact.html','styles.css','app.js'],
+  'Explicit CSS/JS names must not get overwritten by default style.css/main.js');
+intent_assert(coreui_native_plan_source_manifest(
   "# Plan\n- index.html\n- ".implode("\n- ",[
     'a.html','b.html','c.html','d.html','e.html','f.html','g.html','h.html','i.html'])
   )===null,'More than nine files must fail closed');
