@@ -75,6 +75,25 @@ if (in_array('sqlite', PDO::getAvailableDrivers(), true)) {
   dispatch_assert(is_string(coreui_console_multifile_source_directive($request)),
     'Validated source ZIP writer could not recognize the generated task');
 
+  // Regression: a filename followed by a normal sentence-final dot must
+  // remain in the manifest. This caused the live 0.5.40 preflight failure.
+  $punctuated = coreui_console_project_request_spec(
+    'Erstelle index.html, style.css, main.js. Erstelle homepage.zip zum Download.');
+  dispatch_assert(is_array($punctuated)
+    && array_values($punctuated['requested']) === ['index.html','style.css','main.js']
+    && $punctuated['zip_requested'] === true
+    && $punctuated['zip_name'] === 'homepage.zip',
+    'Sentence punctuation removed main.js or the explicit ZIP filename');
+  dispatch_assert(coreui_console_multifile_source_directive(
+    'Erstelle index.html, style.css, main.js. Erstelle homepage.zip zum Download.') !== null,
+    'A complete punctuated source manifest was rejected by the ZIP worker');
+  $falseSuffix = coreui_console_project_request_spec(
+    'Erstelle index.html, style.css, main.js.backup und homepage.zip.tmp zum Download.');
+  dispatch_assert(is_array($falseSuffix)
+    && !in_array('main.js', array_values($falseSuffix['requested']), true)
+    && $falseSuffix['zip_name'] === 'projekt.zip',
+    'Unsafe extension prefix was accepted as a real source or ZIP filename');
+
   $calls=0;
   $lastRequest='';
   $result=coreui_native_tool_apply($pdo,$uid,$session,101,$modelReply,
