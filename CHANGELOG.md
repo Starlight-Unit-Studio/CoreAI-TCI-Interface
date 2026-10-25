@@ -2,6 +2,14 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.46 - 25.10.2026
+
+- Maras Modellwahl `[COREUI/PLANSAVE]` (auch mit kurzer Einleitung) wird als Planungswerkzeug erkannt. Ein fehlender Abschluss wird nicht zu einem fertigen Plan umgedeutet, sondern als explizit unvollstaendiger privater Markdown-Entwurf versioniert.
+- Entwuerfe bleiben als Download verfuegbar und sind niemals fuer den statischen Projekt-Builder freigegeben. Vollstaendige bisherige PLAN_SAVE/PLAN_APPEND/PLAN_AND_BUILD-/PROJECT_BUILD-Protokolle bleiben erhalten.
+- Sync und SSE setzen laengere Antworten mit einem kurzen hinteren Kontextfenster fort; grosse Textueberlappungen werden zusammengefuehrt, wiederholte Modell-Neustarts nicht doppelt angehaengt.
+- Bei verbleibendem Tokenlimit wird die Ausgabe als unvollstaendig kenntlich gemacht statt still als abgeschlossen im Chat zu erscheinen. Regressionen fuer Screenshot-Planmarker, SQL-Draft-Speicherung, Build-Sperre, Markdown-Fortsetzung und begrenzten Prompt ergaenzt.
+- Modelfile, Ollama-Parameter, Installer/One-Liner, Runtime-FIFO, Migrationen, Python-Worker und bestehende Download-Vertraege bleiben unveraendert. Vollstaendige Netcup-E4B-Planungsabnahme noch offen.
+
 ## 0.5.45 - 25.10.2026
 
 - Gemma-Preflight prueft die vom Betreiber nach 0.5.44 aktualisierte aktive Modelfile-Vorlage statt der archivierten E2B-SYSTEM-Passage und der damaligen festgelegten Vier-Parameter-Reihenfolge.
