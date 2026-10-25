@@ -93,6 +93,28 @@ if (substr_count($joined, 'einem eindeutig wiederholten Uebergang') !== 1) {
   reply_test_fail('Fortsetzungssegmente werden am Uebergang doppelt gespeichert.');
 }
 
+$largeOverlap = str_repeat('Ein modularer Planungsabschnitt mit Detailkriterien und Tests. ', 19);
+$longHead = "# Projekt\n\n## Struktur\n" . $largeOverlap;
+$longTail = $largeOverlap . "\n\n## Naechster Abschnitt\nNeue Anforderungen.";
+$merged = ember_join_continuation($longHead, $longTail);
+if (substr_count($merged,'## Struktur') !== 1
+    || substr_count($merged,'## Naechster Abschnitt') !== 1
+    || substr_count($merged,'Ein modularer Planungsabschnitt') !== 19) {
+  reply_test_fail('Markdown-Ueberlappung ueber 400 Zeichen wird doppelt oder falsch verbunden.');
+}
+if (ember_join_continuation($merged, $longHead) !== $merged) {
+  reply_test_fail('Ein Model-Neustart darf keine bereits erzeugte Planungsseite wiederholen.');
+}
+if (ember_join_continuation("Abschnitt abgeschlossen.", "## Weiterer Plan") !==
+    "Abschnitt abgeschlossen.\n\n## Weiterer Plan") {
+  reply_test_fail('Markdown-Fortsetzungen muessen Absatzgrenzen erhalten.');
+}
+$rollingPrompt = ember_continuation_prompt('URSPRUNG', str_repeat('Plankontext ', 4000));
+if (!str_contains($rollingPrompt,'URSPRUNG') || strlen($rollingPrompt) > 3400) {
+  reply_test_fail('Fortsetzung wiederholt zu viel Antworttext im Ollama-Prompt.');
+}
+
+
 $multiline = chat_clean_console_message("Erste Zeile\n  code_block()\n\nZweite Zeile");
 if (!str_contains($multiline, "\n  code_block()\n\n")) {
   reply_test_fail('Der private Ember CoreUI-Kanal verliert Zeilenumbrueche oder Code-Einrueckungen.');
