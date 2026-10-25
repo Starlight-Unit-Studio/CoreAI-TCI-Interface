@@ -1,0 +1,75 @@
+E.M.B.E.R. CoreUI 0.5.36 - UEBERGABEPROTOKOLL
+Stand: 25.10.2026, vor Merge
+Basis: main 0.5.35, Commit 309af581ed7d5fe0d6b8e5945a58912c5bdfacbe
+Branch: fix/skills-route-chat-resume-0.5.36
+
+AUSGANGSBEFUND
+Screenshot aus produktivem Browser: Einstellungen zeigen
+"Skills konnten nicht geladen werden". Beim Wechsel von Chat zu
+Einstellungen und zurueck verschwinden sichtbare neue Nachricht und
+laufender Prozess, bis nach Ende des Modells eine Antwort sichtbar wird.
+
+ROOT CAUSE 1: SKILLS API
+api/user_skills.php existiert seit 0.5.33. Beide Nginx-Templates
+beinhalteten aber nicht den explizit benoetigten PHP-Routennamen
+"user_skills". Das restriktive Fallback fuer *.php antwortet 404.
+Gegenmassnahme: In beiden Listen user_skills ergaenzt, keine andere
+Routenfreigabe. Skill-Frontend meldet kuenftig HTTP-Code und bekannte
+Ursachen statt irrefuehrender reiner Anmelde-Hypothese.
+Regression: scripts/skills-selftest.php prueft beide Nginx-Listen.
+
+ROOT CAUSE 2: CHAT-STATUS VERLIERT BROWSER-STATE
+Beim Seitenwechsel wird das JavaScript-Objekt pendingBySession
+verworfen; die bestehende Chat-History laedt bisher nur Nachrichten
+und speicherte laufende Jobs nicht fuer den Wiederaufbau des UI.
+Der Nutzertext war nach Bestaetigung zwar als DB-Zeile gespeichert,
+aber der laufende Arbeitsprozess wurde nicht wiedererkannt.
+Ein History-Fetch konnte zusaetzlich die letzte bestaetigte, noch
+nicht in einem aelteren Snapshot sichtbare Nutzerzeile ueberschreiben.
+Gegenmassnahmen:
+- api/console_agent_runs.php: aktiver gespeicherter Agentenlauf je
+  Eigentuemerkonto und Session, mit 45-Minuten-Freshness, statusbegrenzt.
+- api/console_work_store.php: gleiche Public-Whitelist fuer die
+  zugehoerigen maximal 100 Arbeitsereignisse, scoping nach User,
+  Session, Turn und Run-Key.
+- api/console_messages.php: aktive Arbeit optional zusammen mit
+  autorisierter History; niemals private Prompt/Thinking-Daten.
+- js/console-app.js: Wartestatus, sichere Timeline und Abbruch-Button
+  vom Server rekonstruieren; ausschliesslich Antwort pollend beobachten.
+  Kein zweiter EventSource-Start, keine neue Ollama-Inferenz.
+- Kurzer Post bleibt per fetch keepalive bei Navigation aktiv.
+  Bestaetigter, noch nicht im History-Snapshot vorhandener Nutzerturn
+  bleibt im Cache erhalten. Grossen POST >60KB ohne keepalive senden.
+- Bestehende Benutzer-/Session-Isolation, Modellwarteschlange und
+  bisheriges sequentielles Modellverhalten bleiben unberuehrt.
+
+TESTS
+- Statische Prüfung beider Nginx-Allowlisten, PHP-/JS-Syntax und
+  frontend/skill-Selftest-Vertragsbedingungen.
+- Node VM isolierte Rehydration: alte, fremde und bereits beendete
+  Runs werden verworfen; echte Run-ID/Turn/Event-Verknuepfung klappt;
+  wiederholte Zustandsabfrage loest keine doppelte Inferenz aus.
+- Isolierter PHP-Snapshot-Test mit Stub-PDO: Konto/Session gebunden,
+  stale-cutoff, sichere Rueckgabefelder.
+- Reale Nginx-Route/HTTP-Status, MariaDB- und Browser-Liveabnahme auf
+  dem Netcup-Server NOCH OFFEN und keinesfalls als getestet ausgeben.
+- Browserpruefung nach Installation: Einstellungen > Skills zeigen
+  Katalog und speicherbare Schalter; aktivieren und neu laden; waehrend
+  E4B antwortet per Einstellungen den Chat verlassen und zurueck,
+  Nutzerturn, aktuellen Prozess und finale Antwort pruefen;
+  keine zweite Antwort und keine doppelte Modellinferenz.
+
+ABSICHTLICH NICHT VERAENDERT
+setup.sh, scripts/install.sh, scripts/install-native.sh, scripts/stack.sh,
+bestehender One-Liner, config/Modelfile.template, Modellparameter,
+Gemma/Ollama-API-Calls, FIFO-Queue, SQL-Migrationen, Draft PR #69.
+Die vorhandenen Nginx-Konfigurationsvorlagen werden lediglich mit
+"user_skills" vervollstaendigt und vom bestehenden Installer wie gehabt
+gerendert. Kein neuer Installationsschritt.
+
+RELEASE
+VERSION 0.5.36, sechs UI-Seiten, SHA-256-abgeleitete numerische
+Browser-Cachekeys, README, CHANGELOG, TXT-Index und Preflightpfade.
+Node-Test aus vorhandener optionaler Node-Pruefung integriert.
+GitHub Actions NICHT nutzen (Kontingent aufgebraucht).
+Nach Merge PR-Nummer und echten Merge-Commit im PR-Kommentar festhalten.

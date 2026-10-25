@@ -7,7 +7,13 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 E.M.B.E.R. CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.35` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.36` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Skills API und Chat-Navigation (0.5.36)
+
+The authenticated Skills API is now explicitly exposed by both production Nginx allowlists. An HTTP 404 at `api/user_skills.php` was previously reported as a vague login error. Per-account opt-in, CSRF rules and migration 014 remain unchanged.
+
+When returning to the chat from Settings while a model is still working, CoreUI reads the existing server-owned run and safe work timeline through the authenticated message-history endpoint. The browser restores the waiting UI and polls for the original answer without launching another inference. Short message posts also use `fetch keepalive` to avoid being cancelled by immediate navigation. The serialized model queue remains untouched. See `docs/UEBERGABEPROTOKOLL_0_5_36.txt` for live acceptance.
 
 ## Aktives Mara-Modelfile (0.5.35)
 

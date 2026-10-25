@@ -2,6 +2,15 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.36 - 25.10.2026
+
+- **Skills wieder erreichbar:** Beide abgesicherten Nginx-Routenlisten enthielten zwar `api/user_settings.php`, aber nicht den seit 0.5.33 existierenden Endpunkt `api/user_skills.php`. Dieser erhielt deshalb HTTP 404. Die bestehende PHP-Freigabeliste wurde in `config/runtime/nginx.conf.template` (Compose) und `config/nginx.conf.template` (native Installation) nur um `user_skills` erweitert. Der Authentifizierungs- und CSRF-Schutz des Endpunkts bleibt unveraendert.
+- Der Skills-Bildschirm zeigt jetzt die tatsaechliche Fehlerklasse (z.B. 404, 401, 500 oder fehlende Migration) statt pauschal eine abgelaufene Anmeldung zu behaupten. Ein neuer Regressionstest verhindert das erneute Vergessen des PHP-Endpunkts.
+- **Chat nach Seitenwechsel:** Bereits laufende, einem Konto und einer Sitzung zugeordnete Agentenlaeufe werden aus der authentifizierten Nachrichten-History als aktive Arbeit rekonstruiert, einschliesslich der serverseitig freigegebenen Arbeitsschritte. Die UI kehrt zu ihrem Wartezustand zurueck, zeigt wieder den Verlauf und pollt nur die bestehende Antwort. Keine doppelte SSE-Generierung und kein zweiter Ollama-Aufruf.
+- Ein kurzer Sende-POST darf mit `fetch keepalive` beim Wechsel in Einstellungen zu Ende gehen; groessere Bodies bleiben ohne keepalive. Ein noch nicht im History-Snapshot enthaltener, bereits bestaetigter Nutzer-Turn bleibt im Cache sichtbar. Fertiggestellte Antworten werden weiterhin aus der DB geladen.
+- Backend-Querys sind user_id/session_id/turn_id/run_key-begrenzt; Arbeitsschritte nutzen die bestehende Public-Whitelist. Inaktive/alte Jobs werden nicht wiederhergestellt. Keine DB-Migration.
+- PHP-/JavaScript-/Nginx-Quelltests sowie isolierte Rehydrationspruefung dokumentiert. Die produktive Netcup-Abnahme ist noch offen. Keine Aenderung an Modelfile, Ollama, Installer, One-Liner, serieller Warteschlange oder PR #69. GitHub Actions nicht gestartet.
+
 ## 0.5.35 - 25.10.2026
 
 - **Aktive Modelfile-Korrektur:** `config/Modelfile.template` nutzt jetzt den SYSTEM-Text und die exakte Parameterreihenfolge der vom Betreiber bereitgestellten `mara.modelfile`-Ausgabe, statt diese nur unter `docs/references` zu archivieren. Der E2B-Export bleibt unberuehrt.
