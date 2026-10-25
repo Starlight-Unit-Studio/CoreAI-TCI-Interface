@@ -1,0 +1,10 @@
+## 0.5.48 - 25.10.2026
+
+- Autonome, serielle Projektplanung: Bei einem Modell-gewaehlten offenen PLAN_SAVE-Block wird der sofort gespeicherte Markdown-Entwurf innerhalb desselben Turns in bis zu vier fokussierten Modellaufrufen weitergeschrieben. Nach jedem verwertbaren Abschnitt wird eine neue private, unveraenderliche .md-Version gesichert.
+- Planungs-Fortsetzungen erhalten nur das aktuelle Arbeitsziel, bereits vorhandene Ueberschriften und ein kurzes Endfenster. Modell-Neustarts, wiederholte Abschnitte und unerwuenschte gemischte Werkzeugaktionen werden verworfen.
+- Erst eine bestaetigte Modellantwort mit explizitem Abschlussmarker und grundlegender Markdown-Struktur macht den Plan fertig; andernfalls bleibt der bisherige Text als abrufbarer Entwurf erhalten.
+- Neues modellwaehlbares PLAN_CONTINUE erlaubt es Mara, auch bereits gespeicherte Entwuerfe eines frueheren Chat-Turns in weiteren Versionen zu vervollstaendigen. Kein automatischer Build und kein Umgehen der kontogebundenen Downloads.
+- Gleiche Engine in SSE- und synchronem Chatpfad; begrenzte fokussierte Modelltimeout-Option nur fuer die Fortsetzungsaufrufe. Keine Aenderung an Ollama-Modelfile oder Sampler-Optionen.
+- Neuer Preflight-Selbsttest fuer Mehrschritt-Planungen, Guardrails, Versionierung, Integritaet und Wiederaufnahme. Antwortpipeline-Test an fokussierte Timeout-Form angepasst.
+- Vollstaendige Netcup-/Gemma-Live-Abnahme steht aus. Modelfile.template unveraendert.
+
