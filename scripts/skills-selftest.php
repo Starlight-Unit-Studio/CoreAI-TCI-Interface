@@ -69,4 +69,13 @@ if (in_array('sqlite',PDO::getAvailableDrivers(),true)) {
   skill_assert(coreui_skills_augment('task') === 'task', 'Runtime leaked between users');
   echo "Skill persistence (SQLite adapter): OK\n";
 } else { echo "Skill persistence: SKIP (pdo_sqlite unavailable)\n"; }
+// Public Skills endpoint must be explicitly allowed by BOTH restricted Nginx
+// configurations, otherwise even an authenticated GET receives HTTP 404.
+foreach (['config/runtime/nginx.conf.template','config/nginx.conf.template'] as $nginxFile) {
+  $nginxSource = (string)file_get_contents($root . '/' . $nginxFile);
+  skill_assert(str_contains($nginxSource,'|user_skills|')
+      && str_contains($nginxSource,'location ~ \\.php
+),
+    'Skills API denied by Nginx allowlist: ' . $nginxFile);
+}
 echo "CoreUI skills catalog, routing, opt-out and context: OK\n";

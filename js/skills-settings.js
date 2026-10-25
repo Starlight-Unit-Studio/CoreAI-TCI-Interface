@@ -11,11 +11,28 @@
   function request(options) {
     return fetch('./api/user_skills.php', Object.assign({credentials: 'same-origin', cache: 'no-store'}, options || {}))
       .then(function (response) {
-        return response.json().then(function (data) {
-          if (!response.ok || !data.ok) throw new Error(data.error || 'skills_unavailable');
+        return response.text().then(function (body) {
+          var data;
+          try { data = JSON.parse(body); }
+          catch (_) { throw new Error('http_' + response.status); }
+          if (!response.ok || !data || data.ok !== true) {
+            throw new Error((data && data.error) || ('http_' + response.status));
+          }
           return data;
         });
       });
+  }
+  function loadErrorMessage(error) {
+    var code = String(error && error.message || '');
+    if (code === 'http_404') return 'Skills-API nicht erreichbar (HTTP 404). Nginx-Routing prüfen, anschließend den normalen CoreUI-Updateweg ausführen.';
+    if (code === 'not_authenticated' || code === 'http_401') return 'Anmeldung abgelaufen. Bitte erneut anmelden.';
+    if (code === 'skills_migration_required' || code === 'skills_save_failed_or_migration_missing') {
+      return 'Skills-Datenbankmigration 014 fehlt. Bitte Server-Preflight prüfen.';
+    }
+    if (code === 'server_error' || code === 'php_fatal' || code === 'http_500') {
+      return 'Skills-API meldet einen Serverfehler (HTTP 500). Serverprotokoll prüfen.';
+    }
+    return 'Skills konnten nicht geladen werden (' + (code || 'Verbindungsfehler') + '). Bitte Server-Preflight prüfen.';
   }
   function controls() {
     save.disabled = all.disabled = none.disabled = !ready || busy;
@@ -80,5 +97,5 @@
     catalog = data.catalog; enabled = data.enabled; csrf = data.csrf_token; ready = data.ready === true;
     status.textContent = ready ? catalog.length + ' Skills verfügbar. Aktiviere deine Auswahl und speichere sie.' : 'Skills noch nicht verfügbar: Datenbankmigration 014 muss eingespielt werden.';
     render();
-  }).catch(function () { status.textContent = 'Skills konnten nicht geladen werden. Bitte Anmeldung prüfen und Seite neu laden.'; });
+  }).catch(function (error) { status.textContent = loadErrorMessage(error); });
 })();
