@@ -105,9 +105,11 @@ UI_FILES=(
   scripts/work-events-persistence-selftest.php
   scripts/local-file-tool-selftest.php
   scripts/contextual-project-selftest.php
+  scripts/model-project-intent-selftest.php
   scripts/native-tools-selftest.php
   scripts/plan-autocontinue-selftest.php
   api/console_native_tools.php
+  api/console_build_intent.php
   api/console_plan_store.php
   api/console_plan_autorun.php
   api/console_plan.php
@@ -298,6 +300,13 @@ if command -v php >/dev/null 2>&1; then
     ok "$native_test"
   else
     fail "Native Tools: $native_test"
+  fi
+
+  project_intent_test=''
+  if project_intent_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/model-project-intent-selftest.php" 2>&1)"; then
+    ok "$project_intent_test"
+  else
+    fail "Modellgesteuerte Projektumsetzung: ${project_intent_test:-Unbekannter Fehler}"
   fi
 
   plan_auto_test=''
