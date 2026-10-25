@@ -37,7 +37,7 @@ const queue = [];
 const queueFn = new Function('state', 'attachmentSlotsUsed','MAX_MESSAGE_ATTACHMENTS',
   'AUTO_PASTE_MAX_BYTES','makeAutoPasteFile','autoPasteSources','uploadQueue',
   'renderAttachmentList','processUploadQueue','appendMessageEl','scrollToBottom',
-  section('  function queueAutoTextAttachment(text) {',
+  section('  function queueAutoTextAttachment(text, reportUnavailable) {',
     '  function sendAfterCompletedUpload() {') + '\nreturn queueAutoTextAttachment;'
 )(state,()=>available,10,256*1024*1024,make,sources,queue,
   ()=>rendered++,()=>uploads++,()=>messages++,()=>{});
