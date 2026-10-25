@@ -1797,7 +1797,7 @@
 
   function queueAutoTextAttachment(text, reportUnavailable) {
     var value = String(text || '');
-    if (!value.trim() || state.waitingEmber) return false;
+    if (!value.trim() || state.waitingEmber || state.editingMessage) return false;
     if (attachmentSlotsUsed() >= MAX_MESSAGE_ATTACHMENTS) {
       if (reportUnavailable === true) {
         appendMessageEl('system', '⚠ Zehn Anhaenge sind bereits ausgewaehlt. Bitte erst einen entfernen, damit der lange Text als .md angehaengt werden kann.');
@@ -1933,8 +1933,11 @@
     });
     inputEl.addEventListener('input', function(e) {
       resizeMessageComposer();
-      if (inputEl.value.length <= INLINE_TEXT_LIMIT) return;
-      // Fallback for mobile paste APIs that do not expose clipboardData.
+      // Android may expose insertFromPaste only through InputEvent, not
+      // ClipboardEvent.clipboardData. Convert 8k+ content in either case.
+      var pasted = e && e.inputType === 'insertFromPaste';
+      if (inputEl.value.length <= INLINE_TEXT_LIMIT
+          && !(pasted && inputEl.value.length > LONG_PASTE_THRESHOLD)) return;
       // The unmodified text stays in the editor if the upload cannot start.
       var text = inputEl.value;
       if (queueAutoTextAttachment(text)) {
