@@ -161,26 +161,38 @@ try {
       && str_contains($css, '.ember-suggested-reply { width: 100%; }'),
     'Vorschlagsantworten sind nicht mobil und tastaturzugaenglich.'
   );
-  frontend_test_assert(
-    str_contains($streamApi, '$fileTaskHandled = !$isVisionTurn')
-      && str_contains($streamApi, 'ember_console_file_tool_is_local(ember_model())')
-      && str_contains($chatApi, 'ember_console_file_tool_is_local($primaryModel)')
-      && str_contains($streamApi, '} elseif ($fileTaskHandled) {')
-      && str_contains($streamApi, 'if (!$fileTaskHandled && ($hasMarker')
-      && str_contains($chatApi, 'function ember_console_file_tool_directive()')
-      && str_contains($chatApi, 'function ember_console_file_tool_candidate(')
-      && str_contains($chatApi, "'tool_protocol_missing'")
-      && str_contains($chatApi, 'coreui_console_multifile_source_directive($sourceProjectRequest)')
-      && str_contains($chatApi, 'coreui_console_local_homepage_zip_request($userMsg)')
-      && str_contains($chatApi, 'ember_console_file_tool_is_device_local($primaryModel)')
-      && str_contains($streamApi, 'coreui_console_multifile_source_directive($fileTaskPrompt)')
-      && str_contains($chatApi, 'coreui_console_missing_requested_artifacts(')
-      && str_contains($fileBridge, 'JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR')
-      && str_contains($fileBridge, 'function coreui_console_project_fences_python(')
-      && str_contains($fileBridge, 'function coreui_console_python_fence_code(')
-      && str_contains($fileBridge, 'function coreui_console_missing_requested_artifacts('),
-    'Mehrdateien-Werkzeugpfad, kodierte Dateien oder gemeinsame Cloud-/Lokalroute fehlen.'
-  );
+  // Check each real integration contract separately: one stale source substring
+  // must not hide which route actually regressed in a future release.
+  $multiFileContracts = [
+    'SSE Dateiauftragsrouting' => str_contains($streamApi, '$fileTaskHandled = !$isVisionTurn'),
+    'SSE lokale Modellroute' => str_contains($streamApi, 'ember_console_file_tool_is_local(ember_model())'),
+    'Chat lokale Modellroute' => str_contains($chatApi, 'ember_console_file_tool_is_local($primaryModel)'),
+    'SSE ausgefuehrter Dateiwerkzeugpfad' => str_contains($streamApi, '} elseif ($fileTaskHandled) {'),
+    // 0.5.46 tracks successful native tool dispatch explicitly. The former
+    // "if (!$fileTaskHandled && ($hasMarker..." text is intentionally gone.
+    // The guarded fallback MUST also exclude already handled native actions.
+    'SSE Fallback nach erfolgreichem Native Tool' =>
+      preg_match(
+        '~if\s*\(\s*!\$fileTaskHandled\s*&&\s*!\$nativeToolHandled\s*&&\s*\(\s*\$hasMarker\s*\|\|\s*\$reply\s*===\s*\'\'\s*\|\|\s*\$streamUnsafe\s*\)\s*\)~',
+        $streamApi
+      ) === 1 && str_contains($streamApi, '$nativeToolHandled = true;'),
+    'Chat Dateiwerkzeug-Direktive' => str_contains($chatApi, 'function ember_console_file_tool_directive()'),
+    'Chat Dateiwerkzeug-Kandidat' => str_contains($chatApi, 'function ember_console_file_tool_candidate('),
+    'Chat Fehlprotokoll' => str_contains($chatApi, "'tool_protocol_missing'"),
+    'Chat Mehrdateien-Quellauftrag' => str_contains($chatApi, 'coreui_console_multifile_source_directive($sourceProjectRequest)'),
+    'Chat lokales Homepage-ZIP' => str_contains($chatApi, 'coreui_console_local_homepage_zip_request($userMsg)'),
+    'Chat geratelokale Modelle' => str_contains($chatApi, 'ember_console_file_tool_is_device_local($primaryModel)'),
+    'SSE Mehrdateien-Quellauftrag' => str_contains($streamApi, 'coreui_console_multifile_source_directive($fileTaskPrompt)'),
+    'Chat Pruefung fehlender Dateien' => str_contains($chatApi, 'coreui_console_missing_requested_artifacts('),
+    'Kodierte Dateiuebergabe' => str_contains($fileBridge, 'JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR'),
+    'Python Mehrdateien-Fences' => str_contains($fileBridge, 'function coreui_console_project_fences_python('),
+    'Python Fence-Code' => str_contains($fileBridge, 'function coreui_console_python_fence_code('),
+    'Mehrdateien Vollstaendigkeitscheck' => str_contains($fileBridge, 'function coreui_console_missing_requested_artifacts('),
+  ];
+  foreach ($multiFileContracts as $feature => $passed) {
+    frontend_test_assert($passed,
+      'Mehrdateien-/Cloud-Lokal-Regression: ' . $feature);
+  }
 
   frontend_test_assert(
     str_contains($appHtml, '<textarea')

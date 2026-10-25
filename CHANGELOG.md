@@ -2,6 +2,13 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.47 - 25.10.2026
+
+- Frontend-Regressions-Selbsttest an die in 0.5.46 eingefuehrte Absicherung `!$nativeToolHandled` angepasst. Die vorherige starre Stringsuche meldete faelschlich den gesamten Mehrdateien-/Cloud-/Lokalpfad als defekt.
+- Die 17 Mehrdateien-/Cloud-/Lokal-Teilbedingungen werden nun einzeln benannt und geprueft; ein zukuenftiger Fehler benennt die konkrete fehlende Schnittstelle.
+- Die spaeteren Composer- und Live-Run-Wiederherstellungsbedingungen am aktuellen Repository abgeglichen; PHP-Fallback-Matcher isoliert mit positiven und negativen Faellen geprueft.
+- Keine Aenderung an Runtime, dateierzeugenden Funktionen, Ollama-Parametern, Installer, Python-Sandbox oder config/Modelfile.template. Netcup-Preflight steht nach Deployment aus.
+
 ## 0.5.46 - 25.10.2026
 
 - Maras Modellwahl `[COREUI/PLANSAVE]` (auch mit kurzer Einleitung) wird als Planungswerkzeug erkannt. Ein fehlender Abschluss wird nicht zu einem fertigen Plan umgedeutet, sondern als explizit unvollstaendiger privater Markdown-Entwurf versioniert.
