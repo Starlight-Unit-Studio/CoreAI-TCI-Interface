@@ -541,7 +541,18 @@ try {
         $afterId,$triggerRevision): ?string {
         return ember_generate_reply($pdo,$char,$task,null,'console',
           (int)$uid,$sessionId,$excludeReplyToId,$afterId,$triggerRevision);
-      }, !$streamComplete
+      }, !$streamComplete,
+      static function (string $nextPrompt) use ($model,$sys): array {
+        if (ember_agent_cancel_requested()) return ['text'=>'','ok'=>false];
+        // Follow-up calls use the SAME model and queue, serially, without
+        // repeating SKILL documents or changing Ollama Modelfile options.
+        $next = console_stream_ollama($model,$sys,$nextPrompt,false,180);
+        $text = ember_sanitize_public_reply((string)($next['content'] ?? ''),
+          (string)($next['thinking'] ?? ''));
+        return ['text'=>$text,
+          'ok'=>!empty($next['ok']) && !empty($next['done'])
+            && empty($next['truncated'])];
+      }, $promptMessage
     );
     if (is_string($toolResult)) {
       $nativeToolHandled = true;
