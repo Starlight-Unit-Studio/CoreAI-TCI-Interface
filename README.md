@@ -7,7 +7,13 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 E.M.B.E.R. CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.41` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.42` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Ollama-Modell-Audit und lokale Quelldateien (0.5.42)
+
+The checked-in `config/Modelfile.template` remains the previously approved owner configuration. It does **not** prove that a running `ember-coreui:latest` model has the same SYSTEM text. The read-only `scripts/model-live-audit.php` compares the actual Ollama `/api/show` system against the template and reports mismatches with SHA-256 prefixes and byte lengths, not the prompt body. It is included in Compose and Native preflights without any new installation step.
+
+A missing local E4B file-source response now exposes its true class (transport timeout, Ollama HTTP error, successful empty content, queue timeout) and safe timings in Work Events. CoreUI does not repeat a known timed-out request unchanged. For the narrow `think:false`+HTTP-200-empty case, it tries once with thinking enabled. Isolated file-source calls do not re-inject full selected SKILL.md bodies; normal chat skills remain available. Runtime native-tool instructions are shorter, but all four tools are unchanged. Owner Modelfile, Ollama options and installation flow stay untouched. Live Netcup acceptance remains necessary. See `docs/UEBERGABEPROTOKOLL_0_5_42.txt`.
 
 ## Projektdateien und Satzzeichen (0.5.41)
 

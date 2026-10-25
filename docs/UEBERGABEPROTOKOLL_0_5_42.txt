@@ -1,0 +1,76 @@
+E.M.B.E.R. COREUI 0.5.42 - UEBERGABEPROTOKOLL
+Datum: 25.10.2026
+Ausgangsbasis: main 0.5.41, a1c95a78d663c2ff4fa2bf900a0dfe0c9a1c8b47
+Branch: fix/model-source-empty-and-live-modelfile-audit-0.5.42
+
+GEMELDETER BEFUND
+Beim Bau von index.html meldet der Arbeitsverlauf:
+reason=model_response_missing, source_chars=0, eval_count=0,
+prompt_eval_count=0, Dauer im Screenshot rund zehn Minuten.
+Es wurde keine Datei ausgegeben. Der Betreiber meldet ausserdem
+ein angeblich altes, zu langes Modelfile.
+
+QUELLBEFUND
+- Die getrackte config/Modelfile.template SHA
+  9cadc6695bbb93250965d7bd9919de66b9ec9424 entspricht in
+  SYSTEM-Inhalt und vier Parametern der bereitgestellten Benutzerreferenz.
+- Das beweist NICHT den tatsaechlichen SYSTEM-Text des auf dem Server
+  geladenen Ollama-Modells oder einen moeglichen separaten Modellnamen.
+- Der Einzeldateiweg nutzte Ollama stream:false und bisher bis zu
+  600s Timeout. Null-Resultate aus Timeout/HTTP/Queue und erfolgreichem
+  leerem Modellinhalt hatten denselben reason. Nach einem Timeout
+  konnte derselbe Call identisch erneut laufen.
+- Der Dateiunteraufruf injizierte nochmals die selektierten Skilltexte;
+  bis zu vier SKILL.md-Bloecke koennen den Codegenerierungs-Prompt
+  aufblaehen, obwohl die konkrete Dateianforderung bereits vorliegt.
+
+GEZIELTE AENDERUNGEN
+- model-live-audit.php fragt den AKTIVEN Ollama-Modellstand nur lesend
+  ueber /api/show ab. SYSTEM gegen exakt die freigegebene Vorlage
+  vergleichen; Bytezahlen/SHA256-Prefix statt Prompttext ausgeben.
+  Offline-Selbsttest plus echter Modellvergleich in beiden Preflights.
+  Keine Modellerstellung oder -ueberschreibung im Audit.
+- api/chat.php: Ollama-Call-Metadaten um curl_errno und elapsed_ms
+  ergaenzt. Fehlerursachen ollama_timeout / ollama_http_error /
+  model_queue_timeout / ollama_transport_error / ollama_empty_content
+  statt pauschalem model_response_missing.
+- Nach belegtem Transportfehler keinen zweiten identischen 600s-Call.
+  Nur bei Ollama HTTP 200 mit leerem Inhalt und lokalem Gemma kann ein
+  zweiter Versuch mit think:true erfolgen.
+- Bei isolierten Raw-Datei-Calls keine wiederholte Skillblock-Injektion;
+  normale Skills in der Hauptunterhaltung bleiben unveraendert.
+- Native Runtime-Tools-Kurzvertrag gestrafft; kein bloated SYSTEM.
+- Script- und Work-Event-Selbsttests angepasst.
+- Version 0.5.42, 6 HTML-Oberflaechen und numerischer JS-Cache-Key,
+  README, Changelogs und Preflight-TXT nachgezogen.
+
+WICHTIG: KEIN UNBELEGTER LIVETEST
+- Echte Ollama-Ausgabe / HTTP-Fehlerklasse auf Netcup ist weiterhin
+  UNBEKANNT, bis der neue Arbeitsverlauf nach einem Versuch vorliegt.
+- Die neue Audit-Abnahme zeigt, ob der Betreiber wirklich eine
+  abweichende alte Modelfile auf dem Server hat. Ein Modell-NEUBAU
+  gehoert zur bestehenden Update-Installation, NICHT zum Audit.
+- Die Parameter / num_ctx / num_predict / FROM / TEMPLATE / SYSTEM
+  der vom Betreiber bereitgestellten Modelfile sind unangetastet.
+- Auch wenn der genannte Spezialfall repariert ist, kann ein echter
+  Ollama-Timeout, Modellabsturz oder zu kleines Kontextfenster
+  weiterhin auftreten. Keine falschen Erfolgszusagen.
+
+ABSICHTLICH UNVERAENDERT
+setup.sh, scripts/install.sh, scripts/install-native.sh,
+scripts/stack.sh, scripts/migrate.sh, One-Liner, Docker-Build,
+SQL-Migrationen, globales FIFO, config/Modelfile.template,
+Ollama-Sampler, Ollama-Kontext- und Tokenparameter.
+GitHub Actions nicht starten (Kontingent aufgebraucht).
+
+NACH UPDATE
+1. Gewohnten One-Liner auf Netcup ausfuehren.
+2. Preflight bestaetigt den Audit anhand des live geladenen SYSTEM.
+   Bei mismatch: die berichteten Byte-/SHA-Angaben vergleichen,
+   installierten Modellnamen und normalen ollama create Schritt pruefen.
+3. E4B erneut index.html bauen lassen. Im Arbeitsverlauf die NEUEN
+   reason/http_code/elapsed_ms/eval_count und ggf. think-Retry pruefen.
+4. Erst nach echten HTML/CSS/JS/ZIP-Downloads den Generator als
+   funktionsfaehig abnehmen.
+5. Kein blindes Umschreiben der freigegebenen Mara-Konfiguration.
+Nach Merge echte PR-Nummer und Merge-SHA als PR-Kommentar festhalten.
