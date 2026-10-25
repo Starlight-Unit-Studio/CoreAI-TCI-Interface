@@ -183,11 +183,21 @@ function coreui_native_plan_source_manifest(string $markdown): ?array {
   $hasHtml = (bool)array_filter($files,
     static fn(string $name): bool => preg_match('~[.]html?$~i',$name) === 1);
   if (!$hasHtml) return []; // No ungrounded page manifest from CSS-only prose.
-  foreach (['index.html','style.css','main.js'] as $required) {
-    if (!isset($seen[$required])) {
-      $files[] = $required;
-      $seen[$required] = true;
-    }
+  // Keep the user's actual asset filenames, e.g. styles.css / app.js.
+  // Only invent the standard CSS/JS names when the plan names none at all.
+  $requires = [];
+  if (!isset($seen['index.html'])) $requires[] = 'index.html';
+  if (!array_filter($files,
+      static fn(string $name): bool => preg_match('~[.]css$~i',$name) === 1)) {
+    $requires[] = 'style.css';
+  }
+  if (!array_filter($files,
+      static fn(string $name): bool => preg_match('~[.]js$~i',$name) === 1)) {
+    $requires[] = 'main.js';
+  }
+  foreach ($requires as $name) {
+    $files[] = $name;
+    $seen[$name] = true;
   }
   if (count($files) > 9) return null;
   // Deterministic output order, even if the plan first mentions about.html.
