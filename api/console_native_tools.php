@@ -42,6 +42,12 @@ function coreui_native_tool_parse(string $reply): ?array {
     if ($body === '' || strlen($body) > 262144 || str_contains($body,"\0")) return null;
     return ['type'=>$type,'body'=>$body];
   }
+  // The model sometimes uses slash spelling. PLAN_CONTINUE only resumes
+  // an existing private draft; it is never a build operation.
+  if (preg_match('~^\s*\[COREUI/PLANCONTINUE\]\s*\n([\s\S]{1,4000}?)\n\[/COREUI/PLANCONTINUE\]\s*$~u',
+      $reply, $m) === 1) {
+    return ['type'=>'PLAN_CONTINUE','body'=>trim((string)$m[1]),'recovered'=>true];
+  }
   return coreui_native_plan_recover_model_reply($reply);
 }
 
