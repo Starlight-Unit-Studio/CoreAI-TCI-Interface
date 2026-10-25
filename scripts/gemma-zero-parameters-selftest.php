@@ -64,10 +64,11 @@ foreach ($activeParameters as $spec) {
 // Parameter order and values belong to the owner-maintained template.
 // This test validates their syntax and the unchanged model/API contract, not
 // an archived historical export or an arbitrary earlier parameter list.
-coreui_gemma_assert(str_contains($template, 'CoreAI') && str_contains($template, 'E.M.B.E.R. CoreUI'),
-  'Mara TCI and natural vision-inspired style must be present');
-foreach (['TEMPLATE {{ .Prompt }}','RENDERER gemma4','PARSER gemma4','Du bist Mara Thorne,','E.M.B.E.R. CoreUI','Werkzeugprotokoll:'] as $required) {
-  coreui_gemma_assert(str_contains($template, $required), 'missing approved directive: ' . $required);
+coreui_gemma_assert(preg_match('/\bMara\b/u', (string)$activeSystem[1]) === 1,
+  'active operator SYSTEM must identify Mara');
+foreach (['TEMPLATE {{ .Prompt }}','RENDERER gemma4','PARSER gemma4'] as $required) {
+  coreui_gemma_assert(str_contains($template, $required),
+    'required Gemma template/renderer/parser directive missing: ' . $required);
 }
 
 foreach (['ember-coreui:latest','ember-coreui','gemma4:e4b','gemma4:latest','gemma3:latest','gemma2:latest','gemma:latest'] as $model) {

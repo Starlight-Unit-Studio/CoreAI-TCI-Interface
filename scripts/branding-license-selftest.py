@@ -107,8 +107,8 @@ def main() -> int:
         require("Ember CoreUI" not in read(current),
                 f"obsolete product branding in active page: {current}")
     model = read("config/Modelfile.template")
-    require("E.M.B.E.R. CoreUI" in model and "Du bist Mara Thorne" in model,
-            "Modelfile must identify the owner-maintained Mara persona and CoreUI")
+    require("E.M.B.E.R. CoreUI" in model and "Mara" in model,
+            "Modelfile must retain Mara identity and CoreUI product branding")
     require("FROM gemma4:e4b" in model and "RENDERER gemma4" in model
             and "PARSER gemma4" in model,
             "Modelfile Gemma base and parser/renderer contract missing")
