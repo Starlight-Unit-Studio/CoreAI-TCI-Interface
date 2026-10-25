@@ -82,9 +82,12 @@ UI_FILES=(
   admin/index.html
   protocols.html
   css/console.css
+  css/artifacts.css
   css/admin.css
   js/console-app.js
   js/coreui-markdown.js
+  js/coreui-markdown-preview.js
+  js/coreui-artifacts.js
   js/coreui-preferences.js
   js/settings.js
   js/admin.js
@@ -161,6 +164,7 @@ UI_FILES=(
   scripts/profile-knowledge-selftest.php
   scripts/account-security-selftest.php
   scripts/frontend-regression-selftest.php
+  scripts/markdown-preview-selftest.php
   scripts/long-chat-selftest.cjs
   database/migrations/015_long_chat_messages.sql
   scripts/chat-navigation-recovery-selftest.cjs
@@ -649,6 +653,13 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   else
     frontend_selftest="${frontend_selftest//$'\r'/}"
     fail "$frontend_selftest"
+  fi
+
+  md_preview_test=''
+  if md_preview_test="$(compose exec -T -u 33:33 php php scripts/markdown-preview-selftest.php 2>&1)"; then
+    ok "$md_preview_test"
+  else
+    fail "Markdown-Vorschau: ${md_preview_test:-Unbekannter Fehler}"
   fi
 
   message_actions_selftest=''
