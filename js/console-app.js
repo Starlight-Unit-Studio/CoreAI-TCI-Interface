@@ -164,6 +164,11 @@
   var composerEditLabel = document.getElementById('composerEditLabel');
   var composerEditCancel = document.getElementById('composerEditCancel');
   var MAX_MESSAGE_ATTACHMENTS = 10;
+  var LONG_PASTE_THRESHOLD = 8000;
+  var INLINE_TEXT_LIMIT = 12000;
+  var AUTO_PASTE_MAX_BYTES = 256 * 1024 * 1024;
+  var autoPasteSources = new WeakMap();
+  var pendingSendAfterUpload = null;
   var pendingFiles  = [];
   var uploadQueue   = [];
   var uploadCurrentFile = null;
@@ -1760,6 +1765,67 @@
     db_insert_failed:          'Datenbankfehler beim Speichern.'
   };
 
+  // Pasted content is stored byte-for-byte in a normal, authenticated .md
+  // attachment. Do not prepend a Markdown heading or silently trim the paste.
+  function makeAutoPasteFile(text) {
+    var now = new Date();
+    var stamp = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0')
+      + '-' + String(now.getDate()).padStart(2, '0') + '_'
+      + String(now.getHours()).padStart(2, '0') + '-'
+      + String(now.getMinutes()).padStart(2, '0') + '-'
+      + String(now.getSeconds()).padStart(2, '0');
+    return new File([text], 'eingefuegter-text-' + stamp + '.md',
+      {type:'text/markdown;charset=utf-8'});
+  }
+
+  function resizeMessageComposer() {
+    if (!inputEl) return;
+    inputEl.style.height = 'auto';
+    inputEl.style.height = Math.max(32, Math.min(128, inputEl.scrollHeight)) + 'px';
+  }
+
+  function restoreFailedAutoPaste(file) {
+    var source = file && autoPasteSources.get(file);
+    if (typeof source !== 'string') return;
+    autoPasteSources.delete(file);
+    if (inputEl) {
+      inputEl.value = inputEl.value
+        + (inputEl.value && !inputEl.value.endsWith('\n') ? '\n' : '') + source;
+      resizeMessageComposer();
+    }
+  }
+
+  function queueAutoTextAttachment(text, reportUnavailable) {
+    var value = String(text || '');
+    if (!value.trim() || state.waitingEmber || state.editingMessage) return false;
+    if (attachmentSlotsUsed() >= MAX_MESSAGE_ATTACHMENTS) {
+      if (reportUnavailable === true) {
+        appendMessageEl('system', '⚠ Zehn Anhaenge sind bereits ausgewaehlt. Bitte erst einen entfernen, damit der lange Text als .md angehaengt werden kann.');
+        scrollToBottom();
+      }
+      return false;
+    }
+    var file = makeAutoPasteFile(value);
+    if (file.size <= 0 || file.size > AUTO_PASTE_MAX_BYTES) {
+      appendMessageEl('system', '⚠ Der eingefuegte Text ist zu gross fuer einen Dateianhang.');
+      scrollToBottom();
+      return false;
+    }
+    autoPasteSources.set(file, value);
+    uploadQueue.push(file);
+    renderAttachmentList();
+    processUploadQueue();
+    return true;
+  }
+
+  function sendAfterCompletedUpload() {
+    if (uploadXhr || uploadCurrentFile || uploadQueue.length || !pendingSendAfterUpload) return;
+    var pending = pendingSendAfterUpload;
+    pendingSendAfterUpload = null;
+    var ses = activeSession();
+    if (ses && String(ses.id) === pending.sessionId) sendMessage(pending.text);
+  }
+
   function processUploadQueue() {
     if (uploadXhr || uploadCurrentFile || uploadQueue.length === 0) {
       renderAttachmentList();
@@ -1798,10 +1864,14 @@
 
       if (xhr.status >= 200 && xhr.status < 300 && d && d.ok) {
         if (pendingFiles.length < MAX_MESSAGE_ATTACHMENTS) pendingFiles.push(d);
+        autoPasteSources.delete(file);
         renderAttachmentList();
         processUploadQueue();
+        sendAfterCompletedUpload();
         return;
       }
+      pendingSendAfterUpload = null;
+      restoreFailedAutoPaste(file);
       var code = (d && d.error) || ('HTTP_' + xhr.status);
       var msg = UPLOAD_ERRORS[code] || ('Upload fehlgeschlagen (' + code + ')');
       if (code === 'file_too_large' && d && d.max_mb) msg = 'Datei ist zu gross (max. ' + d.max_mb + ' MB).';
@@ -1814,6 +1884,8 @@
     xhr.onerror = function() {
       uploadXhr = null;
       uploadCurrentFile = null;
+      pendingSendAfterUpload = null;
+      restoreFailedAutoPaste(file);
       showUploadState(null, '');
       appendMessageEl('system', '\u26a0 Upload fehlgeschlagen (Verbindung).');
       scrollToBottom();
@@ -1847,6 +1919,34 @@
   if (fileInput) fileInput.addEventListener('change', function(e) {
     queueFiles(e.target && e.target.files ? e.target.files : []);
   });
+
+  // Desktop paste, Android clipboard and multiline editor. A long paste is
+  // uploaded as one .md file, then the existing attachment pipeline binds
+  // its UUID visibly to the SAME user message.
+  if (inputEl) {
+    inputEl.addEventListener('paste', function(e) {
+      var clipboard = e.clipboardData;
+      var text = clipboard && clipboard.getData ? clipboard.getData('text/plain') : '';
+      if (!text || (text.length <= LONG_PASTE_THRESHOLD
+          && inputEl.value.length + text.length <= INLINE_TEXT_LIMIT)) return;
+      if (queueAutoTextAttachment(text, true)) e.preventDefault();
+    });
+    inputEl.addEventListener('input', function(e) {
+      resizeMessageComposer();
+      // Android may expose insertFromPaste only through InputEvent, not
+      // ClipboardEvent.clipboardData. Convert 8k+ content in either case.
+      var pasted = e && e.inputType === 'insertFromPaste';
+      if (inputEl.value.length <= INLINE_TEXT_LIMIT
+          && !(pasted && inputEl.value.length > LONG_PASTE_THRESHOLD)) return;
+      // The unmodified text stays in the editor if the upload cannot start.
+      var text = inputEl.value;
+      if (queueAutoTextAttachment(text)) {
+        inputEl.value = '';
+        resizeMessageComposer();
+      }
+    });
+    resizeMessageComposer();
+  }
 
   // ── Nachricht senden ─────────────────────────────────────
   function queueTurnAfterCurrentReply(ses, text) {
@@ -1946,13 +2046,26 @@
       submitMessageEdit(text);
       return;
     }
-    // v1.1.1.89: Ein Anhang ohne Begleittext ist eine gueltige Nachricht.
-    if ((!text || !text.trim()) && pendingFiles.length === 0) return;
-    if (uploadXhr || uploadCurrentFile || uploadQueue.length > 0) {
-      appendMessageEl('system', '\u231b Upload laeuft noch\u2026');
-      scrollToBottom();
+    // Auch lange, langsam getippte Texte werden vor dem Senden verlustfrei
+    // in eine echte Datei verwandelt. Nie die ersten 12k Zeichen wegschneiden.
+    if (!options.from_queue && String(text || '').length > INLINE_TEXT_LIMIT) {
+      var sesForPaste = activeSession();
+      if (sesForPaste && queueAutoTextAttachment(text, true)) {
+        pendingSendAfterUpload = {text:'',sessionId:String(sesForPaste.id)};
+        if (inputEl) inputEl.value = '';
+        resizeMessageComposer();
+      }
       return;
     }
+    if (uploadXhr || uploadCurrentFile || uploadQueue.length > 0) {
+      var pendingSession = activeSession();
+      if (pendingSession) pendingSendAfterUpload = {
+        text:String(text || ''),sessionId:String(pendingSession.id)
+      };
+      return; // Send automatically once all confirmed uploads are available.
+    }
+    // An attachment without accompanying text is a valid user turn.
+    if ((!text || !text.trim()) && pendingFiles.length === 0) return;
     if (!state.characterId) {
       appendMessageEl('system', '\u26a0 Kein Charakter aktiv. Bitte erst im Spiel einloggen.');
       return;
@@ -2895,7 +3008,10 @@
 
   btnSend.addEventListener('click', function() { sendMessage(inputEl.value); });
   inputEl.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(inputEl.value); }
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) {
+      e.preventDefault();
+      sendMessage(inputEl.value);
+    }
     if (e.key === 'Escape' && state.editingMessage) {
       e.preventDefault();
       clearMessageEdit(true);

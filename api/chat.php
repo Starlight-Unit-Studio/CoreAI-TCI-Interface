@@ -2934,23 +2934,30 @@ function ember_insert(
     ? coreui_console_artifact_pending($uid, (string)$sessionId, (int)$replyToId) : null;
   if ($text === '' && $pendingArtifacts !== null) $text = 'Die erzeugten Dateien stehen unten zum Herunterladen bereit.';
   if ($text === '') return 0;
-  $max = ember_max_reply_chars();
-  $textLen = function_exists('mb_strlen') ? mb_strlen($text, 'UTF-8') : strlen($text);
-  if ($textLen > $max) {
-    // Satzweise abschneiden statt hartem Cut - kein abgebrochener Satz im Chat.
-    $slice = function_exists('mb_substr') ? mb_substr($text, 0, $max, 'UTF-8') : substr($text, 0, $max);
-    $cut = false;
-    foreach (['. ', '! ', '? ', '.', '!', '?'] as $needle) {
-      $pos = function_exists('mb_strrpos') ? mb_strrpos($slice, $needle, 0, 'UTF-8') : strrpos($slice, $needle);
-      if ($pos !== false && $pos > (int)floor($max * 0.55)) {
-        $text = trim(function_exists('mb_substr') ? mb_substr($slice, 0, $pos + 1, 'UTF-8') : substr($slice, 0, $pos + 1));
-        $cut = true;
-        break;
+  // Im privaten CoreUI-Chat wird eine echte Modellantwort niemals nachtraeglich
+  // aufgrund der alten 60.000-Zeichen-Einstellung beschnitten. Kontext- und
+  // Tokenlimits des Modells bleiben davon bewusst unabhaengig.
+  // Der globale Spielchat behaelt seine bisherige kompakte Ausgabeschranke.
+  if ($targetChannel !== 'console') {
+    $max = ember_max_reply_chars();
+    $textLen = function_exists('mb_strlen') ? mb_strlen($text, 'UTF-8') : strlen($text);
+    if ($textLen > $max) {
+      // Satzweise abschneiden statt hartem Cut - kein abgebrochener Satz im Chat.
+      $slice = function_exists('mb_substr') ? mb_substr($text, 0, $max, 'UTF-8') : substr($text, 0, $max);
+      $cut = false;
+      foreach (['. ', '! ', '? ', '.', '!', '?'] as $needle) {
+        $pos = function_exists('mb_strrpos') ? mb_strrpos($slice, $needle, 0, 'UTF-8') : strrpos($slice, $needle);
+        if ($pos !== false && $pos > (int)floor($max * 0.55)) {
+          $text = trim(function_exists('mb_substr') ? mb_substr($slice, 0, $pos + 1, 'UTF-8') : substr($slice, 0, $pos + 1));
+          $cut = true;
+          break;
+        }
+      }
+      if (!$cut) {
+        $text = function_exists('mb_substr') ? mb_substr($text, 0, $max, 'UTF-8') : substr($text, 0, $max);
       }
     }
-    if (!$cut) {
-      $text = function_exists('mb_substr') ? mb_substr($text, 0, $max, 'UTF-8') : substr($text, 0, $max);
-    }
+  
   }
 
   // Letzte Persistenzschranke: Im Console-Kanal darf niemals ein roher

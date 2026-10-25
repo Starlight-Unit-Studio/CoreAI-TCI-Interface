@@ -151,14 +151,16 @@ UI_FILES=(
   scripts/profile-knowledge-selftest.php
   scripts/account-security-selftest.php
   scripts/frontend-regression-selftest.php
+  scripts/long-chat-selftest.cjs
+  database/migrations/015_long_chat_messages.sql
   scripts/chat-navigation-recovery-selftest.cjs
   scripts/message-actions-selftest.php
   scripts/markdown-selftest.js
   scripts/branding-license-selftest.py
   scripts/cache-bust.py
-  docs/changelogs-txt/CHANGELOG_0_5_36.txt
+  docs/changelogs-txt/CHANGELOG_0_5_37.txt
   docs/COREUI_IMAGE_ENGINE_PLAN.md
-  docs/UEBERGABEPROTOKOLL_0_5_36.txt
+  docs/UEBERGABEPROTOKOLL_0_5_37.txt
   docker/pyworker/Dockerfile
   docker/pyworker/entrypoint.sh
   images/starlight_unit_studios_logo_original.png
@@ -395,6 +397,14 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   fi
 
   if compose exec -T php php -r \
+      'require "/var/www/coreui/api/db.php"; $p=stu_pdo(); $t=$p->query("SELECT DATA_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=\"stu_chat_messages\" AND COLUMN_NAME=\"message\"")->fetchColumn(); exit(strtolower((string)$t)==="longtext" ? 0 : 1);' \
+      >/dev/null 2>&1; then
+    ok 'Migration 015: lange Chat-Antworten dauerhaft speicherbar.'
+  else
+    fail 'Migration 015 fehlt: stu_chat_messages.message ist nicht LONGTEXT.'
+  fi
+
+  if compose exec -T php php -r \
       'require "/var/www/coreui/api/db.php"; require "/var/www/coreui/api/console_agent_runs.php"; exit(coreui_agent_run_schema_ready(stu_pdo()) ? 0 : 1);' \
       >/dev/null 2>&1; then
     ok 'Migration 013: dauerhafte Agentenlaeufe bereit.'
@@ -457,6 +467,11 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       ok 'Chat-Navigation: bestehender Modellauftrag ohne erneute Generierung wiederhergestellt.'
     else
       fail 'Chat-Navigation: Wiederherstellungs-Selbsttest fehlgeschlagen.'
+    fi
+    if node "$PROJECT_ROOT/scripts/long-chat-selftest.cjs" >/dev/null 2>&1; then
+      ok 'Lange Texte: Markdown-Dateianhang und Originalbytes geprueft.'
+    else
+      fail 'Lange Texte: automatischer Anhang ist fehlerhaft.'
     fi
   else
     warn 'Node nicht installiert: optionaler Antwortdauer-JavaScript-Test uebersprungen.'

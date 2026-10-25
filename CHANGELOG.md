@@ -2,6 +2,15 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.37 - 25.10.2026
+
+- **Vollstaendige Mara-Textantworten:** `ember_insert()` in `api/chat.php` schneidet Antworten im privaten CoreUI-Kanal nicht laenger am frueheren 60.000-Zeichen-Deckel ab. Die globale Spielchat-Schranke und der Sicherheitsfilter gegen interne Modellgedanken bleiben unveraendert.
+- **Dauerhafte Speicherung:** Die reguläre neue Migration `015_long_chat_messages.sql` erweitert `stu_chat_messages.message` von `MEDIUMTEXT` auf `LONGTEXT`, ohne Daten oder Sitzungen zu verwerfen. Der bestehende Migrationsmechanismus erkennt die neue Datei automatisch; Installer, One-Liner und Reihenfolge bleiben unveraendert.
+- **Grosse Texte einfuegen:** `app.html` verwendet ein mehrzeiliges, automatisch wachsendes Eingabefeld ohne hartes HTML-`maxlength`. Beim Einfuegen von mehr als ca. 8.000 Zeichen wird das **unveraenderte Original** als `eingefuegter-text-YYYY-MM-DD_HH-MM-SS.md` ueber die bestehende authentifizierte `console_upload.php`-Pipeline hochgeladen. Mehr als 12.000 Zeichen im Editor werden vor dem Senden ebenfalls als Markdown angehaengt. Die Datei erscheint sichtbar am normalen Nutzerbeitrag, auch nach dem Neuladen.
+- Ein waehrend des Uploads angeforderter Versand erfolgt erst nach erfolgreicher Rueckmeldung des Servers. Bei Uploadfehlern kommt der komplette Ausgangstext in das Eingabefeld zurueck; bei voller Zehn-Anhang-Grenze gibt es einen expliziten Hinweis. `Shift+Enter` erzeugt Zeilenumbrueche, `Enter` sendet, IME-Komposition bleibt geschuetzt.
+- **Kontextklarheit:** Der ganze hochgeladene Text bleibt als Datei abrufbar. Maras Anhang-Extraktor uebergibt weiterhin nur einen kenntlich gemachten Auszug nach dem bestehenden Kontextbudget. Das aendert weder `num_ctx` noch `num_predict`, sondern verhindert, dass Inhalte ohne Hinweis verloren gehen. Modell-/Ollama-eigene Tokenlimits und Zeitgrenzen gelten weiter.
+- Regressionstests fuer private Antwortspeicherung, `LONGTEXT`-Schema und Markdown-Upload; optionale Node-Tests im bestehenden Preflight. Keine GitHub Actions ausgefuehrt, Live-Netcup-/Ollama-Abnahme steht aus.
+
 ## 0.5.36 - 25.10.2026
 
 - **Skills wieder erreichbar:** Beide abgesicherten Nginx-Routenlisten enthielten zwar `api/user_settings.php`, aber nicht den seit 0.5.33 existierenden Endpunkt `api/user_skills.php`. Dieser erhielt deshalb HTTP 404. Die bestehende PHP-Freigabeliste wurde in `config/runtime/nginx.conf.template` (Compose) und `config/nginx.conf.template` (native Installation) nur um `user_skills` erweitert. Der Authentifizierungs- und CSRF-Schutz des Endpunkts bleibt unveraendert.
