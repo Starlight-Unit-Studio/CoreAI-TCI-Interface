@@ -7,7 +7,30 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 E.M.B.E.R. CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.46` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.47` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Frontend-Preflight-Abgleich (0.5.47)
+
+Nach 0.5.46 pruefte der Frontend-Selbsttest weiterhin den alten
+SSE-Fallback-Quelltext `if (!$fileTaskHandled && ($hasMarker`,
+obwohl die Planungs-Aenderung absichtlich zusaetzlich
+`!$nativeToolHandled` voraussetzt. Von den 18 damaligen Teilbedingungen
+waren 17 weiterhin erfuellt; ausschliesslich die veraltete
+Stringpruefung loeste den Preflight-Fehler aus.
+
+Der Frontend-Vertrag prueft jetzt den **geschuetzten Fallback**
+inklusive bereits erledigter Native-Tools und zeigt bei Fehlern
+den konkreten Dateipfad-/Cloud-/Lokalvertrag. Die darauf folgenden
+Composer- und Run-Recovery-Pruefbedingungen wurden ebenfalls
+gegen den aktuellen Quellstand abgeglichen (19/19 erfuellt).
+Die PHP-Regel fuer den neuen Fallback wurde isoliert gegen
+die aktuelle, alte und ungeschuetzte Variante getestet.
+
+Dies ist ein reiner Selbsttest-Hotfix. Keine Aenderung an
+`api/console_stream.php`, Plan-Speicherung, Modell-Ausgaben,
+Datei-/ZIP-Generator, Cloud-/Lokalroute oder Benutzer-Modelfile.
+Der vollstaendige Netcup-Preflight und der Mara-Planungs-Livetest
+bleiben die Abnahme.
 
 ## Modellgesteuerte Projektplanung und Markdown-Entwuerfe (0.5.46)
 

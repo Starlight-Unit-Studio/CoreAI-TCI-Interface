@@ -1,0 +1,76 @@
+E.M.B.E.R. COREUI 0.5.47 - UEBERGABEPROTOKOLL
+Datum: 25.10.2026
+Basis: main 0.5.46, Merge-Commit 41a49be89637d0891c4114f05496f0c1faeb515f
+Branch: fix/frontend-preflight-contract-0.5.47
+
+MELDUNG
+Netcup-Preflight nach 0.5.46 meldet einen Frontend-Regressionsfehler:
+"Mehrdateien-Werkzeugpfad, kodierte Dateien oder gemeinsame
+Cloud-/Lokalroute fehlen."
+Alle bis dahin gezeigten Pruefungen waren laut Screenshot gruen.
+
+QUELLANALYSE
+scripts/frontend-regression-selftest.php verlangte wortwoertlich:
+  if (!$fileTaskHandled && ($hasMarker
+Die reale SSE-Route in api/console_stream.php enthielt seit 0.5.46
+stattdessen zusaetzlich:
+  if (!$fileTaskHandled && !$nativeToolHandled
+      && ($hasMarker || $reply === '' || $streamUnsafe)) {
+Die zusaetzliche Bedingung verhindert, dass nach einem bereits
+erfolgreich ausgefuehrten nativen Planungswerkzeug ein zweiter
+Fallback-Modellaufruf ausgefuehrt wird.
+Dies war eine beabsichtigte und benoetigte Laufzeitabsicherung.
+
+Von 18 untersuchten Bedingungen war nur der obige veraltete
+Stringabgleich falsch, die anderen 17 waren erfuellt. Die
+19 nachfolgenden Bedingungen fuer Langtext-Composer,
+Markdown-Paste, Sitzungs-Restore und aktive Run-Wiederaufnahme
+wurden ebenfalls am gegenwaertigen Quelltext geprueft
+und waren erfuellt.
+
+KORREKTUR
+- Der Selbsttest erkennt jetzt per whitespace-tolerantem PHP
+  Pattern die tatsaechliche Absicherung einschliesslich des
+  Native-Tool-Handled-Status.
+- Die vorherige Sammelbedingung ist in benannte Einzelpruefungen
+  aufgeteilt. Zukuenftige Fehler benennen das genaue fehlende
+  Routingelement, statt pauschal den Cloud-/Lokalpfad.
+- Isolierter PHP-Test: aktueller Fallback erkannt;
+  alter und ungeschuetzter Fallback nicht erkannt.
+- Kein Aenderungsbedarf am wirklichen Mehrdateienpfad.
+
+ABSICHTLICH UNVERAENDERT
+config/Modelfile.template, Ollama-Sampler, num_predict,
+PHP-Runtime/Modell-FIFO, API-Chatrouten, Planungsspeicher,
+Installer und One-Liner, Projekt-Writer, Python-Sandbox,
+ZIP-Erstellung, MariaDB/SQL-Migrationen.
+Keine GitHub Actions wegen aufgebrauchtem Kontingent.
+
+GEAENDERT
+scripts/frontend-regression-selftest.php
+VERSION / scripts/branding-license-selftest.py
+README.md / CHANGELOG.md
+docs/changelogs-txt/CHANGELOG_0_5_47.txt und INDEX.txt
+docs/UEBERGABEPROTOKOLL_0_5_47.txt
+Sechs HTML-Versionsanzeigen
+scripts/preflight-native.sh / scripts/preflight.sh: neue
+Dokumente in der Pflichtliste
+
+TESTSTATUS
+PHP-Matcher isoliert per PHP CLI ausgefuehrt und geprueft.
+Quellcode-Vertraege vor und nach dem fehlerhaften Check
+durch direkten Repository-Vergleich geprueft.
+Vollstaendiger Netcup-Preflight und echter E4B-Planungsauftrag
+koennen nicht von GitHub aus ausgefuehrt werden und stehen
+ausdruecklich noch aus.
+
+ABNAHME
+1. Bestehenden Update-One-Liner nutzen.
+2. Nativen Preflight erneut starten, auf gruenen Frontendtest
+   und den Endstatus achten.
+3. Mit Mara den bereits besprochenen Homepage-Plan als
+   Markdown anlegen. Ein unvollstaendiger Plan muss als
+   Entwurf herunterladbar bleiben, nicht als fertig gelten.
+4. Falls erneut ein Fehler erscheint, die neue konkrete
+   Fehlermeldung unveraendert auswerten, keine Modelfile-
+   Anpassungen als vermeintlichen Test-Fix vornehmen.
