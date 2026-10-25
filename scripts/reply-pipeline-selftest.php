@@ -163,7 +163,7 @@ $turnParametersBound = str_contains(
 if (str_contains($streamSource, "\$_GET['msg']") || !$storedTurnLookup || !$turnParametersBound) {
   reply_test_fail('Der SSE-Pfad liest die Nachricht nicht aus dem kontogebundenen gespeicherten Turn oder uebertraegt Text per URL.');
 }
-if (!str_contains($streamSource, "'think'    => $thinkOverride ?? ember_thinking_enabled()")
+if (!str_contains($streamSource, "'think'    => \$thinkOverride ?? ember_thinking_enabled()")
     || !str_contains($streamSource, 'coreui_build_intent_select(')
     || !str_contains($streamSource, "console_stream_progress(\$thinkingEnabled")) {
   reply_test_fail('Thinking wird im SSE-Pfad nicht serverseitig aktiviert oder deaktiviert.');
