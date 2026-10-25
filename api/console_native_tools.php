@@ -174,6 +174,12 @@ function coreui_native_tool_apply(
   }
   $request = coreui_native_tool_build_request($pdo,$uid,$sessionId,$description);
   if ($request === null) {
+    $lastPlan = coreui_plan_latest($pdo,$uid,$sessionId);
+    if ($lastPlan && coreui_plan_is_draft_markdown((string)$lastPlan['markdown'])) {
+      return 'Der gespeicherte Projektplan ist noch ein unvollstaendiger Entwurf. '
+        . 'Ich starte damit keine Dateierstellung und gebe keinen fertigen ZIP-Download vor. '
+        . 'Zuerst muss die Planung abgeschlossen und als neue fertige Version gespeichert werden.';
+    }
     return 'Die Projektquellen konnten nicht sicher zusammengestellt werden. '
       . 'Entweder ist die Dateiliste ungueltig oder der gespeicherte Plan '
       . 'ist zu gross fuer eine einzelne Modellgenerierung. Die Markdown-Datei bleibt erhalten.';
