@@ -1,0 +1,81 @@
+E.M.B.E.R. COREUI 0.5.37 - UEBERGABEPROTOKOLL
+Datum: 25.10.2026
+Basis: VERSION 0.5.36, main 47088dcfbe32f0d7b0a299fe27cc7ddf41c1ae71
+Branch: fix/long-chat-auto-paste-0.5.37
+Status: Vor Merge, produktiver Live-Test steht aus.
+
+ZWECK
+1. Nachtraegliches Abschneiden langer Mara-Antworten im privaten
+   CoreUI-Chat abschalten.
+2. Lange eingefuegte Nutzertexte nicht hart beschneiden, sondern als
+   vollstaendige Markdown-Datei an DERSELBEN Nachricht anbieten.
+
+BEFUNDE
+- api/chat.php: ember_insert() kuerzte bisher jede private Mara-Antwort
+  anhand ember_max_reply_chars() auf maximal 60.000 Zeichen, selbst wenn
+  Ollama mehr ausgegeben hatte.
+- 001_core.sql definiert message als TEXT, aber Migration 002 hebt
+  bereits auf MEDIUMTEXT (16 MiB) an. Diese alte Migration bleibt intakt.
+- app.html hatte ein einzeiliges input mit maxlength=12000;
+  chat.php erlaubt im privaten Textfall 12000, mit Anhaengen 20000
+  Zeichen. Der bisherige Datei-Upload selbst funktioniert bereits.
+
+UMSETZUNG
+- Nur beim globalen Spielchat: bisherige 60k-Persistenzgrenze behalten.
+  Privater Console-Kanal: kein konfigurationsbedingter Textschnitt
+  beim Schreiben einer bereits erzeugten, bereinigten Antwort.
+- Standardmigration 015_long_chat_messages.sql auf LONGTEXT, ohne
+  Installer-Aenderungen. Vorhandene Daten/Sitzungen bleiben.
+- app.html: TEXTAREA; CSS: 32-128px adaptive Hoehe.
+- Beim Einfuegen ab ueber 8000 Zeichen automatisches, bytegetreues
+  .md als File/Blob, via vorhandene console_upload.php; Datei fuer
+  diese Nachricht sichtbar mit normaler Downloadkarte.
+- Falls Nutzer ueber 12000 Zeichen im Editor hat, automatische
+  Umwandlung vor Sendung statt Silent-Truncation.
+- Upload-Queue: Senden erst nach erfolgreichem Upload, bei
+  Fehler Originaltext in Editor wiederherstellen, kein
+  stilles Verwerfen. Der Zehn-Anhang-Schutz bleibt.
+- Mehrzeilig: Shift+Enter Zeilenumbruch, Enter Sendung; IME geschuetzt.
+- Bestehender Eingabe- und Nachrichten-Sicherheitspfad,
+  Anhang-UUID-Pruefung und kontogebundene Medienablage bleiben.
+
+BEWUSSTE GRENZEN
+- Vollstaendiger Dateianhang != vollstaendig im Modellkontext geladen.
+  Fuer grosse Dateien uebernimmt der bestehende ember_attachments.php
+  Extraktor nur einen klar markierten Auszug (normalerweise 4000 Zeichen
+  pro Datei, je nach Einstellung). Die Bytes der Datei gehen NICHT
+  verloren und koennen vollstaendig heruntergeladen werden.
+- Ollama done_reason=length, Modell-Kontext, Antwort-Tokenlimit,
+  Generierungs-/Timeout-Grenzen und der bereits existierende
+  Fortsetzungsmechanismus bleiben unveraendert.
+- Bei laufendem Modell werden neue Dateianhaenge weiterhin nicht
+  sofort angenommen; die Eingabe bleibt im Composer.
+- Kein Browser- oder produktiver Netcup-End-to-End-Test aus dieser
+  Arbeitsumgebung. Upload und generierte Modellantworten live testen.
+
+TESTS / ABNAHME
+- JS-Quellsyntax erfolgreich geprueft.
+- Isolierte Ausfuehrung der Originalfunktion makeAutoPasteFile:
+  UTF-8 inkl. Sonderzeichen/Emoji ohne Aenderung, .md-Dateiname,
+  Uploadqueue, Zehn-Anhang-Grenze, laufender Modellauftrag.
+- Neue Node-Regressionsdatei scripts/long-chat-selftest.cjs,
+  in beiden vorhandenen Preflights als optionaler Test verdrahtet.
+- PHP-Antwort-Pipeline-Test fordert Console-bypass der
+  alten Textkappung und LONGTEXT-Migration.
+- SQL-Datentyp im Preflight fuer Compose und Native pruefen.
+- Live: E4B-Antwort >60k Zeichen ausgeben, DB/SSE/History
+  vollstaendig vergleichen, keine doppelte Antwort.
+- Live: 9000 Zeichen in Chat pasten -> eine .md erscheint,
+  mit Kommentar senden, in History sichtbar und downloadbar.
+- Live: >12k-Zeichen-Editor, Uploadfehler, mobile Android-Paste,
+  zehn Anhaenge, Shift+Enter. Bei uebergrossen Inhalten
+  Extraktor-Kuerzung transparent an Mara melden.
+- Live Nginx/PHP-Preflight, Datenbankmigration und PHP-Syntax checken.
+
+ABSICHTLICH UNVERAENDERT
+setup.sh, scripts/install.sh, scripts/install-native.sh, scripts/stack.sh,
+scripts/migrate.sh, One-Liner, config/Modelfile.template, Ollama
+Parameter (incl. num_ctx, num_predict), serielle FIFO Queue,
+Skills-Freigaben, Agenten- und Sessionlogik. Kein Actions-Lauf.
+Nach Merge die PR-Nummer und den tatsaechlichen Merge-Commit
+als Kommentar im PR dokumentieren.

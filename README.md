@@ -7,7 +7,15 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 E.M.B.E.R. CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.36` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.37` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Lange Antworten und eingefuegte Texte (0.5.37)
+
+CoreUI no longer truncates private Mara responses to 60,000 characters when saving them to the chat. The regular schema migration 015 promotes the persisted message column from MEDIUMTEXT to LONGTEXT. The global/game chat retains its previous limits. **This does not change Ollama context or token generation limits.**
+
+The private chat composer is now a multiline textarea. A paste exceeding roughly 8,000 characters automatically becomes a byte-for-byte Markdown attachment via the existing authenticated upload pipeline; longer editor text is also converted before sending. The file is bound visibly to the same user message and remains downloadable from history. Uploads must complete successfully before queued sends fire, and failed uploads restore the original text. Up to ten attachments per message are still permitted.
+
+**Context disclosure:** A saved file is complete, but the current attachment extractor includes only a labelled head/tail excerpt in one model prompt. Please do not mistake a complete download for full-context ingestion. No changes were made to the owner Modelfile or model options. See `docs/UEBERGABEPROTOKOLL_0_5_37.txt` for tests and live acceptance.
 
 ## Skills API und Chat-Navigation (0.5.36)
 
