@@ -50,7 +50,13 @@ function coreui_plan_followup_parse(string $raw): ?array {
   $raw = trim($raw);
   if ($raw === '' || strlen($raw) > 20000 || preg_match('//u', $raw) !== 1
       || str_contains($raw, "\0")) return null;
-  // Follow-up turns are content only, never new model-selected tools.
+  // Some Gemma models wrap the chunk in an explicit PLAN_APPEND block.
+  // Recover ONLY this one complete, inert Markdown wrapper, never a build.
+  if (preg_match('~^\[COREUI_PLAN_APPEND\]\s*\n([\s\S]*?)\n\[/COREUI_PLAN_APPEND\]\s*$~u',
+      $raw, $wrapped) === 1) {
+    $raw = trim((string)$wrapped[1]);
+  }
+  // Follow-up turns are otherwise content only, never new tool actions.
   if (preg_match('~\[(?:/?COREUI_(?:PROJECT_BUILD|PLAN_AND_BUILD|PLAN_APPEND)|COREUI/)\b~i', $raw))
     return null;
   if (preg_match('~(?mi)^[ \t]*\[COREUI_PLAN_SAVE\][ \t]*$~', $raw)) return null;
@@ -59,8 +65,17 @@ function coreui_plan_followup_parse(string $raw): ?array {
   $done = preg_match($end, $raw) === 1;
   if ($done) $raw = trim((string)preg_replace($end, '', $raw, 1));
   if (preg_match('~\[(?:/?COREUI_[A-Z_]+|/?COREUI/[A-Z_]+)\]~i', $raw)) return null;
-  if ($raw !== '' && preg_match('~^#{1,4}[ \t]+\S|^[-*][ \t]+\S~u', $raw) !== 1)
-    return null;
+  if ($raw !== '' && preg_match('~^#{1,4}[ \t]+\S|^[-*][ \t]+\S~u', $raw) !== 1) {
+    // Ignore at most a short, harmless model preface before the first real
+    // Markdown section. Do not treat an explanation as file content.
+    if (preg_match('~(?m)^#{2,4}[ \t]+\S~u', $raw, $heading, PREG_OFFSET_CAPTURE) !== 1)
+      return null;
+    $prefixBytes = (int)$heading[0][1];
+    $prefix = trim(substr($raw,0,$prefixBytes));
+    if ($prefixBytes > 240 || str_contains($prefix,'[')
+        || str_contains($prefix,chr(96).chr(96).chr(96))) return null;
+    $raw = ltrim(substr($raw,$prefixBytes));
+  }
   if (!$done && strlen($raw) < 65) return null;
   return ['text'=>$raw,'done'=>$done];
 }
