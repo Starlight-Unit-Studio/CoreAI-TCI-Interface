@@ -49,6 +49,12 @@ $last = "## Abnahme\n- Alle sechs Seiten sind verlinkt und mobil bedienbar.\n"
   . "[COREUI_PLAN_COMPLETE]";
 plan_auto_assert(coreui_plan_followup_parse($segment)['done'] === false,
   'Ordinary end of an answer is not project completion');
+$wrappedPart = "[COREUI_PLAN_APPEND]\n" . trim($segment) . "\n[/COREUI_PLAN_APPEND]";
+plan_auto_assert(coreui_plan_followup_parse($wrappedPart)['text'] === trim($segment),
+  'A single fully closed Markdown APPEND envelope must be recoverable');
+$prefaced = "Ich ergaenze den naechsten Teil.\n\n" . $segment;
+plan_auto_assert(coreui_plan_followup_parse($prefaced)['text'] === trim($segment),
+  'A short harmless model preface must not discard the actual Markdown plan');
 plan_auto_assert(coreui_plan_followup_parse($last)['done'] === true
   && !str_contains(coreui_plan_followup_parse($last)['text'],'COREUI_PLAN_COMPLETE'),
   'Completion marker must only be recognized at the end and stripped from saved Markdown');
