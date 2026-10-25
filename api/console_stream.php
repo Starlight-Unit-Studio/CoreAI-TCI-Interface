@@ -522,11 +522,16 @@ try {
   // draft after its bounded continuations. No truncated build can run.
   $nativeTool = coreui_native_tool_parse($reply);
   $nativeToolHandled = false;
+  $streamComplete = !empty($acc['ok']) && !empty($acc['done'])
+    && empty($acc['truncated']);
+  $draftRecoverable = is_array($nativeTool)
+    && ($nativeTool['type'] ?? '') === 'PLAN_SAVE';
+  // Even after a failed Ollama transport, preserve a substantial model-
+  // selected Markdown plan as a DRAFT, never as an approved tool action.
   if (!$fileTaskHandled && !$isVisionTurn && $attachmentIds === []
       && $generationMode !== 'continue'
-      && !empty($acc['ok']) && !empty($acc['done'])
       && is_array($nativeTool)
-      && (empty($acc['truncated']) || ($nativeTool['type'] ?? '') === 'PLAN_SAVE')) {
+      && ($streamComplete || $draftRecoverable)) {
     coreui_work_record($pdo,'tool','info','Mara hat ein natives Werkzeug angefordert',
       ['reason'=>'model_selected_tool']);
     console_stream_progress($thinkingEnabled,'tool');
@@ -536,7 +541,7 @@ try {
         $afterId,$triggerRevision): ?string {
         return ember_generate_reply($pdo,$char,$task,null,'console',
           (int)$uid,$sessionId,$excludeReplyToId,$afterId,$triggerRevision);
-      }, !empty($acc['truncated'])
+      }, !$streamComplete
     );
     if (is_string($toolResult)) {
       $nativeToolHandled = true;
