@@ -3449,6 +3449,10 @@ function ember_join_continuation(string $head, string $tail): string {
   $tail = ltrim($tail);
   if ($head === '') return $tail;
   if ($tail === '') return $head;
+  // A plan continuation must close the existing block, not start a second one.
+  if (function_exists('coreui_native_plan_marker_attempt')
+      && coreui_native_plan_marker_attempt($head)
+      && coreui_native_plan_marker_attempt($tail)) return $head;
 
   // Never concatenate a resumed model restart on top of its original sections.
   if (ember_msg_len($tail) >= 120 && str_contains($head, $tail)) return $head;
@@ -3473,6 +3477,8 @@ function ember_join_continuation(string $head, string $tail): string {
       return $head . $remain;
     }
   }
+  if (preg_match('~^\[/(?:COREUI_PLAN_SAVE|COREUI/PLANSAVE)\]~i', $tail) === 1)
+    return $head . "\n" . $tail;
   if (preg_match('~^(?:#{1,6}[ \t]+|[-*][ \t]+|[0-9]+[.][ \t]+)~u', $tail) === 1)
     return $head . "\n\n" . $tail;
   return $head . ' ' . $tail;
