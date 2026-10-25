@@ -394,13 +394,28 @@ try {
     ? ember_exact_integer_calculation($promptMessage)
     : null;
   console_stream_progress($thinkingEnabled, 'request');
-  // A download request needs the Python worker, not a first generic model
-  // stream followed by another full inference because no public text appeared.
+  // A short explicit approval may refer to the static web project planned
+  // earlier in the SAME authorized session. Resolve it before choosing the
+  // model path; never ask the model for an implicit tool marker first.
+  $fileTaskPrompt = $promptMessage;
+  if (!$isVisionTurn && $attachmentIds === [] && $generationMode !== 'continue'
+      && ember_py_enabled()) {
+    $resolvedProject = coreui_console_web_project_resolve(
+      $pdo, (int)$uid, $sessionId, $afterId, $promptMessage
+    );
+    if (is_string($resolvedProject)) {
+      $fileTaskPrompt = $resolvedProject;
+      coreui_work_record($pdo, 'tool', 'info', 'Gespraechsplan als Dateiauftrag erkannt',
+        ['reason'=>'contextual_project_handoff','files'=>3]);
+    }
+  }
+  // The existing sandbox is selected by the resolved project request, not
+  // just by download keywords in the short follow-up message.
   $fileTaskHandled = !$isVisionTurn && $attachmentIds === []
     && $generationMode !== 'continue' && ember_py_enabled()
-    && coreui_console_download_requested($promptMessage)
+    && coreui_console_download_requested($fileTaskPrompt)
     && (ember_console_file_tool_is_local(ember_model())
-      || coreui_console_multifile_source_directive($promptMessage) !== null);
+      || coreui_console_multifile_source_directive($fileTaskPrompt) !== null);
 
   // v1.1.1.94: Vision-Turns nehmen NICHT den Streaming-Pfad. console_stream_ollama()
   // baut den Payload ohne images-Feld, ein Bild kaeme dort gar nicht an. Stattdessen
@@ -427,7 +442,7 @@ try {
     coreui_work_record($pdo, 'run', 'info', 'Datei-Auftrag an Werkzeugpfad');
     console_stream_progress($thinkingEnabled, 'tool');
     $fileReply = ember_generate_reply(
-      $pdo, $char, $promptMessage, null, 'console', (int)$uid,
+      $pdo, $char, $fileTaskPrompt, null, 'console', (int)$uid,
       $sessionId, $excludeReplyToId, $afterId, $triggerRevision
     );
     $acc = [

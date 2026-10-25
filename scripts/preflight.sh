@@ -135,6 +135,8 @@ UI_FILES=(
   scripts/work-events-selftest.php
   scripts/work-events-persistence-selftest.php
   scripts/local-file-tool-selftest.php
+  scripts/contextual-project-selftest.php
+  api/console_project_handoff.php
   scripts/gemma-zero-parameters-selftest.php
   config/Modelfile.template
   scripts/response-timing-ui-selftest.js
@@ -158,9 +160,9 @@ UI_FILES=(
   scripts/markdown-selftest.js
   scripts/branding-license-selftest.py
   scripts/cache-bust.py
-  docs/changelogs-txt/CHANGELOG_0_5_37.txt
+  docs/changelogs-txt/CHANGELOG_0_5_38.txt
   docs/COREUI_IMAGE_ENGINE_PLAN.md
-  docs/UEBERGABEPROTOKOLL_0_5_37.txt
+  docs/UEBERGABEPROTOKOLL_0_5_38.txt
   docker/pyworker/Dockerfile
   docker/pyworker/entrypoint.sh
   images/starlight_unit_studios_logo_original.png
@@ -451,6 +453,12 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
 
   # Node is optional for PHP installations. Run the real JS unit test when
   # present on the host; the PHP frontend guard always checks integration.
+  if compose exec -T php php scripts/contextual-project-selftest.php >/dev/null 2>&1; then
+    ok 'Projektfreigabe aus laufender Sitzung aktiviert den verifizierten Dateiweg.'
+  else
+    fail 'Projektfreigabe: Chat-Plan konnte nicht sicher an Dateierstellung uebergeben werden.'
+  fi
+
   if compose exec -T php php scripts/local-file-tool-selftest.php >/dev/null 2>&1; then
     ok 'Lokale Dateiauftraege: Python-Fences, mehrteilige Projekte, ZIP und Vollstaendigkeit geprueft.'
   else

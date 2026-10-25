@@ -7,6 +7,7 @@ require_once __DIR__ . '/console_attachment_store.php';
 require_once __DIR__ . '/console_artifact_store.php';
 require_once __DIR__ . '/console_work_store.php';
 require_once __DIR__ . '/console_data_link_bridge.php';
+require_once __DIR__ . '/console_project_handoff.php';
 require_once __DIR__ . '/console_session_store.php';
 require_once __DIR__ . '/profile_store.php';
 require_once __DIR__ . '/knowledge_store.php';
@@ -4370,6 +4371,22 @@ function ember_generate_reply(
     if ($exactCalculation !== null) {
       ember_exact_calculation_mark_complete();
       return $exactCalculation;
+    }
+  }
+
+  // An explicit "setze unseren Plan um" in THIS private session may activate
+  // the existing validated file agent. This only enriches the task for the
+  // current inference. The original user message stays unmodified in the DB.
+  if ($channel === 'console' && $imageUrl === null && trim($attachBlock) === ''
+      && $consoleUid > 0 && $consoleSessionId !== null
+      && $triggerMessageId > 0 && ember_py_enabled()) {
+    $resolvedProject = coreui_console_web_project_resolve(
+      $pdo, $consoleUid, (string)$consoleSessionId, $triggerMessageId, $userMsg
+    );
+    if (is_string($resolvedProject)) {
+      $userMsg = $resolvedProject;
+      coreui_work_record($pdo, 'tool', 'info', 'Gespraechsplan als Dateiauftrag erkannt',
+        ['reason'=>'contextual_project_handoff','files'=>3]);
     }
   }
 
