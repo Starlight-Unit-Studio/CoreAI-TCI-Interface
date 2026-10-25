@@ -49,6 +49,8 @@ handoff_assert(is_array($gameSpec)
 foreach ([
   'Kannst du erklaeren, wie du das spaeter umsetzen wuerdest?',
   'Warte, noch nicht umsetzen!',
+  'Morgen machen wir das Projekt fertig.',
+  'Dann machen wir das so.',
   'Lass uns zuerst die Seiten besprechen.',
   'Wie wird die Homepage aussehen?',
   'Erstelle nur eine HTML-Datei.',

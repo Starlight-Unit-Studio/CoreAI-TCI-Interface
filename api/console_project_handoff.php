@@ -24,6 +24,13 @@ function coreui_console_web_project_execution_requested(string $message): bool {
     $s
   ) === 1;
   if (!$hasAction) return false;
+  // Scheduling a future implementation is not permission to start it now.
+  if (preg_match('~\\b(?:morgen|uebermorgen|übermorgen|naechste\\s+woche|nächste\\s+woche|irgendwann)\\b~iu', $s)
+      || preg_match('~^\\s*(?:ich|wir)\\s+(?:werde|werden|wollen|plane|planen)\\b~iu', $s)) return false;
+  // Accepting a design choice ("machen wir das so") is not yet an
+  // explicit go-ahead to generate files.
+  if (preg_match('~\\b(?:machen|mach|mache|macht)\\b.{0,48}\\bso\\b~iu', $s)
+      && !preg_match('~\\b(?:jetzt|fertig|los|umsetzen|download|zip)\\b~iu', $s)) return false;
   if (preg_match('~\b(?:ich\s+(?:mache|baue|erstelle|setze)|wir\s+(?:haben|hatten)\s+schon\s+umgesetzt)\b~iu', $s)) return false;
   $referent = preg_match('~\b(?:das|es|dies|unser(?:en|e|es)?|plan|konzept|entwurf|projekt|webseite|website|homepage|startseite|seite|seiten|datei(?:en)?|zip|layout|design|los)\b~iu', $s) === 1;
   if (!$referent) return false;
