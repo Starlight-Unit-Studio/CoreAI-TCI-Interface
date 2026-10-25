@@ -6,9 +6,9 @@ Stand: 2026-10-25. Verbindlich fuer CoreUI-Entwicklung.
 
 - Das vom Betreiber gepostete E2B-`ollama show`-Modelfile liegt als archivierter Inhalt unter `docs/references/MODELFILE_E2B_USER_EXPORT_2026_10_25.txt`. Markdown-Darstellungs-Escapes der Nachricht wurden entfernt. Git-Blob-SHA-1: `bdf70ae29fde3d9172d823720be0f002fa518549`.
 - Die archivierten absoluten `FROM`- und `DRAFT`-Blobpfade gehoeren zu diesem E2B-Export. Sie duerfen **nicht** als E4B-Basismodell in `config/Modelfile.template` eingesetzt werden. Das Archiv wird nicht vom Installer geladen.
-- Ab Version 0.5.35 ist `config/Modelfile.template` die **aktive, portable Umsetzung der Benutzer-Vorlage**, nicht nur eine separate Archivnotiz. `FROM gemma4:e4b` bleibt ein einzelner, vom unveraenderten Installer ersetzbarer Basis-Tag. SYSTEM-Text und Reihenfolge der vier PARAMETER wurden aus dem bereitgestellten `ollama show`-Export uebernommen. Das Archiv mit E2B-Blob-Pfaden bleibt unveraendert.
+- Version 0.5.35 hatte die erste portable Umsetzung des E2B-Exports aktiviert. Am 25.10.2026 wurde `config/Modelfile.template` auf `main` **separat verkleinert** (3043 auf 1717 Zeichen), mit neuer kompakter Mara-TCI-Beschreibung, `TSA-Thorn CoreUI` und `PARAMETER num_predict -1`. Diese aktuelle Version gilt; der historische E2B-Export bleibt als Referenz erhalten und darf nicht ungefragt zurueckkopiert werden. `FROM gemma4:e4b` bleibt der bestehende austauschbare Basis-Tag.
 - Keine Skills, langen Coding-Anleitungen, RAG-Texte oder anderen dynamischen Kontexte in SYSTEM oder Modelfile einbauen. Neue Werkzeuge und Validierung zuerst im Backend umsetzen, sodass nur passende Skilltexte pro Anfrage geladen werden.
-- Die freigegebenen Modellparameter beibehalten: `draft_num_predict 0`, `temperature 1`, `top_k 64`, `top_p 0.95`. Lokalem Gemma weder im Modelfile noch ueber API-Overrides `num_ctx` oder `num_predict` aufdruecken.
+- Die **aktuelle kurze Main-Vorlage** (Git-Blob `8b0c17b954f0ddfe65947fbcbfa1453fd17521e3`) besitzt fuenf Parameter: `draft_num_predict 0`, `num_predict -1`, `temperature 1`, `top_k 64`, `top_p 0.95`. `num_ctx` bleibt aus. Dem lokalen Gemma werden weiterhin **keine API-`options`-Overrides** aufgezwungen; explizite Modelfile-Werte sind davon getrennt.
 
 ## Gezielte Werkzeug-Ausnahme
 
@@ -23,6 +23,6 @@ Stand: 2026-10-25. Verbindlich fuer CoreUI-Entwicklung.
 
 ## Pruefung und Grenzen
 
-Der bestehende `scripts/gemma-zero-parameters-selftest.php` prueft die unveraenderte Referenz, portable Modellbasis, Format der SYSTEM-Anweisung, Persona-Inhalte ausserhalb der Werkzeugsektion sowie die exakte Reihenfolge der genehmigten Parameter. Diese Pruefung allein beweist keine produktive Ollama-/Netcup-Funktion. E2B-Erfolge beweisen keine gleichwertige E4B-Ausgabe. Die universelle Dateifortsetzung befindet sich separat in Draft PR #69.
+Der bestehende `scripts/gemma-zero-parameters-selftest.php` prueft den historischen Export nur auf Unveraendertheit und die **neue kompakte Live-Vorlage separat**, einschliesslich exakter Parameterreihenfolge. Der neue `scripts/model-live-audit.php` vergleicht zusaetzlich den tatsaechlich geladenen Ollama-SYSTEM-Text mit der aktuellen Vorlage. Diese Pruefung allein beweist keine produktive Ollama-/Netcup-Funktion. E2B-Erfolge beweisen keine gleichwertige E4B-Ausgabe. Die universelle Dateifortsetzung befindet sich separat in Draft PR #69.
 
 Versionierung gemaess `docs/VERSIONING_POLICY.md`; keine GitHub Actions waehrend das Kontingent aufgebraucht ist.
