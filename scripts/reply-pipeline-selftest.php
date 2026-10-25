@@ -109,6 +109,19 @@ if (ember_join_continuation("Abschnitt abgeschlossen.", "## Weiterer Plan") !==
     "Abschnitt abgeschlossen.\n\n## Weiterer Plan") {
   reply_test_fail('Markdown-Fortsetzungen muessen Absatzgrenzen erhalten.');
 }
+$openedPlan = "[COREUI_PLAN_SAVE]\n# Projekt\n\n## Ziele\n- Vollstaendige Liste";
+$closedPlan = ember_join_continuation($openedPlan, '[/COREUI_PLAN_SAVE]');
+if ($closedPlan !== $openedPlan . "\n[/COREUI_PLAN_SAVE]"
+    || (function_exists('coreui_native_tool_parse')
+      && (coreui_native_tool_parse($closedPlan)['type'] ?? '') !== 'PLAN_SAVE')) {
+  reply_test_fail('PLAN_SAVE-Abschlussmarker muss nach Fortsetzung eine eigene Zeile behalten.');
+}
+if (function_exists('coreui_native_plan_marker_attempt')
+    && ember_join_continuation($openedPlan, "[COREUI_PLAN_SAVE]\n# Projekt\n"
+      . "## Von vorn") !== $openedPlan) {
+  reply_test_fail('Ein erneuter PLAN_SAVE-Start darf den ersten Plan nicht verdoppeln.');
+}
+
 $rollingPrompt = ember_continuation_prompt('URSPRUNG', str_repeat('Plankontext ', 4000));
 if (!str_contains($rollingPrompt,'URSPRUNG') || strlen($rollingPrompt) > 3400) {
   reply_test_fail('Fortsetzung wiederholt zu viel Antworttext im Ollama-Prompt.');
