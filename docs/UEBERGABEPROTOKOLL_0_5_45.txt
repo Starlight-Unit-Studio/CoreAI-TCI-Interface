@@ -41,7 +41,7 @@ ABSICHTLICH NICHT ANGEFASST
 config/Modelfile.template, Git-Blob-SHA:
 ec01a9540ff668230e6ac0a7e23ffab305d54415
 Unveraendert bleiben: Installer, One-Liner, API, Ollama-Sampler,
-FIF0-Queue, Python-Sandbox, native Tools und Projekt-Writer.
+FIFO-Queue, Python-Sandbox, native Tools und Projekt-Writer.
 Keine GitHub Actions.
 
 AENDERUNGEN UND VERSION

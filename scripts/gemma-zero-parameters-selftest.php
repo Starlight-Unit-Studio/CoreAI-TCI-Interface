@@ -116,7 +116,6 @@ coreui_gemma_assert(preg_match('/^SYSTEM "(.+?)^"$/ms', $ownerReference, $ownerS
   'E2B reference SYSTEM missing');
 coreui_gemma_assert(preg_match('/^SYSTEM """(.+?)^"""$/ms', $template, $activeSystem) === 1,
   'active E4B SYSTEM missing');
-// The user explicitly requested the exact original SYSTEM and four parameters.
 // The E2B export is immutable historical evidence, not the live E4B policy.
 // The operator revised the active Mara SYSTEM independently after 0.5.44.
 coreui_gemma_assert(coreui_gemma_modelfile_parameters($ownerReference)
