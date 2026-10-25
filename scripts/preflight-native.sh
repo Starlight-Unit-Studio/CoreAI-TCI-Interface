@@ -139,12 +139,14 @@ UI_FILES=(
   docs/changelogs-txt/CHANGELOG_0_5_45.txt
   docs/changelogs-txt/CHANGELOG_0_5_46.txt
   docs/changelogs-txt/CHANGELOG_0_5_47.txt
+  docs/changelogs-txt/CHANGELOG_0_5_48.txt
   docs/COREUI_IMAGE_ENGINE_PLAN.md
   docs/UEBERGABEPROTOKOLL_0_5_43.txt
   docs/UEBERGABEPROTOKOLL_0_5_44.txt
   docs/UEBERGABEPROTOKOLL_0_5_45.txt
   docs/UEBERGABEPROTOKOLL_0_5_46.txt
   docs/UEBERGABEPROTOKOLL_0_5_47.txt
+  docs/UEBERGABEPROTOKOLL_0_5_48.txt
   images/starlight_unit_studios_logo_original.png
 )
 for ui_file in "${UI_FILES[@]}"; do
