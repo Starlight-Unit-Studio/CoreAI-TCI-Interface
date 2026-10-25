@@ -506,7 +506,8 @@ try {
       && !empty($acc['ok'])
       && !empty($acc['done'])
       && !empty($acc['truncated'])
-      && !coreui_native_plan_marker_attempt($reply)) {
+      && !coreui_native_plan_marker_attempt($reply)
+      && !coreui_native_plan_continue_marker_attempt($reply)) {
     // Model-selected plan drafts are checkpointed directly. Do not risk
     // duplicate prose via the generic long-reply continuation path.
     console_stream_progress($thinkingEnabled, 'compose');
@@ -527,14 +528,15 @@ try {
   $nativeToolHandled = false;
   $streamComplete = !empty($acc['ok']) && !empty($acc['done'])
     && empty($acc['truncated']);
-  $draftRecoverable = is_array($nativeTool)
-    && ($nativeTool['type'] ?? '') === 'PLAN_SAVE';
+  $safePlanRecovery = is_array($nativeTool)
+    && in_array(($nativeTool['type'] ?? ''),
+      ['PLAN_SAVE','PLAN_CONTINUE'],true);
   // Even after a failed Ollama transport, preserve a substantial model-
   // selected Markdown plan as a DRAFT, never as an approved tool action.
   if (!$fileTaskHandled && !$isVisionTurn && $attachmentIds === []
       && $generationMode !== 'continue'
       && is_array($nativeTool)
-      && ($streamComplete || $draftRecoverable)) {
+      && ($streamComplete || $safePlanRecovery)) {
     coreui_work_record($pdo,'tool','info','Mara hat ein natives Werkzeug angefordert',
       ['reason'=>'model_selected_tool']);
     console_stream_progress($thinkingEnabled,'tool');
@@ -629,8 +631,15 @@ try {
 
   if ($reply !== ''
       && (preg_match('~^\s*\[COREUI_[A-Z_]+\]~u', $reply)
-        || coreui_native_plan_marker_attempt($reply))
+        || coreui_native_plan_marker_attempt($reply)
+        || coreui_native_plan_continue_marker_attempt($reply))
       && coreui_native_tool_parse($reply) === null) {
+    // Diagnostic metadata only, never log the private model text.
+    if (coreui_native_plan_continue_marker_attempt($reply)) {
+      coreui_work_record($pdo,'tool','error',
+        'Plan-Fortsetzungsmarker nicht lesbar',
+        ['reason'=>'invalid_plan_continue_marker','response_bytes'=>strlen($reply)]);
+    }
     $reply = 'Maras Werkzeugantwort war unvollstaendig oder nicht gueltig. '
       . 'Es wurde weder ein Plan gespeichert noch ein Projekt erstellt.';
   }

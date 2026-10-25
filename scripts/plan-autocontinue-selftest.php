@@ -76,6 +76,10 @@ plan_auto_assert(str_contains($toolPrompt,'[COREUI_PLAN_CONTINUE]')
   && (coreui_native_tool_parse($cont)['type'] ?? '') === 'PLAN_CONTINUE',
   'Mara must be able to select a plan continuation without user-side keywords');
 $slashCont = "[COREUI/PLANCONTINUE]\nDen bereits gespeicherten Plan ergaenzen.\n[/COREUI/PLANCONTINUE]";
+$openCont = "Ich setze den Plan fort.\n[COREUI_PLAN_CONTINUE]\n"
+  . "Bitte alle ausstehenden Seiten und Abnahmekriterien ergaenzen.";
+plan_auto_assert((coreui_native_tool_parse($openCont)['type'] ?? '') === 'PLAN_CONTINUE',
+  'A model-selected open resume with short preface must be executable safely');
 plan_auto_assert((coreui_native_tool_parse($slashCont)['type'] ?? '') === 'PLAN_CONTINUE',
   'Gemma slash alias must safely resume an existing private draft');
 
@@ -84,8 +88,11 @@ $streamSource = (string)file_get_contents(dirname(__DIR__) . '/api/console_strea
 plan_auto_assert(
   substr_count($chatSource, "static function (string \$nextPrompt) use (\$primaryModel,\$sys)") === 2
   && str_contains($streamSource,"static function (string \$nextPrompt) use (\$model,\$sys)")
-  && str_contains($streamSource,'console_stream_ollama($model,$sys,$nextPrompt,false,180)'),
-  'Both sync and SSE pathways must wire the same bounded plan engine');
+  && str_contains($streamSource,'console_stream_ollama($model,$sys,$nextPrompt,false,180)')
+  && str_contains($chatSource,'&& !coreui_native_plan_continue_marker_attempt($out)')
+  && str_contains($streamSource,'&& !coreui_native_plan_continue_marker_attempt($reply)')
+  && str_contains($streamSource,'$safePlanRecovery'),
+  'Sync and SSE must both recover model-selected plan resume markers safely');
 
 if (in_array('sqlite',PDO::getAvailableDrivers(),true)) {
   class AutoPlanTestPDO extends PDO {
@@ -150,9 +157,15 @@ if (in_array('sqlite',PDO::getAvailableDrivers(),true)) {
   plan_auto_assert($noProgress['segments']===0 && !$noProgress['complete'],
     'Repeated model output must not create another duplicate revision');
 
-  $resume = coreui_native_tool_apply($pdo,1,$sid,11,$cont,
-    static fn(string $request): string => 'A BUILD MUST NOT RUN',false,
+  $unexpectedBuild = false;
+  $resume = coreui_native_tool_apply($pdo,1,$sid,11,$openCont,
+    static function (string $request) use (&$unexpectedBuild): string {
+      $unexpectedBuild = true;
+      return 'SHOULD NOT BUILD';
+    },true,
     static fn(string $prompt): array => ['text'=>$last,'ok'=>true],'Homepage');
+  plan_auto_assert(!$unexpectedBuild,
+    'Truncated PLAN_CONTINUE must never call the project build worker');
   plan_auto_assert(is_string($resume)
     && str_contains($resume,'abgeschlossene Markdown-Version')
     && !coreui_plan_is_draft_markdown(coreui_plan_latest($pdo,1,$sid)['markdown']),

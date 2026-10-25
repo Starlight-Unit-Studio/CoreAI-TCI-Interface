@@ -58,6 +58,50 @@ foreach ([
     'Quoted, incomplete or mixed model tool output must never be saved');
 }
 
+
+// Screenshot regression: models frequently omit the closing delimiter for
+// PLAN_CONTINUE or add an introductory sentence before the selected tool.
+// This operation reads an existing owner-bound plan; no model text executes.
+foreach ([
+  "[COREUI_PLAN_CONTINUE]",
+  "[COREUI_PLAN_CONTINUE]\nBitte den gespeicherten Entwurf fortsetzen.",
+  "Ich arbeite den vorhandenen Projektplan weiter aus.\n"
+    . "[COREUI_PLAN_CONTINUE]\n## Weitere Unterseiten\n"
+    . str_repeat("- Geforderte Navigation und Bedienbarkeit.\n",160),
+  "[COREUI/PLANCONTINUE]\nProjektplan ergaenzen.",
+  "[COREUI_PLAN_CONTINUE]\n## Neue Seite\n"
+    . str_repeat(chr(96),3) . "html\n<main>Preview</main>\n"
+    . str_repeat(chr(96),3),
+  "[COREUI_PLAN_CONTINUE]\nProjektplan weiterfuehren.\n"
+    . "[/COREUI_PLAN_CONTINUE]\nIch bearbeite die gespeicherte Markdown-Version.",
+  "Ich setze die Planung fort.\n[COREUI/PLAN_CONTINUE]\n"
+    . "Bestehenden Entwurf vervollstaendigen.\n[/COREUI/PLAN_CONTINUE]",
+] as $resumeAttempt) {
+  $parsedResume = coreui_native_tool_parse($resumeAttempt);
+  native_assert(is_array($parsedResume)
+      && ($parsedResume['type'] ?? '') === 'PLAN_CONTINUE'
+      && !empty($parsedResume['recovered']),
+    'Model-selected PLAN_CONTINUE must recover an open or prefaced marker');
+}
+foreach ([
+  "Beispiel:\n[COREUI_PLAN_CONTINUE]\nEin Muster.",
+  "Gespeicherter Marker:\n" . str_repeat(chr(96),3) . "\n"
+    . "[COREUI_PLAN_CONTINUE]\n" . str_repeat(chr(96),3),
+  "[COREUI_PLAN_CONTINUE]\n[COREUI_PROJECT_BUILD]\nUnzulaessig",
+  "[COREUI_PLAN_CONTINUE]\n[COREUI_PLAN_CONTINUE]\nMehrere Aufrufe",
+  "[COREUI_PLAN_CONTINUE]\nWeiter.\n[/COREUI_PLAN_CONTINUE]"
+    . "\n[/COREUI_PLAN_CONTINUE]",
+  "[COREUI_PLAN_CONTINUE]\n"
+    . "[COREUI_PLAN_APPEND]\n## Fremder Inhalt\n[/COREUI_PLAN_APPEND]\n"
+    . "[/COREUI_PLAN_CONTINUE]",
+] as $unsafeContinue) {
+  native_assert(coreui_native_tool_parse($unsafeContinue) === null,
+    'Mixed/quoted/ambiguous PLAN_CONTINUE must never trigger a tool');
+}
+native_assert(coreui_native_plan_continue_marker_attempt(
+  "Vorwort\n[COREUI_PLAN_CONTINUE]\nUngeschlossen"),
+  'Partially generated model resume marker must be visible to routing');
+
 $toolPrompt = coreui_native_tools_prompt();
 $buildExample = [];
 native_assert(preg_match('~(\[COREUI_PROJECT_BUILD\]\n[^\r\n]+\n\[/COREUI_PROJECT_BUILD\])~',
