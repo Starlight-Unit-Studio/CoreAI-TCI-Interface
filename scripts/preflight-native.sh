@@ -51,8 +51,11 @@ UI_FILES=(
   admin/index.html
   protocols.html
   css/console.css
+  css/artifacts.css
   js/console-app.js
   js/coreui-markdown.js
+  js/coreui-markdown-preview.js
+  js/coreui-artifacts.js
   js/coreui-preferences.js
   js/settings.js
   js/admin.js
@@ -127,6 +130,7 @@ UI_FILES=(
   scripts/profile-knowledge-selftest.php
   scripts/account-security-selftest.php
   scripts/frontend-regression-selftest.php
+  scripts/markdown-preview-selftest.php
   scripts/long-chat-selftest.cjs
   database/migrations/015_long_chat_messages.sql
   scripts/chat-navigation-recovery-selftest.cjs
@@ -141,6 +145,7 @@ UI_FILES=(
   docs/changelogs-txt/CHANGELOG_0_5_47.txt
   docs/changelogs-txt/CHANGELOG_0_5_48.txt
   docs/changelogs-txt/CHANGELOG_0_5_49.txt
+  docs/changelogs-txt/CHANGELOG_0_5_50.txt
   docs/COREUI_IMAGE_ENGINE_PLAN.md
   docs/UEBERGABEPROTOKOLL_0_5_43.txt
   docs/UEBERGABEPROTOKOLL_0_5_44.txt
@@ -149,6 +154,7 @@ UI_FILES=(
   docs/UEBERGABEPROTOKOLL_0_5_47.txt
   docs/UEBERGABEPROTOKOLL_0_5_48.txt
   docs/UEBERGABEPROTOKOLL_0_5_49.txt
+  docs/UEBERGABEPROTOKOLL_0_5_50.txt
   images/starlight_unit_studios_logo_original.png
 )
 for ui_file in "${UI_FILES[@]}"; do
@@ -433,6 +439,13 @@ if command -v php >/dev/null 2>&1; then
   else
     frontend_selftest="${frontend_selftest//$'\r'/}"
     fail "$frontend_selftest"
+  fi
+
+  md_preview_test=''
+  if md_preview_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/markdown-preview-selftest.php" 2>&1)"; then
+    ok "$md_preview_test"
+  else
+    fail "Markdown-Vorschau: ${md_preview_test:-Unbekannter Fehler}"
   fi
 
   message_actions_selftest=''

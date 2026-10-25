@@ -126,7 +126,18 @@
     (Array.isArray(files) ? files : []).slice(0, 10).forEach(function (file) {
       if (!validFile(file) || seen.has(file.id)) return;
       seen.add(file.id);
-      section.appendChild(card(file));
+      // Only verified Markdown files use the embedded safe viewer.
+      // All other artifact formats retain the original download card.
+      var viewer = window.CoreUIMarkdownPreview;
+      if (viewer && typeof viewer.supports === 'function'
+          && typeof viewer.create === 'function' && viewer.supports(file)) {
+        var path = file.kind === 'plan' ? 'console_plan.php' : 'console_artifact.php';
+        var endpoint = new URL(path, api);
+        endpoint.searchParams.set('id', file.id);
+        section.appendChild(viewer.create(file, endpoint));
+      } else {
+        section.appendChild(card(file));
+      }
     });
     return section;
   }
@@ -149,6 +160,9 @@
     }
 
     function scan() {
+      if (window.CoreUIMarkdownPreview && typeof window.CoreUIMarkdownPreview.cleanup === 'function') {
+        window.CoreUIMarkdownPreview.cleanup();
+      }
       root.querySelectorAll('.msg-row.ember[data-message-id]').forEach(function (row) {
         var id = row.getAttribute('data-message-id');
         if (!/^[1-9][0-9]{0,15}$/.test(id || '') || visited.has(row)) return;

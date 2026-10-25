@@ -1,0 +1,97 @@
+E.M.B.E.R. COREUI 0.5.50 - UEBERGABEPROTOKOLL
+Datum: 25.10.2026
+Basis: main 0.5.49, Merge 53703f7c660eda5518def7311f495b5ff3ca8ade
+Branch: feat/inline-markdown-file-preview-0.5.50
+
+AUSGANGSLAGE
+Die autonome Projektplanung speichert und vervollstaendigt
+Markdown-Dateien bereits. Nutzer-Screenshots vom 25.10.2026
+zeigen projektplan-v2.md (1,3 KB) und projektplan-v3.md
+(6,2 KB). Bisher erschienen beide nur als Downloadkarten.
+Der Nutzer wuenscht eine direkt im Chat integrierte,
+scrollbare Markdown-Leseansicht wie bei Claude.ai, ohne
+externe App, mit drei Aktionen oben rechts.
+
+UMSETZUNG
+1. Neuer Viewer: js/coreui-markdown-preview.js.
+   Erscheint im Chat unter der zugehoerigen Mara-Nachricht
+   anstelle der bisherigen Markdown-Downloadkarte.
+2. Drei Aktionen: Kopieren, Herunterladen und Vergroessern.
+   Auf Android/Chrome als kompakte Icon-Tasten bedienbar,
+   alle mit sprechenden ARIA-Beschriftungen und Tastaturfokus.
+3. Bestehender sicherer Markdown-Renderer wird wiederverwendet:
+   Keine aktive HTML-Ausfuehrung, kein innerHTML, keine
+   Drittanbieter-Bibliothek und keine externen Viewer.
+4. Authentifizierter Abruf per same-origin fetch an die
+   vorhandenen servereigenen Routen console_plan.php und
+   console_artifact.php, abgeleitet ausschliesslich aus der
+   validierten gespeicherten Datei-ID. Keine vom Modell
+   vorgegebenen Download-URLs. Content-Type,
+   Content-Length/Bytegroesse und optional SHA256 werden
+   geprueft. HTTP-Redirects und Browser-Cache deaktiviert.
+5. Vorschau wird erst beim Sichtbarwerden einer Nachricht
+   geladen, mit Ladezustand und Retry-Knopf bei Fehler.
+   So bleiben lange Chatverlaeufe sparsam auf Mobilgeraeten.
+6. Scrollbarer Dokumentbereich mit fester Dateileiste.
+   Vergroessern oeffnet ein HTML-dialog auf aktuellen
+   Browsern, Escape bzw. dritte Schaltflaeche schliesst es.
+   Fallback-Styling fuer aeltere Browser enthalten.
+7. Marker <!-- COREUI_PLAN_DRAFT --> wird nur fuer Anzeige
+   und Kopieren entfernt und durch den Status
+   "Unvollstaendiger Entwurf" ersetzt. Der Download liefert
+   weiterhin die exakt gespeicherte Originaldatei.
+8. Maximal 512 KiB pro Inline-Markdown-Vorschau, darueber
+   bleibt die sichere vorhandene Downloadkarte verfuegbar.
+9. Andere Formate (ZIP, HTML, CSS, JS, PDF, Bilder usw.)
+   bleiben unveraendert im bisherigen Dateikartenpfad.
+
+WESENTLICHE DATEIEN
+js/coreui-markdown-preview.js (neu)
+js/coreui-artifacts.js (Markdown-Auswahl)
+css/artifacts.css (mobile und Desktop-Styles)
+app.html (Script-Reihenfolge + Cachebusting)
+scripts/markdown-preview-selftest.php (neu)
+scripts/preflight-native.sh + scripts/preflight.sh
+VERSION, scripts/branding-license-selftest.py
+README.md, CHANGELOG.md, docs/changelogs-txt/INDEX.txt,
+docs/changelogs-txt/CHANGELOG_0_5_50.txt
+docs/UEBERGABEPROTOKOLL_0_5_50.txt
+HTML-Versionsanzeigen aktualisiert
+
+UNVERAENDERT UND GESCHUETZT
+config/Modelfile.template, Blob-SHA:
+ec01a9540ff668230e6ac0a7e23ffab305d54415
+Ollama-Parameter, Modell-FIFO, alle PHP-Download-Routen,
+Datenbank/SQL, Benutzer- und Session-Rechte, alle Skills,
+Planungsengine, Installer/Update-One-Liner,
+Python-Worker und ZIP-/Dateierstellung.
+Keine GitHub Actions wegen verbrauchtem Kontingent.
+
+TESTSTAND
+JavaScript-Syntax des neuen Browser-Moduls ist gueltig.
+Eine isolierte simulierte Browser-/DOM-Interaktionsprobe
+testete Markdown-Laden, Entwurfskennzeichnung, Kopieren,
+gleichurspruenglichen authentifizierten Download,
+drei Schaltflaechen und Vergroesserungs-Fallback.
+Native/Compose-Preflight enthalten einen neuen
+PHP-Vertragstest fuer eingebettete Vorschau,
+Script-Reihenfolge, Sichere-DOM-API und unveraenderte
+private Download-Endpunkte.
+Ein echter Android-Browser-/Netcup-Livetest steht aus.
+
+ABNAHME
+1. Mit gewohntem One-Liner aktualisieren, Preflight
+   inklusive "Markdown-Vorschau OK" ausfuehren.
+2. CoreUI neu laden; im bestehenden Chat unter Maras
+   Antwort sollen projektplan-v2.md und projektplan-v3.md
+   als scrollbare Markdown-Lesefenster erscheinen.
+3. Kopieren in die Zwischenablage testen; Original-MD
+   ueber den zweiten Button herunterladen; den dritten
+   Button zum grossen Lesen nutzen und per Escape/Knopf
+   schliessen.
+4. Gespeicherte Entwurfsversion muss Status zeigen,
+   vollstaendige Version nicht. ZIP/andere Dateiformate
+   duerfen sich nicht veraendert haben.
+5. Falls das Vorschaufenster nicht erscheint,
+   Browser-Konsole und Frontend-/Markdown-Preflight
+   kontrollieren, NICHT das Betreiber-Modelfile aendern.

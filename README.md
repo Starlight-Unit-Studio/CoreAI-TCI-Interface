@@ -7,7 +7,52 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 E.M.B.E.R. CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.49` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.50` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Integrierte Markdown-Vorschau im Chat (0.5.50)
+
+Geschuetzte Markdown-Dateien, insbesondere Maras versionierte
+`projektplan-vN.md`-Dateien und von Python erzeugte .md-Dateien,
+erscheinen jetzt direkt unter der zugehoerigen Chatantwort als
+scrollbare, in CoreUI gerenderte Lesefenster. Das gilt auch fuer
+aeltere Nachrichten beim Neuladen des Chatverlaufs. Andere
+Dateitypen behalten ihre bisherigen Downloadkarten.
+
+Die Dokumentleiste bietet drei Touch- und Tastatur-bedienbare
+Aktionen: **Kopieren**, **Herunterladen** und **Vergroessern**.
+Das dritte Symbol oeffnet auf modernen Browsern eine
+bildschirmgroessere Leseansicht, die per Schaltflaeche oder
+Escape geschlossen werden kann. Das Laden erfolgt bei
+sichtbar werdenden Nachrichten, damit alte Chatverlaeufe
+nicht unnoetig viele Dateien gleichzeitig abrufen.
+
+Die Vorschau laedt die unveraenderte Datei nur ueber die
+bereits vorhandenen, authentifizierten API-Endpunkte und
+prueft erwarteten Binaertyp, Bytegroesse sowie (sofern
+browserseitig verfuegbar) SHA256. Sie stellt Markdown mit
+`js/coreui-markdown.js` als **inertes DOM** dar, niemals
+mit `innerHTML` oder einem fremden Dienst. Der interne
+Entwurfsmarker wird nur in der Ansicht ausgeblendet und
+als Entwurfsstatus gekennzeichnet; beim Download bleiben
+die originalen Bytes erhalten. Die Kopieren-Schaltflaeche
+liefert den sichtbaren Markdown-Text ohne internen Marker.
+Die Vorschau ist auf kleinere Markdown-Dateien begrenzt;
+uebergrosse Dateien behalten die Original-Downloadkarte.
+
+Neue Komponenten:
+`js/coreui-markdown-preview.js` und responsive Styles
+in `css/artifacts.css`. Die vorhandene Dateikartenlogik
+delegiert nur geeignete Markdown-Dateien an diesen Viewer;
+die bisherige Sicherung aller anderen Downloads bleibt
+unangetastet. Der Browser bezieht die neue Fassung ueber
+aktualisierte Asset-Versionen in `app.html`.
+`scripts/markdown-preview-selftest.php` ist in beide
+Preflight-Varianten eingebunden.
+
+**Unveraendert:** `config/Modelfile.template`,
+Ollama-Parameter, PHP-Downloads/Authentifizierung, SQL,
+Installer, FIFO, Planungsengine und Python-/ZIP-Writer.
+Uebergabe: `docs/UEBERGABEPROTOKOLL_0_5_50.txt`.
 
 ## Robustere Modellwerkzeug-Erkennung bei Plan-Fortsetzungen (0.5.49)
 
