@@ -42,6 +42,8 @@ function coreui_native_tool_parse(string $reply): ?array {
         . $type . '\]\s*$~u', $reply, $m) !== 1) continue;
     $body = trim((string)$m[1]);
     if ($body === '' || strlen($body) > 262144 || str_contains($body,"\0")) return null;
+    if ($type === 'PLAN_CONTINUE'
+        && preg_match('~\[/?COREUI[/_][A-Z_]+\]~i',$body)) return null;
     return ['type'=>$type,'body'=>$body];
   }
   // The model sometimes uses slash spelling. PLAN_CONTINUE only resumes
