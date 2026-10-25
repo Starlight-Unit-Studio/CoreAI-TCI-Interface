@@ -109,6 +109,7 @@ UI_FILES=(
   database/migrations/016_console_project_plans.sql
   api/console_project_handoff.php
   scripts/gemma-zero-parameters-selftest.php
+  scripts/model-live-audit.php
   config/Modelfile.template
   scripts/response-timing-ui-selftest.js
   scripts/agent-runs-selftest.php
@@ -290,6 +291,12 @@ if command -v php >/dev/null 2>&1; then
     ok 'Lokale Dateiauftraege: Python-Fences, mehrteilige Projekte, ZIP und Vollstaendigkeit geprueft.'
   else
     fail 'Lokaler Dateiwerkzeug-Selbsttest fehlgeschlagen.'
+  fi
+
+  if runuser -u www-data -- php "$PROJECT_ROOT/scripts/model-live-audit.php" --selftest >/dev/null 2>&1; then
+    ok 'Modelfile-Audit: SYSTEM- und Abweichungspruefung offline bestanden.'
+  else
+    fail 'Modelfile-Audit: Offline-Selbsttest fehlgeschlagen.'
   fi
 
   if runuser -u www-data -- php "$PROJECT_ROOT/scripts/gemma-zero-parameters-selftest.php" >/dev/null 2>&1; then
@@ -524,6 +531,12 @@ if command -v php >/dev/null 2>&1; then
     MODEL_NAME="$(read_constant STU_EMBER_MODEL || true)"
     if [[ -n "$MODEL_NAME" ]] && command -v ollama >/dev/null 2>&1 && ollama show "$MODEL_NAME" >/dev/null 2>&1; then
       ok "Ollama-Modell vorhanden: $MODEL_NAME"
+      model_audit=''
+      if model_audit="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/model-live-audit.php" "$MODEL_NAME" 2>&1)"; then
+        ok "$model_audit"
+      else
+        fail "${model_audit:-Ollama-Modelfile nicht verifizierbar.}"
+      fi
     else
       fail "Ollama-Modell fehlt oder Ollama ist nicht erreichbar: ${MODEL_NAME:-unbekannt}"
     fi
