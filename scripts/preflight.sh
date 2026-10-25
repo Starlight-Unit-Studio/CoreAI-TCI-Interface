@@ -137,8 +137,10 @@ UI_FILES=(
   scripts/local-file-tool-selftest.php
   scripts/contextual-project-selftest.php
   scripts/native-tools-selftest.php
+  scripts/plan-autocontinue-selftest.php
   api/console_native_tools.php
   api/console_plan_store.php
+  api/console_plan_autorun.php
   api/console_plan.php
   database/migrations/016_console_project_plans.sql
   api/console_project_handoff.php
@@ -486,6 +488,13 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     ok "$native_test"
   else
     fail "Native Tools: $native_test"
+  fi
+
+  plan_auto_test=''
+  if plan_auto_test="$(compose exec -T php php scripts/plan-autocontinue-selftest.php 2>&1)"; then
+    ok "$plan_auto_test"
+  else
+    fail "Autonome Markdown-Planung: ${plan_auto_test:-Unbekannter Fehler}"
   fi
 
   project_test=''
