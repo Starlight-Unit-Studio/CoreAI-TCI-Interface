@@ -473,9 +473,52 @@ try {
     console_stream_progress($thinkingEnabled, 'context');
     console_stream_progress($thinkingEnabled, 'compose');
 
-    // Streaming-Call: akkumuliert alle Modellfragmente ausschliesslich serverintern.
-    // Erst die vollstaendige, validierte Antwort darf den Browser erreichen.
-    $acc   = console_stream_ollama($model, $sys, $u);
+    // A short, MODEL-selected tool choice is more reliable on small local
+    // reasoning models than asking their giant conversational prompt to
+    // decide and then emit a long build marker. No user keyword classifier.
+    $selectedBuildResult = null;
+    if ($generationRequest === null && $attachmentIds === []
+        && ember_py_enabled() && !ember_agent_cancel_requested()) {
+      $choice = coreui_build_intent_select(
+        $pdo, (int)$uid, $sessionId, $afterId, $message,
+        static function (string $decisionPrompt) use ($model): array {
+          $decision = console_stream_ollama($model, '', $decisionPrompt,
+            false, 90, false);
+          return [
+            'text'=>trim((string)($decision['content'] ?? '')),
+            'ok'=>!empty($decision['ok']) && !empty($decision['done'])
+              && empty($decision['truncated']),
+          ];
+        }
+      );
+      if (($choice['status'] ?? '') === 'build' && is_string($choice['tool'])) {
+        coreui_work_record($pdo,'tool','info',
+          'Mara hat die Umsetzung des gespeicherten Plans gewaehlt',
+          ['reason'=>'model_selected_saved_plan_build',
+           'plan_version'=>(int)$choice['plan_version']]);
+        console_stream_progress($thinkingEnabled, 'tool');
+        $selectedBuildResult = coreui_native_tool_apply(
+          $pdo,(int)$uid,$sessionId,$afterId,$choice['tool'],
+          static function (string $task) use ($pdo,$char,$uid,$sessionId,
+            $excludeReplyToId,$afterId,$triggerRevision): ?string {
+            return ember_generate_reply($pdo,$char,$task,null,'console',
+              (int)$uid,$sessionId,$excludeReplyToId,$afterId,$triggerRevision);
+          },false,null,$message
+        );
+      } elseif (in_array(($choice['status'] ?? ''),['decision_invalid','model_incomplete'],true)) {
+        coreui_work_record($pdo,'model','info','Kurze Werkzeugentscheidung nicht bestaetigt',
+          ['reason'=>(string)$choice['status']]);
+      }
+    }
+    // Only a successful, verified decision invokes the build. Otherwise the
+    // regular chat remains intact with its original model and options.
+    if (is_string($selectedBuildResult)) {
+      $acc = ['thinking'=>'','content'=>$selectedBuildResult,
+        'ok'=>true,'done'=>true,'truncated'=>false,
+        'done_reason'=>'tool_dispatch'];
+    } else {
+      $acc = console_stream_ollama($model, $sys, $u);
+    }
   }
   if (ember_agent_cancel_requested(true)) throw new RuntimeException('agent_cancelled');
   if (($acc['error'] ?? '') === 'model_queue_timeout') {
@@ -646,7 +689,10 @@ try {
 
   if (!$nativeToolHandled && !empty($acc['truncated']) && $reply !== '') {
     coreui_work_record($pdo,'run','info','Antwort blieb nach Fortsetzung unvollstaendig',
-      ['reason'=>'continuation_limit','source_chars'=>strlen($reply)]);
+      ['reason'=>'continuation_limit','source_chars'=>strlen($reply),
+       'done_reason'=>(string)($acc['done_reason'] ?? ''),
+       'eval_count'=>(int)($acc['eval_count'] ?? 0),
+       'prompt_eval_count'=>(int)($acc['prompt_eval_count'] ?? 0)]);
     $reply = rtrim($reply) . "\n\n> **Unvollstaendige Modellausgabe:** "
       . "Das Modell konnte den Text nicht vollstaendig zu Ende generieren. "
       . "Die erhaltenen Abschnitte bleiben sichtbar, sind aber kein freigegebener Gesamtplan.";
@@ -827,7 +873,8 @@ exit;
 // Der kontobezogene Thinking-Schalter wird als echter Ollama-Parameter gesendet.
 // ─────────────────────────────────────────────────────────────────────────────
 function console_stream_ollama(string $model, string $systemPrompt, string $userPrompt,
-                               bool $augmentSkills = true, ?int $timeoutOverride = null): array {
+                               bool $augmentSkills = true, ?int $timeoutOverride = null,
+                               ?bool $thinkOverride = null): array {
   if ($augmentSkills) $userPrompt = coreui_skills_augment($userPrompt);
   $url       = ember_url();
   $keepAlive = ember_keep_alive();
@@ -842,7 +889,7 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
   $payload = [
     'model'    => $model,
     'stream'   => true,
-    'think'    => ember_thinking_enabled(),
+    'think'    => $thinkOverride ?? ember_thinking_enabled(),
     'messages' => $messages,
   ];
   // Do not send an empty options object for native Gemma defaults.
@@ -989,6 +1036,9 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
       'done' => $done ? 1 : 0,
       'done_reason' => $doneReason,
       'eval_count' => $evalCount,
+      'prompt_eval_count' => $promptEvalCount,
+      'thinking_chars' => strlen($thinkingAcc),
+      'content_chars' => strlen($contentAcc),
       'num_predict' => $numPredict,
     ]);
   }
@@ -997,7 +1047,11 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
     coreui_work_record($workDb, 'model', $ok ? 'success' : 'error',
       $ok ? 'Modellstream empfangen' : 'Modellstream fehlgeschlagen',
       ['model'=>$model,'http_code'=>$httpCode,'duration_ms'=>$modelDurationMs,
-        'reason'=>$truncated ? 'output_truncated' : ($ok ? 'completed' : 'request_failed')]);
+        'reason'=>$truncated ? 'output_truncated' : ($ok ? 'completed' : 'request_failed'),
+        'done_reason'=>$doneReason, 'eval_count'=>$evalCount,
+        'prompt_eval_count'=>$promptEvalCount,
+        'thinking_chars'=>strlen($thinkingAcc),
+        'content_chars'=>strlen($contentAcc)]);
   }
   return [
     'thinking' => $thinkingAcc,
