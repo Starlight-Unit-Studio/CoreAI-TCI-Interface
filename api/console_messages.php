@@ -131,6 +131,25 @@ try {
   error_log('[CoreUI] Agent-run history unavailable: ' . get_class($eAgent));
 }
 
+// A history reload can recover the CURRENT server-owned process without
+// opening another model stream or creating a duplicate assistant response.
+$activeRun = null;
+$activeWorkEvents = [];
+try {
+  $activeRun = coreui_agent_run_active_snapshot($pdo, (int)$uid, $sessionId);
+  if ($activeRun !== null) {
+    $activeWorkEvents = coreui_work_active_events(
+      $pdo, (int)$uid, $sessionId,
+      (int)$activeRun['turn_id'], (string)$activeRun['run_key']
+    );
+  }
+} catch (Throwable $eActive) {
+  // A rolling migration or unavailable timeline must not hide chat history.
+  error_log('[CoreUI] Active run snapshot unavailable: ' . get_class($eActive));
+  $activeRun = null;
+  $activeWorkEvents = [];
+}
+
 $emberCid = strtolower(ember_character_id());
 $emberName = strtolower(ember_character_name());
 $showThinking = (bool)(coreui_ai_settings_load($pdo, (int)$uid)['thinking_enabled'] ?? true);
@@ -212,6 +231,8 @@ stu_json([
   'messages' => $rows,
   'oldest_id' => $oldestId,
   'last_id' => $maxId,
+  'active_run' => $activeRun,
+  'active_work_events' => $activeWorkEvents,
   'has_more_before' => $descending ? $hasMore : false,
   'has_more_after' => !$descending ? $hasMore : false,
 ]);

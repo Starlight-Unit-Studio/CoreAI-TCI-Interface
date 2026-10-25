@@ -141,6 +141,21 @@ function coreui_work_map_for_responses(PDO $pdo, int $uid, string $sessionId, ar
   return $map;
 }
 
+/** Active-run work steps: safely scoped by account, session, turn and run key. */
+function coreui_work_active_events(PDO $pdo, int $uid, string $sessionId,
+                                   int $turnId, string $runKey): array {
+  if ($uid <= 0 || $sessionId === '' || $turnId <= 0
+      || !preg_match('/^[a-z0-9_-]{1,48}$/D', $runKey)
+      || !coreui_work_schema_ready($pdo)) return [];
+  $stmt = $pdo->prepare('SELECT id,kind,state,title,details_json,
+      UNIX_TIMESTAMP(created_at) AS unix_time FROM stu_console_work_events
+      WHERE user_id=? AND session_id=? AND turn_id=? AND BINARY run_key=BINARY ?
+      ORDER BY id DESC LIMIT 100');
+  $stmt->execute([$uid,$sessionId,$turnId,$runKey]);
+  $events = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+  return array_map('coreui_work_public_event', array_reverse($events));
+}
+
 function coreui_work_list(PDO $pdo, int $uid, string $sessionId, int $turnId, int $responseId): array {
   if ($uid <= 0 || $turnId <= 0 || $responseId <= 0 || $sessionId === '') return [];
   $stmt = $pdo->prepare('SELECT w.id,w.kind,w.state,w.title,w.details_json,'

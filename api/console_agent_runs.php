@@ -76,6 +76,31 @@ function coreui_agent_run_ensure(
   return $row;
 }
 
+/**
+ * One currently active job for the already authenticated session. A page
+ * reload must NEVER reissue inference; it can only observe this saved run.
+ */
+function coreui_agent_run_active_snapshot(PDO $pdo, int $uid, string $sessionId): ?array {
+  if ($uid <= 0 || !preg_match('/^[a-z0-9_-]{8,40}$/iD', $sessionId)
+      || !coreui_agent_run_schema_ready($pdo)) return null;
+  $stmt = $pdo->prepare("SELECT run_id,turn_id,run_key,status,cancel_requested_at
+    FROM stu_console_agent_runs
+    WHERE user_id=? AND session_id=?
+      AND status IN ('queued','running','waiting_tool')
+      AND updated_at >= DATE_SUB(NOW(), INTERVAL 45 MINUTE)
+    ORDER BY updated_at DESC, created_at DESC LIMIT 1");
+  $stmt->execute([$uid,$sessionId]);
+  $row = $stmt->fetch(PDO::FETCH_ASSOC);
+  if (!is_array($row)) return null;
+  return [
+    'id'=>(string)$row['run_id'],
+    'turn_id'=>(int)$row['turn_id'],
+    'run_key'=>(string)$row['run_key'],
+    'status'=>(string)$row['status'],
+    'cancel_requested'=>!empty($row['cancel_requested_at']),
+  ];
+}
+
 /** Compare-and-swap transition: a second worker cannot claim an active run. */
 function coreui_agent_run_transition(
   PDO $pdo, int $uid, string $sessionId, string $runId,

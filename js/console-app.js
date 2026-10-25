@@ -719,6 +719,49 @@
     });
   }
 
+  // A full page navigation discards JS state. Rehydrate ONLY the existing,
+  // authenticated server run; never re-open SSE or issue another inference.
+  function recoverActiveRun(ses, data) {
+    var run = data && data.active_run;
+    if (!ses || !run || typeof run !== 'object') return false;
+    var sessionId = String(ses.id);
+    var turnId = Number(run.turn_id) || 0;
+    var runId = String(run.id || '');
+    var runKey = String(run.run_key || '');
+    if (turnId <= 0 || !/^[a-f0-9]{32}$/.test(runId)
+        || !/^[a-z0-9_-]{1,48}$/.test(runKey)
+        || ['queued','running','waiting_tool'].indexOf(String(run.status)) < 0) return false;
+    var records = state.messageCacheBySession[sessionId] || [];
+    if (!records.some(function (row) {
+      return Number(row.id) === turnId && !isEmberMsg(row);
+    })) return false;
+    var oldTurn = Number(state.pendingBySession[sessionId]) || 0;
+    if (oldTurn > 0 && oldTurn !== turnId) return false;
+    if (state.pendingBySession[sessionId] === true) return false; // initial POST in flight
+    var wasPending = !!state.pendingBySession[sessionId];
+    if (!wasPending) state.pendingBySession[sessionId] = turnId;
+    state.activeAgentRunsBySession[sessionId] = {
+      id:runId,cancel_requested:run.cancel_requested === true
+    };
+    var prior = state.liveWorkEventsBySession[sessionId];
+    var oldEvents = prior && prior.turnId === turnId && prior.runKey === runKey
+      ? prior.events : [];
+    var events = workEventMerge(oldEvents, data.active_work_events);
+    state.liveWorkEventsBySession[sessionId] = {
+      turnId:turnId,runKey:runKey,events:events
+    };
+    if (isActiveSession(sessionId)) {
+      updateActivePendingUi();
+      if (wasPending && state.thinkingPanelEl && window.CoreUIWorkEvents) {
+        var body = state.thinkingPanelEl.querySelector('.work-body');
+        if (body) events.forEach(function (event) {
+          window.CoreUIWorkEvents.add(body,event);
+        });
+      }
+    }
+    return !wasPending;
+  }
+
   function renderHistory(ses) {
     if (!isActiveSession(ses.id)) return;
     messagesInner.innerHTML = '';
@@ -758,14 +801,23 @@
     if (beforeId > 0) url += '&before_id=' + Number(beforeId);
 
     if (!prepend) setStatus('', 'LADE\u2026');
-    return fetch(url, { credentials: 'include' })
+    return fetch(url, { credentials: 'include', cache:'no-store' })
     .then(function(r) { return r.json(); })
     .then(function(d) {
       if (!d.ok || String(d.session_id || '') !== String(ses.id) || !Array.isArray(d.messages)) {
         throw new Error(d.error || 'history_failed');
       }
-      if (!prepend) state.messageCacheBySession[ses.id] = [];
+      if (!prepend) {
+        // A history GET can race the send POST. Retain an already ACKed
+        // pending user turn until the database snapshot catches up.
+        var pendingId = Number(state.pendingBySession[ses.id]) || 0;
+        var keep = (state.messageCacheBySession[ses.id] || []).filter(function (m) {
+          return pendingId > 0 && Number(m.id) === pendingId && !isEmberMsg(m);
+        });
+        state.messageCacheBySession[ses.id] = keep;
+      }
       mergeSessionMessages(ses.id, d.messages);
+      var resumed = !prepend && recoverActiveRun(ses, d);
       state.historyHasMoreBySession[ses.id] = !!d.has_more_before;
       state.historyOldestBySession[ses.id] = Number(d.oldest_id) || state.historyOldestBySession[ses.id] || 0;
       var newest = Number(d.last_id) || 0;
@@ -782,6 +834,7 @@
         scrollToBottom();
       }
       renderSessionList();
+      if (resumed) startFastPoll(ses, Number(state.pendingBySession[ses.id]));
       scheduleBackgroundPoll();
     })
     .catch(function() {
@@ -1939,19 +1992,23 @@
     showTypingIndicator();
     startCountdown();
 
+    var postBody = JSON.stringify({
+      action:       'send',
+      channel:      CHANNEL,
+      session_id:   sessionId,
+      character_id: state.characterId,
+      message:      msgToSend,
+      attachment_uuids: atts.map(function (item) { return item.uuid; }),
+      ember_client_async: USE_STREAM
+    });
     fetch(API_BASE + '/chat.php', {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action:       'send',
-        channel:      CHANNEL,
-        session_id:   sessionId,
-        character_id: state.characterId,
-        message:      msgToSend,
-        attachment_uuids: atts.map(function (item) { return item.uuid; }),
-        ember_client_async: USE_STREAM   // Streaming: Server speichert nur, Stream-Endpunkt generiert
-      })
+      // Keep short sends alive when navigating to Settings before POST ACK.
+      // The browser's keepalive upload limit is 64 KiB.
+      keepalive: new TextEncoder().encode(postBody).length < 60000,
+      body: postBody
     })
     .then(function(r) { return r.json(); })
     .then(function(d) {
@@ -2621,8 +2678,11 @@
         if (isEmberMsg(m) && Number(m.reply_to_id) === Number(userMsgId)) found = m;
       });
       ingestNewMessages(ses, d.messages);
+      recoverActiveRun(ses, d);
+      var waitingTool = d.active_run && d.active_run.status === 'waiting_tool'
+        && Number(d.active_run.turn_id) === Number(userMsgId);
 
-      if (found) {
+      if (found && !waitingTool) {
         delete state.liveWorkEventsBySession[sessionId];
         clearAgentRun(sessionId);
         delete state.pendingBySession[sessionId];
@@ -2674,7 +2734,14 @@
             && Number(m.reply_to_id) === pendingTurnId) receivedReply = true;
       });
       ingestNewMessages(ses, d.messages);
-      if (receivedReply && state.pendingBySession[sessionId]) {
+      var resumed = recoverActiveRun(ses, d);
+      if (resumed && isActiveSession(sessionId)) {
+        renderHistory(ses);
+        startFastPoll(ses, Number(state.pendingBySession[sessionId]));
+      }
+      var waitingTool = d.active_run && d.active_run.status === 'waiting_tool'
+        && Number(d.active_run.turn_id) === pendingTurnId;
+      if (receivedReply && !waitingTool && state.pendingBySession[sessionId]) {
         delete state.liveWorkEventsBySession[sessionId];
         clearAgentRun(sessionId);
         delete state.pendingBySession[sessionId];
