@@ -69,6 +69,8 @@ foreach ([
     . "[COREUI_PLAN_CONTINUE]\n## Weitere Unterseiten\n"
     . str_repeat("- Geforderte Navigation und Bedienbarkeit.\n",160),
   "[COREUI/PLANCONTINUE]\nProjektplan ergaenzen.",
+  "[COREUI_PLAN_CONTINUE]\nProjektplan weiterfuehren.\n"
+    . "[/COREUI_PLAN_CONTINUE]\nIch bearbeite die gespeicherte Markdown-Version.",
   "Ich setze die Planung fort.\n[COREUI/PLAN_CONTINUE]\n"
     . "Bestehenden Entwurf vervollstaendigen.\n[/COREUI/PLAN_CONTINUE]",
 ] as $resumeAttempt) {
@@ -84,6 +86,8 @@ foreach ([
     . "[COREUI_PLAN_CONTINUE]\n" . str_repeat(chr(96),3),
   "[COREUI_PLAN_CONTINUE]\n[COREUI_PROJECT_BUILD]\nUnzulaessig",
   "[COREUI_PLAN_CONTINUE]\n[COREUI_PLAN_CONTINUE]\nMehrere Aufrufe",
+  "[COREUI_PLAN_CONTINUE]\nWeiter.\n[/COREUI_PLAN_CONTINUE]"
+    . "\n[/COREUI_PLAN_CONTINUE]",
   "[COREUI_PLAN_CONTINUE]\n"
     . "[COREUI_PLAN_APPEND]\n## Fremder Inhalt\n[/COREUI_PLAN_APPEND]\n"
     . "[/COREUI_PLAN_CONTINUE]",
