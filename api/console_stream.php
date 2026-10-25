@@ -803,8 +803,9 @@ exit;
 // (Gemma4-Defaults), damit Embers Stimme im Stream identisch zum Sync-Pfad ist.
 // Der kontobezogene Thinking-Schalter wird als echter Ollama-Parameter gesendet.
 // ─────────────────────────────────────────────────────────────────────────────
-function console_stream_ollama(string $model, string $systemPrompt, string $userPrompt): array {
-  $userPrompt = coreui_skills_augment($userPrompt);
+function console_stream_ollama(string $model, string $systemPrompt, string $userPrompt,
+                               bool $augmentSkills = true, ?int $timeoutOverride = null): array {
+  if ($augmentSkills) $userPrompt = coreui_skills_augment($userPrompt);
   $url       = ember_url();
   $keepAlive = ember_keep_alive();
 
@@ -878,7 +879,9 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
     CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
     CURLOPT_POSTFIELDS     => $body,
     CURLOPT_CONNECTTIMEOUT => 3,
-    CURLOPT_TIMEOUT        => max(30, min(900, ember_timeout_for_model($model))),
+    CURLOPT_TIMEOUT        => $timeoutOverride === null
+      ? max(30, min(900, ember_timeout_for_model($model)))
+      : max(30, min(240, $timeoutOverride)),
     CURLOPT_IPRESOLVE      => CURL_IPRESOLVE_V4,
     CURLOPT_NOSIGNAL       => true,
     CURLOPT_NOPROGRESS     => false,
