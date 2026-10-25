@@ -182,6 +182,20 @@ try {
     'Mehrdateien-Werkzeugpfad, kodierte Dateien oder gemeinsame Cloud-/Lokalroute fehlen.'
   );
 
+  frontend_test_assert(
+    str_contains($console, 'function recoverActiveRun(ses, data)')
+      && str_contains($console, 'var resumed = !prepend && recoverActiveRun(ses, d);')
+      && str_contains($console, 'var resumed = recoverActiveRun(ses, d);')
+      && str_contains($console, 'recoverActiveRun(ses, d);')
+      && str_contains($console, 'if (resumed) startFastPoll(ses, Number(state.pendingBySession[ses.id]));')
+      && str_contains($console, 'keepalive: new TextEncoder().encode(postBody).length < 60000')
+      && str_contains($messageApi, "'active_run' => " . '$activeRun')
+      && str_contains($messageApi, "'active_work_events' => " . '$activeWorkEvents')
+      && str_contains($agentRuns, 'function coreui_agent_run_active_snapshot(')
+      && str_contains($workStore, 'function coreui_work_active_events('),
+    'Aktiver Chatprozess wird nach Seitenwechsel nicht aus sicherer Session-History rekonstruiert.'
+  );
+
   fwrite(STDOUT, "Frontend-Regressions-Selftest OK: Navigation, Avatare, Markdown, Bearbeitung, Warteschlange und Varianten sind fehlersicher verdrahtet.\n");
 } catch (Throwable $e) {
   fwrite(STDERR, 'Frontend-Regressions-Selftest FEHLER: ' . $e->getMessage() . "\n");
