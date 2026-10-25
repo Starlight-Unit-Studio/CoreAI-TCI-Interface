@@ -28,7 +28,9 @@ function coreui_native_tools_prompt(): string {
     . "Beginne mit einem kompakten speicherbaren Grundplan und ergaenze "
     . "weitere Abschnitte spaeter ueber PLAN_APPEND. Ein ungeschlossener "
     . "Block bleibt ein Entwurf. Setze ihn mit begrenzten Modellschritten selbststaendig fort. "
-    . "Vorhandene Entwuerfe kann PLAN_CONTINUE weiterbearbeiten. "
+    . "Wenn im Chat bereits ein UNVOLLSTAENDIGER ENTWURF gespeichert ist "
+    . "und du ihn weiterentwickeln willst, waehle PLAN_CONTINUE statt "
+    . "den bisherigen Plan neu mit PLAN_SAVE zu beginnen. "
     . "Keine erfundenen Dateien oder Links. Keine Host-Befehle.\n";
 }
 
