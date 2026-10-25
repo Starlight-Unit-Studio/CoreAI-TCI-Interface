@@ -2,6 +2,14 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.35 - 25.10.2026
+
+- **Aktive Modelfile-Korrektur:** `config/Modelfile.template` nutzt jetzt den SYSTEM-Text und die exakte Parameterreihenfolge der vom Betreiber bereitgestellten `mara.modelfile`-Ausgabe, statt diese nur unter `docs/references` zu archivieren. Der E2B-Export bleibt unberuehrt.
+- Aus `ollama show --modelfile` stammende absolute Modell-/DRAFT-Blobpfade werden NICHT als feste Serverpfade eingesetzt. Fuer den bestehenden, unveraenderten Installer bleibt ein einzelnes `FROM gemma4:e4b` erhalten; SYSTEM verwendet die korrekte dreifache Einfassung fuer mehrere Zeilen.
+- Modellparameter unveraendert in Nutzerreihenfolge: `draft_num_predict 0`, `temperature 1`, `top_k 64`, `top_p 0.95`; kein `num_ctx` oder `num_predict`-Override. Keine zusaetzlichen Skills oder Coding-Anweisungen im Modelfile.
+- Gemma-Selbsttest und Schutzrichtlinie auf die aktive Vorlage angepasst. Installationsreihenfolge, One-Liner, `setup.sh`, `scripts/install.sh`, `scripts/install-native.sh`, `scripts/stack.sh`, Modellqueue und API-Verarbeitung unveraendert.
+- 0.5.35 Versionierung, sechs Browseroberflaechen, numerischer JS-Cache-Schluessel, Preflight-Verweise, README, TXT-Changelog und Uebergabeprotokoll konsistent aktualisiert. Keine GitHub Actions. Echter Ollama/Netcup-Live-Test bleibt offen.
+
 ## 0.5.34 - 25.10.2026
 
 - Das vom Betreiber gelieferte E2B-`ollama show`-Modelfile mit FROM-/DRAFT-Pfaden und freigegebenen Parametern als unveraenderliche Inhaltsreferenz archiviert; keine Ersetzung der aktiven E4B-Modellbasis.

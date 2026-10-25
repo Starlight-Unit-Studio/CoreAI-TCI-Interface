@@ -1,0 +1,16 @@
+E.M.B.E.R. CoreUI 0.5.35 - 25.10.2026
+
+- config/Modelfile.template AKTIV auf die uebermittelte Mara-Konfiguration umgestellt.
+- Exakter SYSTEM-Inhalt aus der E2B-`ollama show`-Referenz uebernommen,
+  einschliesslich Format und Werkzeugprotokoll. Der Export selbst bleibt unveraendert.
+- Einziger FROM-Tag gemma4:e4b bleibt austauschbar durch den unveraenderten
+  Installer; absolute, modellgebundene FROM- und DRAFT-Blobpfade aus ollama
+  show werden bewusst nicht uebernommen.
+- SYSTEM-Dreifachanführungszeichen zum korrekten mehrzeiligen Parsen.
+- Parameter in Reihenfolge des Betreibers: draft_num_predict 0,
+  temperature 1, top_k 64, top_p 0.95. Kein num_ctx / num_predict.
+- Gemma-Selbsttest und Modelfile-Policy angepasst.
+- Setup, Installer, nativer Installer, Stack, One-Liner, Ollama-Request-
+  Optionen, Backend-Tools, serielle Queue, Datenbank unveraendert.
+- Versionierung und Cache-Schluessel nach Repository-Regeln.
+- GitHub Actions bleiben ausgeschaltet, Netcup-Live-Test steht aus.

@@ -21,11 +21,18 @@ coreui_gemma_assert(str_contains($template, 'FROM gemma4:e4b'),
   'missing FROM base model');
 coreui_gemma_assert(str_contains($template, 'SYSTEM """'),
   'must retain Mara TCI system instructions');
+coreui_gemma_assert(preg_match('/^FROM gemma4:e4b$/m', $template) === 1
+  && preg_match_all('/^FROM /m', $template) === 1
+  && !preg_match('/^DRAFT[ \t]+/m', $template),
+  'portable E4B base must contain one model tag and no exported DRAFT blob');
+coreui_gemma_assert(str_contains($template, "SYSTEM \"\"\"<|think|>\n")
+  && str_contains($template, "\n\"\"\"\nRENDERER gemma4\nPARSER gemma4\nPARAMETER draft_num_predict 0\nPARAMETER temperature 1\nPARAMETER top_k 64\nPARAMETER top_p 0.95\n"),
+  'owner SYSTEM framing and parameter order must be retained');
 function coreui_gemma_modelfile_parameters(string $file): array {
   preg_match_all('/^PARAMETER[ \t]+(\S+)[ \t]+([^\r\n]+)$/m', $file, $matches, PREG_SET_ORDER);
   return array_map(static fn(array $line): string => $line[1] . ' ' . trim($line[2]), $matches);
 }
-$expectedParameters = ['temperature 1','top_k 64','top_p 0.95','draft_num_predict 0'];
+$expectedParameters = ['draft_num_predict 0','temperature 1','top_k 64','top_p 0.95'];
 coreui_gemma_assert(coreui_gemma_modelfile_parameters($template) === $expectedParameters,
   'must retain exactly the owner-approved Modelfile parameters');
 coreui_gemma_assert(!preg_match('/^PARAMETER[ \t]+(?:num_ctx|num_predict)\b/m', $template),

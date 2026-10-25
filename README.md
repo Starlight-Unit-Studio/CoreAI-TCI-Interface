@@ -7,7 +7,11 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 E.M.B.E.R. CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.34` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.35` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Aktives Mara-Modelfile (0.5.35)
+
+The owner-requested change now affects the **active** `config/Modelfile.template`, not just a reference document. Its multi-line Mara SYSTEM content and four sampling parameters, including their order, were transferred from the supplied `ollama show --modelfile` export. Only Ollama export-specific details are normalized: a portable `FROM gemma4:e4b` placeholder compatible with the existing installer (instead of absolute E2B blob paths) and `SYSTEM """..."""` for reliable multiline parsing. The `DRAFT` blob path shown by Ollama is not copied into the portable template; `draft_num_predict 0` remains. **No modifications to the installer or update sequence.**
 
 ## Protected owner Modelfile (0.5.34)
 
