@@ -26,20 +26,20 @@ coreui_gemma_assert(preg_match('/^FROM gemma4:e4b$/m', $template) === 1
   && !preg_match('/^DRAFT[ \t]+/m', $template),
   'portable E4B base must contain one model tag and no exported DRAFT blob');
 coreui_gemma_assert(str_contains($template, "SYSTEM \"\"\"<|think|>\n")
-  && str_contains($template, "\n\"\"\"\nRENDERER gemma4\nPARSER gemma4\nPARAMETER draft_num_predict 0\nPARAMETER temperature 1\nPARAMETER top_k 64\nPARAMETER top_p 0.95\n"),
+  && str_contains($template, "\n\"\"\"\nRENDERER gemma4\nPARSER gemma4\nPARAMETER draft_num_predict 0\nPARAMETER num_predict -1\nPARAMETER temperature 1\nPARAMETER top_k 64\nPARAMETER top_p 0.95\n"),
   'owner SYSTEM framing and parameter order must be retained');
 function coreui_gemma_modelfile_parameters(string $file): array {
   preg_match_all('/^PARAMETER[ \t]+(\S+)[ \t]+([^\r\n]+)$/m', $file, $matches, PREG_SET_ORDER);
   return array_map(static fn(array $line): string => $line[1] . ' ' . trim($line[2]), $matches);
 }
-$expectedParameters = ['draft_num_predict 0','temperature 1','top_k 64','top_p 0.95'];
+$expectedParameters = ['draft_num_predict 0','num_predict -1','temperature 1','top_k 64','top_p 0.95'];
 coreui_gemma_assert(coreui_gemma_modelfile_parameters($template) === $expectedParameters,
   'must retain exactly the owner-approved Modelfile parameters');
-coreui_gemma_assert(!preg_match('/^PARAMETER[ \t]+(?:num_ctx|num_predict)\b/m', $template),
-  'Modelfile must omit forbidden num_ctx and unintended num_predict');
-coreui_gemma_assert(str_contains($template, 'CoreAI') && str_contains($template, 'Gamer-Note'),
+coreui_gemma_assert(!preg_match('/^PARAMETER[ \t]+num_ctx\b/m', $template),
+  'compact model preserves owner num_predict -1 and omits num_ctx');
+coreui_gemma_assert(str_contains($template, 'CoreAI') && str_contains($template, 'TSA-Thorn CoreUI'),
   'Mara TCI and natural vision-inspired style must be present');
-foreach (['TEMPLATE {{ .Prompt }}','RENDERER gemma4','PARSER gemma4','Du bist Mara Thorne,','E.M.B.E.R. CoreUI','E.M.B.E.R.-Framework','CoreAI namens Ember'] as $required) {
+foreach (['TEMPLATE {{ .Prompt }}','RENDERER gemma4','PARSER gemma4','Du bist Mara Thorne,','TSA-Thorn CoreUI','Werkzeugprotokoll:'] as $required) {
   coreui_gemma_assert(str_contains($template, $required), 'missing approved directive: ' . $required);
 }
 
@@ -88,24 +88,19 @@ coreui_gemma_assert(preg_match('/^SYSTEM "(.+?)^"$/ms', $ownerReference, $ownerS
   'E2B reference SYSTEM missing');
 coreui_gemma_assert(preg_match('/^SYSTEM """(.+?)^"""$/ms', $template, $activeSystem) === 1,
   'active E4B SYSTEM missing');
-function coreui_gemma_non_tool_persona(string $system): ?string {
-  $normalized = str_replace(["\r\n", "\r"], "\n", $system);
-  $start = strpos($normalized, "\nWerkzeugprotokoll:\n");
-  $end = strpos($normalized, "\nDu bist Mara Thorne, die TCI und CoreAI der Ravager Thorn.");
-  if ($start === false || $end === false || $end <= $start) return null;
-  $nonTools = substr($normalized, 0, $start) . substr($normalized, $end);
-  return preg_replace('/\s+/u', ' ', trim($nonTools));
-}
-$ownerPersona = coreui_gemma_non_tool_persona($ownerSystem[1]);
-$activePersona = coreui_gemma_non_tool_persona($activeSystem[1]);
-coreui_gemma_assert($ownerPersona !== null && $ownerPersona === $activePersona,
-  'persona changed outside the approved Werkzeugprotokoll section');
-$ownerParameterSet = coreui_gemma_modelfile_parameters($ownerReference);
-$templateParameterSet = coreui_gemma_modelfile_parameters($template);
-sort($ownerParameterSet);
-sort($templateParameterSet);
-coreui_gemma_assert($ownerParameterSet === $templateParameterSet,
-  'E4B parameter set differs from approved E2B reference');
+// The user's E2B show-export is a preserved HISTORICAL reference. The
+// independently revised compact Mara Modelfile on main is now the source of
+// truth; old persona text and missing num_predict must not be re-imposed.
+coreui_gemma_assert(strlen($template) <= 2200
+  && str_contains($activeSystem[1], 'lokale TCI')
+  && str_contains($activeSystem[1], 'TSA-Thorn CoreUI')
+  && str_contains($activeSystem[1], "Werkzeugprotokoll:"),
+  'compact Mara Modelfile revision was replaced by a verbose legacy version');
+coreui_gemma_assert(coreui_gemma_modelfile_parameters($ownerReference)
+  === ['draft_num_predict 0','temperature 1','top_k 64','top_p 0.95'],
+  'archived E2B export must remain unchanged');
+coreui_gemma_assert(coreui_gemma_modelfile_parameters($template) === $expectedParameters,
+  'live compact Mara model parameters must match the updated template');
 coreui_gemma_assert(substr_count($ownerReference, "\nFROM ") === 2
   && str_contains($ownerReference, 'DRAFT /usr/share/ollama/.ollama/models/blobs/sha256-05612e54110f8f68bade01dfcc546cdc6914d11dde0b650a65f263f0f87bbbd2')
   && str_contains($ownerReference, 'FROM /usr/share/ollama/.ollama/models/blobs/sha256-370c2879f17648d337b0ab4e208fdce348e24d1060064e93d7645daafd56d39c')

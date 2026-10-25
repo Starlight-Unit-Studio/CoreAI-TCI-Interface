@@ -143,6 +143,7 @@ UI_FILES=(
   database/migrations/016_console_project_plans.sql
   api/console_project_handoff.php
   scripts/gemma-zero-parameters-selftest.php
+  scripts/model-live-audit.php
   config/Modelfile.template
   scripts/response-timing-ui-selftest.js
   scripts/agent-runs-selftest.php
@@ -165,9 +166,9 @@ UI_FILES=(
   scripts/markdown-selftest.js
   scripts/branding-license-selftest.py
   scripts/cache-bust.py
-  docs/changelogs-txt/CHANGELOG_0_5_41.txt
+  docs/changelogs-txt/CHANGELOG_0_5_42.txt
   docs/COREUI_IMAGE_ENGINE_PLAN.md
-  docs/UEBERGABEPROTOKOLL_0_5_41.txt
+  docs/UEBERGABEPROTOKOLL_0_5_42.txt
   docker/pyworker/Dockerfile
   docker/pyworker/entrypoint.sh
   images/starlight_unit_studios_logo_original.png
@@ -458,6 +459,12 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail 'P06-Arbeitsweg-Persistenz-Selbsttest fehlgeschlagen.'
   fi
 
+  if compose exec -T php php scripts/model-live-audit.php --selftest >/dev/null 2>&1; then
+    ok 'Modelfile-Audit: SYSTEM- und Abweichungspruefung offline bestanden.'
+  else
+    fail 'Modelfile-Audit: Offline-Selbsttest fehlgeschlagen.'
+  fi
+
   if compose exec -T php php scripts/gemma-zero-parameters-selftest.php >/dev/null 2>&1; then
     ok 'Gemma: freigegebenes Modelfile und keine API-Parameterueberschreibung.'
   else
@@ -736,6 +743,12 @@ done
 if command -v ollama >/dev/null 2>&1 \
     && ollama show "${COREUI_MODEL_NAME}" >/dev/null 2>&1; then
   ok "Getrenntes Ollama-Modell vorhanden: ${COREUI_MODEL_NAME}"
+  model_audit=''
+  if model_audit="$(compose exec -T php php scripts/model-live-audit.php "${COREUI_MODEL_NAME}" 2>&1)"; then
+    ok "$model_audit"
+  else
+    fail "${model_audit:-Ollama-Modelfile nicht verifizierbar.}"
+  fi
 else
   fail "E.M.B.E.R. CoreUI-Ollama-Modell fehlt: ${COREUI_MODEL_NAME}"
 fi

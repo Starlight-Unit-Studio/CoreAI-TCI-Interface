@@ -9,25 +9,18 @@ require_once __DIR__ . '/console_data_link_bridge.php';
  * Every call remains scoped to the authenticated, currently running turn.
  */
 function coreui_native_tools_prompt(): string {
-  return "\n\nCOREUI NATIVE TOOLS (nur fuer diese private Sitzung):\n"
-    . "Du DARFST selbst entscheiden, welches Werkzeug zu einer Aufgabe passt. "
-    . "Antworte entweder NORMAL oder mit GENAU EINEM dieser vollstaendigen Werkzeugbloecke, "
-    . "ohne Einleitung und ohne weitere Markdown-Codezaeune:\n"
-    . "[COREUI_PLAN_SAVE]\n# Projektplan\n...vollstaendiges Markdown...\n[/COREUI_PLAN_SAVE]\n"
-    . "[COREUI_PLAN_APPEND]\n...neue Markdown-Abschnitte...\n[/COREUI_PLAN_APPEND]\n"
-    . "[COREUI_PLAN_AND_BUILD]\n# Projektplan\n...vollstaendiges Markdown...\n[/COREUI_PLAN_AND_BUILD]\n"
-    . "[COREUI_PROJECT_BUILD]\nBeschreibe das zu erzeugende Projekt und benoetigte Quelldateien "
-    . "(z.B. index.html, style.css, main.js).\n[/COREUI_PROJECT_BUILD]\n"
-    . "PLAN_SAVE speichert eine echte Markdown-Datei dauerhaft und zeigt sie im Chat als Download. "
-    . "PLAN_APPEND schreibt eine neue Version, ohne aeltere Fassungen zu verlieren. "
-    . "PLAN_AND_BUILD speichert zuerst und startet danach den Projekt-Writer. "
-    . "PROJECT_BUILD startet die sichere vorhandene Dateien-/ZIP-Erzeugung ohne erneute Nutzer-Keywords. "
-    . "Du kannst diese Werkzeuge EIGENSTAENDIG waehlen, aber baue nur, wenn die Person "
-    . "eine Umsetzung beauftragt oder ausdruecklich freigegeben hat. "
-    . "Zum reinen Diskutieren, Brainstormen oder fuer Fragen KEINEN Build ausloesen. "
-    . "Erfinde keine Dateilinks. Es stehen ausschliesslich statische Quelltexte "
-    . "(HTML/CSS/JS/JSON/Markdown/TXT/SVG/Python) zur Verfuegung, KEIN APK-Compiler. "
-    . "Eine normale Antwort braucht KEINE Werkzeugmarkierung.\n";
+  // Short runtime protocol only. Full Skill docs and the owner Mara persona
+  // stay outside this block; no copy of the Modelfile is inserted.
+  return "\n[COREUI TOOLS] Du DARFST selbst entscheiden, ob ein Werkzeug notwendig ist. "
+    . "Antworte normal ODER mit genau EINEM vollstaendigen Block, ohne weiteren Text:\n"
+    . "[COREUI_PLAN_SAVE]\n# Titel\nVollstaendiger Markdown-Plan\n[/COREUI_PLAN_SAVE]\n"
+    . "[COREUI_PLAN_APPEND]\nNeue Markdown-Abschnitte\n[/COREUI_PLAN_APPEND]\n"
+    . "[COREUI_PLAN_AND_BUILD]\n# Titel\nVollstaendiger Markdown-Plan\n[/COREUI_PLAN_AND_BUILD]\n"
+    . "[COREUI_PROJECT_BUILD]\nProjektauftrag mit benoetigten Quelldateien\n[/COREUI_PROJECT_BUILD]\n"
+    . "SAVE speichert eine .md-Datei, APPEND versioniert sie, AND_BUILD speichert und baut, "
+    . "BUILD startet den geprueften Projekt-Writer. Nur bauen, wenn der Nutzer die "
+    . "Umsetzung verlangt oder freigibt. Bei Fragen normal antworten. "
+    . "Keine erfundenen Dateien oder Links. Keine Host-Befehle.\n";
 }
 
 function coreui_native_tool_parse(string $reply): ?array {

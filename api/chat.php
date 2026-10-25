@@ -2466,6 +2466,24 @@ function ember_console_file_tool_think(string $model): ?bool {
  * completion class, marker state and numeric token/length counters.
  * Never put generated Python, prompts, or raw Ollama response into work events.
  */
+/**
+ * Safe, observable reason for a missing local source file. The old generic
+ * "model_response_missing" concealed Ollama HTTP errors, timeouts, and empty
+ * successful replies, leading to duplicate 600-second retries.
+ */
+function ember_console_local_source_failure(?string $reply, array $meta, bool $truncated): string {
+  if ($truncated) return 'model_output_truncated';
+  if (is_string($reply)) return 'source_format_unrecognized';
+  if ((string)($meta['err'] ?? '') === 'model_queue_timeout') return 'model_queue_timeout';
+  if ((int)($meta['curl_errno'] ?? 0) === 28
+      || preg_match('~timed?\s*out|timeout~i', (string)($meta['err'] ?? '')) === 1)
+    return 'ollama_timeout';
+  if ((int)($meta['code'] ?? 0) >= 400) return 'ollama_http_error';
+  if (!empty($meta['ok']) && (int)($meta['code'] ?? 0) === 200)
+    return 'ollama_empty_content';
+  return 'ollama_transport_error';
+}
+
 function ember_console_file_model_status(?string $reply, array $meta, bool $truncated): array {
   $doneReason = strtolower(trim((string)($meta['done_reason'] ?? '')));
   $completion = $truncated ? 'truncated'
@@ -3092,8 +3110,11 @@ function ember_ollama_known_good_options(string $model, array $optionOverrides =
   }
   return $options;
 }
-function ember_call_ollama(string $model, string $systemPrompt, string $userPrompt, int $timeoutSec = 12, array $optionOverrides = [], $imageUrl = null, ?bool $thinkOverride = null): ?string {
-  $userPrompt = coreui_skills_augment($userPrompt);
+function ember_call_ollama(string $model, string $systemPrompt, string $userPrompt, int $timeoutSec = 12, array $optionOverrides = [], $imageUrl = null, ?bool $thinkOverride = null, bool $augmentSkills = true): ?string {
+  // The model already selected the active skills before dispatch. Focused
+  // source-file subcalls need only their source contract; repeating up to four
+  // full SKILL.md documents here inflates a small local Gemma context.
+  if ($augmentSkills) $userPrompt = coreui_skills_augment($userPrompt);
   // Thinking ist strikt an genau diesen Modellaufruf gebunden. Ohne Reset koennte ein
   // spaeterer Call ohne message.thinking versehentlich einen alten Entwurf retten.
   $GLOBALS['STU_EMBER_LAST_THINKING'] = '';
@@ -3294,6 +3315,8 @@ function ember_call_ollama(string $model, string $systemPrompt, string $userProm
   try {
     $raw = curl_exec($ch);
     $err = curl_error($ch);
+    $curlErrno = curl_errno($ch);
+    $elapsedMs = max(0, (int)round((float)curl_getinfo($ch, CURLINFO_TOTAL_TIME) * 1000));
     $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
   } finally {
     curl_close($ch);
@@ -3306,6 +3329,8 @@ function ember_call_ollama(string $model, string $systemPrompt, string $userProm
     'url' => $url,
     'code' => $code,
     'err' => $err,
+    'curl_errno' => $curlErrno,
+    'elapsed_ms' => $elapsedMs,
     'done_seen' => false,
     'done' => null,
     'done_reason' => '',
@@ -4670,6 +4695,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
     if (!is_array($sourceSpec)) return 'Ungueltiger Dateiauftrag.';
     foreach ($sourceSpec['requested'] as $name) {
       $accepted = null;
+      $retryWithThink = false;
       for ($attempt = 1; $attempt <= 2; $attempt++) {
         if (ember_agent_cancel_requested()) return null;
         $singlePrompt = coreui_console_local_source_prompt(
@@ -4679,8 +4705,12 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
           ['file_name'=>(string)$name,'attempt'=>$attempt]);
         coreui_work_record($pdo, 'model', 'running', 'Quelldatei wird erzeugt',
           ['file_name'=>(string)$name,'model'=>$primaryModel]);
+        // Gemma 4 can occasionally complete HTTP 200 with empty content
+        // when think=false. Retry ONCE with thinking enabled only for that
+        // specific case, not after a transport timeout or a queue error.
+        $sourceThink = $retryWithThink ? true : $fileToolThink;
         $modelSource = ember_call_ollama($primaryModel, '', $singlePrompt,
-          ember_timeout_for_model($primaryModel), [], null, $fileToolThink);
+          ember_timeout_for_model($primaryModel), [], null, $sourceThink, false);
         $truncated = ember_last_call_was_truncated();
         $lastMeta = ember_last_call_meta();
         $sourceChars = is_string($modelSource) ? strlen($modelSource) : 0;
@@ -4706,7 +4736,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
               coreui_work_record($pdo, 'model', 'running', 'Fehlender JavaScript-Teil wird erzeugt',
                 ['file_name'=>(string)$name,'model'=>$primaryModel]);
               $follow = ember_call_ollama($primaryModel, '', $followPrompt,
-                ember_timeout_for_model($primaryModel), [], null, $fileToolThink);
+                ember_timeout_for_model($primaryModel), [], null, $fileToolThink, false);
               $truncated = ember_last_call_was_truncated();
               $lastMeta = ember_last_call_meta();
               $part = is_string($follow)
@@ -4735,26 +4765,33 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
           }
         }
         $reason = $accepted !== null ? 'source_ready'
-          : ($truncated ? 'model_output_truncated'
-            : (!is_string($modelSource) ? 'model_response_missing'
-              : ($resumed ? 'source_continuation_invalid' : 'source_format_unrecognized')));
+          : ($resumed && !$truncated ? 'source_continuation_invalid'
+            : ember_console_local_source_failure($modelSource,$lastMeta,$truncated));
+        if ($reason === 'ollama_empty_content'
+            && !$retryWithThink && ember_console_file_tool_is_device_local($primaryModel)) {
+          $retryWithThink = true;
+        }
         coreui_work_record($pdo, 'model', $accepted !== null ? 'success' : 'error',
           $accepted !== null ? 'Quelldatei empfangen' : 'Quelldatei nicht lesbar',
           ['file_name'=>(string)$name, 'model'=>$primaryModel,
             'reason'=>$reason, 'source_chars'=>$sourceChars,
             'eval_count'=>(int)($lastMeta['eval_count'] ?? 0),
-            'prompt_eval_count'=>(int)($lastMeta['prompt_eval_count'] ?? 0)]);
+            'prompt_eval_count'=>(int)($lastMeta['prompt_eval_count'] ?? 0),
+            'http_code'=>(int)($lastMeta['code'] ?? 0),
+            'elapsed_ms'=>(int)($lastMeta['elapsed_ms'] ?? 0)]);
         if ($accepted !== null) break;
-        // A bounded continuation already consumed the repair opportunity.
-        // Do not discard all generated JS and repeat the full request again.
-        if ($resumed) break;
+        // A transport failure is not a source-format problem; blindly
+        // repeating the same 600-second request cannot repair it.
+        if ($resumed || in_array($reason, [
+          'ollama_timeout','ollama_http_error','ollama_transport_error',
+          'model_queue_timeout'], true)) break;
       }
       if ($accepted === null) {
         coreui_work_record($pdo, 'artifact', 'error', 'Projektquellen unvollstaendig',
           ['reason'=>'source_files_incomplete','file_name'=>(string)$name]);
-        return 'Die lokale Modellausgabe konnte fuer ' . $name
-          . ' auch nach begrenzten Wiederholungs- oder Fortsetzungsversuchen '
-          . 'nicht als vollstaendige Quelldatei gelesen werden. '
+        return 'Die lokale Modellausgabe fuer ' . $name
+          . ' ist fehlgeschlagen. Im Arbeitsverlauf stehen jetzt der '
+          . 'konkrete Ollama-Fehlergrund, HTTP-Status und die Aufrufdauer. '
           . 'Es wurde keine ZIP-Datei vorgetaeuscht.';
       }
       $sourceFiles[strtolower((string)$name)] = $accepted;

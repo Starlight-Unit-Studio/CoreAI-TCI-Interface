@@ -524,6 +524,29 @@ local_file_test(str_contains($handler, '$fileModelTruncated = $fileTask && ember
   && str_contains($handler, '$followTruncated = $fileTask && ember_last_call_was_truncated()')
   && str_contains($handler, '$recoveryCandidate = is_string($out) && !$followIncomplete'),
   'the initial, protocol-retry and post-worker repair paths must all be covered');
+
+local_file_test(ember_console_local_source_failure(null,
+  ['code'=>0,'err'=>'Operation timed out after 600000 milliseconds','curl_errno'=>28], false) === 'ollama_timeout',
+  'Ollama transport timeout must not be logged as generic missing response');
+local_file_test(ember_console_local_source_failure(null,
+  ['code'=>503,'err'=>'','curl_errno'=>0],false) === 'ollama_http_error',
+  'HTTP failure must be distinguishable from no-content result');
+local_file_test(ember_console_local_source_failure(null,
+  ['code'=>200,'ok'=>true,'done'=>true,'eval_count'=>4], false) === 'ollama_empty_content',
+  'HTTP 200 without content must be recognized for one Gemma thinking retry');
+local_file_test(ember_console_local_source_failure(null,
+  ['err'=>'model_queue_timeout'],false) === 'model_queue_timeout',
+  'model queue errors must never trigger another 600s source retry');
+local_file_test(ember_console_local_source_failure('<!DOCTYPE html>',[],false) === 'source_format_unrecognized'
+  && ember_console_local_source_failure('partial source',[],true) === 'model_output_truncated',
+  'source format errors and token truncation must stay separate');
+local_file_test(str_contains($handler, '$sourceThink = $retryWithThink ? true : $fileToolThink;')
+  && str_contains($handler, '$fileToolThink, false);')
+  && str_contains($handler, 'http_code')
+  && str_contains($handler, 'ollama_transport_error')
+  && str_contains($handler, 'if ($augmentSkills) $userPrompt = coreui_skills_augment($userPrompt);'),
+  'local file calls must use focused prompts, safe diagnostics and one fallback');
+
 local_file_test(array_keys($okStatus) === ['reason','source_chars','eval_count','prompt_eval_count'],
   'the diagnostic must contain only approved non-content fields');
 
