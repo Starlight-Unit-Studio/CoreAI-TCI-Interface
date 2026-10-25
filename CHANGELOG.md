@@ -2,6 +2,13 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.41 - 25.10.2026
+
+- **Echten Parserfehler beim modellgesteuerten Projekt-Writer behoben:** Der vorherige Dateinamen-Abschluss `(?![A-Za-z0-9._-])` hat einen letzten Dateinamen wie `main.js.` wegen des folgenden Satzpunkts verworfen. Der gesicherte `PROJECT_BUILD`-Auftrag `index.html, style.css, main.js. Erstelle projekt.zip.` kam deshalb nur mit zwei statt drei Quelldateien beim Worker an. Genau das erklaert den nach 0.5.40 gemeldeten Preflight-Fehler `Worker did not get exactly the validated static source manifest`.
+- **Korrigierte Quelle statt deaktivierter Prüfung:** `api/console_data_link_bridge.php` unterscheidet jetzt Satzzeichen von echten zusätzlichen Endungen. `main.js.` und `homepage.zip.` werden korrekt erkannt; `main.js.backup` und `homepage.zip.tmp` dürfen weiterhin nicht als die kürzeren Dateinamen durchgehen. `api/console_native_tools.php` trennt die serverseitige Pflichtdateiliste zusätzlich per Zeilenumbruch statt eines nachgestellten Satzpunkts.
+- **Regressionen:** Die tatsächliche Projektfreigabe-Prüfung `scripts/contextual-project-selftest.php` und der eigenständig laufende `scripts/local-file-tool-selftest.php` prüfen die Dateiliste, ZIP-Namen, ZIP-Worker-Erkennung und unerlaubte Zusatzendungen. Ein isolierter PHP-Test mit dem identischen Parser-/Auftragsformat konnte die alte Fehlstelle reproduzieren und die Korrektur bestätigen.
+- **Keine Änderungen** an Mara-Modelfile, Tool-Auswahl, Ollama-Optionen, Installer, One-Liner, Datenbank, Projekt-Sandbox oder serieller Modell-FIFO. Der Netcup-Preflight und der vollständige E4B-Dateiausgabetest stehen weiterhin als Live-Abnahme aus. GitHub Actions wurden nicht gestartet.
+
 ## 0.5.40 - 25.10.2026
 
 - **Preflight-Fehlalarm bei der Projektfreigabe beseitigt:** Der bisherige Test `scripts/contextual-project-selftest.php` pruefte immer noch den seit Version 0.5.39 nicht mehr benutzten, wortlistenbasierten Projektadapter aus 0.5.38. Welche der alten Einzelpruefungen scheiterte, war wegen unterdrueckter Testausgabe nicht feststellbar. Der alte Test war jedenfalls kein gueltiger Nachweis fuer den seit 0.5.39 produktiven Modellwerkzeugpfad. Der Ersatz prueft jetzt ausschliesslich den tatsaechlichen modellgesteuerten Werkzeugpfad.
