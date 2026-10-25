@@ -1,0 +1,7 @@
+E.M.B.E.R. COREUI 0.5.44 - 25.10.2026
+
+- PROJECT_BUILD-Selbsttests am aktuellen Parser-/Promptvertrag ausgerichtet.
+- Fehlenden Import der Ollama-Fehlerklassifizierungsfunktion im isolierten Datei-Selbsttest ergaenzt.
+- Native/Compose-Preflight zeigt konkrete Fehlermeldungen statt verschluckter Ausgaben.
+- Versionsanzeigen auf 0.5.44 aktualisiert. Mara-Modelfile und Produktionspipeline unveraendert.
+- E4B/Netcup-Livetest steht aus.
