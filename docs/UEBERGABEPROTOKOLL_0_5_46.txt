@@ -1,0 +1,80 @@
+E.M.B.E.R. COREUI 0.5.46 - UEBERGABEPROTOKOLL
+Datum: 25.10.2026
+Basis: main 0.5.45, 209441968ed50a9850917cfd7325073de18be90a
+Branch: fix/planning-tool-draft-and-truncation-0.5.46
+
+MELDUNG AUS DEM LIVE-COREUI
+Betreiber bestaetigt: Netcup-Preflight erfolgreich, lokale Modelle
+koennen echte Dateien und ZIPs erzeugen. Bei einem selbst gewaehlten
+Homepage-Projektplan wird Maras Ausgabe dagegen beschnitten oder sie
+wiederholt Abschnitte. Screenshot zeigt die ungueltige Modellsyntax
+[COREUI/PLANSAVE] nach normaler Einleitung vor einem langen Markdown.
+Andere Antworten zeigen doppelte Abschnitte und fehlende Enden.
+
+NACHGEWIESENE GRUENDE
+api/console_native_tools.php akzeptierte nur einen kompletten
+exakten Block mit [COREUI_PLAN_SAVE] am Beginn der Antwort und
+[/COREUI_PLAN_SAVE] am Ende. Ein selbst gewaehlter, aber falsch
+formatierter Planungsmarker wurde deshalb ignoriert.
+api/chat.php und api/console_stream.php konnten Tokenlimit-Antworten
+nur zwei Mal fortsetzen und gaben in den Folgeprompt zuvor den
+GESAMTEN erzeugten Text. Dadurch wuchs der Kontext und das Modell
+konnte dieselben Kapitel erneut schreiben. Die alte 60k-Grenze
+im privaten Chat war NICHT die Ursache; diese war bereits entfernt.
+
+REPARATUR
+1. CoreUI erkennt ausschliesslich unzweideutige modellgewaehlte
+   PLAN_SAVE-Versuche, inklusive [COREUI/PLANSAVE] und einer
+   kurzen davorstehenden Einleitung. Zitate, mehrfach gemischte
+   Werkzeuge, zu kurze Inhalte und Modell-Beispiele werden abgelehnt.
+2. Ein offen gebliebener oder vom Tokenlimit abgebrochener Plan
+   wird nur als UNVOLLSTAENDIGER, kontogebundener Markdown-Entwurf
+   versioniert. Er bekommt eine geschuetzte Downloadkarte.
+   Weder Erfolg noch Projektabschluss wird vorgetaeuscht.
+3. Entwuerfe haben eine explizite Marker- und Statuskennung im
+   gespeicherten Markdown und sind FUER BUILDS GESPERRT, bis
+   eine fertige neue Version gespeichert ist. Unveraenderte
+   SQL-Struktur: kein neues Schema und keine Migration.
+4. Sync- und SSE-Fortsetzung benutzen nur noch eine kleine
+   hintere Textprobe und erkennen grosse identische
+   Markdown-Ueberlappungen und wiederbegonnene Segmente.
+   Plan-Ausgaben duerfen bis zu vier begrenzte Versuche erhalten,
+   andere Antworten weiterhin zwei. Wenn das Limit bestehen
+   bleibt, wird die Antwort als unvollstaendig gekennzeichnet.
+5. Toolprompt beschreibt sofortigen korrekten Blockstart,
+   kurze speicherbare Grundplaene und versionierte Nachtraege.
+   Das freigegebene Betreiber-Modelfile bleibt unberuehrt.
+6. Selbsttests pruefen den exakten Screenshot-Marker, unvollstaendige
+   Entwurfsspeicherung, die Build-Sperre und lange Fortsetzungen.
+
+GEAENDERTE DATEIEN
+api/console_native_tools.php
+api/console_plan_store.php
+api/chat.php
+api/console_stream.php
+scripts/native-tools-selftest.php
+scripts/reply-pipeline-selftest.php
+VERSION, README.md, CHANGELOG.md, Changelog-TXT und -INDEX
+scripts/branding-license-selftest.py
+scripts/preflight.sh, scripts/preflight-native.sh
+6 HTML-Oberflaechen (Versionsstand)
+
+UNVERAENDERT
+config/Modelfile.template: SHA ec01a9540ff668230e6ac0a7e23ffab305d54415
+Installer/One-Liner, Ollama-Modellerstellung, Modellparameter, FIFO,
+PHP-Datenbankschema, Python-Worker, sichere Dateierzeugung und ZIPs.
+Keine GitHub Actions.
+
+PRUEFUNG UND OFFENE ABNAHME
+Quellcode-Grenzfaelle und eine isolierte PHP-Parserprobe geprueft.
+Der produktive Netcup-/Gemma-Planungs-Livetest ist nach Deployment
+noch nicht erfolgt und wird NICHT als bestanden bezeichnet.
+Nach normalem Update:
+- Preflight muss PHP, Native Tools und Antwortpipeline bestehen.
+- Mara bitten, aus dem bereits besprochenen Homepage-Projekt einen
+  Markdown-Plan anzulegen. Ein vollstaendiger Plan muss eine
+  geschuetzte Datei und die Bestaetigung erzeugen.
+- Bei offenem Planmarker MUSS nur ein Entwurf ausgegeben werden,
+  ohne weiteren Projekt-Writer-Aufruf. Plan weiter vervollstaendigen.
+- Bei erneutem Abbruch nach Fortsetzung Arbeitsverlauf beachten,
+  nicht heimlich fehlende Planabschnitte erfinden.

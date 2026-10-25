@@ -7,7 +7,35 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 E.M.B.E.R. CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.45` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.46` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Modellgesteuerte Projektplanung und Markdown-Entwuerfe (0.5.46)
+
+Der Planungsweg verarbeitet jetzt auch Maras vom Modell eigenstaendig
+gewaehlte Schreibweise `[COREUI/PLANSAVE]` mit kurzer Einleitung
+und sicherem Markdown-Inhalt. Ein fehlender Abschlussmarker oder
+ein offen gebliebenes Tokenlimit erzeugt ausdruecklich nur einen
+kontobezogenen, versionierten und herunterladbaren Markdown-Entwurf
+statt einen angeblich abgeschlossenen Projektplan. Der Entwurf kann
+niemals unbemerkt in den Projekt-Builder gelangen.
+
+Die Stream- und Sync-Fortsetzung reicht nur ein kompaktes letztes
+Textfenster an Ollama zurueck, entfernt echte Ueberlappungen und
+stoppt bei Wiederholung bereits geschriebener Abschnitte, anstatt
+die Ausgabe durch Duplikate zu verlaengern. Ein nicht aufloesbares
+Tokenlimit wird nun sichtbar benannt. Korrekte native SAVE/APPEND/
+PROJECT_BUILD-Aufrufe bleiben unveraendert nutzbar.
+
+Das ist kein Beweis, dass ein lokales Modell beliebig lange Plaene
+in einem einzigen Aufruf zu Ende bringen kann. Unvollstaendige
+Planungen werden erhalten und als solche ausgezeichnet; eine
+fertige Version muss vor dem Bauen vorliegen. Ein echter
+Netcup-/Gemma-4-Live-Durchlauf bleibt die Abnahme.
+
+**Unveraendert:** `config/Modelfile.template`, Ollama-Sampler,
+Installer/One-Liner, Modell-FIFO, SQL-Migrationen, Python-Sandbox
+und bisherige ZIP-/Dateiwerkzeuge. Siehe
+`docs/UEBERGABEPROTOKOLL_0_5_46.txt`.
 
 ## Betreiber-Modelfile und Preflight-Abgleich (0.5.45)
 

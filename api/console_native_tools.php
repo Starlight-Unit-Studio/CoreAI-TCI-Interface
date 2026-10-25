@@ -20,6 +20,12 @@ function coreui_native_tools_prompt(): string {
     . "SAVE speichert eine .md-Datei, APPEND versioniert sie, AND_BUILD speichert und baut, "
     . "BUILD startet den geprueften Projekt-Writer. Nur bauen, wenn der Nutzer die "
     . "Umsetzung verlangt oder freigibt. Bei Fragen normal antworten. "
+    . "Plane bei einem Projektauftrag eigenstaendig mit PLAN_SAVE: direkt mit "
+    . "[COREUI_PLAN_SAVE] beginnen, Markdown ab # Titel ausgeben und exakt "
+    . "mit [/COREUI_PLAN_SAVE] abschliessen, ohne vorangestellten Kommentar. "
+    . "Beginne mit einem kompakten speicherbaren Grundplan und ergaenze "
+    . "weitere Abschnitte spaeter ueber PLAN_APPEND. Ein ungeschlossener "
+    . "Block ist ausschliesslich ein unvollstaendiger Entwurf. "
     . "Keine erfundenen Dateien oder Links. Keine Host-Befehle.\n";
 }
 
@@ -33,7 +39,41 @@ function coreui_native_tool_parse(string $reply): ?array {
     if ($body === '' || strlen($body) > 262144 || str_contains($body,"\0")) return null;
     return ['type'=>$type,'body'=>$body];
   }
-  return null;
+  return coreui_native_plan_recover_model_reply($reply);
+}
+
+/**
+ * Gemma may choose [COREUI/PLANSAVE] with a brief introduction. Only
+ * that unambiguous model-selected plan action may be recovered.
+ * Missing closure is an incomplete DRAFT, never an approved project.
+ */
+function coreui_native_plan_recover_model_reply(string $reply): ?array {
+  if (strlen($reply) > 300000 || preg_match('//u', $reply) !== 1) return null;
+  $matches = [];
+  $pattern = '~(?mi)^[ \t]*\[(COREUI_PLAN_SAVE|COREUI/PLANSAVE)\][ \t]*\r?\n~';
+  if (preg_match_all($pattern, $reply, $matches, PREG_SET_ORDER | PREG_OFFSET_CAPTURE) !== 1)
+    return null;
+  $opening = $matches[0][0][0];
+  $offset = (int)$matches[0][0][1];
+  $intro = trim(substr($reply, 0, $offset));
+  if (strlen($intro) > 900 || str_contains($intro, str_repeat(chr(96), 3))
+      || preg_match('~\[/?COREUI[/_][A-Z_]+\]~i', $intro)) return null;
+  $body = trim(substr($reply, $offset + strlen($opening)));
+  $close = '~\r?\n[ \t]*\[/COREUI(?:_PLAN_SAVE|/PLANSAVE)\][ \t]*$~i';
+  $closed = preg_match($close, $body) === 1;
+  if ($closed) $body = trim((string)preg_replace($close, '', $body, 1));
+  if (strlen($body) < 96 || strlen($body) > 262144 || str_contains($body, "\0")
+      || preg_match('~\[/?COREUI[/_][A-Z_]+\]~i', $body)) return null;
+  if (preg_match('~^(?:#{1,3}[ \t]+\S[^\r\n]*|Projekt[ \t]*:[ \t]*\S[^\r\n]*)~iu', $body) !== 1)
+    return null;
+  if (preg_match('~(?m)^(?:#{2,4}[ \t]+|[ \t]*[-*][ \t]+\S)~u', $body) !== 1)
+    return null;
+  return ['type'=>'PLAN_SAVE', 'body'=>$body, 'draft'=>!$closed, 'recovered'=>true];
+}
+
+function coreui_native_plan_marker_attempt(string $reply): bool {
+  return preg_match('~(?mi)^[ \t]*\[(?:COREUI_PLAN_SAVE|COREUI/PLANSAVE)\][ \t]*$~',
+    substr($reply, 0, 1800)) === 1;
 }
 
 function coreui_native_tool_build_request(PDO $pdo, int $uid, string $sessionId,
@@ -43,6 +83,7 @@ function coreui_native_tool_build_request(PDO $pdo, int $uid, string $sessionId,
   $plan = coreui_plan_latest($pdo,$uid,$sessionId);
   $source = ($plan && trim((string)$plan['markdown']) !== '')
     ? (string)$plan['markdown'] : '';
+  if ($source !== '' && coreui_plan_is_draft_markdown($source)) return null;
   // Never silently omit part of an approved plan; explicit guidance to split.
   // Each local source request retains at most 9000 task characters.
   // Reject an oversized plan rather than silently losing requirements.
@@ -83,7 +124,8 @@ function coreui_native_tool_build_request(PDO $pdo, int $uid, string $sessionId,
  * already secured per-turn Python source/ZIP writer once and ONLY once.
  */
 function coreui_native_tool_apply(
-  PDO $pdo,int $uid,string $sessionId,int $turnId,string $reply,callable $build
+  PDO $pdo,int $uid,string $sessionId,int $turnId,string $reply,callable $build,
+  bool $modelWasTruncated = false
 ): ?string {
   if (!empty($GLOBALS['COREUI_NATIVE_TOOL_REENTRY'])) return null;
   $tool = coreui_native_tool_parse($reply);
@@ -91,9 +133,15 @@ function coreui_native_tool_apply(
   if ($uid <= 0 || $turnId <= 0 || !preg_match('~^[A-Za-z0-9_-]{8,40}$~D',$sessionId))
     return 'Der Werkzeugauftrag besitzt keinen gueltigen privaten Chatkontext.';
   $kind = $tool['type'];
+  if ($modelWasTruncated && $kind !== 'PLAN_SAVE') {
+    return 'Der Werkzeugauftrag wurde vorzeitig abgebrochen. '
+      . 'Keine Aktion ausgefuehrt, kein Download vorgetaeuscht.';
+  }
+  $draft = $kind === 'PLAN_SAVE' && (!empty($tool['draft']) || $modelWasTruncated);
   if (in_array($kind,['PLAN_SAVE','PLAN_APPEND','PLAN_AND_BUILD'],true)) {
     try {
-      $saved = coreui_plan_save($pdo,$uid,$sessionId,$turnId,$tool['body'],
+      $planText = $draft ? COREUI_PLAN_DRAFT_MARKER . "\n\n" . $tool['body'] : $tool['body'];
+      $saved = coreui_plan_save($pdo,$uid,$sessionId,$turnId,$planText,
         $kind==='PLAN_APPEND');
     } catch (Throwable $e) {
       error_log('[CoreUI] Native plan save failed: '.get_class($e));
@@ -106,6 +154,13 @@ function coreui_native_tool_apply(
           'source'=>'native_plan_tool']);
     }
     if ($kind !== 'PLAN_AND_BUILD') {
+      if (coreui_plan_is_draft_markdown((string)$saved['markdown'])) {
+        return 'Ich habe den bisherigen Projektplan als UNVOLLSTAENDIGEN Markdown-Entwurf '
+          . 'v' . (int)$saved['version'] . ' gespeichert. Die Datei steht als '
+          . 'geschuetzter Download bereit. Der Block hatte keinen gueltigen Abschluss '
+          . 'oder die Modellausgabe wurde abgeschnitten. Der Entwurf ist NICHT zum '
+          . 'Projektbau freigegeben. Wir koennen ihn weiterbearbeiten.';
+      }
       return 'Ich habe den aktuellen Projektplan als Markdown-Version '
         . (int)$saved['version'] . ' dauerhaft gespeichert. '
         . 'Die Datei erscheint als geschuetzte Downloadkarte an meiner Antwort.';
@@ -119,6 +174,12 @@ function coreui_native_tool_apply(
   }
   $request = coreui_native_tool_build_request($pdo,$uid,$sessionId,$description);
   if ($request === null) {
+    $lastPlan = coreui_plan_latest($pdo,$uid,$sessionId);
+    if ($lastPlan && coreui_plan_is_draft_markdown((string)$lastPlan['markdown'])) {
+      return 'Der gespeicherte Projektplan ist noch ein unvollstaendiger Entwurf. '
+        . 'Ich starte damit keine Dateierstellung und gebe keinen fertigen ZIP-Download vor. '
+        . 'Zuerst muss die Planung abgeschlossen und als neue fertige Version gespeichert werden.';
+    }
     return 'Die Projektquellen konnten nicht sicher zusammengestellt werden. '
       . 'Entweder ist die Dateiliste ungueltig oder der gespeicherte Plan '
       . 'ist zu gross fuer eine einzelne Modellgenerierung. Die Markdown-Datei bleibt erhalten.';

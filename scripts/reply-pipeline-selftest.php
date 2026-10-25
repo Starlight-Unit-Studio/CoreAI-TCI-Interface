@@ -93,6 +93,41 @@ if (substr_count($joined, 'einem eindeutig wiederholten Uebergang') !== 1) {
   reply_test_fail('Fortsetzungssegmente werden am Uebergang doppelt gespeichert.');
 }
 
+$largeOverlap = str_repeat('Ein modularer Planungsabschnitt mit Detailkriterien und Tests. ', 19);
+$longHead = "# Projekt\n\n## Struktur\n" . $largeOverlap;
+$longTail = $largeOverlap . "\n\n## Naechster Abschnitt\nNeue Anforderungen.";
+$merged = ember_join_continuation($longHead, $longTail);
+if (substr_count($merged,'## Struktur') !== 1
+    || substr_count($merged,'## Naechster Abschnitt') !== 1
+    || substr_count($merged,'Ein modularer Planungsabschnitt') !== 19) {
+  reply_test_fail('Markdown-Ueberlappung ueber 400 Zeichen wird doppelt oder falsch verbunden.');
+}
+if (ember_join_continuation($merged, $longHead) !== $merged) {
+  reply_test_fail('Ein Model-Neustart darf keine bereits erzeugte Planungsseite wiederholen.');
+}
+if (ember_join_continuation("Abschnitt abgeschlossen.", "## Weiterer Plan") !==
+    "Abschnitt abgeschlossen.\n\n## Weiterer Plan") {
+  reply_test_fail('Markdown-Fortsetzungen muessen Absatzgrenzen erhalten.');
+}
+$openedPlan = "[COREUI_PLAN_SAVE]\n# Projekt\n\n## Ziele\n- Vollstaendige Liste";
+$closedPlan = ember_join_continuation($openedPlan, '[/COREUI_PLAN_SAVE]');
+if ($closedPlan !== $openedPlan . "\n[/COREUI_PLAN_SAVE]"
+    || (function_exists('coreui_native_tool_parse')
+      && (coreui_native_tool_parse($closedPlan)['type'] ?? '') !== 'PLAN_SAVE')) {
+  reply_test_fail('PLAN_SAVE-Abschlussmarker muss nach Fortsetzung eine eigene Zeile behalten.');
+}
+if (function_exists('coreui_native_plan_marker_attempt')
+    && ember_join_continuation($openedPlan, "[COREUI_PLAN_SAVE]\n# Projekt\n"
+      . "## Von vorn") !== $openedPlan) {
+  reply_test_fail('Ein erneuter PLAN_SAVE-Start darf den ersten Plan nicht verdoppeln.');
+}
+
+$rollingPrompt = ember_continuation_prompt('URSPRUNG', str_repeat('Plankontext ', 4000));
+if (!str_contains($rollingPrompt,'URSPRUNG') || strlen($rollingPrompt) > 3400) {
+  reply_test_fail('Fortsetzung wiederholt zu viel Antworttext im Ollama-Prompt.');
+}
+
+
 $multiline = chat_clean_console_message("Erste Zeile\n  code_block()\n\nZweite Zeile");
 if (!str_contains($multiline, "\n  code_block()\n\n")) {
   reply_test_fail('Der private Ember CoreUI-Kanal verliert Zeilenumbrueche oder Code-Einrueckungen.');
