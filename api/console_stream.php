@@ -518,11 +518,15 @@ try {
               || (function_exists('ember_py_extract_marker') && ember_py_extract_marker($reply) !== null);
   }
 
-  // Handle one validated tool from Mara's finished output before fallback.
+  // A plan with an unfinished marker may be stored as an explicitly marked
+  // draft after its bounded continuations. No truncated build can run.
+  $nativeTool = coreui_native_tool_parse($reply);
+  $nativeToolHandled = false;
   if (!$fileTaskHandled && !$isVisionTurn && $attachmentIds === []
       && $generationMode !== 'continue'
-      && !empty($acc['ok']) && !empty($acc['done']) && empty($acc['truncated'])
-      && coreui_native_tool_parse($reply) !== null) {
+      && !empty($acc['ok']) && !empty($acc['done'])
+      && is_array($nativeTool)
+      && (empty($acc['truncated']) || ($nativeTool['type'] ?? '') === 'PLAN_SAVE')) {
     coreui_work_record($pdo,'tool','info','Mara hat ein natives Werkzeug angefordert',
       ['reason'=>'model_selected_tool']);
     console_stream_progress($thinkingEnabled,'tool');
@@ -532,9 +536,10 @@ try {
         $afterId,$triggerRevision): ?string {
         return ember_generate_reply($pdo,$char,$task,null,'console',
           (int)$uid,$sessionId,$excludeReplyToId,$afterId,$triggerRevision);
-      }
+      }, !empty($acc['truncated'])
     );
     if (is_string($toolResult)) {
+      $nativeToolHandled = true;
       $reply = $toolResult;
       $hasMarker = false;
     }
@@ -542,7 +547,8 @@ try {
 
   $streamUnsafe = empty($acc['ok'])
     || empty($acc['done']);
-  if (!$fileTaskHandled && ($hasMarker || $reply === '' || $streamUnsafe)) {
+  if (!$fileTaskHandled && !$nativeToolHandled
+      && ($hasMarker || $reply === '' || $streamUnsafe)) {
     if ($hasMarker) {
       coreui_work_record($pdo, 'run', 'info', 'Werkzeuganforderung erkannt');
     } elseif ($streamUnsafe) {
@@ -602,10 +608,20 @@ try {
     $reply = is_string($fallback) ? trim($fallback) : '';
   }
 
-  if ($reply !== '' && preg_match('~^\s*\[COREUI_[A-Z_]+\]~u', $reply)
+  if ($reply !== ''
+      && (preg_match('~^\s*\[COREUI_[A-Z_]+\]~u', $reply)
+        || coreui_native_plan_marker_attempt($reply))
       && coreui_native_tool_parse($reply) === null) {
     $reply = 'Maras Werkzeugantwort war unvollstaendig oder nicht gueltig. '
       . 'Es wurde weder ein Plan gespeichert noch ein Projekt erstellt.';
+  }
+
+  if (!$nativeToolHandled && !empty($acc['truncated']) && $reply !== '') {
+    coreui_work_record($pdo,'run','info','Antwort blieb nach Fortsetzung unvollstaendig',
+      ['reason'=>'continuation_limit','source_chars'=>strlen($reply)]);
+    $reply = rtrim($reply) . "\n\n> **Unvollstaendige Modellausgabe:** "
+      . "Das Modell konnte den Text nicht vollstaendig zu Ende generieren. "
+      . "Die erhaltenen Abschnitte bleiben sichtbar, sind aber kein freigegebener Gesamtplan.";
   }
 
   // Auch ein synchroner Werkzeug-Fallback passiert vor DB und Client dieselbe Schranke.
@@ -976,14 +992,12 @@ function console_stream_continue_truncated(
   $thinkingAll = trim($thinking);
   $lastCall = $firstCall;
   $segments = 0;
+  $stalled = false;
+  $maxSegments = coreui_native_plan_marker_attempt($reply) ? 4 : 2;
 
-  while ($reply !== '' && !empty($lastCall['truncated']) && $segments < 2) {
-    $continuationPrompt = $userPrompt
-      . "\n\n--- BEREITS ERZEUGTE ANTWORT ---\n"
-      . $reply
-      . "\n--- ENDE BEREITS ERZEUGTE ANTWORT ---\n"
-      . "Setze exakt an der abgebrochenen Stelle fort. Wiederhole keinen bereits ausgegebenen Text. "
-      . "Gib nur die Fortsetzung aus, ohne Analyse, Label, Einleitung oder Kommentar.";
+  while ($reply !== '' && !empty($lastCall['truncated'])
+      && $segments < $maxSegments && strlen($reply) < 262000) {
+    $continuationPrompt = ember_continuation_prompt($userPrompt, $reply);
 
     $next = console_stream_ollama($model, $systemPrompt, $continuationPrompt);
     $nextThinking = (string)($next['thinking'] ?? '');
@@ -993,7 +1007,12 @@ function console_stream_continue_truncated(
       break;
     }
 
-    $reply = ember_join_continuation($reply, $nextReply);
+    $joined = ember_join_continuation($reply, $nextReply);
+    if ($joined === $reply) {
+      $stalled = true;
+      break;
+    }
+    $reply = $joined;
     if (trim($nextThinking) !== '') {
       $thinkingAll .= ($thinkingAll !== '' ? "\n" : '') . trim($nextThinking);
     }
@@ -1001,7 +1020,9 @@ function console_stream_continue_truncated(
     $segments++;
   }
 
-  if (!empty($lastCall['truncated'])) {
+  $complete = !$stalled && !empty($lastCall['ok'])
+    && !empty($lastCall['done']) && empty($lastCall['truncated']);
+  if (!$complete) {
     ember_debug_log('console_stream_continuation_limit', [
       'segments' => $segments,
       'done_reason' => (string)($lastCall['done_reason'] ?? ''),
@@ -1012,9 +1033,10 @@ function console_stream_continue_truncated(
   return [
     'reply' => $reply,
     'thinking' => $thinkingAll,
-    'ok' => !empty($lastCall['ok']),
-    'done' => !empty($lastCall['done']),
-    'truncated' => !empty($lastCall['truncated']),
+    // The initial successful response must not disappear after a failed retry.
+    'ok' => !empty($firstCall['ok']),
+    'done' => !empty($firstCall['done']),
+    'truncated' => !$complete,
     'continuation_segments' => $segments,
   ];
 }
