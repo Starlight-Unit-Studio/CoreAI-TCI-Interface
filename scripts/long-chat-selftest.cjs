@@ -53,11 +53,15 @@ available=0;
 state.waitingEmber=true;
 assert.equal(queueFn(raw),false, 'No new file upload during active model run');
 state.waitingEmber=false;
+state.editingMessage={message_id:1};
+assert.equal(queueFn(raw),false, 'Editing an old turn must not attach a file to a new message');
+state.editingMessage=null;
 assert.equal(queueFn('  '),false, 'No blank file');
 assert.equal(messages,0);
 for(const needle of [
   "inputEl.addEventListener('paste'",
   "inputEl.addEventListener('input'",
+  "e.inputType === 'insertFromPaste'",
   'sendAfterCompletedUpload();',
   'restoreFailedAutoPaste(file);',
   'pendingSendAfterUpload = {text:\'\',sessionId:String(sesForPaste.id)}',
