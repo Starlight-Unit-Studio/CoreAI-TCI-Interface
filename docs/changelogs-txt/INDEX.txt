@@ -81,3 +81,5 @@ Jede Version liegt als eigenstaendige UTF-8-TXT-Datei vor.
 * CHANGELOG_0_5_38.txt
 
 * CHANGELOG_0_5_39.txt
+
+* CHANGELOG_0_5_40.txt

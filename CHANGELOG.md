@@ -2,6 +2,14 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.40 - 25.10.2026
+
+- **Preflight-Fehlalarm bei der Projektfreigabe beseitigt:** Der bisherige Test `scripts/contextual-project-selftest.php` pruefte immer noch den seit Version 0.5.39 nicht mehr benutzten, wortlistenbasierten Projektadapter aus 0.5.38. Dessen eigene Zukunfts-/Negationsmuster sind zudem falsch maskiert, weshalb ein alter Negativtest ausloesen konnte. Der Ersatz prueft jetzt ausschliesslich den tatsaechlichen modellgesteuerten Werkzeugpfad.
+- **Neue wirksame Regression:** Ein vom Modell erzeugtes `[COREUI_PROJECT_BUILD]` wird gelesen, mithilfe eines gespeicherten Markdown-Projektplans in einen vollstaendigen Dateiauftrag umgesetzt und an den bestehenden, sicheren HTML/CSS/JS- und ZIP-Generator uebergeben. Tests umfassen echte SQLite-Planabfragen (wenn verfuegbar), Download-Manifest, auf einen Aufruf begrenzte Ausfuehrung, Rekursionsschutz, Sitzungskontext, Fremdaccount-Isolation, grosse Planungen und nicht unterstuetzte Frameworks.
+- **Lesbare Fehlermeldungen:** Compose- und Native-Preflight zeigen bei Projekt-Testfehlern nun die genaue Assertion bzw. PHP-Fehlermeldung. Bisher wurde die Ausgabe durch `>/dev/null 2>&1` geschluckt.
+- **Modell-Werkzeughinweis korrigiert:** Das `PROJECT_BUILD`-Beispiel hatte vor dem schliessenden Marker ein woertliches `\\n` statt eines echten Zeilenumbruchs. Der Runtime-Hinweis nutzt nun das richtige Format; der Native-Tools-Selbsttest prueft es.
+- **Keine Architektur- oder Installationsaenderung:** Modellselektierte Werkzeuge, dauerhafte MD-Versionen, SQL-Migration 016, der bisherige Installer und One-Liner, Ollama-Parameter, das Betreiber-Modelfile und die serielle FIFO-Warteschlange bleiben unangetastet. Keine GitHub Actions. Live-Netcup-Preflight steht aus.
+
 ## 0.5.39 - 25.10.2026
 
 - **Mara waehlt native Werkzeuge selbst:** Die bisherige fest eingebrannte Schluesselwort-Freigabe einer Homepage ist nicht mehr noetig. Das Modell kann im bestehenden privaten Chat selbst einen klar abgegrenzten Werkzeugblock ausgeben: `COREUI_PLAN_SAVE`, `COREUI_PLAN_APPEND`, `COREUI_PLAN_AND_BUILD` oder `COREUI_PROJECT_BUILD`. Der Server validiert und fuehrt genau einen Aufruf aus. Der Nutzer muss nicht jedes Mal "Homepage, ZIP, Download" schreiben. Alte explizite Datei-Auftraege bleiben kompatibel.

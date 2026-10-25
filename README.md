@@ -7,7 +7,13 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 E.M.B.E.R. CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.39` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.40` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Projekt-Agent-Preflight und Werkzeugmarker (0.5.40)
+
+CoreUI 0.5.39 introduced model-selected project tools, but the 0.5.38 contextual-project selftest was still testing a retired keyword-based handler. Version 0.5.40 replaces that stale contract with a live-path test: a model-produced `COREUI_PROJECT_BUILD` marker becomes a validated source-file/ZIP task using the current saved plan, without requiring download keywords from the user. Regression checks cover owner isolation, one-call dispatch, recursion blocking and rejected oversized plans. The old explicit download route remains compatible.
+
+Compose and native Preflight now print the detailed failing project assertion rather than a generic masked message. The runtime `PROJECT_BUILD` tool example also now contains the correct literal newline. No Modelfile, Ollama settings, queue, installer steps or migrations were changed. See `docs/UEBERGABEPROTOKOLL_0_5_40.txt`.
 
 ## Native Modellwerkzeuge und Markdown-Projektplaene (0.5.39)
 

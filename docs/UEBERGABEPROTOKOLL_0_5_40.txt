@@ -1,0 +1,64 @@
+E.M.B.E.R. COREUI 0.5.40 - UEBERGABEPROTOKOLL
+Datum: 25.10.2026
+Ausgangspunkt: CoreUI 0.5.39, main dec367a8cc5ed9f511317b27625e91750166008e
+Branch: fix/native-project-preflight-0.5.40
+
+MELDUNG AUS NETCUP-PREFLIGHT
+[OK] Migration 016: dauerhafte Markdown-Planungen bereit.
+[OK] Native tools: model call parsing, durable Markdown versions, ...
+[FEHLER] Projektfreigabe: Chat-Plan konnte nicht sicher an Dateierstellung uebergeben werden.
+Preflight fehlgeschlagen: 1 Problem(e).
+
+URSACHE
+scripts/contextual-project-selftest.php stammte aus Version 0.5.38.
+Darin wird nach wie vor die alte Funktion
+coreui_console_web_project_from_history() mit festen Nutzereingabe-
+Formulierungen aufgerufen. Diese Funktion steuert die produktive
+Dateierstellung seit Version 0.5.39 NICHT MEHR.
+Ausserdem enthalten die alten Negativ-Zeitbedingungen in
+api/console_project_handoff.php doppelt maskierte \\b-RegEx-Muster;
+z.B. "Morgen machen wir das Projekt fertig" wird dadurch falsch
+eingeschaetzt. Diese alte Heuristik ist nicht der neue Agentenpfad.
+Die neue modellgesteuerte Native-Tools-Pruefung war auf Netcup OK.
+
+KORREKTUR
+- Die veraltete Projekt-Testdatei wurde auf einen tatsaechlichen
+  Modell-Werkzeug- und Dateiauftrag umgestellt. Sie benoetigt KEINE
+  userseitigen Schluesselwoerter.
+- Modelloutput mit COREUI_PROJECT_BUILD wird geparst; der Modellauftrag
+  wird mit dem kontobezogenen gespeicherten Markdown-Plan verknuepft.
+- Sicherer Serverauftragskopf verlangt index.html/style.css/main.js,
+  projekt.zip und ein validiertes Source-Fence-Protokoll. Der eigentliche
+  Python-Worker, seine Sandbox und ZIP-Pipeline werden nicht umgebaut.
+- SQLite-Fixture (wenn pdo_sqlite verfuegbar) prueft den Plan aus der
+  richtigen Benutzer-Sitzung, die Abweisung fremder Plaene, genau einen
+  Build-Callback und Rekursionsschutz; grosse Plaene und React-Aufgaben
+  werden explizit abgelehnt.
+- Beide vorhandenen Preflight-Varianten zeigen jetzt den konkreten
+  ausgegebenen Testfehler, statt den gesamten Stderr zu verwerfen.
+- Runtime-Toolhilfe PROJECT_BUILD korrigiert: ein echtester
+  Zeilenumbruch vor [/COREUI_PROJECT_BUILD] statt woertlichem \\n.
+  Der Native-Tools-Selbsttest testet diesen Vertrag jetzt ebenfalls.
+
+UNVERAENDERT
+setup.sh, scripts/install.sh, scripts/install-native.sh, scripts/stack.sh,
+scripts/migrate.sh, config/Modelfile.template, eigene Betreiber-Persona,
+Ollama-/Gemma-Optionen, Datenbankmigrationen (inkl. 016), Projekt-Agent,
+serialisierte Modell-FIFO und alte Downloads.
+Keine GitHub Actions. Keine Aenderung der Dateiberechtigungen.
+
+VERIFIKATION UND LEBENDE ABNAHME
+- Quell-/Cache-/Versions-Checks auf Branch 0.5.40.
+- Neuer Test in Compose und Native eingebunden, Fehlermeldung sichtbar.
+- Regressionspruefungen fuer erlaubte Marker, sichere Nutzersitzung,
+  Dateiliste, ZIP und eindeutigen Werkzeugaufruf.
+- Kein vollstaendiger produktiver Netcup-/Ollama-Test in dieser
+  Umgebung durchgefuehrt.
+- Bestehenden Update-One-Liner unveraendert nutzen und Preflight erneut
+  laufen lassen. Erwartet: Kein alter Fehler "Projektfreigabe";
+  stattdessen "CoreUI model-chosen project handoff ... OK".
+- Falls ein neuer Testfehler erscheint, ist die echte Assertion jetzt
+  sichtbar. Diese fuer gezielte Fehleranalyse verwenden.
+- E4B-Funktion live pruefen: im Chat gemeinsam planen, Mara speichert
+  projektplan-v1.md, anschliessend eigene Wahl von PROJECT_BUILD;
+  reale Downloadkarten und ZIP-Dateiinhalte verifizieren.
