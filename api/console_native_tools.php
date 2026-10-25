@@ -341,6 +341,18 @@ function coreui_native_tool_apply(
         . 'Ich starte damit keine Dateierstellung und gebe keinen fertigen ZIP-Download vor. '
         . 'Zuerst muss die Planung abgeschlossen und als neue fertige Version gespeichert werden.';
     }
+    if ($lastPlan && strlen((string)$lastPlan['markdown']) > 12000) {
+      return 'Der fertig gespeicherte Projektplan umfasst '
+        . strlen((string)$lastPlan['markdown']) . ' Bytes und ueberschreitet '
+        . 'das derzeitige Limit von 12000 Bytes pro Projektauftrag. '
+        . 'Ich schneide ihn nicht ab und gebe kein unvollstaendiges ZIP aus. '
+        . 'Die Umsetzung muss in kleinere Projektabschnitte aufgeteilt werden.';
+    }
+    if ($lastPlan && coreui_native_plan_source_manifest((string)$lastPlan['markdown']) === null) {
+      return 'Der Projektplan enthaelt mehr als neun unterschiedliche Quelldateien. '
+        . 'Der Dateigenerator nimmt hoechstens neun sichere Dateien pro ZIP an. '
+        . 'Die Planung muss in mehrere verifizierbare Dateipakete aufgeteilt werden.';
+    }
     return 'Die Projektquellen konnten nicht sicher zusammengestellt werden. '
       . 'Entweder ist die Dateiliste ungueltig oder der gespeicherte Plan '
       . 'ist zu gross fuer eine einzelne Modellgenerierung. Die Markdown-Datei bleibt erhalten.';
