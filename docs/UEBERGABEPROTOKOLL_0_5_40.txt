@@ -15,10 +15,13 @@ Darin wird nach wie vor die alte Funktion
 coreui_console_web_project_from_history() mit festen Nutzereingabe-
 Formulierungen aufgerufen. Diese Funktion steuert die produktive
 Dateierstellung seit Version 0.5.39 NICHT MEHR.
-Ausserdem enthalten die alten Negativ-Zeitbedingungen in
-api/console_project_handoff.php doppelt maskierte \\b-RegEx-Muster;
-z.B. "Morgen machen wir das Projekt fertig" wird dadurch falsch
-eingeschaetzt. Diese alte Heuristik ist nicht der neue Agentenpfad.
+Die genaue fehlgeschlagene alte Assertion ist aus dem Screenshot
+nicht ersichtlich, da der damalige Preflight die PHP-Testausgabe
+vollstaendig unterdrueckte. Der zwischenzeitliche Verdacht auf
+falsch maskierte Zeit-RegEx wurde durch eine direkte PHP-Pruefung
+NICHT bestaetigt: Die verwendete Wortgrenze funktioniert. Die
+belegte Fehlstelle war somit die veraltete Test-Zielarchitektur,
+nicht eine nachgewiesene Fehlfunktion des neuen Agentenpfads.
 Die neue modellgesteuerte Native-Tools-Pruefung war auf Netcup OK.
 
 KORREKTUR
