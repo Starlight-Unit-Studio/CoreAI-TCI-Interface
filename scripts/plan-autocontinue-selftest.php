@@ -88,8 +88,11 @@ $streamSource = (string)file_get_contents(dirname(__DIR__) . '/api/console_strea
 plan_auto_assert(
   substr_count($chatSource, "static function (string \$nextPrompt) use (\$primaryModel,\$sys)") === 2
   && str_contains($streamSource,"static function (string \$nextPrompt) use (\$model,\$sys)")
-  && str_contains($streamSource,'console_stream_ollama($model,$sys,$nextPrompt,false,180)'),
-  'Both sync and SSE pathways must wire the same bounded plan engine');
+  && str_contains($streamSource,'console_stream_ollama($model,$sys,$nextPrompt,false,180)')
+  && str_contains($chatSource,'&& !coreui_native_plan_continue_marker_attempt($out)')
+  && str_contains($streamSource,'&& !coreui_native_plan_continue_marker_attempt($reply)')
+  && str_contains($streamSource,'$safePlanRecovery'),
+  'Sync and SSE must both recover model-selected plan resume markers safely');
 
 if (in_array('sqlite',PDO::getAvailableDrivers(),true)) {
   class AutoPlanTestPDO extends PDO {
