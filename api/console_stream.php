@@ -560,6 +560,10 @@ try {
     $acc['ok'] = !empty($continued['ok']);
     $acc['done'] = !empty($continued['done']);
     $acc['truncated'] = !empty($continued['truncated']);
+    $acc['done_reason'] = (string)($continued['done_reason'] ?? '');
+    $acc['eval_count'] = (int)($continued['eval_count'] ?? 0);
+    $acc['prompt_eval_count'] = (int)($continued['prompt_eval_count'] ?? 0);
+    $acc['continuation_segments'] = (int)($continued['continuation_segments'] ?? 0);
     $hasMarker = (ember_extract_web_marker($reply) !== null)
               || (ember_extract_browse_marker($reply) !== null)
               || (function_exists('ember_py_extract_marker') && ember_py_extract_marker($reply) !== null);
@@ -692,10 +696,12 @@ try {
       ['reason'=>'continuation_limit','source_chars'=>strlen($reply),
        'done_reason'=>(string)($acc['done_reason'] ?? ''),
        'eval_count'=>(int)($acc['eval_count'] ?? 0),
-       'prompt_eval_count'=>(int)($acc['prompt_eval_count'] ?? 0)]);
+       'prompt_eval_count'=>(int)($acc['prompt_eval_count'] ?? 0),
+       'continuation_segments'=>(int)($acc['continuation_segments'] ?? 0),
+       'thinking_chars'=>strlen($thinkingAll)]);
     $reply = rtrim($reply) . "\n\n> **Unvollstaendige Modellausgabe:** "
       . "Das Modell konnte den Text nicht vollstaendig zu Ende generieren. "
-      . "Die erhaltenen Abschnitte bleiben sichtbar, sind aber kein freigegebener Gesamtplan.";
+      . "Der sichtbare Antworttext bleibt erhalten, ist aber noch nicht abgeschlossen.";
   }
 
   // Auch ein synchroner Werkzeug-Fallback passiert vor DB und Client dieselbe Schranke.
@@ -1123,5 +1129,8 @@ function console_stream_continue_truncated(
     'done' => !empty($firstCall['done']),
     'truncated' => !$complete,
     'continuation_segments' => $segments,
+    'done_reason' => (string)($lastCall['done_reason'] ?? ''),
+    'eval_count' => (int)($lastCall['eval_count'] ?? 0),
+    'prompt_eval_count' => (int)($lastCall['prompt_eval_count'] ?? 0),
   ];
 }
