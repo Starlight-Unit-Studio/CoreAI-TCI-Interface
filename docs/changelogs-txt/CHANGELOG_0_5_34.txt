@@ -1,0 +1,8 @@
+## 0.5.34 - 25.10.2026
+
+- Das vom Betreiber gelieferte E2B-`ollama show`-Modelfile mit FROM-/DRAFT-Pfaden und genehmigten Parametern als unveraenderliche Inhaltsreferenz archiviert; keine Ersetzung der aktiven E4B-Modellbasis.
+- Verbindliche Richtlinie fuer knappe, geschuetzte Modelfiles: Mara-Persona und Modellparameter bleiben stabil, nur notwendige Werkzeugprotokollanpassungen sind gezielt moeglich; neue Skills und Coding-Anleitungen verbleiben ausserhalb des Modelfiles.
+- Bestehenden Gemma-Selbsttest um Git-Blob-Checksumme, Schutz der Persona ausserhalb der Werkzeugsektion und Abgleich der genehmigten Parameter erweitert.
+- Weder `config/Modelfile.template` noch Installer, One-Liner, Ollama-Modellerstellung, Toolrouting oder serielle Modellwarteschlange geaendert.
+- Versionsangaben, Preflight-Releasedateien und numerische JS-Cache-Schluessel fuer 0.5.34 angepasst. GitHub Actions nicht gestartet; produktive Netcup-/Ollama-Abnahme bleibt offen.
+

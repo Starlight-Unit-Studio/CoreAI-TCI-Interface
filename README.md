@@ -7,7 +7,11 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 E.M.B.E.R. CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.33` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.34` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Protected owner Modelfile (0.5.34)
+
+The owner-provided E2B `ollama show` export is preserved in [docs/references/MODELFILE_E2B_USER_EXPORT_2026_10_25.txt](docs/references/MODELFILE_E2B_USER_EXPORT_2026_10_25.txt) as an immutable model-specific reference, not a replacement for the active E4B `FROM` directive. The current `config/Modelfile.template` and the complete installation/update flow are unchanged. See [docs/MODELFILE_CHANGE_POLICY.md](docs/MODELFILE_CHANGE_POLICY.md): keep the model prompt compact, use skills and backend tools as the flexible layer, and allow minimal necessary adjustments only within the tool-protocol section.
 
 ## Skills (0.5.33)
 
