@@ -169,16 +169,28 @@ function coreui_native_tool_apply(
           'source'=>'native_plan_tool']);
     }
     if ($kind !== 'PLAN_AND_BUILD') {
-      if (coreui_plan_is_draft_markdown((string)$saved['markdown'])) {
-        return 'Ich habe den bisherigen Projektplan als UNVOLLSTAENDIGEN Markdown-Entwurf '
-          . 'v' . (int)$saved['version'] . ' gespeichert. Die Datei steht als '
-          . 'geschuetzter Download bereit. Der Block hatte keinen gueltigen Abschluss '
-          . 'oder die Modellausgabe wurde abgeschnitten. Der Entwurf ist NICHT zum '
-          . 'Projektbau freigegeben. Wir koennen ihn weiterbearbeiten.';
+      $autoSegments = 0;
+      if ($planGenerate !== null && coreui_plan_is_draft_markdown((string)$saved['markdown'])) {
+        $progress = coreui_plan_autorun($pdo,$uid,$sessionId,$turnId,$saved,
+          $planGenerate,$planGoal);
+        $saved = $progress['saved'];
+        $autoSegments = (int)$progress['segments'];
       }
-      return 'Ich habe den aktuellen Projektplan als Markdown-Version '
-        . (int)$saved['version'] . ' dauerhaft gespeichert. '
-        . 'Die Datei erscheint als geschuetzte Downloadkarte an meiner Antwort.';
+      if (coreui_plan_is_draft_markdown((string)$saved['markdown'])) {
+        return 'Ich habe den Projektplan als UNVOLLSTAENDIGEN Markdown-Entwurf v'
+          . (int)$saved['version'] . ' gesichert. '
+          . ($autoSegments > 0
+            ? 'Ich habe selbststaendig ' . $autoSegments . ' weitere Teilabschnitte geschrieben. '
+            : 'Ein weiterer Modellabschnitt konnte noch nicht bestaetigt werden. ')
+          . 'Der Markdown-Download ist vorhanden; die Planung ist noch nicht abgeschlossen. '
+          . 'Es wurde kein Projektbau gestartet.';
+      }
+      return 'Ich habe den Projektplan als abgeschlossene Markdown-Version v'
+        . (int)$saved['version'] . ' gespeichert. '
+        . ($autoSegments > 0
+          ? $autoSegments . ' weitere Teilabschnitte habe ich eigenstaendig erstellt. '
+          : '')
+        . 'Die Datei ist als geschuetzter Download verfuegbar.';
     }
     $description = 'Setze den gespeicherten Plan als vollstaendiges statisches Webprojekt um.';
   } else {
