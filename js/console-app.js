@@ -1795,9 +1795,16 @@
     }
   }
 
-  function queueAutoTextAttachment(text) {
+  function queueAutoTextAttachment(text, reportUnavailable) {
     var value = String(text || '');
-    if (!value.trim() || state.waitingEmber || attachmentSlotsUsed() >= MAX_MESSAGE_ATTACHMENTS) return false;
+    if (!value.trim() || state.waitingEmber) return false;
+    if (attachmentSlotsUsed() >= MAX_MESSAGE_ATTACHMENTS) {
+      if (reportUnavailable === true) {
+        appendMessageEl('system', '⚠ Zehn Anhaenge sind bereits ausgewaehlt. Bitte erst einen entfernen, damit der lange Text als .md angehaengt werden kann.');
+        scrollToBottom();
+      }
+      return false;
+    }
     var file = makeAutoPasteFile(value);
     if (file.size <= 0 || file.size > AUTO_PASTE_MAX_BYTES) {
       appendMessageEl('system', '⚠ Der eingefuegte Text ist zu gross fuer einen Dateianhang.');
@@ -1922,7 +1929,7 @@
       var text = clipboard && clipboard.getData ? clipboard.getData('text/plain') : '';
       if (!text || (text.length <= LONG_PASTE_THRESHOLD
           && inputEl.value.length + text.length <= INLINE_TEXT_LIMIT)) return;
-      if (queueAutoTextAttachment(text)) e.preventDefault();
+      if (queueAutoTextAttachment(text, true)) e.preventDefault();
     });
     inputEl.addEventListener('input', function(e) {
       resizeMessageComposer();
@@ -2040,7 +2047,7 @@
     // in eine echte Datei verwandelt. Nie die ersten 12k Zeichen wegschneiden.
     if (!options.from_queue && String(text || '').length > INLINE_TEXT_LIMIT) {
       var sesForPaste = activeSession();
-      if (sesForPaste && queueAutoTextAttachment(text)) {
+      if (sesForPaste && queueAutoTextAttachment(text, true)) {
         pendingSendAfterUpload = {text:'',sessionId:String(sesForPaste.id)};
         if (inputEl) inputEl.value = '';
         resizeMessageComposer();
