@@ -7,7 +7,13 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 E.M.B.E.R. CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.37` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.38` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Kontextuelle Projektfreigabe (0.5.38)
+
+Mara can now recognize a clear implementation approval in the **same private conversation** after a static website or browser-game design has been agreed. "Dann setz unseren Plan um" or "Okay, dann legen wir los" is resolved against at most twelve preceding account- and session-scoped chat messages. The original user message remains unchanged. A bounded project specification is handed to the existing validated source-file and ZIP worker, instead of guessing from isolated words like "Homepage", "Download" or individual source filenames.
+
+The route is intentionally narrow. Explanations, tentative planning, delayed tasks and framework/backend projects do not silently execute. Ordinary explicit file requests, current Skills switches, source validators, serial model queue, existing install process and owner Modelfile stay unchanged. This first step supports static HTML/CSS/JavaScript websites and browser games, not arbitrary software stacks. See `docs/UEBERGABEPROTOKOLL_0_5_38.txt` for remaining acceptance tests.
 
 ## Lange Antworten und eingefuegte Texte (0.5.37)
 

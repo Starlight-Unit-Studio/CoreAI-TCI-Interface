@@ -1,0 +1,80 @@
+E.M.B.E.R. CoreUI 0.5.38 - UEBERGABEPROTOKOLL
+Stand: 25.10.2026 vor dem Merge
+Basis: main 0.5.37, eea81783b03bcd17cd2b61c5843e891db6d1232e
+Branch: fix/contextual-project-handoff-0.5.38
+
+BEFUND
+Die Projekt-/ZIP-Routen prueften nur die aktuelle Nutzernachricht.
+coreui_console_download_requested() fordert darin gleichzeitig ein Wort
+fuer "Download" UND eine Dateierstellungsabsicht; der lokale Homepage-Weg
+pruefte ausserdem ZIP/Dateihinweise. Nach gemeinsamer Projektplanung
+wurde "Dann setz unseren Plan um" dadurch nur als normaler Chat behandelt.
+Der regulaere Gespraechskontext kuerzt aeltere Turns auf 1200 Zeichen.
+
+UMSETZUNG
+1. api/console_project_handoff.php: konservativer, deterministischer
+   Intent-Resolver fuer eindeutig freigegebene statische Webprojekte.
+   Nur authentifiziertes user_id + session_id + id < aktuellem Turn;
+   nur private Console-Zeilen ohne deleted_at, maximal 12 Nachrichten.
+   Kontext wird begrenzt, die aktive Planung als Daten behandelt.
+2. Aus der Freigabe entsteht ein expliziter Dateiauftrag mit drei
+   pruefbaren Quellen (index.html/style.css/main.js bzw. game.js)
+   und projekt.zip; das Original der Chatnachricht bleibt erhalten.
+3. api/console_stream.php: Dateiroute erkennt einen aufloesbaren Auftrag
+   VOR dem normalem Modellstream; gemeinsame ember_generate_reply()
+   erzeugt Dateien ueber unveraenderten sicheren Python-/ZIP-Worker.
+4. api/chat.php: dieselbe Aufloesung im synchronen Antwortweg.
+5. api/console_data_link_bridge.php: Filename-Parser interpretiert
+   ausschliesslich den expliziten Dateiauftrags-Kopf, nicht zufaellig
+   genannte Dateien in Planungszitaten. Fuer diesen Kontexttask wird
+   die auf 5000 Zeichen begrenzte lokale Quellenanweisung auf 9000
+   Zeichen erweitert; andere Auftraege bleiben unveraendert.
+6. Keine neue Modelfile-Anweisung, kein neuer Ollama-Aufruf nur zur
+   Absichtserkennung und keine parallele Modellgenerierung.
+
+SICHERHEIT UND GRENZEN
+- "Erklaere", "nur planen", "Morgen", "noch nicht", "machen wir so"
+  starten nichts; ein zweideutiges "Ja" allein startet ebenfalls nichts.
+- Fremde Sitzungen und Konten sind per SQL und vordefinierten IDs
+  ausgeschlossen. Die bestehenden Generator-/Artefakt-Schreibschutz-
+  und Manifest-Pruefungen bleiben weiter aktiv.
+- Framework-Projekte mit React/Next/Vue/WordPress oder Server-/SQL-
+  Backend werden NICHT still auf einen falschen statischen ZIP-Typ
+  heruntergebrochen. Sie bleiben beim bisherigen Modellpfad.
+- Lange Pläne werden aus Kontextgründen absichtlich auf Auszuege
+  begrenzt. Nicht behaupten, dass ein ganzer umfangreicher Plan
+  ohne inhaltliche Pruefung im Modellkontext vorhanden ist.
+- Die erste Implementierung ist KEIN universeller Tool-Intent-Planer
+  fuer beliebige Dateien, Bilder, Spiele oder externe Apps.
+
+WEITERER FUND
+scripts/skills-selftest.php enthielt aus dem vorherigen Release
+einen abgeschnittenen PHP-String in der Nginx-Allowlist-Pruefung
+("location ~ \.php$"). Der vorhandene Regressionstest wurde auf
+gueltige Syntax korrigiert, ohne die Nginx-Routen zu veraendern.
+
+TESTS
+- Isolierte PHP-Funktionspruefung mit mbstring-Polyfill: sinnvolle
+  Freigaben erkannt, Fragen/Planung/Future-Timing abgelehnt.
+- Neuer scripts/contextual-project-selftest.php, in beiden
+  Preflights eingebunden; prueft Projektdatei-Vertrag, ZIP-Ausgabe,
+  Query-Scopes, Stream- und Sync-Routing.
+- Live PHP-Preflight und authentifizierter Netcup-Ollama-/DB-Test
+  hier NICHT moeglich; daher produktive Abnahme offen.
+- Browser-Live: Homepagedesign im Chat besprechen; anschliessend
+  "Setz unseren Plan jetzt um" schreiben. Erwartet werden sichtbare
+  Arbeitsschritte und echte Downloadkarten fuer HTML/CSS/JS/ZIP,
+  kein blosses Chatversprechen und keine zweite Modellinferenz.
+- Negativ: "Erklaere den Plan", "Morgen machen wir das",
+  "Dann machen wir das so", "nur einzelne HTML-Datei" darf nicht
+  automatisch ein ZIP erzeugen.
+- Alle Versionen, sechs UI-Seiten, numerischer SHA-256-Cachekey,
+  README, Changelog, neue TXT-Dokumente und Preflight-Verweise
+  nachziehen; GitHub Actions nicht benutzen.
+
+ABSICHTLICH UNVERAENDERT
+setup.sh, scripts/install.sh, scripts/install-native.sh, scripts/stack.sh,
+scripts/migrate.sh, One-Liner, config/Modelfile.template, Ollama
+Optionen/Parameter, globale FIFO-Modellwarteschlange,
+DB-Migrationen, Kontoberechtigungen und angehaengte Dateien.
+Nach Merge tatsaechlichen PR und Merge-SHA im Kommentar notieren.
