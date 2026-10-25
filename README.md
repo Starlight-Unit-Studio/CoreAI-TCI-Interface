@@ -1,7 +1,7 @@
 # Project STΛRLIɢHT: E.M.B.E.R. CoreUI
 [![DOI](https://zenodo.org/badge/1349352973.svg)](https://doi.org/10.5281/zenodo.22201310)
 
-**E.M.B.E.R. CoreUI** is an independent local AI WebUI and control environment by **Starlight Unit Studios**, designed for local **Gemma 4 models via Ollama** and the E.M.B.E.R. cognitive architecture.
+**E.M.B.E.R. CoreUI** is your powerful, 100% free and private alternative to ChatGPT Plus and Claude.ai. Run advanced AI tasks locally or in the cloud without subscriptions, data tracking, or limits.
 
 It combines private conversations and sessions, user-scoped RAG-Lite, local long-term memory, Playwright-based browser research with SearXNG, isolated Python execution, multimodal file handling, deterministic exact integer calculations, and strict separation of internal model analysis from visible answers.
 
