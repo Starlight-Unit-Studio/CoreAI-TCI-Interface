@@ -1,0 +1,129 @@
+E.M.B.E.R. COREUI 0.5.51 - UEBERGABEPROTOKOLL
+Datum: 25.10.2026
+Basis: main 0.5.50, 28ead30492eb581401444c7238326ad87118b150
+Branch: fix/model-selected-plan-execution-0.5.51
+
+LIVE-FEHLER
+Der Nutzer schrieb Mara im bereits mit projektplan-v3.md
+(ungefaehr 6,2 KB, als fertig gemeldet) ausgestatteten
+privaten Chat: "Lass mal den Plan umsetzen".
+Mara startete keinen Project-Writer; der Screenshot zeigt
+"Modellstream empfangen", dann "Antwort blieb nach
+Fortsetzung unvollstaendig", reason=continuation_limit
+und Quelltext: 33 Zeichen. Sichtbare Antwort:
+"Das ist die Entscheidung, die ich".
+Es sind keine neuen Quelldateien/ZIP vorhanden.
+Die genaue Ollama-Done-Ursache war mangels
+done_reason/eval_count im bisherigen Arbeitsverlauf
+noch nicht belegbar. Modell-Kontext-/Thinking-Budget
+ist eine Hypothese, keine festgestellte Ursache.
+
+NACHWEISBARE URSACHEN IM CODE
+- Ein Build verlangte einen expliziten Modell-Toolmarker
+  im langen, bereits ueberladenen generellen Chataufruf.
+- Ohne PROJECT_BUILD faellt das System auf Prosa zurueck.
+- Bei abgeschnittener Prosa kann die bisherige kurze
+  Fortsetzung nur zwei Versuche starten; ueber ein Token-
+  oder Thinking-Limit liefert sie keine Projektdatei.
+- coreui_native_tool_build_request() reduzierte selbst
+  sechs benannte HTML-Seiten auf ein generisches
+  index.html/style.css/main.js-Trio, sofern der
+  Modellmarker nicht selbst alle Dateinamen wiederholte.
+- Der Plan wurde bei mehr als 6500 Bytes abgelehnt.
+
+NEUE ARCHITEKTUR
+1. api/console_build_intent.php (neu): entscheidet
+   anhand der AKTUELLEN Nachricht in einem kurzen
+   separaten Modellaufruf, ob der Nutzer die sofortige
+   technische Ausfuehrung des vorhandenen Plans will.
+   Die Modellwahl wird nur als exaktes START_BUILD
+   oder CHAT akzeptiert; beliebiger Fliesstext oder
+   ein abgebrochener Modellaufruf ist KEINE Freigabe.
+2. Die kurze Wahl wird nur bei einem mit SHA256
+   geprueften, fertigen Plan in derselben privaten,
+   authentifizierten Sitzung ausgefuehrt. Neue
+   Entwurfsplaene, fremde Nutzer, geloeschte Turns,
+   ungueltige Sessions und Reentry sperren den Weg.
+3. Lediglich der Entscheider setzt API-think=false
+   und verzichtet auf Wiederholung von SKILL.md.
+   Dies ist KEINE Modelfile-Umschreibung und
+   KEINE Aenderung der normalen Nutzer-Generierung.
+4. Bei START_BUILD wird ein gueltiger, enger
+   PROJECT_BUILD-Toolblock an coreui_native_tool_apply
+   gegeben. Die bestehenden File-/ZIP-Guards,
+   Sitzungslimits und der Worker bleiben verantwortlich.
+   Falls kein valides ZIP entsteht, kein Scheinerfolg.
+5. Gleicher Pfad in SSE und synchronem Chat. Die
+   globale Modellwarteschlange bleibt streng seriell.
+6. Ein fertiger Plan kann nun bis zu neun benannte
+   sichere Flat-File-Projektquellen enthalten.
+   Sechs HTML-Unterseiten + style.css + main.js
+   werden im Beispiel unveraendert uebergeben.
+   Mehr als neun Dateinamen wird nicht still
+   abgeschnitten; kein Host- oder Shell-Zugriff.
+7. Vollstaendiger Plantext maximal 12000 Bytes
+   statt 6500, darueber Blockeranzeige.
+8. Bessere Ollama-Diagnose bei truncation/continuation:
+   done_reason, eval_count, prompt_eval_count,
+   thinking_chars, content_chars, continuation_segments.
+   Keine privaten Texte in Arbeitsereignissen.
+
+REGRESSIONEN
+scripts/model-project-intent-selftest.php (neu):
+  exakte Modellauswahl, Frage vs Build, abgebrochener
+  oder fehlerhafter Modellentscheid, Kontotrennung,
+  privater Entwurf nicht baubar, Manifest sechs
+  HTML-Seiten plus gemeinsame Assets, Vollstaendigkeit
+  des gespeicherten Plans, ein Build-Callback pro Turn.
+scripts/contextual-project-selftest.php: neue
+  Obergrenze ohne Stillschweigen getestet.
+scripts/reply-pipeline-selftest.php: pro Call
+  Think-Override korrekt geprueft.
+Native und Compose-Preflight enthalten den neuen Test.
+
+GEAENDERT
+api/console_build_intent.php (neu)
+api/console_native_tools.php
+api/console_stream.php
+api/chat.php
+scripts/model-project-intent-selftest.php (neu)
+scripts/contextual-project-selftest.php
+scripts/reply-pipeline-selftest.php
+scripts/preflight-native.sh / scripts/preflight.sh
+VERSION / scripts/branding-license-selftest.py
+README.md / CHANGELOG.md / sechs HTML-Versionen
+docs/changelogs-txt/CHANGELOG_0_5_51.txt / INDEX.txt
+docs/UEBERGABEPROTOKOLL_0_5_51.txt
+
+NICHT ANGEFASST
+config/Modelfile.template; original Git-Blob:
+ec01a9540ff668230e6ac0a7e23ffab305d54415
+Ollama-Optionspolitik fuer das Hauptmodell,
+SQL-Migrationen, Installer, Modell-FIFO,
+persistierte Datenbankplaene, Python-Worker,
+ZIP-Pipeline, andere geschuetzte Download-Routen.
+Keine GitHub Actions wegen bereits aufgebrauchtem
+Kontingent.
+
+ABNAHME NACH NETCUP-UPDATE
+1. Den vorhandenen Update-One-Liner verwenden.
+2. Native/Compose-Preflight samt neuem
+   Modellgesteuerte-Projektumsetzung-Test laufen lassen.
+3. Im bisherigen privaten Chat (mit fertig
+   gespeichertem Projektplan v3) Mara formlos bitten,
+   diesen Plan JETZT umzusetzen.
+4. Im Arbeitsverlauf auf "Mara hat die Umsetzung des
+   gespeicherten Plans gewaehlt" und "Mara hat selbst
+   den Projekt-Writer aufgerufen" achten.
+5. Im ZIP alle im gespeicherten Plan genannten
+   HTML-Seiten sowie CSS/JS pruefen. Kein ZIP als
+   Erfolg melden, wenn ein Teil der Dateien fehlt.
+6. Bei erneuter abgeschnittener Antwort im Arbeitsweg
+   done_reason, eval_count, thinking_chars und
+   continuation_segments kontrollieren, aber nicht
+   das Betreiber-Modelfile als Workaround aendern.
+
+STATUS
+Quelltext/Tests auf separatem Branch angelegt.
+Der echte lokale Ollama-Livetest und vollstaendige
+Netcup-Preflight sind noch nicht ausgefuehrt.

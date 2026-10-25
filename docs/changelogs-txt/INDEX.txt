@@ -95,3 +95,4 @@ Jede Version liegt als eigenstaendige UTF-8-TXT-Datei vor.
 * CHANGELOG_0_5_48.txt
 * CHANGELOG_0_5_49.txt
 * CHANGELOG_0_5_50.txt
+* CHANGELOG_0_5_51.txt
