@@ -2,6 +2,16 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.50 - 25.10.2026
+
+- Gespeicherte Markdown-Dateien (`.md`, einschliesslich aller privaten Projektplan-Versionen) werden direkt unter Maras Antwort als scrollbare, sicher gerenderte Vorschau gezeigt. Andere Dateitypen behalten ihre bewaehrten Downloadkarten.
+- Drei Aktionen oben rechts: Markdown-Inhalt kopieren, Originaldatei herunterladen, Vorschau gross anzeigen; mobile Bedienung, Tastaturfokus und Statusmeldungen integriert.
+- Bestehende authentifizierte Plan-/Artifact-Endpunkte unveraendert wiederverwendet. Dateiabfrage nur gleichurspruenglich, ohne Cache oder Redirect, mit Bytegroessen-, MIME- und optionaler SHA256-Pruefung. Kein aktives HTML und kein externer Viewer.
+- Der interne Entwurfsmarker wird nur in der Ansicht ausgeblendet und als unvollstaendiger Entwurf angezeigt. Originaldownload bleibt byteidentisch; bei Kopieren wird nutzbarer, sichtbarer Markdown-Text verwendet.
+- Vorschauen werden bedarfsweise fuer sichtbare Chatnachrichten geladen. Bei fehlender oder zu grosser Datei bleibt der vorherige sichere Downloadweg erhalten; neu laden innerhalb der Vorschau moeglich.
+- Eigener Frontend-Vertragstest fuer sicheren Viewer und unveraenderte API-Downloads in beiden Preflight-Varianten. Browser-Interaktionsprobe und JavaScript-Syntaxpruefung isoliert durchgefuehrt. Netcup-/Android-Livetest steht aus.
+- Betreiber-Modelfile, Ollama-Optionen, Modell-FIFO, Plan-Speicherung, SQL-Migrationen, Installer, Python-Worker und ZIP-Erzeugung unveraendert.
+
 ## 0.5.49 - 25.10.2026
 
 - Behebt eine Parserluecke bei der Wiederaufnahme schon gespeicherter Markdown-Planentwuerfe: ein einzelner, vom Modell gewaehlter PLAN_CONTINUE-Marker wird jetzt auch mit kurzer Einleitung, Slash-Schreibweise, fehlendem Abschluss oder zusaetzlichem Modelltext erkannt.
