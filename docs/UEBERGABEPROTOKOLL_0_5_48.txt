@@ -1,0 +1,93 @@
+E.M.B.E.R. COREUI 0.5.48 - UEBERGABEPROTOKOLL
+Datum: 25.10.2026
+Basis: main 0.5.47, fc9e6a011a6c6d1b14558666b68dce3e4d9268aa
+Branch: feat/autonomous-markdown-plan-continuation-0.5.48
+
+NUTZERBEFUND
+Preflight 0.5.47 besteht. Mara erkennt Modell-gewaehlte
+Markdown-Planung und legt erfolgreich projektplan-v1.md an.
+Im Screenshot: 1,3 KB, Status UNVOLLSTAENDIG. Mara beendet
+den Turn mit "Wir koennen ihn weiterbearbeiten", statt
+die Planung selbst in weiteren Schritten abzuschliessen.
+
+URSACHE
+0.5.46 rettete eine abgeschnittene PLAN_SAVE-Ausgabe nur als
+Entwurf. Der Code enthielt noch keinen Ausfuehrungspfad fuer
+mehrere serielle Teilplanungs-Generierungen und automatisches
+Weiterschreiben der bereits gespeicherten Markdown-Datei.
+Das urspruengliche Tokenlimit oder das blosse Erhoehen der
+maximalen Antwortlaenge loesen diesen Workflow-Fehler nicht.
+
+KORREKTUR
+- Neues api/console_plan_autorun.php erzeugt einen fokussierten
+  Folgeprompt aus dem alten Projektziel, vorhandenen Markdown-
+  Ueberschriften und maximal 1800 Unicode-Zeichen vom Ende.
+- Mara darf bis zu vier weitere Planungsabschnitte innerhalb
+  desselben Turns generieren, nacheinander unter der bestehenden
+  globalen Ollama-Modellwarteschlange, niemals gleichzeitig.
+- Jeder sichere Abschnitt erzeugt sofort einen unveraenderlichen
+  Markdown-Checkpoint in stu_console_project_plans. Die Datei
+  bleibt auch nach einem Modellabbruch herunterladbar.
+- Nur eine positive Modell-Endbestaetigung mit einem eindeutigen
+  Abschlussmarker ([COREUI_PLAN_COMPLETE] oder schliessender
+  PLAN_SAVE-Marker) und ausreichender Markdown-Struktur hebt
+  den DRAFT-Status auf. Kein stiller Erfolg bei Tokenlimit.
+- PLAN_CONTINUE ist ein neues vom Modell waehlbares Werkzeug
+  fuer bestehende private Entwuerfe, auch aus frueheren Turns.
+  Das ist kein Nutzer-Schluesselwort-Router; das Modell waehlt.
+- Keine nativen Projekt-Builds durch Planungs-Fortsetzungen:
+  PLAN_AND_BUILD und PROJECT_BUILD behalten ihre Guards.
+- Gleiches Modul fuer api/console_stream.php (SSE) und
+  api/chat.php (synchroner Fallback). Folgeaufrufe haben einen
+  eng begrenzten Timeout, aber keine neuen Ollama-API-Parameter.
+- Neue scripts/plan-autocontinue-selftest.php testet
+  Mehrschritt-Fortsetzung, abgebrochene Antworten, nicht
+  bestaetigte Abschluesse, Duplikate, Versionierung,
+  SHA256-Konsistenz, Kontotrennung, fortsetzbare alte Entwuerfe
+  und Testverdrahtung in beiden Chatrouten.
+- scripts/reply-pipeline-selftest.php prueft jetzt den neuen
+  fokussierten SSE-Timeout statt eines entfernten festen
+  CURLOPT_TIMEOUT-Quelltextes.
+
+ABSICHTLICH NICHT VERAENDERT
+config/Modelfile.template (Git-Blob-SHA:
+ec01a9540ff668230e6ac0a7e23ffab305d54415)
+Betreiber-Persona, die vorhandenen Ollama-Modelfile-Parameter,
+Kern-Installer und One-Liner, die global serielle Modell-FIFO,
+bestehender Dateigenerator und ZIP-Pipeline,
+SQL-Migrationsdateien und Nutzerauthentifizierung.
+Keine GitHub Actions (aufgebrauchtes Kontingent).
+
+GEAENDERTE DATEIEN
+api/console_plan_autorun.php (neu)
+api/console_native_tools.php
+api/console_stream.php
+api/chat.php
+scripts/plan-autocontinue-selftest.php (neu)
+scripts/reply-pipeline-selftest.php
+scripts/preflight-native.sh und scripts/preflight.sh
+VERSION, README.md, CHANGELOG.md,
+docs/changelogs-txt/CHANGELOG_0_5_48.txt und INDEX.txt
+Sechs HTML-Versionsanzeigen
+docs/UEBERGABEPROTOKOLL_0_5_48.txt
+
+TESTSTATUS
+Der neue Preflight enthaelt isolierte Tests mit fest
+vorgegebenen Modellantworten und einer SQLite-In-Memory-DB.
+Die vollstaendige Ausfuehrung auf Netcup, das Verhalten des
+konkret ausgewaehlten lokalen Gemma-Modells sowie ein echter
+SSE-Mehrschrittaufbau sind noch nicht live bestaetigt.
+
+ABNAHME NACH UPDATE
+1. Den gewohnten Update-One-Liner benutzen.
+2. Preflight auf Native Tools, Reply-Pipeline und neue
+   "Autonome Markdown-Planung" pruefen.
+3. Mara im bisherigen Chat anweisen, den bereits gespeicherten
+   Homepage-Entwurf weiterzuplanen. Sie soll das neue
+   PLAN_CONTINUE selbst waehlen, keinen Textmarker vom Nutzer.
+4. Ein vollstaendiger Lauf liefert eine neue Markdown-Version
+   ohne Draft-Status. Scheitert ein Modellteil, bleiben alle
+   bis dahin gesicherten Textteile als Entwurf erhalten.
+5. Bei erneutem Fehler: konkreten Preflight oder Laufzeitstatus
+   aufheben und Modell-Output-Parsing begutachten, NICHT
+   das Eigentuemermodelfile ueberschreiben.

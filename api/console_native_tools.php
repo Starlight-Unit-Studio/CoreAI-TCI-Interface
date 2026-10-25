@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__ . '/console_plan_store.php';
+require_once __DIR__ . '/console_plan_autorun.php';
 require_once __DIR__ . '/console_data_link_bridge.php';
 
 /**
@@ -15,6 +16,7 @@ function coreui_native_tools_prompt(): string {
     . "Antworte normal ODER mit genau EINEM vollstaendigen Block, ohne weiteren Text:\n"
     . "[COREUI_PLAN_SAVE]\n# Titel\nVollstaendiger Markdown-Plan\n[/COREUI_PLAN_SAVE]\n"
     . "[COREUI_PLAN_APPEND]\nNeue Markdown-Abschnitte\n[/COREUI_PLAN_APPEND]\n"
+    . "[COREUI_PLAN_CONTINUE]\nVorhandenen Markdown-Entwurf fortsetzen\n[/COREUI_PLAN_CONTINUE]\n"
     . "[COREUI_PLAN_AND_BUILD]\n# Titel\nVollstaendiger Markdown-Plan\n[/COREUI_PLAN_AND_BUILD]\n"
     . "[COREUI_PROJECT_BUILD]\nProjektauftrag mit benoetigten Quelldateien\n[/COREUI_PROJECT_BUILD]\n"
     . "SAVE speichert eine .md-Datei, APPEND versioniert sie, AND_BUILD speichert und baut, "
@@ -25,19 +27,28 @@ function coreui_native_tools_prompt(): string {
     . "mit [/COREUI_PLAN_SAVE] abschliessen, ohne vorangestellten Kommentar. "
     . "Beginne mit einem kompakten speicherbaren Grundplan und ergaenze "
     . "weitere Abschnitte spaeter ueber PLAN_APPEND. Ein ungeschlossener "
-    . "Block ist ausschliesslich ein unvollstaendiger Entwurf. "
+    . "Block bleibt ein Entwurf. Setze ihn mit begrenzten Modellschritten selbststaendig fort. "
+    . "Wenn im Chat bereits ein UNVOLLSTAENDIGER ENTWURF gespeichert ist "
+    . "und du ihn weiterentwickeln willst, waehle PLAN_CONTINUE statt "
+    . "den bisherigen Plan neu mit PLAN_SAVE zu beginnen. "
     . "Keine erfundenen Dateien oder Links. Keine Host-Befehle.\n";
 }
 
 function coreui_native_tool_parse(string $reply): ?array {
   if (strlen($reply) > 300000) return null;
-  $types = ['PLAN_SAVE','PLAN_APPEND','PLAN_AND_BUILD','PROJECT_BUILD'];
+  $types = ['PLAN_SAVE','PLAN_APPEND','PLAN_CONTINUE','PLAN_AND_BUILD','PROJECT_BUILD'];
   foreach ($types as $type) {
     if (preg_match('~^\s*\[COREUI_' . $type . '\]\s*\n([\s\S]*?)\n\[/COREUI_'
         . $type . '\]\s*$~u', $reply, $m) !== 1) continue;
     $body = trim((string)$m[1]);
     if ($body === '' || strlen($body) > 262144 || str_contains($body,"\0")) return null;
     return ['type'=>$type,'body'=>$body];
+  }
+  // The model sometimes uses slash spelling. PLAN_CONTINUE only resumes
+  // an existing private draft; it is never a build operation.
+  if (preg_match('~^\s*\[COREUI/PLANCONTINUE\]\s*\n([\s\S]{1,4000}?)\n\[/COREUI/PLANCONTINUE\]\s*$~u',
+      $reply, $m) === 1) {
+    return ['type'=>'PLAN_CONTINUE','body'=>trim((string)$m[1]),'recovered'=>true];
   }
   return coreui_native_plan_recover_model_reply($reply);
 }
@@ -125,7 +136,8 @@ function coreui_native_tool_build_request(PDO $pdo, int $uid, string $sessionId,
  */
 function coreui_native_tool_apply(
   PDO $pdo,int $uid,string $sessionId,int $turnId,string $reply,callable $build,
-  bool $modelWasTruncated = false
+  bool $modelWasTruncated = false, ?callable $planGenerate = null,
+  string $planGoal = ''
 ): ?string {
   if (!empty($GLOBALS['COREUI_NATIVE_TOOL_REENTRY'])) return null;
   $tool = coreui_native_tool_parse($reply);
@@ -138,11 +150,22 @@ function coreui_native_tool_apply(
       . 'Keine Aktion ausgefuehrt, kein Download vorgetaeuscht.';
   }
   $draft = $kind === 'PLAN_SAVE' && (!empty($tool['draft']) || $modelWasTruncated);
-  if (in_array($kind,['PLAN_SAVE','PLAN_APPEND','PLAN_AND_BUILD'],true)) {
+  if (in_array($kind,['PLAN_SAVE','PLAN_APPEND','PLAN_CONTINUE','PLAN_AND_BUILD'],true)) {
     try {
-      $planText = $draft ? COREUI_PLAN_DRAFT_MARKER . "\n\n" . $tool['body'] : $tool['body'];
-      $saved = coreui_plan_save($pdo,$uid,$sessionId,$turnId,$planText,
-        $kind==='PLAN_APPEND');
+      if ($kind === 'PLAN_CONTINUE') {
+        $saved = coreui_plan_latest($pdo,$uid,$sessionId);
+        if (!is_array($saved)) return 'Hier ist noch kein Projektplan gespeichert.';
+        if (!coreui_plan_is_draft_markdown((string)$saved['markdown']))
+          return 'Der letzte Projektplan ist bereits abgeschlossen.';
+        if ($planGenerate === null)
+          return 'Der Entwurf ist erhalten, aber die Fortsetzung ist momentan nicht verfuegbar.';
+        $saved = coreui_plan_save($pdo,$uid,$sessionId,$turnId,
+          (string)$saved['markdown'],false);
+      } else {
+        $planText = $draft ? COREUI_PLAN_DRAFT_MARKER . "\n\n" . $tool['body'] : $tool['body'];
+        $saved = coreui_plan_save($pdo,$uid,$sessionId,$turnId,$planText,
+          $kind==='PLAN_APPEND');
+      }
     } catch (Throwable $e) {
       error_log('[CoreUI] Native plan save failed: '.get_class($e));
       return 'Ich konnte den Markdown-Projektplan nicht dauerhaft speichern. '
@@ -154,16 +177,28 @@ function coreui_native_tool_apply(
           'source'=>'native_plan_tool']);
     }
     if ($kind !== 'PLAN_AND_BUILD') {
-      if (coreui_plan_is_draft_markdown((string)$saved['markdown'])) {
-        return 'Ich habe den bisherigen Projektplan als UNVOLLSTAENDIGEN Markdown-Entwurf '
-          . 'v' . (int)$saved['version'] . ' gespeichert. Die Datei steht als '
-          . 'geschuetzter Download bereit. Der Block hatte keinen gueltigen Abschluss '
-          . 'oder die Modellausgabe wurde abgeschnitten. Der Entwurf ist NICHT zum '
-          . 'Projektbau freigegeben. Wir koennen ihn weiterbearbeiten.';
+      $autoSegments = 0;
+      if ($planGenerate !== null && coreui_plan_is_draft_markdown((string)$saved['markdown'])) {
+        $progress = coreui_plan_autorun($pdo,$uid,$sessionId,$turnId,$saved,
+          $planGenerate,$planGoal);
+        $saved = $progress['saved'];
+        $autoSegments = (int)$progress['segments'];
       }
-      return 'Ich habe den aktuellen Projektplan als Markdown-Version '
-        . (int)$saved['version'] . ' dauerhaft gespeichert. '
-        . 'Die Datei erscheint als geschuetzte Downloadkarte an meiner Antwort.';
+      if (coreui_plan_is_draft_markdown((string)$saved['markdown'])) {
+        return 'Ich habe den Projektplan als UNVOLLSTAENDIGEN Markdown-Entwurf v'
+          . (int)$saved['version'] . ' gesichert. '
+          . ($autoSegments > 0
+            ? 'Ich habe selbststaendig ' . $autoSegments . ' weitere Teilabschnitte geschrieben. '
+            : 'Ein weiterer Modellabschnitt konnte noch nicht bestaetigt werden. ')
+          . 'Der Markdown-Download ist vorhanden; die Planung ist noch nicht abgeschlossen. '
+          . 'Es wurde kein Projektbau gestartet.';
+      }
+      return 'Ich habe den Projektplan als abgeschlossene Markdown-Version v'
+        . (int)$saved['version'] . ' gespeichert. '
+        . ($autoSegments > 0
+          ? $autoSegments . ' weitere Teilabschnitte habe ich eigenstaendig erstellt. '
+          : '')
+        . 'Die Datei ist als geschuetzter Download verfuegbar.';
     }
     $description = 'Setze den gespeicherten Plan als vollstaendiges statisches Webprojekt um.';
   } else {

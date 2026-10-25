@@ -4973,7 +4973,19 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         $excludeReplyToId,$triggerMessageId,$triggerRevision): ?string {
         return ember_generate_reply($pdo,$senderChar,$task,null,'console',
           $consoleUid,$consoleSessionId,$excludeReplyToId,$triggerMessageId,$triggerRevision);
-      }
+      }, false,
+      static function (string $nextPrompt) use ($primaryModel,$sys): array {
+        if (ember_agent_cancel_requested()) return ['text'=>'','ok'=>false];
+        $raw = ember_call_ollama($primaryModel,$sys,$nextPrompt,180,
+          [],null,null,false);
+        $meta = $GLOBALS['STU_EMBER_LAST_CALL'] ?? [];
+        return [
+          'text'=>ember_sanitize_public_reply(
+            (string)($raw ?? ''),(string)($GLOBALS['STU_EMBER_LAST_THINKING'] ?? '')),
+          'ok'=>is_string($raw) && is_array($meta) && !empty($meta['ok'])
+            && !ember_last_call_was_truncated(),
+        ];
+      }, $userMsg
     );
     if (is_string($nativeResult)) return $nativeResult;
   }
@@ -5249,7 +5261,10 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   if (is_string($out) && trim($out) !== ''
       && ember_extract_web_marker($out) === null
       && ember_extract_browse_marker($out) === null
-      && (!function_exists('ember_py_extract_marker') || ember_py_extract_marker($out) === null)) {
+      && (!function_exists('ember_py_extract_marker') || ember_py_extract_marker($out) === null)
+      && !coreui_native_plan_marker_attempt($out)) {
+    // Preserve a plan draft immediately; the model-selected planner manages
+    // its own smaller, checkpointed continuation calls.
     $out = ember_continue_truncated_reply($primaryModel, $sys, $finalPrompt, $out, null);
   }
   // A long Markdown plan may need Ollama's normal continuation first.
@@ -5265,7 +5280,19 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         $excludeReplyToId,$triggerMessageId,$triggerRevision): ?string {
         return ember_generate_reply($pdo,$senderChar,$task,null,'console',
           $consoleUid,$consoleSessionId,$excludeReplyToId,$triggerMessageId,$triggerRevision);
-      }, ember_last_call_was_truncated()
+      }, ember_last_call_was_truncated(),
+      static function (string $nextPrompt) use ($primaryModel,$sys): array {
+        if (ember_agent_cancel_requested()) return ['text'=>'','ok'=>false];
+        $raw = ember_call_ollama($primaryModel,$sys,$nextPrompt,180,
+          [],null,null,false);
+        $meta = $GLOBALS['STU_EMBER_LAST_CALL'] ?? [];
+        return [
+          'text'=>ember_sanitize_public_reply(
+            (string)($raw ?? ''),(string)($GLOBALS['STU_EMBER_LAST_THINKING'] ?? '')),
+          'ok'=>is_string($raw) && is_array($meta) && !empty($meta['ok'])
+            && !ember_last_call_was_truncated(),
+        ];
+      }, $userMsg
     );
     if (is_string($nativeResult)) return $nativeResult;
   }

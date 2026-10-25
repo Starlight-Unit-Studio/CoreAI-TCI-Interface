@@ -7,7 +7,42 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 E.M.B.E.R. CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.47` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.48` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Autonome mehrstufige Markdown-Projektplanung (0.5.48)
+
+Der private CoreUI-Chat kann einen vom Modell begonnenen Markdown-Plan
+nun auch dann ohne erneute Nutzeraufforderung in mehreren Schritten
+fortsetzen, wenn der erste PLAN_SAVE-Block unvollstaendig blieb.
+Das neue isolierte Modul `api/console_plan_autorun.php` legt
+jede bestaetigte Textfortsetzung als neue, kontogebundene und
+unveraenderliche .md-Version ab. Die in 0.5.46 eingefuehrte
+Entwurfssicherung bleibt jederzeit aktiv. Es werden maximal vier
+weitere Modellaufrufe pro Werkzeugaktion ausgeloest, nie parallel.
+
+Fortsetzungsanfragen enthalten nur das Arbeitsziel, bisherige
+Ueberschriften und ein begrenztes letztes Textfenster, nicht den
+gesamten immer groesser werdenden Plan. Das Modell wird explizit
+zu neuen Abschnitten und eindeutiger Fertigmeldung aufgefordert.
+Ein Abbruch oder eine Antwort ohne bestaetigten Abschluss
+verbleibt bewusst im Zustand UNVOLLSTAENDIGER ENTWURF.
+Wiederholte Abschnitte oder unerwuenschte neue Werkzeugaktionen
+werden abgelehnt. Ein erhaltener Entwurf kann durch das vom
+Modell gewaehlte PLAN_CONTINUE auch in einem spaeteren Turn
+erneut bearbeitet werden.
+
+Das System erstellt dabei nur Markdown-Planungen, keine
+ungefragten Projektdateien. Der bestehende Projekt-Builder
+bleibt separat und verweigert Entwuerfe. Ein erfolgreicher
+Preflight beweist noch nicht, dass ein bestimmtes lokales Modell
+den mehrstufigen Abschlussmarker auch tatsaechlich verwendet.
+`scripts/plan-autocontinue-selftest.php` prueft mit fest
+vorgegebenen Modellantworten den Mehrschrittprozess, Versions-
+und Kontotrennung und die Unterscheidung von fertig/unfertig.
+
+**Unveraendert:** `config/Modelfile.template`, Ollama-Sampling,
+Modell-FIFO, Installer/One-Liner, Datenbankmigrationen und
+Python-/ZIP-Writer. Siehe `docs/UEBERGABEPROTOKOLL_0_5_48.txt`.
 
 ## Frontend-Preflight-Abgleich (0.5.47)
 
