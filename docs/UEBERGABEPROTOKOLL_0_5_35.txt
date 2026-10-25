@@ -1,0 +1,45 @@
+E.M.B.E.R. COREUI 0.5.35 - UEBERGABEPROTOKOLL
+Stand: 25.10.2026, vor Merge
+Basis: main 0.5.34, 9d225767564e636bf1c213d3864eed66e8ca03a3
+Branch: fix/use-owner-mara-modelfile-0.5.35
+
+KORREKTUR
+Im vorherigen Release 0.5.34 war das Nutzer-Modelfile nur unter
+docs/references/MODELFILE_E2B_USER_EXPORT_2026_10_25.txt archiviert.
+Die aktive config/Modelfile.template blieb falsch/unveraendert.
+Dieser Auftrag korrigiert die aktive Vorlage selbst.
+
+NEUER MODUS
+- Mara-SYSTEM-Text und Werkzeugprotokoll aus dem vom Betreiber gelieferten
+  Ollama-show-Export uebernommen.
+- Triple-quoted SYSTEM fuer korrektes Mehrzeilen-Modelfile.
+- Exakte Parameterwerte und Reihenfolge:
+  draft_num_predict 0; temperature 1; top_k 64; top_p 0.95.
+- FROM gemma4:e4b ist bewusst ein austauschbarer Portabilitaetsplatzhalter:
+  Der BESTEHENDE Installer ersetzt genau diese FROM-Zeile bereits.
+- Ollama-exportierte absolute FROM-/DRAFT-Blobpfade gehoeren zu
+  modellgebundenen Dateien, nicht in ein portables Repository-Template.
+  Das archivierte Exportoriginal bleibt unveraendert.
+- Kein zusaetzliches num_ctx, num_predict, extra Skills/SYSTEM-Text.
+- Kein Aendern von anderen API- oder Projektwerkzeugpfaden.
+
+ABSICHTLICH NICHT VERAENDERT
+setup.sh, scripts/install.sh, scripts/install-native.sh,
+scripts/stack.sh, One-Liner, Installationsablauf und Modell-Erstellung,
+PHP-/Ollama-Runtime und globale serielle Modellqueue, DB-Migrationen.
+
+WEITERE DATEIEN
+scripts/gemma-zero-parameters-selftest.php; docs/MODELFILE_CHANGE_POLICY.md;
+VERSION 0.5.35; sechs sichtbare Seiten; js/console-gate.js und numerischer
+SHA-256 Cache-Schluessel; README; CHANGELOG; Release- und Preflight-TXT.
+
+ABNAHMEGRENZEN
+Offline-Quellvergleich: SYSTEM exakt aus dem Export, PARAMETER in Ordnung
+und in der Reihenfolge des Originals, einzig ein FROM ohne Blobpfad.
+Der Modellaufbau wurde auf dem Netcup-Server hier nicht ausgefuehrt.
+Nach Merge den bestehenden One-Liner nutzen, den normalen PHP-Preflight
+pruefen, und die echte E4B-Datei-/ZIP-Ausgabe unter Ollama reproduzieren.
+Weder Erfolgs- noch Fehlerdiagnosen ohne echte Live-Ausgabe behaupten.
+Keine GitHub Actions starten (Kontingent erschoepft).
+
+Nach Merge tatsaechliche PR-Nummer und Merge-SHA in PR-Kommentar festhalten.
