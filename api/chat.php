@@ -4973,7 +4973,19 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         $excludeReplyToId,$triggerMessageId,$triggerRevision): ?string {
         return ember_generate_reply($pdo,$senderChar,$task,null,'console',
           $consoleUid,$consoleSessionId,$excludeReplyToId,$triggerMessageId,$triggerRevision);
-      }
+      }, false,
+      static function (string $nextPrompt) use ($primaryModel,$sys): array {
+        if (ember_agent_cancel_requested()) return ['text'=>'','ok'=>false];
+        $raw = ember_call_ollama($primaryModel,$sys,$nextPrompt,180,
+          [],null,null,false);
+        $meta = $GLOBALS['STU_EMBER_LAST_CALL'] ?? [];
+        return [
+          'text'=>ember_sanitize_public_reply(
+            (string)($raw ?? ''),(string)($GLOBALS['STU_EMBER_LAST_THINKING'] ?? '')),
+          'ok'=>is_string($raw) && is_array($meta) && !empty($meta['ok'])
+            && !ember_last_call_was_truncated(),
+        ];
+      }, $userMsg
     );
     if (is_string($nativeResult)) return $nativeResult;
   }
@@ -5265,7 +5277,19 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         $excludeReplyToId,$triggerMessageId,$triggerRevision): ?string {
         return ember_generate_reply($pdo,$senderChar,$task,null,'console',
           $consoleUid,$consoleSessionId,$excludeReplyToId,$triggerMessageId,$triggerRevision);
-      }, ember_last_call_was_truncated()
+      }, ember_last_call_was_truncated(),
+      static function (string $nextPrompt) use ($primaryModel,$sys): array {
+        if (ember_agent_cancel_requested()) return ['text'=>'','ok'=>false];
+        $raw = ember_call_ollama($primaryModel,$sys,$nextPrompt,180,
+          [],null,null,false);
+        $meta = $GLOBALS['STU_EMBER_LAST_CALL'] ?? [];
+        return [
+          'text'=>ember_sanitize_public_reply(
+            (string)($raw ?? ''),(string)($GLOBALS['STU_EMBER_LAST_THINKING'] ?? '')),
+          'ok'=>is_string($raw) && is_array($meta) && !empty($meta['ok'])
+            && !ember_last_call_was_truncated(),
+        ];
+      }, $userMsg
     );
     if (is_string($nativeResult)) return $nativeResult;
   }
