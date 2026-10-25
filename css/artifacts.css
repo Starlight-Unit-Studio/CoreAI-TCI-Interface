@@ -209,7 +209,7 @@
   min-height: 0;
   max-height: none;
 }
-.msg-artifact-preview.md-preview-fullscreen:not(.md-preview-modal .msg-artifact-preview) {
+.msg-artifact-preview.md-preview-fallback {
   position: fixed;
   z-index: 2200;
   inset: 3dvh 3vw;

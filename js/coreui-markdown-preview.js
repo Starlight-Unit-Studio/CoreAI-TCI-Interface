@@ -184,7 +184,6 @@
 
     var rawText = null;
     var copyTextValue = null;
-    var fileBlob = null;
     var loading = null;
     var modal = null;
     var anchorMarker = null;
@@ -197,7 +196,6 @@
       loading = protectedFetch(file, endpoint).then(function (blob) {
         return blob.arrayBuffer().then(function (bytes) {
           var decoded = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
-          fileBlob = blob;
           rawText = decoded;
           var isDraft = decoded.indexOf(draftMarker) === 0;
           copyTextValue = isDraft ? decoded.slice(draftMarker.length).replace(/^\s+/, '') : decoded;
@@ -266,6 +264,7 @@
       modal = null;
       anchorMarker = null;
       frame.classList.remove('md-preview-fullscreen');
+      frame.classList.remove('md-preview-fallback');
       expand.title = 'Vorschau vergroessern';
       expand.setAttribute('aria-label', expand.title);
       expand.setAttribute('aria-expanded', 'false');
@@ -277,6 +276,7 @@
       if (typeof HTMLDialogElement === 'undefined'
           || typeof document.createElement('dialog').showModal !== 'function') {
         frame.classList.toggle('md-preview-fullscreen');
+        frame.classList.toggle('md-preview-fallback');
         var on = frame.classList.contains('md-preview-fullscreen');
         expand.setAttribute('aria-expanded', String(on));
         expand.title = on ? 'Vorschau verkleinern' : 'Vorschau vergroessern';
