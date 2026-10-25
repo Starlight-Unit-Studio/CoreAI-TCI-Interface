@@ -42,6 +42,9 @@ foreach (['user_id=? AND session_id=?', 'source_turn_id=?', 'response_message_id
   'hash(\'sha256\',$markdown)', 'function coreui_plan_artifact_map('] as $needle) {
   native_assert(str_contains($store,$needle),'Plan persistence guard missing: '.$needle);
 }
+$toolSource = (string)file_get_contents($root.'/api/console_native_tools.php');
+native_assert(str_contains($toolSource, 'react|next[.]?js|vue|angular'),
+  'Unsupported framework build must be rejected without fake artifact success');
 $download = (string)file_get_contents($root.'/api/console_plan.php');
 native_assert(str_contains($download,'stu_require_user_id()')
   && str_contains($download,'hash_equals(')

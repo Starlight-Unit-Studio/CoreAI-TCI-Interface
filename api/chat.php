@@ -5172,6 +5172,29 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       && (!function_exists('ember_py_extract_marker') || ember_py_extract_marker($out) === null)) {
     $out = ember_continue_truncated_reply($primaryModel, $sys, $finalPrompt, $out, null);
   }
+  // A long Markdown plan may need Ollama's normal continuation first.
+  // Recheck the complete marker AFTER continuation, before any public text
+  // sanitizer can expose a partial tool instruction to the user.
+  if ($channel === 'console' && !$fileTask && $imageUrl === null
+      && empty($GLOBALS['COREUI_NATIVE_TOOL_REENTRY'])
+      && is_string($out) && $consoleUid > 0 && $consoleSessionId !== null
+      && $triggerMessageId > 0 && coreui_native_tool_parse($out) !== null) {
+    $nativeResult = coreui_native_tool_apply(
+      $pdo,$consoleUid,(string)$consoleSessionId,$triggerMessageId,$out,
+      static function (string $task) use ($pdo,$senderChar,$consoleUid,$consoleSessionId,
+        $excludeReplyToId,$triggerMessageId,$triggerRevision): ?string {
+        return ember_generate_reply($pdo,$senderChar,$task,null,'console',
+          $consoleUid,$consoleSessionId,$excludeReplyToId,$triggerMessageId,$triggerRevision);
+      }
+    );
+    if (is_string($nativeResult)) return $nativeResult;
+  }
+  if (is_string($out) && preg_match('~^\s*\[COREUI_[A-Z_]+\]~u', $out)
+      && coreui_native_tool_parse($out) === null) {
+    return 'Maras Werkzeugantwort war unvollstaendig oder nicht gueltig. '
+      . 'Es wurde weder ein Plan als fertig gespeichert noch ein Projekt erstellt.';
+  }
+
   // Sicherheitsnetz: falls doch ein Restmarker durchrutscht, entfernen.
   if (is_string($out)) {
     $out = preg_replace('~\[WEB:\s*.*?\]~iu', '', $out);

@@ -602,6 +602,12 @@ try {
     $reply = is_string($fallback) ? trim($fallback) : '';
   }
 
+  if ($reply !== '' && preg_match('~^\s*\[COREUI_[A-Z_]+\]~u', $reply)
+      && coreui_native_tool_parse($reply) === null) {
+    $reply = 'Maras Werkzeugantwort war unvollstaendig oder nicht gueltig. '
+      . 'Es wurde weder ein Plan gespeichert noch ein Projekt erstellt.';
+  }
+
   // Auch ein synchroner Werkzeug-Fallback passiert vor DB und Client dieselbe Schranke.
   if ($reply !== '') {
     $reply = ember_sanitize_public_reply($reply, $thinkingAll);

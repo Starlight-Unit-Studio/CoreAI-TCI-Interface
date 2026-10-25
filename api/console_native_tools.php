@@ -54,6 +54,10 @@ function coreui_native_tool_build_request(PDO $pdo, int $uid, string $sessionId,
   // Each local source request retains at most 9000 task characters.
   // Reject an oversized plan rather than silently losing requirements.
   if (strlen($source) > 6500) return null;
+  // Fail closed on unsupported app stacks. Do not quietly relabel React,
+  // server code or a mobile APK as a working static three-file ZIP.
+  if (preg_match('~\b(?:react|next[.]?js|vue|angular|svelte|wordpress|vite|php|mysql|postgres|laravel|apk|android\s+native|typescript)\b~iu',
+      $description . "\n" . $source)) return null;
   $spec = coreui_console_project_request_spec($description);
   if (!is_array($spec)) return null;
   $files = array_values($spec['requested']);
