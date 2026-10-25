@@ -7,7 +7,15 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 E.M.B.E.R. CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.38` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.39` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Native Modellwerkzeuge und Markdown-Projektplaene (0.5.39)
+
+CoreUI now has a small **model-selected** native tool protocol for the private chat: Mara may save a Markdown plan, append a new immutable version, save and build in the same turn, or request an isolated source-file/ZIP build. The user does not need to repeat a rigid word sequence. The server validates every tool invocation; the model never gets host shell access or an unbounded instruction runner. Existing explicit file/Python commands remain usable.
+
+Plan versions are stored per account and chat in migration 016, not in the transient chat context. They are downloadable as authenticated `projektplan-vN.md` artifact cards. The runtime adds a *small, clearly marked* plan excerpt without expanding the owner Modelfile. Plans beyond the safe per-file model budget are **not silently truncated for generation**: the full saved file remains downloadable, while chunked long-plan retrieval is a future extension.
+
+The existing installation steps are unchanged. PHP syntax validation now emits the offending file and exact PHP error rather than the unhelpful `xargs: php exited 255`. Tests for older UI/stream assumptions were updated. See `docs/UEBERGABEPROTOKOLL_0_5_39.txt` for the honest Netcup live-acceptance checklist.
 
 ## Kontextuelle Projektfreigabe (0.5.38)
 

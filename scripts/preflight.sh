@@ -136,6 +136,11 @@ UI_FILES=(
   scripts/work-events-persistence-selftest.php
   scripts/local-file-tool-selftest.php
   scripts/contextual-project-selftest.php
+  scripts/native-tools-selftest.php
+  api/console_native_tools.php
+  api/console_plan_store.php
+  api/console_plan.php
+  database/migrations/016_console_project_plans.sql
   api/console_project_handoff.php
   scripts/gemma-zero-parameters-selftest.php
   config/Modelfile.template
@@ -160,9 +165,9 @@ UI_FILES=(
   scripts/markdown-selftest.js
   scripts/branding-license-selftest.py
   scripts/cache-bust.py
-  docs/changelogs-txt/CHANGELOG_0_5_38.txt
+  docs/changelogs-txt/CHANGELOG_0_5_39.txt
   docs/COREUI_IMAGE_ENGINE_PLAN.md
-  docs/UEBERGABEPROTOKOLL_0_5_38.txt
+  docs/UEBERGABEPROTOKOLL_0_5_39.txt
   docker/pyworker/Dockerfile
   docker/pyworker/entrypoint.sh
   images/starlight_unit_studios_logo_original.png
@@ -407,6 +412,14 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   fi
 
   if compose exec -T php php -r \
+      'require "/var/www/coreui/api/db.php"; require "/var/www/coreui/api/console_plan_store.php"; exit(coreui_plan_schema_ready(stu_pdo()) ? 0 : 1);' \
+      >/dev/null 2>&1; then
+    ok 'Migration 016: dauerhafte Markdown-Planungen bereit.'
+  else
+    fail 'Migration 016 fehlt: Markdown-Projektplanung nicht bereit.'
+  fi
+
+  if compose exec -T php php -r \
       'require "/var/www/coreui/api/db.php"; require "/var/www/coreui/api/console_agent_runs.php"; exit(coreui_agent_run_schema_ready(stu_pdo()) ? 0 : 1);' \
       >/dev/null 2>&1; then
     ok 'Migration 013: dauerhafte Agentenlaeufe bereit.'
@@ -453,6 +466,12 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
 
   # Node is optional for PHP installations. Run the real JS unit test when
   # present on the host; the PHP frontend guard always checks integration.
+  if native_test="$(compose exec -T php php scripts/native-tools-selftest.php 2>&1)"; then
+    ok "$native_test"
+  else
+    fail "Native Tools: $native_test"
+  fi
+
   if compose exec -T php php scripts/contextual-project-selftest.php >/dev/null 2>&1; then
     ok 'Projektfreigabe aus laufender Sitzung aktiviert den verifizierten Dateiweg.'
   else
@@ -498,8 +517,17 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fi
   done
 
-  if compose exec -T php sh -ec \
-      'find api scripts tools -type f -name "*.php" -print0 | xargs -0 -r -n1 php -l >/dev/null'; then
+  if compose exec -T php sh -ec '
+      find api scripts tools -type f -name "*.php" -exec sh -c '\''
+        for file do
+          if ! php -l "$file" >/dev/null 2>&1; then
+            printf "[PHP-SYNTAXFEHLER] %s\\n" "$file" >&2
+            php -l "$file" >&2 || true
+            exit 1
+          fi
+        done
+      '\'' sh {} +
+    '; then
     ok 'Alle paketierten PHP-Dateien bestehen den Syntaxcheck.'
   else
     fail 'Mindestens eine paketierte PHP-Datei hat einen Syntaxfehler.'

@@ -394,21 +394,9 @@ try {
     ? ember_exact_integer_calculation($promptMessage)
     : null;
   console_stream_progress($thinkingEnabled, 'request');
-  // A short explicit approval may refer to the static web project planned
-  // earlier in the SAME authorized session. Resolve it before choosing the
-  // model path; never ask the model for an implicit tool marker first.
+  // Old explicit file orders retain the fast path; model-selected tools
+  // handle the other requests without matching user keywords.
   $fileTaskPrompt = $promptMessage;
-  if (!$isVisionTurn && $attachmentIds === [] && $generationMode !== 'continue'
-      && ember_py_enabled()) {
-    $resolvedProject = coreui_console_web_project_resolve(
-      $pdo, (int)$uid, $sessionId, $afterId, $promptMessage
-    );
-    if (is_string($resolvedProject)) {
-      $fileTaskPrompt = $resolvedProject;
-      coreui_work_record($pdo, 'tool', 'info', 'Gespraechsplan als Dateiauftrag erkannt',
-        ['reason'=>'contextual_project_handoff','files'=>3]);
-    }
-  }
   // The existing sandbox is selected by the resolved project request, not
   // just by download keywords in the short follow-up message.
   $fileTaskHandled = !$isVisionTurn && $attachmentIds === []
@@ -530,6 +518,28 @@ try {
               || (function_exists('ember_py_extract_marker') && ember_py_extract_marker($reply) !== null);
   }
 
+  // Handle one validated tool from Mara's finished output before fallback.
+  if (!$fileTaskHandled && !$isVisionTurn && $attachmentIds === []
+      && $generationMode !== 'continue'
+      && !empty($acc['ok']) && !empty($acc['done']) && empty($acc['truncated'])
+      && coreui_native_tool_parse($reply) !== null) {
+    coreui_work_record($pdo,'tool','info','Mara hat ein natives Werkzeug angefordert',
+      ['reason'=>'model_selected_tool']);
+    console_stream_progress($thinkingEnabled,'tool');
+    $toolResult = coreui_native_tool_apply(
+      $pdo,(int)$uid,$sessionId,$afterId,$reply,
+      static function (string $task) use ($pdo,$char,$uid,$sessionId,$excludeReplyToId,
+        $afterId,$triggerRevision): ?string {
+        return ember_generate_reply($pdo,$char,$task,null,'console',
+          (int)$uid,$sessionId,$excludeReplyToId,$afterId,$triggerRevision);
+      }
+    );
+    if (is_string($toolResult)) {
+      $reply = $toolResult;
+      $hasMarker = false;
+    }
+  }
+
   $streamUnsafe = empty($acc['ok'])
     || empty($acc['done']);
   if (!$fileTaskHandled && ($hasMarker || $reply === '' || $streamUnsafe)) {
@@ -590,6 +600,12 @@ try {
     }
     if (ember_agent_cancel_requested(true)) throw new RuntimeException('agent_cancelled');
     $reply = is_string($fallback) ? trim($fallback) : '';
+  }
+
+  if ($reply !== '' && preg_match('~^\s*\[COREUI_[A-Z_]+\]~u', $reply)
+      && coreui_native_tool_parse($reply) === null) {
+    $reply = 'Maras Werkzeugantwort war unvollstaendig oder nicht gueltig. '
+      . 'Es wurde weder ein Plan gespeichert noch ein Projekt erstellt.';
   }
 
   // Auch ein synchroner Werkzeug-Fallback passiert vor DB und Client dieselbe Schranke.

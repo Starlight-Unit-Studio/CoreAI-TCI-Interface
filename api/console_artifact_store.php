@@ -2,6 +2,8 @@
 declare(strict_types=1);
 
 /** Generated outputs are registered from trusted worker results, never from model links. */
+require_once __DIR__ . '/console_plan_store.php';
+
 function coreui_console_artifact_schema_ready(PDO $pdo): bool {
   try {
     $pdo->query('SELECT id,user_id,session_id,message_id,job_id,storage_key,orig_name,mime_type,file_size,sha256,partial FROM stu_console_artifacts LIMIT 0');
@@ -210,6 +212,11 @@ function coreui_console_artifact_map(PDO $pdo, int $uid, array $messageIds): arr
     $st = $pdo->prepare(coreui_console_artifact_select_sql() . ' AND a.user_id=? AND a.message_id IN (' . implode(',', array_fill(0, count($chunk), '?')) . ') ORDER BY a.message_id,a.created_at,a.id');
     $st->execute(array_merge([$uid], $chunk));
     foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $row) $map[(int)$row['message_id']][] = coreui_console_artifact_public($row);
+  }
+  // Native Markdown plans are durable downloadable files as well, but
+  // never enter the sandbox artifact table or its Python-job associations.
+  foreach (coreui_plan_artifact_map($pdo, $uid, $ids) as $messageId=>$plans) {
+    foreach ($plans as $plan) $map[(int)$messageId][] = $plan;
   }
   return $map;
 }
