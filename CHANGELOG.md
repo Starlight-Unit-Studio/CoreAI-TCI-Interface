@@ -2,6 +2,12 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.43 - 25.10.2026
+
+- Aktive Mara-Vorlage auf den vollstaendigen vom Betreiber bereitgestellten SYSTEM-Text zurueckgestellt. Nur portable FROM-Basis und Ollama-konforme dreifache SYSTEM-Anfuehrung statt ollama-show-Blobpfaden. Vier Originalparameter, kein num_predict -1, kein num_ctx.
+- Modelfile-Regressionstest und Aenderungsrichtlinie angepasst; vorhandene 0.5.42-Leerausgabe-Diagnose, gezieltes think:true bei HTTP-200-Leerantwort und Modell-Live-Audit bleiben erhalten.
+- Installer, One-Liner, Modellaufbaureihenfolge und Laufzeit-Queue nicht veraendert. Produktiven Modell-Rebuild und echten E4B-Lauf nach Update verifizieren.
+
 ## 0.5.42 - 25.10.2026
 
 - **Leere E4B-Dateiausgabe diagnostizieren:** Das bisherige `model_response_missing` verdeckte Transport-Timeout, Warteschlangenfehler, HTTP-Fehler und erfolgreiche Ollama-Antworten mit leerem `message.content`. CoreUI klassifiziert diese Faelle getrennt und zeigt sicheren HTTP-Status, Laufzeit sowie Tokenzaehler im bestehenden Arbeitsverlauf. Kein Rohprompt oder Modell-Denkinhalt in den Events.

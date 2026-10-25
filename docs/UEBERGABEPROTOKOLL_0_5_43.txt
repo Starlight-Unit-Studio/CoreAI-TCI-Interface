@@ -1,0 +1,48 @@
+E.M.B.E.R. COREUI 0.5.43 - UEBERGABEPROTOKOLL
+Stand: 25.10.2026
+Basis: main 0.5.42 e1e9ec77c33987ef82fba55f088983d91b4e0c3a
+Branch: fix/restore-owner-mara-modelfile-0.5.43
+
+BEFUND
+0.5.41 brach die index.html-Dateiausgabe mit model_response_missing,
+0 Ausgabezeichen und 0 Tokens ab. Das ist eine leere oder fehlende
+Ollama-Antwort, nicht die 60k-Persistenzkuerzung. 0.5.42 enthaelt
+bereits separate Ursachenklassifizierung und einen begrenzten
+think:true-Retry fuer HTTP 200 mit leerem content. Keine dieser
+Verbesserungen wurde rueckgaengig gemacht.
+
+BETREIBER-MODELFILE
+Die aktive config/Modelfile.template war zwischenzeitlich unabhaengig
+vom Betreiberexport auf eine andere TSA-Thorn-Kurzpersona umgestellt
+und PARAMETER num_predict -1 ergaenzt worden. Auf ausdruecklichen
+Betreiberwunsch ist die aktive SYSTEM-Passage jetzt EXAKT wieder
+aus docs/references/MODELFILE_E2B_USER_EXPORT_2026_10_25.txt
+uebernommen. Vier Parameter in Originalreihenfolge:
+draft_num_predict 0, temperature 1, top_k 64, top_p 0.95.
+Nur die exportbedingten absoluten FROM/DRAFT-Blobs sind ausgeschlossen:
+FROM gemma4:e4b bleibt als bereits vorhandener austauschbarer Tag,
+SYSTEM benutzt die portable dreifache Einfassung.
+
+ACHTUNG LAENGE
+Die Original-SYSTEM-Passage ist laenger als die neue Zwischenfassung.
+Es wurden KEINE neuen Coding-Skills, Tool-Listen oder Kontexte in das
+Modelfile eingefuegt. Eine weitere Verkuerzung waere kein 1:1
+Restore und benoetigt eine ausdrueckliche Abstimmung.
+
+GEPRUEFT
+- SYSTEM-Inhalt bytegleich zum archivierten Benutzerexport.
+- Exakt vier Betreiber-Parameter, kein num_ctx und kein num_predict.
+- Gemma Policy-Selbsttest auf gleiche SYSTEM-Passage und Parameter
+  umgestellt; 0.5.42 Live-Ollama-Audit bleibt unveraendert vorhanden.
+- Keine Aenderung an Installer, One-Liner, Ollama-API, Runtime-Queue,
+  Werkzeugsystem und der E4B-Datei-Diagnose von 0.5.42.
+- Echter Ollama/Netcup-Livetest ist offen.
+
+NACH UPDATE
+Mit dem bisherigen One-Liner aktualisieren. Der vorhandene Installer
+generiert var/Modelfile.generated und baut das eigene Ollama-Modell.
+Mit scripts/model-live-audit.php und Ollama /api/show pruefen, ob das
+tatsaechlich geladene SYSTEM nun mit der aktiven Vorlage uebereinstimmt.
+Dann einen kleinen isolierten HTML-Dateiauftrag testen. Bei erneuter
+Leerausgabe HTTP/Timeout/done_reason/Tokenzaehler aus dem neuen
+Arbeitsereignis melden; keine unbelegten Vermutungen ueber num_ctx.

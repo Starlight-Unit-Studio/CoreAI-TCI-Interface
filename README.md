@@ -7,7 +7,7 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 E.M.B.E.R. CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.42` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.43` (numeric only). The last verified ZIP remains archived under its original historical name.
 
 ## Ollama-Modell-Audit und lokale Quelldateien (0.5.42)
 
