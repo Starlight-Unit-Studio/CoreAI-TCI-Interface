@@ -38,6 +38,33 @@ try {
   $profileStore = frontend_test_read($root . '/api/profile_store.php');
   $profileMedia = frontend_test_read($root . '/api/profile_media.php');
 
+  // 0.5.53: The 310-second client countdown came from STU Console.
+  // It was never the server's real timeout. Keep useful response timings,
+  // typing indicator, polling and stream watchdog entirely unchanged.
+  foreach ([
+    'MAX_WAIT_SEC',
+    'ember-countdown',
+    'countdownTimer',
+    'countdownEl',
+    'startCountdown(',
+    'stopCountdown(',
+  ] as $legacy) {
+    frontend_test_assert(
+      !str_contains($console,$legacy) && !str_contains($css,$legacy),
+      'Ueberholter 310-Sekunden-Countdown ist noch aktiv: '.$legacy
+    );
+  }
+  frontend_test_assert(
+    str_contains($console,'function showTypingIndicator()')
+      && str_contains($console,'function showResponseTime(')
+      && str_contains($console,'function responseTimings(record)')
+      && str_contains($console,'function armWatchdog()')
+      && str_contains($console,'startFastPoll(')
+      && str_contains($console,'function doBackgroundPoll()')
+      && str_contains($appHtml,'id="coreClock"'),
+    'Countdown-Entfernung hat echte Stream-/Polling-Funktionen oder die lokale Uhr beschaedigt.'
+  );
+
   frontend_test_assert(!str_contains($settings, 'history.back()'), 'Einstellungen verwenden weiterhin den Browser-Verlauf.');
   frontend_test_assert(str_contains($settings, "location.replace('app.html')"), 'Core Channel besitzt kein deterministisches Ziel.');
   frontend_test_assert(str_contains($adminHtml, 'id="adminBack"'), 'Admin-Zurueckschalter ist nicht eindeutig verdrahtet.');

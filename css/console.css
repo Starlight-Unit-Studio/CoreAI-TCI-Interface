@@ -2137,20 +2137,6 @@ a:focus-visible {
   animation-delay: 280ms;
 }
 
-.ember-countdown {
-  align-self: center;
-  margin: -4px auto 2px;
-  padding: 6px 12px;
-  border: 1px solid rgba(226, 155, 57, 0.28);
-  background: rgba(255, 250, 240, 0.68);
-  color: #9d681f;
-  font-family: "Share Tech Mono", monospace;
-  font-size: 9px;
-  letter-spacing: 0.06em;
-  box-shadow: 0 0 18px rgba(226, 155, 57, 0.09);
-  animation: countdown-pulse 1.8s ease-in-out infinite;
-}
-
 .msg-image {
   display: block;
   width: min(100%, 620px);
@@ -4331,17 +4317,6 @@ audio.msg-image {
   }
   to {
     transform: rotate(360deg);
-  }
-}
-
-@keyframes countdown-pulse {
-  0%,
-  100% {
-    opacity: 0.68;
-  }
-  50% {
-    opacity: 1;
-    box-shadow: 0 0 20px rgba(226, 155, 57, 0.18);
   }
 }
 

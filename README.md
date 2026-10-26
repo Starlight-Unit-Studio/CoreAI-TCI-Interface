@@ -7,7 +7,38 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 E.M.B.E.R. CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.52` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.53` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Legacy-Countdown im CoreUI-Chat entfernt (0.5.53)
+
+Der sichtbare, orangefarbene 310-Sekunden-Countdown ueber der
+Texteingabe war ein rein clientseitiger Rest aus STU Console.
+Er wurde durch `startCountdown()` bei Antworten,
+Fortsetzungen, Bearbeitungen und Sitzungswechseln gestartet.
+Nach Ablauf zeigte er lediglich "noch dabei": Er steuerte
+weder einen Ollama-Timeout noch eine echte Abbruchfrist.
+
+0.5.53 entfernt `MAX_WAIT_SEC = 310`, die
+`startCountdown/stopCountdown`-Hilfsfunktionen, alle
+Aufrufstellen und die CSS-Animation `.ember-countdown`.
+Dadurch gibt es keine irrefuehrende Zeitangabe mehr oberhalb
+des Chat-Eingabefelds.
+
+Die wirklichen Netzwerk-Timeouts, SSE-Idle-Ueberwachung,
+Modellaufrufe, Session-Polling, Typing-Anzeige,
+modell- und serverseitig gemessene Antwortlaufzeiten
+sowie die optionale Ortszeit im Header bleiben erhalten.
+Der Frontend-Regressions-Selbsttest prueft, dass kein
+Countdown mehr verdrahtet ist und die wichtigen
+Laufzeit- und Pollingfunktionen unberuehrt bleiben.
+Die Cache-Schluessel fuer `js/console-app.js` und
+`css/console.css` wurden aktualisiert.
+
+Weder das Betreiber-`config/Modelfile.template` noch
+Ollama-Kontext, Sliding-Window, Sampler, Server-Timeout,
+Planung, Dateigenerierung oder der Installer wurden
+geaendert. Uebergabe:
+`docs/UEBERGABEPROTOKOLL_0_5_53.txt`.
 
 ## Preflight-Hotfix nach Thinking-Override (0.5.52)
 

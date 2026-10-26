@@ -2,6 +2,15 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.53 - 26.10.2026
+
+- Entfernt den historischen, fuer E.M.B.E.R. CoreUI irrelevanten 310-Sekunden-Countdown oberhalb des Chat-Eingabebereichs. Die Anzeige zaehlte nur im Browser herunter, stoppte keine laufende Modellantwort und war kein echter 307-/310-Sekunden-Server-Timeout.
+- `MAX_WAIT_SEC`, `startCountdown()`, `stopCountdown()`, die UI-State-Felder, die 12 Aufrufstellen und die CSS-Regeln `.ember-countdown` sowie `countdown-pulse` entfernt.
+- Die normalen Arbeitsweg-/Thinking-/Typing-Anzeigen, modellbezogenen Antwortzeiten, Statusmeldungen, Sessions, Polling, SSE-Watchdog und tatsaechlichen Backend-Timeouts bleiben unveraendert.
+- `scripts/frontend-regression-selftest.php` prueft den Wegfall des Countdowns und die weiter vorhandenen Stream-/Timing-/Polling-Komponenten. Bestehende Preflight-Varianten fuehren diesen Test bereits aus; keine neue CI-Abhaengigkeit.
+- Neue Browser-Cache-Schluessel fuer Chat-JavaScript und Haupt-CSS, sechs Versionsanzeigen aktualisiert.
+- Modelfile.template, Ollama-Parameter, 0.5.51-Builder, Planungsengine, Installer, SQL, Python-/ZIP-Worker und Datenbank unveraendert. Vollstaendige Netcup-Preflight-Abnahme nach Update bleibt offen.
+
 ## 0.5.52 - 26.10.2026
 
 - Hotfix fuer den realen 0.5.51 Compose-Preflight-Abbruch vor den tieferen Tests: `Thinking-Schalter oder Mehrfachanhaenge sind unvollstaendig paketiert`.
