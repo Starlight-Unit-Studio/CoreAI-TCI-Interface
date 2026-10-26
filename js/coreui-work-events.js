@@ -1,4 +1,4 @@
-// P06: operational events live inline in E.M.B.E.R.'s normal chat answer.
+// P06: operational events live inline in CoreAI's normal chat answer.
 // Events are supplied by the authenticated message history (or SSE), not a
 // second per-message HTTP request. Never render model-authored HTML here.
 (function () {
@@ -196,10 +196,17 @@
     return /^\d\d:\d\d(?::\d\d)?$/.test(raw) ? raw : '';
   }
 
-  function add(body, raw) {
-    if (!body) return false;
-    var event = normalize(raw);
-    if (!event) return false;
+  // Live events can arrive in a single SSE burst. Serialize only their visible
+  // presentation, never the authenticated storage or the actual tool execution.
+  // Reloaded history and reduced-motion users see the complete text immediately.
+  function motionEnabled(body) {
+    if (!body._workLive || body.hidden || typeof window.setTimeout !== 'function'
+        || document.hidden === true) return false;
+    return !(typeof window.matchMedia === 'function'
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }
+
+  function appendNow(body, event, animate, finished) {
     var entries = body.querySelector('.work-entries');
     if (!entries) {
       body.textContent = '';
@@ -216,12 +223,14 @@
     var info = el('div', 'work-info');
     info.appendChild(el('div','work-title',event.title));
     var note = workNote(event);
+    var noteText = null;
     if (note) {
       var annotation = el('div','work-note');
       annotation.className += event.kind === 'commentary' ? ' work-note-model' : ' work-note-derived';
       annotation.appendChild(el('span','work-note-label',event.kind === 'commentary'
         ? 'Mara · Öffentliche Zwischenmeldung' : 'Ereignisbericht · Automatisch erläutert'));
-      annotation.appendChild(el('p','work-note-text',note));
+      noteText = el('p','work-note-text',animate ? '' : note);
+      annotation.appendChild(noteText);
       info.appendChild(annotation);
     }
     var keys = Object.keys(event.meta).filter(function (key) { return key !== 'public_note'; });
@@ -240,17 +249,104 @@
     if (event.time) entry.appendChild(el('time','work-time',localTime(event.time)));
     entries.appendChild(entry);
     while (entries.children.length > 150) entries.removeChild(entries.firstChild);
-    // Keep the newest live step visible inside the scrollable detail area.
-    // A saved history panel must not force the reader's scroll position.
     if (body._workLive) body.scrollTop = body.scrollHeight;
     if (typeof body._onWorkEvent === 'function') body._onWorkEvent(event);
+
+    if (!animate || !noteText || !note) {
+      if (typeof finished === 'function') finished();
+      return true;
+    }
+    var chars = Array.from(note);
+    var active = {node:noteText,full:note,timer:0,pos:0};
+    body._workActive = active;
+    noteText.className += ' work-note-typing';
+    function typeNext() {
+      if (body._workActive !== active) return;
+      // Faster display after reconnect bursts, without discarding a single step.
+      var backlog = (body._workQueue || []).length;
+      var take = Math.min(18, 2 + backlog * 2);
+      active.pos = Math.min(chars.length,active.pos + take);
+      noteText.textContent = chars.slice(0, active.pos).join('');
+      if (body._workLive) body.scrollTop = body.scrollHeight;
+      if (active.pos < chars.length) {
+        active.timer = window.setTimeout(typeNext,Math.max(20,40 - backlog * 2));
+      } else {
+        noteText.className = 'work-note-text';
+        body._workActive = null;
+        finished();
+      }
+    }
+    active.timer = window.setTimeout(typeNext,32);
+    return true;
+  }
+
+  function drainWorkQueue(body) {
+    if (!body || body._workBusy || !Array.isArray(body._workQueue)
+        || !body._workQueue.length) return;
+    if (!motionEnabled(body)) {
+      flushWork(body);
+      return;
+    }
+    var event = body._workQueue.shift();
+    body._workBusy = true;
+    if (!appendNow(body,event,true,function () {
+      body._workBusy = false;
+      if (body._workQueue.length) {
+        body._workDelayTimer = window.setTimeout(function () {
+          body._workDelayTimer = 0;
+          drainWorkQueue(body);
+        },80);
+      }
+    })) {
+      body._workBusy = false;
+      drainWorkQueue(body);
+    }
+  }
+
+  function flushWork(body) {
+    if (!body) return;
+    if (body._workDelayTimer && typeof window.clearTimeout === 'function')
+      window.clearTimeout(body._workDelayTimer);
+    body._workDelayTimer = 0;
+    var active = body._workActive;
+    if (active) {
+      if (active.timer && typeof window.clearTimeout === 'function')
+        window.clearTimeout(active.timer);
+      active.node.textContent = active.full;
+      active.node.className = 'work-note-text';
+      body._workActive = null;
+    }
+    body._workBusy = false;
+    var remaining = Array.isArray(body._workQueue) ? body._workQueue.splice(0) : [];
+    remaining.forEach(function (event) { appendNow(body,event,false); });
+  }
+
+  function add(body, raw) {
+    if (!body) return false;
+    var event = normalize(raw);
+    if (!event) return false;
+    var entries = body.querySelector('.work-entries');
+    if (event.id && entries && entries.querySelector('[data-work-id="' + event.id + '"]'))
+      return false;
+    if (body._workQueue && event.id && body._workQueue.some(function (pending) {
+      return pending.id === event.id;
+    })) return false;
+
+    if (!motionEnabled(body)) {
+      if (body._workQueue && body._workQueue.length) flushWork(body);
+      return appendNow(body,event,false);
+    }
+    if (!body._workQueue) body._workQueue = [];
+    body._workQueue.push(event);
+    drainWorkQueue(body);
     return true;
   }
 
   function create(options) {
     options = options || {};
-    var events = merge(options.events, []);
+    var initialEvents = merge(options.events, []);
     var live = !!options.live;
+    var events = live ? [] : initialEvents;
     if (!live && events.length === 0) return null;
     var timeline = el('section','work-panel');
     timeline.setAttribute('aria-label','E.M.B.E.R. CoreAI Arbeitsweg und öffentliche Arbeitsnotizen');
@@ -297,11 +393,12 @@
       updateSummary();
     };
     updateSummary();
-    events.forEach(function (event) { add(body,event); });
+    initialEvents.forEach(function (event) { add(body,event); });
     toggle.addEventListener('click',function () {
       expanded = !expanded;
       toggle.setAttribute('aria-expanded',expanded ? 'true' : 'false');
       body.hidden = !expanded;
+      if (!expanded) flushWork(body);
       updateSummary();
       if (typeof options.onToggle === 'function') options.onToggle(expanded);
     });
@@ -311,5 +408,5 @@
     return timeline;
   }
 
-  window.CoreUIWorkEvents = {create:create,add:add,normalize:normalize,merge:merge};
+  window.CoreUIWorkEvents = {create:create,add:add,flush:flushWork,normalize:normalize,merge:merge};
 }());
