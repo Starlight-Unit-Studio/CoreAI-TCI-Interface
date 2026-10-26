@@ -2,6 +2,15 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.52 - 26.10.2026
+
+- Hotfix fuer den realen 0.5.51 Compose-Preflight-Abbruch vor den tieferen Tests: `Thinking-Schalter oder Mehrfachanhaenge sind unvollstaendig paketiert`.
+- Ursache: Beide Preflight-Skripte verglichen einen historischen Ollama-Payload-Ausdruck wortwoertlich. 0.5.51 verwendet stattdessen die bereits getestete und gueltige Think-Override-Bindung `$thinkOverride ?? ember_thinking_enabled()`. Die alte Zeichenfolge war folgerichtig nicht mehr vorhanden.
+- In `scripts/preflight.sh` und `scripts/preflight-native.sh` jetzt toleranterer, aber auf das `think`-Payloadfeld und die kontobezogene Defaultfunktion begrenzter Ausdruckstest.
+- Thinking- und Zehn-Anhaenge-Paketierung getrennt geprueft und getrennt diagnostiziert. Das eigentliche Override-Verhalten kontrolliert weiterhin `scripts/reply-pipeline-selftest.php`.
+- Fix lokal per Bash-Grep-Reproduktion mit altem, neuem und ungueltigem Payload-Ausdruck plausibilisiert. Vollstaendiger Netcup-Preflight nach Aktualisierung noch ausstehend.
+- Modelfile.template, Ollama-Parameter, normale Modellgenerierung, 0.5.51-Projekt-Dispatch, SQL, Installer, Python-/ZIP-Writer und persistierte Nutzerdateien unveraendert. Keine GitHub Actions ausgefuehrt.
+
 ## 0.5.51 - 25.10.2026
 
 - Fehlerbehebung fuer "Lass mal den Plan umsetzen": 0.5.50 erzeugte statt Projektdateien nur 33 Zeichen Modelltext und danach `continuation_limit`. Der native Build wurde mangels erkanntem Modellwerkzeug gar nicht aufgerufen.
