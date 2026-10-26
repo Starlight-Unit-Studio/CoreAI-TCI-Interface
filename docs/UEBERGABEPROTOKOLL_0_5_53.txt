@@ -1,0 +1,83 @@
+E.M.B.E.R. COREUI 0.5.53 - UEBERGABEPROTOKOLL
+Datum: 26.10.2026
+Basis: main 0.5.52, 12d9c9db896e7c264e4d58f73e65fdd7fd9581b0
+Branch: fix/remove-legacy-chat-countdown-0.5.53
+
+AUFTRAG
+Den sichtbaren herunterzaehlenden Timer oberhalb der
+CoreUI-Texteingabe entfernen. Es handelt sich um ein
+STU-Console-Ueberbleibsel, das einen vermeintlichen
+310-Sekunden-Countdown anzeigt, obwohl E.M.B.E.R. CoreUI
+unterschiedliche und teils laengere Laufzeiten hat.
+
+ROOT CAUSE
+js/console-app.js enthielt "var MAX_WAIT_SEC = 310"
+sowie startCountdown/stopCountdown. Die Anzeige
+wurde beim Senden, Bearbeiten, Fortsetzen und beim
+Wiederaufruf einer bereits laufenden Sitzung gestartet.
+Sie verringerte alle 1000 ms lediglich einen
+Client-Zaehler und wechselte bei 0 zu "noch dabei".
+Sie startete oder beendete niemals einen echten
+Backend-/Ollama-Auftrag; insbesondere entsprach
+sie keiner garantierten 307-Sekunden-Frist.
+
+KONKRETE AENDERUNGEN
+- js/console-app.js: MAX_WAIT_SEC, alle Countdown-
+  State-Felder, Start-/Stop-Funktionen und
+  saemtliche 12 Aufrufstellen entfernt.
+- css/console.css: .ember-countdown-Block und
+  @keyframes countdown-pulse entfernt.
+- app.html: neue numerische Cache-Schluessel
+  fuer die beiden geaenderten Frontend-Assets.
+- scripts/frontend-regression-selftest.php:
+  Prueft jetzt die vollstaendige Countdown-Abwesenheit
+  und den Erhalt von showTypingIndicator,
+  showResponseTime, responseTimings, armWatchdog,
+  startFastPoll, doBackgroundPoll und coreClock.
+- Ausgabeversion 0.5.53, README, CHANGELOG,
+  Text-Changelog, Pflichtmanifest beider Preflights
+  und die ueblichen sechs HTML-Versionsanzeigen
+  synchronisiert.
+
+AUSDRUECKLICH ERHALTEN
+- Server-/Ollama-Timeouts, Stream-Idle-Watchdog
+  und alle echten Netzwerk-Polling-Timer.
+- Modell-Denk-/Arbeitsweg-Status und persistierte
+  Antwortlaufzeitmessung (keine Countdownanzeige).
+- Lokale Uhrzeit im Header.
+- Alle Skills, Planung und Projekt-Builder.
+- Uploads/Anhaenge, Python-Worker, ZIP-Erstellung.
+- Setup, Datenbank-Migrationen, User-Sessions,
+  Identitaet und Zugriffsrechte.
+
+NICHT VERAENDERT
+config/Modelfile.template, Git-Blob:
+ec01a9540ff668230e6ac0a7e23ffab305d54415
+Gemma-Modellkonfiguration, num_ctx, Sliding Window,
+num_predict, Sampling, Installer, SQL,
+globale serielle Ollama-Warteschlange,
+PHP-Webserver, Worker und HTTP-Timeoutwerte.
+Keine GitHub Actions wegen aufgebrauchtem Kontingent.
+
+TESTSTAND
+Quelltextseitig alle Countdown-Aufrufstellen
+und die CSS-Animation entfernt; Regressionstest
+erweitert. Der volle PHP-Frontend-Selbsttest
+muss noch auf dem Zielserver laufen.
+Der bereits vorhandene Native- und
+Compose-Preflight fuehrt ihn mit aus.
+
+ABNAHME
+1. Gewohnten Update-One-Liner starten.
+2. Preflight einschliesslich Frontend-Regression
+   und modellgesteuerter Projektumsetzung pruefen.
+3. CoreUI neu laden; bei einer Antwort darf
+   kein 310s-Countdown mehr ueber dem
+   Eingabebereich erscheinen.
+4. Thinking/Arbeitsweg, Antwortzeiten,
+   Sitzungswechsel, Fortsetzen und normalen
+   Dateiauftrag weiterhin pruefen.
+5. Falls ein echter Modell-Aufruf abbricht,
+   done_reason/eval_count und Backend-Timeout
+   gesondert untersuchen. Nicht den
+   entfernten UI-Countdown wieder einfuehren.
