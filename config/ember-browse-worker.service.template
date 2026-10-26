@@ -1,5 +1,5 @@
 [Unit]
-Description=Ember CoreUI asynchronous browse worker
+Description=CoreAI: TCI Interface asynchronous browse worker
 After=network-online.target mariadb.service ollama.service docker.service
 Wants=network-online.target
 
