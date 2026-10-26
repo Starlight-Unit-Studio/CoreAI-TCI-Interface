@@ -150,6 +150,12 @@
   var sessionArchiveToggle = document.getElementById('sessionArchiveToggle');
   var messagesInner = document.getElementById('messagesInner');
   var messagesArea  = document.getElementById('messagesArea');
+  var jumpLatest    = document.getElementById('jumpLatest');
+  var chatFollow    = window.CoreUIChatFollow
+    ? window.CoreUIChatFollow.create(messagesArea, jumpLatest,
+        function () { return state.waitingEmber || !!state.typingEl; },
+        function () { return state.typingEl; })
+    : null;
   var inputEl       = document.getElementById('inputMessage');
   var btnSend       = document.getElementById('btnSend');
   // v1.1.1.89 - Anhang
@@ -307,6 +313,7 @@
       ? 'Nachricht nach der laufenden Antwort senden'
       : (state.editingMessage ? 'Bearbeitete Nachricht speichern' : 'Nachricht senden'));
     updateAgentCancelControl();
+    if (chatFollow) chatFollow.refresh();
   }
 
   // ── DB: Sessions laden ───────────────────────────────────
@@ -567,6 +574,7 @@
     if (state.bgTimer) clearTimeout(state.bgTimer);
     state.viewEpoch++;
     state.activeSessionId = String(sessionId || '');
+    if (chatFollow) chatFollow.reset();
     var ses = activeSession();
     if (!ses) return;
     if (state.editingMessage && String(state.editingMessage.session_id) !== String(ses.id)) {
@@ -1589,6 +1597,7 @@
     row.appendChild(content);
     messagesInner.appendChild(row);
     state.typingEl = row;
+    if (chatFollow) chatFollow.refresh();
     scrollToBottom();
   }
 
@@ -1603,11 +1612,13 @@
     state.typingEl = null;
     state.thinkingPanelEl = null;
     state.agentStopEl = null;
+    if (chatFollow) chatFollow.refresh();
   }
 
-  function scrollToBottom() {
+  function scrollToBottom(force) {
+    if (chatFollow) { chatFollow.follow(force === true); return; }
     requestAnimationFrame(function() {
-      messagesArea.scrollTop = messagesArea.scrollHeight;
+      messagesArea.scrollTop = Math.max(0, messagesArea.scrollHeight - messagesArea.clientHeight);
     });
   }
 
@@ -2070,7 +2081,7 @@
     var msgToSend = userText;
     appendMessageEl('user', userText, state.userDisplayName || state.charName, null, atts, sentCreatedAt);
     if (!options.from_queue) clearAttachments();
-    scrollToBottom();
+    scrollToBottom(true); // A new user turn intentionally opens the latest view.
 
     setStatus('waiting', 'MARA ANTWORTET\u2026');
     state.pendingBySession[sessionId] = true;
@@ -2266,7 +2277,9 @@
       try {
         if (!isActiveSession(sessionId) || !window.CoreUIWorkEvents) return;
         var body = panelBody();
-        if (body) window.CoreUIWorkEvents.source(body,JSON.parse(ev.data));
+        if (body && window.CoreUIWorkEvents.source(body,JSON.parse(ev.data))) {
+          scrollToBottom(); // Respect a reader who scrolled away.
+        }
       } catch (e) {}
     });
     es.addEventListener('agent_run', function(ev) {
