@@ -3374,7 +3374,7 @@ function ember_call_ollama(string $model, string $systemPrompt, string $userProm
       curl_setopt($ch,CURLOPT_RETURNTRANSFER,false);
       curl_setopt($ch,CURLOPT_WRITEFUNCTION,static function ($handle,string $chunk) use (&$previewBuffer,$consumePreview): int {
         $previewBuffer .= $chunk;
-        while (($nl = strpos($previewBuffer,"\\n")) !== false) {
+        while (($nl = strpos($previewBuffer,"\n")) !== false) {
           $consumePreview(substr($previewBuffer,0,$nl));
           $previewBuffer = substr($previewBuffer,$nl+1);
         }
