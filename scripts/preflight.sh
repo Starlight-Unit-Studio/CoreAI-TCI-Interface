@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.63 source-preview PHP syntax hotfix.
+# CoreAI: TCI Interface 0.5.64 local file tool regression selftest hotfix.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
