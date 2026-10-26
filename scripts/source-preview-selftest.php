@@ -20,7 +20,7 @@ $check($start !== false && $end !== false && $end > $start, 'Ollama source bound
 $ollama = substr($chat, $start, $end - $start);
 $http = substr($chat, (int)strpos($chat,'function ember_http_get_json('), 1600);
 $check(!str_contains($http, '$sourcePreview'), 'preview must not modify generic HTTP client');
-$check(str_contains($ollama, '$previewActive') && str_contains($ollama, "$payload['stream'] = true"),
+$check(str_contains($ollama, '$previewActive') && str_contains($ollama, "\$payload['stream'] = true"),
   'stream opt-in within Ollama provider call');
 $check(str_contains($ollama, 'CURLOPT_WRITEFUNCTION'), 'real streaming transport');
 $expectedLineSeparator = <<<'PHP'
@@ -40,4 +40,4 @@ $check(str_contains($work, 'function source(body, raw)') &&
 $check(!str_contains($work, 'Automatisch erläutert') &&
     !str_contains($work, 'Öffentliche Zwischenmeldung'),
   'no redundant user-facing provenance labels');
-echo "CoreAI 0.5.62 live-source preview static regression: OK\n";
+echo "CoreAI 0.5.63 live-source preview static regression: OK\n";
