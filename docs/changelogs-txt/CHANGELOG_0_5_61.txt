@@ -1,0 +1,9 @@
+## 0.5.61 - 26.10.2026
+
+- Pflicht-Versionsstand fuer ein umfangreiches Chatwechsel-Uebergabeprotokoll, nicht fuer eine Runtime-Funktion: docs/UEBERGABEPROTOKOLL_0_5_61.txt.
+- Festgehalten: 0.5.60 enthaelt im Quellcode das nacheinander erfolgende Live-Schreiben von Ereignisberichten sowie HTML/CSS-Quelltextfortsetzungen. Die produktive Netcup-/Android-Abnahme steht noch aus.
+- Weiterhin offenes Problem Issue #102: grosse 10-Unterseiten-Projektauftraege scheitern modelluebergreifend an festen Plan-/Manifestgrenzen, abgeschnittenen Quellen und fehlenden persistenten, wiederaufnehmbaren Dateischritten. Keine vollstaendige ZIP-Ausgabe behauptet.
+- Nächster Chat kann direkt am bestehenden privat gespeicherten Plan, der seriellen Ollama-Queue und den bisherigen Tests anknuepfen. Das Betreiber-Modelfile, Modelleinstellungen, Datenspeicher und die externe Homepage bleiben unangetastet.
+- Version in sechs HTML-Seiten, JavaScript-Bootstrap, Marken-/Versionsselbsttest, Preflight-Banner, README und Changelog gemaess docs/VERSIONING_POLICY.md angepasst. Numerischer Bootstrap-Cache-Key wurde nur wegen der Versionsaenderung aktualisiert.
+- Keine produktive Feature- oder Runtime-Aenderung, keine Live-Abnahme und keine GitHub Actions.
+

@@ -1,16 +1,25 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
 Stand: 26.10.2026
-Repository-Version: 0.5.60
+Repository-Version: 0.5.61
 Repository: https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface
-Zuerst lesen: docs/UEBERGABEPROTOKOLL_0_5_60.txt
-Danach: docs/UEBERGABEPROTOKOLL_0_5_59.txt
-Aktueller Stand: Live-Arbeitsnotizen erscheinen nacheinander
-mit schrittweiser Textanzeige; historische Ereignisse sofort.
-Abgebrochene HTML/CSS/JS-Quellen erhalten inerte Fortsetzungen.
-Issue #102 bleibt fuer globale Plan-/Dateigrenzen, echte
-persistente Datei-Checkpoints und mehrstufige Agentenloesung offen.
-Upstream-Vergleich Issue #96; Arbeitsweg Issue #97.
-Keine neue Netcup-Live-Abnahme oder fertiges Homepage-ZIP behaupten.
-Ollama-Modelfile, Parameter und private Planungen nicht veraendern.
-Externe Homepage weiter im anderen Chat bearbeiten.
+ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_5_61.txt
+DANACH:
+  docs/UEBERGABEPROTOKOLL_0_5_60.txt
+  docs/UEBERGABEPROTOKOLL_0_5_59.txt
+NAMENSREGEL: docs/PRODUCT_NAMING.md
+VERSIONIERUNG: docs/VERSIONING_POLICY.md
+SOURCE-STAND: 0.5.60 hat Live-Textanzeige im Arbeitsweg und
+HTML/CSS-Fragmentfortsetzung bereits implementiert.
+ABNAHME: Noch kein gesicherter Netcup-/Android-Livetest der 0.5.60/0.5.61.
+HAUPTPROBLEM: 10-Unterseiten-Projektgenerierung bei lokalen Gemma-
+und Ollama-Cloud-Modellen; >12k-Byte-Plan, >9 Dateien,
+begrenzte Fortsetzungen, keine persistenten File-Checkpoints.
+ISSUE #102 ist die priorisierte Architekturarbeit.
+ISSUE #97: Mara-Arbeitsnotizen/Worklog; #96: externe Referenzen.
+0.5.61 ist ausschliesslich Chat-UEBERGABE mit verpflichtendem
+Versions-/Bootstrap-Abgleich, kein funktionaler Fix.
+Mara/Ember, Ollama-Modelfile, serielle Queue und private Projekt-
+plaene NICHT ungefragt veraendern.
+Externe STU-Homepage wird in einem ANDEREN Chat bearbeitet.

@@ -1,0 +1,183 @@
+COREAI: TCI INTERFACE 0.5.61 - UEBERGABEPROTOKOLL / CHATWECHSEL
+Stand: 26.10.2026, Europe/Berlin
+Repository: https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface
+Vorgaenger: main 0.5.60, Commit 8f831d4059fac6d23ef7e8b0fb65b731fd9ebafb
+Art dieser Version: DOKUMENTATIONS-UEBERGABE, kein neuer Runtime-Fix
+
+0. STARTREGELN FUER DEN NAECHSTEN CHAT
+- Aktuelle main/VERSION und dieses Protokoll zuerst lesen. KEIN
+  erneutes Erfragen oder Neuplanen des bestehenden Nutzerprojekts.
+- Die Arbeit am bestehenden CoreAI-Code fortsetzen, nicht die
+  externe Produkt-Homepage bearbeiten. Die Homepage liegt in
+  einem anderen Chat/Repository.
+- Aktueller offizieller Produktname: CoreAI: TCI Interface.
+  Quantum ist nur die uebergeordnete Softwarefamilie, kein
+  Pflichtvorsatz im normalen Fliesstext.
+- E.M.B.E.R. ist das Backend/Framework; Mara ist die TCI im
+  CoreAI-Projekt. Nicht mit der Game-CoreAI Ember verwechseln.
+- Modellverarbeitung IMMER SERIELL, eine Anfrage gleichzeitig.
+  Kein Modelfile-Tuning ohne ausdruecklichen Betreiberauftrag.
+- GitHub Actions sind derzeit wegen ausgeschöpftem Kontingent
+  kein verlaesslicher Abnahmepfad. Keine Test-/Deploy-Erfolge
+  erfinden. Releases nach docs/VERSIONING_POLICY.md versionieren.
+
+1. LETZTER NUTZERWUNSCH: LIVE GESCHRIEBENER ARBEITSWEG
+- Screenshot: vier automatische Erklaerungsbloecke ("Auftrag
+  gestartet", "Kontext vorbereitet", "Modellstream vorbereitet",
+  "Modellstream gestartet") kamen gleichzeitig. Gewuenscht:
+  Pro Arbeitsereignis wird der Text sichtbar INS vorhandene
+  Ereignisfeld geschrieben, erst dann erscheint das naechste.
+  Ein fortlaufender, zeitlich nachvollziehbarer Live-Arbeitsweg,
+  kein synchroner Vierer-Burst.
+- Das ist in 0.5.60 im GitHub-SOURCE bereits implementiert:
+  js/coreui-work-events.js hat pro Live-Panel eine geordnete
+  Anzeige-Warteschlange mit schrittweisem Textaufbau. Schnelle
+  SSE-Ereignisse werden in der Anzeige nicht ausgelassen.
+  Gespeicherte Historie und reduzierte Bewegung erscheinen
+  sofort vollstaendig; Ein-/Ausklappen und Reload duerfen
+  keine Events verlieren.
+- Technische Werkzeug- und Datenbank-Events bleiben sofortig,
+  nur die Darstellung ist animiert. Die Erklaerungen mit
+  "Ereignisbericht / Automatisch erlaeutert" sind weiterhin
+  AUTOMATISCH aus echten Workevents erzeugte Statusberichte,
+  NICHT private Modell-Gedanken. Echte freigegebene
+  Mara-Arbeitsnotizen getrennt kennzeichnen. Kein Roh-Reasoning.
+- AKTUELLE OFFENE ABNAHME: Es gibt keinen bestaetigten
+  Netcup-/Android-Livetest fuer 0.5.60/0.5.61. Vor der
+  Weiterentwicklung den tatsaechlich installierten Stand
+  kontrollieren und die vier Ereignisse live beobachten.
+
+2. UNGELOEST: MARA ERSTELLT KEIN VOLLSTAENDIGES HOMEPAGE-ZIP
+- Das gespeicherte private Projekt betraf zuletzt eine
+  umfangreiche Anime-/Aether-Welt-Homepage mit insgesamt
+  10 Unterseiten, separaten HTML/CSS/JS-Quellen und gewuenschten
+  visuellen Details. Bereits vorhandene Projektplan-Dateien
+  (u.a. projektplan-v3.md) NICHT ueberschreiben/loeschen.
+- Unter 0.5.59 zeigen die bereitgestellten Worklog-Screenshots
+  u.a. index.html/about.html: HTTP 200, jedoch
+  reason=model_output_truncated; Output teilweise nur 972
+  bzw. 1719 Tokens. Folgend source_files_incomplete;
+  kein fertiges verifiziertes ZIP. Vorherige Durchlaeufe
+  meldeten source_project_size_limit und CSS-/Python-Fehler.
+  HTTP 200 allein ist KEINE komplette Datei.
+- Nutzerbericht: Nicht nur lokale Gemma-4-Modelle (u.a. e4b),
+  sondern auch Ollama-Cloud gpt-oss:120b ueber die LOKALE
+  Ollama-Modellliste scheiterte an grossen Arbeitslaeufen.
+  Deshalb zuerst gemeinsamen CoreAI-Workflow, nicht
+  pauschal das einzelne Modell verantwortlich machen.
+- 0.5.60 hat im Source-Only-Writer die Fortsetzung inerten,
+  abgeschnittenen HTML/CSS-Quelltexts ergaenzt (vorher
+  nur JavaScript). Das ist ein Teilfix, KEINE Garantie
+  fuer kompletten 10-Seiten-Bau und noch nicht live abgenommen.
+
+3. VERIFIZIERTE ARCHITEKTURSCHRANKEN AUS ISSUE #102
+- api/console_native_tools.php: Build aus einem gespeicherten
+  Plan ueber 12.000 Bytes wird abgewiesen, obwohl groessere
+  Planinhalte gespeichert werden koennen.
+- Derselbe Plan-/Manifestpfad und
+  api/console_data_link_bridge.php: hoechstens neun
+  Quelldateien, damit eine 10-Seiten-Homepage selbst bei
+  brauchbarem Modell am App-Limit scheitern kann.
+- Datei-Auftragstexte werden auf begrenzte Anfangsteile
+  (u.a. 9k/12k Zeichen) gekuerzt; spaetere Anforderungen
+  koennen dabei verloren gehen.
+- Chat-/Stream-/Plan-Autorun verwenden begrenzte
+  Fortsetzungs-/Versuchs-/Rundenzaehler (z.B. 2/4).
+  Ein modellausgesuchter nativer Werkzeugauftrag je Turn
+  ersetzt keinen robusten mehrstufigen Agentenlauf.
+- Diese konkreten Grenzen entstanden in mehreren
+  Source-/ZIP-/Plan-Reparaturen vom 21.-25.10.2026.
+  Die fruehere Architekturentscheidung gegen kuenstliche
+  Modell-/Output-Limits wurde dadurch nicht eingehalten.
+- SICHERHEIT NICHT ABSCHALTEN: Account-/Session-Isolation,
+  Pfadsicherheit, Sandbox, echte I/O-/Speicherlimits,
+  Inhaltsvalidierung und ZIP-Integritaet bleiben. Ein
+  Ressourcenlimit darf aber den Gesamtarbeitsstand nicht
+  vernichten oder eine Teilantwort als fertiges Werk verkaufen.
+
+4. NAECHSTE UMSETZUNG (PRIORITAET NACH LIVE-STATUSCHECK)
+A. Aktuelle main-Version, Branches, Issue #102 und den
+   Netcup-Livestand bestimmen. Den 0.5.60-Worklog-Animator
+   und HTML/CSS-Continuation zuerst sichtbar abnehmen.
+B. Im realen Buildpfad genau protokollieren: Build-Intent,
+   plan.byte_size, geplantes Manifest/Dateianzahl, genutztes
+   Modell (Ollama lokal/Cloud), Dateiname, HTTP, done_reason,
+   Tokenzaehler, Versuch, tatsächlich validierte Dateibytes,
+   persistierter Status. Keine ungesicherten Schlussfolgerungen.
+C. Ein SERIELLER, fortsetzbarer Agent-/Dateibau-Runner:
+   Eigentuemerkontrolle -> Plan/Freigabe -> einzelne Datei
+   generieren -> Syntax/Inhalt pruefen -> Quelle persistent
+   speichern inkl. SHA256 -> naechste Datei. Bei Unterbrechung
+   oder Fehler nach der letzten bestaetigten Datei fortsetzen,
+   ohne die bisher fertigen Quelldateien erneut zu generieren.
+D. Fuer >9 Dateien und >12k Bytes: nachvollziehbare, sichere
+   Aufteilung in Dateiaufgaben mit vollem gespeicherten Plan,
+   konsistenten globalen Regeln und gezieltem Abschnittskontext.
+   Keine stillen Trunkierungen, keine Grundsatzablehnung
+   legitimer mehrseitiger Webprojekte aufgrund fixer Zahlen.
+E. Modellseitige Tool Calls und Ergebnisrueckgaben nach
+   passenden Ollama-Referenzen pruefen; bei Modellen ohne
+   native Tools weiter den validierten Marker-Fallback nutzen.
+   Echte Benutzerkommentare und technische Workevents chronologisch
+   und nach Reload nachvollziehbar anzeigen.
+F. Erst wenn alle Quellen tatsaechlich vorliegen,
+   HTML/CSS/JS-Validierung, interne Links und ZIP-Integritaet
+   pruefen; nur dann einen echten Download freigeben.
+
+5. WICHTIGE CODE-/DOKUMENTPFADE
+- api/chat.php: Modellaufrufe, Source-Only-Dateiwriter,
+  Fortsetzungswege; dort keine unautorisierte
+  Betreiber-Modelfile- oder Ollama-Parameterueberschreibung.
+- api/console_stream.php: SSE, Modell- und Arbeitsevents.
+- api/console_native_tools.php: Plan-Tool-Dispatch, 12k-
+  und Manifest-Restriktionen.
+- api/console_data_link_bridge.php: Manifest, Source-Writer,
+  HTML/CSS/JS-Source-Fortsetzung/ZIP-Validierung.
+- api/console_plan_autorun.php, api/console_plan_store.php:
+  Planfortsetzungen und gespeicherte private Plaene.
+- js/coreui-work-events.js, js/console-app.js,
+  css/console.css: bestehende UI-Timeline und Chatsteuerung.
+- scripts/work-events-ui-selftest.js,
+  scripts/local-file-tool-selftest.php,
+  scripts/contextual-project-selftest.php:
+  bestehende Regressionstests als Ausgangspunkt.
+- docs/UEBERGABEPROTOKOLL_0_5_60.txt:
+  konkrete Live-Animation- und HTML/CSS-Quelltext-Aenderungen.
+- docs/PRODUCT_NAMING.md, docs/VERSIONING_POLICY.md:
+  Produktname und zwingende Release-Regeln.
+
+6. LINKS / OFFENE THEMEN
+- Issue #96: dauerhaftes Referenzregister OpenAI, Anthropic,
+  Open-WebUI, OpenClaw, CrewAI, Comfy-Org.
+- Issue #97: Arbeitsweg, sichtbare Mara-Kommentare und
+  persistente detaillierte Worklog-Diagnose.
+- Issue #102: modelluebergreifende Limits und fehlende
+  fortsetzbare Agenten-/Dateiwerkzeugschleife, mit der
+  frueheren Entscheidung gegen kuenstliche Deckel.
+- PRs/Versionschronologie: 0.5.57 Produkt/Quantum,
+  0.5.58 Migration permissions, 0.5.59 Copyright,
+  0.5.60 animierter Live-Arbeitsweg und HTML/CSS-Resume.
+
+7. FOLGEN DER 0.5.61-UEBERGABE
+- Diese Version aendert AUSSCHLIESSLICH die Dokumentations-
+  und fuer jeden Merge vorgeschriebenen Versions-/Cache-Texte.
+  Kein neuer Fix an Modell, Toolrouting, Planner, Datenbank
+  oder Writer. Keine produktive Datenmigration.
+- GitHub main-Quellcommit allein beweist KEINEN Netcup-Deploy,
+  keine erfolgreiche zehnseitige Website und kein ZIP.
+- Keine externen STU-Websites in diesem Chat bearbeiten.
+- Die HTML-Dateien werden nur wegen der 0.5.61-angezeigten
+  Versionskennung/Bootstrap-Asset-Key angepasst.
+
+FORTSETZUNG IM NAECHSTEN CHAT
+1. GitHub main/VERSION und dieses Uebergabeprotokoll lesen.
+2. 0.5.60/0.5.61 Live-Status und bereits ausgefuehrte
+   Schritte pruefen. Nutzer muss Screenshots nicht erneut
+   erklaeren.
+3. Issue #102 in reproduzierbaren, getesteten Teiletappen
+   umsetzen, mit Checkpoint/Resume statt neuen Endlimits.
+4. Wie immer neuen Versionsstand, Changelog und naechste
+   Uebergabe schreiben. Keine Erfolgsmeldung ohne Live-Nachweis.
+
+STATUS: Dokumentierter Chatwechsel. Der groessere
+Projektgenerierungsfehler ist NOCH OFFEN.
