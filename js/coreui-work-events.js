@@ -230,9 +230,8 @@
     var noteText = null;
     if (note) {
       var annotation = el('div','work-note');
-      annotation.className += event.kind === 'commentary' ? ' work-note-model' : ' work-note-derived';
-      annotation.appendChild(el('span','work-note-label',event.kind === 'commentary'
-        ? 'Mara · Öffentliche Zwischenmeldung' : 'Ereignisbericht · Automatisch erläutert'));
+      // Public notes read as natural chat prose. Provenance stays in the
+      // validated event payload, never as a repeating UI badge.
       noteText = el('p','work-note-text',animate ? '' : note);
       annotation.appendChild(noteText);
       info.appendChild(annotation);
@@ -350,6 +349,54 @@
     return true;
   }
 
+  // Dedicated source-preview SSE events carry publicly generated file content,
+  // never Ollama thinking. This ephemeral view is not written to the work log.
+  function source(body, raw) {
+    if (!body || !body._workLive || !raw || typeof raw !== 'object') return false;
+    if (['begin','chunk','end'].indexOf(raw.phase) < 0) return false;
+    var filename = String(raw.file_name || '');
+    var attempt = Number(raw.attempt) || 1;
+    if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,90}\.(?:html?|css|js|json|svg)$/.test(filename)
+        || !Number.isInteger(attempt) || attempt < 1 || attempt > 50) return false;
+    var panel = body._workSourcePanel || null;
+    if (raw.phase === 'begin') {
+      if (panel && panel.parentNode) panel.parentNode.removeChild(panel);
+      else if (panel && body.removeChild) body.removeChild(panel);
+      panel = el('section','work-source');
+      panel.setAttribute('aria-label','Live-Quelltext ' + filename);
+      var header = el('div','work-source-header');
+      header.appendChild(el('span','work-source-file',filename));
+      header.appendChild(el('span','work-source-status','Wird geschrieben'));
+      panel.appendChild(header);
+      var pre = el('pre','work-source-scroll');
+      pre.appendChild(el('code','work-source-code'));
+      panel.appendChild(pre);
+      body.appendChild(panel);
+      body._workSourcePanel = panel;
+      body._workSourceName = filename;
+      body._workSourceAttempt = attempt;
+      body._workSourceBytes = 0;
+      return true;
+    }
+    if (!panel || body._workSourceName !== filename
+        || body._workSourceAttempt !== attempt) return false;
+    if (raw.phase === 'end') {
+      var status = panel.querySelector('.work-source-status');
+      if (status) status.textContent = 'Übertragung beendet · Prüfung läuft';
+      return true;
+    }
+    if (typeof raw.text !== 'string' || !raw.text || raw.text.length > 2500
+        || body._workSourceBytes >= 50000) return false;
+    body._workSourceBytes += raw.text.length;
+    var code = panel.querySelector('.work-source-code');
+    if (!code) return false;
+    code.textContent = (code.textContent + raw.text).slice(-35000);
+    var scroll = panel.querySelector('.work-source-scroll');
+    if (scroll && typeof scroll.scrollTop === 'number') scroll.scrollTop = scroll.scrollHeight;
+    if (body._workLive) body.scrollTop = body.scrollHeight;
+    return true;
+  }
+
   function create(options) {
     options = options || {};
     var initialEvents = merge(options.events, []);
@@ -416,5 +463,5 @@
     return timeline;
   }
 
-  window.CoreUIWorkEvents = {create:create,add:add,flush:flushWork,normalize:normalize,merge:merge};
+  window.CoreUIWorkEvents = {create:create,add:add,source:source,flush:flushWork,normalize:normalize,merge:merge};
 }());
