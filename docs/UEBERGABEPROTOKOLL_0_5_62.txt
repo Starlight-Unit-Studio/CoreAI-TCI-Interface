@@ -41,9 +41,22 @@ B. UMSETZUNG
   Changelogversion und Versionsdateien synchronisiert.
 
 C. OFFENE ARBEIT
-- PR #105 zum Chatstil und zur Live-Code-Vorschau bleibt
-  unabhaengig von diesem Branch und darf nicht versehentlich
-  als bereits gemergte Funktion beschrieben werden.
+- Die Live-Code-Draftaenderungen aus PR #105 wurden in diesen
+  0.5.62-Branch zusammengefuehrt: js/coreui-work-events.js,
+  js/console-app.js, css/console.css, api/chat.php,
+  api/console_stream.php und UI-Selbsttest. PR #105 wird
+  als durch PR #106 ersetzt gekennzeichnet.
+- Die oeffentlichen Work-Notizen erscheinen ohne die wiederholten
+  Labels "Ereignisbericht / Automatisch erlaeutert" oder "Mara /
+  Oeffentliche Zwischenmeldung"; die Ereignis-Ueberschrift bleibt
+  fuer Screenreader erhalten. Kleine Codevorschau direkt darunter.
+- Der urspruengliche Draft enthielt versehentlich eine SSE-Preview-
+  Initialisierung in ember_http_get_json() statt ember_call_ollama().
+  Dieser Fehler ist korrigiert. UTF-8-Chunk-Bildung ist sicher;
+  private Thinking-Tokens werden nicht in den Code-Stream gesendet.
+- Bei output_truncated wird im Worklog kein gruener Modelstream-
+  Erfolg mehr angezeigt. Die Fortsetzungs-/Plan-/Dateigrenzen
+  werden davon NICHT veraendert; Issue #102 bleibt Prioritaet.
 - Issue #102: 12k-Plan-Grenze, maximal neun Quellen, befristete
   Fortsetzungen und keine dauerhaften File-Checkpoints sind
   weiterhin offene Codeaufgaben; ein Skill allein behebt diese
@@ -56,9 +69,9 @@ C. OFFENE ARBEIT
 - Das Betreiber-Modelfile, die lokalen und Cloud-Ollama-Modelle,
   serielle Modellqueue, gespeicherten privaten Projektplaene,
   Accountdaten und externe Homepage nicht veraendern.
-- Bei Parallel-Merge den Versionsstand erneut von main lesen.
-  Branch #105 muss nach einer frueheren 0.5.62-Freigabe auf
-  mindestens 0.5.63 umgestellt und rebaset werden.
+- Vor Merge den main-Versionsstand erneut abgleichen und
+  verpflichtende lokale Tests, Cache-Keys und Netcup-Abnahme
+  durchfuehren. PR #105 wird nicht separat gemergt.
 
 D. ERWARTETES VERHALTEN NACH DEPLOY
 - In MEINE SKILLS steht Werkzeuge an oberster Stelle:
