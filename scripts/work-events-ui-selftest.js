@@ -122,4 +122,66 @@ assert.equal(saved.querySelector('.work-body').hidden,true);
 const reloaded = work.create({events:serverFirst,expanded:false});
 assert(reloaded.textContent.includes('Arbeitsweg (2 Schritte) anzeigen'),
   'history after reload has an explicit reopen control');
+// 0.5.56: Live and saved work should explain the next action and the blockers
+// in plain, first-person public notes. These are derived from confirmed events,
+// never private model reasoning, tool code, stderr, or prompts.
+const steps = work.create({events:[
+  {id:60,kind:'tool',state:'info',title:'Einzeldatei angefordert',
+    meta:{file_name:'index.html',attempt:1,secret_prompt:'NOT_PUBLIC'}},
+  {id:61,kind:'model',state:'error',title:'Quelldatei nicht lesbar',
+    meta:{file_name:'index.html',done_reason:'length',thinking_chars:1900,
+      raw_thinking:'NEVER_SHOW_INTERNAL_THOUGHTS'}},
+],expanded:false});
+assert(steps.textContent.includes('Ich fordere „index.html“ an'),
+  'public progress note must explain the concrete file action');
+assert(steps.textContent.includes('fehlt noch ein nutzbares Ergebnis'),
+  'file blocker must be explained in first person');
+assert(steps.querySelector('.work-digest').textContent.includes('index.html'),
+  'collapsed timeline keeps last useful public diagnostic');
+assert(steps.querySelector('.work-counts').textContent.includes('2 Schritte'),
+  'collapsed summary must show work volume');
+assert(!steps.textContent.includes('NEVER_SHOW_INTERNAL_THOUGHTS')
+  && !steps.textContent.includes('NOT_PUBLIC'),
+  'no private model thinking/prompt content in narrative');
+assert(steps.textContent.includes('Modell-Endgrundlength')
+  && steps.textContent.includes('Denkstatus (Zeichen)1900'),
+  'new bounded diagnostic fields are available after opening');
+steps.querySelector('.work-toggle').handlers.click();
+assert(steps.querySelector('.work-digest').hidden,
+  'expanded steps must not duplicate the condensed preview');
+const liveNarration = work.create({live:true,expanded:true,events:[]});
+work.add(liveNarration.querySelector('.work-body'),
+  {id:62,kind:'tool',state:'running',title:'Python-Job eingereiht',meta:{job_id:123}});
+assert(liveNarration.textContent.includes('isolierten Python-Worker'),
+  'live SSE event must update first-person progress');
+assert(liveNarration.querySelector('.work-counts').textContent.includes('1 Schritt'),
+  'live counter must update when a new event arrives');
+let manuallyOpened = false;
+const toggled = work.create({events:[{id:63,kind:'run',state:'success',
+  title:'Antwort gespeichert'}],onToggle:function(open){manuallyOpened=open;}});
+toggled.querySelector('.work-toggle').handlers.click();
+assert.equal(manuallyOpened,true,'caller can remember user disclosure choice');
+
+const futureTool = work.create({events:[{id:71,kind:'tool',state:'running',
+  title:'Neuen Repository-Pruefschritt gestartet'}],expanded:false});
+assert(futureTool.textContent.includes('Ich führe gerade „Neuen Repository-Pruefschritt gestartet“ aus'),
+  'future tool events must receive a generic evidence-based explanation');
+
+
+// 0.5.56: optional in-band, genuinely public commentary must be
+// separate from automatically explained server events.
+const modelPublic = work.create({events:[{
+  id:72,kind:'commentary',state:'info',title:'Mara meldet ihren naechsten Schritt',
+  meta:{public_note:'Ich pruefe zuerst die vorhandene HTML-Datei.',
+    source:'model_public_text',raw_thinking:'DO_NOT_LEAK'}
+}],expanded:false});
+assert(modelPublic && modelPublic.textContent.includes('Ich pruefe zuerst die vorhandene HTML-Datei.'));
+assert(modelPublic.textContent.includes('Öffentliche Zwischenmeldung'));
+assert(!modelPublic.textContent.includes('DO_NOT_LEAK'));
+assert(!modelPublic.textContent.includes('Automatisch erläutert'));
+assert.equal(work.normalize({id:73,kind:'commentary',state:'info',
+  title:'Mara meldet ihren naechsten Schritt',meta:{raw_thinking:'SECRET'}}),null);
+assert.equal(modelPublic.querySelector('.work-chevron').textContent,'▸',
+  'toggle glyph must be rendered, not escaped');
+
 console.log('P06 inline work-history UI selftest: OK');

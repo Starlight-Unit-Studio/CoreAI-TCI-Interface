@@ -128,6 +128,9 @@
     messageCacheBySession: {},
     liveWorkEventsBySession: {},
     lastCompletedWorkMessageBySession: {},
+    // User-operated disclosure per saved response. Live steps start open;
+    // finished replies collapse by default and survive history re-renders.
+    workExpandedBySession: {},
     historyHasMoreBySession: {},
     historyOldestBySession: {},
     generationPollTimers: {},
@@ -989,18 +992,27 @@
       text = safeReplyText(text);
     }
 
-    // One inline timeline per saved answer, from the already authenticated
-    // message-history response. No second network fetch or duplicate chat row.
+    // Echte, persistierte Arbeitsereignisse mit sicheren oeffentlichen
+    // Fortschrittsnotizen. Eine abgeschlossene Antwort klappt standardmaessig
+    // zusammen, statt die Live-Timeline ungefragt offen zu lassen.
+    var workTimeline = null;
     if (role === 'ember' && record && Array.isArray(record.work_events)
         && record.work_events.length > 0 && window.CoreUIWorkEvents) {
-      var workTimeline = window.CoreUIWorkEvents.create({
+      var workSessionId = String(record.session_id || (activeSession() && activeSession().id) || '');
+      var workMessageKey = String(Number(record.id) || 0);
+      var expandedMap = state.workExpandedBySession[workSessionId] || {};
+      var hasExplicitChoice = Object.prototype.hasOwnProperty.call(expandedMap,workMessageKey);
+      workTimeline = window.CoreUIWorkEvents.create({
         events: record.work_events,
-        expanded: uiPreferences.thinkingExpanded === true
-          || Number(record.id) === Number(state.lastCompletedWorkMessageBySession[
-            String(record.session_id || (activeSession() && activeSession().id) || '')
-          ])
+        expanded: hasExplicitChoice ? expandedMap[workMessageKey] === true
+          : uiPreferences.thinkingExpanded === true,
+        onToggle: function (open) {
+          if (!state.workExpandedBySession[workSessionId]) {
+            state.workExpandedBySession[workSessionId] = {};
+          }
+          state.workExpandedBySession[workSessionId][workMessageKey] = open === true;
+        }
       });
-      if (workTimeline) content.appendChild(workTimeline);
     }
 
     var nameEl = document.createElement('div');
@@ -1009,6 +1021,7 @@
       ? (name || state.userDisplayName || state.charName || 'DU').toUpperCase()
       : (state.assistantName || 'Mara').toUpperCase();
     content.appendChild(nameEl);
+    if (workTimeline) content.appendChild(workTimeline);
 
     var bubble = document.createElement('div');
     bubble.className = 'msg-bubble msg-markdown';

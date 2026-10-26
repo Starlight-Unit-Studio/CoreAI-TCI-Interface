@@ -1,0 +1,14 @@
+## 0.5.56 - 26.10.2026
+
+- Modellformulierter Fortschritt (optional) als kurze, eigenstaendig gespeicherte `[COREUI_PUBLIC_PROGRESS]`-Zeile vor einem verifizierbaren Native-Tool-Block. Die Markierung wird vor dem eigentlichen Werkzeugparser entfernt, die Autorisierung und Quelle bleiben unveraendert; kein zweiter Modellaufruf.
+- Ereignisbasierte Statusnotizen werden klar als automatisch erlaeutert gekennzeichnet, echte model.content-Zwischenmeldungen getrennt als Maras oeffentliche Meldung. Keine Roh-Gedanken oder Prompts, verdachtsfaellige Notizen werden verworfen.
+- Korrigierter Aufklapp-Pfeil, eng begrenzte oeffentliche Textfilter, PHP-/UI-Regressionspruefungen. Volle Netcup-/Mobil-Abnahme steht noch aus.
+
+- Oeffentliche Arbeitsnotizen in Maras Ich-Form zeigen belegte Aktionen, naechste Schritte, fehlende Quellen und Fehler, statt nur kurzer Logtitel. Kein privates Raw-Reasoning.
+- Fortlaufender Arbeitsweg bleibt waehrend der Ausfuehrung offen, nach Abschluss normalerweise zugeklappt, mit dem letzten aussagekraeftigen Status im Kopfbereich; per Klick vollstaendig nachlesbar, auch nach Reload.
+- Tool- und Modellstatus mit echten Diagnosezaehlern und Statusinformationen; Roh-Prompts, stderr, Python-Code und private Thinking-Fragmente bleiben ausgeschlossen.
+- UI: responsive Notizen, Technische Details, scrollbarer Detailverlauf; manuelle Auf-/Zuklappwahl bleibt bei History-Neudarstellung bestehen.
+- Bestehende sichere Work-Event-/SSE-/History-Pfade wiederverwendet. Whitelist-Selbsttest und Work-Events-UI-Test erweitert.
+- Numerische VERSION, sechs HTML-Oberflaechen und JavaScript-Bootstrap auf 0.5.56; SHA-256-Inhalts-Cache-Schluessel fuer referenzierte Assets abgeglichen.
+- Kein Eingriff in Ollama, Modelfile, Modellaufrufe, Installer, Worker, ZIP, Datenbankmigrationen oder globale serielle Queue; GitHub Actions nicht ausgefuehrt.
+- Realer Netcup-/Android-Livetest und vollstaendiger Preflight nach dem Update offen.

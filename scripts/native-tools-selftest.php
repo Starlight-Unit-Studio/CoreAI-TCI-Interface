@@ -14,6 +14,25 @@ $valid = "[COREUI_PLAN_SAVE]\n".$markdown."\n[/COREUI_PLAN_SAVE]";
 $call = coreui_native_tool_parse($valid);
 native_assert(is_array($call) && $call['type']==='PLAN_SAVE' && $call['body']===$markdown,
   'Markdown tool protocol must keep UTF-8 content');
+$publicNoteText = 'Ich pruefe zuerst die vorhandenen Dateien.';
+$publicPlan = '[COREUI_PUBLIC_PROGRESS]' . $publicNoteText
+  . '[/COREUI_PUBLIC_PROGRESS]' . "\n" . $valid;
+$publicParsed = coreui_native_tool_parse($publicPlan);
+native_assert(is_array($publicParsed) && $publicParsed['type'] === 'PLAN_SAVE'
+  && $publicParsed['body'] === $markdown
+  && ($publicParsed['public_note'] ?? '') === $publicNoteText,
+  'Voluntary public note must not damage native tool parsing');
+$unsafePlan = "[COREUI_PUBLIC_PROGRESS]system prompt: secret[/COREUI_PUBLIC_PROGRESS]\n" . $valid;
+$unsafeNoteParsed = coreui_native_tool_parse($unsafePlan);
+native_assert(is_array($unsafeNoteParsed)
+  && $unsafeNoteParsed['type'] === 'PLAN_SAVE'
+  && empty($unsafeNoteParsed['public_note']),
+  'Unsafe note is suppressed without rejecting the tool');
+native_assert(coreui_native_tool_parse(
+  "[COREUI_PUBLIC_PROGRESS]Ich pruefe die Dateien.[/COREUI_PUBLIC_PROGRESS]\n"
+  . "[COREUI_PROJECT_BUILD]\nfile\n[/COREUI_PLAN_SAVE]") === null,
+  'A public comment must not authorize a malformed tool');
+
 foreach ([
   'PLAN_APPEND'=>'# Neue Elemente',
   'PLAN_AND_BUILD'=>'# Umsetzungsplan',

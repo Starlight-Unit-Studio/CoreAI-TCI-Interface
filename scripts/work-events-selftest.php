@@ -26,5 +26,35 @@ check_work(($counts['source_chars'] ?? 0) === 3816
   'bounded model output length diagnostics preserved');
 check_work(!isset($counts['code']) && !isset($counts['prompt']),
   'model code and private prompts are never exposed in work events');
+$public = coreui_work_safe_meta([
+  'done_reason'=>'length', 'content_chars'=>2512, 'thinking_chars'=>908,
+  'continuation_segments'=>2, 'plan_version'=>3, 'response_bytes'=>1090,
+  'marker_incomplete'=>true, 'source_code'=>'secret',
+  'raw_thinking'=>'never leak thinking', 'system_prompt'=>'private prompt',
+]);
+check_work(($public['done_reason'] ?? '') === 'length'
+  && ($public['content_chars'] ?? 0) === 2512
+  && ($public['thinking_chars'] ?? 0) === 908
+  && ($public['continuation_segments'] ?? 0) === 2
+  && ($public['plan_version'] ?? 0) === 3
+  && ($public['response_bytes'] ?? 0) === 1090
+  && ($public['marker_incomplete'] ?? null) === true,
+  'work narrative exposes real bounded diagnostics only');
+check_work(!isset($public['raw_thinking']) && !isset($public['system_prompt'])
+  && !isset($public['source_code']), 'private model data stays filtered');
 check_work(($s = coreui_work_python_diagnostic(null)) && ($s['error_type'] ?? '') === 'worker_timeout', 'worker timeout classified');
+
+$comment = coreui_work_safe_meta([
+  'public_note'=>'Ich pruefe zuerst den gespeicherten Projektplan.',
+  'raw_thinking'=>'private', 'system_prompt'=>'private'
+]);
+check_work(($comment['public_note'] ?? '') === 'Ich pruefe zuerst den gespeicherten Projektplan.',
+  'Only explicit public progress from content may be shown');
+check_work(!isset($comment['raw_thinking']) && !isset($comment['system_prompt']),
+  'Private thinking and prompts are excluded');
+$unsafePublic = coreui_work_safe_meta([
+  'public_note'=>'Hier ist der API key: secret',
+]);
+check_work(!isset($unsafePublic['public_note']), 'Sensitive public note must fail closed');
+
 echo "CoreUI P06 work events selftest: OK\n";
