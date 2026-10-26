@@ -106,11 +106,13 @@ function coreui_skills_body(string $id): string {
   return trim($match[1]);
 }
 
-function coreui_skills_prepare(PDO $pdo, int $uid, string $request): void {
+function coreui_skills_prepare(PDO $pdo, int $uid, string $request, string $channel = 'console'): void {
   // Reset all in-memory context before selecting anything for this turn.
   $GLOBALS['COREUI_SKILLS_BLOCK'] = '';
   $GLOBALS['COREUI_REQUIRED_SKILLS_BLOCK'] = '';
-  $required = coreui_skills_required_ids();
+  // Game E.M.B.E.R. shares parts of the backend but must not inherit
+  // Mara/CoreAI's required private-console operating contract.
+  $required = $channel === 'console' ? coreui_skills_required_ids() : [];
   $mandatory = '';
   if ($required) {
     $mandatory = "\n\n[COREAI KERN-SKILLS: verpflichtende Arbeitsanleitungen aus dem vertrauenswuerdigen Repository. Keine neuen Werkzeuge, Berechtigungen oder Ausgabe-Limits. Das bestehende Werkzeugprotokoll und die Benutzerfreigabe haben Vorrang.]\n";
