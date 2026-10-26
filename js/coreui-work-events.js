@@ -240,28 +240,36 @@
     if (note) title.className += ' work-title-with-note';
     info.appendChild(title);
     var noteText = null;
+    var detailTarget = info;
     if (note) {
       var annotation = el('div','work-note');
-      // Public notes read as natural chat prose. Provenance stays in the
-      // validated event payload, never as a repeating UI badge.
+      // Public progress is a normal chat paragraph; no provenance badges
+      // or repetitive technical labels between paragraphs.
       noteText = el('p','work-note-text',animate ? '' : note);
       annotation.appendChild(noteText);
       info.appendChild(annotation);
+      detailTarget = annotation;
     }
     var keys = Object.keys(event.meta).filter(function (key) { return key !== 'public_note'; });
-    if (keys.length) {
+    if (keys.length || event.time) {
       var details = el('details','work-detail');
-      details.appendChild(el('summary','', 'Technische Details'));
+      var summary = el('summary','work-detail-toggle','ⓘ');
+      summary.setAttribute('aria-label','Technische Details');
+      summary.title = 'Technische Details';
+      details.appendChild(summary);
       var definition = el('dl','');
       keys.forEach(function (key) {
         definition.appendChild(el('dt','',DETAIL_LABELS[key]));
         definition.appendChild(el('dd','',event.meta[key]));
       });
+      if (event.time) {
+        definition.appendChild(el('dt','','Uhrzeit'));
+        definition.appendChild(el('dd','',localTime(event.time)));
+      }
       details.appendChild(definition);
-      info.appendChild(details);
+      detailTarget.appendChild(details);
     }
     entry.appendChild(info);
-    if (event.time) entry.appendChild(el('time','work-time',localTime(event.time)));
     entries.appendChild(entry);
     while (entries.children.length > 150) entries.removeChild(entries.firstChild);
     followWork(body);
