@@ -115,7 +115,19 @@
       case 'Auftrag auf Wunsch abgebrochen':
         return 'Der Auftrag wurde auf Wunsch abgebrochen. Ich starte keine weitere Ausführung.';
       default:
-        return '';
+        // Future and plugin-defined work events also get a truthful note,
+        // without shipping one dedicated model-specific UI workaround.
+        var step = '„' + event.title + '“';
+        if (event.state === 'running') {
+          return 'Ich führe gerade ' + step + ' aus. Der Abschluss steht noch aus.';
+        }
+        if (event.state === 'error') {
+          return 'Bei ' + step + ' wurde ein Fehler protokolliert. Die technischen Angaben zeigen, was tatsächlich bekannt ist.';
+        }
+        if (event.state === 'success') {
+          return 'Der Schritt ' + step + ' wurde erfolgreich abgeschlossen. Darauf kann der weitere Ablauf aufbauen.';
+        }
+        return 'Der Arbeitsschritt ' + step + ' wurde dokumentiert. Der weitere Verlauf zeigt, welches Ergebnis folgte.';
     }
   }
 
