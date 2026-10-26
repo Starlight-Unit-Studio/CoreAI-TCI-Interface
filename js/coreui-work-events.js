@@ -68,11 +68,15 @@
         return 'Für ' + file + ' fehlt noch ein nutzbares Ergebnis. Ich prüfe den Fehlergrund; ein fertiges Dateipaket kann ich damit nicht bestätigen.';
       case 'JavaScript-Ausgabe fortgesetzt':
       case 'Fehlender JavaScript-Teil wird erzeugt':
-        return 'Die JavaScript-Ausgabe war noch nicht vollständig. Ich lasse den fehlenden Abschnitt ergänzen, statt die bisherige Quelle zu verwerfen.';
+      case 'Quelldatei-Ausgabe fortgesetzt':
+      case 'Fehlender Quelltext-Teil wird erzeugt':
+        return 'Die Quelldatei war noch nicht vollständig. Ich lasse den fehlenden Abschnitt ergänzen, statt die bisherige Quelle zu verwerfen.';
       case 'JavaScript-Teil empfangen':
-        return 'Der zusätzliche JavaScript-Abschnitt ist eingetroffen. Jetzt muss die zusammengesetzte Datei nochmals geprüft werden.';
+      case 'Quelltext-Teil empfangen':
+        return 'Der zusätzliche Quelltextabschnitt ist eingetroffen. Jetzt muss die zusammengesetzte Datei nochmals geprüft werden.';
       case 'JavaScript-Fortsetzung unbrauchbar':
-        return 'Die ergänzte JavaScript-Ausgabe ist nicht verwendbar. Ich kann diese Quelle noch nicht als vollständig bestätigen.';
+      case 'Quelldatei-Fortsetzung unbrauchbar':
+        return 'Die ergänzte Quelldatei ist nicht verwendbar. Ich kann diese Quelle noch nicht als vollständig bestätigen.';
       case 'Projektquellen vollstaendig':
         return 'Alle angeforderten Quelltexte sind vorhanden. Als Nächstes muss das Dateipaket erstellt und sein Ergebnis geprüft werden.';
       case 'Projektquellen unvollstaendig':
