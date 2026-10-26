@@ -2,6 +2,13 @@
 
 CoreAI: TCI Interface gehoert zur Quantum-Softwarefamilie und wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert. Historische Changelogs dokumentieren die frueheren Produktnamen unveraendert.
 
+## 0.5.63 - 26.10.2026
+
+- **Installations-Hotfix:** Der bei der Netcup-Installation sichtbare Syntaxfehler in `scripts/source-preview-selftest.php` wurde behoben. Der statische Teststring enthielt eine unmaskierte interpolierte PHP-Variable mit Array-Index und verursachte einen Parse Error.
+- Der Teststring ist nun korrekt maskiert. Lokaler `php -l` unter PHP 8.4 bestaetigt syntaktisch gueltige Datei; End-to-End-Validierung unter Netcup/PHP 8.5 bleibt ausstehend.
+- Numerische Versionsangaben 0.5.63 und der inhaltsbasierte Cache-Key fuer `js/console-gate.js` sind in allen sechs HTML-Oberflaechen synchronisiert. Kein Eingriff in Ollama, CoreAI-Modelfile, Datenbank, Modell-Queue oder private Projektdateien.
+- Issue #102 (mehrteiliger Projektbau) bleibt offen; dieser Hotfix behebt ausschliesslich den Installer-Blocker.
+
 ## 0.5.62 - 26.10.2026
 
 - Neuer fest integrierter und unabschaltbarer System-Skill `skills/werkzeuge/SKILL.md`. Mit `required: true` im Katalog serverseitig bei jedem privaten CoreAI-Console-Turn aktiviert, nicht im Game-Ember-Kanal; auch wenn die Skills-Datenbankmigration fehlt oder ein altes Konto den Skill deaktiviert gespeichert hatte.
