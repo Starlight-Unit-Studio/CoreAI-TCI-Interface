@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.64 local file tool regression selftest hotfix.
+# CoreAI: TCI Interface 0.5.65 reader-owned chat and trusted ZIP writer.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -138,6 +138,8 @@ UI_FILES=(
   scripts/long-chat-selftest.cjs
   database/migrations/015_long_chat_messages.sql
   scripts/chat-navigation-recovery-selftest.cjs
+  scripts/chat-follow-selftest.cjs
+  js/coreui-chat-follow.js
   scripts/message-actions-selftest.php
   scripts/markdown-selftest.js
   scripts/branding-license-selftest.py
@@ -378,6 +380,11 @@ if command -v php >/dev/null 2>&1; then
       ok 'Chat-Navigation: bestehender Modellauftrag ohne erneute Generierung wiederhergestellt.'
     else
       fail 'Chat-Navigation: Wiederherstellungs-Selbsttest fehlgeschlagen.'
+    fi
+    if node "$PROJECT_ROOT/scripts/chat-follow-selftest.cjs" >/dev/null 2>&1; then
+      ok 'Chat-Scroll: manuelles Lesen, Arbeits-Punkte und Sprung zur aktuellen Antwort geprueft.'
+    else
+      fail 'Chat-Scroll: Leserposition oder Pfeil-Button Regression fehlgeschlagen.'
     fi
     if node "$PROJECT_ROOT/scripts/long-chat-selftest.cjs" >/dev/null 2>&1; then
       ok 'Lange Texte: Markdown-Dateianhang und Originalbytes geprueft.'

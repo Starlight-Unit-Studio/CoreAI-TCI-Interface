@@ -107,6 +107,21 @@ function coreui_console_local_homepage_zip_request(string $request): string {
   return rtrim($request) . "\nPflichtdateien fuer das ZIP-Projekt: index.html, style.css, main.js";
 }
 
+/** Compute only the payload needed for the deterministic, server-owned
+ * Python file writer. A model-supplied Python script does NOT get this
+ * allowance. With at most nine verified 150k sources, the writer stays well
+ * under MariaDB MEDIUMTEXT and the isolated worker's resource boundaries. */
+function coreui_console_trusted_project_writer_budget(array $files, int $modelCodeBudget): int {
+  $bytes = 0;
+  foreach ($files as $source) {
+    if (!is_array($source) || !is_string($source['bytes'] ?? null)) return $modelCodeBudget;
+    $bytes += strlen($source['bytes']);
+  }
+  // Base64 worst-case is ~1.34x, add generous Python/filename overhead.
+  // Never use this allowance for untrusted model-generated [PY] programs.
+  return max($modelCodeBudget, min(8 * 1024 * 1024, $bytes * 2 + 65536));
+}
+
 /** Build the server-owned writer from already parsed, inert source bytes. */
 function coreui_console_project_files_python(array $files, array $spec, int $maxCodeChars): ?array {
   if ($files === [] || $maxCodeChars < 500) return null;
@@ -135,7 +150,9 @@ function coreui_console_project_files_python(array $files, array $spec, int $max
         || strtolower($name) !== $key || preg_match($namePattern, $name) !== 1
         || $bytes === '' || strlen($bytes) > 150000) return null;
     $total += strlen($bytes);
-    if ($total > 512000) return null;
+    // Each name and each source has already passed validation above. The
+    // prior combined 512k limit was stricter than the individual limits and
+    // rejected complete projects despite available worker/artifact capacity.
   }
 
   $code = "from pathlib import Path\nimport base64, zlib, zipfile\n"
@@ -303,7 +320,8 @@ function coreui_console_project_source_progress(array $replies, string $request,
   $missing = array_values(array_filter($wanted,
     static fn(string $key): bool => !isset($sources[$key])));
   $project = $missing === []
-    ? coreui_console_project_files_python($sources, $spec, $maxCodeChars) : null;
+    ? coreui_console_project_files_python($sources, $spec,
+      coreui_console_trusted_project_writer_budget($sources,$maxCodeChars)) : null;
   return ['missing'=>$missing, 'source_files'=>$sources, 'project'=>$project];
 }
 

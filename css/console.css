@@ -6371,3 +6371,153 @@ audio.msg-image {
 .msg-row.ember .work-state { opacity: .75; }
 .msg-row.ember .work-info { min-width: 0; }
 .msg-row.ember .work-source { width: 100%; }
+
+/* 0.5.65: actual conversational work flow and reader-owned chat scrolling. */
+.messages-area {
+  scroll-behavior: auto; /* Live updates must not queue competing smooth scrolls. */
+  overflow-anchor: none;
+}
+.msg-row.ember .work-panel {
+  margin: 0 0 12px;
+  border: 0;
+  background: transparent;
+}
+.msg-row.ember .work-toggle {
+  min-height: 28px;
+  margin-bottom: 7px;
+  padding: 0;
+  opacity: .8;
+}
+.msg-row.ember .work-body {
+  max-height: min(56vh, 510px);
+  overflow-y: auto;
+  padding: 0 3px 6px 0;
+  border: 0;
+  overscroll-behavior: contain;
+}
+.msg-row.ember .work-entries {
+  display: flex;
+  gap: 9px;
+  border: 0;
+  padding: 0;
+}
+.msg-row.ember .work-entry,
+.msg-row.ember .work-entry.work-error {
+  display: grid;
+  grid-template-columns: 20px minmax(0,1fr);
+  column-gap: 9px;
+  padding: 0 0 7px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.msg-row.ember .work-state {
+  align-self: start;
+  min-width: 18px;
+  width: 18px;
+  height: 18px;
+  font-size: 12px;
+  background: transparent !important;
+}
+.msg-row.ember .work-entry.work-error .work-state {
+  color: #ad4030;
+}
+.msg-row.ember .work-info { min-width: 0; }
+.msg-row.ember .work-note {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+}
+.msg-row.ember .work-note-text {
+  font: 400 14px/1.65 system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--txt);
+  letter-spacing: 0;
+}
+.msg-row.ember .work-title:not(.work-title-with-note) {
+  font: 500 13px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--txt);
+}
+.msg-row.ember .work-time {
+  grid-column: 2;
+  font-size: 9px;
+  color: #8795a7;
+  opacity: .65;
+  margin-top: -5px;
+}
+.msg-row.ember .work-detail { margin: 3px 0 0; }
+.msg-row.ember .work-detail summary {
+  font: 400 11px/1.4 system-ui, sans-serif;
+  color: #617fa9;
+}
+.msg-row.ember .work-detail dl { padding: 3px 0; }
+.msg-row.ember .work-source {
+  width: 100%;
+  margin: 12px 0 8px;
+  border-radius: 9px;
+}
+.jump-latest {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  background: rgba(245, 249, 255, .68);
+  border: 1px solid rgba(68, 105, 169, .36);
+  box-shadow: 0 7px 24px rgba(27,56,104,.16);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.jump-latest[hidden] { display: none !important; }
+.jump-latest .jump-working-dots { display: none; align-items: center; gap: 4px; }
+.jump-latest .jump-working-dots i {
+  display: block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: coreui-jump-working 1.15s ease-in-out infinite;
+}
+.jump-latest .jump-working-dots i:nth-child(2) { animation-delay: .16s; }
+.jump-latest .jump-working-dots i:nth-child(3) { animation-delay: .32s; }
+.jump-latest.working .jump-arrow { display: none; }
+.jump-latest.working .jump-working-dots { display: inline-flex; }
+@keyframes coreui-jump-working {
+  0%, 70%, 100% { opacity: .4; transform: translateY(0); }
+  35% { opacity: 1; transform: translateY(-3px); }
+}
+.jump-latest:focus-visible { outline: 2px solid #447aff; outline-offset: 3px; }
+@media (max-width: 620px) {
+  .msg-row.ember .work-body { max-height: 53vh; }
+  .msg-row.ember .work-note-text { font-size: 13px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .jump-latest .jump-working-dots i { animation: none; opacity: 1; }
+}
+
+/* One discreet, accessible metadata control instead of a repeated log row. */
+.msg-row.ember .work-note-text { display: inline; }
+.msg-row.ember .work-detail {
+  display: inline-block;
+  vertical-align: baseline;
+  margin: 0 0 0 7px;
+}
+.msg-row.ember .work-detail[open] {
+  display: block;
+  margin: 5px 0 10px;
+  width: 100%;
+}
+.msg-row.ember .work-detail-toggle {
+  display: inline-grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: rgba(91,146,255,.08);
+  color: #647d9e;
+  font: 12px/1 system-ui, sans-serif;
+  list-style: none;
+  user-select: none;
+}
+.msg-row.ember .work-detail-toggle::-webkit-details-marker { display: none; }
+.msg-row.ember .work-detail-toggle::marker { content: ''; }
+.msg-row.ember .work-detail-toggle:hover { background: rgba(91,146,255,.17); }

@@ -1,9 +1,10 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
 Stand: 26.10.2026
-Repository-Version: 0.5.64
+Repository-Version: 0.5.65
 Repository: https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface
 ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_5_65.txt
   docs/UEBERGABEPROTOKOLL_0_5_64.txt
   docs/UEBERGABEPROTOKOLL_0_5_63.txt
   docs/UEBERGABEPROTOKOLL_0_5_62.txt
@@ -25,8 +26,11 @@ ISSUE #97: Mara-Arbeitsnotizen/Worklog; #96: externe Referenzen.
 der PHP-Syntaxcheck wegen scripts/source-preview-selftest.php.
 0.5.63 korrigiert den PHP-Parserfehler. Beim erneuten Preflight
 scheiterte genau ein veralteter Dateiwerkzeug-Test am alten
-Skill-Hook. 0.5.64 aktualisiert diese Assertion, ohne die
-Werkzeuglaufzeit zu veraendern. Netcup-Abnahme steht aus.
+Skill-Hook. 0.5.64 aktualisiert diese Assertion. 0.5.65 korrigiert den
+Chat-Autoscroll, aktiviert den Floating-Button mit Mara-Punkten,
+zeigt Workevents wie Chattexte und entkoppelt den sicheren
+serverseitigen ZIP-Writer vom kleineren Modellcode-Budget.
+Netcup-Abnahme steht aus. Issue #102 bleibt offen.
 Mara/Ember, Ollama-Modelfile, serielle Queue und private Projekt-
 plaene NICHT ungefragt veraendern.
 Externe STU-Homepage wird in einem ANDEREN Chat bearbeitet.

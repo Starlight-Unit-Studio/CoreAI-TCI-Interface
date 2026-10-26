@@ -36,6 +36,8 @@
       case 'Modellstream gestartet':
       case 'Modellaufruf gestartet':
         return 'Ich habe den Modellaufruf gestartet und warte auf ein tatsächlich abgeschlossenes Ergebnis.';
+      case 'Modellstream abgeschnitten':
+        return 'Die Modellausgabe endete vorzeitig. Ich kann nur den bestätigten Text weiterverwenden.';
       case 'Modellstream empfangen':
         return event.meta.reason === 'output_truncated'
           ? 'Das Modell hat nur eine abgeschnittene Ausgabe geliefert. Ich prüfe, ob eine sichere Fortsetzung möglich ist.'
@@ -210,6 +212,12 @@
       && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   }
 
+  function followWork(body) {
+    if (body && body._workLive && !body.hidden && body._workFollow !== false) {
+      body.scrollTop = body.scrollHeight;
+    }
+  }
+
   function appendNow(body, event, animate, finished) {
     var entries = body.querySelector('.work-entries');
     if (!entries) {
@@ -232,31 +240,39 @@
     if (note) title.className += ' work-title-with-note';
     info.appendChild(title);
     var noteText = null;
+    var detailTarget = info;
     if (note) {
       var annotation = el('div','work-note');
-      // Public notes read as natural chat prose. Provenance stays in the
-      // validated event payload, never as a repeating UI badge.
+      // Public progress is a normal chat paragraph; no provenance badges
+      // or repetitive technical labels between paragraphs.
       noteText = el('p','work-note-text',animate ? '' : note);
       annotation.appendChild(noteText);
       info.appendChild(annotation);
+      detailTarget = annotation;
     }
     var keys = Object.keys(event.meta).filter(function (key) { return key !== 'public_note'; });
-    if (keys.length) {
+    if (keys.length || event.time) {
       var details = el('details','work-detail');
-      details.appendChild(el('summary','', 'Technische Details'));
+      var summary = el('summary','work-detail-toggle','ⓘ');
+      summary.setAttribute('aria-label','Technische Details');
+      summary.title = 'Technische Details';
+      details.appendChild(summary);
       var definition = el('dl','');
       keys.forEach(function (key) {
         definition.appendChild(el('dt','',DETAIL_LABELS[key]));
         definition.appendChild(el('dd','',event.meta[key]));
       });
+      if (event.time) {
+        definition.appendChild(el('dt','','Uhrzeit'));
+        definition.appendChild(el('dd','',localTime(event.time)));
+      }
       details.appendChild(definition);
-      info.appendChild(details);
+      detailTarget.appendChild(details);
     }
     entry.appendChild(info);
-    if (event.time) entry.appendChild(el('time','work-time',localTime(event.time)));
     entries.appendChild(entry);
     while (entries.children.length > 150) entries.removeChild(entries.firstChild);
-    if (body._workLive) body.scrollTop = body.scrollHeight;
+    followWork(body);
     if (typeof body._onWorkEvent === 'function') body._onWorkEvent(event);
 
     if (!animate || !noteText || !note) {
@@ -278,7 +294,7 @@
       var take = Math.min(18, 2 + backlog * 2);
       active.pos = Math.min(chars.length,active.pos + take);
       noteText.textContent = chars.slice(0, active.pos).join('');
-      if (body._workLive) body.scrollTop = body.scrollHeight;
+      followWork(body);
       if (active.pos < chars.length) {
         active.timer = window.setTimeout(typeNext,Math.max(20,40 - backlog * 2));
       } else {
@@ -375,6 +391,10 @@
       var pre = el('pre','work-source-scroll');
       pre.appendChild(el('code','work-source-code'));
       panel.appendChild(pre);
+      pre._sourceFollow = true;
+      pre.addEventListener('scroll', function () {
+        pre._sourceFollow = pre.scrollHeight - pre.clientHeight - pre.scrollTop < 56;
+      }, {passive:true});
       body.appendChild(panel);
       body._workSourcePanel = panel;
       body._workSourceName = filename;
@@ -394,8 +414,8 @@
     if (!code) return false;
     code.textContent += raw.text; // Rendering must not hide the beginning of a valid file.
     var scroll = panel.querySelector('.work-source-scroll');
-    if (scroll && typeof scroll.scrollTop === 'number') scroll.scrollTop = scroll.scrollHeight;
-    if (body._workLive) body.scrollTop = body.scrollHeight;
+    if (scroll && scroll._sourceFollow !== false) scroll.scrollTop = scroll.scrollHeight;
+    followWork(body);
     return true;
   }
 
@@ -419,6 +439,11 @@
     var digest = el('p','work-digest');
     var body = el('div','work-body');
     body._workLive = live;
+    body._workFollow = true;
+    body.addEventListener('scroll', function () {
+      var gap = body.scrollHeight - body.clientHeight - body.scrollTop;
+      body._workFollow = gap < 65;
+    }, {passive:true});
     body.hidden = !expanded;
     if (live) body.appendChild(el('p','work-empty','Warte auf den ersten Arbeitsschritt ...'));
 

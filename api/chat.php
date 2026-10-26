@@ -4984,12 +4984,15 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         ['file_name'=>(string)$name]);
     }
     $sourceProject = coreui_console_project_files_python(
-      $sourceFiles, $sourceSpec, ember_py_max_code_chars());
+      $sourceFiles, $sourceSpec,
+      coreui_console_trusted_project_writer_budget($sourceFiles,ember_py_max_code_chars()));
     if (!is_array($sourceProject)) {
       coreui_work_record($pdo, 'artifact', 'error', 'Projektdateien konnten nicht gepackt werden',
-        ['reason'=>'source_project_size_limit']);
-      return 'Alle Quelltexte wurden empfangen, das Dateipaket konnte aber '
-        . 'nicht innerhalb der festgelegten Groessenlimits vorbereitet werden.';
+        ['reason'=>'source_project_writer_invalid',
+         'file_count'=>count($sourceFiles)]);
+      return 'Die empfangenen Quellen konnten nicht als sicherer '
+        . 'ZIP-Schreibauftrag vorbereitet werden. Der konkrete Dateistatus '
+        . 'ist im Arbeitsweg dokumentiert; es wurde kein Download vorgetaeuscht.';
     }
     $fileToolCandidate = ['code'=>$sourceProject['code'], 'kind'=>'project',
       'meta'=>$sourceProject];

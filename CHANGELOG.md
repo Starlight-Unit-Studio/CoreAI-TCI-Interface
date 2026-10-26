@@ -2,6 +2,15 @@
 
 CoreAI: TCI Interface gehoert zur Quantum-Softwarefamilie und wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert. Historische Changelogs dokumentieren die frueheren Produktnamen unveraendert.
 
+## 0.5.65 - 26.10.2026
+
+- **Chat-Scroll repariert:** `scrollToBottom()` respektiert jetzt, ob der Nutzer den neuesten Inhalt verfolgt oder bewusst weiter oben liest. Auch bei Live-Workevents, Quellcode-Chunks, SSE und Polling wird eine entfernte Leseposition nicht mehr ueberfahren. Der neue Nutzer-Turn und explizite Ruecksprung koennen die Nachfuehrung wieder aktivieren.
+- **Floating Jump:** vorhandener `#jumpLatest` ist verkabelt. Unterhalb der letzten Nachrichten erscheint der transparente, runde Pfeil; bei laufendem Mara-Auftrag stattdessen drei animierte Arbeitspunkte. Ruecksprung mit Bewegung oder ohne Animation bei reduzierter Bewegung.
+- **Echter Work-Renderer-Umbau:** Fortschritte stehen als ungerahmte Chatabschnitte, ohne die wiederholten Titel- und Metakarten. Time/Diagnostics sind weiterhin ueber ein zugaengliches kleines Info-Symbol erreichbar. Live-Quelle behaelt ein eigenstaendiges Scrollfenster und zieht den Nutzer nicht aus einer frueheren Position.
+- **Deterministisches ZIP:** bestaetigte, vollstaendige Quelldateien werden nicht mehr bei 512 kB Gesamtumfang abgeblockt. Die safe Writer-Budgetierung richtet sich nach den tatsaechlichen validierten Quellen statt dem Codebudget fuer untrusted Modell-Python. Model-Codeberechtigung, Python-Isolation, ZIP-Manifestaudit, Quelldatei-Validierung und Nutzerkontext bleiben unveraendert.
+- Neue JavaScript-Regression `scripts/chat-follow-selftest.cjs`, Erweiterungen des lokalen Dateiwerkzeug-Selbsttests um ein 520-kB-Projekt und Hochentropie-Daten, Einbindung in vorhandene Preflights. Versionsstand 0.5.65 mit Pflichtdokumentation und inhaltsbasierten Cache-Keys synchronisiert.
+- **Weiter offen:** echte persistente Dateicheckpoints, groessere Projektmanifeste und endliche Fortsetzungsrunden aus Issue #102. Kein Beleg fuer fehlerfreie 10-Unterseiten-Generierung oder erfolgreichen Netcup-Livetest.
+
 ## 0.5.64 - 26.10.2026
 
 - **Netcup-Preflight-Hotfix:** In `scripts/local-file-tool-selftest.php` stand noch die 0.5.61-Assertion `if ($augmentSkills) $userPrompt = coreui_skills_augment($userPrompt);`. Die seit 0.5.62 korrekte Implementierung lautet `$userPrompt = coreui_skills_augment($userPrompt, $augmentSkills);`. Der alte Test schlug damit trotz korrektem CoreAI-Werkzeugvertrag fehl.

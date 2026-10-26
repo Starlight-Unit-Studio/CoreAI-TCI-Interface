@@ -1,0 +1,74 @@
+COREAI: TCI INTERFACE / RELEASE 0.5.65
+Stand: 26.10.2026, Europe/Berlin
+Repository: https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface
+Basis: main 0.5.64, Merge 0495f3c959a53d23d9bc83993a2fd1ec99caccaf
+
+A. AUSLOESER
+- Netcup/CoreAI-Screenshots vom 26.10.2026 22:08-22:13 zeigen
+  den weiterhin wie ein technisches Protokoll wirkenden Arbeitsweg,
+  blinden Autoscroll zu einer leeren Chatflaeche und einen bei der
+  laufenden Nachricht fehlenden Ruecksprung-Button.
+- Aus dem Worklog eindeutig: echte Quelldateien wurden empfangen,
+  aber ZIP-Writer schied mit source_project_size_limit aus.
+  Ein frueherer Modell-Python-Job hatte SyntaxError durch unvollstaendige
+  triple quotes; das ist von der spaeteren ZIP-Grenze zu unterscheiden.
+- Betreiber wuenscht normal fliessende Chattexte, keine wiederholten
+  Herkunftslabels oder technische Logkarten, den halbtransparenten
+  runden Pfeil nach unten und drei arbeitende Punkte waehrend Mara arbeitet.
+
+B. FRONTEND
+- js/coreui-chat-follow.js: neue separate, UI-only Scroll-FSM.
+  Nutzer-hochscrollen setzt Auto-Follow aus, SSE/Modelldeltas koennen
+  die Leseposition dann nicht ueberfahren. Am Ende wird automatisch
+  wieder gefolgt; expliziter Klick auf den Pfeil oder neue Benutzernachricht
+  aktiviert den neuesten Chat.
+- Bei langem laufenden Work-Panel wird dessen Start ausgerichtet,
+  statt blind ganz nach unten zu springen. Eigener innerer
+  Worklog-/Codebox-Scroll bleibt bestehen und respektiert Leseposition.
+- app.html: bereits vorhandenes #jumpLatest verkabelt, beim nicht
+  neuesten Chat sichtbar, waehrend Mara arbeitet mit drei animierten
+  Punkten statt Pfeil; CSS halbtransparent/rund mit Reduced Motion.
+- js/coreui-work-events.js: echte Work-Notizen als einfache Chatabschnitte.
+  Metadaten inklusive Uhrzeit hinter zugreifbarem Info-Symbol, keine
+  wiederholte "Technische Details"-Zeile. Reale Quelle bleibt pre/code,
+  keine Ausgabe privater Thinking-Tokens.
+- css/console.css: Arbeitsweg ohne Karten/Timeline-Rahmen,
+  normaler Fliesstext, keine groesseren Vorlagen- oder Avatarwiederholungen.
+
+C. SERVER
+- api/console_data_link_bridge.php: servereigener deterministischer
+  und nicht vom Modell formulierter Quell-/ZIP-Writer bekommt einen
+  abhaengig von bestaetigten Quellbytes berechneten Codebedarf.
+  Das separate 512-kB-Sammellimit ist entfallen, denn jede einzelne
+  erlaubte Quelldatei und die Dateianzahl sind ohnehin validiert.
+- api/chat.php: Source-only-Lokal-/Cloud-Projektpfad verwendet dieses
+  Writer-Budget. Der Model-Python-Aufruf erhaelt dadurch keine
+  zusaetzlichen Rechte; Ollama-Optionen, serialisierte Modellqueue,
+  Betreiber-Modelfile, private Projekte und Game-Ember sind unberuehrt.
+- Berechtigte Projektdateien werden weiterhin als inerte Quellen
+  validiert und in der bestehenden abgeschotteten Python-Umgebung
+  geschrieben/gezipt. Archive muessen weiter namelist/testzip bestehen.
+  Keine Quelltexte oder ZIPs allein aufgrund von HTTP-200 behaupten.
+
+D. TESTS
+- scripts/chat-follow-selftest.cjs: Wheel/Touch, Reader-Pin, Live-Follow,
+  FAB, Working-Dots, expliziter Ruecksprung.
+- scripts/local-file-tool-selftest.php: >512k-Build und schwer
+  komprimierbare Quellen bei vertrauenswuerdigem Source-Writer.
+- scripts/work-events-ui-selftest.js: bestehender Worklog-Eventvertrag
+  bleibt erhalten. Beide Preflight-Skripte pruefen neue Node-Tests
+  sofern Node installiert ist.
+- Vor Merge: php -l, Node-Tests, Versionsguard 0.5.64,
+  numerische Cache-Keys pruefen. Anschliessend im Repo mergen und
+  ueber bisherigen Netcup-Updater wirklich live testen.
+
+E. BEKANNTE GRENZEN
+- Issue #102 bleibt offen: keine dauerhaften Quelltext-Checkpoints,
+  zwei/vier Fortsetzungsschritte, >9-Quelldatei-Projektmanifest.
+- Andere Source-Formate und nicht validierte Modell-Python-Skripte
+  profitieren nicht vom neuen trusted-Writer-Budget.
+- Der Netcup-Test wurde beim Schreiben dieser Uebergabe noch nicht
+  abgeschlossen. Keine Behauptung, dass der zehnseitige Download
+  bereits erfolgreich gebaut worden sei.
+
+STATUS: Branch-Arbeit / regulärer Merge und Netcup-Abnahme folgen.
