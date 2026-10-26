@@ -162,4 +162,9 @@ const toggled = work.create({events:[{id:63,kind:'run',state:'success',
 toggled.querySelector('.work-toggle').handlers.click();
 assert.equal(manuallyOpened,true,'caller can remember user disclosure choice');
 
+const futureTool = work.create({events:[{id:71,kind:'tool',state:'running',
+  title:'Neuen Repository-Pruefschritt gestartet'}],expanded:false});
+assert(futureTool.textContent.includes('Ich führe gerade „Neuen Repository-Pruefschritt gestartet“ aus'),
+  'future tool events must receive a generic evidence-based explanation');
+
 console.log('P06 inline work-history UI selftest: OK');
