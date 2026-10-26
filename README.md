@@ -13,8 +13,9 @@ Current source version: `0.5.62` (numeric only). The last verified ZIP remains a
 
 CoreAI besitzt jetzt **33** repository-eigene Skills: 32 optionale Fachpakete
 und den neuen **Werkzeuge**-Kern-Skill in `skills/werkzeuge/SKILL.md`.
-Er bleibt serverseitig auf jedem CoreAI-Turn aktiv, selbst wenn fuer das Konto
+Er bleibt serverseitig auf jedem privaten CoreAI-Turn aktiv, selbst wenn fuer das Konto
 alle anderen Skills ausgeschaltet sind oder Migration 014 fehlt. Die
+separate Game-Ember erhaelt diese spezielle Mara-Anleitung nicht. Die
 Einstellungen zeigen ihn angehakt, ausgegraut und vor allen Fach-Skills an.
 Manipulierte Versuche, diesen Skill ueber die API zu deaktivieren, werden
 abgewiesen. Bis zu vier optionale Skills koennen zusaetzlich geladen werden.
