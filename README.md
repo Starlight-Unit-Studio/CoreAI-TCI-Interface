@@ -25,7 +25,16 @@ der seriellen Ollama-Queue und tatsaechlich nachgewiesenen Dateien. Zehn
 bestehende Fach-Skills wurden zu Source-Only-, Agenten-, ZIP-, SSE- und
 Modellablauf aktualisiert. Die eigentliche persistente Datei-Checkpoint-
 Architektur und die mehrteiligen Build-Limits aus Issue #102 sind weiterhin
-offen. PR #105 fuer Live-Quellcode bleibt ein separater Entwurf.
+offen. Die Chat-Darstellung und die echte Live-Quellcodevorschau aus
+dem frueheren PR #105 wurden in denselben 0.5.62-Release-Branch
+uebernommen. Sichtbare Work-Notizen erhalten keine wiederholten
+Herkunfts-Badges und keine farbigen Karten mehr. Bei direkten
+Quelldatei-Auftraegen zeigt ein kleines Fenster tatsaechlich
+empfangene Code-Teile an, niemals private Modellausgaben. Fehlerhaft
+platzierter SSE-PHP-Initialisierungscode wurde im Zuge der
+Zusammenfuehrung korrigiert. Abgeschnittene Modellstreams erscheinen
+nicht laenger als gruen bestaetigter Erfolg. Kein Netcup-Livetest.
+Der Runner aus Issue #102 bleibt davon unabhaengig offen.
 Weitere Einzelheiten: `docs/COREUI_SKILLS.md` und
 `docs/UEBERGABEPROTOKOLL_0_5_62.txt`.
 
