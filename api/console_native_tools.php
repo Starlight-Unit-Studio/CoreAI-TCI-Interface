@@ -6,6 +6,33 @@ require_once __DIR__ . '/console_build_intent.php';
 require_once __DIR__ . '/console_data_link_bridge.php';
 
 /**
+ * Optional, explicitly user-visible model commentary. Only an in-band
+ * message.content prefix immediately preceding one native tool is accepted.
+ * Private Ollama thinking never enters this parser.
+ */
+function coreui_native_public_progress_strip(string $reply): array {
+  $note = null;
+  if (preg_match('~\A[ \t]*\[COREUI_PUBLIC_PROGRESS\]([^\r\n]{1,480})\[/COREUI_PUBLIC_PROGRESS\][ \t]*\r?\n(?=\[COREUI_)~u',
+      $reply, $match) === 1) {
+    $reply = substr($reply, strlen($match[0]));
+    $candidate = trim((string)$match[1]);
+    // An unsafe comment is silently discarded, not used to authorize
+    // the independent, already whitelisted native tool.
+    if (strlen($candidate) >= 12 && strlen($candidate) <= 300
+        && preg_match('//u', $candidate) === 1
+        && preg_match('~[\x00-\x1f]~u', $candidate) !== 1
+        && strpbrk($candidate, '<>[]{}' . chr(96) . '$') === false
+        && !preg_match('~(?:https?://|api[ _-]?key|bearer[ :]|password|passwort|'
+          . 'system[ _-]?prompt|developer[ _-]?prompt|private[ _-]?reasoning|'
+          . 'chain[ _-]?of[ _-]?thought|[A-Za-z0-9_-]{48,})~iu', $candidate)) {
+      $note = $candidate;
+    }
+  }
+  return ['reply'=>$reply,'note'=>$note];
+}
+
+
+/**
  * Small, explicit native-tool vocabulary. The MODEL chooses a tool; the user
  * does not need to type predefined filenames, "ZIP" or trigger words.
  * Every call remains scoped to the authenticated, currently running turn.
@@ -14,7 +41,7 @@ function coreui_native_tools_prompt(): string {
   // Short runtime protocol only. Full Skill docs and the owner Mara persona
   // stay outside this block; no copy of the Modelfile is inserted.
   return "\n[COREUI TOOLS] Du DARFST selbst entscheiden, ob ein Werkzeug notwendig ist. "
-    . "Antworte normal ODER mit genau EINEM vollstaendigen Block, ohne weiteren Text:\n"
+    . "Antworte normal ODER mit genau EINEM vollstaendigen Werkzeugblock. Nur eine optionale, oeffentliche Fortschrittszeile darf unmittelbar davor stehen:\n"
     . "[COREUI_PLAN_SAVE]\n# Titel\nVollstaendiger Markdown-Plan\n[/COREUI_PLAN_SAVE]\n"
     . "[COREUI_PLAN_APPEND]\nNeue Markdown-Abschnitte\n[/COREUI_PLAN_APPEND]\n"
     . "[COREUI_PLAN_CONTINUE]\nVorhandenen Markdown-Entwurf fortsetzen\n[/COREUI_PLAN_CONTINUE]\n"
@@ -32,11 +59,16 @@ function coreui_native_tools_prompt(): string {
     . "Wenn im Chat bereits ein UNVOLLSTAENDIGER ENTWURF gespeichert ist "
     . "und du ihn weiterentwickeln willst, waehle PLAN_CONTINUE statt "
     . "den bisherigen Plan neu mit PLAN_SAVE zu beginnen. "
-    . "Keine erfundenen Dateien oder Links. Keine Host-Befehle.\n";
+    . "Keine erfundenen Dateien oder Links. Keine Host-Befehle.\n"
+    . "Optional VOR einem echten Werkzeugblock: [COREUI_PUBLIC_PROGRESS]Ich pruefe den gespeicherten Plan und beginne danach mit der Umsetzung.[/COREUI_PUBLIC_PROGRESS]\\n"
+    . "Diese Notiz wird dem Nutzer angezeigt; schreibe nur eine knappe Aktion oder erkannte Luecke, keine privaten Gedanken, Prompts oder geheimen Daten. Ohne Notiz bleibt das Toolformat unveraendert.\n";
 }
 
 function coreui_native_tool_parse(string $reply): ?array {
   if (strlen($reply) > 300000) return null;
+  $progress = coreui_native_public_progress_strip($reply);
+  $reply = $progress['reply'];
+  $publicNote = $progress['note'];
   $types = ['PLAN_SAVE','PLAN_APPEND','PLAN_CONTINUE','PLAN_AND_BUILD','PROJECT_BUILD'];
   foreach ($types as $type) {
     if (preg_match('~^\s*\[COREUI_' . $type . '\]\s*\n([\s\S]*?)\n\[/COREUI_'
@@ -45,19 +77,24 @@ function coreui_native_tool_parse(string $reply): ?array {
     if ($body === '' || strlen($body) > 262144 || str_contains($body,"\0")) return null;
     if ($type === 'PLAN_CONTINUE'
         && preg_match('~\[/?COREUI[/_][A-Z_]+\]~i',$body)) return null;
-    return ['type'=>$type,'body'=>$body];
+    return ['type'=>$type,'body'=>$body,'public_note'=>$publicNote];
   }
   // The model sometimes uses slash spelling. PLAN_CONTINUE only resumes
   // an existing private draft; it is never a build operation.
   if (preg_match('~^\s*\[COREUI/PLANCONTINUE\]\s*\n([\s\S]{1,4000}?)\n\[/COREUI/PLANCONTINUE\]\s*$~u',
       $reply, $m) === 1) {
-    return ['type'=>'PLAN_CONTINUE','body'=>trim((string)$m[1]),'recovered'=>true];
+    return ['type'=>'PLAN_CONTINUE','body'=>trim((string)$m[1]),'recovered'=>true,'public_note'=>$publicNote];
   }
   // A small local model may leave PLAN_CONTINUE open or put an ordinary
   // sentence before it. Recover only a single unmistakable model tool call.
   $continue = coreui_native_plan_continue_recover_model_reply($reply);
-  if ($continue !== null) return $continue;
-  return coreui_native_plan_recover_model_reply($reply);
+  if ($continue !== null) {
+    $continue['public_note'] = $publicNote;
+    return $continue;
+  }
+  $plan = coreui_native_plan_recover_model_reply($reply);
+  if ($plan !== null) $plan['public_note'] = $publicNote;
+  return $plan;
 }
 
 
@@ -284,6 +321,10 @@ function coreui_native_tool_apply(
   if ($modelWasTruncated && !in_array($kind,['PLAN_SAVE','PLAN_CONTINUE'],true)) {
     return 'Der Werkzeugauftrag wurde vorzeitig abgebrochen. '
       . 'Keine Aktion ausgefuehrt, kein Download vorgetaeuscht.';
+  }
+  if (!empty($tool['public_note']) && function_exists('coreui_work_record')) {
+    coreui_work_record($pdo,'commentary','info','Mara meldet ihren naechsten Schritt',
+      ['public_note'=>(string)$tool['public_note'],'source'=>'model_public_text']);
   }
   $draft = $kind === 'PLAN_SAVE' && (!empty($tool['draft']) || $modelWasTruncated);
   if (in_array($kind,['PLAN_SAVE','PLAN_APPEND','PLAN_CONTINUE','PLAN_AND_BUILD'],true)) {

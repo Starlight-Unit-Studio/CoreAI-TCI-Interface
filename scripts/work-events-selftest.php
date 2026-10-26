@@ -43,4 +43,18 @@ check_work(($public['done_reason'] ?? '') === 'length'
 check_work(!isset($public['raw_thinking']) && !isset($public['system_prompt'])
   && !isset($public['source_code']), 'private model data stays filtered');
 check_work(($s = coreui_work_python_diagnostic(null)) && ($s['error_type'] ?? '') === 'worker_timeout', 'worker timeout classified');
+
+$comment = coreui_work_safe_meta([
+  'public_note'=>'Ich pruefe zuerst den gespeicherten Projektplan.',
+  'raw_thinking'=>'private', 'system_prompt'=>'private'
+]);
+check_work(($comment['public_note'] ?? '') === 'Ich pruefe zuerst den gespeicherten Projektplan.',
+  'Only explicit public progress from content may be shown');
+check_work(!isset($comment['raw_thinking']) && !isset($comment['system_prompt']),
+  'Private thinking and prompts are excluded');
+$unsafePublic = coreui_work_safe_meta([
+  'public_note'=>'Hier ist der API key: secret',
+]);
+check_work(!isset($unsafePublic['public_note']), 'Sensitive public note must fail closed');
+
 echo "CoreUI P06 work events selftest: OK\n";

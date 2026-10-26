@@ -30,6 +30,20 @@ function coreui_work_safe_meta(array $raw): array {
     if ($key === 'file_name') $value = basename(str_replace('\\', '/', $value));
     if (preg_match('/^[a-zA-Z0-9._:\/-]{1,110}$/D', $value)) $safe[$key] = $value;
   }
+  // Public model comments are deliberate, short, and separately labelled.
+  // Never persist raw thinking, provider prompts or credential-like material.
+  if (isset($raw['public_note']) && is_string($raw['public_note'])) {
+    $note = trim($raw['public_note']);
+    if (strlen($note) >= 12 && strlen($note) <= 300
+        && preg_match('//u',$note) === 1
+        && preg_match('~[\x00-\x1f]~u',$note) !== 1
+        && strpbrk($note, '<>[]{}' . chr(96) . '$') === false
+        && !preg_match('~(?:https?://|api[ _-]?key|bearer[ :]|password|passwort|'
+          . 'system[ _-]?prompt|developer[ _-]?prompt|private[ _-]?reasoning|'
+          . 'chain[ _-]?of[ _-]?thought|[A-Za-z0-9_-]{48,})~iu',$note)) {
+      $safe['public_note'] = $note;
+    }
+  }
   // The marker flag is a boolean diagnostic, never a source-text payload.
   if (isset($raw['marker_incomplete']) && is_bool($raw['marker_incomplete'])) {
     $safe['marker_incomplete'] = $raw['marker_incomplete'];
@@ -68,11 +82,13 @@ function coreui_work_python_diagnostic(?array $result): array {
 function coreui_work_record(PDO $pdo, string $kind, string $state, string $title, array $meta=[]): ?array {
   $ctx = $GLOBALS['COREUI_WORK_CONTEXT'] ?? null;
   if (!is_array($ctx)) return null;
-  if (!in_array($kind, ['run','model','tool','artifact','error'], true)
+  if (!in_array($kind, ['run','model','tool','artifact','error','commentary'], true)
       || !in_array($state, ['running','success','error','info'], true)) return null;
   $title = trim($title);
   if (!preg_match('/^[a-zA-Z0-9 \-.,:()\/]{3,110}$/D', $title)) return null;
   $safe = coreui_work_safe_meta($meta);
+  if ($kind === 'commentary' && empty($safe['public_note'])) return null;
+  if ($kind !== 'commentary') unset($safe['public_note']);
   try {
     $stmt = $pdo->prepare('INSERT INTO stu_console_work_events
        (user_id,session_id,turn_id,run_key,response_message_id,kind,state,title,details_json,created_at)
