@@ -1801,14 +1801,6 @@ function ember_cache_set(string $key, string $value): void {
 }
 
 function ember_http_get_json(string $url, int $timeout = 6): ?array {
-  // Opt-in source-only preview: stream the actual public file-content field
-  // through the existing SSE response. Never forward message.thinking.
-  $sourcePreview = $GLOBALS['COREUI_SOURCE_PREVIEW'] ?? null;
-  $previewActive = is_array($sourcePreview) && is_callable($sourcePreview['publish'] ?? null)
-    && preg_match('~^[A-Za-z0-9][A-Za-z0-9._-]{0,90}\\.(?:html?|css|js|json|svg)$~D',
-      (string)($sourcePreview['file_name'] ?? '')) === 1;
-  if ($previewActive) $payload['stream'] = true;
-  if ($previewActive) $body = json_encode($payload, $flags);
   $ch = curl_init($url);
   if (!$ch) return null;
   curl_setopt_array($ch, [
@@ -3272,6 +3264,14 @@ function ember_call_ollama(string $model, string $systemPrompt, string $userProm
   if (defined('JSON_INVALID_UTF8_SUBSTITUTE')) {
     $flags = $flags | JSON_INVALID_UTF8_SUBSTITUTE;
   }
+  // This preview is available exclusively to the authenticated CoreAI
+  // source-only tool route. Keep provider thinking separate from file content.
+  $sourcePreview = $GLOBALS['COREUI_SOURCE_PREVIEW'] ?? null;
+  $previewActive = is_array($sourcePreview)
+    && is_callable($sourcePreview['publish'] ?? null)
+    && preg_match('~^[A-Za-z0-9][A-Za-z0-9._-]{0,90}\\.(?:html?|css|js|json|svg)$~D',
+      (string)($sourcePreview['file_name'] ?? '')) === 1;
+  if ($previewActive) $payload['stream'] = true;
   $body = json_encode($payload, $flags);
   if ($body === false) {
     if (function_exists('stu__log_error')) {
@@ -3356,8 +3356,13 @@ function ember_call_ollama(string $model, string $systemPrompt, string $userProm
           if (is_string($msg['content'] ?? null)) {
             $delta = $msg['content'];
             $previewContent .= $delta;
-            foreach (str_split($delta, 1800) as $part) {
-              if ($part !== '') $publish(['phase'=>'chunk','file_name'=>$fileName,'attempt'=>$attemptNo,'text'=>$part]);
+            // Split on UTF-8 code-point boundaries to keep JSON/SSE valid.
+            // Do not discard model output when a preview chunk is large.
+            if (preg_match_all('~.{1,700}~us', $delta, $parts)) {
+              foreach ($parts[0] as $part) {
+                $publish(['phase'=>'chunk','file_name'=>$fileName,
+                  'attempt'=>$attemptNo,'text'=>$part]);
+              }
             }
           }
         }
@@ -3380,7 +3385,7 @@ function ember_call_ollama(string $model, string $systemPrompt, string $userProm
       $raw = $raw === false ? false : json_encode(['message'=>['content'=>$previewContent,
         'thinking'=>$previewThinking],'done'=>$previewDone ?? false,
         'done_reason'=>$previewDoneReason,'eval_count'=>$previewEval,
-        'prompt_eval_count'=>$previewPromptEval], JSON_UNESCAPED_UNICODE);
+        'prompt_eval_count'=>$previewPromptEval], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
       $publish(['phase'=>'end','file_name'=>$fileName,'attempt'=>$attemptNo]);
     } else {
       $raw = curl_exec($ch);
