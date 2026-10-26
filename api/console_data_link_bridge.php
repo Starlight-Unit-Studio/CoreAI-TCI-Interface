@@ -386,8 +386,10 @@ function coreui_console_local_source_fragment(string $reply, string $filename, b
   $raw = $reply;
   $ticks = str_repeat(chr(96), 3);
   $heading = '~^\s*#{1,6}[ \t]+' . preg_quote($filename,'~') . '[ \t]*\r?\n~i';
+  $prefixed = $first || preg_match($heading,$raw) === 1
+    || str_starts_with(ltrim($raw),$ticks);
   $raw = preg_replace($heading, '', $raw, 1);
-  $raw = ltrim((string)$raw);
+  if ($prefixed) $raw = ltrim((string)$raw);
   if (str_starts_with($raw,$ticks)) {
     $nl = strpos($raw,"\n");
     if ($nl === false || $nl > 160) return null;
@@ -411,7 +413,21 @@ function coreui_console_local_source_fragment(string $reply, string $filename, b
 
 /** Source-agnostic, overlap-aware append; the existing JS API stays supported. */
 function coreui_console_local_source_append(string $current, string $continuation): ?string {
-  return coreui_console_local_js_append($current,$continuation);
+  if ($current==='' || $continuation==='' || strlen($current)>150000
+      || strlen($continuation)>110000) return null;
+  $overlap = 0;
+  for ($n = min(strlen($current),strlen($continuation),3500); $n >= 12; $n--) {
+    if (substr($current,-$n) === substr($continuation,0,$n)) {
+      $overlap = $n;
+      break;
+    }
+  }
+  if ($overlap===0 && strlen($current)>80
+      && str_starts_with($continuation,substr($current,0,80))) return null;
+  $suffix = substr($continuation,$overlap);
+  if ($suffix==='' || trim($suffix)==='') return null;
+  $joined = $current . $suffix;
+  return strlen($joined)<=150000 ? $joined : null;
 }
 
 /** File-type-aware continuation without changing Ollama parameters or Modelfile. */
