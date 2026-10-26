@@ -1,0 +1,86 @@
+PROJECT STΛRLIɢHT: E.M.B.E.R. COREUI 0.5.56
+UEBERGABEPROTOKOLL
+Stand: 26.10.2026, Europe/Berlin
+Ausgangsstand: main 0.5.55, b38f67e7d3131a55b22d1c75d0da2e5fb58b7a9d
+Branch: feat/public-work-narratives-0-5-56
+
+ANLASS
+Der Nutzer zeigte Screenshots der ChatGPT-Oberflaeche:
+sichtbarer, ausfuehrlicher Verlauf aus Aktionen, Pruefungen,
+Entscheidungen, Fehlstellen und kurzen Ich-Form-Fortschrittsnotizen.
+Das bestehende CoreUI konnte Work-Events bereits aufklappen
+und persistieren, bot aber nur technische Kurztitel.
+NICHT bloss ein weiteres Akkordeon oder eine optische Kopie.
+
+NEUE NACHVOLLZIEHBARE DARSTELLUNG
+- js/coreui-work-events.js: kontextabhaengige oeffentliche
+  Maras-Arbeitsnotizen aus authentifizierten Eventtiteln und
+  freigegebenen Metadaten; niemals aus rohem Chain-of-Thought.
+  Erklaert, was getan wird, welche Datei noch nicht bereitsteht,
+  wann ein Modelloutput unvollstaendig ist, was ein Worker-Fehler
+  bedeutet und warum ein ZIP noch nicht als fertig gelten darf.
+- Im zugeklappten Zustand letzte relevante Notiz und Zaehler
+  fuer Schritte/Werkzeuge/Fehler, beim Oeffnen jedes Ereignis mit
+  Zeit, Status, Arbeitsnotiz und separaten technischen Details.
+- Die laufende Timeline startet aufgeklappt, gespeicherte Antworten
+  werden standardmaessig zugeklappt; individuelle Oeffnungswahl
+  bleibt ueber clientseitige Neurenderings erhalten.
+- Alle Daten kommen weiter aus dem kontogebundenen Work-Store,
+  der authentifizierten History oder dem bestehenden SSE-Stream.
+  Ein Reload laedt dieselben gespeicherten Schritte; keine zweite
+  ungeschuetzte API und kein zweiter Modellaufruf.
+- css/console.css: Mobilansicht, Maximalhoehe und scrollbar
+  aufgeklappter Detailverlauf.
+
+TECHNISCHE DIAGNOSEN
+- api/console_work_store.php erlaubt neue harmlose Metadaten:
+  done_reason, content_chars, thinking_chars, continuation_segments,
+  plan_version, step, response_bytes, discarded_tool_body_bytes,
+  marker_incomplete (bool).
+- Unveraendert AUSGESCHLOSSEN: roher Thinking-Text, interne Prompts,
+  Python-/HTML-Quelltext, stderr und beliebige Modelltexte.
+- Kein behaupteter Zugriff auf ungekuezte private Modellgedanken.
+  Die Ich-Form ist eine verstaendliche, wahrheitsgebundene
+  Erklaerung bereits aufgezeichneter Ereignisse. Fuer spaetere,
+  echte modellformulierte oeffentliche Zwischenmeldungen
+  waere ein separates ausdrueckliches Ausgabeprotokoll noetig.
+
+RELEVANTE TESTS UND ABNAHME
+- scripts/work-events-ui-selftest.js prueft Live- und History-
+  Kommentare, Fehler-/Dateihinweise, Zusammenfassung, Toggle,
+  Live-Zaehler und Geheimnis-Filter. Tests mit isolierter V8-
+  DOM-Mock-Umgebung bestanden; kein Github-Actions-Lauf.
+- scripts/work-events-selftest.php prueft sichere Metadaten-
+  Whitelist und keine Offenlegung privater Inhaltstypen.
+- HTML-Scripte und Styles mit aktuellen SHA-256-Inhalts-
+  Cachekeys versehen; Versionsanzeigen auf 0.5.56.
+- Gesamter PHP-/Node-/Compose-/Native-Preflight und echte
+  Mobilansicht erst nach Live-Installation abnehmen.
+- Keine Veraenderung am laufenden Server durch diese Repo-
+  Entwicklung; kein vollstaendiger Homepage-ZIP-Test behauptet.
+
+NACH DEM MERGE
+1. Bestehenden Netcup-One-Liner unveraendert fuer Update benutzen.
+2. PHP-Lint, Work-Events-PHP-/UI-/Frontend-Tests und kompletten
+   Preflight beobachten. Erste echte Fehlzeile notieren.
+3. In einer vorhandenen privaten Sitzung einen kurzen Tool-
+   Auftrag starten. Waehrend der Ausfuehrung: Live-Icherklaerung,
+   beim Abschluss: zugeklappt mit Status/Anzahl.
+4. Den Eintrag wieder oeffnen, Details anklicken,
+   Sitzung wechseln und Seite neu laden.
+5. Fehlende Quelldatei / SyntaxError / Ollama length getrennt
+   nachpruefen; Metadaten duerfen nicht erfunden sein.
+6. Vor weiteren Arbeiten docs/UEBERGABEPROTOKOLL_AKTUELL.txt
+   und GitHub Issue #96 mit den Upstream-Referenzen lesen.
+
+FESTE RANDbedingungen
+- E.M.B.E.R. verarbeitet nie mehrere Modellanfragen parallel.
+- Bestehender privater projektplan-v3.md bleibt erhalten.
+- Modelfile, Ollama-Konfiguration, Planung, Quelltext- und
+  ZIP-Erzeugung, Dateizugriff, Nutzer-/Sitzungsgrenzen bleiben.
+- Keine neuen Modellrestriktionen, Limits, Promptersatztexte,
+  DB-Migrationen oder automatischen Retry-Schleifen.
+- Erfolgreicher GitHub-Merge bedeutet noch keine Live-Abnahme.
+
+STATUS: Frontend- und Work-Event-Erweiterung im Repo vorbereitet,
+vollstaendiger Netcup-Preflight und Android-Abnahme offen.
