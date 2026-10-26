@@ -1,0 +1,7 @@
+## 0.5.64 - 26.10.2026
+
+- Hotfix fuer den Netcup-Preflight von 0.5.63: scripts/local-file-tool-selftest.php erwartete noch die alte Bedingung "if ($augmentSkills) $userPrompt = coreui_skills_augment($userPrompt);".
+- Seit 0.5.62 ist der korrekte Hook "$userPrompt = coreui_skills_augment($userPrompt, $augmentSkills);": Der verpflichtende Werkzeug-Kern-Skill gilt auch bei fokussierten Quelldatei-Aufrufen; bis zu vier optionale Skills werden dort weiterhin ausgelassen.
+- Der Selbsttest prueft jetzt den tatsaechlichen Aufruf. Die anderen vier Teilbedingungen (fokussierte Prompts, bestehender Fallback, HTTP-/Transportdiagnosen) sind im Handler weiterhin vorhanden.
+- Numerischer Release 0.5.64 inkl. sechs HTML-Versionen, JS-Bootstrap, SHA256-basierter Cache-Kennung, Versionsselbsttest, Preflight, README, Changelog, TXT-Index und Uebergabe dokumentiert.
+- Keine Aenderung der Modell-Inferenz, des Modelfiles, der globalen Queue, der Game-Ember, der Datenbank oder der privaten Projektplaene. Modell- und Dateibaugrenzen aus Issue #102 unveraendert offen. Echtes Netcup-Ergebnis steht aus.
