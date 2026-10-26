@@ -884,7 +884,7 @@ exit;
 function console_stream_ollama(string $model, string $systemPrompt, string $userPrompt,
                                bool $augmentSkills = true, ?int $timeoutOverride = null,
                                ?bool $thinkOverride = null): array {
-  if ($augmentSkills) $userPrompt = coreui_skills_augment($userPrompt);
+  $userPrompt = coreui_skills_augment($userPrompt, $augmentSkills);
   $url       = ember_url();
   $keepAlive = ember_keep_alive();
 
