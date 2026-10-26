@@ -7,7 +7,23 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.63` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.64` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Dateiwerkzeug-Selbsttest korrigiert (0.5.64)
+
+Die Netcup-Abnahme von 0.5.63 war nach bestandener PHP-Syntaxpruefung
+bei `scripts/local-file-tool-selftest.php` haengen geblieben. Ursache:
+Eine im Selbsttest fest hinterlegte Pruefung erwartete noch den alten
+optionalen Skill-Hook aus 0.5.61, obwohl CoreAI seit 0.5.62 den
+verbindlichen Werkzeuge-System-Skill auch in fokussierten Quelldatei-
+Aufrufen uebergibt. Der tatsaechliche Handler erfuellt bereits die
+anderen vier Diagnostik-/Fallbackbedingungen.
+
+0.5.64 aktualisiert allein diese veraltete Testannahme und die
+verbindliche Versions-/Cache-/Changelog-Dokumentation. Die Modell-,
+Runner-, Modelfile-, Datenbank- und Dateiausfuehrungslogik bleiben
+unveraendert. Kein produktiver 10-Seiten-Build behauptet. Erneute
+Netcup-Liveabnahme durch den vorhandenen Installer steht aus.
 
 ## Installer-Syntaxfix (0.5.63)
 
