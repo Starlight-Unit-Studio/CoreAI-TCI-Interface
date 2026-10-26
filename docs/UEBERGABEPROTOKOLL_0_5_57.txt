@@ -1,0 +1,60 @@
+COREAI: TCI INTERFACE 0.5.57 - UEBERGABEPROTOKOLL
+Datum: 26.10.2026 (Europe/Berlin)
+Ausgangsversion: 0.5.56, main 920814af489f9bb7f5ab89a4b2872f4e1a9fc26b
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Ziel: Projektumbenennung und Quantum-Familienzuordnung OHNE Runtime-Migration.
+
+PRODUKTNAME
+- Offiziell: CoreAI: TCI Interface
+- Softwarefamilie: Quantum (Quantum Software).
+- In normaler Dokumentation immer CoreAI: TCI Interface ohne
+  staendigen Vorsatz Quantum. Im Softwarekatalog darf die Familie
+  sichtbar sein.
+- Historische Produktnamen: E.M.B.E.R. CoreUI, Ember CoreUI.
+- E.M.B.E.R. bleibt das Framework, Mara die TCI-Assistentin.
+- Der Betreiber hat das GitHub-Repository vor dieser Arbeit bereits
+  in CoreAI-TCI-Interface umbenannt.
+
+UMGESETZT
+- Projektinterne Splash-, Login-, Chat-, Einstellungen-, Protokoll-
+  und Adminoberflaechen mit aktuellem Produktnamen ausgestattet.
+- Responsives Zweizeilen-Branding und Quantum-Familienkennzeichnung.
+- SoftwareApplication-Metadaten, OpenGraph, Repo-URL und
+  Standardanzeige des Mail-Absenders aktualisiert.
+- Setup-Downloader bezieht main aus dem neuen Repo-Pfad.
+- Benutzerseitige Installer-/Preflight-/Backend-Texte nachgezogen.
+- Aktive Marken-/Lizenzhinweise erhalten Versions- und
+  Namensfortfuehrung, ohne historischen Lizenztext als neue
+  materielle Lizenzregel auszugeben.
+- README, Masterplan, Roadmap, Funktionsmatrix,
+  Versionscheck, Changelog, TXT-Archiv und Uebergabe aktualisiert.
+
+BEWUSST NICHT GEANDERT
+- Externe Starlight-Unit-Homepage, Central Hub und andere Repos.
+  Ein anderer Chat uebernimmt diesen Abschnitt.
+- Die bestehende Netcup-Domain coreui.starlight-unit.de.
+- Interne COREUI-Variablen, Datenbankschema, Container-/Worker-Namen,
+  lokalen Pfad /opt/ember-coreui, GitHub-Release-ZIP-Archive.
+- config/Modelfile.template und jede Betreiber-Ollama-Option.
+- Maras Persona, die serielle Modellwarteschlange, Agenten-, Tool-
+  und Dateiablaufregeln.
+- Private projektplan-v3.md, Benutzerdateien, Gespraeche, RAG und
+  Datenbankinhalte.
+- Historische Original-Changelogs und alte ZIP/SHA-Paare.
+
+NACH DEM MERGE
+1. Versionsnummer, README/Changelog/HTML/Bootstrap und
+   Branding-Selbsttest auf 0.5.57 pruefen.
+2. Den bestehenden Setup-One-Liner gegen das umbenannte Repo
+   laufen lassen und auf Netcup den vollen Preflight kontrollieren.
+3. Responsive Darstellung auf Android kontrollieren, speziell
+   lange Produktnamen im Seitenmenue und auf Login/Splash.
+4. Die bestehenden Mara-Arbeitsweg-/Datei-Tests aus Issue #97
+   fortsetzen. Die Umbenennung ist kein Nachweis einer
+   funktionierenden Projekt-ZIP-Generierung.
+5. Weiterhin Issue #96 fuer Upstream-Referenzen heranziehen.
+6. Vor weiteren Codeschritten neue Versionsregel beachten.
+
+GRENZEN
+Dies ist ein GitHub-Quellstand. Ein erfolgreicher Merge ist noch
+kein bestaetigter Server-Deploy oder getestetes ZIP.

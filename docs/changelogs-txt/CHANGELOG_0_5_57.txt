@@ -1,0 +1,9 @@
+## 0.5.57 - 26.10.2026
+
+- Produktname: CoreAI: TCI Interface, innerhalb der Quantum-Softwarefamilie. Im normalen Text wird Quantum nicht als staendiger Vorsatz benutzt.
+- Das vom Betreiber bereits umbenannte Repository ist Starlight-Unit-Studio/CoreAI-TCI-Interface. Der bestehende Setup-Downloader wurde darauf aktualisiert.
+- Sechs Projektoberflaechen mit Titel-/Meta-/Branding-Anpassung und responsivem Produktheader; JSON-LD-Familienangabe und GitHub-Codequelle aktualisiert.
+- Benutzerseitige Strings in Installer, Preflights, Admin-/Chatoberflaeche und API angepasst; numerische Asset-Cache-Schluessel aktualisiert.
+- Branding- und Markenhinweise mit historischer Lizenzkontinuitaet aktualisiert. Die Community Source Lizenz 1.0 bleibt in ihrer rechtlichen Substanz bestehen.
+- Das E.M.B.E.R.-Framework, die Mara-TCI-Identitaet, das genehmigte Modelfile, Ollama-Optionen, Serverdomain, `coreui`-Kompatibilitaetskennungen, Datenbanken, persistente Chats und das Deployment-Verfahren bleiben unveraendert.
+- Externe Homepage nicht veraendert, historische Changelog-Archive nicht umgeschrieben. Kein Live-Test oder vollstaendiger Netcup-Preflight behauptet.
