@@ -1,0 +1,57 @@
+COREAI: TCI INTERFACE 0.5.58 - UEBERGABEPROTOKOLL
+Stand: 26.10.2026 (Europe/Berlin)
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Vorherige main-Version: 0.5.57, eaad675b5245f92fc39954deac259cd3db2faf11
+
+BEOBACHTETER INSTALLATIONSABBRUCH
+- Netcup-Docker-Images wurden gebaut; Ollama-Modell ember-coreui:latest
+  wurde aus gemma4:e4b erzeugt; MariaDB-Container startete.
+- Danach bricht scripts/install.sh in Zeile 664 mit
+  /opt/ember-coreui/scripts/migrate.sh: Keine Berechtigung ab.
+- SQL-Migrationen, Abschluss-Preflight und Homepage-ZIP wurden
+  dadurch NICHT als erfolgreich bestaetigt.
+
+ROOT CAUSE UND AENDERUNG
+- scripts/migrate.sh stand im Git-Tree mit Modus 100644.
+- setup.sh machte vor Installer-Ausfuehrung install.sh, stack.sh
+  und preflight.sh ausfuehrbar, aber nicht migrate.sh.
+- Der bisherige direkte Start von migrate.sh lag VOR dem chmod am
+  Ende von install.sh. Eine frische Installation konnte so abbrechen.
+- Neuer Git-Dateimodus der Migration: 100755.
+- setup.sh setzt migrate.sh zusammen mit anderen Startskripten
+  vor dem Installationslauf auf 0750.
+- scripts/update-from-main.sh korrigiert dieselben Ausfuehrungsrechte
+  fuer install.sh, preflight.sh und migrate.sh nach rsync.
+- install.sh verwendet bash "$PROJECT_ROOT/scripts/migrate.sh":
+  ueberlebt fehlendes x-Bit in einer alten Quellkopie.
+- tests/migration-permissions-selftest.sh prueft den 0644-Fallback
+  ohne Docker/Server. tests/setup-oneliner-selftest.sh simuliert
+  die 0644-Migration bei Neuinstallation und Update.
+- Compose-/Native-Preflights pruefen die Rechte-Regression.
+
+VERSION UND KOMPATIBILITAET
+- 0.5.58 in VERSION, sechs HTML-Seiten, JS-Gate, Test-Konfiguration,
+  README, Changelog, TXT-Archiv, Uebergabe.
+- Numerischer SHA256-Inhalts-Cache-Key des Gate-Skripts nachgezogen.
+- Unveraendert: SQL-Migrations-Dateien und Daten, private Chats,
+  projektplan-v3.md, Downloads, RAG, Ollama-Modelfile und Parameter,
+  Modell-FIFO, Agenten-/Tool-/ZIP-Logik, Domain, Docker/DB-Namen,
+  Markenname CoreAI: TCI Interface und Quantum-Familienbezug.
+- Externe Homepage wird separat bearbeitet.
+- Keine GitHub Actions und kein neuer gesicherter ZIP-Release.
+
+NAECHSTE SCHRITTE
+1. Vorhandenen Netcup-Setup-One-Liner erneut ausfuehren, ohne
+   Datenbank, var, uploads oder lokale Accounts zu loeschen.
+2. MariaDB-Migrationen und komplette Compose-Preflight-Ausgabe
+   auf ersten echten Fehler pruefen. Wenn weitere Fehler auftreten,
+   diese einzeln behandeln.
+3. Nach der Installation Live-Arbeitsverlauf 0.5.56 und Mara-
+   Kommentarereignisse pruefen, sowie den vorher gespeicherten
+   Projektplan weiterverwenden.
+4. Homepage-Dateigenerierung bis zum vollstaendigen, validierten
+   HTML/CSS/JS-ZIP durchtesten.
+5. Dauerhafte Upstream-Referenzen aus Issue #96 und
+   Arbeitsweg/Kommentare aus Issue #97 weiterverwenden.
+
+STATUS: Reparatur im GitHub-Quellstand, Netcup-Live-Abnahme offen.

@@ -165,7 +165,8 @@ rm -f -- \
 chmod 0750 \
   "$TARGET_DIR/scripts/install.sh" \
   "$TARGET_DIR/scripts/stack.sh" \
-  "$TARGET_DIR/scripts/preflight.sh"
+  "$TARGET_DIR/scripts/preflight.sh" \
+  "$TARGET_DIR/scripts/migrate.sh"
 
 cd "$TARGET_DIR"
 if (( existing == 1 )); then
