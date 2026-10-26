@@ -261,8 +261,28 @@ foreach (['a.txt','b.txt','c.txt','d.txt'] as $largeName) {
   $largeFiles[$largeName] = ['name'=>$largeName,'bytes'=>str_repeat($largeName[0], 130000)];
 }
 local_file_test(is_array($totalSpec)
-  && coreui_console_project_files_python($largeFiles, $totalSpec, 1000000) === null,
-  'combined source-size limit must be enforced');
+  && is_array($largeProject = coreui_console_project_files_python($largeFiles, $totalSpec, 1000000))
+  && ($largeProject['size_bytes'] ?? 0) === 520000
+  && ($largeProject['file_count'] ?? 0) === 5,
+  'individually validated sources must no longer fail at an arbitrary 512k total');
+
+// High-entropy sources also prove that a trusted deterministic ZIP writer
+// may exceed the model-authored Python budget without executing model code.
+$noise = '';
+for ($i = 0; $i < 4500; $i++) $noise .= hash('sha256', (string)$i, true);
+$noise = substr($noise,0,130000);
+$noiseFiles = [];
+foreach (['a.txt','b.txt','c.txt','d.txt'] as $name) {
+  $noiseFiles[$name] = ['name'=>$name,'bytes'=>$noise];
+}
+$writerBudget = coreui_console_trusted_project_writer_budget($noiseFiles,100000);
+$trustedWriter = coreui_console_project_files_python($noiseFiles,$totalSpec,$writerBudget);
+local_file_test($writerBudget > 100000
+  && coreui_console_project_files_python($noiseFiles,$totalSpec,100000) === null
+  && is_array($trustedWriter)
+  && strlen($trustedWriter['code']) > 100000
+  && ($trustedWriter['size_bytes'] ?? 0) === 520000,
+  'trusted inert file packer must be independent of the model-script limit');
 $unnamed = "```html\n<html><body>Snake</body></html>\n```\n"
   . "```css\nbody{color:white}\n```\n"
   . "```javascript\nconsole.log(1)\n```";
