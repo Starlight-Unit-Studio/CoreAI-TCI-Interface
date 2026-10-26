@@ -1,0 +1,42 @@
+COREAI: TCI INTERFACE / HOTFIX 0.5.63
+Stand: 26.10.2026, Europe/Berlin
+Repository: https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface
+Basis: main 0.5.62, Commit 3008ef14c5d6669b5b8bd4547c2b3810aef70f2e
+Vorgaenger: docs/UEBERGABEPROTOKOLL_0_5_62.txt
+
+A. BEFUNDE
+- PR #106 ist auf main als 0.5.62 gemergt worden. Beim anschliessenden
+  Netcup-Update zeigte die Shell am 26.10.2026 um 20:39 Uhr:
+  [PHP-SYNTAXFEHLER] scripts/source-preview-selftest.php
+  Errors parsing scripts/source-preview-selftest.php.
+- Die falsch aufgebaute PHP-Assertion war:
+  str_contains($ollama, "$payload['stream'] = true")
+  Das PHP-Interpolationsformat ist ungueltig und fuehrt zu einem Parse Error.
+- Fehler lokal mit PHP 8.4 reproduziert. Kein Nachweis fuer einen
+  PHP-8.5- oder Docker-Fehler.
+
+B. KORREKTUR
+- Das Dollarzeichen vor payload im Pruefstring maskiert. Die eigentliche
+  Datei-/SSE-Logik bleibt unveraendert.
+- Die vollstaendige korrigierte Testdatei wurde lokal mit php -l
+  syntaktisch erfolgreich geprueft.
+- Version 0.5.63 strikt nach docs/VERSIONING_POLICY.md:
+  VERSION, sechs HTML-Seiten, js/console-gate.js und dessen 25-stelliger
+  inhaltsabhaengiger SHA256-Cache-Key, README, CHANGELOG.md, TXT-Index,
+  branding-license-selftest.py, Preflight-Kopfzeilen, Uebergabe.
+- Dieser Hotfix fuehrt KEINE Schema-Migration, Modelfile-Aenderung,
+  Modellparameter-Umstellung oder neuen Runner ein.
+
+C. VORGESEHENE ABNAHME
+- Vor Merge: scripts/version-merge-check.py gegen main 0.5.62 pruefen;
+  scripts/cache-bust.py --verify, php -l fuer den geaenderten Test,
+  sowie alle referenzierten Versions-/Asset-Angaben abgleichen.
+- Nach Merge: vorhandenen Netcup-One-Liner erneut ausfuehren, damit
+  PHP-FPM-Image und alle pakettierten PHP-Dateien neu geprueft werden.
+- Danach in CoreAI: Skills-Einstellung (Werkzeuge immer an), Chat-Layout
+  und direkte Live-Quelldatei-Anzeige pruefen. Keine Netcup-Livefreigabe
+  ohne beobachteten erfolgreichen Lauf behaupten.
+- Issue #102: weiter bestehende Modell-/Plan-/Datei-Fortsetzungsgrenzen
+  bleiben offen; UI-/Skill-Hotfix darf sie nicht als geloest darstellen.
+
+STATUS: PHP-Parserproblem korrigiert; Netcup-Abnahme ausstehend.
