@@ -1,0 +1,9 @@
+## 0.5.62 - 26.10.2026
+
+- 33 Skills: neuer verpflichtender Kern-Skill `skills/werkzeuge/SKILL.md` neben den bisherigen 32 optionalen Fach-Skills.
+- `required: true` wird im Backend statt nur im Frontend erzwungen. Auch ohne Migration 014 und bei historischen Datenbankwerten `enabled=0` bleibt der Kern-Skill aktiv. Der Skills-POST darf ihn nicht deaktivieren.
+- CoreAI-Anfragen nutzen den Pflicht-Skill, ohne die vier Fach-Skill-Slots zu belegen. Reine Source-Only-Modelle erhalten weiter den Kern-Skill, aber keine erneute Ladung aller optionalen Fachpakete.
+- Skills-Einstellungen zeigen Werkzeuge dauerhaft eingeschaltet, ausgegraut und als nicht deaktivierbar. Bulk-Aktionen/Speichern gelten nur fuer optionale Skills.
+- Zehn vorhandene Fach-Skills wurden inhaltlich an den Stand von 0.5.61 und die offenen Issues #97/#102 angepasst: Planung, Code, Debugging, ZIP, asynchrone Jobs, SSE, Observability, Ollama, Release und Skill-Autoren.
+- Backend-/UI-Regressionstests und Dokumentation vorbereitet. Getrennte PR #105 (Code-Preview) und die anhaltenden Architekturgrenzen #102 werden nicht als gelöst markiert.
+- Keine Aenderungen am Modelfile, Ollama-Parametern, der seriellen Modellqueue, gespeicherten Privatplaenen, produktiven DB-Migrationen oder externen STU-Seiten. Netcup-/Android-Liveabnahme noch offen.
