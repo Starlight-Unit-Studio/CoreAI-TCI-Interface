@@ -266,6 +266,10 @@
     noteText.className += ' work-note-typing';
     function typeNext() {
       if (body._workActive !== active) return;
+      if (!motionEnabled(body) || body.isConnected === false) {
+        flushWork(body);
+        return;
+      }
       // Faster display after reconnect bursts, without discarding a single step.
       var backlog = (body._workQueue || []).length;
       var take = Math.min(18, 2 + backlog * 2);
@@ -285,8 +289,8 @@
   }
 
   function drainWorkQueue(body) {
-    if (!body || body._workBusy || !Array.isArray(body._workQueue)
-        || !body._workQueue.length) return;
+    if (!body || body._workBusy || body._workDelayTimer
+        || !Array.isArray(body._workQueue) || !body._workQueue.length) return;
     if (!motionEnabled(body)) {
       flushWork(body);
       return;
