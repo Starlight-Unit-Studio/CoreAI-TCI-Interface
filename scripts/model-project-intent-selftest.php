@@ -92,10 +92,14 @@ if (in_array('sqlite',PDO::getAvailableDrivers(),true)) {
     static function(string $task) use (&$buildCalls,&$request): string {
       $buildCalls++;
       $request=$task;
+      intent_assert(!empty($GLOBALS['COREUI_NATIVE_SOURCE_PROJECT']),
+        'Only a validated plan build may activate source-only worker mode');
       return 'Projektdateien wurden gespeichert.';
     },false);
   intent_assert($buildCalls===1 && $answer==='Projektdateien wurden gespeichert.',
     'Existing guarded builder must run exactly once');
+  intent_assert(empty($GLOBALS['COREUI_NATIVE_SOURCE_PROJECT']),
+    'Trusted project flag must be restored before the next user action');
   $spec=coreui_console_project_request_spec($request);
   intent_assert(is_array($spec) && $spec['zip_requested']
     && array_values($spec['requested'])===$expected

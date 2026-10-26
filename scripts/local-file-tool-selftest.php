@@ -440,6 +440,7 @@ $tokens = token_get_all($handler);
 $wantedFunctions = ['ember_py_max_code_chars','ember_py_extract_marker',
   'ember_console_file_tool_candidate','ember_console_file_tool_directive',
   'ember_console_file_tool_is_local','ember_console_file_tool_is_device_local','ember_console_file_tool_is_local_qwen_coder',
+  'ember_console_source_only_project_route',
   'ember_console_file_model_status','ember_console_local_source_failure',
   'ember_console_local_gemma_file_incomplete'];
 for ($i = 0; $i < count($tokens); $i++) {
@@ -464,6 +465,28 @@ local_file_test(!ember_console_file_tool_is_device_local('gemma4:26b-cloud')
   && !ember_console_file_tool_is_device_local('gemma4:31b-cloud')
   && !ember_console_file_tool_is_device_local('gpt-oss:120b-cloud'),
   'Ollama Cloud models must keep the already working Cloud ZIP route');
+// Regression 26.10.2026: an approved project was sent as model-written
+// [PY] with unterminated triple quotes, rather than inert per-file sources.
+local_file_test(ember_console_source_only_project_route(
+    true, $directive, 'Mara-SYSTEM:latest')
+  && ember_console_source_only_project_route(
+    true, $directive, 'qwen3.6:35b-a3e-q4_K_M')
+  && ember_console_source_only_project_route(
+    true, $directive, 'gemma4:31b-cloud')
+  && ember_console_source_only_project_route(
+    false, $directive, 'ember-coreui:latest'),
+  'Verified native builds must use inert source mode independent of model tag');
+local_file_test(!ember_console_source_only_project_route(
+    false, $directive, 'Mara-SYSTEM:latest')
+  && !ember_console_source_only_project_route(
+    false, $directive, 'qwen3.6:35b-a3e-q4_K_M')
+  && !ember_console_source_only_project_route(true, null, 'gemma4:e4b'),
+  'Ordinary Python workflows and malformed native manifests retain guards');
+local_file_test(str_contains($handler, 'COREUI_NATIVE_SOURCE_PROJECT')
+  && str_contains($handler, 'if ($nativeSourceProject)')
+  && str_contains($handler, 'native_source_only_route')
+  && !str_contains($handler, '$sourceOnly'),
+  'Trusted build must not slip into legacy [PY] execution or change other tools');
 
 local_file_test(ember_console_file_tool_is_local_qwen_coder('qwen3.6:35b-a3e-q4_K_M')
   && ember_console_file_tool_is_local_qwen_coder('qwen3.6:35b-a3b-q4_K_M'),
