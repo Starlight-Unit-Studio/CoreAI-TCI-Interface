@@ -642,8 +642,10 @@ local_file_test(str_contains($handler, '$sourceThink = $retryWithThink ? true : 
   && str_contains($handler, '$fileToolThink, false);')
   && str_contains($handler, 'http_code')
   && str_contains($handler, 'ollama_transport_error')
-  && str_contains($handler, 'if ($augmentSkills) $userPrompt = coreui_skills_augment($userPrompt);'),
-  'local file calls must use focused prompts, safe diagnostics and one fallback');
+  // Since 0.5.62 every focused file call retains mandatory Werkzeuge;
+  // optional skill packages are omitted via $augmentSkills=false.
+  && str_contains($handler, '$userPrompt = coreui_skills_augment($userPrompt, $augmentSkills);'),
+  'local file calls must use focused prompts, safe diagnostics, mandatory Werkzeuge and one fallback');
 
 local_file_test(array_keys($okStatus) === ['reason','source_chars','eval_count','prompt_eval_count'],
   'the diagnostic must contain only approved non-content fields');
