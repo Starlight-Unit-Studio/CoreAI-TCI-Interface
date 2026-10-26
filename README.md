@@ -7,7 +7,7 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 E.M.B.E.R. CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.53` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.54` (numeric only). The last verified ZIP remains archived under its original historical name.
 
 ## Legacy-Countdown im CoreUI-Chat entfernt (0.5.53)
 
@@ -39,6 +39,55 @@ Ollama-Kontext, Sliding-Window, Sampler, Server-Timeout,
 Planung, Dateigenerierung oder der Installer wurden
 geaendert. Uebergabe:
 `docs/UEBERGABEPROTOKOLL_0_5_53.txt`.
+
+## Native-Projektumsetzung ohne generierten Python-Schreibcode (0.5.54)
+
+Der Netcup-Livetest vom 26.10.2026 hat die freigegebene
+Homepage erstmals an den Python-Worker uebergeben.
+Job 108 endete mit `SyntaxError: unterminated triple-quoted
+string literal`. Danach lieferte der Modell-Folgeaufruf
+nur eine unabgeschlossene Ankuendigung statt Dateien.
+
+Im CoreUI-Code existieren zwei Dateierstellungswege:
+(1) allgemeine `[PY]`-Skripte direkt aus dem Modell;
+(2) ein vorhandener Source-First-Modus, der
+HTML/CSS/JS-Dateien einzeln erzeugen laesst und mit
+einem servereigenen, Base64-kodierten Python-Writer
+unveraendert speichert und als ZIP verifiziert.
+Bisher war Source-First teilweise an die Modell-ID
+gebunden. Der freigegebene Native-Build hat den
+sicheren Modus nicht verbindlich aktiviert.
+
+Ab 0.5.54 aktiviert ein gepruefter,
+kontogebundener `PROJECT_BUILD`-Aufruf einen
+**serverseitigen, nur waehrend des Build-Callbacks
+gueltigen Source-First-Modus**. Dieser wird
+unabhaengig von lokalem Gemma, einem umbenannten
+Modell, Qwen oder Ollama Cloud genutzt. Die
+einzelnen Projektdateien werden jeweils validiert;
+die bestehende servereigene ZIP-Routine uebernimmt
+ausschliesslich inerte Quelldaten. Ungueltige
+Projektmanifeste schlagen fehl, statt heimlich
+auf generiertes `[PY]` oder allgemeine Prosa
+zurueckzufallen. Bei fehlgeschlagener Dateierzeugung
+gibt es keine erfundenen Downloads oder
+Versprechen spaeterer Hintergrundarbeit.
+
+Die vorhandenen Preflight-Selbsttests pruefen
+nun auch die Modellnamen-Unabhaengigkeit, die
+enge Berechtigung des neuen Ausfuehrungsmodus
+und den Schutz gegen ungeschlossene dreifache
+Python-Anfuehrungszeichen. Normale Python-Werkzeuge,
+die globale serielle Modellwarteschlange, die
+persistenten Plaene und alle API-Parameter bleiben
+unveraendert.
+
+Hinweis: Das genaue generierte Python aus Job 108
+ist im Screenshot nicht vorhanden; die konkrete
+Entstehung des Syntaxfehlers ist damit nicht
+abschliessend beweisbar. Der Live-Test nach dem
+Update bleibt erforderlich. Uebergabe:
+`docs/UEBERGABEPROTOKOLL_0_5_54.txt`.
 
 ## Preflight-Hotfix nach Thinking-Override (0.5.52)
 
