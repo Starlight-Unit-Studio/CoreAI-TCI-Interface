@@ -1,0 +1,7 @@
+## 0.5.55 - 26.10.2026
+
+- Netcup-Installer 0.5.54 brach im PHP-Syntaxcheck bei scripts/local-file-tool-selftest.php ab.
+- Ursache: doppelt zitierter PHP-Teststring mit nicht escaptem Dollarzeichen vor fileToolCandidate['kind']. Der Parser interpretierte es als fehlerhafte Variableninterpolation.
+- Dollarzeichen im Teststring escapet. Der per str_contains gesuchte Ausdruck bleibt identisch. Isolierter PHP-8.4-Lint reproduzierte den Fehler und bestaetigte den korrigierten Syntaxausschnitt.
+- Version 0.5.55, sechs HTML-Versionsanzeigen, JavaScript-Bootstrap und Cache-Key nachgezogen. Kein Modelfile-, Installer-, Ollama- oder Build-Runtime-Eingriff.
+- Vollstaendiger Netcup-Preflight und Homepage-ZIP-Livetest noch offen. Keine GitHub Actions ausgefuehrt.

@@ -2,6 +2,13 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.55 - 26.10.2026
+
+- Netcup-Installer 0.5.54 scheiterte beim PHP-Syntaxcheck in `scripts/local-file-tool-selftest.php`.
+- Grund: Der doppelt zitierte Test-String interpolierte versehentlich `$fileToolCandidate['kind']`. Das Dollarzeichen wird nun escapet; die gepruefte Guard-Zeichenfolge bleibt identisch.
+- Vorher/Nachher mit PHP 8.4 Lint isoliert reproduziert und korrigierte Syntax bestaetigt. Vollstaendiger Server-Preflight und Homepage-ZIP-Abnahme noch offen.
+- Versionsmetadaten und Browser-Bootstrap aktualisiert. Modelfile, Ollama-Parameter, Installer, gespeicherte Plaene und Source-First-Build unveraendert. Keine GitHub Actions gestartet.
+
 ## 0.5.54 - 26.10.2026
 
 - Netcup-Regression: Beim freigegebenen Homepage-Build endete Python-Job 108 mit `SyntaxError: unterminated triple-quoted string literal`. Ein anschliessender Modell-Folgeaufruf meldete nur die Absicht zur Korrektur, ohne ein Projekt-ZIP bereitzustellen.

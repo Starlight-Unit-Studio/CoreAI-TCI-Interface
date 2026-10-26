@@ -503,7 +503,7 @@ local_file_test(str_contains($handler, 'COREUI_NATIVE_SOURCE_PROJECT')
   && str_contains($handler, 'if ($nativeSourceProject)')
   && str_contains($handler, 'native_source_only_route')
   && str_contains($handler, 'native_project_python_guard')
-  && str_contains($handler, "($fileToolCandidate['kind'] ?? '') !== 'project'")
+  && str_contains($handler, "(\$fileToolCandidate['kind'] ?? '') !== 'project'")
   && !str_contains($handler, '$sourceOnly'),
   'Trusted build must not slip into legacy [PY] execution or change other tools');
 

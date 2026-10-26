@@ -7,7 +7,11 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 E.M.B.E.R. CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.54` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.55` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## PHP-Syntax-Hotfix (0.5.55)
+
+Der Netcup-Preflight von 0.5.54 stoppte wegen eines nicht escapten PHP-Dollarzeichens in einem neuen Regressionstest. 0.5.55 repariert die reine Test-String-Syntax, ohne den Project-Build, den Installer oder das Modelfile zu veraendern. Der volle Live-Test bleibt offen. Uebergabe: `docs/UEBERGABEPROTOKOLL_0_5_55.txt`.
 
 ## Legacy-Countdown im CoreUI-Chat entfernt (0.5.53)
 

@@ -1,11 +1,11 @@
-PROJECT STΛRLIɢHT: EMBER COREUI
+PROJECT STΛRLIɢHT: E.M.B.E.R. COREUI
 AKTUELLE CHAT-UEBERGABE
 Stand: 26.10.2026
-Repository-Version bei Erstellung: 0.5.54
-Bitte zuerst diese Datei lesen:
+Repository-Version: 0.5.55
+Zuerst lesen:
+  docs/UEBERGABEPROTOKOLL_0_5_55.txt
+Danach bisherige Projekt- und Chat-Uebergabe:
   docs/UEBERGABEPROTOKOLL_0_5_54_CHATWECHSEL_2026_10_26.txt
-
-Danach die aktuelle VERSION und den neuesten main-Commit erneut
-pruefen. Diese Datei ist eine Orientierung fuer Chatwechsel,
-keine Build- oder Preflight-Freigabe. Die bereits fertigen
-Projektplan-Dateien duerfen nicht neu ueberschrieben werden.
+Neuesten main-Commit und VERSION vor weiteren Aenderungen erneut pruefen.
+Dies ist keine Netcup-Live-Abnahme. Fertigen privaten Projektplan
+projektplan-v3.md und andere Daten nicht ueberschreiben.

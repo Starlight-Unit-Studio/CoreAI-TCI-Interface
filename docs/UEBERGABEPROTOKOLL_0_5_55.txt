@@ -1,0 +1,39 @@
+E.M.B.E.R. COREUI 0.5.55 - UEBERGABEPROTOKOLL
+Datum: 26.10.2026
+Basis: main 0.5.54 / Commit 4d7e2ea383ad1c8b62c0e2c3dc7fbab198ce4b92
+
+NETCUP-FEHLER
+Beim Versuch, 0.5.54 zu installieren, brach der Compose-Preflight ab:
+[PHP-SYNTAXFEHLER] scripts/local-file-tool-selftest.php
+Errors parsing scripts/local-file-tool-selftest.php
+
+ROOT CAUSE
+Der Regressionstest fuer Native-Source-Only enthielt in einem doppelt
+zitierten PHP-String die Zeichenfolge ($fileToolCandidate['kind'] ?? '')
+mit nicht escaptem Dollarzeichen. PHP wollte den Ausdruck als interpolierte
+Variable lesen und meldete Parse error. Isolierte PHP-8.4-Lint-Reproduktion
+zeigte den Fehler; Escaping des Dollarzeichens beseitigte ihn.
+
+HOTFIX 0.5.55
+Die String-Pruefung in scripts/local-file-tool-selftest.php sucht
+weiterhin dieselbe Guard-Zeichenfolge. Nur das Dollarzeichen im
+PHP-Stringliteral ist escapet. VERSION, sechs HTML-Oberflaechen,
+js/console-gate.js, HTML-Cache-Key, README, Changelog, Branding-Selftest,
+Preflight-Vermerke und diese Uebergabe nachgezogen.
+Installer, Modelfile.template, Ollama-Parameter, Projektwriter,
+Python-Worker, private Daten, Datenbank und die strikt serielle
+Anfragequeue wurden nicht geaendert. GitHub Actions nicht gestartet.
+
+ABNAHME NOCH OFFEN
+1. Bestehenden One-Liner auf Netcup erneut ausfuehren.
+2. PHP-Lint und ersten verbleibenden Preflight-Fehler kontrollieren.
+3. Im selben privaten CoreUI-Chat den fertigen, gespeicherten
+   projektplan-v3.md beibehalten, nicht neu generieren.
+4. Homepage-Build freigeben und reason=native_source_only_route
+   sowie jede HTML/CSS/JS-Dateiausgabe verfolgen.
+5. Nur ein echtes vollstaendiges validiertes ZIP als Erfolg werten.
+6. Falls das Modell erneut Prosa statt Dateien liefert: Work-Events,
+   Entscheidung/Dispatch und Ollama done_reason/eval_count pruefen.
+   Keine ungeprueften Aenderungen an num_ctx, Sampling oder Modelfile.
+
+STATUS: GitHub-Quellfix. Kein Nachweis eines erfolgreichen Netcup-Deploys.
