@@ -2,6 +2,14 @@
 
 CoreAI: TCI Interface gehoert zur Quantum-Softwarefamilie und wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert. Historische Changelogs dokumentieren die frueheren Produktnamen unveraendert.
 
+## 0.5.61 - 26.10.2026
+
+- Umfassendes Uebergabeprotokoll fuer den Chatwechsel: `docs/UEBERGABEPROTOKOLL_0_5_61.txt`, plus aktualisierter `docs/UEBERGABEPROTOKOLL_AKTUELL.txt`-Zeiger.
+- 0.5.60-Source-Implementierung bestaetigt: nacheinander live geschriebenes Worklog und inerte HTML/CSS-Fragmentfortsetzung. Netcup-/Android-Liveabnahme noch offen.
+- Hauptproblem Issue #102 und Kontext der gescheiterten grossen Homepage-Builds (Plan-/Quelldateilimits, Ausgabeabbrueche, fehlende persistente File-Checkpoints) fuer naechsten Chat festgehalten. Keinen Erfolg oder ZIP behauptet.
+- Nur wegen der zwingenden Repo-Versionierung: sechs HTML-Versionsanzeigen, `VERSION`, JS-Bootstrap inklusive inhaltsbasiertem numerischem Cache-Key, Branding-Check, Preflight-Kommentar, README, Changelog/TXT-Archiv synchronisiert. Kein neuer Agenten-/Datei-Funktionscode, keine Modell- oder Datenbankaenderung.
+- GitHub Actions nicht gestartet; vollstaendiger Server-Preflight nicht ausgefuehrt.
+
 ## 0.5.60 - 26.10.2026
 
 - Core Channel Arbeitsweg: Neue echte SSE-Arbeitsschritte werden visuell geordnet eingereiht. Jede bestaetigte oeffentliche Ereigniserklaerung wird im eigenen Block sichtbar geschrieben; erst nach ihrem Abschluss erscheint der naechste Block. Eine gleichzeitig angelieferte Vierergruppe wird nicht mehr auf einen Schlag angezeigt.

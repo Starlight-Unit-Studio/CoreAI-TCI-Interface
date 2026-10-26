@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.60 queued live work notes and HTML/CSS source continuation.
+# CoreAI: TCI Interface 0.5.61 documentation-only chat handover; runtime unchanged from 0.5.60.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

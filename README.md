@@ -7,7 +7,18 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.60` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.61` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Chatwechsel-Uebergabe und offener 10-Seiten-Build (0.5.61)
+
+Dieser Stand ist **dokumentarisch**: Das vollstaendige Protokoll des
+Chatwechsels, der bereits in 0.5.60 integrierten live geschriebenen
+Arbeitsberichte und HTML/CSS-Fortsetzungen sowie der **weiterhin
+offenen** modelluebergreifenden Projekt-Workflow-Probleme steht in
+`docs/UEBERGABEPROTOKOLL_0_5_61.txt`.
+Die fortsetzbare Datei-/Agentensteuerung aus Issue #102 ist damit
+noch nicht implementiert. Der produktive Live-Test bleibt offen.
+Ollama-Modelfile, private Plaene und externe Homepage bleiben unveraendert.
 
 ## Live geschriebene Arbeitsberichte und HTML/CSS-Fortsetzung (0.5.60)
 
