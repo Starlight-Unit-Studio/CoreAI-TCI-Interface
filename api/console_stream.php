@@ -389,6 +389,9 @@ try {
   $GLOBALS['COREUI_WORK_PUBLISH'] = static function (array $event): void {
     sse_send('work', $event);
   };
+  $GLOBALS['COREUI_SOURCE_PREVIEW_PUBLISH'] = static function (array $preview): void {
+    sse_send('source_preview',$preview);
+  };
   coreui_work_record($pdo, 'run', 'running', 'Auftrag gestartet');
 
   $exactCalculation = (!$isVisionTurn && $attachmentIds === [] && $generationMode !== 'continue')
@@ -865,7 +868,7 @@ try {
     sse_send('error', ['error' => $publicError]);
   }
 } finally {
-  unset($GLOBALS['COREUI_WORK_CONTEXT'], $GLOBALS['COREUI_WORK_PDO'], $GLOBALS['COREUI_WORK_PUBLISH']);
+  unset($GLOBALS['COREUI_WORK_CONTEXT'], $GLOBALS['COREUI_WORK_PDO'], $GLOBALS['COREUI_WORK_PUBLISH'], $GLOBALS['COREUI_SOURCE_PREVIEW_PUBLISH']);
   ember_generation_lock_release($turnLock ?? null);
   // Console-AFK sofort zuruecknehmen -> Ember erscheint im Global wieder online.
   // (Bei [BROWSE:] haelt der Worker ueber sein eigenes Browse-Flag unabhaengig weiter AFK.)
