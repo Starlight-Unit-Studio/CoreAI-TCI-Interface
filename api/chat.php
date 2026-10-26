@@ -5072,9 +5072,23 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   // === v1.1.1.87: Python-Werkzeug ([PY]...[/PY]) - synchron, zweistufig wie [WEB:] ===
   // Genau EINE Ausfuehrung pro Turn: keine PY->PY-Schleife.
   $pyHandled = false;
+  // Defense in depth: even if a future refactor breaks the source-first
+  // branch, an approved native project can NEVER execute model-written
+  // [PY] scripts. Only the deterministic CoreUI project wrapper is allowed.
+  if ($nativeSourceProject
+      && (!is_array($fileToolCandidate)
+        || ($fileToolCandidate['kind'] ?? '') !== 'project')) {
+    coreui_work_record($pdo,'tool','error','Unsicherer Projektcode abgewehrt',
+      ['reason'=>'native_project_python_guard']);
+    return 'Der Projektbau wurde sicher beendet: Statt verifizierter '
+      . 'Quelldateien lag kein servereigener ZIP-Writer vor. '
+      . 'Es wurde kein Python-Skript aus dem Modell ausgefuehrt.';
+  }
   if (ember_py_enabled() && $imageUrl === null && is_string($out)) {
-    $pyCode = $fileTask && is_array($fileToolCandidate)
-      ? (string)$fileToolCandidate['code'] : ember_py_extract_marker($out);
+    $pyCode = $nativeSourceProject && is_array($fileToolCandidate)
+      ? (string)$fileToolCandidate['code']
+      : ($fileTask && is_array($fileToolCandidate)
+        ? (string)$fileToolCandidate['code'] : ember_py_extract_marker($out));
     $inlineFile = $fileTask && is_array($fileToolCandidate)
       ? ($fileToolCandidate['meta'] ?? null) : null;
     if ($pyCode === null && $channel === 'console') {
