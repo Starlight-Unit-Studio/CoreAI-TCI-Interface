@@ -7,19 +7,21 @@ This License applies to the original code of **STΛRLIɢHT: E.M.B.E.R. CoreUI** 
 
 The spelling `Ember CoreUI`, used by releases through `0.5.24`, is the previous product name for this same software. From version `0.5.25`, the official product spelling is `E.M.B.E.R. CoreUI`. This branding correction does not change the License 1.0 grant or any other substantive condition.
 
+**Brand continuation from 0.5.57:** The same software is now officially named **CoreAI: TCI Interface**. `Quantum` designates the wider Quantum software family and is not a mandatory product-name prefix. Earlier names and the original Community Source License 1.0 title are preserved for legal continuity. This name change does not alter the grant or other License terms.
+
 The legally controlling text is the German version in `LICENSE.de.md`. This English version is provided as a convenience translation.
 
 ## 1. Definitions
 
-**Software** means the project-owned source code of STΛRLIɢHT: E.M.B.E.R. CoreUI made available under this License and binary forms built from that code. Separately identified third-party components are excluded.
+**Software** means the project-owned source code of the project now named CoreAI: TCI Interface (formerly STΛRLIɢHT: E.M.B.E.R. CoreUI) made available under this License and binary forms built from that code. Separately identified third-party components are excluded.
 
 **Licensor** means Patrick Schildgen and Starlight Unit Studios to the extent that they own or control the applicable rights.
 
-**Protected Branding** includes the names `STΛRLIɢHT: E.M.B.E.R. CoreUI`, `E.M.B.E.R. CoreUI`, the historical project names `STΛRLIɢHT: Ember CoreUI`, `Ember CoreUI`, `Starlight Unit Studios`, their associated logos, word marks, studio artwork, and the origin and copyright notices contained in the user interface.
+**Protected Branding** includes the current name `CoreAI: TCI Interface`, its Quantum software-family designation, the historical names `STΛRLIɢHT: E.M.B.E.R. CoreUI`, `E.M.B.E.R. CoreUI`, the historical project names `STΛRLIɢHT: Ember CoreUI`, `Ember CoreUI`, `Starlight Unit Studios`, their associated logos, word marks, studio artwork, and the origin and copyright notices contained in the user interface.
 
-**Internal Use** means operation for an individual, a household, or within an organization without offering E.M.B.E.R. CoreUI itself to third parties as a paid service.
+**Internal Use** means operation for an individual, a household, or within an organization without offering CoreAI: TCI Interface itself to third parties as a paid service.
 
-**Monetized Hosted or Managed Service** means an offering through which third parties receive direct access to substantial features or the user interface of E.M.B.E.R. CoreUI in exchange for payment or another economic benefit. This includes subscriptions, usage fees, rental, resale, and advertising-funded or sponsored access to E.M.B.E.R. CoreUI itself.
+**Monetized Hosted or Managed Service** means an offering through which third parties receive direct access to substantial features or the user interface of CoreAI: TCI Interface in exchange for payment or another economic benefit. This includes subscriptions, usage fees, rental, resale, and advertising-funded or sponsored access to CoreAI: TCI Interface itself.
 
 ## 2. Royalty-Free Grant
 
@@ -48,30 +50,30 @@ Internal modifications that are not distributed and are not provided to third pa
 
 ## 4. Required Product Name and Branding
 
-From version `0.5.25`, the required product name is **E.M.B.E.R. CoreUI**. The complete project designation is **STΛRLIɢHT: E.M.B.E.R. CoreUI by Starlight Unit Studios**.
+From version `0.5.57`, the required product name is **CoreAI: TCI Interface**, attributed as **CoreAI: TCI Interface by Starlight Unit Studios**. Its Quantum software-family designation may appear in catalogs but is not a required prefix. Versions `0.5.25` through `0.5.56` used **E.M.B.E.R. CoreUI**.
 
-The Software must not be presented, promoted, or distributed under the standalone product name `CoreUI`. Every product-facing reference must use `E.M.B.E.R. CoreUI` or the complete project designation.
+The Software must not be presented, promoted, or distributed under the standalone product name `CoreUI`. Every current product-facing reference must use `CoreAI: TCI Interface` or the complete publisher attribution.
 
 Protected Branding must not be removed, replaced, hidden, obscured, covered, de-emphasized, or misleadingly altered. This rule applies without a user threshold to every deployment and distribution.
 
 Operators may add their own notices only when those notices remain clearly subordinate, do not displace Protected Branding, and do not imply an official relationship with or endorsement by Starlight Unit Studios.
 
-A publicly available modified version must prominently state that it is an unofficial modification of E.M.B.E.R. CoreUI and is neither maintained nor officially supported by Starlight Unit Studios.
+A publicly available modified version must prominently state that it is an unofficial modification of CoreAI: TCI Interface and is neither maintained nor officially supported by Starlight Unit Studios.
 
 To the extent required to display Protected Branding in compliance with this License, the Licensor grants a limited, non-exclusive, non-transferable, and revocable right to display it. No additional trademark or naming rights are granted.
 
 Technical compatibility identifiers such as `coreui`, `ember-coreui`, `COREUI_*`, `/opt/ember-coreui`, `X-CoreUI-CSRF`, repository slugs, and domain components are not permitted standalone product names. They may remain for technical compatibility.
 
-## 5. No Paid E.M.B.E.R. CoreUI Service
+## 5. No Paid CoreAI: TCI Interface Service
 
-The Software may not be sold, rented, or offered to third parties as a Monetized Hosted or Managed Service. Access to substantial E.M.B.E.R. CoreUI functionality may not be resold as a standalone paid product, subscription, or white-label offering.
+The Software may not be sold, rented, or offered to third parties as a Monetized Hosted or Managed Service. Access to substantial CoreAI: TCI Interface functionality may not be resold as a standalone paid product, subscription, or white-label offering.
 
 This restriction does not prohibit
 
 1. free private or community self-hosting,
 2. Internal Use by a business or another organization,
-3. use of E.M.B.E.R. CoreUI as an internal tool in connection with a separate economic activity, or
-4. general installation or consulting services where the customer operates its own instance, no E.M.B.E.R. CoreUI license is resold, and all License and branding conditions remain satisfied.
+3. use of CoreAI: TCI Interface as an internal tool in connection with a separate economic activity, or
+4. general installation or consulting services where the customer operates its own instance, no CoreAI: TCI Interface license is resold, and all License and branding conditions remain satisfied.
 
 ## 6. Individual Written Permissions
 
@@ -79,7 +81,7 @@ Any departure from the branding or service conditions requires the Licensor's pr
 
 ## 7. No User Counting or License Telemetry
 
-This License has no user threshold. It requires neither registration with the Licensor nor transmission of installation, usage, device, or user-count information. E.M.B.E.R. CoreUI may not require a phone-home function used solely for license enforcement.
+This License has no user threshold. It requires neither registration with the Licensor nor transmission of installation, usage, device, or user-count information. CoreAI: TCI Interface may not require a phone-home function used solely for license enforcement.
 
 ## 8. Third-Party Components
 
@@ -101,7 +103,7 @@ Mandatory liability for intent, gross negligence, injury to life, body, or healt
 
 The names, logos, and designations of the Licensor may not be used to claim endorsement, partnership, certification, or official authorship of a modified or third-party version.
 
-E.M.B.E.R. CoreUI is an independently developed Starlight Unit Studios project. It is not based on, affiliated with, sponsored by, or endorsed by the separate admin-template and component project available at `coreui.io`.
+CoreAI: TCI Interface is an independently developed Starlight Unit Studios project. It is not based on, affiliated with, sponsored by, or endorsed by the separate admin-template and component project available at `coreui.io`.
 
 ## 12. Governing Law and Severability
 
