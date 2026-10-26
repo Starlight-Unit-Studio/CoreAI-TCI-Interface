@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.57 product branding and legacy CoreUI compatibility preflight.
+# CoreAI: TCI Interface 0.5.58 migration execute-permission regression.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -179,6 +179,13 @@ if python3 "$PROJECT_ROOT/scripts/pdo-mysql-installer-selftest.py" >/dev/null 2>
   ok 'PHP-PDO-MariaDB: Image-Build, Installer-Recreation und Preflight-Vertrag geprueft.'
 else
   fail 'PHP-PDO-MariaDB-Installer-Selbsttest fehlgeschlagen.'
+fi
+
+# 0.5.58: check the installer regression using a temporary, Docker-free fixture.
+if bash "$PROJECT_ROOT/tests/migration-permissions-selftest.sh" >/dev/null 2>&1; then
+  ok 'Migration: Ausfuehrungsrechte und Bash-Aufruf vor dem Datenbankimport geprueft.'
+else
+  fail 'Migration: Berechtigungs-/Aufruf-Selbsttest fehlgeschlagen.'
 fi
 
 if python3 "$PROJECT_ROOT/scripts/workspace-output-selftest.py" >/dev/null 2>&1; then
