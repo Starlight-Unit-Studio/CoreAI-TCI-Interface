@@ -5,7 +5,7 @@ IFS=$'\n\t'
 PROJECT_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
 CONFIG_FILE="$PROJECT_ROOT/api/config.local.php"
 VERSION="$(tr -d '[:space:]' < "$PROJECT_ROOT/VERSION")"
-# 0.5.55: Include the corrected project selftest in the mandatory PHP syntax scan."
+# 0.5.56: Work-Event-Diagnosen und UI-Notizen bleiben Teil des vorhandenen Preflights."
 FAILURES=0
 
 ok() {
