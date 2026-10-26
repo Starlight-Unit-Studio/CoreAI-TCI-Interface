@@ -2,6 +2,14 @@
 
 CoreAI: TCI Interface gehoert zur Quantum-Softwarefamilie und wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert. Historische Changelogs dokumentieren die frueheren Produktnamen unveraendert.
 
+## 0.5.58 - 26.10.2026
+
+- Netcup-Installation 0.5.57 brach beim Datenbankimport ab: scripts/install.sh:664 meldete scripts/migrate.sh: Keine Berechtigung. Git-Mode der Migration war 100644.
+- Git-Dateimodus von scripts/migrate.sh auf 100755 umgestellt; setup.sh und scripts/update-from-main.sh setzen Ausfuehrungsrechte vor der Installation. Der Migrationsaufruf in install.sh erfolgt nun explizit via bash, selbst wenn Altdateien nicht executable sind.
+- Offline-Regressionspruefungen fuer 0644-Migrationen und Setup-Neuinstallation/Update ergaenzt sowie in beide Preflights eingebunden.
+- Version 0.5.58 in HTML, JavaScript-Bootstrap, Testkonfiguration und Changelog dokumentiert; SHA-256-basierter JS-Cache-Key aktualisiert.
+- Keine Modelfile-, Ollama-, SQL-Migrations-, Datenbank-, Privatdatei-, Tool- oder Hosting-Aenderungen. GitHub Actions nicht gestartet. Echte Netcup-Liveabnahme bleibt offen.
+
 ## 0.5.57 - 26.10.2026
 
 - Offizieller Produktname ab jetzt **CoreAI: TCI Interface**; **Quantum** ist die uebergeordnete Softwarefamilie und nur als untergeordnete Produktfamilienangabe sichtbar. Die bisherige Produktidentitaet E.M.B.E.R. CoreUI wird historisch dokumentiert.

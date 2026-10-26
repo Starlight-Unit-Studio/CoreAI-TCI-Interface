@@ -7,7 +7,13 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.57` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.58` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Netcup-Migrationsberechtigungsfix (0.5.58)
+
+Bei der Installation von 0.5.57 war `scripts/migrate.sh` im Git-Tree nicht ausfuehrbar (`100644`), obwohl `install.sh` es direkt ausfuehrte. Die Rechte wurden bisher erst *nach* dem Datenbankimport gesetzt. Ab 0.5.58 ist `migrate.sh` als `100755` versioniert, `setup.sh` und der Dev-Updater korrigieren Rechte vor dem Start, und `install.sh` nutzt den expliziten `bash`-Aufruf.
+
+`tests/migration-permissions-selftest.sh` sowie der erweiterte `tests/setup-oneliner-selftest.sh` pruefen die Regression ohne produktive Daten. Kein frischer Datenbankimport oder erfolgreiches Netcup-Deployment wird durch den GitHub-Merge allein belegt. Der bestehende One-Liner kann erneut ausgefuehrt werden.
 
 ## Produktname und Quantum-Softwarefamilie (0.5.57)
 
