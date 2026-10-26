@@ -7,7 +7,30 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.59` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.60` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Live geschriebene Arbeitsberichte und HTML/CSS-Fortsetzung (0.5.60)
+
+Die bereits gespeicherten und erklaerten Arbeitsschritte erscheinen
+waehrend eines laufenden CoreAI-Auftrags jetzt **der Reihe nach**:
+Jeder Text wird im Arbeitsweg sichtbar geschrieben; danach wird der
+naechste Ereignisblock gezeigt. Der Server protokolliert Ereignisse
+unverzueglich wie zuvor. Nach Reload, beim Einklappen oder bei
+`prefers-reduced-motion` sind die vollstaendigen Berichte ohne
+Warteanimation lesbar. Rohes internes Modell-Reasoning wird nicht
+ausgegeben, sondern ausschliesslich bestaetigte Arbeitsereignisse
+und ausdruecklich oeffentliche Modell-Zwischenmeldungen.
+
+Die bestehende Source-Only-Route kann `done_reason=length` jetzt
+auch bei HTML und CSS kontrolliert fortsetzen. Genau diesen Grund
+zeigten die Netcup-Screenshots fuer `index.html` und `about.html`.
+Es werden nur inerte Quelltextfragmente zusammengesetzt, anschliessend
+durch den vorhandenen Parser verifiziert und erst danach fuer ein
+ZIP freigegeben. Fuer vollstaendige, ueber einzelne HTTP-Turns
+fortsetzbare Grossprojekte ist **Issue #102** weiterhin offen,
+insbesondere die 12k-Plan- und Neun-Dateien-Grenzen.
+
+Uebergabe: `docs/UEBERGABEPROTOKOLL_0_5_60.txt`.
 
 ## Quantum-Zuordnung und lesbares Copyright (0.5.59)
 

@@ -1,15 +1,16 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
 Stand: 26.10.2026
+Repository-Version: 0.5.60
 Repository: https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface
-Repository-Version: 0.5.59
-Bitte lesen: docs/UEBERGABEPROTOKOLL_0_5_59.txt
-Vorgeschichte: docs/UEBERGABEPROTOKOLL_0_5_58.txt
-Produktnamen: docs/PRODUCT_NAMING.md
-Aktuelle Probleme: Arbeitsweg Issue #97 und Modell-unabhaengige
-Beschraenkungen der Projektgenerierung (Planlimit 12000 Bytes,
-Neun-Dateien-Grenze, Fortsetzungs- und Wiederholungsgrenzen).
-Quelle/Recherchereferenz: Issue #96.
-Netcup-Deploy 0.5.59 noch nicht bestaetigt. Keine Veraenderung am
-Ollama-Modelfile oder am gespeicherten privaten Projektplan.
-Externe Homepage wird in einem anderen Chat bearbeitet.
+Zuerst lesen: docs/UEBERGABEPROTOKOLL_0_5_60.txt
+Danach: docs/UEBERGABEPROTOKOLL_0_5_59.txt
+Aktueller Stand: Live-Arbeitsnotizen erscheinen nacheinander
+mit schrittweiser Textanzeige; historische Ereignisse sofort.
+Abgebrochene HTML/CSS/JS-Quellen erhalten inerte Fortsetzungen.
+Issue #102 bleibt fuer globale Plan-/Dateigrenzen, echte
+persistente Datei-Checkpoints und mehrstufige Agentenloesung offen.
+Upstream-Vergleich Issue #96; Arbeitsweg Issue #97.
+Keine neue Netcup-Live-Abnahme oder fertiges Homepage-ZIP behaupten.
+Ollama-Modelfile, Parameter und private Planungen nicht veraendern.
+Externe Homepage weiter im anderen Chat bearbeiten.
