@@ -184,4 +184,90 @@ assert.equal(work.normalize({id:73,kind:'commentary',state:'info',
 assert.equal(modelPublic.querySelector('.work-chevron').textContent,'▸',
   'toggle glyph must be rendered, not escaped');
 
+// 0.5.60: SSE bursts must reveal one work event at a time, writing the
+// complete safe public note before displaying the next event. Storage is not
+// delayed, only its visual presentation.
+const timers = [];
+let timerId = 0;
+sandbox.window.setTimeout = fn => {
+  const timer = {id:++timerId,fn,cancelled:false};
+  timers.push(timer);
+  return timer.id;
+};
+sandbox.window.clearTimeout = id => {
+  const entry = timers.find(timer => timer.id === id);
+  if (entry) entry.cancelled = true;
+};
+sandbox.window.matchMedia = () => ({matches:false});
+function tickWork(max = 1500) {
+  let count = 0;
+  while (timers.length && count < max) {
+    const timer = timers.shift();
+    if (!timer.cancelled) timer.fn();
+    count++;
+  }
+  assert(count < max,'typing animation must terminate');
+}
+const queued = work.create({live:true,expanded:true});
+const queuedBody = queued.querySelector('.work-body');
+const taskTitles = ['Auftrag gestartet','Kontext vorbereitet',
+  'Modellstream vorbereitet','Modellstream gestartet'];
+taskTitles.forEach((title,n) => work.add(queuedBody,{
+  id:101+n,kind:'run',state:'info',title,meta:{}
+}));
+assert.equal(queuedBody.querySelector('.work-entries').children.length,1,
+  'a burst may display only its first step initially');
+const firstNote = queuedBody.querySelector('.work-note-text');
+assert.equal(firstNote.textContent,'','first explanation begins empty');
+assert.equal(work.add(queuedBody,{id:104,kind:'run',state:'info',
+  title:'Modellstream gestartet',meta:{}}),false,
+  'SSE duplicates already pending must not produce two rows');
+assert.equal(queuedBody._workQueue.length,3,'remaining steps stay queued');
+const firstTick = timers.shift();
+assert(firstTick && !firstTick.cancelled);
+firstTick.fn();
+assert(firstNote.textContent.length>0
+  && firstNote.textContent.length<90,'safe note appears gradually');
+assert.equal(queuedBody.querySelector('.work-entries').children.length,1,
+  'second event must wait until first note is complete');
+tickWork();
+assert.equal(queuedBody.querySelector('.work-entries').children.length,4);
+assert(queuedBody.textContent.includes('Ich übernehme den Auftrag')
+  && queuedBody.textContent.includes('Ich bereite den Modellaufruf vor'),
+  'typed steps must retain complete safe narratives');
+assert(queued.querySelector('.work-counts').textContent.includes('4 Schritte'));
+assert.equal(queuedBody._workQueue.length,0,'no SSE events silently discarded');
+
+// Collapse during an animation: finish all queued notes immediately.
+const collapsedLive = work.create({live:true,expanded:true});
+const collapsedBody = collapsedLive.querySelector('.work-body');
+taskTitles.forEach((title,n) => work.add(collapsedBody,{
+  id:121+n,kind:'run',state:'info',title,meta:{}
+}));
+collapsedLive.querySelector('.work-toggle').handlers.click();
+assert(collapsedBody.hidden);
+assert.equal(collapsedBody.querySelector('.work-entries').children.length,4);
+assert(!collapsedBody.textContent.includes('SECRET'));
+assert.equal(collapsedBody._workQueue.length,0);
+tickWork();
+
+// Motion-accessibility: on reduced-motion devices, all steps render without
+// an animation and saved work never retypes after a reload.
+sandbox.window.matchMedia = () => ({matches:true});
+const reduced = work.create({live:true,expanded:true});
+const reducedBody = reduced.querySelector('.work-body');
+taskTitles.forEach((title,n) => work.add(reducedBody,{
+  id:141+n,kind:'run',state:'info',title,meta:{}
+}));
+assert.equal(reducedBody.querySelector('.work-entries').children.length,4);
+assert.equal(timers.length,0);
+const finishedHistory = work.create({expanded:true,events:taskTitles.map((title,n)=>({
+  id:141+n,kind:'run',state:'info',title,meta:{}
+}))});
+assert(finishedHistory.textContent.includes('Modellstream gestartet'),
+  'saved history renders synchronously and in order');
+sandbox.window.setTimeout = undefined;
+sandbox.window.clearTimeout = undefined;
+sandbox.window.matchMedia = undefined;
+
 console.log('P06 inline work-history UI selftest: OK');
