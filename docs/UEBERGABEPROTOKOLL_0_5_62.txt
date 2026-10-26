@@ -1,0 +1,76 @@
+COREAI: TCI INTERFACE 0.5.62 - SKILLS / FESTER WERKZEUG-KERN
+Stand: 26.10.2026, Europe/Berlin
+Repository: https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface
+Basis main: 0.5.61 / cfb77c889a5567095b936a5c6c8d55adb7db46c7
+Art: Aenderung an Skillruntime, Einstellungen, zehn Fach-Skills;
+kein fertiger Agent-/Dateirunner und kein Livetest.
+
+A. ANLASS
+Der Betreiber fragt, ob Skills mit den letzten Agenten-/Werkzeug-
+Aenderungen aktualisiert wurden. Bisher waren 32 Fach-Skills
+alle optional, zuletzt 25.10.2026 geprueft. Gewuenscht ist
+ein fest integrierter Werkzeuge-Skill mit dauerhaft angehaktem,
+ausgegrautem und nicht deaktivierbarem UI-Schalter.
+
+B. UMSETZUNG
+- skills/werkzeuge/SKILL.md mit servereigenem Pflichtstatus
+  required: true in skills/catalog.json. Nun 33 Eintraege,
+  davon 32 optional und einer immer aktiv.
+- api/skills.php erzwingt Pflichtstatus unabhaengig von
+  stu_user_skills, alten enabled=0-Zeilen, Nutzerkonto-
+  Praeferenzen und fehlender Migration 014. Ein POST mit
+  werkzeuge=false wird abgelehnt. Keine DB-Schema-Aenderung.
+- coreui_skills_select waehlt weiter bis zu vier optionale
+  Fach-Skills und verbraucht keinen dieser Plaetze fuer Werkzeuge.
+  coreui_skills_prepare laedt den Kern-Skill in jede CoreAI-
+  Anfrage, inkl. kurzem Kontext in fokussierten Source-Only-
+  Unteraufrufen. Keine unbekannten Tool-Rechte.
+- js/skills-settings.js zeigt checked+disabled, Systemhinweis,
+  schliesst Werkzeuge von Sammel-Schaltern und Nutzer-Save aus.
+  css/console.css entfaerbt den Schalter sichtbar.
+  settings.html erklaert den Unterschied.
+- Aktualisiert: project-planning, code-editing, debugging,
+  zip-delivery, async-jobs, sse-streaming, observability,
+  ollama-integration, release-handover, skill-authoring.
+  Neuere 0.5.60-Worklog-/HTML-/CSS-Fortsetzungen werden
+  beruecksichtigt, echte Backend-Schraenken nicht verschwiegen.
+- Tests in scripts/skills-selftest.php und
+  scripts/skills-ui-selftest.cjs erweitert.
+- Doku docs/COREUI_SKILLS.md aktualisiert, neue TXT-
+  Changelogversion und Versionsdateien synchronisiert.
+
+C. OFFENE ARBEIT
+- PR #105 zum Chatstil und zur Live-Code-Vorschau bleibt
+  unabhaengig von diesem Branch und darf nicht versehentlich
+  als bereits gemergte Funktion beschrieben werden.
+- Issue #102: 12k-Plan-Grenze, maximal neun Quellen, befristete
+  Fortsetzungen und keine dauerhaften File-Checkpoints sind
+  weiterhin offene Codeaufgaben; ein Skill allein behebt diese
+  strukturellen Probleme nicht.
+- Issue #97: weitere echte freigegebene Mara-Arbeitsnotizen
+  und persistenter, nachvollziehbarer Worklog; kein Roh-Reasoning.
+- GitHub Actions-Kontingent ist aufgebraucht. Offline-Syntax-
+  tests, Versionsguard, Cache-Keys und echtes Netcup-/Android-
+  Testing getrennt nachweisen. Keinen ungeprueften Erfolg melden.
+- Das Betreiber-Modelfile, die lokalen und Cloud-Ollama-Modelle,
+  serielle Modellqueue, gespeicherten privaten Projektplaene,
+  Accountdaten und externe Homepage nicht veraendern.
+- Bei Parallel-Merge den Versionsstand erneut von main lesen.
+  Branch #105 muss nach einer frueheren 0.5.62-Freigabe auf
+  mindestens 0.5.63 umgestellt und rebaset werden.
+
+D. ERWARTETES VERHALTEN NACH DEPLOY
+- In MEINE SKILLS steht Werkzeuge an oberster Stelle:
+  Schalter AN, ausgegraut, cannot be toggled.
+- ALLE DEAKTIVIEREN entfernt nur optionale Skills.
+- GET user_skills.php zeigt werkzeuge=true; manipulierter
+  POST false ist 400; ein Konto mit disabled Row bleibt true.
+- Ein normaler Chat wie auch ein Quellcode-Unterauftrag bekommt
+  die verpflichtende Werkzeug-Grundanleitung; bis zu vier weitere
+  gewaehlte Fachanleitungen koennen pro Turn hinzukommen.
+- Arbeitsweg kann 'Skill geladen: werkzeuge' zeigen. Das beweist
+  Anleitungsladen und NICHT, dass Code geschrieben oder eine ZIP
+  verifiziert wurde.
+
+STATUS: CoreAI-Branch-Arbeit. GitHub-Merge / Netcup-Installation
+und durchgaengige Ollama-Liveabnahme erst nach Pruefung bestaetigen.
