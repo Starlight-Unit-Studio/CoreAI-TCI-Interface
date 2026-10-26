@@ -4284,7 +4284,7 @@ function ember_build_chat_prompt(
   $uid = (int)($senderChar['user_id'] ?? 0);
   $cid = (string)($senderChar['id'] ?? '');
   if (function_exists('coreui_ai_runtime_apply')) coreui_ai_runtime_apply($pdo, $uid);
-  coreui_skills_prepare($pdo, $uid, $userMsg);
+  coreui_skills_prepare($pdo, $uid, $userMsg, $channel);
   try {
     if ($uid > 0 && coreui_profile_schema_ready($pdo)) {
       $profile = coreui_profile_load($pdo, $uid);
@@ -4479,7 +4479,7 @@ function ember_generate_reply(
   $uid = (int)($senderChar['user_id'] ?? 0);
   $cid = (string)($senderChar['id'] ?? '');
   if (function_exists('coreui_ai_runtime_apply')) coreui_ai_runtime_apply($pdo, $uid);
-  coreui_skills_prepare($pdo, $uid, $userMsg);
+  coreui_skills_prepare($pdo, $uid, $userMsg, $channel);
   try {
     if ($uid > 0 && coreui_profile_schema_ready($pdo)) {
       $profile = coreui_profile_load($pdo, $uid);
