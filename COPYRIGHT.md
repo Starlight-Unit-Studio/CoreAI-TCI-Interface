@@ -1,6 +1,6 @@
 # Copyright, Herkunft und Markenhinweise
 
-Copyright © 2026 Patrick Schildgen, Starlight Unit Studios.
+Copyright © 2023-2026 Patrick Schildgen, Starlight Unit Studios.
 
 CoreAI: TCI Interface, die Projektbezeichnungen, die zugehörige Gestaltung und die bereitgestellten Studio-Grafiken sind dem Projekt Starlight Unit Studios zugeordnet. Nutzungsrechte am projekt-eigenen Code werden ab Version `0.4.2-alpha` ausschliesslich nach `LICENSE.de.md` beziehungsweise der englischen Uebersetzung `LICENSE.md` eingeraeumt. Die Aufnahme einer Datei in dieses Distributionspaket uebertraegt keine weitergehenden Marken- oder Namensrechte.
 

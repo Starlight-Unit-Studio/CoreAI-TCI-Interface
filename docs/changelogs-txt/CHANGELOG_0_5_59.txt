@@ -1,0 +1,8 @@
+0.5.59 - 26.10.2026
+- Quantum als getrennte Softwarefamilienkennzeichnung in Einstellungen.
+- Historischen Project-STΛRLIɢHT-Vorsatz aus dem aktuellen Produkttitel entfernt.
+- Auf allen sechs HTML-Seiten nun namentlich: 2023-2026 Patrick Schildgen / Starlight Unit Studios.
+- Lesbare Copyright-Typografie auf Mobilgeraeten und Desktop.
+- Copyright-Kopfzeilen der rechtsbegleitenden Dateien vereinheitlicht.
+- Branding-Selbsttest, VERSION, Cache-Schluessel und Uebergabe aktualisiert.
+- Keine Runtime-/Modelfile-/Homepage-Aenderung; kein Netcup-Deploy behauptet.

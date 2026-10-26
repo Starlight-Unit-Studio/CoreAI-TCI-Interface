@@ -2,6 +2,16 @@
 
 CoreAI: TCI Interface gehoert zur Quantum-Softwarefamilie und wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert. Historische Changelogs dokumentieren die frueheren Produktnamen unveraendert.
 
+## 0.5.59 - 26.10.2026
+
+- Einstellungen: Veraltetes PROJECT STΛRLIɢHT aus Herausgeber-Info entfernt. QUANTUM SOFTWARE ist eigene Familienzeile oberhalb COREAI: TCI INTERFACE.
+- Lesbares Copyright in allen sechs internen Oberflaechen: 2023-2026 Patrick Schildgen und Starlight Unit Studios. Sichtbarkeit auf Mobilgeraeten durch groessere Schrift, mehr Kontrast und Umbruch verbessert.
+- Chat-Seitentitel und SVG-Beschriftung von veralteter Projektbenennung bereinigt.
+- COPYRIGHT.md, NOTICE.md und Copyright-Kopfzeilen der bestehenden deutsch-/englischsprachigen Lizenz nachgezogen, ohne historische Lizenznamen oder Rechtsbedingungen zu veraendern.
+- Branding-Selbsttest prueft die namentliche Copyright-Nennung auf allen sechs Seiten und die getrennte Quantum-/Produktzeile.
+- Version, Browser-Bootstrap und numerische Content-Cache-Schluessel fuer CSS/JS aktualisiert. Externe Homepage, Modellkonfiguration, Ollama und gespeicherte Daten unveraendert.
+- GitHub Quellstand; Netcup-/Android-Liveabnahme offen. Keine GitHub Actions gestartet.
+
 ## 0.5.58 - 26.10.2026
 
 - Netcup-Installation 0.5.57 brach beim Datenbankimport ab: scripts/install.sh:664 meldete scripts/migrate.sh: Keine Berechtigung. Git-Mode der Migration war 100644.

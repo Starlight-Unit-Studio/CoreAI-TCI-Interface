@@ -1,0 +1,44 @@
+COREAI: TCI INTERFACE 0.5.59 - UEBERGABEPROTOKOLL
+Datum: 26.10.2026 (Europe/Berlin)
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Vorherige Version: 0.5.58
+
+PRODUKT-ZUORDNUNG
+- Die Einstellungen enthielten PROJECT STΛRLIɢHT als veralteten
+  Vorsatz. Der Abschnitt zeigt nun QUANTUM SOFTWARE separat oberhalb
+  von COREAI: TCI INTERFACE.
+- Quantum ist die Softwarefamilie, CoreAI: TCI Interface der offizielle
+  Produktname. Starlight Unit Studios bleibt Herausgeber.
+
+RECHTEINHABER
+- Copyright in sechs internen HTML-Seiten auf 2023-2026
+  Patrick Schildgen und Starlight Unit Studios aktualisiert.
+- CSS fuer Info-Bereich und andere Copyrightzeilen auf mobilen und
+  Desktop-Geraeten besser lesbar; Namenszeile kontrastreich.
+- Copyright-Kopfzeilen in COPYRIGHT.md, NOTICE.md, LICENSE.de.md,
+  LICENSE.md vereinheitlicht; historische Lizenzbezeichnungen und
+  materieller Lizenzinhalt unveraendert.
+
+TEST UND GRENZEN
+- scripts/branding-license-selftest.py kontrolliert jetzt beide
+  Info-Zeilen, alle sechs Copyright-Vermerke und CSS-Lesbarkeit.
+- VERSION, UI-Metadaten, js/console-gate.js, Preflight-Vermerke,
+  README, Changelog/Archiv und numerische Inhalt-Cache-Keys gepflegt.
+- Im Repo keine Netcup-Installation oder Android-Ansicht getestet.
+- Keine Aenderung am bestehenden Modelfile, Ollama-Setup, der FIFO,
+  Datenbank, Projektplaenen, Installer, ZIP-Writer oder externen Homepage.
+
+WICHTIG: WEITERES PROBLEM VOM SELBEN TAG
+- Auch Ollama-Cloud gpt-oss:120b scheint bei laengeren CoreAI-Arbeiten
+  zu scheitern. Das wurde NICHT durch diesen Branding-Patch verursacht.
+- In api/console_native_tools.php sind ein 12000-Byte-Planlimit und
+  maximal neun Projektquellen vorhanden. api/console_stream.php und
+  api/console_plan_autorun.php begrenzen Fortsetzungen/Runden.
+- Auswirkungen differenziert anhand Worklog, Modell-Metadaten, Plan-
+  Bytes, Autorisierung und wirklichem Writer-Einstieg testen.
+- Do not change user Modelfile or remove the serial model queue.
+- Upstream-Referenzen: Issue #96. Arbeitskommentare: Issue #97.
+- Sicherer Fortschritt: reale Teil-Artefakte/Checkpointing, keine
+  erfundenen ZIP-Links, keine ungepruefte Freigabe.
+
+STATUS: GitHub-Benennungsfix; Cloud-/Worker-Diagnose offen.

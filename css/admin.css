@@ -216,3 +216,17 @@ td button, .memory-admin-item button { min-height:30px; cursor:pointer; border:1
   .item-actions { justify-content:flex-end; }
   .admin-footer span:last-child { display:none; }
 }
+
+/* 0.5.59: keep the complete publisher/owner credit readable. */
+.admin-footer {
+  color: #43526d;
+  font-size: 11px;
+  line-height: 1.5;
+  letter-spacing: .025em;
+  flex-wrap: wrap;
+}
+.admin-footer span { min-width: 0; overflow-wrap: anywhere; }
+.admin-footer strong { color: #202c42; }
+@media (max-width: 560px) {
+  .admin-footer { font-size: 11px; }
+}

@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-EXPECTED_VERSION = "0.5.58"
+EXPECTED_VERSION = "0.5.59"
 PUBLIC_PAGES = (
     "index.html",
     "login.html",
@@ -118,6 +118,25 @@ def main() -> int:
     for current in PUBLIC_PAGES:
         require("Ember CoreUI" not in read(current) and "E.M.B.E.R. CoreUI" not in read(current),
                 f"obsolete product branding in active page: {current}")
+    # Public credit: verify the visible owner and full requested year range.
+    for page_name in PUBLIC_PAGES:
+        page = read(page_name)
+        require("2023-2026" in page and "Patrick Schildgen" in page,
+                f"owner copyright or year range missing: {page_name}")
+    for credit_file in ("COPYRIGHT.md", "NOTICE.md", "LICENSE.de.md", "LICENSE.md"):
+        require("2023-2026 Patrick Schildgen" in read(credit_file),
+                f"copyright attribution not consistent: {credit_file}")
+    settings_page = read("settings.html")
+    require('<span class="about-family">QUANTUM SOFTWARE</span>' in settings_page,
+            "Quantum family line missing in settings About")
+    require('<span class="about-product">COREAI: TCI INTERFACE</span>' in settings_page,
+            "separate CoreAI product line missing in settings About")
+    require("PROJECT ST" not in settings_page and "Project ST" not in read("app.html"),
+            "obsolete Project Starlight product label still visible")
+    style = read("css/console.css")
+    require(".about-copy .copyright-line" in style and "font-size: clamp(14px" in style,
+            "readable copyright style missing")
+
     model = read("config/Modelfile.template")
     require("E.M.B.E.R" in model and "Mara" in model,
             "Modelfile must retain Mara identity and E.M.B.E.R. framework")
