@@ -6493,3 +6493,31 @@ audio.msg-image {
 @media (prefers-reduced-motion: reduce) {
   .jump-latest .jump-working-dots i { animation: none; opacity: 1; }
 }
+
+/* One discreet, accessible metadata control instead of a repeated log row. */
+.msg-row.ember .work-note-text { display: inline; }
+.msg-row.ember .work-detail {
+  display: inline-block;
+  vertical-align: baseline;
+  margin: 0 0 0 7px;
+}
+.msg-row.ember .work-detail[open] {
+  display: block;
+  margin: 5px 0 10px;
+  width: 100%;
+}
+.msg-row.ember .work-detail-toggle {
+  display: inline-grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: rgba(91,146,255,.08);
+  color: #647d9e;
+  font: 12px/1 system-ui, sans-serif;
+  list-style: none;
+  user-select: none;
+}
+.msg-row.ember .work-detail-toggle::-webkit-details-marker { display: none; }
+.msg-row.ember .work-detail-toggle::marker { content: ''; }
+.msg-row.ember .work-detail-toggle:hover { background: rgba(91,146,255,.17); }
