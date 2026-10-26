@@ -1,6 +1,6 @@
 # Starlight Unit Studios E.M.B.E.R. CoreUI Community Source Lizenz 1.0
 
-Copyright (c) 2026 Patrick Schildgen, Starlight Unit Studios.
+Copyright (c) 2023-2026 Patrick Schildgen, Starlight Unit Studios.
 Alle Rechte vorbehalten, soweit sie nicht durch diese Lizenz ausdruecklich eingeraeumt werden.
 
 Diese Lizenz gilt fuer den von Patrick Schildgen und Starlight Unit Studios geschaffenen Code von **STΛRLIɢHT: E.M.B.E.R. CoreUI** ab Version `0.4.2-alpha`. Sie ist eine individuelle Source-Available-Lizenz und keine von der Open Source Initiative genehmigte Open-Source-Lizenz.

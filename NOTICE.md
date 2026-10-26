@@ -2,7 +2,7 @@
 
 **CoreAI: TCI Interface by Starlight Unit Studios**
 
-Copyright (c) 2026 Patrick Schildgen, Starlight Unit Studios.
+Copyright (c) 2023-2026 Patrick Schildgen, Starlight Unit Studios.
 
 Official public interface: <https://coreui.starlight-unit.de>
 

@@ -6215,3 +6215,47 @@ audio.msg-image {
 .splash-title { max-width: calc(100vw - 32px); text-align: center; font-size: clamp(23px, 4.3vw, 42px); letter-spacing: .09em; line-height: 1.13; }
 .splash-title .brand-product-part { display: block; margin-top: 7px; font-size: .67em; letter-spacing: .11em; color: var(--cx); }
 @media (max-width: 520px) { .brand-title { font-size: 20px; } .brand-kicker, .brand-signature { letter-spacing: .08em; } }
+
+/* 0.5.59: readable Quantum product attribution and owner copyright. */
+.about-copy h2 .about-family {
+  display: block;
+  color: #315a9b;
+  font-family: "Share Tech Mono", monospace;
+  font-size: clamp(11px, 1.15vw, 14px);
+  font-weight: 400;
+  letter-spacing: .12em;
+  line-height: 1.5;
+}
+.about-copy h2 .about-product { display: block; margin-top: 4px; overflow-wrap: anywhere; }
+.about-copy .copyright-line {
+  color: #503719;
+  font-family: "Rajdhani", sans-serif;
+  font-size: clamp(14px, 1.5vw, 17px);
+  font-weight: 700;
+  letter-spacing: .015em;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.about-copy .copyright-line strong { color: #18243a; font-weight: 700; }
+.splash-copyright, .login-copyright, .drawer-copyright, .proto-footer {
+  color: #43526d;
+  font-size: 11px;
+  letter-spacing: .025em;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.splash-copyright strong, .login-copyright strong,
+.drawer-copyright strong, .proto-footer strong { color: #202c42; }
+.settings-footer {
+  color: #43526d;
+  font-size: 10px;
+  flex-wrap: wrap;
+  line-height: 1.45;
+  letter-spacing: .03em;
+}
+.settings-footer span { min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 520px) {
+  .settings-footer { font-size: 10px; }
+  .about-copy .copyright-line { font-size: 15px; }
+  .splash-copyright, .login-copyright, .drawer-copyright, .proto-footer { font-size: 11px; }
+}
