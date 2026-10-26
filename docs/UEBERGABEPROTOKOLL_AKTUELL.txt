@@ -19,9 +19,10 @@ und Ollama-Cloud-Modellen; >12k-Byte-Plan, >9 Dateien,
 begrenzte Fortsetzungen, keine persistenten File-Checkpoints.
 ISSUE #102 ist die priorisierte Architekturarbeit.
 ISSUE #97: Mara-Arbeitsnotizen/Worklog; #96: externe Referenzen.
-0.5.62 fuehrt den dauerhaften System-Skill Werkzeuge und
-aktualisierte Fach-Skills ein. Separate Live-Code-Arbeit PR #105
-bleibt Entwurf, nicht enthalten.
+0.5.62 verbindet den dauerhaften System-Skill Werkzeuge und
+aktualisierte Fach-Skills mit dem chatartigen Arbeitsweg und
+der Quellcodevorschau aus Draft #105. PR #106 ist bis zur
+regulaeren Abnahme weiterhin ungemergt. Keine Live-Freigabe.
 Mara/Ember, Ollama-Modelfile, serielle Queue und private Projekt-
 plaene NICHT ungefragt veraendern.
 Externe STU-Homepage wird in einem ANDEREN Chat bearbeitet.
