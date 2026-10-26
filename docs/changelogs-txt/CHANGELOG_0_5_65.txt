@@ -1,0 +1,9 @@
+## 0.5.65 - 26.10.2026
+
+- Chat-Aufwaertslesen sperrt die bisher bedingungslose Scroll-to-bottom-Nachfuehrung. Die neue js/coreui-chat-follow.js verwaltet Nutzerposition, laufenden Arbeitsweg, Springen zum aktuellen Chatblock und Reduced Motion. Nahe am Ende wird weiterhin automatisch gefolgt, beim eigenen Scrollen nicht.
+- Der vorhandene runde, transparente #jumpLatest-Button funktioniert: Pfeil, sobald der Nutzer nicht am Ende steht; drei animierte Punkte waehrend Maras laufendem Auftrag. Das Bedienelement ist versteckt, wenn der neueste Chatbereich erreicht ist.
+- Workevents koennen ohne erneute Profilkennzeichnung als Chatabschnitte gelesen werden. Keine wiederholten Ueberschriften oder "Technische Details"-Zeilen; Metadaten und Uhrzeit bleiben unter zugaenglichem Info-Symbol verifizierbar. Live-Codevorschau scrollt separat und respektiert die Leseposition.
+- Vertrauenswuerdiger, rein deterministischer Python-ZIP-Schreiber fuer gepruefte Quellen ist nicht mehr an den Modell-Python-Codeumfang gebunden. 512-kB-Gesamtlimit entfernt; Quelle/Dateiname/Anzahl bleiben validiert. Budget wird nur fuer den generierten ZIP-Writer anhand des tatsaechlichen Datenumfangs berechnet. Keine erweiterten Modell- oder Shell-Rechte.
+- scripts/local-file-tool-selftest.php umfasst jetzt 520 kB Quelltexte und ein schwer komprimierbares, vertrauenswuerdiges Dateipaket; scripts/chat-follow-selftest.cjs prueft Scroll-Nachfuehrung, Nutzer-Leseposition, Drei-Punkte-Zustand und Ruecksprung. Preflight-Skripte referenzieren die neuen Tests.
+- Repo/Version 0.5.65, HTML-Versionen, SHA256-cache-Keys, README, Changelog, TXT-Index und Uebergabe synchronisiert. Netcup-Abnahme nach Merge erforderlich.
+- Issue #102: weiterhin nicht geloest sind persistente Datei-Checkpoints, Begrenzungen der einzelnen Modellantworten/Fortsetzungen und mehr als neun Projektquellen in einem Manifest.
