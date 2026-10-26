@@ -7,7 +7,21 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 E.M.B.E.R. CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.55` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.56` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Ausfuehrliche oeffentliche Arbeitsnotizen (0.5.56)
+
+E.M.B.E.R. CoreUI dokumentiert jetzt reale Arbeitsschritte als kompakte,
+spaeter erneut aufklappbare Arbeitsnotizen: Was wird gerade getan,
+welche Quelldatei fehlt noch, welcher Job ist fehlgeschlagen und
+welche gepruefte Aktion folgt. Die Ich-Form erklaert den sichtbaren
+Arbeitsablauf und ist **kein ungekueztes privates Modell-Reasoning**.
+Die Eintraege stammen weiterhin aus den authentifizierten Work-Events
+und zeigen darunter technische Details mit strikt freigegebenen Werten.
+Laufende Arbeit bleibt aufgeschlagen, fertige Antworten sind
+standardmaessig zusammengeklappt. Auf Android bleibt der Detailverlauf
+scrollbar und auch nach Reload bei einer gespeicherten Nachricht erreichbar.
+Uebergabe: `docs/UEBERGABEPROTOKOLL_0_5_56.txt`.
 
 ## PHP-Syntax-Hotfix (0.5.55)
 
