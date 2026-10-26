@@ -77,7 +77,7 @@ work.add(body,{id:3,kind:'artifact',state:'info',
 assert(timeline.textContent.includes('<script>alert(1)</script>'));
 assert.equal(body.querySelector('.work-entries').children.length,3);
 const live=work.create({live:true,expanded:true});
-assert(live.textContent.includes('E.M.B.E.R. CoreAI arbeitet'),
+assert(live.textContent.includes('Arbeitsweg · laufend'),
   'live operational header must identify CoreAI rather than terminal');
 assert(live && !live.querySelector('.work-body').hidden);
 work.add(live.querySelector('.work-body'),{
@@ -176,13 +176,38 @@ const modelPublic = work.create({events:[{
     source:'model_public_text',raw_thinking:'DO_NOT_LEAK'}
 }],expanded:false});
 assert(modelPublic && modelPublic.textContent.includes('Ich pruefe zuerst die vorhandene HTML-Datei.'));
-assert(modelPublic.textContent.includes('Öffentliche Zwischenmeldung'));
+assert(!modelPublic.textContent.includes('Öffentliche Zwischenmeldung'),
+  'only public prose appears, without provenance badge');
 assert(!modelPublic.textContent.includes('DO_NOT_LEAK'));
 assert(!modelPublic.textContent.includes('Automatisch erläutert'));
 assert.equal(work.normalize({id:73,kind:'commentary',state:'info',
   title:'Mara meldet ihren naechsten Schritt',meta:{raw_thinking:'SECRET'}}),null);
 assert.equal(modelPublic.querySelector('.work-chevron').textContent,'▸',
   'toggle glyph must be rendered, not escaped');
+
+// 0.5.62: actual source-code chunks display below the same live work
+// timeline. They are never loaded into saved events or rendered as HTML.
+const liveCode = work.create({live:true,expanded:true});
+const liveCodeBody = liveCode.querySelector('.work-body');
+assert.equal(work.source(liveCodeBody,{phase:'begin',file_name:'index.html',attempt:1}),true);
+assert.equal(work.source(liveCodeBody,{phase:'chunk',file_name:'index.html',
+  attempt:1,text:'<!DOCTYPE html>\\n<html lang="de">'}),true);
+assert(liveCode.textContent.includes('<!DOCTYPE html>') && liveCode.textContent.includes('index.html'));
+assert.equal(work.source(liveCodeBody,{phase:'chunk',file_name:'../passwd',attempt:1,text:'SECRET'}),false);
+assert.equal(work.source(liveCodeBody,{phase:'chunk',file_name:'index.html',
+  attempt:1,text:'<script>not-html-executed</script>'}),true);
+assert(liveCode.textContent.includes('<script>not-html-executed</script>'));
+assert(!liveCode.textContent.includes('SECRET'));
+assert.equal(work.source(liveCodeBody,{phase:'end',file_name:'index.html',attempt:1}),true);
+assert(liveCode.textContent.includes('Prüfung läuft'));
+const oldCodePanel=liveCodeBody.querySelector('.work-source');
+assert.equal(work.source(liveCodeBody,{phase:'begin',file_name:'styles.css',attempt:1}),true);
+assert.equal(liveCodeBody.querySelector('.work-source-file').textContent,'styles.css');
+assert(!liveCode.textContent.includes('not-html-executed'), 'preview replaces previous file');
+assert.equal(work.source(liveCodeBody,{phase:'chunk',file_name:'index.html',attempt:1,text:'stale'}),false);
+const history=work.create({events:[{id:180,kind:'model',state:'success',
+  title:'Modellstream empfangen',meta:{model:'gpt-oss:120b'}}],expanded:true});
+assert(!history.querySelector('.work-source'), 'private source preview is not reloaded as history');
 
 // 0.5.60: SSE bursts must reveal one work event at a time, writing the
 // complete safe public note before displaying the next event. Storage is not
