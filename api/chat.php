@@ -3126,7 +3126,7 @@ function ember_call_ollama(string $model, string $systemPrompt, string $userProm
   // The model already selected the active skills before dispatch. Focused
   // source-file subcalls need only their source contract; repeating up to four
   // full SKILL.md documents here inflates a small local Gemma context.
-  if ($augmentSkills) $userPrompt = coreui_skills_augment($userPrompt);
+  $userPrompt = coreui_skills_augment($userPrompt, $augmentSkills);
   // Thinking ist strikt an genau diesen Modellaufruf gebunden. Ohne Reset koennte ein
   // spaeterer Call ohne message.thinking versehentlich einen alten Entwurf retten.
   $GLOBALS['STU_EMBER_LAST_THINKING'] = '';
