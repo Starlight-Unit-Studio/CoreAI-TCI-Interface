@@ -6276,3 +6276,53 @@ audio.msg-image {
     content: none;
   }
 }
+
+/* 0.5.62: unboxed, readable work prose and live source beneath the work route. */
+.msg-row.ember .work-note,
+.msg-row.ember .work-note-model {
+  padding: 2px 0 5px;
+  margin: 3px 0;
+  border: 0;
+  background: transparent;
+}
+.msg-row.ember .work-note-text {
+  font-size: 14px;
+  line-height: 1.65;
+  color: #30435f;
+}
+.msg-row.ember .work-body { padding-left: 0; }
+.msg-row.ember .work-source {
+  min-width: 0;
+  margin: 12px 0 16px;
+  border: 1px solid rgba(91,146,255,.24);
+  border-radius: 9px;
+  background: #111827;
+  color: #dfe8ff;
+  overflow: hidden;
+}
+.msg-row.ember .work-source-header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255,255,255,.1);
+  color: #c8dafa;
+  font: 11px/1.4 "Share Tech Mono", monospace;
+}
+.msg-row.ember .work-source-status { color: #b0bfd8; text-align: right; }
+.msg-row.ember .work-source-scroll {
+  max-height: 240px;
+  min-height: 65px;
+  margin: 0;
+  padding: 12px;
+  overflow: auto;
+  white-space: pre;
+  overflow-wrap: normal;
+  font: 12px/1.55 "Share Tech Mono", monospace;
+}
+.msg-row.ember .work-source-code { white-space: pre; }
+@media (max-width: 620px) {
+  .msg-row.ember .work-note-text { font-size: 13px; }
+  .msg-row.ember .work-source-scroll { max-height: 190px; font-size: 11px; }
+}
