@@ -2,6 +2,16 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.56 - 26.10.2026
+
+- CoreUI zeigt jetzt oeffentliche, in der Ich-Form formulierte Arbeitsnotizen zu tatsaechlich protokollierten Schritten an. Konkret sichtbar werden gerade laufende Aktionen, unvollstaendige Dateien, Fehlversuche, Folgeaufrufe und der jeweils belegte naechste Arbeitsschritt.
+- Die Notizen sind bewusst als nachvollziehbare Ausfuehrungserklaerungen gekennzeichnet, nicht als angebliche rohe interne Modell-Gedankenkette. Unbekannte Events erhalten keine erfundenen Erklaerungen. Texte werden ausschliesslich als textContent dargestellt.
+- Ausgefuehrte Modell- und Werkzeugaktionen bleiben inklusive Zeiten, Status, Fehlergrund und einzeln aufklappbaren Diagnosen in der vorhandenen kontogebundenen Work-Timeline erhalten. Weitere harmlose Zaehler (z.B. done_reason, thinking_chars, content_chars, Fortsetzungen, Planversion) werden ueber die bestehende serverseitige Whitelist freigegeben; Roh-Thinking, Prompts, Modellcode und stderr bleiben verborgen.
+- Live-Verlauf bleibt waehrend der Ausfuehrung offen; nach Abschluss klappt die Ansicht standardmaessig zu, zeigt aber die letzte relevante Notiz und Anzahl Schritte/Werkzeuge/Fehler. Benutzerseitige Aufklappwahl bleibt bei sitzungsinternem Neurendering erhalten, alte Server-Events bleiben auch nach Reload einsehbar.
+- CSS fuer breite und mobile Ansichten angepasst: gut lesbare Notizen, kompakte Statistik und scrollbarer Detailverlauf. UI- und PHP-Whitelist-Regressionstests erweitert.
+- Die sechs aktiven Oberflaechen und der Bootstrap auf 0.5.56 aktualisiert. Alle referenzierten JS-/CSS-Cache-Keys aus den echten SHA-256-Dateiinhalten neu abgeglichen, nicht aus Versionsnummern geraten.
+- Modell-/Ollama-Parameter, Modelfile, Python-/ZIP-/Tool-Ausfuehrung, private Speicher, MySQL-Schema, Installer und serielle Warteschlange unveraendert. Keine GitHub Actions. Vollstaendige Netcup-Preflight-/Mobil-Abnahme noch offen.
+
 ## 0.5.55 - 26.10.2026
 
 - Netcup-Installer 0.5.54 scheiterte beim PHP-Syntaxcheck in `scripts/local-file-tool-selftest.php`.
