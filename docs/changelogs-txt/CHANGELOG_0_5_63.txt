@@ -1,0 +1,6 @@
+## 0.5.63 - 26.10.2026
+
+- Hotfix: PHP-Syntaxfehler in scripts/source-preview-selftest.php nach Merge #106. Im Assertion-String war $payload['stream'] innerhalb doppelter Anfuehrungszeichen nicht maskiert. PHP interpretierte dies als fehlerhaften Array-Ausdruck und brach die Syntaxpruefung ab.
+- Der Pruefstring wurde mit maskiertem Dollarzeichen korrigiert. Das gesamte Skript ist lokal mit php -l unter PHP 8.4 fehlerfrei. Echte PHP-8.5-/Netcup-End-to-End-Abnahme steht noch aus.
+- Release 0.5.63: VERSION, sechs sichtbare HTML-Seiten, js/console-gate.js, dessen numerischer SHA256-Cache-Key, Versionstests, Preflight-Kopfzeilen, README, Changelog, TXT-Index und Uebergabe angepasst.
+- Keine Modelfile-, Modellparameter-, Datenbank-, Queue- oder Laufzeit-Aenderungen. Der ungefixte mehrteilige Projektbau (Issue #102) bleibt getrennt.
