@@ -225,8 +225,12 @@
       event.kind === 'commentary' ? '✎' : event.state === 'success' ? '\u2713' :
       event.state === 'error' ? '!' : event.state === 'running' ? '\u2022' : 'i'));
     var info = el('div', 'work-info');
-    info.appendChild(el('div','work-title',event.title));
     var note = workNote(event);
+    var title = el('div','work-title',event.title);
+    // Keep the operational event title available to assistive technology,
+    // but avoid repeating it above the public chat-style note.
+    if (note) title.className += ' work-title-with-note';
+    info.appendChild(title);
     var noteText = null;
     if (note) {
       var annotation = el('div','work-note');
@@ -375,7 +379,6 @@
       body._workSourcePanel = panel;
       body._workSourceName = filename;
       body._workSourceAttempt = attempt;
-      body._workSourceBytes = 0;
       return true;
     }
     if (!panel || body._workSourceName !== filename
@@ -385,12 +388,11 @@
       if (status) status.textContent = 'Übertragung beendet · Prüfung läuft';
       return true;
     }
-    if (typeof raw.text !== 'string' || !raw.text || raw.text.length > 2500
-        || body._workSourceBytes >= 50000) return false;
-    body._workSourceBytes += raw.text.length;
+    if (typeof raw.text !== 'string' || !raw.text || raw.text.length > 2500)
+      return false;
     var code = panel.querySelector('.work-source-code');
     if (!code) return false;
-    code.textContent = (code.textContent + raw.text).slice(-35000);
+    code.textContent += raw.text; // Rendering must not hide the beginning of a valid file.
     var scroll = panel.querySelector('.work-source-scroll');
     if (scroll && typeof scroll.scrollTop === 'number') scroll.scrollTop = scroll.scrollHeight;
     if (body._workLive) body.scrollTop = body.scrollHeight;
@@ -422,7 +424,7 @@
 
     function updateSummary() {
       var countLabel = events.length + (events.length === 1 ? ' Schritt' : ' Schritte');
-      heading.textContent = live ? 'E.M.B.E.R. CoreAI arbeitet'
+      heading.textContent = live ? 'Arbeitsweg · laufend'
         : 'Arbeitsweg (' + countLabel + ') ' + (expanded ? 'ausblenden' : 'anzeigen');
       toggle.setAttribute('aria-label', heading.textContent);
       var errors = events.filter(function (e) { return e.state === 'error'; }).length;
