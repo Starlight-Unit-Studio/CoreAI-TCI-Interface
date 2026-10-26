@@ -130,7 +130,7 @@ if (!str_contains($rollingPrompt,'URSPRUNG') || strlen($rollingPrompt) > 3400) {
 
 $multiline = chat_clean_console_message("Erste Zeile\n  code_block()\n\nZweite Zeile");
 if (!str_contains($multiline, "\n  code_block()\n\n")) {
-  reply_test_fail('Der private Ember CoreUI-Kanal verliert Zeilenumbrueche oder Code-Einrueckungen.');
+  reply_test_fail('Der private CoreAI: TCI Interface-Kanal verliert Zeilenumbrueche oder Code-Einrueckungen.');
 }
 $transport = chat_console_transport_text($multiline);
 if (!str_contains($transport, "\n  code_block()\n\n")) {
@@ -217,7 +217,7 @@ if (str_contains($clientSource, "EMBER_PREFIX + userText")
 
 foreach (['? 20000 : 12000', '? 1200 : 120', 'chat_clean_console_message', 'chat_console_transport_text'] as $needle) {
   if (!str_contains($chatSource, $needle)) {
-    reply_test_fail('Private Ember CoreUI-Arbeitsgrenze fehlt: ' . $needle);
+    reply_test_fail('Private CoreAI: TCI Interface-Arbeitsgrenze fehlt: ' . $needle);
   }
 }
 if (!str_contains($chatSource, '($isConsoleChannel || ember_should_reply($message))')) {

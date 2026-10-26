@@ -3,12 +3,12 @@ set -u
 IFS=$'\n\t'
 
 # Rein lesender Bericht fuer den gemeinsamen Ollama-Dienst. Das Skript aendert
-# weder systemd noch Modelle oder den laufenden Ember CoreUI-Stack.
+# weder systemd noch Modelle oder den laufenden CoreAI: TCI Interface-Stack.
 
 PROJECT_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
 ENV_FILE="$PROJECT_ROOT/var/compose.env"
 
-printf 'Ember CoreUI Ollama-Parallelbericht\n'
+printf 'CoreAI: TCI Interface Ollama-Parallelbericht\n'
 printf 'Zeit: %s\n' "$(date --iso-8601=seconds 2>/dev/null || date)"
 
 printf '\nArbeitsspeicher:\n'

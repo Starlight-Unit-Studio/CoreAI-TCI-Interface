@@ -3,11 +3,11 @@
 # Existing swap is always operator-owned. Only an absent configuration is created.
 
 coreui_swap_info() {
-  printf '[E.M.B.E.R. CoreUI][Swap] [OK] %s\n' "$*"
+  printf '[CoreAI: TCI Interface][Swap] [OK] %s\n' "$*"
 }
 
 coreui_swap_warn() {
-  printf '[E.M.B.E.R. CoreUI][Swap] [WARN] %s\n' "$*" >&2
+  printf '[CoreAI: TCI Interface][Swap] [WARN] %s\n' "$*" >&2
 }
 
 coreui_swap_has_active() {

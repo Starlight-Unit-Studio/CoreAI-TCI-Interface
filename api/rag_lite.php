@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * Gemeinsamer, dateibasierter RAG-Lite-Kern fuer Ember CoreUI.
+ * Gemeinsamer, dateibasierter RAG-Lite-Kern fuer CoreAI: TCI Interface.
  *
  * Globale Betreiberquellen und private Benutzerquellen duerfen unterschiedliche
  * Tabellen verwenden. Extraktion, Normalisierung, Chunking und Ranking laufen
