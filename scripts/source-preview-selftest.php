@@ -40,4 +40,4 @@ $check(str_contains($work, 'function source(body, raw)') &&
 $check(!str_contains($work, 'Automatisch erläutert') &&
     !str_contains($work, 'Öffentliche Zwischenmeldung'),
   'no redundant user-facing provenance labels');
-echo "CoreAI 0.5.63 live-source preview static regression: OK\n";
+echo "CoreAI 0.5.64 live-source preview static regression: OK\n";

@@ -2,6 +2,13 @@
 
 CoreAI: TCI Interface gehoert zur Quantum-Softwarefamilie und wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert. Historische Changelogs dokumentieren die frueheren Produktnamen unveraendert.
 
+## 0.5.64 - 26.10.2026
+
+- **Netcup-Preflight-Hotfix:** In `scripts/local-file-tool-selftest.php` stand noch die 0.5.61-Assertion `if ($augmentSkills) $userPrompt = coreui_skills_augment($userPrompt);`. Die seit 0.5.62 korrekte Implementierung lautet `$userPrompt = coreui_skills_augment($userPrompt, $augmentSkills);`. Der alte Test schlug damit trotz korrektem CoreAI-Werkzeugvertrag fehl.
+- Die Assertion prueft jetzt den aktuellen Pflicht-Skill-Aufruf. Die uebrigen vier Teilpruefungen (fokussierte Datei-Anweisung, genau ein sinnvoller Fallback, sichere HTTP-/Transportdiagnostik) sind anhand des unveraenderten Handlers weiterhin erfuellt.
+- Versionsstand 0.5.64 mit allen sechs HTML-Angaben, JavaScript-Bootstrap, numerischem SHA256-Cache-Key, Versions-Selbsttests, Preflight-Kopfzeilen, README, TXT-Changelog, TXT-Index und Uebergabeprotokoll synchronisiert.
+- Kein Eingriff in Ollama-Optionen, Modelfile, Game-Ember, Datenbank oder persistente Projektplaene. Modell-Fortsetzungsgrenzen aus Issue #102 bleiben offen. Live-Abnahme mit Netcup-Installer steht aus.
+
 ## 0.5.63 - 26.10.2026
 
 - **Installations-Hotfix:** Der bei der Netcup-Installation sichtbare Syntaxfehler in `scripts/source-preview-selftest.php` wurde behoben. Der statische Teststring enthielt eine unmaskierte interpolierte PHP-Variable mit Array-Index und verursachte einen Parse Error.
