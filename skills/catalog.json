@@ -81,8 +81,8 @@
     "sources": [
       "https://docs.python.org/3/tutorial/errors.html"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-26",
+    "version": "1.1.0"
   },
   {
     "id": "html-semantics",
