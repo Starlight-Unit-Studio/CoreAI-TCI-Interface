@@ -269,13 +269,21 @@ else
   fail 'Mindestens eine neue 0.4.0-Funktion ist nicht vollstaendig verdrahtet.'
 fi
 
+# The stream may apply a per-call Thinking override before the account default.
+# Match the actual payload binding, not a frozen PHP source string from 0.5.50.
+# The reply-pipeline selftest verifies the precise runtime contract later.
 if grep -Fq "thinking_enabled: aiThinkingEnabled" "$PROJECT_ROOT/js/settings.js" \
-    && grep -Fq "'think'    => ember_thinking_enabled()" "$PROJECT_ROOT/api/console_stream.php" \
-    && grep -Fq 'MAX_MESSAGE_ATTACHMENTS = 10' "$PROJECT_ROOT/js/console-app.js" \
-    && grep -Fq 'stu_console_message_attachments' "$PROJECT_ROOT/database/migrations/005_thinking_attachments.sql"; then
-  ok 'Thinking-Schalter und bis zu zehn persistente Nachrichtenanhaenge sind paketiert.'
+    && grep -Eq "'think'[[:space:]]*=>[[:space:]]*.*ember_thinking_enabled\(\)" "$PROJECT_ROOT/api/console_stream.php"; then
+  ok 'Thinking-Schalter und Modellaufruf inklusive kontobezogenem Standardwert sind paketiert.'
 else
-  fail 'Thinking-Schalter oder Mehrfachanhaenge sind unvollstaendig paketiert.'
+  fail 'Thinking-Schalter oder Modell-Payload-Anbindung fehlen.'
+fi
+
+if grep -Fq 'MAX_MESSAGE_ATTACHMENTS = 10' "$PROJECT_ROOT/js/console-app.js" \
+    && grep -Fq 'stu_console_message_attachments' "$PROJECT_ROOT/database/migrations/005_thinking_attachments.sql"; then
+  ok 'Bis zu zehn persistente Nachrichtenanhaenge sind paketiert.'
+else
+  fail 'Mehrfachanhaenge oder ihre Datenbankmigration fehlen.'
 fi
 
 if grep -Fq 'coreui_ollama_model_exists' "$PROJECT_ROOT/api/user_settings.php" \
