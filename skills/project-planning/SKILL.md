@@ -4,7 +4,6 @@ description: "Für neue Projekte: Ziel, Dateien, Abhängigkeiten und Abnahme vor
 ---
 # Projektplanung
 
-1. Leite aus dem Auftrag ein konkretes Ergebnis und prüfbare Abnahmekriterien ab. Nutze vorhandene Projektkonventionen.
-2. Plane nur notwendige Dateien und Abhängigkeiten. Jede referenzierte lokale Datei muss erzeugt oder nachweislich vorhanden sein.
-3. Zerlege große Arbeiten in ausführbare Schritte. Schreibe vollständige Dateien im vorgegebenen Werkzeugformat.
-4. Prüfe zuerst den Kernablauf, dann Fehlerfälle. Melde offen, welche Prüfungen tatsächlich liefen. Keine Erfolgsmeldung ohne Ergebnis.
+Leite aus dem Nutzerauftrag ein überprüfbares Ergebnis, eine vollständige Dateiliste und klare Abnahmekriterien ab. Berücksichtige einen bereits gespeicherten, abgeschlossenen Projektplan als verbindliche Grundlage; überschreibe keine privaten Projektversionen. Plane reale Dateien samt Abhängigkeiten und internen Verweisen. Zerlege größere Vorhaben in aufeinanderfolgende Dateischritte, ohne Anforderungen stillschweigend wegzuschneiden. Verwende einen gezielten Abschnittskontext, aber bewahre den vollständigen freigegebenen Plan im persistenten Speicher.
+
+Erzeuge nur tatsächlich erforderliche Quellen. Prüfe jede bestätigte Datei, bevor die nächste abhängig davon erzeugt wird, und verwende bereits verifizierte Quellen erneut, soweit der Runner diese gesichert hat. Melde ausdrücklich, wenn der aktuelle Backend-Runner keine dauerhaften File-Checkpoints bietet oder einen Plan/Manifest-Grenzwert erreicht. Kein Erfolg ohne vollständiges, geprüftes Ergebnis. Der Werkzeug-Kern-Skill gilt zusätzlich; ein Skill allein beseitigt keine Backend-Limits.
