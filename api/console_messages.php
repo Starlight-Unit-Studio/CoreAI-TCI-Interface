@@ -179,7 +179,7 @@ foreach ($rows as &$row) {
   $text = chat_console_transport_text((string)($row['message'] ?? ''));
   if ($isEmber) {
     $safe = ember_sanitize_public_reply($text, '');
-    $text = $safe !== '' ? $safe : 'Diese ältere Antwort wurde vom E.M.B.E.R. CoreUI-Sicherheitsfilter ausgeblendet.';
+    $text = $safe !== '' ? $safe : 'Diese ältere Antwort wurde vom CoreAI: TCI Interface-Sicherheitsfilter ausgeblendet.';
   }
   $row['message'] = $text;
   $row['thinking_content'] = ($isEmber && $showThinking)

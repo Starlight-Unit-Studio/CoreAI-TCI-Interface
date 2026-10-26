@@ -1,5 +1,5 @@
 [Unit]
-Description=Ember CoreUI isolated Python job worker
+Description=CoreAI: TCI Interface isolated Python job worker
 After=network-online.target mariadb.service docker.service
 Wants=network-online.target docker.service
 

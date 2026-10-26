@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 // ─────────────────────────────────────────────────────────────────────────────
-// E.M.B.E.R. CoreUI SSE Stream-Endpunkt mit sicherem Denkstatus
+// CoreAI: TCI Interface SSE Stream-Endpunkt mit sicherem Denkstatus
 //
 // Generiert Embers Antwort im Console-Channel mit Ollama stream:true. Rohe
 // message.thinking-Deltas bleiben strikt serverintern. An die Console gehen nur
@@ -138,7 +138,7 @@ if ($generationRequestId !== '') {
 }
 
 // Die eigentliche Nachricht liegt bereits durch den authentifizierten POST in
-// der E.M.B.E.R. CoreUI-Datenbank. Sie wird nicht noch einmal in die EventSource-URL
+// der CoreAI: TCI Interface-Datenbank. Sie wird nicht noch einmal in die EventSource-URL
 // geschrieben. Dadurch bleiben lange Eingaben unter den Proxy-Headergrenzen
 // und vertraulicher Text landet nicht in Apache- oder Nginx-Zugriffslogs.
 if ($afterId <= 0 || trim($character_id) === '' || $sessionId === '') {
@@ -309,7 +309,7 @@ try {
       if ($existing && isset($existing['id'])) {
         $existingText = ember_sanitize_public_reply((string)($existing['message'] ?? ''), '');
         if ($existingText === '') {
-          $existingText = 'Diese ältere Antwort wurde vom E.M.B.E.R. CoreUI-Sicherheitsfilter ausgeblendet.';
+          $existingText = 'Diese ältere Antwort wurde vom CoreAI: TCI Interface-Sicherheitsfilter ausgeblendet.';
         }
         sse_send('done', [
           'work_events' => console_stream_saved_work_events($pdo,(int)$uid,$sessionId,

@@ -1,13 +1,32 @@
-# Project: E.M.B.E.R. CoreUI
+# CoreAI: TCI Interface
 [![DOI](https://zenodo.org/badge/1349352973.svg)](https://doi.org/10.5281/zenodo.22201310)
 
-**E.M.B.E.R. CoreUI** is your powerful, 100% free and private alternative to ChatGPT Pro and Claude.ai. Run advanced AI tasks locally or in the cloud without subscriptions, data tracking, or limits.
+**CoreAI: TCI Interface** is your powerful, 100% free and private alternative to ChatGPT Pro and Claude.ai. Run advanced AI tasks locally or in the cloud without subscriptions, data tracking, or limits.
 
 It combines private conversations and sessions, user-scoped RAG-Lite, local long-term memory, Playwright-based browser research with SearXNG, isolated Python execution, multimodal file handling, deterministic exact integer calculations, and strict separation of internal model analysis from visible answers.
 
-E.M.B.E.R. CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
+CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.56` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.57` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Produktname und Quantum-Softwarefamilie (0.5.57)
+
+**CoreAI: TCI Interface** ist der offizielle Produktname. Das Produkt
+gehoert zur **Quantum**-Softwarefamilie; der Familienname ist eine
+untergeordnete Klassifikation und kein obligatorischer Namensvorsatz.
+Die frueheren Namen **E.M.B.E.R. CoreUI** und **Ember CoreUI** bezeichnen
+die historischen Versionen derselben Software. Das E.M.B.E.R.-Framework
+und Mara als lokale TCI bleiben Bestandteile der Architektur.
+
+Aktueller Repository-Pfad:
+`https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface`.
+Die bisherige `coreui.starlight-unit.de`-Serveradresse, die technischen
+`coreui`-Identifikatoren, bestehende Installation, Ollama-Modelle und
+private Daten bleiben unveraendert. Die getrennte oeffentliche
+Starlight-Unit-Homepage wird nicht in diesem Repository bearbeitet.
+
+Siehe `docs/PRODUCT_NAMING.md` und
+`docs/UEBERGABEPROTOKOLL_0_5_57.txt`.
 
 ## Oeffentliche Mara-Arbeitsmeldungen und vertiefte Ablaufdiagnose (0.5.56)
 
@@ -603,7 +622,7 @@ The [implementation roadmap](ROADMAP.md) organizes the work into 29 delivery pac
 
 The [E.M.B.E.R. CoreUI and E.M.B.E.R. master plan](docs/COREUI_MASTERPLAN.md) records the planned full agent, developer workspace, skill system, and independent implementation of the functionality inventoried from OpenClaw, Open WebUI, CrewAI, LangGraph, and Microsoft AutoGen. The [native image engine plan](docs/COREUI_IMAGE_ENGINE_PLAN.md) specifies a future CPU-only C/C++ diffusion adapter, shared model admission, explicit weight licensing and real benchmarks. No image generation runtime is claimed as shipped yet. The [feature matrix](docs/COREUI_FEATURE_MATRIX.md) tracks 82 stable requirements, reference coverage, existing foundations, open work, and acceptance criteria. The scope includes agent teams, stateful workflows, durable checkpoints, human review, result validation, and a visual workflow playground. These documents describe planned development, not features already shipped; the full reference inventory remains open.
 
-Generated HTML, ZIP, and other output files must become real, persistent chat downloads. This remains an open, early implementation priority in [issue #29](https://github.com/Starlight-Unit-Studio/coreui/issues/29).
+Generated HTML, ZIP, and other output files must become real, persistent chat downloads. This remains an open, early implementation priority in [issue #29](https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface/issues/29).
 
 ## Quick installation
 

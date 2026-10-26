@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 // ─────────────────────────────────────────────────────────────────────────────
-// Ember CoreUI - private Live-Browser-Agentenansicht
+// CoreAI: TCI Interface - private Live-Browser-Agentenansicht
 // Eigenstaendiger SSE-Endpunkt fuer asynchrone Browse-Jobs.
 //
 // Tailt die JPEG-Frames und den kurzen Status EINES Browse-Jobs. Die Frames bleiben in

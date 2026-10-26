@@ -6,12 +6,12 @@
   <meta name="language" content="de-DE" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#f0f4fa" />
-  <meta name="application-version" content="0.5.56" />
-  <meta name="application-name" content="E.M.B.E.R. CoreUI" />
+  <meta name="application-version" content="0.5.57" />
+  <meta name="application-name" content="CoreAI: TCI Interface" />
   <meta name="robots" content="noindex,nofollow" />
-  <title>E.M.B.E.R. CoreUI - Einstellungen</title>
-  <link rel="stylesheet" href="./css/console.css?v=0545324497403911497410266" />
-  <script src="./js/console-gate.js?v=1182978745249421999045768"></script>
+  <title>CoreAI: TCI Interface - Einstellungen</title>
+  <link rel="stylesheet" href="./css/console.css?v=1084148982257261116607849" />
+  <script src="./js/console-gate.js?v=0181735748438296644896073"></script>
   <script src="./js/coreui-preferences.js?v=0408182548343544002678570"></script>
 </head>
 <body class="settings-body">
@@ -27,7 +27,7 @@
           <h1>EINSTELLUNGEN</h1>
         </div>
       </div>
-      <div class="settings-version">E.M.B.E.R. COREUI // v0.5.56</div>
+      <div class="settings-version">COREAI: TCI INTERFACE // v0.5.57</div>
     </header>
 
     <main class="settings-grid">
@@ -85,7 +85,7 @@
               <span class="settings-profile-avatar" id="userAvatarPreview" aria-label="Vorschau Benutzerbild">OP</span>
               <div>
                 <strong>DEIN PROFILBILD</strong>
-                <small>PNG oder JPG, maximal 4 MB. Das Bild bleibt im privaten E.M.B.E.R. CoreUI-Speicher.</small>
+                <small>PNG oder JPG, maximal 4 MB. Das Bild bleibt im privaten CoreAI: TCI Interface-Speicher.</small>
                 <div class="profile-avatar-actions">
                   <label class="settings-action compact" for="userAvatarFile">BILD WÄHLEN</label>
                   <button class="settings-action compact danger" id="removeUserAvatar" type="button">ENTFERNEN</button>
@@ -94,7 +94,7 @@
               </div>
             </div>
             <label class="settings-field" for="profileDisplayName">
-              <span><strong>DEIN ANZEIGENAME</strong><small>Ändert die sichtbare Bezeichnung in E.M.B.E.R. CoreUI, nicht deine Login-E-Mail.</small></span>
+              <span><strong>DEIN ANZEIGENAME</strong><small>Ändert die sichtbare Bezeichnung in CoreAI: TCI Interface, nicht deine Login-E-Mail.</small></span>
               <input id="profileDisplayName" type="text" maxlength="64" autocomplete="name" />
             </label>
           </article>
@@ -147,7 +147,7 @@
             <input id="aiTemperature" type="number" min="0.1" max="1.5" step="0.05" value="1.0" />
           </label>
           <label class="settings-field" for="aiProvider">
-            <span><strong>MODELLPFAD</strong><small>E.M.B.E.R. CoreUI ist für lokale Gemma-4-Modelle ausgelegt.</small></span>
+            <span><strong>MODELLPFAD</strong><small>CoreAI: TCI Interface ist für lokale Gemma-4-Modelle ausgelegt.</small></span>
             <select id="aiProvider"><option value="local">LOKAL // OLLAMA + GEMMA 4</option><option value="external" disabled>EXTERNE API // VORBEREITET</option></select>
           </label>
           <label class="settings-field" for="aiModelOverride">
@@ -164,7 +164,7 @@
           <span class="settings-switch"><input id="aiMemoryEnabled" type="checkbox" /><i aria-hidden="true"></i></span>
         </label>
         <label class="setting-row" for="aiThinkingEnabled">
-          <span class="setting-copy"><strong>MODELL-THINKING AKTIVIEREN</strong><small>Sendet den Ollama-Parameter <code>think</code> für neue Antworten. Rohe Gedankengänge bleiben auch im aktivierten Zustand serverintern; E.M.B.E.R. CoreUI zeigt nur sichere Fortschrittsstufen. Modelle mit fest vorgegebenen Thinking-Stufen können den booleschen Wert abweichend behandeln.</small></span>
+          <span class="setting-copy"><strong>MODELL-THINKING AKTIVIEREN</strong><small>Sendet den Ollama-Parameter <code>think</code> für neue Antworten. Rohe Gedankengänge bleiben auch im aktivierten Zustand serverintern; CoreAI: TCI Interface zeigt nur sichere Fortschrittsstufen. Modelle mit fest vorgegebenen Thinking-Stufen können den booleschen Wert abweichend behandeln.</small></span>
           <span class="settings-switch"><input id="aiThinkingEnabled" type="checkbox" /><i aria-hidden="true"></i></span>
         </label>
         <div class="settings-local-note" id="externalProviderNote">
@@ -305,20 +305,20 @@
         </div>
         <div class="about-copy">
           <span class="settings-kicker">HERAUSGEBER UND PROJEKTZUORDNUNG</span>
-          <h2 id="aboutTitle">PROJECT STΛRLIɢHT: E.M.B.E.R. COREUI</h2>
-          <p>Eigenständiges, isoliertes WebUI für den lokalen E.M.B.E.R.-Kern. Die E.M.B.E.R. CoreUI-Versionierung bleibt bis zur finalen Repack-Aufnahme getrennt.</p>
+          <h2 id="aboutTitle">PROJECT STΛRLIɢHT: COREAI: TCI INTERFACE</h2>
+          <p>CoreAI: TCI Interface ist Teil der Quantum-Softwarefamilie. Eigenständiges, isoliertes WebUI für Mara und den lokalen E.M.B.E.R.-Kern. Die Versionierung bleibt bis zur finalen Repack-Aufnahme getrennt.</p>
           <p class="copyright-line">© 2026 Starlight Unit Studios. Alle Rechte vorbehalten.</p>
         </div>
       </section>
     </main>
 
     <footer class="settings-footer">
-      <span>STΛRLIɢHT UNIT STUDIOS</span><i aria-hidden="true"></i><span>E.M.B.E.R. COREUI // N-73</span>
+      <span>STΛRLIɢHT UNIT STUDIOS</span><i aria-hidden="true"></i><span>COREAI: TCI INTERFACE // N-73</span>
     </footer>
     <div class="settings-save-state" id="settingsSaveState" role="status" aria-live="polite">LOKAL GESPEICHERT</div>
   </div>
 
   <script src="./js/skills-settings.js?v=1011871854880560615195199"></script>
-  <script src="./js/settings.js?v=0008949398227938228771928"></script>
+  <script src="./js/settings.js?v=0128744981252692904764725"></script>
 </body>
 </html>

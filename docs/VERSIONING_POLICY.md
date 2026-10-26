@@ -1,6 +1,6 @@
-# Verbindliche Versionierung von Ember CoreUI
+# Verbindliche Versionierung von CoreAI: TCI Interface
 
-Stand: 21.10.2026
+Stand: 26.10.2026
 
 ## Unveraenderliche Regeln
 
@@ -46,3 +46,13 @@ dass PR #39 historisch eine andere VERSION enthalten haette.
 Diese Richtlinie geht nicht davon aus, dass GitHub ohne Actions einen
 technischen Branchschutz erzwingt. Der lokale Versions-Guard ist die
 verbindliche Pruefung im Entwicklungsablauf vor jedem manuellen Merge.
+
+## Produktname ab 0.5.57
+
+Offizieller Produktname ist `CoreAI: TCI Interface`; Quantum bezeichnet
+seine Softwarefamilie und ist kein Pflichtvorsatz. Die technischen
+`coreui`-Kennungen, das vorhandene Modell und die Serverdomain
+bleiben aus Kompatibilitaetsgruenden unveraendert.
+
+Die bereits freigegebenen historischen Lizenz-/ZIP-Artefakte
+werden durch eine aktuelle Markenbezeichnung nicht nachtraeglich geaendert.

@@ -1,6 +1,8 @@
-# E.M.B.E.R. CoreUI: Umsetzungsroadmap
+# CoreAI: TCI Interface: Umsetzungsroadmap
 
-Stand: 20.10.2026. Planungsbasis: [`b4a5413`](https://github.com/Starlight-Unit-Studio/coreui/commit/b4a5413f8478119d749a54702c0e50acd3f0b517).
+Produktname ab 0.5.57: CoreAI: TCI Interface (Quantum-Softwarefamilie). Die folgenden historischen Meilensteine verwenden teils noch den frueheren Projektnamen.
+
+Stand: 20.10.2026. Planungsbasis: [`b4a5413`](https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface/commit/b4a5413f8478119d749a54702c0e50acd3f0b517).
 
 **Aktueller Stand: P05-/P06-Grundfunktionen und Arbeitschronik sowie lokale Dateiwerkzeuge sind in Teilständen umgesetzt. Version 0.5.15 entfernt die CoreUI-eigenen Ollama-Parameter fuer Gemma und den kurzlebigen synthetischen Warmup. Der wiederkehrende lokale Inferenzstillstand bleibt bis zur Server-Liveabnahme und technischen Diagnose offen. P20 plant die native CPU-Bildengine; allgemeine P06-/P07-Agentenfunktionen folgen.**
 
@@ -10,10 +12,10 @@ Diese Roadmap ordnet die Anforderungen in **29 abschließbare Arbeitspakete** un
 
 | Bereich | Status |
 |---|---|
-| Ursprünglicher Masterplan, Referenzstände und 72 Einträge | Durch [PR #30](https://github.com/Starlight-Unit-Studio/coreui/pull/30) im Repo gesichert |
-| Erste Umsetzungsroadmap | Durch [PR #31](https://github.com/Starlight-Unit-Studio/coreui/pull/31) im Repo gesichert |
+| Ursprünglicher Masterplan, Referenzstände und 72 Einträge | Durch [PR #30](https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface/pull/30) im Repo gesichert |
+| Erste Umsetzungsroadmap | Durch [PR #31](https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface/pull/31) im Repo gesichert |
 | Referenzerweiterung | CrewAI, LangGraph und AutoGen ergänzt; jetzt 82 CF-Einträge und 29 Pakete, vollständige Einzelinventur weiter offen |
-| Download-Bug | HTML-Datei wurde live heruntergeladen; [Issue #29](https://github.com/Starlight-Unit-Studio/coreui/issues/29) bleibt fuer ZIP-Abnahme offen |
+| Download-Bug | HTML-Datei wurde live heruntergeladen; [Issue #29](https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface/issues/29) bleibt fuer ZIP-Abnahme offen |
 | Laufzeitfunktionen dieser Roadmap | Noch nicht durch diese Planungsarbeit umgesetzt oder abgenommen |
 | Technische Basis | `0.5.15` mit Migration 013, globaler FIFO-Modellwarteschlange, bestaetigter P06-Arbeitschronik, lokalem Dateipfad und strikt parameterfreier Gemma-Anbindung; lokale Inferenzhaenger und ZIP-Endabnahme weiter zu pruefen |
 | GitHub Actions | Wegen ausgeschöpften Kontingents auf Nutzerwunsch ausgelassen |
@@ -172,7 +174,7 @@ Den vorhandenen Python-Worker zuerst anschließen. Echte Ausgaben vor dem Aufrä
 
 Die bestätigten Artefakte in Dateikarten umsetzen und beim erneuten Laden des Gesprächs wieder anzeigen. HTML und ZIP als konkrete End-to-End-Fälle prüfen. Auch mehrere Dateien, Unicode-Namen, fehlende Referenzen, Kontotrennung und Android Chrome abnehmen.
 
-**Ergebnis dieser ersten Lieferung:** E.M.B.E.R. erzeugt eine HTML-Datei und ein ZIP; beide lassen sich aus der Antwort und später erneut aus demselben Gespräch herunterladen. [Issue #29](https://github.com/Starlight-Unit-Studio/coreui/issues/29) wird erst geschlossen, wenn dessen vollständige Abnahme belegt ist.
+**Ergebnis dieser ersten Lieferung:** E.M.B.E.R. erzeugt eine HTML-Datei und ein ZIP; beide lassen sich aus der Antwort und später erneut aus demselben Gespräch herunterladen. [Issue #29](https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface/issues/29) wird erst geschlossen, wenn dessen vollständige Abnahme belegt ist.
 
 ### 4. Frühe Teilveröffentlichung nach P25
 

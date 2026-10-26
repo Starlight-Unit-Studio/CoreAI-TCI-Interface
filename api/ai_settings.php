@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /*
- * Per-user AI configuration for the isolated Ember CoreUI database.
+ * Per-user AI configuration for the isolated CoreAI: TCI Interface database.
  *
  * This file contains no HTTP dispatch. It is shared by user_settings.php,
  * chat.php and the administration API. All values are normalised again at

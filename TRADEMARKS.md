@@ -1,46 +1,30 @@
-# E.M.B.E.R. CoreUI Branding and Trademark Policy
+# CoreAI: TCI Interface Branding and Trademark Policy
 
-## Protected project identity
+## Official product and family
 
-The following names and visual elements identify the Starlight Unit Studios project:
+From version `0.5.57`, the official product name is **CoreAI: TCI Interface**, by Starlight Unit Studios. Its software-family designation is **Quantum**. Use the product name without a mandatory `Quantum` prefix in normal descriptions. A product catalog or family navigation may show `Quantum Software` as a subordinate classification.
 
-- `STΛRLIɢHT: E.M.B.E.R. CoreUI`
-- `E.M.B.E.R. CoreUI`
-- historical project designations `STΛRLIɢHT: Ember CoreUI` and `Ember CoreUI` (releases through `0.5.24`)
-- `Starlight Unit Studios`
-- the Starlight Unit Studios logo and word marks
-- the original E.M.B.E.R. CoreUI interface marks and studio attribution elements
+**Historical identities:** `STΛRLIɢHT: E.M.B.E.R. CoreUI`, `E.M.B.E.R. CoreUI` (through `0.5.56`), and `STΛRLIɢHT: Ember CoreUI` / `Ember CoreUI` (through `0.5.24`) refer to the same software. The original Community Source License 1.0 remains applicable as documented in `LICENSE_HISTORY.md`.
 
-No trademark registration is asserted by this file unless separately documented. Copyright, naming, unfair-competition, and other applicable rights remain reserved.
-
-## Mandatory name format
-
-From version `0.5.25`, the current product must be called **E.M.B.E.R. CoreUI**. The spelling `Ember CoreUI` is historical and must not be used as the current brand. For prominent first references, the preferred complete form is:
-
-`STΛRLIɢHT: E.M.B.E.R. CoreUI by Starlight Unit Studios`
-
-The standalone product name `CoreUI` must not be used for this project. It does not identify E.M.B.E.R. CoreUI and creates avoidable confusion with an unrelated software project.
-
-The acronym **E.M.B.E.R.** identifies the framework/backend/system. The separate STU-universe CoreAI named **Ember**, associated with the *Starlight Ember*, is not this product or its present assistant (Mara Thorne).
+The Starlight Unit Studios name, marks, logo, original interface artwork, and project attribution remain protected. No registered trademark is asserted here without separate evidence. Other applicable copyright, naming and competition rights are reserved.
 
 ## Required presentation
 
-Built-in names, logos, copyright notices, About information, login branding, splash branding, and source attribution must remain visible and must not be removed, replaced, covered, recolored, or reduced to a misleadingly minor role.
+Login, splash, About, administration, package notices and distribution must identify CoreAI: TCI Interface and Starlight Unit Studios. Operator branding may appear only subordinately and must not misrepresent an official affiliation.
 
-An operator may add a clearly subordinate notice such as `Hosted by Example Organization`. The operator notice must not replace E.M.B.E.R. CoreUI branding or imply that the operator is Starlight Unit Studios.
+The project may not be marketed as the standalone product `CoreUI`. That is an internal compatibility designation and risks confusion with an unrelated UI-components project. `CoreAI: TCI Interface` is the current product name.
 
 Public modifications must state:
+`This is an unofficial modification of CoreAI: TCI Interface and is not maintained or officially supported by Starlight Unit Studios.`
 
-`This is an unofficial modification of E.M.B.E.R. CoreUI and is not maintained or officially supported by Starlight Unit Studios.`
+## Engine and compatibility identifiers
 
-## Technical identifiers
+**E.M.B.E.R.** still identifies the underlying framework/backend. The present assistant is **Mara**, and the STU-universe CoreAI named **Ember** is a different entity.
 
-Compatibility identifiers such as `coreui`, `ember-coreui`, `COREUI_*`, `/opt/ember-coreui`, `X-CoreUI-CSRF`, database prefixes, repository slugs, and domain components may remain unchanged. They are machine-facing identifiers, not permitted standalone product branding.
+Technical identifiers such as `coreui`, `ember-coreui`, `COREUI_*`, `/opt/ember-coreui`, `X-CoreUI-CSRF`, Ollama model tags, database prefixes and the existing `coreui.starlight-unit.de` deployment may remain for backward compatibility. They are not alternative product branding. The canonical GitHub repository path is `Starlight-Unit-Studio/CoreAI-TCI-Interface`.
 
-## Independence statement
+## Independence and permissions
 
-E.M.B.E.R. CoreUI is independently developed by Starlight Unit Studios. The source tree contains no dependency on the unrelated admin-template and UI-component project available at `coreui.io`. E.M.B.E.R. CoreUI is not affiliated with, sponsored by, or endorsed by that project.
+CoreAI: TCI Interface is independently developed by Starlight Unit Studios and is not based on, affiliated with, sponsored or endorsed by the unrelated project at `coreui.io`.
 
-## Permissions
-
-Any branding change outside the terms of the E.M.B.E.R. CoreUI Community Source License requires prior express written permission from the rights holder. Permission for one deployment does not create a general permission for another deployment.
+Branding changes beyond the Community Source License require prior written permission from the rights holder. Permission for one deployment does not automatically apply to another.

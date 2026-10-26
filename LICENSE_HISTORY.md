@@ -1,8 +1,8 @@
-# E.M.B.E.R. CoreUI License History
+# CoreAI: TCI Interface License History
 
 Copyright (c) 2026 Patrick Schildgen, Starlight Unit Studios.
 
-This file records which general project license applies to each published E.M.B.E.R. CoreUI version. Third-party components always retain their own license terms.
+This file records which general project license applies to each published version of the software now named CoreAI: TCI Interface. Third-party components always retain their own license terms.
 
 | E.M.B.E.R. CoreUI copies | General project license |
 |---|---|
@@ -16,3 +16,5 @@ Beginning with `0.4.2-alpha`, the project-owned code in the corresponding releas
 This history does not relicense fonts, models, libraries, documents, or other third-party material. Their component-specific notices continue to apply.
 
 **Branding clarification (from `0.5.25`):** The project's official displayed name is `E.M.B.E.R. CoreUI`. Releases through `0.5.24` used the historical spelling `Ember CoreUI`. They refer to the same project; the Community Source License 1.0 grant and version history do not change as a result of this correction.
+
+**Product rename (from `0.5.57`):** The official product name became `CoreAI: TCI Interface` in the Quantum software family. The historical label `E.M.B.E.R. CoreUI` and the original Community Source License 1.0 title remain documented. This changes no grants for existing copies or the license version.

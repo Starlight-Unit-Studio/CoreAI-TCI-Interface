@@ -1,4 +1,4 @@
-/* Project STΛRLIɢHT: E.M.B.E.R. CoreUI settings controller. */
+/* Project STΛRLIɢHT: CoreAI: TCI Interface settings controller. */
 (function () {
   'use strict';
 
@@ -132,7 +132,7 @@
     if (!healthChecks) return;
     healthChecks.innerHTML = '';
     var names = {
-      database: 'E.M.B.E.R. COREUI-DATENBANK',
+      database: 'COREAI: TCI INTERFACE-DATENBANK',
       schema: 'DATENSCHEMA',
       ollama: 'OLLAMA-KERN',
       storage: 'RUNTIME-SPEICHER'
@@ -325,7 +325,7 @@
       if (externalNote) {
         var p = externalNote.querySelector('p');
         if (p && data.external && data.external.enabled && !externalConfigured) {
-          p.textContent = 'Der externe Adapter ist im Adminbereich aktiviert, aber noch nicht vollständig mit HTTPS-Endpunkt, Modell und serverseitigem Schlüssel konfiguriert. E.M.B.E.R. CoreUI bleibt deshalb sicher auf lokalem Ollama.';
+          p.textContent = 'Der externe Adapter ist im Adminbereich aktiviert, aber noch nicht vollständig mit HTTPS-Endpunkt, Modell und serverseitigem Schlüssel konfiguriert. CoreAI: TCI Interface bleibt deshalb sicher auf lokalem Ollama.';
         }
       }
       updatePromptCounter();
@@ -509,7 +509,7 @@
   }
 
   function revokeOtherLoginSessions() {
-    if (!window.confirm('Alle anderen Geräte sofort von E.M.B.E.R. CoreUI abmelden?')) return;
+    if (!window.confirm('Alle anderen Geräte sofort von CoreAI: TCI Interface abmelden?')) return;
     if (revokeOtherSessionsButton) revokeOtherSessionsButton.disabled = true;
     api('./api/account_security.php', {
       method: 'POST',
@@ -537,7 +537,7 @@
       }
       var disposition = response.headers.get('Content-Disposition') || '';
       var match = disposition.match(/filename="([^"]+)"/i);
-      return response.blob().then(function (blob) { return { blob: blob, name: match ? match[1] : 'ember-coreui-account.json' }; });
+      return response.blob().then(function (blob) { return { blob: blob, name: match ? match[1] : 'coreai-tci-interface-account.json' }; });
     }).then(function (download) {
       var url = URL.createObjectURL(download.blob);
       var link = document.createElement('a');

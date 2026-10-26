@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 /**
  * Account provisioning shared by registration and Admin Core.
- * Every interactive E.M.B.E.R. CoreUI user receives one stable internal operator character.
+ * Every interactive CoreAI: TCI Interface user receives one stable internal operator character.
  */
 
 function coreui_account_clean_email(string $value): string {

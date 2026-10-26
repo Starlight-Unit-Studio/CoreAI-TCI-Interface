@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * Read-only Ollama model catalog for Ember CoreUI.
+ * Read-only Ollama model catalog for CoreAI: TCI Interface.
  *
  * The endpoint is derived exclusively from the operator-controlled Ollama
  * chat URL. User input can never select a host or protocol.

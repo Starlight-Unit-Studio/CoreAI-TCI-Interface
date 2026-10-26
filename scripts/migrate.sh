@@ -8,7 +8,7 @@ COMPOSE_FILE="$PROJECT_ROOT/compose.yaml"
 COMPOSE_PROJECT='ember-coreui'
 
 [[ -f "$ENV_FILE" ]] || {
-  printf '[E.M.B.E.R. CoreUI] FEHLER: var/compose.env fehlt. Fuehre zuerst scripts/install.sh aus.\n' >&2
+  printf '[CoreAI: TCI Interface] FEHLER: var/compose.env fehlt. Fuehre zuerst scripts/install.sh aus.\n' >&2
   exit 1
 }
 
@@ -17,7 +17,7 @@ if docker compose version >/dev/null 2>&1; then
 elif command -v docker-compose >/dev/null 2>&1; then
   COMPOSE_CMD=(docker-compose)
 else
-  printf '[E.M.B.E.R. CoreUI] FEHLER: Docker Compose fehlt.\n' >&2
+  printf '[CoreAI: TCI Interface] FEHLER: Docker Compose fehlt.\n' >&2
   exit 1
 fi
 
@@ -34,7 +34,7 @@ for _try in {1..75}; do
     break
   fi
   if [[ "$_try" == '75' ]]; then
-    printf '[E.M.B.E.R. CoreUI] FEHLER: MariaDB wurde nicht rechtzeitig bereit.\n' >&2
+    printf '[CoreAI: TCI Interface] FEHLER: MariaDB wurde nicht rechtzeitig bereit.\n' >&2
     exit 1
   fi
   sleep 2
@@ -43,7 +43,7 @@ done
 shopt -s nullglob
 migrations=("$PROJECT_ROOT"/database/migrations/*.sql)
 (( ${#migrations[@]} > 0 )) || {
-  printf '[E.M.B.E.R. CoreUI] FEHLER: Keine SQL-Migrationen gefunden.\n' >&2
+  printf '[CoreAI: TCI Interface] FEHLER: Keine SQL-Migrationen gefunden.\n' >&2
   exit 1
 }
 
@@ -56,13 +56,13 @@ for migration in "${migrations[@]}"; do
     -- "$query" 2>/dev/null || true)"
   applied="$(printf '%s' "$applied" | tr -d '[:space:]')"
   if [[ "$applied" == '1' ]]; then
-    printf '[E.M.B.E.R. CoreUI] Migration bereits aktiv: %s\n' "$version"
+    printf '[CoreAI: TCI Interface] Migration bereits aktiv: %s\n' "$version"
     continue
   fi
-  printf '[E.M.B.E.R. CoreUI] Wende Migration an: %s\n' "$version"
+  printf '[CoreAI: TCI Interface] Wende Migration an: %s\n' "$version"
   compose exec -T database sh -ec \
     'exec mariadb --protocol=socket -uroot -p"$MARIADB_ROOT_PASSWORD" "$MARIADB_DATABASE"' \
     < "$migration"
 done
 
-printf '[E.M.B.E.R. CoreUI] Alle Datenbankmigrationen sind aktuell.\n'
+printf '[CoreAI: TCI Interface] Alle Datenbankmigrationen sind aktuell.\n'

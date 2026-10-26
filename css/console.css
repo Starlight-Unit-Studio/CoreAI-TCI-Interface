@@ -1,5 +1,5 @@
 /* ========================================================================== */
-/* Project STΛRLIɢHT: E.M.B.E.R. CoreUI                                            */
+/* Quantum Software: CoreAI: TCI Interface                                            */
 /* Stand: E.M.B.E.R. CoreUI 0.5.3-alpha                                           */
 /* Helles, eigenständiges Ren- und Ayal'ren-Holo-Interface                   */
 /* ========================================================================== */
@@ -6206,3 +6206,12 @@ audio.msg-image {
 .skill-card details a { display:inline-block; margin-right:12px; }
 #skillsList { max-height:65vh; overflow-y:auto; padding-right:8px; }
 #skillsStatus { min-height:1.5em; }
+
+/* 0.5.57: product name changes visually; technical CoreUI selectors remain stable. */
+.brand-title { font-size: clamp(19px, 2vw, 25px); letter-spacing: .08em; line-height: 1.08; }
+.brand-title .brand-product-part { display: block; margin-top: 3px; font-size: .59em; letter-spacing: .13em; }
+.login-brand { font-size: clamp(23px, 4.2vw, 30px); letter-spacing: .1em; line-height: 1.1; }
+.login-brand .brand-product-part { display: block; margin-top: 6px; font-size: .64em; letter-spacing: .14em; color: var(--cx); }
+.splash-title { max-width: calc(100vw - 32px); text-align: center; font-size: clamp(23px, 4.3vw, 42px); letter-spacing: .09em; line-height: 1.13; }
+.splash-title .brand-product-part { display: block; margin-top: 7px; font-size: .67em; letter-spacing: .11em; color: var(--cx); }
+@media (max-width: 520px) { .brand-title { font-size: 20px; } .brand-kicker, .brand-signature { letter-spacing: .08em; } }

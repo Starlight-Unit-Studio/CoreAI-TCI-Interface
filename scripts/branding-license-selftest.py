@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Deterministic release checks for E.M.B.E.R. CoreUI branding and licensing."""
+"""Deterministic release checks for CoreAI: TCI Interface branding and licensing."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-EXPECTED_VERSION = "0.5.56"
+EXPECTED_VERSION = "0.5.57"
 PUBLIC_PAGES = (
     "index.html",
     "login.html",
@@ -27,6 +27,9 @@ REQUIRED_FILES = (
     "COMMUNITY_POLICY.md",
     "NOTICE.md",
     "COPYRIGHT.md",
+    "docs/PRODUCT_NAMING.md",
+    "docs/changelogs-txt/CHANGELOG_0_5_57.txt",
+    "docs/UEBERGABEPROTOKOLL_0_5_57.txt",
     "docs/changelogs-txt/CHANGELOG_0_5_18.txt",
     "docs/UEBERGABEPROTOKOLL_0_5_18.txt",
 )
@@ -64,7 +67,8 @@ def main() -> int:
     require("keine Nutzergrenze" in german_license, "no-user-limit rule missing")
     require("no paid license tier" in policy, "free community policy incomplete")
     require("no license phone-home" in policy, "no-telemetry policy incomplete")
-    require("E.M.B.E.R. CoreUI" in trademarks, "trademark naming rule missing")
+    require("CoreAI: TCI Interface" in trademarks and "Quantum" in trademarks,
+            "current product and family naming rule missing")
 
     for relative_path in PUBLIC_PAGES:
         page = read(relative_path)
@@ -78,12 +82,12 @@ def main() -> int:
                     for key in asset_keys), f"Cache key is not numeric: {relative_path}")
         require(
             re.search(
-                r'<meta\s+name="application-name"\s+content="[^"]*E\.M\.B\.E\.R\. CoreUI[^"]*"',
+                r'<meta\s+name="application-name"\s+content="[^"]*CoreAI: TCI Interface[^"]*"',
                 page,
                 re.IGNORECASE,
             )
             is not None,
-            f"E.M.B.E.R. CoreUI application-name missing: {relative_path}",
+            f"CoreAI: TCI Interface application-name missing: {relative_path}",
         )
 
     landing_page = read("index.html")
@@ -95,20 +99,28 @@ def main() -> int:
     require(structured_match is not None, "structured software metadata missing")
     structured_data = json.loads(structured_match.group(1))
     require(structured_data.get("@type") == "SoftwareApplication", "structured software type mismatch")
-    require(structured_data.get("name") == "E.M.B.E.R. CoreUI", "structured product name mismatch")
+    require(structured_data.get("name") == "CoreAI: TCI Interface", "structured product name mismatch")
+    require(structured_data.get("isPartOf", {}).get("name") == "Quantum Software",
+            "Quantum software family missing from structured data")
+    require(structured_data.get("codeRepository") ==
+            "https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface",
+            "renamed GitHub repository is missing from structured data")
+    require("CoreAI: TCI Interface" in read("docs/PRODUCT_NAMING.md"), "naming policy missing")
+    require("Starlight-Unit-Studio/CoreAI-TCI-Interface" in read("setup.sh"),
+            "setup still downloads the old repository")
     for installer in ("setup.sh", "scripts/install.sh", "scripts/install-native.sh"):
         source = read(installer)
-        require("E.M.B.E.R. CoreUI" in source,
-                f"official acronym missing from installer text: {installer}")
+        require("CoreAI: TCI Interface" in source,
+                f"current product name missing from installer text: {installer}")
         require("Ember CoreUI" not in source,
                 f"obsolete character-style product name in installer: {installer}")
 
     for current in PUBLIC_PAGES:
-        require("Ember CoreUI" not in read(current),
+        require("Ember CoreUI" not in read(current) and "E.M.B.E.R. CoreUI" not in read(current),
                 f"obsolete product branding in active page: {current}")
     model = read("config/Modelfile.template")
-    require("E.M.B.E.R. CoreUI" in model and "Mara" in model,
-            "Modelfile must retain Mara identity and CoreUI product branding")
+    require("E.M.B.E.R" in model and "Mara" in model,
+            "Modelfile must retain Mara identity and E.M.B.E.R. framework")
     require("FROM gemma4:e4b" in model and "RENDERER gemma4" in model
             and "PARSER gemma4" in model,
             "Modelfile Gemma base and parser/renderer contract missing")
@@ -131,7 +143,7 @@ def main() -> int:
 
     settings = read("js/settings.js")
     profile_store = read("api/profile_store.php")
-    require("E.M.B.E.R. COREUI-DATENBANK" in settings, "database label is not fully branded")
+    require("COREAI: TCI INTERFACE-DATENBANK" in settings, "database label is not branded with the current product name")
     require("--- MARA COREAI-PROFIL ---" in profile_store, "CoreAI profile marker must name Mara")
     require("--- COREUI-PROFIL ---" not in profile_store, "legacy profile marker remains")
 
@@ -144,7 +156,7 @@ def main() -> int:
             content = path.read_text(encoding="utf-8")
             require("\u2014" not in content, f"Unicode em dash found: {path.relative_to(ROOT)}")
 
-    print("E.M.B.E.R. CoreUI branding and license selftest: OK")
+    print("CoreAI: TCI Interface branding and license selftest: OK")
     return 0
 
 
@@ -152,5 +164,5 @@ if __name__ == "__main__":
     try:
         raise SystemExit(main())
     except (AssertionError, UnicodeDecodeError, json.JSONDecodeError) as exc:
-        print(f"E.M.B.E.R. CoreUI branding and license selftest: FAIL: {exc}", file=sys.stderr)
+        print(f"CoreAI: TCI Interface branding and license selftest: FAIL: {exc}", file=sys.stderr)
         raise SystemExit(1)

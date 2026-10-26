@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# CoreAI: TCI Interface 0.5.57 product branding and legacy CoreUI compatibility preflight.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -37,7 +38,7 @@ read_constant() {
   '
 }
 
-printf 'E.M.B.E.R. CoreUI Native-Preflight, Version %s\n' "$VERSION"
+printf 'CoreAI: TCI Interface Native-Preflight, Version %s\n' "$VERSION"
 
 UI_FILES=(
   LICENSE.de.md
@@ -170,7 +171,7 @@ UI_FILES=(
 )
 for ui_file in "${UI_FILES[@]}"; do
   if [[ ! -s "$PROJECT_ROOT/$ui_file" ]]; then
-    fail "E.M.B.E.R. CoreUI-Oberflaechendatei fehlt oder ist leer: $ui_file"
+    fail "CoreAI: TCI Interface-Oberflaechendatei fehlt oder ist leer: $ui_file"
   fi
 done
 
@@ -585,9 +586,9 @@ if command -v php >/dev/null 2>&1; then
     fi
 
     if systemctl is-active --quiet ember-coreui-python.service; then
-      ok 'E.M.B.E.R. CoreUI-Python-Worker ist aktiv.'
+      ok 'CoreAI: TCI Interface-Python-Worker ist aktiv.'
     else
-      fail 'E.M.B.E.R. CoreUI-Python-Worker ist nicht aktiv.'
+      fail 'CoreAI: TCI Interface-Python-Worker ist nicht aktiv.'
     fi
 
     MODEL_NAME="$(read_constant STU_EMBER_MODEL || true)"
@@ -684,4 +685,4 @@ if (( FAILURES > 0 )); then
   exit 1
 fi
 
-printf '\nPreflight erfolgreich. E.M.B.E.R. CoreUI ist betriebsbereit.\n'
+printf '\nPreflight erfolgreich. CoreAI: TCI Interface ist betriebsbereit.\n'

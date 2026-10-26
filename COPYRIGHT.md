@@ -2,13 +2,13 @@
 
 Copyright © 2026 Patrick Schildgen, Starlight Unit Studios.
 
-Project STΛRLIɢHT: E.M.B.E.R. CoreUI, die Projektbezeichnungen, die zugehörige Gestaltung und die bereitgestellten Studio-Grafiken sind dem Projekt Starlight Unit Studios zugeordnet. Nutzungsrechte am projekt-eigenen Code werden ab Version `0.4.2-alpha` ausschliesslich nach `LICENSE.de.md` beziehungsweise der englischen Uebersetzung `LICENSE.md` eingeraeumt. Die Aufnahme einer Datei in dieses Distributionspaket uebertraegt keine weitergehenden Marken- oder Namensrechte.
+CoreAI: TCI Interface, die Projektbezeichnungen, die zugehörige Gestaltung und die bereitgestellten Studio-Grafiken sind dem Projekt Starlight Unit Studios zugeordnet. Nutzungsrechte am projekt-eigenen Code werden ab Version `0.4.2-alpha` ausschliesslich nach `LICENSE.de.md` beziehungsweise der englischen Uebersetzung `LICENSE.md` eingeraeumt. Die Aufnahme einer Datei in dieses Distributionspaket uebertraegt keine weitergehenden Marken- oder Namensrechte.
 
-Der verbindliche Produktname ist `E.M.B.E.R. CoreUI`. Die alleinstehende Produktbezeichnung `CoreUI` wird fuer dieses Projekt nicht verwendet. Technische Pfade, Variablen, Header, Repository-Slugs und Domainbestandteile mit `coreui` sind reine Kompatibilitaetskennungen und keine Produktbezeichnung.
+Ab Version 0.5.57 lautet der verbindliche Produktname `CoreAI: TCI Interface`. Er gehoert zur Quantum-Softwarefamilie. Aeltere Versionen wurden als `E.M.B.E.R. CoreUI` und `Ember CoreUI` bezeichnet. Die alleinstehende Produktbezeichnung `CoreUI` wird fuer dieses Projekt nicht verwendet. Technische Pfade, Variablen, Header, Repository-Slugs und Domainbestandteile mit `coreui` sind reine Kompatibilitaetskennungen und keine Produktbezeichnung.
 
-E.M.B.E.R. CoreUI ist unabhaengig entwickelt und enthaelt keine Abhaengigkeit vom getrennten Admin-Template- und UI-Komponentenprojekt unter `coreui.io`. Eine Verbindung, Unterstuetzung oder Billigung durch dieses andere Projekt besteht nicht.
+CoreAI: TCI Interface ist unabhaengig entwickelt und enthaelt keine Abhaengigkeit vom getrennten Admin-Template- und UI-Komponentenprojekt unter `coreui.io`. Eine Verbindung, Unterstuetzung oder Billigung durch dieses andere Projekt besteht nicht.
 
-Die im E.M.B.E.R. CoreUI verwendete PNG-Fassung des Studio-Logos ist eine technisch freigestellte Variante der bereitgestellten Originalgrafik. Entfernt wurde ausschließlich der schwarze Hintergrund; Motiv, Wortmarke und vorhandene Konturen bleiben der Studio-Vorlage zugeordnet.
+Die in CoreAI: TCI Interface verwendete PNG-Fassung des Studio-Logos ist eine technisch freigestellte Variante der bereitgestellten Originalgrafik. Entfernt wurde ausschließlich der schwarze Hintergrund; Motiv, Wortmarke und vorhandene Konturen bleiben der Studio-Vorlage zugeordnet.
 
 Hinweise und Lizenztexte fuer mitgelieferte Schriften befinden sich in `assets/fonts/LICENSES.md`. Rechte an weiteren Drittkomponenten verbleiben bei den jeweiligen Rechteinhabern und richten sich nach deren Lizenzbedingungen.
 

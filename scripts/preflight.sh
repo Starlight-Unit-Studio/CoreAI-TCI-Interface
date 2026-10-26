@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# CoreAI: TCI Interface 0.5.57 product branding and legacy CoreUI compatibility preflight.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -58,7 +59,7 @@ check_service() {
   fi
 }
 
-printf 'E.M.B.E.R. CoreUI Compose-Preflight, Version %s\n\n' "$VERSION"
+printf 'CoreAI: TCI Interface Compose-Preflight, Version %s\n\n' "$VERSION"
 
 if [[ ! -f "$ENV_FILE" ]]; then
   fail 'var/compose.env fehlt. Fuehre scripts/install.sh aus.'
@@ -206,7 +207,7 @@ UI_FILES=(
 )
 for ui_file in "${UI_FILES[@]}"; do
   if [[ ! -s "$PROJECT_ROOT/$ui_file" ]]; then
-    fail "E.M.B.E.R. CoreUI-Oberflaechendatei fehlt oder ist leer: $ui_file"
+    fail "CoreAI: TCI Interface-Oberflaechendatei fehlt oder ist leer: $ui_file"
   fi
 done
 
@@ -336,23 +337,23 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail 'Compose-Konfiguration ist ungueltig.'
   fi
 
-  check_service database 'E.M.B.E.R. CoreUI-MariaDB'
-  check_service php 'E.M.B.E.R. CoreUI-PHP-FPM'
-  check_service web 'E.M.B.E.R. CoreUI-Nginx'
-  check_service pyworker 'E.M.B.E.R. CoreUI-Python-Worker'
+  check_service database 'CoreAI: TCI Interface-MariaDB'
+  check_service php 'CoreAI: TCI Interface-PHP-FPM'
+  check_service web 'CoreAI: TCI Interface-Nginx'
+  check_service pyworker 'CoreAI: TCI Interface-Python-Worker'
   if is_enabled "${COREUI_INSTALL_SEARXNG:-0}"; then
-    check_service searxng 'E.M.B.E.R. CoreUI-SearXNG'
+    check_service searxng 'CoreAI: TCI Interface-SearXNG'
   fi
   if is_enabled "${COREUI_INSTALL_BROWSE:-0}"; then
-    check_service browse 'E.M.B.E.R. CoreUI-Browse-Worker'
+    check_service browse 'CoreAI: TCI Interface-Browse-Worker'
   fi
 
   if compose exec -T php php -r \
       'require "/var/www/coreui/api/db.php"; echo (int)stu_pdo()->query("SELECT COUNT(*) FROM stu_schema_migrations")->fetchColumn();' \
       >/dev/null 2>&1; then
-    ok 'Eigene MariaDB-Verbindung und E.M.B.E.R. CoreUI-Schema funktionieren.'
+    ok 'Eigene MariaDB-Verbindung und CoreAI: TCI Interface-Schema funktionieren.'
   else
-    fail 'Eigene MariaDB-Verbindung oder E.M.B.E.R. CoreUI-Schema ist fehlerhaft.'
+    fail 'Eigene MariaDB-Verbindung oder CoreAI: TCI Interface-Schema ist fehlerhaft.'
   fi
 
   if compose exec -T php php -r \
@@ -723,7 +724,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if [[ -n "$LOCK_NAMESPACE" && "$LOCK_NAMESPACE" != 'ember' && "$LOCK_NAMESPACE" != 'stu' ]]; then
     ok "Eigener MariaDB-Lock-Namespace aktiv: $LOCK_NAMESPACE"
   else
-    fail 'Kein sicherer E.M.B.E.R. CoreUI-Lock-Namespace aktiv.'
+    fail 'Kein sicherer CoreAI: TCI Interface-Lock-Namespace aktiv.'
   fi
 
   for writable_dir in \
@@ -765,21 +766,21 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
 fi
 
 if curl -fsS --max-time 10 "http://127.0.0.1:${COREUI_HTTP_PORT}/api/health.php" >/dev/null 2>&1; then
-  ok "E.M.B.E.R. CoreUI-Healthcheck antwortet auf Loopback-Port ${COREUI_HTTP_PORT}."
+  ok "CoreAI: TCI Interface-Healthcheck antwortet auf Loopback-Port ${COREUI_HTTP_PORT}."
 else
-  fail "E.M.B.E.R. CoreUI-Healthcheck antwortet nicht auf Port ${COREUI_HTTP_PORT}."
+  fail "CoreAI: TCI Interface-Healthcheck antwortet nicht auf Port ${COREUI_HTTP_PORT}."
 fi
 
 if curl -fsS --max-time 10 "http://127.0.0.1:${COREUI_HTTP_PORT}/settings.html" \
     | grep -Fq 'EINSTELLUNGEN'; then
-  ok 'E.M.B.E.R. CoreUI-Einstellungen werden vom isolierten Webserver ausgeliefert.'
+  ok 'CoreAI: TCI Interface-Einstellungen werden vom isolierten Webserver ausgeliefert.'
 else
-  fail 'E.M.B.E.R. CoreUI-Einstellungen sind nicht erreichbar. Fuehre scripts/stack.sh refresh-runtime und danach scripts/stack.sh restart web aus.'
+  fail 'CoreAI: TCI Interface-Einstellungen sind nicht erreichbar. Fuehre scripts/stack.sh refresh-runtime und danach scripts/stack.sh restart web aus.'
 fi
 
 if curl -fsS --max-time 10 "http://127.0.0.1:${COREUI_HTTP_PORT}/admin/index.html" \
     | grep -Fq 'ADMIN CORE'; then
-  ok 'Das isolierte Admin Core wird vom E.M.B.E.R. CoreUI-Webserver ausgeliefert.'
+  ok 'Das isolierte Admin Core wird vom CoreAI: TCI Interface-Webserver ausgeliefert.'
 else
   fail 'Admin Core ist nicht erreichbar.'
 fi
@@ -787,7 +788,7 @@ fi
 SESSION_ROUTE_STATUS="$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' \
   "http://127.0.0.1:${COREUI_HTTP_PORT}/api/console_messages.php" 2>/dev/null || true)"
 if [[ "$SESSION_ROUTE_STATUS" == '401' || "$SESSION_ROUTE_STATUS" == '400' ]]; then
-  ok 'Der authentifizierte Sitzungs-History-Endpunkt wird vom E.M.B.E.R. CoreUI-Webserver erreicht.'
+  ok 'Der authentifizierte Sitzungs-History-Endpunkt wird vom CoreAI: TCI Interface-Webserver erreicht.'
 else
   fail "Sitzungs-History-Endpunkt nicht korrekt geroutet (HTTP ${SESSION_ROUTE_STATUS:-000})."
 fi
@@ -796,9 +797,9 @@ for private_route in profile knowledge profile_media account_security account_ex
   route_status="$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' \
     "http://127.0.0.1:${COREUI_HTTP_PORT}/api/${private_route}.php" 2>/dev/null || true)"
   if [[ "$route_status" == '401' ]]; then
-    ok "Privater E.M.B.E.R. CoreUI-Endpunkt korrekt geroutet: ${private_route}.php"
+    ok "Privater CoreAI: TCI Interface-Endpunkt korrekt geroutet: ${private_route}.php"
   else
-    fail "E.M.B.E.R. CoreUI-Endpunkt ${private_route}.php nicht korrekt geroutet (HTTP ${route_status:-000})."
+    fail "CoreAI: TCI Interface-Endpunkt ${private_route}.php nicht korrekt geroutet (HTTP ${route_status:-000})."
   fi
 done
 
@@ -812,7 +813,7 @@ if command -v ollama >/dev/null 2>&1 \
     fail "${model_audit:-Ollama-Modelfile nicht verifizierbar.}"
   fi
 else
-  fail "E.M.B.E.R. CoreUI-Ollama-Modell fehlt: ${COREUI_MODEL_NAME}"
+  fail "CoreAI: TCI Interface-Ollama-Modell fehlt: ${COREUI_MODEL_NAME}"
 fi
 
 if is_enabled "${COREUI_INSTALL_SEARXNG:-0}"; then
@@ -827,13 +828,13 @@ fi
 if [[ "${COREUI_BIND_ADDRESS:-127.0.0.1}" == '127.0.0.1' ]]; then
   ok 'Webzugriff ist standardmaessig auf Loopback begrenzt.'
 else
-  warn 'E.M.B.E.R. CoreUI lauscht bewusst auf 0.0.0.0. Firewall und TLS muessen separat geprueft werden.'
+  warn 'CoreAI: TCI Interface lauscht bewusst auf 0.0.0.0. Firewall und TLS muessen separat geprueft werden.'
 fi
 
 if [[ -L /etc/nginx/sites-enabled/default || -e /etc/nginx/sites-enabled/default ]]; then
   ok 'Eine bestehende Nginx-Default-Site wurde nicht entfernt.'
 else
-  warn 'Keine Nginx-Default-Site gefunden. E.M.B.E.R. CoreUI veraendert diesen Zustand nicht.'
+  warn 'Keine Nginx-Default-Site gefunden. CoreAI: TCI Interface veraendert diesen Zustand nicht.'
 fi
 
 if (( FAILURES > 0 )); then
@@ -841,4 +842,4 @@ if (( FAILURES > 0 )); then
   exit 1
 fi
 
-printf '\nPreflight erfolgreich. E.M.B.E.R. CoreUI laeuft im isolierten Parallelmodus.\n'
+printf '\nPreflight erfolgreich. CoreAI: TCI Interface laeuft im isolierten Parallelmodus.\n'

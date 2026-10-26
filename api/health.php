@@ -117,7 +117,7 @@ $ok = !in_array(false, $checks, true);
 http_response_code($ok ? 200 : 503);
 echo json_encode([
   'ok' => $ok,
-  'project' => 'Project STΛRLIɢHT: E.M.B.E.R. CoreUI',
+  'project' => 'CoreAI: TCI Interface',
   'version' => trim((string)@file_get_contents(dirname(__DIR__) . '/VERSION')) ?: 'unknown',
   'model' => STU_EMBER_MODEL,
   'checks' => $checks,

@@ -154,7 +154,7 @@ try {
 
   $json = json_encode($export, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT | JSON_INVALID_UTF8_SUBSTITUTE);
   if (!is_string($json)) throw new RuntimeException('export_encode_failed');
-  $filename = 'ember-coreui-account-' . gmdate('Ymd-His') . '.json';
+  $filename = 'coreai-tci-interface-account-' . gmdate('Ymd-His') . '.json';
   header('Content-Type: application/json; charset=utf-8');
   header('Content-Disposition: attachment; filename="' . $filename . '"');
   header('Cache-Control: no-store, max-age=0');

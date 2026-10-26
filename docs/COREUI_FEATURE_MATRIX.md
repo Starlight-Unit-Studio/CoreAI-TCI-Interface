@@ -1,4 +1,6 @@
-# E.M.B.E.R. CoreUI: Funktionsmatrix und überprüfbare Startinventur
+# CoreAI: TCI Interface: Funktionsmatrix und überprüfbare Startinventur
+
+Aktueller Produktname ab 0.5.57: CoreAI: TCI Interface (Quantum-Softwarefamilie). Historische Eintraege behalten ihren damaligen Wortlaut.
 
 Stand: 20.10.2026. Status dieses Dokuments: Planung. Durch diese Matrix wurde keine der beschriebenen Funktionen neu implementiert.
 
