@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.64 local file tool regression selftest hotfix.
+# CoreAI: TCI Interface 0.5.65 reader-owned chat and trusted ZIP writer.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
