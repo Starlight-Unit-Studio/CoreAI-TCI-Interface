@@ -4,7 +4,7 @@ CoreAI: TCI Interface gehoert zur Quantum-Softwarefamilie und wird bis zur final
 
 ## 0.5.62 - 26.10.2026
 
-- Neuer fest integrierter und unabschaltbarer System-Skill `skills/werkzeuge/SKILL.md`. Mit `required: true` im Katalog serverseitig bei jedem CoreAI-Turn aktiviert, auch wenn die Skills-Datenbankmigration fehlt oder ein altes Konto den Skill deaktiviert gespeichert hatte.
+- Neuer fest integrierter und unabschaltbarer System-Skill `skills/werkzeuge/SKILL.md`. Mit `required: true` im Katalog serverseitig bei jedem privaten CoreAI-Console-Turn aktiviert, nicht im Game-Ember-Kanal; auch wenn die Skills-Datenbankmigration fehlt oder ein altes Konto den Skill deaktiviert gespeichert hatte.
 - Der Skills-Endpunkt verweigert `werkzeuge=false`. Backend-Logik ignoriert die Pflichtanleitung bei der Auswahl der vier optionalen Pakete, laedt sie jedoch selbst bei fokussierten Quellcode-Unteraufrufen. Keine neuen Werkzeugrechte oder unautorisierte Modellparameter.
 - Skills-Einstellungen: ein sichtbar eingeschalteter, ausgegrauter Werkzeuge-Schalter mit Systemhinweis. Bulk-Aktionen und gespeicherte Vorlieben betreffen nur optionale Pakete.
 - Zehn Fach-Skills fuer Projektplanung, Codebearbeitung, Debugging, ZIP, Jobs, SSE, Diagnose, Ollama, Skill-Autoren und Releases an den tatsaechlichen Stand der CoreAI-Quelle angepasst. Insgesamt 33 Pakete. Beschreibungen machen offene Checkpoint-/Agentenprobleme deutlich, anstatt eine bereits geloeste Funktion vorzugeben.
