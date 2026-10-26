@@ -62,6 +62,23 @@ local_file_test(is_array($homeWriter) && $homeWriter['file_count'] === 4
   && str_contains($homeWriter['code'], "zipfile.ZipFile")
   && !str_contains($homeWriter['code'], $homeHtml),
   'existing deterministic sandbox writer must create and verify real homepage ZIP');
+// Regression: a local model generated an unclosed Python triple-quoted
+// HTML literal. The approved project packer must never embed raw HTML
+// quotes in the Python writer. It only writes verified base64 source bytes.
+$quotedHome = str_replace('</body>', '<div data-template="""">' .
+  "'''\"\"\"" . '</div></body>', $homeHtml);
+$quotedFiles = $homeFiles;
+$quotedFiles['index.html'] = coreui_console_local_source_reply(
+  $quotedHome, $homepageRequest, 'index.html');
+$quotedWriter = coreui_console_project_files_python(
+  $quotedFiles, $homepageSpec, 100000);
+local_file_test(is_array($quotedWriter)
+  && !str_contains($quotedWriter['code'], '"""')
+  && !str_contains($quotedWriter['code'], "'''")
+  && !str_contains($quotedWriter['code'], $quotedHome)
+  && str_contains($quotedWriter['code'], 'base64.b64decode(data, validate=True)')
+  && str_contains($quotedWriter['code'], 'check.testzip() is None'),
+  'Triple-quoted model content must never become executable Python syntax');
 local_file_test(coreui_console_local_homepage_zip_request(
   'Erkläre mir, wie man eine Homepage mit HTML und CSS als ZIP erstellt.') ===
   'Erkläre mir, wie man eine Homepage mit HTML und CSS als ZIP erstellt.',
