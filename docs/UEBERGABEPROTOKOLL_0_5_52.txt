@@ -1,0 +1,90 @@
+E.M.B.E.R. COREUI 0.5.52 - UEBERGABEPROTOKOLL
+Datum: 26.10.2026
+Basis: 0.5.51 auf main, Git-Commit 24a0f9960912aa029990075b53fab876993b7dbd
+Branch: fix/preflight-thinking-contract-0.5.52
+
+LIVE-REPRODUKTION
+Der reale Update-One-Liner installierte 0.5.51 im bestehenden
+Netcup-Compose-Stack. Die Migrationen 016 und die Web-/PHP-
+und Python-Worker-Container starteten erfolgreich. Danach
+brach der Compose-Preflight bereits in der Paketierungsphase
+ab mit:
+[FEHLER] Thinking-Schalter oder Mehrfachanhaenge sind
+unvollstaendig paketiert.
+Preflight vorzeitig beendet: 1 Problem(e).
+Die spaeteren PHP-/Agent-/Projekt-/ZIP-Selftests wurden
+deshalb noch gar nicht ausgefuehrt.
+
+TECHNISCHE URSACHE
+scripts/preflight.sh und scripts/preflight-native.sh
+enthielten eine veraltete wortgetreue Zeichenfolgensuche:
+grep -Fq "'think'    => ember_thinking_enabled()"
+Im tatsaechlichen api/console_stream.php hatte 0.5.51
+die gueltige neue Konstruktion:
+'think'    => $thinkOverride ?? ember_thinking_enabled()
+Das ist absichtlich so, damit Maras separater kleiner
+Modell-Entscheidungsaufruf API-think=false verwenden kann,
+waehrend alle normalen Modellaufrufe den kontobezogenen
+Thinking-Schalter beachten.
+Alle anderen drei Bedingungen des urspruenglichen
+Kombinationschecks (Settings, 10 Anhaenge, Migration 005)
+sind im Repository vorhanden. Das Geraete-Screenshot
+belegt keinen echten Defekt an Thinking oder Anhaengen.
+
+AENDERUNG
+Beide Preflight-Skripte pruefen die verbindliche
+Think-Bindung nun als whitespace-/override-tolerantes
+Grep-E-Muster:
+  'think'[[:space:]]*=>[[:space:]]*.*ember_thinking_enabled\(\)
+Dadurch ist sowohl die urspruengliche direkte Bindung
+als auch die ab 0.5.51 verwendete Override-Bindung
+als gueltiger Quelltext erkennbar.
+Thinking-Konfiguration und Mehrfachanhaenge werden
+getrennt geprueft und nicht mehr in derselben
+Fehlermeldung vermischt.
+Die strengere Semantik der eigentlichen Ollama-Anbindung
+bleibt durch scripts/reply-pipeline-selftest.php gedeckt.
+
+GEPRUEFT
+Repository-Code: alte exakte Zeichenfolge fehlt,
+neue Override-Bindung ist vorhanden.
+Die Settings-Anbindung, das Client-Limit 10 und die
+SQL-Migration 005 sind vorhanden.
+Der neue Bash-Grep-Ausdruck akzeptiert beide erlaubten
+Think-Bindungen und verwirft eine reine Falschbindung.
+Korrektur in Compose und Native identisch durchgefuehrt.
+Der echte vollstaendige Netcup-Preflight nach dem
+Hotfix ist noch nicht ausgefuehrt.
+
+GEAENDERTE DATEIEN
+scripts/preflight.sh
+scripts/preflight-native.sh
+VERSION, scripts/branding-license-selftest.py
+README.md, CHANGELOG.md
+sechs HTML-Versionstexte
+docs/changelogs-txt/INDEX.txt
+docs/changelogs-txt/CHANGELOG_0_5_52.txt (neu)
+docs/UEBERGABEPROTOKOLL_0_5_52.txt (neu)
+
+NICHT GEÄNDERT
+config/Modelfile.template, Blob:
+ec01a9540ff668230e6ac0a7e23ffab305d54415
+Ollama-Parameter, Kontextfenster, Modell-Thinking
+und Haupt-Modellausgabe, native Projekt-/Planungslogik
+aus 0.5.51, globale FIFO, SQL-Migrationen,
+Python-/ZIP-Worker, Installer/Update-One-Liner,
+persistierte Chatverlaeufe und Markdown-Planungen.
+GitHub Actions wegen verbrauchtem Kontingent
+nicht ausgefuehrt.
+
+NAECHSTE ABNAHME
+1. Den bestehenden Update-One-Liner erneut starten.
+2. Preflight 0.5.52 muss bei Think- und
+   Anhaenge-Paketierung zwei separate [OK] ausgeben.
+3. Den restlichen Preflight inkl.
+   Modellgesteuerte-Projektumsetzung-Test beobachten.
+4. Nach gruener Abnahme Mara im bisherigen Chat bitten,
+   den fertigen Homepage-Plan umzusetzen.
+5. Im Worklog den echten Project-Writer und die
+   ZIP-Dateien verifizieren. Kein neuer Modelfile-
+   oder Ollama-Sampler-Eingriff erforderlich.

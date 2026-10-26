@@ -7,7 +7,40 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 E.M.B.E.R. CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.51` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.52` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Preflight-Hotfix nach Thinking-Override (0.5.52)
+
+Der reale Netcup-Compose-Preflight von 0.5.51 meldete unmittelbar
+nach den ersten Paketierungspruefungen:
+`Thinking-Schalter oder Mehrfachanhaenge sind unvollstaendig paketiert.`
+Ursache war **keine fehlende Funktion**, sondern eine veraltete
+Grep-Bedingung in `scripts/preflight.sh` und
+`scripts/preflight-native.sh`. Sie forderte wortwoertlich
+`'think' => ember_thinking_enabled()`, obwohl 0.5.51 den
+korrekten neuen Aufruf `$thinkOverride ?? ember_thinking_enabled()`
+eingefuehrt hatte. Die beiden Aufrufvarianten erhalten weiterhin
+den kontobezogenen Thinking-Standard.
+
+Beide Preflights pruefen nun die tatsaechliche
+`'think' => ... ember_thinking_enabled()`-Bindung
+unabhaengig von Leerzeichen und zusaetzlichem Override,
+anstatt den gesamten PHP-Ausdruck exakt vorzugeben.
+Thinking und persistente bis zu zehn Anhaenge haben
+separate Erfolg-/Fehlermeldungen. Der tiefergehende
+`scripts/reply-pipeline-selftest.php` ueberprueft
+unveraendert die konkrete Thinking-Override-Semantik.
+
+**Weder das aktive Modell noch dessen Modelfile oder
+Sampler-/Kontextparameter wurden geaendert.** Keine
+Migration, kein Installer-Umbau, keine Writer- oder
+ZIP-Aenderung. Auch der neue Modell-Projekt-Dispatch
+aus 0.5.51 bleibt erhalten. Die korrigierte
+Bash-Grep-Bedingung wurde separat mit gueltigen
+alten/neuen und ungueltigen PHP-Testausdruecken
+durchgespielt. Ein vollstaendiger Netcup-Preflight
+nach dem Update steht aus. Details:
+`docs/UEBERGABEPROTOKOLL_0_5_52.txt`.
 
 ## Modellgesteuerte Umsetzung gespeicherter Projektplaene (0.5.51)
 
