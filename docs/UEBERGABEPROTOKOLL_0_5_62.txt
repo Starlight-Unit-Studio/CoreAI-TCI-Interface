@@ -23,7 +23,8 @@ B. UMSETZUNG
 - coreui_skills_select waehlt weiter bis zu vier optionale
   Fach-Skills und verbraucht keinen dieser Plaetze fuer Werkzeuge.
   coreui_skills_prepare laedt den Kern-Skill in jede CoreAI-
-  Anfrage, inkl. kurzem Kontext in fokussierten Source-Only-
+  Anfrage im privaten Console-Kanal (nicht in Game-Ember),
+  inkl. kurzem Kontext in fokussierten Source-Only-
   Unteraufrufen. Keine unbekannten Tool-Rechte.
 - js/skills-settings.js zeigt checked+disabled, Systemhinweis,
   schliesst Werkzeuge von Sammel-Schaltern und Nutzer-Save aus.
