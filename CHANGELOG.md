@@ -2,6 +2,17 @@
 
 CoreAI: TCI Interface gehoert zur Quantum-Softwarefamilie und wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert. Historische Changelogs dokumentieren die frueheren Produktnamen unveraendert.
 
+## 0.5.60 - 26.10.2026
+
+- Core Channel Arbeitsweg: Neue echte SSE-Arbeitsschritte werden visuell geordnet eingereiht. Jede bestaetigte oeffentliche Ereigniserklaerung wird im eigenen Block sichtbar geschrieben; erst nach ihrem Abschluss erscheint der naechste Block. Eine gleichzeitig angelieferte Vierergruppe wird nicht mehr auf einen Schlag angezeigt.
+- Der Ablauf selbst wird nicht verzoegert: Modellantworten, Werkzeugaktionen und die Datenbankspeicherung bleiben unveraendert. Nur die Benutzeransicht wird animiert. Gespeicherte Historie wird auch nach Reload sofort vollstaendig gezeigt.
+- Bei manuellem Einklappen, verborgenem Tab oder eingeschalteter Betriebssystemoption fuer reduzierte Animation werden ausstehende Ereignisse unverzueglich vollstaendig eingeblendet; kein Schritt geht verloren und technische Details bleiben erhalten.
+- In der nativen Source-Only-Route werden abgeschnittene HTML- und CSS-Dateiausgaben bei Ollama `done_reason=length` ebenso wie JavaScript als inerte Quelltextfragmente fortgesetzt, anstatt die erste Teilantwort wegzuwerfen. Exakte Leerzeichen, schliessende Klammern und wiederholte Suffixe werden beim Zusammensetzen geprueft. Fertige Dateien brauchen weiter die bestehende Validierung, bevor ein ZIP freigegeben wird.
+- Der Worklog nennt fuer fortgesetzte Quelldateien nun den `done_reason`, die Dateinamen, Tokenzaehler und den tatsaechlichen Ergebnisstatus. Keine erfundenen Mara-Gedanken, keine rohen Denkspuren.
+- Neue Offline-Regressionstests fuer SSE-Reihenfolge, reduzierte Bewegung, History-Reload, Teilfragmente, sicherheitsrelevante Marker, Ueberschneidungen und HTML/CSS-Verifizierung.
+- Keine Aenderung am E.M.B.E.R.-Modelfile, Ollama-Optionen, MariaDB-Schema, Anwenderdateien, Projektplan oder der einen seriellen Modellwarteschlange. GitHub Actions nicht gestartet.
+- **Noch offen:** 12.000-Byte-Plan-Grenze, Neun-Dateien-Manifestgrenze, per-Request-Fortsetzungsbudget und fehlende dauerhafte Datei-Checkpoints aus Issue #102. Dieser Release ist kein Nachweis fuer eine fertig erzeugte Zehn-Seiten-Homepage oder einen erfolgreichen Netcup-Livetest.
+
 ## 0.5.59 - 26.10.2026
 
 - Einstellungen: Veraltetes PROJECT STΛRLIɢHT aus Herausgeber-Info entfernt. QUANTUM SOFTWARE ist eigene Familienzeile oberhalb COREAI: TCI INTERFACE.

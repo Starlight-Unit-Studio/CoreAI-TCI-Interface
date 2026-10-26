@@ -6259,3 +6259,20 @@ audio.msg-image {
   .about-copy .copyright-line { font-size: 15px; }
   .splash-copyright, .login-copyright, .drawer-copyright, .proto-footer { font-size: 11px; }
 }
+
+/* 0.5.60: sequential live work notes; saved history always renders instantly. */
+.msg-row.ember .work-note-text.work-note-typing::after {
+  content: '▍';
+  display: inline;
+  color: #3e75d0;
+  animation: work-note-caret .75s steps(1,end) infinite;
+}
+@keyframes work-note-caret {
+  50% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .msg-row.ember .work-note-text.work-note-typing::after {
+    animation: none;
+    content: none;
+  }
+}

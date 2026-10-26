@@ -1,0 +1,73 @@
+COREAI: TCI INTERFACE 0.5.60 - UEBERGABEPROTOKOLL
+Stand: 26.10.2026 Europe/Berlin
+Repo: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Vorheriger Main-Stand: 0.5.59, ead0ba112efae5883f36c57bed4f7dd6acc3ad62
+
+A. LIVE ARBEITSWEG
+- Nutzerbeobachtung: Die vier Erklaerungsbloecke Auftrag gestartet,
+  Kontext vorbereitet, Modellstream vorbereitet und Modellstream gestartet
+  erschienen im selben Moment statt nacheinander.
+- Ursache: js/coreui-work-events.js setzte bei jedem SSE-Event Titel
+  und fertige Erklaerung synchron in die DOM-Timeline.
+- Aenderung: Pro live-Panel eine Darstellungswarteschlange. Ein Block wird
+  angelegt, sein erlaubter Text erscheint schrittweise, danach folgt der
+  naechste Block. Bei schneller SSE-Anlieferung wird die Animation
+  dynamisch beschleunigt, aber es werden keine Events ausgelassen.
+- Die echte Werkzeugausfuehrung und das DB-Worklog bleiben sofortig.
+  Auch automatische Berichte sind ausdruecklich als automatischer
+  Ereignisbericht gekennzeichnet, NICHT als rohes Modell-Thinking.
+- Nach Reload, beim Einklappen und bei reduzierter Bewegung werden alle
+  bereits protokollierten Texte sofort vollstaendig angezeigt.
+- Sicherheitsfilter fuer Metadaten/Kommentartext und Event-IDs erhalten.
+
+B. HTML/CSS DATEIQUELLEN
+- Nutzerbeobachtung: Bei index.html und about.html meldete die Live-Timeline
+  HTTP 200, reason=model_output_truncated, endgueltig keine brauchbare Datei.
+- Ursache: In api/chat.php wurde eine unvollstaendige Ollama-Quelldatei
+  nur dann fortgesetzt, wenn die Dateiendung .js war. HTML/CSS mussten
+  beim naechsten Versuch noch einmal von Anfang an generiert werden.
+- Aenderung: api/console_data_link_bridge.php erhaelt inerte
+  HTML/CSS-Fragment-Parser, typbezogene Fortsetzungs-Prompts und eine
+  Ueberlappungs-sichere Zusammenfuehrung. api/chat.php wendet den
+  bestehenden Source-Only-Weg auf html/htm/css/js an.
+- Rueckgaben werden nur als echte Dateien akzeptiert, wenn die
+  bestehende Quelltextvalidierung die zusammengefuehrte Datei annimmt.
+  Kein modellgeneriertes Python wird als Projekt-Writer ausgefuehrt.
+- Workevents melden Quelle, Grund, done_reason, Tokenzaehler und Erfolg.
+- Isolierter PHP-8.4-Syntaxtest der neuen Fragment-Funktionen und
+  Teilquelle-Bedingungen war erfolgreich. Vollstaendige Netcup-Live-Abnahme
+  und echter 10-Seiten-Build stehen noch aus.
+
+C. TESTS UND VERSION
+- scripts/work-events-ui-selftest.js: Bursts, Reihenfolge, Ein-/Ausklappen,
+  ungedrosselte gespeicherte Historie und prefers-reduced-motion.
+- scripts/local-file-tool-selftest.php: abgebrochene HTML/CSS-Quellen,
+  Whitespace, Doppelsuffix, Fehlformate, abschliessende Syntaxpruefung.
+- VERSION 0.5.60, sechs HTML-Seiten, JavaScript-Bootstrap, CSS/JS-
+  SHA256-Cache-Keys, README, Changelog, TXT-Changelog und Uebergabe.
+- GitHub Actions wegen Kontingent nicht gestartet.
+
+D. NOCH OFFEN: ISSUE #102
+- Das Modell wird weiterhin durch Projektplan >12000 Bytes, Manifest
+  >9 Dateien, endliche per-Turn-Fortsetzungen und fehlende
+  ueber Turns persistente verifizierte Quelldateien eingeschraenkt.
+- Darum ist 0.5.60 **kein** vollstaendiger Fix fuer ein grosses
+  10-Unterseiten-Projekt. Ein servereigener Checkpoint-/Resume-Runner
+  ist noch umzusetzen; die eine Ollama-Queue bleibt immer seriell.
+- Keine Aenderung des betriebenen E.M.B.E.R.-Modelfiles, der
+  Ollama-Modellparameter oder bestehender privater Plaene.
+- Externe Website/Central Hub in anderem Chat. Issue #96 Upstream-
+  Referenzen, Issue #97 Arbeitsverlauf, Issue #102 Projektlauf.
+
+ABNAHME NACH INSTALLATION
+1. Im laufenden Chat pruefen, ob die vier ersten Arbeitsberichte
+   nacheinander und nicht sofort gemeinsam erscheinen.
+2. Bei schnellem SSE-Burst einklappen und oeffnen; keine Events fehlen.
+3. Unvollstaendige HTML/CSS-Quelle testen: Worklog mit
+   Quelldatei-Ausgabe fortgesetzt und done_reason bestaetigen.
+4. Nach Reload Timeline komplett sofort aufklappbar.
+5. Realen 10-Seiten-Projektbau separat ueber Issue #102 weiterentwickeln;
+   ohne fertiges verifiziertes ZIP keinen Erfolg behaupten.
+
+STATUS: GitHub Source-Fix und isolierte Funktionspruefung;
+Netcup-Deploy und Gesamt-Workflow-Abnahme offen.

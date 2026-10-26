@@ -443,7 +443,62 @@ local_file_test(coreui_console_local_js_append($cutJs, $cutJs) === null,
 local_file_test(coreui_console_local_js_append($cutJs, '') === null
   && coreui_console_local_js_append(str_repeat('x', 149999), $jsRest) === null,
   'empty or oversized continuations must be rejected');
+// 0.5.60: HTML and CSS need the same inert source continuation as JS.
+// Retain text exactly, including a leading space inside a split HTML text node.
+$cutHtml = '<!DOCTYPE html><html><head><title>Demo</title></head><body><main>Hallo';
+$htmlRest = ' Welt</main></body></html>';
+$cutCss = "body { background: #112233; }\n.card { color: wh";
+$cssRest = 'ite; padding: 1rem; }';
+foreach ([
+  ['index.html',$cutHtml,$htmlRest,'HTML'],
+  ['style.css',$cutCss,$cssRest,'CSS'],
+] as [$filename,$head,$tail,$kind]) {
+  $prompt = coreui_console_local_source_resume_prompt($implicitRequest,$filename,$head,1);
+  local_file_test(is_string($prompt)
+    && str_contains($prompt,$kind . ' QUELLTEXT-FORTSETZUNG')
+    && str_contains($prompt,'TEIL 2')
+    && !str_contains($prompt,'num_ctx') && !str_contains($prompt,'num_predict'),
+    'length-stopped HTML/CSS must continue without model parameter overrides');
+  local_file_test(coreui_console_local_source_fragment($head,$filename,true)===$head,
+    'keep inert leading HTML/CSS source before stopped response');
+  local_file_test(coreui_console_local_source_fragment($tail,$filename,false)===$tail,
+    'keep exact continuation whitespace, including split HTML text nodes');
+  $joined = coreui_console_local_source_append($head,$tail);
+  local_file_test($joined === $head . $tail
+    && coreui_console_local_source_reply($joined,$implicitRequest,$filename)['bytes'] === $joined,
+    'a resumed HTML/CSS file must be validated before ZIP assembly');
+  $echo = substr($head,-20) . $tail;
+  local_file_test(coreui_console_local_source_append($head,$echo) === $joined,
+    'echoed overlap must not duplicate partial HTML/CSS source');
+}
+local_file_test(coreui_console_local_source_fragment(
+  "### index.html\n" . $localFence . "html\n" . $cutHtml,
+  'index.html',true) === $cutHtml,
+  'an interrupted HTML source fence must preserve inert content');
+local_file_test(coreui_console_local_source_fragment(
+  "### style.css\n" . $localFence . "css\n" . $cutCss,
+  'style.css',true) === $cutCss,
+  'an interrupted CSS source fence must preserve inert content');
+local_file_test(coreui_console_local_source_fragment(
+  'Hier ist mein HTML-Entwurf.', 'index.html',true) === null
+  && coreui_console_local_source_fragment(
+    '[PY]print("unsafe")[/PY]', 'style.css',true) === null,
+  'prose or model-authored Python must never be treated as raw source');
+local_file_test(coreui_console_local_source_append($cutCss,'}') === $cutCss . '}',
+  'one-character CSS brace completion must not be discarded');
+local_file_test(coreui_console_local_source_resume_prompt(
+  $implicitRequest,'index.html',$cutHtml,3) === null,
+  'current per-turn continuation bound must stay explicit until durable runs');
+local_file_test(coreui_console_local_source_resume_prompt(
+  $implicitRequest,'image.png',$cutHtml,1) === null,
+  'unsupported formats must not enter the static source continuation route');
+
 $handler = file_get_contents(dirname(__DIR__) . '/api/chat.php');
+local_file_test(str_contains($handler, "['html','htm','css','js']")
+  && str_contains($handler,'coreui_console_local_source_resume_prompt(')
+  && str_contains($handler,'coreui_console_local_source_append('),
+  'live dispatcher must resume truncated HTML/CSS instead of restarting a file');
+
 local_file_test(str_contains($handler, 'ember_console_file_tool_is_device_local($primaryModel)')
   && str_contains($handler, 'coreui_console_local_homepage_zip_request($userMsg)')
   && str_contains($handler, 'coreui_console_local_source_reply($modelSource, $sourceProjectRequest,')

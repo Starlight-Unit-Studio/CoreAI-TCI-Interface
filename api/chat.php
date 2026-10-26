@@ -4827,46 +4827,48 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         $accepted = !$truncated && is_string($modelSource)
           ? coreui_console_local_source_reply($modelSource, $sourceProjectRequest, (string)$name) : null;
         $resumed = false;
-        // An Ollama done_reason=length is not a malformed JS file. Preserve
-        // the partial source in this private turn and request at most two
-        // continuations instead of discarding it and restarting generation.
+        // done_reason=length can truncate HTML/CSS as well as JavaScript.
+        // Recover inert source fragments, not an executable tool or a fake ZIP.
+        // Durable cross-request checkpoints are handled separately in #102.
         if ($accepted === null && $truncated && is_string($modelSource)
-            && strtolower(pathinfo((string)$name, PATHINFO_EXTENSION)) === 'js') {
-          $combined = coreui_console_local_js_fragment($modelSource, (string)$name, true);
+            && in_array(strtolower(pathinfo((string)$name, PATHINFO_EXTENSION)),
+              ['html','htm','css','js'], true)) {
+          $combined = coreui_console_local_source_fragment($modelSource, (string)$name, true);
           if (is_string($combined) && strlen($combined) >= 24) {
             $resumed = true;
             for ($segment = 1; $segment <= 2; $segment++) {
               if (ember_agent_cancel_requested()) return null;
-              $followPrompt = coreui_console_local_js_resume_prompt(
-                $userMsg, (string)$name, $combined, $segment);
+              $followPrompt = coreui_console_local_source_resume_prompt(
+                $sourceProjectRequest, (string)$name, $combined, $segment);
               if (!is_string($followPrompt)) break;
-              coreui_work_record($pdo, 'tool', 'info', 'JavaScript-Ausgabe fortgesetzt',
+              coreui_work_record($pdo, 'tool', 'info', 'Quelldatei-Ausgabe fortgesetzt',
                 ['file_name'=>(string)$name,'attempt'=>$segment + 1,
                  'source_chars'=>strlen($combined)]);
-              coreui_work_record($pdo, 'model', 'running', 'Fehlender JavaScript-Teil wird erzeugt',
+              coreui_work_record($pdo, 'model', 'running', 'Fehlender Quelltext-Teil wird erzeugt',
                 ['file_name'=>(string)$name,'model'=>$primaryModel]);
               $follow = ember_call_ollama($primaryModel, '', $followPrompt,
                 ember_timeout_for_model($primaryModel), [], null, $fileToolThink, false);
               $truncated = ember_last_call_was_truncated();
               $lastMeta = ember_last_call_meta();
               $part = is_string($follow)
-                ? coreui_console_local_js_fragment($follow, (string)$name, false) : null;
+                ? coreui_console_local_source_fragment($follow, (string)$name, false) : null;
               $joined = is_string($part)
-                ? coreui_console_local_js_append($combined, $part) : null;
+                ? coreui_console_local_source_append($combined, $part) : null;
               if (!is_string($joined)) {
-                coreui_work_record($pdo, 'model', 'error', 'JavaScript-Fortsetzung unbrauchbar',
+                coreui_work_record($pdo, 'model', 'error', 'Quelldatei-Fortsetzung unbrauchbar',
                   ['file_name'=>(string)$name,'model'=>$primaryModel,
                     'reason'=>'source_continuation_invalid']);
                 break;
               }
               $combined = $joined;
               $sourceChars = strlen($combined);
-              coreui_work_record($pdo, 'model', 'info', 'JavaScript-Teil empfangen',
+              coreui_work_record($pdo, 'model', 'info', 'Quelltext-Teil empfangen',
                 ['file_name'=>(string)$name,'model'=>$primaryModel,
                   'source_chars'=>$sourceChars,
                   'eval_count'=>(int)($lastMeta['eval_count'] ?? 0),
                   'prompt_eval_count'=>(int)($lastMeta['prompt_eval_count'] ?? 0),
-                  'reason'=>$truncated ? 'model_output_truncated' : 'model_reply_complete']);
+                  'reason'=>$truncated ? 'model_output_truncated' : 'model_reply_complete',
+                   'done_reason'=>(string)($lastMeta['done_reason'] ?? '')]);
               if (!$truncated) {
                 $accepted = coreui_console_local_source_reply($combined, $sourceProjectRequest, (string)$name);
                 if (is_array($accepted)) break;
@@ -4888,6 +4890,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
             'eval_count'=>(int)($lastMeta['eval_count'] ?? 0),
             'prompt_eval_count'=>(int)($lastMeta['prompt_eval_count'] ?? 0),
             'http_code'=>(int)($lastMeta['code'] ?? 0),
+            'done_reason'=>(string)($lastMeta['done_reason'] ?? ''),
             'elapsed_ms'=>(int)($lastMeta['elapsed_ms'] ?? 0)]);
         if ($accepted !== null) break;
         // A transport failure is not a source-format problem; blindly
