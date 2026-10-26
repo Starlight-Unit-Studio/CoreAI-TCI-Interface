@@ -24,6 +24,7 @@ printf '%s\n' 'test app' > "$WORK/fixture/app.html"
 printf '%s\n' 'test compose' > "$WORK/fixture/compose.yaml"
 printf '%s\n' 'test README' > "$WORK/fixture/README.md"
 printf '%s\n' 'test stack' > "$WORK/fixture/scripts/stack.sh"
+printf '#!/usr/bin/env bash\nexit 0\n' > "$WORK/fixture/scripts/migrate.sh"
 printf '%s\n' 'test route' > "$WORK/fixture/api/console_artifact.php"
 printf '%s\n' 'test route' > "$WORK/fixture/api/console_artifacts.php"
 printf '%s\n' 'test schema' > "$WORK/fixture/database/migrations/011_console_artifacts.sql"
@@ -52,6 +53,8 @@ set -Eeuo pipefail
 [[ -s var/compose.env ]]
 PREFLIGHT
 chmod 0755 "$WORK/fixture/scripts/"*.sh
+# Simulate a source checkout with non-executable migration script.
+chmod 0644 "$WORK/fixture/scripts/migrate.sh"
 
 cat > "$WORK/bin/git" <<'GIT'
 #!/usr/bin/env bash
@@ -106,6 +109,7 @@ export PATH="$WORK/bin:$PATH"
 [[ "$(cat "$FAKE_CLONE_UMASK_LOG")" == '0022' ]]
 [[ "$(cat "$TARGET/var/dev_source_commit")" == '0000000000000000000000000000000000000007' ]]
 [[ "$(cat "$TARGET/var/test_installs")" == 'initial' ]]
+[[ -x "$TARGET/scripts/migrate.sh" ]]
 [[ ! -e "$TARGET/.git" && ! -e "$TARGET/.github" && ! -e "$TARGET/releases/huge.zip" ]]
 [[ "$(cat "$TARGET/api/chat.php")" == 'original source' ]]
 
@@ -122,6 +126,7 @@ printf '%s\n' 'file creation fixed' > "$WORK/fixture/api/chat.php"
 [[ "$(cat "$TARGET/var/sessions.txt")" == 'account memory' ]]
 [[ "$(cat "$TARGET/uploads/user.txt")" == 'operator data' ]]
 [[ "$(tail -n 1 "$TARGET/var/test_installs")" == 'update' ]]
+[[ -x "$TARGET/scripts/migrate.sh" ]]
 [[ "$(cat "$TARGET/var/dev_source_commit")" == '0000000000000000000000000000000000000007' ]]
 
 # Broken git input must abort before modifying an installation.

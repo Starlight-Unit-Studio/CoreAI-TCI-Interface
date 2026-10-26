@@ -45,6 +45,9 @@ rsync -a \
   --exclude='assets/chat_media/' \
   --exclude='assets/profile_photos/' \
   "$SOURCE/" "$TARGET_DIR/"
+# Source updates also need executable installer/preflight/migration scripts.
+chmod 0750 "$TARGET_DIR/scripts/install.sh" "$TARGET_DIR/scripts/preflight.sh" \
+  "$TARGET_DIR/scripts/migrate.sh"
 install -m 0640 -o root -g 33 /dev/null "$TARGET_DIR/var/dev_source_commit"
 printf '%s\n' "$COMMIT" > "$TARGET_DIR/var/dev_source_commit"
 cd "$TARGET_DIR"

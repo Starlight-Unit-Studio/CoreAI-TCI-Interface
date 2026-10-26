@@ -661,7 +661,8 @@ if ! wait_healthy database 75; then
 fi
 
 log 'Importiere alle CoreAI: TCI Interface-Migrationen in die eigene Container-Datenbank.'
-"$PROJECT_ROOT/scripts/migrate.sh"
+# This must work even when older source checkouts have no executable bit.
+bash "$PROJECT_ROOT/scripts/migrate.sh"
 
 if ! is_enabled "$SKIP_BOOTSTRAP"; then
   log 'Initialisiere Mara CoreAI und das CoreAI: TCI Interface-Administratorkonto.'
