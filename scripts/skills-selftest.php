@@ -94,6 +94,9 @@ if (in_array('sqlite',PDO::getAvailableDrivers(),true)) {
   $secondAccount = coreui_skills_augment('task');
   skill_assert(str_contains($secondAccount,'Werkzeuge: verbindlicher CoreAI-Kern-Skill')
     && !str_contains($secondAccount,'ZIP und Dateiauslieferung'), 'Optional skill leaked between users');
+  coreui_skills_prepare($pdo,2,'Hallo','global');
+  skill_assert(coreui_skills_augment('task') === 'task',
+    'Required CoreAI-only skill leaked into Game Ember channel');
   echo "Skill persistence (SQLite adapter): OK\n";
 } else { echo "Skill persistence: SKIP (pdo_sqlite unavailable)\n"; }
 // Public Skills endpoint must be explicitly allowed by BOTH restricted Nginx
