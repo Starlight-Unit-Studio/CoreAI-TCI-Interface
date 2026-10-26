@@ -3126,7 +3126,7 @@ function ember_call_ollama(string $model, string $systemPrompt, string $userProm
   // The model already selected the active skills before dispatch. Focused
   // source-file subcalls need only their source contract; repeating up to four
   // full SKILL.md documents here inflates a small local Gemma context.
-  if ($augmentSkills) $userPrompt = coreui_skills_augment($userPrompt);
+  $userPrompt = coreui_skills_augment($userPrompt, $augmentSkills);
   // Thinking ist strikt an genau diesen Modellaufruf gebunden. Ohne Reset koennte ein
   // spaeterer Call ohne message.thinking versehentlich einen alten Entwurf retten.
   $GLOBALS['STU_EMBER_LAST_THINKING'] = '';
@@ -3264,6 +3264,14 @@ function ember_call_ollama(string $model, string $systemPrompt, string $userProm
   if (defined('JSON_INVALID_UTF8_SUBSTITUTE')) {
     $flags = $flags | JSON_INVALID_UTF8_SUBSTITUTE;
   }
+  // This preview is available exclusively to the authenticated CoreAI
+  // source-only tool route. Keep provider thinking separate from file content.
+  $sourcePreview = $GLOBALS['COREUI_SOURCE_PREVIEW'] ?? null;
+  $previewActive = is_array($sourcePreview)
+    && is_callable($sourcePreview['publish'] ?? null)
+    && preg_match('~^[A-Za-z0-9][A-Za-z0-9._-]{0,90}\\.(?:html?|css|js|json|svg)$~D',
+      (string)($sourcePreview['file_name'] ?? '')) === 1;
+  if ($previewActive) $payload['stream'] = true;
   $body = json_encode($payload, $flags);
   if ($body === false) {
     if (function_exists('stu__log_error')) {
@@ -3325,7 +3333,63 @@ function ember_call_ollama(string $model, string $systemPrompt, string $userProm
     return null;
   }
   try {
-    $raw = curl_exec($ch);
+    if ($previewActive) {
+      $raw = '';
+      $previewBuffer = '';
+      $previewContent = '';
+      $previewThinking = '';
+      $previewDone = null;
+      $previewDoneReason = '';
+      $previewEval = 0;
+      $previewPromptEval = 0;
+      $publish = $sourcePreview['publish'];
+      $fileName = $sourcePreview['file_name'];
+      $attemptNo = (int)($sourcePreview['attempt'] ?? 1);
+      $publish(['phase'=>'begin','file_name'=>$fileName,'attempt'=>$attemptNo]);
+      $consumePreview = static function (string $line) use (&$previewContent,&$previewThinking,&$previewDone,
+          &$previewDoneReason,&$previewEval,&$previewPromptEval,$publish,$fileName,$attemptNo): void {
+        $json = json_decode(trim($line), true);
+        if (!is_array($json)) return;
+        $msg = $json['message'] ?? [];
+        if (is_array($msg)) {
+          if (is_string($msg['thinking'] ?? null)) $previewThinking .= $msg['thinking'];
+          if (is_string($msg['content'] ?? null)) {
+            $delta = $msg['content'];
+            $previewContent .= $delta;
+            // Split on UTF-8 code-point boundaries to keep JSON/SSE valid.
+            // Do not discard model output when a preview chunk is large.
+            if (preg_match_all('~.{1,700}~us', $delta, $parts)) {
+              foreach ($parts[0] as $part) {
+                $publish(['phase'=>'chunk','file_name'=>$fileName,
+                  'attempt'=>$attemptNo,'text'=>$part]);
+              }
+            }
+          }
+        }
+        if (array_key_exists('done',$json)) $previewDone = (bool)$json['done'];
+        if (isset($json['done_reason'])) $previewDoneReason = (string)$json['done_reason'];
+        if (isset($json['eval_count'])) $previewEval = (int)$json['eval_count'];
+        if (isset($json['prompt_eval_count'])) $previewPromptEval = (int)$json['prompt_eval_count'];
+      };
+      curl_setopt($ch,CURLOPT_RETURNTRANSFER,false);
+      curl_setopt($ch,CURLOPT_WRITEFUNCTION,static function ($handle,string $chunk) use (&$previewBuffer,$consumePreview): int {
+        $previewBuffer .= $chunk;
+        while (($nl = strpos($previewBuffer,"\n")) !== false) {
+          $consumePreview(substr($previewBuffer,0,$nl));
+          $previewBuffer = substr($previewBuffer,$nl+1);
+        }
+        return strlen($chunk);
+      });
+      $raw = curl_exec($ch);
+      if (trim($previewBuffer) !== '') $consumePreview($previewBuffer);
+      $raw = $raw === false ? false : json_encode(['message'=>['content'=>$previewContent,
+        'thinking'=>$previewThinking],'done'=>$previewDone ?? false,
+        'done_reason'=>$previewDoneReason,'eval_count'=>$previewEval,
+        'prompt_eval_count'=>$previewPromptEval], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+      $publish(['phase'=>'end','file_name'=>$fileName,'attempt'=>$attemptNo]);
+    } else {
+      $raw = curl_exec($ch);
+    }
     $err = curl_error($ch);
     $curlErrno = curl_errno($ch);
     $elapsedMs = max(0, (int)round((float)curl_getinfo($ch, CURLINFO_TOTAL_TIME) * 1000));
@@ -4284,7 +4348,7 @@ function ember_build_chat_prompt(
   $uid = (int)($senderChar['user_id'] ?? 0);
   $cid = (string)($senderChar['id'] ?? '');
   if (function_exists('coreui_ai_runtime_apply')) coreui_ai_runtime_apply($pdo, $uid);
-  coreui_skills_prepare($pdo, $uid, $userMsg);
+  coreui_skills_prepare($pdo, $uid, $userMsg, $channel);
   try {
     if ($uid > 0 && coreui_profile_schema_ready($pdo)) {
       $profile = coreui_profile_load($pdo, $uid);
@@ -4479,7 +4543,7 @@ function ember_generate_reply(
   $uid = (int)($senderChar['user_id'] ?? 0);
   $cid = (string)($senderChar['id'] ?? '');
   if (function_exists('coreui_ai_runtime_apply')) coreui_ai_runtime_apply($pdo, $uid);
-  coreui_skills_prepare($pdo, $uid, $userMsg);
+  coreui_skills_prepare($pdo, $uid, $userMsg, $channel);
   try {
     if ($uid > 0 && coreui_profile_schema_ready($pdo)) {
       $profile = coreui_profile_load($pdo, $uid);
@@ -4819,8 +4883,16 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         // when think=false. Retry ONCE with thinking enabled only for that
         // specific case, not after a transport timeout or a queue error.
         $sourceThink = $retryWithThink ? true : $fileToolThink;
-        $modelSource = ember_call_ollama($primaryModel, '', $singlePrompt,
-          ember_timeout_for_model($primaryModel), [], null, $sourceThink, false);
+        $GLOBALS['COREUI_SOURCE_PREVIEW'] = [
+          'file_name'=>(string)$name,'attempt'=>$attempt,
+          'publish'=>$GLOBALS['COREUI_SOURCE_PREVIEW_PUBLISH'] ?? null
+        ];
+        try {
+          $modelSource = ember_call_ollama($primaryModel, '', $singlePrompt,
+            ember_timeout_for_model($primaryModel), [], null, $sourceThink, false);
+        } finally {
+          unset($GLOBALS['COREUI_SOURCE_PREVIEW']);
+        }
         $truncated = ember_last_call_was_truncated();
         $lastMeta = ember_last_call_meta();
         $sourceChars = is_string($modelSource) ? strlen($modelSource) : 0;

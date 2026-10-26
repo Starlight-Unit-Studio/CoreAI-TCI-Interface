@@ -18,6 +18,15 @@ function coreui_skills_catalog(): array {
   return $catalog;
 }
 
+/** Repository-owned, non-optional instructions. Never use a DB toggle as authority. */
+function coreui_skills_required_ids(): array {
+  $required = [];
+  foreach (coreui_skills_catalog() as $id => $skill) {
+    if (($skill['required'] ?? false) === true) $required[] = $id;
+  }
+  return $required;
+}
+
 function coreui_skills_schema_ready(PDO $pdo): bool {
   try {
     $pdo->query('SELECT user_id,skill_id,enabled FROM stu_user_skills LIMIT 0');
@@ -26,14 +35,17 @@ function coreui_skills_schema_ready(PDO $pdo): bool {
 }
 
 function coreui_skills_load(PDO $pdo, int $uid): array {
-  // Opt-in, including when migration is absent. Never silently enable new skills.
+  // Optional skills remain opt-in. Mandatory core skills stay enabled even
+  // without migration and despite historic disabled rows in existing accounts.
   $values = array_fill_keys(array_keys(coreui_skills_catalog()), false);
+  foreach (coreui_skills_required_ids() as $id) $values[$id] = true;
   if ($uid <= 0 || !coreui_skills_schema_ready($pdo)) return $values;
   $stmt = $pdo->prepare('SELECT skill_id,enabled FROM stu_user_skills WHERE user_id=?');
   $stmt->execute([$uid]);
   foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
     if (array_key_exists($row['skill_id'], $values)) $values[$row['skill_id']] = (int)$row['enabled'] === 1;
   }
+  foreach (coreui_skills_required_ids() as $id) $values[$id] = true;
   return $values;
 }
 
@@ -41,6 +53,9 @@ function coreui_skills_validate(array $values): array {
   $catalog = coreui_skills_catalog();
   foreach ($values as $id => $enabled) {
     if (!isset($catalog[$id]) || !is_bool($enabled)) throw new InvalidArgumentException('invalid_skill_preferences');
+    if (($catalog[$id]['required'] ?? false) === true && $enabled !== true) {
+      throw new InvalidArgumentException('required_skill_cannot_be_disabled');
+    }
   }
   return $values;
 }
@@ -53,7 +68,10 @@ function coreui_skills_save(PDO $pdo, int $uid, array $values): array {
   try {
     $stmt = $pdo->prepare('INSERT INTO stu_user_skills (user_id,skill_id,enabled) VALUES (?,?,?)
       ON DUPLICATE KEY UPDATE enabled=VALUES(enabled)');
-    foreach ($values as $id => $enabled) $stmt->execute([$uid,$id,$enabled ? 1 : 0]);
+    foreach ($values as $id => $enabled) {
+      if ((coreui_skills_catalog()[$id]['required'] ?? false) === true) continue;
+      $stmt->execute([$uid,$id,$enabled ? 1 : 0]);
+    }
     $pdo->commit();
   } catch (Throwable $e) {
     if ($pdo->inTransaction()) $pdo->rollBack();
@@ -66,6 +84,7 @@ function coreui_skills_select(string $request, array $enabled): array {
   $request = function_exists('mb_strtolower') ? mb_strtolower($request, 'UTF-8') : strtolower($request);
   $scores = [];
   foreach (coreui_skills_catalog() as $id => $skill) {
+    if (($skill['required'] ?? false) === true) continue; // loaded independently, never consumes the optional budget
     if (($enabled[$id] ?? false) !== true) continue;
     $score = 0;
     if (preg_match('~(?:/skill\\s+|\\$)' . preg_quote($id, '~') . '(?![a-z0-9-])~', $request)) $score = 10000;
@@ -87,21 +106,48 @@ function coreui_skills_body(string $id): string {
   return trim($match[1]);
 }
 
-function coreui_skills_prepare(PDO $pdo, int $uid, string $request): void {
+function coreui_skills_prepare(PDO $pdo, int $uid, string $request, string $channel = 'console'): void {
+  // Reset all in-memory context before selecting anything for this turn.
   $GLOBALS['COREUI_SKILLS_BLOCK'] = '';
-  $selected = coreui_skills_select($request, coreui_skills_load($pdo, $uid));
-  if (!$selected) return;
-  $block = "\n\n[COREUI SKILLS: aufgabenbezogene Arbeitsanleitungen. Nutzerauftrag und vorhandenes Werkzeugprotokoll gelten weiterhin. Keine neuen Werkzeuge oder Berechtigungen. Tests und Dateien nur als erstellt bestaetigen, wenn tatsaechlich bestaetigt.]\n";
-  foreach ($selected as $id) {
-    $block .= coreui_skills_body($id) . "\n\n";
-    if (function_exists('coreui_work_record')) {
-      coreui_work_record($pdo, 'tool', 'info', 'Skill geladen: ' . $id, ['source'=>$id]);
+  $GLOBALS['COREUI_REQUIRED_SKILLS_BLOCK'] = '';
+  // Game E.M.B.E.R. shares parts of the backend but must not inherit
+  // Mara/CoreAI's required private-console operating contract.
+  $required = $channel === 'console' ? coreui_skills_required_ids() : [];
+  $mandatory = '';
+  if ($required) {
+    $mandatory = "\n\n[COREAI KERN-SKILLS: verpflichtende Arbeitsanleitungen aus dem vertrauenswuerdigen Repository. Keine neuen Werkzeuge, Berechtigungen oder Ausgabe-Limits. Das bestehende Werkzeugprotokoll und die Benutzerfreigabe haben Vorrang.]\n";
+    foreach ($required as $id) {
+      $mandatory .= coreui_skills_body($id) . "\n\n";
+      if (function_exists('coreui_work_record')) {
+        coreui_work_record($pdo, 'tool', 'info', 'Skill geladen: ' . $id, ['source'=>$id]);
+      }
     }
+    $mandatory .= "[ENDE COREAI KERN-SKILLS]\n\n";
   }
-  $GLOBALS['COREUI_SKILLS_BLOCK'] = $block . "[ENDE COREUI SKILLS]\n\n";
+  $GLOBALS['COREUI_REQUIRED_SKILLS_BLOCK'] = $mandatory;
+
+  // Keep the four optional slots independent from the mandatory base skill.
+  $selected = coreui_skills_select($request, coreui_skills_load($pdo, $uid));
+  $optional = '';
+  if ($selected) {
+    $optional = "\n\n[COREUI SKILLS: aufgabenbezogene Arbeitsanleitungen. Nutzerauftrag und vorhandenes Werkzeugprotokoll gelten weiterhin. Keine neuen Werkzeuge oder Berechtigungen. Tests und Dateien nur als erstellt bestaetigen, wenn tatsaechlich bestaetigt.]\n";
+    foreach ($selected as $id) {
+      $optional .= coreui_skills_body($id) . "\n\n";
+      if (function_exists('coreui_work_record')) {
+        coreui_work_record($pdo, 'tool', 'info', 'Skill geladen: ' . $id, ['source'=>$id]);
+      }
+    }
+    $optional .= "[ENDE COREUI SKILLS]\n\n";
+  }
+  $GLOBALS['COREUI_SKILLS_BLOCK'] = $mandatory . $optional;
 }
 
-function coreui_skills_augment(string $prompt): string {
-  // Add to user context, never replace the Ollama Modelfile SYSTEM or its options.
-  return (string)($GLOBALS['COREUI_SKILLS_BLOCK'] ?? '') . $prompt;
+function coreui_skills_augment(string $prompt, bool $includeOptional = true): string {
+  // The mandatory base skill also accompanies focused source-only calls.
+  // Omit optional packages on such calls to retain the model's source budget.
+  $prefix = $includeOptional
+    ? (string)($GLOBALS['COREUI_SKILLS_BLOCK'] ?? '')
+    : (string)($GLOBALS['COREUI_REQUIRED_SKILLS_BLOCK'] ?? '');
+  // Skills never replace the Ollama Modelfile SYSTEM or its options.
+  return $prefix . $prompt;
 }

@@ -6,12 +6,12 @@
   <meta name="language" content="de-DE" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#f0f4fa" />
-  <meta name="application-version" content="0.5.61" />
+  <meta name="application-version" content="0.5.62" />
   <meta name="application-name" content="CoreAI: TCI Interface" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface - Einstellungen</title>
-  <link rel="stylesheet" href="./css/console.css?v=0731994804367017954186355" />
-  <script src="./js/console-gate.js?v=0439811845771578907714003"></script>
+  <link rel="stylesheet" href="./css/console.css?v=0695394154727438082472422" />
+  <script src="./js/console-gate.js?v=0219346137627613807773018"></script>
   <script src="./js/coreui-preferences.js?v=0408182548343544002678570"></script>
 </head>
 <body class="settings-body">
@@ -27,7 +27,7 @@
           <h1>EINSTELLUNGEN</h1>
         </div>
       </div>
-      <div class="settings-version">COREAI: TCI INTERFACE // v0.5.61</div>
+      <div class="settings-version">COREAI: TCI INTERFACE // v0.5.62</div>
     </header>
 
     <main class="settings-grid">
@@ -175,7 +175,7 @@
 
       <section class="settings-panel" aria-labelledby="skillsTitle">
         <div class="settings-panel-head"><div><span>ARBEITSANLEITUNGEN</span><h2 id="skillsTitle">MEINE SKILLS</h2></div></div>
-        <p>Jeder Skill hat einen eigenen Schalter. Aktivierte Skills stehen dem gewählten Modell zur Verfügung; bis zu vier passende Anleitungen werden pro Anfrage geladen. Gezielt wählen: <code>/skill kennung</code>. Das schaltet keine Werkzeuge frei.</p>
+        <p>Der feste System-Skill <strong>Werkzeuge</strong> ist immer aktiv und lässt sich nicht deaktivieren. Alle weiteren Skills sind optional; bis zu vier passende Anleitungen werden zusätzlich je Anfrage geladen. Gezielt wählen: <code>/skill kennung</code>. Skills schalten keine zusätzlichen Werkzeuge frei.</p>
         <label class="settings-field" for="skillsSearch"><span>SKILLS SUCHEN</span><input id="skillsSearch" type="search" placeholder="Name, Kategorie oder Aufgabe" /></label>
         <div class="skills-actions">
           <button class="settings-action" id="enableAllSkills" type="button" disabled>ALLE AKTIVIEREN</button>
@@ -318,7 +318,7 @@
     <div class="settings-save-state" id="settingsSaveState" role="status" aria-live="polite">LOKAL GESPEICHERT</div>
   </div>
 
-  <script src="./js/skills-settings.js?v=1011871854880560615195199"></script>
+  <script src="./js/skills-settings.js?v=0475630369246311829602517"></script>
   <script src="./js/settings.js?v=0128744981252692904764725"></script>
 </body>
 </html>

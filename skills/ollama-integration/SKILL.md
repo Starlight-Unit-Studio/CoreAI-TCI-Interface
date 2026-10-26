@@ -1,11 +1,9 @@
 ---
 name: ollama-integration
-description: "Für Ollama-Modellanbindung, Schutz des CoreUI-Modelfiles, Werkzeugprotokoll und sichere Gemma-Parameter."
+description: "Für Ollama-Modellanbindung, Schutz des CoreAI-Modelfiles, Werkzeugprotokoll und sichere Gemma-Parameter."
 ---
 # Ollama und Modellanbindung
 
-Prüfe Modellname, lokalen Ollama-Endpunkt, tatsächliche Nutzlast und Antwort getrennt. Beachte `docs/MODELFILE_CHANGE_POLICY.md` vor Änderungen. Der archivierte E2B-`ollama show`-Export ist eine Referenz, **keine Ersatzbasis für E4B**.
+Nutze für lokale und Cloud-Modelle denselben vom Nutzer konfigurierten lokalen Ollama-Endpunkt und die dort sichtbare Modellliste. Bewahre das aktive Betreiber-Modelfile mit Mara-Persona, TEMPLATE, RENDERER und PARSER unverändert; vor Änderungen docs/MODELFILE_CHANGE_POLICY.md prüfen. Der E2B-Referenzexport ersetzt nicht das E4B-Modelfile. Für lokale Gemma-Modelle keine zusätzlichen num_ctx- oder num_predict-Overrides; draft_num_predict 0 beibehalten. Modellaufrufe bleiben auch bei mehrstufigen Werkzeugfolgen seriell.
 
-Bewahre das aktive `config/Modelfile.template` mit Mara-Persona, `TEMPLATE`, `RENDERER`, `PARSER` und allen freigegebenen Parametern unverändert. Neue Coding-Skills, Dateifunktionen und Prüfungen im CoreUI-Backend implementieren statt SYSTEM zu verlängern. Nur notwendige Werkzeugprotokoll-Änderungen gezielt vornehmen und verifizieren; keine zusätzlichen Modellparameter. Skills erteilen keine Werkzeugberechtigungen.
-
-Für lokale Gemma-Modelle keine `num_ctx`- oder `num_predict`-Overrides senden. `draft_num_predict 0` beibehalten. Cloud-Modelle bleiben über die lokale Ollama-Liste erreichbar; Modellaufrufe bleiben seriell. Installer, One-Liner und Modell-Erstellungsablauf nicht verändern. Ergebnisse durch reale Nutzlasten und beobachtete Ausgaben belegen.
+Unterscheide Ollama HTTP-Erfolg von vollständiger message.content-Ausgabe; prüfe done, done_reason und Zähler. Verwende native tool_calls nur, wenn die aktuelle Backend-Route sie ausdrücklich bereitstellt und Ergebnisse in der korrekten Rolle zurückgibt. Sonst das bereits validierte Marker-/Source-Fallback verwenden, ohne eine native Werkzeugschleife zu behaupten. Neue Skill-Anweisungen statt ungefragtem SYSTEM-Tuning. Skills verleihen keine Werkzeugberechtigungen. Fehlende Ausgaben nicht als Provider-Erfolg verkaufen.

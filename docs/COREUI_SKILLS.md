@@ -1,37 +1,42 @@
-# CoreUI Skills (0.5.33)
+# CoreAI Skills (0.5.62)
 
-32 repository-owned, originally written instruction packages, with sources reviewed on 2026-10-25. This is a curated starter collection, not an exhaustive mirror of online skills or a claim that all upstream material is current forever. No third-party scripts or skill implementation code were copied. Source links are references, not bundled documentation. New releases should recheck sources, installed framework versions and triggers.
+CoreAI enthaelt jetzt 33 vertrauenswuerdige, direkt im Repository gepflegte Anleitungen: einen fest eingebundenen Kern-Skill und 32 optional aktivierbare Fach-Skills. Die urspruenglichen 32 Pakete stammen aus 0.5.33 und wurden am 25.10.2026 geprueft; zehn fuer den aktuellen Agenten-/Dateibau relevante Pakete wurden am 26.10.2026 an den neuen CoreAI-Stand angepasst.
 
-## Use
+## Verbindlicher System-Skill: Werkzeuge
 
-1. Update CoreUI and apply migration `014_user_skills.sql` through the existing migration runner (`scripts/stack.sh migrate` for Compose).
-2. Settings → MEINE SKILLS: choose individual switches or ALLE AKTIVIEREN, then AUSWAHL SPEICHERN.
-3. The next request uses the saved per-account selection. All skills start disabled, including newly added packages. Existing in-flight requests keep their loaded instructions.
-4. Natural-language keyword matching selects up to four relevant enabled skills. `/skill zip-delivery` or `$zip-delivery` gives an enabled skill priority. More than four requested skills are limited in stable catalog order. Disabled skills cannot be invoked.
-5. The work timeline records `Skill geladen: <id>`. This confirms instruction loading, not successful execution or model compliance.
+- `skills/werkzeuge/SKILL.md` ist im Katalog mit `required: true` registriert.
+- Er gilt bei jeder Anfrage im privaten CoreAI-Console-Kanal, unabhaengig von Schlagwoertern, gespeicherten Nutzer-Praeferenzen und der optionalen Migration 014. Die Game-Ember erhaelt diese Mara-spezifische Pflichtanleitung nicht.
+- Der Server laedt ihn zwingend und uebergeht historische `enabled=0`-Datenbankzeilen. `user_skills.php` darf ihn nicht auf `false` setzen, auch nicht bei manipulierten POST-Daten.
+- Die Einstellungen zeigen ihn oben, dauerhaft angehakt und ausgegraut. Die Schaltflaechen "Alle aktivieren" und "Alle deaktivieren" betreffen ihn nicht. Der Pflicht-Skill wird nicht in kontoabhaengige Vorlieben geschrieben.
+- Bei fokussierten Quellcode-Unteraufrufen bleibt der kurze Kern-Skill aktiv, waehrend bis zu vier weitere optionale Pakete wie bisher ausgelassen werden koennen.
+- Er gibt Handlungsregeln zu vorhandenen Werkzeugen, ehrlichen Fortschrittsanzeigen, serieller Modellwarteschlange und Datei-Validierung. Er aktiviert **keine** fehlenden Werkzeuge und entfernt **keine** Limits aus dem bestehenden Backend.
 
-The first version uses deterministic backend routing, not autonomous native skill retrieval by the model. Selection is based on the current user request, not arbitrary documents or the complete conversation history. Follow-ups should mention the topic or use `/skill <id>` if needed. The selection is retained for model calls and continuations within that request, rather than being re-ranked from generated code. It works with the currently selected local or Ollama-served cloud model; no model replacement is needed.
+## Optionale Skills
 
-## Runtime boundaries
+1. Migration `014_user_skills.sql` ueber den vorhandenen Updateweg einspielen, soweit noch nicht geschehen.
+2. Einstellungen -> MEINE SKILLS: wahlweise einzelne der 32 Fach-Skills aktivieren, alle aktivieren oder deaktivieren, danach AUSWAHL SPEICHERN.
+3. Natuerliche Schlagwoerter oder `/skill zip-delivery` und `$zip-delivery` waehlen maximal vier optionale Pakete pro Anfrage. Der Pflicht-Skill belegt keinen dieser vier Plaetze.
+4. Pro Konto gespeicherte Praeferenzen bleiben getrennt und werden erst ab der naechsten Anfrage geladen. Die System-Skill-Anleitung ist auch ohne Praeferenz-Tabelle aktiv.
+5. Die Work-Timeline protokolliert `Skill geladen: werkzeuge` und gegebenenfalls weitere Fach-Skills. Das ist ein Ladeereignis, kein Nachweis fuer einen erfolgreichen Werkzeugaufruf.
 
-- Up to four complete bodies, at most 2,400 bytes each, are added to the user prompt. Oversized bodies fail validation instead of being cut mid-instruction. Current bodies are shorter than this limit.
-- Modelfile SYSTEM, template, renderer, parser and sampling parameters remain unchanged. No `num_ctx` override is introduced. The global model queue is unchanged.
-- Skills grant no new tool permissions, filesystem access or network access. Existing `[PY]`, `[WEB]`, `[BROWSE]` and source-file protocols remain authoritative.
-- Files are loaded exclusively from catalog-approved repository paths. No URL import, script execution, arbitrary path lookup or third-party marketplace installation.
-- Skill instructions can improve consistency but do not fix model truncation, missing assets or invalid code by themselves. Existing validators and actual execution results remain necessary.
-- Work-event metadata contains only the skill ID, not instruction bodies or private prompts.
-- Missing migration leaves all skills disabled and disables saving in the UI. A failed POST is visibly reported. Saved values are account-scoped; account deletion cascades and account export includes the preferences.
-- PR #69, the universal project agent, stays a separate draft. This release is based on production main, not that pilot.
+## Projektstand, Sicherheit und Grenzen
 
-## Adding a package
+- Bei lokalen Gemma- und Ollama-Cloud-Modellen wird die bestehende lokale Ollama-Liste verwendet. Keine zusaetzlichen Modellparameter, kein geaendertes Modelfile, keine zweite Modellspur.
+- Die fortsetzbare Agenten-/Dateiwerkzeug-Schleife aus Issue #102 ist weiter offen: Planlimits, Manifestgrenzen und fehlende persistente Quelltext-Checkpoints sind **nicht** allein durch Skilltexte repariert.
+- Maras Worklog und der Live-Code-Entwurf aus Draft #105 sind in den gemeinsamen 0.5.62-Branch aufgenommen worden. Rohes Modell-Thinking, private Prompts und fremde Daten gehoeren niemals in oeffentliche Skill-/Workevent-Payloads.
+- Skill-Inhalte werden nur aus validierten Katalogpfaden des Repositories geladen. Keine Remote-Skripte, implizite Werkzeugfreigabe, Modellausgabe als Host-Kommando oder nicht autorisierte Dateipfade.
+- Alle Skills nutzen maximal 2400 Byte pro reiner SKILL.md-Anleitung; keine stille Textabschneidung. Kuerzere Skilltexte ersetzen nicht den im Backend erforderlichen Speicher fuer Projektfortschritt.
+- Fach-Skills bleiben auch nach einem fehlgeschlagenen POST unveraendert; der Backend-Pflicht-Skill bleibt unabhaengig davon aktiv.
 
-Create `skills/<id>/SKILL.md` with `name` and `description` YAML frontmatter and a concise Markdown body. Register its ID, title, description, category, keyword triggers, version, HTTPS sources and review date in `skills/catalog.json`. This runtime supports this controlled subset of the Agent Skills format; it does not interpret arbitrary YAML, resource references or executable scripts. Run `php scripts/skills-selftest.php`. Deploy catalog and documents together. New entries remain opt-in.
+## Skill anlegen oder aktualisieren
 
-Sources for the format: https://agentskills.io/specification . Individual technical references are recorded per package in the catalog and shown in Settings. Instruction text is original CoreUI guidance under the repository license, including project-specific policies that are not claims about upstream recommendations.
+`skills/<id>/SKILL.md` mit name und description im Frontmatter, klarer Ablaufanleitung und registriertem Katalogeintrag erstellen. Beschreibung, Trigger, Version, Quelle und Pruefdatum angeben. Neue Fach-Skills sind standardmaessig opt-in. `required: true` ist fuer fest genehmigte CoreAI-Kernfunktionen reserviert; bei einem solchen Eingriff sind Backend- und UI-Tests sowie die Versionsrichtlinie zwingend.
 
-## Validation and live acceptance
+## Pruefung
 
-- `php scripts/skills-selftest.php`: catalog, every explicit invocation, disabled skills, unknown IDs, invalid value types, traversal rejection, keyword boundaries, selection cap and runtime reset. Optional pdo_sqlite adds actual save/load/account-isolation/rollback tests through a test-only SQL upsert adapter; that is not a MariaDB migration test.
-- `node scripts/skills-ui-selftest.cjs`: optional Playwright browser test with mocked API for switches, search, save/reload, CSRF header, failed-save recovery, mobile width and missing migration. Requires installed Playwright plus browser. `PW_CHROMIUM_PATH` can select an existing Chromium binary. Passed during 0.5.33 preparation with Chromium 134 and mocked API; this is not a production browser/server test.
-- Existing Gemma policy and frontend regression checks remain part of acceptance.
-- On the user's server: migrate; enable only Python and ZIP; save and reload; ask for a small Python ZIP; verify loaded-skill events, real archive and contents. Disable ZIP and repeat a request naming `/skill zip-delivery`, checking that it does not load. Repeat with another account and with SSE and synchronous file paths. Confirm successful migration on MariaDB and the actual selected Ollama model. No live Ollama validation is implied by offline tests.
+- `php scripts/skills-selftest.php` prueft die 33 Paketdokumente, Pflicht-Auswahl, Legacy-Disabled-Override, API-Validierung, ohne Migration bereitgestellten Kern-Skill, Auswahlbudget, isolierte Kontovorlieben und Pflicht-Skill in fokussierten Unteraufrufen.
+- `node scripts/skills-ui-selftest.cjs` prueft mit Playwright die ausgegraute angehakte Schalteranzeige, Bulk-Aktionen, CSRF, Suche, Reload, fehlgeschlagene Speicherung, Mobile und Migrationsstatus.
+- Danach `python3 scripts/version-merge-check.py --base-version 0.5.61` und `python3 scripts/cache-bust.py --verify` sowie PHP-Syntaxpruefung und Live-Abnahme durchfuehren.
+- Offline-Tests ersetzen keinen erfolgreichen Netcup-/Android-/Ollama-Livetest. Kein fertiges 10-Unterseiten-ZIP behaupten, bevor es tatsaechlich erzeugt und geprueft wurde.
+
+Referenzen: https://agentskills.io/specification und die Quellen jedes Katalogeintrags.

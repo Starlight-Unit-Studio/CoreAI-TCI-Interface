@@ -2261,6 +2261,14 @@
         }
       } catch (e) {}
     });
+    es.addEventListener('source_preview', function(ev) {
+      armWatchdog();
+      try {
+        if (!isActiveSession(sessionId) || !window.CoreUIWorkEvents) return;
+        var body = panelBody();
+        if (body) window.CoreUIWorkEvents.source(body,JSON.parse(ev.data));
+      } catch (e) {}
+    });
     es.addEventListener('agent_run', function(ev) {
       armWatchdog();
       try {

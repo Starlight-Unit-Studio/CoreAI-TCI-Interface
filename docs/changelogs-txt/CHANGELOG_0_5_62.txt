@@ -1,0 +1,12 @@
+## 0.5.62 - 26.10.2026
+
+- 33 Skills: neuer verpflichtender Kern-Skill `skills/werkzeuge/SKILL.md` neben den bisherigen 32 optionalen Fach-Skills.
+- `required: true` wird im Backend statt nur im Frontend erzwungen. Nur im privaten CoreAI-Console-Kanal (nicht Game-Ember). Auch ohne Migration 014 und bei historischen Datenbankwerten `enabled=0` bleibt der Kern-Skill aktiv. Der Skills-POST darf ihn nicht deaktivieren.
+- CoreAI-Anfragen nutzen den Pflicht-Skill, ohne die vier Fach-Skill-Slots zu belegen. Reine Source-Only-Modelle erhalten weiter den Kern-Skill, aber keine erneute Ladung aller optionalen Fachpakete.
+- Skills-Einstellungen zeigen Werkzeuge dauerhaft eingeschaltet, ausgegraut und als nicht deaktivierbar. Bulk-Aktionen/Speichern gelten nur fuer optionale Skills.
+- Zehn vorhandene Fach-Skills wurden inhaltlich an den Stand von 0.5.61 und die offenen Issues #97/#102 angepasst: Planung, Code, Debugging, ZIP, asynchrone Jobs, SSE, Observability, Ollama, Release und Skill-Autoren.
+- Chat-/Arbeitsweg-Umgestaltung aus Draft #105 integriert: Notizen als fortlaufende, ungerahmte Chattexte, keine Kennzeichnung als automatische oder modellseitige Meldung je Schritt und echter live gestreamter Quellcode im kleinen Arbeitsfenster.
+- Source-Preview-PHP initialisiert ausschliesslich beim autorisierten Ollama-Dateiaufruf, nicht in der HTTP-JSON-Hilfsfunktion. Code-Chunks werden UTF-8-sicher als SSE gesendet; keine privaten Thinking-Tokens im Browser.
+- Modellstream mit erkannter Trunkierung wird als unvollstaendiger Status protokolliert, nicht als normaler Gruen-Erfolg.
+- JS-Syntax und ein kleiner DOM-Smoke-Test bestanden. Vollstaendige Produktions- und PHP-Livetests noch offen. Die anhaltenden Architekturgrenzen #102 sind nicht geloest.
+- Keine Aenderungen am Modelfile, Ollama-Parametern, der seriellen Modellqueue, gespeicherten Privatplaenen, produktiven DB-Migrationen oder externen STU-Seiten. Netcup-/Android-Liveabnahme noch offen.

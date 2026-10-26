@@ -389,6 +389,9 @@ try {
   $GLOBALS['COREUI_WORK_PUBLISH'] = static function (array $event): void {
     sse_send('work', $event);
   };
+  $GLOBALS['COREUI_SOURCE_PREVIEW_PUBLISH'] = static function (array $preview): void {
+    sse_send('source_preview',$preview);
+  };
   coreui_work_record($pdo, 'run', 'running', 'Auftrag gestartet');
 
   $exactCalculation = (!$isVisionTurn && $attachmentIds === [] && $generationMode !== 'continue')
@@ -865,7 +868,7 @@ try {
     sse_send('error', ['error' => $publicError]);
   }
 } finally {
-  unset($GLOBALS['COREUI_WORK_CONTEXT'], $GLOBALS['COREUI_WORK_PDO'], $GLOBALS['COREUI_WORK_PUBLISH']);
+  unset($GLOBALS['COREUI_WORK_CONTEXT'], $GLOBALS['COREUI_WORK_PDO'], $GLOBALS['COREUI_WORK_PUBLISH'], $GLOBALS['COREUI_SOURCE_PREVIEW_PUBLISH']);
   ember_generation_lock_release($turnLock ?? null);
   // Console-AFK sofort zuruecknehmen -> Ember erscheint im Global wieder online.
   // (Bei [BROWSE:] haelt der Worker ueber sein eigenes Browse-Flag unabhaengig weiter AFK.)
@@ -884,7 +887,7 @@ exit;
 function console_stream_ollama(string $model, string $systemPrompt, string $userPrompt,
                                bool $augmentSkills = true, ?int $timeoutOverride = null,
                                ?bool $thinkOverride = null): array {
-  if ($augmentSkills) $userPrompt = coreui_skills_augment($userPrompt);
+  $userPrompt = coreui_skills_augment($userPrompt, $augmentSkills);
   $url       = ember_url();
   $keepAlive = ember_keep_alive();
 
@@ -1053,8 +1056,12 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
   }
 
   if ($workDb instanceof PDO) {
-    coreui_work_record($workDb, 'model', $ok ? 'success' : 'error',
-      $ok ? 'Modellstream empfangen' : 'Modellstream fehlgeschlagen',
+    // A completed HTTP exchange can still stop at an output-token limit.
+    // Never show a green success tick when Ollama reports truncated content.
+    coreui_work_record($workDb, 'model',
+      $truncated ? 'info' : ($ok ? 'success' : 'error'),
+      $truncated ? 'Modellstream abgeschnitten'
+        : ($ok ? 'Modellstream empfangen' : 'Modellstream fehlgeschlagen'),
       ['model'=>$model,'http_code'=>$httpCode,'duration_ms'=>$modelDurationMs,
         'reason'=>$truncated ? 'output_truncated' : ($ok ? 'completed' : 'request_failed'),
         'done_reason'=>$doneReason, 'eval_count'=>$evalCount,

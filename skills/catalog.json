@@ -1,5 +1,27 @@
 [
   {
+    "id": "werkzeuge",
+    "title": "Werkzeuge",
+    "category": "System",
+    "description": "Immer aktiver Kern-Skill für sichere Werkzeugwahl, serielle Arbeitsabläufe und überprüfte Ergebnisse.",
+    "required": true,
+    "triggers": [
+      "werkzeug",
+      "werkzeuge",
+      "tool",
+      "tools",
+      "agent",
+      "datei erstellen",
+      "projekt umsetzen"
+    ],
+    "sources": [
+      "https://docs.ollama.com/capabilities/tool-calling",
+      "https://agentskills.io/specification"
+    ],
+    "reviewed": "2026-10-26",
+    "version": "1.0.0"
+  },
+  {
     "id": "project-planning",
     "title": "Projektplanung",
     "category": "Arbeitsweise",
@@ -17,8 +39,8 @@
     "sources": [
       "https://aider.chat/docs/more/edit-formats.html"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-26",
+    "version": "1.1.0"
   },
   {
     "id": "code-editing",
@@ -38,8 +60,8 @@
     "sources": [
       "https://aider.chat/docs/more/edit-formats.html"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-26",
+    "version": "1.1.0"
   },
   {
     "id": "debugging",
@@ -59,8 +81,8 @@
     "sources": [
       "https://docs.python.org/3/tutorial/errors.html"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-26",
+    "version": "1.1.0"
   },
   {
     "id": "html-semantics",
@@ -427,8 +449,8 @@
     "sources": [
       "https://docs.python.org/3/library/zipfile.html"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-26",
+    "version": "1.1.0"
   },
   {
     "id": "csv-data",
@@ -462,8 +484,8 @@
     "sources": [
       "https://docs.python.org/3/library/asyncio-task.html"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-26",
+    "version": "1.1.0"
   },
   {
     "id": "sse-streaming",
@@ -479,8 +501,8 @@
     "sources": [
       "https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-26",
+    "version": "1.1.0"
   },
   {
     "id": "observability",
@@ -497,8 +519,8 @@
     "sources": [
       "https://docs.python.org/3/library/logging.html"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-26",
+    "version": "1.1.0"
   },
   {
     "id": "canvas-games",
@@ -534,8 +556,8 @@
     "sources": [
       "https://semver.org/"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-26",
+    "version": "1.1.0"
   },
   {
     "id": "ollama-integration",
@@ -552,8 +574,8 @@
     "sources": [
       "https://docs.ollama.com/api/introduction"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-26",
+    "version": "1.1.0"
   },
   {
     "id": "skill-authoring",
@@ -569,7 +591,7 @@
     "sources": [
       "https://agentskills.io/specification"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-26",
+    "version": "1.1.0"
   }
 ]

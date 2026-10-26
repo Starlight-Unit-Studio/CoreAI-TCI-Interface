@@ -6276,3 +6276,98 @@ audio.msg-image {
     content: none;
   }
 }
+
+/* 0.5.62: required Werkzeuge core skill is visibly ON but non-interactive. */
+.skill-card.skill-required .setting-row { cursor: default; }
+.skill-card.skill-required .settings-switch { opacity: .8; cursor: not-allowed; }
+.skill-card.skill-required .settings-switch input:checked:disabled + i {
+  border-color: rgba(117,130,154,.48);
+  background: rgba(117,130,154,.17);
+  box-shadow: none;
+}
+.skill-card.skill-required .settings-switch input:checked:disabled + i::before {
+  left: 28px;
+  background: #8895aa;
+  box-shadow: none;
+}
+.skill-card .skill-required-note {
+  display: block;
+  margin-top: 6px;
+  color: #68748a;
+  font: 600 10px/1.4 "Share Tech Mono", monospace;
+  letter-spacing: .015em;
+}
+
+/* 0.5.62: unboxed, readable work prose and live source beneath the work route. */
+.msg-row.ember .work-note,
+.msg-row.ember .work-note-model {
+  padding: 2px 0 5px;
+  margin: 3px 0;
+  border: 0;
+  background: transparent;
+}
+.msg-row.ember .work-note-text {
+  font-size: 14px;
+  line-height: 1.65;
+  color: #30435f;
+}
+.msg-row.ember .work-body { padding-left: 0; }
+.msg-row.ember .work-source {
+  min-width: 0;
+  margin: 12px 0 16px;
+  border: 1px solid rgba(91,146,255,.24);
+  border-radius: 9px;
+  background: #111827;
+  color: #dfe8ff;
+  overflow: hidden;
+}
+.msg-row.ember .work-source-header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255,255,255,.1);
+  color: #c8dafa;
+  font: 11px/1.4 "Share Tech Mono", monospace;
+}
+.msg-row.ember .work-source-status { color: #b0bfd8; text-align: right; }
+.msg-row.ember .work-source-scroll {
+  max-height: 240px;
+  min-height: 65px;
+  margin: 0;
+  padding: 12px;
+  overflow: auto;
+  white-space: pre;
+  overflow-wrap: normal;
+  font: 12px/1.55 "Share Tech Mono", monospace;
+}
+.msg-row.ember .work-source-code { white-space: pre; }
+@media (max-width: 620px) {
+  .msg-row.ember .work-note-text { font-size: 13px; }
+  .msg-row.ember .work-source-scroll { max-height: 190px; font-size: 11px; }
+}
+
+/* Natural ChatGPT-style narrative, without repeated operational headings. */
+.msg-row.ember .work-title-with-note {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+.msg-row.ember .work-entry { grid-template-columns: 20px minmax(0, 1fr) auto; gap: 6px; }
+.msg-row.ember .work-note { padding: 0; margin: 1px 0 4px; border: 0; background: transparent; }
+.msg-row.ember .work-note-text {
+  margin: 0;
+  color: var(--txt);
+  font: 500 14px/1.6 "Rajdhani", sans-serif;
+  letter-spacing: 0;
+}
+.msg-row.ember .work-state { opacity: .75; }
+.msg-row.ember .work-info { min-width: 0; }
+.msg-row.ember .work-source { width: 100%; }

@@ -2,6 +2,17 @@
 
 CoreAI: TCI Interface gehoert zur Quantum-Softwarefamilie und wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert. Historische Changelogs dokumentieren die frueheren Produktnamen unveraendert.
 
+## 0.5.62 - 26.10.2026
+
+- Neuer fest integrierter und unabschaltbarer System-Skill `skills/werkzeuge/SKILL.md`. Mit `required: true` im Katalog serverseitig bei jedem privaten CoreAI-Console-Turn aktiviert, nicht im Game-Ember-Kanal; auch wenn die Skills-Datenbankmigration fehlt oder ein altes Konto den Skill deaktiviert gespeichert hatte.
+- Der Skills-Endpunkt verweigert `werkzeuge=false`. Backend-Logik ignoriert die Pflichtanleitung bei der Auswahl der vier optionalen Pakete, laedt sie jedoch selbst bei fokussierten Quellcode-Unteraufrufen. Keine neuen Werkzeugrechte oder unautorisierte Modellparameter.
+- Skills-Einstellungen: ein sichtbar eingeschalteter, ausgegrauter Werkzeuge-Schalter mit Systemhinweis. Bulk-Aktionen und gespeicherte Vorlieben betreffen nur optionale Pakete.
+- Zehn Fach-Skills fuer Projektplanung, Codebearbeitung, Debugging, ZIP, Jobs, SSE, Diagnose, Ollama, Skill-Autoren und Releases an den tatsaechlichen Stand der CoreAI-Quelle angepasst. Insgesamt 33 Pakete. Beschreibungen machen offene Checkpoint-/Agentenprobleme deutlich, anstatt eine bereits geloeste Funktion vorzugeben.
+- Tests fuer Backend-Pflichtregel, Cross-Account-Isolation, API-Manipulation, fokussierte Modellaufrufe und UI-Pflichtschalter aktualisiert. Die vorgeschriebenen numerischen Cache-Keys, Versionstexte, Changelog und Uebergabe wurden vorbereitet.
+- Chat-UI aus dem vorherigen Draft #105 in 0.5.62 integriert: natuerliche fortlaufende Arbeitstexte ohne wiederholte Labels/Infokarten, tatsaechlich gestreamtes Source-Preview-Fenster unterhalb des Arbeitswegs, UTF-8-sichere Quelltext-Chunks und neue UI-Regressionen. Fehlerhafte Preview-Initialisierung aus der ersten Draft-Version wurde in die richtige Ollama-Funktion verschoben.
+- Abgeschnittene Modellstreams werden nicht mehr irrefuehrend als gruen bestaetigter Erfolg markiert. Die Quelle eines `done_reason=length` und die maximalen 2/4 Fortsetzungen sind weiterhin im Runner zu analysieren (Issue #102).
+- Keine Aenderung am Betreiber-Modelfile, Ollama-Optionen, der seriellen Queue, privaten Projektplaenen, der Datenbankstruktur oder dem Python-Worker. Issue #102 (12k-Plan/9-Dateien-Limits und fehlende persistente Datei-Checkpoints) bleibt ungelöst. Netcup-/Android-Liveabnahme und kompletter 10-Seiten-Build noch ausstehend; keine Erfolgsmeldung ueber nicht gelaufene Tests.
+
 ## 0.5.61 - 26.10.2026
 
 - Umfassendes Uebergabeprotokoll fuer den Chatwechsel: `docs/UEBERGABEPROTOKOLL_0_5_61.txt`, plus aktualisierter `docs/UEBERGABEPROTOKOLL_AKTUELL.txt`-Zeiger.
