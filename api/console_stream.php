@@ -1056,8 +1056,12 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
   }
 
   if ($workDb instanceof PDO) {
-    coreui_work_record($workDb, 'model', $ok ? 'success' : 'error',
-      $ok ? 'Modellstream empfangen' : 'Modellstream fehlgeschlagen',
+    // A completed HTTP exchange can still stop at an output-token limit.
+    // Never show a green success tick when Ollama reports truncated content.
+    coreui_work_record($workDb, 'model',
+      $truncated ? 'info' : ($ok ? 'success' : 'error'),
+      $truncated ? 'Modellstream abgeschnitten'
+        : ($ok ? 'Modellstream empfangen' : 'Modellstream fehlgeschlagen'),
       ['model'=>$model,'http_code'=>$httpCode,'duration_ms'=>$modelDurationMs,
         'reason'=>$truncated ? 'output_truncated' : ($ok ? 'completed' : 'request_failed'),
         'done_reason'=>$doneReason, 'eval_count'=>$evalCount,
