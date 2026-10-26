@@ -1,0 +1,62 @@
+COREAI: TCI INTERFACE / HOTFIX 0.5.64
+Stand: 26.10.2026, Europe/Berlin
+Repository: https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface
+Basis: main 0.5.63 (Hotfix PR #107, Merge 8b01ea113ce04828fb81e727d3bbce7c94074d82)
+Vorgaenger: docs/UEBERGEPROTOKOLL_0_5_63.txt (tatsaechlich docs/UEBERGABEPROTOKOLL_0_5_63.txt)
+
+A. REPRODUZIERTER NETCUP-BEFUND
+- Am 26.10.2026 um 20:51 Uhr kam 0.5.63 durch die PHP-Syntax-
+  Pruefung und nahezu alle Preflight-Tests. Die Anzeige meldete:
+  [FEHLER] Lokaler Dateiwerkzeug-Selbsttest: Local file tool FAIL:
+  local file calls must use focused prompts, safe diagnostics and one fallback
+- Gleichzeitig bestanden Skill-Persistenz, Tool-Routing, SQL-Migrationen,
+  Gemma-Modelfile-Kontrolle, Modell-Queue und PHP-Lint.
+- Node fehlte optional, die Nginx-Default-Site-Warnung ist ebenfalls
+  nicht der Grund fuer die eine Preflight-Fehlermeldung.
+
+B. URSACHE
+- Der letzte Assert in scripts/local-file-tool-selftest.php
+  verlangte wörtlich den seit 0.5.61 alten optionalen Skills-Hook:
+  if ($augmentSkills) $userPrompt = coreui_skills_augment($userPrompt);
+- Der korrekte Code seit 0.5.62 lautet:
+  $userPrompt = coreui_skills_augment($userPrompt, $augmentSkills);
+- Diese Aenderung ist beabsichtigt: Pflicht-Skill Werkzeuge bleibt
+  auch bei fokussierten Dateiaufrufen aktiv, optionale Pakete werden
+  ueber $augmentSkills=false ausgespart. scripts/skills-selftest.php
+  kontrolliert genau diesen Vertrag bereits.
+- Die anderen vier Teilbedingungen des lokalen Datei-Selbsttests
+  wurden im aktuellen Handler ebenfalls nachgewiesen. Kein Beleg
+  fuer eine defekte Datei-Implementierung aus diesem Testfehler.
+
+C. HOTFIX 0.5.64
+- Nur die veraltete Assertion in scripts/local-file-tool-selftest.php
+  an den bereits gueltigen Pflicht-Skill-Hook angepasst.
+- VERSION, alle sechs HTML-Produktversionsangaben, js/console-gate.js,
+  numerischer SHA256-Cache-Key, scripts/branding-license-selftest.py,
+  beide Preflight-Kopfzeilen, README, CHANGELOG.md, TXT-Index und
+  neues Uebergabeprotokoll konsistent aktualisiert.
+- Kein neuer Backend-Limit-, Modelfile-, Ollama-Parameter- oder
+  Nutzerdaten-Eingriff.
+
+D. TEST-/ABNAHMESTAND
+- Serverlog zeigt PHP-Syntaxcheck in 0.5.63 bestanden; im Code wurde
+  der veraltete Assert als einzige falsche Teilbedingung identifiziert.
+- Der aktualisierte Assertion-String wurde mit dem aktuellen
+  Handler verglichen. Versionierungs- und Cache-Key-Abgleich vor
+  Merge. Lokaler PHP-Syntaxcheck des veraenderten Ausdrucks moeglich.
+- Der gesamte PHP-Preflight ist erst nach dem neuen Netcup-Update
+  nachweisbar; ohne Screenshot/Logs nicht als bestanden markieren.
+- PR-Basis main 0.5.63 vor Merge nochmals pruefen.
+- Nach Merge denselben bestehenden Netcup-Updater erneut ausfuehren.
+  Kein besonderer PHP-FPM- oder Docker-Reset ausserhalb des
+  regulaeren Installers notwendig.
+
+E. OFFENE ARBEIT
+- Issue #102: fehlende persistente Datei-Checkpoints, fixe
+  Fortsetzungs-/Plan-/Dateianzahl-Grenzen und Modellabbrueche
+  bleiben als separate Architekturarbeit offen.
+- 0.5.62-Chatstil, echte Live-Codevorschau und Pflicht-Werkzeug-Skill
+  bleiben erhalten. Game-Ember, Modell, RAG, private Plaene und
+  andere STU-Projekte nicht ungefragt veraendern.
+
+STATUS: gezielter Preflight-Hotfix, Netcup-Liveabnahme ausstehend.
