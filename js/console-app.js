@@ -121,8 +121,6 @@
     thinkingPanelEl: null,
     sendTimestamp:   0,
     sendTimestampBySession: {},
-    countdownEl:     null,
-    countdownTimer:  null,
     streamedIds:     {},
     pendingBySession: {},
     activeAgentRunsBySession: {},
@@ -564,7 +562,6 @@
 
   function selectSession(sessionId) {
     if (state.bgTimer) clearTimeout(state.bgTimer);
-    stopCountdown();
     state.viewEpoch++;
     state.activeSessionId = String(sessionId || '');
     var ses = activeSession();
@@ -790,7 +787,6 @@
     }
     if (state.pendingBySession[ses.id]) {
       showTypingIndicator();
-      startCountdown();
       setStatus('waiting', 'MARA ANTWORTET\u2026');
     }
     renderQueuedTurns(ses);
@@ -1257,7 +1253,6 @@
       updateActivePendingUi();
       setStatus('waiting', mode === 'continue' ? 'MARA SETZT FORT\u2026' : 'MARA ERZEUGT ALTERNATIVE\u2026');
       showTypingIndicator();
-      startCountdown();
       openStreamForReply(ses, Number(request.trigger_message_id) || 0, request);
     }).catch(function (error) {
       generationActionError(error && error.message ? error.message : 'console_action_failed');
@@ -1601,38 +1596,6 @@
     requestAnimationFrame(function() {
       messagesArea.scrollTop = messagesArea.scrollHeight;
     });
-  }
-
-  var MAX_WAIT_SEC = 310;
-
-  function startCountdown() {
-    stopCountdown();
-    var el = document.createElement('div');
-    el.className = 'ember-countdown';
-    el.textContent = '⏳ ' + MAX_WAIT_SEC + 's';
-    messagesInner.appendChild(el);
-    state.countdownEl = el;
-    scrollToBottom();
-    var remaining = MAX_WAIT_SEC;
-    state.countdownTimer = setInterval(function() {
-      remaining--;
-      if (remaining <= 0) {
-        // Nicht verschwinden lassen - lange (Web-)Turns laufen noch. stopCountdown räumt am Ende auf.
-        if (state.countdownEl) state.countdownEl.textContent = '⏳ noch dabei…';
-        clearInterval(state.countdownTimer);
-        state.countdownTimer = null;
-        return;
-      }
-      if (state.countdownEl) state.countdownEl.textContent = '⏳ ' + remaining + 's';
-    }, 1000);
-  }
-
-  function stopCountdown() {
-    if (state.countdownTimer) { clearInterval(state.countdownTimer); state.countdownTimer = null; }
-    if (state.countdownEl && state.countdownEl.parentNode) {
-      state.countdownEl.parentNode.removeChild(state.countdownEl);
-    }
-    state.countdownEl = null;
   }
 
   function showResponseTime(row, sessionId) {
@@ -2029,7 +1992,6 @@
       renderHistory(ses);
       setStatus('waiting', 'MARA VERARBEITET DIE AENDERUNG…');
       showTypingIndicator();
-      startCountdown();
       scrollToBottom();
       openStreamForReply(ses, editedId, request);
     }).catch(function (error) {
@@ -2103,7 +2065,6 @@
     state.sendTimestamp = Date.now();
     state.sendTimestampBySession[sessionId] = state.sendTimestamp;
     showTypingIndicator();
-    startCountdown();
 
     var postBody = JSON.stringify({
       action:       'send',
@@ -2145,7 +2106,6 @@
         restoreAttachments(atts);
         if (options.from_queue) restoreQueuedTurn(sessionId, options.queued_turn);
         if (isActiveSession(sessionId)) {
-          stopCountdown();
           removeTypingIndicator();
           updateActivePendingUi();
           setStatus('online', 'VERBUNDEN');
@@ -2203,7 +2163,6 @@
       restoreAttachments(atts);
       if (options.from_queue) restoreQueuedTurn(sessionId, options.queued_turn);
       if (isActiveSession(sessionId)) {
-        stopCountdown();
         removeTypingIndicator();
         updateActivePendingUi();
         setStatus('error', 'FEHLER');
@@ -2352,7 +2311,6 @@
     delete state.liveWorkEventsBySession[sessionId];
     clearAgentRun(sessionId);
     if (!isActiveSession(sessionId)) return;
-    stopCountdown();
     removeTypingIndicator();
     updateActivePendingUi();
     setStatus(errorMessage ? 'error' : 'online', errorMessage ? 'AKTION FEHLGESCHLAGEN' : 'VERBUNDEN');
@@ -2461,7 +2419,6 @@
       dbLoadSessions().then(renderSessionList).catch(function() {});
       return;
     }
-    stopCountdown();
 
     // The live timeline is part of the typing row. renderHistory() replaces it
     // with the saved reply and the matching immutable work events (no duplicate).
@@ -2768,7 +2725,6 @@
       delete state.pendingBySession[sessionId];
       delete state.pollTimers[sessionId];
       if (isActiveSession(sessionId)) {
-        stopCountdown();
         removeTypingIndicator();
         updateActivePendingUi();
         setStatus('online', 'VERBUNDEN');
@@ -2801,7 +2757,6 @@
         delete state.pendingBySession[sessionId];
         delete state.pollTimers[sessionId];
         if (isActiveSession(sessionId)) {
-          stopCountdown();
           removeTypingIndicator();
           updateActivePendingUi();
           setStatus('online', 'VERBUNDEN');
@@ -2859,7 +2814,6 @@
         clearAgentRun(sessionId);
         delete state.pendingBySession[sessionId];
         if (isActiveSession(sessionId)) {
-          stopCountdown();
           removeTypingIndicator();
           updateActivePendingUi();
           setStatus('online', 'VERBUNDEN');
