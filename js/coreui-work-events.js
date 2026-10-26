@@ -5,7 +5,7 @@
   'use strict';
 
   var STATES = {running:true,success:true,error:true,info:true};
-  var KINDS = {run:true,model:true,tool:true,artifact:true,error:true};
+  var KINDS = {run:true,model:true,tool:true,artifact:true,error:true,commentary:true};
   var DETAIL_LABELS = {
     model:'Modell', job_id:'Job', exit_code:'Exitcode', duration_ms:'Laufzeit (ms)',
     error_type:'Fehlertyp', file_name:'Datei', file_count:'Dateien', attempt:'Versuch',
@@ -24,6 +24,7 @@
   // Unbekannte Ereignisse erhalten keine erfundene Erklaerung.
   function workNote(event) {
     if (!event) return '';
+    if (event.kind === 'commentary') return event.meta.public_note || '';
     var file = event.meta.file_name ? '„' + event.meta.file_name + '“' : 'die angeforderte Datei';
     switch (event.title) {
       case 'Auftrag gestartet':
@@ -151,6 +152,13 @@
         }
       });
     }
+    if (raw.kind === 'commentary' && raw.meta
+        && typeof raw.meta.public_note === 'string') {
+      var note = raw.meta.public_note.trim();
+      if (note.length >= 12 && note.length <= 300
+          && !/[<>\[\]{}\x00-\x1f]/.test(note)) meta.public_note = note;
+    }
+    if (raw.kind === 'commentary' && !meta.public_note) return null;
     return {
       id:Number(raw.id) || 0,kind:raw.kind,state:raw.state,
       title:title,meta:meta,time:String(raw.time || '').slice(0, 40)
@@ -203,18 +211,20 @@
     var entry = el('div', 'work-entry work-' + event.state);
     if (event.id) entry.setAttribute('data-work-id', String(event.id));
     entry.appendChild(el('span', 'work-state',
-      event.state === 'success' ? '\u2713' :
+      event.kind === 'commentary' ? '✎' : event.state === 'success' ? '\u2713' :
       event.state === 'error' ? '!' : event.state === 'running' ? '\u2022' : 'i'));
     var info = el('div', 'work-info');
     info.appendChild(el('div','work-title',event.title));
     var note = workNote(event);
     if (note) {
       var annotation = el('div','work-note');
-      annotation.appendChild(el('span','work-note-label','Maras Arbeitsnotiz'));
+      annotation.className += event.kind === 'commentary' ? ' work-note-model' : ' work-note-derived';
+      annotation.appendChild(el('span','work-note-label',event.kind === 'commentary'
+        ? 'Mara · Öffentliche Zwischenmeldung' : 'Ereignisbericht · Automatisch erläutert'));
       annotation.appendChild(el('p','work-note-text',note));
       info.appendChild(annotation);
     }
-    var keys = Object.keys(event.meta);
+    var keys = Object.keys(event.meta).filter(function (key) { return key !== 'public_note'; });
     if (keys.length) {
       var details = el('details','work-detail');
       details.appendChild(el('summary','', 'Technische Details'));
@@ -248,7 +258,7 @@
     toggle.type = 'button';
     var expanded = options.expanded === true || live;
     toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-    toggle.appendChild(el('span','work-chevron','\\u25b8'));
+    toggle.appendChild(el('span','work-chevron','▸'));
     var heading = el('span','work-caption');
     toggle.appendChild(heading);
     var counters = el('span','work-counts');

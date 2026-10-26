@@ -6097,6 +6097,14 @@ audio.msg-image {
   border-left: 2px solid rgba(91,146,255,.35);
   background: rgba(91,146,255,.045);
 }
+.msg-row.ember .work-note-model {
+  border-left-color: rgba(44,135,117,.75);
+  background: rgba(44,135,117,.06);
+}
+.msg-row.ember .work-note-derived .work-note-label {
+  opacity: .78;
+}
+
 .msg-row.ember .work-note-label {
   display: block;
   margin-bottom: 2px;

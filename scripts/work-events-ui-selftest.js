@@ -167,4 +167,21 @@ const futureTool = work.create({events:[{id:71,kind:'tool',state:'running',
 assert(futureTool.textContent.includes('Ich führe gerade „Neuen Repository-Pruefschritt gestartet“ aus'),
   'future tool events must receive a generic evidence-based explanation');
 
+
+// 0.5.56: optional in-band, genuinely public commentary must be
+// separate from automatically explained server events.
+const modelPublic = work.create({events:[{
+  id:72,kind:'commentary',state:'info',title:'Mara meldet ihren naechsten Schritt',
+  meta:{public_note:'Ich pruefe zuerst die vorhandene HTML-Datei.',
+    source:'model_public_text',raw_thinking:'DO_NOT_LEAK'}
+}],expanded:false});
+assert(modelPublic && modelPublic.textContent.includes('Ich pruefe zuerst die vorhandene HTML-Datei.'));
+assert(modelPublic.textContent.includes('Öffentliche Zwischenmeldung'));
+assert(!modelPublic.textContent.includes('DO_NOT_LEAK'));
+assert(!modelPublic.textContent.includes('Automatisch erläutert'));
+assert.equal(work.normalize({id:73,kind:'commentary',state:'info',
+  title:'Mara meldet ihren naechsten Schritt',meta:{raw_thinking:'SECRET'}}),null);
+assert.equal(modelPublic.querySelector('.work-chevron').textContent,'▸',
+  'toggle glyph must be rendered, not escaped');
+
 console.log('P06 inline work-history UI selftest: OK');
