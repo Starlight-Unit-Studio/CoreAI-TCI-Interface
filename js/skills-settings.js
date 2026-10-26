@@ -36,7 +36,9 @@
   }
   function controls() {
     save.disabled = all.disabled = none.disabled = !ready || busy;
-    list.querySelectorAll('input').forEach(function (input) { input.disabled = !ready || busy; });
+    list.querySelectorAll('input').forEach(function (input) {
+      input.disabled = input.dataset.required === 'true' || !ready || busy;
+    });
   }
   function dirty() { status.textContent = 'Auswahl geändert. Bitte speichern; sie gilt ab der nächsten Anfrage.'; }
   function render() {
@@ -47,7 +49,7 @@
     });
     filtered.forEach(function (skill) {
       var card = document.createElement('div');
-      card.className = 'skill-card';
+      card.className = skill.required === true ? 'skill-card skill-required' : 'skill-card';
       var label = document.createElement('label');
       label.className = 'setting-row';
       var copy = document.createElement('span');
@@ -55,16 +57,32 @@
       var title = document.createElement('strong'); title.textContent = skill.title;
       var desc = document.createElement('small'); desc.textContent = skill.description;
       copy.append(title, desc);
+      if (skill.required === true) {
+        var fixed = document.createElement('small');
+        fixed.className = 'skill-required-note';
+        fixed.textContent = 'SYSTEM-SKILL · IMMER AKTIV · NICHT DEAKTIVIERBAR';
+        copy.appendChild(fixed);
+      }
       var toggle = document.createElement('span'); toggle.className = 'settings-switch';
-      var input = document.createElement('input'); input.type = 'checkbox'; input.checked = enabled[skill.id] === true;
-      input.addEventListener('change', function () { enabled[skill.id] = input.checked; dirty(); });
+      var input = document.createElement('input');
+      input.type = 'checkbox';
+      input.dataset.required = skill.required === true ? 'true' : 'false';
+      input.checked = skill.required === true || enabled[skill.id] === true;
+      input.disabled = skill.required === true;
+      input.addEventListener('change', function () {
+        if (skill.required === true) { input.checked = true; return; }
+        enabled[skill.id] = input.checked; dirty();
+      });
       var decoration = document.createElement('i'); decoration.setAttribute('aria-hidden', 'true');
       toggle.append(input, decoration); label.append(copy, toggle); card.appendChild(label);
       var details = document.createElement('details');
       var summary = document.createElement('summary'); summary.textContent = skill.category + ' · Quellen und Aufruf';
       details.appendChild(summary);
       var info = document.createElement('p');
-      info.textContent = '/skill ' + skill.id + ' · Version ' + skill.version + ' · Quellen geprüft: ' + skill.reviewed;
+      info.textContent = (skill.required === true
+        ? 'Fest integrierter System-Skill, ohne Ein-/Ausschalter'
+        : '/skill ' + skill.id)
+        + ' · Version ' + skill.version + ' · Quellen geprüft: ' + skill.reviewed;
       details.appendChild(info);
       (skill.sources || []).forEach(function (url) {
         try {
@@ -82,12 +100,22 @@
     controls();
   }
   search.addEventListener('input', render);
-  all.addEventListener('click', function () { catalog.forEach(function (s) { enabled[s.id] = true; }); render(); dirty(); });
-  none.addEventListener('click', function () { catalog.forEach(function (s) { enabled[s.id] = false; }); render(); dirty(); });
+  all.addEventListener('click', function () {
+    catalog.forEach(function (s) { if (s.required !== true) enabled[s.id] = true; });
+    render(); dirty();
+  });
+  none.addEventListener('click', function () {
+    catalog.forEach(function (s) { if (s.required !== true) enabled[s.id] = false; });
+    render(); dirty();
+  });
   save.addEventListener('click', function () {
     if (!ready || busy) return;
     busy = true; controls(); status.textContent = 'Skills werden gespeichert …';
-    request({method: 'POST', headers: {'Content-Type': 'application/json', 'X-CoreUI-CSRF': csrf}, body: JSON.stringify({enabled: enabled})})
+    var writable = {};
+    catalog.forEach(function (skill) {
+      if (skill.required !== true) writable[skill.id] = enabled[skill.id] === true;
+    });
+    request({method: 'POST', headers: {'Content-Type': 'application/json', 'X-CoreUI-CSRF': csrf}, body: JSON.stringify({enabled: writable})})
       .then(function (data) { enabled = data.enabled; status.textContent = 'Skills gespeichert. Die Auswahl gilt ab der nächsten Anfrage.'; })
       .catch(function () { status.textContent = 'Speichern fehlgeschlagen. Auswahl ist noch nicht gespeichert; bitte erneut versuchen.'; })
       .finally(function () { busy = false; render(); });
@@ -95,7 +123,11 @@
   controls();
   request().then(function (data) {
     catalog = data.catalog; enabled = data.enabled; csrf = data.csrf_token; ready = data.ready === true;
-    status.textContent = ready ? catalog.length + ' Skills verfügbar. Aktiviere deine Auswahl und speichere sie.' : 'Skills noch nicht verfügbar: Datenbankmigration 014 muss eingespielt werden.';
+    var optionalCount = catalog.filter(function (s) { return s.required !== true; }).length;
+    var requiredCount = catalog.length - optionalCount;
+    status.textContent = ready
+      ? optionalCount + ' wählbare Skills und ' + requiredCount + ' fester Kern-Skill. Änderungen speichern.'
+      : requiredCount + ' Kern-Skill immer aktiv. Optionale Skills benötigen Datenbankmigration 014.';
     render();
   }).catch(function (error) { status.textContent = loadErrorMessage(error); });
 })();
