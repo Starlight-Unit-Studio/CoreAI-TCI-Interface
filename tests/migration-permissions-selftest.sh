@@ -2,8 +2,10 @@
 # Offline regression for migration script permissions; never contacts Docker.
 set -Eeuo pipefail
 ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
-bash -n "$ROOT/scripts/migrate.sh" "$ROOT/scripts/install.sh" \
-  "$ROOT/setup.sh" "$ROOT/scripts/update-from-main.sh"
+for script in "$ROOT/scripts/migrate.sh" "$ROOT/scripts/install.sh" \
+  "$ROOT/setup.sh" "$ROOT/scripts/update-from-main.sh"; do
+  bash -n "$script"
+done
 [[ -x "$ROOT/scripts/migrate.sh" ]] || {
   printf 'FAIL: Git checkout lacks executable migration script\n' >&2
   exit 1
