@@ -6276,3 +6276,24 @@ audio.msg-image {
     content: none;
   }
 }
+
+/* 0.5.62: required Werkzeuge core skill is visibly ON but non-interactive. */
+.skill-card.skill-required .setting-row { cursor: default; }
+.skill-card.skill-required .settings-switch { opacity: .8; cursor: not-allowed; }
+.skill-card.skill-required .settings-switch input:checked:disabled + i {
+  border-color: rgba(117,130,154,.48);
+  background: rgba(117,130,154,.17);
+  box-shadow: none;
+}
+.skill-card.skill-required .settings-switch input:checked:disabled + i::before {
+  left: 28px;
+  background: #8895aa;
+  box-shadow: none;
+}
+.skill-card .skill-required-note {
+  display: block;
+  margin-top: 6px;
+  color: #68748a;
+  font: 600 10px/1.4 "Share Tech Mono", monospace;
+  letter-spacing: .015em;
+}
