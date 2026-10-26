@@ -1,0 +1,8 @@
+CoreAI: TCI Interface 0.5.58 (26.10.2026)
+
+- Ursache fuer Netcup-Abbruch von 0.5.57: scripts/migrate.sh war im Git-Tree 100644 und wurde in install.sh:664 direkt ausgefuehrt, waehrend chmod erst nach der Migration geschah.
+- scripts/migrate.sh jetzt Git-Dateimodus 100755; setup.sh chmod vor Installer; update-from-main.sh chmod vor Aufruf; install.sh verwendet bash fuer den Migrationsstart.
+- Offline-Regressionstests fuer nicht ausfuehrbare 0644-Skripte und die unveraenderte Setup-Einzelerzeile hinzugefuegt und in Compose-/Native-Preflight aufgenommen.
+- Version, HTML-Versionen, JS-Bootstrap und SHA-256-Inhalts-Cache-Schluessel auf 0.5.58 angehoben.
+- SQL-Schema, private Daten, bestehendes Modelfile, Ollama-Einstellungen, Mara, Docker-Namen und Homepage unveraendert.
+- Serverinstallation/SQL-Import und Live-Preflight noch nicht nachgewiesen. GitHub Actions nicht gestartet.
