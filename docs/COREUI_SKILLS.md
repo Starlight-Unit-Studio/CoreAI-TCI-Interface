@@ -5,7 +5,7 @@ CoreAI enthaelt jetzt 33 vertrauenswuerdige, direkt im Repository gepflegte Anle
 ## Verbindlicher System-Skill: Werkzeuge
 
 - `skills/werkzeuge/SKILL.md` ist im Katalog mit `required: true` registriert.
-- Er gilt bei jeder CoreAI-Anfrage, unabhaengig von Schlagwoertern, gespeicherten Nutzer-Praeferenzen und der optionalen Migration 014.
+- Er gilt bei jeder Anfrage im privaten CoreAI-Console-Kanal, unabhaengig von Schlagwoertern, gespeicherten Nutzer-Praeferenzen und der optionalen Migration 014. Die Game-Ember erhaelt diese Mara-spezifische Pflichtanleitung nicht.
 - Der Server laedt ihn zwingend und uebergeht historische `enabled=0`-Datenbankzeilen. `user_skills.php` darf ihn nicht auf `false` setzen, auch nicht bei manipulierten POST-Daten.
 - Die Einstellungen zeigen ihn oben, dauerhaft angehakt und ausgegraut. Die Schaltflaechen "Alle aktivieren" und "Alle deaktivieren" betreffen ihn nicht. Der Pflicht-Skill wird nicht in kontoabhaengige Vorlieben geschrieben.
 - Bei fokussierten Quellcode-Unteraufrufen bleibt der kurze Kern-Skill aktiv, waehrend bis zu vier weitere optionale Pakete wie bisher ausgelassen werden koennen.
