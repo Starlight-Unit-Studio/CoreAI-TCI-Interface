@@ -28,3 +28,14 @@ Dieses Repository umfasst die Software, ihren Installer, ihre enthaltene Login-/
 
 ## Abnahme
 Name und Quantum-Familienvermerk in den sechs HTML-Seiten und in Such-Metadaten, korrektes Repository im Installer, aktuelle Versionsanzeige, unveraenderte TCI-Identitaet, unveraenderte Daten-/Runtime-Kennungen, keine veralteten Produktnamen in aktiven Anzeigen. Echten Live-Deploy, den Netcup-Preflight und Android-Layout gesondert pruefen.
+
+## Sichtbare Namens- und Rechtezuordnung ab 0.5.59
+
+Im internen Info-Bereich steht `QUANTUM SOFTWARE` ueber dem
+separaten Produktnamen `COREAI: TCI INTERFACE`. Die historische
+Projektbezeichnung `PROJECT STΛRLIɢHT` ist dort keine aktuelle
+Produktzuordnung. Starlight Unit Studios bleibt Herausgeber.
+
+Aktuelle interne Oberflaechen nennen `© 2023-2026 Patrick Schildgen`
+und Starlight Unit Studios in gut lesbarer Schrift. Historische
+Lizenzbezeichnungen und technische Kompatibilitaetsnamen bleiben erhalten.

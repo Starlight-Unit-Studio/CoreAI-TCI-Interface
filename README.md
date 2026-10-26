@@ -7,7 +7,21 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.58` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.59` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Quantum-Zuordnung und lesbares Copyright (0.5.59)
+
+Der interne Info-Bereich zeigt **QUANTUM SOFTWARE** als Familienzeile und
+**COREAI: TCI INTERFACE** als eigenstaendigen Produktnamen. Die alte
+Projektbezeichnung ist dort entfernt. Das Studio-Logo bleibt erhalten.
+
+Alle sechs internen Oberflaechen nennen nun sichtbar **2023-2026 Patrick
+Schildgen** und Starlight Unit Studios. Die Schrift wurde auch auf
+schmalen Anzeigen vergroessert und kontrastreicher gestaltet.
+Die begleitenden Copyright-Kopfzeilen sind angeglichen; historische
+Lizenznamen und materiell unveraenderte Lizenzbedingungen bleiben bestehen.
+
+Siehe `docs/UEBERGABEPROTOKOLL_0_5_59.txt`.
 
 ## Netcup-Migrationsberechtigungsfix (0.5.58)
 
