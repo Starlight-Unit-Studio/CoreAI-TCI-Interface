@@ -1,4 +1,4 @@
-/* E.M.B.E.R. CoreUI standalone bootstrap.
+/* CoreAI: TCI Interface standalone bootstrap.
    Browser, PWA and WebView are gleichberechtigte Clients. Eine fremde
    Root-Seite oder ein STU-Host wird bewusst nicht vorausgesetzt. */
 (function () {
@@ -7,7 +7,7 @@
   var projectUrl = new URL('../', scriptUrl);
 
   window.EMBER_COREUI = Object.freeze({
-    version: '0.5.56',
+    version: '0.5.57',
     projectUrl: projectUrl.href,
     apiUrl: new URL('api/', projectUrl).href
   });

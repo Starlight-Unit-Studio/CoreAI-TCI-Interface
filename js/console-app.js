@@ -1,4 +1,4 @@
-// E.M.B.E.R. CoreUI - console-app.js
+// CoreAI: TCI Interface - console-app.js
 // Session-Persistenz via MariaDB (api/console_sessions.php)
 // Nachrichten kommen aus stu_chat_messages via SSE und Fetch-Poll.
 // Rohe Modellgedanken werden weder angezeigt noch aus der Historie uebernommen.
@@ -507,7 +507,7 @@
           ev.stopPropagation();
           var title = String(s.title || 'Sitzung');
           if (!window.confirm(
-            'Sitzung "' + title + '" endgültig löschen? Nachrichten, Browser-Recherchen und zugehörige Uploads werden aus E.M.B.E.R. CoreUI entfernt.'
+            'Sitzung "' + title + '" endgültig löschen? Nachrichten, Browser-Recherchen und zugehörige Uploads werden aus CoreAI: TCI Interface entfernt.'
           )) return;
           var proof = window.prompt('Zur Bestätigung LÖSCHEN eingeben:');
           proof = String(proof || '').trim().toLocaleUpperCase('de-DE');
