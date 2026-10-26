@@ -14,8 +14,10 @@ function coreui_work_schema_ready(PDO $pdo): bool {
 
 function coreui_work_safe_meta(array $raw): array {
   $allowedNumbers = ['job_id','exit_code','duration_ms','file_count','attempt','http_code','elapsed_ms',
-    'source_chars','eval_count','prompt_eval_count'];
-  $allowedStrings = ['model','error_type','file_name','reason','source'];
+    'source_chars','eval_count','prompt_eval_count',
+    'plan_version','step','content_chars','thinking_chars','continuation_segments',
+    'response_bytes','discarded_tool_body_bytes'];
+  $allowedStrings = ['model','error_type','file_name','reason','source','done_reason'];
   $safe = [];
   foreach ($allowedNumbers as $key) {
     if (isset($raw[$key]) && (is_int($raw[$key]) || is_numeric($raw[$key]))) {
@@ -27,6 +29,10 @@ function coreui_work_safe_meta(array $raw): array {
     $value = trim($raw[$key]);
     if ($key === 'file_name') $value = basename(str_replace('\\', '/', $value));
     if (preg_match('/^[a-zA-Z0-9._:\/-]{1,110}$/D', $value)) $safe[$key] = $value;
+  }
+  // The marker flag is a boolean diagnostic, never a source-text payload.
+  if (isset($raw['marker_incomplete']) && is_bool($raw['marker_incomplete'])) {
+    $safe['marker_incomplete'] = $raw['marker_incomplete'];
   }
   return $safe;
 }
