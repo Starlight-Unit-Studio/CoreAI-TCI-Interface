@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.61 documentation-only chat handover; runtime unchanged from 0.5.60.
+# CoreAI: TCI Interface 0.5.62 mandatory Werkzeug core skill and optional skill updates.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
