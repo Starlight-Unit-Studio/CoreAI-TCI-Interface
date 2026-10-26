@@ -7,7 +7,41 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.64` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.65` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Leserorientierter Arbeitsweg und Projekt-ZIP-Writer (0.5.65)
+
+Der CoreAI-Chat hat einen funktionierenden, halbtransparenten
+Ruecksprung-Button. Beim Lesen aelterer Nachrichten folgt der Chat
+nicht mehr blind jedem Modell- und SSE-Ereignis; erst der ausdrueckliche
+Sprung oder die Rueckkehr ans Ende schaltet die automatische Nachfuehrung
+wieder ein. Waehrend Mara arbeitet, zeigt der Button drei animierte
+Arbeitspunkte statt des Pfeils. Eine grosse laufende Arbeit wird am
+Beginn des aktiven Nachrichtenblocks verankert, nicht hinter ihren
+sichtbaren Inhalt gescrollt. Live-Arbeitsweg und Quellcodefenster behalten
+jeweils ihre eigene Leserposition.
+
+Die Workevents erscheinen als durchlaufende Chattexte statt als
+Protokollkarten. Diagnose und Zeitpunkt bleiben unter einem kleinen
+Info-Symbol abrufbar; keine wiederholten "Technische Details"-Zeilen
+und keine erzwungenen Profilnamen an jedem Arbeitsschritt.
+
+Beim nativen und Quelltext-ZIP-Bau sind die bestaetigten Dateien
+weiterhin nach Quelle, Dateiname, Anzahl und Worker-Kontext validiert.
+Der fruehere zusaetzliche 512-kB-Sammeldeckel und der fuer modell-
+geschriebene Python-Skripte geltende Codeumfang werden nicht mehr
+auf den rein serverseitig erstellten, deterministischen ZIP-Schreiber
+uebertragen. Dessen tatsaechlicher Bedarf wird aus den geprueften
+Quelldateien berechnet. Ein mehrteiliger persistenter Projekt-Runner
+und die bisherigen Manifest-/Fortsetzungsgrenzen aus Issue #102 sind
+weiterhin offen; kein fertiger zehnseitiger Projektbau behauptet.
+
+Tests: `node scripts/chat-follow-selftest.cjs`,
+`node scripts/work-events-ui-selftest.js`,
+`php scripts/local-file-tool-selftest.php`,
+`python3 scripts/version-merge-check.py --base-version 0.5.64`,
+`python3 scripts/cache-bust.py --verify`.
+Die Netcup-Liveabnahme folgt erst nach dem Merge und Server-Update.
 
 ## Dateiwerkzeug-Selbsttest korrigiert (0.5.64)
 
