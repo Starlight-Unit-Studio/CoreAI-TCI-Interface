@@ -2,7 +2,7 @@ COREAI: TCI INTERFACE / HOTFIX 0.5.64
 Stand: 26.10.2026, Europe/Berlin
 Repository: https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface
 Basis: main 0.5.63 (Hotfix PR #107, Merge 8b01ea113ce04828fb81e727d3bbce7c94074d82)
-Vorgaenger: docs/UEBERGEPROTOKOLL_0_5_63.txt (tatsaechlich docs/UEBERGABEPROTOKOLL_0_5_63.txt)
+Vorgaenger: docs/UEBERGABEPROTOKOLL_0_5_63.txt
 
 A. REPRODUZIERTER NETCUP-BEFUND
 - Am 26.10.2026 um 20:51 Uhr kam 0.5.63 durch die PHP-Syntax-
