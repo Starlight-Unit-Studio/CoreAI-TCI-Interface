@@ -218,6 +218,9 @@
     if (event.time) entry.appendChild(el('time','work-time',localTime(event.time)));
     entries.appendChild(entry);
     while (entries.children.length > 150) entries.removeChild(entries.firstChild);
+    // Keep the newest live step visible inside the scrollable detail area.
+    // A saved history panel must not force the reader's scroll position.
+    if (body._workLive) body.scrollTop = body.scrollHeight;
     if (typeof body._onWorkEvent === 'function') body._onWorkEvent(event);
     return true;
   }
@@ -240,6 +243,7 @@
     toggle.appendChild(counters);
     var digest = el('p','work-digest');
     var body = el('div','work-body');
+    body._workLive = live;
     body.hidden = !expanded;
     if (live) body.appendChild(el('p','work-empty','Warte auf den ersten Arbeitsschritt ...'));
 
