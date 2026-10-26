@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-/* E.M.B.E.R. CoreUI standalone configuration loader.
+/* CoreAI: TCI Interface standalone configuration loader.
    Priority: existing constants, api/config.local.php, environment, defaults. */
 
 $localConfig = __DIR__ . '/config.local.php';
@@ -42,7 +42,7 @@ coreui_define('STU_SMTP_PORT', (int)coreui_env('COREUI_SMTP_PORT', '587'));
 coreui_define('STU_SMTP_USER', coreui_env('COREUI_SMTP_USER'));
 coreui_define('STU_SMTP_PASS', coreui_env('COREUI_SMTP_PASS'));
 coreui_define('STU_MAIL_FROM', coreui_env('COREUI_MAIL_FROM'));
-coreui_define('STU_MAIL_FROM_NAME', coreui_env('COREUI_MAIL_FROM_NAME', 'E.M.B.E.R. CoreUI'));
+coreui_define('STU_MAIL_FROM_NAME', coreui_env('COREUI_MAIL_FROM_NAME', 'CoreAI: TCI Interface'));
 coreui_define('STU_PUBLIC_BASE_URL', rtrim(coreui_env('COREUI_PUBLIC_URL'), '/'));
 coreui_define('STU_MAIL_DEBUG', false);
 
@@ -82,7 +82,7 @@ coreui_define('STU_EMBER_LORE_ENABLED', coreui_env_bool('COREUI_LORE_ENABLED', t
 coreui_define('STU_EMBER_LORE_LIMIT', (int)coreui_env('COREUI_LORE_LIMIT', '5'));
 coreui_define('STU_EMBER_LORE_MAX_CHARS', (int)coreui_env('COREUI_LORE_MAX_CHARS', '1800'));
 coreui_define('STU_EMBER_LORE_MIN_QUERY_CHARS', (int)coreui_env('COREUI_LORE_MIN_QUERY_CHARS', '3'));
-// Studio-internes Kanonmaterial wird niemals mit E.M.B.E.R. CoreUI ausgeliefert.
+// Studio-internes Kanonmaterial wird niemals mit CoreAI: TCI Interface ausgeliefert.
 // Operatoren koennen eigene, rechtmaessig bereitgestellte Quellen separat
 // importieren. Das oeffentliche Release enthaelt keine voreingestellten Pfade.
 coreui_define('STU_EMBER_LORE_DOCS', []);
