@@ -1,0 +1,11 @@
+PROJECT STΛRLIɢHT: EMBER COREUI
+AKTUELLE CHAT-UEBERGABE
+Stand: 26.10.2026
+Repository-Version bei Erstellung: 0.5.54
+Bitte zuerst diese Datei lesen:
+  docs/UEBERGABEPROTOKOLL_0_5_54_CHATWECHSEL_2026_10_26.txt
+
+Danach die aktuelle VERSION und den neuesten main-Commit erneut
+pruefen. Diese Datei ist eine Orientierung fuer Chatwechsel,
+keine Build- oder Preflight-Freigabe. Die bereits fertigen
+Projektplan-Dateien duerfen nicht neu ueberschrieben werden.

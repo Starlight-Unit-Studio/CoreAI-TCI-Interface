@@ -1,0 +1,235 @@
+PROJECT STΛRLIɢHT: E.M.B.E.R. COREUI
+UEBERGABEPROTOKOLL FUER CHATWECHSEL
+Stand: 26.10.2026, Europe/Berlin
+Art: reine Dokumentation, KEIN neuer CoreUI-Release, KEIN Runtime-Patch
+
+ZIEL DIESES DOKUMENTS
+Dieses Protokoll ist der Einstiegspunkt fuer den naechsten
+Chat, weil der bisherige Chat sein Nachrichtenlimit erreicht
+hat. Die Arbeit am vorhandenen CoreUI-Repository fortsetzen,
+NICHT nochmals bei Null beginnen und NICHT den fertigen
+Homepage-Plan neu generieren.
+
+REPOSITORY UND VERIFIZIERTER QUELLSTAND
+Repository: https://github.com/Starlight-Unit-Studio/coreui
+Basis bei Dokumenterstellung:
+  Branch: main
+  Commit: b1603a7df27146fa0640dd5cb1420b64dc991ada
+  VERSION: 0.5.54
+Vor neuen Aenderungen die neueste main/Version erneut lesen,
+da die Arbeit im Repository parallel fortgesetzt werden kann.
+Diese Chatuebergabe erhoeht die Versionsnummer NICHT.
+Die historische Uebergabe fuer den derzeitigen Source-Only-
+Fix steht in docs/UEBERGABEPROTOKOLL_0_5_54.txt.
+
+AKTUELLER BENUTZERWUNSCH UND PROJEKTZIEL
+- Mara im eigenen CoreUI soll aus einem fertigen,
+  dauerhaft gespeicherten Markdown-Homepage-Plan
+  tatsaechlich Projektdateien erstellen koennen.
+- Beispielauftrag: Anime-Welt-Tagebuch / private Homepage
+  mit etwa sechs miteinander verlinkten Unterseiten,
+  gemeinsamem Design sowie CSS/JS, spaeter als
+  vollstaendiges geprueftes ZIP.
+- Die Auftragssteuerung soll modellgesteuert funktionieren,
+  NICHT nur durch eine Phrase/Worterkennung des Nutzers.
+- E.M.B.E.R. verarbeitet grundsaetzlich HOECHSTENS EINE
+  Anfrage zur selben Zeit; die Ollama-Queue bleibt seriell.
+- Bestehende private Planungen, Chatverlaeufe,
+  Dateiversionen und die Konto-/Sessiontrennung erhalten.
+- Mobil nutzbar, der Nutzer arbeitet von Android aus.
+- Nach jeder relevanten Code-Freigabe ist ein konkretes
+  Uebergabeprotokoll im Repository erwuescht.
+
+BELEGTE ERFOLGE AUS DEN SCREENSHOTS
+1. Der zuvor fehlerhafte Preflight konnte nach mehreren
+   Korrekturen grundsaetzlich wieder laufen. 0.5.51
+   erzeugte dann einen neuen Falschfehler in einem
+   starren Thinking-Paketierungscheck. Dieser wurde in
+   0.5.52 im Repository repariert. Ob 0.5.54 auf dem
+   Zielserver komplett gruen durchlaeuft, ist NICHT
+   bestaetigt.
+2. Lokale Modelle konnten Markdown-Dateien und ZIPs
+   grundsaetzlich bereits erzeugen. Das beweist noch
+   keinen erfolgreichen Homepage-Gesamtbuild.
+3. Mara hat einen bereits begonnenen Projektplan
+   autonom fortgesetzt und als fertige
+   projektplan-v3.md gespeichert (Screenshot: ca. 6,2 KB).
+   Daneben war projektplan-v2.md (ca. 1,3 KB) sichtbar.
+   Die bestehende fertige Planversion NICHT loeschen.
+4. Ab 0.5.50 besitzt CoreUI einen eingebauten
+   scrollbaren Markdown-Viewer im Chat, mit Kopieren,
+   Herunterladen und Vergroessern. Externe App ist
+   zum Lesen der MD-Dateien nicht mehr vorgesehen.
+
+OFFENE PROBLEME / KONKRETE LIVE-BEFUNDE
+A. Modellantworten bleiben teilweise kurz oder werden
+   abgeschnitten. In einem Screenshot vom 25.10.2026
+   nach "Lass mal den Plan umsetzen":
+   "Das ist die Entscheidung, die ich" (nur 33 Zeichen),
+   Work-Event reason=continuation_limit.
+   Das allein beweist NICHT, ob 128k Kontext zur Laufzeit
+   genutzt werden, und beweist auch kein bestimmtes
+   Modell-Tokenlimit. Nach 0.5.51 liefert das Worklog
+   mehr Diagnosemetadaten (done_reason, eval_count,
+   prompt_eval_count, Thinking-/Textlaenge, Fortsetzungen).
+B. Bei einem spaeteren echten Buildversuch, im Screenshot
+   vom 26.10.2026 ca. 09:48 Uhr, endete Python-Job 108
+   mit Exitcode 1 und SyntaxError: "unterminated
+   triple-quoted string literal". Mara erhielt einen
+   Folgeaufruf, schrieb nur, sie werde den Fehler
+   beheben, und lieferte KEIN verifiziertes Projekt-ZIP.
+   In 0.5.54 wurde DARAUFHIN der native Webprojekt-Build
+   auf den Source-First-Einzeldateimodus umgestellt,
+   statt beliebiges vom Modell erzeugtes Python fuer
+   den ZIP-Bau zu verwenden. Das ist im Quellcode
+   implementiert, aber auf Netcup noch NICHT nachweislich
+   mit einem kompletten Projekt abgenommen.
+C. Im Screenshot vom 26.10.2026 ca. 11:00 Uhr kuendigte
+   Mara erneut die Erstellung von index.html und style.css
+   an, statt tatsaechliche Dateien zu zeigen. Auch diese
+   Antwort wurde als unvollstaendig markiert.
+   Keine verifizierte ZIP-Auslieferung erkennbar.
+   Die installierte CoreUI-Version dieses Screenshots
+   ist NICHT sichtbar; daher NICHT automatisch
+   als 0.5.54-Regression einstufen.
+D. Der Nutzer meldete, dass sein GEKUERZTES
+   Ollama-Modelfile funktionierte, eine laengere
+   von der Assistenz vorgeschlagene Version jedoch
+   Probleme ausloeste. Warum genau, ist NICHT belegt.
+   Genaue aktive Modelfile-Fassung, Modellauswahl,
+   Ollama-Runtimeoptionen und Request-Metadaten sind
+   noch zu vergleichen. Lange SYSTEM-Anweisungen,
+   widerspruechliche Werkzeuganweisungen und
+   Tokenbudget sind Hypothesen, keine Root-Cause.
+E. Der Nutzer verweist auf ein nominelles
+   Gemma-4-Kontextfenster von 128k Tokens und
+   ein Sliding-Window von 512 Tokens. Modell-Spezifikation
+   ist NICHT gleich effektiv konfiguriertes
+   num_ctx oder Ausgabe-/Thinking-Budget.
+   Nicht ungeprueft aus den Zahlen Rueckschluesse
+   auf das aktuelle Laufzeitlimit ziehen.
+F. Das sichtbare herunterzaehlende 310-Sekunden-
+   UI-Element ueber der Texteingabe war ein altes
+   STU-Console-Ueberbleibsel und sollte weg.
+   Dies wurde in 0.5.53 im Repository bereits
+   umgesetzt. Echte Backend-Timeouts, SSE-Watchdog,
+   Laufzeitmessungen und Uhr blieben erhalten.
+   Kein erneutes, blindes Entfernen erforderlich.
+
+RELEVANTE VERSIONEN ZUR ORIENTIERUNG
+0.5.46: unvollstaendige Planspeicherung als Draft.
+0.5.48: serielle autonome Planungsfortsetzung mit
+        versionierten Markdown-Checkpoints.
+0.5.49: tolerantere PLAN_CONTINUE-Erkennung.
+0.5.50: scrollbare, geschuetzte Markdown-Vorschau im Chat.
+0.5.51: kurze modellgesteuerte Build-Entscheidung vor
+        langem Chattext; Plan-Dateiliste und groessere
+        vollstaendige Projektplan-Uebergabe.
+0.5.52: falschen Thinking-/Anhang-Preflightcheck repariert.
+0.5.53: sichtbaren, irrefuehrenden 310s-Countdown entfernt.
+0.5.54: native Homepage-Builds erzwingen sichere
+        einzelne HTML/CSS/JS-Quelldateien und
+        deterministischen Base64-Python-/ZIP-Writer.
+Fuer Details nicht von Kurztexten ausgehen, sondern
+docs/UEBERGABEPROTOKOLL_0_5_51.txt bis
+docs/UEBERGABEPROTOKOLL_0_5_54.txt lesen.
+
+JETZT ZUERST ZU PRUEFEN
+1. Exakte installierte VERSION auf Netcup gegen main
+   vergleichen. Keine Annahme aus einem Screenshot
+   ohne eingeblendete Versionsnummer.
+2. Vollstaendigen Native- oder Compose-Preflight von
+   0.5.54 ausfuehren und die erste tatsaechliche
+   [FEHLER]-Zeile mitsamt Testname sichern. Das
+   GitHub-Actions-Kontingent war aufgebraucht;
+   Tests auf dem Server bzw. isoliert ausfuehren.
+3. Im BESTEHENDEN privaten CoreUI-Chat mit dem
+   fertigen Projektplan den normalen Auftrag zur
+   Umsetzung erneut testen, NICHT neuen Plan erstellen.
+4. Im Arbeitsweg auf das Ereignis
+   "Freigegebenes Webprojekt im Quelltextmodus gestartet"
+   und reason=native_source_only_route achten.
+   Danach die Anforderungen und Rueckgaben fuer
+   JEDE einzeln erzeugte Datei kontrollieren.
+5. Nur ein reales, validiertes ZIP mit der vollstaendigen
+   benannten HTML/CSS/JS-Liste als Erfolg werten.
+   Eine Antwort "Ich fange jetzt an" ist kein Build.
+   Ein fehlendes ZIP darf nicht als Hintergrundarbeit
+   versprochen werden.
+6. Bei erneutem Python-Fehler den betroffenen Worker-
+   Auftrag und die Syntax/Quelle sicher eingrenzen.
+   Bei reinem Prosa-/Marker-Fehler zuerst den
+   kurzen Modell-Entscheider und die Tool-Dispatch-
+   Events untersuchen. Bei Truncation die
+   Ollama-Metadaten statt Vermutungen verwenden.
+7. Anschliessend die Kurz- und Lang-Modelfile-Fassung
+   kontrolliert mit gleichen Eingaben/Modellen und
+   beobachteten Runtime-Optionen vergleichen.
+   Niemals eine vermeintliche 128k-Fenstergrenze
+   mit 128k ausgebbaren Tokens gleichsetzen.
+8. Nach nachgewiesener Reparatur Regressionstests,
+   README/CHANGELOG, Version und naechstes
+   Uebergabeprotokoll aktualisieren, bevor
+   eine Codeaenderung gemergt wird.
+
+WICHTIGE CODE-EINSTIEGSPUNKTE
+api/console_build_intent.php
+  Modellwaehlbare Entscheidung START_BUILD / CHAT.
+api/console_native_tools.php
+  PLAN_SAVE/PLAN_CONTINUE/PROJECT_BUILD, Datei-Manifest
+  und private Guardrails; Native-Source-Only-Flag.
+api/chat.php
+  synchroner Modellweg, Source-First-Dateiausgabe.
+api/console_stream.php
+  SSE, Modellentscheidung, Short/Long Reply,
+  continuation_limit und Work-Events.
+api/console_plan_store.php
+api/console_plan_autorun.php
+  bestehende persistente Planversionen.
+js/console-app.js
+  Chat-Frontend (Countdown bereits entfernt).
+js/coreui-markdown-preview.js
+  private Markdown-Vorschauen.
+scripts/preflight.sh
+scripts/preflight-native.sh
+scripts/local-file-tool-selftest.php
+scripts/contextual-project-selftest.php
+scripts/model-project-intent-selftest.php
+scripts/reply-pipeline-selftest.php
+scripts/frontend-regression-selftest.php
+  Test- und Preflight-Einstiegspunkte.
+
+FESTE LEITPLANKEN
+- Das vom Nutzer bereitgestellte Ollama-Modelfile NICHT
+  ungefragt anpassen oder mit alten Vorlagen ersetzen.
+- config/Modelfile.template blieb auf main bei
+  Dokumenterstellung unveraendert, Blob-SHA:
+  ec01a9540ff668230e6ac0a7e23ffab305d54415.
+  Das Repo-Template ist NICHT zwingend identisch
+  mit einem konkret zur Laufzeit aktiven Modell.
+- Bestehende Ollama-Defaults / Modelfile-Parameter,
+  inklusive etwaiger nutzerspezifischer Einstellungen,
+  nicht durch generische num_ctx-/num_predict-
+  Overrides ueberschreiben.
+- Serielle E.M.B.E.R.-Bearbeitung bleibt Pflicht.
+  Nicht mit dem separaten Homepage-Supportbot verwechseln.
+- Die geschuetzte, kontogebundene Projektplan-Datei
+  und andere private Nutzerdateien erhalten.
+- Kein ungeprueftes Python fuer statische Website-
+  Projekte ausfuehren, keine erfundenen ZIP-Downloads.
+- Bestehenden Installer und das Live-System nicht
+  wegen eines Frontend-/Parserfehlers riskieren.
+- Kein GitHub-Actions-Lauf annehmen oder versprechen.
+- User arbeitet mobil; Handlungsanweisungen
+  sollten mobil ueber Web-GitHub/Serverkonsole gehen.
+- Neues GitHub-Commit / PR braucht bei funktionalen
+  Aenderungen ein uebliches Uebergabeprotokoll.
+
+NICHT VERWECHSELN
+Dieses Dokument selbst ist nur eine Wissensuebergabe.
+Es ist KEINE Bestaetigung, dass v0.5.54 lokal deployed
+wurde, dass der neue Preflight bestanden ist oder
+dass die Homepage bereits fertig gebaut wurde.
+Den User erst nach echten Tests ueber Erfolg informieren.
+
+ENDE DES UEBERGABEPROTOKOLLS
