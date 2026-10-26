@@ -638,12 +638,12 @@ local_file_test(ember_console_local_source_failure(null,
 local_file_test(ember_console_local_source_failure('<!DOCTYPE html>',[],false) === 'source_format_unrecognized'
   && ember_console_local_source_failure('partial source',[],true) === 'model_output_truncated',
   'source format errors and token truncation must stay separate');
+// Since 0.5.62 every focused file call retains mandatory Werkzeuge;
+// optional skill packages are omitted via $augmentSkills=false.
 local_file_test(str_contains($handler, '$sourceThink = $retryWithThink ? true : $fileToolThink;')
   && str_contains($handler, '$fileToolThink, false);')
   && str_contains($handler, 'http_code')
   && str_contains($handler, 'ollama_transport_error')
-  // Since 0.5.62 every focused file call retains mandatory Werkzeuge;
-  // optional skill packages are omitted via $augmentSkills=false.
   && str_contains($handler, '$userPrompt = coreui_skills_augment($userPrompt, $augmentSkills);'),
   'local file calls must use focused prompts, safe diagnostics, mandatory Werkzeuge and one fallback');
 
