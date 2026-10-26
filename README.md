@@ -9,6 +9,35 @@ E.M.B.E.R. CoreUI runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG
 
 Current source version: `0.5.56` (numeric only). The last verified ZIP remains archived under its original historical name.
 
+## Oeffentliche Mara-Arbeitsmeldungen und vertiefte Ablaufdiagnose (0.5.56)
+
+Der bereits existente, persistierte Arbeitsweg erklaert nun echte
+Modell- und Werkzeugereignisse als lesbare Fortschrittsnotizen. Diese
+automatisch aus Ereignissen abgeleiteten Erklaerungen sind im Interface
+ausdruecklich als solche gekennzeichnet. Separate, tatsaechlich vom
+Modell formulierte Zwischenmeldungen sind ebenfalls moeglich: Vor
+einem nativen Werkzeugblock darf das Modell optional genau eine
+benutzersichtbare Zeile
+`[COREUI_PUBLIC_PROGRESS]Ich pruefe den Plan.[/COREUI_PUBLIC_PROGRESS]`
+ausgeben. Der Parser trennt die Notiz vom Werkzeug, der bestehende
+Dispatcher validiert die Aktion unveraendert und der private
+Work-Store speichert nur eine kurze, gefilterte Notiz aus dem
+oeffentlichen Antwortkanal. Rohe Ollama-Thinking-Tokens, interne
+Prompts und Werkzeuginhalte werden nicht als Kommentare veroeffentlicht.
+Keine zusaetzlichen Modellaufrufe und keine neuen Retry-Schleifen.
+
+Nach Abschluss ist die Timeline standardmaessig zugeklappt, mit
+Schrittzaehler und einer kurzen, nachpruefbaren Zusammenfassung.
+Im geoeffneten Verlauf bleiben Zeitpunkt, Modell-/Werkzeugstatus,
+Fehlerdiagnosen und die Herkunft der Texte sichtbar. Die Darstellung
+bleibt mit der geschuetzten Sitzungs-/Antwort-Historie verknuepft.
+Eine fehlende explizite Modellnotiz wird nicht als echte
+Modellkommentierung ausgegeben.
+
+Siehe Issue #97 und `docs/UEBERGABEPROTOKOLL_0_5_56.txt`.
+Realer Netcup-Preflight und Android-Livetest sind noch offen.
+
+
 ## Ausfuehrliche oeffentliche Arbeitsnotizen (0.5.56)
 
 E.M.B.E.R. CoreUI dokumentiert jetzt reale Arbeitsschritte als kompakte,

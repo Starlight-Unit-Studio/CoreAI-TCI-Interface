@@ -7,6 +7,7 @@ Zuerst lesen:
 Danach bisherige Projekt- und Chat-Uebergaben:
   docs/UEBERGABEPROTOKOLL_0_5_55.txt
   docs/UEBERGABEPROTOKOLL_0_5_54_CHATWECHSEL_2026_10_26.txt
+Aktueller Aufgabenstand: Issue #97 (Arbeitsweg und sichere Modell-Zwischenmeldungen).
 Dauerhafte Referenzbasis:
   https://github.com/Starlight-Unit-Studio/coreui/issues/96
 

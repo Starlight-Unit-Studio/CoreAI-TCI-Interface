@@ -4,6 +4,10 @@ Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versi
 
 ## 0.5.56 - 26.10.2026
 
+- Modellformulierter Fortschritt (optional) als kurze, eigenstaendig gespeicherte `[COREUI_PUBLIC_PROGRESS]`-Zeile vor einem verifizierbaren Native-Tool-Block. Die Markierung wird vor dem eigentlichen Werkzeugparser entfernt, die Autorisierung und Quelle bleiben unveraendert; kein zweiter Modellaufruf.
+- Ereignisbasierte Statusnotizen werden klar als automatisch erlaeutert gekennzeichnet, echte model.content-Zwischenmeldungen getrennt als Maras oeffentliche Meldung. Keine Roh-Gedanken oder Prompts, verdachtsfaellige Notizen werden verworfen.
+- Korrigierter Aufklapp-Pfeil, eng begrenzte oeffentliche Textfilter, PHP-/UI-Regressionspruefungen. Volle Netcup-/Mobil-Abnahme steht noch aus.
+
 - CoreUI zeigt jetzt oeffentliche, in der Ich-Form formulierte Arbeitsnotizen zu tatsaechlich protokollierten Schritten an. Konkret sichtbar werden gerade laufende Aktionen, unvollstaendige Dateien, Fehlversuche, Folgeaufrufe und der jeweils belegte naechste Arbeitsschritt.
 - Die Notizen sind bewusst als nachvollziehbare Ausfuehrungserklaerungen gekennzeichnet, nicht als angebliche rohe interne Modell-Gedankenkette. Unbekannte Events erhalten keine erfundenen Erklaerungen. Texte werden ausschliesslich als textContent dargestellt.
 - Ausgefuehrte Modell- und Werkzeugaktionen bleiben inklusive Zeiten, Status, Fehlergrund und einzeln aufklappbaren Diagnosen in der vorhandenen kontogebundenen Work-Timeline erhalten. Weitere harmlose Zaehler (z.B. done_reason, thinking_chars, content_chars, Fortsetzungen, Planversion) werden ueber die bestehende serverseitige Whitelist freigegeben; Roh-Thinking, Prompts, Modellcode und stderr bleiben verborgen.

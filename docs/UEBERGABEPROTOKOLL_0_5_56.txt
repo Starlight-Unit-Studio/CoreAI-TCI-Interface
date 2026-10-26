@@ -82,5 +82,29 @@ FESTE RANDbedingungen
   DB-Migrationen oder automatischen Retry-Schleifen.
 - Erfolgreicher GitHub-Merge bedeutet noch keine Live-Abnahme.
 
+
+ERGÄNZUNG ZUR AUSFUEHRUNG DER MODELL-ZWISCHENMELDUNGEN
+- Werkzeugantworten DÜRFEN, MUESSEN ABER NICHT, vor dem
+  vorhandenen nativen Werkzeugblock exakt eine Zeile
+  [COREUI_PUBLIC_PROGRESS]Ich pruefe zuerst die Dateien.[/COREUI_PUBLIC_PROGRESS]
+  enthalten. Hierbei handelt es sich um eine ausdruecklich
+  oeffentliche Modellantwort (message.content), nie um Ollama
+  message.thinking oder ungeklaerte interne Reasoning-Tokens.
+- coreui_native_public_progress_strip() trennt den Hinweis vom
+  Werkzeugblock; nur ein korrekt autorisierter Tool-Dispatcher
+  schreibt den Hinweis als kind=commentary im bestehenden
+  kontogebundenen Work-Store. Kein zweiter Model-Call.
+- Nicht vorhandene oder ungueltige Hinweise verleihen keine
+  Werkzeugrechte. Der native Parser prueft weiter den genauen
+  Block, sein Eigentum und die Manifest-/Writer-Freigaben.
+- Das UI unterscheidet echte Modell-Zwischenmeldungen sichtbar
+  von automatisch abgeleiteten Ereigniserklaerungen.
+- PHP-8.4-Smoketest fuer den Marker-/Filterausdruck bestanden.
+  Frontend-Modul in isolierter V8-DOM-Umgebung mit 8
+  Szenarien geprueft, inklusive Live-SSE und neuer Texttypen.
+  Vollstaendiger PHP-/Docker-Preflight und Netcup-Integration offen.
+- Keine Aenderung an Ollama, Modelfile, Sampling, Python-Worker,
+  Installer, Datenbank-Schema oder der seriellen Anfragequeue.
+
 STATUS: Frontend- und Work-Event-Erweiterung im Repo vorbereitet,
 vollstaendiger Netcup-Preflight und Android-Abnahme offen.
