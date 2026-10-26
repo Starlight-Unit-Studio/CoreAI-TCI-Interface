@@ -82,7 +82,7 @@ def main() -> int:
                     for key in asset_keys), f"Cache key is not numeric: {relative_path}")
         require(
             re.search(
-                r'<meta\s+name="application-name"\s+content="[^"]*E\.M\.B\.E\.R\. CoreUI[^"]*"',
+                r'<meta\s+name="application-name"\s+content="[^"]*CoreAI: TCI Interface[^"]*"',
                 page,
                 re.IGNORECASE,
             )
@@ -111,7 +111,7 @@ def main() -> int:
     for installer in ("setup.sh", "scripts/install.sh", "scripts/install-native.sh"):
         source = read(installer)
         require("CoreAI: TCI Interface" in source,
-                f"official acronym missing from installer text: {installer}")
+                f"current product name missing from installer text: {installer}")
         require("Ember CoreUI" not in source,
                 f"obsolete character-style product name in installer: {installer}")
 
@@ -164,5 +164,5 @@ if __name__ == "__main__":
     try:
         raise SystemExit(main())
     except (AssertionError, UnicodeDecodeError, json.JSONDecodeError) as exc:
-        print(f"E.M.B.E.R. CoreUI branding and license selftest: FAIL: {exc}", file=sys.stderr)
+        print(f"CoreAI: TCI Interface branding and license selftest: FAIL: {exc}", file=sys.stderr)
         raise SystemExit(1)

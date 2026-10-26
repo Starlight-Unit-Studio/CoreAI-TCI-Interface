@@ -107,7 +107,7 @@ if [[ "$SOURCE_MODE" == 'main' ]]; then
   done
   log "Aktueller GitHub-Commit: $SOURCE_COMMIT"
 else
-  log "Lade das unveraenderte archivierte CoreAI: TCI Interface-Release ${ARCHIVED_RELEASE_VERSION}."
+  log "Lade das unveraenderte historische E.M.B.E.R. CoreUI-Release ${ARCHIVED_RELEASE_VERSION}."
   curl --fail --location --show-error --silent --retry 3 --retry-all-errors \
     --output "$TEMP_DIR/$ARCHIVE" "$DOWNLOAD_BASE/$ARCHIVE"
   curl --fail --location --show-error --silent --retry 3 --retry-all-errors \
@@ -187,5 +187,5 @@ if [[ "$SOURCE_MODE" == 'main' ]]; then
   log "CoreAI: TCI Interface $SOURCE_VERSION, GitHub-Commit $SOURCE_COMMIT."
 else
   rm -f -- "$TARGET_DIR/var/dev_source_commit"
-  log "Archiviertes CoreAI: TCI Interface Release ${ARCHIVED_RELEASE_VERSION} wurde geprueft installiert."
+  log "Archiviertes historisches E.M.B.E.R. CoreUI Release ${ARCHIVED_RELEASE_VERSION} wurde geprueft installiert."
 fi

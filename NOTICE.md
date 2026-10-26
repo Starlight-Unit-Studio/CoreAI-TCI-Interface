@@ -12,6 +12,6 @@ CoreAI: TCI Interface is independently developed and is not based on, affiliated
 
 CoreAI: TCI Interface belongs to the Quantum software family. Its pre-0.5.57 names are historical; existing compatibility identifiers do not imply another product.
 
-This distribution is governed by the license version identified in `LICENSE_HISTORY.md`. The German text in `LICENSE.de.md` controls for CoreAI: TCI Interface `0.4.2-alpha`; `LICENSE.md` is its English convenience translation.
+This distribution is governed by the license version identified in `LICENSE_HISTORY.md`. The German text in `LICENSE.de.md` controls the licensed project beginning with its historical `0.4.2-alpha` release; `LICENSE.md` is its English convenience translation.
 
 Third-party components retain their own notices and license terms.
