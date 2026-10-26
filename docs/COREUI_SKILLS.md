@@ -23,7 +23,7 @@ CoreAI enthaelt jetzt 33 vertrauenswuerdige, direkt im Repository gepflegte Anle
 
 - Bei lokalen Gemma- und Ollama-Cloud-Modellen wird die bestehende lokale Ollama-Liste verwendet. Keine zusaetzlichen Modellparameter, kein geaendertes Modelfile, keine zweite Modellspur.
 - Die fortsetzbare Agenten-/Dateiwerkzeug-Schleife aus Issue #102 ist weiter offen: Planlimits, Manifestgrenzen und fehlende persistente Quelltext-Checkpoints sind **nicht** allein durch Skilltexte repariert.
-- Maras Worklog und der Live-Code-Entwurf in PR #105 sind separate UI-Arbeiten. Rohes Modell-Thinking, private Prompts und fremde Daten gehoeren niemals in oeffentliche Skill-/Workevent-Payloads.
+- Maras Worklog und der Live-Code-Entwurf aus Draft #105 sind in den gemeinsamen 0.5.62-Branch aufgenommen worden. Rohes Modell-Thinking, private Prompts und fremde Daten gehoeren niemals in oeffentliche Skill-/Workevent-Payloads.
 - Skill-Inhalte werden nur aus validierten Katalogpfaden des Repositories geladen. Keine Remote-Skripte, implizite Werkzeugfreigabe, Modellausgabe als Host-Kommando oder nicht autorisierte Dateipfade.
 - Alle Skills nutzen maximal 2400 Byte pro reiner SKILL.md-Anleitung; keine stille Textabschneidung. Kuerzere Skilltexte ersetzen nicht den im Backend erforderlichen Speicher fuer Projektfortschritt.
 - Fach-Skills bleiben auch nach einem fehlgeschlagenen POST unveraendert; der Backend-Pflicht-Skill bleibt unabhaengig davon aktiv.
