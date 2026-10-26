@@ -244,14 +244,23 @@
     if (live) body.appendChild(el('p','work-empty','Warte auf den ersten Arbeitsschritt ...'));
 
     function updateSummary() {
+      var countLabel = events.length + (events.length === 1 ? ' Schritt' : ' Schritte');
       heading.textContent = live ? 'E.M.B.E.R. CoreAI arbeitet'
-        : 'Arbeitsweg (' + events.length + ' Schritte) ' + (expanded ? 'ausblenden' : 'anzeigen');
+        : 'Arbeitsweg (' + countLabel + ') ' + (expanded ? 'ausblenden' : 'anzeigen');
       toggle.setAttribute('aria-label', heading.textContent);
       var errors = events.filter(function (e) { return e.state === 'error'; }).length;
       var tools = events.filter(function (e) { return e.kind === 'tool'; }).length;
-      counters.textContent = events.length + ' Schritte' + (tools ? ' · ' + tools + ' Werkzeuge' : '')
+      counters.textContent = countLabel + (tools ? ' · ' + tools + (tools === 1 ? ' Werkzeug' : ' Werkzeuge') : '')
         + (errors ? ' · ' + errors + ' Fehler' : '');
       var last = events.length ? events[events.length - 1] : null;
+      // The final DB-save event must not conceal an unresolved file error.
+      // Show the last substantive confirmed step in the collapsed preview.
+      if (last && last.title === 'Antwort gespeichert') {
+        var earlier = events.slice(0, -1).filter(function (item) {
+          return workNote(item) && item.title !== 'Modellstream vorbereitet';
+        });
+        if (earlier.length) last = earlier[earlier.length - 1];
+      }
       var note = workNote(last);
       digest.textContent = note;
       digest.hidden = !note || expanded;
