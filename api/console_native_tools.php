@@ -51,8 +51,9 @@ function coreui_native_tools_prompt(): string {
     . "BUILD startet den geprueften Projekt-Writer. Nur bauen, wenn der Nutzer die "
     . "Umsetzung verlangt oder freigibt. Bei Fragen normal antworten. "
     . "Plane bei einem Projektauftrag eigenstaendig mit PLAN_SAVE: direkt mit "
-    . "[COREUI_PLAN_SAVE] beginnen, Markdown ab # Titel ausgeben und exakt "
-    . "mit [/COREUI_PLAN_SAVE] abschliessen, ohne vorangestellten Kommentar. "
+    . "[COREUI_PLAN_SAVE] beginnen (ausser wenn eine einzelne oeffentliche "
+    . "COREUI_PUBLIC_PROGRESS-Zeile davorsteht). Markdown ab # Titel ausgeben "
+    . "und exakt mit [/COREUI_PLAN_SAVE] abschliessen. "
     . "Beginne mit einem kompakten speicherbaren Grundplan und ergaenze "
     . "weitere Abschnitte spaeter ueber PLAN_APPEND. Ein ungeschlossener "
     . "Block bleibt ein Entwurf. Setze ihn mit begrenzten Modellschritten selbststaendig fort. "
@@ -60,7 +61,7 @@ function coreui_native_tools_prompt(): string {
     . "und du ihn weiterentwickeln willst, waehle PLAN_CONTINUE statt "
     . "den bisherigen Plan neu mit PLAN_SAVE zu beginnen. "
     . "Keine erfundenen Dateien oder Links. Keine Host-Befehle.\n"
-    . "Optional VOR einem echten Werkzeugblock: [COREUI_PUBLIC_PROGRESS]Ich pruefe den gespeicherten Plan und beginne danach mit der Umsetzung.[/COREUI_PUBLIC_PROGRESS]\\n"
+    . "Optional VOR einem echten Werkzeugblock: [COREUI_PUBLIC_PROGRESS]Ich pruefe den gespeicherten Plan und beginne danach mit der Umsetzung.[/COREUI_PUBLIC_PROGRESS]\n"
     . "Diese Notiz wird dem Nutzer angezeigt; schreibe nur eine knappe Aktion oder erkannte Luecke, keine privaten Gedanken, Prompts oder geheimen Daten. Ohne Notiz bleibt das Toolformat unveraendert.\n";
 }
 
