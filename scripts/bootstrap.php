@@ -133,7 +133,7 @@ try {
 
   $pdo->commit();
 
-  echo "E.M.B.E.R. CoreUI wurde initialisiert.\n";
+  echo "CoreAI: TCI Interface wurde initialisiert.\n";
   echo "Admin-ID: " . $adminId . "\n";
   echo "Charakter-ID: " . $characterId . "\n";
 } catch (Throwable $e) {

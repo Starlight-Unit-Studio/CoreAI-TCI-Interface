@@ -3,7 +3,7 @@ set -Eeuo pipefail
 IFS=$'\n\t'
 umask 027
 
-REPOSITORY='Starlight-Unit-Studio/coreui'
+REPOSITORY='Starlight-Unit-Studio/CoreAI-TCI-Interface'
 # Ein und derselbe One-Liner installiert und aktualisiert den jeweils gemergten
 # Entwicklungsstand. Das letzte veroeffentlichte und gepruefte ZIP bleibt ueber
 # COREUI_SETUP_SOURCE=release explizit verfuegbar.
@@ -20,11 +20,11 @@ SOURCE_DIR=''
 SOURCE_COMMIT=''
 
 log() {
-  printf '[E.M.B.E.R. CoreUI Setup] %s\n' "$*"
+  printf '[CoreAI: TCI Interface Setup] %s\n' "$*"
 }
 
 die() {
-  printf '[E.M.B.E.R. CoreUI Setup] FEHLER: %s\n' "$*" >&2
+  printf '[CoreAI: TCI Interface Setup] FEHLER: %s\n' "$*" >&2
   exit 1
 }
 
@@ -88,7 +88,7 @@ fi
 
 TEMP_DIR="$(mktemp -d /tmp/ember-coreui-setup.XXXXXX)"
 if [[ "$SOURCE_MODE" == 'main' ]]; then
-  log 'Lade den neuesten E.M.B.E.R. CoreUI-Entwicklungsstand aus main.'
+  log 'Lade den neuesten CoreAI: TCI Interface-Entwicklungsstand aus main.'
   # Das globale umask 027 schuetzt lokale Zugangsdaten, ist fuer den
   # oeffentlichen Git-Checkout aber zu strikt: rsync -a uebernimmt 750/640
   # root:root und der Webserver (UID 33) kann api/health.php nicht lesen.
@@ -107,7 +107,7 @@ if [[ "$SOURCE_MODE" == 'main' ]]; then
   done
   log "Aktueller GitHub-Commit: $SOURCE_COMMIT"
 else
-  log "Lade das unveraenderte archivierte E.M.B.E.R. CoreUI-Release ${ARCHIVED_RELEASE_VERSION}."
+  log "Lade das unveraenderte archivierte CoreAI: TCI Interface-Release ${ARCHIVED_RELEASE_VERSION}."
   curl --fail --location --show-error --silent --retry 3 --retry-all-errors \
     --output "$TEMP_DIR/$ARCHIVE" "$DOWNLOAD_BASE/$ARCHIVE"
   curl --fail --location --show-error --silent --retry 3 --retry-all-errors \
@@ -184,8 +184,8 @@ if [[ "$SOURCE_MODE" == 'main' ]]; then
   printf '%s\n' "$SOURCE_COMMIT" > "$TARGET_DIR/var/dev_source_commit"
   chmod 0640 "$TARGET_DIR/var/dev_source_commit"
   log "Entwicklerstand erfolgreich installiert: $SOURCE_COMMIT"
-  log "E.M.B.E.R. CoreUI $SOURCE_VERSION, GitHub-Commit $SOURCE_COMMIT."
+  log "CoreAI: TCI Interface $SOURCE_VERSION, GitHub-Commit $SOURCE_COMMIT."
 else
   rm -f -- "$TARGET_DIR/var/dev_source_commit"
-  log "Archiviertes E.M.B.E.R. CoreUI Release ${ARCHIVED_RELEASE_VERSION} wurde geprueft installiert."
+  log "Archiviertes CoreAI: TCI Interface Release ${ARCHIVED_RELEASE_VERSION} wurde geprueft installiert."
 fi
