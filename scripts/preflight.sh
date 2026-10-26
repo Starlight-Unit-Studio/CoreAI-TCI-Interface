@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.62 mandatory Werkzeug core skill and optional skill updates.
+# CoreAI: TCI Interface 0.5.63 source-preview PHP syntax hotfix.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
