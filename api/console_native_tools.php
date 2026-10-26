@@ -371,7 +371,13 @@ function coreui_native_tool_apply(
     coreui_work_record($pdo,'tool','info','Mara hat selbst den Projekt-Writer aufgerufen',
       ['reason'=>'model_requested_project_build']);
   }
+  // This authority comes from the verified native tool, not from a user
+  // keyword or model-written Python. Retain it only during this callback.
+  // The file worker MUST generate inert source files one by one; it may not
+  // execute the legacy model-written [PY] project constructor.
+  $previousSourceMode = $GLOBALS['COREUI_NATIVE_SOURCE_PROJECT'] ?? null;
   $GLOBALS['COREUI_NATIVE_TOOL_REENTRY'] = true;
+  $GLOBALS['COREUI_NATIVE_SOURCE_PROJECT'] = true;
   try {
     $response = $build($request);
     return is_string($response) && trim($response) !== ''
@@ -382,5 +388,7 @@ function coreui_native_tool_apply(
     return 'Der Projektauftrag konnte nicht abgeschlossen werden. Es wird kein Download vorgetaeuscht.';
   } finally {
     unset($GLOBALS['COREUI_NATIVE_TOOL_REENTRY']);
+    if ($previousSourceMode === null) unset($GLOBALS['COREUI_NATIVE_SOURCE_PROJECT']);
+    else $GLOBALS['COREUI_NATIVE_SOURCE_PROJECT'] = $previousSourceMode;
   }
 }

@@ -104,6 +104,8 @@ if (in_array('sqlite', PDO::getAvailableDrivers(), true)) {
     static function(string $task) use (&$calls,&$lastRequest,$pdo,$uid,$session,$modelReply): string {
       $calls++;
       $lastRequest=$task;
+      dispatch_assert(!empty($GLOBALS['COREUI_NATIVE_SOURCE_PROJECT']),
+        'Native callback must receive server-owned source-only authority');
       $nested=coreui_native_tool_apply($pdo,$uid,$session,101,$modelReply,
         static fn(string $untrusted): string => 'unexpected nested call');
       dispatch_assert($nested === null, 'Recursive tool action was permitted');
@@ -115,6 +117,8 @@ if (in_array('sqlite', PDO::getAvailableDrivers(), true)) {
     'Build callback was not dispatched exactly once');
   dispatch_assert(empty($GLOBALS['COREUI_NATIVE_TOOL_REENTRY']),
     'Model tool reentry lock was not released');
+  dispatch_assert(empty($GLOBALS['COREUI_NATIVE_SOURCE_PROJECT']),
+    'Private source-only authority leaked beyond the tool callback');
 
   $otherRequest=coreui_native_tool_build_request($pdo,$uid+1,$session,$description);
   dispatch_assert(is_string($otherRequest) && !str_contains($otherRequest,'Nachtblaues Design'),

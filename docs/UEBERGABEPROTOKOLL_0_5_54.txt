@@ -1,0 +1,123 @@
+E.M.B.E.R. COREUI 0.5.54 - UEBERGABEPROTOKOLL
+Datum: 26.10.2026
+Basis: main 0.5.53, f1a8e4190d00b1e1f81a43d2e6e596da0e7be691
+Branch: fix/native-build-source-only-0.5.53
+
+LIVE-FEHLER
+Der fertige Homepage-Projektplan wurde von Mara zur
+Umsetzung angenommen. Im CoreUI-Arbeitsverlauf:
+Python-Job 108, Exitcode 1, Laufzeit 398 ms,
+Fehlertyp SyntaxError.
+Die Modellantwort benannte "unterminated triple-quoted
+string literal". Danach erhielt Mara einen Folgeaufruf
+und kuendigte spaetere Dateien an, statt ein bestaetigtes
+ZIP als Ausgabe zu liefern. Der Antworttext war erneut
+unvollstaendig.
+
+BEFUNDE IM QUELLCODE
+1. Der generische Dateiauftrag nimmt Python-Code aus
+   [PY] entgegen und kann modellgenerierte Python-
+   Stringliterale an den isolierten Worker uebergeben.
+2. Die sichere vorhandene Source-First-Route erzeugt
+   pro Datei nur HTML/CSS/JS und laesst CoreUI
+   anschliessend einen festen, Base64-kodierten
+   Writer fuer das ZIP erstellen.
+3. Die Route war an Modellnamen- und
+   Dateiauftragsbedingungen gebunden. Der durch
+   PROJECT_BUILD autorisierte Native-Build musste
+   bisher nicht zwingend die sichere Route benutzen.
+4. Das exakte Python aus Job 108 ist aus dem Screenshot
+   nicht rekonstruierbar. Deshalb wird die vermutete
+   Zuordnung zum generischen [PY]-Pfad als
+   Fehlerhypothese und nicht als bewiesene Historie
+   behandelt.
+
+REPARATUR
+- In api/console_native_tools.php setzt der bereits
+  authentifizierte Native-Build ausschliesslich waehrend
+  des geprueften Build-Callbacks das servereigene Flag
+  COREUI_NATIVE_SOURCE_PROJECT. Der vorherige Wert
+  wird in finally wiederhergestellt.
+- api/chat.php erkennt den Native-Build und verlangt
+  eine gueltige Mehrdateien-/ZIP-Spezifikation.
+  Falls diese fehlt, erfolgt ein sicherer Abbruch,
+  nicht ein Fallback zu [PY] oder Prosa.
+- Bei gueltigem Manifest wird ungeachtet des
+  ausgewaehlten Ollama-Modellnamens
+  coreui_console_local_source_prompt() verwendet,
+  um jeden angeforderten HTML/CSS/JS-Quelltext
+  einzeln und seriell zu erzeugen und zu validieren.
+- Anschliessend erzeugt die unveraenderte
+  coreui_console_project_files_python() den Worker-
+  Quelltext ausschliesslich aus kodierten Quelldaten.
+  Dadurch werden HTML-Anfuehrungszeichen nicht
+  unmittelbar zu Python-String-Literalen.
+- Fuer fehlerhafte Quelldateien bestehen hoechstens
+  zwei Modellversuche pro Datei. Keine unerwarteten
+  Hintergrundaktionen oder vorgetaeschtes ZIP.
+- Work-Event: "Freigegebenes Webprojekt im
+  Quelltextmodus gestartet"; reason
+  native_source_only_route. Folgeevents zeigen
+  Einzeldatei-Anforderung, Quelldatei empfangen,
+  Projektquellen vollstaendig oder einen Fehler.
+
+REGRESSIONEN
+scripts/local-file-tool-selftest.php:
+  umbenannte Modelle, Qwen, Cloud-Tags,
+  Source-Only-Pruefung, weiterhin funktionierender
+  allgemeiner Python-Pfad und Triple-Quote-HTML
+  als inerte Base64-Dateiinhalte.
+scripts/contextual-project-selftest.php:
+  Source-Only-Flag gilt innerhalb des geprueften
+  Callback, laeuft nicht in Rekursion und
+  verbleibt nicht im naechsten Turn.
+scripts/model-project-intent-selftest.php:
+  validierte Modellfreigabe setzt die scoped
+  Autorisierung; nach dem Callback wird sie
+  wieder freigegeben.
+Alle Tests sind bereits in Native/Compose-Preflight.
+
+GEAENDERT
+api/console_native_tools.php
+api/chat.php
+scripts/local-file-tool-selftest.php
+scripts/contextual-project-selftest.php
+scripts/model-project-intent-selftest.php
+VERSION / scripts/branding-license-selftest.py
+README.md / CHANGELOG.md
+sechs HTML-Versionsanzeigen
+scripts/preflight-native.sh / scripts/preflight.sh
+docs/changelogs-txt/INDEX.txt
+docs/changelogs-txt/CHANGELOG_0_5_54.txt
+docs/UEBERGABEPROTOKOLL_0_5_54.txt
+
+UNVERAENDERT
+config/Modelfile.template (Blob:
+ec01a9540ff668230e6ac0a7e23ffab305d54415)
+Ollama-Optionen, Thinking, num_ctx, Sampling,
+Modell-FIFO, der in 0.5.53 entfernte UI-Countdown,
+SQL, Installer/Update-One-Liner, private Markdown-
+Planungen, Python-Worker und ZIP-Builder.
+GitHub Actions wegen verbrauchtem Kontingent
+nicht gestartet.
+
+ABNAHME
+1. Mit bestehendem One-Liner aktualisieren.
+2. Preflight local-file-tool, contextual-project,
+   model-project-intent und Python-Worker pruefen.
+3. In der bisherigen privaten Planung Mara bitten,
+   den bereits fertigen Plan in eine Website umzusetzen.
+4. Worklog zeigt "Freigegebenes Webprojekt im
+   Quelltextmodus gestartet" und danach fuer
+   jede benoetigte Datei eine Einzelanforderung.
+5. Nach erfolgreichem Lauf muss ein echtes,
+   verifiziertes projekt.zip mit allen benannten
+   HTML-Seiten, CSS und JS erscheinen.
+6. Bei Scheitern: Fehlergrund und betroffene
+   Einzeldatei untersuchen, nicht Modelfile
+   oder Sampling als Parser-Workaround veraendern.
+
+STATUS
+Quelltext und automatisierte Regressionstests
+vorbereitet, echter Netcup-Preflight und Live-
+Gemma-Projektlauf stehen noch aus.

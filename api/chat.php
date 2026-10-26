@@ -2455,6 +2455,18 @@ function ember_console_file_tool_is_device_local(string $model): bool {
   return preg_match('~(?:^|[:._-])cloud(?:$|[:._-])~i', trim($model)) !== 1;
 }
 
+/**
+ * Approved native builds are routed by a server-scoped authority bit. An
+ * Ollama display name (including a custom Gemma/Qwen model tag) must not
+ * determine whether model-generated Python executes in the sandbox.
+ */
+function ember_console_source_only_project_route(bool $trustedNativeBuild,
+                                                 ?string $sourceDirective,
+                                                 string $model): bool {
+  return $sourceDirective !== null
+    && ($trustedNativeBuild || ember_console_file_tool_is_device_local($model));
+}
+
 function ember_console_file_tool_think(string $model): ?bool {
   return ember_console_file_tool_is_local($model)
     ? (bool)ember_cfg('STU_EMBER_LOCAL_FILE_THINK', false)
@@ -4713,16 +4725,37 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   // Local Gemma: a complete homepage ZIP can be requested without the user
   // spelling out index.html/style.css/main.js. Retain the original message
   // everywhere else, especially for Ollama Cloud and local Qwen.
-  $sourceProjectRequest = ember_console_file_tool_is_device_local($primaryModel)
+  $nativeSourceProject = $channel === 'console'
+    && !empty($GLOBALS['COREUI_NATIVE_SOURCE_PROJECT']);
+  $sourceProjectRequest = ($nativeSourceProject
+    || ember_console_file_tool_is_device_local($primaryModel))
     ? coreui_console_local_homepage_zip_request($userMsg) : $userMsg;
   $requestedSourceProject = $channel === 'console' && $imageUrl === null
     && ember_py_enabled() && coreui_console_download_requested($userMsg)
       ? coreui_console_multifile_source_directive($sourceProjectRequest) : null;
   $fileTask = $channel === 'console' && $imageUrl === null && ember_py_enabled()
-    && coreui_console_download_requested($userMsg)
-    && (ember_console_file_tool_is_local($primaryModel)
+    && ($nativeSourceProject || coreui_console_download_requested($userMsg))
+    && ($nativeSourceProject || ember_console_file_tool_is_local($primaryModel)
       || $requestedSourceProject !== null);
   $fileToolThink = $fileTask ? ember_console_file_tool_think($primaryModel) : null;
+  if ($nativeSourceProject) {
+    // Do not fall back to [PY] or free-form text if the trusted static
+    // project manifest is not valid. No 'I will start soon' response.
+    if (!$fileTask || $requestedSourceProject === null) {
+      coreui_work_record($pdo,'artifact','error','Projektmanifest nicht nutzbar',
+        ['reason'=>'native_source_manifest_invalid']);
+      return 'Der freigegebene Projektauftrag konnte nicht als sichere '
+        . 'Quelldateiliste verarbeitet werden. Es wurde kein Python-'
+        . 'Schreibskript gestartet und kein ZIP als fertig ausgegeben.';
+    }
+    $nativeSpec = coreui_console_project_request_spec($sourceProjectRequest);
+    coreui_work_record($pdo,'tool','info',
+      'Freigegebenes Webprojekt im Quelltextmodus gestartet',
+      ['reason'=>'native_source_only_route',
+       'file_count'=>is_array($nativeSpec)
+         ? count($nativeSpec['requested']) : 0,
+       'model'=>$primaryModel]);
+  }
   // The synchronous fallback must share the SSE model-selected execution
   // contract. This is not keyword routing and does not touch the Modelfile.
   if ($channel === 'console' && !$fileTask && $imageUrl === null
@@ -4760,8 +4793,8 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   // The cloud/source-fence path already creates verified ZIPs. Only the local
   // Gemma route needs smaller, raw per-file source requests without the
   // regular conversation's competing [PY] tool hints.
-  $localDirectSources = $requestedSourceProject !== null
-    && ember_console_file_tool_is_device_local($primaryModel);
+  $localDirectSources = ember_console_source_only_project_route(
+    $nativeSourceProject, $requestedSourceProject, $primaryModel);
   if ($localDirectSources) {
     if ($sourceProjectRequest !== $userMsg) {
       coreui_work_record($pdo, 'tool', 'info', 'Homepage-Projektdateien erkannt',
@@ -5039,9 +5072,23 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   // === v1.1.1.87: Python-Werkzeug ([PY]...[/PY]) - synchron, zweistufig wie [WEB:] ===
   // Genau EINE Ausfuehrung pro Turn: keine PY->PY-Schleife.
   $pyHandled = false;
+  // Defense in depth: even if a future refactor breaks the source-first
+  // branch, an approved native project can NEVER execute model-written
+  // [PY] scripts. Only the deterministic CoreUI project wrapper is allowed.
+  if ($nativeSourceProject
+      && (!is_array($fileToolCandidate)
+        || ($fileToolCandidate['kind'] ?? '') !== 'project')) {
+    coreui_work_record($pdo,'tool','error','Unsicherer Projektcode abgewehrt',
+      ['reason'=>'native_project_python_guard']);
+    return 'Der Projektbau wurde sicher beendet: Statt verifizierter '
+      . 'Quelldateien lag kein servereigener ZIP-Writer vor. '
+      . 'Es wurde kein Python-Skript aus dem Modell ausgefuehrt.';
+  }
   if (ember_py_enabled() && $imageUrl === null && is_string($out)) {
-    $pyCode = $fileTask && is_array($fileToolCandidate)
-      ? (string)$fileToolCandidate['code'] : ember_py_extract_marker($out);
+    $pyCode = $nativeSourceProject && is_array($fileToolCandidate)
+      ? (string)$fileToolCandidate['code']
+      : ($fileTask && is_array($fileToolCandidate)
+        ? (string)$fileToolCandidate['code'] : ember_py_extract_marker($out));
     $inlineFile = $fileTask && is_array($fileToolCandidate)
       ? ($fileToolCandidate['meta'] ?? null) : null;
     if ($pyCode === null && $channel === 'console') {

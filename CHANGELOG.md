@@ -2,6 +2,15 @@
 
 Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
 
+## 0.5.54 - 26.10.2026
+
+- Netcup-Regression: Beim freigegebenen Homepage-Build endete Python-Job 108 mit `SyntaxError: unterminated triple-quoted string literal`. Ein anschliessender Modell-Folgeaufruf meldete nur die Absicht zur Korrektur, ohne ein Projekt-ZIP bereitzustellen.
+- Freigegebene Native-Projekt-Builds erzwingen jetzt den bestehenden sicheren Einzeldatei-Modus: Modell generiert HTML/CSS/JS als inerte Quellen, CoreUI schreibt und prueft das ZIP mit dem deterministischen Base64-Writer. Ein langes modellgeschriebenes Python-`[PY]`-Schreibskript wird fuer diesen Build-Typ nicht mehr ausgefuehrt.
+- Die serverseitige Source-Only-Autorisierung wird ausschliesslich nach geprueften Plan-/Tool-Guards aktiviert und in `finally` zurueckgesetzt. Sie funktioniert modellnamenunabhaengig auch mit umbenanntem lokalen Gemma, Qwen und Cloud-Tags. Gewoehnliche Python-Auftraege behalten ihren alten Weg.
+- Ein ungueltiges Projektmanifest wird ohne unsicheren Fallback abgelehnt. Worklog-Grund `native_source_only_route` kennzeichnet die sichere Route; separate Events zeigen die Einzeldateien und ihren jeweiligen Status.
+- Regressionstests fuer Live-Syntaxfehler, Triple-Quotes als inerte Quelldaten, Modell-Aliasse, Quelltext-Routing, privaten Build-Kontext, Einmal-Dispatch und ZIP-Integritaet in den schon vorhandenen Preflight-Tests ergaenzt.
+- 0.5.53-Countdown-Entfernung bleibt erhalten. Modelfile.template, Ollama-Parameter, Datenbankmigrationen, Installer, bestehender Python-Worker und ZIP-Writer unveraendert. Vollstaendige Netcup-Abnahme noch offen.
+
 ## 0.5.53 - 26.10.2026
 
 - Entfernt den historischen, fuer E.M.B.E.R. CoreUI irrelevanten 310-Sekunden-Countdown oberhalb des Chat-Eingabebereichs. Die Anzeige zaehlte nur im Browser herunter, stoppte keine laufende Modellantwort und war kein echter 307-/310-Sekunden-Server-Timeout.
