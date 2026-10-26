@@ -1,6 +1,15 @@
-# Project STΛRLIɢHT: Ember CoreUI
+# CoreAI: TCI Interface
 
-Ember CoreUI wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert.
+CoreAI: TCI Interface gehoert zur Quantum-Softwarefamilie und wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert. Historische Changelogs dokumentieren die frueheren Produktnamen unveraendert.
+
+## 0.5.57 - 26.10.2026
+
+- Offizieller Produktname ab jetzt **CoreAI: TCI Interface**; **Quantum** ist die uebergeordnete Softwarefamilie und nur als untergeordnete Produktfamilienangabe sichtbar. Die bisherige Produktidentitaet E.M.B.E.R. CoreUI wird historisch dokumentiert.
+- Repository umbenannt nach `Starlight-Unit-Studio/CoreAI-TCI-Interface`; der bestehende Setup-Downloader verweist auf den neuen GitHub-Pfad. Die bisherigen Netcup-Domain-, Installations- und Datenpfade bleiben vorlaeufig als technische Kompatibilitaetskennungen erhalten.
+- Die sechs Projekt-Oberflaechen, SEO-/OpenGraph-/JSON-LD-Produktmetadaten, Branding, Familienhinweis, About-Dialog, JavaScript-Ausgaben, Servertexte, Installationsmeldungen und die Mail-Absender-Standardbezeichnung wurden nachgezogen. Responsive Produkttitel und SHA-256-basierte numerische Asset-Keys aktualisiert.
+- Rechtliche Produkt- und Markenhinweise mit Namensfortfuehrung aktualisiert, ohne historische Lizenz-/Releases zu ueberschreiben. Die urspruengliche Community Source Lizenz 1.0 und ihre inhaltlichen Nutzungsbedingungen bleiben bestehen.
+- Bestandsdaten, Mara-Identitaet, E.M.B.E.R.-Framework, Ollama-Modelfile, `coreui`-Routen/Umgebungsvariablen, Docker/DB-Namen, Queue, Agenten- und Dateifunktionen bleiben unveraendert. Keine Datenmigration und keine Umstellung der externen Homepage.
+- Full-Netcup-/Compose-Preflight und visuelle Android-Abnahme weiterhin offen. Dieses GitHub-Source-Update ist kein Live-Deploy.
 
 ## 0.5.56 - 26.10.2026
 

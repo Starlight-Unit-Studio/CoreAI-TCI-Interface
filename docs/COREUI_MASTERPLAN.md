@@ -1,14 +1,16 @@
-# Masterplan für E.M.B.E.R. CoreUI und E.M.B.E.R.
+# Masterplan für CoreAI: TCI Interface und E.M.B.E.R.
+
+Aktueller Produktname ab 0.5.57: CoreAI: TCI Interface, zur Quantum-Softwarefamilie gehoerend. Aeltere historische Abschnitte nutzen die damals gueltige Bezeichnung.
 
 Stand: 20.10.2026. Dieses Dokument hält das vereinbarte Ziel, die belegte Ausgangslage und die Reihenfolge der Entwicklung fest. Es beschreibt geplante Arbeit; die Aufnahme einer Funktion ist kein Nachweis ihrer Implementierung.
 
-Die [Funktionsmatrix](COREUI_FEATURE_MATRIX.md) ist das zugehörige Arbeitsregister. [Issue #29](https://github.com/Starlight-Unit-Studio/coreui/issues/29) führt den Fehler bei Downloads erzeugter Dateien. Beide Dokumente sollen bei Umsetzung und Übergaben gemeinsam aktualisiert werden.
+Die [Funktionsmatrix](COREUI_FEATURE_MATRIX.md) ist das zugehörige Arbeitsregister. [Issue #29](https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface/issues/29) führt den Fehler bei Downloads erzeugter Dateien. Beide Dokumente sollen bei Umsetzung und Übergaben gemeinsam aktualisiert werden.
 
 Die [Umsetzungsroadmap](../ROADMAP.md) ordnet diese Anforderungen in 29 Lieferpakete mit Abhängigkeiten, Abnahmen und dem konkret nächsten Arbeitsabschnitt.
 
 ## 1. Verbindliches Ziel
 
-**E.M.B.E.R. CoreUI soll eine vollständige Arbeitsumgebung mit dem E.M.B.E.R.-Framework und Mara als ausführender TCI werden.** Dazu gehören mehrstufige Aufgaben, sichtbare Arbeitsschritte, ein echter Entwicklungsbereich, wiederverwendbare Skills und verlässliche Dateiausgabe.
+**CoreAI: TCI Interface soll eine vollständige Arbeitsumgebung mit dem E.M.B.E.R.-Framework und Mara als ausführender TCI werden.** Dazu gehören mehrstufige Aufgaben, sichtbare Arbeitsschritte, ein echter Entwicklungsbereich, wiederverwendbare Skills und verlässliche Dateiausgabe.
 
 **OpenClaw, Open WebUI, CrewAI, LangGraph und Microsoft AutoGen** werden systematisch untersucht. Alle fünf Projekte gehören zum verbindlichen Referenzumfang. Ziel ist, sämtliche erfassten Funktionen durch eigene Implementierungen in E.M.B.E.R. CoreUI abzudecken. Es werden keine fremden Quellcodeabschnitte, Oberflächentexte oder Assets übernommen. Referenzverhalten wird verstanden, als eigenständige Anforderung beschrieben und anhand eigener Abnahmekriterien umgesetzt. Ein vorgefertigter Klon ist kein Umsetzungsschritt.
 
@@ -28,19 +30,19 @@ Für die Aufgabenbearbeitung dient der vom Betreiber gewünschte Arbeitsumfang v
 
 ## 2. Belegte Ausgangslage
 
-Ausgangspunkt der Prüfung ist [CoreUI-Commit `6ab7d2f`](https://github.com/Starlight-Unit-Studio/coreui/commit/6ab7d2f54b61409cbd817cdf0b6f3db6a208e51e). Nachfolgende Dokumentationscommits ändern diese technische Bestandsaufnahme nicht.
+Ausgangspunkt der Prüfung ist [CoreUI-Commit `6ab7d2f`](https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface/commit/6ab7d2f54b61409cbd817cdf0b6f3db6a208e51e). Nachfolgende Dokumentationscommits ändern diese technische Bestandsaufnahme nicht.
 
 | Bereich | Belegter Stand | Konsequenz |
 |---|---|---|
 | Veröffentlichter Versionsstand | `0.5.3-alpha`, Schema bis Migration 009 | Keine neue Release- oder Migrationsnummer allein durch diesen Plan. |
 | Bereits vorhanden | Private Chats und Sitzungen, Uploads, RAG-Lite, lokales Gedächtnis, Browserrecherche, Python-Ausführung und exakte Ganzzahlrechnung | Diese Bausteine werden weiterentwickelt; ihre Existenz beweist noch keine vollständige Referenzabdeckung. |
-| Host-Swap | [PR #28](https://github.com/Starlight-Unit-Studio/coreui/pull/28) ist in `main` integriert | Das vorhandene 0.5.3-Archiv enthält diesen späteren Quellstand noch nicht. Das nächste tatsächlich gebaute Paket muss ihn berücksichtigen. |
+| Host-Swap | [PR #28](https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface/pull/28) ist in `main` integriert | Das vorhandene 0.5.3-Archiv enthält diesen späteren Quellstand noch nicht. Das nächste tatsächlich gebaute Paket muss ihn berücksichtigen. |
 | Vorbereitete 0.5.4-Arbeit | Im früheren Work-Verlauf wurden `release/0.5.4-alpha`, lokaler Commit `3fec85d` und `010_console_tools` dokumentiert | Dieser Commit und Branch sind im geprüften Remote nicht vorhanden. Einzelne hochgeladene Blobs ersetzen keinen vollständigen Git-Stand. |
 | Inhalt des alten Arbeitsstands | Werkzeugmenü für Datei/RAG-Lite/Web/Browse/Python, persistente Werkzeug-/Quellenmetadaten und Anpassungen des Rechenpfads wurden im früheren Verlauf beschrieben | Die zugehörigen vollständigen Dateien sind hier nicht wiederhergestellt. Veröffentlichung, Migration und damalige Testergebnisse lassen sich daraus nicht erneut bestätigen. |
-| Generierte Downloads | [Bug #29](https://github.com/Starlight-Unit-Studio/coreui/issues/29) ist offen | Die Fehlerursache wurde im Code untersucht, noch nicht behoben oder zusätzlich auf dem Produktionssystem reproduziert. |
+| Generierte Downloads | [Bug #29](https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface/issues/29) ist offen | Die Fehlerursache wurde im Code untersucht, noch nicht behoben oder zusätzlich auf dem Produktionssystem reproduziert. |
 | Vollständiger Agent und IDE | Einzelne Grundlagen sind vorhanden, ein allgemeiner Entwicklungsarbeitsbereich und vollständiger Skill-Lebenszyklus sind nicht belegt | Als eigener Ausbau planen und gezielt abnehmen. |
 
-Die technische Basis und ihre bisherige Ausrichtung sind in der [gepinnten README](https://github.com/Starlight-Unit-Studio/coreui/blob/6ab7d2f54b61409cbd817cdf0b6f3db6a208e51e/README.md) sowie den [bisherigen Übergaben](.) dokumentiert. Dieses Dokument ergänzt sie um den zusammenhängenden Agenten- und Referenzplan.
+Die technische Basis und ihre bisherige Ausrichtung sind in der [gepinnten README](https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface/blob/6ab7d2f54b61409cbd817cdf0b6f3db6a208e51e/README.md) sowie den [bisherigen Übergaben](.) dokumentiert. Dieses Dokument ergänzt sie um den zusammenhängenden Agenten- und Referenzplan.
 
 **Versionsabgleich:** Falls der vollständige alte 0.5.4-Arbeitsstand wieder verfügbar wird, zunächst gegen den aktuellen Branch vergleichen und den bereits integrierten Swap berücksichtigen. Fehlt er weiterhin, erforderliche Funktionen nachvollziehbar neu umsetzen. Die Nummer `010_console_tools` vor einer neuen Migration abgleichen; keine zwei unterschiedlichen Migrationen unter derselben Nummer veröffentlichen.
 
@@ -69,7 +71,7 @@ Neue Erkenntnisse erweitern die Matrix. Eine Fertigmeldung erfordert eine konkre
 
 **Der Downloadfehler ist unabhängig von der vollständigen IDE früh zu beheben.** Das gemeinsame Ziel lautet: Datei erzeugen, dauerhaft übernehmen, registrieren, der Antwort zuordnen und als echte Datei herunterladen.
 
-Der [Python-Worker](https://github.com/Starlight-Unit-Studio/coreui/blob/6ab7d2f54b61409cbd817cdf0b6f3db6a208e51e/tools/ember_py_worker.py) gibt bislang Text, Exitcode und Laufzeit zurück und entfernt danach sein temporäres Arbeitsverzeichnis. Er übergibt keine registrierten Ausgabedateien. Der [Medienendpunkt](https://github.com/Starlight-Unit-Studio/coreui/blob/6ab7d2f54b61409cbd817cdf0b6f3db6a208e51e/api/console_media.php) kann bereits registrierte Uploads mit Eigentümerprüfung ausliefern, bekommt diese Python-Ergebnisse jedoch nicht.
+Der [Python-Worker](https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface/blob/6ab7d2f54b61409cbd817cdf0b6f3db6a208e51e/tools/ember_py_worker.py) gibt bislang Text, Exitcode und Laufzeit zurück und entfernt danach sein temporäres Arbeitsverzeichnis. Er übergibt keine registrierten Ausgabedateien. Der [Medienendpunkt](https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface/blob/6ab7d2f54b61409cbd817cdf0b6f3db6a208e51e/api/console_media.php) kann bereits registrierte Uploads mit Eigentümerprüfung ausliefern, bekommt diese Python-Ergebnisse jedoch nicht.
 
 Daraus folgt für die eigene Umsetzung:
 
@@ -82,7 +84,7 @@ Daraus folgt für die eigene Umsetzung:
 
 Ein Modelltext mit einem Dateinamen oder einem `sandbox:`-Pfad ersetzt diese Schritte nicht. Ein fehlgeschlagener Job darf keine nicht vorhandene Datei als erfolgreich ausgegeben melden.
 
-Die verbindliche Einzelabnahme steht in [Issue #29](https://github.com/Starlight-Unit-Studio/coreui/issues/29). Sie umfasst insbesondere echte HTML-Bytes, ein vollständig lesbares ZIP, mehrere Dateien, Unicode-Namen, erneutes Öffnen der Sitzung, Kontotrennung und Erhalt nach Worker-Bereinigung. Die gemeinsame Schnittstelle soll später auch Dateien aus Editor, Dokument-, Bild- und anderen Werkzeugen aufnehmen.
+Die verbindliche Einzelabnahme steht in [Issue #29](https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface/issues/29). Sie umfasst insbesondere echte HTML-Bytes, ein vollständig lesbares ZIP, mehrere Dateien, Unicode-Namen, erneutes Öffnen der Sitzung, Kontotrennung und Erhalt nach Worker-Bereinigung. Die gemeinsame Schnittstelle soll später auch Dateien aus Editor, Dokument-, Bild- und anderen Werkzeugen aufnehmen.
 
 ## 5. E.M.B.E.R. als vollständiger Agent
 
@@ -92,7 +94,7 @@ Ein Auftrag erhält einen dauerhaften Lauf mit Zustand, Plan, Ereignissen und Er
 
 Die zentrale Warteschlange besitzt die Ausführungsberechtigung für Modellanfragen. Werkzeuge, Delegation, Gedächtnis und Automationen dürfen keinen Seitenweg eröffnen. Folgeschritte werden erst gestartet, wenn der vorherige Modellaufruf abgeschlossen oder kontrolliert beendet ist. Ob unabhängige rein technische Vorgänge gleichzeitig laufen dürfen, ist eine spätere Ressourcenentscheidung und ändert diese Modellgrenze nicht.
 
-Der Agent braucht einen begrenzten, steuerbaren Arbeitszyklus: nächste Aktion bestimmen, Werkzeug ausführen, Ergebnis auswerten, bei Bedarf korrigieren und mit einem überprüften Ergebnis abschließen. Budgets, Abbruch und Wiederaufnahme gehören zum Lauf. Der bisherige einzelne Python-Aufruf pro Turn in [`api/chat.php`](https://github.com/Starlight-Unit-Studio/coreui/blob/6ab7d2f54b61409cbd817cdf0b6f3db6a208e51e/api/chat.php) ist noch keine allgemeine Ausführungs- und Reparaturschleife.
+Der Agent braucht einen begrenzten, steuerbaren Arbeitszyklus: nächste Aktion bestimmen, Werkzeug ausführen, Ergebnis auswerten, bei Bedarf korrigieren und mit einem überprüften Ergebnis abschließen. Budgets, Abbruch und Wiederaufnahme gehören zum Lauf. Der bisherige einzelne Python-Aufruf pro Turn in [`api/chat.php`](https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface/blob/6ab7d2f54b61409cbd817cdf0b6f3db6a208e51e/api/chat.php) ist noch keine allgemeine Ausführungs- und Reparaturschleife.
 
 ### Sichtbares Thinking und sichtbare Arbeit
 
@@ -105,7 +107,7 @@ Vier getrennte Funktionen sind vorgesehen:
 | Arbeitskommentare und Plan | Verständlich erklären, woran E.M.B.E.R. arbeitet, was bereits bekannt ist und welche konkrete Unsicherheit als Nächstes geklärt wird. |
 | Werkzeug- und Dateiaktivität | Tatsächliche Lese-/Schreibaktionen, Befehle, Ergebnisse, Fehler und Wiederholungen dem richtigen Arbeitsschritt zuordnen. Details aufklappbar halten. |
 
-Das [aktuelle Chat-Backend](https://github.com/Starlight-Unit-Studio/coreui/blob/6ab7d2f54b61409cbd817cdf0b6f3db6a208e51e/api/chat.php) enthält vorgefertigte öffentliche Statussätze. Die neue Darstellung benötigt belastbare Laufereignisse und einen definierten Ausgabekanal. Bestehende Filter für interne Inhalte einfach zu entfernen erfüllt dieses Ziel nicht.
+Das [aktuelle Chat-Backend](https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface/blob/6ab7d2f54b61409cbd817cdf0b6f3db6a208e51e/api/chat.php) enthält vorgefertigte öffentliche Statussätze. Die neue Darstellung benötigt belastbare Laufereignisse und einen definierten Ausgabekanal. Bestehende Filter für interne Inhalte einfach zu entfernen erfüllt dieses Ziel nicht.
 
 Als Referenz dienen die getrennten Konzepte für [Fortschritt](https://github.com/openclaw/openclaw/blob/54417c68199f58e9b78fddff95c1ae6b610845fe/docs/tools/progress-card.md), [Thinking-Steuerung](https://github.com/openclaw/openclaw/blob/54417c68199f58e9b78fddff95c1ae6b610845fe/docs/tools/thinking.md) und die [anbieterabhängige Anzeige in Open WebUI](https://docs.openwebui.com/features/chat-conversations/chat-features/reasoning-models/).
 
@@ -167,9 +169,9 @@ Die Quellen [OpenClaw Skills](https://github.com/openclaw/openclaw/blob/54417c68
 
 Die Matrix führt Chatorganisation und Projekte, Prompt-/Modellprofile, Wissen und RAG, Gedächtnis, Websuche, Browseraktionen, Medien, Sprachfunktionen, Automationen, Kommunikationskanäle, Zusammenarbeit, Administration, Provider und Betrieb.
 
-[Issue #25](https://github.com/Starlight-Unit-Studio/coreui/issues/25) bleibt der vorhandene Browser-Action-Plan: Recherche, authentifizierte und getrennte Browsersitzungen, Eingaben und Formulare, Uploads, sichtbare Aktionen, Entwürfe, Ausführung sowie menschliche Übergabe und Wiederaufnahme. Die bereits beschriebenen Zuständigkeiten und Freigabegrenzen werden bei der Umsetzung berücksichtigt.
+[Issue #25](https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface/issues/25) bleibt der vorhandene Browser-Action-Plan: Recherche, authentifizierte und getrennte Browsersitzungen, Eingaben und Formulare, Uploads, sichtbare Aktionen, Entwürfe, Ausführung sowie menschliche Übergabe und Wiederaufnahme. Die bereits beschriebenen Zuständigkeiten und Freigabegrenzen werden bei der Umsetzung berücksichtigt.
 
-[Issue #23](https://github.com/Starlight-Unit-Studio/coreui/issues/23) zum Schutz festgelegter Branding-/Copyright-Dateien und [Issue #24](https://github.com/Starlight-Unit-Studio/coreui/issues/24) zur optionalen Installationserfassung bleiben gesonderte bestehende Planungen. Sie autorisieren kein allgemeines Durchsuchen privater Inhalte oder standardmäßiges Tracking. Die geltenden Regeln zu fehlender Lizenztelemetrie werden durch diese Roadmap nicht verändert.
+[Issue #23](https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface/issues/23) zum Schutz festgelegter Branding-/Copyright-Dateien und [Issue #24](https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface/issues/24) zur optionalen Installationserfassung bleiben gesonderte bestehende Planungen. Sie autorisieren kein allgemeines Durchsuchen privater Inhalte oder standardmäßiges Tracking. Die geltenden Regeln zu fehlender Lizenztelemetrie werden durch diese Roadmap nicht verändert.
 
 Breite Funktionsabdeckung bedeutet auch, Voraussetzungen sichtbar zu machen: Nicht jeder lokale Modellprovider bietet dieselben Medien-, Tool- oder Reasoning-Funktionen. Fehlende Fähigkeiten werden nachvollziehbar angezeigt und über passende eigene Integrationen ergänzt.
 
