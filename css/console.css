@@ -6050,6 +6050,78 @@ audio.msg-image {
   margin: 0;
   padding: 4px;
 }
+/* 0.5.56: Compact public reasoning summaries plus on-demand full work log.
+   Notes are reconstructed from real server events, never from raw CoT. */
+.msg-row.ember .work-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  column-gap: 9px;
+  row-gap: 3px;
+  text-decoration: none;
+}
+.msg-row.ember .work-caption {
+  font: 700 12px/1.35 "Rajdhani", sans-serif;
+  color: #315fae;
+}
+.msg-row.ember .work-counts {
+  margin-left: auto;
+  color: #70819c;
+  font: 10px/1.4 "Share Tech Mono", monospace;
+  letter-spacing: 0;
+  text-align: right;
+  text-transform: none;
+}
+.msg-row.ember .work-digest {
+  max-width: 100%;
+  margin: 2px 0 12px 23px;
+  padding: 0 0 0 9px;
+  border-left: 2px solid rgba(91,146,255,.36);
+  color: #51627d;
+  font: 500 12px/1.55 "Rajdhani", sans-serif;
+  overflow-wrap: anywhere;
+}
+.msg-row.ember .work-digest[hidden] { display: none; }
+.msg-row.ember .work-body {
+  max-height: min(65vh, 640px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(91,146,255,.35) transparent;
+  overscroll-behavior: contain;
+}
+.msg-row.ember .work-body[hidden] { display: none; }
+.msg-row.ember .work-note {
+  margin-top: 5px;
+  padding: 5px 9px 7px;
+  border-left: 2px solid rgba(91,146,255,.35);
+  background: rgba(91,146,255,.045);
+}
+.msg-row.ember .work-note-label {
+  display: block;
+  margin-bottom: 2px;
+  color: #476da4;
+  font: 600 9px/1.3 "Share Tech Mono", monospace;
+  letter-spacing: .045em;
+}
+.msg-row.ember .work-note-text {
+  margin: 0;
+  color: #334c70;
+  font: 500 13px/1.5 "Rajdhani", sans-serif;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 620px) {
+  .msg-row.ember .work-counts {
+    width: 100%;
+    margin-left: 23px;
+    text-align: left;
+    font-size: 9px;
+  }
+  .msg-row.ember .work-digest { margin-left: 17px; }
+  .msg-row.ember .work-body { max-height: 58vh; }
+  .msg-row.ember .work-note-text { font-size: 12px; }
+}
+
 @media (max-width: 620px) {
   .msg-row.ember .msg-content { max-width: calc(100% - 47px); }
   .msg-row.ember .work-entry { grid-template-columns: 21px minmax(0,1fr); }
