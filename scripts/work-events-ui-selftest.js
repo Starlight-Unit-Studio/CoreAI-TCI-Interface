@@ -154,7 +154,7 @@ work.add(liveNarration.querySelector('.work-body'),
   {id:62,kind:'tool',state:'running',title:'Python-Job eingereiht',meta:{job_id:123}});
 assert(liveNarration.textContent.includes('isolierten Python-Worker'),
   'live SSE event must update first-person progress');
-assert(liveNarration.querySelector('.work-counts').textContent.includes('1 Schritte'),
+assert(liveNarration.querySelector('.work-counts').textContent.includes('1 Schritt'),
   'live counter must update when a new event arrives');
 let manuallyOpened = false;
 const toggled = work.create({events:[{id:63,kind:'run',state:'success',
