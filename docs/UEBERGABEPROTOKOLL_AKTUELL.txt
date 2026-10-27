@@ -50,7 +50,9 @@ Leerraum unter der letzten Nachricht (versteckte Schritt-Titel im
 aufgeklappten Arbeitsweg) ist behoben.
 0.5.67 ist live abgenommen: lokal und Cloud laufen schnell. 0.5.68
 laesst den Autoscroll dem laufenden Arbeitsweg folgen und stoppt ihn nur
-bei echtem Nutzer-Scrollen.
+bei echtem Nutzer-Scrollen, zeigt den Arbeitsweg im Nachrichtenfluss wie
+ein Agent-Terminal und ergaenzt Infokaesten (Core, Kontext, Werkzeuge,
+Projekt) rechts bzw. als Buttons auf schmalen Bildschirmen.
 Mara/Ember, Ollama-Modelfile, serielle Queue und private Projekt-
 plaene NICHT ungefragt veraendern.
 Externe STU-Homepage wird in einem ANDEREN Chat bearbeitet.

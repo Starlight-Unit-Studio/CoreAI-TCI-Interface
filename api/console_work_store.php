@@ -44,6 +44,14 @@ function coreui_work_safe_meta(array $raw): array {
       $safe['public_note'] = $note;
     }
   }
+  // Planned project files for the task card: flat basenames only.
+  if (isset($raw['file_list']) && is_array($raw['file_list'])) {
+    $files = [];
+    foreach (array_slice(array_values($raw['file_list']), 0, 30) as $name) {
+      if (is_string($name) && preg_match('/^[A-Za-z0-9][A-Za-z0-9._-]{0,90}$/D', $name)) $files[] = $name;
+    }
+    if ($files !== []) $safe['file_list'] = $files;
+  }
   // The marker flag is a boolean diagnostic, never a source-text payload.
   if (isset($raw['marker_incomplete']) && is_bool($raw['marker_incomplete'])) {
     $safe['marker_incomplete'] = $raw['marker_incomplete'];

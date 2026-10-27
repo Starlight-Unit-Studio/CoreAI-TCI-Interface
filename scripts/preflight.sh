@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.68 live work history follow: camera stays on the newest step until the reader scrolls.
+# CoreAI: TCI Interface 0.5.68 agent-style work flow, info boxes and follow-until-the-reader-scrolls.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -141,6 +141,11 @@ UI_FILES=(
   scripts/work-events-persistence-selftest.php
   scripts/local-file-tool-selftest.php
   scripts/context-budget-selftest.php
+  scripts/insights-selftest.php
+  scripts/insights-ui-selftest.cjs
+  api/console_insights.php
+  api/console_insights_store.php
+  js/coreui-insights.js
   scripts/contextual-project-selftest.php
   scripts/model-project-intent-selftest.php
   scripts/native-tools-selftest.php
@@ -565,6 +570,13 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail "Kontextfenster-Selbsttest: ${context_test:-Unbekannter Fehler}"
   fi
 
+  insights_test=''
+  if insights_test="$(compose exec -T php php scripts/insights-selftest.php 2>&1)"; then
+    ok 'Infokaesten: Core, Kontext, Werkzeuge und Projekt nur lesend und sitzungsbezogen.'
+  else
+    fail "Infokaesten-Selbsttest: ${insights_test:-Unbekannter Fehler}"
+  fi
+
   if command -v node >/dev/null 2>&1; then
     if node "$PROJECT_ROOT/scripts/response-timing-ui-selftest.js" >/dev/null 2>&1; then
       ok 'Antwortdauer: gespeicherte Gesamt- und Modellzeit in der Infoanzeige geprueft.'
@@ -575,6 +587,11 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       ok 'Chat-Navigation: bestehender Modellauftrag ohne erneute Generierung wiederhergestellt.'
     else
       fail 'Chat-Navigation: Wiederherstellungs-Selbsttest fehlgeschlagen.'
+    fi
+    if node "$PROJECT_ROOT/scripts/insights-ui-selftest.cjs" >/dev/null 2>&1; then
+      ok 'Infokaesten: rechte Spalte, Handy-Buttons und Live-Kontext geprueft.'
+    else
+      fail 'Infokaesten: JavaScript-Selbsttest fehlgeschlagen.'
     fi
     if node "$PROJECT_ROOT/scripts/chat-follow-selftest.cjs" >/dev/null 2>&1; then
       ok 'Chat-Scroll: manuelles Lesen, Arbeits-Punkte und Sprung zur aktuellen Antwort geprueft.'

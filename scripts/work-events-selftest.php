@@ -30,6 +30,9 @@ $window = coreui_work_safe_meta(['reason'=>'context_window_full','context_tokens
 check_work(($window['reason'] ?? '') === 'context_window_full'
   && ($window['context_tokens'] ?? 0) === 4096,
   'the local context window size is a safe numeric diagnostic');
+$planned = coreui_work_safe_meta(['file_list'=>['index.html','style.css','../etc/passwd','.env',['x'],'main.js']]);
+check_work(($planned['file_list'] ?? []) === ['index.html','style.css','main.js'],
+  'the planned file list keeps safe flat basenames only');
 $public = coreui_work_safe_meta([
   'done_reason'=>'length', 'content_chars'=>2512, 'thinking_chars'=>908,
   'continuation_segments'=>2, 'plan_version'=>3, 'response_bytes'=>1090,

@@ -2,6 +2,8 @@ CoreAI: TCI Interface 0.5.68 - 27.10.2026
 - Live-Test 0.5.67: lokale und Cloud-Modelle laufen schnell durch. Offen war nur das Autoscroll beim Live-Arbeitsweg.
 - Ursache: js/coreui-chat-follow.js hielt einen laufenden Block ueber 78 Prozent der Sichthoehe an seinem Anfang fest, folgte nur bei Server-Ereignissen und wertete jede nach oben verschobene Scrollposition als Nutzer-Scrollen.
 - Korrektur: Ziel ist immer das Ende des neuesten Beitrags; ResizeObserver folgt jedem Wachstum; Stopp nur bei Mausrad, Wischen, Tasten oder Scrollleiste, Gesten zeitlich begrenzt.
-- Tests: chat-follow-selftest erweitert; Browser-Nachbau bei 412, 600 und 1010 Pixel Breite.
+- Arbeitsweg im Nachrichtenfluss wie ein Agent-Terminal: Erzaehlung als Antworttext, gefaltete Routine-Schritte, Aufgabenkarte mit Dateistatus, Live-Statuszeile (Taetigkeit, Laufzeit, Tokens). Neues Ereignis "Projektdateien geplant" mit gefilterter Dateiliste.
+- Infokaesten Core, Kontext, Werkzeuge, Projekt: api/console_insights.php (nur lesend, sitzungsbezogen), js/coreui-insights.js; Desktop rechte Spalte im CoreAI-Kastenstil, sonst aufklappbare Buttons; Kontext live.
+- Tests: chat-follow-selftest erweitert, insights-selftest.php und insights-ui-selftest.cjs neu und in beiden Preflights, Arbeitsweg-UI-Test erweitert; Browser-Nachbau bei 412, 600, 1010 und 1584 Pixel Breite.
 - Keine Modell-, Ollama- oder Modelfile-Aenderung.
 - OFFEN: Issue #102, Live-Abnahme des Autoscrolls auf Android.

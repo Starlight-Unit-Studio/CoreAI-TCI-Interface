@@ -6546,3 +6546,474 @@ audio.msg-image {
 .msg-row.ember .work-source-scroll {
   position: relative;
 }
+
+/* 0.5.68: Claude-Code-like work flow inside Mara's reply. Narration reads
+   like the answer itself, routine steps fold into one muted line per run,
+   files appear as a task card and a live status line closes the run. */
+.msg-row.ember .work-panel.work-flow {
+  margin: 0 0 12px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.msg-row.ember .work-panel.work-flow .work-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 24px;
+  margin: 0 0 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  opacity: 1;
+  cursor: pointer;
+}
+.msg-row.ember .work-panel.work-flow .work-caption {
+  color: var(--muted);
+  font: 600 14px/1.3 "Rajdhani", sans-serif;
+  letter-spacing: .02em;
+}
+.msg-row.ember .work-panel.work-flow .work-counts {
+  color: var(--muted-soft);
+  font: 400 11px/1.3 "Share Tech Mono", monospace;
+}
+.msg-row.ember .work-panel.work-flow .work-body {
+  max-height: none;
+  overflow: visible;
+  padding: 4px 0 0;
+  border: 0;
+}
+.msg-row.ember .work-panel.work-flow .work-body[hidden] { display: none; }
+.msg-row.ember .work-panel.work-flow .work-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.msg-row.ember .work-panel.work-flow .work-entry,
+.msg-row.ember .work-panel.work-flow .work-entry.work-error {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.msg-row.ember .work-panel.work-flow .work-entry[hidden],
+.msg-row.ember .work-panel.work-flow .work-step-row[hidden] { display: none; }
+
+/* Narration: the same voice and type as Mara's answer. */
+.msg-row.ember .work-panel.work-flow .work-narration .work-state { display: none; }
+.msg-row.ember .work-panel.work-flow .work-narration .work-note { padding: 0; }
+.msg-row.ember .work-panel.work-flow .work-narration .work-note-text {
+  margin: 0;
+  color: var(--txt);
+  font: 500 15px/1.54 "Rajdhani", "Segoe UI", sans-serif;
+}
+.msg-row.ember .work-panel.work-flow .work-narration.work-error .work-note-text {
+  padding-left: 10px;
+  border-left: 2px solid var(--red);
+}
+
+/* Routine runs: one muted, expandable line. */
+.msg-row.ember .work-panel.work-flow .work-run-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted-soft);
+  font: 500 14px/1.4 "Rajdhani", sans-serif;
+  text-align: left;
+  cursor: pointer;
+}
+.msg-row.ember .work-panel.work-flow .work-run-toggle:hover { color: var(--cx); }
+.msg-row.ember .work-panel.work-flow .work-run-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.msg-row.ember .work-panel.work-flow .work-run-chevron {
+  flex: none;
+  font-size: 11px;
+  transition: transform 160ms ease;
+}
+.msg-row.ember .work-panel.work-flow .work-run-toggle[aria-expanded="true"] .work-run-chevron {
+  transform: rotate(90deg);
+}
+.msg-row.ember .work-panel.work-flow .work-step-row {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr);
+  column-gap: 8px;
+  margin: 6px 0 0 4px;
+  padding: 0 0 0 10px;
+  border-left: 1px solid var(--line);
+}
+.msg-row.ember .work-panel.work-flow .work-step .work-state {
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  font-size: 10px;
+  opacity: .8;
+}
+.msg-row.ember .work-panel.work-flow .work-step .work-title {
+  position: static;
+  width: auto;
+  height: auto;
+  margin: 0;
+  overflow: visible;
+  clip-path: none;
+  white-space: normal;
+  color: #4d5a72;
+  font: 600 13px/1.4 "Rajdhani", sans-serif;
+}
+.msg-row.ember .work-panel.work-flow .work-step-note { padding: 0; }
+.msg-row.ember .work-panel.work-flow .work-step-note .work-note-text {
+  margin: 1px 0 0;
+  color: var(--muted-soft);
+  font: 500 13px/1.45 "Rajdhani", sans-serif;
+}
+
+/* Task card in the CoreAI frame: cut corners top right and bottom left. */
+.msg-row.ember .work-panel.work-flow .work-tasks {
+  position: relative;
+  max-width: 560px;
+  margin: 14px 0 4px;
+  padding: 12px 16px 13px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, .95), rgba(240, 246, 255, .88));
+  box-shadow: inset 0 0 0 1px rgba(91, 146, 255, .32);
+  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
+}
+.msg-row.ember .work-panel.work-flow .work-tasks::before {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 46%;
+  height: 2px;
+  content: "";
+  background: linear-gradient(90deg, var(--cx), var(--violet), var(--amb));
+}
+.msg-row.ember .work-panel.work-flow .work-tasks[hidden] { display: none; }
+.msg-row.ember .work-panel.work-flow .work-tasks-head {
+  margin-bottom: 9px;
+  color: var(--muted);
+  font: 400 10px/1.3 "Share Tech Mono", monospace;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.msg-row.ember .work-panel.work-flow .work-task-list {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.msg-row.ember .work-panel.work-flow .work-task {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--txt);
+  font: 500 15px/1.3 "Rajdhani", sans-serif;
+}
+.msg-row.ember .work-panel.work-flow .work-task-mark {
+  display: grid;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  place-items: center;
+  border: 1.5px solid var(--muted-soft);
+  border-radius: 50%;
+  color: #fff;
+  font-size: 10px;
+  line-height: 1;
+}
+.msg-row.ember .work-panel.work-flow .work-task-done .work-task-mark {
+  border-color: var(--green);
+  background: var(--green);
+}
+.msg-row.ember .work-panel.work-flow .work-task-done .work-task-name { color: var(--muted); }
+.msg-row.ember .work-panel.work-flow .work-task-error .work-task-mark {
+  border-color: var(--red);
+  background: var(--red);
+}
+.msg-row.ember .work-panel.work-flow .work-task-running .work-task-mark {
+  border-color: var(--cx);
+  border-style: dashed;
+  animation: thinking-spin 1.6s linear infinite;
+}
+
+/* Live status line: activity, elapsed time and tokens. */
+.msg-row.ember .work-panel.work-flow .work-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  color: var(--muted);
+  font: 500 14px/1.4 "Rajdhani", sans-serif;
+}
+.msg-row.ember .work-panel.work-flow .work-status-dots {
+  display: inline-flex;
+  gap: 3px;
+}
+.msg-row.ember .work-panel.work-flow .work-status-dots i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--amb);
+  animation: coreui-jump-working 1.15s ease-in-out infinite;
+}
+.msg-row.ember .work-panel.work-flow .work-status-dots i:nth-child(2) { background: var(--violet); animation-delay: .16s; }
+.msg-row.ember .work-panel.work-flow .work-status-dots i:nth-child(3) { background: var(--cx); animation-delay: .32s; }
+/* The status line already shows that Mara works; no second dot bubble. */
+.msg-row.ember .work-panel.work-flow ~ .msg-bubble .typing-dots { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .msg-row.ember .work-panel.work-flow .work-status-dots i,
+  .msg-row.ember .work-panel.work-flow .work-task-running .work-task-mark { animation: none; }
+}
+
+/* 0.5.68: Core, Kontext, Werkzeuge and Projekt info boxes. CoreAI frame:
+   cut corners top right and bottom left, blue-violet-amber accent line. */
+.core-insights,
+.insight-chips { display: none; }
+.insight-box {
+  position: relative;
+  background: linear-gradient(135deg, rgba(255, 255, 255, .96), rgba(239, 245, 255, .9));
+  box-shadow: inset 0 0 0 1px rgba(91, 146, 255, .3);
+  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
+}
+.insight-box::before {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 52%;
+  height: 2px;
+  content: "";
+  background: linear-gradient(90deg, var(--cx), var(--violet), var(--amb));
+}
+.insight-box::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 34%;
+  height: 1px;
+  content: "";
+  background: linear-gradient(90deg, transparent, rgba(226, 155, 57, .55));
+}
+.insight-head {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 9px;
+  padding: 12px 16px;
+  border: 0;
+  background: transparent;
+  color: var(--txt);
+  text-align: left;
+  cursor: pointer;
+}
+.insight-icon { color: var(--amb); font-size: 14px; }
+.insight-title {
+  flex: 1;
+  font: 400 11px/1.2 "Share Tech Mono", monospace;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+.insight-chevron {
+  color: var(--muted-soft);
+  font-size: 11px;
+  transition: transform 160ms ease;
+}
+.insight-head[aria-expanded="false"] .insight-chevron { transform: rotate(-90deg); }
+.insight-body {
+  padding: 0 16px 14px;
+  color: var(--txt);
+  font: 500 14px/1.45 "Rajdhani", "Segoe UI", sans-serif;
+}
+.insight-body[hidden] { display: none; }
+.insight-rows { display: grid; gap: 6px; margin: 0; }
+.insight-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: baseline;
+}
+.insight-row dt { color: var(--muted); }
+.insight-row dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  text-align: right;
+  font-weight: 600;
+}
+.insight-empty,
+.insight-note {
+  margin: 8px 0 0;
+  color: var(--muted-soft);
+  font-size: 13px;
+}
+.insight-empty { margin: 0; }
+.insight-usage-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-weight: 700;
+}
+.insight-usage-total {
+  color: var(--muted);
+  font: 400 12px/1.6 "Share Tech Mono", monospace;
+}
+.insight-bar {
+  display: flex;
+  height: 6px;
+  margin: 8px 0 10px;
+  overflow: hidden;
+  background: rgba(91, 146, 255, .12);
+}
+.insight-bar span { display: block; min-width: 0; height: 100%; }
+.insight-bar-input { background: var(--cx); }
+.insight-bar-output { background: var(--amb); }
+.insight-legend,
+.insight-tools,
+.insight-files {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.insight-legend li,
+.insight-tool {
+  display: grid;
+  grid-template-columns: 10px auto minmax(0, 1fr);
+  gap: 9px;
+  align-items: center;
+}
+.insight-legend i,
+.insight-tool i {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  background: rgba(137, 148, 170, .35);
+}
+.insight-legend-input i { background: var(--cx); }
+.insight-legend-output i { background: var(--amb); }
+.insight-legend-value,
+.insight-tool-detail {
+  color: var(--muted);
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.insight-tool i { border-radius: 50%; }
+.insight-tool.is-on i { background: var(--green); box-shadow: 0 0 6px rgba(42, 175, 117, .55); }
+.insight-tool.is-off { opacity: .6; }
+.insight-tool-label { font: 400 11px/1.4 "Share Tech Mono", monospace; letter-spacing: .1em; }
+.insight-subhead {
+  margin: 10px 0 6px;
+  color: var(--muted);
+  font: 400 10px/1.2 "Share Tech Mono", monospace;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+.insight-subhead:first-child { margin-top: 0; }
+.insight-file {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+.insight-file-name {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--txt);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+a.insight-file-name { color: #2d5fc4; text-decoration: none; }
+a.insight-file-name:hover { text-decoration: underline; }
+.insight-file-meta { flex: none; color: var(--muted-soft); font-size: 13px; }
+
+/* Wide screens: a right column beside the conversation. */
+@media (min-width: 1400px) {
+  .core-insights {
+    position: fixed;
+    z-index: 4;
+    top: calc(var(--header-height) + 18px);
+    right: 18px;
+    bottom: calc(var(--composer-height) + 14px);
+    display: flex;
+    width: 304px;
+    flex-direction: column;
+    gap: 14px;
+    overflow-y: auto;
+    padding: 2px 2px 8px;
+    scrollbar-width: thin;
+  }
+  .app-shell .messages-area { margin-right: 334px; }
+  .jump-latest { right: calc(334px + 30px); }
+}
+
+/* Narrow screens: chip buttons that open one box at a time. */
+@media (max-width: 1399px) {
+  .insight-chips {
+    position: sticky;
+    z-index: 6;
+    top: 0;
+    display: block;
+    padding: 10px 16px 8px;
+    background: #f0f4fa;
+    box-shadow: 0 1px 0 rgba(91, 146, 255, .14);
+  }
+  .insight-chips::after {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    left: 0;
+    height: 14px;
+    content: "";
+    pointer-events: none;
+    background: linear-gradient(180deg, rgba(240, 244, 250, .95), rgba(240, 244, 250, 0));
+  }
+  .insight-chip-row {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .insight-chip {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 13px;
+    border: 0;
+    background: rgba(255, 255, 255, .92);
+    box-shadow: inset 0 0 0 1px rgba(91, 146, 255, .32);
+    color: var(--txt);
+    font: 400 11px/1 "Share Tech Mono", monospace;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    clip-path: polygon(0 0, calc(100% - 9px) 0, 100% 9px, 100% 100%, 9px 100%, 0 calc(100% - 9px));
+  }
+  .insight-chip.is-open {
+    background: linear-gradient(90deg, rgba(91, 146, 255, .2), rgba(138, 111, 242, .16), rgba(226, 155, 57, .2));
+    box-shadow: inset 0 0 0 1px rgba(91, 146, 255, .6);
+  }
+  .insight-sheet {
+    position: absolute;
+    top: 100%;
+    right: 16px;
+    left: 16px;
+    max-height: 62vh;
+    overflow-y: auto;
+    filter: drop-shadow(0 12px 22px rgba(34, 58, 104, .16));
+  }
+  .insight-sheet[hidden] { display: none; }
+  .insight-sheet { z-index: 1; }
+  .insight-sheet .insight-box { background: linear-gradient(135deg, #ffffff, #eef4ff); }
+}
+@media (max-width: 620px) {
+  .insight-chips { padding: 8px 12px 6px; }
+  .insight-sheet { right: 12px; left: 12px; }
+}

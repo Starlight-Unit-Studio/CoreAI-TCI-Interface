@@ -157,6 +157,14 @@
         function () { return state.typingEl || (messagesInner && messagesInner.lastElementChild); },
         messagesInner)
     : null;
+  // Core, Kontext, Werkzeuge and Projekt of the active session.
+  var insights      = window.CoreUIInsights
+    ? window.CoreUIInsights.create({
+        aside: document.getElementById('coreInsights'),
+        chips: document.getElementById('insightChips'),
+        apiBase: API_BASE
+      })
+    : null;
   var inputEl       = document.getElementById('inputMessage');
   var btnSend       = document.getElementById('btnSend');
   // v1.1.1.89 - Anhang
@@ -583,6 +591,7 @@
     }
 
     rememberActiveSession(ses.id);
+    if (insights) insights.refresh(ses.id);
     headerSessionName.textContent = ses.title;
     messagesInner.innerHTML = '';
     state.typingEl = null;
@@ -1576,6 +1585,7 @@
     state.thinkingPanelEl = window.CoreUIWorkEvents
       ? window.CoreUIWorkEvents.create({
           live:true,expanded:true,
+          startedAt: session ? Number(state.sendTimestampBySession[String(session.id)]) || 0 : 0,
           events: bucket && bucket.turnId === Number(state.pendingBySession[String(session.id)])
             ? bucket.events : []
         })
@@ -2268,6 +2278,7 @@
         if (!isActiveSession(sessionId) || !window.CoreUIWorkEvents) return;
         var event = rememberLiveWorkEvent(sessionId,Number(userMsgId),
           workRunKey,JSON.parse(ev.data));
+        if (insights && event) insights.observe(event);
         var body = panelBody();
         if (body && event) {
           window.CoreUIWorkEvents.add(body,event);
@@ -2451,6 +2462,7 @@
       delete state.liveWorkEventsBySession[sessionId];
     }
     if (emberId > Number(ses.last_message_id || 0)) ses.last_message_id = emberId;
+    if (insights && isActiveSession(sessionId)) insights.refresh(sessionId);
 
     if (!isActiveSession(sessionId)) {
       dbLoadSessions().then(renderSessionList).catch(function() {});
@@ -2798,6 +2810,7 @@
           updateActivePendingUi();
           setStatus('online', 'VERBUNDEN');
           scrollToBottom();
+          if (insights) insights.refresh(sessionId);
         }
         dbLoadSessions().then(renderSessionList).catch(function() {});
         drainQueuedTurn(sessionId);

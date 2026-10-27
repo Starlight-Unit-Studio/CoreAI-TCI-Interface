@@ -38,8 +38,24 @@ GEPRUEFT:
 - Browser-Nachbau: neuester Schritt bei 412, 600 und 1010 Pixel Breite durchgehend sichtbar;
   Mausrad hoch ueber dem Chat haelt die Position (scrollTop 634 statt 934).
 
+NACHTRAG (Wunsch des Betreibers, Claude-Code-Ansicht als Vorbild):
+- Arbeitsweg wirkte getrennt von Maras Nachricht. Jetzt (js/coreui-work-events.js):
+  Erzaehl-Ereignisse (Kommentar, Planwahl, Kontextfenster, Dateiliste, Fehler, Ergebnis) als
+  normaler Antworttext; alle anderen Ereignisse falten sich pro Abschnitt zu einer grauen,
+  aufklappbaren Zeile ("n Schritte · letzter Schritt"). Jedes Ereignis bleibt genau ein Eintrag.
+  Aufgabenkarte (Projektdateien x von y fertig) im CoreAI-Rahmen; Live-Statuszeile mit
+  Taetigkeit, Laufzeit seit dem Senden und Ausgabe-Tokens. Kein inneres Scrollfeld mehr.
+- chat.php schreibt "Projektdateien geplant" mit file_list (console_work_store filtert auf
+  flache Dateinamen, maximal 30).
+- Infokaesten: api/console_insights.php + api/console_insights_store.php (Core, Kontext,
+  Werkzeuge, Projekt; Eigentuemer/Sitzung geprueft, Session-Lock freigegeben, no-store),
+  js/coreui-insights.js (nur textContent, sichere Download-Links), app.html Container
+  #coreInsights und #insightChips. Ab 1400 px rechte Spalte, darunter Buttons mit Ausklappblatt.
+  Kontext-Kasten aktualisiert sich live aus Arbeitsereignissen (prompt_eval_count/eval_count).
+- ember_ollama_context_window() merkt sich die Quelle (geladen, Modelfile, gemessen, Standard).
+
 UNVERAENDERT:
-- Modelfile, Ollama, Backend, Modell-Queue, Werkzeuge.
+- Modelfile, Ollama-Parameter, Modell-Queue, Werkzeugausfuehrung und Berechtigungen.
 
 WEITERHIN OFFEN:
 - Live-Abnahme auf Android/Netcup.

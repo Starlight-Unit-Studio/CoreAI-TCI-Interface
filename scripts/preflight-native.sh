@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.68 live work history follow: camera stays on the newest step until the reader scrolls.
+# CoreAI: TCI Interface 0.5.68 agent-style work flow, info boxes and follow-until-the-reader-scrolls.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -107,6 +107,11 @@ UI_FILES=(
   scripts/work-events-persistence-selftest.php
   scripts/local-file-tool-selftest.php
   scripts/context-budget-selftest.php
+  scripts/insights-selftest.php
+  scripts/insights-ui-selftest.cjs
+  api/console_insights.php
+  api/console_insights_store.php
+  js/coreui-insights.js
   scripts/contextual-project-selftest.php
   scripts/model-project-intent-selftest.php
   scripts/native-tools-selftest.php
@@ -365,6 +370,13 @@ if command -v php >/dev/null 2>&1; then
     fail "Kontextfenster-Selbsttest: ${context_test:-Unbekannter Fehler}"
   fi
 
+  insights_test=''
+  if insights_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/insights-selftest.php" 2>&1)"; then
+    ok 'Infokaesten: Core, Kontext, Werkzeuge und Projekt nur lesend und sitzungsbezogen.'
+  else
+    fail "Infokaesten-Selbsttest: ${insights_test:-Unbekannter Fehler}"
+  fi
+
   if runuser -u www-data -- php "$PROJECT_ROOT/scripts/model-live-audit.php" --selftest >/dev/null 2>&1; then
     ok 'Modelfile-Audit: SYSTEM- und Abweichungspruefung offline bestanden.'
   else
@@ -388,6 +400,11 @@ if command -v php >/dev/null 2>&1; then
       ok 'Chat-Navigation: bestehender Modellauftrag ohne erneute Generierung wiederhergestellt.'
     else
       fail 'Chat-Navigation: Wiederherstellungs-Selbsttest fehlgeschlagen.'
+    fi
+    if node "$PROJECT_ROOT/scripts/insights-ui-selftest.cjs" >/dev/null 2>&1; then
+      ok 'Infokaesten: rechte Spalte, Handy-Buttons und Live-Kontext geprueft.'
+    else
+      fail 'Infokaesten: JavaScript-Selbsttest fehlgeschlagen.'
     fi
     if node "$PROJECT_ROOT/scripts/chat-follow-selftest.cjs" >/dev/null 2>&1; then
       ok 'Chat-Scroll: manuelles Lesen, Arbeits-Punkte und Sprung zur aktuellen Antwort geprueft.'

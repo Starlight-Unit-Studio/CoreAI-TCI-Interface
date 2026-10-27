@@ -9,7 +9,7 @@ CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, Sea
 
 Current source version: `0.5.68` (numeric only). The last verified ZIP remains archived under its original historical name.
 
-## Autoscroll folgt dem laufenden Arbeitsweg (0.5.68)
+## Arbeitsweg wie ein Agent-Terminal, Infokaesten und Autoscroll (0.5.68)
 
 Live-Test des Betreibers nach 0.5.67: Lokale und Cloud-Modelle laufen
 schnell durch. Beim Schreiben des Arbeitswegs blieb die Ansicht aber kurz
@@ -27,7 +27,27 @@ Nutzer-Scrollen, auch wenn der Browser sie selbst verursacht hatte.
 Nutzeraktion: Mausrad, Wischen, Tasten oder Ziehen der Scrollleiste.
 Im Browser-Nachbau bleibt der neueste Schritt bei 412, 600 und 1010 Pixel
 Breite durchgehend sichtbar; nach Hochscrollen bleibt die Leseposition
-stehen. Nur Frontend, keine Modell- oder Modelfile-Aenderung.
+stehen.
+
+**Arbeitsweg im Nachrichtenfluss:** Maras Erzaehlung (eigene Notizen,
+Planentscheidung, Kontextfenster, Dateiliste, Fehler, Ergebnis) steht als
+normaler Antworttext in ihrer Nachricht. Routine-Schritte (Core-Aufrufe,
+Einzeldateien, Pruefungen) falten sich pro Abschnitt zu einer grauen Zeile
+wie "10 Schritte · Quelldatei wird erzeugt · profile.html ▸", die sich
+aufklappen laesst. Beim Projektbau zeigt eine Aufgabenkarte im CoreAI-Rahmen
+alle geplanten Dateien mit Status, unten laeuft eine Statuszeile mit
+aktueller Taetigkeit, Laufzeit und Ausgabe-Tokens. Das neue Ereignis
+"Projektdateien geplant" traegt die Dateiliste (nur flache Dateinamen).
+
+**Infokaesten:** `api/console_insights.php` liefert nur lesend und
+sitzungsbezogen **Core** (Modell, lokal/Cloud, Kontextfenster mit Quelle,
+Denkmodus), **Kontext** (Auslastung des letzten Core-Aufrufs mit Balken),
+**Werkzeuge** (RAG-LITE, CRUD-LZG, WEB, BROWSE, Python, Skills) und
+**Projekt** (letzter Plan und Dateien mit Download). Ab 1400 Pixel Breite
+stehen sie rechts neben dem Chat im CoreAI-Kastenstil (Ecken oben rechts
+und unten links abgeschnitten, Blau-Violett-Amber-Verlauf), darunter als
+aufklappbare Buttons. Waehrend Mara arbeitet, aktualisiert sich der
+Kontext-Kasten live. Keine Modell-, Ollama- oder Modelfile-Aenderung.
 
 ## Kontextfenster, Cloud-Werkzeuge, Python-Schutz und Chat-Leerraum (0.5.67)
 

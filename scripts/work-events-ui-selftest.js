@@ -198,6 +198,45 @@ assert(toolFix.textContent.includes('mehrere Werkzeugblöcke in einer Antwort')
   && toolFix.textContent.includes('Ich setze sie jetzt um'),
   'tool reply correction must be narrated with its reason');
 
+// 0.5.68: Claude-Code-like flow. Routine steps fold into one muted line per
+// sequence, Mara's narration stays readable text, a task card lists files.
+const flow = work.create({events:[
+  {id:201,kind:'run',state:'info',title:'Auftrag gestartet',meta:{}},
+  {id:202,kind:'model',state:'running',title:'Modellstream gestartet',meta:{model:'gemma4:31b-cloud'}},
+  {id:203,kind:'tool',state:'info',title:'Projektdateien geplant',
+    meta:{file_count:3,file_list:['index.html','style.css','main.js','../evil']}},
+  {id:204,kind:'tool',state:'info',title:'Einzeldatei angefordert',meta:{file_name:'index.html',attempt:1}},
+  {id:205,kind:'model',state:'success',title:'Quelldatei empfangen',
+    meta:{file_name:'index.html',eval_count:1200}},
+  {id:206,kind:'tool',state:'info',title:'Einzeldatei angefordert',meta:{file_name:'style.css',attempt:1}},
+],expanded:true});
+const flowEntries = flow.querySelector('.work-entries');
+assert.equal(flowEntries.children.length,6,'every event keeps exactly one entry');
+const firstRun = flowEntries.children[0];
+assert(firstRun.className.includes('work-run-head'),'a routine sequence starts a folded run');
+assert.equal(firstRun.querySelector('.work-run-toggle').textContent,'2 Schritte · Modellstream gestartet▸');
+assert.equal(flowEntries.children[1].hidden,true,'folded steps stay hidden');
+firstRun.querySelector('.work-run-toggle').handlers.click();
+assert.equal(flowEntries.children[1].hidden,false,'expanding a run shows each step');
+assert(flowEntries.children[2].className.includes('work-narration'),'a planned file list is narrated');
+assert(flow.textContent.includes('Ich erstelle 3 Dateien und prüfe jede einzeln: index.html, style.css, main.js.'));
+assert(!flow.textContent.includes('../evil'),'only safe basenames reach the file list');
+assert(flowEntries.children[3].querySelector('.work-run-toggle').textContent
+  .startsWith('3 Schritte · Einzeldatei angefordert · style.css'),'a new run follows the narration');
+const tasksCard = flow.querySelector('.work-tasks');
+assert.equal(tasksCard.hidden,false,'two or more files show a task card');
+assert(tasksCard.textContent.includes('Projektdateien · 1 von 3 fertig'));
+assert(tasksCard.querySelector('.work-task-done').textContent.includes('index.html'));
+assert(tasksCard.querySelector('.work-task-running').textContent.includes('style.css'));
+assert(tasksCard.querySelector('.work-task-pending').textContent.includes('main.js'));
+const liveStatus = work.create({live:true,expanded:true,startedAt:Date.now() - 125000});
+work.add(liveStatus.querySelector('.work-body'),{id:220,kind:'model',state:'running',
+  title:'Quelldatei wird erzeugt',meta:{file_name:'gallery.html',eval_count:4200}});
+assert(liveStatus.querySelector('.work-status').textContent
+  .includes('Schreibe gallery.html · 2 Min. 5 Sek. · 4,2k Tokens'),
+  'the live status names the activity, elapsed time and tokens');
+assert.equal(saved.querySelector('.work-status'),null,'a finished reply has no live status line');
+
 const futureTool = work.create({events:[{id:71,kind:'tool',state:'running',
   title:'Neuen Repository-Pruefschritt gestartet'}],expanded:false});
 assert(futureTool.textContent.includes('Ich führe gerade „Neuen Repository-Pruefschritt gestartet“ aus'),
@@ -271,8 +310,10 @@ function tickWork(max = 1500) {
 }
 const queued = work.create({live:true,expanded:true});
 const queuedBody = queued.querySelector('.work-body');
-const taskTitles = ['Auftrag gestartet','Kontext vorbereitet',
-  'Modellstream vorbereitet','Modellstream gestartet'];
+// 0.5.68: only Mara's narration is typed; routine steps fold at once.
+const taskTitles = ['Mara hat die Umsetzung des gespeicherten Plans gewaehlt',
+  'Freigegebenes Webprojekt im Quelltextmodus gestartet',
+  'Homepage-Projektdateien erkannt','Projektquellen vollstaendig'];
 taskTitles.forEach((title,n) => work.add(queuedBody,{
   id:101+n,kind:'run',state:'info',title,meta:{}
 }));
@@ -281,7 +322,7 @@ assert.equal(queuedBody.querySelector('.work-entries').children.length,1,
 const firstNote = queuedBody.querySelector('.work-note-text');
 assert.equal(firstNote.textContent,'','first explanation begins empty');
 assert.equal(work.add(queuedBody,{id:104,kind:'run',state:'info',
-  title:'Modellstream gestartet',meta:{}}),false,
+  title:'Projektquellen vollstaendig',meta:{}}),false,
   'SSE duplicates already pending must not produce two rows');
 assert.equal(queuedBody._workQueue.length,3,'remaining steps stay queued');
 const firstTick = timers.shift();
@@ -293,8 +334,8 @@ assert.equal(queuedBody.querySelector('.work-entries').children.length,1,
   'second event must wait until first note is complete');
 tickWork();
 assert.equal(queuedBody.querySelector('.work-entries').children.length,4);
-assert(queuedBody.textContent.includes('Ich übernehme den Auftrag')
-  && queuedBody.textContent.includes('Ich bereite den Core-Aufruf vor'),
+assert(queuedBody.textContent.includes('Ich setze den bereits gespeicherten Projektplan um')
+  && queuedBody.textContent.includes('Alle angeforderten Quelltexte sind vorhanden'),
   'typed steps must retain complete safe narratives');
 assert(queued.querySelector('.work-counts').textContent.includes('4 Schritte'));
 assert.equal(queuedBody._workQueue.length,0,'no SSE events silently discarded');
@@ -325,7 +366,7 @@ assert.equal(timers.length,0);
 const finishedHistory = work.create({expanded:true,events:taskTitles.map((title,n)=>({
   id:141+n,kind:'run',state:'info',title,meta:{}
 }))});
-assert(finishedHistory.textContent.includes('Modellstream gestartet'),
+assert(finishedHistory.textContent.includes('Projektquellen vollstaendig'),
   'saved history renders synchronously and in order');
 sandbox.window.setTimeout = undefined;
 sandbox.window.clearTimeout = undefined;
