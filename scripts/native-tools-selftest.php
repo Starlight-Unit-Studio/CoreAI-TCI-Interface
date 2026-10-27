@@ -94,22 +94,22 @@ native_assert(coreui_native_tool_parse("[COREUI_PLAN_AND_BUILD]\n# Kurz")
 
 // 0.5.66: incomplete PLAN_APPEND must not overwrite the approved plan as
 // final or execute a build; it is an authenticated, versioned Markdown draft.
-$appendBody = "## Weitere Unterseiten\\n"
-  . "- Die Galerie bekommt eine eigene, bedienbare Unterseite.\\n"
-  . "- Blog und Kontakt bleiben verlinkt; vorhandene Seiten werden erhalten.\\n"
-  . "### Abnahme\\n- Navigation und responsive Layouts pruefen.";
-$appendParsed = coreui_native_tool_parse("[COREUI_PLAN_APPEND]\\n" . $appendBody);
+$appendBody = "## Weitere Unterseiten\n"
+  . "- Die Galerie bekommt eine eigene, bedienbare Unterseite.\n"
+  . "- Blog und Kontakt bleiben verlinkt; vorhandene Seiten werden erhalten.\n"
+  . "### Abnahme\n- Navigation und responsive Layouts pruefen.";
+$appendParsed = coreui_native_tool_parse("[COREUI_PLAN_APPEND]\n" . $appendBody);
 native_assert(is_array($appendParsed)
   && ($appendParsed['type'] ?? '') === 'PLAN_APPEND'
   && !empty($appendParsed['draft']) && !empty($appendParsed['recovered'])
   && ($appendParsed['body'] ?? '') === $appendBody,
   'unfinished plan extension must be preserved only as a draft');
-native_assert(coreui_native_plan_marker_attempt("[COREUI_PLAN_APPEND]\\n" . $appendBody),
+native_assert(coreui_native_plan_marker_attempt("[COREUI_PLAN_APPEND]\n" . $appendBody),
   'plan append must bypass generic prose continuation');
-native_assert(coreui_native_tool_parse("[COREUI_PLAN_APPEND]\\n## Weiter\\n"
-    . str_repeat("abc",40) . "\\n[COREUI_PROJECT_BUILD]") === null,
+native_assert(coreui_native_tool_parse("[COREUI_PLAN_APPEND]\n## Weiter\n"
+    . str_repeat("abc",40) . "\n[COREUI_PROJECT_BUILD]") === null,
   'mixed plan-append/build markers are unsafe');
-native_assert(coreui_native_tool_parse("[COREUI_PLAN_APPEND]\\nNur Text") === null,
+native_assert(coreui_native_tool_parse("[COREUI_PLAN_APPEND]\nNur Text") === null,
   'plain prose is not an approved Markdown plan extension');
 
 // Screenshot regression: models frequently omit the closing delimiter for
