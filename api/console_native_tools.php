@@ -10,25 +10,61 @@ require_once __DIR__ . '/console_data_link_bridge.php';
  * message.content prefix immediately preceding one native tool is accepted.
  * Private Ollama thinking never enters this parser.
  */
+/** An unsafe comment is silently discarded; it never authorizes anything. */
+function coreui_native_public_note_safe(string $candidate): ?string {
+  $candidate = trim($candidate);
+  if (strlen($candidate) >= 12 && strlen($candidate) <= 300
+      && preg_match('//u', $candidate) === 1
+      && preg_match('~[\x00-\x1f]~u', $candidate) !== 1
+      && strpbrk($candidate, '<>[]{}' . chr(96) . '$') === false
+      && !preg_match('~(?:https?://|api[ _-]?key|bearer[ :]|password|passwort|'
+        . 'system[ _-]?prompt|developer[ _-]?prompt|private[ _-]?reasoning|'
+        . 'chain[ _-]?of[ _-]?thought|[A-Za-z0-9_-]{48,})~iu', $candidate)) {
+    return $candidate;
+  }
+  return null;
+}
+
 function coreui_native_public_progress_strip(string $reply): array {
   $note = null;
-  if (preg_match('~\A[ \t]*\[COREUI_PUBLIC_PROGRESS\]([^\r\n]{1,480})\[/COREUI_PUBLIC_PROGRESS\][ \t]*\r?\n(?=\[COREUI_)~u',
+  // Blank lines between the note and its tool block are harmless formatting.
+  if (preg_match('~\A[ \t]*\[COREUI_PUBLIC_PROGRESS\]([^\r\n]{1,480})\[/COREUI_PUBLIC_PROGRESS\][ \t]*\r?\n(?:[ \t]*\r?\n)*(?=\[COREUI_)~u',
       $reply, $match) === 1) {
     $reply = substr($reply, strlen($match[0]));
-    $candidate = trim((string)$match[1]);
-    // An unsafe comment is silently discarded, not used to authorize
-    // the independent, already whitelisted native tool.
-    if (strlen($candidate) >= 12 && strlen($candidate) <= 300
-        && preg_match('//u', $candidate) === 1
-        && preg_match('~[\x00-\x1f]~u', $candidate) !== 1
-        && strpbrk($candidate, '<>[]{}' . chr(96) . '$') === false
-        && !preg_match('~(?:https?://|api[ _-]?key|bearer[ :]|password|passwort|'
-          . 'system[ _-]?prompt|developer[ _-]?prompt|private[ _-]?reasoning|'
-          . 'chain[ _-]?of[ _-]?thought|[A-Za-z0-9_-]{48,})~iu', $candidate)) {
-      $note = $candidate;
-    }
+    // The independent, already whitelisted native tool keeps its own checks.
+    $note = coreui_native_public_note_safe((string)$match[1]);
   }
   return ['reply'=>$reply,'note'=>$note];
+}
+
+/**
+ * A model may write the public progress line and then simply answer in
+ * prose, without any tool. That is an ordinary reply, not a broken tool
+ * call: return the prose and the (filtered) note. Any further COREUI marker
+ * keeps the strict tool validation.
+ */
+function coreui_native_public_progress_only(string $reply): ?array {
+  if (preg_match('~\A[ \t]*\[COREUI_PUBLIC_PROGRESS\]([^\r\n]{1,480})\[/COREUI_PUBLIC_PROGRESS\][ \t]*(?:\r?\n|\z)~u',
+      $reply, $match) !== 1) return null;
+  $rest = trim(substr($reply, strlen($match[0])));
+  if ($rest === '' || preg_match('~\[/?COREUI[_/][A-Z_]+\]~i', $rest) === 1) return null;
+  return ['reply'=>$rest,'note'=>coreui_native_public_note_safe((string)$match[1])];
+}
+
+/**
+ * Remove negated technology mentions ("kein React, kein PHP", "ohne Vue")
+ * before the unsupported-stack check. A contrast ("sondern React", "mit Vue")
+ * is kept, so a real framework project still fails closed.
+ */
+function coreui_native_strip_negated_stacks(string $text): string {
+  return (string)preg_replace_callback(
+    '~\b(?:kein(?:e|en|em|er|es)?|ohne|nicht|statt|anstatt|no|not|without)\b([^.,;:!?\r\n]{0,80})~iu',
+    static function (array $m): string {
+      if (preg_match('~\b(?:sondern|aber|jedoch|mit|but|with|plus)\b~iu', $m[1], $c, PREG_OFFSET_CAPTURE) === 1) {
+        return ' ' . substr($m[1], (int)$c[0][1]);
+      }
+      return ' ';
+    }, $text);
 }
 
 
@@ -37,9 +73,20 @@ function coreui_native_public_progress_strip(string $reply): array {
  * does not need to type predefined filenames, "ZIP" or trigger words.
  * Every call remains scoped to the authenticated, currently running turn.
  */
-function coreui_native_tools_prompt(): string {
+function coreui_native_tools_prompt(bool $compact = false): string {
   // Short runtime protocol only. Full Skill docs and the owner Mara persona
   // stay outside this block; no copy of the Modelfile is inserted.
+  if ($compact) {
+    // Same vocabulary for a small local context window. The parser accepts
+    // every tool either way; only the explanation is shorter.
+    return "\n[COREUI TOOLS] Du DARFST selbst entscheiden, ob ein Werkzeug notwendig ist. "
+      . "Antworte normal ODER nur mit genau EINEM vollstaendigen Block:\n"
+      . "[COREUI_PLAN_SAVE]\n# Titel\nMarkdown-Plan\n[/COREUI_PLAN_SAVE]\n"
+      . "[COREUI_PLAN_CONTINUE]\nGespeicherten Entwurf fortsetzen\n[/COREUI_PLAN_CONTINUE]\n"
+      . "[COREUI_PROJECT_BUILD]\nKurzer Projektauftrag\n[/COREUI_PROJECT_BUILD]\n"
+      . "PROJECT_BUILD nur, wenn der Nutzer die Umsetzung verlangt oder freigibt. CoreAI erzeugt "
+      . "dann jede Datei einzeln und prueft das ZIP. Keine erfundenen Dateien, Links oder Host-Befehle.\n";
+  }
   return "\n[COREUI TOOLS] Du DARFST selbst entscheiden, ob ein Werkzeug notwendig ist. "
     . "Antworte normal ODER mit genau EINEM vollstaendigen Werkzeugblock. Nur eine optionale, oeffentliche Fortschrittszeile darf unmittelbar davor stehen:\n"
     . "[COREUI_PLAN_SAVE]\n# Titel\nVollstaendiger Markdown-Plan\n[/COREUI_PLAN_SAVE]\n"
@@ -72,13 +119,29 @@ function coreui_native_tool_parse(string $reply): ?array {
   $publicNote = $progress['note'];
   $types = ['PLAN_SAVE','PLAN_APPEND','PLAN_CONTINUE','PLAN_AND_BUILD','PROJECT_BUILD'];
   foreach ($types as $type) {
+    // A short closing sentence after the block ("Ich lege los.") is not a
+    // second action. Anything with brackets or code fences still fails.
     if (preg_match('~^\s*\[COREUI_' . $type . '\]\s*\n([\s\S]*?)\n\[/COREUI_'
-        . $type . '\]\s*$~u', $reply, $m) !== 1) continue;
+        . $type . '\][ \t]*(?:\r?\n([^\[\]`]{0,400}))?\s*$~u', $reply, $m) !== 1) continue;
     $body = trim((string)$m[1]);
     if ($body === '' || strlen($body) > 262144 || str_contains($body,"\0")) return null;
     if ($type === 'PLAN_CONTINUE'
         && preg_match('~\[/?COREUI[/_][A-Z_]+\]~i',$body)) return null;
-    return ['type'=>$type,'body'=>$body,'public_note'=>$publicNote];
+    $call = ['type'=>$type,'body'=>$body,'public_note'=>$publicNote];
+    if (trim((string)($m[2] ?? '')) !== '') $call['recovered'] = true; // trailing sentence
+    return $call;
+  }
+  $build = coreui_native_build_recover_model_reply($reply);
+  if ($build !== null) {
+    $build['public_note'] = $publicNote;
+    return $build;
+  }
+  // Cloud models like to frame one closed block with a sentence before or
+  // after it, or to bold the marker lines. Exactly one known block remains.
+  $single = coreui_native_single_block_recover($reply);
+  if ($single !== null) {
+    if ($publicNote !== null || !isset($single['public_note'])) $single['public_note'] = $publicNote;
+    return $single;
   }
   // The model sometimes uses slash spelling. PLAN_CONTINUE only resumes
   // an existing private draft; it is never a build operation.
@@ -156,6 +219,24 @@ function coreui_native_plan_continue_recover_model_reply(string $reply): ?array 
   ];
 }
 
+/**
+ * Models often announce the build in one sentence ("Alles klar, ich lege
+ * los.") before an otherwise complete PROJECT_BUILD block. Accept exactly
+ * one closed block after a short, bracket-free introduction. The build
+ * itself still requires a finished private plan and all writer checks.
+ */
+function coreui_native_build_recover_model_reply(string $reply): ?array {
+  if (strlen($reply) > 20000 || preg_match('//u', $reply) !== 1
+      || str_contains($reply, "\0")) return null;
+  if (preg_match_all('~\[/?COREUI[_/][A-Z_]+\]~i', $reply) !== 2) return null;
+  if (preg_match('~\A(?<intro>[^\[\]`]{1,400}?)\r?\n[ \t]*\[COREUI_PROJECT_BUILD\][ \t]*\r?\n'
+      . '(?<body>[\s\S]{1,12000}?)\r?\n[ \t]*\[/COREUI_PROJECT_BUILD\][ \t]*'
+      . '(?:\r?\n[^\[\]`]{0,400})?\s*\z~u', $reply, $m) !== 1) return null;
+  if (preg_match('~\b(?:Beispiel|Syntax|Format|Codeblock|Zitat)\s*:\s*\z~iu', trim($m['intro']))) return null;
+  $body = trim($m['body']);
+  return $body === '' ? null : ['type'=>'PROJECT_BUILD','body'=>$body,'recovered'=>true];
+}
+
 function coreui_native_plan_continue_marker_attempt(string $reply): bool {
   return preg_match(
     '~(?mi)^[ \t]*\[(?:COREUI_PLAN_CONTINUE|COREUI_PLANCONTINUE|COREUI/PLANCONTINUE|COREUI/PLAN_CONTINUE)\][ \t]*\r?$~',
@@ -178,7 +259,9 @@ function coreui_native_plan_recover_model_reply(string $reply): ?array {
   $offset = (int)$matches[0][0][1];
   $intro = trim(substr($reply, 0, $offset));
   if (strlen($intro) > 900 || str_contains($intro, str_repeat(chr(96), 3))
-      || preg_match('~\[/?COREUI[/_][A-Z_]+\]~i', $intro)) return null;
+      || preg_match('~\[/?COREUI[/_][A-Z_]+\]~i', $intro)
+      || preg_match('~\b(?:Beispiel|Syntax|Format|Codeblock|Code-Block|Zitat|Vorlage|Example)\s*:\s*\z~iu', $intro))
+    return null;
   $body = trim(substr($reply, $offset + strlen($opening)));
   $close = '~\r?\n[ \t]*\[/COREUI(?:_PLAN_SAVE|/PLANSAVE)\][ \t]*$~i';
   $closed = preg_match($close, $body) === 1;
@@ -243,6 +326,119 @@ function coreui_native_plan_append_draft_recover(string $reply): ?array {
     return null;
   return ['type'=>'PLAN_APPEND','body'=>$body,'draft'=>true,
           'recovered'=>true,'source_marker'=>'unfinished_plan_append'];
+}
+
+/** "**[COREUI_PLAN_SAVE]**" on its own line is the same marker. */
+function coreui_native_marker_lines_normalize(string $reply): string {
+  $reply = str_replace("\r\n", "\n", $reply);
+  return (string)preg_replace(
+    '~(?m)^[ \t]*(?:\*\*|__|\*|_)\[(/?COREUI_[A-Z_]+)\](?:\*\*|__|\*|_)[ \t]*$~',
+    '[$1]', $reply);
+}
+
+/** A plan saved through a framed block must still look like a real plan. */
+function coreui_native_recovered_body_ok(string $type, string $body): bool {
+  if ($body === '' || strlen($body) > 262144 || str_contains($body, "\0")) return false;
+  if ($type === 'PROJECT_BUILD') return true;
+  if ($type === 'PLAN_APPEND')
+    return strlen($body) >= 24 && preg_match('~^(?:#{1,4}[ \t]+\S|[-*][ \t]+\S)~u', $body) === 1;
+  return strlen($body) >= 96
+    && preg_match('~^(?:#{1,3}[ \t]+\S|Projekt[ \t]*:[ \t]*\S)~iu', $body) === 1
+    && preg_match('~(?m)^(?:#{2,4}[ \t]+|[ \t]*[-*][ \t]+\S)~u', $body) === 1;
+}
+
+/**
+ * Exactly one CLOSED block of a known tool, with an optional short
+ * introduction and an optional closing remark. Brackets or code fences
+ * around it, a second marker, or an "Beispiel:" introduction still fail
+ * closed: those are illustrations or several actions, not one tool call.
+ */
+function coreui_native_single_block_recover(string $reply): ?array {
+  if (strlen($reply) > 300000 || preg_match('//u', $reply) !== 1
+      || str_contains($reply, "\0")) return null;
+  $reply = coreui_native_marker_lines_normalize($reply);
+  if (preg_match_all('~\[/?COREUI[_/][A-Z_]+\]~i', $reply) !== 2) return null;
+  if (preg_match('~\A(?<intro>[\s\S]*?)^[ \t]*\[COREUI_(?<type>PLAN_SAVE|PLAN_APPEND|PLAN_AND_BUILD|PROJECT_BUILD)\][ \t]*\n'
+      . '(?<body>[\s\S]*?)\n[ \t]*\[/COREUI_\k<type>\][ \t]*$(?<tail>[\s\S]*)\z~mu', $reply, $m) !== 1)
+    return null;
+  $intro = trim($m['intro']);
+  $tail = trim($m['tail']);
+  if (strlen($intro) > 900 || strpbrk($intro, '[]' . chr(96)) !== false
+      || preg_match('~\b(?:Beispiel|Syntax|Format|Codeblock|Code-Block|Zitat|Vorlage|Example)\s*:\s*\z~iu', $intro))
+    return null;
+  if (strlen($tail) > 1200 || strpbrk($tail, '[]') !== false
+      || str_contains($tail, str_repeat(chr(96), 3))) return null;
+  $type = $m['type'];
+  $body = trim($m['body']);
+  if (!coreui_native_recovered_body_ok($type, $body)) return null;
+  $call = ['type'=>$type,'body'=>$body,'recovered'=>true];
+  $note = $intro !== '' ? coreui_native_public_note_safe($intro) : null;
+  if ($note !== null) $call['public_note'] = $note;
+  return $call;
+}
+
+/**
+ * Bounded, text-free description of WHY a tool reply was unreadable. It is
+ * stored in the work history and steers the single correction request.
+ */
+function coreui_native_tool_reply_shape(string $reply): string {
+  $text = coreui_native_marker_lines_normalize(coreui_native_public_progress_strip($reply)['reply']);
+  preg_match_all('~\[(/?)COREUI[_/]([A-Z_]+)\]~i', $text, $found, PREG_SET_ORDER);
+  $opens = []; $closes = [];
+  foreach ($found as $marker) {
+    $name = strtoupper(str_replace('/', '_', $marker[2]));
+    if ($name === 'PUBLIC_PROGRESS') continue;
+    if ($marker[1] === '/') $closes[] = $name; else $opens[] = $name;
+  }
+  if ($opens === []) return 'tool_marker_without_block';
+  if (str_contains($text, str_repeat(chr(96), 3))) return 'tool_marker_in_code_fence';
+  if (count($opens) > 1) return 'multiple_tool_blocks';
+  $known = ['PLAN_SAVE','PLAN_APPEND','PLAN_CONTINUE','PLAN_AND_BUILD','PROJECT_BUILD','PLANSAVE','PLANCONTINUE'];
+  if (!in_array($opens[0], $known, true)) return 'tool_name_unknown';
+  if ($closes === []) return 'tool_block_unclosed';
+  if (count($closes) > 1 || $closes[0] !== $opens[0]) return 'tool_markers_mismatched';
+  if (preg_match('~\[COREUI_[A-Z_]+\][ \t]*\n([\s\S]*?)\n[ \t]*\[/COREUI_~', $text, $inner) === 1
+      && !coreui_native_recovered_body_ok($opens[0], trim($inner[1]))) return 'tool_body_too_short';
+  return 'tool_text_around_block';
+}
+
+/** Does a reply try to call a native tool at all (also with bold markers)? */
+function coreui_native_tool_attempt(string $reply): bool {
+  $text = coreui_native_marker_lines_normalize($reply);
+  return preg_match('~^\s*\[COREUI_[A-Z_]+\]~u', $text) === 1
+    || coreui_native_plan_marker_attempt($text)
+    || coreui_native_plan_continue_marker_attempt($text)
+    || preg_match('~(?m)^[ \t]*\[COREUI_(?:PLAN_SAVE|PLAN_APPEND|PLAN_CONTINUE|PLAN_AND_BUILD|PROJECT_BUILD)\][ \t]*$~',
+      substr($text, 0, 4000)) === 1;
+}
+
+/** The single correction request after an unreadable tool reply. */
+function coreui_native_tool_repair_prompt(string $shape, string $previous, bool $compact = false): string {
+  $why = [
+    'multiple_tool_blocks'=>'Du hast mehrere Werkzeugbloecke geschrieben. Erlaubt ist genau EIN Block. '
+      . 'Plan speichern UND bauen ist ein einziger [COREUI_PLAN_AND_BUILD]-Block.',
+    'tool_marker_in_code_fence'=>'Der Werkzeugblock stand in einem Markdown-Codeblock. '
+      . 'Ein echter Werkzeugblock steht ohne Codeblock direkt in der Antwort.',
+    'tool_block_unclosed'=>'Der schliessende Marker fehlte.',
+    'tool_markers_mismatched'=>'Oeffnender und schliessender Marker passten nicht zusammen.',
+    'tool_name_unknown'=>'Der Werkzeugname war unbekannt.',
+    'tool_body_too_short'=>'Der Inhalt war zu kurz. Ein Plan beginnt mit # Titel und hat ## Abschnitte oder Listenpunkte.',
+    'tool_text_around_block'=>'Vor oder nach dem Block stand Text mit Klammern, Links oder Codebloecken.',
+  ][$shape] ?? 'Die Form des Werkzeugblocks war nicht eindeutig.';
+  $prompt = "\n\n[COREUI WERKZEUGKORREKTUR]\nDeine letzte Antwort wollte ein CoreAI-Werkzeug "
+    . "nutzen, war aber nicht sicher lesbar. Grund: " . $why . "\n"
+    . "Triff deine Entscheidung jetzt erneut. Antworte ENTWEDER normal ohne jeden COREUI-Marker "
+    . "ODER ausschliesslich mit genau EINEM vollstaendigen Block, erste Zeile der oeffnende, "
+    . "letzte Zeile der passende schliessende Marker, zum Beispiel:\n"
+    . "[COREUI_PLAN_SAVE]\n# Titel\n## Abschnitt\n- Punkt\n[/COREUI_PLAN_SAVE]\n"
+    . "Erlaubte Werkzeuge: PLAN_SAVE, PLAN_APPEND, PLAN_CONTINUE, PLAN_AND_BUILD, PROJECT_BUILD. "
+    . "Kein Codeblock und kein zweiter Block.\n";
+  $previous = trim($previous);
+  if (!$compact && $previous !== '') {
+    $excerpt = function_exists('mb_strcut') ? mb_strcut($previous, 0, 8000, 'UTF-8') : substr($previous, 0, 8000);
+    $prompt .= "Deine vorige Antwort, nur als Material fuer die Korrektur:\n<<<\n" . $excerpt . "\n>>>\n";
+  }
+  return $prompt;
 }
 
 function coreui_native_plan_marker_attempt(string $reply): bool {
@@ -316,8 +512,9 @@ function coreui_native_tool_build_request(PDO $pdo, int $uid, string $sessionId,
   if (strlen($source) > 12000) return null;
   // Fail closed on unsupported app stacks. Do not quietly relabel React,
   // server code or a mobile APK as a working static three-file ZIP.
+  // "kein React, kein PHP" describes a static site and must not block it.
   if (preg_match('~\b(?:react|next[.]?js|vue|angular|svelte|wordpress|vite|php|mysql|postgres|laravel|apk|android\s+native|typescript)\b~iu',
-      $description . "\n" . $source)) return null;
+      coreui_native_strip_negated_stacks($description . "\n" . $source))) return null;
   $spec = coreui_console_project_request_spec($description);
   if (!is_array($spec)) return null;
   $files = array_values($spec['requested']);

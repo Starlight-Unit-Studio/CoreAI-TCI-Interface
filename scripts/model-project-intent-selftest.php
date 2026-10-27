@@ -45,13 +45,30 @@ intent_assert(strlen($prompt)<3500 && str_contains($prompt,'START_BUILD')
   'Small model decision lacks expected format/message');
 $stream=(string)file_get_contents(dirname(__DIR__).'/api/console_stream.php');
 $chat=(string)file_get_contents(dirname(__DIR__).'/api/chat.php');
+// 0.5.67: think=false and no SKILL documents for the short decision call;
+// "Neu generieren" and edited turns get the same decision as a first send.
 intent_assert(str_contains($stream,'coreui_build_intent_select(')
   && str_contains($chat,'coreui_build_intent_select(')
-  && str_contains($stream,'false, 90, false)')
-  && str_contains($chat,'[],null,false,false)')
+  && str_contains($stream,'false, 90, false, false)')
+  && str_contains($chat,"['__skills'=>'none'],null,false,false)")
+  && str_contains($stream,"in_array(\$generationMode, ['regenerate','edit'], true)")
   && str_contains($stream,'$nativeToolHandled = $preselectedBuildHandled;')
   && str_contains($stream,'if (!$fileTaskHandled && !$nativeToolHandled'),
   'Sync/SSE no-thinking selection and single-tool dispatch not wired');
+// 0.5.67: an unreadable tool reply gets a bounded reason and ONE correction
+// through the same apply path, in the SSE and in the synchronous route.
+foreach (['stream'=>$stream,'chat'=>$chat] as $route=>$source) {
+  intent_assert(str_contains($source,'coreui_native_tool_reply_shape(')
+    && str_contains($source,'coreui_native_tool_repair_prompt(')
+    && str_contains($source,"'Werkzeugantwort nicht lesbar'")
+    && str_contains($source,"'Werkzeugantwort wird einmal korrigiert'")
+    && str_contains($source,'$repairTried = true;')
+    && substr_count($source,'coreui_native_tool_repair_prompt(') === 1,
+    'Single tool reply correction not wired in ' . $route);
+}
+intent_assert(substr_count($stream,'$applyNativeTool(') === 2
+  && substr_count($chat,'$applyNative(') === 2,
+  'First reply and correction must share one tool apply path');
 intent_assert(!str_contains($stream,'coreui_console_web_project_resolve(')
   && !str_contains($chat,'coreui_console_web_project_resolve('),
   'Old keyword router returned');

@@ -6535,3 +6535,14 @@ audio.msg-image {
 .msg-row.ember .work-source-scroll {
   overscroll-behavior-y: contain;
 }
+
+/* 0.5.67: the visually hidden step titles (.work-title-with-note) are
+   position:absolute. Without a positioned scroll box they escaped the
+   internally scrolling work history and stretched the chat by their
+   off-screen positions, leaving a large blank area below the last message
+   whenever "Arbeitsweg" was opened. Keep them inside their own entry. */
+.msg-row.ember .work-body,
+.msg-row.ember .work-entry,
+.msg-row.ember .work-source-scroll {
+  position: relative;
+}

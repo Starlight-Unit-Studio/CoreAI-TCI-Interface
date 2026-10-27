@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.66 source recovery, cloud plan draft and chat scroll fix.
+# CoreAI: TCI Interface 0.5.67 context-aware local prompts, no cut-off Python, honest self-correction.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -140,6 +140,7 @@ UI_FILES=(
   scripts/work-events-selftest.php
   scripts/work-events-persistence-selftest.php
   scripts/local-file-tool-selftest.php
+  scripts/context-budget-selftest.php
   scripts/contextual-project-selftest.php
   scripts/model-project-intent-selftest.php
   scripts/native-tools-selftest.php
@@ -555,6 +556,13 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     ok 'Lokale Dateiauftraege: Python-Fences, mehrteilige Projekte, ZIP und Vollstaendigkeit geprueft.'
   else
     fail "Lokaler Dateiwerkzeug-Selbsttest: ${file_test:-Unbekannter Fehler}"
+  fi
+
+  context_test=''
+  if context_test="$(compose exec -T php php scripts/context-budget-selftest.php 2>&1)"; then
+    ok 'Kontextfenster: erkannte Fenstergroesse, Datei-Prompt-Budget und Planauszug geprueft.'
+  else
+    fail "Kontextfenster-Selbsttest: ${context_test:-Unbekannter Fehler}"
   fi
 
   if command -v node >/dev/null 2>&1; then

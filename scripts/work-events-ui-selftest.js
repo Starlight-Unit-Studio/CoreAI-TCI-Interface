@@ -143,7 +143,7 @@ assert(steps.querySelector('.work-counts').textContent.includes('2 Schritte'),
 assert(!steps.textContent.includes('NEVER_SHOW_INTERNAL_THOUGHTS')
   && !steps.textContent.includes('NOT_PUBLIC'),
   'no private model thinking/prompt content in narrative');
-assert(steps.textContent.includes('Modell-Endgrundlength')
+assert(steps.textContent.includes('Core-Endgrundlength')
   && steps.textContent.includes('Denkstatus (Zeichen)1900'),
   'new bounded diagnostic fields are available after opening');
 steps.querySelector('.work-toggle').handlers.click();
@@ -161,6 +161,42 @@ const toggled = work.create({events:[{id:63,kind:'run',state:'success',
   title:'Antwort gespeichert'}],onToggle:function(open){manuallyOpened=open;}});
 toggled.querySelector('.work-toggle').handlers.click();
 assert.equal(manuallyOpened,true,'caller can remember user disclosure choice');
+
+// 0.5.67: a full local context window (3250 + 846 = 4096) is named as such,
+// with its size, instead of a generic "abgeschnitten".
+const windowFull = work.create({events:[
+  {id:64,kind:'tool',state:'info',title:'Kontextfenster ermittelt',
+    meta:{context_tokens:4096,model:'ember-coreui:latest'}},
+  {id:65,kind:'model',state:'error',title:'Quelldatei nicht lesbar',
+    meta:{file_name:'index.html',reason:'context_window_full',context_tokens:4096,
+      eval_count:846,prompt_eval_count:3250,done_reason:'length'}},
+  {id:66,kind:'tool',state:'error',title:'Unvollstaendiger Python-Code nicht ausgefuehrt',
+    meta:{reason:'output_truncated'}},
+],expanded:true});
+assert(windowFull.textContent.includes('Kontextfenster (4096 Tokens)'),
+  'the detected window size must be explained');
+assert(windowFull.textContent.includes('Das Kontextfenster von Core war voll (4096 Tokens)'),
+  'a full window must not be shown as a generic truncation');
+assert(windowFull.textContent.includes('Kontextfenster (Tokens)4096'),
+  'the window size must be available in the details');
+assert(windowFull.textContent.includes('führe es deshalb nicht aus'),
+  'blocked incomplete Python must be explained truthfully');
+
+// 0.5.67: an unreadable cloud tool reply names its bounded reason and the
+// single self-correction, never the private model text.
+const toolFix = work.create({events:[
+  {id:67,kind:'tool',state:'error',title:'Werkzeugantwort nicht lesbar',
+    meta:{reason:'multiple_tool_blocks',response_bytes:2777,model:'gemma4:31b-cloud'}},
+  {id:68,kind:'model',state:'running',title:'Werkzeugantwort wird einmal korrigiert',
+    meta:{reason:'multiple_tool_blocks'}},
+  {id:69,kind:'tool',state:'success',title:'Werkzeugantwort korrigiert',
+    meta:{reason:'tool_reply_corrected'}},
+],expanded:true});
+assert(toolFix.textContent.includes('mehrere Werkzeugblöcke in einer Antwort')
+  && toolFix.textContent.includes('Daraus führe ich nichts aus')
+  && toolFix.textContent.includes('einmal in der vorgesehenen Form neu')
+  && toolFix.textContent.includes('Ich setze sie jetzt um'),
+  'tool reply correction must be narrated with its reason');
 
 const futureTool = work.create({events:[{id:71,kind:'tool',state:'running',
   title:'Neuen Repository-Pruefschritt gestartet'}],expanded:false});
@@ -258,7 +294,7 @@ assert.equal(queuedBody.querySelector('.work-entries').children.length,1,
 tickWork();
 assert.equal(queuedBody.querySelector('.work-entries').children.length,4);
 assert(queuedBody.textContent.includes('Ich übernehme den Auftrag')
-  && queuedBody.textContent.includes('Ich bereite den Modellaufruf vor'),
+  && queuedBody.textContent.includes('Ich bereite den Core-Aufruf vor'),
   'typed steps must retain complete safe narratives');
 assert(queued.querySelector('.work-counts').textContent.includes('4 Schritte'));
 assert.equal(queuedBody._workQueue.length,0,'no SSE events silently discarded');

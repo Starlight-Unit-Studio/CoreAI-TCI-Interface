@@ -7,7 +7,67 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.66` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.67` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Kontextfenster, Cloud-Werkzeuge, Python-Schutz und Chat-Leerraum (0.5.67)
+
+Die Diagnosewerte der Netcup-Bilder 3250 + 846, 3284 + 812 und
+1091 + 3005 ergeben jeweils exakt 4096 Tokens. Das ist Ollamas
+Standard-Kontextfenster ohne grosse GPU. CoreAI sendet seit 0.5.15 kein
+`num_ctx`; die Einzeldatei-Prompts waren durch den 9000-Zeichen-Planauszug
+und den Pflicht-Skill so gross geworden, dass fuer Denkphase und Quelltext
+nur rund 800 Tokens blieben.
+
+0.5.67 ermittelt das echte Fenster nur lesend (`/api/ps`, gemerkte volle
+Fenster mit `done_reason=length`, sonst 4096) und teilt jeden
+Einzeldatei-Prompt danach auf: passender Planauszug statt fester 9000
+Zeichen, DOM-Schnittstelle statt Rohquelltext bereits erzeugter Dateien,
+kein SKILL-Text in reinen Quelltextaufrufen. Im Selbsttest belegt ein
+Galerie-Prompt bei 4096 Tokens rechnerisch rund 1300 Eingabe-Tokens
+inklusive Modelfile-SYSTEM; die Laeufe auf den Bildern lagen bei 3250.
+Cloud-Modelle behalten den bisherigen Prompt unveraendert. Die Konsole
+kuerzt bei kleinem Fenster Verlauf, Planblock und Werkzeughinweise.
+
+Python aus einer abgeschnittenen Modellantwort wird nie ausgefuehrt
+(vorher: `SyntaxError: unterminated triple-quoted string`). Lokale Modelle
+erhalten fuer mehrseitige Projekte keinen Python-Pflichthinweis mehr, der
+`[COREUI_PROJECT_BUILD]` widersprach; ein solcher Versuch geht bei einem
+gespeicherten Plan an den geprueften Projekt-Writer. Ein von Mara selbst
+gewaehlter Dateijob bekommt auch ohne Schlagwoerter wie "Download" genau
+einen begrenzten Korrekturversuch und endet danach mit einer sachlichen
+Meldung statt einem Versprechen. "Neu generieren" und "Bearbeiten" fragen
+die Bauentscheidung ebenfalls ab.
+
+Werkzeugmarker werden toleranter gelesen (Leerzeilen, kurzer Nachsatz,
+reine Fortschrittszeile), und Saetze wie "kein React" sperren kein Projekt
+mehr. Konsolenantworten behalten Absaetze und Codeeinrueckung.
+
+Messung des Betreibers am 27.10.2026 (Netcup, CPU, `ember-coreui:latest`):
+Ausgabe 25,1 / 22,4 / 24,3 / 22,0 Tokens/s bei `num_ctx` 4096 / 16384 /
+32768 / 65536, Prompt 228 bis 262 Tokens/s. Ein groesseres Fenster kostet
+dort also nur rund 10 Prozent Tempo. Der Betreiber hat deshalb selbst
+`PARAMETER num_ctx` im Modelfile-Template gesetzt (zuerst 65536, jetzt
+131072); mit 65536 lieferte das lokale Modell erstmals ein Projekt-ZIP mit
+acht Dateien. CoreAI selbst sendet weiterhin kein `num_ctx`: Es liest das
+Fenster ueber `/api/ps` oder, bei entladenem Modell, aus dem Modelfile
+(`/api/show`) und spart Prompt nur bei kleinen Fenstern.
+
+**Cloud-Werkzeugantworten:** Antworten von `gemma4:31b-cloud` und
+`gpt-oss:120b-cloud` endeten trotz `done_reason=stop` als "Werkzeugantwort
+unvollstaendig". Genau ein geschlossener Werkzeugblock mit kurzem Satz davor
+oder danach, Inline-Code im Nachsatz, fetten Markerzeilen oder CRLF wird
+jetzt erkannt. Bleibt eine Antwort unlesbar (mehrere Bloecke, Codeblock,
+"Beispiel:"), steht der Grund im Arbeitsweg und Mara korrigiert sich
+genau einmal selbst, statt mit einer Sackgasse zu enden.
+
+**Leerraum unter der letzten Nachricht:** Die unsichtbaren Schritt-Titel
+des Arbeitswegs waren absolut positioniert, der intern scrollende
+Arbeitsweg aber nicht. Aufgeklappt verlaengerten sie den Chat um ihre
+verborgenen Positionen (im Nachbau rund 1300 Pixel). Sie bleiben jetzt in
+ihrem Eintrag; unter der letzten Nachricht bleiben 16 Pixel.
+
+Issue #102 bleibt offen. Lokale Selbsttests und Browser-Nachbau ersetzen
+nicht die Live-Abnahme ueber den Netcup-Updater.
 
 ## Quellen-Fortsetzung, Cloud-Entwurf und Chat-Hoehe (0.5.66)
 

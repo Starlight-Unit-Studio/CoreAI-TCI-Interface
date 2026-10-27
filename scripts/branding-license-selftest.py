@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-EXPECTED_VERSION = "0.5.66"
+EXPECTED_VERSION = "0.5.67"
 PUBLIC_PAGES = (
     "index.html",
     "login.html",
@@ -138,8 +138,10 @@ def main() -> int:
             "readable copyright style missing")
 
     model = read("config/Modelfile.template")
-    require("E.M.B.E.R" in model and "Mara" in model,
-            "Modelfile must retain Mara identity and E.M.B.E.R. framework")
+    # 0.5.66: the owner renamed the runtime line in the Modelfile to the
+    # current product; the Mara identity stays mandatory.
+    require("Mara" in model and "CoreAI: TCI Interface" in model,
+            "Modelfile must retain Mara identity and the CoreAI: TCI Interface runtime")
     require("FROM gemma4:e4b" in model and "RENDERER gemma4" in model
             and "PARSER gemma4" in model,
             "Modelfile Gemma base and parser/renderer contract missing")

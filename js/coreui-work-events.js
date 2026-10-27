@@ -16,7 +16,20 @@
     content_chars:'Antworttext (Zeichen)', thinking_chars:'Denkstatus (Zeichen)',
     continuation_segments:'Fortsetzungen', response_bytes:'Antwort (Bytes)',
     discarded_tool_body_bytes:'Verworfener Marker (Bytes)',
-    marker_incomplete:'Marker unvollständig'
+    marker_incomplete:'Marker unvollständig',
+    context_tokens:'Kontextfenster (Tokens)'
+  };
+
+  // Bounded shape reasons of an unreadable tool reply (never model text).
+  var TOOL_SHAPES = {
+    multiple_tool_blocks:'mehrere Werkzeugblöcke in einer Antwort',
+    tool_marker_in_code_fence:'Werkzeugblock in einem Codeblock',
+    tool_block_unclosed:'schließender Marker fehlt',
+    tool_markers_mismatched:'Marker passen nicht zusammen',
+    tool_name_unknown:'unbekanntes Werkzeug',
+    tool_body_too_short:'Inhalt zu kurz',
+    tool_text_around_block:'Text mit Klammern oder Code um den Block',
+    tool_marker_without_block:'Marker ohne Werkzeugblock'
   };
 
   // Das ist ein oeffentliches, aus bestaetigten Arbeitsereignissen
@@ -26,7 +39,31 @@
     if (!event) return '';
     if (event.kind === 'commentary') return event.meta.public_note || '';
     var file = event.meta.file_name ? '„' + event.meta.file_name + '“' : 'die angeforderte Datei';
+    var windowSize = Number(event.meta.context_tokens) > 0
+      ? ' (' + Number(event.meta.context_tokens) + ' Tokens)' : '';
+    if (event.meta.reason === 'context_window_full' && event.state !== 'success') {
+      return 'Das Kontextfenster von Core war voll' + windowSize + '. Auftrag, Denkphase und Antwort '
+        + 'passten nicht gemeinsam hinein, deshalb endete die Ausgabe vorzeitig.';
+    }
     switch (event.title) {
+      case 'Kontextfenster ermittelt':
+        return 'Der lokale Core arbeitet mit einem Kontextfenster' + windowSize + '. Ich teile Auftrag '
+          + 'und Plan pro Datei so zu, dass Platz für den eigentlichen Quelltext bleibt.';
+      case 'Werkzeugantwort nicht lesbar':
+        return 'Meine Werkzeugantwort hatte eine Form, die ich nicht sicher auswerten kann'
+          + (TOOL_SHAPES[event.meta.reason] ? ' (' + TOOL_SHAPES[event.meta.reason] + ')' : '')
+          + '. Daraus führe ich nichts aus.';
+      case 'Werkzeugantwort wird einmal korrigiert':
+        return 'Ich schreibe die Werkzeugantwort einmal in der vorgesehenen Form neu.';
+      case 'Werkzeugantwort korrigiert':
+        return 'Die korrigierte Antwort ist eindeutig. Ich setze sie jetzt um.';
+      case 'Korrektur nicht lesbar':
+        return 'Auch die Korrektur war nicht eindeutig'
+          + (TOOL_SHAPES[event.meta.reason] ? ' (' + TOOL_SHAPES[event.meta.reason] + ')' : '')
+          + '. Deshalb starte ich keine Aktion.';
+      case 'Unvollstaendiger Python-Code nicht ausgefuehrt':
+        return 'Mein Python-Skript wurde beim Schreiben abgeschnitten. Ich führe es deshalb nicht aus '
+          + 'und behaupte keine Datei.';
       case 'Auftrag gestartet':
         return 'Ich übernehme den Auftrag und beginne mit den notwendigen Prüfungen.';
       case 'Kontext vorbereitet':

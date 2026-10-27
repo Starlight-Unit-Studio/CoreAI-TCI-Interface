@@ -55,7 +55,7 @@ try {
     );
   }
   frontend_test_assert(
-    str_contains($console,'function showTypingIndicator()')
+    str_contains($console,'function showTypingIndicator(')
       && str_contains($console,'function showResponseTime(')
       && str_contains($console,'function responseTimings(record)')
       && str_contains($console,'function armWatchdog()')
@@ -247,6 +247,17 @@ try {
       && str_contains($agentRuns, 'function coreui_agent_run_active_snapshot(')
       && str_contains($workStore, 'function coreui_work_active_events('),
     'Aktiver Chatprozess wird nach Seitenwechsel nicht aus sicherer Session-History rekonstruiert.'
+  );
+
+  // 0.5.67: absolutely positioned, visually hidden step titles must stay
+  // inside the internally scrolling work history. Otherwise an opened
+  // "Arbeitsweg" stretches the chat with a large blank area below the reply.
+  $hiddenTitle = strpos($css, ".msg-row.ember .work-title-with-note {\n  position: absolute;");
+  $contained = strrpos($css, ".msg-row.ember .work-body,\n.msg-row.ember .work-entry,\n"
+    . ".msg-row.ember .work-source-scroll {\n  position: relative;\n}");
+  frontend_test_assert(
+    $hiddenTitle !== false && $contained !== false && $contained > $hiddenTitle,
+    'Versteckte Arbeitsweg-Titel koennen aus dem Scrollbereich ausbrechen und Leerraum unter der letzten Nachricht erzeugen.'
   );
 
   fwrite(STDOUT, "Frontend-Regressions-Selftest OK: Navigation, Avatare, Markdown, Bearbeitung, Warteschlange und Varianten sind fehlersicher verdrahtet.\n");

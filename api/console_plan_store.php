@@ -102,15 +102,19 @@ function coreui_plan_artifact_map(PDO $pdo, int $uid, array $responseIds): array
 }
 
 /** Keep the prompt bounded but preserve complete bytes in the download store. */
-function coreui_plan_prompt_block(PDO $pdo, int $uid, string $sessionId): string {
+function coreui_plan_prompt_block(PDO $pdo, int $uid, string $sessionId, int $maxChars = 3200): string {
   $plan = coreui_plan_latest($pdo,$uid,$sessionId);
   if (!$plan) return '';
   $body = (string)$plan['markdown'];
   // Do not turn every ordinary chat exchange into a giant plan re-prompt.
   // The original Markdown remains complete in persistent storage/downloads.
+  // A small local context window gets a proportionally shorter excerpt.
   $isDraft = coreui_plan_is_draft_markdown($body);
-  $cut = strlen($body) > 3200;
-  if ($cut) $body = substr($body,0,2200) . "\n[MITTELTEIL NICHT IM KONTEXT]\n" . substr($body,-700);
+  $maxChars = max(800, $maxChars);
+  $cut = strlen($body) > $maxChars;
+  if ($cut) $body = mb_strcut($body,0,intdiv($maxChars * 11, 16),'UTF-8')
+    . "\n[MITTELTEIL NICHT IM KONTEXT]\n"
+    . mb_strcut($body,strlen($body) - intdiv($maxChars * 7, 32),null,'UTF-8');
   return "\n\n[DAUERHAFT GESPEICHERTER PROJEKTPLAN v".(int)$plan['version']."]\n"
     . "Titel: ".(string)$plan['title']."\n"
     . "Datei bytegenau gespeichert: ".(int)$plan['byte_size']." Bytes. "

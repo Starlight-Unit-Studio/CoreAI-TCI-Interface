@@ -8,7 +8,7 @@ CoreAI enthaelt jetzt 33 vertrauenswuerdige, direkt im Repository gepflegte Anle
 - Er gilt bei jeder Anfrage im privaten CoreAI-Console-Kanal, unabhaengig von Schlagwoertern, gespeicherten Nutzer-Praeferenzen und der optionalen Migration 014. Die Game-Ember erhaelt diese Mara-spezifische Pflichtanleitung nicht.
 - Der Server laedt ihn zwingend und uebergeht historische `enabled=0`-Datenbankzeilen. `user_skills.php` darf ihn nicht auf `false` setzen, auch nicht bei manipulierten POST-Daten.
 - Die Einstellungen zeigen ihn oben, dauerhaft angehakt und ausgegraut. Die Schaltflaechen "Alle aktivieren" und "Alle deaktivieren" betreffen ihn nicht. Der Pflicht-Skill wird nicht in kontoabhaengige Vorlieben geschrieben.
-- Bei fokussierten Quellcode-Unteraufrufen bleibt der kurze Kern-Skill aktiv, waehrend bis zu vier weitere optionale Pakete wie bisher ausgelassen werden koennen.
+- Seit 0.5.67 erhalten reine Einzeldatei-Quelltextaufrufe und die kurze Bauentscheidung keinen Skilltext: dort gibt es kein Werkzeug, und bei einem lokalen 4096-Token-Fenster wird jedes Token fuer die Datei gebraucht. In normalen Konsolenantworten bleibt der Kern-Skill Pflicht; bei kleinem lokalem Fenster werden weniger optionale Pakete geladen (bis 4096 Tokens eines, bis 8192 Tokens zwei).
 - Er gibt Handlungsregeln zu vorhandenen Werkzeugen, ehrlichen Fortschrittsanzeigen, serieller Modellwarteschlange und Datei-Validierung. Er aktiviert **keine** fehlenden Werkzeuge und entfernt **keine** Limits aus dem bestehenden Backend.
 
 ## Optionale Skills
