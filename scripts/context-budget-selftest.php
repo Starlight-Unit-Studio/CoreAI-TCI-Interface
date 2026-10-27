@@ -26,7 +26,8 @@ function ember_cfg(string $key, mixed $default = null): mixed {
 $chat = (string)file_get_contents($root . '/api/chat.php');
 $wanted = ['ember_url','ember_cache_dir','ember_http_get_json','ember_model_is_cloud',
   'ember_ollama_context_cache_file','ember_ollama_context_store','ember_ollama_context_observe',
-  'ember_ollama_ps_context','ember_ollama_context_window'];
+  'ember_ollama_ps_context','ember_ollama_parameters_num_ctx','ember_ollama_show_context',
+  'ember_ollama_context_window'];
 $tokens = token_get_all($chat);
 for ($i = 0; $i < count($tokens); $i++) {
   if (!is_array($tokens[$i]) || $tokens[$i][0] !== T_FUNCTION) continue;
@@ -68,6 +69,13 @@ ember_ollama_context_store('gemma4:e4b', 65536);
 unset($GLOBALS['COREUI_OLLAMA_CONTEXT_MEMO']);
 context_test(ember_ollama_context_window('gemma4:e4b') === 65536,
   'a stored /api/ps window must be reused while the model is unloaded');
+
+// 0.5.68: the owner's Modelfile line "PARAMETER num_ctx 65536" is read from
+// /api/show when the model is not loaded. CoreAI never writes it.
+context_test(ember_ollama_parameters_num_ctx("temperature 1\ntop_k 64\nnum_ctx 65536\ntop_p 0.95") === 65536
+  && ember_ollama_parameters_num_ctx("temperature 1\ntop_k 64") === null
+  && ember_ollama_parameters_num_ctx("num_ctx -1") === null,
+  'num_ctx must be read from the Modelfile parameters only when it is a real size');
 
 // 2. Budget: generous for cloud, output room first for a small local window.
 context_test(coreui_console_source_prompt_budget(null) === ['plan'=>9000,'refs'=>7200,'compact_refs'=>false],

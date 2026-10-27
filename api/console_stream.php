@@ -589,26 +589,28 @@ try {
       ['PLAN_SAVE','PLAN_APPEND','PLAN_CONTINUE'],true);
   // Even after a failed Ollama transport, preserve a substantial model-
   // selected Markdown plan as a DRAFT, never as an approved tool action.
-  if (!$fileTaskHandled && !$nativeToolHandled
-      && !$isVisionTurn && $attachmentIds === []
-      && $generationMode !== 'continue'
-      && is_array($nativeTool)
-      && ($streamComplete || $safePlanRecovery)) {
+  // One shared, serial apply path for the first reply and its correction.
+  // File, vision and exact-calculation turns never built a chat prompt.
+  $toolModel = isset($model) ? (string)$model : ember_model();
+  $toolSys = isset($sys) ? (string)$sys : '';
+  $applyNativeTool = static function (string $toolReply, bool $wasTruncated)
+      use ($pdo,$char,$uid,$sessionId,$excludeReplyToId,$afterId,$triggerRevision,
+        $toolModel,$toolSys,$promptMessage,$thinkingEnabled): ?string {
     coreui_work_record($pdo,'tool','info','Mara hat ein natives Werkzeug angefordert',
       ['reason'=>'model_selected_tool']);
     console_stream_progress($thinkingEnabled,'tool');
-    $toolResult = coreui_native_tool_apply(
-      $pdo,(int)$uid,$sessionId,$afterId,$reply,
+    return coreui_native_tool_apply(
+      $pdo,(int)$uid,$sessionId,$afterId,$toolReply,
       static function (string $task) use ($pdo,$char,$uid,$sessionId,$excludeReplyToId,
         $afterId,$triggerRevision): ?string {
         return ember_generate_reply($pdo,$char,$task,null,'console',
           (int)$uid,$sessionId,$excludeReplyToId,$afterId,$triggerRevision);
-      }, !$streamComplete,
-      static function (string $nextPrompt) use ($model,$sys): array {
+      }, $wasTruncated,
+      static function (string $nextPrompt) use ($toolModel,$toolSys): array {
         if (ember_agent_cancel_requested()) return ['text'=>'','ok'=>false];
         // Follow-up calls use the SAME model and queue, serially, without
         // repeating SKILL documents or changing Ollama Modelfile options.
-        $next = console_stream_ollama($model,$sys,$nextPrompt,false,180);
+        $next = console_stream_ollama($toolModel,$toolSys,$nextPrompt,false,180);
         $text = ember_sanitize_public_reply((string)($next['content'] ?? ''),
           (string)($next['thinking'] ?? ''));
         return ['text'=>$text,
@@ -616,6 +618,13 @@ try {
             && empty($next['truncated'])];
       }, $promptMessage
     );
+  };
+  $nativeEligible = !$fileTaskHandled && !$isVisionTurn && $attachmentIds === []
+    && $generationMode !== 'continue';
+  if ($nativeEligible && !$nativeToolHandled
+      && is_array($nativeTool)
+      && ($streamComplete || $safePlanRecovery)) {
+    $toolResult = $applyNativeTool($reply, !$streamComplete);
     if (is_string($toolResult)) {
       $nativeToolHandled = true;
       $reply = $toolResult;
@@ -697,10 +706,8 @@ try {
     $reply = $progressOnly['reply'];
   }
 
-  if ($reply !== ''
-      && (preg_match('~^\s*\[COREUI_[A-Z_]+\]~u', $reply)
-        || coreui_native_plan_marker_attempt($reply)
-        || coreui_native_plan_continue_marker_attempt($reply))
+  if ($reply !== '' && !$nativeToolHandled
+      && coreui_native_tool_attempt($reply)
       && coreui_native_tool_parse($reply) === null) {
     // Diagnostic metadata only, never log the private model text.
     if (coreui_native_plan_continue_marker_attempt($reply)) {
@@ -708,9 +715,42 @@ try {
         'Plan-Fortsetzungsmarker nicht lesbar',
         ['reason'=>'invalid_plan_continue_marker','response_bytes'=>strlen($reply)]);
     }
-    $reply = 'Ich konnte die aktuelle Werkzeugantwort nicht sicher auswerten. '
-      . 'Bereits gespeicherte Planversionen bleiben erhalten. '
-      . 'Aus dieser unvollstaendigen Antwort habe ich keinen Projektbau gestartet.';
+    $shape = coreui_native_tool_reply_shape($reply);
+    coreui_work_record($pdo,'tool','error','Werkzeugantwort nicht lesbar',
+      ['reason'=>$shape,'response_bytes'=>strlen($reply),'model'=>$toolModel]);
+    // Mara corrects herself ONCE: same model, same queue, a precise reason.
+    // Only a then readable single tool (or a plain answer) is used.
+    $corrected = null;
+    $repairTried = false;
+    if ($nativeEligible && $streamComplete && isset($u, $sys, $model)
+        && !ember_agent_cancel_requested()) {
+      $repairTried = true;
+      coreui_work_record($pdo,'model','running','Werkzeugantwort wird einmal korrigiert',
+        ['reason'=>$shape,'model'=>$model]);
+      $window = ember_ollama_context_window($model);
+      $fix = console_stream_ollama($model,$sys,
+        $u . coreui_native_tool_repair_prompt($shape,$reply,$window !== null && $window <= 8192),
+        false,180);
+      $fixText = ember_sanitize_public_reply((string)($fix['content'] ?? ''),
+        (string)($fix['thinking'] ?? ''));
+      $fixComplete = !empty($fix['ok']) && !empty($fix['done']) && empty($fix['truncated']);
+      if ($fixComplete && coreui_native_tool_parse($fixText) !== null) {
+        $corrected = $applyNativeTool($fixText, false);
+        if (is_string($corrected)) $nativeToolHandled = true;
+      } elseif ($fixComplete && trim($fixText) !== '' && !coreui_native_tool_attempt($fixText)) {
+        // She decided to answer normally instead of using a tool.
+        $corrected = trim($fixText);
+      }
+      coreui_work_record($pdo,'tool',is_string($corrected) ? 'success' : 'error',
+        is_string($corrected) ? 'Werkzeugantwort korrigiert' : 'Korrektur nicht lesbar',
+        ['reason'=>is_string($corrected) ? 'tool_reply_corrected'
+          : ($fixComplete ? coreui_native_tool_reply_shape($fixText) : 'correction_incomplete'),
+         'response_bytes'=>strlen($fixText)]);
+    }
+    $reply = is_string($corrected) ? $corrected
+      : 'Ich konnte meine Werkzeugantwort ' . ($repairTried ? 'auch nach einem Korrekturversuch ' : '')
+        . 'nicht sicher auswerten (Grund: ' . $shape . '). Bereits gespeicherte Planversionen bleiben '
+        . 'erhalten, und ich habe keinen Projektbau gestartet. Die Details stehen im Arbeitsweg.';
   }
 
   if (!$nativeToolHandled && !empty($acc['truncated']) && $reply !== '') {

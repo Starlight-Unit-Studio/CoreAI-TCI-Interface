@@ -3659,18 +3659,48 @@ function ember_ollama_ps_context(string $model): ?int {
   return null;
 }
 
+/** "num_ctx 65536" from the parameters text that /api/show returns. */
+function ember_ollama_parameters_num_ctx(string $parameters): ?int {
+  if (preg_match('~(?m)^\s*num_ctx\s+(\d{3,7})\s*$~', $parameters, $m) !== 1) return null;
+  $ctx = (int)$m[1];
+  return $ctx >= 256 ? $ctx : null;
+}
+
+/** Context window set in the model's Modelfile (read-only /api/show). */
+function ember_ollama_show_context(string $model): ?int {
+  $url = preg_replace('~/api/(?:chat|generate)/?$~', '/api/show', ember_url());
+  if (!is_string($url) || !str_ends_with($url, '/api/show')) return null;
+  $ch = curl_init($url);
+  if (!$ch) return null;
+  curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_POSTFIELDS => json_encode(['model'=>$model]),
+    CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Accept: application/json'],
+    CURLOPT_CONNECTTIMEOUT => 2,
+    CURLOPT_TIMEOUT => 4,
+  ]);
+  $raw = curl_exec($ch);
+  $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+  curl_close($ch);
+  if (!is_string($raw) || $code < 200 || $code >= 300) return null;
+  $show = json_decode($raw, true);
+  return is_array($show) && is_string($show['parameters'] ?? null)
+    ? ember_ollama_parameters_num_ctx($show['parameters']) : null;
+}
+
 /**
  * Effective context window of a LOCAL Ollama model: reported by /api/ps,
- * otherwise remembered from an earlier /api/ps or full window (12 h),
- * otherwise Ollama's CPU default. null means the window is not limited by
- * this server (cloud).
+ * otherwise num_ctx from its Modelfile (/api/show), otherwise remembered
+ * from an earlier /api/ps or full window (12 h), otherwise Ollama's CPU
+ * default. null means the window is not limited by this server (cloud).
  */
 function ember_ollama_context_window(string $model): ?int {
   $model = trim($model);
   if ($model === '' || ember_model_is_cloud($model)) return null;
   $memo = $GLOBALS['COREUI_OLLAMA_CONTEXT_MEMO'] ?? [];
   if (is_array($memo) && isset($memo[$model])) return (int)$memo[$model];
-  $ctx = ember_ollama_ps_context($model);
+  $ctx = ember_ollama_ps_context($model) ?? ember_ollama_show_context($model);
   if ($ctx !== null) ember_ollama_context_store($model, $ctx);
   else {
     $data = json_decode((string)@file_get_contents(ember_ollama_context_cache_file()), true);
@@ -5752,17 +5782,20 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   // A long Markdown plan may need Ollama's normal continuation first.
   // Recheck the complete marker AFTER continuation, before any public text
   // sanitizer can expose a partial tool instruction to the user.
-  if ($channel === 'console' && !$fileTask && $imageUrl === null
-      && empty($GLOBALS['COREUI_NATIVE_TOOL_REENTRY'])
-      && is_string($out) && $consoleUid > 0 && $consoleSessionId !== null
-      && $triggerMessageId > 0 && coreui_native_tool_parse($out) !== null) {
-    $nativeResult = coreui_native_tool_apply(
-      $pdo,$consoleUid,(string)$consoleSessionId,$triggerMessageId,$out,
+  $nativeEligible = $channel === 'console' && !$fileTask && $imageUrl === null
+    && empty($GLOBALS['COREUI_NATIVE_TOOL_REENTRY'])
+    && $consoleUid > 0 && $consoleSessionId !== null && $triggerMessageId > 0;
+  // Shared by the first reply and its single correction.
+  $applyNative = static function (string $toolReply, bool $wasTruncated)
+      use ($pdo,$senderChar,$consoleUid,$consoleSessionId,$excludeReplyToId,
+        $triggerMessageId,$triggerRevision,$primaryModel,$sys,$userMsg): ?string {
+    return coreui_native_tool_apply(
+      $pdo,$consoleUid,(string)$consoleSessionId,$triggerMessageId,$toolReply,
       static function (string $task) use ($pdo,$senderChar,$consoleUid,$consoleSessionId,
         $excludeReplyToId,$triggerMessageId,$triggerRevision): ?string {
         return ember_generate_reply($pdo,$senderChar,$task,null,'console',
           $consoleUid,$consoleSessionId,$excludeReplyToId,$triggerMessageId,$triggerRevision);
-      }, ember_last_call_was_truncated(),
+      }, $wasTruncated,
       static function (string $nextPrompt) use ($primaryModel,$sys): array {
         if (ember_agent_cancel_requested()) return ['text'=>'','ok'=>false];
         $raw = ember_call_ollama($primaryModel,$sys,$nextPrompt,180,
@@ -5776,6 +5809,10 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         ];
       }, $userMsg
     );
+  };
+  $outCut = ember_last_call_was_truncated();
+  if ($nativeEligible && is_string($out) && coreui_native_tool_parse($out) !== null) {
+    $nativeResult = $applyNative($out, $outCut);
     if (is_string($nativeResult)) return $nativeResult;
   }
   // A public progress line followed by ordinary prose is a normal answer.
@@ -5788,19 +5825,49 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
     }
     $out = $progressOnly['reply'];
   }
-  if (is_string($out)
-      && (preg_match('~^\s*\[COREUI_[A-Z_]+\]~u', $out)
-        || coreui_native_plan_marker_attempt($out)
-        || coreui_native_plan_continue_marker_attempt($out))
+  if (is_string($out) && coreui_native_tool_attempt($out)
       && coreui_native_tool_parse($out) === null) {
     if (coreui_native_plan_continue_marker_attempt($out)) {
       coreui_work_record($pdo,'tool','error',
         'Plan-Fortsetzungsmarker nicht lesbar',
         ['reason'=>'invalid_plan_continue_marker','response_bytes'=>strlen($out)]);
     }
-    return 'Ich konnte diese Werkzeugantwort noch nicht sicher auswerten. '
-      . 'Bereits gespeicherte Planversionen bleiben erhalten. '
-      . 'Es wurde kein unbelegter Projektbau gestartet.';
+    $shape = coreui_native_tool_reply_shape($out);
+    coreui_work_record($pdo,'tool','error','Werkzeugantwort nicht lesbar',
+      ['reason'=>$shape,'response_bytes'=>strlen($out),'model'=>$primaryModel]);
+    // Same single self-correction as the streaming path.
+    $repairTried = false;
+    if ($nativeEligible && !$outCut && !ember_agent_cancel_requested()) {
+      $repairTried = true;
+      coreui_work_record($pdo,'model','running','Werkzeugantwort wird einmal korrigiert',
+        ['reason'=>$shape,'model'=>$primaryModel]);
+      $window = ember_ollama_context_window($primaryModel);
+      $fixRaw = ember_call_ollama($primaryModel,$sys,
+        $finalPrompt . coreui_native_tool_repair_prompt($shape,$out,$window !== null && $window <= 8192),
+        ember_timeout_for_model($primaryModel),[],null,$fileToolThink);
+      $fixMeta = ember_last_call_meta();
+      $fixComplete = is_string($fixRaw) && !empty($fixMeta['ok']) && !ember_last_call_was_truncated();
+      $fixText = $fixComplete ? ember_sanitize_public_reply($fixRaw,
+        (string)($GLOBALS['STU_EMBER_LAST_THINKING'] ?? '')) : '';
+      $corrected = null;
+      if ($fixComplete && coreui_native_tool_parse($fixText) !== null) {
+        $corrected = $applyNative($fixText, false);
+      } elseif ($fixComplete && trim($fixText) !== '' && !coreui_native_tool_attempt($fixText)) {
+        $out = $fixText; // a normal answer continues through the usual cleanup
+        $corrected = false;
+      }
+      coreui_work_record($pdo,'tool',$corrected !== null ? 'success' : 'error',
+        $corrected !== null ? 'Werkzeugantwort korrigiert' : 'Korrektur nicht lesbar',
+        ['reason'=>$corrected !== null ? 'tool_reply_corrected'
+          : ($fixComplete ? coreui_native_tool_reply_shape($fixText) : 'correction_incomplete'),
+         'response_bytes'=>strlen($fixText)]);
+      if (is_string($corrected)) return $corrected;
+    }
+    if (coreui_native_tool_attempt($out) && coreui_native_tool_parse($out) === null) {
+      return 'Ich konnte meine Werkzeugantwort ' . ($repairTried ? 'auch nach einem Korrekturversuch ' : '')
+        . 'nicht sicher auswerten (Grund: ' . $shape . '). Bereits gespeicherte Planversionen bleiben '
+        . 'erhalten, und ich habe keinen Projektbau gestartet. Die Details stehen im Arbeitsweg.';
+    }
   }
 
   // Sicherheitsnetz: falls doch ein Restmarker durchrutscht, entfernen.

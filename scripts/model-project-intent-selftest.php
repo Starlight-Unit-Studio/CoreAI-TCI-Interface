@@ -55,6 +55,20 @@ intent_assert(str_contains($stream,'coreui_build_intent_select(')
   && str_contains($stream,'$nativeToolHandled = $preselectedBuildHandled;')
   && str_contains($stream,'if (!$fileTaskHandled && !$nativeToolHandled'),
   'Sync/SSE no-thinking selection and single-tool dispatch not wired');
+// 0.5.68: an unreadable tool reply gets a bounded reason and ONE correction
+// through the same apply path, in the SSE and in the synchronous route.
+foreach (['stream'=>$stream,'chat'=>$chat] as $route=>$source) {
+  intent_assert(str_contains($source,'coreui_native_tool_reply_shape(')
+    && str_contains($source,'coreui_native_tool_repair_prompt(')
+    && str_contains($source,"'Werkzeugantwort nicht lesbar'")
+    && str_contains($source,"'Werkzeugantwort wird einmal korrigiert'")
+    && str_contains($source,'$repairTried = true;')
+    && substr_count($source,'coreui_native_tool_repair_prompt(') === 1,
+    'Single tool reply correction not wired in ' . $route);
+}
+intent_assert(substr_count($stream,'$applyNativeTool(') === 2
+  && substr_count($chat,'$applyNative(') === 2,
+  'First reply and correction must share one tool apply path');
 intent_assert(!str_contains($stream,'coreui_console_web_project_resolve(')
   && !str_contains($chat,'coreui_console_web_project_resolve('),
   'Old keyword router returned');

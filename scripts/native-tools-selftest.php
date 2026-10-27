@@ -88,6 +88,66 @@ foreach ([
   'Multi-action/malformed protocol should not run');
 
 
+// 0.5.68: Netcup 27.10.2026, gemma4:31b-cloud and gpt-oss:120b-cloud wrote a
+// complete reply (done_reason=stop) that ended as "Werkzeugantwort unvollstaendig".
+// One closed block framed by ordinary sentences, bold markers or CRLF is still
+// exactly one tool call.
+$cloudPlan = "# Private Homepage\n\n## Seiten\n- index.html: Start\n- gallery.html: Galerie\n"
+  . "- profile.html: Profil\n\n## Design\n- Dunkles Sci-Fi-Layout mit Neon-Akzenten.";
+foreach ([
+  'intro before PLAN_AND_BUILD' => ["Sehr gern, ich speichere den Plan und baue die Seite.\n\n"
+    . "[COREUI_PLAN_AND_BUILD]\n" . $cloudPlan . "\n[/COREUI_PLAN_AND_BUILD]", 'PLAN_AND_BUILD'],
+  'remark with inline code after PLAN_SAVE' => ["[COREUI_PLAN_SAVE]\n" . $cloudPlan . "\n[/COREUI_PLAN_SAVE]\n\n"
+    . "Sobald du ihn freigibst, erstelle ich `index.html` und die anderen Seiten. Passt das so?", 'PLAN_SAVE'],
+  'bold marker lines' => ["**[COREUI_PLAN_SAVE]**\n" . $cloudPlan . "\n**[/COREUI_PLAN_SAVE]**", 'PLAN_SAVE'],
+  'CRLF line endings' => [str_replace("\n", "\r\n", "Ich lege los.\n[COREUI_PLAN_SAVE]\n" . $cloudPlan
+    . "\n[/COREUI_PLAN_SAVE]"), 'PLAN_SAVE'],
+  'intro before PLAN_APPEND' => ["Ich ergaenze den Plan.\n[COREUI_PLAN_APPEND]\n## Blog\n- blog.html mit Artikeln\n"
+    . "[/COREUI_PLAN_APPEND]", 'PLAN_APPEND'],
+] as $case => [$cloudReply, $cloudType]) {
+  $cloudCall = coreui_native_tool_parse($cloudReply);
+  native_assert(($cloudCall['type'] ?? '') === $cloudType
+    && str_replace("\r", '', (string)($cloudCall['body'] ?? '')) !== ''
+    && ($cloudType !== 'PLAN_SAVE' && $cloudType !== 'PLAN_AND_BUILD'
+      || str_replace("\r", '', (string)$cloudCall['body']) === $cloudPlan),
+    'Cloud tool framing rejected: ' . $case);
+}
+$introCall = coreui_native_tool_parse("Sehr gern, ich speichere den Plan und baue die Seite.\n\n"
+  . "[COREUI_PLAN_AND_BUILD]\n" . $cloudPlan . "\n[/COREUI_PLAN_AND_BUILD]");
+native_assert(($introCall['public_note'] ?? '') === 'Sehr gern, ich speichere den Plan und baue die Seite.',
+  'A safe introduction becomes the visible progress note');
+foreach ([
+  'two actions (save, then build)' => "[COREUI_PLAN_SAVE]\n" . $cloudPlan . "\n[/COREUI_PLAN_SAVE]\n"
+    . "[COREUI_PROJECT_BUILD]\nPlan umsetzen\n[/COREUI_PROJECT_BUILD]",
+  'fenced block' => "Hier:\n" . str_repeat(chr(96),3) . "\n[COREUI_PLAN_SAVE]\n" . $cloudPlan
+    . "\n[/COREUI_PLAN_SAVE]\n" . str_repeat(chr(96),3),
+  'example introduction' => "Beispiel:\n[COREUI_PLAN_SAVE]\n" . $cloudPlan . "\n[/COREUI_PLAN_SAVE]",
+  'markdown link after block' => "[COREUI_PLAN_SAVE]\n" . $cloudPlan . "\n[/COREUI_PLAN_SAVE]\nMehr: [Doku](https://x.y)",
+  'tiny plan after intro' => "Text\n[COREUI_PLAN_AND_BUILD]\n# Evil\n[/COREUI_PLAN_AND_BUILD]",
+] as $case => $unsafeCloud) {
+  native_assert(coreui_native_tool_parse($unsafeCloud) === null, 'Ambiguous cloud tool accepted: ' . $case);
+  native_assert(coreui_native_tool_attempt($unsafeCloud), 'Ambiguous tool reply not detected: ' . $case);
+}
+native_assert(coreui_native_tool_reply_shape("[COREUI_PLAN_SAVE]\n" . $cloudPlan . "\n[/COREUI_PLAN_SAVE]\n"
+    . "[COREUI_PROJECT_BUILD]\nx\n[/COREUI_PROJECT_BUILD]") === 'multiple_tool_blocks'
+  && coreui_native_tool_reply_shape(str_repeat(chr(96),3) . "\n[COREUI_PLAN_SAVE]\n# x\n[/COREUI_PLAN_SAVE]\n"
+    . str_repeat(chr(96),3)) === 'tool_marker_in_code_fence'
+  && coreui_native_tool_reply_shape("[COREUI_PROJECT_BUILD]\nx\n[/COREUI_PLAN_SAVE]") === 'tool_markers_mismatched'
+  && coreui_native_tool_reply_shape("[COREUI_PROJECT_BUILD]\nPlan umsetzen") === 'tool_block_unclosed'
+  && coreui_native_tool_reply_shape("[COREUI_DEPLOY]\nx\n[/COREUI_DEPLOY]") === 'tool_name_unknown'
+  && coreui_native_tool_reply_shape("Text\n[COREUI_PLAN_AND_BUILD]\n# Evil\n[/COREUI_PLAN_AND_BUILD]") === 'tool_body_too_short'
+  && coreui_native_tool_reply_shape("[COREUI_PLAN_SAVE]\n" . $cloudPlan . "\n[/COREUI_PLAN_SAVE]\nMehr: [Doku](https://x.y)")
+    === 'tool_text_around_block',
+  'Unreadable tool replies get a bounded, text-free reason');
+$repair = coreui_native_tool_repair_prompt('multiple_tool_blocks', 'VORHER-ANTWORT');
+$repairSmall = coreui_native_tool_repair_prompt('multiple_tool_blocks', 'VORHER-ANTWORT', true);
+native_assert(str_contains($repair, '[COREUI_PLAN_AND_BUILD]') && str_contains($repair, 'VORHER-ANTWORT')
+  && str_contains($repair, 'genau EINEM') && !str_contains($repairSmall, 'VORHER-ANTWORT'),
+  'The correction names the reason and omits the old reply for a small context window');
+native_assert(!coreui_native_tool_attempt('Ganz normale Antwort ohne Werkzeug.')
+  && coreui_native_tool_attempt("Ich speichere.\n**[COREUI_PLAN_SAVE]**\n# x"),
+  'Tool attempts are detected without flagging ordinary prose');
+
 // Screenshot regression: Gemma writes [COREUI/PLANSAVE] after normal prose
 // and often omits the closing marker. Never mistake that for a finished plan.
 $planBody = "# Projekt: Anime-Welt Tagebuch\n\n## Ziel\nSechs miteinander "

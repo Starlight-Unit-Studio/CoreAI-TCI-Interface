@@ -87,8 +87,11 @@ $chatSource = (string)file_get_contents(dirname(__DIR__) . '/api/chat.php');
 $streamSource = (string)file_get_contents(dirname(__DIR__) . '/api/console_stream.php');
 plan_auto_assert(
   substr_count($chatSource, "static function (string \$nextPrompt) use (\$primaryModel,\$sys)") === 2
-  && str_contains($streamSource,"static function (string \$nextPrompt) use (\$model,\$sys)")
-  && str_contains($streamSource,'console_stream_ollama($model,$sys,$nextPrompt,false,180)')
+  // 0.5.68: the SSE apply path is shared with the tool correction; it keeps
+  // the turn's model and system prompt as $toolModel/$toolSys.
+  && str_contains($streamSource,"static function (string \$nextPrompt) use (\$toolModel,\$toolSys)")
+  && str_contains($streamSource,'console_stream_ollama($toolModel,$toolSys,$nextPrompt,false,180)')
+  && str_contains($streamSource,'$toolModel = isset($model) ? (string)$model : ember_model();')
   && str_contains($chatSource,'&& !coreui_native_plan_continue_marker_attempt($out)')
   && str_contains($streamSource,'&& !coreui_native_plan_continue_marker_attempt($reply)')
   && str_contains($streamSource,'$safePlanRecovery'),

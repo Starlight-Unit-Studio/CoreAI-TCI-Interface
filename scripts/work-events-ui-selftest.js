@@ -182,6 +182,22 @@ assert(windowFull.textContent.includes('Kontextfenster (Tokens)4096'),
 assert(windowFull.textContent.includes('führe es deshalb nicht aus'),
   'blocked incomplete Python must be explained truthfully');
 
+// 0.5.68: an unreadable cloud tool reply names its bounded reason and the
+// single self-correction, never the private model text.
+const toolFix = work.create({events:[
+  {id:67,kind:'tool',state:'error',title:'Werkzeugantwort nicht lesbar',
+    meta:{reason:'multiple_tool_blocks',response_bytes:2777,model:'gemma4:31b-cloud'}},
+  {id:68,kind:'model',state:'running',title:'Werkzeugantwort wird einmal korrigiert',
+    meta:{reason:'multiple_tool_blocks'}},
+  {id:69,kind:'tool',state:'success',title:'Werkzeugantwort korrigiert',
+    meta:{reason:'tool_reply_corrected'}},
+],expanded:true});
+assert(toolFix.textContent.includes('mehrere Werkzeugblöcke in einer Antwort')
+  && toolFix.textContent.includes('Daraus führe ich nichts aus')
+  && toolFix.textContent.includes('einmal in der vorgesehenen Form neu')
+  && toolFix.textContent.includes('Ich setze sie jetzt um'),
+  'tool reply correction must be narrated with its reason');
+
 const futureTool = work.create({events:[{id:71,kind:'tool',state:'running',
   title:'Neuen Repository-Pruefschritt gestartet'}],expanded:false});
 assert(futureTool.textContent.includes('Ich führe gerade „Neuen Repository-Pruefschritt gestartet“ aus'),
