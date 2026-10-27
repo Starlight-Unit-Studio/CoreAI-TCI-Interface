@@ -95,6 +95,7 @@ function coreui_native_tool_parse(string $reply): ?array {
   }
   $plan = coreui_native_plan_recover_model_reply($reply);
   if ($plan === null) $plan = coreui_native_plan_and_build_draft_recover($reply);
+  if ($plan === null) $plan = coreui_native_plan_append_draft_recover($reply);
   if ($plan !== null) $plan['public_note'] = $publicNote;
   return $plan;
 }
@@ -219,8 +220,33 @@ function coreui_native_plan_and_build_draft_recover(string $reply): ?array {
           'recovered'=>true,'source_marker'=>'unfinished_plan_and_build'];
 }
 
+/**
+ * A cut-off PLAN_APPEND is private Markdown, never executable project code.
+ * Preserve it only as an unfinished version based on the existing owner-
+ * scoped plan, with no authorization to rebuild until the draft completes.
+ */
+function coreui_native_plan_append_draft_recover(string $reply): ?array {
+  if (strlen($reply) > 300000 || preg_match('//u',$reply) !== 1
+      || str_contains($reply,"\\0")) return null;
+  $openingPattern = '~(?mi)^[ \\t]*\\[COREUI_PLAN_APPEND\\][ \\t]*\\r?\\n~';
+  if (preg_match_all($openingPattern,$reply,$matches,PREG_OFFSET_CAPTURE) !== 1) return null;
+  $opening = (string)$matches[0][0][0];
+  $offset = (int)$matches[0][0][1];
+  $intro = trim(substr($reply,0,$offset));
+  if (strlen($intro) > 640 || str_contains($intro,str_repeat(chr(96),3))
+      || str_contains($intro,'[') || str_contains($intro,']')) return null;
+  $body = trim(substr($reply,$offset+strlen($opening)));
+  if (strlen($body) < 96 || strlen($body) > 262144
+      || preg_match('~\\[/?COREUI[/_][A-Z_]+\\]~i',$body)) return null;
+  // A new heading is evidence of a Markdown addition, unlike arbitrary prose.
+  if (preg_match('~^(?:#{2,4}[ \\t]+\\S|[-*][ \\t]+\\S)~u',$body) !== 1)
+    return null;
+  return ['type'=>'PLAN_APPEND','body'=>$body,'draft'=>true,
+          'recovered'=>true,'source_marker'=>'unfinished_plan_append'];
+}
+
 function coreui_native_plan_marker_attempt(string $reply): bool {
-  return preg_match('~(?mi)^[ \t]*\[(?:COREUI_PLAN_SAVE|COREUI/PLANSAVE)\][ \t]*$~',
+  return preg_match('~(?mi)^[ \t]*\[(?:COREUI_PLAN_SAVE|COREUI_PLAN_APPEND|COREUI_PLAN_AND_BUILD|COREUI/PLANSAVE)\][ \t]*$~',
     substr($reply, 0, 1800)) === 1;
 }
 
@@ -348,7 +374,7 @@ function coreui_native_tool_apply(
   }
   // PLAN_CONTINUE has no executable body: it only resumes the already
   // authenticated, saved draft. A truncated marker is safe to recover.
-  if ($modelWasTruncated && !in_array($kind,['PLAN_SAVE','PLAN_CONTINUE'],true)) {
+  if ($modelWasTruncated && !in_array($kind,['PLAN_SAVE','PLAN_APPEND','PLAN_CONTINUE'],true)) {
     return 'Der Werkzeugauftrag wurde vorzeitig abgebrochen. '
       . 'Keine Aktion ausgefuehrt, kein Download vorgetaeuscht.';
   }
@@ -356,7 +382,8 @@ function coreui_native_tool_apply(
     coreui_work_record($pdo,'commentary','info','Mara meldet ihren naechsten Schritt',
       ['public_note'=>(string)$tool['public_note'],'source'=>'model_public_text']);
   }
-  $draft = $kind === 'PLAN_SAVE' && (!empty($tool['draft']) || $modelWasTruncated);
+  $draft = in_array($kind,['PLAN_SAVE','PLAN_APPEND'],true)
+    && (!empty($tool['draft']) || $modelWasTruncated);
   if (in_array($kind,['PLAN_SAVE','PLAN_APPEND','PLAN_CONTINUE','PLAN_AND_BUILD'],true)) {
     try {
       if ($kind === 'PLAN_CONTINUE') {
@@ -368,6 +395,16 @@ function coreui_native_tool_apply(
           return 'Der Entwurf ist erhalten, aber die Fortsetzung ist momentan nicht verfuegbar.';
         $saved = coreui_plan_save($pdo,$uid,$sessionId,$turnId,
           (string)$saved['markdown'],false);
+      } elseif ($kind === 'PLAN_APPEND' && $draft) {
+        // Incomplete additions must never make an approved previous plan
+        // silently appear complete. Preserve old bytes in a versioned draft.
+        $previous = coreui_plan_latest($pdo,$uid,$sessionId);
+        if (!is_array($previous)) return 'Es gibt noch keinen Projektplan zum Erweitern.';
+        $existingText = coreui_plan_draft_text((string)$previous['markdown']);
+        $extended = coreui_plan_merge_chunk($existingText,(string)$tool['body']);
+        if (!is_string($extended)) return 'Die Planerweiterung war eine Wiederholung oder nicht zusammenfuehrbar.';
+        $saved = coreui_plan_save($pdo,$uid,$sessionId,$turnId,
+          COREUI_PLAN_DRAFT_MARKER . "\n\n" . $extended,false);
       } else {
         $planText = $draft ? COREUI_PLAN_DRAFT_MARKER . "\n\n" . $tool['body'] : $tool['body'];
         $saved = coreui_plan_save($pdo,$uid,$sessionId,$turnId,$planText,
