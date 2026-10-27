@@ -534,7 +534,9 @@ $wantedFunctions = ['ember_py_max_code_chars','ember_py_extract_marker',
   'ember_console_file_tool_is_local','ember_console_file_tool_is_device_local','ember_console_file_tool_is_local_qwen_coder',
   'ember_console_source_only_project_route',
   'ember_console_file_model_status','ember_console_local_source_failure',
-  'ember_console_local_gemma_file_incomplete'];
+  'ember_console_local_gemma_file_incomplete','ember_py_code_writes_output',
+  'ember_truncation_meta','ember_model_is_cloud','ember_py_prefers_project_builder',
+  'ember_py_capability_hint','ember_console_prompt_profile'];
 for ($i = 0; $i < count($tokens); $i++) {
   if (!is_array($tokens[$i]) || $tokens[$i][0] !== T_FUNCTION) continue;
   $j = $i + 1;
@@ -637,11 +639,58 @@ local_file_test(!ember_console_local_gemma_file_incomplete('gemma4:31b-cloud', $
   && !ember_console_local_gemma_file_incomplete('gpt-oss:120b-cloud', $openPy, true)
   && !ember_console_local_gemma_file_incomplete('qwen3.6:35b-a3e-q4_K_M', $openPy, true),
   'Cloud models selected through Ollama and local Qwen must remain unchanged');
-local_file_test(str_contains($handler, '$fileModelTruncated = $fileTask && ember_last_call_was_truncated()')
+// 0.5.66: the truncation state of the FIRST reply is kept in $outTruncated,
+// so later model calls cannot overwrite it before the [PY] guard runs.
+local_file_test(str_contains($handler, '$outTruncated = ember_last_call_was_truncated();')
+  && str_contains($handler, '$fileModelTruncated = $fileTask && $outTruncated;')
   && str_contains($handler, '$retryTruncated = ember_last_call_was_truncated()')
+  && str_contains($handler, '$outTruncated = $retryTruncated;')
   && str_contains($handler, '$followTruncated = $fileTask && ember_last_call_was_truncated()')
   && str_contains($handler, '$recoveryCandidate = is_string($out) && !$followIncomplete'),
   'the initial, protocol-retry and post-worker repair paths must all be covered');
+// Job 138: model-written Python from a cut-off reply must never reach the worker,
+// and a failed self-chosen file job gets the bounded repair, not free prose.
+local_file_test(str_contains($handler, 'if ($modelPython && $outTruncated) {')
+  && str_contains($handler, "'Unvollstaendiger Python-Code nicht ausgefuehrt'")
+  && strpos($handler, 'if ($modelPython && $outTruncated) {') < strpos($handler, '$pyRes = ember_py_run($pdo, $pyCode')
+  && str_contains($handler, '$followIncomplete = $followCut ||')
+  && str_contains($handler, '$selfFileJob = !$requestedFile && $channel === \'console\' && $modelPython')
+  && str_contains($handler, 'if ($requestedFile || $needsFileRepair) {'),
+  'truncated model Python must be blocked and self-chosen file jobs must use the bounded repair');
+local_file_test(ember_py_code_writes_output("Path(os.environ['EMBER_OUTPUT_DIR']) / 'a.html'")
+  && ember_py_code_writes_output("open('/work/output/x.zip','wb')")
+  && !ember_py_code_writes_output("print(2**64)"),
+  'file-writing model code must be recognized without user keywords');
+// Netcup 27.10.2026: 3250 prompt + 846 output tokens = 4096, done_reason=length.
+local_file_test(ember_console_local_source_failure(null, ['context_tokens'=>4096], true) === 'context_window_full'
+  && ember_console_local_source_failure(null, [], true) === 'model_output_truncated'
+  && ember_truncation_meta(['context_tokens'=>4096,'done_reason'=>'length',
+      'eval_count'=>846,'prompt_eval_count'=>3250])['reason'] === 'context_window_full',
+  'a full context window must be reported as such, not as a generic truncation');
+// Local models hand multi-page projects to the checked builder; Cloud and the
+// established local Qwen [PY] workflow keep Python; the Game channel is unchanged.
+local_file_test(ember_py_prefers_project_builder('ember-coreui:latest', true)
+  && ember_py_prefers_project_builder('gemma4:e4b', true)
+  && !ember_py_prefers_project_builder('gpt-oss:120b-cloud', true)
+  && !ember_py_prefers_project_builder('gemma4:31b-cloud', true)
+  && !ember_py_prefers_project_builder('qwen3.6:35b-a3e-q4_K_M', true)
+  && !ember_py_prefers_project_builder('ember-coreui:latest', false),
+  'project builder preference must only apply to local non-Qwen console models');
+$localHint = ember_py_capability_hint('ember-coreui:latest', false, true);
+$cloudHint = ember_py_capability_hint('gpt-oss:120b-cloud', false, true);
+$gameHint = ember_py_capability_hint();
+local_file_test(str_contains($localHint, '[COREUI_PROJECT_BUILD]')
+  && !str_contains($localHint, 'MUSST du Python nutzen')
+  && str_contains($cloudHint, 'MUSST du Python nutzen') && !str_contains($cloudHint, '[COREUI_PROJECT_BUILD]')
+  && $gameHint === ember_py_capability_hint('', false, false)
+  && str_contains($gameHint, 'MUSST du Python nutzen')
+  && strlen(ember_py_capability_hint('ember-coreui:latest', true, true)) < strlen($localHint),
+  'Python hint must not contradict PROJECT_BUILD for local models and stay unchanged elsewhere');
+local_file_test(ember_console_prompt_profile('console', 4096)['compact'] === true
+  && ember_console_prompt_profile('console', 4096)['skills'] === 1
+  && ember_console_prompt_profile('console', null)['compact'] === false
+  && ember_console_prompt_profile('global', 4096)['plan'] === 3200,
+  'small local windows get a compact console prompt; cloud and game keep the full prompt');
 
 local_file_test(ember_console_local_source_failure(null,
   ['code'=>0,'err'=>'Operation timed out after 600000 milliseconds','curl_errno'=>28], false) === 'ollama_timeout',

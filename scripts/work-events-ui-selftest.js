@@ -162,6 +162,26 @@ const toggled = work.create({events:[{id:63,kind:'run',state:'success',
 toggled.querySelector('.work-toggle').handlers.click();
 assert.equal(manuallyOpened,true,'caller can remember user disclosure choice');
 
+// 0.5.66: a full local context window (3250 + 846 = 4096) is named as such,
+// with its size, instead of a generic "abgeschnitten".
+const windowFull = work.create({events:[
+  {id:64,kind:'tool',state:'info',title:'Kontextfenster ermittelt',
+    meta:{context_tokens:4096,model:'ember-coreui:latest'}},
+  {id:65,kind:'model',state:'error',title:'Quelldatei nicht lesbar',
+    meta:{file_name:'index.html',reason:'context_window_full',context_tokens:4096,
+      eval_count:846,prompt_eval_count:3250,done_reason:'length'}},
+  {id:66,kind:'tool',state:'error',title:'Unvollstaendiger Python-Code nicht ausgefuehrt',
+    meta:{reason:'output_truncated'}},
+],expanded:true});
+assert(windowFull.textContent.includes('Kontextfenster (4096 Tokens)'),
+  'the detected window size must be explained');
+assert(windowFull.textContent.includes('Das Kontextfenster des Modells war voll (4096 Tokens)'),
+  'a full window must not be shown as a generic truncation');
+assert(windowFull.textContent.includes('Kontextfenster (Tokens)4096'),
+  'the window size must be available in the details');
+assert(windowFull.textContent.includes('führe es deshalb nicht aus'),
+  'blocked incomplete Python must be explained truthfully');
+
 const futureTool = work.create({events:[{id:71,kind:'tool',state:'running',
   title:'Neuen Repository-Pruefschritt gestartet'}],expanded:false});
 assert(futureTool.textContent.includes('Ich führe gerade „Neuen Repository-Pruefschritt gestartet“ aus'),

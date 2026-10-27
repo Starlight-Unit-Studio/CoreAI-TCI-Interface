@@ -33,6 +33,44 @@ native_assert(coreui_native_tool_parse(
   . "[COREUI_PROJECT_BUILD]\nfile\n[/COREUI_PLAN_SAVE]") === null,
   'A public comment must not authorize a malformed tool');
 
+// Netcup 27.10.2026, Bild 1: a COMPLETE stream ended as "Werkzeugantwort
+// unvollstaendig". Harmless formatting around one valid block must work.
+$build = "[COREUI_PROJECT_BUILD]\nSetze den gespeicherten Plan als Homepage um.\n[/COREUI_PROJECT_BUILD]";
+$progressLine = '[COREUI_PUBLIC_PROGRESS]Ich pruefe den gespeicherten Plan und beginne.[/COREUI_PUBLIC_PROGRESS]';
+foreach ([
+  'blank line after progress note' => $progressLine . "\n\n" . $build,
+  'short sentence after block' => $build . "\nIch melde mich mit dem Ergebnis.",
+  'one-sentence introduction' => "Alles klar, ich setze den Plan jetzt um.\n" . $build,
+] as $case => $reply) {
+  $parsedCase = coreui_native_tool_parse($reply);
+  native_assert(($parsedCase['type'] ?? '') === 'PROJECT_BUILD'
+    && ($parsedCase['body'] ?? '') === 'Setze den gespeicherten Plan als Homepage um.',
+    'Harmless tool formatting rejected: ' . $case);
+}
+$prose = coreui_native_public_progress_only($progressLine . "\nKlar, das machen wir so!");
+native_assert(is_array($prose) && $prose['reply'] === 'Klar, das machen wir so!'
+  && $prose['note'] === 'Ich pruefe den gespeicherten Plan und beginne.'
+  && coreui_native_tool_parse($progressLine . "\nKlar, das machen wir so!") === null,
+  'A progress note followed by prose is an ordinary answer, never a tool');
+native_assert(coreui_native_public_progress_only($progressLine . "\n[COREUI_PROJECT_BUILD]\nx") === null
+  && coreui_native_public_progress_only('Normaler Text') === null,
+  'Progress-only handling must not swallow a broken tool block');
+foreach ([
+  'second action in tail' => $build . "\n[COREUI_PLAN_SAVE]\n# x\n[/COREUI_PLAN_SAVE]",
+  'code fence in tail' => $build . "\n" . str_repeat(chr(96),3) . "\nx\n" . str_repeat(chr(96),3),
+  'quoted example' => "So sieht das Format aus, Beispiel:\n" . $build,
+  'bracket in introduction' => "Siehe [Doku]\n" . $build,
+  'unclosed build after intro' => "Ich lege los.\n[COREUI_PROJECT_BUILD]\nPlan umsetzen",
+] as $case => $reply) {
+  native_assert(coreui_native_tool_parse($reply) === null, 'Unsafe tool formatting accepted: ' . $case);
+}
+native_assert(!preg_match('~\b(?:react|php|vue|angular)\b~i',
+    coreui_native_strip_negated_stacks("Technik: reines HTML, kein React, kein PHP. Keine Frameworks wie Vue oder Angular."))
+  && preg_match('~\breact\b~i', coreui_native_strip_negated_stacks('Kein Backend, sondern React mit Vite.')) === 1
+  && preg_match('~\bvue\b~i', coreui_native_strip_negated_stacks('Ohne PHP und mit Vue.')) === 1
+  && preg_match('~\breact\b~i', coreui_native_strip_negated_stacks('Eine React App.')) === 1,
+  'Negated stacks must not block a static site, real framework projects must still fail closed');
+
 foreach ([
   'PLAN_APPEND'=>'# Neue Elemente',
   'PLAN_AND_BUILD'=>'# Umsetzungsplan',

@@ -26,6 +26,10 @@ check_work(($counts['source_chars'] ?? 0) === 3816
   'bounded model output length diagnostics preserved');
 check_work(!isset($counts['code']) && !isset($counts['prompt']),
   'model code and private prompts are never exposed in work events');
+$window = coreui_work_safe_meta(['reason'=>'context_window_full','context_tokens'=>4096]);
+check_work(($window['reason'] ?? '') === 'context_window_full'
+  && ($window['context_tokens'] ?? 0) === 4096,
+  'the local context window size is a safe numeric diagnostic');
 $public = coreui_work_safe_meta([
   'done_reason'=>'length', 'content_chars'=>2512, 'thinking_chars'=>908,
   'continuation_segments'=>2, 'plan_version'=>3, 'response_bytes'=>1090,

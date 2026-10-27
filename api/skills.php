@@ -80,7 +80,7 @@ function coreui_skills_save(PDO $pdo, int $uid, array $values): array {
   return coreui_skills_load($pdo, $uid);
 }
 
-function coreui_skills_select(string $request, array $enabled): array {
+function coreui_skills_select(string $request, array $enabled, int $max = 4): array {
   $request = function_exists('mb_strtolower') ? mb_strtolower($request, 'UTF-8') : strtolower($request);
   $scores = [];
   foreach (coreui_skills_catalog() as $id => $skill) {
@@ -94,7 +94,7 @@ function coreui_skills_select(string $request, array $enabled): array {
     if ($score > 0) $scores[$id] = $score;
   }
   arsort($scores, SORT_NUMERIC); // Stable catalog order breaks ties.
-  return array_slice(array_keys($scores), 0, 4);
+  return array_slice(array_keys($scores), 0, max(0, min(4, $max)));
 }
 
 function coreui_skills_body(string $id): string {
@@ -106,7 +106,8 @@ function coreui_skills_body(string $id): string {
   return trim($match[1]);
 }
 
-function coreui_skills_prepare(PDO $pdo, int $uid, string $request, string $channel = 'console'): void {
+function coreui_skills_prepare(PDO $pdo, int $uid, string $request, string $channel = 'console',
+                               int $maxOptional = 4): void {
   // Reset all in-memory context before selecting anything for this turn.
   $GLOBALS['COREUI_SKILLS_BLOCK'] = '';
   $GLOBALS['COREUI_REQUIRED_SKILLS_BLOCK'] = '';
@@ -127,7 +128,9 @@ function coreui_skills_prepare(PDO $pdo, int $uid, string $request, string $chan
   $GLOBALS['COREUI_REQUIRED_SKILLS_BLOCK'] = $mandatory;
 
   // Keep the four optional slots independent from the mandatory base skill.
-  $selected = coreui_skills_select($request, coreui_skills_load($pdo, $uid));
+  // A small local context window gets fewer optional packages, never zero
+  // required ones; the Werkzeuge core skill is loaded above in every case.
+  $selected = coreui_skills_select($request, coreui_skills_load($pdo, $uid), $maxOptional);
   $optional = '';
   if ($selected) {
     $optional = "\n\n[COREUI SKILLS: aufgabenbezogene Arbeitsanleitungen. Nutzerauftrag und vorhandenes Werkzeugprotokoll gelten weiterhin. Keine neuen Werkzeuge oder Berechtigungen. Tests und Dateien nur als erstellt bestaetigen, wenn tatsaechlich bestaetigt.]\n";

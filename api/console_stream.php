@@ -481,13 +481,16 @@ try {
     // reasoning models than asking their giant conversational prompt to
     // decide and then emit a long build marker. No user keyword classifier.
     $selectedBuildResult = null;
-    if ($generationRequest === null && $attachmentIds === []
+    // "Neu generieren" or an edited "setz den Plan um" deserves the same
+    // decision as the first send; only a continuation of text is excluded.
+    if (($generationRequest === null || in_array($generationMode, ['regenerate','edit'], true))
+        && $attachmentIds === []
         && ember_py_enabled() && !ember_agent_cancel_requested()) {
       $choice = coreui_build_intent_select(
         $pdo, (int)$uid, $sessionId, $afterId, $message,
         static function (string $decisionPrompt) use ($model): array {
           $decision = console_stream_ollama($model, '', $decisionPrompt,
-            false, 90, false);
+            false, 90, false, false);
           return [
             'text'=>trim((string)($decision['content'] ?? '')),
             'ok'=>!empty($decision['ok']) && !empty($decision['done'])
@@ -569,6 +572,7 @@ try {
     $acc['eval_count'] = (int)($continued['eval_count'] ?? 0);
     $acc['prompt_eval_count'] = (int)($continued['prompt_eval_count'] ?? 0);
     $acc['continuation_segments'] = (int)($continued['continuation_segments'] ?? 0);
+    $acc['context_tokens'] = (int)($continued['context_tokens'] ?? 0);
     $hasMarker = (ember_extract_web_marker($reply) !== null)
               || (ember_extract_browse_marker($reply) !== null)
               || (function_exists('ember_py_extract_marker') && ember_py_extract_marker($reply) !== null);
@@ -682,6 +686,17 @@ try {
     $reply = is_string($fallback) ? trim($fallback) : '';
   }
 
+  // A public progress line followed by ordinary prose is a normal answer.
+  $progressOnly = (!$nativeToolHandled && $reply !== '')
+    ? coreui_native_public_progress_only($reply) : null;
+  if ($progressOnly !== null) {
+    if ($progressOnly['note'] !== null) {
+      coreui_work_record($pdo,'commentary','info','Mara meldet ihren naechsten Schritt',
+        ['public_note'=>$progressOnly['note'],'source'=>'model_public_text']);
+    }
+    $reply = $progressOnly['reply'];
+  }
+
   if ($reply !== ''
       && (preg_match('~^\s*\[COREUI_[A-Z_]+\]~u', $reply)
         || coreui_native_plan_marker_attempt($reply)
@@ -699,7 +714,9 @@ try {
 
   if (!$nativeToolHandled && !empty($acc['truncated']) && $reply !== '') {
     coreui_work_record($pdo,'run','info','Antwort blieb nach Fortsetzung unvollstaendig',
-      ['reason'=>'continuation_limit','source_chars'=>strlen($reply),
+      ['reason'=>!empty($acc['context_tokens']) ? 'context_window_full' : 'continuation_limit',
+       'context_tokens'=>(int)($acc['context_tokens'] ?? 0),
+       'source_chars'=>strlen($reply),
        'done_reason'=>(string)($acc['done_reason'] ?? ''),
        'eval_count'=>(int)($acc['eval_count'] ?? 0),
        'prompt_eval_count'=>(int)($acc['prompt_eval_count'] ?? 0),
@@ -886,8 +903,9 @@ exit;
 // ─────────────────────────────────────────────────────────────────────────────
 function console_stream_ollama(string $model, string $systemPrompt, string $userPrompt,
                                bool $augmentSkills = true, ?int $timeoutOverride = null,
-                               ?bool $thinkOverride = null): array {
-  $userPrompt = coreui_skills_augment($userPrompt, $augmentSkills);
+                               ?bool $thinkOverride = null, bool $withSkills = true): array {
+  // A short internal classification needs no SKILL documents at all.
+  if ($withSkills) $userPrompt = coreui_skills_augment($userPrompt, $augmentSkills);
   $url       = ember_url();
   $keepAlive = ember_keep_alive();
 
@@ -1037,6 +1055,11 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
     && $apiError === ''
     && $doneSeen
     && $done;
+  // Prompt plus answer filling the local window is a different cause than
+  // an explicit output cap; show and remember it instead of guessing.
+  $contextTokens = $truncated
+    ? (int)(ember_ollama_context_observe($model, $doneReason, $promptEvalCount, $evalCount, $numPredict) ?? 0)
+    : 0;
 
   if (!$ok || $truncated) {
     ember_debug_log('console_stream_incomplete', [
@@ -1063,9 +1086,11 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
       $truncated ? 'Modellstream abgeschnitten'
         : ($ok ? 'Modellstream empfangen' : 'Modellstream fehlgeschlagen'),
       ['model'=>$model,'http_code'=>$httpCode,'duration_ms'=>$modelDurationMs,
-        'reason'=>$truncated ? 'output_truncated' : ($ok ? 'completed' : 'request_failed'),
+        'reason'=>$truncated ? ($contextTokens > 0 ? 'context_window_full' : 'output_truncated')
+          : ($ok ? 'completed' : 'request_failed'),
         'done_reason'=>$doneReason, 'eval_count'=>$evalCount,
         'prompt_eval_count'=>$promptEvalCount,
+        'context_tokens'=>$contextTokens,
         'thinking_chars'=>strlen($thinkingAcc),
         'content_chars'=>strlen($contentAcc)]);
   }
@@ -1078,6 +1103,7 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
     'done_reason' => $doneReason,
     'eval_count' => $evalCount,
     'prompt_eval_count' => $promptEvalCount,
+    'context_tokens' => $contextTokens,
   ];
 }
 
@@ -1142,5 +1168,6 @@ function console_stream_continue_truncated(
     'done_reason' => (string)($lastCall['done_reason'] ?? ''),
     'eval_count' => (int)($lastCall['eval_count'] ?? 0),
     'prompt_eval_count' => (int)($lastCall['prompt_eval_count'] ?? 0),
+    'context_tokens' => (int)($lastCall['context_tokens'] ?? 0),
   ];
 }

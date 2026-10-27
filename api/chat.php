@@ -2144,6 +2144,12 @@ function ember_web_capability_hint(): string {
     . "Fuer Smalltalk, Meinungen oder Dinge die du ohnehin weisst, brauchst du KEINE Websuche.";
 }
 
+/** Same protocol in one line for a small local context window. */
+function ember_web_capability_hint_compact(): string {
+  return "WEB: Fuer aktuelle reale Fakten, die nicht in der KANON-REFERENZ stehen, antworte nur mit "
+    . "einer Zeile [WEB: suchbegriffe]. Fuer Smalltalk und Lore keine Websuche.";
+}
+
 // Marker [WEB: ...] aus Embers Antwort extrahieren.
 function ember_extract_web_marker(string $s): ?string {
   if (stripos($s, '[WEB:') === false) return null;
@@ -2232,6 +2238,26 @@ function ember_browse_capability_hint(): string {
     . "Antworte in DIESEM Fall AUSSCHLIESSLICH mit genau EINER Zeile in genau diesem Format:\n"
     . "[BROWSE: was du herausfinden sollst]\n"
     . "und sonst GAR NICHTS (kein Zusatztext, keine Begruessung).";
+}
+
+function ember_browse_capability_hint_compact(): string {
+  return "BROWSE: Fuer eine gruendliche Recherche auf echten Webseiten (\"recherchier mal\", "
+    . "\"schau selbst nach\") antworte nur mit einer Zeile [BROWSE: was du herausfinden sollst].";
+}
+
+/**
+ * Prompt sizing for the private console from the local model's real window.
+ * Ollama silently drops the beginning of an overlong prompt, so a 4096-token
+ * window gets a deliberately shorter history, plan excerpt and tool help.
+ */
+function ember_console_prompt_profile(string $channel, ?int $contextTokens): array {
+  if ($channel !== 'console' || $contextTokens === null || $contextTokens > 8192) {
+    return ['history'=>0,'line'=>0,'skills'=>4,'plan'=>3200,'compact'=>false];
+  }
+  if ($contextTokens <= 4096) {
+    return ['history'=>6,'line'=>400,'skills'=>1,'plan'=>1200,'compact'=>true];
+  }
+  return ['history'=>10,'line'=>800,'skills'=>2,'plan'=>2000,'compact'=>true];
 }
 
 function ember_extract_browse_marker(string $s): ?string {
@@ -2395,14 +2421,42 @@ function ember_py_max_code_chars(): int {
 }
 
 // Capability-Hinweis fuer $u (Call #1).
-function ember_py_capability_hint(): string {
+/**
+ * Local models with a small context cannot finish a multi-page site inside
+ * one Python script; the script is cut off and fails as SyntaxError. In the
+ * private console they hand such projects to the checked file-by-file builder.
+ * Cloud models and the established local Qwen [PY] workflow keep Python.
+ */
+function ember_py_prefers_project_builder(string $model, bool $nativeProjects): bool {
+  return $nativeProjects && $model !== '' && !ember_model_is_cloud($model)
+    && !ember_console_file_tool_is_local_qwen_coder($model);
+}
+
+function ember_py_capability_hint(string $model = '', bool $compact = false,
+                                  bool $nativeProjects = false): string {
+  $preferBuild = ember_py_prefers_project_builder($model, $nativeProjects);
+  $projectRule = "Ein Webprojekt mit mehreren Seiten oder einen gespeicherten Projektplan setzt du "
+    . "NICHT mit Python um, sondern antwortest nur mit:\n"
+    . "[COREUI_PROJECT_BUILD]\nKurzer Projektauftrag\n[/COREUI_PROJECT_BUILD]\n"
+    . "CoreAI erzeugt und prueft dann jede Datei einzeln und baut das ZIP selbst.\n";
+  if ($compact) {
+    return "PYTHON: Zum Rechnen, Pruefen oder fuer eine herunterladbare Datei antworte nur mit\n"
+      . "[PY]\ncode\n[/PY]\n"
+      . "Dateien nach Path(os.environ['EMBER_OUTPUT_DIR']) schreiben; keine erfundenen Links. "
+      . ($preferBuild ? $projectRule : '')
+      . "Fuer Smalltalk, Meinungen oder Lore brauchst du KEIN Python.";
+  }
+  $files = $preferBuild
+    ? "DATEIEN: Fuer EINE herunterladbare Datei (eine HTML-Seite, ein Minigame, eine kleine ZIP) "
+      . "nutze Python und speichere die fertigen Bytes in /work/output. " . $projectRule
+    : "DATEIEN: Wenn jemand eine herunterladbare HTML-Seite, ein Minigame, eine ZIP- oder andere Datei "
+      . "erstellt haben moechte, MUSST du Python nutzen und die fertigen Bytes in /work/output speichern. ";
   return "PYTHON: Du kannst echten Python-Code ausfuehren lassen. Er laeuft in deiner eigenen "
     . "abgeschotteten Umgebung mit Internetzugang; numpy, pandas, requests, beautifulsoup4, "
     . "pillow und matplotlib sind da. Nutze das, wenn du etwas WIRKLICH ausrechnen, pruefen, "
     . "zaehlen, parsen oder testen willst statt zu schaetzen (Mathe, Datums-/Zeitrechnung, "
     . "Textanalyse, JSON/CSV, kleine Skripte, API-Abfragen und DATEIEN fuer den Benutzer).\n"
-    . "DATEIEN: Wenn jemand eine herunterladbare HTML-Seite, ein Minigame, eine ZIP- oder andere Datei "
-    . "erstellt haben moechte, MUSST du Python nutzen und die fertigen Bytes in /work/output speichern. "
+    . $files
     . "Keine data:-Links, keine base64-Inline-URLs, keine rohen <a download>-Tags, keine "
     . "angeblichen lokalen Pfade oder erfundenen Downloads. Die Chatoberflaeche zeigt echte "
     . "Dateikarten nur fuer vom Worker bestaetigte Ausgabedateien.\n"
@@ -2484,7 +2538,7 @@ function ember_console_file_tool_think(string $model): ?bool {
  * successful replies, leading to duplicate 600-second retries.
  */
 function ember_console_local_source_failure(?string $reply, array $meta, bool $truncated): string {
-  if ($truncated) return 'model_output_truncated';
+  if ($truncated) return !empty($meta['context_tokens']) ? 'context_window_full' : 'model_output_truncated';
   if (is_string($reply)) return 'source_format_unrecognized';
   if ((string)($meta['err'] ?? '') === 'model_queue_timeout') return 'model_queue_timeout';
   if ((int)($meta['curl_errno'] ?? 0) === 28
@@ -2509,6 +2563,24 @@ function ember_console_file_model_status(?string $reply, array $meta, bool $trun
     'eval_count'=>max(0, (int)($meta['eval_count'] ?? 0)),
     'prompt_eval_count'=>max(0, (int)($meta['prompt_eval_count'] ?? 0)),
   ];
+}
+
+/** Safe diagnostic fields for a reply that ended at a token or context limit. */
+function ember_truncation_meta(array $meta): array {
+  $context = (int)($meta['context_tokens'] ?? 0);
+  return [
+    'reason'=>$context > 0 ? 'context_window_full' : 'output_truncated',
+    'done_reason'=>(string)($meta['done_reason'] ?? ''),
+    'eval_count'=>max(0, (int)($meta['eval_count'] ?? 0)),
+    'prompt_eval_count'=>max(0, (int)($meta['prompt_eval_count'] ?? 0)),
+    'context_tokens'=>$context,
+  ];
+}
+
+/** A model-written script that writes downloadable files, not a calculation. */
+function ember_py_code_writes_output(?string $code): bool {
+  return is_string($code)
+    && preg_match('~EMBER_OUTPUT_DIR|/work/output|/mnt/data~', $code) === 1;
 }
 
 /**
@@ -3126,7 +3198,11 @@ function ember_call_ollama(string $model, string $systemPrompt, string $userProm
   // The model already selected the active skills before dispatch. Focused
   // source-file subcalls need only their source contract; repeating up to four
   // full SKILL.md documents here inflates a small local Gemma context.
-  $userPrompt = coreui_skills_augment($userPrompt, $augmentSkills);
+  // '__skills' => 'none' marks a raw single-file source call: no tool is
+  // available there, and every token is needed for the file itself.
+  $skillMode = (string)($optionOverrides['__skills'] ?? '');
+  unset($optionOverrides['__skills']);
+  if ($skillMode !== 'none') $userPrompt = coreui_skills_augment($userPrompt, $augmentSkills);
   // Thinking ist strikt an genau diesen Modellaufruf gebunden. Ohne Reset koennte ein
   // spaeterer Call ohne message.thinking versehentlich einen alten Entwurf retten.
   $GLOBALS['STU_EMBER_LAST_THINKING'] = '';
@@ -3459,6 +3535,11 @@ function ember_call_ollama(string $model, string $systemPrompt, string $userProm
   $GLOBALS['STU_EMBER_LAST_CALL']['done_reason'] = trim((string)($j['done_reason'] ?? ''));
   $GLOBALS['STU_EMBER_LAST_CALL']['eval_count'] = max(0, (int)($j['eval_count'] ?? 0));
   $GLOBALS['STU_EMBER_LAST_CALL']['prompt_eval_count'] = max(0, (int)($j['prompt_eval_count'] ?? 0));
+  $GLOBALS['STU_EMBER_LAST_CALL']['context_tokens'] = (int)(ember_ollama_context_observe(
+    $model, (string)$GLOBALS['STU_EMBER_LAST_CALL']['done_reason'],
+    (int)$GLOBALS['STU_EMBER_LAST_CALL']['prompt_eval_count'],
+    (int)$GLOBALS['STU_EMBER_LAST_CALL']['eval_count'],
+    (int)($options['num_predict'] ?? 0)) ?? 0);
 
   if (isset($j['message']['content']) && is_string($j['message']['content'])) {
     $raw = (string)$j['message']['content'];
@@ -3518,6 +3599,88 @@ function ember_last_call_was_truncated(): bool {
   $limit = (int)($meta['num_predict'] ?? 0);
   $used = (int)($meta['eval_count'] ?? 0);
   return $limit > 0 && $used >= $limit;
+}
+
+/** Ollama Cloud tags run remotely; this server's context window does not apply. */
+function ember_model_is_cloud(string $model): bool {
+  return preg_match('~(?:^|[:._-])cloud(?:$|[:._-])~i', trim($model)) === 1;
+}
+
+function ember_ollama_context_cache_file(): string {
+  return rtrim(ember_cache_dir(), '/') . '/ollama-context.json';
+}
+
+/**
+ * done_reason=length without an explicit output cap means prompt plus answer
+ * filled the model's context window (e.g. 3250 + 846 = 4096). Remember that
+ * exact size for this local model. Read-only towards Ollama: CoreAI sends no
+ * num_ctx and changes neither the Modelfile nor the Ollama service.
+ */
+function ember_ollama_context_observe(string $model, string $doneReason, int $promptEval,
+                                      int $eval, int $numPredict = 0): ?int {
+  $model = trim($model);
+  if ($model === '' || strtolower(trim($doneReason)) !== 'length'
+      || ember_model_is_cloud($model)) return null;
+  if ($numPredict > 0 && $eval >= $numPredict) return null; // explicit output cap
+  $total = max(0, $promptEval) + max(0, $eval);
+  if ($total < 1024 || $total % 256 !== 0) return null;
+  ember_ollama_context_store($model, $total);
+  return $total;
+}
+
+/** Remember a measured window so an unloaded model keeps its real size. */
+function ember_ollama_context_store(string $model, int $tokens): void {
+  $file = ember_ollama_context_cache_file();
+  $data = json_decode((string)@file_get_contents($file), true);
+  if (!is_array($data)) $data = [];
+  $known = is_array($data[$model] ?? null) ? $data[$model] : [];
+  if ((int)($known['tokens'] ?? 0) !== $tokens || (int)($known['at'] ?? 0) < time() - 3600) {
+    $data[$model] = ['tokens'=>$tokens, 'at'=>time()];
+    @file_put_contents($file, json_encode($data, JSON_UNESCAPED_SLASHES), LOCK_EX);
+  }
+  $GLOBALS['COREUI_OLLAMA_CONTEXT_MEMO'][$model] = $tokens;
+}
+
+/** Context length Ollama reports for a currently loaded model, if any. */
+function ember_ollama_ps_context(string $model): ?int {
+  $url = preg_replace('~/api/(?:chat|generate)/?$~', '/api/ps', ember_url());
+  if (!is_string($url) || !str_ends_with($url, '/api/ps')) return null;
+  $ps = ember_http_get_json($url, 3);
+  $wanted = str_contains($model, ':') ? strtolower($model) : strtolower($model) . ':latest';
+  foreach ((is_array($ps['models'] ?? null) ? $ps['models'] : []) as $row) {
+    if (!is_array($row)) continue;
+    foreach (['name','model'] as $key) {
+      $name = strtolower(trim((string)($row[$key] ?? '')));
+      if ($name !== '' && !str_contains($name, ':')) $name .= ':latest';
+      $ctx = (int)($row['context_length'] ?? 0);
+      if ($name === $wanted && $ctx >= 256) return $ctx;
+    }
+  }
+  return null;
+}
+
+/**
+ * Effective context window of a LOCAL Ollama model: reported by /api/ps,
+ * otherwise remembered from an earlier /api/ps or full window (12 h),
+ * otherwise Ollama's CPU default. null means the window is not limited by
+ * this server (cloud).
+ */
+function ember_ollama_context_window(string $model): ?int {
+  $model = trim($model);
+  if ($model === '' || ember_model_is_cloud($model)) return null;
+  $memo = $GLOBALS['COREUI_OLLAMA_CONTEXT_MEMO'] ?? [];
+  if (is_array($memo) && isset($memo[$model])) return (int)$memo[$model];
+  $ctx = ember_ollama_ps_context($model);
+  if ($ctx !== null) ember_ollama_context_store($model, $ctx);
+  else {
+    $data = json_decode((string)@file_get_contents(ember_ollama_context_cache_file()), true);
+    $learned = is_array($data) ? ($data[$model] ?? null) : null;
+    if (is_array($learned) && (int)($learned['at'] ?? 0) >= time() - 43200
+        && (int)($learned['tokens'] ?? 0) >= 1024) $ctx = (int)$learned['tokens'];
+  }
+  $ctx ??= max(1024, (int)ember_cfg('STU_EMBER_ASSUMED_CONTEXT', 4096));
+  $GLOBALS['COREUI_OLLAMA_CONTEXT_MEMO'][$model] = $ctx;
+  return $ctx;
 }
 
 function ember_join_continuation(string $head, string $tail): string {
@@ -4249,7 +4412,8 @@ function ember_build_context(
   string $channel = 'global',
   int $consoleUid = 0,
   ?string $consoleSessionId = null,
-  ?int $excludeReplyToId = null
+  ?int $excludeReplyToId = null,
+  int $consoleLineLimit = 0
 ): string {
   $limit = max(4, min(20, $limit));
   try { $pdo->query('SELECT 1 FROM stu_chat_messages LIMIT 1'); } catch (Throwable $e) { return ''; }
@@ -4305,6 +4469,8 @@ function ember_build_context(
     // Der private CoreAI: TCI Interface-Dialog braucht echten Arbeitskontext. Das alte
     // Global-Chat-Limit von 120 Zeichen bleibt nur fuer den oeffentlichen Kanal.
     $lineLimit = ($channel === 'console') ? 1200 : 120;
+    // A small local context window keeps more turns readable when shorter.
+    if ($channel === 'console' && $consoleLineLimit > 0) $lineLimit = min($lineLimit, $consoleLineLimit);
     if (function_exists('mb_substr')) $msg = mb_substr($msg, 0, $lineLimit, 'UTF-8');
     else $msg = substr($msg, 0, $lineLimit);
     $lines[] = ($isEmberRow ? (($name !== '' ? $name : 'Mara') . ' (du)') : $name) . ': ' . $msg;
@@ -4336,23 +4502,28 @@ function ember_build_chat_prompt(
 
   // Erst NACH dem Entfernen pruefen, sonst landet der Hex-String als Lore-Suchbegriff.
   $useLore = ember_should_use_lore_for_message($userMsg);
+  $uid = (int)($senderChar['user_id'] ?? 0);
+  $cid = (string)($senderChar['id'] ?? '');
+  if (function_exists('coreui_ai_runtime_apply')) coreui_ai_runtime_apply($pdo, $uid);
+  // The runtime model is known only after the account settings are applied.
+  $profile = ember_console_prompt_profile($channel,
+    $channel === 'console' ? ember_ollama_context_window(ember_model()) : null);
   $ctxLimit = ($channel === 'console') ? ($useLore ? 6 : 12) : ($useLore ? 4 : 8);
+  if ($profile['history'] > 0) $ctxLimit = min($ctxLimit, $profile['history']);
   $ctx = ember_build_context(
     $pdo,
     $ctxLimit,
     $channel,
     $consoleUid,
     $consoleSessionId,
-    $excludeReplyToId
+    $excludeReplyToId,
+    $profile['line']
   );
-  $uid = (int)($senderChar['user_id'] ?? 0);
-  $cid = (string)($senderChar['id'] ?? '');
-  if (function_exists('coreui_ai_runtime_apply')) coreui_ai_runtime_apply($pdo, $uid);
-  coreui_skills_prepare($pdo, $uid, $userMsg, $channel);
+  coreui_skills_prepare($pdo, $uid, $userMsg, $channel, $profile['skills']);
   try {
     if ($uid > 0 && coreui_profile_schema_ready($pdo)) {
-      $profile = coreui_profile_load($pdo, $uid);
-      $senderChar['name'] = (string)($profile['display_name'] ?? $senderChar['name']);
+      $profileRow = coreui_profile_load($pdo, $uid);
+      $senderChar['name'] = (string)($profileRow['display_name'] ?? $senderChar['name']);
     }
   } catch (Throwable $e) {}
   $memLimit = $useLore ? min(2, ember_memory_limit()) : ember_memory_limit();
@@ -4380,9 +4551,14 @@ function ember_build_chat_prompt(
   })();
   $sys = "";
 
-  $webHint = (ember_web_enabled() && $imageUrl === null) ? ember_web_capability_hint() : '';
-  $browseHint = (ember_browse_enabled() && $imageUrl === null) ? ember_browse_capability_hint() : '';
-  $pyHint = (ember_py_enabled() && $imageUrl === null) ? ember_py_capability_hint() : '';
+  $nativeProjects = $channel === 'console' && $imageUrl === null
+    && empty($GLOBALS['COREUI_NATIVE_TOOL_REENTRY']);
+  $webHint = (ember_web_enabled() && $imageUrl === null)
+    ? ($profile['compact'] ? ember_web_capability_hint_compact() : ember_web_capability_hint()) : '';
+  $browseHint = (ember_browse_enabled() && $imageUrl === null)
+    ? ($profile['compact'] ? ember_browse_capability_hint_compact() : ember_browse_capability_hint()) : '';
+  $pyHint = (ember_py_enabled() && $imageUrl === null)
+    ? ember_py_capability_hint(ember_model(), $profile['compact'], $nativeProjects) : '';
   $loreBlock = '';
   if (is_string($lore) && trim($lore) !== '') {
     $loreBlock = "
@@ -4409,11 +4585,9 @@ function ember_build_chat_prompt(
   $playerStateBlock = ($playerStateHint !== '') ? ("\n\n" . trim($playerStateHint)) : '';
   $userPromptBlock = function_exists('coreui_ai_user_prompt_block') ? coreui_ai_user_prompt_block() : '';
   $profilePromptBlock = function_exists('coreui_profile_prompt_block') ? coreui_profile_prompt_block($pdo, $uid) : '';
-  $nativeToolHint = ($channel === 'console' && $imageUrl === null
-      && empty($GLOBALS['COREUI_NATIVE_TOOL_REENTRY']))
-    ? coreui_native_tools_prompt() : '';
+  $nativeToolHint = $nativeProjects ? coreui_native_tools_prompt($profile['compact']) : '';
   $savedPlanBlock = ($channel === 'console' && $consoleSessionId !== null)
-    ? coreui_plan_prompt_block($pdo,$uid,(string)$consoleSessionId) : '';
+    ? coreui_plan_prompt_block($pdo,$uid,(string)$consoleSessionId,$profile['plan']) : '';
   $u = "[SERVERZEIT (nur dein Hintergrundwissen - Datum/Uhrzeit NUR nennen, wenn in der NEU-Nachricht danach gefragt wird): {$emberZeit}]{$memBlock}{$repBlock}{$playerStateBlock}{$attachBlock}{$userPromptBlock}{$profilePromptBlock}{$privateKnowledgeBlock}{$savedPlanBlock}\n" . "Kontext (letzte Zeilen - Zeilen mit (du) sind DEINE eigenen, bereits gesendeten Antworten; beantworte sie NICHT erneut):\n" . ($ctx !== '' ? $ctx : "(leer)")
    . $loreBlock
    . "
@@ -4531,19 +4705,24 @@ function ember_generate_reply(
   // Lore-Gate erst NACH dem Entfernen des Markers pruefen: der Hex-String haette
   // sonst als Suchbegriff im Kanon gelandet.
   $useLore = ember_should_use_lore_for_message($userMsg);
+  $uid = (int)($senderChar['user_id'] ?? 0);
+  $cid = (string)($senderChar['id'] ?? '');
+  if (function_exists('coreui_ai_runtime_apply')) coreui_ai_runtime_apply($pdo, $uid);
+  // Same window-aware sizing as the streaming prompt builder.
+  $promptProfile = ember_console_prompt_profile($channel,
+    $channel === 'console' ? ember_ollama_context_window(ember_model()) : null);
   $ctxLimit = ($channel === 'console') ? ($useLore ? 6 : 12) : ($useLore ? 4 : 8);
+  if ($promptProfile['history'] > 0) $ctxLimit = min($ctxLimit, $promptProfile['history']);
   $ctx = ember_build_context(
     $pdo,
     $ctxLimit,
     $channel,
     $consoleUid,
     $consoleSessionId,
-    $excludeReplyToId
+    $excludeReplyToId,
+    $promptProfile['line']
   );
-  $uid = (int)($senderChar['user_id'] ?? 0);
-  $cid = (string)($senderChar['id'] ?? '');
-  if (function_exists('coreui_ai_runtime_apply')) coreui_ai_runtime_apply($pdo, $uid);
-  coreui_skills_prepare($pdo, $uid, $userMsg, $channel);
+  coreui_skills_prepare($pdo, $uid, $userMsg, $channel, $promptProfile['skills']);
   try {
     if ($uid > 0 && coreui_profile_schema_ready($pdo)) {
       $profile = coreui_profile_load($pdo, $uid);
@@ -4590,9 +4769,15 @@ function ember_generate_reply(
   $sys = $sysBase;
   // Memory wird in $u eingefuegt (nicht in $sys) damit das Modelfile-SYSTEM nicht ueberschrieben wird
 
-  $webHint = (ember_web_enabled() && $imageUrl === null) ? ember_web_capability_hint() : '';
-  $browseHint = (ember_browse_enabled() && $imageUrl === null) ? ember_browse_capability_hint() : '';
-  $pyHint = (ember_py_enabled() && $imageUrl === null) ? ember_py_capability_hint() : '';
+  $webHint = (ember_web_enabled() && $imageUrl === null)
+    ? ($promptProfile['compact'] ? ember_web_capability_hint_compact() : ember_web_capability_hint()) : '';
+  $browseHint = (ember_browse_enabled() && $imageUrl === null)
+    ? ($promptProfile['compact'] ? ember_browse_capability_hint_compact() : ember_browse_capability_hint()) : '';
+  // The synchronous prompt has no separate tool block, so the Python hint
+  // itself names the checked project builder for small local models.
+  $pyHint = (ember_py_enabled() && $imageUrl === null)
+    ? ember_py_capability_hint(ember_model(), $promptProfile['compact'],
+        $channel === 'console' && empty($GLOBALS['COREUI_NATIVE_TOOL_REENTRY'])) : '';
   $loreBlock = '';
   if (is_string($lore) && trim($lore) !== '') {
     $loreBlock = "
@@ -4822,43 +5007,69 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   }
   // The synchronous fallback must share the SSE model-selected execution
   // contract. This is not keyword routing and does not touch the Modelfile.
-  if ($channel === 'console' && !$fileTask && $imageUrl === null
-      && trim($attachBlock) === '' && ember_py_enabled()
-      && empty($GLOBALS['COREUI_NATIVE_TOOL_REENTRY'])
-      && $consoleUid > 0 && $consoleSessionId !== null
-      && $triggerMessageId > 0) {
+  $buildIntentStatus = 'not_run';
+  $buildEligible = $channel === 'console' && $imageUrl === null
+    && ember_py_enabled() && empty($GLOBALS['COREUI_NATIVE_TOOL_REENTRY'])
+    && $consoleUid > 0 && $consoleSessionId !== null && $triggerMessageId > 0;
+  // One bounded classifier + approved build; the same checks as the SSE path.
+  $runApprovedBuild = static function () use ($pdo,$senderChar,$consoleUid,$consoleSessionId,
+      $excludeReplyToId,$triggerMessageId,$triggerRevision,$userMsg,$primaryModel,
+      &$buildIntentStatus): ?string {
     $choice = coreui_build_intent_select(
       $pdo,$consoleUid,(string)$consoleSessionId,$triggerMessageId,$userMsg,
       static function (string $decisionPrompt) use ($primaryModel): array {
+        // The classifier needs no SKILL documents, only the short decision.
         $raw = ember_call_ollama($primaryModel,'',$decisionPrompt,90,
-          [],null,false,false);
+          ['__skills'=>'none'],null,false,false);
         $meta = ember_last_call_meta();
         return ['text'=>is_string($raw) ? trim($raw) : '',
           'ok'=>is_string($raw) && !empty($meta['ok'])
             && !ember_last_call_was_truncated()];
       }
     );
-    if (($choice['status'] ?? '') === 'build' && is_string($choice['tool'])) {
-      coreui_work_record($pdo,'tool','info',
-        'Mara hat die Umsetzung des gespeicherten Plans gewaehlt',
-        ['reason'=>'model_selected_saved_plan_build',
-         'plan_version'=>(int)$choice['plan_version']]);
-      $result = coreui_native_tool_apply(
-        $pdo,$consoleUid,(string)$consoleSessionId,$triggerMessageId,$choice['tool'],
-        static function (string $task) use ($pdo,$senderChar,$consoleUid,$consoleSessionId,
-          $excludeReplyToId,$triggerMessageId,$triggerRevision): ?string {
-          return ember_generate_reply($pdo,$senderChar,$task,null,'console',
-            $consoleUid,$consoleSessionId,$excludeReplyToId,$triggerMessageId,$triggerRevision);
-        },false,null,$userMsg
-      );
-      if (is_string($result)) return $result;
+    $buildIntentStatus = (string)($choice['status'] ?? 'inference_error');
+    if (in_array($buildIntentStatus, ['decision_invalid','model_incomplete','inference_error'], true)) {
+      coreui_work_record($pdo,'model','info','Kurze Werkzeugentscheidung nicht bestaetigt',
+        ['reason'=>$buildIntentStatus]);
     }
+    if ($buildIntentStatus !== 'build' || !is_string($choice['tool'] ?? null)) return null;
+    coreui_work_record($pdo,'tool','info',
+      'Mara hat die Umsetzung des gespeicherten Plans gewaehlt',
+      ['reason'=>'model_selected_saved_plan_build',
+       'plan_version'=>(int)$choice['plan_version']]);
+    return coreui_native_tool_apply(
+      $pdo,$consoleUid,(string)$consoleSessionId,$triggerMessageId,$choice['tool'],
+      static function (string $task) use ($pdo,$senderChar,$consoleUid,$consoleSessionId,
+        $excludeReplyToId,$triggerMessageId,$triggerRevision): ?string {
+        return ember_generate_reply($pdo,$senderChar,$task,null,'console',
+          $consoleUid,$consoleSessionId,$excludeReplyToId,$triggerMessageId,$triggerRevision);
+      },false,null,$userMsg
+    );
+  };
+  if ($buildEligible && !$fileTask && trim($attachBlock) === '') {
+    $result = $runApprovedBuild();
+    if (is_string($result)) return $result;
   }
+  // When Mara herself starts writing a multi-page project with Python on a
+  // small local model, hand an approved saved plan to the checked builder
+  // instead of executing or "repairing" a script that cannot fit. A prior
+  // CHAT decision or a missing finished plan is respected.
+  $projectHandoff = static function (?string $code) use ($buildEligible,$primaryModel,
+      $runApprovedBuild,&$buildIntentStatus,$pdo): ?string {
+    if (!$buildEligible || !is_string($code) || preg_match('~\.html?\b~i', $code) !== 1
+        || !ember_py_prefers_project_builder($primaryModel, true)
+        || in_array($buildIntentStatus, ['build','chat','ineligible'], true)) return null;
+    coreui_work_record($pdo,'tool','info','Projekt an geprueften Projekt-Writer uebergeben',
+      ['reason'=>'python_project_handoff','model'=>$primaryModel]);
+    return $runApprovedBuild();
+  };
   // The cloud/source-fence path already creates verified ZIPs. Only the local
   // Gemma route needs smaller, raw per-file source requests without the
   // regular conversation's competing [PY] tool hints.
   $localDirectSources = ember_console_source_only_project_route(
     $nativeSourceProject, $requestedSourceProject, $primaryModel);
+  $outTruncated = false;
+  $outMeta = [];
   if ($localDirectSources) {
     if ($sourceProjectRequest !== $userMsg) {
       coreui_work_record($pdo, 'tool', 'info', 'Homepage-Projektdateien erkannt',
@@ -4867,13 +5078,22 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
     $sourceSpec = coreui_console_project_request_spec($sourceProjectRequest);
     $sourceFiles = [];
     if (!is_array($sourceSpec)) return 'Ungueltiger Dateiauftrag.';
+    // A local model shares one window between prompt, thinking and source.
+    // Budget each file prompt for the real window instead of a fixed excerpt.
+    $sourceContext = ember_ollama_context_window($primaryModel);
+    if ($sourceContext !== null) {
+      coreui_work_record($pdo, 'tool', 'info', 'Kontextfenster ermittelt',
+        ['context_tokens'=>$sourceContext, 'model'=>$primaryModel]);
+    }
     foreach ($sourceSpec['requested'] as $name) {
       $accepted = null;
       $retryWithThink = false;
+      $reason = '';
+      $lastMeta = [];
       for ($attempt = 1; $attempt <= 2; $attempt++) {
         if (ember_agent_cancel_requested()) return null;
         $singlePrompt = coreui_console_local_source_prompt(
-          $sourceProjectRequest, (string)$name, $sourceFiles, $attempt > 1);
+          $sourceProjectRequest, (string)$name, $sourceFiles, $attempt > 1, $sourceContext);
         if ($singlePrompt === null) break;
         coreui_work_record($pdo, 'tool', 'info', 'Einzeldatei angefordert',
           ['file_name'=>(string)$name,'attempt'=>$attempt]);
@@ -4889,7 +5109,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         ];
         try {
           $modelSource = ember_call_ollama($primaryModel, '', $singlePrompt,
-            ember_timeout_for_model($primaryModel), [], null, $sourceThink, false);
+            ember_timeout_for_model($primaryModel), ['__skills'=>'none'], null, $sourceThink, false);
         } finally {
           unset($GLOBALS['COREUI_SOURCE_PREVIEW']);
         }
@@ -4919,7 +5139,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
               coreui_work_record($pdo, 'model', 'running', 'Fehlender Quelltext-Teil wird erzeugt',
                 ['file_name'=>(string)$name,'model'=>$primaryModel]);
               $follow = ember_call_ollama($primaryModel, '', $followPrompt,
-                ember_timeout_for_model($primaryModel), [], null, $fileToolThink, false);
+                ember_timeout_for_model($primaryModel), ['__skills'=>'none'], null, $fileToolThink, false);
               $truncated = ember_last_call_was_truncated();
               $lastMeta = ember_last_call_meta();
               $part = is_string($follow)
@@ -4939,8 +5159,11 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
                   'source_chars'=>$sourceChars,
                   'eval_count'=>(int)($lastMeta['eval_count'] ?? 0),
                   'prompt_eval_count'=>(int)($lastMeta['prompt_eval_count'] ?? 0),
-                  'reason'=>$truncated ? 'model_output_truncated' : 'model_reply_complete',
-                   'done_reason'=>(string)($lastMeta['done_reason'] ?? '')]);
+                  'reason'=>$truncated
+                    ? (!empty($lastMeta['context_tokens']) ? 'context_window_full' : 'model_output_truncated')
+                    : 'model_reply_complete',
+                  'context_tokens'=>(int)($lastMeta['context_tokens'] ?? 0),
+                  'done_reason'=>(string)($lastMeta['done_reason'] ?? '')]);
               if (!$truncated) {
                 $accepted = coreui_console_local_source_reply($combined, $sourceProjectRequest, (string)$name);
                 if (is_array($accepted)) break;
@@ -4963,6 +5186,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
             'prompt_eval_count'=>(int)($lastMeta['prompt_eval_count'] ?? 0),
             'http_code'=>(int)($lastMeta['code'] ?? 0),
             'done_reason'=>(string)($lastMeta['done_reason'] ?? ''),
+            'context_tokens'=>(int)($lastMeta['context_tokens'] ?? 0),
             'elapsed_ms'=>(int)($lastMeta['elapsed_ms'] ?? 0)]);
         if ($accepted !== null) break;
         // A transport failure is not a source-format problem; blindly
@@ -4970,10 +5194,19 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         if ($resumed || in_array($reason, [
           'ollama_timeout','ollama_http_error','ollama_transport_error',
           'model_queue_timeout'], true)) break;
+        // A full window without any source cannot improve with a longer retry.
+        if ($reason === 'context_window_full' && $sourceChars === 0) break;
       }
       if ($accepted === null) {
         coreui_work_record($pdo, 'artifact', 'error', 'Projektquellen unvollstaendig',
           ['reason'=>'source_files_incomplete','file_name'=>(string)$name]);
+        if ($reason === 'context_window_full') {
+          return 'Fuer ' . $name . ' war das Kontextfenster des lokalen Modells voll ('
+            . (int)($lastMeta['context_tokens'] ?? 0) . ' Tokens). Auftrag und Denkphase haben '
+            . 'den Platz belegt, bevor genug Quelltext entstand. Es wurde keine ZIP-Datei '
+            . 'vorgetaeuscht. Abhilfe: ein groesseres Ollama-Kontextfenster '
+            . '(OLLAMA_CONTEXT_LENGTH) oder ein Cloud-Modell aus der Ollama-Liste.';
+        }
         return 'Die lokale Modellausgabe fuer ' . $name
           . ' ist fehlgeschlagen. Im Arbeitsverlauf stehen jetzt der '
           . 'konkrete Ollama-Fehlergrund, HTTP-Status und die Aufrufdauer. '
@@ -5011,10 +5244,15 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   coreui_work_record($pdo, 'model', 'running', 'Modellaufruf gestartet', ['model'=>$primaryModel]);
   $out = ember_call_ollama($primaryModel, $sys, $u, ember_timeout_for_model($primaryModel),
     [], $imageUrl, $fileToolThink);
-  $fileModelTruncated = $fileTask && ember_last_call_was_truncated();
+  // Remember whether THIS reply was cut off; later calls overwrite the meta.
+  $outTruncated = ember_last_call_was_truncated();
+  $outMeta = ember_last_call_meta();
+  $fileModelTruncated = $fileTask && $outTruncated;
   $fileModelStatus = $fileTask
-    ? ember_console_file_model_status($out, ember_last_call_meta(), $fileModelTruncated) : [];
-  coreui_work_record($pdo, 'model', is_string($out) && trim($out) !== '' ? 'success' : 'error',
+    ? ember_console_file_model_status($out, $outMeta, $fileModelTruncated)
+    : ($outTruncated ? ember_truncation_meta($outMeta) : []);
+  coreui_work_record($pdo, 'model', is_string($out) && trim($out) !== ''
+      ? ($outTruncated ? 'info' : 'success') : 'error',
     is_string($out) && trim($out) !== '' ? 'Modellantwort empfangen' : 'Modellaufruf ohne Antwort',
     ['model'=>$primaryModel] + $fileModelStatus);
   $finalPrompt = $u;
@@ -5101,6 +5339,8 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
             . 'Es wurde kein Python-Job gestartet und keine Downloaddatei gespeichert.';
       }
       $out = $retry;
+      $outTruncated = $retryTruncated;
+      $outMeta = ember_last_call_meta();
       $finalPrompt = $compactPrompt;
     }
   }
@@ -5181,6 +5421,25 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         ['file_name'=>(string)$inlineFile['name'],
           'file_count'=>(int)($inlineFile['file_count'] ?? 1)]);
     }
+    // Model-written code from a reply that hit the token or context limit is
+    // incomplete by definition: an unclosed [PY] block then runs as
+    // "unterminated triple-quoted string" SyntaxError. Server-built project
+    // and inline writers are exempt; model code is never executed in that case.
+    $modelPython = $pyCode !== null && !is_array($inlineFile) && !$nativeSourceProject;
+    if ($modelPython && $outTruncated) {
+      $contextFull = (int)($outMeta['context_tokens'] ?? 0);
+      coreui_work_record($pdo, 'tool', 'error', 'Unvollstaendiger Python-Code nicht ausgefuehrt',
+        ember_truncation_meta($outMeta) + ['source_chars'=>strlen((string)$pyCode)]);
+      $handoff = $projectHandoff($pyCode);
+      if (is_string($handoff)) return $handoff;
+      return 'Mein Python-Skript wurde beim Schreiben abgeschnitten, weil die Modellantwort '
+        . ($contextFull > 0
+          ? 'das Kontextfenster (' . $contextFull . ' Tokens) gefuellt hat'
+          : 'am Ausgabelimit endete')
+        . '. Ich habe es deshalb nicht ausgefuehrt und keine Datei vorgetaeuscht. '
+        . 'Ein mehrseitiges Projekt baue ich ueber den geprueften Projekt-Writer Datei fuer Datei, '
+        . 'sobald du die Umsetzung des gespeicherten Plans freigibst.';
+    }
     if ($pyCode !== null) {
       ember_debug_log('ember_py_trigger', [
         'channel'      => $channel,
@@ -5252,6 +5511,19 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       // This is serial through the existing Ollama lock and the existing
       // per-turn, account-bound worker queue, never an untracked download.
       $needsFileRepair = $requestedFile && $confirmedFile === null && is_array($pyRes);
+      // Mara herself chose to write files (e.g. after "setz den Plan um",
+      // without the words Download/erstellen). A failed run gets the same
+      // single bounded self-correction and a factual result, never a free
+      // follow-up that promises unverified background work.
+      $selfFileJob = !$requestedFile && $channel === 'console' && $modelPython
+        && is_array($pyRes) && ember_py_code_writes_output($pyCode)
+        && coreui_console_artifact_pending($consoleUid, (string)$consoleSessionId,
+          $triggerMessageId) === null;
+      if ($selfFileJob) {
+        $handoff = $projectHandoff($pyCode);
+        if (is_string($handoff)) return $handoff;
+        $needsFileRepair = true;
+      }
       // The safe project wrapper was generated by CoreUI, not the model.
       // Re-generating that Python code cannot fix a failed worker, broken
       // volume or artifact registration and wastes another large CPU call.
@@ -5262,9 +5534,9 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
           . 'vollstaendiges Downloadpaket bestaetigen. Es wurde keine ZIP-Datei '
           . 'bereitgestellt. Bitte pruefe die technischen Details des Python-Jobs.';
       }
-      $repairReason = is_array($pyRes)
-        && str_contains((string)($pyRes['stderr'] ?? ''), 'FileNotFoundError')
-          ? 'FileNotFoundError' : 'output_missing';
+      $pyStderr = is_array($pyRes) ? (string)($pyRes['stderr'] ?? '') : '';
+      $repairReason = str_contains($pyStderr, 'FileNotFoundError') ? 'FileNotFoundError'
+        : (str_contains($pyStderr, 'SyntaxError') ? 'SyntaxError' : 'output_missing');
       if ($needsFileRepair) {
         coreui_work_record($pdo, 'artifact', 'error', 'Python hat keine Datei bereitgestellt',
           ['job_id'=>(int)$pyRes['id'], 'reason'=>$repairReason]);
@@ -5279,11 +5551,23 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       if (isset($browseHint) && $browseHint !== '') $uBase = str_replace($browseHint . "\n\n", '', $uBase);
       if (isset($pyHint)     && $pyHint     !== '') $uBase = str_replace($pyHint . "\n\n", '', $uBase);
 
-      $u2 = $uBase
+      // A repair on a small local window must not resend the whole chat
+      // prompt plus 20k characters of failed code: it would not fit either.
+      $repairContext = $needsFileRepair ? ember_ollama_context_window($primaryModel) : null;
+      $compactRepair = $repairContext !== null && $repairContext <= 8192;
+      $u2 = ($compactRepair
+          ? "AUFTRAG DES NUTZERS:\n" . mb_substr($userMsg, 0, 3000, 'UTF-8')
+          : $uBase)
         . "\n\n" . ember_py_result_block($pyCode, $pyRes) . $artifactNotice . "\n";
       if ($needsFileRepair) {
-        $previousCode = strlen($pyCode) <= 20000 ? $pyCode
-          : substr($pyCode, 0, 20000) . "\n[Vorheriger Code war laenger; bitte komplett neu erzeugen]";
+        $previousCode = $compactRepair
+          ? "[Vorheriger Code nicht wiederholt: kleines Kontextfenster. Schreibe ihn kompakt neu.]"
+          : (strlen($pyCode) <= 20000 ? $pyCode
+            : substr($pyCode, 0, 20000) . "\n[Vorheriger Code war laenger; bitte komplett neu erzeugen]");
+        if ($repairReason === 'SyntaxError') {
+          $u2 .= "\nDer vorige Code war syntaktisch ungueltig, meist durch einen nicht geschlossenen "
+            . "String. Schliesse jeden String und vermeide dreifache Anfuehrungszeichen in HTML-Inhalten.";
+        }
         $u2 .= "\nDie angefragte Datei wurde NICHT im Ausgabespeicher gefunden (Grund: "
           . $repairReason . "). Auch Exitcode 0 bedeutet ohne gespeicherte Datei KEINEN Erfolg. "
           . "Antworte ausschliesslich mit einem VOLLSTAENDIGEN, korrigierten [PY]-Block. "
@@ -5312,8 +5596,11 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       $out2 = ember_call_ollama($primaryModel, $sys, $u2,
         ember_timeout_for_model($primaryModel), [], null, $fileToolThink);
       $followTruncated = $fileTask && ember_last_call_was_truncated();
+      // Same rule as the first run: corrected code from a cut-off reply never runs.
+      $followCut = ember_last_call_was_truncated();
       $followStatus = $fileTask
-        ? ember_console_file_model_status($out2, ember_last_call_meta(), $followTruncated) : [];
+        ? ember_console_file_model_status($out2, ember_last_call_meta(), $followTruncated)
+        : ($followCut ? ember_truncation_meta(ember_last_call_meta()) : []);
       $out  = (is_string($out2) && trim($out2) !== '') ? $out2 : null;
       coreui_work_record($pdo, 'model', $out !== null ? 'success' : 'error',
         $out !== null ? 'Folgeantwort empfangen' : 'Folgeaufruf ohne Antwort',
@@ -5324,9 +5611,9 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       // first sandbox failure. Recover a complete document as inert bytes;
       // otherwise execute ONE corrected tool block for FileNotFoundError.
       // Neither case lets model-supplied URLs become a download.
-      if ($requestedFile) {
-        $followIncomplete = $fileTask
-          && ember_console_local_gemma_file_incomplete($primaryModel, $out, $followTruncated);
+      if ($requestedFile || $needsFileRepair) {
+        $followIncomplete = $followCut || ($fileTask
+          && ember_console_local_gemma_file_incomplete($primaryModel, $out, $followTruncated));
         $recoveryCandidate = is_string($out) && !$followIncomplete
           ? ember_console_file_tool_candidate($out, $userMsg) : null;
         $recoveryCode = $needsFileRepair && is_array($recoveryCandidate)
@@ -5373,7 +5660,10 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         coreui_work_record($pdo, 'artifact', 'error', 'Keine Downloaddatei bestaetigt',
           ['reason'=>'output_missing']);
         return 'Die Datei konnte nicht als Download gespeichert werden. '
-          . 'Die Python-Ausgabe ist fehlgeschlagen oder unvollstaendig; es wurde keine Datei bereitgestellt.';
+          . 'Die Python-Ausgabe ist fehlgeschlagen oder unvollstaendig'
+          . ($repairReason !== 'output_missing' ? ' (' . $repairReason . ')' : '')
+          . ($recoveryCode !== null ? ', auch nach einem Korrekturversuch' : '')
+          . '; es wurde keine Datei bereitgestellt. Die Details stehen im Arbeitsweg.';
       }
       $pyHandled = true;
     }
@@ -5456,6 +5746,16 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
     );
     if (is_string($nativeResult)) return $nativeResult;
   }
+  // A public progress line followed by ordinary prose is a normal answer.
+  $progressOnly = is_string($out) && $channel === 'console'
+    ? coreui_native_public_progress_only($out) : null;
+  if ($progressOnly !== null) {
+    if ($progressOnly['note'] !== null) {
+      coreui_work_record($pdo,'commentary','info','Mara meldet ihren naechsten Schritt',
+        ['public_note'=>$progressOnly['note'],'source'=>'model_public_text']);
+    }
+    $out = $progressOnly['reply'];
+  }
   if (is_string($out)
       && (preg_match('~^\s*\[COREUI_[A-Z_]+\]~u', $out)
         || coreui_native_plan_marker_attempt($out)
@@ -5518,7 +5818,9 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   $out = preg_replace('~^["\'„""«]+~u', '', $out);
   $out = trim($out);
   $out = preg_replace("~\b(das tut ja super|upgrade gegeben hast)\b~i", "", $out);
-  $out = trim(preg_replace("~\s{2,}~", " ", $out));
+  // The one-line global chat collapses whitespace. The private console keeps
+  // paragraphs, lists and indented code blocks of its Markdown answer.
+  $out = $channel === 'console' ? trim($out) : trim(preg_replace("~\s{2,}~", " ", $out));
 
   try {
     $st = $pdo->prepare("SELECT message FROM stu_chat_messages WHERE channel='global' AND alliance_id IS NULL AND user_id=? ORDER BY id DESC LIMIT 1");

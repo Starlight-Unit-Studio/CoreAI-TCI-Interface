@@ -45,10 +45,13 @@ intent_assert(strlen($prompt)<3500 && str_contains($prompt,'START_BUILD')
   'Small model decision lacks expected format/message');
 $stream=(string)file_get_contents(dirname(__DIR__).'/api/console_stream.php');
 $chat=(string)file_get_contents(dirname(__DIR__).'/api/chat.php');
+// 0.5.66: think=false and no SKILL documents for the short decision call;
+// "Neu generieren" and edited turns get the same decision as a first send.
 intent_assert(str_contains($stream,'coreui_build_intent_select(')
   && str_contains($chat,'coreui_build_intent_select(')
-  && str_contains($stream,'false, 90, false)')
-  && str_contains($chat,'[],null,false,false)')
+  && str_contains($stream,'false, 90, false, false)')
+  && str_contains($chat,"['__skills'=>'none'],null,false,false)")
+  && str_contains($stream,"in_array(\$generationMode, ['regenerate','edit'], true)")
   && str_contains($stream,'$nativeToolHandled = $preselectedBuildHandled;')
   && str_contains($stream,'if (!$fileTaskHandled && !$nativeToolHandled'),
   'Sync/SSE no-thinking selection and single-tool dispatch not wired');

@@ -106,6 +106,7 @@ UI_FILES=(
   scripts/work-events-selftest.php
   scripts/work-events-persistence-selftest.php
   scripts/local-file-tool-selftest.php
+  scripts/context-budget-selftest.php
   scripts/contextual-project-selftest.php
   scripts/model-project-intent-selftest.php
   scripts/native-tools-selftest.php
@@ -355,6 +356,13 @@ if command -v php >/dev/null 2>&1; then
     ok 'Lokale Dateiauftraege: Python-Fences, mehrteilige Projekte, ZIP und Vollstaendigkeit geprueft.'
   else
     fail "Lokaler Dateiwerkzeug-Selbsttest: ${file_test:-Unbekannter Fehler}"
+  fi
+
+  context_test=''
+  if context_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/context-budget-selftest.php" 2>&1)"; then
+    ok 'Kontextfenster: erkannte Fenstergroesse, Datei-Prompt-Budget und Planauszug geprueft.'
+  else
+    fail "Kontextfenster-Selbsttest: ${context_test:-Unbekannter Fehler}"
   fi
 
   if runuser -u www-data -- php "$PROJECT_ROOT/scripts/model-live-audit.php" --selftest >/dev/null 2>&1; then
