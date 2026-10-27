@@ -49,6 +49,11 @@
       case 'Kontextfenster ermittelt':
         return 'Der lokale Core arbeitet mit einem Kontextfenster' + windowSize + '. Ich teile Auftrag '
           + 'und Plan pro Datei so zu, dass Platz für den eigentlichen Quelltext bleibt.';
+      case 'Projektdateien geplant':
+        return Array.isArray(event.meta.file_list) && event.meta.file_list.length
+          ? 'Ich erstelle ' + event.meta.file_list.length + ' Dateien und prüfe jede einzeln: '
+            + event.meta.file_list.join(', ') + '.'
+          : 'Ich erstelle die Projektdateien einzeln und prüfe jede, bevor daraus ein ZIP entsteht.';
       case 'Werkzeugantwort nicht lesbar':
         return 'Meine Werkzeugantwort hatte eine Form, die ich nicht sicher auswerten kann'
           + (TOOL_SHAPES[event.meta.reason] ? ' (' + TOOL_SHAPES[event.meta.reason] + ')' : '')
@@ -199,6 +204,13 @@
         }
       });
     }
+    // Planned project files for the task card: basenames only, never paths.
+    if (raw.meta && Array.isArray(raw.meta.file_list)) {
+      var planned = raw.meta.file_list.filter(function (name) {
+        return typeof name === 'string' && /^[A-Za-z0-9][A-Za-z0-9._-]{0,90}$/.test(name);
+      }).slice(0, 30);
+      if (planned.length) meta.file_list = planned;
+    }
     if (raw.kind === 'commentary' && raw.meta
         && typeof raw.meta.public_note === 'string') {
       var note = raw.meta.public_note.trim();
@@ -259,6 +271,101 @@
     }
   }
 
+  // Claude-Code-like flow: Mara's meaningful progress reads as normal text,
+  // routine operations fold into ONE muted, expandable line per sequence.
+  var NARRATED = {
+    'Kontextfenster ermittelt':1,'Projektdateien geplant':1,
+    'Mara hat die Umsetzung des gespeicherten Plans gewaehlt':1,
+    'Mara hat ein natives Werkzeug angefordert':1,
+    'Mara hat selbst den Projekt-Writer aufgerufen':1,
+    'Freigegebenes Webprojekt im Quelltextmodus gestartet':1,
+    'Homepage-Projektdateien erkannt':1,'Projektquellen vollstaendig':1,
+    'Downloaddateien gesichert':1,'Reparierte Dateien gesichert':1,
+    'Markdown-Projektplan gespeichert':1,'Markdown-Projektplan abgeschlossen':1,
+    'Werkzeugantwort wird einmal korrigiert':1,'Werkzeugantwort korrigiert':1,
+    'Korrekturversuch vorbereitet':1,'Unvollstaendiger Python-Code nicht ausgefuehrt':1,
+    'Antwort blieb nach Fortsetzung unvollstaendig':1,'Auftrag auf Wunsch abgebrochen':1
+  };
+  function isNarration(event) {
+    return !!event && (event.kind === 'commentary' || event.state === 'error'
+      || NARRATED[event.title] === 1);
+  }
+  function stepLabel(event) {
+    return event.title + (event.meta.file_name ? ' · ' + event.meta.file_name : '');
+  }
+  function updateRun(run) {
+    var count = run._runCount;
+    run._runToggle.textContent = '';
+    run._runToggle.appendChild(el('span','work-run-text',
+      (count === 1 ? '1 Schritt' : count + ' Schritte') + ' · ' + run._runLatest));
+    run._runToggle.appendChild(el('span','work-run-chevron','▸'));
+    run._runToggle.setAttribute('aria-expanded', run._runOpen ? 'true' : 'false');
+  }
+  function setRunOpen(run, open) {
+    run._runOpen = open;
+    run._runRow.hidden = !open;
+    run._runMembers.forEach(function (member) { member.hidden = !open; });
+    updateRun(run);
+  }
+
+  // Project file checklist, derived only from confirmed public events.
+  var FILE_DONE = {'Quelldatei erkannt':1,'Quelldatei empfangen':1};
+  function taskList(events) {
+    var order = [];
+    var states = {};
+    function ensure(name) {
+      if (Object.prototype.hasOwnProperty.call(states, name)) return;
+      order.push(name);
+      states[name] = 'pending';
+    }
+    events.forEach(function (event) {
+      if (Array.isArray(event.meta.file_list)) event.meta.file_list.forEach(ensure);
+      var name = event.meta.file_name;
+      if (typeof name !== 'string' || !/\.(?:html?|css|js|json|svg)$/i.test(name)) return;
+      ensure(name);
+      if (FILE_DONE[event.title] === 1 && event.state !== 'error') states[name] = 'done';
+      else if (states[name] !== 'done') states[name] = event.state === 'error' ? 'error' : 'running';
+    });
+    if (events.some(function (event) { return event.title === 'Projektquellen vollstaendig'; })) {
+      order.forEach(function (name) { states[name] = 'done'; });
+    }
+    return order.map(function (name) { return {name:name,state:states[name]}; });
+  }
+
+  var ACTIVITY = {
+    'Auftrag gestartet':'Ich starte den Auftrag','Kontext vorbereitet':'Kontext vorbereitet',
+    'Modellstream vorbereitet':'Core wird vorbereitet','Modellstream gestartet':'Core denkt nach',
+    'Modellaufruf gestartet':'Core denkt nach','Modellstream empfangen':'Ich prüfe die Antwort',
+    'Einzeldatei angefordert':'Fordere {f} an','Fehlende Quelldatei angefordert':'Fordere {f} an',
+    'Quelldatei wird erzeugt':'Schreibe {f}','Quelldatei empfangen':'Prüfe {f}',
+    'Fehlender Quelltext-Teil wird erzeugt':'Setze {f} fort',
+    'Fehlender JavaScript-Teil wird erzeugt':'Setze {f} fort',
+    'Python-Job eingereiht':'Python läuft','Werkzeugantwort wird einmal korrigiert':'Korrigiere die Werkzeugantwort',
+    'Mara hat selbst den Projekt-Writer aufgerufen':'Starte den Projekt-Writer',
+    'Projektdateien geplant':'Plane die Projektdateien','Kontextfenster ermittelt':'Plane den Kontext'
+  };
+  function activity(event) {
+    if (!event) return 'Warte auf den ersten Schritt';
+    var text = ACTIVITY[event.title];
+    if (!text) return event.state === 'running' ? event.title : 'Arbeite weiter';
+    return text.replace('{f}', event.meta.file_name || 'die Datei');
+  }
+  function formatDuration(ms) {
+    var seconds = Math.max(0, Math.round(ms / 1000));
+    var minutes = Math.floor(seconds / 60);
+    seconds = seconds % 60;
+    return minutes > 0 ? minutes + ' Min. ' + seconds + ' Sek.' : seconds + ' Sek.';
+  }
+  function formatTokens(count) {
+    return count >= 1000
+      ? String(Math.round(count / 100) / 10).replace('.', ',') + 'k Tokens'
+      : count + ' Tokens';
+  }
+  function eventMs(event) {
+    var when = event && event.time ? Date.parse(event.time) : NaN;
+    return Number.isNaN(when) ? 0 : when;
+  }
+
   function appendNow(body, event, animate, finished) {
     var entries = body.querySelector('.work-entries');
     if (!entries) {
@@ -268,22 +375,26 @@
     }
     if (event.id && entries.querySelector('[data-work-id="' + event.id + '"]')) return false;
 
-    var entry = el('div', 'work-entry work-' + event.state);
+    var narration = isNarration(event);
+    // Only narration is typed; a folded routine step appears at once.
+    animate = animate && narration;
+    var entry = el('div', 'work-entry work-' + event.state
+      + (narration ? ' work-narration' : ' work-step'));
     if (event.id) entry.setAttribute('data-work-id', String(event.id));
-    entry.appendChild(el('span', 'work-state',
+    var icon = el('span', 'work-state',
       event.kind === 'commentary' ? '✎' : event.state === 'success' ? '\u2713' :
-      event.state === 'error' ? '!' : event.state === 'running' ? '\u2022' : 'i'));
+      event.state === 'error' ? '!' : event.state === 'running' ? '\u2022' : 'i');
     var info = el('div', 'work-info');
     var note = workNote(event);
-    var title = el('div','work-title',event.title);
+    var title = el('div','work-title',narration ? event.title : stepLabel(event));
     // Keep the operational event title available to assistive technology,
     // but avoid repeating it above the public chat-style note.
-    if (note) title.className += ' work-title-with-note';
+    if (note && narration) title.className += ' work-title-with-note';
     info.appendChild(title);
     var noteText = null;
     var detailTarget = info;
     if (note) {
-      var annotation = el('div','work-note');
+      var annotation = el('div',narration ? 'work-note' : 'work-note work-step-note');
       // Public progress is a normal chat paragraph; no provenance badges
       // or repetitive technical labels between paragraphs.
       noteText = el('p','work-note-text',animate ? '' : note);
@@ -291,7 +402,9 @@
       info.appendChild(annotation);
       detailTarget = annotation;
     }
-    var keys = Object.keys(event.meta).filter(function (key) { return key !== 'public_note'; });
+    var keys = Object.keys(event.meta).filter(function (key) {
+      return Object.prototype.hasOwnProperty.call(DETAIL_LABELS, key);
+    });
     if (keys.length || event.time) {
       var details = el('details','work-detail');
       var summary = el('summary','work-detail-toggle','ⓘ');
@@ -310,7 +423,40 @@
       details.appendChild(definition);
       detailTarget.appendChild(details);
     }
-    entry.appendChild(info);
+    if (narration) {
+      entries._openRun = null;
+      entry.appendChild(icon);
+      entry.appendChild(info);
+    } else {
+      var row = el('div','work-step-row');
+      row.appendChild(icon);
+      row.appendChild(info);
+      var run = entries._openRun;
+      if (run) {
+        entry.appendChild(row);
+        entry.hidden = !run._runOpen;
+        run._runMembers.push(entry);
+        run._runCount++;
+        run._runLatest = stepLabel(event);
+        updateRun(run);
+      } else {
+        var runToggle = el('button','work-run-toggle');
+        runToggle.type = 'button';
+        entry.className += ' work-run-head';
+        entry._runToggle = runToggle;
+        entry._runRow = row;
+        entry._runMembers = [];
+        entry._runCount = 1;
+        entry._runLatest = stepLabel(event);
+        entry._runOpen = false;
+        runToggle.addEventListener('click', function () { setRunOpen(entry, !entry._runOpen); });
+        row.hidden = true;
+        entry.appendChild(runToggle);
+        entry.appendChild(row);
+        updateRun(entry);
+        entries._openRun = entry;
+      }
+    }
     entries.appendChild(entry);
     while (entries.children.length > 150) entries.removeChild(entries.firstChild);
     followWork(body);
@@ -469,7 +615,7 @@
     var live = !!options.live;
     var events = live ? [] : initialEvents;
     if (!live && events.length === 0) return null;
-    var timeline = el('section','work-panel');
+    var timeline = el('section','work-panel work-flow');
     timeline.setAttribute('aria-label','E.M.B.E.R. CoreAI Arbeitsweg und öffentliche Arbeitsnotizen');
     var toggle = el('button','work-toggle');
     toggle.type = 'button';
@@ -490,6 +636,47 @@
     }, {passive:true});
     body.hidden = !expanded;
     if (live) body.appendChild(el('p','work-empty','Warte auf den ersten Arbeitsschritt ...'));
+    var tasks = el('div','work-tasks');
+    tasks.hidden = true;
+    var status = live ? el('div','work-status') : null;
+    var startedAt = Number(options.startedAt) || 0;
+
+    function renderTasks() {
+      var list = taskList(events);
+      tasks.textContent = '';
+      tasks.hidden = list.length < 2 || body.hidden;
+      if (tasks.hidden) return;
+      var done = list.filter(function (task) { return task.state === 'done'; }).length;
+      tasks.appendChild(el('div','work-tasks-head','Projektdateien · ' + done + ' von ' + list.length + ' fertig'));
+      var listEl = el('ul','work-task-list');
+      list.forEach(function (task) {
+        var item = el('li','work-task work-task-' + task.state);
+        item.appendChild(el('span','work-task-mark',
+          task.state === 'done' ? '\u2713' : task.state === 'error' ? '!' : ''));
+        item.appendChild(el('span','work-task-name',task.name));
+        listEl.appendChild(item);
+      });
+      tasks.appendChild(listEl);
+    }
+
+    // One live line like a terminal agent: what happens now, for how long,
+    // and how many tokens Core has written in this run.
+    function renderStatus() {
+      if (!status) return;
+      var tokens = events.reduce(function (sum, event) {
+        return sum + (Number(event.meta.eval_count) || 0);
+      }, 0);
+      var start = startedAt || eventMs(events[0]) || Date.now();
+      status.textContent = '';
+      var dots = el('span','work-status-dots');
+      dots.appendChild(el('i',''));
+      dots.appendChild(el('i',''));
+      dots.appendChild(el('i',''));
+      status.appendChild(dots);
+      status.appendChild(el('span','work-status-text',
+        activity(events[events.length - 1]) + ' · ' + formatDuration(Date.now() - start)
+        + (tokens > 0 ? ' · ' + formatTokens(tokens) : '')));
+    }
 
     function updateSummary() {
       var countLabel = events.length + (events.length === 1 ? ' Schritt' : ' Schritte');
@@ -498,8 +685,11 @@
       toggle.setAttribute('aria-label', heading.textContent);
       var errors = events.filter(function (e) { return e.state === 'error'; }).length;
       var tools = events.filter(function (e) { return e.kind === 'tool'; }).length;
+      var span = !live && events.length > 1
+        ? eventMs(events[events.length - 1]) - eventMs(events[0]) : 0;
       counters.textContent = countLabel + (tools ? ' · ' + tools + (tools === 1 ? ' Werkzeug' : ' Werkzeuge') : '')
-        + (errors ? ' · ' + errors + ' Fehler' : '');
+        + (errors ? ' · ' + errors + ' Fehler' : '')
+        + (span >= 1000 && eventMs(events[0]) > 0 ? ' · ' + formatDuration(span) : '');
       var last = events.length ? events[events.length - 1] : null;
       // The final DB-save event must not conceal an unresolved file error.
       // Show the last substantive confirmed step in the collapsed preview.
@@ -512,6 +702,8 @@
       var note = workNote(last);
       digest.textContent = note;
       digest.hidden = !note || expanded;
+      renderTasks();
+      renderStatus();
     }
 
     body._onWorkEvent = function (event) {
@@ -531,6 +723,21 @@
     timeline.appendChild(toggle);
     timeline.appendChild(digest);
     timeline.appendChild(body);
+    timeline.appendChild(tasks);
+    if (status) {
+      timeline.appendChild(status);
+      if (typeof window.setInterval === 'function') {
+        var ticker = window.setInterval(function () {
+          // The finished reply replaces the live row; stop with it.
+          if (timeline.isConnected === false && timeline._wasConnected) {
+            window.clearInterval(ticker);
+            return;
+          }
+          if (timeline.isConnected) timeline._wasConnected = true;
+          renderStatus();
+        }, 1000);
+      }
+    }
     return timeline;
   }
 

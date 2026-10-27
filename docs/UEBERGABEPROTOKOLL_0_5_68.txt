@@ -1,0 +1,62 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.5.68
+Stand: 27.10.2026
+Branch: claude/bold-galileo-myoyi0 (neu von main 0.5.67 nach Merge von PR #111)
+Basis: 0.5.67 live abgenommen vom Betreiber: lokale und Cloud-Modelle laufen schnell.
+
+BEFUND DES BETREIBERS:
+- Wenn der Arbeitsweg zu schreiben beginnt, folgt die Ansicht nicht. Sie rutscht nach der
+  eigenen Nachricht ein Stueck nach unten, man sieht nur den halben Text, danach nichts mehr.
+- Erwartung: Autoscroll stoppt nur, wenn der Nutzer selbst scrollt.
+
+NACHGESTELLT (Playwright, gestubbte API, 600x590 CSS-Pixel, Touch):
+- Vorher blieb scrollTop bei 657, waehrend das Maximum auf 934 wuchs; der neueste Schritt lag
+  rund 220 Pixel unterhalb des sichtbaren Bereichs.
+
+URSACHE (js/coreui-chat-follow.js):
+- activeTarget() hielt einen laufenden Block mit mehr als 78 Prozent der Sichthoehe an seinem
+  ANFANG fest. Das war ein Notbehelf gegen den Leerraum, dessen echte Ursache (versteckte
+  Schritt-Titel) 0.5.67 behoben hat.
+- Gefolgt wurde nur bei SSE-Ereignissen, nicht beim buchstabenweisen Tippen dazwischen.
+- onScroll() wertete jedes Hochrutschen (top < lastTop) als Nutzer-Scrollen, auch Layout-
+  Verschiebungen, Scroll-Anchoring und Neuaufbau. Ein Mausrad-/Wischsignal, das nur den inneren
+  Arbeitsweg bewegte, blieb haengen und stoppte spaeter faelschlich.
+
+KORREKTUR:
+- Ziel ist immer das Ende des neuesten Beitrags (auf das tatsaechliche Maximum begrenzt).
+- create(area, button, isWorking, activeRow, content): ResizeObserver auf #messagesInner folgt
+  jedem Wachstum, solange der Nutzer folgt.
+- Stopp nur bei Nutzeraktion: Mausrad hoch, Wischen nach unten, Pfeil hoch/Bild hoch/Pos1/
+  Shift+Leertaste, Ziehen der Scrollleiste (pointerdown auf dem Scrollbereich selbst).
+  Gesten erklaeren Scroll-Ereignisse nur 700 ms lang.
+- Scrollt der Nutzer im Arbeitsweg selbst nach oben, bleibt auch dessen innere Ansicht stehen
+  (bestehendes Verhalten).
+- Rueckkehr ans Ende oder der Sprung-Button aktivieren das Folgen wieder (unveraendert).
+
+GEPRUEFT:
+- chat-follow-selftest (neu: Blockende, Wachstum ohne Ereignis, programmatische Verschiebung,
+  veraltete Geste, Scrollleiste, kein Herunterziehen nach Hochscrollen), alle Offline-Tests.
+- Browser-Nachbau: neuester Schritt bei 412, 600 und 1010 Pixel Breite durchgehend sichtbar;
+  Mausrad hoch ueber dem Chat haelt die Position (scrollTop 634 statt 934).
+
+NACHTRAG (Wunsch des Betreibers, Claude-Code-Ansicht als Vorbild):
+- Arbeitsweg wirkte getrennt von Maras Nachricht. Jetzt (js/coreui-work-events.js):
+  Erzaehl-Ereignisse (Kommentar, Planwahl, Kontextfenster, Dateiliste, Fehler, Ergebnis) als
+  normaler Antworttext; alle anderen Ereignisse falten sich pro Abschnitt zu einer grauen,
+  aufklappbaren Zeile ("n Schritte · letzter Schritt"). Jedes Ereignis bleibt genau ein Eintrag.
+  Aufgabenkarte (Projektdateien x von y fertig) im CoreAI-Rahmen; Live-Statuszeile mit
+  Taetigkeit, Laufzeit seit dem Senden und Ausgabe-Tokens. Kein inneres Scrollfeld mehr.
+- chat.php schreibt "Projektdateien geplant" mit file_list (console_work_store filtert auf
+  flache Dateinamen, maximal 30).
+- Infokaesten: api/console_insights.php + api/console_insights_store.php (Core, Kontext,
+  Werkzeuge, Projekt; Eigentuemer/Sitzung geprueft, Session-Lock freigegeben, no-store),
+  js/coreui-insights.js (nur textContent, sichere Download-Links), app.html Container
+  #coreInsights und #insightChips. Ab 1400 px rechte Spalte, darunter Buttons mit Ausklappblatt.
+  Kontext-Kasten aktualisiert sich live aus Arbeitsereignissen (prompt_eval_count/eval_count).
+- ember_ollama_context_window() merkt sich die Quelle (geladen, Modelfile, gemessen, Standard).
+
+UNVERAENDERT:
+- Modelfile, Ollama-Parameter, Modell-Queue, Werkzeugausfuehrung und Berechtigungen.
+
+WEITERHIN OFFEN:
+- Live-Abnahme auf Android/Netcup.
+- Issue #102 (persistente Checkpoints, mehr als 9 Dateien, 12k-Planlimit).

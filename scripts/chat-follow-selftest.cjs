@@ -21,12 +21,19 @@ const button = {
 };
 let working=false;
 let active=null;
-const sandbox={window:{
+const resizeCallbacks=[];
+const windowListeners={};
+let clock=1000;
+const sandbox={Date:{now(){return clock;}},window:{
   requestAnimationFrame(fn){frames.push(fn);},
-  matchMedia(){return {matches:false};}
+  matchMedia(){return {matches:false};},
+  addEventListener(type,fn){windowListeners[type]=fn;},
+  ResizeObserver:function(fn){resizeCallbacks.push(fn);this.observe=function(){};}
 }};
 vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../js/coreui-chat-follow.js'),'utf8'),sandbox);
-const follow = sandbox.window.CoreUIChatFollow.create(area,button,()=>working,()=>active);
+const content={};
+const follow = sandbox.window.CoreUIChatFollow.create(area,button,()=>working,()=>active,content);
+assert.equal(resizeCallbacks.length,1,'the conversation content must be observed for growth');
 const flush=()=>{while(frames.length)frames.shift()();};
 
 assert.equal(follow.atBottom(),true);
@@ -93,5 +100,43 @@ follow.follow(true);flush();
 assert.equal(area.scrollTop,1248,
   'follow must align last message, not 4500px feed-shell bottom');
 assert.equal(button.hidden,true);
+
+// 0.5.68: Mara's live work history grows letter by letter between server
+// events. While the reader follows, the camera grows with it and targets the
+// END of a large working block (where the newest step is written).
+clock+=5000; // the earlier swipe is long over
+working=true;
+area.scrollTop=1200; area.scrollHeight=2400; area.clientHeight=400;
+active={getBoundingClientRect(){return {top:700,bottom:1300,height:600};}};
+follow.follow(true);flush();
+assert.equal(area.scrollTop,1918,'a large live block must be followed to its end, not its start');
+area.scrollHeight=2600;
+active={getBoundingClientRect(){return {top:500,bottom:900,height:400};}};
+resizeCallbacks[0]();flush();
+assert.equal(area.scrollTop,2200,'typed growth must move the camera without a server event');
+
+// Layout changes (scroll anchoring, a re-render clamp) are not the reader.
+area.scrollTop-=300;area.listeners.scroll();
+assert.equal(follow.isFollowing(),true,'a programmatic upward shift must not stop following');
+
+// A wheel consumed by the inner work view does not explain a later shift.
+area.listeners.wheel({deltaY:40});
+clock+=2000;
+area.scrollTop-=40;area.listeners.scroll();
+assert.equal(follow.isFollowing(),true,'a stale gesture must not stop following later');
+
+// Dragging the scrollbar is a real reader action, other presses are not.
+area.listeners.pointerdown({target:{}});
+area.scrollTop-=50;area.listeners.scroll();
+assert.equal(follow.isFollowing(),true,'a press on a message is not a scroll gesture');
+area.listeners.pointerdown({target:area});
+area.scrollTop-=200;area.listeners.scroll();
+assert.equal(follow.isFollowing(),false,'scrollbar drag must stop following');
+windowListeners.pointerup();
+const kept=area.scrollTop;
+area.scrollHeight+=500;
+resizeCallbacks[0]();flush();
+assert.equal(area.scrollTop,kept,'growth must never pull a reader who scrolled away');
+working=false;
 
 console.log('CoreAI reader-aware follow, working dots and jump button: OK');

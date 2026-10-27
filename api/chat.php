@@ -3700,16 +3700,28 @@ function ember_ollama_context_window(string $model): ?int {
   if ($model === '' || ember_model_is_cloud($model)) return null;
   $memo = $GLOBALS['COREUI_OLLAMA_CONTEXT_MEMO'] ?? [];
   if (is_array($memo) && isset($memo[$model])) return (int)$memo[$model];
-  $ctx = ember_ollama_ps_context($model) ?? ember_ollama_show_context($model);
+  // The source is shown in the Core info box: loaded runner, Modelfile,
+  // a remembered value or Ollama's documented CPU default.
+  $source = 'loaded';
+  $ctx = ember_ollama_ps_context($model);
+  if ($ctx === null) {
+    $ctx = ember_ollama_show_context($model);
+    $source = 'modelfile';
+  }
   if ($ctx !== null) ember_ollama_context_store($model, $ctx);
   else {
     $data = json_decode((string)@file_get_contents(ember_ollama_context_cache_file()), true);
     $learned = is_array($data) ? ($data[$model] ?? null) : null;
     if (is_array($learned) && (int)($learned['at'] ?? 0) >= time() - 43200
         && (int)($learned['tokens'] ?? 0) >= 1024) $ctx = (int)$learned['tokens'];
+    $source = 'remembered';
   }
-  $ctx ??= max(1024, (int)ember_cfg('STU_EMBER_ASSUMED_CONTEXT', 4096));
+  if ($ctx === null) {
+    $ctx = max(1024, (int)ember_cfg('STU_EMBER_ASSUMED_CONTEXT', 4096));
+    $source = 'default';
+  }
   $GLOBALS['COREUI_OLLAMA_CONTEXT_MEMO'][$model] = $ctx;
+  $GLOBALS['COREUI_OLLAMA_CONTEXT_SOURCE'][$model] = $source;
   return $ctx;
 }
 
@@ -5115,6 +5127,10 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       coreui_work_record($pdo, 'tool', 'info', 'Kontextfenster ermittelt',
         ['context_tokens'=>$sourceContext, 'model'=>$primaryModel]);
     }
+    // The visible task card lists every planned file before the first one.
+    coreui_work_record($pdo, 'tool', 'info', 'Projektdateien geplant',
+      ['file_count'=>count($sourceSpec['requested']),
+       'file_list'=>array_values(array_map('strval', $sourceSpec['requested']))]);
     foreach ($sourceSpec['requested'] as $name) {
       $accepted = null;
       $retryWithThink = false;
