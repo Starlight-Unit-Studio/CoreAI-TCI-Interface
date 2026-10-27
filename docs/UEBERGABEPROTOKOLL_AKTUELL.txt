@@ -1,9 +1,10 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
-Stand: 26.10.2026
-Repository-Version: 0.5.65
+Stand: 27.10.2026
+Repository-Version: 0.5.66
 Repository: https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface
 ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_5_66.txt
   docs/UEBERGABEPROTOKOLL_0_5_65.txt
   docs/UEBERGABEPROTOKOLL_0_5_64.txt
   docs/UEBERGABEPROTOKOLL_0_5_63.txt
@@ -16,7 +17,7 @@ NAMENSREGEL: docs/PRODUCT_NAMING.md
 VERSIONIERUNG: docs/VERSIONING_POLICY.md
 SOURCE-STAND: 0.5.60 hat Live-Textanzeige im Arbeitsweg und
 HTML/CSS-Fragmentfortsetzung bereits implementiert.
-ABNAHME: Noch kein gesicherter Netcup-/Android-Livetest der 0.5.60/0.5.61.
+ABNAHME: Netcup-/Android-Screenshots 0.5.65 vom 27.10.2026 zeigen konkrete Fortsetzungsfehler. 0.5.66 ist vor erneuter Live-Abnahme.
 HAUPTPROBLEM: 10-Unterseiten-Projektgenerierung bei lokalen Gemma-
 und Ollama-Cloud-Modellen; >12k-Byte-Plan, >9 Dateien,
 begrenzte Fortsetzungen, keine persistenten File-Checkpoints.
@@ -30,7 +31,11 @@ Skill-Hook. 0.5.64 aktualisiert diese Assertion. 0.5.65 korrigiert den
 Chat-Autoscroll, aktiviert den Floating-Button mit Mara-Punkten,
 zeigt Workevents wie Chattexte und entkoppelt den sicheren
 serverseitigen ZIP-Writer vom kleineren Modellcode-Budget.
-Netcup-Abnahme steht aus. Issue #102 bleibt offen.
+0.5.66 repariert Stop-als-unvollstaendige-Quelle, validiert
+echte Dateineustarts, sichert sichere ungeschlossene Cloud-Plaene
+als Entwurf und verhindert Leerscrollen hinter die letzte Nachricht.
+Die 0.5.65-Livebilder belegen Fehler, keine erfolgreiche
+End-to-End-Abnahme. Issue #102 bleibt offen.
 Mara/Ember, Ollama-Modelfile, serielle Queue und private Projekt-
 plaene NICHT ungefragt veraendern.
 Externe STU-Homepage wird in einem ANDEREN Chat bearbeitet.
