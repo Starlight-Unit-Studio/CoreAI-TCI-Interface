@@ -690,7 +690,7 @@ function coreui_console_local_source_prompt(
       . ": Beginne die SICHTBARE Antwort SOFORT mit " . $start
       . ". Keine Analyse, keine Denknotizen und keine Erklaerung. "
       . "Nur die fertige Datei im Antwortfeld, nicht im Denkstatus. "
-      . "Der nachfolgende Auftrag bleibt verbindlich.\\n\\n" . $prompt;
+      . "Der nachfolgende Auftrag bleibt verbindlich.\n\n" . $prompt;
   }
   $reference = '';
   foreach ($existing as $file) {
