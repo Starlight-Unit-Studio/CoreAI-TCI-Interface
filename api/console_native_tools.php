@@ -200,7 +200,7 @@ function coreui_native_plan_recover_model_reply(string $reply): ?array {
  */
 function coreui_native_plan_and_build_draft_recover(string $reply): ?array {
   if (strlen($reply) > 300000 || preg_match('//u',$reply) !== 1
-      || str_contains($reply,"\\0")) return null;
+      || str_contains($reply,chr(0))) return null;
   $open = '~(?mi)^[ \\t]*\\[COREUI_PLAN_AND_BUILD\\][ \\t]*\\r?\\n~';
   $count = preg_match_all($open,$reply,$matches,PREG_OFFSET_CAPTURE);
   if ($count !== 1) return null;
@@ -227,7 +227,7 @@ function coreui_native_plan_and_build_draft_recover(string $reply): ?array {
  */
 function coreui_native_plan_append_draft_recover(string $reply): ?array {
   if (strlen($reply) > 300000 || preg_match('//u',$reply) !== 1
-      || str_contains($reply,"\\0")) return null;
+      || str_contains($reply,chr(0))) return null;
   $openingPattern = '~(?mi)^[ \\t]*\\[COREUI_PLAN_APPEND\\][ \\t]*\\r?\\n~';
   if (preg_match_all($openingPattern,$reply,$matches,PREG_OFFSET_CAPTURE) !== 1) return null;
   $opening = (string)$matches[0][0][0];
