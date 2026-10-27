@@ -4975,9 +4975,16 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         $reason = $accepted !== null ? 'source_ready'
           : ($resumed ? 'source_continuation_invalid'
             : ember_console_local_source_failure($modelSource,$lastMeta,$truncated));
-        if ($reason === 'ollama_empty_content'
+        // A length stop with zero public content can mean that all generated
+        // tokens went to thinking. Reuse the existing second attempt with
+        // thinking enabled rather than treating it as a source fragment.
+        if (($reason === 'ollama_empty_content'
+              || ($sourceChars === 0 && $truncated && !empty($lastMeta['ok'])))
             && !$retryWithThink && ember_console_file_tool_is_device_local($primaryModel)) {
           $retryWithThink = true;
+          coreui_work_record($pdo,'model','info','Leere Quelltextausgabe erkannt',
+            ['file_name'=>(string)$name,'reason'=>'thinking_only_or_empty',
+             'eval_count'=>(int)($lastMeta['eval_count'] ?? 0)]);
         }
         coreui_work_record($pdo, 'model', $accepted !== null ? 'success' : 'error',
           $accepted !== null ? 'Quelldatei empfangen' : 'Quelldatei nicht lesbar',
