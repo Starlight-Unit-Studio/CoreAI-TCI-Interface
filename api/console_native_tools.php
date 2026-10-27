@@ -94,6 +94,7 @@ function coreui_native_tool_parse(string $reply): ?array {
     return $continue;
   }
   $plan = coreui_native_plan_recover_model_reply($reply);
+  if ($plan === null) $plan = coreui_native_plan_and_build_draft_recover($reply);
   if ($plan !== null) $plan['public_note'] = $publicNote;
   return $plan;
 }
@@ -188,6 +189,34 @@ function coreui_native_plan_recover_model_reply(string $reply): ?array {
   if (preg_match('~(?m)^(?:#{2,4}[ \t]+|[ \t]*[-*][ \t]+\S)~u', $body) !== 1)
     return null;
   return ['type'=>'PLAN_SAVE', 'body'=>$body, 'draft'=>!$closed, 'recovered'=>true];
+}
+
+/**
+ * A cloud/local model can stop mid PLAN_AND_BUILD. This is not an approved
+ * build, but a sufficiently complete Markdown prefix can be saved as an
+ * incomplete plan draft and resumed. Never execute or authorize PROJECT_BUILD
+ * from an unfinished block; reject mixed markers and fenced examples.
+ */
+function coreui_native_plan_and_build_draft_recover(string $reply): ?array {
+  if (strlen($reply) > 300000 || preg_match('//u',$reply) !== 1
+      || str_contains($reply,"\\0")) return null;
+  $open = '~(?mi)^[ \\t]*\\[COREUI_PLAN_AND_BUILD\\][ \\t]*\\r?\\n~';
+  $count = preg_match_all($open,$reply,$matches,PREG_OFFSET_CAPTURE);
+  if ($count !== 1) return null;
+  $opening = $matches[0][0][0];
+  $offset = (int)$matches[0][0][1];
+  $intro = trim(substr($reply,0,$offset));
+  if (strlen($intro) > 640 || str_contains($intro,str_repeat(chr(96),3))
+      || str_contains($intro,'[') || str_contains($intro,']')) return null;
+  $body = trim(substr($reply,$offset+strlen($opening)));
+  // A closed or ambiguous tool belongs to the strict parser, never here.
+  if (preg_match('~\\[/?COREUI[/_][A-Z_]+\\]~i',$body)
+      || strlen($body) < 96 || strlen($body) > 262144) return null;
+  if (!preg_match('~^#{1,3}[ \\t]+\\S[^\\r\\n]*~u',$body)
+      || !preg_match('~(?m)^(?:#{2,4}[ \\t]+|[ \\t]*[-*][ \\t]+\\S)~u',$body))
+    return null;
+  return ['type'=>'PLAN_SAVE','body'=>$body,'draft'=>true,
+          'recovered'=>true,'source_marker'=>'unfinished_plan_and_build'];
 }
 
 function coreui_native_plan_marker_attempt(string $reply): bool {
