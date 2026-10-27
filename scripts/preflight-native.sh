@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.65 reader-owned chat and trusted ZIP writer.
+# CoreAI: TCI Interface 0.5.66 source recovery, cloud plan draft and chat scroll fix.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
