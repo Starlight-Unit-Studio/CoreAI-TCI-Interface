@@ -1273,7 +1273,7 @@
       state.pendingBySession[ses.id] = Number(request.trigger_message_id) || true;
       updateActivePendingUi();
       setStatus('waiting', mode === 'continue' ? 'MARA SETZT FORT\u2026' : 'MARA ERZEUGT ALTERNATIVE\u2026');
-      showTypingIndicator();
+      showTypingIndicator(true);
       openStreamForReply(ses, Number(request.trigger_message_id) || 0, request);
     }).catch(function (error) {
       generationActionError(error && error.message ? error.message : 'console_action_failed');
@@ -1554,7 +1554,7 @@
 
   // A live timeline belongs to the SAME assistant message as the typing state.
   // It is replaced by the persisted response row, never kept as a second row.
-  function showThinkingRunning() {
+  function showThinkingRunning(forceFollow) {
     if (state.typingEl) return;
     var row = document.createElement('div');
     row.className = 'msg-row ember';
@@ -1598,11 +1598,11 @@
     messagesInner.appendChild(row);
     state.typingEl = row;
     if (chatFollow) chatFollow.refresh();
-    scrollToBottom();
+    scrollToBottom(forceFollow === true);
   }
 
-  function showTypingIndicator() {
-    showThinkingRunning();
+  function showTypingIndicator(forceFollow) {
+    showThinkingRunning(forceFollow === true);
   }
 
   function removeTypingIndicator() {
@@ -2088,7 +2088,9 @@
     state.waitingEmber = true;
     state.sendTimestamp = Date.now();
     state.sendTimestampBySession[sessionId] = state.sendTimestamp;
-    showTypingIndicator();
+    // One explicit send owns the viewport; subsequent SSE work updates must
+    // never re-enable following after the reader intentionally scrolls away.
+    showTypingIndicator(true);
 
     var postBody = JSON.stringify({
       action:       'send',
