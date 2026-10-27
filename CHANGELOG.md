@@ -2,6 +2,15 @@
 
 CoreAI: TCI Interface gehoert zur Quantum-Softwarefamilie und wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert. Historische Changelogs dokumentieren die frueheren Produktnamen unveraendert.
 
+## 0.5.66 - 27.10.2026
+
+- **Lokale Quelltext-Fortsetzung:** Die Screenshot-Diagnose HTTP 200, `done_reason=stop`, `source_continuation_invalid` war bisher nicht abgedeckt, weil der Handler nur bei `length` mit dem Fortsetzen begann. Strukturell offene HTML-/CSS-/JS-Quelltexte werden jetzt auch nach einem Stop gezielt geprueft und ohne Modelfile-/Tokenoptionen fortgesetzt.
+- **Sichere Neustartannahme:** Liefert ein Modell statt der angeforderten Fortsetzung eine neue vollstaendige Version derselben Quelle, darf CoreAI sie nur bei erfolgreicher Dateipruefung und uebereinstimmendem bereits erhaltenem Prefix uebernehmen. Fehlerhafte Fragmente erzwingen keinen sofortigen Abbruch aller weiteren Dateiversuche.
+- **Cloud-Werkzeugprotokoll:** Ein einzelner angefangener `PLAN_AND_BUILD`-Marker mit echtem Markdown-Plan kann als *unvollstaendiger PLAN_SAVE-Entwurf* gesichert werden. Mischmarker, Beispiele, Mini-Fragmente und unvollstaendige Build-Ausfuehrungen bleiben blockiert.
+- **Chat-Leerraum:** `js/coreui-chat-follow.js` richtet Rueckspruenge und Auto-Follow an der zuletzt tatsaechlich gerenderten Chatnachricht aus. Die Layout-Mindesthoehe unterhalb des Verlaufs und ueberfluessige untere Auffuellung entfallen. Der bestehende transparente Pfeil und Arbeitspunkte bleiben erhalten.
+- Regressionstests: stop-vs-incomplete CSS/HTML, abgeglichener Source-Neustart, unvollstaendiger Cloud-Plan, Leerraum unter der letzten Chatnachricht und bestehende Sicherheitsfaelle.
+- Versionsstand 0.5.66 mit HTML-Versionen, SHA256-Frontend-Keys, README, TXT-Changelog und Uebergabe. **Nicht geloest:** persistente dateiweise Checkpoints, globale sichere Agentenfortsetzungen, >9-Quelldatei-Manifeste aus Issue #102. Keine weiteren Modelllimits eingefuehrt.
+
 ## 0.5.65 - 26.10.2026
 
 - **Chat-Scroll repariert:** `scrollToBottom()` respektiert jetzt, ob der Nutzer den neuesten Inhalt verfolgt oder bewusst weiter oben liest. Auch bei Live-Workevents, Quellcode-Chunks, SSE und Polling wird eine entfernte Leseposition nicht mehr ueberfahren. Der neue Nutzer-Turn und explizite Ruecksprung koennen die Nachfuehrung wieder aktivieren.
