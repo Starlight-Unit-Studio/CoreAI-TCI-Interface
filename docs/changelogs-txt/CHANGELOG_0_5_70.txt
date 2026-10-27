@@ -1,0 +1,10 @@
+CoreAI: TCI Interface 0.5.70 - 27.10.2026
+- Issue #113: Kontextfenster im KI-Profil. Regler 4K/8K/16K/32K/64K/128K plus "Core-Standard übernehmen" (Voreinstellung).
+- Speicher-Richtwert an jeder Stufe, abhaengig vom Core (Gewichte, KV-Cache inkl. Sliding Window, Korrektur ueber /api/ps, MemAvailable). Ohne Metadaten: "nicht zuverlaessig schaetzbar". Warnung, keine Sperre.
+- options.num_ctx nur bei ausdruecklicher Wahl, nur lokal, nur private Konsole, nie Cloud, keine weiteren Gemma-Parameter. SSE und Sync gleich. Pro Lauf fixiert. Migration 017_ai_num_ctx (NULL = kein Override).
+- Projektbudgets und Core-Infokasten nutzen das gesendete Fenster (Quelle KI-Profil); geladenes Fenster getrennt angezeigt.
+- Issue #115: sichtbar "Core" statt "Modell"; interne Kennungen unveraendert; Regressionstest.
+- Issue #112 (P1/P2): abbrechbares Laden mit Zeitlimit und Wiederholen, Fehlerarten benannt, Entwurf und Anzeige bleiben, Resync bei online/Vordergrund ohne Doppelauftrag, Backoff mit Jitter, inkrementelles Nachladen aelterer Seiten, begrenztes Rendern und Caches, Messwerte ohne Inhalte.
+- Neue Tests: ai-context-selftest.php, context-slider-ui-selftest.cjs, webui-resilience-selftest.cjs (beide Preflights).
+- UNVERAENDERT: Modelfile, Ollama-Dienst, serielle Queue, Global-Kanal, private Plaene.
+- OFFEN: Live-Abnahme Netcup/Android; #112 P3 (Android-Wrapper) im Repository Quantum-Mobile-Wrapper.

@@ -74,10 +74,10 @@
       case 'Kontext vorbereitet':
         return 'Ich habe den Kontext vorbereitet. Als Nächstes prüfe ich, welche Antwort oder Werkzeugaktion erforderlich ist.';
       case 'Modellstream vorbereitet':
-        return 'Ich bereite den Core-Aufruf vor. Eine Antwort liegt zu diesem Zeitpunkt noch nicht vor.';
+        return 'Ich bereite Core vor. Eine Antwort liegt noch nicht vor.';
       case 'Modellstream gestartet':
       case 'Modellaufruf gestartet':
-        return 'Ich habe den Core-Aufruf gestartet und warte auf ein tatsächlich abgeschlossenes Ergebnis.';
+        return 'Core arbeitet jetzt. Ich warte auf das vollständige Ergebnis.';
       case 'Modellstream abgeschnitten':
         return 'Meine Ausgabe endete vorzeitig. Ich kann nur den bestätigten Text weiterverwenden.';
       case 'Modellstream empfangen':
@@ -86,7 +86,7 @@
           : 'Meine Antwort ist eingetroffen. Ich prüfe jetzt, ob sie vollständig und für den Auftrag verwendbar ist.';
       case 'Modellstream fehlgeschlagen':
       case 'Modellaufruf ohne Antwort':
-        return 'Der Core-Aufruf hat keine bestätigte vollständige Antwort geliefert. Ich prüfe die technischen Angaben, um die Ursache einzugrenzen.';
+        return 'Core hat keine bestätigte vollständige Antwort geliefert. Ich prüfe die Ursache.';
       case 'Kurze Werkzeugentscheidung nicht bestaetigt':
         return 'Ich konnte die Werkzeugentscheidung nicht sicher bestätigen. Deshalb starte ich keinen unbelegten Projektbau.';
       case 'Mara hat die Umsetzung des gespeicherten Plans gewaehlt':
@@ -162,7 +162,7 @@
       case 'Antwort blieb nach Fortsetzung unvollstaendig':
         return 'Meine Antwort ist trotz Fortsetzung noch unvollständig. Der vorhandene Teil bleibt erhalten; er ist kein bestätigter Abschluss.';
       case 'Modellstream unvollstaendig':
-        return 'Die Core-Übertragung war unvollständig. Ich prüfe den vorhandenen Werkzeug- oder Ersatzpfad, ohne den Abbruch zu verschweigen.';
+        return 'Die Übertragung von Core war unvollständig. Ich prüfe den Werkzeug- oder Ersatzweg, ohne den Abbruch zu verschweigen.';
       case 'Antwort gespeichert':
         return 'Die Antwort ist im privaten Verlauf gesichert. Den bestätigten Arbeitsweg kannst du später erneut aufklappen.';
       case 'Auftrag auf Wunsch abgebrochen':
@@ -170,7 +170,7 @@
       default:
         // Future and plugin-defined work events also get a truthful note,
         // without shipping one dedicated model-specific UI workaround.
-        var step = '„' + event.title + '“';
+        var step = '„' + displayTitle(event.title) + '“';
         if (event.state === 'running') {
           return 'Ich führe gerade ' + step + ' aus. Der Abschluss steht noch aus.';
         }
@@ -271,6 +271,30 @@
     }
   }
 
+  // Starlight lore: an AI here is a Core, not "a model". Internal event
+  // names, API fields and logs keep their technical identifiers; only the
+  // visible label is phrased naturally.
+  var DISPLAY_TITLES = {
+    'Modellstream vorbereitet':'Core wird vorbereitet',
+    'Modellstream gestartet':'Core arbeitet',
+    'Modellaufruf gestartet':'Core arbeitet',
+    'Modellstream empfangen':'Antwort von Core empfangen',
+    'Modellantwort empfangen':'Antwort von Core empfangen',
+    'Modellantwort erhalten':'Antwort von Core erhalten',
+    'Modellstream abgeschnitten':'Ausgabe von Core abgeschnitten',
+    'Modellstream fehlgeschlagen':'Core ohne vollständige Antwort',
+    'Modellaufruf ohne Antwort':'Core ohne Antwort',
+    'Modellstream unvollstaendig':'Übertragung von Core unvollständig',
+    'Modellwarteschlange nicht verfuegbar':'Warteschlange von Core nicht verfügbar'
+  };
+  function displayTitle(title) {
+    var text = String(title || '');
+    if (Object.prototype.hasOwnProperty.call(DISPLAY_TITLES, text)) return DISPLAY_TITLES[text];
+    // Future titles: never show the word "Modell" in the interface.
+    return text.replace(/Modellantwort/g, 'Antwort von Core')
+      .replace(/Modell(?:stream|aufruf)?/g, 'Core');
+  }
+
   // Claude-Code-like flow: Mara's meaningful progress reads as normal text,
   // routine operations fold into ONE muted, expandable line per sequence.
   var NARRATED = {
@@ -291,7 +315,7 @@
       || NARRATED[event.title] === 1);
   }
   function stepLabel(event) {
-    return event.title + (event.meta.file_name ? ' · ' + event.meta.file_name : '');
+    return displayTitle(event.title) + (event.meta.file_name ? ' · ' + event.meta.file_name : '');
   }
   function updateRun(run) {
     var count = run._runCount;
@@ -347,7 +371,7 @@
   function activity(event) {
     if (!event) return 'Warte auf den ersten Schritt';
     var text = ACTIVITY[event.title];
-    if (!text) return event.state === 'running' ? event.title : 'Arbeite weiter';
+    if (!text) return event.state === 'running' ? displayTitle(event.title) : 'Arbeite weiter';
     return text.replace('{f}', event.meta.file_name || 'die Datei');
   }
   function formatDuration(ms) {
@@ -386,7 +410,7 @@
       event.state === 'error' ? '!' : event.state === 'running' ? '\u2022' : 'i');
     var info = el('div', 'work-info');
     var note = workNote(event);
-    var title = el('div','work-title',narration ? event.title : stepLabel(event));
+    var title = el('div','work-title',narration ? displayTitle(event.title) : stepLabel(event));
     // Keep the operational event title available to assistive technology,
     // but avoid repeating it above the public chat-style note.
     if (note && narration) title.className += ' work-title-with-note';
@@ -741,5 +765,6 @@
     return timeline;
   }
 
-  window.CoreUIWorkEvents = {create:create,add:add,source:source,flush:flushWork,normalize:normalize,merge:merge};
+  window.CoreUIWorkEvents = {create:create,add:add,source:source,flush:flushWork,normalize:normalize,
+    merge:merge,displayTitle:displayTitle};
 }());

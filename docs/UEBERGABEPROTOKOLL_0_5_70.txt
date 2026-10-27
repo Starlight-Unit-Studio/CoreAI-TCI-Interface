@@ -1,0 +1,62 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.5.70
+Stand: 27.10.2026
+Branch: claude/bold-galileo-myoyi0 (neu von main 0.5.69 nach Merge von PR #117)
+Basis: 0.5.69 live; Infokaesten und Chat ohne Flackern.
+
+AUFTRAG DES BETREIBERS:
+- Altes Issue #102 schliessen (erledigt).
+- Eigene Issues #115, #113 und #112 umsetzen.
+- Sichtbar "Core" statt "Modell": Starlight-Unit-Lore, eine KI ist mehr als nur KI.
+
+#115 / LORE:
+- js/coreui-work-events.js: DISPLAY_TITLES und displayTitle() uebersetzen interne Titel
+  ("Modellstream gestartet") in "Core arbeitet", "Antwort von Core empfangen" usw. Interne Titel,
+  Ereignisnamen, API-Felder und Parser-Schluessel bleiben unveraendert.
+- Einstellungen, Admin, Infokaesten und sichtbare Server-Meldungen (chat.php, console_stream.php,
+  console_native_tools.php) sprechen von Core. frontend-regression-selftest verbietet sichtbares
+  "Modell" in settings.html, admin/index.html, app.html und den sichtbaren JS-Texten.
+
+#113 / KONTEXTFENSTER:
+- api/ai_settings.php: coreui_ai_num_ctx_choices() (4096 bis 131072, optional begrenzt durch
+  STU_EMBER_NUM_CTX_MAX), coreui_ai_num_ctx_normalise() (Whitelist, sonst NULL), Laden und Speichern
+  mit Rueckfall ohne Migration 017 (gewaehlter Wert ohne Spalte: missing_schema_017, nie still
+  verworfen). coreui_ai_runtime_apply() fixiert num_ctx pro Request = pro Lauf.
+- api/chat.php: ember_profile_num_ctx() (NULL fuer Cloud oder keine Wahl). ember_ollama_known_good_options():
+  Gemma erhaelt GENAU ['num_ctx'=>Wert] nur bei Wahl, sonst []; andere lokale Cores bekommen den
+  Profilwert vorrangig; Cloud nie num_ctx. ember_ollama_context_window() liefert zuerst den
+  Profilwert (Quelle 'profile'). Volle Profilfenster werden gemeldet, aber nicht als Core-Standard
+  gelernt. Global-Kanal: num_ctx wird verworfen (Queue/Ember-Game unveraendert).
+- api/ai_context_estimate.php (neu, nur lesend): Gewichte aus /api/tags, KV-Bytes je Token aus
+  /api/show model_info (Gemma-3-Rhythmus 5:1 oder explizites sliding_window_pattern; unbekannter
+  Rhythmus = keine Zahl), Korrektur ueber /api/ps (size, size_vram, context_length), MemAvailable.
+  Bandbreite 0,9 bis 1,15 (gemessen 0,85 bis 1,25), gerundet. Warnung erst, wenn die Untergrenze
+  den verfuegbaren Speicher (frei plus geladene Cores) um mehr als 10 Prozent uebersteigt.
+- api/user_settings.php: GET ?context_model= liefert die Richtwerte; POST lehnt ungueltige Werte
+  mit invalid_num_ctx (400) ab. Migration database/migrations/017_ai_num_ctx.sql.
+- settings.html, js/coreui-context-slider.js, js/settings.js, css/console.css: Regler, sechs
+  Stufen mit Richtwert, Text "geschaetzt: ...", Warnung, Status gewaehlt / fuer Anfragen verwendet /
+  von Ollama geladen. Cloud: "nicht anwendbar". Handy: zwei Reihen.
+- Infokasten Core: Quelle "KI-Profil", "Von Ollama geladen" getrennt, wenn abweichend.
+
+#112 / WEBUI (P1 und P2):
+- js/coreui-net.js (neu): fetchJson mit Timeout/Abbruch und Fehlerarten, backoff mit Jitter,
+  describe, record (nur Zahlen und kurze Codes, Ringpuffer 60), lange Frames.
+- js/console-app.js: loadChatHistory abbrechbar (Sitzungswechsel), 20 s Zeitlimit, Hinweiszeile
+  mit ERNEUT LADEN, bis 4 automatische Wiederholungen (nicht offline/verdeckt), viewEpoch bleibt.
+  Angezeigte Nachrichten und Entwurf bleiben. online/visibilitychange: resyncActiveSession() nur
+  per GET. doPoll: Backoff, Offline-Versuche zaehlen nicht gegen MAX_POLL_ATTEMPTS. Hintergrund-Poll:
+  Backoff bis 60 s, verdeckt 15 s. Aeltere Seiten: prependOlderRecords() baut nur neue Zeilen
+  ausserhalb des Dokuments und setzt sie davor; Rueckfall auf vollen Neuaufbau, wenn ein Turn beide
+  Teile ueberspannt. Leseposition bleibt (coreui-chat-follow release()). visibleRecords(): hoechstens
+  240 Datensaetze beim Oeffnen; trimSessionCaches(): inaktive Sitzungen 60, hoechstens 12 Caches.
+- Nachbau mit 1.000 Nachrichten: Renderzeit je nachgeladener Seite konstant rund 25 ms (vorher bis
+  rund 1 s), Anker-Abweichung 0 bis 10 px, nach Offline/Online "VERBUNDEN", Entwurf erhalten, 0 POST.
+- P3 (Android-Wrapper, onRenderProcessGone, DeX) liegt im Repository Quantum-Mobile-Wrapper.
+
+GEPRUEFT:
+- Alle Offline-Selbsttests inklusive der neuen ai-context-selftest.php, context-slider-ui-selftest.cjs
+  und webui-resilience-selftest.cjs; Browser-Nachbau Einstellungen (1280 und 412 px) und Chat.
+
+UNVERAENDERT: Modelfile-Template, Ollama-Dienst, serielle Queue, Global-Kanal, private Plaene.
+
+WEITERHIN OFFEN: Live-Abnahme Netcup/Android, insbesondere Speicher-Richtwerte am echten Server.

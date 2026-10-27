@@ -72,6 +72,19 @@
   var promptMax = 6000;
   var selectedKnowledgeFile = null;
   var selectedModelOverride = '';
+  var defaultModel = '';
+  var ctxField = document.getElementById('aiCtxField');
+  var contextSlider = ctxField && window.CoreUIContextSlider ? window.CoreUIContextSlider.create({
+    root: ctxField,
+    range: document.getElementById('aiNumCtx'),
+    output: document.getElementById('aiNumCtxValue'),
+    useDefault: document.getElementById('aiCtxDefault'),
+    stops: document.getElementById('aiCtxStops'),
+    estimate: document.getElementById('aiCtxEstimate'),
+    warning: document.getElementById('aiCtxWarning'),
+    status: document.getElementById('aiCtxStatus'),
+    fetchJson: function (url) { return api(url); }
+  }) : null;
 
   function api(url, options) {
     options = options || {};
@@ -303,6 +316,11 @@
       if (aiMemoryLimit) aiMemoryLimit.value = String(s.memory_limit == null ? 16 : s.memory_limit);
       if (aiNumPredict) aiNumPredict.value = String(s.num_predict == null ? 6500 : s.num_predict);
       if (aiTemperature) aiTemperature.value = String(s.temperature == null ? 1 : s.temperature);
+      defaultModel = String(data.default_model || defaultModel || '');
+      if (contextSlider) {
+        contextSlider.apply(s.num_ctx, data.limits && data.limits.num_ctx_choices,
+          !(data.limits && data.limits.num_ctx_available === false));
+      }
       selectedModelOverride = s.model_override || '';
       if (aiModelOverride) {
         var modelOptionExists = Array.prototype.some.call(aiModelOverride.options || [], function (option) {
@@ -325,16 +343,24 @@
       if (externalNote) {
         var p = externalNote.querySelector('p');
         if (p && data.external && data.external.enabled && !externalConfigured) {
-          p.textContent = 'Der externe Adapter ist im Adminbereich aktiviert, aber noch nicht vollständig mit HTTPS-Endpunkt, Modell und serverseitigem Schlüssel konfiguriert. CoreAI: TCI Interface bleibt deshalb sicher auf lokalem Ollama.';
+          p.textContent = 'Der externe Adapter ist im Adminbereich aktiviert, aber noch nicht vollständig mit HTTPS-Endpunkt, Core und serverseitigem Schlüssel konfiguriert. CoreAI: TCI Interface bleibt deshalb sicher auf lokalem Ollama.';
         }
       }
       updatePromptCounter();
+      loadContextEstimate();
     }).catch(function (error) {
       announceSaved(
         error.message === 'missing_schema_005' ? 'MIGRATION 005 FEHLT' : 'KI-EINSTELLUNGEN NICHT ERREICHBAR',
         true
       );
     });
+  }
+
+  /** #113: memory guide values follow the Core chosen in the list. */
+  function loadContextEstimate() {
+    if (!contextSlider) return Promise.resolve();
+    var name = (aiModelOverride && aiModelOverride.value) || selectedModelOverride || defaultModel;
+    return contextSlider.load(name);
   }
 
   function loadModels() {
@@ -368,7 +394,7 @@
       }
       aiModelOverride.value = desired;
     }).catch(function (error) {
-      announceSaved('OLLAMA-MODELLLISTE NICHT ERREICHBAR: ' + error.message, true);
+      announceSaved('OLLAMA-CORE-LISTE NICHT ERREICHBAR: ' + error.message, true);
     }).finally(function () { if (refreshModelsButton) refreshModelsButton.disabled = false; });
   }
 
@@ -383,7 +409,8 @@
       num_predict: aiNumPredict ? Number(aiNumPredict.value) : 6500,
       temperature: aiTemperature ? Number(aiTemperature.value) : 1,
       provider: aiProvider ? aiProvider.value : 'local',
-      model_override: aiModelOverride ? aiModelOverride.value.trim() : ''
+      model_override: aiModelOverride ? aiModelOverride.value.trim() : '',
+      num_ctx: contextSlider ? contextSlider.value() : null
     };
     api('./api/user_settings.php', { method: 'POST', body: JSON.stringify(body) })
       .then(function () {
@@ -392,10 +419,12 @@
       })
       .catch(function (error) {
         var labels = {
-          model_not_available: 'MODELL IST NICHT MEHR IN OLLAMA INSTALLIERT',
-          model_catalog_unavailable: 'OLLAMA-MODELLLISTE IST NICHT ERREICHBAR',
-          model_catalog_invalid_response: 'OLLAMA-MODELLLISTE IST UNGÜLTIG',
-          invalid_model_name: 'UNGÜLTIGER MODELLNAME'
+          model_not_available: 'CORE IST NICHT MEHR IN OLLAMA INSTALLIERT',
+          model_catalog_unavailable: 'OLLAMA-CORE-LISTE IST NICHT ERREICHBAR',
+          model_catalog_invalid_response: 'OLLAMA-CORE-LISTE IST UNGÜLTIG',
+          invalid_model_name: 'UNGÜLTIGER CORE-NAME',
+          invalid_num_ctx: 'UNGÜLTIGES KONTEXTFENSTER',
+          missing_schema_017: 'MIGRATION 017 FEHLT: KONTEXTFENSTER NICHT GESPEICHERT'
         };
         announceSaved(labels[error.message] || ('SPEICHERN FEHLGESCHLAGEN: ' + error.message), true);
       })
@@ -745,6 +774,7 @@
   if (aiSystemPrompt) aiSystemPrompt.addEventListener('input', updatePromptCounter);
   if (aiSaveButton) aiSaveButton.addEventListener('click', saveAiSettings);
   if (refreshModelsButton) refreshModelsButton.addEventListener('click', loadModels);
+  if (aiModelOverride) aiModelOverride.addEventListener('change', loadContextEstimate);
   if (saveProfileButton) saveProfileButton.addEventListener('click', saveProfile);
   if (userAvatarFile) userAvatarFile.addEventListener('change', function () { uploadAvatar('user', userAvatarFile.files && userAvatarFile.files[0]); });
   if (assistantAvatarFile) assistantAvatarFile.addEventListener('change', function () { uploadAvatar('assistant', assistantAvatarFile.files && assistantAvatarFile.files[0]); });

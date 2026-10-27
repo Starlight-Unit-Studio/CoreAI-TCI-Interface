@@ -214,7 +214,7 @@ const flowEntries = flow.querySelector('.work-entries');
 assert.equal(flowEntries.children.length,6,'every event keeps exactly one entry');
 const firstRun = flowEntries.children[0];
 assert(firstRun.className.includes('work-run-head'),'a routine sequence starts a folded run');
-assert.equal(firstRun.querySelector('.work-run-toggle').textContent,'2 Schritte · Modellstream gestartet▸');
+assert.equal(firstRun.querySelector('.work-run-toggle').textContent,'2 Schritte · Core arbeitet▸');
 assert.equal(flowEntries.children[1].hidden,true,'folded steps stay hidden');
 firstRun.querySelector('.work-run-toggle').handlers.click();
 assert.equal(flowEntries.children[1].hidden,false,'expanding a run shows each step');
@@ -236,6 +236,24 @@ assert(liveStatus.querySelector('.work-status').textContent
   .includes('Schreibe gallery.html · 2 Min. 5 Sek. · 4,2k Tokens'),
   'the live status names the activity, elapsed time and tokens');
 assert.equal(saved.querySelector('.work-status'),null,'a finished reply has no live status line');
+
+// Issue #115 and Starlight lore: the interface says "Core", never "Modell"
+// or "Core-Aufruf". Internal event names stay unchanged.
+const coreTitles = ['Modellstream vorbereitet','Modellstream gestartet','Modellaufruf gestartet',
+  'Modellstream empfangen','Modellantwort empfangen','Modellstream abgeschnitten',
+  'Modellstream fehlgeschlagen','Modellaufruf ohne Antwort','Modellstream unvollstaendig',
+  'Modellwarteschlange nicht verfuegbar','Modellprobe kuenftig'];
+const coreWording = work.create({expanded:true,events:coreTitles.map((title,n)=>({
+  id:400+n,kind:'model',state:n%3 ? 'info' : 'error',title,meta:{model:'gemma4:31b-cloud'}}))});
+assert(!/Modell|Core-Aufruf|Core-Übertragung/.test(coreWording.textContent),
+  'no "Modell" or "Core-Aufruf" anywhere in the visible work history');
+assert(coreWording.textContent.includes('Ich bereite Core vor. Eine Antwort liegt noch nicht vor.')
+  && coreWording.textContent.includes('Core arbeitet jetzt. Ich warte auf das vollständige Ergebnis.')
+  && coreWording.textContent.includes('Core hat keine bestätigte vollständige Antwort geliefert. Ich prüfe die Ursache.'),
+  'the #115 sentences are phrased naturally');
+assert.equal(work.displayTitle('Modellstream gestartet'),'Core arbeitet');
+assert.equal(work.normalize({id:1,kind:'model',state:'info',title:'Modellstream gestartet'}).title,
+  'Modellstream gestartet','the stored event name itself is not renamed');
 
 const futureTool = work.create({events:[{id:71,kind:'tool',state:'running',
   title:'Neuen Repository-Pruefschritt gestartet'}],expanded:false});

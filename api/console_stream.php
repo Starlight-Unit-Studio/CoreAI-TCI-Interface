@@ -763,8 +763,8 @@ try {
        'prompt_eval_count'=>(int)($acc['prompt_eval_count'] ?? 0),
        'continuation_segments'=>(int)($acc['continuation_segments'] ?? 0),
        'thinking_chars'=>strlen($thinkingAll)]);
-    $reply = rtrim($reply) . "\n\n> **Unvollstaendige Modellausgabe:** "
-      . "Das Modell konnte den Text nicht vollstaendig zu Ende generieren. "
+    $reply = rtrim($reply) . "\n\n> **Unvollstaendige Core-Ausgabe:** "
+      . "Core konnte den Text nicht vollstaendig zu Ende generieren. "
       . "Der sichtbare Antworttext bleibt erhalten, ist aber noch nicht abgeschlossen.";
   }
 

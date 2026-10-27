@@ -11,6 +11,14 @@
   var POLL_FAST_MS      = 1500;   // während Ember antwortet
   var POLL_BG_MS        = 3000;   // Hintergrund-Poll
   var MAX_POLL_ATTEMPTS = 700;    // ~17,5 Minuten: lokale Gemma-4-Generierung plus Werkzeugpfad
+  // 0.5.70 (#112): resilience for long chats, weak networks and WebViews.
+  var POLL_HIDDEN_MS    = 15000;  // Hintergrund-Poll eines verdeckten Tabs
+  var HISTORY_TIMEOUT_MS = 20000;
+  var HISTORY_AUTO_RETRIES = 4;   // danach nur noch manuell
+  var RENDER_LIMIT      = 240;    // gerenderte Datensaetze pro Sitzung (DOM-Grenze)
+  var RENDER_STEP       = 120;
+  var CACHE_KEEP_INACTIVE = 60;   // neueste Seite inaktiver Sitzungen bleibt sofort sichtbar
+  var CACHE_MAX_SESSIONS = 12;
   // Phase 3a: SSE mit sicherem Denkstatus. Poll bleibt Fallback.
   var USE_STREAM        = (typeof window !== 'undefined' && 'EventSource' in window);
   var STREAM_IDLE_MS    = 780000; // Server sendet sichere Heartbeats; erst nach 13 Minuten ausweichen.
@@ -94,7 +102,7 @@
       /(?:system|entwickler)[\s-]*(?:prompt|anweisung)/i
     ].filter(function (rx) { return rx.test(head); }).length;
     if (startsInternal || highSignals >= 1) {
-      return 'Diese ältere Ausgabe enthielt einen internen Modellentwurf und wurde ausgeblendet.';
+      return 'Diese ältere Ausgabe enthielt einen internen Core-Entwurf und wurde ausgeblendet.';
     }
     return text;
   }
@@ -134,6 +142,14 @@
     workExpandedBySession: {},
     historyHasMoreBySession: {},
     historyOldestBySession: {},
+    historyAbort: null,
+    historyFailuresBySession: {},
+    historyRetryTimer: null,
+    renderLimitBySession: {},
+    sessionLru: [],
+    pollFailuresBySession: {},
+    bgFailures: 0,
+    hiddenAt: 0,
     generationPollTimers: {},
     queuedTurnsBySession: {},
     variantSelectionBySession: {},
@@ -591,10 +607,59 @@
     });
   }
 
+  function netJson(url, opts) {
+    if (window.CoreUINet) return window.CoreUINet.fetchJson(url, opts);
+    return fetch(url, { credentials: 'include', cache: 'no-store' }).then(function (r) { return r.json(); });
+  }
+
+  function netOnline() {
+    return window.CoreUINet ? window.CoreUINet.isOnline() : navigator.onLine !== false;
+  }
+
+  function netBackoff(attempt, baseMs, capMs) {
+    return window.CoreUINet ? window.CoreUINet.backoff(attempt, baseMs, capMs)
+      : Math.min(capMs, baseMs * Math.pow(2, Math.min(8, attempt)));
+  }
+
+  function netRecord(entry) {
+    if (window.CoreUINet) window.CoreUINet.record(entry);
+  }
+
+  // #112: inactive sessions keep only their newest page in memory; the
+  // server stays the source of truth and returns the rest on demand.
+  function trimSessionCaches(activeId) {
+    activeId = String(activeId || '');
+    state.sessionLru = [activeId].concat(state.sessionLru.filter(function (id) { return id !== activeId; }));
+    Object.keys(state.messageCacheBySession).forEach(function (id) {
+      if (id === activeId || state.pendingBySession[id]) return;
+      var rank = state.sessionLru.indexOf(id);
+      if (rank < 0 || rank >= CACHE_MAX_SESSIONS) {
+        delete state.messageCacheBySession[id];
+        delete state.historyHasMoreBySession[id];
+        delete state.historyOldestBySession[id];
+        return;
+      }
+      var rows = state.messageCacheBySession[id];
+      if (!Array.isArray(rows) || rows.length <= CACHE_KEEP_INACTIVE) return;
+      var kept = rows.slice(rows.length - CACHE_KEEP_INACTIVE);
+      state.messageCacheBySession[id] = kept;
+      state.historyHasMoreBySession[id] = true;
+      state.historyOldestBySession[id] = Number(kept[0].id) || 0;
+    });
+    state.sessionLru = state.sessionLru.slice(0, CACHE_MAX_SESSIONS);
+  }
+
   function selectSession(sessionId) {
     if (state.bgTimer) clearTimeout(state.bgTimer);
+    // #112: a session switch cancels the previous history request and its retry.
+    if (state.historyAbort) state.historyAbort.abort();
+    state.historyAbort = null;
+    if (state.historyRetryTimer) clearTimeout(state.historyRetryTimer);
+    state.historyRetryTimer = null;
     state.viewEpoch++;
     state.activeSessionId = String(sessionId || '');
+    delete state.renderLimitBySession[state.activeSessionId];
+    trimSessionCaches(state.activeSessionId);
     if (chatFollow) chatFollow.reset();
     var ses = activeSession();
     if (!ses) return;
@@ -690,8 +755,28 @@
     return state.variantSelectionBySession[sessionId];
   }
 
-  function renderConversationRows(ses) {
+  // #112: very long chats render only their newest records; older cached
+  // ones come back with the "older" button before the server is asked.
+  function visibleRecords(ses) {
     var rows = state.messageCacheBySession[ses.id] || [];
+    var limit = Number(state.renderLimitBySession[ses.id]) || RENDER_LIMIT;
+    if (rows.length <= limit) return rows;
+    var start = rows.length - limit;
+    // Begin with a question so no reply loses its turn or its variants.
+    while (start > 0 && isEmberMsg(rows[start])) start--;
+    var firstId = Number(rows[start] && rows[start].id) || 0;
+    return rows.slice(start).filter(function (record) {
+      var turnId = Number(record && record.reply_to_id) || 0;
+      return !(isEmberMsg(record) && turnId > 0 && turnId < firstId);
+    });
+  }
+
+  function hiddenRecordCount(ses) {
+    return Math.max(0, (state.messageCacheBySession[ses.id] || []).length - visibleRecords(ses).length);
+  }
+
+  function renderConversationRows(ses, onlyRows) {
+    var rows = onlyRows || visibleRecords(ses);
     var groups = {};
     rows.forEach(function (record) {
       var turnId = Number(record && record.reply_to_id) || 0;
@@ -811,18 +896,7 @@
     messagesInner.innerHTML = '';
     state.typingEl = null;
     state.thinkingPanelEl = null;
-    if (state.historyHasMoreBySession[ses.id]) {
-      var older = document.createElement('button');
-      older.type = 'button';
-      older.className = 'history-load-older';
-      older.textContent = 'AELTERE NACHRICHTEN LADEN';
-      older.disabled = !!state.pendingBySession[ses.id];
-      older.addEventListener('click', function() {
-        older.disabled = true;
-        loadChatHistory(ses, state.historyOldestBySession[ses.id] || 0, true);
-      });
-      messagesInner.appendChild(older);
-    }
+    appendOlderButton(ses);
     renderConversationRows(ses);
     if (!state.messageCacheBySession[ses.id] || !state.messageCacheBySession[ses.id].length) {
       appendMessageEl('system', 'ARCHNET VERBINDUNG HERGESTELLT. COREUI TERMINAL AKTIV.');
@@ -834,6 +908,128 @@
     renderQueuedTurns(ses);
   }
 
+  function appendOlderButton(ses) {
+    var hidden = hiddenRecordCount(ses);
+    if (hidden > 0 || state.historyHasMoreBySession[ses.id]) {
+      var older = document.createElement('button');
+      older.type = 'button';
+      older.className = 'history-load-older';
+      older.textContent = 'AELTERE NACHRICHTEN LADEN';
+      older.disabled = !!state.pendingBySession[ses.id] && hidden === 0;
+      older.addEventListener('click', function() {
+        older.disabled = true;
+        if (chatFollow && chatFollow.release) chatFollow.release();
+        if (hiddenRecordCount(ses) > 0) {
+          // Already in memory: show more without a request, keep the anchor.
+          state.renderLimitBySession[ses.id] = visibleRecords(ses).length + RENDER_STEP;
+          renderHistoryKeepingAnchor(ses);
+          return;
+        }
+        loadChatHistory(ses, state.historyOldestBySession[ses.id] || 0, true);
+      });
+      messagesInner.insertBefore(older, messagesInner.firstChild);
+    }
+  }
+
+  // #112: an older page is placed in front of the rows already on screen.
+  // Existing nodes (live work view, previews, listeners) are moved, not
+  // rebuilt, so the cost no longer grows with the length of the chat. A
+  // turn whose replies straddle both parts needs the full grouped render.
+  function prependOlderRecords(ses, oldestBefore) {
+    if (!(oldestBefore > 0) || !messagesInner.querySelector('.msg-row')) return null;
+    var cache = state.messageCacheBySession[ses.id] || [];
+    var older = cache.filter(function (record) { return Number(record.id) < oldestBefore; });
+    var olderTurns = {};
+    older.forEach(function (record) {
+      if (isEmberMsg(record) && Number(record.reply_to_id) > 0) olderTurns[String(record.reply_to_id)] = true;
+    });
+    var straddles = cache.some(function (record) {
+      return Number(record.id) >= oldestBefore && isEmberMsg(record)
+        && olderTurns[String(Number(record.reply_to_id) || 0)];
+    });
+    if (straddles) return null;
+    var started = Date.now();
+    var height = messagesArea ? messagesArea.scrollHeight : 0;
+    var top = messagesArea ? messagesArea.scrollTop : 0;
+    Array.prototype.slice.call(messagesInner.querySelectorAll(':scope > .history-load-older, :scope > .history-retry'))
+      .forEach(function (node) { messagesInner.removeChild(node); });
+    // Build the older rows off-screen, then insert them in one step.
+    var visibleInner = messagesInner;
+    var holder = document.createElement('div');
+    messagesInner = holder;
+    try {
+      renderConversationRows(ses, older);
+    } finally {
+      messagesInner = visibleInner;
+    }
+    var fresh = document.createDocumentFragment();
+    while (holder.firstChild) fresh.appendChild(holder.firstChild);
+    messagesInner.insertBefore(fresh, messagesInner.firstChild);
+    appendOlderButton(ses);
+    if (messagesArea) messagesArea.scrollTop = Math.max(0, messagesArea.scrollHeight - height + top);
+    return Date.now() - started;
+  }
+
+  // Prepending keeps the message the reader looked at in place instead of
+  // jumping to the oldest row.
+  function renderHistoryKeepingAnchor(ses) {
+    var height = messagesArea ? messagesArea.scrollHeight : 0;
+    var top = messagesArea ? messagesArea.scrollTop : 0;
+    var started = Date.now();
+    renderHistory(ses);
+    if (messagesArea) messagesArea.scrollTop = Math.max(0, messagesArea.scrollHeight - height + top);
+    return Date.now() - started;
+  }
+
+  function clearHistoryRetry() {
+    if (state.historyRetryTimer) clearTimeout(state.historyRetryTimer);
+    state.historyRetryTimer = null;
+    var bar = messagesInner && messagesInner.querySelector('.history-retry');
+    if (bar && bar.parentNode) bar.parentNode.removeChild(bar);
+  }
+
+  // One visible notice with a manual retry instead of a new system line per
+  // failure. Rendered messages and the composer draft stay untouched.
+  function showHistoryRetry(ses, error, prepend) {
+    clearHistoryRetry();
+    var bar = document.createElement('div');
+    bar.className = 'history-retry';
+    bar.setAttribute('role', 'status');
+    var text = document.createElement('p');
+    var reason = window.CoreUINet ? window.CoreUINet.describe(error) : 'Der Verlauf konnte nicht geladen werden.';
+    var cached = (state.messageCacheBySession[ses.id] || []).length > 0;
+    text.textContent = '\u26a0 ' + reason + (cached ? ' Der zuletzt bestätigte Verlauf bleibt sichtbar.' : '');
+    var button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = 'ERNEUT LADEN';
+    button.addEventListener('click', function () {
+      state.historyFailuresBySession[ses.id] = 0;
+      button.disabled = true;
+      loadChatHistory(ses, prepend ? (state.historyOldestBySession[ses.id] || 0) : 0, !!prepend);
+    });
+    bar.appendChild(text);
+    bar.appendChild(button);
+    var older = messagesInner.querySelector('.history-load-older');
+    if (prepend && older) {
+      older.disabled = false;
+      older.parentNode.insertBefore(bar, older.nextSibling);
+    } else {
+      messagesInner.appendChild(bar);
+    }
+  }
+
+  // Bounded automatic retries with backoff; offline or hidden waits for the
+  // online or visibility signal instead of spinning.
+  function scheduleHistoryRetry(ses, failures) {
+    if (failures > HISTORY_AUTO_RETRIES || !netOnline() || document.hidden) return;
+    var epoch = state.viewEpoch;
+    state.historyRetryTimer = setTimeout(function () {
+      state.historyRetryTimer = null;
+      if (epoch !== state.viewEpoch || !isActiveSession(ses.id)) return;
+      loadChatHistory(ses);
+    }, netBackoff(failures - 1, 2000, 30000));
+  }
+
   // Exakte, serverseitig gefilterte History einer einzigen Sitzung.
   function loadChatHistory(ses, beforeId, prepend) {
     if (!state.characterId || !ses) return Promise.resolve();
@@ -843,10 +1039,21 @@
       + '&limit=60';
     if (beforeId > 0) url += '&before_id=' + Number(beforeId);
 
+    // #112: one abortable request per view; a newer load or a session
+    // switch cancels it, a timeout ends it, the viewEpoch check stays.
+    var controller = null;
+    var oldestBefore = prepend ? Number(beforeId) || 0 : 0;
+    if (!prepend) {
+      if (state.historyAbort) state.historyAbort.abort();
+      controller = typeof AbortController === 'function' ? new AbortController() : null;
+      state.historyAbort = controller;
+    }
+    var started = Date.now();
     if (!prepend) setStatus('', 'LADE\u2026');
-    return fetch(url, { credentials: 'include', cache:'no-store' })
-    .then(function(r) { return r.json(); })
+    return netJson(url, { signal: controller ? controller.signal : null, timeoutMs: HISTORY_TIMEOUT_MS,
+      metric: prepend ? 'history_older' : 'history' })
     .then(function(d) {
+      if (controller && state.historyAbort === controller) state.historyAbort = null;
       if (!d.ok || String(d.session_id || '') !== String(ses.id) || !Array.isArray(d.messages)) {
         throw new Error(d.error || 'history_failed');
       }
@@ -858,8 +1065,12 @@
           return pendingId > 0 && Number(m.id) === pendingId && !isEmberMsg(m);
         });
         state.messageCacheBySession[ses.id] = keep;
+      } else {
+        // Newly loaded older rows are shown in full, the window grows with them.
+        state.renderLimitBySession[ses.id] = visibleRecords(ses).length + d.messages.length;
       }
       mergeSessionMessages(ses.id, d.messages);
+      state.historyFailuresBySession[ses.id] = 0;
       var resumed = !prepend && recoverActiveRun(ses, d);
       state.historyHasMoreBySession[ses.id] = !!d.has_more_before;
       state.historyOldestBySession[ses.id] = Number(d.oldest_id) || state.historyOldestBySession[ses.id] || 0;
@@ -868,28 +1079,37 @@
       if (newest > Number(ses.last_message_id || 0)) ses.last_message_id = newest;
       ses.unread_count = 0;
       if (!isActiveSession(ses.id) || epoch !== state.viewEpoch) return;
-      renderHistory(ses);
-      if (!state.pendingBySession[ses.id]) setStatus('online', 'VERBUNDEN');
+      clearHistoryRetry();
+      var renderMs;
       if (prepend) {
-        var first = messagesInner.querySelector('.msg-row');
-        if (first) first.scrollIntoView({ block: 'start' });
+        renderMs = prependOlderRecords(ses, oldestBefore);
+        if (renderMs === null) renderMs = renderHistoryKeepingAnchor(ses);
       } else {
-        scrollToBottom();
+        var renderStart = Date.now();
+        renderHistory(ses);
+        renderMs = Date.now() - renderStart;
       }
+      netRecord({kind: 'history_render', records: d.messages.length,
+        rendered: visibleRecords(ses).length, render_ms: renderMs, total_ms: Date.now() - started});
+      if (!state.pendingBySession[ses.id]) setStatus('online', 'VERBUNDEN');
+      if (!prepend) scrollToBottom();
       renderSessionList();
       if (resumed) startFastPoll(ses, Number(state.pendingBySession[ses.id]));
       scheduleBackgroundPoll();
     })
-    .catch(function() {
+    .catch(function(error) {
+      if (controller && state.historyAbort === controller) state.historyAbort = null;
+      if (error && error.kind === 'aborted') return;
       if (!isActiveSession(ses.id) || epoch !== state.viewEpoch) return;
+      var failures = (Number(state.historyFailuresBySession[ses.id]) || 0) + 1;
+      state.historyFailuresBySession[ses.id] = failures;
       var hasCachedHistory = Array.isArray(state.messageCacheBySession[ses.id])
         && state.messageCacheBySession[ses.id].length > 0;
-      if (hasCachedHistory) renderHistory(ses);
-      else messagesInner.innerHTML = '';
-      setStatus('error', 'LADEFEHLER');
-      appendMessageEl('system', hasCachedHistory
-        ? '\u26a0 Aktualisierung fehlgeschlagen. Der zuletzt bestaetigte Verlauf bleibt sichtbar.'
-        : '\u26a0 Sitzung konnte nicht geladen werden. Bitte Preflight und Migration pruefen.');
+      // Never remove what is already on screen; only fill an empty view.
+      if (hasCachedHistory && !messagesInner.querySelector('.msg-row')) renderHistory(ses);
+      setStatus('error', netOnline() ? 'LADEFEHLER' : 'OFFLINE');
+      showHistoryRetry(ses, error, prepend);
+      if (!prepend) scheduleHistoryRetry(ses, failures);
       scheduleBackgroundPoll();
     });
   }
@@ -1381,7 +1601,7 @@
       values.push([timings.total_label, formatResponseDuration(timings.total_ms)]);
     }
     if (timings.model_ms !== null) {
-      values.push(['MODELLZEIT', formatResponseDuration(timings.model_ms)]);
+      values.push(['CORE-ZEIT', formatResponseDuration(timings.model_ms)]);
     }
     values.push(
       ['NACHRICHT', '#' + String(Number(record && record.id) || 0)],
@@ -2810,12 +3030,12 @@
       return;
     }
 
-    fetch(consoleMessagesUrl(ses, userMsgId), { credentials: 'include' })
-    .then(function(r) { return r.json(); })
+    netJson(consoleMessagesUrl(ses, userMsgId), { timeoutMs: HISTORY_TIMEOUT_MS })
     .then(function(d) {
       if (!d.ok || String(d.session_id || '') !== sessionId || !Array.isArray(d.messages)) {
         throw new Error(d.error || 'poll_failed');
       }
+      state.pollFailuresBySession[sessionId] = 0;
       var found = null;
       d.messages.forEach(function(m) {
         if (isEmberMsg(m) && Number(m.reply_to_id) === Number(userMsgId)) found = m;
@@ -2845,14 +3065,26 @@
       }
     })
     .catch(function() {
-      state.pollTimers[sessionId] = setTimeout(function() { doPoll(ses, userMsgId); }, POLL_FAST_MS);
+      // #112: an unreachable server is not "no answer". Offline attempts do
+      // not use up the reply budget and retries back off (capped, jittered).
+      var failures = (Number(state.pollFailuresBySession[sessionId]) || 0) + 1;
+      state.pollFailuresBySession[sessionId] = failures;
+      if (!netOnline()) {
+        state.pollAttemptsBySession[sessionId] = Math.max(0, Number(state.pollAttemptsBySession[sessionId] || 0) - 1);
+      }
+      state.pollTimers[sessionId] = setTimeout(function() { doPoll(ses, userMsgId); },
+        netBackoff(failures - 1, POLL_FAST_MS, 20000));
     });
   }
 
   // Background Poll liest ausschliesslich neue Nachrichten der aktiven Sitzung.
   function scheduleBackgroundPoll() {
     if (state.bgTimer) clearTimeout(state.bgTimer);
-    state.bgTimer = setTimeout(doBackgroundPoll, POLL_BG_MS);
+    // #112: failures back off up to a minute; a hidden tab polls slowly and
+    // resynchronises at once when it becomes visible again.
+    var delay = state.bgFailures > 0 ? netBackoff(state.bgFailures - 1, POLL_BG_MS, 60000) : POLL_BG_MS;
+    if (document.hidden) delay = Math.max(delay, POLL_HIDDEN_MS);
+    state.bgTimer = setTimeout(doBackgroundPoll, delay);
   }
 
   function doBackgroundPoll() {
@@ -2863,12 +3095,23 @@
     }
     var sessionId = String(ses.id);
     var cursor = sessionClientCursor(ses);
-    fetch(consoleMessagesUrl(ses, cursor), { credentials: 'include' })
-    .then(function(r) { return r.json(); })
+    if (!netOnline()) {
+      state.bgFailures++;
+      scheduleBackgroundPoll();
+      return;
+    }
+    netJson(consoleMessagesUrl(ses, cursor), { timeoutMs: HISTORY_TIMEOUT_MS })
     .then(function(d) {
       if (!d.ok || String(d.session_id || '') !== sessionId || !Array.isArray(d.messages)) {
+        state.bgFailures++;
         scheduleBackgroundPoll();
         return;
+      }
+      state.bgFailures = 0;
+      // The connection works again: replace OFFLINE or LADEFEHLER.
+      if (/^(?:OFFLINE|LADEFEHLER|VERBINDE)/.test(statusLabel.textContent || '')
+          && !state.pendingBySession[sessionId] && !(Number(state.historyFailuresBySession[sessionId]) > 0)) {
+        setStatus('online', 'VERBUNDEN');
       }
       var pendingTurnId = Number(state.pendingBySession[sessionId]) || 0;
       var receivedReply = false;
@@ -2898,8 +3141,52 @@
       if (d.messages.length && isActiveSession(sessionId)) scrollToBottom();
       scheduleBackgroundPoll();
     })
-    .catch(function() { scheduleBackgroundPoll(); });
+    .catch(function() {
+      state.bgFailures++;
+      scheduleBackgroundPoll();
+    });
   }
+
+  // #112: after the network returns or the tab is shown again, ask the
+  // server for the current state. Only GET requests: a turn or an agent run
+  // is reattached by its server-side id, never sent again.
+  function resyncActiveSession(reason) {
+    var ses = activeSession();
+    if (!ses || !state.characterId) return;
+    netRecord({kind: 'resync', reason: reason});
+    var sessionId = String(ses.id);
+    if (Number(state.historyFailuresBySession[sessionId]) > 0) {
+      state.historyFailuresBySession[sessionId] = 0;
+      loadChatHistory(ses);
+      return;
+    }
+    var pendingTurn = Number(state.pendingBySession[sessionId]) || 0;
+    if (pendingTurn > 0 && state.pollTimers[sessionId]) {
+      clearTimeout(state.pollTimers[sessionId]);
+      state.pollFailuresBySession[sessionId] = 0;
+      doPoll(ses, pendingTurn);
+    }
+    state.bgFailures = 0;
+    if (state.bgTimer) clearTimeout(state.bgTimer);
+    doBackgroundPoll();
+  }
+
+  window.addEventListener('online', function () {
+    if (activeSession() && !state.pendingBySession[String(activeSession().id)]) setStatus('', 'VERBINDE\u2026');
+    resyncActiveSession('online');
+  });
+  window.addEventListener('offline', function () {
+    setStatus('error', 'OFFLINE');
+  });
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) {
+      state.hiddenAt = Date.now();
+      return;
+    }
+    var away = state.hiddenAt ? Date.now() - state.hiddenAt : 0;
+    state.hiddenAt = 0;
+    if (away >= 10000) resyncActiveSession('visible');
+  });
 
   // ── Auth & Charakter ─────────────────────────────────────
   function checkAuth() {

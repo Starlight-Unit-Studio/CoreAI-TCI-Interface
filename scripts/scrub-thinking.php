@@ -27,7 +27,7 @@ foreach ($scan->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
   $clean = ember_sanitize_public_reply($message, (string)($row['thinking_content'] ?? ''));
   if ($clean === $message) continue;
   if ($clean === '') {
-    $clean = 'Diese ältere Ausgabe enthielt einen internen Modellentwurf und wurde ausgeblendet.';
+    $clean = 'Diese ältere Ausgabe enthielt einen internen Core-Entwurf und wurde ausgeblendet.';
   }
   $update->execute([$clean, (int)$row['id']]);
   $replyRows += $update->rowCount();

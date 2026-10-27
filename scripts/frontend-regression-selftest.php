@@ -165,7 +165,7 @@ try {
   frontend_test_assert(
     str_contains($console, 'function responseTimings(record)')
       && str_contains($console, 'function formatResponseDuration(ms)')
-      && str_contains($console, "values.push(['MODELLZEIT'")
+      && str_contains($console, "values.push(['CORE-ZEIT'")
       && str_contains($console, "elapsed_ms: data && data.elapsed_ms")
       && str_contains($streamApi, "'elapsed_ms'    => " . '$elapsedMs')
       && str_contains($streamApi, "'duration_ms'=>" . '$modelDurationMs')
@@ -248,6 +248,24 @@ try {
       && str_contains($workStore, 'function coreui_work_active_events('),
     'Aktiver Chatprozess wird nach Seitenwechsel nicht aus sicherer Session-History rekonstruiert.'
   );
+
+  // Starlight lore (#115): visible interface text says "Core", not "Modell".
+  // Internal ids (event names, API fields, element ids) are not affected.
+  $settingsHtml = frontend_test_read($root . '/settings.html');
+  $insightsJs = frontend_test_read($root . '/js/coreui-insights.js');
+  $visible = [
+    'settings.html'=>strip_tags(preg_replace('~<(script|style)\b[^>]*>.*?</\1>~is', '', $settingsHtml)),
+    'admin/index.html'=>strip_tags(preg_replace('~<(script|style)\b[^>]*>.*?</\1>~is', '', $adminHtml)),
+    'app.html'=>strip_tags(preg_replace('~<(script|style)\b[^>]*>.*?</\1>~is', '', $appHtml)),
+  ];
+  foreach ($visible as $file => $text) {
+    frontend_test_assert(!preg_match('~Modell|MODELL~u', $text), 'Sichtbarer Text "Modell" in ' . $file);
+  }
+  foreach (['settings.js'=>$settings, 'coreui-insights.js'=>$insightsJs, 'console-app.js'=>$console] as $file => $source) {
+    preg_match_all("~'([^'\\n]*(?:Modell|MODELL)[^'\\n]*)'~u", $source, $quoted);
+    $shown = array_filter($quoted[1], static fn(string $text): bool => !preg_match('~^Modell[a-z]+ [a-z]+$~u', $text));
+    frontend_test_assert($shown === [], 'Sichtbarer Text "Modell" in js/' . $file . ': ' . implode(' | ', $shown));
+  }
 
   // 0.5.67: absolutely positioned, visually hidden step titles must stay
   // inside the internally scrolling work history. Otherwise an opened

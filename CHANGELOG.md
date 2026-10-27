@@ -2,6 +2,13 @@
 
 CoreAI: TCI Interface gehoert zur Quantum-Softwarefamilie und wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert. Historische Changelogs dokumentieren die frueheren Produktnamen unveraendert.
 
+## 0.5.70 - 27.10.2026
+
+- **Kontextfenster im KI-Profil (#113):** Schieberegler 4K bis 128K plus "Core-Standard übernehmen" (Voreinstellung). Speicher-Richtwert an jeder Stufe, abhaengig vom gewaehlten Core (`api/ai_context_estimate.php`: Gewichte aus `/api/tags`, KV-Cache aus `/api/show`-Metadaten inklusive Sliding Window, Korrektur ueber `/api/ps`, `MemAvailable`); gerundet als Bandbreite, sonst "nicht zuverlaessig schaetzbar". Warnung bei deutlich zu wenig Speicher, keine Sperre. Strikte Whitelist, Migration `017_ai_num_ctx.sql` (NULL = kein Override), `invalid_num_ctx` bei ungueltigem Wert. `options.num_ctx` nur bei ausdruecklicher Wahl, nur lokal und nur in der privaten Konsole, nie Cloud, keine weiteren Gemma-Parameter; SSE und Sync gleich. Pro Lauf fixiert. `ember_ollama_context_window()` liefert das gesendete Fenster (Quelle "KI-Profil"); der Infokasten zeigt den von Ollama geladenen Wert getrennt. Modelfile unveraendert.
+- **"Core" statt "Modell" (#115):** Arbeitsweg, Infokaesten, Einstellungen, Admin und sichtbare Server-Meldungen sprechen von Core. Interne Ereignistitel, API-Felder und Protokollkennungen unveraendert (`CoreUIWorkEvents.displayTitle`). Regressionstest gegen sichtbares "Modell".
+- **WebUI-Robustheit (#112, P1/P2):** `js/coreui-net.js` (Timeout, Abbruch, Fehlerarten, Backoff mit Jitter, datensparsame Messwerte). Verlauf: abbrechbar beim Sitzungswechsel, eine Hinweiszeile mit "ERNEUT LADEN" statt neuer Systemzeilen, begrenzte automatische Wiederholung, nichts Angezeigtes wird entfernt, Entwurf bleibt. `online`/`visibilitychange` synchronisieren nur lesend; laufende Auftraege werden ueber die Server-ID angebunden, nie doppelt gesendet. Antwort-Poll zaehlt Offline-Versuche nicht gegen das Zeitbudget. Aeltere Seiten werden inkrementell vorangestellt (Nachbau 1.000 Nachrichten: rund 25 ms je Seite statt bis 1 s), Leseposition bleibt; lange Verlaeufe rendern begrenzt; inaktive Sitzungscaches werden gekuerzt.
+- Tests: neue `scripts/ai-context-selftest.php`, `scripts/context-slider-ui-selftest.cjs`, `scripts/webui-resilience-selftest.cjs` in beiden Preflights; Gemma-, Infokasten-, Arbeitsweg- und Frontend-Tests erweitert.
+
 ## 0.5.69 - 27.10.2026
 
 - **Infokaesten auf dem Server:** `console_insights` fehlte in der nginx-Freigabeliste (`config/nginx.conf.template`, `config/runtime/nginx.conf.template`); Werkzeuge und Projekt blieben deshalb im Ladezustand. Beide Preflights und `scripts/insights-selftest.php` pruefen die Route. Ein nicht erreichbarer Endpunkt wird im Kasten benannt.

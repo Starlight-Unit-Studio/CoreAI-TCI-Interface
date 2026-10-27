@@ -146,5 +146,20 @@ vm.runInNewContext(source, sandbox);
   assert(brokenAside.textContent.includes('gerade nicht erreichbar')
     && !brokenAside.textContent.includes('Lade Werkzeuge'), 'an unreachable endpoint is reported');
 
+  // #113: a KI-Profil window is named as such; a differently loaded runner
+  // is shown separately instead of being mixed up with the used window.
+  const profileAside = new Element('aside');
+  const profile = sandbox.window.CoreUIInsights.create({aside:profileAside, apiBase:'/coreai/api'});
+  sandbox.window.fetch = () => Promise.resolve({json: () => Promise.resolve({ok:true, session_id:'sessionDDDD4',
+    core:{model:'ember-coreui:latest', runtime:'local', context_tokens:32768, context_source:'profile',
+      context_loaded:131072, thinking:true}, tools:[], files:[]})});
+  await profile.refresh('sessionDDDD4');
+  sandbox.window.fetch = realFetch;
+  assert(profileAside.textContent.includes('32.768 Tokens · KI-Profil'), 'profile source named');
+  assert(profileAside.textContent.includes('Von Ollama geladen131.072 Tokens'), 'loaded window shown apart');
+  profile.observe({meta:{model:'ember-coreui:latest', context_tokens:'32768', prompt_eval_count:'30000',
+    eval_count:'2768'}});
+  assert(profileAside.textContent.includes('32.768 Tokens · KI-Profil'), 'a full profile window keeps its source');
+
   console.log('CoreAI info boxes: Core, Kontext, Werkzeuge, Projekt, chips and live usage OK');
 })().catch(error => { console.error(error); process.exit(1); });

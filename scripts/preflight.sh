@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.69 info boxes routed by nginx, no resurrected runs after a reply.
+# CoreAI: TCI Interface 0.5.70 KI-Profil context window, Core naming, resilient WebUI for long chats.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -143,6 +143,13 @@ UI_FILES=(
   scripts/context-budget-selftest.php
   scripts/insights-selftest.php
   scripts/insights-ui-selftest.cjs
+  scripts/ai-context-selftest.php
+  scripts/context-slider-ui-selftest.cjs
+  api/ai_context_estimate.php
+  js/coreui-context-slider.js
+  database/migrations/017_ai_num_ctx.sql
+  scripts/webui-resilience-selftest.cjs
+  js/coreui-net.js
   api/console_insights.php
   api/console_insights_store.php
   js/coreui-insights.js
@@ -582,6 +589,13 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail "Infokaesten-Selbsttest: ${insights_test:-Unbekannter Fehler}"
   fi
 
+  ai_context_test=''
+  if ai_context_test="$(compose exec -T php php scripts/ai-context-selftest.php 2>&1)"; then
+    ok 'KI-Profil: Kontextfenster nur auf Wunsch, nie Cloud, pro Lauf fixiert, Speicher-Richtwerte geprueft.'
+  else
+    fail "KI-Profil-Kontextfenster-Selbsttest: ${ai_context_test:-Unbekannter Fehler}"
+  fi
+
   if command -v node >/dev/null 2>&1; then
     if node "$PROJECT_ROOT/scripts/response-timing-ui-selftest.js" >/dev/null 2>&1; then
       ok 'Antwortdauer: gespeicherte Gesamt- und Modellzeit in der Infoanzeige geprueft.'
@@ -597,6 +611,16 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       ok 'Infokaesten: rechte Spalte, Handy-Buttons und Live-Kontext geprueft.'
     else
       fail 'Infokaesten: JavaScript-Selbsttest fehlgeschlagen.'
+    fi
+    if node "$PROJECT_ROOT/scripts/context-slider-ui-selftest.cjs" >/dev/null 2>&1; then
+      ok 'KI-Profil: Kontextfenster-Regler mit Richtwert an jeder Stufe geprueft.'
+    else
+      fail 'KI-Profil: Kontextfenster-Regler-Selbsttest fehlgeschlagen.'
+    fi
+    if node "$PROJECT_ROOT/scripts/webui-resilience-selftest.cjs" >/dev/null 2>&1; then
+      ok 'WebUI: abbrechbares Laden, Reconnect ohne Doppelauftrag, Backoff und lange Chats geprueft.'
+    else
+      fail 'WebUI: Robustheits-Selbsttest fehlgeschlagen.'
     fi
     if node "$PROJECT_ROOT/scripts/chat-follow-selftest.cjs" >/dev/null 2>&1; then
       ok 'Chat-Scroll: manuelles Lesen, Arbeits-Punkte und Sprung zur aktuellen Antwort geprueft.'

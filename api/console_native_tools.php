@@ -630,7 +630,7 @@ function coreui_native_tool_apply(
           . (int)$saved['version'] . ' gesichert. '
           . ($autoSegments > 0
             ? 'Ich habe selbststaendig ' . $autoSegments . ' weitere Teilabschnitte geschrieben. '
-            : 'Ein weiterer Modellabschnitt konnte noch nicht bestaetigt werden. ')
+            : 'Ein weiterer Planabschnitt von Core konnte noch nicht bestaetigt werden. ')
           . 'Der Markdown-Download ist vorhanden; die Planung ist noch nicht abgeschlossen. '
           . 'Es wurde kein Projektbau gestartet.';
       }
@@ -670,7 +670,7 @@ function coreui_native_tool_apply(
     }
     return 'Die Projektquellen konnten nicht sicher zusammengestellt werden. '
       . 'Entweder ist die Dateiliste ungueltig oder der gespeicherte Plan '
-      . 'ist zu gross fuer eine einzelne Modellgenerierung. Die Markdown-Datei bleibt erhalten.';
+      . 'ist zu gross fuer einen einzelnen Core-Durchlauf. Die Markdown-Datei bleibt erhalten.';
   }
   if (function_exists('coreui_work_record')) {
     coreui_work_record($pdo,'tool','info','Mara hat selbst den Projekt-Writer aufgerufen',
