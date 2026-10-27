@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.68 agent-style work flow, info boxes and follow-until-the-reader-scrolls.
+# CoreAI: TCI Interface 0.5.69 info boxes routed by nginx, no resurrected runs after a reply.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -247,6 +247,11 @@ if grep -Fq 'console_artifact|console_artifacts' "$PROJECT_ROOT/config/runtime/n
   ok 'Nginx erlaubt geschuetzte Datei-Downloads und Metadaten-Endpunkt.'
 else
   fail 'Nginx-Routing fuer Chat-Dateiausgaben fehlt.'
+fi
+if grep -Fq '|console_insights|' "$PROJECT_ROOT/config/runtime/nginx.conf.template"; then
+  ok 'Nginx erlaubt die Infokaesten (Core, Kontext, Werkzeuge, Projekt).'
+else
+  fail 'Nginx-Routing fuer die Infokaesten fehlt.'
 fi
 
 if (( FAILURES == 0 )); then

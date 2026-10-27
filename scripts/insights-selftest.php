@@ -53,6 +53,12 @@ insights_test(!str_contains($store, 'markdown\'=>') && !str_contains($store, "'t
   && str_contains($store, 'coreui_work_safe_meta(') && str_contains($store, "a.user_id=? AND a.session_id=?"),
   'only whitelisted metadata and owner-scoped files leave the server');
 
+// 0.5.68: nginx only serves listed API files; a missing entry left the
+// Werkzeuge and Projekt boxes loading forever on the server.
+foreach (['config/nginx.conf.template','config/runtime/nginx.conf.template'] as $nginx) {
+  insights_test(str_contains((string)file_get_contents($root . '/' . $nginx), '|console_insights|'),
+    'nginx must route the info box endpoint: ' . $nginx);
+}
 $app = (string)file_get_contents($root . '/app.html');
 $js = (string)file_get_contents($root . '/js/console-app.js');
 insights_test(str_contains($app, 'id="coreInsights"') && str_contains($app, 'id="insightChips"')

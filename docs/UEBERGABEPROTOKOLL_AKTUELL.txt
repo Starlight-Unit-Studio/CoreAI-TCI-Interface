@@ -1,9 +1,10 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
 Stand: 27.10.2026
-Repository-Version: 0.5.68
+Repository-Version: 0.5.69
 Repository: https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface
 ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_5_69.txt
   docs/UEBERGABEPROTOKOLL_0_5_68.txt
   docs/UEBERGABEPROTOKOLL_0_5_67.txt
   docs/UEBERGABEPROTOKOLL_0_5_66.txt
@@ -53,6 +54,8 @@ laesst den Autoscroll dem laufenden Arbeitsweg folgen und stoppt ihn nur
 bei echtem Nutzer-Scrollen, zeigt den Arbeitsweg im Nachrichtenfluss wie
 ein Agent-Terminal und ergaenzt Infokaesten (Core, Kontext, Werkzeuge,
 Projekt) rechts bzw. als Buttons auf schmalen Bildschirmen.
+0.5.69: nginx-Route fuer die Infokaesten ergaenzt; nach einer Antwort
+belebt eine verspaetete Abfrage den beendeten Lauf nicht mehr (Flackern).
 Mara/Ember, Ollama-Modelfile, serielle Queue und private Projekt-
 plaene NICHT ungefragt veraendern.
 Externe STU-Homepage wird in einem ANDEREN Chat bearbeitet.

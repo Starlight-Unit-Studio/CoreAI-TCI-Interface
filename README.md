@@ -7,7 +7,26 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.68` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.69` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Infokaesten auf dem Server und kein Chat-Flackern nach Antworten (0.5.69)
+
+Live-Test 0.5.68: Werkzeuge und Projekt blieben im Ladezustand, und nach
+einer Antwort flackerte der Chat. Ursache 1: nginx laesst nur API-Dateien
+aus einer festen Liste durch; `console_insights` fehlte in beiden
+Vorlagen. Core und Kontext wirkten trotzdem gefuellt, weil sie auch aus den
+Live-Ereignissen lesen. Die Vorlagen enthalten den Endpunkt jetzt, beide
+Preflights pruefen ihn, und ein nicht erreichbarer Endpunkt wird im Kasten
+benannt statt endlos zu laden.
+
+Ursache 2 (schon vor 0.5.68 vorhanden): Die Hintergrund-Abfrage alle drei
+Sekunden lieferte manchmal noch den eben beendeten Agentenlauf als
+"laeuft", weil sie kurz vor dem Abschluss gestellt wurde. Die App belebte
+den Lauf wieder, baute den ganzen Verlauf neu auf, zeigte erneut den
+Tipp-Indikator und lud die Download-Karten nach. Jetzt merkt sich die App
+beendete Laeufe, erkennt einen Lauf mit gespeicherter Antwort und den
+Basislauf eines bereits beantworteten Turns als veraltet. Eine echte
+Neu-Generierung wird weiterhin fortgesetzt.
 
 ## Arbeitsweg wie ein Agent-Terminal, Infokaesten und Autoscroll (0.5.68)
 
