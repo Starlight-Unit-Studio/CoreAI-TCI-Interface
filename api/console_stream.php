@@ -582,7 +582,7 @@ try {
     && empty($acc['truncated']);
   $safePlanRecovery = is_array($nativeTool)
     && in_array(($nativeTool['type'] ?? ''),
-      ['PLAN_SAVE','PLAN_CONTINUE'],true);
+      ['PLAN_SAVE','PLAN_APPEND','PLAN_CONTINUE'],true);
   // Even after a failed Ollama transport, preserve a substantial model-
   // selected Markdown plan as a DRAFT, never as an approved tool action.
   if (!$fileTaskHandled && !$nativeToolHandled
@@ -693,8 +693,9 @@ try {
         'Plan-Fortsetzungsmarker nicht lesbar',
         ['reason'=>'invalid_plan_continue_marker','response_bytes'=>strlen($reply)]);
     }
-    $reply = 'Maras Werkzeugantwort war unvollstaendig oder nicht gueltig. '
-      . 'Es wurde weder ein Plan gespeichert noch ein Projekt erstellt.';
+    $reply = 'Ich konnte die aktuelle Werkzeugantwort nicht sicher auswerten. '
+      . 'Bereits gespeicherte Planversionen bleiben erhalten. '
+      . 'Aus dieser unvollstaendigen Antwort habe ich keinen Projektbau gestartet.';
   }
 
   if (!$nativeToolHandled && !empty($acc['truncated']) && $reply !== '') {

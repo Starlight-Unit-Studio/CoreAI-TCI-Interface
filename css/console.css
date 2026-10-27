@@ -6521,3 +6521,17 @@ audio.msg-image {
 .msg-row.ember .work-detail-toggle::-webkit-details-marker { display: none; }
 .msg-row.ember .work-detail-toggle::marker { content: ''; }
 .msg-row.ember .work-detail-toggle:hover { background: rgba(91,146,255,.17); }
+
+/* 0.5.66: never reserve a full blank viewport below the chat transcript. */
+.feed-shell {
+  min-height: 0;
+  padding-bottom: 16px;
+}
+.messages-inner { min-height: 0; }
+.messages-area { overflow-anchor: auto; }
+/* Scroll management is done by the reader-aware controller, but native
+   anchoring still stabilizes layout when images or previews gain height. */
+.msg-row.ember .work-body,
+.msg-row.ember .work-source-scroll {
+  overscroll-behavior-y: contain;
+}

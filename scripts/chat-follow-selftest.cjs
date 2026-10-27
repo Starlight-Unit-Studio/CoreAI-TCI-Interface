@@ -9,7 +9,7 @@ const frames = [];
 const area = {
   scrollTop:1200,scrollHeight:1600,clientHeight:400,listeners:{},
   addEventListener(type,fn) { this.listeners[type]=fn; },
-  getBoundingClientRect() { return {top:200,height:400}; },
+  getBoundingClientRect() { return {top:200,bottom:600,height:400}; },
   scrollTo(opts) { this.scrollTop=opts.top;this.listeners.scroll(); }
 };
 const flags = new Set();
@@ -53,7 +53,7 @@ assert.equal(flags.has('working'),true);
 assert.match(button.attributes['aria-label'],/Mara arbeitet/);
 
 // A click moves toward the working assistant block, never empty space.
-active={getBoundingClientRect(){return {top:560,height:680};}};
+active={getBoundingClientRect(){return {top:560,bottom:1240,height:680};}};
 button.listeners.click();
 assert(area.scrollTop > saved);
 assert(area.scrollTop < area.scrollHeight-area.clientHeight);
@@ -81,4 +81,17 @@ assert.equal(area.scrollTop,top);
 active=null;follow.follow(true);flush();
 assert.equal(follow.isFollowing(),true);
 assert.equal(area.scrollTop,area.scrollHeight-area.clientHeight);
+// The actual latest message, not a stretched parent with decorative padding,
+// determines the scroll destination when there is a huge empty feed tail.
+working=false;
+area.scrollTop=1420; area.scrollHeight=4500; area.clientHeight=400;
+active={getBoundingClientRect(){return {top:300,bottom:410,height:110};}};
+follow.refresh();
+assert.equal(follow.atBottom(),true,
+  'blank layout tail must never make the latest message look unread');
+follow.follow(true);flush();
+assert.equal(area.scrollTop,1248,
+  'follow must align last message, not 4500px feed-shell bottom');
+assert.equal(button.hidden,true);
+
 console.log('CoreAI reader-aware follow, working dots and jump button: OK');

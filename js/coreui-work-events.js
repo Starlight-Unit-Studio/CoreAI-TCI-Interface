@@ -7,12 +7,12 @@
   var STATES = {running:true,success:true,error:true,info:true};
   var KINDS = {run:true,model:true,tool:true,artifact:true,error:true,commentary:true};
   var DETAIL_LABELS = {
-    model:'Modell', job_id:'Job', exit_code:'Exitcode', duration_ms:'Laufzeit (ms)',
+    model:'Core', job_id:'Job', exit_code:'Exitcode', duration_ms:'Laufzeit (ms)',
     error_type:'Fehlertyp', file_name:'Datei', file_count:'Dateien', attempt:'Versuch',
     http_code:'HTTP', reason:'Grund', source:'Quelle', elapsed_ms:'Dauer (ms)',
     source_chars:'Quelltext (Zeichen)', eval_count:'Ausgabe-Tokens',
     prompt_eval_count:'Eingabe-Tokens', plan_version:'Planversion',
-    step:'Planungsabschnitt', done_reason:'Modell-Endgrund',
+    step:'Planungsabschnitt', done_reason:'Core-Endgrund',
     content_chars:'Antworttext (Zeichen)', thinking_chars:'Denkstatus (Zeichen)',
     continuation_segments:'Fortsetzungen', response_bytes:'Antwort (Bytes)',
     discarded_tool_body_bytes:'Verworfener Marker (Bytes)',
@@ -30,28 +30,28 @@
       case 'Auftrag gestartet':
         return 'Ich übernehme den Auftrag und beginne mit den notwendigen Prüfungen.';
       case 'Kontext vorbereitet':
-        return 'Der Kontext ist vorbereitet. Als Nächstes prüfe ich, welche Antwort oder Werkzeugaktion erforderlich ist.';
+        return 'Ich habe den Kontext vorbereitet. Als Nächstes prüfe ich, welche Antwort oder Werkzeugaktion erforderlich ist.';
       case 'Modellstream vorbereitet':
-        return 'Ich bereite den Modellaufruf vor. Eine Modellantwort liegt zu diesem Zeitpunkt noch nicht vor.';
+        return 'Ich bereite den Core-Aufruf vor. Eine Antwort liegt zu diesem Zeitpunkt noch nicht vor.';
       case 'Modellstream gestartet':
       case 'Modellaufruf gestartet':
-        return 'Ich habe den Modellaufruf gestartet und warte auf ein tatsächlich abgeschlossenes Ergebnis.';
+        return 'Ich habe den Core-Aufruf gestartet und warte auf ein tatsächlich abgeschlossenes Ergebnis.';
       case 'Modellstream abgeschnitten':
-        return 'Die Modellausgabe endete vorzeitig. Ich kann nur den bestätigten Text weiterverwenden.';
+        return 'Meine Ausgabe endete vorzeitig. Ich kann nur den bestätigten Text weiterverwenden.';
       case 'Modellstream empfangen':
         return event.meta.reason === 'output_truncated'
-          ? 'Das Modell hat nur eine abgeschnittene Ausgabe geliefert. Ich prüfe, ob eine sichere Fortsetzung möglich ist.'
-          : 'Die Modellantwort ist eingetroffen. Ich prüfe jetzt, ob sie vollständig und für den Auftrag verwendbar ist.';
+          ? 'Core hat nur eine unvollständige Ausgabe geliefert. Ich prüfe, ob ich sie sicher fortsetzen kann.'
+          : 'Meine Antwort ist eingetroffen. Ich prüfe jetzt, ob sie vollständig und für den Auftrag verwendbar ist.';
       case 'Modellstream fehlgeschlagen':
       case 'Modellaufruf ohne Antwort':
-        return 'Der Modellaufruf hat keine bestätigte vollständige Antwort geliefert. Die technischen Angaben helfen, die Ursache einzugrenzen.';
+        return 'Der Core-Aufruf hat keine bestätigte vollständige Antwort geliefert. Ich prüfe die technischen Angaben, um die Ursache einzugrenzen.';
       case 'Kurze Werkzeugentscheidung nicht bestaetigt':
         return 'Ich konnte die Werkzeugentscheidung nicht sicher bestätigen. Deshalb starte ich keinen unbelegten Projektbau.';
       case 'Mara hat die Umsetzung des gespeicherten Plans gewaehlt':
         return 'Ich setze den bereits gespeicherten Projektplan um. Zuerst prüfe ich die Freigabe und die benötigten Quelldateien.';
       case 'Mara hat ein natives Werkzeug angefordert':
       case 'Mara hat selbst den Projekt-Writer aufgerufen':
-        return 'Ich habe eine Werkzeugaktion gewählt. Vor der Ausführung prüft CoreUI die Freigabe und den passenden Ausführungsweg.';
+        return 'Ich habe eine Werkzeugaktion gewählt und prüfe vor der Ausführung die Freigabe sowie den passenden Ausführungsweg.';
       case 'Freigegebenes Webprojekt im Quelltextmodus gestartet':
         return 'Der Projektbau ist freigegeben. Ich erstelle und prüfe die Quelldateien einzeln; erst danach darf daraus ein ZIP entstehen.';
       case 'Homepage-Projektdateien erkannt':
@@ -67,6 +67,10 @@
         return 'Ich habe ' + file + ' erfasst. Für das ZIP wird anschließend die vollständige Dateiliste geprüft.';
       case 'Quelldatei nicht lesbar':
       case 'Quelldatei ausgeblieben':
+        if (event.meta.reason === 'model_output_truncated'
+            && Number(event.meta.source_chars) === 0) {
+          return 'Core hat für ' + file + ' noch keinen sichtbaren Quelltext geliefert. Ich kann daraus keine Datei bestätigen; im Detail stehen Ausgabe- und Denkstatus-Längen.';
+        }
         return 'Für ' + file + ' fehlt noch ein nutzbares Ergebnis. Ich prüfe den Fehlergrund; ein fertiges Dateipaket kann ich damit nicht bestätigen.';
       case 'JavaScript-Ausgabe fortgesetzt':
       case 'Fehlender JavaScript-Teil wird erzeugt':
@@ -116,7 +120,7 @@
       case 'Antwort blieb nach Fortsetzung unvollstaendig':
         return 'Meine Antwort ist trotz Fortsetzung noch unvollständig. Der vorhandene Teil bleibt erhalten; er ist kein bestätigter Abschluss.';
       case 'Modellstream unvollstaendig':
-        return 'Die Modellübertragung war unvollständig. Ich prüfe den vorhandenen Werkzeug- oder Ersatzpfad, ohne den Abbruch zu verschweigen.';
+        return 'Die Core-Übertragung war unvollständig. Ich prüfe den vorhandenen Werkzeug- oder Ersatzpfad, ohne den Abbruch zu verschweigen.';
       case 'Antwort gespeichert':
         return 'Die Antwort ist im privaten Verlauf gesichert. Den bestätigten Arbeitsweg kannst du später erneut aufklappen.';
       case 'Auftrag auf Wunsch abgebrochen':
@@ -405,7 +409,10 @@
         || body._workSourceAttempt !== attempt) return false;
     if (raw.phase === 'end') {
       var status = panel.querySelector('.work-source-status');
-      if (status) status.textContent = 'Übertragung beendet · Prüfung läuft';
+      var codeOnEnd = panel.querySelector('.work-source-code');
+      if (status) status.textContent = codeOnEnd && codeOnEnd.textContent
+        ? 'Übertragung beendet · Prüfung läuft'
+        : 'Kein sichtbarer Quelltext empfangen';
       return true;
     }
     if (typeof raw.text !== 'string' || !raw.text || raw.text.length > 2500)

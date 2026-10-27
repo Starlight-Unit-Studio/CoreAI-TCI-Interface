@@ -1,0 +1,8 @@
+CoreAI: TCI Interface 0.5.66 - 27.10.2026
+- Werkweg-Meldungen sprechen aus Maras Ich-Perspektive. Sichtbare Modell-Bezeichnungen werden zu Core; persistierte Event-IDs und technische Protokolldaten bleiben erhalten.
+- Lokales Gemma: HTTP 200 mit done_reason=length und null Quelltextzeichen darf nicht als fortsetzbare Datei gelten. Ein fehlgeschlagener leerer Source-Aufruf nutzt den gezielten zweiten Dateiversuch, ohne Ollama-/Modelfile-Optionen global zu veraendern.
+- Lokal: Syntaktisch offene CSS-/HTML-/JS-Ausgabe kann auch bei done_reason=stop sicher fortgesetzt werden. Ein kompletter neuer File-Output wird nur bei passendem Prefix und strenger Einzeldateipruefung akzeptiert.
+- Cloud: Unvollstaendige PLAN_AND_BUILD- und PLAN_APPEND-Werkzeugausgaben werden als eindeutig unvollstaendige, private Markdown-Entwuerfe aufgefangen. Kein unsicherer Build aus Teilmarkern.
+- Chat: Verlauf richtet sich am Ende der letzten Nachricht statt an kuenstlichen Feed-Abstaenden aus; neue Nachrichten aktivieren das Folgen beim Start. Vorhandener transparenter Sprung-Button und animierte Arbeitspunkte bleiben.
+- Wiederholungs- und Sicherheitspruefungen wurden ergaenzt. Keine erneute 512-KB-Sammelgrenze und keine Veraenderung des Modelfiles.
+- OFFEN: Dauerhafte mehrstufige Projekt-/Datei-Checkpoints, zehn oder mehr Projektunterseiten, Abnahme durch echten Netcup-/Android-Test.
