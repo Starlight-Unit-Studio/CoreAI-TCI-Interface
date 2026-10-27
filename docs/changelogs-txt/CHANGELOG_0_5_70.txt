@@ -5,7 +5,7 @@ CoreAI: TCI Interface 0.5.70 - 27.10.2026
 - Projektbudgets und Core-Infokasten nutzen das gesendete Fenster (Quelle KI-Profil); geladenes Fenster getrennt angezeigt.
 - Issue #115: sichtbar "Core" statt "Modell"; interne Kennungen unveraendert; Regressionstest.
 - Issue #112 (P1/P2): abbrechbares Laden mit Zeitlimit und Wiederholen, Fehlerarten benannt, Entwurf und Anzeige bleiben, Resync bei online/Vordergrund ohne Doppelauftrag, Backoff mit Jitter, inkrementelles Nachladen aelterer Seiten, begrenztes Rendern und Caches, Messwerte ohne Inhalte.
-- Datum: Homepage trug das Trainingsjahr 2024. Getrennte Core-Aufrufe (Einzeldateien, Fortsetzungen, Folgeschritte) hatten kein Datum. Jeder Core-Aufruf eines Konsolenauftrags beginnt jetzt mit [DATUM HEUTE: ...] (nur Datum, Prompt-Cache bleibt); SERVERZEIT erlaubt das Datum fuer erzeugte Inhalte wie Copyright-Jahr.
+- Datum und Uhrzeit: Homepage trug das Trainingsjahr 2024. Getrennte Core-Aufrufe (Einzeldateien, Fortsetzungen, Folgeschritte) hatten weder Datum noch Uhrzeit. Jeder Core-Aufruf eines Konsolenauftrags beginnt jetzt mit [DATUM HEUTE: ...]; [UHRZEIT JETZT: ...] steht vor der letzten Anweisung (Prompt-Cache bleibt). SERVERZEIT erlaubt das Datum fuer erzeugte Inhalte wie Copyright-Jahr.
 - Neue Tests: ai-context-selftest.php, context-slider-ui-selftest.cjs, webui-resilience-selftest.cjs, date-awareness-selftest.php (beide Preflights).
 - UNVERAENDERT: Modelfile, Ollama-Dienst, serielle Queue, Global-Kanal, private Plaene.
 - OFFEN: Live-Abnahme Netcup/Android; #112 P3 (Android-Wrapper) im Repository Quantum-Mobile-Wrapper.

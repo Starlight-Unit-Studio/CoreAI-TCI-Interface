@@ -1833,22 +1833,33 @@ function ember_tool_time(): string {
 }
 
 /**
- * 0.5.70: today's date for every Core call of a private console turn. The
- * main prompt carries SERVERZEIT, but separate calls (single source files,
- * their continuations, plan and tool follow-ups, repairs) had no date, so a
- * generated homepage used the year from the training data (2024). Date only,
- * no time: the line changes once a day and keeps Ollama's prompt cache.
+ * 0.5.70: today's date and the clock time for every Core call of a private
+ * console turn. The main prompt carries SERVERZEIT, but separate calls
+ * (single source files, their continuations, plan and tool follow-ups,
+ * repairs) had neither, so a generated homepage used the year from the
+ * training data (2024). The date leads the prompt (changes once a day); the
+ * time goes just before the final instruction line, so the shared task text
+ * in front of it stays in Ollama's prompt cache when the minute changes.
  */
-function ember_today_line(): string {
+function ember_now_berlin(): DateTime {
   try {
-    $dt = new DateTime('now', new DateTimeZone(ember_tz()));
+    return new DateTime('now', new DateTimeZone(ember_tz()));
   } catch (Throwable $e) {
-    $dt = new DateTime('now');
+    return new DateTime('now');
   }
+}
+
+function ember_today_line(?DateTime $dt = null): string {
+  $dt ??= ember_now_berlin();
   $days = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
   return '[DATUM HEUTE: ' . $days[(int)$dt->format('w')] . ', ' . $dt->format('d.m.Y')
     . '. Fuer zeitabhaengige Inhalte wie Copyright-Jahr, Stand-Angaben oder Fristen gilt '
     . 'dieses Datum, nicht das Jahr aus deinem Trainingswissen.]';
+}
+
+function ember_clock_line(?DateTime $dt = null): string {
+  $dt ??= ember_now_berlin();
+  return '[UHRZEIT JETZT: ' . $dt->format('H:i') . ' Uhr, ' . ember_tz() . ']';
 }
 
 function ember_with_today(string $prompt): string {
@@ -1856,7 +1867,11 @@ function ember_with_today(string $prompt): string {
     return $prompt;
   }
   if (str_contains($prompt, '[SERVERZEIT') || str_contains($prompt, '[DATUM HEUTE:')) return $prompt;
-  return ember_today_line() . "\n" . $prompt;
+  $dt = ember_now_berlin();
+  $dated = ember_today_line($dt) . "\n" . $prompt;
+  // Insert the time before the final line (usually "JETZT NUR ... AUSGEBEN:").
+  $cut = strrpos(rtrim($dated), "\n");
+  return substr($dated, 0, (int)$cut) . "\n" . ember_clock_line($dt) . substr($dated, (int)$cut);
 }
 
 function ember_weather_code_de($code): string {

@@ -50,13 +50,15 @@ Seite im Speicher. Messwerte (Dauer, Anzahl, Renderzeit, lange Frames) liegen
 ohne Inhalte in `window.CoreUINet.metrics()`. P3 (Android-Wrapper) gehoert
 in das Repository Quantum-Mobile-Wrapper.
 
-**Heutiges Datum:** Eine Homepage von Mara trug das Jahr 2024 aus den
+**Datum und Uhrzeit:** Eine Homepage von Mara trug das Jahr 2024 aus den
 Trainingsdaten. Nur der Hauptprompt kannte die SERVERZEIT; die getrennten
 Aufrufe fuer einzelne Quelldateien, Fortsetzungen und Folgeschritte hatten
-kein Datum. Jetzt beginnt jeder Core-Aufruf eines Konsolenauftrags mit
-`[DATUM HEUTE: ...]` (nur Datum, damit Ollamas Prompt-Cache erhalten bleibt),
-und die SERVERZEIT-Anweisung erlaubt das Datum ausdruecklich fuer erzeugte
-Inhalte wie das Copyright-Jahr.
+weder Datum noch Uhrzeit. Jetzt beginnt jeder Core-Aufruf eines
+Konsolenauftrags mit `[DATUM HEUTE: ...]`, und `[UHRZEIT JETZT: ...]` steht
+direkt vor der letzten Anweisung, damit Ollamas Prompt-Cache den gemeinsamen
+Auftragstext auch nach einem Minutenwechsel weiter nutzt. Die
+SERVERZEIT-Anweisung erlaubt das Datum ausdruecklich fuer erzeugte Inhalte
+wie das Copyright-Jahr.
 
 ## Infokaesten auf dem Server und kein Chat-Flackern nach Antworten (0.5.69)
 

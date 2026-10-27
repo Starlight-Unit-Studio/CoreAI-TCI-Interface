@@ -399,7 +399,7 @@ if command -v php >/dev/null 2>&1; then
 
   date_test=''
   if date_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/date-awareness-selftest.php" 2>&1)"; then
-    ok 'Datum: jeder Core-Aufruf eines Konsolenauftrags kennt das heutige Datum.'
+    ok 'Datum und Uhrzeit: jeder Core-Aufruf eines Konsolenauftrags kennt beides.'
   else
     fail "Datums-Selbsttest: ${date_test:-Unbekannter Fehler}"
   fi

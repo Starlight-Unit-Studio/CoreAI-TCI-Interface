@@ -599,7 +599,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
 
   date_test=''
   if date_test="$(compose exec -T php php scripts/date-awareness-selftest.php 2>&1)"; then
-    ok 'Datum: jeder Core-Aufruf eines Konsolenauftrags kennt das heutige Datum.'
+    ok 'Datum und Uhrzeit: jeder Core-Aufruf eines Konsolenauftrags kennt beides.'
   else
     fail "Datums-Selbsttest: ${date_test:-Unbekannter Fehler}"
   fi
