@@ -4983,6 +4983,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
           $accepted !== null ? 'Quelldatei empfangen' : 'Quelldatei nicht lesbar',
           ['file_name'=>(string)$name, 'model'=>$primaryModel,
             'reason'=>$reason, 'source_chars'=>$sourceChars,
+            'thinking_chars'=>strlen((string)($GLOBALS['STU_EMBER_LAST_THINKING'] ?? '')),
             'eval_count'=>(int)($lastMeta['eval_count'] ?? 0),
             'prompt_eval_count'=>(int)($lastMeta['prompt_eval_count'] ?? 0),
             'http_code'=>(int)($lastMeta['code'] ?? 0),
