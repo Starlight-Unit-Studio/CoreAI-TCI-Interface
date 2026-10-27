@@ -1,0 +1,30 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.5.66
+Stand: 27.10.2026
+Branch: fix/0.5.66-source-recovery-scroll
+Basis: 0.5.65, vor Netcup-/Android-Endabnahme.
+Prioritaet: Lokale Mara-Projektumsetzung, Cloud-Projektfortsetzung und leserorientierter Chat.
+
+BEFUNDE AUS BILDERN DES BETREIBERS:
+- Lokale Mara kann Plaene vorbereiten und teilweise speichern.
+- Umsetzung scheitert schon bei index.html. Diagnose: HTTP 200, Grund model_output_truncated, Quelltext 0 Zeichen, done_reason length, etwa 812-846 Ausgabe-Tokens. Nicht dieselbe Ursache wie ein normaler HTML-Quelltext, der mitten im Tag endet.
+- Andere lokale Laeufe zeigten style.css source_continuation_invalid bei HTTP 200, done_reason stop.
+- Cloud-Modelle liefern manchmal Anfangsprojekte, scheitern aber beim Erweitern bereits bestehender Sites; Teilmarkierungen fuer native Projektplanung werden ungueltig.
+- Chat scrollt bei live start nicht immer zur neuen Mara-Nachricht; ein leerer Bereich bleibt nach dem Verlauf. Statusformulierungen nennen CoreUI oder Modell statt Ich/Core.
+
+ANGESPROCHENE KORREKTUREN:
+- Werkweg-Texte aus Ich-Perspektive und sichtbare Bezeichnung Core, ohne Log-Event-Identifier umzubenennen.
+- Lokaler Null-Quelltext mit length-Ende wird getrennt diagnostiziert; der zweite bestehende Dateiversuch kann Thinking einschalten, ohne die Betreiberkonfiguration zu ueberschreiben.
+- Teilquelle kann auch nach stop anhand sicherer Quelltextstruktur fortgesetzt werden. Kein angenommener Erfolg ohne vollstaendige Datei.
+- Unerwartet vollstaendige neue Quelle darf bestehende nur mit passendem Anfang und erfolgreicher Validierung ersetzen.
+- Cloud PLAN_AND_BUILD und PLAN_APPEND: unvollstaendige Markdown-Ausgabe als Entwurf statt Datenverlust; niemals Projektbau aus unbestaetigtem Entwurf.
+- Reader-Follow richtet sich an echter letzter Nachricht aus, nicht am Leerraum des Containers. Der neue Nutzerturn reaktiviert es.
+- Frontend Asset-Schluessel, Versions-/Indexdateien aktualisieren. Ergebnis erst bei Merge und Netcup-Live-Abnahme als erfolgreich bezeichnen.
+
+UNVERAENDERT:
+- Betreiber-Modelfile, Ollama-Modellkonfiguration, serielle Modellqueue, sicherer Python-Worker und bestehende Werkzeugberechtigungen.
+- Kein Rueckbau der in 0.5.65 entfernten 512-kB-Projektsammelgrenze.
+- Bereits authentifizierte Chat- und Projekt-Daten bleiben account-/sessionspezifisch.
+
+WEITERHIN OFFEN:
+- Issue #102: dauerhafte Checkpoints und Fortsetzungen fuer Projektdateien ueber mehrere Auftraege; groessere Projektmanifeste; echter inkrementeller Ausbau von bestehendem Webprojekt statt ZIP-Neuaufbau aus einem Plan.
+- Vor Ort: PHP-Syntax, Selftests, Browsersicht und beide Modelle pruefen. Kein Fake-ZIP und keine unbestaetigte Erfolgsmeldung.
