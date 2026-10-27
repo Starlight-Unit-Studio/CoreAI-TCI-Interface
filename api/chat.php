@@ -4902,7 +4902,12 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         // done_reason=length can truncate HTML/CSS as well as JavaScript.
         // Recover inert source fragments, not an executable tool or a fake ZIP.
         // Durable cross-request checkpoints are handled separately in #102.
-        if ($accepted === null && $truncated && is_string($modelSource)
+        // A provider can return stop even if the source itself is unfinished.
+        // Resume only inert and structurally incomplete source, never prose.
+        $sourceIncomplete = is_string($modelSource)
+          && coreui_console_local_source_needs_continuation($modelSource,(string)$name);
+        if ($accepted === null && ($truncated || $sourceIncomplete)
+            && is_string($modelSource)
             && in_array(strtolower(pathinfo((string)$name, PATHINFO_EXTENSION)),
               ['html','htm','css','js'], true)) {
           $combined = coreui_console_local_source_fragment($modelSource, (string)$name, true);
@@ -4922,15 +4927,30 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
                 ember_timeout_for_model($primaryModel), [], null, $fileToolThink, false);
               $truncated = ember_last_call_was_truncated();
               $lastMeta = ember_last_call_meta();
+              // Some models restart a complete file despite the tail request.
+              // Accept it only when independently valid AND sharing our source
+              // prefix; never concatenate a second copy or discard old data.
+              $restart = is_string($follow)
+                ? coreui_console_local_source_completed_restart(
+                    $combined,$follow,$sourceProjectRequest,(string)$name)
+                : null;
+              if (is_array($restart)) {
+                $accepted = $restart;
+                $sourceChars = strlen($restart['bytes']);
+                coreui_work_record($pdo,'model','success','Vollstaendige Quelle sicher uebernommen',
+                  ['file_name'=>(string)$name,'model'=>$primaryModel,
+                   'reason'=>'source_validated_restart','source_chars'=>$sourceChars]);
+                break;
+              }
               $part = is_string($follow)
                 ? coreui_console_local_source_fragment($follow, (string)$name, false) : null;
               $joined = is_string($part)
                 ? coreui_console_local_source_append($combined, $part) : null;
               if (!is_string($joined)) {
-                coreui_work_record($pdo, 'model', 'error', 'Quelldatei-Fortsetzung unbrauchbar',
+                coreui_work_record($pdo, 'model', 'info', 'Quelle passt nicht zur bisherigen Fortsetzung',
                   ['file_name'=>(string)$name,'model'=>$primaryModel,
-                    'reason'=>'source_continuation_invalid']);
-                break;
+                   'reason'=>'source_continuation_invalid']);
+                break; // Preserve the original and retry a fresh file below.
               }
               $combined = $joined;
               $sourceChars = strlen($combined);
@@ -4944,12 +4964,16 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
               if (!$truncated) {
                 $accepted = coreui_console_local_source_reply($combined, $sourceProjectRequest, (string)$name);
                 if (is_array($accepted)) break;
+                // Do not treat done_reason=stop as proof of a finished file.
+                // If syntax is still open, continue with the validated prefix.
+                if (!coreui_console_local_source_needs_continuation($combined,(string)$name))
+                  break;
               }
             }
           }
         }
         $reason = $accepted !== null ? 'source_ready'
-          : ($resumed && !$truncated ? 'source_continuation_invalid'
+          : ($resumed ? 'source_continuation_invalid'
             : ember_console_local_source_failure($modelSource,$lastMeta,$truncated));
         if ($reason === 'ollama_empty_content'
             && !$retryWithThink && ember_console_file_tool_is_device_local($primaryModel)) {
@@ -4967,9 +4991,11 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         if ($accepted !== null) break;
         // A transport failure is not a source-format problem; blindly
         // repeating the same 600-second request cannot repair it.
-        if ($resumed || in_array($reason, [
+        if (in_array($reason, [
           'ollama_timeout','ollama_http_error','ollama_transport_error',
           'model_queue_timeout'], true)) break;
+        // A malformed continuation is not a provider failure: the second
+        // per-file attempt is an independent new complete-file request.
       }
       if ($accepted === null) {
         coreui_work_record($pdo, 'artifact', 'error', 'Projektquellen unvollstaendig',
