@@ -78,6 +78,20 @@ foreach ([
 }
 
 
+// 0.5.66: interrupted PLAN_AND_BUILD must not disappear or execute.
+$unfinishedBuild = "[COREUI_PLAN_AND_BUILD]\\n" . $planBody;
+$draftBuild = coreui_native_tool_parse($unfinishedBuild);
+native_assert(is_array($draftBuild)
+  && ($draftBuild['type'] ?? '') === 'PLAN_SAVE'
+  && !empty($draftBuild['draft']) && !empty($draftBuild['recovered'])
+  && ($draftBuild['body'] ?? '') === $planBody,
+  'unfinished cloud plan-and-build must recover as an inert Markdown draft');
+native_assert(coreui_native_tool_parse($unfinishedBuild
+  . "\\n[COREUI_PROJECT_BUILD]\\nindex.html") === null,
+  'mixed model build fragments must never be recovered or executed');
+native_assert(coreui_native_tool_parse("[COREUI_PLAN_AND_BUILD]\\n# Kurz")
+  === null, 'a heading without a real plan is not a project draft');
+
 // Screenshot regression: models frequently omit the closing delimiter for
 // PLAN_CONTINUE or add an introductory sentence before the selected tool.
 // This operation reads an existing owner-bound plan; no model text executes.
