@@ -363,6 +363,13 @@ $localSpec = coreui_console_project_request_spec($implicitRequest);
 local_file_test(coreui_console_local_source_prompt($implicitRequest, 'game.js', [
   'index.html'=>['name'=>'index.html','bytes'=>$localHtml],
 ], false) !== null, 'local raw one-file prompt must be available');
+$focusedSecond = coreui_console_local_source_prompt($implicitRequest,'index.html',[],true);
+local_file_test(is_string($focusedSecond)
+  && str_contains($focusedSecond,'ZWEITER QUELLCODEVERSUCH')
+  && str_contains($focusedSecond,'Beginne die SICHTBARE Antwort SOFORT mit <!DOCTYPE html>')
+  && str_contains($focusedSecond,$implicitRequest)
+  && !str_contains($focusedSecond,'num_predict'),
+  'no-source retry must request public HTML before the approved task without model option changes');
 $localPrompt = coreui_console_local_source_prompt($implicitRequest, 'game.js', [
   'index.html'=>['name'=>'index.html','bytes'=>$localHtml],
 ], true);
@@ -506,6 +513,20 @@ local_file_test(coreui_console_local_source_fragment(
   'prose or model-authored Python must never be treated as raw source');
 local_file_test(coreui_console_local_source_append($cutCss,'}') === $cutCss . '}',
   'one-character CSS brace completion must not be discarded');
+local_file_test(coreui_console_local_source_needs_continuation($cutCss,'style.css')
+  && coreui_console_local_source_needs_continuation($cutHtml,'index.html')
+  && !coreui_console_local_source_needs_continuation($cutCss . $cssRest,'style.css')
+  && !coreui_console_local_source_needs_continuation($cutHtml . $htmlRest,'index.html'),
+  'Ollama stop may still leave syntactically unfinished HTML/CSS');
+$cssRestart = coreui_console_local_source_completed_restart(
+  $cutCss,$cutCss.$cssRest,$implicitRequest,'style.css');
+local_file_test(is_array($cssRestart)
+  && ($cssRestart['bytes'] ?? '') === $cutCss.$cssRest,
+  'matching complete CSS restart may safely replace incomplete prefix');
+local_file_test(coreui_console_local_source_completed_restart(
+  $cutCss,'body { color: red; }',$implicitRequest,'style.css') === null,
+  'unrelated or shorter complete CSS must never overwrite saved prefix');
+
 local_file_test(coreui_console_local_source_resume_prompt(
   $implicitRequest,'index.html',$cutHtml,3) === null,
   'current per-turn continuation bound must stay explicit until durable runs');
@@ -516,8 +537,11 @@ local_file_test(coreui_console_local_source_resume_prompt(
 $handler = file_get_contents(dirname(__DIR__) . '/api/chat.php');
 local_file_test(str_contains($handler, "['html','htm','css','js']")
   && str_contains($handler,'coreui_console_local_source_resume_prompt(')
-  && str_contains($handler,'coreui_console_local_source_append('),
-  'live dispatcher must resume truncated HTML/CSS instead of restarting a file');
+  && str_contains($handler,'coreui_console_local_source_append(')
+  && str_contains($handler,'coreui_console_local_source_needs_continuation(')
+  && str_contains($handler,'coreui_console_local_source_completed_restart(')
+  && str_contains($handler,'source_validated_restart'),
+  'live dispatcher must resume incomplete HTML/CSS even on stop, with safe restart validation');
 
 local_file_test(str_contains($handler, 'ember_console_file_tool_is_device_local($primaryModel)')
   && str_contains($handler, 'coreui_console_local_homepage_zip_request($userMsg)')

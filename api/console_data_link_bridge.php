@@ -448,6 +448,50 @@ function coreui_console_local_source_append(string $current, string $continuatio
   return strlen($joined)<=150000 ? $joined : null;
 }
 
+/**
+ * An Ollama continuation may restart a complete source instead of returning
+ * the requested tail. Use that replacement only if it independently passes
+ * the strict single-file validation AND agrees with the already received
+ * source prefix. A random CSS rule or an unrelated file cannot replace it.
+ * Both candidates stay inert until the existing isolated writer verifies ZIP.
+ */
+function coreui_console_local_source_completed_restart(
+  string $existing, string $reply, string $request, string $filename
+): ?array {
+  if (trim($existing) === '' || trim($reply) === '') return null;
+  $candidate = coreui_console_local_source_reply($reply,$request,$filename);
+  if (!is_array($candidate) || !is_string($candidate['bytes'] ?? null)) return null;
+  $head = ltrim($existing);
+  $next = ltrim($candidate['bytes']);
+  $prefixBytes = min(48,strlen($head));
+  if ($prefixBytes < 20 || !str_starts_with($next,substr($head,0,$prefixBytes)))
+    return null;
+  // A restart must actually resolve the unfinished output.
+  if (strlen($next) <= strlen($head)) return null;
+  return $candidate;
+}
+
+/**
+ * Ollama may report done_reason=stop on syntactically unfinished raw source.
+ * Examine only the inert source bytes, never model reasoning or prose.
+ * A stop on complete source is NOT retried.
+ */
+function coreui_console_local_source_needs_continuation(string $reply, string $filename): bool {
+  $raw = coreui_console_local_source_fragment($reply,$filename,true);
+  if (!is_string($raw) || strlen($raw) < 24) return false;
+  $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+  if ($ext === 'html' || $ext === 'htm')
+    return preg_match('~</html>\\s*$~i',$raw) !== 1;
+  if ($ext === 'css') {
+    return substr_count($raw,'{') > substr_count($raw,'}')
+      || preg_match('~[:{,]\\s*$~',$raw) === 1;
+  }
+  if ($ext === 'js')
+    return substr_count($raw,'{') > substr_count($raw,'}')
+      || preg_match('~[;})]\\s*$~',$raw) !== 1;
+  return false;
+}
+
 /** File-type-aware continuation without changing Ollama parameters or Modelfile. */
 function coreui_console_local_source_resume_prompt(
   string $request, string $filename, string $current, int $segment
@@ -782,8 +826,19 @@ function coreui_console_local_source_prompt(
   } elseif ($ext === 'json') {
     $prompt .= "Gib ausschliesslich gueltiges JSON aus. ";
   }
-  if ($retry) $prompt .= "WICHTIG: Der vorige Versuch wurde NICHT als Quelldatei "
-    . "erkannt. Schreibe jetzt NUR den rohen, vollstaendigen Dateiinhalt. ";
+  if ($retry) {
+    // A completed Ollama request may contain only private thinking and zero
+    // source bytes. Keep the approved task intact, but move the file-output
+    // contract ahead of its large planning context on the fresh retry.
+    $start = in_array($ext,['html','htm'],true)
+      ? '<!DOCTYPE html>' : ($ext === 'css' ? 'CSS-Selektor'
+      : ($ext === 'js' ? 'const oder function' : 'Dateiinhalt'));
+    $prompt = "ZWEITER QUELLCODEVERSUCH FUER " . $spec['requested'][$key]
+      . ": Beginne die SICHTBARE Antwort SOFORT mit " . $start
+      . ". Keine Analyse, keine Denknotizen und keine Erklaerung. "
+      . "Nur die fertige Datei im Antwortfeld, nicht im Denkstatus. "
+      . "Der nachfolgende Auftrag bleibt verbindlich.\n\n" . $prompt;
+  }
   $reference = '';
   $perFile = max(300, intdiv($budget['refs'], max(1, count($existing))));
   foreach ($existing as $file) {

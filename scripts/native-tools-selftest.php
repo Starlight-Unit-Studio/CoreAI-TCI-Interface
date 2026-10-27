@@ -116,6 +116,50 @@ foreach ([
 }
 
 
+// 0.5.66: interrupted PLAN_AND_BUILD must not disappear or execute.
+$unfinishedBuild = "[COREUI_PLAN_AND_BUILD]\n" . $planBody;
+$draftBuild = coreui_native_tool_parse($unfinishedBuild);
+native_assert(is_array($draftBuild)
+  && ($draftBuild['type'] ?? '') === 'PLAN_SAVE'
+  && !empty($draftBuild['draft']) && !empty($draftBuild['recovered'])
+  && ($draftBuild['body'] ?? '') === $planBody,
+  'unfinished cloud plan-and-build must recover as an inert Markdown draft');
+native_assert(coreui_native_tool_parse($unfinishedBuild
+  . "\n[COREUI_PROJECT_BUILD]\nindex.html") === null,
+  'mixed model build fragments must never be recovered or executed');
+native_assert(coreui_native_tool_parse("[COREUI_PLAN_AND_BUILD]\n# Kurz")
+  === null, 'a heading without a real plan is not a project draft');
+
+// 0.5.66: incomplete PLAN_APPEND must not overwrite the approved plan as
+// final or execute a build; it is an authenticated, versioned Markdown draft.
+$appendBody = "## Weitere Unterseiten\n"
+  . "- Die Galerie bekommt eine eigene, bedienbare Unterseite.\n"
+  . "- Blog und Kontakt bleiben verlinkt; vorhandene Seiten werden erhalten.\n"
+  . "### Abnahme\n- Navigation und responsive Layouts pruefen.";
+$appendParsed = coreui_native_tool_parse("[COREUI_PLAN_APPEND]\n" . $appendBody);
+native_assert(is_array($appendParsed)
+  && ($appendParsed['type'] ?? '') === 'PLAN_APPEND'
+  && !empty($appendParsed['draft']) && !empty($appendParsed['recovered'])
+  && ($appendParsed['body'] ?? '') === $appendBody,
+  'unfinished plan extension must be preserved only as a draft');
+native_assert(coreui_native_plan_marker_attempt("[COREUI_PLAN_APPEND]\n" . $appendBody),
+  'plan append must bypass generic prose continuation');
+native_assert(coreui_native_tool_parse("[COREUI_PLAN_APPEND]\n## Weiter\n"
+    . str_repeat("abc",40) . "\n[COREUI_PROJECT_BUILD]") === null,
+  'mixed plan-append/build markers are unsafe');
+native_assert(coreui_native_tool_parse("[COREUI_PLAN_APPEND]\nNur Text") === null,
+  'plain prose is not an approved Markdown plan extension');
+
+$appendDraft = coreui_native_tool_parse("[COREUI_PLAN_APPEND]\\n"
+  . "## Neue Unterseiten\\n" . str_repeat("- Navigationslink und Inhaltslayout.\\n",8));
+native_assert(is_array($appendDraft) && ($appendDraft['type'] ?? '') === 'PLAN_APPEND'
+  && !empty($appendDraft['draft']),
+  'cut-off cloud plan additions must be persisted as an incomplete draft');
+native_assert(coreui_native_tool_parse("[COREUI_PLAN_APPEND]\\n"
+  . "## Links\\n" . str_repeat("- Test.\\n",28)
+  . "[COREUI_PROJECT_BUILD]") === null,
+  'mixed tool markers cannot authorize an appended plan');
+
 // Screenshot regression: models frequently omit the closing delimiter for
 // PLAN_CONTINUE or add an introductory sentence before the selected tool.
 // This operation reads an existing owner-bound plan; no model text executes.

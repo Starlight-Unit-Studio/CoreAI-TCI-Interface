@@ -7,7 +7,37 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.65` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.66` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Quellen-Fortsetzung, Cloud-Entwurf und Chat-Hoehe (0.5.66)
+
+Die Netcup-Tests vom 27.10.2026 zeigen beim lokalen Gemma
+`source_continuation_invalid` nach HTTP 200 / `done_reason=stop`.
+0.5.66 betrachtet nicht allein den Provider-Endgrund:
+Strukturell offene HTML-/CSS-/JS-Quelldaten duerfen weiter als
+inerte Fragmente vervollstaendigt werden. Ein kompletter Neustart
+derselben Datei wird nur dann uebernommen, wenn er die sichere
+Einzeldatei-Validierung besteht und den bestaetigten Dateianfang
+beibehält. Eine ungültige Fortsetzung kann einen erneuten
+vollstaendigen Dateiversuch ausloesen, statt den Auftrag sofort
+abzubrechen. Keine Modellparameter, keine Modelfile-Aenderung.
+
+Eine ungeschlossene, jedoch eindeutig ausgewaehlte
+`[COREUI_PLAN_AND_BUILD]`-Modellaktion kann bei genug
+valide strukturiertem Markdown nun als **unvollstaendiger Planentwurf**
+gespeichert werden. Der Build selbst wird nicht gestartet,
+bevor der Plan komplett und autorisiert ist.
+
+Das Chat-Follow richtet sich am Ende der **letzten echten Nachricht**
+aus, nicht am leeren Feed-Container. Der zuvor ueber die
+Viewport-Hoehe gespannte Platzhalter und 54px untere Auffuellung
+entfallen. Der schwebende Ruecksprung-Button bleibt.
+
+Diese Fehlerbehebung schraubt an **keinem** Ollama-Token- oder
+Datei-Codebudget. Das 512-KB-Sammellimit blieb seit 0.5.65 entfernt.
+Issue #102 zur langfristig persistenten Projekt- und Datei-Wiederaufnahme
+bleibt offen. Lokale isolierte PHP- und DOM-Pruefungen ersetzen nicht
+die Live-Abnahme ueber den Netcup-Updater.
 
 ## Leserorientierter Arbeitsweg und Projekt-ZIP-Writer (0.5.65)
 

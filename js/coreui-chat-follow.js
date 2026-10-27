@@ -15,9 +15,24 @@
       ? root.requestAnimationFrame.bind(root)
       : function (fn) { fn(); };
 
+    function latestRect() {
+      var row = activeRow && activeRow();
+      if (!row || typeof row.getBoundingClientRect !== 'function'
+          || typeof area.getBoundingClientRect !== 'function') return null;
+      return {row:row.getBoundingClientRect(),viewport:area.getBoundingClientRect()};
+    }
+    function contentEnd() {
+      // The feed-shell has historically stretched to the full viewport,
+      // including decorative padding. That empty tail is not chat content.
+      var rect = latestRect();
+      if (!rect) return Number(area.scrollHeight) || 0;
+      return Math.min(Number(area.scrollHeight) || 0,
+        Math.max(0,(Number(area.scrollTop)||0) +
+          rect.row.bottom - rect.viewport.top + 18));
+    }
     function gap() {
-      return Math.max(0, (Number(area.scrollHeight) || 0)
-        - (Number(area.clientHeight) || 0) - (Number(area.scrollTop) || 0));
+      return Math.max(0,contentEnd() -
+        (Number(area.clientHeight)||0) - (Number(area.scrollTop)||0));
     }
 
     function refresh() {
@@ -33,19 +48,21 @@
     }
 
     function activeTarget() {
-      var max = Math.max(0, (Number(area.scrollHeight) || 0) -
-        (Number(area.clientHeight) || 0));
-      // A long running work panel has its OWN inner scroll. Align its
-      // beginning instead of scrolling the conversation into empty space.
-      var row = activeRow && activeRow();
-      if (isWorking && isWorking() && row
-          && typeof row.getBoundingClientRect === 'function'
-          && typeof area.getBoundingClientRect === 'function') {
-        var rect = row.getBoundingClientRect();
-        var viewport = area.getBoundingClientRect();
-        if (rect.height > area.clientHeight * .78) {
-          return Math.max(0, Math.min(max, area.scrollTop + rect.top - viewport.top - 12));
+      var max = Math.max(0,(Number(area.scrollHeight)||0) -
+        (Number(area.clientHeight)||0));
+      var rect = latestRect();
+      if (rect) {
+        // Never target an empty tail beyond the last visible message.
+        var target = (Number(area.scrollTop)||0) + rect.row.bottom
+          - rect.viewport.bottom + 18;
+        // A large live work panel scrolls internally. Keep its beginning
+        // visible instead of moving the entire conversation into blank space.
+        if (isWorking && isWorking() &&
+            rect.row.height > (Number(area.clientHeight)||0) * .78) {
+          target = (Number(area.scrollTop)||0) +
+            rect.row.top - rect.viewport.top - 12;
         }
+        return Math.max(0,Math.min(max,target));
       }
       return max;
     }
