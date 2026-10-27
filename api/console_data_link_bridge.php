@@ -679,8 +679,19 @@ function coreui_console_local_source_prompt(
   } elseif ($ext === 'json') {
     $prompt .= "Gib ausschliesslich gueltiges JSON aus. ";
   }
-  if ($retry) $prompt .= "WICHTIG: Der vorige Versuch wurde NICHT als Quelldatei "
-    . "erkannt. Schreibe jetzt NUR den rohen, vollstaendigen Dateiinhalt. ";
+  if ($retry) {
+    // A completed Ollama request may contain only private thinking and zero
+    // source bytes. Keep the approved task intact, but move the file-output
+    // contract ahead of its large planning context on the fresh retry.
+    $start = in_array($ext,['html','htm'],true)
+      ? '<!DOCTYPE html>' : ($ext === 'css' ? 'CSS-Selektor'
+      : ($ext === 'js' ? 'const oder function' : 'Dateiinhalt'));
+    $prompt = "ZWEITER QUELLCODEVERSUCH FUER " . $spec['requested'][$key]
+      . ": Beginne die SICHTBARE Antwort SOFORT mit " . $start
+      . ". Keine Analyse, keine Denknotizen und keine Erklaerung. "
+      . "Nur die fertige Datei im Antwortfeld, nicht im Denkstatus. "
+      . "Der nachfolgende Auftrag bleibt verbindlich.\\n\\n" . $prompt;
+  }
   $reference = '';
   foreach ($existing as $file) {
     if (!is_array($file) || !is_string($file['name'] ?? null)
