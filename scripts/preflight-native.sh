@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.66 source recovery, cloud plan draft and chat scroll fix.
+# CoreAI: TCI Interface 0.5.67 context-aware local prompts, no cut-off Python, honest self-correction.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

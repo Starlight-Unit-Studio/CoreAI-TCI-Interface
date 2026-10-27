@@ -663,7 +663,7 @@ local_file_test(!ember_console_local_gemma_file_incomplete('gemma4:31b-cloud', $
   && !ember_console_local_gemma_file_incomplete('gpt-oss:120b-cloud', $openPy, true)
   && !ember_console_local_gemma_file_incomplete('qwen3.6:35b-a3e-q4_K_M', $openPy, true),
   'Cloud models selected through Ollama and local Qwen must remain unchanged');
-// 0.5.66: the truncation state of the FIRST reply is kept in $outTruncated,
+// 0.5.67: the truncation state of the FIRST reply is kept in $outTruncated,
 // so later model calls cannot overwrite it before the [PY] guard runs.
 local_file_test(str_contains($handler, '$outTruncated = ember_last_call_was_truncated();')
   && str_contains($handler, '$fileModelTruncated = $fileTask && $outTruncated;')

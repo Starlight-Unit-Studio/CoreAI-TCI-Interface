@@ -1,0 +1,12 @@
+CoreAI: TCI Interface 0.5.67 - 27.10.2026
+- Befund: Die lokalen Abbrueche endeten exakt bei 4096 Tokens (3250+846, 3284+812, 1091+3005). Das ist Ollamas Standardfenster ohne grosse GPU. CoreAI sendet kein num_ctx.
+- Kontextfenster wird nur lesend ermittelt: /api/ps, gemerkte volle Fenster (done_reason=length), sonst 4096. Cloud-Modelle sind davon ausgenommen. Kein Modelfile- oder Ollama-Eingriff.
+- Einzeldatei-Prompts: Planauszug pro Datei, DOM-Schnittstelle bereits erzeugter Seiten, Ausgabereserve; kein SKILL-Text in reinen Quelltextaufrufen und in der kurzen Bauentscheidung. Cloud-Prompts unveraendert.
+- Konsole bei kleinem Fenster: kuerzerer Verlauf, Planblock und kompakte Werkzeughinweise.
+- Python aus einer abgeschnittenen Antwort wird nie ausgefuehrt. Mehrseitige lokale Projekte gehen an den geprueften Projekt-Writer; lokaler Python-Hinweis ohne Widerspruch zu COREUI_PROJECT_BUILD.
+- Von Mara gewaehlte Dateijobs: ein begrenzter Korrekturversuch ohne Nutzer-Schlagwoerter, auch bei SyntaxError; danach sachliche Meldung mit Grund.
+- Neu generieren und Bearbeiten fragen die Bauentscheidung fuer gespeicherte Plaene ab.
+- Werkzeugparser toleriert Leerzeilen, kurzen Nachsatz und reine Fortschrittszeilen; verneinte Frameworks sperren kein Projekt.
+- Konsolenantworten behalten Absaetze und Codeeinrueckung.
+- Tests: context-budget-selftest neu und in beiden Preflights; vier nach 0.5.66 rote Selbsttests repariert.
+- OFFEN: groesseres Kontextfenster nur nach Tempomessung und Betreiberentscheidung, Issue #102, Live-Abnahme Netcup/Android.

@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-// CoreAI 0.5.66: local Ollama context window, per-file prompt budget and
+// CoreAI 0.5.67: local Ollama context window, per-file prompt budget and
 // plan excerpts. Offline: no Ollama, no database, no Modelfile change.
 if (PHP_SAPI !== 'cli') exit(1);
 $root = dirname(__DIR__);

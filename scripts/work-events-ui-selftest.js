@@ -162,7 +162,7 @@ const toggled = work.create({events:[{id:63,kind:'run',state:'success',
 toggled.querySelector('.work-toggle').handlers.click();
 assert.equal(manuallyOpened,true,'caller can remember user disclosure choice');
 
-// 0.5.66: a full local context window (3250 + 846 = 4096) is named as such,
+// 0.5.67: a full local context window (3250 + 846 = 4096) is named as such,
 // with its size, instead of a generic "abgeschnitten".
 const windowFull = work.create({events:[
   {id:64,kind:'tool',state:'info',title:'Kontextfenster ermittelt',

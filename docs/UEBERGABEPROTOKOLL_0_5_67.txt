@@ -1,0 +1,64 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.5.67
+Stand: 27.10.2026
+Branch: claude/bold-galileo-myoyi0
+Basis: 0.5.66 (main gemergt), vor Netcup-/Android-Endabnahme.
+Prioritaet: Lokale Mehrdatei-Projekte, keine falschen Versprechen, Cloud unveraendert.
+
+BEFUNDE AUS BILDERN DES BETREIBERS:
+- Lokales Gemma (ember-coreui:latest aus gemma4:e4b): index.html mit 0 Quelltextzeichen,
+  done_reason length. Eingabe + Ausgabe = 3250+846, 3284+812, 1091+3005, also exakt 4096.
+- Ursache: Ollama nutzt ohne num_ctx bei weniger als 24 GiB VRAM bzw. auf CPU 4096 Tokens.
+  CoreAI sendet seit 0.5.15 kein num_ctx. Der Einzeldatei-Prompt war durch den
+  9000-Zeichen-Planauszug (seit 0.5.38/0.5.39) und den Pflicht-Skill (seit 0.5.62) so gross,
+  dass fuer Denkphase und Quelltext rund 800 Tokens blieben.
+- Python Job mit SyntaxError "unterminated triple-quoted string": eine abgeschnittene
+  [PY]-Antwort wurde trotzdem ausgefuehrt. Der Python-Hinweis sagte lokalen Modellen
+  "MUSST du Python nutzen", der Werkzeugblock gleichzeitig COREUI_PROJECT_BUILD.
+- "Ich korrigiere das und melde mich": die automatische Korrektur lief nur, wenn der Nutzer
+  Woerter wie Download/erstellen geschrieben hatte. Bei "setz den Plan um" lief sie nicht,
+  und die freie Folgeantwort versprach Hintergrundarbeit, die es nicht gibt.
+- "Maras Werkzeugantwort war unvollstaendig": strenger Parser (Leerzeile, Nachsatz,
+  reine Fortschrittszeile) und eine Framework-Sperre, die auch "kein React" traf.
+- Das Modelfile ist NICHT die Ursache (Aussage des Betreibers, Debug-Modelfile) und blieb
+  unveraendert.
+
+KORREKTUREN:
+- api/chat.php: ember_ollama_context_window() liest /api/ps (nur lesend), merkt sich
+  gemeldete und volle Fenster 12 h in var/cache/ollama-context.json, sonst
+  STU_EMBER_ASSUMED_CONTEXT (Standard 4096). Cloud-Tags liefern null.
+- api/console_data_link_bridge.php: coreui_console_source_prompt_budget(),
+  Planauszug pro Datei, DOM-Schnittstelle fuer erzeugte Dateien. Ohne Fensterwert (Cloud)
+  exakt der bisherige Prompt.
+- Reine Quelltextaufrufe und die kurze Bauentscheidung uebergeben ['__skills'=>'none'].
+- ember_console_prompt_profile(): kleinere Konsolenprompts bei 4096/8192 Tokens.
+- Abgeschnittene Modellantwort mit [PY]: Ereignis "Unvollstaendiger Python-Code nicht
+  ausgefuehrt", Uebergabe an den Projekt-Writer bei gespeichertem Plan, sonst ehrliche Meldung.
+- Lokaler Python-Hinweis nennt fuer mehrseitige Projekte COREUI_PROJECT_BUILD
+  (Cloud und lokales Qwen-Coder unveraendert).
+- Selbst gewaehlter Dateijob: ein begrenzter Korrekturversuch ohne Schlagwoerter,
+  kompakt bei kleinem Fenster, SyntaxError-Hinweis; Abschlussmeldung mit Grund.
+- console_stream.php: Bauentscheidung auch bei Neu generieren/Bearbeiten; Kontextwerte im
+  Stream; reine Fortschrittszeile wird als Notiz gezeigt.
+- console_native_tools.php: toleranter Parser, coreui_native_strip_negated_stacks().
+- Konsolenantworten werden nicht mehr auf eine Zeile zusammengezogen.
+- Merge mit main 0.5.66: dessen zweiter vollstaendiger Dateiversuch bleibt erhalten.
+- Vier nach 0.5.66 rote Selbsttests (Plan-Append-Fixture, Core-Beschriftungen,
+  showTypingIndicator(forceFollow), Modelfile-Laufzeitzeile) auf der Testseite repariert.
+
+GEPRUEFT (offline, ohne Docker-DB):
+- php -l fuer alle PHP-Dateien, alle scripts/*selftest*.php/js/cjs/py ausser den vier
+  DB-gebundenen Tests, tests/*.sh, tests/test_cache_bust.py, tests/artifacts.
+- version-merge-check gegen 0.5.66, cache-bust --verify.
+
+UNVERAENDERT:
+- config/Modelfile.template, Ollama-Parameter, Ollama-Dienst, serielle Modellqueue,
+  Python-Worker, private Projektplaene, technische coreui-Bezeichner.
+
+WEITERHIN OFFEN:
+- Optionale Betreibereinstellung fuer ein groesseres Fenster erst nach Tempomessung auf dem
+  Server (Betreiber meldet halbe Tokens/s mit num_ctx bei gemma4). num_ctx -1 ist in Ollama
+  nicht definiert. Bis dahin: OLLAMA_CONTEXT_LENGTH ist eine Betreiberentscheidung.
+- Issue #102 (persistente Checkpoints, mehr als 9 Dateien, 12k-Planlimit).
+- SSE-Fallback erzeugt nach einem gestreamten [PY] eine neue Antwort statt die vorhandene
+  zu nutzen.
+- Live-Abnahme ueber den Netcup-Updater und Android. Kein Erfolg ohne Live-Nachweis.

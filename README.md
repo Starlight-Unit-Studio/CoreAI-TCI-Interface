@@ -7,7 +7,45 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.66` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.67` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Kontextfenster, Python-Schutz und ehrliche Selbstkorrektur (0.5.67)
+
+Die Diagnosewerte der Netcup-Bilder 3250 + 846, 3284 + 812 und
+1091 + 3005 ergeben jeweils exakt 4096 Tokens. Das ist Ollamas
+Standard-Kontextfenster ohne grosse GPU. CoreAI sendet seit 0.5.15 kein
+`num_ctx`; die Einzeldatei-Prompts waren durch den 9000-Zeichen-Planauszug
+und den Pflicht-Skill so gross geworden, dass fuer Denkphase und Quelltext
+nur rund 800 Tokens blieben.
+
+0.5.67 ermittelt das echte Fenster nur lesend (`/api/ps`, gemerkte volle
+Fenster mit `done_reason=length`, sonst 4096) und teilt jeden
+Einzeldatei-Prompt danach auf: passender Planauszug statt fester 9000
+Zeichen, DOM-Schnittstelle statt Rohquelltext bereits erzeugter Dateien,
+kein SKILL-Text in reinen Quelltextaufrufen. Im Selbsttest belegt ein
+Galerie-Prompt bei 4096 Tokens rechnerisch rund 1300 Eingabe-Tokens
+inklusive Modelfile-SYSTEM; die Laeufe auf den Bildern lagen bei 3250.
+Cloud-Modelle behalten den bisherigen Prompt unveraendert. Die Konsole
+kuerzt bei kleinem Fenster Verlauf, Planblock und Werkzeughinweise.
+
+Python aus einer abgeschnittenen Modellantwort wird nie ausgefuehrt
+(vorher: `SyntaxError: unterminated triple-quoted string`). Lokale Modelle
+erhalten fuer mehrseitige Projekte keinen Python-Pflichthinweis mehr, der
+`[COREUI_PROJECT_BUILD]` widersprach; ein solcher Versuch geht bei einem
+gespeicherten Plan an den geprueften Projekt-Writer. Ein von Mara selbst
+gewaehlter Dateijob bekommt auch ohne Schlagwoerter wie "Download" genau
+einen begrenzten Korrekturversuch und endet danach mit einer sachlichen
+Meldung statt einem Versprechen. "Neu generieren" und "Bearbeiten" fragen
+die Bauentscheidung ebenfalls ab.
+
+Werkzeugmarker werden toleranter gelesen (Leerzeilen, kurzer Nachsatz,
+reine Fortschrittszeile), und Saetze wie "kein React" sperren kein Projekt
+mehr. Konsolenantworten behalten Absaetze und Codeeinrueckung.
+
+Kein `num_ctx`, keine Modelfile-Aenderung, keine Ollama-Dienstaenderung.
+Ein groesseres Fenster (`OLLAMA_CONTEXT_LENGTH`) bleibt eine
+Betreiberentscheidung nach Tempomessung am Server. Issue #102 bleibt offen.
+Lokale Selbsttests ersetzen nicht die Live-Abnahme ueber den Netcup-Updater.
 
 ## Quellen-Fortsetzung, Cloud-Entwurf und Chat-Hoehe (0.5.66)
 

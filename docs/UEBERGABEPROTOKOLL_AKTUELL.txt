@@ -1,9 +1,10 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
 Stand: 27.10.2026
-Repository-Version: 0.5.66
+Repository-Version: 0.5.67
 Repository: https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface
 ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_5_67.txt
   docs/UEBERGABEPROTOKOLL_0_5_66.txt
   docs/UEBERGABEPROTOKOLL_0_5_65.txt
   docs/UEBERGABEPROTOKOLL_0_5_64.txt
@@ -17,7 +18,7 @@ NAMENSREGEL: docs/PRODUCT_NAMING.md
 VERSIONIERUNG: docs/VERSIONING_POLICY.md
 SOURCE-STAND: 0.5.60 hat Live-Textanzeige im Arbeitsweg und
 HTML/CSS-Fragmentfortsetzung bereits implementiert.
-ABNAHME: Netcup-/Android-Screenshots 0.5.65 vom 27.10.2026 zeigen konkrete Fortsetzungsfehler. 0.5.66 ist vor erneuter Live-Abnahme.
+ABNAHME: Netcup-/Android-Screenshots 0.5.65 vom 27.10.2026 zeigen konkrete Fortsetzungsfehler. 0.5.66 und 0.5.67 sind vor erneuter Live-Abnahme.
 HAUPTPROBLEM: 10-Unterseiten-Projektgenerierung bei lokalen Gemma-
 und Ollama-Cloud-Modellen; >12k-Byte-Plan, >9 Dateien,
 begrenzte Fortsetzungen, keine persistenten File-Checkpoints.
@@ -36,6 +37,12 @@ echte Dateineustarts, sichert sichere ungeschlossene Cloud-Plaene
 als Entwurf und verhindert Leerscrollen hinter die letzte Nachricht.
 Die 0.5.65-Livebilder belegen Fehler, keine erfolgreiche
 End-to-End-Abnahme. Issue #102 bleibt offen.
+0.5.67: Die lokalen Abbrueche endeten exakt bei 4096 Tokens
+(Ollama-Standardfenster ohne num_ctx). Fenster wird nur lesend
+erkannt, Einzeldatei- und Konsolenprompts passen sich an, Python aus
+abgeschnittenen Antworten laeuft nie, Selbstkorrektur ohne
+Schlagwoerter, toleranter Werkzeugparser. Groesseres Fenster erst nach
+Tempomessung und Entscheidung des Betreibers.
 Mara/Ember, Ollama-Modelfile, serielle Queue und private Projekt-
 plaene NICHT ungefragt veraendern.
 Externe STU-Homepage wird in einem ANDEREN Chat bearbeitet.
