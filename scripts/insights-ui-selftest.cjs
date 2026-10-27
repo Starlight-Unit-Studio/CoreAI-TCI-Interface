@@ -136,5 +136,15 @@ vm.runInNewContext(source, sandbox);
   assert(aside.textContent.includes('other') && !aside.textContent.includes('ember-coreui:latest'),
     'stale session data is ignored');
 
+  // A failed request (for example a missing nginx route) never stays "loading".
+  const brokenAside = new Element('aside');
+  const broken = sandbox.window.CoreUIInsights.create({aside:brokenAside, apiBase:'/coreai/api'});
+  const realFetch = sandbox.window.fetch;
+  sandbox.window.fetch = () => Promise.resolve({json: () => Promise.reject(new Error('404 html'))});
+  await broken.refresh('sessionCCCC3');
+  sandbox.window.fetch = realFetch;
+  assert(brokenAside.textContent.includes('gerade nicht erreichbar')
+    && !brokenAside.textContent.includes('Lade Werkzeuge'), 'an unreachable endpoint is reported');
+
   console.log('CoreAI info boxes: Core, Kontext, Werkzeuge, Projekt, chips and live usage OK');
 })().catch(error => { console.error(error); process.exit(1); });

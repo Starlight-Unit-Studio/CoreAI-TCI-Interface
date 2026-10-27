@@ -75,7 +75,8 @@
     var chips = options.chips;
     if (!aside && !chips) return null;
     var apiBase = String(options.apiBase || 'api');
-    var state = {data:null, live:{}, sessionId:'', open:readOpen(), chip:'', request:0};
+    var state = {data:null, live:{}, sessionId:'', open:readOpen(), chip:'', request:0, failed:false};
+    var UNREACHABLE = 'Die Infodaten sind gerade nicht erreichbar. Nach der nächsten Antwort versuche ich es erneut.';
     var bodies = {};
     var heads = {};
 
@@ -153,7 +154,7 @@
     function renderTools(body) {
       var tools = state.data && Array.isArray(state.data.tools) ? state.data.tools : [];
       if (!tools.length) {
-        body.appendChild(el('p', 'insight-empty', 'Lade Werkzeuge ...'));
+        body.appendChild(el('p', 'insight-empty', state.failed ? UNREACHABLE : 'Lade Werkzeuge ...'));
         return;
       }
       var list = el('ul', 'insight-tools');
@@ -189,7 +190,8 @@
       var files = state.data && Array.isArray(state.data.files) ? state.data.files : [];
       if (!plan && !files.length) {
         body.appendChild(el('p', 'insight-empty', state.data
-          ? 'Noch kein Projektplan und keine Dateien in dieser Sitzung.' : 'Lade Projekt ...'));
+          ? 'Noch kein Projektplan und keine Dateien in dieser Sitzung.'
+          : (state.failed ? UNREACHABLE : 'Lade Projekt ...')));
         return;
       }
       if (plan) {
@@ -309,14 +311,22 @@
         {credentials:'include', cache:'no-store'})
         .then(function (response) { return response.json(); })
         .then(function (data) {
-          if (ticket !== state.request || id !== state.sessionId
-              || !data || !data.ok || String(data.session_id) !== id) return null;
+          if (ticket !== state.request || id !== state.sessionId) return null;
+          if (!data || !data.ok || String(data.session_id) !== id) throw new Error('insights_unavailable');
           state.data = data;
           state.live = {};
+          state.failed = false;
           render();
           return data;
         })
-        .catch(function () { return null; });
+        .catch(function () {
+          // Never leave a box "loading" forever; say so honestly instead.
+          if (ticket === state.request && id === state.sessionId && !state.data) {
+            state.failed = true;
+            render();
+          }
+          return null;
+        });
     }
 
     // Live work events update the boxes before the reply is saved.

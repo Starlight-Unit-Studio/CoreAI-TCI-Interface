@@ -1,0 +1,36 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.5.69
+Stand: 27.10.2026
+Branch: claude/bold-galileo-myoyi0 (neu von main 0.5.68 nach Merge von PR #116)
+Basis: 0.5.68 live: Arbeitsweg und Autoscroll laufen.
+
+BEFUND DES BETREIBERS:
+- Infokaesten Werkzeuge und Projekt "laden sich dumm und daemlich". Im Bild fehlt im Core-Kasten
+  die Zeile Sitzung: die Daten kamen nur aus Live-Ereignissen, der Endpunkt antwortete nicht.
+- Nach einem Lauf und der Antwort flackert der Chat "auf Scroll-Art". War schon vor 0.5.68 da.
+
+URSACHE 1:
+- config/nginx.conf.template und config/runtime/nginx.conf.template erlauben nur gelistete
+  API-Dateien. console_insights fehlte, also kein PHP-Aufruf. install.sh und stack.sh rendern die
+  Runtime-Vorlage bei jedem Update neu, der Fix greift mit dem One-Liner.
+- Korrektur: Route ergaenzt; preflight.sh, preflight-native.sh und insights-selftest pruefen sie;
+  js/coreui-insights.js zeigt "nicht erreichbar" statt endlos "Lade ...".
+
+URSACHE 2 (js/console-app.js):
+- doBackgroundPoll laeuft alle 3 s auch waehrend eines Laufs. Eine Abfrage, die kurz vor dem
+  Abschluss gestellt wurde, kam nach dem SSE-"done" an und meldete active_run noch "running".
+  recoverActiveRun setzte den Turn wieder auf pending, renderHistory baute alles neu (Tipp-
+  Indikator, Download-Karten neu geladen), Fast-Poll raeumte wieder ab: sichtbares Flackern.
+  Im Nachbau blieb danach sogar eine Geisterzeile "Arbeitsweg · laufend".
+- Korrektur: rememberFinishedRun()/finishedRunsBySession (bei done, clearAgentRun und Aufgabe
+  des Fast-Polls), agent_run in der lokal gespeicherten Antwort, recoverActiveRun ignoriert
+  Laeufe mit gespeicherter Antwort und den Basislauf eines beantworteten Turns. Ein
+  Generierungslauf (run_key = Anfrage-ID) fuer einen beantworteten Turn wird weiter fortgesetzt.
+
+GEPRUEFT:
+- Alle Offline-Tests, erweiterte chat-navigation-recovery- und insights-UI-Tests.
+- Browser-Nachbau des Rennens: main 0.5.68 ein Neuaufbau und 20 Tipp-Indikator-Mutationen,
+  mit Fix keiner.
+
+UNVERAENDERT: Modelfile, Ollama, Backend-Logik der Agentenlaeufe, Werkzeuge.
+
+WEITERHIN OFFEN: Live-Abnahme Netcup/Android, Issue #102.

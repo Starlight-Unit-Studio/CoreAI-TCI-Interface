@@ -2,6 +2,12 @@
 
 CoreAI: TCI Interface gehoert zur Quantum-Softwarefamilie und wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert. Historische Changelogs dokumentieren die frueheren Produktnamen unveraendert.
 
+## 0.5.69 - 27.10.2026
+
+- **Infokaesten auf dem Server:** `console_insights` fehlte in der nginx-Freigabeliste (`config/nginx.conf.template`, `config/runtime/nginx.conf.template`); Werkzeuge und Projekt blieben deshalb im Ladezustand. Beide Preflights und `scripts/insights-selftest.php` pruefen die Route. Ein nicht erreichbarer Endpunkt wird im Kasten benannt.
+- **Kein Chat-Flackern nach einer Antwort:** Eine kurz vor dem Laufende gestellte Hintergrund-Abfrage belebte den beendeten Lauf wieder (Neuaufbau, Tipp-Indikator, Download-Karten neu). Die App merkt sich beendete Laeufe, uebernimmt die Lauf-ID in die gespeicherte Antwort und ignoriert den Basislauf eines beantworteten Turns. Echte Neu-Generierungen laufen weiter. Im Browser-Nachbau: vorher Neuaufbau und haengende Zeile "Arbeitsweg · laufend", nachher keiner.
+- Tests: `chat-navigation-recovery-selftest.cjs` und `insights-ui-selftest.cjs` erweitert.
+
 ## 0.5.68 - 27.10.2026
 
 - **Autoscroll beim Live-Arbeitsweg:** Die Ansicht blieb kurz nach der eigenen Nachricht stehen, weil ein grosser laufender Block an seinem Anfang festgehalten wurde und die Ansicht nur bei Server-Ereignissen folgte. Jetzt folgt sie dem Ende des neuesten Beitrags und jedem Wachstum (`ResizeObserver`), auch zwischen den Ereignissen.

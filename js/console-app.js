@@ -124,6 +124,7 @@
     streamedIds:     {},
     pendingBySession: {},
     activeAgentRunsBySession: {},
+    finishedRunsBySession: {},
     agentStopEl: null,
     messageCacheBySession: {},
     liveWorkEventsBySession: {},
@@ -241,7 +242,18 @@
       : '■ Auftrag abbrechen';
   }
 
+  // A run this tab saw finish (or gave up on) must never be resurrected by
+  // a poll snapshot that was taken a moment before it completed.
+  function rememberFinishedRun(sessionId, runId) {
+    if (!/^[a-f0-9]{32}$/.test(String(runId || ''))) return;
+    var key = String(sessionId);
+    if (!state.finishedRunsBySession[key]) state.finishedRunsBySession[key] = {};
+    state.finishedRunsBySession[key][String(runId)] = true;
+  }
+
   function clearAgentRun(sessionId) {
+    var current = state.activeAgentRunsBySession[String(sessionId)];
+    if (current) rememberFinishedRun(sessionId, current.id);
     delete state.activeAgentRunsBySession[String(sessionId)];
     updateAgentCancelControl();
   }
@@ -757,6 +769,15 @@
     var records = state.messageCacheBySession[sessionId] || [];
     if (!records.some(function (row) {
       return Number(row.id) === turnId && !isEmberMsg(row);
+    })) return false;
+    // Stale snapshot: this run already finished here, already produced a saved
+    // reply, or is the base run of a turn that already has its first reply.
+    // Resurrecting it re-rendered the whole chat right after an answer.
+    var finished = state.finishedRunsBySession && state.finishedRunsBySession[sessionId];
+    if (finished && finished[runId]) return false;
+    if (records.some(function (row) {
+      return isEmberMsg(row) && ((row.agent_run && String(row.agent_run.id) === runId)
+        || (runKey === 'base' && Number(row.reply_to_id) === turnId && !row.generation));
     })) return false;
     var oldTurn = Number(state.pendingBySession[sessionId]) || 0;
     if (oldTurn > 0 && oldTurn !== turnId) return false;
@@ -2429,6 +2450,7 @@
       ? String(generationRequest.id) : 'base';
     var savedWork = workEventMerge(data && data.work_events,
       liveWorkForReply(sessionId,Number(userMsgId),workRunKey));
+    rememberFinishedRun(sessionId, data && data.agent_run_id);
     if (emberId > 0 && savedWork.length) {
       state.lastCompletedWorkMessageBySession[sessionId] = emberId;
     }
@@ -2445,6 +2467,8 @@
         is_ember: true,
         thinking_content: thinking,
         work_events: savedWork,
+        agent_run: data && /^[a-f0-9]{32}$/.test(String(data.agent_run_id || ''))
+          ? {id:String(data.agent_run_id),key:workRunKey} : null,
         elapsed_ms: data && data.elapsed_ms,
         generation: data && data.generation_mode ? {
           mode: data.generation_mode,
@@ -2773,6 +2797,7 @@
       delete state.liveWorkEventsBySession[sessionId];
       delete state.pendingBySession[sessionId];
       delete state.pollTimers[sessionId];
+      clearAgentRun(sessionId);
       if (isActiveSession(sessionId)) {
         removeTypingIndicator();
         updateActivePendingUi();

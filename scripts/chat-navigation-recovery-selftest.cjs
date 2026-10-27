@@ -48,4 +48,20 @@ assert.equal(recover(ses,{active_run:{...validRun,id:'not-a-run'}}),false,'Inval
 assert.equal(recover(ses,{active_run:{...validRun,turn_id:42}}),false,'Unowned/absent user turn');
 state.pendingBySession[sessionId]=56;
 assert.equal(recover(ses,{active_run:validRun}),false,'Existing other turn must not be replaced');
+
+// 0.5.68: a poll snapshot taken just before the run finished must not
+// resurrect it after the reply arrived (the chat re-rendered and flickered).
+delete state.pendingBySession[sessionId];
+state.finishedRunsBySession = {[sessionId]:{[validRun.id]:true}};
+assert.equal(recover(ses,{active_run:validRun}),false,'A run this tab saw finish stays finished');
+state.finishedRunsBySession = {};
+state.messageCacheBySession[sessionId].push({id:42,is_ember:true,reply_to_id:41,
+  agent_run:{id:validRun.id,key:'base'},generation:null});
+assert.equal(recover(ses,{active_run:validRun}),false,'A run with a saved reply is not active');
+state.messageCacheBySession[sessionId][1].agent_run = null;
+assert.equal(recover(ses,{active_run:{...validRun,id:'b'.repeat(32)}}),false,
+  'The base run of an answered turn is a stale snapshot');
+const regenerate = {...validRun,id:'c'.repeat(32),run_key:'d'.repeat(32)};
+assert.equal(recover(ses,{active_run:regenerate}),true,'A real regeneration of an answered turn still resumes');
+assert.equal(state.pendingBySession[sessionId],41);
 console.log('CoreUI active-run recovery: existing run restored, events merged, invalid state ignored, no duplicate inference');
