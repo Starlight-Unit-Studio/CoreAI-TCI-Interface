@@ -64,7 +64,9 @@ session_test_expect(str_contains($client, 'MAX_MESSAGE_ATTACHMENTS = 10'), 'Clie
 session_test_expect(str_contains($client, 'attachment_uuids:'), 'Client sendet die persistente Anhangliste nicht.');
 session_test_expect(str_contains($client, "Number(m.reply_to_id) === Number(userMsgId)"), 'Client ordnet Antworten nicht dem exakten Turn zu.');
 session_test_expect(str_contains($client, "Number(m.reply_to_id) === pendingTurnId"), 'Hintergrund-Poll kann noch eine fremde Antwort als eigenen Turn abschliessen.');
-session_test_expect(str_contains($client, 'Der zuletzt bestaetigte Verlauf bleibt sichtbar.'), 'Ein Ladefehler kann den bestaetigten Verlauf noch optisch verdraengen.');
+session_test_expect(str_contains($client, 'Der zuletzt bestätigte Verlauf bleibt sichtbar.')
+  && str_contains($client, "if (hasCachedHistory && !messagesInner.querySelector('.msg-row')) renderHistory(ses);"),
+  'Ein Ladefehler kann den bestaetigten Verlauf noch optisch verdraengen.');
 session_test_expect(str_contains($client, 'sessionArchiveToggle'), 'Archivansicht fehlt im Client.');
 session_test_expect(str_contains($client, "action: 'restore'"), 'Wiederherstellung archivierter Sitzungen fehlt.');
 session_test_expect(str_contains($client, "action: 'delete_permanently'"), 'Endgueltige Loeschaktion fehlt im Client.');

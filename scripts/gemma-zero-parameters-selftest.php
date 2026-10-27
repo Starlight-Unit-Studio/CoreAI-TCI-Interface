@@ -83,6 +83,19 @@ foreach (['ember-coreui:latest','ember-coreui','gemma4:e4b','gemma4:latest','gem
     'local Gemma overrides must not bypass the no-parameter policy'
   );
 }
+// 0.5.70 (#113): the single exception is an explicit KI-Profil window. It
+// adds num_ctx and nothing else; without a choice Gemma stays parameter-free.
+$GLOBALS['COREUI_AI_RUNTIME_SETTINGS'] = ['num_ctx'=>16384];
+foreach (['ember-coreui:latest','gemma4:e4b'] as $model) {
+  coreui_gemma_assert(ember_ollama_known_good_options($model,
+      ['temperature'=>0.1,'num_ctx'=>65536,'num_thread'=>20,'top_p'=>0.1]) === ['num_ctx'=>16384],
+    'a KI-Profil window must be the only Gemma option: ' . $model);
+}
+coreui_gemma_assert(ember_ollama_known_good_options('gemma4:31b-cloud') === [],
+  'a cloud Gemma never receives num_ctx');
+$GLOBALS['COREUI_AI_RUNTIME_SETTINGS'] = [];
+coreui_gemma_assert(ember_ollama_known_good_options('ember-coreui:latest') === [],
+  'without a KI-Profil choice Gemma stays parameter-free');
 foreach (['gpt-oss:120b','llama3.2:latest','my-ember-coreui:latest'] as $other) {
   coreui_gemma_assert(!ember_model_is_parameter_free_gemma($other),
     'other providers must retain their own policy: ' . $other);

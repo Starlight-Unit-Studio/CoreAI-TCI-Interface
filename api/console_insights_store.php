@@ -12,12 +12,18 @@ function coreui_insights_core(string $model): array {
   $cloud = function_exists('ember_model_is_cloud') && ember_model_is_cloud($model);
   $window = (!$cloud && function_exists('ember_ollama_context_window'))
     ? ember_ollama_context_window($model) : null;
+  $source = $window !== null
+    ? (string)($GLOBALS['COREUI_OLLAMA_CONTEXT_SOURCE'][$model] ?? 'default') : null;
+  // #113: "used for requests" and "loaded by Ollama" are different facts;
+  // a profile window applies from the next request on.
+  $loaded = $source === 'loaded' ? $window
+    : ((!$cloud && function_exists('ember_ollama_ps_context')) ? ember_ollama_ps_context($model) : null);
   return [
     'model'=>$model,
     'runtime'=>$cloud ? 'cloud' : 'local',
     'context_tokens'=>$window,
-    'context_source'=>$window !== null
-      ? (string)($GLOBALS['COREUI_OLLAMA_CONTEXT_SOURCE'][$model] ?? 'default') : null,
+    'context_source'=>$source,
+    'context_loaded'=>$loaded,
     'thinking'=>function_exists('ember_thinking_enabled') ? ember_thinking_enabled() : true,
   ];
 }

@@ -7,7 +7,58 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.69` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.70` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Kontextfenster im KI-Profil, "Core" statt "Modell" und robuste WebUI (0.5.70)
+
+**Kontextfenster (Issue #113):** Unter Einstellungen > KI-Profil gibt es
+einen Schieberegler mit 4K, 8K, 16K, 32K, 64K und 128K sowie den Modus
+"Core-Standard übernehmen" (Voreinstellung fuer jedes Konto). Jede Stufe
+zeigt einen gerundeten Speicher-Richtwert fuer den ausgewaehlten Core
+(Gewichte, KV-Cache je Kontextlaenge inklusive Sliding-Window-Schichten,
+Laufzeitanteil; ist der Core geladen, korrigiert die echte Belegung aus
+`/api/ps` die Schaetzung). Fehlen Metadaten, steht dort "nicht zuverlaessig
+schaetzbar" statt einer erfundenen Zahl. Uebersteigt ein Richtwert den
+verfuegbaren Arbeitsspeicher deutlich, erscheint ein Hinweis, gesperrt wird
+nichts. Nur bei ausdruecklicher Wahl sendet CoreAI `options.num_ctx`, im
+SSE- und Sync-Weg gleich, nur an lokale Cores der privaten Konsole, nie an
+Cloud-Cores, nie weitere Gemma-Parameter. Der Wert gilt pro Lauf; eine
+Aenderung waehrend eines Agentenjobs greift ab dem naechsten Auftrag.
+Projektbudgets und der Core-Infokasten nutzen das tatsaechlich gesendete
+Fenster (Quelle "KI-Profil", der geladene Wert erscheint getrennt). Neue
+Migration `017_ai_num_ctx.sql` (NULL = kein Override). Das Modelfile bleibt
+unveraendert.
+
+**Lore (Issue #115):** Sichtbare Texte sagen "Core" statt "Modell": Der
+Arbeitsweg zeigt "Core arbeitet", "Antwort von Core empfangen" statt
+"Modellstream gestartet" oder "Core-Aufruf". Interne Ereignisnamen,
+API-Felder und Protokollkennungen bleiben unveraendert. Ein Test verhindert,
+dass "Modell" in sichtbare Texte zurueckkehrt.
+
+**WebUI-Robustheit (Issue #112, P1 und P2):** Der Verlauf laedt mit Abbruch
+beim Sitzungswechsel, Zeitlimit und einer sichtbaren Wiederholen-Schaltflaeche;
+Fehlerarten (offline, Zeitueberschreitung, HTTP, ungueltige Antwort) werden
+benannt. Bereits angezeigte Nachrichten und der Entwurf bleiben erhalten.
+Nach `online` oder Rueckkehr in den Vordergrund synchronisiert die App nur
+lesend; ein laufender Auftrag wird ueber seine Server-ID wieder angebunden,
+nie doppelt gesendet. Abfragen weichen bei Fehlern begrenzt aus (Backoff mit
+Jitter), verdeckte Tabs fragen seltener. Aeltere Seiten werden vor die
+vorhandenen Nachrichten gesetzt statt alles neu aufzubauen: im Nachbau mit
+1.000 Nachrichten konstant rund 25 ms je Seite statt bis zu 1 s, die
+Leseposition bleibt stehen. Inaktive Sitzungen behalten nur ihre neueste
+Seite im Speicher. Messwerte (Dauer, Anzahl, Renderzeit, lange Frames) liegen
+ohne Inhalte in `window.CoreUINet.metrics()`. P3 (Android-Wrapper) gehoert
+in das Repository Quantum-Mobile-Wrapper.
+
+**Datum und Uhrzeit:** Eine Homepage von Mara trug das Jahr 2024 aus den
+Trainingsdaten. Nur der Hauptprompt kannte die SERVERZEIT; die getrennten
+Aufrufe fuer einzelne Quelldateien, Fortsetzungen und Folgeschritte hatten
+weder Datum noch Uhrzeit. Jetzt beginnt jeder Core-Aufruf eines
+Konsolenauftrags mit `[DATUM HEUTE: ...]`, und `[UHRZEIT JETZT: ...]` steht
+direkt vor der letzten Anweisung, damit Ollamas Prompt-Cache den gemeinsamen
+Auftragstext auch nach einem Minutenwechsel weiter nutzt. Die
+SERVERZEIT-Anweisung erlaubt das Datum ausdruecklich fuer erzeugte Inhalte
+wie das Copyright-Jahr.
 
 ## Infokaesten auf dem Server und kein Chat-Flackern nach Antworten (0.5.69)
 

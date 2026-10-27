@@ -1832,6 +1832,48 @@ function ember_tool_time(): string {
   }
 }
 
+/**
+ * 0.5.70: today's date and the clock time for every Core call of a private
+ * console turn. The main prompt carries SERVERZEIT, but separate calls
+ * (single source files, their continuations, plan and tool follow-ups,
+ * repairs) had neither, so a generated homepage used the year from the
+ * training data (2024). The date leads the prompt (changes once a day); the
+ * time goes just before the final instruction line, so the shared task text
+ * in front of it stays in Ollama's prompt cache when the minute changes.
+ */
+function ember_now_berlin(): DateTime {
+  try {
+    return new DateTime('now', new DateTimeZone(ember_tz()));
+  } catch (Throwable $e) {
+    return new DateTime('now');
+  }
+}
+
+function ember_today_line(?DateTime $dt = null): string {
+  $dt ??= ember_now_berlin();
+  $days = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+  return '[DATUM HEUTE: ' . $days[(int)$dt->format('w')] . ', ' . $dt->format('d.m.Y')
+    . '. Fuer zeitabhaengige Inhalte wie Copyright-Jahr, Stand-Angaben oder Fristen gilt '
+    . 'dieses Datum, nicht das Jahr aus deinem Trainingswissen.]';
+}
+
+function ember_clock_line(?DateTime $dt = null): string {
+  $dt ??= ember_now_berlin();
+  return '[UHRZEIT JETZT: ' . $dt->format('H:i') . ' Uhr, ' . ember_tz() . ']';
+}
+
+function ember_with_today(string $prompt): string {
+  if (empty($GLOBALS['COREUI_CONSOLE_DATE_AWARE']) && !is_array($GLOBALS['COREUI_WORK_CONTEXT'] ?? null)) {
+    return $prompt;
+  }
+  if (str_contains($prompt, '[SERVERZEIT') || str_contains($prompt, '[DATUM HEUTE:')) return $prompt;
+  $dt = ember_now_berlin();
+  $dated = ember_today_line($dt) . "\n" . $prompt;
+  // Insert the time before the final line (usually "JETZT NUR ... AUSGEBEN:").
+  $cut = strrpos(rtrim($dated), "\n");
+  return substr($dated, 0, (int)$cut) . "\n" . ember_clock_line($dt) . substr($dated, (int)$cut);
+}
+
 function ember_weather_code_de($code): string {
   $c = (int)$code;
   $map = [
@@ -3167,8 +3209,25 @@ function ember_model_is_parameter_free_gemma(string $model): bool {
   return preg_match('~^(?:ember-coreui|gemma[0-9]*)(?::|$)~i', trim($model)) === 1;
 }
 
+/**
+ * 0.5.70 (#113): context window the account chose in its KI-Profil, fixed for
+ * this run. null means no choice ("Core-Standard") or a cloud Core, whose
+ * window belongs to the provider. Never derived from the old STU_EMBER_NUM_CTX.
+ */
+function ember_profile_num_ctx(string $model): ?int {
+  $model = trim($model);
+  if ($model === '' || ember_model_is_cloud($model)) return null;
+  return function_exists('coreui_ai_num_ctx_choice') ? coreui_ai_num_ctx_choice() : null;
+}
+
 function ember_ollama_known_good_options(string $model, array $optionOverrides = []): array {
-  if (ember_model_is_parameter_free_gemma($model)) return [];
+  // The single deliberate exception to the parameter-free Gemma policy: an
+  // explicit num_ctx from the KI-Profil. Without that choice nothing is sent
+  // and the Modelfile decides; no other Gemma parameter is ever added.
+  $profileCtx = ember_profile_num_ctx($model);
+  if (ember_model_is_parameter_free_gemma($model)) {
+    return $profileCtx !== null ? ['num_ctx' => $profileCtx] : [];
+  }
   $options = [
     'temperature' => ember_temperature(),
     'top_p' => ember_top_p(),
@@ -3192,6 +3251,10 @@ function ember_ollama_known_good_options(string $model, array $optionOverrides =
     }
     $options[$k] = $v;
   }
+  // The profile window wins over call specific values, so a short sub call
+  // does not reload the runner with another size; a cloud Core never gets one.
+  if ($profileCtx !== null) $options['num_ctx'] = $profileCtx;
+  if (ember_model_is_cloud($model)) unset($options['num_ctx']);
   return $options;
 }
 function ember_call_ollama(string $model, string $systemPrompt, string $userPrompt, int $timeoutSec = 12, array $optionOverrides = [], $imageUrl = null, ?bool $thinkOverride = null, bool $augmentSkills = true): ?string {
@@ -3203,6 +3266,7 @@ function ember_call_ollama(string $model, string $systemPrompt, string $userProm
   $skillMode = (string)($optionOverrides['__skills'] ?? '');
   unset($optionOverrides['__skills']);
   if ($skillMode !== 'none') $userPrompt = coreui_skills_augment($userPrompt, $augmentSkills);
+  $userPrompt = ember_with_today($userPrompt);
   // Thinking ist strikt an genau diesen Modellaufruf gebunden. Ohne Reset koennte ein
   // spaeterer Call ohne message.thinking versehentlich einen alten Entwurf retten.
   $GLOBALS['STU_EMBER_LAST_THINKING'] = '';
@@ -3624,6 +3688,9 @@ function ember_ollama_context_observe(string $model, string $doneReason, int $pr
   if ($numPredict > 0 && $eval >= $numPredict) return null; // explicit output cap
   $total = max(0, $promptEval) + max(0, $eval);
   if ($total < 1024 || $total % 256 !== 0) return null;
+  // A full KI-Profil window is reported but not learned: remembering it
+  // would later pass for the Core default after a switch back.
+  if (ember_profile_num_ctx($model) !== null) return $total;
   ember_ollama_context_store($model, $total);
   return $total;
 }
@@ -3690,14 +3757,22 @@ function ember_ollama_show_context(string $model): ?int {
 }
 
 /**
- * Effective context window of a LOCAL Ollama model: reported by /api/ps,
- * otherwise num_ctx from its Modelfile (/api/show), otherwise remembered
- * from an earlier /api/ps or full window (12 h), otherwise Ollama's CPU
- * default. null means the window is not limited by this server (cloud).
+ * Effective context window of a LOCAL Ollama model: the KI-Profil choice sent
+ * with every request of this run, otherwise reported by /api/ps, otherwise
+ * num_ctx from its Modelfile (/api/show), otherwise remembered from an
+ * earlier /api/ps or full window (12 h), otherwise Ollama's CPU default.
+ * null means the window is not limited by this server (cloud).
  */
 function ember_ollama_context_window(string $model): ?int {
   $model = trim($model);
   if ($model === '' || ember_model_is_cloud($model)) return null;
+  // Project budgets must follow the window Ollama really receives, even
+  // while /api/ps still reports the runner loaded with another size.
+  $profileCtx = ember_profile_num_ctx($model);
+  if ($profileCtx !== null) {
+    $GLOBALS['COREUI_OLLAMA_CONTEXT_SOURCE'][$model] = 'profile';
+    return $profileCtx;
+  }
   $memo = $GLOBALS['COREUI_OLLAMA_CONTEXT_MEMO'] ?? [];
   if (is_array($memo) && isset($memo[$model])) return (int)$memo[$model];
   // The source is shown in the Core info box: loaded runner, Modelfile,
@@ -4547,6 +4622,10 @@ function ember_build_chat_prompt(
   $uid = (int)($senderChar['user_id'] ?? 0);
   $cid = (string)($senderChar['id'] ?? '');
   if (function_exists('coreui_ai_runtime_apply')) coreui_ai_runtime_apply($pdo, $uid);
+  // #113: the KI-Profil window belongs to the private console; the global
+  // channel and its queue keep the Core default.
+  if ($channel !== 'console') $GLOBALS['COREUI_AI_RUNTIME_SETTINGS']['num_ctx'] = null;
+  if ($channel === 'console') $GLOBALS['COREUI_CONSOLE_DATE_AWARE'] = true;
   // The runtime model is known only after the account settings are applied.
   $profile = ember_console_prompt_profile($channel,
     $channel === 'console' ? ember_ollama_context_window(ember_model()) : null);
@@ -4630,7 +4709,7 @@ function ember_build_chat_prompt(
   $nativeToolHint = $nativeProjects ? coreui_native_tools_prompt($profile['compact']) : '';
   $savedPlanBlock = ($channel === 'console' && $consoleSessionId !== null)
     ? coreui_plan_prompt_block($pdo,$uid,(string)$consoleSessionId,$profile['plan']) : '';
-  $u = "[SERVERZEIT (nur dein Hintergrundwissen - Datum/Uhrzeit NUR nennen, wenn in der NEU-Nachricht danach gefragt wird): {$emberZeit}]{$memBlock}{$repBlock}{$playerStateBlock}{$attachBlock}{$userPromptBlock}{$profilePromptBlock}{$privateKnowledgeBlock}{$savedPlanBlock}\n" . "Kontext (letzte Zeilen - Zeilen mit (du) sind DEINE eigenen, bereits gesendeten Antworten; beantworte sie NICHT erneut):\n" . ($ctx !== '' ? $ctx : "(leer)")
+  $u = "[SERVERZEIT (nur dein Hintergrundwissen - Datum/Uhrzeit im Gespraech NUR nennen, wenn in der NEU-Nachricht danach gefragt wird; fuer erzeugte Inhalte wie Copyright-Jahr oder Stand-Angaben gilt dieses Datum, nicht das Jahr aus deinem Trainingswissen): {$emberZeit}]{$memBlock}{$repBlock}{$playerStateBlock}{$attachBlock}{$userPromptBlock}{$profilePromptBlock}{$privateKnowledgeBlock}{$savedPlanBlock}\n" . "Kontext (letzte Zeilen - Zeilen mit (du) sind DEINE eigenen, bereits gesendeten Antworten; beantworte sie NICHT erneut):\n" . ($ctx !== '' ? $ctx : "(leer)")
    . $loreBlock
    . "
 
@@ -4750,6 +4829,8 @@ function ember_generate_reply(
   $uid = (int)($senderChar['user_id'] ?? 0);
   $cid = (string)($senderChar['id'] ?? '');
   if (function_exists('coreui_ai_runtime_apply')) coreui_ai_runtime_apply($pdo, $uid);
+  if ($channel !== 'console') $GLOBALS['COREUI_AI_RUNTIME_SETTINGS']['num_ctx'] = null;
+  if ($channel === 'console') $GLOBALS['COREUI_CONSOLE_DATE_AWARE'] = true;
   // Same window-aware sizing as the streaming prompt builder.
   $promptProfile = ember_console_prompt_profile($channel,
     $channel === 'console' ? ember_ollama_context_window(ember_model()) : null);
@@ -4846,7 +4927,7 @@ function ember_generate_reply(
   $playerStateBlock = ($playerStateHint !== '') ? ("\n\n" . trim($playerStateHint)) : '';
   $userPromptBlock = function_exists('coreui_ai_user_prompt_block') ? coreui_ai_user_prompt_block() : '';
   $profilePromptBlock = function_exists('coreui_profile_prompt_block') ? coreui_profile_prompt_block($pdo, $uid) : '';
-  $u = "[SERVERZEIT (nur dein Hintergrundwissen - Datum/Uhrzeit NUR nennen, wenn in der NEU-Nachricht danach gefragt wird): {$emberZeit}]{$memBlock}{$repBlock}{$playerStateBlock}{$attachBlock}{$userPromptBlock}{$profilePromptBlock}{$privateKnowledgeBlock}\n" . "Kontext (letzte Zeilen - Zeilen mit (du) sind DEINE eigenen, bereits gesendeten Antworten; beantworte sie NICHT erneut):\n" . ($ctx !== '' ? $ctx : "(leer)")
+  $u = "[SERVERZEIT (nur dein Hintergrundwissen - Datum/Uhrzeit im Gespraech NUR nennen, wenn in der NEU-Nachricht danach gefragt wird; fuer erzeugte Inhalte wie Copyright-Jahr oder Stand-Angaben gilt dieses Datum, nicht das Jahr aus deinem Trainingswissen): {$emberZeit}]{$memBlock}{$repBlock}{$playerStateBlock}{$attachBlock}{$userPromptBlock}{$profilePromptBlock}{$privateKnowledgeBlock}\n" . "Kontext (letzte Zeilen - Zeilen mit (du) sind DEINE eigenen, bereits gesendeten Antworten; beantworte sie NICHT erneut):\n" . ($ctx !== '' ? $ctx : "(leer)")
    . $loreBlock
    . "
 
@@ -5279,13 +5360,13 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         coreui_work_record($pdo, 'artifact', 'error', 'Projektquellen unvollstaendig',
           ['reason'=>'source_files_incomplete','file_name'=>(string)$name]);
         if ($reason === 'context_window_full') {
-          return 'Fuer ' . $name . ' war das Kontextfenster des lokalen Modells voll ('
+          return 'Fuer ' . $name . ' war das Kontextfenster des lokalen Core voll ('
             . (int)($lastMeta['context_tokens'] ?? 0) . ' Tokens). Auftrag und Denkphase haben '
             . 'den Platz belegt, bevor genug Quelltext entstand. Es wurde keine ZIP-Datei '
-            . 'vorgetaeuscht. Abhilfe: ein groesseres Ollama-Kontextfenster '
-            . '(OLLAMA_CONTEXT_LENGTH) oder ein Cloud-Modell aus der Ollama-Liste.';
+            . 'vorgetaeuscht. Abhilfe: ein groesseres Kontextfenster unter Einstellungen > '
+            . 'KI-Profil, OLLAMA_CONTEXT_LENGTH oder ein Cloud-Core aus der Ollama-Liste.';
         }
-        return 'Die lokale Modellausgabe fuer ' . $name
+        return 'Die Ausgabe des lokalen Core fuer ' . $name
           . ' ist fehlgeschlagen. Im Arbeitsverlauf stehen jetzt der '
           . 'konkrete Ollama-Fehlergrund, HTTP-Status und die Aufrufdauer. '
           . 'Es wurde keine ZIP-Datei vorgetaeuscht.';
@@ -5413,7 +5494,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
           ? 'Die lokale Gemma-Dateiausgabe wurde abgeschnitten oder der [PY]-Block '
             . 'nicht geschlossen. Nach einem erneuten Versuch wird kein '
             . 'unvollstaendiger Python-Code ausgefuehrt und kein Download vorgetaeuscht.'
-          : 'Die Modellantwort konnte nicht als ausfuehrbarer Datei-Auftrag verarbeitet werden. '
+          : 'Die Antwort von Core konnte nicht als ausfuehrbarer Datei-Auftrag verarbeitet werden. '
             . 'Es wurde kein Python-Job gestartet und keine Downloaddatei gespeichert.';
       }
       $out = $retry;
@@ -5478,7 +5559,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       ['reason'=>'native_project_python_guard']);
     return 'Der Projektbau wurde sicher beendet: Statt verifizierter '
       . 'Quelldateien lag kein servereigener ZIP-Writer vor. '
-      . 'Es wurde kein Python-Skript aus dem Modell ausgefuehrt.';
+      . 'Es wurde kein Python-Skript aus der Core-Antwort ausgefuehrt.';
   }
   if (ember_py_enabled() && $imageUrl === null && is_string($out)) {
     $pyCode = $nativeSourceProject && is_array($fileToolCandidate)
@@ -5510,7 +5591,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         ember_truncation_meta($outMeta) + ['source_chars'=>strlen((string)$pyCode)]);
       $handoff = $projectHandoff($pyCode);
       if (is_string($handoff)) return $handoff;
-      return 'Mein Python-Skript wurde beim Schreiben abgeschnitten, weil die Modellantwort '
+      return 'Mein Python-Skript wurde beim Schreiben abgeschnitten, weil die Antwort von Core '
         . ($contextFull > 0
           ? 'das Kontextfenster (' . $contextFull . ' Tokens) gefuellt hat'
           : 'am Ausgabelimit endete')
@@ -5895,7 +5976,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
 
   if ($channel === 'console' && !$fileTask && is_string($out) && trim($out) !== ''
       && ember_last_call_was_truncated()) {
-    $out = rtrim($out) . "\n\n> **Unvollstaendige Modellausgabe:** "
+    $out = rtrim($out) . "\n\n> **Unvollstaendige Core-Ausgabe:** "
       . "Das Tokenlimit wurde trotz Fortsetzung erreicht. Der vorhandene "
       . "Text wurde nicht als abgeschlossen gekennzeichnet.";
   }

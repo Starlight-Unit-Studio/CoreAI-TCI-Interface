@@ -135,6 +135,8 @@
     return {
       follow:follow,refresh:refresh,atBottom:function(){return gap() <= bottomMargin;},
       isFollowing:function(){return following;},
+      // The reader asked for older messages: that is reading, not following.
+      release:function(){following=false;refresh();},
       reset:function(){following=true;lastTop=0;follow(true);}
     };
   }

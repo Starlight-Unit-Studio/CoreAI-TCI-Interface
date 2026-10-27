@@ -6,12 +6,12 @@
   <meta name="language" content="de-DE" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#f0f4fa" />
-  <meta name="application-version" content="0.5.69" />
+  <meta name="application-version" content="0.5.70" />
   <meta name="application-name" content="CoreAI: TCI Interface" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface - Einstellungen</title>
-  <link rel="stylesheet" href="./css/console.css?v=0791559319928110111500483" />
-  <script src="./js/console-gate.js?v=0764156529940960224254065"></script>
+  <link rel="stylesheet" href="./css/console.css?v=0063692723615049948660974" />
+  <script src="./js/console-gate.js?v=0241405673804584509035247"></script>
   <script src="./js/coreui-preferences.js?v=0408182548343544002678570"></script>
 </head>
 <body class="settings-body">
@@ -27,7 +27,7 @@
           <h1>EINSTELLUNGEN</h1>
         </div>
       </div>
-      <div class="settings-version">COREAI: TCI INTERFACE // v0.5.69</div>
+      <div class="settings-version">COREAI: TCI INTERFACE // v0.5.70</div>
     </header>
 
     <main class="settings-grid">
@@ -58,7 +58,7 @@
         </header>
 
         <label class="setting-row" for="prefThinkingExpanded">
-          <span class="setting-copy"><strong>DENKSTATUS OFFEN HALTEN</strong><small>Den sicheren Fortschrittsstatus standardmäßig ausgeklappt lassen. Interne Modellgedanken bleiben verborgen.</small></span>
+          <span class="setting-copy"><strong>DENKSTATUS OFFEN HALTEN</strong><small>Den sicheren Fortschrittsstatus standardmäßig ausgeklappt lassen. Interne Core-Gedanken bleiben verborgen.</small></span>
           <span class="settings-switch"><input id="prefThinkingExpanded" type="checkbox" /><i aria-hidden="true"></i></span>
         </label>
         <label class="setting-row" for="prefLiveFrameMotion">
@@ -147,16 +147,33 @@
             <input id="aiTemperature" type="number" min="0.1" max="1.5" step="0.05" value="1.0" />
           </label>
           <label class="settings-field" for="aiProvider">
-            <span><strong>MODELLPFAD</strong><small>CoreAI: TCI Interface ist für lokale Gemma-4-Modelle ausgelegt.</small></span>
+            <span><strong>CORE-PFAD</strong><small>CoreAI: TCI Interface ist für lokale Gemma-4-Cores ausgelegt.</small></span>
             <select id="aiProvider"><option value="local">LOKAL // OLLAMA + GEMMA 4</option><option value="external" disabled>EXTERNE API // VORBEREITET</option></select>
           </label>
           <label class="settings-field" for="aiModelOverride">
-            <span><strong>LOKALES MODELL</strong><small>Nur tatsächlich in Ollama installierte Modelle sind auswählbar. Serverstandard übernimmt die Betreiberkonfiguration.</small></span>
+            <span><strong>LOKALER CORE</strong><small>Nur tatsächlich in Ollama installierte Cores sind auswählbar. Serverstandard übernimmt die Betreiberkonfiguration.</small></span>
             <span class="model-select-row">
               <select id="aiModelOverride"><option value="">SERVERSTANDARD</option></select>
-              <button class="settings-action compact" id="refreshModels" type="button">MODELLE LADEN</button>
+              <button class="settings-action compact" id="refreshModels" type="button">CORES LADEN</button>
             </span>
           </label>
+        </div>
+
+        <div class="settings-field settings-ctx" id="aiCtxField">
+          <span><strong>KONTEXTFENSTER (num_ctx)</strong><small>Obergrenze für Eingabe, Verlauf, Werkzeugergebnisse und Antwort eines lokalen Core. Größere Fenster brauchen mehr Speicher und können langsamer werden. Der Wert ist eine Obergrenze, nicht die tatsächlich gefüllte Länge.</small></span>
+          <label class="setting-row ctx-default-row" for="aiCtxDefault">
+            <span class="setting-copy"><strong>CORE-STANDARD ÜBERNEHMEN</strong><small>Kein Override: der lokale Core behält das Fenster aus seinem Modelfile. Voreinstellung für jedes Konto.</small></span>
+            <span class="settings-switch"><input id="aiCtxDefault" type="checkbox" checked /><i aria-hidden="true"></i></span>
+          </label>
+          <span class="ctx-slider-row">
+            <input id="aiNumCtx" type="range" min="0" max="5" step="1" value="5" aria-label="Kontextfenster" aria-describedby="aiCtxEstimate" />
+            <output id="aiNumCtxValue" for="aiNumCtx">Core-Standard</output>
+          </span>
+          <ol class="ctx-stops" id="aiCtxStops" aria-label="Speicher-Richtwerte je Stufe"></ol>
+          <p class="ctx-estimate" id="aiCtxEstimate">geschätzt: wird für diesen Core ermittelt</p>
+          <p class="ctx-warning" id="aiCtxWarning" role="status" hidden></p>
+          <p class="ctx-status" id="aiCtxStatus"></p>
+          <small class="ctx-note">Schätzung für diesen Core, abhängig von tatsächlicher Kontextnutzung und System. Eine Änderung gilt ab dem nächsten Auftrag; ein laufender Arbeitsweg behält seinen Wert.</small>
         </div>
 
         <label class="setting-row" for="aiMemoryEnabled">
@@ -164,7 +181,7 @@
           <span class="settings-switch"><input id="aiMemoryEnabled" type="checkbox" /><i aria-hidden="true"></i></span>
         </label>
         <label class="setting-row" for="aiThinkingEnabled">
-          <span class="setting-copy"><strong>MODELL-THINKING AKTIVIEREN</strong><small>Sendet den Ollama-Parameter <code>think</code> für neue Antworten. Rohe Gedankengänge bleiben auch im aktivierten Zustand serverintern; CoreAI: TCI Interface zeigt nur sichere Fortschrittsstufen. Modelle mit fest vorgegebenen Thinking-Stufen können den booleschen Wert abweichend behandeln.</small></span>
+          <span class="setting-copy"><strong>CORE-THINKING AKTIVIEREN</strong><small>Sendet den Ollama-Parameter <code>think</code> für neue Antworten. Rohe Gedankengänge bleiben auch im aktivierten Zustand serverintern; CoreAI: TCI Interface zeigt nur sichere Fortschrittsstufen. Cores mit fest vorgegebenen Thinking-Stufen können den booleschen Wert abweichend behandeln.</small></span>
           <span class="settings-switch"><input id="aiThinkingEnabled" type="checkbox" /><i aria-hidden="true"></i></span>
         </label>
         <div class="settings-local-note" id="externalProviderNote">
@@ -242,7 +259,7 @@
         <div class="health-summary checking" id="healthSummary">KERNSTATUS WIRD GEPRÜFT...</div>
         <div class="health-facts">
           <div><span>VERSION</span><strong id="healthVersion">...</strong></div>
-          <div><span>MODELL</span><strong id="healthModel">...</strong></div>
+          <div><span>CORE</span><strong id="healthModel">...</strong></div>
         </div>
         <div class="health-checks" id="healthChecks" aria-live="polite"></div>
       </section>
@@ -319,6 +336,7 @@
   </div>
 
   <script src="./js/skills-settings.js?v=0475630369246311829602517"></script>
-  <script src="./js/settings.js?v=0128744981252692904764725"></script>
+  <script src="./js/coreui-context-slider.js?v=0071279618529070371071429"></script>
+  <script src="./js/settings.js?v=0569119993051342813909948"></script>
 </body>
 </html>

@@ -1,9 +1,10 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
 Stand: 27.10.2026
-Repository-Version: 0.5.69
+Repository-Version: 0.5.70
 Repository: https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface
 ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_5_70.txt
   docs/UEBERGABEPROTOKOLL_0_5_69.txt
   docs/UEBERGABEPROTOKOLL_0_5_68.txt
   docs/UEBERGABEPROTOKOLL_0_5_67.txt
@@ -24,7 +25,7 @@ ABNAHME: Netcup-/Android-Screenshots 0.5.65 vom 27.10.2026 zeigen konkrete Forts
 HAUPTPROBLEM: 10-Unterseiten-Projektgenerierung bei lokalen Gemma-
 und Ollama-Cloud-Modellen; >12k-Byte-Plan, >9 Dateien,
 begrenzte Fortsetzungen, keine persistenten File-Checkpoints.
-ISSUE #102 ist die priorisierte Architekturarbeit.
+ISSUE #102 wurde am 27.10.2026 vom Betreiber geschlossen.
 ISSUE #97: Mara-Arbeitsnotizen/Worklog; #96: externe Referenzen.
 0.5.62 ist durch PR #106 gemergt. Beim Netcup-Update stoppte
 der PHP-Syntaxcheck wegen scripts/source-preview-selftest.php.
@@ -38,7 +39,7 @@ serverseitigen ZIP-Writer vom kleineren Modellcode-Budget.
 echte Dateineustarts, sichert sichere ungeschlossene Cloud-Plaene
 als Entwurf und verhindert Leerscrollen hinter die letzte Nachricht.
 Die 0.5.65-Livebilder belegen Fehler, keine erfolgreiche
-End-to-End-Abnahme. Issue #102 bleibt offen.
+End-to-End-Abnahme.
 0.5.67: Die lokalen Abbrueche endeten exakt bei 4096 Tokens
 (Ollama-Standardfenster ohne num_ctx). Fenster wird nur lesend
 erkannt, Einzeldatei- und Konsolenprompts passen sich an, Python aus
@@ -56,6 +57,11 @@ ein Agent-Terminal und ergaenzt Infokaesten (Core, Kontext, Werkzeuge,
 Projekt) rechts bzw. als Buttons auf schmalen Bildschirmen.
 0.5.69: nginx-Route fuer die Infokaesten ergaenzt; nach einer Antwort
 belebt eine verspaetete Abfrage den beendeten Lauf nicht mehr (Flackern).
+0.5.70: Issues #113 (Kontextfenster-Regler im KI-Profil mit Speicher-
+Richtwerten, num_ctx nur auf Wunsch, nie Cloud), #115 (sichtbar "Core"
+statt "Modell", Starlight-Lore) und #112 P1/P2 (abbrechbares Laden,
+Reconnect ohne Doppelauftrag, Backoff, inkrementelles Nachladen langer
+Chats). #112 P3 gehoert in Quantum-Mobile-Wrapper.
 Mara/Ember, Ollama-Modelfile, serielle Queue und private Projekt-
 plaene NICHT ungefragt veraendern.
 Externe STU-Homepage wird in einem ANDEREN Chat bearbeitet.

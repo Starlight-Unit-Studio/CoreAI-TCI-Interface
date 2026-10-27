@@ -15,6 +15,7 @@ function ember_ollama_context_window(string $model): ?int {
   $GLOBALS['COREUI_OLLAMA_CONTEXT_SOURCE'][$model] = 'modelfile';
   return 131072;
 }
+function ember_ollama_ps_context(string $model): ?int { return $GLOBALS['TEST_PS'] ?? 8192; }
 function ember_thinking_enabled(): bool { return false; }
 function ember_memory_enabled(): bool { return true; }
 function ember_web_enabled(): bool { return true; }
@@ -24,7 +25,10 @@ require_once $root . '/api/console_insights_store.php';
 
 $local = coreui_insights_core('ember-coreui:latest');
 insights_test($local === ['model'=>'ember-coreui:latest','runtime'=>'local','context_tokens'=>131072,
-  'context_source'=>'modelfile','thinking'=>false], 'local Core snapshot');
+  'context_source'=>'modelfile','context_loaded'=>8192,'thinking'=>false], 'local Core snapshot');
+// #113: used and loaded windows are reported separately.
+$GLOBALS['TEST_PS'] = 131072;
+insights_test(coreui_insights_core('ember-coreui:latest')['context_loaded'] === 131072, 'loaded window from /api/ps');
 $cloud = coreui_insights_core('gpt-oss:120b-cloud');
 insights_test($cloud['runtime'] === 'cloud' && $cloud['context_tokens'] === null
   && $cloud['context_source'] === null, 'a cloud window is never invented');

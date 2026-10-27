@@ -11,7 +11,7 @@
     {id:'project', label:'Projekt', icon:'▤'}
   ];
   var SOURCES = {
-    loaded:'geladenes Modell', modelfile:'Modelfile',
+    loaded:'geladener Core', modelfile:'Modelfile', profile:'KI-Profil',
     remembered:'zuletzt gemessen', 'default':'Ollama-Standard'
   };
   var STORAGE_KEY = 'coreai.insights.open';
@@ -85,8 +85,10 @@
       var model = state.live.model || data.model || '';
       var cloud = /(?:^|[:._-])cloud(?:$|[:._-])/i.test(model) || data.runtime === 'cloud';
       var windowSize = cloud ? null : (state.live.context_tokens || data.context_tokens || null);
+      var profile = data.context_source === 'profile';
       return {model:model, cloud:cloud, windowSize:windowSize,
-        source:state.live.context_tokens ? 'loaded' : data.context_source,
+        source:profile ? 'profile' : (state.live.context_tokens ? 'loaded' : data.context_source),
+        loaded:cloud ? null : (Number(data.context_loaded) || null),
         thinking:data.thinking !== false};
     }
 
@@ -97,10 +99,12 @@
         return;
       }
       rows(body, [
-        ['Modell', info.model],
+        ['Core', info.model],
         ['Ausführung', info.cloud ? 'Cloud über Ollama' : 'Lokal über Ollama'],
         ['Kontextfenster', info.cloud ? 'vom Cloud-Anbieter'
           : count(info.windowSize) + ' Tokens' + (SOURCES[info.source] ? ' · ' + SOURCES[info.source] : '')],
+        info.loaded && info.windowSize && info.loaded !== Number(info.windowSize)
+          ? ['Von Ollama geladen', count(info.loaded) + ' Tokens · wechselt mit der nächsten Anfrage'] : null,
         ['Denkmodus', info.thinking ? 'an' : 'aus'],
         state.data && state.data.session_title ? ['Sitzung', state.data.session_title] : null
       ]);
@@ -109,7 +113,7 @@
     function renderContext(body) {
       var usage = state.live.usage || (state.data && state.data.usage) || null;
       if (!usage) {
-        body.appendChild(el('p', 'insight-empty', 'Noch kein Core-Aufruf in dieser Sitzung.'));
+        body.appendChild(el('p', 'insight-empty', 'Core hat in dieser Sitzung noch nicht geantwortet.'));
         return;
       }
       var prompt = Number(usage.prompt_tokens) || 0;
@@ -147,8 +151,8 @@
         });
       body.appendChild(legend);
       body.appendChild(el('p', 'insight-note', windowSize > 0
-        ? 'Letzter Core-Aufruf dieser Sitzung.'
-        : 'Letzter Core-Aufruf. Das Fenster bestimmt der Cloud-Anbieter.'));
+        ? 'Stand der letzten Core-Antwort in dieser Sitzung.'
+        : 'Stand der letzten Core-Antwort. Das Fenster bestimmt der Cloud-Anbieter.'));
     }
 
     function renderTools(body) {
