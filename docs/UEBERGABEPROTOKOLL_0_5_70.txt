@@ -53,6 +53,18 @@ AUFTRAG DES BETREIBERS:
   rund 1 s), Anker-Abweichung 0 bis 10 px, nach Offline/Online "VERBUNDEN", Entwurf erhalten, 0 POST.
 - P3 (Android-Wrapper, onRenderProcessGone, DeX) liegt im Repository Quantum-Mobile-Wrapper.
 
+DATUM (Nachtrag des Betreibers: Homepage mit Jahr 2024):
+- Ursache: Nur der Hauptprompt ($u) traegt [SERVERZEIT ...]. Die lokalen Einzeldatei-Aufrufe
+  (coreui_console_local_source_prompt, leeres System, nur Modelfile-SYSTEM), ihre Fortsetzungen,
+  Einzelquellen-, Plan- und Werkzeug-Folgeaufrufe hatten kein Datum; der Core nahm sein Trainingsjahr.
+  Zusaetzlich sagte die SERVERZEIT-Anweisung "Datum NUR nennen, wenn gefragt".
+- Korrektur: ember_today_line()/ember_with_today() in api/chat.php; ember_call_ollama() und
+  console_stream_ollama() stellen [DATUM HEUTE: Wochentag, TT.MM.JJJJ ...] voran, wenn ein
+  Konsolenauftrag laeuft (COREUI_CONSOLE_DATE_AWARE oder COREUI_WORK_CONTEXT) und der Prompt noch kein
+  Datum enthaelt. Nur Datum, keine Uhrzeit (Prompt-Cache). Kein Systemprompt (Modelfile bleibt).
+  SERVERZEIT-Anweisung: im Gespraech nur auf Nachfrage, fuer erzeugte Inhalte immer dieses Datum.
+- Geprueft mit Fake-Ollama: der echte Einzeldatei-Request beginnt mit der Datumszeile, ohne options.
+
 GEPRUEFT:
 - Alle Offline-Selbsttests inklusive der neuen ai-context-selftest.php, context-slider-ui-selftest.cjs
   und webui-resilience-selftest.cjs; Browser-Nachbau Einstellungen (1280 und 412 px) und Chat.

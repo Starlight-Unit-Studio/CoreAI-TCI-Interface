@@ -1832,6 +1832,33 @@ function ember_tool_time(): string {
   }
 }
 
+/**
+ * 0.5.70: today's date for every Core call of a private console turn. The
+ * main prompt carries SERVERZEIT, but separate calls (single source files,
+ * their continuations, plan and tool follow-ups, repairs) had no date, so a
+ * generated homepage used the year from the training data (2024). Date only,
+ * no time: the line changes once a day and keeps Ollama's prompt cache.
+ */
+function ember_today_line(): string {
+  try {
+    $dt = new DateTime('now', new DateTimeZone(ember_tz()));
+  } catch (Throwable $e) {
+    $dt = new DateTime('now');
+  }
+  $days = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+  return '[DATUM HEUTE: ' . $days[(int)$dt->format('w')] . ', ' . $dt->format('d.m.Y')
+    . '. Fuer zeitabhaengige Inhalte wie Copyright-Jahr, Stand-Angaben oder Fristen gilt '
+    . 'dieses Datum, nicht das Jahr aus deinem Trainingswissen.]';
+}
+
+function ember_with_today(string $prompt): string {
+  if (empty($GLOBALS['COREUI_CONSOLE_DATE_AWARE']) && !is_array($GLOBALS['COREUI_WORK_CONTEXT'] ?? null)) {
+    return $prompt;
+  }
+  if (str_contains($prompt, '[SERVERZEIT') || str_contains($prompt, '[DATUM HEUTE:')) return $prompt;
+  return ember_today_line() . "\n" . $prompt;
+}
+
 function ember_weather_code_de($code): string {
   $c = (int)$code;
   $map = [
@@ -3224,6 +3251,7 @@ function ember_call_ollama(string $model, string $systemPrompt, string $userProm
   $skillMode = (string)($optionOverrides['__skills'] ?? '');
   unset($optionOverrides['__skills']);
   if ($skillMode !== 'none') $userPrompt = coreui_skills_augment($userPrompt, $augmentSkills);
+  $userPrompt = ember_with_today($userPrompt);
   // Thinking ist strikt an genau diesen Modellaufruf gebunden. Ohne Reset koennte ein
   // spaeterer Call ohne message.thinking versehentlich einen alten Entwurf retten.
   $GLOBALS['STU_EMBER_LAST_THINKING'] = '';
@@ -4582,6 +4610,7 @@ function ember_build_chat_prompt(
   // #113: the KI-Profil window belongs to the private console; the global
   // channel and its queue keep the Core default.
   if ($channel !== 'console') $GLOBALS['COREUI_AI_RUNTIME_SETTINGS']['num_ctx'] = null;
+  if ($channel === 'console') $GLOBALS['COREUI_CONSOLE_DATE_AWARE'] = true;
   // The runtime model is known only after the account settings are applied.
   $profile = ember_console_prompt_profile($channel,
     $channel === 'console' ? ember_ollama_context_window(ember_model()) : null);
@@ -4665,7 +4694,7 @@ function ember_build_chat_prompt(
   $nativeToolHint = $nativeProjects ? coreui_native_tools_prompt($profile['compact']) : '';
   $savedPlanBlock = ($channel === 'console' && $consoleSessionId !== null)
     ? coreui_plan_prompt_block($pdo,$uid,(string)$consoleSessionId,$profile['plan']) : '';
-  $u = "[SERVERZEIT (nur dein Hintergrundwissen - Datum/Uhrzeit NUR nennen, wenn in der NEU-Nachricht danach gefragt wird): {$emberZeit}]{$memBlock}{$repBlock}{$playerStateBlock}{$attachBlock}{$userPromptBlock}{$profilePromptBlock}{$privateKnowledgeBlock}{$savedPlanBlock}\n" . "Kontext (letzte Zeilen - Zeilen mit (du) sind DEINE eigenen, bereits gesendeten Antworten; beantworte sie NICHT erneut):\n" . ($ctx !== '' ? $ctx : "(leer)")
+  $u = "[SERVERZEIT (nur dein Hintergrundwissen - Datum/Uhrzeit im Gespraech NUR nennen, wenn in der NEU-Nachricht danach gefragt wird; fuer erzeugte Inhalte wie Copyright-Jahr oder Stand-Angaben gilt dieses Datum, nicht das Jahr aus deinem Trainingswissen): {$emberZeit}]{$memBlock}{$repBlock}{$playerStateBlock}{$attachBlock}{$userPromptBlock}{$profilePromptBlock}{$privateKnowledgeBlock}{$savedPlanBlock}\n" . "Kontext (letzte Zeilen - Zeilen mit (du) sind DEINE eigenen, bereits gesendeten Antworten; beantworte sie NICHT erneut):\n" . ($ctx !== '' ? $ctx : "(leer)")
    . $loreBlock
    . "
 
@@ -4786,6 +4815,7 @@ function ember_generate_reply(
   $cid = (string)($senderChar['id'] ?? '');
   if (function_exists('coreui_ai_runtime_apply')) coreui_ai_runtime_apply($pdo, $uid);
   if ($channel !== 'console') $GLOBALS['COREUI_AI_RUNTIME_SETTINGS']['num_ctx'] = null;
+  if ($channel === 'console') $GLOBALS['COREUI_CONSOLE_DATE_AWARE'] = true;
   // Same window-aware sizing as the streaming prompt builder.
   $promptProfile = ember_console_prompt_profile($channel,
     $channel === 'console' ? ember_ollama_context_window(ember_model()) : null);
@@ -4882,7 +4912,7 @@ function ember_generate_reply(
   $playerStateBlock = ($playerStateHint !== '') ? ("\n\n" . trim($playerStateHint)) : '';
   $userPromptBlock = function_exists('coreui_ai_user_prompt_block') ? coreui_ai_user_prompt_block() : '';
   $profilePromptBlock = function_exists('coreui_profile_prompt_block') ? coreui_profile_prompt_block($pdo, $uid) : '';
-  $u = "[SERVERZEIT (nur dein Hintergrundwissen - Datum/Uhrzeit NUR nennen, wenn in der NEU-Nachricht danach gefragt wird): {$emberZeit}]{$memBlock}{$repBlock}{$playerStateBlock}{$attachBlock}{$userPromptBlock}{$profilePromptBlock}{$privateKnowledgeBlock}\n" . "Kontext (letzte Zeilen - Zeilen mit (du) sind DEINE eigenen, bereits gesendeten Antworten; beantworte sie NICHT erneut):\n" . ($ctx !== '' ? $ctx : "(leer)")
+  $u = "[SERVERZEIT (nur dein Hintergrundwissen - Datum/Uhrzeit im Gespraech NUR nennen, wenn in der NEU-Nachricht danach gefragt wird; fuer erzeugte Inhalte wie Copyright-Jahr oder Stand-Angaben gilt dieses Datum, nicht das Jahr aus deinem Trainingswissen): {$emberZeit}]{$memBlock}{$repBlock}{$playerStateBlock}{$attachBlock}{$userPromptBlock}{$profilePromptBlock}{$privateKnowledgeBlock}\n" . "Kontext (letzte Zeilen - Zeilen mit (du) sind DEINE eigenen, bereits gesendeten Antworten; beantworte sie NICHT erneut):\n" . ($ctx !== '' ? $ctx : "(leer)")
    . $loreBlock
    . "
 

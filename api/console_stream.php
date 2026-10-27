@@ -80,6 +80,7 @@ $sourceResponseId = 0;
 $afterId = (int)($_GET['after_id'] ?? 0);
 $sessionId = coreui_console_session_normalize_id($_GET['session_id'] ?? '');
 $channel = 'console';
+$GLOBALS['COREUI_CONSOLE_DATE_AWARE'] = true;
 
 if ($generationRequestId !== '') {
   try {
@@ -950,6 +951,8 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
   $url       = ember_url();
   $keepAlive = ember_keep_alive();
 
+  // Same date line as ember_call_ollama() for every call of the turn.
+  $userPrompt = ember_with_today($userPrompt);
   // Keep SSE and synchronous generation on the same validated option policy.
   $options = ember_ollama_known_good_options($model);
 

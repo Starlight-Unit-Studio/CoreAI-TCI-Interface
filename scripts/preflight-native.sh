@@ -115,6 +115,7 @@ UI_FILES=(
   js/coreui-context-slider.js
   database/migrations/017_ai_num_ctx.sql
   scripts/webui-resilience-selftest.cjs
+  scripts/date-awareness-selftest.php
   js/coreui-net.js
   api/console_insights.php
   api/console_insights_store.php
@@ -394,6 +395,13 @@ if command -v php >/dev/null 2>&1; then
     ok 'KI-Profil: Kontextfenster nur auf Wunsch, nie Cloud, pro Lauf fixiert, Speicher-Richtwerte geprueft.'
   else
     fail "KI-Profil-Kontextfenster-Selbsttest: ${ai_context_test:-Unbekannter Fehler}"
+  fi
+
+  date_test=''
+  if date_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/date-awareness-selftest.php" 2>&1)"; then
+    ok 'Datum: jeder Core-Aufruf eines Konsolenauftrags kennt das heutige Datum.'
+  else
+    fail "Datums-Selbsttest: ${date_test:-Unbekannter Fehler}"
   fi
 
   if runuser -u www-data -- php "$PROJECT_ROOT/scripts/model-live-audit.php" --selftest >/dev/null 2>&1; then
