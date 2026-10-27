@@ -448,6 +448,29 @@ function coreui_console_local_source_append(string $current, string $continuatio
   return strlen($joined)<=150000 ? $joined : null;
 }
 
+/**
+ * An Ollama continuation may restart a complete source instead of returning
+ * the requested tail. Use that replacement only if it independently passes
+ * the strict single-file validation AND agrees with the already received
+ * source prefix. A random CSS rule or an unrelated file cannot replace it.
+ * Both candidates stay inert until the existing isolated writer verifies ZIP.
+ */
+function coreui_console_local_source_completed_restart(
+  string $existing, string $reply, string $request, string $filename
+): ?array {
+  if (trim($existing) === '' || trim($reply) === '') return null;
+  $candidate = coreui_console_local_source_reply($reply,$request,$filename);
+  if (!is_array($candidate) || !is_string($candidate['bytes'] ?? null)) return null;
+  $head = ltrim($existing);
+  $next = ltrim($candidate['bytes']);
+  $prefixBytes = min(48,strlen($head));
+  if ($prefixBytes < 20 || !str_starts_with($next,substr($head,0,$prefixBytes)))
+    return null;
+  // A restart must actually resolve the unfinished output.
+  if (strlen($next) <= strlen($head)) return null;
+  return $candidate;
+}
+
 /** File-type-aware continuation without changing Ollama parameters or Modelfile. */
 function coreui_console_local_source_resume_prompt(
   string $request, string $filename, string $current, int $segment
