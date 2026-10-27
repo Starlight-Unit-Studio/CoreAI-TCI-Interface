@@ -471,6 +471,27 @@ function coreui_console_local_source_completed_restart(
   return $candidate;
 }
 
+/**
+ * Ollama may report done_reason=stop on syntactically unfinished raw source.
+ * Examine only the inert source bytes, never model reasoning or prose.
+ * A stop on complete source is NOT retried.
+ */
+function coreui_console_local_source_needs_continuation(string $reply, string $filename): bool {
+  $raw = coreui_console_local_source_fragment($reply,$filename,true);
+  if (!is_string($raw) || strlen($raw) < 24) return false;
+  $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+  if ($ext === 'html' || $ext === 'htm')
+    return preg_match('~</html>\\s*$~i',$raw) !== 1;
+  if ($ext === 'css') {
+    return substr_count($raw,'{') > substr_count($raw,'}')
+      || preg_match('~[:{,]\\s*$~',$raw) === 1;
+  }
+  if ($ext === 'js')
+    return substr_count($raw,'{') > substr_count($raw,'}')
+      || preg_match('~[;})]\\s*$~',$raw) !== 1;
+  return false;
+}
+
 /** File-type-aware continuation without changing Ollama parameters or Modelfile. */
 function coreui_console_local_source_resume_prompt(
   string $request, string $filename, string $current, int $segment
