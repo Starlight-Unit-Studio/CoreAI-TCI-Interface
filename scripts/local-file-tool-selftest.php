@@ -363,6 +363,13 @@ $localSpec = coreui_console_project_request_spec($implicitRequest);
 local_file_test(coreui_console_local_source_prompt($implicitRequest, 'game.js', [
   'index.html'=>['name'=>'index.html','bytes'=>$localHtml],
 ], false) !== null, 'local raw one-file prompt must be available');
+$focusedSecond = coreui_console_local_source_prompt($implicitRequest,'index.html',[],true);
+local_file_test(is_string($focusedSecond)
+  && str_contains($focusedSecond,'ZWEITER QUELLCODEVERSUCH')
+  && str_contains($focusedSecond,'Beginne die SICHTBARE Antwort SOFORT mit <!DOCTYPE html>')
+  && str_contains($focusedSecond,$implicitRequest)
+  && !str_contains($focusedSecond,'num_predict'),
+  'no-source retry must request public HTML before the approved task without model option changes');
 $localPrompt = coreui_console_local_source_prompt($implicitRequest, 'game.js', [
   'index.html'=>['name'=>'index.html','bytes'=>$localHtml],
 ], true);
