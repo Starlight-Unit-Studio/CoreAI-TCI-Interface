@@ -150,8 +150,8 @@ native_assert(coreui_native_tool_parse("[COREUI_PLAN_APPEND]\n## Weiter\n"
 native_assert(coreui_native_tool_parse("[COREUI_PLAN_APPEND]\nNur Text") === null,
   'plain prose is not an approved Markdown plan extension');
 
-$appendDraft = coreui_native_tool_parse("[COREUI_PLAN_APPEND]\\n"
-  . "## Neue Unterseiten\\n" . str_repeat("- Navigationslink und Inhaltslayout.\\n",8));
+$appendDraft = coreui_native_tool_parse("[COREUI_PLAN_APPEND]\n"
+  . "## Neue Unterseiten\n" . str_repeat("- Navigationslink und Inhaltslayout.\n",8));
 native_assert(is_array($appendDraft) && ($appendDraft['type'] ?? '') === 'PLAN_APPEND'
   && !empty($appendDraft['draft']),
   'cut-off cloud plan additions must be persisted as an incomplete draft');

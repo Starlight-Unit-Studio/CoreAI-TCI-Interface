@@ -55,7 +55,7 @@ try {
     );
   }
   frontend_test_assert(
-    str_contains($console,'function showTypingIndicator()')
+    str_contains($console,'function showTypingIndicator(')
       && str_contains($console,'function showResponseTime(')
       && str_contains($console,'function responseTimings(record)')
       && str_contains($console,'function armWatchdog()')

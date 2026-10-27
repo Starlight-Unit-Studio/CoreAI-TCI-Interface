@@ -143,7 +143,7 @@ assert(steps.querySelector('.work-counts').textContent.includes('2 Schritte'),
 assert(!steps.textContent.includes('NEVER_SHOW_INTERNAL_THOUGHTS')
   && !steps.textContent.includes('NOT_PUBLIC'),
   'no private model thinking/prompt content in narrative');
-assert(steps.textContent.includes('Modell-Endgrundlength')
+assert(steps.textContent.includes('Core-Endgrundlength')
   && steps.textContent.includes('Denkstatus (Zeichen)1900'),
   'new bounded diagnostic fields are available after opening');
 steps.querySelector('.work-toggle').handlers.click();
@@ -175,7 +175,7 @@ const windowFull = work.create({events:[
 ],expanded:true});
 assert(windowFull.textContent.includes('Kontextfenster (4096 Tokens)'),
   'the detected window size must be explained');
-assert(windowFull.textContent.includes('Das Kontextfenster des Modells war voll (4096 Tokens)'),
+assert(windowFull.textContent.includes('Das Kontextfenster von Core war voll (4096 Tokens)'),
   'a full window must not be shown as a generic truncation');
 assert(windowFull.textContent.includes('Kontextfenster (Tokens)4096'),
   'the window size must be available in the details');
@@ -278,7 +278,7 @@ assert.equal(queuedBody.querySelector('.work-entries').children.length,1,
 tickWork();
 assert.equal(queuedBody.querySelector('.work-entries').children.length,4);
 assert(queuedBody.textContent.includes('Ich übernehme den Auftrag')
-  && queuedBody.textContent.includes('Ich bereite den Modellaufruf vor'),
+  && queuedBody.textContent.includes('Ich bereite den Core-Aufruf vor'),
   'typed steps must retain complete safe narratives');
 assert(queued.querySelector('.work-counts').textContent.includes('4 Schritte'));
 assert.equal(queuedBody._workQueue.length,0,'no SSE events silently discarded');

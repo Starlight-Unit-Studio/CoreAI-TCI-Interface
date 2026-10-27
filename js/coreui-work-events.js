@@ -30,12 +30,12 @@
     var windowSize = Number(event.meta.context_tokens) > 0
       ? ' (' + Number(event.meta.context_tokens) + ' Tokens)' : '';
     if (event.meta.reason === 'context_window_full' && event.state !== 'success') {
-      return 'Das Kontextfenster des Modells war voll' + windowSize + '. Auftrag, Denkphase und Antwort '
+      return 'Das Kontextfenster von Core war voll' + windowSize + '. Auftrag, Denkphase und Antwort '
         + 'passten nicht gemeinsam hinein, deshalb endete die Ausgabe vorzeitig.';
     }
     switch (event.title) {
       case 'Kontextfenster ermittelt':
-        return 'Das lokale Modell arbeitet mit einem Kontextfenster' + windowSize + '. Ich teile Auftrag '
+        return 'Der lokale Core arbeitet mit einem Kontextfenster' + windowSize + '. Ich teile Auftrag '
           + 'und Plan pro Datei so zu, dass Platz für den eigentlichen Quelltext bleibt.';
       case 'Unvollstaendiger Python-Code nicht ausgefuehrt':
         return 'Mein Python-Skript wurde beim Schreiben abgeschnitten. Ich führe es deshalb nicht aus '
