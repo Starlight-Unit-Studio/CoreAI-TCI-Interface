@@ -5493,8 +5493,9 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         'Plan-Fortsetzungsmarker nicht lesbar',
         ['reason'=>'invalid_plan_continue_marker','response_bytes'=>strlen($out)]);
     }
-    return 'Maras Werkzeugantwort war unvollstaendig oder nicht gueltig. '
-      . 'Es wurde weder ein Plan als fertig gespeichert noch ein Projekt erstellt.';
+    return 'Ich konnte diese Werkzeugantwort noch nicht sicher auswerten. '
+      . 'Bereits gespeicherte Planversionen bleiben erhalten. '
+      . 'Es wurde kein unbelegter Projektbau gestartet.';
   }
 
   // Sicherheitsnetz: falls doch ein Restmarker durchrutscht, entfernen.
