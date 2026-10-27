@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.67 context-aware local prompts, no cut-off Python, honest self-correction.
+# CoreAI: TCI Interface 0.5.68 live work history follow: camera stays on the newest step until the reader scrolls.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

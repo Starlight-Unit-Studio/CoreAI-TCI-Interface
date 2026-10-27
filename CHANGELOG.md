@@ -2,6 +2,13 @@
 
 CoreAI: TCI Interface gehoert zur Quantum-Softwarefamilie und wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert. Historische Changelogs dokumentieren die frueheren Produktnamen unveraendert.
 
+## 0.5.68 - 27.10.2026
+
+- **Autoscroll beim Live-Arbeitsweg:** Die Ansicht blieb kurz nach der eigenen Nachricht stehen, weil ein grosser laufender Block an seinem Anfang festgehalten wurde und die Ansicht nur bei Server-Ereignissen folgte. Jetzt folgt sie dem Ende des neuesten Beitrags und jedem Wachstum (`ResizeObserver`), auch zwischen den Ereignissen.
+- **Stopp nur durch den Nutzer:** Mausrad, Wischen, Tasten oder Scrollleiste halten die Leseposition an. Layout-Verschiebungen, Scroll-Anchoring und Neuaufbau zaehlen nicht mehr als Nutzer-Scrollen; Gesten gelten zeitlich begrenzt.
+- Tests: `scripts/chat-follow-selftest.cjs` um Live-Wachstum, Blockende, programmatische Verschiebung, veraltete Geste und Scrollleisten-Ziehen erweitert; Browser-Nachbau bei 412, 600 und 1010 Pixel Breite.
+- Versionsstand 0.5.68 mit HTML-Versionen, SHA256-Frontend-Keys, README, TXT-Changelog und Uebergabe. Keine Modell-, Ollama- oder Modelfile-Aenderung.
+
 ## 0.5.67 - 27.10.2026
 
 - **Kontextfenster erkannt:** Die abgeschnittenen lokalen Laeufe endeten exakt bei 4096 Tokens (Prompt + Ausgabe). CoreAI liest das echte Fenster jetzt nur lesend ueber `/api/ps`, merkt sich volle Fenster und nimmt sonst Ollamas CPU-Standard 4096 an. Kein `num_ctx`, kein Modelfile- oder Ollama-Eingriff.

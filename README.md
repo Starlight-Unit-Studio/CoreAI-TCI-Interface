@@ -7,7 +7,27 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.67` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.68` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Autoscroll folgt dem laufenden Arbeitsweg (0.5.68)
+
+Live-Test des Betreibers nach 0.5.67: Lokale und Cloud-Modelle laufen
+schnell durch. Beim Schreiben des Arbeitswegs blieb die Ansicht aber kurz
+nach der eigenen Nachricht stehen, und der Text darunter war nur halb zu
+sehen. Ursache im Scroll-Controller `js/coreui-chat-follow.js`: Ein
+laufender Block, der hoeher als 78 Prozent des Sichtbereichs wurde, wurde
+absichtlich an seinem Anfang festgehalten (ein Notbehelf gegen den
+Leerraum, dessen echte Ursache 0.5.67 behoben hat). Ausserdem folgte die
+Ansicht nur bei neuen Server-Ereignissen, nicht beim buchstabenweisen
+Wachsen, und jede nach oben verschobene Scrollposition galt als
+Nutzer-Scrollen, auch wenn der Browser sie selbst verursacht hatte.
+
+0.5.68 folgt dem Ende des neuesten Beitrags, reagiert per
+`ResizeObserver` auf jedes Wachstum und stoppt nur bei einer echten
+Nutzeraktion: Mausrad, Wischen, Tasten oder Ziehen der Scrollleiste.
+Im Browser-Nachbau bleibt der neueste Schritt bei 412, 600 und 1010 Pixel
+Breite durchgehend sichtbar; nach Hochscrollen bleibt die Leseposition
+stehen. Nur Frontend, keine Modell- oder Modelfile-Aenderung.
 
 ## Kontextfenster, Cloud-Werkzeuge, Python-Schutz und Chat-Leerraum (0.5.67)
 

@@ -154,7 +154,8 @@
   var chatFollow    = window.CoreUIChatFollow
     ? window.CoreUIChatFollow.create(messagesArea, jumpLatest,
         function () { return state.waitingEmber || !!state.typingEl; },
-        function () { return state.typingEl || (messagesInner && messagesInner.lastElementChild); })
+        function () { return state.typingEl || (messagesInner && messagesInner.lastElementChild); },
+        messagesInner)
     : null;
   var inputEl       = document.getElementById('inputMessage');
   var btnSend       = document.getElementById('btnSend');

@@ -3,11 +3,12 @@
 (function (root) {
   'use strict';
 
-  function create(area, button, isWorking, activeRow) {
+  function create(area, button, isWorking, activeRow, content) {
     if (!area || !button) return null;
     var following = true;
     var scheduled = false;
-    var manualGesture = false;
+    var gestureAt = 0; // last wheel/touch movement by the reader
+    var draggingBar = false;
     var lastTop = Number(area.scrollTop) || 0;
     var touchY = null;
     var bottomMargin = 76;
@@ -52,16 +53,10 @@
         (Number(area.clientHeight)||0));
       var rect = latestRect();
       if (rect) {
-        // Never target an empty tail beyond the last visible message.
+        // Follow the END of the latest message: that is where Mara's live
+        // work history writes. Never target an empty tail beyond it.
         var target = (Number(area.scrollTop)||0) + rect.row.bottom
           - rect.viewport.bottom + 18;
-        // A large live work panel scrolls internally. Keep its beginning
-        // visible instead of moving the entire conversation into blank space.
-        if (isWorking && isWorking() &&
-            rect.row.height > (Number(area.clientHeight)||0) * .78) {
-          target = (Number(area.scrollTop)||0) +
-            rect.row.top - rect.viewport.top - 12;
-        }
         return Math.max(0,Math.min(max,target));
       }
       return max;
@@ -81,18 +76,36 @@
       });
     }
 
+    // Only the reader stops the camera: wheel, touch, keys or the scrollbar.
+    // Layout changes, scroll anchoring and re-rendering never count.
+    function now() { return Date.now(); }
+    // A gesture explains scroll events shortly after it (including momentum),
+    // never a layout shift long after a gesture the inner work view consumed.
+    function readerGesture() { return now() - gestureAt < 700; }
     function onScroll() {
       var top = Number(area.scrollTop) || 0;
       if (gap() <= bottomMargin) following = true;
-      else if (manualGesture || top < lastTop - 2) following = false;
+      else if (readerGesture() || draggingBar) following = false;
       lastTop = top;
-      manualGesture = false;
       refresh();
     }
 
     area.addEventListener('scroll', onScroll, {passive:true});
+    // A press on the scroll container itself (not a message) is its scrollbar.
+    area.addEventListener('pointerdown', function (e) {
+      if (e && e.target === area) draggingBar = true;
+    }, {passive:true});
+    if (typeof root.addEventListener === 'function') {
+      root.addEventListener('pointerup', function () { draggingBar = false; }, {passive:true});
+      root.addEventListener('pointercancel', function () { draggingBar = false; }, {passive:true});
+    }
+    // Typed work notes, previews and images grow the conversation between
+    // server events. While the reader follows, the camera grows with them.
+    if (content && typeof root.ResizeObserver === 'function') {
+      new root.ResizeObserver(function () { if (following) follow(); }).observe(content);
+    }
     area.addEventListener('wheel', function (e) {
-      manualGesture = true;
+      gestureAt = now();
       if (e.deltaY < 0) following = false;
     }, {passive:true});
     area.addEventListener('touchstart', function (e) {
@@ -102,7 +115,7 @@
       if (touchY === null || !e.touches || !e.touches.length) return;
       var next = e.touches[0].clientY;
       if (next > touchY + 4) following = false; // Swipe down: read older messages.
-      if (Math.abs(next - touchY) > 3) manualGesture = true;
+      if (Math.abs(next - touchY) > 3) gestureAt = now();
       touchY = next;
     }, {passive:true});
     area.addEventListener('keydown', function (e) {
