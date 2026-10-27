@@ -41,8 +41,12 @@ End-to-End-Abnahme. Issue #102 bleibt offen.
 (Ollama-Standardfenster ohne num_ctx). Fenster wird nur lesend
 erkannt, Einzeldatei- und Konsolenprompts passen sich an, Python aus
 abgeschnittenen Antworten laeuft nie, Selbstkorrektur ohne
-Schlagwoerter, toleranter Werkzeugparser. Groesseres Fenster erst nach
-Tempomessung und Entscheidung des Betreibers.
+Schlagwoerter, toleranter Werkzeugparser. Der Betreiber hat nach eigener
+Tempomessung (kaum Verlust) num_ctx im Modelfile gesetzt (jetzt 131072);
+damit lief lokal erstmals ein Projekt-ZIP durch. Cloud-Werkzeugantworten
+mit Satz um den Block werden erkannt, sonst ein Korrekturversuch. Der
+Leerraum unter der letzten Nachricht (versteckte Schritt-Titel im
+aufgeklappten Arbeitsweg) ist behoben.
 Mara/Ember, Ollama-Modelfile, serielle Queue und private Projekt-
 plaene NICHT ungefragt veraendern.
 Externe STU-Homepage wird in einem ANDEREN Chat bearbeitet.

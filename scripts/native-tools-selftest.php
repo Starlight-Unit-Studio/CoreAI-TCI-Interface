@@ -88,7 +88,7 @@ foreach ([
   'Multi-action/malformed protocol should not run');
 
 
-// 0.5.68: Netcup 27.10.2026, gemma4:31b-cloud and gpt-oss:120b-cloud wrote a
+// 0.5.67: Netcup 27.10.2026, gemma4:31b-cloud and gpt-oss:120b-cloud wrote a
 // complete reply (done_reason=stop) that ended as "Werkzeugantwort unvollstaendig".
 // One closed block framed by ordinary sentences, bold markers or CRLF is still
 // exactly one tool call.

@@ -249,7 +249,7 @@ try {
     'Aktiver Chatprozess wird nach Seitenwechsel nicht aus sicherer Session-History rekonstruiert.'
   );
 
-  // 0.5.68: absolutely positioned, visually hidden step titles must stay
+  // 0.5.67: absolutely positioned, visually hidden step titles must stay
   // inside the internally scrolling work history. Otherwise an opened
   // "Arbeitsweg" stretches the chat with a large blank area below the reply.
   $hiddenTitle = strpos($css, ".msg-row.ember .work-title-with-note {\n  position: absolute;");

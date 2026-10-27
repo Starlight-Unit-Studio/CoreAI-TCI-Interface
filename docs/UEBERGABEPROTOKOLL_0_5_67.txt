@@ -45,19 +45,43 @@ KORREKTUREN:
 - Vier nach 0.5.66 rote Selbsttests (Plan-Append-Fixture, Core-Beschriftungen,
   showTypingIndicator(forceFollow), Modelfile-Laufzeitzeile) auf der Testseite repariert.
 
+NACHTRAG 27.10.2026 (zweite Bilderserie des Betreibers):
+- Tempomessung auf dem Server (ember-coreui:latest, CPU): Ausgabe 25,1 / 22,4 / 24,3 / 22,0
+  Tokens/s bei num_ctx 4096 / 16384 / 32768 / 65536, Prompt 228-262 Tokens/s, RAM 94 GiB
+  (33 GiB belegt). Kein Halbieren des Tempos.
+- Der Betreiber hat PARAMETER num_ctx selbst in config/Modelfile.template gesetzt (65536,
+  danach 131072). Mit 65536 lieferte Mara lokal erstmals ein Projekt-ZIP mit acht Dateien
+  (Gesamtdauer 16 min 31 s). 131072 ist noch nicht gemessen.
+- Die Fehlertexte der Bilder ("Maras Werkzeugantwort war unvollstaendig...", "Modell-Endgrund")
+  stammen aus einem Stand vor 0.5.66; der Server lief dabei noch nicht mit diesem Branch.
+- Cloud (gemma4:31b-cloud, gpt-oss:120b-cloud): vollstaendige Antwort (stop, 2777 Zeichen),
+  trotzdem "Werkzeugantwort unvollstaendig". Der Parser verlangte den Block ohne jeden Text
+  davor und hoechstens einen klammerfreien Satz danach.
+  Korrektur: coreui_native_single_block_recover() (genau ein geschlossener Block, Satz davor
+  oder danach, Inline-Code, fette Marker, CRLF), coreui_native_tool_reply_shape() als
+  textfreie Diagnose, coreui_native_tool_repair_prompt() fuer genau EINEN Korrekturaufruf
+  ueber denselben Ausfuehrungsweg in console_stream.php und chat.php. Mehrere Bloecke,
+  Codebloecke und "Beispiel:" bleiben gesperrt (bestehende Sicherheitsentscheidung).
+- Leerraum unter der letzten Nachricht: Ursache im Browser-Nachbau gefunden. Die versteckten
+  Schritt-Titel (.work-title-with-note, position:absolute) brachen aus dem nicht
+  positionierten, intern scrollenden Arbeitsweg aus. Aufgeklappt verlaengerten sie den Chat
+  um rund 1300 Pixel. Der 0.5.66-Fix (min-height/padding) behob das nicht.
+  Korrektur: .work-body, .work-entry und .work-source-scroll sind position:relative.
+  Nachbau danach: 16 Pixel unter der letzten Nachricht bei 412, 600 und 1010 Pixel Breite.
+- ember_ollama_context_window() liest bei entladenem Modell num_ctx aus /api/show.
+
 GEPRUEFT (offline, ohne Docker-DB):
 - php -l fuer alle PHP-Dateien, alle scripts/*selftest*.php/js/cjs/py ausser den vier
   DB-gebundenen Tests, tests/*.sh, tests/test_cache_bust.py, tests/artifacts.
 - version-merge-check gegen 0.5.66, cache-bust --verify.
 
-UNVERAENDERT:
-- config/Modelfile.template, Ollama-Parameter, Ollama-Dienst, serielle Modellqueue,
+UNVERAENDERT DURCH CLAUDE:
+- config/Modelfile.template (num_ctx hat der Betreiber selbst gesetzt), Ollama-Dienst, serielle Modellqueue,
   Python-Worker, private Projektplaene, technische coreui-Bezeichner.
 
 WEITERHIN OFFEN:
-- Optionale Betreibereinstellung fuer ein groesseres Fenster erst nach Tempomessung auf dem
-  Server (Betreiber meldet halbe Tokens/s mit num_ctx bei gemma4). num_ctx -1 ist in Ollama
-  nicht definiert. Bis dahin: OLLAMA_CONTEXT_LENGTH ist eine Betreiberentscheidung.
+- Tempo und Speicher bei num_ctx 131072 messen (ollama ps, Tokens/s). num_ctx -1 ist in
+  Ollama nicht definiert.
 - Issue #102 (persistente Checkpoints, mehr als 9 Dateien, 12k-Planlimit).
 - SSE-Fallback erzeugt nach einem gestreamten [PY] eine neue Antwort statt die vorhandene
   zu nutzen.

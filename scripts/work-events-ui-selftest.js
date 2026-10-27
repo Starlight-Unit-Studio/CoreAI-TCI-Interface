@@ -182,7 +182,7 @@ assert(windowFull.textContent.includes('Kontextfenster (Tokens)4096'),
 assert(windowFull.textContent.includes('führe es deshalb nicht aus'),
   'blocked incomplete Python must be explained truthfully');
 
-// 0.5.68: an unreadable cloud tool reply names its bounded reason and the
+// 0.5.67: an unreadable cloud tool reply names its bounded reason and the
 // single self-correction, never the private model text.
 const toolFix = work.create({events:[
   {id:67,kind:'tool',state:'error',title:'Werkzeugantwort nicht lesbar',

@@ -70,7 +70,7 @@ unset($GLOBALS['COREUI_OLLAMA_CONTEXT_MEMO']);
 context_test(ember_ollama_context_window('gemma4:e4b') === 65536,
   'a stored /api/ps window must be reused while the model is unloaded');
 
-// 0.5.68: the owner's Modelfile line "PARAMETER num_ctx 65536" is read from
+// 0.5.67: the owner's Modelfile line "PARAMETER num_ctx 65536" is read from
 // /api/show when the model is not loaded. CoreAI never writes it.
 context_test(ember_ollama_parameters_num_ctx("temperature 1\ntop_k 64\nnum_ctx 65536\ntop_p 0.95") === 65536
   && ember_ollama_parameters_num_ctx("temperature 1\ntop_k 64") === null

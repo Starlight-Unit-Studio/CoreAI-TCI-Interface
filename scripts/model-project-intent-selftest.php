@@ -55,7 +55,7 @@ intent_assert(str_contains($stream,'coreui_build_intent_select(')
   && str_contains($stream,'$nativeToolHandled = $preselectedBuildHandled;')
   && str_contains($stream,'if (!$fileTaskHandled && !$nativeToolHandled'),
   'Sync/SSE no-thinking selection and single-tool dispatch not wired');
-// 0.5.68: an unreadable tool reply gets a bounded reason and ONE correction
+// 0.5.67: an unreadable tool reply gets a bounded reason and ONE correction
 // through the same apply path, in the SSE and in the synchronous route.
 foreach (['stream'=>$stream,'chat'=>$chat] as $route=>$source) {
   intent_assert(str_contains($source,'coreui_native_tool_reply_shape(')

@@ -9,4 +9,7 @@ CoreAI: TCI Interface 0.5.67 - 27.10.2026
 - Werkzeugparser toleriert Leerzeilen, kurzen Nachsatz und reine Fortschrittszeilen; verneinte Frameworks sperren kein Projekt.
 - Konsolenantworten behalten Absaetze und Codeeinrueckung.
 - Tests: context-budget-selftest neu und in beiden Preflights; vier nach 0.5.66 rote Selbsttests repariert.
-- OFFEN: groesseres Kontextfenster nur nach Tempomessung und Betreiberentscheidung, Issue #102, Live-Abnahme Netcup/Android.
+- Cloud: genau ein geschlossener Werkzeugblock mit Satz davor/danach, Inline-Code, fetten Markern oder CRLF wird erkannt. Unlesbare Antworten: begrenzter Grund im Arbeitsweg und genau ein Korrekturaufruf (SSE und Sync). Mehrere Bloecke, Codebloecke, "Beispiel:" bleiben gesperrt.
+- Chat: Leerraum unter der letzten Nachricht bei aufgeklapptem Arbeitsweg behoben (versteckte absolute Schritt-Titel brachen aus dem Scrollbereich aus).
+- Betreiber-Messung: 25,1/22,4/24,3/22,0 Ausgabe-Tokens/s bei num_ctx 4096/16384/32768/65536. Betreiber setzt PARAMETER num_ctx im Modelfile-Template selbst (jetzt 131072). CoreAI liest es bei entladenem Modell ueber /api/show, sendet selbst kein num_ctx.
+- OFFEN: Issue #102, Live-Abnahme Netcup/Android, Tempo/Speicher bei 131072 noch nicht gemessen.

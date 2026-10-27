@@ -9,7 +9,7 @@ CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, Sea
 
 Current source version: `0.5.67` (numeric only). The last verified ZIP remains archived under its original historical name.
 
-## Kontextfenster, Python-Schutz und ehrliche Selbstkorrektur (0.5.67)
+## Kontextfenster, Cloud-Werkzeuge, Python-Schutz und Chat-Leerraum (0.5.67)
 
 Die Diagnosewerte der Netcup-Bilder 3250 + 846, 3284 + 812 und
 1091 + 3005 ergeben jeweils exakt 4096 Tokens. Das ist Ollamas
@@ -42,10 +42,32 @@ Werkzeugmarker werden toleranter gelesen (Leerzeilen, kurzer Nachsatz,
 reine Fortschrittszeile), und Saetze wie "kein React" sperren kein Projekt
 mehr. Konsolenantworten behalten Absaetze und Codeeinrueckung.
 
-Kein `num_ctx`, keine Modelfile-Aenderung, keine Ollama-Dienstaenderung.
-Ein groesseres Fenster (`OLLAMA_CONTEXT_LENGTH`) bleibt eine
-Betreiberentscheidung nach Tempomessung am Server. Issue #102 bleibt offen.
-Lokale Selbsttests ersetzen nicht die Live-Abnahme ueber den Netcup-Updater.
+Messung des Betreibers am 27.10.2026 (Netcup, CPU, `ember-coreui:latest`):
+Ausgabe 25,1 / 22,4 / 24,3 / 22,0 Tokens/s bei `num_ctx` 4096 / 16384 /
+32768 / 65536, Prompt 228 bis 262 Tokens/s. Ein groesseres Fenster kostet
+dort also nur rund 10 Prozent Tempo. Der Betreiber hat deshalb selbst
+`PARAMETER num_ctx` im Modelfile-Template gesetzt (zuerst 65536, jetzt
+131072); mit 65536 lieferte das lokale Modell erstmals ein Projekt-ZIP mit
+acht Dateien. CoreAI selbst sendet weiterhin kein `num_ctx`: Es liest das
+Fenster ueber `/api/ps` oder, bei entladenem Modell, aus dem Modelfile
+(`/api/show`) und spart Prompt nur bei kleinen Fenstern.
+
+**Cloud-Werkzeugantworten:** Antworten von `gemma4:31b-cloud` und
+`gpt-oss:120b-cloud` endeten trotz `done_reason=stop` als "Werkzeugantwort
+unvollstaendig". Genau ein geschlossener Werkzeugblock mit kurzem Satz davor
+oder danach, Inline-Code im Nachsatz, fetten Markerzeilen oder CRLF wird
+jetzt erkannt. Bleibt eine Antwort unlesbar (mehrere Bloecke, Codeblock,
+"Beispiel:"), steht der Grund im Arbeitsweg und Mara korrigiert sich
+genau einmal selbst, statt mit einer Sackgasse zu enden.
+
+**Leerraum unter der letzten Nachricht:** Die unsichtbaren Schritt-Titel
+des Arbeitswegs waren absolut positioniert, der intern scrollende
+Arbeitsweg aber nicht. Aufgeklappt verlaengerten sie den Chat um ihre
+verborgenen Positionen (im Nachbau rund 1300 Pixel). Sie bleiben jetzt in
+ihrem Eintrag; unter der letzten Nachricht bleiben 16 Pixel.
+
+Issue #102 bleibt offen. Lokale Selbsttests und Browser-Nachbau ersetzen
+nicht die Live-Abnahme ueber den Netcup-Updater.
 
 ## Quellen-Fortsetzung, Cloud-Entwurf und Chat-Hoehe (0.5.66)
 

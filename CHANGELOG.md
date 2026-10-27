@@ -12,8 +12,11 @@ CoreAI: TCI Interface gehoert zur Quantum-Softwarefamilie und wird bis zur final
 - **Neu generieren/Bearbeiten:** Die Bauentscheidung fuer gespeicherte Plaene laeuft auch bei diesen Aktionen.
 - **Werkzeugparser:** Leerzeilen, kurzer Nachsatz nach dem Marker, Einleitung vor PROJECT_BUILD und reine Fortschrittszeilen werden sicher verarbeitet. Verneinte Frameworks ("kein React") blockieren kein Projekt mehr.
 - **Konsole:** Antworten behalten Absaetze, Listen und Codeeinrueckung.
-- **Tests:** neuer `scripts/context-budget-selftest.php` in beiden Preflights; erweiterte Datei-, Werkzeug-, Projektentscheidungs- und Workevent-Tests. Vier durch 0.5.66-Umbenennungen rote Selbsttests repariert (Testseite; Modelfile unveraendert).
-- **Offen:** optionale Betreibereinstellung fuer ein groesseres Fenster erst nach Tempomessung; Issue #102; Live-Abnahme auf Netcup/Android.
+- **Tests:** neuer `scripts/context-budget-selftest.php` in beiden Preflights; erweiterte Datei-, Werkzeug-, Cloud-Marker-, Projektentscheidungs-, Frontend- und Workevent-Tests. Vier durch 0.5.66-Umbenennungen rote Selbsttests repariert (Testseite; Modelfile unveraendert).
+- **Cloud-Werkzeugantworten:** Genau ein geschlossener Block mit kurzem Satz davor oder danach, Inline-Code im Nachsatz, fetten Markerzeilen oder CRLF wird erkannt. Unlesbare Antworten erhalten einen begrenzten Grund (`multiple_tool_blocks`, `tool_marker_in_code_fence`, ...) im Arbeitsweg und genau einen Korrekturaufruf ueber denselben Ausfuehrungsweg, in SSE und Sync. Mehrere Bloecke, Codebloecke und "Beispiel:"-Einleitungen bleiben gesperrt.
+- **Chat-Leerraum behoben:** Die unsichtbaren, absolut positionierten Schritt-Titel brachen aus dem scrollenden Arbeitsweg aus und verlaengerten den Chat (Nachbau: rund 1300 Pixel Leerraum). Arbeitsweg, Eintraege und Quelltextvorschau sind jetzt positioniert.
+- **num_ctx des Betreibers:** Messung 25,1 / 22,4 / 24,3 / 22,0 Ausgabe-Tokens/s bei 4096 / 16384 / 32768 / 65536. Der Betreiber setzt `PARAMETER num_ctx` (jetzt 131072) selbst im Modelfile-Template; CoreAI liest den Wert bei entladenem Modell ueber `/api/show` und sendet weiterhin kein `num_ctx`.
+- **Offen:** Issue #102; Live-Abnahme auf Netcup/Android; Tempo und Speicher bei 131072 sind noch nicht gemessen.
 
 ## 0.5.66 - 27.10.2026
 

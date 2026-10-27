@@ -87,7 +87,7 @@ $chatSource = (string)file_get_contents(dirname(__DIR__) . '/api/chat.php');
 $streamSource = (string)file_get_contents(dirname(__DIR__) . '/api/console_stream.php');
 plan_auto_assert(
   substr_count($chatSource, "static function (string \$nextPrompt) use (\$primaryModel,\$sys)") === 2
-  // 0.5.68: the SSE apply path is shared with the tool correction; it keeps
+  // 0.5.67: the SSE apply path is shared with the tool correction; it keeps
   // the turn's model and system prompt as $toolModel/$toolSys.
   && str_contains($streamSource,"static function (string \$nextPrompt) use (\$toolModel,\$toolSys)")
   && str_contains($streamSource,'console_stream_ollama($toolModel,$toolSys,$nextPrompt,false,180)')
