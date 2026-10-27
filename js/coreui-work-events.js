@@ -67,6 +67,10 @@
         return 'Ich habe ' + file + ' erfasst. Für das ZIP wird anschließend die vollständige Dateiliste geprüft.';
       case 'Quelldatei nicht lesbar':
       case 'Quelldatei ausgeblieben':
+        if (event.meta.reason === 'model_output_truncated'
+            && Number(event.meta.source_chars) === 0) {
+          return 'Core hat für ' + file + ' noch keinen sichtbaren Quelltext geliefert. Ich kann daraus keine Datei bestätigen; im Detail stehen Ausgabe- und Denkstatus-Längen.';
+        }
         return 'Für ' + file + ' fehlt noch ein nutzbares Ergebnis. Ich prüfe den Fehlergrund; ein fertiges Dateipaket kann ich damit nicht bestätigen.';
       case 'JavaScript-Ausgabe fortgesetzt':
       case 'Fehlender JavaScript-Teil wird erzeugt':
@@ -405,7 +409,10 @@
         || body._workSourceAttempt !== attempt) return false;
     if (raw.phase === 'end') {
       var status = panel.querySelector('.work-source-status');
-      if (status) status.textContent = 'Übertragung beendet · Prüfung läuft';
+      var codeOnEnd = panel.querySelector('.work-source-code');
+      if (status) status.textContent = codeOnEnd && codeOnEnd.textContent
+        ? 'Übertragung beendet · Prüfung läuft'
+        : 'Kein sichtbarer Quelltext empfangen';
       return true;
     }
     if (typeof raw.text !== 'string' || !raw.text || raw.text.length > 2500)
