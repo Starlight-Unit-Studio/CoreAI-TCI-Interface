@@ -47,6 +47,8 @@
         + 'passten nicht gemeinsam hinein, deshalb endete die Ausgabe vorzeitig.';
     }
     switch (event.title) {
+      case 'Anhang wird angesehen':
+        return 'Ich sehe mir den Anhang an. Bilder, Videos und PDF-Seiten laufen bewusst über den Bildpfad von Core, nicht über den Textstream.';
       case 'Privates Wissen durchsucht':
         return Number(event.meta.knowledge_hits) > 0
           ? 'Ich habe in deinem hochgeladenen Wissen (RAG-Lite) gesucht und '
@@ -375,7 +377,7 @@
     'Python-Job eingereiht':'Python läuft','Werkzeugantwort wird einmal korrigiert':'Korrigiere die Werkzeugantwort',
     'Mara hat selbst den Projekt-Writer aufgerufen':'Starte den Projekt-Writer',
     'Projektdateien geplant':'Plane die Projektdateien','Kontextfenster ermittelt':'Plane den Kontext',
-    'Privates Wissen durchsucht':'Durchsuche dein Wissen'
+    'Privates Wissen durchsucht':'Durchsuche dein Wissen','Anhang wird angesehen':'Sehe mir den Anhang an'
   };
   function activity(event) {
     if (!event) return 'Warte auf den ersten Schritt';

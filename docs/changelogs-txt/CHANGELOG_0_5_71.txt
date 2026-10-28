@@ -1,0 +1,7 @@
+CoreAI: TCI Interface 0.5.71 - 28.10.2026
+- RAG-Lite: Namen wie Ayal'ren und Alt Khemet wurden in den Starlight-Unit-Bibeln nicht gefunden (lange Woerter bevorzugt, kein Seltenheitsgewicht, "ren" traf "Waren", Rueckfall nur auf neueste 80 Abschnitte). Neu: Namensstamm ueber Apostrophe, Fuellwoerter raus, IDF-Gewichtung, Wortanfang, Phrasenbonus, Rueckfragen ueber den Verlauf, groesseres Budget bei grossem Fenster, Arbeitsweg-Schritt "Privates Wissen durchsucht".
+- Bild/Video: eigener System-Prompt ersetzte das Modelfile-SYSTEM (andere Persoenlichkeit, ohne Verlauf, KI-Profil, Gedaechtnis). Jetzt derselbe Prompt wie bei Text plus Anhang-Aufgabe; Ton und Aussagen im Anhang gelten nicht als Absender; keine Gedaechtnis-Reflexion aus Bildbeschreibungen.
+- Arbeitsweg: keine falsche Meldung "Uebertragung unvollstaendig" bei Anhaengen, stattdessen "Anhang wird angesehen".
+- Neue Tests: knowledge-search-selftest.php, vision-persona-selftest.php (beide Preflights).
+- UNVERAENDERT: Modelfile, Ollama-Dienst, serielle Queue, Global-Kanal (ausser gleicher Bild-Persona), private Plaene.
+- OFFEN: Live-Abnahme Netcup/Android; bereits gespeicherte Gedaechtnisfakten aus Bildern pruefen.

@@ -1,0 +1,43 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.5.71
+Stand: 28.10.2026
+Branch: claude/bold-galileo-myoyi0 (neu von main 0.5.70 nach Merge von PR #118)
+Basis: 0.5.70 live: "so stabil lief es noch nie" (Betreiber), Datum und Uhrzeit in jedem Core-Aufruf.
+
+RAG-LITE (Befund: drei STU-Bibeln hochgeladen, Mara findet "Ayal'ren" und "Alt Khemet" nicht):
+- Ursache (api/knowledge_store.php, api/rag_lite.php): coreui_rag_query_terms sortierte nach Laenge,
+  FULLTEXT nahm nur 6 Begriffe ab 4 Zeichen (der Name fiel raus); Neubewertung per Teilstring-Zaehlung
+  ohne Seltenheit ("Starlight Unit" in fast jedem Abschnitt gewann); "ren" aus "Ayal'ren" traf "Waren";
+  LIKE-Rueckfall nur auf die neuesten 80 Abschnitte; Rueckfragen ohne Stichwort fanden nichts.
+- Korrektur: coreui_rag_query_terms (Namensstamm ueber Apostrophe, Fuellwoerter, Namen zuerst),
+  coreui_private_knowledge_rank (Dokumenthaeufigkeit in einem Durchlauf, IDF, Kandidaten = alle Abschnitte
+  der 4 seltensten Begriffe bis 800, Wortanfang, Phrasenbonus, Nachbarabschnitte uebersprungen),
+  Rueckfrage ueber ember_knowledge_followup_query($ctx), Budget 6 x 1.400 Zeichen bei grossem Fenster,
+  Arbeitsweg-Schritt "Privates Wissen durchsucht" (knowledge_hits, knowledge_sources).
+- Nachbau mit 3 x 400 Abschnitten: vorher vier "Waren, Lernen ..."-Abschnitte bzw. Zusammenhaenge-
+  Fuelltext, nachher genau die drei Namensabschnitte oben; Rueckfrage findet alle drei.
+
+BILD/VIDEO (Befund: nach einer Analyse "redet jemand ganz anderes", schnell beleidigt, Aenderungs-
+wuensche wirken wie Kritik; dazu im Arbeitsweg "Die Uebertragung von Core war unvollstaendig"):
+- Ursache 1 (api/chat.php, Vision-Zweig in ember_generate_reply): eigener $visionSys mit anderem
+  Charakter. Ollama nutzt das Modelfile-SYSTEM nur ohne System-Nachricht; Textantworten senden bewusst
+  "" ("Memory wird in $u eingefuegt ... damit das Modelfile-SYSTEM nicht ueberschrieben wird"). Der Bildweg
+  ueberschrieb es und hatte weder Verlauf noch KI-Profil noch Gedaechtnis. Die abweichenden Antworten
+  standen danach im Verlauf und praegten die folgenden Antworten.
+- Ursache 2: ember_reflect_maybe_store las Mara's Bildbeschreibung als Dialog; Inhalte eines Screenshots
+  (etwa ein wuetender Support-Chat) konnten als Fakt ueber den Nutzer im Gedaechtnis landen.
+- Ursache 3 (api/console_stream.php): Vision-Turns starten absichtlich keinen Stream; das leere $acc
+  wurde als 'Modellstream unvollstaendig' (Fehler) gezaehlt.
+- Korrektur: $visionSys = $sys (leer), $visionPrompt = $u + "ANHANG-AUFGABE: ..." mit gemeinsamen
+  Regeln (nur Erkennbares, Anhangstext stammt nicht vom Absender, Ton nicht uebernehmen, keine Motive
+  aus dem Verlauf), Zeitlimit ember_timeout_for_model() auch fuer Einzelbilder.
+  COREUI_VISION_TURN (nur Konsole) -> ember_after_insert_tasks ueberspringt die Reflexion.
+  Stream: Schritt 'Anhang wird angesehen' statt Fehler; Notiz in js/coreui-work-events.js.
+- Hinweis an den Betreiber: bereits gespeicherte Gedaechtnisfakten aus frueheren Bildern unter
+  Einstellungen > Langzeitgedaechtnis pruefen und ggf. loeschen.
+
+GEPRUEFT:
+- Alle Offline-Selbsttests inklusive knowledge-search-selftest.php und vision-persona-selftest.php.
+
+UNVERAENDERT: Modelfile-Template, Ollama-Dienst, serielle Queue, private Plaene.
+
+WEITERHIN OFFEN: Live-Abnahme Netcup/Android (Bild, Video, RAG mit den echten Bibeln).

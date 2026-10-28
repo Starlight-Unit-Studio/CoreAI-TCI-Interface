@@ -68,20 +68,6 @@ DATUM (Nachtrag des Betreibers: Homepage mit Jahr 2024, auch Uhrzeit gewuenscht)
 - Geprueft mit Fake-Ollama: der echte Einzeldatei-Request beginnt mit der Datumszeile, die Uhrzeit
   steht vor "JETZT NUR DEN INHALT VON index.html AUSGEBEN:", keine options, kein System.
 
-RAG-LITE (Nachtrag des Betreibers, 28.10.2026: drei STU-Bibeln hochgeladen, Mara findet
-"Ayal'ren" und "Alt Khemet" nicht):
-- Ursache (api/knowledge_store.php, api/rag_lite.php): coreui_rag_query_terms sortierte nach Laenge,
-  FULLTEXT nahm nur 6 Begriffe ab 4 Zeichen (der Name fiel raus); Neubewertung per Teilstring-Zaehlung
-  ohne Seltenheit ("Starlight Unit" in fast jedem Abschnitt gewann); "ren" aus "Ayal'ren" traf "Waren";
-  LIKE-Rueckfall nur auf die neuesten 80 Abschnitte; Rueckfragen ohne Stichwort fanden nichts.
-- Korrektur: coreui_rag_query_terms (Namensstamm ueber Apostrophe, Fuellwoerter, Namen zuerst),
-  coreui_private_knowledge_rank (Dokumenthaeufigkeit in einem Durchlauf, IDF, Kandidaten = alle Abschnitte
-  der 4 seltensten Begriffe bis 800, Wortanfang, Phrasenbonus, Nachbarabschnitte uebersprungen),
-  Rueckfrage ueber ember_knowledge_followup_query($ctx), Budget 6 x 1.400 Zeichen bei grossem Fenster,
-  Arbeitsweg-Schritt "Privates Wissen durchsucht" (knowledge_hits, knowledge_sources).
-- Nachbau mit 3 x 400 Abschnitten: vorher vier "Waren, Lernen ..."-Abschnitte bzw. Zusammenhaenge-
-  Fuelltext, nachher genau die drei Namensabschnitte oben; Rueckfrage findet alle drei.
-
 GEPRUEFT:
 - Alle Offline-Selbsttests inklusive der neuen ai-context-selftest.php, context-slider-ui-selftest.cjs
   und webui-resilience-selftest.cjs; Browser-Nachbau Einstellungen (1280 und 412 px) und Chat.

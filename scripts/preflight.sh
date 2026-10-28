@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.70 KI-Profil context window, Core naming, resilient WebUI for long chats.
+# CoreAI: TCI Interface 0.5.71 RAG-Lite finds names in large documents, one Mara for text and images.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -151,6 +151,7 @@ UI_FILES=(
   scripts/webui-resilience-selftest.cjs
   scripts/date-awareness-selftest.php
   scripts/knowledge-search-selftest.php
+  scripts/vision-persona-selftest.php
   js/coreui-net.js
   api/console_insights.php
   api/console_insights_store.php
@@ -610,6 +611,13 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     ok 'RAG-Lite: seltene Namen vor Allerweltsbegriffen, Rueckfragen ueber den Verlauf, sichtbarer Suchschritt.'
   else
     fail "RAG-Lite-Suche: ${knowledge_test:-Unbekannter Fehler}"
+  fi
+
+  vision_test=''
+  if vision_test="$(compose exec -T php php scripts/vision-persona-selftest.php 2>&1)"; then
+    ok 'Bild und Video: dieselbe Mara wie bei Text, kein falscher Fehler, keine Bildfakten im Gedaechtnis.'
+  else
+    fail "Bild-/Video-Persona: ${vision_test:-Unbekannter Fehler}"
   fi
 
   if command -v node >/dev/null 2>&1; then

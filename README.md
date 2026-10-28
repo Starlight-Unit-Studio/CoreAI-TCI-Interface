@@ -7,7 +7,31 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.70` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.71` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## RAG-Lite findet Namen, eine Mara fuer Text und Bild (0.5.71)
+
+**RAG-Lite in grossen Dokumenten:** Nach dem Hochladen der drei
+Starlight-Unit-Bibeln fand Mara Namen wie "Ayal'ren" oder "Alt Khemet" nicht.
+Die Suche bevorzugte lange Woerter, zaehlte Allerweltsbegriffe wie
+"Starlight Unit" (in fast jedem Abschnitt) genauso wie den gesuchten Namen,
+und der Rest "ren" traf "Waren" oder "Lernen". Jetzt zaehlt, wie selten ein
+Begriff im eigenen Wissen ist, Namen behalten ihren Stamm ueber Apostrophe,
+und Rueckfragen ohne Stichwort nutzen den Gespraechsverlauf. Der Arbeitsweg
+zeigt "Privates Wissen durchsucht" mit Treffern und Quellen.
+
+**Eine Mara fuer Text, Bild und Video:** Nach einer Bild- oder Videoanalyse
+klang Mara wie jemand anderes und nahm Aenderungswuensche als Kritik. Der
+Bildweg schickte einen eigenen, fest eingebauten Charakter als
+System-Prompt; der ersetzt bei Ollama das Modelfile-SYSTEM, und Verlauf,
+KI-Profil und Gedaechtnis fehlten. Jetzt nutzt der Bildweg dasselbe leere
+System (also das Modelfile) und denselben Prompt wie Textantworten, nur mit
+der Bildaufgabe dahinter. Text und Ton aus einem Anhang (etwa ein wuetender
+Chat im Screenshot) gelten nicht als Aussage des Absenders, und eine
+Bildbeschreibung wird nicht mehr als Gedaechtnisfakt ueber den Nutzer
+gespeichert. Die Meldung "Die Uebertragung von Core war unvollstaendig" bei
+jedem Anhang ist weg: Bilder laufen bewusst nicht ueber den Textstream, der
+Arbeitsweg zeigt jetzt "Anhang wird angesehen".
 
 ## Kontextfenster im KI-Profil, "Core" statt "Modell" und robuste WebUI (0.5.70)
 
@@ -59,15 +83,6 @@ direkt vor der letzten Anweisung, damit Ollamas Prompt-Cache den gemeinsamen
 Auftragstext auch nach einem Minutenwechsel weiter nutzt. Die
 SERVERZEIT-Anweisung erlaubt das Datum ausdruecklich fuer erzeugte Inhalte
 wie das Copyright-Jahr.
-
-**RAG-Lite in grossen Dokumenten:** Nach dem Hochladen der drei
-Starlight-Unit-Bibeln fand Mara Namen wie "Ayal'ren" oder "Alt Khemet" nicht.
-Die Suche bevorzugte lange Woerter, zaehlte Allerweltsbegriffe wie
-"Starlight Unit" (in fast jedem Abschnitt) genauso wie den gesuchten Namen,
-und der Rest "ren" traf "Waren" oder "Lernen". Jetzt zaehlt, wie selten ein
-Begriff im eigenen Wissen ist, Namen behalten ihren Stamm ueber Apostrophe,
-und Rueckfragen ohne Stichwort nutzen den Gespraechsverlauf. Der Arbeitsweg
-zeigt "Privates Wissen durchsucht" mit Treffern und Quellen.
 
 ## Infokaesten auf dem Server und kein Chat-Flackern nach Antworten (0.5.69)
 
