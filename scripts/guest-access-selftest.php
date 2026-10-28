@@ -57,7 +57,7 @@ $admin = (string)file_get_contents($root . '/api/admin.php');
 guest_test(str_contains($admin, "'registration_enabled', 'guest_enabled', 'guest_message_limit',")
   && str_contains($admin, "if (\$key === 'guest_message_limit') \$value = (string)coreui_guest_limit_normalise(\$value);")
   && str_contains($admin, "'guest_message_limit' => '5',"), 'admin saves the switch and a clamped limit');
-$adminHtml = (string)file_get_contents($root . '/admin/index.html');
+$adminHtml = (string)file_get_contents($root . '/settings.html'); // 0.5.79: Admin Core is a tab group there
 $adminJs = (string)file_get_contents($root . '/js/admin.js');
 guest_test(strpos($adminHtml, 'id="registrationEnabled"') < strpos($adminHtml, 'id="guestEnabled"')
   && str_contains($adminHtml, 'id="guestMessageLimit" type="number" min="1" max="100"'), 'admin fields in Runtime');

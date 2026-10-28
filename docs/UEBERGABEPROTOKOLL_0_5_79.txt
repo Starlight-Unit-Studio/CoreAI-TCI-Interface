@@ -1,0 +1,67 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.5.79
+Stand: 28.10.2026
+Branch: claude/bold-galileo-myoyi0 (neu auf main nach Merge von PR #128 mit 0.5.78)
+Basis: Test des Betreibers mit 0.5.78 (Screenshots): Browserfenster sprengt den Chat, Mara stuetzt sich auf eine
+Quelle, AFK-Meldung des Game-Chats unter dem Browser, Game-Raenge in der Rechteverwaltung, Cursor bleibt stehen
+und wackelt nur, einmal keine Antwort (nach Server-Neustart behoben), Frage nach Gast-Einstellungen; Wunsch Captcha.
+
+BEFUND UND AENDERUNGEN:
+- Fensterbreite: .msg-row.ember .msg-content (0.5.8, volle Spalte) ueberstimmte .browse-row .msg-content. Jetzt
+  .browse-live { width: min(100%, 600px) }, .expanded volle Breite, Knopf .browse-live-size in der Kopfzeile.
+- Eine Quelle: Der Core sah nur die aktuelle Seite; was er auf der vorigen las, war beim Seitenwechsel weg.
+  tools/ember_browse_worker.py: Feld notiz an jeder Aktion -> notes (Text, URL, Host, Titel) in jedem Prompt
+  (DEINE NOTIZEN BISHER, GEPRUEFTE WEBSEITEN), Aktion search (SearXNG neu, max. 3, sichtbare Trefferseite),
+  done mit weniger als STU_EMBER_BROWSE_MIN_SOURCES Hosts wird einmal zurueckgestellt (Befund wird Notiz),
+  run_browse liefert notes; Bericht (report_prompt) mit Notizen je Quelle, Werkzeuge ausdruecklich aus.
+- Cursor: goto auf eine Adresse, die als Link auf der Seite steht, klickt den Link (LINK_FOR_URL_JS, target
+  entfernt, Fallback page.goto). Waehrend des Core-Aufrufs bewegt on_tick den Cursor ueber READ_TARGETS_JS /
+  reading_path (Frames mit leerem Bild; push_browse_frame erlaubt sie, console-app.js moveCursorOnly, Klasse
+  reading, sanfte CSS-Bewegung nur ohne reading).
+- Cookie-Banner: dismiss_consent vor jedem Schritt und nach dem load-Ereignis eines Seitenwechsels.
+- Leere Antwort: Das Modelfile (config/Modelfile.template, Werkzeugprotokoll) erlaubt [BROWSE:]/[WEB:]; eine
+  reine Marker-Antwort entfernte safeReplyText im Chat. clean_report entfernt Marker und PY-Bloecke, verlangt
+  mindestens 12 Wortzeichen, fallback_report baut sonst den Bericht aus Befund, Notizen und Quellen.
+  (Der gemeldete Fall war laut Betreiber ein haengender Worker, nach Neustart behoben; das hier ist Vorsorge.)
+- AFK: entfernt in Worker (set_browse_afk, insert_system_message, clear_browse_afk_safe), console_stream.php
+  (Ankuendigung im Global-Chat bei jeder Antwort) und chat.php (ember_browse_afk_active, ember_console_afk_*,
+  ember_gate_self_afk/ember_exec_self_afk, chat_apply_afk_state, /afk /back, Hilfe, Presence-afk vom Client).
+- Rollen: helpers.php COREUI_ROLE_* (0 Inhaber, 1 Admin, 4 Nutzer), coreui_role_name, stu_is_staff_level <= 1,
+  Migration 019 (2 und 3 -> 4), admin.php nur gueltige Rollen, Gast bleibt Gast, admin.js/settings.js Namen,
+  auth.php me liefert role, .setperm nur 0|1|4.
+- Captcha: neue api/captcha.php (Aufgabe salt + Zahl bis 300000, HMAC-Signatur mit dem Server-Geheimnis aus
+  abuse_guard.php, Ablauf 10 Minuten, Einmalverwendung ueber stu_abuse_counters), auth.php action=captcha
+  (Ratenlimit 30/10 min), guest (nur neues Konto) und register verlangen sie, Admin-Schalter captcha_enabled.
+  js/coreui-captcha.js loest im Browser (eigene SHA-256, Stuecke zu 4000, Fortschritt im Knopf).
+- Gaeste: Core-Wechsel und Kontextfenster gesperrt (user_settings.php core und KI-Profil: guest_core_locked;
+  ai_settings.php coreui_ai_runtime_apply erzwingt Standard). Pruefung: Installieren, Updates, Deinstallieren,
+  Cloud und Auto-Update verlangen Stufe <= 1; alle uebrigen Einstellungen sind je Konto (stu_user_ai_settings,
+  Profil, Gedaechtnis, Wissen) und aendern nichts fuer andere.
+
+NACHTRAG VOR DEM MERGE (Wuensche des Betreibers):
+- Core-Menue: js/coreui-core-mode.js Punkt-Zustaende active (gruen, der gewaehlte Core), standby (gelb,
+  installiert), loading (goldener Puls, unveraendert), missing/gone/unknown (rot). Legende in app.html erklaert es.
+- KI-Profil ohne "Lokaler Core" (Ollama-Liste): Feld, loadModels und model_override aus settings.js entfernt.
+  user_settings.php behaelt model_override, wenn das KI-Profil es nicht mitschickt ($keepModel), und prueft dann
+  nicht gegen Ollama. Core-Pfad (aiProvider) bleibt.
+- Einstellungen: settings.html als eine Seite mit Tabs (.cfg-nav, js/coreui-settings-tabs.js), je Kategorie eine
+  Ansicht (.cfg-view) mit Karten; Start mit Begruessung, Kurzueberblick (Core, System, Wissen, Memory) und Kacheln.
+  Adresse #tab, alte Anker (#about) werden umgesetzt; Ereignis coreai:view meldet den geoeffneten Tab.
+- Admin Core: Markup aus admin/index.html in settings.html (Tab-Gruppe adminNavGroup, nur sichtbar nach
+  auth.php me mit Stufe <= 1); js/admin.js laedt ueber ./api/admin.php, je Tab erst beim Oeffnen, keine
+  Weiterleitung mehr fuer Nutzer (Gruppe bleibt verborgen; der Server prueft ohnehin jeden Aufruf). Runtime
+  aufgeteilt in "Zugang und Schutz" und "Betrieb" (beide Knoepfe speichern alle Werte). Neue css/settings.css
+  (lesbare Groessen ab 11 px, Schalter statt Checkboxen, Handy-Leiste); css/admin.css geloescht;
+  admin/index.html ist eine Weiterleitung (#users -> #admin-benutzer usw.).
+
+GEPRUEFT:
+- Alle Offline-Selbsttests; browse-worker-selftest.py mit echtem Chromium (Formular, Treffer per Klick, lesender
+  Cursor, zwei Webseiten mit Notizen und neuer Suche, Login/Kontakt blockiert, lokales Netz, Cookie-Banner);
+  browse-live-ui-selftest.cjs (Cursor-Schritte, Vergroessern); registration-ui-selftest.cjs (echte Aufgabe
+  geloest, Wiederholung bei abgelaufener Loesung); captcha-selftest.php; roles-guest-selftest.php;
+  settings-tabs-ui-selftest.cjs (Nutzer ohne Admin Core, Inhaber mit Admin-Adresse, Speichern, alle Tabs ohne
+  Schrift unter 11 px, Handy 390 px ohne Querscrollen, alte Admin-Adresse); Gegenprobe ohne settings.css schlaegt
+  wie erwartet fehl.
+
+NAECHSTER SCHRITT: Update auf dem Server (Migration 019 laeuft mit, Browse-Worker neu starten), dann eine
+Recherche testen (zwei Quellen, Cursor, Fenstergroesse), Gast-Start mit Captcha auf dem Handy, Einstellungen
+mit Tabs und Admin Core (Rollen, Zugang und Schutz), Punkte im Core-Menue. Danach Benutzerverwaltung, TTS-Kandidaten, P20.1.

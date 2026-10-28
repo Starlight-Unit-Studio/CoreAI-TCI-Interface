@@ -6,10 +6,15 @@ require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/ai_settings.php';
 require_once __DIR__ . '/model_catalog.php';
 require_once __DIR__ . '/ai_context_estimate.php';
+require_once __DIR__ . '/guest_access.php';
 
 $pdo = stu_pdo();
 $uid = stu_require_user_id();
 $method = strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+// 0.5.79: guests use the server's default Core with its own window. Core and
+// window are per account, but switching them loads another Core into the RAM
+// that all accounts share (only one Core stays loaded), so guests cannot.
+$isGuest = coreui_guest_is($pdo, (int)$uid);
 
 if ($method === 'GET' && array_key_exists('context_model', $_GET)) {
   // #113: memory guide values for every slider stop of one installed Core.
@@ -93,6 +98,7 @@ if ($method === 'GET') {
     'external' => coreui_ai_external_capability($pdo),
     'csrf_token' => stu_csrf_token(),
     'permission_level' => stu_get_permission_level($pdo),
+    'is_guest' => $isGuest,
   ];
   // 0.5.76: weekly Core update when an admin switched it on. The first page
   // load after the due date starts it in the background, for any account.
@@ -133,6 +139,7 @@ if (($body['action'] ?? '') === 'thinking') {
 // 0.5.75: Core chosen in the chat menu. Only installed Cores are accepted;
 // the answer goes out at once, then a local Core is loaded in the background.
 if (($body['action'] ?? '') === 'core') {
+  if ($isGuest) stu_json(['ok'=>false, 'error'=>'guest_core_locked'], 403);
   $name = trim((string)($body['model_override'] ?? ''));
   if ($name !== '') {
     if (!coreui_model_name_valid($name)) stu_json(['ok'=>false, 'error'=>'invalid_model_name'], 400);
@@ -299,9 +306,22 @@ $requestedCtx = $body['num_ctx'] ?? null;
 if ($requestedCtx !== null && $requestedCtx !== '' && coreui_ai_num_ctx_normalise($requestedCtx) === null) {
   stu_json(['ok'=>false, 'error'=>'invalid_num_ctx'], 400);
 }
+if ($isGuest) {
+  $wantsModel = trim((string)($body['model_override'] ?? '')) !== '';
+  $wantsCtx = $requestedCtx !== null && $requestedCtx !== '';
+  if ($wantsModel || $wantsCtx) stu_json(['ok'=>false, 'error'=>'guest_core_locked'], 403);
+  $body['model_override'] = '';
+  $body['num_ctx'] = null;
+}
+// 0.5.79: the Core is chosen in the chat menu only; the KI-Profil keeps the
+// stored choice (also one Ollama no longer lists, so saving never fails on it).
+$keepModel = !array_key_exists('model_override', $body);
+if ($keepModel) {
+  $body['model_override'] = (string)(coreui_ai_settings_load($pdo, $uid)['model_override'] ?? '');
+}
 try {
   $requestedModel = trim((string)($body['model_override'] ?? ''));
-  if ($requestedModel !== '') {
+  if ($requestedModel !== '' && !$keepModel) {
     if (!coreui_model_name_valid($requestedModel)) {
       stu_json(['ok'=>false, 'error'=>'invalid_model_name'], 400);
     }

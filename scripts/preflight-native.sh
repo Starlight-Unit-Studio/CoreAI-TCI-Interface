@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.78 protection against repeat guests and password guessing.
+# CoreAI: TCI Interface 0.5.79 browser with several sources, captcha, CoreAI roles, no AFK.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -61,7 +61,9 @@ UI_FILES=(
   js/coreui-preferences.js
   js/settings.js
   js/admin.js
-  css/admin.css
+  css/settings.css
+  js/coreui-settings-tabs.js
+  scripts/settings-tabs-ui-selftest.cjs
   setup.sh
   api/rag_lite.php
   api/ai_settings.php
@@ -115,8 +117,13 @@ UI_FILES=(
   js/coreui-context-slider.js
   database/migrations/017_ai_num_ctx.sql
   database/migrations/018_abuse_guard.sql
+  database/migrations/019_coreai_roles.sql
   api/abuse_guard.php
   scripts/abuse-guard-selftest.php
+  scripts/captcha-selftest.php
+  scripts/roles-guest-selftest.php
+  api/captcha.php
+  js/coreui-captcha.js
   scripts/webui-resilience-selftest.cjs
   scripts/date-awareness-selftest.php
   scripts/knowledge-search-selftest.php
@@ -283,7 +290,7 @@ else
   fail 'Die sichere Sitzungsloeschung ist unvollstaendig paketiert.'
 fi
 
-if grep -Fq "model_override: aiModelOverride" "$PROJECT_ROOT/js/settings.js" \
+if grep -Fq "{action: 'core', model_override: value}" "$PROJECT_ROOT/js/coreui-core-mode.js" \
     && grep -Fq "coreui_private_knowledge_block" "$PROJECT_ROOT/api/chat.php" \
     && grep -Fq "user_create" "$PROJECT_ROOT/api/admin.php"; then
   ok 'Funktionale Modellwahl, privates RAG-Lite und Benutzeranlage sind paketiert.'
@@ -491,6 +498,20 @@ if command -v php >/dev/null 2>&1; then
     fail "Missbrauchsschutz-Selbsttest: ${abuse_test:-Unbekannter Fehler}"
   fi
 
+  captcha_test=''
+  if captcha_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/captcha-selftest.php" 2>&1)"; then
+    ok 'Captcha: signierte Aufgabe, einmalig gueltig, Faelschung, Ablauf und Wiederverwendung abgelehnt.'
+  else
+    fail "Captcha-Selbsttest: ${captcha_test:-Unbekannter Fehler}"
+  fi
+
+  roles_test=''
+  if roles_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/roles-guest-selftest.php" 2>&1)"; then
+    ok 'Rollen: Inhaber, Admin, Nutzer, Gast; Gaeste nutzen den Standard-Core.'
+  else
+    fail "Rollen-Selbsttest: ${roles_test:-Unbekannter Fehler}"
+  fi
+
   compact_test=''
   if compact_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/compaction-selftest.php" 2>&1)"; then
     ok 'Chat komprimieren: Fenster, laufende Zusammenfassung, Archiv zuerst, Suche und Loeschen geprueft.'
@@ -561,7 +582,7 @@ if command -v php >/dev/null 2>&1; then
       fail 'KI-Profil: Kontextfenster-Regler-Selbsttest fehlgeschlagen.'
     fi
     if node "$PROJECT_ROOT/scripts/thinking-switch-ui-selftest.cjs" >/dev/null 2>&1; then
-      ok 'Chat: Core-Chip mit TCI-Namen, fester Reihenfolge, gruenen Punkten, Legende, Laden, Denkschalter und Fehlerfaellen geprueft.'
+      ok 'Chat: Core-Chip mit TCI-Namen, fester Reihenfolge, Status-Punkten (gruen, gelb, rot), Legende, Laden, Denkschalter und Fehlerfaellen geprueft.'
     else
       fail 'Chat: Denkschalter-Oberflaechentest fehlgeschlagen.'
     fi
@@ -579,6 +600,16 @@ if command -v php >/dev/null 2>&1; then
       ok 'Live-Browser: Mara ueberlegt mit Sekunden, Cursor gleitet, Warteschlange, Fortsetzen nach Abbruch geprueft.'
     else
       fail 'Live-Browser-Oberflaechentest fehlgeschlagen.'
+    fi
+    # 0.5.79: settings page with tabs and Admin Core; needs Playwright for Node.
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/settings-tabs-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'Einstellungen: Tabs, Admin Core nach Rolle, Speichern, lesbare Schrift und Handy-Breite geprueft.'
+      else
+        fail 'Einstellungen: Tab-Oberflaechentest fehlgeschlagen.'
+      fi
+    else
+      ok 'Einstellungen: Tab-Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
     fi
     if node "$PROJECT_ROOT/scripts/webui-resilience-selftest.cjs" >/dev/null 2>&1; then
       ok 'WebUI: abbrechbares Laden, Reconnect ohne Doppelauftrag, Backoff und lange Chats geprueft.'

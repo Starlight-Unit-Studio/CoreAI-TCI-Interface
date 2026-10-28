@@ -287,7 +287,6 @@ $replyFinal  = '';
 $thinkingAll = '';
 $thinkingPublic = '';
 $browseJobId = 0;
-$consoleAfkOwned = false;
 $agentRunId = '';
 $preselectedBuildHandled = false;
 
@@ -428,9 +427,6 @@ try {
     // Exactly one initial file-code request. The shared reply function checks
     // the real worker manifest and permits only one compact protocol retry.
     // Keep the SSE response/DB/run/artifact binding identical to text turns.
-    ember_console_afk_set($pdo, time() + 930);
-    $consoleAfkOwned = true;
-    ember_console_afk_announce($pdo);
     ember_prepare_background_runtime();
     coreui_work_record($pdo, 'run', 'info', 'Datei-Auftrag an Werkzeugpfad');
     console_stream_progress($thinkingEnabled, 'tool');
@@ -445,20 +441,11 @@ try {
       'ok'=>true,'done'=>true,'truncated'=>false,
     ];
   } elseif ($isVisionTurn) {
-    // Console-AFK nur setzen, wenn wirklich ein Modell- oder Werkzeuglauf startet.
-    ember_console_afk_set($pdo, time() + 930);
-    $consoleAfkOwned = true;
-    ember_console_afk_announce($pdo);
     ember_prepare_background_runtime();
     sse_comment('vision-sync');
     console_stream_progress($thinkingEnabled, 'context');
     $acc = ['thinking' => '', 'content' => ''];
   } else {
-    // Console-AFK: Ember in der globalen Nickliste abwesend zeigen, solange das
-    // Modell arbeitet. Der finally-Block nimmt den Status im Normalfall zurueck.
-    ember_console_afk_set($pdo, time() + 930);
-    $consoleAfkOwned = true;
-    ember_console_afk_announce($pdo);
     ember_prepare_background_runtime();
     // Prompt bauen - identische Ember-Stimme wie ueberall (shared builder).
     $built = ember_build_chat_prompt(
@@ -953,7 +940,6 @@ try {
   // (Bei [BROWSE:] haelt der Worker ueber sein eigenes Browse-Flag unabhaengig weiter AFK.)
   // Ein lokaler Rechenschritt setzt den Status nicht und darf daher auch keinen
   // AFK-Marker eines parallel laufenden Modell- oder Werkzeugturns loeschen.
-  if ($consoleAfkOwned && isset($pdo) && $pdo instanceof PDO) { ember_console_afk_clear($pdo); }
 }
 exit;
 

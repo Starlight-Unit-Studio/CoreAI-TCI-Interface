@@ -2926,6 +2926,16 @@
     var placeholderText = panel.querySelector('.browse-live-placeholder strong');
     var cursor      = panel.querySelector('.browse-ghost-cursor');
     var think       = panel.querySelector('.browse-live-think');
+    var sizeButton  = panel.querySelector('.browse-live-size');
+    // 0.5.79: kompakt im Chat, auf Wunsch gross.
+    if (sizeButton) sizeButton.addEventListener('click', function () {
+      var big = !panel.classList.contains('expanded');
+      panel.classList.toggle('expanded', big);
+      sizeButton.textContent = big ? '\u2921' : '\u2922';
+      sizeButton.title = big ? 'Kleiner anzeigen' : 'Größer anzeigen';
+      sizeButton.setAttribute('aria-label', sizeButton.title);
+      sizeButton.setAttribute('aria-pressed', big ? 'true' : 'false');
+    });
     var thinkText   = panel.querySelector('.browse-think-text');
     var thinkTime   = panel.querySelector('.browse-think-time');
 
@@ -2978,6 +2988,7 @@
     function stopThinking() {
       thinkingSince = 0;
       panel.classList.remove('thinking');
+      panel.classList.remove('reading');
       if (think) think.hidden = true;
       if (thinkTimer) { clearInterval(thinkTimer); thinkTimer = null; }
     }
@@ -3027,8 +3038,18 @@
       else shot.src = nextSrc;
     }
 
+    // 0.5.79: ein Schritt ohne Bild bewegt nur den Cursor (Mara liest die Zeilen entlang).
+    function moveCursorOnly(d) {
+      if (!cursor || typeof d.cx !== 'number' || typeof d.cy !== 'number' || !(Number(d.vw) > 0) || !(Number(d.vh) > 0)) return;
+      cursor.classList.add('active');
+      panel.classList.add('reading');
+      cursor.style.left = (clamp(Number(d.cx) / Number(d.vw), 0.015, 0.985) * 100) + '%';
+      cursor.style.top  = (clamp(Number(d.cy) / Number(d.vh), 0.02, 0.98) * 100) + '%';
+    }
+
     function queueFrame(d) {
-      if (!d || !d.b64) return;
+      if (!d) return;
+      if (!d.b64) { moveCursorOnly(d); return; }
       if (uiPreferences.liveFrameMotion === false) frameQueue = [d];
       else frameQueue.push(d);
       // Bei sehr schnellem Surfen nur einen kleinen, aktuellen Verlauf behalten.
@@ -3184,6 +3205,7 @@
       +   '<span class="browse-live-title">IM NETZ</span>'
       +   '<span class="browse-live-url">coreui://browser/verbinden</span>'
       +   '<span class="browse-live-state">LIVE</span>'
+      +   '<button type="button" class="browse-live-size" title="Größer anzeigen" aria-label="Größer anzeigen" aria-pressed="false">\u2922</button>'
       + '</div>'
       + '<div class="browse-live-stage">'
       +   '<div class="browse-live-placeholder"><span class="browse-live-orbit"></span>'

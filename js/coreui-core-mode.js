@@ -8,10 +8,12 @@
    legend next to the chip, together with formatting and commands.
    The list keeps a fixed order (Schnell, Normal, Plus, Pro, Premium, then
    Cores with their own name), one row per tier: a tier that also runs in
-   the cloud gets a Lokal/Cloud switch in its row. Installed Cores carry a
-   green dot; a missing local tier stays greyed but opens the install window
-   (coreui-core-install.js). Admins find "Cores verwalten" (updates) below
-   the list. */
+   the cloud gets a Lokal/Cloud switch in its row. A missing local tier
+   stays greyed but opens the install window (coreui-core-install.js).
+   Admins find "Cores verwalten" (updates) below the list.
+   0.5.79: the dot tells the state: green is the Core in use, yellow an
+   installed Core on standby, red one that is missing or not available;
+   the gold pulse marks the Core that is loading. */
 (function () {
   'use strict';
 
@@ -92,7 +94,8 @@
       }
     }
 
-    // dot: ready (green), loading, missing, gone or unknown (Ollama list not read).
+    // dot: active (green), standby (yellow), loading (gold pulse), missing,
+    // gone or unknown (red; the Ollama list was not read).
     function entry(label, meta, dot) {
       var button = doc.createElement('button');
       button.type = 'button';
@@ -121,7 +124,8 @@
       var checked = value === state.override;
       var core = value || state.defaultModel;
       var dot = disabled ? 'gone' : state.models === null ? 'unknown'
-        : (state.loading && state.loading === modelKey(core) ? 'loading' : 'ready');
+        : state.loading && state.loading === modelKey(core) ? 'loading'
+        : checked ? 'active' : 'standby';
       var button = entry(label, meta, dot);
       button.setAttribute('aria-checked', checked ? 'true' : 'false');
       button.setAttribute('data-value', value);
@@ -352,6 +356,8 @@
         state.csrf = String(data.csrf_token || '');
         state.admin = typeof data.permission_level === 'number' && data.permission_level <= 1;
         if (manageBtn) manageBtn.hidden = !state.admin;
+        // 0.5.79: guests use the default Core (the RAM is shared by all accounts).
+        state.guest = data.is_guest === true;
         state.loaded = true;
         say('');
         render();
@@ -404,6 +410,10 @@
 
     function choose(value) {
       value = String(value || '');
+      if (state.guest && value !== state.override) {
+        say('Als Gast chattest du mit dem Standard-Core. Mit einem eigenen Konto kannst du ihn wechseln.');
+        return Promise.resolve(state.override);
+      }
       if (!state.loaded || state.saving || value === state.override) return Promise.resolve(state.override);
       state.saving = true;
       say('Core wird gewählt …');
@@ -423,6 +433,7 @@
         }
       }).catch(function (error) {
         say(error.code === 'model_not_available' ? 'Dieser Core ist nicht mehr installiert.'
+          : error.code === 'guest_core_locked' ? 'Als Gast chattest du mit dem Standard-Core.'
           : 'Nicht gespeichert. Bitte noch einmal versuchen.');
       }).then(function () {
         state.saving = false;

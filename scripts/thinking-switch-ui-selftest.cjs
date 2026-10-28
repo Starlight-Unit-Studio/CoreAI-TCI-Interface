@@ -154,12 +154,12 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
   assert.match(opts[2].textContent, /32\.7B · Cloud/, 'cloud Core is marked');
 
   // One row per tier, no name twice. Missing local tiers stay at their place,
-  // greyed; installed Cores carry a green dot.
+  // greyed with a red dot; the Core in use is green, installed ones yellow.
   let all = entries(els.coreModeList);
   assert.deepEqual(all.map(o => o.children[0].textContent), ['TCI: Mara Schnell', 'TCI: Mara Normal', 'TCI: Mara Plus',
     'TCI: Mara Pro', 'TCI: Mara Premium', 'gpt-oss:120b-cloud']);
   assert.equal(new Set(all.map(o => o.children[0].textContent)).size, all.length, 'no name twice');
-  assert.deepEqual(all.map(dot), ['ready', 'ready', 'missing', 'missing', 'ready', 'ready']);
+  assert.deepEqual(all.map(dot), ['standby', 'active', 'missing', 'missing', 'standby', 'standby']);
   // Premium runs in the cloud only: its row shows the cloud Core with a Lokal/Cloud switch,
   // Lokal is greyed and opens the installer.
   const premium = switchOf(rowItems(els.coreModeList)[4]);
@@ -207,7 +207,8 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
   assert.equal(timers.length, 0, 'polling stops once loaded');
   opts = options(els.coreModeList);
   assert.equal(opts[0].getAttribute('aria-checked'), 'true');
-  assert.equal(dot(opts[0]), 'ready');
+  assert.equal(dot(opts[0]), 'active', 'the Core in use is green');
+  assert.equal(dot(opts[1]), 'standby', 'the former Core goes to standby (yellow)');
 
   // Same Core again: nothing is sent. Cloud Core: no loading.
   const before = srv.calls.length;
@@ -292,7 +293,7 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
     const list = entries(p.els.coreModeList);
     assert.equal(list[2].getAttribute('data-value'), 'ember-coreui:12b', 'Mara\'s Core of the tier is listed');
     assert.equal(list[2].children[0].textContent, 'TCI: Mara Plus');
-    assert.equal(dot(list[2]), 'ready');
+    assert.equal(dot(list[2]), 'standby');
     assert.match(list[3].textContent, /wird installiert · 42 %/, 'running install in the menu');
     // Local and cloud Premium: one row, local first, the switch chooses the cloud.
     let premiumRow = rowItems(p.els.coreModeList)[4];
@@ -366,7 +367,9 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
   assert(!settings.includes('aiThinkingEnabled'), 'the KI-Profil switch is gone');
   assert(settings.includes('id="thinkingMovedNote"'), 'the KI-Profil points to the chat');
   const settingsJs = fs.readFileSync(path.join(__dirname, '../js/settings.js'), 'utf8');
-  assert(!settingsJs.includes('thinking_enabled'), 'saving the KI-Profil never sends a thinking value');
+  // The start view may show the state; the KI-Profil save never sends it.
+  const saveAi = settingsJs.slice(settingsJs.indexOf('function saveAiSettings('), settingsJs.indexOf('function formatSessionDate('));
+  assert(saveAi.length > 100 && !saveAi.includes('thinking_enabled'), 'saving the KI-Profil never sends a thinking value');
 
   console.log('CoreAI Core chip: TCI names, legend, Core choice with loading, thinking switch and failures OK');
 })().catch(error => { console.error(error); process.exit(1); });

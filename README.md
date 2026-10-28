@@ -7,7 +7,27 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.78` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.79` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Mehrere Quellen, Captcha, CoreAI-Rollen und neue Einstellungen (0.5.79)
+
+Beim Browsen haelt Mara Notizen je Seite fest, sucht bei Bedarf neu und prueft
+mindestens zwei Webseiten, bevor sie antwortet; ihr Bericht nennt die Quellen.
+Das Live-Fenster ist kompakt (Knopf zum Vergroessern), der Cursor klickt die
+Treffer und liest die Zeilen mit. Das AFK-System aus dem frueheren Game-Chat
+ist entfernt.
+
+Gast-Zugang und Registrierung haben ein eigenes Captcha ohne Dritte: Der
+Browser rechnet kurz eine signierte Aufgabe. Rollen heissen jetzt Inhaber,
+Admin, Nutzer und Gast; Gaeste chatten mit dem Standard-Core.
+
+Die Einstellungen sind eine Seite mit Tabs: Start (Ueberblick), Anzeige,
+Profil, KI-Profil, Skills, Wissen, Memory, Konto und System, jede Kategorie
+mit eigenen Karten. Inhaber und Admins sehen darunter die Gruppe Admin Core
+(Uebersicht, Benutzer, Zugang und Schutz, Betrieb, Memory, RAG-Lore,
+Protokoll, Audit); `/admin/` leitet dorthin weiter. Den Core waehlt man nur
+noch im Chat: Im Core-Menue ist der aktive Core gruen, installierte sind
+gelb, fehlende rot.
 
 ## Schutz gegen Mehrfach-Gaeste und Passwort-Raten (0.5.78)
 

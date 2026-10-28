@@ -169,10 +169,12 @@ if (!str_contains($streamSource, "'think'    => \$thinkOverride ?? ember_thinkin
   reply_test_fail('Thinking wird im SSE-Pfad nicht serverseitig aktiviert oder deaktiviert.');
 }
 if (!str_contains($streamSource, 'ember_exact_integer_calculation($promptMessage)')
-    || !str_contains($streamSource, "'truncated' => false")
-    || !str_contains($streamSource, '$consoleAfkOwned = false;')
-    || !str_contains($streamSource, 'if ($consoleAfkOwned && isset($pdo)')) {
+    || !str_contains($streamSource, "'truncated' => false")) {
   reply_test_fail('Der SSE-Pfad schliesst exakte Ganzzahlrechnungen nicht lokal ab.');
+}
+// 0.5.79: no AFK state any more (leftover of the game chat).
+if (str_contains($streamSource, 'consoleAfkOwned') || str_contains($streamSource, 'ember_console_afk')) {
+  reply_test_fail('Der SSE-Pfad setzt noch einen AFK-Status.');
 }
 
 $chatSource = (string)file_get_contents(dirname(__DIR__) . '/api/chat.php');

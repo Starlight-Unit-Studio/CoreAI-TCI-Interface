@@ -1,9 +1,10 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
 Stand: 27.10.2026
-Repository-Version: 0.5.78
+Repository-Version: 0.5.79
 Repository: https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface
 ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_5_79.txt
   docs/UEBERGABEPROTOKOLL_0_5_78.txt
   docs/UEBERGABEPROTOKOLL_0_5_77.txt
   docs/UEBERGABEPROTOKOLL_0_5_76.txt
@@ -102,6 +103,11 @@ Websuche mit Stichworten als zweitem Versuch. Browse-Worker nach dem Update neu 
 0.5.77 ist gemergt (PR #127). 0.5.78: Schutz gegen Mehrfach-Gaeste (Geraetemerkmal, Netz-Kontingent 24 h,
 Tagesdeckel), Ratenlimits und Login-Drossel auf dem Server, Migration 018. Im Host-Proxy X-Forwarded-For
 setzen (Admin-Bereich zeigt den Stand).
+0.5.78 ist gemergt (PR #128). 0.5.79: Browserfenster kompakt, mehrere Quellen mit Notizen und neuer Suche, Cursor
+klickt Treffer und liest mit, kein AFK mehr, Rollen Inhaber/Admin/Nutzer/Gast (Migration 019), Captcha bei
+Gast-Zugang und Registrierung, Gaeste auf dem Standard-Core; Core-Menue mit Punkten gruen/gelb/rot, KI-Profil
+ohne Ollama-Liste, Einstellungen als Tab-Seite mit Start und Karten, Admin Core als Tab-Gruppe darin (admin/
+leitet weiter, css/admin.css entfaellt).
 NAECHSTER SCHRITT: Benutzerverwaltung nach Betreiberwunsch, TTS-Kandidaten, dann P20.1.
 Mara/Ember, Ollama-Modelfile, serielle Queue und private Projekt-
 plaene NICHT ungefragt veraendern.

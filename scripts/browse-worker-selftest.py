@@ -187,6 +187,26 @@ report = w.report_prompt("Preis Nebelfalke", "42 Euro", ["https://shop.example/x
 check("als Mara" in report and "- https://shop.example/x" in report and "Markdown" in report and "Ember" not in report, "report as Mara")
 check("Kein Markdown" in w.report_prompt("x", "y", [], "Mara", False), "global channel without Markdown")
 check(w.clean_report("I am Mara and I have to report") == "", "thinking protocol dropped")
+# 0.5.79: Maras Modelfile erlaubt Werkzeugmarker; der Bericht sagt ausdruecklich, dass sie aus sind,
+# und eine Antwort, die nur aus Markern besteht, wird nie zur leeren Chat-Blase.
+check("KEINE Werkzeuge" in report and "mindestens zwei" in report, "report: tools off, several sources")
+check(w.clean_report("[BROWSE: Preise nachsehen]", console=True) == "" and w.clean_report("[WEB: x] [PY]1[/PY]") == "",
+      "a marker-only report counts as empty")
+check(w.clean_report("- **42 Euro** laut [Spieleladen](https://a.example)", console=True).startswith("- **42 Euro**"),
+      "Markdown stays in the private chat")
+fb = w.fallback_report("(kein klarer Befund)", [{"text": "42 Euro", "host": "a.example", "url": "https://a.example/x"}],
+                       ["https://a.example/x", "https://b.example/y"], True)
+check("42 Euro (a.example)" in fb and "Quellen: https://a.example/x, https://b.example/y" in fb, "fallback with notes and sources")
+check(w.fallback_report("", [], [], True).startswith("Ich habe nachgeschaut"), "fallback is never empty")
+notes_prompt = w.action_user_prompt("Z", "(keine)", "https://a.example/", "T", [], "x", 0, 1, [], 2, 12,
+                                    notes=[{"text": "42 Euro", "host": "a.example", "title": "Laden", "url": "https://a.example/"}],
+                                    visited_hosts=["a.example"], min_sources=2)
+check("- [Laden] 42 Euro (https://a.example/)" in notes_prompt and "GEPRUEFTE WEBSEITEN: 1 (a.example); pruefe mindestens 2" in notes_prompt,
+      "notes and checked websites in every prompt")
+check('"action":"search"' in w.ACTION_SYS and '"notiz"' in w.ACTION_SYS and "nie auf eine einzige Quelle" in w.ACTION_SYS,
+      "prompt: search, notes, several sources")
+check(w.reading_path([{"x": 10, "y": 50, "w": 400}]) == [(10.0, 50.0), (210.0, 50.0), (378.0, 50.0)], "reading path along a line")
+check(w.same_url("https://a.example/x/", "https://a.example/x#top") and not w.same_url("", ""), "same address")
 
 # Suche wie in chat.php: Stichworte als zweiter Versuch, keine Doppelten, sauberer Text.
 check(w.web_query_variants("Wie ist das Wetter morgen in Mönchengladbach?")
@@ -231,9 +251,16 @@ check("es.addEventListener('timeout', function (ev) {" in app and "reconnect(200
       and "if (kind === 'think') {" in app and "browse-live-think" in app and "showQueued();" in app,
       "client reconnects, shows thinking and the queue")
 css = (ROOT / "css" / "console.css").read_text(encoding="utf-8")
-check(".browse-live.thinking .browse-ghost-cursor {" in css and "@keyframes browse-cursor-read" in css
+check(".browse-live.thinking:not(.reading) .browse-ghost-cursor {" in css and "@keyframes browse-cursor-read" in css
       and "left 520ms" in css, "cursor glides and reads")
 console_stream = (ROOT / "api" / "console_stream.php").read_text(encoding="utf-8")
+# 0.5.79: kein AFK mehr (Reste des Game-Chats): keine Systemmeldung unter dem Browser, kein
+# AFK-Status fuer Mara, keine /afk-Befehle.
+check("nicht an der Tastatur" not in src and "ember_browse_afk" not in src and "set_browse_afk" not in src,
+      "the worker never posts an AFK message")
+check(not any(x in chat + console_stream for x in ("ember_console_afk", "ember_browse_afk_active", "ember_gate_self_afk",
+                                                   "chat_apply_afk_state", "nicht an der Tastatur"))
+      and "|afk|back)" not in chat and "'error'=>'afk_removed'" in chat, "no AFK anywhere in the chat")
 check("$emberMsgId > 0 && $browseJobId <= 0 && !ember_agent_cancel_requested()" in console_stream,
       "a browse job goes before the compaction")
 
@@ -309,7 +336,7 @@ def ref_of(prompt, label):
     fail(f"element {label!r} missing in prompt:\n{prompt[:1500]}")
 
 
-def run(script, cfg_over=None, start=None, model_delay=0.0):
+def run(script, cfg_over=None, start=None, model_delay=0.0, search=None):
     """Ein Lauf mit nachgebautem Core: script ist eine Liste von Funktionen prompt -> Aktion."""
     prompts, said, frames = [], [], []
 
@@ -321,13 +348,15 @@ def run(script, cfg_over=None, start=None, model_delay=0.0):
         return json.dumps(step(user_msg))
 
     w.browse_action_call = fake_action
-    w.searxng_search = lambda cfg_, q, log=None: [{"title": "Spieleladen", "url": BASE + "/shop", "content": "Brettspiele"}]
+    w.searxng_search = search or (lambda cfg_, q, log=None: [{"title": "Spieleladen", "url": BASE + "/shop", "content": "Brettspiele"}])
     run_cfg = dict(w.DEFAULTS, STU_EMBER_BROWSE_ALLOW_PRIVATE="1", STU_EMBER_BROWSE_HEARTBEAT_SEC="2",
+                   STU_EMBER_BROWSE_MIN_SOURCES="1",
                    STU_EMBER_BROWSE_SCREENSHOT_DIR=str(Path(os.environ.get("TMPDIR", "/tmp")) / "coreai-browse-selftest"))
     run_cfg.update(cfg_over or {})
     job = {"id": 1, "goal": "Was kostet der Nebelfalke (Brettspiel, auf Lager)?", "max_steps": len(script), "start_url": start}
     result = w.run_browse(run_cfg, job, lambda m: None,
-                          push_frame=lambda *a: frames.append({"step": a[0], "cx": a[2], "url": a[6], "label": a[7], "click": a[8]}),
+                          push_frame=lambda *a: frames.append({"step": a[0], "image": bool(a[1]), "cx": a[2], "cy": a[3],
+                                                               "url": a[6], "label": a[7], "click": a[8]}),
                           say=lambda text, kind="step": said.append((kind, text)))
     return result, prompts, said, frames
 
@@ -341,7 +370,7 @@ script = [
     lambda p: {"action": "click", "ref": ref_of(p, "Suchen")},
     lambda p: {"action": "done", "summary": "Nebelfalke kostet 42 Euro (Spieleladen)."},
 ]
-(summary, steps, shot, sources), prompts, said, frames = run(script, model_delay=2.6)
+(summary, steps, shot, sources, notes), prompts, said, frames = run(script, model_delay=2.6)
 check(summary == "Nebelfalke kostet 42 Euro (Spieleladen).", f"summary: {summary!r} steps={steps}")
 check(any("q=Nebelfalke&kat=spiele&lager=1" in s for s in sources), f"form sent with all fields: {sources}")
 check("Nebelfalke, Brettspiel, auf Lager: 42 Euro" in prompts[-1], "the Core reads the result page")
@@ -351,7 +380,12 @@ check(kinds.count("think") >= 6 and "warn" not in kinds, f"a thinking status per
 check(("step", "Tippe „Nebelfalke“ in „Suchbegriff“") in said and ("step", "Wähle „Brettspiele“ in „Kategorie“") in said
       and ("step", "Setze den Haken bei „Nur auf Lager“") in said and ("step", "Klicke auf „Suchen“") in said,
       f"human status for every action: {said}")
-check(len([f for f in frames if f["click"]]) >= 4, "the cursor points at every field and button before acting")
+check(len([f for f in frames if f["click"]]) >= 5, "the cursor points at every field and button before acting")
+check(any(f["click"] and f["url"] == "searxng://local/search" for f in frames) and "(Link)" in steps[0],
+      f"goto to a search hit: the cursor clicks the hit: {steps[0]}")
+reading = [f for f in frames if not f["image"]]
+check(len(reading) >= 4 and len({(round(f["cx"]), round(f["cy"])) for f in reading}) >= 3,
+      "while the Core thinks, the cursor moves along real text blocks")
 check(len([f for f in frames if f["label"] == "Mara tippt"]) == 3, "typing shows up in three pictures")
 check(any(f["label"] == "Mara liest die Seite" for f in frames), "fresh picture while the Core thinks (late content)")
 check(all(f["url"].startswith(("http", "searxng://")) for f in frames), "frames carry a readable address")
@@ -363,7 +397,7 @@ script = [
     lambda p: {"action": "type", "ref": ref_of(p, "E-Mail"), "text": "mara@example.org"},
     lambda p: {"action": "done", "summary": "Login nicht moeglich."},
 ]
-(summary, steps, _, _), _, said, _ = run(script, start=BASE + "/login")
+(summary, steps, _, _, _), _, said, _ = run(script, start=BASE + "/login")
 check(summary == "Login nicht moeglich." and len([k for k, _ in said if k == "warn"]) == 3
       and sum("BLOCKIERT" in s for s in steps) == 3, f"login form blocked three times: {steps}")
 script = [
@@ -372,7 +406,7 @@ script = [
     lambda p: {"action": "click", "ref": ref_of(p, "Weiter")},
     lambda p: {"action": "done", "summary": "Kontaktformular nicht gesendet."},
 ]
-(summary, steps, _, _), _, said, _ = run(script, start=BASE + "/kontakt")
+(summary, steps, _, _, _), _, said, _ = run(script, start=BASE + "/kontakt")
 check(HITS["posts"] == 0, "nothing was ever posted")
 check("BLOCKIERT type" in steps[0] and "step2: type" in steps[1] and "BLOCKIERT click" in steps[2],
       f"typing yes, sending no: {steps}")
@@ -380,13 +414,46 @@ check("BLOCKIERT type" in steps[0] and "step2: type" in steps[1] and "BLOCKIERT 
 # Formulare aus: nur lesen.
 script = [lambda p: {"action": "type", "ref": ref_of(p, "Suchbegriff"), "text": "x"},
           lambda p: {"action": "done", "summary": "ok"}]
-(_, steps, _, _), prompts, said, _ = run(script, cfg_over={"STU_EMBER_BROWSE_FORMS": "0"}, start=BASE + "/shop")
+(_, steps, _, _, _), prompts, said, _ = run(script, cfg_over={"STU_EMBER_BROWSE_FORMS": "0"}, start=BASE + "/shop")
 check("ausgeschaltet" in steps[0], f"forms switched off: {steps}")
 
 # Lokales Netz gesperrt (Standard), auch als Startseite und per goto.
 script = [lambda p: {"action": "goto", "url": BASE + "/shop"}, lambda p: {"action": "done", "summary": "nichts"}]
-(_, steps, _, _), _, said, _ = run(script, cfg_over={"STU_EMBER_BROWSE_ALLOW_PRIVATE": "0"}, start=BASE + "/login")
+(_, steps, _, _, _), _, said, _ = run(script, cfg_over={"STU_EMBER_BROWSE_ALLOW_PRIVATE": "0"}, start=BASE + "/login")
 check(steps[0].startswith("start-goto blockiert") and "BLOCKIERT goto" in steps[1], f"local addresses blocked: {steps}")
+
+# Mehrere Quellen: ein zu fruehes done wird einmal zurueckgestellt, Mara sucht neu, oeffnet eine
+# zweite Webseite (anderer Hostname) und haelt Notizen je Quelle fest.
+BASE2 = BASE.replace("127.0.0.1", "localhost")
+PAGES["/preise"] = """<!doctype html><html lang="de"><head><meta charset="utf-8"><title>Preisvergleich</title></head>
+<body><main><h1>Preisvergleich Nebelfalke</h1><p>Der Nebelfalke kostet bei drei Haendlern zwischen 41 und 43 Euro.</p></main></body></html>"""
+
+
+def two_searches(cfg_, query, log=None):
+    if "Preisvergleich" in query:
+        return [{"title": "Preisvergleich", "url": BASE2 + "/preise", "content": "41 bis 43 Euro"}]
+    return [{"title": "Spieleladen", "url": BASE + "/shop", "content": "Brettspiele"}]
+
+
+script = [
+    lambda p: {"action": "goto", "url": BASE + "/shop"},
+    lambda p: {"action": "done", "summary": "42 Euro laut Spieleladen"},
+    lambda p: {"action": "search", "query": "Nebelfalke Preisvergleich"},
+    lambda p: {"action": "goto", "url": BASE2 + "/preise"},
+    lambda p: {"action": "done", "summary": "Etwa 42 Euro, bei drei Haendlern 41 bis 43 Euro.", "notiz": "Preisvergleich: 41 bis 43 Euro"},
+]
+(summary, steps, _, sources, notes), prompts, said, frames = run(
+    script, cfg_over={"STU_EMBER_BROWSE_MIN_SOURCES": "2"}, search=two_searches)
+check("done zurueckgestellt, erst 1 von 2 Webseiten" in steps[1], f"too early done is held back once: {steps}")
+check(steps[2].startswith('step3: search "Nebelfalke Preisvergleich" (1 Treffer)') and "(Link)" in steps[3], f"new search, hit clicked: {steps}")
+check(summary == "Etwa 42 Euro, bei drei Haendlern 41 bis 43 Euro.", f"second done accepted: {summary!r}")
+check([n["host"] for n in notes] == ["127.0.0.1", "localhost"] and notes[0]["text"] == "42 Euro laut Spieleladen",
+      f"notes per source: {notes}")
+check(any(u.startswith(BASE + "/shop") for u in sources) and any(u.startswith(BASE2 + "/preise") for u in sources), f"both sources: {sources}")
+check("- [Spieleladen] 42 Euro laut Spieleladen" in prompts[2] and "GEPRUEFTE WEBSEITEN: 1 (127.0.0.1)" in prompts[2],
+      "after the nudge the Core sees its note and the count")
+check(("step", "Mara prüft noch eine weitere Quelle") in said and ("step", "Mara notiert: Preisvergleich: 41 bis 43 Euro") in said,
+      f"the live view says so: {said}")
 
 # Netzwerkschutz fuer alles, was eine Seite nachlaedt (Bilder, Skripte, Weiterleitungen),
 # und Cookie-Banner: Mara lehnt ab, wenn sie kann.

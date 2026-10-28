@@ -255,9 +255,26 @@ function coreui_operator_runtime_load(PDO $pdo): array {
   ];
 }
 
+function coreui_ai_account_is_guest(PDO $pdo, int $uid): bool {
+  if ($uid <= 0) return false;
+  try {
+    $st = $pdo->prepare('SELECT is_guest FROM stu_users WHERE id = ? LIMIT 1');
+    $st->execute([$uid]);
+    return (int)$st->fetchColumn() === 1;
+  } catch (Throwable $e) {
+    return false;
+  }
+}
+
 function coreui_ai_runtime_apply(PDO $pdo, int $uid): array {
   unset($GLOBALS['COREUI_SKILLS_BLOCK']);
   $settings = coreui_ai_settings_load($pdo, $uid);
+  // 0.5.79: a guest always chats with the default Core and its own window
+  // (the RAM is shared; a guest must not load another Core for everyone).
+  if (coreui_ai_account_is_guest($pdo, $uid)) {
+    $settings['model_override'] = '';
+    $settings['num_ctx'] = null;
+  }
   // #113: the context window is fixed once per request, which is one run. A
   // value saved while an agent job works applies from the next job on, so a
   // running job never reloads the Core half way through.

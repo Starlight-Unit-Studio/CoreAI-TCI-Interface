@@ -1,4 +1,7 @@
-/* CoreAI: TCI Interface isolated administration controller. */
+/* CoreAI: TCI Interface isolated administration controller.
+   0.5.79: Admin Core lives in the settings page as its own tab group. The
+   tabs appear only for Inhaber and Admin (the server checks every call
+   anyway); a category loads its data when its tab opens. */
 (function () {
   'use strict';
 
@@ -6,9 +9,21 @@
   var actorLevel = 4;
   var flashTimer = 0;
   var runtimeState = {};
+  var ready = false;
   var flash = document.getElementById('adminFlash');
   var identity = document.getElementById('adminIdentity');
-  var backButton = document.getElementById('adminBack');
+  var navGroup = document.getElementById('adminNavGroup');
+  var startAdmin = document.getElementById('startAdmin');
+  var VIEWS = {
+    'admin-uebersicht': function () { return loadOverview(); },
+    'admin-benutzer': function () { return loadUsers(); },
+    'admin-zugang': function () { return loadOverview(); },
+    'admin-betrieb': function () { return loadOverview(); },
+    'admin-memory': function () { return loadMemories(); },
+    'admin-lore': function () { return loadLore(false); },
+    'admin-protokoll': function () { return loadLogs(); },
+    'admin-audit': function () { return loadAudit(); }
+  };
 
   function show(message, error) {
     if (!flash) return;
@@ -21,7 +36,7 @@
 
   function api(action, options, query) {
     options = options || {};
-    var url = '../api/admin.php?action=' + encodeURIComponent(action);
+    var url = './api/admin.php?action=' + encodeURIComponent(action);
     if (query) url += '&' + query;
     options.credentials = 'include';
     options.cache = 'no-store';
@@ -35,9 +50,8 @@
         if (!response.ok || !data.ok) {
           var err = new Error(data.error || ('HTTP_' + response.status));
           err.data = data;
-          if (response.status === 401 || response.status === 403 && data.error === 'insufficient_permissions') {
-            location.replace('../settings.html');
-          }
+          if (response.status === 401) location.replace('login.html');
+          if (response.status === 403 && data.error === 'insufficient_permissions') hideAdmin();
           throw err;
         }
         return data;
@@ -56,34 +70,40 @@
     return node;
   }
 
-  function switchPanel(name, skipLoad) {
-    document.querySelectorAll('[data-panel]').forEach(function (button) {
-      button.classList.toggle('active', button.getAttribute('data-panel') === name);
-    });
-    document.querySelectorAll('[data-panel-view]').forEach(function (panel) {
-      var active = panel.getAttribute('data-panel-view') === name;
-      panel.hidden = !active;
-      panel.classList.toggle('active', active);
-    });
-    history.replaceState(null, '', '#' + name);
-    if (!skipLoad) {
-      if (name === 'overview') loadOverview();
-      if (name === 'users') loadUsers();
-      if (name === 'memories') loadMemories();
-      if (name === 'lore') loadLore(false);
-      if (name === 'logs') loadLogs();
-      if (name === 'audit') loadAudit();
-    }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  function tabs() {
+    return window.CoreAISettingsTabs && window.CoreAISettingsTabs.instance;
+  }
+
+  function showAdmin() {
+    if (navGroup) navGroup.hidden = false;
+    if (startAdmin) startAdmin.hidden = false;
+    var instance = tabs();
+    if (instance) instance.refresh();
+  }
+
+  function hideAdmin() {
+    ready = false;
+    if (navGroup) navGroup.hidden = true;
+    if (startAdmin) startAdmin.hidden = true;
+    var instance = tabs();
+    if (instance && /^admin-/.test(instance.current())) instance.show('start');
+  }
+
+  // A category loads its data when its tab opens.
+  function onView(event) {
+    var name = event && event.detail ? event.detail.view : '';
+    if (ready && VIEWS[name]) VIEWS[name]();
   }
 
   function loadOverview() {
     return api('overview').then(function (data) {
       csrfToken = data.csrf_token || csrfToken;
       runtimeState = data.settings || {};
+      // The figures also show on the start view tiles.
       Object.keys(data.stats || {}).forEach(function (key) {
-        var target = document.querySelector('[data-stat="' + key + '"]');
-        if (target) target.textContent = String(data.stats[key]);
+        document.querySelectorAll('[data-stat="' + key + '"]').forEach(function (target) {
+          target.textContent = String(data.stats[key]);
+        });
       });
       fillRuntime(runtimeState);
       showGuestGuard(data.client_address || null);
@@ -94,6 +114,14 @@
     if (!value) return '';
     var normalized = String(value).replace(' ', 'T');
     return normalized.slice(0, 16);
+  }
+
+  var ROLE_OPTIONS = [[0, 'INHABER'], [1, 'ADMIN'], [4, 'NUTZER']];
+
+  function roleName(level, guest) {
+    if (guest) return 'GAST';
+    var hit = ROLE_OPTIONS.filter(function (role) { return role[0] === Number(level); })[0];
+    return hit ? hit[1] : 'NUTZER';
   }
 
   function loadUsers() {
@@ -111,12 +139,15 @@
 
         var levelCell = el('td');
         var level = document.createElement('select');
-        [0, 1, 2, 3, 4].forEach(function (value) {
-          var option = el('option', '', value + ' // ' + ['SYSTEM', 'ADMIN', 'MOD', 'CHAT-MOD', 'USER'][value]);
-          option.value = String(value);
-          if (Number(user.permission_level) === value) option.selected = true;
+        // 0.5.79: CoreAI roles instead of the old game ranks; a guest stays a guest.
+        var roles = Number(user.is_guest) === 1 ? [[4, 'GAST']] : ROLE_OPTIONS;
+        roles.forEach(function (role) {
+          var option = el('option', '', role[1]);
+          option.value = String(role[0]);
+          if (Number(user.permission_level) === role[0] || roles.length === 1) option.selected = true;
           level.appendChild(option);
         });
+        level.disabled = roles.length === 1;
         levelCell.appendChild(level);
         row.appendChild(levelCell);
 
@@ -303,6 +334,7 @@
     document.getElementById('guestMessageLimit').value = settings.guest_message_limit || '5';
     document.getElementById('guestNetworkGuests').value = settings.guest_network_guests || '1';
     document.getElementById('guestDailyMessages').value = settings.guest_daily_messages != null ? settings.guest_daily_messages : '200';
+    document.getElementById('captchaEnabled').checked = settings.captcha_enabled == null ? true : boolSetting(settings.captcha_enabled);
     document.getElementById('maintenanceEnabled').checked = boolSetting(settings.maintenance_enabled);
     document.getElementById('memoryDefaultEnabled').checked = boolSetting(settings.memory_default_enabled);
     document.getElementById('promptLimit').value = settings.user_system_prompt_max_chars || '6000';
@@ -323,6 +355,7 @@
       guest_message_limit: document.getElementById('guestMessageLimit').value,
       guest_network_guests: document.getElementById('guestNetworkGuests').value,
       guest_daily_messages: document.getElementById('guestDailyMessages').value,
+      captcha_enabled: document.getElementById('captchaEnabled').checked ? '1' : '0',
       maintenance_enabled: document.getElementById('maintenanceEnabled').checked ? '1' : '0',
       memory_default_enabled: document.getElementById('memoryDefaultEnabled').checked ? '1' : '0',
       user_system_prompt_max_chars: document.getElementById('promptLimit').value,
@@ -374,15 +407,6 @@
   }
 
   function bind() {
-    if (backButton) {
-      backButton.addEventListener('click', function (event) {
-        event.preventDefault();
-        location.replace('../settings.html');
-      });
-    }
-    document.querySelectorAll('[data-panel]').forEach(function (button) {
-      button.addEventListener('click', function () { switchPanel(button.getAttribute('data-panel')); });
-    });
     document.getElementById('refreshOverview').addEventListener('click', loadOverview);
     document.getElementById('reloadUsers').addEventListener('click', loadUsers);
     document.getElementById('searchUsers').addEventListener('click', loadUsers);
@@ -394,31 +418,28 @@
     document.getElementById('reloadLore').addEventListener('click', function () { loadLore(false); });
     document.getElementById('searchLore').addEventListener('click', function () { loadLore(true); });
     document.getElementById('saveRuntime').addEventListener('click', saveRuntime);
+    document.getElementById('saveRuntimeAccess').addEventListener('click', saveRuntime);
     document.getElementById('reloadLogs').addEventListener('click', loadLogs);
     document.getElementById('clearLogs').addEventListener('click', clearLogs);
     document.getElementById('reloadAudit').addEventListener('click', loadAudit);
   }
 
-  fetch('../api/auth.php?action=me', { credentials: 'include', cache: 'no-store' })
+  if (!navGroup) return;
+  document.addEventListener('coreai:view', onView);
+  fetch('./api/auth.php?action=me', { credentials: 'include', cache: 'no-store' })
     .then(function (response) { return response.json(); })
     .then(function (data) {
-      if (!data.ok || Number(data.permission_level) > 1) {
-        location.replace('../settings.html');
-        return Promise.reject(new Error('forbidden'));
-      }
+      // Users and guests never see Admin Core; settings.js handles the login.
+      if (!data.ok || data.is_guest || Number(data.permission_level) > 1) return null;
       csrfToken = data.csrf_token || '';
       actorLevel = Number(data.permission_level);
       var adminOption = document.querySelector('#newUserLevel option[value="1"]');
       if (adminOption && actorLevel > 0) adminOption.disabled = true;
-      if (identity) identity.textContent = (data.username || 'ADMIN') + ' // LV.' + data.permission_level;
+      if (identity) identity.textContent = (data.username || 'ADMIN') + ' // ' + roleName(data.permission_level, false);
       bind();
-      var initial = location.hash.replace(/^#/, '') || 'overview';
-      if (!document.querySelector('[data-panel="' + initial + '"]')) initial = 'overview';
-      return loadOverview().then(function () {
-        switchPanel(initial, initial === 'overview');
-      });
+      ready = true;
+      // Showing the group opens an admin tab the address asked for; that tab loads its data itself.
+      return loadOverview().then(showAdmin);
     })
-    .catch(function (error) {
-      if (error.message !== 'forbidden') show('Admin-Initialisierung: ' + error.message, true);
-    });
+    .catch(function (error) { show('Admin-Initialisierung: ' + error.message, true); });
 })();
