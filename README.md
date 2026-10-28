@@ -7,7 +7,17 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.75` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.76` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Erklaerungen statt Werkzeugaufrufe, Unterstriche, Arbeitsweg (0.5.76)
+
+Erklaert Mara ihre Werkzeuge, loesen die erwaehnten Marker in Code-Markierungen
+keine Suche und keine Python-Ausfuehrung mehr aus, und ein Fortschrittsblock
+vor normalem Text startet keine Korrekturrunde mehr. Unterstriche mitten im
+Wort (snake_case, Dateinamen, Marker) bleiben im Chat stehen. Einfache
+Antworten zeigen keinen Arbeitsweg mehr; er erscheint, sobald Mara wirklich
+arbeitet. Im Sprachplan steht Lauf 4 mit der Entscheidung: Mitschrift ueber
+Googles Transkriptionsvorlage, Sprachnachrichten zweistufig, Live einstufig.
 
 ## Denkschalter und Core-Wahl im Chat (0.5.75)
 

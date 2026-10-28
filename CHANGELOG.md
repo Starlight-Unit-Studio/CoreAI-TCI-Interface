@@ -2,6 +2,17 @@
 
 CoreAI: TCI Interface gehoert zur Quantum-Softwarefamilie und wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert. Historische Changelogs dokumentieren die frueheren Produktnamen unveraendert.
 
+## 0.5.76 - 28.10.2026
+
+- **Werkzeug-Erwaehnungen loesen nichts mehr aus:** Erklaerte Mara ihre Werkzeuge ("dazu nutze ich den `[WEB: ...]`-Befehl", "`[PY]`-Block"), starteten diese Erwaehnungen echte Suchen und der restliche Text lief als Python (im Test vom 28.10.2026: 4 Werkzeuge, 1 Fehler). Marker in Inline-Code sind jetzt Erwaehnungen; echte Aufrufe, auch Python mit Codeblock, funktionieren weiter.
+- **Keine falsche Korrekturrunde:** Ein Fortschrittsblock vor normalem Text gilt auch mehrzeilig, lang oder offen als normale Antwort (ohne Denken kostete das eine zusaetzliche Core-Runde, ueber eine Minute).
+- **Sicherheitsnetz laesst Code stehen:** Nicht ausgefuehrte Marker im Fliesstext werden weiter entfernt, Erwaehnungen in Code-Markierungen bleiben (vorher blieb "``-Befehl" uebrig).
+- **Unterstriche im Chat:** `_` betont nie mehr mitten im Wort (COREUI_PLAN_SAVE, snake_case, my_app/config_file.php bleiben wie geschrieben), `*` nicht mehr zwischen Ziffern (2*3*4). Normale Betonung mit _kursiv_, *kursiv*, **fett** bleibt.
+- **Ruhigerer Arbeitsweg:** Einfache Antworten ohne Werkzeug, Notiz, Korrektur, Datei, Wissenstreffer oder Fehler zeigen keinen Arbeitsweg mehr. Die Einstellung heisst jetzt "Arbeitsweg offen halten".
+- **Analyse-Filter** erkennt auch zusammengesetzte Namen wie "[Systemanalyse: ...]".
+- **Sprachplan, Lauf 4:** Googles Transkriptionsvorlage erkennt 10 von 10 kurzen Aufnahmen in etwa 1 s und 60 s in 18 s, ohne temperature 0. Entscheidung: Sprachnachrichten zweistufig (Mitschrift, dann Antwort auf den Text), Live-Gespraech einstufig mit Mitschrift im Hintergrund. Alle vier lokalen Cores auf dem Server nutzen dieselbe Gewichtsdatei.
+- Tests: neue `tool-mention-selftest.php` in beiden Preflights; Markdown-, Arbeitsweg- und Datei-Werkzeug-Tests erweitert.
+
 ## 0.5.75 - 28.10.2026
 
 - **Denkschalter im Chat:** Ein Core-Chip unter dem Eingabefeld zeigt den aktiven Core und ob Mara denkt (DENKEN oder SCHNELL). Ein Tipp oeffnet ein Menue mit dem Schalter "Denken"; der Wert gilt fuer alle Chats des Kontos ab der naechsten Nachricht. Der Schalter im KI-Profil entfaellt; das KI-Profil ueberschreibt den Wert beim Speichern nicht mehr.

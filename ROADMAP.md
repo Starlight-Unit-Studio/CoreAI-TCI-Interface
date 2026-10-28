@@ -27,7 +27,7 @@ Diese Roadmap ordnet die Anforderungen in **29 abschließbare Arbeitspakete** un
 
 | Schritt | Inhalt | Plan |
 |---|---|---|
-| 1. P20.0 | Test auf dem Server: Audio über Ollama (Gemma 4 e2b, e4b, 12b über das `images`-Array), TTS-Kandidaten, Latenz einer Live-Runde. **In Arbeit:** Hören dreimal gemessen (Messprotokoll im Sprachplan). Kurze Aufnahmen scheiterten in Maras Persona in 11 von 20 Fällen; 0.5.75 vergleicht Googles Transkriptionsvorlage, Stille davor und temperature 0 sowie Live einstufig und zweistufig. Festes Denken im Modelfile entfernt. TTS-Kandidaten offen. | [Sprachplan](docs/COREUI_VOICE_PLAN.md) |
+| 1. P20.0 | Test auf dem Server: Audio über Ollama (Gemma 4 e2b, e4b, 12b über das `images`-Array), TTS-Kandidaten, Latenz einer Live-Runde. **Hören erledigt:** vier Läufe (Messprotokoll im Sprachplan). Entscheidung: Mitschrift über Googles Transkriptionsvorlage ohne Denken (10 von 10 kurze Aufnahmen, 60 s in 18 s), Sprachnachrichten zweistufig, Live einstufig. Festes Denken im Modelfile entfernt. **Offen:** TTS-Kandidaten. | [Sprachplan](docs/COREUI_VOICE_PLAN.md) |
 | 2. P20.1 | Spracheingabe: Mikrofon, Sprachnachrichten, Audiodateien, Mitschrift im Chat | Sprachplan |
 | 3. P20.2 | Videos hören: Tonspur zusammen mit den Bildern | Sprachplan |
 | 4. P20.3 | Sprachausgabe: Lautsprecher-Knopf, optional automatisch vorlesen, eigene Mara-Stimme vom Server | Sprachplan |

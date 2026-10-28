@@ -776,6 +776,20 @@
     return timeline;
   }
 
+  // 0.5.76: a plain answer (request, queue, one Core call, saved) needs no
+  // Arbeitsweg under the finished reply. It appears once Mara used a tool,
+  // wrote a note, corrected herself, made files, found private knowledge,
+  // looked at an attachment, or something went wrong.
+  function substantive(events) {
+    return merge(events, []).some(function (e) {
+      var meta = e.meta || {};
+      if (e.state === 'error' || e.kind === 'commentary' || e.kind === 'artifact') return true;
+      if (NARRATED[e.title] === 1 || meta.reason === 'context_window_full') return true;
+      if (e.kind === 'tool') return e.title !== 'Privates Wissen durchsucht' || Number(meta.knowledge_hits) > 0;
+      return e.title === 'Anhang wird angesehen';
+    });
+  }
+
   window.CoreUIWorkEvents = {create:create,add:add,source:source,flush:flushWork,normalize:normalize,
-    merge:merge,displayTitle:displayTitle};
+    merge:merge,displayTitle:displayTitle,substantive:substantive};
 }());

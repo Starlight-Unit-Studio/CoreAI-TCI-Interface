@@ -1,0 +1,31 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.5.76
+Stand: 28.10.2026
+Branch: claude/bold-galileo-myoyi0 (neu von main 0.5.75 nach Merge von PR #125)
+Basis: Lauf 4 des Medien-Tests und ein Chattest mit Denken aus (Screenshots): die zweite Antwort brauchte
+ueber eine Minute (13 Schritte, 4 Werkzeuge, 1 Fehler, Korrekturrunde) und zeigte "``-Befehl"; Unterstriche
+wurden im Chat zu Kursivschrift.
+
+URSACHEN UND AENDERUNGEN:
+- api/chat.php: ember_extract_web_marker, ember_extract_browse_marker und ember_py_extract_marker fanden Marker
+  auch in Inline-Code; neue ember_without_inline_code (nur einfache Backtick-Spans, Fences bleiben fuer PY).
+  WEB und BROWSE ignorieren zusaetzlich Codebloecke. ember_strip_stray_tool_markers ersetzt das alte
+  Sicherheitsnetz (auch in api/console_stream.php) und laesst Code stehen. Analyse-Filter mit
+  zusammengesetzten Namen (\p{L}{2,20} vor analyse/analysis/ueberlegung/reasoning).
+- api/console_native_tools.php: coreui_native_public_progress_only akzeptiert mehrzeilige, lange und offene
+  Fortschrittsbloecke vor Text; eine einzelne kurze Notiz und echte Werkzeugbloecke bleiben streng; Marker in
+  Inline-Code zaehlen nicht.
+- js/coreui-markdown.js: Flanken-Regeln fuer _ und * (emphasisOpens, emphasisCloser).
+- js/coreui-work-events.js: substantive(events); js/console-app.js zeigt den Arbeitsweg unter fertigen Antworten
+  nur, wenn substantive() wahr ist. settings.html: "ARBEITSWEG OFFEN HALTEN".
+- Doku: Sprachplan Lauf 4 und Entscheidung (Mitschrift ueber Vorlage, zweistufig im Chat, Live einstufig),
+  Roadmap P20.0 Hoeren erledigt.
+
+GEPRUEFT:
+- Alle Offline-Selbsttests, neu tool-mention-selftest.php mit der Erklaerung aus dem Chattest; echte Aufrufe
+  (WEB, BROWSE, PY einzeilig und mit Fence) weiterhin erkannt.
+
+HINWEIS AN DEN BETREIBER: Auf dem Server sind gemma4:26b und gemma4:e2b nur weitere Namen fuer dieselbe
+Gewichtsdatei wie gemma4:e4b (370c2879f176, 7.5B). Ob sie geloescht oder die echten Modelle gezogen werden,
+entscheidet der Betreiber; CoreAI aendert keine Modelle.
+
+NAECHSTER SCHRITT: TTS-Kandidaten fuer Maras Stimme messen, dann P20.1 (Mikrofon im Chat, zweistufig).

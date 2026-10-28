@@ -386,6 +386,31 @@ const finishedHistory = work.create({expanded:true,events:taskTitles.map((title,
 }))});
 assert(finishedHistory.textContent.includes('Projektquellen vollstaendig'),
   'saved history renders synchronously and in order');
+// 0.5.76: a plain answer shows no Arbeitsweg, real work and errors do.
+const plain = [
+  {id: 1, kind: 'run', state: 'running', title: 'Auftrag gestartet', meta: {}},
+  {id: 2, kind: 'run', state: 'success', title: 'Kontext vorbereitet', meta: {}},
+  {id: 3, kind: 'tool', state: 'info', title: 'Privates Wissen durchsucht', meta: {knowledge_hits: 0, knowledge_sources: 0}},
+  {id: 4, kind: 'model', state: 'running', title: 'Modellstream gestartet', meta: {}},
+  {id: 5, kind: 'run', state: 'success', title: 'Antwort gespeichert', meta: {}},
+];
+assert.equal(work.substantive(plain), false, 'a plain answer needs no Arbeitsweg');
+const withHits = plain.map(e => e.id === 3
+  ? {...e, state: 'success', meta: {knowledge_hits: 4, knowledge_sources: 2}} : e);
+assert.equal(work.substantive(withHits), true, 'private knowledge hits are shown');
+assert.equal(work.substantive([...plain, {id: 6, kind: 'tool', state: 'error', title: 'Werkzeugantwort nicht lesbar',
+  meta: {reason: 'tool_marker_without_block'}}]), true, 'errors are shown');
+assert.equal(work.substantive([...plain, {id: 7, kind: 'artifact', state: 'success', title: 'Downloaddateien gesichert',
+  meta: {}}]), true, 'files are shown');
+assert.equal(work.substantive([...plain, {id: 8, kind: 'model', state: 'running', title: 'Werkzeugantwort wird einmal korrigiert',
+  meta: {}}]), true, 'a correction round is shown');
+assert.equal(work.substantive([...plain, {id: 9, kind: 'model', state: 'running', title: 'Anhang wird angesehen',
+  meta: {}}]), true, 'looking at an attachment is shown');
+assert.equal(work.substantive([]), false);
+const app = fs.readFileSync(path.join(__dirname, '../js/console-app.js'), 'utf8');
+assert(app.includes('window.CoreUIWorkEvents.substantive(record.work_events)'),
+  'finished replies only get an Arbeitsweg with real work');
+
 sandbox.window.setTimeout = undefined;
 sandbox.window.clearTimeout = undefined;
 sandbox.window.matchMedia = undefined;

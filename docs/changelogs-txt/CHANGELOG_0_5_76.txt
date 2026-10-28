@@ -1,0 +1,10 @@
+CoreAI: TCI Interface 0.5.76 - 28.10.2026
+- Werkzeug-Erwaehnungen in Inline-Code (WEB, BROWSE, PY) starten kein Werkzeug mehr; echte Aufrufe unveraendert.
+- Fortschrittsblock vor normalem Text (mehrzeilig, lang, offen) startet keine Korrekturrunde mehr.
+- Sicherheitsnetz entfernt nur noch Marker im Fliesstext, Erwaehnungen in Code bleiben.
+- Chat-Markdown: _ nie mitten im Wort, * nicht zwischen Ziffern; normale Betonung bleibt.
+- Arbeitsweg nur bei echter Arbeit (Werkzeug, Notiz, Korrektur, Datei, Wissenstreffer, Anhang, Fehler); Einstellung "Arbeitsweg offen halten".
+- Analyse-Filter erkennt zusammengesetzte Namen wie [Systemanalyse: ...].
+- Sprachplan Lauf 4: Vorlage 10 von 10 kurze Aufnahmen, 60 s in 18 s; Entscheidung Sprachnachricht zweistufig, Live einstufig.
+- Tests: tool-mention-selftest.php (beide Preflights); markdown-, work-events-ui- und local-file-tool-Tests erweitert.
+- OFFEN: TTS-Kandidaten, dann P20.1 (Mikrofon im Chat).

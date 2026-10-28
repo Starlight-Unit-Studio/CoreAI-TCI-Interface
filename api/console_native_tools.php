@@ -41,14 +41,31 @@ function coreui_native_public_progress_strip(string $reply): array {
  * A model may write the public progress line and then simply answer in
  * prose, without any tool. That is an ordinary reply, not a broken tool
  * call: return the prose and the (filtered) note. Any further COREUI marker
- * keeps the strict tool validation.
+ * outside inline code keeps the strict tool validation.
+ *
+ * 0.5.76: without thinking Mara also wrote the block over several lines,
+ * longer than a note, or left it open; that still is prose and must not
+ * start a correction round. Only a lone short note stays strict: it
+ * announces a tool step that is missing.
  */
 function coreui_native_public_progress_only(string $reply): ?array {
-  if (preg_match('~\A[ \t]*\[COREUI_PUBLIC_PROGRESS\]([^\r\n]{1,480})\[/COREUI_PUBLIC_PROGRESS\][ \t]*(?:\r?\n|\z)~u',
-      $reply, $match) !== 1) return null;
-  $rest = trim(substr($reply, strlen($match[0])));
-  if ($rest === '' || preg_match('~\[/?COREUI[_/][A-Z_]+\]~i', $rest) === 1) return null;
-  return ['reply'=>$rest,'note'=>coreui_native_public_note_safe((string)$match[1])];
+  if (preg_match('~\A[ \t]*\[COREUI_PUBLIC_PROGRESS\]~u', $reply) !== 1) return null;
+  $outsideCode = (string)preg_replace('~`[^`\r\n]*`~u', '', $reply);
+  if (preg_match('~\[/?COREUI[_/](?!PUBLIC_PROGRESS\])[A-Z_]+\]~i', $outsideCode) === 1) return null;
+  $note = null;
+  if (preg_match('~\A[ \t]*\[COREUI_PUBLIC_PROGRESS\]([\s\S]*?)\[/COREUI_PUBLIC_PROGRESS\][ \t]*(?:\r?\n|\z)~u',
+      $reply, $match) === 1) {
+    $inner = trim($match[1]);
+    $rest = trim(substr($reply, strlen($match[0])));
+    $shortNote = $inner !== '' && !str_contains($inner, "\n") && strlen($inner) <= 480;
+    if ($rest === '' && $shortNote) return null;
+    if ($shortNote) $note = coreui_native_public_note_safe($inner);
+    else $rest = trim($inner . "\n\n" . $rest);
+  } else {
+    $rest = trim((string)preg_replace('~\A[ \t]*\[COREUI_PUBLIC_PROGRESS\]~u', '', $reply));
+  }
+  $rest = trim((string)preg_replace('~\[/?COREUI_PUBLIC_PROGRESS\]~i', '', $rest));
+  return $rest === '' ? null : ['reply'=>$rest, 'note'=>$note];
 }
 
 /**

@@ -337,13 +337,27 @@ function ember_extract_explicit_reply_candidate(string $source): string {
 // oeffentliche Antwortpassage gerettet; sonst bleibt die Antwort leer und der Aufrufer
 // kann einen sauberen Fallback starten.
 /**
+ * Removes tool markers that were not executed from a public reply. Markers
+ * inside inline code or a code block are explanations ("dazu nutze ich den
+ * `[WEB: ...]`-Befehl") and stay; before 0.5.76 they left "``" behind.
+ */
+function ember_strip_stray_tool_markers(string $out): string {
+  return (string)preg_replace_callback(
+    '~(```[\s\S]*?```|`[^`\r\n]*`)|\[WEB:\s*.*?\]|\[BROWSE:\s*.*?\]|\[/?PY\]~iu',
+    static fn(array $m): string => ($m[1] ?? '') !== '' ? $m[1] : '',
+    $out);
+}
+
+/**
  * 0.5.75: without a thinking channel Mara sometimes writes her planning as a
  * leading bracket block ("[Analyse: Der Nutzer ...] Na klar ..."). Such
  * blocks are removed; tool markers like [WEB: ...] are not meta labels.
  */
 function ember_strip_leading_bracket_meta(string $content): string {
   $labels = ember_internal_meta_label_pattern();
-  $pattern = '~^\s*\[\s*(?:interne?\s+)?' . $labels . '\s*:[^\]]{0,4000}\]\s*~iu';
+  // 0.5.76: also compound names such as "[Systemanalyse: ...]" or "[Kontextanalyse: ...]".
+  $pattern = '~^\s*\[\s*(?:interne?\s+)?(?:\p{L}{2,20}(?:analyse|analysis|(?:ue|ü)berlegung|reasoning)|'
+    . $labels . ')\s*:[^\]]{0,4000}\]\s*~iu';
   for ($i = 0; $i < 3 && preg_match($pattern, $content, $m) === 1; $i++) {
     $content = (string)substr($content, strlen($m[0]));
   }
@@ -2241,8 +2255,21 @@ function ember_web_capability_hint_compact(): string {
     . "einer Zeile [WEB: suchbegriffe]. Fuer Smalltalk und Lore keine Websuche.";
 }
 
+/**
+ * 0.5.76: a marker inside inline code is a mention, never a call. When Mara
+ * explains her tools ("dazu nutze ich den `[WEB: ...]`-Befehl", "`[PY]`-Block")
+ * these mentions started real searches and ran the rest of the text as
+ * Python. Fenced blocks stay (a [PY] call may wrap its code in one).
+ */
+function ember_without_inline_code(string $s): string {
+  // A reply that is nothing but one marker in backticks is still a call.
+  if (preg_match('~\A\s*`(\[(?:WEB|BROWSE):[^`\]]+\]|\[PY\][^`]*\[/PY\])`\s*\z~iu', $s, $sole) === 1) return $sole[1];
+  return (string)preg_replace('~(?<!`)`(?!`)[^`\r\n]+`(?!`)~u', '', $s);
+}
+
 // Marker [WEB: ...] aus Embers Antwort extrahieren.
 function ember_extract_web_marker(string $s): ?string {
+  $s = ember_without_inline_code((string)preg_replace('~```[\s\S]*?```~u', '', $s));
   if (stripos($s, '[WEB:') === false) return null;
   if (!preg_match('~\[WEB:\s*(.+?)\]~iu', $s, $m)) return null;
   $q = trim($m[1]);
@@ -2352,6 +2379,7 @@ function ember_console_prompt_profile(string $channel, ?int $contextTokens): arr
 }
 
 function ember_extract_browse_marker(string $s): ?string {
+  $s = ember_without_inline_code((string)preg_replace('~```[\s\S]*?```~u', '', $s));
   if (stripos($s, '[BROWSE:') === false) return null;
   if (!preg_match('~\[BROWSE:\s*(.+?)\]~iu', $s, $m)) return null;
   $q = trim($m[1]);
@@ -2712,6 +2740,7 @@ function ember_console_file_tool_candidate(string $reply, string $request): ?arr
 // Code aus [PY]...[/PY] ziehen. Robust gegen fehlendes Schluss-Tag und Markdown-Fences,
 // weil Gemma 4 beides regelmaessig verschludert.
 function ember_py_extract_marker(string $s): ?string {
+  $s = ember_without_inline_code($s);
   if (stripos($s, '[PY]') === false) return null;
   if (preg_match('~\[PY\](.*?)\[/PY\]~isu', $s, $m)) {
     $code = (string)$m[1];
@@ -6033,11 +6062,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   }
 
   // Sicherheitsnetz: falls doch ein Restmarker durchrutscht, entfernen.
-  if (is_string($out)) {
-    $out = preg_replace('~\[WEB:\s*.*?\]~iu', '', $out);
-    $out = preg_replace('~\[BROWSE:\s*.*?\]~iu', '', $out);
-    $out = preg_replace('~\[/?PY\]~iu', '', $out);
-  }
+  if (is_string($out)) $out = ember_strip_stray_tool_markers($out);
 
   if ($channel === 'console' && !$fileTask && is_string($out) && trim($out) !== ''
       && ember_last_call_was_truncated()) {

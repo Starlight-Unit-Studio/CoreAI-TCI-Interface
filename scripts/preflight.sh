@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.75 thinking switch and Core choice in the chat, Modelfile without fixed <|think|>, media test variants.
+# CoreAI: TCI Interface 0.5.76 tool mentions run no tool, underscores stay in the chat, quieter work view, voice decision.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -159,6 +159,7 @@ UI_FILES=(
   scripts/thinking-switch-ui-selftest.cjs
   js/coreui-core-mode.js
   api/core_preload.php
+  scripts/tool-mention-selftest.php
   scripts/media-spike.php
   scripts/media-spike.sh
   js/coreui-net.js
@@ -634,6 +635,13 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     ok 'Audio: WAV-Pruefung, Hilfen fuer Audio-Aufrufe und Medien-Test P20.0 geprueft.'
   else
     fail "Audio-WAV-Selbsttest: ${audio_test:-Unbekannter Fehler}"
+  fi
+
+  mention_test=''
+  if mention_test="$(compose exec -T php php scripts/tool-mention-selftest.php 2>&1)"; then
+    ok 'Werkzeug-Erwaehnungen: Erklaerungen starten kein Werkzeug und keine Korrekturrunde.'
+  else
+    fail "Werkzeug-Erwaehnungs-Selbsttest: ${mention_test:-Unbekannter Fehler}"
   fi
 
   think_test=''
