@@ -7,6 +7,7 @@ CoreAI: TCI Interface gehoert zur Quantum-Softwarefamilie und wird bis zur final
 - **Roadmap auf Stand 0.5.71:** Neue Statustabelle je Etappe (M1 praktisch erledigt, M2 grossteils erledigt, M3 offen, M4 bis M6 teilweise) und "Naechste Lieferfolge" nach Betreiberentscheidung: P20.0 Test, P20.1 Spracheingabe, P20.2 Videos hoeren, P20.3 Sprachausgabe, P20.4 Live-Gespraech, P20.5 Bildgenerierung, danach P09 Projekt-Workspace.
 - **Neuer Sprachplan** `docs/COREUI_VOICE_PLAN.md`: Hoeren ueber Gemma 4 via Ollama, eigene Mara-Stimme als Server-TTS, Vorlesen satzweise, Live-Gespraech mit Sprechpausen-Erkennung und Unterbrechen, Datenschutz fuer Aufnahmen, gemeinsame Abnahme.
 - **Regel zur seriellen Ausfuehrung** in Roadmap, Funktionsmatrix und Masterplan um die einzige Ausnahme ergaenzt: Sprachausgabe mit festem Kernlimit parallel zu genau einer Core-Anfrage.
+- **Betreiber-Recherche eingearbeitet:** Audio nur bei `gemma4:e2b`, `e4b` und `12b` (nicht 26b/31b), Format WAV mit RIFF-Header, 16 kHz, Mono, hoechstens 30 bis 60 Sekunden je Clip; CoreAI schneidet Abschnitte von hoechstens 30 Sekunden an Sprechpausen und deaktiviert das Mikrofon bei Cores ohne Audio. Bildplan um das konkrete FLUX.1-schnell-Startsetup ergaenzt (T5-XXL Q4_K_M, CLIP-L Q8_0, Transformer Q8_0 oder Q5_K_M, VAE `ae.safetensors`, GGUF von `city96`), Lizenzhinweis zu SDXL-Turbo, Aufruf von stable-diffusion.cpp als isolierter Worker-Prozess.
 - Funktionsmatrix: CF-057 und CF-058 auf den Plan verwiesen. Keine Code-, Modell- oder Datenbankaenderung.
 
 ## 0.5.71 - 28.10.2026
