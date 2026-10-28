@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.72 roadmap update: Mara hears and speaks (voice plan), status 0.5.71.
+# CoreAI: TCI Interface 0.5.73 P20.0 media test (audio over Ollama, voices, images) and WAV check.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -118,6 +118,10 @@ UI_FILES=(
   scripts/date-awareness-selftest.php
   scripts/knowledge-search-selftest.php
   scripts/vision-persona-selftest.php
+  scripts/audio-wav-selftest.php
+  api/audio_wav.php
+  scripts/media-spike.php
+  scripts/media-spike.sh
   js/coreui-net.js
   api/console_insights.php
   api/console_insights_store.php
@@ -418,6 +422,13 @@ if command -v php >/dev/null 2>&1; then
     ok 'Bild und Video: dieselbe Mara wie bei Text, kein falscher Fehler, keine Bildfakten im Gedaechtnis.'
   else
     fail "Bild-/Video-Persona: ${vision_test:-Unbekannter Fehler}"
+  fi
+
+  audio_test=''
+  if audio_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/audio-wav-selftest.php" 2>&1)"; then
+    ok 'Audio: WAV-Pruefung (RIFF, Mono, 16 kHz, 16 Bit) und Medien-Test P20.0 geprueft.'
+  else
+    fail "Audio-WAV-Selbsttest: ${audio_test:-Unbekannter Fehler}"
   fi
 
   if runuser -u www-data -- php "$PROJECT_ROOT/scripts/model-live-audit.php" --selftest >/dev/null 2>&1; then
