@@ -24,6 +24,7 @@ try {
   $settings = frontend_test_read($root . '/js/settings.js');
   $admin = frontend_test_read($root . '/js/admin.js');
   $adminHtml = frontend_test_read($root . '/admin/index.html');
+  $settingsPage = frontend_test_read($root . '/settings.html');
   $appHtml = frontend_test_read($root . '/app.html');
   $console = frontend_test_read($root . '/js/console-app.js');
   $markdown = frontend_test_read($root . '/js/coreui-markdown.js');
@@ -67,10 +68,15 @@ try {
 
   frontend_test_assert(!str_contains($settings, 'history.back()'), 'Einstellungen verwenden weiterhin den Browser-Verlauf.');
   frontend_test_assert(str_contains($settings, "location.replace('app.html')"), 'Core Channel besitzt kein deterministisches Ziel.');
-  frontend_test_assert(str_contains($adminHtml, 'id="adminBack"'), 'Admin-Zurueckschalter ist nicht eindeutig verdrahtet.');
+  // 0.5.79: Admin Core is a tab group of the settings page; the old address
+  // replaces itself with the matching tab, so no history entry is left behind.
+  frontend_test_assert(str_contains($adminHtml, 'id="adminBack"')
+      && str_contains($adminHtml, "location.replace('../settings.html#' + tab);"),
+    'Alte Admin-Adresse fuehrt nicht ohne Verlaufseintrag zum Admin-Core-Tab.');
   frontend_test_assert(
-    str_contains($admin, "location.replace('../settings.html')") && str_contains($admin, 'event.preventDefault()'),
-    'Admin Core hinterlaesst weiterhin einen problematischen Verlaufseintrag.'
+    str_contains($settingsPage, 'id="adminNavGroup"') && str_contains($admin, "var url = './api/admin.php?action='")
+      && !str_contains($admin, '../settings.html'),
+    'Admin Core ist nicht als Tab-Gruppe der Einstellungen verdrahtet.'
   );
 
   foreach ([

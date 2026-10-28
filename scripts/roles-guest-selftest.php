@@ -35,7 +35,7 @@ roles_test(str_contains($admin, "=== COREUI_ROLE_ADMIN ? COREUI_ROLE_ADMIN : COR
 $adminJs = (string)file_get_contents($root . '/js/admin.js');
 roles_test(str_contains($adminJs, "var ROLE_OPTIONS = [[0, 'INHABER'], [1, 'ADMIN'], [4, 'NUTZER']];") && str_contains($adminJs, "[[4, 'GAST']]")
   && !str_contains($adminJs, 'CHAT-MOD'), 'admin page shows the roles');
-$adminHtml = (string)file_get_contents($root . '/admin/index.html');
+$adminHtml = (string)file_get_contents($root . '/settings.html'); // 0.5.79: Admin Core is a tab group there
 roles_test(str_contains($adminHtml, '<option value="4">NUTZER</option><option value="1">ADMIN</option>') && !str_contains($adminHtml, 'CHAT-MOD'), 'new account form');
 roles_test(str_contains((string)file_get_contents($root . '/js/settings.js'), "data.is_guest ? 'GAST' : (lvl === 0 ? 'INHABER'"), 'settings show the role');
 roles_test(str_contains((string)file_get_contents($root . '/api/auth.php'), "'role' => coreui_role_name(\$lvl, \$guest !== null),"), 'me tells the role');

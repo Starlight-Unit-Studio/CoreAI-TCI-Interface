@@ -37,12 +37,31 @@ BEFUND UND AENDERUNGEN:
   Cloud und Auto-Update verlangen Stufe <= 1; alle uebrigen Einstellungen sind je Konto (stu_user_ai_settings,
   Profil, Gedaechtnis, Wissen) und aendern nichts fuer andere.
 
+NACHTRAG VOR DEM MERGE (Wuensche des Betreibers):
+- Core-Menue: js/coreui-core-mode.js Punkt-Zustaende active (gruen, der gewaehlte Core), standby (gelb,
+  installiert), loading (goldener Puls, unveraendert), missing/gone/unknown (rot). Legende in app.html erklaert es.
+- KI-Profil ohne "Lokaler Core" (Ollama-Liste): Feld, loadModels und model_override aus settings.js entfernt.
+  user_settings.php behaelt model_override, wenn das KI-Profil es nicht mitschickt ($keepModel), und prueft dann
+  nicht gegen Ollama. Core-Pfad (aiProvider) bleibt.
+- Einstellungen: settings.html als eine Seite mit Tabs (.cfg-nav, js/coreui-settings-tabs.js), je Kategorie eine
+  Ansicht (.cfg-view) mit Karten; Start mit Begruessung, Kurzueberblick (Core, System, Wissen, Memory) und Kacheln.
+  Adresse #tab, alte Anker (#about) werden umgesetzt; Ereignis coreai:view meldet den geoeffneten Tab.
+- Admin Core: Markup aus admin/index.html in settings.html (Tab-Gruppe adminNavGroup, nur sichtbar nach
+  auth.php me mit Stufe <= 1); js/admin.js laedt ueber ./api/admin.php, je Tab erst beim Oeffnen, keine
+  Weiterleitung mehr fuer Nutzer (Gruppe bleibt verborgen; der Server prueft ohnehin jeden Aufruf). Runtime
+  aufgeteilt in "Zugang und Schutz" und "Betrieb" (beide Knoepfe speichern alle Werte). Neue css/settings.css
+  (lesbare Groessen ab 11 px, Schalter statt Checkboxen, Handy-Leiste); css/admin.css geloescht;
+  admin/index.html ist eine Weiterleitung (#users -> #admin-benutzer usw.).
+
 GEPRUEFT:
 - Alle Offline-Selbsttests; browse-worker-selftest.py mit echtem Chromium (Formular, Treffer per Klick, lesender
   Cursor, zwei Webseiten mit Notizen und neuer Suche, Login/Kontakt blockiert, lokales Netz, Cookie-Banner);
   browse-live-ui-selftest.cjs (Cursor-Schritte, Vergroessern); registration-ui-selftest.cjs (echte Aufgabe
-  geloest, Wiederholung bei abgelaufener Loesung); captcha-selftest.php; roles-guest-selftest.php.
+  geloest, Wiederholung bei abgelaufener Loesung); captcha-selftest.php; roles-guest-selftest.php;
+  settings-tabs-ui-selftest.cjs (Nutzer ohne Admin Core, Inhaber mit Admin-Adresse, Speichern, alle Tabs ohne
+  Schrift unter 11 px, Handy 390 px ohne Querscrollen, alte Admin-Adresse); Gegenprobe ohne settings.css schlaegt
+  wie erwartet fehl.
 
 NAECHSTER SCHRITT: Update auf dem Server (Migration 019 laeuft mit, Browse-Worker neu starten), dann eine
-Recherche testen (zwei Quellen, Cursor, Fenstergroesse), Gast-Start mit Captcha auf dem Handy, Admin-Bereich
-Rollen. Danach Benutzerverwaltung, TTS-Kandidaten, P20.1.
+Recherche testen (zwei Quellen, Cursor, Fenstergroesse), Gast-Start mit Captcha auf dem Handy, Einstellungen
+mit Tabs und Admin Core (Rollen, Zugang und Schutz), Punkte im Core-Menue. Danach Benutzerverwaltung, TTS-Kandidaten, P20.1.

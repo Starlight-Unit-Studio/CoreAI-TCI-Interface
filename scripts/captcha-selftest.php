@@ -69,6 +69,6 @@ captcha_test(strpos($register, 'coreui_captcha_require($pdo, $body);') < strpos(
 captcha_test(str_contains($auth, "if (\$action === 'captcha') {") && str_contains($auth, "stu_rate_limit('captcha', 30, 600);"), 'task endpoint, rate limited');
 $admin = (string)file_get_contents($root . '/api/admin.php');
 captcha_test(str_contains($admin, "'captcha_enabled' => '1',") && str_contains($admin, "'captcha_enabled', 'maintenance_enabled'"), 'admin switch saved');
-captcha_test(str_contains((string)file_get_contents($root . '/admin/index.html'), 'id="captchaEnabled"'), 'admin switch shown');
+captcha_test(str_contains((string)file_get_contents($root . '/settings.html'), 'id="captchaEnabled"'), 'admin switch shown (Admin Core tab)');
 
 echo "CoreAI captcha: signed task, right number once, forgeries, expiry and reuse refused, switch, wiring OK\n";

@@ -29,14 +29,18 @@ const root = path.resolve(__dirname, '..');
       if (url.pathname === '/settings.html') {
         const html = fs.readFileSync(path.join(root,'settings.html'),'utf8')
           .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,'')
-          .replace('</body>','<script src="./js/skills-settings.js"></script></body>');
+          .replace('</body>','<script src="./js/coreui-settings-tabs.js"></script><script src="./js/skills-settings.js"></script></body>');
         return route.fulfill({contentType:'text/html',body:html});
       }
       if (url.pathname === '/js/skills-settings.js') return route.fulfill({contentType:'text/javascript',body:fs.readFileSync(path.join(root,'js/skills-settings.js'))});
+      // 0.5.79: the skills live in their own tab of the settings page.
+      if (url.pathname === '/js/coreui-settings-tabs.js') return route.fulfill({contentType:'text/javascript',body:fs.readFileSync(path.join(root,'js/coreui-settings-tabs.js'))});
       if (url.pathname === '/css/console.css') return route.fulfill({contentType:'text/css',body:fs.readFileSync(path.join(root,'css/console.css'))});
+      if (url.pathname === '/css/settings.css') return route.fulfill({contentType:'text/css',body:fs.readFileSync(path.join(root,'css/settings.css'))});
       return route.fulfill({status:404,body:''});
     });
-    await page.goto('http://coreui.test/settings.html');
+    await page.goto('http://coreui.test/settings.html#skills');
+    assert.equal(await page.locator('#view-skills').isVisible(),true,'the address opens the Skills tab');
     await page.waitForFunction(() => !document.querySelector('#saveSkills').disabled);
     assert.equal(await page.locator('#skillsList input').count(),33);
     const required = page.locator('#skillsList input[data-required="true"]');

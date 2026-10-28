@@ -85,7 +85,9 @@ UI_FILES=(
   protocols.html
   css/console.css
   css/artifacts.css
-  css/admin.css
+  css/settings.css
+  js/coreui-settings-tabs.js
+  scripts/settings-tabs-ui-selftest.cjs
   js/console-app.js
   js/coreui-markdown.js
   js/coreui-markdown-preview.js
@@ -340,7 +342,7 @@ else
   ok 'SSE-Ausgaben passieren erst nach der serverseitigen Antwortpruefung.'
 fi
 
-if grep -Fq "model_override: aiModelOverride" "$PROJECT_ROOT/js/settings.js" \
+if grep -Fq "{action: 'core', model_override: value}" "$PROJECT_ROOT/js/coreui-core-mode.js" \
     && grep -Fq "coreui_private_knowledge_block" "$PROJECT_ROOT/api/chat.php" \
     && grep -Fq "user_create" "$PROJECT_ROOT/api/admin.php"; then
   ok 'Funktionale Modellwahl, privates RAG-Lite und Benutzeranlage sind paketiert.'
@@ -776,7 +778,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       fail 'KI-Profil: Kontextfenster-Regler-Selbsttest fehlgeschlagen.'
     fi
     if node "$PROJECT_ROOT/scripts/thinking-switch-ui-selftest.cjs" >/dev/null 2>&1; then
-      ok 'Chat: Core-Chip mit TCI-Namen, fester Reihenfolge, gruenen Punkten, Legende, Laden, Denkschalter und Fehlerfaellen geprueft.'
+      ok 'Chat: Core-Chip mit TCI-Namen, fester Reihenfolge, Status-Punkten (gruen, gelb, rot), Legende, Laden, Denkschalter und Fehlerfaellen geprueft.'
     else
       fail 'Chat: Denkschalter-Oberflaechentest fehlgeschlagen.'
     fi
@@ -794,6 +796,16 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       ok 'Live-Browser: Mara ueberlegt mit Sekunden, Cursor gleitet, Warteschlange, Fortsetzen nach Abbruch geprueft.'
     else
       fail 'Live-Browser-Oberflaechentest fehlgeschlagen.'
+    fi
+    # 0.5.79: settings page with tabs and Admin Core; needs Playwright for Node.
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/settings-tabs-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'Einstellungen: Tabs, Admin Core nach Rolle, Speichern, lesbare Schrift und Handy-Breite geprueft.'
+      else
+        fail 'Einstellungen: Tab-Oberflaechentest fehlgeschlagen.'
+      fi
+    else
+      warn 'Einstellungen: Tab-Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
     fi
     if node "$PROJECT_ROOT/scripts/webui-resilience-selftest.cjs" >/dev/null 2>&1; then
       ok 'WebUI: abbrechbares Laden, Reconnect ohne Doppelauftrag, Backoff und lange Chats geprueft.'
@@ -1024,9 +1036,10 @@ else
   fail 'CoreAI: TCI Interface-Einstellungen sind nicht erreichbar. Fuehre scripts/stack.sh refresh-runtime und danach scripts/stack.sh restart web aus.'
 fi
 
-if curl -fsS --max-time 10 "http://127.0.0.1:${COREUI_HTTP_PORT}/admin/index.html" \
-    | grep -Fq 'ADMIN CORE'; then
-  ok 'Das isolierte Admin Core wird vom CoreAI: TCI Interface-Webserver ausgeliefert.'
+# 0.5.79: Admin Core is a tab group of the settings page; the old address forwards there.
+if curl -fsS --max-time 10 "http://127.0.0.1:${COREUI_HTTP_PORT}/settings.html" | grep -Fq 'id="adminNavGroup"' \
+    && curl -fsS --max-time 10 "http://127.0.0.1:${COREUI_HTTP_PORT}/admin/index.html" | grep -Fq 'ADMIN CORE'; then
+  ok 'Admin Core wird als Tab-Gruppe der Einstellungen ausgeliefert, die alte Adresse leitet dorthin.'
 else
   fail 'Admin Core ist nicht erreichbar.'
 fi

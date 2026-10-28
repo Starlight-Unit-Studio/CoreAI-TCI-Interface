@@ -15,7 +15,6 @@
   var accountDisplayName = document.getElementById('accountDisplayName');
   var accountAvatar = document.getElementById('accountAvatar');
   var accountLevel = document.getElementById('accountLevel');
-  var adminEntry = document.getElementById('adminEntry');
   var healthSummary = document.getElementById('healthSummary');
   var healthVersion = document.getElementById('healthVersion');
   var healthModel = document.getElementById('healthModel');
@@ -32,8 +31,6 @@
   var aiNumPredict = document.getElementById('aiNumPredict');
   var aiTemperature = document.getElementById('aiTemperature');
   var aiProvider = document.getElementById('aiProvider');
-  var aiModelOverride = document.getElementById('aiModelOverride');
-  var refreshModelsButton = document.getElementById('refreshModels');
   var externalNote = document.getElementById('externalProviderNote');
   var memoryFact = document.getElementById('memoryFact');
   var memoryRelevance = document.getElementById('memoryRelevance');
@@ -66,6 +63,20 @@
   var loginSessionList = document.getElementById('loginSessionList');
   var revokeOtherSessionsButton = document.getElementById('revokeOtherSessions');
   var exportAccountDataButton = document.getElementById('exportAccountData');
+  // 0.5.79: the start view sums up the categories.
+  var start = {
+    name: document.getElementById('startName'),
+    mail: document.getElementById('startMail'),
+    role: document.getElementById('startRole'),
+    avatar: document.getElementById('startAvatar'),
+    core: document.getElementById('startCore'),
+    thinking: document.getElementById('startThinking'),
+    health: document.getElementById('startHealth'),
+    version: document.getElementById('startVersion'),
+    knowledge: document.getElementById('startKnowledge'),
+    knowledgeChunks: document.getElementById('startKnowledgeChunks'),
+    memory: document.getElementById('startMemory')
+  };
   var saveTimer = 0;
   var csrfToken = '';
   var promptMax = 6000;
@@ -129,6 +140,15 @@
     saveTimer = setTimeout(function () { saveState.classList.remove('visible'); }, 2600);
   }
 
+  function startText(key, text) {
+    if (start[key]) start[key].textContent = text;
+  }
+
+  function count(value, one, many) {
+    var n = Number(value) || 0;
+    return n + ' ' + (n === 1 ? one : many);
+  }
+
   function saveLocal() {
     if (!preferences) return;
     var stored = preferences.save(collect());
@@ -184,6 +204,9 @@
         if (healthVersion) healthVersion.textContent = data.version || 'UNBEKANNT';
         if (healthModel) healthModel.textContent = data.model || 'NICHT GEMELDET';
         renderChecks(data.checks || {});
+        startText('health', data.ok ? 'Alles bereit' : 'Mit Abweichungen');
+        if (start.health) start.health.setAttribute('data-state', data.ok ? 'ok' : 'error');
+        startText('version', 'Version ' + (data.version || 'unbekannt'));
       })
       .catch(function () {
         if (healthSummary) {
@@ -191,6 +214,8 @@
           healthSummary.textContent = 'HEALTH-ENDPUNKT NICHT ERREICHBAR';
         }
         renderChecks({});
+        startText('health', 'Nicht erreichbar');
+        if (start.health) start.health.setAttribute('data-state', 'error');
       })
       .finally(function () { if (refreshButton) refreshButton.disabled = false; });
   }
@@ -208,11 +233,13 @@
         if (accountDisplayName) accountDisplayName.textContent = (data.display_name || 'ANGEMELDETER OPERATOR').toUpperCase();
         setAvatarPreview(accountAvatar, data.avatars && data.avatars.user, data.display_name || data.username || 'OP');
         // 0.5.79: CoreAI roles (Inhaber, Admin, Nutzer, Gast) instead of level numbers.
-        if (accountLevel) {
-          var lvl = Number(data.permission_level == null ? 4 : data.permission_level);
-          accountLevel.textContent = data.is_guest ? 'GAST' : (lvl === 0 ? 'INHABER' : (lvl === 1 ? 'ADMIN' : 'NUTZER'));
-        }
-        if (adminEntry && Number(data.permission_level) <= 1) adminEntry.hidden = false;
+        var lvl = Number(data.permission_level == null ? 4 : data.permission_level);
+        var role = data.is_guest ? 'GAST' : (lvl === 0 ? 'INHABER' : (lvl === 1 ? 'ADMIN' : 'NUTZER'));
+        if (accountLevel) accountLevel.textContent = role;
+        startText('role', role);
+        startText('mail', data.username || '');
+        startText('name', data.display_name || data.username || 'Operator');
+        setAvatarPreview(start.avatar, data.avatars && data.avatars.user, data.display_name || data.username || 'OP');
       })
       .catch(function () {
         if (accountMail) accountMail.textContent = 'STATUS NICHT ERREICHBAR';
@@ -242,6 +269,8 @@
     setAvatarPreview(userAvatarPreview, avatars.user, profile.display_name || 'Operator');
     setAvatarPreview(assistantAvatarPreview, avatars.assistant, profile.assistant_name || 'Mara');
     setAvatarPreview(accountAvatar, avatars.user, profile.display_name || 'Operator');
+    setAvatarPreview(start.avatar, avatars.user, profile.display_name || 'Operator');
+    if (profile.display_name) startText('name', profile.display_name);
     if (accountDisplayName) accountDisplayName.textContent = (profile.display_name || 'ANGEMELDETER OPERATOR').toUpperCase();
   }
 
@@ -323,19 +352,12 @@
         contextSlider.apply(s.num_ctx, data.limits && data.limits.num_ctx_choices,
           !(data.limits && data.limits.num_ctx_available === false));
       }
+      // 0.5.79: the Core is chosen in the chat menu; the window estimate follows it.
       selectedModelOverride = s.model_override || '';
-      if (aiModelOverride) {
-        var modelOptionExists = Array.prototype.some.call(aiModelOverride.options || [], function (option) {
-          return option.value === selectedModelOverride;
-        });
-        if (selectedModelOverride && !modelOptionExists) {
-          var storedOption = document.createElement('option');
-          storedOption.value = selectedModelOverride;
-          storedOption.textContent = selectedModelOverride + ' // GESPEICHERT';
-          aiModelOverride.appendChild(storedOption);
-        }
-        aiModelOverride.value = selectedModelOverride;
-      }
+      startText('core', String(data.core_label || data.default_label || selectedModelOverride || defaultModel || 'Core')
+        .replace(/^TCI:\s*/, ''));
+      startText('thinking', 'Denken ' + (s.thinking_enabled === false ? 'aus' : 'an')
+        + (selectedModelOverride ? '' : ' · Standard-Core'));
       var externalConfigured = data.external && data.external.configured === true;
       if (aiProvider) {
         var externalOption = aiProvider.querySelector('option[value="external"]');
@@ -358,46 +380,10 @@
     });
   }
 
-  /** #113: memory guide values follow the Core chosen in the list. */
+  /** #113: memory guide values follow the Core chosen in the chat menu. */
   function loadContextEstimate() {
     if (!contextSlider) return Promise.resolve();
-    var name = (aiModelOverride && aiModelOverride.value) || selectedModelOverride || defaultModel;
-    return contextSlider.load(name);
-  }
-
-  function loadModels() {
-    if (!aiModelOverride) return Promise.resolve();
-    if (refreshModelsButton) refreshModelsButton.disabled = true;
-    var desired = aiModelOverride.value || selectedModelOverride || '';
-    return api('./api/models.php').then(function (data) {
-      aiModelOverride.innerHTML = '';
-      var standard = document.createElement('option');
-      standard.value = '';
-      standard.textContent = data.default_model
-        ? 'SERVERSTANDARD // ' + String(data.default_model)
-        : 'SERVERSTANDARD';
-      aiModelOverride.appendChild(standard);
-      var found = desired === '';
-      (data.models || []).forEach(function (model) {
-        var name = String(model.name || '');
-        if (!name) return;
-        var option = document.createElement('option');
-        option.value = name;
-        option.textContent = name + (model.parameter_size ? ' // ' + model.parameter_size : '');
-        aiModelOverride.appendChild(option);
-        if (name === desired) found = true;
-      });
-      if (desired && !found) {
-        var unavailable = document.createElement('option');
-        unavailable.value = desired;
-        unavailable.textContent = desired + ' // NICHT MEHR INSTALLIERT';
-        unavailable.disabled = true;
-        aiModelOverride.appendChild(unavailable);
-      }
-      aiModelOverride.value = desired;
-    }).catch(function (error) {
-      announceSaved('OLLAMA-CORE-LISTE NICHT ERREICHBAR: ' + error.message, true);
-    }).finally(function () { if (refreshModelsButton) refreshModelsButton.disabled = false; });
+    return contextSlider.load(selectedModelOverride || defaultModel);
   }
 
   function saveAiSettings() {
@@ -410,7 +396,6 @@
       num_predict: aiNumPredict ? Number(aiNumPredict.value) : 6500,
       temperature: aiTemperature ? Number(aiTemperature.value) : 1,
       provider: aiProvider ? aiProvider.value : 'local',
-      model_override: aiModelOverride ? aiModelOverride.value.trim() : '',
       num_ctx: contextSlider ? contextSlider.value() : null
     };
     api('./api/user_settings.php', { method: 'POST', body: JSON.stringify(body) })
@@ -591,6 +576,7 @@
   }
 
   function renderMemories(items) {
+    startText('memory', count((items || []).length, 'Fakt', 'Fakten'));
     if (!memoryList) return;
     memoryList.innerHTML = '';
     if (!items || !items.length) {
@@ -676,6 +662,8 @@
     if (knowledgeSourceCount) knowledgeSourceCount.textContent = String(totals.sources || 0);
     if (knowledgeChunkCount) knowledgeChunkCount.textContent = String(totals.chunks || 0);
     if (knowledgeGlobalCount) knowledgeGlobalCount.textContent = String(totals.global_chunks || 0) + ' CHUNKS';
+    startText('knowledge', count(totals.sources, 'Quelle', 'Quellen'));
+    startText('knowledgeChunks', count(totals.chunks, 'Abschnitt', 'Abschnitte'));
     if (!knowledgeList) return;
     knowledgeList.innerHTML = '';
     var sources = data.sources || [];
@@ -775,8 +763,6 @@
   });
   if (aiSystemPrompt) aiSystemPrompt.addEventListener('input', updatePromptCounter);
   if (aiSaveButton) aiSaveButton.addEventListener('click', saveAiSettings);
-  if (refreshModelsButton) refreshModelsButton.addEventListener('click', loadModels);
-  if (aiModelOverride) aiModelOverride.addEventListener('change', loadContextEstimate);
   if (saveProfileButton) saveProfileButton.addEventListener('click', saveProfile);
   if (userAvatarFile) userAvatarFile.addEventListener('change', function () { uploadAvatar('user', userAvatarFile.files && userAvatarFile.files[0]); });
   if (assistantAvatarFile) assistantAvatarFile.addEventListener('change', function () { uploadAvatar('assistant', assistantAvatarFile.files && assistantAvatarFile.files[0]); });
@@ -825,7 +811,7 @@
   Promise.resolve(loadAccount()).then(function () {
     return Promise.all([
       loadProfile(),
-      loadAiSettings().then(loadModels),
+      loadAiSettings(),
       loadKnowledge(),
       loadMemories(),
       loadHealth(),

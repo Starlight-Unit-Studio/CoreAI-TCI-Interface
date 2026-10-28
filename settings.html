@@ -10,11 +10,32 @@
   <meta name="application-name" content="CoreAI: TCI Interface" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface - Einstellungen</title>
-  <link rel="stylesheet" href="./css/console.css?v=0954779773437532126240117" />
+  <link rel="stylesheet" href="./css/console.css?v=0396917892177056426880940" />
+  <link rel="stylesheet" href="./css/settings.css?v=0283112489552574677646382" />
   <script src="./js/console-gate.js?v=0428390828821762213503181"></script>
   <script src="./js/coreui-preferences.js?v=0408182548343544002678570"></script>
 </head>
 <body class="settings-body">
+  <svg class="cfg-sprite" aria-hidden="true" focusable="false">
+    <symbol id="i-start" viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5" /><path d="M5.5 9.5V20h5v-5.5h3V20h5V9.5" /></symbol>
+    <symbol id="i-display" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="1" /><path d="M8 20h8M12 16v4" /></symbol>
+    <symbol id="i-profile" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" /><path d="M4 20.5c1.4-4 4.4-6 8-6s6.6 2 8 6" /></symbol>
+    <symbol id="i-core" viewBox="0 0 24 24"><path d="M12 3l2.2 5.8L20 11l-5.8 2.2L12 19l-2.2-5.8L4 11l5.8-2.2z" /><path d="M19 3v4M17 5h4" /></symbol>
+    <symbol id="i-skills" viewBox="0 0 24 24"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5z" /><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19M9 8h6M9 11.5h4" /></symbol>
+    <symbol id="i-knowledge" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5z" /><path d="M3 12.5l9 5 9-5M3 16.5l9 5 9-5" /></symbol>
+    <symbol id="i-memory" viewBox="0 0 24 24"><path d="M6.5 3h11v18l-5.5-3.8L6.5 21z" /><path d="M10 8h4" /></symbol>
+    <symbol id="i-account" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="1" /><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0v3M12 14.5v2.5" /></symbol>
+    <symbol id="i-system" viewBox="0 0 24 24"><path d="M3 12h4l2.5-6.5 5 13L17 12h4" /></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" /><rect x="13" y="4" width="7" height="7" /><rect x="4" y="13" width="7" height="7" /><rect x="13" y="13" width="7" height="7" /></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8.5" r="3.5" /><path d="M2.5 20c1-3.6 3.4-5.5 6.5-5.5s5.5 1.9 6.5 5.5" /><path d="M15.5 5.2a3.5 3.5 0 0 1 0 6.6M17.5 14.8c2 .7 3.3 2.4 4 5.2" /></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.8-3.4 8-8 9-4.6-1-8-4.2-8-9V6z" /><path d="M8.5 12l2.5 2.5 4.5-5" /></symbol>
+    <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9" /><circle cx="15" cy="7" r="2" /><circle cx="9" cy="17" r="2" /></symbol>
+    <symbol id="i-database" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7.5" ry="3" /><path d="M4.5 6v12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3V6M4.5 12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3" /></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M12 6.5C10 4.8 7 4.5 3.5 5v14c3.5-.5 6.5-.2 8.5 1.5 2-1.7 5-2 8.5-1.5V5C17 4.5 14 4.8 12 6.5zM12 6.5v14" /></symbol>
+    <symbol id="i-terminal" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="15" rx="1" /><path d="M7 9.5l3 2.5-3 2.5M12.5 15h4.5" /></symbol>
+    <symbol id="i-audit" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11" /><path d="M4 5.5l1 1 2-2M4 11.5l1 1 2-2M4 17.5l1 1 2-2" /></symbol>
+  </svg>
+
   <div class="settings-page">
     <div class="settings-vector-field" aria-hidden="true"><span></span><span></span><span></span></div>
 
@@ -30,313 +51,722 @@
       <div class="settings-version">COREAI: TCI INTERFACE // v0.5.79</div>
     </header>
 
-    <main class="settings-grid">
-      <section class="settings-panel settings-panel-interface" aria-labelledby="interfaceTitle">
-        <header class="settings-panel-head">
-          <span class="settings-panel-glyph" aria-hidden="true">⟐</span>
-          <div><span>SEKTOR 01</span><h2 id="interfaceTitle">OBERFLÄCHE</h2></div>
-        </header>
-
-        <label class="setting-row" for="prefReduceMotion">
-          <span class="setting-copy"><strong>BEWEGUNG REDUZIEREN</strong><small>Rotationen, Pulse und Übergänge auf ein Minimum setzen.</small></span>
-          <span class="settings-switch"><input id="prefReduceMotion" type="checkbox" /><i aria-hidden="true"></i></span>
-        </label>
-        <label class="setting-row" for="prefCompactFeed">
-          <span class="setting-copy"><strong>KOMPAKTER DATENSTROM</strong><small>Nachrichten enger darstellen und mehr Verlauf sichtbar halten.</small></span>
-          <span class="settings-switch"><input id="prefCompactFeed" type="checkbox" /><i aria-hidden="true"></i></span>
-        </label>
-        <label class="setting-row" for="prefShowTelemetry">
-          <span class="setting-copy"><strong>KERNTELEMETRIE</strong><small>Link-, Node- und Uhrzeitdaten in der Desktop-Topbar anzeigen.</small></span>
-          <span class="settings-switch"><input id="prefShowTelemetry" type="checkbox" /><i aria-hidden="true"></i></span>
-        </label>
-      </section>
-
-      <section class="settings-panel settings-panel-chat" aria-labelledby="chatTitle">
-        <header class="settings-panel-head">
-          <span class="settings-panel-glyph amber" aria-hidden="true">◇</span>
-          <div><span>SEKTOR 02</span><h2 id="chatTitle">EMBER-KANAL</h2></div>
-        </header>
-
-        <label class="setting-row" for="prefThinkingExpanded">
-          <span class="setting-copy"><strong>ARBEITSWEG OFFEN HALTEN</strong><small>Den Arbeitsweg unter einer Antwort standardmäßig ausgeklappt lassen. Einfache Antworten ohne Werkzeug, Datei oder Fehler zeigen keinen Arbeitsweg. Interne Core-Gedanken bleiben verborgen.</small></span>
-          <span class="settings-switch"><input id="prefThinkingExpanded" type="checkbox" /><i aria-hidden="true"></i></span>
-        </label>
-        <label class="setting-row" for="prefLiveFrameMotion">
-          <span class="setting-copy"><strong>LIVE-BROWSER-BILDFOLGE</strong><small>Alle empfangenen Playwright-Frames nacheinander wiedergeben.</small></span>
-          <span class="settings-switch"><input id="prefLiveFrameMotion" type="checkbox" /><i aria-hidden="true"></i></span>
-        </label>
-
-        <div class="settings-local-note">
-          <span aria-hidden="true">⌁</span>
-          <p>Diese Anzeigeoptionen bleiben ausschließlich in diesem Browser gespeichert. Konten, Sessions und Ember-Daten werden dadurch nicht verändert.</p>
+    <!-- 0.5.79: one page, categories as tabs. Each category is its own view
+         with cards; the admin categories (Admin Core) appear for Inhaber and
+         Admin only. The address keeps the open tab (#ki-profil, #admin-benutzer). -->
+    <div class="cfg-shell">
+      <nav class="cfg-nav" id="cfgNav" aria-label="Einstellungen">
+        <div class="cfg-nav-group" role="tablist" aria-orientation="vertical" aria-label="Mein CoreAI">
+          <span class="cfg-nav-label">MEIN COREAI</span>
+          <button class="cfg-tab" type="button" role="tab" id="tab-start" data-view="start" aria-controls="view-start" aria-selected="true"><svg aria-hidden="true"><use href="#i-start" /></svg><span>Start</span></button>
+          <button class="cfg-tab" type="button" role="tab" id="tab-anzeige" data-view="anzeige" aria-controls="view-anzeige" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-display" /></svg><span>Anzeige</span></button>
+          <button class="cfg-tab" type="button" role="tab" id="tab-profil" data-view="profil" aria-controls="view-profil" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-profile" /></svg><span>Profil</span></button>
+          <button class="cfg-tab" type="button" role="tab" id="tab-ki-profil" data-view="ki-profil" aria-controls="view-ki-profil" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-core" /></svg><span>KI-Profil</span></button>
+          <button class="cfg-tab" type="button" role="tab" id="tab-skills" data-view="skills" aria-controls="view-skills" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-skills" /></svg><span>Skills</span></button>
+          <button class="cfg-tab" type="button" role="tab" id="tab-wissen" data-view="wissen" aria-controls="view-wissen" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-knowledge" /></svg><span>Wissen</span></button>
+          <button class="cfg-tab" type="button" role="tab" id="tab-memory" data-view="memory" aria-controls="view-memory" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-memory" /></svg><span>Memory</span></button>
+          <button class="cfg-tab" type="button" role="tab" id="tab-konto" data-view="konto" aria-controls="view-konto" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-account" /></svg><span>Konto</span></button>
+          <button class="cfg-tab" type="button" role="tab" id="tab-system" data-view="system" aria-controls="view-system" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-system" /></svg><span>System</span></button>
         </div>
-      </section>
+        <div class="cfg-nav-group cfg-nav-admin" id="adminNavGroup" role="tablist" aria-orientation="vertical" aria-label="Admin Core" hidden>
+          <span class="cfg-nav-label">ADMIN CORE</span>
+          <button class="cfg-tab" type="button" role="tab" id="tab-admin-uebersicht" data-view="admin-uebersicht" aria-controls="view-admin-uebersicht" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-grid" /></svg><span>Übersicht</span></button>
+          <button class="cfg-tab" type="button" role="tab" id="tab-admin-benutzer" data-view="admin-benutzer" aria-controls="view-admin-benutzer" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-users" /></svg><span>Benutzer</span></button>
+          <button class="cfg-tab" type="button" role="tab" id="tab-admin-zugang" data-view="admin-zugang" aria-controls="view-admin-zugang" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-shield" /></svg><span>Zugang und Schutz</span></button>
+          <button class="cfg-tab" type="button" role="tab" id="tab-admin-betrieb" data-view="admin-betrieb" aria-controls="view-admin-betrieb" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-sliders" /></svg><span>Betrieb</span></button>
+          <button class="cfg-tab" type="button" role="tab" id="tab-admin-memory" data-view="admin-memory" aria-controls="view-admin-memory" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-database" /></svg><span>Memory (global)</span></button>
+          <button class="cfg-tab" type="button" role="tab" id="tab-admin-lore" data-view="admin-lore" aria-controls="view-admin-lore" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-book" /></svg><span>RAG-Lore</span></button>
+          <button class="cfg-tab" type="button" role="tab" id="tab-admin-protokoll" data-view="admin-protokoll" aria-controls="view-admin-protokoll" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-terminal" /></svg><span>Protokoll</span></button>
+          <button class="cfg-tab" type="button" role="tab" id="tab-admin-audit" data-view="admin-audit" aria-controls="view-admin-audit" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-audit" /></svg><span>Audit</span></button>
+        </div>
+      </nav>
 
-      <section class="settings-panel settings-panel-profile" aria-labelledby="profileTitle">
-        <header class="settings-panel-head">
-          <span class="settings-panel-glyph violet" aria-hidden="true">◈</span>
-          <div><span>SEKTOR 03</span><h2 id="profileTitle">PROFILE UND IDENTITÄTEN</h2></div>
-          <button class="settings-action compact" id="saveProfile" type="button">PROFILE SPEICHERN</button>
-        </header>
+      <main class="cfg-main" id="cfgMain">
 
-        <div class="profile-editor-grid">
-          <article class="profile-editor-card">
-            <div class="profile-avatar-editor">
-              <span class="settings-profile-avatar" id="userAvatarPreview" aria-label="Vorschau Benutzerbild">OP</span>
-              <div>
-                <strong>DEIN PROFILBILD</strong>
-                <small>PNG oder JPG, maximal 4 MB. Das Bild bleibt im privaten CoreAI: TCI Interface-Speicher.</small>
-                <div class="profile-avatar-actions">
-                  <label class="settings-action compact" for="userAvatarFile">BILD WÄHLEN</label>
-                  <button class="settings-action compact danger" id="removeUserAvatar" type="button">ENTFERNEN</button>
-                </div>
-                <input class="visually-hidden" id="userAvatarFile" type="file" accept="image/png,image/jpeg" />
-              </div>
+        <!-- START -->
+        <section class="cfg-view" id="view-start" role="tabpanel" aria-labelledby="tab-start" tabindex="-1">
+          <div class="settings-panel cfg-hero">
+            <span class="settings-profile-avatar" id="startAvatar" aria-hidden="true">OP</span>
+            <div class="cfg-hero-copy">
+              <span class="cfg-kicker">WILLKOMMEN ZURÜCK</span>
+              <h2 id="startName">Operator</h2>
+              <p><span id="startMail">wird geprüft …</span> <span class="cfg-role" id="startRole">NUTZER</span></p>
             </div>
-            <label class="settings-field" for="profileDisplayName">
-              <span><strong>DEIN ANZEIGENAME</strong><small>Ändert die sichtbare Bezeichnung in CoreAI: TCI Interface, nicht deine Login-E-Mail.</small></span>
-              <input id="profileDisplayName" type="text" maxlength="64" autocomplete="name" />
-            </label>
-          </article>
+            <a class="settings-action cfg-hero-action" href="./app.html">ZUM CORE CHANNEL</a>
+          </div>
 
-          <article class="profile-editor-card assistant">
-            <div class="profile-avatar-editor">
-              <span class="settings-profile-avatar assistant" id="assistantAvatarPreview" aria-label="Vorschau CoreAI-Bild">EM</span>
-              <div>
-                <strong>COREAI PROFILBILD</strong>
-                <small>Persönliche Darstellung deiner CoreAI. Die stabile interne Ember-ID bleibt erhalten.</small>
-                <div class="profile-avatar-actions">
-                  <label class="settings-action compact" for="assistantAvatarFile">BILD WÄHLEN</label>
-                  <button class="settings-action compact danger" id="removeAssistantAvatar" type="button">ENTFERNEN</button>
-                </div>
-                <input class="visually-hidden" id="assistantAvatarFile" type="file" accept="image/png,image/jpeg" />
-              </div>
+          <div class="cfg-stats" aria-label="Kurzüberblick">
+            <button class="cfg-stat" type="button" data-goto="ki-profil">
+              <span class="cfg-kicker">CORE</span>
+              <strong id="startCore">…</strong>
+              <small id="startThinking">wird geladen</small>
+            </button>
+            <button class="cfg-stat" type="button" data-goto="system">
+              <span class="cfg-kicker">SYSTEM</span>
+              <strong id="startHealth" data-state="checking">wird geprüft</strong>
+              <small id="startVersion">Version …</small>
+            </button>
+            <button class="cfg-stat" type="button" data-goto="wissen">
+              <span class="cfg-kicker">WISSEN</span>
+              <strong id="startKnowledge">0 Quellen</strong>
+              <small id="startKnowledgeChunks">0 Abschnitte</small>
+            </button>
+            <button class="cfg-stat" type="button" data-goto="memory">
+              <span class="cfg-kicker">MEMORY</span>
+              <strong id="startMemory">0 Fakten</strong>
+              <small>persönlich und global</small>
+            </button>
+          </div>
+
+          <h3 class="cfg-section-title">KATEGORIEN</h3>
+          <div class="cfg-tiles">
+            <button class="cfg-tile" type="button" data-goto="anzeige"><svg aria-hidden="true"><use href="#i-display" /></svg><strong>Anzeige</strong><small>Bewegung, kompakter Chat, Telemetrie und Live-Browser.</small></button>
+            <button class="cfg-tile" type="button" data-goto="profil"><svg aria-hidden="true"><use href="#i-profile" /></svg><strong>Profil</strong><small>Dein Name und Bild, Name und Bild deiner CoreAI.</small></button>
+            <button class="cfg-tile" type="button" data-goto="ki-profil"><svg aria-hidden="true"><use href="#i-core" /></svg><strong>KI-Profil</strong><small>System-Prompt, Antwortbudget, Temperatur und Kontextfenster.</small></button>
+            <button class="cfg-tile" type="button" data-goto="skills"><svg aria-hidden="true"><use href="#i-skills" /></svg><strong>Skills</strong><small>Arbeitsanleitungen, die Mara passend dazulädt.</small></button>
+            <button class="cfg-tile" type="button" data-goto="wissen"><svg aria-hidden="true"><use href="#i-knowledge" /></svg><strong>Wissen</strong><small>Eigene Dokumente, in denen Mara nachschlägt.</small></button>
+            <button class="cfg-tile" type="button" data-goto="memory"><svg aria-hidden="true"><use href="#i-memory" /></svg><strong>Memory</strong><small>Fakten, die Mara sich über dich merken darf.</small></button>
+            <button class="cfg-tile" type="button" data-goto="konto"><svg aria-hidden="true"><use href="#i-account" /></svg><strong>Konto</strong><small>Passwort, Anmeldungen, Datenexport und Abmelden.</small></button>
+            <button class="cfg-tile" type="button" data-goto="system"><svg aria-hidden="true"><use href="#i-system" /></svg><strong>System</strong><small>Status der Kernmodule und Informationen zu CoreAI.</small></button>
+          </div>
+
+          <div id="startAdmin" hidden>
+            <h3 class="cfg-section-title amber">ADMIN CORE</h3>
+            <div class="cfg-tiles">
+              <button class="cfg-tile admin" type="button" data-goto="admin-uebersicht"><svg aria-hidden="true"><use href="#i-grid" /></svg><strong>Übersicht</strong><small><span data-stat="users">…</span> Konten, <span data-stat="messages">…</span> Nachrichten.</small></button>
+              <button class="cfg-tile admin" type="button" data-goto="admin-benutzer"><svg aria-hidden="true"><use href="#i-users" /></svg><strong>Benutzer</strong><small>Konten anlegen, Rollen vergeben, sperren.</small></button>
+              <button class="cfg-tile admin" type="button" data-goto="admin-zugang"><svg aria-hidden="true"><use href="#i-shield" /></svg><strong>Zugang und Schutz</strong><small>Registrierung, Gast-Zugang, Grenzen und Captcha.</small></button>
+              <button class="cfg-tile admin" type="button" data-goto="admin-betrieb"><svg aria-hidden="true"><use href="#i-sliders" /></svg><strong>Betrieb</strong><small>Wartung, Standards, Werkzeuge und externer Adapter.</small></button>
+              <button class="cfg-tile admin" type="button" data-goto="admin-memory"><svg aria-hidden="true"><use href="#i-database" /></svg><strong>Memory (global)</strong><small>Alle gespeicherten Fakten durchsuchen und pflegen.</small></button>
+              <button class="cfg-tile admin" type="button" data-goto="admin-lore"><svg aria-hidden="true"><use href="#i-book" /></svg><strong>RAG-Lore</strong><small>Kanon-Quellen und ihre Abschnitte.</small></button>
+              <button class="cfg-tile admin" type="button" data-goto="admin-protokoll"><svg aria-hidden="true"><use href="#i-terminal" /></svg><strong>Protokoll</strong><small>Fehlerprotokoll des Servers.</small></button>
+              <button class="cfg-tile admin" type="button" data-goto="admin-audit"><svg aria-hidden="true"><use href="#i-audit" /></svg><strong>Audit</strong><small>Wer hat wann was in der Verwaltung geändert.</small></button>
             </div>
-            <label class="settings-field" for="assistantDisplayName">
-              <span><strong>COREAI ANZEIGENAME</strong><small>Freier Rufname in deinem Konto. Identität, Sicherheit und Datenzuordnung bleiben unverändert.</small></span>
-              <input id="assistantDisplayName" type="text" maxlength="64" value="Ember" />
-            </label>
-          </article>
-        </div>
-      </section>
+          </div>
+        </section>
 
-      <section class="settings-panel settings-panel-ai" aria-labelledby="aiTitle">
-        <header class="settings-panel-head">
-          <span class="settings-panel-glyph violet" aria-hidden="true">⌬</span>
-          <div><span>SEKTOR 04</span><h2 id="aiTitle">KI-PROFIL</h2></div>
-          <button class="settings-action compact" id="saveAiSettings" type="button">SERVERSEITIG SPEICHERN</button>
-        </header>
-
-        <label class="settings-field" for="aiSystemPrompt">
-          <span><strong>EIGENER SYSTEM-PROMPT</strong><small>Ergänzt Embers feste Kernidentität um deinen Stil und deine Arbeitsweise. Sicherheitsregeln und Werkzeuggrenzen bleiben serverseitig aktiv.</small></span>
-          <textarea id="aiSystemPrompt" rows="8" maxlength="6000" placeholder="Zum Beispiel: Antworte kompakt, erkläre Code schrittweise und frage bei riskanten Änderungen nach."></textarea>
-          <em id="aiPromptCounter">0 / 6000</em>
-        </label>
-
-        <div class="settings-tuning-grid">
-          <label class="settings-field" for="aiMemoryLimit">
-            <span><strong>MEMORY-KONTEXT</strong><small>Maximale Zahl passender Fakten pro Antwort.</small></span>
-            <input id="aiMemoryLimit" type="number" min="0" max="60" step="1" value="16" />
-          </label>
-          <label class="settings-field" for="aiNumPredict">
-            <span><strong>ANTWORTBUDGET</strong><small>Tokenbudget für Thinking plus Antwort. Gemma 4: 6500 empfohlen.</small></span>
-            <input id="aiNumPredict" type="number" min="256" max="16384" step="128" value="6500" />
-          </label>
-          <label class="settings-field" for="aiTemperature">
-            <span><strong>TEMPERATUR</strong><small>0,1 präziser, 1,5 freier. Standard: 1,0.</small></span>
-            <input id="aiTemperature" type="number" min="0.1" max="1.5" step="0.05" value="1.0" />
-          </label>
-          <label class="settings-field" for="aiProvider">
-            <span><strong>CORE-PFAD</strong><small>CoreAI: TCI Interface ist für lokale Gemma-4-Cores ausgelegt.</small></span>
-            <select id="aiProvider"><option value="local">LOKAL // OLLAMA + GEMMA 4</option><option value="external" disabled>EXTERNE API // VORBEREITET</option></select>
-          </label>
-          <label class="settings-field" for="aiModelOverride">
-            <span><strong>LOKALER CORE</strong><small>Nur tatsächlich in Ollama installierte Cores sind auswählbar. Serverstandard übernimmt die Betreiberkonfiguration.</small></span>
-            <span class="model-select-row">
-              <select id="aiModelOverride"><option value="">SERVERSTANDARD</option></select>
-              <button class="settings-action compact" id="refreshModels" type="button">CORES LADEN</button>
-            </span>
-          </label>
-        </div>
-
-        <div class="settings-field settings-ctx" id="aiCtxField">
-          <span><strong>KONTEXTFENSTER (num_ctx)</strong><small>Obergrenze für Eingabe, Verlauf, Werkzeugergebnisse und Antwort eines lokalen Core. Größere Fenster brauchen mehr Speicher und können langsamer werden. Der Wert ist eine Obergrenze, nicht die tatsächlich gefüllte Länge.</small></span>
-          <label class="setting-row ctx-default-row" for="aiCtxDefault">
-            <span class="setting-copy"><strong>CORE-STANDARD ÜBERNEHMEN</strong><small>Kein Override: der lokale Core behält das Fenster aus seinem Modelfile. Voreinstellung für jedes Konto.</small></span>
-            <span class="settings-switch"><input id="aiCtxDefault" type="checkbox" checked /><i aria-hidden="true"></i></span>
-          </label>
-          <span class="ctx-slider-row">
-            <input id="aiNumCtx" type="range" min="0" max="5" step="1" value="5" aria-label="Kontextfenster" aria-describedby="aiCtxEstimate" />
-            <output id="aiNumCtxValue" for="aiNumCtx">Core-Standard</output>
-          </span>
-          <ol class="ctx-stops" id="aiCtxStops" aria-label="Speicher-Richtwerte je Stufe"></ol>
-          <p class="ctx-estimate" id="aiCtxEstimate">geschätzt: wird für diesen Core ermittelt</p>
-          <p class="ctx-warning" id="aiCtxWarning" role="status" hidden></p>
-          <p class="ctx-status" id="aiCtxStatus"></p>
-          <small class="ctx-note">Schätzung für diesen Core, abhängig von tatsächlicher Kontextnutzung und System. Eine Änderung gilt ab dem nächsten Auftrag; ein laufender Arbeitsweg behält seinen Wert.</small>
-        </div>
-
-        <label class="setting-row" for="aiMemoryEnabled">
-          <span class="setting-copy"><strong>LANGZEITGEDÄCHTNIS VERWENDEN</strong><small>Persönliche und charakterbezogene Fakten in neue Antworten einbeziehen.</small></span>
-          <span class="settings-switch"><input id="aiMemoryEnabled" type="checkbox" /><i aria-hidden="true"></i></span>
-        </label>
-        <div class="settings-local-note" id="thinkingMovedNote">
-          <span aria-hidden="true">◇</span>
-          <p>Denken schaltest du direkt im Chat: Tippe unter dem Eingabefeld auf den Core-Chip. Der Zustand gilt für alle deine Chats.</p>
-        </div>
-        <div class="settings-local-note" id="externalProviderNote">
-          <span aria-hidden="true">◇</span>
-          <p>Externe OpenAI-kompatible APIs sind als optionaler Adapter vorbereitet, standardmäßig aber deaktiviert. Es gibt keine Kompatibilitätszusage außerhalb der Gemma-4-Reihe.</p>
-        </div>
-      </section>
-
-      <section class="settings-panel" aria-labelledby="skillsTitle">
-        <div class="settings-panel-head"><div><span>ARBEITSANLEITUNGEN</span><h2 id="skillsTitle">MEINE SKILLS</h2></div></div>
-        <p>Der feste System-Skill <strong>Werkzeuge</strong> ist immer aktiv und lässt sich nicht deaktivieren. Alle weiteren Skills sind optional; bis zu vier passende Anleitungen werden zusätzlich je Anfrage geladen. Gezielt wählen: <code>/skill kennung</code>. Skills schalten keine zusätzlichen Werkzeuge frei.</p>
-        <label class="settings-field" for="skillsSearch"><span>SKILLS SUCHEN</span><input id="skillsSearch" type="search" placeholder="Name, Kategorie oder Aufgabe" /></label>
-        <div class="skills-actions">
-          <button class="settings-action" id="enableAllSkills" type="button" disabled>ALLE AKTIVIEREN</button>
-          <button class="settings-action" id="disableAllSkills" type="button" disabled>ALLE DEAKTIVIEREN</button>
-          <button class="settings-action" id="saveSkills" type="button" disabled>AUSWAHL SPEICHERN</button>
-        </div>
-        <p id="skillsStatus" role="status">Skills werden geladen …</p>
-        <div id="skillsList"></div>
-      </section>
-
-      <section class="settings-panel settings-panel-knowledge" aria-labelledby="knowledgeTitle">
-        <header class="settings-panel-head">
-          <span class="settings-panel-glyph green" aria-hidden="true">⌁</span>
-          <div><span>SEKTOR 05</span><h2 id="knowledgeTitle">MEIN WISSEN // RAG-LITE</h2></div>
-          <button class="settings-action compact" id="reloadKnowledge" type="button">QUELLEN LADEN</button>
-        </header>
-
-        <div class="knowledge-upload-grid">
-          <label class="settings-field" for="knowledgeTitleInput">
-            <span><strong>DOKUMENTTITEL</strong><small>Optional. Ohne Titel wird der Dateiname verwendet.</small></span>
-            <input id="knowledgeTitleInput" type="text" maxlength="160" placeholder="Zum Beispiel: Serverhandbuch" />
-          </label>
-          <label class="knowledge-file-drop" for="knowledgeFile">
-            <span class="knowledge-file-glyph" aria-hidden="true">⇧</span>
-            <strong id="knowledgeFileName">DOKUMENT ODER CODEDATEI AUSWÄHLEN</strong>
-            <small>Text-PDFs werden direkt verarbeitet. Scan-PDFs ohne Textebene werden abgelehnt.</small>
-          </label>
-          <input class="visually-hidden" id="knowledgeFile" type="file" accept=".txt,.md,.pdf,.docx,.py,.csv,.json,.xml,.yml,.yaml,.ini,.php,.js,.html,.css,.sql,text/plain,text/markdown,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
-          <button class="settings-action knowledge-upload-button" id="uploadKnowledge" type="button">HOCHLADEN UND CHUNKEN</button>
-        </div>
-        <div class="knowledge-totals" id="knowledgeTotals">
-          <span><small>PRIVATE QUELLEN</small><strong id="knowledgeSourceCount">0</strong></span>
-          <span><small>PRIVATE CHUNKS</small><strong id="knowledgeChunkCount">0</strong></span>
-          <span><small>GLOBALER KANON</small><strong id="knowledgeGlobalCount">0 CHUNKS</strong></span>
-        </div>
-        <div class="knowledge-list" id="knowledgeList" aria-live="polite"></div>
-        <div class="settings-local-note">
-          <span aria-hidden="true">⌁</span>
-          <p>Deine Uploads und Chunks sind nur für dein Konto sichtbar. Das globale Studio-Wissen bleibt davon getrennt. Beim Löschen werden Quelle, Datei und sämtliche Chunks entfernt.</p>
-        </div>
-      </section>
-
-      <section class="settings-panel settings-panel-memory" aria-labelledby="memoryTitle">
-        <header class="settings-panel-head">
-          <span class="settings-panel-glyph amber" aria-hidden="true">⟐</span>
-          <div><span>SEKTOR 06</span><h2 id="memoryTitle">MEIN MEMORY</h2></div>
-          <button class="settings-action compact" id="reloadMemories" type="button">NEU LADEN</button>
-        </header>
-        <div class="memory-editor">
-          <textarea id="memoryFact" rows="3" maxlength="1000" placeholder="Fakt, Präferenz oder Arbeitskontext, den Ember behalten darf..."></textarea>
-          <label>RELEVANZ <input id="memoryRelevance" type="number" min="1" max="10" value="5" /></label>
-          <button class="settings-action" id="addMemory" type="button">FAKT SPEICHERN</button>
-        </div>
-        <div class="memory-list" id="memoryList" aria-live="polite"></div>
-      </section>
-
-      <section class="settings-panel settings-panel-health" aria-labelledby="healthTitle">
-        <header class="settings-panel-head">
-          <span class="settings-panel-glyph green" aria-hidden="true">⏻</span>
-          <div><span>SEKTOR 07</span><h2 id="healthTitle">SYSTEMSTATUS</h2></div>
-          <button class="settings-action compact" id="refreshHealth" type="button">NEU PRÜFEN</button>
-        </header>
-
-        <div class="health-summary checking" id="healthSummary">KERNSTATUS WIRD GEPRÜFT...</div>
-        <div class="health-facts">
-          <div><span>VERSION</span><strong id="healthVersion">...</strong></div>
-          <div><span>CORE</span><strong id="healthModel">...</strong></div>
-        </div>
-        <div class="health-checks" id="healthChecks" aria-live="polite"></div>
-      </section>
-
-      <section class="settings-panel settings-panel-account" aria-labelledby="accountTitle">
-        <header class="settings-panel-head">
-          <span class="settings-panel-glyph violet" aria-hidden="true">⌬</span>
-          <div><span>SEKTOR 08</span><h2 id="accountTitle">KONTO UND ZUGRIFF</h2></div>
-        </header>
-
-        <div class="account-ident">
-          <span class="account-avatar" id="accountAvatar" aria-hidden="true">OP</span>
-          <div><span id="accountDisplayName">ANGEMELDETER OPERATOR</span><strong id="accountMail">WIRD GEPRÜFT...</strong></div>
-          <span class="account-level" id="accountLevel">LV.-</span>
-        </div>
-        <div class="account-security-grid">
-          <article class="account-security-card">
-            <div class="account-security-head">
-              <div><strong>PASSWORT ÄNDERN</strong><small>Die Änderung meldet alle anderen Geräte sofort ab. Mindestlänge: 12 Zeichen.</small></div>
-            </div>
-            <label class="settings-field" for="currentPassword">
-              <span><strong>AKTUELLES PASSWORT</strong></span>
-              <input id="currentPassword" type="password" maxlength="1024" autocomplete="current-password" />
-            </label>
-            <div class="password-fields">
-              <label class="settings-field" for="newPassword">
-                <span><strong>NEUES PASSWORT</strong></span>
-                <input id="newPassword" type="password" minlength="12" maxlength="1024" autocomplete="new-password" />
+        <!-- ANZEIGE -->
+        <section class="cfg-view" id="view-anzeige" role="tabpanel" aria-labelledby="tab-anzeige" tabindex="-1" hidden>
+          <header class="cfg-view-head">
+            <div><span class="cfg-kicker">MEIN COREAI</span><h2>Anzeige</h2><p>Diese Optionen bleiben nur in diesem Browser gespeichert. Konten, Sitzungen und Ember-Daten ändern sich dadurch nicht.</p></div>
+            <button class="settings-action" id="resetPreferences" type="button">ANZEIGE ZURÜCKSETZEN</button>
+          </header>
+          <div class="cfg-cards">
+            <section class="settings-panel cfg-card settings-panel-interface" aria-labelledby="interfaceTitle">
+              <header class="settings-panel-head">
+                <span class="settings-panel-glyph" aria-hidden="true">⟐</span>
+                <div><span>OBERFLÄCHE</span><h3 id="interfaceTitle">Bewegung und Layout</h3></div>
+              </header>
+              <label class="setting-row" for="prefReduceMotion">
+                <span class="setting-copy"><strong>BEWEGUNG REDUZIEREN</strong><small>Rotationen, Pulse und Übergänge auf ein Minimum setzen.</small></span>
+                <span class="settings-switch"><input id="prefReduceMotion" type="checkbox" /><i aria-hidden="true"></i></span>
               </label>
-              <label class="settings-field" for="confirmPassword">
-                <span><strong>BESTÄTIGEN</strong></span>
-                <input id="confirmPassword" type="password" minlength="12" maxlength="1024" autocomplete="new-password" />
+              <label class="setting-row" for="prefCompactFeed">
+                <span class="setting-copy"><strong>KOMPAKTER DATENSTROM</strong><small>Nachrichten enger darstellen und mehr Verlauf sichtbar halten.</small></span>
+                <span class="settings-switch"><input id="prefCompactFeed" type="checkbox" /><i aria-hidden="true"></i></span>
               </label>
-            </div>
-            <button class="settings-action" id="changePassword" type="button">PASSWORT SICHER ÄNDERN</button>
-          </article>
+              <label class="setting-row" for="prefShowTelemetry">
+                <span class="setting-copy"><strong>KERNTELEMETRIE</strong><small>Link-, Node- und Uhrzeitdaten in der Desktop-Topbar anzeigen.</small></span>
+                <span class="settings-switch"><input id="prefShowTelemetry" type="checkbox" /><i aria-hidden="true"></i></span>
+              </label>
+            </section>
 
-          <article class="account-security-card">
-            <div class="account-security-head">
-              <div><strong>AKTIVE ANMELDUNGEN</strong><small>Das sind Geräte-Logins, nicht deine Chat-Sitzungen. Einzelne fremde Anmeldungen können widerrufen werden.</small></div>
-              <button class="settings-action compact danger" id="revokeOtherSessions" type="button">ANDERE ABMELDEN</button>
-            </div>
-            <div class="login-session-list" id="loginSessionList" aria-live="polite"></div>
-          </article>
-        </div>
-        <div class="account-export-row">
-          <div><strong>MEINE DATEN EXPORTIEREN</strong><small>Erzeugt eine private JSON-Datei mit Profil, Einstellungen, Memories, RAG-Chunks und Unterhaltungen. Geheimnisse und interne Thinking-Daten bleiben ausgeschlossen.</small></div>
-          <button class="settings-action" id="exportAccountData" type="button">JSON-EXPORT ERSTELLEN</button>
-        </div>
-        <div class="settings-actions">
-          <a class="settings-action admin-entry" id="adminEntry" href="./admin/index.html" hidden>ADMIN CORE</a>
-          <button class="settings-action" id="resetPreferences" type="button">ANZEIGE ZURÜCKSETZEN</button>
-          <button class="settings-action danger" id="settingsLogout" type="button">ABMELDEN</button>
-        </div>
-      </section>
+            <section class="settings-panel cfg-card amber settings-panel-chat" aria-labelledby="chatTitle">
+              <header class="settings-panel-head">
+                <span class="settings-panel-glyph amber" aria-hidden="true">◇</span>
+                <div><span>EMBER-KANAL</span><h3 id="chatTitle">Chat und Live-Browser</h3></div>
+              </header>
+              <label class="setting-row" for="prefThinkingExpanded">
+                <span class="setting-copy"><strong>ARBEITSWEG OFFEN HALTEN</strong><small>Den Arbeitsweg unter einer Antwort standardmäßig ausgeklappt lassen. Einfache Antworten ohne Werkzeug, Datei oder Fehler zeigen keinen Arbeitsweg. Interne Core-Gedanken bleiben verborgen.</small></span>
+                <span class="settings-switch"><input id="prefThinkingExpanded" type="checkbox" /><i aria-hidden="true"></i></span>
+              </label>
+              <label class="setting-row" for="prefLiveFrameMotion">
+                <span class="setting-copy"><strong>LIVE-BROWSER-BILDFOLGE</strong><small>Alle empfangenen Playwright-Frames nacheinander wiedergeben.</small></span>
+                <span class="settings-switch"><input id="prefLiveFrameMotion" type="checkbox" /><i aria-hidden="true"></i></span>
+              </label>
+            </section>
+          </div>
+        </section>
 
-      <section class="settings-panel settings-panel-about" id="about" aria-labelledby="aboutTitle">
-        <div class="studio-mark studio-mark-settings">
-          <img src="./images/starlight_unit_studios_logo_original.png" alt="Starlight Unit Studios" draggable="false" />
-        </div>
-        <div class="about-copy">
-          <span class="settings-kicker">HERAUSGEBER UND PROJEKTZUORDNUNG</span>
-          <h2 id="aboutTitle"><span class="about-family">QUANTUM SOFTWARE</span><span class="about-product">COREAI: TCI INTERFACE</span></h2>
-          <p>CoreAI: TCI Interface ist Teil der Quantum-Softwarefamilie. Eigenständiges, isoliertes WebUI für Mara und den lokalen E.M.B.E.R.-Kern. Die Versionierung bleibt bis zur finalen Repack-Aufnahme getrennt.</p>
-          <p class="copyright-line">© 2023-2026 <strong>Patrick Schildgen</strong> · Starlight Unit Studios. Alle Rechte vorbehalten.</p>
-        </div>
-      </section>
-    </main>
+        <!-- PROFIL -->
+        <section class="cfg-view" id="view-profil" role="tabpanel" aria-labelledby="tab-profil" tabindex="-1" hidden>
+          <header class="cfg-view-head">
+            <div><span class="cfg-kicker">MEIN COREAI</span><h2 id="profileTitle">Profil</h2><p>So erscheinen du und deine CoreAI im Chat. Login, Identität und Datenzuordnung bleiben unverändert.</p></div>
+            <button class="settings-action" id="saveProfile" type="button">PROFILE SPEICHERN</button>
+          </header>
+          <div class="cfg-cards">
+            <article class="settings-panel cfg-card profile-editor-card">
+              <header class="settings-panel-head">
+                <span class="settings-panel-glyph" aria-hidden="true">◈</span>
+                <div><span>DU</span><h3>Dein Profil</h3></div>
+              </header>
+              <div class="profile-avatar-editor">
+                <span class="settings-profile-avatar" id="userAvatarPreview" aria-label="Vorschau Benutzerbild">OP</span>
+                <div>
+                  <strong>DEIN PROFILBILD</strong>
+                  <small>PNG oder JPG, maximal 4 MB. Das Bild bleibt im privaten CoreAI: TCI Interface-Speicher.</small>
+                  <div class="profile-avatar-actions">
+                    <label class="settings-action compact" for="userAvatarFile">BILD WÄHLEN</label>
+                    <button class="settings-action compact danger" id="removeUserAvatar" type="button">ENTFERNEN</button>
+                  </div>
+                  <input class="visually-hidden" id="userAvatarFile" type="file" accept="image/png,image/jpeg" />
+                </div>
+              </div>
+              <label class="settings-field" for="profileDisplayName">
+                <span><strong>DEIN ANZEIGENAME</strong><small>Ändert die sichtbare Bezeichnung in CoreAI: TCI Interface, nicht deine Login-E-Mail.</small></span>
+                <input id="profileDisplayName" type="text" maxlength="64" autocomplete="name" />
+              </label>
+            </article>
+
+            <article class="settings-panel cfg-card violet profile-editor-card assistant">
+              <header class="settings-panel-head">
+                <span class="settings-panel-glyph violet" aria-hidden="true">⌬</span>
+                <div><span>COREAI</span><h3>Profil deiner CoreAI</h3></div>
+              </header>
+              <div class="profile-avatar-editor">
+                <span class="settings-profile-avatar assistant" id="assistantAvatarPreview" aria-label="Vorschau CoreAI-Bild">EM</span>
+                <div>
+                  <strong>COREAI PROFILBILD</strong>
+                  <small>Persönliche Darstellung deiner CoreAI. Die stabile interne Ember-ID bleibt erhalten.</small>
+                  <div class="profile-avatar-actions">
+                    <label class="settings-action compact" for="assistantAvatarFile">BILD WÄHLEN</label>
+                    <button class="settings-action compact danger" id="removeAssistantAvatar" type="button">ENTFERNEN</button>
+                  </div>
+                  <input class="visually-hidden" id="assistantAvatarFile" type="file" accept="image/png,image/jpeg" />
+                </div>
+              </div>
+              <label class="settings-field" for="assistantDisplayName">
+                <span><strong>COREAI ANZEIGENAME</strong><small>Freier Rufname in deinem Konto. Identität, Sicherheit und Datenzuordnung bleiben unverändert.</small></span>
+                <input id="assistantDisplayName" type="text" maxlength="64" value="Ember" />
+              </label>
+            </article>
+          </div>
+        </section>
+
+        <!-- KI-PROFIL -->
+        <section class="cfg-view" id="view-ki-profil" role="tabpanel" aria-labelledby="tab-ki-profil" tabindex="-1" hidden>
+          <header class="cfg-view-head">
+            <div><span class="cfg-kicker">MEIN COREAI</span><h2 id="aiTitle">KI-Profil</h2><p>Wie Mara für dich arbeitet. Den Core und das Denken wählst du direkt im Chat über den Core-Chip unter dem Eingabefeld.</p></div>
+            <button class="settings-action" id="saveAiSettings" type="button">SERVERSEITIG SPEICHERN</button>
+          </header>
+          <div class="cfg-cards">
+            <section class="settings-panel cfg-card wide violet" aria-labelledby="aiPromptTitle">
+              <header class="settings-panel-head">
+                <span class="settings-panel-glyph violet" aria-hidden="true">⌬</span>
+                <div><span>PERSÖNLICHKEIT</span><h3 id="aiPromptTitle">Eigener System-Prompt</h3></div>
+              </header>
+              <label class="settings-field" for="aiSystemPrompt">
+                <span><small>Ergänzt Embers feste Kernidentität um deinen Stil und deine Arbeitsweise. Sicherheitsregeln und Werkzeuggrenzen bleiben serverseitig aktiv.</small></span>
+                <textarea id="aiSystemPrompt" rows="8" maxlength="6000" placeholder="Zum Beispiel: Antworte kompakt, erkläre Code schrittweise und frage bei riskanten Änderungen nach."></textarea>
+                <em id="aiPromptCounter">0 / 6000</em>
+              </label>
+            </section>
+
+            <section class="settings-panel cfg-card wide" aria-labelledby="aiTuneTitle">
+              <header class="settings-panel-head">
+                <span class="settings-panel-glyph" aria-hidden="true">⟐</span>
+                <div><span>ANTWORTVERHALTEN</span><h3 id="aiTuneTitle">Antwort und Gedächtnis</h3></div>
+              </header>
+              <div class="settings-tuning-grid">
+                <label class="settings-field" for="aiMemoryLimit">
+                  <span><strong>MEMORY-KONTEXT</strong><small>Maximale Zahl passender Fakten pro Antwort.</small></span>
+                  <input id="aiMemoryLimit" type="number" min="0" max="60" step="1" value="16" />
+                </label>
+                <label class="settings-field" for="aiNumPredict">
+                  <span><strong>ANTWORTBUDGET</strong><small>Tokenbudget für Thinking plus Antwort. Gemma 4: 6500 empfohlen.</small></span>
+                  <input id="aiNumPredict" type="number" min="256" max="16384" step="128" value="6500" />
+                </label>
+                <label class="settings-field" for="aiTemperature">
+                  <span><strong>TEMPERATUR</strong><small>0,1 präziser, 1,5 freier. Standard: 1,0.</small></span>
+                  <input id="aiTemperature" type="number" min="0.1" max="1.5" step="0.05" value="1.0" />
+                </label>
+                <label class="settings-field" for="aiProvider">
+                  <span><strong>CORE-PFAD</strong><small>CoreAI: TCI Interface ist für lokale Gemma-4-Cores ausgelegt.</small></span>
+                  <select id="aiProvider"><option value="local">LOKAL // OLLAMA + GEMMA 4</option><option value="external" disabled>EXTERNE API // VORBEREITET</option></select>
+                </label>
+              </div>
+              <label class="setting-row" for="aiMemoryEnabled">
+                <span class="setting-copy"><strong>LANGZEITGEDÄCHTNIS VERWENDEN</strong><small>Persönliche und charakterbezogene Fakten in neue Antworten einbeziehen.</small></span>
+                <span class="settings-switch"><input id="aiMemoryEnabled" type="checkbox" /><i aria-hidden="true"></i></span>
+              </label>
+              <div class="settings-local-note" id="thinkingMovedNote">
+                <span aria-hidden="true">◇</span>
+                <p>Core und Denken schaltest du direkt im Chat: Tippe unter dem Eingabefeld auf den Core-Chip. Die Wahl gilt für alle deine Chats.</p>
+              </div>
+              <div class="settings-local-note" id="externalProviderNote">
+                <span aria-hidden="true">◇</span>
+                <p>Externe OpenAI-kompatible APIs sind als optionaler Adapter vorbereitet, standardmäßig aber deaktiviert. Es gibt keine Kompatibilitätszusage außerhalb der Gemma-4-Reihe.</p>
+              </div>
+            </section>
+
+            <section class="settings-panel cfg-card wide" aria-labelledby="aiCtxTitle">
+              <header class="settings-panel-head">
+                <span class="settings-panel-glyph green" aria-hidden="true">⌁</span>
+                <div><span>SPEICHER</span><h3 id="aiCtxTitle">Kontextfenster</h3></div>
+              </header>
+              <div class="settings-field settings-ctx" id="aiCtxField">
+                <span><strong>KONTEXTFENSTER (num_ctx)</strong><small>Obergrenze für Eingabe, Verlauf, Werkzeugergebnisse und Antwort eines lokalen Core. Größere Fenster brauchen mehr Speicher und können langsamer werden. Der Wert ist eine Obergrenze, nicht die tatsächlich gefüllte Länge.</small></span>
+                <label class="setting-row ctx-default-row" for="aiCtxDefault">
+                  <span class="setting-copy"><strong>CORE-STANDARD ÜBERNEHMEN</strong><small>Kein Override: der lokale Core behält das Fenster aus seinem Modelfile. Voreinstellung für jedes Konto.</small></span>
+                  <span class="settings-switch"><input id="aiCtxDefault" type="checkbox" checked /><i aria-hidden="true"></i></span>
+                </label>
+                <span class="ctx-slider-row">
+                  <input id="aiNumCtx" type="range" min="0" max="5" step="1" value="5" aria-label="Kontextfenster" aria-describedby="aiCtxEstimate" />
+                  <output id="aiNumCtxValue" for="aiNumCtx">Core-Standard</output>
+                </span>
+                <ol class="ctx-stops" id="aiCtxStops" aria-label="Speicher-Richtwerte je Stufe"></ol>
+                <p class="ctx-estimate" id="aiCtxEstimate">geschätzt: wird für diesen Core ermittelt</p>
+                <p class="ctx-warning" id="aiCtxWarning" role="status" hidden></p>
+                <p class="ctx-status" id="aiCtxStatus"></p>
+                <small class="ctx-note">Schätzung für diesen Core, abhängig von tatsächlicher Kontextnutzung und System. Eine Änderung gilt ab dem nächsten Auftrag; ein laufender Arbeitsweg behält seinen Wert.</small>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <!-- SKILLS -->
+        <section class="cfg-view" id="view-skills" role="tabpanel" aria-labelledby="tab-skills" tabindex="-1" hidden>
+          <header class="cfg-view-head">
+            <div><span class="cfg-kicker">ARBEITSANLEITUNGEN</span><h2 id="skillsTitle">Meine Skills</h2><p>Der feste System-Skill <strong>Werkzeuge</strong> ist immer aktiv. Alle weiteren Skills sind optional; bis zu vier passende Anleitungen werden je Anfrage zusätzlich geladen. Gezielt wählen: <code>/skill kennung</code>. Skills schalten keine zusätzlichen Werkzeuge frei.</p></div>
+          </header>
+          <div class="cfg-cards">
+            <section class="settings-panel cfg-card wide" aria-labelledby="skillsTitle">
+              <label class="settings-field" for="skillsSearch"><span><strong>SKILLS SUCHEN</strong></span><input id="skillsSearch" type="search" placeholder="Name, Kategorie oder Aufgabe" /></label>
+              <div class="skills-actions">
+                <button class="settings-action" id="enableAllSkills" type="button" disabled>ALLE AKTIVIEREN</button>
+                <button class="settings-action" id="disableAllSkills" type="button" disabled>ALLE DEAKTIVIEREN</button>
+                <button class="settings-action" id="saveSkills" type="button" disabled>AUSWAHL SPEICHERN</button>
+              </div>
+              <p class="cfg-status-line" id="skillsStatus" role="status">Skills werden geladen …</p>
+              <div id="skillsList"></div>
+            </section>
+          </div>
+        </section>
+
+        <!-- WISSEN -->
+        <section class="cfg-view" id="view-wissen" role="tabpanel" aria-labelledby="tab-wissen" tabindex="-1" hidden>
+          <header class="cfg-view-head">
+            <div><span class="cfg-kicker">RAG-LITE</span><h2 id="knowledgeTitle">Mein Wissen</h2><p>Deine Uploads und Abschnitte sind nur für dein Konto sichtbar. Das globale Studio-Wissen bleibt davon getrennt. Beim Löschen werden Quelle, Datei und alle Abschnitte entfernt.</p></div>
+            <button class="settings-action" id="reloadKnowledge" type="button">QUELLEN LADEN</button>
+          </header>
+          <div class="cfg-cards">
+            <section class="settings-panel cfg-card wide green" aria-labelledby="knowledgeUploadTitle">
+              <header class="settings-panel-head">
+                <span class="settings-panel-glyph green" aria-hidden="true">⇧</span>
+                <div><span>NEUE QUELLE</span><h3 id="knowledgeUploadTitle">Dokument hochladen</h3></div>
+              </header>
+              <div class="knowledge-upload-grid">
+                <label class="settings-field" for="knowledgeTitleInput">
+                  <span><strong>DOKUMENTTITEL</strong><small>Optional. Ohne Titel wird der Dateiname verwendet.</small></span>
+                  <input id="knowledgeTitleInput" type="text" maxlength="160" placeholder="Zum Beispiel: Serverhandbuch" />
+                </label>
+                <label class="knowledge-file-drop" for="knowledgeFile">
+                  <span class="knowledge-file-glyph" aria-hidden="true">⇧</span>
+                  <strong id="knowledgeFileName">DOKUMENT ODER CODEDATEI AUSWÄHLEN</strong>
+                  <small>Text-PDFs werden direkt verarbeitet. Scan-PDFs ohne Textebene werden abgelehnt.</small>
+                </label>
+                <input class="visually-hidden" id="knowledgeFile" type="file" accept=".txt,.md,.pdf,.docx,.py,.csv,.json,.xml,.yml,.yaml,.ini,.php,.js,.html,.css,.sql,text/plain,text/markdown,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+                <button class="settings-action knowledge-upload-button" id="uploadKnowledge" type="button">HOCHLADEN UND CHUNKEN</button>
+              </div>
+            </section>
+
+            <section class="settings-panel cfg-card wide green" aria-labelledby="knowledgeListTitle">
+              <header class="settings-panel-head">
+                <span class="settings-panel-glyph green" aria-hidden="true">⌁</span>
+                <div><span>BESTAND</span><h3 id="knowledgeListTitle">Meine Quellen</h3></div>
+              </header>
+              <div class="knowledge-totals" id="knowledgeTotals">
+                <span><small>PRIVATE QUELLEN</small><strong id="knowledgeSourceCount">0</strong></span>
+                <span><small>PRIVATE CHUNKS</small><strong id="knowledgeChunkCount">0</strong></span>
+                <span><small>GLOBALER KANON</small><strong id="knowledgeGlobalCount">0 CHUNKS</strong></span>
+              </div>
+              <div class="knowledge-list" id="knowledgeList" aria-live="polite"></div>
+            </section>
+          </div>
+        </section>
+
+        <!-- MEMORY -->
+        <section class="cfg-view" id="view-memory" role="tabpanel" aria-labelledby="tab-memory" tabindex="-1" hidden>
+          <header class="cfg-view-head">
+            <div><span class="cfg-kicker">LANGZEITGEDÄCHTNIS</span><h2 id="memoryTitle">Mein Memory</h2><p>Fakten, Vorlieben und Arbeitskontext, die Mara in neue Antworten einbeziehen darf. Globale Fakten pflegt die Verwaltung.</p></div>
+            <button class="settings-action" id="reloadMemories" type="button">NEU LADEN</button>
+          </header>
+          <div class="cfg-cards">
+            <section class="settings-panel cfg-card wide amber" aria-labelledby="memoryNewTitle">
+              <header class="settings-panel-head">
+                <span class="settings-panel-glyph amber" aria-hidden="true">+</span>
+                <div><span>NEU</span><h3 id="memoryNewTitle">Fakt merken</h3></div>
+              </header>
+              <div class="memory-editor">
+                <textarea id="memoryFact" rows="3" maxlength="1000" placeholder="Fakt, Präferenz oder Arbeitskontext, den Ember behalten darf..."></textarea>
+                <label>RELEVANZ <input id="memoryRelevance" type="number" min="1" max="10" value="5" /></label>
+                <button class="settings-action" id="addMemory" type="button">FAKT SPEICHERN</button>
+              </div>
+            </section>
+            <section class="settings-panel cfg-card wide amber" aria-labelledby="memoryListTitle">
+              <header class="settings-panel-head">
+                <span class="settings-panel-glyph amber" aria-hidden="true">⟐</span>
+                <div><span>BESTAND</span><h3 id="memoryListTitle">Gespeicherte Fakten</h3></div>
+              </header>
+              <div class="memory-list" id="memoryList" aria-live="polite"></div>
+            </section>
+          </div>
+        </section>
+
+        <!-- KONTO -->
+        <section class="cfg-view" id="view-konto" role="tabpanel" aria-labelledby="tab-konto" tabindex="-1" hidden>
+          <header class="cfg-view-head">
+            <div><span class="cfg-kicker">KONTO UND ZUGRIFF</span><h2 id="accountTitle">Konto</h2><p>Deine Anmeldung, aktive Geräte und deine Daten.</p></div>
+            <button class="settings-action danger" id="settingsLogout" type="button">ABMELDEN</button>
+          </header>
+          <div class="cfg-cards">
+            <section class="settings-panel cfg-card wide violet settings-panel-account" aria-labelledby="accountIdentTitle">
+              <header class="settings-panel-head">
+                <span class="settings-panel-glyph violet" aria-hidden="true">⌬</span>
+                <div><span>ANGEMELDET</span><h3 id="accountIdentTitle">Dein Konto</h3></div>
+              </header>
+              <div class="account-ident">
+                <span class="account-avatar" id="accountAvatar" aria-hidden="true">OP</span>
+                <div><span id="accountDisplayName">ANGEMELDETER OPERATOR</span><strong id="accountMail">WIRD GEPRÜFT...</strong></div>
+                <span class="account-level" id="accountLevel">LV.-</span>
+              </div>
+              <div class="account-export-row">
+                <div><strong>MEINE DATEN EXPORTIEREN</strong><small>Erzeugt eine private JSON-Datei mit Profil, Einstellungen, Memories, RAG-Chunks und Unterhaltungen. Geheimnisse und interne Thinking-Daten bleiben ausgeschlossen.</small></div>
+                <button class="settings-action" id="exportAccountData" type="button">JSON-EXPORT ERSTELLEN</button>
+              </div>
+            </section>
+
+            <article class="settings-panel cfg-card account-security-card" aria-labelledby="passwordTitle">
+              <header class="settings-panel-head">
+                <span class="settings-panel-glyph" aria-hidden="true">⚿</span>
+                <div><span>SICHERHEIT</span><h3 id="passwordTitle">Passwort ändern</h3></div>
+              </header>
+              <p class="cfg-card-note">Die Änderung meldet alle anderen Geräte sofort ab. Mindestlänge: 12 Zeichen.</p>
+              <label class="settings-field" for="currentPassword">
+                <span><strong>AKTUELLES PASSWORT</strong></span>
+                <input id="currentPassword" type="password" maxlength="1024" autocomplete="current-password" />
+              </label>
+              <div class="password-fields">
+                <label class="settings-field" for="newPassword">
+                  <span><strong>NEUES PASSWORT</strong></span>
+                  <input id="newPassword" type="password" minlength="12" maxlength="1024" autocomplete="new-password" />
+                </label>
+                <label class="settings-field" for="confirmPassword">
+                  <span><strong>BESTÄTIGEN</strong></span>
+                  <input id="confirmPassword" type="password" minlength="12" maxlength="1024" autocomplete="new-password" />
+                </label>
+              </div>
+              <button class="settings-action" id="changePassword" type="button">PASSWORT SICHER ÄNDERN</button>
+            </article>
+
+            <article class="settings-panel cfg-card account-security-card" aria-labelledby="sessionsTitle">
+              <header class="settings-panel-head">
+                <span class="settings-panel-glyph" aria-hidden="true">◈</span>
+                <div><span>GERÄTE</span><h3 id="sessionsTitle">Aktive Anmeldungen</h3></div>
+                <button class="settings-action compact danger" id="revokeOtherSessions" type="button">ANDERE ABMELDEN</button>
+              </header>
+              <p class="cfg-card-note">Das sind Geräte-Logins, nicht deine Chat-Sitzungen. Einzelne fremde Anmeldungen können widerrufen werden.</p>
+              <div class="login-session-list" id="loginSessionList" aria-live="polite"></div>
+            </article>
+          </div>
+        </section>
+
+        <!-- SYSTEM -->
+        <section class="cfg-view" id="view-system" role="tabpanel" aria-labelledby="tab-system" tabindex="-1" hidden>
+          <header class="cfg-view-head">
+            <div><span class="cfg-kicker">KERN</span><h2 id="healthTitle">System</h2><p>Zustand der Kernmodule und Informationen zu CoreAI: TCI Interface.</p></div>
+            <button class="settings-action" id="refreshHealth" type="button">NEU PRÜFEN</button>
+          </header>
+          <div class="cfg-cards">
+            <section class="settings-panel cfg-card wide green settings-panel-health" aria-labelledby="healthCardTitle">
+              <header class="settings-panel-head">
+                <span class="settings-panel-glyph green" aria-hidden="true">⏻</span>
+                <div><span>DIAGNOSE</span><h3 id="healthCardTitle">Systemstatus</h3></div>
+              </header>
+              <div class="health-summary checking" id="healthSummary">KERNSTATUS WIRD GEPRÜFT...</div>
+              <div class="health-facts">
+                <div><span>VERSION</span><strong id="healthVersion">...</strong></div>
+                <div><span>CORE</span><strong id="healthModel">...</strong></div>
+              </div>
+              <div class="health-checks" id="healthChecks" aria-live="polite"></div>
+            </section>
+
+            <section class="settings-panel cfg-card wide settings-panel-about" id="about" aria-labelledby="aboutTitle">
+              <div class="studio-mark studio-mark-settings">
+                <img src="./images/starlight_unit_studios_logo_original.png" alt="Starlight Unit Studios" draggable="false" />
+              </div>
+              <div class="about-copy">
+                <span class="settings-kicker">HERAUSGEBER UND PROJEKTZUORDNUNG</span>
+                <h2 id="aboutTitle"><span class="about-family">QUANTUM SOFTWARE</span><span class="about-product">COREAI: TCI INTERFACE</span></h2>
+                <p>CoreAI: TCI Interface ist Teil der Quantum-Softwarefamilie. Eigenständiges, isoliertes WebUI für Mara und den lokalen E.M.B.E.R.-Kern. Die Versionierung bleibt bis zur finalen Repack-Aufnahme getrennt.</p>
+                <p class="copyright-line">© 2023-2026 <strong>Patrick Schildgen</strong> · Starlight Unit Studios. Alle Rechte vorbehalten.</p>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <!-- ADMIN CORE: ÜBERSICHT -->
+        <section class="cfg-view admin-view" id="view-admin-uebersicht" role="tabpanel" aria-labelledby="tab-admin-uebersicht" tabindex="-1" hidden>
+          <header class="cfg-view-head">
+            <div><span class="cfg-kicker amber">ADMIN CORE</span><h2>Übersicht</h2><p>Angemeldet als <strong id="adminIdentity">…</strong>. Dieser Bereich verwaltet ausschließlich das eigene CoreAI: TCI Interface-Schema.</p></div>
+            <button class="settings-action" id="refreshOverview" type="button">AKTUALISIEREN</button>
+          </header>
+          <div class="cfg-cards">
+            <section class="settings-panel cfg-card wide" aria-label="Kennzahlen">
+              <div class="stat-grid" id="statGrid">
+                <article><span>BENUTZER</span><strong data-stat="users">…</strong></article>
+                <article><span>SITZUNGEN</span><strong data-stat="sessions">…</strong></article>
+                <article><span>NACHRICHTEN</span><strong data-stat="messages">…</strong></article>
+                <article><span>MEMORIES</span><strong data-stat="memories">…</strong></article>
+                <article><span>LORE-CHUNKS</span><strong data-stat="lore_chunks">…</strong></article>
+                <article><span>NUTZER-RAG-CHUNKS</span><strong data-stat="user_knowledge_chunks">…</strong></article>
+                <article><span>BROWSER AKTIV</span><strong data-stat="browse_active">…</strong></article>
+              </div>
+              <div class="admin-callout"><b>ISOLATION AKTIV</b><p>Game, Homepage, Global-Chat und Repack-Admin werden von hier aus nicht angesprochen.</p></div>
+            </section>
+          </div>
+        </section>
+
+        <!-- ADMIN CORE: BENUTZER -->
+        <section class="cfg-view admin-view" id="view-admin-benutzer" role="tabpanel" aria-labelledby="tab-admin-benutzer" tabindex="-1" hidden>
+          <header class="cfg-view-head">
+            <div><span class="cfg-kicker amber">ADMIN CORE</span><h2>Benutzer und Rollen</h2><p>Rollen: Inhaber, Admin und Nutzer. Gäste bleiben Gäste und nutzen den Standard-Core.</p></div>
+            <button class="settings-action" id="reloadUsers" type="button">NEU LADEN</button>
+          </header>
+          <div class="cfg-cards">
+            <section class="settings-panel cfg-card wide" aria-labelledby="adminNewUserTitle">
+              <header class="settings-panel-head">
+                <span class="settings-panel-glyph" aria-hidden="true">+</span>
+                <div><span>NEUES KONTO</span><h3 id="adminNewUserTitle">Benutzer anlegen</h3></div>
+              </header>
+              <form class="admin-form user-create-form" id="adminUserForm">
+                <label class="settings-field">ANZEIGENAME<input id="newUserDisplayName" type="text" maxlength="64" required autocomplete="off" /></label>
+                <label class="settings-field">LOGIN-E-MAIL<input id="newUserEmail" type="email" maxlength="254" required autocomplete="off" /></label>
+                <label class="settings-field">STARTPASSWORT<input id="newUserPassword" type="password" minlength="12" maxlength="1024" required autocomplete="new-password" /></label>
+                <label class="settings-field">ROLLE<select id="newUserLevel"><option value="4">NUTZER</option><option value="1">ADMIN</option></select></label>
+                <div class="form-actions wide"><button class="settings-action" type="submit">BENUTZER ANLEGEN</button><span class="form-hint">Das Konto erhält automatisch ein eigenes Profil, einen privaten Operator und funktionierende Sitzungen.</span></div>
+              </form>
+            </section>
+            <section class="settings-panel cfg-card wide" aria-labelledby="adminUsersTitle">
+              <header class="settings-panel-head">
+                <span class="settings-panel-glyph" aria-hidden="true">◇</span>
+                <div><span>ALLE KONTEN</span><h3 id="adminUsersTitle">Konten und Sperren</h3></div>
+              </header>
+              <div class="toolbar"><input id="userSearch" type="search" placeholder="E-Mail oder Name suchen …" /><button class="settings-action" id="searchUsers" type="button">SUCHEN</button></div>
+              <div class="table-wrap"><table><thead><tr><th>ID</th><th>KONTO</th><th>ROLLE</th><th>SPERRE BIS</th><th>SITZUNGEN</th><th>AKTION</th></tr></thead><tbody id="userRows"></tbody></table></div>
+            </section>
+          </div>
+        </section>
+
+        <!-- ADMIN CORE: ZUGANG UND SCHUTZ -->
+        <section class="cfg-view admin-view" id="view-admin-zugang" role="tabpanel" aria-labelledby="tab-admin-zugang" tabindex="-1" hidden>
+          <header class="cfg-view-head">
+            <div><span class="cfg-kicker amber">ADMIN CORE</span><h2>Zugang und Schutz</h2><p>Wer hereinkommt und wie Gäste begrenzt werden. Speichern sichert auch die Einstellungen unter Betrieb.</p></div>
+            <button class="settings-action" id="saveRuntimeAccess" type="button">SPEICHERN</button>
+          </header>
+          <div class="cfg-cards">
+            <section class="settings-panel cfg-card" aria-labelledby="adminAccessTitle">
+              <header class="settings-panel-head">
+                <span class="settings-panel-glyph" aria-hidden="true">◇</span>
+                <div><span>ZUGANG</span><h3 id="adminAccessTitle">Registrierung und Gäste</h3></div>
+              </header>
+              <label class="setting-row" for="registrationEnabled">
+                <span class="setting-copy"><strong>ÖFFENTLICHE REGISTRIERUNG</strong><small>Besucher können sich selbst ein Konto anlegen.</small></span>
+                <span class="settings-switch"><input id="registrationEnabled" type="checkbox" /><i aria-hidden="true"></i></span>
+              </label>
+              <label class="setting-row" for="guestEnabled">
+                <span class="setting-copy"><strong>GAST-ZUGANG</strong><small>"Als Gast chatten" auf der Anmeldeseite, ohne Konto und mit begrenzten Nachrichten.</small></span>
+                <span class="settings-switch"><input id="guestEnabled" type="checkbox" /><i aria-hidden="true"></i></span>
+              </label>
+              <label class="settings-field" for="guestMessageLimit">
+                <span><strong>NACHRICHTEN PRO GAST</strong><small>So viele Nachrichten hat ein Gastkonto insgesamt.</small></span>
+                <input id="guestMessageLimit" type="number" min="1" max="100" step="1" />
+              </label>
+            </section>
+            <section class="settings-panel cfg-card amber" aria-labelledby="adminGuardTitle">
+              <header class="settings-panel-head">
+                <span class="settings-panel-glyph amber" aria-hidden="true">⚿</span>
+                <div><span>SCHUTZ</span><h3 id="adminGuardTitle">Missbrauchsschutz</h3></div>
+              </header>
+              <label class="settings-field" for="guestNetworkGuests">
+                <span><strong>GÄSTE PRO NETZWERK UND TAG</strong><small>Neue Gastkonten aus demselben Netzwerk innerhalb von 24 Stunden.</small></span>
+                <input id="guestNetworkGuests" type="number" min="1" max="20" step="1" />
+              </label>
+              <label class="settings-field" for="guestDailyMessages">
+                <span><strong>GAST-NACHRICHTEN PRO TAG</strong><small>Für alle Gäste zusammen. 0 heißt ohne Grenze.</small></span>
+                <input id="guestDailyMessages" type="number" min="0" max="100000" step="10" />
+              </label>
+              <label class="setting-row" for="captchaEnabled">
+                <span class="setting-copy"><strong>CAPTCHA</strong><small>Kurze Rechenaufgabe im Browser bei Gast-Zugang und Registrierung. Selbst gehostet, ohne Dritte.</small></span>
+                <span class="settings-switch"><input id="captchaEnabled" type="checkbox" /><i aria-hidden="true"></i></span>
+              </label>
+            </section>
+            <div class="admin-callout wide" id="guestGuardNote" hidden><b id="guestGuardTitle">SCHUTZ VOR MEHRFACH-GÄSTEN</b><p id="guestGuardText"></p></div>
+          </div>
+        </section>
+
+        <!-- ADMIN CORE: BETRIEB -->
+        <section class="cfg-view admin-view" id="view-admin-betrieb" role="tabpanel" aria-labelledby="tab-admin-betrieb" tabindex="-1" hidden>
+          <header class="cfg-view-head">
+            <div><span class="cfg-kicker amber">ADMIN CORE</span><h2>Betrieb</h2><p>Wartung, Standards für neue Konten, Werkzeuge und der optionale externe Adapter. Speichern sichert auch Zugang und Schutz.</p></div>
+            <button class="settings-action" id="saveRuntime" type="button">SPEICHERN</button>
+          </header>
+          <div class="cfg-cards">
+            <section class="settings-panel cfg-card amber" aria-labelledby="adminMaintTitle">
+              <header class="settings-panel-head">
+                <span class="settings-panel-glyph amber" aria-hidden="true">⏻</span>
+                <div><span>WARTUNG</span><h3 id="adminMaintTitle">Wartungsmodus</h3></div>
+              </header>
+              <label class="setting-row" for="maintenanceEnabled">
+                <span class="setting-copy"><strong>WARTUNGSMODUS</strong><small>Nur die Verwaltung kann chatten; alle anderen sehen die Wartungsmeldung.</small></span>
+                <span class="settings-switch"><input id="maintenanceEnabled" type="checkbox" /><i aria-hidden="true"></i></span>
+              </label>
+              <label class="settings-field" for="maintenanceMessage">
+                <span><strong>WARTUNGSMELDUNG</strong></span>
+                <textarea id="maintenanceMessage" rows="3" maxlength="520"></textarea>
+              </label>
+            </section>
+            <section class="settings-panel cfg-card" aria-labelledby="adminDefaultsTitle">
+              <header class="settings-panel-head">
+                <span class="settings-panel-glyph" aria-hidden="true">⟐</span>
+                <div><span>STANDARDS</span><h3 id="adminDefaultsTitle">Neue Konten</h3></div>
+              </header>
+              <label class="setting-row" for="memoryDefaultEnabled">
+                <span class="setting-copy"><strong>MEMORY STANDARDMÄSSIG AN</strong><small>Neue Konten nutzen das Langzeitgedächtnis von Anfang an.</small></span>
+                <span class="settings-switch"><input id="memoryDefaultEnabled" type="checkbox" /><i aria-hidden="true"></i></span>
+              </label>
+              <label class="settings-field" for="promptLimit">
+                <span><strong>SYSTEM-PROMPT-LIMIT</strong><small>Höchstlänge des eigenen System-Prompts in Zeichen.</small></span>
+                <input id="promptLimit" type="number" min="500" max="12000" step="100" />
+              </label>
+            </section>
+            <section class="settings-panel cfg-card" aria-labelledby="adminToolsTitle">
+              <header class="settings-panel-head">
+                <span class="settings-panel-glyph" aria-hidden="true">⚡</span>
+                <div><span>WERKZEUGPFAD</span><h3 id="adminToolsTitle">Werkzeuge</h3></div>
+              </header>
+              <label class="setting-row" for="toolWebEnabled">
+                <span class="setting-copy"><strong>SCHNELLE WEB-SUCHE</strong><small>Suchergebnisse über SearXNG direkt in der Antwort.</small></span>
+                <span class="settings-switch"><input id="toolWebEnabled" type="checkbox" /><i aria-hidden="true"></i></span>
+              </label>
+              <label class="setting-row" for="toolBrowseEnabled">
+                <span class="setting-copy"><strong>TIEFE BROWSER-RECHERCHE</strong><small>Mara öffnet Webseiten im Live-Browser und prüft mehrere Quellen.</small></span>
+                <span class="settings-switch"><input id="toolBrowseEnabled" type="checkbox" /><i aria-hidden="true"></i></span>
+              </label>
+              <label class="setting-row" for="toolPythonEnabled">
+                <span class="setting-copy"><strong>ISOLIERTES PYTHON</strong><small>Rechnen und Auswerten in einer abgeschotteten Umgebung.</small></span>
+                <span class="settings-switch"><input id="toolPythonEnabled" type="checkbox" /><i aria-hidden="true"></i></span>
+              </label>
+            </section>
+            <section class="settings-panel cfg-card violet" aria-labelledby="adminExternalTitle">
+              <header class="settings-panel-head">
+                <span class="settings-panel-glyph violet" aria-hidden="true">◈</span>
+                <div><span>OPTIONAL</span><h3 id="adminExternalTitle">Externer Adapter</h3></div>
+              </header>
+              <label class="setting-row" for="externalEnabled">
+                <span class="setting-copy"><strong>EXTERNEN ADAPTER VORBEREITEN</strong><small>Noch inaktiv. API-Schlüssel gehören ausschließlich serverseitig in STU_EXTERNAL_API_KEY.</small></span>
+                <span class="settings-switch"><input id="externalEnabled" type="checkbox" /><i aria-hidden="true"></i></span>
+              </label>
+              <label class="settings-field" for="externalLabel"><span><strong>ANZEIGENAME</strong></span><input id="externalLabel" type="text" maxlength="160" /></label>
+              <label class="settings-field" for="externalBaseUrl"><span><strong>HTTPS BASE-URL</strong></span><input id="externalBaseUrl" type="url" placeholder="https://api.example.com/v1" /></label>
+              <label class="settings-field" for="externalModel"><span><strong>CORE-NAME</strong></span><input id="externalModel" type="text" maxlength="160" /></label>
+            </section>
+            <div class="admin-callout wide"><b>KEIN KOMPATIBILITÄTSVERSPRECHEN</b><p>Der lokale Ollama-Pfad mit Gemma 4 bleibt der Referenzbetrieb.</p></div>
+          </div>
+        </section>
+
+        <!-- ADMIN CORE: MEMORY -->
+        <section class="cfg-view admin-view" id="view-admin-memory" role="tabpanel" aria-labelledby="tab-admin-memory" tabindex="-1" hidden>
+          <header class="cfg-view-head">
+            <div><span class="cfg-kicker amber">ADMIN CORE</span><h2>Memory (global)</h2><p>Alle Fakten aller Bereiche: global, pro Konto und pro Charakter.</p></div>
+            <button class="settings-action" id="reloadAdminMemories" type="button">NEU LADEN</button>
+          </header>
+          <div class="cfg-cards">
+            <section class="settings-panel cfg-card wide amber" aria-labelledby="adminMemoryEditTitle">
+              <header class="settings-panel-head">
+                <span class="settings-panel-glyph amber" aria-hidden="true">+</span>
+                <div><span>BEARBEITEN</span><h3 id="adminMemoryEditTitle">Fakt anlegen oder ändern</h3></div>
+              </header>
+              <form class="admin-form memory-form" id="adminMemoryForm">
+                <input id="adminMemoryId" type="hidden" value="0" />
+                <label class="settings-field wide">FAKT<textarea id="adminMemoryFact" rows="4" maxlength="2000" required></textarea></label>
+                <label class="settings-field">SCOPE<select id="adminMemoryScope"><option value="global">GLOBAL</option><option value="user">USER</option><option value="character">CHARACTER</option></select></label>
+                <label class="settings-field">RELEVANZ<input id="adminMemoryRelevance" type="number" min="1" max="10" value="5" /></label>
+                <label class="settings-field">USER-ID<input id="adminMemoryUser" type="number" min="0" value="0" /></label>
+                <label class="settings-field">CHARAKTER-ID<input id="adminMemoryCharacter" type="text" maxlength="64" /></label>
+                <div class="form-actions wide"><button class="settings-action" type="submit">SPEICHERN</button><button class="settings-action" type="button" id="resetAdminMemory">NEUER FAKT</button></div>
+              </form>
+            </section>
+            <section class="settings-panel cfg-card wide amber" aria-labelledby="adminMemoryListTitle">
+              <header class="settings-panel-head">
+                <span class="settings-panel-glyph amber" aria-hidden="true">⟐</span>
+                <div><span>BESTAND</span><h3 id="adminMemoryListTitle">Alle Fakten</h3></div>
+              </header>
+              <div class="toolbar"><input id="memorySearch" type="search" placeholder="Memory durchsuchen …" /><select id="memoryScopeFilter"><option value="">ALLE SCOPES</option><option value="global">GLOBAL</option><option value="user">USER</option><option value="character">CHARACTER</option></select><button class="settings-action" id="searchAdminMemories" type="button">FILTERN</button></div>
+              <div class="memory-admin-list" id="adminMemoryRows"></div>
+            </section>
+          </div>
+        </section>
+
+        <!-- ADMIN CORE: RAG-LORE -->
+        <section class="cfg-view admin-view" id="view-admin-lore" role="tabpanel" aria-labelledby="tab-admin-lore" tabindex="-1" hidden>
+          <header class="cfg-view-head">
+            <div><span class="cfg-kicker amber">ADMIN CORE</span><h2>RAG-Lore und Kanon</h2><p>Das globale Studio-Wissen, in dem Mara für alle Konten nachschlägt.</p></div>
+            <button class="settings-action" id="reloadLore" type="button">QUELLEN LADEN</button>
+          </header>
+          <div class="cfg-cards">
+            <section class="settings-panel cfg-card wide green" aria-labelledby="adminLoreTitle">
+              <header class="settings-panel-head">
+                <span class="settings-panel-glyph green" aria-hidden="true">⌁</span>
+                <div><span>KANON</span><h3 id="adminLoreTitle">Quellen und Abschnitte</h3></div>
+              </header>
+              <div class="lore-sources" id="loreSources"></div>
+              <div class="toolbar"><input id="loreSearch" type="search" placeholder="Lore-Auszüge durchsuchen …" /><select id="loreSourceFilter"><option value="">ALLE QUELLEN</option></select><button class="settings-action" id="searchLore" type="button">SUCHEN</button></div>
+              <div class="lore-results" id="loreResults"></div>
+            </section>
+            <div class="admin-callout amber wide"><b>IMPORT ÜBER SSH</b><p>Neuindizierung bleibt bewusst ein kontrollierter Terminal-Schritt über tools/ingest_docx_knowledge.php. Diese Seite führt keine Dateipfade außerhalb des Pakets aus.</p></div>
+          </div>
+        </section>
+
+        <!-- ADMIN CORE: PROTOKOLL -->
+        <section class="cfg-view admin-view" id="view-admin-protokoll" role="tabpanel" aria-labelledby="tab-admin-protokoll" tabindex="-1" hidden>
+          <header class="cfg-view-head">
+            <div><span class="cfg-kicker amber">ADMIN CORE</span><h2>Fehlerprotokoll</h2><p>Die letzten Zeilen des CoreAI: TCI Interface-Fehlerprotokolls.</p></div>
+            <div class="head-actions"><button class="settings-action" id="reloadLogs" type="button">NEU LADEN</button><button class="settings-action danger" id="clearLogs" type="button">LEEREN</button></div>
+          </header>
+          <div class="cfg-cards">
+            <section class="settings-panel cfg-card wide" aria-label="Fehlerprotokoll">
+              <pre class="log-output" id="logOutput">PROTOKOLL WIRD GELADEN...</pre>
+            </section>
+          </div>
+        </section>
+
+        <!-- ADMIN CORE: AUDIT -->
+        <section class="cfg-view admin-view" id="view-admin-audit" role="tabpanel" aria-labelledby="tab-admin-audit" tabindex="-1" hidden>
+          <header class="cfg-view-head">
+            <div><span class="cfg-kicker amber">ADMIN CORE</span><h2>Admin-Audit</h2><p>Jede Änderung in der Verwaltung mit Konto und Zeitpunkt.</p></div>
+            <button class="settings-action" id="reloadAudit" type="button">NEU LADEN</button>
+          </header>
+          <div class="cfg-cards">
+            <section class="settings-panel cfg-card wide" aria-label="Audit">
+              <div class="audit-list" id="auditRows"></div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
 
     <footer class="settings-footer">
       <span>STΛRLIɢHT UNIT STUDIOS</span><i aria-hidden="true"></i><span>COREAI: TCI INTERFACE // N-73</span>
     </footer>
     <div class="settings-save-state" id="settingsSaveState" role="status" aria-live="polite">LOKAL GESPEICHERT</div>
+    <div class="settings-save-state admin-flash" id="adminFlash" role="status" aria-live="polite"></div>
   </div>
 
+  <script src="./js/coreui-settings-tabs.js?v=1135950849260775405607445"></script>
   <script src="./js/skills-settings.js?v=0475630369246311829602517"></script>
   <script src="./js/coreui-context-slider.js?v=0071279618529070371071429"></script>
-  <script src="./js/settings.js?v=1039600159433140375027717"></script>
+  <script src="./js/settings.js?v=0314934842498128911394521"></script>
+  <script src="./js/admin.js?v=0087040071739075456672003"></script>
 </body>
 </html>

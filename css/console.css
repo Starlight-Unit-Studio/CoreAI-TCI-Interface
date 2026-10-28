@@ -3528,7 +3528,8 @@ audio.msg-image {
   color: var(--cx);
 }
 
-/* 0.5.76: green dot = installed and ready; a missing tier stays greyed. */
+/* 0.5.79: green dot = the Core in use, yellow = installed on standby,
+   red = missing or not available; gold pulses while a Core loads. */
 .core-mode-dot {
   grid-row: 1 / span 2;
   grid-column: 1;
@@ -3538,10 +3539,22 @@ audio.msg-image {
   border-radius: 50%;
 }
 
-.core-mode-dot[data-state="ready"] {
+.core-mode-dot[data-state="active"] {
   border-color: var(--green);
   background: var(--green);
   box-shadow: 0 0 6px rgba(42, 175, 117, 0.55);
+}
+
+.core-mode-dot[data-state="standby"] {
+  border-color: #c9a514;
+  background: #e8c53a;
+}
+
+.core-mode-dot[data-state="missing"],
+.core-mode-dot[data-state="gone"],
+.core-mode-dot[data-state="unknown"] {
+  border-color: var(--red);
+  background: var(--red);
 }
 
 .core-mode-dot[data-state="loading"] {

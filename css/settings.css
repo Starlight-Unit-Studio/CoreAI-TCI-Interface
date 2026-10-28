@@ -1,0 +1,1210 @@
+/* ========================================================================== */
+/* CoreAI: TCI Interface 0.5.79: settings page with tabs and Admin Core       */
+/* One category per view, every category with its own cards. Loaded after    */
+/* console.css; raises the old 7 to 9 px labels to readable sizes and brings  */
+/* the former admin page into the same look.                                  */
+/* ========================================================================== */
+
+.cfg-sprite {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.settings-body {
+  --cfg-text: #2c3850;
+  --cfg-soft: #5d6982;
+}
+
+/* --- Header ------------------------------------------------------------- */
+
+.settings-body .settings-kicker {
+  font-size: 11px;
+}
+
+.settings-body .settings-version {
+  font-size: 12px;
+}
+
+.settings-body .settings-back {
+  font-size: 12px;
+}
+
+/* --- Shell: navigation and views ---------------------------------------- */
+
+.cfg-shell {
+  display: grid;
+  width: min(1360px, calc(100% - 40px));
+  grid-template-columns: 252px minmax(0, 1fr);
+  align-items: start;
+  gap: 24px;
+  margin: 26px auto 0;
+}
+
+.cfg-nav {
+  position: sticky;
+  top: 18px;
+  display: flex;
+  max-height: calc(100vh - 36px);
+  max-height: calc(100dvh - 36px);
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px 12px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.95), rgba(244, 248, 255, 0.82));
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(22px) saturate(135%);
+  -webkit-backdrop-filter: blur(22px) saturate(135%);
+  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
+}
+
+.cfg-nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.cfg-nav-group[hidden] {
+  display: none;
+}
+
+.cfg-nav-label {
+  padding: 2px 12px 8px;
+  color: var(--muted);
+  font-family: "Share Tech Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+}
+
+.cfg-nav-admin {
+  padding-top: 14px;
+  border-top: 1px solid rgba(226, 155, 57, 0.3);
+}
+
+.cfg-nav-admin .cfg-nav-label {
+  color: #a8681a;
+}
+
+.cfg-tab {
+  display: grid;
+  min-height: 40px;
+  cursor: pointer;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 6px 12px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--cfg-soft);
+  font-family: "Rajdhani", "Segoe UI", sans-serif;
+  font-size: 16.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-align: left;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.cfg-tab svg,
+.cfg-tile svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.cfg-tab svg {
+  color: var(--cx);
+}
+
+.cfg-nav-admin .cfg-tab svg {
+  color: var(--amb);
+}
+
+.cfg-tab:hover {
+  background: var(--panel-cx);
+  color: var(--txt);
+}
+
+.cfg-tab[aria-selected="true"] {
+  border-color: rgba(91, 146, 255, 0.32);
+  background: linear-gradient(90deg, rgba(91, 146, 255, 0.15), rgba(91, 146, 255, 0.04));
+  color: var(--txt);
+  box-shadow: inset 3px 0 0 var(--cx);
+}
+
+.cfg-nav-admin .cfg-tab[aria-selected="true"] {
+  border-color: rgba(226, 155, 57, 0.36);
+  background: linear-gradient(90deg, rgba(226, 155, 57, 0.15), rgba(226, 155, 57, 0.04));
+  box-shadow: inset 3px 0 0 var(--amb);
+}
+
+.cfg-tab:focus-visible,
+.cfg-tile:focus-visible,
+.cfg-stat:focus-visible {
+  outline: 2px solid var(--amb);
+  outline-offset: 2px;
+}
+
+.cfg-main {
+  min-width: 0;
+}
+
+.cfg-view[hidden] {
+  display: none;
+}
+
+.cfg-view:focus {
+  outline: none;
+}
+
+.cfg-view:not([hidden]) {
+  animation: cfg-view-in 220ms var(--ease-holo);
+}
+
+@keyframes cfg-view-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+.cfg-kicker {
+  color: var(--muted);
+  font-family: "Share Tech Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+}
+
+.cfg-kicker.amber {
+  color: #a8681a;
+}
+
+.cfg-view-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  margin: 2px 0 20px;
+  padding: 0 4px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.cfg-view-head > div:first-child {
+  min-width: 0;
+}
+
+.cfg-view-head h2 {
+  margin: 4px 0 6px;
+  color: var(--txt);
+  font-size: clamp(26px, 2.6vw, 32px);
+  letter-spacing: 0.05em;
+  line-height: 1.1;
+}
+
+.cfg-view-head p {
+  max-width: 72ch;
+  margin: 0;
+  color: var(--cfg-soft);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.cfg-view-head p strong {
+  color: var(--txt);
+  font-weight: 700;
+}
+
+.cfg-view-head p code {
+  padding: 1px 5px;
+  border: 1px solid var(--line);
+  background: var(--panel-cx);
+  font-family: "Share Tech Mono", monospace;
+  font-size: 13px;
+}
+
+.cfg-view-head > .settings-action,
+.cfg-view-head > .head-actions {
+  flex: 0 0 auto;
+}
+
+.head-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.cfg-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 18px;
+}
+
+.cfg-cards > .wide {
+  grid-column: 1 / -1;
+}
+
+/* --- Cards -------------------------------------------------------------- */
+
+.settings-body .cfg-card {
+  padding: 22px 24px;
+}
+
+.settings-body .cfg-card.amber::before {
+  background: linear-gradient(90deg, var(--amb), transparent);
+}
+
+.settings-body .cfg-card.violet::before {
+  background: linear-gradient(90deg, var(--violet), transparent);
+}
+
+.settings-body .cfg-card.green::before {
+  background: linear-gradient(90deg, var(--green), transparent);
+}
+
+.settings-body .settings-panel-head {
+  min-height: 46px;
+  margin-bottom: 16px;
+}
+
+.settings-body .settings-panel-head span:not(.settings-panel-glyph) {
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.15em;
+}
+
+.settings-body .settings-panel-head h3 {
+  margin: 3px 0 0;
+  color: var(--txt);
+  font-size: 20px;
+  letter-spacing: 0.04em;
+  line-height: 1.15;
+}
+
+.settings-body .profile-editor-card,
+.settings-body .account-security-card {
+  padding: 22px 24px;
+}
+
+.cfg-card-note {
+  margin: -4px 0 14px;
+  color: var(--cfg-soft);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.cfg-status-line {
+  margin: 0 0 10px;
+  color: var(--cfg-soft);
+  font-size: 15px;
+}
+
+/* --- Readable controls (the old pages used 7 to 9 px) --------------------- */
+
+.settings-body .setting-row {
+  min-height: 68px;
+}
+
+.settings-body .setting-copy strong {
+  font-size: 15px;
+  letter-spacing: 0.06em;
+}
+
+.settings-body .setting-copy small,
+.settings-body .settings-field small,
+.settings-body .profile-avatar-editor small,
+.settings-body .account-security-head small,
+.settings-body .account-export-row small {
+  color: var(--cfg-soft);
+  font-family: "Rajdhani", "Segoe UI", sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.005em;
+  line-height: 1.42;
+}
+
+.settings-body .settings-field {
+  color: var(--txt);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.settings-body .settings-field strong,
+.settings-body .memory-editor label,
+.settings-body .profile-avatar-editor strong,
+.settings-body .account-security-head strong,
+.settings-body .account-export-row strong {
+  font-size: 13.5px;
+  letter-spacing: 0.08em;
+}
+
+.settings-body .settings-field textarea,
+.settings-body .settings-field input,
+.settings-body .settings-field select,
+.settings-body .memory-editor textarea,
+.settings-body .memory-editor input,
+.settings-body .toolbar input,
+.settings-body .toolbar select,
+.settings-body td input,
+.settings-body td select {
+  color: var(--txt);
+  font-family: "Share Tech Mono", monospace;
+  font-size: 14.5px;
+  letter-spacing: 0.01em;
+}
+
+.settings-body .settings-field input,
+.settings-body .settings-field select,
+.settings-body .memory-editor input {
+  min-height: 44px;
+}
+
+/* Fields side by side keep their inputs on one line, whatever the text above. */
+.settings-body .settings-tuning-grid .settings-field > span {
+  flex: 1 1 auto;
+}
+
+.settings-body .settings-field em {
+  font-size: 12px;
+}
+
+.settings-body .settings-local-note p {
+  color: var(--cfg-soft);
+  font-family: "Rajdhani", "Segoe UI", sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.settings-body .settings-action {
+  min-height: 42px;
+  padding: 9px 16px;
+  font-size: 12.5px;
+  letter-spacing: 0.1em;
+  text-decoration: none;
+}
+
+.settings-body .settings-action.compact {
+  min-height: 36px;
+  padding: 7px 12px;
+  font-size: 11.5px;
+}
+
+.settings-body a.settings-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.settings-body .settings-save-state {
+  font-size: 12.5px;
+}
+
+.settings-body .ctx-stop-button {
+  font-size: 11px;
+}
+
+.settings-body .ctx-stop-button b {
+  font-size: 13px;
+}
+
+.settings-body .settings-ctx output {
+  font-size: 13px;
+}
+
+.settings-body .settings-ctx .ctx-estimate,
+.settings-body .settings-ctx .ctx-warning,
+.settings-body .settings-ctx .ctx-status {
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.settings-body .knowledge-file-drop strong {
+  font-size: 14px;
+}
+
+.settings-body .knowledge-file-drop small {
+  font-family: "Rajdhani", "Segoe UI", sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.settings-body .knowledge-totals small {
+  font-size: 11px;
+}
+
+.settings-body .knowledge-totals strong {
+  font-size: 20px;
+}
+
+.settings-body .knowledge-item strong {
+  font-size: 14.5px;
+}
+
+.settings-body .knowledge-item small,
+.settings-body .memory-item small {
+  font-size: 12px;
+}
+
+.settings-body .memory-item p {
+  font-family: "Rajdhani", "Segoe UI", sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.settings-body .memory-empty {
+  font-size: 13px;
+}
+
+.settings-body .health-summary {
+  font-size: 13px;
+}
+
+.settings-body .health-facts span {
+  font-size: 11px;
+}
+
+.settings-body .health-facts strong {
+  font-size: 15px;
+}
+
+.settings-body .health-node {
+  min-height: 44px;
+  font-size: 12.5px;
+}
+
+.settings-body .account-ident > div span {
+  font-size: 12px;
+}
+
+.settings-body .account-ident > div strong {
+  font-size: 16px;
+}
+
+.settings-body .account-level,
+.settings-body .account-avatar {
+  font-size: 12.5px;
+}
+
+.settings-body .account-export-row {
+  margin-top: 16px;
+}
+
+.settings-body .login-session-item strong {
+  font-size: 14px;
+}
+
+.settings-body .login-session-item small,
+.settings-body .login-session-current {
+  font-size: 12px;
+}
+
+.settings-body .about-copy p {
+  font-family: "Rajdhani", "Segoe UI", sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.settings-body .skill-card details {
+  font-size: 15px;
+}
+
+.settings-body #skillsList {
+  max-height: none;
+  overflow: visible;
+}
+
+.settings-body .settings-footer {
+  width: min(1360px, calc(100% - 40px));
+}
+
+/* --- Start view ---------------------------------------------------------- */
+
+.cfg-hero {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 22px;
+}
+
+.cfg-hero .settings-profile-avatar {
+  width: 92px;
+  height: 92px;
+}
+
+.cfg-hero-copy h2 {
+  margin: 4px 0 6px;
+  color: var(--txt);
+  font-size: clamp(26px, 3vw, 36px);
+  letter-spacing: 0.04em;
+  line-height: 1.05;
+}
+
+.cfg-hero-copy p {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  color: var(--cfg-soft);
+  font-family: "Share Tech Mono", monospace;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.cfg-role {
+  padding: 3px 9px;
+  border: 1px solid rgba(138, 111, 242, 0.34);
+  background: rgba(138, 111, 242, 0.08);
+  color: var(--violet);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+}
+
+.cfg-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.cfg-stat {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 112px;
+  cursor: pointer;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 16px 18px;
+  overflow: hidden;
+  border: 1px solid rgba(91, 146, 255, 0.22);
+  background: linear-gradient(145deg, rgba(91, 146, 255, 0.08), rgba(255, 255, 255, 0.78));
+  box-shadow: var(--shadow-tight);
+  color: var(--txt);
+  text-align: left;
+  transition: border-color 160ms ease, transform 160ms ease;
+}
+
+.cfg-stat::after {
+  position: absolute;
+  right: -26px;
+  bottom: -26px;
+  width: 74px;
+  height: 74px;
+  border: 1px solid rgba(91, 146, 255, 0.14);
+  content: "";
+  transform: rotate(45deg);
+}
+
+.cfg-stat:hover {
+  border-color: var(--cx);
+  transform: translateY(-1px);
+}
+
+.cfg-stat strong {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--cx);
+  font-size: 22px;
+  letter-spacing: 0.03em;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cfg-stat strong[data-state="ok"] {
+  color: #1f8c5d;
+}
+
+.cfg-stat strong[data-state="error"] {
+  color: var(--red);
+}
+
+.cfg-stat small {
+  color: var(--cfg-soft);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.cfg-section-title {
+  margin: 30px 4px 12px;
+  color: var(--muted);
+  font-family: "Share Tech Mono", monospace;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.18em;
+}
+
+.cfg-section-title.amber {
+  color: #a8681a;
+}
+
+.cfg-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
+  gap: 12px;
+}
+
+.cfg-tile {
+  display: grid;
+  min-height: 96px;
+  cursor: pointer;
+  grid-template-columns: 40px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-content: start;
+  column-gap: 12px;
+  row-gap: 4px;
+  padding: 15px 16px;
+  border: 1px solid rgba(91, 146, 255, 0.2);
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: var(--shadow-tight);
+  color: var(--txt);
+  text-align: left;
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+}
+
+.cfg-tile svg {
+  width: 40px;
+  height: 40px;
+  grid-row: 1 / span 2;
+  padding: 8px;
+  border: 1px solid rgba(91, 146, 255, 0.28);
+  background: var(--panel-cx);
+  color: var(--cx);
+}
+
+.cfg-tile.admin svg {
+  border-color: rgba(226, 155, 57, 0.34);
+  background: var(--panel-amb);
+  color: var(--amb);
+}
+
+.cfg-tile strong {
+  font-size: 17.5px;
+  letter-spacing: 0.03em;
+}
+
+.cfg-tile small {
+  color: var(--cfg-soft);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.cfg-tile:hover {
+  border-color: var(--cx);
+  background: #fff;
+  transform: translateY(-1px);
+}
+
+.cfg-tile.admin:hover {
+  border-color: var(--amb);
+}
+
+/* --- Admin Core ---------------------------------------------------------- */
+
+.admin-view .settings-panel-head .settings-panel-glyph {
+  font-size: 18px;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 12px;
+}
+
+.stat-grid article {
+  position: relative;
+  min-height: 104px;
+  padding: 16px 18px;
+  overflow: hidden;
+  border: 1px solid rgba(91, 146, 255, 0.2);
+  background: linear-gradient(145deg, rgba(91, 146, 255, 0.075), rgba(255, 255, 255, 0.7));
+}
+
+.stat-grid article::after {
+  position: absolute;
+  right: -24px;
+  bottom: -24px;
+  width: 70px;
+  height: 70px;
+  border: 1px solid rgba(91, 146, 255, 0.13);
+  content: "";
+  transform: rotate(45deg);
+}
+
+.stat-grid span {
+  color: var(--muted);
+  font-family: "Share Tech Mono", monospace;
+  font-size: 11.5px;
+  letter-spacing: 0.12em;
+}
+
+.stat-grid strong {
+  display: block;
+  margin-top: 10px;
+  color: var(--cx);
+  font-family: "Share Tech Mono", monospace;
+  font-size: 30px;
+}
+
+.admin-callout {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border: 1px solid rgba(42, 175, 117, 0.26);
+  background: rgba(42, 175, 117, 0.06);
+}
+
+.cfg-cards > .admin-callout {
+  margin-top: 0;
+}
+
+.admin-callout[hidden] {
+  display: none;
+}
+
+.admin-callout.amber {
+  border-color: rgba(226, 155, 57, 0.32);
+  background: rgba(226, 155, 57, 0.07);
+}
+
+.admin-callout b {
+  color: #1f8c5d;
+  font-size: 15px;
+  letter-spacing: 0.08em;
+}
+
+.admin-callout.amber b {
+  color: #a8681a;
+}
+
+.admin-callout p {
+  margin: 5px 0 0;
+  color: var(--cfg-soft);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.toolbar input,
+.toolbar select,
+.settings-body td input,
+.settings-body td select {
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  padding: 8px 11px;
+  border: 1px solid rgba(91, 146, 255, 0.26);
+  border-radius: 0;
+  outline: none;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.toolbar input:focus,
+.toolbar select:focus,
+.settings-body td input:focus,
+.settings-body td select:focus {
+  border-color: var(--cx);
+  box-shadow: 0 0 0 2px rgba(91, 146, 255, 0.09);
+}
+
+.toolbar :only-child {
+  grid-column: 1 / -1;
+}
+
+.table-wrap {
+  width: 100%;
+  overflow: auto;
+  border: 1px solid rgba(91, 146, 255, 0.16);
+}
+
+.table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+
+.table-wrap th,
+.table-wrap td {
+  padding: 11px 12px;
+  border-bottom: 1px solid rgba(91, 146, 255, 0.12);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.table-wrap th {
+  position: sticky;
+  top: 0;
+  background: #f4f8ff;
+  color: var(--muted);
+  font-family: "Share Tech Mono", monospace;
+  font-size: 11.5px;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+}
+
+.table-wrap td {
+  color: var(--cfg-text);
+}
+
+.table-wrap td strong,
+.table-wrap td small {
+  display: block;
+}
+
+.table-wrap td strong {
+  color: var(--txt);
+  font-size: 16px;
+}
+
+.table-wrap td small {
+  margin-top: 2px;
+  color: var(--cfg-soft);
+  font-family: "Share Tech Mono", monospace;
+  font-size: 12.5px;
+  overflow-wrap: anywhere;
+}
+
+.table-wrap td input[type="datetime-local"] {
+  min-width: 200px;
+}
+
+.table-wrap td select {
+  min-width: 130px;
+}
+
+.table-wrap td button,
+.memory-admin-item button {
+  min-height: 36px;
+  cursor: pointer;
+  padding: 6px 12px;
+  border: 1px solid rgba(91, 146, 255, 0.3);
+  background: rgba(91, 146, 255, 0.07);
+  color: var(--cx);
+  font-family: "Share Tech Mono", monospace;
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+}
+
+.table-wrap td button:hover,
+.memory-admin-item button:hover {
+  border-color: var(--cx);
+}
+
+.admin-form {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px 14px;
+}
+
+.admin-form .settings-field {
+  margin: 0;
+}
+
+.admin-form .wide {
+  grid-column: 1 / -1;
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.form-hint {
+  color: var(--cfg-soft);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.memory-admin-list,
+.lore-results,
+.audit-list {
+  display: grid;
+  gap: 8px;
+}
+
+.memory-admin-item,
+.lore-item,
+.audit-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  padding: 13px 14px;
+  border: 1px solid rgba(91, 146, 255, 0.16);
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.memory-admin-item p,
+.lore-item p,
+.audit-item p {
+  margin: 0;
+  color: var(--txt);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.memory-admin-item small,
+.lore-item small,
+.audit-item small {
+  display: block;
+  margin-top: 6px;
+  color: var(--cfg-soft);
+  font-family: "Share Tech Mono", monospace;
+  font-size: 12.5px;
+  overflow-wrap: anywhere;
+}
+
+.item-actions {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.item-actions .danger,
+.table-wrap .danger {
+  border-color: rgba(212, 80, 93, 0.3);
+  color: var(--red);
+}
+
+.lore-sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.lore-source {
+  padding: 8px 11px;
+  border: 1px solid rgba(226, 155, 57, 0.28);
+  background: rgba(226, 155, 57, 0.06);
+  color: #8a5716;
+  font-family: "Share Tech Mono", monospace;
+  font-size: 13px;
+}
+
+.log-output {
+  min-height: 56vh;
+  max-height: 72vh;
+  margin: 0;
+  padding: 16px;
+  overflow: auto;
+  border: 1px solid rgba(16, 22, 38, 0.18);
+  background: #101626;
+  color: #c4dcff;
+  font-family: "Share Tech Mono", monospace;
+  font-size: 13.5px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  user-select: text;
+}
+
+.admin-flash {
+  bottom: max(70px, calc(env(safe-area-inset-bottom) + 70px));
+}
+
+/* --- Smaller screens ----------------------------------------------------- */
+
+@media (max-width: 1100px) {
+  .cfg-cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cfg-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .cfg-shell {
+    width: calc(100% - 24px);
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+    margin-top: 12px;
+  }
+
+  /* The tabs become a bar that scrolls sideways and stays at the top. */
+  .cfg-nav {
+    position: sticky;
+    z-index: 15;
+    top: 0;
+    max-height: none;
+    flex-direction: row;
+    gap: 6px;
+    padding: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    clip-path: none;
+    scrollbar-width: thin;
+  }
+
+  .cfg-nav-group {
+    flex-direction: row;
+    flex: 0 0 auto;
+    gap: 4px;
+  }
+
+  .cfg-nav-label {
+    display: none;
+  }
+
+  .cfg-nav-admin {
+    padding: 0 0 0 6px;
+    border-top: 0;
+    border-left: 1px solid rgba(226, 155, 57, 0.4);
+  }
+
+  .cfg-tab {
+    flex: 0 0 auto;
+    min-height: 42px;
+    grid-template-columns: 20px auto;
+    gap: 8px;
+    padding: 7px 12px;
+    font-size: 15.5px;
+    white-space: nowrap;
+  }
+
+  .cfg-tab svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .cfg-tab[aria-selected="true"],
+  .cfg-nav-admin .cfg-tab[aria-selected="true"] {
+    box-shadow: inset 0 -3px 0 var(--cx);
+  }
+
+  .cfg-nav-admin .cfg-tab[aria-selected="true"] {
+    box-shadow: inset 0 -3px 0 var(--amb);
+  }
+
+  .settings-body .settings-footer {
+    width: calc(100% - 24px);
+  }
+}
+
+@media (max-width: 640px) {
+  /* Header: the version gets its own line instead of running into the title. */
+  .settings-body .settings-version {
+    grid-column: 1 / -1;
+    font-size: 11px;
+  }
+
+  .settings-body .settings-kicker {
+    font-size: 10px;
+  }
+
+  .cfg-view-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .cfg-view-head > .settings-action,
+  .cfg-view-head > .head-actions {
+    width: 100%;
+  }
+
+  .head-actions .settings-action {
+    flex: 1 1 0;
+  }
+
+  .settings-body .cfg-card,
+  .settings-body .profile-editor-card,
+  .settings-body .account-security-card {
+    padding: 18px 16px;
+  }
+
+  .cfg-hero {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .cfg-hero .settings-profile-avatar {
+    width: 68px;
+    height: 68px;
+  }
+
+  .cfg-hero-action {
+    grid-column: 1 / -1;
+  }
+
+  .cfg-stats {
+    gap: 10px;
+  }
+
+  .cfg-stat {
+    min-height: 96px;
+    padding: 13px 14px;
+  }
+
+  .cfg-stat strong {
+    font-size: 18px;
+  }
+
+  .cfg-tiles {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .toolbar,
+  .admin-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .stat-grid strong {
+    font-size: 24px;
+  }
+
+  .memory-admin-item,
+  .lore-item,
+  .audit-item {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .item-actions {
+    justify-content: flex-end;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cfg-view:not([hidden]) {
+    animation: none;
+  }
+}
+
+.pref-reduced-motion .cfg-view:not([hidden]) {
+  animation: none;
+}

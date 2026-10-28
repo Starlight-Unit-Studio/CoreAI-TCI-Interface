@@ -313,9 +313,15 @@ if ($isGuest) {
   $body['model_override'] = '';
   $body['num_ctx'] = null;
 }
+// 0.5.79: the Core is chosen in the chat menu only; the KI-Profil keeps the
+// stored choice (also one Ollama no longer lists, so saving never fails on it).
+$keepModel = !array_key_exists('model_override', $body);
+if ($keepModel) {
+  $body['model_override'] = (string)(coreui_ai_settings_load($pdo, $uid)['model_override'] ?? '');
+}
 try {
   $requestedModel = trim((string)($body['model_override'] ?? ''));
-  if ($requestedModel !== '') {
+  if ($requestedModel !== '' && !$keepModel) {
     if (!coreui_model_name_valid($requestedModel)) {
       stu_json(['ok'=>false, 'error'=>'invalid_model_name'], 400);
     }

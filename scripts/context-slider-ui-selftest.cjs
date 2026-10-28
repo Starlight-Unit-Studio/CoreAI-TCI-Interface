@@ -171,7 +171,13 @@ function context(model, extra) {
     && html.includes('./js/coreui-context-slider.js?v='), 'slider markup and script present');
   assert(html.indexOf('coreui-context-slider.js') < html.indexOf('js/settings.js'), 'module loads first');
   assert(js.includes('num_ctx: contextSlider ? contextSlider.value() : null')
-    && js.includes("aiModelOverride.addEventListener('change', loadContextEstimate)"), 'save and model switch wired');
+    && js.includes('contextSlider.load(selectedModelOverride || defaultModel)'), 'save wired, estimate follows the chosen Core');
+  // 0.5.79: the Core is chosen in the chat menu only; the KI-Profil has no Ollama list and sends no Core.
+  assert(!html.includes('id="aiModelOverride"') && !html.includes('LOKALER CORE') && html.includes('CORE-PFAD')
+    && !js.includes('model_override:'), 'no Core list in the KI-Profil, Core-Pfad stays');
+  const settingsApi = fs.readFileSync(path.join(__dirname, '../api/user_settings.php'), 'utf8');
+  assert(settingsApi.includes("$keepModel = !array_key_exists('model_override', $body);")
+    && settingsApi.includes("if ($requestedModel !== '' && !$keepModel) {"), 'the server keeps the Core chosen in the chat');
   const css = fs.readFileSync(path.join(__dirname, '../css/console.css'), 'utf8');
   assert(/@media \(max-width: 720px\)[\s\S]{0,80}\.ctx-stops[\s\S]{0,60}repeat\(3/.test(css), 'two rows on phones');
 

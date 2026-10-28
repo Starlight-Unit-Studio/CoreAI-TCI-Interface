@@ -466,7 +466,10 @@ assert.equal(api.gb(20 * 1073741824), '20 GB');
   assert(/Ollama-Konto/.test(html), 'the account need is explained');
   assert(/<script src="\.\/js\/coreui-core-install\.js\?v=\d+"><\/script>/.test(html), 'module is loaded');
   const css = fs.readFileSync(path.join(__dirname, '../css/console.css'), 'utf8');
-  assert(/\.core-mode-dot\[data-state="ready"\][^}]*var\(--green\)/.test(css), 'ready Cores carry a green dot');
+  assert(/\.core-mode-dot\[data-state="active"\][^}]*var\(--green\)/.test(css), 'the Core in use carries a green dot');
+  assert(/\.core-mode-dot\[data-state="standby"\][^}]*#e8c53a/.test(css), 'installed Cores on standby are yellow');
+  assert(/\.core-mode-dot\[data-state="missing"\],[^{]*\[data-state="gone"\][^{]*\{[^}]*var\(--red\)/.test(css), 'missing Cores are red');
+  assert(/\.core-mode-dot\[data-state="loading"\][^}]*var\(--amb\)[^}]*core-mode-pulse/.test(css), 'a loading Core keeps the gold pulse');
   assert(/\.core-install\[hidden\]\s*\{\s*display: none;/.test(css), 'the hidden window takes no space');
 
   console.log('CoreAI install window: check, verdict, admins only, confirmation, progress, Cores verwalten, updates and Ollama Cloud OK');

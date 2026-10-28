@@ -105,7 +105,9 @@ Tagesdeckel), Ratenlimits und Login-Drossel auf dem Server, Migration 018. Im Ho
 setzen (Admin-Bereich zeigt den Stand).
 0.5.78 ist gemergt (PR #128). 0.5.79: Browserfenster kompakt, mehrere Quellen mit Notizen und neuer Suche, Cursor
 klickt Treffer und liest mit, kein AFK mehr, Rollen Inhaber/Admin/Nutzer/Gast (Migration 019), Captcha bei
-Gast-Zugang und Registrierung, Gaeste auf dem Standard-Core.
+Gast-Zugang und Registrierung, Gaeste auf dem Standard-Core; Core-Menue mit Punkten gruen/gelb/rot, KI-Profil
+ohne Ollama-Liste, Einstellungen als Tab-Seite mit Start und Karten, Admin Core als Tab-Gruppe darin (admin/
+leitet weiter, css/admin.css entfaellt).
 NAECHSTER SCHRITT: Benutzerverwaltung nach Betreiberwunsch, TTS-Kandidaten, dann P20.1.
 Mara/Ember, Ollama-Modelfile, serielle Queue und private Projekt-
 plaene NICHT ungefragt veraendern.

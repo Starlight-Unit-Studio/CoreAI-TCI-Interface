@@ -7,4 +7,8 @@ CoreAI: TCI Interface 0.5.79 - 28.10.2026
 - Rollen: Inhaber, Admin, Nutzer, Gast; Migration 019 (Stufe 2 und 3 werden Nutzer).
 - Captcha (selbst gehostet, Proof of Work) bei Gast-Zugang und Registrierung, einmalig 10 Minuten gueltig, Admin-Schalter.
 - Gaeste: Standard-Core und Standard-Kontextfenster (gemeinsamer Arbeitsspeicher).
-- Tests: captcha-selftest.php, roles-guest-selftest.php (beide Preflights); Browser-, Live- und Login-Tests erweitert.
+- Core-Menue: gruen nur der aktive Core, gelb installiert in Bereitschaft, rot fehlend oder nicht erreichbar, goldener Puls beim Wechsel.
+- KI-Profil ohne Ollama-Liste (Lokaler Core); Core-Pfad bleibt; Speichern behaelt den im Chat gewaehlten Core.
+- Einstellungen als eine Seite mit Tabs: Start plus Anzeige, Profil, KI-Profil, Skills, Wissen, Memory, Konto, System; jede Kategorie mit eigenen Karten, Adresse merkt den Tab.
+- Admin Core neu gestaltet als Tab-Gruppe der Einstellungen (nur Inhaber und Admin), lesbare Schrift ab 11 px; admin/index.html leitet weiter, css/admin.css entfaellt.
+- Tests: captcha-selftest.php, roles-guest-selftest.php (beide Preflights); Browser-, Live- und Login-Tests erweitert; settings-tabs-ui-selftest.cjs (mit Playwright).

@@ -65,6 +65,8 @@ $settings = (string)file_get_contents($root . '/api/user_settings.php');
 tier_test(str_contains($settings, "'default_label' =>") && str_contains($settings, "'core_label' =>")
   && str_contains($settings, "'label'=>coreui_core_label(\$model)"), 'settings and Core choice send TCI names');
 $settingsJs = (string)file_get_contents($root . '/js/settings.js');
-tier_test(str_contains($settingsJs, "option.textContent = name + (model.parameter_size"), 'the KI-Profil keeps technical names');
+// 0.5.79: the KI-Profil has no Core list any more; the chat menu (TCI names) is the only Core choice.
+tier_test(!str_contains($settingsJs, "api('./api/models.php')") && !str_contains($settingsJs, 'model_override:'),
+  'the KI-Profil neither lists nor sends a Core');
 
 echo "CoreAI Core tiers: TCI names, Mara's base and persona for every Core OK\n";
