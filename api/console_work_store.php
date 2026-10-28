@@ -16,7 +16,7 @@ function coreui_work_safe_meta(array $raw): array {
   $allowedNumbers = ['job_id','exit_code','duration_ms','file_count','attempt','http_code','elapsed_ms',
     'source_chars','eval_count','prompt_eval_count',
     'plan_version','step','content_chars','thinking_chars','continuation_segments',
-    'response_bytes','discarded_tool_body_bytes','context_tokens'];
+    'response_bytes','discarded_tool_body_bytes','context_tokens','knowledge_hits','knowledge_sources'];
   $allowedStrings = ['model','error_type','file_name','reason','source','done_reason'];
   $safe = [];
   foreach ($allowedNumbers as $key) {

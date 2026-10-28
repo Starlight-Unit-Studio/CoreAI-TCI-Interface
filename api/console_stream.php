@@ -639,6 +639,10 @@ try {
       && ($hasMarker || $reply === '' || $streamUnsafe)) {
     if ($hasMarker) {
       coreui_work_record($pdo, 'run', 'info', 'Werkzeuganforderung erkannt');
+    } elseif ($isVisionTurn) {
+      // 0.5.71: images, videos and PDF pages never stream on purpose; the
+      // synchronous vision path below is the normal route, not a failure.
+      coreui_work_record($pdo, 'model', 'running', 'Anhang wird angesehen');
     } elseif ($streamUnsafe) {
       coreui_work_record($pdo, 'error', 'error', 'Modellstream unvollstaendig',
         ['reason'=>'stream_incomplete']);
