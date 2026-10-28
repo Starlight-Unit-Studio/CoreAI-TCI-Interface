@@ -7,7 +7,21 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.72` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.73` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Medien-Test P20.0 fuer den Server (0.5.73)
+
+`bash scripts/media-spike.sh` misst auf dem echten Server, wie Mara ueber
+Gemma 4 hoert: Testaufnahme in 5 bis 60 Sekunden als WAV (16 kHz, Mono,
+16 Bit), absichtlich falsche Formate (24 Bit, Float, 44,1 kHz Stereo, rohes
+PCM) und ein Fall mit Bild und Ton gemeinsam. Jeder Aufruf wartet in Maras
+serieller Warteschlange; Modelle, Modelfile und Datenbank bleiben
+unveraendert. Optional misst das Skript Stimmen-Kandidaten
+(`--tts "NAME=BEFEHL"` mit `{text}` und `{out}`) mit 2 und 4 Kernen sowie
+einen Bildbefehl (`--image`). Eine eigene Aufnahme vom Handy geht mit
+`--audio DATEI`. Ergebnis: `var/cache/media-spike/ZEITSTEMPEL/report.md`.
+Neu ist ausserdem `api/audio_wav.php`, die WAV-Pruefung (RIFF, Mono,
+16 kHz, 16 Bit), die P20.1 spaeter vor jedem Senden verwendet.
 
 ## Roadmap: Mara hoert und spricht (0.5.72)
 

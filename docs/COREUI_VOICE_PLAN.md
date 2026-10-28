@@ -36,6 +36,20 @@ Offen für den Test bleiben die Tokenkosten je Sekunde Audio, die Zeit bis zur e
 - Ende-zu-Ende-Latenz einer Live-Runde (Sprechpause bis erster gesprochener Satz) mit und ohne parallele TTS.
 - **Ergebnis:** Messprotokoll im Repo, Auswahl der Mara-Stimme, festgelegte Grenzwerte (Clip-Länge, Kernlimit, Zeitlimits). Keine Zusage von Latenzen vor dieser Messung.
 
+**So läuft der Test (ab 0.5.73):** `bash scripts/media-spike.sh` im Projektordner auf dem Server. Optionen:
+- `--audio DATEI`: eine eigene Sprachaufnahme, etwa vom Handy, in beliebigem Format.
+- `--tts "NAME=BEFEHL"`: Stimmen-Kandidaten, mehrfach möglich, mit `{text}` und `{out}` als Platzhaltern.
+- `--image "BEFEHL"`: ein Bildbefehl mit `{out}` und `{threads}`.
+
+Was der Test macht:
+- Server-Daten erfassen: CPU, AVX-512, RAM, Ollama-Version und die Fähigkeiten der Gemma-4-Cores laut `/api/show`.
+- Testaufnahme in den Längen 5, 15, 30, 45 und 60 Sekunden als WAV mit 16 kHz, Mono und 16 Bit erzeugen. Dazu kommen absichtlich falsche Formate: 24 Bit, Float, 44,1 kHz Stereo und rohes PCM.
+- Jeden Fall über Maras Warteschlange an Ollama schicken und die Antwortzeiten, Tokens und die Mitschrift festhalten. Zusätzlich ein Fall mit Bild und Ton gemeinsam.
+
+Ohne eigene Aufnahme hört Core die erste gemessene Stimme. Das ist ein Rundlauf von der Sprachausgabe zurück zum Hören. Ohne Aufnahme und ohne Stimme gibt es nur einen Formattest mit Sinuston.
+
+Das Ergebnis steht in `var/cache/media-spike/ZEITSTEMPEL/report.md`. Der Test ändert keine Modelle, kein Modelfile und keine Datenbank. Der Formatprüfer `api/audio_wav.php` ist derselbe, den P20.1 vor jedem Senden nutzt.
+
 ### P20.1: Spracheingabe
 
 - Mikrofon-Knopf im Eingabefeld, auch auf Android Chrome und Samsung DeX. Aufnahme im Browser, sichtbare Dauer, Abbrechen, Senden.

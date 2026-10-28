@@ -2,6 +2,12 @@
 
 CoreAI: TCI Interface gehoert zur Quantum-Softwarefamilie und wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert. Historische Changelogs dokumentieren die frueheren Produktnamen unveraendert.
 
+## 0.5.73 - 28.10.2026
+
+- **Medien-Test P20.0:** `scripts/media-spike.sh` (Host) und `scripts/media-spike.php` (php-Container oder nativ) messen Hoeren ueber Gemma 4: Faehigkeiten laut `/api/show`, Testaufnahme 5 bis 60 Sekunden als WAV 16 kHz Mono 16 Bit, falsche Formate als Gegenprobe, Bild und Ton gemeinsam, Antwortzeiten, Tokens und Mitschrift. Optional Stimmen-Kandidaten (Rechenzeit, Echtzeitfaktor, RAM bei 2 und 4 Kernen) und ein Bildbefehl. Jeder Core-Aufruf wartet in Maras Warteschlange, ohne Ollama-Optionen, ohne Modell- oder Datenbankaenderung. Bericht als Markdown und JSON.
+- **WAV-Pruefung** `api/audio_wav.php`: liest den RIFF-Header (auch WAVE_FORMAT_EXTENSIBLE, offene Datenlaenge, Zusatz-Chunks) und lehnt alles ausser PCM, Mono, 16 kHz, 16 Bit mit Grund ab. Wird spaeter in P20.1 vor jedem Senden genutzt.
+- Tests: neue `scripts/audio-wav-selftest.php` in beiden Preflights; Probelauf gegen einen nachgebauten Ollama.
+
 ## 0.5.72 - 28.10.2026
 
 - **Roadmap auf Stand 0.5.71:** Neue Statustabelle je Etappe (M1 praktisch erledigt, M2 grossteils erledigt, M3 offen, M4 bis M6 teilweise) und "Naechste Lieferfolge" nach Betreiberentscheidung: P20.0 Test, P20.1 Spracheingabe, P20.2 Videos hoeren, P20.3 Sprachausgabe, P20.4 Live-Gespraech, P20.5 Bildgenerierung, danach P09 Projekt-Workspace.

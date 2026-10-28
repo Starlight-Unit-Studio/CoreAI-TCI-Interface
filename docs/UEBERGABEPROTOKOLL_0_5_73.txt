@@ -1,0 +1,23 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.5.73
+Stand: 28.10.2026
+Branch: claude/bold-galileo-myoyi0 (neu von main 0.5.72 nach Merge von PR #122)
+Basis: 0.5.72 Roadmap und Sprachplan. Betreiber: zuerst PR mergen, dann Testskript fuer den Server.
+
+INHALT:
+- scripts/media-spike.sh (Host): Serverdaten (lscpu, AVX-512, free, ollama --version), optional TTS-Kandidaten
+  (--tts NAME=BEFEHL, {text}/{out}, Kerne per taskset und OMP_NUM_THREADS, Zeit und RAM per /usr/bin/time) und
+  Bildbefehl (--image, {out}/{threads}); startet dann den PHP-Teil im php-Container (Docker) oder nativ.
+- scripts/media-spike.php: /api/version, /api/tags, /api/show (capabilities, Audio-Metadaten) fuer den Mara-Core
+  und alle gemma4-Cores; Testaufnahme (eigene Aufnahme, sonst erste TTS-Stimme, sonst Sinuston) per ffmpeg in
+  5/15/30/45/60 s als WAV 16 kHz Mono 16 Bit, Gegenproben 24 Bit, Float, 44,1 kHz Stereo, rohes PCM; Aufwaermen;
+  je Fall ein Aufruf ueber ember_global_lock_acquire / ember_generation_lock_release, think=false, keine options;
+  Fall Bild und Ton gemeinsam; Bericht report.md und results.json.
+- api/audio_wav.php: coreui_wav_info, coreui_wav_gemma_ready, coreui_wav_reject_reason, coreui_wav_ffmpeg_args.
+- scripts/audio-wav-selftest.php in beiden Preflights; docs/COREUI_VOICE_PLAN.md mit Anleitung zu P20.0.
+
+GEPRUEFT:
+- Alle Offline-Selbsttests; Probelauf gegen einen nachgebauten Ollama, der den WAV-Header prueft: richtige Faelle
+  angenommen, 24 Bit, Float und rohes PCM abgelehnt, Tabellen korrekt, Bild und Ton gemeinsam angekommen.
+
+NAECHSTER SCHRITT: Betreiber startet bash scripts/media-spike.sh auf dem Server (am besten mit --audio und einer
+Handy-Aufnahme, optional mit Piper als --tts) und schickt report.md. Danach Auswahl der Stimme und P20.1.

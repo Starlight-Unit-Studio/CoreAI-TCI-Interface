@@ -1,0 +1,8 @@
+CoreAI: TCI Interface 0.5.73 - 28.10.2026
+- Medien-Test P20.0: scripts/media-spike.sh (Host) und scripts/media-spike.php (php-Container oder nativ).
+- Misst Hoeren ueber Gemma 4: /api/show-Faehigkeiten, WAV 16 kHz Mono 16 Bit in 5 bis 60 s, falsche Formate als Gegenprobe, Bild und Ton gemeinsam, Zeiten, Tokens, Mitschrift.
+- Optional Stimmen-Kandidaten (--tts NAME=BEFEHL) mit 2 und 4 Kernen und ein Bildbefehl (--image). Bericht var/cache/media-spike/ZEITSTEMPEL/report.md.
+- Jeder Core-Aufruf in Maras Warteschlange, keine Ollama-Optionen, keine Modell- oder Datenbankaenderung.
+- Neu: api/audio_wav.php (RIFF-Header-Pruefung PCM, Mono, 16 kHz, 16 Bit) fuer P20.1.
+- Neuer Test: audio-wav-selftest.php (beide Preflights).
+- OFFEN: Lauf auf dem echten Server und Auswertung des Berichts.
