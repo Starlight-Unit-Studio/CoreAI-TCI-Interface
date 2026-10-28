@@ -13,6 +13,8 @@ require_once __DIR__ . '/console_session_store.php';
 require_once __DIR__ . '/profile_store.php';
 require_once __DIR__ . '/knowledge_store.php';
 require_once __DIR__ . '/guest_access.php';
+require_once __DIR__ . '/console_compaction.php';
+require_once __DIR__ . '/console_agent_loop.php';
 
 // -----------------------------------------------------------------------------
 // Ember - Global-Chat NPC (Ollama local)
@@ -344,7 +346,7 @@ function ember_extract_explicit_reply_candidate(string $source): string {
  */
 function ember_strip_stray_tool_markers(string $out): string {
   return (string)preg_replace_callback(
-    '~(```[\s\S]*?```|`[^`\r\n]*`)|\[WEB:\s*.*?\]|\[BROWSE:\s*.*?\]|\[/?PY\]~iu',
+    '~(```[\s\S]*?```|`[^`\r\n]*`)|\[WEB:\s*.*?\]|\[BROWSE:\s*.*?\]|\[ARCHIV:\s*.*?\]|\[/?PY\]~iu',
     static fn(array $m): string => ($m[1] ?? '') !== '' ? $m[1] : '',
     $out);
 }
@@ -4706,6 +4708,11 @@ function ember_build_context(
     else $msg = substr($msg, 0, $lineLimit);
     $lines[] = ($isEmberRow ? (($name !== '' ? $name : 'Mara') . ' (du)') : $name) . ': ' . $msg;
   }
+  // 0.5.77: older messages that fell out of the window ride along as summary.
+  if ($channel === 'console' && $consoleUid > 0 && isset($sessionId) && function_exists('coreui_compact_context_block')) {
+    $summary = coreui_compact_context_block(coreui_compact_load($pdo, $consoleUid, (string)$sessionId));
+    if ($summary !== '') array_unshift($lines, rtrim($summary));
+  }
   return implode("\n", $lines);
 }
 
@@ -4798,6 +4805,11 @@ function ember_build_chat_prompt(
     && empty($GLOBALS['COREUI_NATIVE_TOOL_REENTRY']);
   $webHint = (ember_web_enabled() && $imageUrl === null)
     ? ($profile['compact'] ? ember_web_capability_hint_compact() : ember_web_capability_hint()) : '';
+  // 0.5.77: in the private chat Mara works on her own over several steps.
+  if ($channel === 'console' && $webHint !== '') {
+    $webHint .= "\n" . coreui_agent_loop_hint($profile['compact'],
+      in_array('archive', ember_agent_allowed_tools($consoleUid, (string)$consoleSessionId), true));
+  }
   $browseHint = (ember_browse_enabled() && $imageUrl === null)
     ? ($profile['compact'] ? ember_browse_capability_hint_compact() : ember_browse_capability_hint()) : '';
   $pyHint = (ember_py_enabled() && $imageUrl === null)
@@ -4876,6 +4888,37 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
     'attach_block' => $attachBlock,
     'user_msg' => $userMsg,   // v1.1.1.92: Marker-freie Fassung fuer den Aufrufer
   ];
+}
+
+/**
+ * 0.5.77: runs one step of Mara's work loop and returns its result as text
+ * for the next prompt. Python only calculates here; files keep their own path.
+ */
+function ember_agent_run_tool(PDO $pdo, array $tool, string $channel, int $uid, string $sessionId,
+    int $triggerId, int $triggerRevision): string {
+  if ($tool['tool'] === 'web') {
+    $block = ember_web_results_block((string)$tool['input']);
+    return $block !== '' ? $block : 'Die Websuche brachte keine Treffer, oder der Suchdienst war gerade nicht erreichbar.';
+  }
+  if ($tool['tool'] === 'archive') return coreui_compact_archive_block($uid, $sessionId, (string)$tool['input']);
+  if ($tool['tool'] === 'python') {
+    $code = (string)$tool['input'];
+    if (ember_py_code_writes_output($code)) {
+      return 'In der Arbeitsschleife rechnest du nur; Dateien erzeugst du mit einer neuen Anfrage. Der Code lief nicht.';
+    }
+    return ember_py_result_block($code, ember_py_run($pdo, $code, $channel, $uid, $sessionId, $triggerId, $triggerRevision));
+  }
+  return 'Unbekanntes Werkzeug.';
+}
+
+/** Tools of the work loop for this chat. */
+function ember_agent_allowed_tools(int $uid, string $sessionId): array {
+  $tools = [];
+  if (ember_web_enabled()) $tools[] = 'web';
+  if (ember_browse_enabled()) $tools[] = 'browse';
+  if (ember_py_enabled()) $tools[] = 'python';
+  if ($uid > 0 && $sessionId !== '' && is_file(coreui_compact_archive_path($uid, $sessionId))) $tools[] = 'archive';
+  return $tools;
 }
 
 function ember_generate_reply(
@@ -5021,6 +5064,10 @@ function ember_generate_reply(
 
   $webHint = (ember_web_enabled() && $imageUrl === null)
     ? ($promptProfile['compact'] ? ember_web_capability_hint_compact() : ember_web_capability_hint()) : '';
+  if ($channel === 'console' && $webHint !== '') {
+    $webHint .= "\n" . coreui_agent_loop_hint($promptProfile['compact'],
+      in_array('archive', ember_agent_allowed_tools($consoleUid, (string)$consoleSessionId), true));
+  }
   $browseHint = (ember_browse_enabled() && $imageUrl === null)
     ? ($promptProfile['compact'] ? ember_browse_capability_hint_compact() : ember_browse_capability_hint()) : '';
   // The synchronous prompt has no separate tool block, so the Python hint
@@ -5959,8 +6006,40 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
     }
   }
 
+  // === 0.5.77: Maras Arbeitsschleife im privaten Chat (console_agent_loop.php) ===
+  // Up to six steps: after every result Mara answers or asks for exactly one
+  // more tool. [BROWSE:] hands over to the browser worker as before.
+  $agentLoopHandled = false;
+  if ($channel === 'console' && $imageUrl === null && empty($fileTask) && is_string($out)) {
+    $loopAllowed = ember_agent_allowed_tools($consoleUid, (string)$consoleSessionId);
+    $loopTool = coreui_agent_next_tool($out, array_values(array_intersect($loopAllowed, ['web', 'archive'])));
+    if ($loopTool !== null) {
+      $agentLoopHandled = true;
+      $uBase = $u;
+      if (isset($loreBlock) && $loreBlock !== '') $uBase = str_replace($loreBlock, '', $uBase);
+      foreach ([$webHint ?? '', $browseHint ?? '', $pyHint ?? ''] as $hint) {
+        if ($hint !== '') $uBase = str_replace($hint . "\n\n", '', $uBase);
+      }
+      $loop = coreui_agent_loop_run($out, $loopTool, $uBase, $loopAllowed, $pyHandled ? 1 : 0,
+        static fn(string $prompt): ?string => ember_call_ollama($primaryModel, $sys, $prompt, ember_timeout_for_model($primaryModel), []),
+        static fn(array $tool): string => ember_agent_run_tool($pdo, $tool, $channel, $consoleUid, (string)$consoleSessionId,
+          $triggerMessageId, $triggerRevision),
+        static function (string $kind, string $state, string $title, array $meta) use ($pdo): void {
+          coreui_work_record($pdo, $kind, $state, $title, $meta);
+        },
+        static fn(): bool => ember_agent_cancel_requested(true));
+      if ($loop['browse'] !== null) {
+        $GLOBALS['STU_EMBER_BROWSE_REQUEST'] = $loop['browse'];
+        return null;
+      }
+      if (is_string($loop['prompt'])) $finalPrompt = $loop['prompt'];
+      $out = $loop['out'];
+    }
+  }
+
   // === Autonome Websuche (Marker-Loop) - nur Text-Pfad, nicht bei Bildern ===
-  if (ember_web_enabled() && $imageUrl === null && !$pyHandled && is_string($out)) {
+  // The private chat uses the work loop above; this single step stays for the global channel.
+  if (!$agentLoopHandled && ember_web_enabled() && $imageUrl === null && !$pyHandled && is_string($out)) {
     $webQuery = ember_extract_web_marker($out);
     if ($webQuery !== null) {
       ember_debug_log('ember_web_trigger', ['q' => $webQuery]);

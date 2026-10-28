@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/console_compaction.php';
 require_once __DIR__ . '/console_attachment_store.php';
 require_once __DIR__ . '/console_artifact_store.php';
 require_once __DIR__ . '/console_agent_runs.php';
@@ -430,6 +431,8 @@ function coreui_console_session_delete(PDO $pdo, int $uid, string $sessionId): a
     throw $e;
   }
 
+  // 0.5.77: the summary and the Markdown archive go with the chat.
+  coreui_compact_forget($pdo, $uid, coreui_console_session_normalize_id($sessionId));
   $artifactKeys = is_array($result['artifact_keys'] ?? null) ? $result['artifact_keys'] : [];
   unset($result['artifact_keys']);
   $artifactFiles = coreui_console_artifact_delete_files($artifactKeys);

@@ -5,5 +5,7 @@ CoreAI: TCI Interface 0.5.77 - 28.10.2026
 - Als Gast chatten: Knopf nur bei eingeschaltetem Gast-Zugang (Runtime), Gastkonto ohne E-Mail, sofort im Chat; Limit "Nachrichten pro Gast" (Standard 5, 1 bis 100), zaehlt Senden, Neu generieren, Weiter und Bearbeiten; Zaehler pro Konto in stu_kv; nur privater Chat; max. 30 neue Gaeste pro Stunde.
 - Cores verwalten: Aktualisieren und Deinstallieren je Stufe (Maras Haupt-Core bleibt), Cloud entfernen; entfernte Cores werden vorher entladen, gewaehlte fallen auf den Standard zurueck.
 - Core-Wechsel entlaedt zuerst die anderen lokalen Cores (keep_alive 0), dann wird der neue geladen.
-- Tests: registration-ui-selftest.cjs, guest-access-selftest.php (beide Preflights); Installer- und Fenster-Tests erweitert.
-- OFFEN: Chat-Komprimierung mit Archiv, Maras Orchestrierung, Ausbau der Benutzerverwaltung, TTS-Kandidaten, P20.1.
+- Chat komprimieren: automatisch nach einer Antwort, sobald Nachrichten aus Maras Fenster fallen, oder per Knopf / /komprimieren; laufende Zusammenfassung im Prompt; woertliches Markdown-Archiv je Chat (zuerst geschrieben, bis zum Loeschen, Download); Mara sucht darin mit [ARCHIV: Stichworte].
+- Maras Arbeitsschleife im privaten Chat: bis zu 6 selbst gewaehlte Schritte (WEB, BROWSE, PY rechnen, ARCHIV), sucht von sich aus bei fehlendem aktuellem Wissen, jeder Schritt im Arbeitsweg, abbrechbar; globaler Kanal unveraendert.
+- Tests: registration-ui-selftest.cjs, guest-access-selftest.php, compaction-selftest.php, agent-loop-selftest.php (beide Preflights); Installer- und Fenster-Tests erweitert.
+- OFFEN: Ausbau der Benutzerverwaltung, TTS-Kandidaten, P20.1.

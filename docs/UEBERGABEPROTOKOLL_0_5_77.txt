@@ -31,15 +31,33 @@ AENDERUNGEN:
 - Betreiberwunsch Cores verwalten: je Stufe "Aktualisieren" (core_update mit tier) und "Deinstallieren"
   (core_uninstall: entlaedt, DELETE /api/delete, setzt model_override betroffener Konten zurueck; Maras
   Haupt-Core nie; Cloud-Cores ueber "Cloud entfernen"), zweimal tippen.
+- Betreiberwunsch Chat komprimieren (Entscheidungen: automatisch + Knopf, Mara sucht selbst im Archiv):
+  neue api/console_compaction.php. Zustand je Chat in stu_kv (cmp_<sitzung>: upto_id, summary, folded,
+  archived_upto), keine Migration. Gefaltet wird alles ausserhalb der neuesten 12 Nachrichten, automatisch ab 4,
+  hoechstens 40 je Lauf; erst das woertliche Archiv (var/console_media/archives/<uid>/<sitzung>.md), dann eine
+  Zusammenfassung mit Maras Core ohne Denken (ember_call_ollama, nichts wird gestreamt). ember_build_context
+  stellt den Block "BISHERIGER VERLAUF" vor den Verlauf. console_stream.php komprimiert nach sse_send('done')
+  (Arbeitsweg-Kontext vorher geloest). console_actions.php: POST compact (bis 3 Runden), GET compact_status
+  und archive (Download als text/markdown). Loeschen des Chats entfernt Zustand und Archiv. Chat: Knopf ⇊ mit
+  Menue, /komprimieren, Eintrag in der Legende.
+- Betreiberwunsch Orchestrierung (Entscheidungen: Arbeitsschleife, 6 Schritte): neue api/console_agent_loop.php
+  (coreui_agent_loop_run mit Callbacks fuer Core, Werkzeug und Arbeitsweg). chat.php ember_generate_reply: im
+  privaten Chat ersetzt die Schleife den einzelnen Websuche-Schritt (WEB/ARCHIV starten, danach auch BROWSE als
+  Uebergabe an den Browser-Worker und PY nur zum Rechnen); der globale Kanal behaelt den alten Schritt. Beide
+  Prompt-Bauer haengen coreui_agent_loop_hint an den Web-Hinweis (selbststaendig suchen, Stichtag, Datum).
+  [ARCHIV:] wird im Stream erkannt und nie angezeigt. Titel im Arbeitsweg ASCII ("Schritt 2 von 6: Websuche"),
+  die Suchanfrage als oeffentliche Notiz.
 - Betreiberwunsch RAM: core_preload.php entlaedt beim Core-Wechsel zuerst die anderen lokalen Cores
   (POST /api/generate mit keep_alive 0) innerhalb der Warteschlange, dann laedt er den neuen; auch wenn der
   gewaehlte schon geladen ist, werden die anderen entladen.
 
 GEPRUEFT:
 - Alle Offline-Selbsttests, neu registration-ui-selftest.cjs (fuehrt das Skript der Login-Seite mit
-  nachgebautem Server aus, auch den Gast-Knopf) und guest-access-selftest.php; core-install-Tests decken
-  Aktualisieren, Deinstallieren und das Entladen ab. Echter Test auf dem Server steht aus.
+  nachgebautem Server aus, auch den Gast-Knopf), guest-access-selftest.php, compaction-selftest.php (echter
+  Lauf gegen SQLite im Speicher: Fenster, Archiv zuerst, Wiederholung ohne Doppelung, Suche, Loeschen) und
+  agent-loop-selftest.php (nachgebauter Core: Verkettung, Antwort, Browser-Uebergabe, sechs Schritte, Abbruch);
+  core-install-Tests decken Aktualisieren, Deinstallieren und das Entladen ab. Echter Test auf dem Server steht aus.
 
-NAECHSTER SCHRITT: Plan fuer Chat-Komprimierung (Archiv als Markdown je Sitzung) und Maras Orchestrierung
-(selbststaendiges Recherchieren) mit dem Betreiber abstimmen; Umfang der Benutzerverwaltung klaeren; dann
+NAECHSTER SCHRITT: Auf dem Server testen (Gast, Registrieren, Cores verwalten, Komprimieren eines langen
+Chats, eine Recherchefrage mit mehreren Schritten); Umfang der Benutzerverwaltung klaeren; dann
 TTS-Kandidaten und P20.1.

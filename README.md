@@ -9,7 +9,7 @@ CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, Sea
 
 Current source version: `0.5.77` (numeric only). The last verified ZIP remains archived under its original historical name.
 
-## Registrieren, Gast-Zugang, Cores einzeln verwalten (0.5.77)
+## Registrieren, Gast-Zugang, Cores verwalten, Komprimieren, Arbeitsschleife (0.5.77)
 
 Schaltet ein Admin unter `/admin/` (Runtime) die oeffentliche Registrierung
 ein, bietet die Login-Seite "Noch kein Konto? Registrieren" an: E-Mail,
@@ -21,6 +21,12 @@ sofort, bis zu der eingestellten Zahl an Nachrichten (Standard 5).
 Unter "Cores verwalten" laesst sich jede Stufe einzeln aktualisieren und
 deinstallieren (Maras Haupt-Core bleibt). Beim Core-Wechsel entlaedt CoreAI
 zuerst den alten Core, damit der Arbeitsspeicher reicht.
+
+Lange Chats komprimiert Mara selbst: Aelteres, das aus ihrem Fenster faellt,
+fasst sie zusammen, und die woertliche Mitschrift bleibt als .md-Archiv im
+Chat (Knopf ⇊ oder `/komprimieren`). Bei Recherchen arbeitet sie wie ein
+Agent in bis zu 6 Schritten: suchen, genauer suchen, Webseiten lesen,
+rechnen, im Archiv nachsehen, und erst dann antworten.
 
 ## Erklaerungen statt Werkzeugaufrufe, Unterstriche, Arbeitsweg (0.5.76)
 

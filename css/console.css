@@ -3545,6 +3545,38 @@ audio.msg-image {
   clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
 }
 
+.compact-menu {
+  display: grid;
+  gap: 8px;
+}
+
+.compact-menu[hidden] {
+  display: none;
+}
+
+.compact-copy {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.compact-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.compact-actions a.core-install-btn {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.compact-actions [hidden] {
+  display: none;
+}
+
 .core-legend-btn:hover,
 .core-legend-btn[aria-expanded="true"] {
   border-color: var(--line-strong);

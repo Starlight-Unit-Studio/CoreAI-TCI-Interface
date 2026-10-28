@@ -2285,10 +2285,105 @@
     });
   }
 
+  // 0.5.77: Chat komprimieren. Mara folds older messages into a summary on
+  // her own; this menu does it at once and offers the Markdown archive.
+  var compactBtn = document.getElementById('compactBtn');
+  var compactMenu = document.getElementById('compactMenu');
+  var compactStatus = document.getElementById('compactStatus');
+  var compactNowBtn = document.getElementById('compactNow');
+  var compactArchive = document.getElementById('compactArchive');
+
+  function compactShowArchive(sessionId, available) {
+    if (!compactArchive) return;
+    compactArchive.hidden = !available;
+    if (available) {
+      compactArchive.setAttribute('href', API_BASE + '/console_actions.php?action=archive&session_id=' + encodeURIComponent(sessionId));
+    }
+  }
+
+  function compactSummaryText(folded) {
+    return folded > 0 ? folded + ' ältere Nachrichten sind zusammengefasst und im Archiv.'
+      : 'Noch nichts zusammengefasst: der Chat passt in Maras Fenster.';
+  }
+
+  function openCompactMenu() {
+    var ses = activeSession();
+    if (!compactMenu || !ses) return Promise.resolve();
+    compactMenu.hidden = false;
+    if (compactBtn) compactBtn.setAttribute('aria-expanded', 'true');
+    if (compactStatus) compactStatus.textContent = '';
+    var sessionId = String(ses.id);
+    return fetch(API_BASE + '/console_actions.php?action=compact_status&session_id=' + encodeURIComponent(sessionId),
+      { credentials: 'include', cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d || !d.ok || !isActiveSession(sessionId)) return;
+        if (compactStatus) compactStatus.textContent = compactSummaryText(Number(d.folded) || 0);
+        compactShowArchive(sessionId, !!d.has_archive);
+      })
+      .catch(function () {});
+  }
+
+  function closeCompactMenu() {
+    if (!compactMenu || compactMenu.hidden) return;
+    compactMenu.hidden = true;
+    if (compactBtn) compactBtn.setAttribute('aria-expanded', 'false');
+  }
+
+  function compactActiveSession() {
+    var ses = activeSession();
+    if (!ses || (compactNowBtn && compactNowBtn.disabled)) return Promise.resolve();
+    var sessionId = String(ses.id);
+    if (compactNowBtn) compactNowBtn.disabled = true;
+    if (compactStatus) compactStatus.textContent = 'Mara fasst den älteren Verlauf zusammen … auf dem Prozessor kann das eine Minute dauern.';
+    return postConsoleAction({ action: 'compact', session_id: sessionId }).then(function (d) {
+      var folded = Number(d.folded) || 0;
+      var text = folded > 0 ? 'Chat komprimiert: ' + folded + ' ältere Nachrichten zusammengefasst, insgesamt ' + (Number(d.total) || folded)
+        + '. Die Mitschrift liegt im Archiv (.md).' : 'Noch nichts zu komprimieren: alles passt in Maras Fenster.';
+      if (compactStatus) compactStatus.textContent = text;
+      compactShowArchive(sessionId, !!d.has_archive);
+      if (folded > 0 && isActiveSession(sessionId)) {
+        appendMessageEl('system', '\u2398 ' + text);
+        scrollToBottom();
+      }
+    }).catch(function (error) {
+      if (compactStatus) compactStatus.textContent = (error && error.message) === 'compact_failed'
+        ? 'Die Zusammenfassung hat nicht geklappt. Die Mitschrift ist trotzdem im Archiv gesichert.'
+        : 'Komprimieren gerade nicht möglich. Bitte noch einmal versuchen.';
+    }).finally(function () {
+      if (compactNowBtn) compactNowBtn.disabled = false;
+    });
+  }
+
+  if (compactBtn) compactBtn.addEventListener('click', function (event) {
+    event.stopPropagation();
+    if (compactMenu && !compactMenu.hidden) closeCompactMenu();
+    else openCompactMenu();
+  });
+  if (compactNowBtn) compactNowBtn.addEventListener('click', function (event) {
+    event.stopPropagation();
+    compactActiveSession();
+  });
+  document.addEventListener('click', function (event) {
+    if (!compactMenu || compactMenu.hidden) return;
+    if (compactMenu.contains(event.target) || (compactBtn && compactBtn.contains(event.target))) return;
+    closeCompactMenu();
+  });
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') closeCompactMenu();
+  });
+
   function sendMessage(text, options) {
     options = options || {};
     if (state.editingMessage && !options.from_queue) {
       submitMessageEdit(text);
+      return;
+    }
+    // 0.5.77: "/komprimieren" (or "/compact") is a command, not a message.
+    if (!options.from_queue && /^\s*\/(?:komprimieren|compact)\s*$/i.test(String(text || ''))) {
+      if (inputEl) inputEl.value = '';
+      openCompactMenu();
+      compactActiveSession();
       return;
     }
     // Auch lange, langsam getippte Texte werden vor dem Senden verlustfrei

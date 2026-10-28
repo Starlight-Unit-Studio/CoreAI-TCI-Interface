@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.77 sign-up and guest access on the login page, per tier update and removal, one Core in RAM.
+# CoreAI: TCI Interface 0.5.77 sign-up and guest access, per tier Core management, one Core in RAM, chat compaction, Mara's work loop.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -132,6 +132,10 @@ UI_FILES=(
   scripts/registration-ui-selftest.cjs
   scripts/guest-access-selftest.php
   api/guest_access.php
+  scripts/compaction-selftest.php
+  api/console_compaction.php
+  scripts/agent-loop-selftest.php
+  api/console_agent_loop.php
   api/core_install.php
   js/coreui-core-install.js
   scripts/media-spike.php
@@ -464,6 +468,20 @@ if command -v php >/dev/null 2>&1; then
     ok 'Gast-Zugang: Limit, Zaehlung bei jeder Antwort, nur privater Chat, Stundenlimit, Login und Admin geprueft.'
   else
     fail "Gast-Zugang-Selbsttest: ${guest_test:-Unbekannter Fehler}"
+  fi
+
+  compact_test=''
+  if compact_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/compaction-selftest.php" 2>&1)"; then
+    ok 'Chat komprimieren: Fenster, laufende Zusammenfassung, Archiv zuerst, Suche und Loeschen geprueft.'
+  else
+    fail "Komprimierungs-Selbsttest: ${compact_test:-Unbekannter Fehler}"
+  fi
+
+  loop_test=''
+  if loop_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/agent-loop-selftest.php" 2>&1)"; then
+    ok 'Arbeitsschleife: verkettete Schritte, Antwort, Uebergabe an den Browser, sechs Schritte, Abbruch geprueft.'
+  else
+    fail "Arbeitsschleifen-Selbsttest: ${loop_test:-Unbekannter Fehler}"
   fi
 
   mention_test=''
