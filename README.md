@@ -7,7 +7,38 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.75` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.76` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Erklaerungen statt Werkzeugaufrufe, Unterstriche, Arbeitsweg (0.5.76)
+
+Erklaert Mara ihre Werkzeuge, loesen die erwaehnten Marker in Code-Markierungen
+keine Suche und keine Python-Ausfuehrung mehr aus, und ein Fortschrittsblock
+vor normalem Text startet keine Korrekturrunde mehr. Unterstriche mitten im
+Wort (snake_case, Dateinamen, Marker) bleiben im Chat stehen. Einfache
+Antworten zeigen keinen Arbeitsweg mehr; er erscheint, sobald Mara wirklich
+arbeitet. Im Sprachplan steht Lauf 4 mit der Entscheidung: Mitschrift ueber
+Googles Transkriptionsvorlage, Sprachnachrichten zweistufig, Live einstufig.
+
+Im Chat tragen die Gemma-Stufen TCI-Namen: Mara Schnell (e2b), Normal (e4b),
+Plus (12b), Pro (26b) und Premium (31b), auch in der Cloud. Das Core-Menue
+zeigt sie immer in dieser Reihenfolge, danach Cores mit eigenem Namen; ein
+gruener Punkt heisst installiert und bereit. Jeder Core antwortet als Mara:
+Cores ohne eigenen SYSTEM-Text bekommen Maras Text aus dem Modelfile. Die
+technischen Namen, die Formatierung und die Befehle stehen in der Legende
+neben dem Core-Chip.
+
+Fehlt eine lokale Stufe, steht sie ausgegraut im Menue. Ein Tipp oeffnet
+den Installer: Erklaerung, kurzer Hardware-Check mit Empfehlung und fuer
+Admins ein Knopf "Installieren". Ollama laedt dann die Gemma-Basis, CoreAI
+baut daraus Maras Core aus `config/Modelfile.template` (nur FROM getauscht)
+und zeigt den Fortschritt. So geht das ganz ohne SSH und Terminal. Gibt es
+eine Stufe auch in der Cloud, waehlt man in ihrer Zeile Lokal oder Cloud.
+
+Unter "Cores verwalten" (Admins) stehen alle Stufen, "Jetzt aktualisieren"
+und der Schalter fuer ein woechentliches Auto-Update: Ollama zieht neue
+Fassungen, Maras Cores werden danach mit ihrem Modelfile neu gebaut. Dort
+verbindet man den Server auch mit einem Ollama-Konto fuer Cloud-Cores, wie
+`ollama signin`, nur ueber einen Anmeldelink im Browser statt im Terminal.
 
 ## Denkschalter und Core-Wahl im Chat (0.5.75)
 

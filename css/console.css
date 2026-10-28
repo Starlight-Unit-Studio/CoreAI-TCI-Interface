@@ -3367,7 +3367,7 @@ audio.msg-image {
 .core-mode-option {
   display: grid;
   min-height: 40px;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: 10px minmax(0, 1fr) auto;
   align-items: center;
   column-gap: 8px;
   padding: 6px 8px;
@@ -3395,20 +3395,126 @@ audio.msg-image {
 }
 
 .core-mode-option-name {
+  grid-row: 1;
+  grid-column: 2;
   overflow-wrap: anywhere;
   font-size: 14px;
 }
 
 .core-mode-option small {
-  grid-column: 1;
+  grid-row: 2;
+  grid-column: 2;
   color: var(--muted);
   font-size: 12px;
 }
 
 .core-mode-check {
   grid-row: 1 / span 2;
-  grid-column: 2;
+  grid-column: 3;
   color: var(--cx);
+}
+
+/* 0.5.76: green dot = installed and ready; a missing tier stays greyed. */
+.core-mode-dot {
+  grid-row: 1 / span 2;
+  grid-column: 1;
+  width: 8px;
+  height: 8px;
+  border: 1px solid var(--muted-soft);
+  border-radius: 50%;
+}
+
+.core-mode-dot[data-state="ready"] {
+  border-color: var(--green);
+  background: var(--green);
+  box-shadow: 0 0 6px rgba(42, 175, 117, 0.55);
+}
+
+.core-mode-dot[data-state="loading"] {
+  border-color: var(--amb);
+  background: var(--amb);
+  animation: core-mode-pulse 1.2s ease-in-out infinite;
+}
+
+.core-mode-option--missing .core-mode-option-name,
+.core-mode-option--missing small {
+  color: var(--muted-soft);
+}
+
+.core-mode-option--missing:hover {
+  border-color: var(--line);
+  border-style: dashed;
+  background: transparent;
+}
+
+/* One row per tier; a tier that also runs in the cloud has a Lokal/Cloud switch. */
+.core-mode-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 6px;
+}
+
+.core-mode-variants {
+  display: inline-flex;
+  border: 1px solid var(--line);
+}
+
+.core-mode-variant {
+  min-width: 44px;
+  min-height: 30px;
+  padding: 2px 8px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-family: "Share Tech Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+
+.core-mode-variant + .core-mode-variant {
+  border-left: 1px solid var(--line);
+}
+
+.core-mode-variant[aria-pressed="true"] {
+  background: var(--panel-cx);
+  color: var(--cx);
+}
+
+.core-mode-variant--missing {
+  color: var(--muted-soft);
+  text-decoration: underline dotted;
+}
+
+.core-mode-variant:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.core-mode-variant:focus-visible,
+.core-mode-manage:focus-visible,
+.core-install-tier-btn:focus-visible {
+  outline: 2px solid var(--amb);
+  outline-offset: 1px;
+}
+
+.core-mode-manage {
+  justify-self: start;
+  min-height: 32px;
+  margin-top: 4px;
+  padding: 4px 10px;
+  border: 1px dashed var(--line-strong);
+  background: transparent;
+  color: var(--cx);
+  font-family: "Share Tech Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+.core-mode-manage[hidden] {
+  display: none;
 }
 
 .core-mode-empty {
@@ -3422,12 +3528,531 @@ audio.msg-image {
   animation: core-mode-pulse 1.2s ease-in-out infinite;
 }
 
+/* 0.5.76: legend next to the Core chip (Core tiers, formatting, commands). */
+.core-legend-btn {
+  display: inline-grid;
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--line);
+  background: var(--panel-soft);
+  color: var(--cx);
+  cursor: pointer;
+  font-family: "Share Tech Mono", monospace;
+  font-size: 13px;
+  clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
+}
+
+.core-legend-btn:hover,
+.core-legend-btn[aria-expanded="true"] {
+  border-color: var(--line-strong);
+  background: var(--panel-cx);
+}
+
+.core-legend-btn:focus-visible {
+  outline: 2px solid var(--amb);
+  outline-offset: 2px;
+}
+
+.core-legend {
+  position: absolute;
+  z-index: 30;
+  right: clamp(18px, 3.4vw, 48px);
+  bottom: calc(max(10px, env(safe-area-inset-bottom)) + 34px);
+  width: min(460px, calc(100vw - 32px));
+  max-height: min(62vh, 560px);
+  padding: 12px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--line-strong);
+  background: var(--panel-solid);
+  box-shadow: var(--shadow-soft);
+  color: var(--txt);
+}
+
+.core-legend[hidden] {
+  display: none;
+}
+
+.core-legend-section + .core-legend-section {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.core-legend h3 {
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-family: "Share Tech Mono", monospace;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+}
+
+.core-legend-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.core-legend-table th,
+.core-legend-table td {
+  padding: 4px 6px 4px 0;
+  overflow-wrap: anywhere;
+  text-align: left;
+  vertical-align: top;
+}
+
+.core-legend-table thead th {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.core-legend-table tbody th {
+  white-space: nowrap;
+}
+
+.core-legend-table tbody tr + tr th,
+.core-legend-table tbody tr + tr td {
+  border-top: 1px solid var(--line);
+}
+
+.core-legend-note {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.core-legend-list {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 4px 10px;
+  margin: 0;
+  font-size: 12px;
+}
+
+.core-legend-list dt,
+.core-legend-list dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.core-legend-list dd {
+  color: var(--muted);
+}
+
+.core-legend code {
+  padding: 0 3px;
+  background: var(--panel-cx);
+  font-size: 11px;
+}
+
+/* 0.5.76: install window for a missing tier. */
+.core-install {
+  position: fixed;
+  z-index: 60;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(16, 22, 38, 0.42);
+}
+
+.core-install[hidden] {
+  display: none;
+}
+
+.core-install-panel {
+  width: min(460px, 100%);
+  max-height: calc(100dvh - 32px);
+  padding: 14px 16px 16px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--line-strong);
+  background: var(--panel-solid);
+  box-shadow: var(--shadow-soft);
+  color: var(--txt);
+}
+
+.core-install-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.core-install-x {
+  min-width: 32px;
+  min-height: 32px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.core-install-x:hover {
+  border-color: var(--line);
+  color: var(--txt);
+}
+
+.core-install-x:focus-visible,
+.core-install-btn:focus-visible {
+  outline: 2px solid var(--amb);
+  outline-offset: 1px;
+}
+
+.core-install-title {
+  margin: 4px 0 6px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.core-install-lead,
+.core-install-tech,
+.core-install-note,
+.core-install-step {
+  margin: 0 0 8px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.core-install-tech {
+  color: var(--muted);
+  font-family: "Share Tech Mono", monospace;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.core-install-tech:empty,
+.core-install-note:empty {
+  display: none;
+}
+
+.core-install-check {
+  margin: 10px 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.core-install-tiers h4,
+.core-install-maint h4,
+.core-install-cloud h4,
+.core-install-check h4 {
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-family: "Share Tech Mono", monospace;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+}
+
+.core-install-rows {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 4px 10px;
+  margin: 0;
+  font-size: 12px;
+}
+
+.core-install-rows dt {
+  position: relative;
+  padding-left: 14px;
+  color: var(--muted);
+}
+
+.core-install-rows dt::before {
+  content: "";
+  position: absolute;
+  top: 0.45em;
+  left: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+}
+
+.core-install-rows dt[data-state="warn"]::before {
+  background: var(--amb);
+}
+
+.core-install-rows dt[data-state="bad"]::before {
+  background: var(--red);
+}
+
+.core-install-rows dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.core-install-verdict {
+  display: grid;
+  gap: 2px;
+  margin-top: 10px;
+  padding: 8px 10px;
+  border-left: 3px solid var(--green);
+  background: rgba(42, 175, 117, 0.08);
+  font-size: 12px;
+}
+
+.core-install-verdict[hidden] {
+  display: none;
+}
+
+.core-install-verdict strong {
+  font-size: 13px;
+}
+
+.core-install-verdict[data-verdict="knapp"] {
+  border-left-color: var(--amb);
+  background: var(--panel-amb);
+}
+
+.core-install-verdict[data-verdict="abraten"] {
+  border-left-color: var(--red);
+  background: rgba(212, 80, 93, 0.08);
+}
+
+.core-install-progress[hidden] {
+  display: none;
+}
+
+.core-install-tiers,
+.core-install-maint,
+.core-install-cloud {
+  margin: 10px 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.core-install-tierlist,
+.core-install-results {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.core-install-tier {
+  display: grid;
+  gap: 3px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+}
+
+.core-install-tier[data-status="missing"] {
+  border-style: dashed;
+}
+
+.core-install-tier-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.core-install-tier-status {
+  color: var(--green);
+  font-family: "Share Tech Mono", monospace;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.core-install-tier[data-status="cloud"] .core-install-tier-status {
+  color: var(--cx);
+}
+
+.core-install-tier[data-status="missing"] .core-install-tier-status {
+  color: var(--muted-soft);
+}
+
+.core-install-tier-cores {
+  color: var(--muted);
+  font-family: "Share Tech Mono", monospace;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.core-install-tier-alias {
+  color: var(--amb);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.core-install-tier-btn {
+  justify-self: start;
+  min-height: 30px;
+  margin-top: 2px;
+  padding: 2px 10px;
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  color: var(--cx);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.core-install-maint .core-mode-row {
+  padding-top: 0;
+}
+
+.core-install-maint .core-mode-copy small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.core-install-update-info {
+  margin: 8px 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.core-install-results {
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.core-install-results li {
+  padding-left: 14px;
+  position: relative;
+}
+
+.core-install-results li::before {
+  content: "";
+  position: absolute;
+  top: 0.45em;
+  left: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+}
+
+.core-install-results li[data-state="bad"]::before {
+  background: var(--red);
+}
+
+.core-install-actions.core-install-actions--start {
+  justify-content: flex-start;
+  margin-top: 8px;
+}
+
+a.core-install-btn {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.core-install-tier-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.core-install-tier-btn:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.core-install-cloud-state {
+  margin: 0 0 6px;
+  font-size: 13px;
+}
+
+.core-install-cloud-state[data-state="ok"] {
+  color: var(--green);
+}
+
+.core-install-cloud-state[data-state="warn"] {
+  color: var(--amb);
+}
+
+.core-install-cloud-steps {
+  margin: 0 0 6px;
+  padding-left: 20px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.core-install-bar {
+  height: 6px;
+  margin: 6px 0;
+  overflow: hidden;
+  background: var(--panel-cx);
+}
+
+.core-install-bar i {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: var(--cx);
+  transition: width 0.4s var(--ease-holo);
+}
+
+.core-install-note[data-tone="bad"] {
+  color: var(--red);
+}
+
+.core-install-note[data-tone="warn"] {
+  color: var(--amb);
+}
+
+.core-install-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.core-install-btn {
+  min-height: 36px;
+  padding: 6px 14px;
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  color: var(--txt);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.core-install-btn[hidden] {
+  display: none;
+}
+
+.core-install-btn--go {
+  border-color: var(--cx);
+  background: var(--cx);
+  color: var(--ink-inverse);
+}
+
+.core-install-btn--go[data-tone="warn"] {
+  border-color: var(--amb);
+  background: var(--amb);
+}
+
+.core-install-btn:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .core-install-bar i {
+    transition: none;
+  }
+}
+
 @keyframes core-mode-pulse {
   50% { opacity: 0.35; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .core-mode-chip[data-state="loading"] .core-mode-think {
+  .core-mode-chip[data-state="loading"] .core-mode-think,
+  .core-mode-dot[data-state="loading"] {
     animation: none;
   }
 }
@@ -3852,8 +4477,17 @@ audio.msg-image {
     display: none;
   }
 
-  .core-mode-menu {
+  .core-mode-menu,
+  .core-legend {
     right: 16px;
+  }
+
+  .core-legend-list {
+    grid-template-columns: 1fr;
+  }
+
+  .core-legend-list dd {
+    margin-bottom: 4px;
   }
 
   .core-mode-name {

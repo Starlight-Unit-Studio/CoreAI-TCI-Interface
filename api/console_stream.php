@@ -778,11 +778,8 @@ try {
     $reply = ember_sanitize_public_reply($reply, $thinkingAll);
   }
 
-  // Safety-Strip etwaiger Marker (wie im normalen Pfad).
-  if ($reply !== '') {
-    $reply = trim((string)preg_replace('~\[(?:WEB|BROWSE):[^\]]*\]~i', '', $reply));
-    $reply = trim((string)preg_replace('~\[/?PY\]~i', '', $reply));
-  }
+  // Safety-Strip etwaiger Marker (wie im normalen Pfad); Erwaehnungen in Code bleiben.
+  if ($reply !== '') $reply = trim(ember_strip_stray_tool_markers($reply));
   if ($reply === '' && coreui_console_artifact_pending((int)$uid, $sessionId, $afterId)) {
     $reply = 'Die erzeugten Dateien stehen unten zum Herunterladen bereit.';
   }

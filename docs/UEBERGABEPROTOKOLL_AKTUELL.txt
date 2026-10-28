@@ -1,9 +1,10 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
 Stand: 27.10.2026
-Repository-Version: 0.5.75
+Repository-Version: 0.5.76
 Repository: https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface
 ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_5_76.txt
   docs/UEBERGABEPROTOKOLL_0_5_75.txt
   docs/UEBERGABEPROTOKOLL_0_5_74.txt
   docs/UEBERGABEPROTOKOLL_0_5_73.txt
@@ -86,6 +87,9 @@ NAECHSTER SCHRITT: Lauf mit dem erweiterten Test, dann TTS-Kandidaten und P20.1.
 mit Vorladen im Chat, Modelfile ohne festes <|think|> (Betreiberfreigabe), Analyse-Block-Filter,
 Medien-Test mit Transkriptionsvarianten und Live einstufig/zweistufig.
 NAECHSTER SCHRITT: Update auf dem Server (baut Maras Core neu), Lauf mit dem neuen Test, dann P20.1.
+0.5.75 ist gemergt (PR #125), Lauf 4 erledigt. 0.5.76: Werkzeug-Erwaehnungen loesen nichts aus, keine
+falsche Korrekturrunde, Unterstriche im Chat, Arbeitsweg nur bei echter Arbeit, Sprachentscheidung.
+NAECHSTER SCHRITT: TTS-Kandidaten, dann P20.1.
 Mara/Ember, Ollama-Modelfile, serielle Queue und private Projekt-
 plaene NICHT ungefragt veraendern.
 Externe STU-Homepage wird in einem ANDEREN Chat bearbeitet.

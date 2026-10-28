@@ -29,8 +29,10 @@ vision_test(str_contains($vision, 'stammen nicht von') && str_contains($vision, 
 vision_test(str_contains($vision, '$visionTimeout = ember_timeout_for_model($primaryModel);'),
   'configured timeout also for a single image');
 
-// The regular sync prompt keeps the Modelfile SYSTEM (empty $sys).
-vision_test(str_contains($chat, "\$sysBase = \"\";\n  \$sys = \$sysBase;"), 'sync system prompt stays empty');
+// The regular sync prompt keeps the Modelfile SYSTEM: empty for Mara's own
+// Core; since 0.5.76 other Cores get the same persona text. Images use it too.
+vision_test(str_contains($chat, "\$sysBase = ember_persona_system_for(ember_model());\n  \$sys = \$sysBase;"),
+  'sync system prompt stays empty for Mara\'s own Core (runtime check in core-tiers-selftest)');
 
 // No memory reflection from an image description (console only).
 vision_test(str_contains($vision, "if (\$channel === 'console') \$GLOBALS['COREUI_VISION_TURN'] = true;"),

@@ -337,13 +337,27 @@ function ember_extract_explicit_reply_candidate(string $source): string {
 // oeffentliche Antwortpassage gerettet; sonst bleibt die Antwort leer und der Aufrufer
 // kann einen sauberen Fallback starten.
 /**
+ * Removes tool markers that were not executed from a public reply. Markers
+ * inside inline code or a code block are explanations ("dazu nutze ich den
+ * `[WEB: ...]`-Befehl") and stay; before 0.5.76 they left "``" behind.
+ */
+function ember_strip_stray_tool_markers(string $out): string {
+  return (string)preg_replace_callback(
+    '~(```[\s\S]*?```|`[^`\r\n]*`)|\[WEB:\s*.*?\]|\[BROWSE:\s*.*?\]|\[/?PY\]~iu',
+    static fn(array $m): string => ($m[1] ?? '') !== '' ? $m[1] : '',
+    $out);
+}
+
+/**
  * 0.5.75: without a thinking channel Mara sometimes writes her planning as a
  * leading bracket block ("[Analyse: Der Nutzer ...] Na klar ..."). Such
  * blocks are removed; tool markers like [WEB: ...] are not meta labels.
  */
 function ember_strip_leading_bracket_meta(string $content): string {
   $labels = ember_internal_meta_label_pattern();
-  $pattern = '~^\s*\[\s*(?:interne?\s+)?' . $labels . '\s*:[^\]]{0,4000}\]\s*~iu';
+  // 0.5.76: also compound names such as "[Systemanalyse: ...]" or "[Kontextanalyse: ...]".
+  $pattern = '~^\s*\[\s*(?:interne?\s+)?(?:\p{L}{2,20}(?:analyse|analysis|(?:ue|ü)berlegung|reasoning)|'
+    . $labels . ')\s*:[^\]]{0,4000}\]\s*~iu';
   for ($i = 0; $i < 3 && preg_match($pattern, $content, $m) === 1; $i++) {
     $content = (string)substr($content, strlen($m[0]));
   }
@@ -2241,8 +2255,21 @@ function ember_web_capability_hint_compact(): string {
     . "einer Zeile [WEB: suchbegriffe]. Fuer Smalltalk und Lore keine Websuche.";
 }
 
+/**
+ * 0.5.76: a marker inside inline code is a mention, never a call. When Mara
+ * explains her tools ("dazu nutze ich den `[WEB: ...]`-Befehl", "`[PY]`-Block")
+ * these mentions started real searches and ran the rest of the text as
+ * Python. Fenced blocks stay (a [PY] call may wrap its code in one).
+ */
+function ember_without_inline_code(string $s): string {
+  // A reply that is nothing but one marker in backticks is still a call.
+  if (preg_match('~\A\s*`(\[(?:WEB|BROWSE):[^`\]]+\]|\[PY\][^`]*\[/PY\])`\s*\z~iu', $s, $sole) === 1) return $sole[1];
+  return (string)preg_replace('~(?<!`)`(?!`)[^`\r\n]+`(?!`)~u', '', $s);
+}
+
 // Marker [WEB: ...] aus Embers Antwort extrahieren.
 function ember_extract_web_marker(string $s): ?string {
+  $s = ember_without_inline_code((string)preg_replace('~```[\s\S]*?```~u', '', $s));
   if (stripos($s, '[WEB:') === false) return null;
   if (!preg_match('~\[WEB:\s*(.+?)\]~iu', $s, $m)) return null;
   $q = trim($m[1]);
@@ -2352,6 +2379,7 @@ function ember_console_prompt_profile(string $channel, ?int $contextTokens): arr
 }
 
 function ember_extract_browse_marker(string $s): ?string {
+  $s = ember_without_inline_code((string)preg_replace('~```[\s\S]*?```~u', '', $s));
   if (stripos($s, '[BROWSE:') === false) return null;
   if (!preg_match('~\[BROWSE:\s*(.+?)\]~iu', $s, $m)) return null;
   $q = trim($m[1]);
@@ -2712,6 +2740,7 @@ function ember_console_file_tool_candidate(string $reply, string $request): ?arr
 // Code aus [PY]...[/PY] ziehen. Robust gegen fehlendes Schluss-Tag und Markdown-Fences,
 // weil Gemma 4 beides regelmaessig verschludert.
 function ember_py_extract_marker(string $s): ?string {
+  $s = ember_without_inline_code($s);
   if (stripos($s, '[PY]') === false) return null;
   if (preg_match('~\[PY\](.*?)\[/PY\]~isu', $s, $m)) {
     $code = (string)$m[1];
@@ -3782,8 +3811,8 @@ function ember_ollama_parameters_num_ctx(string $parameters): ?int {
   return $ctx >= 256 ? $ctx : null;
 }
 
-/** Context window set in the model's Modelfile (read-only /api/show). */
-function ember_ollama_show_context(string $model): ?int {
+/** Read-only /api/show answer of a Core, null when Ollama does not answer. */
+function ember_ollama_show_json(string $model): ?array {
   $url = preg_replace('~/api/(?:chat|generate)/?$~', '/api/show', ember_url());
   if (!is_string($url) || !str_ends_with($url, '/api/show')) return null;
   $ch = curl_init($url);
@@ -3801,8 +3830,43 @@ function ember_ollama_show_context(string $model): ?int {
   curl_close($ch);
   if (!is_string($raw) || $code < 200 || $code >= 300) return null;
   $show = json_decode($raw, true);
+  return is_array($show) ? $show : null;
+}
+
+/** Context window set in the model's Modelfile (read-only /api/show). */
+function ember_ollama_show_context(string $model): ?int {
+  $show = ember_ollama_show_json($model);
   return is_array($show) && is_string($show['parameters'] ?? null)
     ? ember_ollama_parameters_num_ctx($show['parameters']) : null;
+}
+
+/** Mara's SYSTEM text from the active Modelfile template, without a thinking switch. */
+function ember_mara_system_text(): string {
+  $text = (string)@file_get_contents(dirname(__DIR__) . '/config/Modelfile.template');
+  if (preg_match('~^SYSTEM[ \t]+"""(.*?)^"""~ms', $text, $m) !== 1) return '';
+  return trim(str_replace('<|think|>', '', $m[1]));
+}
+
+/**
+ * 0.5.76: every Core speaks as Mara. Her own Core carries the SYSTEM text in
+ * its Modelfile, so nothing is sent (the Modelfile stays authoritative). A
+ * raw Gemma Core or a cloud Core has none and gets the same text as system
+ * message; thinking still follows the switch. A Core with a SYSTEM text of
+ * its own keeps it.
+ */
+function ember_persona_system_for(string $model): string {
+  static $memo = [];
+  $model = trim($model);
+  $default = trim((string)ember_cfg('STU_EMBER_MODEL', 'ember-coreui:latest'));
+  $key = static function (string $n): string {
+    $n = strtolower($n);
+    return ($n !== '' && !str_contains($n, ':')) ? $n . ':latest' : $n;
+  };
+  if ($model === '' || $key($model) === $key($default)) return '';
+  if (array_key_exists($model, $memo)) return $memo[$model];
+  $show = ember_ollama_show_json($model);
+  if (is_array($show) && trim((string)($show['system'] ?? '')) !== '') return $memo[$model] = '';
+  return $memo[$model] = ember_mara_system_text();
 }
 
 /**
@@ -4726,7 +4790,8 @@ function ember_build_chat_prompt(
     $wochentage = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
     return $wochentage[(int)$dt->format('w')] . ', ' . $dt->format('d.m.Y') . ', ' . $dt->format('H:i') . ' Uhr';
   })();
-  $sys = "";
+  // 0.5.76: empty for Mara's own Core (Modelfile SYSTEM), her persona for other Cores.
+  $sys = ember_persona_system_for(ember_model());
 
   $nativeProjects = $channel === 'console' && $imageUrl === null
     && empty($GLOBALS['COREUI_NATIVE_TOOL_REENTRY']);
@@ -4939,17 +5004,17 @@ function ember_generate_reply(
   // Lore-Kontext wird im $sysBase-Pfad eingebunden (siehe unten: $sys .= $lore)
   // Der separate Lore-Fastpath wurde entfernt - er umging Embers Stimme und Memory.
 
-  // sysBase leer - Persoenlichkeit/Identitaet liegt vollstaendig im Modelfile-SYSTEM.
+  // sysBase bleibt fuer Maras eigenen Core leer - Persoenlichkeit/Identitaet liegt
+  // vollstaendig im Modelfile-SYSTEM, ein gesetzter system-Parameter wuerde es ersetzen.
+  // Andere Cores ohne SYSTEM bekommen seit 0.5.76 denselben Text (ember_persona_system_for).
   // Datum/Uhrzeit wird pro Nachricht direkt in $u eingefuegt.
-  // Beim /api/chat-Endpoint ueberschreibt ein gesetzter system-Parameter das Modelfile-SYSTEM -
-  // daher sysBase leer lassen damit das Modelfile ungekuerzt greift.
   $emberZeit = (function() {
     $tz = new DateTimeZone('Europe/Berlin');
     $dt = new DateTime('now', $tz);
     $wochentage = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
     return $wochentage[(int)$dt->format('w')] . ', ' . $dt->format('d.m.Y') . ', ' . $dt->format('H:i') . ' Uhr';
   })();
-  $sysBase = "";
+  $sysBase = ember_persona_system_for(ember_model());
   $sys = $sysBase;
   // Memory wird in $u eingefuegt (nicht in $sys) damit das Modelfile-SYSTEM nicht ueberschrieben wird
 
@@ -6033,11 +6098,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   }
 
   // Sicherheitsnetz: falls doch ein Restmarker durchrutscht, entfernen.
-  if (is_string($out)) {
-    $out = preg_replace('~\[WEB:\s*.*?\]~iu', '', $out);
-    $out = preg_replace('~\[BROWSE:\s*.*?\]~iu', '', $out);
-    $out = preg_replace('~\[/?PY\]~iu', '', $out);
-  }
+  if (is_string($out)) $out = ember_strip_stray_tool_markers($out);
 
   if ($channel === 'console' && !$fileTask && is_string($out) && trim($out) !== ''
       && ember_last_call_was_truncated()) {

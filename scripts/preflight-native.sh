@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.75 thinking switch and Core choice in the chat, Modelfile without fixed <|think|>, media test variants.
+# CoreAI: TCI Interface 0.5.76 tool mentions run no tool, underscores stay in the chat, quieter work view, voice decision.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -125,6 +125,12 @@ UI_FILES=(
   scripts/thinking-switch-ui-selftest.cjs
   js/coreui-core-mode.js
   api/core_preload.php
+  scripts/tool-mention-selftest.php
+  scripts/core-tiers-selftest.php
+  scripts/core-install-selftest.php
+  scripts/core-install-ui-selftest.cjs
+  api/core_install.php
+  js/coreui-core-install.js
   scripts/media-spike.php
   scripts/media-spike.sh
   js/coreui-net.js
@@ -436,6 +442,27 @@ if command -v php >/dev/null 2>&1; then
     fail "Audio-WAV-Selbsttest: ${audio_test:-Unbekannter Fehler}"
   fi
 
+  tiers_test=''
+  if tiers_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/core-tiers-selftest.php" 2>&1)"; then
+    ok 'Core-Stufen: TCI-Namen im Chat und Maras Persona fuer jeden Core geprueft.'
+  else
+    fail "Core-Stufen-Selbsttest: ${tiers_test:-Unbekannter Fehler}"
+  fi
+
+  install_test=''
+  if install_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/core-install-selftest.php" 2>&1)"; then
+    ok 'Core-Installer: Maras Core aus dem Modelfile, Hardware-Check, Fortschritt, ein Auftrag, nur Admins geprueft.'
+  else
+    fail "Core-Installer-Selbsttest: ${install_test:-Unbekannter Fehler}"
+  fi
+
+  mention_test=''
+  if mention_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/tool-mention-selftest.php" 2>&1)"; then
+    ok 'Werkzeug-Erwaehnungen: Erklaerungen starten kein Werkzeug und keine Korrekturrunde.'
+  else
+    fail "Werkzeug-Erwaehnungs-Selbsttest: ${mention_test:-Unbekannter Fehler}"
+  fi
+
   think_test=''
   if think_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/thinking-switch-selftest.php" 2>&1)"; then
     ok 'Denkschalter und Core-Wahl: Modelfile ohne festes Denken, Speichern, Vorladen, globaler Kanal und Analyse-Filter geprueft.'
@@ -478,9 +505,14 @@ if command -v php >/dev/null 2>&1; then
       fail 'KI-Profil: Kontextfenster-Regler-Selbsttest fehlgeschlagen.'
     fi
     if node "$PROJECT_ROOT/scripts/thinking-switch-ui-selftest.cjs" >/dev/null 2>&1; then
-      ok 'Chat: Core-Chip mit Ollama-Liste, Laden, Denkschalter und Fehlerfaellen geprueft.'
+      ok 'Chat: Core-Chip mit TCI-Namen, fester Reihenfolge, gruenen Punkten, Legende, Laden, Denkschalter und Fehlerfaellen geprueft.'
     else
       fail 'Chat: Denkschalter-Oberflaechentest fehlgeschlagen.'
+    fi
+    if node "$PROJECT_ROOT/scripts/core-install-ui-selftest.cjs" >/dev/null 2>&1; then
+      ok 'Chat: Install-Fenster mit Hardware-Check, Bestaetigung, Fortschritt und Jetzt nutzen geprueft.'
+    else
+      fail 'Chat: Install-Fenster-Oberflaechentest fehlgeschlagen.'
     fi
     if node "$PROJECT_ROOT/scripts/webui-resilience-selftest.cjs" >/dev/null 2>&1; then
       ok 'WebUI: abbrechbares Laden, Reconnect ohne Doppelauftrag, Backoff und lange Chats geprueft.'

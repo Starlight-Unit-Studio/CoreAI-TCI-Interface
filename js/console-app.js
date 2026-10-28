@@ -1255,8 +1255,11 @@
     // Fortschrittsnotizen. Eine abgeschlossene Antwort klappt standardmaessig
     // zusammen, statt die Live-Timeline ungefragt offen zu lassen.
     var workTimeline = null;
+    // 0.5.76: a plain answer without tools, notes, files or errors shows none.
     if (role === 'ember' && record && Array.isArray(record.work_events)
-        && record.work_events.length > 0 && window.CoreUIWorkEvents) {
+        && record.work_events.length > 0 && window.CoreUIWorkEvents
+        && (typeof window.CoreUIWorkEvents.substantive !== 'function'
+          || window.CoreUIWorkEvents.substantive(record.work_events))) {
       var workSessionId = String(record.session_id || (activeSession() && activeSession().id) || '');
       var workMessageKey = String(Number(record.id) || 0);
       var expandedMap = state.workExpandedBySession[workSessionId] || {};

@@ -553,7 +553,7 @@ local_file_test(str_contains($handler, 'ember_console_file_tool_is_device_local(
 function ember_cfg(string $key, mixed $default = null): mixed { return $default; }
 function ember_debug_log(string $event, array $meta): void {}
 $tokens = token_get_all($handler);
-$wantedFunctions = ['ember_py_max_code_chars','ember_py_extract_marker',
+$wantedFunctions = ['ember_py_max_code_chars','ember_py_extract_marker','ember_without_inline_code',
   'ember_console_file_tool_candidate','ember_console_file_tool_directive',
   'ember_console_file_tool_is_local','ember_console_file_tool_is_device_local','ember_console_file_tool_is_local_qwen_coder',
   'ember_console_source_only_project_route',

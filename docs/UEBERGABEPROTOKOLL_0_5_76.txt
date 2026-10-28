@@ -1,0 +1,86 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.5.76
+Stand: 28.10.2026
+Branch: claude/bold-galileo-myoyi0 (neu von main 0.5.75 nach Merge von PR #125)
+Basis: Lauf 4 des Medien-Tests und ein Chattest mit Denken aus (Screenshots): die zweite Antwort brauchte
+ueber eine Minute (13 Schritte, 4 Werkzeuge, 1 Fehler, Korrekturrunde) und zeigte "``-Befehl"; Unterstriche
+wurden im Chat zu Kursivschrift.
+
+URSACHEN UND AENDERUNGEN:
+- api/chat.php: ember_extract_web_marker, ember_extract_browse_marker und ember_py_extract_marker fanden Marker
+  auch in Inline-Code; neue ember_without_inline_code (nur einfache Backtick-Spans, Fences bleiben fuer PY).
+  WEB und BROWSE ignorieren zusaetzlich Codebloecke. ember_strip_stray_tool_markers ersetzt das alte
+  Sicherheitsnetz (auch in api/console_stream.php) und laesst Code stehen. Analyse-Filter mit
+  zusammengesetzten Namen (\p{L}{2,20} vor analyse/analysis/ueberlegung/reasoning).
+- api/console_native_tools.php: coreui_native_public_progress_only akzeptiert mehrzeilige, lange und offene
+  Fortschrittsbloecke vor Text; eine einzelne kurze Notiz und echte Werkzeugbloecke bleiben streng; Marker in
+  Inline-Code zaehlen nicht.
+- js/coreui-markdown.js: Flanken-Regeln fuer _ und * (emphasisOpens, emphasisCloser).
+- js/coreui-work-events.js: substantive(events); js/console-app.js zeigt den Arbeitsweg unter fertigen Antworten
+  nur, wenn substantive() wahr ist. settings.html: "ARBEITSWEG OFFEN HALTEN".
+- Betreiberwunsch TCI-Namen: api/model_catalog.php (coreui_core_tier, coreui_core_label, coreui_core_mara_base aus
+  var/Modelfile.generated bzw. config/Modelfile.template), api/models.php und api/user_settings.php senden label,
+  default_label, core_label; js/coreui-core-mode.js zeigt TCI-Namen (eine Zeile je Stufe, Maras Basis-Core in
+  ihrer Stufe zusammengefasst, Sortierung Schnell bis Premium) und baut die Legende; js/coreui-insights.js
+  nutzt den Namen im CORE-Kasten. Das KI-Profil bleibt technisch. Nachtrag: 12b heisst "TCI: Mara Plus".
+- Betreiberwunsch Reihenfolge und Installer: js/coreui-core-mode.js listet fest Schnell, Normal, Plus, Pro,
+  Premium (je lokal, dann Cloud), danach eigene Namen; gruener Punkt fuer installierte Cores, gelb beim Laden;
+  fehlende lokale Stufen (api/models.php missing_tiers, coreui_core_missing_tiers) ausgegraut und antippbar.
+  Ein von Maras Modelfile gebauter Core (Feld mara) hat in seiner Stufe Vorrang vor der rohen Basis.
+- Neuer Installer api/core_install.php (Bibliothek, ueber api/user_settings.php erreichbar, keine neue
+  nginx-Freigabe noetig): GET ?core_install=<stufe> liefert Hardware-Check (/proc/meminfo, /proc/cpuinfo,
+  disk_free_space des CoreAI-Laufwerks, /api/version, /api/ps fuer die Grafikkarte) mit Empfehlung gut, knapp
+  oder abraten und can_install; GET ?core_install_status=1 den Fortschritt; POST action core_install startet
+  (nur Berechtigungsstufe 0 und 1, Bestaetigung bei abraten, gesperrt ohne Ollama, flock fuer genau einen
+  Auftrag). Der Auftrag laeuft nach fastcgi_finish_request: /api/pull mit gestreamtem Fortschritt nach
+  var/cache/core-install.json, dann /api/create mit dem Inhalt von config/Modelfile.template (FROM durch die
+  Basis ersetzt, TEMPLATE, SYSTEM, RENDERER, PARSER und PARAMETER wie geschrieben; unbekannte Befehle brechen
+  ab), dann /api/show zum Pruefen des SYSTEM-Texts. Name: Maras Familie mit der Groesse als Tag
+  (ember-coreui:12b); coreui_core_tier erkennt diese Namen. Keine serielle Warteschlange (nichts wird geladen).
+- js/coreui-core-install.js und das Fenster #coreInstall in app.html: Hardware-Check, Empfehlung, Install-Knopf,
+  Fortschritt in GB und Prozent, "Jetzt nutzen" nach Erfolg; Nicht-Admins sehen den Check ohne Knopf.
+- Groessen im Katalog laut Screenshot des Betreibers von ollama.com/library/gemma4 (28.10.2026, oberer Wert
+  von "Size / Usage"): e2b 7,5, e4b 9,5, 12b 8,0, 26b 19, 31b 20 GB. api/model_catalog.php liefert jetzt auch
+  den Manifest-Digest je Core.
+- Betreiberwunsch keine Dopplung: js/coreui-core-mode.js baut je Stufe eine Zeile (div.core-mode-item); hat die
+  Stufe einen Cloud-Core, sitzen Lokal und Cloud als Knoepfe in der Zeile (aria-pressed), die Zeile zeigt den
+  Cloud-Core, wenn er gewaehlt ist oder lokal fehlt; "Lokal" grau oeffnet den Installer. Ein weiterer Core
+  derselben Stufe, der im KI-Profil gewaehlt wurde, bleibt als eigene Zeile sichtbar.
+- Betreiberwunsch Updates (Entscheidungen: Knopf "Cores verwalten" im Menue, Haupt-Core wird mit neu gebaut):
+  api/core_install.php coreui_core_update_plan (jede lokale Basis einmal, mit den Mara-Cores darauf),
+  coreui_core_update_run (Pull, Digest vorher und nachher ueber /api/tags, Neubau bei neuer Basis oder
+  abweichendem SYSTEM-Text, Ergebnis je Basis), coreui_core_manage_rows (Status, Zweitnamen: gleiche Digests,
+  echt ist Maras Basis), coreui_core_auto_update (stu_app_settings core_auto_update, core_update_last,
+  core_auto_update_since). api/user_settings.php: GET core_manage, POST core_update, POST core_auto_update
+  (alle nur Admins); der normale GET startet das woechentliche Update nach Ablauf im Hintergrund
+  (core_update_last wird vorher gesetzt, die Install-Sperre verhindert Doppelstarts).
+  Hinweis: Ollama raeumt alte Gewichte erst beim naechsten Neustart weg; bis dahin belegt ein Update kurz
+  doppelten Platz. Auf dem Betreiber-Server sind gemma4:e2b und gemma4:26b Kopien von e4b: ein Update laedt
+  dort das echte e2b (ca. 7,5 GB) und das echte 26b (ca. 19 GB); die Uebersicht warnt davor.
+- Betreiberwunsch Ollama Cloud ohne Terminal: aus dem Ollama-Quellcode bestaetigt, dass `ollama signin` nur
+  POST /api/me am lokalen Server ruft; 401 liefert signin_url (https://ollama.com/connect?name=...&key=...).
+  coreui_ollama_cloud_status (Version ab 0.12, Konto), Link nur bei https://ollama.com/connect?...;
+  GET core_cloud, POST core_cloud_add (nur verbunden, Pull von gemma4:31b-cloud ohne Modelfile-Bau). Ein
+  Token-Feld ist nicht noetig: Ein API-Schluessel (OLLAMA_API_KEY) muesste in der Umgebung des Ollama-Dienstes
+  stehen, die CoreAI nicht aendern kann; die Verbindung per Link ist der Weg ohne SSH.
+- js/coreui-core-install.js: zweiter Modus "Cores verwalten" (Stufenliste, Update, Ergebnisse, Ollama Cloud),
+  Update-Bereich auch im Installationsfenster (Admins).
+- Betreiberentscheidung Persona: api/chat.php ember_persona_system_for (Maras Core leer, Core ohne SYSTEM laut
+  /api/show bekommt ember_mara_system_text, Core mit eigenem SYSTEM behaelt ihn), in beiden Prompt-Buildern.
+- app.html/css: Legende (Knopf neben dem Chip) mit Core-Stufen, Formatierung, Befehlen und Tasten.
+- Doku: Sprachplan Lauf 4 und Entscheidung (Mitschrift ueber Vorlage, zweistufig im Chat, Live einstufig),
+  Roadmap P20.0 Hoeren erledigt.
+
+GEPRUEFT:
+- Alle Offline-Selbsttests (51), neu tool-mention-selftest.php mit der Erklaerung aus dem Chattest; echte Aufrufe
+  (WEB, BROWSE, PY einzeilig und mit Fence) weiterhin erkannt. Neu core-install-selftest.php (Create-Anfrage
+  aus dem echten Template, Parser, Empfehlungen, Pull-Fortschritt, Sperre, Rechte) und
+  core-install-ui-selftest.cjs (Fenster in allen Zustaenden, Cores verwalten, Update, Ollama Cloud). Menue und
+  Fenster per Browser-Screenshot auf Desktop und Handy geprueft (ohne Querscrollen). Ein echter Pull, ein
+  echtes Update und die echte Cloud-Anmeldung gegen Ollama stehen noch aus.
+
+HINWEIS AN DEN BETREIBER: Auf dem Server sind gemma4:26b und gemma4:e2b nur weitere Namen fuer dieselbe
+Gewichtsdatei wie gemma4:e4b (370c2879f176, 7.5B). Ob sie geloescht oder die echten Modelle gezogen werden,
+entscheidet der Betreiber; CoreAI aendert keine Modelle.
+
+NAECHSTER SCHRITT: Installer, Update und Cloud-Anmeldung einmal echt auf dem Server ausprobieren, dann TTS-Kandidaten fuer
+Maras Stimme messen, dann P20.1 (Mikrofon im Chat, zweistufig).

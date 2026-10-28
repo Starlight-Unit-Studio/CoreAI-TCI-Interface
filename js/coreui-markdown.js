@@ -48,6 +48,34 @@
     return { type: 'text', value: String(value || '') };
   }
 
+  // 0.5.76: emphasis follows the CommonMark flanking idea. "_" never opens or
+  // closes inside a word (snake_case, COREUI_PLAN_SAVE, my_app/config_file.php
+  // stay as written); "*" needs text right after the opener and right before
+  // the closer and never marks math between digits (2*3*4).
+  var WORD_CHAR = /[0-9A-Za-z\u00C0-\u024F\u0370-\u03FF\u0400-\u04FF]/;
+  function isWordChar(ch) { return !!ch && WORD_CHAR.test(ch); }
+  function isSpaceChar(ch) { return !ch || /\s/.test(ch); }
+  function betweenDigits(before, after) { return /[0-9]/.test(before || '') && /[0-9]/.test(after || ''); }
+
+  function emphasisOpens(text, i, mark) {
+    var before = text.charAt(i - 1);
+    var after = text.charAt(i + mark.length);
+    if (isSpaceChar(after)) return false;
+    if (mark.charAt(0) === '_') return !isWordChar(before);
+    return !betweenDigits(before, after);
+  }
+
+  function emphasisCloser(text, from, mark) {
+    for (var j = text.indexOf(mark, from); j >= 0; j = text.indexOf(mark, j + 1)) {
+      var before = text.charAt(j - 1);
+      var after = text.charAt(j + mark.length);
+      if (j === from || isSpaceChar(before)) continue;
+      if (mark.charAt(0) === '_' ? isWordChar(after) : betweenDigits(before, after)) continue;
+      return j;
+    }
+    return -1;
+  }
+
   function parseInline(value, depth) {
     var text = String(value || '');
     var level = Number(depth) || 0;
@@ -82,9 +110,10 @@
         }
       }
 
-      if (text.slice(i, i + 2) === '**' || text.slice(i, i + 2) === '__') {
+      if ((text.slice(i, i + 2) === '**' || text.slice(i, i + 2) === '__')
+          && emphasisOpens(text, i, text.slice(i, i + 2))) {
         var strongMark = text.slice(i, i + 2);
-        var strongEnd = text.indexOf(strongMark, i + 2);
+        var strongEnd = emphasisCloser(text, i + 2, strongMark);
         if (strongEnd > i + 2) {
           pushWrapped('strong', text.slice(i + 2, strongEnd));
           i = strongEnd + 2;
@@ -152,9 +181,9 @@
         }
       }
 
-      if (text.charAt(i) === '*' || text.charAt(i) === '_') {
+      if ((text.charAt(i) === '*' || text.charAt(i) === '_') && emphasisOpens(text, i, text.charAt(i))) {
         var emMark = text.charAt(i);
-        var emEnd = text.indexOf(emMark, i + 1);
+        var emEnd = emphasisCloser(text, i + 1, emMark);
         if (emEnd > i + 1) {
           pushWrapped('em', text.slice(i + 1, emEnd));
           i = emEnd + 1;
