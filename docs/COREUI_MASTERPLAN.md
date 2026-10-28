@@ -20,7 +20,7 @@ Für die Aufgabenbearbeitung dient der vom Betreiber gewünschte Arbeitsumfang v
 
 ### Feste Rahmenbedingungen
 
-- **Höchstens eine Modellanfrage gleichzeitig.** Alle interaktiven Aufträge, Unteraufgaben, Automationen, Gedächtnispflege und Zusammenfassungen verwenden dieselbe zentrale serielle Ausführung. Mehrere Rollen oder Agenten dürfen keine zusätzlichen parallelen Modellanfragen erzeugen.
+- **Höchstens eine Modellanfrage gleichzeitig.** Alle interaktiven Aufträge, Unteraufgaben, Automationen, Gedächtnispflege und Zusammenfassungen verwenden dieselbe zentrale serielle Ausführung. Mehrere Rollen oder Agenten dürfen keine zusätzlichen parallelen Modellanfragen erzeugen. Einzige Ausnahme seit 28.10.2026: die Sprachausgabe (TTS) mit festem Kernlimit, siehe [Sprachplan](COREUI_VOICE_PLAN.md).
 - **Echte Arbeit muss sichtbar sein.** Geplante Schritte, tatsächliche Werkzeugereignisse und Ergebnisse haben getrennte Zustände. Statussätze dürfen nicht vortäuschen, dass ein Werkzeug bereits ausgeführt wurde.
 - **Eigenständiges Produkt.** Name, Branding, bestehende Lizenz- und Community-Regeln von E.M.B.E.R. CoreUI bleiben maßgeblich. Die Referenzprodukte bestimmen weder Lizenzmodell noch Bezahlfunktionen der eigenen Umsetzung.
 - **Am Handy bedienbar.** Die zentralen Abläufe müssen in Android Chrome einschließlich Dateidownload, Wiederaufnahme, Editor, Terminalbedienung und Freigaben nutzbar sein.

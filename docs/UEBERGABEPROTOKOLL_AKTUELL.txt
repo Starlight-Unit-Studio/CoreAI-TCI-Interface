@@ -1,9 +1,10 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
 Stand: 27.10.2026
-Repository-Version: 0.5.71
+Repository-Version: 0.5.72
 Repository: https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface
 ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_5_72.txt
   docs/UEBERGABEPROTOKOLL_0_5_71.txt
   docs/UEBERGABEPROTOKOLL_0_5_70.txt
   docs/UEBERGABEPROTOKOLL_0_5_69.txt
@@ -68,6 +69,10 @@ Chats). #112 P3 gehoert in Quantum-Mobile-Wrapper.
 den Verlauf, sichtbarer Suchschritt); Bild/Video nutzen dieselbe Mara wie
 Text (kein eigener System-Prompt mehr), keine falsche Fehlermeldung bei
 Anhaengen, keine Gedaechtnisfakten aus Bildbeschreibungen.
+0.5.71 ist gemergt (PR #121) und laeuft live problemlos.
+0.5.72: Roadmap auf Stand 0.5.71 und neuer Sprachplan (docs/COREUI_VOICE_PLAN.md).
+NAECHSTER SCHRITT: P20.0, Test von Audio ueber Ollama und TTS-Kandidaten auf dem Server.
+Reihenfolge laut Betreiber: Sprache, dann Bildgenerierung, dann Projekt-Workspace.
 Mara/Ember, Ollama-Modelfile, serielle Queue und private Projekt-
 plaene NICHT ungefragt veraendern.
 Externe STU-Homepage wird in einem ANDEREN Chat bearbeitet.

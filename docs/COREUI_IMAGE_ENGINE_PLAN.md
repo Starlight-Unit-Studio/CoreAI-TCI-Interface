@@ -1,4 +1,4 @@
-# Native Bildgenerierung: Ember Image Engine (Planungsstand 21.10.2026)
+# Native Bildgenerierung: Ember Image Engine (Planungsstand 21.10.2026, ergänzt 28.10.2026)
 
 **Status: geplant, nicht implementiert und nicht live gemessen.** Die Engine ist ein eigener Medienpfad im E.M.B.E.R. CoreUI. Sie ist kein Aufruf von ComfyUI, kein Wechsel der Textmodell-Laufzeit und kein fertiges Bildmodell. Schnittstellen, Gewichte und Lizenzbedingungen werden vor einer Aktivierung überprüft.
 
@@ -14,6 +14,22 @@ Der Nutzer fordert im Chat ein Bild an. Der Agent identifiziert den Medientool-A
 - **FLUX.1-schnell** mit passenden, zusammengehoerigen Text-Encodern (z.B. CLIP-L und T5-XXL), Diffusion Transformer und VAE. Die benoetigten Formate und Quantisierungen haengen von der ausgewaehlten Runtime-Version ab; GGUF wird nicht fuer jeden Teil der Pipeline vorausgesetzt. Repository-, Gewichts- und Nutzungsbedingungen sind vor Distribution separat zu pruefen.
 - **SDXL-Turbo** als alternativer Kandidat fuer sehr wenige Sampling-Schritte. Ein einzelner Step bedeutet keine garantierte einstellige Laufzeit und keine identische Pipeline zu FLUX.1. Runtime-Kompatibilitaet, benoetigte Encoder/VAE und Qualitaet pro Aufloesung sind gesondert zu validieren.
 - Gewichtsquellen wie Hugging Face oder Konvertierungen von Dritten werden nur anhand einer festgehaltenen konkreten Version mit Hash, Herkunft und passender Lizenz akzeptiert. Die Modellgewichte werden nicht stillschweigend im Installationspaket mitgeliefert.
+
+## Konkretes Startsetup (Betreiber-Recherche 28.10.2026, im Test zu bestätigen)
+
+Die Recherche bestätigt die Richtung dieses Plans und nennt ein konkretes erstes Setup für FLUX.1 [schnell] im GGUF-Format, getrennt in drei Stufen, die nacheinander laufen:
+
+| Stufe | Datei laut Recherche | Hinweis |
+|---|---|---|
+| Text-Encoder (Conditioning) | T5-XXL als GGUF, zum Beispiel `t5v1.1-xxl-encoder-Q4_K_M.gguf`, und CLIP-L, zum Beispiel `clip_l-Q8_0.gguf` | T5-XXL ist der größte RAM-Posten neben dem Transformer. |
+| Transformer (Hauptmodell) | `flux1-schnell-Q8_0.gguf`, alternativ `Q5_K_M` für mehr Tempo | Laut Recherche rund 15 GB im RAM; die tatsächliche Größe zählt nach dem Download. FLUX.1 [schnell] ist für sehr wenige Schritte gebaut; gemessen wird mit 4 und mit 8 Schritten. |
+| VAE-Decoder | `ae.safetensors` aus dem FLUX.1-schnell-Repository | Liefert die RGB-Pixel; stable-diffusion.cpp liest dieses Format direkt. |
+
+- **Quelle der GGUF-Dateien:** Konvertierungen auf Hugging Face, laut Recherche am verlässlichsten von `city96`. Jede Datei wird mit Repository, Commit, SHA-256 und Lizenz im Modellregister festgehalten.
+- **Lizenzen:** FLUX.1 [schnell] steht unter Apache 2.0, die Konvertierungen und der VAE werden pro Datei geprüft. **SDXL-Turbo** stand ursprünglich unter einer nur nicht-kommerziellen Lizenz von Stability AI; vor einem Einsatz ist die aktuell gültige Lizenz zu prüfen, sonst bleibt es ein reiner Testkandidat.
+- **SDXL-Turbo als Sofort-Variante:** `sdxl_turbo_Q8_0.gguf` mit einem einzigen Schritt, geringere Qualität als FLUX. Die genannten Zeiten (FLUX 30 bis 60 Sekunden, SDXL-Turbo einstellige Sekunden auf 20 Kernen) sind Schätzungen der Recherche, keine Messwerte.
+- **Integration in CoreAI:** Das Backend ist PHP mit eigenem Python-Worker. stable-diffusion.cpp wird als fertig kompiliertes Programm (Kommandozeile oder sein eingebauter Server) in einem isolierten Worker-Prozess mit festen Argumenten aufgerufen, so wie heute der Python-Worker. Die ggml-Rechenkerne werden weder nachgebaut noch herauskopiert; die Bibliothek bleibt eine geprüfte, versionierte Fremdkomponente mit Lizenzhinweis.
+- **Host:** 20 Kerne und AVX-512 auf dem EPYC Turin werden vor dem Test auf dem echten Host bestätigt (zum Beispiel über `lscpu`), damit stable-diffusion.cpp mit den passenden CPU-Funktionen gebaut wird.
 
 ## Modulvertrag
 

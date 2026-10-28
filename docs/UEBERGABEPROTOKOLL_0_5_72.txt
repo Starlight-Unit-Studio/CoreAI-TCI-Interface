@@ -1,0 +1,36 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.5.72
+Stand: 28.10.2026
+Branch: claude/bold-galileo-myoyi0 (neu von main 0.5.71 nach Merge von PR #121)
+Basis: 0.5.71 live, laut Betreiber "laeuft jetzt problemlos".
+
+ART DER VERSION: reine Planungs- und Dokumentationsversion. Kein Code, keine Migration, kein Modelfile.
+
+INHALT:
+- ROADMAP.md: Stand 20.10.2026 (0.5.15) auf 28.10.2026 (0.5.71) gebracht. Neue Tabellen "Aktueller Stand
+  (0.5.71)" und "Naechste Lieferfolge". Historische Zwischenstaende bleiben als Nachweis stehen.
+- docs/COREUI_VOICE_PLAN.md (neu): P20.0 Test, P20.1 Spracheingabe, P20.2 Videos hoeren, P20.3 Sprachausgabe,
+  P20.4 Live-Gespraech, P20.5 Bildgenerierung (verweist auf den Bild-Technikplan), gemeinsame Abnahme.
+- Serielle Regel (Roadmap, docs/COREUI_FEATURE_MATRIX.md Regel 1, docs/COREUI_MASTERPLAN.md): einzige
+  Ausnahme Sprachausgabe mit festem Kernlimit, hoechstens ein TTS-Auftrag, parallel zu genau einer Core-Anfrage.
+- Matrix: CF-057 und CF-058 verweisen auf den Sprachplan.
+
+BETREIBERENTSCHEIDUNGEN 28.10.2026:
+- Reihenfolge: Sprache, dann Bildgenerierung, dann Projekt-Workspace (P09).
+- Beides: normales Audio (Antwort als Text plus Lautsprecher-Knopf) und Live-Gespraech wie Gemini/ChatGPT.
+- Sprachausgabe parallel mit Kernlimit erlaubt.
+- Direkt eine eigene Mara-Stimme vom Server, keine Geraetestimme als Zwischenloesung.
+- Betreiberangabe: Ollama nimmt Audio fuer gemma4 e2b, e4b und 12b ueber das images-Array an.
+
+BETREIBER-RECHERCHE 28.10.2026 (eingearbeitet, im Test zu bestaetigen):
+- Audio: nur gemma4:e2b, e4b, 12b haben den Audio-Encoder; 26b und 31b nur Text und Bild. Uebergabe im
+  images-Array. Format WAV mit vollem RIFF-Header, exakt 16 kHz, Mono, 16 Bit PCM signed (24 Bit oder
+  32 Bit Float brechen ab oder rauschen); hoechstens 30 bis 60 s je Clip. ffmpeg: -ac 1 -ar 16000 -c:a pcm_s16le.
+  Plan: ffmpeg-Umwandlung serverseitig, Abschnitte <= 30 s an Sprechpausen, Mikrofon bei Cores ohne Audio aus.
+- Bild: FLUX.1 [schnell] GGUF (T5-XXL Q4_K_M, CLIP-L Q8_0, flux1-schnell Q8_0 oder Q5_K_M, VAE ae.safetensors),
+  Konvertierungen von city96; SDXL-Turbo Q8_0 als 1-Schritt-Variante mit Lizenzvorbehalt. stable-diffusion.cpp
+  als kompiliertes Programm in isoliertem Worker-Prozess (PHP-Backend), keine nachgebauten ggml-Kerne.
+  Zeiten (FLUX 30-60 s, SDXL-Turbo einstellig) sind Schaetzungen, keine Messwerte.
+
+NAECHSTER SCHRITT: P20.0 auf dem echten Server: Audioformate, Laenge pro Clip, Latenz mit e4b, Bild und Ton
+gemeinsam, TTS-Kandidaten (unter anderem Piper) mit Echtzeitfaktor, RAM und Lizenz je Stimme, Latenz einer
+Live-Runde. Keine Latenzzusagen vor dieser Messung.

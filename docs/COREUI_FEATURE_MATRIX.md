@@ -2,7 +2,7 @@
 
 Aktueller Produktname ab 0.5.57: CoreAI: TCI Interface (Quantum-Softwarefamilie). Historische Eintraege behalten ihren damaligen Wortlaut.
 
-Stand: 20.10.2026. Status dieses Dokuments: Planung. Durch diese Matrix wurde keine der beschriebenen Funktionen neu implementiert.
+Stand: 20.10.2026, ergänzt am 28.10.2026 (CF-057, CF-058 und Regel 1 zur Sprachausgabe). Status dieses Dokuments: Planung. Durch diese Matrix wurde keine der beschriebenen Funktionen neu implementiert.
 
 Der [Masterplan](COREUI_MASTERPLAN.md) beschreibt die gemeinsame Zielarchitektur, die technische Ausgangslage und die Reihenfolge der Umsetzung.
 
@@ -23,7 +23,7 @@ Die Matrix verwendet folgende Zustände:
 
 ## Verbindliche Produktregeln
 
-1. **E.M.B.E.R. darf höchstens eine Modellanfrage gleichzeitig ausführen.** Chat, Browserentscheidungen, Unteragenten, Erinnerungsverarbeitung, Zusammenfassungen, Medienmodelle und Automationen müssen dieselbe serielle Warteschlange nutzen. Das gilt auch für Graphzweige, Manager, Sprecherwahl, Ergebnisprüfer, Embeddings, Replay und Playground-/Evaluationsläufe. Mehrere Aufgaben dürfen warten und nacheinander arbeiten. Neue Adapter, weitere Benutzer oder zusätzliche Prozesse dürfen diese Grenze nicht umgehen.
+1. **E.M.B.E.R. darf höchstens eine Modellanfrage gleichzeitig ausführen.** Chat, Browserentscheidungen, Unteragenten, Erinnerungsverarbeitung, Zusammenfassungen, Medienmodelle und Automationen müssen dieselbe serielle Warteschlange nutzen. Das gilt auch für Graphzweige, Manager, Sprecherwahl, Ergebnisprüfer, Embeddings, Replay und Playground-/Evaluationsläufe. Mehrere Aufgaben dürfen warten und nacheinander arbeiten. Neue Adapter, weitere Benutzer oder zusätzliche Prozesse dürfen diese Grenze nicht umgehen. **Einzige Ausnahme (28.10.2026):** die Sprachausgabe (TTS) mit festem Kernlimit parallel zu genau einer Core-Anfrage, höchstens ein TTS-Auftrag gleichzeitig ([Sprachplan](COREUI_VOICE_PLAN.md)).
 2. Denkaufwand als Modelleinstellung, tatsächlich bereitgestellte Reasoning-Ausgabe, öffentliche Kommentare und Pläne sowie ausgeführte Werkzeugschritte bleiben getrennte Daten- und Anzeigetypen. Eine nicht gelieferte Gedankenansicht wird nicht erfunden. Liefert ein Anbieter nur eine Zusammenfassung, wird diese als solche angezeigt.
 3. Die Entwicklerumgebung umfasst Projekte, Dateibrowser, Editor, Terminal, Git, Tests und Vorschauen. Der vorhandene Python-Einzelaufruf erfüllt dieses Ziel noch nicht.
 4. Tools führen Aktionen aus. Skills beschreiben wiederverwendbare Vorgehensweisen mit Ressourcen. Plugins erweitern die Laufzeit und können Tools oder Provider bereitstellen. Ein Skill ist nicht automatisch eine Berechtigung zur Werkzeugausführung.
@@ -149,8 +149,8 @@ Die Phasennummer in jeder Soll-Zelle benennt den vorgesehenen Schwerpunkt. Sie e
 
 | ID | Referenzfunktion / Quelle | CoreUI-Stand | Eigenes Soll mit Abnahme |
 |---|---|---|---|
-| CF-057 | Bild-, Video- und Dokumenteingabe [OC-F], [OW-R], [C-R] | Teilbestand | **M6.** Multimodale Eingaben mit erkennbarer Verarbeitungsreichweite anbieten. Abnahme: Dateityp, verwendete Seiten beziehungsweise Frames und Fehler sind sichtbar; eine Stichprobe wird nicht als vollständige Analyse ausgegeben. |
-| CF-058 | Spracheingabe, Ausgabe und Live-Medien [OC-F], [OW-R], [C-R] | Offen | **M6.** Transkription, TTS und geeignete Live-Audio-/Videoabläufe anbinden. Abnahme: Aufnahme, Unterbrechung und Wiedergabe funktionieren; beteiligte Modellaufrufe halten die gemeinsame Ausführungsgrenze ein. |
+| CF-057 | Bild-, Video- und Dokumenteingabe [OC-F], [OW-R], [C-R] | Teilbestand | **M6.** Multimodale Eingaben mit erkennbarer Verarbeitungsreichweite anbieten. Stand 0.5.71: Bilder, Video-Einzelbilder und PDF-Seiten werden analysiert; Audio und Tonspur von Videos folgen mit P20.1 und P20.2 ([Sprachplan](COREUI_VOICE_PLAN.md)). Abnahme: Dateityp, verwendete Seiten beziehungsweise Frames und Fehler sind sichtbar; eine Stichprobe wird nicht als vollständige Analyse ausgegeben. |
+| CF-058 | Spracheingabe, Ausgabe und Live-Medien [OC-F], [OW-R], [C-R] | Offen | **M6, vorgezogen (P20.0 bis P20.4, [Sprachplan](COREUI_VOICE_PLAN.md)).** Hören über Gemma 4 (e2b, e4b, 12b) via Ollama, eigene Mara-Stimme als Server-TTS mit Kernlimit, Vorlesen und Live-Gespräch mit Unterbrechen. Transkription, TTS und geeignete Live-Audio-/Videoabläufe anbinden. Abnahme: Aufnahme, Unterbrechung und Wiedergabe funktionieren; beteiligte Modellaufrufe halten die gemeinsame Ausführungsgrenze ein. |
 | CF-059 | Bild-, Video- und Musikgenerierung [OC-T], [OW-R] | Ungeprüft | **M6/P20.** Separate native CPU-Bildengine nach [Technikplan](COREUI_IMAGE_ENGINE_PLAN.md): stable-diffusion.cpp als pruefbare C/C++-Runtime-Referenz; FLUX.1-schnell und SDXL-Turbo als einzeln zu verifizierende Modellpfade. Modellgewichte/Encoder/VAE, SHA-256, Lizenz, CPU-Benchmarks, RAM-/Threadlimits, Provider-unabhaengige serielle Queue, Auftragsabbruch und echtes Chat-Artefaktregister. Bild-/Video-/Musikgenerierung getrennt abnehmen; keine behaupteten Performancewerte vor Live-Messung. |
 | CF-060 | Einmalige und wiederkehrende Automationen [OC-A], [OW-R] | Offen | **M6.** Zeitpunkte, Intervalle, Cron und Webhooks mit Historie verwalten. Abnahme: Auslösen, Deaktivieren und Wiederaufnehmen sind nachvollziehbar; ausgelöste Modellarbeit wartet bei belegter Warteschlange. |
 | CF-061 | Dauerhafte Aufträge, Hooks und Heartbeats [OC-A] | Offen | **M6.** Dauerhafte Anweisungen, ereignisgebundene Hooks und periodische Heartbeats als getrennte Mechanismen anbieten. Abnahme: Auslöser, Zustand und Wiederaufnahme sind je Mechanismus prüfbar; Neustart erzeugt keinen doppelten Abschluss, Abbruch und Fortschritt bleiben sichtbar. |
