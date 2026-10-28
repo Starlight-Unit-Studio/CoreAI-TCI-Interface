@@ -4,12 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#f0f4fa" />
-  <meta name="application-version" content="0.5.77" />
+  <meta name="application-version" content="0.5.78" />
   <meta name="application-name" content="CoreAI: TCI Interface" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface - Admin Core</title>
   <link rel="stylesheet" href="../css/admin.css?v=0224970461056525352305464" />
-  <script src="../js/console-gate.js?v=0013551363289213071145381"></script>
+  <script src="../js/console-gate.js?v=0167122946032016966563344"></script>
 </head>
 <body>
   <div class="admin-field" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -19,7 +19,7 @@
       <img src="../images/starlight_unit_studios_logo_original.png" alt="Starlight Unit Studios" draggable="false" />
       <div><span>QUANTUM SOFTWARE // N-73</span><h1>ADMIN CORE</h1></div>
     </div>
-    <div class="admin-identity"><span id="adminIdentity">AUTH...</span><strong>v0.5.77</strong></div>
+    <div class="admin-identity"><span id="adminIdentity">AUTH...</span><strong>v0.5.78</strong></div>
   </header>
 
   <div class="admin-shell">
@@ -92,6 +92,9 @@
           <label class="check"><input id="registrationEnabled" type="checkbox" /><span>ÖFFENTLICHE REGISTRIERUNG</span></label>
           <label class="check"><input id="guestEnabled" type="checkbox" /><span>GAST-ZUGANG (ALS GAST CHATTEN)</span></label>
           <label>NACHRICHTEN PRO GAST<input id="guestMessageLimit" type="number" min="1" max="100" step="1" /></label>
+          <label>GÄSTE PRO NETZWERK UND TAG<input id="guestNetworkGuests" type="number" min="1" max="20" step="1" /></label>
+          <label>GAST-NACHRICHTEN PRO TAG (0 = OHNE GRENZE)<input id="guestDailyMessages" type="number" min="0" max="100000" step="10" /></label>
+          <div class="admin-callout wide" id="guestGuardNote" hidden><b id="guestGuardTitle">SCHUTZ VOR MEHRFACH-GÄSTEN</b><p id="guestGuardText"></p></div>
           <label class="check"><input id="maintenanceEnabled" type="checkbox" /><span>WARTUNGSMODUS</span></label>
           <label class="check"><input id="memoryDefaultEnabled" type="checkbox" /><span>MEMORY STANDARDMÄSSIG AN</span></label>
           <label>SYSTEM-PROMPT-LIMIT<input id="promptLimit" type="number" min="500" max="12000" step="100" /></label>
@@ -122,6 +125,6 @@
   </div>
 
   <footer class="admin-footer"><span>© 2023-2026 <strong>Patrick Schildgen</strong> · Starlight Unit Studios</span><i></i><span>COREAI: TCI INTERFACE // ADMIN N-73</span></footer>
-  <script src="../js/admin.js?v=0679532694399848607077205"></script>
+  <script src="../js/admin.js?v=0740036151136925413522980"></script>
 </body>
 </html>

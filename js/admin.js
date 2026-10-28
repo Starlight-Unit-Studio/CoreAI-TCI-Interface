@@ -86,6 +86,7 @@
         if (target) target.textContent = String(data.stats[key]);
       });
       fillRuntime(runtimeState);
+      showGuestGuard(data.client_address || null);
     }).catch(function (error) { show('Übersicht: ' + error.message, true); });
   }
 
@@ -279,11 +280,29 @@
     return String(value) === '1';
   }
 
+  // 0.5.78: can the server tell visitors apart? Behind a reverse proxy only if it
+  // sends X-Forwarded-For; otherwise the per-network guest budget stays off.
+  function showGuestGuard(client) {
+    var note = document.getElementById('guestGuardNote');
+    if (!note || !client) return;
+    var title = document.getElementById('guestGuardTitle');
+    var text = document.getElementById('guestGuardText');
+    var known = client.source === 'direct' || client.source === 'forwarded';
+    note.hidden = false;
+    note.classList.toggle('amber', !known);
+    title.textContent = known ? 'SCHUTZ VOR MEHRFACH-GÄSTEN AKTIV' : 'BESUCHER-ADRESSE NICHT ERKENNBAR';
+    text.textContent = known
+      ? 'Gäste aus demselben Netzwerk teilen sich ihr Kontingent für 24 Stunden; Browserdaten löschen bringt keine neuen Nachrichten. Ein Gerät kommt per Cookie in sein altes Gastkonto zurück.'
+      : 'Der Reverse-Proxy meldet die Adresse der Besucher nicht, alle kommen scheinbar vom selben Rechner. Bis das behoben ist, wirken nur Gerätemerkmal, Tagesgrenze und Stundenlimit. Im Proxy ergänzen: proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;';
+  }
+
   function fillRuntime(settings) {
     if (!settings) return;
     document.getElementById('registrationEnabled').checked = boolSetting(settings.registration_enabled);
     document.getElementById('guestEnabled').checked = boolSetting(settings.guest_enabled);
     document.getElementById('guestMessageLimit').value = settings.guest_message_limit || '5';
+    document.getElementById('guestNetworkGuests').value = settings.guest_network_guests || '1';
+    document.getElementById('guestDailyMessages').value = settings.guest_daily_messages != null ? settings.guest_daily_messages : '200';
     document.getElementById('maintenanceEnabled').checked = boolSetting(settings.maintenance_enabled);
     document.getElementById('memoryDefaultEnabled').checked = boolSetting(settings.memory_default_enabled);
     document.getElementById('promptLimit').value = settings.user_system_prompt_max_chars || '6000';
@@ -302,6 +321,8 @@
       registration_enabled: document.getElementById('registrationEnabled').checked ? '1' : '0',
       guest_enabled: document.getElementById('guestEnabled').checked ? '1' : '0',
       guest_message_limit: document.getElementById('guestMessageLimit').value,
+      guest_network_guests: document.getElementById('guestNetworkGuests').value,
+      guest_daily_messages: document.getElementById('guestDailyMessages').value,
       maintenance_enabled: document.getElementById('maintenanceEnabled').checked ? '1' : '0',
       memory_default_enabled: document.getElementById('memoryDefaultEnabled').checked ? '1' : '0',
       user_system_prompt_max_chars: document.getElementById('promptLimit').value,

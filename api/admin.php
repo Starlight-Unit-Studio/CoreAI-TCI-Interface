@@ -54,6 +54,8 @@ function coreui_admin_setting_rows(PDO $pdo): array {
     'registration_enabled' => '0',
     'guest_enabled' => '0',
     'guest_message_limit' => '5',
+    'guest_network_guests' => '1',
+    'guest_daily_messages' => '200',
     'maintenance_enabled' => '0',
     'maintenance_message' => '',
     'memory_default_enabled' => '1',
@@ -90,6 +92,8 @@ function coreui_admin_get_overview(PDO $pdo, int $actorLevel): void {
     'stats' => $stats,
     'settings' => coreui_admin_setting_rows($pdo),
     'external' => coreui_ai_external_capability($pdo),
+    // 0.5.78: whether visitors can be told apart (guest network budget, rate limits).
+    'client_address' => ['source' => coreui_client_address_current()['source']],
     'permission_level' => $actorLevel,
     'csrf_token' => stu_csrf_token(),
   ]);
@@ -303,7 +307,8 @@ if ($action === 'memory_delete') {
 
 if ($action === 'settings_save') {
   $whitelist = [
-    'registration_enabled', 'guest_enabled', 'guest_message_limit', 'maintenance_enabled', 'maintenance_message',
+    'registration_enabled', 'guest_enabled', 'guest_message_limit', 'guest_network_guests', 'guest_daily_messages',
+    'maintenance_enabled', 'maintenance_message',
     'memory_default_enabled', 'user_system_prompt_max_chars',
     'tool_web_enabled', 'tool_browse_enabled', 'tool_python_enabled',
     'external_api_enabled', 'external_api_label', 'external_api_base_url', 'external_api_model',
@@ -317,6 +322,8 @@ if ($action === 'settings_save') {
     if (str_ends_with($key, '_enabled')) $value = in_array(strtolower($value), ['1', 'true', 'yes', 'on'], true) ? '1' : '0';
     if ($key === 'user_system_prompt_max_chars') $value = (string)max(500, min(12000, (int)$value));
     if ($key === 'guest_message_limit') $value = (string)coreui_guest_limit_normalise($value);
+    if ($key === 'guest_network_guests') $value = (string)coreui_guest_network_normalise($value);
+    if ($key === 'guest_daily_messages') $value = (string)coreui_guest_daily_normalise($value);
     if ($key === 'maintenance_message') {
       if (function_exists('mb_substr')) $value = mb_substr($value, 0, 520, 'UTF-8');
       else $value = substr($value, 0, 520);

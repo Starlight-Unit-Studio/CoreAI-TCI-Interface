@@ -2,6 +2,18 @@
 
 CoreAI: TCI Interface gehoert zur Quantum-Softwarefamilie und wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert. Historische Changelogs dokumentieren die frueheren Produktnamen unveraendert.
 
+## 0.5.78 - 28.10.2026
+
+- **Schutz gegen Mehrfach-Gaeste (Betreiberfrage):** Bisher bekam ein neuer Gast immer 5 frische Nachrichten, und dafuer reichte schon das Schliessen des Browsers (Sitzungscookie), Browserdaten loeschen oder ein privates Fenster. Jetzt:
+  - Ein Geraetemerkmal (Cookie, 30 Tage, in der Datenbank nur als Hash) fuehrt zurueck ins alte Gastkonto mit dem, was dort uebrig ist.
+  - Alle Gaeste aus demselben Netzwerk (IPv4-Adresse, IPv6 als /64) teilen sich ihre Nachrichten fuer 24 Stunden ("Gaeste pro Netzwerk und Tag", Standard 1, also 5 Nachrichten); wer Daten loescht, bekommt nur den Rest, danach "fuer heute aufgebraucht, wieder ab HH:MM".
+  - Ein Tagesdeckel fuer alle Gaeste zusammen ("Gast-Nachrichten pro Tag", Standard 200, 0 = ohne Grenze) begrenzt auch Adresswechsler.
+  - Abgelehnte Nachrichten zaehlen nicht, gesperrte Gaeste bleiben gesperrt.
+- **Ratenlimits auf dem Server:** `stu_rate_limit` zaehlte nur in der PHP-Sitzung, ohne Cookie also bei null. Jetzt zaehlt der Server zusaetzlich je Netzwerk (Login, Registrieren, Gast, Passwort vergessen), und Login-Fehlversuche werden je Konto gedrosselt: 10 je Konto und Netzwerk, 50 je Konto insgesamt in 15 Minuten, danach `too_many_attempts`.
+- **Echte Besucher-Adresse hinter dem Reverse-Proxy:** CoreAI lauscht auf 127.0.0.1, PHP sah fuer alle Besucher dieselbe Adresse. `X-Forwarded-For` wird jetzt von rechts gelesen und nur lokalen Proxys geglaubt (`STU_TRUSTED_PROXIES`, Standard lokale Netze), gefaelschte Eintraege links gewinnen nie. Sendet der Proxy den Kopf nicht, bleiben die Netzwerk-Regeln aus (sonst teilten sich alle Besucher ein Limit); der Admin-Bereich zeigt dann eine Warnung mit der fehlenden Proxy-Zeile.
+- Datenschutz: neue Tabelle `stu_abuse_counters` (Migration 018) speichert nur HMAC-Schluessel mit Server-Geheimnis, keine IP- oder E-Mail-Adressen; Zeilen verfallen mit ihrem Zeitfenster.
+- Tests: neue `abuse-guard-selftest.php` (SQLite im Speicher; eine Gegenprobe ohne Netzwerk-Regel schlaegt fehl) in beiden Preflights; Login- und Admin-Seite erklaeren die neuen Grenzen. Neue Migration 018, `health.php` prueft die Tabelle.
+
 ## 0.5.77 - 28.10.2026
 
 - **Registrieren auf der Login-Seite:** Ist im Admin-Bereich (Runtime, "Oeffentliche Registrierung") die Registrierung eingeschaltet, zeigt die Login-Seite "Noch kein Konto? Registrieren". Das Formular fragt E-Mail, optional einen Anzeigenamen und das Passwort zweimal (mindestens 8 Zeichen) und nutzt die vorhandene Registrierung des Servers; neue Konten sind normale Nutzer. Ist die Registrierung aus, bleibt der Knopf verborgen und der Server lehnt weiter ab. Vorher gab es die Registrierung nur im Server, die Login-Seite bot sie nie an.

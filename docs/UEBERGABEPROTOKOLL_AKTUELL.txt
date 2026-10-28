@@ -1,9 +1,10 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
 Stand: 27.10.2026
-Repository-Version: 0.5.77
+Repository-Version: 0.5.78
 Repository: https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface
 ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_5_78.txt
   docs/UEBERGABEPROTOKOLL_0_5_77.txt
   docs/UEBERGABEPROTOKOLL_0_5_76.txt
   docs/UEBERGABEPROTOKOLL_0_5_75.txt
@@ -98,6 +99,9 @@ aktualisieren und deinstallieren, beim Core-Wechsel wird der alte zuerst entlade
 Einfrieren (Mara ueberlegt mit Sekunden, Neuverbindung), Formulare ausfuellen mit festen Regeln, eigene
 Elementliste (Playwright ohne Accessibility-Snapshot), lokales Netz gesperrt, Core des Nutzers im Worker,
 Websuche mit Stichworten als zweitem Versuch. Browse-Worker nach dem Update neu starten.
+0.5.77 ist gemergt (PR #127). 0.5.78: Schutz gegen Mehrfach-Gaeste (Geraetemerkmal, Netz-Kontingent 24 h,
+Tagesdeckel), Ratenlimits und Login-Drossel auf dem Server, Migration 018. Im Host-Proxy X-Forwarded-For
+setzen (Admin-Bereich zeigt den Stand).
 NAECHSTER SCHRITT: Benutzerverwaltung nach Betreiberwunsch, TTS-Kandidaten, dann P20.1.
 Mara/Ember, Ollama-Modelfile, serielle Queue und private Projekt-
 plaene NICHT ungefragt veraendern.
