@@ -1,0 +1,35 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.5.75
+Stand: 28.10.2026
+Branch: claude/bold-galileo-myoyi0 (neu von main 0.5.74 nach Merge von PR #124)
+Basis: Lauf 3 des Medien-Tests (Screenshots), Betreiberentscheidungen vom 28.10.2026:
+Denkschalter im Chat, bleibt kontoweit gesetzt; nur <|think|> aus dem Modelfile entfernen; KI-Profil-Schalter
+entfaellt; temperature 0 nur in einer Testvariante; Core-Wahl mit automatischem Laden im Chat-Menue.
+
+INHALT:
+- config/Modelfile.template: nur "<|think|>\n" am Anfang des SYSTEM entfernt; Persona und PARAMETER unveraendert.
+  Ollamas gemma4-Renderer setzt <|think|> bei think=true (Quelle: model/renderers/gemma4.go).
+- app.html, css/console.css, js/coreui-core-mode.js: Core-Chip im Fuss des Eingabefelds, Menue mit Ollama-Liste
+  (api/models.php), Ladeanzeige (Poll von user_settings.php?core_status=1, hoechstens etwa 90 s) und Denkschalter.
+- api/user_settings.php: action=thinking und action=core (Pruefung gegen die Ollama-Liste, Antwort sofort,
+  dann fastcgi_finish_request und Vorladen), GET core_status; KI-Profil-Speichern behaelt thinking_enabled.
+- api/ai_settings.php: coreui_ai_settings_patch (nur thinking_enabled bzw. model_override aendern).
+- api/core_preload.php: coreui_core_preload ueber ember_global_lock_acquire(120), leerer Prompt, Optionen wie ein
+  Chat-Aufruf (ember_ollama_known_good_options), keep_alive aus der Konfiguration, Cloud ausgenommen.
+- api/ai_context_estimate.php: coreui_ollama_model_key, coreui_ollama_loaded_names (/api/ps).
+- api/chat.php: globaler Kanal thinking_enabled=true (beide Prompt-Builder); ember_strip_leading_bracket_meta in
+  ember_sanitize_public_reply. api/console_build_intent.php toleriert den Block vor START_BUILD/CHAT.
+- settings.html, js/settings.js: Schalter entfernt, Hinweis auf den Chip.
+- api/voice_core.php: Transkriptionsvorlage, neutraler SYSTEM-Text, coreui_voice_reply_kind (heard/missed/silence).
+- scripts/media-spike.php: Varianten bisher/vorlage/vorlage_stille/vorlage_temp0 auf 3 und 5 s, Vorlage auf den
+  langen Clips, live_mit_denken (think=true), live_einstufig (2x), live_zweistufig; erster sprechbarer Satz ohne
+  [Analyse]-Block; Gewichtsdatei je Core; kompakter Bericht. temperature 0 einzig in vorlage_temp0.
+- Doku: Sprachplan (Lauf 3, VAD, zweistufig als Kandidat), MODELFILE_CHANGE_POLICY (Freigabe), Roadmap, Matrix.
+
+GEPRUEFT:
+- Alle Offline-Selbsttests; Probelaeufe gegen einen nachgebauten Ollama (Medien-Test: think, Optionen, SYSTEM-Texte
+  je Variante; Vorladen: leerer Prompt, keep_alive, Cloud und ungueltige Namen ausgenommen); Chip und Menue im
+  Browser auf Desktop- und Handybreite ohne seitlichen Ueberlauf.
+
+NAECHSTER SCHRITT: PR mergen, Server wie gewohnt aktualisieren (baut Maras Core ohne <|think|> neu), Chip im Chat
+ausprobieren, dann bash /opt/ember-coreui/scripts/media-spike.sh --audio DATEI --skip-formats --durations 15,60
+und die Kurzfassung schicken. Danach Entscheidung des Mitschrift-Wegs fuer P20.1.

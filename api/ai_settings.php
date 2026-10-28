@@ -213,6 +213,34 @@ function coreui_ai_settings_save(PDO $pdo, int $uid, array $input): array {
   return $value;
 }
 
+/**
+ * 0.5.75: the chat menu changes single KI-Profil values (thinking switch,
+ * Core choice). Only the given columns change; a new account row starts
+ * from the defaults. Allowed: thinking_enabled, model_override.
+ */
+function coreui_ai_settings_patch(PDO $pdo, int $uid, array $patch): array {
+  if ($uid <= 0) throw new InvalidArgumentException('invalid_user');
+  $allowed = ['thinking_enabled', 'model_override'];
+  if ($patch === [] || array_diff(array_keys($patch), $allowed) !== []) throw new InvalidArgumentException('invalid_patch');
+  if (!coreui_ai_settings_schema_ready($pdo)) throw new RuntimeException('missing_schema_005');
+  $d = coreui_ai_settings_defaults($pdo);
+  $value = [
+    'thinking_enabled' => array_key_exists('thinking_enabled', $patch) ? (bool)$patch['thinking_enabled'] : (bool)$d['thinking_enabled'],
+    'model_override' => array_key_exists('model_override', $patch) ? trim((string)$patch['model_override']) : '',
+  ];
+  $updates = implode(', ', array_map(static fn(string $c): string => "{$c} = VALUES({$c})", array_keys($patch)));
+  $st = $pdo->prepare(
+    'INSERT INTO stu_user_ai_settings '
+    . '(user_id, system_prompt, memory_enabled, thinking_enabled, memory_limit, num_predict, temperature, provider, model_override, updated_at) '
+    . 'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()) '
+    . 'ON DUPLICATE KEY UPDATE ' . $updates . ', updated_at = NOW()'
+  );
+  $st->execute([$uid, $d['system_prompt'], $d['memory_enabled'] ? 1 : 0, $value['thinking_enabled'] ? 1 : 0,
+    $d['memory_limit'], $d['num_predict'], $d['temperature'], $d['provider'],
+    $value['model_override'] !== '' ? $value['model_override'] : null]);
+  return array_intersect_key($value, $patch);
+}
+
 function coreui_operator_runtime_load(PDO $pdo): array {
   $defaults = [
     'web' => defined('STU_EMBER_WEB_ENABLED') ? (bool)STU_EMBER_WEB_ENABLED : true,

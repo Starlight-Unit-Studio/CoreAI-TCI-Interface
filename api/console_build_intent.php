@@ -76,6 +76,8 @@ function coreui_build_intent_prompt(array $context): string {
 
 function coreui_build_intent_decode(string $reply): ?string {
   $candidate = trim($reply);
+  // 0.5.75: without thinking a leading "[Analyse: ...]" block may precede the token.
+  if (function_exists('ember_strip_leading_bracket_meta')) $candidate = trim(ember_strip_leading_bracket_meta($candidate));
   if ($candidate === 'START_BUILD') return 'build';
   if ($candidate === 'CHAT') return 'chat';
   return null; // Never infer a build from free-form model commentary.

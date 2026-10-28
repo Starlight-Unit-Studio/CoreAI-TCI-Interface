@@ -59,8 +59,12 @@ wav_test(coreui_wav_ffmpeg_args() === ['-ac', '1', '-ar', '16000', '-c:a', 'pcm_
 $spike = (string)file_get_contents($root . '/scripts/media-spike.php');
 wav_test(str_contains($spike, 'ember_global_lock_acquire(') && str_contains($spike, 'ember_generation_lock_release($lock)'),
   'every Core call of the media test waits in Mara\'s queue');
-wav_test(!preg_match("~'options'\\s*=>~", $spike) && str_contains($spike, "'think'=>false"),
-  'no Ollama options are sent (parameter-free Gemma policy)');
+// 0.5.75: think is false unless a case asks for it; the only Ollama option is
+// temperature 0 in the approved test variant "vorlage_temp0".
+wav_test(str_contains($spike, "bool \$think = false, array \$options = []") && str_contains($spike, "'think'=>\$think")
+  && substr_count($spike, "['temperature'=>0]") === 1 && !preg_match("~'options'\\s*=>~", $spike)
+  && preg_match_all("~'(?:num_ctx|num_predict|top_k|top_p|repeat_penalty|seed)'~", $spike) === 0,
+  'no Ollama options except the approved temperature 0 test variant (parameter-free Gemma policy)');
 wav_test(!preg_match('~/api/(?:create|delete|pull|copy|push)\b~', $spike), 'the media test never changes models');
 wav_test(str_contains($spike, 'coreui_wav_ffmpeg_args()') && str_contains($spike, 'coreui_wav_reject_reason('),
   'test audio uses the same format and check as the later product');
@@ -92,6 +96,32 @@ foreach ([
 ] as $heard) wav_test(!coreui_voice_missed_audio($heard), 'a transcript is not a miss: ' . $heard);
 wav_test(!coreui_voice_missed_audio(str_repeat('Bitte stellen Sie die Aufnahme zur Verfügung. ', 20)),
   'long answers are transcripts, not a refusal');
+
+// 0.5.75: every refusal of the third server run (0.5.74 counted only half of
+// them), the transcripts of the same run, and "no speech" as its own kind.
+foreach ([
+  'Die angefügte Sprachaufnahme konnte nicht geladen werden. Bitte versuche es erneut.',
+  'Es ist kein Audio zur Analyse vorhanden. Bitte stelle die Aufnahme bereit.',
+  'Bitte gib mir die Aufnahme, die transkribiert werden soll.',
+  'Ich benötige die Audioaufnahme, um eine vollständige und wortwörtliche Transkription zu erstellen.',
+  '(Ich habe keinen Zugriff auf die angehängte Sprachaufnahme, um sie zu transkribieren.)',
+  'Es wurde keine Aufnahme zur Verarbeitung bereitgestellt. Bitte stellen Sie die Aufnahme bereit.',
+  'Ich kann die Sprachaufnahme nicht transkribieren, da keine Datei beigefügt wurde.',
+  'Sie haben keine Aufnahme bereitgestellt. Bitte liefern Sie die Audiodatei zur Transkription.',
+  'Ich benötige die Audioaufnahme, um die Transkription durchzuführen. Bitte stelle sie bereit.',
+] as $missed) wav_test(coreui_voice_reply_kind($missed) === 'missed', 'refusal of run 3: ' . $missed);
+foreach ([
+  'es heiß sei fest ist nicht sauber genug haha',
+  'hɛl chajfæst isch nisch sauber gnueg häh ä',
+  'Hey, Scheißfeest, ist nicht sauber genug. Haben Sie rein Handtücher dabei? Ja.',
+  'Ich glaube, so war das gedacht. Wir haben niemanden gesehen. Nein.',
+] as $heard) wav_test(coreui_voice_reply_kind($heard) === 'heard', 'transcript of run 3: ' . $heard);
+foreach (['(keine Sprache)', '[keine Sprache]', 'Keine Sprache.', '(no speech)'] as $quiet) {
+  wav_test(coreui_voice_reply_kind($quiet) === 'silence', 'no speech: ' . $quiet);
+}
+wav_test(str_starts_with(coreui_voice_transcribe_prompt('German'), 'Transcribe the following speech segment in German into German text.')
+  && !str_contains(coreui_voice_transcribe_prompt('German'), 'keine Sprache')
+  && !str_contains(coreui_voice_transcribe_system(), '<|think|>'), 'Google template without a no-speech way out, neutral SYSTEM');
 $persona = "<|think|>\nDu bist Mara, die TCI der Ravager Thorn.\nDu sprichst Deutsch.";
 wav_test(coreui_voice_modelfile_system(['system'=>$persona]) === $persona, 'SYSTEM from the /api/show field');
 wav_test(coreui_voice_modelfile_system(['modelfile'=>"FROM gemma4:e4b\nSYSTEM \"\"\"{$persona}\"\"\"\nPARAMETER x 1\n"]) === $persona,
@@ -106,8 +136,12 @@ wav_test(str_contains($spike, '$keepAlive = ember_keep_alive();') && !str_contai
   'the media test keeps CoreAI\'s keep_alive instead of its own');
 wav_test(str_contains($spike, "'stream'=>true") && str_contains($spike, "'first_answer_s'=>") && str_contains($spike, "'first_sentence_s'=>"),
   'time to the first answer word and sentence is measured');
-wav_test(str_contains($spike, 'coreui_voice_system_without_think($system)') && str_contains($spike, 'coreui_voice_missed_audio($r[\'text\'])')
-  && str_contains($spike, 'coreui_voice_attachment_hint($sec)'), 'thinking comparison and short clips use the shared helpers');
+wav_test(str_contains($spike, 'coreui_voice_system_without_think($system)') && str_contains($spike, "'kind'=>coreui_voice_reply_kind(\$text)")
+  && str_contains($spike, 'coreui_voice_transcribe_prompt(') && str_contains($spike, 'coreui_voice_transcribe_system()')
+  && str_contains($spike, 'coreui_voice_attachment_hint($liveSec)'), 'variants, live reply and classification use the shared helpers');
+wav_test(str_contains($spike, "'vorlage_stille'") && str_contains($spike, 'adelay=1000:all=1'), 'silence variant pads one second in front');
+wav_test(str_contains($spike, "['live_mit_denken', null, true]") && str_contains($spike, "'live_zweistufig'"),
+  'live reply with the switch on, in one step and in two steps');
 wav_test(str_contains($sh, '--short "$SHORT" --repeat "$REPEAT"'), 'starter passes the short clip options');
 
 echo "CoreAI audio WAV check, audio turn helpers and P20.0 media test contract OK\n";

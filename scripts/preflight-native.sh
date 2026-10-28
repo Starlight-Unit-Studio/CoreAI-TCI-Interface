@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.74 P20.0 media test extended (thinking, live reply, short clips) and audio turn helpers.
+# CoreAI: TCI Interface 0.5.75 thinking switch and Core choice in the chat, Modelfile without fixed <|think|>, media test variants.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -121,6 +121,10 @@ UI_FILES=(
   scripts/audio-wav-selftest.php
   api/audio_wav.php
   api/voice_core.php
+  scripts/thinking-switch-selftest.php
+  scripts/thinking-switch-ui-selftest.cjs
+  js/coreui-core-mode.js
+  api/core_preload.php
   scripts/media-spike.php
   scripts/media-spike.sh
   js/coreui-net.js
@@ -263,9 +267,9 @@ fi
 # The stream may apply a per-call Thinking override before the account default.
 # Match the actual payload binding, not a frozen PHP source string from 0.5.50.
 # The reply-pipeline selftest verifies the precise runtime contract later.
-if grep -Fq "thinking_enabled: aiThinkingEnabled" "$PROJECT_ROOT/js/settings.js" \
+if grep -Fq "action: 'thinking'" "$PROJECT_ROOT/js/coreui-core-mode.js" \
     && grep -Eq "'think'[[:space:]]*=>[[:space:]]*.*ember_thinking_enabled\(\)" "$PROJECT_ROOT/api/console_stream.php"; then
-  ok 'Thinking-Schalter und Modellaufruf inklusive kontobezogenem Standardwert sind paketiert.'
+  ok 'Denkschalter im Chat und Modellaufruf inklusive kontobezogenem Standardwert sind paketiert.'
 else
   fail 'Thinking-Schalter oder Modell-Payload-Anbindung fehlen.'
 fi
@@ -432,6 +436,13 @@ if command -v php >/dev/null 2>&1; then
     fail "Audio-WAV-Selbsttest: ${audio_test:-Unbekannter Fehler}"
   fi
 
+  think_test=''
+  if think_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/thinking-switch-selftest.php" 2>&1)"; then
+    ok 'Denkschalter und Core-Wahl: Modelfile ohne festes Denken, Speichern, Vorladen, globaler Kanal und Analyse-Filter geprueft.'
+  else
+    fail "Denkschalter-Selbsttest: ${think_test:-Unbekannter Fehler}"
+  fi
+
   if runuser -u www-data -- php "$PROJECT_ROOT/scripts/model-live-audit.php" --selftest >/dev/null 2>&1; then
     ok 'Modelfile-Audit: SYSTEM- und Abweichungspruefung offline bestanden.'
   else
@@ -465,6 +476,11 @@ if command -v php >/dev/null 2>&1; then
       ok 'KI-Profil: Kontextfenster-Regler mit Richtwert an jeder Stufe geprueft.'
     else
       fail 'KI-Profil: Kontextfenster-Regler-Selbsttest fehlgeschlagen.'
+    fi
+    if node "$PROJECT_ROOT/scripts/thinking-switch-ui-selftest.cjs" >/dev/null 2>&1; then
+      ok 'Chat: Core-Chip mit Ollama-Liste, Laden, Denkschalter und Fehlerfaellen geprueft.'
+    else
+      fail 'Chat: Denkschalter-Oberflaechentest fehlgeschlagen.'
     fi
     if node "$PROJECT_ROOT/scripts/webui-resilience-selftest.cjs" >/dev/null 2>&1; then
       ok 'WebUI: abbrechbares Laden, Reconnect ohne Doppelauftrag, Backoff und lange Chats geprueft.'

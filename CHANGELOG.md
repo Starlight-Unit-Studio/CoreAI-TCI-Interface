@@ -2,6 +2,15 @@
 
 CoreAI: TCI Interface gehoert zur Quantum-Softwarefamilie und wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert. Historische Changelogs dokumentieren die frueheren Produktnamen unveraendert.
 
+## 0.5.75 - 28.10.2026
+
+- **Denkschalter im Chat:** Ein Core-Chip unter dem Eingabefeld zeigt den aktiven Core und ob Mara denkt (DENKEN oder SCHNELL). Ein Tipp oeffnet ein Menue mit dem Schalter "Denken"; der Wert gilt fuer alle Chats des Kontos ab der naechsten Nachricht. Der Schalter im KI-Profil entfaellt; das KI-Profil ueberschreibt den Wert beim Speichern nicht mehr.
+- **Modelfile ohne festes `<|think|>`** (Freigabe des Betreibers): Bisher dachte Mara bei jeder Anfrage, auch mit `think: false`, und der Schalter verbarg das Denken nur (22 bis 28 s bis zum ersten Wort). Ollamas Gemma-4-Renderer setzt `<|think|>` jetzt nur bei `think: true`. Der globale Kanal denkt weiter wie bisher. Das normale Update baut Maras Core neu.
+- **Core-Wahl im Chat:** Das Menue listet alle Cores aus Ollama wie das KI-Profil (Serverstandard, Groesse, geladen, Cloud). Eine Auswahl speichert nur den Core; ein lokaler Core wird sofort ueber Maras Warteschlange mit denselben Optionen wie ein Chat-Aufruf vorgeladen, der Chip zeigt LAEDT bis Ollama ihn im Speicher hat. Cloud-Cores werden nicht geladen.
+- **Analyse-Block entfernt:** Ohne Denken schrieb Mara ihre Vorueberlegung manchmal sichtbar als "[Analyse: ...]" vor die Antwort; ein solcher vorangestellter Block wird jetzt entfernt (Werkzeugmarker bleiben). Die Bau-Entscheidung START_BUILD/CHAT toleriert ihn ebenfalls.
+- **Medien-Test, Lauf 3 ausgewertet:** kurze Aufnahmen scheiterten in Maras Persona in 11 von 20 Faellen; der Test vergleicht jetzt Googles Transkriptionsvorlage mit neutralem SYSTEM-Text, eine Sekunde Stille davor und `temperature 0` (nur in dieser Testvariante freigegeben), dazu Live einstufig und zweistufig mit dem ersten wirklich sprechbaren Satz, Gewichtsdatei je Core und einen kompakten Bericht. Die Erkennung von Fehlantworten ordnet alle echten Faelle richtig ein (gehoert, keine Aufnahme, keine Sprache).
+- Tests: neue `thinking-switch-selftest.php` und `thinking-switch-ui-selftest.cjs` in beiden Preflights; Gemma-Modelfile-, Audio- und Preflight-Pruefungen angepasst.
+
 ## 0.5.74 - 28.10.2026
 
 - **Messprotokoll P20.0** im Sprachplan: zwei Laeufe auf dem echten Server. Audio kostet 25 Tokens je Sekunde, Einlesen etwa 170 und Ausgabe etwa 22 Tokens je Sekunde; 60 Sekunden laufen stabil und werden durchgehend mitgeschrieben; Ollama 0.40.6 nimmt auch 24 Bit, Float und 44,1 kHz Stereo an, nur rohes PCM nicht; Bild und Ton gemeinsam funktionieren. Verborgenes Denken durch `<|think|>` im Modelfile kostet 14 bis 27 Sekunden je Aufruf; eine 5-Sekunden-Aufnahme wurde einmal uebersehen. Abschnitte daher bis 60 Sekunden, Live-Gespraech ohne Denken mit Vorwaermen.

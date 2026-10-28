@@ -28,7 +28,6 @@
   var aiSystemPrompt = document.getElementById('aiSystemPrompt');
   var aiPromptCounter = document.getElementById('aiPromptCounter');
   var aiMemoryEnabled = document.getElementById('aiMemoryEnabled');
-  var aiThinkingEnabled = document.getElementById('aiThinkingEnabled');
   var aiMemoryLimit = document.getElementById('aiMemoryLimit');
   var aiNumPredict = document.getElementById('aiNumPredict');
   var aiTemperature = document.getElementById('aiTemperature');
@@ -312,7 +311,6 @@
         aiSystemPrompt.value = s.system_prompt || '';
       }
       if (aiMemoryEnabled) aiMemoryEnabled.checked = s.memory_enabled === true;
-      if (aiThinkingEnabled) aiThinkingEnabled.checked = s.thinking_enabled !== false;
       if (aiMemoryLimit) aiMemoryLimit.value = String(s.memory_limit == null ? 16 : s.memory_limit);
       if (aiNumPredict) aiNumPredict.value = String(s.num_predict == null ? 6500 : s.num_predict);
       if (aiTemperature) aiTemperature.value = String(s.temperature == null ? 1 : s.temperature);
@@ -404,7 +402,6 @@
     var body = {
       system_prompt: aiSystemPrompt ? aiSystemPrompt.value : '',
       memory_enabled: aiMemoryEnabled ? aiMemoryEnabled.checked : true,
-      thinking_enabled: aiThinkingEnabled ? aiThinkingEnabled.checked : true,
       memory_limit: aiMemoryLimit ? Number(aiMemoryLimit.value) : 16,
       num_predict: aiNumPredict ? Number(aiNumPredict.value) : 6500,
       temperature: aiTemperature ? Number(aiTemperature.value) : 1,

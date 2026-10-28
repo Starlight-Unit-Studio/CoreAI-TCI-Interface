@@ -17,6 +17,13 @@ Stand: 2026-10-25. Verbindlich fuer CoreUI-Entwicklung.
 - Bestehende `[PY]`, `[WEB]` und `[BROWSE]`-Protokolle mit den tatsaechlichen Werkzeugen abgleichen. Skills erteilen keine neuen Rechte.
 - Globale Ollama-Anfragen bleiben seriell. Ollama-Cloud-Modelle weiterhin ueber die lokale Ollama-Liste und denselben Endpoint waehlen.
 
+## Freigabe vom 28.10.2026: Denken per Schalter (0.5.75)
+
+- Der Betreiber hat freigegeben, `<|think|>` am Anfang des SYSTEM-Texts zu entfernen. Sonst bleibt der SYSTEM-Text Wort fuer Wort gleich, ebenso alle PARAMETER.
+- Grund: Das feste Token liess Mara bei jeder Anfrage denken, auch mit `think: false`; der Schalter im KI-Profil konnte das Denken nur verbergen (gemessen: 22 bis 28 Sekunden bis zum ersten Wort). Ollamas Gemma-4-Renderer (`RENDERER gemma4`) setzt `<|think|>` selbst in den System-Turn, wenn eine Anfrage `think: true` schickt.
+- Der Denkschalter sitzt seit 0.5.75 im Chat (Core-Chip unter dem Eingabefeld). Der globale Kanal sendet weiterhin `think: true` und verhaelt sich damit wie bisher.
+- Der normale Updater (`scripts/update-from-main.sh` ruft `scripts/install.sh` auf) erzeugt `var/Modelfile.generated` und Maras Core neu; danach meldet `scripts/model-live-audit.php` wieder Uebereinstimmung.
+
 ## Installation bleibt unveraendert
 
 `setup.sh`, `scripts/install.sh`, `scripts/install-native.sh`, `scripts/stack.sh`, der One-Liner und die bestehende Modell-Erstellungsroutine duerfen durch diesen Auftrag nicht geaendert werden. Jede Installationsaenderung bedarf eines separaten ausdruecklichen Auftrags.

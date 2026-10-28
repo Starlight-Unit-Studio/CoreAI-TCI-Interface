@@ -1,9 +1,10 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
 Stand: 27.10.2026
-Repository-Version: 0.5.74
+Repository-Version: 0.5.75
 Repository: https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface
 ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_5_75.txt
   docs/UEBERGABEPROTOKOLL_0_5_74.txt
   docs/UEBERGABEPROTOKOLL_0_5_73.txt
   docs/UEBERGABEPROTOKOLL_0_5_72.txt
@@ -81,6 +82,10 @@ api/audio_wav.php. Wartet auf den Lauf auf dem Server und den Bericht.
 Sprachplan (25 Tokens je Sekunde Audio, 60 s stabil, Denken kostet 14 bis 27 s), erweiterter
 Test (ohne Denken, Live-Antwort, kurze Aufnahmen) und api/voice_core.php.
 NAECHSTER SCHRITT: Lauf mit dem erweiterten Test, dann TTS-Kandidaten und P20.1.
+0.5.74 ist gemergt (PR #124) und lief auf dem Server (Lauf 3). 0.5.75: Denkschalter und Core-Wahl
+mit Vorladen im Chat, Modelfile ohne festes <|think|> (Betreiberfreigabe), Analyse-Block-Filter,
+Medien-Test mit Transkriptionsvarianten und Live einstufig/zweistufig.
+NAECHSTER SCHRITT: Update auf dem Server (baut Maras Core neu), Lauf mit dem neuen Test, dann P20.1.
 Mara/Ember, Ollama-Modelfile, serielle Queue und private Projekt-
 plaene NICHT ungefragt veraendern.
 Externe STU-Homepage wird in einem ANDEREN Chat bearbeitet.

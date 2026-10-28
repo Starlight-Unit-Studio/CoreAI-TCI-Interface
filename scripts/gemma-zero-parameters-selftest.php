@@ -25,9 +25,14 @@ coreui_gemma_assert(preg_match('/^FROM gemma4:e4b$/m', $template) === 1
   && preg_match_all('/^FROM /m', $template) === 1
   && !preg_match('/^DRAFT[ \t]+/m', $template),
   'portable E4B base must contain one model tag and no exported DRAFT blob');
-coreui_gemma_assert(str_contains($template, "SYSTEM \"\"\"<|think|>\n")
+coreui_gemma_assert(str_contains($template, "SYSTEM \"\"\"Du bist Mara")
   && preg_match('~^"""[ \t]*\r?\nRENDERER gemma4\r?\nPARSER gemma4[ \t]*$~m', $template) === 1,
   'active Mara SYSTEM framing and Gemma renderer/parser structure invalid');
+// 0.5.75: thinking follows the chat switch. The gemma4 renderer puts
+// <|think|> into the system turn when a request sends think=true; a fixed
+// token in the SYSTEM text kept Mara thinking even with think=false.
+coreui_gemma_assert(!str_contains($template, '<|think|>'),
+  'the SYSTEM text must not hard-wire <|think|>; the think flag of each request decides');
 coreui_gemma_assert(preg_match('/^SYSTEM """(.+?)^"""$/ms', $template, $activeSystem) === 1
   && trim((string)$activeSystem[1]) !== '',
   'active Mara SYSTEM is missing or empty');

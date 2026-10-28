@@ -336,8 +336,22 @@ function ember_extract_explicit_reply_candidate(string $source): string {
 // als Antwort gespeichert werden. Bei einem erkannten Leak wird nur eine explizite,
 // oeffentliche Antwortpassage gerettet; sonst bleibt die Antwort leer und der Aufrufer
 // kann einen sauberen Fallback starten.
+/**
+ * 0.5.75: without a thinking channel Mara sometimes writes her planning as a
+ * leading bracket block ("[Analyse: Der Nutzer ...] Na klar ..."). Such
+ * blocks are removed; tool markers like [WEB: ...] are not meta labels.
+ */
+function ember_strip_leading_bracket_meta(string $content): string {
+  $labels = ember_internal_meta_label_pattern();
+  $pattern = '~^\s*\[\s*(?:interne?\s+)?' . $labels . '\s*:[^\]]{0,4000}\]\s*~iu';
+  for ($i = 0; $i < 3 && preg_match($pattern, $content, $m) === 1; $i++) {
+    $content = (string)substr($content, strlen($m[0]));
+  }
+  return $content;
+}
+
 function ember_sanitize_public_reply(string $content, string $thinking = ''): string {
-  $content = trim(ember_strip_thinking_block($content));
+  $content = trim(ember_strip_leading_bracket_meta(ember_strip_thinking_block($content)));
   if ($content === '') {
     return ember_extract_explicit_reply_candidate($thinking);
   }
@@ -4660,6 +4674,9 @@ function ember_build_chat_prompt(
   // #113: the KI-Profil window belongs to the private console; the global
   // channel and its queue keep the Core default.
   if ($channel !== 'console') $GLOBALS['COREUI_AI_RUNTIME_SETTINGS']['num_ctx'] = null;
+  // 0.5.75: the thinking switch belongs to the private chat; the global
+  // channel keeps thinking as it did when the Modelfile forced it.
+  if ($channel !== 'console') $GLOBALS['COREUI_AI_RUNTIME_SETTINGS']['thinking_enabled'] = true;
   if ($channel === 'console') $GLOBALS['COREUI_CONSOLE_DATE_AWARE'] = true;
   // The runtime model is known only after the account settings are applied.
   $profile = ember_console_prompt_profile($channel,
@@ -4869,6 +4886,9 @@ function ember_generate_reply(
   $cid = (string)($senderChar['id'] ?? '');
   if (function_exists('coreui_ai_runtime_apply')) coreui_ai_runtime_apply($pdo, $uid);
   if ($channel !== 'console') $GLOBALS['COREUI_AI_RUNTIME_SETTINGS']['num_ctx'] = null;
+  // 0.5.75: the thinking switch belongs to the private chat; the global
+  // channel keeps thinking as it did when the Modelfile forced it.
+  if ($channel !== 'console') $GLOBALS['COREUI_AI_RUNTIME_SETTINGS']['thinking_enabled'] = true;
   if ($channel === 'console') $GLOBALS['COREUI_CONSOLE_DATE_AWARE'] = true;
   // Same window-aware sizing as the streaming prompt builder.
   $promptProfile = ember_console_prompt_profile($channel,

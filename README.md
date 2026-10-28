@@ -7,7 +7,25 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.74` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.75` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Denkschalter und Core-Wahl im Chat (0.5.75)
+
+Unter dem Eingabefeld sitzt ein Core-Chip, aehnlich wie in anderen Chat-
+Oberflaechen. Er zeigt den aktiven Core und ob Mara denkt. Ein Tipp oeffnet
+die Liste aller Cores aus Ollama und den Schalter "Denken"; beides gilt fuer
+alle Chats des Kontos ab der naechsten Nachricht. Ein gewaehlter lokaler Core
+wird sofort ueber Maras Warteschlange vorgeladen.
+
+Damit der Schalter wirklich schaltet, steht `<|think|>` nicht mehr fest im
+`config/Modelfile.template` (Freigabe des Betreibers). Ollamas Gemma-4-
+Renderer setzt es bei `think: true` selbst. Das normale Update
+(`scripts/update-from-main.sh`) baut Maras Core dabei neu. Der globale Kanal
+denkt weiter wie bisher.
+
+Der Medien-Test vergleicht ausserdem Wege, kurze Aufnahmen zuverlaessig
+mitzuschreiben (Googles Transkriptionsvorlage, Stille davor, temperature 0
+nur im Test) und misst die Live-Antwort einstufig und zweistufig.
 
 ## Messprotokoll und erweiterter Medien-Test (0.5.74)
 

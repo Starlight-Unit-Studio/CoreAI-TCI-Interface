@@ -49,6 +49,24 @@ function coreui_ollama_read_json(string $endpoint, ?array $post = null): ?array 
   return is_array($json) ? $json : null;
 }
 
+/** Model name as /api/ps reports it: lower case, ":latest" when no tag is given. */
+function coreui_ollama_model_key(string $name): string {
+  $name = strtolower(trim($name));
+  return ($name !== '' && !str_contains($name, ':')) ? $name . ':latest' : $name;
+}
+
+/** 0.5.75: Cores Ollama holds in memory right now (/api/ps), as model keys. */
+function coreui_ollama_loaded_names(): array {
+  $ps = coreui_ollama_read_json('ps') ?? [];
+  $names = [];
+  foreach ((is_array($ps['models'] ?? null) ? $ps['models'] : []) as $row) {
+    if (!is_array($row)) continue;
+    $key = coreui_ollama_model_key((string)($row['name'] ?? $row['model'] ?? ''));
+    if ($key !== '') $names[] = $key;
+  }
+  return array_values(array_unique($names));
+}
+
 /** MemAvailable in bytes as the kernel reports it, null if unreadable. */
 function coreui_mem_available_bytes(?string $meminfo = null): ?int {
   $meminfo ??= (string)@file_get_contents('/proc/meminfo');

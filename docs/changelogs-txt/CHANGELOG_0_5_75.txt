@@ -1,0 +1,8 @@
+CoreAI: TCI Interface 0.5.75 - 28.10.2026
+- Denkschalter im Chat: Core-Chip unter dem Eingabefeld (DENKEN/SCHNELL), Menue mit Schalter, kontoweit ab der naechsten Nachricht; KI-Profil-Schalter entfaellt.
+- Modelfile ohne festes <|think|> (Betreiberfreigabe); think je Anfrage entscheidet, globaler Kanal denkt weiter. Update baut Maras Core neu.
+- Core-Wahl im Chat: Ollama-Liste wie im KI-Profil, Auswahl speichert nur den Core, lokaler Core wird ueber die Warteschlange vorgeladen (Chip zeigt LAEDT), Cloud ohne Laden.
+- Vorangestellter "[Analyse: ...]"-Block wird aus Antworten entfernt; Bau-Entscheidung toleriert ihn.
+- Medien-Test: Lauf 3 ausgewertet (kurze Aufnahmen 11 von 20 Fehlversuche); Varianten bisher, vorlage, vorlage_stille, vorlage_temp0 (temperature 0 nur hier), Live einstufig/zweistufig, Gewichtsdatei je Core, kompakter Bericht, robuste Einordnung der Antworten.
+- Tests: thinking-switch-selftest.php, thinking-switch-ui-selftest.cjs (beide Preflights); Gemma-, Audio- und Preflight-Pruefungen angepasst.
+- OFFEN: Update auf dem Server, Lauf mit dem neuen Test, dann Entscheidung Mitschrift-Weg fuer P20.1.
