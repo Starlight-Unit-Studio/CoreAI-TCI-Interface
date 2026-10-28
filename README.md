@@ -9,12 +9,18 @@ CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, Sea
 
 Current source version: `0.5.77` (numeric only). The last verified ZIP remains archived under its original historical name.
 
-## Registrieren auf der Login-Seite (0.5.77)
+## Registrieren, Gast-Zugang, Cores einzeln verwalten (0.5.77)
 
 Schaltet ein Admin unter `/admin/` (Runtime) die oeffentliche Registrierung
 ein, bietet die Login-Seite "Noch kein Konto? Registrieren" an: E-Mail,
 optionaler Anzeigename, Passwort zweimal. Neue Konten sind normale Nutzer;
 Rechte und Sperren verwaltet der Admin unter "Benutzer und Rechte".
+Mit "Gast-Zugang" erscheint "Als Gast chatten": ein Tipp, und man chattet
+sofort, bis zu der eingestellten Zahl an Nachrichten (Standard 5).
+
+Unter "Cores verwalten" laesst sich jede Stufe einzeln aktualisieren und
+deinstallieren (Maras Haupt-Core bleibt). Beim Core-Wechsel entlaedt CoreAI
+zuerst den alten Core, damit der Arbeitsspeicher reicht.
 
 ## Erklaerungen statt Werkzeugaufrufe, Unterstriche, Arbeitsweg (0.5.76)
 

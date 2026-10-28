@@ -1,7 +1,8 @@
 /* CoreAI 0.5.77: sign-up on the login page. The "Registrieren" button shows
    only while the admin has public registration switched on (Runtime); the
    form asks for a repeated password and an optional display name and uses
-   the existing api/auth.php?action=register. */
+   the existing api/auth.php?action=register. "Als Gast chatten" shows only
+   while the guest access is on and logs a fresh guest account in. */
 'use strict';
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -34,23 +35,25 @@ assert(source && source.includes('loginModeToggle'), 'the login script handles s
 
 function page(opts) {
   const ids = ['email', 'password', 'passwordRepeat', 'displayName', 'displayNameGroup', 'passwordRepeatGroup',
-    'loginError', 'loginBtn', 'loginModeToggle'];
+    'loginError', 'loginBtn', 'loginModeToggle', 'guestBtn'];
   const els = Object.fromEntries(ids.map(id => [id, new Element(id)]));
   // Markup defaults from login.html.
-  for (const id of ['displayNameGroup', 'passwordRepeatGroup', 'loginModeToggle']) {
+  for (const id of ['displayNameGroup', 'passwordRepeatGroup', 'loginModeToggle', 'guestBtn']) {
     assert(new RegExp('id="' + id + '"[^>]*hidden').test(html), id + ' starts hidden');
     els[id].hidden = true;
   }
   els.loginBtn.textContent = 'EINLOGGEN';
   els.loginModeToggle.textContent = 'NOCH KEIN KONTO? REGISTRIEREN';
+  els.guestBtn.textContent = 'ALS GAST CHATTEN';
   const calls = [];
   const replaced = [];
   const reply = body => Promise.resolve({json: () => Promise.resolve(body)});
   const fetch = (url, init) => {
     calls.push({url, init: init || {}});
     if (url === './api/auth.php?action=me') {
-      return reply({ok: false, error: 'not_authenticated', registration_enabled: opts.open === true});
+      return reply({ok: false, error: 'not_authenticated', registration_enabled: opts.open === true, guest_enabled: opts.guest === true});
     }
+    if (url === './api/auth.php?action=guest') return reply(opts.guestReply || {ok: true, user_id: 9, guest: {limit: 5, used: 0, left: 5}});
     if (url === './api/auth.php?action=register') return reply(opts.registerReply || {ok: true, user_id: 7, permission_level: 4});
     return reply({ok: false, error: 'invalid_credentials'});
   };
@@ -129,16 +132,43 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
   assert.equal(p.els.loginModeToggle.hidden, true, 'a closed sign-up hides the button again');
   assert.equal(p.els.loginBtn.textContent, 'EINLOGGEN');
 
+  // Guest access: only while switched on; one tap logs a guest in.
+  p = page({open: false, guest: false});
+  await flush();
+  assert.equal(p.els.guestBtn.hidden, true, 'closed guest access shows no button');
+  p = page({open: false, guest: true});
+  await flush();
+  assert.equal(p.els.guestBtn.hidden, false, 'open guest access shows the button');
+  assert.equal(p.els.loginModeToggle.hidden, true, 'independent of registration');
+  p.els.guestBtn.handlers.click();
+  assert.equal(p.els.guestBtn.disabled, true);
+  await flush();
+  const guestPost = p.calls.find(c => c.url === './api/auth.php?action=guest');
+  assert.equal(guestPost.init.method, 'POST');
+  assert.deepEqual(p.replaced, ['app.html'], 'straight into the chat');
+  p = page({guest: true, guestReply: {ok: false, error: 'guest_capacity'}});
+  await flush();
+  p.els.guestBtn.handlers.click();
+  await flush();
+  assert.match(p.els.loginError.textContent, /sehr viele Gäste/);
+  assert.equal(p.els.guestBtn.disabled, false);
+  p = page({guest: true, guestReply: {ok: false, error: 'guest_disabled'}});
+  await flush();
+  p.els.guestBtn.handlers.click();
+  await flush();
+  assert.equal(p.els.guestBtn.hidden, true, 'a closed guest access hides the button again');
+
   // Server side: the public answer carries the switch, register uses the same check.
   const auth = fs.readFileSync(path.join(root, 'api/auth.php'), 'utf8');
-  assert(auth.includes("stu_json(['ok' => false, 'error' => 'not_authenticated', 'registration_enabled' => $registrationOpen], 200);"));
+  assert(auth.includes("stu_json(['ok' => false, 'error' => 'not_authenticated', 'registration_enabled' => $registrationOpen,\n    'guest_enabled' => $guestOpen], 200);"),
+    'the public answer carries both switches');
   assert(auth.includes("if (!coreui_registration_enabled($pdo)) {"), 'register checks the same switch');
   assert(auth.includes("stu_app_setting_get($pdo, 'registration_enabled',"), 'the switch is the admin setting');
   const admin = fs.readFileSync(path.join(root, 'js/admin.js'), 'utf8');
   assert(admin.includes("registration_enabled: document.getElementById('registrationEnabled').checked ? '1' : '0'"),
     'the admin switch saves the same key');
   const css = fs.readFileSync(path.join(root, 'css/console.css'), 'utf8');
-  assert(/\.login-field-group\[hidden\],\s*\.login-mode-toggle\[hidden\]\s*\{\s*display: none;/.test(css), 'hidden fields take no space');
+  assert(/\.login-field-group\[hidden\],\s*\.login-mode-toggle\[hidden\],\s*\.login-guest\[hidden\]\s*\{\s*display: none;/.test(css), 'hidden fields take no space');
 
-  console.log('CoreAI sign-up: button only while open, checks, register call and errors OK');
+  console.log('CoreAI sign-up and guest access: buttons only while open, checks, calls and errors OK');
 })().catch(error => { console.error(error); process.exit(1); });

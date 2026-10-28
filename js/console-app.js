@@ -1501,8 +1501,10 @@
       browse_failed: 'Die Browser-Recherche ist fehlgeschlagen.',
       browse_result_missing: 'Die Browser-Recherche lieferte keine Antwort.',
       session_not_found: 'Die Sitzung ist nicht mehr aktiv.',
-      csrf_failed: 'Die Sitzung wurde erneuert. Bitte Seite neu laden.'
+      csrf_failed: 'Die Sitzung wurde erneuert. Bitte Seite neu laden.',
+      guest_limit_reached: 'Deine Gast-Nachrichten sind aufgebraucht. Mit einem eigenen Konto geht es weiter.'
     };
+    if (error === 'guest_limit_reached') guestLimitReached();
     appendMessageEl('system', '\u26a0 ' + (map[error] || 'Nachrichtenaktion fehlgeschlagen.'));
     scrollToBottom();
   }
@@ -1524,6 +1526,7 @@
     }).then(function (data) {
       var request = data.request || {};
       if (!request.id) throw new Error('generation_request_missing');
+      guestTurnCounted();
       state.pendingBySession[ses.id] = Number(request.trigger_message_id) || true;
       updateActivePendingUi();
       setStatus('waiting', mode === 'continue' ? 'MARA SETZT FORT\u2026' : 'MARA ERZEUGT ALTERNATIVE\u2026');
@@ -2251,6 +2254,7 @@
     }).then(function (data) {
       var request = data.request || {};
       if (!request.id) throw new Error('generation_request_missing');
+      guestTurnCounted();
       var editedId = Number(data.message_id) || Number(edit.message_id);
       var rows = state.messageCacheBySession[ses.id] || [];
       state.messageCacheBySession[ses.id] = rows.filter(function (record) {
@@ -2381,8 +2385,11 @@
           'message_store_failed':'\u26a0 Nachricht und Anhänge konnten nicht gespeichert werden.',
           'too_short':           '\u26a0 Nachricht zu kurz.',
           'banned':              '\u26a0 Konto gesperrt.',
-          'not_authenticated':   '\u26a0 Sitzung beendet.'
+          'not_authenticated':   '\u26a0 Sitzung beendet.',
+          'guest_limit_reached': '\u26a0 Deine Gast-Nachrichten sind aufgebraucht. Mit einem eigenen Konto geht es weiter.',
+          'guest_console_only':  '\u26a0 Als Gast chattest du nur im privaten Chat mit Mara.'
         };
+        if (d.error === 'guest_limit_reached') guestLimitReached();
         delete state.pendingBySession[sessionId];
         restoreAttachments(atts);
         if (options.from_queue) restoreQueuedTurn(sessionId, options.queued_turn);
@@ -2399,6 +2406,10 @@
         return;
       }
 
+      if (d.guest) {
+        state.guest = d.guest;
+        renderGuestQuota();
+      }
       var sentMsgId = d.id || 0;
       state.pendingBySession[sessionId] = Number(sentMsgId) || true;
       updateActivePendingUi();
@@ -3205,7 +3216,30 @@
         state.userAvatarUrl = d.avatars && d.avatars.user ? d.avatars.user : null;
         state.assistantAvatarUrl = d.avatars && d.avatars.assistant ? d.avatars.assistant : null;
         if (inputEl) inputEl.placeholder = 'Nachricht an ' + state.assistantName + '…';
+        state.guest = d.is_guest && d.guest ? d.guest : null;
+        renderGuestQuota();
       });
+  }
+
+  // 0.5.77: a guest sees how many messages are left (the server counts).
+  function renderGuestQuota() {
+    var label = document.getElementById('composerLinkLabel');
+    if (!label) return;
+    var g = state.guest;
+    label.textContent = g ? 'GAST · NOCH ' + Math.max(0, Number(g.left) || 0) + ' VON ' + (Number(g.limit) || 0) + ' NACHRICHTEN' : 'PRIVATE CORE LINK';
+    label.setAttribute('data-guest', g ? (Number(g.left) > 0 ? 'open' : 'used') : '');
+  }
+
+  function guestTurnCounted() {
+    if (!state.guest) return;
+    state.guest.left = Math.max(0, (Number(state.guest.left) || 0) - 1);
+    state.guest.used = (Number(state.guest.used) || 0) + 1;
+    renderGuestQuota();
+  }
+
+  function guestLimitReached() {
+    if (state.guest) state.guest.left = 0;
+    renderGuestQuota();
   }
 
   function refreshRuntimeProfile() {

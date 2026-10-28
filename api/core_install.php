@@ -525,7 +525,10 @@ function coreui_core_manage_rows(array $models): array {
     $own = $index[coreui_ollama_model_key($entry['base'])]['digest'] ?? null;
     $aliasOf = $own && $real[$own] !== $entry['base'] ? $real[$own] : null;
     $cloudBase = COREUI_CORE_CLOUD_CATALOG[$tier] ?? null;
+    $default = defined('STU_EMBER_MODEL') ? (string)STU_EMBER_MODEL : 'ember-coreui:latest';
     $rows[] = ['tier'=>$tier, 'label'=>COREUI_CORE_TIER_LABELS[$tier], 'base'=>$entry['base'],
+      // 0.5.77: what "Deinstallieren" may remove; Mara's own Core always stays.
+      'removable'=>array_values(array_filter($local, static fn(string $n): bool => !coreui_core_same($n, $default))),
       'download_gb'=>$entry['download_gb'], 'local'=>$local, 'cloud'=>$cloud, 'alias_of'=>$aliasOf,
       'cloud_base'=>$cloudBase, 'cloud_missing'=>$cloudBase !== null && !isset($index[coreui_ollama_model_key($cloudBase)]),
       'status'=>$local !== [] ? 'installed' : ($cloud !== [] ? 'cloud' : 'missing')];
@@ -706,4 +709,59 @@ function coreui_core_cloud_begin(string $tier): array {
     'started_at'=>time()];
   coreui_core_install_write($state);
   return $state;
+}
+
+// ---- Deinstallieren (0.5.77) ----
+
+/** Cores "Deinstallieren" removes for a tier row (pure): local ones without Mara's own Core, or the cloud ones. */
+function coreui_core_uninstall_targets(array $row, bool $cloud): array {
+  return array_values($cloud ? (array)($row['cloud'] ?? []) : (array)($row['removable'] ?? []));
+}
+
+function coreui_core_delete(string $model): bool {
+  $ch = curl_init(coreui_ollama_api_url('delete'));
+  curl_setopt_array($ch, [
+    CURLOPT_CUSTOMREQUEST=>'DELETE', CURLOPT_RETURNTRANSFER=>true, CURLOPT_FOLLOWLOCATION=>false,
+    CURLOPT_CONNECTTIMEOUT=>3, CURLOPT_TIMEOUT=>60, CURLOPT_IPRESOLVE=>CURL_IPRESOLVE_V4,
+    CURLOPT_HTTPHEADER=>['Content-Type: application/json'],
+    CURLOPT_POSTFIELDS=>json_encode(['model'=>$model], JSON_UNESCAPED_SLASHES),
+  ]);
+  curl_exec($ch);
+  $status = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+  curl_close($ch);
+  return $status >= 200 && $status < 300;
+}
+
+/**
+ * Removes the Cores of one tier: unload, delete in Ollama, and accounts that
+ * had chosen one of them go back to the standard Core. Under the install
+ * lock, so no install or update runs at the same time.
+ */
+function coreui_core_uninstall(PDO $pdo, array $targets): array {
+  $loaded = coreui_ollama_loaded_names();
+  $removed = [];
+  $failed = [];
+  foreach ($targets as $name) {
+    if (in_array(coreui_ollama_model_key($name), $loaded, true)) {
+      $ch = curl_init(coreui_ollama_api_url('generate'));
+      curl_setopt_array($ch, [
+        CURLOPT_POST=>true, CURLOPT_RETURNTRANSFER=>true, CURLOPT_CONNECTTIMEOUT=>3, CURLOPT_TIMEOUT=>60,
+        CURLOPT_IPRESOLVE=>CURL_IPRESOLVE_V4, CURLOPT_HTTPHEADER=>['Content-Type: application/json'],
+        CURLOPT_POSTFIELDS=>json_encode(['model'=>$name, 'keep_alive'=>0], JSON_UNESCAPED_SLASHES),
+      ]);
+      curl_exec($ch);
+      curl_close($ch);
+    }
+    if (coreui_core_delete($name)) $removed[] = $name;
+    else $failed[] = $name;
+  }
+  if ($removed !== []) {
+    $marks = implode(',', array_fill(0, count($removed), '?'));
+    try {
+      $pdo->prepare("UPDATE stu_user_ai_settings SET model_override = NULL WHERE model_override IN ({$marks})")->execute($removed);
+    } catch (Throwable $e) {
+      if (function_exists('stu__log_error')) stu__log_error(['type'=>'core_uninstall_override_reset_failed', 'message'=>$e->getMessage()]);
+    }
+  }
+  return ['removed'=>$removed, 'failed'=>$failed];
 }

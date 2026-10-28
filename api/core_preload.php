@@ -9,7 +9,32 @@ declare(strict_types=1);
  * waits in Mara's serial queue like a chat turn and sends exactly the
  * options a chat turn would send, so Ollama never has to reload the runner
  * with another window. An empty prompt only loads the model.
+ *
+ * 0.5.77: a Core switch first unloads the other local Cores (empty prompt,
+ * keep_alive 0, Ollama's documented way), so two Cores never share the RAM.
+ * This runs under the same queue, so no chat turn is cut off.
  */
+
+/** Local Cores in memory other than $keep (cloud Cores take no RAM here). */
+function coreui_core_unload_targets(array $loaded, string $keep): array {
+  $keepKey = coreui_ollama_model_key($keep);
+  return array_values(array_filter($loaded, static fn(string $name): bool =>
+    coreui_ollama_model_key($name) !== $keepKey && preg_match('~(?:^|[:._-])cloud(?:$|[:._-])~i', $name) !== 1));
+}
+
+function coreui_core_unload(string $model): bool {
+  $ch = curl_init(coreui_ollama_api_url('generate'));
+  curl_setopt_array($ch, [
+    CURLOPT_POST=>true, CURLOPT_RETURNTRANSFER=>true, CURLOPT_FOLLOWLOCATION=>false,
+    CURLOPT_CONNECTTIMEOUT=>3, CURLOPT_TIMEOUT=>60, CURLOPT_IPRESOLVE=>CURL_IPRESOLVE_V4,
+    CURLOPT_HTTPHEADER=>['Content-Type: application/json'],
+    CURLOPT_POSTFIELDS=>json_encode(['model'=>$model, 'keep_alive'=>0], JSON_UNESCAPED_SLASHES),
+  ]);
+  curl_exec($ch);
+  $status = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+  curl_close($ch);
+  return $status >= 200 && $status < 300;
+}
 
 function coreui_core_preload(PDO $pdo, int $uid, string $model): bool {
   if ($uid <= 0 || !coreui_model_name_valid($model) || ember_model_is_cloud($model)) return false;
@@ -23,6 +48,7 @@ function coreui_core_preload(PDO $pdo, int $uid, string $model): bool {
   $lock = ember_global_lock_acquire(120);
   if ($lock === false) return false;
   try {
+    foreach (coreui_core_unload_targets(coreui_ollama_loaded_names(), $model) as $other) coreui_core_unload($other);
     $ch = curl_init(coreui_ollama_api_url('generate'));
     curl_setopt_array($ch, [
       CURLOPT_POST=>true, CURLOPT_RETURNTRANSFER=>true, CURLOPT_FOLLOWLOCATION=>false,

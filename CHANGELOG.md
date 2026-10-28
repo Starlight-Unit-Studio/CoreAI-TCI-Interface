@@ -5,8 +5,11 @@ CoreAI: TCI Interface gehoert zur Quantum-Softwarefamilie und wird bis zur final
 ## 0.5.77 - 28.10.2026
 
 - **Registrieren auf der Login-Seite:** Ist im Admin-Bereich (Runtime, "Oeffentliche Registrierung") die Registrierung eingeschaltet, zeigt die Login-Seite "Noch kein Konto? Registrieren". Das Formular fragt E-Mail, optional einen Anzeigenamen und das Passwort zweimal (mindestens 8 Zeichen) und nutzt die vorhandene Registrierung des Servers; neue Konten sind normale Nutzer. Ist die Registrierung aus, bleibt der Knopf verborgen und der Server lehnt weiter ab. Vorher gab es die Registrierung nur im Server, die Login-Seite bot sie nie an.
-- Die Abfrage `auth.php?action=me` meldet ohne Anmeldung, ob die Registrierung offen ist; Registrierung und Login-Seite nutzen dieselbe Pruefung (`coreui_registration_enabled`).
-- Tests: neue `registration-ui-selftest.cjs` in beiden Preflights.
+- Die Abfrage `auth.php?action=me` meldet ohne Anmeldung, ob Registrierung und Gast-Zugang offen sind; Registrierung und Login-Seite nutzen dieselbe Pruefung (`coreui_registration_enabled`).
+- **Als Gast chatten:** Ist im Admin-Bereich (Runtime) "Gast-Zugang" eingeschaltet, legt ein dritter Knopf auf der Login-Seite ein Gastkonto an (ohne E-Mail und Passwort, Anzeigename "Gast") und oeffnet sofort den Chat. Ein Gast darf so viele Nachrichten senden, wie der Admin unter "Nachrichten pro Gast" einstellt (Standard 5, 1 bis 100); jede Antwort zaehlt, auch Neu generieren, Weiter und eine bearbeitete Nachricht. Der Zaehler haengt am Konto, ein geloeschter Chat gibt nichts zurueck. Im Chat steht "GAST · NOCH X VON Y NACHRICHTEN", danach ein klarer Hinweis. Gaeste chatten nur im privaten Chat; hoechstens 30 neue Gastkonten pro Stunde.
+- **Cores verwalten:** Jede installierte Stufe hat "Aktualisieren" (nur diese Stufe) und "Deinstallieren" (zweimal tippen; Maras Haupt-Core bleibt immer), Cloud-Cores "Cloud entfernen". Ein entfernter Core wird vorher entladen; wer ihn gewaehlt hatte, chattet danach mit dem Standard-Core.
+- **Ein Core im Speicher:** Beim Wechsel im Core-Menue entlaedt CoreAI zuerst die anderen lokalen Cores (Ollama: leere Anfrage mit `keep_alive` 0) und laedt erst dann den neuen, innerhalb von Maras Warteschlange. So teilen sich nie zwei Cores den Arbeitsspeicher.
+- Tests: neue `registration-ui-selftest.cjs` und `guest-access-selftest.php` in beiden Preflights; Installer- und Fenster-Tests erweitert.
 
 ## 0.5.76 - 28.10.2026
 

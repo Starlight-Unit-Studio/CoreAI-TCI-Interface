@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.77 sign-up on the login page while registration is open.
+# CoreAI: TCI Interface 0.5.77 sign-up and guest access on the login page, per tier update and removal, one Core in RAM.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -164,6 +164,8 @@ UI_FILES=(
   scripts/core-install-selftest.php
   scripts/core-install-ui-selftest.cjs
   scripts/registration-ui-selftest.cjs
+  scripts/guest-access-selftest.php
+  api/guest_access.php
   api/core_install.php
   js/coreui-core-install.js
   scripts/media-spike.php
@@ -657,6 +659,13 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail "Core-Installer-Selbsttest: ${install_test:-Unbekannter Fehler}"
   fi
 
+  guest_test=''
+  if guest_test="$(compose exec -T php php scripts/guest-access-selftest.php 2>&1)"; then
+    ok 'Gast-Zugang: Limit, Zaehlung bei jeder Antwort, nur privater Chat, Stundenlimit, Login und Admin geprueft.'
+  else
+    fail "Gast-Zugang-Selbsttest: ${guest_test:-Unbekannter Fehler}"
+  fi
+
   mention_test=''
   if mention_test="$(compose exec -T php php scripts/tool-mention-selftest.php 2>&1)"; then
     ok 'Werkzeug-Erwaehnungen: Erklaerungen starten kein Werkzeug und keine Korrekturrunde.'
@@ -703,7 +712,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       fail 'Chat: Install-Fenster-Oberflaechentest fehlgeschlagen.'
     fi
     if node "$PROJECT_ROOT/scripts/registration-ui-selftest.cjs" >/dev/null 2>&1; then
-      ok 'Login: Registrieren nur bei offener Registrierung, Pruefungen und Fehlerfaelle geprueft.'
+      ok 'Login: Registrieren und Als Gast chatten nur wenn offen, Pruefungen und Fehlerfaelle geprueft.'
     else
       fail 'Login: Registrierungs-Selbsttest fehlgeschlagen.'
     fi

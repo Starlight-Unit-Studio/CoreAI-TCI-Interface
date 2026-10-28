@@ -12,6 +12,7 @@ require_once __DIR__ . '/console_native_tools.php';
 require_once __DIR__ . '/console_session_store.php';
 require_once __DIR__ . '/profile_store.php';
 require_once __DIR__ . '/knowledge_store.php';
+require_once __DIR__ . '/guest_access.php';
 
 // -----------------------------------------------------------------------------
 // Ember - Global-Chat NPC (Ollama local)
@@ -9260,6 +9261,9 @@ if ($action === 'send') {
     stu_json(['ok'=>false,'error'=>'schema_missing_chat', 'hint'=>'run migrations/07_stu_mysql_schema_chat.sql'], 500);
   }
 
+  // 0.5.77: guests chat only in the console and only up to the admin's limit.
+  $guestQuota = coreui_guest_reserve_turn($pdo, (int)$uid, $channel);
+
   $hasImageCol = chat_schema_has_image_url($pdo);
 
   $startedAttachmentTx = !$pdo->inTransaction();
@@ -9348,6 +9352,7 @@ if ($action === 'send') {
     'session_id'=>($channel === 'console') ? $consoleSessionId : null,
     'session_title'=>($channel === 'console') ? $sessionTitle : null,
   ];
+  if ($guestQuota !== null) $okPayload['guest'] = $guestQuota;
 
   // Ember reply (global + console channel)
   $doEmber = false;

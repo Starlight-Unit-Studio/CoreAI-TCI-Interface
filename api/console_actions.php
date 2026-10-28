@@ -4,6 +4,7 @@ declare(strict_types=1);
 define('STU_CHAT_LIB', 1);
 require __DIR__ . '/chat.php';
 require_once __DIR__ . '/console_action_store.php';
+require_once __DIR__ . '/guest_access.php';
 require_once __DIR__ . '/console_agent_runs.php';
 
 $pdo = stu_pdo();
@@ -104,6 +105,8 @@ try {
   if ($action === 'prepare_generation') {
     $characterId = trim((string)($body['character_id'] ?? ''));
     chat_require_character($pdo, (int)$uid, $characterId);
+    // 0.5.77: "Neu generieren" and "Weiter" count against a guest's limit.
+    coreui_guest_reserve_turn($pdo, (int)$uid);
     $request = coreui_console_generation_prepare(
       $pdo,
       (int)$uid,
@@ -124,6 +127,7 @@ try {
       false
     );
     chat_require_character($pdo, (int)$uid, (string)($turn['character_id'] ?? ''));
+    coreui_guest_reserve_turn($pdo, (int)$uid);
     $result = coreui_console_edit_prepare(
       $pdo,
       (int)$uid,

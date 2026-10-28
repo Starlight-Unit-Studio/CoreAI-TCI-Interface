@@ -3954,6 +3954,16 @@ a.core-install-btn {
   gap: 6px;
 }
 
+.core-install-tier-btn--remove {
+  border-color: rgba(212, 80, 93, 0.45);
+  color: var(--red);
+}
+
+.core-install-tier-keep {
+  color: var(--muted);
+  font-size: 11px;
+}
+
 .core-install-tier-btn:disabled {
   cursor: default;
   opacity: 0.55;
@@ -4887,8 +4897,45 @@ a.core-install-btn {
 
 /* 0.5.77: sign-up on the login page, only while the admin has it switched on. */
 .login-field-group[hidden],
-.login-mode-toggle[hidden] {
+.login-mode-toggle[hidden],
+.login-guest[hidden] {
   display: none;
+}
+
+.login-guest {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 4px;
+  border: 1px dashed var(--line-strong);
+  background: transparent;
+  color: var(--cx);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+}
+
+.login-guest:hover {
+  border-style: solid;
+  background: var(--panel-cx);
+}
+
+.login-guest:disabled {
+  cursor: wait;
+  opacity: 0.64;
+}
+
+#composerLinkLabel[data-guest="open"] {
+  color: var(--cx);
+}
+
+#composerLinkLabel[data-guest="used"] {
+  color: var(--amb);
+}
+
+.login-guest:focus-visible {
+  outline: 2px solid var(--amb);
+  outline-offset: 2px;
 }
 
 .login-mode-toggle {

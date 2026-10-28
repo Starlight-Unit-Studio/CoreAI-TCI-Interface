@@ -20,9 +20,26 @@ AENDERUNGEN:
   Wartung, zu viele Versuche); "registration_disabled" blendet den Knopf wieder aus.
 - css/console.css: Stil fuer den Umschalter, verborgene Felder nehmen keinen Platz.
 - Version 0.5.77 (VERSION, Seiten, console-gate, Branding-Test, Preflight-Kopf).
+- Betreiberwunsch Gast-Zugang: neue api/guest_access.php (Schalter guest_enabled, Limit guest_message_limit
+  in stu_app_settings, Standard 5, 1 bis 100; Zaehler coreui_guest_used in stu_kv, atomar hochgezaehlt vor
+  dem Speichern; guest_limit_reached; Gaeste nur Kanal console; max. 30 neue Gaeste je Stunde, erkannt am
+  guest_key-Praefix chat_). auth.php: action=guest (POST, Ratenbegrenzung, Wartung, Sitzung wie beim Login),
+  me liefert guest_enabled bzw. is_guest und guest. chat.php send, console_actions.php prepare_generation und
+  edit_message zaehlen vor dem Speichern. admin: Felder in Runtime, Speichern mit Begrenzung. login.html:
+  Knopf "ALS GAST CHATTEN". console-app.js: "GAST · NOCH X VON Y NACHRICHTEN" in der Zeile unter dem
+  Eingabefeld, Hinweis am Ende. Gastkonten bleiben in der Datenbank (kein automatisches Aufraeumen).
+- Betreiberwunsch Cores verwalten: je Stufe "Aktualisieren" (core_update mit tier) und "Deinstallieren"
+  (core_uninstall: entlaedt, DELETE /api/delete, setzt model_override betroffener Konten zurueck; Maras
+  Haupt-Core nie; Cloud-Cores ueber "Cloud entfernen"), zweimal tippen.
+- Betreiberwunsch RAM: core_preload.php entlaedt beim Core-Wechsel zuerst die anderen lokalen Cores
+  (POST /api/generate mit keep_alive 0) innerhalb der Warteschlange, dann laedt er den neuen; auch wenn der
+  gewaehlte schon geladen ist, werden die anderen entladen.
 
 GEPRUEFT:
 - Alle Offline-Selbsttests, neu registration-ui-selftest.cjs (fuehrt das Skript der Login-Seite mit
-  nachgebautem Server aus).
+  nachgebautem Server aus, auch den Gast-Knopf) und guest-access-selftest.php; core-install-Tests decken
+  Aktualisieren, Deinstallieren und das Entladen ab. Echter Test auf dem Server steht aus.
 
-NAECHSTER SCHRITT: Umfang der Benutzerverwaltung mit dem Betreiber klaeren, dann TTS-Kandidaten und P20.1.
+NAECHSTER SCHRITT: Plan fuer Chat-Komprimierung (Archiv als Markdown je Sitzung) und Maras Orchestrierung
+(selbststaendiges Recherchieren) mit dem Betreiber abstimmen; Umfang der Benutzerverwaltung klaeren; dann
+TTS-Kandidaten und P20.1.

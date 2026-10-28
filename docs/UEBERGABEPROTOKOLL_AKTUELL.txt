@@ -92,7 +92,8 @@ NAECHSTER SCHRITT: Update auf dem Server (baut Maras Core neu), Lauf mit dem neu
 falsche Korrekturrunde, Unterstriche im Chat, Arbeitsweg nur bei echter Arbeit, Sprachentscheidung.
 NAECHSTER SCHRITT: TTS-Kandidaten, dann P20.1.
 0.5.76 ist gemergt (PR #126) mit TCI-Stufen, Installer, Updates und Ollama Cloud im Chat. 0.5.77:
-Registrieren auf der Login-Seite, nur bei offener Registrierung.
+Registrieren und Als Gast chatten auf der Login-Seite (nur wenn offen, Gast-Limit Standard 5), Cores einzeln
+aktualisieren und deinstallieren, beim Core-Wechsel wird der alte zuerst entladen.
 NAECHSTER SCHRITT: Benutzerverwaltung nach Betreiberwunsch, TTS-Kandidaten, dann P20.1.
 Mara/Ember, Ollama-Modelfile, serielle Queue und private Projekt-
 plaene NICHT ungefragt veraendern.
