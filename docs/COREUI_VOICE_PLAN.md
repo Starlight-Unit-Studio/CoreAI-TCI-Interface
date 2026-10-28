@@ -17,7 +17,7 @@
 |---|---|---|
 | Cores mit Audio | `gemma4:e2b`, `gemma4:e4b`, `gemma4:12b` haben den Audio-Encoder. `gemma4:26b` und `gemma4:31b` können nur Text und Bild. | Maras Modelfile (`FROM gemma4:e4b`) kann hören. Ist im KI-Profil ein Core ohne Audio gewählt (26b, 31b, Cloud), wird der Mikrofon-Knopf deaktiviert und klar begründet. Erkennung über die Fähigkeiten aus `/api/show`, falls Ollama dort Audio meldet, sonst über eine geprüfte Namensliste. |
 | Übergabe | Audio wird wie ein Bild im `images`-Array der Nutzernachricht übergeben. | Derselbe Weg wie beim Bildpfad; Bild und Ton können in einer Anfrage stehen. |
-| Format | WAV mit vollständigem RIFF-Header, exakt 16 kHz, Mono. Rohes PCM ohne Header wird nicht erkannt. | Der Server wandelt jede Aufnahme und jede Datei mit ffmpeg um (Mono, 16 kHz, PCM in WAV); Browserformate wie WebM/Opus gehen nie direkt an Ollama. Test bestätigt die Bittiefe. |
+| Format | WAV mit vollständigem RIFF-Header, exakt 16 kHz, Mono, **16 Bit PCM signed**. Rohes PCM ohne Header wird nicht erkannt; 24 Bit, 32 Bit Float oder andere Formate führen meist zum Abbruch oder zu unbrauchbarem Rauschen. | Der Server wandelt jede Aufnahme und jede Datei mit ffmpeg um (`-ac 1 -ar 16000 -c:a pcm_s16le`, WAV-Container) und prüft danach den Header (RIFF, Mono, 16 kHz, 16 Bit), bevor etwas an Ollama geht. Browserformate wie WebM/Opus gehen nie direkt an Ollama. |
 | Länge | Höchstens 30 bis 60 Sekunden am Stück; längere Dateien führen zu Fehlern oder abgeschnittenem Kontext. | Abschnitte von höchstens 30 Sekunden, bevorzugt an Sprechpausen geschnitten, mit Zeitmarken. Der Test prüft, ob 60 Sekunden stabil laufen; erst dann wird die Grenze angehoben. |
 
 Offen für den Test bleiben die Tokenkosten je Sekunde Audio, die Zeit bis zur ersten Antwort und die Qualität bei Deutsch, Dialekt und Hintergrundgeräusch.
@@ -30,7 +30,7 @@ Offen für den Test bleiben die Tokenkosten je Sekunde Audio, die Zeit bis zur e
 
 ### P20.0: Test auf dem echten Server (zuerst)
 
-- Audio über Ollama: Bestätigung des recherchierten Formats (WAV mit RIFF-Header, 16 kHz, Mono; Bittiefe), stabile Länge pro Clip (30 oder 60 Sekunden), Fehlerbild bei zu langen oder falsch formatierten Dateien, Bild und Ton gemeinsam in einer Anfrage, Audio-Fähigkeit in `/api/show` für e2b, e4b, 12b und 26b/31b.
+- Audio über Ollama: Bestätigung des recherchierten Formats (WAV mit RIFF-Header, 16 kHz, Mono, 16 Bit PCM signed), stabile Länge pro Clip (30 oder 60 Sekunden), Fehlerbild bei zu langen oder falsch formatierten Dateien, Bild und Ton gemeinsam in einer Anfrage, Audio-Fähigkeit in `/api/show` für e2b, e4b, 12b und 26b/31b.
 - Messung für 5, 15 und 30 Sekunden Sprache mit e4b: Eingabe-Tokens, Zeit bis zum ersten Antworttoken, Qualität bei Deutsch, Dialekt und Hintergrundgeräusch.
 - TTS-Kandidaten: Echtzeitfaktor bei 2 und 4 Kernen, Peak-RAM, Hörproben derselben Sätze, Lizenzlage.
 - Ende-zu-Ende-Latenz einer Live-Runde (Sprechpause bis erster gesprochener Satz) mit und ohne parallele TTS.
@@ -40,14 +40,14 @@ Offen für den Test bleiben die Tokenkosten je Sekunde Audio, die Zeit bis zur e
 
 - Mikrofon-Knopf im Eingabefeld, auch auf Android Chrome und Samsung DeX. Aufnahme im Browser, sichtbare Dauer, Abbrechen, Senden.
 - Sprachnachrichten und Audiodateien (zum Beispiel MP3, M4A, WAV, OGG) als Anhang, genau wie Bilder.
-- Server: Umwandlung mit ffmpeg in WAV (RIFF), 16 kHz, Mono; Aufteilung langer Aufnahmen in Abschnitte von höchstens 30 Sekunden an Sprechpausen, in fester Reihenfolge mit Zeitmarken.
+- Server: Umwandlung mit ffmpeg in WAV (RIFF), 16 kHz, Mono, 16 Bit PCM signed, mit Header-Prüfung vor dem Senden; Aufteilung langer Aufnahmen in Abschnitte von höchstens 30 Sekunden an Sprechpausen, in fester Reihenfolge mit Zeitmarken.
 - Mara hört die Aufnahme direkt und antwortet. Im Chat steht eine **Mitschrift** dessen, was gesagt wurde, damit der Verlauf lesbar und durchsuchbar bleibt. Ob die Mitschrift im selben Core-Aufruf (Marker) oder in einem eigenen kurzen Aufruf entsteht, entscheidet der Test nach Zuverlässigkeit und Zeit.
 - Cores ohne Audio (`gemma4:26b`, `gemma4:31b`, Cloud-Cores ohne Audioeingang) melden das klar, statt etwas zu erfinden; der Mikrofon-Knopf ist dann deaktiviert.
 - Datenschutz: Aufnahmen sind kontogebunden wie andere Anhänge; Option, die Audiodatei nach der Mitschrift automatisch zu löschen.
 
 ### P20.2: Videos hören
 
-- ffmpeg trennt die Tonspur (WAV, 16 kHz, Mono) und teilt sie in Abschnitte von höchstens 30 Sekunden. Bilder und passende Tonabschnitte gehen gemeinsam in dieselbe Anfrage, mit Zeitmarken.
+- ffmpeg trennt die Tonspur (WAV, 16 kHz, Mono, 16 Bit PCM signed) und teilt sie in Abschnitte von höchstens 30 Sekunden. Bilder und passende Tonabschnitte gehen gemeinsam in dieselbe Anfrage, mit Zeitmarken.
 - Der heutige Hinweis "Ton hast du nicht" entfällt, wenn eine Tonspur vorhanden ist; Videos ohne Ton bleiben wie bisher.
 - Längengrenzen und Stichproben werden offen genannt (welche Abschnitte gehört und gesehen wurden).
 

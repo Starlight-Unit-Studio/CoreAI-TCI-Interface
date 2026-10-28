@@ -23,7 +23,8 @@ BETREIBERENTSCHEIDUNGEN 28.10.2026:
 
 BETREIBER-RECHERCHE 28.10.2026 (eingearbeitet, im Test zu bestaetigen):
 - Audio: nur gemma4:e2b, e4b, 12b haben den Audio-Encoder; 26b und 31b nur Text und Bild. Uebergabe im
-  images-Array. Format WAV mit vollem RIFF-Header, exakt 16 kHz, Mono; hoechstens 30 bis 60 s je Clip.
+  images-Array. Format WAV mit vollem RIFF-Header, exakt 16 kHz, Mono, 16 Bit PCM signed (24 Bit oder
+  32 Bit Float brechen ab oder rauschen); hoechstens 30 bis 60 s je Clip. ffmpeg: -ac 1 -ar 16000 -c:a pcm_s16le.
   Plan: ffmpeg-Umwandlung serverseitig, Abschnitte <= 30 s an Sprechpausen, Mikrofon bei Cores ohne Audio aus.
 - Bild: FLUX.1 [schnell] GGUF (T5-XXL Q4_K_M, CLIP-L Q8_0, flux1-schnell Q8_0 oder Q5_K_M, VAE ae.safetensors),
   Konvertierungen von city96; SDXL-Turbo Q8_0 als 1-Schritt-Variante mit Lizenzvorbehalt. stable-diffusion.cpp
