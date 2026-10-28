@@ -5,6 +5,7 @@ require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/ai_settings.php';
 require_once __DIR__ . '/account_store.php';
+require_once __DIR__ . '/guest_access.php';
 require_once __DIR__ . '/profile_store.php';
 
 $pdo = stu_pdo();
@@ -51,6 +52,8 @@ function coreui_admin_tail(string $file, int $limit): array {
 function coreui_admin_setting_rows(PDO $pdo): array {
   $defaults = [
     'registration_enabled' => '0',
+    'guest_enabled' => '0',
+    'guest_message_limit' => '5',
     'maintenance_enabled' => '0',
     'maintenance_message' => '',
     'memory_default_enabled' => '1',
@@ -300,7 +303,7 @@ if ($action === 'memory_delete') {
 
 if ($action === 'settings_save') {
   $whitelist = [
-    'registration_enabled', 'maintenance_enabled', 'maintenance_message',
+    'registration_enabled', 'guest_enabled', 'guest_message_limit', 'maintenance_enabled', 'maintenance_message',
     'memory_default_enabled', 'user_system_prompt_max_chars',
     'tool_web_enabled', 'tool_browse_enabled', 'tool_python_enabled',
     'external_api_enabled', 'external_api_label', 'external_api_base_url', 'external_api_model',
@@ -313,6 +316,7 @@ if ($action === 'settings_save') {
     $value = trim((string)$incoming[$key]);
     if (str_ends_with($key, '_enabled')) $value = in_array(strtolower($value), ['1', 'true', 'yes', 'on'], true) ? '1' : '0';
     if ($key === 'user_system_prompt_max_chars') $value = (string)max(500, min(12000, (int)$value));
+    if ($key === 'guest_message_limit') $value = (string)coreui_guest_limit_normalise($value);
     if ($key === 'maintenance_message') {
       if (function_exists('mb_substr')) $value = mb_substr($value, 0, 520, 'UTF-8');
       else $value = substr($value, 0, 520);

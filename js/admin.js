@@ -282,6 +282,8 @@
   function fillRuntime(settings) {
     if (!settings) return;
     document.getElementById('registrationEnabled').checked = boolSetting(settings.registration_enabled);
+    document.getElementById('guestEnabled').checked = boolSetting(settings.guest_enabled);
+    document.getElementById('guestMessageLimit').value = settings.guest_message_limit || '5';
     document.getElementById('maintenanceEnabled').checked = boolSetting(settings.maintenance_enabled);
     document.getElementById('memoryDefaultEnabled').checked = boolSetting(settings.memory_default_enabled);
     document.getElementById('promptLimit').value = settings.user_system_prompt_max_chars || '6000';
@@ -298,6 +300,8 @@
   function saveRuntime() {
     var settings = {
       registration_enabled: document.getElementById('registrationEnabled').checked ? '1' : '0',
+      guest_enabled: document.getElementById('guestEnabled').checked ? '1' : '0',
+      guest_message_limit: document.getElementById('guestMessageLimit').value,
       maintenance_enabled: document.getElementById('maintenanceEnabled').checked ? '1' : '0',
       memory_default_enabled: document.getElementById('memoryDefaultEnabled').checked ? '1' : '0',
       user_system_prompt_max_chars: document.getElementById('promptLimit').value,

@@ -12,6 +12,9 @@ require_once __DIR__ . '/console_native_tools.php';
 require_once __DIR__ . '/console_session_store.php';
 require_once __DIR__ . '/profile_store.php';
 require_once __DIR__ . '/knowledge_store.php';
+require_once __DIR__ . '/guest_access.php';
+require_once __DIR__ . '/console_compaction.php';
+require_once __DIR__ . '/console_agent_loop.php';
 
 // -----------------------------------------------------------------------------
 // Ember - Global-Chat NPC (Ollama local)
@@ -343,7 +346,7 @@ function ember_extract_explicit_reply_candidate(string $source): string {
  */
 function ember_strip_stray_tool_markers(string $out): string {
   return (string)preg_replace_callback(
-    '~(```[\s\S]*?```|`[^`\r\n]*`)|\[WEB:\s*.*?\]|\[BROWSE:\s*.*?\]|\[/?PY\]~iu',
+    '~(```[\s\S]*?```|`[^`\r\n]*`)|\[WEB:\s*.*?\]|\[BROWSE:\s*.*?\]|\[ARCHIV:\s*.*?\]|\[/?PY\]~iu',
     static fn(array $m): string => ($m[1] ?? '') !== '' ? $m[1] : '',
     $out);
 }
@@ -2278,30 +2281,100 @@ function ember_extract_web_marker(string $s): ?string {
   return $q !== '' ? $q : null;
 }
 
-// SearXNG-JSON-Suche. Gibt Liste [title,url,content] zurueck.
+/**
+ * 0.5.77: a long question often finds nothing where its key words find a
+ * lot. The second variant keeps names, numbers and nouns and drops question
+ * words and filler (pure). Same list as the browse worker.
+ */
+function ember_web_query_variants(string $query): array {
+  $query = trim((string)preg_replace('~\s+~u', ' ', $query));
+  if ($query === '') return [];
+  static $stop = ['wie','was','wer','wo','wann','warum','wieso','weshalb','welche','welcher','welches','welchen',
+    'ist','sind','war','waren','wird','werden','gibt','es','der','die','das','den','dem','des','ein','eine','einen',
+    'einem','einer','und','oder','mir','mich','du','ich','bitte','mal','kannst','koenntest','könntest','sag','sage',
+    'zeig','zeige','such','suche','finde','im','am','zu','zum','zur','vom','fuer','für','auf','an','aus','bei',
+    'mit','nach','ueber','über','noch','eigentlich','gerade','denn','in','von','the','a','is','are','what','who',
+    'where','when','why','how','of','for','to','please','can','you','me','tell','find','search'];
+  $words = preg_split('~[\s,;:!?.„“"()\[\]{}<>]+~u', $query, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+  $keep = [];
+  foreach ($words as $w) {
+    $lw = function_exists('mb_strtolower') ? mb_strtolower($w, 'UTF-8') : strtolower($w);
+    if (in_array($lw, $stop, true)) continue;
+    if ((function_exists('mb_strlen') ? mb_strlen($w, 'UTF-8') : strlen($w)) < 2 && !ctype_digit($w)) continue;
+    $keep[] = $w;
+    if (count($keep) >= 8) break;
+  }
+  $short = implode(' ', $keep);
+  $variants = [$query];
+  if ($short !== '' && strcasecmp($short, $query) !== 0) $variants[] = $short;
+  return $variants;
+}
+
+/** URL for comparing hits: no fragment, no tracking parameters, no trailing slash (pure). */
+function ember_web_url_key(string $url): string {
+  $parts = parse_url(trim($url));
+  if (!is_array($parts) || empty($parts['host'])) return strtolower(trim($url));
+  $query = '';
+  if (!empty($parts['query'])) {
+    parse_str((string)$parts['query'], $params);
+    foreach (array_keys($params) as $k) {
+      if (preg_match('~^(?:utm_|fbclid$|gclid$|mc_|ref$|ref_src$)~i', (string)$k) === 1) unset($params[$k]);
+    }
+    ksort($params);
+    $query = $params ? '?' . http_build_query($params) : '';
+  }
+  $host = strtolower((string)$parts['host']);
+  if (str_starts_with($host, 'www.')) $host = substr($host, 4);
+  return $host . rtrim((string)($parts['path'] ?? ''), '/') . $query;
+}
+
+/**
+ * Clean SearXNG results (pure): only http(s) links, no duplicates, snippets
+ * without HTML tags or entities, the date when the engine knows it.
+ */
+function ember_web_clean_rows(array $results, int $limit): array {
+  $out = [];
+  $seen = [];
+  $clean = static function ($v): string {
+    $v = html_entity_decode(strip_tags((string)$v), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    return trim((string)preg_replace('~[\s\x{00A0}]+~u', ' ', $v));
+  };
+  foreach ($results as $r) {
+    if (!is_array($r)) continue;
+    $title = $clean($r['title'] ?? '');
+    $rurl = trim((string)($r['url'] ?? ''));
+    $content = $clean($r['content'] ?? '');
+    if ($title === '' && $content === '') continue;
+    if ($rurl !== '' && preg_match('~^https?://~i', $rurl) !== 1) continue;
+    $key = $rurl !== '' ? ember_web_url_key($rurl) : 't:' . strtolower($title);
+    if (isset($seen[$key])) continue;
+    $seen[$key] = true;
+    $date = '';
+    $published = trim((string)($r['publishedDate'] ?? ''));
+    if ($published !== '' && ($ts = strtotime($published)) !== false && $ts > 0) $date = gmdate('Y-m-d', $ts);
+    $out[] = ['title' => $title, 'url' => $rurl, 'content' => $content, 'date' => $date];
+    if (count($out) >= $limit) break;
+  }
+  return $out;
+}
+
+// SearXNG-JSON-Suche. Gibt Liste [title,url,content,date] zurueck.
+// 0.5.77: findet die Frage nichts, sucht Mara mit den Stichworten daraus noch einmal.
 function ember_web_search(string $query, int $limit = 5, int $timeout = 12): array {
   $query = trim($query);
   if ($query === '') return [];
   $base = ember_web_url();
-  $url = $base . (str_contains($base, '?') ? '&' : '?')
-    . 'q=' . rawurlencode($query)
-    . '&format=json&language=de&safesearch=1';
-  $j = ember_http_get_json($url, $timeout);
-  if (!is_array($j) || empty($j['results']) || !is_array($j['results'])) {
-    if (function_exists('ember_tool_log_fail')) ember_tool_log_fail('web', $query, 'no_results');
-    return [];
+  foreach (ember_web_query_variants($query) as $variant) {
+    $url = $base . (str_contains($base, '?') ? '&' : '?')
+      . 'q=' . rawurlencode($variant)
+      . '&format=json&language=de&safesearch=1';
+    $j = ember_http_get_json($url, $timeout);
+    $rows = (is_array($j) && !empty($j['results']) && is_array($j['results']))
+      ? ember_web_clean_rows($j['results'], $limit) : [];
+    if ($rows) return $rows;
   }
-  $out = [];
-  foreach ($j['results'] as $r) {
-    if (!is_array($r)) continue;
-    $title   = trim((string)($r['title'] ?? ''));
-    $rurl    = trim((string)($r['url'] ?? ''));
-    $content = trim((string)($r['content'] ?? ''));
-    if ($title === '' && $content === '') continue;
-    $out[] = ['title' => $title, 'url' => $rurl, 'content' => $content];
-    if (count($out) >= $limit) break;
-  }
-  return $out;
+  if (function_exists('ember_tool_log_fail')) ember_tool_log_fail('web', $query, 'no_results');
+  return [];
 }
 
 // Untrusted-Data-Block aus den Web-Treffern bauen (hart getruncated).
@@ -2319,6 +2392,7 @@ function ember_web_results_block(string $query): string {
       $snip = mb_substr($snip, 0, $snipMax, 'UTF-8') . "\xE2\x80\xA6";
     }
     $head = $i . '. ' . ($r['title'] !== '' ? $r['title'] : '(ohne Titel)');
+    if (($r['date'] ?? '') !== '') $head .= ' (vom ' . $r['date'] . ')';
     if ($r['url'] !== '') $head .= ' [' . $r['url'] . ']';
     $lines[] = $head . ($snip !== '' ? "\n   " . $snip : '');
   }
@@ -2423,6 +2497,9 @@ function ember_browse_ensure_schema(PDO $pdo): void {
       "ALTER TABLE stu_ember_browse_jobs ADD COLUMN IF NOT EXISTS session_id VARCHAR(40) NULL",
       "ALTER TABLE stu_ember_browse_jobs ADD COLUMN IF NOT EXISTS trigger_message_id BIGINT UNSIGNED NULL",
       "ALTER TABLE stu_ember_browse_jobs ADD COLUMN IF NOT EXISTS trigger_user_id INT NULL",
+      // 0.5.77: the worker browses with the Core (and window) the user chats with.
+      "ALTER TABLE stu_ember_browse_jobs ADD COLUMN IF NOT EXISTS model VARCHAR(160) NULL",
+      "ALTER TABLE stu_ember_browse_jobs ADD COLUMN IF NOT EXISTS num_ctx INT NULL",
     ] as $ddl) {
       try { $pdo->exec($ddl); } catch (Throwable $e) {}
     }
@@ -2469,13 +2546,27 @@ function ember_browse_enqueue(
       if ((int)$stExisting->fetchColumn() > 0) return true;
     } catch (Throwable $e) {}
   }
+  // 0.5.77: the Core of this turn and its KI-Profil window travel with the job,
+  // so the worker never loads a second Core next to the one in use.
+  $model = ember_model();
+  $numCtx = ember_profile_num_ctx($model);
   try {
-    $st = $pdo->prepare(
-      "INSERT INTO stu_ember_browse_jobs
-         (status, goal, channel, recipient_uid, session_id, trigger_message_id, trigger_user_id, max_steps)
-       VALUES ('queued', ?, ?, ?, ?, ?, ?, 12)"
-    );
-    $st->execute([$goal, $ch, $recipientUid, $sessionId, $triggerMessageId, $triggerUid]);
+    try {
+      $st = $pdo->prepare(
+        "INSERT INTO stu_ember_browse_jobs
+           (status, goal, channel, recipient_uid, session_id, trigger_message_id, trigger_user_id, max_steps, model, num_ctx)
+         VALUES ('queued', ?, ?, ?, ?, ?, ?, 12, ?, ?)"
+      );
+      $st->execute([$goal, $ch, $recipientUid, $sessionId, $triggerMessageId, $triggerUid, $model, $numCtx]);
+    } catch (Throwable $eColumns) {
+      // Table without the 0.5.77 columns: the worker falls back to STU_EMBER_MODEL.
+      $st = $pdo->prepare(
+        "INSERT INTO stu_ember_browse_jobs
+           (status, goal, channel, recipient_uid, session_id, trigger_message_id, trigger_user_id, max_steps)
+         VALUES ('queued', ?, ?, ?, ?, ?, ?, 12)"
+      );
+      $st->execute([$goal, $ch, $recipientUid, $sessionId, $triggerMessageId, $triggerUid]);
+    }
     return true;
   } catch (Throwable $e) {
     if (function_exists('stu__log_error')) {
@@ -4705,6 +4796,11 @@ function ember_build_context(
     else $msg = substr($msg, 0, $lineLimit);
     $lines[] = ($isEmberRow ? (($name !== '' ? $name : 'Mara') . ' (du)') : $name) . ': ' . $msg;
   }
+  // 0.5.77: older messages that fell out of the window ride along as summary.
+  if ($channel === 'console' && $consoleUid > 0 && isset($sessionId) && function_exists('coreui_compact_context_block')) {
+    $summary = coreui_compact_context_block(coreui_compact_load($pdo, $consoleUid, (string)$sessionId));
+    if ($summary !== '') array_unshift($lines, rtrim($summary));
+  }
   return implode("\n", $lines);
 }
 
@@ -4797,6 +4893,11 @@ function ember_build_chat_prompt(
     && empty($GLOBALS['COREUI_NATIVE_TOOL_REENTRY']);
   $webHint = (ember_web_enabled() && $imageUrl === null)
     ? ($profile['compact'] ? ember_web_capability_hint_compact() : ember_web_capability_hint()) : '';
+  // 0.5.77: in the private chat Mara works on her own over several steps.
+  if ($channel === 'console' && $webHint !== '') {
+    $webHint .= "\n" . coreui_agent_loop_hint($profile['compact'],
+      in_array('archive', ember_agent_allowed_tools($consoleUid, (string)$consoleSessionId), true));
+  }
   $browseHint = (ember_browse_enabled() && $imageUrl === null)
     ? ($profile['compact'] ? ember_browse_capability_hint_compact() : ember_browse_capability_hint()) : '';
   $pyHint = (ember_py_enabled() && $imageUrl === null)
@@ -4875,6 +4976,37 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
     'attach_block' => $attachBlock,
     'user_msg' => $userMsg,   // v1.1.1.92: Marker-freie Fassung fuer den Aufrufer
   ];
+}
+
+/**
+ * 0.5.77: runs one step of Mara's work loop and returns its result as text
+ * for the next prompt. Python only calculates here; files keep their own path.
+ */
+function ember_agent_run_tool(PDO $pdo, array $tool, string $channel, int $uid, string $sessionId,
+    int $triggerId, int $triggerRevision): string {
+  if ($tool['tool'] === 'web') {
+    $block = ember_web_results_block((string)$tool['input']);
+    return $block !== '' ? $block : 'Die Websuche brachte keine Treffer, oder der Suchdienst war gerade nicht erreichbar.';
+  }
+  if ($tool['tool'] === 'archive') return coreui_compact_archive_block($uid, $sessionId, (string)$tool['input']);
+  if ($tool['tool'] === 'python') {
+    $code = (string)$tool['input'];
+    if (ember_py_code_writes_output($code)) {
+      return 'In der Arbeitsschleife rechnest du nur; Dateien erzeugst du mit einer neuen Anfrage. Der Code lief nicht.';
+    }
+    return ember_py_result_block($code, ember_py_run($pdo, $code, $channel, $uid, $sessionId, $triggerId, $triggerRevision));
+  }
+  return 'Unbekanntes Werkzeug.';
+}
+
+/** Tools of the work loop for this chat. */
+function ember_agent_allowed_tools(int $uid, string $sessionId): array {
+  $tools = [];
+  if (ember_web_enabled()) $tools[] = 'web';
+  if (ember_browse_enabled()) $tools[] = 'browse';
+  if (ember_py_enabled()) $tools[] = 'python';
+  if ($uid > 0 && $sessionId !== '' && is_file(coreui_compact_archive_path($uid, $sessionId))) $tools[] = 'archive';
+  return $tools;
 }
 
 function ember_generate_reply(
@@ -5020,6 +5152,10 @@ function ember_generate_reply(
 
   $webHint = (ember_web_enabled() && $imageUrl === null)
     ? ($promptProfile['compact'] ? ember_web_capability_hint_compact() : ember_web_capability_hint()) : '';
+  if ($channel === 'console' && $webHint !== '') {
+    $webHint .= "\n" . coreui_agent_loop_hint($promptProfile['compact'],
+      in_array('archive', ember_agent_allowed_tools($consoleUid, (string)$consoleSessionId), true));
+  }
   $browseHint = (ember_browse_enabled() && $imageUrl === null)
     ? ($promptProfile['compact'] ? ember_browse_capability_hint_compact() : ember_browse_capability_hint()) : '';
   // The synchronous prompt has no separate tool block, so the Python hint
@@ -5958,8 +6094,40 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
     }
   }
 
+  // === 0.5.77: Maras Arbeitsschleife im privaten Chat (console_agent_loop.php) ===
+  // Up to six steps: after every result Mara answers or asks for exactly one
+  // more tool. [BROWSE:] hands over to the browser worker as before.
+  $agentLoopHandled = false;
+  if ($channel === 'console' && $imageUrl === null && empty($fileTask) && is_string($out)) {
+    $loopAllowed = ember_agent_allowed_tools($consoleUid, (string)$consoleSessionId);
+    $loopTool = coreui_agent_next_tool($out, array_values(array_intersect($loopAllowed, ['web', 'archive'])));
+    if ($loopTool !== null) {
+      $agentLoopHandled = true;
+      $uBase = $u;
+      if (isset($loreBlock) && $loreBlock !== '') $uBase = str_replace($loreBlock, '', $uBase);
+      foreach ([$webHint ?? '', $browseHint ?? '', $pyHint ?? ''] as $hint) {
+        if ($hint !== '') $uBase = str_replace($hint . "\n\n", '', $uBase);
+      }
+      $loop = coreui_agent_loop_run($out, $loopTool, $uBase, $loopAllowed, $pyHandled ? 1 : 0,
+        static fn(string $prompt): ?string => ember_call_ollama($primaryModel, $sys, $prompt, ember_timeout_for_model($primaryModel), []),
+        static fn(array $tool): string => ember_agent_run_tool($pdo, $tool, $channel, $consoleUid, (string)$consoleSessionId,
+          $triggerMessageId, $triggerRevision),
+        static function (string $kind, string $state, string $title, array $meta) use ($pdo): void {
+          coreui_work_record($pdo, $kind, $state, $title, $meta);
+        },
+        static fn(): bool => ember_agent_cancel_requested(true));
+      if ($loop['browse'] !== null) {
+        $GLOBALS['STU_EMBER_BROWSE_REQUEST'] = $loop['browse'];
+        return null;
+      }
+      if (is_string($loop['prompt'])) $finalPrompt = $loop['prompt'];
+      $out = $loop['out'];
+    }
+  }
+
   // === Autonome Websuche (Marker-Loop) - nur Text-Pfad, nicht bei Bildern ===
-  if (ember_web_enabled() && $imageUrl === null && !$pyHandled && is_string($out)) {
+  // The private chat uses the work loop above; this single step stays for the global channel.
+  if (!$agentLoopHandled && ember_web_enabled() && $imageUrl === null && !$pyHandled && is_string($out)) {
     $webQuery = ember_extract_web_marker($out);
     if ($webQuery !== null) {
       ember_debug_log('ember_web_trigger', ['q' => $webQuery]);
@@ -9260,6 +9428,9 @@ if ($action === 'send') {
     stu_json(['ok'=>false,'error'=>'schema_missing_chat', 'hint'=>'run migrations/07_stu_mysql_schema_chat.sql'], 500);
   }
 
+  // 0.5.77: guests chat only in the console and only up to the admin's limit.
+  $guestQuota = coreui_guest_reserve_turn($pdo, (int)$uid, $channel);
+
   $hasImageCol = chat_schema_has_image_url($pdo);
 
   $startedAttachmentTx = !$pdo->inTransaction();
@@ -9348,6 +9519,7 @@ if ($action === 'send') {
     'session_id'=>($channel === 'console') ? $consoleSessionId : null,
     'session_title'=>($channel === 'console') ? $sessionTitle : null,
   ];
+  if ($guestQuota !== null) $okPayload['guest'] = $guestQuota;
 
   // Ember reply (global + console channel)
   $doEmber = false;

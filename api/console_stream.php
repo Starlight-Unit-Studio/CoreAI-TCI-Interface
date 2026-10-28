@@ -550,7 +550,8 @@ try {
   // vorhandenen Antworttext fort und startet nicht mehr die ganze Anfrage neu.
   $hasMarker = (ember_extract_web_marker($reply) !== null)
             || (ember_extract_browse_marker($reply) !== null)
-            || (function_exists('ember_py_extract_marker') && ember_py_extract_marker($reply) !== null);
+            || (function_exists('ember_py_extract_marker') && ember_py_extract_marker($reply) !== null)
+            || coreui_extract_archive_marker($reply) !== null;
 
   if (!$isVisionTurn && !$fileTaskHandled
       && !$hasMarker
@@ -576,7 +577,8 @@ try {
     $acc['context_tokens'] = (int)($continued['context_tokens'] ?? 0);
     $hasMarker = (ember_extract_web_marker($reply) !== null)
               || (ember_extract_browse_marker($reply) !== null)
-              || (function_exists('ember_py_extract_marker') && ember_py_extract_marker($reply) !== null);
+              || (function_exists('ember_py_extract_marker') && ember_py_extract_marker($reply) !== null)
+            || coreui_extract_archive_marker($reply) !== null;
   }
 
   // A plan with an unfinished marker may be stored as an explicitly marked
@@ -889,6 +891,23 @@ try {
     'generation_mode' => $generationMode !== '' ? $generationMode : null,
     'source_response_id' => $sourceResponseId > 0 ? $sourceResponseId : null,
   ]);
+  // 0.5.77: messages that fell out of Mara's window are folded into the
+  // summary and the archive, after the answer is out and still inside the
+  // turn's queue slot, so the next message already knows the older part.
+  // A browse job waits for the queue: it goes first, the next turn compacts.
+  if ($emberMsgId > 0 && $browseJobId <= 0 && !ember_agent_cancel_requested()) {
+    // The answer's work view is complete; the summary call records nothing there.
+    unset($GLOBALS['COREUI_WORK_CONTEXT'], $GLOBALS['COREUI_WORK_PUBLISH'], $GLOBALS['COREUI_SOURCE_PREVIEW_PUBLISH']);
+    ignore_user_abort(true);
+    @set_time_limit(300);
+    try {
+      coreui_compact_with_core($pdo, (int)$uid, $sessionId, false);
+    } catch (Throwable $eCompact) {
+      if (function_exists('stu__log_error')) {
+        stu__log_error(['type'=>'console_compaction_failed', 'uid'=>(int)$uid, 'message'=>$eCompact->getMessage()]);
+      }
+    }
+  }
 } catch (Throwable $e) {
   $cancelled = $e->getMessage() === 'agent_cancelled';
   if ($agentRunId !== '') {

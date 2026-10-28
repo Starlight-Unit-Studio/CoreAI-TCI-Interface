@@ -7,7 +7,32 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.76` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.77` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Registrieren, Gast-Zugang, Cores verwalten, Komprimieren, Arbeitsschleife (0.5.77)
+
+Schaltet ein Admin unter `/admin/` (Runtime) die oeffentliche Registrierung
+ein, bietet die Login-Seite "Noch kein Konto? Registrieren" an: E-Mail,
+optionaler Anzeigename, Passwort zweimal. Neue Konten sind normale Nutzer;
+Rechte und Sperren verwaltet der Admin unter "Benutzer und Rechte".
+Mit "Gast-Zugang" erscheint "Als Gast chatten": ein Tipp, und man chattet
+sofort, bis zu der eingestellten Zahl an Nachrichten (Standard 5).
+
+Unter "Cores verwalten" laesst sich jede Stufe einzeln aktualisieren und
+deinstallieren (Maras Haupt-Core bleibt). Beim Core-Wechsel entlaedt CoreAI
+zuerst den alten Core, damit der Arbeitsspeicher reicht.
+
+Lange Chats komprimiert Mara selbst: Aelteres, das aus ihrem Fenster faellt,
+fasst sie zusammen, und die woertliche Mitschrift bleibt als .md-Archiv im
+Chat (Knopf ⇊ oder `/komprimieren`). Bei Recherchen arbeitet sie wie ein
+Agent in bis zu 6 Schritten: suchen, genauer suchen, Webseiten lesen,
+rechnen, im Archiv nachsehen, und erst dann antworten.
+
+Beim Browsen sieht man Mara live zu: Waehrend ihr Core ueberlegt, laeuft die
+Zeit mit und der Cursor liest mit, vor jedem Klick gleitet er zum Ziel. Mara
+fuellt auch Formulare aus (Suchfelder, Auswahllisten, Haken), aber nie
+Passwoerter, Zahlungsdaten oder Logins, und sie kauft, sendet oder loescht
+nichts. Adressen im lokalen Netz oeffnet ihr Browser nicht.
 
 ## Erklaerungen statt Werkzeugaufrufe, Unterstriche, Arbeitsweg (0.5.76)
 

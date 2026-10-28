@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.76 tool mentions run no tool, underscores stay in the chat, quieter work view, voice decision.
+# CoreAI: TCI Interface 0.5.77 sign-up and guest access, per tier Core management, one Core in RAM, chat compaction, Mara's work loop.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -129,6 +129,18 @@ UI_FILES=(
   scripts/core-tiers-selftest.php
   scripts/core-install-selftest.php
   scripts/core-install-ui-selftest.cjs
+  scripts/registration-ui-selftest.cjs
+  scripts/guest-access-selftest.php
+  api/guest_access.php
+  scripts/compaction-selftest.php
+  api/console_compaction.php
+  scripts/agent-loop-selftest.php
+  api/console_agent_loop.php
+  scripts/browse-worker-selftest.py
+  scripts/browse-live-ui-selftest.cjs
+  scripts/web-search-selftest.php
+  tools/ember_browse_worker.py
+  api/console_browse_stream.php
   api/core_install.php
   js/coreui-core-install.js
   scripts/media-spike.php
@@ -219,6 +231,12 @@ if bash "$PROJECT_ROOT/tests/migration-permissions-selftest.sh" >/dev/null 2>&1;
   ok 'Migration: Ausfuehrungsrechte und Bash-Aufruf vor dem Datenbankimport geprueft.'
 else
   fail 'Migration: Berechtigungs-/Aufruf-Selbsttest fehlgeschlagen.'
+fi
+
+if COREAI_BROWSE_LIVE=0 python3 "$PROJECT_ROOT/scripts/browse-worker-selftest.py" >/dev/null 2>&1; then
+  ok 'Browser-Regeln: geschuetzte Felder, Kaeufe, Logins, Nachrichten, lokales Netz, Core des Nutzers und Herzschlag geprueft.'
+else
+  fail 'Browser-Regeln-Selbsttest fehlgeschlagen.'
 fi
 
 if python3 "$PROJECT_ROOT/scripts/workspace-output-selftest.py" >/dev/null 2>&1; then
@@ -456,6 +474,34 @@ if command -v php >/dev/null 2>&1; then
     fail "Core-Installer-Selbsttest: ${install_test:-Unbekannter Fehler}"
   fi
 
+  guest_test=''
+  if guest_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/guest-access-selftest.php" 2>&1)"; then
+    ok 'Gast-Zugang: Limit, Zaehlung bei jeder Antwort, nur privater Chat, Stundenlimit, Login und Admin geprueft.'
+  else
+    fail "Gast-Zugang-Selbsttest: ${guest_test:-Unbekannter Fehler}"
+  fi
+
+  compact_test=''
+  if compact_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/compaction-selftest.php" 2>&1)"; then
+    ok 'Chat komprimieren: Fenster, laufende Zusammenfassung, Archiv zuerst, Suche und Loeschen geprueft.'
+  else
+    fail "Komprimierungs-Selbsttest: ${compact_test:-Unbekannter Fehler}"
+  fi
+
+  loop_test=''
+  if loop_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/agent-loop-selftest.php" 2>&1)"; then
+    ok 'Arbeitsschleife: verkettete Schritte, Antwort, Uebergabe an den Browser, sechs Schritte, Abbruch geprueft.'
+  else
+    fail "Arbeitsschleifen-Selbsttest: ${loop_test:-Unbekannter Fehler}"
+  fi
+
+  web_test=''
+  if web_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/web-search-selftest.php" 2>&1)"; then
+    ok 'Websuche: Stichworte als zweiter Versuch, keine Doppelten, saubere Snippets und Datum geprueft.'
+  else
+    fail "Websuche-Selbsttest: ${web_test:-Unbekannter Fehler}"
+  fi
+
   mention_test=''
   if mention_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/tool-mention-selftest.php" 2>&1)"; then
     ok 'Werkzeug-Erwaehnungen: Erklaerungen starten kein Werkzeug und keine Korrekturrunde.'
@@ -513,6 +559,16 @@ if command -v php >/dev/null 2>&1; then
       ok 'Chat: Install-Fenster mit Hardware-Check, Bestaetigung, Fortschritt und Jetzt nutzen geprueft.'
     else
       fail 'Chat: Install-Fenster-Oberflaechentest fehlgeschlagen.'
+    fi
+    if node "$PROJECT_ROOT/scripts/registration-ui-selftest.cjs" >/dev/null 2>&1; then
+      ok 'Login: Registrieren und Als Gast chatten nur wenn offen, Pruefungen und Fehlerfaelle geprueft.'
+    else
+      fail 'Login: Registrierungs-Selbsttest fehlgeschlagen.'
+    fi
+    if node "$PROJECT_ROOT/scripts/browse-live-ui-selftest.cjs" >/dev/null 2>&1; then
+      ok 'Live-Browser: Mara ueberlegt mit Sekunden, Cursor gleitet, Warteschlange, Fortsetzen nach Abbruch geprueft.'
+    else
+      fail 'Live-Browser-Oberflaechentest fehlgeschlagen.'
     fi
     if node "$PROJECT_ROOT/scripts/webui-resilience-selftest.cjs" >/dev/null 2>&1; then
       ok 'WebUI: abbrechbares Laden, Reconnect ohne Doppelauftrag, Backoff und lange Chats geprueft.'
@@ -791,6 +847,16 @@ if command -v php >/dev/null 2>&1; then
         ok 'Private Live-Browser-Frame-Tabelle ist bereit.'
       else
         fail 'Private Live-Browser-Frame-Tabelle fehlt. Browse-Worker neu starten.'
+      fi
+      if [[ -x "$PROJECT_ROOT/var/venv/bin/python" ]]; then
+        browse_live=''
+        if browse_live="$(runuser -u www-data -- env COREAI_BROWSE_LIVE=1 TMPDIR=/tmp \
+            PLAYWRIGHT_BROWSERS_PATH="$PROJECT_ROOT/var/playwright" HOME="$PROJECT_ROOT/var/worker-home" \
+            "$PROJECT_ROOT/var/venv/bin/python" "$PROJECT_ROOT/scripts/browse-worker-selftest.py" 2>&1)"; then
+          ok 'Browser (echter Chromium-Lauf): Formular ausgefuellt, Bilder beim Ueberlegen, Login und Kontakt blockiert, lokales Netz gesperrt.'
+        else
+          fail "Browser-Livetest: ${browse_live:-Unbekannter Fehler}"
+        fi
       fi
     fi
   fi

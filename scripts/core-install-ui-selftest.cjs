@@ -62,13 +62,13 @@ const ROWS = [
 const check = extra => Object.assign({tier: 'plus', label: 'TCI: Mara Plus', base: 'gemma4:12b', core: 'ember-coreui:12b',
   download_gb: 8, installed: false, verdict: 'gut', blocked: false, rows: ROWS, cloud_base: null}, extra || {});
 const TIERS = [
-  {tier: 'schnell', label: 'TCI: Mara Schnell', base: 'gemma4:e2b', download_gb: 7.5, local: ['gemma4:e2b'], cloud: [],
+  {tier: 'schnell', label: 'TCI: Mara Schnell', base: 'gemma4:e2b', download_gb: 7.5, local: ['gemma4:e2b'], removable: ['gemma4:e2b'], cloud: [],
     alias_of: 'gemma4:e4b', cloud_base: null, cloud_missing: false, status: 'installed'},
-  {tier: 'normal', label: 'TCI: Mara Normal', base: 'gemma4:e4b', download_gb: 9.5, local: ['ember-coreui:latest', 'gemma4:e4b'],
+  {tier: 'normal', label: 'TCI: Mara Normal', base: 'gemma4:e4b', download_gb: 9.5, local: ['ember-coreui:latest', 'gemma4:e4b'], removable: ['gemma4:e4b'],
     cloud: [], alias_of: null, cloud_base: null, cloud_missing: false, status: 'installed'},
   {tier: 'plus', label: 'TCI: Mara Plus', base: 'gemma4:12b', download_gb: 8, local: [], cloud: [], alias_of: null,
     cloud_base: null, cloud_missing: false, status: 'missing'},
-  {tier: 'pro', label: 'TCI: Mara Pro', base: 'gemma4:26b', download_gb: 19, local: ['gemma4:26b'], cloud: [],
+  {tier: 'pro', label: 'TCI: Mara Pro', base: 'gemma4:26b', download_gb: 19, local: ['gemma4:26b'], removable: ['gemma4:26b'], cloud: [],
     alias_of: 'gemma4:e4b', cloud_base: null, cloud_missing: false, status: 'installed'},
   {tier: 'premium', label: 'TCI: Mara Premium', base: 'gemma4:31b', download_gb: 20, local: [], cloud: ['gemma4:31b-cloud'],
     alias_of: null, cloud_base: 'gemma4:31b-cloud', cloud_missing: false, status: 'cloud'},
@@ -115,6 +115,9 @@ function server(opts) {
         st.install = {kind: 'update', tier: 'schnell', label: 'TCI: Mara Schnell', phase: 'pull', step: 'Startet …', item: 1, items: 3,
           percent: 0, completed: 0, total: 0, running: true};
         return reply(200, {ok: true, install: st.install});
+      }
+      if (body.action === 'core_uninstall') {
+        return reply(200, {ok: true, removed: body.tier === 'pro' ? ['gemma4:26b'] : [], failed: []});
       }
       if (body.action === 'core_cloud_add') {
         st.install = {kind: 'install', cloud: true, tier: 'premium', label: 'TCI: Mara Premium', core: 'gemma4:31b-cloud',
@@ -336,6 +339,38 @@ assert.equal(api.gb(20 * 1073741824), '20 GB');
   assert.deepEqual(els.coreInstallResults.children.map(li => [li.textContent, li.getAttribute('data-state')]), [
     ['TCI: Mara Schnell: aktuell', 'ok'], ['TCI: Mara Normal: neue Fassung, neu gebaut', 'ok'],
     ['TCI: Mara Pro: Ollama meldet: kaputt', 'bad']]);
+
+  // 0.5.77: each installed tier can be updated alone and removed with two taps;
+  // Mara's own Core is never offered for removal.
+  ({els, doc} = page());
+  const menuRefresh = [];
+  srv = server({tiers: TIERS.map(t => t.tier === 'normal' ? Object.assign({}, t, {local: ['ember-coreui:latest'], removable: []}) : t)});
+  win = api.create(doc, srv.fetch, () => {}, {installed: () => menuRefresh.push(1)});
+  await win.manage();
+  const actionsOf = i => {
+    const box = els.coreInstallTierList.children[i].children.find(c => c.className === 'core-install-tier-actions');
+    return box ? box.children : [];
+  };
+  assert.deepEqual(actionsOf(0).map(b => b.textContent), ['Aktualisieren', 'Deinstallieren']);
+  assert.deepEqual(actionsOf(1).map(b => b.textContent), ['Aktualisieren'], 'no removal for Mara\'s own Core');
+  assert.match(els.coreInstallTierList.children[1].textContent, /Maras Haupt-Core bleibt immer installiert/);
+  assert.deepEqual(actionsOf(4).map(b => b.textContent), ['Cloud entfernen', 'Lokal installieren']);
+  await actionsOf(0)[0].handlers.click();
+  assert.deepEqual(JSON.parse(srv.calls.filter(c => c.init.method === 'POST').pop().init.body), {action: 'core_update', tier: 'schnell'});
+  ({els, doc} = page());
+  srv = server({});
+  win = api.create(doc, srv.fetch, () => {}, {installed: () => menuRefresh.push(1)});
+  await win.manage();
+  await actionsOf(3)[1].handlers.click();
+  assert.equal(srv.calls.filter(c => c.init.method === 'POST').length, 0, 'the first tap only asks');
+  assert.equal(actionsOf(3)[1].textContent, 'Wirklich entfernen?');
+  assert.match(els.coreInstallTierList.children[3].textContent, /Entfernt gemma4:26b\. Wer diesen Core gewählt hat, chattet danach mit dem Standard-Core\./);
+  const manageReads = srv.calls.filter(c => c.url === './api/user_settings.php?core_manage=1').length;
+  await actionsOf(3)[1].handlers.click();
+  assert.deepEqual(JSON.parse(srv.calls.filter(c => c.init.method === 'POST').pop().init.body), {action: 'core_uninstall', tier: 'pro', cloud: false});
+  assert.equal(els.coreInstallNote.textContent, 'gemma4:26b entfernt.');
+  assert.equal(srv.calls.filter(c => c.url === './api/user_settings.php?core_manage=1').length, manageReads + 1, 'the overview is read again');
+  assert(menuRefresh.length >= 1, 'the Core menu is refreshed');
 
   // A failed switch is put back.
   ({els, doc} = page());

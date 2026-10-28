@@ -29,6 +29,7 @@
     install_confirm_required: 'Der Check rät ab. Bitte bestätige die Installation noch einmal.',
     nothing_to_update: 'Es ist noch keine lokale Stufe installiert, es gibt nichts zu aktualisieren.',
     cloud_signin_required: 'Erst den Server mit einem Ollama-Konto verbinden (Ollama Cloud, unten).',
+    nothing_to_remove: 'Hier gibt es nichts zu entfernen; Maras Haupt-Core bleibt immer installiert.',
     unknown_tier: 'Diese Stufe kennt der Installer nicht.'
   };
   var RESULT = {updated: 'neue Fassung, neu gebaut', rebuilt: 'Modelfile-Text erneuert', current: 'aktuell'};
@@ -55,7 +56,8 @@
       'Progress', 'BarWrap', 'Bar', 'Step', 'Maint', 'Auto', 'UpdateInfo', 'UpdateNow', 'ToManage', 'Results',
       'Cloud', 'CloudState', 'CloudSteps', 'CloudLink', 'CloudCheck', 'Note', 'Go', 'Cancel', 'Close'].forEach(function (key) { el[key] = doc.getElementById('coreInstall' + key); });
     var state = {mode: 'tier', tier: '', check: null, canInstall: false, install: null, confirm: false, busy: false,
-      csrf: '', polling: false, error: '', auto: null, tiers: null, plan: null, cloud: null, cloudBusy: false};
+      csrf: '', polling: false, error: '', auto: null, tiers: null, plan: null, cloud: null, cloudBusy: false,
+      confirmRemove: null, notice: ''};
 
     function isOpen() { return !root.hidden; }
     function clear(node) { while (node && node.firstChild) node.removeChild(node.firstChild); }
@@ -128,6 +130,21 @@
             + '. Ein Update lädt das echte ' + tier.base.replace(/^.*:/, '') + ' (ca. ' + String(tier.download_gb).replace('.', ',') + ' GB).');
         }
         var actions = add(li, 'div', 'core-install-tier-actions');
+        var busy = state.busy || !!(job() && job().running);
+        // 0.5.77: installed tiers can be updated one by one and removed (two taps).
+        if (tier.status === 'installed') {
+          var update = add(actions, 'button', 'core-install-tier-btn', 'Aktualisieren');
+          update.type = 'button';
+          update.disabled = busy;
+          update.addEventListener('click', function () { return start({action: 'core_update', tier: tier.tier}); });
+          if ((tier.removable || []).length) actions.appendChild(removeButton(tier, false, busy));
+          else add(li, 'small', 'core-install-tier-keep', 'Maras Haupt-Core bleibt immer installiert.');
+        }
+        if ((tier.cloud || []).length) actions.appendChild(removeButton(tier, true, busy));
+        if (state.confirmRemove && state.confirmRemove.tier === tier.tier) {
+          add(li, 'small', 'core-install-tier-alias', 'Entfernt ' + (state.confirmRemove.cloud ? tier.cloud : tier.removable).join(', ')
+            + '. Wer diesen Core gewählt hat, chattet danach mit dem Standard-Core.');
+        }
         if (tier.status !== 'installed') {
           var button = add(actions, 'button', 'core-install-tier-btn', tier.status === 'cloud' ? 'Lokal installieren' : 'Installieren');
           button.type = 'button';
@@ -142,6 +159,41 @@
         }
         if (!actions.firstChild) li.removeChild(actions);
       });
+    }
+
+    function removeButton(tier, cloud, busy) {
+      var asking = !!state.confirmRemove && state.confirmRemove.tier === tier.tier && state.confirmRemove.cloud === cloud;
+      var button = doc.createElement('button');
+      button.type = 'button';
+      button.className = 'core-install-tier-btn core-install-tier-btn--remove';
+      button.textContent = asking ? 'Wirklich entfernen?' : (cloud ? 'Cloud entfernen' : 'Deinstallieren');
+      button.disabled = busy;
+      button.addEventListener('click', function () { return removeTier(tier.tier, cloud); });
+      return button;
+    }
+
+    function removeTier(tier, cloud) {
+      var asking = !!state.confirmRemove && state.confirmRemove.tier === tier && state.confirmRemove.cloud === cloud;
+      if (!asking) {
+        state.confirmRemove = {tier: tier, cloud: cloud};
+        render();
+        return Promise.resolve();
+      }
+      state.confirmRemove = null;
+      state.busy = true;
+      state.error = '';
+      render();
+      return request(API, 'POST', {action: 'core_uninstall', tier: tier, cloud: cloud}).then(function (data) {
+        state.notice = (data.removed || []).join(', ') + ' entfernt.';
+      }).catch(function (error) {
+        state.error = ERRORS[error.code] || (error.code === 'uninstall_partial'
+          ? 'Nicht alles ließ sich entfernen: ' + ((error.data && error.data.failed) || []).join(', ') + '.'
+          : 'Das Entfernen hat nicht geklappt. Bitte noch einmal versuchen.');
+      }).then(function () {
+        state.busy = false;
+        if (typeof hooks.installed === 'function') hooks.installed('');
+        return refreshManage().catch(function () {});
+      }).then(render);
     }
 
     function renderCloud() {
@@ -267,6 +319,7 @@
         note = j.message || (j.kind === 'update' ? 'Das Update ist fehlgeschlagen.' : 'Die Installation ist fehlgeschlagen.');
       }
       if (state.error && (check || manage)) note = state.error;
+      else if (manage && !running && state.notice) note = state.notice;
       if (!manage && !running && !done && check) {
         if (!state.canInstall) note = note || 'Installieren dürfen nur Admins. Bitte deinen Admin, diese Stufe hier im Chat zu installieren.';
         else if (check.installed) note = note || 'Diese Stufe ist bereits installiert.';
@@ -313,6 +366,8 @@
       state.mode = mode;
       state.check = null;
       state.error = '';
+      state.notice = '';
+      state.confirmRemove = null;
       state.confirm = false;
       state.busy = false;
       root.hidden = false;
@@ -405,6 +460,8 @@
     function start(body) {
       state.busy = true;
       state.error = '';
+      state.notice = '';
+      state.confirmRemove = null;
       render();
       return request(API, 'POST', body).then(function (data) {
         state.install = data.install || null;

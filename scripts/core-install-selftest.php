@@ -208,9 +208,27 @@ $cloudBegin = coreui_core_cloud_begin('premium');
 install_test($cloudBegin['cloud'] === true && $cloudBegin['base'] === 'gemma4:31b-cloud' && $cloudBegin['core'] === 'gemma4:31b-cloud', 'cloud job pulls the tag only');
 install_test(str_contains($lib, "if (\$state['phase'] !== 'error' && !empty(\$state['cloud'])) {"), 'no Modelfile build for cloud Cores');
 
+// 0.5.77: removing a tier keeps Mara's own Core; per tier update; unload before a switch.
+$normal = $rows['normal'];
+install_test(!in_array($default, $normal['removable'], true) && coreui_core_uninstall_targets($normal, false) === $normal['removable']
+  && coreui_core_uninstall_targets($rows['premium'], true) === ['gemma4:31b-cloud'] && coreui_core_uninstall_targets($rows['plus'], true) === [],
+  'uninstall targets: never Mara\'s own Core');
+install_test(str_contains($lib, "CURLOPT_CUSTOMREQUEST=>'DELETE'") && str_contains($lib, "coreui_ollama_api_url('delete')")
+  && str_contains($lib, 'UPDATE stu_user_ai_settings SET model_override = NULL WHERE model_override IN'), 'delete in Ollama, choices fall back');
+install_test(str_contains($settings, "static fn(array \$item): bool => \$onlyTier === '' || \$item['tier'] === \$onlyTier"), 'update one tier');
+require_once $root . '/api/core_preload.php';
+install_test(coreui_core_unload_targets(['gemma4:e4b', 'ember-coreui:latest', 'gemma4:31b-cloud'], 'Ember-CoreUI') === ['gemma4:e4b'],
+  'switching unloads the other local Cores');
+$preload = (string)file_get_contents($root . '/api/core_preload.php');
+install_test(strpos($preload, 'ember_global_lock_acquire(120)') < strpos($preload, 'coreui_core_unload($other)')
+  && strpos($preload, 'coreui_core_unload($other)') < strpos($preload, "\$ch = curl_init(coreui_ollama_api_url('generate'));\n    curl_setopt_array(\$ch, [\n      CURLOPT_POST=>true, CURLOPT_RETURNTRANSFER=>true, CURLOPT_FOLLOWLOCATION=>false,\n      CURLOPT_CONNECTTIMEOUT=>3, CURLOPT_TIMEOUT=>300"),
+  'unload inside the queue, before the load');
+install_test(str_contains($preload, "json_encode(['model'=>\$model, 'keep_alive'=>0]") && str_contains($settings, "if (\$preload !== 'started' && !\$unloadOthers) exit;"),
+  'keep_alive 0 unloads; a loaded choice still clears the others');
+
 // Endpoints: admins only for the overview, cloud, switch, update and cloud add.
 foreach (["array_key_exists('core_manage', \$_GET)", "array_key_exists('core_cloud', \$_GET)", "=== 'core_auto_update')",
-  "=== 'core_update')", "=== 'core_cloud_add')"] as $marker) {
+  "=== 'core_update')", "=== 'core_cloud_add')", "=== 'core_uninstall')"] as $marker) {
   $part = substr($settings, (int)strpos($settings, $marker), 500);
   install_test(str_contains($part, 'stu_require_permission_at_most(COREUI_CORE_INSTALL_PERMISSION_MAX, $pdo);'), 'admins only: ' . $marker);
 }

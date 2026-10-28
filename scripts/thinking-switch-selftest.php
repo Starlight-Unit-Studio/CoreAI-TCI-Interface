@@ -106,8 +106,11 @@ $preloadAt = strpos($coreBlock, 'coreui_core_preload($pdo, $uid, $model)');
 think_test($coreAt !== false && $coreAt < $saveAt && $existsAt !== false && $patchAt !== false && $echoAt !== false
   && $finishAt !== false && $preloadAt !== false && $existsAt < $patchAt && $patchAt < $echoAt && $echoAt < $finishAt
   && $finishAt < $preloadAt, 'Core choice: checked, saved, answered, then loaded in the background');
-think_test(str_contains($coreBlock, "if (\$preload !== 'started') exit;") && str_contains($coreBlock, 'session_write_close()'),
-  'cloud or already loaded Cores are not loaded again; the session lock is released first');
+// 0.5.77: an already loaded choice still clears the other local Cores; a cloud choice never touches the RAM.
+think_test(str_contains($coreBlock, "if (\$preload !== 'started' && !\$unloadOthers) exit;")
+  && str_contains($coreBlock, "\$unloadOthers = !\$cloud && count(\$loadedNow) > (\$preload === 'loaded' ? 1 : 0);")
+  && str_contains($coreBlock, 'session_write_close()'),
+  'cloud Cores are not loaded, loaded ones not again, others leave the RAM; the session lock is released first');
 think_test(str_contains($endpoint, "array_key_exists('core_status', \$_GET)") && str_contains($endpoint, "'loaded'=>coreui_ollama_loaded_names()"),
   'loading state comes from Ollama /api/ps');
 require_once $root . '/api/ai_context_estimate.php';

@@ -7,6 +7,11 @@ declare(strict_types=1);
 // Tailt die JPEG-Frames und den kurzen Status EINES Browse-Jobs. Die Frames bleiben in
 // der privaten Datenbank und werden nur nach Benutzer-/Job-Pruefung ausgeliefert.
 // Reiner Lese-Endpunkt - startet/aendert nichts an der Generierung.
+//
+// 0.5.77: after_frame/after_step setzen einen abgerissenen Stream fort (der Client
+// verbindet sich nach dem 15-Minuten-Deckel oder einem Netzfehler neu, ohne alte Bilder
+// doppelt zu bekommen). Jeder Schritt traegt seine Art (step, think, warn), und ein
+// status-Ereignis meldet, ob der Auftrag noch auf Mara wartet oder schon laeuft.
 // ─────────────────────────────────────────────────────────────────────────────
 
 define('STU_CHAT_LIB', 1);
@@ -30,6 +35,57 @@ function bsse_send(string $event, $data): void {
   @flush();
 }
 function bsse_comment(string $c): void { echo ': ' . $c . "\n\n"; @flush(); }
+
+/** Art eines Live-Schritts (rein): unbekannte oder alte Zeilen gelten als step. */
+function bsse_step_kind($kind): string {
+  $kind = strtolower(trim((string)$kind));
+  return in_array($kind, ['step', 'think', 'warn'], true) ? $kind : 'step';
+}
+
+/** Fortsetzungspunkt aus der Anfrage (rein): nur nicht negative Ganzzahlen. */
+function bsse_resume_id($value): int {
+  $value = is_scalar($value) ? trim((string)$value) : '';
+  return preg_match('~^[0-9]{1,18}$~', $value) === 1 ? (int)$value : 0;
+}
+
+function bsse_emit_steps(PDO $pdo, int $jobId, int &$lastStepId): int {
+  static $withKind = true;
+  $rows = [];
+  try {
+    if ($withKind) {
+      try {
+        $ss = $pdo->prepare(
+          "SELECT id, text, kind FROM stu_ember_browse_steps
+           WHERE job_id = ? AND id > ? ORDER BY id ASC LIMIT 100"
+        );
+        $ss->execute([$jobId, $lastStepId]);
+        $rows = $ss->fetchAll(PDO::FETCH_ASSOC);
+      } catch (Throwable $e) {
+        // Tabelle aus einer Version ohne Spalte kind (Worker noch nicht neu gestartet).
+        $withKind = false;
+      }
+    }
+    if (!$withKind) {
+      $ss = $pdo->prepare(
+        "SELECT id, text FROM stu_ember_browse_steps
+         WHERE job_id = ? AND id > ? ORDER BY id ASC LIMIT 100"
+      );
+      $ss->execute([$jobId, $lastStepId]);
+      $rows = $ss->fetchAll(PDO::FETCH_ASSOC);
+    }
+  } catch (Throwable $e) {
+    return 0;
+  }
+  foreach ($rows as $row) {
+    $lastStepId = (int)$row['id'];
+    bsse_send('step', [
+      'id' => $lastStepId,
+      'text' => (string)$row['text'],
+      'kind' => bsse_step_kind($row['kind'] ?? 'step'),
+    ]);
+  }
+  return count($rows);
+}
 
 function bsse_emit_frames(PDO $pdo, int $jobId, int &$lastFrameId): int {
   $count = 0;
@@ -109,8 +165,9 @@ if (session_status() === PHP_SESSION_ACTIVE) { @session_write_close(); }
 
 bsse_comment('open');
 
-$lastStepId = 0;
-$lastFrameId = 0;
+$lastStepId  = bsse_resume_id($_GET['after_step'] ?? '');
+$lastFrameId = bsse_resume_id($_GET['after_frame'] ?? '');
+$lastStatus  = '';
 $startTs    = time();
 $MAX_SECS   = 900;   // Sicherheits-Cap passend zu Nginx und PHP-FPM
 
@@ -119,17 +176,7 @@ while (!connection_aborted() && (time() - $startTs) < $MAX_SECS) {
   bsse_emit_frames($pdo, $jobId, $lastFrameId);
 
   // Neue Schritte ausliefern.
-  try {
-    $ss = $pdo->prepare(
-      "SELECT id, text FROM stu_ember_browse_steps
-       WHERE job_id = ? AND id > ? ORDER BY id ASC LIMIT 100"
-    );
-    $ss->execute([$jobId, $lastStepId]);
-    foreach ($ss->fetchAll(PDO::FETCH_ASSOC) as $row) {
-      $lastStepId = (int)$row['id'];
-      bsse_send('step', ['id' => $lastStepId, 'text' => (string)$row['text']]);
-    }
-  } catch (Throwable $e) { /* weiter versuchen */ }
+  bsse_emit_steps($pdo, $jobId, $lastStepId);
 
   // Job-Status pruefen.
   try {
@@ -142,19 +189,14 @@ while (!connection_aborted() && (time() - $startTs) < $MAX_SECS) {
         if (bsse_emit_frames($pdo, $jobId, $lastFrameId) < 25) break;
       }
       // Letzte evtl. noch nicht gelesenen Schritte nachreichen.
-      try {
-        $ss2 = $pdo->prepare(
-          "SELECT id, text FROM stu_ember_browse_steps
-           WHERE job_id = ? AND id > ? ORDER BY id ASC LIMIT 100"
-        );
-        $ss2->execute([$jobId, $lastStepId]);
-        foreach ($ss2->fetchAll(PDO::FETCH_ASSOC) as $row) {
-          $lastStepId = (int)$row['id'];
-          bsse_send('step', ['id' => $lastStepId, 'text' => (string)$row['text']]);
-        }
-      } catch (Throwable $e) {}
+      bsse_emit_steps($pdo, $jobId, $lastStepId);
       bsse_send($status === 'done' ? 'done' : 'error', ['status' => $status]);
       exit;
+    }
+    if ($status !== '' && $status !== $lastStatus) {
+      // queued = Mara ist noch mit etwas anderem beschaeftigt (Warteschlange).
+      $lastStatus = $status;
+      bsse_send('status', ['status' => $status]);
     }
   } catch (Throwable $e) {}
 
@@ -162,6 +204,6 @@ while (!connection_aborted() && (time() - $startTs) < $MAX_SECS) {
   usleep(1000000);      // 1s Poll-Intervall
 }
 
-// Cap erreicht / Client weg.
-bsse_send('timeout', ['note' => 'stream_cap']);
+// Cap erreicht / Client weg. Der Client setzt mit diesen Punkten fort.
+bsse_send('timeout', ['note' => 'stream_cap', 'after_frame' => $lastFrameId, 'after_step' => $lastStepId]);
 exit;

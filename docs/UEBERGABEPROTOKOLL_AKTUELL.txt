@@ -1,9 +1,10 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
 Stand: 27.10.2026
-Repository-Version: 0.5.76
+Repository-Version: 0.5.77
 Repository: https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface
 ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_5_77.txt
   docs/UEBERGABEPROTOKOLL_0_5_76.txt
   docs/UEBERGABEPROTOKOLL_0_5_75.txt
   docs/UEBERGABEPROTOKOLL_0_5_74.txt
@@ -90,6 +91,14 @@ NAECHSTER SCHRITT: Update auf dem Server (baut Maras Core neu), Lauf mit dem neu
 0.5.75 ist gemergt (PR #125), Lauf 4 erledigt. 0.5.76: Werkzeug-Erwaehnungen loesen nichts aus, keine
 falsche Korrekturrunde, Unterstriche im Chat, Arbeitsweg nur bei echter Arbeit, Sprachentscheidung.
 NAECHSTER SCHRITT: TTS-Kandidaten, dann P20.1.
+0.5.76 ist gemergt (PR #126) mit TCI-Stufen, Installer, Updates und Ollama Cloud im Chat. 0.5.77:
+Registrieren und Als Gast chatten auf der Login-Seite (nur wenn offen, Gast-Limit Standard 5), Cores einzeln
+aktualisieren und deinstallieren, beim Core-Wechsel wird der alte zuerst entladen, Chat komprimieren mit
+.md-Archiv, Maras Arbeitsschleife mit bis zu 6 Schritten. Dazu Browsing und Websuche: Live-Ansicht ohne
+Einfrieren (Mara ueberlegt mit Sekunden, Neuverbindung), Formulare ausfuellen mit festen Regeln, eigene
+Elementliste (Playwright ohne Accessibility-Snapshot), lokales Netz gesperrt, Core des Nutzers im Worker,
+Websuche mit Stichworten als zweitem Versuch. Browse-Worker nach dem Update neu starten.
+NAECHSTER SCHRITT: Benutzerverwaltung nach Betreiberwunsch, TTS-Kandidaten, dann P20.1.
 Mara/Ember, Ollama-Modelfile, serielle Queue und private Projekt-
 plaene NICHT ungefragt veraendern.
 Externe STU-Homepage wird in einem ANDEREN Chat bearbeitet.

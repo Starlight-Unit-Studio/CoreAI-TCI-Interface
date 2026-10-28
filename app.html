@@ -11,13 +11,13 @@
   />
   <meta name="theme-color" content="#f0f4fa" />
   <meta name="color-scheme" content="light" />
-  <meta name="application-version" content="0.5.76" />
+  <meta name="application-version" content="0.5.77" />
   <meta name="application-name" content="CoreAI: TCI Interface" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface | Quantum Software</title>
-  <link rel="stylesheet" href="./css/console.css?v=0482763606657742683573424" />
+  <link rel="stylesheet" href="./css/console.css?v=0126314495665228751302134" />
   <link rel="stylesheet" href="./css/artifacts.css?v=0620486151135252268178618" />
-  <script src="./js/console-gate.js?v=1167305587541147054387411"></script>
+  <script src="./js/console-gate.js?v=0013551363289213071145381"></script>
   <script src="./js/coreui-preferences.js?v=0408182548343544002678570"></script>
 </head>
 <body class="app-body coreui-body">
@@ -135,7 +135,7 @@
         <div class="brand-copy">
           <div class="brand-kicker">QUANTUM SOFTWARE</div>
           <div class="brand-title">COREAI:<span class="brand-product-part">TCI INTERFACE</span></div>
-          <div class="brand-signature">AYAL'REN MATRIX // N-73 // v0.5.76</div>
+          <div class="brand-signature">AYAL'REN MATRIX // N-73 // v0.5.77</div>
         </div>
       </div>
 
@@ -379,9 +379,11 @@
       </div>
 
       <div class="composer-footer-line" id="composerHint">
-        <span>PRIVATE CORE LINK</span>
+        <span id="composerLinkLabel">PRIVATE CORE LINK</span>
         <i aria-hidden="true"></i>
         <span>ENTER SENDEN · SHIFT+ENTER ZEILENUMBRUCH · LANGER TEXT ALS .MD</span>
+        <button class="core-legend-btn core-compact-btn" id="compactBtn" type="button" aria-haspopup="dialog" aria-expanded="false"
+          aria-controls="compactMenu" aria-label="Chat komprimieren und Archiv" title="Chat komprimieren">⇊</button>
         <button class="core-legend-btn" id="coreLegendBtn" type="button" aria-haspopup="dialog" aria-expanded="false"
           aria-controls="coreLegend" aria-label="Legende: Core-Stufen, Formatierung und Befehle" title="Legende">?</button>
         <button class="core-mode-chip" id="coreModeChip" type="button" data-thinking="on"
@@ -409,6 +411,17 @@
           <span class="settings-switch"><input id="coreThinkToggle" type="checkbox" checked /><i aria-hidden="true"></i></span>
         </label>
         <p class="core-mode-status" id="coreModeStatus" role="status" aria-live="polite"></p>
+      </div>
+
+      <div class="core-mode-menu compact-menu" id="compactMenu" role="dialog" aria-label="Chat komprimieren" hidden>
+        <span class="core-mode-kicker">CHAT KOMPRIMIEREN</span>
+        <p class="compact-copy">Fallen ältere Nachrichten aus Maras Fenster, fasst sie den Verlauf selbst zusammen. Die wörtliche
+          Mitschrift bleibt als .md-Archiv, bis du den Chat löschst; Mara schlägt darin nach, wenn ihr ein Detail fehlt.</p>
+        <p class="core-mode-status" id="compactStatus" role="status" aria-live="polite"></p>
+        <div class="compact-actions">
+          <button class="core-install-btn core-install-btn--go" id="compactNow" type="button">Jetzt komprimieren</button>
+          <a class="core-install-btn" id="compactArchive" href="#" download hidden>Archiv (.md)</a>
+        </div>
       </div>
 
       <div class="core-legend" id="coreLegend" role="dialog" aria-label="Legende" hidden>
@@ -446,6 +459,7 @@
             <dt>Büroklammer</dt><dd>Bis zu zehn Dateien oder Bilder anhängen</dd>
             <dt>Langer Text</dt><dd>Ab 8000 Zeichen automatisch als <code>.md</code>-Anhang</dd>
             <dt>Core-Chip</dt><dd>Core-Stufe wählen und Denken an- oder ausschalten</dd>
+            <dt><code>/komprimieren</code> oder ⇊</dt><dd>Älteren Verlauf zusammenfassen; die Mitschrift bleibt als .md-Archiv im Chat</dd>
           </dl>
         </section>
       </div>
@@ -525,9 +539,9 @@
   <script src="./js/coreui-insights.js?v=0594460657635895301005082"></script>
   <script src="./js/coreui-work-events.js?v=0346522000099481117561694"></script>
   <script src="./js/coreui-net.js?v=0716710642958975802942157"></script>
-  <script src="./js/console-app.js?v=0232495144295535980989395"></script>
+  <script src="./js/console-app.js?v=0902404837864452164351008"></script>
   <script src="./js/coreui-core-mode.js?v=0162969755017295993434355"></script>
-  <script src="./js/coreui-core-install.js?v=0988252371667851108653431"></script>
+  <script src="./js/coreui-core-install.js?v=0819725459921683629237258"></script>
   <script src="./js/coreui-artifacts.js?v=1069339270452640197429799"></script>
 </body>
 </html>

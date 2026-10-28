@@ -149,15 +149,18 @@ if (($body['action'] ?? '') === 'core') {
   }
   $model = $name !== '' ? $name : (defined('STU_EMBER_MODEL') ? (string)STU_EMBER_MODEL : 'ember-coreui:latest');
   $cloud = preg_match('~(?:^|[:._-])cloud(?:$|[:._-])~i', $model) === 1;
+  $loadedNow = coreui_ollama_loaded_names();
   $preload = $cloud ? 'cloud'
-    : (in_array(coreui_ollama_model_key($model), coreui_ollama_loaded_names(), true) ? 'loaded' : 'started');
+    : (in_array(coreui_ollama_model_key($model), $loadedNow, true) ? 'loaded' : 'started');
+  // 0.5.77: other local Cores leave the RAM first, also when the chosen one is already loaded.
+  $unloadOthers = !$cloud && count($loadedNow) > ($preload === 'loaded' ? 1 : 0);
   if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
   http_response_code(200);
   header('Content-Type: application/json; charset=utf-8');
   header('Cache-Control: no-store');
   echo json_encode(['ok'=>true, 'model_override'=>$name, 'model'=>$model, 'label'=>coreui_core_label($model),
     'preload'=>$preload], JSON_UNESCAPED_UNICODE);
-  if ($preload !== 'started') exit;
+  if ($preload !== 'started' && !$unloadOthers) exit;
   if (function_exists('fastcgi_finish_request')) @fastcgi_finish_request();
   ignore_user_abort(true);
   @set_time_limit(420);
@@ -226,6 +229,36 @@ if (($body['action'] ?? '') === 'core_cloud_add') {
   coreui_core_job_run($lock, 'coreui_core_install_run', $state, $uid);
   exit;
 }
+// 0.5.77: "Deinstallieren" in Cores verwalten (admins): the local Cores of a
+// tier (never Mara's own Core) or its cloud Cores.
+if (($body['action'] ?? '') === 'core_uninstall') {
+  require_once __DIR__ . '/core_install.php';
+  stu_require_permission_at_most(COREUI_CORE_INSTALL_PERMISSION_MAX, $pdo);
+  if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
+  $tier = trim((string)($body['tier'] ?? ''));
+  if (!isset(COREUI_CORE_INSTALL_CATALOG[$tier])) stu_json(['ok'=>false, 'error'=>'unknown_tier'], 400);
+  try {
+    $rows = array_column(coreui_core_manage_rows(coreui_ollama_models()), null, 'tier');
+    $lock = coreui_core_install_lock();
+  } catch (RuntimeException $e) {
+    stu_json(['ok'=>false, 'error'=>$e->getMessage()], 503);
+  }
+  if ($lock === false) stu_json(['ok'=>false, 'error'=>'install_running', 'install'=>coreui_core_install_status()], 409);
+  $targets = coreui_core_uninstall_targets($rows[$tier], ($body['cloud'] ?? false) === true);
+  if ($targets === []) {
+    flock($lock, LOCK_UN);
+    fclose($lock);
+    stu_json(['ok'=>false, 'error'=>'nothing_to_remove'], 409);
+  }
+  try {
+    $result = coreui_core_uninstall($pdo, $targets);
+  } finally {
+    flock($lock, LOCK_UN);
+    fclose($lock);
+  }
+  stu_json(['ok'=>$result['failed'] === [], 'error'=>$result['failed'] === [] ? null : 'uninstall_partial'] + $result,
+    $result['failed'] === [] ? 200 : 502);
+}
 // 0.5.76: weekly update switch (admins).
 if (($body['action'] ?? '') === 'core_auto_update') {
   require_once __DIR__ . '/core_install.php';
@@ -235,12 +268,16 @@ if (($body['action'] ?? '') === 'core_auto_update') {
   stu_json(['ok'=>true, 'auto'=>coreui_core_auto_update_set($pdo, $enabled)]);
 }
 // 0.5.76: update every local tier now (admins); same lock as the installer.
+// 0.5.77: with a tier, only that tier (button in its row).
 if (($body['action'] ?? '') === 'core_update') {
   require_once __DIR__ . '/core_install.php';
   stu_require_permission_at_most(COREUI_CORE_INSTALL_PERMISSION_MAX, $pdo);
   if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
+  $onlyTier = trim((string)($body['tier'] ?? ''));
+  if ($onlyTier !== '' && !isset(COREUI_CORE_INSTALL_CATALOG[$onlyTier])) stu_json(['ok'=>false, 'error'=>'unknown_tier'], 400);
   try {
-    $plan = coreui_core_update_plan(coreui_ollama_models());
+    $plan = array_values(array_filter(coreui_core_update_plan(coreui_ollama_models()),
+      static fn(array $item): bool => $onlyTier === '' || $item['tier'] === $onlyTier));
     $lock = $plan === [] ? null : coreui_core_install_lock();
   } catch (RuntimeException $e) {
     stu_json(['ok'=>false, 'error'=>$e->getMessage()], 503);

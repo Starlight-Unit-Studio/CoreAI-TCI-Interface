@@ -4,6 +4,7 @@ require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/mailer.php';
 require_once __DIR__ . '/account_store.php';
 require_once __DIR__ . '/profile_store.php';
+require_once __DIR__ . '/guest_access.php';
 
 // Simple username/password auth for Alpha.
 // - Session cookie stores stu_uid when logged in.
@@ -37,6 +38,17 @@ function stu_valid_username(string $u): bool {
   return coreui_account_valid_email($u);
 }
 
+/** Public sign-up: the admin switch (Runtime), else the installer's default. */
+function coreui_registration_enabled(?PDO $pdo): bool {
+  $enabled = defined('STU_ALLOW_REGISTRATION') && STU_ALLOW_REGISTRATION;
+  if (!$pdo) return $enabled;
+  try {
+    return stu_app_setting_get($pdo, 'registration_enabled', $enabled ? '1' : '0') === '1';
+  } catch (Throwable $e) {
+    return $enabled;
+  }
+}
+
 if ($action === 'me') {
   $uid = stu_get_user_id();
   if ($uid) {
@@ -44,11 +56,12 @@ if ($action === 'me') {
     try {
       $pdo = stu_pdo();
       stu_enforce_account_access($pdo, (int)$uid);
-      $st = $pdo->prepare('SELECT id, username, permission_level FROM stu_users WHERE id = ? LIMIT 1');
+      $st = $pdo->prepare('SELECT id, username, permission_level, is_guest FROM stu_users WHERE id = ? LIMIT 1');
       $st->execute([$uid]);
       $urow = $st->fetch();
       if ($urow) {
         coreui_account_ensure($pdo, (int)$uid, (string)($urow['username'] ?? ''));
+        $guest = (int)($urow['is_guest'] ?? 0) === 1 ? coreui_guest_quota($pdo, (int)$uid) : null;
         $lvl = isset($urow['permission_level']) ? (int)$urow['permission_level'] : 4;
         $_SESSION['stu_perm'] = $lvl;
         $maintenance = stu_maintenance_status($pdo);
@@ -69,6 +82,9 @@ if ($action === 'me') {
           'avatars' => is_array($profile) ? ($profile['avatars'] ?? ['user' => null, 'assistant' => null]) : ['user' => null, 'assistant' => null],
           'permission_level' => $lvl,
           'permission_label' => stu_permission_label($lvl),
+          // 0.5.77: guests see how many messages are left.
+          'is_guest' => $guest !== null,
+          'guest' => $guest,
           'csrf_token' => stu_csrf_token(),
         ]);
       }
@@ -78,7 +94,51 @@ if ($action === 'me') {
     // Invalid/stale session: force logout
     stu_logout();
   }
-  stu_json(['ok' => false, 'error' => 'not_authenticated'], 200);
+  // 0.5.77: the login page shows "Registrieren" and "Als Gast chatten" only while they are open.
+  $guestOpen = false;
+  try {
+    $pdoPublic = stu_pdo();
+    $registrationOpen = coreui_registration_enabled($pdoPublic);
+    $guestOpen = coreui_guest_enabled($pdoPublic);
+  } catch (Throwable $e) {
+    $registrationOpen = coreui_registration_enabled(null);
+  }
+  stu_json(['ok' => false, 'error' => 'not_authenticated', 'registration_enabled' => $registrationOpen,
+    'guest_enabled' => $guestOpen], 200);
+}
+
+// 0.5.77: "Als Gast chatten": a guest account, logged in at once, limited
+// to the admin's message count (guest_access.php).
+if ($action === 'guest') {
+  if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    stu_json(['ok' => false, 'error' => 'method_not_allowed'], 405);
+  }
+  stu_rate_limit('guest', 3, 600);
+  $pdo = stu_pdo();
+  if (!coreui_guest_enabled($pdo)) stu_json(['ok' => false, 'error' => 'guest_disabled'], 403);
+  if (!coreui_auth_session_schema_ready($pdo)) stu_json(['ok' => false, 'error' => 'missing_schema_006'], 503);
+  stu_enforce_maintenance($pdo, null, 4);
+  try {
+    $uid = coreui_guest_create($pdo);
+  } catch (RuntimeException $e) {
+    if ($e->getMessage() === 'guest_capacity') stu_json(['ok' => false, 'error' => 'guest_capacity'], 429);
+    if (function_exists('stu__log_error')) stu__log_error(['type' => 'guest_create_failed', 'message' => $e->getMessage()]);
+    stu_json(['ok' => false, 'error' => 'guest_failed'], 500);
+  } catch (Throwable $e) {
+    if (function_exists('stu__log_error')) stu__log_error(['type' => 'guest_create_failed', 'message' => $e->getMessage()]);
+    stu_json(['ok' => false, 'error' => 'guest_failed'], 500);
+  }
+  session_regenerate_id(true);
+  stu_set_user_id($uid);
+  $_SESSION['stu_perm'] = 4;
+  try {
+    $pdo->prepare('UPDATE stu_users SET last_login_at=NOW() WHERE id=?')->execute([$uid]);
+    coreui_auth_session_issue($pdo, $uid);
+  } catch (Throwable $e) {
+    stu_logout(false);
+    stu_json(['ok' => false, 'error' => 'auth_session_failed'], 500);
+  }
+  stu_json(['ok' => true, 'user_id' => $uid, 'guest' => coreui_guest_quota($pdo, $uid)]);
 }
 
 if ($action === 'logout') {
@@ -116,15 +176,7 @@ if ($action === 'register' || $action === 'login') {
   }
 
   if ($action === 'register') {
-    $registrationEnabled = defined('STU_ALLOW_REGISTRATION') && STU_ALLOW_REGISTRATION;
-    try {
-      $registrationEnabled = stu_app_setting_get(
-        $pdo,
-        'registration_enabled',
-        $registrationEnabled ? '1' : '0'
-      ) === '1';
-    } catch (Throwable $e) {}
-    if (!$registrationEnabled) {
+    if (!coreui_registration_enabled($pdo)) {
       stu_json(['ok' => false, 'error' => 'registration_disabled'], 403);
     }
     // During maintenance, only existing Staff accounts may pass. New accounts are normal users.
