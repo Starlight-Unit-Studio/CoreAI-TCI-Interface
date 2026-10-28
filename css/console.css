@@ -3272,6 +3272,201 @@ audio.msg-image {
   letter-spacing: 0.12em;
 }
 
+/* 0.5.75: Core chip with the thinking switch under the composer. */
+.core-mode-chip {
+  display: inline-flex;
+  min-height: 28px;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  background: var(--panel-soft);
+  color: var(--txt);
+  cursor: pointer;
+  font-family: "Share Tech Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+.core-mode-chip:hover,
+.core-mode-chip[aria-expanded="true"] {
+  border-color: var(--line-strong);
+  background: var(--panel-cx);
+}
+
+.core-mode-chip:focus-visible {
+  outline: 2px solid var(--amb);
+  outline-offset: 2px;
+}
+
+.core-mode-name {
+  max-width: 16ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.core-mode-think {
+  color: var(--cx);
+}
+
+.core-mode-chip[data-thinking="off"] .core-mode-think {
+  color: var(--amb);
+}
+
+.core-mode-chip svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+.core-mode-menu {
+  position: absolute;
+  z-index: 30;
+  right: clamp(18px, 3.4vw, 48px);
+  bottom: calc(max(10px, env(safe-area-inset-bottom)) + 34px);
+  width: min(330px, calc(100vw - 32px));
+  padding: 12px;
+  border: 1px solid var(--line-strong);
+  background: var(--panel-solid);
+  box-shadow: var(--shadow-soft);
+  color: var(--txt);
+}
+
+.core-mode-menu[hidden] {
+  display: none;
+}
+
+.core-mode-section {
+  display: grid;
+  gap: 6px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.core-mode-kicker {
+  color: var(--muted);
+  font-family: "Share Tech Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+}
+
+.core-mode-list {
+  display: grid;
+  max-height: min(42vh, 300px);
+  gap: 2px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.core-mode-option {
+  display: grid;
+  min-height: 40px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--txt);
+  cursor: pointer;
+  text-align: left;
+}
+
+.core-mode-option:hover:not(:disabled),
+.core-mode-option[aria-checked="true"] {
+  border-color: var(--line);
+  background: var(--panel-cx);
+}
+
+.core-mode-option:focus-visible {
+  outline: 2px solid var(--amb);
+  outline-offset: 1px;
+}
+
+.core-mode-option:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.core-mode-option-name {
+  overflow-wrap: anywhere;
+  font-size: 14px;
+}
+
+.core-mode-option small {
+  grid-column: 1;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.core-mode-check {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  color: var(--cx);
+}
+
+.core-mode-empty {
+  margin: 4px 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.core-mode-chip[data-state="loading"] .core-mode-think {
+  color: var(--amb);
+  animation: core-mode-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes core-mode-pulse {
+  50% { opacity: 0.35; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .core-mode-chip[data-state="loading"] .core-mode-think {
+    animation: none;
+  }
+}
+
+.core-mode-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 10px;
+  cursor: pointer;
+}
+
+.core-mode-copy {
+  display: grid;
+  gap: 3px;
+}
+
+.core-mode-copy strong {
+  font-family: "Share Tech Mono", monospace;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+}
+
+.core-mode-copy small,
+.core-mode-status {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.core-mode-status {
+  margin: 8px 0 0;
+}
+
+.core-mode-status:empty {
+  display: none;
+}
+
 .jump-latest {
   position: fixed;
   z-index: 18;
@@ -3655,6 +3850,14 @@ audio.msg-image {
 
   .composer-footer-line > span:nth-of-type(2) {
     display: none;
+  }
+
+  .core-mode-menu {
+    right: 16px;
+  }
+
+  .core-mode-name {
+    max-width: 13ch;
   }
 
   .composer-attach,

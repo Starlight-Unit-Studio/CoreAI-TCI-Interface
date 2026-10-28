@@ -13,7 +13,7 @@ Diese Roadmap ordnet die Anforderungen in **29 abschließbare Arbeitspakete** un
 | Bereich | Stand | Belege |
 |---|---|---|
 | **M1 Downloads** (P02 bis P04) | Praktisch erledigt: Dateiablage, Download-Karten, geprüfter ZIP-Writer; ein komplettes Projekt-ZIP wurde live lokal gebaut. Formale Abnahme von #29 (Reload, Android) steht aus. | Migration 011, 0.5.47 bis 0.5.67 |
-| **M2 Agent** (P05 bis P08) | Großteils erledigt: persistente Agentenläufe mit Abbruch, globale serielle Warteschlange, Arbeitsweg im Agent-Stil, native Werkzeuge (Plan, Bau, Web, Browse, Python) mit Selbstkorrektur, KI-Profil mit Kontextfenster. Offen: Arbeitsprofile und Promptvorlagen mit Variablen. | Migrationen 012, 013, 016, 017; 0.5.68 bis 0.5.70 |
+| **M2 Agent** (P05 bis P08) | Großteils erledigt: persistente Agentenläufe mit Abbruch, globale serielle Warteschlange, Arbeitsweg im Agent-Stil, native Werkzeuge (Plan, Bau, Web, Browse, Python) mit Selbstkorrektur, KI-Profil mit Kontextfenster; seit 0.5.75 Denkschalter und Core-Wahl mit Vorladen direkt im Chat. Offen: Arbeitsprofile und Promptvorlagen mit Variablen. | Migrationen 012, 013, 016, 017; 0.5.68 bis 0.5.70 |
 | **P26 bis P28** (Teams, Checkpoints, Reviews) | Offen; die dauerhaften Projektpläne sind ein erster Baustein. | Migration 016 |
 | **M3 Entwicklung** (P09 bis P11) | Offen: kein dauerhafter Projektordner, Editor, Terminal oder Git. Projekte entstehen je Bau neu als ZIP. | |
 | **M4 Skills** (P12 bis P14) | Teilweise: Skills mit Pflicht-Skill "werkzeuge" und eigene Skills. Offen: Versionen, Import/Export, Plugins; Sprachskill #119. | Migration 014 |
@@ -27,7 +27,7 @@ Diese Roadmap ordnet die Anforderungen in **29 abschließbare Arbeitspakete** un
 
 | Schritt | Inhalt | Plan |
 |---|---|---|
-| 1. P20.0 | Test auf dem Server: Audio über Ollama (Gemma 4 e2b, e4b, 12b über das `images`-Array), TTS-Kandidaten, Latenz einer Live-Runde. **In Arbeit:** Hören zweimal gemessen (Messprotokoll im Sprachplan); 0.5.74 misst zusätzlich Denken, Live-Antwort und kurze Aufnahmen. TTS-Kandidaten offen. | [Sprachplan](docs/COREUI_VOICE_PLAN.md) |
+| 1. P20.0 | Test auf dem Server: Audio über Ollama (Gemma 4 e2b, e4b, 12b über das `images`-Array), TTS-Kandidaten, Latenz einer Live-Runde. **In Arbeit:** Hören dreimal gemessen (Messprotokoll im Sprachplan). Kurze Aufnahmen scheiterten in Maras Persona in 11 von 20 Fällen; 0.5.75 vergleicht Googles Transkriptionsvorlage, Stille davor und temperature 0 sowie Live einstufig und zweistufig. Festes Denken im Modelfile entfernt. TTS-Kandidaten offen. | [Sprachplan](docs/COREUI_VOICE_PLAN.md) |
 | 2. P20.1 | Spracheingabe: Mikrofon, Sprachnachrichten, Audiodateien, Mitschrift im Chat | Sprachplan |
 | 3. P20.2 | Videos hören: Tonspur zusammen mit den Bildern | Sprachplan |
 | 4. P20.3 | Sprachausgabe: Lautsprecher-Knopf, optional automatisch vorlesen, eigene Mara-Stimme vom Server | Sprachplan |

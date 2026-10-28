@@ -6,12 +6,12 @@
   <meta name="language" content="de-DE" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#f0f4fa" />
-  <meta name="application-version" content="0.5.74" />
+  <meta name="application-version" content="0.5.75" />
   <meta name="application-name" content="CoreAI: TCI Interface" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface - Einstellungen</title>
-  <link rel="stylesheet" href="./css/console.css?v=0063692723615049948660974" />
-  <script src="./js/console-gate.js?v=0920889983859714197624516"></script>
+  <link rel="stylesheet" href="./css/console.css?v=0189120216937297437061949" />
+  <script src="./js/console-gate.js?v=0961437058300474388720534"></script>
   <script src="./js/coreui-preferences.js?v=0408182548343544002678570"></script>
 </head>
 <body class="settings-body">
@@ -27,7 +27,7 @@
           <h1>EINSTELLUNGEN</h1>
         </div>
       </div>
-      <div class="settings-version">COREAI: TCI INTERFACE // v0.5.74</div>
+      <div class="settings-version">COREAI: TCI INTERFACE // v0.5.75</div>
     </header>
 
     <main class="settings-grid">
@@ -180,10 +180,10 @@
           <span class="setting-copy"><strong>LANGZEITGEDÄCHTNIS VERWENDEN</strong><small>Persönliche und charakterbezogene Fakten in neue Antworten einbeziehen.</small></span>
           <span class="settings-switch"><input id="aiMemoryEnabled" type="checkbox" /><i aria-hidden="true"></i></span>
         </label>
-        <label class="setting-row" for="aiThinkingEnabled">
-          <span class="setting-copy"><strong>CORE-THINKING AKTIVIEREN</strong><small>Sendet den Ollama-Parameter <code>think</code> für neue Antworten. Rohe Gedankengänge bleiben auch im aktivierten Zustand serverintern; CoreAI: TCI Interface zeigt nur sichere Fortschrittsstufen. Cores mit fest vorgegebenen Thinking-Stufen können den booleschen Wert abweichend behandeln.</small></span>
-          <span class="settings-switch"><input id="aiThinkingEnabled" type="checkbox" /><i aria-hidden="true"></i></span>
-        </label>
+        <div class="settings-local-note" id="thinkingMovedNote">
+          <span aria-hidden="true">◇</span>
+          <p>Denken schaltest du direkt im Chat: Tippe unter dem Eingabefeld auf den Core-Chip. Der Zustand gilt für alle deine Chats.</p>
+        </div>
         <div class="settings-local-note" id="externalProviderNote">
           <span aria-hidden="true">◇</span>
           <p>Externe OpenAI-kompatible APIs sind als optionaler Adapter vorbereitet, standardmäßig aber deaktiviert. Es gibt keine Kompatibilitätszusage außerhalb der Gemma-4-Reihe.</p>
@@ -337,6 +337,6 @@
 
   <script src="./js/skills-settings.js?v=0475630369246311829602517"></script>
   <script src="./js/coreui-context-slider.js?v=0071279618529070371071429"></script>
-  <script src="./js/settings.js?v=0569119993051342813909948"></script>
+  <script src="./js/settings.js?v=0326718659861841609600926"></script>
 </body>
 </html>

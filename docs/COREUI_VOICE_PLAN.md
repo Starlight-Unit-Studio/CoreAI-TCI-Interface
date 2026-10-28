@@ -1,6 +1,6 @@
 # Mara hört und spricht: Sprachplan (Planungsstand 28.10.2026)
 
-**Status: geplant und noch nicht implementiert. Das Hören über Ollama ist auf dem echten Server gemessen (P20.0, zwei Läufe am 28.10.2026, siehe [Messprotokoll](#messprotokoll-p200-28102026)); Stimme und Live-Latenz sind noch nicht gemessen.** Dieser Plan beschreibt die Spracheingabe, das Hören von Videos, die Sprachausgabe und das Live-Gespräch in CoreAI: TCI Interface. Er ergänzt den [Bild-Technikplan](COREUI_IMAGE_ENGINE_PLAN.md) und bildet zusammen mit ihm das Paket P20 der [Roadmap](../ROADMAP.md) (Matrix `CF-057`, `CF-058`, `CF-059`).
+**Status: geplant und noch nicht implementiert. Das Hören über Ollama ist auf dem echten Server gemessen (P20.0, drei Läufe am 28.10.2026, siehe [Messprotokoll](#messprotokoll-p200-28102026)); Stimme und Live-Latenz ohne festes Denken sind noch nicht gemessen.** Dieser Plan beschreibt die Spracheingabe, das Hören von Videos, die Sprachausgabe und das Live-Gespräch in CoreAI: TCI Interface. Er ergänzt den [Bild-Technikplan](COREUI_IMAGE_ENGINE_PLAN.md) und bildet zusammen mit ihm das Paket P20 der [Roadmap](../ROADMAP.md) (Matrix `CF-057`, `CF-058`, `CF-059`).
 
 ## Entscheidungen des Betreibers (28.10.2026)
 
@@ -8,6 +8,8 @@
 - **Beides anbieten:** den normalen Audiomodus wie in anderen Chats (Antwort als Text, Lautsprecher-Knopf zum Vorlesen) und ein Live-Gespräch wie bei Gemini oder ChatGPT.
 - **Sprachausgabe darf parallel laufen:** Ausnahme von der Regel "höchstens eine Modellanfrage gleichzeitig" nur für die Sprachausgabe (TTS), mit festem Kernlimit. Spracherkennung und Antworten bleiben in der seriellen Core-Warteschlange.
 - **Direkt eine eigene Mara-Stimme** auf dem Server, keine Gerätestimme als Zwischenlösung.
+- **Denken per Schalter (0.5.75):** `<|think|>` kommt aus dem Modelfile. Ob Mara denkt, entscheidet der Denkschalter im Chat (`think` je Anfrage, Ollamas Gemma-4-Renderer setzt `<|think|>` dann selbst). Mitschrift und Live-Gespräch laufen ohne Denken.
+- **Testfreigabe `temperature 0` (0.5.75):** ausschließlich für die Testvariante "vorlage_temp0" des Medien-Tests, nie im Chat.
 
 ## Technische Grundlage
 
@@ -61,7 +63,7 @@ Das Ergebnis steht in `var/cache/media-spike/ZEITSTEMPEL/report.md`. Der Test ä
 - `keep_alive` kommt aus der CoreAI-Konfiguration (`STU_EMBER_KEEP_ALIVE`) statt aus einem eigenen Wert des Tests.
 - Die Hilfen dafür liegen in `api/voice_core.php` und werden später von P20.1 und P20.4 genutzt.
 
-Empfohlener nächster Lauf, am besten mit einer eigenen, direkt ins Handy gesprochenen Aufnahme von 30 bis 60 Sekunden (Dauer etwa 10 Minuten):
+Lauf mit dem Test aus 0.5.74 (erledigt, siehe Lauf 3 im Messprotokoll):
 
 ```
 bash /opt/ember-coreui/scripts/media-spike.sh --audio DATEI --skip-formats --durations 15,60
@@ -105,13 +107,47 @@ Folgerungen für die Lieferungen:
 - Kurze Aufnahmen im Auftrag ausdrücklich als Anhang benennen; behauptet Core trotzdem, es gebe keine Aufnahme, einmal automatisch wiederholen (`coreui_voice_missed_audio`). Ob der Hinweis allein reicht, misst der erweiterte Test.
 - Live-Gespräch ohne Denken (P20.4), Core beim Start vorwärmen und ein Neuladen sichtbar machen.
 
+**Lauf 3 (0.5.74, Monk-Szene, 60 Sekunden):**
+
+| Fall (15-s-Clip) | Erstes Wort | Erster Satz |
+|---|---|---|
+| Mitschrift mit Denken | 28,2 s | 28,5 s |
+| Mitschrift ohne Denken | 4,1 s | (Antwort "[keine Sprache]") |
+| Live-Antwort mit Denken | 31,4 s | 31,6 s |
+| Live-Antwort ohne Denken | 4,3 s | 5,7 s, erster echter Satz nach etwa 6,6 s |
+
+- Einlesen etwa 187, Ausgabe etwa 24 Tokens je Sekunde, kein Neuladen, 60 Sekunden wieder vollständig mitgeschrieben.
+- **Kurze Aufnahmen (3 und 5 s, je fünfmal mit und ohne Anhang-Hinweis): 11 von 20 Fehlversuchen**, neunmal "keine Aufnahme" in wechselnden Formulierungen, zweimal "(keine Sprache)", obwohl gesprochen wurde. Der Hinweis half kaum (5 von 10 mit, 6 von 10 ohne). Die Erkennung aus 0.5.74 zählte nur 6 davon; 0.5.75 ordnet alle richtig ein.
+- Ohne Denk-Kanal schrieb Mara ihre Vorüberlegung sichtbar als "[Analyse: ...]" vor die Antwort. Ursache ist der Modelfile-Satz "Trenne intern gedachte Analyse strikt von der sichtbaren Antwort"; seit 0.5.75 entfernt CoreAI einen solchen vorangestellten Block.
+- Alle vier lokalen Cores haben eigene Digests, sind aber gleich groß (6,6 GB, 7,5B); die angebliche `gemma4:26b` ist vermutlich kein 26B-Modell. Der Test zeigt ab 0.5.75 die Gewichtsdatei hinter `FROM`.
+- Ursachen im Modelfile: festes `<|think|>` (Denken trotz `think: false`, nur verborgen), `temperature 1` (jeder Lauf verhört anders), der Analyse-Satz.
+
+Folgerungen aus Lauf 3:
+- Mitschrift nicht in Maras Persona und nicht mit dem Ausweg "(keine Sprache)": Kandidat ist Googles Transkriptionsvorlage mit neutralem SYSTEM-Text, ohne Denken, gegebenenfalls mit einer Sekunde Stille davor oder `temperature 0`. Der Test in 0.5.75 vergleicht genau diese Varianten.
+- **Zweistufig als Kandidat für P20.1 und P20.4:** erst die Mitschrift mit der Vorlage, dann antwortet Mara auf den Text. Die Persona bleibt aus dem Hören heraus (wie beim Bild-Fix in 0.5.71), und die Mitschrift für den Chat entsteht ohnehin.
+- **Sprachaktivität (VAD) vor dem Senden:** Im Browser erkennt eine leichte VAD (etwa Silero VAD als ONNX im Browser) Sprechbeginn und Sprechpause. Reine Stille wird nicht gesendet, der Schnitt lässt vor dem ersten Wort etwas Luft, und im Live-Modus beendet die Sprechpause die Runde. Gegen die Fehlversuche oben hilft VAD nicht, denn diese Clips enthielten Sprache.
+
+**Erweiterung in 0.5.75:**
+- Kurze Aufnahmen (3 und 5 s, je fünfmal) in vier Varianten: `bisher` (Persona, alter Auftrag), `vorlage` (Googles Vorlage, neutraler SYSTEM-Text), `vorlage_stille` (eine Sekunde Stille davor), `vorlage_temp0` (temperature 0, freigegeben nur hier). Alle ohne Denken.
+- Die Vorlage auch auf den langen Clips, mit beiden 60-Sekunden-Mitschriften vollständig im Bericht.
+- Live-Antwort mit Denken (`think: true`, zugleich Prüfung, ob der Denkschalter wirkt), einstufig (zweimal, der zweite Lauf zeigt den Cache) und zweistufig. Gemessen wird der erste wirklich sprechbare Satz, ein "[Analyse: ...]"-Block zählt nicht.
+- Kompakter Bericht mit einer Zeile je Variante, Fehlantworten als Liste, Gewichtsdatei je Core.
+- Hat der Core auf dem Server noch ein festes `<|think|>`, schickt der Test für Aufrufe ohne Denken denselben SYSTEM-Text ohne diesen Schalter und meldet das im Bericht.
+
+Nächster Lauf nach dem Update auf 0.5.75 (das Update baut Maras Core ohne `<|think|>` neu):
+
+```
+bash /opt/ember-coreui/scripts/media-spike.sh --audio DATEI --skip-formats --durations 15,60
+```
+
 ### P20.1: Spracheingabe
 
 - Mikrofon-Knopf im Eingabefeld, auch auf Android Chrome und Samsung DeX. Aufnahme im Browser, sichtbare Dauer, Abbrechen, Senden.
 - Sprachnachrichten und Audiodateien (zum Beispiel MP3, M4A, WAV, OGG) als Anhang, genau wie Bilder.
 - Server: Umwandlung mit ffmpeg in WAV (RIFF), 16 kHz, Mono, 16 Bit PCM signed, mit Header-Prüfung vor dem Senden; Aufteilung langer Aufnahmen in Abschnitte von höchstens 60 Sekunden an Sprechpausen, in fester Reihenfolge mit Zeitmarken.
 - Mara hört die Aufnahme direkt und antwortet. Im Chat steht eine **Mitschrift** dessen, was gesagt wurde, damit der Verlauf lesbar und durchsuchbar bleibt. Ob die Mitschrift im selben Core-Aufruf (Marker) oder in einem eigenen kurzen Aufruf entsteht, entscheidet der Test nach Zuverlässigkeit und Zeit; ein eigener Aufruf für die Mitschrift kostet mit Denken 15 bis 30 Sekunden (Messprotokoll), ohne Denken misst ihn der Test ab 0.5.74.
-- Der Auftrag nennt die Aufnahme ausdrücklich mit Länge ("[Angehaengt: Sprachaufnahme, N Sekunden]"). Behauptet Core trotzdem, es gebe keine Aufnahme, wird der Aufruf einmal automatisch wiederholt; bleibt es dabei, sagt die Oberfläche das offen.
+- Der Auftrag nennt die Aufnahme ausdrücklich mit Länge ("[Angehaengt: Sprachaufnahme, N Sekunden]"). Behauptet Core trotzdem, es gebe keine Aufnahme, wird der Aufruf einmal automatisch wiederholt; bleibt es dabei, sagt die Oberfläche das offen. Die Einordnung (`coreui_voice_reply_kind`: gehört, keine Aufnahme, keine Sprache) ist an allen echten Fehlantworten geprüft.
+- VAD im Browser: Aufnahme startet mit dem ersten Wort und lässt davor etwas Luft; reine Stille wird gar nicht erst gesendet.
 - Cores ohne Audio (`gemma4:26b`, `gemma4:31b`, Cloud-Cores ohne Audioeingang) melden das klar, statt etwas zu erfinden; der Mikrofon-Knopf ist dann deaktiviert.
 - Datenschutz: Aufnahmen sind kontogebunden wie andere Anhänge; Option, die Audiodatei nach der Mitschrift automatisch zu löschen.
 
@@ -137,7 +173,7 @@ Folgerungen für die Lieferungen:
 - Beide Seiten landen als normale Nachrichten (Mitschrift und Antwort) in der Sitzung und sind danach im Chat lesbar.
 - Echo- und Rauschunterdrückung über die Browser-Audioeinstellungen; Bildschirm bleibt während des Gesprächs an.
 - Hintergrundaufgaben, die Core belegen (Gedächtnis-Reflexion, Beziehungswert), warten während eines Live-Gesprächs, damit keine Runde hinter ihnen ansteht.
-- **Ohne Denken:** Live-Runden schicken Maras SYSTEM-Text aus dem Modelfile ohne `<|think|>` mit (`coreui_voice_system_without_think`) und `think: false`. Die Persönlichkeit bleibt Wort für Wort gleich; die 14 bis 27 Sekunden Denken je Runde entfallen. Der Gesprächsverlauf wird so aufgebaut, dass sein Anfang gleich bleibt und Ollama ihn aus dem Cache nehmen kann.
+- **Ohne Denken:** Live-Runden schicken `think: false`; seit 0.5.75 enthält das Modelfile kein festes `<|think|>` mehr (für ältere Cores schickt CoreAI den SYSTEM-Text ohne Schalter mit, `coreui_voice_system_without_think`). Ein vorangestellter "[Analyse: ...]"-Block wird nicht gesprochen. Die Persönlichkeit bleibt Wort für Wort gleich; die 14 bis 27 Sekunden Denken je Runde entfallen. Der Gesprächsverlauf wird so aufgebaut, dass sein Anfang gleich bleibt und Ollama ihn aus dem Cache nehmen kann.
 - **Vorwärmen und Neuladen:** Beim Start des Gesprächsmodus wird Core geladen, bevor die erste Runde beginnt (Kaltstart 11 bis 12 Sekunden). Muss er mittendrin neu geladen werden (gemessen bis 23,5 Sekunden), zeigt die Oberfläche "Core wird geladen" statt Stille.
 - Ehrliche Grenze: Gemma antwortet als Text, die Stimme kommt aus der TTS. Das ist ein schneller Rundenwechsel, kein natives Sprache-zu-Sprache-Modell. Die erreichbare Latenz legt P20.0 fest.
 

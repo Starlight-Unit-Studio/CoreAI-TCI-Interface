@@ -1,17 +1,20 @@
 <?php
 declare(strict_types=1);
 /*
- * CoreAI 0.5.74: P20.0 media test on the real server (voice plan).
+ * CoreAI 0.5.75: P20.0 media test on the real server (voice plan).
  *
  * Measures Gemma 4 audio input through Ollama: accepted formats, clip
- * length, time to the first answer word and transcript; one combined image
- * plus audio request. Since 0.5.74 also the cost of thinking (the same clip
- * with the Modelfile SYSTEM text minus <|think|>), a live reply with and
- * without thinking, and short clips repeated with and without naming the
- * attachment. Optional TTS and image timings prepared by
- * scripts/media-spike.sh are added to the same report. Changes no model,
- * Modelfile or database row; every Core call waits in Mara's serial model
- * queue like a chat turn and keeps CoreAI's keep_alive.
+ * length, time to the first word and transcript; one combined image plus
+ * audio request. Since 0.5.75 it compares ways to ask for a transcript on
+ * short clips (Mara's persona with the old prompt, Google's transcription
+ * template with a neutral SYSTEM text, the template with one second of
+ * silence in front, the template with temperature 0), runs the template on
+ * the long clips, and times a live reply with thinking, in one step and in
+ * two steps (transcript first, then Mara answers the text). Optional TTS
+ * and image timings prepared by scripts/media-spike.sh are added to the
+ * same report. Changes no model, Modelfile or database row; every Core call
+ * waits in Mara's serial model queue like a chat turn and keeps CoreAI's
+ * keep_alive.
  *
  * Usage (normally started by scripts/media-spike.sh):
  *   php scripts/media-spike.php --out var/cache/media-spike/STAMP [--model NAME]
@@ -72,14 +75,19 @@ function spike_stream_line(array &$state, string $line, float $start): void {
     $now = round(microtime(true) - $start, 2);
     if ($state['first_s'] === null && trim($piece) !== '') $state['first_s'] = $now;
     $state['text'] .= $piece;
-    // First full sentence: what a sentence-wise voice (P20.3/P20.4) could start speaking.
-    if ($state['sentence_s'] === null && mb_strlen(trim($state['text'])) >= 12
-      && preg_match('~[.!?](?:\s|$)~u', $state['text']) === 1) $state['sentence_s'] = $now;
+    // First sentence a voice could speak: a leading "[Analyse: ...]" block
+    // is not spoken, so it only counts once that block is closed and removed.
+    if ($state['sentence_s'] === null) {
+      $text = ltrim($state['text']);
+      $open = str_starts_with($text, '[') && !str_contains($text, ']');
+      $spoken = $open ? '' : trim(ember_strip_leading_bracket_meta($text));
+      if (mb_strlen($spoken) >= 12 && preg_match('~[.!?](?:\s|$)~u', $spoken) === 1) $state['sentence_s'] = $now;
+    }
   }
   if (!empty($j['done'])) $state['final'] = $j;
 }
 
-/** Streams one /api/chat call and notes when the first answer word and sentence arrived. */
+/** Streams one /api/chat call and notes when the first word and the first spoken sentence arrived. */
 function spike_stream(string $url, array $body, int $timeout): array {
   $state = ['buf'=>'', 'text'=>'', 'thinking'=>'', 'final'=>[], 'error'=>'', 'first_s'=>null, 'sentence_s'=>null];
   $start = microtime(true);
@@ -114,11 +122,18 @@ function spike_ffmpeg(array $args): bool {
   return $status === 0;
 }
 
-/** One Core call in Mara's queue: audio (and optional image), a prompt and optionally a SYSTEM text. */
-function spike_core(string $apiBase, string $model, string $prompt, array $images, ?string $system = null, int $timeout = 900): array {
+/**
+ * One Core call in Mara's queue: audio (and optional image), a prompt and
+ * optionally a SYSTEM text. Ollama options stay empty, with one exception
+ * the operator approved on 28.10.2026: temperature 0 for the transcription
+ * variant "vorlage_temp0" of this test, never in the chat.
+ */
+function spike_core(string $apiBase, string $model, string $prompt, array $images, ?string $system = null,
+                    bool $think = false, array $options = [], int $timeout = 900): array {
   $messages = $system !== null ? [['role'=>'system', 'content'=>$system]] : [];
   $messages[] = ['role'=>'user', 'content'=>$prompt] + ($images ? ['images'=>$images] : []);
-  $body = ['model'=>$model, 'stream'=>true, 'think'=>false, 'messages'=>$messages];
+  $body = ['model'=>$model, 'stream'=>true, 'think'=>$think, 'messages'=>$messages];
+  if ($options !== []) $body['options'] = $options;
   // CoreAI's own keep_alive: the test never shortens how long Mara stays loaded.
   $keepAlive = ember_keep_alive();
   if ($keepAlive !== null) $body['keep_alive'] = $keepAlive;
@@ -139,13 +154,15 @@ function spike_core(string $apiBase, string $model, string $prompt, array $image
     'prompt_tokens'=>$j['prompt_eval_count'] ?? null, 'output_tokens'=>$j['eval_count'] ?? null,
     'done_reason'=>(string)($j['done_reason'] ?? ''),
     'thinking_chars'=>mb_strlen($r['thinking']), 'text_chars'=>mb_strlen($text),
+    'kind'=>coreui_voice_reply_kind($text),
     'text'=>$text, 'thinking'=>mb_substr(trim($r['thinking']), 0, 4000),
   ];
 }
 
 function spike_case_log(string $name, array $r): void {
-  spike_log("  {$name}: HTTP {$r['http']}, {$r['wall_s']} s, erste Antwort " . ($r['first_answer_s'] ?? '-')
+  spike_log("  {$name}: HTTP {$r['http']}, {$r['wall_s']} s, erstes Wort " . ($r['first_answer_s'] ?? '-')
     . ' s, Tokens ' . ($r['prompt_tokens'] ?? '-') . '/' . ($r['output_tokens'] ?? '-')
+    . ($r['kind'] !== 'heard' ? " ({$r['kind']})" : '')
     . ($r['error'] !== '' ? ", Fehler: {$r['error']}" : '') . ' | ' . mb_substr($r['text'], 0, 90));
 }
 
@@ -157,7 +174,6 @@ if (!isset($ff[0])) { fwrite(STDERR, "ffmpeg fehlt; Audio-Test nicht moeglich.\n
 $results['ollama_version'] = spike_http('GET', $apiBase . '/api/version', null, 10)['json']['version'] ?? 'unbekannt';
 $tags = spike_http('GET', $apiBase . '/api/tags', null, 15)['json']['models'] ?? [];
 $tags = is_array($tags) ? $tags : [];
-// The digest shows whether several names point to the same weights.
 $tagInfo = [];
 foreach ($tags as $m) {
   $n = (string)($m['name'] ?? '');
@@ -171,23 +187,26 @@ $modelShow = [];
 foreach ($names as $name) {
   $show = spike_http('POST', $apiBase . '/api/show', ['model'=>$name], 30)['json'] ?? [];
   if ($name === $model) $modelShow = $show;
-  $info = is_array($show['model_info'] ?? null) ? $show['model_info'] : [];
-  $audioKeys = array_values(array_filter(array_keys($info), static fn(string $k): bool => stripos($k, 'audio') !== false));
   $tag = $tagInfo[$name] ?? $tagInfo[$name . ':latest'] ?? ['digest'=>'', 'size_gb'=>null];
+  // The weights file behind FROM shows whether several names share one model.
+  $weights = preg_match('~^FROM\s+\S*sha256[-:]([0-9a-f]{12})~mi', (string)($show['modelfile'] ?? ''), $w) === 1 ? $w[1] : '';
   $results['capabilities'][$name] = [
     'capabilities'=>$show['capabilities'] ?? null,
     'parameter_size'=>$show['details']['parameter_size'] ?? null,
     'quantization'=>$show['details']['quantization_level'] ?? null,
-    'digest'=>$tag['digest'], 'size_gb'=>$tag['size_gb'],
-    'audio_metadata_keys'=>array_slice($audioKeys, 0, 8),
+    'digest'=>$tag['digest'], 'size_gb'=>$tag['size_gb'], 'weights'=>$weights,
   ];
   spike_log("  {$name}: Faehigkeiten " . json_encode($show['capabilities'] ?? 'keine Angabe')
-    . ", Digest {$tag['digest']}");
+    . ", Gewichte {$weights}");
 }
-// Read only: the live-talk comparison sends the same SYSTEM text minus <|think|>.
+// Read only. A Core created from a Modelfile before 0.5.75 still carries
+// <|think|>; persona calls without thinking then send the same text without it.
 $system = coreui_voice_modelfile_system(is_array($modelShow) ? $modelShow : []);
-$noThinkSystem = $system !== '' ? coreui_voice_system_without_think($system) : null;
-$results['system'] = ['chars'=>mb_strlen($system), 'has_think'=>str_contains($system, '<|think|>')];
+$hasThinkToken = str_contains($system, '<|think|>');
+$personaNoThink = $hasThinkToken ? coreui_voice_system_without_think($system) : null;
+$results['system'] = ['chars'=>mb_strlen($system), 'has_think'=>$hasThinkToken];
+$neutral = coreui_voice_transcribe_system();
+$template = coreui_voice_transcribe_prompt('German');
 
 // --- Test audio ------------------------------------------------------------
 $source = (string)($opt['audio'] ?? '');
@@ -205,6 +224,16 @@ $clipOf = static function (int $sec) use ($out, $source): ?string {
   if (!is_file($path)) spike_ffmpeg(['-stream_loop', '-1', '-i', $source, '-t', (string)$sec, ...coreui_wav_ffmpeg_args(), $path]);
   return is_file($path) ? $path : null;
 };
+/** The same clip with one second of silence in front and 0.3 s behind. */
+$paddedOf = static function (int $sec) use ($out, $clipOf): ?string {
+  $clip = $clipOf($sec);
+  $path = "{$out}/wav/still_{$sec}s.wav";
+  if ($clip !== null && !is_file($path)) {
+    spike_ffmpeg(['-i', $clip, '-af', 'adelay=1000:all=1,apad=pad_dur=0.3', ...coreui_wav_ffmpeg_args(), $path]);
+  }
+  return is_file($path) ? $path : null;
+};
+$b64 = static fn(string $path): string => base64_encode((string)file_get_contents($path));
 
 $prompt = 'Schreibe woertlich und vollstaendig auf, was in der Aufnahme gesagt wird, ohne Kommentar. '
   . 'Wenn keine verstaendliche Sprache zu hoeren ist, antworte nur: (keine Sprache).';
@@ -224,9 +253,10 @@ if (!isset($opt['skip-formats'])) {
 spike_log('Lade Core (Aufwaermen) ...');
 $results['warmup'] = spike_core($apiBase, $model, 'Antworte nur mit: ok', []);
 
+// --- Long clips and formats: Mara's persona with the old prompt ("bisher") --
 foreach ($cases as $case) {
   $path = $out . '/wav/' . $case['file'];
-  if (!spike_ffmpeg([...$case['args'], $path])) {
+  if (!is_file($path) && !spike_ffmpeg([...$case['args'], $path])) {
     $results['cases'][] = ['name'=>$case['name'], 'error'=>'ffmpeg fehlgeschlagen'];
     continue;
   }
@@ -235,9 +265,17 @@ foreach ($cases as $case) {
   spike_log("Fall {$case['name']}: " . ($info ? "{$info['seconds']} s, {$info['bits']} Bit, {$info['sample_rate']} Hz, "
     . "{$info['channels']} Kanal" : 'ohne RIFF-Header') . ', Pruefung: '
     . (coreui_wav_gemma_ready($info) ? 'passt' : coreui_wav_reject_reason($info)));
-  $r = spike_core($apiBase, $model, $prompt, [base64_encode($bytes)]);
+  $r = spike_core($apiBase, $model, $prompt, [base64_encode($bytes)], $personaNoThink);
   $results['cases'][] = ['name'=>$case['name'], 'wav'=>$info, 'check'=>coreui_wav_reject_reason($info)] + $r;
   spike_case_log($case['name'], $r);
+}
+// The same long clips with Google's template and a neutral SYSTEM text.
+foreach ($durations as $sec) {
+  $clip = $clipOf($sec);
+  if ($clip === null) continue;
+  $r = spike_core($apiBase, $model, $template, [$b64($clip)], $neutral);
+  $results['cases'][] = ['name'=>"vorlage_{$sec}s", 'group'=>'long', 'seconds'=>$sec] + $r;
+  spike_case_log("vorlage_{$sec}s", $r);
 }
 
 // Image and audio in the same request (videos with sound, P20.2).
@@ -246,54 +284,58 @@ $clip = $clipOf(15);
 if (spike_ffmpeg(['-f', 'lavfi', '-i', 'testsrc=size=640x360:rate=1', '-frames:v', '1', $frame]) && $clip !== null) {
   spike_log('Fall Bild und Ton gemeinsam ...');
   $r = spike_core($apiBase, $model, 'Beschreibe in einem Satz, was auf dem Bild zu sehen ist. '
-    . 'Schreibe danach woertlich auf, was in der Aufnahme gesagt wird.',
-    [base64_encode((string)file_get_contents($frame)), base64_encode((string)file_get_contents($clip))]);
+    . 'Schreibe danach woertlich auf, was in der Aufnahme gesagt wird.', [$b64($frame), $b64($clip)], $personaNoThink);
   $results['cases'][] = ['name'=>'bild_und_ton'] + $r;
   spike_case_log('bild_und_ton', $r);
 }
 
-// --- Thinking and live reply (P20.4) ----------------------------------------
-// Same clip as ok_15s: once without <|think|> for the transcript, then a short
-// spoken-style reply with and without thinking.
-$compareSec = in_array(15, $durations, true) ? 15 : ($durations[0] ?? 15);
-$results['compare_seconds'] = $compareSec;
-$compareClip = $clipOf($compareSec);
-$livePrompt = coreui_voice_attachment_hint($compareSec) . "\nDas ist eine Sprachnachricht an dich. "
-  . 'Antworte so, wie du im Gespraech antworten wuerdest: kurz und natuerlich, hoechstens drei Saetze.';
-if ($compareClip === null) {
-  spike_log('Vergleich ohne Denken uebersprungen: kein Clip.');
-} elseif ($noThinkSystem === null) {
-  spike_log('Vergleich ohne Denken uebersprungen: der Core hat keinen SYSTEM-Text im Modelfile.');
-} else {
-  $audio = [base64_encode((string)file_get_contents($compareClip))];
-  foreach ([
-    ['mitschrift_ohne_denken', $prompt, $noThinkSystem],
-    ['live_mit_denken', $livePrompt, null],
-    ['live_ohne_denken', $livePrompt, $noThinkSystem],
-  ] as [$name, $p, $sys]) {
-    spike_log("Fall {$name} ({$compareSec} s) ...");
-    $r = spike_core($apiBase, $model, $p, $audio, $sys);
-    $results['cases'][] = ['name'=>$name, 'group'=>'compare'] + $r;
-    spike_case_log($name, $r);
+// --- Short clips: which way of asking hears them reliably? -----------------
+// 3 and 5 s were missed in 11 of 20 runs on 28.10.2026 (persona, old prompt).
+$variants = [
+  'bisher'         => fn(int $s): array => [$prompt, $clipOf($s), $personaNoThink, []],
+  'vorlage'        => fn(int $s): array => [$template, $clipOf($s), $neutral, []],
+  'vorlage_stille' => fn(int $s): array => [$template, $paddedOf($s), $neutral, []],
+  'vorlage_temp0'  => fn(int $s): array => [$template, $clipOf($s), $neutral, ['temperature'=>0]],
+];
+for ($i = 1; $i <= $repeat; $i++) {
+  foreach ($shortClips as $sec) {
+    foreach ($variants as $variant => $build) {
+      [$p, $file, $sys, $options] = $build($sec);
+      if ($file === null) continue;
+      $name = "kurz_{$sec}s_{$variant}_{$i}";
+      $r = spike_core($apiBase, $model, $p, [$b64($file)], $sys, false, $options);
+      $results['cases'][] = ['name'=>$name, 'group'=>'short', 'seconds'=>$sec, 'variant'=>$variant] + $r;
+      spike_case_log($name, $r);
+    }
   }
 }
 
-// --- Short clips: does Core notice the recording? ---------------------------
-// A 5 s clip was once answered with "Bitte stellen Sie die Aufnahme zur
-// Verfuegung"; each length runs with and without naming the attachment.
-foreach ($shortClips as $sec) {
-  $short = $repeat > 0 ? $clipOf($sec) : null;
-  if ($short === null) continue;
-  $audio = [base64_encode((string)file_get_contents($short))];
-  for ($i = 1; $i <= $repeat; $i++) {
-    foreach (['ohne_hinweis'=>$prompt, 'mit_hinweis'=>coreui_voice_attachment_hint($sec) . "\n" . $prompt] as $variant => $p) {
-      $name = "kurz_{$sec}s_{$variant}_{$i}";
-      $r = spike_core($apiBase, $model, $p, $audio);
-      $missed = coreui_voice_missed_audio($r['text']);
-      $results['cases'][] = ['name'=>$name, 'group'=>'short', 'seconds'=>$sec, 'variant'=>$variant, 'missed'=>$missed] + $r;
-      spike_case_log($name . ($missed ? ' (Audio uebersehen)' : ''), $r);
-    }
+// --- Live reply (P20.4) ------------------------------------------------------
+$liveSec = in_array(15, $durations, true) ? 15 : ($durations[0] ?? 15);
+$results['live_seconds'] = $liveSec;
+$liveClip = $clipOf($liveSec);
+$liveAsk = 'Antworte so, wie du im Gespraech antworten wuerdest: kurz und natuerlich, hoechstens drei Saetze. '
+  . 'Antworte direkt, ohne vorangestellte Analyse.';
+$liveAudioPrompt = coreui_voice_attachment_hint($liveSec) . "\nDas ist eine Sprachnachricht an dich. " . $liveAsk;
+if ($liveClip !== null) {
+  $audio = [$b64($liveClip)];
+  // think=true: the gemma4 renderer adds <|think|> itself (the switch in the chat).
+  foreach ([['live_mit_denken', null, true], ['live_einstufig', $personaNoThink, false],
+            ['live_einstufig_2', $personaNoThink, false]] as [$name, $sys, $think]) {
+    $r = spike_core($apiBase, $model, $liveAudioPrompt, $audio, $sys, $think);
+    $results['cases'][] = ['name'=>$name, 'group'=>'live', 'steps_s'=>null] + $r;
+    spike_case_log($name, $r);
   }
+  // Two steps: transcript with the template, then Mara answers the text.
+  $step1 = spike_core($apiBase, $model, $template, $audio, $neutral);
+  $heard = trim($step1['text']);
+  $step2 = spike_core($apiBase, $model, "Sprachnachricht an dich (Mitschrift): \"{$heard}\"\n" . $liveAsk, [], $personaNoThink);
+  $sentence = $step2['first_sentence_s'] !== null ? round($step1['wall_s'] + $step2['first_sentence_s'], 2) : null;
+  $first = $step2['first_answer_s'] !== null ? round($step1['wall_s'] + $step2['first_answer_s'], 2) : null;
+  $results['cases'][] = ['name'=>'live_zweistufig', 'group'=>'live', 'steps_s'=>[$step1['wall_s'], $step2['wall_s']],
+    'transcript'=>$heard] + array_merge($step2, ['first_answer_s'=>$first, 'first_sentence_s'=>$sentence,
+    'wall_s'=>round($step1['wall_s'] + $step2['wall_s'], 2), 'kind'=>$step1['kind']]);
+  spike_case_log('live_zweistufig', $step2);
 }
 
 // --- TTS and image timings from media-spike.sh ------------------------------
@@ -327,11 +369,15 @@ $byName = static function (string $name) use (&$results): ?array {
   foreach ($results['cases'] as $c) if ($c['name'] === $name) return $c;
   return null;
 };
+$avg = static function (array $cases, string $key): ?float {
+  $v = array_values(array_filter(array_map(static fn(array $c) => $c[$key] ?? null, $cases), static fn($x) => $x !== null));
+  return $v ? round(array_sum($v) / count($v), 1) : null;
+};
 $okCases = array_values(array_filter($results['cases'], static fn(array $c): bool =>
   str_starts_with($c['name'], 'ok_') && ($c['http'] ?? 0) === 200 && is_array($c['wav'] ?? null)));
+usort($okCases, static fn(array $a, array $b): int => $a['wav']['seconds'] <=> $b['wav']['seconds']);
 $summary = [];
 if (count($okCases) >= 2) {
-  usort($okCases, static fn(array $a, array $b): int => $a['wav']['seconds'] <=> $b['wav']['seconds']);
   $first = $okCases[0];
   $last = $okCases[count($okCases) - 1];
   $span = $last['wav']['seconds'] - $first['wav']['seconds'];
@@ -352,13 +398,16 @@ $summary['output_tokens_per_s'] = $rates($results['cases'], 'output_tokens', 'ev
 $summary['reloads'] = array_values(array_map(static fn(array $c): string => "{$c['name']} ({$c['load_s']} s)",
   array_filter($results['cases'], static fn(array $c): bool => (float)($c['load_s'] ?? 0) > 2.0)));
 $summary['short'] = [];
-foreach ($results['cases'] as $c) {
-  if (($c['group'] ?? '') !== 'short') continue;
-  $key = "{$c['seconds']} s " . ($c['variant'] === 'mit_hinweis' ? 'mit Hinweis' : 'ohne Hinweis');
-  $summary['short'][$key] ??= ['missed'=>0, 'runs'=>0];
-  $summary['short'][$key]['runs']++;
-  if (!empty($c['missed'])) $summary['short'][$key]['missed']++;
+foreach (array_keys($variants) as $variant) {
+  $rows = array_values(array_filter($results['cases'], static fn(array $c): bool =>
+    ($c['group'] ?? '') === 'short' && $c['variant'] === $variant));
+  if (!$rows) continue;
+  $count = static fn(string $kind): int => count(array_filter($rows, static fn(array $c): bool => $c['kind'] === $kind));
+  $summary['short'][$variant] = ['runs'=>count($rows), 'heard'=>$count('heard'), 'missed'=>$count('missed'),
+    'silence'=>$count('silence'), 'wall_s'=>$avg($rows, 'wall_s'), 'first_s'=>$avg($rows, 'first_answer_s')];
 }
+$liveThink = $byName('live_mit_denken');
+$summary['think_switch'] = $liveThink === null ? null : (int)$liveThink['thinking_chars'] > 0;
 $results['summary'] = $summary;
 file_put_contents($out . '/results.json', json_encode($results, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
 
@@ -366,71 +415,71 @@ file_put_contents($out . '/results.json', json_encode($results, JSON_PRETTY_PRIN
 $md = "# CoreAI P20.0 Medien-Test\n\n- Zeit: {$results['started']} bis {$results['finished']}\n"
   . "- Core: `{$model}`, Ollama {$results['ollama_version']}\n- ffmpeg: {$results['ffmpeg']}\n"
   . "- Testaufnahme: {$results['source']}\n"
-  . "- Modelfile-SYSTEM: {$results['system']['chars']} Zeichen, Denk-Schalter <|think|>: "
-  . ($results['system']['has_think'] ? 'ja' : 'nein') . "\n\n## Kurzfassung\n\n";
+  . "- Modelfile-SYSTEM: {$results['system']['chars']} Zeichen, festes <|think|>: "
+  . ($hasThinkToken ? 'ja (Core vor 0.5.75 erstellt: ollama create ausfuehren)' : 'nein') . "\n\n## Kurzfassung\n\n";
+if ($summary['think_switch'] !== null) {
+  $md .= '- Denkschalter: think=true liefert ' . ($summary['think_switch']
+    ? "Denken ({$liveThink['thinking_chars']} Zeichen), der Schalter wirkt." : 'kein Denken, der Schalter wirkt nicht.') . "\n";
+}
 if (isset($summary['audio_tokens_per_s'])) $md .= "- Audio kostet {$de($summary['audio_tokens_per_s'])} Tokens pro Sekunde.\n";
 $md .= "- Einlesen: {$de($summary['prompt_tokens_per_s'])} Tokens pro Sekunde, Ausgabe: {$de($summary['output_tokens_per_s'])} Tokens pro Sekunde.\n"
   . "- Kaltstart beim Aufwaermen: {$de($results['warmup']['load_s'])} s. Neu geladen waehrend des Tests: "
   . ($summary['reloads'] ? implode(', ', $summary['reloads']) : 'nie') . ".\n";
-$ref = $byName("ok_{$compareSec}s");
-$plain = $byName('mitschrift_ohne_denken');
-if ($ref !== null && $plain !== null) {
-  $md .= "- Mitschrift {$compareSec} s mit Denken: erstes Wort nach {$de($ref['first_answer_s'])} s, {$de($ref['output_tokens'])} Ausgabe-Tokens; "
-    . "ohne Denken: nach {$de($plain['first_answer_s'])} s, {$de($plain['output_tokens'])} Ausgabe-Tokens.\n";
-}
-$liveThink = $byName('live_mit_denken');
-$liveFast = $byName('live_ohne_denken');
-if ($liveThink !== null && $liveFast !== null) {
-  $md .= "- Live-Antwort auf {$compareSec} s: erster Satz mit Denken nach {$de($liveThink['first_sentence_s'])} s, "
-    . "ohne Denken nach {$de($liveFast['first_sentence_s'])} s.\n";
-}
-foreach ($summary['short'] as $key => $s) {
-  $md .= "- Kurze Aufnahme {$key}: Audio {$s['missed']} von {$s['runs']} Mal uebersehen.\n";
+
+if ($summary['short']) {
+  $md .= "\n### Kurze Aufnahmen (" . implode(' und ', array_map(static fn(int $s): string => "{$s} s", $shortClips))
+    . ", je {$repeat}x)\n\n| Variante | Erkannt | Keine Aufnahme | Keine Sprache | Gesamt s (Mittel) | Erstes Wort s |\n|---|---|---|---|---|---|\n";
+  foreach ($summary['short'] as $variant => $s) {
+    $md .= "| {$variant} | {$s['heard']} von {$s['runs']} | {$s['missed']} | {$s['silence']} | {$de($s['wall_s'])} | {$de($s['first_s'])} |\n";
+  }
+  $md .= "\nbisher: Maras Persona mit dem alten Auftrag. vorlage: Googles Transkriptionsvorlage mit neutralem SYSTEM-Text. "
+    . "stille: 1 s Stille davor. temp0: temperature 0 (nur in diesem Test).\n";
 }
 
-$md .= "\n## Faehigkeiten laut /api/show\n\n| Core | Groesse | Quant. | Digest | GB | capabilities |\n|---|---|---|---|---|---|\n";
-foreach ($results['capabilities'] as $name => $c) {
-  $md .= "| `{$name}` | {$c['parameter_size']} | {$c['quantization']} | {$c['digest']} | {$de($c['size_gb'])} | "
-    . json_encode($c['capabilities']) . " |\n";
+$live = array_values(array_filter($results['cases'], static fn(array $c): bool => ($c['group'] ?? '') === 'live'));
+if ($live) {
+  $md .= "\n### Live-Antwort auf {$liveSec} s\n\n| Weg | Erstes Wort s | Erster gesprochener Satz s | Gesamt s | Antwort |\n|---|---|---|---|---|\n";
+  foreach ($live as $c) {
+    $md .= "| {$c['name']} | {$cell($c['first_answer_s'])} | {$cell($c['first_sentence_s'])} | {$cell($c['wall_s'])} | "
+      . $cell(mb_substr(trim(ember_strip_leading_bracket_meta($c['text'])), 0, 160)) . " |\n";
+  }
+  $two = $byName('live_zweistufig');
+  if ($two !== null) {
+    $md .= "\nzweistufig: Mitschrift {$de($two['steps_s'][0])} s, dann Antwort {$de($two['steps_s'][1])} s. "
+      . 'Gehoert: "' . $cell(mb_substr($two['transcript'], 0, 160)) . "\"\n";
+  }
 }
-$w = $results['warmup'];
-$md .= "\nAufwaermen: HTTP {$w['http']}, {$w['wall_s']} s, Laden {$w['load_s']} s\n\n## Audio\n\n"
-  . "| Fall | Datei | Pruefung | HTTP | Laden s | Eingabe s | Erstes Wort s | Gesamt s | Tokens ein/aus | Denken Zeichen | Fehler | Antwort (Anfang) |\n"
-  . "|---|---|---|---|---|---|---|---|---|---|---|---|\n";
+
+$md .= "\n## Lange Aufnahmen\n\n| Fall | Datei | Pruefung | HTTP | Laden s | Eingabe s | Erstes Wort s | Gesamt s | Tokens ein/aus | Ergebnis | Antwort (Anfang) |\n"
+  . "|---|---|---|---|---|---|---|---|---|---|---|\n";
 foreach ($results['cases'] as $c) {
-  if (isset($c['group'])) continue;
+  if (isset($c['group']) && $c['group'] !== 'long') continue;
   $wav = is_array($c['wav'] ?? null) ? "{$c['wav']['seconds']} s, {$c['wav']['bits']} Bit, {$c['wav']['sample_rate']} Hz, {$c['wav']['channels']} Kan." : '';
   $check = isset($c['wav']) || array_key_exists('check', $c) ? (($c['check'] ?? '') ?: 'passt') : '';
   $md .= "| {$c['name']} | {$wav} | {$check} | " . $cell($c['http'] ?? '') . ' | ' . $cell($c['load_s'] ?? '')
     . ' | ' . $cell($c['prompt_eval_s'] ?? '') . ' | ' . $cell($c['first_answer_s'] ?? '') . ' | ' . $cell($c['wall_s'] ?? '')
-    . ' | ' . $cell($c['prompt_tokens'] ?? '') . '/' . $cell($c['output_tokens'] ?? '') . ' | ' . $cell($c['thinking_chars'] ?? '')
-    . ' | ' . $cell($c['error'] ?? '') . ' | ' . $cell(mb_substr((string)($c['text'] ?? ''), 0, 120)) . " |\n";
+    . ' | ' . $cell($c['prompt_tokens'] ?? '') . '/' . $cell($c['output_tokens'] ?? '') . ' | '
+    . $cell(($c['error'] ?? '') !== '' ? $c['error'] : ($c['kind'] ?? '')) . ' | ' . $cell(mb_substr((string)($c['text'] ?? ''), 0, 100)) . " |\n";
 }
-
-$compare = array_values(array_filter($results['cases'], static fn(array $c): bool => ($c['group'] ?? '') === 'compare'));
-if ($compare) {
-  $md .= "\n## Denken und Live-Antwort ({$compareSec} s)\n\n"
-    . "| Fall | Laden s | Eingabe s | Erstes Wort s | Erster Satz s | Gesamt s | Tokens aus | Denken Zeichen | Antwort |\n|---|---|---|---|---|---|---|---|---|\n";
-  foreach (array_merge($ref !== null ? [$ref] : [], $compare) as $c) {
-    $md .= "| {$c['name']} | " . $cell($c['load_s']) . ' | ' . $cell($c['prompt_eval_s']) . ' | ' . $cell($c['first_answer_s'])
-      . ' | ' . $cell($c['first_sentence_s']) . ' | ' . $cell($c['wall_s']) . ' | ' . $cell($c['output_tokens'])
-      . ' | ' . $cell($c['thinking_chars']) . ' | '
-      . $cell(str_starts_with($c['name'], 'live_') ? $c['text'] : mb_substr($c['text'], 0, 120)) . " |\n";
-  }
-}
-
-$shortRows = array_values(array_filter($results['cases'], static fn(array $c): bool => ($c['group'] ?? '') === 'short'));
-if ($shortRows) {
-  $md .= "\n## Kurze Aufnahmen\n\n| Fall | Gesamt s | Tokens aus | Audio uebersehen | Antwort (Anfang) |\n|---|---|---|---|---|\n";
-  foreach ($shortRows as $c) {
-    $md .= "| {$c['name']} | " . $cell($c['wall_s']) . ' | ' . $cell($c['output_tokens']) . ' | '
-      . ($c['missed'] ? 'ja' : 'nein') . ' | ' . $cell(mb_substr($c['text'], 0, 80)) . " |\n";
-  }
-}
-
 if ($okCases) {
   $longest = $okCases[count($okCases) - 1];
-  $md .= "\n## Vollstaendige Mitschrift ({$longest['name']})\n\n" . trim($longest['text']) . "\n";
+  $sec = (int)round((float)$longest['wav']['seconds']);
+  $md .= "\n### Vollstaendige Mitschrift {$sec} s, bisher\n\n" . trim($longest['text']) . "\n";
+  $tpl = $byName("vorlage_{$sec}s");
+  if ($tpl !== null) $md .= "\n### Vollstaendige Mitschrift {$sec} s, vorlage\n\n" . trim($tpl['text']) . "\n";
+}
+
+$failures = array_values(array_filter($results['cases'], static fn(array $c): bool =>
+  ($c['group'] ?? '') === 'short' && $c['kind'] !== 'heard'));
+if ($failures) {
+  $md .= "\n## Fehlantworten kurzer Aufnahmen\n\n";
+  foreach ($failures as $c) $md .= "- {$c['name']}: " . $cell(mb_substr($c['text'], 0, 90)) . "\n";
+}
+
+$md .= "\n## Faehigkeiten laut /api/show\n\n| Core | Groesse | Quant. | Gewichte | GB | capabilities |\n|---|---|---|---|---|---|\n";
+foreach ($results['capabilities'] as $name => $c) {
+  $md .= "| `{$name}` | {$c['parameter_size']} | {$c['quantization']} | {$c['weights']} | {$de($c['size_gb'])} | "
+    . json_encode($c['capabilities']) . " |\n";
 }
 if ($results['tts']) {
   $md .= "\n## Sprachausgabe (TTS)\n\n| Kandidat | Kerne | Satz | Rechenzeit s | Audio s | Echtzeitfaktor | max. RAM MB |\n|---|---|---|---|---|---|---|\n";
