@@ -756,11 +756,8 @@ if command -v php >/dev/null 2>&1; then
       fail 'Migration 012: Ereignistabelle fehlt.'
     fi
 
-    if php -r "require '$PROJECT_ROOT/api/db.php'; require '$PROJECT_ROOT/api/skills.php'; exit(coreui_skills_schema_ready(stu_pdo()) ? 0 : 1);" >/dev/null 2>&1; then
-      ok 'Migration 014: kontobezogene Skills bereit.'
-    else
-      fail 'Migration 014: Skills-Tabelle fehlt.'
-    fi
+    # Since 0.5.80 skills use the repository library, not per-account DB switches.
+    # Keep migration 014 as history; skills-selftest.php checks the current path.
 
     if COREUI_PREFLIGHT_ROOT="$PROJECT_ROOT" php -r '
       require getenv("COREUI_PREFLIGHT_ROOT") . "/api/db.php";

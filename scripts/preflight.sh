@@ -507,13 +507,9 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail 'Migration 012 fehlt. Fuehre scripts/stack.sh migrate aus.'
   fi
 
-  if compose exec -T php php -r \
-      'require "/var/www/coreui/api/db.php"; require "/var/www/coreui/api/skills.php"; exit(coreui_skills_schema_ready(stu_pdo()) ? 0 : 1);' \
-      >/dev/null 2>&1; then
-    ok 'Migration 014: kontobezogene Skills bereit.'
-  else
-    fail 'Migration 014 fehlt. Fuehre scripts/stack.sh migrate aus.'
-  fi
+  # Since 0.5.80 skills use the repository library, not per-account DB switches.
+  # Migration 014 remains in the migration history; skills-selftest.php below
+  # validates the current library and work-loop integration.
 
   if compose exec -T php php -r \
       'require "/var/www/coreui/api/db.php"; $p=stu_pdo(); $t=$p->query("SELECT DATA_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=\"stu_chat_messages\" AND COLUMN_NAME=\"message\"")->fetchColumn(); exit(strtolower((string)$t)==="longtext" ? 0 : 1);' \
@@ -1100,3 +1096,4 @@ if (( FAILURES > 0 )); then
 fi
 
 printf '\nPreflight erfolgreich. CoreAI: TCI Interface laeuft im isolierten Parallelmodus.\n'
+
