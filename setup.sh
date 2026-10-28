@@ -156,6 +156,16 @@ rsync -a \
   --exclude='assets/profile_photos/' \
   "$SOURCE_DIR/" "$TARGET_DIR/"
 
+# rsync deliberately preserves local files. Remove only these retired source
+# files, and only when absent from the selected checkout (also on repeated runs).
+# Never use --delete here: operator files and persistent data must survive.
+for obsolete in api/user_skills.php js/skills-settings.js \
+    scripts/skills-ui-selftest.cjs css/admin.css; do
+  if [[ ! -e "$SOURCE_DIR/$obsolete" && ! -L "$SOURCE_DIR/$obsolete" ]]; then
+    rm -f -- "$TARGET_DIR/$obsolete"
+  fi
+done
+
 # Exakte Altlasten aus versehentlichen Alpha-Paketen entfernen. Andere Dateien
 # im docs-Verzeichnis bleiben unangetastet.
 rm -f -- \
@@ -190,3 +200,4 @@ else
   rm -f -- "$TARGET_DIR/var/dev_source_commit"
   log "Archiviertes historisches E.M.B.E.R. CoreUI Release ${ARCHIVED_RELEASE_VERSION} wurde geprueft installiert."
 fi
+

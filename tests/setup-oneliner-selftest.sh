@@ -120,7 +120,18 @@ printf '%s\n' 'custom config' > "$TARGET/api/config.local.php"
 printf '%s\n' 'operator data' > "$TARGET/uploads/user.txt"
 printf '%s\n' 'older code' > "$TARGET/api/chat.php"
 printf '%s\n' 'file creation fixed' > "$WORK/fixture/api/chat.php"
+mkdir -p "$TARGET/js" "$TARGET/css" "$TARGET/skills/operator-skill"
+for obsolete in api/user_skills.php js/skills-settings.js scripts/skills-ui-selftest.cjs css/admin.css; do
+  printf '%s\n' 'obsolete source from previous version' > "$TARGET/$obsolete"
+done
+printf '%s\n' 'operator extension' > "$TARGET/api/operator.php"
+printf '%s\n' 'operator skill' > "$TARGET/skills/operator-skill/SKILL.md"
 "$WORK/setup.sh" > "$WORK/update.log"
+for obsolete in api/user_skills.php js/skills-settings.js scripts/skills-ui-selftest.cjs css/admin.css; do
+  [[ ! -e "$TARGET/$obsolete" ]]
+done
+[[ "$(cat "$TARGET/api/operator.php")" == 'operator extension' ]]
+[[ "$(cat "$TARGET/skills/operator-skill/SKILL.md")" == 'operator skill' ]]
 [[ "$(cat "$TARGET/api/chat.php")" == 'file creation fixed' ]]
 [[ "$(cat "$TARGET/api/config.local.php")" == 'custom config' ]]
 [[ "$(cat "$TARGET/var/sessions.txt")" == 'account memory' ]]
@@ -130,16 +141,26 @@ printf '%s\n' 'file creation fixed' > "$WORK/fixture/api/chat.php"
 [[ "$(cat "$TARGET/var/dev_source_commit")" == '0000000000000000000000000000000000000007' ]]
 
 # Broken git input must abort before modifying an installation.
+printf '%s\n' 'must survive failed fetch' > "$TARGET/api/user_skills.php"
 if FAKE_FAIL_GIT=1 "$WORK/setup.sh" > "$WORK/failure.log" 2>&1; then
   echo 'FAIL: failing GitHub fetch was not rejected' >&2
   exit 51
 fi
 [[ "$(cat "$TARGET/api/chat.php")" == 'file creation fixed' ]]
+[[ "$(cat "$TARGET/api/user_skills.php")" == 'must survive failed fetch' ]]
+
+# Retrying the update cleans stale files and remains safe when already clean.
+"$WORK/setup.sh" > "$WORK/retry.log"
+"$WORK/setup.sh" > "$WORK/repeat.log"
+[[ ! -e "$TARGET/api/user_skills.php" ]]
+[[ "$(cat "$TARGET/api/config.local.php")" == 'custom config' ]]
 
 # Explicit pinned-release fallback is still verified by its original ZIP/SHA pair.
 mkdir -p "$WORK/package/EMBER_COREUI_0_5_3_ALPHA"
 cp -a "$WORK/fixture/." "$WORK/package/EMBER_COREUI_0_5_3_ALPHA/"
 printf '%s\n' '0.5.3-alpha' > "$WORK/package/EMBER_COREUI_0_5_3_ALPHA/VERSION"
+# Cleanup must not remove a file shipped by the selected source itself.
+printf '%s\n' 'selected source owns this file' > "$WORK/package/EMBER_COREUI_0_5_3_ALPHA/api/user_skills.php"
 (cd "$WORK/package" && zip -qr "$FAKE_ARCHIVE" EMBER_COREUI_0_5_3_ALPHA)
 (cd "$WORK" && sha256sum EMBER_COREUI_0_5_3_ALPHA.zip > EMBER_COREUI_0_5_3_ALPHA.zip.sha256)
 COREUI_SETUP_SOURCE=release "$WORK/setup.sh" > "$WORK/release.log"
@@ -147,6 +168,7 @@ COREUI_SETUP_SOURCE=release "$WORK/setup.sh" > "$WORK/release.log"
 [[ "$(cat "$TARGET/var/sessions.txt")" == 'account memory' ]]
 [[ "$(cat "$TARGET/api/config.local.php")" == 'custom config' ]]
 grep -q 'EMBER_COREUI_0_5_3_ALPHA.zip: OK' "$WORK/release.log"
+[[ "$(cat "$TARGET/api/user_skills.php")" == 'selected source owns this file' ]]
 
 # A failed checksum must never modify an existing installation.
 printf '%s\n' 'broken checksum' > "$FAKE_SUM"
@@ -162,4 +184,11 @@ if COREUI_SETUP_SOURCE='untrusted' "$WORK/setup.sh" > "$WORK/invalid.log" 2>&1; 
   exit 52
 fi
 
-echo 'PASS: unchanged one-liner, readable main checkout mask, safe update, failed fetch, pinned fallback, invalid mode'
+# Both preflights must use the current skills test, never the removed DB helper.
+for preflight in scripts/preflight.sh scripts/preflight-native.sh; do
+  ! grep -Fq 'coreui_skills_schema_ready' "$ROOT/$preflight"
+  grep -Fq 'scripts/skills-selftest.php' "$ROOT/$preflight"
+done
+
+echo 'PASS: one-liner, safe update, retired files, retries, local data, failed fetch, pinned fallback, current skills checks'
+
