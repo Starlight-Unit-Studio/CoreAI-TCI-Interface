@@ -7,9 +7,11 @@
    server decides, see coreui_core_label). The technical names live in the
    legend next to the chip, together with formatting and commands.
    The list keeps a fixed order (Schnell, Normal, Plus, Pro, Premium, then
-   Cores with their own name). Installed Cores carry a green dot; a missing
-   local tier stays greyed but opens the install window
-   (coreui-core-install.js). */
+   Cores with their own name), one row per tier: a tier that also runs in
+   the cloud gets a Lokal/Cloud switch in its row. Installed Cores carry a
+   green dot; a missing local tier stays greyed but opens the install window
+   (coreui-core-install.js). Admins find "Cores verwalten" (updates) below
+   the list. */
 (function () {
   'use strict';
 
@@ -59,9 +61,10 @@
     var legendBtn = doc.getElementById('coreLegendBtn');
     var legend = doc.getElementById('coreLegend');
     var legendRows = doc.getElementById('coreLegendRows');
+    var manageBtn = doc.getElementById('coreModeManage');
     var state = {thinking: true, override: '', defaultModel: '', defaultLabel: '', labels: {}, csrf: '',
       loaded: false, saving: false, models: null, inMemory: [], loading: '', polls: 0, listError: false,
-      missing: [], install: null, mara: {}};
+      missing: [], install: null, mara: {}, admin: false};
 
     function effective() { return state.override || state.defaultModel; }
     function labelOf(name) {
@@ -148,6 +151,54 @@
       return button;
     }
 
+    function item(child) {
+      var wrap = doc.createElement('div');
+      wrap.className = 'core-mode-item';
+      wrap.appendChild(child);
+      return wrap;
+    }
+
+    // Lokal/Cloud switch of a tier row. A missing local Core is greyed and
+    // opens the install window.
+    function variants(label, local, cloud, useCloud, miss) {
+      var group = doc.createElement('div');
+      group.className = 'core-mode-variants';
+      group.setAttribute('role', 'group');
+      group.setAttribute('aria-label', shortLabel(label) + ': lokal oder in der Cloud');
+      [['Lokal', local, !useCloud], ['Cloud', cloud, useCloud]].forEach(function (v) {
+        var button = doc.createElement('button');
+        button.type = 'button';
+        button.className = 'core-mode-variant';
+        button.textContent = v[0];
+        button.setAttribute('aria-pressed', v[2] ? 'true' : 'false');
+        if (v[1] === null) {
+          button.className = 'core-mode-variant core-mode-variant--missing';
+          button.setAttribute('aria-label', 'Lokal nicht installiert. Öffnet die Installation.');
+          button.disabled = !miss;
+        } else {
+          button.setAttribute('aria-label', shortLabel(label) + (v[0] === 'Lokal' ? ' lokal' : ' in der Cloud'));
+          button.disabled = state.saving;
+        }
+        button.addEventListener('click', function (event) {
+          if (event && typeof event.stopPropagation === 'function') event.stopPropagation();
+          if (v[1] === null) return miss ? openInstall(miss.tier) : Promise.resolve();
+          return choose(v[1]);
+        });
+        group.appendChild(button);
+      });
+      return group;
+    }
+
+    function openManage() {
+      var tool = installer();
+      if (!tool || typeof tool.manage !== 'function') {
+        say('Die Verwaltung ist gerade nicht verfügbar.');
+        return Promise.resolve();
+      }
+      close(false);
+      return Promise.resolve(tool.manage());
+    }
+
     function openInstall(tier) {
       var tool = installer();
       if (!tool || typeof tool.open !== 'function') {
@@ -177,44 +228,61 @@
         list.appendChild(wait);
         if (!state.listError) return;
       }
-      // Fixed order: Schnell to Premium (local, then cloud), then Cores with
-      // their own name. One entry per tier: Mara's own Core is the standard,
-      // her raw base and further variants are listed in the legend; the
-      // current choice is shown in addition.
+      // Fixed order Schnell to Premium, then Cores with their own name. One
+      // row per tier: Mara's own Core is the standard, her raw base and
+      // further variants are listed in the legend. A tier that also runs in
+      // the cloud gets a Lokal/Cloud switch; the row shows the cloud Core
+      // when it is the current choice or the only one.
       var names = (state.models || []).map(function (m) { return String(m && m.name || ''); }).filter(Boolean);
       var tierLabels = TIERS.map(function (t) { return t[1]; });
       var standard = labelOf(state.defaultModel);
       var shown = {};
       var found = state.override === '';
-      function add(value) {
+      function row(value, extra) {
         var core = value || state.defaultModel;
         shown[modelKey(core)] = true;
         if (value === state.override) found = true;
-        list.appendChild(option(value, labelOf(core), metaFor(core, sizeOf(core), value ? '' : 'Standard'), false));
+        var item = doc.createElement('div');
+        item.className = 'core-mode-item';
+        item.appendChild(option(value, labelOf(core), metaFor(core, sizeOf(core), value ? '' : 'Standard'), false));
+        if (extra) item.appendChild(extra);
+        list.appendChild(item);
       }
-      function slot(label, cloud) {
-        var cores = names.filter(function (n) {
+      function cores(label, cloud) {
+        return names.filter(function (n) {
           return isCloud(n) === cloud && labelOf(n) === label && !sameCore(n, state.defaultModel);
         });
-        if (standard === label && isCloud(state.defaultModel) === cloud) add('');
-        else if (cores.length) add(cores.filter(function (n) { return state.mara[modelKey(n)]; })[0] || cores[0]);
-        else return false;
-        cores.forEach(function (n) { if (n === state.override && !shown[modelKey(n)]) add(n); });
-        return true;
+      }
+      // The Core a slot stands for: the standard, Mara's own Core, the first one; null if none.
+      function slot(label, cloud) {
+        if (standard === label && isCloud(state.defaultModel) === cloud) return '';
+        var pool = cores(label, cloud);
+        if (!pool.length) return null;
+        return pool.filter(function (n) { return n === state.override; })[0]
+          || pool.filter(function (n) { return state.mara[modelKey(n)]; })[0] || pool[0];
       }
       TIERS.forEach(function (tier) {
-        if (!slot(tier[1], false)) {
-          var miss = state.missing.filter(function (m) { return m.label === tier[1]; })[0];
-          if (miss) list.appendChild(missingOption(miss));
+        var miss = state.missing.filter(function (m) { return m.label === tier[1]; })[0];
+        var local = slot(tier[1], false);
+        var cloud = slot(tier[1], true);
+        if (local === null && cloud === null) {
+          if (miss) list.appendChild(item(missingOption(miss)));
+          return;
         }
-        slot(tier[1], true);
+        var useCloud = cloud !== null && (local === null || cloud === state.override);
+        row(useCloud ? cloud : local, cloud !== null ? variants(tier[1], local, cloud, useCloud, miss) : null);
+        // A further Core of the same tier chosen elsewhere (KI-Profil) stays visible.
+        cores(tier[1], false).concat(cores(tier[1], true)).forEach(function (n) {
+          if (n === state.override && !shown[modelKey(n)]) row(n, null);
+        });
       });
-      if (tierLabels.indexOf(standard) < 0) add('');
+      if (tierLabels.indexOf(standard) < 0) row('', null);
       names.forEach(function (n) {
-        if (tierLabels.indexOf(labelOf(n)) < 0 && !shown[modelKey(n)] && !sameCore(n, state.defaultModel)) add(n);
+        if (tierLabels.indexOf(labelOf(n)) < 0 && !shown[modelKey(n)] && !sameCore(n, state.defaultModel)) row(n, null);
       });
-      if (!found && state.models !== null) list.appendChild(option(state.override, labelOf(state.override), 'nicht mehr installiert', true));
-      else if (!found) list.appendChild(option(state.override, labelOf(state.override), metaFor(state.override, ''), false));
+      if (!found && state.models !== null) list.appendChild(item(option(state.override, labelOf(state.override), 'nicht mehr installiert', true)));
+      else if (!found) list.appendChild(item(option(state.override, labelOf(state.override), metaFor(state.override, ''), false)));
+      if (manageBtn) manageBtn.hidden = !state.admin;
       renderLegend();
     }
 
@@ -282,6 +350,8 @@
         state.defaultLabel = String(data.default_label || '');
         if (data.core_label) state.labels[modelKey(effective())] = String(data.core_label);
         state.csrf = String(data.csrf_token || '');
+        state.admin = typeof data.permission_level === 'number' && data.permission_level <= 1;
+        if (manageBtn) manageBtn.hidden = !state.admin;
         state.loaded = true;
         say('');
         render();
@@ -425,6 +495,10 @@
       return open();
     });
     if (toggle) toggle.addEventListener('change', function () { return setThinking(toggle.checked); });
+    if (manageBtn) manageBtn.addEventListener('click', function (event) {
+      if (event && typeof event.stopPropagation === 'function') event.stopPropagation();
+      return openManage();
+    });
     if (legendBtn) legendBtn.addEventListener('click', function (event) {
       if (event && typeof event.stopPropagation === 'function') event.stopPropagation();
       if (legendOpen()) { closeLegend(false); return Promise.resolve(); }

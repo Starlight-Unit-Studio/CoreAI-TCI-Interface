@@ -15,7 +15,7 @@
   <meta name="application-name" content="CoreAI: TCI Interface" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface | Quantum Software</title>
-  <link rel="stylesheet" href="./css/console.css?v=0293351552830444370968405" />
+  <link rel="stylesheet" href="./css/console.css?v=0482763606657742683573424" />
   <link rel="stylesheet" href="./css/artifacts.css?v=0620486151135252268178618" />
   <script src="./js/console-gate.js?v=1167305587541147054387411"></script>
   <script src="./js/coreui-preferences.js?v=0408182548343544002678570"></script>
@@ -399,6 +399,7 @@
           <div class="core-mode-list" id="coreModeList" role="radiogroup" aria-labelledby="coreModeListLabel">
             <p class="core-mode-empty">Ollama-Liste wird geladen …</p>
           </div>
+          <button class="core-mode-manage" id="coreModeManage" type="button" hidden>Cores verwalten</button>
         </div>
         <label class="core-mode-row" for="coreThinkToggle">
           <span class="core-mode-copy">
@@ -417,7 +418,7 @@
             <thead><tr><th scope="col">TCI-Name</th><th scope="col">Core</th><th scope="col">Status</th></tr></thead>
             <tbody id="coreLegendRows"></tbody>
           </table>
-          <p class="core-legend-note">Jede Stufe antwortet als Mara. Ein grüner Punkt im Core-Menü heißt installiert und bereit; eine ausgegraute Stufe fehlt noch und lässt sich dort installieren (nur Admins). Cloud-Cores laufen über Ollama in der Cloud.</p>
+          <p class="core-legend-note">Jede Stufe antwortet als Mara. Ein grüner Punkt im Core-Menü heißt installiert und bereit; eine ausgegraute Stufe fehlt noch und lässt sich dort installieren (nur Admins). Gibt es eine Stufe auch in der Cloud, wählst du in ihrer Zeile Lokal oder Cloud. Cloud-Cores laufen über Ollama in der Cloud und brauchen auf dem Server ein Ollama-Konto; Admins verbinden es unter "Cores verwalten".</p>
         </section>
         <section class="core-legend-section" aria-labelledby="coreLegendFormat">
           <h3 id="coreLegendFormat">FORMATIERUNG</h3>
@@ -454,12 +455,16 @@
   <div class="core-install" id="coreInstall" hidden>
     <div class="core-install-panel" role="dialog" aria-modal="true" aria-labelledby="coreInstallTitle" aria-describedby="coreInstallLead">
       <div class="core-install-head">
-        <span class="core-mode-kicker">CORE INSTALLIEREN</span>
+        <span class="core-mode-kicker" id="coreInstallKicker">CORE INSTALLIEREN</span>
         <button class="core-install-x" id="coreInstallClose" type="button" aria-label="Fenster schließen">×</button>
       </div>
       <h3 class="core-install-title" id="coreInstallTitle">Core installieren</h3>
       <p class="core-install-lead" id="coreInstallLead"></p>
       <p class="core-install-tech" id="coreInstallTech"></p>
+      <section class="core-install-tiers" id="coreInstallTiers" aria-labelledby="coreInstallTiersTitle" hidden>
+        <h4 id="coreInstallTiersTitle">STUFEN</h4>
+        <ul class="core-install-tierlist" id="coreInstallTierList"></ul>
+      </section>
       <section class="core-install-check" id="coreInstallCheck" aria-labelledby="coreInstallCheckTitle">
         <h4 id="coreInstallCheckTitle">HARDWARE-CHECK</h4>
         <dl class="core-install-rows" id="coreInstallRows"></dl>
@@ -473,6 +478,39 @@
           aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="coreInstallBar"></i></div>
         <p class="core-install-step" id="coreInstallStep" role="status" aria-live="polite"></p>
       </div>
+      <section class="core-install-maint" id="coreInstallMaint" aria-labelledby="coreInstallMaintTitle" hidden>
+        <h4 id="coreInstallMaintTitle">UPDATES</h4>
+        <label class="core-mode-row" for="coreInstallAuto">
+          <span class="core-mode-copy">
+            <strong>AUTO-UPDATE</strong>
+            <small>Einmal pro Woche prüft Ollama alle lokalen Stufen auf neue Fassungen; Maras Cores werden danach neu gebaut.</small>
+          </span>
+          <span class="settings-switch"><input id="coreInstallAuto" type="checkbox" /><i aria-hidden="true"></i></span>
+        </label>
+        <p class="core-install-update-info" id="coreInstallUpdateInfo"></p>
+        <ul class="core-install-results" id="coreInstallResults" hidden></ul>
+        <div class="core-install-actions core-install-actions--start">
+          <button class="core-install-btn" id="coreInstallUpdateNow" type="button">Jetzt aktualisieren</button>
+          <button class="core-install-btn" id="coreInstallToManage" type="button" hidden>Cores verwalten</button>
+        </div>
+      </section>
+      <section class="core-install-cloud" id="coreInstallCloud" aria-labelledby="coreInstallCloudTitle" hidden>
+        <h4 id="coreInstallCloudTitle">OLLAMA CLOUD</h4>
+        <p class="core-install-update-info">Cloud-Cores laufen auf Ollamas Servern: kein Download, keine Grafikkarte, dafür Internet
+          und ein Ollama-Konto auf diesem Server. Die Registrierung auf ollama.com ist kostenlos; wie viel du nutzen kannst,
+          hängt vom Ollama-Plan ab.</p>
+        <p class="core-install-cloud-state" id="coreInstallCloudState" data-state="" role="status" aria-live="polite"></p>
+        <ol class="core-install-cloud-steps" id="coreInstallCloudSteps" hidden>
+          <li>Auf ollama.com ein Konto anlegen, falls du noch keins hast.</li>
+          <li>"Bei Ollama anmelden" öffnen, einloggen und diesen Server verbinden.</li>
+          <li>Hierher zurückkommen und "Verbindung prüfen" tippen.</li>
+        </ol>
+        <div class="core-install-actions core-install-actions--start">
+          <a class="core-install-btn core-install-btn--go" id="coreInstallCloudLink" href="https://ollama.com" target="_blank"
+            rel="noopener noreferrer" hidden>Bei Ollama anmelden</a>
+          <button class="core-install-btn" id="coreInstallCloudCheck" type="button">Verbindung prüfen</button>
+        </div>
+      </section>
       <p class="core-install-note" id="coreInstallNote" role="status" aria-live="polite"></p>
       <div class="core-install-actions">
         <button class="core-install-btn" id="coreInstallCancel" type="button">Abbrechen</button>
@@ -488,8 +526,8 @@
   <script src="./js/coreui-work-events.js?v=0346522000099481117561694"></script>
   <script src="./js/coreui-net.js?v=0716710642958975802942157"></script>
   <script src="./js/console-app.js?v=0232495144295535980989395"></script>
-  <script src="./js/coreui-core-mode.js?v=0658151770789179186960967"></script>
-  <script src="./js/coreui-core-install.js?v=0070454268904313724079779"></script>
+  <script src="./js/coreui-core-mode.js?v=0162969755017295993434355"></script>
+  <script src="./js/coreui-core-install.js?v=0988252371667851108653431"></script>
   <script src="./js/coreui-artifacts.js?v=1069339270452640197429799"></script>
 </body>
 </html>

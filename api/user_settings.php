@@ -42,14 +42,38 @@ if ($method === 'GET' && (array_key_exists('core_install', $_GET) || array_key_e
   } catch (RuntimeException $e) {
     stu_json(['ok'=>false, 'error'=>$e->getMessage()], 400);
   }
-  stu_json(['ok'=>true, 'check'=>$check, 'can_install'=>$admin,
-    'install'=>coreui_core_install_status(), 'csrf_token'=>$csrf]);
+  stu_json(['ok'=>true, 'check'=>$check, 'can_install'=>$admin, 'install'=>coreui_core_install_status(),
+    'auto'=>$admin ? coreui_core_auto_update($pdo) : null, 'csrf_token'=>$csrf]);
+}
+
+// 0.5.76: Cores verwalten (admins): every tier with its Cores, what an
+// update would touch, the weekly switch and the last job.
+if ($method === 'GET' && array_key_exists('core_manage', $_GET)) {
+  require_once __DIR__ . '/core_install.php';
+  stu_require_permission_at_most(COREUI_CORE_INSTALL_PERMISSION_MAX, $pdo);
+  $csrf = stu_csrf_token();
+  if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
+  try {
+    $models = coreui_ollama_models();
+  } catch (RuntimeException $e) {
+    stu_json(['ok'=>false, 'error'=>$e->getMessage()], 503);
+  }
+  stu_json(['ok'=>true, 'tiers'=>coreui_core_manage_rows($models), 'plan'=>coreui_core_update_plan($models),
+    'auto'=>coreui_core_auto_update($pdo), 'install'=>coreui_core_install_status(), 'csrf_token'=>$csrf]);
+}
+
+// 0.5.76: Ollama Cloud account of the server (admins), like `ollama signin`.
+if ($method === 'GET' && array_key_exists('core_cloud', $_GET)) {
+  require_once __DIR__ . '/core_install.php';
+  stu_require_permission_at_most(COREUI_CORE_INSTALL_PERMISSION_MAX, $pdo);
+  if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
+  stu_json(['ok'=>true, 'cloud'=>coreui_ollama_cloud_status()]);
 }
 
 if ($method === 'GET') {
   $settings = coreui_ai_settings_load($pdo, $uid);
   $defaultModel = defined('STU_EMBER_MODEL') ? (string)STU_EMBER_MODEL : '';
-  stu_json([
+  $payload = [
     'ok' => true,
     'settings' => $settings,
     // 0.5.76: TCI names for the chat chip.
@@ -69,7 +93,26 @@ if ($method === 'GET') {
     'external' => coreui_ai_external_capability($pdo),
     'csrf_token' => stu_csrf_token(),
     'permission_level' => stu_get_permission_level($pdo),
-  ]);
+  ];
+  // 0.5.76: weekly Core update when an admin switched it on. The first page
+  // load after the due date starts it in the background, for any account.
+  require_once __DIR__ . '/core_install.php';
+  if (!coreui_core_auto_update_due(coreui_core_auto_update($pdo), time())) stu_json($payload);
+  stu_app_setting_set($pdo, 'core_update_last', (string)time());
+  try {
+    $lock = coreui_core_install_lock();
+    $plan = $lock === false ? [] : coreui_core_update_plan(coreui_ollama_models());
+  } catch (RuntimeException $e) {
+    $plan = [];
+  }
+  if ($plan === []) {
+    if (!empty($lock)) { flock($lock, LOCK_UN); fclose($lock); }
+    stu_json($payload);
+  }
+  $state = coreui_core_update_begin($plan);
+  coreui_core_job_detach($payload);
+  coreui_core_job_run($lock, 'coreui_core_update_run', $state, $uid);
+  exit;
 }
 
 if ($method !== 'POST') stu_json(['ok' => false, 'error' => 'method_not_allowed'], 405);
@@ -153,24 +196,61 @@ if (($body['action'] ?? '') === 'core_install') {
   }
   if ($lock === false) stu_json(['ok'=>false, 'error'=>'install_running', 'install'=>coreui_core_install_status()], 409);
   $state = coreui_core_install_begin($check);
+  coreui_core_job_detach(['ok'=>true, 'install'=>['running'=>true] + array_diff_key($state, ['layers'=>true])]);
+  coreui_core_job_run($lock, 'coreui_core_install_run', $state, $uid);
+  exit;
+}
+// 0.5.76: add a cloud Core (admins), only with the server's Ollama connected.
+if (($body['action'] ?? '') === 'core_cloud_add') {
+  require_once __DIR__ . '/core_install.php';
+  stu_require_permission_at_most(COREUI_CORE_INSTALL_PERMISSION_MAX, $pdo);
   if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
-  http_response_code(200);
-  header('Content-Type: application/json; charset=utf-8');
-  header('Cache-Control: no-store');
-  echo json_encode(['ok'=>true, 'install'=>['running'=>true] + array_diff_key($state, ['layers'=>true])], JSON_UNESCAPED_UNICODE);
-  if (function_exists('fastcgi_finish_request')) @fastcgi_finish_request();
-  ignore_user_abort(true);
-  @set_time_limit(0);
+  $tier = trim((string)($body['tier'] ?? ''));
+  if (!isset(COREUI_CORE_CLOUD_CATALOG[$tier])) stu_json(['ok'=>false, 'error'=>'unknown_tier'], 400);
   try {
-    coreui_core_install_run($state);
-  } catch (Throwable $e) {
-    coreui_core_install_write(['phase'=>'error', 'error'=>'install_failed',
-      'message'=>'Die Installation ist abgebrochen. Details stehen im Fehlerprotokoll.'] + $state);
-    if (function_exists('stu__log_error')) stu__log_error(['type'=>'core_install_failed', 'uid'=>$uid, 'message'=>$e->getMessage()]);
-  } finally {
-    flock($lock, LOCK_UN);
-    fclose($lock);
+    if (coreui_ollama_model_exists(COREUI_CORE_CLOUD_CATALOG[$tier])) stu_json(['ok'=>false, 'error'=>'already_installed'], 409);
+  } catch (RuntimeException $e) {
+    stu_json(['ok'=>false, 'error'=>$e->getMessage()], 503);
   }
+  if ((coreui_ollama_cloud_status()['account']['state'] ?? '') !== 'connected') {
+    stu_json(['ok'=>false, 'error'=>'cloud_signin_required'], 409);
+  }
+  try {
+    $lock = coreui_core_install_lock();
+  } catch (RuntimeException $e) {
+    stu_json(['ok'=>false, 'error'=>$e->getMessage()], 503);
+  }
+  if ($lock === false) stu_json(['ok'=>false, 'error'=>'install_running', 'install'=>coreui_core_install_status()], 409);
+  $state = coreui_core_cloud_begin($tier);
+  coreui_core_job_detach(['ok'=>true, 'install'=>['running'=>true] + array_diff_key($state, ['layers'=>true])]);
+  coreui_core_job_run($lock, 'coreui_core_install_run', $state, $uid);
+  exit;
+}
+// 0.5.76: weekly update switch (admins).
+if (($body['action'] ?? '') === 'core_auto_update') {
+  require_once __DIR__ . '/core_install.php';
+  stu_require_permission_at_most(COREUI_CORE_INSTALL_PERMISSION_MAX, $pdo);
+  $enabled = filter_var($body['enabled'] ?? null, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+  if ($enabled === null) stu_json(['ok'=>false, 'error'=>'invalid_auto_update'], 400);
+  stu_json(['ok'=>true, 'auto'=>coreui_core_auto_update_set($pdo, $enabled)]);
+}
+// 0.5.76: update every local tier now (admins); same lock as the installer.
+if (($body['action'] ?? '') === 'core_update') {
+  require_once __DIR__ . '/core_install.php';
+  stu_require_permission_at_most(COREUI_CORE_INSTALL_PERMISSION_MAX, $pdo);
+  if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
+  try {
+    $plan = coreui_core_update_plan(coreui_ollama_models());
+    $lock = $plan === [] ? null : coreui_core_install_lock();
+  } catch (RuntimeException $e) {
+    stu_json(['ok'=>false, 'error'=>$e->getMessage()], 503);
+  }
+  if ($plan === []) stu_json(['ok'=>false, 'error'=>'nothing_to_update'], 409);
+  if ($lock === false) stu_json(['ok'=>false, 'error'=>'install_running', 'install'=>coreui_core_install_status()], 409);
+  stu_app_setting_set($pdo, 'core_update_last', (string)time());
+  $state = coreui_core_update_begin($plan);
+  coreui_core_job_detach(['ok'=>true, 'install'=>['running'=>true] + array_diff_key($state, ['layers'=>true, 'plan'=>true])]);
+  coreui_core_job_run($lock, 'coreui_core_update_run', $state, $uid);
   exit;
 }
 // The KI-Profil no longer carries the switch: keep the stored value.

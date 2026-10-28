@@ -15,12 +15,31 @@ declare(strict_types=1);
  * (like the Core preload) and reports into var/cache/core-install.json,
  * which the window polls. Pull and create do not wait in Mara's serial
  * queue: they load nothing into memory.
+ *
+ * Updates (Cores verwalten): Ollama brings new versions of the Gemma tags at
+ * irregular intervals. An update pulls every local base in use again (only
+ * changed layers come down) and rebuilds Mara's Cores on it when the base
+ * changed or their SYSTEM text no longer matches the Modelfile: the
+ * installer's Cores from the template, Mara's own Core from
+ * var/Modelfile.generated, as the normal update does. Weekly on request
+ * (admin switch); the next page load after the due date starts it.
+ *
+ * Ollama Cloud: cloud Cores need the server's Ollama connected to an
+ * ollama.com account. `ollama signin` only asks the local server
+ * (POST /api/me); without an account link it answers with a connect URL on
+ * ollama.com that the admin opens in the browser. CoreAI does the same, so
+ * no terminal and no token are needed. A cloud Core is then added with a
+ * pull (a small stub, nothing is downloaded); it speaks as Mara through the
+ * persona system message (ember_persona_system_for).
  */
 
 require_once __DIR__ . '/model_catalog.php';
 require_once __DIR__ . '/ai_context_estimate.php';
 
 const COREUI_CORE_INSTALL_PERMISSION_MAX = 1; // admin and system admin
+// Cloud variants the installer may add, per tier (ollama.com/library/gemma4).
+const COREUI_CORE_CLOUD_CATALOG = ['premium' => 'gemma4:31b-cloud'];
+const COREUI_OLLAMA_CLOUD_MIN_VERSION = '0.12.0';
 const COREUI_CORE_INSTALL_ACTIVE = ['pull', 'create', 'verify'];
 
 /** Core name for an installed tier: Mara's family with the size as tag, e.g. ember-coreui:12b. */
@@ -206,7 +225,8 @@ function coreui_core_install_check(string $tier, bool $hardware = true): array {
     $installed = false;
   }
   return ['tier'=>$tier, 'label'=>COREUI_CORE_TIER_LABELS[$tier], 'base'=>$entry['base'],
-    'core'=>coreui_core_install_name($tier), 'download_gb'=>$entry['download_gb'], 'installed'=>$installed]
+    'core'=>coreui_core_install_name($tier), 'download_gb'=>$entry['download_gb'], 'installed'=>$installed,
+    'cloud_base'=>COREUI_CORE_CLOUD_CATALOG[$tier] ?? null]
     + ($hardware ? coreui_core_install_verdict(coreui_core_install_hardware(), $entry)
       : ['verdict'=>null, 'blocked'=>false, 'rows'=>[], 'ram_need'=>null]);
 }
@@ -256,17 +276,19 @@ function coreui_core_install_status(): ?array {
   if (!$running && in_array($state['phase'], COREUI_CORE_INSTALL_ACTIVE, true)) {
     $state['phase'] = 'error';
     $state['error'] = 'install_interrupted';
-    $state['message'] = 'Die Installation wurde unterbrochen (Server neu gestartet?). Du kannst sie neu starten.';
+    $state['message'] = (($state['kind'] ?? '') === 'update' ? 'Das Update' : 'Die Installation')
+      . ' wurde unterbrochen (Server neu gestartet?). Du kannst es neu starten.';
   }
-  $public = ['running'=>$running];
-  foreach (['tier', 'label', 'base', 'core', 'phase', 'step', 'completed', 'total', 'percent', 'error', 'message', 'started_at', 'updated_at'] as $key) {
+  $public = ['running'=>$running, 'kind'=>(string)($state['kind'] ?? 'install'), 'cloud'=>!empty($state['cloud'])];
+  foreach (['tier', 'label', 'base', 'core', 'phase', 'step', 'completed', 'total', 'percent', 'error', 'message',
+    'item', 'items', 'results', 'started_at', 'updated_at'] as $key) {
     if (array_key_exists($key, $state)) $public[$key] = $state[$key];
   }
   return $public;
 }
 
 function coreui_core_install_begin(array $check): array {
-  $state = ['tier'=>$check['tier'], 'label'=>$check['label'], 'base'=>$check['base'], 'core'=>$check['core'],
+  $state = ['kind'=>'install', 'tier'=>$check['tier'], 'label'=>$check['label'], 'base'=>$check['base'], 'core'=>$check['core'],
     'phase'=>'pull', 'step'=>'Startet …', 'completed'=>0, 'total'=>0, 'percent'=>0, 'layers'=>[],
     'started_at'=>time()];
   coreui_core_install_write($state);
@@ -375,10 +397,15 @@ function coreui_core_install_post(string $endpoint, array $body, int $timeout): 
   return [$status, is_array($json) ? $json : []];
 }
 
-/** The whole job: pull, create from the template, check the result. */
+/** The whole job: pull, create from the template, check the result. A cloud Core is only pulled. */
 function coreui_core_install_run(array $state): array {
   $state = coreui_core_install_pull($state);
-  if ($state['phase'] !== 'error') {
+  if ($state['phase'] !== 'error' && !empty($state['cloud'])) {
+    $state['phase'] = 'done';
+    $state['step'] = 'Fertig: ' . $state['label'] . ' (Cloud) ist bereit.';
+    $state['percent'] = 100;
+  }
+  if ($state['phase'] !== 'error' && $state['phase'] !== 'done') {
     $state['phase'] = 'create';
     $state['step'] = 'Baut Maras Core aus dem Modelfile …';
     coreui_core_install_write($state);
@@ -414,6 +441,269 @@ function coreui_core_install_run(array $state): array {
     $state['percent'] = 100;
   }
   unset($state['layers'], $state['pulled']);
+  coreui_core_install_write($state);
+  return $state;
+}
+
+// ---- Updates and Cores verwalten ----
+
+const COREUI_CORE_UPDATE_DAYS = 7;
+
+/** Mara's own Modelfile on this server: the installer's generated file, else the template. */
+function coreui_core_mara_modelfile(): string {
+  $root = dirname(__DIR__);
+  foreach ([$root . '/var/Modelfile.generated', $root . '/config/Modelfile.template'] as $file) {
+    $text = is_readable($file) ? (string)@file_get_contents($file) : '';
+    if (trim($text) !== '') return $text;
+  }
+  return '';
+}
+
+/** Models by Ollama key (lower case, ":latest" added) with their manifest digest. */
+function coreui_core_model_index(array $models): array {
+  $index = [];
+  foreach ($models as $m) {
+    $name = (string)(is_array($m) ? ($m['name'] ?? '') : $m);
+    if ($name !== '') $index[coreui_ollama_model_key($name)] = ['name'=>$name, 'digest'=>is_array($m) ? ($m['digest'] ?? null) : null];
+  }
+  return $index;
+}
+
+/**
+ * What an update touches (pure): every local Gemma base in use, once, in tier
+ * order, with Mara's Cores built on it. A tier counts when its base or the
+ * installer's Core exists; Mara's own Core adds the base of her Modelfile.
+ */
+function coreui_core_update_plan(array $models): array {
+  $index = coreui_core_model_index($models);
+  $has = static fn(string $name): bool => isset($index[coreui_ollama_model_key($name)]);
+  $plan = [];
+  foreach (COREUI_CORE_INSTALL_CATALOG as $tier => $entry) {
+    $core = coreui_core_install_name($tier);
+    if (!$has($entry['base']) && !$has($core)) continue;
+    $plan[coreui_ollama_model_key($entry['base'])] = ['base'=>$entry['base'], 'tier'=>$tier,
+      'label'=>COREUI_CORE_TIER_LABELS[$tier], 'cores'=>$has($core) ? [['name'=>$core, 'source'=>'template']] : []];
+  }
+  $default = defined('STU_EMBER_MODEL') ? (string)STU_EMBER_MODEL : 'ember-coreui:latest';
+  $base = coreui_core_mara_base();
+  if ($has($default) && coreui_model_name_valid($base) && !coreui_core_same($base, $default)) {
+    $key = coreui_ollama_model_key($base);
+    $tier = coreui_core_tier($base);
+    $plan[$key] ??= ['base'=>$base, 'tier'=>$tier, 'label'=>$tier !== null ? COREUI_CORE_TIER_LABELS[$tier] : $base, 'cores'=>[]];
+    array_unshift($plan[$key]['cores'], ['name'=>$default, 'source'=>'mara']);
+  }
+  $order = array_flip(array_keys(COREUI_CORE_INSTALL_CATALOG));
+  uasort($plan, static fn(array $a, array $b): int => ($order[$a['tier']] ?? 99) <=> ($order[$b['tier']] ?? 99));
+  return array_values($plan);
+}
+
+/**
+ * Overview for Cores verwalten (pure): every tier with its local and cloud
+ * Cores. Bases that carry the same manifest are one model under several
+ * names (ollama cp): the one Mara's Core is built on (else the first tier)
+ * counts as real, the others as second names; an update then loads the
+ * real tier behind each second name.
+ */
+function coreui_core_manage_rows(array $models): array {
+  $index = coreui_core_model_index($models);
+  $real = [];
+  $maraKey = coreui_ollama_model_key(coreui_core_mara_base());
+  foreach (COREUI_CORE_INSTALL_CATALOG as $entry) {
+    $key = coreui_ollama_model_key($entry['base']);
+    $digest = $index[$key]['digest'] ?? null;
+    if ($digest && (!isset($real[$digest]) || $key === $maraKey)) $real[$digest] = $entry['base'];
+  }
+  $rows = [];
+  foreach (COREUI_CORE_INSTALL_CATALOG as $tier => $entry) {
+    $local = [];
+    $cloud = [];
+    foreach ($index as $m) {
+      if (coreui_core_tier_of($m['name']) !== $tier) continue;
+      if (preg_match('~(?:^|[:._-])cloud(?:$|[:._-])~i', $m['name']) === 1) $cloud[] = $m['name'];
+      else $local[] = $m['name'];
+    }
+    $own = $index[coreui_ollama_model_key($entry['base'])]['digest'] ?? null;
+    $aliasOf = $own && $real[$own] !== $entry['base'] ? $real[$own] : null;
+    $cloudBase = COREUI_CORE_CLOUD_CATALOG[$tier] ?? null;
+    $rows[] = ['tier'=>$tier, 'label'=>COREUI_CORE_TIER_LABELS[$tier], 'base'=>$entry['base'],
+      'download_gb'=>$entry['download_gb'], 'local'=>$local, 'cloud'=>$cloud, 'alias_of'=>$aliasOf,
+      'cloud_base'=>$cloudBase, 'cloud_missing'=>$cloudBase !== null && !isset($index[coreui_ollama_model_key($cloudBase)]),
+      'status'=>$local !== [] ? 'installed' : ($cloud !== [] ? 'cloud' : 'missing')];
+  }
+  return $rows;
+}
+
+function coreui_core_auto_update(PDO $pdo): array {
+  $enabled = stu_app_setting_get($pdo, 'core_auto_update', '0') === '1';
+  $last = (int)stu_app_setting_get($pdo, 'core_update_last', '0');
+  $since = (int)stu_app_setting_get($pdo, 'core_auto_update_since', '0');
+  return ['enabled'=>$enabled, 'last'=>$last > 0 ? $last : null,
+    'next'=>$enabled ? max($last, $since) + COREUI_CORE_UPDATE_DAYS * 86400 : null];
+}
+
+/** Switching on starts the week now; the button updates at once. */
+function coreui_core_auto_update_set(PDO $pdo, bool $on): array {
+  stu_app_setting_set($pdo, 'core_auto_update', $on ? '1' : '0');
+  if ($on) stu_app_setting_set($pdo, 'core_auto_update_since', (string)time());
+  return coreui_core_auto_update($pdo);
+}
+
+function coreui_core_auto_update_due(array $auto, int $now): bool {
+  return $auto['enabled'] === true && $auto['next'] !== null && $now >= (int)$auto['next'];
+}
+
+function coreui_core_update_begin(array $plan): array {
+  $state = ['kind'=>'update', 'tier'=>'', 'label'=>'Update', 'base'=>'', 'core'=>'', 'phase'=>'pull', 'step'=>'Startet …',
+    'completed'=>0, 'total'=>0, 'percent'=>0, 'layers'=>[], 'item'=>0, 'items'=>count($plan), 'plan'=>$plan,
+    'results'=>[], 'started_at'=>time()];
+  coreui_core_install_write($state);
+  return $state;
+}
+
+function coreui_core_digest_of(string $name): ?string {
+  try {
+    $index = coreui_core_model_index(coreui_ollama_models());
+  } catch (RuntimeException $e) {
+    return null;
+  }
+  return $index[coreui_ollama_model_key($name)]['digest'] ?? null;
+}
+
+/** One line per base for the window (pure). */
+function coreui_core_update_summary(array $results): string {
+  $updated = count(array_filter($results, static fn(array $r): bool => $r['result'] === 'updated'));
+  $failed = count(array_filter($results, static fn(array $r): bool => $r['result'] === 'error'));
+  if ($results === []) return 'Es ist keine lokale Stufe installiert, es gab nichts zu aktualisieren.';
+  $text = $updated === 0 ? 'Alle Stufen sind aktuell.'
+    : ($updated === 1 ? 'Eine Stufe hatte eine neue Fassung und wurde neu gebaut.' : $updated . ' Stufen hatten eine neue Fassung und wurden neu gebaut.');
+  return $failed > 0 ? $text . ' ' . ($failed === 1 ? 'Eine Stufe' : $failed . ' Stufen') . ' schlug fehl.' : $text;
+}
+
+/** The whole update: pull each base, rebuild Mara's Cores where needed. */
+function coreui_core_update_run(array $state): array {
+  $template = (string)@file_get_contents(dirname(__DIR__) . '/config/Modelfile.template');
+  $results = [];
+  foreach ($state['plan'] as $i => $item) {
+    $state = ['item'=>$i + 1, 'label'=>$item['label'], 'tier'=>(string)$item['tier'], 'base'=>$item['base'], 'phase'=>'pull',
+      'step'=>'Prüft auf eine neue Fassung …', 'layers'=>[], 'completed'=>0, 'total'=>0, 'percent'=>0, 'results'=>$results]
+      + array_diff_key($state, ['pulled'=>true, 'error'=>true, 'message'=>true]);
+    coreui_core_install_write($state);
+    $before = coreui_core_digest_of($item['base']);
+    $state = coreui_core_install_pull($state);
+    if ($state['phase'] === 'error') {
+      $results[] = ['label'=>$item['label'], 'base'=>$item['base'], 'result'=>'error', 'message'=>(string)$state['message']];
+      continue;
+    }
+    $after = coreui_core_digest_of($item['base']);
+    $changed = $before === null || $after === null || $before !== $after;
+    $rebuilt = [];
+    $failure = '';
+    foreach ($item['cores'] as $core) {
+      try {
+        $text = $core['source'] === 'mara' ? coreui_core_mara_modelfile() : $template;
+        $request = coreui_core_create_request($text, $core['name'], $item['base']);
+      } catch (RuntimeException $e) {
+        $failure = 'Das Modelfile ließ sich nicht lesen (' . $e->getMessage() . ').';
+        continue;
+      }
+      $show = coreui_ollama_read_json('show', ['model'=>$core['name']]);
+      $same = is_array($show) && trim((string)($show['system'] ?? '')) === trim((string)($request['system'] ?? ''));
+      if (!$changed && $same) continue;
+      $state['phase'] = 'create';
+      $state['step'] = 'Baut ' . $core['name'] . ' neu …';
+      coreui_core_install_write($state);
+      [$status, $reply] = coreui_core_install_post('create', $request, 600);
+      $show = coreui_ollama_read_json('show', ['model'=>$core['name']]);
+      if ($status < 200 || $status >= 300 || isset($reply['error'])
+          || !is_array($show) || trim((string)($show['system'] ?? '')) !== trim((string)($request['system'] ?? ''))) {
+        $failure = 'Ollama konnte ' . $core['name'] . ' nicht neu bauen: ' . mb_substr((string)($reply['error'] ?? 'HTTP ' . $status), 0, 160);
+        continue;
+      }
+      $rebuilt[] = $core['name'];
+    }
+    $results[] = ['label'=>$item['label'], 'base'=>$item['base'], 'rebuilt'=>$rebuilt, 'message'=>$failure,
+      'result'=>$failure !== '' ? 'error' : ($changed ? 'updated' : ($rebuilt !== [] ? 'rebuilt' : 'current'))];
+  }
+  $failed = count(array_filter($results, static fn(array $r): bool => $r['result'] === 'error'));
+  $state = ['phase'=>$results !== [] && $failed === count($results) ? 'error' : 'done', 'error'=>$failed > 0 ? 'update_partial' : null,
+    'step'=>'Update fertig.', 'percent'=>100, 'results'=>$results, 'message'=>coreui_core_update_summary($results),
+    'label'=>'Update', 'tier'=>'', 'base'=>''] + $state;
+  unset($state['plan'], $state['layers'], $state['pulled']);
+  coreui_core_install_write($state);
+  return $state;
+}
+
+/** Sends the JSON answer; the job goes on after the browser has it. */
+function coreui_core_job_detach(array $payload): void {
+  if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
+  http_response_code(200);
+  header('Content-Type: application/json; charset=utf-8');
+  header('Cache-Control: no-store');
+  echo json_encode($payload, JSON_UNESCAPED_UNICODE);
+  if (function_exists('fastcgi_finish_request')) @fastcgi_finish_request();
+  ignore_user_abort(true);
+  @set_time_limit(0);
+}
+
+/** Runs an install or update under the held lock and always releases it. */
+function coreui_core_job_run(mixed $lock, callable $job, array $state, int $uid): void {
+  try {
+    $job($state);
+  } catch (Throwable $e) {
+    coreui_core_install_write(['phase'=>'error', 'error'=>'job_failed',
+      'message'=>'Der Auftrag ist abgebrochen. Details stehen im Fehlerprotokoll.'] + $state);
+    if (function_exists('stu__log_error')) stu__log_error(['type'=>'core_job_failed', 'uid'=>$uid, 'message'=>$e->getMessage()]);
+  } finally {
+    flock($lock, LOCK_UN);
+    fclose($lock);
+  }
+}
+
+// ---- Ollama Cloud ----
+
+function coreui_ollama_version_at_least(?string $have, string $min): bool {
+  if ($have === null || preg_match('~^\d+(?:\.\d+){0,2}~', trim($have), $m) !== 1) return false;
+  return version_compare($m[0], $min, '>=');
+}
+
+/** Only Ollama's own connect page may be offered as a link. */
+function coreui_ollama_signin_url_valid(string $url): bool {
+  return preg_match('#^https://ollama\.com/connect\?[A-Za-z0-9._~%&=+-]+$#D', $url) === 1;
+}
+
+/** Reads POST /api/me like `ollama signin` (pure part, for the tests). */
+function coreui_ollama_cloud_account_from(int $status, array $reply): array {
+  if ($status >= 200 && $status < 300 && trim((string)($reply['name'] ?? '')) !== '') {
+    return ['state'=>'connected', 'name'=>mb_substr(trim((string)$reply['name']), 0, 80),
+      'plan'=>mb_substr(trim((string)($reply['plan'] ?? 'free')), 0, 40) ?: 'free'];
+  }
+  if ($status === 401) {
+    $url = (string)($reply['signin_url'] ?? '');
+    return ['state'=>'signed_out', 'signin_url'=>coreui_ollama_signin_url_valid($url) ? $url : null];
+  }
+  if ($status === 404) return ['state'=>'unsupported'];
+  return ['state'=>'unavailable'];
+}
+
+/** Version, account and connect link of the server's Ollama for the cloud section. */
+function coreui_ollama_cloud_status(): array {
+  $version = coreui_ollama_read_json('version');
+  $have = is_array($version) && isset($version['version']) ? (string)$version['version'] : null;
+  $ok = coreui_ollama_version_at_least($have, COREUI_OLLAMA_CLOUD_MIN_VERSION);
+  $account = ['state'=>$have === null ? 'unreachable' : 'unsupported'];
+  if ($ok) {
+    [$status, $reply] = coreui_core_install_post('me', [], 15);
+    $account = coreui_ollama_cloud_account_from($status, $reply);
+  }
+  return ['version'=>$have, 'version_ok'=>$ok, 'min_version'=>COREUI_OLLAMA_CLOUD_MIN_VERSION, 'account'=>$account];
+}
+
+function coreui_core_cloud_begin(string $tier): array {
+  $base = COREUI_CORE_CLOUD_CATALOG[$tier] ?? null;
+  if ($base === null) throw new RuntimeException('unknown_tier');
+  $state = ['kind'=>'install', 'cloud'=>true, 'tier'=>$tier, 'label'=>COREUI_CORE_TIER_LABELS[$tier], 'base'=>$base,
+    'core'=>$base, 'phase'=>'pull', 'step'=>'Startet …', 'completed'=>0, 'total'=>0, 'percent'=>0, 'layers'=>[],
+    'started_at'=>time()];
   coreui_core_install_write($state);
   return $state;
 }

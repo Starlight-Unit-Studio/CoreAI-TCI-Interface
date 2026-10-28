@@ -7,8 +7,10 @@ CoreAI: TCI Interface 0.5.76 - 28.10.2026
 - Analyse-Filter erkennt zusammengesetzte Namen wie [Systemanalyse: ...].
 - Sprachplan Lauf 4: Vorlage 10 von 10 kurze Aufnahmen, 60 s in 18 s; Entscheidung Sprachnachricht zweistufig, Live einstufig.
 - TCI-Namen im Chat: e2b Mara Schnell, e4b Mara Normal, 12b Mara Plus, 26b Mara Pro, 31b Mara Premium (auch Cloud); Maras Core nach der Basis aus dem Modelfile; Chip, Menue und CORE-Infokasten.
-- Core-Menue in fester Reihenfolge Schnell, Normal, Plus, Pro, Premium, dann eigene Namen; gruener Punkt = installiert und bereit; fehlende lokale Stufe ausgegraut, aber antippbar.
-- Installer im Chat: Fenster mit Erklaerung, Hardware-Check (Ollama, RAM, CPU, Speicherplatz, Tempo) und Empfehlung; Admins installieren per Knopf (Ollama-Pull mit Fortschritt, dann Maras Core aus Modelfile.template mit getauschtem FROM, z. B. ember-coreui:12b). Ein Auftrag zur Zeit, Bestaetigung bei "lieber nicht", keine Cloud-Stufen.
+- Core-Menue in fester Reihenfolge Schnell, Normal, Plus, Pro, Premium, dann eigene Namen, jede Stufe einmal (Lokal/Cloud-Knoepfe in der Zeile); gruener Punkt = installiert und bereit; fehlende lokale Stufe ausgegraut, aber antippbar.
+- Installer im Chat: Fenster mit Erklaerung, Hardware-Check (Ollama, RAM, CPU, Speicherplatz, Tempo) und Empfehlung; Admins installieren per Knopf (Ollama-Pull mit Fortschritt, dann Maras Core aus Modelfile.template mit getauschtem FROM, z. B. ember-coreui:12b). Ein Auftrag zur Zeit, Bestaetigung bei "lieber nicht".
+- Cores verwalten (Admins): Stufen mit Status und Zweitnamen-Warnung, "Jetzt aktualisieren" (Pull jeder lokalen Basis, Maras Cores inklusive Haupt-Core neu gebaut, wenn noetig), Auto-Update einmal pro Woche.
+- Ollama Cloud ohne Terminal: Hinweis auf Ollama-Konto, Verbindung wie ollama signin ueber POST /api/me mit Anmeldelink auf ollama.com, danach Cloud-Core (gemma4:31b-cloud) per Knopf.
 - Jeder Core ist Mara: Cores ohne SYSTEM bekommen Maras SYSTEM aus dem Modelfile als System-Nachricht.
 - Legende neben dem Core-Chip: Core-Stufen mit technischen Namen, Formatierung, Befehle und Tasten.
 - Tests: tool-mention-selftest.php, core-tiers-selftest.php, core-install-selftest.php und core-install-ui-selftest.cjs (beide Preflights); markdown-, work-events-ui-, Core-Chip- und local-file-tool-Tests erweitert.

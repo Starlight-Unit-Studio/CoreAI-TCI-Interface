@@ -31,7 +31,14 @@ Fehlt eine lokale Stufe, steht sie ausgegraut im Menue. Ein Tipp oeffnet
 den Installer: Erklaerung, kurzer Hardware-Check mit Empfehlung und fuer
 Admins ein Knopf "Installieren". Ollama laedt dann die Gemma-Basis, CoreAI
 baut daraus Maras Core aus `config/Modelfile.template` (nur FROM getauscht)
-und zeigt den Fortschritt. So geht das ganz ohne SSH und Terminal.
+und zeigt den Fortschritt. So geht das ganz ohne SSH und Terminal. Gibt es
+eine Stufe auch in der Cloud, waehlt man in ihrer Zeile Lokal oder Cloud.
+
+Unter "Cores verwalten" (Admins) stehen alle Stufen, "Jetzt aktualisieren"
+und der Schalter fuer ein woechentliches Auto-Update: Ollama zieht neue
+Fassungen, Maras Cores werden danach mit ihrem Modelfile neu gebaut. Dort
+verbindet man den Server auch mit einem Ollama-Konto fuer Cloud-Cores, wie
+`ollama signin`, nur ueber einen Anmeldelink im Browser statt im Terminal.
 
 ## Denkschalter und Core-Wahl im Chat (0.5.75)
 

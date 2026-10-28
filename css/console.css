@@ -3447,6 +3447,76 @@ audio.msg-image {
   background: transparent;
 }
 
+/* One row per tier; a tier that also runs in the cloud has a Lokal/Cloud switch. */
+.core-mode-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 6px;
+}
+
+.core-mode-variants {
+  display: inline-flex;
+  border: 1px solid var(--line);
+}
+
+.core-mode-variant {
+  min-width: 44px;
+  min-height: 30px;
+  padding: 2px 8px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-family: "Share Tech Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+
+.core-mode-variant + .core-mode-variant {
+  border-left: 1px solid var(--line);
+}
+
+.core-mode-variant[aria-pressed="true"] {
+  background: var(--panel-cx);
+  color: var(--cx);
+}
+
+.core-mode-variant--missing {
+  color: var(--muted-soft);
+  text-decoration: underline dotted;
+}
+
+.core-mode-variant:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.core-mode-variant:focus-visible,
+.core-mode-manage:focus-visible,
+.core-install-tier-btn:focus-visible {
+  outline: 2px solid var(--amb);
+  outline-offset: 1px;
+}
+
+.core-mode-manage {
+  justify-self: start;
+  min-height: 32px;
+  margin-top: 4px;
+  padding: 4px 10px;
+  border: 1px dashed var(--line-strong);
+  background: transparent;
+  color: var(--cx);
+  font-family: "Share Tech Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+.core-mode-manage[hidden] {
+  display: none;
+}
+
 .core-mode-empty {
   margin: 4px 0;
   color: var(--muted);
@@ -3667,6 +3737,9 @@ audio.msg-image {
   border-top: 1px solid var(--line);
 }
 
+.core-install-tiers h4,
+.core-install-maint h4,
+.core-install-cloud h4,
 .core-install-check h4 {
   margin: 0 0 6px;
   color: var(--muted);
@@ -3744,6 +3817,166 @@ audio.msg-image {
 
 .core-install-progress[hidden] {
   display: none;
+}
+
+.core-install-tiers,
+.core-install-maint,
+.core-install-cloud {
+  margin: 10px 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.core-install-tierlist,
+.core-install-results {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.core-install-tier {
+  display: grid;
+  gap: 3px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+}
+
+.core-install-tier[data-status="missing"] {
+  border-style: dashed;
+}
+
+.core-install-tier-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.core-install-tier-status {
+  color: var(--green);
+  font-family: "Share Tech Mono", monospace;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.core-install-tier[data-status="cloud"] .core-install-tier-status {
+  color: var(--cx);
+}
+
+.core-install-tier[data-status="missing"] .core-install-tier-status {
+  color: var(--muted-soft);
+}
+
+.core-install-tier-cores {
+  color: var(--muted);
+  font-family: "Share Tech Mono", monospace;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.core-install-tier-alias {
+  color: var(--amb);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.core-install-tier-btn {
+  justify-self: start;
+  min-height: 30px;
+  margin-top: 2px;
+  padding: 2px 10px;
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  color: var(--cx);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.core-install-maint .core-mode-row {
+  padding-top: 0;
+}
+
+.core-install-maint .core-mode-copy small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.core-install-update-info {
+  margin: 8px 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.core-install-results {
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.core-install-results li {
+  padding-left: 14px;
+  position: relative;
+}
+
+.core-install-results li::before {
+  content: "";
+  position: absolute;
+  top: 0.45em;
+  left: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+}
+
+.core-install-results li[data-state="bad"]::before {
+  background: var(--red);
+}
+
+.core-install-actions.core-install-actions--start {
+  justify-content: flex-start;
+  margin-top: 8px;
+}
+
+a.core-install-btn {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.core-install-tier-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.core-install-tier-btn:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.core-install-cloud-state {
+  margin: 0 0 6px;
+  font-size: 13px;
+}
+
+.core-install-cloud-state[data-state="ok"] {
+  color: var(--green);
+}
+
+.core-install-cloud-state[data-state="warn"] {
+  color: var(--amb);
+}
+
+.core-install-cloud-steps {
+  margin: 0 0 6px;
+  padding-left: 20px;
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .core-install-bar {

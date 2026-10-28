@@ -30,6 +30,8 @@ Stand: 2026-10-25. Verbindlich fuer CoreUI-Entwicklung.
 - Er aendert weder `config/Modelfile.template` noch `var/Modelfile.generated` noch Maras Core. Er legt einen neuen Core an (Maras Name mit der Groesse als Tag, z. B. `ember-coreui:12b`) und schickt dafuer den Inhalt der Vorlage an `/api/create`, nur FROM zeigt auf die Gemma-Basis der Stufe. Das entspricht dem, was `scripts/install-native.sh` fuer Maras Core tut.
 - Kennt der Installer einen Befehl der Vorlage nicht, bricht er ab, statt einen abweichenden Core zu bauen. Nach dem Anlegen prueft er den SYSTEM-Text ueber `/api/show`.
 - Er laedt nichts in den Speicher und setzt keine Ollama-Parameter ausserhalb der Vorlage.
+- Updates (Cores verwalten, auch woechentlich automatisch, nur nach Einschalten durch einen Admin): Nach einem neuen Download der Basis oder wenn der SYSTEM-Text eines Mara-Cores nicht mehr zur Datei passt, baut CoreAI ihn neu: die Installer-Cores aus `config/Modelfile.template`, Maras Haupt-Core aus `var/Modelfile.generated` (Betreiberentscheidung vom 28.10.2026), so wie es das normale Update auch tut. Der Inhalt der Dateien wird dabei nicht veraendert.
+- Cloud-Cores werden nur hinzugefuegt (Pull), nicht aus dem Modelfile gebaut; Mara spricht dort ueber die Persona-Nachricht.
 
 ## Installation bleibt unveraendert
 

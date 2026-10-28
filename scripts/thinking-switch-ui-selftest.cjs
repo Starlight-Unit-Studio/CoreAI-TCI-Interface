@@ -37,10 +37,12 @@ class Element {
 
 function page() {
   const ids = ['coreModeChip', 'coreModeMenu', 'coreModeName', 'coreModeThink', 'coreModeList',
-    'coreThinkToggle', 'coreModeStatus', 'coreLegendBtn', 'coreLegend', 'coreLegendRows'];
+    'coreThinkToggle', 'coreModeStatus', 'coreLegendBtn', 'coreLegend', 'coreLegendRows', 'coreModeManage'];
   const els = Object.fromEntries(ids.map(id => [id, new Element('div', id)]));
   els.coreModeMenu.hidden = true;
   els.coreModeMenu.appendChild(els.coreModeList);
+  els.coreModeMenu.appendChild(els.coreModeManage);
+  els.coreModeManage.hidden = true;
   els.coreLegend.hidden = true;
   els.coreLegend.appendChild(els.coreLegendRows);
   const doc = {
@@ -62,13 +64,13 @@ const MODELS = [
 ];
 const MISSING = [{tier: 'plus', label: 'TCI: Mara Plus', base: 'gemma4:12b'},
   {tier: 'pro', label: 'TCI: Mara Pro', base: 'gemma4:26b'}, {tier: 'premium', label: 'TCI: Mara Premium', base: 'gemma4:31b'}];
-const labelFor = name => (MODELS.find(m => m.name === name) || {}).label || name;
 
 function server(opts) {
   opts = opts || {};
   const calls = [];
   const st = {thinking: opts.thinking !== false, override: opts.override || '', loaded: ['ember-coreui:latest']};
   const models = opts.models || MODELS;
+  const labelFor = name => (models.find(m => m.name === name) || {}).label || name;
   const reply = (status, body) => Promise.resolve({ok: status < 400, status, json: () => Promise.resolve(body)});
   const fetch = (url, init) => {
     calls.push({url, init});
@@ -95,7 +97,7 @@ function server(opts) {
     }
     return reply(200, {ok: true, settings: {thinking_enabled: st.thinking, model_override: st.override},
       default_model: 'ember-coreui:latest', default_label: 'TCI: Mara Normal',
-      core_label: labelFor(st.override || 'ember-coreui:latest'), csrf_token: 'tok123'});
+      core_label: labelFor(st.override || 'ember-coreui:latest'), csrf_token: 'tok123', permission_level: opts.level ?? 4});
   };
   return {fetch, calls, st};
 }
@@ -115,8 +117,12 @@ assert.equal(api.modelKey('Ember-CoreUI'), 'ember-coreui:latest');
  ['gemma4:12b', 'TCI: Mara Plus'], ['gpt-oss:120b-cloud', ''], ['gemma3:27b', '']]
   .forEach(([name, label]) => assert.equal(api.tierLabel(name), label, 'tier of ' + name));
 
-const options = list => list.children.filter(c => c.className === 'core-mode-option');
-const entries = list => list.children.filter(c => /(^| )core-mode-option( |$)/.test(c.className));
+// Rows are wrappers (core-mode-item) holding the option and, for cloud tiers, the Lokal/Cloud switch.
+const rowItems = list => list.children.filter(c => c.className === 'core-mode-item');
+const flat = list => list.children.flatMap(c => c.className === 'core-mode-item' ? c.children : [c]);
+const options = list => flat(list).filter(c => c.className === 'core-mode-option');
+const entries = list => flat(list).filter(c => /(^| )core-mode-option( |$)/.test(c.className));
+const switchOf = row => row.children.find(c => c.className === 'core-mode-variants') || null;
 const dot = button => button.children.find(c => c.className === 'core-mode-dot').getAttribute('data-state');
 const flush = () => new Promise(resolve => setImmediate(resolve));
 
@@ -126,7 +132,8 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
   let srv = server();
   const timers = [];
   const opened = [];
-  let mode = api.create(doc, srv.fetch, fn => timers.push(fn), {installer: () => ({open: tier => opened.push(tier)})});
+  let mode = api.create(doc, srv.fetch, fn => timers.push(fn), {installer: () => ({open: tier => opened.push(tier),
+    manage: () => opened.push('manage')})});
   await mode.ready;
   assert.equal(els.coreModeName.textContent, 'Mara Normal', 'the chip shows the TCI name');
   assert.equal(els.coreModeThink.textContent, 'DENKEN');
@@ -146,24 +153,37 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
   assert.match(opts[1].textContent, /Standard · 7\.5B · geladen/, 'standard, size and loaded state');
   assert.match(opts[2].textContent, /32\.7B · Cloud/, 'cloud Core is marked');
 
-  // Missing local tiers stay at their place, greyed; installed Cores carry a green dot.
+  // One row per tier, no name twice. Missing local tiers stay at their place,
+  // greyed; installed Cores carry a green dot.
   let all = entries(els.coreModeList);
   assert.deepEqual(all.map(o => o.children[0].textContent), ['TCI: Mara Schnell', 'TCI: Mara Normal', 'TCI: Mara Plus',
-    'TCI: Mara Pro', 'TCI: Mara Premium', 'TCI: Mara Premium', 'gpt-oss:120b-cloud']);
-  assert.deepEqual(all.map(dot), ['ready', 'ready', 'missing', 'missing', 'missing', 'ready', 'ready']);
+    'TCI: Mara Pro', 'TCI: Mara Premium', 'gpt-oss:120b-cloud']);
+  assert.equal(new Set(all.map(o => o.children[0].textContent)).size, all.length, 'no name twice');
+  assert.deepEqual(all.map(dot), ['ready', 'ready', 'missing', 'missing', 'ready', 'ready']);
+  // Premium runs in the cloud only: its row shows the cloud Core with a Lokal/Cloud switch,
+  // Lokal is greyed and opens the installer.
+  const premium = switchOf(rowItems(els.coreModeList)[4]);
+  assert(premium, 'a tier with a cloud Core has a switch');
+  assert.deepEqual(premium.children.map(b => [b.textContent, b.getAttribute('aria-pressed')]), [['Lokal', 'false'], ['Cloud', 'true']]);
+  assert.equal(premium.children[0].className, 'core-mode-variant core-mode-variant--missing');
+  assert.equal(premium.children[0].disabled, false);
+  assert.deepEqual(rowItems(els.coreModeList).map(r => !!switchOf(r)), [false, false, false, false, true, false], 'only cloud tiers have a switch');
   const plus = all[2];
   assert.equal(plus.className, 'core-mode-option core-mode-option--missing');
   assert.equal(plus.getAttribute('data-tier'), 'plus');
   assert.equal(plus.disabled, false, 'a missing tier stays clickable');
   assert.match(plus.textContent, /nicht installiert/);
   assert.match(plus.getAttribute('aria-label'), /Öffnet die Installation/);
-  assert.match(all[4].textContent, /nicht installiert/, 'local Premium is missing, the cloud one is there');
   let bubbled = false;
   await plus.handlers.click({stopPropagation() { bubbled = true; }});
   assert.deepEqual(opened, ['plus'], 'a missing tier opens the install window');
   assert.equal(bubbled, true);
   assert.equal(els.coreModeMenu.hidden, true, 'the menu closes for the install window');
   assert.equal(srv.calls.filter(c => c.init.method === 'POST').length, 0, 'a missing tier is never chosen');
+  await els.coreModeChip.handlers.click({stopPropagation() {}});
+  await switchOf(rowItems(els.coreModeList)[4]).children[0].handlers.click({stopPropagation() {}});
+  assert.deepEqual(opened, ['plus', 'premium'], 'greyed Lokal opens the installer of its tier');
+  assert.equal(els.coreModeManage.hidden, true, 'Cores verwalten is for admins only');
   await els.coreModeChip.handlers.click({stopPropagation() {}});
   opts = options(els.coreModeList);
 
@@ -261,9 +281,12 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
     const models = MODELS.concat([
       {name: 'gemma4:12b', parameter_size: '12B', label: 'TCI: Mara Plus'},
       {name: 'ember-coreui:12b', parameter_size: '12B', label: 'TCI: Mara Plus', mara: true},
+      {name: 'ember-coreui:31b', parameter_size: '31B', label: 'TCI: Mara Premium', mara: true},
     ]);
-    const s2 = server({models, missing: MISSING.slice(1), install: {tier: 'pro', phase: 'pull', running: true, percent: 42}});
-    const m2 = api.create(p.doc, s2.fetch, () => {});
+    const s2 = server({models, missing: MISSING.slice(1, 2), level: 1,
+      install: {tier: 'pro', phase: 'pull', running: true, percent: 42}});
+    const managed = [];
+    const m2 = api.create(p.doc, s2.fetch, () => {}, {installer: () => ({open() {}, manage: () => managed.push(1)})});
     await m2.ready;
     await m2.open();
     const list = entries(p.els.coreModeList);
@@ -271,6 +294,25 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
     assert.equal(list[2].children[0].textContent, 'TCI: Mara Plus');
     assert.equal(dot(list[2]), 'ready');
     assert.match(list[3].textContent, /wird installiert · 42 %/, 'running install in the menu');
+    // Local and cloud Premium: one row, local first, the switch chooses the cloud.
+    let premiumRow = rowItems(p.els.coreModeList)[4];
+    assert.equal(premiumRow.children[0].getAttribute('data-value'), 'ember-coreui:31b');
+    assert.deepEqual(switchOf(premiumRow).children.map(b => b.getAttribute('aria-pressed')), ['true', 'false']);
+    assert.equal(entries(p.els.coreModeList).filter(o => o.children[0].textContent === 'TCI: Mara Premium').length, 1);
+    await switchOf(premiumRow).children[1].handlers.click({stopPropagation() {}});
+    assert.deepEqual(JSON.parse(s2.calls.filter(c => c.init.method === 'POST').pop().init.body),
+      {action: 'core', model_override: 'gemma4:31b-cloud'});
+    premiumRow = rowItems(p.els.coreModeList)[4];
+    assert.equal(premiumRow.children[0].getAttribute('data-value'), 'gemma4:31b-cloud', 'the row follows the choice');
+    assert.equal(premiumRow.children[0].getAttribute('aria-checked'), 'true');
+    assert.deepEqual(switchOf(premiumRow).children.map(b => b.getAttribute('aria-pressed')), ['false', 'true']);
+    await switchOf(premiumRow).children[0].handlers.click({stopPropagation() {}});
+    assert.equal(rowItems(p.els.coreModeList)[4].children[0].getAttribute('data-value'), 'ember-coreui:31b', 'back to local');
+    // Admins get Cores verwalten below the list.
+    assert.equal(p.els.coreModeManage.hidden, false);
+    await p.els.coreModeManage.handlers.click({stopPropagation() {}});
+    assert.deepEqual(managed, [1]);
+    assert.equal(p.els.coreModeMenu.hidden, true, 'the menu closes for the window');
     await m2.openLegend();
     const plusRow = p.els.coreLegendRows.children[2].children.map(c => c.textContent);
     assert.deepEqual(plusRow, ['TCI: Mara Plus', 'gemma4:12b, ember-coreui:12b (Maras Modelfile)', 'installiert']);

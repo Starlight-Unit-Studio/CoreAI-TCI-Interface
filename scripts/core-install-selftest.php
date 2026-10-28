@@ -2,8 +2,9 @@
 declare(strict_types=1);
 // CoreAI 0.5.76: chat installer for missing TCI tiers. Offline: the Core is
 // built from Mara's Modelfile with only FROM swapped, the hardware check
-// gives a clear verdict, Ollama's pull stream becomes progress, one install
-// runs at a time and only admins may start one.
+// gives a clear verdict, Ollama's pull stream becomes progress, one job
+// runs at a time and only admins may start one. Updates rebuild Mara's
+// Cores, weekly on request; Ollama Cloud connects like `ollama signin`.
 if (PHP_SAPI !== 'cli') exit(1);
 $root = dirname(__DIR__);
 $cache = sys_get_temp_dir() . '/coreui-install-test-' . getmypid();
@@ -135,8 +136,8 @@ install_test(COREUI_CORE_INSTALL_PERMISSION_MAX === 1
   && strpos($post, 'COREUI_CORE_INSTALL_PERMISSION_MAX') < strpos($post, 'coreui_core_install_lock()'), 'permission is checked before anything runs');
 install_test(str_contains($post, "\$check['verdict'] === 'abraten' && (\$body['confirm'] ?? false) !== true"), 'advised against needs a confirmation');
 install_test(str_contains($post, "if (\$check['blocked'])") && str_contains($post, "if (\$check['installed'])"), 'blocked or installed tiers are refused');
-install_test(strpos($post, 'fastcgi_finish_request') < strpos($post, 'coreui_core_install_run(') && str_contains($post, 'flock($lock, LOCK_UN)'),
-  'the answer goes out first, the lock is released');
+install_test(strpos($post, 'coreui_core_job_detach(') < strpos($post, "coreui_core_job_run(\$lock, 'coreui_core_install_run'"),
+  'the answer goes out first, then the job runs');
 install_test(str_contains($settings, "\$admin = \$level <= COREUI_CORE_INSTALL_PERMISSION_MAX;")
   && str_contains($settings, "coreui_core_install_check(trim((string)\$_GET['core_install']), \$admin)")
   && str_contains($settings, "'can_install'=>\$admin"), 'hardware details and the button only for admins');
@@ -146,5 +147,77 @@ install_test(str_contains($models, "'missing_tiers'=>coreui_core_missing_tiers(\
 $lib = (string)file_get_contents($root . '/api/core_install.php');
 install_test(!str_contains($lib, 'ember_global_lock_acquire') && !str_contains($lib, 'file_put_contents($root')
   && !preg_match('~fopen\([^)]*Modelfile~', $lib), 'no serial queue, no Modelfile write');
+$detach = substr($lib, (int)strpos($lib, 'function coreui_core_job_detach'));
+install_test(strpos($detach, 'echo json_encode') < strpos($detach, 'fastcgi_finish_request') && str_contains($lib, "finally {\n    flock(\$lock, LOCK_UN);"),
+  'answer first, the lock is always released');
 
-echo "CoreAI Core install: Modelfile create, hardware check, pull progress, one job, admins only OK\n";
+// Update plan: every local base in use once, in tier order, with Mara's Cores on it.
+$default = defined('STU_EMBER_MODEL') ? (string)STU_EMBER_MODEL : 'ember-coreui:latest';
+$maraBase = coreui_core_mara_base();
+$listing = [['name'=>$default, 'digest'=>'d0'], ['name'=>'gemma4:e4b', 'digest'=>'d1'], ['name'=>'gemma4:e2b', 'digest'=>'d1'],
+  ['name'=>'gemma4:26b', 'digest'=>'d1'], ['name'=>$family . ':12b', 'digest'=>'d5'], ['name'=>'gemma4:31b-cloud', 'digest'=>'d6'],
+  ['name'=>'gpt-oss:120b-cloud', 'digest'=>'d7']];
+$plan = coreui_core_update_plan($listing);
+install_test(array_column($plan, 'base') === ['gemma4:e2b', 'gemma4:e4b', 'gemma4:12b', 'gemma4:26b'], 'plan: local bases in tier order, no cloud');
+$byBase = array_column($plan, 'cores', 'base');
+install_test($byBase['gemma4:12b'] === [['name'=>$family . ':12b', 'source'=>'template']], 'installer Core rebuilt from the template');
+install_test(($byBase[$maraBase][0] ?? null) === ['name'=>$default, 'source'=>'mara'], 'Mara\'s own Core rebuilt from her Modelfile');
+install_test(coreui_core_update_plan([['name'=>'gpt-oss:120b-cloud']]) === [], 'nothing local, nothing to update');
+install_test(str_contains(coreui_core_mara_modelfile(), 'Du bist Mara Thorne'), 'Mara\'s Modelfile is readable');
+
+// Overview: status per tier, aliases (same manifest as another tier), cloud variants.
+$rows = array_column(coreui_core_manage_rows($listing), null, 'tier');
+install_test($rows['schnell']['alias_of'] === $maraBase && $rows['pro']['alias_of'] === $maraBase && $rows['normal']['alias_of'] === null,
+  'second names for the same weights point to Mara\'s base');
+$twins = array_column(coreui_core_manage_rows([['name'=>'gemma4:12b', 'digest'=>'x'], ['name'=>'gemma4:31b', 'digest'=>'x']]), null, 'tier');
+install_test($twins['plus']['alias_of'] === null && $twins['premium']['alias_of'] === 'gemma4:12b', 'without Mara\'s base the first tier is real');
+install_test($rows['plus']['status'] === 'installed' && $rows['plus']['alias_of'] === null, 'installer Core counts as installed');
+install_test($rows['premium']['status'] === 'cloud' && $rows['premium']['cloud'] === ['gemma4:31b-cloud'] && $rows['premium']['cloud_missing'] === false,
+  'cloud only Premium');
+$bare = array_column(coreui_core_manage_rows([['name'=>$default]]), null, 'tier');
+install_test($bare['premium']['status'] === 'missing' && $bare['premium']['cloud_missing'] === true && $bare['plus']['cloud_base'] === null,
+  'missing Premium can be added from the cloud, Plus has no cloud variant');
+
+// Summary and weekly due date.
+install_test(coreui_core_update_summary([]) !== '' && coreui_core_update_summary([['result'=>'current'], ['result'=>'rebuilt']]) === 'Alle Stufen sind aktuell.',
+  'summary when nothing changed');
+install_test(coreui_core_update_summary([['result'=>'updated'], ['result'=>'error']]) === 'Eine Stufe hatte eine neue Fassung und wurde neu gebaut. Eine Stufe schlug fehl.',
+  'summary with a failure');
+$week = COREUI_CORE_UPDATE_DAYS * 86400;
+install_test(COREUI_CORE_UPDATE_DAYS === 7 && coreui_core_auto_update_due(['enabled'=>true, 'last'=>1000, 'next'=>1000 + $week], 1000 + $week)
+  && !coreui_core_auto_update_due(['enabled'=>true, 'last'=>1000, 'next'=>1000 + $week], 999 + $week)
+  && !coreui_core_auto_update_due(['enabled'=>false, 'last'=>null, 'next'=>null], PHP_INT_MAX), 'weekly, only when switched on');
+$autoFn = substr($lib, (int)strpos($lib, 'function coreui_core_auto_update_set'), 400);
+install_test(str_contains($autoFn, "if (\$on) stu_app_setting_set(\$pdo, 'core_auto_update_since', (string)time());"), 'switching on starts the week, no surprise download');
+
+// Ollama Cloud: like `ollama signin`, only Ollama's own connect page as link.
+$url = 'https://ollama.com/connect?name=coreai&key=c3NoLWVkMjU1MTkgQUFBQUMzTnphQzFsWkRJMU5URTVBQUFBSUJ';
+install_test(coreui_ollama_cloud_account_from(401, ['error'=>'unauthorized', 'signin_url'=>$url]) === ['state'=>'signed_out', 'signin_url'=>$url],
+  'signed out with connect link');
+foreach (['javascript:alert(1)', 'https://ollama.com.evil.io/connect?x=1', 'http://ollama.com/connect?x=1', 'https://ollama.com/connect?x="><b>'] as $bad) {
+  install_test(coreui_ollama_cloud_account_from(401, ['signin_url'=>$bad])['signin_url'] === null, 'refused link ' . $bad);
+}
+install_test(coreui_ollama_cloud_account_from(200, ['name'=>'mara', 'plan'=>'']) === ['state'=>'connected', 'name'=>'mara', 'plan'=>'free'], 'connected');
+install_test(coreui_ollama_cloud_account_from(200, [])['state'] === 'unavailable' && coreui_ollama_cloud_account_from(503, ['error'=>'account unavailable'])['state'] === 'unavailable'
+  && coreui_ollama_cloud_account_from(404, [])['state'] === 'unsupported', 'other answers');
+install_test(coreui_ollama_version_at_least('0.40.6', '0.12.0') && coreui_ollama_version_at_least('0.12.0-rc1', '0.12.0')
+  && !coreui_ollama_version_at_least('0.11.10', '0.12.0') && !coreui_ollama_version_at_least(null, '0.12.0'), 'cloud needs Ollama 0.12');
+install_test(COREUI_CORE_CLOUD_CATALOG === ['premium'=>'gemma4:31b-cloud'] && coreui_core_tier('gemma4:31b-cloud') === 'premium', 'cloud catalog');
+install_test(str_contains($lib, "coreui_core_install_post('me', [], 15)"), 'account read like ollama signin (POST /api/me)');
+$cloudBegin = coreui_core_cloud_begin('premium');
+install_test($cloudBegin['cloud'] === true && $cloudBegin['base'] === 'gemma4:31b-cloud' && $cloudBegin['core'] === 'gemma4:31b-cloud', 'cloud job pulls the tag only');
+install_test(str_contains($lib, "if (\$state['phase'] !== 'error' && !empty(\$state['cloud'])) {"), 'no Modelfile build for cloud Cores');
+
+// Endpoints: admins only for the overview, cloud, switch, update and cloud add.
+foreach (["array_key_exists('core_manage', \$_GET)", "array_key_exists('core_cloud', \$_GET)", "=== 'core_auto_update')",
+  "=== 'core_update')", "=== 'core_cloud_add')"] as $marker) {
+  $part = substr($settings, (int)strpos($settings, $marker), 500);
+  install_test(str_contains($part, 'stu_require_permission_at_most(COREUI_CORE_INSTALL_PERMISSION_MAX, $pdo);'), 'admins only: ' . $marker);
+}
+install_test(str_contains($settings, "if ((coreui_ollama_cloud_status()['account']['state'] ?? '') !== 'connected')"), 'cloud Core only when connected');
+$get = substr($settings, (int)strpos($settings, "\$payload = ["));
+install_test(strpos($get, 'coreui_core_auto_update_due(') < strpos($get, "stu_app_setting_set(\$pdo, 'core_update_last'")
+  && strpos($get, "stu_app_setting_set(\$pdo, 'core_update_last'") < strpos($get, 'coreui_core_install_lock()')
+  && str_contains($get, "coreui_core_job_run(\$lock, 'coreui_core_update_run'"), 'weekly update starts from a page load, marked first');
+
+echo "CoreAI Core install: Modelfile create, hardware check, pull progress, updates, Ollama Cloud, one job, admins only OK\n";

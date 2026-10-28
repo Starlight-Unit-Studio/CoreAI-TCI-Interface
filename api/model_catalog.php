@@ -59,6 +59,7 @@ function coreui_ollama_models(): array {
       'family' => isset($details['family']) ? (string)$details['family'] : null,
       'parameter_size' => isset($details['parameter_size']) ? (string)$details['parameter_size'] : null,
       'quantization_level' => isset($details['quantization_level']) ? (string)$details['quantization_level'] : null,
+      'digest' => isset($row['digest']) ? strtolower((string)$row['digest']) : null,
     ];
   }
   ksort($models, SORT_NATURAL | SORT_FLAG_CASE);
@@ -90,16 +91,17 @@ const COREUI_CORE_TIER_LABELS = [
 const COREUI_CORE_TIER_SIZES = ['e2b'=>'schnell', 'e4b'=>'normal', '12b'=>'plus', '26b'=>'pro', '31b'=>'premium'];
 
 /*
- * Local tiers the chat installer may pull (api/core_install.php). Download
- * sizes as the Ollama library lists them; the 12b size is an estimate until
- * the pull reports the real one. active_b: parameters read per token (the
- * 26b is a mixture of experts with about 4B active), decides the speed hint.
+ * Local tiers the chat installer may pull (api/core_install.php). Sizes as
+ * ollama.com/library/gemma4 lists them on 28.10.2026 (upper value of "Size /
+ * Usage"); the pull reports the real one. active_b: parameters read per
+ * token (the 26b is a mixture of experts with about 4B active), decides the
+ * speed hint.
  */
 const COREUI_CORE_INSTALL_CATALOG = [
-  'schnell' => ['base'=>'gemma4:e2b', 'download_gb'=>7.2, 'active_b'=>2.3],
-  'normal' => ['base'=>'gemma4:e4b', 'download_gb'=>9.6, 'active_b'=>4.5],
+  'schnell' => ['base'=>'gemma4:e2b', 'download_gb'=>7.5, 'active_b'=>2.3],
+  'normal' => ['base'=>'gemma4:e4b', 'download_gb'=>9.5, 'active_b'=>4.5],
   'plus' => ['base'=>'gemma4:12b', 'download_gb'=>8.0, 'active_b'=>12.0],
-  'pro' => ['base'=>'gemma4:26b', 'download_gb'=>18.0, 'active_b'=>4.0],
+  'pro' => ['base'=>'gemma4:26b', 'download_gb'=>19.0, 'active_b'=>4.0],
   'premium' => ['base'=>'gemma4:31b', 'download_gb'=>20.0, 'active_b'=>31.0],
 ];
 
