@@ -1,0 +1,35 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.5.74
+Stand: 28.10.2026
+Branch: claude/bold-galileo-myoyi0 (neu von main 0.5.73 nach Merge von PR #123)
+Basis: zwei Laeufe von scripts/media-spike.sh auf dem Server (Bericht per Screenshot, 60-s-Mitschrift per results.json).
+
+ERGEBNISSE P20.0 (Details im Messprotokoll von docs/COREUI_VOICE_PLAN.md):
+- Core ember-coreui:latest (FROM gemma4:e4b, 7.5B Q4_K_M), Ollama 0.40.6, 20 Kerne AVX-512, 94 GiB RAM.
+- Audio 25 Tokens je Sekunde, Grundlast etwa 450 Tokens; Einlesen etwa 170, Ausgabe etwa 22 Tokens je Sekunde.
+- 60 s stabil, Mitschrift bis zum Ende; Qualitaet bei Fernsehton: Inhalt klar, etwa drei Viertel der Saetze richtig.
+- 24 Bit, Float, 44,1 kHz Stereo angenommen; rohes PCM HTTP 400. Bild und Ton gemeinsam funktionieren.
+- Verborgenes Denken (<|think|> im Modelfile, think=false hilft nicht): 300 bis 590 Tokens, 14 bis 27 s je Aufruf.
+- 5-s-Aufnahme einmal uebersehen ("Bitte stellen Sie die Aufnahme zur Verfuegung") trotz 574 Eingabe-Tokens.
+- Ausreisser durch Neuladen (23,5 s), ausgeloest von Embers Orchestrator im Global-Chat des Spiels.
+- Alle lokalen gemma4-Namen melden 7.5B und Audio (auch 26b); gemma4:31b-cloud ohne Audio.
+
+INHALT:
+- api/voice_core.php: coreui_voice_attachment_hint, coreui_voice_missed_audio, coreui_voice_modelfile_system,
+  coreui_voice_system_without_think. Noch nicht im Chat verdrahtet (P20.1/P20.4).
+- scripts/media-spike.php: Streaming (first_answer_s, first_sentence_s, thinking_chars), keep_alive aus
+  ember_keep_alive(), Digest aus /api/tags, Vergleichsfaelle mitschrift_ohne_denken, live_mit_denken,
+  live_ohne_denken (SYSTEM aus /api/show ohne <|think|>, nur im Testaufruf), kurze Clips --short/--repeat mit
+  und ohne Anhang-Hinweis, Kurzfassung, volle Mitschrift. Weiterhin keine options, keine Modellaenderung.
+- scripts/media-spike.sh: --short, --repeat, Dauerhinweis.
+- Doku: Sprachplan (Messprotokoll, Abschnitte 60 s, P20.1 Anhang-Hinweis und Wiederholung, P20.4 ohne Denken,
+  Vorwaermen), Roadmap P20.0 in Arbeit, Matrix CF-058.
+
+GEPRUEFT:
+- Alle Offline-Selbsttests; Probelauf gegen einen nachgebauten Ollama mit gestreamten NDJSON-Antworten:
+  Anfragen ohne options, think=false, keep_alive aus der Konfiguration, SYSTEM ohne <|think|> nur in den
+  Vergleichsfaellen, Hinweis nur in den mit_hinweis-Faellen, Kurzfassung und Tabellen korrekt.
+
+NAECHSTER SCHRITT: Betreiber startet
+  bash /opt/ember-coreui/scripts/media-spike.sh --audio DATEI --skip-formats --durations 15,60
+(am besten eigene, direkt ins Handy gesprochene Aufnahme) und schickt die Kurzfassung. Danach TTS-Kandidaten
+und P20.1.

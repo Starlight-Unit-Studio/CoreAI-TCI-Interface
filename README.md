@@ -7,7 +7,20 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.73` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.74` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Messprotokoll und erweiterter Medien-Test (0.5.74)
+
+Der erste Medien-Test lief zweimal auf dem echten Server. Mara hoert ueber
+Gemma 4 zuverlaessig: Audio kostet 25 Tokens je Sekunde, 60 Sekunden laufen
+stabil, Bild und Ton gehen gemeinsam. Die Werte stehen im Messprotokoll von
+`docs/COREUI_VOICE_PLAN.md`. Der Test misst jetzt zusaetzlich die Zeit bis
+zum ersten Wort, die Kosten des Denkens (Vergleich mit Maras SYSTEM-Text
+ohne `<|think|>`, nur im Testaufruf), eine kurze Live-Antwort und wie oft
+Core sehr kurze Aufnahmen uebersieht. Naechster Lauf:
+`bash scripts/media-spike.sh --audio DATEI --skip-formats --durations 15,60`.
+Neu ist `api/voice_core.php` mit den Hilfen fuer Audio-Aufrufe in P20.1 und
+P20.4.
 
 ## Medien-Test P20.0 fuer den Server (0.5.73)
 

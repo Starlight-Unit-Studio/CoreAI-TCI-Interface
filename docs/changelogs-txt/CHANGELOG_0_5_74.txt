@@ -1,0 +1,9 @@
+CoreAI: TCI Interface 0.5.74 - 28.10.2026
+- Messprotokoll P20.0 im Sprachplan (zwei Laeufe auf dem Server): 25 Tokens je Sekunde Audio, Einlesen etwa 170, Ausgabe etwa 22 Tokens je Sekunde.
+- 60 Sekunden stabil und durchgehend mitgeschrieben; 24 Bit, Float und 44,1 kHz Stereo angenommen, rohes PCM nicht; Bild und Ton gemeinsam funktionieren.
+- Verborgenes Denken (<|think|> im Modelfile) kostet 14 bis 27 s je Aufruf; eine 5-s-Aufnahme wurde einmal uebersehen; Ausreisser durch Neuladen des Cores.
+- Folgerungen: Abschnitte bis 60 s, Audio-Faehigkeit ueber /api/show, Anhang-Hinweis mit einer automatischen Wiederholung, Live-Gespraech ohne Denken mit Vorwaermen.
+- Medien-Test erweitert: Streaming mit Zeit bis zum ersten Wort und Satz, Lade- und Denkzeit, Vergleich ohne Denken (nur im Testaufruf), Live-Antwort, kurze Aufnahmen mit und ohne Hinweis, Digest, Kurzfassung, volle Mitschrift, keep_alive aus der Konfiguration.
+- Neu: api/voice_core.php (Anhang-Hinweis, Erkennung von "keine Aufnahme", SYSTEM-Text aus /api/show, SYSTEM-Text ohne Denk-Schalter).
+- Tests: audio-wav-selftest.php erweitert; Probelauf gegen einen nachgebauten Ollama.
+- OFFEN: Lauf mit dem erweiterten Test, TTS-Kandidaten, danach P20.1.

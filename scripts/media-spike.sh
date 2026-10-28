@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.73: P20.0 Medien-Test auf dem echten Server.
-# Misst Hoeren ueber Gemma 4 (Ollama), optional Sprachausgabe-Kandidaten und
-# Bildgenerierung. Aendert keine Modelle, kein Modelfile und keine Datenbank;
+# CoreAI: TCI Interface 0.5.74: P20.0 Medien-Test auf dem echten Server.
+# Misst Hoeren ueber Gemma 4 (Ollama), die Kosten des Denkens, kurze Aufnahmen,
+# optional Sprachausgabe-Kandidaten und Bildgenerierung. Aendert keine Modelle, kein Modelfile und keine Datenbank;
 # jeder Core-Aufruf reiht sich in Maras serielle Warteschlange ein.
 set -Eeuo pipefail
 IFS=$'\n\t'
@@ -17,6 +17,8 @@ AUDIO=''
 MODEL=''
 DURATIONS='5,15,30,45,60'
 SKIP_FORMATS=''
+SHORT='3,5'
+REPEAT='5'
 TTS_CMDS=()
 TTS_THREADS='2,4'
 IMAGE_CMD=''
@@ -34,6 +36,8 @@ Optionen:
   --model NAME           Core fuer den Test (Standard: Mara-Core aus der CoreAI-Konfiguration).
   --durations LISTE      Laengen in Sekunden (Standard: 5,15,30,45,60).
   --skip-formats         Falsche Formate (24 Bit, Float, 44,1 kHz Stereo, rohes PCM) nicht testen.
+  --short LISTE          Kurze Aufnahmen in Sekunden, je mit und ohne Anhang-Hinweis (Standard: 3,5).
+  --repeat N             Wiederholungen je kurzer Aufnahme und Variante (Standard: 5, 0 = aus).
   --tts NAME=BEFEHL      Sprachausgabe-Kandidat, mehrfach erlaubt. {text} und {out} werden ersetzt.
                          Beispiel Piper (Version und Stimme selbst pruefen):
                          --tts "piper-thorsten=python3 -m piper -m de_DE-thorsten-high -f {out} -- {text}"
@@ -43,6 +47,7 @@ Optionen:
   -h, --help             Diese Hilfe.
 
 Ergebnis: var/cache/media-spike/ZEITSTEMPEL/report.md
+Dauer mit allen Faellen: etwa 10 bis 15 Minuten.
 Bitte starten, wenn Mara gerade nichts Grosses baut; die Core-Aufrufe warten sonst in der Warteschlange.
 EOF
 }
@@ -53,6 +58,8 @@ while (($#)); do
     --model) MODEL="${2:-}"; shift 2 ;;
     --durations) DURATIONS="${2:-}"; shift 2 ;;
     --skip-formats) SKIP_FORMATS='1'; shift ;;
+    --short) SHORT="${2:-}"; shift 2 ;;
+    --repeat) REPEAT="${2:-}"; shift 2 ;;
     --tts) TTS_CMDS+=("${2:-}"); shift 2 ;;
     --tts-threads) TTS_THREADS="${2:-}"; shift 2 ;;
     --image) IMAGE_CMD="${2:-}"; shift 2 ;;
@@ -156,7 +163,7 @@ if [[ -n "$IMAGE_CMD" ]]; then
 fi
 
 # --- Hoeren ueber Core (im PHP-Container oder nativ) ---------------------
-php_args=(--out "$REL_OUT" --durations "$DURATIONS")
+php_args=(--out "$REL_OUT" --durations "$DURATIONS" --short "$SHORT" --repeat "$REPEAT")
 [[ -n "$MODEL" ]] && php_args+=(--model "$MODEL")
 [[ -n "$SKIP_FORMATS" ]] && php_args+=(--skip-formats)
 if [[ -n "$AUDIO" ]]; then

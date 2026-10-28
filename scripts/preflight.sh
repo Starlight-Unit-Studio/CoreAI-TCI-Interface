@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.73 P20.0 media test (audio over Ollama, voices, images) and WAV check.
+# CoreAI: TCI Interface 0.5.74 P20.0 media test extended (thinking, live reply, short clips) and audio turn helpers.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -154,6 +154,7 @@ UI_FILES=(
   scripts/vision-persona-selftest.php
   scripts/audio-wav-selftest.php
   api/audio_wav.php
+  api/voice_core.php
   scripts/media-spike.php
   scripts/media-spike.sh
   js/coreui-net.js
@@ -626,7 +627,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
 
   audio_test=''
   if audio_test="$(compose exec -T php php scripts/audio-wav-selftest.php 2>&1)"; then
-    ok 'Audio: WAV-Pruefung (RIFF, Mono, 16 kHz, 16 Bit) und Medien-Test P20.0 geprueft.'
+    ok 'Audio: WAV-Pruefung, Hilfen fuer Audio-Aufrufe und Medien-Test P20.0 geprueft.'
   else
     fail "Audio-WAV-Selbsttest: ${audio_test:-Unbekannter Fehler}"
   fi

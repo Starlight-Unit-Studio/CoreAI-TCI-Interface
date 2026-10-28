@@ -18,7 +18,7 @@ Diese Roadmap ordnet die Anforderungen in **29 abschließbare Arbeitspakete** un
 | **M3 Entwicklung** (P09 bis P11) | Offen: kein dauerhafter Projektordner, Editor, Terminal oder Git. Projekte entstehen je Bau neu als ZIP. | |
 | **M4 Skills** (P12 bis P14) | Teilweise: Skills mit Pflicht-Skill "werkzeuge" und eigene Skills. Offen: Versionen, Import/Export, Plugins; Sprachskill #119. | Migration 014 |
 | **M5 Browser, Wissen, Gedächtnis** (P15 bis P17) | Teilweise: Web und Browser nur lesend (#25 offen); RAG-Lite mit Namen und Rückfragen brauchbar, aber ohne Quellenangaben und Texterkennung; Gedächtnis ohne Herkunftsangabe. | 0.5.71 |
-| **M6 Medien** (P20) | Bild-, Video- und PDF-Analyse vorhanden, seit 0.5.71 mit derselben Mara wie im Text. Hören, Sprechen, Live-Gespräch und Bildgenerierung offen und als nächste Etappe geplant. | [Sprachplan](docs/COREUI_VOICE_PLAN.md), [Bildplan](docs/COREUI_IMAGE_ENGINE_PLAN.md) |
+| **M6 Medien** (P20) | Bild-, Video- und PDF-Analyse vorhanden, seit 0.5.71 mit derselben Mara wie im Text. Hören über Ollama am 28.10.2026 auf dem Server gemessen (P20.0: 25 Tokens je Sekunde Audio, Abschnitte bis 60 Sekunden). Hören im Chat, Sprechen, Live-Gespräch und Bildgenerierung offen und als nächste Etappe geplant. | [Sprachplan](docs/COREUI_VOICE_PLAN.md), [Bildplan](docs/COREUI_IMAGE_ENGINE_PLAN.md) |
 | **M6 übrige Breite** | P19 teilweise (robuste WebUI, Handy, 0.5.70); P18, P21 bis P24, P29 offen. | |
 | **Laufzeit** | #51 und #52 (Hänger, Modellwechsel) seit Warteschlange, Kontextfenster-Erkennung und num_ctx vermutlich entschärft; live nachprüfen. | |
 | **GitHub Actions** | Wegen ausgeschöpften Kontingents auf Nutzerwunsch ausgelassen; Prüfung über Preflights und lokale Selbsttests. | |
@@ -27,7 +27,7 @@ Diese Roadmap ordnet die Anforderungen in **29 abschließbare Arbeitspakete** un
 
 | Schritt | Inhalt | Plan |
 |---|---|---|
-| 1. P20.0 | Test auf dem Server: Audio über Ollama (Gemma 4 e2b, e4b, 12b über das `images`-Array), TTS-Kandidaten, Latenz einer Live-Runde | [Sprachplan](docs/COREUI_VOICE_PLAN.md) |
+| 1. P20.0 | Test auf dem Server: Audio über Ollama (Gemma 4 e2b, e4b, 12b über das `images`-Array), TTS-Kandidaten, Latenz einer Live-Runde. **In Arbeit:** Hören zweimal gemessen (Messprotokoll im Sprachplan); 0.5.74 misst zusätzlich Denken, Live-Antwort und kurze Aufnahmen. TTS-Kandidaten offen. | [Sprachplan](docs/COREUI_VOICE_PLAN.md) |
 | 2. P20.1 | Spracheingabe: Mikrofon, Sprachnachrichten, Audiodateien, Mitschrift im Chat | Sprachplan |
 | 3. P20.2 | Videos hören: Tonspur zusammen mit den Bildern | Sprachplan |
 | 4. P20.3 | Sprachausgabe: Lautsprecher-Knopf, optional automatisch vorlesen, eigene Mara-Stimme vom Server | Sprachplan |
@@ -204,7 +204,7 @@ Die Matrix bleibt die Quelle für den Funktionsstatus. Ein Paket wird erst erled
 
 Nach jeder Lieferung die Roadmap um Datum, PR/Commit und Ergebnis ergänzen. Neue Referenzfunktionen in der Matrix erfassen und einem Paket oder einem neuen Paket zuordnen. Die vollständige Abdeckung wird anhand der festgehaltenen Referenzstände geprüft, ohne aus der Anzahl der Pakete einen Fertigstellungsprozentsatz abzuleiten.
 
-**Übergabe für den nächsten Arbeitsabschnitt (28.10.2026):** Der nächste Schritt ist P20.0, der Test von Audio über Ollama und der TTS-Kandidaten auf dem echten Server (siehe [Sprachplan](docs/COREUI_VOICE_PLAN.md)). Danach P20.1 bis P20.5 und P09. Die Abschnitte "Der erste Umsetzungsabschnitt" oben beschreiben den historischen Start mit P02 bis P04 und bleiben als Nachweis stehen.
+**Übergabe für den nächsten Arbeitsabschnitt (28.10.2026):** P20.0 läuft: Das Hören über Ollama ist zweimal auf dem echten Server gemessen und im Messprotokoll des [Sprachplans](docs/COREUI_VOICE_PLAN.md) festgehalten. Als Nächstes folgen der Lauf mit dem erweiterten Test aus 0.5.74 (Denken, Live-Antwort, kurze Aufnahmen) und die TTS-Kandidaten. Danach P20.1 bis P20.5 und P09. Die Abschnitte "Der erste Umsetzungsabschnitt" oben beschreiben den historischen Start mit P02 bis P04 und bleiben als Nachweis stehen.
 
 Historische Übergabe vom 20.10.2026: P02 war der nächste Schritt. Download-Bug #29 blieb offen. Masterplan und Matrix waren gesichert; es waren durch die Roadmap noch keine Laufzeitfunktionen fertiggestellt, keine neue Migration vergeben und keine GitHub Actions ausgeführt.
 
