@@ -14,6 +14,8 @@ declare(strict_types=1);
  * worker, which reports back on its own (as before). Python inside the loop
  * only calculates; files are still made by the established first step.
  * The global channel keeps its single step.
+ * 0.5.80: [SKILL: kennung] loads a working guide from Mara's skill library
+ * (skills.php) as a step, before she goes on with the task.
  */
 
 const COREUI_AGENT_MAX_STEPS = 6;
@@ -21,6 +23,7 @@ const COREUI_AGENT_MAX_STEPS = 6;
 /** The tool Mara asks for next (pure), or null when she answers. */
 function coreui_agent_next_tool(string $reply, array $allowed): ?array {
   $checks = [
+    'skill'=>static fn(string $r): ?string => function_exists('coreui_skills_extract_marker') ? coreui_skills_extract_marker($r) : null,
     'browse'=>static fn(string $r): ?string => function_exists('ember_extract_browse_marker') ? ember_extract_browse_marker($r) : null,
     'web'=>static fn(string $r): ?string => function_exists('ember_extract_web_marker') ? ember_extract_web_marker($r) : null,
     'archive'=>static fn(string $r): ?string => coreui_extract_archive_marker($r),
@@ -36,7 +39,8 @@ function coreui_agent_next_tool(string $reply, array $allowed): ?array {
 
 /** Work view title of a step (pure, ASCII as the work store requires). */
 function coreui_agent_step_title(array $tool, int $step, int $max): string {
-  $what = ['web'=>'Websuche', 'archive'=>'Archiv durchsucht', 'python'=>'Python-Rechnung', 'browse'=>'Browser-Recherche'];
+  $what = ['web'=>'Websuche', 'archive'=>'Archiv durchsucht', 'python'=>'Python-Rechnung', 'browse'=>'Browser-Recherche',
+    'skill'=>'Skill geladen'];
   return 'Schritt ' . $step . ' von ' . $max . ': ' . ($what[(string)$tool['tool']] ?? 'Werkzeug');
 }
 
@@ -44,7 +48,8 @@ function coreui_agent_step_title(array $tool, int $step, int $max): string {
 function coreui_agent_step_note(array $tool): ?string {
   $input = trim((string)preg_replace('~\s+~u', ' ', (string)$tool['input']));
   if ($tool['tool'] === 'python' || $input === '') return null;
-  $prefix = ['web'=>'Ich suche nach: ', 'archive'=>'Ich schaue im Archiv nach: ', 'browse'=>'Ich recherchiere auf Webseiten: '];
+  $prefix = ['web'=>'Ich suche nach: ', 'archive'=>'Ich schaue im Archiv nach: ', 'browse'=>'Ich recherchiere auf Webseiten: ',
+    'skill'=>'Ich lade die Arbeitsanleitung: '];
   $note = ($prefix[(string)$tool['tool']] ?? '') . (mb_strlen($input) > 200 ? mb_substr($input, 0, 197) . '...' : $input);
   return strlen($note) >= 12 && strpbrk($note, '<>[]{}`$') === false && preg_match('~https?://~i', $note) !== 1 ? $note : null;
 }
@@ -58,6 +63,7 @@ function coreui_agent_step_label(array $tool, int $step, int $max): string {
     'archive' => 'Archiv durchsucht: „' . $short . '“',
     'python' => 'Python-Rechnung',
     'browse' => 'Recherche im Browser: „' . $short . '“',
+    'skill' => 'Skill geladen: ' . $short,
     default => 'Werkzeug',
   };
   return $what;
@@ -70,6 +76,7 @@ function coreui_agent_tool_menu(array $allowed): string {
   if (in_array('browse', $allowed, true)) $lines[] = '[BROWSE: was du herausfinden willst] um selbst Webseiten zu lesen (dauert laenger, das Ergebnis meldest du nach)';
   if (in_array('python', $allowed, true)) $lines[] = '[PY]Rechencode[/PY] um etwas zu berechnen oder zu pruefen';
   if (in_array('archive', $allowed, true)) $lines[] = '[ARCHIV: Stichworte] um in der Mitschrift dieses Chats nachzusehen';
+  if (in_array('skill', $allowed, true)) $lines[] = '[SKILL: kennung] um eine Arbeitsanleitung aus deiner Skill-Bibliothek zu laden';
   return implode("\n", array_map(static fn(string $l): string => '- ' . $l, $lines));
 }
 
@@ -151,7 +158,7 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
   // Still asking for a tool after the last step: keep only the prose.
   if ($out !== '' && coreui_agent_next_tool($out, $allowed) !== null) {
     $prose = trim(function_exists('ember_strip_stray_tool_markers') ? ember_strip_stray_tool_markers($out)
-      : (string)preg_replace('~\[(?:WEB|BROWSE|ARCHIV):[^\]]*\]|\[/?PY\]~iu', '', $out));
+      : (string)preg_replace('~\[(?:WEB|BROWSE|ARCHIV|SKILL):[^\]]*\]|\[/?PY\]~iu', '', $out));
     $out = $prose !== '' ? $prose : 'Ich habe alle ' . COREUI_AGENT_MAX_STEPS . ' Arbeitsschritte genutzt und noch keine '
       . 'sichere Antwort gefunden. Sag mir, worauf ich mich konzentrieren soll, dann suche ich gezielter weiter.';
   }

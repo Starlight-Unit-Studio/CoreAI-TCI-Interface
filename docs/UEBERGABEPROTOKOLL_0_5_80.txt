@@ -1,0 +1,38 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.5.80
+Stand: 28.10.2026
+Branch: claude/bold-galileo-myoyi0 (neu auf main nach Merge von PR #129 mit 0.5.79)
+Basis: Wunsch des Betreibers: das Skill-System als intelligentes System, Mara hat immer Zugriff auf alles und waehlt
+selbst, was sie braucht (wie bei Claude und GPT); die Skill-Einstellungen werden dadurch ueberfluessig.
+
+BEFUND:
+- Bis 0.5.79 waren die 32 Fach-Skills pro Konto opt-in (Standard aus) und wurden nur ueber Schlagwoerter geladen.
+  Ohne Schalter bekam Mara nie einen Fach-Skill; eine eigene Wahl hatte sie nicht.
+
+AENDERUNGEN:
+- api/skills.php: keine Kontoschalter mehr (coreui_skills_load/save/validate/schema_ready entfernt).
+  coreui_skills_select waehlt aus allen Fach-Skills (Trigger, /skill, $kennung), Budget wie bisher je Fenster.
+  coreui_skills_index: Skill-Bibliothek (full mit Beschreibung, titles, ids) ohne schon geladene Skills.
+  coreui_skills_compose: Pflicht-Skill + geladene Fach-Skills + Bibliothek als ein Block je Turn.
+  coreui_skills_extract_marker: [SKILL: a, b], auch als einziger Inline-Code, nie aus Erklaerungen in Code.
+  coreui_skills_tool_result: legt bis zu zwei Anleitungen in den vertrauenswuerdigen Block und meldet nur
+  "Geladen"; unbekannte Kennung -> Liste der verfuegbaren. coreui_skills_drop_index fuer Datei-Auftraege.
+  coreui_skills_prepare(PDO, Anfrage, Kanal, Budget): nur Console bekommt Skills.
+- api/console_agent_loop.php: Werkzeug "skill" (Titel "Skill geladen", Notiz "Ich lade die Arbeitsanleitung: ...",
+  Menue-Zeile [SKILL: kennung]); Prosa-Bereinigung kennt SKILL.
+- api/chat.php: ember_agent_allowed_tools bietet "skill" an, wenn die Bibliothek im Prompt steht; erster Schritt
+  erkennt [SKILL:]; ember_agent_run_tool ruft coreui_skills_tool_result; Datei-Auftrag -> coreui_skills_drop_index;
+  ember_strip_stray_tool_markers entfernt [SKILL:]. api/console_stream.php reicht [SKILL:] an die Schleife weiter.
+- Marker-Bereinigung auch in js/console-app.js (safeReplyText, dazu ARCHIV), tools/ember_browse_worker.py
+  (TOOL_MARKER_RE) und api/console_compaction.php.
+- Entfernt: api/user_skills.php, js/skills-settings.js, Skills-Tab und Kachel in settings.html,
+  scripts/skills-ui-selftest.cjs, nginx-Freigabe user_skills (beide Vorlagen), Eintraege in den Preflight-Listen,
+  Skills im Kontoexport. Insights: skills.library statt optional_enabled. Tabelle stu_user_skills bleibt liegen.
+- skills/skill-authoring/SKILL.md und docs/COREUI_SKILLS.md beschreiben die Bibliothek.
+
+GEPRUEFT:
+- Alle Offline-Selbsttests; skills-selftest.php mit echtem Durchlauf der Arbeitsschleife ([SKILL: python] ->
+  Anleitung im Block vor den Arbeitsschritten -> Antwort, Arbeitsweg "Schritt 1 von 6: Skill geladen").
+
+NAECHSTER SCHRITT: Update auf dem Server (keine Migration, nginx-Vorlage aendert sich: scripts/stack.sh
+refresh-runtime laeuft im normalen Update mit). Live pruefen: eine Code-Frage ohne Schlagwort (Mara laedt selbst),
+eine Python-Frage (Vorauswahl), Smalltalk (kein Skill). Danach Audio.

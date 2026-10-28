@@ -76,7 +76,7 @@
     if (!text) return '';
     if (/<\/think>/i.test(text)) text = text.replace(/^.*?<\/think>/is, '').trim();
     text = text.replace(/<think>[\s\S]*$/i, '').trim();
-    text = text.replace(/\[(?:WEB|BROWSE):[^\]]*\]/gi, '').replace(/\[\/?PY\]/gi, '').trim();
+    text = text.replace(/\[(?:WEB|BROWSE|ARCHIV|SKILL):[^\]]*\]/gi, '').replace(/\[\/?PY\]/gi, '').trim();
     // Historical model replies sometimes contain enormous percent-encoded
     // data: HTML instead of a server-registered download. Keep the original
     // stored message intact but do not render the payload as a wall of text.

@@ -34,7 +34,6 @@ function server(level) {
       {id: 2, fact: 'Mara ist die Stimme von CoreAI.', relevance: 9, scope: 'global'}]}),
     'health.php': () => ({ok: true, version: '0.5.79', model: 'ember-coreui:latest', checks: {database: true, schema: true, ollama: true, storage: true}}),
     'account_security.php': () => ({ok: true, sessions: []}),
-    'user_skills.php': () => ({ok: true, csrf_token: 'tok', ready: true, catalog: [], enabled: {}}),
     'admin.php': url => {
       const action = url.searchParams.get('action');
       if (action === 'users') return {ok: true, items: [{id: 1, username: 'patrick@starlight.test', display_name: 'Patrick', permission_level: 0, is_guest: 0, session_count: 3},
@@ -112,7 +111,8 @@ const smallText = page => page.evaluate(() => {
     assert.equal(await page.getAttribute('#tab-ki-profil', 'aria-selected'), 'true');
     assert.equal(await page.getAttribute('#tab-start', 'aria-selected'), 'false');
     await page.keyboard.press('ArrowDown');
-    assert.deepEqual(await visibleViews(page), ['view-skills'], 'arrow keys move between tabs');
+    assert.deepEqual(await visibleViews(page), ['view-wissen'], 'arrow keys move between tabs');
+    assert.equal(await page.locator('#tab-skills').count(), 0, 'no Skills tab: Mara picks her skills herself');
     await page.keyboard.press('Home');
     assert.deepEqual(await visibleViews(page), ['view-start']);
     await page.click('.cfg-tile[data-goto="wissen"]');

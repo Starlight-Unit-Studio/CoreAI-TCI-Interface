@@ -6,13 +6,13 @@
   <meta name="language" content="de-DE" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#f0f4fa" />
-  <meta name="application-version" content="0.5.79" />
+  <meta name="application-version" content="0.5.80" />
   <meta name="application-name" content="CoreAI: TCI Interface" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface - Einstellungen</title>
   <link rel="stylesheet" href="./css/console.css?v=0396917892177056426880940" />
   <link rel="stylesheet" href="./css/settings.css?v=0283112489552574677646382" />
-  <script src="./js/console-gate.js?v=0428390828821762213503181"></script>
+  <script src="./js/console-gate.js?v=1020516976691414647469226"></script>
   <script src="./js/coreui-preferences.js?v=0408182548343544002678570"></script>
 </head>
 <body class="settings-body">
@@ -21,7 +21,6 @@
     <symbol id="i-display" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="1" /><path d="M8 20h8M12 16v4" /></symbol>
     <symbol id="i-profile" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" /><path d="M4 20.5c1.4-4 4.4-6 8-6s6.6 2 8 6" /></symbol>
     <symbol id="i-core" viewBox="0 0 24 24"><path d="M12 3l2.2 5.8L20 11l-5.8 2.2L12 19l-2.2-5.8L4 11l5.8-2.2z" /><path d="M19 3v4M17 5h4" /></symbol>
-    <symbol id="i-skills" viewBox="0 0 24 24"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5z" /><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19M9 8h6M9 11.5h4" /></symbol>
     <symbol id="i-knowledge" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5z" /><path d="M3 12.5l9 5 9-5M3 16.5l9 5 9-5" /></symbol>
     <symbol id="i-memory" viewBox="0 0 24 24"><path d="M6.5 3h11v18l-5.5-3.8L6.5 21z" /><path d="M10 8h4" /></symbol>
     <symbol id="i-account" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="1" /><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0v3M12 14.5v2.5" /></symbol>
@@ -48,7 +47,7 @@
           <h1>EINSTELLUNGEN</h1>
         </div>
       </div>
-      <div class="settings-version">COREAI: TCI INTERFACE // v0.5.79</div>
+      <div class="settings-version">COREAI: TCI INTERFACE // v0.5.80</div>
     </header>
 
     <!-- 0.5.79: one page, categories as tabs. Each category is its own view
@@ -62,7 +61,6 @@
           <button class="cfg-tab" type="button" role="tab" id="tab-anzeige" data-view="anzeige" aria-controls="view-anzeige" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-display" /></svg><span>Anzeige</span></button>
           <button class="cfg-tab" type="button" role="tab" id="tab-profil" data-view="profil" aria-controls="view-profil" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-profile" /></svg><span>Profil</span></button>
           <button class="cfg-tab" type="button" role="tab" id="tab-ki-profil" data-view="ki-profil" aria-controls="view-ki-profil" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-core" /></svg><span>KI-Profil</span></button>
-          <button class="cfg-tab" type="button" role="tab" id="tab-skills" data-view="skills" aria-controls="view-skills" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-skills" /></svg><span>Skills</span></button>
           <button class="cfg-tab" type="button" role="tab" id="tab-wissen" data-view="wissen" aria-controls="view-wissen" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-knowledge" /></svg><span>Wissen</span></button>
           <button class="cfg-tab" type="button" role="tab" id="tab-memory" data-view="memory" aria-controls="view-memory" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-memory" /></svg><span>Memory</span></button>
           <button class="cfg-tab" type="button" role="tab" id="tab-konto" data-view="konto" aria-controls="view-konto" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-account" /></svg><span>Konto</span></button>
@@ -123,7 +121,6 @@
             <button class="cfg-tile" type="button" data-goto="anzeige"><svg aria-hidden="true"><use href="#i-display" /></svg><strong>Anzeige</strong><small>Bewegung, kompakter Chat, Telemetrie und Live-Browser.</small></button>
             <button class="cfg-tile" type="button" data-goto="profil"><svg aria-hidden="true"><use href="#i-profile" /></svg><strong>Profil</strong><small>Dein Name und Bild, Name und Bild deiner CoreAI.</small></button>
             <button class="cfg-tile" type="button" data-goto="ki-profil"><svg aria-hidden="true"><use href="#i-core" /></svg><strong>KI-Profil</strong><small>System-Prompt, Antwortbudget, Temperatur und Kontextfenster.</small></button>
-            <button class="cfg-tile" type="button" data-goto="skills"><svg aria-hidden="true"><use href="#i-skills" /></svg><strong>Skills</strong><small>Arbeitsanleitungen, die Mara passend dazulädt.</small></button>
             <button class="cfg-tile" type="button" data-goto="wissen"><svg aria-hidden="true"><use href="#i-knowledge" /></svg><strong>Wissen</strong><small>Eigene Dokumente, in denen Mara nachschlägt.</small></button>
             <button class="cfg-tile" type="button" data-goto="memory"><svg aria-hidden="true"><use href="#i-memory" /></svg><strong>Memory</strong><small>Fakten, die Mara sich über dich merken darf.</small></button>
             <button class="cfg-tile" type="button" data-goto="konto"><svg aria-hidden="true"><use href="#i-account" /></svg><strong>Konto</strong><small>Passwort, Anmeldungen, Datenexport und Abmelden.</small></button>
@@ -246,7 +243,7 @@
         <!-- KI-PROFIL -->
         <section class="cfg-view" id="view-ki-profil" role="tabpanel" aria-labelledby="tab-ki-profil" tabindex="-1" hidden>
           <header class="cfg-view-head">
-            <div><span class="cfg-kicker">MEIN COREAI</span><h2 id="aiTitle">KI-Profil</h2><p>Wie Mara für dich arbeitet. Den Core und das Denken wählst du direkt im Chat über den Core-Chip unter dem Eingabefeld.</p></div>
+            <div><span class="cfg-kicker">MEIN COREAI</span><h2 id="aiTitle">KI-Profil</h2><p>Wie Mara für dich arbeitet. Den Core und das Denken wählst du direkt im Chat über den Core-Chip unter dem Eingabefeld. Ihre Skills (Arbeitsanleitungen) wählt Mara selbst.</p></div>
             <button class="settings-action" id="saveAiSettings" type="button">SERVERSEITIG SPEICHERN</button>
           </header>
           <div class="cfg-cards">
@@ -320,25 +317,6 @@
                 <p class="ctx-status" id="aiCtxStatus"></p>
                 <small class="ctx-note">Schätzung für diesen Core, abhängig von tatsächlicher Kontextnutzung und System. Eine Änderung gilt ab dem nächsten Auftrag; ein laufender Arbeitsweg behält seinen Wert.</small>
               </div>
-            </section>
-          </div>
-        </section>
-
-        <!-- SKILLS -->
-        <section class="cfg-view" id="view-skills" role="tabpanel" aria-labelledby="tab-skills" tabindex="-1" hidden>
-          <header class="cfg-view-head">
-            <div><span class="cfg-kicker">ARBEITSANLEITUNGEN</span><h2 id="skillsTitle">Meine Skills</h2><p>Der feste System-Skill <strong>Werkzeuge</strong> ist immer aktiv. Alle weiteren Skills sind optional; bis zu vier passende Anleitungen werden je Anfrage zusätzlich geladen. Gezielt wählen: <code>/skill kennung</code>. Skills schalten keine zusätzlichen Werkzeuge frei.</p></div>
-          </header>
-          <div class="cfg-cards">
-            <section class="settings-panel cfg-card wide" aria-labelledby="skillsTitle">
-              <label class="settings-field" for="skillsSearch"><span><strong>SKILLS SUCHEN</strong></span><input id="skillsSearch" type="search" placeholder="Name, Kategorie oder Aufgabe" /></label>
-              <div class="skills-actions">
-                <button class="settings-action" id="enableAllSkills" type="button" disabled>ALLE AKTIVIEREN</button>
-                <button class="settings-action" id="disableAllSkills" type="button" disabled>ALLE DEAKTIVIEREN</button>
-                <button class="settings-action" id="saveSkills" type="button" disabled>AUSWAHL SPEICHERN</button>
-              </div>
-              <p class="cfg-status-line" id="skillsStatus" role="status">Skills werden geladen …</p>
-              <div id="skillsList"></div>
             </section>
           </div>
         </section>
@@ -764,7 +742,6 @@
   </div>
 
   <script src="./js/coreui-settings-tabs.js?v=1135950849260775405607445"></script>
-  <script src="./js/skills-settings.js?v=0475630369246311829602517"></script>
   <script src="./js/coreui-context-slider.js?v=0071279618529070371071429"></script>
   <script src="./js/settings.js?v=0314934842498128911394521"></script>
   <script src="./js/admin.js?v=0087040071739075456672003"></script>

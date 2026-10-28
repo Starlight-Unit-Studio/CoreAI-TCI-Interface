@@ -173,9 +173,10 @@
       });
       body.appendChild(list);
       var skills = state.data.skills || {};
-      var optional = Number(skills.optional_enabled) || 0;
+      // 0.5.80: Mara picks from her whole library herself.
+      var library = Number(skills.library) || 0;
       body.appendChild(el('p', 'insight-note', 'Skills: Werkzeuge (Pflicht)'
-        + (optional ? ' + ' + optional + ' optionale' : '')));
+        + (library ? ', ' + library + ' weitere wählt Mara selbst' : '')));
     }
 
     function link(name, url, meta) {

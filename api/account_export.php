@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/ai_settings.php';
-require_once __DIR__ . '/skills.php';
 require_once __DIR__ . '/profile_store.php';
 require_once __DIR__ . '/console_artifact_store.php';
 
@@ -74,7 +73,6 @@ try {
     'profile' => coreui_profile_load($pdo, $uid),
     'profile_media' => coreui_export_profile_media($pdo, $uid),
     'ai_settings' => coreui_ai_settings_load($pdo, $uid),
-    'skills' => coreui_skills_load($pdo, $uid),
     'characters' => coreui_export_rows(
       $pdo,
       'SELECT id,name,world_id,portrait_index,portrait_path,gender,created_at FROM stu_characters WHERE user_id=? ORDER BY created_at,id',

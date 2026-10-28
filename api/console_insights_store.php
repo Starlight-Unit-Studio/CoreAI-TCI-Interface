@@ -53,12 +53,9 @@ function coreui_insights_usage(PDO $pdo, int $uid, string $sessionId): ?array {
 /** Tool bus and skills as the server will actually use them. */
 function coreui_insights_tools(PDO $pdo, int $uid): array {
   $on = static fn(string $fn): bool => function_exists($fn) ? (bool)$fn() : false;
-  $skills = coreui_skills_load($pdo, $uid);
+  // 0.5.80: no per-account switches; every skill is in Mara's library.
   $required = coreui_skills_required_ids();
-  $optional = 0;
-  foreach ($skills as $id=>$enabled) {
-    if ($enabled && !in_array($id, $required, true)) $optional++;
-  }
+  $optional = count(coreui_skills_optional_ids());
   return [
     'tools'=>[
       ['id'=>'rag','label'=>'RAG-LITE','detail'=>'Eigenes Wissen','on'=>true],
@@ -67,7 +64,7 @@ function coreui_insights_tools(PDO $pdo, int $uid): array {
       ['id'=>'browse','label'=>'BROWSE','detail'=>'Browser-Recherche','on'=>$on('ember_browse_enabled')],
       ['id'=>'python','label'=>'PYTHON','detail'=>'Isolierter Worker und Projekt-Writer','on'=>$on('ember_py_enabled')],
     ],
-    'skills'=>['required'=>array_values($required),'optional_enabled'=>$optional],
+    'skills'=>['required'=>array_values($required),'library'=>$optional],
   ];
 }
 

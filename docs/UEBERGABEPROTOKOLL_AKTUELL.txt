@@ -1,9 +1,10 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
-Stand: 27.10.2026
-Repository-Version: 0.5.79
+Stand: 28.10.2026
+Repository-Version: 0.5.80
 Repository: https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface
 ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_5_80.txt
   docs/UEBERGABEPROTOKOLL_0_5_79.txt
   docs/UEBERGABEPROTOKOLL_0_5_78.txt
   docs/UEBERGABEPROTOKOLL_0_5_77.txt
@@ -108,7 +109,9 @@ klickt Treffer und liest mit, kein AFK mehr, Rollen Inhaber/Admin/Nutzer/Gast (M
 Gast-Zugang und Registrierung, Gaeste auf dem Standard-Core; Core-Menue mit Punkten gruen/gelb/rot, KI-Profil
 ohne Ollama-Liste, Einstellungen als Tab-Seite mit Start und Karten, Admin Core als Tab-Gruppe darin (admin/
 leitet weiter, css/admin.css entfaellt).
-NAECHSTER SCHRITT: Benutzerverwaltung nach Betreiberwunsch, TTS-Kandidaten, dann P20.1.
+0.5.79 ist gemergt (PR #129). 0.5.80: Skills ohne Schalter, Mara waehlt selbst (Bibliothek im Prompt, [SKILL: kennung]
+als Schritt der Arbeitsschleife, Vorauswahl bleibt).
+NAECHSTER SCHRITT: Audio (TTS-Kandidaten), Benutzerverwaltung nach Betreiberwunsch, dann P20.1.
 Mara/Ember, Ollama-Modelfile, serielle Queue und private Projekt-
 plaene NICHT ungefragt veraendern.
 Externe STU-Homepage wird in einem ANDEREN Chat bearbeitet.

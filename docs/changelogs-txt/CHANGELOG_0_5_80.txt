@@ -1,0 +1,7 @@
+CoreAI: TCI Interface 0.5.80 - 28.10.2026
+- Skills als intelligentes System: Mara hat alle Skills und waehlt selbst (wie Claude oder GPT).
+- Vorauswahl passender Skills wie bisher, alle uebrigen als Skill-Bibliothek im Prompt (Beschreibung, Titel oder Kennung je Kontextfenster).
+- [SKILL: kennung] (hoechstens zwei) laedt nach, als Schritt der Arbeitsschleife; die Anleitung kommt in den vertrauenswuerdigen Skill-Block, der Schritt meldet nur "Geladen".
+- Datei-Auftraege ohne Bibliothek (keine Schleife), Game-Kanal ohne Skills.
+- Skill-Schalter entfernt: Einstellungs-Tab Skills, api/user_skills.php, js/skills-settings.js; /skill kennung bleibt.
+- Tests: skills-selftest.php neu, skills-ui-selftest.cjs entfaellt, Insights- und Einstellungs-Tests angepasst.

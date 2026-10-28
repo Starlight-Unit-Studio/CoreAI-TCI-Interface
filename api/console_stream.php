@@ -538,7 +538,8 @@ try {
   $hasMarker = (ember_extract_web_marker($reply) !== null)
             || (ember_extract_browse_marker($reply) !== null)
             || (function_exists('ember_py_extract_marker') && ember_py_extract_marker($reply) !== null)
-            || coreui_extract_archive_marker($reply) !== null;
+            || coreui_extract_archive_marker($reply) !== null
+            || coreui_skills_extract_marker($reply) !== null;
 
   if (!$isVisionTurn && !$fileTaskHandled
       && !$hasMarker
@@ -565,7 +566,8 @@ try {
     $hasMarker = (ember_extract_web_marker($reply) !== null)
               || (ember_extract_browse_marker($reply) !== null)
               || (function_exists('ember_py_extract_marker') && ember_py_extract_marker($reply) !== null)
-            || coreui_extract_archive_marker($reply) !== null;
+            || coreui_extract_archive_marker($reply) !== null
+            || coreui_skills_extract_marker($reply) !== null;
   }
 
   // A plan with an unfinished marker may be stored as an explicitly marked
