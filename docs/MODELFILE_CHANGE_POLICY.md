@@ -24,9 +24,16 @@ Stand: 2026-10-25. Verbindlich fuer CoreUI-Entwicklung.
 - Der Denkschalter sitzt seit 0.5.75 im Chat (Core-Chip unter dem Eingabefeld). Der globale Kanal sendet weiterhin `think: true` und verhaelt sich damit wie bisher.
 - Der normale Updater (`scripts/update-from-main.sh` ruft `scripts/install.sh` auf) erzeugt `var/Modelfile.generated` und Maras Core neu; danach meldet `scripts/model-live-audit.php` wieder Uebereinstimmung.
 
+## Auftrag vom 28.10.2026: Installer im Chat (0.5.76)
+
+- Der Betreiber hat einen Installer im Chat beauftragt, damit fehlende Gemma-Stufen ohne SSH installiert werden koennen. Nur Admins duerfen ihn starten.
+- Er aendert weder `config/Modelfile.template` noch `var/Modelfile.generated` noch Maras Core. Er legt einen neuen Core an (Maras Name mit der Groesse als Tag, z. B. `ember-coreui:12b`) und schickt dafuer den Inhalt der Vorlage an `/api/create`, nur FROM zeigt auf die Gemma-Basis der Stufe. Das entspricht dem, was `scripts/install-native.sh` fuer Maras Core tut.
+- Kennt der Installer einen Befehl der Vorlage nicht, bricht er ab, statt einen abweichenden Core zu bauen. Nach dem Anlegen prueft er den SYSTEM-Text ueber `/api/show`.
+- Er laedt nichts in den Speicher und setzt keine Ollama-Parameter ausserhalb der Vorlage.
+
 ## Installation bleibt unveraendert
 
-`setup.sh`, `scripts/install.sh`, `scripts/install-native.sh`, `scripts/stack.sh`, der One-Liner und die bestehende Modell-Erstellungsroutine duerfen durch diesen Auftrag nicht geaendert werden. Jede Installationsaenderung bedarf eines separaten ausdruecklichen Auftrags.
+`setup.sh`, `scripts/install.sh`, `scripts/install-native.sh`, `scripts/stack.sh`, der One-Liner und die bestehende Modell-Erstellungsroutine duerfen durch diesen Auftrag nicht geaendert werden (auch der Installer im Chat aendert sie nicht). Jede Installationsaenderung bedarf eines separaten ausdruecklichen Auftrags.
 
 ## Pruefung und Grenzen
 

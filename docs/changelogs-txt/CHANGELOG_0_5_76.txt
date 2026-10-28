@@ -6,8 +6,10 @@ CoreAI: TCI Interface 0.5.76 - 28.10.2026
 - Arbeitsweg nur bei echter Arbeit (Werkzeug, Notiz, Korrektur, Datei, Wissenstreffer, Anhang, Fehler); Einstellung "Arbeitsweg offen halten".
 - Analyse-Filter erkennt zusammengesetzte Namen wie [Systemanalyse: ...].
 - Sprachplan Lauf 4: Vorlage 10 von 10 kurze Aufnahmen, 60 s in 18 s; Entscheidung Sprachnachricht zweistufig, Live einstufig.
-- TCI-Namen im Chat: e2b Mara Schnell, e4b Mara Normal, 26b Mara Pro, 31b Mara Premium (auch Cloud); Maras Core nach der Basis aus dem Modelfile; Chip, Menue und CORE-Infokasten.
+- TCI-Namen im Chat: e2b Mara Schnell, e4b Mara Normal, 12b Mara Plus, 26b Mara Pro, 31b Mara Premium (auch Cloud); Maras Core nach der Basis aus dem Modelfile; Chip, Menue und CORE-Infokasten.
+- Core-Menue in fester Reihenfolge Schnell, Normal, Plus, Pro, Premium, dann eigene Namen; gruener Punkt = installiert und bereit; fehlende lokale Stufe ausgegraut, aber antippbar.
+- Installer im Chat: Fenster mit Erklaerung, Hardware-Check (Ollama, RAM, CPU, Speicherplatz, Tempo) und Empfehlung; Admins installieren per Knopf (Ollama-Pull mit Fortschritt, dann Maras Core aus Modelfile.template mit getauschtem FROM, z. B. ember-coreui:12b). Ein Auftrag zur Zeit, Bestaetigung bei "lieber nicht", keine Cloud-Stufen.
 - Jeder Core ist Mara: Cores ohne SYSTEM bekommen Maras SYSTEM aus dem Modelfile als System-Nachricht.
 - Legende neben dem Core-Chip: Core-Stufen mit technischen Namen, Formatierung, Befehle und Tasten.
-- Tests: tool-mention-selftest.php und core-tiers-selftest.php (beide Preflights); markdown-, work-events-ui-, Core-Chip- und local-file-tool-Tests erweitert.
+- Tests: tool-mention-selftest.php, core-tiers-selftest.php, core-install-selftest.php und core-install-ui-selftest.cjs (beide Preflights); markdown-, work-events-ui-, Core-Chip- und local-file-tool-Tests erweitert.
 - OFFEN: TTS-Kandidaten, dann P20.1 (Mikrofon im Chat).

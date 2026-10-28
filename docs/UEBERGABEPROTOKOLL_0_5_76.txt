@@ -21,7 +21,25 @@ URSACHEN UND AENDERUNGEN:
   var/Modelfile.generated bzw. config/Modelfile.template), api/models.php und api/user_settings.php senden label,
   default_label, core_label; js/coreui-core-mode.js zeigt TCI-Namen (eine Zeile je Stufe, Maras Basis-Core in
   ihrer Stufe zusammengefasst, Sortierung Schnell bis Premium) und baut die Legende; js/coreui-insights.js
-  nutzt den Namen im CORE-Kasten. Das KI-Profil bleibt technisch. gemma4:12b hat noch keinen TCI-Namen.
+  nutzt den Namen im CORE-Kasten. Das KI-Profil bleibt technisch. Nachtrag: 12b heisst "TCI: Mara Plus".
+- Betreiberwunsch Reihenfolge und Installer: js/coreui-core-mode.js listet fest Schnell, Normal, Plus, Pro,
+  Premium (je lokal, dann Cloud), danach eigene Namen; gruener Punkt fuer installierte Cores, gelb beim Laden;
+  fehlende lokale Stufen (api/models.php missing_tiers, coreui_core_missing_tiers) ausgegraut und antippbar.
+  Ein von Maras Modelfile gebauter Core (Feld mara) hat in seiner Stufe Vorrang vor der rohen Basis.
+- Neuer Installer api/core_install.php (Bibliothek, ueber api/user_settings.php erreichbar, keine neue
+  nginx-Freigabe noetig): GET ?core_install=<stufe> liefert Hardware-Check (/proc/meminfo, /proc/cpuinfo,
+  disk_free_space des CoreAI-Laufwerks, /api/version, /api/ps fuer die Grafikkarte) mit Empfehlung gut, knapp
+  oder abraten und can_install; GET ?core_install_status=1 den Fortschritt; POST action core_install startet
+  (nur Berechtigungsstufe 0 und 1, Bestaetigung bei abraten, gesperrt ohne Ollama, flock fuer genau einen
+  Auftrag). Der Auftrag laeuft nach fastcgi_finish_request: /api/pull mit gestreamtem Fortschritt nach
+  var/cache/core-install.json, dann /api/create mit dem Inhalt von config/Modelfile.template (FROM durch die
+  Basis ersetzt, TEMPLATE, SYSTEM, RENDERER, PARSER und PARAMETER wie geschrieben; unbekannte Befehle brechen
+  ab), dann /api/show zum Pruefen des SYSTEM-Texts. Name: Maras Familie mit der Groesse als Tag
+  (ember-coreui:12b); coreui_core_tier erkennt diese Namen. Keine serielle Warteschlange (nichts wird geladen).
+- js/coreui-core-install.js und das Fenster #coreInstall in app.html: Hardware-Check, Empfehlung, Install-Knopf,
+  Fortschritt in GB und Prozent, "Jetzt nutzen" nach Erfolg; Nicht-Admins sehen den Check ohne Knopf.
+- Die 12b-Groesse im Katalog (ca. 8 GB) ist geschaetzt; ollama.com war aus der Arbeitsumgebung nicht
+  erreichbar. Kennt Ollama gemma4:12b nicht, meldet das Fenster das in Klartext.
 - Betreiberentscheidung Persona: api/chat.php ember_persona_system_for (Maras Core leer, Core ohne SYSTEM laut
   /api/show bekommt ember_mara_system_text, Core mit eigenem SYSTEM behaelt ihn), in beiden Prompt-Buildern.
 - app.html/css: Legende (Knopf neben dem Chip) mit Core-Stufen, Formatierung, Befehlen und Tasten.
@@ -29,11 +47,15 @@ URSACHEN UND AENDERUNGEN:
   Roadmap P20.0 Hoeren erledigt.
 
 GEPRUEFT:
-- Alle Offline-Selbsttests, neu tool-mention-selftest.php mit der Erklaerung aus dem Chattest; echte Aufrufe
-  (WEB, BROWSE, PY einzeilig und mit Fence) weiterhin erkannt.
+- Alle Offline-Selbsttests (51), neu tool-mention-selftest.php mit der Erklaerung aus dem Chattest; echte Aufrufe
+  (WEB, BROWSE, PY einzeilig und mit Fence) weiterhin erkannt. Neu core-install-selftest.php (Create-Anfrage
+  aus dem echten Template, Parser, Empfehlungen, Pull-Fortschritt, Sperre, Rechte) und
+  core-install-ui-selftest.cjs (Fenster in allen Zustaenden). Menue und Fenster per Browser-Screenshot auf
+  Desktop und Handy geprueft (ohne Querscrollen). Ein echter Pull gegen Ollama steht noch aus.
 
 HINWEIS AN DEN BETREIBER: Auf dem Server sind gemma4:26b und gemma4:e2b nur weitere Namen fuer dieselbe
 Gewichtsdatei wie gemma4:e4b (370c2879f176, 7.5B). Ob sie geloescht oder die echten Modelle gezogen werden,
 entscheidet der Betreiber; CoreAI aendert keine Modelle.
 
-NAECHSTER SCHRITT: TTS-Kandidaten fuer Maras Stimme messen, dann P20.1 (Mikrofon im Chat, zweistufig).
+NAECHSTER SCHRITT: Installer einmal echt auf dem Server ausprobieren (z. B. Plus), dann TTS-Kandidaten fuer
+Maras Stimme messen, dann P20.1 (Mikrofon im Chat, zweistufig).

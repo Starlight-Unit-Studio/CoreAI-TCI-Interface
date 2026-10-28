@@ -5,7 +5,11 @@
    by the server, the chip shows LÄDT until Ollama holds it in memory.
    0.5.76: Gemma tiers carry TCI names (Schnell, Normal, Pro, Premium; the
    server decides, see coreui_core_label). The technical names live in the
-   legend next to the chip, together with formatting and commands. */
+   legend next to the chip, together with formatting and commands.
+   The list keeps a fixed order (Schnell, Normal, Plus, Pro, Premium, then
+   Cores with their own name). Installed Cores carry a green dot; a missing
+   local tier stays greyed but opens the install window
+   (coreui-core-install.js). */
 (function () {
   'use strict';
 
@@ -28,7 +32,8 @@
 
   // Mirror of coreui_core_tier() for names the server has not labelled yet.
   var TIERS = [['e2b', 'TCI: Mara Schnell', 'Gemma 4 E2B'], ['e4b', 'TCI: Mara Normal', 'Gemma 4 E4B'],
-    ['26b', 'TCI: Mara Pro', 'Gemma 4 26B'], ['31b', 'TCI: Mara Premium', 'Gemma 4 31B']];
+    ['12b', 'TCI: Mara Plus', 'Gemma 4 12B'], ['26b', 'TCI: Mara Pro', 'Gemma 4 26B'],
+    ['31b', 'TCI: Mara Premium', 'Gemma 4 31B']];
   function tierLabel(name) {
     var m = String(name || '').trim().toLowerCase();
     if (!/gemma-?4/.test(m)) return '';
@@ -38,11 +43,14 @@
     return '';
   }
 
-  function create(doc, fetchFn, schedule) {
+  function create(doc, fetchFn, schedule, opts) {
     var chip = doc.getElementById('coreModeChip');
     var menu = doc.getElementById('coreModeMenu');
     if (!chip || !menu || typeof fetchFn !== 'function') return null;
     schedule = schedule || function (fn, ms) { return window.setTimeout(fn, ms); };
+    opts = opts || {};
+    var installer = typeof opts.installer === 'function' ? opts.installer
+      : function () { return window.CoreUICoreInstall && window.CoreUICoreInstall.instance; };
     var nameEl = doc.getElementById('coreModeName');
     var thinkEl = doc.getElementById('coreModeThink');
     var list = doc.getElementById('coreModeList');
@@ -52,7 +60,8 @@
     var legend = doc.getElementById('coreLegend');
     var legendRows = doc.getElementById('coreLegendRows');
     var state = {thinking: true, override: '', defaultModel: '', defaultLabel: '', labels: {}, csrf: '',
-      loaded: false, saving: false, models: null, inMemory: [], loading: '', polls: 0, listError: false};
+      loaded: false, saving: false, models: null, inMemory: [], loading: '', polls: 0, listError: false,
+      missing: [], install: null, mara: {}};
 
     function effective() { return state.override || state.defaultModel; }
     function labelOf(name) {
@@ -80,33 +89,73 @@
       }
     }
 
-    function option(value, label, meta, disabled) {
+    // dot: ready (green), loading, missing, gone or unknown (Ollama list not read).
+    function entry(label, meta, dot) {
       var button = doc.createElement('button');
-      var checked = value === state.override;
       button.type = 'button';
       button.className = 'core-mode-option';
       button.setAttribute('role', 'radio');
-      button.setAttribute('aria-checked', checked ? 'true' : 'false');
-      button.setAttribute('data-value', value);
-      button.disabled = !!disabled || state.saving;
+      var mark = doc.createElement('span');
+      mark.className = 'core-mode-dot';
+      mark.setAttribute('data-state', dot);
+      mark.setAttribute('aria-hidden', 'true');
       var name = doc.createElement('span');
       name.className = 'core-mode-option-name';
       name.textContent = label;
       var small = doc.createElement('small');
       small.textContent = meta;
-      var mark = doc.createElement('span');
-      mark.className = 'core-mode-check';
-      mark.setAttribute('aria-hidden', 'true');
-      mark.textContent = checked ? '✓' : '';
+      var check = doc.createElement('span');
+      check.className = 'core-mode-check';
+      check.setAttribute('aria-hidden', 'true');
       button.appendChild(name);
       button.appendChild(small);
+      button.appendChild(check);
       button.appendChild(mark);
+      return button;
+    }
+
+    function option(value, label, meta, disabled) {
+      var checked = value === state.override;
+      var core = value || state.defaultModel;
+      var dot = disabled ? 'gone' : state.models === null ? 'unknown'
+        : (state.loading && state.loading === modelKey(core) ? 'loading' : 'ready');
+      var button = entry(label, meta, dot);
+      button.setAttribute('aria-checked', checked ? 'true' : 'false');
+      button.setAttribute('data-value', value);
+      button.disabled = !!disabled || state.saving;
+      button.children[2].textContent = checked ? '✓' : '';
       button.addEventListener('click', function (event) {
         // The list is rebuilt on choice; the click must not count as outside the menu.
         if (event && typeof event.stopPropagation === 'function') event.stopPropagation();
         return choose(value);
       });
       return button;
+    }
+
+    // A local tier Ollama does not have: greyed, but it opens the install window.
+    function missingOption(miss) {
+      var job = state.install && state.install.tier === miss.tier && state.install.running ? state.install : null;
+      var meta = job ? 'wird installiert' + (job.percent > 0 ? ' · ' + job.percent + ' %' : ' …') : 'nicht installiert';
+      var button = entry(miss.label, meta, 'missing');
+      button.className = 'core-mode-option core-mode-option--missing';
+      button.setAttribute('aria-checked', 'false');
+      button.setAttribute('data-tier', miss.tier);
+      button.setAttribute('aria-label', miss.label + ', ' + meta + '. Öffnet die Installation.');
+      button.addEventListener('click', function (event) {
+        if (event && typeof event.stopPropagation === 'function') event.stopPropagation();
+        return openInstall(miss.tier);
+      });
+      return button;
+    }
+
+    function openInstall(tier) {
+      var tool = installer();
+      if (!tool || typeof tool.open !== 'function') {
+        say('Die Installation ist gerade nicht verfügbar.');
+        return Promise.resolve();
+      }
+      close(false);
+      return Promise.resolve(tool.open(tier));
     }
 
     function metaFor(name, size, prefix) {
@@ -120,7 +169,7 @@
 
     function renderList() {
       if (!list) return;
-      while (list.firstChild) list.removeChild(list.firstChild);
+      clear(list);
       if (state.models === null) {
         var wait = doc.createElement('p');
         wait.className = 'core-mode-empty';
@@ -128,31 +177,41 @@
         list.appendChild(wait);
         if (!state.listError) return;
       }
-      // One entry per TCI name: Mara's own Core is the standard; a raw Core of
-      // the same tier (her base) and further variants are listed in the legend.
-      var seen = {};
+      // Fixed order: Schnell to Premium (local, then cloud), then Cores with
+      // their own name. One entry per tier: Mara's own Core is the standard,
+      // her raw base and further variants are listed in the legend; the
+      // current choice is shown in addition.
+      var names = (state.models || []).map(function (m) { return String(m && m.name || ''); }).filter(Boolean);
+      var tierLabels = TIERS.map(function (t) { return t[1]; });
       var standard = labelOf(state.defaultModel);
-      seen[standard + '|' + isCloud(state.defaultModel)] = true;
-      list.appendChild(option('', standard, metaFor(state.defaultModel, sizeOf(state.defaultModel), 'Standard'), false));
+      var shown = {};
       var found = state.override === '';
-      // Tier order (Schnell to Premium, local before cloud), own names last.
-      var rank = function (name) {
-        var label = labelOf(name);
-        for (var i = 0; i < TIERS.length; i++) if (TIERS[i][1] === label) return i * 2 + (isCloud(name) ? 1 : 0);
-        return 99;
-      };
-      (state.models || []).slice().sort(function (a, b) {
-        return rank(String(a && a.name || '')) - rank(String(b && b.name || ''));
-      }).forEach(function (model) {
-        var name = String(model && model.name || '');
-        if (!name) return;
-        var current = name === state.override;
-        if (current) found = true;
-        var label = labelOf(name);
-        var key = label + '|' + isCloud(name);
-        if (!current && (sameCore(name, state.defaultModel) || seen[key])) return;
-        seen[key] = true;
-        list.appendChild(option(name, label, metaFor(name, model.parameter_size || ''), false));
+      function add(value) {
+        var core = value || state.defaultModel;
+        shown[modelKey(core)] = true;
+        if (value === state.override) found = true;
+        list.appendChild(option(value, labelOf(core), metaFor(core, sizeOf(core), value ? '' : 'Standard'), false));
+      }
+      function slot(label, cloud) {
+        var cores = names.filter(function (n) {
+          return isCloud(n) === cloud && labelOf(n) === label && !sameCore(n, state.defaultModel);
+        });
+        if (standard === label && isCloud(state.defaultModel) === cloud) add('');
+        else if (cores.length) add(cores.filter(function (n) { return state.mara[modelKey(n)]; })[0] || cores[0]);
+        else return false;
+        cores.forEach(function (n) { if (n === state.override && !shown[modelKey(n)]) add(n); });
+        return true;
+      }
+      TIERS.forEach(function (tier) {
+        if (!slot(tier[1], false)) {
+          var miss = state.missing.filter(function (m) { return m.label === tier[1]; })[0];
+          if (miss) list.appendChild(missingOption(miss));
+        }
+        slot(tier[1], true);
+      });
+      if (tierLabels.indexOf(standard) < 0) add('');
+      names.forEach(function (n) {
+        if (tierLabels.indexOf(labelOf(n)) < 0 && !shown[modelKey(n)] && !sameCore(n, state.defaultModel)) add(n);
       });
       if (!found && state.models !== null) list.appendChild(option(state.override, labelOf(state.override), 'nicht mehr installiert', true));
       else if (!found) list.appendChild(option(state.override, labelOf(state.override), metaFor(state.override, ''), false));
@@ -182,7 +241,7 @@
       TIERS.forEach(function (tier) {
         var names = models.filter(function (n) { return labelOf(n) === tier[1]; });
         var core = names.length ? names.map(function (n) {
-          return n + (sameCore(n, state.defaultModel) ? ' (Maras Core)' : '');
+          return n + (sameCore(n, state.defaultModel) ? ' (Maras Core)' : state.mara[modelKey(n)] ? ' (Maras Modelfile)' : '');
         }).join(', ') : tier[2];
         var note = !names.length ? (state.models === null ? '' : 'nicht installiert')
           : names.some(function (n) { return sameCore(n, state.defaultModel); }) ? 'Standard'
@@ -239,12 +298,18 @@
           state.models = Array.isArray(both[0].models) ? both[0].models : [];
           if (both[0].default_model) state.defaultModel = String(both[0].default_model);
           if (both[0].default_label) state.defaultLabel = String(both[0].default_label);
+          state.mara = {};
           state.models.forEach(function (m) {
             if (m && m.name && m.label) state.labels[modelKey(m.name)] = String(m.label);
+            if (m && m.name && m.mara) state.mara[modelKey(m.name)] = true;
           });
+          state.missing = (Array.isArray(both[0].missing_tiers) ? both[0].missing_tiers : []).filter(function (m) {
+            return m && m.tier && m.label;
+          });
+          state.install = both[0].install && typeof both[0].install === 'object' ? both[0].install : null;
           state.inMemory = Array.isArray(both[1].loaded) ? both[1].loaded.map(modelKey) : [];
         })
-        .catch(function () { state.models = null; state.listError = true; })
+        .catch(function () { state.models = null; state.missing = []; state.listError = true; })
         .then(function () { renderList(); render(); });
     }
 
@@ -390,6 +455,7 @@
       openLegend: openLegend,
       closeLegend: closeLegend,
       label: labelOf,
+      refresh: loadList,
       state: function () {
         return {thinking: state.thinking, override: state.override, core: effective(), loaded: state.loaded, loading: state.loading};
       }

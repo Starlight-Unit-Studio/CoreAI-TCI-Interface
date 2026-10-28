@@ -20,10 +20,18 @@ arbeitet. Im Sprachplan steht Lauf 4 mit der Entscheidung: Mitschrift ueber
 Googles Transkriptionsvorlage, Sprachnachrichten zweistufig, Live einstufig.
 
 Im Chat tragen die Gemma-Stufen TCI-Namen: Mara Schnell (e2b), Normal (e4b),
-Pro (26b) und Premium (31b), auch in der Cloud. Jeder Core antwortet als Mara:
+Plus (12b), Pro (26b) und Premium (31b), auch in der Cloud. Das Core-Menue
+zeigt sie immer in dieser Reihenfolge, danach Cores mit eigenem Namen; ein
+gruener Punkt heisst installiert und bereit. Jeder Core antwortet als Mara:
 Cores ohne eigenen SYSTEM-Text bekommen Maras Text aus dem Modelfile. Die
 technischen Namen, die Formatierung und die Befehle stehen in der Legende
 neben dem Core-Chip.
+
+Fehlt eine lokale Stufe, steht sie ausgegraut im Menue. Ein Tipp oeffnet
+den Installer: Erklaerung, kurzer Hardware-Check mit Empfehlung und fuer
+Admins ein Knopf "Installieren". Ollama laedt dann die Gemma-Basis, CoreAI
+baut daraus Maras Core aus `config/Modelfile.template` (nur FROM getauscht)
+und zeigt den Fortschritt. So geht das ganz ohne SSH und Terminal.
 
 ## Denkschalter und Core-Wahl im Chat (0.5.75)
 

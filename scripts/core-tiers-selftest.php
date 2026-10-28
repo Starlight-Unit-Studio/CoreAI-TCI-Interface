@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
-// CoreAI 0.5.76: Gemma tiers carry TCI names in the chat, and every Core
-// speaks as Mara. Her own Core keeps the Modelfile SYSTEM; a raw Gemma or
+// CoreAI 0.5.76: Gemma tiers carry TCI names in the chat (Schnell, Normal,
+// Plus, Pro, Premium), and every Core speaks as Mara. Her own Core keeps the Modelfile SYSTEM; a raw Gemma or
 // cloud Core without one gets the same text as system message.
 if (PHP_SAPI !== 'cli') exit(1);
 $root = dirname(__DIR__);
@@ -22,7 +22,12 @@ foreach ([
   'gemma4:31b-cloud' => 'TCI: Mara Premium',
   'gemma4:26b-a4b-it-q4_K_M' => 'TCI: Mara Pro',
   'hf.co/x/gemma-4-E4B-it-GGUF:Q8_0' => 'TCI: Mara Normal',
-  'gemma4:12b' => 'gemma4:12b',
+  'gemma4:12b' => 'TCI: Mara Plus',
+  'gemma4:12b-cloud' => 'TCI: Mara Plus',
+  // Cores the chat installer built from Mara's Modelfile (family:size).
+  'ember-coreui:12b' => 'TCI: Mara Plus',
+  'Ember-CoreUI:26b' => 'TCI: Mara Pro',
+  'ember-coreui:test' => 'ember-coreui:test',
   'gpt-oss:120b-cloud' => 'gpt-oss:120b-cloud',
   'gemma3:27b' => 'gemma3:27b',
 ] as $model => $label) tier_test(coreui_core_label($model) === $label, "label of {$model}");
@@ -33,6 +38,11 @@ tier_test($base !== '' && coreui_core_tier($base) !== null, 'base of Mara\'s Cor
 $default = defined('STU_EMBER_MODEL') ? (string)STU_EMBER_MODEL : 'ember-coreui:latest';
 tier_test(coreui_core_label($default) === COREUI_CORE_TIER_LABELS[coreui_core_tier($base)], 'Mara\'s Core carries the tier of her base');
 tier_test(coreui_core_same('Ember-CoreUI', 'ember-coreui:latest') && !coreui_core_same('', ''), 'names compare like Ollama');
+tier_test(array_keys(COREUI_CORE_TIER_LABELS) === ['schnell', 'normal', 'plus', 'pro', 'premium']
+  && array_values(COREUI_CORE_TIER_SIZES) === array_keys(COREUI_CORE_TIER_LABELS)
+  && array_keys(COREUI_CORE_INSTALL_CATALOG) === array_keys(COREUI_CORE_TIER_LABELS), 'one fixed tier order everywhere');
+tier_test(coreui_core_is_mara($default) && coreui_core_is_mara('ember-coreui:12b') && !coreui_core_is_mara('gemma4:12b'),
+  'Mara\'s Cores are recognised by her name');
 
 // Persona: Mara's SYSTEM text without a thinking switch, never for her own Core.
 $template = (string)file_get_contents($root . '/config/Modelfile.template');

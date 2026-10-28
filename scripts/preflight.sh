@@ -161,6 +161,10 @@ UI_FILES=(
   api/core_preload.php
   scripts/tool-mention-selftest.php
   scripts/core-tiers-selftest.php
+  scripts/core-install-selftest.php
+  scripts/core-install-ui-selftest.cjs
+  api/core_install.php
+  js/coreui-core-install.js
   scripts/media-spike.php
   scripts/media-spike.sh
   js/coreui-net.js
@@ -645,6 +649,13 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail "Core-Stufen-Selbsttest: ${tiers_test:-Unbekannter Fehler}"
   fi
 
+  install_test=''
+  if install_test="$(compose exec -T php php scripts/core-install-selftest.php 2>&1)"; then
+    ok 'Core-Installer: Maras Core aus dem Modelfile, Hardware-Check, Fortschritt, ein Auftrag, nur Admins geprueft.'
+  else
+    fail "Core-Installer-Selbsttest: ${install_test:-Unbekannter Fehler}"
+  fi
+
   mention_test=''
   if mention_test="$(compose exec -T php php scripts/tool-mention-selftest.php 2>&1)"; then
     ok 'Werkzeug-Erwaehnungen: Erklaerungen starten kein Werkzeug und keine Korrekturrunde.'
@@ -681,9 +692,14 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       fail 'KI-Profil: Kontextfenster-Regler-Selbsttest fehlgeschlagen.'
     fi
     if node "$PROJECT_ROOT/scripts/thinking-switch-ui-selftest.cjs" >/dev/null 2>&1; then
-      ok 'Chat: Core-Chip mit TCI-Namen, Legende, Laden, Denkschalter und Fehlerfaellen geprueft.'
+      ok 'Chat: Core-Chip mit TCI-Namen, fester Reihenfolge, gruenen Punkten, Legende, Laden, Denkschalter und Fehlerfaellen geprueft.'
     else
       fail 'Chat: Denkschalter-Oberflaechentest fehlgeschlagen.'
+    fi
+    if node "$PROJECT_ROOT/scripts/core-install-ui-selftest.cjs" >/dev/null 2>&1; then
+      ok 'Chat: Install-Fenster mit Hardware-Check, Bestaetigung, Fortschritt und Jetzt nutzen geprueft.'
+    else
+      fail 'Chat: Install-Fenster-Oberflaechentest fehlgeschlagen.'
     fi
     if node "$PROJECT_ROOT/scripts/webui-resilience-selftest.cjs" >/dev/null 2>&1; then
       ok 'WebUI: abbrechbares Laden, Reconnect ohne Doppelauftrag, Backoff und lange Chats geprueft.'

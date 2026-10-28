@@ -28,6 +28,24 @@ if ($method === 'GET' && array_key_exists('core_status', $_GET)) {
   stu_json(['ok'=>true, 'loaded'=>coreui_ollama_loaded_names()]);
 }
 
+// 0.5.76: chat installer for missing tiers. Every account sees what is
+// missing and the progress; the hardware check and installing are for admins.
+if ($method === 'GET' && (array_key_exists('core_install', $_GET) || array_key_exists('core_install_status', $_GET))) {
+  require_once __DIR__ . '/core_install.php';
+  $level = stu_get_permission_level($pdo);
+  $csrf = stu_csrf_token();
+  if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
+  if (!array_key_exists('core_install', $_GET)) stu_json(['ok'=>true, 'install'=>coreui_core_install_status()]);
+  $admin = $level <= COREUI_CORE_INSTALL_PERMISSION_MAX;
+  try {
+    $check = coreui_core_install_check(trim((string)$_GET['core_install']), $admin);
+  } catch (RuntimeException $e) {
+    stu_json(['ok'=>false, 'error'=>$e->getMessage()], 400);
+  }
+  stu_json(['ok'=>true, 'check'=>$check, 'can_install'=>$admin,
+    'install'=>coreui_core_install_status(), 'csrf_token'=>$csrf]);
+}
+
 if ($method === 'GET') {
   $settings = coreui_ai_settings_load($pdo, $uid);
   $defaultModel = defined('STU_EMBER_MODEL') ? (string)STU_EMBER_MODEL : '';
@@ -107,6 +125,51 @@ if (($body['action'] ?? '') === 'core') {
     coreui_core_preload($pdo, $uid, $model);
   } catch (Throwable $e) {
     if (function_exists('stu__log_error')) stu__log_error(['type'=>'core_preload_failed', 'uid'=>$uid, 'message'=>$e->getMessage()]);
+  }
+  exit;
+}
+// 0.5.76: install a missing tier from the chat. Admins only, one job at a
+// time; the answer goes out at once, the job reports into the status file.
+if (($body['action'] ?? '') === 'core_install') {
+  require_once __DIR__ . '/core_install.php';
+  if (stu_get_permission_level($pdo) > COREUI_CORE_INSTALL_PERMISSION_MAX) {
+    stu_json(['ok'=>false, 'error'=>'install_not_allowed'], 403);
+  }
+  try {
+    $check = coreui_core_install_check(trim((string)($body['tier'] ?? '')));
+  } catch (RuntimeException $e) {
+    stu_json(['ok'=>false, 'error'=>$e->getMessage()], 400);
+  }
+  if ($check['installed']) stu_json(['ok'=>false, 'error'=>'already_installed'], 409);
+  if ($check['blocked']) stu_json(['ok'=>false, 'error'=>'install_blocked', 'check'=>$check], 409);
+  // Advised against: only with a second, explicit confirmation.
+  if ($check['verdict'] === 'abraten' && ($body['confirm'] ?? false) !== true) {
+    stu_json(['ok'=>false, 'error'=>'install_confirm_required', 'check'=>$check], 409);
+  }
+  try {
+    $lock = coreui_core_install_lock();
+  } catch (RuntimeException $e) {
+    stu_json(['ok'=>false, 'error'=>$e->getMessage()], 503);
+  }
+  if ($lock === false) stu_json(['ok'=>false, 'error'=>'install_running', 'install'=>coreui_core_install_status()], 409);
+  $state = coreui_core_install_begin($check);
+  if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
+  http_response_code(200);
+  header('Content-Type: application/json; charset=utf-8');
+  header('Cache-Control: no-store');
+  echo json_encode(['ok'=>true, 'install'=>['running'=>true] + array_diff_key($state, ['layers'=>true])], JSON_UNESCAPED_UNICODE);
+  if (function_exists('fastcgi_finish_request')) @fastcgi_finish_request();
+  ignore_user_abort(true);
+  @set_time_limit(0);
+  try {
+    coreui_core_install_run($state);
+  } catch (Throwable $e) {
+    coreui_core_install_write(['phase'=>'error', 'error'=>'install_failed',
+      'message'=>'Die Installation ist abgebrochen. Details stehen im Fehlerprotokoll.'] + $state);
+    if (function_exists('stu__log_error')) stu__log_error(['type'=>'core_install_failed', 'uid'=>$uid, 'message'=>$e->getMessage()]);
+  } finally {
+    flock($lock, LOCK_UN);
+    fclose($lock);
   }
   exit;
 }
