@@ -96,6 +96,14 @@
     return normalized.slice(0, 16);
   }
 
+  var ROLE_OPTIONS = [[0, 'INHABER'], [1, 'ADMIN'], [4, 'NUTZER']];
+
+  function roleName(level, guest) {
+    if (guest) return 'GAST';
+    var hit = ROLE_OPTIONS.filter(function (role) { return role[0] === Number(level); })[0];
+    return hit ? hit[1] : 'NUTZER';
+  }
+
   function loadUsers() {
     var q = document.getElementById('userSearch').value.trim();
     return api('users', null, 'limit=150&q=' + encodeURIComponent(q)).then(function (data) {
@@ -111,12 +119,15 @@
 
         var levelCell = el('td');
         var level = document.createElement('select');
-        [0, 1, 2, 3, 4].forEach(function (value) {
-          var option = el('option', '', value + ' // ' + ['SYSTEM', 'ADMIN', 'MOD', 'CHAT-MOD', 'USER'][value]);
-          option.value = String(value);
-          if (Number(user.permission_level) === value) option.selected = true;
+        // 0.5.79: CoreAI roles instead of the old game ranks; a guest stays a guest.
+        var roles = Number(user.is_guest) === 1 ? [[4, 'GAST']] : ROLE_OPTIONS;
+        roles.forEach(function (role) {
+          var option = el('option', '', role[1]);
+          option.value = String(role[0]);
+          if (Number(user.permission_level) === role[0] || roles.length === 1) option.selected = true;
           level.appendChild(option);
         });
+        level.disabled = roles.length === 1;
         levelCell.appendChild(level);
         row.appendChild(levelCell);
 
@@ -303,6 +314,7 @@
     document.getElementById('guestMessageLimit').value = settings.guest_message_limit || '5';
     document.getElementById('guestNetworkGuests').value = settings.guest_network_guests || '1';
     document.getElementById('guestDailyMessages').value = settings.guest_daily_messages != null ? settings.guest_daily_messages : '200';
+    document.getElementById('captchaEnabled').checked = settings.captcha_enabled == null ? true : boolSetting(settings.captcha_enabled);
     document.getElementById('maintenanceEnabled').checked = boolSetting(settings.maintenance_enabled);
     document.getElementById('memoryDefaultEnabled').checked = boolSetting(settings.memory_default_enabled);
     document.getElementById('promptLimit').value = settings.user_system_prompt_max_chars || '6000';
@@ -323,6 +335,7 @@
       guest_message_limit: document.getElementById('guestMessageLimit').value,
       guest_network_guests: document.getElementById('guestNetworkGuests').value,
       guest_daily_messages: document.getElementById('guestDailyMessages').value,
+      captcha_enabled: document.getElementById('captchaEnabled').checked ? '1' : '0',
       maintenance_enabled: document.getElementById('maintenanceEnabled').checked ? '1' : '0',
       memory_default_enabled: document.getElementById('memoryDefaultEnabled').checked ? '1' : '0',
       user_system_prompt_max_chars: document.getElementById('promptLimit').value,
@@ -410,7 +423,7 @@
       actorLevel = Number(data.permission_level);
       var adminOption = document.querySelector('#newUserLevel option[value="1"]');
       if (adminOption && actorLevel > 0) adminOption.disabled = true;
-      if (identity) identity.textContent = (data.username || 'ADMIN') + ' // LV.' + data.permission_level;
+      if (identity) identity.textContent = (data.username || 'ADMIN') + ' // ' + roleName(data.permission_level, false);
       bind();
       var initial = location.hash.replace(/^#/, '') || 'overview';
       if (!document.querySelector('[data-panel="' + initial + '"]')) initial = 'overview';

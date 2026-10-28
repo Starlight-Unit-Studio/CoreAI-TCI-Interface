@@ -7,12 +7,13 @@
   <meta http-equiv="Accept-Language" content="de-DE, de;q=0.9, en;q=0.8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="application-name" content="CoreAI: TCI Interface" />
-  <meta name="application-version" content="0.5.78" />
+  <meta name="application-version" content="0.5.79" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface - Login</title>
-  <link rel="stylesheet" href="./css/console.css?v=0126314495665228751302134" />
-  <script src="./js/console-gate.js?v=0167122946032016966563344"></script>
+  <link rel="stylesheet" href="./css/console.css?v=0954779773437532126240117" />
+  <script src="./js/console-gate.js?v=0428390828821762213503181"></script>
   <script src="./js/coreui-preferences.js?v=0408182548343544002678570"></script>
+  <script src="./js/coreui-captcha.js?v=0847946519843965556453703"></script>
 </head>
 <body>
   <div class="login-page" style="background-image:url('./images/login_background.webp')">
@@ -22,7 +23,7 @@
         <img class="logo" src="./images/starlight_unit_studios_logo_original.png" alt="Starlight Unit Studios" draggable="false" />
       </div>
       <div class="login-brand">COREAI:<span class="brand-product-part">TCI INTERFACE</span></div>
-      <div class="login-brand-sub">QUANTUM SOFTWARE // N-73 // v0.5.78</div>
+      <div class="login-brand-sub">QUANTUM SOFTWARE // N-73 // v0.5.79</div>
 
       <div class="login-field-group">
         <label for="email">E-MAIL</label>
@@ -92,7 +93,30 @@
       document.getElementById('loginError').style.display = 'none';
     }
 
-    function doRegister() {
+    // 0.5.79: Sicherheitspruefung (Captcha, ohne Dritte) vor Gast-Zugang und Registrierung.
+    // Der Browser rechnet kurz eine signierte Aufgabe, der Knopf zeigt den Fortschritt.
+    var CAPTCHA_ERRORS = {
+      'captcha_required': 'Die Sicherheitsprüfung fehlt. Bitte noch einmal versuchen.',
+      'captcha_invalid':  'Die Sicherheitsprüfung ist fehlgeschlagen. Bitte noch einmal versuchen.',
+      'captcha_expired':  'Die Sicherheitsprüfung ist abgelaufen. Bitte noch einmal versuchen.',
+      'captcha_reused':   'Die Sicherheitsprüfung wurde schon benutzt. Bitte noch einmal versuchen.',
+      'captcha_unsolved': 'Die Sicherheitsprüfung ließ sich nicht lösen. Bitte Seite neu laden.'
+    };
+    function securityCheck(button) {
+      return fetch('./api/auth.php?action=captcha', { credentials: 'include', cache: 'no-store' })
+        .then(function(r) { return r.json(); })
+        .then(function(task) {
+          if (!task || !task.ok) throw new Error((task && task.error) || 'captcha_unavailable');
+          if (!task.required) return null;
+          if (!window.CoreAICaptcha) throw new Error('captcha_unsolved');
+          button.textContent = 'SICHERHEITSPRÜFUNG…';
+          return window.CoreAICaptcha.solve(task, function(progress) {
+            button.textContent = 'SICHERHEITSPRÜFUNG ' + Math.min(99, Math.round(progress * 100)) + ' %';
+          });
+        });
+    }
+
+    function doRegister(retried) {
       var email = document.getElementById('email').value.trim();
       var pass  = document.getElementById('password').value;
       var again = document.getElementById('passwordRepeat').value;
@@ -106,16 +130,24 @@
 
       btn.disabled = true;
       btn.textContent = 'ERSTELLE KONTO…';
-      fetch('./api/auth.php?action=register', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: email, password: pass, display_name: name })
+      securityCheck(btn)
+      .then(function(captcha) {
+        btn.textContent = 'ERSTELLE KONTO…';
+        return fetch('./api/auth.php?action=register', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: email, password: pass, display_name: name, captcha: captcha })
+        });
       })
       .then(function(r) { return r.json(); })
       .then(function(d) {
         if (d.ok) {
           location.replace('app.html');
+          return;
+        }
+        if (/^captcha_(?:expired|reused|invalid)$/.test(String(d.error || '')) && retried !== true) {
+          doRegister(true);
           return;
         }
         btn.disabled = false;
@@ -128,28 +160,42 @@
           'rate_limited':          'Zu viele Versuche. Bitte warten.',
           'maintenance_mode':      'Wartungsmodus: gerade keine neuen Konten.'
         };
+        Object.keys(CAPTCHA_ERRORS).forEach(function(k) { errMap[k] = CAPTCHA_ERRORS[k]; });
         if (d.error === 'registration_disabled') {
           toggle.hidden = true;
           setMode('login');
         }
         showError(errMap[d.error] || ('Fehler: ' + (d.error || 'unbekannt')));
       })
-      .catch(function() {
+      .catch(function(err) {
         btn.disabled = false;
         btn.textContent = 'KONTO ERSTELLEN';
-        showError('Verbindungsfehler. Server nicht erreichbar.');
+        showError(CAPTCHA_ERRORS[err && err.message] || 'Verbindungsfehler. Server nicht erreichbar.');
       });
     }
 
-    function doGuest() {
+    function doGuest(retried) {
       hideError();
       guestBtn.disabled = true;
       guestBtn.textContent = 'STARTE GAST-ZUGANG…';
-      fetch('./api/auth.php?action=guest', { method: 'POST', credentials: 'include' })
+      securityCheck(guestBtn)
+      .then(function(captcha) {
+        guestBtn.textContent = 'STARTE GAST-ZUGANG…';
+        return fetch('./api/auth.php?action=guest', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ captcha: captcha })
+        });
+      })
       .then(function(r) { return r.json(); })
       .then(function(d) {
         if (d.ok) {
           location.replace('app.html');
+          return;
+        }
+        if (/^captcha_(?:expired|reused|invalid)$/.test(String(d.error || '')) && retried !== true) {
+          doGuest(true);
           return;
         }
         guestBtn.disabled = false;
@@ -168,13 +214,14 @@
           'rate_limited':     'Zu viele Versuche. Bitte warten.',
           'maintenance_mode': 'Wartungsmodus: gerade kein Gast-Zugang.'
         };
+        Object.keys(CAPTCHA_ERRORS).forEach(function(k) { errMap[k] = CAPTCHA_ERRORS[k]; });
         if (d.error === 'guest_disabled') guestBtn.hidden = true;
         showError(errMap[d.error] || ('Fehler: ' + (d.error || 'unbekannt')));
       })
-      .catch(function() {
+      .catch(function(err) {
         guestBtn.disabled = false;
         guestBtn.textContent = 'ALS GAST CHATTEN';
-        showError('Verbindungsfehler. Server nicht erreichbar.');
+        showError(CAPTCHA_ERRORS[err && err.message] || 'Verbindungsfehler. Server nicht erreichbar.');
       });
     }
 

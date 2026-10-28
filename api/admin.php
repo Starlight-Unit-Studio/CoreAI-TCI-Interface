@@ -56,6 +56,7 @@ function coreui_admin_setting_rows(PDO $pdo): array {
     'guest_message_limit' => '5',
     'guest_network_guests' => '1',
     'guest_daily_messages' => '200',
+    'captcha_enabled' => '1',
     'maintenance_enabled' => '0',
     'maintenance_message' => '',
     'memory_default_enabled' => '1',
@@ -112,12 +113,12 @@ if ($method === 'GET') {
       $params = ['%' . $q . '%', '%' . $q . '%', '%' . $q . '%'];
     }
     $st = $pdo->prepare(
-      'SELECT u.id, u.username, u.permission_level, u.banned_until, u.banned_reason, u.created_at, '
+      'SELECT u.id, u.username, u.permission_level, u.is_guest, u.banned_until, u.banned_reason, u.created_at, '
       . 'u.chat_seconds_lifetime, p.display_name, p.assistant_name, MAX(c.name) AS character_name, COUNT(DISTINCT s.id) AS session_count '
       . 'FROM stu_users u LEFT JOIN stu_characters c ON c.user_id = u.id '
       . 'LEFT JOIN stu_coreui_profiles p ON p.user_id = u.id '
       . 'LEFT JOIN stu_console_sessions s ON s.user_id = u.id ' . $where
-      . ' GROUP BY u.id, u.username, u.permission_level, u.banned_until, u.banned_reason, u.created_at, u.chat_seconds_lifetime, p.display_name, p.assistant_name '
+      . ' GROUP BY u.id, u.username, u.permission_level, u.is_guest, u.banned_until, u.banned_reason, u.created_at, u.chat_seconds_lifetime, p.display_name, p.assistant_name '
       . 'ORDER BY u.id DESC LIMIT ' . $limit
     );
     $st->execute($params);
@@ -192,7 +193,8 @@ if ($action === 'user_create') {
     (string)($body['display_name'] ?? ''),
     coreui_account_default_display_name($email)
   );
-  $newLevel = max(1, min(4, (int)($body['permission_level'] ?? 4)));
+  // 0.5.79: new accounts are Admin or Nutzer; Inhaber is never created here.
+  $newLevel = (int)($body['permission_level'] ?? COREUI_ROLE_USER) === COREUI_ROLE_ADMIN ? COREUI_ROLE_ADMIN : COREUI_ROLE_USER;
   if (!coreui_account_valid_email($email)) stu_json(['ok' => false, 'error' => 'invalid_username'], 400);
   if (strlen($password) < 12 || strlen($password) > 1024) stu_json(['ok' => false, 'error' => 'invalid_password'], 400);
   if ($actorLevel > 0 && $newLevel <= $actorLevel) stu_json(['ok' => false, 'error' => 'protected_account'], 403);
@@ -226,7 +228,9 @@ if ($action === 'user_create') {
 
 if ($action === 'user_update') {
   $targetId = (int)($body['user_id'] ?? 0);
-  $newLevel = max(0, min(4, (int)($body['permission_level'] ?? 4)));
+  $requestedLevel = (int)($body['permission_level'] ?? COREUI_ROLE_USER);
+  if (!in_array($requestedLevel, COREUI_ROLE_LEVELS, true)) stu_json(['ok' => false, 'error' => 'invalid_role'], 400);
+  $newLevel = $requestedLevel;
   $reason = trim((string)($body['banned_reason'] ?? ''));
   if (function_exists('mb_substr')) $reason = mb_substr($reason, 0, 255, 'UTF-8');
   else $reason = substr($reason, 0, 255);
@@ -239,10 +243,14 @@ if ($action === 'user_update') {
   }
   if ($targetId <= 0) stu_json(['ok' => false, 'error' => 'invalid_user'], 400);
 
-  $st = $pdo->prepare('SELECT id, username, permission_level FROM stu_users WHERE id = ? LIMIT 1');
+  $st = $pdo->prepare('SELECT id, username, permission_level, is_guest FROM stu_users WHERE id = ? LIMIT 1');
   $st->execute([$targetId]);
   $target = $st->fetch(PDO::FETCH_ASSOC);
   if (!$target) stu_json(['ok' => false, 'error' => 'user_not_found'], 404);
+  // A guest stays a guest (Nutzer level); an admin can only ban or unban it.
+  if ((int)($target['is_guest'] ?? 0) === 1 && $newLevel !== COREUI_ROLE_USER) {
+    stu_json(['ok' => false, 'error' => 'guest_role_fixed'], 400);
+  }
   $oldLevel = (int)$target['permission_level'];
   if ($actorLevel > 0 && ($oldLevel <= $actorLevel || $newLevel <= $actorLevel)) {
     stu_json(['ok' => false, 'error' => 'protected_account'], 403);
@@ -308,7 +316,7 @@ if ($action === 'memory_delete') {
 if ($action === 'settings_save') {
   $whitelist = [
     'registration_enabled', 'guest_enabled', 'guest_message_limit', 'guest_network_guests', 'guest_daily_messages',
-    'maintenance_enabled', 'maintenance_message',
+    'captcha_enabled', 'maintenance_enabled', 'maintenance_message',
     'memory_default_enabled', 'user_system_prompt_max_chars',
     'tool_web_enabled', 'tool_browse_enabled', 'tool_python_enabled',
     'external_api_enabled', 'external_api_label', 'external_api_base_url', 'external_api_model',

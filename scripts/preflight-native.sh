@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.78 protection against repeat guests and password guessing.
+# CoreAI: TCI Interface 0.5.79 browser with several sources, captcha, CoreAI roles, no AFK.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -115,8 +115,13 @@ UI_FILES=(
   js/coreui-context-slider.js
   database/migrations/017_ai_num_ctx.sql
   database/migrations/018_abuse_guard.sql
+  database/migrations/019_coreai_roles.sql
   api/abuse_guard.php
   scripts/abuse-guard-selftest.php
+  scripts/captcha-selftest.php
+  scripts/roles-guest-selftest.php
+  api/captcha.php
+  js/coreui-captcha.js
   scripts/webui-resilience-selftest.cjs
   scripts/date-awareness-selftest.php
   scripts/knowledge-search-selftest.php
@@ -489,6 +494,20 @@ if command -v php >/dev/null 2>&1; then
     ok 'Missbrauchsschutz: Geraetemerkmal, Netz-Kontingent, Tagesgrenze, Login-Drossel und echte Besucher-Adresse geprueft.'
   else
     fail "Missbrauchsschutz-Selbsttest: ${abuse_test:-Unbekannter Fehler}"
+  fi
+
+  captcha_test=''
+  if captcha_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/captcha-selftest.php" 2>&1)"; then
+    ok 'Captcha: signierte Aufgabe, einmalig gueltig, Faelschung, Ablauf und Wiederverwendung abgelehnt.'
+  else
+    fail "Captcha-Selbsttest: ${captcha_test:-Unbekannter Fehler}"
+  fi
+
+  roles_test=''
+  if roles_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/roles-guest-selftest.php" 2>&1)"; then
+    ok 'Rollen: Inhaber, Admin, Nutzer, Gast; Gaeste nutzen den Standard-Core.'
+  else
+    fail "Rollen-Selbsttest: ${roles_test:-Unbekannter Fehler}"
   fi
 
   compact_test=''

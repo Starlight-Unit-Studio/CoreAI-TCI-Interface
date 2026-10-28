@@ -2451,9 +2451,11 @@ audio.msg-image {
   max-width: calc(100% - 57px);
 }
 
+/* 0.5.79: kompakt im Chat (die Regel fuer Mara-Nachrichten gibt der Spalte volle Breite),
+   mit dem Knopf in der Kopfzeile auf volle Breite. */
 .browse-live {
   position: relative;
-  width: 100%;
+  width: min(100%, 600px);
   overflow: hidden;
   border: 1px solid rgba(91, 146, 255, 0.48);
   background: rgba(238, 245, 255, 0.94);
@@ -2486,12 +2488,37 @@ audio.msg-image {
   border-bottom: 1px solid var(--cx);
 }
 
+.browse-live.expanded {
+  width: 100%;
+}
+
+.browse-live-size {
+  display: grid;
+  width: 30px;
+  height: 28px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid rgba(91, 146, 255, 0.32);
+  background: rgba(255, 255, 255, 0.82);
+  color: #386fda;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.browse-live-size:hover,
+.browse-live-size:focus-visible {
+  border-color: var(--amb);
+  color: #9b671f;
+  outline: none;
+}
+
 .browse-live-chrome {
   display: grid;
   min-height: 43px;
   padding: 8px 17px 8px 16px;
   align-items: center;
-  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  grid-template-columns: auto auto minmax(0, 1fr) auto auto;
   gap: 9px;
   border-bottom: 1px solid rgba(91, 146, 255, 0.28);
   background: linear-gradient(90deg, rgba(255, 252, 246, 0.98), rgba(245, 249, 255, 0.97));
@@ -2643,9 +2670,14 @@ audio.msg-image {
   transition: left 520ms cubic-bezier(0.45, 0.05, 0.25, 1), top 520ms cubic-bezier(0.45, 0.05, 0.25, 1), opacity 160ms ease;
 }
 
-/* Waehrend Mara auf ihren Core wartet, liest der Cursor die Zeilen entlang. */
-.browse-live.thinking .browse-ghost-cursor {
+/* Waehrend Mara auf ihren Core wartet, liest der Cursor die Zeilen entlang: mit echten
+   Textpositionen vom Worker (reading), sonst als sanfte Bewegung (aeltere Worker). */
+.browse-live.thinking:not(.reading) .browse-ghost-cursor {
   animation: browse-cursor-read 4.8s ease-in-out infinite;
+}
+
+.browse-live.reading .browse-ghost-cursor {
+  transition: left 900ms cubic-bezier(0.45, 0.05, 0.25, 1), top 600ms cubic-bezier(0.45, 0.05, 0.25, 1), opacity 160ms ease;
 }
 
 .browse-live-think {

@@ -1,0 +1,10 @@
+CoreAI: TCI Interface 0.5.79 - 28.10.2026
+- Browserfenster im Chat hoechstens 600 px breit, Knopf zum Vergroessern.
+- Mehrere Quellen: Notizen je Seite (notiz), neue Suche mitten in der Recherche (search, max. 3), zu fruehes done einmal zurueckgestellt bis 2 Webseiten (STU_EMBER_BROWSE_MIN_SOURCES), Bericht nennt Quellen und Widersprueche.
+- Cursor faehrt zu Treffern und klickt, liest waehrend des Ueberlegens die echten Textbloecke (Cursor-Schritte ohne Bild); Cookie-Banner vor jedem Schritt.
+- Bericht nie leer: Werkzeuge im Bericht ausdruecklich aus, Marker und PY-Bloecke entfernt, sonst Bericht aus Befund, Notizen und Quellen.
+- AFK-System entfernt: keine AFK-Meldung, kein AFK-Status, keine Selbst-AFK, keine /afk- und /back-Befehle (set_afk: afk_removed).
+- Rollen: Inhaber, Admin, Nutzer, Gast; Migration 019 (Stufe 2 und 3 werden Nutzer).
+- Captcha (selbst gehostet, Proof of Work) bei Gast-Zugang und Registrierung, einmalig 10 Minuten gueltig, Admin-Schalter.
+- Gaeste: Standard-Core und Standard-Kontextfenster (gemeinsamer Arbeitsspeicher).
+- Tests: captcha-selftest.php, roles-guest-selftest.php (beide Preflights); Browser-, Live- und Login-Tests erweitert.

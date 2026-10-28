@@ -227,14 +227,35 @@ function stu_require_permission_at_most(int $maxLevel, ?PDO $pdo = null): int {
   return $lvl;
 }
 
+// 0.5.79: CoreAI roles instead of the old game ranks (system admin, admin, game
+// moderator, chat moderator, user). Stored as permission_level; guests are a flag
+// (is_guest), not a level. Levels 2 and 3 were folded into Nutzer (migration 019).
+const COREUI_ROLE_OWNER = 0;
+const COREUI_ROLE_ADMIN = 1;
+const COREUI_ROLE_USER = 4;
+const COREUI_ROLE_LEVELS = [COREUI_ROLE_OWNER, COREUI_ROLE_ADMIN, COREUI_ROLE_USER];
+
 function stu_permission_label(int $lvl): string {
   switch ($lvl) {
-    case 0: return 'system_admin';
-    case 1: return 'admin';
-    case 2: return 'game_moderator';
-    case 3: return 'chat_moderator';
+    case COREUI_ROLE_OWNER: return 'owner';
+    case COREUI_ROLE_ADMIN: return 'admin';
     default: return 'user';
   }
+}
+
+/** Visible name of a role (Inhaber, Admin, Nutzer, Gast). */
+function coreui_role_name(int $lvl, bool $guest = false): string {
+  if ($guest) return 'Gast';
+  switch ($lvl) {
+    case COREUI_ROLE_OWNER: return 'Inhaber';
+    case COREUI_ROLE_ADMIN: return 'Admin';
+    default: return 'Nutzer';
+  }
+}
+
+/** A stored or requested level as one of the three roles; anything else becomes Nutzer. */
+function coreui_role_level(int $lvl): int {
+  return in_array($lvl, COREUI_ROLE_LEVELS, true) ? $lvl : COREUI_ROLE_USER;
 }
 
 function stu_is_logged_in(): bool {
@@ -474,8 +495,8 @@ function stu_app_setting_set(PDO $pdo, string $key, string $value): void {
 }
 
 function stu_is_staff_level(int $lvl): bool {
-  // STU permission model: 0 system_admin, 1 admin, 2 game_moderator, 3 chat_moderator, 4 user.
-  return $lvl <= 3;
+  // CoreAI roles: 0 Inhaber, 1 Admin, 4 Nutzer (guests are flagged separately).
+  return $lvl <= COREUI_ROLE_ADMIN;
 }
 
 function stu_default_maintenance_message(): string {

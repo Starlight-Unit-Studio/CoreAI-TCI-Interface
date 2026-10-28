@@ -93,6 +93,8 @@ class Element {
   querySelector(sel) { return this.parts[sel.replace(/^\./, '')] || null; }
   appendChild(child) { child.parentNode = this; this.children.push(child); return child; }
   addEventListener(type, fn) { this.handlers[type] = fn; }
+  setAttribute(name, value) { (this.attrs = this.attrs || {})[name] = String(value); }
+  getAttribute(name) { return (this.attrs || {})[name]; }
 }
 
 // --- fake EventSource --------------------------------------------------------
@@ -178,10 +180,18 @@ es.emit('frame', frame(2, {label: 'Mara liest die Seite'}));
 advance(300);
 assert.equal(h.part('browse-live-status').textContent, 'Mara überlegt noch, 15 s (2 von 12)');
 
+// 0.5.79: steps without a picture move only the cursor along the text she reads.
+const shotBefore = h.part('browse-live-shot').src;
+es.emit('frame', frame(4, {b64: '', cx: 128, cy: 180, label: 'Mara liest die Seite'}));
+assert.equal(h.part('browse-ghost-cursor').style.left, '10%', 'reading: cursor moves');
+assert.equal(h.part('browse-ghost-cursor').style.top, '20%');
+assert(h.panel.classList.contains('reading') && h.part('browse-live-shot').src === shotBefore, 'reading: no new picture');
+
 // An action: thinking ends, the cursor glides first, then clicks.
 es.emit('step', {id: 7, kind: 'step', text: 'Klicke auf „Suchen“'});
 assert(!h.panel.classList.contains('thinking') && h.part('browse-live-think').hidden, 'badge gone on action');
-es.emit('frame', frame(3, {cx: 320, cy: 90, click: true, label: 'Klick: Suchen'}));
+assert(!h.panel.classList.contains('reading'), 'reading ends with the action');
+es.emit('frame', frame(5, {cx: 320, cy: 90, click: true, label: 'Klick: Suchen'}));
 advance(10);
 const cursor = h.part('browse-ghost-cursor');
 assert.equal(cursor.style.left, '25%');
@@ -196,19 +206,27 @@ assert(h.panel.classList.contains('warned'));
 es.emit('step', {id: 9, text: 'Öffne shop.example'});
 assert(!h.panel.classList.contains('warned'), 'old lines without kind count as steps');
 
+// 0.5.79: compact in the chat, full width with the button in the title bar.
+const size = h.part('browse-live-size');
+assert(size && !h.panel.classList.contains('expanded'), 'compact by default');
+size.handlers.click();
+assert(h.panel.classList.contains('expanded') && size.title === 'Kleiner anzeigen' && size.getAttribute('aria-pressed') === 'true', 'enlarged');
+size.handlers.click();
+assert(!h.panel.classList.contains('expanded') && size.title === 'Größer anzeigen', 'back to compact');
+
 // The 15-minute cap: resume after the last picture and step, nothing twice.
-es.emit('timeout', {note: 'stream_cap', after_frame: 3, after_step: 9});
+es.emit('timeout', {note: 'stream_cap', after_frame: 5, after_step: 9});
 assert(es.closed, 'old stream closed');
 advance(250);
 assert.equal(sources.length, 2);
 es = sources[1];
-assert.match(es.url, /after_frame=3&after_step=9$/, 'resumed at the right place');
+assert.match(es.url, /after_frame=5&after_step=9$/, 'resumed at the right place');
 
 // Network errors: reconnect with growing pauses, stop after six tries.
 es.emit('error');
 advance(1600);
 assert.equal(sources.length, 3, 'reconnect after a network error');
-assert.match(sources[2].url, /after_frame=3&after_step=9$/);
+assert.match(sources[2].url, /after_frame=5&after_step=9$/);
 for (let i = 0; i < 6; i++) {
   sources[sources.length - 1].emit('error');
   advance(16000);
@@ -244,7 +262,9 @@ advance(20000);
 assert.equal(sources.length, 1, 'no reconnect when access is refused');
 
 // --- styles -----------------------------------------------------------------
-assert.match(css, /\.browse-live\.thinking \.browse-ghost-cursor \{\s*animation: browse-cursor-read/, 'cursor reads while thinking');
+assert.match(css, /\.browse-live\.thinking:not\(\.reading\) \.browse-ghost-cursor \{\s*animation: browse-cursor-read/, 'soft motion only without real reading steps');
+assert.match(css, /\.browse-live \{\s*position: relative;\s*width: min\(100%, 600px\);/, 'compact window in the chat');
+assert.match(css, /\.browse-live\.expanded \{\s*width: 100%;/, 'full width on request');
 assert.match(css, /transition: left 520ms/, 'cursor glides');
 assert.match(css, /\.browse-live-think\[hidden\] \{\s*display: none;/, 'badge hides');
 assert.match(css, /\.pref-live-static \.browse-live\.thinking \.browse-ghost-cursor,/, 'still view without motion');

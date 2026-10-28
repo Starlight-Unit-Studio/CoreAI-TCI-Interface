@@ -995,7 +995,7 @@ function ember_get_user_permission_level(PDO $pdo, int $uid): int {
 }
 
 function ember_user_is_staff_level(int $perm): bool {
-  return ($perm >= 0 && $perm <= 3);
+  return ($perm >= 0 && $perm <= COREUI_ROLE_ADMIN);
 }
 
 function ember_identity_name_token(string $s): string {
@@ -2407,8 +2407,8 @@ function ember_web_results_block(string $query): string {
 // -------------------------------
 // Ember asynchroner Browse (Phase 2) - autonom via [BROWSE:]-Marker
 // Reiht einen Job in stu_ember_browse_jobs ein; der Browse-Worker (systemd-Service) holt ihn,
-// setzt Ember AFK ("im Netz unterwegs"), surft selbst und postet das Ergebnis in den Channel zurueck.
-// [WEB:] = schnelle Snippet-Suche (synchron). [BROWSE:] = tiefere Recherche (asynchron, AFK).
+// surft selbst und postet das Ergebnis in den Channel zurueck (seit 0.5.79 ohne AFK-Status).
+// [WEB:] = schnelle Snippet-Suche (synchron). [BROWSE:] = tiefere Recherche (asynchron).
 // -------------------------------
 function ember_browse_enabled(): bool {
   $configured = (bool)ember_cfg('STU_EMBER_BROWSE_ENABLED', true);
@@ -3095,11 +3095,6 @@ function ember_try_mute(PDO $pdo, int $mutedByUid, array $targetChar, string $re
 
 function ember_self_xp_amount_per_message(): int {
   $n = (int)ember_cfg('STU_EMBER_SELF_XP_PER_MESSAGE', 5);
-  return max(0, min(100, $n));
-}
-
-function ember_self_xp_amount_per_afk(): int {
-  $n = (int)ember_cfg('STU_EMBER_SELF_XP_PER_AFK', 2);
   return max(0, min(100, $n));
 }
 
@@ -4145,7 +4140,7 @@ function ember_msg_len(string $s): int {
 
 
 function ember_known_command_regex(): string {
-  return '(?:help|whoami|prune|mute|unmute|mutes|ban|unban|bans|setperm|rootentity|afk|back)';
+  return '(?:help|whoami|prune|mute|unmute|mutes|ban|unban|bans|setperm|rootentity)';
 }
 
 function ember_strip_command_wrappers(string $line): string {
@@ -6691,108 +6686,13 @@ function ember_execute_generated_command(PDO $pdo, string $line): array {
   return ['handled'=>false, 'ok'=>false];
 }
 
-function ember_browse_afk_active(PDO $pdo): bool {
-  // Phase-1 Browse-Worker setzt stu_kv (k='ember_browse_afk', user_id=ember) auf '1',
-  // solange Ember im Netz unterwegs ist. Hier nur lesen -> Nicklist zeigt AFK + 💤.
-  try {
-    $st = $pdo->prepare("SELECT value FROM stu_kv WHERE k='ember_browse_afk' AND user_id=? LIMIT 1");
-    $st->execute([ember_user_id()]);
-    $v = trim((string)($st->fetchColumn() ?: ''));
-    return $v === '1' || strtolower($v) === 'true';
-  } catch (Throwable $e) {
-    return false;
-  }
-}
-
-// Console-AFK: waehrend Ember IM CONSOLE-CHANNEL eine Antwort generiert, soll sie in der
-// GLOBAL-Nickliste als abwesend (💤) erscheinen - wie frueher. Mechanik bewusst getrennt
-// vom Browse-Flag (ember_browse_afk):
-//   * eigener stu_kv-Key 'ember_console_afk_until' = Unix-ABLAUFZEIT (kein 0/1).
-//   * Selbstheilend: stirbt console_stream.php mitten im Stream (kein finally), faellt der
-//     Status nach Ablauf von selbst auf "online" zurueck - kein ewiges AFK.
-//   * Kein Konflikt bei Ueberlappung Browse+Console: getrennte Keys, in der Nicklist per OR.
-function ember_console_afk_kv_key(): string { return 'ember_console_afk_until'; }
-
-// Setzt/verlaengert (oder loescht mit 0) den Console-AFK-Marker. Wert = Unix-Ts, bis zu der
-// AFK gilt. Niemals den Send-/Stream-Pfad an einem Presence-Marker sterben lassen -> try/catch.
-function ember_console_afk_set(PDO $pdo, int $until_ts): void {
-  try {
-    $k   = ember_console_afk_kv_key();
-    $uid = ember_user_id();
-    if ($uid <= 0) return;
-    $val = (string)max(0, $until_ts);
-    $up = $pdo->prepare("UPDATE stu_kv SET value=? WHERE k=? AND user_id=?");
-    $up->execute([$val, $k, $uid]);
-    if ($up->rowCount() === 0) {
-      try {
-        $ins = $pdo->prepare("INSERT INTO stu_kv (k, user_id, value) VALUES (?,?,?)");
-        $ins->execute([$k, $uid, $val]);
-      } catch (Throwable $eIns) {
-        // (k,user_id) evtl. doch vorhanden (UPDATE meldete 0 geaenderte Zeilen, weil Wert gleich) -> best effort
-        $pdo->prepare("UPDATE stu_kv SET value=? WHERE k=? AND user_id=?")->execute([$val, $k, $uid]);
-      }
-    }
-  } catch (Throwable $e) {
-    // still
-  }
-}
-
-function ember_console_afk_clear(PDO $pdo): void { ember_console_afk_set($pdo, 0); }
-
-function ember_console_afk_active(PDO $pdo): bool {
-  try {
-    $st = $pdo->prepare("SELECT value FROM stu_kv WHERE k=? AND user_id=? LIMIT 1");
-    $st->execute([ember_console_afk_kv_key(), ember_user_id()]);
-    $until = (int)trim((string)($st->fetchColumn() ?: '0'));
-    return $until > time();
-  } catch (Throwable $e) {
-    return false;
-  }
-}
-
-// Postet EINMAL pro Console-"Session" die gewohnte AFK-Systemmeldung in den Global-Chat
-// (gleiche Optik wie der Browse-Worker: System-Avatar, "... ist gerade nicht an der Tastatur").
-// Dedup ueber stu_kv 'ember_console_afk_msg_until': innerhalb des Cooldowns wird NICHT erneut
-// gepostet -> kein Spam, wenn Ember in der Console mehrere Turns hintereinander antwortet.
-// Postet auch nicht, wenn der Browse-Worker bereits AFK angekuendigt hat (kein Doppel-Hinweis).
-function ember_console_afk_announce(PDO $pdo, int $cooldownSec = 300): void {
-  try {
-    if (ember_user_id() <= 0) return;
-    if (ember_browse_afk_active($pdo)) return; // Browse hat den Hinweis schon gepostet
-    $k   = 'ember_console_afk_msg_until';
-    $uid = ember_user_id();
-    $st = $pdo->prepare("SELECT value FROM stu_kv WHERE k=? AND user_id=? LIMIT 1");
-    $st->execute([$k, $uid]);
-    $until = (int)trim((string)($st->fetchColumn() ?: '0'));
-    if ($until > time()) return; // kuerzlich schon angekuendigt -> still bleiben
-    // Cooldown setzen (vor dem Posten, damit parallele Turns nicht doppelt posten)
-    $val = (string)(time() + max(60, $cooldownSec));
-    $up = $pdo->prepare("UPDATE stu_kv SET value=? WHERE k=? AND user_id=?");
-    $up->execute([$val, $k, $uid]);
-    if ($up->rowCount() === 0) {
-      try {
-        $pdo->prepare("INSERT INTO stu_kv (k, user_id, value) VALUES (?,?,?)")->execute([$k, $uid, $val]);
-      } catch (Throwable $eIns) {
-        $pdo->prepare("UPDATE stu_kv SET value=? WHERE k=? AND user_id=?")->execute([$val, $k, $uid]);
-      }
-    }
-    chat_insert_system_message(
-      $pdo, 'global', null,
-      ember_character_name() . ' ist gerade nicht an der Tastatur. 💤 (im netz unterwegs)',
-      $uid
-    );
-  } catch (Throwable $e) {
-    // niemals den Stream-/Send-Pfad an einer Statusmeldung sterben lassen
-  }
-}
-
 function ember_virtual_nick_row(PDO $pdo): ?array {
   if (!ember_enabled() || ember_user_id() <= 0) return null;
   $row = [
     'user_id' => ember_user_id(),
     'character_id' => ember_character_id(),
     'character_name' => ember_character_name(),
-    'afk' => (ember_browse_afk_active($pdo) || ember_console_afk_active($pdo)) ? 1 : 0,
+    'afk' => 0,
     'last_seen_s' => 0,
     'last_active_s' => 0,
     'online' => 1,
@@ -6911,7 +6811,7 @@ function ember_run_pending_greet(PDO $pdo): void {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // v1.1.1.62 - Freie Werkzeugwahl (Phase 3e). Vorher: feste Prioritaetskette
-// (Follow-up > Idle > Self-AFK > News, elseif-Kette in ember_initiative_tick.php).
+// (Follow-up > Idle > News, elseif-Kette in ember_initiative_tick.php).
 // Jetzt: jede Aktion ist in GATE (billig, kein LLM-Call, reine Zeit-/Zustandspruefung)
 // und EXECUTE (macht die eigentliche Aktion) aufgeteilt. Der Tick sammelt alle gerade
 // gate-offenen Kandidaten; bei 0 passiert nichts, bei genau 1 wird direkt ausgefuehrt
@@ -7049,110 +6949,6 @@ function ember_exec_follow_up(PDO $pdo, array $ctx): bool {
   return false;
 }
 
-// ---- SELF-AFK ----------------------------------------------------------
-
-// v1.1.1.45 - Ember geht gelegentlich von sich aus AFK, mit einem SELBST formulierten Grund
-// (kein Textbaustein/Vorlage). Nutzt die BESTEHENDE chat_apply_afk_state()-Infrastruktur
-// (die bereits einen $isVirtualEmber-Fall vorsieht) - kein neuer Presence-Mechanismus noetig.
-function ember_self_afk_minutes(): int {
-  $n = (int)ember_cfg('STU_EMBER_SELF_AFK_MIN', 45);
-  return max(10, min(240, $n));
-}
-
-// v1.1.1.46: Der Zufallswuerfel wurde entfernt (Rick: "das soll sie ja selbststaendig
-// entscheiden" - ein externer mt_rand()-Filter VOR der Frage war nicht das Gemeinte).
-// Diese Gate-Funktion prueft nur die harten Grundvoraussetzungen (nicht schon AFK,
-// Mindest-Ruhezeit) - die eigentliche wants_afk-Entscheidung bleibt VOLLSTAENDIG beim
-// Modell und passiert erst in ember_exec_self_afk(), NACHDEM diese Aktion (ggf. unter
-// mehreren offenen Optionen) tatsaechlich gewaehlt wurde.
-function ember_gate_self_afk(PDO $pdo): ?array {
-  if (!ember_enabled()) return null;
-  if (ember_user_id() <= 0) return null;
-
-  $cid = ember_character_id();
-  // Bereits AFK (Browse ODER Console ODER manuell per chat_apply_afk_state)? Dann nichts tun.
-  if (ember_browse_afk_active($pdo)) return null;
-  if (ember_console_afk_active($pdo)) return null;
-  try {
-    $stAfk = $pdo->prepare("SELECT afk FROM stu_chat_presence WHERE channel='global' AND alliance_id=0 AND character_id=? LIMIT 1");
-    $stAfk->execute([$cid]);
-    if ((int)($stAfk->fetchColumn() ?: 0) === 1) return null;
-  } catch (Throwable $e) {
-    return null;
-  }
-
-  // Nur in Frage kommen, wenn seit ihrer letzten Chat-Zeile eine Mindestzeit vergangen ist -
-  // sie soll nicht mitten in einem laufenden Gespraech verschwinden.
-  try {
-    $stLast = $pdo->prepare("SELECT created_at FROM stu_chat_messages WHERE channel='global' AND alliance_id IS NULL AND character_id=? ORDER BY id DESC LIMIT 1");
-    $stLast->execute([$cid]);
-    $lastEm = $stLast->fetchColumn();
-    if ($lastEm) {
-      $ts = strtotime((string)$lastEm);
-      if ($ts !== false && (time() - $ts) < (ember_self_afk_minutes() * 60)) return null;
-    }
-  } catch (Throwable $e) {
-    return null;
-  }
-
-  return ['cid' => $cid];
-}
-
-function ember_exec_self_afk(PDO $pdo, array $ctx): bool {
-  $cid = $ctx['cid'];
-
-  // Die Entscheidung selbst liegt VOLLSTAENDIG beim Modell - kein Wuerfel davor.
-  $sys = "Du entscheidest gerade voellig frei und aus eigenem Antrieb, ob du JETZT kurz AFK "
-       . "gehen moechtest - es gibt keinen aeusseren Anlass und niemand fragt dich das. Wenn du "
-       . "gerade keine Lust hast zu verschwinden, ist das voellig in Ordnung, dann antworte mit "
-       . "wants_afk:false. Wenn du gehen moechtest, nenne einen kurzen, glaubwuerdigen "
-       . "Alltagsgrund aus DEINER Perspektive (z.B. etwas essen, kurz raus, was anderes tun) - "
-       . "keine Erklaerung, kein Rahmen drumherum, keine Anrede. "
-       . "Antworte NUR als JSON (ohne Markdown): {\"wants_afk\":true|false,\"reason\":\"...\"} "
-       . "Der reason-Text (nur falls wants_afk:true): kleingeschrieben, kein Punkt am Ende, "
-       . "maximal 6-8 Woerter.";
-  $raw = ember_call_ollama(ember_reflect_model(), $sys, 'moechtest du gerade afk gehen?', ember_reputation_timeout(), [], null, false);
-  if (!is_string($raw) || trim($raw) === '') return false;
-
-  $txt = trim($raw);
-  if (str_contains($txt, '<think>') || str_contains($txt, '</think>')) {
-    $txt = ember_strip_thinking_block($txt);
-  }
-  $txt = preg_replace('~^```(?:json)?\s*~i', '', $txt);
-  $txt = preg_replace('~\s*```$~', '', $txt);
-  $j = json_decode($txt, true);
-  if (!is_array($j)) return false;
-
-  // Ihre eigene Entscheidung - kein Fallback, der das uebersteuert.
-  $wantsAfk = (bool)($j['wants_afk'] ?? false);
-  if (!$wantsAfk) return false;
-
-  $reason = trim((string)($j['reason'] ?? ''));
-  if ($reason === '') return false;
-  if (function_exists('mb_substr')) $reason = mb_substr($reason, 0, 80, 'UTF-8');
-  else $reason = substr($reason, 0, 80);
-
-  $senderChar = [
-    'id'         => $cid,
-    'name'       => ember_character_name(),
-    'user_id'    => ember_user_id(),
-    'alliance_id'=> null,
-  ];
-  try {
-    $res = chat_apply_afk_state($pdo, ember_user_id(), 'global', null, $senderChar, 'on', $reason);
-    if (!empty($res['ok']) && !empty($res['system'])) {
-      chat_insert_system_message($pdo, 'global', null, (string)$res['system'], ember_user_id());
-      ember_self_xp_grant($pdo, ember_self_xp_amount_per_afk(), 'self_afk');
-      return true;
-    }
-  } catch (Throwable $e) {
-    if (function_exists('stu__log_error')) {
-      stu__log_error(['type'=>'ember_self_afk_exception','message'=>$e->getMessage()]);
-    }
-  }
-  return false;
-}
-
 // ---- NEWS-REAKTION -------------------------------------------------------
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -7228,9 +7024,7 @@ function ember_gate_news_reaction(PDO $pdo): ?array {
   }
 
   // Nicht mitten in einem laufenden Gespraech oder waehrend sie schon anderweitig
-  // beschaeftigt ist (Browse/Console-AFK) initiativ werden.
-  if (ember_browse_afk_active($pdo)) return null;
-  if (ember_console_afk_active($pdo)) return null;
+  // beschaeftigt ist (laufende Browser-Recherche) initiativ werden.
   if (ember_browse_has_pending($pdo)) return null;
 
   return [];
@@ -7520,7 +7314,6 @@ function ember_initiative_gather_candidates(PDO $pdo): array {
   $candidates = [];
   if (($ctx = ember_gate_follow_up($pdo)) !== null) $candidates['follow_up'] = $ctx;
   if (($ctx = ember_gate_idle_initiative($pdo)) !== null) $candidates['idle_initiative'] = $ctx;
-  if (($ctx = ember_gate_self_afk($pdo)) !== null) $candidates['self_afk'] = $ctx;
   if (($ctx = ember_gate_news_reaction($pdo)) !== null) $candidates['news_reaction'] = $ctx;
   if (($ctx = ember_gate_direct_address($pdo)) !== null) $candidates['direct_address'] = $ctx;
   return $candidates;
@@ -7537,8 +7330,6 @@ function ember_initiative_describe_candidate(string $tool, array $ctx): string {
     case 'idle_initiative':
       $age = (int)($ctx['age_min'] ?? 0);
       return "von dir aus was sagen - seit {$age} minuten ist niemand im chat aktiv";
-    case 'self_afk':
-      return "kurz afk gehen - falls dir gerade danach ist, aus irgendeinem alltagsgrund";
     case 'news_reaction':
       return "aus neugier im internet schauen - wonach auch immer dir gerade in den sinn kommt";
     case 'direct_address':
@@ -7633,7 +7424,6 @@ function ember_initiative_dispatch(PDO $pdo): array {
     switch ($tool) {
       case 'follow_up':       $ok = ember_exec_follow_up($pdo, $ctx); break;
       case 'idle_initiative': $ok = ember_exec_idle_initiative($pdo, $ctx); break;
-      case 'self_afk':        $ok = ember_exec_self_afk($pdo, $ctx); break;
       case 'news_reaction':   $ok = ember_exec_news_reaction($pdo, $ctx); break;
       case 'direct_address':  $ok = ember_exec_direct_address($pdo, $ctx); break;
     }
@@ -8225,62 +8015,6 @@ function chat_prune_history(PDO $pdo, string $channel, ?int $alliance_id, int $k
 
 
 
-function chat_apply_afk_state(PDO $pdo, int $uid, string $channel, ?int $alliance_id, array $senderChar, ?string $mode = null, ?string $reason = null): array {
-  $channel = chat_channel_norm($channel);
-  // v1.1.1.08: $isVirtualEmber war hier nie definiert (nur in anderen Funktionen ab Z.5612)
-  // -> "Undefined variable $isVirtualEmber" bei jedem /afk. Hier sauber bestimmen.
-  $isVirtualEmber = (strtolower((string)($senderChar['id'] ?? '')) === strtolower(ember_character_id()));
-  $want = null;
-  $arg = strtolower(trim((string)$mode));
-  if ($arg === 'on' || $arg === '1' || $arg === 'true') $want = 1;
-  if ($arg === 'off' || $arg === '0' || $arg === 'false' || $arg === 'back') $want = 0;
-
-  $cur = null;
-  try {
-    $st = $pdo->prepare('SELECT afk FROM stu_chat_presence WHERE channel=? AND user_id=? AND character_id=? AND ' . ($channel==='alliance' ? 'alliance_id=?' : 'alliance_id=0') . ' LIMIT 1');
-    $params = [$channel, $uid, (string)$senderChar['id']];
-    if ($channel === 'alliance') $params[] = (int)$alliance_id;
-    $st->execute($params);
-    $row = $st->fetch();
-    if ($row && isset($row['afk'])) $cur = (int)$row['afk'];
-  } catch (Throwable $e) {
-    $cur = null;
-  }
-
-  $newAfk = ($want === null) ? (($cur === 1) ? 0 : 1) : (int)$want;
-  $aid = ($channel === 'alliance') ? (int)$alliance_id : 0;
-  chat_upsert_presence($pdo, $channel, $aid, $uid, (string)$senderChar['id'], (string)$senderChar['name'], $newAfk, true);
-
-  $sys = ($newAfk === 1)
-    ? ((string)$senderChar['name'] . ' ist gerade nicht an der Tastatur. 💤'
-        . (($reason !== null && trim($reason) !== '') ? (' (' . trim($reason) . ')') : ''))
-    : '';
-
-  return [
-    'ok' => true,
-    'command' => 'afk',
-    'afk_state' => $newAfk,
-    'notice' => ($newAfk === 1 ? 'AFK aktiviert.' : 'AFK deaktiviert.'),
-    'system' => $sys,
-    'channel' => $isVirtualEmber ? 'global' : $channel,
-  ];
-}
-
-// Stilles AFK-Clear: wer in den Chat schreibt, ist nicht mehr AFK.
-// Setzt afk=1 -> 0 ohne System-Meldung (kein Broadcast, anders als chat_apply_afk_state).
-function chat_clear_afk_on_activity(PDO $pdo, string $channel, ?int $alliance_id, int $uid, string $characterId): void {
-  try {
-    $sql = 'UPDATE stu_chat_presence SET afk=0 WHERE channel=? AND user_id=? AND character_id=? AND afk=1 AND '
-         . ($channel === 'alliance' ? 'alliance_id=?' : 'alliance_id=0');
-    $params = [$channel, $uid, $characterId];
-    if ($channel === 'alliance') $params[] = (int)$alliance_id;
-    $st = $pdo->prepare($sql);
-    $st->execute($params);
-  } catch (Throwable $e) {
-    // still - Presence-Schema evtl. nicht vorhanden, niemals den Send-Pfad brechen
-  }
-}
-
 function chat_channel_norm(string $c): string {
   $c = strtolower(trim($c));
   if ($c === 'global' || $c === 'alliance' || $c === 'console') return $c;
@@ -8377,10 +8111,9 @@ function chat_handle_command(PDO $pdo, int $uid, int $perm, string $channel, ?in
       $lines[] = '.bans';
     }
     if ($canSet) {
-      $lines[] = '.setperm <Username> <0-4>';
+      $lines[] = '.setperm <Username> <0|1|4>';
       $lines[] = '.rootentity <CharName|Email> [Notiz]';
     }
-    $lines[] = '/afk [on|off|<grund>]  (alias: /back)';
     $lines[] = '.whoami';
     return [
       'ok'=>true,
@@ -8393,31 +8126,6 @@ function chat_handle_command(PDO $pdo, int $uid, int $perm, string $channel, ?in
   // whoami
   if ($cmd === 'whoami') {
     return ['ok'=>true,'command'=>true,'notice'=>'permission_level=' . $perm . ' (' . stu_permission_label($perm) . ')'];
-  }
-
-  // afk toggle / set
-  // Usage:
-  //   /afk        -> toggle
-  //   /afk on     -> force AFK
-  //   /afk off    -> return (auto-AFK rules apply again)
-  // Aliases:
-  //   /back       -> same as "/afk off"
-  if ($cmd === 'afk' || $cmd === 'back') {
-    $mode = 'toggle';
-    $reason = '';
-    if ($cmd === 'back') {
-      $mode = 'off';
-    } elseif (isset($parts[1])) {
-      $a = strtolower(trim((string)$parts[1]));
-      if (in_array($a, ['on','off','1','0','true','false','back','toggle'], true)) {
-        $mode = $a;
-      } else {
-        // Freitext nach /afk = Grund; AFK wird aktiviert.
-        $mode = 'on';
-        $reason = trim(implode(' ', array_slice($parts, 1)));
-      }
-    }
-    return chat_apply_afk_state($pdo, $uid, $channel, $alliance_id, $senderChar, $mode, $reason);
   }
 
   // prune chat history (staff only)
@@ -8615,12 +8323,12 @@ function chat_handle_command(PDO $pdo, int $uid, int $perm, string $channel, ?in
 // Set permission level by username
   if ($cmd === 'setperm') {
     stu_require_permission_at_most(1, $pdo);
-    if (count($parts) < 3) return ['ok'=>false,'error'=>'usage','notice'=>'.setperm <Username> <0-4>'];
+    if (count($parts) < 3) return ['ok'=>false,'error'=>'usage','notice'=>'.setperm <Username> <0|1|4>'];
     $uname = trim((string)$parts[1]);
     $lvl = (int)$parts[2];
-    if ($lvl < 0 || $lvl > 4) return ['ok'=>false,'error'=>'invalid_level'];
-    // Only system_admin can grant system_admin
-    if ($lvl === 0 && $perm !== 0) return ['ok'=>false,'error'=>'insufficient_permissions','notice'=>'Nur System Admin kann Level 0 setzen.'];
+    if (!in_array($lvl, COREUI_ROLE_LEVELS, true)) return ['ok'=>false,'error'=>'invalid_level','notice'=>'Rollen: 0 Inhaber, 1 Admin, 4 Nutzer.'];
+    // Only the owner can make an owner
+    if ($lvl === 0 && $perm !== 0) return ['ok'=>false,'error'=>'insufficient_permissions','notice'=>'Nur der Inhaber kann die Rolle Inhaber vergeben.'];
 
     // Can't promote above yourself (numerically lower)
     if ($lvl < $perm && $perm !== 0) return ['ok'=>false,'error'=>'insufficient_permissions','notice'=>'Du kannst niemanden über dich selbst befördern.'];
@@ -9501,7 +9209,6 @@ if ($action === 'send') {
   }
 
   // v1.1.1.07: Wer schreibt, ist nicht mehr AFK - still, ohne System-Meldung.
-  chat_clear_afk_on_activity($pdo, $channel, ($channel === 'alliance') ? (int)$alliance_id : null, $uid, $character_id);
 
   // Keep DB small: prune chat history to the last 100 messages per channel scope.
   // Scope:
@@ -9935,34 +9642,9 @@ if ($action === 'ember_reply') {
 
 
 
+// 0.5.79: AFK came from the old game chat; CoreAI has no AFK state any more.
 if ($action === 'set_afk') {
-  if ($method !== 'POST') stu_json(['ok'=>false,'error'=>'method_not_allowed'], 405);
-
-  $body = stu_read_json_body();
-  if (empty($body) && !empty($_POST)) { $body = $_POST; }
-  if (empty($body)) {
-    $raw = file_get_contents('php://input') ?: '';
-    if ($raw && strpos($raw, '=') !== false) {
-      parse_str($raw, $tmp);
-      if (is_array($tmp) && !empty($tmp)) $body = $tmp;
-    }
-  }
-
-  $channel = chat_channel_norm((string)($body['channel'] ?? 'global'));
-  $character_id = (string)($body['character_id'] ?? '');
-  $mode = (string)($body['mode'] ?? 'toggle');
-  $char = chat_require_character($pdo, $uid, $character_id);
-  $alliance_id = $char['alliance_id'] ?? null;
-
-  if ($channel === 'alliance' && empty($alliance_id)) {
-    stu_json(['ok'=>false,'error'=>'not_in_alliance'], 400);
-  }
-
-  $res = chat_apply_afk_state($pdo, $uid, $channel, ($channel === 'alliance') ? (int)$alliance_id : null, $char, $mode);
-  if (!empty($res['system'])) {
-    chat_insert_system_message($pdo, $channel, ($channel === 'alliance') ? (int)$alliance_id : null, (string)$res['system'], $uid);
-  }
-  stu_json($res, 200);
+  stu_json(['ok'=>false,'error'=>'afk_removed'], 410);
 }
 
 if ($action === 'presence_ping') {
@@ -9982,7 +9664,7 @@ if ($action === 'presence_ping') {
   }
   $channel = chat_channel_norm((string)($body['channel'] ?? 'global'));
   $character_id = (string)($body['character_id'] ?? '');
-  $afk = (int)($body['afk'] ?? 0);
+  $afk = 0; // 0.5.79: no AFK state any more
   $active = (int)($body['active'] ?? 0);
 
   $char = chat_require_character($pdo, $uid, $character_id);

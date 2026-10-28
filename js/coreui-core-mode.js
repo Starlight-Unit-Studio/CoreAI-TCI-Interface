@@ -352,6 +352,8 @@
         state.csrf = String(data.csrf_token || '');
         state.admin = typeof data.permission_level === 'number' && data.permission_level <= 1;
         if (manageBtn) manageBtn.hidden = !state.admin;
+        // 0.5.79: guests use the default Core (the RAM is shared by all accounts).
+        state.guest = data.is_guest === true;
         state.loaded = true;
         say('');
         render();
@@ -404,6 +406,10 @@
 
     function choose(value) {
       value = String(value || '');
+      if (state.guest && value !== state.override) {
+        say('Als Gast chattest du mit dem Standard-Core. Mit einem eigenen Konto kannst du ihn wechseln.');
+        return Promise.resolve(state.override);
+      }
       if (!state.loaded || state.saving || value === state.override) return Promise.resolve(state.override);
       state.saving = true;
       say('Core wird gewählt …');
@@ -423,6 +429,7 @@
         }
       }).catch(function (error) {
         say(error.code === 'model_not_available' ? 'Dieser Core ist nicht mehr installiert.'
+          : error.code === 'guest_core_locked' ? 'Als Gast chattest du mit dem Standard-Core.'
           : 'Nicht gespeichert. Bitte noch einmal versuchen.');
       }).then(function () {
         state.saving = false;

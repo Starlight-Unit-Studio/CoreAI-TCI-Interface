@@ -5,6 +5,7 @@ require_once __DIR__ . '/mailer.php';
 require_once __DIR__ . '/account_store.php';
 require_once __DIR__ . '/profile_store.php';
 require_once __DIR__ . '/guest_access.php';
+require_once __DIR__ . '/captcha.php';
 
 // Simple username/password auth for Alpha.
 // - Session cookie stores stu_uid when logged in.
@@ -90,6 +91,8 @@ if ($action === 'me') {
           'avatars' => is_array($profile) ? ($profile['avatars'] ?? ['user' => null, 'assistant' => null]) : ['user' => null, 'assistant' => null],
           'permission_level' => $lvl,
           'permission_label' => stu_permission_label($lvl),
+          // 0.5.79: the visible role (Inhaber, Admin, Nutzer, Gast).
+          'role' => coreui_role_name($lvl, $guest !== null),
           // 0.5.77: guests see how many messages are left.
           'is_guest' => $guest !== null,
           'guest' => $guest,
@@ -104,15 +107,25 @@ if ($action === 'me') {
   }
   // 0.5.77: the login page shows "Registrieren" and "Als Gast chatten" only while they are open.
   $guestOpen = false;
+  $captchaOn = true;
   try {
     $pdoPublic = stu_pdo();
     $registrationOpen = coreui_registration_enabled($pdoPublic);
     $guestOpen = coreui_guest_enabled($pdoPublic);
+    $captchaOn = coreui_captcha_enabled($pdoPublic);
   } catch (Throwable $e) {
     $registrationOpen = coreui_registration_enabled(null);
   }
   stu_json(['ok' => false, 'error' => 'not_authenticated', 'registration_enabled' => $registrationOpen,
-    'guest_enabled' => $guestOpen], 200);
+    'guest_enabled' => $guestOpen, 'captcha_enabled' => $captchaOn], 200);
+}
+
+// 0.5.79: a signed task for the captcha (guest access and sign-up).
+if ($action === 'captcha') {
+  stu_rate_limit('captcha', 30, 600);
+  $pdo = stu_pdo();
+  if (!coreui_captcha_enabled($pdo)) stu_json(['ok' => true, 'required' => false]);
+  stu_json(['ok' => true, 'required' => true] + coreui_captcha_challenge($pdo));
 }
 
 // 0.5.77: "Als Gast chatten": a guest account, logged in at once, limited
@@ -134,6 +147,8 @@ if ($action === 'guest') {
   $uid = $known !== null ? (int)$known['id'] : null;
   try {
     if ($uid === null) {
+      // 0.5.79: a new guest account only with a solved captcha (a known device needs none).
+      coreui_captcha_require($pdo, stu_read_json_body());
       $start = coreui_guest_start_allowed($pdo);
       if (!$start['ok']) {
         stu_json(['ok' => false, 'error' => $start['error'], 'retry_at' => date('c', (int)$start['retry_at'])], 429);
@@ -201,6 +216,8 @@ if ($action === 'register' || $action === 'login') {
     if (!coreui_registration_enabled($pdo)) {
       stu_json(['ok' => false, 'error' => 'registration_disabled'], 403);
     }
+    // 0.5.79: sign-up only with a solved captcha.
+    coreui_captcha_require($pdo, $body);
     // During maintenance, only existing Staff accounts may pass. New accounts are normal users.
     stu_enforce_maintenance($pdo, null, 4);
     // Ensure columns exist (graceful message if schema not migrated)

@@ -207,7 +207,11 @@
         if (accountMail) accountMail.textContent = data.username || 'NICHT GEMELDET';
         if (accountDisplayName) accountDisplayName.textContent = (data.display_name || 'ANGEMELDETER OPERATOR').toUpperCase();
         setAvatarPreview(accountAvatar, data.avatars && data.avatars.user, data.display_name || data.username || 'OP');
-        if (accountLevel) accountLevel.textContent = 'LV.' + String(data.permission_level == null ? 4 : data.permission_level);
+        // 0.5.79: CoreAI roles (Inhaber, Admin, Nutzer, Gast) instead of level numbers.
+        if (accountLevel) {
+          var lvl = Number(data.permission_level == null ? 4 : data.permission_level);
+          accountLevel.textContent = data.is_guest ? 'GAST' : (lvl === 0 ? 'INHABER' : (lvl === 1 ? 'ADMIN' : 'NUTZER'));
+        }
         if (adminEntry && Number(data.permission_level) <= 1) adminEntry.hidden = false;
       })
       .catch(function () {
@@ -421,6 +425,7 @@
           model_catalog_invalid_response: 'OLLAMA-CORE-LISTE IST UNGÜLTIG',
           invalid_model_name: 'UNGÜLTIGER CORE-NAME',
           invalid_num_ctx: 'UNGÜLTIGES KONTEXTFENSTER',
+          guest_core_locked: 'ALS GAST GELTEN STANDARD-CORE UND -KONTEXTFENSTER',
           missing_schema_017: 'MIGRATION 017 FEHLT: KONTEXTFENSTER NICHT GESPEICHERT'
         };
         announceSaved(labels[error.message] || ('SPEICHERN FEHLGESCHLAGEN: ' + error.message), true);
