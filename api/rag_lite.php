@@ -157,22 +157,68 @@ function coreui_rag_chunks(string $text, int $target, int $overlap, int $maxChun
   return $chunks;
 }
 
+/**
+ * Search terms of a question. 0.5.70: names keep their stem across
+ * apostrophes ("Ayal'ren", "Ayal’ren" -> "ayal"), the tail never becomes a
+ * substring term ("ren" matched "Waren", "Lernen"), conversational filler is
+ * ignored, and proper names come first instead of the longest words.
+ */
 function coreui_rag_query_terms(string $query, int $limit = 8): array {
-  $lower = mb_strtolower($query, 'UTF-8');
-  $parts = preg_split('~[^\pL\pN_-]+~u', $lower) ?: [];
-  $stop = [
-    'der','die','das','und','oder','ein','eine','ist','sind','mit','von','auf','ich','du','mir','bitte',
-    'was','wie','wer','wo','mein','meine','aus','den','dem','des','fuer','für','zum','zur','dass','dies',
-  ];
-  $terms = [];
-  foreach ($parts as $part) {
-    $part = trim($part);
-    $length = mb_strlen($part, 'UTF-8');
-    if ($length < 3 || in_array($part, $stop, true)) continue;
-    $terms[$part] = $length;
+  static $stop = null;
+  if ($stop === null) {
+    $stop = array_flip(explode(' ',
+      'der die das den dem des ein eine einer eines einem einen und oder aber doch denn sondern '
+      . 'ist sind war waren bin bist sein seid wird werden wurde wurden hat hast habe haben hatte hatten '
+      . 'haettest hättest haette hätte kann kannst koennen können konnte koennte könnte soll sollst sollen sollte '
+      . 'muss musst muessen müssen will willst wollen moechte möchte darf mag ich du er sie es wir ihr mir dir '
+      . 'mich dich uns euch mein meine meinen meinem meiner dein deine deinen deinem deiner sein seine ihre '
+      . 'was wie wer wo wann warum wieso weshalb welche welcher welches wem wen woher wohin '
+      . 'mit von vom auf aus bei nach seit zu zum zur fuer für ueber über unter vor hinter neben zwischen '
+      . 'durch gegen ohne um an am im in ins als wie ob dass daß weil wenn dann noch schon auch nur mal '
+      . 'bitte danke ja nein nicht kein keine keinen etwas alles mehr dazu davon darueber darüber damit '
+      . 'hier dort jetzt heute gerade eben sehr ganz genau einfach wirklich erst nochmal '
+      . 'weisst weißt kennst sag sage sagen erklaer erklär erklaere erkläre erklaeren erklären erzaehl erzähl '
+      . 'erzaehle erzähle zeig zeige gib gibt geben mach mache machen finde finden such suche suchen '
+      . 'durchsuch durchsuche durchsuchen schau schaue nachschauen pruef prüf pruefe prüfe '
+      . 'the and or of to in on for with what who how is are was were about tell explain'));
   }
-  arsort($terms);
-  return array_slice(array_keys($terms), 0, max(1, min(12, $limit)));
+  $words = [];
+  // Words, keeping inner apostrophes and hyphens: Ayal'ren, Khemet-Archive.
+  if (preg_match_all("~[\\pL\\pN]+(?:['’`´-][\\pL\\pN]+)*~u", $query, $m, PREG_OFFSET_CAPTURE)) {
+    foreach ($m[0] as [$raw, $offset]) {
+      $before = rtrim(substr($query, 0, (int)$offset));
+      $sentenceStart = $before === '' || preg_match('~[.!?:]$~u', $before) === 1;
+      $hasMark = preg_match("~['’`´]~u", $raw) === 1;
+      // German capitalises every noun, so an apostrophe or a digit marks a
+      // name more reliably than a capital letter.
+      $marked = $hasMark || preg_match('~\\pN~u', $raw) === 1;
+      $capital = !$sentenceStart && preg_match('~^\\p{Lu}~u', $raw) === 1;
+      // A name keeps the stem before its apostrophe; the tail is dropped.
+      $parts = $hasMark ? [preg_split("~['’`´]~u", $raw)[0]] : explode('-', $raw);
+      foreach ($parts as $part) {
+        $term = mb_strtolower(trim($part), 'UTF-8');
+        $length = mb_strlen($term, 'UTF-8');
+        if ($length < 3 || isset($stop[$term])) continue;
+        $rank = ($marked ? 200 : ($capital ? 100 : 0)) + min(40, $length);
+        if (!isset($words[$term]) || $words[$term] < $rank) $words[$term] = $rank;
+      }
+    }
+  }
+  arsort($words);
+  return array_slice(array_keys($words), 0, max(1, min(12, $limit)));
+}
+
+/** Query terms in reading order (for adjacent-word phrases). */
+function coreui_rag_query_terms_in_order(string $query): array {
+  $keep = array_flip(coreui_rag_query_terms($query, 12));
+  $order = [];
+  if (preg_match_all("~[\\pL\\pN]+(?:['’`´-][\\pL\\pN]+)*~u", $query, $m)) {
+    foreach ($m[0] as $raw) {
+      $term = mb_strtolower((string)preg_split("~['’`´]~u", $raw)[0], 'UTF-8');
+      if (isset($keep[$term])) $order[] = $term;
+    }
+  }
+  return $order;
 }
 
 function coreui_rag_score(string $title, string $text, array $terms): float {

@@ -116,6 +116,7 @@ UI_FILES=(
   database/migrations/017_ai_num_ctx.sql
   scripts/webui-resilience-selftest.cjs
   scripts/date-awareness-selftest.php
+  scripts/knowledge-search-selftest.php
   js/coreui-net.js
   api/console_insights.php
   api/console_insights_store.php
@@ -402,6 +403,13 @@ if command -v php >/dev/null 2>&1; then
     ok 'Datum und Uhrzeit: jeder Core-Aufruf eines Konsolenauftrags kennt beides.'
   else
     fail "Datums-Selbsttest: ${date_test:-Unbekannter Fehler}"
+  fi
+
+  knowledge_test=''
+  if knowledge_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/knowledge-search-selftest.php" 2>&1)"; then
+    ok 'RAG-Lite: seltene Namen vor Allerweltsbegriffen, Rueckfragen ueber den Verlauf, sichtbarer Suchschritt.'
+  else
+    fail "RAG-Lite-Suche: ${knowledge_test:-Unbekannter Fehler}"
   fi
 
   if runuser -u www-data -- php "$PROJECT_ROOT/scripts/model-live-audit.php" --selftest >/dev/null 2>&1; then

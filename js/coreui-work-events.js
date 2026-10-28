@@ -17,7 +17,8 @@
     continuation_segments:'Fortsetzungen', response_bytes:'Antwort (Bytes)',
     discarded_tool_body_bytes:'Verworfener Marker (Bytes)',
     marker_incomplete:'Marker unvollständig',
-    context_tokens:'Kontextfenster (Tokens)'
+    context_tokens:'Kontextfenster (Tokens)',
+    knowledge_hits:'Treffer', knowledge_sources:'Quellen'
   };
 
   // Bounded shape reasons of an unreadable tool reply (never model text).
@@ -46,6 +47,13 @@
         + 'passten nicht gemeinsam hinein, deshalb endete die Ausgabe vorzeitig.';
     }
     switch (event.title) {
+      case 'Privates Wissen durchsucht':
+        return Number(event.meta.knowledge_hits) > 0
+          ? 'Ich habe in deinem hochgeladenen Wissen (RAG-Lite) gesucht und '
+            + Number(event.meta.knowledge_hits) + ' passende Abschnitte aus '
+            + Number(event.meta.knowledge_sources || 1) + ' Quelle(n) gefunden'
+            + (event.meta.reason === 'followup_context' ? ', anhand des bisherigen Gesprächs' : '') + '.'
+          : 'Ich habe in deinem hochgeladenen Wissen (RAG-Lite) gesucht, aber keinen passenden Abschnitt gefunden.';
       case 'Kontextfenster ermittelt':
         return 'Der lokale Core arbeitet mit einem Kontextfenster' + windowSize + '. Ich teile Auftrag '
           + 'und Plan pro Datei so zu, dass Platz für den eigentlichen Quelltext bleibt.';
@@ -366,7 +374,8 @@
     'Fehlender JavaScript-Teil wird erzeugt':'Setze {f} fort',
     'Python-Job eingereiht':'Python läuft','Werkzeugantwort wird einmal korrigiert':'Korrigiere die Werkzeugantwort',
     'Mara hat selbst den Projekt-Writer aufgerufen':'Starte den Projekt-Writer',
-    'Projektdateien geplant':'Plane die Projektdateien','Kontextfenster ermittelt':'Plane den Kontext'
+    'Projektdateien geplant':'Plane die Projektdateien','Kontextfenster ermittelt':'Plane den Kontext',
+    'Privates Wissen durchsucht':'Durchsuche dein Wissen'
   };
   function activity(event) {
     if (!event) return 'Warte auf den ersten Schritt';

@@ -60,6 +60,15 @@ Auftragstext auch nach einem Minutenwechsel weiter nutzt. Die
 SERVERZEIT-Anweisung erlaubt das Datum ausdruecklich fuer erzeugte Inhalte
 wie das Copyright-Jahr.
 
+**RAG-Lite in grossen Dokumenten:** Nach dem Hochladen der drei
+Starlight-Unit-Bibeln fand Mara Namen wie "Ayal'ren" oder "Alt Khemet" nicht.
+Die Suche bevorzugte lange Woerter, zaehlte Allerweltsbegriffe wie
+"Starlight Unit" (in fast jedem Abschnitt) genauso wie den gesuchten Namen,
+und der Rest "ren" traf "Waren" oder "Lernen". Jetzt zaehlt, wie selten ein
+Begriff im eigenen Wissen ist, Namen behalten ihren Stamm ueber Apostrophe,
+und Rueckfragen ohne Stichwort nutzen den Gespraechsverlauf. Der Arbeitsweg
+zeigt "Privates Wissen durchsucht" mit Treffern und Quellen.
+
 ## Infokaesten auf dem Server und kein Chat-Flackern nach Antworten (0.5.69)
 
 Live-Test 0.5.68: Werkzeuge und Projekt blieben im Ladezustand, und nach

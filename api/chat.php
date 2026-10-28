@@ -1874,6 +1874,41 @@ function ember_with_today(string $prompt): string {
   return substr($dated, 0, (int)$cut) . "\n" . ember_clock_line($dt) . substr($dated, (int)$cut);
 }
 
+/**
+ * Recent conversation for a RAG-Lite follow-up: the last two lines of the
+ * reader and the last answer, from the already built context lines
+ * ("Name: text", answers marked "(du)"). Only used when the new message
+ * itself finds nothing.
+ */
+function ember_knowledge_followup_query(string $ctx): string {
+  $lines = array_values(array_filter(explode("\n", $ctx), static fn(string $line): bool => trim($line) !== ''));
+  $user = [];
+  $answer = '';
+  for ($i = count($lines) - 1; $i >= 0 && (count($user) < 2 || $answer === ''); $i--) {
+    $colon = strpos($lines[$i], ': ');
+    if ($colon === false) continue;
+    $text = substr($lines[$i], $colon + 2);
+    if (str_contains(substr($lines[$i], 0, $colon), '(du)')) {
+      if ($answer === '') $answer = $text;
+    } elseif (count($user) < 2) {
+      $user[] = $text;
+    }
+  }
+  $query = trim(implode("\n", $user) . "\n" . $answer);
+  return function_exists('mb_substr') ? mb_substr($query, 0, 1600, 'UTF-8') : substr($query, 0, 1600);
+}
+
+/** Visible step: whether the private knowledge was searched and found. */
+function ember_record_knowledge_lookup(PDO $pdo): void {
+  $last = $GLOBALS['COREUI_KNOWLEDGE_LAST'] ?? null;
+  unset($GLOBALS['COREUI_KNOWLEDGE_LAST']);
+  if (!is_array($last) || empty($last['searched']) || !function_exists('coreui_work_record')) return;
+  $meta = ['knowledge_hits'=>(int)$last['hits'], 'knowledge_sources'=>(int)$last['sources']];
+  if (!empty($last['followup'])) $meta['reason'] = 'followup_context';
+  coreui_work_record($pdo, 'tool', (int)$last['hits'] > 0 ? 'success' : 'info',
+    'Privates Wissen durchsucht', $meta);
+}
+
 function ember_weather_code_de($code): string {
   $c = (int)$code;
   $map = [
@@ -4660,9 +4695,13 @@ function ember_build_chat_prompt(
       $lore = ember_lore_block($pdo, $loreQuery, ember_lore_limit_for_runtime());
     }
   }
+  // 0.5.70: a follow-up ("durchsuch nochmal") falls back to the recent
+  // conversation; a large window gets more and longer passages.
   $privateKnowledgeBlock = $channel === 'console' && function_exists('coreui_private_knowledge_block')
-    ? coreui_private_knowledge_block($pdo, $uid, $cleanLoreQuestion, 4)
+    ? coreui_private_knowledge_block($pdo, $uid, $cleanLoreQuestion, $profile['compact'] ? 4 : 6,
+        ember_knowledge_followup_query($ctx), $profile['compact'] ? 2800 : 7000)
     : '';
+  if ($channel === 'console') ember_record_knowledge_lookup($pdo);
 
   $emberZeit = (function() {
     $tz = new DateTimeZone('Europe/Berlin');
@@ -4872,8 +4911,10 @@ function ember_generate_reply(
     }
   }
   $privateKnowledgeBlock = $channel === 'console' && function_exists('coreui_private_knowledge_block')
-    ? coreui_private_knowledge_block($pdo, $uid, $cleanLoreQuestion, 4)
+    ? coreui_private_knowledge_block($pdo, $uid, $cleanLoreQuestion, $promptProfile['compact'] ? 4 : 6,
+        ember_knowledge_followup_query($ctx), $promptProfile['compact'] ? 2800 : 7000)
     : '';
+  if ($channel === 'console') ember_record_knowledge_lookup($pdo);
 
   // Lore-Kontext wird im $sysBase-Pfad eingebunden (siehe unten: $sys .= $lore)
   // Der separate Lore-Fastpath wurde entfernt - er umging Embers Stimme und Memory.
