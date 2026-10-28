@@ -3422,6 +3422,127 @@ audio.msg-image {
   animation: core-mode-pulse 1.2s ease-in-out infinite;
 }
 
+/* 0.5.76: legend next to the Core chip (Core tiers, formatting, commands). */
+.core-legend-btn {
+  display: inline-grid;
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--line);
+  background: var(--panel-soft);
+  color: var(--cx);
+  cursor: pointer;
+  font-family: "Share Tech Mono", monospace;
+  font-size: 13px;
+  clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
+}
+
+.core-legend-btn:hover,
+.core-legend-btn[aria-expanded="true"] {
+  border-color: var(--line-strong);
+  background: var(--panel-cx);
+}
+
+.core-legend-btn:focus-visible {
+  outline: 2px solid var(--amb);
+  outline-offset: 2px;
+}
+
+.core-legend {
+  position: absolute;
+  z-index: 30;
+  right: clamp(18px, 3.4vw, 48px);
+  bottom: calc(max(10px, env(safe-area-inset-bottom)) + 34px);
+  width: min(460px, calc(100vw - 32px));
+  max-height: min(62vh, 560px);
+  padding: 12px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--line-strong);
+  background: var(--panel-solid);
+  box-shadow: var(--shadow-soft);
+  color: var(--txt);
+}
+
+.core-legend[hidden] {
+  display: none;
+}
+
+.core-legend-section + .core-legend-section {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.core-legend h3 {
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-family: "Share Tech Mono", monospace;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+}
+
+.core-legend-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.core-legend-table th,
+.core-legend-table td {
+  padding: 4px 6px 4px 0;
+  overflow-wrap: anywhere;
+  text-align: left;
+  vertical-align: top;
+}
+
+.core-legend-table thead th {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.core-legend-table tbody th {
+  white-space: nowrap;
+}
+
+.core-legend-table tbody tr + tr th,
+.core-legend-table tbody tr + tr td {
+  border-top: 1px solid var(--line);
+}
+
+.core-legend-note {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.core-legend-list {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 4px 10px;
+  margin: 0;
+  font-size: 12px;
+}
+
+.core-legend-list dt,
+.core-legend-list dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.core-legend-list dd {
+  color: var(--muted);
+}
+
+.core-legend code {
+  padding: 0 3px;
+  background: var(--panel-cx);
+  font-size: 11px;
+}
+
 @keyframes core-mode-pulse {
   50% { opacity: 0.35; }
 }
@@ -3852,8 +3973,17 @@ audio.msg-image {
     display: none;
   }
 
-  .core-mode-menu {
+  .core-mode-menu,
+  .core-legend {
     right: 16px;
+  }
+
+  .core-legend-list {
+    grid-template-columns: 1fr;
+  }
+
+  .core-legend-list dd {
+    margin-bottom: 4px;
   }
 
   .core-mode-name {

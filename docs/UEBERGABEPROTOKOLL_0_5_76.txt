@@ -17,6 +17,14 @@ URSACHEN UND AENDERUNGEN:
 - js/coreui-markdown.js: Flanken-Regeln fuer _ und * (emphasisOpens, emphasisCloser).
 - js/coreui-work-events.js: substantive(events); js/console-app.js zeigt den Arbeitsweg unter fertigen Antworten
   nur, wenn substantive() wahr ist. settings.html: "ARBEITSWEG OFFEN HALTEN".
+- Betreiberwunsch TCI-Namen: api/model_catalog.php (coreui_core_tier, coreui_core_label, coreui_core_mara_base aus
+  var/Modelfile.generated bzw. config/Modelfile.template), api/models.php und api/user_settings.php senden label,
+  default_label, core_label; js/coreui-core-mode.js zeigt TCI-Namen (eine Zeile je Stufe, Maras Basis-Core in
+  ihrer Stufe zusammengefasst, Sortierung Schnell bis Premium) und baut die Legende; js/coreui-insights.js
+  nutzt den Namen im CORE-Kasten. Das KI-Profil bleibt technisch. gemma4:12b hat noch keinen TCI-Namen.
+- Betreiberentscheidung Persona: api/chat.php ember_persona_system_for (Maras Core leer, Core ohne SYSTEM laut
+  /api/show bekommt ember_mara_system_text, Core mit eigenem SYSTEM behaelt ihn), in beiden Prompt-Buildern.
+- app.html/css: Legende (Knopf neben dem Chip) mit Core-Stufen, Formatierung, Befehlen und Tasten.
 - Doku: Sprachplan Lauf 4 und Entscheidung (Mitschrift ueber Vorlage, zweistufig im Chat, Live einstufig),
   Roadmap P20.0 Hoeren erledigt.
 

@@ -15,7 +15,7 @@
   <meta name="application-name" content="CoreAI: TCI Interface" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface | Quantum Software</title>
-  <link rel="stylesheet" href="./css/console.css?v=0189120216937297437061949" />
+  <link rel="stylesheet" href="./css/console.css?v=0622186569237868617469970" />
   <link rel="stylesheet" href="./css/artifacts.css?v=0620486151135252268178618" />
   <script src="./js/console-gate.js?v=1167305587541147054387411"></script>
   <script src="./js/coreui-preferences.js?v=0408182548343544002678570"></script>
@@ -382,6 +382,8 @@
         <span>PRIVATE CORE LINK</span>
         <i aria-hidden="true"></i>
         <span>ENTER SENDEN · SHIFT+ENTER ZEILENUMBRUCH · LANGER TEXT ALS .MD</span>
+        <button class="core-legend-btn" id="coreLegendBtn" type="button" aria-haspopup="dialog" aria-expanded="false"
+          aria-controls="coreLegend" aria-label="Legende: Core-Stufen, Formatierung und Befehle" title="Legende">?</button>
         <button class="core-mode-chip" id="coreModeChip" type="button" data-thinking="on"
           aria-haspopup="dialog" aria-expanded="false" aria-controls="coreModeMenu">
           <span class="core-mode-name" id="coreModeName">Core</span>
@@ -407,17 +409,56 @@
         </label>
         <p class="core-mode-status" id="coreModeStatus" role="status" aria-live="polite"></p>
       </div>
+
+      <div class="core-legend" id="coreLegend" role="dialog" aria-label="Legende" hidden>
+        <section class="core-legend-section" aria-labelledby="coreLegendTiers">
+          <h3 id="coreLegendTiers">CORE-STUFEN</h3>
+          <table class="core-legend-table">
+            <thead><tr><th scope="col">TCI-Name</th><th scope="col">Core</th><th scope="col">Status</th></tr></thead>
+            <tbody id="coreLegendRows"></tbody>
+          </table>
+          <p class="core-legend-note">Jede Stufe antwortet als Mara. Cloud-Cores laufen über Ollama in der Cloud.</p>
+        </section>
+        <section class="core-legend-section" aria-labelledby="coreLegendFormat">
+          <h3 id="coreLegendFormat">FORMATIERUNG</h3>
+          <dl class="core-legend-list">
+            <dt><code>**fett**</code></dt><dd><strong>fett</strong></dd>
+            <dt><code>*kursiv*</code> oder <code>_kursiv_</code></dt><dd><em>kursiv</em>, ein Unterstrich mitten im Wort bleibt stehen</dd>
+            <dt><code>~~weg~~</code></dt><dd><del>durchgestrichen</del></dd>
+            <dt><code>`Code`</code></dt><dd>Code im Text</dd>
+            <dt><code>```sprache</code></dt><dd>Codeblock, mit <code>```</code> schließen</dd>
+            <dt><code># Titel</code></dt><dd>Überschrift, <code>##</code> bis <code>######</code> für kleinere</dd>
+            <dt><code>- Punkt</code> oder <code>1. Punkt</code></dt><dd>Liste</dd>
+            <dt><code>&gt; Text</code></dt><dd>Zitat</dd>
+            <dt><code>| A | B |</code></dt><dd>Tabelle, zweite Zeile <code>| --- | --- |</code></dd>
+            <dt><code>[Text](https://…)</code></dt><dd>Link (nur https und mailto)</dd>
+            <dt><code>---</code></dt><dd>Trennlinie</dd>
+            <dt><code>\*</code></dt><dd>Zeichen wörtlich zeigen</dd>
+          </dl>
+        </section>
+        <section class="core-legend-section" aria-labelledby="coreLegendKeys">
+          <h3 id="coreLegendKeys">BEFEHLE UND TASTEN</h3>
+          <dl class="core-legend-list">
+            <dt>Enter</dt><dd>Nachricht senden</dd>
+            <dt>Shift+Enter</dt><dd>Neue Zeile</dd>
+            <dt><code>/skill kennung</code> oder <code>$kennung</code></dt><dd>Einen Skill gezielt wählen (Kennungen unter Einstellungen, Meine Skills)</dd>
+            <dt>Büroklammer</dt><dd>Bis zu zehn Dateien oder Bilder anhängen</dd>
+            <dt>Langer Text</dt><dd>Ab 8000 Zeichen automatisch als <code>.md</code>-Anhang</dd>
+            <dt>Core-Chip</dt><dd>Core-Stufe wählen und Denken an- oder ausschalten</dd>
+          </dl>
+        </section>
+      </div>
     </footer>
   </div>
 
   <script src="./js/coreui-markdown.js?v=0764972026233993864517711"></script>
   <script src="./js/coreui-markdown-preview.js?v=0129630505605465300569623"></script>
   <script src="./js/coreui-chat-follow.js?v=0911353222815455977204546"></script>
-  <script src="./js/coreui-insights.js?v=0318336117257095384692754"></script>
+  <script src="./js/coreui-insights.js?v=0594460657635895301005082"></script>
   <script src="./js/coreui-work-events.js?v=0346522000099481117561694"></script>
   <script src="./js/coreui-net.js?v=0716710642958975802942157"></script>
   <script src="./js/console-app.js?v=0232495144295535980989395"></script>
-  <script src="./js/coreui-core-mode.js?v=0950717837168830499620776"></script>
+  <script src="./js/coreui-core-mode.js?v=0032872250530463624815995"></script>
   <script src="./js/coreui-artifacts.js?v=1069339270452640197429799"></script>
 </body>
 </html>

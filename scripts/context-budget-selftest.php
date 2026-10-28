@@ -26,7 +26,7 @@ function ember_cfg(string $key, mixed $default = null): mixed {
 $chat = (string)file_get_contents($root . '/api/chat.php');
 $wanted = ['ember_url','ember_cache_dir','ember_http_get_json','ember_model_is_cloud',
   'ember_ollama_context_cache_file','ember_ollama_context_store','ember_ollama_context_observe',
-  'ember_ollama_ps_context','ember_ollama_parameters_num_ctx','ember_ollama_show_context',
+  'ember_ollama_ps_context','ember_ollama_parameters_num_ctx','ember_ollama_show_context','ember_ollama_show_json',
   'ember_ollama_context_window','ember_profile_num_ctx'];
 $tokens = token_get_all($chat);
 for ($i = 0; $i < count($tokens); $i++) {

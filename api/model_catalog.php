@@ -72,3 +72,51 @@ function coreui_ollama_model_exists(string $name): bool {
   }
   return false;
 }
+
+/*
+ * 0.5.76: TCI names for the Gemma 4 tiers (lore in the chat). The size in
+ * the name decides, also for cloud variants: e2b Schnell, e4b Normal,
+ * 26b Pro, 31b Premium. Other Cores keep their own name.
+ */
+const COREUI_CORE_TIER_LABELS = [
+  'schnell' => 'TCI: Mara Schnell',
+  'normal' => 'TCI: Mara Normal',
+  'pro' => 'TCI: Mara Pro',
+  'premium' => 'TCI: Mara Premium',
+];
+
+function coreui_core_tier(string $model): ?string {
+  $m = strtolower(trim($model));
+  if (preg_match('~gemma-?4~', $m) !== 1) return null;
+  foreach (['e2b'=>'schnell', 'e4b'=>'normal', '26b'=>'pro', '31b'=>'premium'] as $size => $tier) {
+    if (preg_match('~(?<![a-z0-9])' . $size . '(?![a-z0-9])~', $m) === 1) return $tier;
+  }
+  return null;
+}
+
+/** Same Core, compared like Ollama does (case, missing ":latest"). */
+function coreui_core_same(string $a, string $b): bool {
+  $key = static function (string $n): string {
+    $n = strtolower(trim($n));
+    return ($n !== '' && !str_contains($n, ':')) ? $n . ':latest' : $n;
+  };
+  return $key($a) !== '' && $key($a) === $key($b);
+}
+
+/** Base Core of Mara's own Core: the installer's generated Modelfile, else the template. */
+function coreui_core_mara_base(): string {
+  $root = dirname(__DIR__);
+  foreach ([$root . '/var/Modelfile.generated', $root . '/config/Modelfile.template'] as $file) {
+    $text = is_readable($file) ? (string)@file_get_contents($file) : '';
+    if (preg_match('~^FROM[ \t]+(\S+)~m', $text, $m) === 1) return $m[1];
+  }
+  return '';
+}
+
+/** Name shown in the chat: the TCI tier name, or the Core's own name. */
+function coreui_core_label(string $model): string {
+  $default = defined('STU_EMBER_MODEL') ? (string)STU_EMBER_MODEL : 'ember-coreui:latest';
+  $tier = coreui_core_tier($model);
+  if ($tier === null && coreui_core_same($model, $default)) $tier = coreui_core_tier(coreui_core_mara_base());
+  return $tier !== null ? COREUI_CORE_TIER_LABELS[$tier] : $model;
+}

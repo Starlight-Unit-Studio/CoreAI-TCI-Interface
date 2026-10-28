@@ -6,5 +6,8 @@ CoreAI: TCI Interface 0.5.76 - 28.10.2026
 - Arbeitsweg nur bei echter Arbeit (Werkzeug, Notiz, Korrektur, Datei, Wissenstreffer, Anhang, Fehler); Einstellung "Arbeitsweg offen halten".
 - Analyse-Filter erkennt zusammengesetzte Namen wie [Systemanalyse: ...].
 - Sprachplan Lauf 4: Vorlage 10 von 10 kurze Aufnahmen, 60 s in 18 s; Entscheidung Sprachnachricht zweistufig, Live einstufig.
-- Tests: tool-mention-selftest.php (beide Preflights); markdown-, work-events-ui- und local-file-tool-Tests erweitert.
+- TCI-Namen im Chat: e2b Mara Schnell, e4b Mara Normal, 26b Mara Pro, 31b Mara Premium (auch Cloud); Maras Core nach der Basis aus dem Modelfile; Chip, Menue und CORE-Infokasten.
+- Jeder Core ist Mara: Cores ohne SYSTEM bekommen Maras SYSTEM aus dem Modelfile als System-Nachricht.
+- Legende neben dem Core-Chip: Core-Stufen mit technischen Namen, Formatierung, Befehle und Tasten.
+- Tests: tool-mention-selftest.php und core-tiers-selftest.php (beide Preflights); markdown-, work-events-ui-, Core-Chip- und local-file-tool-Tests erweitert.
 - OFFEN: TTS-Kandidaten, dann P20.1 (Mikrofon im Chat).

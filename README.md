@@ -19,6 +19,12 @@ Antworten zeigen keinen Arbeitsweg mehr; er erscheint, sobald Mara wirklich
 arbeitet. Im Sprachplan steht Lauf 4 mit der Entscheidung: Mitschrift ueber
 Googles Transkriptionsvorlage, Sprachnachrichten zweistufig, Live einstufig.
 
+Im Chat tragen die Gemma-Stufen TCI-Namen: Mara Schnell (e2b), Normal (e4b),
+Pro (26b) und Premium (31b), auch in der Cloud. Jeder Core antwortet als Mara:
+Cores ohne eigenen SYSTEM-Text bekommen Maras Text aus dem Modelfile. Die
+technischen Namen, die Formatierung und die Befehle stehen in der Legende
+neben dem Core-Chip.
+
 ## Denkschalter und Core-Wahl im Chat (0.5.75)
 
 Unter dem Eingabefeld sitzt ein Core-Chip, aehnlich wie in anderen Chat-

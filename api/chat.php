@@ -3811,8 +3811,8 @@ function ember_ollama_parameters_num_ctx(string $parameters): ?int {
   return $ctx >= 256 ? $ctx : null;
 }
 
-/** Context window set in the model's Modelfile (read-only /api/show). */
-function ember_ollama_show_context(string $model): ?int {
+/** Read-only /api/show answer of a Core, null when Ollama does not answer. */
+function ember_ollama_show_json(string $model): ?array {
   $url = preg_replace('~/api/(?:chat|generate)/?$~', '/api/show', ember_url());
   if (!is_string($url) || !str_ends_with($url, '/api/show')) return null;
   $ch = curl_init($url);
@@ -3830,8 +3830,43 @@ function ember_ollama_show_context(string $model): ?int {
   curl_close($ch);
   if (!is_string($raw) || $code < 200 || $code >= 300) return null;
   $show = json_decode($raw, true);
+  return is_array($show) ? $show : null;
+}
+
+/** Context window set in the model's Modelfile (read-only /api/show). */
+function ember_ollama_show_context(string $model): ?int {
+  $show = ember_ollama_show_json($model);
   return is_array($show) && is_string($show['parameters'] ?? null)
     ? ember_ollama_parameters_num_ctx($show['parameters']) : null;
+}
+
+/** Mara's SYSTEM text from the active Modelfile template, without a thinking switch. */
+function ember_mara_system_text(): string {
+  $text = (string)@file_get_contents(dirname(__DIR__) . '/config/Modelfile.template');
+  if (preg_match('~^SYSTEM[ \t]+"""(.*?)^"""~ms', $text, $m) !== 1) return '';
+  return trim(str_replace('<|think|>', '', $m[1]));
+}
+
+/**
+ * 0.5.76: every Core speaks as Mara. Her own Core carries the SYSTEM text in
+ * its Modelfile, so nothing is sent (the Modelfile stays authoritative). A
+ * raw Gemma Core or a cloud Core has none and gets the same text as system
+ * message; thinking still follows the switch. A Core with a SYSTEM text of
+ * its own keeps it.
+ */
+function ember_persona_system_for(string $model): string {
+  static $memo = [];
+  $model = trim($model);
+  $default = trim((string)ember_cfg('STU_EMBER_MODEL', 'ember-coreui:latest'));
+  $key = static function (string $n): string {
+    $n = strtolower($n);
+    return ($n !== '' && !str_contains($n, ':')) ? $n . ':latest' : $n;
+  };
+  if ($model === '' || $key($model) === $key($default)) return '';
+  if (array_key_exists($model, $memo)) return $memo[$model];
+  $show = ember_ollama_show_json($model);
+  if (is_array($show) && trim((string)($show['system'] ?? '')) !== '') return $memo[$model] = '';
+  return $memo[$model] = ember_mara_system_text();
 }
 
 /**
@@ -4755,7 +4790,8 @@ function ember_build_chat_prompt(
     $wochentage = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
     return $wochentage[(int)$dt->format('w')] . ', ' . $dt->format('d.m.Y') . ', ' . $dt->format('H:i') . ' Uhr';
   })();
-  $sys = "";
+  // 0.5.76: empty for Mara's own Core (Modelfile SYSTEM), her persona for other Cores.
+  $sys = ember_persona_system_for(ember_model());
 
   $nativeProjects = $channel === 'console' && $imageUrl === null
     && empty($GLOBALS['COREUI_NATIVE_TOOL_REENTRY']);
@@ -4968,17 +5004,17 @@ function ember_generate_reply(
   // Lore-Kontext wird im $sysBase-Pfad eingebunden (siehe unten: $sys .= $lore)
   // Der separate Lore-Fastpath wurde entfernt - er umging Embers Stimme und Memory.
 
-  // sysBase leer - Persoenlichkeit/Identitaet liegt vollstaendig im Modelfile-SYSTEM.
+  // sysBase bleibt fuer Maras eigenen Core leer - Persoenlichkeit/Identitaet liegt
+  // vollstaendig im Modelfile-SYSTEM, ein gesetzter system-Parameter wuerde es ersetzen.
+  // Andere Cores ohne SYSTEM bekommen seit 0.5.76 denselben Text (ember_persona_system_for).
   // Datum/Uhrzeit wird pro Nachricht direkt in $u eingefuegt.
-  // Beim /api/chat-Endpoint ueberschreibt ein gesetzter system-Parameter das Modelfile-SYSTEM -
-  // daher sysBase leer lassen damit das Modelfile ungekuerzt greift.
   $emberZeit = (function() {
     $tz = new DateTimeZone('Europe/Berlin');
     $dt = new DateTime('now', $tz);
     $wochentage = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
     return $wochentage[(int)$dt->format('w')] . ', ' . $dt->format('d.m.Y') . ', ' . $dt->format('H:i') . ' Uhr';
   })();
-  $sysBase = "";
+  $sysBase = ember_persona_system_for(ember_model());
   $sys = $sysBase;
   // Memory wird in $u eingefuegt (nicht in $sys) damit das Modelfile-SYSTEM nicht ueberschrieben wird
 

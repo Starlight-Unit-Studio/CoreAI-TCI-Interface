@@ -29,9 +29,14 @@ if ($method === 'GET' && array_key_exists('core_status', $_GET)) {
 }
 
 if ($method === 'GET') {
+  $settings = coreui_ai_settings_load($pdo, $uid);
+  $defaultModel = defined('STU_EMBER_MODEL') ? (string)STU_EMBER_MODEL : '';
   stu_json([
     'ok' => true,
-    'settings' => coreui_ai_settings_load($pdo, $uid),
+    'settings' => $settings,
+    // 0.5.76: TCI names for the chat chip.
+    'default_label' => $defaultModel !== '' ? coreui_core_label($defaultModel) : '',
+    'core_label' => coreui_core_label((string)($settings['model_override'] ?: $defaultModel)),
     'limits' => [
       'system_prompt_chars' => coreui_ai_prompt_limit($pdo),
       'memory_limit_max' => 60,
@@ -89,7 +94,8 @@ if (($body['action'] ?? '') === 'core') {
   http_response_code(200);
   header('Content-Type: application/json; charset=utf-8');
   header('Cache-Control: no-store');
-  echo json_encode(['ok'=>true, 'model_override'=>$name, 'model'=>$model, 'preload'=>$preload], JSON_UNESCAPED_UNICODE);
+  echo json_encode(['ok'=>true, 'model_override'=>$name, 'model'=>$model, 'label'=>coreui_core_label($model),
+    'preload'=>$preload], JSON_UNESCAPED_UNICODE);
   if ($preload !== 'started') exit;
   if (function_exists('fastcgi_finish_request')) @fastcgi_finish_request();
   ignore_user_abort(true);

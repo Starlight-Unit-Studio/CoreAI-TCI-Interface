@@ -126,6 +126,7 @@ UI_FILES=(
   js/coreui-core-mode.js
   api/core_preload.php
   scripts/tool-mention-selftest.php
+  scripts/core-tiers-selftest.php
   scripts/media-spike.php
   scripts/media-spike.sh
   js/coreui-net.js
@@ -437,6 +438,13 @@ if command -v php >/dev/null 2>&1; then
     fail "Audio-WAV-Selbsttest: ${audio_test:-Unbekannter Fehler}"
   fi
 
+  tiers_test=''
+  if tiers_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/core-tiers-selftest.php" 2>&1)"; then
+    ok 'Core-Stufen: TCI-Namen im Chat und Maras Persona fuer jeden Core geprueft.'
+  else
+    fail "Core-Stufen-Selbsttest: ${tiers_test:-Unbekannter Fehler}"
+  fi
+
   mention_test=''
   if mention_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/tool-mention-selftest.php" 2>&1)"; then
     ok 'Werkzeug-Erwaehnungen: Erklaerungen starten kein Werkzeug und keine Korrekturrunde.'
@@ -486,7 +494,7 @@ if command -v php >/dev/null 2>&1; then
       fail 'KI-Profil: Kontextfenster-Regler-Selbsttest fehlgeschlagen.'
     fi
     if node "$PROJECT_ROOT/scripts/thinking-switch-ui-selftest.cjs" >/dev/null 2>&1; then
-      ok 'Chat: Core-Chip mit Ollama-Liste, Laden, Denkschalter und Fehlerfaellen geprueft.'
+      ok 'Chat: Core-Chip mit TCI-Namen, Legende, Laden, Denkschalter und Fehlerfaellen geprueft.'
     else
       fail 'Chat: Denkschalter-Oberflaechentest fehlgeschlagen.'
     fi

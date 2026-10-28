@@ -99,7 +99,9 @@
         return;
       }
       rows(body, [
-        ['Core', info.model],
+        // 0.5.76: TCI name like in the Core chip; technical names are in its legend.
+        ['Core', root.CoreUICoreMode && typeof root.CoreUICoreMode.label === 'function'
+          ? root.CoreUICoreMode.label(info.model) : info.model],
         ['Ausführung', info.cloud ? 'Cloud über Ollama' : 'Lokal über Ollama'],
         ['Kontextfenster', info.cloud ? 'vom Cloud-Anbieter'
           : count(info.windowSize) + ' Tokens' + (SOURCES[info.source] ? ' · ' + SOURCES[info.source] : '')],

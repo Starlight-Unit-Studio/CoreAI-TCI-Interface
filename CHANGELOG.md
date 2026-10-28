@@ -11,7 +11,10 @@ CoreAI: TCI Interface gehoert zur Quantum-Softwarefamilie und wird bis zur final
 - **Ruhigerer Arbeitsweg:** Einfache Antworten ohne Werkzeug, Notiz, Korrektur, Datei, Wissenstreffer oder Fehler zeigen keinen Arbeitsweg mehr. Die Einstellung heisst jetzt "Arbeitsweg offen halten".
 - **Analyse-Filter** erkennt auch zusammengesetzte Namen wie "[Systemanalyse: ...]".
 - **Sprachplan, Lauf 4:** Googles Transkriptionsvorlage erkennt 10 von 10 kurzen Aufnahmen in etwa 1 s und 60 s in 18 s, ohne temperature 0. Entscheidung: Sprachnachrichten zweistufig (Mitschrift, dann Antwort auf den Text), Live-Gespraech einstufig mit Mitschrift im Hintergrund. Alle vier lokalen Cores auf dem Server nutzen dieselbe Gewichtsdatei.
-- Tests: neue `tool-mention-selftest.php` in beiden Preflights; Markdown-, Arbeitsweg- und Datei-Werkzeug-Tests erweitert.
+- **TCI-Namen fuer die Gemma-Stufen im Chat:** e2b heisst "TCI: Mara Schnell", e4b "TCI: Mara Normal", 26b "TCI: Mara Pro", 31b "TCI: Mara Premium", auch als Cloud-Variante. Maras eigener Core traegt die Stufe seiner Basis aus dem Modelfile. Chip, Core-Menue (eine Zeile je Stufe, sortiert von Schnell bis Premium) und CORE-Infokasten zeigen den TCI-Namen; Cores anderer Familien behalten ihren Namen. Das KI-Profil zeigt weiter die technischen Namen.
+- **Jeder Core ist Mara:** Rohe Gemma- und Cloud-Cores ohne eigenen SYSTEM-Text bekommen Maras SYSTEM-Text aus `config/Modelfile.template` (ohne `<|think|>`) als System-Nachricht; vorher antwortete dort ein Gemma ohne Persona und ohne Werkzeugregeln. Maras eigener Core nutzt unveraendert sein Modelfile, ein Core mit eigenem SYSTEM-Text behaelt ihn.
+- **Legende am Eingabefeld** (Knopf "?" neben dem Core-Chip): Core-Stufen mit den technischen Cores dahinter und ihrem Status, die Formatierung im Chat und die Befehle und Tasten (`/skill kennung`, Enter, Shift+Enter, Anhaenge, langer Text als `.md`).
+- Tests: neue `tool-mention-selftest.php` und `core-tiers-selftest.php` in beiden Preflights; Markdown-, Arbeitsweg-, Core-Chip- und Datei-Werkzeug-Tests erweitert.
 
 ## 0.5.75 - 28.10.2026
 
