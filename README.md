@@ -28,6 +28,12 @@ Chat (Knopf ⇊ oder `/komprimieren`). Bei Recherchen arbeitet sie wie ein
 Agent in bis zu 6 Schritten: suchen, genauer suchen, Webseiten lesen,
 rechnen, im Archiv nachsehen, und erst dann antworten.
 
+Beim Browsen sieht man Mara live zu: Waehrend ihr Core ueberlegt, laeuft die
+Zeit mit und der Cursor liest mit, vor jedem Klick gleitet er zum Ziel. Mara
+fuellt auch Formulare aus (Suchfelder, Auswahllisten, Haken), aber nie
+Passwoerter, Zahlungsdaten oder Logins, und sie kauft, sendet oder loescht
+nichts. Adressen im lokalen Netz oeffnet ihr Browser nicht.
+
 ## Erklaerungen statt Werkzeugaufrufe, Unterstriche, Arbeitsweg (0.5.76)
 
 Erklaert Mara ihre Werkzeuge, loesen die erwaehnten Marker in Code-Markierungen

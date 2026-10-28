@@ -94,7 +94,10 @@ NAECHSTER SCHRITT: TTS-Kandidaten, dann P20.1.
 0.5.76 ist gemergt (PR #126) mit TCI-Stufen, Installer, Updates und Ollama Cloud im Chat. 0.5.77:
 Registrieren und Als Gast chatten auf der Login-Seite (nur wenn offen, Gast-Limit Standard 5), Cores einzeln
 aktualisieren und deinstallieren, beim Core-Wechsel wird der alte zuerst entladen, Chat komprimieren mit
-.md-Archiv, Maras Arbeitsschleife mit bis zu 6 Schritten.
+.md-Archiv, Maras Arbeitsschleife mit bis zu 6 Schritten. Dazu Browsing und Websuche: Live-Ansicht ohne
+Einfrieren (Mara ueberlegt mit Sekunden, Neuverbindung), Formulare ausfuellen mit festen Regeln, eigene
+Elementliste (Playwright ohne Accessibility-Snapshot), lokales Netz gesperrt, Core des Nutzers im Worker,
+Websuche mit Stichworten als zweitem Versuch. Browse-Worker nach dem Update neu starten.
 NAECHSTER SCHRITT: Benutzerverwaltung nach Betreiberwunsch, TTS-Kandidaten, dann P20.1.
 Mara/Ember, Ollama-Modelfile, serielle Queue und private Projekt-
 plaene NICHT ungefragt veraendern.

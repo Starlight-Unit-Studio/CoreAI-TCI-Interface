@@ -170,6 +170,11 @@ UI_FILES=(
   api/console_compaction.php
   scripts/agent-loop-selftest.php
   api/console_agent_loop.php
+  scripts/browse-worker-selftest.py
+  scripts/browse-live-ui-selftest.cjs
+  scripts/web-search-selftest.php
+  tools/ember_browse_worker.py
+  api/console_browse_stream.php
   api/core_install.php
   js/coreui-core-install.js
   scripts/media-spike.php
@@ -262,6 +267,12 @@ if bash "$PROJECT_ROOT/tests/migration-permissions-selftest.sh" >/dev/null 2>&1;
   ok 'Migration: Ausfuehrungsrechte und Bash-Aufruf vor dem Datenbankimport geprueft.'
 else
   fail 'Migration: Berechtigungs-/Aufruf-Selbsttest fehlgeschlagen.'
+fi
+
+if COREAI_BROWSE_LIVE=0 python3 "$PROJECT_ROOT/scripts/browse-worker-selftest.py" >/dev/null 2>&1; then
+  ok 'Browser-Regeln: geschuetzte Felder, Kaeufe, Logins, Nachrichten, lokales Netz, Core des Nutzers und Herzschlag geprueft.'
+else
+  fail 'Browser-Regeln-Selbsttest fehlgeschlagen.'
 fi
 
 if python3 "$PROJECT_ROOT/scripts/workspace-output-selftest.py" >/dev/null 2>&1; then
@@ -684,6 +695,22 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail "Arbeitsschleifen-Selbsttest: ${loop_test:-Unbekannter Fehler}"
   fi
 
+  web_test=''
+  if web_test="$(compose exec -T php php scripts/web-search-selftest.php 2>&1)"; then
+    ok 'Websuche: Stichworte als zweiter Versuch, keine Doppelten, saubere Snippets und Datum geprueft.'
+  else
+    fail "Websuche-Selbsttest: ${web_test:-Unbekannter Fehler}"
+  fi
+
+  if is_enabled "${COREUI_INSTALL_BROWSE:-0}" && service_running browse; then
+    browse_live=''
+    if browse_live="$(compose exec -T -e COREAI_BROWSE_LIVE=1 browse python3 scripts/browse-worker-selftest.py 2>&1)"; then
+      ok 'Browser (echter Chromium-Lauf): Formular ausgefuellt, Bilder beim Ueberlegen, Login und Kontakt blockiert, lokales Netz gesperrt.'
+    else
+      fail "Browser-Livetest: ${browse_live:-Unbekannter Fehler}"
+    fi
+  fi
+
   mention_test=''
   if mention_test="$(compose exec -T php php scripts/tool-mention-selftest.php 2>&1)"; then
     ok 'Werkzeug-Erwaehnungen: Erklaerungen starten kein Werkzeug und keine Korrekturrunde.'
@@ -733,6 +760,11 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       ok 'Login: Registrieren und Als Gast chatten nur wenn offen, Pruefungen und Fehlerfaelle geprueft.'
     else
       fail 'Login: Registrierungs-Selbsttest fehlgeschlagen.'
+    fi
+    if node "$PROJECT_ROOT/scripts/browse-live-ui-selftest.cjs" >/dev/null 2>&1; then
+      ok 'Live-Browser: Mara ueberlegt mit Sekunden, Cursor gleitet, Warteschlange, Fortsetzen nach Abbruch geprueft.'
+    else
+      fail 'Live-Browser-Oberflaechentest fehlgeschlagen.'
     fi
     if node "$PROJECT_ROOT/scripts/webui-resilience-selftest.cjs" >/dev/null 2>&1; then
       ok 'WebUI: abbrechbares Laden, Reconnect ohne Doppelauftrag, Backoff und lange Chats geprueft.'

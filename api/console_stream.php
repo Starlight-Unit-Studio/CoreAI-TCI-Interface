@@ -894,7 +894,8 @@ try {
   // 0.5.77: messages that fell out of Mara's window are folded into the
   // summary and the archive, after the answer is out and still inside the
   // turn's queue slot, so the next message already knows the older part.
-  if ($emberMsgId > 0 && !ember_agent_cancel_requested()) {
+  // A browse job waits for the queue: it goes first, the next turn compacts.
+  if ($emberMsgId > 0 && $browseJobId <= 0 && !ember_agent_cancel_requested()) {
     // The answer's work view is complete; the summary call records nothing there.
     unset($GLOBALS['COREUI_WORK_CONTEXT'], $GLOBALS['COREUI_WORK_PUBLISH'], $GLOBALS['COREUI_SOURCE_PREVIEW_PUBLISH']);
     ignore_user_abort(true);

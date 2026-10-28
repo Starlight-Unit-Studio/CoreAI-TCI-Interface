@@ -7,5 +7,10 @@ CoreAI: TCI Interface 0.5.77 - 28.10.2026
 - Core-Wechsel entlaedt zuerst die anderen lokalen Cores (keep_alive 0), dann wird der neue geladen.
 - Chat komprimieren: automatisch nach einer Antwort, sobald Nachrichten aus Maras Fenster fallen, oder per Knopf / /komprimieren; laufende Zusammenfassung im Prompt; woertliches Markdown-Archiv je Chat (zuerst geschrieben, bis zum Loeschen, Download); Mara sucht darin mit [ARCHIV: Stichworte].
 - Maras Arbeitsschleife im privaten Chat: bis zu 6 selbst gewaehlte Schritte (WEB, BROWSE, PY rechnen, ARCHIV), sucht von sich aus bei fehlendem aktuellem Wissen, jeder Schritt im Arbeitsweg, abbrechbar; globaler Kanal unveraendert.
-- Tests: registration-ui-selftest.cjs, guest-access-selftest.php, compaction-selftest.php, agent-loop-selftest.php (beide Preflights); Installer- und Fenster-Tests erweitert.
+- Live-Browser: "Mara ueberlegt" mit laufender Zeit und lesendem Cursor, solange der Core rechnet; frische Bilder bei Seitenaenderung; Cursor gleitet vor Klick und Eingabe zum Ziel; "WARTET AUF MARA"; Neuverbindung an der letzten Stelle nach dem 15-Minuten-Deckel oder Netzfehler.
+- Formulare beim Browsen: tippen, auswaehlen, anhaken, abschicken; Regeln im Worker (keine Passwoerter, Zahlungsdaten, Uploads, Logins, Kaeufe, Nachrichten, persoenliche Daten nur aus dem Auftrag); Schalter STU_EMBER_BROWSE_FORMS.
+- Browser gehaertet: eigene nummerierte Elementliste (Playwright ohne Accessibility-Snapshot), Text in Fenstern, zurueck, Cookie-Banner, lokales Netz gesperrt (STU_EMBER_BROWSE_ALLOW_PRIVATE).
+- Browse-Auftrag nutzt Core und num_ctx des Nutzers (Spalten model, num_ctx), keine Gemma-Parameter, keep_alive aus der Konfiguration, Ergebnis in Maras Stimme mit Quelle.
+- Websuche: Stichworte als zweiter Versuch, keine Doppelten, saubere Snippets, Datum beim Treffer.
+- Tests: registration-ui-selftest.cjs, guest-access-selftest.php, compaction-selftest.php, agent-loop-selftest.php, browse-worker-selftest.py, browse-live-ui-selftest.cjs, web-search-selftest.php (beide Preflights); Installer- und Fenster-Tests erweitert.
 - OFFEN: Ausbau der Benutzerverwaltung, TTS-Kandidaten, P20.1.

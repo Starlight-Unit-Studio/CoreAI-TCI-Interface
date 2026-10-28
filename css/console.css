@@ -2639,7 +2639,75 @@ audio.msg-image {
   pointer-events: none;
   filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.98)) drop-shadow(0 2px 3px rgba(16, 22, 38, 0.58)) drop-shadow(0 0 5px rgba(91, 146, 255, 0.76));
   transform: translate(-3px, -3px) rotate(-15deg);
-  transition: left 300ms cubic-bezier(0.22, 0.72, 0.2, 1), top 300ms cubic-bezier(0.22, 0.72, 0.2, 1), opacity 160ms ease;
+  /* 0.5.77: der Cursor gleitet sichtbar zum naechsten Ziel statt zu springen. */
+  transition: left 520ms cubic-bezier(0.45, 0.05, 0.25, 1), top 520ms cubic-bezier(0.45, 0.05, 0.25, 1), opacity 160ms ease;
+}
+
+/* Waehrend Mara auf ihren Core wartet, liest der Cursor die Zeilen entlang. */
+.browse-live.thinking .browse-ghost-cursor {
+  animation: browse-cursor-read 4.8s ease-in-out infinite;
+}
+
+.browse-live-think {
+  position: absolute;
+  z-index: 5;
+  right: 14px;
+  bottom: 14px;
+  display: inline-flex;
+  max-width: calc(100% - 28px);
+  align-items: center;
+  gap: 9px;
+  padding: 7px 12px;
+  border: 1px solid rgba(91, 146, 255, 0.42);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 6px 18px rgba(16, 22, 38, 0.16);
+  color: #24324a;
+  font-family: "Share Tech Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+}
+
+.browse-live-think[hidden] {
+  display: none;
+}
+
+.browse-think-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.browse-think-time {
+  color: #9b671f;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.browse-think-dots {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.browse-think-dots i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #5b92ff;
+  animation: browse-think-dot 1.2s ease-in-out infinite;
+}
+
+.browse-think-dots i:nth-child(2) { animation-delay: 0.18s; }
+.browse-think-dots i:nth-child(3) { animation-delay: 0.36s; }
+
+.browse-live.warned .browse-live-status {
+  color: #a5621d;
+}
+
+.browse-live.warned .browse-live-pulse {
+  background: var(--amb);
+  box-shadow: 0 0 8px rgba(226, 155, 57, 0.6);
 }
 
 .browse-ghost-cursor::before {
@@ -2726,6 +2794,20 @@ audio.msg-image {
 @keyframes browse-click-ripple {
   0% { opacity: 1; transform: rotate(15deg) scale(0.35); }
   100% { opacity: 0; transform: rotate(15deg) scale(3.4); }
+}
+
+@keyframes browse-cursor-read {
+  0%, 100% { translate: 0 0; }
+  20% { translate: 46px 2px; }
+  38% { translate: 92px 4px; }
+  50% { translate: 8px 18px; }
+  70% { translate: 60px 20px; }
+  86% { translate: 104px 22px; }
+}
+
+@keyframes browse-think-dot {
+  0%, 100% { opacity: 0.28; transform: translateY(0); }
+  45% { opacity: 1; transform: translateY(-2px); }
 }
 
 /* Future parser panels for Step 3. They are harmless until JS emits them. */
@@ -6863,6 +6945,11 @@ a.core-install-btn {
 .pref-live-static .browse-scanline,
 .pref-live-static .browse-live-orbit {
   display: none;
+}
+
+.pref-live-static .browse-live.thinking .browse-ghost-cursor,
+.pref-live-static .browse-think-dots i {
+  animation: none;
 }
 
 .pref-live-static .browse-live-shot,

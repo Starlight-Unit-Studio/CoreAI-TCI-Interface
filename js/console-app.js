@@ -2885,6 +2885,24 @@
   // Das Browserbild IST die Rechercheflaeche. Technische Schritte erscheinen nur noch
   // als einzeiliger Status. Der Ghost-Cursor bleibt sichtbar; nur echte Playwright-
   // Klickkoordinaten loesen einen Klickimpuls aus.
+  // 0.5.77: Waehrend Mara auf ihren Core wartet (Schritte der Art think), zeigt die
+  // Ansicht "Mara ueberlegt" mit laufender Zeit und der Cursor liest die Seite mit,
+  // statt eingefroren zu wirken. Der Stream setzt nach dem 15-Minuten-Deckel oder
+  // einem Netzfehler an der letzten Stelle fort.
+  var BROWSE_RECONNECT_MAX = 6;
+
+  function browseStreamUrl(jobId, sessionId, afterFrame, afterStep) {
+    return API_BASE + '/console_browse_stream.php?job_id=' + (jobId | 0)
+      + '&session_id=' + encodeURIComponent(String(sessionId || ''))
+      + '&after_frame=' + Math.max(0, Number(afterFrame) || 0)
+      + '&after_step=' + Math.max(0, Number(afterStep) || 0);
+  }
+
+  function browseThinkLabel(seconds) {
+    var s = Math.max(0, Math.floor(Number(seconds) || 0));
+    return s < 60 ? s + ' s' : Math.floor(s / 60) + ' min ' + (s % 60) + ' s';
+  }
+
   function openBrowseWindow(jobId, sessionId) {
     var panel       = buildBrowsePanel();
     var browseStop = document.createElement('button');
@@ -2901,22 +2919,23 @@
     var status      = panel.querySelector('.browse-live-status');
     var shot        = panel.querySelector('.browse-live-shot');
     var placeholder = panel.querySelector('.browse-live-placeholder');
+    var placeholderText = panel.querySelector('.browse-live-placeholder strong');
     var cursor      = panel.querySelector('.browse-ghost-cursor');
+    var think       = panel.querySelector('.browse-live-think');
+    var thinkText   = panel.querySelector('.browse-think-text');
+    var thinkTime   = panel.querySelector('.browse-think-time');
 
-    var url = API_BASE + '/console_browse_stream.php?job_id=' + (jobId | 0)
-      + '&session_id=' + encodeURIComponent(String(sessionId || ''));
-    var es;
-    try { es = new EventSource(url, { withCredentials: true }); }
-    catch (e) {
-      if (head) head.textContent = 'OFFLINE';
-      if (status) status.textContent = 'Live-Browser konnte nicht verbunden werden.';
-      return;
-    }
-
+    var es = null;
     var doneB = false;
     var gotFrame = false;
     var frameQueue = [];
     var frameBusy = false;
+    var lastFrameId = 0;
+    var lastStepId = 0;
+    var reconnects = 0;
+    var reconnectTimer = null;
+    var thinkingSince = 0;
+    var thinkTimer = null;
 
     function clamp(value, min, max) {
       return Math.max(min, Math.min(max, value));
@@ -2928,6 +2947,35 @@
       void cursor.offsetWidth;
       cursor.classList.add('clicking');
       setTimeout(function () { cursor.classList.remove('clicking'); }, 650);
+    }
+
+    function setStatusText(txt, warn) {
+      if (!status || !txt) return;
+      status.textContent = txt;
+      status.title = txt;
+      panel.classList.toggle('warned', !!warn);
+    }
+
+    function tickThinking() {
+      if (!thinkingSince || !thinkTime) return;
+      thinkTime.textContent = browseThinkLabel((Date.now() - thinkingSince) / 1000);
+    }
+
+    function startThinking(txt) {
+      if (!thinkingSince) thinkingSince = Date.now();
+      panel.classList.add('thinking');
+      if (think) think.hidden = false;
+      // Kurz im Bild (passt auch aufs Handy), der ganze Satz steht in der Fusszeile.
+      if (thinkText) thinkText.textContent = (state.assistantName || 'Mara') + (/schreib/i.test(String(txt || '')) ? ' schreibt' : ' überlegt');
+      tickThinking();
+      if (!thinkTimer) thinkTimer = setInterval(tickThinking, 1000);
+    }
+
+    function stopThinking() {
+      thinkingSince = 0;
+      panel.classList.remove('thinking');
+      if (think) think.hidden = true;
+      if (thinkTimer) { clearInterval(thinkTimer); thinkTimer = null; }
     }
 
     function renderNextFrame() {
@@ -2947,18 +2995,20 @@
         shot.classList.add('ready');
         if (placeholder) placeholder.classList.add('hidden');
         if (urlLabel && d.url) urlLabel.textContent = d.url;
-        if (status && d.label) status.textContent = d.label;
+        // Waehrend Mara ueberlegt bleibt ihr Status stehen; neue Bilder zeigen nur die Seite.
+        if (d.label && !thinkingSince) setStatusText(d.label, false);
         if (hasCursor && cursor) {
           cursor.classList.add('active');
           cursor.style.left = (clamp(Number(d.cx) / Number(d.vw), 0.015, 0.985) * 100) + '%';
           cursor.style.top  = (clamp(Number(d.cy) / Number(d.vh), 0.02, 0.98) * 100) + '%';
-          if (isClick) setTimeout(pulseCursor, 310);
+          // Erst gleitet der Cursor ans Ziel, dann der Klickimpuls.
+          if (isClick) setTimeout(pulseCursor, 560);
         }
         scrollToBottom();
         setTimeout(function () {
           frameBusy = false;
           renderNextFrame();
-        }, isClick ? 640 : 260);
+        }, isClick ? 900 : 260);
       }
       function frameFailed() {
         if (settled) return;
@@ -2982,16 +3032,32 @@
       renderNextFrame();
     }
 
-    function updateStep(txt) {
-      if (!status || !txt) return;
-      status.textContent = txt;
-      status.title = txt;
+    function updateStep(d) {
+      var txt = String((d && d.text) || '');
+      if (!txt) return;
+      var kind = d && d.kind ? String(d.kind) : 'step';
+      if (kind === 'think') {
+        startThinking(txt);
+        setStatusText(txt, false);
+        return;
+      }
+      stopThinking();
+      setStatusText(txt, kind === 'warn');
     }
+
+    function showQueued() {
+      if (head) head.textContent = 'WARTET';
+      if (placeholderText && !gotFrame) placeholderText.textContent = 'WARTET AUF MARA';
+      setStatusText('Mara ist noch beschäftigt, die Recherche startet gleich.', false);
+    }
+
     function finishB(label) {
       if (doneB) return;
       doneB = true;
       clearTimeout(bWatch);
-      try { es.close(); } catch (e) {}
+      clearTimeout(reconnectTimer);
+      stopThinking();
+      try { if (es) es.close(); } catch (e) {}
       if (head) head.textContent = label;
       panel.classList.remove('running');
       panel.classList.add('complete');
@@ -3004,20 +3070,74 @@
     var bWatch;
     armBrowseWatch();
 
-    es.addEventListener('step', function (ev) {
-      armBrowseWatch();
-      try { updateStep(JSON.parse(ev.data).text || ''); } catch (e) {}
-    });
-    es.addEventListener('frame', function (ev) {
-      armBrowseWatch();
-      try { queueFrame(JSON.parse(ev.data) || {}); } catch (e) {}
-    });
-    es.addEventListener('done', function () { finishB('FERTIG ✓'); });
-    es.addEventListener('error', function (ev) {
-      // Ein benanntes Server-error beendet den Job. Ein reiner Netzwerkfehler
-      // laesst das Pending bestehen, weil das Ergebnis weiter persistiert werden kann.
+    // planned = der Server hat den Stream regulaer beendet (Deckel); zaehlt nicht als Fehler.
+    function reconnect(delayMs, planned) {
+      if (doneB) return;
+      try { if (es) es.close(); } catch (e) {}
+      es = null;
+      if (!planned) {
+        if (reconnects >= BROWSE_RECONNECT_MAX) {
+          finishB('GETRENNT');
+          setStatusText('Live-Verbindung verloren. Das Ergebnis kommt trotzdem in den Chat.', true);
+          return;
+        }
+        reconnects++;
+      }
+      clearTimeout(reconnectTimer);
+      reconnectTimer = setTimeout(connect, delayMs);
+    }
+
+    function connect() {
+      if (doneB) return;
       try {
-        var payload = ev && ev.data ? JSON.parse(ev.data) : null;
+        es = new EventSource(browseStreamUrl(jobId, sessionId, lastFrameId, lastStepId), { withCredentials: true });
+      } catch (e) {
+        if (head) head.textContent = 'OFFLINE';
+        setStatusText('Live-Browser konnte nicht verbunden werden.', true);
+        return;
+      }
+      es.addEventListener('step', function (ev) {
+        armBrowseWatch();
+        reconnects = 0;
+        try {
+          var d = JSON.parse(ev.data) || {};
+          if (Number(d.id) > lastStepId) lastStepId = Number(d.id);
+          updateStep(d);
+        } catch (e) {}
+      });
+      es.addEventListener('frame', function (ev) {
+        armBrowseWatch();
+        reconnects = 0;
+        try {
+          var d = JSON.parse(ev.data) || {};
+          if (Number(d.id) > lastFrameId) lastFrameId = Number(d.id);
+          queueFrame(d);
+        } catch (e) {}
+      });
+      es.addEventListener('status', function (ev) {
+        armBrowseWatch();
+        try {
+          var d = JSON.parse(ev.data) || {};
+          if (d.status === 'queued') showQueued();
+          else if (d.status === 'running' && head) head.textContent = 'LIVE';
+        } catch (e) {}
+      });
+      es.addEventListener('done', function () { finishB('FERTIG ✓'); });
+      es.addEventListener('timeout', function (ev) {
+        // 15-Minuten-Deckel des Servers, der Auftrag laeuft weiter: nahtlos fortsetzen.
+        try {
+          var d = JSON.parse(ev.data) || {};
+          if (Number(d.after_frame) > lastFrameId) lastFrameId = Number(d.after_frame);
+          if (Number(d.after_step) > lastStepId) lastStepId = Number(d.after_step);
+        } catch (e) {}
+        reconnects = 0;
+        reconnect(200, true);
+      });
+      es.addEventListener('error', function (ev) {
+        // Ein benanntes Server-error beendet den Job. Ein reiner Netzwerkfehler
+        // verbindet neu; das Ergebnis wird ohnehin im Chat gespeichert.
+        var payload = null;
+        try { payload = ev && ev.data ? JSON.parse(ev.data) : null; } catch (e) {}
         if (payload && payload.status === 'error') {
           delete state.pendingBySession[String(sessionId || '')];
           if (isActiveSession(sessionId)) {
@@ -3025,11 +3145,19 @@
             setStatus('error', 'RECHERCHEFEHLER');
           }
           drainQueuedTurn(sessionId);
+          finishB('ABGESCHLOSSEN');
+          return;
         }
-      } catch (e) {}
-      finishB('ABGESCHLOSSEN');
-    });
-    es.addEventListener('timeout', function () { finishB('ABGESCHLOSSEN'); });
+        if (payload && payload.error) {
+          // Zugriff verweigert oder Sitzung weg: neu verbinden hilft nicht.
+          finishB('ABGESCHLOSSEN');
+          return;
+        }
+        reconnect(Math.min(15000, 1500 * Math.pow(2, reconnects)), false);
+      });
+    }
+
+    connect();
   }
 
   function buildBrowsePanel() {
@@ -3056,9 +3184,13 @@
       + '<div class="browse-live-stage">'
       +   '<div class="browse-live-placeholder"><span class="browse-live-orbit"></span>'
       +     '<strong>BROWSERKANAL WIRD SYNCHRONISIERT</strong><small>PLAYWRIGHT // SECURE VIEW</small></div>'
-      +   '<img class="browse-live-shot" alt="Aktuelle Browseransicht von Embers Recherche" draggable="false">'
+      +   '<img class="browse-live-shot" alt="Aktuelle Browseransicht von Maras Recherche" draggable="false">'
       +   '<span class="browse-scanline" aria-hidden="true"></span>'
       +   '<span class="browse-ghost-cursor active" aria-hidden="true"></span>'
+      +   '<div class="browse-live-think" role="status" aria-live="polite" hidden>'
+      +     '<span class="browse-think-dots" aria-hidden="true"><i></i><i></i><i></i></span>'
+      +     '<span class="browse-think-text">Mara überlegt</span>'
+      +     '<span class="browse-think-time">0 s</span></div>'
       + '</div>'
       + '<div class="browse-live-footer"><span class="browse-live-pulse"></span>'
       +   '<span class="browse-live-status">Recherche wird vorbereitet...</span>'

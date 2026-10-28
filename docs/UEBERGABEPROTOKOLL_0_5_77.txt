@@ -51,7 +51,47 @@ AENDERUNGEN:
   (POST /api/generate mit keep_alive 0) innerhalb der Warteschlange, dann laedt er den neuen; auch wenn der
   gewaehlte schon geladen ist, werden die anderen entladen.
 
+- Betreiberwunsch Websuche und Browsing verbessern, haerten, eingefrorene Live-Ansicht, Formulare:
+  BEFUND: (1) Waehrend jedes Aktionsaufrufs an den Core (bis 420 s) schickte der Worker weder Bild noch
+  Status; der Client setzte den Cursor nur bei neuen Bildern, die Ansicht wirkte eingefroren. (2) Der
+  SSE-Stream endet nach 900 s, der Client wertete das als Ende ("ABGESCHLOSSEN"). (3) Playwright 1.63 hat
+  page.accessibility nicht mehr; collect_elements lieferte immer "(keine)", Klicks waren unmoeglich. (4) Der
+  Worker nutzte immer STU_EMBER_MODEL (zweiter Core im RAM nach einem Core-Wechsel), sendete temperature,
+  num_predict und keep_alive -1, und der Bericht nutzte den alten Ember-Text als System. (5) page_text las immer
+  die ersten 1800 Zeichen, Scrollen brachte dem Core keinen neuen Text. (6) Chromium im Host-Netz konnte
+  127.0.0.1 erreichen (Ollama, SearXNG, Datenbank).
+  AENDERUNGEN: tools/ember_browse_worker.py: call_with_heartbeat (Core-Aufruf im Hilfsthread, Playwright bleibt im
+  Hauptthread; alle 4 s ein Bild, wenn die Seite sich geaendert hat, alle 15 s ein Status); Schritte mit Art
+  (stu_ember_browse_steps.kind: step, think, warn; ADD COLUMN IF NOT EXISTS); say() statt gespiegelter Logzeilen.
+  COLLECT_JS nummeriert sichtbare Elemente (data-coreai-ref) mit Rolle, Name, Wert, Optionen, Haken, geschuetzt;
+  INSPECT_JS liefert das Sicherheitsprofil (geschuetztes Feld, Formularart search/free/form/message/login/
+  payment/upload, Absendeknopf). Aktionen goto, click, type (+submit), select, check, scroll (hoch/runter),
+  back, done; Regeln in blocked_click_reason/blocked_type_reason/personal_data_outside_goal (im Code, nicht nur
+  im Prompt). navigation_block_reason und install_network_guard (context.route, auch Weiterleitungen und DNS)
+  sperren lokale Adressen; dismiss_consent lehnt Cookie-Banner ab. Textfenster 2000 Zeichen, Scrollen schiebt um
+  1700. ollama_payload: Core und num_ctx aus dem Job, sonst nichts; keep_alive aus STU_EMBER_KEEP_ALIVE (Standard
+  15m wie config.php). Bericht ohne System-Text (Maras Modelfile), mit besuchten Seiten. chat.php:
+  ember_browse_enqueue speichert ember_model() und ember_profile_num_ctx() (Spalten model, num_ctx; Rueckfall
+  ohne Spalten). console_browse_stream.php: after_frame/after_step zum Fortsetzen, kind je Schritt, status-
+  Ereignis (queued/running), timeout mit Fortsetzungspunkten. console-app.js: Denk-Anzeige mit Sekunden,
+  Fortsetzen nach Deckel (zaehlt nicht als Fehler) und Neuverbindung mit Pausen 1,5 bis 15 s (hoechstens 6),
+  Klickimpuls erst nach dem Gleiten, Warteschlange, Warnungen. console.css: Anzeige, Lese-Animation des
+  Cursors (aus bei "Live-Bilder ruhig"), Cursor gleitet 520 ms. console_stream.php: keine Komprimierung in einem
+  Zug mit Browse-Auftrag (der Auftrag wartet sonst in der Warteschlange). Websuche (chat.php und Worker gleich):
+  ember_web_query_variants (Stichworte als zweiter Versuch), ember_web_url_key und ember_web_clean_rows
+  (Doppelte, Tracking-Parameter, HTML, Entities, nur http(s), Datum aus publishedDate).
+  Neue Konfiguration (optional): STU_EMBER_BROWSE_FORMS (1), STU_EMBER_BROWSE_ALLOW_PRIVATE (0),
+  STU_EMBER_BROWSE_HEARTBEAT_SEC (4). Der Browse-Worker muss nach dem Update neu starten (Dienst bzw.
+  Container), sonst laeuft der alte Code weiter.
+
 GEPRUEFT:
+- browse-worker-selftest.py: Regeln offline; mit Playwright ein echter Chromium-Lauf (nachgebauter Core, lokale
+  Testseiten): Suchformular mit Tippen, Auswahl, Haken und Absenden, Cursorbilder vor jeder Aktion, Bild
+  waehrend des Ueberlegens, Login- und Kontaktformular blockiert (nichts gesendet), Formulare aus, lokales
+  Netz gesperrt (Gegenprobe ohne Schutz schlaegt fehl), Cookie-Banner abgelehnt. browse-live-ui-selftest.cjs:
+  echter Code der Ansicht mit nachgebautem EventSource und Uhr. web-search-selftest.php: nachgebautes SearXNG.
+  Ansicht per Screenshot auf Desktop- und Handybreite geprueft. Auf dem Server laufen die Preflights den
+  echten Chromium-Lauf im Browse-Container bzw. mit var/venv.
 - Alle Offline-Selbsttests, neu registration-ui-selftest.cjs (fuehrt das Skript der Login-Seite mit
   nachgebautem Server aus, auch den Gast-Knopf), guest-access-selftest.php, compaction-selftest.php (echter
   Lauf gegen SQLite im Speicher: Fenster, Archiv zuerst, Wiederholung ohne Doppelung, Suche, Loeschen) und
@@ -59,5 +99,6 @@ GEPRUEFT:
   core-install-Tests decken Aktualisieren, Deinstallieren und das Entladen ab. Echter Test auf dem Server steht aus.
 
 NAECHSTER SCHRITT: Auf dem Server testen (Gast, Registrieren, Cores verwalten, Komprimieren eines langen
-Chats, eine Recherchefrage mit mehreren Schritten); Umfang der Benutzerverwaltung klaeren; dann
-TTS-Kandidaten und P20.1.
+Chats, eine Recherchefrage mit mehreren Schritten, eine Browser-Recherche mit Formular, z. B. ein Fahrplan,
+und die Live-Ansicht waehrend langer Core-Schritte); Umfang der Benutzerverwaltung klaeren; dann
+TTS-Kandidaten und P20.1. Offen aus #25: Logins mit Uebergabe an den Menschen, Entwuerfe, Uploads.
