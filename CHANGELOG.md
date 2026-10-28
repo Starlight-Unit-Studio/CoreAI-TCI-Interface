@@ -2,6 +2,12 @@
 
 CoreAI: TCI Interface gehoert zur Quantum-Softwarefamilie und wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert. Historische Changelogs dokumentieren die frueheren Produktnamen unveraendert.
 
+## 0.5.77 - 28.10.2026
+
+- **Registrieren auf der Login-Seite:** Ist im Admin-Bereich (Runtime, "Oeffentliche Registrierung") die Registrierung eingeschaltet, zeigt die Login-Seite "Noch kein Konto? Registrieren". Das Formular fragt E-Mail, optional einen Anzeigenamen und das Passwort zweimal (mindestens 8 Zeichen) und nutzt die vorhandene Registrierung des Servers; neue Konten sind normale Nutzer. Ist die Registrierung aus, bleibt der Knopf verborgen und der Server lehnt weiter ab. Vorher gab es die Registrierung nur im Server, die Login-Seite bot sie nie an.
+- Die Abfrage `auth.php?action=me` meldet ohne Anmeldung, ob die Registrierung offen ist; Registrierung und Login-Seite nutzen dieselbe Pruefung (`coreui_registration_enabled`).
+- Tests: neue `registration-ui-selftest.cjs` in beiden Preflights.
+
 ## 0.5.76 - 28.10.2026
 
 - **Werkzeug-Erwaehnungen loesen nichts mehr aus:** Erklaerte Mara ihre Werkzeuge ("dazu nutze ich den `[WEB: ...]`-Befehl", "`[PY]`-Block"), starteten diese Erwaehnungen echte Suchen und der restliche Text lief als Python (im Test vom 28.10.2026: 4 Werkzeuge, 1 Fehler). Marker in Inline-Code sind jetzt Erwaehnungen; echte Aufrufe, auch Python mit Codeblock, funktionieren weiter.

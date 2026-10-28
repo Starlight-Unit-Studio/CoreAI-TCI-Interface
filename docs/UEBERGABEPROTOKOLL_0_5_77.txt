@@ -1,0 +1,28 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.5.77
+Stand: 28.10.2026
+Branch: claude/bold-galileo-myoyi0 (neu von main 0.5.76 nach Merge von PR #126)
+Basis: Hinweis des Betreibers: Bei eingeschalteter Registrierung erscheint kein Registrieren-Knopf; eine
+richtige Benutzerverwaltung fehlt noch.
+
+BEFUND:
+- api/auth.php konnte schon registrieren (action=register, prueft stu_app_settings registration_enabled,
+  Fallback STU_ALLOW_REGISTRATION, neue Konten Stufe 4, Ratenbegrenzung, Wartungsmodus). login.html bot das
+  nie an und konnte nicht wissen, ob die Registrierung offen ist.
+- Vorhanden ist im Admin-Bereich /admin/ "SEKTOR 01 BENUTZER UND RECHTE": Liste mit Suche, Konto anlegen
+  (min. 12 Zeichen Passwort), Rechte-Stufe aendern, sperren mit Grund und Frist; Audit-Protokoll.
+  Es fehlen u. a.: Konto loeschen, Passwort zuruecksetzen, E-Mail-Bestaetigung, Einladungen.
+
+AENDERUNGEN:
+- api/auth.php: coreui_registration_enabled(); die Antwort ohne Anmeldung (action=me) enthaelt
+  registration_enabled; register nutzt dieselbe Funktion.
+- login.html: Knopf "NOCH KEIN KONTO? REGISTRIEREN" (nur bei offener Registrierung), Felder Anzeigename
+  (optional) und Passwort wiederholen, Pruefung vor dem Senden, Fehlertexte (vergeben, geschlossen,
+  Wartung, zu viele Versuche); "registration_disabled" blendet den Knopf wieder aus.
+- css/console.css: Stil fuer den Umschalter, verborgene Felder nehmen keinen Platz.
+- Version 0.5.77 (VERSION, Seiten, console-gate, Branding-Test, Preflight-Kopf).
+
+GEPRUEFT:
+- Alle Offline-Selbsttests, neu registration-ui-selftest.cjs (fuehrt das Skript der Login-Seite mit
+  nachgebautem Server aus).
+
+NAECHSTER SCHRITT: Umfang der Benutzerverwaltung mit dem Betreiber klaeren, dann TTS-Kandidaten und P20.1.

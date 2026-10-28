@@ -1,0 +1,6 @@
+CoreAI: TCI Interface 0.5.77 - 28.10.2026
+- Login-Seite: "Noch kein Konto? Registrieren" erscheint nur, wenn ein Admin die oeffentliche Registrierung eingeschaltet hat (Runtime).
+- Formular mit E-Mail, optionalem Anzeigenamen und Passwort zweimal (min. 8 Zeichen); nutzt die vorhandene Server-Registrierung, neue Konten sind normale Nutzer.
+- auth.php?action=me meldet ohne Anmeldung registration_enabled; Login-Seite und Registrierung nutzen dieselbe Pruefung (coreui_registration_enabled).
+- Tests: registration-ui-selftest.cjs (beide Preflights).
+- OFFEN: Ausbau der Benutzerverwaltung nach Betreiberwunsch, TTS-Kandidaten, P20.1.

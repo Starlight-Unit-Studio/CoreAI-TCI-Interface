@@ -7,11 +7,11 @@
   <meta http-equiv="Accept-Language" content="de-DE, de;q=0.9, en;q=0.8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="application-name" content="CoreAI: TCI Interface" />
-  <meta name="application-version" content="0.5.76" />
+  <meta name="application-version" content="0.5.77" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface - Login</title>
-  <link rel="stylesheet" href="./css/console.css?v=0482763606657742683573424" />
-  <script src="./js/console-gate.js?v=1167305587541147054387411"></script>
+  <link rel="stylesheet" href="./css/console.css?v=1200728262469300661785059" />
+  <script src="./js/console-gate.js?v=0013551363289213071145381"></script>
   <script src="./js/coreui-preferences.js?v=0408182548343544002678570"></script>
 </head>
 <body>
@@ -22,25 +22,38 @@
         <img class="logo" src="./images/starlight_unit_studios_logo_original.png" alt="Starlight Unit Studios" draggable="false" />
       </div>
       <div class="login-brand">COREAI:<span class="brand-product-part">TCI INTERFACE</span></div>
-      <div class="login-brand-sub">QUANTUM SOFTWARE // N-73 // v0.5.76</div>
+      <div class="login-brand-sub">QUANTUM SOFTWARE // N-73 // v0.5.77</div>
 
       <div class="login-field-group">
         <label for="email">E-MAIL</label>
         <input id="email" type="email" placeholder="name@domain.tld" autocomplete="username" required />
       </div>
+      <div class="login-field-group" id="displayNameGroup" hidden>
+        <label for="displayName">ANZEIGENAME (OPTIONAL)</label>
+        <input id="displayName" type="text" maxlength="60" placeholder="So nennt dich Mara" autocomplete="nickname" />
+      </div>
       <div class="login-field-group">
         <label for="password">PASSWORT</label>
         <input id="password" type="password" placeholder="••••••••" autocomplete="current-password" required />
+      </div>
+      <div class="login-field-group" id="passwordRepeatGroup" hidden>
+        <label for="passwordRepeat">PASSWORT WIEDERHOLEN (MIN. 8 ZEICHEN)</label>
+        <input id="passwordRepeat" type="password" placeholder="••••••••" autocomplete="new-password" />
       </div>
 
       <div id="loginError" class="login-error" style="display:none"></div>
 
       <button id="loginBtn" type="button">EINLOGGEN</button>
+      <button id="loginModeToggle" class="login-mode-toggle" type="button" hidden>NOCH KEIN KONTO? REGISTRIEREN</button>
       <div class="login-copyright">© 2023-2026 <strong>Patrick Schildgen</strong> · Starlight Unit Studios. Alle Rechte vorbehalten.</div>
     </div>
   </div>
 
   <script>
+    // 0.5.77: "Registrieren" only while the admin has sign-up switched on.
+    var mode = 'login';
+    var toggle = document.getElementById('loginModeToggle');
+
     // Bereits eingeloggt? Direkt weiter.
     (function() {
       fetch('./api/auth.php?action=me', { credentials: 'include' })
@@ -48,10 +61,23 @@
         .then(function(d) {
           if (d.ok && d.user_id) {
             location.replace('app.html');
+          } else if (d.registration_enabled === true) {
+            toggle.hidden = false;
           }
         })
         .catch(function() {});
     })();
+
+    function setMode(next) {
+      mode = next;
+      var register = mode === 'register';
+      document.getElementById('displayNameGroup').hidden = !register;
+      document.getElementById('passwordRepeatGroup').hidden = !register;
+      document.getElementById('password').setAttribute('autocomplete', register ? 'new-password' : 'current-password');
+      document.getElementById('loginBtn').textContent = register ? 'KONTO ERSTELLEN' : 'EINLOGGEN';
+      toggle.textContent = register ? 'SCHON EIN KONTO? EINLOGGEN' : 'NOCH KEIN KONTO? REGISTRIEREN';
+      hideError();
+    }
 
     function showError(msg) {
       var el = document.getElementById('loginError');
@@ -63,7 +89,57 @@
       document.getElementById('loginError').style.display = 'none';
     }
 
+    function doRegister() {
+      var email = document.getElementById('email').value.trim();
+      var pass  = document.getElementById('password').value;
+      var again = document.getElementById('passwordRepeat').value;
+      var name  = document.getElementById('displayName').value.trim();
+      var btn   = document.getElementById('loginBtn');
+
+      hideError();
+      if (!email || !pass) { showError('Bitte E-Mail und Passwort eingeben.'); return; }
+      if (pass.length < 8) { showError('Passwort zu kurz (min. 8 Zeichen).'); return; }
+      if (pass !== again) { showError('Die Passwörter stimmen nicht überein.'); return; }
+
+      btn.disabled = true;
+      btn.textContent = 'ERSTELLE KONTO…';
+      fetch('./api/auth.php?action=register', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: email, password: pass, display_name: name })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.ok) {
+          location.replace('app.html');
+          return;
+        }
+        btn.disabled = false;
+        btn.textContent = 'KONTO ERSTELLEN';
+        var errMap = {
+          'username_taken':        'Für diese E-Mail gibt es schon ein Konto. Bitte einloggen.',
+          'registration_disabled': 'Die Registrierung ist gerade geschlossen.',
+          'invalid_username':      'Ungültige E-Mail-Adresse.',
+          'invalid_password':      'Passwort zu kurz (min. 8 Zeichen).',
+          'rate_limited':          'Zu viele Versuche. Bitte warten.',
+          'maintenance_mode':      'Wartungsmodus: gerade keine neuen Konten.'
+        };
+        if (d.error === 'registration_disabled') {
+          toggle.hidden = true;
+          setMode('login');
+        }
+        showError(errMap[d.error] || ('Fehler: ' + (d.error || 'unbekannt')));
+      })
+      .catch(function() {
+        btn.disabled = false;
+        btn.textContent = 'KONTO ERSTELLEN';
+        showError('Verbindungsfehler. Server nicht erreichbar.');
+      });
+    }
+
     function doLogin() {
+      if (mode === 'register') return doRegister();
       var email = document.getElementById('email').value.trim();
       var pass  = document.getElementById('password').value;
       var btn   = document.getElementById('loginBtn');
@@ -110,7 +186,14 @@
     }
 
     document.getElementById('loginBtn').addEventListener('click', doLogin);
+    toggle.addEventListener('click', function() { setMode(mode === 'register' ? 'login' : 'register'); });
     document.getElementById('password').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        if (mode === 'register') document.getElementById('passwordRepeat').focus();
+        else doLogin();
+      }
+    });
+    document.getElementById('passwordRepeat').addEventListener('keydown', function(e) {
       if (e.key === 'Enter') doLogin();
     });
     document.getElementById('email').addEventListener('keydown', function(e) {

@@ -4885,6 +4885,34 @@ a.core-install-btn {
   opacity: 0.64;
 }
 
+/* 0.5.77: sign-up on the login page, only while the admin has it switched on. */
+.login-field-group[hidden],
+.login-mode-toggle[hidden] {
+  display: none;
+}
+
+.login-mode-toggle {
+  width: 100%;
+  min-height: 40px;
+  margin-top: 12px;
+  border: 0;
+  background: transparent;
+  color: var(--cx);
+  cursor: pointer;
+  font-family: "Share Tech Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.13em;
+}
+
+.login-mode-toggle:hover {
+  text-decoration: underline;
+}
+
+.login-mode-toggle:focus-visible {
+  outline: 2px solid var(--amb);
+  outline-offset: 2px;
+}
+
 .protocols-page {
   min-height: 100vh;
   min-height: 100dvh;

@@ -7,7 +7,14 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.76` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.77` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Registrieren auf der Login-Seite (0.5.77)
+
+Schaltet ein Admin unter `/admin/` (Runtime) die oeffentliche Registrierung
+ein, bietet die Login-Seite "Noch kein Konto? Registrieren" an: E-Mail,
+optionaler Anzeigename, Passwort zweimal. Neue Konten sind normale Nutzer;
+Rechte und Sperren verwaltet der Admin unter "Benutzer und Rechte".
 
 ## Erklaerungen statt Werkzeugaufrufe, Unterstriche, Arbeitsweg (0.5.76)
 

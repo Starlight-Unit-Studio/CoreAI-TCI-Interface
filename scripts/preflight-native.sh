@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.76 tool mentions run no tool, underscores stay in the chat, quieter work view, voice decision.
+# CoreAI: TCI Interface 0.5.77 sign-up on the login page while registration is open.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -129,6 +129,7 @@ UI_FILES=(
   scripts/core-tiers-selftest.php
   scripts/core-install-selftest.php
   scripts/core-install-ui-selftest.cjs
+  scripts/registration-ui-selftest.cjs
   api/core_install.php
   js/coreui-core-install.js
   scripts/media-spike.php
@@ -513,6 +514,11 @@ if command -v php >/dev/null 2>&1; then
       ok 'Chat: Install-Fenster mit Hardware-Check, Bestaetigung, Fortschritt und Jetzt nutzen geprueft.'
     else
       fail 'Chat: Install-Fenster-Oberflaechentest fehlgeschlagen.'
+    fi
+    if node "$PROJECT_ROOT/scripts/registration-ui-selftest.cjs" >/dev/null 2>&1; then
+      ok 'Login: Registrieren nur bei offener Registrierung, Pruefungen und Fehlerfaelle geprueft.'
+    else
+      fail 'Login: Registrierungs-Selbsttest fehlgeschlagen.'
     fi
     if node "$PROJECT_ROOT/scripts/webui-resilience-selftest.cjs" >/dev/null 2>&1; then
       ok 'WebUI: abbrechbares Laden, Reconnect ohne Doppelauftrag, Backoff und lange Chats geprueft.'

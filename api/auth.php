@@ -37,6 +37,17 @@ function stu_valid_username(string $u): bool {
   return coreui_account_valid_email($u);
 }
 
+/** Public sign-up: the admin switch (Runtime), else the installer's default. */
+function coreui_registration_enabled(?PDO $pdo): bool {
+  $enabled = defined('STU_ALLOW_REGISTRATION') && STU_ALLOW_REGISTRATION;
+  if (!$pdo) return $enabled;
+  try {
+    return stu_app_setting_get($pdo, 'registration_enabled', $enabled ? '1' : '0') === '1';
+  } catch (Throwable $e) {
+    return $enabled;
+  }
+}
+
 if ($action === 'me') {
   $uid = stu_get_user_id();
   if ($uid) {
@@ -78,7 +89,13 @@ if ($action === 'me') {
     // Invalid/stale session: force logout
     stu_logout();
   }
-  stu_json(['ok' => false, 'error' => 'not_authenticated'], 200);
+  // 0.5.77: the login page shows "Registrieren" only while sign-up is open.
+  try {
+    $registrationOpen = coreui_registration_enabled(stu_pdo());
+  } catch (Throwable $e) {
+    $registrationOpen = coreui_registration_enabled(null);
+  }
+  stu_json(['ok' => false, 'error' => 'not_authenticated', 'registration_enabled' => $registrationOpen], 200);
 }
 
 if ($action === 'logout') {
@@ -116,15 +133,7 @@ if ($action === 'register' || $action === 'login') {
   }
 
   if ($action === 'register') {
-    $registrationEnabled = defined('STU_ALLOW_REGISTRATION') && STU_ALLOW_REGISTRATION;
-    try {
-      $registrationEnabled = stu_app_setting_get(
-        $pdo,
-        'registration_enabled',
-        $registrationEnabled ? '1' : '0'
-      ) === '1';
-    } catch (Throwable $e) {}
-    if (!$registrationEnabled) {
+    if (!coreui_registration_enabled($pdo)) {
       stu_json(['ok' => false, 'error' => 'registration_disabled'], 403);
     }
     // During maintenance, only existing Staff accounts may pass. New accounts are normal users.
