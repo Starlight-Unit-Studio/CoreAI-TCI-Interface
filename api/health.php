@@ -34,6 +34,7 @@ try {
     'stu_console_message_attachments',
     'stu_auth_sessions',
     'stu_console_generation_requests',
+    'stu_abuse_counters',
   ];
   $missing = [];
   foreach ($required as $table) {

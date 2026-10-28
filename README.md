@@ -7,7 +7,19 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.77` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.78` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Schutz gegen Mehrfach-Gaeste und Passwort-Raten (0.5.78)
+
+Gaeste koennen nicht schummeln: Ein Geraet kommt in sein altes Gastkonto
+zurueck, und alle Gaeste aus demselben Netzwerk teilen sich ihre Nachrichten
+fuer 24 Stunden, Browserdaten loeschen bringt also nichts. Damit das hinter
+einem Reverse-Proxy wirkt, muss er die Besucher-Adresse weitergeben:
+`proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`. Der
+Admin-Bereich zeigt, ob das klappt.
+
+Fehlversuche beim Login zaehlt der Server je Konto; nach 10 falschen
+Passwoertern aus einem Netzwerk wartet man 15 Minuten.
 
 ## Registrieren, Gast-Zugang, Cores verwalten, Komprimieren, Arbeitsschleife (0.5.77)
 

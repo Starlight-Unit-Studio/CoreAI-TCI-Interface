@@ -1,0 +1,34 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.5.78
+Stand: 28.10.2026
+Branch: claude/bold-galileo-myoyi0 (neu auf main 0.5.77 nach Merge von PR #127)
+Basis: Frage des Betreibers: Erkennt CoreAI, wenn jemand Browserdaten loescht und mit einem neuen Gastkonto
+wieder hereinkommt? Falls nicht, Missbrauch verhindern.
+
+BEFUND: Zaehler nur je Gastkonto; stu_rate_limit zaehlte in der
+  PHP-Sitzung (ohne Cookie bei null, auch fuer Login); das Sitzungscookie endet mit dem Browser, also gab schon
+  Browser schliessen 5 neue Nachrichten; hinter dem Reverse-Proxy sah PHP fuer alle Besucher 127.0.0.1 bzw. das
+  Docker-Gateway. AENDERUNGEN: neue api/abuse_guard.php (coreui_client_address: X-Forwarded-For von rechts, nur
+  von STU_TRUSTED_PROXIES, Standard lokale Netze; source direct/forwarded/proxy_only; coreui_network_of: IPv6 /64;
+  Zaehler stu_abuse_counters mit HMAC-Schluessel, Fenster, Rueckgabe, fail-open ohne Migration; Login-Drossel).
+  Migration 018_abuse_guard. guest_access.php: coreui_guest_take_turn (eigene Nachrichten, Netzwerk-Kontingent
+  Limit x guest_network_guests, Tagesdeckel guest_daily_messages, Rueckgabe bei Ablehnung), Fehler
+  guest_network_limit/guest_daily_limit; coreui_guest_start_allowed (guest_network_exhausted/guest_daily_exhausted
+  mit retry_at); Geraetemerkmal coreui_guest_device (Cookie coreui_guest_device, guest_key = chat_ + Hash).
+  auth.php: stu_rate_limit zusaetzlich serverseitig, Login prueft/zaehlt Fehlversuche, Gast-Start erst Geraet,
+  dann Budgets, dann neues Konto mit Merkmal, gesperrte Gaeste bleiben gesperrt. Admin: zwei Felder und Hinweis,
+  ob Besucher unterscheidbar sind. health.php prueft die Tabelle.
+  OFFEN BEIM BETREIBER: Im Host-Reverse-Proxy muss "proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;"
+  (oder X-Real-IP) stehen, sonst bleiben die Netzwerk-Regeln aus (Admin-Bereich zeigt das an). Grenzen: ein
+  Wechsel des Netzes (VPN, Mobilfunk neu verbinden) gibt bis zum Tagesdeckel neue Nachrichten; mehrere Menschen
+  hinter einer Adresse teilen sich das Kontingent (dafuer das Admin-Feld).
+
+GEPRUEFT:
+- abuse-guard-selftest.php gegen SQLite im Speicher: Daten loeschen bringt einem neuen Gast nur den Rest des
+  Netzwerks, Geraetemerkmal fuehrt ins alte Konto, IPv6 je /64, Admin-Feld, Tagesdeckel auch ohne bekannte
+  Adresse, Rueckgabe bei Ablehnung, Login-Drossel (auch verteilt), X-Forwarded-For nur von lokalen Proxys,
+  ohne Migration niemand ausgesperrt. Gegenprobe ohne Netzwerk-Regel schlaegt fehl.
+- Alle 59 Offline-Selbsttests gruen; Admin-Bereich per Screenshot geprueft.
+
+NAECHSTER SCHRITT: Update auf dem Server (Migration 018 laeuft mit), im Host-Proxy X-Forwarded-For setzen und im
+Admin-Bereich unter Runtime pruefen, dass "SCHUTZ VOR MEHRFACH-GAESTEN AKTIV" steht; dann Gast-Zugang testen
+(zweiter Gast nach Daten loeschen bekommt nur den Rest). Danach Benutzerverwaltung, TTS-Kandidaten, P20.1.

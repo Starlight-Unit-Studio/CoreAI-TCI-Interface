@@ -1502,9 +1502,11 @@
       browse_result_missing: 'Die Browser-Recherche lieferte keine Antwort.',
       session_not_found: 'Die Sitzung ist nicht mehr aktiv.',
       csrf_failed: 'Die Sitzung wurde erneuert. Bitte Seite neu laden.',
-      guest_limit_reached: 'Deine Gast-Nachrichten sind aufgebraucht. Mit einem eigenen Konto geht es weiter.'
+      guest_limit_reached: 'Deine Gast-Nachrichten sind aufgebraucht. Mit einem eigenen Konto geht es weiter.',
+      guest_network_limit: 'Die Gast-Nachrichten für dein Netzwerk sind für heute aufgebraucht. Mit einem eigenen Konto geht es weiter.',
+      guest_daily_limit: 'Der Gast-Zugang ist für heute ausgelastet. Mit einem eigenen Konto geht es weiter.'
     };
-    if (error === 'guest_limit_reached') guestLimitReached();
+    if (/^guest_(?:limit_reached|network_limit|daily_limit)$/.test(String(error || ''))) guestLimitReached();
     appendMessageEl('system', '\u26a0 ' + (map[error] || 'Nachrichtenaktion fehlgeschlagen.'));
     scrollToBottom();
   }
@@ -2482,9 +2484,11 @@
           'banned':              '\u26a0 Konto gesperrt.',
           'not_authenticated':   '\u26a0 Sitzung beendet.',
           'guest_limit_reached': '\u26a0 Deine Gast-Nachrichten sind aufgebraucht. Mit einem eigenen Konto geht es weiter.',
+          'guest_network_limit': '\u26a0 Die Gast-Nachrichten für dein Netzwerk sind für heute aufgebraucht. Mit einem eigenen Konto geht es weiter.',
+          'guest_daily_limit':   '\u26a0 Der Gast-Zugang ist für heute ausgelastet. Mit einem eigenen Konto geht es weiter.',
           'guest_console_only':  '\u26a0 Als Gast chattest du nur im privaten Chat mit Mara.'
         };
-        if (d.error === 'guest_limit_reached') guestLimitReached();
+        if (/^guest_(?:limit_reached|network_limit|daily_limit)$/.test(String(d.error || ''))) guestLimitReached();
         delete state.pendingBySession[sessionId];
         restoreAttachments(atts);
         if (options.from_queue) restoreQueuedTurn(sessionId, options.queued_turn);

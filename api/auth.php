@@ -28,6 +28,14 @@ function stu_rate_limit(string $bucket, int $max, int $windowSec): void {
   $row['n'] = (int)$row['n'] + 1;
   $_SESSION[$k] = $row;
   if ($row['n'] > $max) stu_json(['ok' => false, 'error' => 'rate_limited'], 429);
+  // 0.5.78: the session counter alone starts at zero without a cookie; the
+  // server counts per network as well (abuse_guard.php).
+  try {
+    $pdoLimit = stu_pdo();
+  } catch (Throwable $e) {
+    return;
+  }
+  coreui_abuse_rate_limit($pdoLimit, $bucket, $max, $windowSec);
 }
 
 function stu_clean_username(string $u): string {
@@ -118,8 +126,22 @@ if ($action === 'guest') {
   if (!coreui_guest_enabled($pdo)) stu_json(['ok' => false, 'error' => 'guest_disabled'], 403);
   if (!coreui_auth_session_schema_ready($pdo)) stu_json(['ok' => false, 'error' => 'missing_schema_006'], 503);
   stu_enforce_maintenance($pdo, null, 4);
+  // 0.5.78: a device that was a guest before gets its guest account back
+  // (with what is left of it) instead of a fresh one.
+  $deviceToken = coreui_guest_device_cookie();
+  $known = $deviceToken !== null ? coreui_guest_find_device($pdo, $deviceToken) : null;
+  if ($known !== null && $known['banned']) stu_json(['ok' => false, 'error' => 'banned'], 403);
+  $uid = $known !== null ? (int)$known['id'] : null;
   try {
-    $uid = coreui_guest_create($pdo);
+    if ($uid === null) {
+      $start = coreui_guest_start_allowed($pdo);
+      if (!$start['ok']) {
+        stu_json(['ok' => false, 'error' => $start['error'], 'retry_at' => date('c', (int)$start['retry_at'])], 429);
+      }
+      $deviceToken = bin2hex(random_bytes(32));
+      $uid = coreui_guest_create($pdo, $deviceToken);
+    }
+    coreui_guest_device_cookie_set($deviceToken);
   } catch (RuntimeException $e) {
     if ($e->getMessage() === 'guest_capacity') stu_json(['ok' => false, 'error' => 'guest_capacity'], 429);
     if (function_exists('stu__log_error')) stu__log_error(['type' => 'guest_create_failed', 'message' => $e->getMessage()]);
@@ -230,12 +252,22 @@ try {
   if (is_array($row) && !isset($row['banned_reason'])) $row['banned_reason'] = '';
 }
 
+  // 0.5.78: failed logins count on the server per account (and network), so
+  // guessing a password does not restart with every new cookie.
+  $loginNetwork = coreui_client_network();
+  $blockedFor = coreui_login_blocked_for($pdo, $username, $loginNetwork);
+  if ($blockedFor > 0) {
+    stu_json(['ok' => false, 'error' => 'too_many_attempts', 'retry_after' => $blockedFor], 429);
+  }
   if (!$row || empty($row['password_hash'])) {
+    coreui_login_failed($pdo, $username, $loginNetwork);
     stu_json(['ok' => false, 'error' => 'invalid_credentials'], 401);
   }
   if (!password_verify($password, (string)$row['password_hash'])) {
+    coreui_login_failed($pdo, $username, $loginNetwork);
     stu_json(['ok' => false, 'error' => 'invalid_credentials'], 401);
   }
+  coreui_login_succeeded($pdo, $username, $loginNetwork);
   // Ban check (optional schema extension)
   if (isset($row['banned_until']) && !empty($row['banned_until'])) {
     $ts = strtotime((string)$row['banned_until']);

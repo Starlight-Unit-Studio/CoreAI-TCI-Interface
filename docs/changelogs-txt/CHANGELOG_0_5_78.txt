@@ -1,0 +1,8 @@
+CoreAI: TCI Interface 0.5.78 - 28.10.2026
+- Schutz gegen Mehrfach-Gaeste: Geraetemerkmal (Cookie 30 Tage, in der Datenbank nur als Hash) fuehrt ins alte Gastkonto; Gaeste eines Netzwerks (IPv4, IPv6 /64) teilen sich 24 h ihre Nachrichten (Admin: Gaeste pro Netzwerk und Tag, Standard 1); Tagesdeckel aller Gaeste (Admin: Gast-Nachrichten pro Tag, Standard 200, 0 = ohne Grenze); abgelehnte Nachrichten zaehlen nicht; gesperrte Gaeste bleiben gesperrt.
+- Vorher genuegte Browser schliessen (Sitzungscookie), Browserdaten loeschen oder ein privates Fenster fuer 5 neue Nachrichten.
+- Ratenlimits zusaetzlich serverseitig je Netzwerk (vorher nur in der PHP-Sitzung, ohne Cookie bei null); Login-Fehlversuche je Konto gedrosselt (10 je Konto und Netzwerk, 50 je Konto, 15 Minuten, too_many_attempts).
+- Besucher-Adresse hinter dem Reverse-Proxy aus X-Forwarded-For (von rechts, nur von lokalen Proxys, STU_TRUSTED_PROXIES); ohne Kopf bleiben Netzwerk-Regeln aus, der Admin-Bereich zeigt die fehlende Proxy-Zeile.
+- Migration 018 (stu_abuse_counters, nur HMAC-Schluessel, keine IP- oder E-Mail-Adressen); health.php prueft die Tabelle.
+- Tests: abuse-guard-selftest.php (beide Preflights).
+- OFFEN: im Host-Proxy proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; setzen und im Admin-Bereich pruefen.

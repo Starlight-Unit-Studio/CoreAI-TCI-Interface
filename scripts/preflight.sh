@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.77 sign-up and guest access, per tier Core management, one Core in RAM, chat compaction, Mara's work loop.
+# CoreAI: TCI Interface 0.5.78 protection against repeat guests and password guessing.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -148,6 +148,9 @@ UI_FILES=(
   api/ai_context_estimate.php
   js/coreui-context-slider.js
   database/migrations/017_ai_num_ctx.sql
+  database/migrations/018_abuse_guard.sql
+  api/abuse_guard.php
+  scripts/abuse-guard-selftest.php
   scripts/webui-resilience-selftest.cjs
   scripts/date-awareness-selftest.php
   scripts/knowledge-search-selftest.php
@@ -679,6 +682,13 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     ok 'Gast-Zugang: Limit, Zaehlung bei jeder Antwort, nur privater Chat, Stundenlimit, Login und Admin geprueft.'
   else
     fail "Gast-Zugang-Selbsttest: ${guest_test:-Unbekannter Fehler}"
+  fi
+
+  abuse_test=''
+  if abuse_test="$(compose exec -T php php scripts/abuse-guard-selftest.php 2>&1)"; then
+    ok 'Missbrauchsschutz: Geraetemerkmal, Netz-Kontingent, Tagesgrenze, Login-Drossel und echte Besucher-Adresse geprueft.'
+  else
+    fail "Missbrauchsschutz-Selbsttest: ${abuse_test:-Unbekannter Fehler}"
   fi
 
   compact_test=''
