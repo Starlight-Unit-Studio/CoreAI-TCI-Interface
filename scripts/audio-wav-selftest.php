@@ -2,9 +2,11 @@
 declare(strict_types=1);
 // CoreAI 0.5.73 (P20): WAV check for Gemma 4 audio input and the P20.0
 // media test. Offline: headers are built in memory, no Ollama, no ffmpeg.
+// 0.5.74: helpers for audio turns (api/voice_core.php) and the extended test.
 if (PHP_SAPI !== 'cli') exit(1);
 $root = dirname(__DIR__);
 require_once $root . '/api/audio_wav.php';
+require_once $root . '/api/voice_core.php';
 
 function wav_test(bool $ok, string $why): void {
   if (!$ok) { fwrite(STDERR, "Audio WAV FAIL: {$why}\n"); exit(1); }
@@ -69,4 +71,43 @@ $sh = (string)file_get_contents($shell);
 wav_test(str_contains($sh, 'exec -T php php scripts/media-spike.php') && str_contains($sh, "IFS='|' read -r wall rss rc"),
   'starter runs the PHP part in the php container and keeps empty timing fields');
 
-echo "CoreAI audio WAV check and P20.0 media test contract OK\n";
+// 0.5.74: audio turns. The 5 s miss from the server run is recognised,
+// real transcripts (also from the same run) and silence are not.
+wav_test(coreui_voice_attachment_hint(4.6) === '[Angehaengt: Sprachaufnahme, 5 Sekunden]'
+  && coreui_voice_attachment_hint(0.4) === '[Angehaengt: Sprachaufnahme, 1 Sekunde]', 'attachment hint names the length');
+foreach ([
+  'Bitte stellen Sie die Aufnahme zur Verfügung. Ich kann die Transkription erst erstellen, wenn ich den Audioinhalt habe.',
+  'Es wurde keine Audiodatei angehängt.',
+  'Ich kann die Aufnahme leider nicht abspielen.',
+  'Ich habe keinen Zugriff auf Audio.',
+  'Please provide the audio recording.',
+  "I can't listen to audio files.",
+] as $missed) wav_test(coreui_voice_missed_audio($missed), 'missed audio recognised: ' . $missed);
+foreach ([
+  'Hey, sei fair, es ist nicht sauber genug. Haben Sie eigentlich Handtücher dabei? Ja. Kopfkissenbezüge? Natürlich.',
+  'Wussten Sie, dass die meisten ins Hotel gehen, damit sie das klauen können? Das ist mein Fussel-Reservat.',
+  '(keine Sprache)',
+  'Okay, okay, schon gut.',
+  '',
+] as $heard) wav_test(!coreui_voice_missed_audio($heard), 'a transcript is not a miss: ' . $heard);
+wav_test(!coreui_voice_missed_audio(str_repeat('Bitte stellen Sie die Aufnahme zur Verfügung. ', 20)),
+  'long answers are transcripts, not a refusal');
+$persona = "<|think|>\nDu bist Mara, die TCI der Ravager Thorn.\nDu sprichst Deutsch.";
+wav_test(coreui_voice_modelfile_system(['system'=>$persona]) === $persona, 'SYSTEM from the /api/show field');
+wav_test(coreui_voice_modelfile_system(['modelfile'=>"FROM gemma4:e4b\nSYSTEM \"\"\"{$persona}\"\"\"\nPARAMETER x 1\n"]) === $persona,
+  'SYSTEM from a Modelfile block');
+wav_test(coreui_voice_modelfile_system(['modelfile'=>"FROM gemma4:e4b\n"]) === '', 'no SYSTEM');
+wav_test(coreui_voice_system_without_think($persona) === "Du bist Mara, die TCI der Ravager Thorn.\nDu sprichst Deutsch.",
+  'only the thinking switch is removed, the persona stays word for word');
+
+// 0.5.74 media test: CoreAI's keep_alive, streamed answers with the time to
+// the first word, the thinking comparison only reads the Modelfile.
+wav_test(str_contains($spike, '$keepAlive = ember_keep_alive();') && !str_contains($spike, "'15m'"),
+  'the media test keeps CoreAI\'s keep_alive instead of its own');
+wav_test(str_contains($spike, "'stream'=>true") && str_contains($spike, "'first_answer_s'=>") && str_contains($spike, "'first_sentence_s'=>"),
+  'time to the first answer word and sentence is measured');
+wav_test(str_contains($spike, 'coreui_voice_system_without_think($system)') && str_contains($spike, 'coreui_voice_missed_audio($r[\'text\'])')
+  && str_contains($spike, 'coreui_voice_attachment_hint($sec)'), 'thinking comparison and short clips use the shared helpers');
+wav_test(str_contains($sh, '--short "$SHORT" --repeat "$REPEAT"'), 'starter passes the short clip options');
+
+echo "CoreAI audio WAV check, audio turn helpers and P20.0 media test contract OK\n";

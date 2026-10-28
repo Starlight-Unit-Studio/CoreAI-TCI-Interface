@@ -2,6 +2,13 @@
 
 CoreAI: TCI Interface gehoert zur Quantum-Softwarefamilie und wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert. Historische Changelogs dokumentieren die frueheren Produktnamen unveraendert.
 
+## 0.5.74 - 28.10.2026
+
+- **Messprotokoll P20.0** im Sprachplan: zwei Laeufe auf dem echten Server. Audio kostet 25 Tokens je Sekunde, Einlesen etwa 170 und Ausgabe etwa 22 Tokens je Sekunde; 60 Sekunden laufen stabil und werden durchgehend mitgeschrieben; Ollama 0.40.6 nimmt auch 24 Bit, Float und 44,1 kHz Stereo an, nur rohes PCM nicht; Bild und Ton gemeinsam funktionieren. Verborgenes Denken durch `<|think|>` im Modelfile kostet 14 bis 27 Sekunden je Aufruf; eine 5-Sekunden-Aufnahme wurde einmal uebersehen. Abschnitte daher bis 60 Sekunden, Live-Gespraech ohne Denken mit Vorwaermen.
+- **Medien-Test erweitert:** gestreamte Antworten mit Zeit bis zum ersten Wort und ersten Satz, Lade- und Denkzeit pro Fall; Vergleich mit Maras SYSTEM-Text ohne `<|think|>` (nur im Testaufruf, Modelfile unveraendert) fuer Mitschrift und Live-Antwort; kurze Aufnahmen (3 und 5 Sekunden, je fuenfmal) mit und ohne Anhang-Hinweis; Digest jedes Cores; Kurzfassung und vollstaendige Mitschrift im Bericht; `keep_alive` aus der CoreAI-Konfiguration. Neue Optionen `--short` und `--repeat`.
+- **Hilfen fuer Audio-Aufrufe** `api/voice_core.php`: Anhang-Hinweis mit Laenge, Erkennung von "keine Aufnahme"-Antworten fuer eine automatische Wiederholung, SYSTEM-Text aus `/api/show`, SYSTEM-Text ohne Denk-Schalter. Fuer P20.1 und P20.4.
+- Tests: `audio-wav-selftest.php` prueft die neuen Hilfen (auch mit den echten Antworten des Serverlaufs) und den erweiterten Test; Probelauf gegen einen nachgebauten Ollama mit gestreamten Antworten.
+
 ## 0.5.73 - 28.10.2026
 
 - **Medien-Test P20.0:** `scripts/media-spike.sh` (Host) und `scripts/media-spike.php` (php-Container oder nativ) messen Hoeren ueber Gemma 4: Faehigkeiten laut `/api/show`, Testaufnahme 5 bis 60 Sekunden als WAV 16 kHz Mono 16 Bit, falsche Formate als Gegenprobe, Bild und Ton gemeinsam, Antwortzeiten, Tokens und Mitschrift. Optional Stimmen-Kandidaten (Rechenzeit, Echtzeitfaktor, RAM bei 2 und 4 Kernen) und ein Bildbefehl. Jeder Core-Aufruf wartet in Maras Warteschlange, ohne Ollama-Optionen, ohne Modell- oder Datenbankaenderung. Bericht als Markdown und JSON.
