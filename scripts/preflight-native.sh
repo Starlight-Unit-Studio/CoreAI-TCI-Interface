@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.71 RAG-Lite finds names in large documents, one Mara for text and images.
+# CoreAI: TCI Interface 0.5.72 roadmap update: Mara hears and speaks (voice plan), status 0.5.71.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

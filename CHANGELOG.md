@@ -2,6 +2,13 @@
 
 CoreAI: TCI Interface gehoert zur Quantum-Softwarefamilie und wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert. Historische Changelogs dokumentieren die frueheren Produktnamen unveraendert.
 
+## 0.5.72 - 28.10.2026
+
+- **Roadmap auf Stand 0.5.71:** Neue Statustabelle je Etappe (M1 praktisch erledigt, M2 grossteils erledigt, M3 offen, M4 bis M6 teilweise) und "Naechste Lieferfolge" nach Betreiberentscheidung: P20.0 Test, P20.1 Spracheingabe, P20.2 Videos hoeren, P20.3 Sprachausgabe, P20.4 Live-Gespraech, P20.5 Bildgenerierung, danach P09 Projekt-Workspace.
+- **Neuer Sprachplan** `docs/COREUI_VOICE_PLAN.md`: Hoeren ueber Gemma 4 via Ollama, eigene Mara-Stimme als Server-TTS, Vorlesen satzweise, Live-Gespraech mit Sprechpausen-Erkennung und Unterbrechen, Datenschutz fuer Aufnahmen, gemeinsame Abnahme.
+- **Regel zur seriellen Ausfuehrung** in Roadmap, Funktionsmatrix und Masterplan um die einzige Ausnahme ergaenzt: Sprachausgabe mit festem Kernlimit parallel zu genau einer Core-Anfrage.
+- Funktionsmatrix: CF-057 und CF-058 auf den Plan verwiesen. Keine Code-, Modell- oder Datenbankaenderung.
+
 ## 0.5.71 - 28.10.2026
 
 - **RAG-Lite findet Namen in grossen Dokumenten:** Live-Befund: Nach dem Hochladen der drei Starlight-Unit-Bibeln fand Mara "Ayal'ren" und "Alt Khemet" nicht. Ursachen im Nachbau: Die Suche nahm die laengsten Woerter statt der Namen, das Ranking zaehlte nur Treffer (jeder Abschnitt nennt "Starlight Unit" und gewann), der Rest "ren" aus "Ayal'ren" traf "Waren", "Lernen", "Fahren", und der Rueckfallweg sah nur die neuesten 80 Abschnitte. Neu: Namen behalten ihren Stamm ueber Apostrophe, Fuellwoerter fallen weg, Gewichtung nach Seltenheit im eigenen Wissen (IDF), Treffer nur am Wortanfang, Bonus fuer zusammenstehende Namen ("Alt Khemet"), alle Abschnitte der seltensten Begriffe werden geprueft. Rueckfragen ohne Stichwort nutzen den Gespraechsverlauf. Bei grossem Kontextfenster bis zu 6 Abschnitte mit je 1.400 Zeichen. Arbeitsweg-Schritt "Privates Wissen durchsucht" mit Treffern und Quellen.

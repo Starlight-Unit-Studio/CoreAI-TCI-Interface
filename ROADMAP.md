@@ -2,23 +2,39 @@
 
 Produktname ab 0.5.57: CoreAI: TCI Interface (Quantum-Softwarefamilie). Die folgenden historischen Meilensteine verwenden teils noch den frueheren Projektnamen.
 
-Stand: 20.10.2026. Planungsbasis: [`b4a5413`](https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface/commit/b4a5413f8478119d749a54702c0e50acd3f0b517).
+Stand: 28.10.2026. Planungsbasis: [`383bd28`](https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface/commit/383bd289f295ede48fef322458baaee3879a0d9a) (Version 0.5.71). Erste Fassung: 20.10.2026 auf Basis `b4a5413`.
 
-**Aktueller Stand: P05-/P06-Grundfunktionen und Arbeitschronik sowie lokale Dateiwerkzeuge sind in Teilständen umgesetzt. Version 0.5.15 entfernt die CoreUI-eigenen Ollama-Parameter fuer Gemma und den kurzlebigen synthetischen Warmup. Der wiederkehrende lokale Inferenzstillstand bleibt bis zur Server-Liveabnahme und technischen Diagnose offen. P20 plant die native CPU-Bildengine; allgemeine P06-/P07-Agentenfunktionen folgen.**
+**Aktueller Stand 0.5.71: Downloads (M1) und der Agentenkern (M2) laufen live; Projekt-ZIPs entstehen lokal und in der Cloud. Als Nächstes folgt die Medien-Etappe mit Sprache (Mara hört und spricht, auch im Live-Gespräch), danach Bildgenerierung und der Projekt-Workspace. Details zur Sprache stehen im [Sprachplan](docs/COREUI_VOICE_PLAN.md).**
 
 Diese Roadmap ordnet die Anforderungen in **29 abschließbare Arbeitspakete** und nutzbare Lieferungen. Der [Masterplan](docs/COREUI_MASTERPLAN.md) hält Ziel und Architektur fest; die [Funktionsmatrix](docs/COREUI_FEATURE_MATRIX.md) führt Referenzen, bestehenden Teilbestand und Einzelabnahmen. Alle 82 derzeitigen Matrix-IDs sind einem Paket primär zugeordnet. Das bedeutet vollständige Zuordnung des erfassten Startbestands; die Tiefeninventur von **OpenClaw, Open WebUI, CrewAI, LangGraph und Microsoft AutoGen** läuft weiter.
 
-## Aktueller Stand
+## Aktueller Stand (0.5.71, 28.10.2026)
 
-| Bereich | Status |
-|---|---|
-| Ursprünglicher Masterplan, Referenzstände und 72 Einträge | Durch [PR #30](https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface/pull/30) im Repo gesichert |
-| Erste Umsetzungsroadmap | Durch [PR #31](https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface/pull/31) im Repo gesichert |
-| Referenzerweiterung | CrewAI, LangGraph und AutoGen ergänzt; jetzt 82 CF-Einträge und 29 Pakete, vollständige Einzelinventur weiter offen |
-| Download-Bug | HTML-Datei wurde live heruntergeladen; [Issue #29](https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface/issues/29) bleibt fuer ZIP-Abnahme offen |
-| Laufzeitfunktionen dieser Roadmap | Noch nicht durch diese Planungsarbeit umgesetzt oder abgenommen |
-| Technische Basis | `0.5.15` mit Migration 013, globaler FIFO-Modellwarteschlange, bestaetigter P06-Arbeitschronik, lokalem Dateipfad und strikt parameterfreier Gemma-Anbindung; lokale Inferenzhaenger und ZIP-Endabnahme weiter zu pruefen |
-| GitHub Actions | Wegen ausgeschöpften Kontingents auf Nutzerwunsch ausgelassen |
+| Bereich | Stand | Belege |
+|---|---|---|
+| **M1 Downloads** (P02 bis P04) | Praktisch erledigt: Dateiablage, Download-Karten, geprüfter ZIP-Writer; ein komplettes Projekt-ZIP wurde live lokal gebaut. Formale Abnahme von #29 (Reload, Android) steht aus. | Migration 011, 0.5.47 bis 0.5.67 |
+| **M2 Agent** (P05 bis P08) | Großteils erledigt: persistente Agentenläufe mit Abbruch, globale serielle Warteschlange, Arbeitsweg im Agent-Stil, native Werkzeuge (Plan, Bau, Web, Browse, Python) mit Selbstkorrektur, KI-Profil mit Kontextfenster. Offen: Arbeitsprofile und Promptvorlagen mit Variablen. | Migrationen 012, 013, 016, 017; 0.5.68 bis 0.5.70 |
+| **P26 bis P28** (Teams, Checkpoints, Reviews) | Offen; die dauerhaften Projektpläne sind ein erster Baustein. | Migration 016 |
+| **M3 Entwicklung** (P09 bis P11) | Offen: kein dauerhafter Projektordner, Editor, Terminal oder Git. Projekte entstehen je Bau neu als ZIP. | |
+| **M4 Skills** (P12 bis P14) | Teilweise: Skills mit Pflicht-Skill "werkzeuge" und eigene Skills. Offen: Versionen, Import/Export, Plugins; Sprachskill #119. | Migration 014 |
+| **M5 Browser, Wissen, Gedächtnis** (P15 bis P17) | Teilweise: Web und Browser nur lesend (#25 offen); RAG-Lite mit Namen und Rückfragen brauchbar, aber ohne Quellenangaben und Texterkennung; Gedächtnis ohne Herkunftsangabe. | 0.5.71 |
+| **M6 Medien** (P20) | Bild-, Video- und PDF-Analyse vorhanden, seit 0.5.71 mit derselben Mara wie im Text. Hören, Sprechen, Live-Gespräch und Bildgenerierung offen und als nächste Etappe geplant. | [Sprachplan](docs/COREUI_VOICE_PLAN.md), [Bildplan](docs/COREUI_IMAGE_ENGINE_PLAN.md) |
+| **M6 übrige Breite** | P19 teilweise (robuste WebUI, Handy, 0.5.70); P18, P21 bis P24, P29 offen. | |
+| **Laufzeit** | #51 und #52 (Hänger, Modellwechsel) seit Warteschlange, Kontextfenster-Erkennung und num_ctx vermutlich entschärft; live nachprüfen. | |
+| **GitHub Actions** | Wegen ausgeschöpften Kontingents auf Nutzerwunsch ausgelassen; Prüfung über Preflights und lokale Selbsttests. | |
+
+## Nächste Lieferfolge (Betreiberentscheidung 28.10.2026)
+
+| Schritt | Inhalt | Plan |
+|---|---|---|
+| 1. P20.0 | Test auf dem Server: Audio über Ollama (Gemma 4 e2b, e4b, 12b über das `images`-Array), TTS-Kandidaten, Latenz einer Live-Runde | [Sprachplan](docs/COREUI_VOICE_PLAN.md) |
+| 2. P20.1 | Spracheingabe: Mikrofon, Sprachnachrichten, Audiodateien, Mitschrift im Chat | Sprachplan |
+| 3. P20.2 | Videos hören: Tonspur zusammen mit den Bildern | Sprachplan |
+| 4. P20.3 | Sprachausgabe: Lautsprecher-Knopf, optional automatisch vorlesen, eigene Mara-Stimme vom Server | Sprachplan |
+| 5. P20.4 | Live-Gespräch: freihändig oder Halten-zum-Sprechen, satzweise Antwort, Unterbrechen | Sprachplan |
+| 6. P20.5 | Bildgenerierung als Werkzeug nach dem Bild-Technikplan | [Bildplan](docs/COREUI_IMAGE_ENGINE_PLAN.md) |
+| 7. P09 | Projekt-Workspace: gebaute Projekte bleiben als Ordner, gezielte Änderungen einzelner Dateien, neues ZIP | dieses Dokument, M3 |
+| Danach | Wissen mit Quellenangaben und Texterkennung (P16), Sprachskill #119, Arbeitskommentare und Debug-Protokoll #97, Automationen (P21) | |
 
 Die Paketnummern bleiben als Arbeitsreferenzen bestehen. Sämtliche Umsetzungspakete sind zunächst **offen**; vorhandene Teilfunktionen behalten ihren differenzierten Status in der Matrix. M0 und M7 begleiten die Entwicklung. Sie sind keine Wartephase vor der ersten nutzbaren Korrektur.
 
@@ -38,7 +54,7 @@ Feste Termine und neue Releaseversionen werden nach dem technischen Abgleich und
 
 ## Regeln für jede Lieferung
 
-- **Serieller Modellbetrieb:** Höchstens eine aktive Modellanfrage, gemeinsam für Gespräche, Unteraufgaben, Memory, Automationen und Medienmodelle. Auch Graphzweige, Manager, Sprecherwahl, Ergebnisprüfung, Embeddings, Replay und Evaluations-/Playgroundläufe nutzen dieselbe globale Warteschlange. Paketplanung und die Zahl der Clients ändern diese Grenze nicht.
+- **Serieller Modellbetrieb:** Höchstens eine aktive Modellanfrage, gemeinsam für Gespräche, Unteraufgaben, Memory, Automationen und Medienmodelle. Auch Graphzweige, Manager, Sprecherwahl, Ergebnisprüfung, Embeddings, Replay und Evaluations-/Playgroundläufe nutzen dieselbe globale Warteschlange. Paketplanung und die Zahl der Clients ändern diese Grenze nicht. **Einzige Ausnahme (Betreiberentscheidung 28.10.2026):** die Sprachausgabe (TTS) darf mit festem Kernlimit parallel zu genau einer Core-Anfrage laufen, höchstens ein TTS-Auftrag gleichzeitig. Hören, Antworten und Bildgenerierung bleiben seriell.
 - **Mobile Nutzung ab dem ersten Paket:** Downloads, Fortschritt, wesentliche Bedienelemente und spätere Entwicklerwerkzeuge auf Android Chrome prüfen. P19 erweitert diesen Umfang; die Handy-Nutzung beginnt bereits in M1.
 - **Rechte und Datenerhalt ab dem ersten Paket:** Kontotrennung, reale Datei-IDs, Aufbewahrung, Löschung und Update-Persistenz gehören zur jeweiligen Umsetzung. P18 und P19 erweitern diese Grundlagen später.
 - **Eigene Umsetzung:** OpenClaw, Open WebUI, CrewAI, LangGraph und Microsoft AutoGen werden vollständig als Referenzen inventarisiert. Fremder Code, Texte und Assets werden nicht übernommen. Modellabhängige, experimentelle, kommerzielle oder nur historisch gepflegte Bestandteile behalten die im Quellenregister beschriebenen Beleggrenzen.
@@ -139,7 +155,7 @@ P18 bis P24 und P29 werden als getrennte Erweiterungen geliefert. Ihre Paketabh�
 |---|---|---|---|
 | **P18: Verwaltung und gemeinsame Ressourcen** | P07, P09, P13 | Vorhandene Konto- und Toolrechte um Rollen, Gruppen und geteilte Ressourcen erweitern. Zusätzliche Anmeldewege, API-Schlüssel, Laufdiagnose und wiederholbare Evaluation mit dokumentierter Ausgangslage einzeln abnehmen. **Abnahme:** Entzogene Rechte wirken auf direkte Zugriffe. Traces sind realen Läufen zugeordnet; Modellvergleiche laufen seriell und nennen Definition, Modell sowie Bewertungsbedingungen. | `CF-065`, `CF-066`, `CF-067` |
 | **P19: Betrieb, mobile Bedienung und weitere Oberflächen** | P04, P11, P13 | Installation, Speicherbetrieb, Backup, Wiederherstellung, Sprachen, Tastaturbedienung und PWA-Umfang vervollständigen. Zusätzliche Prozesse respektieren die Modellgrenze. **Abnahme:** Ein gesicherter Stand lässt sich vollständig wiederherstellen. Kernabläufe sind auf Android Chrome ohne verdeckte Hauptaktionen bedienbar. | `CF-068`, `CF-069` |
-| **P20: Medien und Sprache ausbauen** | P03, P04, P05, P14 | Bild-, Video- und Dokumentverarbeitung, Transkription, TTS, geeignete Live-Medien und Generierungswege je Provider ergänzen. Die CPU-native Bildinferenz nach [Ember Image Engine Plan](docs/COREUI_IMAGE_ENGINE_PLAN.md) mit stable-diffusion.cpp als C/C++-Referenz, FLUX.1-schnell und SDXL-Turbo als getrennten Kandidaten spezifizieren; CPU-Benchmarks, Modell-/Lizenzregister, RAM- und Threadlimits und eine provideruebergreifende serielle Warteschlange sind Voraussetzung. Alle Ergebnisse in den gemeinsamen Dateiweg aufnehmen. **Abnahme:** Unterstützte Medienabläufe funktionieren mit erkennbaren Modellgrenzen. Generierte Medien lassen sich wieder öffnen und herunterladen; beteiligte Modellanfragen bleiben seriell. | `CF-057`, `CF-058`, `CF-059` |
+| **P20: Medien und Sprache ausbauen** | P03, P04, P05 (P14 nur für Fremdanbieter) | **Ab 28.10.2026 vorgezogen und in P20.0 bis P20.5 aufgeteilt, siehe "Nächste Lieferfolge" und [Sprachplan](docs/COREUI_VOICE_PLAN.md):** Test, Spracheingabe, Videos hören, Sprachausgabe mit eigener Mara-Stimme, Live-Gespräch, Bildgenerierung. Bild-, Video- und Dokumentverarbeitung, Transkription, TTS, geeignete Live-Medien und Generierungswege je Provider ergänzen. Die CPU-native Bildinferenz nach [Ember Image Engine Plan](docs/COREUI_IMAGE_ENGINE_PLAN.md) mit stable-diffusion.cpp als C/C++-Referenz, FLUX.1-schnell und SDXL-Turbo als getrennten Kandidaten spezifizieren; CPU-Benchmarks, Modell-/Lizenzregister, RAM- und Threadlimits und eine provideruebergreifende serielle Warteschlange sind Voraussetzung. Alle Ergebnisse in den gemeinsamen Dateiweg aufnehmen. **Abnahme:** Unterstützte Medienabläufe funktionieren mit erkennbaren Modellgrenzen. Generierte Medien lassen sich wieder öffnen und herunterladen; beteiligte Modellanfragen bleiben seriell. | `CF-057`, `CF-058`, `CF-059` |
 | **P21: Automationen, Kalender und dauerhafte Aufträge** | P05, P06, P07, P18 (P18 für gemeinsame Ressourcen) | Einmalige und wiederkehrende Aufgaben, Kalender, Webhooks, dauerhafte Anweisungen, Ereignishooks und Heartbeats als eigene Mechanismen mit Historie anbieten. **Abnahme:** Auslösen, Ändern, Stoppen und Wiederaufnahme funktionieren mit korrekter Zeitzone. Ein Neustart verdoppelt keine Aufgabe; Modellarbeit wartet bei belegter Warteschlange. | `CF-060`, `CF-061`, `CF-064` |
 | **P22: Kanäle, Clients und Geräte** | P07, P14, P18 | Kommunikationskanäle, Gruppen, weitere Clients sowie Gerätefähigkeiten einzeln anbinden. Identität, Pairing, Sitzungszuordnung und Zugriffe festlegen. **Abnahme:** Eine Antwort erreicht den richtigen autorisierten Kanal. Kein Client oder Gerät eröffnet eine zweite gleichzeitige Modellanfrage. | `CF-062`, `CF-063` |
 | **P23: Zusammenarbeit und Austausch** | P08, P09, P18 | Gesprächsimport/-export, kontrollierte Freigaben, Notizen und gemeinsame Channels mit Antworten, Reaktionen und Pins ausbauen. **Abnahme:** Ein Gespräch lässt sich mit ausgewählten Ressourcen übertragen. Gemeinsame Arbeit beachtet Mitgliedschaft und widerrufene Freigaben. | `CF-014`, `CF-015`, `CF-016` |
@@ -188,5 +204,7 @@ Die Matrix bleibt die Quelle für den Funktionsstatus. Ein Paket wird erst erled
 
 Nach jeder Lieferung die Roadmap um Datum, PR/Commit und Ergebnis ergänzen. Neue Referenzfunktionen in der Matrix erfassen und einem Paket oder einem neuen Paket zuordnen. Die vollständige Abdeckung wird anhand der festgehaltenen Referenzstände geprüft, ohne aus der Anzahl der Pakete einen Fertigstellungsprozentsatz abzuleiten.
 
-**Übergabe für den nächsten Arbeitsabschnitt:** P02 ist der nächste Schritt. Download-Bug #29 bleibt offen. Masterplan und Matrix sind gesichert. Es sind durch diese Roadmap noch keine Laufzeitfunktionen fertiggestellt, keine neue Migration vergeben und keine GitHub Actions ausgeführt.
+**Übergabe für den nächsten Arbeitsabschnitt (28.10.2026):** Der nächste Schritt ist P20.0, der Test von Audio über Ollama und der TTS-Kandidaten auf dem echten Server (siehe [Sprachplan](docs/COREUI_VOICE_PLAN.md)). Danach P20.1 bis P20.5 und P09. Die Abschnitte "Der erste Umsetzungsabschnitt" oben beschreiben den historischen Start mit P02 bis P04 und bleiben als Nachweis stehen.
+
+Historische Übergabe vom 20.10.2026: P02 war der nächste Schritt. Download-Bug #29 blieb offen. Masterplan und Matrix waren gesichert; es waren durch die Roadmap noch keine Laufzeitfunktionen fertiggestellt, keine neue Migration vergeben und keine GitHub Actions ausgeführt.
 

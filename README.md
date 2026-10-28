@@ -7,7 +7,22 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.71` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.72` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Roadmap: Mara hoert und spricht (0.5.72)
+
+Reine Planungsversion, keine Laufzeitaenderung. Die Roadmap stand noch auf
+dem 20.10.2026 (0.5.15) und ist jetzt auf dem Stand 0.5.71: Downloads und
+Agentenkern laufen live, die naechste Etappe sind Medien. Neuer
+[Sprachplan](docs/COREUI_VOICE_PLAN.md): Mara hoert ueber Gemma 4 (e2b, e4b,
+12b nehmen Audio ueber das `images`-Array von Ollama an), hoert bei Videos
+auch den Ton, spricht mit einer eigenen Server-Stimme (Lautsprecher-Knopf
+unter jeder Antwort) und fuehrt Live-Gespraeche mit Unterbrechen.
+Betreiberentscheidungen vom 28.10.2026: Reihenfolge Sprache, dann
+Bildgenerierung, dann Projekt-Workspace; die Sprachausgabe darf als einzige
+Ausnahme mit festem Kernlimit parallel zu einer Core-Anfrage laufen; direkt
+eine eigene Mara-Stimme. Der erste Schritt ist ein Test auf dem echten Server
+(Audioformate, Laenge, Latenz, Stimmen-Kandidaten).
 
 ## RAG-Lite findet Namen, eine Mara fuer Text und Bild (0.5.71)
 

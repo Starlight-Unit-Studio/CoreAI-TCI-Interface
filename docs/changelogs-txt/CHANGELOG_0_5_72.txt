@@ -1,0 +1,6 @@
+CoreAI: TCI Interface 0.5.72 - 28.10.2026
+- Reine Planungsversion, keine Laufzeitaenderung.
+- ROADMAP.md auf Stand 0.5.71: Statustabelle je Etappe, naechste Lieferfolge nach Betreiberentscheidung (Sprache, dann Bildgenerierung, dann Projekt-Workspace).
+- Neuer Sprachplan docs/COREUI_VOICE_PLAN.md: Hoeren ueber Gemma 4 (e2b, e4b, 12b ueber das images-Array von Ollama), Videos mit Ton, eigene Mara-Stimme, Vorlesen, Live-Gespraech mit Unterbrechen.
+- Serielle Regel um die einzige Ausnahme ergaenzt: Sprachausgabe mit festem Kernlimit parallel zu genau einer Core-Anfrage (Roadmap, Matrix, Masterplan).
+- OFFEN: P20.0 Test auf dem echten Server.

@@ -1,0 +1,26 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.5.72
+Stand: 28.10.2026
+Branch: claude/bold-galileo-myoyi0 (neu von main 0.5.71 nach Merge von PR #121)
+Basis: 0.5.71 live, laut Betreiber "laeuft jetzt problemlos".
+
+ART DER VERSION: reine Planungs- und Dokumentationsversion. Kein Code, keine Migration, kein Modelfile.
+
+INHALT:
+- ROADMAP.md: Stand 20.10.2026 (0.5.15) auf 28.10.2026 (0.5.71) gebracht. Neue Tabellen "Aktueller Stand
+  (0.5.71)" und "Naechste Lieferfolge". Historische Zwischenstaende bleiben als Nachweis stehen.
+- docs/COREUI_VOICE_PLAN.md (neu): P20.0 Test, P20.1 Spracheingabe, P20.2 Videos hoeren, P20.3 Sprachausgabe,
+  P20.4 Live-Gespraech, P20.5 Bildgenerierung (verweist auf den Bild-Technikplan), gemeinsame Abnahme.
+- Serielle Regel (Roadmap, docs/COREUI_FEATURE_MATRIX.md Regel 1, docs/COREUI_MASTERPLAN.md): einzige
+  Ausnahme Sprachausgabe mit festem Kernlimit, hoechstens ein TTS-Auftrag, parallel zu genau einer Core-Anfrage.
+- Matrix: CF-057 und CF-058 verweisen auf den Sprachplan.
+
+BETREIBERENTSCHEIDUNGEN 28.10.2026:
+- Reihenfolge: Sprache, dann Bildgenerierung, dann Projekt-Workspace (P09).
+- Beides: normales Audio (Antwort als Text plus Lautsprecher-Knopf) und Live-Gespraech wie Gemini/ChatGPT.
+- Sprachausgabe parallel mit Kernlimit erlaubt.
+- Direkt eine eigene Mara-Stimme vom Server, keine Geraetestimme als Zwischenloesung.
+- Betreiberangabe: Ollama nimmt Audio fuer gemma4 e2b, e4b und 12b ueber das images-Array an.
+
+NAECHSTER SCHRITT: P20.0 auf dem echten Server: Audioformate, Laenge pro Clip, Latenz mit e4b, Bild und Ton
+gemeinsam, TTS-Kandidaten (unter anderem Piper) mit Echtzeitfaktor, RAM und Lizenz je Stimme, Latenz einer
+Live-Runde. Keine Latenzzusagen vor dieser Messung.
