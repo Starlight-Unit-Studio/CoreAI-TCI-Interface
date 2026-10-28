@@ -130,7 +130,7 @@ function coreui_compact_context_block(?array $state): string {
 /** A model answer to a summary, or null if it is not usable (pure). */
 function coreui_compact_clean_summary(?string $text): ?string {
   $text = trim((string)$text);
-  $text = trim((string)preg_replace('~\[(?:WEB|BROWSE|ARCHIV|PY)\b[^\]]*\]~iu', '', $text));
+  $text = trim((string)preg_replace('~\[(?:WEB|BROWSE|ARCHIV|SKILL|PY)\b[^\]]*\]~iu', '', $text));
   if (mb_strlen($text) < 20) return null;
   return mb_substr($text, 0, COREUI_COMPACT_SUMMARY_CHARS + 500);
 }

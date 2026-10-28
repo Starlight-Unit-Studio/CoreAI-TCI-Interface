@@ -39,7 +39,7 @@ $states = array_column($tools['tools'], 'on', 'id');
 insights_test($states === ['rag'=>true,'memory'=>true,'web'=>true,'browse'=>false,'python'=>true],
   'tool states come from the server flags');
 insights_test(in_array('werkzeuge', $tools['skills']['required'], true)
-  && $tools['skills']['optional_enabled'] === 0, 'the mandatory skill is always listed');
+  && $tools['skills']['library'] === count(coreui_skills_catalog()) - 1, 'the mandatory skill is listed, Mara picks from the rest');
 insights_test(coreui_insights_usage($pdo, 7, 'cs_session_0001') === null
   && coreui_insights_plan($pdo, 7, 'cs_session_0001') === null
   && coreui_insights_files($pdo, 7, 'cs_session_0001') === [],

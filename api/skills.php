@@ -27,65 +27,17 @@ function coreui_skills_required_ids(): array {
   return $required;
 }
 
-function coreui_skills_schema_ready(PDO $pdo): bool {
-  try {
-    $pdo->query('SELECT user_id,skill_id,enabled FROM stu_user_skills LIMIT 0');
-    return true;
-  } catch (Throwable $e) { return false; }
-}
+// 0.5.80: no per-account switches any more. Like Claude or GPT, Mara has
+// every skill: the server preloads the obvious ones, and the rest stand in a
+// short library in her prompt. She loads one herself with [SKILL: kennung]
+// as a step of her work loop (console_agent_loop.php).
 
-function coreui_skills_load(PDO $pdo, int $uid): array {
-  // Optional skills remain opt-in. Mandatory core skills stay enabled even
-  // without migration and despite historic disabled rows in existing accounts.
-  $values = array_fill_keys(array_keys(coreui_skills_catalog()), false);
-  foreach (coreui_skills_required_ids() as $id) $values[$id] = true;
-  if ($uid <= 0 || !coreui_skills_schema_ready($pdo)) return $values;
-  $stmt = $pdo->prepare('SELECT skill_id,enabled FROM stu_user_skills WHERE user_id=?');
-  $stmt->execute([$uid]);
-  foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
-    if (array_key_exists($row['skill_id'], $values)) $values[$row['skill_id']] = (int)$row['enabled'] === 1;
-  }
-  foreach (coreui_skills_required_ids() as $id) $values[$id] = true;
-  return $values;
-}
-
-function coreui_skills_validate(array $values): array {
-  $catalog = coreui_skills_catalog();
-  foreach ($values as $id => $enabled) {
-    if (!isset($catalog[$id]) || !is_bool($enabled)) throw new InvalidArgumentException('invalid_skill_preferences');
-    if (($catalog[$id]['required'] ?? false) === true && $enabled !== true) {
-      throw new InvalidArgumentException('required_skill_cannot_be_disabled');
-    }
-  }
-  return $values;
-}
-
-function coreui_skills_save(PDO $pdo, int $uid, array $values): array {
-  $values = coreui_skills_validate($values);
-  if ($uid <= 0) throw new InvalidArgumentException('invalid_user');
-  if (!coreui_skills_schema_ready($pdo)) throw new RuntimeException('skills_migration_required');
-  $pdo->beginTransaction();
-  try {
-    $stmt = $pdo->prepare('INSERT INTO stu_user_skills (user_id,skill_id,enabled) VALUES (?,?,?)
-      ON DUPLICATE KEY UPDATE enabled=VALUES(enabled)');
-    foreach ($values as $id => $enabled) {
-      if ((coreui_skills_catalog()[$id]['required'] ?? false) === true) continue;
-      $stmt->execute([$uid,$id,$enabled ? 1 : 0]);
-    }
-    $pdo->commit();
-  } catch (Throwable $e) {
-    if ($pdo->inTransaction()) $pdo->rollBack();
-    throw $e;
-  }
-  return coreui_skills_load($pdo, $uid);
-}
-
-function coreui_skills_select(string $request, array $enabled, int $max = 4): array {
+/** The optional skills that fit the request best, at most $max (pure). */
+function coreui_skills_select(string $request, int $max = 4): array {
   $request = function_exists('mb_strtolower') ? mb_strtolower($request, 'UTF-8') : strtolower($request);
   $scores = [];
   foreach (coreui_skills_catalog() as $id => $skill) {
     if (($skill['required'] ?? false) === true) continue; // loaded independently, never consumes the optional budget
-    if (($enabled[$id] ?? false) !== true) continue;
     $score = 0;
     if (preg_match('~(?:/skill\\s+|\\$)' . preg_quote($id, '~') . '(?![a-z0-9-])~', $request)) $score = 10000;
     foreach ($skill['triggers'] as $term) {
@@ -97,6 +49,95 @@ function coreui_skills_select(string $request, array $enabled, int $max = 4): ar
   return array_slice(array_keys($scores), 0, max(0, min(4, $max)));
 }
 
+/** The optional skills, all of them, in catalog order. */
+function coreui_skills_optional_ids(): array {
+  return array_values(array_diff(array_keys(coreui_skills_catalog()), coreui_skills_required_ids()));
+}
+
+/**
+ * Mara's skill library (pure): every optional skill not loaded yet, sized to
+ * the context window. 'full' adds the short description, 'titles' the title,
+ * 'ids' only the ids for a 4096 window.
+ */
+function coreui_skills_index(array $loaded, string $size = 'full'): string {
+  $catalog = coreui_skills_catalog();
+  $lines = [];
+  foreach (coreui_skills_optional_ids() as $id) {
+    if (in_array($id, $loaded, true)) continue;
+    $lines[] = match ($size) {
+      'ids' => $id,
+      'titles' => $id . ' (' . (string)$catalog[$id]['title'] . ')',
+      default => '- ' . $id . ': ' . (string)$catalog[$id]['description'],
+    };
+  }
+  if ($lines === []) return '';
+  $list = $size === 'full' ? implode("\n", $lines) : implode(', ', $lines);
+  return "[SKILL-BIBLIOTHEK: Arbeitsanleitungen, die du bei Bedarf selbst laedst. Passt eine davon zu deiner Aufgabe, "
+    . "antworte zuerst NUR mit [SKILL: kennung]; danach bekommst du die Anleitung und arbeitest weiter. Hoechstens zwei "
+    . "Skills auf einmal ([SKILL: a, b]). Fuer Smalltalk, Meinungen und einfache Fragen brauchst du keinen."
+    . ($loaded !== [] ? ' Schon geladen: ' . implode(', ', $loaded) . '.' : '') . "]\n"
+    . $list . "\n[ENDE SKILL-BIBLIOTHEK]\n\n";
+}
+
+/** Ids from [SKILL: a, b] in a reply (pure), or null. Code blocks do not count. */
+function coreui_skills_extract_marker(string $reply): ?string {
+  $s = (string)preg_replace('~```[\\s\\S]*?```~u', '', $reply);
+  if (preg_match('~\\A\\s*`(\\[SKILL:[^`\\]]+\\])`\\s*\\z~iu', $s, $sole) === 1) $s = $sole[1];
+  $s = (string)preg_replace('~`[^`\\r\\n]*`~u', '', $s);
+  if (preg_match('~\\[SKILL:\\s*([a-z0-9][a-z0-9 ,\\-]{0,140})\\]~iu', $s, $m) !== 1) return null;
+  $ids = trim(strtolower($m[1]));
+  return $ids !== '' ? $ids : null;
+}
+
+/**
+ * Result of [SKILL: ...] for Mara's next step. Up to two skills join the
+ * trusted skill block at the top of her prompt (instructions she follows),
+ * never the step results (data she must not obey); the step only reports.
+ */
+function coreui_skills_tool_result(string $input): string {
+  $catalog = coreui_skills_catalog();
+  $loaded = (array)($GLOBALS['COREUI_SKILLS_LOADED'] ?? []);
+  $added = [];
+  $notes = [];
+  $unknown = false;
+  $ids = array_slice(array_values(array_unique(array_filter(array_map('trim', explode(',', strtolower($input)))))), 0, 2);
+  foreach ($ids as $id) {
+    if (!isset($catalog[$id])) { $notes[] = 'Einen Skill "' . $id . '" gibt es nicht.'; $unknown = true; continue; }
+    if (($catalog[$id]['required'] ?? false) === true || in_array($id, $loaded, true)) {
+      $notes[] = 'Der Skill "' . $id . '" ist schon geladen, er steht oben bei deinen Skills.';
+      continue;
+    }
+    $loaded[] = $id;
+    $added[] = $id . ' (' . (string)$catalog[$id]['title'] . ')';
+  }
+  $GLOBALS['COREUI_SKILLS_LOADED'] = $loaded;
+  coreui_skills_compose();
+  if ($added === []) {
+    $rest = array_values(array_diff(coreui_skills_optional_ids(), $loaded));
+    return trim(implode(' ', $notes) . ($unknown && $rest !== [] ? ' Verfuegbar sind: ' . implode(', ', $rest) . '.' : ''));
+  }
+  return trim(implode(' ', $notes) . ' Geladen: ' . implode(', ', $added) . '. Die Anleitung steht jetzt oben bei '
+    . 'deinen COREUI SKILLS; folge ihr bei deiner Antwort.');
+}
+
+/**
+ * Builds the skill block of this turn from its parts: the required skills,
+ * every loaded optional skill and the library of the rest (if offered).
+ */
+function coreui_skills_compose(): void {
+  $loaded = (array)($GLOBALS['COREUI_SKILLS_LOADED'] ?? []);
+  $optional = '';
+  if ($loaded !== []) {
+    $optional = "\n\n[COREUI SKILLS: aufgabenbezogene Arbeitsanleitungen. Nutzerauftrag und vorhandenes Werkzeugprotokoll gelten weiterhin. Keine neuen Werkzeuge oder Berechtigungen. Tests und Dateien nur als erstellt bestaetigen, wenn tatsaechlich bestaetigt.]\n";
+    foreach ($loaded as $id) $optional .= coreui_skills_body($id) . "\n\n";
+    $optional .= "[ENDE COREUI SKILLS]\n\n";
+  }
+  $size = (string)($GLOBALS['COREUI_SKILLS_INDEX_SIZE'] ?? '');
+  $index = $size !== '' ? coreui_skills_index($loaded, $size) : '';
+  $GLOBALS['COREUI_SKILLS_INDEX_BLOCK'] = $index;
+  $GLOBALS['COREUI_SKILLS_BLOCK'] = (string)($GLOBALS['COREUI_REQUIRED_SKILLS_BLOCK'] ?? '') . $optional . $index;
+}
+
 function coreui_skills_body(string $id): string {
   if (!isset(coreui_skills_catalog()[$id])) return '';
   $raw = (string)file_get_contents(__DIR__ . '/../skills/' . $id . '/SKILL.md');
@@ -106,43 +147,50 @@ function coreui_skills_body(string $id): string {
   return trim($match[1]);
 }
 
-function coreui_skills_prepare(PDO $pdo, int $uid, string $request, string $channel = 'console',
-                               int $maxOptional = 4): void {
+function coreui_skills_prepare(PDO $pdo, string $request, string $channel = 'console', int $maxOptional = 4): void {
   // Reset all in-memory context before selecting anything for this turn.
   $GLOBALS['COREUI_SKILLS_BLOCK'] = '';
   $GLOBALS['COREUI_REQUIRED_SKILLS_BLOCK'] = '';
+  $GLOBALS['COREUI_SKILLS_INDEX_BLOCK'] = '';
+  $GLOBALS['COREUI_SKILLS_INDEX_SIZE'] = '';
+  $GLOBALS['COREUI_SKILLS_LOADED'] = [];
   // Game E.M.B.E.R. shares parts of the backend but must not inherit
-  // Mara/CoreAI's required private-console operating contract.
-  $required = $channel === 'console' ? coreui_skills_required_ids() : [];
-  $mandatory = '';
-  if ($required) {
-    $mandatory = "\n\n[COREAI KERN-SKILLS: verpflichtende Arbeitsanleitungen aus dem vertrauenswuerdigen Repository. Keine neuen Werkzeuge, Berechtigungen oder Ausgabe-Limits. Das bestehende Werkzeugprotokoll und die Benutzerfreigabe haben Vorrang.]\n";
-    foreach ($required as $id) {
-      $mandatory .= coreui_skills_body($id) . "\n\n";
-      if (function_exists('coreui_work_record')) {
-        coreui_work_record($pdo, 'tool', 'info', 'Skill geladen: ' . $id, ['source'=>$id]);
-      }
+  // Mara/CoreAI's private-console skills.
+  if ($channel !== 'console') return;
+  $mandatory = "\n\n[COREAI KERN-SKILLS: verpflichtende Arbeitsanleitungen aus dem vertrauenswuerdigen Repository. Keine neuen Werkzeuge, Berechtigungen oder Ausgabe-Limits. Das bestehende Werkzeugprotokoll und die Benutzerfreigabe haben Vorrang.]\n";
+  foreach (coreui_skills_required_ids() as $id) {
+    $mandatory .= coreui_skills_body($id) . "\n\n";
+    if (function_exists('coreui_work_record')) {
+      coreui_work_record($pdo, 'tool', 'info', 'Skill geladen: ' . $id, ['source'=>$id]);
     }
-    $mandatory .= "[ENDE COREAI KERN-SKILLS]\n\n";
   }
+  $mandatory .= "[ENDE COREAI KERN-SKILLS]\n\n";
   $GLOBALS['COREUI_REQUIRED_SKILLS_BLOCK'] = $mandatory;
 
-  // Keep the four optional slots independent from the mandatory base skill.
-  // A small local context window gets fewer optional packages, never zero
-  // required ones; the Werkzeuge core skill is loaded above in every case.
-  $selected = coreui_skills_select($request, coreui_skills_load($pdo, $uid), $maxOptional);
-  $optional = '';
-  if ($selected) {
-    $optional = "\n\n[COREUI SKILLS: aufgabenbezogene Arbeitsanleitungen. Nutzerauftrag und vorhandenes Werkzeugprotokoll gelten weiterhin. Keine neuen Werkzeuge oder Berechtigungen. Tests und Dateien nur als erstellt bestaetigen, wenn tatsaechlich bestaetigt.]\n";
-    foreach ($selected as $id) {
-      $optional .= coreui_skills_body($id) . "\n\n";
-      if (function_exists('coreui_work_record')) {
-        coreui_work_record($pdo, 'tool', 'info', 'Skill geladen: ' . $id, ['source'=>$id]);
-      }
+  // The obvious skills come right away (no extra model call on a slow local
+  // Core). A small window gets fewer of them and a shorter library, never
+  // fewer required ones.
+  $selected = coreui_skills_select($request, $maxOptional);
+  foreach ($selected as $id) {
+    if (function_exists('coreui_work_record')) {
+      coreui_work_record($pdo, 'tool', 'info', 'Skill geladen: ' . $id, ['source'=>$id]);
     }
-    $optional .= "[ENDE COREUI SKILLS]\n\n";
   }
-  $GLOBALS['COREUI_SKILLS_BLOCK'] = $mandatory . $optional;
+  $GLOBALS['COREUI_SKILLS_LOADED'] = $selected;
+  $GLOBALS['COREUI_SKILLS_INDEX_SIZE'] = $maxOptional >= 4 ? 'full' : ($maxOptional >= 2 ? 'titles' : 'ids');
+  coreui_skills_compose();
+}
+
+/** Whether Mara was offered the library in this turn (and may load from it). */
+function coreui_skills_index_active(): bool {
+  return (string)($GLOBALS['COREUI_SKILLS_INDEX_BLOCK'] ?? '') !== '';
+}
+
+/** A turn without the work loop (file tasks) cannot load skills: drop the library. */
+function coreui_skills_drop_index(): void {
+  if (!coreui_skills_index_active()) return;
+  $GLOBALS['COREUI_SKILLS_INDEX_SIZE'] = '';
+  coreui_skills_compose();
 }
 
 function coreui_skills_augment(string $prompt, bool $includeOptional = true): string {

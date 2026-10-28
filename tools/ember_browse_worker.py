@@ -645,7 +645,7 @@ def report_prompt(goal, summary, sources, name, console, notes=None):
     )
 
 
-TOOL_MARKER_RE = re.compile(r"\[PY\][\s\S]*?\[/PY\]|\[(?:WEB|BROWSE|ARCHIV):[^\]]*\]|\[/?PY\]", re.I)
+TOOL_MARKER_RE = re.compile(r"\[PY\][\s\S]*?\[/PY\]|\[(?:WEB|BROWSE|ARCHIV|SKILL):[^\]]*\]|\[/?PY\]", re.I)
 
 
 def fallback_report(summary, notes, sources, console):

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.79 browser with several sources, captcha, CoreAI roles, no AFK.
+# CoreAI: TCI Interface 0.5.80 skills as a library: Mara picks and loads them herself.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -73,9 +73,7 @@ UI_FILES=(
   api/account_security.php
   api/account_export.php
   api/skills.php
-  api/user_skills.php
   skills/catalog.json
-  js/skills-settings.js
   scripts/skills-selftest.php
   database/migrations/014_user_skills.sql
   api/console_attachment_store.php

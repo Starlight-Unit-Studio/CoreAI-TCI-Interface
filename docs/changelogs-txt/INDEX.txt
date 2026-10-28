@@ -124,3 +124,4 @@ Jede Version liegt als eigenstaendige UTF-8-TXT-Datei vor.
 * CHANGELOG_0_5_77.txt
 * CHANGELOG_0_5_78.txt
 * CHANGELOG_0_5_79.txt
+* CHANGELOG_0_5_80.txt

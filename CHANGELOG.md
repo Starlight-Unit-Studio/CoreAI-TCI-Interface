@@ -2,6 +2,14 @@
 
 CoreAI: TCI Interface gehoert zur Quantum-Softwarefamilie und wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert. Historische Changelogs dokumentieren die frueheren Produktnamen unveraendert.
 
+## 0.5.80 - 28.10.2026
+
+- **Skills als intelligentes System:** Mara hat jetzt immer alle 33 Skills und waehlt selbst, wie man es von Claude oder GPT kennt. Offensichtlich passende Skills laedt der Server weiterhin vorab (spart dem lokalen Core einen Rechenschritt), alle uebrigen stehen als kurze Skill-Bibliothek in ihrem Prompt. Mit `[SKILL: kennung]` (hoechstens zwei auf einmal) laedt sie einen nach, als Schritt ihrer Arbeitsschleife; im Arbeitsweg steht dann "Schritt n: Skill geladen".
+- **Anleitung bleibt Anleitung:** Ein nachgeladener Skill kommt in den vertrauenswuerdigen Skill-Block oben im Prompt, nicht zu den Werkzeugergebnissen, deren Anweisungen Mara nicht befolgen darf. Der Schritt meldet nur "Geladen", die Bibliothek fuehrt den Skill danach als schon geladen.
+- **Passend zum Kontextfenster:** Die Bibliothek zeigt bei grossem Fenster die Beschreibungen, bis 8192 Tokens die Titel und bis 4096 nur die Kennungen. Datei-Auftraege laufen ohne Arbeitsschleife; dort bleibt es bei der Vorauswahl, die Liste entfaellt. Im Game-Kanal gibt es keine Skills.
+- **Keine Skill-Schalter mehr:** Der Tab "Skills" in den Einstellungen, `api/user_skills.php` und `js/skills-settings.js` sind entfernt (die Tabelle aus Migration 014 bleibt unbenutzt liegen). `/skill kennung` und `$kennung` geben einen Skill weiterhin vor. Die Infokaesten zeigen "N weitere waehlt Mara selbst". `[SKILL: ...]` wird ueberall aus sichtbarem Text entfernt (Server, Chat, Browser-Bericht, Komprimieren).
+- Tests: `skills-selftest.php` neu (Vorauswahl, Bibliothek je Fenster, Marker auch nicht aus Code, Nachladen in den Block, echter Durchlauf der Arbeitsschleife, Datei-Auftrag ohne Bibliothek, Game-Kanal, keine Schalter); `skills-ui-selftest.cjs` entfaellt mit den Schaltern; Insights- und Einstellungs-Tests angepasst.
+
 ## 0.5.79 - 28.10.2026
 
 - **Browserfenster kompakt:** Das Live-Fenster ist im Chat hoechstens 600 Pixel breit (eine spaetere Regel gab Mara-Nachrichten die volle Spaltenbreite, das Fenster war dadurch riesig). Der Knopf ⤢ in der Kopfzeile vergroessert es auf volle Breite und wieder zurueck.

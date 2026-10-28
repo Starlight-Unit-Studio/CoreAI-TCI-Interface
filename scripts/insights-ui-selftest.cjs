@@ -65,7 +65,7 @@ const snapshot = {
   usage:{prompt_tokens:2833, output_tokens:1373, context_tokens:131072},
   tools:[{id:'web',label:'WEB',detail:'SearXNG-Suche',on:true},
     {id:'browse',label:'BROWSE',detail:'Browser-Recherche',on:false}],
-  skills:{required:['werkzeuge'], optional_enabled:2},
+  skills:{required:['werkzeuge'], library:32},
   plan:{version:3, title:'Private Homepage', draft:false, size_bytes:7120,
     name:'projektplan-v3.md', download_url:'api/console_plan.php?id=abc'},
   files:[{name:'projekt.zip', size_bytes:15260, download_url:'api/console_artifact.php?id=1'},
@@ -93,7 +93,7 @@ vm.runInNewContext(source, sandbox);
     'Kontext box shows the share of the window');
   assert(text.includes('Eingabe2.833') && text.includes('Ausgabe1.373'), 'Kontext legend counts');
   assert(text.includes('WEBSearXNG-Suche') && text.includes('BROWSEaus'), 'tool states are explicit');
-  assert(text.includes('Skills: Werkzeuge (Pflicht) + 2 optionale'));
+  assert(text.includes('Skills: Werkzeuge (Pflicht), 32 weitere wählt Mara selbst'));
   const links = aside.all('insight-file-name');
   const plan = links.find(link => link.textContent === 'projektplan-v3.md');
   assert.equal(plan.href, 'api/console_plan.php?id=abc', 'plan download link');

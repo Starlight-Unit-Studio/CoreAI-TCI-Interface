@@ -346,7 +346,7 @@ function ember_extract_explicit_reply_candidate(string $source): string {
  */
 function ember_strip_stray_tool_markers(string $out): string {
   return (string)preg_replace_callback(
-    '~(```[\s\S]*?```|`[^`\r\n]*`)|\[WEB:\s*.*?\]|\[BROWSE:\s*.*?\]|\[ARCHIV:\s*.*?\]|\[/?PY\]~iu',
+    '~(```[\s\S]*?```|`[^`\r\n]*`)|\[WEB:\s*.*?\]|\[BROWSE:\s*.*?\]|\[ARCHIV:\s*.*?\]|\[SKILL:\s*.*?\]|\[/?PY\]~iu',
     static fn(array $m): string => ($m[1] ?? '') !== '' ? $m[1] : '',
     $out);
 }
@@ -4847,7 +4847,7 @@ function ember_build_chat_prompt(
     $excludeReplyToId,
     $profile['line']
   );
-  coreui_skills_prepare($pdo, $uid, $userMsg, $channel, $profile['skills']);
+  coreui_skills_prepare($pdo, $userMsg, $channel, $profile['skills']);
   try {
     if ($uid > 0 && coreui_profile_schema_ready($pdo)) {
       $profileRow = coreui_profile_load($pdo, $uid);
@@ -4984,6 +4984,7 @@ function ember_agent_run_tool(PDO $pdo, array $tool, string $channel, int $uid, 
     return $block !== '' ? $block : 'Die Websuche brachte keine Treffer, oder der Suchdienst war gerade nicht erreichbar.';
   }
   if ($tool['tool'] === 'archive') return coreui_compact_archive_block($uid, $sessionId, (string)$tool['input']);
+  if ($tool['tool'] === 'skill') return coreui_skills_tool_result((string)$tool['input']);
   if ($tool['tool'] === 'python') {
     $code = (string)$tool['input'];
     if (ember_py_code_writes_output($code)) {
@@ -5001,6 +5002,8 @@ function ember_agent_allowed_tools(int $uid, string $sessionId): array {
   if (ember_browse_enabled()) $tools[] = 'browse';
   if (ember_py_enabled()) $tools[] = 'python';
   if ($uid > 0 && $sessionId !== '' && is_file(coreui_compact_archive_path($uid, $sessionId))) $tools[] = 'archive';
+  // 0.5.80: the skill library is offered in the prompt of this turn.
+  if (coreui_skills_index_active()) $tools[] = 'skill';
   return $tools;
 }
 
@@ -5096,7 +5099,7 @@ function ember_generate_reply(
     $excludeReplyToId,
     $promptProfile['line']
   );
-  coreui_skills_prepare($pdo, $uid, $userMsg, $channel, $promptProfile['skills']);
+  coreui_skills_prepare($pdo, $userMsg, $channel, $promptProfile['skills']);
   try {
     if ($uid > 0 && coreui_profile_schema_ready($pdo)) {
       $profile = coreui_profile_load($pdo, $uid);
@@ -5371,6 +5374,8 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
     && ($nativeSourceProject || ember_console_file_tool_is_local($primaryModel)
       || $requestedSourceProject !== null);
   $fileToolThink = $fileTask ? ember_console_file_tool_think($primaryModel) : null;
+  // A file task has no work loop, so Mara cannot load skills from the library there.
+  if ($fileTask) coreui_skills_drop_index();
   if ($nativeSourceProject) {
     // Do not fall back to [PY] or free-form text if the trusted static
     // project manifest is not valid. No 'I will start soon' response.
@@ -6095,7 +6100,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   $agentLoopHandled = false;
   if ($channel === 'console' && $imageUrl === null && empty($fileTask) && is_string($out)) {
     $loopAllowed = ember_agent_allowed_tools($consoleUid, (string)$consoleSessionId);
-    $loopTool = coreui_agent_next_tool($out, array_values(array_intersect($loopAllowed, ['web', 'archive'])));
+    $loopTool = coreui_agent_next_tool($out, array_values(array_intersect($loopAllowed, ['web', 'archive', 'skill'])));
     if ($loopTool !== null) {
       $agentLoopHandled = true;
       $uBase = $u;
