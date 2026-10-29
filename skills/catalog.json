@@ -25,7 +25,7 @@
     "id": "project-planning",
     "title": "Projektplanung",
     "category": "Arbeitsweise",
-    "description": "Projektplanung und Abnahme.",
+    "description": "Projekte planen.",
     "triggers": [
       "projekt",
       "project",
@@ -46,7 +46,7 @@
     "id": "code-editing",
     "title": "Gezielte Codeänderungen",
     "category": "Arbeitsweise",
-    "description": "Code ändern und prüfen.",
+    "description": "Code editieren.",
     "triggers": [
       "refactor",
       "refactoring",
@@ -67,7 +67,7 @@
     "id": "debugging",
     "title": "Fehleranalyse",
     "category": "Arbeitsweise",
-    "description": "Bugs finden und beheben.",
+    "description": "Bugs beheben.",
     "triggers": [
       "bug",
       "debug",
@@ -88,7 +88,7 @@
     "id": "html-semantics",
     "title": "HTML und Formulare",
     "category": "Frontend",
-    "description": "HTML-Struktur und Formulare.",
+    "description": "HTML/Formulare.",
     "triggers": [
       "html",
       "formular",
@@ -107,7 +107,7 @@
     "id": "responsive-css",
     "title": "Responsives CSS",
     "category": "Frontend",
-    "description": "CSS-Layouts mobil machen.",
+    "description": "Mobile CSS.",
     "triggers": [
       "css",
       "responsive",
@@ -126,7 +126,7 @@
     "id": "javascript",
     "title": "JavaScript",
     "category": "Frontend",
-    "description": "JS, Events und DOM.",
+    "description": "JavaScript/DOM.",
     "triggers": [
       "javascript",
       "js",
@@ -143,7 +143,7 @@
     "id": "typescript",
     "title": "TypeScript",
     "category": "Frontend",
-    "description": "TS-Typen und Verträge.",
+    "description": "TypeScript.",
     "triggers": [
       "typescript",
       "ts",
@@ -160,7 +160,7 @@
     "id": "react",
     "title": "React-Komponenten",
     "category": "Frontend",
-    "description": "React-State und Komponenten.",
+    "description": "React-State.",
     "triggers": [
       "react",
       "jsx",
@@ -176,7 +176,7 @@
     "id": "vue",
     "title": "Vue-Komponenten",
     "category": "Frontend",
-    "description": "Vue und Reaktivität.",
+    "description": "Vue-State.",
     "triggers": [
       "vue",
       "vuejs",
@@ -192,7 +192,7 @@
     "id": "nextjs",
     "title": "Next.js",
     "category": "Frontend",
-    "description": "Next.js Server und Client.",
+    "description": "Next.js.",
     "triggers": [
       "nextjs",
       "next.js",
@@ -208,7 +208,7 @@
     "id": "accessibility",
     "title": "Barrierefreiheit",
     "category": "Qualität",
-    "description": "Zugängliche Bedienung.",
+    "description": "Barrierefreiheit.",
     "triggers": [
       "barrierefrei",
       "accessibility",
@@ -226,7 +226,7 @@
     "id": "assets",
     "title": "Bilder und Projektressourcen",
     "category": "Frontend",
-    "description": "Bilder und Asset-Pfade.",
+    "description": "Assets prüfen.",
     "triggers": [
       "bilder",
       "images",
@@ -245,7 +245,7 @@
     "id": "fetch-api",
     "title": "HTTP-Client und Fetch",
     "category": "Backend",
-    "description": "Fetch und HTTP-Fehler.",
+    "description": "Fetch/HTTP.",
     "triggers": [
       "fetch",
       "http client",
@@ -263,7 +263,7 @@
     "id": "rest-api",
     "title": "REST-Endpunkte",
     "category": "Backend",
-    "description": "REST-Endpunkte entwickeln.",
+    "description": "REST-APIs.",
     "triggers": [
       "rest",
       "endpoint",
@@ -281,7 +281,7 @@
     "id": "php-pdo",
     "title": "PHP und PDO",
     "category": "Backend",
-    "description": "PHP, PDO und Datenbanken.",
+    "description": "PHP und PDO.",
     "triggers": [
       "php",
       "pdo",
@@ -297,7 +297,7 @@
     "id": "python",
     "title": "Python-Programme",
     "category": "Backend",
-    "description": "Python entwickeln und prüfen.",
+    "description": "Python-Code.",
     "triggers": [
       "python",
       "py",
@@ -314,7 +314,7 @@
     "id": "sql-security",
     "title": "SQL-Sicherheit",
     "category": "Sicherheit",
-    "description": "SQL-Injection vermeiden.",
+    "description": "SQL schützen.",
     "triggers": [
       "sql",
       "sql injection",
@@ -331,7 +331,7 @@
     "id": "xss-prevention",
     "title": "XSS-Schutz",
     "category": "Sicherheit",
-    "description": "XSS-Schutz für HTML.",
+    "description": "XSS verhindern.",
     "triggers": [
       "xss",
       "innerhtml",
@@ -348,7 +348,7 @@
     "id": "authorization",
     "title": "Konten und Zugriffsrechte",
     "category": "Sicherheit",
-    "description": "Login und Rollen absichern.",
+    "description": "Zugriff/Rechte.",
     "triggers": [
       "authorization",
       "berechtigung",
@@ -367,7 +367,7 @@
     "id": "browser-testing",
     "title": "Browser-Tests",
     "category": "Qualität",
-    "description": "Browser-Tests durchführen.",
+    "description": "Browser testen.",
     "triggers": [
       "playwright",
       "browser test",
@@ -384,7 +384,7 @@
     "id": "unit-testing",
     "title": "Unit- und Regressionstests",
     "category": "Qualität",
-    "description": "Unit- und Regressionstests.",
+    "description": "Unit-Tests.",
     "triggers": [
       "pytest",
       "unittest",
@@ -402,7 +402,7 @@
     "id": "docker",
     "title": "Docker und Container",
     "category": "Betrieb",
-    "description": "Docker-Builds und Container.",
+    "description": "Docker.",
     "triggers": [
       "docker",
       "dockerfile",
@@ -419,7 +419,7 @@
     "id": "git-review",
     "title": "Git und Code-Review",
     "category": "Arbeitsweise",
-    "description": "Git-Diffs und PR-Reviews.",
+    "description": "Git-Reviews.",
     "triggers": [
       "git",
       "diff",
@@ -438,7 +438,7 @@
     "id": "zip-delivery",
     "title": "ZIP und Dateiauslieferung",
     "category": "Dateien",
-    "description": "ZIPs erstellen und prüfen.",
+    "description": "ZIP ausliefern.",
     "triggers": [
       "zip",
       "download",
@@ -456,7 +456,7 @@
     "id": "csv-data",
     "title": "CSV und Datenimport",
     "category": "Dateien",
-    "description": "CSV importieren/exportieren.",
+    "description": "CSV-Daten.",
     "triggers": [
       "csv",
       "datenimport",
@@ -473,7 +473,7 @@
     "id": "async-jobs",
     "title": "Asynchrone Jobs",
     "category": "Backend",
-    "description": "Jobs, Queues und Abbruch.",
+    "description": "Jobs/Queues.",
     "triggers": [
       "asyncio",
       "async",
@@ -491,7 +491,7 @@
     "id": "sse-streaming",
     "title": "SSE und Streaming",
     "category": "Backend",
-    "description": "SSE und Wiederverbindung.",
+    "description": "SSE-Streams.",
     "triggers": [
       "sse",
       "streaming",
@@ -508,7 +508,7 @@
     "id": "observability",
     "title": "Logs und Diagnose",
     "category": "Betrieb",
-    "description": "Logs und Runs prüfen.",
+    "description": "Logs prüfen.",
     "triggers": [
       "logging",
       "logs",
@@ -526,7 +526,7 @@
     "id": "canvas-games",
     "title": "Canvas und kleine Spiele",
     "category": "Frontend",
-    "description": "Canvas und kleine Spiele.",
+    "description": "Canvas-Spiele.",
     "triggers": [
       "canvas",
       "spiel",
@@ -544,7 +544,7 @@
     "id": "release-handover",
     "title": "Release und Übergabe",
     "category": "Betrieb",
-    "description": "Releases dokumentieren.",
+    "description": "Releases.",
     "triggers": [
       "release",
       "version",
@@ -563,7 +563,7 @@
     "id": "ollama-integration",
     "title": "Ollama und Modellanbindung",
     "category": "Backend",
-    "description": "Ollama, Gemma und Modelfile.",
+    "description": "Ollama/Gemma.",
     "triggers": [
       "ollama",
       "gemma",
@@ -581,7 +581,7 @@
     "id": "skill-authoring",
     "title": "Eigene CoreUI-Skills",
     "category": "Arbeitsweise",
-    "description": "CoreAI-Skills entwickeln.",
+    "description": "CoreAI-Skills.",
     "triggers": [
       "skill",
       "skills",
@@ -598,7 +598,7 @@
     "id": "web-research",
     "title": "Webrecherche und Quellen",
     "category": "Recherche",
-    "description": "Webrecherche mit Quellen.",
+    "description": "Webquellen.",
     "triggers": [
       "recherche",
       "recherchiere",
@@ -616,7 +616,7 @@
     "id": "fact-checking",
     "title": "Faktencheck",
     "category": "Recherche",
-    "description": "Behauptungen verifizieren.",
+    "description": "Fakten prüfen.",
     "triggers": [
       "faktencheck",
       "fact check",
@@ -635,7 +635,7 @@
     "id": "rag-knowledge",
     "title": "Privates Wissen und RAG-Lite",
     "category": "Wissen",
-    "description": "Privates Wissen abfragen.",
+    "description": "RAG-Wissen.",
     "triggers": [
       "rag",
       "wissensbasis",
@@ -654,7 +654,7 @@
     "id": "document-analysis",
     "title": "Dokumente und PDF auswerten",
     "category": "Dateien",
-    "description": "Dokumente und PDF auswerten.",
+    "description": "Dokumente lesen.",
     "triggers": [
       "pdf",
       "dokument analysieren",
@@ -673,7 +673,7 @@
     "id": "tabular-analysis",
     "title": "Tabellen und Kennzahlen",
     "category": "Daten",
-    "description": "Tabellen und Kennzahlen.",
+    "description": "Tabellen prüfen.",
     "triggers": [
       "tabellenanalyse",
       "tabelle auswerten",
@@ -692,7 +692,7 @@
     "id": "data-visualization",
     "title": "Diagramme und Datenvisualisierung",
     "category": "Daten",
-    "description": "Diagramme aus Daten bauen.",
+    "description": "Datenplots.",
     "triggers": [
       "diagramm",
       "datenvisualisierung",
@@ -711,7 +711,7 @@
     "id": "json-yaml",
     "title": "JSON und YAML",
     "category": "Backend",
-    "description": "JSON/YAML-Konfiguration.",
+    "description": "JSON/YAML.",
     "triggers": [
       "json",
       "yaml",
@@ -730,7 +730,7 @@
     "id": "linux-shell",
     "title": "Linux und Shell-Kommandos",
     "category": "Betrieb",
-    "description": "Shell und Serverdiagnose.",
+    "description": "Linux/Shell.",
     "triggers": [
       "shell",
       "bash",
@@ -749,7 +749,7 @@
     "id": "web-security",
     "title": "Websicherheit",
     "category": "Sicherheit",
-    "description": "CSRF, SSRF und Secrets.",
+    "description": "Websicherheit.",
     "triggers": [
       "csrf",
       "ssrf",
@@ -768,7 +768,7 @@
     "id": "ui-ux",
     "title": "UI und Nutzerführung",
     "category": "Frontend",
-    "description": "Nutzerführung und UI.",
+    "description": "UX/Bedienung.",
     "triggers": [
       "ux",
       "ui",
@@ -787,7 +787,7 @@
     "id": "technical-writing",
     "title": "Technische Dokumentation",
     "category": "Schreiben",
-    "description": "Technische Doku schreiben.",
+    "description": "Technische Doku.",
     "triggers": [
       "readme",
       "technische dokumentation",
@@ -806,7 +806,7 @@
     "id": "creative-writing",
     "title": "Kreatives Schreiben und Lore",
     "category": "Schreiben",
-    "description": "Romane, Lore und Dialoge.",
+    "description": "Romane/Lore.",
     "triggers": [
       "roman",
       "kapitel",
@@ -826,7 +826,7 @@
     "id": "translation",
     "title": "Übersetzen und Lokalisieren",
     "category": "Schreiben",
-    "description": "Übersetzen und lokalisieren.",
+    "description": "Übersetzungen.",
     "triggers": [
       "übersetze",
       "uebersetze",
@@ -845,7 +845,7 @@
     "id": "backup-restore",
     "title": "Backup und Wiederherstellung",
     "category": "Betrieb",
-    "description": "Backup und Recovery.",
+    "description": "Backups.",
     "triggers": [
       "backup",
       "restore",
@@ -864,7 +864,7 @@
     "id": "privacy-memory",
     "title": "Privatsphäre und Erinnerung",
     "category": "Sicherheit",
-    "description": "Memory und Privatsphäre.",
+    "description": "Privacy/Memory.",
     "triggers": [
       "memory",
       "gedächtnis",
@@ -883,7 +883,7 @@
     "id": "media-inspection",
     "title": "Bild- und Videoanalyse",
     "category": "Medien",
-    "description": "Bilder, Video, Screenshots.",
+    "description": "Medien prüfen.",
     "triggers": [
       "bildanalyse",
       "videoanalyse",
@@ -902,7 +902,7 @@
     "id": "browser-actions",
     "title": "Browseraktionen und Formulare",
     "category": "Browser",
-    "description": "Formulare im Browser bedienen.",
+    "description": "Browseraktionen.",
     "triggers": [
       "formular ausfüllen",
       "formular ausfuellen",
@@ -921,7 +921,7 @@
     "id": "docx",
     "title": "Word und DOCX",
     "category": "Office",
-    "description": "DOCX bearbeiten.",
+    "description": "DOCX.",
     "triggers": [
       "docx",
       "dotx",
@@ -940,7 +940,7 @@
     "id": "pdf-workflows",
     "title": "PDF-Bearbeitung und Formulare",
     "category": "Office",
-    "description": "PDF-Seiten verwalten.",
+    "description": "PDF-Werkzeuge.",
     "triggers": [
       "pdf zusammenfügen",
       "pdf verbinden",
@@ -961,7 +961,7 @@
     "id": "pptx",
     "title": "PowerPoint und PPTX",
     "category": "Office",
-    "description": "PPTX erstellen.",
+    "description": "PPTX.",
     "triggers": [
       "pptx",
       "potx",
@@ -980,7 +980,7 @@
     "id": "xlsx",
     "title": "Excel und XLSX",
     "category": "Office",
-    "description": "Excel bearbeiten.",
+    "description": "XLSX.",
     "triggers": [
       "xlsx",
       "xlsm",
@@ -999,7 +999,7 @@
     "id": "brand-guidelines",
     "title": "Markenrichtlinien",
     "category": "Design",
-    "description": "Markenrichtlinien.",
+    "description": "Markenstil.",
     "triggers": [
       "brand guidelines",
       "markenrichtlinien",
@@ -1018,7 +1018,7 @@
     "id": "web-artifacts",
     "title": "Interaktive Web-Artefakte",
     "category": "Frontend",
-    "description": "Web-Artefakte entwickeln.",
+    "description": "Webartefakte.",
     "triggers": [
       "web artifact",
       "web-artifact",
@@ -1037,7 +1037,7 @@
     "id": "llm-api",
     "title": "LLM-Provider-APIs",
     "category": "Backend",
-    "description": "LLM-Provider anbinden.",
+    "description": "LLM-API.",
     "triggers": [
       "llm api",
       "model api",
@@ -1058,7 +1058,7 @@
     "id": "mcp-builder",
     "title": "MCP-Server und Werkzeuge",
     "category": "Backend",
-    "description": "MCP-Server bauen.",
+    "description": "MCP-Server.",
     "triggers": [
       "mcp",
       "mcp server",
@@ -1077,7 +1077,7 @@
     "id": "algorithmic-art",
     "title": "Generative Codekunst",
     "category": "Design",
-    "description": "Generative Kunst.",
+    "description": "Codekunst.",
     "triggers": [
       "algorithmic art",
       "algorithmische kunst",
@@ -1096,7 +1096,7 @@
     "id": "canvas-design",
     "title": "Poster und Grafikdesign",
     "category": "Design",
-    "description": "Poster gestalten.",
+    "description": "Grafikdesign.",
     "triggers": [
       "poster",
       "plakat",
@@ -1115,7 +1115,7 @@
     "id": "gif-creator",
     "title": "Animierte GIFs",
     "category": "Medien",
-    "description": "Animierte GIFs optimieren.",
+    "description": "GIFs.",
     "triggers": [
       "gif",
       "animiertes gif",
@@ -1134,7 +1134,7 @@
     "id": "theme-factory",
     "title": "Design-Themes",
     "category": "Design",
-    "description": "Theming und Farben.",
+    "description": "Themes.",
     "triggers": [
       "theme",
       "theming",
@@ -1154,7 +1154,7 @@
     "id": "doc-coauthoring",
     "title": "Gemeinsames Dokumentenschreiben",
     "category": "Schreiben",
-    "description": "Dokumente co-schreiben.",
+    "description": "Gemeinsam schreiben.",
     "triggers": [
       "dokument gemeinsam",
       "gemeinsam schreiben",
@@ -1173,7 +1173,7 @@
     "id": "internal-comms",
     "title": "Interne Kommunikation",
     "category": "Schreiben",
-    "description": "Interne Mitteilungen.",
+    "description": "Mitteilungen.",
     "triggers": [
       "interne mitteilung",
       "internes memo",
@@ -1193,7 +1193,7 @@
     "id": "learning-design",
     "title": "Lernmaterial und Onboarding",
     "category": "Schreiben",
-    "description": "Lernpläne und Schulungen.",
+    "description": "Lernmaterial.",
     "triggers": [
       "lernplan",
       "onboarding material",
@@ -1213,7 +1213,7 @@
     "id": "reasoning-review",
     "title": "Kritische Ergebnisprüfung",
     "category": "Qualität",
-    "description": "Annahmen kritisch prüfen.",
+    "description": "Kritikcheck.",
     "triggers": [
       "argument prüfen",
       "denkfehler",
@@ -1233,7 +1233,7 @@
     "id": "agent-task-design",
     "title": "Agentenrollen und Aufgaben",
     "category": "Agenten",
-    "description": "Agentenaufgaben planen.",
+    "description": "Agentenaufgaben.",
     "triggers": [
       "agentenrolle",
       "agentenaufgabe",
@@ -1253,7 +1253,7 @@
     "id": "workflow-checkpoints",
     "title": "Workflows und Wiederaufnahme",
     "category": "Agenten",
-    "description": "Workflows fortsetzen planen.",
+    "description": "Checkpoints.",
     "triggers": [
       "workflow checkpoint",
       "checkpointing",
@@ -1273,7 +1273,7 @@
     "id": "pdf",
     "title": "PDF-Dokumente",
     "category": "Office",
-    "description": "PDF, OCR und Formulare.",
+    "description": "PDF/OCR.",
     "triggers": [
       "pdf",
       "pdf erstellen",
@@ -1293,7 +1293,7 @@
     "id": "frontend-design",
     "title": "Frontend-Design",
     "category": "Frontend",
-    "description": "Frontend gestalten.",
+    "description": "Frontenddesign.",
     "triggers": [
       "frontend design",
       "webdesign",
@@ -1311,7 +1311,7 @@
     "id": "web-artifacts-builder",
     "title": "Interaktive Web-Artefakte",
     "category": "Frontend",
-    "description": "Web-Artefakte bauen.",
+    "description": "Webapp-Builder.",
     "triggers": [
       "web artifacts",
       "web-artifacts-builder",
@@ -1329,7 +1329,7 @@
     "id": "claude-api",
     "title": "Claude-API",
     "category": "Backend",
-    "description": "Claude-SDK und API.",
+    "description": "Claude-API.",
     "triggers": [
       "claude api",
       "anthropic api",
@@ -1347,7 +1347,7 @@
     "id": "skill-creator",
     "title": "Erweiterte Skill-Erstellung",
     "category": "Arbeitsweise",
-    "description": "Skills entwickeln und prüfen.",
+    "description": "Skill-Pakete.",
     "triggers": [
       "skill-creator",
       "skill erstellen",
@@ -1366,7 +1366,7 @@
     "id": "webapp-testing",
     "title": "Webapp-Tests",
     "category": "Qualität",
-    "description": "Playwright Webtests.",
+    "description": "Playwright.",
     "triggers": [
       "webapp testing",
       "webapp-testing",
@@ -1385,7 +1385,7 @@
     "id": "slack-gif-creator",
     "title": "Slack- und Messenger-GIFs",
     "category": "Medien",
-    "description": "Slack-GIFs erstellen.",
+    "description": "Slack-GIFs.",
     "triggers": [
       "slack gif",
       "slack emoji",
@@ -1402,7 +1402,7 @@
     "id": "academy-guide",
     "title": "Academy-Lernpfade",
     "category": "Schreiben",
-    "description": "Academy-Lernpfade.",
+    "description": "Lernpfade.",
     "triggers": [
       "claude academy",
       "academy",
@@ -1420,7 +1420,7 @@
     "id": "discernment-nudge",
     "title": "Kritische Ergebnisprüfung",
     "category": "Qualität",
-    "description": "Entscheidungen prüfen.",
+    "description": "Reflexionshilfe.",
     "triggers": [
       "discernment",
       "entscheidungsprüfung",
@@ -1433,5 +1433,503 @@
     ],
     "reviewed": "2026-10-29",
     "version": "1.0.1"
+  },
+  {
+    "id": "legal-research",
+    "title": "Juristische Quellenrecherche",
+    "category": "Recht",
+    "description": "Rechtsrecherche.",
+    "triggers": [
+      "rechtsrecherche",
+      "gesetzeslage",
+      "rechtslage",
+      "rechtsquellen",
+      "gerichtsurteil",
+      "rechtsfrage",
+      "urteil recherchieren"
+    ],
+    "sources": [
+      "https://www.gesetze-im-internet.de/hinweise.html",
+      "https://www.recht.bund.de/",
+      "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "contract-review-summary",
+    "title": "Vertragsprüfung und Zusammenfassung",
+    "category": "Recht",
+    "description": "Vertragsprüfung.",
+    "triggers": [
+      "vertrag prüfen",
+      "vertragsprüfung",
+      "vertragsklausel",
+      "vertrag analysieren",
+      "contract review",
+      "vertragsrisiko",
+      "agb prüfen"
+    ],
+    "sources": [
+      "https://www.gesetze-im-internet.de/hinweise.html",
+      "https://www.recht.bund.de/",
+      "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "legal-memo-standard",
+    "title": "Juristisches Gutachten und Rechtsmemo",
+    "category": "Recht",
+    "description": "Rechtsmemo.",
+    "triggers": [
+      "rechtsmemo",
+      "juristisches memo",
+      "rechtliches gutachten",
+      "rechtsgutachten",
+      "juristische stellungnahme",
+      "legal memo"
+    ],
+    "sources": [
+      "https://www.gesetze-im-internet.de/hinweise.html",
+      "https://www.recht.bund.de/",
+      "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "policy-qa-from-knowledgebase",
+    "title": "Richtlinien- und Compliance-QA",
+    "category": "Recht",
+    "description": "Richtlinien-QA.",
+    "triggers": [
+      "policy qa",
+      "compliance richtlinie",
+      "interne richtlinie",
+      "policy prüfen",
+      "wissensbasis richtlinien",
+      "betriebsvereinbarung prüfen"
+    ],
+    "sources": [
+      "https://www.gesetze-im-internet.de/hinweise.html",
+      "https://www.recht.bund.de/",
+      "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "legal-drafting",
+    "title": "Juristische Schreiben und Schriftsätze",
+    "category": "Recht",
+    "description": "Rechtstexte entwerfen.",
+    "triggers": [
+      "widerspruch schreiben",
+      "rechtsschreiben",
+      "juristische formulierung",
+      "rechtsantrag",
+      "rechtstext verfassen",
+      "anwaltsschreiben",
+      "schriftsatz entwerfen"
+    ],
+    "sources": [
+      "https://www.gesetze-im-internet.de/hinweise.html",
+      "https://www.recht.bund.de/",
+      "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "legal-deadlines",
+    "title": "Rechtsfristen und Zustellung",
+    "category": "Recht",
+    "description": "Fristenprüfung.",
+    "triggers": [
+      "rechtsfrist",
+      "widerspruchsfrist",
+      "klagefrist",
+      "frist berechnen",
+      "zustellung",
+      "bekanntgabe",
+      "fristwahrung",
+      "rechtsmittelbelehrung"
+    ],
+    "sources": [
+      "https://www.gesetze-im-internet.de/hinweise.html",
+      "https://www.recht.bund.de/",
+      "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "administrative-law",
+    "title": "Verwaltungs- und Behördenrecht",
+    "category": "Recht",
+    "description": "Verwaltungsrecht.",
+    "triggers": [
+      "verwaltungsrecht",
+      "bescheid prüfen",
+      "behördenbescheid",
+      "verwaltungsakt",
+      "widerspruchsbescheid",
+      "vorgesetzte behörde"
+    ],
+    "sources": [
+      "https://www.gesetze-im-internet.de/hinweise.html",
+      "https://www.recht.bund.de/",
+      "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "social-law",
+    "title": "Sozialrecht und Leistungsbescheide",
+    "category": "Recht",
+    "description": "Sozialrecht.",
+    "triggers": [
+      "sozialrecht",
+      "sgb",
+      "jobcenter",
+      "grundsicherung",
+      "erwerbsminderung",
+      "bürgergeld",
+      "sozialamt",
+      "krankenversicherung bescheid"
+    ],
+    "sources": [
+      "https://www.gesetze-im-internet.de/hinweise.html",
+      "https://www.recht.bund.de/",
+      "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "tenancy-law",
+    "title": "Miet- und Wohnrecht",
+    "category": "Recht",
+    "description": "Mietrecht.",
+    "triggers": [
+      "mietrecht",
+      "mietvertrag",
+      "mieterhöhung",
+      "nebenkostenabrechnung",
+      "kaution",
+      "kündigung mietwohnung",
+      "wohnungsmangel",
+      "mieterschutz"
+    ],
+    "sources": [
+      "https://www.gesetze-im-internet.de/hinweise.html",
+      "https://www.recht.bund.de/",
+      "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "employment-law",
+    "title": "Arbeits- und Beschäftigungsrecht",
+    "category": "Recht",
+    "description": "Arbeitsrecht.",
+    "triggers": [
+      "arbeitsrecht",
+      "arbeitsvertrag",
+      "kündigung arbeit",
+      "arbeitszeugnis",
+      "urlaub anspruch",
+      "abmahnung",
+      "arbeitsgericht"
+    ],
+    "sources": [
+      "https://www.gesetze-im-internet.de/hinweise.html",
+      "https://www.recht.bund.de/",
+      "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "consumer-law",
+    "title": "Verbraucher- und Vertragsrecht",
+    "category": "Recht",
+    "description": "Verbraucherrecht.",
+    "triggers": [
+      "verbraucherrecht",
+      "widerruf",
+      "reklamation",
+      "gewährleistung",
+      "onlinekauf",
+      "rücktritt",
+      "mahnung",
+      "inkasso"
+    ],
+    "sources": [
+      "https://www.gesetze-im-internet.de/hinweise.html",
+      "https://www.recht.bund.de/",
+      "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "privacy-law",
+    "title": "Datenschutz- und Datenrecht",
+    "category": "Recht",
+    "description": "Datenschutzrecht.",
+    "triggers": [
+      "datenschutzrecht",
+      "dsgvo",
+      "auskunftsanspruch",
+      "löschantrag",
+      "datenschutzverletzung",
+      "auftragsverarbeitung",
+      "dsar"
+    ],
+    "sources": [
+      "https://www.gesetze-im-internet.de/hinweise.html",
+      "https://www.recht.bund.de/",
+      "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "intellectual-property",
+    "title": "Urheber-, Marken- und Lizenzrecht",
+    "category": "Recht",
+    "description": "Urheber-/Markenrecht.",
+    "triggers": [
+      "urheberrecht",
+      "markenrecht",
+      "lizenzvertrag",
+      "nutzungsrechte",
+      "open source lizenz",
+      "copyright",
+      "markenverletzung",
+      "bildrechte"
+    ],
+    "sources": [
+      "https://www.gesetze-im-internet.de/hinweise.html",
+      "https://www.recht.bund.de/",
+      "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "tax-law",
+    "title": "Steuerrecht und Abgaben",
+    "category": "Recht",
+    "description": "Steuerrecht.",
+    "triggers": [
+      "steuerrecht",
+      "steuerbescheid",
+      "umsatzsteuer",
+      "einkommensteuer",
+      "abgabenordnung",
+      "steuererklärung",
+      "finanzamt"
+    ],
+    "sources": [
+      "https://www.gesetze-im-internet.de/hinweise.html",
+      "https://www.recht.bund.de/",
+      "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "civil-procedure",
+    "title": "Zivilprozess und Verfahrensrecht",
+    "category": "Recht",
+    "description": "Zivilverfahren.",
+    "triggers": [
+      "zivilprozess",
+      "zpo",
+      "klage einreichen",
+      "vollstreckung",
+      "gerichtskosten",
+      "mahnbescheid",
+      "prozesskostenhilfe"
+    ],
+    "sources": [
+      "https://www.gesetze-im-internet.de/hinweise.html",
+      "https://www.recht.bund.de/",
+      "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "evidence-review",
+    "title": "Beweis- und Dokumentenprüfung",
+    "category": "Recht",
+    "description": "Belege prüfen.",
+    "triggers": [
+      "beweismittel",
+      "belege prüfen",
+      "dokumentbeweise",
+      "nachweise auswerten",
+      "beweiskette",
+      "chronologie belegen"
+    ],
+    "sources": [
+      "https://www.gesetze-im-internet.de/hinweise.html",
+      "https://www.recht.bund.de/",
+      "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "official-forms",
+    "title": "Behördenanträge und Formulare",
+    "category": "Recht",
+    "description": "Behördenformulare.",
+    "triggers": [
+      "behördenformular",
+      "antrag ausfüllen",
+      "antragsformular",
+      "amtlicher vordruck",
+      "formularhilfe",
+      "bescheinigung"
+    ],
+    "sources": [
+      "https://www.gesetze-im-internet.de/hinweise.html",
+      "https://www.recht.bund.de/",
+      "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "family-law",
+    "title": "Familien- und Unterhaltsrecht",
+    "category": "Recht",
+    "description": "Familienrecht.",
+    "triggers": [
+      "familienrecht",
+      "unterhaltsrecht",
+      "scheidung",
+      "sorgerecht",
+      "kindesunterhalt",
+      "familiengericht"
+    ],
+    "sources": [
+      "https://www.gesetze-im-internet.de/hinweise.html",
+      "https://www.recht.bund.de/",
+      "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "criminal-law",
+    "title": "Straf- und Strafverfahrensrecht",
+    "category": "Recht",
+    "description": "Strafrecht.",
+    "triggers": [
+      "strafrecht",
+      "strafanzeige",
+      "strafverfahren",
+      "stpo",
+      "beschuldigter rechte",
+      "zeugenaussage",
+      "strafbefehl"
+    ],
+    "sources": [
+      "https://www.gesetze-im-internet.de/hinweise.html",
+      "https://www.recht.bund.de/",
+      "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "company-law",
+    "title": "Gesellschafts- und Wirtschaftsrecht",
+    "category": "Recht",
+    "description": "Gesellschaftsrecht.",
+    "triggers": [
+      "gesellschaftsrecht",
+      "gmbh",
+      "ug gründen",
+      "handelsregister",
+      "vereinsrecht",
+      "gesellschaftervertrag",
+      "unternehmensgründung"
+    ],
+    "sources": [
+      "https://www.gesetze-im-internet.de/hinweise.html",
+      "https://www.recht.bund.de/",
+      "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "financial-analysis",
+    "title": "Finanzanalyse und Planung",
+    "category": "Finanzen",
+    "description": "Finanzanalyse.",
+    "triggers": [
+      "finanzanalyse",
+      "budget analysieren",
+      "liquidität",
+      "cashflow",
+      "bilanzanalyse",
+      "kostenprognose",
+      "finanzkennzahlen"
+    ],
+    "sources": [
+      "https://www.bundesbank.de/"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "academic-research",
+    "title": "Wissenschaftliche Fachrecherche",
+    "category": "Wissenschaft",
+    "description": "Fachliteratur prüfen.",
+    "triggers": [
+      "wissenschaftliche recherche",
+      "literaturrecherche",
+      "studie analysieren",
+      "wissenschaftliche quellen",
+      "peer review",
+      "forschungsstand"
+    ],
+    "sources": [
+      "https://www.crossref.org/",
+      "https://pubmed.ncbi.nlm.nih.gov/"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "threat-modeling",
+    "title": "Bedrohungsmodellierung für Code",
+    "category": "Sicherheit",
+    "description": "IT-Bedrohungen.",
+    "triggers": [
+      "threat model",
+      "bedrohungsmodell",
+      "angriffspfade",
+      "sicherheitsmodell",
+      "trust boundaries",
+      "angriffsfläche analysieren"
+    ],
+    "sources": [
+      "https://github.com/openai/skills/tree/main/skills/.curated/security-threat-model"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
   }
 ]
