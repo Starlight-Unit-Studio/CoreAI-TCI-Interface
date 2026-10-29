@@ -1,0 +1,28 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.5.82
+Stand: 29.10.2026
+Grundlage: main 0.5.81 (PR #132 gemergt)
+Branch: feat/skills-depth-react-nextjs-tests-20261029
+
+ZIEL: Bestehende CoreAI-Skills fachlich vervollstaendigen, aber Skill-System, Loader, Modelfile und globale serielle Modellqueue nicht anruehren.
+
+ERGEBNIS:
+- 106 Skills bleiben bestehen, mit einem einzigen Pflicht-Skill werkzeuge.
+- Sechs vorhandene SKILL.md fachlich vertieft: react, nextjs, debugging, unit-testing, academic-research, threat-modeling.
+- Neue Referenzen: react/references/IMPLEMENTATION.md, nextjs/references/IMPLEMENTATION.md, debugging/references/IMPLEMENTATION.md, unit-testing/references/IMPLEMENTATION.md, academic-research/references/NOTEBOOK_WORKFLOW.md, threat-modeling/references/STATIC_ANALYSIS.md.
+- docs/COREAI_CLAUDE_SKILL_PORTABILITY.md erklaert die unterschiedlichen Skill-Discovery-Pfade und deren spaetere kontrollierte Anbindung.
+- Kein automatischer Import aus externen Agentenrepositorien; keine unautorisierten Tools oder Skripte.
+
+VERSION:
+- 0.5.82 in VERSION, allen sechs HTML-Oberflaechen, JS-Bootstrap und Branding-Testreferenz.
+- README, CHANGELOG, TXT-Changelog, TXT-Index, dieses Uebergabeprotokoll und Preflight-Versionsheader nachgezogen.
+- Historisch zutreffende Hinweise auf 0.5.81 bleiben als historische Angaben erhalten.
+
+VOR EINEM MERGE:
+- Aktuelles main auf 0.5.81 oder eine hoehere Version pruefen, Konflikte und Versionssprung gegebenenfalls anpassen.
+- php scripts/skills-selftest.php
+- python3 scripts/version-merge-check.py --base-version 0.5.81
+- python3 scripts/cache-bust.py --verify
+- Projekt-Preflights und reale Betreiber-Tests auf Netcup und Android.
+- Keine GitHub Actions ohne Kontingent; keine nicht ausgefuehrten Pruefungen als bestanden ausgeben.
+
+Noch kein Merge und kein Server-Deploy fuer diesen Branch.

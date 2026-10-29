@@ -2,6 +2,14 @@
 
 CoreAI: TCI Interface gehoert zur Quantum-Softwarefamilie und wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert. Historische Changelogs dokumentieren die frueheren Produktnamen unveraendert.
 
+## 0.5.82 - 29.10.2026
+
+- **Sechs bestehende Fach-Skills vervollstaendigt, weiterhin 106 Skills:** `react`, `nextjs`, `debugging`, `unit-testing`, `academic-research` und `threat-modeling` erhalten systematischere Workflows. Keine neuen Katalogkennungen und kein Eingriff in die Skill-Auswahl.
+- **Konkrete Referenzplaene:** React-Performance, Next.js-Sicherheits- und Servergrenzen, belegbare CoreAI-Fehleranalyse, TDD/Regression, Jupyter-Notebook-Strukturen und statische Sicherheitsanalyse (Semgrep, CodeQL, SARIF) sind mit Werkzeugbedarf und Negativtests dokumentiert.
+- **Claude-Kompatibilitaet geklaert:** `docs/COREAI_CLAUDE_SKILL_PORTABILITY.md` beschreibt den Unterschied zwischen CoreAI `skills/<id>/` und Claude Code `.claude/skills/<id>/`. Ein Merge bedeutet nicht automatisch, dass Claude Code diese Skills entdeckt; ein kontrollierter Export waere ein gesonderter Schritt.
+- **Kein Runtime-Umbau:** Katalog, `api/skills.php`, Modelfile, Pflicht-Skill `werkzeuge`, Modellwarteschlange und Game-Grenzen unveraendert.
+- **Tests:** Statische Datei-/Body-/Strukturkontrollen vorbereitet. PHP-Selftest, Versionierungs-Gate, Cache-Bust, Preflights und Netcup-/Android-Livetest sind bis zu tatsaechlicher Ausfuehrung offen. GitHub Actions wurden nicht gestartet.
+
 ## 0.5.81 - 29.10.2026
 
 - **Allround-Skill-Bibliothek auf 106 erweitert:** 73 neue Fach-Skills im Vergleich zu den urspruenglichen 33. Enthalten sind alle 19 Anthropic-Referenznamen, zusaetzliche OpenAI-/Codex-inspirierte Prozesse und **20 eigene Rechts-Skills** fuer Bundes-/Landes-/EU-Recht, Bescheide, Vertrage, Rechtsbehelfe, Fristen, Sozialrecht, Miete, Verbraucher, Arbeitsrecht, Datenschutz, Urheber-/Markenrecht, Steuer, Verfahren und weitere Themen.
