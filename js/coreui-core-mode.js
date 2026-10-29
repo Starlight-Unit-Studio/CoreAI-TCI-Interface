@@ -13,7 +13,9 @@
    Admins find "Cores verwalten" (updates) below the list.
    0.5.79: the dot tells the state: green is the Core in use, yellow an
    installed Core on standby, red one that is missing or not available;
-   the gold pulse marks the Core that is loading. */
+   the gold pulse marks the Core that is loading.
+   0.5.83: the Ollama list loads when the chat opens; the legend lists the
+   TCI tiers only. */
 (function () {
   'use strict';
 
@@ -301,8 +303,9 @@
       legendRows.appendChild(tr);
     }
 
-    // Legend: every TCI tier with the technical Cores behind it, then Cores
-    // that keep their own name.
+    // Legend: every TCI tier with the technical Cores behind it. 0.5.83: only
+    // Mara's CoreAI tiers; other models in Ollama (own names, not Gemma) are no
+    // part of CoreAI and show up in the Core menu only, below the tiers.
     function renderLegend() {
       if (!legendRows) return;
       clear(legendRows);
@@ -319,9 +322,6 @@
           : names.some(function (n) { return sameCore(n, state.defaultModel); }) ? 'Standard'
           : names.every(isCloud) ? 'Cloud' : 'installiert';
         legendRow(tier[1], core, note);
-      });
-      models.filter(function (n) { return labelOf(n) === shortCore(n); }).forEach(function (n) {
-        legendRow(shortCore(n), n, isCloud(n) ? 'Cloud, eigener Name' : 'eigener Name');
       });
       if (state.models === null && state.listError) legendRow('', 'Ollama-Liste gerade nicht erreichbar', '');
     }
@@ -530,7 +530,9 @@
 
     render();
     return {
-      ready: load(),
+      // 0.5.83: the Ollama list loads with the chat, so the menu is current
+      // right away; opening the menu or the legend fetches it again.
+      ready: load().then(loadList),
       setThinking: setThinking,
       choose: choose,
       poll: poll,

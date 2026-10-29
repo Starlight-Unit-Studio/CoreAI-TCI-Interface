@@ -7,7 +7,14 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.82` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.83` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Eingabefeld und Legende (0.5.83)
+
+Das Eingabefeld springt nach dem Senden wieder auf eine Zeile zurueck. Die
+Legende am Eingabefeld zeigt unter "Core-Stufen" nur Maras TCI-Stufen; andere
+in Ollama installierte Modelle stehen nur im Core-Menue unter den festen
+Stufen. Die Ollama-Liste laedt schon beim Oeffnen des Chats.
 
 ## Skill-Referenzen auf Anforderung (0.5.82)
 

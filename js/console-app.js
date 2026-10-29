@@ -1210,7 +1210,7 @@
           clearMessageEdit(false);
           updateActivePendingUi();
         }
-        if (inputEl) inputEl.value = label;
+        setComposerText(label);
         sendMessage(label);
       });
       wrapper.appendChild(button);
@@ -1353,7 +1353,7 @@
     if (composerEditLabel) composerEditLabel.textContent = 'NACHRICHT #' + String(record.id) + ' BEARBEITEN';
     updateActivePendingUi();
     if (!inputEl) return;
-    inputEl.value = String(text || '');
+    setComposerText(text);
     inputEl.focus();
     inputEl.setSelectionRange(inputEl.value.length, inputEl.value.length);
   }
@@ -2031,14 +2031,21 @@
     inputEl.style.height = Math.max(32, Math.min(128, inputEl.scrollHeight)) + 'px';
   }
 
+  // 0.5.83: every programmatic change goes through here. Setting .value fires
+  // no input event, so after sending a long message the field kept its height.
+  function setComposerText(text) {
+    if (!inputEl) return;
+    inputEl.value = String(text || '');
+    resizeMessageComposer();
+  }
+
   function restoreFailedAutoPaste(file) {
     var source = file && autoPasteSources.get(file);
     if (typeof source !== 'string') return;
     autoPasteSources.delete(file);
     if (inputEl) {
-      inputEl.value = inputEl.value
-        + (inputEl.value && !inputEl.value.endsWith('\n') ? '\n' : '') + source;
-      resizeMessageComposer();
+      setComposerText(inputEl.value
+        + (inputEl.value && !inputEl.value.endsWith('\n') ? '\n' : '') + source);
     }
   }
 
@@ -2187,10 +2194,7 @@
           && !(pasted && inputEl.value.length > LONG_PASTE_THRESHOLD)) return;
       // The unmodified text stays in the editor if the upload cannot start.
       var text = inputEl.value;
-      if (queueAutoTextAttachment(text)) {
-        inputEl.value = '';
-        resizeMessageComposer();
-      }
+      if (queueAutoTextAttachment(text)) setComposerText('');
     });
     resizeMessageComposer();
   }
@@ -2205,7 +2209,7 @@
       created_at: new Date().toISOString()
     };
     state.queuedTurnsBySession[sessionId].push(turn);
-    if (inputEl) inputEl.value = '';
+    setComposerText('');
     renderHistory(ses);
     setStatus('waiting', 'NACHRICHT VORGEMERKT');
     scrollToBottom();
@@ -2269,7 +2273,7 @@
       ses.last_message_id = editedId;
       ses.last_read_message_id = editedId;
       state.variantSelectionBySession[ses.id] = {};
-      if (inputEl) inputEl.value = '';
+      setComposerText('');
       clearMessageEdit(false);
       state.pendingBySession[ses.id] = editedId;
       state.sendTimestampBySession[ses.id] = Date.now();
@@ -2383,7 +2387,7 @@
     }
     // 0.5.77: "/komprimieren" (or "/compact") is a command, not a message.
     if (!options.from_queue && /^\s*\/(?:komprimieren|compact)\s*$/i.test(String(text || ''))) {
-      if (inputEl) inputEl.value = '';
+      setComposerText('');
       openCompactMenu();
       compactActiveSession();
       return;
@@ -2394,8 +2398,7 @@
       var sesForPaste = activeSession();
       if (sesForPaste && queueAutoTextAttachment(text, true)) {
         pendingSendAfterUpload = {text:'',sessionId:String(sesForPaste.id)};
-        if (inputEl) inputEl.value = '';
-        resizeMessageComposer();
+        setComposerText('');
       }
       return;
     }
@@ -2428,7 +2431,7 @@
     var userText = (text || '').trim();
     var atts = options.from_queue ? [] : pendingFiles.slice(0, MAX_MESSAGE_ATTACHMENTS);
     var sentCreatedAt = new Date().toISOString();
-    if (!options.from_queue) inputEl.value = '';
+    if (!options.from_queue) setComposerText('');
     btnSend.disabled = true;
 
     // Der private Kanal adressiert Ember serverseitig. Ein kuenstliches
@@ -3604,7 +3607,7 @@
 
   if (composerEditCancel) {
     composerEditCancel.addEventListener('click', function () {
-      if (inputEl) inputEl.value = '';
+      setComposerText('');
       clearMessageEdit(true);
       updateActivePendingUi();
     });
@@ -3621,7 +3624,7 @@
     if (e.key === 'Escape' && state.editingMessage) {
       e.preventDefault();
       clearMessageEdit(true);
-      inputEl.value = '';
+      setComposerText('');
       updateActivePendingUi();
     }
   });

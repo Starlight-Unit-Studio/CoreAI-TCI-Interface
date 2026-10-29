@@ -1,0 +1,20 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.5.83
+Stand: 29.10.2026
+Branch: claude/bold-galileo-myoyi0 (neu auf main nach Merge von PR #134 mit 0.5.82)
+Basis: Meldungen des Betreibers: Eingabefeld bleibt nach dem Senden langer Nachrichten gross; in der Legende ("?")
+steht gpt-oss bei den Cores, obwohl es ein privates Modell und kein Gemma-/CoreAI-Core ist. Wunsch: Das Core-Menue
+laedt die aktuelle Ollama-Liste beim Oeffnen des Chats; fremde Modelle stehen dort unter Maras festen Stufen.
+
+AENDERUNGEN:
+- js/console-app.js: setComposerText(text) setzt den Text und ruft resizeMessageComposer(); alle zehn bisherigen
+  Zuweisungen an inputEl.value laufen darueber (Senden, Vormerken, Bearbeiten, Abbrechen, Escape, /komprimieren,
+  langer Text als Anhang, Wiederherstellen eines fehlgeschlagenen Anhangs, Vorschlags-Knopf).
+- js/coreui-core-mode.js: renderLegend listet nur TCI-Stufen (keine Zeilen fuer eigene Namen mehr);
+  ready = load().then(loadList), die Liste laedt also mit dem Chat; open()/openLegend() laden weiterhin frisch.
+  Das Core-Menue selbst ist unveraendert (fremde installierte Modelle unter den Stufen).
+
+GEPRUEFT:
+- Alle Offline-Selbsttests; Chromium mit app.html und nachgebauter API: sechs Zeilen tippen (128 px), senden ->
+  32 px (ohne Fix 128 px bei leerem Feld).
+
+NAECHSTER SCHRITT: Update auf dem Server, Eingabefeld und Legende kurz pruefen. Danach Audio.

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.82 skill reference plans load on request.
+# CoreAI: TCI Interface 0.5.83 composer height after sending, Ollama list with the chat, legend with TCI tiers only.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

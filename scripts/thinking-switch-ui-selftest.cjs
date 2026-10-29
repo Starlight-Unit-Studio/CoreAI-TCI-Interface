@@ -136,6 +136,9 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
     manage: () => opened.push('manage')})});
   await mode.ready;
   assert.equal(els.coreModeName.textContent, 'Mara Normal', 'the chip shows the TCI name');
+  // 0.5.83: the Ollama list loads with the chat, before the menu is opened.
+  assert(srv.calls.some(c => /models\.php/.test(c.url)), 'the Ollama list loads when the chat opens');
+  assert.equal(els.coreModeMenu.hidden, true, 'loading the list does not open the menu');
   assert.equal(els.coreModeThink.textContent, 'DENKEN');
   assert.equal(els.coreThinkToggle.disabled, false);
 
@@ -263,8 +266,9 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
     ['TCI: Mara Plus', 'Gemma 4 12B', 'nicht installiert'],
     ['TCI: Mara Pro', 'Gemma 4 26B', 'nicht installiert'],
     ['TCI: Mara Premium', 'gemma4:31b-cloud', 'Cloud'],
-    ['gpt-oss:120b-cloud', 'gpt-oss:120b-cloud', 'Cloud, eigener Name'],
   ]);
+  // 0.5.83: models outside CoreAI (own names, not Gemma) never appear in the legend.
+  assert(!els.coreLegendRows.children.some(tr => tr.children.some(cell => /gpt-oss/.test(cell.textContent))), 'no private model in the legend');
   doc.handlers.click({target: els.coreLegendRows});
   assert.equal(els.coreLegend.hidden, false, 'a click inside keeps the legend open');
   doc.handlers.keydown({key: 'Escape'});

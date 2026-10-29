@@ -2,6 +2,13 @@
 
 CoreAI: TCI Interface gehoert zur Quantum-Softwarefamilie und wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert. Historische Changelogs dokumentieren die frueheren Produktnamen unveraendert.
 
+## 0.5.83 - 29.10.2026
+
+- **Eingabefeld springt nach dem Senden zurueck:** Waechst das Feld durch mehrere Zeilen, blieb es nach dem Absenden leer, aber gross. Ursache: Der Text wurde an zehn Stellen per Code geleert oder gesetzt (Senden, Vormerken, Bearbeiten und Abbrechen, `/komprimieren`, langer Text als Anhang); das loest kein Eingabe-Ereignis aus, die Hoehe wurde nie neu berechnet. Jetzt laeuft jede Aenderung ueber eine Funktion, die die Hoehe anpasst. Im echten Browser geprueft: vorher 128 px nach dem Senden, jetzt 32 px.
+- **Legende nur mit Maras Cores:** Unter "Core-Stufen" stehen nur noch die TCI-Stufen (Schnell bis Premium) mit ihren Gemma-Cores. Modelle mit eigenem Namen, die nicht zu CoreAI gehoeren (etwa gpt-oss), erscheinen dort nicht mehr; im Core-Menue stehen sie wie bisher unter Maras festen Stufen, solange sie in Ollama installiert sind.
+- **Ollama-Liste laedt mit dem Chat:** Das Core-Menue holt die aktuelle Ollama-Liste schon beim Oeffnen des Chats (und beim Aufklappen erneut), Punkte und Eintraege stimmen damit sofort.
+- Tests: Frontend-Regressionstest sichert, dass das Eingabefeld nur noch ueber die Hoehen-Funktion geaendert wird; Core-Chip-Test prueft Legende ohne fremde Modelle und das Laden der Liste beim Chat-Start.
+
 ## 0.5.82 - 29.10.2026
 
 - **Skill-Referenzen angebunden:** Die Referenzplaene der Skills (`references/*.md`, bei 48 Skills, zum Beispiel Quellen- und Gueltigkeitsregeln der Rechts-Skills oder Zielumfang und Abnahme der Office-Skills) waren bisher nur Repository-Dokumente. Mara laedt sie jetzt auf Anforderung mit `[SKILL: kennung/references/IMPLEMENTATION.md]`, als Schritt ihrer Arbeitsschleife wie einen Skill. Ein geladener Skill nennt seine Referenz am Ende ("Referenz bei Bedarf"), und eine Referenz bringt ihren Skill mit, falls er noch fehlt.
