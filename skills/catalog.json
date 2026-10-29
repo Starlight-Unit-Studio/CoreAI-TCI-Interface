@@ -654,7 +654,7 @@
     "id": "document-analysis",
     "title": "Dokumente",
     "category": "Dateien",
-    "description": "Dokumente lesen.",
+    "description": "Dokumente.",
     "triggers": [
       "pdf",
       "dokument analysieren",
@@ -667,7 +667,7 @@
       "https://pymupdf.readthedocs.io/en/latest/"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.3"
+    "version": "1.0.4"
   },
   {
     "id": "tabular-analysis",
@@ -787,7 +787,7 @@
     "id": "technical-writing",
     "title": "Technische Doku",
     "category": "Schreiben",
-    "description": "Technische Doku.",
+    "description": "Tech-Doku.",
     "triggers": [
       "readme",
       "technische dokumentation",
@@ -800,7 +800,7 @@
       "https://developers.google.com/tech-writing/overview"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.3"
+    "version": "1.0.4"
   },
   {
     "id": "creative-writing",
@@ -864,7 +864,7 @@
     "id": "privacy-memory",
     "title": "Privacy/Memory",
     "category": "Sicherheit",
-    "description": "Privacy/Memory.",
+    "description": "Privatsphäre.",
     "triggers": [
       "memory",
       "gedächtnis",
@@ -877,7 +877,7 @@
       "https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.2"
+    "version": "1.0.3"
   },
   {
     "id": "media-inspection",
@@ -902,7 +902,7 @@
     "id": "browser-actions",
     "title": "Browseraktionen",
     "category": "Browser",
-    "description": "Browseraktionen.",
+    "description": "Browser.",
     "triggers": [
       "formular ausfüllen",
       "formular ausfuellen",
@@ -915,7 +915,7 @@
       "https://playwright.dev/docs/locators"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.3"
+    "version": "1.0.4"
   },
   {
     "id": "docx",
@@ -1154,7 +1154,7 @@
     "id": "doc-coauthoring",
     "title": "Text-Koautor",
     "category": "Schreiben",
-    "description": "Gemeinsam schreiben.",
+    "description": "Koautor.",
     "triggers": [
       "dokument gemeinsam",
       "gemeinsam schreiben",
@@ -1167,7 +1167,7 @@
       "https://github.com/anthropics/skills/tree/main/skills/doc-coauthoring"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.3"
+    "version": "1.0.4"
   },
   {
     "id": "internal-comms",
@@ -1293,7 +1293,7 @@
     "id": "frontend-design",
     "title": "Frontenddesign",
     "category": "Frontend",
-    "description": "Frontenddesign.",
+    "description": "Frontend.",
     "triggers": [
       "frontend design",
       "webdesign",
@@ -1305,13 +1305,13 @@
       "https://github.com/anthropics/skills/tree/main/skills/frontend-design"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.2"
+    "version": "1.0.3"
   },
   {
     "id": "web-artifacts-builder",
     "title": "Webapp-Builder",
     "category": "Frontend",
-    "description": "Webapp-Builder.",
+    "description": "Webapps.",
     "triggers": [
       "web artifacts",
       "web-artifacts-builder",
@@ -1323,13 +1323,13 @@
       "https://github.com/anthropics/skills/tree/main/skills/web-artifacts-builder"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.2"
+    "version": "1.0.3"
   },
   {
     "id": "claude-api",
     "title": "Claude API",
     "category": "Backend",
-    "description": "Claude-API.",
+    "description": "Claude.",
     "triggers": [
       "claude api",
       "anthropic api",
@@ -1341,7 +1341,7 @@
       "https://github.com/anthropics/skills/tree/main/skills/claude-api"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.2"
+    "version": "1.0.3"
   },
   {
     "id": "skill-creator",
@@ -1517,7 +1517,7 @@
     "id": "policy-qa-from-knowledgebase",
     "title": "Richtlinien-QA",
     "category": "Recht",
-    "description": "Richtlinien-QA.",
+    "description": "Richtlinien.",
     "triggers": [
       "policy qa",
       "compliance richtlinie",
@@ -1535,7 +1535,7 @@
       "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.2"
+    "version": "1.0.3"
   },
   {
     "id": "legal-drafting",
@@ -1828,7 +1828,7 @@
     "id": "evidence-review",
     "title": "Belegprüfung",
     "category": "Recht",
-    "description": "Belege prüfen.",
+    "description": "Belege.",
     "triggers": [
       "beweismittel",
       "belege prüfen",
@@ -1847,7 +1847,7 @@
       "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.2"
+    "version": "1.0.3"
   },
   {
     "id": "official-forms",
@@ -2001,5 +2001,139 @@
     ],
     "reviewed": "2026-10-29",
     "version": "1.0.1"
+  },
+  {
+    "id": "skill-discovery",
+    "title": "Skill-Suche",
+    "category": "Arbeitsweise",
+    "description": "Quellenprüfung.",
+    "triggers": [
+      "skills finden",
+      "skill finden",
+      "skill suchen",
+      "skill recherche",
+      "skill bibliothek",
+      "agenticskills.io",
+      "externen skill prüfen",
+      "skill importieren"
+    ],
+    "sources": [
+      "https://agenticskills.io/skills/find-skills",
+      "https://github.com/vercel-labs/skills/tree/main/skills/find-skills"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "seo-audit",
+    "title": "SEO-Audit",
+    "category": "Marketing",
+    "description": "SEO-Audit.",
+    "triggers": [
+      "seo audit",
+      "seo prüfen",
+      "suchmaschinenoptimierung",
+      "indexierung",
+      "canonical",
+      "robots.txt",
+      "sitemap.xml",
+      "strukturierte daten",
+      "search console"
+    ],
+    "sources": [
+      "https://agenticskills.io/skills/seo-audit",
+      "https://github.com/coreyhaines31/marketingskills/tree/main/skills/seo-audit"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "marketing-strategy",
+    "title": "Marketing",
+    "category": "Marketing",
+    "description": "Marketingplan.",
+    "triggers": [
+      "marketingstrategie",
+      "marketing planen",
+      "produkteinführung",
+      "launch strategie",
+      "kampagnenplanung",
+      "content marketing",
+      "zielgruppe analysieren",
+      "konversionsrate"
+    ],
+    "sources": [
+      "https://agenticskills.io/skills/marketing-skills",
+      "https://github.com/coreyhaines31/marketingskills"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "mobile-apps",
+    "title": "Mobile-Apps",
+    "category": "Mobile",
+    "description": "Mobile-Apps.",
+    "triggers": [
+      "android app",
+      "ios app",
+      "react native",
+      "expo",
+      "mobile app",
+      "handy app entwickeln",
+      "app store build",
+      "apk erstellen",
+      "aab erstellen"
+    ],
+    "sources": [
+      "https://agenticskills.io/skills/react-native-best-practices",
+      "https://github.com/callstackincubator/agent-skills"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "property-testing",
+    "title": "Eigenschaftstests",
+    "category": "Qualität",
+    "description": "Testinvarianten.",
+    "triggers": [
+      "property based testing",
+      "eigenschaftstests",
+      "invariantentest",
+      "fuzz testing",
+      "fuzztest",
+      "quickcheck",
+      "hypothesis test",
+      "fast-check"
+    ],
+    "sources": [
+      "https://agenticskills.io/skills/property-based-testing",
+      "https://github.com/trailofbits/skills/tree/main/plugins/property-based-testing/skills/property-based-testing"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "database-tuning",
+    "title": "DB-Tuning",
+    "category": "Backend",
+    "description": "DB-Performance.",
+    "triggers": [
+      "datenbank optimieren",
+      "query optimieren",
+      "sql performance",
+      "index optimierung",
+      "explain analyze",
+      "datenbank tuning",
+      "slow query",
+      "datenbank index"
+    ],
+    "sources": [
+      "https://agenticskills.io/skills/supabase-postgres",
+      "https://github.com/supabase/agent-skills/tree/main/skills/supabase-postgres-best-practices"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
   }
 ]
