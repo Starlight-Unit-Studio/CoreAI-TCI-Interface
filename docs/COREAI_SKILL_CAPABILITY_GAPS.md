@@ -36,7 +36,11 @@ Weitere Referenzen aus der CoreAI-Funktionsmatrix: `agent-task-design` (CrewAI/A
 
 ## OpenAI-/Rechts-Skills: aktuelle Rechtslage und Toolbedarf
 
-Die zusaetzlichen 23 Skills ergaenzen den 77-Skills-Stand auf **100**. 20 juristische Skills sind mit vollstaendiger Fachaufgabe, Werkzeugbedarf und Abnahmetests vorbereitet. Bei **jeder Rechtspruefung** muss der am Ereignisdatum geltende Normstand sowie die aktuelle Rechtslage per Webrecherche ermittelt werden. Die Pflicht gilt direkt in jeder rechtlichen SKILL.md, nicht nur in dieser Dokumentation.
+Die zusaetzlichen 23 Skills ergaenzen den 77-Skills-Stand auf **100**.
+
+Das aeltere [OpenAI Skills-Repository](https://github.com/openai/skills) ist offiziell als deprecated markiert. Fuer spaetere Codex-/Plugin-Vergleiche auch [OpenAI Plugins](https://github.com/openai/plugins) verwenden. Die hier beschriebenen juristischen Skills sind **eigene CoreAI-Fachentwuerfe**, nicht vorgefertigte OpenAI-Rechtsskills.
+
+ 20 juristische Skills sind mit vollstaendiger Fachaufgabe, Werkzeugbedarf und Abnahmetests vorbereitet. Bei **jeder Rechtspruefung** muss der am Ereignisdatum geltende Normstand sowie die aktuelle Rechtslage per Webrecherche ermittelt werden. Die Pflicht gilt direkt in jeder rechtlichen SKILL.md, nicht nur in dieser Dokumentation.
 
 Referenz fuer alle juristischen Skills: [COREAI_LEGAL_CURRENTNESS.md](COREAI_LEGAL_CURRENTNESS.md). Amtliche Quellen: [Bundesgesetzblatt](https://www.recht.bund.de/), [Gesetze im Internet](https://www.gesetze-im-internet.de/hinweise.html) als konsolidierte, nicht amtliche Darstellung, [EUR-Lex](https://eur-lex.europa.eu/collection/eu-law/consleg.html) fuer EU-Rechtsakte und historische konsolidierte Fassungen, zustaendige Landesrecht-Portale und Originalentscheidungen von Gerichten. **Nicht** allein auf Modellwissen, alte RAG-Inhalte, Suchtreffer oder eine ungepruefte Sekundaerquelle vertrauen.
 
