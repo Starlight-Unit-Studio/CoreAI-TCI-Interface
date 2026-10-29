@@ -119,7 +119,7 @@ als Schritt der Arbeitsschleife, Vorauswahl bleibt).
 0.5.82 ist gemergt (PR #134). 0.5.83: Eingabefeld springt nach dem Senden zurueck, Legende nur mit Maras
 TCI-Stufen, Ollama-Liste laedt mit dem Chat, Modell-Freigaben pro Benutzer durch den Inhaber (Migration 020),
 Update-Fenster fuer den Inhaber (Host-Dienst coreai-update per systemd, Datenbanksicherung, offizielles setup.sh,
-"Bitte auf Neustart warten" fuer alle), PHP-Sitzungen ueberleben ein Update.
+"Bitte auf Neustart warten" fuer alle mit echtem Installationsfortschritt), PHP-Sitzungen ueberleben ein Update.
 Offen auf Wunsch des Betreibers, nacheinander: Benutzer loeschen, weitere Benutzer-Einstellungen.
 NAECHSTER SCHRITT: Audio (TTS-Kandidaten), Benutzerverwaltung nach Betreiberwunsch, dann P20.1.
 Mara/Ember, Ollama-Modelfile, serielle Queue und private Projekt-

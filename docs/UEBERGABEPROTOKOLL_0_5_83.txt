@@ -46,6 +46,14 @@ AENDERUNGEN:
   Allowlist um update ergaenzt. js/coreui-update.js und css/coreui-update.css in app.html und settings.html;
   Karte "CoreAI-Update" unter Einstellungen > System. Abfrage alle 60 Sekunden (alle Konten), beim Warten alle
   3 Sekunden; 502 waehrend des Neustarts haelt das Warten; Neuladen bei done, neuer Version oder nach Ausfall.
+- Echter Fortschritt (Rueckfrage des Betreibers, ob die Seite den echten Stand vom Installer bekommt): setup.sh laeuft
+  mit 2>&1 durch "coreai_update_state.py follow", das jede Zeile unveraendert ins Update-Protokoll schreibt und aus
+  MILESTONES (20 Zeilen aus setup.sh, install.sh, Preflight; Reihenfolge und Werte 12..90) Prozent und Schritt in
+  status.json macht. Docker-Build-Zeilen "[php 3/6]" fuellen 24..40 und 42..50, Preflight-Zeilen [OK]/[WARN]/[FEHLER]
+  fuellen 79..89 (erwartete Laenge aus dem letzten Lauf, sonst 170). Nie rueckwaerts, nie Abbruch (sonst bricht die
+  Pipe den Installer), pipefail behaelt den Exit-Code. Updater setzt 2/8/10/91/94/97/100. Oeffentlicher Status hat
+  percent und step. Fenster: Balken mit Prozent, Schritt, Laufzeit; bei 502 bleibt der letzte Stand ("CoreAI startet
+  gerade neu"). Wird eine Logzeile in install.sh umformuliert, schlaegt tests/update-runner-selftest.sh an.
 - PHP-Sitzungen: docker/php/coreui.ini session.save_path = var/php_sessions (Mount, install.sh/stack.sh legen den
   Ordner an); helpers.php faellt auf den Temp-Ordner zurueck, falls er nicht beschreibbar ist. setup.sh gibt
   var/dev_source_commit der Gruppe 33.
@@ -55,7 +63,8 @@ GEPRUEFT:
   32 px (ohne Fix 128 px bei leerem Feld).
 - Update: update-selftest.php, tests/update-runner-selftest.sh (vier Gegenproben erkannt: Anfrage bleibt liegen,
   Ollama immer neu, kein Zielschutz, Pruefanfrage bleibt liegen), update-ui-selftest.cjs (zwei Gegenproben erkannt:
-  Neuladen schon bei 502, "Spaeter" wirkungslos). Nicht geprueft: echtes systemd und Docker auf dem Server.
+  Neuladen schon bei 502, "Spaeter" wirkungslos; fuer den Balken drei weitere: zurueckfallen, zeitbasiert, Reset bei
+  502). Nicht geprueft: echtes systemd und Docker auf dem Server.
 
 NAECHSTER SCHRITT: Update auf dem Server einmal mit dem Setup-Einzeiler (Migration 020 und Update-Dienst kommen
 mit; danach "systemctl status coreai-update.path coreai-update-check.timer"). Eingabefeld, Legende, Freigaben und

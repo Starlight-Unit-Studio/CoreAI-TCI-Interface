@@ -76,18 +76,25 @@ catch (RuntimeException $e) { update_test($e->getMessage() === 'update_running',
 update_test(coreui_update_cancel($work) && !is_file($work . '/var/update-request/request.json'), 'a queued request can be withdrawn');
 
 // A running update: everyone waits; a dead one does not hold the page forever.
-$put('var/update/status.json', ['state' => 'running', 'phase' => 'install', 'started_at' => gmdate('Y-m-d\TH:i:s\Z', $now - 60), 'updated_at' => gmdate('Y-m-d\TH:i:s\Z', $now - 30)]);
+$put('var/update/status.json', ['state' => 'running', 'phase' => 'install', 'percent' => 47, 'step' => 'Die Images werden gebaut.',
+  'started_at' => gmdate('Y-m-d\TH:i:s\Z', $now - 60), 'updated_at' => gmdate('Y-m-d\TH:i:s\Z', $now - 30)]);
 $s = coreui_update_state($work, $now);
 update_test($s['running'] && $s['state'] === 'running' && $s['phase'] === 'install' && !$s['available'], 'running');
+update_test($s['percent'] === 47 && $s['step'] === 'Die Images werden gebaut.', 'real progress from the host');
+$put('var/update/status.json', ['state' => 'running', 'phase' => 'install', 'percent' => 900, 'updated_at' => gmdate('Y-m-d\TH:i:s\Z', $now)]);
+update_test(coreui_update_state($work, $now)['percent'] === 100, 'percent capped');
+$put('var/update/status.json', ['state' => 'running', 'phase' => 'install', 'percent' => 47, 'step' => 'Die Images werden gebaut.',
+  'started_at' => gmdate('Y-m-d\TH:i:s\Z', $now - 60), 'updated_at' => gmdate('Y-m-d\TH:i:s\Z', $now - 30)]);
 coreui_update_write_request($work . '/var/update-request/request.json', '{}');
 update_test(coreui_update_state($work, $now)['state'] === 'running' && !coreui_update_cancel($work), 'running beats a leftover request and cannot be cancelled');
 unlink($work . '/var/update-request/request.json');
 $s = coreui_update_state($work, $now + COREUI_UPDATE_STALE_SECONDS + 60);
-update_test($s['state'] === 'failed' && !$s['running'] && $s['available'] && str_contains($s['message'], 'nicht zurueckgemeldet'), 'a dead update ends as failed');
+update_test($s['state'] === 'failed' && !$s['running'] && $s['available'] && str_contains($s['message'], 'nicht zurückgemeldet'), 'a dead update ends as failed');
 $public = coreui_update_public(coreui_update_state($work, $now));
-update_test(array_keys($public) === ['running', 'state', 'phase', 'version'] && $public['running'], 'every account sees only whether CoreAI restarts');
-$put('var/update/status.json', ['state' => 'done', 'phase' => 'done', 'to_version' => '0.5.84']);
-update_test(coreui_update_state($work, $now)['state'] === 'done', 'done');
+update_test(array_keys($public) === ['running', 'state', 'phase', 'percent', 'step', 'version'] && $public['running'],
+  'every account sees only whether CoreAI restarts and how far');
+$put('var/update/status.json', ['state' => 'done', 'phase' => 'done', 'to_version' => '0.5.84', 'percent' => 97]);
+update_test(coreui_update_state($work, $now)['state'] === 'done' && coreui_update_state($work, $now)['percent'] === 100, 'done is 100 percent');
 // A symlinked status file (never written by the host) is ignored.
 unlink($work . '/var/update/status.json');
 symlink($work . '/var/update/available.json', $work . '/var/update/status.json');

@@ -26,8 +26,9 @@ Aenderungen ("Spaeter" blendet es bis zum naechsten Laden aus; unter
 Einstellungen > System steht die Karte "CoreAI-Update"). "Update starten"
 sichert die Datenbank (`var/backups`), installiert den neuen Stand mit dem
 offiziellen `setup.sh`, startet die Worker und auf Wunsch Ollama neu. Alle
-offenen Seiten zeigen "Bitte auf Neustart warten" und laden neu, sobald CoreAI
-zurueck ist. Die Oberflaeche fuehrt dabei keinen Befehl aus: Sie legt nur eine
+offenen Seiten zeigen "Bitte auf Neustart warten" mit dem echten
+Installationsfortschritt (der Dienst liest die Ausgabe des Installers mit) und
+laden neu, sobald CoreAI zurueck ist. Die Oberflaeche fuehrt dabei keinen Befehl aus: Sie legt nur eine
 Anfrage ab, die der systemd-Dienst `coreai-update` auf dem Host abholt.
 Eingerichtet wird er von `scripts/install.sh`; das Update auf 0.5.83 selbst
 laeuft deshalb noch einmal ueber den Setup-Einzeiler. Status:

@@ -261,7 +261,7 @@ fi
 # 0.5.83: host updater (update window) with stand-ins for git, curl and systemd.
 if [[ "${EUID:-$(id -u)}" -eq 0 ]]; then
   if bash "$PROJECT_ROOT/tests/update-runner-selftest.sh" >/dev/null 2>&1; then
-    ok 'Update-Dienst: Pruefung, Sicherung zuerst, offizielles Setup, Neustart der Dienste und Fehlerfaelle geprueft.'
+    ok 'Update-Dienst: Pruefung, Sicherung zuerst, offizielles Setup, Installationsfortschritt, Neustart der Dienste und Fehlerfaelle geprueft.'
   else
     fail 'Update-Dienst: Host-Updater-Selbsttest fehlgeschlagen.'
   fi
@@ -654,7 +654,7 @@ if command -v php >/dev/null 2>&1; then
     # 0.5.83: update window (Inhaber) and "Bitte auf Neustart warten"; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/update-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Update-Fenster: goldenes Fenster fuer den Inhaber, Spaeter, Wartefenster fuer alle, Neuladen nach dem Neustart geprueft.'
+        ok 'Update-Fenster: goldenes Fenster fuer den Inhaber, Spaeter, Fortschrittsbalken fuer alle, Neuladen nach dem Neustart geprueft.'
       else
         fail 'Update-Fenster: Oberflaechentest fehlgeschlagen.'
       fi

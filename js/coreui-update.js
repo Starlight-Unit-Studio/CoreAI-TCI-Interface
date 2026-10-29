@@ -4,9 +4,10 @@
  * the Inhaber gets a matte golden window over a third of the screen, at every
  * page load until he starts it ("Später" hides it until the next load).
  * "Update starten" asks the host to install it; then everyone, the Inhaber and
- * every other account with CoreAI open, sees "Bitte auf Neustart warten". The
- * page reloads as soon as CoreAI is back on the new version (usually within
- * 60 to 90 seconds), not after a fixed wait.
+ * every other account with CoreAI open, sees "Bitte auf Neustart warten" with
+ * the real progress: the host reads the installer's output and reports the step
+ * it is on and how far it is. The page reloads as soon as CoreAI is back on
+ * the new version, not after a fixed wait.
  */
 (function () {
   'use strict';
@@ -14,8 +15,9 @@
   var API = './api/update.php';
   var POLL_IDLE_MS = 60000;
   var POLL_WAIT_MS = 3000;
-  var ESTIMATE_S = 90;
   var GIVE_UP_S = 20 * 60;
+  // Only if the host sends no percent (an older updater): a rough value per phase.
+  var PHASE_PERCENT = { queued: 0, backup: 4, download: 9, install: 50, restart: 92, done: 100 };
   var STEPS = [
     ['backup', 'Sichern'],
     ['download', 'Laden'],
@@ -167,7 +169,7 @@
     ollama.checked = true;
     ollama.id = 'cuOllama';
     option.appendChild(el('span', '', 'Ollama danach neu starten'));
-    box.appendChild(el('p', 'cu-hint', 'Vorher wird die Datenbank gesichert. Während des Neustarts ist CoreAI für alle etwa 60 bis 90 Sekunden nicht erreichbar; die Seite lädt danach von selbst neu.'));
+    box.appendChild(el('p', 'cu-hint', 'Vorher wird die Datenbank gesichert. Alle offenen Seiten zeigen währenddessen den Installationsfortschritt; nur beim Neustart von PHP und Web ist CoreAI kurz nicht erreichbar. Danach lädt die Seite von selbst neu.'));
 
     var actions = box.appendChild(el('footer', 'cu-actions'));
     var later = actions.appendChild(el('button', 'cu-later', 'Später'));
@@ -222,11 +224,16 @@
       var item = steps.appendChild(el('li', '', step[1]));
       item.setAttribute('data-step', step[0]);
     });
-    var bar = box.appendChild(el('div', 'cu-bar'));
+    var progress = box.appendChild(el('div', 'cu-progress'));
+    var head = progress.appendChild(el('div', 'cu-progress-head'));
+    head.appendChild(el('span', 'cu-progress-label', 'Installationsfortschritt'));
+    head.appendChild(el('strong', 'cu-percent', '0 %'));
+    var bar = progress.appendChild(el('div', 'cu-bar'));
     bar.setAttribute('role', 'progressbar');
     bar.setAttribute('aria-valuemin', '0');
     bar.setAttribute('aria-valuemax', '100');
-    bar.appendChild(el('span'));
+    bar.setAttribute('aria-label', 'Installationsfortschritt');
+    bar.appendChild(el('span', 'cu-fill'));
     box.appendChild(el('p', 'cu-eta'));
     var reload = box.appendChild(el('button', 'cu-reload', 'Seite neu laden'));
     reload.type = 'button';
@@ -248,26 +255,45 @@
     });
   }
 
-  function paintWait(phaseName) {
+  function clock(seconds) {
+    var minutes = Math.floor(seconds / 60);
+    var rest = seconds % 60;
+    return minutes + ':' + (rest < 10 ? '0' : '') + rest;
+  }
+
+  // Takes the host's report: phase, step and percent (never going back).
+  function track(data) {
+    if (!data) return;
+    if (data.phase) wait.phase = data.phase;
+    if (data.step) wait.step = data.step;
+    var percent = typeof data.percent === 'number' ? data.percent : PHASE_PERCENT[wait.phase];
+    if (typeof percent === 'number') wait.percent = Math.max(wait.percent, Math.min(100, percent));
+    wait.offline = false;
+  }
+
+  function paintWait() {
     if (!root || mode !== 'wait') showWait();
     var elapsed = Math.round((Date.now() - wait.since) / 1000);
-    var finished = phaseName === 'done';
-    root.querySelector('.cu-phase').textContent = PHASES[phaseName] || PHASES.install;
-    var reached = STEPS.findIndex(function (step) { return step[0] === phaseName; });
+    var finished = wait.phase === 'done';
+    var percent = finished ? 100 : wait.percent;
+    root.querySelector('.cu-phase').textContent = finished ? PHASES.done : (wait.step || PHASES[wait.phase] || PHASES.install);
+    var reached = STEPS.findIndex(function (step) { return step[0] === wait.phase; });
     if (finished) reached = STEPS.length;
     root.querySelectorAll('.cu-steps li').forEach(function (item, index) {
       item.classList.toggle('is-done', index < reached);
       item.classList.toggle('is-active', index === reached);
     });
-    var percent = finished ? 100 : Math.min(95, Math.round(elapsed / ESTIMATE_S * 95));
-    root.querySelector('.cu-bar span').style.width = percent + '%';
-    root.querySelector('.cu-bar').setAttribute('aria-valuenow', String(percent));
+    root.querySelector('.cu-fill').style.width = percent + '%';
+    root.querySelector('.cu-percent').textContent = percent + ' %';
+    var bar = root.querySelector('.cu-bar');
+    bar.setAttribute('aria-valuenow', String(percent));
+    bar.classList.toggle('is-moving', !finished && !wait.offline);
     var eta = root.querySelector('.cu-eta');
     if (finished) eta.textContent = 'Die Seite wird neu geladen.';
-    else if (elapsed < ESTIMATE_S) eta.textContent = 'Noch etwa ' + Math.max(5, ESTIMATE_S - elapsed) + ' Sekunden. Die Seite lädt danach von selbst neu.';
-    else eta.textContent = 'Dauert etwas länger als üblich, gleich geschafft. Die Seite lädt von selbst neu.';
+    else if (wait.offline) eta.textContent = 'CoreAI startet gerade neu, die Verbindung ist kurz weg. Der Fortschritt kommt gleich zurück.';
+    else eta.textContent = 'Läuft seit ' + clock(elapsed) + ' Min. Die Seite lädt danach von selbst neu.';
     root.querySelector('.cu-reload').hidden = elapsed < GIVE_UP_S;
-    var stalled = !finished && phaseName === 'queued' && last && last.update && last.update.stalled;
+    var stalled = !finished && wait.phase === 'queued' && last && last.update && last.update.stalled;
     if (stalled) eta.textContent = 'Der Update-Dienst auf dem Server reagiert nicht (systemctl status coreai-update.path).';
     root.querySelector('.cu-cancel').hidden = !stalled;
   }
@@ -275,16 +301,19 @@
   function finish() {
     clearTimeout(waitTimer);
     clearInterval(tickTimer);
-    paintWait('done');
+    wait.phase = 'done';
+    wait.offline = false;
+    paintWait();
     setTimeout(function () { location.reload(); }, 1200);
   }
 
   function startWaiting(data) {
     clearTimeout(idleTimer);
-    wait = wait || { since: Date.now(), version: (data && data.version) || '', phase: (data && data.phase) || 'queued', down: false };
-    paintWait(wait.phase);
+    if (!wait) wait = { since: Date.now(), version: (data && data.version) || '', phase: 'queued', step: '', percent: 0, offline: false, down: false };
+    track(data);
+    paintWait();
     clearInterval(tickTimer);
-    tickTimer = setInterval(function () { if (wait) paintWait(wait.phase); }, 1000);
+    tickTimer = setInterval(function () { if (wait) paintWait(); }, 1000);
     clearTimeout(waitTimer);
     waitTimer = setTimeout(pollWait, POLL_WAIT_MS);
   }
@@ -294,8 +323,8 @@
       last = data;
       if (data.csrf_token) csrf = data.csrf_token;
       if (data.running) {
-        wait.phase = data.phase || wait.phase;
-        paintWait(wait.phase);
+        track(data);
+        paintWait();
         waitTimer = setTimeout(pollWait, POLL_WAIT_MS);
         return;
       }
@@ -316,9 +345,10 @@
       close();
       scheduleIdle();
     }).catch(function () {
-      // CoreAI is restarting (no answer, 502): keep waiting.
+      // CoreAI is restarting (no answer, 502): keep the last progress and wait.
       wait.down = true;
-      paintWait(wait.phase);
+      wait.offline = true;
+      paintWait();
       waitTimer = setTimeout(pollWait, POLL_WAIT_MS);
     });
   }
@@ -332,7 +362,7 @@
     if (!info) return;
     var stateText = 'CoreAI ist aktuell.';
     if (!info.installed) stateText = 'Der Update-Dienst ist auf dem Server noch nicht eingerichtet. Einmal mit dem Setup-Einzeiler aktualisieren, danach kommen Updates hierüber.';
-    else if (info.running) stateText = PHASES[info.phase] || 'Ein Update läuft.';
+    else if (info.running) stateText = (info.step || PHASES[info.phase] || 'Ein Update läuft.') + ' (' + (info.percent || 0) + ' %)';
     else if (info.state === 'failed') stateText = 'Letztes Update fehlgeschlagen: ' + (info.message || 'siehe Update-Protokoll.');
     else if (info.available) stateText = 'Neue Version ' + (info.latest_version || '') + ' verfügbar.';
     else if (info.check_error) stateText = 'GitHub war bei der letzten Prüfung nicht erreichbar.';

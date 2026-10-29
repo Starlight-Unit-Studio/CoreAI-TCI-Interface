@@ -4,7 +4,8 @@
 // matte golden window (a third of the screen, slightly transparent) at load,
 // "Später" hides it until the next load, the settings card reopens it,
 // "Update starten" sends the Ollama choice and shows "Bitte auf Neustart
-// warten", the page reloads once CoreAI is back (not after a fixed wait), a
+// warten" with the host's real step and percent (kept while CoreAI is down,
+// never going back), the page reloads once CoreAI is back (not after a fixed wait), a
 // failed update shows its log, a Nutzer never gets the window but does get the
 // waiting window while CoreAI restarts, and a phone shows it without sideways
 // scrolling. The clock is simulated, so the minutes pass in no time.
@@ -132,22 +133,53 @@ async function advance(page, ms) {
     assert.equal(start.csrf, 'tok', 'with the CSRF token');
     assert.equal(await page.textContent('#cuWaitTitle'), 'Bitte auf Neustart warten');
     assert.equal(await page.textContent('.cu-phase'), 'Das Update wird vorbereitet.');
-    // Host: backup, then CoreAI is down while it restarts.
-    srv.status = () => ({ok: true, running: true, state: 'running', phase: 'backup', version: '0.5.83'});
+    assert.equal(await page.textContent('.cu-percent'), '0 %');
+    // Host: backup with its real progress.
+    const running = (phase, percent, step) => () => ({ok: true, running: true, state: 'running', phase, percent, step, version: '0.5.83'});
+    srv.status = running('backup', 2, 'Die Datenbank wird gesichert.');
     await advance(page, 3100);
     assert.equal(await page.textContent('.cu-phase'), 'Die Datenbank wird gesichert.');
+    assert.equal(await page.textContent('.cu-percent'), '2 %');
     assert.deepEqual(await page.$$eval('.cu-steps li.is-active', l => l.map(x => x.textContent)), ['Sichern']);
+    // The installer's step and percent come from the host, not from a timer.
+    srv.status = running('install', 47, 'Die Images werden gebaut.');
+    await advance(page, 3100);
+    assert.equal(await page.textContent('.cu-phase'), 'Die Images werden gebaut.');
+    assert.equal(await page.textContent('.cu-percent'), '47 %');
+    assert.equal(await page.$eval('.cu-bar', b => b.getAttribute('aria-valuenow')), '47');
+    assert.equal(await page.$eval('.cu-fill', f => f.style.width), '47%', 'the bar fills to the real value');
+    assert.equal(await page.$eval('.cu-bar', b => b.classList.contains('is-moving')), true, 'the sheen runs while the host works');
+    assert.match(await page.$eval('.cu-fill', f => getComputedStyle(f).backgroundImage), /rgb\(24, 42, 102\).*rgb\(91, 146, 255\)/,
+      'navy into CoreAI blue on gold');
+    assert.deepEqual(await page.$$eval('.cu-steps li.is-done', l => l.map(x => x.textContent)), ['Sichern', 'Laden']);
+    assert.match(await page.textContent('.cu-eta'), /^Läuft seit 0:0\d Min\./);
+    await advance(page, 20000);
+    assert.equal(await page.textContent('.cu-percent'), '47 %', 'no made-up progress while the host reports nothing new');
+    // CoreAI is down while PHP and web restart: the last progress stays.
     srv.status = () => 'down';
     await advance(page, 30000);
     assert.equal(await mode(page), 'wait', 'a restart (502) keeps the window waiting');
     assert.equal(await reloaded(page), false, 'no reload while CoreAI is down');
-    await advance(page, 70000);
-    assert.match(await page.textContent('.cu-eta'), /Dauert etwas länger/, 'after 90 s it says it takes longer');
+    assert.equal(await page.textContent('.cu-percent'), '47 %', 'the last progress stays while CoreAI is down');
+    assert.match(await page.textContent('.cu-eta'), /CoreAI startet gerade neu/);
+    assert.equal(await page.$eval('.cu-bar', b => b.classList.contains('is-moving')), false);
+    // Back with the preflight; a lower value never moves the bar back.
+    srv.status = running('install', 30, 'Der Preflight prüft alle Funktionen.');
+    await advance(page, 3100);
+    assert.equal(await page.textContent('.cu-percent'), '47 %', 'progress never goes back');
+    srv.status = running('install', 84, 'Der Preflight prüft alle Funktionen.');
+    await advance(page, 3100);
+    assert.equal(await page.textContent('.cu-percent'), '84 %');
+    assert.match(await page.textContent('.cu-eta'), /^Läuft seit 1:\d\d Min\./);
     assert.equal(await page.isVisible('.cu-reload'), false, 'no manual reload yet');
+    srv.status = running('restart', 94, 'Ollama startet neu.');
+    await advance(page, 3100);
+    assert.deepEqual(await page.$$eval('.cu-steps li.is-active', l => l.map(x => x.textContent)), ['Neustart']);
     // Back on the new version: reload by itself.
-    srv.status = () => ({ok: true, running: false, state: 'done', phase: 'done', version: '0.5.84'});
+    srv.status = () => ({ok: true, running: false, state: 'done', phase: 'done', percent: 100, step: 'Fertig.', version: '0.5.84'});
     await advance(page, 3100);
     assert.equal(await page.textContent('.cu-phase'), 'Neustart abgeschlossen.');
+    assert.equal(await page.textContent('.cu-percent'), '100 %');
     await Promise.all([page.waitForEvent('load'), page.clock.runFor(1300)]);
     assert.equal(await reloaded(page), true, 'the page reloads when CoreAI is back');
     assert.deepEqual(errors, []);
@@ -182,10 +214,11 @@ async function advance(page, ms) {
     await advance(page, 500);
     assert.equal(await page.locator('#coreaiUpdate').count(), 0, 'no update window for a Nutzer');
     assert.equal(await page.isHidden('#updateCard'), true, 'no update card for a Nutzer');
-    srv.status = () => ({ok: true, running: true, state: 'running', phase: 'install', version: '0.5.83'});
+    srv.status = () => ({ok: true, running: true, state: 'running', phase: 'install', percent: 60, step: 'Die Datenbank-Migrationen laufen.', version: '0.5.83'});
     await advance(page, 61000);
     await page.waitForSelector('.cu-wait');
-    assert.equal(await page.textContent('.cu-phase'), 'CoreAI wird installiert und neu gestartet.');
+    assert.equal(await page.textContent('.cu-phase'), 'Die Datenbank-Migrationen laufen.');
+    assert.equal(await page.textContent('.cu-percent'), '60 %', 'a Nutzer sees the same progress');
     assert.deepEqual(await page.$$eval('.cu-steps li.is-done', l => l.map(x => x.textContent)), ['Sichern', 'Laden'],
       'earlier steps marked done');
     assert.equal(srv.calls.filter(c => c.key === 'update.php' && c.post).length, 0, 'a Nutzer never posts');
@@ -209,7 +242,7 @@ async function advance(page, ms) {
   } finally {
     await browser.close();
   }
-  console.log('CoreAI update window: golden window for the Inhaber, Später, start with Ollama choice, waiting window, reload when back, failure log, Nutzer, phone OK');
+  console.log('CoreAI update window: golden window for the Inhaber, Später, start with Ollama choice, real progress, reload when back, failure log, Nutzer, phone OK');
 })().catch(error => {
   console.error(error);
   process.exit(1);

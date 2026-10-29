@@ -83,13 +83,19 @@ function coreui_update_state(string $root, ?int $now = null): array {
     $seen = max(coreui_update_time((string)($status['updated_at'] ?? '')), coreui_update_time((string)($status['started_at'] ?? '')));
     if ($seen > 0 && $now - $seen > COREUI_UPDATE_STALE_SECONDS) {
       $state = 'failed';
-      $message = 'Das Update hat sich nicht zurueckgemeldet. Bitte das Update-Protokoll pruefen.';
+      $message = 'Das Update hat sich nicht zurückgemeldet. Bitte das Update-Protokoll prüfen.';
     }
   }
+  // Real progress from the host: percent 0-100 and the installer step it is on.
+  $percent = max(0, min(100, (int)($status['percent'] ?? 0)));
+  $step = mb_substr(trim((string)($status['step'] ?? '')), 0, 160);
+  if ($state === 'done') $percent = 100;
   $queuedFor = 0;
   if ($state !== 'running' && is_file($paths['request'])) {
     $state = 'queued';
     $phase = 'queued';
+    $percent = 0;
+    $step = '';
     $queuedFor = max(0, $now - (int)@filemtime($paths['request']));
     $message = 'Update angefordert, der Update-Dienst startet gleich.';
   }
@@ -102,6 +108,8 @@ function coreui_update_state(string $root, ?int $now = null): array {
     'queued_seconds' => $queuedFor,
     'stalled' => $state === 'queued' && $queuedFor > COREUI_UPDATE_QUEUE_SECONDS,
     'message' => $message,
+    'percent' => $percent,
+    'step' => $step,
     'available' => $isNew && $state !== 'running' && $state !== 'queued',
     'current_version' => $local['version'],
     'current_commit' => substr($local['commit'], 0, 7),
@@ -119,12 +127,14 @@ function coreui_update_state(string $root, ?int $now = null): array {
   ];
 }
 
-/** What every account (and the login page) sees: only whether CoreAI restarts. */
+/** What every account (and the login page) sees: whether CoreAI restarts, and how far it is. */
 function coreui_update_public(array $state): array {
   return [
     'running' => (bool)$state['running'],
     'state' => (string)$state['state'],
     'phase' => (string)$state['phase'],
+    'percent' => (int)$state['percent'],
+    'step' => (string)$state['step'],
     'version' => (string)$state['current_version'],
   ];
 }

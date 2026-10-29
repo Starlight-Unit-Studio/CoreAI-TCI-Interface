@@ -191,6 +191,7 @@ restart_services() {
   if [[ "$restart_ollama" == '1' ]]; then
     if systemctl cat ollama.service >/dev/null 2>&1; then
       log 'Starte Ollama neu.'
+      state status "$STATUS_FILE" percent=94 step='Ollama startet neu.'
       systemctl restart ollama || return 1
       for attempt in $(seq 1 30); do
         curl -fsS --max-time 4 "$OLLAMA_URL" >/dev/null 2>&1 && return 0
@@ -245,37 +246,46 @@ do_run() {
   exec >>"$LOG_FILE" 2>&1
 
   log "Update angefordert von Konto $requested_by, Ollama-Neustart: $restart_ollama."
+  # Progress for the window: backup 0-8, download 8-10, installation 10-90
+  # (milestones of the installer, see coreai_update_state.py), restart 90-99.
   state status "$STATUS_FILE" state=running phase=backup message='Datenbank wird gesichert.' \
     started_at="$(utc_now)" finished_at='' from_version="$(local_version)" to_version='' commit='' \
-    restart_ollama="$restart_ollama" requested_by="$requested_by" backup=''
+    restart_ollama="$restart_ollama" requested_by="$requested_by" backup='' \
+    percent=2 step='Die Datenbank wird gesichert.'
   # Only now: the window never sees "no request" before "running" (no early reload).
   rm -f -- "$REQUEST_FILE"
 
-  backup="$(backup_database)" || fail_run backup 'Die Datenbanksicherung ist fehlgeschlagen. CoreAI bleibt unveraendert.'
+  backup="$(backup_database)" || fail_run backup 'Die Datenbanksicherung ist fehlgeschlagen. CoreAI bleibt unverändert.'
   log "Datenbank gesichert: $backup"
-  state status "$STATUS_FILE" phase=download message='Neuer Stand wird geladen.' backup="$backup"
+  state status "$STATUS_FILE" phase=download message='Neuer Stand wird geladen.' backup="$backup" \
+    percent=8 step='Das Setup des neuen Stands wird geladen.'
 
   download_setup || result=$?
   if (( result == 2 )); then
-    fail_run download "Das Setup aus main installiert nicht nach $PROJECT_ROOT. CoreAI bleibt unveraendert."
+    fail_run download "Das Setup aus main installiert nicht nach $PROJECT_ROOT. CoreAI bleibt unverändert."
   elif (( result != 0 )); then
-    fail_run download 'GitHub ist nicht erreichbar. CoreAI bleibt unveraendert.'
+    fail_run download 'GitHub ist nicht erreichbar. CoreAI bleibt unverändert.'
   fi
 
-  state status "$STATUS_FILE" phase=install message='CoreAI wird installiert und neu gestartet.'
-  if ! (cd "$TMP_DIR" && COREUI_SETUP_SOURCE=main bash ./setup.sh </dev/null); then
+  state status "$STATUS_FILE" phase=install message='CoreAI wird installiert und neu gestartet.' \
+    percent=10 step='Der Installer startet.'
+  # The output goes through the follower into the log; it turns the installer's
+  # milestones into percent and step. pipefail keeps the installer's exit code.
+  if ! (cd "$TMP_DIR" && COREUI_SETUP_SOURCE=main bash ./setup.sh </dev/null 2>&1) | state follow "$STATUS_FILE"; then
     # Bring the stack up with what is there, so the window can show the error.
     "$PROJECT_ROOT/scripts/stack.sh" up -d >/dev/null 2>&1 || true
     fail_run install 'Die Installation meldet Fehler. Details im Update-Protokoll.'
   fi
 
-  state status "$STATUS_FILE" phase=restart message='Dienste werden neu gestartet.'
-  restart_services "$restart_ollama" || fail_run restart 'Ein Dienst liess sich nicht neu starten. Details im Update-Protokoll.'
+  state status "$STATUS_FILE" phase=restart message='Dienste werden neu gestartet.' \
+    percent=91 step='Die Worker starten neu.'
+  restart_services "$restart_ollama" || fail_run restart 'Ein Dienst ließ sich nicht neu starten. Details im Update-Protokoll.'
 
+  state status "$STATUS_FILE" percent=97 step='CoreAI wird ein letztes Mal geprüft.'
   message='Update abgeschlossen.'
   health_ok || message='Update abgeschlossen; der Health-Check meldet noch Fehler.'
   state status "$STATUS_FILE" state=done phase=done message="$message" finished_at="$(utc_now)" \
-    to_version="$(local_version)" commit="$(local_commit)"
+    to_version="$(local_version)" commit="$(local_commit)" percent=100 step='Fertig.'
   log "$message Version $(local_version), Commit $(local_commit)."
   check_now || true
 }
