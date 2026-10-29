@@ -43,7 +43,7 @@ skill_assert(coreui_skills_body('../config') === '', 'Path traversal');
 $full = coreui_skills_index([], 'full');
 skill_assert(str_contains($full, '[SKILL: kennung]') && str_contains($full, '- python: ' . $catalog['python']['description'])
   && !str_contains($full, 'werkzeuge:'), 'Full library lists every optional skill with its description');
-skill_assert(str_contains(coreui_skills_index([], 'titles'), 'python (Python-Programme)'), 'Titles library');
+skill_assert(str_contains(coreui_skills_index([], 'titles'), 'python (' . $catalog['python']['title'] . ')'), 'Titles library');
 $ids = coreui_skills_index(['python'], 'ids');
 skill_assert(str_contains($ids, 'zip-delivery') && !str_contains($ids, ', python,') && str_contains($ids, 'Schon geladen: python.'), 'Loaded skills leave the library');
 skill_assert(strlen(coreui_skills_index([], 'ids')) < strlen(coreui_skills_index([], 'titles'))
@@ -52,7 +52,7 @@ skill_assert(coreui_skills_index(coreui_skills_optional_ids()) === '', 'Nothing 
 
 // Marker: plain or as sole inline code; explanations in code do not count.
 skill_assert(coreui_skills_extract_marker('[SKILL: python]') === 'python', 'Marker');
-skill_assert(coreui_skills_extract_marker('[skill: Python, zip-delivery]') === 'python, zip-delivery', 'Two skills, any case');
+skill_assert(coreui_skills_extract_marker('[skill: Python, zip-delivery]') === 'Python, zip-delivery', 'Two skills, any case (ids are lowercased when loading)');
 skill_assert(coreui_skills_extract_marker('`[SKILL: python]`') === 'python', 'Sole inline code marker');
 skill_assert(coreui_skills_extract_marker('Mit `[SKILL: python]` lade ich Anleitungen.') === null, 'Explanation in code');
 skill_assert(coreui_skills_extract_marker("```\n[SKILL: python]\n```") === null, 'Code block');
@@ -68,7 +68,7 @@ skill_assert(str_contains($block, 'Werkzeuge: verbindlicher CoreAI-Kern-Skill') 
 skill_assert(coreui_skills_index_active(), 'Library offered');
 $result = coreui_skills_tool_result('python, gibtsnicht');
 $after = coreui_skills_augment('task');
-skill_assert(str_contains($result, 'Geladen: python (Python-Programme)') && str_contains($result, '"gibtsnicht" gibt es nicht')
+skill_assert(str_contains($result, 'Geladen: python (' . $catalog['python']['title'] . ')') && str_contains($result, '"gibtsnicht" gibt es nicht')
   && !str_contains($result, 'Trenne Ein-/Ausgabe'), 'The step only reports');
 skill_assert(str_contains($after, "[COREUI SKILLS:") && str_contains($after, 'Trenne Ein-/Ausgabe')
   && str_contains($after, 'Schon geladen: python.'), 'The skill joins the trusted block, the library updates');
@@ -109,8 +109,57 @@ $loop = coreui_agent_loop_run('[SKILL: python]', $tool, 'BASIS', ['web', 'skill'
   static fn(): bool => false);
 skill_assert($loop['out'] === 'Hier ist dein sauberes Skript.' && $loop['steps'] === 1 && count($seen) === 1, 'The loop answers after loading');
 skill_assert(strpos($seen[0], 'Trenne Ein-/Ausgabe') < strpos($seen[0], '--- DEINE ARBEITSSCHRITTE BISHER')
-  && str_contains($seen[0], 'Geladen: python (Python-Programme)'), 'The guide sits in the trusted block, the step only reports');
+  && str_contains($seen[0], 'Geladen: python (' . $catalog['python']['title'] . ')'), 'The guide sits in the trusted block, the step only reports');
 skill_assert(in_array('Schritt 1 von 6: Skill geladen', $records, true), 'The work view shows the step');
+
+// 0.5.82: reference plans in references/*.md, loaded on request into the trusted block.
+$withRefs = array_values(array_filter(coreui_skills_optional_ids(), static fn(string $id): bool => coreui_skills_resource_paths($id) !== []));
+skill_assert(count($withRefs) >= 40 && coreui_skills_resource_paths('tenancy-law') === ['references/IMPLEMENTATION.md'], 'Reference plans are found');
+foreach ($withRefs as $id) {
+  foreach (coreui_skills_resource_paths($id) as $file) {
+    skill_assert(coreui_skills_resource_text($id, $file) !== '', 'Reference loadable within ' . COREUI_SKILLS_RESOURCE_MAX_BYTES . ' bytes: ' . $id . '/' . $file);
+  }
+}
+skill_assert(coreui_skills_extract_marker('[SKILL: tenancy-law/references/IMPLEMENTATION.md]') === 'tenancy-law/references/IMPLEMENTATION.md', 'Reference marker keeps the file name');
+skill_assert(coreui_skills_resource_file('tenancy-law', 'references/implementation.md') === 'references/IMPLEMENTATION.md'
+  && coreui_skills_resource_file('tenancy-law', 'IMPLEMENTATION.md') === 'references/IMPLEMENTATION.md', 'Case and short form');
+foreach (['references/../SKILL.md', '../../../api/config.local.php', 'references/IMPLEMENTATION.php', 'SKILL.md', ''] as $bad) {
+  skill_assert(coreui_skills_resource_file('tenancy-law', $bad) === null, 'Only listed reference files: ' . $bad);
+}
+skill_assert(coreui_skills_resource_paths('../skills/xlsx') === [] && coreui_skills_resource_paths('python') === [], 'Unknown skill or none');
+coreui_skills_prepare($pdo, 'Hallo');
+coreui_skills_tool_result('tenancy-law');
+$hint = coreui_skills_augment('task');
+skill_assert(str_contains($hint, '(Referenz bei Bedarf: [SKILL: tenancy-law/references/IMPLEMENTATION.md])'), 'A loaded skill names its reference');
+$refResult = coreui_skills_tool_result('tenancy-law/references/implementation.md');
+$withRef = coreui_skills_augment('task');
+skill_assert(str_contains($refResult, 'Geladen: tenancy-law/references/IMPLEMENTATION.md') && !str_contains($refResult, 'Fristenrechner'), 'The step only reports');
+skill_assert(str_contains($withRef, '[REFERENZ tenancy-law/references/IMPLEMENTATION.md:') && str_contains($withRef, 'Fristenrechner')
+  && str_contains($withRef, 'gibt es nur, wenn sie in deinem Werkzeugprotokoll stehen')
+  && strpos($withRef, '[REFERENZ') < strpos($withRef, '[ENDE COREUI SKILLS]')
+  && !str_contains($withRef, 'Referenz bei Bedarf: [SKILL: tenancy-law'), 'Reference in the trusted block, planned tools are not claimed');
+skill_assert(str_contains($withRef, 'Schon geladen: tenancy-law.') && !str_contains($withRef, 'Schon geladen: tenancy-law, tenancy-law/'), 'The library lists skills only');
+skill_assert(str_contains(coreui_skills_tool_result('tenancy-law/references/IMPLEMENTATION.md'), 'schon geladen'), 'No double reference');
+coreui_skills_tool_result('xlsx/references/IMPLEMENTATION.md');
+skill_assert(str_contains(coreui_skills_augment('task'), 'Excel') && in_array('xlsx', $GLOBALS['COREUI_SKILLS_LOADED'], true),
+  'A reference brings its skill along');
+skill_assert(str_contains(coreui_skills_tool_result('pdf/references/IMPLEMENTATION.md'), 'mehr passen nicht'), 'Two references per answer on a big window');
+skill_assert(str_contains(coreui_skills_tool_result('xlsx/references/README.md'), 'Vorhanden: xlsx/references/IMPLEMENTATION.md'), 'Unknown file names the real ones');
+coreui_skills_prepare($pdo, 'Hallo', 'console', 2);
+coreui_skills_tool_result('tenancy-law/references/IMPLEMENTATION.md');
+skill_assert(str_contains(coreui_skills_tool_result('pdf/references/IMPLEMENTATION.md'), 'mehr passen nicht'), 'One reference on an 8192 window');
+coreui_skills_prepare($pdo, 'Hallo', 'console', 1);
+skill_assert(str_contains(coreui_skills_tool_result('tenancy-law/references/IMPLEMENTATION.md'), 'Kontextfenster zu klein')
+  && !str_contains(coreui_skills_augment('task'), '[REFERENZ'), 'No references on a 4096 window');
+coreui_skills_tool_result('tenancy-law');
+skill_assert(!str_contains(coreui_skills_augment('task'), 'Referenz bei Bedarf'), 'And no hint there');
+$refTool = coreui_agent_next_tool('[SKILL: tenancy-law/references/IMPLEMENTATION.md]', ['skill']);
+skill_assert($refTool === ['tool'=>'skill', 'input'=>'tenancy-law/references/IMPLEMENTATION.md']
+  && coreui_agent_step_note($refTool) === 'Ich lade die Arbeitsanleitung: tenancy-law/references/IMPLEMENTATION.md', 'Reference as a loop step');
+foreach (glob($root . '/skills/*/references/*.md') ?: [] as $refFile) {
+  skill_assert(preg_match('~laedt CoreAI nur SKILL|lädt aktuell nur SKILL|nicht automatisch (nach)?geladen~u', (string)file_get_contents($refFile)) !== 1,
+    'Reference still says it is never loaded: ' . basename(dirname($refFile, 2)));
+}
 
 // Wiring.
 $chat = (string)file_get_contents($root . '/api/chat.php');
@@ -132,4 +181,4 @@ foreach (['config/runtime/nginx.conf.template','config/nginx.conf.template'] as 
 }
 $settings = (string)file_get_contents($root . '/settings.html');
 skill_assert(!str_contains($settings, 'view-skills') && !str_contains($settings, 'skills-settings'), 'No Skills tab');
-echo "CoreAI skills: whole library for Mara, preselection, [SKILL:] in the work loop, trusted block, no switches OK\n";
+echo "CoreAI skills: whole library for Mara, preselection, [SKILL:] in the work loop, trusted block, reference plans on request, no switches OK\n";

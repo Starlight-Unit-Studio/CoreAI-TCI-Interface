@@ -1,0 +1,32 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.5.82
+Stand: 29.10.2026
+Branch: claude/bold-galileo-myoyi0 (neu auf main 0.5.81, Merge von PR #132)
+Basis: Frage des Betreibers, ob die neuen Skills noch angebunden werden muessen. Hinweis des Betreibers: Skills, deren
+Werkzeuge noch fehlen, sind bewusst als Vorbereitung und Uebersicht des Fehlenden angelegt.
+
+BEFUND:
+- Alle 106 SKILL.md sind im Katalog und in Maras Bibliothek; sie sind angebunden.
+- 48 Skills haben references/IMPLEMENTATION.md (Zielumfang, Quellen, Abnahme). Der Loader las nur SKILL.md; die Doku
+  nannte eine "separat geplante Ressourcenladefunktion".
+- scripts/skills-selftest.php erwartete den alten Titel "Python-Programme"; nach dem Kuerzen der Titel in 0.5.81
+  schlug er fehl (auch im Server-Preflight).
+
+AENDERUNGEN:
+- api/skills.php: coreui_skills_resource_paths (Markdown in references/, keine Links), coreui_skills_resource_file
+  (Pfad gegen die echte Liste, Gross-/Kleinschreibung egal, Kurzform DATEI.md), coreui_skills_resource_text (realpath
+  im references-Ordner, hoechstens COREUI_SKILLS_RESOURCE_MAX_BYTES = 4000, sonst ''), coreui_skills_resource_budget
+  (full 2, titles 1, ids 0; COREUI_SKILLS_BUDGET aus coreui_skills_prepare). Marker behaelt Gross-/Kleinschreibung
+  (Dateinamen), Kennungen werden beim Laden kleingeschrieben. coreui_skills_tool_result laedt "kennung/pfad" als
+  Referenz (bringt den Skill mit), coreui_skills_compose haengt an jeden geladenen Skill "(Referenz bei Bedarf:
+  [SKILL: ...])" und setzt geladene Referenzen als [REFERENZ ...: Hinweis zu geplanten Werkzeugen] in den Block.
+  Die Bibliothek fuehrt unter "Schon geladen" nur Skills.
+- skills/*: Saetze "wird nicht (automatisch) geladen" in SKILL.md und references/IMPLEMENTATION.md nennen jetzt den
+  Marker; Groessengrenzen bleiben eingehalten (Anleitung 2400, Referenz 4000, Bibliothek 3600 Byte).
+- docs/COREUI_SKILLS.md, docs/COREAI_SKILL_CAPABILITY_GAPS.md, docs/COREAI_AGENTICSKILLS_REFERENCE.md: Ressourcenlader.
+
+GEPRUEFT:
+- Alle Offline-Selbsttests; skills-selftest.php mit allen 48 Referenzen, Pfadschutz (.., andere Endung, SKILL.md),
+  Budget je Fenster, Referenz im Block vor [ENDE COREUI SKILLS], kein Doppelladen, Arbeitsschleifen-Schritt.
+
+NAECHSTER SCHRITT: Update auf dem Server (keine Migration). Live: eine Mietrechtsfrage stellen und schauen, ob Mara
+den Skill und bei Bedarf die Referenz laedt und online nach der geltenden Fassung sucht. Danach Audio.

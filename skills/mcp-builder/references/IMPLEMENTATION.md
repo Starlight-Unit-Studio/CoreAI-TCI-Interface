@@ -1,6 +1,6 @@
 # MCP-Tool- und Server-Entwicklung: Vollausbau
 
-Fachliche Vorgaben für spätere CoreAI-Tools; der aktuelle Skill-Loader wird nicht verändert und lädt weiterhin nur SKILL.md. Die hier genannten APIs/Skripte sind keine bereits aktivierten Berechtigungen.
+Fachliche Vorgaben für spätere CoreAI-Tools; Mara lädt diese Referenz nur bei Bedarf ([SKILL: mcp-builder/references/IMPLEMENTATION.md]). Die hier genannten APIs/Skripte sind keine bereits aktivierten Berechtigungen.
 
 ## Vollständiges Ziel
 MCP-Server mit Tools, Resources und Prompts planen; JSON-Schemas für Inputs/Outputs, klare Toolnamen, Auth und Rechte, stdio/Streamable-HTTP-Transport, Status, Timeout, Cancellation und Versionierung definieren. Client-/Serververhalten getrennt testen. OAuth oder andere Anmeldungen ausschließlich mit freigegebenem Kontokontext.

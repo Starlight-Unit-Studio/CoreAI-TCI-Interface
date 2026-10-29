@@ -1,6 +1,6 @@
 # Urheber-, Marken- und Lizenzrecht: vollstandiger Zielumfang und Abnahme
 
-Diese Datei ist der vollstandige Fach- und Werkzeugplan. Aktuell laedt CoreAI nur SKILL.md; die Referenz liegt fuer den spaeteren Ausbau bereit, ohne Loader oder Modelfile zu veraendern.
+Diese Datei ist der vollstandige Fach- und Werkzeugplan. Mara laedt sie bei Bedarf mit [SKILL: intellectual-property/references/IMPLEMENTATION.md]; die hier genannten Werkzeuge gibt es erst, wenn sie im Werkzeugprotokoll stehen.
 
 ## Ausloeser
 urheberrecht, markenrecht, lizenzvertrag, nutzungsrechte, open source lizenz, copyright, markenverletzung, bildrechte

@@ -7,7 +7,15 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.81` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.82` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Skill-Referenzen auf Anforderung (0.5.82)
+
+48 Skills haben einen Referenzplan (`references/IMPLEMENTATION.md`) mit Quellen,
+Zielumfang und Abnahme. Mara laedt ihn bei Bedarf mit
+`[SKILL: kennung/references/IMPLEMENTATION.md]` nach. Werkzeuge, die dort als
+benoetigt stehen, nutzt sie nur, wenn es sie wirklich gibt; die Plaene bleiben
+die Uebersicht, was noch fehlt.
 
 ## Skills: Mara waehlt selbst (0.5.81)
 

@@ -10,4 +10,4 @@ Halte Raster, Kontraste und Abstände konsistent. Für Druck RGB/CMYK und Beschn
 
 Prüfe die Gestaltung im Ausgabeformat, wenn eine echte Vorschau gerendert werden kann. Fehlt Bild- oder PDF-Erzeugung, liefere eine präzise Layoutbeschreibung mit Abmessungen statt erfundener Dateien.
 
-Der gesamte fachliche Zielumfang, die benoetigten Werkzeuge und Abnahmekriterien stehen in references/IMPLEMENTATION.md. Plane diese Funktionen auch dann vollstaendig, wenn ihr Backend noch aussteht; kennzeichne die konkrete Ausfuehrung als offen. Diese Referenz wird vom aktuellen Loader noch nicht automatisch nachgeladen.
+Der gesamte fachliche Zielumfang, die benoetigten Werkzeuge und Abnahmekriterien stehen in references/IMPLEMENTATION.md. Plane diese Funktionen auch dann vollstaendig, wenn ihr Backend noch aussteht; kennzeichne die konkrete Ausfuehrung als offen. Lade sie bei Bedarf mit [SKILL: canvas-design/references/IMPLEMENTATION.md].

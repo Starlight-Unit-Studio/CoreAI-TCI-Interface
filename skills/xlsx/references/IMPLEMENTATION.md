@@ -1,6 +1,6 @@
 # XLSX: fachliche Endausbaustufe
 
-Dies ist die eigene CoreAI-Sollbeschreibung zur Vorbereitung der Werkzeuge. Die bestehende Runtime lädt aktuell nur SKILL.md, nicht diesen Referenztext.
+Dies ist die eigene CoreAI-Sollbeschreibung zur Vorbereitung der Werkzeuge. Mara lädt diesen Referenztext bei Bedarf ([SKILL: xlsx/references/IMPLEMENTATION.md]).
 
 ## Verbindliche Fähigkeiten
 Neue/alte Workbooks einschließlich Tabellenblättern, Spalten, Formeln, Zellbezügen, Diagrammen, Styles, Datenvalidierung, Named Ranges, Filtern und bedingten Formaten bearbeiten; CSV/TSV-Daten sicher importieren; Makrodateien gezielt erhalten.

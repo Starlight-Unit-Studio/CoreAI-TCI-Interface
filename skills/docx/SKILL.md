@@ -10,4 +10,4 @@ Bei Erstellung Überschriftenhierarchie, Absatzabstände, Tabellenbreiten, Seite
 
 DOCX als ZIP/OOXML strukturell prüfen, eingebettete Medienbeziehungen und UTF-8-Text kontrollieren. Eine gerenderte Sichtprüfung nur behaupten, wenn die Vorschau tatsächlich erzeugt wurde. Fehlt der Dateiausgabeweg, stattdessen klar gekennzeichneten Inhalt und das fehlende Werkzeug benennen.
 
-Der gesamte fachliche Zielumfang, die benoetigten Werkzeuge und Abnahmekriterien stehen in references/IMPLEMENTATION.md. Plane diese Funktionen auch dann vollstaendig, wenn ihr Backend noch aussteht; kennzeichne die konkrete Ausfuehrung als offen. Diese Referenz wird vom aktuellen Loader noch nicht automatisch nachgeladen.
+Der gesamte fachliche Zielumfang, die benoetigten Werkzeuge und Abnahmekriterien stehen in references/IMPLEMENTATION.md. Plane diese Funktionen auch dann vollstaendig, wenn ihr Backend noch aussteht; kennzeichne die konkrete Ausfuehrung als offen. Lade sie bei Bedarf mit [SKILL: docx/references/IMPLEMENTATION.md].

@@ -4,7 +4,7 @@ Stand: 29.10.2026, geplant für Quellversion 0.5.81. Ausgangspunkt: 33 Skills (0
 
 ## Grundsatz
 
-Die Skills sollen ihre **vollständige fachliche Fähigkeit** beschreiben, auch wenn ein dafür notwendiges Backend-Werkzeug noch fehlt. Die 19 Skills besitzen jeweils eine aktive, kontextsparende `SKILL.md` und einen ausführlichen eigenen Funktions- und Abnahmeplan in `skills/<id>/references/IMPLEMENTATION.md`. **Dieser Referenzplan wird vom heutigen Loader nicht automatisch gelesen**, bleibt jedoch als verbindliche Entwicklungsvorlage im Repository.
+Die Skills sollen ihre **vollständige fachliche Fähigkeit** beschreiben, auch wenn ein dafür notwendiges Backend-Werkzeug noch fehlt. Die 19 Skills besitzen jeweils eine aktive, kontextsparende `SKILL.md` und einen ausführlichen eigenen Funktions- und Abnahmeplan in `skills/<id>/references/IMPLEMENTATION.md`. **Seit 0.5.82 laedt Mara diesen Referenzplan auf Anforderung** (`[SKILL: kennung/references/IMPLEMENTATION.md]`); er bleibt zugleich die verbindliche Entwicklungsvorlage. Werkzeuge, die er als benoetigt nennt, gelten fuer Mara nur, wenn sie in ihrem Werkzeugprotokoll stehen.
 
 Der neue Skillkatalog ist additive Vorbereitung, keine Implementierung sämtlicher Office-, Browser-, Agenten- oder Grafikfunktionen. Alle technischen Fähigkeiten müssen erst durch echte Werkzeuge, Sicherheit, Tests und Downloads bereitgestellt und abgenommen werden. Keine automatische Installation fremder Abhängigkeiten und keine Änderungen an `api/skills.php`, Modellwahl, Modelfile oder Pflicht-Skill `werkzeuge`.
 
@@ -84,7 +84,7 @@ Referenz fuer alle juristischen Skills: [COREAI_LEGAL_CURRENTNESS.md](COREAI_LEG
 
 - `werkzeuge` bleibt einziger verpflichtender Skill; alle anderen werden wie seit 0.5.80 von Mara selbst ausgewählt oder vorab geladen.
 - Die bestehende `[SKILL: kennung]`-Syntax, die Anleitungsgrenze von 2400 Byte und die Indexgrenze von 3600 Byte bleiben erhalten.
-- Referenzdateien in den Skill-Ordnern sind bis zu einer **separat geplanten** Ressourcenladefunktion nur Quell-/Entwicklungsdokumentation. Keine heimliche Loader- oder Modelfile-Änderung.
+- Referenzdateien in den Skill-Ordnern laedt Mara seit 0.5.82 auf Anforderung in den vertrauenswuerdigen Skill-Block (Ressourcenlader, nur `references/*.md`, keine Skripte). Das Modelfile bleibt unveraendert.
 - Eigene Skill-Anleitungen und Zielverträge; kein Kopieren von proprietären DOCX/PDF/PPTX/XLSX-Skilldateien oder fremden Grafiken/Schriften. Quelloffene Beispiele und SDK-Dokumentationen sind Architekturvorbilder.
 - Das zusätzliche lokale Gemma-Grammatik-Feature aus #119 bleibt ein separates späteres Vorhaben, damit kein unerwünschter systemweiter Pflicht-Skill eingeführt wird.
 

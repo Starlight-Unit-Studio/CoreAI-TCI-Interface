@@ -1,6 +1,6 @@
 # Playwright-Webapp-Tests: Produktionsumfang
 
-Spezifikation der fertigen Funktion für spätere Werkzeuge. SKILL.md bleibt der heute aktiv geladene Kern; die unveränderte Laufzeit lädt dieses Referenzdokument nicht automatisch.
+Spezifikation der fertigen Funktion für spätere Werkzeuge. SKILL.md bleibt der aktiv geladene Kern; dieses Referenzdokument lädt Mara nur bei Bedarf ([SKILL: webapp-testing/references/IMPLEMENTATION.md]).
 
 ## Fähigkeiten
 Automatisierte E2E-Tests für lokale Webapps, inklusive Start/Stopp von Entwicklungsservern, Rollen/Locatoren, sicheren Formularen, Browsernavigation, responsive Viewports, Mockdaten, Downloadkontrolle, Screenshots, Traces und Fehlerdiagnose. Browserzustand pro Test isolieren; vorhandene Sessionrechte wahren.

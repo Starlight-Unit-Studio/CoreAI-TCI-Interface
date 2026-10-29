@@ -10,4 +10,4 @@ Für strukturierte Daten ist gerendertes DOM wichtig: Ein reiner HTTP-Textabruf 
 
 Liefere eine priorisierte Tabelle aus URL, belegtem Befund, Auswirkung, Korrektur, benötigtem Werkzeug und Retest. Rankingsteigerungen nie garantieren. Ist kein Website-Zugriff verfügbar, stattdessen vollständige Audit-Checkliste und offenen Werkzeugbedarf liefern.
 
-Vollständige Zielwerkzeuge, Negativtests und spätere technische Integrationen: references/IMPLEMENTATION.md. Diese Zusatzdatei wird derzeit nicht automatisch geladen.
+Vollständige Zielwerkzeuge, Negativtests und spätere technische Integrationen: references/IMPLEMENTATION.md. Bei Bedarf mit [SKILL: seo-audit/references/IMPLEMENTATION.md] nachladen.

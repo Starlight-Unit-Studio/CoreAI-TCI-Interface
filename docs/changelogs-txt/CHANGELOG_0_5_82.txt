@@ -1,0 +1,7 @@
+CoreAI: TCI Interface 0.5.82 - 29.10.2026
+- Skill-Referenzen angebunden: [SKILL: kennung/references/IMPLEMENTATION.md] laedt einen Referenzplan auf Anforderung in den vertrauenswuerdigen Skill-Block (Schritt der Arbeitsschleife).
+- Geladene Skills nennen ihre Referenz; eine Referenz bringt ihren Skill mit.
+- Geplante Werkzeuge aus Referenzen gelten nur, wenn sie im Werkzeugprotokoll stehen.
+- Nur references/*.md registrierter Skills, Pfad geprueft, hoechstens 4000 Byte; zwei je Antwort (grosses Fenster), eine (8192), keine (4096); keine Skripte.
+- Skill- und Referenztexte sowie Doku nennen den Marker statt "wird nicht geladen".
+- skills-selftest.php repariert (Titel aus dem Katalog) und um Referenzen erweitert.

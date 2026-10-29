@@ -1,6 +1,6 @@
 # PDF: fachliche Endausbaustufe
 
-Dies ist die eigene CoreAI-Sollbeschreibung zur Vorbereitung der Werkzeuge. Die bestehende Runtime lädt aktuell nur SKILL.md, nicht diesen Referenztext.
+Dies ist die eigene CoreAI-Sollbeschreibung zur Vorbereitung der Werkzeuge. Mara lädt diesen Referenztext bei Bedarf ([SKILL: pdf/references/IMPLEMENTATION.md]).
 
 ## Verbindliche Fähigkeiten
 Text und Tabellen extrahieren; PDF-Seiten zusammenfügen, teilen, drehen, sortieren, entnehmen, Wasserzeichen; neue PDF-Dokumente setzen; AcroForm-Felder auslesen und ausfüllen; gescannte Seiten mit OCR erschließen; Signaturfolgen respektieren.

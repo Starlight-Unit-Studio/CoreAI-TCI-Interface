@@ -1,6 +1,6 @@
 # PPTX: fachliche Endausbaustufe
 
-Dies ist die eigene CoreAI-Sollbeschreibung zur Vorbereitung der Werkzeuge. Die bestehende Runtime lädt aktuell nur SKILL.md, nicht diesen Referenztext.
+Dies ist die eigene CoreAI-Sollbeschreibung zur Vorbereitung der Werkzeuge. Mara lädt diesen Referenztext bei Bedarf ([SKILL: pptx/references/IMPLEMENTATION.md]).
 
 ## Verbindliche Fähigkeiten
 Neue Präsentation aus Briefing/Markenregeln, Themes und Masterlayouts bauen; bestehende PPTX/POTX bearbeiten; editierbare Charts, Tabellen, Formen, Bilder, Notizen und Folientexte erzeugen; Folien dramaturgisch und visuell prüfen.

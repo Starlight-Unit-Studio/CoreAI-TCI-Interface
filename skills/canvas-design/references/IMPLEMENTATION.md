@@ -1,6 +1,6 @@
 # Grafik- und Posterdesign: Produktionsumfang
 
-Spezifikation der fertigen Funktion für spätere Werkzeuge. SKILL.md bleibt der heute aktiv geladene Kern; die unveränderte Laufzeit lädt dieses Referenzdokument nicht automatisch.
+Spezifikation der fertigen Funktion für spätere Werkzeuge. SKILL.md bleibt der aktiv geladene Kern; dieses Referenzdokument lädt Mara nur bei Bedarf ([SKILL: canvas-design/references/IMPLEMENTATION.md]).
 
 ## Fähigkeiten
 Magazine, Poster, Broschüren, Cover und Banner aus Konzept, Farbpalette, Typografie und Bildhierarchie gestalten. Raster, Beschnitt, Seitenverhältnis, Print-/Screen-Auflösung und zulässige Assets beachten. Mehrere Entwürfe mit konkreten visuellen Unterschieden anbieten, finalen Export nach Zielmedium prüfen.

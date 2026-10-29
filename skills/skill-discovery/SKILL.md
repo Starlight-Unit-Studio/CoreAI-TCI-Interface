@@ -10,4 +10,4 @@ Lies die tatsächliche SKILL.md vor einer Empfehlung. Die Aufnahme in einen Kata
 
 Ergebnis: nach Relevanz sortierte Kandidaten, Abgleich zum bestehenden Skill, geprüfte Quelle, Risiken, fehlende Toolklassen und ein konkreter CoreAI-Ergänzungsvorschlag. Bis zu einer ausdrücklich autorisierten Importfunktion nur eigene SKILL.md-Texte vorbereiten; Loader, Modelfile und den Pflicht-Skill nicht verändern.
 
-Vollständige Zielwerkzeuge, Negativtests und spätere technische Integrationen: references/IMPLEMENTATION.md. Diese Zusatzdatei wird derzeit nicht automatisch geladen.
+Vollständige Zielwerkzeuge, Negativtests und spätere technische Integrationen: references/IMPLEMENTATION.md. Bei Bedarf mit [SKILL: skill-discovery/references/IMPLEMENTATION.md] nachladen.

@@ -1,9 +1,11 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
-Stand: 28.10.2026
-Repository-Version: 0.5.80
+Stand: 29.10.2026
+Repository-Version: 0.5.82
 Repository: https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface
 ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_5_82.txt
+  docs/UEBERGABEPROTOKOLL_0_5_81.txt
   docs/UEBERGABEPROTOKOLL_0_5_80.txt
   docs/UEBERGABEPROTOKOLL_0_5_79.txt
   docs/UEBERGABEPROTOKOLL_0_5_78.txt
@@ -111,6 +113,8 @@ ohne Ollama-Liste, Einstellungen als Tab-Seite mit Start und Karten, Admin Core 
 leitet weiter, css/admin.css entfaellt).
 0.5.79 ist gemergt (PR #129). 0.5.80: Skills ohne Schalter, Mara waehlt selbst (Bibliothek im Prompt, [SKILL: kennung]
 als Schritt der Arbeitsschleife, Vorauswahl bleibt).
+0.5.81 (PR #132): 106 Skills. 0.5.82: Referenzplaene der Skills laedt Mara auf Anforderung
+([SKILL: kennung/references/IMPLEMENTATION.md]); Skill-Test an gekuerzte Titel angepasst.
 NAECHSTER SCHRITT: Audio (TTS-Kandidaten), Benutzerverwaltung nach Betreiberwunsch, dann P20.1.
 Mara/Ember, Ollama-Modelfile, serielle Queue und private Projekt-
 plaene NICHT ungefragt veraendern.

@@ -1,6 +1,6 @@
 # GIFs für Slack und Messenger: kompletter Arbeitsablauf
 
-Dieser Referenzplan bleibt bis zur späteren Toolintegration als fachliches Soll erhalten. Die Runtime lädt aktuell nur SKILL.md und wird dafür nicht verändert.
+Dieser Referenzplan bleibt bis zur späteren Toolintegration als fachliches Soll erhalten. Mara lädt ihn bei Bedarf ([SKILL: slack-gif-creator/references/IMPLEMENTATION.md]).
 
 ## Zielbild
 GIF, Emoji, Sticker oder Reaktionsanimation aus Storyboard erzeugen. Plattformabhängige Bildmaße und Größenlimit aus aktuellen offiziellen Vorgaben ableiten; Frame-Rate, Schleifenmodus, Bildpalette, Dithering, Transparenz, Lesbarkeit bei Miniaturansicht und Kompression gezielt bearbeiten.
