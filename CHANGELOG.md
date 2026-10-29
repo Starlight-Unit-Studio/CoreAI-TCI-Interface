@@ -2,6 +2,14 @@
 
 CoreAI: TCI Interface gehoert zur Quantum-Softwarefamilie und wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert. Historische Changelogs dokumentieren die frueheren Produktnamen unveraendert.
 
+## 0.5.84 - 29.10.2026
+
+- **Benutzer loeschen:** Unter Admin Core > Benutzer hat jede Zeile, die man loeschen darf, den Knopf LOESCHEN. Er klappt eine Zeile auf, die sagt, was alles geht, und verlangt die E-Mail des Kontos als Bestaetigung (Gross- und Kleinschreibung egal); erst dann wird ENDGUELTIG LOESCHEN aktiv. Danach meldet die Seite, wie viele Chats, Nachrichten und Dateien entfernt wurden.
+- **Wer wen loeschen darf (Server prueft):** Der Inhaber loescht Admins, Nutzer und Gaeste; ein Admin nur Nutzer und Gaeste. Niemand loescht sich selbst, ein Inhaber-Konto oder Maras Systemkonto. Laeuft fuer das Konto gerade etwas (Antwort, Browser, Python, Warteschlange), wird nichts geloescht und die Seite bittet, kurz zu warten.
+- **Was geloescht wird:** alle Chats mit Nachrichten, Anhaengen, Dateiausgaben, Browser- und Python-Jobs, Arbeitsschritten und Plaenen (ueber die geprueften Chat-Loeschung), hochgeladene Dateien, die nie in einem Chat landeten, Wissen mit Abschnitten und Dateien, Maras Erinnerungen an das Konto und seine Figur, Profil und Avatare, KI-Einstellungen, Core-Freigaben, Skills, Anmeldungen und Komprimier-Archive. Globale Fakten, die das Konto einmal angelegt hat, bleiben fuer alle erhalten, nur ohne Verweis aufs Konto. Im Admin-Audit bleibt ein Eintrag mit E-Mail, Rolle und Zahlen.
+- **Alles oder nichts:** Der Datenbankteil laeuft in einer Transaktion; Dateien werden erst nach dem Abschluss entfernt und nur in ihren bekannten Ordnern (keine Pfade, keine Symlinks nach aussen).
+- Tests: neu `account-delete-selftest.php` (Rechte, Bestaetigung, Dateien, Verdrahtung; mit Datenbank eine vollstaendige Loeschung eines Testkontos mit Chats, Dateien, Wissen und Erinnerungen, danach Rollback; fremde Konten bleiben unberuehrt), in beiden Preflights. Der Einstellungs-Browser-Test loescht als Inhaber ein Konto mit Bestaetigung und prueft, dass ein Admin das Inhaber-Konto nicht loeschen kann. Lokal gegen MariaDB 10.11 mit allen Migrationen geprueft, auch mit echtem Commit und echten Dateien.
+
 ## 0.5.83 - 29.10.2026
 
 - **Eingabefeld springt nach dem Senden zurueck:** Waechst das Feld durch mehrere Zeilen, blieb es nach dem Absenden leer, aber gross. Ursache: Der Text wurde an zehn Stellen per Code geleert oder gesetzt (Senden, Vormerken, Bearbeiten und Abbrechen, `/komprimieren`, langer Text als Anhang); das loest kein Eingabe-Ereignis aus, die Hoehe wurde nie neu berechnet. Jetzt laeuft jede Aenderung ueber eine Funktion, die die Hoehe anpasst. Im echten Browser geprueft: vorher 128 px nach dem Senden, jetzt 32 px.

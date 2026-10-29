@@ -7,7 +7,16 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.83` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.84` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Benutzer loeschen (0.5.84)
+
+Unter Admin Core > Benutzer loescht der Inhaber Admins, Nutzer und Gaeste, ein
+Admin nur Nutzer und Gaeste. Niemand loescht sich selbst oder ein
+Inhaber-Konto. Zur Bestaetigung wird die E-Mail des Kontos eingetippt. Geloescht
+werden Chats mit Dateien, Wissen, Maras Erinnerungen an das Konto, Profil,
+Einstellungen, Freigaben und Anmeldungen, alles in einer Transaktion; im
+Admin-Audit bleibt ein Eintrag.
 
 ## Eingabefeld, Legende, Modell-Freigaben und Update-Fenster (0.5.83)
 

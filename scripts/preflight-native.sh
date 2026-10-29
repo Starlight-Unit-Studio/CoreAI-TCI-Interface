@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.83 composer height after sending, Ollama list with the chat, legend with TCI tiers only, update window.
+# CoreAI: TCI Interface 0.5.84 delete accounts under Admin Core > Benutzer (Inhaber: Admins, Nutzer, Gaeste; Admin: Nutzer, Gaeste).
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -126,6 +126,8 @@ UI_FILES=(
   scripts/coreai-updater.sh
   scripts/lib/coreai_update_state.py
   scripts/update-selftest.php
+  api/account_delete.php
+  scripts/account-delete-selftest.php
   scripts/update-ui-selftest.cjs
   tests/update-runner-selftest.sh
   config/systemd/coreai-update.service.template
@@ -550,6 +552,14 @@ if command -v php >/dev/null 2>&1; then
     ok 'Update-Fenster: nur bei neuem Commit, Start nur durch den Inhaber, Wartefenster fuer alle.'
   else
     fail "Update-Selbsttest: ${update_test:-Unbekannter Fehler}"
+  fi
+
+  # 0.5.84: deleting an account (rules, confirmation, files; a full deletion on the database, rolled back).
+  delete_test=''
+  if delete_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/account-delete-selftest.php" 2>&1)"; then
+    ok 'Konto loeschen: Rechte, Bestaetigung, Dateien und vollstaendige Loeschung (mit Rollback) geprueft.'
+  else
+    fail "Konto-Loeschen-Selbsttest: ${delete_test:-Unbekannter Fehler}"
   fi
 
   compact_test=''
