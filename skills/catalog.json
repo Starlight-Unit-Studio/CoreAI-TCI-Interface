@@ -1268,5 +1268,170 @@
     ],
     "reviewed": "2026-10-29",
     "version": "1.0.1"
+  },
+  {
+    "id": "pdf",
+    "title": "PDF-Dokumente",
+    "category": "Office",
+    "description": "PDF erstellen, OCR, Formulare.",
+    "triggers": [
+      "pdf",
+      "pdf erstellen",
+      "pdf bearbeiten",
+      "pdf formular",
+      "pdf zusammenfügen",
+      "pdf seiten",
+      "ocr"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/pdf"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "frontend-design",
+    "title": "Frontend-Design",
+    "category": "Frontend",
+    "description": "Weboberflächen gestalten.",
+    "triggers": [
+      "frontend design",
+      "webdesign",
+      "landingpage gestalten",
+      "ui design",
+      "frontend-design"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/frontend-design"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "web-artifacts-builder",
+    "title": "Interaktive Web-Artefakte",
+    "category": "Frontend",
+    "description": "Web-Apps bauen und bundlen.",
+    "triggers": [
+      "web artifacts",
+      "web-artifacts-builder",
+      "react app erstellen",
+      "web artefakt",
+      "shadcn"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/web-artifacts-builder"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "claude-api",
+    "title": "Claude-API",
+    "category": "Backend",
+    "description": "Claude API verwenden.",
+    "triggers": [
+      "claude api",
+      "anthropic api",
+      "anthropic sdk",
+      "claude sdk",
+      "claude-api"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/claude-api"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "skill-creator",
+    "title": "Erweiterte Skill-Erstellung",
+    "category": "Arbeitsweise",
+    "description": "Skills entwickeln und prüfen.",
+    "triggers": [
+      "skill-creator",
+      "skill erstellen",
+      "neuen skill",
+      "skill paket",
+      "skills paket",
+      "skill generieren"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/skill-creator"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "webapp-testing",
+    "title": "Webapp-Tests",
+    "category": "Qualität",
+    "description": "Webapps mit Playwright testen.",
+    "triggers": [
+      "webapp testing",
+      "webapp-testing",
+      "playwright automation",
+      "e2e app",
+      "web app testen",
+      "regressionstest browser"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/webapp-testing"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "slack-gif-creator",
+    "title": "Slack- und Messenger-GIFs",
+    "category": "Medien",
+    "description": "Slack-GIFs und Emojis erstellen.",
+    "triggers": [
+      "slack gif",
+      "slack emoji",
+      "slack-gif-creator",
+      "animiertes emoji"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/slack-gif-creator"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "academy-guide",
+    "title": "Academy-Lernpfade",
+    "category": "Schreiben",
+    "description": "Lernressourcen empfehlen.",
+    "triggers": [
+      "claude academy",
+      "academy",
+      "lernressourcen claude",
+      "claude kurs",
+      "onboarding claude"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/academy-guide"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "discernment-nudge",
+    "title": "Kritische Ergebnisprüfung",
+    "category": "Qualität",
+    "description": "Annahmen bei Entscheidungen prüfen.",
+    "triggers": [
+      "discernment",
+      "entscheidungsprüfung",
+      "was übersehe ich",
+      "annahmen überprüfen",
+      "folgenabschätzung"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/discernment-nudge"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
   }
 ]
