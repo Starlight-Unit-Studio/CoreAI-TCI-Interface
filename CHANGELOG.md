@@ -4,10 +4,12 @@ CoreAI: TCI Interface gehoert zur Quantum-Softwarefamilie und wird bis zur final
 
 ## 0.5.81 - 29.10.2026
 
-- **Skill-Bibliothek auf 50 erweitert:** 17 neue Fach-Skills fuer Webrecherche, Faktencheck, RAG-Wissen, PDF/Dokumente, Tabellen, Datenvisualisierung, JSON/YAML, Linux-Shell, Websicherheit, UI/UX, technische Dokumentation, kreatives Schreiben/Lore, Uebersetzung, Backups, Privatsphaere/Memory, Medienanalyse und Browseraktionen.
-- **Bestehende Anleitungen ergaenzt:** skill-authoring, browser-testing, assets, observability und release-handover erhalten praezisere Pruef- und Sicherheitsregeln; 20 alte Katalogbeschreibungen sind kuerzer, um das bestehende Kontextbudget zu schonen.
-- **Keine Laufzeitaenderung:** Der Pflicht-Skill werkzeuge, Auswahl, [SKILL:]-Nachladen, Modellprofile, Modelfile, globale serielle Warteschlange und Game-Trennung bleiben unveraendert. Volle Skill-Bibliothek weiterhin unter 3600 Byte. Der gesonderte lokale Gemma-Sprachskill #119 ist weiterhin offen.
-- **Pruefung:** Katalog und Skilltexte statisch auf Vollstaendigkeit, groesse und gueltige Metadaten geprueft. CoreAI-Laufzeit-Selbsttest, Preflights, Netcup und Android bleiben bis zur Ausfuehrung unbestaetigt. GitHub Actions nicht verwendet.
+- **Skill-Bibliothek von 33 auf 77:** 44 zusaetzliche Fach-Skills, darunter alle 19 offiziellen Anthropic-Kennungen als eigene CoreAI-Skill-Verzeichnisse. Der einzige Pflicht-Skill `werkzeuge` bleibt unveraendert.
+- **19 ausfuehrliche Soll-Spezifikationen:** Unter `skills/<id>/references/IMPLEMENTATION.md` sind fuer jeden der 19 Anthropic-orientierten Skills der komplette Funktionsumfang, Schrittfolge, benoetigte Werkzeuge und Abnahmefaelle vorbereitet. Word, PDF, PowerPoint, Excel, Frontend, Webartefakte, Claude-API, MCP, Playwright, generative Kunst, GIFs, Themes und Kommunikations-Workflows werden fachlich nicht auf den heutigen Toolbestand reduziert.
+- **Werkzeugluecken nach Roadmap:** `docs/COREAI_SKILL_CAPABILITY_GAPS.md` ordnet fehlende Office-/Media-Renderer, Editor-/Workspace-, MCP-/Provider- und Testwerkzeuge den bestehenden Roadmap-Paketen zu; CrewAI, LangGraph, OpenClaw, Open WebUI und AutoGen bleiben als Referenzen erhalten.
+- **Bestehende Fach-Skills ergaenzt:** Regeln fuer Skill-Erstellung, UI, Browserpruefung, Assets, Logs und Uebergabe geschaerft; kurze Katalogbeschreibungen halten die vollstaendige Promptbibliothek unter dem bestehenden 3600-Byte-Budget.
+- **Keine Skill-System-Umbauten:** Loader, Autowahl, `[SKILL:]`, Modelfile, Toolrechte, Game-Trennung und die globale serielle Modellwarteschlange bleiben wie zuvor. Referenzdateien werden derzeit nicht automatisch nachgeladen. Fehlende Backend-Werkzeuge sind geplante Funktionen, keine behauptete Auslieferung.
+- **Pruefung:** Katalog- und Vollstaendigkeitsabgleich; weitere Offline-Selbsttests und Netcup-/Android-Livetests vor Merge offen. Keine GitHub Actions gestartet.
 
 ## 0.5.80 - 28.10.2026
 
