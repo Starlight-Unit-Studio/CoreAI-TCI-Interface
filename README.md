@@ -11,11 +11,13 @@ Current source version: `0.5.81` (numeric only). The last verified ZIP remains a
 
 ## Skills: Mara waehlt selbst (0.5.81)
 
-Skills braucht niemand mehr einzuschalten: Mara hat alle 77 und waehlt selbst,
+Skills braucht niemand mehr einzuschalten: Mara hat alle 100 und waehlt selbst,
 wie man es von Claude oder GPT kennt. Offensichtlich passende laedt der Server
 vorab, die uebrigen kennt sie aus ihrer Skill-Bibliothek und laedt sie bei
 Bedarf mit `[SKILL: kennung]` nach (im Arbeitsweg zu sehen). `/skill kennung`
-gibt einen Skill weiterhin vor. In 0.5.81 sind 44 neue Fach-Skills hinzugekommen: Recherche, Wissen, Office-Dokumente (DOCX/PDF/PPTX/XLSX), Design, Medien, MCP/API-Entwicklung, Team-/Workflow-Planung und Schreiben. Sie wurden mit den 19 offiziellen Anthropic-Beispielen und den Referenzrepos von CrewAI, LangGraph, OpenClaw, Open WebUI und AutoGen abgeglichen. Alle 19 offiziellen Anthropic-Kennungen sind als eigene Skill-Ordner vertreten. Detaillierte Soll-Funktionen, fehlende Tools und Abnahmefaelle sind in den Referenzdateien und in [docs/COREAI_SKILL_CAPABILITY_GAPS.md](docs/COREAI_SKILL_CAPABILITY_GAPS.md) dokumentiert. Vorhandene Anleitungen wurden ergaenzt. Bereits vorbereitete Skill-Funktionen werden nicht als fertige Backend-Werkzeuge ausgegeben. Auswahl und Nachladen bleiben unveraendert. Details: [docs/COREUI_SKILLS.md](docs/COREUI_SKILLS.md).
+gibt einen Skill weiterhin vor. In 0.5.81 sind 67 neue Fach-Skills hinzugekommen: Recherche, Wissen, Office-Dokumente (DOCX/PDF/PPTX/XLSX), Design, Medien, MCP/API-Entwicklung, Team-/Workflow-Planung und Schreiben. Sie wurden mit den 19 offiziellen Anthropic-Beispielen und den Referenzrepos von CrewAI, LangGraph, OpenClaw, Open WebUI und AutoGen abgeglichen. Alle 19 offiziellen Anthropic-Kennungen sind als eigene Skill-Ordner vertreten. Detaillierte Soll-Funktionen, fehlende Tools und Abnahmefaelle sind in den Referenzdateien und in [docs/COREAI_SKILL_CAPABILITY_GAPS.md](docs/COREAI_SKILL_CAPABILITY_GAPS.md) dokumentiert. Vorhandene Anleitungen wurden ergaenzt. Bereits vorbereitete Skill-Funktionen werden nicht als fertige Backend-Werkzeuge ausgegeben. Auswahl und Nachladen bleiben unveraendert. Details: [docs/COREUI_SKILLS.md](docs/COREUI_SKILLS.md).
+
+**Rechtliche Aktualitaet:** 20 neue, eigenstaendige Rechtsskills ermitteln vor jeder konkreten Rechtsaussage den geltenden und den zum Ereigniszeitpunkt massgeblichen Rechtsstand im Internet, einschliesslich Novellen, Inkrafttreten, Uebergangsrecht und offiziellen Urteilen. Ein Ergebnis ohne bestaetigte Onlinequelle wird nicht als aktuelles oder durchsetzbares Recht ausgegeben. Dazu 3 neue Skills fuer Finanzanalyse, wissenschaftliche Recherche und AppSec-Threat-Modeling. Die Regel und die benoetigten Werkzeuge sind in [docs/COREAI_LEGAL_CURRENTNESS.md](docs/COREAI_LEGAL_CURRENTNESS.md) sowie [docs/COREAI_SKILL_CAPABILITY_GAPS.md](docs/COREAI_SKILL_CAPABILITY_GAPS.md) dokumentiert. Der bisherige Skill-Loader bleibt unveraendert.
 
 ## Mehrere Quellen, Captcha, CoreAI-Rollen und neue Einstellungen (0.5.79)
 

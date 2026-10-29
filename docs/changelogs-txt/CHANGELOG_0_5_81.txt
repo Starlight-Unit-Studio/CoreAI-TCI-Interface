@@ -1,8 +1,8 @@
 CoreAI: TCI Interface 0.5.81 - 29.10.2026
-- Skill-Bibliothek von 33 auf 77 erweitert: 44 neue Fach-Skills, 1 Pflicht-Skill werkzeuge unveraendert.
-- Alle 19 offiziellen Anthropic-Skill-Kennungen als eigene CoreAI-Ordner, dazu 19 detaillierte references/IMPLEMENTATION.md zu Zielumfang, Workflows, Toolbedarf und Abnahme.
-- Zusaetzliche eigene Skills fuer Recherche, RAG, Dokumente, Medien, Sicherheit, Entwicklung und Agent-Workflows.
-- docs/COREAI_SKILL_CAPABILITY_GAPS.md ordnet fehlende Office-, Medien-, Browser-, Provider-, MCP-, Workspace- und Checkpoint-Werkzeuge der Roadmap zu.
-- Keine Aenderung an Skill-Loader, Autoauswahl, [SKILL:]-Nachladen, Modelfile, Modellwarteschlange oder Game-Trennung.
-- Fachliche Soll-Anleitungen sind vorbereitet. Noch nicht gebaute Ausfuehrungswerkzeuge gelten als geplant, nicht als bereits funktionsfaehig.
-- GitHub Actions nicht verwendet. Offline-PHP-, Versionierungs-, Preflight- und Server-Tests bleiben bis zur echten Ausfuehrung offen.
+- Skill-Bibliothek von 33 auf 100 erweitert: 67 neue Fach-Skills, einziger Pflicht-Skill werkzeuge unveraendert.
+- 19 Anthropic-Referenzskills mit 19 detaillierten Funktionsplaenen und 20 eigenstaendige Rechts-Skills mit eigenen Vollplaenen.
+- Juristische Pflicht: vor jeder konkreten Rechtsaussage amtliche aktuelle und historische Gesetzesfassung online verifizieren, Novellen, Inkrafttreten, Uebergangsrecht und Rechtsprechung pruefen; offline keine scheinaktuelle Rechtslage behaupten.
+- Weitere neue Skills: Finanzanalyse, wissenschaftliche Fachrecherche und defensive IT-Bedrohungsmodellierung.
+- docs/COREAI_LEGAL_CURRENTNESS.md: Rechtsstandsregeln und Negativtests. docs/COREAI_SKILL_CAPABILITY_GAPS.md: erforderliche Tool-Integrationen und Roadmap-Zuordnung.
+- Loader, Skill-Auswahl, Nachladen, Modelfile, Kernskill, Game-Trennung und serielle Modellqueue unveraendert.
+- Verifizierter Zielplan ist noch keine implementierte Werkzeugfaehigkeit. Offline-PHP-Selbsttests, Versionsgate, Netcup und Android offen; keine GitHub Actions.

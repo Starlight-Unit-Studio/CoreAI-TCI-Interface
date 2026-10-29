@@ -4,30 +4,28 @@ Basis: main 0.5.80
 Branch: feat/skillbibliothek-50-20261029
 
 BETREIBERAUFTRAG:
-Skills sofort in ihrer vollen geplanten Fachfunktion vorbereiten; noch nicht vorhandene Backend-Werkzeuge nicht aus der Sollbeschreibung streichen. Das seit 0.5.80 erfolgreiche Skill-System darf nicht umgebaut werden.
+Skillbibliothek als vollwertige Allround-Sammlung vorbereiten. Speziell Rechts-Skills muessen ihre Daten vor jeder konkreten Rechtsauskunft mit dem Internet abgleichen, um am Stichtag bereits geaenderte Normen nicht als aktuell durchzusetzen. Die vorhandene Skill-Architektur nicht umbauen.
 
 ERGEBNIS:
-- 77 Skills (33 bisher, 44 neu). 76 Fach-Skills und genau ein unveraenderter Pflicht-Skill werkzeuge.
-- Alle 19 Anthropic-Skillnamen jeweils als eigene skills/<id>/SKILL.md eingetragen. Eigene Texte, keine Kopie proprietaerer DOCX/PDF/PPTX/XLSX-Skripte.
-- Jeweils eine vollstaendige Soll-/Tool-/Testbeschreibung unter skills/<id>/references/IMPLEMENTATION.md fuer die 19 Referenz-Skills; diese Dateien werden mit dem heutigen Loader noch nicht automatisch gelesen.
-- Zusaetzliche Skills zu Coding, Recherche, Daten, Medien, Sicherheits- und Projektarbeit; agent-task-design und workflow-checkpoints aus CrewAI/LangGraph/AutoGen-Konzepten.
-- docs/COREAI_SKILL_CAPABILITY_GAPS.md mit den pro Skill fehlenden Schnittstellen, Tools und Roadmap-Paketen P05/P07/P09/P10/P12-P16/P19/P20/P26/P27.
-- Bestehende Skill-Anleitungen ergaenzt, Katalogbeschreibungen kompakt fuer das unveraenderte Prompt-Budget.
-- README, Skillsdokumentation, Changelog und numerische Version 0.5.81 synchronisiert.
+- 100 Skills, 99 Fach-Skills, einziger Pflicht-Skill werkzeuge.
+- 67 neue Skills im Vergleich zu 0.5.80; alle 19 Anthropic-Skillnamen mit eigenem SKILL.md und references/IMPLEMENTATION.md, ausserdem 20 juristische und 3 weitere allround Fach-Skills.
+- Legal-Bereiche: Rechtsrecherche, Vertragspruefung, Gutachten, Policy/Compliance, Schriftsaetze, Fristen, Verwaltung, Sozialrecht, Mietrecht, Arbeitsrecht, Verbraucherrecht, Datenschutz, Urheber-/Markenrecht, Steuerrecht, Zivilprozess, Beweise, amtliche Formulare, Familienrecht, Strafrecht, Gesellschaftsrecht.
+- Rechtsstandsregel in jedem der 20 rechtlichen Skilltexte selbst enthalten. Normen der Gegenwart und am Ereignisdatum geltende Fassungen getrennt online verifizieren. Offizielle Verkuendung, Inkrafttreten, Novellen, Uebergangs-/Rueckwirkungsrecht, Gerichtsurteile und Landes-/EU-Recht beachten. Keine Behauptung von aktueller Geltung, wenn die Recherche offline oder unbelegt ist.
+- docs/COREAI_LEGAL_CURRENTNESS.md beschreibt die Pflicht, offizielle Quellen und Negativtests.
+- docs/COREAI_SKILL_CAPABILITY_GAPS.md und ROADMAP.md ordnen fehlende Werkzeuge den spaeteren Ausbauschritten zu.
+- Kompakte Katalogbeschreibungen, vollstaendige Zielabläufe in references/IMPLEMENTATION.md fuer alle 23 neuen Skills.
 
-KEINE AENDERUNG:
-- api/skills.php und console_agent_loop.php; preselect, [SKILL:]-Nachladen, Rechtegrenzen und Game-Trennung.
-- Pflicht-Skill skills/werkzeuge/SKILL.md und aktives Modelfile.
-- Serielle globale Modellwarteschlange, kein zusaetzlicher Provider oder automatisch gestarteter Skriptlauf.
+UNVERAENDERT:
+- api/skills.php, console_agent_loop.php, [SKILL:]-Loader/-Router, skills/werkzeuge/SKILL.md und Modelfile.
+- Keine automatisch geladenen Referenzdateien, kein neuer Pflicht-Skill, keine parallelen Modellaufrufe.
+- Kein automatisches Uebernehmen fremder proprietaerer Skills, keine neue Backend-Werkzeugfaehigkeit nur durch Anleitungstext.
 
-ABNAHME:
-- GitHub-Branch auf Katalogzaehlung, Skill-Dateien, 19 Referenzplaene und Version verifizieren.
-- Runtime-Tests php scripts/skills-selftest.php, python3 scripts/version-merge-check.py --base-version 0.5.80, python3 scripts/cache-bust.py --verify und bestehende Preflights noch auszufuehren.
-- Echte Office-/MCP-/Browser-/Media-Skills koennen erst nach Toolimplementation End-to-End abgenommen werden.
-- Kein automatischer Merge und kein Deploy; GitHub Actions wegen ausgeschopftem Kontingent nicht ausloesen.
-- Eigenstaendiger lokaler Gemma-Sprachskill #119 bleibt ein gesondertes Vorhaben.
+BISHER GEPRUEFT:
+- GitHub-Katalog und Skill-Dateien auf Anzahl, Eindeutigkeit, Laengenlimits, Katalog-Indexlimit, Frontmatter und Legal-Onlinepflicht kontrollieren.
+- Noch offen: PHP scripts/skills-selftest.php, Versionsgate, Cache-Bust-Verify, Preflights, Netcup-/Android-Livetest.
+- GitHub Actions nicht genutzt (Kontingent); kein Merge und kein Deployment erfolgt.
 
-NAECHSTE SCHRITTE:
-- Skill-Matrix bei jeder Werkzeug-Implementierung als Rueckverfolgung verwenden.
-- Fehlende Tool-Schnittstellen je Paket abarbeiten und reale Negativ-/Positivtests dokumentieren.
-- Erst nach bestaetigtem Merge und Betreiberdeploy die Live-Version als aktualisiert bezeichnen.
+NAECHSTER SCHRITT:
+- PR #132 nach Pruefung und Betreiberfreigabe mergen; anschliessend Live-Einstellungen validieren.
+- Bei jeder neuen Toolfunktion Skill-Matrix abarbeiten, inklusive positiver, veralteter und offline Rechtsstands-Testfaelle.
+- Lokaler Gemma-Sprachskill Issue #119 bleibt separates Vorhaben.
