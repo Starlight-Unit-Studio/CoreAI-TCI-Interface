@@ -25,7 +25,7 @@
     "id": "project-planning",
     "title": "Projektplanung",
     "category": "Arbeitsweise",
-    "description": "Projekte planen und abnehmen.",
+    "description": "Projektplanung und Abnahme.",
     "triggers": [
       "projekt",
       "project",
@@ -40,13 +40,13 @@
       "https://aider.chat/docs/more/edit-formats.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.2"
+    "version": "1.0.3"
   },
   {
     "id": "code-editing",
     "title": "Gezielte Codeänderungen",
     "category": "Arbeitsweise",
-    "description": "Code-Patches und Refactoring.",
+    "description": "Code ändern und prüfen.",
     "triggers": [
       "refactor",
       "refactoring",
@@ -61,7 +61,7 @@
       "https://aider.chat/docs/more/edit-formats.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.2"
+    "version": "1.0.3"
   },
   {
     "id": "debugging",
@@ -107,7 +107,7 @@
     "id": "responsive-css",
     "title": "Responsives CSS",
     "category": "Frontend",
-    "description": "CSS-Layouts für Mobilgeräte.",
+    "description": "CSS-Layouts mobil machen.",
     "triggers": [
       "css",
       "responsive",
@@ -120,7 +120,7 @@
       "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/CSS_layout/Responsive_Design"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.2"
+    "version": "1.0.3"
   },
   {
     "id": "javascript",
@@ -208,7 +208,7 @@
     "id": "accessibility",
     "title": "Barrierefreiheit",
     "category": "Qualität",
-    "description": "Barrierefreiheit und Tastatur.",
+    "description": "Zugängliche Bedienung.",
     "triggers": [
       "barrierefrei",
       "accessibility",
@@ -220,13 +220,13 @@
       "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Accessibility"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.2"
+    "version": "1.0.3"
   },
   {
     "id": "assets",
     "title": "Bilder und Projektressourcen",
     "category": "Frontend",
-    "description": "Bilder, Fonts und Asset-Pfade.",
+    "description": "Bilder und Asset-Pfade.",
     "triggers": [
       "bilder",
       "images",
@@ -239,7 +239,7 @@
       "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Structuring_content/HTML_images"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.2"
+    "version": "1.0.3"
   },
   {
     "id": "fetch-api",
@@ -263,7 +263,7 @@
     "id": "rest-api",
     "title": "REST-Endpunkte",
     "category": "Backend",
-    "description": "REST-Endpunkte und Statuscodes.",
+    "description": "REST-Endpunkte entwickeln.",
     "triggers": [
       "rest",
       "endpoint",
@@ -275,7 +275,7 @@
       "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.2"
+    "version": "1.0.3"
   },
   {
     "id": "php-pdo",
@@ -297,7 +297,7 @@
     "id": "python",
     "title": "Python-Programme",
     "category": "Backend",
-    "description": "Python-Code und Fehlerbehandlung.",
+    "description": "Python entwickeln und prüfen.",
     "triggers": [
       "python",
       "py",
@@ -308,7 +308,7 @@
       "https://docs.python.org/3/tutorial/errors.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.2"
+    "version": "1.0.3"
   },
   {
     "id": "sql-security",
@@ -331,7 +331,7 @@
     "id": "xss-prevention",
     "title": "XSS-Schutz",
     "category": "Sicherheit",
-    "description": "XSS und sichere HTML-Ausgabe.",
+    "description": "XSS-Schutz für HTML.",
     "triggers": [
       "xss",
       "innerhtml",
@@ -342,13 +342,13 @@
       "https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "authorization",
     "title": "Konten und Zugriffsrechte",
     "category": "Sicherheit",
-    "description": "Login, Rollen und Zugriffsrechte.",
+    "description": "Login und Rollen absichern.",
     "triggers": [
       "authorization",
       "berechtigung",
@@ -361,13 +361,13 @@
       "https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "browser-testing",
     "title": "Browser-Tests",
     "category": "Qualität",
-    "description": "Playwright und Browser-Tests.",
+    "description": "Browser-Tests durchführen.",
     "triggers": [
       "playwright",
       "browser test",
@@ -378,7 +378,7 @@
       "https://playwright.dev/docs/best-practices"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.2"
+    "version": "1.0.3"
   },
   {
     "id": "unit-testing",
@@ -456,7 +456,7 @@
     "id": "csv-data",
     "title": "CSV und Datenimport",
     "category": "Dateien",
-    "description": "CSV einlesen und exportieren.",
+    "description": "CSV importieren/exportieren.",
     "triggers": [
       "csv",
       "datenimport",
@@ -467,7 +467,7 @@
       "https://docs.python.org/3/library/csv.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "async-jobs",
@@ -508,7 +508,7 @@
     "id": "observability",
     "title": "Logs und Diagnose",
     "category": "Betrieb",
-    "description": "Logs und nachprüfbare Runs.",
+    "description": "Logs und Runs prüfen.",
     "triggers": [
       "logging",
       "logs",
@@ -520,7 +520,7 @@
       "https://docs.python.org/3/library/logging.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.1.1"
+    "version": "1.1.2"
   },
   {
     "id": "canvas-games",
@@ -544,7 +544,7 @@
     "id": "release-handover",
     "title": "Release und Übergabe",
     "category": "Betrieb",
-    "description": "Version, Changelog und Release.",
+    "description": "Releases dokumentieren.",
     "triggers": [
       "release",
       "version",
@@ -557,7 +557,7 @@
       "https://semver.org/"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.1.1"
+    "version": "1.1.2"
   },
   {
     "id": "ollama-integration",
@@ -581,7 +581,7 @@
     "id": "skill-authoring",
     "title": "Eigene CoreUI-Skills",
     "category": "Arbeitsweise",
-    "description": "CoreAI-Skills schreiben und testen.",
+    "description": "CoreAI-Skills entwickeln.",
     "triggers": [
       "skill",
       "skills",
@@ -592,7 +592,7 @@
       "https://agentskills.io/specification"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.1.1"
+    "version": "1.1.2"
   },
   {
     "id": "web-research",
@@ -635,7 +635,7 @@
     "id": "rag-knowledge",
     "title": "Privates Wissen und RAG-Lite",
     "category": "Wissen",
-    "description": "Privates RAG-Wissen abfragen.",
+    "description": "Privates Wissen abfragen.",
     "triggers": [
       "rag",
       "wissensbasis",
@@ -648,13 +648,13 @@
       "https://docs.ollama.com/capabilities/embeddings"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "document-analysis",
     "title": "Dokumente und PDF auswerten",
     "category": "Dateien",
-    "description": "Dokumente und PDFs auswerten.",
+    "description": "Dokumente und PDF auswerten.",
     "triggers": [
       "pdf",
       "dokument analysieren",
@@ -667,7 +667,7 @@
       "https://pymupdf.readthedocs.io/en/latest/"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "tabular-analysis",
@@ -787,7 +787,7 @@
     "id": "technical-writing",
     "title": "Technische Dokumentation",
     "category": "Schreiben",
-    "description": "README und technische Anleitungen.",
+    "description": "Technische Doku schreiben.",
     "triggers": [
       "readme",
       "technische dokumentation",
@@ -800,7 +800,7 @@
       "https://developers.google.com/tech-writing/overview"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "creative-writing",
@@ -902,7 +902,7 @@
     "id": "browser-actions",
     "title": "Browseraktionen und Formulare",
     "category": "Browser",
-    "description": "Browser und Formulare bedienen.",
+    "description": "Formulare im Browser bedienen.",
     "triggers": [
       "formular ausfüllen",
       "formular ausfuellen",
@@ -915,13 +915,13 @@
       "https://playwright.dev/docs/locators"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "docx",
     "title": "Word und DOCX",
     "category": "Office",
-    "description": "Word/DOCX erstellen und ändern.",
+    "description": "Word-Dateien bearbeiten.",
     "triggers": [
       "docx",
       "dotx",
@@ -934,13 +934,13 @@
       "https://github.com/anthropics/skills/tree/main/skills/docx"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "pdf-workflows",
     "title": "PDF-Bearbeitung und Formulare",
     "category": "Office",
-    "description": "PDFs bearbeiten und verbinden.",
+    "description": "PDF-Zuschnitt und Formulare.",
     "triggers": [
       "pdf zusammenfügen",
       "pdf verbinden",
@@ -955,13 +955,13 @@
       "https://github.com/anthropics/skills/tree/main/skills/pdf"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "pptx",
     "title": "PowerPoint und PPTX",
     "category": "Office",
-    "description": "Präsentationen als PPTX erstellen.",
+    "description": "PPTX-Folien erstellen.",
     "triggers": [
       "pptx",
       "potx",
@@ -974,7 +974,7 @@
       "https://github.com/anthropics/skills/tree/main/skills/pptx"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "xlsx",
@@ -1018,7 +1018,7 @@
     "id": "web-artifacts",
     "title": "Interaktive Web-Artefakte",
     "category": "Frontend",
-    "description": "Interaktive Web-Apps bauen.",
+    "description": "Web-Artefakte entwickeln.",
     "triggers": [
       "web artifact",
       "web-artifact",
@@ -1031,13 +1031,13 @@
       "https://github.com/anthropics/skills/tree/main/skills/web-artifacts-builder"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "llm-api",
     "title": "LLM-Provider-APIs",
     "category": "Backend",
-    "description": "LLM-Provider-APIs anbinden.",
+    "description": "LLM-Provider anbinden.",
     "triggers": [
       "llm api",
       "model api",
@@ -1052,13 +1052,13 @@
       "https://github.com/anthropics/skills/tree/main/skills/claude-api"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "mcp-builder",
     "title": "MCP-Server und Werkzeuge",
     "category": "Backend",
-    "description": "MCP-Server und Tool-Verträge.",
+    "description": "MCP-Server entwickeln.",
     "triggers": [
       "mcp",
       "mcp server",
@@ -1071,7 +1071,7 @@
       "https://github.com/anthropics/skills/tree/main/skills/mcp-builder"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "algorithmic-art",
@@ -1096,7 +1096,7 @@
     "id": "canvas-design",
     "title": "Poster und Grafikdesign",
     "category": "Design",
-    "description": "Poster und Grafiken gestalten.",
+    "description": "Poster und Grafiken.",
     "triggers": [
       "poster",
       "plakat",
@@ -1109,7 +1109,7 @@
       "https://github.com/anthropics/skills/tree/main/skills/canvas-design"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "gif-creator",
@@ -1134,7 +1134,7 @@
     "id": "theme-factory",
     "title": "Design-Themes",
     "category": "Design",
-    "description": "Farbthemen und Designsysteme.",
+    "description": "Farbthemen entwickeln.",
     "triggers": [
       "theme",
       "theming",
@@ -1148,13 +1148,13 @@
       "https://github.com/anthropics/skills/tree/main/skills/theme-factory"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "doc-coauthoring",
     "title": "Gemeinsames Dokumentenschreiben",
     "category": "Schreiben",
-    "description": "Dokumente gemeinsam entwerfen.",
+    "description": "Dokumente gemeinsam verfassen.",
     "triggers": [
       "dokument gemeinsam",
       "gemeinsam schreiben",
@@ -1167,7 +1167,7 @@
       "https://github.com/anthropics/skills/tree/main/skills/doc-coauthoring"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "internal-comms",
@@ -1233,7 +1233,7 @@
     "id": "agent-task-design",
     "title": "Agentenrollen und Aufgaben",
     "category": "Agenten",
-    "description": "Agentenrollen und Tasks planen.",
+    "description": "Agentenaufgaben planen.",
     "triggers": [
       "agentenrolle",
       "agentenaufgabe",
@@ -1247,13 +1247,13 @@
       "https://github.com/crewAIInc/skills"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "workflow-checkpoints",
     "title": "Workflows und Wiederaufnahme",
     "category": "Agenten",
-    "description": "Workflows und Resume prüfen.",
+    "description": "Workflows fortsetzen planen.",
     "triggers": [
       "workflow checkpoint",
       "checkpointing",
@@ -1267,6 +1267,6 @@
       "https://github.com/langchain-ai/langgraph"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   }
 ]
