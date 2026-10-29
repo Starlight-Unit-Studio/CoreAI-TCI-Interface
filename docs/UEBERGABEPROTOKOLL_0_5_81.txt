@@ -7,8 +7,10 @@ BETREIBERAUFTRAG:
 Skillbibliothek als vollwertige Allround-Sammlung vorbereiten. Speziell Rechts-Skills muessen ihre Daten vor jeder konkreten Rechtsauskunft mit dem Internet abgleichen, um am Stichtag bereits geaenderte Normen nicht als aktuell durchzusetzen. Die vorhandene Skill-Architektur nicht umbauen.
 
 ERGEBNIS:
-- 100 Skills, 99 Fach-Skills, einziger Pflicht-Skill werkzeuge.
-- 67 neue Skills im Vergleich zu 0.5.80; alle 19 Anthropic-Skillnamen mit eigenem SKILL.md und references/IMPLEMENTATION.md, ausserdem 20 juristische und 3 weitere allround Fach-Skills.
+- 106 Skills, 105 Fach-Skills, einziger Pflicht-Skill werkzeuge.
+- 73 neue Skills im Vergleich zu 0.5.80; alle 19 Anthropic-Skillnamen mit eigenem SKILL.md und references/IMPLEMENTATION.md, ausserdem 20 juristische und 3 weitere allround Fach-Skills.
+- AgenticSkills.io als neue unabhaengige externe Skills- und MCP-Recherchequelle geprueft; eigene Skills skill-discovery, seo-audit, marketing-strategy, mobile-apps, property-testing, database-tuning hinzugefuegt, je mit references/IMPLEMENTATION.md. Keine fremden Skripte, Installer oder MCP-Server ausgefuehrt.
+- Quelle, sichere Fremdpruefung und weitere Kandidaten: docs/COREAI_AGENTICSKILLS_REFERENCE.md.
 - Legal-Bereiche: Rechtsrecherche, Vertragspruefung, Gutachten, Policy/Compliance, Schriftsaetze, Fristen, Verwaltung, Sozialrecht, Mietrecht, Arbeitsrecht, Verbraucherrecht, Datenschutz, Urheber-/Markenrecht, Steuerrecht, Zivilprozess, Beweise, amtliche Formulare, Familienrecht, Strafrecht, Gesellschaftsrecht.
 - Rechtsstandsregel in jedem der 20 rechtlichen Skilltexte selbst enthalten. Normen der Gegenwart und am Ereignisdatum geltende Fassungen getrennt online verifizieren. Offizielle Verkuendung, Inkrafttreten, Novellen, Uebergangs-/Rueckwirkungsrecht, Gerichtsurteile und Landes-/EU-Recht beachten. Keine Behauptung von aktueller Geltung, wenn die Recherche offline oder unbelegt ist.
 - docs/COREAI_LEGAL_CURRENTNESS.md beschreibt die Pflicht, offizielle Quellen und Negativtests.

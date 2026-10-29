@@ -1,6 +1,6 @@
 # CoreAI Skill-Bibliothek: Zielumfang und Werkzeuglücken
 
-Stand: 29.10.2026, geplant für Quellversion 0.5.81. Ausgangspunkt: 33 Skills (0.5.80). Im aktuellen Erweiterungsbranch: **100 Skills**, einschließlich aller **19 Original-Kennungen** aus [anthropics/skills](https://github.com/anthropics/skills/tree/main/skills), weiterer eigener Fach-Skills sowie zwei Planungs-Skills für Agenten/Workflows.
+Stand: 29.10.2026, geplant für Quellversion 0.5.81. Ausgangspunkt: 33 Skills (0.5.80). Im aktuellen Erweiterungsbranch: **106 Skills**, einschließlich aller **19 Original-Kennungen** aus [anthropics/skills](https://github.com/anthropics/skills/tree/main/skills), weiterer eigener Fach-Skills sowie zwei Planungs-Skills für Agenten/Workflows.
 
 ## Grundsatz
 
@@ -89,3 +89,8 @@ Referenz fuer alle juristischen Skills: [COREAI_LEGAL_CURRENTNESS.md](COREAI_LEG
 - Das zusätzliche lokale Gemma-Grammatik-Feature aus #119 bleibt ein separates späteres Vorhaben, damit kein unerwünschter systemweiter Pflicht-Skill eingeführt wird.
 
 **Status:** Planung und Skill-Dateien vorbereitet. Technische Werkzeug-Lücken sind absichtlich sichtbar und noch nicht als abgeschlossen markiert.
+
+
+## AgenticSkills.io-Quelleninventur: sechs zusaetzliche Skills
+
+Die inzwischen **106 Skills** enthalten sechs selbst formulierte und im Katalog registrierte Anleitungen aus den bisher noch fehlenden Bereichen Skill-Entdeckung, technisches SEO, Produktmarketing, mobile Anwendungen, Eigenschaftstests und Datenbankleistung. Details, Primaerquellen und Funktionsabnahmen stehen unter [COREAI_AGENTICSKILLS_REFERENCE.md](COREAI_AGENTICSKILLS_REFERENCE.md). Die 139 gelisteten MCP-Server sind eine Recherchequelle, aber weder installiert noch technisch freigegeben. Bestehende P12/P13-/Workspace-/Toolpakete bleiben die Integrationspunkte.
