@@ -1,6 +1,10 @@
-# CoreAI Skills (0.5.62, Bibliothek seit 0.5.80)
+# CoreAI Skills (Bibliothek seit 0.5.80, erweitert in 0.5.81)
 
-CoreAI enthaelt 33 vertrauenswuerdige, direkt im Repository gepflegte Anleitungen: einen fest eingebundenen Kern-Skill und 32 Fach-Skills, aus denen Mara seit 0.5.80 selbst waehlt (keine Schalter pro Konto mehr). Die urspruenglichen 32 Pakete stammen aus 0.5.33 und wurden am 25.10.2026 geprueft; zehn fuer den aktuellen Agenten-/Dateibau relevante Pakete wurden am 26.10.2026 an den neuen CoreAI-Stand angepasst.
+CoreAI enthaelt 50 vertrauenswuerdige, direkt im Repository gepflegte Anleitungen: einen fest eingebundenen Kern-Skill und 49 Fach-Skills, aus denen Mara seit 0.5.80 selbst waehlt (keine Schalter pro Konto mehr). Die urspruenglichen 32 Pakete stammen aus 0.5.33 und wurden am 25.10.2026 geprueft; zehn fuer den aktuellen Agenten-/Dateibau relevante Pakete wurden am 26.10.2026 an den neuen CoreAI-Stand angepasst.
+
+Seit 0.5.81 sind 17 zusätzliche, thematisch spezialisierte Fach-Skills registriert: Webrecherche, Faktencheck, RAG-Lite, Dokument- und PDF-Auswertung, Tabellen, Diagramme, JSON/YAML, Linux-Shell, Websicherheit, UI/UX, technische Dokumentation, kreatives Schreiben und Lore, Übersetzung, Backup/Restore, Privatsphäre/Memory, Medienanalyse sowie Browseraktionen. Fünf vorhandene Skills enthalten zusätzliche konkrete Prüfregeln. Die Beschreibungen einiger alter Skills wurden für das bestehende Kontextbudget komprimiert.
+
+**Unveränderte Laufzeit:** Keine Änderung an Loader, Skill-Auswahl, Marker, Game-Trennung, Modellparametern, Modelfile, globaler Queue oder dem Pflicht-Skill. Die Bibliothek enthält bei voller Ansicht weiterhin weniger als 3600 Byte. Es werden keine neuen Tools oder Produktfunktionen freigeschaltet. Der gesonderte lokale Gemma-Sprachskill aus #119 bleibt offen, weil seine Modellbindung eine eigene Integration bräuchte.
 
 ## Verbindlicher System-Skill: Werkzeuge
 
@@ -34,7 +38,7 @@ Wie bei Claude oder GPT hat Mara immer Zugriff auf alle Fach-Skills; die frueher
 
 ## Pruefung
 
-- `php scripts/skills-selftest.php` prueft die 33 Paketdokumente, Pflicht-Skill, Vorauswahl und Budget, die Bibliothek je Fenstergroesse, den Marker (auch in Code nicht ausgeloest), das Nachladen in den vertrauenswuerdigen Block, die Arbeitsschleife, fokussierte Unteraufrufe, Datei-Auftraege ohne Bibliothek, den Game-Kanal und dass keine Schalter mehr existieren.
+- `php scripts/skills-selftest.php` prueft die 50 Paketdokumente, Pflicht-Skill, Vorauswahl und Budget, die Bibliothek je Fenstergroesse, den Marker (auch in Code nicht ausgeloest), das Nachladen in den vertrauenswuerdigen Block, die Arbeitsschleife, fokussierte Unteraufrufe, Datei-Auftraege ohne Bibliothek, den Game-Kanal und dass keine Schalter mehr existieren.
 - Danach `python3 scripts/version-merge-check.py --base-version 0.5.61` und `python3 scripts/cache-bust.py --verify` sowie PHP-Syntaxpruefung und Live-Abnahme durchfuehren.
 - Offline-Tests ersetzen keinen erfolgreichen Netcup-/Android-/Ollama-Livetest. Kein fertiges 10-Unterseiten-ZIP behaupten, bevor es tatsaechlich erzeugt und geprueft wurde.
 
