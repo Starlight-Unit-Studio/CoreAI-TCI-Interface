@@ -2,6 +2,13 @@
 
 CoreAI: TCI Interface gehoert zur Quantum-Softwarefamilie und wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert. Historische Changelogs dokumentieren die frueheren Produktnamen unveraendert.
 
+## 0.5.81 - 29.10.2026
+
+- **Skill-Bibliothek auf 50 erweitert:** 17 neue Fach-Skills fuer Webrecherche, Faktencheck, RAG-Wissen, PDF/Dokumente, Tabellen, Datenvisualisierung, JSON/YAML, Linux-Shell, Websicherheit, UI/UX, technische Dokumentation, kreatives Schreiben/Lore, Uebersetzung, Backups, Privatsphaere/Memory, Medienanalyse und Browseraktionen.
+- **Bestehende Anleitungen ergaenzt:** skill-authoring, browser-testing, assets, observability und release-handover erhalten praezisere Pruef- und Sicherheitsregeln; 20 alte Katalogbeschreibungen sind kuerzer, um das bestehende Kontextbudget zu schonen.
+- **Keine Laufzeitaenderung:** Der Pflicht-Skill werkzeuge, Auswahl, [SKILL:]-Nachladen, Modellprofile, Modelfile, globale serielle Warteschlange und Game-Trennung bleiben unveraendert. Volle Skill-Bibliothek weiterhin unter 3600 Byte. Der gesonderte lokale Gemma-Sprachskill #119 ist weiterhin offen.
+- **Pruefung:** Katalog und Skilltexte statisch auf Vollstaendigkeit, groesse und gueltige Metadaten geprueft. CoreAI-Laufzeit-Selbsttest, Preflights, Netcup und Android bleiben bis zur Ausfuehrung unbestaetigt. GitHub Actions nicht verwendet.
+
 ## 0.5.80 - 28.10.2026
 
 - **Skills als intelligentes System:** Mara hat jetzt immer alle 33 Skills und waehlt selbst, wie man es von Claude oder GPT kennt. Offensichtlich passende Skills laedt der Server weiterhin vorab (spart dem lokalen Core einen Rechenschritt), alle uebrigen stehen als kurze Skill-Bibliothek in ihrem Prompt. Mit `[SKILL: kennung]` (hoechstens zwei auf einmal) laedt sie einen nach, als Schritt ihrer Arbeitsschleife; im Arbeitsweg steht dann "Schritt n: Skill geladen".
