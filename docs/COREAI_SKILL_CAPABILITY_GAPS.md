@@ -94,3 +94,8 @@ Referenz fuer alle juristischen Skills: [COREAI_LEGAL_CURRENTNESS.md](COREAI_LEG
 ## AgenticSkills.io-Quelleninventur: sechs zusaetzliche Skills
 
 Die inzwischen **106 Skills** enthalten sechs selbst formulierte und im Katalog registrierte Anleitungen aus den bisher noch fehlenden Bereichen Skill-Entdeckung, technisches SEO, Produktmarketing, mobile Anwendungen, Eigenschaftstests und Datenbankleistung. Details, Primaerquellen und Funktionsabnahmen stehen unter [COREAI_AGENTICSKILLS_REFERENCE.md](COREAI_AGENTICSKILLS_REFERENCE.md). Die 139 gelisteten MCP-Server sind eine Recherchequelle, aber weder installiert noch technisch freigegeben. Bestehende P12/P13-/Workspace-/Toolpakete bleiben die Integrationspunkte.
+
+
+## 0.5.82: Vertiefung statt neuer Kennungen
+
+Die Zahl der Skills bleibt bei **106**. Die sechs bestehenden Anleitungen zu React, Next.js, Debugging, Unit-Tests, wissenschaftlicher Recherche und Bedrohungsmodellen wurden um fachliche Abnahmefaelle und separate Referenzplaene erweitert. Offene Werkzeugklassen: Node-/Browser-Preview, Profiler und Bundle-Analyse, isolierter Test-Runner, reproduzierbare Notebook-Ausfuehrung, Quellcode-Scanner und SARIF-Auswertung. Die bestehenden Skills erhalten durch Referenztexte keine neuen technischen Rechte. Detaillierte Zuordnung: [COREAI_SKILLS_FOLLOWUP.md](COREAI_SKILLS_FOLLOWUP.md).

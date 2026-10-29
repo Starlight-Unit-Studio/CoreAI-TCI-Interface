@@ -1,0 +1,7 @@
+CoreAI: TCI Interface 0.5.82 - 29.10.2026
+- Sechs vorhandene Skills vertieft: react, nextjs, debugging, unit-testing, academic-research und threat-modeling.
+- Vollstaendige Referenzablaeufe fuer React-/Next.js-Performance und Sicherheit, Root-Cause-Diagnose, TDD, Jupyter und Semgrep/CodeQL/SARIF.
+- Es bleiben 106 Skills mit einem einzigen Pflicht-Skill werkzeuge. Katalog, Autoauswahl und Modelfile unveraendert.
+- docs/COREAI_CLAUDE_SKILL_PORTABILITY.md erklaert Claude-Code-Discovery unter .claude/skills vs. CoreAI skills/<id>.
+- Noch erforderliche Runner, Entwicklerwerkzeuge und Tests sind als offene Abnahmepunkte dokumentiert.
+- PHP-Skillselbsttest, Versionierungs-Gate, Cache-Bust, Preflight, Netcup und Android noch nicht ausgefuehrt; kein Actions-Lauf oder Deploy.

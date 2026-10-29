@@ -2,13 +2,10 @@
 name: academic-research
 description: "Fachliteratur prüfen."
 ---
-# Wissenschaftliche Fachrecherche
+# Wissenschaftliche Fachrecherche und Notebooks
 
-## Quellenstand
-Aktuelle Aussagen, Preise, Forschungsergebnisse oder technische Empfehlungen vor Nutzung nach Möglichkeit online an Primärquellen prüfen. Quellenstand und Unsicherheit angeben.
+Kläre Forschungsfrage, Methode, Suchzeitraum und gesuchte Evidenz. Primärstudien, Reviews und Preprints unterscheiden; DOI, Publikationsdatum, Korrekturen und Retraktionen an aktuellen Quellen prüfen. Methode, Stichprobe, Effektgröße, Unsicherheit und Interessenkonflikte nennen. Keine Publikationen oder Resultate erfinden.
 
-## Fachlicher Ablauf
-Forschungsfrage und Suchstrategie formulieren. Primärstudien, Reviews und Preprints mit Veröffentlichungsdatum, Methode, Stichprobe, Effektgröße, Limitationen und möglichem Interessenkonflikt beurteilen. Aktuellen Stand bei dynamischen Themen online prüfen, Rücknahmen/Korrekturen berücksichtigen und Ergebnisse nicht stärker behaupten als die Evidenz erlaubt.
+Bei Datenexperimenten oder Schulungen ein reproduzierbares Jupyter-Notebook als mögliche Ausgabe planen. `.ipynb` braucht korrektes JSON, Kernel-Metadaten, geordnete Markdown-/Codezellen, nachvollziehbare Inputs, Seeds und einen sicheren Datenpfad. Abhängigkeiten nur mit Zustimmung installieren, keine Tokens oder privaten Dateien in Notebook-Ausgaben speichern.
 
-## Zukunftige Werkzeugprüfung
-Benötigte Tools und Schnittstellen sind Vorbereitungsziele, keine Zusage ihrer heutigen Verfügbarkeit. Rechercheergebnis, Quellenstand, Berechnungen, Dateien und Versand nur nach tatsächlich ausgeführtem Werkzeugnachweis als geprüft melden.
+Notebook-Ausführung und Forschungsaussage getrennt verifizieren. Wenn kein Python-/Jupyter-Runner existiert, nur Notebookstruktur und reproduzierbare Zellen vorbereiten. Quellen und Testumfang offen angeben. Vertiefung: references/NOTEBOOK_WORKFLOW.md sowie references/IMPLEMENTATION.md.

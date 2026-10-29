@@ -33,6 +33,10 @@ Zu jedem der sechs Skills liegen `SKILL.md` und `references/IMPLEMENTATION.md` v
 - [Content Research Writer](https://agenticskills.io/skills/content-research-writer): Abgleich mit `technical-writing`, `doc-coauthoring` und `creative-writing`.
 - Der 139-Server-MCP-Katalog wird separat auf Eignung, Berechtigungen, Netzwerk-/Tokenrisiken und Lizenz geprueft. Die blosse Listung eines MCP-Servers macht ihn noch nicht zu einem CoreAI-Werkzeug.
 
+## Zweite Ausbaurunde ohne neue Skill-IDs (0.5.82)
+
+Die Vercel-React-Patterns und die systematischen Debugging- und TDD-Konzepte wurden inzwischen direkt in den vorhandenen Skills `react`, `nextjs`, `debugging` und `unit-testing` vertieft. Jupyter-Notebooks stehen als reproduzierbarer Referenzablauf unter `academic-research`, statische Codeanalyse mit Semgrep/CodeQL/SARIF unter `threat-modeling`. Die vorherige Kandidatenliste dient nur als historische Forschungsübersicht; diese sechs Themen erzeugen keine zusätzlichen Skill-IDs. Details: [COREAI_SKILLS_FOLLOWUP.md](COREAI_SKILLS_FOLLOWUP.md).
+
 ## Sicherheits- und Integrationsregel
 
 1. Bei jeder externen Skillquelle Original-GitHub-Repostand, Verantwortliche, Lizenz, Referenzen, etwaige Skripte/Hooks und Netzbefugnisse pruefen.
