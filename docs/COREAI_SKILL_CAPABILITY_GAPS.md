@@ -1,6 +1,6 @@
 # CoreAI Skill-Bibliothek: Zielumfang und Werkzeuglücken
 
-Stand: 29.10.2026, geplant für Quellversion 0.5.81. Ausgangspunkt: 33 Skills (0.5.80). Im aktuellen Erweiterungsbranch: **77 Skills**, einschließlich aller **19 Original-Kennungen** aus [anthropics/skills](https://github.com/anthropics/skills/tree/main/skills), weiterer eigener Fach-Skills sowie zwei Planungs-Skills für Agenten/Workflows.
+Stand: 29.10.2026, geplant für Quellversion 0.5.81. Ausgangspunkt: 33 Skills (0.5.80). Im aktuellen Erweiterungsbranch: **100 Skills**, einschließlich aller **19 Original-Kennungen** aus [anthropics/skills](https://github.com/anthropics/skills/tree/main/skills), weiterer eigener Fach-Skills sowie zwei Planungs-Skills für Agenten/Workflows.
 
 ## Grundsatz
 
@@ -33,6 +33,40 @@ Der neue Skillkatalog ist additive Vorbereitung, keine Implementierung sämtlich
 | `discernment-nudge` | Kritische Prüfung folgenreicher Antworten mit konkreten Rückfragen, ohne unnötige Wiederholung | Skill jetzt gezielt auswählbar; eine systemweite automatische Schlussprüfung wäre eine **separat freizugebende** Routingfunktion | P08/P12 |
 
 Weitere Referenzen aus der CoreAI-Funktionsmatrix: `agent-task-design` (CrewAI/AutoGen-Rollen und Ergebnisverträge) und `workflow-checkpoints` (LangGraph/AutoGen-Checkpoints, Zustandsübergänge, Resume). Hier fehlen die vollständigen P26-/P27-Engines. [OpenClaw](https://github.com/openclaw/openclaw), [Open WebUI](https://github.com/open-webui/open-webui), [CrewAI Skills](https://github.com/crewAIInc/skills), [LangGraph](https://github.com/langchain-ai/langgraph) und [AutoGen](https://github.com/microsoft/autogen) bleiben zusätzlich für die laufende Detailinventur P01 erfasst.
+
+## OpenAI-/Rechts-Skills: aktuelle Rechtslage und Toolbedarf
+
+Die zusaetzlichen 23 Skills ergaenzen den 77-Skills-Stand auf **100**. 20 juristische Skills sind mit vollstaendiger Fachaufgabe, Werkzeugbedarf und Abnahmetests vorbereitet. Bei **jeder Rechtspruefung** muss der am Ereignisdatum geltende Normstand sowie die aktuelle Rechtslage per Webrecherche ermittelt werden. Die Pflicht gilt direkt in jeder rechtlichen SKILL.md, nicht nur in dieser Dokumentation.
+
+Referenz fuer alle juristischen Skills: [COREAI_LEGAL_CURRENTNESS.md](COREAI_LEGAL_CURRENTNESS.md). Amtliche Quellen: [Bundesgesetzblatt](https://www.recht.bund.de/), [Gesetze im Internet](https://www.gesetze-im-internet.de/hinweise.html) als konsolidierte, nicht amtliche Darstellung, [EUR-Lex](https://eur-lex.europa.eu/collection/eu-law/consleg.html) fuer EU-Rechtsakte und historische konsolidierte Fassungen, zustaendige Landesrecht-Portale und Originalentscheidungen von Gerichten. **Nicht** allein auf Modellwissen, alte RAG-Inhalte, Suchtreffer oder eine ungepruefte Sekundaerquelle vertrauen.
+
+| Skill | Fachlicher Zielumfang | Benoetigte Tools und Abnahme |
+|---|---|---|
+| `legal-research` | Online-Rechtsquellen, Auslegung und Urteile | Aktuelle/historische Gesetzesversionen, amtliche Verkuendung, Gerichtsquellen |
+| `contract-review-summary` | Vertragsanalysetabelle, Klausel-Redlining | DOCX/PDF, Klausel-Diff, geltende Normen und Vertragsplaybook |
+| `legal-memo-standard` | Gutachten, Rechtsmemo, Subsumtion | Normen-/Urteilrecherche, Zitatpruefung und Dokumentexport |
+| `policy-qa-from-knowledgebase` | Interne Richtlinien gegen Recht pruefen | Privates RAG mit Berechtigungen, Versionen und amtlicher Quellenabgleich |
+| `legal-drafting` | Widerspruch, Antrag und Schriftsatz | Bescheid-/Dokumentenparser, Belege, Fristen, Entwurf und Export |
+| `legal-deadlines` | Fristbeginn, Zustellung, Feiertage | Normenbasierter Fristenrechner mit Landes-/Verfahrensregeln |
+| `administrative-law` | Verwaltungsakte, Behoerdenbescheide | Bundes-/Landesrecht, Zustellungs-, Rechtsweg- und Fristenpruefung |
+| `social-law` | SGB, Leistungen, Bescheide und Rechtsbehelfe | SGB-Fassungen, Bescheid-PDF, anwendbare Leistungsrechnung |
+| `tenancy-law` | Mietvertraege, Kuendigung, Nebenkosten | BGB, Landes-/Ortssonderrecht, Abrechnung und Fristen |
+| `employment-law` | Arbeitsvertraege, Kuendigung, Urlaub | Aktuelle Normen, Tarif-/Vertragsstand, Arbeitsgericht-Recherche |
+| `consumer-law` | Widerruf, Reklamation, Forderung | Vertrags-/Rechnungsparser, BGB-Spezialrecht und Fristen |
+| `privacy-law` | DSGVO, BDSG, Betroffenenrechte | EUR-Lex, Aufsichtsbehoerden, Dateninventar und Zustandspruefung |
+| `intellectual-property` | Urheber-, Marken- und Lizenzrecht | DPMA/EUIPO, Lizenztexte, Rechteketten und Asset-Inventar |
+| `tax-law` | Steuerjahre, Veranlagung und Bescheid | Aktuelle/historische Steuerfassungen, BMF/BFH und Finanzrechner |
+| `civil-procedure` | Zivilprozess, Kosten, Rechtsmittel | ZPO/Verfahrensrecht, Gerichts-/Fristen-/Kostenpruefung |
+| `evidence-review` | Belege, Widersprueche und Zeitachsen | Originaldateien, Hash/Metadaten, OCR mit verifizierten Fundstellen |
+| `official-forms` | Amtliche Antragsformulare | Aktuelle Vordrucke, Formularparser, Version und sichere Dateiausgabe |
+| `family-law` | Unterhalt, Sorge, Verfahren | BGB/FamFG, aktueller Tabellenstand, vertrauliche Dateiverarbeitung |
+| `criminal-law` | StGB/StPO, Rechte, Verfahrensstand | Strafrechtsfassung am Tatzeitpunkt, Urteile, Fristenpruefung |
+| `company-law` | Gesellschaften, Gruendung, Register | Aktuelle Register- und Rechtsformvorschriften, Satzungsentwurf |
+| `financial-analysis` | Budgets, Liquiditaet und Kennzahlen | Rechen-/Tabellenwerkzeuge, aktueller Quellenstand und Charts |
+| `academic-research` | Literatur, Studienbewertung, Zitate | Fachsuche, DOI, PDF-Parser und Evidenzpruefung |
+| `threat-modeling` | defensive AppSec-Bedrohungsmodelle | Repository-Analyse, Datenfluss- und Risikopruefung |
+
+**Abnahme fuer alle Rechtsskills:** positiver Stichtagsfall, geaendertes Gesetz, noch nicht in Kraft getretene Novelle, altes Bescheiddatum, Landesrecht, unklare Frist und Fall **ohne Webzugriff**. Nur wenn Quellen aufrufbar und zeitlich richtig sind, darf Mara das Ergebnis als nach aktuellen Originalquellen geprueft bezeichnen.
 
 ## Gemeinsame Abnahmevoraussetzungen
 
