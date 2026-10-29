@@ -7,6 +7,7 @@
 
   var csrfToken = '';
   var actorLevel = 4;
+  var actorId = 0;
   var flashTimer = 0;
   var runtimeState = {};
   var ready = false;
@@ -117,6 +118,177 @@
   }
 
   var ROLE_OPTIONS = [[0, 'INHABER'], [1, 'ADMIN'], [4, 'NUTZER']];
+  // 0.5.83: models outside CoreAI and their releases per account (Inhaber only).
+  var modelAccess = null;
+
+  function loadModelAccess() {
+    if (actorLevel !== 0) return Promise.resolve(null);
+    return api('model_access').then(function (data) {
+      modelAccess = data;
+      return data;
+    }).catch(function (error) {
+      modelAccess = null;
+      show('Cores: ' + error.message, true);
+      return null;
+    });
+  }
+
+  function grantsOf(user) {
+    var grants = modelAccess && modelAccess.grants ? modelAccess.grants[String(user.id)] : null;
+    return Array.isArray(grants) ? grants : [];
+  }
+
+  // Cell of the CORES column: the release button, or why there is none.
+  function modelCell(user, row) {
+    var cell = el('td', 'model-access-cell');
+    if (Number(user.is_guest) === 1) { cell.appendChild(el('small', '', 'Standard-Core')); return cell; }
+    if (Number(user.permission_level) === 0) { cell.appendChild(el('small', '', 'alle (Inhaber)')); return cell; }
+    if (actorLevel !== 0 || !modelAccess) { cell.appendChild(el('small', '', 'nur Inhaber')); return cell; }
+    var toggle = el('button', 'model-access-toggle', 'FREIGABEN (' + grantsOf(user).length + ')');
+    toggle.type = 'button';
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.addEventListener('click', function () {
+      var open = row.nextSibling && row.nextSibling.classList && row.nextSibling.classList.contains('model-access-row');
+      closePanel(row);
+      if (open) return;
+      row.parentNode.insertBefore(modelPanel(user, toggle), row.nextSibling);
+      toggle.setAttribute('aria-expanded', 'true');
+    });
+    cell.appendChild(toggle);
+    return cell;
+  }
+
+  // One panel row under an account at a time (Core releases or deleting).
+  function closePanel(row) {
+    var next = row.nextSibling;
+    if (next && next.classList && next.classList.contains('user-panel-row')) next.parentNode.removeChild(next);
+    row.querySelectorAll('[aria-expanded="true"]').forEach(function (button) { button.setAttribute('aria-expanded', 'false'); });
+  }
+
+  // 0.5.84: who may be deleted by whom (the server checks the same):
+  // never oneself or an Inhaber, an Admin only Nutzer and Gaeste.
+  function canDelete(user) {
+    var level = Number(user.permission_level);
+    if (Number(user.id) === actorId || level === 0) return false;
+    return actorLevel === 0 || (actorLevel === 1 && level > 1);
+  }
+
+  function accountName(user) {
+    return String(user.username || user.id);
+  }
+
+  var DELETE_ERRORS = {
+    account_busy: 'Das Konto arbeitet gerade (laufende Antwort, Browser oder Python). Kurz warten und erneut löschen.',
+    protected_account: 'Dieses Konto ist geschützt und kann nicht gelöscht werden.',
+    self_delete_blocked: 'Das eigene Konto kann hier nicht gelöscht werden.',
+    delete_confirmation_required: 'Die eingetippte Bestätigung stimmt nicht.',
+    user_not_found: 'Das Konto gibt es nicht mehr.'
+  };
+
+  // Row under an account: what goes, the typed confirmation, then delete.
+  function deletePanel(user, toggle) {
+    var tr = el('tr', 'user-panel-row user-delete-row');
+    var td = el('td');
+    td.colSpan = 7;
+    var who = (user.display_name || accountName(user)) + (user.username ? ' (' + user.username + ')' : '');
+    td.appendChild(el('p', 'user-delete-title', 'Konto ' + who + ' endgültig löschen?'));
+    td.appendChild(el('p', 'model-access-note', 'Gelöscht werden alle Chats mit Nachrichten, Anhängen und Dateien, hochgeladenes Wissen, '
+      + 'Maras Erinnerungen an dieses Konto, Profil und Avatare, Einstellungen, Core-Freigaben und alle Anmeldungen. '
+      + 'Das lässt sich nicht rückgängig machen. Im Audit bleibt nur ein Eintrag mit der E-Mail.'));
+    var label = el('label', 'user-delete-confirm');
+    label.appendChild(el('span', '', 'Zum Bestätigen eintippen: '));
+    label.appendChild(el('code', '', accountName(user)));
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.autocomplete = 'off';
+    input.spellcheck = false;
+    input.setAttribute('aria-label', 'Bestätigung: ' + accountName(user));
+    label.appendChild(input);
+    td.appendChild(label);
+    var actions = el('div', 'user-delete-actions');
+    var cancel = el('button', 'settings-action compact', 'ABBRECHEN');
+    cancel.type = 'button';
+    var confirm = el('button', 'settings-action compact danger', 'ENDGÜLTIG LÖSCHEN');
+    confirm.type = 'button';
+    confirm.disabled = true;
+    actions.appendChild(cancel);
+    actions.appendChild(confirm);
+    td.appendChild(actions);
+    tr.appendChild(td);
+
+    input.addEventListener('input', function () {
+      confirm.disabled = input.value.trim().toLowerCase() !== accountName(user).toLowerCase();
+    });
+    cancel.addEventListener('click', function () {
+      tr.parentNode.removeChild(tr);
+      toggle.setAttribute('aria-expanded', 'false');
+      toggle.focus();
+    });
+    confirm.addEventListener('click', function () {
+      confirm.disabled = true;
+      cancel.disabled = true;
+      post('user_delete', { user_id: Number(user.id), confirm: input.value.trim() }).then(function (data) {
+        var d = data.deleted || {};
+        show('Konto ' + accountName(user) + ' gelöscht: ' + (d.sessions_deleted || 0) + ' Chats, '
+          + (d.messages_deleted || 0) + ' Nachrichten, ' + (d.files_deleted || 0) + ' Dateien.');
+        return Promise.all([loadUsers(), loadOverview()]);
+      }).catch(function (error) {
+        show('Löschen: ' + (DELETE_ERRORS[error.message] || error.message), true);
+        confirm.disabled = input.value.trim().toLowerCase() !== accountName(user).toLowerCase();
+        cancel.disabled = false;
+      });
+    });
+    setTimeout(function () { input.focus(); }, 0);
+    return tr;
+  }
+
+  // Row under an account: one switch per model outside CoreAI, then save.
+  function modelPanel(user, toggle) {
+    var tr = el('tr', 'user-panel-row model-access-row');
+    var td = el('td');
+    td.colSpan = 7;
+    var models = (modelAccess && modelAccess.models) || [];
+    var granted = grantsOf(user);
+    td.appendChild(el('p', 'model-access-note', models.length
+      ? 'Fremde Cores außerhalb von CoreAI für ' + (user.display_name || user.username || ('Konto ' + user.id))
+        + '. Maras Cores brauchen keine Freigabe.'
+      : 'Keine fremden Cores außerhalb von CoreAI in Ollama installiert.'));
+    if (modelAccess && modelAccess.ollama === false) {
+      td.appendChild(el('p', 'model-access-note warn', 'Ollama-Liste gerade nicht erreichbar; gezeigt werden nur bestehende Freigaben.'));
+    }
+    var list = el('div', 'model-access-list');
+    models.forEach(function (name) {
+      var label = el('label', 'model-access-choice');
+      var box = document.createElement('input');
+      box.type = 'checkbox';
+      box.value = name;
+      box.checked = granted.indexOf(name) >= 0;
+      label.appendChild(box);
+      label.appendChild(el('span', '', name));
+      list.appendChild(label);
+    });
+    td.appendChild(list);
+    var save = el('button', 'settings-action compact', 'FREIGABEN SPEICHERN');
+    save.type = 'button';
+    save.disabled = models.length === 0;
+    save.addEventListener('click', function () {
+      var chosen = Array.prototype.slice.call(list.querySelectorAll('input:checked')).map(function (box) { return box.value; });
+      save.disabled = true;
+      post('model_access_save', { user_id: Number(user.id), models: chosen }).then(function (data) {
+        if (modelAccess) {
+          if (!modelAccess.grants || Array.isArray(modelAccess.grants)) modelAccess.grants = {};
+          modelAccess.grants[String(user.id)] = data.models || [];
+        }
+        toggle.textContent = 'FREIGABEN (' + (data.models || []).length + ')';
+        show('Freigaben für Benutzer ' + user.id + ' gespeichert.');
+      }).catch(function (error) {
+        show('Freigaben: ' + error.message, true);
+      }).finally(function () { save.disabled = false; });
+    });
+    td.appendChild(save);
+    tr.appendChild(td);
+    return tr;
+  }
 
   function roleName(level, guest) {
     if (guest) return 'GAST';
@@ -126,7 +298,8 @@
 
   function loadUsers() {
     var q = document.getElementById('userSearch').value.trim();
-    return api('users', null, 'limit=150&q=' + encodeURIComponent(q)).then(function (data) {
+    return Promise.all([api('users', null, 'limit=150&q=' + encodeURIComponent(q)), loadModelAccess()]).then(function (both) {
+      var data = both[0];
       var tbody = document.getElementById('userRows');
       tbody.innerHTML = '';
       (data.items || []).forEach(function (user) {
@@ -159,7 +332,9 @@
         banCell.appendChild(until);
         row.appendChild(banCell);
         row.appendChild(el('td', '', user.session_count || 0));
+        row.appendChild(modelCell(user, row));
         var actionCell = el('td');
+        var actions = actionCell.appendChild(el('div', 'user-actions'));
         var save = el('button', '', 'SPEICHERN');
         save.type = 'button';
         save.addEventListener('click', function () {
@@ -175,7 +350,20 @@
             loadUsers();
           }).catch(function (error) { show('Benutzer: ' + error.message, true); });
         });
-        actionCell.appendChild(save);
+        actions.appendChild(save);
+        if (canDelete(user)) {
+          var remove = el('button', 'danger user-delete-toggle', 'LÖSCHEN');
+          remove.type = 'button';
+          remove.setAttribute('aria-expanded', 'false');
+          remove.addEventListener('click', function () {
+            var open = row.nextSibling && row.nextSibling.classList && row.nextSibling.classList.contains('user-delete-row');
+            closePanel(row);
+            if (open) return;
+            row.parentNode.insertBefore(deletePanel(user, remove), row.nextSibling);
+            remove.setAttribute('aria-expanded', 'true');
+          });
+          actions.appendChild(remove);
+        }
         row.appendChild(actionCell);
         tbody.appendChild(row);
       });
@@ -433,6 +621,7 @@
       if (!data.ok || data.is_guest || Number(data.permission_level) > 1) return null;
       csrfToken = data.csrf_token || '';
       actorLevel = Number(data.permission_level);
+      actorId = Number(data.user_id) || 0;
       var adminOption = document.querySelector('#newUserLevel option[value="1"]');
       if (adminOption && actorLevel > 0) adminOption.disabled = true;
       if (identity) identity.textContent = (data.username || 'ADMIN') + ' // ' + roleName(data.permission_level, false);

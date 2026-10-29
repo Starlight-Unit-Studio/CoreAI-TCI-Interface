@@ -49,6 +49,10 @@ services:
       - ./var/ember_py:/var/www/coreui/var/ember_py
       - ./var/ember_frames:/var/www/coreui/var/ember_frames
       - ./var/pdf_pages:/var/www/coreui/var/pdf_pages
+      # 0.5.83: logins survive a recreated container (update), and the update
+      # window drops its request here (var/update itself stays read-only).
+      - ./var/php_sessions:/var/www/coreui/var/php_sessions
+      - ./var/update-request:/var/www/coreui/var/update-request
       - ./uploads/ember_browse:/var/www/coreui/uploads/ember_browse
       - ./assets/chat_media:/var/www/coreui/assets/chat_media
       - ./assets/profile_photos:/var/www/coreui/assets/profile_photos

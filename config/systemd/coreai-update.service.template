@@ -1,0 +1,13 @@
+# CoreAI 0.5.83: installs the newest main when the Inhaber presses "Update starten".
+# Started by coreai-update.path; written by scripts/install.sh.
+[Unit]
+Description=CoreAI: TCI Interface Update (aus dem Update-Fenster gestartet)
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=@@PROJECT_ROOT@@/scripts/coreai-updater.sh run
+Environment=HOME=/root
+TimeoutStartSec=40min
+Nice=5

@@ -35,6 +35,7 @@ try {
     'stu_auth_sessions',
     'stu_console_generation_requests',
     'stu_abuse_counters',
+    'stu_user_model_access',
   ];
   $missing = [];
   foreach ($required as $table) {

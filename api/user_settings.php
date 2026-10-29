@@ -7,6 +7,7 @@ require_once __DIR__ . '/ai_settings.php';
 require_once __DIR__ . '/model_catalog.php';
 require_once __DIR__ . '/ai_context_estimate.php';
 require_once __DIR__ . '/guest_access.php';
+require_once __DIR__ . '/model_access.php';
 
 $pdo = stu_pdo();
 $uid = stu_require_user_id();
@@ -77,6 +78,8 @@ if ($method === 'GET' && array_key_exists('core_cloud', $_GET)) {
 
 if ($method === 'GET') {
   $settings = coreui_ai_settings_load($pdo, $uid);
+  // 0.5.83: a Core whose release was withdrawn no longer counts as chosen.
+  if (!coreui_model_access_allowed($pdo, $uid, (string)$settings['model_override'])) $settings['model_override'] = '';
   $defaultModel = defined('STU_EMBER_MODEL') ? (string)STU_EMBER_MODEL : '';
   $payload = [
     'ok' => true,
@@ -148,6 +151,8 @@ if (($body['action'] ?? '') === 'core') {
     } catch (RuntimeException $e) {
       stu_json(['ok'=>false, 'error'=>$e->getMessage()], 503);
     }
+    // 0.5.83: a model outside CoreAI needs the Inhaber's release.
+    if (!coreui_model_access_allowed($pdo, $uid, $name)) stu_json(['ok'=>false, 'error'=>'model_not_allowed'], 403);
   }
   try {
     coreui_ai_settings_patch($pdo, $uid, ['model_override'=>$name]);
@@ -324,6 +329,9 @@ try {
   if ($requestedModel !== '' && !$keepModel) {
     if (!coreui_model_name_valid($requestedModel)) {
       stu_json(['ok'=>false, 'error'=>'invalid_model_name'], 400);
+    }
+    if (!coreui_model_access_allowed($pdo, $uid, $requestedModel)) {
+      stu_json(['ok'=>false, 'error'=>'model_not_allowed'], 403);
     }
     try {
       if (!coreui_ollama_model_exists($requestedModel)) {

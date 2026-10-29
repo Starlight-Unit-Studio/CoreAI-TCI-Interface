@@ -7,7 +7,42 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.82` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.84` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Benutzer loeschen (0.5.84)
+
+Unter Admin Core > Benutzer loescht der Inhaber Admins, Nutzer und Gaeste, ein
+Admin nur Nutzer und Gaeste. Niemand loescht sich selbst oder ein
+Inhaber-Konto. Zur Bestaetigung wird die E-Mail des Kontos eingetippt. Geloescht
+werden Chats mit Dateien, Wissen, Maras Erinnerungen an das Konto, Profil,
+Einstellungen, Freigaben und Anmeldungen, alles in einer Transaktion; im
+Admin-Audit bleibt ein Eintrag.
+
+## Eingabefeld, Legende, Modell-Freigaben und Update-Fenster (0.5.83)
+
+Das Eingabefeld springt nach dem Senden wieder auf eine Zeile zurueck. Die
+Legende am Eingabefeld zeigt unter "Core-Stufen" nur Maras TCI-Stufen; andere
+in Ollama installierte Modelle stehen nur im Core-Menue unter den festen
+Stufen. Die Ollama-Liste laedt schon beim Oeffnen des Chats.
+
+Maras Cores stehen allen Konten offen. Modelle ausserhalb von CoreAI (etwa ein
+privates Cloud-Modell) nutzt nur der Inhaber; unter Admin Core > Benutzer gibt
+er sie in der Spalte CORES einzelnen Konten frei (Migration 020).
+
+**Update-Fenster:** Landet ein neuer Merge auf `main`, bemerkt das der Server
+innerhalb von 10 Minuten. Der Inhaber bekommt ein mattgoldenes Fenster mit den
+Aenderungen ("Spaeter" blendet es bis zum naechsten Laden aus; unter
+Einstellungen > System steht die Karte "CoreAI-Update"). "Update starten"
+sichert die Datenbank (`var/backups`), installiert den neuen Stand mit dem
+offiziellen `setup.sh`, startet die Worker und auf Wunsch Ollama neu. Alle
+offenen Seiten zeigen "Bitte auf Neustart warten" mit dem echten
+Installationsfortschritt (der Dienst liest die Ausgabe des Installers mit) und
+laden neu, sobald CoreAI zurueck ist. Die Oberflaeche fuehrt dabei keinen Befehl aus: Sie legt nur eine
+Anfrage ab, die der systemd-Dienst `coreai-update` auf dem Host abholt.
+Eingerichtet wird er von `scripts/install.sh`; das Update auf 0.5.83 selbst
+laeuft deshalb noch einmal ueber den Setup-Einzeiler. Status:
+`systemctl status coreai-update.path coreai-update-check.timer`, Protokoll:
+`/opt/ember-coreui/var/update/update.log`.
 
 ## Skill-Referenzen auf Anforderung (0.5.82)
 
@@ -1589,6 +1624,8 @@ Bei der Verwendung von `sudo` koennen abweichende Einstellungen mit `sudo --pres
 ## Live-Entwicklerstand mit dem bestehenden One-Liner
 
 Genau denselben One-Liner wie bei der Erstinstallation erneut ausfuehren. `setup.sh` laedt den neuesten Commit aus `main`, fuehrt den regulaeren Installer und die SQL-Migrationen aus und prueft die aktualisierte Installation. Der konfigurierte isolierte Betrieb bleibt bestehen; Benutzer, Sitzungen, Datenbank, Uploads und Geheimnisse bleiben erhalten. GitHub Actions werden nicht benoetigt.
+
+Ab 0.5.83 geht das auch ohne Terminal: Der Inhaber startet das Update aus dem Update-Fenster (siehe oben); der Host-Dienst fuehrt dabei genau dieses `setup.sh` aus.
 
 Der tatsaechlich installierte Commit wird am Ende ausgegeben und in `/opt/ember-coreui/var/dev_source_commit` gespeichert. Die aktuelle Produktversion in `VERSION` ist rein numerisch (`0.5.13`), unabhaengig von Commit und Cache-Schluessel. Fuer den exakten live installierten Quellstand ist die gesondert gespeicherte Commit-SHA massgeblich.
 

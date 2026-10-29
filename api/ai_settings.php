@@ -9,6 +9,8 @@ declare(strict_types=1);
  * runtime so an old or manually modified database row cannot bypass limits.
  */
 
+require_once __DIR__ . '/model_access.php';
+
 function coreui_ai_settings_schema_ready(PDO $pdo): bool {
   try {
     $pdo->query('SELECT user_id, thinking_enabled FROM stu_user_ai_settings LIMIT 1');
@@ -275,6 +277,9 @@ function coreui_ai_runtime_apply(PDO $pdo, int $uid): array {
     $settings['model_override'] = '';
     $settings['num_ctx'] = null;
   }
+  // 0.5.83: a model outside CoreAI whose release was withdrawn falls back to
+  // the default Core from the next message on.
+  if (!coreui_model_access_allowed($pdo, $uid, (string)$settings['model_override'])) $settings['model_override'] = '';
   // #113: the context window is fixed once per request, which is one run. A
   // value saved while an agent job works applies from the next job on, so a
   // running job never reloads the Core half way through.

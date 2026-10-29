@@ -1,0 +1,34 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.5.84
+Stand: 29.10.2026
+Branch: claude/bold-galileo-myoyi0 (auf 0.5.83, PR #135)
+Basis: Wunsch des Betreibers: unter den Benutzer-Einstellungen eine Loeschfunktion, danach weitere Einstellungen pro
+Konto, eines nach dem anderen.
+
+AENDERUNGEN:
+- api/account_delete.php (neu):
+  coreui_account_delete_refusal(actorId, actorLevel, target) ist rein und legt die Regeln fest: nie selbst
+  (self_delete_blocked), nie Inhaber oder STU_EMBER_USER_ID (protected_account), Admin nur Konten mit hoeherer Stufe,
+  Nutzer gar nicht. coreui_account_delete_confirmed: getippte E-Mail (ohne E-Mail die id), Gross-/Kleinschreibung egal.
+  coreui_account_delete_tx (in einer Transaktion des Aufrufers): Konto FOR UPDATE, Inhaber/Mara verweigert; laufende
+  Browser-/Python-Jobs oder Warteschlangen-Eintraege -> account_busy; alle Chats archivieren und je
+  coreui_console_session_delete_tx (session_busy -> account_busy); Jobs ausserhalb von Chats, uebrige Console-Medien,
+  Wissen (Quellen, Abschnitte), Profilmedien, alte Profilfotos; ember_memories scope user und character loeschen,
+  global nur user_id = NULL; weitere Tabellen (Queue, Reaktionen, Presence, Chat-Medien, Reputation, Log, Mail,
+  Passwort-Resets, kv, Figuren, uebrige Nachrichten), fehlende Tabellen/Spalten zaehlen als leer; zuletzt
+  stu_users (permission_level <> 0), Rest per ON DELETE CASCADE. coreui_account_delete: Commit, dann Dateien
+  (Artefakte, Medien ueber die bestehende Pfadpruefung, Wissen und Avatare nur per Dateiname im eigenen Ordner,
+  Profilfotos nur unter assets/profile_photos/pending|approved, Komprimier-Archive var/console_media/archives/<id>).
+- api/admin.php: POST user_delete (hinter CSRF): Ziel laden, Regel, Bestaetigung (delete_confirmation_required),
+  account_busy 409, Audit user_delete mit E-Mail, Rolle und Zahlen.
+- js/admin.js: actorId aus auth.php?action=me; LOESCHEN nur, wo canDelete; Panelzeile (immer nur ein Panel je
+  Konto, auch gegen die Freigaben-Zeile), Bestaetigungsfeld, Fehlertexte, danach Liste und Uebersicht neu.
+  css/settings.css: Stil der Loeschzeile.
+
+GEPRUEFT:
+- Alle Offline-Selbsttests; account-delete-selftest.php lokal gegen MariaDB 10.11 mit allen 19 Migrationen
+  (vollstaendige Loeschung mit Rollback, fuenf Gegenproben erkannt: ohne Busy-Pruefung, ohne Figur-Erinnerungen,
+  globale Fakten geloescht, Admin darf Admin loeschen, Wissen bleibt); dazu einmal mit echtem Commit und echten
+  Dateien (alle Dateien und Zeilen weg). Einstellungs-Browser-Test mit Loeschablauf.
+
+NAECHSTER SCHRITT: PR #135 (0.5.83) mergen, dann diesen Stand auf main bringen. Danach weitere Einstellungen pro
+Konto nach Wunsch des Betreibers, dann Audio (TTS, P20.1).

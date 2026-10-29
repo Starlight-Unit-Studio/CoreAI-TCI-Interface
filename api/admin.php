@@ -7,6 +7,8 @@ require_once __DIR__ . '/ai_settings.php';
 require_once __DIR__ . '/account_store.php';
 require_once __DIR__ . '/guest_access.php';
 require_once __DIR__ . '/profile_store.php';
+require_once __DIR__ . '/model_access.php';
+require_once __DIR__ . '/account_delete.php';
 
 $pdo = stu_pdo();
 $actorId = stu_require_user_id();
@@ -123,6 +125,32 @@ if ($method === 'GET') {
     );
     $st->execute($params);
     stu_json(['ok' => true, 'items' => $st->fetchAll(PDO::FETCH_ASSOC) ?: []]);
+  }
+
+  // 0.5.83: models outside CoreAI and who may use them. Only the Inhaber
+  // releases them; installed ones come from Ollama, released ones that are
+  // gone from Ollama stay listed so they can be withdrawn.
+  if ($action === 'model_access') {
+    if ($actorLevel !== 0) stu_json(['ok' => false, 'error' => 'owner_only'], 403);
+    $external = [];
+    $ollama = true;
+    try {
+      foreach (coreui_ollama_models() as $m) {
+        $name = (string)($m['name'] ?? '');
+        if ($name !== '' && !coreui_model_is_coreai($name)) $external[] = $name;
+      }
+    } catch (RuntimeException $e) {
+      $ollama = false;
+    }
+    $grants = coreui_model_access_all($pdo);
+    foreach ($grants as $names) {
+      foreach ($names as $name) {
+        if (!in_array($name, $external, true)) $external[] = $name;
+      }
+    }
+    sort($external, SORT_NATURAL | SORT_FLAG_CASE);
+    stu_json(['ok' => true, 'models' => $external, 'grants' => (object)$grants, 'ollama' => $ollama,
+      'ready' => coreui_model_access_ready($pdo)]);
   }
 
   if ($action === 'memories') {
@@ -267,6 +295,68 @@ if ($action === 'user_update') {
     'banned_until' => $until,
   ]);
   stu_json(['ok' => true]);
+}
+
+// 0.5.84: delete an account with everything it owns. The Inhaber deletes
+// Admins, Nutzer and Gaeste, an Admin only Nutzer and Gaeste; nobody deletes
+// himself or an Inhaber. The account's e-mail must be typed to confirm.
+if ($action === 'user_delete') {
+  $targetId = (int)($body['user_id'] ?? 0);
+  $st = $pdo->prepare('SELECT id, username, permission_level, is_guest FROM stu_users WHERE id = ? LIMIT 1');
+  $st->execute([$targetId]);
+  $target = $st->fetch(PDO::FETCH_ASSOC);
+  if (!$target) stu_json(['ok' => false, 'error' => 'user_not_found'], 404);
+  $refusal = coreui_account_delete_refusal($actorId, $actorLevel, $target);
+  if ($refusal !== '') stu_json(['ok' => false, 'error' => $refusal], $refusal === 'invalid_user' ? 400 : 403);
+  if (!coreui_account_delete_confirmed($target, (string)($body['confirm'] ?? ''))) {
+    stu_json(['ok' => false, 'error' => 'delete_confirmation_required'], 400);
+  }
+  try {
+    $deleted = coreui_account_delete($pdo, $targetId);
+  } catch (RuntimeException $e) {
+    $code = $e->getMessage();
+    if ($code === 'account_busy') stu_json(['ok' => false, 'error' => 'account_busy'], 409);
+    if ($code === 'user_not_found') stu_json(['ok' => false, 'error' => 'user_not_found'], 404);
+    if ($code === 'protected_account') stu_json(['ok' => false, 'error' => 'protected_account'], 403);
+    if (function_exists('stu__log_error')) stu__log_error(['type' => 'admin_user_delete_failed', 'actor' => $actorId, 'message' => $code]);
+    stu_json(['ok' => false, 'error' => 'user_delete_failed'], 500);
+  } catch (Throwable $e) {
+    if (function_exists('stu__log_error')) stu__log_error(['type' => 'admin_user_delete_failed', 'actor' => $actorId, 'message' => $e->getMessage()]);
+    stu_json(['ok' => false, 'error' => 'user_delete_failed'], 500);
+  }
+  coreui_admin_audit($pdo, $actorId, 'user_delete', 'user', (string)$targetId, [
+    'username' => (string)$target['username'],
+    'role' => coreui_role_name((int)$target['permission_level'], (int)($target['is_guest'] ?? 0) === 1),
+    'sessions' => $deleted['sessions_deleted'],
+    'messages' => $deleted['messages_deleted'],
+    'knowledge' => $deleted['knowledge_sources_deleted'],
+    'memories' => $deleted['memories_deleted'],
+    'files' => $deleted['files_deleted'],
+  ]);
+  stu_json(['ok' => true, 'deleted' => $deleted]);
+}
+
+if ($action === 'model_access_save') {
+  if ($actorLevel !== 0) stu_json(['ok' => false, 'error' => 'owner_only'], 403);
+  $targetId = (int)($body['user_id'] ?? 0);
+  $models = $body['models'] ?? null;
+  if ($targetId <= 0 || !is_array($models)) stu_json(['ok' => false, 'error' => 'invalid_request'], 400);
+  $target = coreui_model_access_account($pdo, $targetId);
+  $st = $pdo->prepare('SELECT COUNT(*) FROM stu_users WHERE id = ?');
+  $st->execute([$targetId]);
+  if ((int)$st->fetchColumn() !== 1) stu_json(['ok' => false, 'error' => 'user_not_found'], 404);
+  // Guests stay on the default Core; the Inhaber has every model anyway.
+  if ($target['guest']) stu_json(['ok' => false, 'error' => 'guest_core_locked'], 400);
+  if ($target['level'] === 0) stu_json(['ok' => false, 'error' => 'owner_has_all'], 400);
+  try {
+    $saved = coreui_model_access_save($pdo, $targetId, $models, $actorId);
+  } catch (InvalidArgumentException $e) {
+    stu_json(['ok' => false, 'error' => $e->getMessage()], 400);
+  } catch (RuntimeException $e) {
+    stu_json(['ok' => false, 'error' => $e->getMessage()], 503);
+  }
+  coreui_admin_audit($pdo, $actorId, 'model_access_save', 'user', (string)$targetId, ['models' => $saved]);
+  stu_json(['ok' => true, 'models' => $saved]);
 }
 
 if ($action === 'memory_upsert') {

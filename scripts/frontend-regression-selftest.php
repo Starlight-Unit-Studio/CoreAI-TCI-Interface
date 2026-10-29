@@ -79,6 +79,17 @@ try {
     'Admin Core ist nicht als Tab-Gruppe der Einstellungen verdrahtet.'
   );
 
+  // 0.5.83: after sending a long message the composer kept its grown height,
+  // because setting .value fires no input event. Every programmatic change
+  // goes through setComposerText(), which recalculates the height.
+  preg_match_all('~inputEl\.value\s*=(?!=)~', $console, $assignments);
+  frontend_test_assert(
+    count($assignments[0]) === 1
+      && str_contains($console, "function setComposerText(text) {\n    if (!inputEl) return;\n    inputEl.value = String(text || '');\n    resizeMessageComposer();")
+      && str_contains($console, "if (!options.from_queue) setComposerText('');"),
+    'Das Eingabefeld wird irgendwo ohne Hoehenanpassung geleert oder gesetzt.'
+  );
+
   foreach ([
     "image.className = 'msg-avatar-image'",
     "image.addEventListener('load'",

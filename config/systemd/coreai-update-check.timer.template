@@ -1,0 +1,12 @@
+# CoreAI 0.5.83: looks for a new merge on main every 10 minutes.
+[Unit]
+Description=CoreAI: TCI Interface Update-Pruefung alle 10 Minuten
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=10min
+RandomizedDelaySec=30s
+Unit=coreai-update-check.service
+
+[Install]
+WantedBy=timers.target

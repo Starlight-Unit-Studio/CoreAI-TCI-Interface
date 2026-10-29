@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.82 skill reference plans load on request.
+# CoreAI: TCI Interface 0.5.84 delete accounts under Admin Core > Benutzer (Inhaber: Admins, Nutzer, Gaeste; Admin: Nutzer, Gaeste).
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -116,6 +116,25 @@ UI_FILES=(
   database/migrations/017_ai_num_ctx.sql
   database/migrations/018_abuse_guard.sql
   database/migrations/019_coreai_roles.sql
+  database/migrations/020_model_access.sql
+  api/model_access.php
+  scripts/model-access-selftest.php
+  api/update.php
+  api/update_store.php
+  js/coreui-update.js
+  css/coreui-update.css
+  scripts/coreai-updater.sh
+  scripts/lib/coreai_update_state.py
+  scripts/update-selftest.php
+  api/account_delete.php
+  scripts/account-delete-selftest.php
+  scripts/update-ui-selftest.cjs
+  tests/update-runner-selftest.sh
+  config/systemd/coreai-update.service.template
+  config/systemd/coreai-update.path.template
+  config/systemd/coreai-update-check.service.template
+  config/systemd/coreai-update-check.timer.template
+  config/systemd/coreai-update-check.path.template
   api/abuse_guard.php
   scripts/abuse-guard-selftest.php
   scripts/captcha-selftest.php
@@ -239,6 +258,15 @@ if bash "$PROJECT_ROOT/tests/migration-permissions-selftest.sh" >/dev/null 2>&1;
   ok 'Migration: Ausfuehrungsrechte und Bash-Aufruf vor dem Datenbankimport geprueft.'
 else
   fail 'Migration: Berechtigungs-/Aufruf-Selbsttest fehlgeschlagen.'
+fi
+
+# 0.5.83: host updater (update window) with stand-ins for git, curl and systemd.
+if [[ "${EUID:-$(id -u)}" -eq 0 ]]; then
+  if bash "$PROJECT_ROOT/tests/update-runner-selftest.sh" >/dev/null 2>&1; then
+    ok 'Update-Dienst: Pruefung, Sicherung zuerst, offizielles Setup, Installationsfortschritt, Neustart der Dienste und Fehlerfaelle geprueft.'
+  else
+    fail 'Update-Dienst: Host-Updater-Selbsttest fehlgeschlagen.'
+  fi
 fi
 
 if COREAI_BROWSE_LIVE=0 python3 "$PROJECT_ROOT/scripts/browse-worker-selftest.py" >/dev/null 2>&1; then
@@ -510,6 +538,30 @@ if command -v php >/dev/null 2>&1; then
     fail "Rollen-Selbsttest: ${roles_test:-Unbekannter Fehler}"
   fi
 
+  # 0.5.83: models outside CoreAI only for the Inhaber and released accounts.
+  model_access_test=''
+  if model_access_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/model-access-selftest.php" 2>&1)"; then
+    ok 'Modell-Freigaben: Maras Cores fuer alle, fremde Modelle nur fuer Inhaber und freigegebene Konten.'
+  else
+    fail "Modell-Freigaben-Selbsttest: ${model_access_test:-Unbekannter Fehler}"
+  fi
+
+  # 0.5.83: update window: only a new commit, Inhaber only, waiting for everyone.
+  update_test=''
+  if update_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/update-selftest.php" 2>&1)"; then
+    ok 'Update-Fenster: nur bei neuem Commit, Start nur durch den Inhaber, Wartefenster fuer alle.'
+  else
+    fail "Update-Selbsttest: ${update_test:-Unbekannter Fehler}"
+  fi
+
+  # 0.5.84: deleting an account (rules, confirmation, files; a full deletion on the database, rolled back).
+  delete_test=''
+  if delete_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/account-delete-selftest.php" 2>&1)"; then
+    ok 'Konto loeschen: Rechte, Bestaetigung, Dateien und vollstaendige Loeschung (mit Rollback) geprueft.'
+  else
+    fail "Konto-Loeschen-Selbsttest: ${delete_test:-Unbekannter Fehler}"
+  fi
+
   compact_test=''
   if compact_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/compaction-selftest.php" 2>&1)"; then
     ok 'Chat komprimieren: Fenster, laufende Zusammenfassung, Archiv zuerst, Suche und Loeschen geprueft.'
@@ -608,6 +660,16 @@ if command -v php >/dev/null 2>&1; then
       fi
     else
       ok 'Einstellungen: Tab-Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+    fi
+    # 0.5.83: update window (Inhaber) and "Bitte auf Neustart warten"; needs Playwright for Node.
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/update-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'Update-Fenster: goldenes Fenster fuer den Inhaber, Spaeter, Fortschrittsbalken fuer alle, Neuladen nach dem Neustart geprueft.'
+      else
+        fail 'Update-Fenster: Oberflaechentest fehlgeschlagen.'
+      fi
+    else
+      ok 'Update-Fenster: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
     fi
     if node "$PROJECT_ROOT/scripts/webui-resilience-selftest.cjs" >/dev/null 2>&1; then
       ok 'WebUI: abbrechbares Laden, Reconnect ohne Doppelauftrag, Backoff und lange Chats geprueft.'

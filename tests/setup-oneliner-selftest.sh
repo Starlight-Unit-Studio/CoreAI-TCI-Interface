@@ -108,6 +108,8 @@ export PATH="$WORK/bin:$PATH"
 # nginx/php UID 33; the installer's own restrictive umask stays at 027.
 [[ "$(cat "$FAKE_CLONE_UMASK_LOG")" == '0022' ]]
 [[ "$(cat "$TARGET/var/dev_source_commit")" == '0000000000000000000000000000000000000007' ]]
+# 0.5.83: readable for the web server (group 33), so the update window can compare.
+[[ "$(stat -c '%a %g' "$TARGET/var/dev_source_commit")" == '640 33' ]]
 [[ "$(cat "$TARGET/var/test_installs")" == 'initial' ]]
 [[ -x "$TARGET/scripts/migrate.sh" ]]
 [[ ! -e "$TARGET/.git" && ! -e "$TARGET/.github" && ! -e "$TARGET/releases/huge.zip" ]]

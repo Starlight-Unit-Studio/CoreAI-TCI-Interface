@@ -1,0 +1,10 @@
+# CoreAI 0.5.83: the update window drops var/update-request/request.json.
+[Unit]
+Description=CoreAI: TCI Interface Update-Anfrage aus der Oberflaeche
+
+[Path]
+PathExists=@@PROJECT_ROOT@@/var/update-request/request.json
+Unit=coreai-update.service
+
+[Install]
+WantedBy=multi-user.target

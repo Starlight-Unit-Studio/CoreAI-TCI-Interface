@@ -1,9 +1,11 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
 Stand: 29.10.2026
-Repository-Version: 0.5.82
+Repository-Version: 0.5.84
 Repository: https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface
 ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_5_84.txt
+  docs/UEBERGABEPROTOKOLL_0_5_83.txt
   docs/UEBERGABEPROTOKOLL_0_5_82.txt
   docs/UEBERGABEPROTOKOLL_0_5_81.txt
   docs/UEBERGABEPROTOKOLL_0_5_80.txt
@@ -115,6 +117,12 @@ leitet weiter, css/admin.css entfaellt).
 als Schritt der Arbeitsschleife, Vorauswahl bleibt).
 0.5.81 (PR #132): 106 Skills. 0.5.82: Referenzplaene der Skills laedt Mara auf Anforderung
 ([SKILL: kennung/references/IMPLEMENTATION.md]); Skill-Test an gekuerzte Titel angepasst.
+0.5.82 ist gemergt (PR #134). 0.5.83: Eingabefeld springt nach dem Senden zurueck, Legende nur mit Maras
+TCI-Stufen, Ollama-Liste laedt mit dem Chat, Modell-Freigaben pro Benutzer durch den Inhaber (Migration 020),
+Update-Fenster fuer den Inhaber (Host-Dienst coreai-update per systemd, Datenbanksicherung, offizielles setup.sh,
+"Bitte auf Neustart warten" fuer alle mit echtem Installationsfortschritt), PHP-Sitzungen ueberleben ein Update.
+0.5.84: Benutzer loeschen unter Admin Core > Benutzer (Bestaetigung per E-Mail, alles oder nichts, Audit).
+Offen auf Wunsch des Betreibers, nacheinander: weitere Benutzer-Einstellungen.
 NAECHSTER SCHRITT: Audio (TTS-Kandidaten), Benutzerverwaltung nach Betreiberwunsch, dann P20.1.
 Mara/Ember, Ollama-Modelfile, serielle Queue und private Projekt-
 plaene NICHT ungefragt veraendern.

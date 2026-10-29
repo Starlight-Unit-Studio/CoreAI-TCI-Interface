@@ -1,0 +1,71 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.5.83
+Stand: 29.10.2026
+Branch: claude/bold-galileo-myoyi0 (neu auf main nach Merge von PR #134 mit 0.5.82)
+Basis: Meldungen des Betreibers: Eingabefeld bleibt nach dem Senden langer Nachrichten gross; in der Legende ("?")
+steht gpt-oss bei den Cores, obwohl es ein privates Modell und kein Gemma-/CoreAI-Core ist. Wunsch: Das Core-Menue
+laedt die aktuelle Ollama-Liste beim Oeffnen des Chats; fremde Modelle stehen dort unter Maras festen Stufen.
+
+AENDERUNGEN:
+- js/console-app.js: setComposerText(text) setzt den Text und ruft resizeMessageComposer(); alle zehn bisherigen
+  Zuweisungen an inputEl.value laufen darueber (Senden, Vormerken, Bearbeiten, Abbrechen, Escape, /komprimieren,
+  langer Text als Anhang, Wiederherstellen eines fehlgeschlagenen Anhangs, Vorschlags-Knopf).
+- js/coreui-core-mode.js: renderLegend listet nur TCI-Stufen (keine Zeilen fuer eigene Namen mehr);
+  ready = load().then(loadList), die Liste laedt also mit dem Chat; open()/openLegend() laden weiterhin frisch.
+  Das Core-Menue selbst ist unveraendert (fremde installierte Modelle unter den Stufen).
+- Modell-Freigaben (Wunsch: der Inhaber waehlt unter den Benutzer-Einstellungen pro Konto; Loeschen und weitere
+  Einstellungen folgen nacheinander): neue api/model_access.php. coreui_model_is_coreai = TCI-Stufe oder Maras Core.
+  coreui_model_access_allowed: '' und CoreAI immer, Inhaber alles, Gaeste nie, sonst nur mit Freigabe
+  (coreui_core_same, also Gross-/Kleinschreibung und :latest egal). Migration 020 stu_user_model_access
+  (user_id, model_name, granted_by; ON DELETE CASCADE). Filter in api/models.php; api/user_settings.php lehnt
+  im Core-Menue und im KI-Profil mit model_not_allowed (403) ab und meldet einen entzogenen Core als nicht
+  gewaehlt; api/ai_settings.php faellt zur Laufzeit auf den Standard zurueck. api/admin.php: model_access (GET)
+  und model_access_save (POST), nur Inhaber (owner_only), Gaeste und Inhaber selbst abgelehnt, Admin-Audit.
+  settings.html/js/admin.js: Spalte CORES mit FREIGABEN (n), aufklappbare Zeile mit Haken, Speichern;
+  Admins sehen "nur Inhaber". api/health.php prueft die Tabelle.
+
+- Update-Fenster (Wunsch: mattgoldenes, leicht transparentes Fenster ueber ein Drittel des Bildschirms, erzwungen
+  bei neuem Merge, "Bitte auf Neustart warten", danach Neuladen und Ollama-Neustart). Entscheidungen des Betreibers:
+  nur der Inhaber startet; "Spaeter" bis zum naechsten Laden.
+  Host: scripts/coreai-updater.sh check|run, scripts/lib/coreai_update_state.py (JSON, atomar, 0640 root:33),
+  config/systemd/coreai-update{.service,.path} und coreai-update-check{.service,.timer,.path} (Vorlagen mit
+  @@PROJECT_ROOT@@). install.sh: ensure_update_service schreibt die Units, aktiviert Path-Units und Timer und
+  var/update/updater.json; ohne systemd nur ein Hinweis. Ordner: var/update (root:33 0750, nur lesbar fuer PHP),
+  var/update-request (33:33, einziger beschreibbarer Ort, in compose.yaml gemountet), var/backups (root 0700).
+  run: Anfrage ohne Symlink, klein, feste Felder (action, requested_by, restart_ollama); Sperre (flock); Status
+  running erst schreiben, dann Anfrage loeschen (kein zu fruehes Neuladen); mariadb-dump im Datenbank-Container
+  (Zugangsdaten bleiben dort) nach var/backups, 5 behalten; setup.sh des Commits von raw.githubusercontent, nur wenn
+  TARGET_DIR auf diese Installation zeigt; bei Fehler stack.sh up -d, damit das Fenster den Fehler zeigen kann;
+  stack.sh restart pyworker (und browse, falls an); optional systemctl restart ollama mit Warten auf 11434;
+  Health-Check; Status done; neue Pruefung. check: ls-remote, VERSION und CHANGELOG des Commits, Notizen ab der
+  installierten Version (8000 Zeichen); GitHub nicht erreichbar -> letztes Ergebnis bleibt; laufender Status ohne
+  Sperre -> "unterbrochen".
+  Web: api/update_store.php (verfuegbar wird beim Lesen gegen var/dev_source_commit entschieden, ohne Markierung
+  ueber die Version; running aelter als 45 Minuten gilt als fehlgeschlagen; Anfrage ohne Abholung nach 2 Minuten
+  "stalled"), api/update.php (GET status ohne Login: nur running/state/phase/version; Inhaber zusaetzlich alles,
+  CSRF-Token, Protokoll bei Fehler; POST start/check/cancel nur Inhaber mit CSRF, start im Admin-Audit), nginx-
+  Allowlist um update ergaenzt. js/coreui-update.js und css/coreui-update.css in app.html und settings.html;
+  Karte "CoreAI-Update" unter Einstellungen > System. Abfrage alle 60 Sekunden (alle Konten), beim Warten alle
+  3 Sekunden; 502 waehrend des Neustarts haelt das Warten; Neuladen bei done, neuer Version oder nach Ausfall.
+- Echter Fortschritt (Rueckfrage des Betreibers, ob die Seite den echten Stand vom Installer bekommt): setup.sh laeuft
+  mit 2>&1 durch "coreai_update_state.py follow", das jede Zeile unveraendert ins Update-Protokoll schreibt und aus
+  MILESTONES (20 Zeilen aus setup.sh, install.sh, Preflight; Reihenfolge und Werte 12..90) Prozent und Schritt in
+  status.json macht. Docker-Build-Zeilen "[php 3/6]" fuellen 24..40 und 42..50, Preflight-Zeilen [OK]/[WARN]/[FEHLER]
+  fuellen 79..89 (erwartete Laenge aus dem letzten Lauf, sonst 170). Nie rueckwaerts, nie Abbruch (sonst bricht die
+  Pipe den Installer), pipefail behaelt den Exit-Code. Updater setzt 2/8/10/91/94/97/100. Oeffentlicher Status hat
+  percent und step. Fenster: Balken mit Prozent, Schritt, Laufzeit; bei 502 bleibt der letzte Stand ("CoreAI startet
+  gerade neu"). Wird eine Logzeile in install.sh umformuliert, schlaegt tests/update-runner-selftest.sh an.
+- PHP-Sitzungen: docker/php/coreui.ini session.save_path = var/php_sessions (Mount, install.sh/stack.sh legen den
+  Ordner an); helpers.php faellt auf den Temp-Ordner zurueck, falls er nicht beschreibbar ist. setup.sh gibt
+  var/dev_source_commit der Gruppe 33.
+
+GEPRUEFT:
+- Alle Offline-Selbsttests (70); Chromium mit app.html und nachgebauter API: sechs Zeilen tippen (128 px), senden ->
+  32 px (ohne Fix 128 px bei leerem Feld).
+- Update: update-selftest.php, tests/update-runner-selftest.sh (vier Gegenproben erkannt: Anfrage bleibt liegen,
+  Ollama immer neu, kein Zielschutz, Pruefanfrage bleibt liegen), update-ui-selftest.cjs (zwei Gegenproben erkannt:
+  Neuladen schon bei 502, "Spaeter" wirkungslos; fuer den Balken drei weitere: zurueckfallen, zeitbasiert, Reset bei
+  502). Nicht geprueft: echtes systemd und Docker auf dem Server.
+
+NAECHSTER SCHRITT: Update auf dem Server einmal mit dem Setup-Einzeiler (Migration 020 und Update-Dienst kommen
+mit; danach "systemctl status coreai-update.path coreai-update-check.timer"). Eingabefeld, Legende, Freigaben und
+beim naechsten Merge das Update-Fenster pruefen. Danach Benutzer loeschen und weitere Benutzer-Einstellungen, dann Audio.

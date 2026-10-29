@@ -1,0 +1,6 @@
+CoreAI: TCI Interface 0.5.84 - 29.10.2026
+- Benutzer loeschen unter Admin Core > Benutzer: Knopf LOESCHEN, aufklappbare Zeile mit Hinweis, Bestaetigung durch Eintippen der E-Mail.
+- Rechte: Inhaber loescht Admins, Nutzer, Gaeste; Admin nur Nutzer und Gaeste; nie sich selbst, nie Inhaber oder Maras Systemkonto; bei laufender Arbeit wird nichts geloescht.
+- Geloescht werden Chats mit allem Zubehoer, Uploads, Wissen, Maras Erinnerungen an das Konto, Profil, Avatare, Einstellungen, Freigaben, Anmeldungen; globale Fakten bleiben ohne Kontoverweis. Audit-Eintrag bleibt.
+- Datenbank in einer Transaktion, Dateien danach und nur in ihren Ordnern.
+- Tests: account-delete-selftest.php (mit Datenbank: vollstaendige Loeschung mit Rollback), Einstellungs-Browser-Test.
