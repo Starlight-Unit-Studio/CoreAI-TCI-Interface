@@ -2,6 +2,14 @@
 
 CoreAI: TCI Interface gehoert zur Quantum-Softwarefamilie und wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert. Historische Changelogs dokumentieren die frueheren Produktnamen unveraendert.
 
+## 0.5.85 - 29.10.2026
+
+- **Konten bearbeiten (BEARBEITEN):** Unter Admin Core > Benutzer klappt BEARBEITEN pro Konto ein Panel mit Abschnitten auf. Es gelten dieselben Regeln wie beim Loeschen: Der Inhaber bearbeitet Admins, Nutzer und Gaeste, ein Admin nur Nutzer und Gaeste; ein anderes Inhaber-Konto und Maras Systemkonto bleiben unberuehrt.
+- **Name und E-Mail:** Anzeigename und Login-E-Mail aendern (bereinigt, gueltig, nur einmal vergeben: `username_taken`). Gaeste behalten ihre automatische Kennung, nur der Name ist aenderbar. Auch am eigenen Konto moeglich.
+- **Passwort und Anmeldungen:** Neues Passwort setzen (mindestens 12 Zeichen); dabei werden alle Anmeldungen des Kontos beendet, damit alte Geraete nicht angemeldet bleiben. "Alle Geraete abmelden" beendet die Anmeldungen ohne neues Passwort; das Panel zeigt, wie viele aktiv sind. Gaeste haben kein Passwort. Am eigenen Konto gibt es das hier nicht, dafuer bleibt der Tab Konto (mit altem Passwort).
+- Jede Aenderung steht im Admin-Audit (`user_identity`, `user_password_set`, `user_logout_all`), das Passwort nie.
+- Tests: neu `account-admin-selftest.php` (Regeln, Verdrahtung; mit Datenbank Passwort, Abmelden, Name und E-Mail mit Rollback), in beiden Preflights; der Einstellungs-Browser-Test bearbeitet ein Konto (Name und E-Mail, Passwort erst ab 12 Zeichen, alle Geraete abmelden) und prueft eigenes Konto, Gast und Admin-Sicht. Lokal gegen MariaDB 10.11 geprueft.
+
 ## 0.5.84 - 29.10.2026
 
 - **Benutzer loeschen:** Unter Admin Core > Benutzer hat jede Zeile, die man loeschen darf, den Knopf LOESCHEN. Er klappt eine Zeile auf, die sagt, was alles geht, und verlangt die E-Mail des Kontos als Bestaetigung (Gross- und Kleinschreibung egal); erst dann wird ENDGUELTIG LOESCHEN aktiv. Danach meldet die Seite, wie viele Chats, Nachrichten und Dateien entfernt wurden.

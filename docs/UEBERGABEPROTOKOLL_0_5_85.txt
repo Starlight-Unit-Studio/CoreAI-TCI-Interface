@@ -1,0 +1,23 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.5.85
+Stand: 29.10.2026
+Branch: claude/bold-galileo-myoyi0 (neu auf main nach Merge von PR #135 mit 0.5.83 und 0.5.84)
+Basis: Wunsch des Betreibers: weitere Einstellungen pro Konto, nacheinander: Passwort und Anmeldungen, Name und
+E-Mail, Werkzeuge pro Konto, Limits pro Konto.
+
+AENDERUNGEN (erster Teil):
+- api/account_admin.php (neu): coreui_account_manage_refusal(actorId, actorLevel, target, selfAllowed) rein, gleiche
+  Regeln wie beim Loeschen; am eigenen Konto nur mit selfAllowed (Name/E-Mail), sonst use_account_settings.
+  coreui_account_set_password (12..1024 Zeichen, Gaeste guest_account, password_changed_at, alle Anmeldungen per
+  coreui_auth_session_revoke_all 'admin_password_set'), coreui_account_logout_all, coreui_account_set_identity
+  (E-Mail bereinigt und eindeutig, Gaeste behalten die Kennung, Profil wird bei Bedarf angelegt),
+  coreui_account_login_count.
+- api/admin.php: POST user_password, user_logout_all, user_identity hinter CSRF, mit Regel und Audit (ohne Passwort).
+  Benutzerliste mit login_count (aktive Anmeldungen).
+- js/admin.js: canManage, BEARBEITEN mit Panelzeile (Abschnitte Name und E-Mail, Passwort und Anmeldungen), ein Panel
+  je Konto. css/settings.css: Raster der Abschnitte.
+
+GEPRUEFT:
+- Alle Offline-Selbsttests; account-admin-selftest.php lokal gegen MariaDB 10.11 (mit Rollback); Einstellungs-Browser-
+  Test mit Bearbeiten-Ablauf.
+
+NAECHSTER SCHRITT: Werkzeuge pro Konto, dann Limits pro Konto (beide in denselben BEARBEITEN-Panel).

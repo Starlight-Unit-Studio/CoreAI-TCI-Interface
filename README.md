@@ -7,7 +7,14 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.84` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.85` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Konten bearbeiten (0.5.85)
+
+Unter Admin Core > Benutzer oeffnet BEARBEITEN die Einstellungen eines Kontos:
+Anzeigename und Login-E-Mail, ein neues Passwort (beendet alle Anmeldungen des
+Kontos) und "Alle Geraete abmelden". Es gelten dieselben Regeln wie beim
+Loeschen; das eigene Passwort bleibt im Tab Konto.
 
 ## Benutzer loeschen (0.5.84)
 

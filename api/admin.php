@@ -9,6 +9,7 @@ require_once __DIR__ . '/guest_access.php';
 require_once __DIR__ . '/profile_store.php';
 require_once __DIR__ . '/model_access.php';
 require_once __DIR__ . '/account_delete.php';
+require_once __DIR__ . '/account_admin.php';
 
 $pdo = stu_pdo();
 $actorId = stu_require_user_id();
@@ -116,7 +117,9 @@ if ($method === 'GET') {
     }
     $st = $pdo->prepare(
       'SELECT u.id, u.username, u.permission_level, u.is_guest, u.banned_until, u.banned_reason, u.created_at, '
-      . 'u.chat_seconds_lifetime, p.display_name, p.assistant_name, MAX(c.name) AS character_name, COUNT(DISTINCT s.id) AS session_count '
+      . 'u.chat_seconds_lifetime, p.display_name, p.assistant_name, MAX(c.name) AS character_name, COUNT(DISTINCT s.id) AS session_count, '
+      // 0.5.85: active logins for "Alle Geraete abmelden".
+      . '(SELECT COUNT(*) FROM stu_auth_sessions a WHERE a.user_id = u.id AND a.revoked_at IS NULL AND a.expires_at > NOW()) AS login_count '
       . 'FROM stu_users u LEFT JOIN stu_characters c ON c.user_id = u.id '
       . 'LEFT JOIN stu_coreui_profiles p ON p.user_id = u.id '
       . 'LEFT JOIN stu_console_sessions s ON s.user_id = u.id ' . $where
@@ -334,6 +337,42 @@ if ($action === 'user_delete') {
     'files' => $deleted['files_deleted'],
   ]);
   stu_json(['ok' => true, 'deleted' => $deleted]);
+}
+
+// 0.5.85: settings per account (BEARBEITEN). Same rules as deleting; on the
+// own account only name and e-mail (password and devices stay in Konto).
+if (in_array($action, ['user_password', 'user_logout_all', 'user_identity'], true)) {
+  $targetId = (int)($body['user_id'] ?? 0);
+  $target = $targetId > 0 ? coreui_account_admin_target($pdo, $targetId) : null;
+  if ($target === null) stu_json(['ok' => false, 'error' => 'user_not_found'], 404);
+  $refusal = coreui_account_manage_refusal($actorId, $actorLevel, $target, $action === 'user_identity');
+  if ($refusal !== '') stu_json(['ok' => false, 'error' => $refusal], $refusal === 'invalid_user' ? 400 : 403);
+  try {
+    if ($action === 'user_password') {
+      $ended = coreui_account_set_password($pdo, $targetId, (string)($body['password'] ?? ''));
+      coreui_admin_audit($pdo, $actorId, 'user_password_set', 'user', (string)$targetId, ['logins_ended' => $ended]);
+      stu_json(['ok' => true, 'logins_ended' => $ended]);
+    }
+    if ($action === 'user_logout_all') {
+      $ended = coreui_account_logout_all($pdo, $targetId);
+      coreui_admin_audit($pdo, $actorId, 'user_logout_all', 'user', (string)$targetId, ['logins_ended' => $ended]);
+      stu_json(['ok' => true, 'logins_ended' => $ended]);
+    }
+    $identity = coreui_account_set_identity($pdo, $targetId, (string)($body['display_name'] ?? ''), (string)($body['username'] ?? ''));
+    coreui_admin_audit($pdo, $actorId, 'user_identity', 'user', (string)$targetId, [
+      'old_username' => (string)$target['username'], 'username' => $identity['username'], 'display_name' => $identity['display_name'],
+    ]);
+    stu_json(['ok' => true, 'user' => $identity]);
+  } catch (InvalidArgumentException $e) {
+    stu_json(['ok' => false, 'error' => $e->getMessage()], 400);
+  } catch (RuntimeException $e) {
+    $code = $e->getMessage();
+    if ($code === 'username_taken') stu_json(['ok' => false, 'error' => 'username_taken'], 409);
+    if ($code === 'guest_account') stu_json(['ok' => false, 'error' => 'guest_account'], 400);
+    if ($code === 'user_not_found') stu_json(['ok' => false, 'error' => 'user_not_found'], 404);
+    if (function_exists('stu__log_error')) stu__log_error(['type' => 'admin_' . $action . '_failed', 'actor' => $actorId, 'message' => $code]);
+    stu_json(['ok' => false, 'error' => 'user_settings_failed'], 500);
+  }
 }
 
 if ($action === 'model_access_save') {

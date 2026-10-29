@@ -177,6 +177,123 @@
     return String(user.username || user.id);
   }
 
+  // 0.5.85: who may change whom under BEARBEITEN (the server checks the same):
+  // the own account only for name and e-mail; never another Inhaber or Mara.
+  function canManage(user) {
+    var level = Number(user.permission_level);
+    if (Number(user.id) === actorId) return true;
+    if (level === 0) return false;
+    return actorLevel === 0 || (actorLevel === 1 && level > 1);
+  }
+
+  var MANAGE_ERRORS = {
+    invalid_password: 'Das Passwort braucht mindestens 12 Zeichen.',
+    invalid_username: 'Das ist keine gültige E-Mail.',
+    invalid_display_name: 'Der Anzeigename darf nicht leer sein.',
+    username_taken: 'Diese E-Mail gehört schon zu einem anderen Konto.',
+    guest_account: 'Gäste haben kein Passwort und keine eigene E-Mail.',
+    protected_account: 'Dieses Konto ist geschützt.',
+    use_account_settings: 'Das eigene Passwort und die eigenen Geräte stehen im Tab Konto.'
+  };
+
+  function manageError(prefix, error) {
+    show(prefix + ': ' + (MANAGE_ERRORS[error.message] || error.message), true);
+  }
+
+  function editSection(title, note) {
+    var box = el('section', 'user-edit-section');
+    box.appendChild(el('h4', '', title));
+    if (note) box.appendChild(el('p', 'model-access-note', note));
+    return box;
+  }
+
+  function editField(box, label, input) {
+    var wrap = el('label', 'user-edit-field');
+    wrap.appendChild(el('span', '', label));
+    wrap.appendChild(input);
+    box.appendChild(wrap);
+    return input;
+  }
+
+  // Row under an account: its settings in sections, each saved on its own.
+  function editPanel(user, toggle) {
+    var self = Number(user.id) === actorId;
+    var guest = Number(user.is_guest) === 1;
+    var tr = el('tr', 'user-panel-row user-edit-row');
+    var td = el('td');
+    td.colSpan = 7;
+    var grid = el('div', 'user-edit-grid');
+
+    // Name und E-Mail
+    var identity = editSection('Name und E-Mail', guest ? 'Gäste behalten ihre automatische Kennung; nur der Name ist änderbar.' : '');
+    var nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.maxLength = 64;
+    nameInput.value = user.display_name || '';
+    editField(identity, 'ANZEIGENAME', nameInput);
+    var mailInput = document.createElement('input');
+    mailInput.type = 'email';
+    mailInput.value = user.username || '';
+    mailInput.disabled = guest;
+    editField(identity, 'LOGIN-E-MAIL', mailInput);
+    var saveIdentity = el('button', 'settings-action compact', 'NAME UND E-MAIL SPEICHERN');
+    saveIdentity.type = 'button';
+    saveIdentity.addEventListener('click', function () {
+      saveIdentity.disabled = true;
+      post('user_identity', { user_id: Number(user.id), display_name: nameInput.value, username: mailInput.value }).then(function (data) {
+        show('Konto ' + user.id + ': ' + (data.user && data.user.email_changed ? 'Name und E-Mail gespeichert. Anmeldung ab jetzt mit ' + data.user.username + '.' : 'Name gespeichert.'));
+        return loadUsers();
+      }).catch(function (error) { manageError('Name und E-Mail', error); saveIdentity.disabled = false; });
+    });
+    identity.appendChild(saveIdentity);
+    grid.appendChild(identity);
+
+    // Passwort und Anmeldungen (not for the own account: that is the Konto tab)
+    var logins = Number(user.login_count) || 0;
+    var access = editSection('Passwort und Anmeldungen', self
+      ? 'Dein eigenes Passwort und deine Geräte verwaltest du im Tab Konto.'
+      : 'Aktive Anmeldungen: ' + logins + '. Ein neues Passwort meldet das Konto auf allen Geräten ab.');
+    if (!self) {
+      if (!guest) {
+        var pass = document.createElement('input');
+        pass.type = 'password';
+        pass.autocomplete = 'new-password';
+        pass.minLength = 12;
+        pass.placeholder = 'mindestens 12 Zeichen';
+        editField(access, 'NEUES PASSWORT', pass);
+        var setPass = el('button', 'settings-action compact', 'PASSWORT SETZEN');
+        setPass.type = 'button';
+        setPass.disabled = true;
+        pass.addEventListener('input', function () { setPass.disabled = pass.value.length < 12; });
+        setPass.addEventListener('click', function () {
+          setPass.disabled = true;
+          post('user_password', { user_id: Number(user.id), password: pass.value }).then(function (data) {
+            pass.value = '';
+            show('Konto ' + user.id + ': neues Passwort gesetzt, ' + (data.logins_ended || 0) + ' Anmeldungen beendet.');
+            return loadUsers();
+          }).catch(function (error) { manageError('Passwort', error); setPass.disabled = pass.value.length < 12; });
+        });
+        access.appendChild(setPass);
+      }
+      var logout = el('button', 'settings-action compact danger', 'ALLE GERÄTE ABMELDEN');
+      logout.type = 'button';
+      logout.disabled = logins === 0;
+      logout.addEventListener('click', function () {
+        logout.disabled = true;
+        post('user_logout_all', { user_id: Number(user.id) }).then(function (data) {
+          show('Konto ' + user.id + ': ' + (data.logins_ended || 0) + ' Anmeldungen beendet.');
+          return loadUsers();
+        }).catch(function (error) { manageError('Abmelden', error); logout.disabled = false; });
+      });
+      access.appendChild(logout);
+    }
+    grid.appendChild(access);
+
+    td.appendChild(grid);
+    tr.appendChild(td);
+    return tr;
+  }
+
   var DELETE_ERRORS = {
     account_busy: 'Das Konto arbeitet gerade (laufende Antwort, Browser oder Python). Kurz warten und erneut löschen.',
     protected_account: 'Dieses Konto ist geschützt und kann nicht gelöscht werden.',
@@ -351,6 +468,19 @@
           }).catch(function (error) { show('Benutzer: ' + error.message, true); });
         });
         actions.appendChild(save);
+        if (canManage(user)) {
+          var edit = el('button', 'user-edit-toggle', 'BEARBEITEN');
+          edit.type = 'button';
+          edit.setAttribute('aria-expanded', 'false');
+          edit.addEventListener('click', function () {
+            var open = row.nextSibling && row.nextSibling.classList && row.nextSibling.classList.contains('user-edit-row');
+            closePanel(row);
+            if (open) return;
+            row.parentNode.insertBefore(editPanel(user, edit), row.nextSibling);
+            edit.setAttribute('aria-expanded', 'true');
+          });
+          actions.appendChild(edit);
+        }
         if (canDelete(user)) {
           var remove = el('button', 'danger user-delete-toggle', 'LÖSCHEN');
           remove.type = 'button';
