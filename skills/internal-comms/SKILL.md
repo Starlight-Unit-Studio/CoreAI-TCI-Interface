@@ -9,3 +9,5 @@ Leite aus dem verifizierten Projektstand ab, was sich geändert hat, wer davon b
 Halte beschlossene, geplante, getestete und ausgelieferte Zustände auseinander. Termine und Verantwortliche nur angeben, wenn sie belegt sind. Private Betriebsdetails, Zugangsdaten und interne personenbezogene Angaben nicht unbeabsichtigt veröffentlichen.
 
 Für Releasekommunikation die echten Changelogs und Übergaben verwenden, statt Versionsstände frei zu ergänzen. Texte vor Versand auf falsche Empfänger oder unautorisierte Veröffentlichung prüfen. Eine Nachricht niemals als gesendet bezeichnen, bevor ein erlaubtes Werkzeug den Versand bestätigt.
+
+Der gesamte fachliche Zielumfang, die benoetigten Werkzeuge und Abnahmekriterien stehen in references/IMPLEMENTATION.md. Plane diese Funktionen auch dann vollstaendig, wenn ihr Backend noch aussteht; kennzeichne die konkrete Ausfuehrung als offen. Diese Referenz wird vom aktuellen Loader noch nicht automatisch nachgeladen.
