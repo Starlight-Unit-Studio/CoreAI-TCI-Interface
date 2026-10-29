@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.80 skills as a library: Mara picks and loads them herself.
+# CoreAI: TCI Interface 0.5.81 skills as a library: Mara picks and loads them herself.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -507,7 +507,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail 'Migration 012 fehlt. Fuehre scripts/stack.sh migrate aus.'
   fi
 
-  # Since 0.5.80 skills use the repository library, not per-account DB switches.
+  # Since 0.5.81 skills use the repository library, not per-account DB switches.
   # Migration 014 remains in the migration history; skills-selftest.php below
   # validates the current library and work-loop integration.
 

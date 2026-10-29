@@ -1,0 +1,33 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.5.81
+Stand: 29.10.2026
+Basis: main 0.5.80
+Branch: feat/skillbibliothek-50-20261029
+
+BETREIBERAUFTRAG:
+Skillbibliothek als vollwertige Allround-Sammlung vorbereiten. Speziell Rechts-Skills muessen ihre Daten vor jeder konkreten Rechtsauskunft mit dem Internet abgleichen, um am Stichtag bereits geaenderte Normen nicht als aktuell durchzusetzen. Die vorhandene Skill-Architektur nicht umbauen.
+
+ERGEBNIS:
+- 106 Skills, 105 Fach-Skills, einziger Pflicht-Skill werkzeuge.
+- 73 neue Skills im Vergleich zu 0.5.80; alle 19 Anthropic-Skillnamen mit eigenem SKILL.md und references/IMPLEMENTATION.md, ausserdem 20 juristische und 3 weitere allround Fach-Skills.
+- AgenticSkills.io als neue unabhaengige externe Skills- und MCP-Recherchequelle geprueft; eigene Skills skill-discovery, seo-audit, marketing-strategy, mobile-apps, property-testing, database-tuning hinzugefuegt, je mit references/IMPLEMENTATION.md. Keine fremden Skripte, Installer oder MCP-Server ausgefuehrt.
+- Quelle, sichere Fremdpruefung und weitere Kandidaten: docs/COREAI_AGENTICSKILLS_REFERENCE.md.
+- Legal-Bereiche: Rechtsrecherche, Vertragspruefung, Gutachten, Policy/Compliance, Schriftsaetze, Fristen, Verwaltung, Sozialrecht, Mietrecht, Arbeitsrecht, Verbraucherrecht, Datenschutz, Urheber-/Markenrecht, Steuerrecht, Zivilprozess, Beweise, amtliche Formulare, Familienrecht, Strafrecht, Gesellschaftsrecht.
+- Rechtsstandsregel in jedem der 20 rechtlichen Skilltexte selbst enthalten. Normen der Gegenwart und am Ereignisdatum geltende Fassungen getrennt online verifizieren. Offizielle Verkuendung, Inkrafttreten, Novellen, Uebergangs-/Rueckwirkungsrecht, Gerichtsurteile und Landes-/EU-Recht beachten. Keine Behauptung von aktueller Geltung, wenn die Recherche offline oder unbelegt ist.
+- docs/COREAI_LEGAL_CURRENTNESS.md beschreibt die Pflicht, offizielle Quellen und Negativtests.
+- docs/COREAI_SKILL_CAPABILITY_GAPS.md und ROADMAP.md ordnen fehlende Werkzeuge den spaeteren Ausbauschritten zu.
+- Kompakte Katalogbeschreibungen, vollstaendige Zielabläufe in references/IMPLEMENTATION.md fuer alle 23 neuen Skills.
+
+UNVERAENDERT:
+- api/skills.php, console_agent_loop.php, [SKILL:]-Loader/-Router, skills/werkzeuge/SKILL.md und Modelfile.
+- Keine automatisch geladenen Referenzdateien, kein neuer Pflicht-Skill, keine parallelen Modellaufrufe.
+- Kein automatisches Uebernehmen fremder proprietaerer Skills, keine neue Backend-Werkzeugfaehigkeit nur durch Anleitungstext.
+
+BISHER GEPRUEFT:
+- GitHub-Katalog und Skill-Dateien auf Anzahl, Eindeutigkeit, Laengenlimits, Katalog-Indexlimit, Frontmatter und Legal-Onlinepflicht kontrollieren.
+- Noch offen: PHP scripts/skills-selftest.php, Versionsgate, Cache-Bust-Verify, Preflights, Netcup-/Android-Livetest.
+- GitHub Actions nicht genutzt (Kontingent); kein Merge und kein Deployment erfolgt.
+
+NAECHSTER SCHRITT:
+- PR #132 nach Pruefung und Betreiberfreigabe mergen; anschliessend Live-Einstellungen validieren.
+- Bei jeder neuen Toolfunktion Skill-Matrix abarbeiten, inklusive positiver, veralteter und offline Rechtsstands-Testfaelle.
+- Lokaler Gemma-Sprachskill Issue #119 bleibt separates Vorhaben.

@@ -25,7 +25,7 @@
     "id": "project-planning",
     "title": "Projektplanung",
     "category": "Arbeitsweise",
-    "description": "Für neue Projekte: Ziel, Dateien, Abhängigkeiten und Abnahme vor dem Schreiben klären.",
+    "description": "Projekte planen.",
     "triggers": [
       "projekt",
       "project",
@@ -39,14 +39,14 @@
     "sources": [
       "https://aider.chat/docs/more/edit-formats.html"
     ],
-    "reviewed": "2026-10-26",
-    "version": "1.1.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.3"
   },
   {
     "id": "code-editing",
-    "title": "Gezielte Codeänderungen",
+    "title": "Code-Patches",
     "category": "Arbeitsweise",
-    "description": "Für Änderungen an vorhandenem Code mit kleinen, überprüfbaren Diffs.",
+    "description": "Code editieren.",
     "triggers": [
       "refactor",
       "refactoring",
@@ -60,14 +60,14 @@
     "sources": [
       "https://aider.chat/docs/more/edit-formats.html"
     ],
-    "reviewed": "2026-10-26",
-    "version": "1.1.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.4"
   },
   {
     "id": "debugging",
-    "title": "Fehleranalyse",
+    "title": "Debugging",
     "category": "Arbeitsweise",
-    "description": "Für reproduzierbare Fehler, Exceptions und fehlgeschlagene Abläufe.",
+    "description": "Bugs beheben.",
     "triggers": [
       "bug",
       "debug",
@@ -81,14 +81,14 @@
     "sources": [
       "https://docs.python.org/3/tutorial/errors.html"
     ],
-    "reviewed": "2026-10-26",
-    "version": "1.1.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.3"
   },
   {
     "id": "html-semantics",
-    "title": "HTML und Formulare",
+    "title": "HTML",
     "category": "Frontend",
-    "description": "Für semantische Webseiten, Formulare und klare Dokumentstruktur.",
+    "description": "HTML/Formulare.",
     "triggers": [
       "html",
       "formular",
@@ -100,14 +100,14 @@
     "sources": [
       "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Accessibility"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.3"
   },
   {
     "id": "responsive-css",
-    "title": "Responsives CSS",
+    "title": "Responsive CSS",
     "category": "Frontend",
-    "description": "Für Layouts, die auf kleinen und großen Bildschirmen funktionieren.",
+    "description": "Mobile CSS.",
     "triggers": [
       "css",
       "responsive",
@@ -119,14 +119,14 @@
     "sources": [
       "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/CSS_layout/Responsive_Design"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.4"
   },
   {
     "id": "javascript",
     "title": "JavaScript",
     "category": "Frontend",
-    "description": "Für Browserlogik, Ereignisse und robuste JavaScript-Funktionen.",
+    "description": "JavaScript/DOM.",
     "triggers": [
       "javascript",
       "js",
@@ -136,14 +136,14 @@
     "sources": [
       "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
   },
   {
     "id": "typescript",
     "title": "TypeScript",
     "category": "Frontend",
-    "description": "Für nachvollziehbare Typen und sichere Datengrenzen in TypeScript.",
+    "description": "TypeScript.",
     "triggers": [
       "typescript",
       "ts",
@@ -153,14 +153,14 @@
     "sources": [
       "https://www.typescriptlang.org/docs/handbook/2/everyday-types.html"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
   },
   {
     "id": "react",
-    "title": "React-Komponenten",
+    "title": "React",
     "category": "Frontend",
-    "description": "Für React-Oberflächen mit konsistentem State und Komponenten.",
+    "description": "React-State.",
     "triggers": [
       "react",
       "jsx",
@@ -169,14 +169,14 @@
     "sources": [
       "https://react.dev/learn/thinking-in-react"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.3"
   },
   {
     "id": "vue",
-    "title": "Vue-Komponenten",
+    "title": "Vue",
     "category": "Frontend",
-    "description": "Für Vue-Komponenten und zuverlässige reaktive Zustände.",
+    "description": "Vue-State.",
     "triggers": [
       "vue",
       "vuejs",
@@ -185,14 +185,14 @@
     "sources": [
       "https://vuejs.org/guide/essentials/reactivity-fundamentals.html"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.3"
   },
   {
     "id": "nextjs",
     "title": "Next.js",
     "category": "Frontend",
-    "description": "Für Next.js mit passenden Server- und Client-Grenzen.",
+    "description": "Next.js.",
     "triggers": [
       "nextjs",
       "next.js",
@@ -201,14 +201,14 @@
     "sources": [
       "https://nextjs.org/docs/app/getting-started/server-and-client-components"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
   },
   {
     "id": "accessibility",
     "title": "Barrierefreiheit",
     "category": "Qualität",
-    "description": "Für Tastaturbedienung, verständliche Labels und zugängliche Zustände.",
+    "description": "Barrierefreiheit.",
     "triggers": [
       "barrierefrei",
       "accessibility",
@@ -219,14 +219,14 @@
     "sources": [
       "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Accessibility"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.3"
   },
   {
     "id": "assets",
-    "title": "Bilder und Projektressourcen",
+    "title": "Assets",
     "category": "Frontend",
-    "description": "Für vollständige Bildressourcen und funktionierende lokale Verweise.",
+    "description": "Assets prüfen.",
     "triggers": [
       "bilder",
       "images",
@@ -238,14 +238,14 @@
     "sources": [
       "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Structuring_content/HTML_images"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.4"
   },
   {
     "id": "fetch-api",
-    "title": "HTTP-Client und Fetch",
+    "title": "Fetch API",
     "category": "Backend",
-    "description": "Für HTTP-Aufrufe mit expliziten Fehlern und Abbruchverhalten.",
+    "description": "Fetch/HTTP.",
     "triggers": [
       "fetch",
       "http client",
@@ -256,14 +256,14 @@
     "sources": [
       "https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.3"
   },
   {
     "id": "rest-api",
-    "title": "REST-Endpunkte",
+    "title": "REST API",
     "category": "Backend",
-    "description": "Für konsistente API-Verträge und nachvollziehbare Fehlerantworten.",
+    "description": "REST-APIs.",
     "triggers": [
       "rest",
       "endpoint",
@@ -274,14 +274,14 @@
     "sources": [
       "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.4"
   },
   {
     "id": "php-pdo",
-    "title": "PHP und PDO",
+    "title": "PHP/PDO",
     "category": "Backend",
-    "description": "Für PHP-Backends mit vorbereiteten SQL-Anweisungen.",
+    "description": "PHP und PDO.",
     "triggers": [
       "php",
       "pdo",
@@ -290,14 +290,14 @@
     "sources": [
       "https://www.php.net/manual/en/pdo.prepared-statements.php"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
   },
   {
     "id": "python",
-    "title": "Python-Programme",
+    "title": "Python",
     "category": "Backend",
-    "description": "Für wartbare Python-Skripte und gezielte Fehlerbehandlung.",
+    "description": "Python-Code.",
     "triggers": [
       "python",
       "py",
@@ -307,14 +307,14 @@
     "sources": [
       "https://docs.python.org/3/tutorial/errors.html"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.4"
   },
   {
     "id": "sql-security",
-    "title": "SQL-Sicherheit",
+    "title": "SQL-Schutz",
     "category": "Sicherheit",
-    "description": "Für sichere Datenbankabfragen und begrenzte Datenzugriffe.",
+    "description": "SQL schützen.",
     "triggers": [
       "sql",
       "sql injection",
@@ -324,14 +324,14 @@
     "sources": [
       "https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
   },
   {
     "id": "xss-prevention",
     "title": "XSS-Schutz",
     "category": "Sicherheit",
-    "description": "Für sichere Darstellung fremder Texte und erlaubter HTML-Inhalte.",
+    "description": "XSS verhindern.",
     "triggers": [
       "xss",
       "innerhtml",
@@ -341,14 +341,14 @@
     "sources": [
       "https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
   },
   {
     "id": "authorization",
-    "title": "Konten und Zugriffsrechte",
+    "title": "Zugriffsrechte",
     "category": "Sicherheit",
-    "description": "Für serverseitige Rechteprüfung und strikte Trennung von Konten.",
+    "description": "Zugriff/Rechte.",
     "triggers": [
       "authorization",
       "berechtigung",
@@ -360,14 +360,14 @@
     "sources": [
       "https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.3"
   },
   {
     "id": "browser-testing",
-    "title": "Browser-Tests",
+    "title": "Browsertests",
     "category": "Qualität",
-    "description": "Für reproduzierbare Tests aus Sicht der Benutzer.",
+    "description": "Browser testen.",
     "triggers": [
       "playwright",
       "browser test",
@@ -377,14 +377,14 @@
     "sources": [
       "https://playwright.dev/docs/best-practices"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.4"
   },
   {
     "id": "unit-testing",
-    "title": "Unit- und Regressionstests",
+    "title": "Unit-Tests",
     "category": "Qualität",
-    "description": "Für kleine, unabhängige Tests an relevanten Verhaltensgrenzen.",
+    "description": "Unit-Tests.",
     "triggers": [
       "pytest",
       "unittest",
@@ -395,14 +395,14 @@
     "sources": [
       "https://docs.pytest.org/en/stable/how-to/fixtures.html"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.3"
   },
   {
     "id": "docker",
-    "title": "Docker und Container",
+    "title": "Docker",
     "category": "Betrieb",
-    "description": "Für reproduzierbare Container mit begrenzten Abhängigkeiten.",
+    "description": "Docker.",
     "triggers": [
       "docker",
       "dockerfile",
@@ -412,14 +412,14 @@
     "sources": [
       "https://docs.docker.com/build/building/best-practices/"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
   },
   {
     "id": "git-review",
-    "title": "Git und Code-Review",
+    "title": "Git-Review",
     "category": "Arbeitsweise",
-    "description": "Für nachvollziehbare Änderungen und gezielte Prüfung vor Veröffentlichung.",
+    "description": "Git-Reviews.",
     "triggers": [
       "git",
       "diff",
@@ -431,14 +431,14 @@
     "sources": [
       "https://git-scm.com/docs/git-diff"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.3"
   },
   {
     "id": "zip-delivery",
-    "title": "ZIP und Dateiauslieferung",
+    "title": "ZIP-Pakete",
     "category": "Dateien",
-    "description": "Für vollständige Archive mit überprüften Dateien und Verweisen.",
+    "description": "ZIP ausliefern.",
     "triggers": [
       "zip",
       "download",
@@ -449,14 +449,14 @@
     "sources": [
       "https://docs.python.org/3/library/zipfile.html"
     ],
-    "reviewed": "2026-10-26",
-    "version": "1.1.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.3"
   },
   {
     "id": "csv-data",
-    "title": "CSV und Datenimport",
+    "title": "CSV",
     "category": "Dateien",
-    "description": "Für zuverlässigen Import und Export strukturierter Textdaten.",
+    "description": "CSV-Daten.",
     "triggers": [
       "csv",
       "datenimport",
@@ -466,14 +466,14 @@
     "sources": [
       "https://docs.python.org/3/library/csv.html"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.3"
   },
   {
     "id": "async-jobs",
-    "title": "Asynchrone Jobs",
+    "title": "Jobs/Queues",
     "category": "Backend",
-    "description": "Für kontrollierte Nebenläufigkeit, Abbruch und Hintergrundaufgaben.",
+    "description": "Jobs/Queues.",
     "triggers": [
       "asyncio",
       "async",
@@ -484,14 +484,14 @@
     "sources": [
       "https://docs.python.org/3/library/asyncio-task.html"
     ],
-    "reviewed": "2026-10-26",
-    "version": "1.1.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.3"
   },
   {
     "id": "sse-streaming",
-    "title": "SSE und Streaming",
+    "title": "SSE-Streams",
     "category": "Backend",
-    "description": "Für robuste Ereignisströme, Wiederverbindung und Abschlusszustände.",
+    "description": "SSE-Streams.",
     "triggers": [
       "sse",
       "streaming",
@@ -501,14 +501,14 @@
     "sources": [
       "https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events"
     ],
-    "reviewed": "2026-10-26",
-    "version": "1.1.0"
+    "reviewed": "2026-10-29",
+    "version": "1.1.2"
   },
   {
     "id": "observability",
-    "title": "Logs und Diagnose",
+    "title": "Logs",
     "category": "Betrieb",
-    "description": "Für nachvollziehbare Ereignisse ohne unnötige sensible Inhalte.",
+    "description": "Logs prüfen.",
     "triggers": [
       "logging",
       "logs",
@@ -519,14 +519,14 @@
     "sources": [
       "https://docs.python.org/3/library/logging.html"
     ],
-    "reviewed": "2026-10-26",
-    "version": "1.1.0"
+    "reviewed": "2026-10-29",
+    "version": "1.1.3"
   },
   {
     "id": "canvas-games",
-    "title": "Canvas und kleine Spiele",
+    "title": "Canvas-Spiele",
     "category": "Frontend",
-    "description": "Für Canvas-Darstellung und kleine interaktive Spiele.",
+    "description": "Canvas-Spiele.",
     "triggers": [
       "canvas",
       "spiel",
@@ -537,14 +537,14 @@
     "sources": [
       "https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
   },
   {
     "id": "release-handover",
-    "title": "Release und Übergabe",
+    "title": "Releases",
     "category": "Betrieb",
-    "description": "Für konsistente Versionsstände und fortsetzbare Übergaben.",
+    "description": "Releases.",
     "triggers": [
       "release",
       "version",
@@ -556,14 +556,14 @@
     "sources": [
       "https://semver.org/"
     ],
-    "reviewed": "2026-10-26",
-    "version": "1.1.0"
+    "reviewed": "2026-10-29",
+    "version": "1.1.3"
   },
   {
     "id": "ollama-integration",
-    "title": "Ollama und Modellanbindung",
+    "title": "Ollama",
     "category": "Backend",
-    "description": "Für CoreUI-Modellanbindung unter Erhalt der projektspezifischen Parameter.",
+    "description": "Ollama/Gemma.",
     "triggers": [
       "ollama",
       "gemma",
@@ -574,14 +574,14 @@
     "sources": [
       "https://docs.ollama.com/api/introduction"
     ],
-    "reviewed": "2026-10-26",
-    "version": "1.1.0"
+    "reviewed": "2026-10-29",
+    "version": "1.1.2"
   },
   {
     "id": "skill-authoring",
-    "title": "Eigene CoreUI-Skills",
+    "title": "CoreAI-Skills",
     "category": "Arbeitsweise",
-    "description": "Für kompakte, geprüfte und erweiterbare CoreUI-Arbeitsanleitungen.",
+    "description": "CoreAI-Skills.",
     "triggers": [
       "skill",
       "skills",
@@ -591,7 +591,1549 @@
     "sources": [
       "https://agentskills.io/specification"
     ],
-    "reviewed": "2026-10-26",
-    "version": "1.1.0"
+    "reviewed": "2026-10-29",
+    "version": "1.1.3"
+  },
+  {
+    "id": "web-research",
+    "title": "Webrecherche",
+    "category": "Recherche",
+    "description": "Webquellen.",
+    "triggers": [
+      "recherche",
+      "recherchiere",
+      "websuche",
+      "quellenvergleich",
+      "web research"
+    ],
+    "sources": [
+      "https://developer.mozilla.org/en-US/docs/Web/HTTP/Overview"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
+  },
+  {
+    "id": "fact-checking",
+    "title": "Faktencheck",
+    "category": "Recherche",
+    "description": "Fakten prüfen.",
+    "triggers": [
+      "faktencheck",
+      "fact check",
+      "behauptung prüfen",
+      "quellen prüfen",
+      "verifizieren",
+      "stimmt das"
+    ],
+    "sources": [
+      "https://www.loc.gov/programs/teachers/getting-started-with-primary-sources/"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.1"
+  },
+  {
+    "id": "rag-knowledge",
+    "title": "RAG-Wissen",
+    "category": "Wissen",
+    "description": "RAG-Wissen.",
+    "triggers": [
+      "rag",
+      "wissensbasis",
+      "privates wissen",
+      "wissensarchiv",
+      "quellendokument",
+      "hochgeladenen dokumenten"
+    ],
+    "sources": [
+      "https://docs.ollama.com/capabilities/embeddings"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.3"
+  },
+  {
+    "id": "document-analysis",
+    "title": "Dokumente",
+    "category": "Dateien",
+    "description": "Dokumente.",
+    "triggers": [
+      "pdf",
+      "dokument analysieren",
+      "dokument auswerten",
+      "text extrahieren",
+      "seitenzahl",
+      "pdf prüfen"
+    ],
+    "sources": [
+      "https://pymupdf.readthedocs.io/en/latest/"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.4"
+  },
+  {
+    "id": "tabular-analysis",
+    "title": "Tabellen",
+    "category": "Daten",
+    "description": "Tabellen prüfen.",
+    "triggers": [
+      "tabellenanalyse",
+      "tabelle auswerten",
+      "datenanalyse",
+      "kennzahlen",
+      "pivot",
+      "statistik auswerten"
+    ],
+    "sources": [
+      "https://pandas.pydata.org/docs/user_guide/index.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
+  },
+  {
+    "id": "data-visualization",
+    "title": "Diagramme",
+    "category": "Daten",
+    "description": "Datenplots.",
+    "triggers": [
+      "diagramm",
+      "datenvisualisierung",
+      "chart",
+      "plot",
+      "daten visualisieren",
+      "grafik aus daten"
+    ],
+    "sources": [
+      "https://matplotlib.org/stable/users/explain/quick_start.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
+  },
+  {
+    "id": "json-yaml",
+    "title": "JSON/YAML",
+    "category": "Backend",
+    "description": "JSON/YAML.",
+    "triggers": [
+      "json",
+      "yaml",
+      "yml",
+      "json schema",
+      "konfigurationsdatei",
+      "konfiguration prüfen"
+    ],
+    "sources": [
+      "https://yaml.org/spec/1.2.2/"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
+  },
+  {
+    "id": "linux-shell",
+    "title": "Linux/Shell",
+    "category": "Betrieb",
+    "description": "Linux/Shell.",
+    "triggers": [
+      "shell",
+      "bash",
+      "ssh",
+      "terminal",
+      "kommandozeile",
+      "linux befehl"
+    ],
+    "sources": [
+      "https://www.gnu.org/software/bash/manual/bash.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
+  },
+  {
+    "id": "web-security",
+    "title": "Websicherheit",
+    "category": "Sicherheit",
+    "description": "Websicherheit.",
+    "triggers": [
+      "csrf",
+      "ssrf",
+      "secrets",
+      "sicherheitsreview",
+      "security audit",
+      "sicherheitsaudit"
+    ],
+    "sources": [
+      "https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.1"
+  },
+  {
+    "id": "ui-ux",
+    "title": "UI/UX",
+    "category": "Frontend",
+    "description": "UX/Bedienung.",
+    "triggers": [
+      "ux",
+      "ui",
+      "interaktionsdesign",
+      "nutzerführung",
+      "user experience",
+      "bedienbarkeit"
+    ],
+    "sources": [
+      "https://www.w3.org/WAI/tutorials/"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
+  },
+  {
+    "id": "technical-writing",
+    "title": "Technische Doku",
+    "category": "Schreiben",
+    "description": "Tech-Doku.",
+    "triggers": [
+      "readme",
+      "technische dokumentation",
+      "dokumentation",
+      "handbuch",
+      "api-dokumentation",
+      "anleitung schreiben"
+    ],
+    "sources": [
+      "https://developers.google.com/tech-writing/overview"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.4"
+  },
+  {
+    "id": "creative-writing",
+    "title": "Kreatives Schreiben",
+    "category": "Schreiben",
+    "description": "Romane/Lore.",
+    "triggers": [
+      "roman",
+      "kapitel",
+      "worldbuilding",
+      "lore",
+      "figur entwickeln",
+      "dialog schreiben",
+      "geschichte schreiben"
+    ],
+    "sources": [
+      "https://writingcenter.unc.edu/tips-and-tools/"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
+  },
+  {
+    "id": "translation",
+    "title": "Übersetzung",
+    "category": "Schreiben",
+    "description": "Übersetzungen.",
+    "triggers": [
+      "übersetze",
+      "uebersetze",
+      "übersetzung",
+      "translation",
+      "translate",
+      "lokalisieren"
+    ],
+    "sources": [
+      "https://www.w3.org/International/"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
+  },
+  {
+    "id": "backup-restore",
+    "title": "Backup/Restore",
+    "category": "Betrieb",
+    "description": "Backups.",
+    "triggers": [
+      "backup",
+      "restore",
+      "datensicherung",
+      "wiederherstellen",
+      "disaster recovery",
+      "rücksicherung"
+    ],
+    "sources": [
+      "https://mariadb.com/kb/en/backup-and-restore-overview/"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
+  },
+  {
+    "id": "privacy-memory",
+    "title": "Privacy/Memory",
+    "category": "Sicherheit",
+    "description": "Privatsphäre.",
+    "triggers": [
+      "memory",
+      "gedächtnis",
+      "erinnerungen",
+      "privatsphäre",
+      "datenminimierung",
+      "personenbezogene daten"
+    ],
+    "sources": [
+      "https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.3"
+  },
+  {
+    "id": "media-inspection",
+    "title": "Medienanalyse",
+    "category": "Medien",
+    "description": "Medien prüfen.",
+    "triggers": [
+      "bildanalyse",
+      "videoanalyse",
+      "screenshot",
+      "bild beschreiben",
+      "anhang analysieren",
+      "videoinhalt"
+    ],
+    "sources": [
+      "https://developer.mozilla.org/en-US/docs/Web/Media/Formats"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
+  },
+  {
+    "id": "browser-actions",
+    "title": "Browseraktionen",
+    "category": "Browser",
+    "description": "Browser.",
+    "triggers": [
+      "formular ausfüllen",
+      "formular ausfuellen",
+      "browseraktion",
+      "webseite bedienen",
+      "im browser klicken",
+      "browsen"
+    ],
+    "sources": [
+      "https://playwright.dev/docs/locators"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.4"
+  },
+  {
+    "id": "docx",
+    "title": "DOCX",
+    "category": "Office",
+    "description": "DOCX.",
+    "triggers": [
+      "docx",
+      "dotx",
+      "word dokument",
+      "word-datei",
+      "worddatei",
+      "docx erstellen"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/docx"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.3"
+  },
+  {
+    "id": "pdf-workflows",
+    "title": "PDF-Werkzeuge",
+    "category": "Office",
+    "description": "PDF-Werkzeuge.",
+    "triggers": [
+      "pdf zusammenfügen",
+      "pdf verbinden",
+      "pdf trennen",
+      "pdf drehen",
+      "pdf formular",
+      "pdf bearbeiten",
+      "pdf-workflows",
+      "pdf seiten extrahieren"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/pdf"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.3"
+  },
+  {
+    "id": "pptx",
+    "title": "PPTX",
+    "category": "Office",
+    "description": "PPTX.",
+    "triggers": [
+      "pptx",
+      "potx",
+      "powerpoint",
+      "foliensatz",
+      "pitch deck",
+      "folienpräsentation"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/pptx"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.3"
+  },
+  {
+    "id": "xlsx",
+    "title": "XLSX",
+    "category": "Office",
+    "description": "XLSX.",
+    "triggers": [
+      "xlsx",
+      "xlsm",
+      "xltx",
+      "excel datei",
+      "excel-tabelle",
+      "excel formel"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/xlsx"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
+  },
+  {
+    "id": "brand-guidelines",
+    "title": "Markenstil",
+    "category": "Design",
+    "description": "Markenstil.",
+    "triggers": [
+      "brand guidelines",
+      "markenrichtlinien",
+      "corporate design",
+      "markenfarben",
+      "ci vorgaben",
+      "brand-guidelines"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/brand-guidelines"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
+  },
+  {
+    "id": "web-artifacts",
+    "title": "Web-Artefakte",
+    "category": "Frontend",
+    "description": "Webartefakte.",
+    "triggers": [
+      "web artifact",
+      "web-artifact",
+      "web artifacts",
+      "mini-app",
+      "interaktive web-app",
+      "webartifacts"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/web-artifacts-builder"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
+  },
+  {
+    "id": "llm-api",
+    "title": "LLM-APIs",
+    "category": "Backend",
+    "description": "LLM-API.",
+    "triggers": [
+      "llm api",
+      "model api",
+      "provider api",
+      "claude api",
+      "anthropic sdk",
+      "openai sdk",
+      "token budget",
+      "api rate limit"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/claude-api"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
+  },
+  {
+    "id": "mcp-builder",
+    "title": "MCP-Server",
+    "category": "Backend",
+    "description": "MCP-Server.",
+    "triggers": [
+      "mcp",
+      "mcp server",
+      "model context protocol",
+      "mcp-builder",
+      "mcp tool",
+      "fastmcp"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/mcp-builder"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.3"
+  },
+  {
+    "id": "algorithmic-art",
+    "title": "Generative Kunst",
+    "category": "Design",
+    "description": "Codekunst.",
+    "triggers": [
+      "algorithmic art",
+      "algorithmische kunst",
+      "generative art",
+      "generative kunst",
+      "p5.js",
+      "particle art"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/algorithmic-art"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
+  },
+  {
+    "id": "canvas-design",
+    "title": "Grafikdesign",
+    "category": "Design",
+    "description": "Grafikdesign.",
+    "triggers": [
+      "poster",
+      "plakat",
+      "flyer gestalten",
+      "grafikdesign",
+      "canvas design",
+      "drucklayout"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/canvas-design"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.3"
+  },
+  {
+    "id": "gif-creator",
+    "title": "GIFs",
+    "category": "Medien",
+    "description": "GIFs.",
+    "triggers": [
+      "gif",
+      "animiertes gif",
+      "animated gif",
+      "slack emoji",
+      "gif optimieren",
+      "animation erstellen"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/slack-gif-creator"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.1"
+  },
+  {
+    "id": "theme-factory",
+    "title": "Design-Themes",
+    "category": "Design",
+    "description": "Themes.",
+    "triggers": [
+      "theme",
+      "theming",
+      "theme factory",
+      "dark mode",
+      "farbpalette",
+      "design tokens",
+      "farbschema"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/theme-factory"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
+  },
+  {
+    "id": "doc-coauthoring",
+    "title": "Text-Koautor",
+    "category": "Schreiben",
+    "description": "Koautor.",
+    "triggers": [
+      "dokument gemeinsam",
+      "gemeinsam schreiben",
+      "coauthoring",
+      "doc coauthoring",
+      "text gemeinsam entwickeln",
+      "redaktionelle abstimmung"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/doc-coauthoring"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.4"
+  },
+  {
+    "id": "internal-comms",
+    "title": "Interne Memos",
+    "category": "Schreiben",
+    "description": "Mitteilungen.",
+    "triggers": [
+      "interne mitteilung",
+      "internes memo",
+      "team-update",
+      "statusbericht",
+      "projektankündigung",
+      "newsletter intern",
+      "changelog ankündigung"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/internal-comms"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
+  },
+  {
+    "id": "learning-design",
+    "title": "Lernpläne",
+    "category": "Schreiben",
+    "description": "Lernmaterial.",
+    "triggers": [
+      "lernplan",
+      "onboarding material",
+      "schulung",
+      "training entwickeln",
+      "lernmaterial",
+      "tutorial erstellen",
+      "didaktik"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/academy-guide"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.1"
+  },
+  {
+    "id": "reasoning-review",
+    "title": "Kritikcheck",
+    "category": "Qualität",
+    "description": "Kritikcheck.",
+    "triggers": [
+      "argument prüfen",
+      "denkfehler",
+      "logische lücken",
+      "kritisch prüfen",
+      "plausibilitätsprüfung",
+      "reasoning review",
+      "selbstkritik"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/discernment-nudge"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.1"
+  },
+  {
+    "id": "agent-task-design",
+    "title": "Agentenplanung",
+    "category": "Agenten",
+    "description": "Agentenaufgaben.",
+    "triggers": [
+      "agentenrolle",
+      "agentenaufgabe",
+      "multi agent",
+      "task definition",
+      "crewai task",
+      "agenten team",
+      "agentenworkflow"
+    ],
+    "sources": [
+      "https://github.com/crewAIInc/skills"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
+  },
+  {
+    "id": "workflow-checkpoints",
+    "title": "Checkpoints",
+    "category": "Agenten",
+    "description": "Checkpoints.",
+    "triggers": [
+      "workflow checkpoint",
+      "checkpointing",
+      "workflow resume",
+      "wiederaufnahme planen",
+      "arbeitsstand fortsetzen",
+      "workflow wiederherstellen",
+      "langgraph"
+    ],
+    "sources": [
+      "https://github.com/langchain-ai/langgraph"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
+  },
+  {
+    "id": "pdf",
+    "title": "PDF",
+    "category": "Office",
+    "description": "PDF/OCR.",
+    "triggers": [
+      "pdf",
+      "pdf erstellen",
+      "pdf bearbeiten",
+      "pdf formular",
+      "pdf zusammenfügen",
+      "pdf seiten",
+      "ocr"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/pdf"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
+  },
+  {
+    "id": "frontend-design",
+    "title": "Frontenddesign",
+    "category": "Frontend",
+    "description": "Frontend.",
+    "triggers": [
+      "frontend design",
+      "webdesign",
+      "landingpage gestalten",
+      "ui design",
+      "frontend-design"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/frontend-design"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.3"
+  },
+  {
+    "id": "web-artifacts-builder",
+    "title": "Webapp-Builder",
+    "category": "Frontend",
+    "description": "Webapps.",
+    "triggers": [
+      "web artifacts",
+      "web-artifacts-builder",
+      "react app erstellen",
+      "web artefakt",
+      "shadcn"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/web-artifacts-builder"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.3"
+  },
+  {
+    "id": "claude-api",
+    "title": "Claude API",
+    "category": "Backend",
+    "description": "Claude.",
+    "triggers": [
+      "claude api",
+      "anthropic api",
+      "anthropic sdk",
+      "claude sdk",
+      "claude-api"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/claude-api"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.3"
+  },
+  {
+    "id": "skill-creator",
+    "title": "Skill-Creator",
+    "category": "Arbeitsweise",
+    "description": "Skill-Pakete.",
+    "triggers": [
+      "skill-creator",
+      "skill erstellen",
+      "neuen skill",
+      "skill paket",
+      "skills paket",
+      "skill generieren"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/skill-creator"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.1"
+  },
+  {
+    "id": "webapp-testing",
+    "title": "Playwright",
+    "category": "Qualität",
+    "description": "Playwright.",
+    "triggers": [
+      "webapp testing",
+      "webapp-testing",
+      "playwright automation",
+      "e2e app",
+      "web app testen",
+      "regressionstest browser"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/webapp-testing"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
+  },
+  {
+    "id": "slack-gif-creator",
+    "title": "Slack-GIFs",
+    "category": "Medien",
+    "description": "Slack-GIFs.",
+    "triggers": [
+      "slack gif",
+      "slack emoji",
+      "slack-gif-creator",
+      "animiertes emoji"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/slack-gif-creator"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
+  },
+  {
+    "id": "academy-guide",
+    "title": "Academy-Guide",
+    "category": "Schreiben",
+    "description": "Lernpfade.",
+    "triggers": [
+      "claude academy",
+      "academy",
+      "lernressourcen claude",
+      "claude kurs",
+      "onboarding claude"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/academy-guide"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
+  },
+  {
+    "id": "discernment-nudge",
+    "title": "Reflexionshilfe",
+    "category": "Qualität",
+    "description": "Reflexionshilfe.",
+    "triggers": [
+      "discernment",
+      "entscheidungsprüfung",
+      "was übersehe ich",
+      "annahmen überprüfen",
+      "folgenabschätzung"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/discernment-nudge"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
+  },
+  {
+    "id": "legal-research",
+    "title": "Rechtsrecherche",
+    "category": "Recht",
+    "description": "Rechtsrecherche.",
+    "triggers": [
+      "rechtsrecherche",
+      "gesetzeslage",
+      "rechtslage",
+      "rechtsquellen",
+      "gerichtsurteil",
+      "rechtsfrage",
+      "urteil recherchieren",
+      "gesetz",
+      "gesetzesänderung",
+      "gesetzesnovelle",
+      "rechtsauskunft",
+      "paragraph",
+      "paragraf",
+      "rechtsprechung"
+    ],
+    "sources": [
+      "https://www.gesetze-im-internet.de/hinweise.html",
+      "https://www.recht.bund.de/",
+      "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
+  },
+  {
+    "id": "contract-review-summary",
+    "title": "Vertragsprüfung",
+    "category": "Recht",
+    "description": "Vertragsprüfung.",
+    "triggers": [
+      "vertrag prüfen",
+      "vertragsprüfung",
+      "vertragsklausel",
+      "vertrag analysieren",
+      "contract review",
+      "vertragsrisiko",
+      "agb prüfen",
+      "agb",
+      "vertragsanalyse",
+      "kündigungsklausel",
+      "vertragsbedingungen"
+    ],
+    "sources": [
+      "https://www.gesetze-im-internet.de/hinweise.html",
+      "https://www.recht.bund.de/",
+      "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
+  },
+  {
+    "id": "legal-memo-standard",
+    "title": "Rechtsmemo",
+    "category": "Recht",
+    "description": "Rechtsmemo.",
+    "triggers": [
+      "rechtsmemo",
+      "juristisches memo",
+      "rechtliches gutachten",
+      "rechtsgutachten",
+      "juristische stellungnahme",
+      "legal memo",
+      "juristische bewertung",
+      "rechtliche stellungnahme",
+      "rechtliche analyse"
+    ],
+    "sources": [
+      "https://www.gesetze-im-internet.de/hinweise.html",
+      "https://www.recht.bund.de/",
+      "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
+  },
+  {
+    "id": "policy-qa-from-knowledgebase",
+    "title": "Richtlinien-QA",
+    "category": "Recht",
+    "description": "Richtlinien.",
+    "triggers": [
+      "policy qa",
+      "compliance richtlinie",
+      "interne richtlinie",
+      "policy prüfen",
+      "wissensbasis richtlinien",
+      "betriebsvereinbarung prüfen",
+      "compliance",
+      "gesetzeskonform",
+      "interne vorgaben"
+    ],
+    "sources": [
+      "https://www.gesetze-im-internet.de/hinweise.html",
+      "https://www.recht.bund.de/",
+      "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.3"
+  },
+  {
+    "id": "legal-drafting",
+    "title": "Rechtstexte",
+    "category": "Recht",
+    "description": "Rechtstexte entwerfen.",
+    "triggers": [
+      "widerspruch schreiben",
+      "rechtsschreiben",
+      "juristische formulierung",
+      "rechtsantrag",
+      "rechtstext verfassen",
+      "anwaltsschreiben",
+      "schriftsatz entwerfen",
+      "widerspruch",
+      "einspruch",
+      "schriftsatz",
+      "beschwerdeschreiben"
+    ],
+    "sources": [
+      "https://www.gesetze-im-internet.de/hinweise.html",
+      "https://www.recht.bund.de/",
+      "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
+  },
+  {
+    "id": "legal-deadlines",
+    "title": "Rechtsfristen",
+    "category": "Recht",
+    "description": "Fristenprüfung.",
+    "triggers": [
+      "rechtsfrist",
+      "widerspruchsfrist",
+      "klagefrist",
+      "frist berechnen",
+      "zustellung",
+      "bekanntgabe",
+      "fristwahrung",
+      "rechtsmittelbelehrung",
+      "frist",
+      "fristende",
+      "rechtsbehelfsfrist",
+      "fristbeginn"
+    ],
+    "sources": [
+      "https://www.gesetze-im-internet.de/hinweise.html",
+      "https://www.recht.bund.de/",
+      "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
+  },
+  {
+    "id": "administrative-law",
+    "title": "Verwaltungsrecht",
+    "category": "Recht",
+    "description": "Verwaltungsrecht.",
+    "triggers": [
+      "verwaltungsrecht",
+      "bescheid prüfen",
+      "behördenbescheid",
+      "verwaltungsakt",
+      "widerspruchsbescheid",
+      "vorgesetzte behörde",
+      "behörde",
+      "amtlicher bescheid",
+      "ablehnungsbescheid",
+      "antrag abgelehnt"
+    ],
+    "sources": [
+      "https://www.gesetze-im-internet.de/hinweise.html",
+      "https://www.recht.bund.de/",
+      "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
+  },
+  {
+    "id": "social-law",
+    "title": "Sozialrecht",
+    "category": "Recht",
+    "description": "Sozialrecht.",
+    "triggers": [
+      "sozialrecht",
+      "sgb",
+      "jobcenter",
+      "grundsicherung",
+      "erwerbsminderung",
+      "bürgergeld",
+      "sozialamt",
+      "krankenversicherung bescheid",
+      "pflegegeld",
+      "sozialleistungen",
+      "sozialhilfe",
+      "leistungsbescheid"
+    ],
+    "sources": [
+      "https://www.gesetze-im-internet.de/hinweise.html",
+      "https://www.recht.bund.de/",
+      "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
+  },
+  {
+    "id": "tenancy-law",
+    "title": "Mietrecht",
+    "category": "Recht",
+    "description": "Mietrecht.",
+    "triggers": [
+      "mietrecht",
+      "mietvertrag",
+      "mieterhöhung",
+      "nebenkostenabrechnung",
+      "kaution",
+      "kündigung mietwohnung",
+      "wohnungsmangel",
+      "mieterschutz",
+      "vermieter",
+      "miete",
+      "mietminderung",
+      "heizkosten"
+    ],
+    "sources": [
+      "https://www.gesetze-im-internet.de/hinweise.html",
+      "https://www.recht.bund.de/",
+      "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
+  },
+  {
+    "id": "employment-law",
+    "title": "Arbeitsrecht",
+    "category": "Recht",
+    "description": "Arbeitsrecht.",
+    "triggers": [
+      "arbeitsrecht",
+      "arbeitsvertrag",
+      "kündigung arbeit",
+      "arbeitszeugnis",
+      "urlaub anspruch",
+      "abmahnung",
+      "arbeitsgericht",
+      "arbeitgeber",
+      "lohn",
+      "kündigungsschutz",
+      "urlaubsanspruch"
+    ],
+    "sources": [
+      "https://www.gesetze-im-internet.de/hinweise.html",
+      "https://www.recht.bund.de/",
+      "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
+  },
+  {
+    "id": "consumer-law",
+    "title": "Verbraucherrecht",
+    "category": "Recht",
+    "description": "Verbraucherrecht.",
+    "triggers": [
+      "verbraucherrecht",
+      "widerruf",
+      "reklamation",
+      "gewährleistung",
+      "onlinekauf",
+      "rücktritt",
+      "mahnung",
+      "inkasso",
+      "widerrufsrecht",
+      "retoure",
+      "inkassoforderung",
+      "onlinebestellung",
+      "abo"
+    ],
+    "sources": [
+      "https://www.gesetze-im-internet.de/hinweise.html",
+      "https://www.recht.bund.de/",
+      "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
+  },
+  {
+    "id": "privacy-law",
+    "title": "Datenschutzrecht",
+    "category": "Recht",
+    "description": "Datenschutzrecht.",
+    "triggers": [
+      "datenschutzrecht",
+      "dsgvo",
+      "auskunftsanspruch",
+      "löschantrag",
+      "datenschutzverletzung",
+      "auftragsverarbeitung",
+      "dsar",
+      "datenschutz",
+      "ds-gvo",
+      "datenlöschung",
+      "auskunft personenbezogene daten"
+    ],
+    "sources": [
+      "https://www.gesetze-im-internet.de/hinweise.html",
+      "https://www.recht.bund.de/",
+      "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
+  },
+  {
+    "id": "intellectual-property",
+    "title": "Urheber/Marke",
+    "category": "Recht",
+    "description": "Urheber-/Markenrecht.",
+    "triggers": [
+      "urheberrecht",
+      "markenrecht",
+      "lizenzvertrag",
+      "nutzungsrechte",
+      "open source lizenz",
+      "copyright",
+      "markenverletzung",
+      "bildrechte",
+      "marke schützen",
+      "copyright claim"
+    ],
+    "sources": [
+      "https://www.gesetze-im-internet.de/hinweise.html",
+      "https://www.recht.bund.de/",
+      "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
+  },
+  {
+    "id": "tax-law",
+    "title": "Steuerrecht",
+    "category": "Recht",
+    "description": "Steuerrecht.",
+    "triggers": [
+      "steuerrecht",
+      "steuerbescheid",
+      "umsatzsteuer",
+      "einkommensteuer",
+      "abgabenordnung",
+      "steuererklärung",
+      "finanzamt",
+      "steuer",
+      "steuerklasse"
+    ],
+    "sources": [
+      "https://www.gesetze-im-internet.de/hinweise.html",
+      "https://www.recht.bund.de/",
+      "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
+  },
+  {
+    "id": "civil-procedure",
+    "title": "Zivilverfahren",
+    "category": "Recht",
+    "description": "Zivilverfahren.",
+    "triggers": [
+      "zivilprozess",
+      "zpo",
+      "klage einreichen",
+      "vollstreckung",
+      "gerichtskosten",
+      "mahnbescheid",
+      "prozesskostenhilfe",
+      "gericht",
+      "zivilklage",
+      "klagefrist",
+      "prozesskosten"
+    ],
+    "sources": [
+      "https://www.gesetze-im-internet.de/hinweise.html",
+      "https://www.recht.bund.de/",
+      "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
+  },
+  {
+    "id": "evidence-review",
+    "title": "Belegprüfung",
+    "category": "Recht",
+    "description": "Belege.",
+    "triggers": [
+      "beweismittel",
+      "belege prüfen",
+      "dokumentbeweise",
+      "nachweise auswerten",
+      "beweiskette",
+      "chronologie belegen",
+      "beweise",
+      "nachweise",
+      "belegauswertung",
+      "zeitachse"
+    ],
+    "sources": [
+      "https://www.gesetze-im-internet.de/hinweise.html",
+      "https://www.recht.bund.de/",
+      "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.3"
+  },
+  {
+    "id": "official-forms",
+    "title": "Behördenformulare",
+    "category": "Recht",
+    "description": "Behördenformulare.",
+    "triggers": [
+      "behördenformular",
+      "antrag ausfüllen",
+      "antragsformular",
+      "amtlicher vordruck",
+      "formularhilfe",
+      "bescheinigung",
+      "vordruck"
+    ],
+    "sources": [
+      "https://www.gesetze-im-internet.de/hinweise.html",
+      "https://www.recht.bund.de/",
+      "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
+  },
+  {
+    "id": "family-law",
+    "title": "Familienrecht",
+    "category": "Recht",
+    "description": "Familienrecht.",
+    "triggers": [
+      "familienrecht",
+      "unterhaltsrecht",
+      "scheidung",
+      "sorgerecht",
+      "kindesunterhalt",
+      "familiengericht",
+      "unterhalt",
+      "elterliche sorge"
+    ],
+    "sources": [
+      "https://www.gesetze-im-internet.de/hinweise.html",
+      "https://www.recht.bund.de/",
+      "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
+  },
+  {
+    "id": "criminal-law",
+    "title": "Strafrecht",
+    "category": "Recht",
+    "description": "Strafrecht.",
+    "triggers": [
+      "strafrecht",
+      "strafanzeige",
+      "strafverfahren",
+      "stpo",
+      "beschuldigter rechte",
+      "zeugenaussage",
+      "strafbefehl",
+      "ermittlungsverfahren"
+    ],
+    "sources": [
+      "https://www.gesetze-im-internet.de/hinweise.html",
+      "https://www.recht.bund.de/",
+      "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
+  },
+  {
+    "id": "company-law",
+    "title": "Gesellschaftsrecht",
+    "category": "Recht",
+    "description": "Gesellschaftsrecht.",
+    "triggers": [
+      "gesellschaftsrecht",
+      "gmbh",
+      "ug gründen",
+      "handelsregister",
+      "vereinsrecht",
+      "gesellschaftervertrag",
+      "unternehmensgründung",
+      "firma gründen",
+      "registereintrag",
+      "gesellschafter",
+      "gesellschaftsvertrag"
+    ],
+    "sources": [
+      "https://www.gesetze-im-internet.de/hinweise.html",
+      "https://www.recht.bund.de/",
+      "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.2"
+  },
+  {
+    "id": "financial-analysis",
+    "title": "Finanzanalyse",
+    "category": "Finanzen",
+    "description": "Finanzanalyse.",
+    "triggers": [
+      "finanzanalyse",
+      "budget analysieren",
+      "liquidität",
+      "cashflow",
+      "bilanzanalyse",
+      "kostenprognose",
+      "finanzkennzahlen"
+    ],
+    "sources": [
+      "https://www.bundesbank.de/"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.1"
+  },
+  {
+    "id": "academic-research",
+    "title": "Fachrecherche",
+    "category": "Wissenschaft",
+    "description": "Fachliteratur prüfen.",
+    "triggers": [
+      "wissenschaftliche recherche",
+      "literaturrecherche",
+      "studie analysieren",
+      "wissenschaftliche quellen",
+      "peer review",
+      "forschungsstand"
+    ],
+    "sources": [
+      "https://www.crossref.org/",
+      "https://pubmed.ncbi.nlm.nih.gov/"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.1"
+  },
+  {
+    "id": "threat-modeling",
+    "title": "Bedrohungsmodell",
+    "category": "Sicherheit",
+    "description": "IT-Bedrohungen.",
+    "triggers": [
+      "threat model",
+      "bedrohungsmodell",
+      "angriffspfade",
+      "sicherheitsmodell",
+      "trust boundaries",
+      "angriffsfläche analysieren"
+    ],
+    "sources": [
+      "https://github.com/openai/skills/tree/main/skills/.curated/security-threat-model"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.1"
+  },
+  {
+    "id": "skill-discovery",
+    "title": "Skill-Suche",
+    "category": "Arbeitsweise",
+    "description": "Quellenprüfung.",
+    "triggers": [
+      "skills finden",
+      "skill finden",
+      "skill suchen",
+      "skill recherche",
+      "skill bibliothek",
+      "agenticskills.io",
+      "externen skill prüfen",
+      "skill importieren"
+    ],
+    "sources": [
+      "https://agenticskills.io/skills/find-skills",
+      "https://github.com/vercel-labs/skills/tree/main/skills/find-skills"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "seo-audit",
+    "title": "SEO-Audit",
+    "category": "Marketing",
+    "description": "SEO-Audit.",
+    "triggers": [
+      "seo audit",
+      "seo prüfen",
+      "suchmaschinenoptimierung",
+      "indexierung",
+      "canonical",
+      "robots.txt",
+      "sitemap.xml",
+      "strukturierte daten",
+      "search console"
+    ],
+    "sources": [
+      "https://agenticskills.io/skills/seo-audit",
+      "https://github.com/coreyhaines31/marketingskills/tree/main/skills/seo-audit"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "marketing-strategy",
+    "title": "Marketing",
+    "category": "Marketing",
+    "description": "Marketingplan.",
+    "triggers": [
+      "marketingstrategie",
+      "marketing planen",
+      "produkteinführung",
+      "launch strategie",
+      "kampagnenplanung",
+      "content marketing",
+      "zielgruppe analysieren",
+      "konversionsrate"
+    ],
+    "sources": [
+      "https://agenticskills.io/skills/marketing-skills",
+      "https://github.com/coreyhaines31/marketingskills"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "mobile-apps",
+    "title": "Mobile-Apps",
+    "category": "Mobile",
+    "description": "Mobile-Apps.",
+    "triggers": [
+      "android app",
+      "ios app",
+      "react native",
+      "expo",
+      "mobile app",
+      "handy app entwickeln",
+      "app store build",
+      "apk erstellen",
+      "aab erstellen"
+    ],
+    "sources": [
+      "https://agenticskills.io/skills/react-native-best-practices",
+      "https://github.com/callstackincubator/agent-skills"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "property-testing",
+    "title": "Eigenschaftstests",
+    "category": "Qualität",
+    "description": "Testinvarianten.",
+    "triggers": [
+      "property based testing",
+      "eigenschaftstests",
+      "invariantentest",
+      "fuzz testing",
+      "fuzztest",
+      "quickcheck",
+      "hypothesis test",
+      "fast-check"
+    ],
+    "sources": [
+      "https://agenticskills.io/skills/property-based-testing",
+      "https://github.com/trailofbits/skills/tree/main/plugins/property-based-testing/skills/property-based-testing"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "database-tuning",
+    "title": "DB-Tuning",
+    "category": "Backend",
+    "description": "DB-Performance.",
+    "triggers": [
+      "datenbank optimieren",
+      "query optimieren",
+      "sql performance",
+      "index optimierung",
+      "explain analyze",
+      "datenbank tuning",
+      "slow query",
+      "datenbank index"
+    ],
+    "sources": [
+      "https://agenticskills.io/skills/supabase-postgres",
+      "https://github.com/supabase/agent-skills/tree/main/skills/supabase-postgres-best-practices"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
   }
 ]

@@ -1,0 +1,10 @@
+CoreAI: TCI Interface 0.5.81 - 29.10.2026
+- Skill-Bibliothek von 33 auf 106 erweitert: 73 neue Fach-Skills, einziger Pflicht-Skill werkzeuge unveraendert.
+- Sechs weitere Skills aus der AgenticSkills.io-Inventur: skill-discovery, seo-audit, marketing-strategy, mobile-apps, property-testing, database-tuning. Jeder mit eigenem Soll- und Werkzeugplan. Kein Fremd-Installer oder MCP-Server automatisch eingebunden.
+- docs/COREAI_AGENTICSKILLS_REFERENCE.md dokumentiert Quellenpruefung, Tool-Luecken und weitere Kandidaten.
+- 19 Anthropic-Referenzskills mit 19 detaillierten Funktionsplaenen und 20 eigenstaendige Rechts-Skills mit eigenen Vollplaenen.
+- Juristische Pflicht: vor jeder konkreten Rechtsaussage amtliche aktuelle und historische Gesetzesfassung online verifizieren, Novellen, Inkrafttreten, Uebergangsrecht und Rechtsprechung pruefen; offline keine scheinaktuelle Rechtslage behaupten.
+- Weitere neue Skills: Finanzanalyse, wissenschaftliche Fachrecherche und defensive IT-Bedrohungsmodellierung.
+- docs/COREAI_LEGAL_CURRENTNESS.md: Rechtsstandsregeln und Negativtests. docs/COREAI_SKILL_CAPABILITY_GAPS.md: erforderliche Tool-Integrationen und Roadmap-Zuordnung.
+- Loader, Skill-Auswahl, Nachladen, Modelfile, Kernskill, Game-Trennung und serielle Modellqueue unveraendert.
+- Verifizierter Zielplan ist noch keine implementierte Werkzeugfaehigkeit. Offline-PHP-Selbsttests, Versionsgate, Netcup und Android offen; keine GitHub Actions.

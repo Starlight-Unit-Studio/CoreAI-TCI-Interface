@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.80 skills as a library: Mara picks and loads them herself.
+# CoreAI: TCI Interface 0.5.81 skills as a library: Mara picks and loads them herself.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -756,7 +756,7 @@ if command -v php >/dev/null 2>&1; then
       fail 'Migration 012: Ereignistabelle fehlt.'
     fi
 
-    # Since 0.5.80 skills use the repository library, not per-account DB switches.
+    # Since 0.5.81 skills use the repository library, not per-account DB switches.
     # Keep migration 014 as history; skills-selftest.php checks the current path.
 
     if COREUI_PREFLIGHT_ROOT="$PROJECT_ROOT" php -r '
