@@ -1,6 +1,6 @@
 # Skill-Tiefenausbau nach PR #132
 
-Arbeitsbranch: `feat/skills-depth-react-nextjs-tests-20261029`, basierend auf dem noch offenen 106-Skills-PR #132. **Diese Änderungen gehören nicht mehr zu PR #132**, damit der Betreiber ihn ungestört mergen und mit seiner Claude-Integration testen kann.
+Arbeitsbranch: `feat/skills-depth-react-nextjs-tests-20261029`, basierend auf dem inzwischen gemergten 106-Skills-PR #132. Produktversion dieses unabgenommenen Folgebranches: **0.5.82**.
 
 ## Verbesserte vorhandene Skills
 - **react**: Dataflow, Stable Keys, Effekte, Render-Messung, Wasserfälle, Bundlegröße und mobile Tests
@@ -16,15 +16,7 @@ Zu jeder bestehenden `SKILL.md` liegt eine neue eigenständige `references/`-Anl
 Details zur Claude-Integration stehen in [COREAI_CLAUDE_SKILL_PORTABILITY.md](COREAI_CLAUDE_SKILL_PORTABILITY.md). Das aktuelle Repository `skills/<id>/` ist nicht automatisch der Projekt-Discovery-Pfad von Claude Code. Künftiger Export ist eine separate, zustimmungspflichtige Aufgabe und **nicht** Teil dieser Änderung.
 
 ## Vor einem späteren Merge
-1. Verifizieren, dass PR #132 in main gemergt wurde und ein neues Versionsintervall frei ist.
-2. Diesen Folgebranch auf den dann aktuellen main-Stand bringen.
-3. `VERSION` auf die nächste zulässige Version erhöhen, alle UI-/JS-/README-/Changelog-/TXT-/Übergabereferenzen nach `docs/VERSIONING_POLICY.md` nachführen.
-4. `php scripts/skills-selftest.php`, `python3 scripts/version-merge-check.py --base-version <VERSION-MAIN>`, `python3 scripts/cache-bust.py --verify` und Preflights ausführen. Ohne bestätigten Checkout nicht als bestanden kennzeichnen.
-5. Kein Merge, GitHub-Actions-Lauf oder Server-Deploy ohne Betreiberfreigabe und Liveprüfung.
-
-## Quellen
-- https://github.com/vercel-labs/agent-skills/tree/main/skills/react-best-practices
-- https://github.com/obra/superpowers/tree/main/skills/systematic-debugging
-- https://github.com/obra/superpowers/tree/main/skills/test-driven-development
-- https://github.com/openai/skills/tree/main/skills/.curated/jupyter-notebook
-- https://github.com/openai/skills/tree/main/skills/.curated/security-threat-model
+1. Die Version 0.5.82 ist in diesem Folgebranch vorbereitet. Vor Merge das aktuelle main erneut auf Versions- und Inhaltskonflikte pruefen.
+2. `php scripts/skills-selftest.php`, `python3 scripts/version-merge-check.py --base-version 0.5.81`, `python3 scripts/cache-bust.py --verify` und Preflights tatsaechlich ausfuehren. Ist main inzwischen weiter, Versionsziel und Checkparameter anpassen.
+3. Nach verifiziertem Merge per bestehendem One-Liner auf dem autorisierten Server testen. Keine GitHub Actions verbrauchen, keine falschen Live-Nachweise.
+4. Ohne bestaetigte Tests kein Merge oder Deploy; diese Referenzen sind fachliche Zielplaene und schalten keine fehlenden Werkzeuge frei.

@@ -1,4 +1,4 @@
-# CoreAI Skills (Bibliothek seit 0.5.80, erweitert in 0.5.81)
+# CoreAI Skills (Bibliothek seit 0.5.80, fachlich vertieft in 0.5.82)
 
 CoreAI enthaelt 106 vertrauenswuerdige, direkt im Repository gepflegte Anleitungen: einen fest eingebundenen Kern-Skill und 105 Fach-Skills, aus denen Mara seit 0.5.80 selbst waehlt (keine Schalter pro Konto mehr). Die urspruenglichen 32 Pakete stammen aus 0.5.33 und wurden am 25.10.2026 geprueft; zehn fuer den aktuellen Agenten-/Dateibau relevante Pakete wurden am 26.10.2026 an den neuen CoreAI-Stand angepasst.
 
@@ -33,6 +33,10 @@ Seit 0.5.81 umfassen 20 zusaetzliche juristische Fach-Skills die Bereiche Rechts
 ## Externe Skills-Suche: AgenticSkills.io
 
 Neben den Anthropic- und OpenAI-Referenzen dient das unabhaengige [AgenticSkills.io](https://agenticskills.io) als neues Rechercheverzeichnis. Sechs eigene Skills zu externer Skill-Entdeckung, SEO, Marketing, Mobile-Apps, Property-Based-Testing und Datenbankoptimierung stehen im Katalog. Quelle, Luecken, Lizenz-/Sicherheitspruefung und weitere Kandidaten: [COREAI_AGENTICSKILLS_REFERENCE.md](COREAI_AGENTICSKILLS_REFERENCE.md). Automatischer Fremd-Import ist nicht vorgesehen.
+
+## Vertiefungen im Folgebranch 0.5.82
+
+Sechs bereits registrierte Fach-Skills sind nun mit konkreteren Arbeitsabläufen und nachgelagerten Referenzdateien vervollständigt: `react`, `nextjs`, `debugging`, `unit-testing`, `academic-research` und `threat-modeling`. Die Bibliothek bleibt bei 106 Skills; Kategorien, Pflicht-Skill, Auswahlrouter und Full-Index bleiben unverändert. Die Referenzdateien können künftig von Claude-kompatiblen Skillumgebungen gezielt gelesen werden, werden jedoch vom jetzigen CoreAI-Loader nicht automatisch geladen. Siehe [Tiefenausbau](COREAI_SKILLS_FOLLOWUP.md) und [Claude-Skill-Portabilität](COREAI_CLAUDE_SKILL_PORTABILITY.md).
 
 ## Verbindlicher System-Skill: Werkzeuge
 
