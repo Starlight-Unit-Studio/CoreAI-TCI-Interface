@@ -1446,7 +1446,14 @@
       "rechtsquellen",
       "gerichtsurteil",
       "rechtsfrage",
-      "urteil recherchieren"
+      "urteil recherchieren",
+      "gesetz",
+      "gesetzesänderung",
+      "gesetzesnovelle",
+      "rechtsauskunft",
+      "paragraph",
+      "paragraf",
+      "rechtsprechung"
     ],
     "sources": [
       "https://www.gesetze-im-internet.de/hinweise.html",
@@ -1454,7 +1461,7 @@
       "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "contract-review-summary",
@@ -1468,7 +1475,11 @@
       "vertrag analysieren",
       "contract review",
       "vertragsrisiko",
-      "agb prüfen"
+      "agb prüfen",
+      "agb",
+      "vertragsanalyse",
+      "kündigungsklausel",
+      "vertragsbedingungen"
     ],
     "sources": [
       "https://www.gesetze-im-internet.de/hinweise.html",
@@ -1476,7 +1487,7 @@
       "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "legal-memo-standard",
@@ -1489,7 +1500,10 @@
       "rechtliches gutachten",
       "rechtsgutachten",
       "juristische stellungnahme",
-      "legal memo"
+      "legal memo",
+      "juristische bewertung",
+      "rechtliche stellungnahme",
+      "rechtliche analyse"
     ],
     "sources": [
       "https://www.gesetze-im-internet.de/hinweise.html",
@@ -1497,7 +1511,7 @@
       "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "policy-qa-from-knowledgebase",
@@ -1510,7 +1524,10 @@
       "interne richtlinie",
       "policy prüfen",
       "wissensbasis richtlinien",
-      "betriebsvereinbarung prüfen"
+      "betriebsvereinbarung prüfen",
+      "compliance",
+      "gesetzeskonform",
+      "interne vorgaben"
     ],
     "sources": [
       "https://www.gesetze-im-internet.de/hinweise.html",
@@ -1518,7 +1535,7 @@
       "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "legal-drafting",
@@ -1532,7 +1549,11 @@
       "rechtsantrag",
       "rechtstext verfassen",
       "anwaltsschreiben",
-      "schriftsatz entwerfen"
+      "schriftsatz entwerfen",
+      "widerspruch",
+      "einspruch",
+      "schriftsatz",
+      "beschwerdeschreiben"
     ],
     "sources": [
       "https://www.gesetze-im-internet.de/hinweise.html",
@@ -1540,7 +1561,7 @@
       "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "legal-deadlines",
@@ -1555,7 +1576,11 @@
       "zustellung",
       "bekanntgabe",
       "fristwahrung",
-      "rechtsmittelbelehrung"
+      "rechtsmittelbelehrung",
+      "frist",
+      "fristende",
+      "rechtsbehelfsfrist",
+      "fristbeginn"
     ],
     "sources": [
       "https://www.gesetze-im-internet.de/hinweise.html",
@@ -1563,7 +1588,7 @@
       "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "administrative-law",
@@ -1576,7 +1601,11 @@
       "behördenbescheid",
       "verwaltungsakt",
       "widerspruchsbescheid",
-      "vorgesetzte behörde"
+      "vorgesetzte behörde",
+      "behörde",
+      "amtlicher bescheid",
+      "ablehnungsbescheid",
+      "antrag abgelehnt"
     ],
     "sources": [
       "https://www.gesetze-im-internet.de/hinweise.html",
@@ -1584,7 +1613,7 @@
       "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "social-law",
@@ -1599,7 +1628,11 @@
       "erwerbsminderung",
       "bürgergeld",
       "sozialamt",
-      "krankenversicherung bescheid"
+      "krankenversicherung bescheid",
+      "pflegegeld",
+      "sozialleistungen",
+      "sozialhilfe",
+      "leistungsbescheid"
     ],
     "sources": [
       "https://www.gesetze-im-internet.de/hinweise.html",
@@ -1607,7 +1640,7 @@
       "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "tenancy-law",
@@ -1622,7 +1655,11 @@
       "kaution",
       "kündigung mietwohnung",
       "wohnungsmangel",
-      "mieterschutz"
+      "mieterschutz",
+      "vermieter",
+      "miete",
+      "mietminderung",
+      "heizkosten"
     ],
     "sources": [
       "https://www.gesetze-im-internet.de/hinweise.html",
@@ -1630,7 +1667,7 @@
       "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "employment-law",
@@ -1644,7 +1681,11 @@
       "arbeitszeugnis",
       "urlaub anspruch",
       "abmahnung",
-      "arbeitsgericht"
+      "arbeitsgericht",
+      "arbeitgeber",
+      "lohn",
+      "kündigungsschutz",
+      "urlaubsanspruch"
     ],
     "sources": [
       "https://www.gesetze-im-internet.de/hinweise.html",
@@ -1652,7 +1693,7 @@
       "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "consumer-law",
@@ -1667,7 +1708,12 @@
       "onlinekauf",
       "rücktritt",
       "mahnung",
-      "inkasso"
+      "inkasso",
+      "widerrufsrecht",
+      "retoure",
+      "inkassoforderung",
+      "onlinebestellung",
+      "abo"
     ],
     "sources": [
       "https://www.gesetze-im-internet.de/hinweise.html",
@@ -1675,7 +1721,7 @@
       "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "privacy-law",
@@ -1689,7 +1735,11 @@
       "löschantrag",
       "datenschutzverletzung",
       "auftragsverarbeitung",
-      "dsar"
+      "dsar",
+      "datenschutz",
+      "ds-gvo",
+      "datenlöschung",
+      "auskunft personenbezogene daten"
     ],
     "sources": [
       "https://www.gesetze-im-internet.de/hinweise.html",
@@ -1697,7 +1747,7 @@
       "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "intellectual-property",
@@ -1712,7 +1762,9 @@
       "open source lizenz",
       "copyright",
       "markenverletzung",
-      "bildrechte"
+      "bildrechte",
+      "marke schützen",
+      "copyright claim"
     ],
     "sources": [
       "https://www.gesetze-im-internet.de/hinweise.html",
@@ -1720,7 +1772,7 @@
       "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "tax-law",
@@ -1734,7 +1786,9 @@
       "einkommensteuer",
       "abgabenordnung",
       "steuererklärung",
-      "finanzamt"
+      "finanzamt",
+      "steuer",
+      "steuerklasse"
     ],
     "sources": [
       "https://www.gesetze-im-internet.de/hinweise.html",
@@ -1742,7 +1796,7 @@
       "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "civil-procedure",
@@ -1756,7 +1810,11 @@
       "vollstreckung",
       "gerichtskosten",
       "mahnbescheid",
-      "prozesskostenhilfe"
+      "prozesskostenhilfe",
+      "gericht",
+      "zivilklage",
+      "klagefrist",
+      "prozesskosten"
     ],
     "sources": [
       "https://www.gesetze-im-internet.de/hinweise.html",
@@ -1764,7 +1822,7 @@
       "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "evidence-review",
@@ -1777,7 +1835,11 @@
       "dokumentbeweise",
       "nachweise auswerten",
       "beweiskette",
-      "chronologie belegen"
+      "chronologie belegen",
+      "beweise",
+      "nachweise",
+      "belegauswertung",
+      "zeitachse"
     ],
     "sources": [
       "https://www.gesetze-im-internet.de/hinweise.html",
@@ -1785,7 +1847,7 @@
       "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "official-forms",
@@ -1798,7 +1860,8 @@
       "antragsformular",
       "amtlicher vordruck",
       "formularhilfe",
-      "bescheinigung"
+      "bescheinigung",
+      "vordruck"
     ],
     "sources": [
       "https://www.gesetze-im-internet.de/hinweise.html",
@@ -1806,7 +1869,7 @@
       "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "family-law",
@@ -1819,7 +1882,9 @@
       "scheidung",
       "sorgerecht",
       "kindesunterhalt",
-      "familiengericht"
+      "familiengericht",
+      "unterhalt",
+      "elterliche sorge"
     ],
     "sources": [
       "https://www.gesetze-im-internet.de/hinweise.html",
@@ -1827,7 +1892,7 @@
       "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "criminal-law",
@@ -1841,7 +1906,8 @@
       "stpo",
       "beschuldigter rechte",
       "zeugenaussage",
-      "strafbefehl"
+      "strafbefehl",
+      "ermittlungsverfahren"
     ],
     "sources": [
       "https://www.gesetze-im-internet.de/hinweise.html",
@@ -1849,7 +1915,7 @@
       "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "company-law",
@@ -1863,7 +1929,11 @@
       "handelsregister",
       "vereinsrecht",
       "gesellschaftervertrag",
-      "unternehmensgründung"
+      "unternehmensgründung",
+      "firma gründen",
+      "registereintrag",
+      "gesellschafter",
+      "gesellschaftsvertrag"
     ],
     "sources": [
       "https://www.gesetze-im-internet.de/hinweise.html",
@@ -1871,7 +1941,7 @@
       "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "financial-analysis",
