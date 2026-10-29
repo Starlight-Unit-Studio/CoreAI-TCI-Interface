@@ -7,9 +7,9 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.81` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.82` (numeric only). The last verified ZIP remains archived under its original historical name.
 
-## Skills: Mara waehlt selbst (0.5.81)
+## Skills: Mara waehlt selbst (0.5.82)
 
 Skills braucht niemand mehr einzuschalten: Mara hat alle 106 und waehlt selbst,
 wie man es von Claude oder GPT kennt. Offensichtlich passende laedt der Server
@@ -20,6 +20,8 @@ gibt einen Skill weiterhin vor. In 0.5.81 sind 73 neue Fach-Skills hinzugekommen
 **Weitere Referenz:** [AgenticSkills.io und sechs daraus abgeleitete neue Skills](docs/COREAI_AGENTICSKILLS_REFERENCE.md). Die externe Sammlung ist ein unabhaengiges Verzeichnis und wird nicht blind installiert. Hinzu kamen Skill-Suche mit Sicherheitspruefung, SEO-Audit, Marketing-Strategie, Mobil-App-Planung, Property-Based-Tests und Datenbanktuning.
 
 **Rechtliche Aktualitaet:** 20 neue, eigenstaendige Rechtsskills ermitteln vor jeder konkreten Rechtsaussage den geltenden und den zum Ereigniszeitpunkt massgeblichen Rechtsstand im Internet, einschliesslich Novellen, Inkrafttreten, Uebergangsrecht und offiziellen Urteilen. Ein Ergebnis ohne bestaetigte Onlinequelle wird nicht als aktuelles oder durchsetzbares Recht ausgegeben. Dazu 3 neue Skills fuer Finanzanalyse, wissenschaftliche Recherche und AppSec-Threat-Modeling. Die Regel und die benoetigten Werkzeuge sind in [docs/COREAI_LEGAL_CURRENTNESS.md](docs/COREAI_LEGAL_CURRENTNESS.md) sowie [docs/COREAI_SKILL_CAPABILITY_GAPS.md](docs/COREAI_SKILL_CAPABILITY_GAPS.md) dokumentiert. Der bisherige Skill-Loader bleibt unveraendert.
+
+**Fachlicher Ausbau 0.5.82:** Die bestehenden Skills `react`, `nextjs`, `debugging`, `unit-testing`, `academic-research` und `threat-modeling` wurden ohne neue Katalogeintraege vertieft. Die neuen Referenzdateien dokumentieren Performance- und Sicherheitspruefung, Root-Cause-Analyse, TDD, Jupyter und defensive statische Analyse. Mehr dazu in [COREAI_SKILLS_FOLLOWUP.md](docs/COREAI_SKILLS_FOLLOWUP.md) und zum Claude-Format in [COREAI_CLAUDE_SKILL_PORTABILITY.md](docs/COREAI_CLAUDE_SKILL_PORTABILITY.md). Der Loader bleibt unveraendert.
 
 ## Mehrere Quellen, Captcha, CoreAI-Rollen und neue Einstellungen (0.5.79)
 
