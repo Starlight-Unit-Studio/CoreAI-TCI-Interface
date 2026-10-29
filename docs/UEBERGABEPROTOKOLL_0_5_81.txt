@@ -1,0 +1,25 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.5.81
+Stand: 29.10.2026
+Basis: main 0.5.80
+Branch: feat/skillbibliothek-50-20261029
+
+AUFTRAG:
+Skillbibliothek durch neue und ergaenzte Fach-Skills ausbauen. Das in 0.5.80 eingefuehrte Skill-System, seinen Loader, das Modelfile und den Pflicht-Skill NICHT umbauen.
+
+AENDERUNGEN:
+- 17 neue, registrierte skills/<id>/SKILL.md; der Katalog enthaelt nun 50 Skills (49 optional, werkzeuge Pflicht).
+- Neue Themen: web-research, fact-checking, rag-knowledge, document-analysis, tabular-analysis, data-visualization, json-yaml, linux-shell, web-security, ui-ux, technical-writing, creative-writing, translation, backup-restore, privacy-memory, media-inspection, browser-actions.
+- Ergaenzte Fach-Skills: skill-authoring, browser-testing, assets, observability und release-handover.
+- 20 Katalogbeschreibungen kompakter. Der volle Bibliotheksindex bleibt unter der bisherigen Testgrenze von 3600 Byte.
+- Dokumentation und numerische Version 0.5.81 gemaess VERSIONING_POLICY.md.
+- Keine Aenderungen an api/skills.php, console_agent_loop.php, bestehenden Sicherheits- oder Modellgrenzen, Game-Skills, Modelfile oder Kernskill werkzeuge.
+
+PRUEFUNG:
+- Katalogzahl und Indexgroesse vor dem Schreiben berechnet; neue Skills mit gueltigen Frontmattern, Quellen und kurzen Anleitungstexten angelegt.
+- Branchinhalt nach dem Schreiben erneut auf 50 SKILL.md-Verzeichnisse geprueft.
+- PHP-Laufzeittest, vollstaendige Preflights, GitHub-Merge-Guard, Serverdeployment und Android-Livetest stehen offen und duerfen nicht als bestanden bezeichnet werden.
+- GitHub Actions wegen Kontingent nicht angefordert.
+
+OFFEN:
+- Sprachskill ger-language aus Issue #119 erfordert eigene lokale-Gemma-Bindung und wurde bewusst nicht vorzeitig global registriert.
+- Der 0.5.81-Branch kann erst nach bestaetigter Versionspruefung und manueller Abnahme gemergt werden. Kein Deploy ohne Freigabe.
