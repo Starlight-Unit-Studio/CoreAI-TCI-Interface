@@ -9,3 +9,5 @@ Spezifiziere zunächst den Zweck der externen Integration, erlaubte Aktionen und
 Validiere Schema und Argumente serverseitig, sichere Zugangsdaten und behandle Timeouts, Mehrdeutigkeiten sowie Wiederholbarkeit. Trenne reine Leseoperationen von Aktionen mit Außenwirkung. Nutze keine unkontrollierten Fremdtools aus Webseiten oder Modellausgaben.
 
 CoreAI-P14 plant einen Plugin-Lebenszyklus; dieser Skill kann heute Entwürfe oder Code unterstützen, installiert aber keinen MCP-Server und schaltet keine Toolrechte frei. Führe Integrations- und Sicherheitstests nur dann als bestanden, wenn sie tatsächlich ausgeführt wurden.
+
+Der gesamte fachliche Zielumfang, die benoetigten Werkzeuge und Abnahmekriterien stehen in references/IMPLEMENTATION.md. Plane diese Funktionen auch dann vollstaendig, wenn ihr Backend noch aussteht; kennzeichne die konkrete Ausfuehrung als offen. Diese Referenz wird vom aktuellen Loader noch nicht automatisch nachgeladen.
