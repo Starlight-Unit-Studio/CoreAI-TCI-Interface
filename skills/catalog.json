@@ -44,7 +44,7 @@
   },
   {
     "id": "code-editing",
-    "title": "Gezielte Codeänderungen",
+    "title": "Code-Patches",
     "category": "Arbeitsweise",
     "description": "Code editieren.",
     "triggers": [
@@ -61,11 +61,11 @@
       "https://aider.chat/docs/more/edit-formats.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.3"
+    "version": "1.0.4"
   },
   {
     "id": "debugging",
-    "title": "Fehleranalyse",
+    "title": "Debugging",
     "category": "Arbeitsweise",
     "description": "Bugs beheben.",
     "triggers": [
@@ -82,11 +82,11 @@
       "https://docs.python.org/3/tutorial/errors.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.2"
+    "version": "1.0.3"
   },
   {
     "id": "html-semantics",
-    "title": "HTML und Formulare",
+    "title": "HTML",
     "category": "Frontend",
     "description": "HTML/Formulare.",
     "triggers": [
@@ -101,11 +101,11 @@
       "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Accessibility"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.2"
+    "version": "1.0.3"
   },
   {
     "id": "responsive-css",
-    "title": "Responsives CSS",
+    "title": "Responsive CSS",
     "category": "Frontend",
     "description": "Mobile CSS.",
     "triggers": [
@@ -120,7 +120,7 @@
       "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/CSS_layout/Responsive_Design"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.3"
+    "version": "1.0.4"
   },
   {
     "id": "javascript",
@@ -158,7 +158,7 @@
   },
   {
     "id": "react",
-    "title": "React-Komponenten",
+    "title": "React",
     "category": "Frontend",
     "description": "React-State.",
     "triggers": [
@@ -170,11 +170,11 @@
       "https://react.dev/learn/thinking-in-react"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.2"
+    "version": "1.0.3"
   },
   {
     "id": "vue",
-    "title": "Vue-Komponenten",
+    "title": "Vue",
     "category": "Frontend",
     "description": "Vue-State.",
     "triggers": [
@@ -186,7 +186,7 @@
       "https://vuejs.org/guide/essentials/reactivity-fundamentals.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.2"
+    "version": "1.0.3"
   },
   {
     "id": "nextjs",
@@ -224,7 +224,7 @@
   },
   {
     "id": "assets",
-    "title": "Bilder und Projektressourcen",
+    "title": "Assets",
     "category": "Frontend",
     "description": "Assets prüfen.",
     "triggers": [
@@ -239,11 +239,11 @@
       "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Structuring_content/HTML_images"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.3"
+    "version": "1.0.4"
   },
   {
     "id": "fetch-api",
-    "title": "HTTP-Client und Fetch",
+    "title": "Fetch API",
     "category": "Backend",
     "description": "Fetch/HTTP.",
     "triggers": [
@@ -257,11 +257,11 @@
       "https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.2"
+    "version": "1.0.3"
   },
   {
     "id": "rest-api",
-    "title": "REST-Endpunkte",
+    "title": "REST API",
     "category": "Backend",
     "description": "REST-APIs.",
     "triggers": [
@@ -275,11 +275,11 @@
       "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.3"
+    "version": "1.0.4"
   },
   {
     "id": "php-pdo",
-    "title": "PHP und PDO",
+    "title": "PHP/PDO",
     "category": "Backend",
     "description": "PHP und PDO.",
     "triggers": [
@@ -291,11 +291,11 @@
       "https://www.php.net/manual/en/pdo.prepared-statements.php"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "python",
-    "title": "Python-Programme",
+    "title": "Python",
     "category": "Backend",
     "description": "Python-Code.",
     "triggers": [
@@ -308,11 +308,11 @@
       "https://docs.python.org/3/tutorial/errors.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.3"
+    "version": "1.0.4"
   },
   {
     "id": "sql-security",
-    "title": "SQL-Sicherheit",
+    "title": "SQL-Schutz",
     "category": "Sicherheit",
     "description": "SQL schützen.",
     "triggers": [
@@ -325,7 +325,7 @@
       "https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "xss-prevention",
@@ -346,7 +346,7 @@
   },
   {
     "id": "authorization",
-    "title": "Konten und Zugriffsrechte",
+    "title": "Zugriffsrechte",
     "category": "Sicherheit",
     "description": "Zugriff/Rechte.",
     "triggers": [
@@ -361,11 +361,11 @@
       "https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.2"
+    "version": "1.0.3"
   },
   {
     "id": "browser-testing",
-    "title": "Browser-Tests",
+    "title": "Browsertests",
     "category": "Qualität",
     "description": "Browser testen.",
     "triggers": [
@@ -378,11 +378,11 @@
       "https://playwright.dev/docs/best-practices"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.3"
+    "version": "1.0.4"
   },
   {
     "id": "unit-testing",
-    "title": "Unit- und Regressionstests",
+    "title": "Unit-Tests",
     "category": "Qualität",
     "description": "Unit-Tests.",
     "triggers": [
@@ -396,11 +396,11 @@
       "https://docs.pytest.org/en/stable/how-to/fixtures.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.2"
+    "version": "1.0.3"
   },
   {
     "id": "docker",
-    "title": "Docker und Container",
+    "title": "Docker",
     "category": "Betrieb",
     "description": "Docker.",
     "triggers": [
@@ -413,11 +413,11 @@
       "https://docs.docker.com/build/building/best-practices/"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "git-review",
-    "title": "Git und Code-Review",
+    "title": "Git-Review",
     "category": "Arbeitsweise",
     "description": "Git-Reviews.",
     "triggers": [
@@ -432,11 +432,11 @@
       "https://git-scm.com/docs/git-diff"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.2"
+    "version": "1.0.3"
   },
   {
     "id": "zip-delivery",
-    "title": "ZIP und Dateiauslieferung",
+    "title": "ZIP-Pakete",
     "category": "Dateien",
     "description": "ZIP ausliefern.",
     "triggers": [
@@ -450,11 +450,11 @@
       "https://docs.python.org/3/library/zipfile.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.2"
+    "version": "1.0.3"
   },
   {
     "id": "csv-data",
-    "title": "CSV und Datenimport",
+    "title": "CSV",
     "category": "Dateien",
     "description": "CSV-Daten.",
     "triggers": [
@@ -467,11 +467,11 @@
       "https://docs.python.org/3/library/csv.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.2"
+    "version": "1.0.3"
   },
   {
     "id": "async-jobs",
-    "title": "Asynchrone Jobs",
+    "title": "Jobs/Queues",
     "category": "Backend",
     "description": "Jobs/Queues.",
     "triggers": [
@@ -485,11 +485,11 @@
       "https://docs.python.org/3/library/asyncio-task.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.2"
+    "version": "1.0.3"
   },
   {
     "id": "sse-streaming",
-    "title": "SSE und Streaming",
+    "title": "SSE-Streams",
     "category": "Backend",
     "description": "SSE-Streams.",
     "triggers": [
@@ -502,11 +502,11 @@
       "https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.1.1"
+    "version": "1.1.2"
   },
   {
     "id": "observability",
-    "title": "Logs und Diagnose",
+    "title": "Logs",
     "category": "Betrieb",
     "description": "Logs prüfen.",
     "triggers": [
@@ -520,11 +520,11 @@
       "https://docs.python.org/3/library/logging.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.1.2"
+    "version": "1.1.3"
   },
   {
     "id": "canvas-games",
-    "title": "Canvas und kleine Spiele",
+    "title": "Canvas-Spiele",
     "category": "Frontend",
     "description": "Canvas-Spiele.",
     "triggers": [
@@ -538,11 +538,11 @@
       "https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "release-handover",
-    "title": "Release und Übergabe",
+    "title": "Releases",
     "category": "Betrieb",
     "description": "Releases.",
     "triggers": [
@@ -557,11 +557,11 @@
       "https://semver.org/"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.1.2"
+    "version": "1.1.3"
   },
   {
     "id": "ollama-integration",
-    "title": "Ollama und Modellanbindung",
+    "title": "Ollama",
     "category": "Backend",
     "description": "Ollama/Gemma.",
     "triggers": [
@@ -575,11 +575,11 @@
       "https://docs.ollama.com/api/introduction"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.1.1"
+    "version": "1.1.2"
   },
   {
     "id": "skill-authoring",
-    "title": "Eigene CoreUI-Skills",
+    "title": "CoreAI-Skills",
     "category": "Arbeitsweise",
     "description": "CoreAI-Skills.",
     "triggers": [
@@ -592,11 +592,11 @@
       "https://agentskills.io/specification"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.1.2"
+    "version": "1.1.3"
   },
   {
     "id": "web-research",
-    "title": "Webrecherche und Quellen",
+    "title": "Webrecherche",
     "category": "Recherche",
     "description": "Webquellen.",
     "triggers": [
@@ -610,7 +610,7 @@
       "https://developer.mozilla.org/en-US/docs/Web/HTTP/Overview"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "fact-checking",
@@ -633,7 +633,7 @@
   },
   {
     "id": "rag-knowledge",
-    "title": "Privates Wissen und RAG-Lite",
+    "title": "RAG-Wissen",
     "category": "Wissen",
     "description": "RAG-Wissen.",
     "triggers": [
@@ -648,11 +648,11 @@
       "https://docs.ollama.com/capabilities/embeddings"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.2"
+    "version": "1.0.3"
   },
   {
     "id": "document-analysis",
-    "title": "Dokumente und PDF auswerten",
+    "title": "Dokumente",
     "category": "Dateien",
     "description": "Dokumente lesen.",
     "triggers": [
@@ -667,11 +667,11 @@
       "https://pymupdf.readthedocs.io/en/latest/"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.2"
+    "version": "1.0.3"
   },
   {
     "id": "tabular-analysis",
-    "title": "Tabellen und Kennzahlen",
+    "title": "Tabellen",
     "category": "Daten",
     "description": "Tabellen prüfen.",
     "triggers": [
@@ -686,11 +686,11 @@
       "https://pandas.pydata.org/docs/user_guide/index.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "data-visualization",
-    "title": "Diagramme und Datenvisualisierung",
+    "title": "Diagramme",
     "category": "Daten",
     "description": "Datenplots.",
     "triggers": [
@@ -705,11 +705,11 @@
       "https://matplotlib.org/stable/users/explain/quick_start.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "json-yaml",
-    "title": "JSON und YAML",
+    "title": "JSON/YAML",
     "category": "Backend",
     "description": "JSON/YAML.",
     "triggers": [
@@ -724,11 +724,11 @@
       "https://yaml.org/spec/1.2.2/"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "linux-shell",
-    "title": "Linux und Shell-Kommandos",
+    "title": "Linux/Shell",
     "category": "Betrieb",
     "description": "Linux/Shell.",
     "triggers": [
@@ -743,7 +743,7 @@
       "https://www.gnu.org/software/bash/manual/bash.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "web-security",
@@ -766,7 +766,7 @@
   },
   {
     "id": "ui-ux",
-    "title": "UI und Nutzerführung",
+    "title": "UI/UX",
     "category": "Frontend",
     "description": "UX/Bedienung.",
     "triggers": [
@@ -781,11 +781,11 @@
       "https://www.w3.org/WAI/tutorials/"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "technical-writing",
-    "title": "Technische Dokumentation",
+    "title": "Technische Doku",
     "category": "Schreiben",
     "description": "Technische Doku.",
     "triggers": [
@@ -800,11 +800,11 @@
       "https://developers.google.com/tech-writing/overview"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.2"
+    "version": "1.0.3"
   },
   {
     "id": "creative-writing",
-    "title": "Kreatives Schreiben und Lore",
+    "title": "Kreatives Schreiben",
     "category": "Schreiben",
     "description": "Romane/Lore.",
     "triggers": [
@@ -820,11 +820,11 @@
       "https://writingcenter.unc.edu/tips-and-tools/"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "translation",
-    "title": "Übersetzen und Lokalisieren",
+    "title": "Übersetzung",
     "category": "Schreiben",
     "description": "Übersetzungen.",
     "triggers": [
@@ -839,11 +839,11 @@
       "https://www.w3.org/International/"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "backup-restore",
-    "title": "Backup und Wiederherstellung",
+    "title": "Backup/Restore",
     "category": "Betrieb",
     "description": "Backups.",
     "triggers": [
@@ -858,11 +858,11 @@
       "https://mariadb.com/kb/en/backup-and-restore-overview/"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "privacy-memory",
-    "title": "Privatsphäre und Erinnerung",
+    "title": "Privacy/Memory",
     "category": "Sicherheit",
     "description": "Privacy/Memory.",
     "triggers": [
@@ -877,11 +877,11 @@
       "https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "media-inspection",
-    "title": "Bild- und Videoanalyse",
+    "title": "Medienanalyse",
     "category": "Medien",
     "description": "Medien prüfen.",
     "triggers": [
@@ -896,11 +896,11 @@
       "https://developer.mozilla.org/en-US/docs/Web/Media/Formats"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "browser-actions",
-    "title": "Browseraktionen und Formulare",
+    "title": "Browseraktionen",
     "category": "Browser",
     "description": "Browseraktionen.",
     "triggers": [
@@ -915,11 +915,11 @@
       "https://playwright.dev/docs/locators"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.2"
+    "version": "1.0.3"
   },
   {
     "id": "docx",
-    "title": "Word und DOCX",
+    "title": "DOCX",
     "category": "Office",
     "description": "DOCX.",
     "triggers": [
@@ -934,11 +934,11 @@
       "https://github.com/anthropics/skills/tree/main/skills/docx"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.2"
+    "version": "1.0.3"
   },
   {
     "id": "pdf-workflows",
-    "title": "PDF-Bearbeitung und Formulare",
+    "title": "PDF-Werkzeuge",
     "category": "Office",
     "description": "PDF-Werkzeuge.",
     "triggers": [
@@ -955,11 +955,11 @@
       "https://github.com/anthropics/skills/tree/main/skills/pdf"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.2"
+    "version": "1.0.3"
   },
   {
     "id": "pptx",
-    "title": "PowerPoint und PPTX",
+    "title": "PPTX",
     "category": "Office",
     "description": "PPTX.",
     "triggers": [
@@ -974,11 +974,11 @@
       "https://github.com/anthropics/skills/tree/main/skills/pptx"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.2"
+    "version": "1.0.3"
   },
   {
     "id": "xlsx",
-    "title": "Excel und XLSX",
+    "title": "XLSX",
     "category": "Office",
     "description": "XLSX.",
     "triggers": [
@@ -993,11 +993,11 @@
       "https://github.com/anthropics/skills/tree/main/skills/xlsx"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "brand-guidelines",
-    "title": "Markenrichtlinien",
+    "title": "Markenstil",
     "category": "Design",
     "description": "Markenstil.",
     "triggers": [
@@ -1012,11 +1012,11 @@
       "https://github.com/anthropics/skills/tree/main/skills/brand-guidelines"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "web-artifacts",
-    "title": "Interaktive Web-Artefakte",
+    "title": "Web-Artefakte",
     "category": "Frontend",
     "description": "Webartefakte.",
     "triggers": [
@@ -1031,11 +1031,11 @@
       "https://github.com/anthropics/skills/tree/main/skills/web-artifacts-builder"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "llm-api",
-    "title": "LLM-Provider-APIs",
+    "title": "LLM-APIs",
     "category": "Backend",
     "description": "LLM-API.",
     "triggers": [
@@ -1052,11 +1052,11 @@
       "https://github.com/anthropics/skills/tree/main/skills/claude-api"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "mcp-builder",
-    "title": "MCP-Server und Werkzeuge",
+    "title": "MCP-Server",
     "category": "Backend",
     "description": "MCP-Server.",
     "triggers": [
@@ -1071,11 +1071,11 @@
       "https://github.com/anthropics/skills/tree/main/skills/mcp-builder"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.2"
+    "version": "1.0.3"
   },
   {
     "id": "algorithmic-art",
-    "title": "Generative Codekunst",
+    "title": "Generative Kunst",
     "category": "Design",
     "description": "Codekunst.",
     "triggers": [
@@ -1090,11 +1090,11 @@
       "https://github.com/anthropics/skills/tree/main/skills/algorithmic-art"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "canvas-design",
-    "title": "Poster und Grafikdesign",
+    "title": "Grafikdesign",
     "category": "Design",
     "description": "Grafikdesign.",
     "triggers": [
@@ -1109,11 +1109,11 @@
       "https://github.com/anthropics/skills/tree/main/skills/canvas-design"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.2"
+    "version": "1.0.3"
   },
   {
     "id": "gif-creator",
-    "title": "Animierte GIFs",
+    "title": "GIFs",
     "category": "Medien",
     "description": "GIFs.",
     "triggers": [
@@ -1128,7 +1128,7 @@
       "https://github.com/anthropics/skills/tree/main/skills/slack-gif-creator"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "theme-factory",
@@ -1152,7 +1152,7 @@
   },
   {
     "id": "doc-coauthoring",
-    "title": "Gemeinsames Dokumentenschreiben",
+    "title": "Text-Koautor",
     "category": "Schreiben",
     "description": "Gemeinsam schreiben.",
     "triggers": [
@@ -1167,11 +1167,11 @@
       "https://github.com/anthropics/skills/tree/main/skills/doc-coauthoring"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.2"
+    "version": "1.0.3"
   },
   {
     "id": "internal-comms",
-    "title": "Interne Kommunikation",
+    "title": "Interne Memos",
     "category": "Schreiben",
     "description": "Mitteilungen.",
     "triggers": [
@@ -1187,11 +1187,11 @@
       "https://github.com/anthropics/skills/tree/main/skills/internal-comms"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "learning-design",
-    "title": "Lernmaterial und Onboarding",
+    "title": "Lernpläne",
     "category": "Schreiben",
     "description": "Lernmaterial.",
     "triggers": [
@@ -1207,11 +1207,11 @@
       "https://github.com/anthropics/skills/tree/main/skills/academy-guide"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "reasoning-review",
-    "title": "Kritische Ergebnisprüfung",
+    "title": "Kritikcheck",
     "category": "Qualität",
     "description": "Kritikcheck.",
     "triggers": [
@@ -1227,11 +1227,11 @@
       "https://github.com/anthropics/skills/tree/main/skills/discernment-nudge"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "agent-task-design",
-    "title": "Agentenrollen und Aufgaben",
+    "title": "Agentenplanung",
     "category": "Agenten",
     "description": "Agentenaufgaben.",
     "triggers": [
@@ -1247,11 +1247,11 @@
       "https://github.com/crewAIInc/skills"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "workflow-checkpoints",
-    "title": "Workflows und Wiederaufnahme",
+    "title": "Checkpoints",
     "category": "Agenten",
     "description": "Checkpoints.",
     "triggers": [
@@ -1267,11 +1267,11 @@
       "https://github.com/langchain-ai/langgraph"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "pdf",
-    "title": "PDF-Dokumente",
+    "title": "PDF",
     "category": "Office",
     "description": "PDF/OCR.",
     "triggers": [
@@ -1287,11 +1287,11 @@
       "https://github.com/anthropics/skills/tree/main/skills/pdf"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "frontend-design",
-    "title": "Frontend-Design",
+    "title": "Frontenddesign",
     "category": "Frontend",
     "description": "Frontenddesign.",
     "triggers": [
@@ -1305,11 +1305,11 @@
       "https://github.com/anthropics/skills/tree/main/skills/frontend-design"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "web-artifacts-builder",
-    "title": "Interaktive Web-Artefakte",
+    "title": "Webapp-Builder",
     "category": "Frontend",
     "description": "Webapp-Builder.",
     "triggers": [
@@ -1323,11 +1323,11 @@
       "https://github.com/anthropics/skills/tree/main/skills/web-artifacts-builder"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "claude-api",
-    "title": "Claude-API",
+    "title": "Claude API",
     "category": "Backend",
     "description": "Claude-API.",
     "triggers": [
@@ -1341,11 +1341,11 @@
       "https://github.com/anthropics/skills/tree/main/skills/claude-api"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "skill-creator",
-    "title": "Erweiterte Skill-Erstellung",
+    "title": "Skill-Creator",
     "category": "Arbeitsweise",
     "description": "Skill-Pakete.",
     "triggers": [
@@ -1360,11 +1360,11 @@
       "https://github.com/anthropics/skills/tree/main/skills/skill-creator"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "webapp-testing",
-    "title": "Webapp-Tests",
+    "title": "Playwright",
     "category": "Qualität",
     "description": "Playwright.",
     "triggers": [
@@ -1379,11 +1379,11 @@
       "https://github.com/anthropics/skills/tree/main/skills/webapp-testing"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "slack-gif-creator",
-    "title": "Slack- und Messenger-GIFs",
+    "title": "Slack-GIFs",
     "category": "Medien",
     "description": "Slack-GIFs.",
     "triggers": [
@@ -1396,11 +1396,11 @@
       "https://github.com/anthropics/skills/tree/main/skills/slack-gif-creator"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "academy-guide",
-    "title": "Academy-Lernpfade",
+    "title": "Academy-Guide",
     "category": "Schreiben",
     "description": "Lernpfade.",
     "triggers": [
@@ -1414,11 +1414,11 @@
       "https://github.com/anthropics/skills/tree/main/skills/academy-guide"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "discernment-nudge",
-    "title": "Kritische Ergebnisprüfung",
+    "title": "Reflexionshilfe",
     "category": "Qualität",
     "description": "Reflexionshilfe.",
     "triggers": [
@@ -1432,11 +1432,11 @@
       "https://github.com/anthropics/skills/tree/main/skills/discernment-nudge"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "legal-research",
-    "title": "Juristische Quellenrecherche",
+    "title": "Rechtsrecherche",
     "category": "Recht",
     "description": "Rechtsrecherche.",
     "triggers": [
@@ -1461,11 +1461,11 @@
       "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "contract-review-summary",
-    "title": "Vertragsprüfung und Zusammenfassung",
+    "title": "Vertragsprüfung",
     "category": "Recht",
     "description": "Vertragsprüfung.",
     "triggers": [
@@ -1487,11 +1487,11 @@
       "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "legal-memo-standard",
-    "title": "Juristisches Gutachten und Rechtsmemo",
+    "title": "Rechtsmemo",
     "category": "Recht",
     "description": "Rechtsmemo.",
     "triggers": [
@@ -1511,11 +1511,11 @@
       "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "policy-qa-from-knowledgebase",
-    "title": "Richtlinien- und Compliance-QA",
+    "title": "Richtlinien-QA",
     "category": "Recht",
     "description": "Richtlinien-QA.",
     "triggers": [
@@ -1535,11 +1535,11 @@
       "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "legal-drafting",
-    "title": "Juristische Schreiben und Schriftsätze",
+    "title": "Rechtstexte",
     "category": "Recht",
     "description": "Rechtstexte entwerfen.",
     "triggers": [
@@ -1561,11 +1561,11 @@
       "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "legal-deadlines",
-    "title": "Rechtsfristen und Zustellung",
+    "title": "Rechtsfristen",
     "category": "Recht",
     "description": "Fristenprüfung.",
     "triggers": [
@@ -1588,11 +1588,11 @@
       "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "administrative-law",
-    "title": "Verwaltungs- und Behördenrecht",
+    "title": "Verwaltungsrecht",
     "category": "Recht",
     "description": "Verwaltungsrecht.",
     "triggers": [
@@ -1613,11 +1613,11 @@
       "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "social-law",
-    "title": "Sozialrecht und Leistungsbescheide",
+    "title": "Sozialrecht",
     "category": "Recht",
     "description": "Sozialrecht.",
     "triggers": [
@@ -1640,11 +1640,11 @@
       "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "tenancy-law",
-    "title": "Miet- und Wohnrecht",
+    "title": "Mietrecht",
     "category": "Recht",
     "description": "Mietrecht.",
     "triggers": [
@@ -1667,11 +1667,11 @@
       "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "employment-law",
-    "title": "Arbeits- und Beschäftigungsrecht",
+    "title": "Arbeitsrecht",
     "category": "Recht",
     "description": "Arbeitsrecht.",
     "triggers": [
@@ -1693,11 +1693,11 @@
       "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "consumer-law",
-    "title": "Verbraucher- und Vertragsrecht",
+    "title": "Verbraucherrecht",
     "category": "Recht",
     "description": "Verbraucherrecht.",
     "triggers": [
@@ -1721,11 +1721,11 @@
       "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "privacy-law",
-    "title": "Datenschutz- und Datenrecht",
+    "title": "Datenschutzrecht",
     "category": "Recht",
     "description": "Datenschutzrecht.",
     "triggers": [
@@ -1747,11 +1747,11 @@
       "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "intellectual-property",
-    "title": "Urheber-, Marken- und Lizenzrecht",
+    "title": "Urheber/Marke",
     "category": "Recht",
     "description": "Urheber-/Markenrecht.",
     "triggers": [
@@ -1772,11 +1772,11 @@
       "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "tax-law",
-    "title": "Steuerrecht und Abgaben",
+    "title": "Steuerrecht",
     "category": "Recht",
     "description": "Steuerrecht.",
     "triggers": [
@@ -1796,11 +1796,11 @@
       "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "civil-procedure",
-    "title": "Zivilprozess und Verfahrensrecht",
+    "title": "Zivilverfahren",
     "category": "Recht",
     "description": "Zivilverfahren.",
     "triggers": [
@@ -1822,11 +1822,11 @@
       "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "evidence-review",
-    "title": "Beweis- und Dokumentenprüfung",
+    "title": "Belegprüfung",
     "category": "Recht",
     "description": "Belege prüfen.",
     "triggers": [
@@ -1847,11 +1847,11 @@
       "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "official-forms",
-    "title": "Behördenanträge und Formulare",
+    "title": "Behördenformulare",
     "category": "Recht",
     "description": "Behördenformulare.",
     "triggers": [
@@ -1869,11 +1869,11 @@
       "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "family-law",
-    "title": "Familien- und Unterhaltsrecht",
+    "title": "Familienrecht",
     "category": "Recht",
     "description": "Familienrecht.",
     "triggers": [
@@ -1892,11 +1892,11 @@
       "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "criminal-law",
-    "title": "Straf- und Strafverfahrensrecht",
+    "title": "Strafrecht",
     "category": "Recht",
     "description": "Strafrecht.",
     "triggers": [
@@ -1915,11 +1915,11 @@
       "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "company-law",
-    "title": "Gesellschafts- und Wirtschaftsrecht",
+    "title": "Gesellschaftsrecht",
     "category": "Recht",
     "description": "Gesellschaftsrecht.",
     "triggers": [
@@ -1941,11 +1941,11 @@
       "https://eur-lex.europa.eu/collection/eu-law/consleg.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "financial-analysis",
-    "title": "Finanzanalyse und Planung",
+    "title": "Finanzanalyse",
     "category": "Finanzen",
     "description": "Finanzanalyse.",
     "triggers": [
@@ -1961,11 +1961,11 @@
       "https://www.bundesbank.de/"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "academic-research",
-    "title": "Wissenschaftliche Fachrecherche",
+    "title": "Fachrecherche",
     "category": "Wissenschaft",
     "description": "Fachliteratur prüfen.",
     "triggers": [
@@ -1981,11 +1981,11 @@
       "https://pubmed.ncbi.nlm.nih.gov/"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "threat-modeling",
-    "title": "Bedrohungsmodellierung für Code",
+    "title": "Bedrohungsmodell",
     "category": "Sicherheit",
     "description": "IT-Bedrohungen.",
     "triggers": [
@@ -2000,6 +2000,6 @@
       "https://github.com/openai/skills/tree/main/skills/.curated/security-threat-model"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   }
 ]
