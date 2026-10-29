@@ -7,15 +7,15 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.80` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.81` (numeric only). The last verified ZIP remains archived under its original historical name.
 
-## Skills: Mara waehlt selbst (0.5.80)
+## Skills: Mara waehlt selbst (0.5.81)
 
-Skills braucht niemand mehr einzuschalten: Mara hat alle 33 und waehlt selbst,
+Skills braucht niemand mehr einzuschalten: Mara hat alle 50 und waehlt selbst,
 wie man es von Claude oder GPT kennt. Offensichtlich passende laedt der Server
 vorab, die uebrigen kennt sie aus ihrer Skill-Bibliothek und laedt sie bei
 Bedarf mit `[SKILL: kennung]` nach (im Arbeitsweg zu sehen). `/skill kennung`
-gibt einen Skill weiterhin vor. Details: [docs/COREUI_SKILLS.md](docs/COREUI_SKILLS.md).
+gibt einen Skill weiterhin vor. In 0.5.81 sind 17 Fach-Skills hinzugekommen (Recherche, Faktencheck, RAG, Dokumente, Daten, Browser, Sicherheit, kreative Arbeit und mehr); fuenf vorhandene Anleitungen sind erweitert. Auswahl und Nachladen bleiben unveraendert. Details: [docs/COREUI_SKILLS.md](docs/COREUI_SKILLS.md).
 
 ## Mehrere Quellen, Captcha, CoreAI-Rollen und neue Einstellungen (0.5.79)
 
