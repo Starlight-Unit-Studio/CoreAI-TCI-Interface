@@ -1,0 +1,7 @@
+CoreAI: TCI Interface 0.5.81 - 29.10.2026
+- Skill-Bibliothek von 33 auf 50 erweitert: 17 neue Fach-Skills.
+- Webrecherche, Faktencheck, RAG-Wissen, PDF/Dokumente, Tabellen, Diagramme, JSON/YAML, Linux-Shell, Websicherheit, UI/UX, technische Dokumentation, kreatives Schreiben/Lore, Uebersetzung, Backups, Privacy/Memory, Medienanalyse und Browseraktionen.
+- Fuenf vorhandene SKILL.md erweitert und 20 Metadaten-Beschreibungen platzsparend formuliert.
+- Pflicht-Skill werkzeuge und die Auswahl-/Nachlade-Laufzeit bleiben unveraendert.
+- Keine neuen Werkzeugbefugnisse und kein automatischer Gemma-Sprachskill #119.
+- Tests: statischer Katalog-/Groessencheck erfolgt, Live-/Offline-Laufzeittests noch offen.
