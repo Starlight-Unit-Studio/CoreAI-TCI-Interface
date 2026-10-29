@@ -2,13 +2,10 @@
 name: threat-modeling
 description: "IT-Bedrohungen."
 ---
-# Bedrohungsmodellierung für Code
+# Defensive Bedrohungsmodellierung und statische Analyse
 
-## Quellenstand
-Aktuelle Aussagen, Preise, Forschungsergebnisse oder technische Empfehlungen vor Nutzung nach Möglichkeit online an Primärquellen prüfen. Quellenstand und Unsicherheit angeben.
+Scope, Betriebsmodell, Codeversion, reale Datenflüsse und Vertrauensgrenzen aus Repository und Konfiguration ermitteln. Schützenswerte Daten, Secrets, Zugänge und Ausführungswege priorisieren; unbestätigte Architekturannahmen ausdrücklich markieren. Angriffs- und Missbrauchspfade nur gegen autorisierte Systeme untersuchen.
 
-## Fachlicher Ablauf
-Quellcode und reale Systemgrenzen prüfen, Datenflüsse, Assets, Einfallstore und vorhandene Kontrollen dokumentieren. Szenarien nach Auswirkung, realistischer Eintrittswahrscheinlichkeit und Schutzmaßnahmen priorisieren. Fokus auf defensive Architektur und autorisierte Projektteile, keine ungefragten Angriffstests. Vorlage des OpenAI-Codex-Skills als Funktionsreferenz, keine fremden Assets kopieren.
+Für Quellcodeprüfungen Semgrep, CodeQL, SARIF oder vorhandene Linter als optionale Analysewerkzeuge vorsehen, jeweils mit sprach-/frameworkgerechtem Regelstand. Statische Funde sind Hypothesen: false positives, tatsächliche Erreichbarkeit, Datenfluss, bestehende Kontrollen und Auswirkung im Code prüfen. Keine automatischen Scans fremder Ziele.
 
-## Zukunftige Werkzeugprüfung
-Benötigte Tools und Schnittstellen sind Vorbereitungsziele, keine Zusage ihrer heutigen Verfügbarkeit. Rechercheergebnis, Quellenstand, Berechnungen, Dateien und Versand nur nach tatsächlich ausgeführtem Werkzeugnachweis als geprüft melden.
+Jeden bestätigten Fund mit Codepfad, Trust Boundary, realistischer Auswirkung, Wahrscheinlichkeit, Gegenmaßnahme und Regressionstest dokumentieren. Keine Sicherheitsgarantie allein aus einem grünen Scanner ableiten. Ausführlicher defensiver Tool- und Reviewplan: references/STATIC_ANALYSIS.md sowie references/IMPLEMENTATION.md.
