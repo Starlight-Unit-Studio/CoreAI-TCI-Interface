@@ -116,6 +116,9 @@ UI_FILES=(
   database/migrations/017_ai_num_ctx.sql
   database/migrations/018_abuse_guard.sql
   database/migrations/019_coreai_roles.sql
+  database/migrations/020_model_access.sql
+  api/model_access.php
+  scripts/model-access-selftest.php
   api/abuse_guard.php
   scripts/abuse-guard-selftest.php
   scripts/captcha-selftest.php
@@ -508,6 +511,14 @@ if command -v php >/dev/null 2>&1; then
     ok 'Rollen: Inhaber, Admin, Nutzer, Gast; Gaeste nutzen den Standard-Core.'
   else
     fail "Rollen-Selbsttest: ${roles_test:-Unbekannter Fehler}"
+  fi
+
+  # 0.5.83: models outside CoreAI only for the Inhaber and released accounts.
+  model_access_test=''
+  if model_access_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/model-access-selftest.php" 2>&1)"; then
+    ok 'Modell-Freigaben: Maras Cores fuer alle, fremde Modelle nur fuer Inhaber und freigegebene Konten.'
+  else
+    fail "Modell-Freigaben-Selbsttest: ${model_access_test:-Unbekannter Fehler}"
   fi
 
   compact_test=''

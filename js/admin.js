@@ -117,6 +117,96 @@
   }
 
   var ROLE_OPTIONS = [[0, 'INHABER'], [1, 'ADMIN'], [4, 'NUTZER']];
+  // 0.5.83: models outside CoreAI and their releases per account (Inhaber only).
+  var modelAccess = null;
+
+  function loadModelAccess() {
+    if (actorLevel !== 0) return Promise.resolve(null);
+    return api('model_access').then(function (data) {
+      modelAccess = data;
+      return data;
+    }).catch(function (error) {
+      modelAccess = null;
+      show('Cores: ' + error.message, true);
+      return null;
+    });
+  }
+
+  function grantsOf(user) {
+    var grants = modelAccess && modelAccess.grants ? modelAccess.grants[String(user.id)] : null;
+    return Array.isArray(grants) ? grants : [];
+  }
+
+  // Cell of the CORES column: the release button, or why there is none.
+  function modelCell(user, row) {
+    var cell = el('td', 'model-access-cell');
+    if (Number(user.is_guest) === 1) { cell.appendChild(el('small', '', 'Standard-Core')); return cell; }
+    if (Number(user.permission_level) === 0) { cell.appendChild(el('small', '', 'alle (Inhaber)')); return cell; }
+    if (actorLevel !== 0 || !modelAccess) { cell.appendChild(el('small', '', 'nur Inhaber')); return cell; }
+    var toggle = el('button', 'model-access-toggle', 'FREIGABEN (' + grantsOf(user).length + ')');
+    toggle.type = 'button';
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.addEventListener('click', function () {
+      var open = row.nextSibling && row.nextSibling.classList && row.nextSibling.classList.contains('model-access-row');
+      if (open) {
+        row.parentNode.removeChild(row.nextSibling);
+        toggle.setAttribute('aria-expanded', 'false');
+        return;
+      }
+      row.parentNode.insertBefore(modelPanel(user, toggle), row.nextSibling);
+      toggle.setAttribute('aria-expanded', 'true');
+    });
+    cell.appendChild(toggle);
+    return cell;
+  }
+
+  // Row under an account: one switch per model outside CoreAI, then save.
+  function modelPanel(user, toggle) {
+    var tr = el('tr', 'model-access-row');
+    var td = el('td');
+    td.colSpan = 7;
+    var models = (modelAccess && modelAccess.models) || [];
+    var granted = grantsOf(user);
+    td.appendChild(el('p', 'model-access-note', models.length
+      ? 'Fremde Cores außerhalb von CoreAI für ' + (user.display_name || user.username || ('Konto ' + user.id))
+        + '. Maras Cores brauchen keine Freigabe.'
+      : 'Keine fremden Cores außerhalb von CoreAI in Ollama installiert.'));
+    if (modelAccess && modelAccess.ollama === false) {
+      td.appendChild(el('p', 'model-access-note warn', 'Ollama-Liste gerade nicht erreichbar; gezeigt werden nur bestehende Freigaben.'));
+    }
+    var list = el('div', 'model-access-list');
+    models.forEach(function (name) {
+      var label = el('label', 'model-access-choice');
+      var box = document.createElement('input');
+      box.type = 'checkbox';
+      box.value = name;
+      box.checked = granted.indexOf(name) >= 0;
+      label.appendChild(box);
+      label.appendChild(el('span', '', name));
+      list.appendChild(label);
+    });
+    td.appendChild(list);
+    var save = el('button', 'settings-action compact', 'FREIGABEN SPEICHERN');
+    save.type = 'button';
+    save.disabled = models.length === 0;
+    save.addEventListener('click', function () {
+      var chosen = Array.prototype.slice.call(list.querySelectorAll('input:checked')).map(function (box) { return box.value; });
+      save.disabled = true;
+      post('model_access_save', { user_id: Number(user.id), models: chosen }).then(function (data) {
+        if (modelAccess) {
+          if (!modelAccess.grants || Array.isArray(modelAccess.grants)) modelAccess.grants = {};
+          modelAccess.grants[String(user.id)] = data.models || [];
+        }
+        toggle.textContent = 'FREIGABEN (' + (data.models || []).length + ')';
+        show('Freigaben für Benutzer ' + user.id + ' gespeichert.');
+      }).catch(function (error) {
+        show('Freigaben: ' + error.message, true);
+      }).finally(function () { save.disabled = false; });
+    });
+    td.appendChild(save);
+    tr.appendChild(td);
+    return tr;
+  }
 
   function roleName(level, guest) {
     if (guest) return 'GAST';
@@ -126,7 +216,8 @@
 
   function loadUsers() {
     var q = document.getElementById('userSearch').value.trim();
-    return api('users', null, 'limit=150&q=' + encodeURIComponent(q)).then(function (data) {
+    return Promise.all([api('users', null, 'limit=150&q=' + encodeURIComponent(q)), loadModelAccess()]).then(function (both) {
+      var data = both[0];
       var tbody = document.getElementById('userRows');
       tbody.innerHTML = '';
       (data.items || []).forEach(function (user) {
@@ -159,6 +250,7 @@
         banCell.appendChild(until);
         row.appendChild(banCell);
         row.appendChild(el('td', '', user.session_count || 0));
+        row.appendChild(modelCell(user, row));
         var actionCell = el('td');
         var save = el('button', '', 'SPEICHERN');
         save.type = 'button';

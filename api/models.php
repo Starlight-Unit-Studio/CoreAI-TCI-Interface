@@ -4,8 +4,10 @@ declare(strict_types=1);
 require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/model_catalog.php';
 require_once __DIR__ . '/core_install.php';
+require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/model_access.php';
 
-stu_require_user_id();
+$uid = stu_require_user_id();
 if (strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET')) !== 'GET') {
   stu_json(['ok'=>false, 'error'=>'method_not_allowed'], 405);
 }
@@ -19,6 +21,8 @@ try {
     'cloud'=>preg_match('~(?:^|[:._-])cloud(?:$|[:._-])~i', (string)$m['name']) === 1,
     'mara'=>coreui_core_is_mara((string)$m['name']),
   ], coreui_ollama_models());
+  // 0.5.83: models outside CoreAI only for the Inhaber and accounts he released them to.
+  $models = coreui_model_access_filter(stu_pdo(), $uid, $models);
   $default = defined('STU_EMBER_MODEL') ? (string)STU_EMBER_MODEL : '';
   if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
   stu_json([

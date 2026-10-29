@@ -37,7 +37,11 @@ function server(level) {
     'admin.php': url => {
       const action = url.searchParams.get('action');
       if (action === 'users') return {ok: true, items: [{id: 1, username: 'patrick@starlight.test', display_name: 'Patrick', permission_level: 0, is_guest: 0, session_count: 3},
-        {id: 2, username: 'gast-7f3a', display_name: 'Gast', permission_level: 4, is_guest: 1, session_count: 1}]};
+        {id: 2, username: 'gast-7f3a', display_name: 'Gast', permission_level: 4, is_guest: 1, session_count: 1},
+        {id: 3, username: 'lena@example.test', display_name: 'Lena', permission_level: 4, is_guest: 0, session_count: 2}]};
+      // 0.5.83: models outside CoreAI and their releases (Inhaber only).
+      if (action === 'model_access') return level === 0 ? {ok: true, models: ['gpt-oss:120b-cloud', 'llama3.2:latest'], grants: {}, ollama: true}
+        : {ok: false, error: 'owner_only'};
       if (action === 'audit') return {ok: true, items: [{action_name: 'settings_save', target_type: 'settings', target_id: 'runtime', actor: 'patrick', created_at: '2026-10-28 10:58:00'}]};
       if (action === 'logs') return {ok: true, lines: ['[2026-10-28] ok']};
       if (action === 'memories') return {ok: true, items: []};
@@ -54,6 +58,9 @@ function server(level) {
       const post = route.request().method() === 'POST' ? route.request().postData() : null;
       calls.push({key, action: url.searchParams.get('action'), post: post ? JSON.parse(post) : null});
       if (key === 'admin.php' && post && level > 1) return route.fulfill({status: 403, json: {ok: false, error: 'insufficient_permissions'}});
+      if (key === 'admin.php' && post && url.searchParams.get('action') === 'model_access_save') {
+        return route.fulfill({json: {ok: true, models: JSON.parse(post).models}});
+      }
       if (key === 'admin.php' && post) return route.fulfill({json: {ok: true, settings: JSON.parse(post).settings}});
       return route.fulfill({json: api[key] ? api[key](url) : {ok: true}});
     }
@@ -135,7 +142,7 @@ const smallText = page => page.evaluate(() => {
     // The Inhaber: Admin Core appears and an admin address opens once the role is known.
     ({page, srv, errors} = await open(browser, 0, '#admin-benutzer'));
     await page.waitForFunction(() => !document.getElementById('adminNavGroup').hidden);
-    await page.waitForFunction(() => document.querySelectorAll('#userRows tr').length === 2);
+    await page.waitForFunction(() => document.querySelectorAll('#userRows tr').length === 3);
     assert.deepEqual(await visibleViews(page), ['view-admin-benutzer'], 'the admin address opens after the role check');
     assert.equal(await page.$eval('#startAdmin', e => e.hidden), false, 'Admin Core tiles on the start view');
     assert.equal(await page.textContent('#adminIdentity'), 'patrick@starlight.test // INHABER');
@@ -143,7 +150,20 @@ const smallText = page => page.evaluate(() => {
       'the figures fill the start tile and the overview');
     assert.deepEqual(await page.$$eval('#userRows tr:nth-child(2) select option', o => o.map(x => x.textContent)), ['GAST'], 'a guest stays a guest');
     assert.equal(await page.$eval('#newUserLevel option[value="1"]', o => o.disabled), false, 'the Inhaber may create admins');
+    // 0.5.83: the Inhaber releases models outside CoreAI per account.
+    assert.deepEqual(await page.$$eval('#userRows .model-access-cell', cells => cells.map(c => c.textContent)),
+      ['alle (Inhaber)', 'Standard-Core', 'FREIGABEN (0)'], 'CORES column for Inhaber, guest and Nutzer');
+    await page.click('#userRows tr:nth-child(3) .model-access-toggle');
+    assert.deepEqual(await page.$$eval('.model-access-row .model-access-choice', l => l.map(x => x.textContent)),
+      ['gpt-oss:120b-cloud', 'llama3.2:latest'], 'the foreign models to release');
     assert.deepEqual(await smallText(page), [], 'no text below 11 px in Benutzer');
+    await page.click('.model-access-row .model-access-choice:first-child input');
+    await page.click('.model-access-row button');
+    await page.waitForFunction(() => document.querySelector('#userRows tr:nth-child(3) .model-access-toggle').textContent === 'FREIGABEN (1)');
+    const release = srv.calls.find(c => c.key === 'admin.php' && c.action === 'model_access_save');
+    assert.deepEqual(release && release.post, {user_id: 3, models: ['gpt-oss:120b-cloud']}, 'the release is saved for Lena');
+    await page.click('#userRows tr:nth-child(3) .model-access-toggle');
+    assert.equal(await page.locator('.model-access-row').count(), 0, 'the panel closes again');
     // Zugang und Schutz saves every runtime key, like Betrieb.
     await page.click('#tab-admin-zugang');
     assert.equal(await page.isChecked('#registrationEnabled'), true);
@@ -178,6 +198,9 @@ const smallText = page => page.evaluate(() => {
       assert.ok(box.x >= 0 && box.x + box.width <= 391, 'the open tab is in sight: ' + view);
     }
     assert.equal(await page.$eval('#newUserLevel option[value="1"]', o => o.disabled), true, 'an Admin cannot create admins');
+    await page.waitForFunction(() => document.querySelectorAll('#userRows .model-access-cell').length === 3);
+    assert.deepEqual(await page.$$eval('#userRows .model-access-cell', cells => cells.map(c => c.textContent)),
+      ['alle (Inhaber)', 'Standard-Core', 'nur Inhaber'], 'an Admin cannot release models');
     assert.deepEqual(errors, []);
     await page.close();
 

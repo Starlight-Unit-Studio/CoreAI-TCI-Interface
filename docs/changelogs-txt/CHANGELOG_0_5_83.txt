@@ -2,4 +2,5 @@ CoreAI: TCI Interface 0.5.83 - 29.10.2026
 - Eingabefeld springt nach dem Senden auf eine Zeile zurueck (jede Textaenderung per Code passt die Hoehe an; vorher 128 px, jetzt 32 px).
 - Legende "Core-Stufen" nur mit Maras TCI-Stufen; fremde Modelle (z. B. gpt-oss) nur noch im Core-Menue unter den festen Stufen.
 - Core-Menue laedt die Ollama-Liste schon beim Oeffnen des Chats.
-- Tests: Frontend-Regression (Eingabefeld), Core-Chip-Test (Legende, Laden beim Start).
+- Modell-Freigaben: Maras Cores fuer alle; Modelle ausserhalb von CoreAI nur fuer den Inhaber und Konten, denen er sie unter Admin Core > Benutzer (Spalte CORES) freigibt; Pruefung bei Liste, Wahl und Laufzeit; Migration 020 (stu_user_model_access).
+- Tests: Frontend-Regression (Eingabefeld), Core-Chip-Test (Legende, Laden beim Start), model-access-selftest.php, Einstellungs-Browser-Test (Freigabe als Inhaber).

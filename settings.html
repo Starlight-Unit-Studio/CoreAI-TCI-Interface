@@ -11,7 +11,7 @@
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface - Einstellungen</title>
   <link rel="stylesheet" href="./css/console.css?v=0396917892177056426880940" />
-  <link rel="stylesheet" href="./css/settings.css?v=0283112489552574677646382" />
+  <link rel="stylesheet" href="./css/settings.css?v=0552346926317640519068604" />
   <script src="./js/console-gate.js?v=0291450412219995779505393"></script>
   <script src="./js/coreui-preferences.js?v=0408182548343544002678570"></script>
 </head>
@@ -508,7 +508,7 @@
         <!-- ADMIN CORE: BENUTZER -->
         <section class="cfg-view admin-view" id="view-admin-benutzer" role="tabpanel" aria-labelledby="tab-admin-benutzer" tabindex="-1" hidden>
           <header class="cfg-view-head">
-            <div><span class="cfg-kicker amber">ADMIN CORE</span><h2>Benutzer und Rollen</h2><p>Rollen: Inhaber, Admin und Nutzer. Gäste bleiben Gäste und nutzen den Standard-Core.</p></div>
+            <div><span class="cfg-kicker amber">ADMIN CORE</span><h2>Benutzer und Rollen</h2><p>Rollen: Inhaber, Admin und Nutzer. Gäste bleiben Gäste und nutzen den Standard-Core. Maras Cores stehen allen Konten offen; fremde Cores außerhalb von CoreAI gibt der Inhaber unter CORES pro Konto frei.</p></div>
             <button class="settings-action" id="reloadUsers" type="button">NEU LADEN</button>
           </header>
           <div class="cfg-cards">
@@ -531,7 +531,7 @@
                 <div><span>ALLE KONTEN</span><h3 id="adminUsersTitle">Konten und Sperren</h3></div>
               </header>
               <div class="toolbar"><input id="userSearch" type="search" placeholder="E-Mail oder Name suchen …" /><button class="settings-action" id="searchUsers" type="button">SUCHEN</button></div>
-              <div class="table-wrap"><table><thead><tr><th>ID</th><th>KONTO</th><th>ROLLE</th><th>SPERRE BIS</th><th>SITZUNGEN</th><th>AKTION</th></tr></thead><tbody id="userRows"></tbody></table></div>
+              <div class="table-wrap"><table><thead><tr><th>ID</th><th>KONTO</th><th>ROLLE</th><th>SPERRE BIS</th><th>SITZUNGEN</th><th>CORES</th><th>AKTION</th></tr></thead><tbody id="userRows"></tbody></table></div>
             </section>
           </div>
         </section>
@@ -744,6 +744,6 @@
   <script src="./js/coreui-settings-tabs.js?v=1135950849260775405607445"></script>
   <script src="./js/coreui-context-slider.js?v=0071279618529070371071429"></script>
   <script src="./js/settings.js?v=0314934842498128911394521"></script>
-  <script src="./js/admin.js?v=0087040071739075456672003"></script>
+  <script src="./js/admin.js?v=0234890337209413717238774"></script>
 </body>
 </html>

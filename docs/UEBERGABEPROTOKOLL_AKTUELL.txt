@@ -117,7 +117,8 @@ als Schritt der Arbeitsschleife, Vorauswahl bleibt).
 0.5.81 (PR #132): 106 Skills. 0.5.82: Referenzplaene der Skills laedt Mara auf Anforderung
 ([SKILL: kennung/references/IMPLEMENTATION.md]); Skill-Test an gekuerzte Titel angepasst.
 0.5.82 ist gemergt (PR #134). 0.5.83: Eingabefeld springt nach dem Senden zurueck, Legende nur mit Maras
-TCI-Stufen, Ollama-Liste laedt mit dem Chat.
+TCI-Stufen, Ollama-Liste laedt mit dem Chat, Modell-Freigaben pro Benutzer durch den Inhaber (Migration 020).
+Offen auf Wunsch des Betreibers, nacheinander: Benutzer loeschen, weitere Benutzer-Einstellungen.
 NAECHSTER SCHRITT: Audio (TTS-Kandidaten), Benutzerverwaltung nach Betreiberwunsch, dann P20.1.
 Mara/Ember, Ollama-Modelfile, serielle Queue und private Projekt-
 plaene NICHT ungefragt veraendern.

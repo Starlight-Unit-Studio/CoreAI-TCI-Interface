@@ -433,6 +433,7 @@
         }
       }).catch(function (error) {
         say(error.code === 'model_not_available' ? 'Dieser Core ist nicht mehr installiert.'
+          : error.code === 'model_not_allowed' ? 'Dieser Core ist für dein Konto nicht freigegeben.'
           : error.code === 'guest_core_locked' ? 'Als Gast chattest du mit dem Standard-Core.'
           : 'Nicht gespeichert. Bitte noch einmal versuchen.');
       }).then(function () {

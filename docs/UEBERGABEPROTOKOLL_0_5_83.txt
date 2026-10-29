@@ -12,9 +12,20 @@ AENDERUNGEN:
 - js/coreui-core-mode.js: renderLegend listet nur TCI-Stufen (keine Zeilen fuer eigene Namen mehr);
   ready = load().then(loadList), die Liste laedt also mit dem Chat; open()/openLegend() laden weiterhin frisch.
   Das Core-Menue selbst ist unveraendert (fremde installierte Modelle unter den Stufen).
+- Modell-Freigaben (Wunsch: der Inhaber waehlt unter den Benutzer-Einstellungen pro Konto; Loeschen und weitere
+  Einstellungen folgen nacheinander): neue api/model_access.php. coreui_model_is_coreai = TCI-Stufe oder Maras Core.
+  coreui_model_access_allowed: '' und CoreAI immer, Inhaber alles, Gaeste nie, sonst nur mit Freigabe
+  (coreui_core_same, also Gross-/Kleinschreibung und :latest egal). Migration 020 stu_user_model_access
+  (user_id, model_name, granted_by; ON DELETE CASCADE). Filter in api/models.php; api/user_settings.php lehnt
+  im Core-Menue und im KI-Profil mit model_not_allowed (403) ab und meldet einen entzogenen Core als nicht
+  gewaehlt; api/ai_settings.php faellt zur Laufzeit auf den Standard zurueck. api/admin.php: model_access (GET)
+  und model_access_save (POST), nur Inhaber (owner_only), Gaeste und Inhaber selbst abgelehnt, Admin-Audit.
+  settings.html/js/admin.js: Spalte CORES mit FREIGABEN (n), aufklappbare Zeile mit Haken, Speichern;
+  Admins sehen "nur Inhaber". api/health.php prueft die Tabelle.
 
 GEPRUEFT:
 - Alle Offline-Selbsttests; Chromium mit app.html und nachgebauter API: sechs Zeilen tippen (128 px), senden ->
   32 px (ohne Fix 128 px bei leerem Feld).
 
-NAECHSTER SCHRITT: Update auf dem Server, Eingabefeld und Legende kurz pruefen. Danach Audio.
+NAECHSTER SCHRITT: Update auf dem Server (Migration 020 laeuft mit), Eingabefeld, Legende und Freigaben pruefen.
+Danach Benutzer loeschen und weitere Benutzer-Einstellungen, dann Audio.
