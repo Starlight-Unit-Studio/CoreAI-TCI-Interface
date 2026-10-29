@@ -20,4 +20,18 @@ GEPRUEFT:
 - Alle Offline-Selbsttests; account-admin-selftest.php lokal gegen MariaDB 10.11 (mit Rollback); Einstellungs-Browser-
   Test mit Bearbeiten-Ablauf.
 
-NAECHSTER SCHRITT: Werkzeuge pro Konto, dann Limits pro Konto (beide in denselben BEARBEITEN-Panel).
+AENDERUNGEN (zweiter Teil, Werkzeuge):
+- database/migrations/021_user_policies.sql: stu_user_policies (tool_web, tool_browse, tool_python, daily_messages,
+  max_num_ctx, updated_by; ON DELETE CASCADE). api/health.php prueft die Tabelle.
+- api/user_policy.php (neu): ready, default, from_row, load, all, coreui_user_policy_tools (rein: Sperre verengt, global
+  aus bleibt aus), coreui_user_policy_save (Teil-Patch, Pruefung: invalid_tools, invalid_daily_messages,
+  invalid_max_num_ctx, missing_schema_021).
+- api/ai_settings.php: coreui_ai_runtime_apply setzt COREUI_OPERATOR_RUNTIME_SETTINGS = globale Schalter verengt um
+  die Sperren des Kontos; alle Werkzeuge gehen ueber ember_web/browse/py_enabled -> coreui_runtime_tool_enabled.
+- api/admin.php: users liefert policies, tools (globale Schalter), policy_ready; POST user_policy (eigenes Konto
+  own_policy), Audit. js/admin.js: Abschnitt Werkzeuge mit Haken, "global aus" gesperrt.
+- Testfund: stu_app_settings_install (CREATE TABLE IF NOT EXISTS, einmal pro Prozess) beendete die Test-Transaktion
+  still; Testzeilen blieben. Der Test legt die Tabelle vorher an; alle DB-Tests pruefen @@in_transaction vor dem
+  Rollback (Gegenprobe: ohne Vorab-Anlage schlaegt die Pruefung an).
+
+NAECHSTER SCHRITT: Limits pro Konto (Nachrichten pro Tag, groesstes Kontextfenster) im selben Panel.

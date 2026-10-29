@@ -186,6 +186,16 @@
     return actorLevel === 0 || (actorLevel === 1 && level > 1);
   }
 
+  // 0.5.85: own rules per account and the global tool switches (from the user list).
+  var userPolicies = {};
+  var globalTools = {};
+  var policyReady = true;
+  var TOOL_LABELS = [['web', 'Websuche'], ['browse', 'Browser'], ['python', 'Python']];
+
+  function policyOf(user) {
+    return userPolicies[String(user.id)] || { tools: { web: true, browse: true, python: true }, daily_messages: null, max_num_ctx: null };
+  }
+
   var MANAGE_ERRORS = {
     invalid_password: 'Das Passwort braucht mindestens 12 Zeichen.',
     invalid_username: 'Das ist keine gültige E-Mail.',
@@ -193,7 +203,9 @@
     username_taken: 'Diese E-Mail gehört schon zu einem anderen Konto.',
     guest_account: 'Gäste haben kein Passwort und keine eigene E-Mail.',
     protected_account: 'Dieses Konto ist geschützt.',
-    use_account_settings: 'Das eigene Passwort und die eigenen Geräte stehen im Tab Konto.'
+    use_account_settings: 'Das eigene Passwort und die eigenen Geräte stehen im Tab Konto.',
+    own_policy: 'Für das eigene Konto gelten die globalen Schalter unter Betrieb.',
+    missing_schema_021: 'Migration 021 fehlt noch. Bitte das Update einspielen.'
   };
 
   function manageError(prefix, error) {
@@ -288,6 +300,43 @@
       access.appendChild(logout);
     }
     grid.appendChild(access);
+
+    // Werkzeuge (not for the own account: the switches under Betrieb apply there)
+    if (!self) {
+      var policy = policyOf(user);
+      var tools = editSection('Werkzeuge', policyReady
+        ? 'Haken weg sperrt ein Werkzeug nur für dieses Konto. Was unter Betrieb aus ist, bleibt für alle aus.'
+        : MANAGE_ERRORS.missing_schema_021);
+      var boxes = {};
+      TOOL_LABELS.forEach(function (tool) {
+        var label = el('label', 'model-access-choice user-tool-choice');
+        var box = document.createElement('input');
+        box.type = 'checkbox';
+        box.value = tool[0];
+        var globalOn = globalTools[tool[0]] !== false;
+        box.checked = policy.tools[tool[0]] !== false;
+        box.disabled = !globalOn || !policyReady;
+        label.appendChild(box);
+        label.appendChild(el('span', '', tool[1] + (globalOn ? '' : ' (global aus)')));
+        tools.appendChild(label);
+        boxes[tool[0]] = box;
+      });
+      var saveTools = el('button', 'settings-action compact', 'WERKZEUGE SPEICHERN');
+      saveTools.type = 'button';
+      saveTools.disabled = !policyReady;
+      saveTools.addEventListener('click', function () {
+        var chosen = {};
+        TOOL_LABELS.forEach(function (tool) { chosen[tool[0]] = boxes[tool[0]].checked; });
+        saveTools.disabled = true;
+        post('user_policy', { user_id: Number(user.id), tools: chosen }).then(function (data) {
+          userPolicies[String(user.id)] = data.policy;
+          var off = TOOL_LABELS.filter(function (tool) { return !data.policy.tools[tool[0]]; }).map(function (tool) { return tool[1]; });
+          show('Konto ' + user.id + ': ' + (off.length ? 'gesperrt: ' + off.join(', ') + '.' : 'alle Werkzeuge erlaubt.'));
+        }).catch(function (error) { manageError('Werkzeuge', error); }).finally(function () { saveTools.disabled = !policyReady; });
+      });
+      tools.appendChild(saveTools);
+      grid.appendChild(tools);
+    }
 
     td.appendChild(grid);
     tr.appendChild(td);
@@ -417,6 +466,9 @@
     var q = document.getElementById('userSearch').value.trim();
     return Promise.all([api('users', null, 'limit=150&q=' + encodeURIComponent(q)), loadModelAccess()]).then(function (both) {
       var data = both[0];
+      userPolicies = data.policies && !Array.isArray(data.policies) ? data.policies : {};
+      globalTools = data.tools || {};
+      policyReady = data.policy_ready !== false;
       var tbody = document.getElementById('userRows');
       tbody.innerHTML = '';
       (data.items || []).forEach(function (user) {

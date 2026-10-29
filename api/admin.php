@@ -127,7 +127,9 @@ if ($method === 'GET') {
       . 'ORDER BY u.id DESC LIMIT ' . $limit
     );
     $st->execute($params);
-    stu_json(['ok' => true, 'items' => $st->fetchAll(PDO::FETCH_ASSOC) ?: []]);
+    // 0.5.85: own rules per account (tools, limits) and the global tool switches.
+    stu_json(['ok' => true, 'items' => $st->fetchAll(PDO::FETCH_ASSOC) ?: [], 'policies' => coreui_user_policy_all($pdo),
+      'tools' => coreui_operator_runtime_load($pdo), 'policy_ready' => coreui_user_policy_ready($pdo)]);
   }
 
   // 0.5.83: models outside CoreAI and who may use them. Only the Inhaber
@@ -373,6 +375,30 @@ if (in_array($action, ['user_password', 'user_logout_all', 'user_identity'], tru
     if (function_exists('stu__log_error')) stu__log_error(['type' => 'admin_' . $action . '_failed', 'actor' => $actorId, 'message' => $code]);
     stu_json(['ok' => false, 'error' => 'user_settings_failed'], 500);
   }
+}
+
+// 0.5.85: own rules of an account: tools now, limits next. Not for the own
+// account (the global switches under Betrieb apply there).
+if ($action === 'user_policy') {
+  $targetId = (int)($body['user_id'] ?? 0);
+  $target = $targetId > 0 ? coreui_account_admin_target($pdo, $targetId) : null;
+  if ($target === null) stu_json(['ok' => false, 'error' => 'user_not_found'], 404);
+  $refusal = coreui_account_manage_refusal($actorId, $actorLevel, $target, false);
+  if ($refusal === 'use_account_settings') $refusal = 'own_policy';
+  if ($refusal !== '') stu_json(['ok' => false, 'error' => $refusal], $refusal === 'invalid_user' ? 400 : 403);
+  $patch = [];
+  foreach (['tools', 'daily_messages', 'max_num_ctx'] as $key) {
+    if (array_key_exists($key, $body)) $patch[$key] = $body[$key];
+  }
+  try {
+    $policy = coreui_user_policy_save($pdo, $targetId, $patch, $actorId, coreui_ai_num_ctx_choices());
+  } catch (InvalidArgumentException $e) {
+    stu_json(['ok' => false, 'error' => $e->getMessage()], 400);
+  } catch (RuntimeException $e) {
+    stu_json(['ok' => false, 'error' => $e->getMessage() === 'missing_schema_021' ? 'missing_schema_021' : 'user_settings_failed'], 503);
+  }
+  coreui_admin_audit($pdo, $actorId, 'user_policy', 'user', (string)$targetId, $policy);
+  stu_json(['ok' => true, 'policy' => $policy]);
 }
 
 if ($action === 'model_access_save') {

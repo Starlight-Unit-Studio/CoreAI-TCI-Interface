@@ -1389,3 +1389,11 @@
 .user-edit-section .settings-action.compact {
   justify-self: start;
 }
+
+.user-edit-section .user-tool-choice {
+  justify-self: start;
+}
+
+.user-edit-section .user-tool-choice input:disabled + span {
+  color: var(--cfg-soft);
+}

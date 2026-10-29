@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.85 settings per account (BEARBEITEN): password, signing out everywhere, name and e-mail.
+# CoreAI: TCI Interface 0.5.85 settings per account (BEARBEITEN): password, signing out everywhere, name and e-mail, tools.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -130,6 +130,9 @@ UI_FILES=(
   scripts/account-delete-selftest.php
   api/account_admin.php
   scripts/account-admin-selftest.php
+  api/user_policy.php
+  database/migrations/021_user_policies.sql
+  scripts/user-policy-selftest.php
   scripts/update-ui-selftest.cjs
   tests/update-runner-selftest.sh
   config/systemd/coreai-update.service.template
@@ -570,6 +573,14 @@ if command -v php >/dev/null 2>&1; then
     ok 'Konto bearbeiten: Rechte, Passwort, Abmelden, Name und E-Mail (mit Rollback) geprueft.'
   else
     fail "Konto-Bearbeiten-Selbsttest: ${manage_test:-Unbekannter Fehler}"
+  fi
+
+  # 0.5.85: own rules per account (tools blocked per account, global off stays off).
+  policy_test=''
+  if policy_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/user-policy-selftest.php" 2>&1)"; then
+    ok 'Regeln pro Konto: Werkzeuge pro Konto gesperrt, global aus bleibt aus (mit Rollback) geprueft.'
+  else
+    fail "Regeln-pro-Konto-Selbsttest: ${policy_test:-Unbekannter Fehler}"
   fi
 
   compact_test=''

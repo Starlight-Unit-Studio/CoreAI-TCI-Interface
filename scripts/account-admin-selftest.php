@@ -107,6 +107,7 @@ try {
   catch (InvalidArgumentException $e) { manage_test($e->getMessage() === 'invalid_display_name', 'empty name refused'); }
   $g = coreui_account_set_identity($pdo, $guest, 'Besuch', 'versuch@example.test');
   manage_test($g['username'] === "gast-{$s}" && !$g['email_changed'] && $g['display_name'] === 'Besuch', 'a guest keeps its login, gets a name (profile created)');
+  manage_test((int)$pdo->query('SELECT @@in_transaction')->fetchColumn() === 1, 'still inside the transaction (no implicit commit)');
 } finally {
   if ($pdo->inTransaction()) $pdo->rollBack();
 }

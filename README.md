@@ -14,7 +14,9 @@ Current source version: `0.5.85` (numeric only). The last verified ZIP remains a
 Unter Admin Core > Benutzer oeffnet BEARBEITEN die Einstellungen eines Kontos:
 Anzeigename und Login-E-Mail, ein neues Passwort (beendet alle Anmeldungen des
 Kontos) und "Alle Geraete abmelden". Es gelten dieselben Regeln wie beim
-Loeschen; das eigene Passwort bleibt im Tab Konto.
+Loeschen; das eigene Passwort bleibt im Tab Konto. Websuche, Browser und Python
+lassen sich pro Konto sperren; was unter Betrieb global aus ist, bleibt fuer
+alle aus (Migration 021).
 
 ## Benutzer loeschen (0.5.84)
 

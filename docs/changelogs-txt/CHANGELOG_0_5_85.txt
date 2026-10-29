@@ -2,5 +2,7 @@ CoreAI: TCI Interface 0.5.85 - 29.10.2026
 - Admin Core > Benutzer: BEARBEITEN pro Konto (Regeln wie beim Loeschen).
 - Name und E-Mail aendern (E-Mail eindeutig, Gaeste nur Name, auch am eigenen Konto).
 - Neues Passwort setzen (mind. 12 Zeichen, beendet alle Anmeldungen) und alle Geraete abmelden; nicht am eigenen Konto (dafuer Tab Konto), Gaeste ohne Passwort.
+- Werkzeuge pro Konto sperren (Websuche, Browser, Python), globaler Schalter bleibt Obergrenze; Migration 021 (stu_user_policies).
 - Audit fuer jede Aenderung, ohne Passwort.
-- Tests: account-admin-selftest.php (mit Datenbank und Rollback), Einstellungs-Browser-Test.
+- Datenbank-Tests pruefen, dass ihre Transaktion bis zum Rollback offen bleibt (keine Testkonten zurueck).
+- Tests: account-admin-selftest.php und user-policy-selftest.php (mit Datenbank und Rollback), Einstellungs-Browser-Test.
