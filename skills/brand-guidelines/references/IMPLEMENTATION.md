@@ -1,6 +1,6 @@
 # Markenrichtlinien: Vollausbau und Werkzeugbedarf
 
-Die aktive SKILL.md beschreibt den Einstieg. Dieses Dokument bewahrt den vollen geplanten Funktionsumfang; die unveränderte Runtime lädt Referenzdateien derzeit nicht automatisch.
+Die aktive SKILL.md beschreibt den Einstieg. Dieses Dokument bewahrt den vollen geplanten Funktionsumfang; Mara lädt es nur auf Anforderung ([SKILL: brand-guidelines/references/IMPLEMENTATION.md]).
 
 ## Zielablauf und Funktionen
 Markenquelle und Freigabestand ermitteln; Logo, Farbpalette, Typografie, Abstände, Bildwelt und Schreibstil als wiederverwendbare Tokens/Regeln modellieren; auf Office-Dateien, Folien und Webartefakte anwenden; konkurrierende Projektmarken trennen; Version und Herkunft jeder Regel dokumentieren.

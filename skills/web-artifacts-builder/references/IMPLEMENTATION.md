@@ -1,6 +1,6 @@
 # Interaktive Web-Artefakte: Vollausbau und Werkzeugbedarf
 
-Die aktive SKILL.md beschreibt den Einstieg. Dieses Dokument bewahrt den vollen geplanten Funktionsumfang; die unveränderte Runtime lädt Referenzdateien derzeit nicht automatisch.
+Die aktive SKILL.md beschreibt den Einstieg. Dieses Dokument bewahrt den vollen geplanten Funktionsumfang; Mara lädt es nur auf Anforderung ([SKILL: web-artifacts-builder/references/IMPLEMENTATION.md]).
 
 ## Zielablauf und Funktionen
 Komplexes Artefakt mit React, TypeScript, State, Routing, Styles und Komponenten erstellen; Designsystem und Shadcn/Radix nur bei tatsächlich bereitgestellten Paketen verwenden; aus Projektdateien bauen, bei Bedarf in einzelnes HTML bundlen, Assets und Runtime-Anforderungen dokumentieren.

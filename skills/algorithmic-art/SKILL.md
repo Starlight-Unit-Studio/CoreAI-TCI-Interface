@@ -10,4 +10,4 @@ Verwende p5.js, Canvas oder eine andere Grafikbibliothek nur, wenn sie im Projek
 
 Bei Animation Standbild und Bewegungsablauf unterscheiden. Rechte an Bildern und Fonts prüfen. Erzeuge keine angebliche PNG-, SVG- oder Videodatei ohne tatsächlich bestätigte Render- und Exportmöglichkeit.
 
-Der gesamte fachliche Zielumfang, die benoetigten Werkzeuge und Abnahmekriterien stehen in references/IMPLEMENTATION.md. Plane diese Funktionen auch dann vollstaendig, wenn ihr Backend noch aussteht; kennzeichne die konkrete Ausfuehrung als offen. Diese Referenz wird vom aktuellen Loader noch nicht automatisch nachgeladen.
+Der gesamte fachliche Zielumfang, die benoetigten Werkzeuge und Abnahmekriterien stehen in references/IMPLEMENTATION.md. Plane diese Funktionen auch dann vollstaendig, wenn ihr Backend noch aussteht; kennzeichne die konkrete Ausfuehrung als offen. Lade sie bei Bedarf mit [SKILL: algorithmic-art/references/IMPLEMENTATION.md].

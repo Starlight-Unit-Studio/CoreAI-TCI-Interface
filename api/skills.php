@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+const COREUI_SKILLS_RESOURCE_MAX_BYTES = 4000;
+
 // Trusted, repository-owned instructions only. No remote imports or executable skills.
 function coreui_skills_catalog(): array {
   static $catalog = null;
@@ -71,11 +73,12 @@ function coreui_skills_index(array $loaded, string $size = 'full'): string {
     };
   }
   if ($lines === []) return '';
+  $done = array_values(array_filter($loaded, static fn(string $l): bool => !str_contains($l, '/')));
   $list = $size === 'full' ? implode("\n", $lines) : implode(', ', $lines);
   return "[SKILL-BIBLIOTHEK: Arbeitsanleitungen, die du bei Bedarf selbst laedst. Passt eine davon zu deiner Aufgabe, "
     . "antworte zuerst NUR mit [SKILL: kennung]; danach bekommst du die Anleitung und arbeitest weiter. Hoechstens zwei "
     . "Skills auf einmal ([SKILL: a, b]). Fuer Smalltalk, Meinungen und einfache Fragen brauchst du keinen."
-    . ($loaded !== [] ? ' Schon geladen: ' . implode(', ', $loaded) . '.' : '') . "]\n"
+    . ($done !== [] ? ' Schon geladen: ' . implode(', ', $done) . '.' : '') . "]\n"
     . $list . "\n[ENDE SKILL-BIBLIOTHEK]\n\n";
 }
 
@@ -84,15 +87,17 @@ function coreui_skills_extract_marker(string $reply): ?string {
   $s = (string)preg_replace('~```[\\s\\S]*?```~u', '', $reply);
   if (preg_match('~\\A\\s*`(\\[SKILL:[^`\\]]+\\])`\\s*\\z~iu', $s, $sole) === 1) $s = $sole[1];
   $s = (string)preg_replace('~`[^`\\r\\n]*`~u', '', $s);
-  if (preg_match('~\\[SKILL:\\s*([a-z0-9][a-z0-9 ,\\-]{0,140})\\]~iu', $s, $m) !== 1) return null;
-  $ids = trim(strtolower($m[1]));
+  if (preg_match('~\\[SKILL:\\s*([a-z0-9][a-z0-9 ,/._\\-]{0,200})\\]~iu', $s, $m) !== 1) return null;
+  $ids = trim($m[1]);
   return $ids !== '' ? $ids : null;
 }
 
 /**
- * Result of [SKILL: ...] for Mara's next step. Up to two skills join the
- * trusted skill block at the top of her prompt (instructions she follows),
- * never the step results (data she must not obey); the step only reports.
+ * Result of [SKILL: ...] for Mara's next step. Up to two skills or reference
+ * files join the trusted skill block at the top of her prompt (instructions
+ * she follows), never the step results (data she must not obey); the step
+ * only reports. 0.5.82: "kennung/references/DATEI.md" loads a reference plan
+ * of a skill, as many as the context window allows (none at 4096 tokens).
  */
 function coreui_skills_tool_result(string $input): string {
   $catalog = coreui_skills_catalog();
@@ -100,8 +105,34 @@ function coreui_skills_tool_result(string $input): string {
   $added = [];
   $notes = [];
   $unknown = false;
-  $ids = array_slice(array_values(array_unique(array_filter(array_map('trim', explode(',', strtolower($input)))))), 0, 2);
-  foreach ($ids as $id) {
+  $items = array_slice(array_values(array_unique(array_filter(array_map('trim', explode(',', $input))))), 0, 2);
+  foreach ($items as $item) {
+    if (str_contains($item, '/')) {
+      [$skill, $path] = array_map('trim', explode('/', $item, 2));
+      $skill = strtolower($skill);
+      $file = isset($catalog[$skill]) ? coreui_skills_resource_file($skill, $path) : null;
+      if ($file === null) {
+        $refs = isset($catalog[$skill]) ? coreui_skills_resource_paths($skill) : [];
+        $notes[] = 'Die Referenz "' . $item . '" gibt es nicht.'
+          . ($refs !== [] ? ' Vorhanden: ' . implode(', ', array_map(static fn(string $r): string => $skill . '/' . $r, $refs)) . '.' : '');
+        continue;
+      }
+      $key = $skill . '/' . $file;
+      if (in_array($key, $loaded, true)) { $notes[] = 'Die Referenz "' . $key . '" ist schon geladen.'; continue; }
+      $budget = coreui_skills_resource_budget();
+      $used = count(array_filter($loaded, static fn(string $l): bool => str_contains($l, '/')));
+      if ($used >= $budget) {
+        $notes[] = $budget === 0 ? 'Fuer Referenzen ist dein Kontextfenster zu klein; arbeite mit der Anleitung.'
+          : 'In dieser Antwort sind schon ' . $used . ' Referenzen geladen, mehr passen nicht ins Kontextfenster.';
+        continue;
+      }
+      if (coreui_skills_resource_text($skill, $file) === '') { $notes[] = 'Die Referenz "' . $key . '" ist zu gross.'; continue; }
+      if (!in_array($skill, $loaded, true) && ($catalog[$skill]['required'] ?? false) !== true) $loaded[] = $skill;
+      $loaded[] = $key;
+      $added[] = $key;
+      continue;
+    }
+    $id = strtolower($item);
     if (!isset($catalog[$id])) { $notes[] = 'Einen Skill "' . $id . '" gibt es nicht.'; $unknown = true; continue; }
     if (($catalog[$id]['required'] ?? false) === true || in_array($id, $loaded, true)) {
       $notes[] = 'Der Skill "' . $id . '" ist schon geladen, er steht oben bei deinen Skills.';
@@ -116,8 +147,52 @@ function coreui_skills_tool_result(string $input): string {
     $rest = array_values(array_diff(coreui_skills_optional_ids(), $loaded));
     return trim(implode(' ', $notes) . ($unknown && $rest !== [] ? ' Verfuegbar sind: ' . implode(', ', $rest) . '.' : ''));
   }
-  return trim(implode(' ', $notes) . ' Geladen: ' . implode(', ', $added) . '. Die Anleitung steht jetzt oben bei '
-    . 'deinen COREUI SKILLS; folge ihr bei deiner Antwort.');
+  return trim(implode(' ', $notes) . ' Geladen: ' . implode(', ', $added) . '. Das steht jetzt oben bei '
+    . 'deinen COREUI SKILLS; folge der Anleitung bei deiner Antwort.');
+}
+
+/** Reference files of a skill (pure): Markdown in references/, relative paths. */
+function coreui_skills_resource_paths(string $id): array {
+  if (!isset(coreui_skills_catalog()[$id])) return [];
+  $dir = __DIR__ . '/../skills/' . $id . '/references';
+  if (!is_dir($dir) || is_link($dir)) return [];
+  $out = [];
+  foreach ((array)scandir($dir) as $name) {
+    if (is_string($name) && preg_match('~\\A[A-Za-z0-9][A-Za-z0-9._-]{0,80}\\.md\\z~', $name) === 1
+        && is_file($dir . '/' . $name) && !is_link($dir . '/' . $name)) {
+      $out[] = 'references/' . $name;
+    }
+  }
+  sort($out);
+  return $out;
+}
+
+/** The real relative path of a requested reference, case-insensitive (pure), or null. */
+function coreui_skills_resource_file(string $id, string $path): ?string {
+  $path = trim(str_replace('\\', '/', $path));
+  if (!str_contains($path, '/')) $path = 'references/' . $path;
+  foreach (coreui_skills_resource_paths($id) as $known) {
+    if (strcasecmp($known, $path) === 0) return $known;
+  }
+  return null;
+}
+
+/** Text of a reference, '' when it is too large for one step (no silent cutting). */
+function coreui_skills_resource_text(string $id, string $file): string {
+  $real = realpath(__DIR__ . '/../skills/' . $id . '/' . $file);
+  $base = realpath(__DIR__ . '/../skills/' . $id . '/references');
+  if ($real === false || $base === false || !str_starts_with($real, $base . DIRECTORY_SEPARATOR)) return '';
+  $text = (string)file_get_contents($real);
+  return strlen($text) <= COREUI_SKILLS_RESOURCE_MAX_BYTES ? trim($text) : '';
+}
+
+/** References per answer the context window allows: none at 4096, one at 8192, two above. */
+function coreui_skills_resource_budget(): int {
+  return match ((string)($GLOBALS['COREUI_SKILLS_BUDGET'] ?? 'full')) {
+    'ids' => 0,
+    'titles' => 1,
+    default => 2,
+  };
 }
 
 /**
@@ -129,7 +204,24 @@ function coreui_skills_compose(): void {
   $optional = '';
   if ($loaded !== []) {
     $optional = "\n\n[COREUI SKILLS: aufgabenbezogene Arbeitsanleitungen. Nutzerauftrag und vorhandenes Werkzeugprotokoll gelten weiterhin. Keine neuen Werkzeuge oder Berechtigungen. Tests und Dateien nur als erstellt bestaetigen, wenn tatsaechlich bestaetigt.]\n";
-    foreach ($loaded as $id) $optional .= coreui_skills_body($id) . "\n\n";
+    foreach ($loaded as $id) {
+      if (str_contains($id, '/')) continue;
+      $optional .= coreui_skills_body($id) . "\n";
+      // 0.5.82: say what reference plans this skill has and how to load them.
+      $refs = array_values(array_filter(coreui_skills_resource_paths($id),
+        static fn(string $r): bool => !in_array($id . '/' . $r, $loaded, true)));
+      if ($refs !== [] && coreui_skills_resource_budget() > 0) {
+        $optional .= '(Referenz bei Bedarf: ' . implode(', ', array_map(static fn(string $r): string => '[SKILL: ' . $id . '/' . $r . ']', $refs)) . ")\n";
+      }
+      $optional .= "\n";
+    }
+    foreach ($loaded as $key) {
+      if (!str_contains($key, '/')) continue;
+      [$id, $file] = explode('/', $key, 2);
+      $optional .= '[REFERENZ ' . $key . ': Plan und Abnahme dieses Skills. Werkzeuge, die hier als benoetigt oder geplant stehen, '
+        . "gibt es nur, wenn sie in deinem Werkzeugprotokoll stehen; sonst nenne sie als fehlend und behaupte kein Ergebnis.]\n"
+        . coreui_skills_resource_text($id, $file) . "\n[ENDE REFERENZ]\n\n";
+    }
     $optional .= "[ENDE COREUI SKILLS]\n\n";
   }
   $size = (string)($GLOBALS['COREUI_SKILLS_INDEX_SIZE'] ?? '');
@@ -153,6 +245,7 @@ function coreui_skills_prepare(PDO $pdo, string $request, string $channel = 'con
   $GLOBALS['COREUI_REQUIRED_SKILLS_BLOCK'] = '';
   $GLOBALS['COREUI_SKILLS_INDEX_BLOCK'] = '';
   $GLOBALS['COREUI_SKILLS_INDEX_SIZE'] = '';
+  $GLOBALS['COREUI_SKILLS_BUDGET'] = 'ids';
   $GLOBALS['COREUI_SKILLS_LOADED'] = [];
   // Game E.M.B.E.R. shares parts of the backend but must not inherit
   // Mara/CoreAI's private-console skills.
@@ -178,6 +271,7 @@ function coreui_skills_prepare(PDO $pdo, string $request, string $channel = 'con
   }
   $GLOBALS['COREUI_SKILLS_LOADED'] = $selected;
   $GLOBALS['COREUI_SKILLS_INDEX_SIZE'] = $maxOptional >= 4 ? 'full' : ($maxOptional >= 2 ? 'titles' : 'ids');
+  $GLOBALS['COREUI_SKILLS_BUDGET'] = $GLOBALS['COREUI_SKILLS_INDEX_SIZE'];
   coreui_skills_compose();
 }
 

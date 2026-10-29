@@ -1,6 +1,6 @@
 # Generative Kunst per p5.js: Produktionsumfang
 
-Spezifikation der fertigen Funktion für spätere Werkzeuge. SKILL.md bleibt der heute aktiv geladene Kern; die unveränderte Laufzeit lädt dieses Referenzdokument nicht automatisch.
+Spezifikation der fertigen Funktion für spätere Werkzeuge. SKILL.md bleibt der aktiv geladene Kern; dieses Referenzdokument lädt Mara nur bei Bedarf ([SKILL: algorithmic-art/references/IMPLEMENTATION.md]).
 
 ## Fähigkeiten
 Partikel, Flow Fields, L-Systeme, geometrische Regeln, Noise, deterministische Zufallsseeds und animierte Szenen planen. Reproduzierbare Parameter aus Nutzerabsicht ableiten; statische und animierte Exporte rendern; Ressourcenbudgets und Framezeiten berücksichtigen; Werke stilistisch eigenständig halten.

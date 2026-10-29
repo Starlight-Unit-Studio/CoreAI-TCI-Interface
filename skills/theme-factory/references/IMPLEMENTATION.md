@@ -1,6 +1,6 @@
 # Theme-Fabrik und Design-Tokens: kompletter Arbeitsablauf
 
-Dieser Referenzplan bleibt bis zur späteren Toolintegration als fachliches Soll erhalten. Die Runtime lädt aktuell nur SKILL.md und wird dafür nicht verändert.
+Dieser Referenzplan bleibt bis zur späteren Toolintegration als fachliches Soll erhalten. Mara lädt ihn bei Bedarf ([SKILL: theme-factory/references/IMPLEMENTATION.md]).
 
 ## Zielbild
 Aus Branding/Stimmung konsistente CSS-/UI-Tokens für Hintergründe, Flächen, Text, Akzent, Border, Hover, Focus, Disabled und semantische Statusfarben bilden. Varianten hell/dunkel und ggf. hohe Kontraste vorsehen. Themes auf Webanwendungen, Präsentationen und kreative Artefakte abbilden.

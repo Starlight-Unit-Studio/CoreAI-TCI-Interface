@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.81 skills as a library: Mara picks and loads them herself.
+# CoreAI: TCI Interface 0.5.82 skill reference plans load on request.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

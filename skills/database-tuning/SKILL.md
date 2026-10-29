@@ -10,4 +10,4 @@ Nutze lesende EXPLAIN- und Monitoringabfragen vor Änderungen. EXPLAIN ANALYZE k
 
 Ergebnis: beobachteter Engpass, nachvollziehbare Metrik, konkrete Optimierung, Risiko, Migrationsplan und erneute Messung. Ohne DB-Verbindung keine beschleunigte Abfrage behaupten; SQL-Vorschläge als ungetestet kennzeichnen.
 
-Vollständige Zielwerkzeuge, Negativtests und spätere technische Integrationen: references/IMPLEMENTATION.md. Diese Zusatzdatei wird derzeit nicht automatisch geladen.
+Vollständige Zielwerkzeuge, Negativtests und spätere technische Integrationen: references/IMPLEMENTATION.md. Bei Bedarf mit [SKILL: database-tuning/references/IMPLEMENTATION.md] nachladen.

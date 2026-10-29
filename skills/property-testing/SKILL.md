@@ -10,4 +10,4 @@ Nutze zum Stack passende Testtools nur nach bestätigter Installation, etwa Hypo
 
 Bei Fehlschlag tatsächliches Gegenbeispiel und Quelle des Fehlers ermitteln, dann zielgerichtet korrigieren und Regressionstest hinzufügen. Ohne ausführbaren Test-Runner Testentwurf, Invarianten und erwartete Negativfälle bereitstellen, keinen bestandenen Test behaupten.
 
-Vollständige Zielwerkzeuge, Negativtests und spätere technische Integrationen: references/IMPLEMENTATION.md. Diese Zusatzdatei wird derzeit nicht automatisch geladen.
+Vollständige Zielwerkzeuge, Negativtests und spätere technische Integrationen: references/IMPLEMENTATION.md. Bei Bedarf mit [SKILL: property-testing/references/IMPLEMENTATION.md] nachladen.

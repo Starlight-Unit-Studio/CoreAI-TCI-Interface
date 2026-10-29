@@ -2,6 +2,14 @@
 
 CoreAI: TCI Interface gehoert zur Quantum-Softwarefamilie und wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert. Historische Changelogs dokumentieren die frueheren Produktnamen unveraendert.
 
+## 0.5.82 - 29.10.2026
+
+- **Skill-Referenzen angebunden:** Die Referenzplaene der Skills (`references/*.md`, bei 48 Skills, zum Beispiel Quellen- und Gueltigkeitsregeln der Rechts-Skills oder Zielumfang und Abnahme der Office-Skills) waren bisher nur Repository-Dokumente. Mara laedt sie jetzt auf Anforderung mit `[SKILL: kennung/references/IMPLEMENTATION.md]`, als Schritt ihrer Arbeitsschleife wie einen Skill. Ein geladener Skill nennt seine Referenz am Ende ("Referenz bei Bedarf"), und eine Referenz bringt ihren Skill mit, falls er noch fehlt.
+- **Geplante Werkzeuge bleiben geplant:** Eine Referenz steht im vertrauenswuerdigen Skill-Block mit dem Hinweis, dass dort genannte Werkzeuge nur gelten, wenn sie in Maras Werkzeugprotokoll stehen; sonst nennt sie sie als fehlend und behauptet kein Ergebnis. Die Plaene bleiben so die Uebersicht, was noch fehlt.
+- **Grenzen:** nur Markdown-Dateien aus dem `references/`-Ordner eines registrierten Skills (Pfad gegen den echten Ordner geprueft, Gross- und Kleinschreibung egal), hoechstens 4000 Byte je Datei, nichts wird abgeschnitten. Je Antwort zwei Referenzen bei grossem Kontextfenster, eine bis 8192 Tokens, keine bei 4096. Skripte werden nie geladen oder ausgefuehrt.
+- **Texte angepasst:** Skills und Referenzplaene, die "wird nicht geladen" sagten, nennen jetzt den Marker zum Nachladen; die Skill-Doku und die Werkzeugluecken-Uebersicht beschreiben den Ressourcenlader.
+- **Test repariert:** `skills-selftest.php` erwartete nach dem Kuerzen der Titel noch "Python-Programme" und schlug in 0.5.81 fehl (auch im Server-Preflight); er liest den Titel jetzt aus dem Katalog. Neu im Test: alle Referenzen ladbar, Pfadschutz, Budget je Fenster, Referenz im Block, Arbeitsschleife.
+
 ## 0.5.81 - 29.10.2026
 
 - **Allround-Skill-Bibliothek auf 106 erweitert:** 73 neue Fach-Skills im Vergleich zu den urspruenglichen 33. Enthalten sind alle 19 Anthropic-Referenznamen, zusaetzliche OpenAI-/Codex-inspirierte Prozesse und **20 eigene Rechts-Skills** fuer Bundes-/Landes-/EU-Recht, Bescheide, Vertrage, Rechtsbehelfe, Fristen, Sozialrecht, Miete, Verbraucher, Arbeitsrecht, Datenschutz, Urheber-/Markenrecht, Steuer, Verfahren und weitere Themen.

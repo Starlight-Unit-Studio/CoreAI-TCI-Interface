@@ -10,4 +10,4 @@ Wettbewerbs-, Markt-, Plattform- und Preisangaben mit aktuellem Onlinebeleg prü
 
 Ergebnis: konkrete Kampagnenbausteine mit Ziel, Zielgruppe, Botschaft, Zeitraum, Abhängigkeiten, Datenquelle und Abnahmekriterium. Wenn Medien- oder Versandtools noch fehlen, fertige Entwürfe und die erforderlichen Integrationen dokumentieren.
 
-Vollständige Zielwerkzeuge, Negativtests und spätere technische Integrationen: references/IMPLEMENTATION.md. Diese Zusatzdatei wird derzeit nicht automatisch geladen.
+Vollständige Zielwerkzeuge, Negativtests und spätere technische Integrationen: references/IMPLEMENTATION.md. Bei Bedarf mit [SKILL: marketing-strategy/references/IMPLEMENTATION.md] nachladen.

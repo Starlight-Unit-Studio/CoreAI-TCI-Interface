@@ -1,6 +1,6 @@
 # Frontend-Design: Vollausbau und Werkzeugbedarf
 
-Die aktive SKILL.md beschreibt den Einstieg. Dieses Dokument bewahrt den vollen geplanten Funktionsumfang; die unveränderte Runtime lädt Referenzdateien derzeit nicht automatisch.
+Die aktive SKILL.md beschreibt den Einstieg. Dieses Dokument bewahrt den vollen geplanten Funktionsumfang; Mara lädt es nur auf Anforderung ([SKILL: frontend-design/references/IMPLEMENTATION.md]).
 
 ## Zielablauf und Funktionen
 Nutzerziel, Seitentyp, Komponentenliste, Typografie und Hierarchie entwickeln; individuelle Layouts mit Raster, visueller Spannung und passenden Medien gestalten; responsive Mobile-first; echte Interaktions-, Validierungs-, Lade- und Fehlerzustände; barrierefreie Tastatur-/Touchbedienung.

@@ -1,6 +1,6 @@
 # Claude/Anthropic API: Vollausbau
 
-Fachliche Vorgaben für spätere CoreAI-Tools; der aktuelle Skill-Loader wird nicht verändert und lädt weiterhin nur SKILL.md. Die hier genannten APIs/Skripte sind keine bereits aktivierten Berechtigungen.
+Fachliche Vorgaben für spätere CoreAI-Tools; Mara lädt diese Referenz nur bei Bedarf ([SKILL: claude-api/references/IMPLEMENTATION.md]). Die hier genannten APIs/Skripte sind keine bereits aktivierten Berechtigungen.
 
 ## Vollständiges Ziel
 Anthropic Messages API, Provider-Modelle, Auth, Versionen, Tool-Use/Tool-Result, Tokenzählung, Streaming, Prompt-Caching und kompatibles Thinking anhand aktueller Dokumentation aufbauen. Rate Limits, Kosten, Timeout, Abbruch und Retry-After behandeln. Claude darf Ollama nicht ungefragt ersetzen.

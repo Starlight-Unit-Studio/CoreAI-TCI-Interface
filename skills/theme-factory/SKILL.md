@@ -10,4 +10,4 @@ Bewahre bestehende Markenfarben, wenn sie verbindlich sind. Tausche nicht ungebe
 
 Themedateien oder Vorschauen nur nach tatsächlicher Erstellung und Prüfung als fertig melden. Ein Vorschlag ohne Zugriff auf die Projektdateien ist kein installierter Theme-Wechsel.
 
-Der gesamte fachliche Zielumfang, die benoetigten Werkzeuge und Abnahmekriterien stehen in references/IMPLEMENTATION.md. Plane diese Funktionen auch dann vollstaendig, wenn ihr Backend noch aussteht; kennzeichne die konkrete Ausfuehrung als offen. Diese Referenz wird vom aktuellen Loader noch nicht automatisch nachgeladen.
+Der gesamte fachliche Zielumfang, die benoetigten Werkzeuge und Abnahmekriterien stehen in references/IMPLEMENTATION.md. Plane diese Funktionen auch dann vollstaendig, wenn ihr Backend noch aussteht; kennzeichne die konkrete Ausfuehrung als offen. Lade sie bei Bedarf mit [SKILL: theme-factory/references/IMPLEMENTATION.md].

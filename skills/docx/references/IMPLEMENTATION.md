@@ -1,6 +1,6 @@
 # DOCX: vollständiger Zielumfang
 
-Diese Spezifikation beschreibt die gewünschte spätere CoreAI-Funktion. Die bestehende Runtime lädt aktuell nur SKILL.md, nicht diese Referenzdatei. Es werden keine Änderungen am Loader vorgenommen.
+Diese Spezifikation beschreibt die gewünschte spätere CoreAI-Funktion. Mara lädt diese Referenzdatei bei Bedarf ([SKILL: docx/references/IMPLEMENTATION.md]).
 
 ## Eingabe und Ausgabe
 Eingaben: Word-Dateien, Vorlagen, Texte, Bilder, Layoutvorgaben und konkrete Änderungswünsche.

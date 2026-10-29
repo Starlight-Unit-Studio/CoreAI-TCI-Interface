@@ -1,6 +1,6 @@
 # Kooperatives Dokumentenschreiben: kompletter Arbeitsablauf
 
-Dieser Referenzplan bleibt bis zur späteren Toolintegration als fachliches Soll erhalten. Die Runtime lädt aktuell nur SKILL.md und wird dafür nicht verändert.
+Dieser Referenzplan bleibt bis zur späteren Toolintegration als fachliches Soll erhalten. Mara lädt ihn bei Bedarf ([SKILL: doc-coauthoring/references/IMPLEMENTATION.md]).
 
 ## Zielbild
 Vorhandenen Auftrag auswerten und nur bei Informationslücken ein kurzes Interview mit Zweck, Zielgruppe, Kernbotschaft, Umfang und Quellen führen. Outline gemeinsam abnehmen, Abschnitte iterativ entwerfen, Feedback als nachvollziehbare Revisionen einarbeiten und am Schluss Leserperspektive und Fakten prüfen.

@@ -10,4 +10,4 @@ Plane Navigation, UI/UX, Berechtigungen, sichere lokale Speicherung, Netzwerkfeh
 
 Für echte APK/AAB/IPA-Ausgabe Buildprotokoll, Artefaktdaten, Emulator-/Gerätetest und Installierbarkeit kontrollieren. Stores, Zahlungen, Push-Dienste und Veröffentlichung nur nach gezielter Freigabe. Fehlen Xcode, Android SDK oder Gerätezugriff, einen realistischen Umsetzungs- und Testplan liefern.
 
-Vollständige Zielwerkzeuge, Negativtests und spätere technische Integrationen: references/IMPLEMENTATION.md. Diese Zusatzdatei wird derzeit nicht automatisch geladen.
+Vollständige Zielwerkzeuge, Negativtests und spätere technische Integrationen: references/IMPLEMENTATION.md. Bei Bedarf mit [SKILL: mobile-apps/references/IMPLEMENTATION.md] nachladen.

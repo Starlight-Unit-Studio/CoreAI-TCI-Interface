@@ -38,7 +38,7 @@ Zu jedem der sechs Skills liegen `SKILL.md` und `references/IMPLEMENTATION.md` v
 1. Bei jeder externen Skillquelle Original-GitHub-Repostand, Verantwortliche, Lizenz, Referenzen, etwaige Skripte/Hooks und Netzbefugnisse pruefen.
 2. Keine automatische `npx skills add`-Installation, kein Remote-Shell-Piping, keine fremden Hooks, ungepruefte MCP-Server oder stilles Freischalten von Toolrechten.
 3. Duplicate Skills nicht ungeprueft anlegen; vorhandene SKILL.md nach Bedarf vertiefen, neue nur bei eigenem fachlichem Umfang registrieren.
-4. Der jetzige Loader liest ausschliesslich registrierte `SKILL.md`, Zusatzdateien stehen noch nicht im Laufzeitkontext. Die sechs neuen Referenzplaene sind vorbereitete Anforderungen fuer spaetere Toolentwicklung.
+4. Der Loader liest registrierte `SKILL.md`; Referenzplaene unter `references/*.md` laedt Mara seit 0.5.82 nur auf Anforderung (`[SKILL: kennung/references/DATEI.md]`). Die sechs neuen Referenzplaene sind vorbereitete Anforderungen fuer spaetere Toolentwicklung.
 5. `api/skills.php`, `skills/werkzeuge/SKILL.md`, Modelfile, globale serielle Modellwarteschlange und `[SKILL:]`-Auswahl bleiben unveraendert. Der volle Index muss unter 3600 Byte bleiben, kompakte Titel kleiner als die Vollansicht.
 6. GitHub Actions und Live-Deployment erst nach Betreiberabnahme; neue Skills sind kein Beleg fuer bereits installierte Ausfuehrungswerkzeuge.
 
