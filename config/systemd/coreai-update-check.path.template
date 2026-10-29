@@ -1,0 +1,10 @@
+# CoreAI 0.5.83: "Jetzt pruefen" in the update window drops var/update-request/check.
+[Unit]
+Description=CoreAI: TCI Interface Update-Pruefung auf Anfrage
+
+[Path]
+PathExists=@@PROJECT_ROOT@@/var/update-request/check
+Unit=coreai-update-check.service
+
+[Install]
+WantedBy=multi-user.target

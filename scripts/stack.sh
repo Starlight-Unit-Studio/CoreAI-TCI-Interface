@@ -33,12 +33,14 @@ ensure_private_storage_dirs() {
   local profile_dir="$PROJECT_ROOT/var/profile_media"
   local knowledge_dir="$PROJECT_ROOT/var/knowledge_uploads"
   local python_dir="$PROJECT_ROOT/var/ember_py"
+  local session_dir="$PROJECT_ROOT/var/php_sessions"
+  local request_dir="$PROJECT_ROOT/var/update-request"
   if (( EUID == 0 )); then
-    install -d -m 0770 -o 33 -g 33 "$profile_dir" "$knowledge_dir" "$python_dir"
+    install -d -m 0770 -o 33 -g 33 "$profile_dir" "$knowledge_dir" "$python_dir" "$session_dir" "$request_dir"
     return
   fi
-  mkdir -p "$profile_dir" "$knowledge_dir" "$python_dir"
-  chmod 0770 "$profile_dir" "$knowledge_dir" "$python_dir" 2>/dev/null || true
+  mkdir -p "$profile_dir" "$knowledge_dir" "$python_dir" "$session_dir" "$request_dir"
+  chmod 0770 "$profile_dir" "$knowledge_dir" "$python_dir" "$session_dir" "$request_dir" 2>/dev/null || true
 }
 
 remove_private_studio_lore_files() {

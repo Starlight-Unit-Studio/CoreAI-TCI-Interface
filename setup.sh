@@ -193,6 +193,8 @@ fi
 if [[ "$SOURCE_MODE" == 'main' ]]; then
   [[ ! -L "$TARGET_DIR/var/dev_source_commit" ]] || die 'Unsicherer Entwicklerstand-Markierungspfad.'
   printf '%s\n' "$SOURCE_COMMIT" > "$TARGET_DIR/var/dev_source_commit"
+  # 0.5.83: the update window (web server, group 33) compares it with main.
+  chgrp 33 "$TARGET_DIR/var/dev_source_commit" 2>/dev/null || true
   chmod 0640 "$TARGET_DIR/var/dev_source_commit"
   log "Entwicklerstand erfolgreich installiert: $SOURCE_COMMIT"
   log "CoreAI: TCI Interface $SOURCE_VERSION, GitHub-Commit $SOURCE_COMMIT."

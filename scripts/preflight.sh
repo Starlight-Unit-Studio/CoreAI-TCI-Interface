@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.83 composer height after sending, Ollama list with the chat, legend with TCI tiers only.
+# CoreAI: TCI Interface 0.5.83 composer height after sending, Ollama list with the chat, legend with TCI tiers only, update window.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -153,6 +153,20 @@ UI_FILES=(
   database/migrations/020_model_access.sql
   api/model_access.php
   scripts/model-access-selftest.php
+  api/update.php
+  api/update_store.php
+  js/coreui-update.js
+  css/coreui-update.css
+  scripts/coreai-updater.sh
+  scripts/lib/coreai_update_state.py
+  scripts/update-selftest.php
+  scripts/update-ui-selftest.cjs
+  tests/update-runner-selftest.sh
+  config/systemd/coreai-update.service.template
+  config/systemd/coreai-update.path.template
+  config/systemd/coreai-update-check.service.template
+  config/systemd/coreai-update-check.timer.template
+  config/systemd/coreai-update-check.path.template
   api/abuse_guard.php
   scripts/abuse-guard-selftest.php
   scripts/captcha-selftest.php
@@ -278,6 +292,15 @@ if bash "$PROJECT_ROOT/tests/migration-permissions-selftest.sh" >/dev/null 2>&1;
   ok 'Migration: Ausfuehrungsrechte und Bash-Aufruf vor dem Datenbankimport geprueft.'
 else
   fail 'Migration: Berechtigungs-/Aufruf-Selbsttest fehlgeschlagen.'
+fi
+
+# 0.5.83: host updater (update window) with stand-ins for git, curl and systemd.
+if [[ "${EUID:-$(id -u)}" -eq 0 ]]; then
+  if bash "$PROJECT_ROOT/tests/update-runner-selftest.sh" >/dev/null 2>&1; then
+    ok 'Update-Dienst: Pruefung, Sicherung zuerst, offizielles Setup, Neustart der Dienste und Fehlerfaelle geprueft.'
+  else
+    fail 'Update-Dienst: Host-Updater-Selbsttest fehlgeschlagen.'
+  fi
 fi
 
 if COREAI_BROWSE_LIVE=0 python3 "$PROJECT_ROOT/scripts/browse-worker-selftest.py" >/dev/null 2>&1; then
@@ -717,6 +740,14 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail "Modell-Freigaben-Selbsttest: ${model_access_test:-Unbekannter Fehler}"
   fi
 
+  # 0.5.83: update window: only a new commit, Inhaber only, waiting for everyone.
+  update_test=''
+  if update_test="$(compose exec -T php php scripts/update-selftest.php 2>&1)"; then
+    ok 'Update-Fenster: nur bei neuem Commit, Start nur durch den Inhaber, Wartefenster fuer alle.'
+  else
+    fail "Update-Selbsttest: ${update_test:-Unbekannter Fehler}"
+  fi
+
   compact_test=''
   if compact_test="$(compose exec -T php php scripts/compaction-selftest.php 2>&1)"; then
     ok 'Chat komprimieren: Fenster, laufende Zusammenfassung, Archiv zuerst, Suche und Loeschen geprueft.'
@@ -811,6 +842,16 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       fi
     else
       warn 'Einstellungen: Tab-Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+    fi
+    # 0.5.83: update window (Inhaber) and "Bitte auf Neustart warten"; needs Playwright for Node.
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/update-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'Update-Fenster: goldenes Fenster fuer den Inhaber, Spaeter, Wartefenster fuer alle, Neuladen nach dem Neustart geprueft.'
+      else
+        fail 'Update-Fenster: Oberflaechentest fehlgeschlagen.'
+      fi
+    else
+      warn 'Update-Fenster: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
     fi
     if node "$PROJECT_ROOT/scripts/webui-resilience-selftest.cjs" >/dev/null 2>&1; then
       ok 'WebUI: abbrechbares Laden, Reconnect ohne Doppelauftrag, Backoff und lange Chats geprueft.'
@@ -998,6 +1039,8 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     /var/www/coreui/var/knowledge_uploads \
     /var/www/coreui/var/ember_frames \
     /var/www/coreui/var/pdf_pages \
+    /var/www/coreui/var/php_sessions \
+    /var/www/coreui/var/update-request \
     /var/www/coreui/uploads/ember_browse \
     /var/www/coreui/assets/chat_media \
     /var/www/coreui/assets/profile_photos/pending \
@@ -1008,6 +1051,17 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       fail "Container-Schreibpfad nicht bereit: ${writable_dir#/var/www/coreui/}"
     fi
   done
+
+  # 0.5.83: the update window needs the host units (installed by scripts/install.sh).
+  if command -v systemctl >/dev/null 2>&1 && [[ -d /run/systemd/system ]]; then
+    if systemctl is-active --quiet coreai-update.path && systemctl is-active --quiet coreai-update-check.timer; then
+      ok 'Update-Dienst aktiv: Pruefung auf neue Merges alle 10 Minuten, Start aus dem Update-Fenster.'
+    else
+      fail 'Update-Dienst nicht aktiv (coreai-update.path oder coreai-update-check.timer). scripts/install.sh erneut ausfuehren.'
+    fi
+  else
+    warn 'Kein systemd: das Update-Fenster bleibt ohne Host-Dienst.'
+  fi
 
   video_selftest=''
   if video_selftest="$(compose exec -T -u 33:33 php php scripts/video-selftest.php 2>&1)"; then

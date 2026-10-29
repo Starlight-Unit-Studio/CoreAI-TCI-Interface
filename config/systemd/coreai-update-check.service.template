@@ -1,0 +1,12 @@
+# CoreAI 0.5.83: asks GitHub for the newest commit on main (no download, no install).
+[Unit]
+Description=CoreAI: TCI Interface Update-Pruefung
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=@@PROJECT_ROOT@@/scripts/coreai-updater.sh check
+Environment=HOME=/root
+TimeoutStartSec=3min
+Nice=10

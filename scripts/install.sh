@@ -244,11 +244,18 @@ prepare_permissions() {
     "$PROJECT_ROOT/var/ember_frames" \
     "$PROJECT_ROOT/var/pdf_pages" \
     "$PROJECT_ROOT/var/browser-home" \
+    "$PROJECT_ROOT/var/php_sessions" \
+    "$PROJECT_ROOT/var/update-request" \
     "$PROJECT_ROOT/uploads/ember_browse" \
     "$PROJECT_ROOT/assets/chat_media" \
     "$PROJECT_ROOT/assets/profile_photos" \
     "$PROJECT_ROOT/assets/profile_photos/pending" \
     "$PROJECT_ROOT/assets/profile_photos/approved"
+
+  # 0.5.83: self-update. var/update is root's (the web app only reads it),
+  # var/backups holds the database backups taken before an update.
+  install -d -m 0750 -o root -g 33 "$PROJECT_ROOT/var/update"
+  install -d -m 0700 -o root -g root "$PROJECT_ROOT/var/backups"
 
   if [[ ! -d "$PROJECT_ROOT/var/mariadb" ]]; then
     install -d -m 0700 -o root -g root "$PROJECT_ROOT/var/mariadb"
@@ -377,6 +384,37 @@ PHP
   install -m 0640 -o root -g root "$searxng_tmp" "$PROJECT_ROOT/var/searxng/config/settings.yml"
 }
 
+# 0.5.83: the update window of the Inhaber. Systemd units on the host check
+# main every 10 minutes and run scripts/coreai-updater.sh when the window
+# drops its request file; the web app itself never runs a command.
+ensure_update_service() {
+  local marker="$PROJECT_ROOT/var/update/updater.json"
+  local units=(coreai-update.service coreai-update.path coreai-update-check.service \
+    coreai-update-check.timer coreai-update-check.path)
+  local unit unit_tmp
+  if ! command -v systemctl >/dev/null 2>&1 || [[ ! -d /run/systemd/system ]]; then
+    warn 'Kein systemd: das Update-Fenster bleibt ohne Host-Dienst. Updates weiter mit dem Setup-Einzeiler.'
+    printf '{"installed": false, "reason": "no_systemd", "version": "%s"}\n' "$COREUI_VERSION" > "$marker"
+    chown root:33 "$marker"
+    chmod 0640 "$marker"
+    return 0
+  fi
+  chmod 0750 "$PROJECT_ROOT/scripts/coreai-updater.sh"
+  for unit in "${units[@]}"; do
+    unit_tmp="$(mktemp)"
+    TEMP_FILES+=("$unit_tmp")
+    sed "s|@@PROJECT_ROOT@@|$PROJECT_ROOT|g" "$PROJECT_ROOT/config/systemd/$unit.template" > "$unit_tmp"
+    install -m 0644 -o root -g root "$unit_tmp" "/etc/systemd/system/$unit"
+  done
+  systemctl daemon-reload
+  systemctl enable --now coreai-update.path coreai-update-check.path coreai-update-check.timer >/dev/null 2>&1 \
+    || { warn 'Update-Dienste konnten nicht aktiviert werden.'; return 0; }
+  printf '{"installed": true, "units": "systemd", "version": "%s"}\n' "$COREUI_VERSION" > "$marker"
+  chown root:33 "$marker"
+  chmod 0640 "$marker"
+  log 'Update-Dienst aktiv: Pruefung auf neue Merges alle 10 Minuten, Start aus dem Update-Fenster.'
+}
+
 ensure_ollama_model() {
   local install_tmp
   local owned_model=''
@@ -435,6 +473,8 @@ ensure_ollama_model() {
 [[ -f "$PROJECT_ROOT/app.html" ]] || die 'app.html fehlt. Das Installationspaket ist unvollstaendig.'
 [[ -f "$PROJECT_ROOT/settings.html" ]] || die 'settings.html fehlt. Das Installationspaket ist unvollstaendig.'
 [[ -f "$PROJECT_ROOT/config/runtime/nginx.conf.template" ]] || die 'Runtime-Nginx-Template fehlt.'
+[[ -f "$PROJECT_ROOT/config/systemd/coreai-update.service.template" ]] || die 'Update-Dienst-Vorlagen fehlen.'
+[[ -f "$PROJECT_ROOT/scripts/coreai-updater.sh" ]] || die 'scripts/coreai-updater.sh fehlt.'
 [[ -f "$COMPOSE_FILE" ]] || die 'compose.yaml fehlt. Das Installationspaket ist unvollstaendig.'
 [[ -f "$PROJECT_ROOT/scripts/migrate.sh" ]] || die 'scripts/migrate.sh fehlt. Das Installationspaket ist unvollstaendig.'
 [[ -f "$PROJECT_ROOT/database/migrations/001_core.sql" ]] || die 'SQL-Basisschema fehlt.'
@@ -713,7 +753,10 @@ compose up -d pyworker
 
 chmod 0750 "$PROJECT_ROOT/scripts/install.sh" "$PROJECT_ROOT/scripts/preflight.sh" \
   "$PROJECT_ROOT/scripts/install-native.sh" "$PROJECT_ROOT/scripts/preflight-native.sh" \
-  "$PROJECT_ROOT/scripts/stack.sh" "$PROJECT_ROOT/scripts/migrate.sh" 2>/dev/null || true
+  "$PROJECT_ROOT/scripts/stack.sh" "$PROJECT_ROOT/scripts/migrate.sh" \
+  "$PROJECT_ROOT/scripts/coreai-updater.sh" 2>/dev/null || true
+
+ensure_update_service
 
 log "Installation erfolgreich. Lokaler Endpunkt: http://127.0.0.1:$HTTP_PORT/"
 # Optional host safeguard after successful stack start; no existing swap is changed.

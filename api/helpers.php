@@ -150,6 +150,11 @@ function stu_start_session(): void {
     if ($isHttps) ini_set('session.cookie_secure', '1');
   }
 
+  // 0.5.83: sessions live in var/php_sessions (survive an update). Should that
+  // folder be missing or read-only, fall back to the temp folder, never fail.
+  $savePath = (string)session_save_path();
+  if ($savePath !== '' && !is_writable($savePath)) session_save_path(sys_get_temp_dir());
+
   session_start();
 }
 

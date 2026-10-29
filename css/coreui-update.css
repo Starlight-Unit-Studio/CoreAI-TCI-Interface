@@ -1,0 +1,417 @@
+/* CoreAI 0.5.83: update window (matte gold, slightly transparent, a third of the
+   screen) and "Bitte auf Neustart warten". Built by js/coreui-update.js. */
+
+:root {
+  --cu-ink: #22180a;
+  --cu-ink-soft: rgba(34, 24, 10, 0.72);
+  --cu-gold-hi: rgba(233, 205, 134, 0.9);
+  --cu-gold: rgba(201, 162, 80, 0.88);
+  --cu-gold-lo: rgba(160, 120, 48, 0.88);
+  --cu-edge: rgba(255, 238, 192, 0.6);
+  --cu-paper: rgba(255, 249, 232, 0.38);
+}
+
+html.coreai-update-open,
+html.coreai-update-open body {
+  overflow: hidden;
+}
+
+.cu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(10, 14, 24, 0.44);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+  animation: cu-fade 0.24s ease-out;
+}
+
+.cu-window,
+.cu-wait {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  color: var(--cu-ink);
+  background: linear-gradient(155deg, var(--cu-gold-hi), var(--cu-gold) 48%, var(--cu-gold-lo));
+  border: 1px solid var(--cu-edge);
+  border-radius: 18px;
+  box-shadow: 0 30px 80px rgba(48, 32, 4, 0.36), inset 0 1px 0 rgba(255, 246, 220, 0.5);
+  -webkit-backdrop-filter: blur(14px) saturate(0.85);
+  backdrop-filter: blur(14px) saturate(0.85);
+}
+
+/* Matte finish: a fine grain instead of a glossy surface. */
+.cu-window::before,
+.cu-wait::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.2;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.35 0 0 0 0 0.26 0 0 0 0 0.08 0 0 0 0.55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* A third of the screen: half the width, two thirds of the height. */
+.cu-window {
+  width: 50vw;
+  height: 66.7vh;
+  min-width: 360px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 32px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 26px 30px 22px;
+  animation: cu-rise 0.32s cubic-bezier(0.22, 0.72, 0.2, 1);
+}
+
+.cu-head {
+  display: grid;
+  gap: 4px;
+}
+
+.cu-kicker {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  color: var(--cu-ink-soft);
+}
+
+.cu-head h2,
+.cu-wait h2 {
+  margin: 0;
+  font-size: 26px;
+  line-height: 1.2;
+  font-weight: 800;
+  color: var(--cu-ink);
+}
+
+.cu-versions {
+  margin: 2px 0 0;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 15px;
+}
+
+.cu-from {
+  color: var(--cu-ink-soft);
+}
+
+.cu-arrow {
+  font-weight: 700;
+}
+
+.cu-to {
+  font-size: 18px;
+}
+
+.cu-notes {
+  flex: 1 1 auto;
+  min-height: 90px;
+  overflow: auto;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--cu-paper);
+  border: 1px solid rgba(255, 244, 214, 0.5);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.cu-notes h3 {
+  margin: 10px 0 4px;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.cu-notes h3:first-child {
+  margin-top: 0;
+}
+
+.cu-notes ul {
+  margin: 0 0 6px;
+  padding-left: 18px;
+}
+
+.cu-notes li + li {
+  margin-top: 6px;
+}
+
+.cu-notes p {
+  margin: 0 0 6px;
+}
+
+.cu-notes code {
+  font-size: 12.5px;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: rgba(34, 24, 10, 0.1);
+}
+
+.cu-more {
+  color: var(--cu-ink-soft);
+  font-style: italic;
+}
+
+.cu-error {
+  margin: 0;
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #5a1414;
+  background: rgba(255, 236, 228, 0.62);
+  border: 1px solid rgba(150, 40, 40, 0.3);
+}
+
+.cu-log summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.cu-log pre {
+  max-height: 160px;
+  overflow: auto;
+  margin: 6px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  color: #f6ecd2;
+  background: rgba(34, 24, 10, 0.86);
+}
+
+.cu-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cu-option input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--cu-ink);
+}
+
+.cu-hint {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--cu-ink-soft);
+}
+
+.cu-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.cu-actions button,
+.cu-wait button {
+  min-height: 42px;
+  padding: 0 20px;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.cu-later,
+.cu-cancel {
+  color: var(--cu-ink);
+  background: rgba(255, 249, 232, 0.28);
+  border: 1px solid rgba(34, 24, 10, 0.35);
+}
+
+.cu-start,
+.cu-reload {
+  color: #f7e6b4;
+  background: var(--cu-ink);
+  border: 1px solid var(--cu-ink);
+  box-shadow: 0 8px 20px rgba(34, 24, 10, 0.28);
+}
+
+.cu-actions button:hover:not(:disabled),
+.cu-wait button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.cu-actions button:focus-visible,
+.cu-wait button:focus-visible,
+.cu-option input:focus-visible,
+.cu-notes:focus-visible {
+  outline: 3px solid rgba(34, 24, 10, 0.55);
+  outline-offset: 2px;
+}
+
+.cu-actions button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* --- Bitte auf Neustart warten --- */
+.cu-wait {
+  width: min(460px, calc(100vw - 32px));
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 30px 28px 26px;
+  text-align: center;
+}
+
+.cu-wait h2 {
+  font-size: 24px;
+}
+
+.cu-spinner {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 4px solid rgba(34, 24, 10, 0.18);
+  border-top-color: var(--cu-ink);
+  animation: cu-spin 0.9s linear infinite;
+}
+
+.cu-phase {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.cu-steps {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cu-steps li {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--cu-ink-soft);
+  background: rgba(255, 249, 232, 0.3);
+  border: 1px solid rgba(34, 24, 10, 0.18);
+}
+
+.cu-steps li.is-done {
+  color: var(--cu-ink);
+  background: rgba(255, 249, 232, 0.55);
+}
+
+.cu-steps li.is-done::before {
+  content: '✓ ';
+}
+
+.cu-steps li.is-active {
+  color: #f7e6b4;
+  background: var(--cu-ink);
+  border-color: var(--cu-ink);
+}
+
+.cu-bar {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(34, 24, 10, 0.16);
+}
+
+.cu-bar span {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: inherit;
+  background: var(--cu-ink);
+  transition: width 0.9s linear;
+}
+
+.cu-eta {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--cu-ink-soft);
+}
+
+@keyframes cu-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes cu-rise {
+  from { opacity: 0; transform: translateY(14px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes cu-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 900px) {
+  .cu-window {
+    width: calc(100vw - 32px);
+    min-width: 0;
+    height: auto;
+    max-height: calc(100dvh - 32px);
+    padding: 22px 18px 18px;
+  }
+
+  .cu-notes {
+    max-height: 40vh;
+  }
+
+  .cu-head h2 {
+    font-size: 22px;
+  }
+
+  .cu-actions button {
+    flex: 1 1 140px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cu-backdrop,
+  .cu-window {
+    animation: none;
+  }
+
+  .cu-spinner {
+    animation-duration: 3s;
+  }
+
+  .cu-bar span {
+    transition: none;
+  }
+}
+
+/* Settings card (Inhaber) */
+.settings-panel-update .update-card-state {
+  margin: 4px 0 12px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.settings-panel-update .update-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
