@@ -25,7 +25,7 @@
     "id": "project-planning",
     "title": "Projektplanung",
     "category": "Arbeitsweise",
-    "description": "Für Ziele, Dateien und Abnahme neuer Projekte.",
+    "description": "Projekte planen und abnehmen.",
     "triggers": [
       "projekt",
       "project",
@@ -40,13 +40,13 @@
       "https://aider.chat/docs/more/edit-formats.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "code-editing",
     "title": "Gezielte Codeänderungen",
     "category": "Arbeitsweise",
-    "description": "Für kleine, geprüfte Code-Patches.",
+    "description": "Code-Patches und Refactoring.",
     "triggers": [
       "refactor",
       "refactoring",
@@ -61,13 +61,13 @@
       "https://aider.chat/docs/more/edit-formats.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "debugging",
     "title": "Fehleranalyse",
     "category": "Arbeitsweise",
-    "description": "Für reproduzierbare Fehler und Ursachen.",
+    "description": "Bugs finden und beheben.",
     "triggers": [
       "bug",
       "debug",
@@ -82,13 +82,13 @@
       "https://docs.python.org/3/tutorial/errors.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "html-semantics",
     "title": "HTML und Formulare",
     "category": "Frontend",
-    "description": "Für semantisches HTML und Formulare.",
+    "description": "HTML-Struktur und Formulare.",
     "triggers": [
       "html",
       "formular",
@@ -101,13 +101,13 @@
       "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Accessibility"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "responsive-css",
     "title": "Responsives CSS",
     "category": "Frontend",
-    "description": "Für responsive Layouts auf allen Geräten.",
+    "description": "CSS-Layouts für Mobilgeräte.",
     "triggers": [
       "css",
       "responsive",
@@ -120,13 +120,13 @@
       "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/CSS_layout/Responsive_Design"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "javascript",
     "title": "JavaScript",
     "category": "Frontend",
-    "description": "Für zuverlässige JavaScript- und DOM-Logik.",
+    "description": "JS, Events und DOM.",
     "triggers": [
       "javascript",
       "js",
@@ -137,13 +137,13 @@
       "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "typescript",
     "title": "TypeScript",
     "category": "Frontend",
-    "description": "Für Typen und klare TypeScript-Verträge.",
+    "description": "TS-Typen und Verträge.",
     "triggers": [
       "typescript",
       "ts",
@@ -154,13 +154,13 @@
       "https://www.typescriptlang.org/docs/handbook/2/everyday-types.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "react",
     "title": "React-Komponenten",
     "category": "Frontend",
-    "description": "Für React-State und Komponenten.",
+    "description": "React-State und Komponenten.",
     "triggers": [
       "react",
       "jsx",
@@ -170,13 +170,13 @@
       "https://react.dev/learn/thinking-in-react"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "vue",
     "title": "Vue-Komponenten",
     "category": "Frontend",
-    "description": "Für Vue-State und Komponenten.",
+    "description": "Vue und Reaktivität.",
     "triggers": [
       "vue",
       "vuejs",
@@ -186,13 +186,13 @@
       "https://vuejs.org/guide/essentials/reactivity-fundamentals.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "nextjs",
     "title": "Next.js",
     "category": "Frontend",
-    "description": "Für Next.js Server- und Client-Grenzen.",
+    "description": "Next.js Server und Client.",
     "triggers": [
       "nextjs",
       "next.js",
@@ -202,13 +202,13 @@
       "https://nextjs.org/docs/app/getting-started/server-and-client-components"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "accessibility",
     "title": "Barrierefreiheit",
     "category": "Qualität",
-    "description": "Für zugängliche Bedienung und Labels.",
+    "description": "Barrierefreiheit und Tastatur.",
     "triggers": [
       "barrierefrei",
       "accessibility",
@@ -220,13 +220,13 @@
       "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Accessibility"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "assets",
     "title": "Bilder und Projektressourcen",
     "category": "Frontend",
-    "description": "Für Bilder, Medienpfade und Assets.",
+    "description": "Bilder, Fonts und Asset-Pfade.",
     "triggers": [
       "bilder",
       "images",
@@ -239,13 +239,13 @@
       "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Structuring_content/HTML_images"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "fetch-api",
     "title": "HTTP-Client und Fetch",
     "category": "Backend",
-    "description": "Für robuste HTTP-Aufrufe per Fetch.",
+    "description": "Fetch und HTTP-Fehler.",
     "triggers": [
       "fetch",
       "http client",
@@ -257,13 +257,13 @@
       "https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "rest-api",
     "title": "REST-Endpunkte",
     "category": "Backend",
-    "description": "Für REST-Endpunkte und Fehlerverträge.",
+    "description": "REST-Endpunkte und Statuscodes.",
     "triggers": [
       "rest",
       "endpoint",
@@ -275,13 +275,13 @@
       "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "php-pdo",
     "title": "PHP und PDO",
     "category": "Backend",
-    "description": "Für PHP-Backends mit vorbereiteten SQL-Anweisungen.",
+    "description": "PHP, PDO und Datenbanken.",
     "triggers": [
       "php",
       "pdo",
@@ -290,14 +290,14 @@
     "sources": [
       "https://www.php.net/manual/en/pdo.prepared-statements.php"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.1"
   },
   {
     "id": "python",
     "title": "Python-Programme",
     "category": "Backend",
-    "description": "Für robuste Python-Skripte.",
+    "description": "Python-Code und Fehlerbehandlung.",
     "triggers": [
       "python",
       "py",
@@ -308,13 +308,13 @@
       "https://docs.python.org/3/tutorial/errors.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "sql-security",
     "title": "SQL-Sicherheit",
     "category": "Sicherheit",
-    "description": "Für sichere Datenbankabfragen und begrenzte Datenzugriffe.",
+    "description": "SQL-Injection vermeiden.",
     "triggers": [
       "sql",
       "sql injection",
@@ -324,14 +324,14 @@
     "sources": [
       "https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.1"
   },
   {
     "id": "xss-prevention",
     "title": "XSS-Schutz",
     "category": "Sicherheit",
-    "description": "Für sichere Darstellung fremder Texte und erlaubter HTML-Inhalte.",
+    "description": "XSS und sichere HTML-Ausgabe.",
     "triggers": [
       "xss",
       "innerhtml",
@@ -341,14 +341,14 @@
     "sources": [
       "https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.1"
   },
   {
     "id": "authorization",
     "title": "Konten und Zugriffsrechte",
     "category": "Sicherheit",
-    "description": "Für serverseitige Rechteprüfung und strikte Trennung von Konten.",
+    "description": "Login, Rollen und Zugriffsrechte.",
     "triggers": [
       "authorization",
       "berechtigung",
@@ -360,14 +360,14 @@
     "sources": [
       "https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.1"
   },
   {
     "id": "browser-testing",
     "title": "Browser-Tests",
     "category": "Qualität",
-    "description": "Für End-to-End-Tests im Browser.",
+    "description": "Playwright und Browser-Tests.",
     "triggers": [
       "playwright",
       "browser test",
@@ -378,13 +378,13 @@
       "https://playwright.dev/docs/best-practices"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "unit-testing",
     "title": "Unit- und Regressionstests",
     "category": "Qualität",
-    "description": "Für Unit- und Regressionstests.",
+    "description": "Unit- und Regressionstests.",
     "triggers": [
       "pytest",
       "unittest",
@@ -396,13 +396,13 @@
       "https://docs.pytest.org/en/stable/how-to/fixtures.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "docker",
     "title": "Docker und Container",
     "category": "Betrieb",
-    "description": "Für reproduzierbare Container mit begrenzten Abhängigkeiten.",
+    "description": "Docker-Builds und Container.",
     "triggers": [
       "docker",
       "dockerfile",
@@ -412,14 +412,14 @@
     "sources": [
       "https://docs.docker.com/build/building/best-practices/"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.1"
   },
   {
     "id": "git-review",
     "title": "Git und Code-Review",
     "category": "Arbeitsweise",
-    "description": "Für Diffs, Commits und Code-Review.",
+    "description": "Git-Diffs und PR-Reviews.",
     "triggers": [
       "git",
       "diff",
@@ -432,13 +432,13 @@
       "https://git-scm.com/docs/git-diff"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "zip-delivery",
     "title": "ZIP und Dateiauslieferung",
     "category": "Dateien",
-    "description": "Für geprüfte ZIPs und Dateipakete.",
+    "description": "ZIPs erstellen und prüfen.",
     "triggers": [
       "zip",
       "download",
@@ -450,13 +450,13 @@
       "https://docs.python.org/3/library/zipfile.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "csv-data",
     "title": "CSV und Datenimport",
     "category": "Dateien",
-    "description": "Für zuverlässigen Import und Export strukturierter Textdaten.",
+    "description": "CSV einlesen und exportieren.",
     "triggers": [
       "csv",
       "datenimport",
@@ -466,14 +466,14 @@
     "sources": [
       "https://docs.python.org/3/library/csv.html"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.1"
   },
   {
     "id": "async-jobs",
     "title": "Asynchrone Jobs",
     "category": "Backend",
-    "description": "Für Jobs, Warteschlangen und Abbruch.",
+    "description": "Jobs, Queues und Abbruch.",
     "triggers": [
       "asyncio",
       "async",
@@ -485,13 +485,13 @@
       "https://docs.python.org/3/library/asyncio-task.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "sse-streaming",
     "title": "SSE und Streaming",
     "category": "Backend",
-    "description": "Für robuste Ereignisströme, Wiederverbindung und Abschlusszustände.",
+    "description": "SSE und Wiederverbindung.",
     "triggers": [
       "sse",
       "streaming",
@@ -501,14 +501,14 @@
     "sources": [
       "https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events"
     ],
-    "reviewed": "2026-10-26",
-    "version": "1.1.0"
+    "reviewed": "2026-10-29",
+    "version": "1.1.1"
   },
   {
     "id": "observability",
     "title": "Logs und Diagnose",
     "category": "Betrieb",
-    "description": "Für nachvollziehbare Ereignisse ohne unnötige sensible Inhalte.",
+    "description": "Logs und nachprüfbare Runs.",
     "triggers": [
       "logging",
       "logs",
@@ -519,14 +519,14 @@
     "sources": [
       "https://docs.python.org/3/library/logging.html"
     ],
-    "reviewed": "2026-10-26",
-    "version": "1.1.0"
+    "reviewed": "2026-10-29",
+    "version": "1.1.1"
   },
   {
     "id": "canvas-games",
     "title": "Canvas und kleine Spiele",
     "category": "Frontend",
-    "description": "Für Canvas-Darstellung und kleine interaktive Spiele.",
+    "description": "Canvas und kleine Spiele.",
     "triggers": [
       "canvas",
       "spiel",
@@ -537,14 +537,14 @@
     "sources": [
       "https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.1"
   },
   {
     "id": "release-handover",
     "title": "Release und Übergabe",
     "category": "Betrieb",
-    "description": "Für konsistente Versionsstände und fortsetzbare Übergaben.",
+    "description": "Version, Changelog und Release.",
     "triggers": [
       "release",
       "version",
@@ -556,14 +556,14 @@
     "sources": [
       "https://semver.org/"
     ],
-    "reviewed": "2026-10-26",
-    "version": "1.1.0"
+    "reviewed": "2026-10-29",
+    "version": "1.1.1"
   },
   {
     "id": "ollama-integration",
     "title": "Ollama und Modellanbindung",
     "category": "Backend",
-    "description": "Für CoreUI-Modellanbindung unter Erhalt der projektspezifischen Parameter.",
+    "description": "Ollama, Gemma und Modelfile.",
     "triggers": [
       "ollama",
       "gemma",
@@ -574,14 +574,14 @@
     "sources": [
       "https://docs.ollama.com/api/introduction"
     ],
-    "reviewed": "2026-10-26",
-    "version": "1.1.0"
+    "reviewed": "2026-10-29",
+    "version": "1.1.1"
   },
   {
     "id": "skill-authoring",
     "title": "Eigene CoreUI-Skills",
     "category": "Arbeitsweise",
-    "description": "Für kompakte, geprüfte und erweiterbare CoreUI-Arbeitsanleitungen.",
+    "description": "CoreAI-Skills schreiben und testen.",
     "triggers": [
       "skill",
       "skills",
@@ -591,14 +591,14 @@
     "sources": [
       "https://agentskills.io/specification"
     ],
-    "reviewed": "2026-10-26",
-    "version": "1.1.0"
+    "reviewed": "2026-10-29",
+    "version": "1.1.1"
   },
   {
     "id": "web-research",
     "title": "Webrecherche und Quellen",
     "category": "Recherche",
-    "description": "Für Webrecherche mit mehreren belegten Quellen.",
+    "description": "Webrecherche mit Quellen.",
     "triggers": [
       "recherche",
       "recherchiere",
@@ -610,13 +610,13 @@
       "https://developer.mozilla.org/en-US/docs/Web/HTTP/Overview"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "fact-checking",
     "title": "Faktencheck",
     "category": "Recherche",
-    "description": "Für überprüfbare Behauptungen und Quellenkritik.",
+    "description": "Behauptungen verifizieren.",
     "triggers": [
       "faktencheck",
       "fact check",
@@ -629,13 +629,13 @@
       "https://www.loc.gov/programs/teachers/getting-started-with-primary-sources/"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "rag-knowledge",
     "title": "Privates Wissen und RAG-Lite",
     "category": "Wissen",
-    "description": "Für Fragen zu privatem RAG-Wissen und Fundstellen.",
+    "description": "Privates RAG-Wissen abfragen.",
     "triggers": [
       "rag",
       "wissensbasis",
@@ -648,13 +648,13 @@
       "https://docs.ollama.com/capabilities/embeddings"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "document-analysis",
     "title": "Dokumente und PDF auswerten",
     "category": "Dateien",
-    "description": "Für PDF- und Dokumentanalyse mit Seitenbezug.",
+    "description": "Dokumente und PDFs auswerten.",
     "triggers": [
       "pdf",
       "dokument analysieren",
@@ -667,13 +667,13 @@
       "https://pymupdf.readthedocs.io/en/latest/"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "tabular-analysis",
     "title": "Tabellen und Kennzahlen",
     "category": "Daten",
-    "description": "Für Tabellen, Kennzahlen und Datenprüfung.",
+    "description": "Tabellen und Kennzahlen.",
     "triggers": [
       "tabellenanalyse",
       "tabelle auswerten",
@@ -686,13 +686,13 @@
       "https://pandas.pydata.org/docs/user_guide/index.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "data-visualization",
     "title": "Diagramme und Datenvisualisierung",
     "category": "Daten",
-    "description": "Für passende Diagramme und visuelle Daten.",
+    "description": "Diagramme aus Daten bauen.",
     "triggers": [
       "diagramm",
       "datenvisualisierung",
@@ -705,13 +705,13 @@
       "https://matplotlib.org/stable/users/explain/quick_start.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "json-yaml",
     "title": "JSON und YAML",
     "category": "Backend",
-    "description": "Für sichere JSON- und YAML-Konfiguration.",
+    "description": "JSON/YAML-Konfiguration.",
     "triggers": [
       "json",
       "yaml",
@@ -724,13 +724,13 @@
       "https://yaml.org/spec/1.2.2/"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "linux-shell",
     "title": "Linux und Shell-Kommandos",
     "category": "Betrieb",
-    "description": "Für sichere Shell-Kommandos und Serverarbeit.",
+    "description": "Shell und Serverdiagnose.",
     "triggers": [
       "shell",
       "bash",
@@ -743,13 +743,13 @@
       "https://www.gnu.org/software/bash/manual/bash.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "web-security",
     "title": "Websicherheit",
     "category": "Sicherheit",
-    "description": "Für CSRF-, SSRF- und Geheimnisschutz.",
+    "description": "CSRF, SSRF und Secrets.",
     "triggers": [
       "csrf",
       "ssrf",
@@ -762,13 +762,13 @@
       "https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "ui-ux",
     "title": "UI und Nutzerführung",
     "category": "Frontend",
-    "description": "Für nutzbare Oberflächen und klare Bedienwege.",
+    "description": "Nutzerführung und UI.",
     "triggers": [
       "ux",
       "ui",
@@ -781,13 +781,13 @@
       "https://www.w3.org/WAI/tutorials/"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "technical-writing",
     "title": "Technische Dokumentation",
     "category": "Schreiben",
-    "description": "Für README, Anleitungen und technische Doku.",
+    "description": "README und technische Anleitungen.",
     "triggers": [
       "readme",
       "technische dokumentation",
@@ -800,13 +800,13 @@
       "https://developers.google.com/tech-writing/overview"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "creative-writing",
     "title": "Kreatives Schreiben und Lore",
     "category": "Schreiben",
-    "description": "Für Romane, Figuren, Dialoge und Lore.",
+    "description": "Romane, Lore und Dialoge.",
     "triggers": [
       "roman",
       "kapitel",
@@ -820,13 +820,13 @@
       "https://writingcenter.unc.edu/tips-and-tools/"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "translation",
     "title": "Übersetzen und Lokalisieren",
     "category": "Schreiben",
-    "description": "Für präzise Übersetzung und Lokalisierung.",
+    "description": "Übersetzen und lokalisieren.",
     "triggers": [
       "übersetze",
       "uebersetze",
@@ -839,13 +839,13 @@
       "https://www.w3.org/International/"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "backup-restore",
     "title": "Backup und Wiederherstellung",
     "category": "Betrieb",
-    "description": "Für überprüfte Backups und Wiederherstellung.",
+    "description": "Backup und Recovery.",
     "triggers": [
       "backup",
       "restore",
@@ -858,13 +858,13 @@
       "https://mariadb.com/kb/en/backup-and-restore-overview/"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "privacy-memory",
     "title": "Privatsphäre und Erinnerung",
     "category": "Sicherheit",
-    "description": "Für private Erinnerung und Datenminimierung.",
+    "description": "Memory und Privatsphäre.",
     "triggers": [
       "memory",
       "gedächtnis",
@@ -877,13 +877,13 @@
       "https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "media-inspection",
     "title": "Bild- und Videoanalyse",
     "category": "Medien",
-    "description": "Für belegbare Bild-, Video- und Screenshotanalyse.",
+    "description": "Bilder, Video, Screenshots.",
     "triggers": [
       "bildanalyse",
       "videoanalyse",
@@ -896,13 +896,13 @@
       "https://developer.mozilla.org/en-US/docs/Web/Media/Formats"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "browser-actions",
     "title": "Browseraktionen und Formulare",
     "category": "Browser",
-    "description": "Für sichere Rechercheaktionen im Webbrowser.",
+    "description": "Browser und Formulare bedienen.",
     "triggers": [
       "formular ausfüllen",
       "formular ausfuellen",
@@ -913,6 +913,358 @@
     ],
     "sources": [
       "https://playwright.dev/docs/locators"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.1"
+  },
+  {
+    "id": "docx",
+    "title": "Word und DOCX",
+    "category": "Office",
+    "description": "Word/DOCX erstellen und ändern.",
+    "triggers": [
+      "docx",
+      "dotx",
+      "word dokument",
+      "word-datei",
+      "worddatei",
+      "docx erstellen"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/docx"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "pdf-workflows",
+    "title": "PDF-Bearbeitung und Formulare",
+    "category": "Office",
+    "description": "PDFs bearbeiten und verbinden.",
+    "triggers": [
+      "pdf zusammenfügen",
+      "pdf verbinden",
+      "pdf trennen",
+      "pdf drehen",
+      "pdf formular",
+      "pdf bearbeiten",
+      "pdf-workflows",
+      "pdf seiten extrahieren"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/pdf"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "pptx",
+    "title": "PowerPoint und PPTX",
+    "category": "Office",
+    "description": "Präsentationen als PPTX erstellen.",
+    "triggers": [
+      "pptx",
+      "potx",
+      "powerpoint",
+      "foliensatz",
+      "pitch deck",
+      "folienpräsentation"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/pptx"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "xlsx",
+    "title": "Excel und XLSX",
+    "category": "Office",
+    "description": "Excel-Dateien und Formeln.",
+    "triggers": [
+      "xlsx",
+      "xlsm",
+      "xltx",
+      "excel datei",
+      "excel-tabelle",
+      "excel formel"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/xlsx"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "brand-guidelines",
+    "title": "Markenrichtlinien",
+    "category": "Design",
+    "description": "Markenstil nach Vorgaben.",
+    "triggers": [
+      "brand guidelines",
+      "markenrichtlinien",
+      "corporate design",
+      "markenfarben",
+      "ci vorgaben",
+      "brand-guidelines"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/brand-guidelines"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "web-artifacts",
+    "title": "Interaktive Web-Artefakte",
+    "category": "Frontend",
+    "description": "Interaktive Web-Apps bauen.",
+    "triggers": [
+      "web artifact",
+      "web-artifact",
+      "web artifacts",
+      "mini-app",
+      "interaktive web-app",
+      "webartifacts"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/web-artifacts-builder"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "llm-api",
+    "title": "LLM-Provider-APIs",
+    "category": "Backend",
+    "description": "LLM-Provider-APIs anbinden.",
+    "triggers": [
+      "llm api",
+      "model api",
+      "provider api",
+      "claude api",
+      "anthropic sdk",
+      "openai sdk",
+      "token budget",
+      "api rate limit"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/claude-api"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "mcp-builder",
+    "title": "MCP-Server und Werkzeuge",
+    "category": "Backend",
+    "description": "MCP-Server und Tool-Verträge.",
+    "triggers": [
+      "mcp",
+      "mcp server",
+      "model context protocol",
+      "mcp-builder",
+      "mcp tool",
+      "fastmcp"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/mcp-builder"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "algorithmic-art",
+    "title": "Generative Codekunst",
+    "category": "Design",
+    "description": "Generative Kunst aus Code.",
+    "triggers": [
+      "algorithmic art",
+      "algorithmische kunst",
+      "generative art",
+      "generative kunst",
+      "p5.js",
+      "particle art"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/algorithmic-art"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "canvas-design",
+    "title": "Poster und Grafikdesign",
+    "category": "Design",
+    "description": "Poster und Grafiken gestalten.",
+    "triggers": [
+      "poster",
+      "plakat",
+      "flyer gestalten",
+      "grafikdesign",
+      "canvas design",
+      "drucklayout"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/canvas-design"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "gif-creator",
+    "title": "Animierte GIFs",
+    "category": "Medien",
+    "description": "Animierte GIFs optimieren.",
+    "triggers": [
+      "gif",
+      "animiertes gif",
+      "animated gif",
+      "slack emoji",
+      "gif optimieren",
+      "animation erstellen"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/slack-gif-creator"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "theme-factory",
+    "title": "Design-Themes",
+    "category": "Design",
+    "description": "Farbthemen und Designsysteme.",
+    "triggers": [
+      "theme",
+      "theming",
+      "theme factory",
+      "dark mode",
+      "farbpalette",
+      "design tokens",
+      "farbschema"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/theme-factory"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "doc-coauthoring",
+    "title": "Gemeinsames Dokumentenschreiben",
+    "category": "Schreiben",
+    "description": "Dokumente gemeinsam entwerfen.",
+    "triggers": [
+      "dokument gemeinsam",
+      "gemeinsam schreiben",
+      "coauthoring",
+      "doc coauthoring",
+      "text gemeinsam entwickeln",
+      "redaktionelle abstimmung"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/doc-coauthoring"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "internal-comms",
+    "title": "Interne Kommunikation",
+    "category": "Schreiben",
+    "description": "Interne Memos und Meldungen.",
+    "triggers": [
+      "interne mitteilung",
+      "internes memo",
+      "team-update",
+      "statusbericht",
+      "projektankündigung",
+      "newsletter intern",
+      "changelog ankündigung"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/internal-comms"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "learning-design",
+    "title": "Lernmaterial und Onboarding",
+    "category": "Schreiben",
+    "description": "Lernpläne und Schulungen.",
+    "triggers": [
+      "lernplan",
+      "onboarding material",
+      "schulung",
+      "training entwickeln",
+      "lernmaterial",
+      "tutorial erstellen",
+      "didaktik"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/academy-guide"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "reasoning-review",
+    "title": "Kritische Ergebnisprüfung",
+    "category": "Qualität",
+    "description": "Annahmen kritisch prüfen.",
+    "triggers": [
+      "argument prüfen",
+      "denkfehler",
+      "logische lücken",
+      "kritisch prüfen",
+      "plausibilitätsprüfung",
+      "reasoning review",
+      "selbstkritik"
+    ],
+    "sources": [
+      "https://github.com/anthropics/skills/tree/main/skills/discernment-nudge"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "agent-task-design",
+    "title": "Agentenrollen und Aufgaben",
+    "category": "Agenten",
+    "description": "Agentenrollen und Tasks planen.",
+    "triggers": [
+      "agentenrolle",
+      "agentenaufgabe",
+      "multi agent",
+      "task definition",
+      "crewai task",
+      "agenten team",
+      "agentenworkflow"
+    ],
+    "sources": [
+      "https://github.com/crewAIInc/skills"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "workflow-checkpoints",
+    "title": "Workflows und Wiederaufnahme",
+    "category": "Agenten",
+    "description": "Workflows und Resume prüfen.",
+    "triggers": [
+      "workflow checkpoint",
+      "checkpointing",
+      "workflow resume",
+      "wiederaufnahme planen",
+      "arbeitsstand fortsetzen",
+      "workflow wiederherstellen",
+      "langgraph"
+    ],
+    "sources": [
+      "https://github.com/langchain-ai/langgraph"
     ],
     "reviewed": "2026-10-29",
     "version": "1.0.0"
