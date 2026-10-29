@@ -123,8 +123,7 @@ TCI-Stufen, Ollama-Liste laedt mit dem Chat, Modell-Freigaben pro Benutzer durch
 Update-Fenster fuer den Inhaber (Host-Dienst coreai-update per systemd, Datenbanksicherung, offizielles setup.sh,
 "Bitte auf Neustart warten" fuer alle mit echtem Installationsfortschritt), PHP-Sitzungen ueberleben ein Update.
 0.5.84: Benutzer loeschen unter Admin Core > Benutzer (Bestaetigung per E-Mail, alles oder nichts, Audit).
-0.5.84 ist gemergt (PR #135). 0.5.85: BEARBEITEN pro Konto mit Name und E-Mail, Passwort und Anmeldungen, Werkzeuge (Migration 021).
-Offen auf Wunsch des Betreibers: Limits pro Konto.
+0.5.84 ist gemergt (PR #135). 0.5.85: BEARBEITEN pro Konto mit Name und E-Mail, Passwort und Anmeldungen, Werkzeuge und Limits (Migration 021).
 NAECHSTER SCHRITT: Audio (TTS-Kandidaten), Benutzerverwaltung nach Betreiberwunsch, dann P20.1.
 Mara/Ember, Ollama-Modelfile, serielle Queue und private Projekt-
 plaene NICHT ungefragt veraendern.

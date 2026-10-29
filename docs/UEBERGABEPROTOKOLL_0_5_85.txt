@@ -34,4 +34,19 @@ AENDERUNGEN (zweiter Teil, Werkzeuge):
   still; Testzeilen blieben. Der Test legt die Tabelle vorher an; alle DB-Tests pruefen @@in_transaction vor dem
   Rollback (Gegenprobe: ohne Vorab-Anlage schlaegt die Pruefung an).
 
-NAECHSTER SCHRITT: Limits pro Konto (Nachrichten pro Tag, groesstes Kontextfenster) im selben Panel.
+AENDERUNGEN (dritter Teil, Limits):
+- api/user_policy.php: coreui_user_policy_take_turn (Zaehler stu_abuse_counters, Schluessel policy-day:<id>, Fenster
+  86400 ab der ersten Nachricht; Ablehnung gibt zurueck), coreui_user_policy_reserve_turn (429 daily_message_limit
+  mit retry_at), used_today, ctx_choices (Stufen bis zum Limit), ctx_clamp (nur eine eigene Wahl wird gekuerzt).
+- api/chat.php (Senden) und api/console_actions.php (prepare_generation, edit_message): Reservierung neben der
+  Gast-Reservierung. api/ai_settings.php: Regeln einmal laden, Fenster kuerzen, Werkzeuge verengen.
+- api/user_settings.php: Stufen des Schiebereglers bis zum Limit, angezeigter Wert gekuerzt, Speichern darueber 403
+  num_ctx_not_allowed. js/settings.js und js/console-app.js: Texte.
+- api/admin.php: Liste mit ctx_choices und used_today; js/admin.js: Abschnitt Limits (Zahl, Auswahl "bis 16K").
+- css/settings.css: Haekchen in Tabellen-Panels 17 px (die td-input-Regel machte sie breit und 42 px hoch).
+
+GEPRUEFT: user-policy-selftest.php mit MariaDB (Tageslimit 2: dritte abgelehnt und nicht gezaehlt, Fenster 65536 ->
+16384, 8192 bleibt), drei Gegenproben (keine Rueckgabe, Standard angehoben, global aus ueberstimmt) erkannt;
+Einstellungs-Browser-Test mit Limits.
+
+NAECHSTER SCHRITT: Audio (TTS-Kandidaten), dann P20.1.

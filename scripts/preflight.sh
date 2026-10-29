@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.85 settings per account (BEARBEITEN): password, signing out everywhere, name and e-mail, tools.
+# CoreAI: TCI Interface 0.5.85 settings per account (BEARBEITEN): password, signing out everywhere, name and e-mail, tools, limits.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -774,7 +774,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   # 0.5.85: own rules per account (tools blocked per account, global off stays off).
   policy_test=''
   if policy_test="$(compose exec -T php php scripts/user-policy-selftest.php 2>&1)"; then
-    ok 'Regeln pro Konto: Werkzeuge pro Konto gesperrt, global aus bleibt aus (mit Rollback) geprueft.'
+    ok 'Regeln pro Konto: Werkzeuge gesperrt, global aus bleibt aus, Tageslimit, Kontextfenster (mit Rollback) geprueft.'
   else
     fail "Regeln-pro-Konto-Selbsttest: ${policy_test:-Unbekannter Fehler}"
   fi

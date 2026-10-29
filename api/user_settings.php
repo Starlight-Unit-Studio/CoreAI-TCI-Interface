@@ -25,7 +25,9 @@ if ($method === 'GET' && array_key_exists('context_model', $_GET)) {
   $model = trim((string)$_GET['context_model']);
   if ($model === '') $model = (string)($settings['model_override'] ?: (defined('STU_EMBER_MODEL') ? STU_EMBER_MODEL : 'ember-coreui:latest'));
   if (!coreui_model_name_valid($model)) stu_json(['ok'=>false, 'error'=>'invalid_model_name'], 400);
-  stu_json(['ok'=>true, 'context'=>coreui_ai_context_estimate($model, coreui_ai_num_ctx_choices(), $settings['num_ctx'])]);
+  $policy = coreui_user_policy_load($pdo, (int)$uid);
+  stu_json(['ok'=>true, 'context'=>coreui_ai_context_estimate($model, coreui_user_policy_ctx_choices(coreui_ai_num_ctx_choices(), $policy),
+    coreui_user_policy_ctx_clamp($settings['num_ctx'], $policy))]);
 }
 
 // 0.5.75: which Cores Ollama holds in memory, for the loading state in the chat.
@@ -80,6 +82,8 @@ if ($method === 'GET') {
   $settings = coreui_ai_settings_load($pdo, $uid);
   // 0.5.83: a Core whose release was withdrawn no longer counts as chosen.
   if (!coreui_model_access_allowed($pdo, $uid, (string)$settings['model_override'])) $settings['model_override'] = '';
+  // 0.5.85: a window above the account's limit shows as the limit.
+  $settings['num_ctx'] = coreui_user_policy_ctx_clamp($settings['num_ctx'], coreui_user_policy_load($pdo, (int)$uid));
   $defaultModel = defined('STU_EMBER_MODEL') ? (string)STU_EMBER_MODEL : '';
   $payload = [
     'ok' => true,
@@ -94,7 +98,8 @@ if ($method === 'GET') {
       'num_predict_max' => 16384,
       'temperature_min' => 0.1,
       'temperature_max' => 1.5,
-      'num_ctx_choices' => coreui_ai_num_ctx_choices(),
+      // 0.5.85: up to the account's limit, if the Inhaber or an Admin set one.
+      'num_ctx_choices' => coreui_user_policy_ctx_choices(coreui_ai_num_ctx_choices(), coreui_user_policy_load($pdo, (int)$uid)),
       'num_ctx_available' => coreui_ai_num_ctx_schema_ready($pdo),
     ],
     'default_model' => defined('STU_EMBER_MODEL') ? (string)STU_EMBER_MODEL : '',
@@ -310,6 +315,11 @@ if (!array_key_exists('thinking_enabled', $body)) {
 $requestedCtx = $body['num_ctx'] ?? null;
 if ($requestedCtx !== null && $requestedCtx !== '' && coreui_ai_num_ctx_normalise($requestedCtx) === null) {
   stu_json(['ok'=>false, 'error'=>'invalid_num_ctx'], 400);
+}
+// 0.5.85: a window above the account's limit is refused.
+$normalisedCtx = coreui_ai_num_ctx_normalise($requestedCtx);
+if ($normalisedCtx !== null && coreui_user_policy_ctx_clamp($normalisedCtx, coreui_user_policy_load($pdo, (int)$uid)) !== $normalisedCtx) {
+  stu_json(['ok'=>false, 'error'=>'num_ctx_not_allowed'], 403);
 }
 if ($isGuest) {
   $wantsModel = trim((string)($body['model_override'] ?? '')) !== '';

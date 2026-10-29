@@ -16,7 +16,8 @@ Anzeigename und Login-E-Mail, ein neues Passwort (beendet alle Anmeldungen des
 Kontos) und "Alle Geraete abmelden". Es gelten dieselben Regeln wie beim
 Loeschen; das eigene Passwort bleibt im Tab Konto. Websuche, Browser und Python
 lassen sich pro Konto sperren; was unter Betrieb global aus ist, bleibt fuer
-alle aus (Migration 021).
+alle aus (Migration 021). Dazu Limits pro Konto: Nachrichten pro Tag und das
+groesste Kontextfenster.
 
 ## Benutzer loeschen (0.5.84)
 

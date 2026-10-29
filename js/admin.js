@@ -191,6 +191,11 @@
   var globalTools = {};
   var policyReady = true;
   var TOOL_LABELS = [['web', 'Websuche'], ['browse', 'Browser'], ['python', 'Python']];
+  var ctxChoices = [];
+
+  function ctxLabel(n) {
+    return Math.round(Number(n) / 1024) + 'K';
+  }
 
   function policyOf(user) {
     return userPolicies[String(user.id)] || { tools: { web: true, browse: true, python: true }, daily_messages: null, max_num_ctx: null };
@@ -205,6 +210,8 @@
     protected_account: 'Dieses Konto ist geschützt.',
     use_account_settings: 'Das eigene Passwort und die eigenen Geräte stehen im Tab Konto.',
     own_policy: 'Für das eigene Konto gelten die globalen Schalter unter Betrieb.',
+    invalid_daily_messages: 'Nachrichten pro Tag: eine Zahl von 1 bis 100000, oder leer für ohne Grenze.',
+    invalid_max_num_ctx: 'Dieses Kontextfenster gibt es nicht.',
     missing_schema_021: 'Migration 021 fehlt noch. Bitte das Update einspielen.'
   };
 
@@ -336,6 +343,49 @@
       });
       tools.appendChild(saveTools);
       grid.appendChild(tools);
+
+      // Limits: messages per day and the largest context window.
+      var used = policy.daily_messages !== null && policy.used_today != null
+        ? ' Heute gesendet: ' + policy.used_today + ' von ' + policy.daily_messages + '.' : '';
+      var limits = editSection('Limits', policyReady
+        ? 'Leer heißt ohne eigene Grenze. Das Tageslimit zählt 24 Stunden ab der ersten Nachricht.' + used
+        : MANAGE_ERRORS.missing_schema_021);
+      var daily = document.createElement('input');
+      daily.type = 'number';
+      daily.min = '1';
+      daily.max = '100000';
+      daily.step = '1';
+      daily.placeholder = 'ohne Grenze';
+      daily.value = policy.daily_messages != null ? String(policy.daily_messages) : '';
+      daily.disabled = !policyReady;
+      editField(limits, 'NACHRICHTEN PRO TAG', daily);
+      var ctx = document.createElement('select');
+      var none = el('option', '', 'ohne Grenze');
+      none.value = '';
+      ctx.appendChild(none);
+      ctxChoices.forEach(function (n) {
+        var option = el('option', '', 'bis ' + ctxLabel(n));
+        option.value = String(n);
+        if (Number(policy.max_num_ctx) === Number(n)) option.selected = true;
+        ctx.appendChild(option);
+      });
+      ctx.disabled = !policyReady;
+      editField(limits, 'GRÖSSTES KONTEXTFENSTER', ctx);
+      var saveLimits = el('button', 'settings-action compact', 'LIMITS SPEICHERN');
+      saveLimits.type = 'button';
+      saveLimits.disabled = !policyReady;
+      saveLimits.addEventListener('click', function () {
+        var dailyValue = daily.value.trim() === '' ? null : Number(daily.value);
+        saveLimits.disabled = true;
+        post('user_policy', { user_id: Number(user.id), daily_messages: dailyValue, max_num_ctx: ctx.value === '' ? null : Number(ctx.value) }).then(function (data) {
+          userPolicies[String(user.id)] = data.policy;
+          var p = data.policy;
+          show('Konto ' + user.id + ': ' + (p.daily_messages ? p.daily_messages + ' Nachrichten pro Tag' : 'kein Tageslimit') + ', '
+            + (p.max_num_ctx ? 'Kontextfenster bis ' + ctxLabel(p.max_num_ctx) : 'Kontextfenster ohne Grenze') + '.');
+        }).catch(function (error) { manageError('Limits', error); }).finally(function () { saveLimits.disabled = !policyReady; });
+      });
+      limits.appendChild(saveLimits);
+      grid.appendChild(limits);
     }
 
     td.appendChild(grid);
@@ -468,6 +518,7 @@
       var data = both[0];
       userPolicies = data.policies && !Array.isArray(data.policies) ? data.policies : {};
       globalTools = data.tools || {};
+      ctxChoices = Array.isArray(data.ctx_choices) ? data.ctx_choices : [];
       policyReady = data.policy_ready !== false;
       var tbody = document.getElementById('userRows');
       tbody.innerHTML = '';

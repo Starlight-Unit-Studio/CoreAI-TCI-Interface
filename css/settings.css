@@ -1397,3 +1397,15 @@
 .user-edit-section .user-tool-choice input:disabled + span {
   color: var(--cfg-soft);
 }
+
+/* 0.5.85: checkboxes in table panels (tools, Core releases) keep their size;
+   the general td input rule (full width, 42px high) is for text fields. */
+.settings-body td input[type="checkbox"] {
+  width: 17px;
+  min-width: 17px;
+  height: 17px;
+  min-height: 0;
+  padding: 0;
+  flex: none;
+  accent-color: var(--cx);
+}

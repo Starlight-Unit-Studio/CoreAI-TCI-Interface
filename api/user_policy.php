@@ -101,3 +101,60 @@ function coreui_user_policy_save(PDO $pdo, int $uid, array $patch, int $actorId,
   ]);
   return coreui_user_policy_load($pdo, $uid);
 }
+
+// --- Limits -------------------------------------------------------------
+
+const COREUI_USER_POLICY_DAY = 86400;
+
+function coreui_user_policy_day_key(int $uid): string {
+  return 'policy-day:' . $uid;
+}
+
+/** Messages the account sent in its current 24-hour window. */
+function coreui_user_policy_used_today(PDO $pdo, int $uid): int {
+  if (!function_exists('coreui_abuse_count')) require_once __DIR__ . '/abuse_guard.php';
+  return (int)coreui_abuse_count($pdo, coreui_user_policy_day_key($uid), COREUI_USER_POLICY_DAY, 0)['n'];
+}
+
+/**
+ * Counts one message against the account's daily limit, or refuses it and
+ * gives the count back. Accounts without a limit pass untouched (null).
+ * The window starts with the first message and lasts 24 hours.
+ */
+function coreui_user_policy_take_turn(PDO $pdo, int $uid, ?int $now = null): ?array {
+  $limit = coreui_user_policy_load($pdo, $uid)['daily_messages'];
+  if ($limit === null) return null;
+  if (!function_exists('coreui_abuse_count')) require_once __DIR__ . '/abuse_guard.php';
+  $key = coreui_user_policy_day_key($uid);
+  $count = coreui_abuse_count($pdo, $key, COREUI_USER_POLICY_DAY, 1, $now);
+  if ($count['ok'] && $count['n'] > $limit) {
+    coreui_abuse_give_back($pdo, $key);
+    return ['ok' => false, 'limit' => $limit, 'used' => $limit, 'left' => 0, 'retry_at' => (int)$count['reset']];
+  }
+  return ['ok' => true, 'limit' => $limit, 'used' => min($limit, (int)$count['n']), 'left' => max(0, $limit - (int)$count['n']), 'retry_at' => (int)$count['reset']];
+}
+
+/** Before a message is stored: answers daily_message_limit (429) when the day is used up. */
+function coreui_user_policy_reserve_turn(PDO $pdo, int $uid): ?array {
+  $turn = coreui_user_policy_take_turn($pdo, $uid);
+  if ($turn !== null && !$turn['ok']) {
+    stu_json(['ok' => false, 'error' => 'daily_message_limit', 'limit' => $turn['limit'],
+      'retry_at' => date('c', $turn['retry_at'])], 429);
+  }
+  return $turn;
+}
+
+/** Context windows this account may choose (the slider stops up to its limit). */
+function coreui_user_policy_ctx_choices(array $choices, array $policy): array {
+  $max = $policy['max_num_ctx'] ?? null;
+  if ($max === null) return array_values($choices);
+  $allowed = array_values(array_filter($choices, static fn(int $n): bool => $n <= $max));
+  return $allowed !== [] ? $allowed : [min($choices)];
+}
+
+/** An own choice above the limit is cut to it; no choice (the Core's default) stays. */
+function coreui_user_policy_ctx_clamp(?int $numCtx, array $policy): ?int {
+  $max = $policy['max_num_ctx'] ?? null;
+  if ($numCtx === null || $max === null) return $numCtx;
+  return min($numCtx, (int)$max);
+}

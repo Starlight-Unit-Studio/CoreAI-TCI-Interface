@@ -1504,7 +1504,8 @@
       csrf_failed: 'Die Sitzung wurde erneuert. Bitte Seite neu laden.',
       guest_limit_reached: 'Deine Gast-Nachrichten sind aufgebraucht. Mit einem eigenen Konto geht es weiter.',
       guest_network_limit: 'Die Gast-Nachrichten für dein Netzwerk sind für heute aufgebraucht. Mit einem eigenen Konto geht es weiter.',
-      guest_daily_limit: 'Der Gast-Zugang ist für heute ausgelastet. Mit einem eigenen Konto geht es weiter.'
+      guest_daily_limit: 'Der Gast-Zugang ist für heute ausgelastet. Mit einem eigenen Konto geht es weiter.',
+      daily_message_limit: 'Dein Tageslimit an Nachrichten ist erreicht. Es setzt sich 24 Stunden nach der ersten Nachricht zurück.'
     };
     if (/^guest_(?:limit_reached|network_limit|daily_limit)$/.test(String(error || ''))) guestLimitReached();
     appendMessageEl('system', '\u26a0 ' + (map[error] || 'Nachrichtenaktion fehlgeschlagen.'));
@@ -2489,7 +2490,9 @@
           'guest_limit_reached': '\u26a0 Deine Gast-Nachrichten sind aufgebraucht. Mit einem eigenen Konto geht es weiter.',
           'guest_network_limit': '\u26a0 Die Gast-Nachrichten für dein Netzwerk sind für heute aufgebraucht. Mit einem eigenen Konto geht es weiter.',
           'guest_daily_limit':   '\u26a0 Der Gast-Zugang ist für heute ausgelastet. Mit einem eigenen Konto geht es weiter.',
-          'guest_console_only':  '\u26a0 Als Gast chattest du nur im privaten Chat mit Mara.'
+          'guest_console_only':  '\u26a0 Als Gast chattest du nur im privaten Chat mit Mara.',
+          'daily_message_limit': '\u26a0 Dein Tageslimit an Nachrichten ist erreicht.'
+            + (d.retry_at ? ' Wieder möglich ab ' + new Date(d.retry_at).toLocaleString('de-DE', { weekday: 'short', hour: '2-digit', minute: '2-digit' }) + '.' : '')
         };
         if (/^guest_(?:limit_reached|network_limit|daily_limit)$/.test(String(d.error || ''))) guestLimitReached();
         delete state.pendingBySession[sessionId];

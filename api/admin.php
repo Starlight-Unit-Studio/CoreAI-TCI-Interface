@@ -127,9 +127,15 @@ if ($method === 'GET') {
       . 'ORDER BY u.id DESC LIMIT ' . $limit
     );
     $st->execute($params);
-    // 0.5.85: own rules per account (tools, limits) and the global tool switches.
-    stu_json(['ok' => true, 'items' => $st->fetchAll(PDO::FETCH_ASSOC) ?: [], 'policies' => coreui_user_policy_all($pdo),
-      'tools' => coreui_operator_runtime_load($pdo), 'policy_ready' => coreui_user_policy_ready($pdo)]);
+    // 0.5.85: own rules per account (tools, limits), the global tool switches,
+    // the window steps and, for accounts with a daily limit, what they sent today.
+    $policies = coreui_user_policy_all($pdo);
+    foreach ($policies as $policyUid => $policy) {
+      if ($policy['daily_messages'] !== null) $policies[$policyUid]['used_today'] = coreui_user_policy_used_today($pdo, (int)$policyUid);
+    }
+    stu_json(['ok' => true, 'items' => $st->fetchAll(PDO::FETCH_ASSOC) ?: [], 'policies' => $policies,
+      'tools' => coreui_operator_runtime_load($pdo), 'policy_ready' => coreui_user_policy_ready($pdo),
+      'ctx_choices' => coreui_ai_num_ctx_choices()]);
   }
 
   // 0.5.83: models outside CoreAI and who may use them. Only the Inhaber
