@@ -162,6 +162,7 @@ try {
     && $check('SELECT COUNT(*) FROM stu_chat_messages WHERE user_id = ?', [$other]) === 1
     && $check('SELECT COUNT(*) FROM stu_console_sessions WHERE user_id = ?', [$other]) === 1
     && $check('SELECT COUNT(*) FROM stu_users WHERE id IN (?, ?)', [$other, $boss]) === 2, 'other accounts untouched');
+  delete_test((int)$pdo->query('SELECT @@in_transaction')->fetchColumn() === 1, 'still inside the transaction (no implicit commit)');
 } finally {
   if ($pdo->inTransaction()) $pdo->rollBack();
 }

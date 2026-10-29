@@ -410,6 +410,7 @@
           model_catalog_invalid_response: 'OLLAMA-CORE-LISTE IST UNGÜLTIG',
           invalid_model_name: 'UNGÜLTIGER CORE-NAME',
           invalid_num_ctx: 'UNGÜLTIGES KONTEXTFENSTER',
+          num_ctx_not_allowed: 'KONTEXTFENSTER ÜBER DEM LIMIT DIESES KONTOS',
           guest_core_locked: 'ALS GAST GELTEN STANDARD-CORE UND -KONTEXTFENSTER',
           missing_schema_017: 'MIGRATION 017 FEHLT: KONTEXTFENSTER NICHT GESPEICHERT'
         };

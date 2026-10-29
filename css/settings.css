@@ -1329,3 +1329,83 @@
   opacity: 0.45;
   cursor: not-allowed;
 }
+
+/* 0.5.85: settings per account (BEARBEITEN). */
+.table-wrap td button.user-edit-toggle[aria-expanded="true"] {
+  border-color: var(--cx);
+  background: rgba(91, 146, 255, 0.08);
+}
+
+.table-wrap tr.user-edit-row td {
+  padding: 14px 16px 16px;
+  border-left: 3px solid var(--cx);
+  background: rgba(91, 146, 255, 0.05);
+  white-space: normal;
+}
+
+.user-edit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.user-edit-section {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid rgba(91, 146, 255, 0.2);
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.user-edit-section h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.user-edit-section .model-access-note {
+  margin: 0;
+  font-size: 14px;
+}
+
+.user-edit-field {
+  display: grid;
+  gap: 4px;
+}
+
+.user-edit-field span {
+  font-family: "Share Tech Mono", monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--cfg-soft);
+}
+
+.user-edit-field input,
+.user-edit-field select {
+  width: 100%;
+}
+
+.user-edit-section .settings-action.compact {
+  justify-self: start;
+}
+
+.user-edit-section .user-tool-choice {
+  justify-self: start;
+}
+
+.user-edit-section .user-tool-choice input:disabled + span {
+  color: var(--cfg-soft);
+}
+
+/* 0.5.85: checkboxes in table panels (tools, Core releases) keep their size;
+   the general td input rule (full width, 42px high) is for text fields. */
+.settings-body td input[type="checkbox"] {
+  width: 17px;
+  min-width: 17px;
+  height: 17px;
+  min-height: 0;
+  padding: 0;
+  flex: none;
+  accent-color: var(--cx);
+}

@@ -38,7 +38,10 @@ function server(level) {
       const action = url.searchParams.get('action');
       if (action === 'users') return {ok: true, items: [{id: 1, username: 'patrick@starlight.test', display_name: 'Patrick', permission_level: 0, is_guest: 0, session_count: 3},
         {id: 2, username: 'gast-7f3a', display_name: 'Gast', permission_level: 4, is_guest: 1, session_count: 1},
-        {id: 3, username: 'lena@example.test', display_name: 'Lena', permission_level: 4, is_guest: 0, session_count: 2}]};
+        {id: 3, username: 'lena@example.test', display_name: 'Lena', permission_level: 4, is_guest: 0, session_count: 2, login_count: 2}],
+        // 0.5.85: own rules (Python blocked for Lena) and the global switches (browser off for everyone).
+        policies: {3: {tools: {web: true, browse: true, python: false}, daily_messages: 40, max_num_ctx: 16384, used_today: 12}},
+        tools: {web: true, browse: false, python: true}, policy_ready: true, ctx_choices: [4096, 8192, 16384, 32768, 65536, 131072]};
       // 0.5.83: models outside CoreAI and their releases (Inhaber only).
       if (action === 'model_access') return level === 0 ? {ok: true, models: ['gpt-oss:120b-cloud', 'llama3.2:latest'], grants: {}, ollama: true}
         : {ok: false, error: 'owner_only'};
@@ -60,6 +63,18 @@ function server(level) {
       if (key === 'admin.php' && post && level > 1) return route.fulfill({status: 403, json: {ok: false, error: 'insufficient_permissions'}});
       if (key === 'admin.php' && post && url.searchParams.get('action') === 'model_access_save') {
         return route.fulfill({json: {ok: true, models: JSON.parse(post).models}});
+      }
+      if (key === 'admin.php' && post && ['user_password', 'user_logout_all'].includes(url.searchParams.get('action'))) {
+        return route.fulfill({json: {ok: true, logins_ended: 2}});
+      }
+      if (key === 'admin.php' && post && url.searchParams.get('action') === 'user_policy') {
+        const sent = JSON.parse(post);
+        return route.fulfill({json: {ok: true, policy: {tools: Object.assign({web: true, browse: true, python: true}, sent.tools || {}),
+          daily_messages: 'daily_messages' in sent ? sent.daily_messages : 40, max_num_ctx: 'max_num_ctx' in sent ? sent.max_num_ctx : 16384}}});
+      }
+      if (key === 'admin.php' && post && url.searchParams.get('action') === 'user_identity') {
+        const sent = JSON.parse(post);
+        return route.fulfill({json: {ok: true, user: {username: sent.username, display_name: sent.display_name, email_changed: sent.username !== 'lena@example.test'}}});
       }
       if (key === 'admin.php' && post && url.searchParams.get('action') === 'user_delete') {
         return route.fulfill({json: {ok: true, deleted: {sessions_deleted: 2, messages_deleted: 14, files_deleted: 3}}});
@@ -167,6 +182,63 @@ const smallText = page => page.evaluate(() => {
     assert.deepEqual(release && release.post, {user_id: 3, models: ['gpt-oss:120b-cloud']}, 'the release is saved for Lena');
     await page.click('#userRows tr:nth-child(3) .model-access-toggle');
     assert.equal(await page.locator('.model-access-row').count(), 0, 'the panel closes again');
+    // 0.5.85: BEARBEITEN: name and e-mail, password, signing out everywhere.
+    assert.deepEqual(await page.$$eval('#userRows > tr', rows => rows.map(r => !!r.querySelector('.user-edit-toggle'))), [true, true, true],
+      'BEARBEITEN for everyone the Inhaber manages, and for himself');
+    await page.click('#userRows tr:nth-child(3) .user-edit-toggle');
+    assert.deepEqual(await page.$$eval('.user-edit-section h4', h => h.map(x => x.textContent)), ['Name und E-Mail', 'Passwort und Anmeldungen', 'Werkzeuge', 'Limits']);
+    // Limits: 40 messages a day (12 sent today), window up to 16K.
+    assert.match(await page.textContent('.user-edit-row'), /Heute gesendet: 12 von 40\./);
+    assert.equal(await page.inputValue('.user-edit-row input[type="number"]'), '40');
+    assert.equal(await page.inputValue('.user-edit-row select'), '16384');
+    assert.deepEqual(await page.$$eval('.user-edit-row select option', o => o.map(x => x.textContent)),
+      ['ohne Grenze', 'bis 4K', 'bis 8K', 'bis 16K', 'bis 32K', 'bis 64K', 'bis 128K']);
+    await page.fill('.user-edit-row input[type="number"]', '');
+    await page.selectOption('.user-edit-row select', '32768');
+    await page.click('.user-edit-row button:has-text("LIMITS SPEICHERN")');
+    await page.waitForFunction(() => /kein Tageslimit, Kontextfenster bis 32K\./.test(document.getElementById('adminFlash').textContent));
+    assert.deepEqual(srv.calls.filter(c => c.action === 'user_policy').pop().post, {user_id: 3, daily_messages: null, max_num_ctx: 32768});
+    // Werkzeuge: Python blocked for Lena, the browser is off for everyone.
+    assert.deepEqual(await page.$$eval('.user-tool-choice', l => l.map(x => [x.textContent, x.querySelector('input').checked, x.querySelector('input').disabled])),
+      [['Websuche', true, false], ['Browser (global aus)', true, true], ['Python', false, false]]);
+    await page.click('.user-tool-choice:has-text("Websuche") input');
+    await page.click('.user-edit-row button:has-text("WERKZEUGE SPEICHERN")');
+    await page.waitForFunction(() => /gesperrt: Websuche, Python\./.test(document.getElementById('adminFlash').textContent));
+    assert.deepEqual(srv.calls.find(c => c.action === 'user_policy' && c.post.tools).post, {user_id: 3, tools: {web: false, browse: true, python: false}});
+    assert.match(await page.textContent('.user-edit-row'), /Aktive Anmeldungen: 2\./);
+    assert.equal(await page.inputValue('.user-edit-row input[type="email"]'), 'lena@example.test');
+    await page.fill('.user-edit-row input[type="text"]', 'Lena Berg');
+    await page.fill('.user-edit-row input[type="email"]', 'lena.berg@example.test');
+    await page.click('.user-edit-row button:has-text("NAME UND E-MAIL SPEICHERN")');
+    await page.waitForFunction(() => /Anmeldung ab jetzt mit lena\.berg@example\.test/.test(document.getElementById('adminFlash').textContent));
+    assert.deepEqual(srv.calls.find(c => c.action === 'user_identity').post, {user_id: 3, display_name: 'Lena Berg', username: 'lena.berg@example.test'});
+    await page.waitForFunction(() => document.querySelectorAll('#userRows > tr').length === 3);
+    await page.click('#userRows tr:nth-child(3) .user-edit-toggle');
+    const setPass = '.user-edit-row button:has-text("PASSWORT SETZEN")';
+    await page.fill('.user-edit-row input[type="password"]', 'zu-kurz');
+    assert.equal(await page.isDisabled(setPass), true, 'no password below 12 characters');
+    await page.fill('.user-edit-row input[type="password"]', 'ein-neues-passwort');
+    assert.deepEqual(await smallText(page), [], 'no text below 11 px in the edit panel');
+    await page.click(setPass);
+    await page.waitForFunction(() => /neues Passwort gesetzt, 2 Anmeldungen beendet/.test(document.getElementById('adminFlash').textContent));
+    assert.deepEqual(srv.calls.find(c => c.action === 'user_password').post, {user_id: 3, password: 'ein-neues-passwort'});
+    await page.waitForFunction(() => document.querySelectorAll('#userRows > tr').length === 3);
+    await page.click('#userRows tr:nth-child(3) .user-edit-toggle');
+    await page.click('.user-edit-row button:has-text("ALLE GERÄTE ABMELDEN")');
+    await page.waitForFunction(() => /2 Anmeldungen beendet/.test(document.getElementById('adminFlash').textContent));
+    assert.deepEqual(srv.calls.find(c => c.action === 'user_logout_all').post, {user_id: 3});
+    await page.waitForFunction(() => document.querySelectorAll('#userRows > tr').length === 3);
+    // The own account: only name and e-mail here; a guest has no password field.
+    await page.click('#userRows tr:nth-child(1) .user-edit-toggle');
+    assert.equal(await page.locator('.user-edit-row input[type="password"]').count(), 0, 'no password field for the own account');
+    assert.equal(await page.locator('.user-tool-choice').count(), 0, 'no tool blocks for the own account');
+    assert.match(await page.textContent('.user-edit-row'), /im Tab Konto/);
+    await page.click('#userRows tr:nth-child(1) .user-edit-toggle');
+    assert.equal(await page.locator('.user-edit-row').count(), 0, 'the panel closes again');
+    await page.click('#userRows tr:nth-child(2) .user-edit-toggle');
+    assert.equal(await page.locator('.user-edit-row input[type="password"]').count(), 0, 'guests have no password');
+    assert.equal(await page.isDisabled('.user-edit-row input[type="email"]'), true, 'a guest keeps its login');
+    await page.click('#userRows tr:nth-child(2) .user-edit-toggle');
     // 0.5.84: deleting an account: never the Inhaber himself, the e-mail typed to confirm.
     assert.deepEqual(await page.$$eval('#userRows > tr', rows => rows.map(r => !!r.querySelector('.user-delete-toggle'))), [false, true, true],
       'LÖSCHEN for guest and Nutzer, not for the Inhaber himself');
@@ -222,6 +294,8 @@ const smallText = page => page.evaluate(() => {
     await page.waitForFunction(() => document.querySelectorAll('#userRows > tr').length === 3);
     assert.deepEqual(await page.$$eval('#userRows > tr', rows => rows.map(r => !!r.querySelector('.user-delete-toggle'))), [false, true, true],
       'an Admin deletes guests and Nutzer, never the Inhaber');
+    assert.deepEqual(await page.$$eval('#userRows > tr', rows => rows.map(r => !!r.querySelector('.user-edit-toggle'))), [false, true, true],
+      'an Admin edits guests and Nutzer, never the Inhaber');
     await page.waitForFunction(() => document.querySelectorAll('#userRows .model-access-cell').length === 3);
     assert.deepEqual(await page.$$eval('#userRows .model-access-cell', cells => cells.map(c => c.textContent)),
       ['alle (Inhaber)', 'Standard-Core', 'nur Inhaber'], 'an Admin cannot release models');

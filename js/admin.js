@@ -177,6 +177,222 @@
     return String(user.username || user.id);
   }
 
+  // 0.5.85: who may change whom under BEARBEITEN (the server checks the same):
+  // the own account only for name and e-mail; never another Inhaber or Mara.
+  function canManage(user) {
+    var level = Number(user.permission_level);
+    if (Number(user.id) === actorId) return true;
+    if (level === 0) return false;
+    return actorLevel === 0 || (actorLevel === 1 && level > 1);
+  }
+
+  // 0.5.85: own rules per account and the global tool switches (from the user list).
+  var userPolicies = {};
+  var globalTools = {};
+  var policyReady = true;
+  var TOOL_LABELS = [['web', 'Websuche'], ['browse', 'Browser'], ['python', 'Python']];
+  var ctxChoices = [];
+
+  function ctxLabel(n) {
+    return Math.round(Number(n) / 1024) + 'K';
+  }
+
+  function policyOf(user) {
+    return userPolicies[String(user.id)] || { tools: { web: true, browse: true, python: true }, daily_messages: null, max_num_ctx: null };
+  }
+
+  var MANAGE_ERRORS = {
+    invalid_password: 'Das Passwort braucht mindestens 12 Zeichen.',
+    invalid_username: 'Das ist keine gültige E-Mail.',
+    invalid_display_name: 'Der Anzeigename darf nicht leer sein.',
+    username_taken: 'Diese E-Mail gehört schon zu einem anderen Konto.',
+    guest_account: 'Gäste haben kein Passwort und keine eigene E-Mail.',
+    protected_account: 'Dieses Konto ist geschützt.',
+    use_account_settings: 'Das eigene Passwort und die eigenen Geräte stehen im Tab Konto.',
+    own_policy: 'Für das eigene Konto gelten die globalen Schalter unter Betrieb.',
+    invalid_daily_messages: 'Nachrichten pro Tag: eine Zahl von 1 bis 100000, oder leer für ohne Grenze.',
+    invalid_max_num_ctx: 'Dieses Kontextfenster gibt es nicht.',
+    missing_schema_021: 'Migration 021 fehlt noch. Bitte das Update einspielen.'
+  };
+
+  function manageError(prefix, error) {
+    show(prefix + ': ' + (MANAGE_ERRORS[error.message] || error.message), true);
+  }
+
+  function editSection(title, note) {
+    var box = el('section', 'user-edit-section');
+    box.appendChild(el('h4', '', title));
+    if (note) box.appendChild(el('p', 'model-access-note', note));
+    return box;
+  }
+
+  function editField(box, label, input) {
+    var wrap = el('label', 'user-edit-field');
+    wrap.appendChild(el('span', '', label));
+    wrap.appendChild(input);
+    box.appendChild(wrap);
+    return input;
+  }
+
+  // Row under an account: its settings in sections, each saved on its own.
+  function editPanel(user, toggle) {
+    var self = Number(user.id) === actorId;
+    var guest = Number(user.is_guest) === 1;
+    var tr = el('tr', 'user-panel-row user-edit-row');
+    var td = el('td');
+    td.colSpan = 7;
+    var grid = el('div', 'user-edit-grid');
+
+    // Name und E-Mail
+    var identity = editSection('Name und E-Mail', guest ? 'Gäste behalten ihre automatische Kennung; nur der Name ist änderbar.' : '');
+    var nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.maxLength = 64;
+    nameInput.value = user.display_name || '';
+    editField(identity, 'ANZEIGENAME', nameInput);
+    var mailInput = document.createElement('input');
+    mailInput.type = 'email';
+    mailInput.value = user.username || '';
+    mailInput.disabled = guest;
+    editField(identity, 'LOGIN-E-MAIL', mailInput);
+    var saveIdentity = el('button', 'settings-action compact', 'NAME UND E-MAIL SPEICHERN');
+    saveIdentity.type = 'button';
+    saveIdentity.addEventListener('click', function () {
+      saveIdentity.disabled = true;
+      post('user_identity', { user_id: Number(user.id), display_name: nameInput.value, username: mailInput.value }).then(function (data) {
+        show('Konto ' + user.id + ': ' + (data.user && data.user.email_changed ? 'Name und E-Mail gespeichert. Anmeldung ab jetzt mit ' + data.user.username + '.' : 'Name gespeichert.'));
+        return loadUsers();
+      }).catch(function (error) { manageError('Name und E-Mail', error); saveIdentity.disabled = false; });
+    });
+    identity.appendChild(saveIdentity);
+    grid.appendChild(identity);
+
+    // Passwort und Anmeldungen (not for the own account: that is the Konto tab)
+    var logins = Number(user.login_count) || 0;
+    var access = editSection('Passwort und Anmeldungen', self
+      ? 'Dein eigenes Passwort und deine Geräte verwaltest du im Tab Konto.'
+      : 'Aktive Anmeldungen: ' + logins + '. Ein neues Passwort meldet das Konto auf allen Geräten ab.');
+    if (!self) {
+      if (!guest) {
+        var pass = document.createElement('input');
+        pass.type = 'password';
+        pass.autocomplete = 'new-password';
+        pass.minLength = 12;
+        pass.placeholder = 'mindestens 12 Zeichen';
+        editField(access, 'NEUES PASSWORT', pass);
+        var setPass = el('button', 'settings-action compact', 'PASSWORT SETZEN');
+        setPass.type = 'button';
+        setPass.disabled = true;
+        pass.addEventListener('input', function () { setPass.disabled = pass.value.length < 12; });
+        setPass.addEventListener('click', function () {
+          setPass.disabled = true;
+          post('user_password', { user_id: Number(user.id), password: pass.value }).then(function (data) {
+            pass.value = '';
+            show('Konto ' + user.id + ': neues Passwort gesetzt, ' + (data.logins_ended || 0) + ' Anmeldungen beendet.');
+            return loadUsers();
+          }).catch(function (error) { manageError('Passwort', error); setPass.disabled = pass.value.length < 12; });
+        });
+        access.appendChild(setPass);
+      }
+      var logout = el('button', 'settings-action compact danger', 'ALLE GERÄTE ABMELDEN');
+      logout.type = 'button';
+      logout.disabled = logins === 0;
+      logout.addEventListener('click', function () {
+        logout.disabled = true;
+        post('user_logout_all', { user_id: Number(user.id) }).then(function (data) {
+          show('Konto ' + user.id + ': ' + (data.logins_ended || 0) + ' Anmeldungen beendet.');
+          return loadUsers();
+        }).catch(function (error) { manageError('Abmelden', error); logout.disabled = false; });
+      });
+      access.appendChild(logout);
+    }
+    grid.appendChild(access);
+
+    // Werkzeuge (not for the own account: the switches under Betrieb apply there)
+    if (!self) {
+      var policy = policyOf(user);
+      var tools = editSection('Werkzeuge', policyReady
+        ? 'Haken weg sperrt ein Werkzeug nur für dieses Konto. Was unter Betrieb aus ist, bleibt für alle aus.'
+        : MANAGE_ERRORS.missing_schema_021);
+      var boxes = {};
+      TOOL_LABELS.forEach(function (tool) {
+        var label = el('label', 'model-access-choice user-tool-choice');
+        var box = document.createElement('input');
+        box.type = 'checkbox';
+        box.value = tool[0];
+        var globalOn = globalTools[tool[0]] !== false;
+        box.checked = policy.tools[tool[0]] !== false;
+        box.disabled = !globalOn || !policyReady;
+        label.appendChild(box);
+        label.appendChild(el('span', '', tool[1] + (globalOn ? '' : ' (global aus)')));
+        tools.appendChild(label);
+        boxes[tool[0]] = box;
+      });
+      var saveTools = el('button', 'settings-action compact', 'WERKZEUGE SPEICHERN');
+      saveTools.type = 'button';
+      saveTools.disabled = !policyReady;
+      saveTools.addEventListener('click', function () {
+        var chosen = {};
+        TOOL_LABELS.forEach(function (tool) { chosen[tool[0]] = boxes[tool[0]].checked; });
+        saveTools.disabled = true;
+        post('user_policy', { user_id: Number(user.id), tools: chosen }).then(function (data) {
+          userPolicies[String(user.id)] = data.policy;
+          var off = TOOL_LABELS.filter(function (tool) { return !data.policy.tools[tool[0]]; }).map(function (tool) { return tool[1]; });
+          show('Konto ' + user.id + ': ' + (off.length ? 'gesperrt: ' + off.join(', ') + '.' : 'alle Werkzeuge erlaubt.'));
+        }).catch(function (error) { manageError('Werkzeuge', error); }).finally(function () { saveTools.disabled = !policyReady; });
+      });
+      tools.appendChild(saveTools);
+      grid.appendChild(tools);
+
+      // Limits: messages per day and the largest context window.
+      var used = policy.daily_messages !== null && policy.used_today != null
+        ? ' Heute gesendet: ' + policy.used_today + ' von ' + policy.daily_messages + '.' : '';
+      var limits = editSection('Limits', policyReady
+        ? 'Leer heißt ohne eigene Grenze. Das Tageslimit zählt 24 Stunden ab der ersten Nachricht.' + used
+        : MANAGE_ERRORS.missing_schema_021);
+      var daily = document.createElement('input');
+      daily.type = 'number';
+      daily.min = '1';
+      daily.max = '100000';
+      daily.step = '1';
+      daily.placeholder = 'ohne Grenze';
+      daily.value = policy.daily_messages != null ? String(policy.daily_messages) : '';
+      daily.disabled = !policyReady;
+      editField(limits, 'NACHRICHTEN PRO TAG', daily);
+      var ctx = document.createElement('select');
+      var none = el('option', '', 'ohne Grenze');
+      none.value = '';
+      ctx.appendChild(none);
+      ctxChoices.forEach(function (n) {
+        var option = el('option', '', 'bis ' + ctxLabel(n));
+        option.value = String(n);
+        if (Number(policy.max_num_ctx) === Number(n)) option.selected = true;
+        ctx.appendChild(option);
+      });
+      ctx.disabled = !policyReady;
+      editField(limits, 'GRÖSSTES KONTEXTFENSTER', ctx);
+      var saveLimits = el('button', 'settings-action compact', 'LIMITS SPEICHERN');
+      saveLimits.type = 'button';
+      saveLimits.disabled = !policyReady;
+      saveLimits.addEventListener('click', function () {
+        var dailyValue = daily.value.trim() === '' ? null : Number(daily.value);
+        saveLimits.disabled = true;
+        post('user_policy', { user_id: Number(user.id), daily_messages: dailyValue, max_num_ctx: ctx.value === '' ? null : Number(ctx.value) }).then(function (data) {
+          userPolicies[String(user.id)] = data.policy;
+          var p = data.policy;
+          show('Konto ' + user.id + ': ' + (p.daily_messages ? p.daily_messages + ' Nachrichten pro Tag' : 'kein Tageslimit') + ', '
+            + (p.max_num_ctx ? 'Kontextfenster bis ' + ctxLabel(p.max_num_ctx) : 'Kontextfenster ohne Grenze') + '.');
+        }).catch(function (error) { manageError('Limits', error); }).finally(function () { saveLimits.disabled = !policyReady; });
+      });
+      limits.appendChild(saveLimits);
+      grid.appendChild(limits);
+    }
+
+    td.appendChild(grid);
+    tr.appendChild(td);
+    return tr;
+  }
+
   var DELETE_ERRORS = {
     account_busy: 'Das Konto arbeitet gerade (laufende Antwort, Browser oder Python). Kurz warten und erneut löschen.',
     protected_account: 'Dieses Konto ist geschützt und kann nicht gelöscht werden.',
@@ -300,6 +516,10 @@
     var q = document.getElementById('userSearch').value.trim();
     return Promise.all([api('users', null, 'limit=150&q=' + encodeURIComponent(q)), loadModelAccess()]).then(function (both) {
       var data = both[0];
+      userPolicies = data.policies && !Array.isArray(data.policies) ? data.policies : {};
+      globalTools = data.tools || {};
+      ctxChoices = Array.isArray(data.ctx_choices) ? data.ctx_choices : [];
+      policyReady = data.policy_ready !== false;
       var tbody = document.getElementById('userRows');
       tbody.innerHTML = '';
       (data.items || []).forEach(function (user) {
@@ -351,6 +571,19 @@
           }).catch(function (error) { show('Benutzer: ' + error.message, true); });
         });
         actions.appendChild(save);
+        if (canManage(user)) {
+          var edit = el('button', 'user-edit-toggle', 'BEARBEITEN');
+          edit.type = 'button';
+          edit.setAttribute('aria-expanded', 'false');
+          edit.addEventListener('click', function () {
+            var open = row.nextSibling && row.nextSibling.classList && row.nextSibling.classList.contains('user-edit-row');
+            closePanel(row);
+            if (open) return;
+            row.parentNode.insertBefore(editPanel(user, edit), row.nextSibling);
+            edit.setAttribute('aria-expanded', 'true');
+          });
+          actions.appendChild(edit);
+        }
         if (canDelete(user)) {
           var remove = el('button', 'danger user-delete-toggle', 'LÖSCHEN');
           remove.type = 'button';

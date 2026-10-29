@@ -1,0 +1,52 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.5.85
+Stand: 29.10.2026
+Branch: claude/bold-galileo-myoyi0 (neu auf main nach Merge von PR #135 mit 0.5.83 und 0.5.84)
+Basis: Wunsch des Betreibers: weitere Einstellungen pro Konto, nacheinander: Passwort und Anmeldungen, Name und
+E-Mail, Werkzeuge pro Konto, Limits pro Konto.
+
+AENDERUNGEN (erster Teil):
+- api/account_admin.php (neu): coreui_account_manage_refusal(actorId, actorLevel, target, selfAllowed) rein, gleiche
+  Regeln wie beim Loeschen; am eigenen Konto nur mit selfAllowed (Name/E-Mail), sonst use_account_settings.
+  coreui_account_set_password (12..1024 Zeichen, Gaeste guest_account, password_changed_at, alle Anmeldungen per
+  coreui_auth_session_revoke_all 'admin_password_set'), coreui_account_logout_all, coreui_account_set_identity
+  (E-Mail bereinigt und eindeutig, Gaeste behalten die Kennung, Profil wird bei Bedarf angelegt),
+  coreui_account_login_count.
+- api/admin.php: POST user_password, user_logout_all, user_identity hinter CSRF, mit Regel und Audit (ohne Passwort).
+  Benutzerliste mit login_count (aktive Anmeldungen).
+- js/admin.js: canManage, BEARBEITEN mit Panelzeile (Abschnitte Name und E-Mail, Passwort und Anmeldungen), ein Panel
+  je Konto. css/settings.css: Raster der Abschnitte.
+
+GEPRUEFT:
+- Alle Offline-Selbsttests; account-admin-selftest.php lokal gegen MariaDB 10.11 (mit Rollback); Einstellungs-Browser-
+  Test mit Bearbeiten-Ablauf.
+
+AENDERUNGEN (zweiter Teil, Werkzeuge):
+- database/migrations/021_user_policies.sql: stu_user_policies (tool_web, tool_browse, tool_python, daily_messages,
+  max_num_ctx, updated_by; ON DELETE CASCADE). api/health.php prueft die Tabelle.
+- api/user_policy.php (neu): ready, default, from_row, load, all, coreui_user_policy_tools (rein: Sperre verengt, global
+  aus bleibt aus), coreui_user_policy_save (Teil-Patch, Pruefung: invalid_tools, invalid_daily_messages,
+  invalid_max_num_ctx, missing_schema_021).
+- api/ai_settings.php: coreui_ai_runtime_apply setzt COREUI_OPERATOR_RUNTIME_SETTINGS = globale Schalter verengt um
+  die Sperren des Kontos; alle Werkzeuge gehen ueber ember_web/browse/py_enabled -> coreui_runtime_tool_enabled.
+- api/admin.php: users liefert policies, tools (globale Schalter), policy_ready; POST user_policy (eigenes Konto
+  own_policy), Audit. js/admin.js: Abschnitt Werkzeuge mit Haken, "global aus" gesperrt.
+- Testfund: stu_app_settings_install (CREATE TABLE IF NOT EXISTS, einmal pro Prozess) beendete die Test-Transaktion
+  still; Testzeilen blieben. Der Test legt die Tabelle vorher an; alle DB-Tests pruefen @@in_transaction vor dem
+  Rollback (Gegenprobe: ohne Vorab-Anlage schlaegt die Pruefung an).
+
+AENDERUNGEN (dritter Teil, Limits):
+- api/user_policy.php: coreui_user_policy_take_turn (Zaehler stu_abuse_counters, Schluessel policy-day:<id>, Fenster
+  86400 ab der ersten Nachricht; Ablehnung gibt zurueck), coreui_user_policy_reserve_turn (429 daily_message_limit
+  mit retry_at), used_today, ctx_choices (Stufen bis zum Limit), ctx_clamp (nur eine eigene Wahl wird gekuerzt).
+- api/chat.php (Senden) und api/console_actions.php (prepare_generation, edit_message): Reservierung neben der
+  Gast-Reservierung. api/ai_settings.php: Regeln einmal laden, Fenster kuerzen, Werkzeuge verengen.
+- api/user_settings.php: Stufen des Schiebereglers bis zum Limit, angezeigter Wert gekuerzt, Speichern darueber 403
+  num_ctx_not_allowed. js/settings.js und js/console-app.js: Texte.
+- api/admin.php: Liste mit ctx_choices und used_today; js/admin.js: Abschnitt Limits (Zahl, Auswahl "bis 16K").
+- css/settings.css: Haekchen in Tabellen-Panels 17 px (die td-input-Regel machte sie breit und 42 px hoch).
+
+GEPRUEFT: user-policy-selftest.php mit MariaDB (Tageslimit 2: dritte abgelehnt und nicht gezaehlt, Fenster 65536 ->
+16384, 8192 bleibt), drei Gegenproben (keine Rueckgabe, Standard angehoben, global aus ueberstimmt) erkannt;
+Einstellungs-Browser-Test mit Limits.
+
+NAECHSTER SCHRITT: Audio (TTS-Kandidaten), dann P20.1.

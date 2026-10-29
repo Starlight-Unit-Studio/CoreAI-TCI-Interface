@@ -10,6 +10,7 @@ declare(strict_types=1);
  */
 
 require_once __DIR__ . '/model_access.php';
+require_once __DIR__ . '/user_policy.php';
 
 function coreui_ai_settings_schema_ready(PDO $pdo): bool {
   try {
@@ -271,6 +272,9 @@ function coreui_ai_account_is_guest(PDO $pdo, int $uid): bool {
 function coreui_ai_runtime_apply(PDO $pdo, int $uid): array {
   unset($GLOBALS['COREUI_SKILLS_BLOCK']);
   $settings = coreui_ai_settings_load($pdo, $uid);
+  $policy = coreui_user_policy_load($pdo, $uid);
+  // 0.5.85: an own window above the account's limit is cut to the limit.
+  $settings['num_ctx'] = coreui_user_policy_ctx_clamp($settings['num_ctx'], $policy);
   // 0.5.79: a guest always chats with the default Core and its own window
   // (the RAM is shared; a guest must not load another Core for everyone).
   if (coreui_ai_account_is_guest($pdo, $uid)) {
@@ -290,7 +294,9 @@ function coreui_ai_runtime_apply(PDO $pdo, int $uid): array {
     $GLOBALS['COREUI_AI_NUM_CTX_FIXED'] = ['uid'=>$uid, 'value'=>$settings['num_ctx']];
   }
   $GLOBALS['COREUI_AI_RUNTIME_SETTINGS'] = $settings;
-  $GLOBALS['COREUI_OPERATOR_RUNTIME_SETTINGS'] = coreui_operator_runtime_load($pdo);
+  // 0.5.85: tools the Inhaber or an Admin blocked for this account are off
+  // for it, everywhere (prompt, work loop, file tasks); global off stays off.
+  $GLOBALS['COREUI_OPERATOR_RUNTIME_SETTINGS'] = coreui_user_policy_tools(coreui_operator_runtime_load($pdo), $policy);
   return $settings;
 }
 

@@ -9143,6 +9143,8 @@ if ($action === 'send') {
 
   // 0.5.77: guests chat only in the console and only up to the admin's limit.
   $guestQuota = coreui_guest_reserve_turn($pdo, (int)$uid, $channel);
+  // 0.5.85: the daily message limit the Inhaber or an Admin set for this account.
+  coreui_user_policy_reserve_turn($pdo, (int)$uid);
 
   $hasImageCol = chat_schema_has_image_url($pdo);
 
