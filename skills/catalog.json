@@ -25,7 +25,7 @@
     "id": "project-planning",
     "title": "Projektplanung",
     "category": "Arbeitsweise",
-    "description": "Für neue Projekte: Ziel, Dateien, Abhängigkeiten und Abnahme vor dem Schreiben klären.",
+    "description": "Für Ziele, Dateien und Abnahme neuer Projekte.",
     "triggers": [
       "projekt",
       "project",
@@ -39,14 +39,14 @@
     "sources": [
       "https://aider.chat/docs/more/edit-formats.html"
     ],
-    "reviewed": "2026-10-26",
-    "version": "1.1.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.1"
   },
   {
     "id": "code-editing",
     "title": "Gezielte Codeänderungen",
     "category": "Arbeitsweise",
-    "description": "Für Änderungen an vorhandenem Code mit kleinen, überprüfbaren Diffs.",
+    "description": "Für kleine, geprüfte Code-Patches.",
     "triggers": [
       "refactor",
       "refactoring",
@@ -60,14 +60,14 @@
     "sources": [
       "https://aider.chat/docs/more/edit-formats.html"
     ],
-    "reviewed": "2026-10-26",
-    "version": "1.1.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.1"
   },
   {
     "id": "debugging",
     "title": "Fehleranalyse",
     "category": "Arbeitsweise",
-    "description": "Für reproduzierbare Fehler, Exceptions und fehlgeschlagene Abläufe.",
+    "description": "Für reproduzierbare Fehler und Ursachen.",
     "triggers": [
       "bug",
       "debug",
@@ -81,14 +81,14 @@
     "sources": [
       "https://docs.python.org/3/tutorial/errors.html"
     ],
-    "reviewed": "2026-10-26",
-    "version": "1.1.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.1"
   },
   {
     "id": "html-semantics",
     "title": "HTML und Formulare",
     "category": "Frontend",
-    "description": "Für semantische Webseiten, Formulare und klare Dokumentstruktur.",
+    "description": "Für semantisches HTML und Formulare.",
     "triggers": [
       "html",
       "formular",
@@ -100,14 +100,14 @@
     "sources": [
       "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Accessibility"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.1"
   },
   {
     "id": "responsive-css",
     "title": "Responsives CSS",
     "category": "Frontend",
-    "description": "Für Layouts, die auf kleinen und großen Bildschirmen funktionieren.",
+    "description": "Für responsive Layouts auf allen Geräten.",
     "triggers": [
       "css",
       "responsive",
@@ -119,14 +119,14 @@
     "sources": [
       "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/CSS_layout/Responsive_Design"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.1"
   },
   {
     "id": "javascript",
     "title": "JavaScript",
     "category": "Frontend",
-    "description": "Für Browserlogik, Ereignisse und robuste JavaScript-Funktionen.",
+    "description": "Für zuverlässige JavaScript- und DOM-Logik.",
     "triggers": [
       "javascript",
       "js",
@@ -136,14 +136,14 @@
     "sources": [
       "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.1"
   },
   {
     "id": "typescript",
     "title": "TypeScript",
     "category": "Frontend",
-    "description": "Für nachvollziehbare Typen und sichere Datengrenzen in TypeScript.",
+    "description": "Für Typen und klare TypeScript-Verträge.",
     "triggers": [
       "typescript",
       "ts",
@@ -153,14 +153,14 @@
     "sources": [
       "https://www.typescriptlang.org/docs/handbook/2/everyday-types.html"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.1"
   },
   {
     "id": "react",
     "title": "React-Komponenten",
     "category": "Frontend",
-    "description": "Für React-Oberflächen mit konsistentem State und Komponenten.",
+    "description": "Für React-State und Komponenten.",
     "triggers": [
       "react",
       "jsx",
@@ -169,14 +169,14 @@
     "sources": [
       "https://react.dev/learn/thinking-in-react"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.1"
   },
   {
     "id": "vue",
     "title": "Vue-Komponenten",
     "category": "Frontend",
-    "description": "Für Vue-Komponenten und zuverlässige reaktive Zustände.",
+    "description": "Für Vue-State und Komponenten.",
     "triggers": [
       "vue",
       "vuejs",
@@ -185,14 +185,14 @@
     "sources": [
       "https://vuejs.org/guide/essentials/reactivity-fundamentals.html"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.1"
   },
   {
     "id": "nextjs",
     "title": "Next.js",
     "category": "Frontend",
-    "description": "Für Next.js mit passenden Server- und Client-Grenzen.",
+    "description": "Für Next.js Server- und Client-Grenzen.",
     "triggers": [
       "nextjs",
       "next.js",
@@ -201,14 +201,14 @@
     "sources": [
       "https://nextjs.org/docs/app/getting-started/server-and-client-components"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.1"
   },
   {
     "id": "accessibility",
     "title": "Barrierefreiheit",
     "category": "Qualität",
-    "description": "Für Tastaturbedienung, verständliche Labels und zugängliche Zustände.",
+    "description": "Für zugängliche Bedienung und Labels.",
     "triggers": [
       "barrierefrei",
       "accessibility",
@@ -219,14 +219,14 @@
     "sources": [
       "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Accessibility"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.1"
   },
   {
     "id": "assets",
     "title": "Bilder und Projektressourcen",
     "category": "Frontend",
-    "description": "Für vollständige Bildressourcen und funktionierende lokale Verweise.",
+    "description": "Für Bilder, Medienpfade und Assets.",
     "triggers": [
       "bilder",
       "images",
@@ -238,14 +238,14 @@
     "sources": [
       "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Structuring_content/HTML_images"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.1"
   },
   {
     "id": "fetch-api",
     "title": "HTTP-Client und Fetch",
     "category": "Backend",
-    "description": "Für HTTP-Aufrufe mit expliziten Fehlern und Abbruchverhalten.",
+    "description": "Für robuste HTTP-Aufrufe per Fetch.",
     "triggers": [
       "fetch",
       "http client",
@@ -256,14 +256,14 @@
     "sources": [
       "https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.1"
   },
   {
     "id": "rest-api",
     "title": "REST-Endpunkte",
     "category": "Backend",
-    "description": "Für konsistente API-Verträge und nachvollziehbare Fehlerantworten.",
+    "description": "Für REST-Endpunkte und Fehlerverträge.",
     "triggers": [
       "rest",
       "endpoint",
@@ -274,8 +274,8 @@
     "sources": [
       "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.1"
   },
   {
     "id": "php-pdo",
@@ -297,7 +297,7 @@
     "id": "python",
     "title": "Python-Programme",
     "category": "Backend",
-    "description": "Für wartbare Python-Skripte und gezielte Fehlerbehandlung.",
+    "description": "Für robuste Python-Skripte.",
     "triggers": [
       "python",
       "py",
@@ -307,8 +307,8 @@
     "sources": [
       "https://docs.python.org/3/tutorial/errors.html"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.1"
   },
   {
     "id": "sql-security",
@@ -367,7 +367,7 @@
     "id": "browser-testing",
     "title": "Browser-Tests",
     "category": "Qualität",
-    "description": "Für reproduzierbare Tests aus Sicht der Benutzer.",
+    "description": "Für End-to-End-Tests im Browser.",
     "triggers": [
       "playwright",
       "browser test",
@@ -377,14 +377,14 @@
     "sources": [
       "https://playwright.dev/docs/best-practices"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.1"
   },
   {
     "id": "unit-testing",
     "title": "Unit- und Regressionstests",
     "category": "Qualität",
-    "description": "Für kleine, unabhängige Tests an relevanten Verhaltensgrenzen.",
+    "description": "Für Unit- und Regressionstests.",
     "triggers": [
       "pytest",
       "unittest",
@@ -395,8 +395,8 @@
     "sources": [
       "https://docs.pytest.org/en/stable/how-to/fixtures.html"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.1"
   },
   {
     "id": "docker",
@@ -419,7 +419,7 @@
     "id": "git-review",
     "title": "Git und Code-Review",
     "category": "Arbeitsweise",
-    "description": "Für nachvollziehbare Änderungen und gezielte Prüfung vor Veröffentlichung.",
+    "description": "Für Diffs, Commits und Code-Review.",
     "triggers": [
       "git",
       "diff",
@@ -431,14 +431,14 @@
     "sources": [
       "https://git-scm.com/docs/git-diff"
     ],
-    "reviewed": "2026-10-25",
-    "version": "1.0.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.1"
   },
   {
     "id": "zip-delivery",
     "title": "ZIP und Dateiauslieferung",
     "category": "Dateien",
-    "description": "Für vollständige Archive mit überprüften Dateien und Verweisen.",
+    "description": "Für geprüfte ZIPs und Dateipakete.",
     "triggers": [
       "zip",
       "download",
@@ -449,8 +449,8 @@
     "sources": [
       "https://docs.python.org/3/library/zipfile.html"
     ],
-    "reviewed": "2026-10-26",
-    "version": "1.1.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.1"
   },
   {
     "id": "csv-data",
@@ -473,7 +473,7 @@
     "id": "async-jobs",
     "title": "Asynchrone Jobs",
     "category": "Backend",
-    "description": "Für kontrollierte Nebenläufigkeit, Abbruch und Hintergrundaufgaben.",
+    "description": "Für Jobs, Warteschlangen und Abbruch.",
     "triggers": [
       "asyncio",
       "async",
@@ -484,8 +484,8 @@
     "sources": [
       "https://docs.python.org/3/library/asyncio-task.html"
     ],
-    "reviewed": "2026-10-26",
-    "version": "1.1.0"
+    "reviewed": "2026-10-29",
+    "version": "1.0.1"
   },
   {
     "id": "sse-streaming",
@@ -593,5 +593,328 @@
     ],
     "reviewed": "2026-10-26",
     "version": "1.1.0"
+  },
+  {
+    "id": "web-research",
+    "title": "Webrecherche und Quellen",
+    "category": "Recherche",
+    "description": "Für Webrecherche mit mehreren belegten Quellen.",
+    "triggers": [
+      "recherche",
+      "recherchiere",
+      "websuche",
+      "quellenvergleich",
+      "web research"
+    ],
+    "sources": [
+      "https://developer.mozilla.org/en-US/docs/Web/HTTP/Overview"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "fact-checking",
+    "title": "Faktencheck",
+    "category": "Recherche",
+    "description": "Für überprüfbare Behauptungen und Quellenkritik.",
+    "triggers": [
+      "faktencheck",
+      "fact check",
+      "behauptung prüfen",
+      "quellen prüfen",
+      "verifizieren",
+      "stimmt das"
+    ],
+    "sources": [
+      "https://www.loc.gov/programs/teachers/getting-started-with-primary-sources/"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "rag-knowledge",
+    "title": "Privates Wissen und RAG-Lite",
+    "category": "Wissen",
+    "description": "Für Fragen zu privatem RAG-Wissen und Fundstellen.",
+    "triggers": [
+      "rag",
+      "wissensbasis",
+      "privates wissen",
+      "wissensarchiv",
+      "quellendokument",
+      "hochgeladenen dokumenten"
+    ],
+    "sources": [
+      "https://docs.ollama.com/capabilities/embeddings"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "document-analysis",
+    "title": "Dokumente und PDF auswerten",
+    "category": "Dateien",
+    "description": "Für PDF- und Dokumentanalyse mit Seitenbezug.",
+    "triggers": [
+      "pdf",
+      "dokument analysieren",
+      "dokument auswerten",
+      "text extrahieren",
+      "seitenzahl",
+      "pdf prüfen"
+    ],
+    "sources": [
+      "https://pymupdf.readthedocs.io/en/latest/"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "tabular-analysis",
+    "title": "Tabellen und Kennzahlen",
+    "category": "Daten",
+    "description": "Für Tabellen, Kennzahlen und Datenprüfung.",
+    "triggers": [
+      "tabellenanalyse",
+      "tabelle auswerten",
+      "datenanalyse",
+      "kennzahlen",
+      "pivot",
+      "statistik auswerten"
+    ],
+    "sources": [
+      "https://pandas.pydata.org/docs/user_guide/index.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "data-visualization",
+    "title": "Diagramme und Datenvisualisierung",
+    "category": "Daten",
+    "description": "Für passende Diagramme und visuelle Daten.",
+    "triggers": [
+      "diagramm",
+      "datenvisualisierung",
+      "chart",
+      "plot",
+      "daten visualisieren",
+      "grafik aus daten"
+    ],
+    "sources": [
+      "https://matplotlib.org/stable/users/explain/quick_start.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "json-yaml",
+    "title": "JSON und YAML",
+    "category": "Backend",
+    "description": "Für sichere JSON- und YAML-Konfiguration.",
+    "triggers": [
+      "json",
+      "yaml",
+      "yml",
+      "json schema",
+      "konfigurationsdatei",
+      "konfiguration prüfen"
+    ],
+    "sources": [
+      "https://yaml.org/spec/1.2.2/"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "linux-shell",
+    "title": "Linux und Shell-Kommandos",
+    "category": "Betrieb",
+    "description": "Für sichere Shell-Kommandos und Serverarbeit.",
+    "triggers": [
+      "shell",
+      "bash",
+      "ssh",
+      "terminal",
+      "kommandozeile",
+      "linux befehl"
+    ],
+    "sources": [
+      "https://www.gnu.org/software/bash/manual/bash.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "web-security",
+    "title": "Websicherheit",
+    "category": "Sicherheit",
+    "description": "Für CSRF-, SSRF- und Geheimnisschutz.",
+    "triggers": [
+      "csrf",
+      "ssrf",
+      "secrets",
+      "sicherheitsreview",
+      "security audit",
+      "sicherheitsaudit"
+    ],
+    "sources": [
+      "https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "ui-ux",
+    "title": "UI und Nutzerführung",
+    "category": "Frontend",
+    "description": "Für nutzbare Oberflächen und klare Bedienwege.",
+    "triggers": [
+      "ux",
+      "ui",
+      "interaktionsdesign",
+      "nutzerführung",
+      "user experience",
+      "bedienbarkeit"
+    ],
+    "sources": [
+      "https://www.w3.org/WAI/tutorials/"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "technical-writing",
+    "title": "Technische Dokumentation",
+    "category": "Schreiben",
+    "description": "Für README, Anleitungen und technische Doku.",
+    "triggers": [
+      "readme",
+      "technische dokumentation",
+      "dokumentation",
+      "handbuch",
+      "api-dokumentation",
+      "anleitung schreiben"
+    ],
+    "sources": [
+      "https://developers.google.com/tech-writing/overview"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "creative-writing",
+    "title": "Kreatives Schreiben und Lore",
+    "category": "Schreiben",
+    "description": "Für Romane, Figuren, Dialoge und Lore.",
+    "triggers": [
+      "roman",
+      "kapitel",
+      "worldbuilding",
+      "lore",
+      "figur entwickeln",
+      "dialog schreiben",
+      "geschichte schreiben"
+    ],
+    "sources": [
+      "https://writingcenter.unc.edu/tips-and-tools/"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "translation",
+    "title": "Übersetzen und Lokalisieren",
+    "category": "Schreiben",
+    "description": "Für präzise Übersetzung und Lokalisierung.",
+    "triggers": [
+      "übersetze",
+      "uebersetze",
+      "übersetzung",
+      "translation",
+      "translate",
+      "lokalisieren"
+    ],
+    "sources": [
+      "https://www.w3.org/International/"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "backup-restore",
+    "title": "Backup und Wiederherstellung",
+    "category": "Betrieb",
+    "description": "Für überprüfte Backups und Wiederherstellung.",
+    "triggers": [
+      "backup",
+      "restore",
+      "datensicherung",
+      "wiederherstellen",
+      "disaster recovery",
+      "rücksicherung"
+    ],
+    "sources": [
+      "https://mariadb.com/kb/en/backup-and-restore-overview/"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "privacy-memory",
+    "title": "Privatsphäre und Erinnerung",
+    "category": "Sicherheit",
+    "description": "Für private Erinnerung und Datenminimierung.",
+    "triggers": [
+      "memory",
+      "gedächtnis",
+      "erinnerungen",
+      "privatsphäre",
+      "datenminimierung",
+      "personenbezogene daten"
+    ],
+    "sources": [
+      "https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "media-inspection",
+    "title": "Bild- und Videoanalyse",
+    "category": "Medien",
+    "description": "Für belegbare Bild-, Video- und Screenshotanalyse.",
+    "triggers": [
+      "bildanalyse",
+      "videoanalyse",
+      "screenshot",
+      "bild beschreiben",
+      "anhang analysieren",
+      "videoinhalt"
+    ],
+    "sources": [
+      "https://developer.mozilla.org/en-US/docs/Web/Media/Formats"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
+  },
+  {
+    "id": "browser-actions",
+    "title": "Browseraktionen und Formulare",
+    "category": "Browser",
+    "description": "Für sichere Rechercheaktionen im Webbrowser.",
+    "triggers": [
+      "formular ausfüllen",
+      "formular ausfuellen",
+      "browseraktion",
+      "webseite bedienen",
+      "im browser klicken",
+      "browsen"
+    ],
+    "sources": [
+      "https://playwright.dev/docs/locators"
+    ],
+    "reviewed": "2026-10-29",
+    "version": "1.0.0"
   }
 ]
