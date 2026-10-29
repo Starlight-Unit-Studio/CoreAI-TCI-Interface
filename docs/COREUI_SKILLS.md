@@ -1,26 +1,28 @@
 # CoreAI Skills (Bibliothek seit 0.5.80, erweitert in 0.5.81)
 
-CoreAI enthaelt 68 vertrauenswuerdige, direkt im Repository gepflegte Anleitungen: einen fest eingebundenen Kern-Skill und 67 Fach-Skills, aus denen Mara seit 0.5.80 selbst waehlt (keine Schalter pro Konto mehr). Die urspruenglichen 32 Pakete stammen aus 0.5.33 und wurden am 25.10.2026 geprueft; zehn fuer den aktuellen Agenten-/Dateibau relevante Pakete wurden am 26.10.2026 an den neuen CoreAI-Stand angepasst.
+CoreAI enthaelt 77 vertrauenswuerdige, direkt im Repository gepflegte Anleitungen: einen fest eingebundenen Kern-Skill und 76 Fach-Skills, aus denen Mara seit 0.5.80 selbst waehlt (keine Schalter pro Konto mehr). Die urspruenglichen 32 Pakete stammen aus 0.5.33 und wurden am 25.10.2026 geprueft; zehn fuer den aktuellen Agenten-/Dateibau relevante Pakete wurden am 26.10.2026 an den neuen CoreAI-Stand angepasst.
 
-Seit 0.5.81 sind 35 zusätzliche, thematisch spezialisierte Fach-Skills registriert: Webrecherche, Faktencheck, RAG-Lite, Dokument- und PDF-Auswertung, Tabellen, Diagramme, JSON/YAML, Linux-Shell, Websicherheit, UI/UX, technische Dokumentation, kreatives Schreiben und Lore, Übersetzung, Backup/Restore, Privatsphäre/Memory, Medienanalyse sowie Browseraktionen. Fünf vorhandene Skills enthalten zusätzliche konkrete Prüfregeln. Die Beschreibungen einiger alter Skills wurden für das bestehende Kontextbudget komprimiert.
+Seit 0.5.81 sind 44 zusätzliche, thematisch spezialisierte Fach-Skills registriert: Webrecherche, Faktencheck, RAG-Lite, Dokument- und PDF-Auswertung, Tabellen, Diagramme, JSON/YAML, Linux-Shell, Websicherheit, UI/UX, technische Dokumentation, kreatives Schreiben und Lore, Übersetzung, Backup/Restore, Privatsphäre/Memory, Medienanalyse sowie Browseraktionen. Fünf vorhandene Skills enthalten zusätzliche konkrete Prüfregeln. Die Beschreibungen einiger alter Skills wurden für das bestehende Kontextbudget komprimiert.
 
 **Unveränderte Laufzeit:** Keine Änderung an Loader, Skill-Auswahl, Marker, Game-Trennung, Modellparametern, Modelfile, globaler Queue oder dem Pflicht-Skill. Die Bibliothek enthält bei voller Ansicht weiterhin weniger als 3600 Byte. Es werden keine neuen Tools oder Produktfunktionen freigeschaltet. Der gesonderte lokale Gemma-Sprachskill aus #119 bleibt offen, weil seine Modellbindung eine eigene Integration bräuchte.
 
 ## Abgleich mit Anthropic und der CoreAI-Funktionsmatrix (0.5.81)
 
-Die 19 Verzeichnisse von [anthropics/skills](https://github.com/anthropics/skills/tree/main/skills) wurden als **Funktionsvorbilder** eingeordnet, nicht als Fremdcode importiert. Anthropic kennzeichnet seine vier Dokumenten-Skills als source-available, nicht als Open Source. Es werden keine proprietaeren Texte, Skripte, Komponenten oder Markenassets kopiert. Unsere eigenen Skills verweisen nur auf Dokumentation und benennen verfuegbare Werkzeuge als Voraussetzung.
+Alle 19 Original-Skill-Kennungen werden in CoreAI mit eigenen SKILL.md-Anleitungen und ausführlichen refs/IMPLEMENTATION.md-Plänen als Zielumfang vorbereitet. Die 19 Verzeichnisse von [anthropics/skills](https://github.com/anthropics/skills/tree/main/skills) wurden als **Funktionsvorbilder** eingeordnet, nicht als Fremdcode importiert. Anthropic kennzeichnet seine vier Dokumenten-Skills als source-available, nicht als Open Source. Es werden keine proprietaeren Texte, Skripte, Komponenten oder Markenassets kopiert. Unsere eigenen Skills verweisen nur auf Dokumentation und benennen verfuegbare Werkzeuge als Voraussetzung.
 
-| Offizielle Anthropic-Referenz | CoreAI-Anleitung |
+| Offizielle Anthropic-Referenz | CoreAI-Skill mit derselben Kennung |
 |---|---|
-| docx, pdf, pptx, xlsx | docx, pdf-workflows (neben document-analysis), pptx, xlsx |
-| brand-guidelines, frontend-design, web-artifacts-builder | brand-guidelines, vorhandener ui-ux erweitert, web-artifacts |
-| claude-api, mcp-builder, skill-creator, webapp-testing | anbieterneutrales llm-api, mcp-builder, vorhandene skill-authoring und browser-testing erweitert |
-| algorithmic-art, canvas-design, slack-gif-creator, theme-factory | algorithmic-art, canvas-design, plattformneutrales gif-creator, theme-factory |
-| doc-coauthoring, internal-comms, academy-guide, discernment-nudge | doc-coauthoring, internal-comms, learning-design, reasoning-review |
+| docx, pdf, pptx, xlsx | `docx`, `pdf`, `pptx`, `xlsx` |
+| brand-guidelines, frontend-design, web-artifacts-builder | `brand-guidelines`, `frontend-design`, `web-artifacts-builder` |
+| claude-api, mcp-builder, skill-creator, webapp-testing | `claude-api`, `mcp-builder`, `skill-creator`, `webapp-testing` |
+| algorithmic-art, canvas-design, slack-gif-creator, theme-factory | `algorithmic-art`, `canvas-design`, `slack-gif-creator`, `theme-factory` |
+| doc-coauthoring, internal-comms, academy-guide, discernment-nudge | `doc-coauthoring`, `internal-comms`, `academy-guide`, `discernment-nudge` |
+
+Die vormals erstellten allgemeineren Fach-Skills bleiben zusätzlich verfügbar. Die Referenzen unter `skills/<id>/references/IMPLEMENTATION.md` halten für jeden dieser 19 Skills **seinen vollständigen gewünschten Funktionsumfang**, die benötigten Toolklassen und Abnahmetests fest. Sie werden heute noch nicht automatisch in den Modellkontext geladen. Die Werkzeuglücken und die Verknüpfung zur Roadmap stehen in [COREAI_SKILL_CAPABILITY_GAPS.md](COREAI_SKILL_CAPABILITY_GAPS.md).
 
 Die neuen Anleitungen `agent-task-design` und `workflow-checkpoints` greifen zusaetzlich die in der Funktionsmatrix festgehaltenen Konzepte von [CrewAI](https://github.com/crewAIInc/skills), [LangGraph](https://github.com/langchain-ai/langgraph), [AutoGen](https://github.com/microsoft/autogen), [OpenClaw](https://github.com/openclaw/openclaw) und [Open WebUI](https://github.com/open-webui/open-webui) auf. Dies ersetzt nicht die offene Tiefeninventur aus P01 und implementiert keine P26-/P27-Engine.
 
-**Feste technische Grenzen:** Der aktive Loader liest weiterhin nur SKILL.md, hoechstens 2400 Byte je reiner Anleitung; zusaetzliche Referenzdateien oder Skripte werden nicht automatisch geladen oder ausgefuehrt. Ein DOCX-, PDF-, PPTX-, XLSX-, Bild-, MCP- oder Checkpoint-Skill verleiht keine Editor-, Export-, Provider-, Browser- oder Workflow-Faehigkeit. Solche Backend-Funktionen bleiben getrennte Arbeitspakete. Die 68-Eintraege-Bibliothek bleibt unter der bestehenden Full-Index-Selbsttestgrenze von 3600 Byte; bei kleinen Kontextfenstern erscheinen weiterhin nur Titel oder Kennungen. Keine Aenderungen an Auswahl und Nachladen.
+**Feste technische Grenzen:** Der aktive Loader liest weiterhin nur SKILL.md, hoechstens 2400 Byte je reiner Anleitung; zusaetzliche Referenzdateien oder Skripte werden nicht automatisch geladen oder ausgefuehrt. Ein DOCX-, PDF-, PPTX-, XLSX-, Bild-, MCP- oder Checkpoint-Skill verleiht keine Editor-, Export-, Provider-, Browser- oder Workflow-Faehigkeit. Solche Backend-Funktionen bleiben getrennte Arbeitspakete. Die 77-Eintraege-Bibliothek bleibt unter der bestehenden Full-Index-Selbsttestgrenze von 3600 Byte; bei kleinen Kontextfenstern erscheinen weiterhin nur Titel oder Kennungen. Keine Aenderungen an Auswahl und Nachladen.
 
 ## Verbindlicher System-Skill: Werkzeuge
 
@@ -54,7 +56,7 @@ Wie bei Claude oder GPT hat Mara immer Zugriff auf alle Fach-Skills; die frueher
 
 ## Pruefung
 
-- `php scripts/skills-selftest.php` prueft die 68 Paketdokumente, Pflicht-Skill, Vorauswahl und Budget, die Bibliothek je Fenstergroesse, den Marker (auch in Code nicht ausgeloest), das Nachladen in den vertrauenswuerdigen Block, die Arbeitsschleife, fokussierte Unteraufrufe, Datei-Auftraege ohne Bibliothek, den Game-Kanal und dass keine Schalter mehr existieren.
+- `php scripts/skills-selftest.php` prueft die 77 Paketdokumente, Pflicht-Skill, Vorauswahl und Budget, die Bibliothek je Fenstergroesse, den Marker (auch in Code nicht ausgeloest), das Nachladen in den vertrauenswuerdigen Block, die Arbeitsschleife, fokussierte Unteraufrufe, Datei-Auftraege ohne Bibliothek, den Game-Kanal und dass keine Schalter mehr existieren.
 - Danach `python3 scripts/version-merge-check.py --base-version 0.5.61` und `python3 scripts/cache-bust.py --verify` sowie PHP-Syntaxpruefung und Live-Abnahme durchfuehren.
 - Offline-Tests ersetzen keinen erfolgreichen Netcup-/Android-/Ollama-Livetest. Kein fertiges 10-Unterseiten-ZIP behaupten, bevor es tatsaechlich erzeugt und geprueft wurde.
 
