@@ -137,6 +137,8 @@ P12 bis P14 ergänzen einen vollständigen Skill-Lebenszyklus und installierbare
 | **P13: Skill-Lebenszyklus vervollständigen** | P12 | Rechte, feste Revisionen, Vergleich, Import/Export, Konfliktbehandlung und Wiederherstellung ergänzen. Verbesserungen durch E.M.B.E.R. als nachvollziehbare Änderungen führen. **Abnahme:** Ein vollständiger Skill wird exportiert, wieder importiert und auf einen früheren Stand zurückgesetzt. Laufende Aufträge behalten ihre ausgewählte Revision samt Ressourcen. | `CF-045`, `CF-046`, `CF-047` |
 | **P14: Plugins und externe Fähigkeiten** | P05, P07, P12 | Installierbare Erweiterungen mit Abhängigkeiten, Konfiguration und Rechten einführen. Tools, Provider, Hooks, MCP-/OpenAPI-Anbindungen und weitere Erweiterungsarten einzeln inventarisieren. **Abnahme:** Eine Erweiterung lässt sich installieren, nutzen, aktualisieren, deaktivieren und entfernen. Toolfilter, Konfigurations-/Verbindungsfehler und Zugriffe sind nachvollziehbar; zusätzliche Abhängigkeiten und Dienste werden einzeln ausgewiesen. | `CF-048` |
 
+**Ergänzung zur Skill-Inventur (Arbeitsbranch 0.5.81, 29.10.2026):** Die geplanten Fähigkeiten der 77 Skills, einschließlich aller 19 offiziellen Anthropic-Referenzkennungen, sind in [Skill-Werkzeuglücken und Abnahmen](docs/COREAI_SKILL_CAPABILITY_GAPS.md) dokumentiert. Die ergänzten Anleitungen und Referenzpläne sind kein Ersatz für die noch offenen P12 bis P14, Office-/Media-Toolintegration oder den zukünftigen Workspace. Die Architektur und der Skills-Loader bleiben unverändert.
+
 ### M5: Fünfte Lieferung: Browser, Wissen und Gedächtnis
 
 P15 bis P17 machen Recherche, Browseraktionen und dauerhaften Kontext zu nachvollziehbaren Bestandteilen der Agentenarbeit.
