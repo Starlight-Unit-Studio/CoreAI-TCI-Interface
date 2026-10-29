@@ -8,7 +8,7 @@ Seit 0.5.81 sind 44 zusätzliche, thematisch spezialisierte Fach-Skills registri
 
 ## Abgleich mit Anthropic und der CoreAI-Funktionsmatrix (0.5.81)
 
-Alle 19 Original-Skill-Kennungen werden in CoreAI mit eigenen SKILL.md-Anleitungen und ausführlichen refs/IMPLEMENTATION.md-Plänen als Zielumfang vorbereitet. Die 19 Verzeichnisse von [anthropics/skills](https://github.com/anthropics/skills/tree/main/skills) wurden als **Funktionsvorbilder** eingeordnet, nicht als Fremdcode importiert. Anthropic kennzeichnet seine vier Dokumenten-Skills als source-available, nicht als Open Source. Es werden keine proprietaeren Texte, Skripte, Komponenten oder Markenassets kopiert. Unsere eigenen Skills verweisen nur auf Dokumentation und benennen verfuegbare Werkzeuge als Voraussetzung.
+Alle 19 Original-Skill-Kennungen werden in CoreAI mit eigenen SKILL.md-Anleitungen und ausführlichen references/IMPLEMENTATION.md-Plänen als Zielumfang vorbereitet. Die 19 Verzeichnisse von [anthropics/skills](https://github.com/anthropics/skills/tree/main/skills) wurden als **Funktionsvorbilder** eingeordnet, nicht als Fremdcode importiert. Anthropic kennzeichnet seine vier Dokumenten-Skills als source-available, nicht als Open Source. Es werden keine proprietaeren Texte, Skripte, Komponenten oder Markenassets kopiert. Unsere eigenen Skills verweisen nur auf Dokumentation und benennen verfuegbare Werkzeuge als Voraussetzung.
 
 | Offizielle Anthropic-Referenz | CoreAI-Skill mit derselben Kennung |
 |---|---|
