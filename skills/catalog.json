@@ -921,7 +921,7 @@
     "id": "docx",
     "title": "Word und DOCX",
     "category": "Office",
-    "description": "Word-Dateien bearbeiten.",
+    "description": "DOCX bearbeiten.",
     "triggers": [
       "docx",
       "dotx",
@@ -934,13 +934,13 @@
       "https://github.com/anthropics/skills/tree/main/skills/docx"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "pdf-workflows",
     "title": "PDF-Bearbeitung und Formulare",
     "category": "Office",
-    "description": "PDF-Zuschnitt und Formulare.",
+    "description": "PDF-Seiten verwalten.",
     "triggers": [
       "pdf zusammenfügen",
       "pdf verbinden",
@@ -955,13 +955,13 @@
       "https://github.com/anthropics/skills/tree/main/skills/pdf"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "pptx",
     "title": "PowerPoint und PPTX",
     "category": "Office",
-    "description": "PPTX-Folien erstellen.",
+    "description": "PPTX erstellen.",
     "triggers": [
       "pptx",
       "potx",
@@ -974,13 +974,13 @@
       "https://github.com/anthropics/skills/tree/main/skills/pptx"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "xlsx",
     "title": "Excel und XLSX",
     "category": "Office",
-    "description": "Excel-Dateien und Formeln.",
+    "description": "Excel bearbeiten.",
     "triggers": [
       "xlsx",
       "xlsm",
@@ -993,13 +993,13 @@
       "https://github.com/anthropics/skills/tree/main/skills/xlsx"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "brand-guidelines",
     "title": "Markenrichtlinien",
     "category": "Design",
-    "description": "Markenstil nach Vorgaben.",
+    "description": "Markenrichtlinien.",
     "triggers": [
       "brand guidelines",
       "markenrichtlinien",
@@ -1012,7 +1012,7 @@
       "https://github.com/anthropics/skills/tree/main/skills/brand-guidelines"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "web-artifacts",
@@ -1058,7 +1058,7 @@
     "id": "mcp-builder",
     "title": "MCP-Server und Werkzeuge",
     "category": "Backend",
-    "description": "MCP-Server entwickeln.",
+    "description": "MCP-Server bauen.",
     "triggers": [
       "mcp",
       "mcp server",
@@ -1071,13 +1071,13 @@
       "https://github.com/anthropics/skills/tree/main/skills/mcp-builder"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "algorithmic-art",
     "title": "Generative Codekunst",
     "category": "Design",
-    "description": "Generative Kunst aus Code.",
+    "description": "Generative Kunst.",
     "triggers": [
       "algorithmic art",
       "algorithmische kunst",
@@ -1090,13 +1090,13 @@
       "https://github.com/anthropics/skills/tree/main/skills/algorithmic-art"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "canvas-design",
     "title": "Poster und Grafikdesign",
     "category": "Design",
-    "description": "Poster und Grafiken.",
+    "description": "Poster gestalten.",
     "triggers": [
       "poster",
       "plakat",
@@ -1109,7 +1109,7 @@
       "https://github.com/anthropics/skills/tree/main/skills/canvas-design"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "gif-creator",
@@ -1134,7 +1134,7 @@
     "id": "theme-factory",
     "title": "Design-Themes",
     "category": "Design",
-    "description": "Farbthemen entwickeln.",
+    "description": "Theming und Farben.",
     "triggers": [
       "theme",
       "theming",
@@ -1148,13 +1148,13 @@
       "https://github.com/anthropics/skills/tree/main/skills/theme-factory"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "doc-coauthoring",
     "title": "Gemeinsames Dokumentenschreiben",
     "category": "Schreiben",
-    "description": "Dokumente gemeinsam verfassen.",
+    "description": "Dokumente co-schreiben.",
     "triggers": [
       "dokument gemeinsam",
       "gemeinsam schreiben",
@@ -1167,13 +1167,13 @@
       "https://github.com/anthropics/skills/tree/main/skills/doc-coauthoring"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   {
     "id": "internal-comms",
     "title": "Interne Kommunikation",
     "category": "Schreiben",
-    "description": "Interne Memos und Meldungen.",
+    "description": "Interne Mitteilungen.",
     "triggers": [
       "interne mitteilung",
       "internes memo",
@@ -1187,7 +1187,7 @@
       "https://github.com/anthropics/skills/tree/main/skills/internal-comms"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "learning-design",
@@ -1273,7 +1273,7 @@
     "id": "pdf",
     "title": "PDF-Dokumente",
     "category": "Office",
-    "description": "PDF erstellen, OCR, Formulare.",
+    "description": "PDF, OCR und Formulare.",
     "triggers": [
       "pdf",
       "pdf erstellen",
@@ -1287,13 +1287,13 @@
       "https://github.com/anthropics/skills/tree/main/skills/pdf"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "frontend-design",
     "title": "Frontend-Design",
     "category": "Frontend",
-    "description": "Weboberflächen gestalten.",
+    "description": "Frontend gestalten.",
     "triggers": [
       "frontend design",
       "webdesign",
@@ -1305,13 +1305,13 @@
       "https://github.com/anthropics/skills/tree/main/skills/frontend-design"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "web-artifacts-builder",
     "title": "Interaktive Web-Artefakte",
     "category": "Frontend",
-    "description": "Web-Apps bauen und bundlen.",
+    "description": "Web-Artefakte bauen.",
     "triggers": [
       "web artifacts",
       "web-artifacts-builder",
@@ -1323,13 +1323,13 @@
       "https://github.com/anthropics/skills/tree/main/skills/web-artifacts-builder"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "claude-api",
     "title": "Claude-API",
     "category": "Backend",
-    "description": "Claude API verwenden.",
+    "description": "Claude-SDK und API.",
     "triggers": [
       "claude api",
       "anthropic api",
@@ -1341,7 +1341,7 @@
       "https://github.com/anthropics/skills/tree/main/skills/claude-api"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "skill-creator",
@@ -1366,7 +1366,7 @@
     "id": "webapp-testing",
     "title": "Webapp-Tests",
     "category": "Qualität",
-    "description": "Webapps mit Playwright testen.",
+    "description": "Playwright Webtests.",
     "triggers": [
       "webapp testing",
       "webapp-testing",
@@ -1379,13 +1379,13 @@
       "https://github.com/anthropics/skills/tree/main/skills/webapp-testing"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "slack-gif-creator",
     "title": "Slack- und Messenger-GIFs",
     "category": "Medien",
-    "description": "Slack-GIFs und Emojis erstellen.",
+    "description": "Slack-GIFs erstellen.",
     "triggers": [
       "slack gif",
       "slack emoji",
@@ -1396,13 +1396,13 @@
       "https://github.com/anthropics/skills/tree/main/skills/slack-gif-creator"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "academy-guide",
     "title": "Academy-Lernpfade",
     "category": "Schreiben",
-    "description": "Lernressourcen empfehlen.",
+    "description": "Academy-Lernpfade.",
     "triggers": [
       "claude academy",
       "academy",
@@ -1414,13 +1414,13 @@
       "https://github.com/anthropics/skills/tree/main/skills/academy-guide"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   {
     "id": "discernment-nudge",
     "title": "Kritische Ergebnisprüfung",
     "category": "Qualität",
-    "description": "Annahmen bei Entscheidungen prüfen.",
+    "description": "Entscheidungen prüfen.",
     "triggers": [
       "discernment",
       "entscheidungsprüfung",
@@ -1432,6 +1432,6 @@
       "https://github.com/anthropics/skills/tree/main/skills/discernment-nudge"
     ],
     "reviewed": "2026-10-29",
-    "version": "1.0.0"
+    "version": "1.0.1"
   }
 ]
