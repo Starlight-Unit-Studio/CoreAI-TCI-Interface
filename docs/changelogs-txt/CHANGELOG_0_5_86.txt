@@ -1,0 +1,6 @@
+CoreAI: TCI Interface 0.5.86 - 30.10.2026
+- Maras Erinnerungen werden nicht mehr nach 240 Zeichen abgeschnitten, weder beim Merken noch im Prompt.
+- Im Prompt nur ganze Erinnerungen innerhalb eines Budgets je Kontextfenster (12000/3000/1500 Zeichen); was nicht passt, bleibt fuer diese Antwort draussen.
+- Memory-Tab und Admin Core erlauben 8000 Zeichen; 8000 ist nur Schutz gegen ausufernde Ausgaben (laengeres wird nicht gespeichert, nicht gekuerzt).
+- Schon gekuerzte Eintraege bleiben gekuerzt (der Rest wurde nie gespeichert).
+- Tests: memory-length-selftest.php.

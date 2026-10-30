@@ -2,6 +2,14 @@
 
 CoreAI: TCI Interface gehoert zur Quantum-Softwarefamilie und wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert. Historische Changelogs dokumentieren die frueheren Produktnamen unveraendert.
 
+## 0.5.86 - 30.10.2026
+
+- **Maras Erinnerungen ohne Kuerzung:** Laengere Eintraege im Memory waren abgeschnitten. Ursache: Beim automatischen Merken schnitt der Server jeden Fakt hart nach 240 Zeichen ab (mitten im Satz), und beim Einfuegen in Maras Prompt nochmals. Jetzt wird jede Erinnerung vollstaendig gespeichert und vollstaendig verwendet.
+- **Ganze Erinnerungen im Prompt:** Statt einzelne Fakten zu kuerzen, bekommt das Gedaechtnis ein Budget je Kontextfenster (12000 Zeichen bei grossem oder unbekanntem Fenster, 3000 bis 8K, 1500 bis 4K). Die passendsten Erinnerungen kommen ganz hinein; passt eine nicht mehr, bleibt sie fuer diese Antwort draussen und die naechste wird versucht. Nie wird ein Fakt halbiert.
+- **Auch von Hand laenger:** Der Memory-Tab erlaubte 1000 Zeichen, Admin Core 2000; beide jetzt 8000. Diese Grenze von 8000 Zeichen gilt ueberall nur als Schutz gegen ausufernde Ausgaben: Laengeres wird gar nicht gespeichert statt abgeschnitten. Die alte Einstellung `STU_EMBER_REFLECT_MAX_FACT_LEN` entfaellt.
+- Hinweis: Schon gekuerzte Eintraege lassen sich nicht wiederherstellen, der abgeschnittene Teil wurde nie gespeichert. Sie lassen sich unter Admin Core > Memory (global) bearbeiten oder loeschen; Mara merkt sie sich beim naechsten Mal vollstaendig.
+- Tests: neu `memory-length-selftest.php` (ganze Fakten, Budget je Fenster, nichts kuerzt mehr), in beiden Preflights.
+
 ## 0.5.85 - 29.10.2026
 
 - **Konten bearbeiten (BEARBEITEN):** Unter Admin Core > Benutzer klappt BEARBEITEN pro Konto ein Panel mit Abschnitten auf. Es gelten dieselben Regeln wie beim Loeschen: Der Inhaber bearbeitet Admins, Nutzer und Gaeste, ein Admin nur Nutzer und Gaeste; ein anderes Inhaber-Konto und Maras Systemkonto bleiben unberuehrt.

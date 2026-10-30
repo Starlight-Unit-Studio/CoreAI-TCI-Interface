@@ -438,7 +438,7 @@ if ($action === 'memory_upsert') {
   $userId = (int)($body['user_id'] ?? 0);
   $characterId = trim((string)($body['character_id'] ?? ''));
   $length = function_exists('mb_strlen') ? mb_strlen($fact, 'UTF-8') : strlen($fact);
-  if ($length < 3 || $length > 2000) stu_json(['ok' => false, 'error' => 'invalid_fact'], 400);
+  if ($length < 3 || $length > COREUI_MEMORY_FACT_MAX_CHARS) stu_json(['ok' => false, 'error' => 'invalid_fact'], 400);
   if (!in_array($scope, ['global', 'user', 'character'], true)) stu_json(['ok' => false, 'error' => 'invalid_scope'], 400);
   if ($scope === 'user' && $userId <= 0) stu_json(['ok' => false, 'error' => 'user_required'], 400);
   if ($scope === 'character' && $characterId === '') stu_json(['ok' => false, 'error' => 'character_required'], 400);

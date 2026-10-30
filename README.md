@@ -7,7 +7,13 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.85` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.86` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Maras Erinnerungen ohne Kuerzung (0.5.86)
+
+Mara speichert Erinnerungen vollstaendig (frueher nach 240 Zeichen
+abgeschnitten) und nimmt sie ganz in ihren Prompt, so viele wie ins Budget des
+Kontextfensters passen. Memory-Tab und Admin Core erlauben 8000 Zeichen.
 
 ## Konten bearbeiten (0.5.85)
 

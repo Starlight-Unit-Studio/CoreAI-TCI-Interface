@@ -75,7 +75,6 @@ coreui_define('STU_EMBER_MEMORY_LIMIT', (int)coreui_env('COREUI_MEMORY_LIMIT', '
 coreui_define('STU_EMBER_REFLECT_ENABLED', coreui_env_bool('COREUI_REFLECT_ENABLED', true));
 coreui_define('STU_EMBER_REFLECT_EVERY_N', (int)coreui_env('COREUI_REFLECT_EVERY_N', '4'));
 coreui_define('STU_EMBER_REFLECT_TIMEOUT', (int)coreui_env('COREUI_REFLECT_TIMEOUT', '90'));
-coreui_define('STU_EMBER_REFLECT_MAX_FACT_LEN', (int)coreui_env('COREUI_REFLECT_MAX_FACT_LEN', '240'));
 coreui_define('STU_EMBER_REFLECT_MODEL', coreui_env('COREUI_REFLECT_MODEL'));
 
 coreui_define('STU_EMBER_LORE_ENABLED', coreui_env_bool('COREUI_LORE_ENABLED', true));

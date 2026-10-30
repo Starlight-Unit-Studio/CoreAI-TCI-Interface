@@ -235,6 +235,10 @@ function stu_require_permission_at_most(int $maxLevel, ?PDO $pdo = null): int {
 // 0.5.79: CoreAI roles instead of the old game ranks (system admin, admin, game
 // moderator, chat moderator, user). Stored as permission_level; guests are a flag
 // (is_guest), not a level. Levels 2 and 3 were folded into Nutzer (migration 019).
+// 0.5.86: Mara's memories are stored and used whole, never cut off. This is
+// only a guard against runaway output: a longer "fact" is not stored at all.
+const COREUI_MEMORY_FACT_MAX_CHARS = 8000;
+
 const COREUI_ROLE_OWNER = 0;
 const COREUI_ROLE_ADMIN = 1;
 const COREUI_ROLE_USER = 4;

@@ -6,14 +6,14 @@
   <meta name="language" content="de-DE" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#f0f4fa" />
-  <meta name="application-version" content="0.5.85" />
+  <meta name="application-version" content="0.5.86" />
   <meta name="application-name" content="CoreAI: TCI Interface" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface - Einstellungen</title>
   <link rel="stylesheet" href="./css/console.css?v=0396917892177056426880940" />
   <link rel="stylesheet" href="./css/settings.css?v=0984972608747539305184913" />
   <link rel="stylesheet" href="./css/coreui-update.css?v=1027839363176318351849490" />
-  <script src="./js/console-gate.js?v=0963344483368721922907388"></script>
+  <script src="./js/console-gate.js?v=0285309928333412552852803"></script>
   <script src="./js/coreui-preferences.js?v=0408182548343544002678570"></script>
 </head>
 <body class="settings-body">
@@ -48,7 +48,7 @@
           <h1>EINSTELLUNGEN</h1>
         </div>
       </div>
-      <div class="settings-version">COREAI: TCI INTERFACE // v0.5.85</div>
+      <div class="settings-version">COREAI: TCI INTERFACE // v0.5.86</div>
     </header>
 
     <!-- 0.5.79: one page, categories as tabs. Each category is its own view
@@ -377,7 +377,7 @@
                 <div><span>NEU</span><h3 id="memoryNewTitle">Fakt merken</h3></div>
               </header>
               <div class="memory-editor">
-                <textarea id="memoryFact" rows="3" maxlength="1000" placeholder="Fakt, Präferenz oder Arbeitskontext, den Ember behalten darf..."></textarea>
+                <textarea id="memoryFact" rows="3" maxlength="8000" placeholder="Fakt, Präferenz oder Arbeitskontext, den Ember behalten darf..."></textarea>
                 <label>RELEVANZ <input id="memoryRelevance" type="number" min="1" max="10" value="5" /></label>
                 <button class="settings-action" id="addMemory" type="button">FAKT SPEICHERN</button>
               </div>
@@ -685,7 +685,7 @@
               </header>
               <form class="admin-form memory-form" id="adminMemoryForm">
                 <input id="adminMemoryId" type="hidden" value="0" />
-                <label class="settings-field wide">FAKT<textarea id="adminMemoryFact" rows="4" maxlength="2000" required></textarea></label>
+                <label class="settings-field wide">FAKT<textarea id="adminMemoryFact" rows="4" maxlength="8000" required></textarea></label>
                 <label class="settings-field">SCOPE<select id="adminMemoryScope"><option value="global">GLOBAL</option><option value="user">USER</option><option value="character">CHARACTER</option></select></label>
                 <label class="settings-field">RELEVANZ<input id="adminMemoryRelevance" type="number" min="1" max="10" value="5" /></label>
                 <label class="settings-field">USER-ID<input id="adminMemoryUser" type="number" min="0" value="0" /></label>

@@ -60,7 +60,7 @@ $relevance = max(1, min(10, (int)($body['relevance'] ?? 5)));
 $characterId = trim((string)($body['character_id'] ?? ''));
 
 $length = function_exists('mb_strlen') ? mb_strlen($fact, 'UTF-8') : strlen($fact);
-if ($length < 3 || $length > 1000) stu_json(['ok' => false, 'error' => 'invalid_fact'], 400);
+if ($length < 3 || $length > COREUI_MEMORY_FACT_MAX_CHARS) stu_json(['ok' => false, 'error' => 'invalid_fact'], 400);
 if (!in_array($scope, ['global', 'user', 'character'], true)) stu_json(['ok' => false, 'error' => 'invalid_scope'], 400);
 if ($scope === 'global' && stu_get_permission_level($pdo) > 1) stu_json(['ok' => false, 'error' => 'forbidden'], 403);
 if ($scope === 'character' && !coreui_memory_owned_character($pdo, $uid, $characterId)) {

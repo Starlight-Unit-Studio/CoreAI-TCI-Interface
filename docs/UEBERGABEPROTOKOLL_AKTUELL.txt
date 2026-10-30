@@ -1,9 +1,10 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
 Stand: 29.10.2026
-Repository-Version: 0.5.85
+Repository-Version: 0.5.86
 Repository: https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface
 ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_5_86.txt
   docs/UEBERGABEPROTOKOLL_0_5_85.txt
   docs/UEBERGABEPROTOKOLL_0_5_84.txt
   docs/UEBERGABEPROTOKOLL_0_5_83.txt
@@ -124,6 +125,7 @@ Update-Fenster fuer den Inhaber (Host-Dienst coreai-update per systemd, Datenban
 "Bitte auf Neustart warten" fuer alle mit echtem Installationsfortschritt), PHP-Sitzungen ueberleben ein Update.
 0.5.84: Benutzer loeschen unter Admin Core > Benutzer (Bestaetigung per E-Mail, alles oder nichts, Audit).
 0.5.84 ist gemergt (PR #135). 0.5.85: BEARBEITEN pro Konto mit Name und E-Mail, Passwort und Anmeldungen, Werkzeuge und Limits (Migration 021).
+0.5.85 ist gemergt (PR #136). 0.5.86: Maras Erinnerungen ohne 240-Zeichen-Kuerzung, ganze Fakten im Prompt.
 NAECHSTER SCHRITT: Audio (TTS-Kandidaten), Benutzerverwaltung nach Betreiberwunsch, dann P20.1.
 Mara/Ember, Ollama-Modelfile, serielle Queue und private Projekt-
 plaene NICHT ungefragt veraendern.
