@@ -685,9 +685,24 @@ function ember_reflect_timeout(): int {
   return max(6, min(45, $n));
 }
 
-function ember_reflect_max_fact_len(): int {
-  $n = (int)ember_cfg('STU_EMBER_REFLECT_MAX_FACT_LEN', 240);
-  return max(80, min(500, $n));
+/**
+ * 0.5.86: which memories go into the prompt, whole (pure). In their order
+ * (most relevant first) as long as they fit the budget in characters; one
+ * that does not fit is left out and the next is tried. A fact is never cut:
+ * the old 240 character cut lost the end of longer memories.
+ */
+function ember_mem_fit_facts(array $facts, int $budget): array {
+  $out = [];
+  $used = 0;
+  foreach ($facts as $fact) {
+    $fact = trim((string)$fact);
+    if ($fact === '') continue;
+    $length = function_exists('mb_strlen') ? mb_strlen($fact, 'UTF-8') : strlen($fact);
+    if ($budget > 0 && $used + $length > $budget) continue;
+    $out[] = $fact;
+    $used += $length;
+  }
+  return $out;
 }
 
 function ember_reflect_model(): string {
@@ -867,24 +882,21 @@ function ember_mem_fetch_relevant(PDO $pdo, int $uid, string $characterId, strin
   return array_slice($pool, 0, $limit);
 }
 
-function ember_mem_block(PDO $pdo, int $uid, string $characterId, int $limit = 10, string $query = ''): string {
+function ember_mem_block(PDO $pdo, int $uid, string $characterId, int $limit = 10, string $query = '', int $budget = 12000): string {
   if (!ember_memory_enabled()) return '';
   if ($limit <= 0) return '';
   $rows = (trim($query) !== '')
     ? ember_mem_fetch_relevant($pdo, $uid, $characterId, $query, $limit)
     : ember_mem_fetch($pdo, $uid, $characterId, $limit);
   if (!$rows) return '';
-  $lines = [];
-  $maxLen = ember_reflect_max_fact_len();
+  $facts = [];
   foreach ($rows as $r) {
     $fact = trim((string)($r['fact'] ?? ''));
-    if ($fact === '') continue;
-    if (ember_mem_fact_looks_ephemeral($fact)) continue;
-    // hard length clamp
-    if (function_exists('mb_substr')) $fact = mb_substr($fact, 0, $maxLen, 'UTF-8');
-    else $fact = substr($fact, 0, $maxLen);
-    $lines[] = '- ' . $fact;
+    if ($fact === '' || ember_mem_fact_looks_ephemeral($fact)) continue;
+    $facts[] = $fact;
   }
+  // 0.5.86: whole memories within the window's budget, never cut off.
+  $lines = array_map(static fn(string $fact): string => '- ' . $fact, ember_mem_fit_facts($facts, $budget));
   if (!$lines) return '';
   return "LANGZEITGEDAECHTNIS (nur Kontext, nicht zitieren):\n" . implode("\n", $lines) . "\n";
 }
@@ -1150,9 +1162,13 @@ function ember_reflect_maybe_store(PDO $pdo, int $uid, string $characterId, stri
   $fact = trim((string)($j['fact'] ?? ''));
   if ($fact === '') return;
 
-  $maxLen = ember_reflect_max_fact_len();
-  if (function_exists('mb_substr')) $fact = mb_substr($fact, 0, $maxLen, 'UTF-8');
-  else $fact = substr($fact, 0, $maxLen);
+  // 0.5.86: stored whole (it used to be cut at 240 characters); only runaway
+  // output beyond the guard is not stored at all.
+  $factLength = function_exists('mb_strlen') ? mb_strlen($fact, 'UTF-8') : strlen($fact);
+  if ($factLength > COREUI_MEMORY_FACT_MAX_CHARS) {
+    if (function_exists('stu__log_error')) stu__log_error(['type'=>'ember_reflect_fact_too_long','uid'=>$uid,'chars'=>$factLength]);
+    return;
+  }
 
   $rel = (int)($j['relevance'] ?? 5);
   $scope = (string)($j['scope'] ?? 'global');
@@ -2443,13 +2459,14 @@ function ember_browse_capability_hint_compact(): string {
  * window gets a deliberately shorter history, plan excerpt and tool help.
  */
 function ember_console_prompt_profile(string $channel, ?int $contextTokens): array {
+  // 'memory': characters for whole memories in the prompt (0.5.86).
   if ($channel !== 'console' || $contextTokens === null || $contextTokens > 8192) {
-    return ['history'=>0,'line'=>0,'skills'=>4,'plan'=>3200,'compact'=>false];
+    return ['history'=>0,'line'=>0,'skills'=>4,'plan'=>3200,'compact'=>false,'memory'=>12000];
   }
   if ($contextTokens <= 4096) {
-    return ['history'=>6,'line'=>400,'skills'=>1,'plan'=>1200,'compact'=>true];
+    return ['history'=>6,'line'=>400,'skills'=>1,'plan'=>1200,'compact'=>true,'memory'=>1500];
   }
-  return ['history'=>10,'line'=>800,'skills'=>2,'plan'=>2000,'compact'=>true];
+  return ['history'=>10,'line'=>800,'skills'=>2,'plan'=>2000,'compact'=>true,'memory'=>3000];
 }
 
 function ember_extract_browse_marker(string $s): ?string {
@@ -4855,7 +4872,7 @@ function ember_build_chat_prompt(
     }
   } catch (Throwable $e) {}
   $memLimit = $useLore ? min(2, ember_memory_limit()) : ember_memory_limit();
-  $mem = $memLimit > 0 ? ember_mem_block($pdo, $uid, $cid, $memLimit, $userMsg) : '';
+  $mem = $memLimit > 0 ? ember_mem_block($pdo, $uid, $cid, $memLimit, $userMsg, $profile['memory']) : '';
 
   $lore = '';
   $loreQuery = '';
@@ -5107,7 +5124,7 @@ function ember_generate_reply(
     }
   } catch (Throwable $e) {}
   $memLimit = $useLore ? min(2, ember_memory_limit()) : ember_memory_limit();
-  $mem = $memLimit > 0 ? ember_mem_block($pdo, $uid, $cid, $memLimit, $userMsg) : '';
+  $mem = $memLimit > 0 ? ember_mem_block($pdo, $uid, $cid, $memLimit, $userMsg, $promptProfile['memory']) : '';
 
 
 

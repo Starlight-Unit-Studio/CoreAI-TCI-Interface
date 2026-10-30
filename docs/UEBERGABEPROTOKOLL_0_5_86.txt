@@ -1,0 +1,24 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.5.86
+Stand: 30.10.2026
+Branch: claude/bold-galileo-myoyi0 (neu auf main nach Merge von PR #136 mit 0.5.85)
+Basis: Meldung des Betreibers: viele laengere Eintraege in Maras Memory sind beschnitten; die Textbegrenzung soll weg.
+
+URSACHE:
+- api/chat.php ember_reflect_maybe_store kuerzte den extrahierten Fakt mit mb_substr auf
+  ember_reflect_max_fact_len() (STU_EMBER_REFLECT_MAX_FACT_LEN, Standard 240, max 500) vor dem Speichern.
+- ember_mem_block kuerzte jeden Fakt beim Einfuegen in den Prompt nochmals auf dieselbe Laenge.
+- memories.php (Memory-Tab) erlaubte 1000, admin.php memory_upsert 2000 Zeichen; Textfelder maxlength ebenso.
+
+AENDERUNGEN:
+- api/helpers.php: COREUI_MEMORY_FACT_MAX_CHARS = 8000 (nur Schutz; laengeres wird nicht gespeichert).
+- api/chat.php: ember_reflect_max_fact_len entfernt; Reflexion speichert ganz, ueber 8000 nichts (Log
+  ember_reflect_fact_too_long). ember_mem_fit_facts (rein): ganze Fakten in Reihenfolge bis zum Budget, nicht
+  passende werden uebersprungen. ember_mem_block(..., $budget) nutzt sie. ember_console_prompt_profile hat 'memory'
+  (12000 gross/unbekannt, 3000 bis 8K, 1500 bis 4K); beide Prompt-Bauer geben es weiter.
+- api/memories.php, api/admin.php: Grenze COREUI_MEMORY_FACT_MAX_CHARS; settings.html: maxlength 8000.
+- api/config.php: STU_EMBER_REFLECT_MAX_FACT_LEN entfernt.
+
+GEPRUEFT: alle Offline-Selbsttests; memory-length-selftest.php (laedt die reinen Helfer aus chat.php).
+Nicht live geprueft: echte Reflexion gegen Ollama mit einem langen Fakt.
+
+NAECHSTER SCHRITT: Audio (TTS-Kandidaten), dann P20.1.

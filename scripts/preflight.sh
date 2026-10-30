@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.85 settings per account (BEARBEITEN): password, signing out everywhere, name and e-mail, tools, limits.
+# CoreAI: TCI Interface 0.5.86 Mara's memories stored and used whole (no 240 character cut), budget per window.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -167,6 +167,7 @@ UI_FILES=(
   api/user_policy.php
   database/migrations/021_user_policies.sql
   scripts/user-policy-selftest.php
+  scripts/memory-length-selftest.php
   scripts/update-ui-selftest.cjs
   tests/update-runner-selftest.sh
   config/systemd/coreai-update.service.template
@@ -777,6 +778,14 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     ok 'Regeln pro Konto: Werkzeuge gesperrt, global aus bleibt aus, Tageslimit, Kontextfenster (mit Rollback) geprueft.'
   else
     fail "Regeln-pro-Konto-Selbsttest: ${policy_test:-Unbekannter Fehler}"
+  fi
+
+  # 0.5.86: Mara's memories stored and used whole (no cut), budget per window.
+  memory_length_test=''
+  if memory_length_test="$(compose exec -T php php scripts/memory-length-selftest.php 2>&1)"; then
+    ok 'Memory: Erinnerungen ganz gespeichert und ganz im Prompt, Budget je Kontextfenster geprueft.'
+  else
+    fail "Memory-Laengen-Selbsttest: ${memory_length_test:-Unbekannter Fehler}"
   fi
 
   compact_test=''
