@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.88 Turn-bound Python upload inputs.
+# CoreAI: TCI Interface 0.5.89 Turn-bound Python upload inputs.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
