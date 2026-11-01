@@ -8339,3 +8339,17 @@ a.insight-file-name:hover { text-decoration: underline; }
 .msg-row.ember .browse-live.browse-live-hidden { display:none !important; }
 .msg-row.ember .browse-live-fallback { display:block; padding:9px 0; color:var(--muted); font:500 13px/1.5 "Rajdhani",sans-serif; }
 .msg-row.ember .work-research-label:empty { display:none; }
+
+/* 0.5.89: real-time sources are independent of text typing and stay compact. */
+.msg-row.ember .work-research-current[hidden],
+.msg-row.ember .work-research-history[hidden] { display:none !important; }
+.msg-row.ember .work-research { display:flex;align-items:center;flex-wrap:wrap;column-gap:12px;row-gap:2px; }
+.msg-row.ember .work-research-line { flex:1;min-width:160px; }
+.msg-row.ember .work-research-history { flex:none;max-width:100%;margin:0; }
+.msg-row.ember .work-research-summary { font-size:11px; }
+.msg-row.ember .work-research-label { color:var(--muted-soft); }
+.msg-row.ember .work-panel.work-flow > .work-counts { display:none; }
+@media (max-width:480px) {
+ .msg-row.ember .work-research-line { min-width:0;width:100%; }
+ .msg-row.ember .work-research-history { margin-left:0; }
+}
