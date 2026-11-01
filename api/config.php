@@ -93,12 +93,12 @@ coreui_define('STU_EMBER_WEB_TIMEOUT', (int)coreui_env('COREUI_WEB_TIMEOUT', '15
 coreui_define('STU_EMBER_WEB_MAX_CHARS', (int)coreui_env('COREUI_WEB_MAX_CHARS', '5000'));
 coreui_define('STU_EMBER_WEB_SNIPPET_CHARS', (int)coreui_env('COREUI_WEB_SNIPPET_CHARS', '300'));
 coreui_define('STU_EMBER_BROWSE_ENABLED', coreui_env_bool('COREUI_BROWSE_ENABLED', true));
-coreui_define('STU_EMBER_BROWSE_MAX_STEPS', (int)coreui_env('COREUI_BROWSE_MAX_STEPS', '12'));
+coreui_define('STU_EMBER_BROWSE_MAX_STEPS', (int)coreui_env('COREUI_BROWSE_MAX_STEPS', '20'));
 coreui_define('STU_EMBER_BROWSE_AGENT_TIMEOUT', (int)coreui_env('COREUI_BROWSE_AGENT_TIMEOUT', '420'));
 coreui_define('STU_EMBER_BROWSE_REPORT_TIMEOUT', (int)coreui_env('COREUI_BROWSE_REPORT_TIMEOUT', '420'));
 coreui_define('STU_EMBER_BROWSE_AGENT_RETRIES', (int)coreui_env('COREUI_BROWSE_AGENT_RETRIES', '3'));
 coreui_define('STU_EMBER_BROWSE_FRAME_QUALITY', (int)coreui_env('COREUI_BROWSE_FRAME_QUALITY', '45'));
-coreui_define('STU_EMBER_BROWSE_FRAME_BURST', (int)coreui_env('COREUI_BROWSE_FRAME_BURST', '3'));
+coreui_define('STU_EMBER_BROWSE_FRAME_BURST', (int)coreui_env('COREUI_BROWSE_FRAME_BURST', '5'));
 coreui_define('STU_EMBER_BROWSE_FRAME_INTERVAL_MS', (int)coreui_env('COREUI_BROWSE_FRAME_INTERVAL_MS', '240'));
 coreui_define('STU_EMBER_BROWSE_FRAME_RETENTION_HOURS', (int)coreui_env('COREUI_BROWSE_FRAME_RETENTION_HOURS', '24'));
 coreui_define('STU_EMBER_BROWSE_SCREENSHOT_DIR', dirname(__DIR__) . '/uploads/ember_browse');
