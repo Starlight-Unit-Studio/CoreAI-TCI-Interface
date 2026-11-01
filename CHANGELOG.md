@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.5.88 - 01.11.2026
+
+- Normale [WEB]-Suche zeigt gefundene Webseiten als wechselndes Favicon-/URL-Karussell direkt in Maras Fortschritt, statt einer ausgeschriebenen Liste oder der Beschriftung "Web wird durchsucht". Die Detailquellen bleiben ausklappbar. Suchtreffer werden nicht als besucht ausgegeben.
+- [BROWSE] nutzt weiterhin das eigenstaendige Playwright-Livefenster. Neue Anzeigeoption fuer das komplette Browserfenster: ausgeschaltet erscheint stattdessen "Web wird durchsucht". Die bisherige Option fuer die Frame-Bewegung bleibt separat.
+- Live-Quelltextvorschau und Codefenster in Maras fertiger Nachricht sind in aufklappbare Schritte verschoben. Code wird nicht ueber den Chat verbreitert; Kopieren bleibt vorhanden.
+- Keine Aenderung der Modellqueue, des Browser-Workers, der Toolformate, des Game-Repos oder des Modelfiles.
+- Nur Quellbranch; kein Deploy und keine Live-Abnahme. Version- und Browserpreflights vor Merge ausfuehren.
+
+
 CoreAI: TCI Interface gehoert zur Quantum-Softwarefamilie und wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert. Historische Changelogs dokumentieren die frueheren Produktnamen unveraendert.
 
 ## 0.5.87 - 01.11.2026
