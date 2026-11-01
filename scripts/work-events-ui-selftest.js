@@ -415,7 +415,7 @@ assert.equal(found.querySelector('.work-site-icon').referrerPolicy,'no-referrer'
 const research = work.researchList();
 assert(work.researchPage(research,'https://example.org/a','','Aktuelle Seite'));
 work.researchPage(research,'https://example.org/a','','Aktuelle Seite');
-assert.equal(research.children.length,1,'repeated browser frames deduplicated');
+assert.equal(research._sites.length,1,'repeated browser frames deduplicated');
 work.researchPage(research,'https://example.net/b','','Aktuelle Seite');
 assert.equal(research._sites[0].status.textContent,'Besucht');
 assert.equal(research._sites[1].status.textContent,'Aktuelle Seite');
@@ -427,3 +427,16 @@ for (const bad of ['javascript:alert(1)','http://localhost/a','http://127.0.0.1/
 }
 found.querySelector('.work-site-icon').handlers.error();
 assert.equal(found.querySelector('.work-site-icon').hidden,true,'missing favicon keeps fallback');
+assert(found.querySelector('.work-research-current'),'web source is shown as a compact ticker');
+assert(found.querySelector('.work-research-history'),'source list is initially collapsed');
+assert.equal(found.querySelector('.work-research-history').tag,'details');
+assert.equal(research._currentUrl,'https://example.net/b');
+assert.equal(research.querySelector('.work-research-url').textContent,'example.net/b');
+assert.equal(research.querySelector('.work-research-label').textContent,'');
+assert.equal(found.querySelector('.work-research-label').textContent,'','WEB carousel replaces generic Web wird durchsucht');
+const codeFold = work.create({live:true,codeOnly:true});
+assert(work.source(codeFold.querySelector('.work-body'),{phase:'begin',file_name:'index.html',attempt:1}));
+assert.equal(codeFold.querySelector('.work-source').tag,'details');
+assert.equal(codeFold.querySelector('.work-source').open,undefined,'live source is folded by default');
+assert(app.includes('window.CoreUIWorkEvents.tuckCode(workTimeline,bubble)'), 'finished answer code moves to steps');
+

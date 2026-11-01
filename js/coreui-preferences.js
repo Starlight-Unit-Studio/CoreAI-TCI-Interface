@@ -9,6 +9,7 @@
     compactFeed: false,
     thinkingExpanded: false,
     liveFrameMotion: true,
+    showLiveBrowser: true,
     showTelemetry: true
   };
 
@@ -19,6 +20,7 @@
       compactFeed: source.compactFeed === true,
       thinkingExpanded: source.thinkingExpanded === true,
       liveFrameMotion: source.liveFrameMotion !== false,
+      showLiveBrowser: source.showLiveBrowser !== false,
       showTelemetry: source.showTelemetry !== false
     };
   }
@@ -42,6 +44,7 @@
     root.classList.toggle('pref-compact-feed', prefs.compactFeed);
     root.classList.toggle('pref-thinking-expanded', prefs.thinkingExpanded);
     root.classList.toggle('pref-live-static', !prefs.liveFrameMotion);
+    root.classList.toggle('pref-hide-browser', !prefs.showLiveBrowser);
     root.classList.toggle('pref-hide-telemetry', !prefs.showTelemetry);
     return prefs;
   }

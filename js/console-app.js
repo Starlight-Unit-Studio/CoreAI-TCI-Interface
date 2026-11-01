@@ -1277,6 +1277,16 @@
     var attachments = Array.isArray(attachment) ? attachment : (attachment ? [attachment] : []);
     // Leere Blase unterdruecken, wenn nur Anhaenge gesendet wurden.
     if (text || attachments.length === 0) content.appendChild(bubble);
+    // Move generated code out of the public answer into a folded work step.
+    if (role === 'ember' && window.CoreUIWorkEvents && window.CoreUIWorkEvents.tuckCode
+        && bubble.querySelector('.md-codeblock')) {
+      if (!workTimeline) {
+        workTimeline = window.CoreUIWorkEvents.create({codeOnly:true});
+        if (workTimeline) content.insertBefore(workTimeline,bubble);
+      }
+      window.CoreUIWorkEvents.tuckCode(workTimeline,bubble);
+      if (!bubble.textContent.trim() && bubble.parentNode) bubble.parentNode.removeChild(bubble);
+    }
     if (role === 'ember' && messageId > 0 && record && Number(record.reply_to_id) > 0) {
       var suggestionRow = buildSuggestedReplyButtons(text, String(record.session_id || (activeSession() && activeSession().id) || ''));
       if (suggestionRow) content.appendChild(suggestionRow);
@@ -2906,9 +2916,17 @@
     if (panel.parentNode) panel.parentNode.appendChild(browseStop);
     state.agentStopEl = browseStop;
     updateAgentCancelControl();
-    var research = window.CoreUIWorkEvents && window.CoreUIWorkEvents.researchList
-      ? window.CoreUIWorkEvents.researchList() : null;
-    if (research && panel.parentNode) panel.parentNode.insertBefore(research, panel);
+    // Playwright is a different channel from ordinary [WEB] search.
+    // Never show search-result carousel for browser frames.
+    var research = null;
+    if (uiPreferences.showLiveBrowser === false) {
+      panel.classList.add('browse-live-hidden');
+      panel.setAttribute('aria-label','Web wird durchsucht');
+      var fallback = document.createElement('span');
+      fallback.className = 'browse-live-fallback';
+      fallback.textContent = 'Web wird durchsucht';
+      panel.parentNode.insertBefore(fallback,panel);
+    }
     var head        = panel.querySelector('.browse-live-state');
     var urlLabel    = panel.querySelector('.browse-live-url');
     var status      = panel.querySelector('.browse-live-status');
@@ -3040,7 +3058,6 @@
 
     function queueFrame(d) {
       if (!d) return;
-      if (research && d.url) window.CoreUIWorkEvents.researchPage(research, d.url, '', 'Aktuelle Seite');
       if (!d.b64) { moveCursorOnly(d); return; }
       if (uiPreferences.liveFrameMotion === false) frameQueue = [d];
       else frameQueue.push(d);
@@ -3071,7 +3088,6 @@
     function finishB(label) {
       if (doneB) return;
       doneB = true;
-      if (research) window.CoreUIWorkEvents.finishResearch(research);
       clearTimeout(bWatch);
       clearTimeout(reconnectTimer);
       stopThinking();

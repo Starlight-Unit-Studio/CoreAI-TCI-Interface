@@ -8,6 +8,7 @@
     compactFeed: document.getElementById('prefCompactFeed'),
     thinkingExpanded: document.getElementById('prefThinkingExpanded'),
     liveFrameMotion: document.getElementById('prefLiveFrameMotion'),
+    showLiveBrowser: document.getElementById('prefShowLiveBrowser'),
     showTelemetry: document.getElementById('prefShowTelemetry')
   };
   var saveState = document.getElementById('settingsSaveState');

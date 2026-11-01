@@ -226,19 +226,88 @@
       return url;
     } catch (e) { return null; }
   }
-  function researchList() {
+  // A single live source line replaces the tall per-page cards. The detail
+  // list remains a user-expandable record, with hits distinct from visited pages.
+  function researchList(options) {
+    options = options || {};
     var list = el('div','work-research');
     list.setAttribute('aria-label','Webseiten der Recherche');
     list.hidden = true;
     list._sites = [];
+    list._live = !!options.live;
+    list._ticker = null;
+    list._selectedIndex = -1;
+    var line = el('div','work-research-line');
+    var label = el('span','work-research-label','');
+    label.setAttribute('role','status');
+    line.appendChild(label);
+    var active = el('a','work-research-current');
+    active.target = '_blank'; active.rel = 'noopener noreferrer';
+    var mark = el('span','work-site-mark');
+    var initial = el('span','work-research-initial','');
+    var icon = el('img','work-site-icon');
+    icon.alt = ''; icon.referrerPolicy = 'no-referrer'; icon.loading = 'lazy';
+    icon.addEventListener('error',function () { icon.hidden = true; });
+    mark.appendChild(initial);
+    mark.appendChild(icon);
+    active.appendChild(mark);
+    var urlText = el('span','work-research-url','');
+    active.appendChild(urlText);
+    line.appendChild(active);
+    var count = el('span','work-research-count','');
+    line.appendChild(count);
+    list.appendChild(line);
+    var history = el('details','work-research-history');
+    var summary = el('summary','work-research-summary','Webseiten');
+    var items = el('div','work-research-items');
+    history.appendChild(summary);
+    history.appendChild(items);
+    list.appendChild(history);
+    list._label = label; list._active = active; list._activeIcon = icon;
+    list._activeInitial = initial; list._activeUrl = urlText;
+    list._count = count; list._summary = summary; list._items = items;
     return list;
+  }
+  function showResearchSite(list, site) {
+    if (!list || !site) return;
+    var url = researchURL(site.url);
+    if (!url) return;
+    list._active.href = url.href;
+    list._active.title = String(site.title || url.href).slice(0,180);
+    list._activeInitial.textContent = url.hostname.charAt(0).toUpperCase();
+    list._activeUrl.textContent = (url.hostname + url.pathname).slice(0,180);
+    list._activeIcon.hidden = false;
+    list._activeIcon.src = url.origin + '/favicon.ico';
+    list._active.className = 'work-research-current';
+    if (list._currentUrl !== url.href) {
+      void list._active.offsetWidth;
+      list._active.className += ' work-research-flip';
+    }
+    list._currentUrl = url.href;
+  }
+  function startResearchTicker(list) {
+    if (!list._live || list._ticker || typeof window.setInterval !== 'function') return;
+    list._ticker = window.setInterval(function () {
+      if (list.isConnected === false && list._wasConnected) {
+        window.clearInterval(list._ticker); list._ticker = null;
+        return;
+      }
+      if (list.isConnected) list._wasConnected = true;
+      var sites = list._sites || [];
+      if (sites.length < 2) return;
+      list._selectedIndex = (list._selectedIndex + 1) % sites.length;
+      showResearchSite(list,sites[list._selectedIndex]);
+    },1600);
   }
   function researchPage(list, raw, title, label) {
     var url = researchURL(raw);
-    if (!list || !url) return false;
+    if (!list || !url || !list._items) return false;
     var sites = list._sites || (list._sites = []);
     var current = sites.find(function (site) { return site.url === url.href; });
-    if (label !== 'Suchtreffer') sites.forEach(function (site) { site.status.textContent = 'Besucht'; });
+    var visited = label !== 'Suchtreffer';
+    if (visited) sites.forEach(function (site) {
+      if (site.visited) site.status.textContent = 'Besucht';
+    });
     if (!current) {
       var row = el('div','work-site');
       var mark = el('span','work-site-mark',url.hostname.charAt(0).toUpperCase());
@@ -255,17 +324,39 @@
       row.appendChild(link);
       var status = el('span','work-site-status');
       row.appendChild(status);
-      list.appendChild(row);
-      current = {url:url.href,row:row,status:status};
+      list._items.appendChild(row);
+      current = {url:url.href,row:row,status:status,visited:false,title:String(title || url.hostname + url.pathname).slice(0,160)};
       sites.push(current);
-      if (sites.length > 30) list.removeChild(sites.shift().row);
+      if (sites.length > 30) list._items.removeChild(sites.shift().row);
     }
-    current.status.textContent = label || 'Aktuelle Seite';
+    if (visited) current.visited = true;
+    current.status.textContent = current.visited ? (visited ? (label || 'Aktuelle Seite') : 'Besucht') : 'Suchtreffer';
+    list._selectedIndex = sites.indexOf(current);
+    showResearchSite(list,current);
+    startResearchTicker(list);
+    list._count.textContent = String(sites.length);
+    var visits = sites.filter(function (site) { return site.visited; }).length;
+    list._summary.textContent = visits
+      ? visits + (visits === 1 ? ' Webseite besucht' : ' Webseiten besucht')
+      : sites.length + (sites.length === 1 ? ' Suchtreffer' : ' Suchtreffer');
     list.hidden = false;
     return true;
   }
   function finishResearch(list) {
-    if (list && list._sites) list._sites.forEach(function (site) { site.status.textContent = 'Besucht'; });
+    if (!list || !list._sites) return;
+    if (list._ticker && typeof window.clearInterval === 'function') {
+      window.clearInterval(list._ticker);
+      list._ticker = null;
+    }
+    list._sites.forEach(function (site) {
+      if (site.visited) site.status.textContent = 'Besucht';
+    });
+    if (list._sites.length && list._live) {
+      var visited = list._sites.filter(function (site) { return site.visited; }).length;
+      list._label.textContent = visited
+        ? visited + (visited === 1 ? ' Website besucht' : ' Websites besucht')
+        : list._sites.length + (list._sites.length === 1 ? ' Website gefunden' : ' Websites gefunden');
+    }
   }
 
   function normalize(raw) {
@@ -479,6 +570,20 @@
   }
 
   function appendNow(body, event, animate, finished) {
+    if (event.meta.page_url && body._research) {
+      researchPage(body._research,event.meta.page_url,event.meta.page_title,'Suchtreffer');
+    }
+    if (event.title === 'Webquelle gefunden' && event.meta.page_url) {
+      // Search hits are source data, not thirty repetitive narration paragraphs.
+      if (event.id) (body._workResearchIds || (body._workResearchIds = {}))[event.id] = true;
+      var empty = body.querySelector('.work-empty');
+      if (empty) body.removeChild(empty);
+      followWork(body);
+      if (typeof body._onWorkEvent === 'function') body._onWorkEvent(event);
+      if (typeof finished === 'function') finished();
+      return true;
+    }
+    if (event.title === 'Websuche beendet' && body._research) finishResearch(body._research);
     var entries = body.querySelector('.work-entries');
     if (!entries) {
       body.textContent = '';
@@ -541,11 +646,6 @@
       warning.setAttribute('aria-label','Fehler');
       warning.title = 'Fehler';
       detailTarget.appendChild(warning);
-    }
-    if (event.meta.page_url) {
-      var sites = researchList();
-      researchPage(sites, event.meta.page_url, event.meta.page_title, 'Suchtreffer');
-      info.appendChild(sites);
     }
     if (narration) {
       entries._openRun = null;
@@ -664,6 +764,7 @@
     var event = normalize(raw);
     if (!event) return false;
     var entries = body.querySelector('.work-entries');
+    if (event.id && body._workResearchIds && body._workResearchIds[event.id]) return false;
     if (event.id && entries && entries.querySelector('[data-work-id="' + event.id + '"]'))
       return false;
     if (body._workQueue && event.id && body._workQueue.some(function (pending) {
@@ -693,11 +794,12 @@
     if (raw.phase === 'begin') {
       if (panel && panel.parentNode) panel.parentNode.removeChild(panel);
       else if (panel && body.removeChild) body.removeChild(panel);
-      panel = el('section','work-source');
-      panel.setAttribute('aria-label','Live-Quelltext ' + filename);
-      var header = el('div','work-source-header');
+      panel = el('details','work-source');
+      panel.setAttribute('aria-label','Quelltext-Schritt ' + filename);
+      // The source is streamed continuously, but never expands the chat on its own.
+      var header = el('summary','work-source-header');
       header.appendChild(el('span','work-source-file',filename));
-      header.appendChild(el('span','work-source-status','Wird geschrieben'));
+      header.appendChild(el('span','work-source-status','Wird geschrieben · anzeigen'));
       panel.appendChild(header);
       var pre = el('pre','work-source-scroll');
       pre.appendChild(el('code','work-source-code'));
@@ -728,8 +830,8 @@
     if (!code) return false;
     code.textContent += raw.text; // Rendering must not hide the beginning of a valid file.
     var scroll = panel.querySelector('.work-source-scroll');
-    if (scroll && scroll._sourceFollow !== false) scroll.scrollTop = scroll.scrollHeight;
-    followWork(body);
+    if (scroll && panel.open && scroll._sourceFollow !== false) scroll.scrollTop = scroll.scrollHeight;
+    if (panel.open) followWork(body);
     return true;
   }
 
@@ -738,11 +840,14 @@
     var initialEvents = merge(options.events, []);
     var live = !!options.live;
     var events = live ? [] : initialEvents;
-    if (!live && events.length === 0) return null;
+    if (!live && events.length === 0 && !options.codeOnly) return null;
     var timeline = el('section','work-panel work-flow');
     timeline.setAttribute('aria-label','Maras Fortschritt');
     var counters = el('span','work-counts');
+    if (options.codeOnly) counters.hidden = true;
     var body = el('div','work-body');
+    var research = researchList({live:live});
+    body._research = research;
     body._workLive = live;
     body._workFollow = true;
     body.addEventListener('scroll', function () {
@@ -812,6 +917,7 @@
     };
     updateSummary();
     initialEvents.forEach(function (event) { add(body,event); });
+    timeline.appendChild(research);
     timeline.appendChild(body);
     timeline.appendChild(tasks);
     timeline.appendChild(counters);
@@ -832,6 +938,27 @@
     return timeline;
   }
 
+  // Finished assistant code fences belong to the same expandable step area.
+  // Move existing, already safely rendered DOM nodes so copy controls survive.
+  function tuckCode(timeline, bubble) {
+    if (!timeline || !bubble || typeof bubble.querySelectorAll !== 'function') return false;
+    var blocks = Array.prototype.slice.call(bubble.querySelectorAll('.md-codeblock'));
+    var body = timeline.querySelector('.work-body');
+    if (!body || !blocks.length) return false;
+    var drawer = el('details','work-code-drawer');
+    var summary = el('summary','work-code-summary',
+      blocks.length === 1 ? '1 Codefenster anzeigen' : blocks.length + ' Codefenster anzeigen');
+    var contents = el('div','work-code-contents');
+    blocks.forEach(function (block) {
+      if (block.parentNode) block.parentNode.removeChild(block);
+      contents.appendChild(block);
+    });
+    drawer.appendChild(summary);
+    drawer.appendChild(contents);
+    body.appendChild(drawer);
+    return true;
+  }
+
   // 0.5.76: a plain answer (request, queue, one Core call, saved) needs no
   // Arbeitsweg under the finished reply. It appears once Mara used a tool,
   // wrote a note, corrected herself, made files, found private knowledge,
@@ -849,5 +976,6 @@
 
   window.CoreUIWorkEvents = {create:create,add:add,source:source,flush:flushWork,normalize:normalize,
     merge:merge,displayTitle:displayTitle,substantive:substantive,
-    researchList:researchList,researchPage:researchPage,finishResearch:finishResearch};
+    researchList:researchList,researchPage:researchPage,finishResearch:finishResearch,
+    tuckCode:tuckCode};
 }());

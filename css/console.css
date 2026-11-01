@@ -8305,3 +8305,37 @@ a.insight-file-name:hover { text-decoration: underline; }
   .msg-row.ember .work-site-link { flex: 1; }
   .msg-row.ember .work-site-status { width: 100%; margin-left: 29px; }
 }
+
+/* 0.5.88: one moving source line, detailed sources only when requested. */
+.msg-row.ember .work-research {display:block;min-width:0;margin:8px 0 12px}
+.msg-row.ember .work-research[hidden] {display:none}
+.msg-row.ember .work-research-line {display:flex;align-items:center;gap:9px;min-width:0;max-width:100%;padding:6px 0}
+.msg-row.ember .work-research-label {flex:none;color:var(--muted);font:500 12px/1.4 "Rajdhani",sans-serif}
+.msg-row.ember .work-research-current {display:flex;min-width:0;flex:1;align-items:center;gap:7px;overflow:hidden;white-space:nowrap;color:var(--txt);text-decoration:none}
+.msg-row.ember .work-research-url {min-width:0;overflow:hidden;text-overflow:ellipsis;font:500 12px/1.4 "Share Tech Mono",monospace}
+.msg-row.ember .work-research-count {flex:none;color:var(--muted-soft);font:11px/1.4 monospace}
+.msg-row.ember .work-research-flip {animation:coreai-research-flip 220ms ease-out}
+@keyframes coreai-research-flip {from{opacity:.25;transform:translateY(5px)}to{opacity:1;transform:none}}
+.msg-row.ember .work-research-history {max-width:100%;margin:2px 0}
+.msg-row.ember .work-research-summary {width:max-content;max-width:100%;cursor:pointer;color:var(--muted-soft);font:12px/1.5 "Rajdhani",sans-serif}
+.msg-row.ember .work-research-items {max-height:180px;overflow:auto;padding:5px 0}
+.msg-row.ember .work-research-items .work-site {padding:3px 0}
+.msg-row.ember .work-research-items .work-site-title {font-size:12px}
+.msg-row.ember .work-research-items .work-site-host,.msg-row.ember .work-research-items .work-site-status {font-size:10px}
+.msg-row.ember .work-code-drawer {max-width:100%;margin:8px 0;min-width:0}
+.msg-row.ember .work-code-summary {cursor:pointer;color:var(--muted-soft);font:500 13px/1.5 "Rajdhani",sans-serif}
+.msg-row.ember .work-code-contents {min-width:0;max-height:55vh;overflow:auto}
+.msg-row.ember .work-code-contents .md-codeblock {max-width:100%;width:100%;margin:8px 0}
+.msg-row.ember .work-source {max-width:100%;min-width:0}
+.msg-row.ember .work-source-header {cursor:pointer}
+.msg-row.ember .work-source:not([open]) .work-source-header {border-bottom:0}
+@media(max-width:480px) {
+ .msg-row.ember .work-research-label {font-size:11px}
+ .msg-row.ember .work-research-url {font-size:10px}
+}
+@media(prefers-reduced-motion:reduce) {.msg-row.ember .work-research-flip {animation:none}}
+
+/* Playwright hidden by preference: its status is not the ordinary WEB carousel. */
+.msg-row.ember .browse-live.browse-live-hidden { display:none !important; }
+.msg-row.ember .browse-live-fallback { display:block; padding:9px 0; color:var(--muted); font:500 13px/1.5 "Rajdhani",sans-serif; }
+.msg-row.ember .work-research-label:empty { display:none; }
