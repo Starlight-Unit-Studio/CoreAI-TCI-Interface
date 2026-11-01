@@ -1,9 +1,10 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
 Stand: 01.11.2026
-Repository-Version: 0.5.88 (PR-Branch, noch nicht gemergt)
-BASIS: main 0.5.87, PR #138 gemergt.
+Repository-Version: 0.5.89 (PR-Branch, noch nicht gemergt)
+BASIS: main 0.5.88, PR #139 gemergt.
 NEUE ARBEIT ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_5_89.txt
   docs/UEBERGABEPROTOKOLL_0_5_88.txt
   docs/UEBERGABEPROTOKOLL_0_5_87.txt
 Repository: https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface
