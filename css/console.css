@@ -8334,3 +8334,8 @@ a.insight-file-name:hover { text-decoration: underline; }
  .msg-row.ember .work-research-url {font-size:10px}
 }
 @media(prefers-reduced-motion:reduce) {.msg-row.ember .work-research-flip {animation:none}}
+
+/* Playwright hidden by preference: its status is not the ordinary WEB carousel. */
+.msg-row.ember .browse-live.browse-live-hidden { display:none !important; }
+.msg-row.ember .browse-live-fallback { display:block; padding:9px 0; color:var(--muted); font:500 13px/1.5 "Rajdhani",sans-serif; }
+.msg-row.ember .work-research-label:empty { display:none; }
