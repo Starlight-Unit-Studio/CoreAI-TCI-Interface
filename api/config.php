@@ -66,7 +66,7 @@ coreui_define('STU_EMBER_TIMEOUT', (int)coreui_env('COREUI_EMBER_TIMEOUT', '600'
 coreui_define('STU_EMBER_TIMEOUT_RETRY', (int)coreui_env('COREUI_EMBER_TIMEOUT_RETRY', '600'));
 coreui_define('STU_EMBER_MAX_REPLY_CHARS', (int)coreui_env('COREUI_EMBER_MAX_REPLY_CHARS', '60000'));
 coreui_define('STU_EMBER_ATTACH_MAX_CHARS', (int)coreui_env('COREUI_EMBER_ATTACH_MAX_CHARS', '4000'));
-coreui_define('STU_EMBER_FAIL_MESSAGE', 'Die Verbindung zum lokalen Kern ist gerade nicht stabil.');
+coreui_define('STU_EMBER_FAIL_MESSAGE', 'Die Verbindung zum lokalen Core ist gerade nicht stabil.');
 coreui_define('STU_EMBER_TZ', coreui_env('COREUI_TIMEZONE', 'Europe/Berlin'));
 coreui_define('STU_EMBER_CACHE_DIR', dirname(__DIR__) . '/var/cache');
 
@@ -98,7 +98,7 @@ coreui_define('STU_EMBER_BROWSE_AGENT_TIMEOUT', (int)coreui_env('COREUI_BROWSE_A
 coreui_define('STU_EMBER_BROWSE_REPORT_TIMEOUT', (int)coreui_env('COREUI_BROWSE_REPORT_TIMEOUT', '420'));
 coreui_define('STU_EMBER_BROWSE_AGENT_RETRIES', (int)coreui_env('COREUI_BROWSE_AGENT_RETRIES', '3'));
 coreui_define('STU_EMBER_BROWSE_FRAME_QUALITY', (int)coreui_env('COREUI_BROWSE_FRAME_QUALITY', '45'));
-coreui_define('STU_EMBER_BROWSE_FRAME_BURST', (int)coreui_env('COREUI_BROWSE_FRAME_BURST', '5'));
+coreui_define('STU_EMBER_BROWSE_FRAME_BURST', (int)coreui_env('COREUI_BROWSE_FRAME_BURST', '3'));
 coreui_define('STU_EMBER_BROWSE_FRAME_INTERVAL_MS', (int)coreui_env('COREUI_BROWSE_FRAME_INTERVAL_MS', '240'));
 coreui_define('STU_EMBER_BROWSE_FRAME_RETENTION_HOURS', (int)coreui_env('COREUI_BROWSE_FRAME_RETENTION_HOURS', '24'));
 coreui_define('STU_EMBER_BROWSE_SCREENSHOT_DIR', dirname(__DIR__) . '/uploads/ember_browse');
