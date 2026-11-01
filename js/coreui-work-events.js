@@ -38,7 +38,13 @@
   // Unbekannte Ereignisse erhalten keine erfundene Erklaerung.
   function workNote(event) {
     if (!event) return '';
-    if (event.kind === 'commentary') return event.meta.public_note || '';
+    if (event.kind === 'commentary') {
+      var note = event.meta.public_note || '';
+      if (event.meta.source === 'agent_loop' && /^Ich suche nach:\s*/.test(note)) {
+        return 'Ich prüfe dazu aktuelle Quellen und gleiche die Ergebnisse ab.';
+      }
+      return note;
+    }
     var file = event.meta.file_name ? '„' + event.meta.file_name + '“' : 'die angeforderte Datei';
     var windowSize = Number(event.meta.context_tokens) > 0
       ? ' (' + Number(event.meta.context_tokens) + ' Tokens)' : '';
@@ -253,6 +259,7 @@
     active.appendChild(mark);
     var urlText = el('span','work-research-url','');
     active.appendChild(urlText);
+    active.hidden = true;
     line.appendChild(active);
     var count = el('span','work-research-count','');
     line.appendChild(count);
@@ -262,11 +269,23 @@
     var items = el('div','work-research-items');
     history.appendChild(summary);
     history.appendChild(items);
+    history.hidden = true;
     list.appendChild(history);
     list._label = label; list._active = active; list._activeIcon = icon;
     list._activeInitial = initial; list._activeUrl = urlText;
     list._count = count; list._summary = summary; list._items = items;
     return list;
+  }
+  // A WEB search is visible immediately, even before its first genuine hit.
+  function researchStart(list) {
+    if (!list) return;
+    list.hidden = false;
+    if (!list._sites.length) {
+      list._label.textContent = 'Suche läuft ...';
+      list._active.hidden = true;
+      list._history.hidden = true;
+      list._count.textContent = '';
+    }
   }
   function showResearchSite(list, site) {
     if (!list || !site) return;
@@ -332,6 +351,9 @@
     if (visited) current.visited = true;
     current.status.textContent = current.visited ? (visited ? (label || 'Aktuelle Seite') : 'Besucht') : 'Suchtreffer';
     list._selectedIndex = sites.indexOf(current);
+    list._label.textContent = '';
+    list._active.hidden = false;
+    list._history.hidden = false;
     showResearchSite(list,current);
     startResearchTicker(list);
     list._count.textContent = String(sites.length);
@@ -351,12 +373,13 @@
     list._sites.forEach(function (site) {
       if (site.visited) site.status.textContent = 'Besucht';
     });
-    if (list._sites.length && list._live) {
-      var visited = list._sites.filter(function (site) { return site.visited; }).length;
-      list._label.textContent = visited
-        ? visited + (visited === 1 ? ' Website besucht' : ' Websites besucht')
-        : list._sites.length + (list._sites.length === 1 ? ' Website gefunden' : ' Websites gefunden');
-    }
+    var visited = list._sites.filter(function (site) { return site.visited; }).length;
+    var total = list._sites.length;
+    list._label.textContent = total
+      ? (visited ? visited + (visited === 1 ? ' Website besucht' : ' Websites besucht')
+          : total + (total === 1 ? ' Quelle gefunden' : ' Quellen gefunden'))
+      : 'Keine Quellen gefunden';
+    list.hidden = false;
   }
 
   function normalize(raw) {
@@ -475,7 +498,7 @@
   var NARRATED = {
     'Kontextfenster ermittelt':1,'Projektdateien geplant':1,
     'Anhang wird angesehen':1,'Privates Wissen durchsucht':1,
-    'Browserauftrag eingereiht':1,'Websuche beendet':1,
+    'Browserauftrag eingereiht':1,
     'Mara hat die Umsetzung des gespeicherten Plans gewaehlt':1,
     'Mara hat ein natives Werkzeug angefordert':1,
     'Mara hat selbst den Projekt-Writer aufgerufen':1,
@@ -490,7 +513,9 @@
   function isNarration(event) {
     return !!event && (event.kind === 'commentary' || event.state === 'error'
       || NARRATED[event.title] === 1 || !!event.meta.page_url
-      || (event.kind === 'tool' && event.state === 'running'));
+      || (event.kind === 'tool' && event.state === 'running'
+        && event.title !== 'Websuche gestartet'
+        && !/^Schritt [0-9]+ von [0-9]+: /.test(event.title)));
   }
   function stepLabel(event) {
     return displayTitle(event.title) + (event.meta.file_name ? ' · ' + event.meta.file_name : '');
@@ -499,7 +524,7 @@
     var count = run._runCount;
     run._runToggle.textContent = '';
     run._runToggle.appendChild(el('span','work-run-text',
-      (count === 1 ? '1 Schritt' : count + ' Schritte') + ' · ' + run._runLatest));
+      (count === 1 ? '1 technischer Schritt' : count + ' technische Schritte') + ' anzeigen'));
     run._runToggle.appendChild(el('span','work-run-chevron','▸'));
     run._runToggle.setAttribute('aria-expanded', run._runOpen ? 'true' : 'false');
   }
@@ -570,20 +595,6 @@
   }
 
   function appendNow(body, event, animate, finished) {
-    if (event.meta.page_url && body._research) {
-      researchPage(body._research,event.meta.page_url,event.meta.page_title,'Suchtreffer');
-    }
-    if (event.title === 'Webquelle gefunden' && event.meta.page_url) {
-      // Search hits are source data, not thirty repetitive narration paragraphs.
-      if (event.id) (body._workResearchIds || (body._workResearchIds = {}))[event.id] = true;
-      var empty = body.querySelector('.work-empty');
-      if (empty) body.removeChild(empty);
-      followWork(body);
-      if (typeof body._onWorkEvent === 'function') body._onWorkEvent(event);
-      if (typeof finished === 'function') finished();
-      return true;
-    }
-    if (event.title === 'Websuche beendet' && body._research) finishResearch(body._research);
     var entries = body.querySelector('.work-entries');
     if (!entries) {
       body.textContent = '';
@@ -592,8 +603,13 @@
     }
     if (event.id && entries.querySelector('[data-work-id="' + event.id + '"]')) return false;
 
-    var narration = isNarration(event);
-    // Only narration is typed; a folded routine step appears at once.
+    // The first public WEB note reads as Mara's own text; refinements stay
+    // in the technical details so six searches do not produce six paragraphs.
+    var webIntro = event.kind === 'commentary' && event.meta.source === 'agent_loop'
+      && /^Ich suche nach:\s*/.test(event.meta.public_note || '');
+    var narration = isNarration(event) && (!webIntro || !body._webIntroShown);
+    if (webIntro) body._webIntroShown = true;
+    // Only meaningful narration is typed; routine tool operations are folded.
     animate = animate && narration;
     var entry = el('div', 'work-entry work-' + event.state
       + (narration ? ' work-narration' : ' work-step'));
@@ -771,6 +787,20 @@
       return pending.id === event.id;
     })) return false;
 
+    // Actual WEB source events bypass the prose typewriter queue. The source
+    // carousel updates on SSE arrival, not at the end of the assistant reply.
+    if (body._research && event.title === 'Websuche gestartet') {
+      researchStart(body._research);
+    }
+    if (event.title === 'Webquelle gefunden' && event.meta.page_url) {
+      if (body._research) researchPage(body._research,event.meta.page_url,
+        event.meta.page_title,'Suchtreffer');
+      if (event.id) (body._workResearchIds || (body._workResearchIds = {}))[event.id] = true;
+      if (typeof body._onWorkEvent === 'function') body._onWorkEvent(event);
+      followWork(body);
+      return true;
+    }
+
     if (!motionEnabled(body)) {
       if (body._workQueue && body._workQueue.length) flushWork(body);
       return appendNow(body,event,false);
@@ -917,6 +947,7 @@
     };
     updateSummary();
     initialEvents.forEach(function (event) { add(body,event); });
+    if (!live && research._sites.length) finishResearch(research);
     timeline.appendChild(research);
     timeline.appendChild(body);
     timeline.appendChild(tasks);
@@ -976,6 +1007,7 @@
 
   window.CoreUIWorkEvents = {create:create,add:add,source:source,flush:flushWork,normalize:normalize,
     merge:merge,displayTitle:displayTitle,substantive:substantive,
-    researchList:researchList,researchPage:researchPage,finishResearch:finishResearch,
+    researchList:researchList,researchPage:researchPage,
+    researchStart:researchStart,finishResearch:finishResearch,
     tuckCode:tuckCode};
 }());
