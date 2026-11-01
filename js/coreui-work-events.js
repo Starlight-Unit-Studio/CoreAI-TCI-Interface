@@ -273,7 +273,7 @@
     list.appendChild(history);
     list._label = label; list._active = active; list._activeIcon = icon;
     list._activeInitial = initial; list._activeUrl = urlText;
-    list._count = count; list._summary = summary; list._items = items;
+    list._count = count; list._summary = summary; list._items = items; list._history = history;
     return list;
   }
   // A WEB search is visible immediately, even before its first genuine hit.
