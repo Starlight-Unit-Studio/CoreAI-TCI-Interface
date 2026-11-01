@@ -1,0 +1,13 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.5.88
+Stand: 01.11.2026
+Branch: fix/live-research-carousel-code-steps
+Basis: main 0.5.87 (PR #138 gemergt).
+AUSDRUECKLICHE NUTZERVORGABE:
+[WEB] normale Suche, einschliesslich Suchmaschinen: keine separate "Web wird durchsucht"-Zeile, sondern wechselnde Websites mit Favicon und Domain, wie das Quellenkarussell von ChatGPT. Treffer sind keine bestaetigten Browserbesuche.
+[BROWSE] Playwright: Livefenster beibehalten. Wenn sein Anzeigen-Schalter deaktiviert ist, nur die Beschriftung "Web wird durchsucht" anstelle des Browserfensters. Vorhandene Motion-Einstellung bleibt unabhaengig.
+Codefenster aus Antwortmarkdown sowie die Live-Source-Preview in Maras aufklappbare Schritte verschieben. Keine grosse Codeflaeche mehr im Nachrichtenfluss.
+Die Schritte bleiben Teil von Maras Nachricht, nicht als separater aeusserer "Arbeitsweg". Fehlerwarndreieck aus 0.5.87 behalten.
+
+GEAENDERT: js/coreui-work-events.js, js/console-app.js, js/coreui-preferences.js, js/settings.js, settings.html, css/console.css, UI-Tests, Versionsdateien.
+VERIFIKATIONSGRENZE: GitHub-Quellbranch; noch keine bestaetigten Netcup-/Android-Live-Tests. Vor Merge bitte node scripts/work-events-ui-selftest.js, Playwright-FixTURE und Versions-/Cache-Preflight ausfuehren.
+Nicht aendern: Core-Modelfile, Skillbibliothek, Spiel-Repository, globale serielle Queue, Reputationssystem.
