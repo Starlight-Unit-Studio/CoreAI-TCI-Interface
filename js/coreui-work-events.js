@@ -228,13 +228,18 @@
   }
   // A single live source line replaces the tall per-page cards. The detail
   // list remains a user-expandable record, with hits distinct from visited pages.
-  function researchList() {
+  function researchList(options) {
+    options = options || {};
     var list = el('div','work-research');
     list.setAttribute('aria-label','Webseiten der Recherche');
     list.hidden = true;
     list._sites = [];
+    list._live = !!options.live;
+    list._ticker = null;
+    list._selectedIndex = -1;
     var line = el('div','work-research-line');
     var label = el('span','work-research-label','Web wird durchsucht');
+    label.setAttribute('role','status');
     line.appendChild(label);
     var active = el('a','work-research-current');
     active.target = '_blank'; active.rel = 'noopener noreferrer';
@@ -263,6 +268,37 @@
     list._count = count; list._summary = summary; list._items = items;
     return list;
   }
+  function showResearchSite(list, site) {
+    if (!list || !site) return;
+    var url = researchURL(site.url);
+    if (!url) return;
+    list._active.href = url.href;
+    list._active.title = String(site.title || url.href).slice(0,180);
+    list._activeInitial.textContent = url.hostname.charAt(0).toUpperCase();
+    list._activeUrl.textContent = (url.hostname + url.pathname).slice(0,180);
+    list._activeIcon.hidden = false;
+    list._activeIcon.src = url.origin + '/favicon.ico';
+    list._active.className = 'work-research-current';
+    if (list._currentUrl !== url.href) {
+      void list._active.offsetWidth;
+      list._active.className += ' work-research-flip';
+    }
+    list._currentUrl = url.href;
+  }
+  function startResearchTicker(list) {
+    if (!list._live || list._ticker || typeof window.setInterval !== 'function') return;
+    list._ticker = window.setInterval(function () {
+      if (list.isConnected === false && list._wasConnected) {
+        window.clearInterval(list._ticker); list._ticker = null;
+        return;
+      }
+      if (list.isConnected) list._wasConnected = true;
+      var sites = list._sites || [];
+      if (sites.length < 2) return;
+      list._selectedIndex = (list._selectedIndex + 1) % sites.length;
+      showResearchSite(list,sites[list._selectedIndex]);
+    },1600);
+  }
   function researchPage(list, raw, title, label) {
     var url = researchURL(raw);
     if (!list || !url || !list._items) return false;
@@ -289,37 +325,38 @@
       var status = el('span','work-site-status');
       row.appendChild(status);
       list._items.appendChild(row);
-      current = {url:url.href,row:row,status:status,visited:false};
+      current = {url:url.href,row:row,status:status,visited:false,title:String(title || url.hostname + url.pathname).slice(0,160)};
       sites.push(current);
       if (sites.length > 30) list._items.removeChild(sites.shift().row);
     }
     if (visited) current.visited = true;
     current.status.textContent = current.visited ? (visited ? (label || 'Aktuelle Seite') : 'Besucht') : 'Suchtreffer';
-    list._active.href = url.href;
-    list._active.title = String(title || url.href).slice(0,180);
-    list._activeInitial.textContent = url.hostname.charAt(0).toUpperCase();
-    list._activeUrl.textContent = (url.hostname + url.pathname).slice(0,180);
-    list._activeIcon.hidden = false;
-    list._activeIcon.src = url.origin + '/favicon.ico';
-    list._active.className = 'work-research-current';
-    // Restart the small slide transition when a genuinely new source arrives.
-    if (list._currentUrl !== url.href) {
-      void list._active.offsetWidth;
-      list._active.className += ' work-research-flip';
-    }
-    list._currentUrl = url.href;
+    list._selectedIndex = sites.indexOf(current);
+    showResearchSite(list,current);
+    startResearchTicker(list);
     list._count.textContent = String(sites.length);
-    list._summary.textContent = sites.length + (sites.length === 1 ? ' Webseite' : ' Webseiten')
-      + (sites.some(function (site) { return site.visited; }) ? ' (besucht)' : ' (Suchtreffer)');
+    var visits = sites.filter(function (site) { return site.visited; }).length;
+    list._summary.textContent = visits
+      ? visits + (visits === 1 ? ' Webseite besucht' : ' Webseiten besucht')
+      : sites.length + (sites.length === 1 ? ' Suchtreffer' : ' Suchtreffer');
     list.hidden = false;
     return true;
   }
   function finishResearch(list) {
     if (!list || !list._sites) return;
+    if (list._ticker && typeof window.clearInterval === 'function') {
+      window.clearInterval(list._ticker);
+      list._ticker = null;
+    }
     list._sites.forEach(function (site) {
       if (site.visited) site.status.textContent = 'Besucht';
     });
-    if (list._sites.length) list._label.textContent = 'Recherche abgeschlossen';
+    if (list._sites.length) {
+      var visited = list._sites.filter(function (site) { return site.visited; }).length;
+      list._label.textContent = visited
+        ? visited + (visited === 1 ? ' Website besucht' : ' Websites besucht')
+        : list._sites.length + (list._sites.length === 1 ? ' Website gefunden' : ' Websites gefunden');
+    }
   }
 
   function normalize(raw) {
@@ -809,7 +846,7 @@
     var counters = el('span','work-counts');
     if (options.codeOnly) counters.hidden = true;
     var body = el('div','work-body');
-    var research = researchList();
+    var research = researchList({live:live});
     body._research = research;
     body._workLive = live;
     body._workFollow = true;
