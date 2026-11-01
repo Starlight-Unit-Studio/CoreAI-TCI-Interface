@@ -238,7 +238,7 @@
     list._ticker = null;
     list._selectedIndex = -1;
     var line = el('div','work-research-line');
-    var label = el('span','work-research-label','Web wird durchsucht');
+    var label = el('span','work-research-label','');
     label.setAttribute('role','status');
     line.appendChild(label);
     var active = el('a','work-research-current');
@@ -351,7 +351,7 @@
     list._sites.forEach(function (site) {
       if (site.visited) site.status.textContent = 'Besucht';
     });
-    if (list._sites.length) {
+    if (list._sites.length && list._live) {
       var visited = list._sites.filter(function (site) { return site.visited; }).length;
       list._label.textContent = visited
         ? visited + (visited === 1 ? ' Website besucht' : ' Websites besucht')
