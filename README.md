@@ -7,7 +7,11 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.87` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.88` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Websuche, Quellenkarussell und Code-Schritte (0.5.88)
+
+Normale Websuche [WEB] zeigt live wechselnde gefundene Quellen mit Favicon und Domain, ohne eine separate Beschriftung "Web wird durchsucht". Die Quellenliste bleibt aufklappbar. Die tiefe Playwright-Recherche [BROWSE] behaelt ihr eigenes Browserfenster. Neu ist ein separater Anzeigeschalter: bei ausgeblendetem Playwright-Fenster steht nur "Web wird durchsucht". Codefenster aus Maras Antworten und Live-Quelltexte bleiben innerhalb der aufklappbaren Schritte.
 
 ## Maras Fortschritt und Webrecherche (0.5.87)
 
