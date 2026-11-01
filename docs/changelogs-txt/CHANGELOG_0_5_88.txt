@@ -1,0 +1,8 @@
+COREAI: TCI INTERFACE 0.5.88
+Datum: 01.11.2026
+
+Normale WEB-Recherche: laufend rotierende Webseiten-URLs samt Favicons in einer kompakten ChatGPT-aehnlichen Zeile, ohne den bisherigen Text "Web wird durchsucht". Trefferliste im Detail ausklappbar.
+Tiefe Playwright-Browserrecherche: eigenes Livefenster, das separat in Anzeige deaktiviert werden kann. Falls ausgeblendet: "Web wird durchsucht". Der Schalter fuer das Abspielen der Browserbilder ist davon unabhaengig.
+Live-Quelltext und vom Core ausgegebene Codefenster erscheinen nur in aufklappbaren Schrittbereichen, um den Nachrichtenfluss kompakt zu halten.
+Keine Aenderungen an Game, seriellem Modellablauf oder Modelfile.
+Netcup-/Android-Livetest und vollstaendiger Preflight vor Merge noch offen.
