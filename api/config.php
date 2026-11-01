@@ -88,15 +88,15 @@ coreui_define('STU_EMBER_LORE_DOCS', []);
 
 coreui_define('STU_EMBER_WEB_ENABLED', coreui_env_bool('COREUI_WEB_ENABLED', true));
 coreui_define('STU_EMBER_WEB_URL', coreui_env('COREUI_SEARXNG_URL', 'http://127.0.0.1:18889/search'));
-coreui_define('STU_EMBER_WEB_LIMIT', (int)coreui_env('COREUI_WEB_LIMIT', '5'));
+coreui_define('STU_EMBER_WEB_LIMIT', (int)coreui_env('COREUI_WEB_LIMIT', '10'));
 coreui_define('STU_EMBER_WEB_TIMEOUT', (int)coreui_env('COREUI_WEB_TIMEOUT', '15'));
-coreui_define('STU_EMBER_WEB_MAX_CHARS', (int)coreui_env('COREUI_WEB_MAX_CHARS', '2000'));
+coreui_define('STU_EMBER_WEB_MAX_CHARS', (int)coreui_env('COREUI_WEB_MAX_CHARS', '5000'));
 coreui_define('STU_EMBER_WEB_SNIPPET_CHARS', (int)coreui_env('COREUI_WEB_SNIPPET_CHARS', '300'));
 coreui_define('STU_EMBER_BROWSE_ENABLED', coreui_env_bool('COREUI_BROWSE_ENABLED', true));
 coreui_define('STU_EMBER_BROWSE_MAX_STEPS', (int)coreui_env('COREUI_BROWSE_MAX_STEPS', '12'));
 coreui_define('STU_EMBER_BROWSE_AGENT_TIMEOUT', (int)coreui_env('COREUI_BROWSE_AGENT_TIMEOUT', '420'));
 coreui_define('STU_EMBER_BROWSE_REPORT_TIMEOUT', (int)coreui_env('COREUI_BROWSE_REPORT_TIMEOUT', '420'));
-coreui_define('STU_EMBER_BROWSE_AGENT_RETRIES', (int)coreui_env('COREUI_BROWSE_AGENT_RETRIES', '0'));
+coreui_define('STU_EMBER_BROWSE_AGENT_RETRIES', (int)coreui_env('COREUI_BROWSE_AGENT_RETRIES', '3'));
 coreui_define('STU_EMBER_BROWSE_FRAME_QUALITY', (int)coreui_env('COREUI_BROWSE_FRAME_QUALITY', '45'));
 coreui_define('STU_EMBER_BROWSE_FRAME_BURST', (int)coreui_env('COREUI_BROWSE_FRAME_BURST', '3'));
 coreui_define('STU_EMBER_BROWSE_FRAME_INTERVAL_MS', (int)coreui_env('COREUI_BROWSE_FRAME_INTERVAL_MS', '240'));
@@ -122,6 +122,6 @@ coreui_define('STU_EMBER_PDF_PAGE_DIR', coreui_env(
   dirname(__DIR__) . '/var/pdf_pages'
 ));
 coreui_define('STU_EXTERNAL_API_KEY', coreui_env('COREUI_EXTERNAL_API_KEY'));
-coreui_define('STU_EMBER_REPUTATION_ENABLED', coreui_env_bool('COREUI_REPUTATION_ENABLED', true));
+coreui_define('STU_EMBER_REPUTATION_ENABLED', coreui_env_bool('COREUI_REPUTATION_ENABLED', false));
 coreui_define('STU_EMBER_AUTOMOD', false);
 coreui_define('STU_EMBER_TOOLS', true);
