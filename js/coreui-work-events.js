@@ -351,7 +351,7 @@
     if (visited) current.visited = true;
     current.status.textContent = current.visited ? (visited ? (label || 'Aktuelle Seite') : 'Besucht') : 'Suchtreffer';
     list._selectedIndex = sites.indexOf(current);
-    list._label.textContent = '';
+    list._label.textContent = sites.length + (sites.length === 1 ? ' Quelle gefunden' : ' Quellen gefunden');
     list._active.hidden = false;
     list._history.hidden = false;
     showResearchSite(list,current);
@@ -570,7 +570,8 @@
     'Python-Job eingereiht':'Python läuft','Werkzeugantwort wird einmal korrigiert':'Korrigiere die Werkzeugantwort',
     'Mara hat selbst den Projekt-Writer aufgerufen':'Starte den Projekt-Writer',
     'Projektdateien geplant':'Plane die Projektdateien','Kontextfenster ermittelt':'Plane den Kontext',
-    'Privates Wissen durchsucht':'Durchsuche dein Wissen','Anhang wird angesehen':'Sehe mir den Anhang an'
+    'Privates Wissen durchsucht':'Durchsuche dein Wissen','Anhang wird angesehen':'Sehe mir den Anhang an',
+    'Websuche gestartet':'Prüfe Webquellen','Websuche beendet':'Ordne Quellen ein'
   };
   function activity(event) {
     if (!event) return 'Warte auf den ersten Schritt';
