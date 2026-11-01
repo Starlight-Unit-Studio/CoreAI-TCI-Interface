@@ -221,7 +221,7 @@ class WorkerTests(unittest.TestCase):
             if cmd[1] == 'rm':
                 return subprocess.CompletedProcess(cmd,0 if stop else 1,b'',b'engine unavailable' if not stop else b'')
             mounts = [cmd[i+1] for i,word in enumerate(cmd[:-1]) if word == '-v']
-            self.assertEqual(len(mounts), 3)
+            self.assertEqual(len(mounts), 4)
             mount = next(x for x in mounts if x.endswith(':/work/output:rw'))
             output = Path(mount[:-len(':/work/output:rw')])
             self.assertIn(str(output) + ':/mnt/data:rw', mounts)
@@ -291,13 +291,13 @@ class WorkerTests(unittest.TestCase):
 
     def test_rejected_completion_discards_files(self):
         job = {'id':7,'code':'pass','channel':'console','recipient_uid':1,'session_id':'s','trigger_message_id':2}
-        with mock.patch.object(worker.subprocess,'run',side_effect=self.docker_double()):
+        with mock.patch.object(worker,'resolve_inputs',return_value=[]), mock.patch.object(worker.subprocess,'run',side_effect=self.docker_double()):
             worker.process_job(FakeConnection(0),self.cfg,job)
         self.assertFalse((self.base/'artifacts'/'7').exists())
 
     def test_unknown_commit_keeps_files(self):
         job = {'id':7,'code':'pass','channel':'console','recipient_uid':1,'session_id':'s','trigger_message_id':2}
-        with mock.patch.object(worker.subprocess,'run',side_effect=self.docker_double()), mock.patch.object(worker,'finish_job',side_effect=OSError('lost DB')):
+        with mock.patch.object(worker,'resolve_inputs',return_value=[]), mock.patch.object(worker.subprocess,'run',side_effect=self.docker_double()), mock.patch.object(worker,'finish_job',side_effect=OSError('lost DB')):
             with self.assertRaises(OSError): worker.process_job(FakeConnection(),self.cfg,job)
         self.assertEqual(len(list((self.base/'artifacts'/'7').iterdir())),1)
 

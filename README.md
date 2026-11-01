@@ -7,7 +7,20 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.86` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.87` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Python-Eingaben aus Uploads (0.5.87)
+
+Python-Jobs erhalten schreibgeschuetzte Kopien der Anhaenge ihrer aktuellen
+Nachricht. `EMBER_INPUT_MANIFEST` verweist auf JSON mit Upload-ID, Originalname,
+Containerpfad, Groesse, MIME-Typ und SHA-256. Der private Upload-Speicher wird
+nicht gemountet. Fehlende, veraenderte oder unsichere Eingaben stoppen den Job.
+ZIPs werden vorab auf Pfade, Links, Kollisionen, CRC und Entpackgroesse geprueft.
+Grenzen: 10 Anhaenge, je 256 MiB (wie Upload), je ZIP 10.000 Eintraege und 1 GiB
+entpackte Daten, je Eintrag 256 MiB. Originalarchive werden nicht auf dem Host
+entpackt. Folgeauftraege brauchen weiterhin explizite Anhaenge; dauerhafte
+Projekt-Wiederaufnahme und die Vollstaendigkeitsabnahme des Projekt-Writers
+sind damit noch nicht implementiert. Nach Update Python-Worker neu starten.
 
 ## Maras Erinnerungen ohne Kuerzung (0.5.86)
 

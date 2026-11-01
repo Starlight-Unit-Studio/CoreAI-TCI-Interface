@@ -2662,6 +2662,12 @@ function ember_py_prefers_project_builder(string $model, bool $nativeProjects): 
 function ember_py_capability_hint(string $model = '', bool $compact = false,
                                   bool $nativeProjects = false): string {
   $preferBuild = ember_py_prefers_project_builder($model, $nativeProjects);
+  $inputRule = "EINGABEN: Lies JSON aus os.environ['EMBER_INPUT_MANIFEST']. "
+    . "files enthaelt upload_id, name, path, size_bytes, sha256 und mime_type der Anhaenge "
+    . "dieser Nachricht. Oeffne nur diese path-Werte; Originale sind schreibgeschuetzt. "
+    . "Bearbeite Kopien in /work und schreibe Ergebnisse nach /work/output. "
+    . "Fehlt die benoetigte Eingabe, melde den Fehler statt sie zu rekonstruieren. "
+    . "Fruehere Nachrichten/Jobs sind keine automatisch verfuegbaren Eingaben. ";
   $projectRule = "Ein Webprojekt mit mehreren Seiten oder einen gespeicherten Projektplan setzt du "
     . "NICHT mit Python um, sondern antwortest nur mit:\n"
     . "[COREUI_PROJECT_BUILD]\nKurzer Projektauftrag\n[/COREUI_PROJECT_BUILD]\n"
@@ -2670,6 +2676,7 @@ function ember_py_capability_hint(string $model = '', bool $compact = false,
     return "PYTHON: Zum Rechnen, Pruefen oder fuer eine herunterladbare Datei antworte nur mit\n"
       . "[PY]\ncode\n[/PY]\n"
       . "Dateien nach Path(os.environ['EMBER_OUTPUT_DIR']) schreiben; keine erfundenen Links. "
+      . $inputRule
       . ($preferBuild ? $projectRule : '')
       . "Fuer Smalltalk, Meinungen oder Lore brauchst du KEIN Python.";
   }
@@ -2684,6 +2691,7 @@ function ember_py_capability_hint(string $model = '', bool $compact = false,
     . "zaehlen, parsen oder testen willst statt zu schaetzen (Mathe, Datums-/Zeitrechnung, "
     . "Textanalyse, JSON/CSV, kleine Skripte, API-Abfragen und DATEIEN fuer den Benutzer).\n"
     . $files
+    . $inputRule
     . "Keine data:-Links, keine base64-Inline-URLs, keine rohen <a download>-Tags, keine "
     . "angeblichen lokalen Pfade oder erfundenen Downloads. Die Chatoberflaeche zeigt echte "
     . "Dateikarten nur fuer vom Worker bestaetigte Ausgabedateien.\n"

@@ -1,0 +1,31 @@
+COREAI 0.5.87: PYTHON-UPLOAD-EINGABEN
+Stand: 01.11.2026. Basis: main b4cd69a44fcd3db6262e169b8111de4e9bb518b8 (0.5.86).
+
+Erster abgegrenzter Reparaturschritt aus dem Mara-Handover.
+Neue tools/ember_inputs.py trennt Berechtigungsaufloesung, sichere Dateikopie
+und ZIP-Pruefung vom Container-Lebenszyklus. Mapping und Hashes werden im
+artifacts_json des Jobs unter inputs gespeichert. Ausgabeformat bleibt v1.
+Keine Migration erforderlich: bestehende Nachrichten-/Anhangstabellen werden
+benutzt. Worker nach Update neu starten; Docker-Image muss nicht neu gebaut werden.
+
+Der Worker liest nur Anhaenge des aktuellen Triggers, nicht die gesamte Session.
+Originalnamen sind Metadaten, die Containerdateien heissen nach Upload-ID.
+Nach Kopie wird der DB-Bezug nochmals geprueft. Alte/geaenderte/geloeschte Turns
+werden abgewiesen. Output-Publikation hat weiterhin ihre separate Turn-Pruefung.
+
+Offline geprueft: 12 neue Eingabetests, 11 bestehende Worker-Tests mit Docker-/DB-
+Doubles und bestehender Workspace-Ausgabe-Selftest.
+Die komplette Artefaktsuite hat in dieser Umgebung 23 bestandene und 5 nicht
+lauffaehige Faelle: vier brauchen PHP, einer einen Wechsel zu UID/GID www-data.
+PHP und Docker sind hier nicht installiert. Vollstaendige PHP-/DB-/Docker-
+Preflights und Netcup-/Android-Livetests sind daher vor Freigabe offen.
+Die synthetische ZIP enthaelt 13 Dateien; die reale CyberKawaii-ZIP und ihre
+Workevents liegen hier nicht vor. Keine Behauptung einer Live-Reproduktion.
+
+Noch offen aus dem Handover: Projektmanifest mit Soll/Ist-Dateiabnahme und
+Wiederaufnahme; Writer-Limits; Ollama-Fehlerklassen; Reputation zur Laufzeit;
+Player-State-Prompt-Abkopplung und Skill-Marker-Regressionen.
+Reputation-Default ist auf main bereits false in api/config.php. Das beweist
+keine effektive Servereinstellung. Beide Player-State-Promptpfade sind noch
+im Code vorhanden. PR #133 bleibt unabhaengiger, offener Draft.
+Kein Merge, kein Deploy, keine Aenderung am Game-Repository.

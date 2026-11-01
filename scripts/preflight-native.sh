@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.86 Mara's memories stored and used whole (no 240 character cut), budget per window.
+# CoreAI: TCI Interface 0.5.87 Turn-bound Python upload inputs.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -200,6 +200,8 @@ UI_FILES=(
   scripts/agent-runs-selftest.php
   scripts/model-queue-selftest.php
   scripts/workspace-output-selftest.py
+  scripts/python-input-selftest.py
+  tools/ember_inputs.py
   scripts/pdo-mysql-installer-selftest.py
   api/console_artifact.php
   api/console_artifacts.php
@@ -285,6 +287,12 @@ if python3 "$PROJECT_ROOT/scripts/workspace-output-selftest.py" >/dev/null 2>&1;
   ok 'Python-Worker: gerettete HTML/ZIP-Dateien und sichere Ausgabepfade geprueft.'
 else
   fail 'Python-Ausgabedatei-Selbsttest fehlgeschlagen.'
+fi
+
+if python3 "$PROJECT_ROOT/scripts/python-input-selftest.py" >/dev/null 2>&1; then
+  ok 'Python-Eingaben: Nachrichtenzuordnung, Originaldateien und ZIP-Pruefung getestet.'
+else
+  fail 'Python-Eingabedatei-Selbsttest fehlgeschlagen.'
 fi
 
 if python3 "$PROJECT_ROOT/scripts/cache-bust.py" --root "$PROJECT_ROOT" --verify > /dev/null; then
