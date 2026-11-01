@@ -486,3 +486,10 @@ const noResults = work.create({live:true}).querySelector('.work-research');
 work.researchStart(noResults);
 assert.equal(noResults.hidden,false);
 assert.equal(noResults._active.hidden,true,'no fictitious source before actual WEB results');
+
+const emptyWebHistory = work.create({events:[
+  {id:997,kind:'tool',state:'running',title:'Websuche gestartet',meta:{}},
+  {id:998,kind:'tool',state:'info',title:'Websuche beendet',meta:{knowledge_hits:0}}
+]});
+assert.equal(emptyWebHistory.querySelector('.work-research-label').textContent,
+  'Keine Quellen gefunden','finished empty searches must not look like ongoing work');
