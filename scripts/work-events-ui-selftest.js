@@ -432,7 +432,8 @@ assert(found.querySelector('.work-research-history'),'source list is initially c
 assert.equal(found.querySelector('.work-research-history').tag,'details');
 assert.equal(research._currentUrl,'https://example.net/b');
 assert.equal(research.querySelector('.work-research-url').textContent,'example.net/b');
-assert.equal(research.querySelector('.work-research-label').textContent,'Recherche abgeschlossen');
+assert.equal(research.querySelector('.work-research-label').textContent,'');
+assert.equal(found.querySelector('.work-research-label').textContent,'','WEB carousel replaces generic Web wird durchsucht');
 const codeFold = work.create({live:true,codeOnly:true});
 assert(work.source(codeFold.querySelector('.work-body'),{phase:'begin',file_name:'index.html',attempt:1}));
 assert.equal(codeFold.querySelector('.work-source').tag,'details');
