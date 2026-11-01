@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.5.89 - 01.11.2026
+
+- WEB-Quellen gelangen sofort bei einem SSE-Treffer ins Favicon- und URL-Karussell; die langsame Erzaehlanimation blockiert sie nicht mehr.
+- Das erste echte Websuch-Ereignis zeigt den laufenden Suchstatus ohne "Web wird durchsucht". Trefferlose Recherchen bleiben als solche kenntlich; keine Quellen werden vorgetaeuscht.
+- Wiederholte Suchrunden und Schritt-Nummern erscheinen ausschliesslich in den eingeklappten technischen Details. Eine erste, natuerlich formulierte Recherchemeldung bleibt wie Maras normaler Nachrichtentext sichtbar.
+- Mehrfache Fortschritts-Zeilen und die redundante Schritte-/Werkzeuge-Gesamtzahl wurden im Nachrichtenfluss reduziert. Browserfenster-Schalter und Codefenster aus 0.5.88 bleiben erhalten.
+- Regressionstest mit aktiver Textanimationswarteschlange, sofortigem Live-Treffer, URL-Wechsel, mehrfacher Suche und erfolgloser Websuche.
+
 ## 0.5.88 - 01.11.2026
 
 - Normale [WEB]-Suche zeigt gefundene Webseiten als wechselndes Favicon-/URL-Karussell direkt in Maras Fortschritt, statt einer ausgeschriebenen Liste oder der Beschriftung "Web wird durchsucht". Die Detailquellen bleiben ausklappbar. Suchtreffer werden nicht als besucht ausgegeben.
