@@ -68,6 +68,7 @@ class Element {
   }
   set className(v) { this.classList = new ClassList(); String(v).split(/\s+/).filter(Boolean).forEach(c => this.classList.add(c)); }
   get className() { return Array.from(this.classList.set).join(' '); }
+  insertBefore(child, ref) { child.parentNode = this; this.children.splice(this.children.indexOf(ref),0,child); return child; }
   set innerHTML(html) {
     this._html = html;
     // The panel's parts, found by class like the real markup.
@@ -113,12 +114,17 @@ function harness() {
   timers = [];
   sources.length = 0;
   const messagesInner = new Element('div');
-  const calls = {status: [], drained: 0, scrolled: 0};
+  const calls = {status: [], drained: 0, scrolled: 0, research: [], researchFinished: 0};
   const state = {pendingBySession: {s1: {}}, assistantName: 'Mara', agentStopEl: null};
   const sandbox = {
     API_BASE: '/api', BROWSE_IDLE_MS: 720000, uiPreferences: {liveFrameMotion: true}, state, messagesInner,
     document: {createElement: tag => new Element(tag)},
     EventSource: FakeEventSource,
+    window: {CoreUIWorkEvents:{
+      researchList:()=>new Element('div'),
+      researchPage:(list,url,title,label)=>calls.research.push({url,label}),
+      finishResearch:()=>{calls.researchFinished++;}
+    }},
     setTimeout: (fn, ms) => addTimer(fn, ms, false), clearTimeout: clearTimer,
     setInterval: (fn, ms) => addTimer(fn, ms, true), clearInterval: clearTimer,
     Date: {now: () => now}, JSON, Math, Number, String, encodeURIComponent,
@@ -134,7 +140,7 @@ function harness() {
   vm.runInNewContext(source + '\nthis.openBrowseWindow = openBrowseWindow;', sandbox);
   sandbox.openBrowseWindow(77, 's1');
   const row = messagesInner.children[0];
-  const panel = row.children[1].children[0];
+  const panel = row.children[1].children.find(el=>el.classList.contains('browse-live'));
   const part = name => panel.parts[name];
   return {sandbox, panel, part, calls, state};
 }
@@ -177,6 +183,7 @@ advance(60000);
 assert.equal(h.part('browse-think-time').textContent, '1 min 23 s');
 // A fresh picture while thinking does not overwrite her status.
 es.emit('frame', frame(2, {label: 'Mara liest die Seite'}));
+assert(h.calls.research.some(site=>site.url==='https://shop.example/' && site.label==='Aktuelle Seite'),'frame supplies actual current page');
 advance(300);
 assert.equal(h.part('browse-live-status').textContent, 'Mara überlegt noch, 15 s (2 von 12)');
 

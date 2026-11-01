@@ -52,6 +52,7 @@ from ember_artifacts import (
     collect_outputs, discard_outputs, empty_manifest,
     recover_workspace_outputs, recover_stdout_html,
 )
+from ember_inputs import InputError, resolve_inputs, stage_inputs
 
 try:
     import pymysql
@@ -216,7 +217,7 @@ def stop_container(container):
         return False
 
 
-def run_in_container(cfg, job_id, code, *, publish_outputs=False):
+def run_in_container(cfg, job_id, code, *, publish_outputs=False, inputs=(), verify_inputs=None):
     """Return stdout, stderr, exit code, duration, error and a v1 manifest.
 
     The separate output bind mount prevents replacing its host-side root with a
@@ -234,6 +235,10 @@ def run_in_container(cfg, job_id, code, *, publish_outputs=False):
     manifest = empty_manifest()
     stopped = True
     try:
+        input_dir = os.path.join(workdir, "input")
+        input_manifest = stage_inputs(PROJECT_ROOT, inputs, input_dir)
+        if verify_inputs is not None:
+            verify_inputs()
         os.mkdir(sandbox, 0o777)
         os.mkdir(output, 0o777)
         os.chmod(sandbox, 0o777)
@@ -259,8 +264,10 @@ def run_in_container(cfg, job_id, code, *, publish_outputs=False):
             # This is the SAME bounded per-job output dir, not a host /mnt/data
             # mount and never the persistent artifact store.
             "-v", "%s:/mnt/data:rw" % output,
+            "-v", "%s:/work/input:ro" % input_dir,
             "-w", "/work", "-e", "HOME=/tmp", "-e", "MPLBACKEND=Agg",
             "-e", "PYTHONUNBUFFERED=1", "-e", "EMBER_OUTPUT_DIR=/work/output",
+            "-e", "EMBER_INPUT_MANIFEST=/work/input/manifest.json",
             str(cfg.get("STU_EMBER_PY_IMAGE", "ember-py:1")),
             "python", "-I", "/work/main.py",
         ]
@@ -306,6 +313,10 @@ def run_in_container(cfg, job_id, code, *, publish_outputs=False):
                 manifest["warnings"].append("workspace_output_recovered")
             if stdout_recovered:
                 manifest["warnings"].append("stdout_html_recovered")
+        manifest["inputs"] = input_manifest["files"]
+    except InputError as exc:
+        err = str(exc)
+        manifest["warnings"].append(err)
     finally:
         if stopped:
             shutil.rmtree(workdir, ignore_errors=True)
@@ -319,7 +330,20 @@ def process_job(conn, cfg, job):
     print("[job %d] starte (%d Zeichen Code)" % (job_id, len(code)), flush=True)
     bound = (job.get("channel") == "console" and int(job.get("recipient_uid") or 0) > 0
              and bool(job.get("session_id")) and int(job.get("trigger_message_id") or 0) > 0)
-    stdout, stderr, rc, dur, err, manifest = run_in_container(cfg, job_id, code, publish_outputs=bound)
+    try:
+        inputs = resolve_inputs(conn, job) if bound else []
+
+        def verify_inputs():
+            if resolve_inputs(conn, job) != inputs:
+                raise InputError("input_context_changed")
+
+        stdout, stderr, rc, dur, err, manifest = run_in_container(
+            cfg, job_id, code, publish_outputs=bound, inputs=inputs,
+            verify_inputs=verify_inputs if bound else None)
+    except InputError as exc:
+        stdout, stderr, rc, dur, err, manifest = "", "", None, 0, str(exc), empty_manifest()
+    if rc not in (None, 0) and not err:
+        err = "python_exit_nonzero"
     # A PHP timeout/cancellation wins. Do not overwrite it. If the DB throws,
     # commit outcome is unknown: retain copies rather than deleting live files.
     accepted = finish_job(conn, job_id, "error" if err else "done", stdout, stderr, rc, dur,
@@ -327,7 +351,7 @@ def process_job(conn, cfg, job):
     if not accepted and manifest["files"]:
         discard_outputs(work_base(cfg), manifest)
     print("[job %d] %s rc=%s in %dms (%d Dateien)" %
-          (job_id, "fertig" if accepted else "verworfen", rc, dur, len(manifest["files"])), flush=True)
+          (job_id, ("fehlgeschlagen" if err else "fertig") if accepted else "verworfen", rc, dur, len(manifest["files"])), flush=True)
 
 
 # ----------------------------------------------------------------------------- main

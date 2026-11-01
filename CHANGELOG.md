@@ -2,6 +2,19 @@
 
 CoreAI: TCI Interface gehoert zur Quantum-Softwarefamilie und wird bis zur finalen Aufnahme in den STU-Repack eigenstaendig versioniert. Historische Changelogs dokumentieren die frueheren Produktnamen unveraendert.
 
+## 0.5.87 - 01.11.2026
+
+- Fortschritt erscheint dauerhaft als Teil von Maras Nachricht, ohne Arbeitsweg-Ueberschrift oder aeusseren Klappschalter. Nur Schrittgruppen und technische Infos bleiben klappbar; Fehler tragen ein rotes Warndreieck neben dem Info-Symbol statt einer roten Linie.
+- Wichtige Starts ausserhalb des Projektbaus (Python, Websuche, Browser, Anhaenge, Wissenssuche) erscheinen als oeffentliche Fortschrittsnotizen aus echten Ereignissen.
+- Websuchtreffer werden mit Titel, Domain und Favicon (Buchstaben-Fallback) angezeigt und als Suchtreffer gekennzeichnet. Der Live-Browser zeigt die tatsaechlichen Frame-URLs als aktuelle bzw. besuchte Seiten, ohne Duplikate pro URL.
+- Recherche-Metadaten erlauben nur oeffentliche HTTP(S)-Adressen ohne Zugangsdaten, Query oder Fragment; Titel werden als Text gerendert. Favicon-Abrufe senden keinen Referrer. Die vorhandene Browseransicht bleibt erhalten.
+- Python-Worker uebernimmt ausschliesslich Uploads der gebundenen Nachricht nach Pruefung von Nutzer, Session und Revision. Legacy-file_uuid bleibt lesbar; keine beliebigen Modellpfade oder vorherigen Chats.
+- Originalbytes werden mit Groessenpruefung und SHA-256 in einen separaten, schreibgeschuetzten Job-Input kopiert. Das Modell erhaelt den Manifest-Vertrag; der private Medienstore bleibt ausserhalb des Containers.
+- ZIP-Pruefung vor Ausfuehrung: Traversal, Symlinks/Spezialdateien, doppelte Pfade, Dateipfad-Kollisionen, verschluesselte/defekte Archive und Entpacklimits werden abgewiesen. Kein Host-Extract.
+- Fehlende Eingaben starten keinen Container. Python-Exitcodes ungleich null erzeugen den Jobstatus error statt done; vorhandene Teilausgaben bleiben als partiell markiert.
+- Neues Offline-Selftest-Skript in beiden Preflights. Bestehende Docker-Testdoubles an den vierten, schreibgeschuetzten Mount angepasst.
+- Abgrenzung: Projekt-Writer-Vollstaendigkeit, Datei-Wiederaufnahme, Ollama-Diagnose und Game-/Skill-Bereinigung bleiben eigene Folgeschritte. Keine Aenderung an Modelfile, Modellqueue oder Skill-Loader.
+
 ## 0.5.86 - 30.10.2026
 
 - **Maras Erinnerungen ohne Kuerzung:** Laengere Eintraege im Memory waren abgeschnitten. Ursache: Beim automatischen Merken schnitt der Server jeden Fakt hart nach 240 Zeichen ab (mitten im Satz), und beim Einfuegen in Maras Prompt nochmals. Jetzt wird jede Erinnerung vollstaendig gespeichert und vollstaendig verwendet.

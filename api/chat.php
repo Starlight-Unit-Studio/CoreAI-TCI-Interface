@@ -2394,9 +2394,10 @@ function ember_web_search(string $query, int $limit = 5, int $timeout = 12): arr
 }
 
 // Untrusted-Data-Block aus den Web-Treffern bauen (hart getruncated).
-function ember_web_results_block(string $query): string {
+function ember_web_results_block(string $query, ?callable $onResults = null): string {
   if (!ember_web_enabled()) return '';
   $rows = ember_web_search($query, ember_web_limit(), ember_web_timeout());
+  if ($onResults !== null) $onResults($rows);
   if (empty($rows)) return '';
   $snipMax = ember_web_snippet_chars();
   $lines = [];
@@ -2662,6 +2663,12 @@ function ember_py_prefers_project_builder(string $model, bool $nativeProjects): 
 function ember_py_capability_hint(string $model = '', bool $compact = false,
                                   bool $nativeProjects = false): string {
   $preferBuild = ember_py_prefers_project_builder($model, $nativeProjects);
+  $inputRule = "EINGABEN: Lies JSON aus os.environ['EMBER_INPUT_MANIFEST']. "
+    . "files enthaelt upload_id, name, path, size_bytes, sha256 und mime_type der Anhaenge "
+    . "dieser Nachricht. Oeffne nur diese path-Werte; Originale sind schreibgeschuetzt. "
+    . "Bearbeite Kopien in /work und schreibe Ergebnisse nach /work/output. "
+    . "Fehlt die benoetigte Eingabe, melde den Fehler statt sie zu rekonstruieren. "
+    . "Fruehere Nachrichten/Jobs sind keine automatisch verfuegbaren Eingaben. ";
   $projectRule = "Ein Webprojekt mit mehreren Seiten oder einen gespeicherten Projektplan setzt du "
     . "NICHT mit Python um, sondern antwortest nur mit:\n"
     . "[COREUI_PROJECT_BUILD]\nKurzer Projektauftrag\n[/COREUI_PROJECT_BUILD]\n"
@@ -2670,6 +2677,7 @@ function ember_py_capability_hint(string $model = '', bool $compact = false,
     return "PYTHON: Zum Rechnen, Pruefen oder fuer eine herunterladbare Datei antworte nur mit\n"
       . "[PY]\ncode\n[/PY]\n"
       . "Dateien nach Path(os.environ['EMBER_OUTPUT_DIR']) schreiben; keine erfundenen Links. "
+      . $inputRule
       . ($preferBuild ? $projectRule : '')
       . "Fuer Smalltalk, Meinungen oder Lore brauchst du KEIN Python.";
   }
@@ -2684,6 +2692,7 @@ function ember_py_capability_hint(string $model = '', bool $compact = false,
     . "zaehlen, parsen oder testen willst statt zu schaetzen (Mathe, Datums-/Zeitrechnung, "
     . "Textanalyse, JSON/CSV, kleine Skripte, API-Abfragen und DATEIEN fuer den Benutzer).\n"
     . $files
+    . $inputRule
     . "Keine data:-Links, keine base64-Inline-URLs, keine rohen <a download>-Tags, keine "
     . "angeblichen lokalen Pfade oder erfundenen Downloads. Die Chatoberflaeche zeigt echte "
     . "Dateikarten nur fuer vom Worker bestaetigte Ausgabedateien.\n"
@@ -4997,7 +5006,14 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
 function ember_agent_run_tool(PDO $pdo, array $tool, string $channel, int $uid, string $sessionId,
     int $triggerId, int $triggerRevision): string {
   if ($tool['tool'] === 'web') {
-    $block = ember_web_results_block((string)$tool['input']);
+    coreui_work_record($pdo, 'tool', 'running', 'Websuche gestartet', ['source'=>'web']);
+    $block = ember_web_results_block((string)$tool['input'], static function (array $rows) use ($pdo): void {
+      foreach ($rows as $row) {
+        coreui_work_record($pdo, 'tool', 'info', 'Webquelle gefunden',
+          ['page_url'=>(string)$row['url'], 'page_title'=>(string)$row['title'], 'source'=>'search_result']);
+      }
+      coreui_work_record($pdo, 'tool', 'info', 'Websuche beendet', ['knowledge_hits'=>count($rows), 'source'=>'web']);
+    });
     return $block !== '' ? $block : 'Die Websuche brachte keine Treffer, oder der Suchdienst war gerade nicht erreichbar.';
   }
   if ($tool['tool'] === 'archive') return coreui_compact_archive_block($uid, $sessionId, (string)$tool['input']);

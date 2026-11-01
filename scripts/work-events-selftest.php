@@ -65,3 +65,11 @@ $unsafePublic = coreui_work_safe_meta([
 check_work(!isset($unsafePublic['public_note']), 'Sensitive public note must fail closed');
 
 echo "CoreUI P06 work events selftest: OK\n";
+
+$research = coreui_work_safe_meta(['page_url'=>'https://example.org/news?token=SECRET#top','page_title'=>'News <b>title</b>']);
+check_work(($research['page_url'] ?? '') === 'https://example.org/news', 'research URL strips query and fragment');
+check_work(!str_contains(json_encode($research), 'SECRET'), 'no URL secrets in work metadata');
+foreach (['javascript:alert(1)','http://localhost/a','http://127.0.0.1/a','http://2130706433/a',
+  'https://user:secret@example.org/a','https://x.internal/a'] as $unsafe) {
+  check_work(coreui_work_page_url($unsafe) === null, 'reject unsafe research URL');
+}

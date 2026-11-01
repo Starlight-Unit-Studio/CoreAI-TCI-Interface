@@ -144,6 +144,16 @@
         return 'Der freigegebene Auftrag enthält noch kein gültiges Dateimanifest. Ohne dieses starte ich keinen unsicheren Build.';
       case 'Projektdateien konnten nicht gepackt werden':
         return 'Die Quelldateien konnten nicht sicher verpackt werden. Ich muss erst den gemeldeten Grund klären.';
+      case 'Websuche gestartet':
+        return 'Ich suche im Web nach passenden Quellen (Websuche).';
+      case 'Websuche beendet':
+        return Number(event.meta.knowledge_hits) > 0
+          ? 'Ich habe Suchtreffer gefunden und prüfe ihre Angaben (Websuche).'
+          : 'Die Websuche hat keine verwertbaren Treffer geliefert.';
+      case 'Webquelle gefunden':
+        return '';
+      case 'Browserauftrag eingereiht':
+        return 'Ich starte die Recherche auf Webseiten (Browser).';
       case 'Python-Job eingereiht':
         return 'Ich habe den Auftrag an den isolierten Python-Worker übergeben. Die Ausführung ist noch nicht bestätigt.';
       case 'Python-Ausfuehrung beendet':
@@ -174,7 +184,7 @@
       case 'Modellstream unvollstaendig':
         return 'Die Übertragung von Core war unvollständig. Ich prüfe den Werkzeug- oder Ersatzweg, ohne den Abbruch zu verschweigen.';
       case 'Antwort gespeichert':
-        return 'Die Antwort ist im privaten Verlauf gesichert. Den bestätigten Arbeitsweg kannst du später erneut aufklappen.';
+        return 'Die Antwort ist im privaten Verlauf gesichert. Die einzelnen Schritte bleiben im Verlauf verfügbar.';
       case 'Auftrag auf Wunsch abgebrochen':
         return 'Der Auftrag wurde auf Wunsch abgebrochen. Ich starte keine weitere Ausführung.';
       default:
@@ -201,6 +211,63 @@
     return item;
   }
 
+  // Only public http(s) pages. Never turn credentials or local hosts into requests.
+  // Query/fragment are deliberately excluded from the public activity metadata.
+  function researchURL(raw) {
+    if (typeof raw !== 'string' || raw.length > 2048) return null;
+    try {
+      var url = new URL(raw);
+      var host = url.hostname.toLowerCase();
+      if (!/^https?:$/.test(url.protocol) || url.username || url.password
+          || host.indexOf('.') < 0 || /^[0-9.]+$/.test(host) || host.indexOf(':') >= 0
+          || /(?:^|\.)(?:localhost|local|internal|test|invalid)$/.test(host)
+          || (url.port && url.port !== '80' && url.port !== '443')) return null;
+      url.search = ''; url.hash = '';
+      return url;
+    } catch (e) { return null; }
+  }
+  function researchList() {
+    var list = el('div','work-research');
+    list.setAttribute('aria-label','Webseiten der Recherche');
+    list.hidden = true;
+    list._sites = [];
+    return list;
+  }
+  function researchPage(list, raw, title, label) {
+    var url = researchURL(raw);
+    if (!list || !url) return false;
+    var sites = list._sites || (list._sites = []);
+    var current = sites.find(function (site) { return site.url === url.href; });
+    if (label !== 'Suchtreffer') sites.forEach(function (site) { site.status.textContent = 'Besucht'; });
+    if (!current) {
+      var row = el('div','work-site');
+      var mark = el('span','work-site-mark',url.hostname.charAt(0).toUpperCase());
+      var icon = el('img','work-site-icon');
+      icon.alt = ''; icon.referrerPolicy = 'no-referrer'; icon.loading = 'lazy';
+      icon.addEventListener('error',function () { icon.hidden = true; });
+      icon.src = url.origin + '/favicon.ico';
+      mark.appendChild(icon);
+      row.appendChild(mark);
+      var link = el('a','work-site-link');
+      link.href = url.href; link.target = '_blank'; link.rel = 'noopener noreferrer';
+      link.appendChild(el('span','work-site-title',String(title || url.hostname + url.pathname).slice(0,160)));
+      link.appendChild(el('span','work-site-host',url.hostname));
+      row.appendChild(link);
+      var status = el('span','work-site-status');
+      row.appendChild(status);
+      list.appendChild(row);
+      current = {url:url.href,row:row,status:status};
+      sites.push(current);
+      if (sites.length > 30) list.removeChild(sites.shift().row);
+    }
+    current.status.textContent = label || 'Aktuelle Seite';
+    list.hidden = false;
+    return true;
+  }
+  function finishResearch(list) {
+    if (list && list._sites) list._sites.forEach(function (site) { site.status.textContent = 'Besucht'; });
+  }
+
   function normalize(raw) {
     if (!raw || !STATES[raw.state] || !KINDS[raw.kind]) return null;
     var title = String(raw.title || '').slice(0, 120);
@@ -213,6 +280,13 @@
           meta[key] = String(value).slice(0, 110);
         }
       });
+    }
+    if (raw.meta) {
+      var page = researchURL(raw.meta.page_url);
+      if (page) {
+        meta.page_url = page.href;
+        meta.page_title = String(raw.meta.page_title || '').replace(/[\x00-\x1f]/g, '').slice(0, 160);
+      }
     }
     // Planned project files for the task card: basenames only, never paths.
     if (raw.meta && Array.isArray(raw.meta.file_list)) {
@@ -309,6 +383,8 @@
   // routine operations fold into ONE muted, expandable line per sequence.
   var NARRATED = {
     'Kontextfenster ermittelt':1,'Projektdateien geplant':1,
+    'Anhang wird angesehen':1,'Privates Wissen durchsucht':1,
+    'Browserauftrag eingereiht':1,'Websuche beendet':1,
     'Mara hat die Umsetzung des gespeicherten Plans gewaehlt':1,
     'Mara hat ein natives Werkzeug angefordert':1,
     'Mara hat selbst den Projekt-Writer aufgerufen':1,
@@ -322,7 +398,8 @@
   };
   function isNarration(event) {
     return !!event && (event.kind === 'commentary' || event.state === 'error'
-      || NARRATED[event.title] === 1);
+      || NARRATED[event.title] === 1 || !!event.meta.page_url
+      || (event.kind === 'tool' && event.state === 'running'));
   }
   function stepLabel(event) {
     return displayTitle(event.title) + (event.meta.file_name ? ' · ' + event.meta.file_name : '');
@@ -424,7 +501,7 @@
     var title = el('div','work-title',narration ? displayTitle(event.title) : stepLabel(event));
     // Keep the operational event title available to assistive technology,
     // but avoid repeating it above the public chat-style note.
-    if (note && narration) title.className += ' work-title-with-note';
+    if ((note || event.meta.page_url) && narration) title.className += ' work-title-with-note';
     info.appendChild(title);
     var noteText = null;
     var detailTarget = info;
@@ -440,7 +517,7 @@
     var keys = Object.keys(event.meta).filter(function (key) {
       return Object.prototype.hasOwnProperty.call(DETAIL_LABELS, key);
     });
-    if (keys.length || event.time) {
+    if (keys.length || event.time || event.state === 'error') {
       var details = el('details','work-detail');
       var summary = el('summary','work-detail-toggle','ⓘ');
       summary.setAttribute('aria-label','Technische Details');
@@ -457,6 +534,18 @@
       }
       details.appendChild(definition);
       detailTarget.appendChild(details);
+    }
+    if (event.state === 'error') {
+      var warning = el('span','work-warning','!');
+      warning.setAttribute('role','img');
+      warning.setAttribute('aria-label','Fehler');
+      warning.title = 'Fehler';
+      detailTarget.appendChild(warning);
+    }
+    if (event.meta.page_url) {
+      var sites = researchList();
+      researchPage(sites, event.meta.page_url, event.meta.page_title, 'Suchtreffer');
+      info.appendChild(sites);
     }
     if (narration) {
       entries._openRun = null;
@@ -651,17 +740,8 @@
     var events = live ? [] : initialEvents;
     if (!live && events.length === 0) return null;
     var timeline = el('section','work-panel work-flow');
-    timeline.setAttribute('aria-label','E.M.B.E.R. CoreAI Arbeitsweg und öffentliche Arbeitsnotizen');
-    var toggle = el('button','work-toggle');
-    toggle.type = 'button';
-    var expanded = options.expanded === true || live;
-    toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-    toggle.appendChild(el('span','work-chevron','▸'));
-    var heading = el('span','work-caption');
-    toggle.appendChild(heading);
+    timeline.setAttribute('aria-label','Maras Fortschritt');
     var counters = el('span','work-counts');
-    toggle.appendChild(counters);
-    var digest = el('p','work-digest');
     var body = el('div','work-body');
     body._workLive = live;
     body._workFollow = true;
@@ -669,7 +749,7 @@
       var gap = body.scrollHeight - body.clientHeight - body.scrollTop;
       body._workFollow = gap < 65;
     }, {passive:true});
-    body.hidden = !expanded;
+    body.hidden = false;
     if (live) body.appendChild(el('p','work-empty','Warte auf den ersten Arbeitsschritt ...'));
     var tasks = el('div','work-tasks');
     tasks.hidden = true;
@@ -715,9 +795,6 @@
 
     function updateSummary() {
       var countLabel = events.length + (events.length === 1 ? ' Schritt' : ' Schritte');
-      heading.textContent = live ? 'Arbeitsweg · laufend'
-        : 'Arbeitsweg (' + countLabel + ') ' + (expanded ? 'ausblenden' : 'anzeigen');
-      toggle.setAttribute('aria-label', heading.textContent);
       var errors = events.filter(function (e) { return e.state === 'error'; }).length;
       var tools = events.filter(function (e) { return e.kind === 'tool'; }).length;
       var span = !live && events.length > 1
@@ -725,18 +802,6 @@
       counters.textContent = countLabel + (tools ? ' · ' + tools + (tools === 1 ? ' Werkzeug' : ' Werkzeuge') : '')
         + (errors ? ' · ' + errors + ' Fehler' : '')
         + (span >= 1000 && eventMs(events[0]) > 0 ? ' · ' + formatDuration(span) : '');
-      var last = events.length ? events[events.length - 1] : null;
-      // The final DB-save event must not conceal an unresolved file error.
-      // Show the last substantive confirmed step in the collapsed preview.
-      if (last && last.title === 'Antwort gespeichert') {
-        var earlier = events.slice(0, -1).filter(function (item) {
-          return workNote(item) && item.title !== 'Modellstream vorbereitet';
-        });
-        if (earlier.length) last = earlier[earlier.length - 1];
-      }
-      var note = workNote(last);
-      digest.textContent = note;
-      digest.hidden = !note || expanded;
       renderTasks();
       renderStatus();
     }
@@ -747,18 +812,9 @@
     };
     updateSummary();
     initialEvents.forEach(function (event) { add(body,event); });
-    toggle.addEventListener('click',function () {
-      expanded = !expanded;
-      toggle.setAttribute('aria-expanded',expanded ? 'true' : 'false');
-      body.hidden = !expanded;
-      if (!expanded) flushWork(body);
-      updateSummary();
-      if (typeof options.onToggle === 'function') options.onToggle(expanded);
-    });
-    timeline.appendChild(toggle);
-    timeline.appendChild(digest);
     timeline.appendChild(body);
     timeline.appendChild(tasks);
+    timeline.appendChild(counters);
     if (status) {
       timeline.appendChild(status);
       if (typeof window.setInterval === 'function') {
@@ -783,6 +839,7 @@
   function substantive(events) {
     return merge(events, []).some(function (e) {
       var meta = e.meta || {};
+      if (e.title === 'Privates Wissen durchsucht' && e.state !== 'error' && !(Number(meta.knowledge_hits) > 0)) return false;
       if (e.state === 'error' || e.kind === 'commentary' || e.kind === 'artifact') return true;
       if (NARRATED[e.title] === 1 || meta.reason === 'context_window_full') return true;
       if (e.kind === 'tool') return e.title !== 'Privates Wissen durchsucht' || Number(meta.knowledge_hits) > 0;
@@ -791,5 +848,6 @@
   }
 
   window.CoreUIWorkEvents = {create:create,add:add,source:source,flush:flushWork,normalize:normalize,
-    merge:merge,displayTitle:displayTitle,substantive:substantive};
+    merge:merge,displayTitle:displayTitle,substantive:substantive,
+    researchList:researchList,researchPage:researchPage,finishResearch:finishResearch};
 }());

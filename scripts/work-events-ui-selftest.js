@@ -44,6 +44,7 @@ class Element {
 
 const sandbox = {
   window: {},
+  URL,
   document: {createElement: tag => new Element(tag)},
   fetch: () => { throw new Error('Never perform separate work-history HTTP requests'); },
 };
@@ -62,14 +63,10 @@ const timeline = work.create({
 });
 assert(timeline);
 const body = timeline.querySelector('.work-body');
-assert.equal(body.hidden,true);
+assert.equal(body.hidden,false);
 assert.equal(body.querySelector('.work-entries').children.length,2);
 assert(!timeline.textContent.includes('SECRET'), 'never expose raw stderr');
-const toggle = timeline.querySelector('.work-toggle');
-toggle.handlers.click();
-assert.equal(body.hidden,false);
-toggle.handlers.click();
-assert.equal(body.hidden,true);
+assert.equal(timeline.querySelector('.work-toggle'),null,'no global collapse control');
 work.add(body,{id:2,kind:'tool',state:'error',title:'Duplicated'});
 assert.equal(body.querySelector('.work-entries').children.length,2,'SSE dedup');
 work.add(body,{id:3,kind:'artifact',state:'info',
@@ -77,8 +74,7 @@ work.add(body,{id:3,kind:'artifact',state:'info',
 assert(timeline.textContent.includes('<script>alert(1)</script>'));
 assert.equal(body.querySelector('.work-entries').children.length,3);
 const live=work.create({live:true,expanded:true});
-assert(live.textContent.includes('Arbeitsweg · laufend'),
-  'live operational header must identify CoreAI rather than terminal');
+assert(!live.textContent.includes('Arbeitsweg'),'no separate workflow heading');
 assert(live && !live.querySelector('.work-body').hidden);
 work.add(live.querySelector('.work-body'),{
   id:4,kind:'artifact',state:'success',title:'Datei gesichert',meta:{file_count:3}
@@ -115,13 +111,9 @@ assert.equal(serverFirst[0].title,'Serverseitig bestaetigt','server wins duplica
 const saved = work.create({events:serverFirst,expanded:true});
 assert(saved,'completed message keeps its timeline');
 assert.equal(saved.querySelector('.work-body').hidden,false,'just-finished work stays open');
-assert(saved.textContent.includes('Arbeitsweg (2 Schritte) ausblenden'));
-saved.querySelector('.work-toggle').handlers.click();
-assert(saved.textContent.includes('Arbeitsweg (2 Schritte) anzeigen'));
-assert.equal(saved.querySelector('.work-body').hidden,true);
+assert.equal(saved.querySelector('.work-toggle'),null);
 const reloaded = work.create({events:serverFirst,expanded:false});
-assert(reloaded.textContent.includes('Arbeitsweg (2 Schritte) anzeigen'),
-  'history after reload has an explicit reopen control');
+assert.equal(reloaded.querySelector('.work-body').hidden,false,'history progress always visible');
 // 0.5.56: Live and saved work should explain the next action and the blockers
 // in plain, first-person public notes. These are derived from confirmed events,
 // never private model reasoning, tool code, stderr, or prompts.
@@ -136,8 +128,7 @@ assert(steps.textContent.includes('Ich fordere „index.html“ an'),
   'public progress note must explain the concrete file action');
 assert(steps.textContent.includes('fehlt noch ein nutzbares Ergebnis'),
   'file blocker must be explained in first person');
-assert(steps.querySelector('.work-digest').textContent.includes('index.html'),
-  'collapsed timeline keeps last useful public diagnostic');
+assert.equal(steps.querySelector('.work-digest'),null,'no collapsed duplicate preview');
 assert(steps.querySelector('.work-counts').textContent.includes('2 Schritte'),
   'collapsed summary must show work volume');
 assert(!steps.textContent.includes('NEVER_SHOW_INTERNAL_THOUGHTS')
@@ -146,9 +137,6 @@ assert(!steps.textContent.includes('NEVER_SHOW_INTERNAL_THOUGHTS')
 assert(steps.textContent.includes('Core-Endgrundlength')
   && steps.textContent.includes('Denkstatus (Zeichen)1900'),
   'new bounded diagnostic fields are available after opening');
-steps.querySelector('.work-toggle').handlers.click();
-assert(steps.querySelector('.work-digest').hidden,
-  'expanded steps must not duplicate the condensed preview');
 const liveNarration = work.create({live:true,expanded:true,events:[]});
 work.add(liveNarration.querySelector('.work-body'),
   {id:62,kind:'tool',state:'running',title:'Python-Job eingereiht',meta:{job_id:123}});
@@ -156,12 +144,6 @@ assert(liveNarration.textContent.includes('isolierten Python-Worker'),
   'live SSE event must update first-person progress');
 assert(liveNarration.querySelector('.work-counts').textContent.includes('1 Schritt'),
   'live counter must update when a new event arrives');
-let manuallyOpened = false;
-const toggled = work.create({events:[{id:63,kind:'run',state:'success',
-  title:'Antwort gespeichert'}],onToggle:function(open){manuallyOpened=open;}});
-toggled.querySelector('.work-toggle').handlers.click();
-assert.equal(manuallyOpened,true,'caller can remember user disclosure choice');
-
 // 0.5.67: a full local context window (3250 + 846 = 4096) is named as such,
 // with its size, instead of a generic "abgeschnitten".
 const windowFull = work.create({events:[
@@ -275,8 +257,7 @@ assert(!modelPublic.textContent.includes('DO_NOT_LEAK'));
 assert(!modelPublic.textContent.includes('Automatisch erläutert'));
 assert.equal(work.normalize({id:73,kind:'commentary',state:'info',
   title:'Mara meldet ihren naechsten Schritt',meta:{raw_thinking:'SECRET'}}),null);
-assert.equal(modelPublic.querySelector('.work-chevron').textContent,'▸',
-  'toggle glyph must be rendered, not escaped');
+assert.equal(modelPublic.querySelector('.work-chevron'),null,'no outer disclosure arrow');
 
 // 0.5.62: actual source-code chunks display below the same live work
 // timeline. They are never loaded into saved events or rendered as HTML.
@@ -364,8 +345,9 @@ const collapsedBody = collapsedLive.querySelector('.work-body');
 taskTitles.forEach((title,n) => work.add(collapsedBody,{
   id:121+n,kind:'run',state:'info',title,meta:{}
 }));
-collapsedLive.querySelector('.work-toggle').handlers.click();
-assert(collapsedBody.hidden);
+work.flush(collapsedBody);
+assert.equal(collapsedLive.querySelector('.work-toggle'),null);
+assert.equal(collapsedBody.hidden,false);
 assert.equal(collapsedBody.querySelector('.work-entries').children.length,4);
 assert(!collapsedBody.textContent.includes('SECRET'));
 assert.equal(collapsedBody._workQueue.length,0);
@@ -416,3 +398,32 @@ sandbox.window.clearTimeout = undefined;
 sandbox.window.matchMedia = undefined;
 
 console.log('P06 inline work-history UI selftest: OK');
+
+// 0.5.87: warnings after info; source cards never claim search hits were read.
+const failed = work.create({events:[{id:900,kind:'tool',state:'error',title:'Python-Ausfuehrung fehlgeschlagen',meta:{}}]});
+const warning = failed.querySelector('.work-warning');
+assert(warning && warning.attributes['aria-label'] === 'Fehler');
+const note = failed.querySelector('.work-note');
+assert.equal(note.children[note.children.length-2].className,'work-detail');
+assert.equal(note.children[note.children.length-1],warning);
+const found = work.create({events:[{id:901,kind:'tool',state:'info',title:'Webquelle gefunden',
+  meta:{page_url:'https://example.org/news?token=SECRET#top',page_title:'Example news'}}]});
+assert(found.textContent.includes('Suchtreffer'));
+assert.equal(found.querySelector('.work-site-link').href,'https://example.org/news');
+assert(!found.textContent.includes('SECRET'));
+assert.equal(found.querySelector('.work-site-icon').referrerPolicy,'no-referrer');
+const research = work.researchList();
+assert(work.researchPage(research,'https://example.org/a','','Aktuelle Seite'));
+work.researchPage(research,'https://example.org/a','','Aktuelle Seite');
+assert.equal(research.children.length,1,'repeated browser frames deduplicated');
+work.researchPage(research,'https://example.net/b','','Aktuelle Seite');
+assert.equal(research._sites[0].status.textContent,'Besucht');
+assert.equal(research._sites[1].status.textContent,'Aktuelle Seite');
+work.finishResearch(research);
+assert(research._sites.every(site=>site.status.textContent === 'Besucht'));
+for (const bad of ['javascript:alert(1)','http://localhost/a','http://127.0.0.1/a',
+  'http://2130706433/a','https://user:secret@example.org/a','https://x.internal/a']) {
+  assert.equal(work.researchPage(research,bad,'',''),false,bad);
+}
+found.querySelector('.work-site-icon').handlers.error();
+assert.equal(found.querySelector('.work-site-icon').hidden,true,'missing favicon keeps fallback');
