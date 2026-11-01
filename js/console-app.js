@@ -1285,6 +1285,7 @@
         if (workTimeline) content.insertBefore(workTimeline,bubble);
       }
       window.CoreUIWorkEvents.tuckCode(workTimeline,bubble);
+      if (!bubble.textContent.trim() && bubble.parentNode) bubble.parentNode.removeChild(bubble);
     }
     if (role === 'ember' && messageId > 0 && record && Number(record.reply_to_id) > 0) {
       var suggestionRow = buildSuggestedReplyButtons(text, String(record.session_id || (activeSession() && activeSession().id) || ''));
@@ -2916,7 +2917,7 @@
     state.agentStopEl = browseStop;
     updateAgentCancelControl();
     var research = window.CoreUIWorkEvents && window.CoreUIWorkEvents.researchList
-      ? window.CoreUIWorkEvents.researchList() : null;
+      ? window.CoreUIWorkEvents.researchList({live:true}) : null;
     if (research && panel.parentNode) panel.parentNode.insertBefore(research, panel);
     var head        = panel.querySelector('.browse-live-state');
     var urlLabel    = panel.querySelector('.browse-live-url');
