@@ -2916,9 +2916,17 @@
     if (panel.parentNode) panel.parentNode.appendChild(browseStop);
     state.agentStopEl = browseStop;
     updateAgentCancelControl();
-    var research = window.CoreUIWorkEvents && window.CoreUIWorkEvents.researchList
-      ? window.CoreUIWorkEvents.researchList({live:true}) : null;
-    if (research && panel.parentNode) panel.parentNode.insertBefore(research, panel);
+    // Playwright is a different channel from ordinary [WEB] search.
+    // Never show search-result carousel for browser frames.
+    var research = null;
+    if (uiPreferences.showLiveBrowser === false) {
+      panel.classList.add('browse-live-hidden');
+      panel.setAttribute('aria-label','Web wird durchsucht');
+      var fallback = document.createElement('span');
+      fallback.className = 'browse-live-fallback';
+      fallback.textContent = 'Web wird durchsucht';
+      panel.parentNode.insertBefore(fallback,panel);
+    }
     var head        = panel.querySelector('.browse-live-state');
     var urlLabel    = panel.querySelector('.browse-live-url');
     var status      = panel.querySelector('.browse-live-status');
@@ -3050,7 +3058,6 @@
 
     function queueFrame(d) {
       if (!d) return;
-      if (research && d.url) window.CoreUIWorkEvents.researchPage(research, d.url, '', 'Aktuelle Seite');
       if (!d.b64) { moveCursorOnly(d); return; }
       if (uiPreferences.liveFrameMotion === false) frameQueue = [d];
       else frameQueue.push(d);
@@ -3081,7 +3088,6 @@
     function finishB(label) {
       if (doneB) return;
       doneB = true;
-      if (research) window.CoreUIWorkEvents.finishResearch(research);
       clearTimeout(bWatch);
       clearTimeout(reconnectTimer);
       stopThinking();
