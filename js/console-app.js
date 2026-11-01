@@ -1277,6 +1277,15 @@
     var attachments = Array.isArray(attachment) ? attachment : (attachment ? [attachment] : []);
     // Leere Blase unterdruecken, wenn nur Anhaenge gesendet wurden.
     if (text || attachments.length === 0) content.appendChild(bubble);
+    // Move generated code out of the public answer into a folded work step.
+    if (role === 'ember' && window.CoreUIWorkEvents && window.CoreUIWorkEvents.tuckCode
+        && bubble.querySelector('.md-codeblock')) {
+      if (!workTimeline) {
+        workTimeline = window.CoreUIWorkEvents.create({codeOnly:true});
+        if (workTimeline) content.insertBefore(workTimeline,bubble);
+      }
+      window.CoreUIWorkEvents.tuckCode(workTimeline,bubble);
+    }
     if (role === 'ember' && messageId > 0 && record && Number(record.reply_to_id) > 0) {
       var suggestionRow = buildSuggestedReplyButtons(text, String(record.session_id || (activeSession() && activeSession().id) || ''));
       if (suggestionRow) content.appendChild(suggestionRow);
