@@ -51,6 +51,9 @@ const root = path.resolve(__dirname,'..');
       assert.equal(await page.locator('.work-warning').isVisible(),true);
       assert.equal(await page.locator('.work-narration.work-error .work-note-text').evaluate(el=>getComputedStyle(el).borderLeftWidth),'0px');
       assert.equal(await page.locator('.work-site-status').allTextContents().then(x=>x.join('|')),'Suchtreffer|Besucht|Aktuelle Seite');
+      assert.equal(await page.locator('.work-research-current').count(),2);
+      assert.equal(await page.locator('.work-research-history').first().getAttribute('open'),null);
+      assert.equal(await page.locator('.work-research-url').last().innerText(),'news.example.org/update');
       assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no horizontal overflow');
       assert(!(await page.locator('body').innerText()).includes('Arbeitsweg'));
       if(process.env.COREAI_SCREENSHOT_DIR) {
