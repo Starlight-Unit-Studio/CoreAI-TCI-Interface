@@ -12,6 +12,21 @@ function coreui_work_schema_ready(PDO $pdo): bool {
   }
 }
 
+function coreui_work_page_url(string $url): ?string {
+  if (strlen($url) > 2048 || filter_var($url, FILTER_VALIDATE_URL) === false) return null;
+  $parts = parse_url($url);
+  if (!is_array($parts)) return null;
+  $scheme = strtolower((string)($parts['scheme'] ?? ''));
+  $host = strtolower((string)($parts['host'] ?? ''));
+  if (!in_array($scheme, ['http','https'], true) || isset($parts['user']) || isset($parts['pass'])
+      || !str_contains($host, '.') || filter_var($host, FILTER_VALIDATE_IP) !== false
+      || preg_match('~^[0-9.]+$|:|(?:^|\.)(?:localhost|local|internal|test|invalid)$~', $host)
+      || (isset($parts['port']) && !in_array($parts['port'], [80,443], true))) return null;
+  // Activity metadata must never persist URL credentials, query tokens or fragments.
+  return $scheme . '://' . $host . (isset($parts['port']) ? ':' . $parts['port'] : '')
+    . ($parts['path'] ?? '/');
+}
+
 function coreui_work_safe_meta(array $raw): array {
   $allowedNumbers = ['job_id','exit_code','duration_ms','file_count','attempt','http_code','elapsed_ms',
     'source_chars','eval_count','prompt_eval_count',
@@ -19,6 +34,14 @@ function coreui_work_safe_meta(array $raw): array {
     'response_bytes','discarded_tool_body_bytes','context_tokens','knowledge_hits','knowledge_sources'];
   $allowedStrings = ['model','error_type','file_name','reason','source','done_reason'];
   $safe = [];
+  $page = is_string($raw['page_url'] ?? null) ? coreui_work_page_url($raw['page_url']) : null;
+  if ($page !== null) {
+    $safe['page_url'] = $page;
+    $title = is_string($raw['page_title'] ?? null) ? $raw['page_title'] : '';
+    if (preg_match('//u', $title) === 1) {
+      $safe['page_title'] = mb_substr(trim((string)preg_replace('~[\x00-\x1f<>]~u', '', $title)), 0, 160);
+    }
+  }
   foreach ($allowedNumbers as $key) {
     if (isset($raw[$key]) && (is_int($raw[$key]) || is_numeric($raw[$key]))) {
       $safe[$key] = max(-1, min(100000000, (int)$raw[$key]));

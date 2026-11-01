@@ -75,3 +75,11 @@ $block = ember_web_results_block('ollama neu');
 web_test(str_starts_with($block, '1. Ollama 0.13 (vom 2026-10-27) [https://ollama.com/blog]'), 'date in the results block: ' . $block);
 
 echo "CoreAI web search: key words retry, no duplicates, clean snippets, dates OK\n";
+
+$answers = [['results'=>[['title'=>'Quelle', 'url'=>'https://example.org/page', 'content'=>'Text']]]];
+$seenRows = null;
+ember_web_results_block('Quelle', static function(array $rows) use (&$seenRows): void { $seenRows = $rows; });
+web_test(is_array($seenRows) && count($seenRows) === 1 && $seenRows[0]['url'] === 'https://example.org/page', 'real result callback for activity cards');
+$answers = [null];
+ember_web_results_block('leer', static function(array $rows) use (&$seenRows): void { $seenRows = $rows; });
+web_test($seenRows === [], 'no invented cards for empty results');

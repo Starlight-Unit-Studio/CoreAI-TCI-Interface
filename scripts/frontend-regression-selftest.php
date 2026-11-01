@@ -172,7 +172,9 @@ try {
       && str_contains($console, 'work_events: savedWork')
       && str_contains($console, 'renderMessageRecord(saved || m)')
       && str_contains($workJs, 'function merge(serverEvents, liveEvents)')
-      && str_contains($workJs, 'Arbeitsweg (')
+      && !str_contains($workJs, "el('button','work-toggle')")
+      && str_contains($workJs, 'body.hidden = false;')
+      && str_contains($workJs, "el('button','work-run-toggle')")
       && str_contains($workStore, 'LEFT JOIN stu_console_agent_runs r')
       && str_contains($workStore, 'BINARY r.run_key=BINARY w.run_key')
       && str_contains($streamApi, 'console_stream_saved_work_events('),

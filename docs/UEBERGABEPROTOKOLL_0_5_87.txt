@@ -15,10 +15,10 @@ werden abgewiesen. Output-Publikation hat weiterhin ihre separate Turn-Pruefung.
 
 Offline geprueft: 12 neue Eingabetests, 11 bestehende Worker-Tests mit Docker-/DB-
 Doubles und bestehender Workspace-Ausgabe-Selftest.
-Die komplette Artefaktsuite hat in dieser Umgebung 23 bestandene und 5 nicht
-lauffaehige Faelle: vier brauchen PHP, einer einen Wechsel zu UID/GID www-data.
-PHP und Docker sind hier nicht installiert. Vollstaendige PHP-/DB-/Docker-
-Preflights und Netcup-/Android-Livetests sind daher vor Freigabe offen.
+Nachtraeglich eine isolierte PHP-8.3-Testlaufzeit bereitgestellt: 27 von 28
+Artefakttests bestanden; nur der www-data-UID/GID-Wechsel bleibt hier unmoeglich.
+Docker und Produktionsdatenbank sind nicht verfuegbar. Vollstaendige
+PHP-/DB-/Docker-Preflights und Netcup-/Android-Livetests bleiben offen.
 Die synthetische ZIP enthaelt 13 Dateien; die reale CyberKawaii-ZIP und ihre
 Workevents liegen hier nicht vor. Keine Behauptung einer Live-Reproduktion.
 
@@ -29,3 +29,27 @@ Reputation-Default ist auf main bereits false in api/config.php. Das beweist
 keine effektive Servereinstellung. Beide Player-State-Promptpfade sind noch
 im Code vorhanden. PR #133 bleibt unabhaengiger, offener Draft.
 Kein Merge, kein Deploy, keine Aenderung am Game-Repository.
+
+ERWEITERUNG: FORTSCHRITT UND RECHERCHE-UI
+Auf Nutzerwunsch im selben noch offenen PR #138, weiterhin ein Merge/0.5.87.
+Aeussere Klappfunktion, Ueberschrift und redundante Vorschau entfernt.
+Schrittgruppen und Info-Details weiter per Tastatur/Maus bedienbar.
+Rote Fehlerlinie durch kleines Dreieck mit Ausrufezeichen ersetzt.
+Wichtige Werkzeugstarts ausserhalb des Dateibaus werden offen erzaehlt.
+Websuche publiziert echte Suchtreffer ueber den bestehenden Workevent-Pfad.
+Nur bereinigte http(s)-URL und Titel, kein Snippet/Prompt/Thinking im neuen Feld.
+Live-Browser nutzt bestehende Frame-URLs; gleiche Seiten werden zusammengefasst.
+Suchtreffer und besuchte Seiten bleiben klar unterschieden. Favicon-Fallback
+bei Netzfehler; keine neue Modellanfrage oder Aenderung der seriellen Queue.
+
+Verifiziert: JS-Workevents, Browserstream, Chat-Follow, Antwortdauer; PHP-Syntax,
+Workevents, Websuche (inkl. Result-Callback), Agentenschleife, Source-Preview,
+Native-Tool-Pfade (inklusive SQLite-Fixture), Skill-Bibliothek, persistierte
+Workevents, Frontend-Regressionen und globale Modellqueue. Echte Chromium-Ansicht mit dem neuen
+scripts/progress-browser-selftest.cjs bei 390 und 1000 Pixeln geprueft, inklusive
+Klappen der Schrittgruppen, Fehlerdreieck, Quellenstatus und Seitenueberlauf.
+Optionaler Browser-Test braucht Playwright; COREAI_BROWSER_PATH waehlt ein
+vorhandenes Chromium. Er verwendet eine lokale Fixture und keine Livekonten.
+Keine echte Netcup-/Android-Abnahme oder Recherche gegen Live-Webseiten.
+Kein neues dauerhaftes Browser-Recherchearchiv: besuchte Seiten stammen aus
+dem bestehenden Live-Frame-Stream; Suchtreffer persistieren als Workevents.

@@ -7857,8 +7857,8 @@ a.core-install-btn {
   font: 500 15px/1.54 "Rajdhani", "Segoe UI", sans-serif;
 }
 .msg-row.ember .work-panel.work-flow .work-narration.work-error .work-note-text {
-  padding-left: 10px;
-  border-left: 2px solid var(--red);
+  padding-left: 0;
+  border-left: 0;
 }
 
 /* Routine runs: one muted, expandable line. */
@@ -8263,4 +8263,45 @@ a.insight-file-name:hover { text-decoration: underline; }
 @media (max-width: 620px) {
   .insight-chips { padding: 8px 12px 6px; }
   .insight-sheet { right: 12px; left: 12px; }
+}
+
+/* 0.5.87: progress belongs to Mara's message; only step groups disclose. */
+.msg-row.ember .work-panel.work-flow > .work-counts {
+  display: block;
+  margin-top: 10px;
+}
+.msg-row.ember .work-warning {
+  display: inline-block;
+  width: 15px; height: 14px; box-sizing: border-box; padding-top: 3px;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  background: #c93442; color: #fff; text-align: center;
+  margin-left: 5px;
+  font: 700 10px/11px sans-serif;
+  vertical-align: baseline;
+}
+.msg-row.ember .work-research { margin: 8px 0; display: grid; gap: 6px; }
+.msg-row.ember .work-research[hidden] { display: none; }
+.msg-row.ember .work-site {
+  display: flex; align-items: center; gap: 9px;
+  min-width: 0; padding: 7px 0;
+}
+.msg-row.ember .work-site-mark {
+  position: relative; flex: none; width: 20px; height: 20px;
+  border-radius: 5px; background: #e8eef7; color: #50617a;
+  text-align: center; font: 600 12px/20px sans-serif;
+}
+.msg-row.ember .work-site-icon {
+  position: absolute; inset: 2px; width: 16px; height: 16px;
+  background: #fff; object-fit: contain;
+}
+.msg-row.ember .work-site-icon[hidden] { display: none; }
+.msg-row.ember .work-site-link { display: grid; min-width: 0; color: var(--txt); text-decoration: none; }
+.msg-row.ember .work-site-link:hover .work-site-title { text-decoration: underline; }
+.msg-row.ember .work-site-title { overflow-wrap: anywhere; font: 500 14px/1.3 "Rajdhani", sans-serif; }
+.msg-row.ember .work-site-host { color: var(--muted-soft); font: 11px/1.4 sans-serif; overflow-wrap: anywhere; }
+.msg-row.ember .work-site-status { flex: none; margin-left: auto; color: var(--muted); font: 11px/1.3 sans-serif; }
+@media(max-width:480px) {
+  .msg-row.ember .work-site { flex-wrap: wrap; }
+  .msg-row.ember .work-site-link { flex: 1; }
+  .msg-row.ember .work-site-status { width: 100%; margin-left: 29px; }
 }

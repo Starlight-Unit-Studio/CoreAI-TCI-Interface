@@ -9,6 +9,18 @@ CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, Sea
 
 Current source version: `0.5.87` (numeric only). The last verified ZIP remains archived under its original historical name.
 
+## Maras Fortschritt und Webrecherche (0.5.87)
+
+Fortschrittsnotizen bleiben offen in Maras Nachricht; nur Schrittgruppen und
+die technischen Infos sind klappbar. Fehler erscheinen mit einem roten
+Warndreieck neben dem Info-Symbol. Websuchtreffer zeigen Titel, Domain und
+Website-Icon; im Live-Browser werden tatsaechlich geoeffnete Seiten angezeigt.
+Suchtreffer sind keine Lesebestaetigung. Icons kommen ohne Referrer direkt von
+der jeweiligen Website (favicon.ico); fehlt das Icon, bleibt ein Buchstabe.
+Suchtreffer bleiben in den Workevents gespeichert. Die Liste der besuchten
+Browserseiten ist eine Live-Anzeige aus dem bestehenden Frame-Stream, kein
+neues dauerhaftes Recherchearchiv. URL-Query und Fragment werden ausgeblendet.
+
 ## Python-Eingaben aus Uploads (0.5.87)
 
 Python-Jobs erhalten schreibgeschuetzte Kopien der Anhaenge ihrer aktuellen

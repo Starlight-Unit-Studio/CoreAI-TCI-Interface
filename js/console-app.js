@@ -137,9 +137,6 @@
     messageCacheBySession: {},
     liveWorkEventsBySession: {},
     lastCompletedWorkMessageBySession: {},
-    // User-operated disclosure per saved response. Live steps start open;
-    // finished replies collapse by default and survive history re-renders.
-    workExpandedBySession: {},
     historyHasMoreBySession: {},
     historyOldestBySession: {},
     historyAbort: null,
@@ -1252,29 +1249,14 @@
     }
 
     // Echte, persistierte Arbeitsereignisse mit sicheren oeffentlichen
-    // Fortschrittsnotizen. Eine abgeschlossene Antwort klappt standardmaessig
-    // zusammen, statt die Live-Timeline ungefragt offen zu lassen.
+    // Fortschrittsnotizen bleiben Teil der Antwort; nur Schrittgruppen sind klappbar.
     var workTimeline = null;
     // 0.5.76: a plain answer without tools, notes, files or errors shows none.
     if (role === 'ember' && record && Array.isArray(record.work_events)
         && record.work_events.length > 0 && window.CoreUIWorkEvents
         && (typeof window.CoreUIWorkEvents.substantive !== 'function'
           || window.CoreUIWorkEvents.substantive(record.work_events))) {
-      var workSessionId = String(record.session_id || (activeSession() && activeSession().id) || '');
-      var workMessageKey = String(Number(record.id) || 0);
-      var expandedMap = state.workExpandedBySession[workSessionId] || {};
-      var hasExplicitChoice = Object.prototype.hasOwnProperty.call(expandedMap,workMessageKey);
-      workTimeline = window.CoreUIWorkEvents.create({
-        events: record.work_events,
-        expanded: hasExplicitChoice ? expandedMap[workMessageKey] === true
-          : uiPreferences.thinkingExpanded === true,
-        onToggle: function (open) {
-          if (!state.workExpandedBySession[workSessionId]) {
-            state.workExpandedBySession[workSessionId] = {};
-          }
-          state.workExpandedBySession[workSessionId][workMessageKey] = open === true;
-        }
-      });
+      workTimeline = window.CoreUIWorkEvents.create({events: record.work_events});
     }
 
     var nameEl = document.createElement('div');
@@ -2924,6 +2906,9 @@
     if (panel.parentNode) panel.parentNode.appendChild(browseStop);
     state.agentStopEl = browseStop;
     updateAgentCancelControl();
+    var research = window.CoreUIWorkEvents && window.CoreUIWorkEvents.researchList
+      ? window.CoreUIWorkEvents.researchList() : null;
+    if (research && panel.parentNode) panel.parentNode.insertBefore(research, panel);
     var head        = panel.querySelector('.browse-live-state');
     var urlLabel    = panel.querySelector('.browse-live-url');
     var status      = panel.querySelector('.browse-live-status');
@@ -3055,6 +3040,7 @@
 
     function queueFrame(d) {
       if (!d) return;
+      if (research && d.url) window.CoreUIWorkEvents.researchPage(research, d.url, '', 'Aktuelle Seite');
       if (!d.b64) { moveCursorOnly(d); return; }
       if (uiPreferences.liveFrameMotion === false) frameQueue = [d];
       else frameQueue.push(d);
@@ -3085,6 +3071,7 @@
     function finishB(label) {
       if (doneB) return;
       doneB = true;
+      if (research) window.CoreUIWorkEvents.finishResearch(research);
       clearTimeout(bWatch);
       clearTimeout(reconnectTimer);
       stopThinking();

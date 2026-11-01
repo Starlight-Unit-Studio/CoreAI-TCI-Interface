@@ -2394,9 +2394,10 @@ function ember_web_search(string $query, int $limit = 5, int $timeout = 12): arr
 }
 
 // Untrusted-Data-Block aus den Web-Treffern bauen (hart getruncated).
-function ember_web_results_block(string $query): string {
+function ember_web_results_block(string $query, ?callable $onResults = null): string {
   if (!ember_web_enabled()) return '';
   $rows = ember_web_search($query, ember_web_limit(), ember_web_timeout());
+  if ($onResults !== null) $onResults($rows);
   if (empty($rows)) return '';
   $snipMax = ember_web_snippet_chars();
   $lines = [];
@@ -5005,7 +5006,14 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
 function ember_agent_run_tool(PDO $pdo, array $tool, string $channel, int $uid, string $sessionId,
     int $triggerId, int $triggerRevision): string {
   if ($tool['tool'] === 'web') {
-    $block = ember_web_results_block((string)$tool['input']);
+    coreui_work_record($pdo, 'tool', 'running', 'Websuche gestartet', ['source'=>'web']);
+    $block = ember_web_results_block((string)$tool['input'], static function (array $rows) use ($pdo): void {
+      foreach ($rows as $row) {
+        coreui_work_record($pdo, 'tool', 'info', 'Webquelle gefunden',
+          ['page_url'=>(string)$row['url'], 'page_title'=>(string)$row['title'], 'source'=>'search_result']);
+      }
+      coreui_work_record($pdo, 'tool', 'info', 'Websuche beendet', ['knowledge_hits'=>count($rows), 'source'=>'web']);
+    });
     return $block !== '' ? $block : 'Die Websuche brachte keine Treffer, oder der Suchdienst war gerade nicht erreichbar.';
   }
   if ($tool['tool'] === 'archive') return coreui_compact_archive_block($uid, $sessionId, (string)$tool['input']);

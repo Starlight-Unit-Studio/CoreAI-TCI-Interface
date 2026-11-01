@@ -43,7 +43,7 @@
       button.classList.toggle('visible', away);
       button.classList.toggle('working', working);
       button.setAttribute('aria-label', working
-        ? 'Mara arbeitet. Zum aktuellen Arbeitsweg springen'
+        ? 'Mara arbeitet. Zum aktuellen Fortschritt springen'
         : 'Zur neuesten Nachricht springen');
       return away;
     }
