@@ -1,0 +1,50 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.5.90
+Datum: 02.11.2026
+Basis: main 0.5.89, Merge PR #141 bestaetigt.
+Branch: fix/session-selftest-render-guard-0590
+
+AUSGANGSLAGE:
+Nach dem 0.5.89-Hotfix meldeten CoreAI-Updater und SSH-Preflight
+"Preflight fehlgeschlagen: 1 Problem(e)".
+Konkrete Ausgabe: "Sitzungs-Selftest fehlgeschlagen:
+Ein Ladefehler kann den bestaetigten Verlauf noch optisch verdraengen."
+Der Updater zeigte beim gescheiterten Installationslauf 0.5.89 -> 0.5.89.
+
+URSACHE NACH CODEABGLEICH:
+scripts/session-selftest.php enthielt eine veraltete, exakte
+String-Assertion fuer die urspruengliche clientseitige History-Fallback-Zeile.
+Seit 0.5.89 ist diese Zeile absichtlich ersetzt. Der neue Code baut
+die Historie off-screen auf und tauscht sie erst nach erfolgreichem
+Rendern aus; lokale Renderfehler werden nicht mehr automatisch
+neu geladen. Die alte Assert ist deswegen ein False Positive.
+
+AENDERUNG:
+Nur die veraltete Session-Testpruefung durch zwei neue Assertions
+ersetzen, die atomaren Verlaufsaustausch, DOM-Referenz-Wiederherstellung,
+getrennte Behandlung von render/network und Unterdrueckung der
+automatischen Wiederholungen bei Anzeigefehlern pruefen.
+Keine Abschwaechung des eigentlichen Sitzungs-/DB-Tests.
+
+BETROFFENE DATEIEN:
+scripts/session-selftest.php, VERSION, sichtbare Versionsangaben
+sechs HTML-Seiten, js/console-gate.js, README.md, CHANGELOG.md,
+docs/changelogs-txt/INDEX.txt, diese TXT, gesonderter Changelog,
+docs/UEBERGABEPROTOKOLL_AKTUELL.txt sowie die Versions-Tests/
+Preflight-Kopfzeilen.
+
+VERIFIKATION:
+- PHP-Quelle, Client-Implementierung und die statischen Assertions
+  vergleichen; gezielt beweisen, dass sie gegen den alten Code
+  fehlschlagen und gegen den neuen bestehen.
+- Test auf dem Server: php scripts/session-selftest.php unter
+  dem vorgesehenen Dienstbenutzer mit DB-Zugang. Der Test nimmt
+  DB-Aenderungen mit ROLLBACK zurueck.
+- Container: scripts/preflight.sh; Native/SSH: scripts/preflight-native.sh.
+- Kein GitHub-Actions-Kontingent erforderlich.
+- Nach dem Merge per bestehendem CoreAI-Updater/One-Liner installieren,
+  danach Websuche/Chatverlauf nochmals live testen.
+
+AUSSCHLUESSE:
+Keine Aenderung am Modell, Modelfile, Ollama, Skills, Game,
+Mail-/Telefon-Systemen oder produktiven Chatdaten.
+Die Update-Fehlermeldung allein belegt keine geloeschten Nachrichten.

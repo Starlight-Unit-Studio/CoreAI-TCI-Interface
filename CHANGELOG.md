@@ -1,5 +1,12 @@
 # CoreAI: TCI Interface
 
+## 0.5.90 - 02.11.2026
+
+- **Preflight-Reparatur:** Der Sitzungs-Selftest erwartete noch die alte History-Fallback-Zeile, die im 0.5.89-Hotfix bewusst ersetzt wurde. Diese veraltete Assertion blockierte sowohl CoreAI-Updater als auch den SSH-/Native-Preflight.
+- **Schutz weiterhin aktiv:** Die neuen Assertions verlangen das atomare Erzeugen und Anzeigen der Chat-Historie, die sichere Rueckgabe der DOM-Referenz, getrennte Renderfehler und das Unterdruecken automatischer Retries bei einem solchen Anzeigefehler. Die anderen Sitzungs-, Rechte- und DB-Tests bleiben unveraendert.
+- **Kein Produkt- oder Datenbankeingriff:** PHP-/Client-Verhalten unveraendert; lediglich Test-/Versions-/Changelog-Metadaten nachgezogen. Keine neuen GitHub Actions noetig.
+- **Live-Pruefung offen:** Beide Preflights nach Installation erneut ausfuehren; die Fehlermeldung zum veralteten Test sollte verschwinden. Die Web-UI danach nochmals mit laufender Recherche testen.
+
 ## 0.5.89 - 01.11.2026
 
 - **Notfallkorrektur nach Live-Test (02.11.2026):** Ein nicht initialisierter `list._history`-Verweis im WEB-Karussell loeste `Cannot set properties of undefined (setting 'hidden')` aus. Die Browseroberflaeche verwechselte diesen Darstellungsfehler mit einem API-Ausfall, loeschte beim erneuten Rendern die sichtbare Chat-Ansicht und wiederholte den Vorgang automatisch. Der Verweis ist jetzt korrekt initialisiert und die Verstecken-/Anzeigen-Regeln fuer die Quelle greifen.

@@ -1,0 +1,24 @@
+COREAI: TCI INTERFACE 0.5.90
+Datum: 02.11.2026
+
+Preflight-Korrektur nach dem 0.5.89-Hotfix:
+Der Sitzungs-Selftest erwartete noch den alten direkten Render-Fallback
+"if (hasCachedHistory && !messagesInner.querySelector('.msg-row')) renderHistory(ses);"
+und meldete dadurch faelschlich einen Fehler, obwohl diese Implementierung
+aus Sicherheitsgruenden im 0.5.89-Hotfix ersetzt wurde.
+
+Die Pruefung kontrolliert jetzt den tatsaechlichen Schutz:
+- Aufbau des Verlaufs in einem getrennten DOM-Container
+- Sichtbarer Austausch erst nach vollstaendig erfolgreichem Rendern
+- Wiederherstellung der internen DOM-Referenz bei Fehlern
+- Trennung zwischen Netzwerkfehler und lokalem Renderfehler
+- Kein automatischer History-Reload-Loop bei Renderfehlern
+- Rueckfall auf den bestaetigten Cache nur unter sicheren Bedingungen
+
+Betrifft sowohl den Container- als auch den Native-/SSH-Preflight,
+da beide scripts/session-selftest.php ausfuehren.
+
+Kein Eingriff in Datenbank, Sitzungsdaten, Nachrichten, PHP-API,
+Playwright, Modelfile, Modellqueue oder den Spielcode.
+Vorgesehene Tests: PHP-Syntax und Sitzungsselbsttest auf dem Host,
+Node-History-Regression, beide Preflight-Varianten und Live-Abnahme.
