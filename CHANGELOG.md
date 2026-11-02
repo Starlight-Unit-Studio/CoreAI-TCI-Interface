@@ -1,5 +1,15 @@
 # CoreAI: TCI Interface
 
+## 0.5.91 - 02.11.2026
+
+- **Mein CoreAI / Personalisierung:** Kontogebundene Einstellungen fuer Maras Tonfall, Herzlichkeit, Begeisterung, Emojis, Ueberschriften, Visualisierung, benutzerdefinierte Stilwuensche, Schreibstil-Anpassung und knappe Direktantworten.
+- **Echte Wirkung:** Antwort-Prompt in beiden Pfaden aktualisiert, ohne das operatorseitige Modelfile oder die Werkzeugprotokolle zu aendern. WEB, Playwright und private RAG-Lite-Suche koennen pro Konto zusaetzlich eingeschraenkt werden; Betreiber- und Nutzerpolicies bleiben Obergrenzen.
+- **Bestehende Funktionen:** Memory-Schalter im neuen Bereich mit KI-Profil synchronisiert, Folgefrage-Buttons ein-/ausblendbar und Links zu Profilfoto, Wissen und Browseranzeige.
+- **Server und Datenschutz:** Migration 022, authentifizierter CSRF-API-Endpunkt, pro-Konto-Persistenz mit Feldvalidierung, Account-Export aktualisiert, Loeschkaskade bei Kontoloeschung.
+- **Rendering:** Dezente blau-goldene Markdown-Akzente in normalen Mara-Antworten, ohne ungeprueftes HTML.
+- **Ehrliche Grenzen:** Referenzbilder fuer ImageGen, Live-Sprachchat und Connector-Suche nicht als wirkungslose Schalter angeboten.
+- **QA:** Personalisierungs-Selftest in Container- und Native-Preflight aufgenommen. Echte Server-, Installer- und Mobile-Abnahme nach Merge erforderlich.
+
 ## 0.5.90 - 02.11.2026
 
 - **Preflight-Reparatur:** Der Sitzungs-Selftest erwartete noch die alte History-Fallback-Zeile, die im 0.5.89-Hotfix bewusst ersetzt wurde. Diese veraltete Assertion blockierte sowohl CoreAI-Updater als auch den SSH-/Native-Preflight.
