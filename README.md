@@ -7,7 +7,23 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.90` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.91` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Maras Personalisierung (0.5.91)
+
+Neuer eigener Bereich **Mein CoreAI > Personalisierung**: pro Konto werden
+Basisstil, Herzlichkeit, Begeisterung, Emoji-Dichte, Markdown-Darstellung,
+Ueberschriften/Listen, Schreibstil-Anpassung und persoenliche Anweisungen
+gespeichert. Die Optionen beeinflussen beide normalen Antwortwege ohne
+Modelfile-Aenderung. Nutzer koennen WEB, Playwright und private RAG-Lite-Suche
+fuer sich abwaehlen, jedoch nie Betreiberbeschraenkungen umgehen.
+Memory ist mit dem KI-Profil synchronisiert; vorhandene Folgefrage-Buttons
+koennen ausgeblendet werden. Account-Export enthaelt Personalisierung.
+Migration 022 und ein Selftest in beiden Preflight-Varianten ergaenzt.
+
+Referenzfotos zur KI-Bildgenerierung, durchgehender Sprachchat und Suche in
+nicht verbundenen Apps sind derzeit nicht aktiviert; die Oberflaeche
+kennzeichnet diese Funktionen ehrlich als noch nicht unterstuetzt.
 
 ## Sitzungs-Preflight aktualisiert (0.5.90)
 
