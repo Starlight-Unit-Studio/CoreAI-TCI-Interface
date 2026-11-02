@@ -64,9 +64,23 @@ session_test_expect(str_contains($client, 'MAX_MESSAGE_ATTACHMENTS = 10'), 'Clie
 session_test_expect(str_contains($client, 'attachment_uuids:'), 'Client sendet die persistente Anhangliste nicht.');
 session_test_expect(str_contains($client, "Number(m.reply_to_id) === Number(userMsgId)"), 'Client ordnet Antworten nicht dem exakten Turn zu.');
 session_test_expect(str_contains($client, "Number(m.reply_to_id) === pendingTurnId"), 'Hintergrund-Poll kann noch eine fremde Antwort als eigenen Turn abschliessen.');
-session_test_expect(str_contains($client, 'Der zuletzt bestätigte Verlauf bleibt sichtbar.')
-  && str_contains($client, "if (hasCachedHistory && !messagesInner.querySelector('.msg-row')) renderHistory(ses);"),
-  'Ein Ladefehler kann den bestaetigten Verlauf noch optisch verdraengen.');
+// 0.5.90: Since 0.5.89 history is rendered off-screen and committed only on
+// success. Do not require the old direct-render fallback: that very approach
+// could blank the chat when a WEB result contained a malformed UI element.
+session_test_expect(
+  str_contains($client, 'Der zuletzt bestätigte Verlauf bleibt sichtbar.')
+    && str_contains($client, "var draft = document.createElement('div');")
+    && str_contains($client, 'messagesInner = draft;')
+    && str_contains($client, 'messagesInner = visibleInner;')
+    && str_contains($client, 'visibleInner.replaceChildren.apply(visibleInner,Array.prototype.slice.call(draft.childNodes));'),
+  'Verlauf wird nicht atomar aufgebaut; ein Renderfehler koennte bestaetigte Nachrichten verdrangen.');
+session_test_expect(
+  str_contains($client, "problem.kind = 'render';")
+    && str_contains($client, "var displayError = error && error.kind === 'render';")
+    && str_contains($client, "if (!displayError && hasCachedHistory && !messagesInner.querySelector('.msg-row'))")
+    && str_contains($client, "try { renderHistory(ses); }")
+    && str_contains($client, "if (!displayError && !prepend) scheduleHistoryRetry(ses, failures);"),
+  'Renderfehler werden nicht getrennt behandelt oder koennen weiterhin eine endlose History-Retry-Schleife starten.');
 session_test_expect(str_contains($client, 'sessionArchiveToggle'), 'Archivansicht fehlt im Client.');
 session_test_expect(str_contains($client, "action: 'restore'"), 'Wiederherstellung archivierter Sitzungen fehlt.');
 session_test_expect(str_contains($client, "action: 'delete_permanently'"), 'Endgueltige Loeschaktion fehlt im Client.');
