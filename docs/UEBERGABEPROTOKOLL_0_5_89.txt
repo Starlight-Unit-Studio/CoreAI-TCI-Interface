@@ -3,6 +3,46 @@ Stand: 01.11.2026
 Basis: main 0.5.88 (PR #139 gemergt, Nutzer meldet Live-Probleme).
 Branch: fix/live-web-events-natural-progress
 
+NOTFALL-NACHSTAND 02.11.2026, WEITERE SCREENSHOTS:
+- Nach den ersten WEB-Treffern zeigte CoreAI nur "6 Quellen gefunden"
+  und ein leeres Favicon-Kaestchen. Danach verschwand der laufende Mara-Turn,
+  die Ansicht flackerte und zeigte die Meldung
+  "Cannotsetpropertiesofundefinedsettinghid".
+- Das ist die auf 40 Zeichen gekuerzte, von CoreUINet.describe() bereinigte
+  JavaScript-Fehlermeldung "Cannot set properties of undefined
+  (setting 'hidden')", KEIN HTTP-/MariaDB-Ausfall.
+- EXAKTE URSACHE in main 0.5.88: researchList() speicherte das details-
+  Element "history" nicht in list._history. researchStart()/researchPage()
+  versuchten list._history.hidden zu setzen und warfen TypeError.
+- Der Fehler wurde im SSE-Handler abgefangen, wodurch nur die Zaehlzeile
+  sichtbar blieb; spaeter wurde er beim history-GET als Promise-Renderfehler
+  vom generischen .catch wie ein Serverfehler behandelt. Der Retry setzte
+  History/DOM wiederholt neu, was Flackern und Nachrichtenschwund erzeugte.
+- PR #141 enthielt bereits die unmittelbare Fix-Zuweisung
+  list._history = history; und zusaetzliche [hidden]-CSS-Sicherungen.
+- NEU in PR #141: renderHistory() erzeugt eine komplette neue Ansicht
+  in einem nicht eingehangten DOM-Container, tauscht erst nach Erfolg
+  aus und behaelt bei einem Fehler die vorherigen Chatnachrichten.
+  loadChatHistory() kennzeichnet Renderfehler separat (kind=render),
+  stoppt automatische Retries auf diesem Pfad und zeigt einen
+  echten ANZEIGEFEHLER, nicht "Server konnte Verlauf nicht liefern".
+  Auch der bereits zwischengespeicherte Verlauf wird beim Sitzungwechsel
+  nicht ungefangen zum Abbruch der nachfolgenden History-GET.
+- Die CoreUI-net-Fehlererklaerung erkennt kind=render.
+- UI-Regressionspruefung gegen Original-Fall ergaenzt; 156 Assertions
+  bestanden mit einem DOM-Double in der JS-Umgebung, JavaScript-
+  Syntaxkontrolle fuer alle drei geaenderten Dateien bestanden.
+- Der bestehende PR #141 bleibt der einzige Releasekandidat fuer 0.5.89.
+  Der Live-Server laeuft vor Merge/Installer-Update noch mit dem defekten
+  Stand. Keine Veraenderung an Datenbank, gespeicherten Nachrichten,
+  Core-Prompt, Queue, Game oder Modelfiles.
+- NACH MERGE / INSTALLATION unbedingt zwei echte WEB-Suchen durchfuehren
+  (mit und ohne Quellen), Quellzeile waehrend des laufenden Streams
+  beobachten, danach Seite neu laden und Sitzung wechseln.
+  Erst wenn auch dann kein Flackern oder Verlaufsabbruch auftritt,
+  den Vorfall als live verifiziert markieren.
+
+
 BUGREPORT MIT LIVE-SCREENSHOTS:
 1. Beim WEB-Werkzeug wurde das Quellenkarussell erst gegen Ende bzw. nach der Antwort sichtbar.
 2. Statt einer durchgehenden natuerlichen Mara-Nachricht entstanden repetitive Texte:
