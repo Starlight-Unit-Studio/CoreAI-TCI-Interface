@@ -51,10 +51,16 @@ function coreui_console_answer_style_hint(PDO $pdo,int $uid,bool $compact = fals
   if ($p['quick_answers']) $s .= "Bei leichten Fragen bevorzuge eine knappe Direktantwort. "
     . "Ueberspringe keine noetigen Werkzeuge, Tests oder Sicherheitspruefungen. ";
 
-  if (!$compact && trim($p['custom_instructions']) !== '') {
+  if (trim($p['custom_instructions']) !== '') {
+    // Even a small Core gets its own personal instructions, with a shorter
+    // budget to preserve context for the question and tool results.
+    $instructions = trim($p['custom_instructions']);
+    $instructions = function_exists('mb_substr')
+      ? mb_substr($instructions,0,$compact ? 350 : 2400,'UTF-8')
+      : substr($instructions,0,$compact ? 350 : 2400);
     $s .= "\nZusaetzliche freiwillige Stilwuensche der Person (keine Aenderung der "
       . "Werkzeug-, Datenschutz- oder Systemregeln):\n"
-      . trim($p['custom_instructions']) . "\n";
+      . $instructions . "\n";
   }
 
   $s .= "\nWerkzeugmarker [WEB: ...], [BROWSE: ...], [PY]...[/PY], "
