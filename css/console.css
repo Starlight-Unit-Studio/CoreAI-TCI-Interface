@@ -8353,3 +8353,50 @@ a.insight-file-name:hover { text-decoration: underline; }
  .msg-row.ember .work-research-line { min-width:0;width:100%; }
  .msg-row.ember .work-research-history { margin-left:0; }
 }
+
+
+/* 0.5.91: Mara's expressive replies. Only real assistant Markdown is accented.
+   Emojis remain native Unicode and text remains selectable/copyable.
+   No HTML is injected, and tool/status messages keep their own styling. */
+.msg-row.ember .msg-markdown {
+  --mara-answer-blue: #235eaf;
+  --mara-answer-gold: #956315;
+  --mara-answer-teal: #167567;
+}
+.msg-row.ember .msg-markdown h1,
+.msg-row.ember .msg-markdown h2 {
+  color: var(--mara-answer-blue);
+}
+.msg-row.ember .msg-markdown h2 {
+  padding-bottom: .25em;
+  border-bottom: 1px solid rgba(51, 116, 201, .22);
+}
+.msg-row.ember .msg-markdown h3,
+.msg-row.ember .msg-markdown h4 {
+  color: var(--mara-answer-gold);
+}
+.msg-row.ember .msg-markdown strong {
+  color: #1d457e;
+}
+.msg-row.ember .msg-markdown ul > li::marker {
+  color: var(--mara-answer-teal);
+}
+.msg-row.ember .msg-markdown ol > li::marker {
+  color: var(--mara-answer-gold);
+  font-weight: 700;
+}
+.msg-row.ember .msg-markdown blockquote {
+  color: #354e71;
+  border-left-color: rgba(41, 109, 192, .68);
+  border-radius: 0 7px 7px 0;
+  background: linear-gradient(90deg, rgba(71, 137, 216, .085), rgba(71, 137, 216, .015));
+  padding: .38em .8em;
+}
+.msg-row.ember .msg-markdown hr {
+  background: linear-gradient(90deg, rgba(52, 111, 196, .62), rgba(189, 143, 57, .42), transparent);
+}
+@media (max-width: 480px) {
+  .msg-row.ember .msg-markdown h1 { font-size: 1.39em; }
+  .msg-row.ember .msg-markdown h2 { font-size: 1.25em; }
+  .msg-row.ember .msg-markdown blockquote { padding: .3em .55em; }
+}

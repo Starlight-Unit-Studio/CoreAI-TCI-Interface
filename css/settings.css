@@ -1409,3 +1409,66 @@
   flex: none;
   accent-color: var(--cx);
 }
+
+/* 0.5.91: original CoreAI personalization controls, mobile-first. */
+.settings-body .persona-cards .setting-row {
+  gap: 15px;
+}
+.settings-body .persona-select-row select {
+  min-width: 112px;
+  width: min(34%, 168px);
+  max-width: 100%;
+  border: 1px solid rgba(72, 119, 180, .28);
+  border-radius: 9px;
+  background: rgba(242, 246, 252, .9);
+  color: #23395b;
+  font: 600 13px/1.35 "Rajdhani", sans-serif;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+.settings-body .persona-select-row select:focus-visible {
+  outline: 2px solid #3975ca;
+  outline-offset: 2px;
+}
+.settings-body .persona-cards .setting-copy {
+  min-width: 0;
+}
+.settings-body .persona-cards .setting-copy strong {
+  overflow-wrap: anywhere;
+}
+.settings-body .persona-links {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  padding: 14px 0 0;
+}
+.settings-body .persona-counter {
+  color: #657996;
+  font: 12px/1.45 "Share Tech Mono", monospace;
+  margin-right: auto;
+}
+.settings-body .persona-limit {
+  margin: 8px 0;
+  line-height: 1.6;
+  color: #4e637e;
+  font-size: 13px;
+}
+.settings-body .persona-limit strong { color: #254474; }
+.settings-body .persona-status {
+  margin-top: 16px;
+  font: 600 12px/1.6 "Rajdhani", sans-serif;
+  color: #2d7464;
+}
+.settings-body .persona-status.error { color: #a34842; }
+@media (max-width: 500px) {
+  .settings-body .persona-select-row { align-items: center; }
+  .settings-body .persona-select-row select {
+    min-width: 94px;
+    width: 102px;
+    padding: 7px 6px;
+    flex: 0 0 102px;
+    font-size: 12px;
+  }
+  .settings-body .persona-links .settings-action { font-size: 10px; }
+}

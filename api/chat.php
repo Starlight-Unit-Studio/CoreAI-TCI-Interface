@@ -15,6 +15,7 @@ require_once __DIR__ . '/knowledge_store.php';
 require_once __DIR__ . '/guest_access.php';
 require_once __DIR__ . '/console_compaction.php';
 require_once __DIR__ . '/console_agent_loop.php';
+require_once __DIR__ . '/console_answer_style.php';
 
 // -----------------------------------------------------------------------------
 // Ember - Global-Chat NPC (Ollama local)
@@ -2235,9 +2236,9 @@ function ember_try_tools(string $userMsg): ?string {
 // -------------------------------
 function ember_web_enabled(): bool {
   $configured = (bool)ember_cfg('STU_EMBER_WEB_ENABLED', true);
-  return function_exists('coreui_runtime_tool_enabled')
-    ? coreui_runtime_tool_enabled('web', $configured)
-    : $configured;
+  $allowed = function_exists('coreui_runtime_tool_enabled')
+    ? coreui_runtime_tool_enabled('web', $configured) : $configured;
+  return $allowed && coreui_personalization_tool_allowed('web');
 }
 function ember_web_url(): string {
   $u = (string)ember_cfg('STU_EMBER_WEB_URL', 'http://127.0.0.1:18889/search');
@@ -2429,9 +2430,9 @@ function ember_web_results_block(string $query, ?callable $onResults = null): st
 // -------------------------------
 function ember_browse_enabled(): bool {
   $configured = (bool)ember_cfg('STU_EMBER_BROWSE_ENABLED', true);
-  return function_exists('coreui_runtime_tool_enabled')
-    ? coreui_runtime_tool_enabled('browse', $configured)
-    : $configured;
+  $allowed = function_exists('coreui_runtime_tool_enabled')
+    ? coreui_runtime_tool_enabled('browse', $configured) : $configured;
+  return $allowed && coreui_personalization_tool_allowed('browse');
 }
 
 function ember_browse_capability_hint(): string {
@@ -4852,6 +4853,8 @@ function ember_build_chat_prompt(
   $uid = (int)($senderChar['user_id'] ?? 0);
   $cid = (string)($senderChar['id'] ?? '');
   if (function_exists('coreui_ai_runtime_apply')) coreui_ai_runtime_apply($pdo, $uid);
+  $GLOBALS['COREUI_PERSONALIZATION_CONTEXT'] = $channel === 'console'
+    ? coreui_personalization_load($pdo,$uid) : null;
   // #113: the KI-Profil window belongs to the private console; the global
   // channel and its queue keep the Core default.
   if ($channel !== 'console') $GLOBALS['COREUI_AI_RUNTIME_SETTINGS']['num_ctx'] = null;
@@ -4895,7 +4898,9 @@ function ember_build_chat_prompt(
   }
   // 0.5.70: a follow-up ("durchsuch nochmal") falls back to the recent
   // conversation; a large window gets more and longer passages.
-  $privateKnowledgeBlock = $channel === 'console' && function_exists('coreui_private_knowledge_block')
+  $privateKnowledgeBlock = $channel === 'console'
+    && (($GLOBALS['COREUI_PERSONALIZATION_CONTEXT']['knowledge_search'] ?? true) === true)
+    && function_exists('coreui_private_knowledge_block')
     ? coreui_private_knowledge_block($pdo, $uid, $cleanLoreQuestion, $profile['compact'] ? 4 : 6,
         ember_knowledge_followup_query($ctx), $profile['compact'] ? 2800 : 7000)
     : '';
@@ -4970,6 +4975,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
    . ($browseHint !== '' ? ($browseHint . "\n\n") : "")
    . ($pyHint !== '' ? ($pyHint . "\n\n") : "")
    . $nativeToolHint
+   . ($channel === 'console' ? ("\n" . coreui_console_answer_style_hint($pdo,$uid,$profile['compact']) . "\n") : "")
    . "Antworte als Mara:"
    . ($imageUrl !== null ? "\n[Bild wurde mitgesendet - beschreibe und kommentiere es als Mara.]" : "");
 
@@ -5113,6 +5119,8 @@ function ember_generate_reply(
   $uid = (int)($senderChar['user_id'] ?? 0);
   $cid = (string)($senderChar['id'] ?? '');
   if (function_exists('coreui_ai_runtime_apply')) coreui_ai_runtime_apply($pdo, $uid);
+  $GLOBALS['COREUI_PERSONALIZATION_CONTEXT'] = $channel === 'console'
+    ? coreui_personalization_load($pdo,$uid) : null;
   if ($channel !== 'console') $GLOBALS['COREUI_AI_RUNTIME_SETTINGS']['num_ctx'] = null;
   // 0.5.75: the thinking switch belongs to the private chat; the global
   // channel keeps thinking as it did when the Modelfile forced it.
@@ -5158,7 +5166,9 @@ function ember_generate_reply(
       $lore = ember_lore_block($pdo, $loreQuery, ember_lore_limit_for_runtime());
     }
   }
-  $privateKnowledgeBlock = $channel === 'console' && function_exists('coreui_private_knowledge_block')
+  $privateKnowledgeBlock = $channel === 'console'
+    && (($GLOBALS['COREUI_PERSONALIZATION_CONTEXT']['knowledge_search'] ?? true) === true)
+    && function_exists('coreui_private_knowledge_block')
     ? coreui_private_knowledge_block($pdo, $uid, $cleanLoreQuestion, $promptProfile['compact'] ? 4 : 6,
         ember_knowledge_followup_query($ctx), $promptProfile['compact'] ? 2800 : 7000)
     : '';
@@ -5237,6 +5247,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
    . ($webHint !== '' ? ($webHint . "\n\n") : "")
    . ($browseHint !== '' ? ($browseHint . "\n\n") : "")
    . ($pyHint !== '' ? ($pyHint . "\n\n") : "")
+   . ($channel === 'console' ? ("\n" . coreui_console_answer_style_hint($pdo,$uid,$promptProfile['compact']) . "\n") : "")
    . "Antworte als Mara:"
    . ($imageUrl !== null ? "\n[Bild wurde mitgesendet - beschreibe und kommentiere es als Mara.]" : "");
 

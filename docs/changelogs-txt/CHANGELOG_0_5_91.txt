@@ -1,0 +1,37 @@
+COREAI: TCI INTERFACE 0.5.91
+Datum: 02.11.2026
+
+NEU: MEIN COREAI / PERSONALISIERUNG
+Einstellungen fuer Mara pro Konto, mit neuem Tab im bestehenden hellen
+CoreAI-Design. Keine Kopie fremder UI-Assets.
+
+Wirklich funktionsfaehige Optionen:
+- Basisstil/Tonfall, Herzlichkeit, Begeisterung, Emojis,
+  visuelle Markdown-Gliederung und Ueberschriften/Listen.
+- Stil des aktuellen Nutzergespraechs beruecksichtigen.
+- Eigene stilbezogene Anweisungen, serverseitig je Konto gespeichert.
+- Knappe Direktantworten bevorzugen (keine Geschwindigkeitsgarantie).
+- Vorhandene vorgeschlagene Folgefragen ein-/ausblenden.
+- WEB- und Playwright-Recherche fuer sich selbst abwaehlen;
+  globale Betreiberrechte bleiben immer Vorrang.
+- Automatische Suche im eigenen RAG-Lite-Wissen abwaehlen.
+- Bestehendes Memory serverseitig schalten; Memory-Daten bleiben erhalten.
+- Verlinkungen zu Profilfoto, KI-Profil, Wissensbestand und Browseranzeige.
+
+Technik:
+- Migration 022: stu_user_personalization, pro user_id mit ON DELETE CASCADE.
+- CSRF-geschuetztes GET/POST: api/personalization.php.
+- Wiederverwendbarer Backend-Store mit Feldvalidierung und Limits.
+- Maras beide Prompt-Pfade erhalten denselben persoenlichen Stil,
+  das Betreiber-Modelfile und Werkzeugmarker werden nicht veraendert.
+- Private Kontoeinstellungen werden in den Account-JSON-Export aufgenommen.
+- Responsive Darstellung in CSS; lokal sicher gerendertes Markdown.
+- Eigener PHP-Selftest wird im Native- und Container-Preflight ausgefuehrt.
+
+Noch NICHT als funktionsfaehige Schalter angeboten:
+- Bildgenerierungs-Referenzfotos/Ganzkoerper-Referenzfotos.
+- Wiederverwendung frueherer Sprachaufnahmen und vollstaendiger Live-Sprachchat.
+- Suche in extern verbundenen Apps ohne bereitgestellte Integration.
+
+Kein Eingriff in Game, Modelfile, Ollama, seriellen Core-Aufruf oder
+bestehende Nachrichten. Vor Merge: Tests sowie Migration/Updater kontrollieren.
