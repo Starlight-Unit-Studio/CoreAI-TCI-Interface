@@ -221,6 +221,12 @@ UI_FILES=(
   js/coreui-chat-follow.js
   scripts/message-actions-selftest.php
   scripts/markdown-selftest.js
+  scripts/personalization-selftest.php
+  js/coreui-personalization-settings.js
+  api/console_personalization_store.php
+  api/console_answer_style.php
+  api/personalization.php
+  database/migrations/022_user_personalization.sql
   scripts/branding-license-selftest.py
   scripts/cache-bust.py
   docs/changelogs-txt/CHANGELOG_0_5_43.txt
@@ -754,6 +760,14 @@ if command -v php >/dev/null 2>&1; then
   else
     session_selftest="${session_selftest//$'\r'/}"
     fail "$session_selftest"
+  fi
+
+
+  personal_selftest=''
+  if personal_selftest="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/personalization-selftest.php" 2>&1)"; then
+    ok "$personal_selftest"
+  else
+    fail "$personal_selftest"
   fi
 
   if skills_selftest="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/skills-selftest.php" 2>&1)"; then
