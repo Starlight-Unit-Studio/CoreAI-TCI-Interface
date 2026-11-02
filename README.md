@@ -7,7 +7,17 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.89` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.90` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Sitzungs-Preflight aktualisiert (0.5.90)
+
+Der Sitzungsselbsttest hatte eine veraltete Client-Codezeile fest verdrahtet
+und blockierte nach dem Hotfix 0.5.89 sowohl Native-/SSH- als auch
+Container-Updates. Die Pruefung erwartet jetzt die tatsaechlichen
+History-Schutzmechanismen: atomaren DOM-Austausch, Wiederherstellung
+bei Renderfehlern und keine automatische Wiederholung bei lokalen
+Darstellungsfehlern. Keine Aenderung an Chats, Datenbank oder
+Ollama. Der echte Preflight muss nach Installation erneut laufen.
 
 ## Live-Quellen und natuerliche Fortschrittsanzeige (0.5.89)
 
