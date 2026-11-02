@@ -30,6 +30,21 @@
   window.addEventListener('coreui:preferences', function (event) {
     if (event && event.detail) uiPreferences = event.detail;
   });
+  // Source of truth is per-account server settings, not localStorage.
+  // This setting only hides genuine model-generated follow-up controls.
+  var showSuggestedPrompts = true;
+  fetch('./api/personalization.php',{credentials:'include',cache:'no-store',
+    headers:{'Accept':'application/json'}}).then(function (response) {
+    return response.ok ? response.json() : null;
+  }).then(function (data) {
+    if (!data || !data.ok || !data.settings) return;
+    showSuggestedPrompts = data.settings.suggested_prompts !== false;
+    if (!showSuggestedPrompts) {
+      Array.prototype.forEach.call(document.querySelectorAll('.ember-suggested-replies'),
+        function (node) { if (node.parentNode) node.parentNode.removeChild(node); });
+    }
+  }).catch(function () { /* keep existing visible suggestions when settings are unavailable */ });
+
 
   var SAFE_THINKING_LINES = {
     'ANFRAGE WIRD ANALYSIERT': true,
@@ -1234,7 +1249,7 @@
   }
 
   function buildSuggestedReplyButtons(markdown, sessionId) {
-    if (!sessionId) return null;
+    if (!sessionId || !showSuggestedPrompts) return null;
     var options = extractSuggestedReplies(markdown);
     if (!options.length) return null;
     var wrapper = document.createElement('div');
