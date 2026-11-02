@@ -1,6 +1,22 @@
 COREAI: TCI INTERFACE 0.5.89
 Datum: 01.11.2026
 
+NOTFALLKORREKTUR NACH LIVE-SCREENSHOTS, 02.11.2026:
+Fehlende Zuweisung fuer list._history verursachte beim ersten WEB-Treffer
+einen JavaScript-Fehler: Cannot set properties of undefined (setting 'hidden').
+Die alte History-Fehlerbehandlung deutete den UI-Absturz als Serverausfall
+und versuchte alle paar Sekunden erneut, den Chat neu zu zeichnen. Dadurch
+flackerte der Bildschirm und die Chatansicht verschwand.
+
+Behebung: Quellenliste korrekt initialisiert, sichtbare/verborgene URLs
+richtig geschaltet, Chatverlauf zunaechst ausserhalb der sichtbaren DOM-Ansicht
+erzeugen und erst nach Erfolg austauschen. Anzeige- und Netzfehler getrennt.
+Keine automatische Wiederholung bei einem reinen Renderfehler. Datenbankdaten
+bleiben unveraendert.
+Tests: 156 UI-Assertions mit DOM-Double bestanden, betroffene JS-Dateien
+syntaktisch geprueft. Browser-/Netcup-Livetest steht vor Merge aus.
+
+
 WEB-Quellenkarussell wird jetzt beim Eintreffen des SSE-Suchtreffers
 sofort aktualisiert, auch wenn Maras Textanimation noch laeuft.
 Das Quellenkarussell wechselt echte Favicons und bereinigte URLs live.
