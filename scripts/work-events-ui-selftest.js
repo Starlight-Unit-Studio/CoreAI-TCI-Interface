@@ -196,7 +196,7 @@ const flowEntries = flow.querySelector('.work-entries');
 assert.equal(flowEntries.children.length,6,'every event keeps exactly one entry');
 const firstRun = flowEntries.children[0];
 assert(firstRun.className.includes('work-run-head'),'a routine sequence starts a folded run');
-assert.equal(firstRun.querySelector('.work-run-toggle').textContent,'2 Schritte · Core arbeitet▸');
+assert.equal(firstRun.querySelector('.work-run-toggle').textContent,'2 technische Schritte anzeigen▸');
 assert.equal(flowEntries.children[1].hidden,true,'folded steps stay hidden');
 firstRun.querySelector('.work-run-toggle').handlers.click();
 assert.equal(flowEntries.children[1].hidden,false,'expanding a run shows each step');
@@ -204,7 +204,7 @@ assert(flowEntries.children[2].className.includes('work-narration'),'a planned f
 assert(flow.textContent.includes('Ich erstelle 3 Dateien und prüfe jede einzeln: index.html, style.css, main.js.'));
 assert(!flow.textContent.includes('../evil'),'only safe basenames reach the file list');
 assert(flowEntries.children[3].querySelector('.work-run-toggle').textContent
-  .startsWith('3 Schritte · Einzeldatei angefordert · style.css'),'a new run follows the narration');
+  .startsWith('3 technische Schritte anzeigen'),'a new run follows the narration');
 const tasksCard = flow.querySelector('.work-tasks');
 assert.equal(tasksCard.hidden,false,'two or more files show a task card');
 assert(tasksCard.textContent.includes('Projektdateien · 1 von 3 fertig'));
@@ -430,13 +430,71 @@ assert.equal(found.querySelector('.work-site-icon').hidden,true,'missing favicon
 assert(found.querySelector('.work-research-current'),'web source is shown as a compact ticker');
 assert(found.querySelector('.work-research-history'),'source list is initially collapsed');
 assert.equal(found.querySelector('.work-research-history').tag,'details');
+assert.equal(found.querySelector('.work-research-history').hidden,false,
+  'a saved source must reveal its expandable source list, not crash on undefined');
+assert.equal(found.querySelector('.work-research-current').hidden,false,
+  'a found URL must make its favicon and link visible');
+assert.equal(found.querySelector('.work-research-url').textContent,'example.org/news');
 assert.equal(research._currentUrl,'https://example.net/b');
 assert.equal(research.querySelector('.work-research-url').textContent,'example.net/b');
-assert.equal(research.querySelector('.work-research-label').textContent,'');
-assert.equal(found.querySelector('.work-research-label').textContent,'','WEB carousel replaces generic Web wird durchsucht');
+assert.equal(research.querySelector('.work-research-label').textContent,'2 Websites besucht');
+assert.equal(found.querySelector('.work-research-label').textContent,'1 Quelle gefunden','WEB uses the source count instead of Web wird durchsucht');
 const codeFold = work.create({live:true,codeOnly:true});
 assert(work.source(codeFold.querySelector('.work-body'),{phase:'begin',file_name:'index.html',attempt:1}));
 assert.equal(codeFold.querySelector('.work-source').tag,'details');
 assert.equal(codeFold.querySelector('.work-source').open,undefined,'live source is folded by default');
 assert(app.includes('window.CoreUIWorkEvents.tuckCode(workTimeline,bubble)'), 'finished answer code moves to steps');
 
+
+// 0.5.89: WEB results must jump the typing queue on the SSE event itself.
+const delayedWeb = [];
+const tickerWeb = [];
+sandbox.window.setTimeout = fn => { delayedWeb.push(fn); return delayedWeb.length; };
+sandbox.window.clearTimeout = () => {};
+sandbox.window.setInterval = fn => { tickerWeb.push(fn); return tickerWeb.length; };
+sandbox.window.clearInterval = () => {};
+sandbox.document.hidden = false;
+const realtime = work.create({live:true,startedAt:Date.now()});
+const realtimeBody = realtime.querySelector('.work-body');
+const liveResearch = realtime.querySelector('.work-research');
+work.add(realtimeBody,{id:990,kind:'commentary',state:'info',
+  title:'Mara meldet ihren naechsten Schritt',
+  meta:{source:'agent_loop',public_note:'Ich suche nach: Markenrecht Namensschutz'}});
+assert.equal(realtimeBody._workBusy,true,'narration still typing');
+work.add(realtimeBody,{id:991,kind:'tool',state:'running',title:'Websuche gestartet',meta:{source:'web'}});
+assert.equal(liveResearch.hidden,false,'web activity is shown at search start');
+assert.equal(liveResearch._label.textContent,'Suche läuft ...');
+work.add(realtimeBody,{id:992,kind:'tool',state:'info',title:'Webquelle gefunden',
+  meta:{page_url:'https://example.org/a?private=1',page_title:'Quelle A'}});
+assert.equal(liveResearch._sites.length,1,'first source is shown without draining the narration');
+assert.equal(liveResearch._currentUrl,'https://example.org/a');
+assert.equal(liveResearch._label.textContent,'1 Quelle gefunden');
+assert.equal(realtimeBody._workQueue.length,1,'only the technical tool start is queued');
+work.add(realtimeBody,{id:993,kind:'tool',state:'info',title:'Webquelle gefunden',
+  meta:{page_url:'https://example.net/b',page_title:'Quelle B'}});
+assert.equal(liveResearch._sites.length,2);
+assert.equal(liveResearch._label.textContent,'2 Quellen gefunden');
+assert.equal(liveResearch._currentUrl,'https://example.net/b');
+tickerWeb[tickerWeb.length - 1]();
+assert.equal(liveResearch._currentUrl,'https://example.org/a','ticker rotates real recorded sources');
+work.add(realtimeBody,{id:994,kind:'tool',state:'success',title:'Schritt 1 von 6: Websuche',meta:{}});
+work.add(realtimeBody,{id:995,kind:'commentary',state:'info',
+  title:'Mara meldet ihren naechsten Schritt',
+  meta:{source:'agent_loop',public_note:'Ich suche nach: zweite Suchanfrage'}});
+work.flush(realtimeBody);
+const visibleNotes = realtimeBody.querySelector('.work-entries').children
+  .filter(node => node.className.includes('work-narration'));
+assert.equal(visibleNotes.length,1,'repeated search steps do not flood the chat');
+assert(visibleNotes[0].textContent.includes('Ich prüfe dazu aktuelle Quellen'),'prose sounds like Mara');
+assert(!liveResearch.textContent.includes('Web wird durchsucht'));
+const noResults = work.create({live:true}).querySelector('.work-research');
+work.researchStart(noResults);
+assert.equal(noResults.hidden,false);
+assert.equal(noResults._active.hidden,true,'no fictitious source before actual WEB results');
+
+const emptyWebHistory = work.create({events:[
+  {id:997,kind:'tool',state:'running',title:'Websuche gestartet',meta:{}},
+  {id:998,kind:'tool',state:'info',title:'Websuche beendet',meta:{knowledge_hits:0}}
+]});
+assert.equal(emptyWebHistory.querySelector('.work-research-label').textContent,
+  'Keine Quellen gefunden','finished empty searches must not look like ongoing work');

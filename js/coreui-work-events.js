@@ -273,13 +273,14 @@
     list.appendChild(history);
     list._label = label; list._active = active; list._activeIcon = icon;
     list._activeInitial = initial; list._activeUrl = urlText;
-    list._count = count; list._summary = summary; list._items = items;
+    list._count = count; list._summary = summary; list._items = items; list._history = history;
     return list;
   }
   // A WEB search is visible immediately, even before its first genuine hit.
   function researchStart(list) {
     if (!list) return;
     list.hidden = false;
+    list._searchStarted = true;
     if (!list._sites.length) {
       list._label.textContent = 'Suche läuft ...';
       list._active.hidden = true;
@@ -793,6 +794,9 @@
     if (body._research && event.title === 'Websuche gestartet') {
       researchStart(body._research);
     }
+    if (event.title === 'Websuche beendet' && body._research && !body._research._sites.length) {
+      body._research._label.textContent = 'Keine verwertbaren Treffer';
+    }
     if (event.title === 'Webquelle gefunden' && event.meta.page_url) {
       if (body._research) researchPage(body._research,event.meta.page_url,
         event.meta.page_title,'Suchtreffer');
@@ -948,7 +952,7 @@
     };
     updateSummary();
     initialEvents.forEach(function (event) { add(body,event); });
-    if (!live && research._sites.length) finishResearch(research);
+    if (!live && research._searchStarted) finishResearch(research);
     timeline.appendChild(research);
     timeline.appendChild(body);
     timeline.appendChild(tasks);

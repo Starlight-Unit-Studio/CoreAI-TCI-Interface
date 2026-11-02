@@ -676,7 +676,13 @@
     // Bereits bestaetigte Daten sofort aus dem sitzungseigenen Cache anzeigen.
     // Ein kurzzeitiger API-Fehler darf einen vorhandenen Verlauf nicht optisch
     // verschwinden lassen.
-    if (Array.isArray(state.messageCacheBySession[ses.id])) renderHistory(ses);
+    if (Array.isArray(state.messageCacheBySession[ses.id])) {
+      try { renderHistory(ses); }
+      catch (error) {
+        // Cached UI can be malformed; a fresh authenticated GET must still run.
+        console.error('[CoreAI] Cached conversation render failed:',error);
+      }
+    }
     loadChatHistory(ses).then(function () { drainQueuedTurn(ses.id); });
   }
 
@@ -888,21 +894,42 @@
     return !wasPending;
   }
 
+  // Build an authenticated history off-screen and commit its DOM in one
+  // operation. An invalid work card must never erase the last usable chat.
   function renderHistory(ses) {
     if (!isActiveSession(ses.id)) return;
-    messagesInner.innerHTML = '';
-    state.typingEl = null;
-    state.thinkingPanelEl = null;
-    appendOlderButton(ses);
-    renderConversationRows(ses);
-    if (!state.messageCacheBySession[ses.id] || !state.messageCacheBySession[ses.id].length) {
-      appendMessageEl('system', 'ARCHNET VERBINDUNG HERGESTELLT. COREUI TERMINAL AKTIV.');
+    var visibleInner = messagesInner;
+    var draft = document.createElement('div');
+    var priorTyping = state.typingEl;
+    var priorThinking = state.thinkingPanelEl;
+    var priorStop = state.agentStopEl;
+    messagesInner = draft;
+    try {
+      state.typingEl = null;
+      state.thinkingPanelEl = null;
+      state.agentStopEl = null;
+      appendOlderButton(ses);
+      renderConversationRows(ses);
+      if (!state.messageCacheBySession[ses.id] || !state.messageCacheBySession[ses.id].length) {
+        appendMessageEl('system', 'ARCHNET VERBINDUNG HERGESTELLT. COREUI TERMINAL AKTIV.');
+      }
+      if (state.pendingBySession[ses.id]) {
+        showTypingIndicator();
+        setStatus('waiting', 'MARA ANTWORTET\u2026');
+      }
+      renderQueuedTurns(ses);
+    } catch (error) {
+      state.typingEl = priorTyping;
+      state.thinkingPanelEl = priorThinking;
+      state.agentStopEl = priorStop;
+      throw error;
+    } finally {
+      messagesInner = visibleInner;
     }
-    if (state.pendingBySession[ses.id]) {
-      showTypingIndicator();
-      setStatus('waiting', 'MARA ANTWORTET\u2026');
-    }
-    renderQueuedTurns(ses);
+    // No intermediate blank frame: the previous messages stay untouched
+    // until the entire new view was built successfully.
+    visibleInner.replaceChildren.apply(visibleInner,Array.prototype.slice.call(draft.childNodes));
+    if (chatFollow) chatFollow.refresh();
   }
 
   function appendOlderButton(ses) {
@@ -1076,23 +1103,32 @@
       if (newest > Number(ses.last_message_id || 0)) ses.last_message_id = newest;
       ses.unread_count = 0;
       if (!isActiveSession(ses.id) || epoch !== state.viewEpoch) return;
-      clearHistoryRetry();
-      var renderMs;
-      if (prepend) {
-        renderMs = prependOlderRecords(ses, oldestBefore);
-        if (renderMs === null) renderMs = renderHistoryKeepingAnchor(ses);
-      } else {
-        var renderStart = Date.now();
-        renderHistory(ses);
-        renderMs = Date.now() - renderStart;
+      try {
+        clearHistoryRetry();
+        var renderMs;
+        if (prepend) {
+          renderMs = prependOlderRecords(ses, oldestBefore);
+          if (renderMs === null) renderMs = renderHistoryKeepingAnchor(ses);
+        } else {
+          var renderStart = Date.now();
+          renderHistory(ses);
+          renderMs = Date.now() - renderStart;
+        }
+        netRecord({kind: 'history_render', records: d.messages.length,
+          rendered: visibleRecords(ses).length, render_ms: renderMs, total_ms: Date.now() - started});
+        if (!state.pendingBySession[ses.id]) setStatus('online', 'VERBUNDEN');
+        if (!prepend) scrollToBottom();
+        renderSessionList();
+        if (resumed) startFastPoll(ses, Number(state.pendingBySession[ses.id]));
+        scheduleBackgroundPoll();
+      } catch (renderError) {
+        // The HTTP request succeeded. Do not mislabel a DOM failure as a
+        // server error or repeat the same broken render every few seconds.
+        console.error('[CoreAI] Conversation display failed:',renderError);
+        var problem = new Error('chat_render_failed');
+        problem.kind = 'render';
+        throw problem;
       }
-      netRecord({kind: 'history_render', records: d.messages.length,
-        rendered: visibleRecords(ses).length, render_ms: renderMs, total_ms: Date.now() - started});
-      if (!state.pendingBySession[ses.id]) setStatus('online', 'VERBUNDEN');
-      if (!prepend) scrollToBottom();
-      renderSessionList();
-      if (resumed) startFastPoll(ses, Number(state.pendingBySession[ses.id]));
-      scheduleBackgroundPoll();
     })
     .catch(function(error) {
       if (controller && state.historyAbort === controller) state.historyAbort = null;
@@ -1102,11 +1138,21 @@
       state.historyFailuresBySession[ses.id] = failures;
       var hasCachedHistory = Array.isArray(state.messageCacheBySession[ses.id])
         && state.messageCacheBySession[ses.id].length > 0;
-      // Never remove what is already on screen; only fill an empty view.
-      if (hasCachedHistory && !messagesInner.querySelector('.msg-row')) renderHistory(ses);
-      setStatus('error', netOnline() ? 'LADEFEHLER' : 'OFFLINE');
+      var displayError = error && error.kind === 'render';
+      // Only transport failures retry automatically. A broken UI would
+      // otherwise cause the exact flashing / vanishing conversation loop.
+      if (!displayError && hasCachedHistory && !messagesInner.querySelector('.msg-row')) {
+        try { renderHistory(ses); }
+        catch (renderError) {
+          console.error('[CoreAI] Cached history fallback failed:',renderError);
+          displayError = true;
+          error = {kind:'render'};
+        }
+      }
+      setStatus('error', displayError ? 'ANZEIGEFEHLER'
+        : (netOnline() ? 'LADEFEHLER' : 'OFFLINE'));
       showHistoryRetry(ses, error, prepend);
-      if (!prepend) scheduleHistoryRetry(ses, failures);
+      if (!displayError && !prepend) scheduleHistoryRetry(ses, failures);
       scheduleBackgroundPoll();
     });
   }

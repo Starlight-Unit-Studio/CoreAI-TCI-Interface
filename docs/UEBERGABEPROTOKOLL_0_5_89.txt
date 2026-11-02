@@ -1,0 +1,102 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.5.89
+Stand: 01.11.2026
+Basis: main 0.5.88 (PR #139 gemergt, Nutzer meldet Live-Probleme).
+Branch: fix/live-web-events-natural-progress
+
+NOTFALL-NACHSTAND 02.11.2026, WEITERE SCREENSHOTS:
+- Nach den ersten WEB-Treffern zeigte CoreAI nur "6 Quellen gefunden"
+  und ein leeres Favicon-Kaestchen. Danach verschwand der laufende Mara-Turn,
+  die Ansicht flackerte und zeigte die Meldung
+  "Cannotsetpropertiesofundefinedsettinghid".
+- Das ist die auf 40 Zeichen gekuerzte, von CoreUINet.describe() bereinigte
+  JavaScript-Fehlermeldung "Cannot set properties of undefined
+  (setting 'hidden')", KEIN HTTP-/MariaDB-Ausfall.
+- EXAKTE URSACHE in main 0.5.88: researchList() speicherte das details-
+  Element "history" nicht in list._history. researchStart()/researchPage()
+  versuchten list._history.hidden zu setzen und warfen TypeError.
+- Der Fehler wurde im SSE-Handler abgefangen, wodurch nur die Zaehlzeile
+  sichtbar blieb; spaeter wurde er beim history-GET als Promise-Renderfehler
+  vom generischen .catch wie ein Serverfehler behandelt. Der Retry setzte
+  History/DOM wiederholt neu, was Flackern und Nachrichtenschwund erzeugte.
+- PR #141 enthielt bereits die unmittelbare Fix-Zuweisung
+  list._history = history; und zusaetzliche [hidden]-CSS-Sicherungen.
+- NEU in PR #141: renderHistory() erzeugt eine komplette neue Ansicht
+  in einem nicht eingehangten DOM-Container, tauscht erst nach Erfolg
+  aus und behaelt bei einem Fehler die vorherigen Chatnachrichten.
+  loadChatHistory() kennzeichnet Renderfehler separat (kind=render),
+  stoppt automatische Retries auf diesem Pfad und zeigt einen
+  echten ANZEIGEFEHLER, nicht "Server konnte Verlauf nicht liefern".
+  Auch der bereits zwischengespeicherte Verlauf wird beim Sitzungwechsel
+  nicht ungefangen zum Abbruch der nachfolgenden History-GET.
+- Die CoreUI-net-Fehlererklaerung erkennt kind=render.
+- UI-Regressionspruefung gegen Original-Fall ergaenzt; 156 Assertions
+  bestanden mit einem DOM-Double in der JS-Umgebung, JavaScript-
+  Syntaxkontrolle fuer alle drei geaenderten Dateien bestanden.
+- Der bestehende PR #141 bleibt der einzige Releasekandidat fuer 0.5.89.
+  Der Live-Server laeuft vor Merge/Installer-Update noch mit dem defekten
+  Stand. Keine Veraenderung an Datenbank, gespeicherten Nachrichten,
+  Core-Prompt, Queue, Game oder Modelfiles.
+- NACH MERGE / INSTALLATION unbedingt zwei echte WEB-Suchen durchfuehren
+  (mit und ohne Quellen), Quellzeile waehrend des laufenden Streams
+  beobachten, danach Seite neu laden und Sitzung wechseln.
+  Erst wenn auch dann kein Flackern oder Verlaufsabbruch auftritt,
+  den Vorfall als live verifiziert markieren.
+
+
+BUGREPORT MIT LIVE-SCREENSHOTS:
+1. Beim WEB-Werkzeug wurde das Quellenkarussell erst gegen Ende bzw. nach der Antwort sichtbar.
+2. Statt einer durchgehenden natuerlichen Mara-Nachricht entstanden repetitive Texte:
+   "Schritt 1 von 6: Websuche", "Ich fuehre gerade ...", "Ich suche im Web ...",
+   "Die Websuche ...", und unzaehlige Schrittgruppen (50 Schritte/36 Werkzeuge).
+3. Referenz: ChatGPT-artige Darstellung mit Live-Favicon-/URL-Wechsel waehrend des
+   Webzugriffs, nur technische Schritte aufklappbar. Playwright ist ein anderer
+   Werkzeugpfad; falls Browserfenster deaktiviert, nur "Web wird durchsucht".
+
+URSACHE:
+- js/coreui-work-events.js verarbeitete Webquelle-Events ueber die mit
+  Textanimations-Timern serialisierte workQueue. Die Quelle war erst sichtbar,
+  wenn vorherige Notizen fertig getippt waren.
+- Laufende Tool-Schritte und jede neue Suchrunde wurden zu normalen
+  Textnachrichten hochgestuft.
+- Nach einer Suche ohne Treffer gab es kein verlaessliches abgeschlossenes
+  Statusbild.
+
+KORREKTUR:
+- WEB-Suchstart und echte Quellen werden in add() vor der Textanimationsqueue
+  sofort in den separaten Quellenbereich uebernommen. Echtes SSE, keine
+  simulierten URLs, keine neuen Requests oder Core-Aufrufe.
+- Karussell bekommt die Quelle sofort und wechselt bei mehreren Quellen.
+  Suchtreffer bleiben von tatsaechlich besuchten Browserseiten getrennt.
+- Erste Recherchenotiz erscheint als natuerlicher Mara-Satz, weitere
+  agentische Suchrunden und die Nummerierung bleiben nur in einer kompakten,
+  einklappbaren technischen Schrittgruppe.
+- Redundante Schritte-/Werkzeuge-Zusammenfassung im Chat ausgeblendet.
+- Suchstart ohne Quellen zeigt "Suche laeuft"; abgeschlossener Lauf ohne
+  Quellen zeigt "Keine Quellen gefunden", ohne Schein-Webseiten.
+- Fehlende Referenz auf das Quellen-Detailpanel in researchList behoben.
+- Basis 0.5.88: Playwright-Browserfenster/Anzeigeschalter und eingeklappte
+  Codefenster unveraendert.
+
+GEAENDERT:
+  js/coreui-work-events.js
+  css/console.css
+  scripts/work-events-ui-selftest.js
+  scripts/progress-browser-selftest.cjs
+  sowie Versions-/Cache-/Changelog-/Uebergabedateien.
+
+TESTGRENZEN:
+- Die Arbeit wurde direkt ueber GitHub-Connector ausgefuehrt; der
+  Arbeitscontainer kann github.com nicht per DNS erreichen.
+- Vorab das veraenderte JS mit einem DOM-Double in der Codeumgebung
+  geladen und den bestehenden erweiterten UI-Test mit 147 Assertions
+  bestanden. Dies ersetzt KEINE echte Chromium- und Netcup-Abnahme.
+- Vor Merge: node scripts/work-events-ui-selftest.js,
+  node scripts/progress-browser-selftest.cjs (Playwright/Chromium),
+  python3 scripts/version-merge-check.py --base-version 0.5.88,
+  python3 scripts/cache-bust.py --verify sowie die regulaeren Preflights.
+- Nach Merge: LIVE-Test mit einer WEB-Recherche MIT Treffern und einer
+  OHNE Treffer; Screenshot waehrend der laufenden Anfrage, nicht nur danach.
+- Keine GitHub Actions benoetigt. Kein Deploy, kein Merge als Teil
+  dieser PR-Branch-Entwicklung.
+- Game, Modelfile, serielle Queue, Tool-Parser und Spiel-Reputationslogik
+  bleiben unberuehrt.

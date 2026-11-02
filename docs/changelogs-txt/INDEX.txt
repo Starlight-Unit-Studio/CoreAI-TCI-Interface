@@ -133,3 +133,4 @@ Jede Version liegt als eigenstaendige UTF-8-TXT-Datei vor.
 * CHANGELOG_0_5_86.txt
 * CHANGELOG_0_5_87.txt
 * CHANGELOG_0_5_88.txt
+* CHANGELOG_0_5_89.txt

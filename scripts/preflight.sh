@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.88 Turn-bound Python upload inputs.
+# CoreAI: TCI Interface 0.5.89 Turn-bound Python upload inputs.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -248,6 +248,7 @@ UI_FILES=(
   scripts/frontend-regression-selftest.php
   scripts/markdown-preview-selftest.php
   scripts/long-chat-selftest.cjs
+  scripts/history-render-selftest.cjs
   database/migrations/015_long_chat_messages.sql
   scripts/chat-navigation-recovery-selftest.cjs
   scripts/chat-follow-selftest.cjs

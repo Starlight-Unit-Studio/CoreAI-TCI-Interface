@@ -121,6 +121,17 @@ try {
       && str_contains($css, '.md-codeblock'),
     'Nachrichtenaktionen oder Codeblockdarstellung sind nicht vollstaendig verdrahtet.'
   );
+  // 0.5.89 incident: rendering a source panel must never clear a confirmed
+  // chat or trigger infinite network retries when HTTP itself succeeded.
+  frontend_test_assert(
+    str_contains($workJs, 'list._history = history;')
+      && str_contains($console, 'visibleInner.replaceChildren.apply')
+      && str_contains($console, "problem.kind = 'render'")
+      && str_contains($console, 'if (!displayError && !prepend) scheduleHistoryRetry')
+      && str_contains($console, 'var draft = document.createElement'),
+    'Live-Webquelle oder History-Renderfehler kann den Chat noch zerstoeren.'
+  );
+
   foreach ([
     "action: 'edit_message'",
     'state.pendingBySession[ses.id]',

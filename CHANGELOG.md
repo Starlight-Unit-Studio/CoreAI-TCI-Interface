@@ -1,5 +1,16 @@
 # CoreAI: TCI Interface
 
+## 0.5.89 - 01.11.2026
+
+- **Notfallkorrektur nach Live-Test (02.11.2026):** Ein nicht initialisierter `list._history`-Verweis im WEB-Karussell loeste `Cannot set properties of undefined (setting 'hidden')` aus. Die Browseroberflaeche verwechselte diesen Darstellungsfehler mit einem API-Ausfall, loeschte beim erneuten Rendern die sichtbare Chat-Ansicht und wiederholte den Vorgang automatisch. Der Verweis ist jetzt korrekt initialisiert und die Verstecken-/Anzeigen-Regeln fuer die Quelle greifen.
+- **Chat-Stabilitaet:** Verlauf wird in einem inaktiven DOM-Container vorbereitet und erst bei erfolgreichem Rendering ersetzt. Bei Renderfehlern bleiben sichtbare Nachrichten stehen; der Fehler wird als ANZEIGEFEHLER statt Serverfehler benannt, und die automatische History-Ladeschleife stoppt. Der Verlauf in MariaDB bleibt unveraendert.
+- **Tests:** 156 UI-Assertions mit DOM-Double bestanden, Syntax von `coreui-work-events.js`, `console-app.js` und `coreui-net.js` geprueft. Echtes Chromium und Netcup-Live-Verhalten sind weiterhin vor Ort abzunehmen.
+- WEB-Quellen gelangen sofort bei einem SSE-Treffer ins Favicon- und URL-Karussell; die langsame Erzaehlanimation blockiert sie nicht mehr.
+- Das erste echte Websuch-Ereignis zeigt den laufenden Suchstatus ohne "Web wird durchsucht". Trefferlose Recherchen bleiben als solche kenntlich; keine Quellen werden vorgetaeuscht.
+- Wiederholte Suchrunden und Schritt-Nummern erscheinen ausschliesslich in den eingeklappten technischen Details. Eine erste, natuerlich formulierte Recherchemeldung bleibt wie Maras normaler Nachrichtentext sichtbar.
+- Mehrfache Fortschritts-Zeilen und die redundante Schritte-/Werkzeuge-Gesamtzahl wurden im Nachrichtenfluss reduziert. Browserfenster-Schalter und Codefenster aus 0.5.88 bleiben erhalten.
+- Regressionstest mit aktiver Textanimationswarteschlange, sofortigem Live-Treffer, URL-Wechsel, mehrfacher Suche und erfolgloser Websuche.
+
 ## 0.5.88 - 01.11.2026
 
 - Normale [WEB]-Suche zeigt gefundene Webseiten als wechselndes Favicon-/URL-Karussell direkt in Maras Fortschritt, statt einer ausgeschriebenen Liste oder der Beschriftung "Web wird durchsucht". Die Detailquellen bleiben ausklappbar. Suchtreffer werden nicht als besucht ausgegeben.
