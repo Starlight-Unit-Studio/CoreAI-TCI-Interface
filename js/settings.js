@@ -345,6 +345,8 @@
         aiSystemPrompt.value = s.system_prompt || '';
       }
       if (aiMemoryEnabled) aiMemoryEnabled.checked = s.memory_enabled === true;
+      var personaMemory = document.getElementById('personaMemoryEnabled');
+      if (personaMemory) personaMemory.checked = s.memory_enabled === true;
       if (aiMemoryLimit) aiMemoryLimit.value = String(s.memory_limit == null ? 16 : s.memory_limit);
       if (aiNumPredict) aiNumPredict.value = String(s.num_predict == null ? 6500 : s.num_predict);
       if (aiTemperature) aiTemperature.value = String(s.temperature == null ? 1 : s.temperature);
