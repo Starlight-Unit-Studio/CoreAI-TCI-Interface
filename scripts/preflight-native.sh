@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.90 Preflight session-history compatibility.
+# CoreAI: TCI Interface 0.5.91 Per-account personalization and Markdown.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
