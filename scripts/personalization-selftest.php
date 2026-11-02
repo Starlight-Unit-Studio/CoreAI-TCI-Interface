@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+// CoreAI 0.5.91: independent personalized reply and account-safety regression.
 require_once dirname(__DIR__) . '/api/console_answer_style.php';
 
 function personal_expect(bool $ok,string $why): void {
