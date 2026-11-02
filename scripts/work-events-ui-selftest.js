@@ -430,6 +430,11 @@ assert.equal(found.querySelector('.work-site-icon').hidden,true,'missing favicon
 assert(found.querySelector('.work-research-current'),'web source is shown as a compact ticker');
 assert(found.querySelector('.work-research-history'),'source list is initially collapsed');
 assert.equal(found.querySelector('.work-research-history').tag,'details');
+assert.equal(found.querySelector('.work-research-history').hidden,false,
+  'a saved source must reveal its expandable source list, not crash on undefined');
+assert.equal(found.querySelector('.work-research-current').hidden,false,
+  'a found URL must make its favicon and link visible');
+assert.equal(found.querySelector('.work-research-url').textContent,'example.org/news');
 assert.equal(research._currentUrl,'https://example.net/b');
 assert.equal(research.querySelector('.work-research-url').textContent,'example.net/b');
 assert.equal(research.querySelector('.work-research-label').textContent,'2 Websites besucht');
