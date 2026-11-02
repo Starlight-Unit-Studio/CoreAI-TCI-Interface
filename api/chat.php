@@ -15,6 +15,7 @@ require_once __DIR__ . '/knowledge_store.php';
 require_once __DIR__ . '/guest_access.php';
 require_once __DIR__ . '/console_compaction.php';
 require_once __DIR__ . '/console_agent_loop.php';
+require_once __DIR__ . '/console_answer_style.php';
 
 // -----------------------------------------------------------------------------
 // Ember - Global-Chat NPC (Ollama local)
@@ -4970,6 +4971,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
    . ($browseHint !== '' ? ($browseHint . "\n\n") : "")
    . ($pyHint !== '' ? ($pyHint . "\n\n") : "")
    . $nativeToolHint
+   . ($channel === 'console' ? ("\n" . coreui_console_answer_style_hint($profile['compact']) . "\n") : "")
    . "Antworte als Mara:"
    . ($imageUrl !== null ? "\n[Bild wurde mitgesendet - beschreibe und kommentiere es als Mara.]" : "");
 
@@ -5237,6 +5239,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
    . ($webHint !== '' ? ($webHint . "\n\n") : "")
    . ($browseHint !== '' ? ($browseHint . "\n\n") : "")
    . ($pyHint !== '' ? ($pyHint . "\n\n") : "")
+   . ($channel === 'console' ? ("\n" . coreui_console_answer_style_hint($promptProfile['compact']) . "\n") : "")
    . "Antworte als Mara:"
    . ($imageUrl !== null ? "\n[Bild wurde mitgesendet - beschreibe und kommentiere es als Mara.]" : "");
 
