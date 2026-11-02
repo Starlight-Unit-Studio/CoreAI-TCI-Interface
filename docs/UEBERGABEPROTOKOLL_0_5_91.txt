@@ -1,0 +1,60 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.5.91
+Datum: 02.11.2026
+Basis: main 0.5.90 (PR #142 gemergt).
+Branch: feat/mara-expressive-markdown-0591
+
+AUFTRAG
+Nutzer zeigt Personalisierungsseite von ChatGPT als Funktionsreferenz:
+Memory, Schreibstil, Referenzfotos, Tonfall, Herzlichkeit, Begeisterung,
+Emojis, visuelle Antworten, Ueberschriften/Listen, eigene Anweisungen,
+schnelle Antworten, vorgeschlagene Prompts, Sprachaufnahmen, Websuche,
+Sprachchat, Dateisuche, Connectorsuche. Eigenstaendiges CoreAI-Design,
+keine Kopie fremder UI-Assets, keine funktionslosen Schalter.
+
+ENTSCHEIDUNG UND UMSETZUNG
+Neuer Tab #personalisierung in settings.html mit responsive Panels.
+Mara-Persona wird nicht ueberschrieben. Stilvorgaben sind
+benutzerbezogene zusaetzliche Antwort-Hinweise, keine Aenderung des
+operatorseitigen Ollama-Modelfiles. Tool-Syntax, JSON, Code, Fakten,
+Sicherheitsregeln und globale Warteschlange bleiben vorrangig.
+
+SERVERPERSISTENZ:
+database/migrations/022_user_personalization.sql
+api/console_personalization_store.php
+api/personalization.php (authentifiziert, GET und POST, CSRF)
+Neue Tabelle stu_user_personalization mit FOREIGN KEY ON DELETE CASCADE.
+Validiert enums, Bools und 2400 Zeichen Nutzeranweisungen. GET liefert
+auch Status des bestehenden Memory-Schalters. memory-POST veraendert
+ausschliesslich memory_enabled, nicht die anderen KI-Einstellungen.
+Account-JSON-Export gibt persoenliche Einstellungen mit aus.
+
+MARAS ANTWORTEN:
+api/console_answer_style.php erzeugt anhand kontogebundener
+Einstellungen ein klares, kontextangemessenes Markdown-Stilprofil.
+api/chat.php bindet es in beide privaten Prompt-Pfade ein;
+Toolmarker bleiben als alleinstehende Befehle ohne Verzierung.
+WEB/BROWSE-Obergrenzen des Operators bleiben, User kann zusaetzlich
+WEB bzw. BROWSE fuer sein eigenes Konto abwaehlen.
+Private automatische RAG-Lite-Abfrage kann abgewahlt werden.
+
+CLIENT:
+js/coreui-personalization-settings.js laedt/speichert Optionen pro
+Konto und synchronisiert Memory mit KI-Profil. js/console-app.js
+versteckt echte, bereits vorhandene Folgefrage-Buttons, wenn abgewahlt.
+Neue CSS-Stile auf CoreAI-Markdown begrenzt, mobile Layoutregeln.
+Reference-photo fuer ImageGen, durchgehender Voicechat, Audiohistorie und
+Connector-Apps sind NICHT als aktive Optionen vermerkt, weil Backend
+noch fehlt. Profilbild und Wissens-/Browser-Einstellungen sind verlinkt.
+
+QA UND UEBERNAHME:
+- php scripts/personalization-selftest.php ohne DB schliesst
+  Formatierung, Permission-Obergrenzen, Account-Export und UI ein.
+- Container und Native Preflight verlangen und starten diesen Test.
+- Nach Migration 022 REST-GET, POST-save, POST-memory fuer je
+  zwei unterschiedliche Konten testen, danach neu anmelden.
+- WEB und BROWSE nacheinander je deaktivieren und Tool-Aufrufe
+  auf User-Grenze beobachten. Admin-Deaktivierung bleibt wirksam.
+- Private Wissenssuche mit knowledge_search off verifizieren.
+- Chat-Antworten mit Emoji=keine und Emoji=mehr vergleichen.
+- Anschliessend Changelog/Cachebuster und mobile Darstellung pruefen.
+- Keine Live-Abnahme oder Github Actions behaupten ohne echte Ausfuehrung.
