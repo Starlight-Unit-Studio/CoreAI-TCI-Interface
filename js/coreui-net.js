@@ -114,7 +114,7 @@
     if (kind === 'http') return 'Der Server meldet einen Fehler (HTTP ' + (Number(error.status) || 0) + ').';
     if (kind === 'json') return 'Die Serverantwort war unvollständig oder ungültig.';
     if (kind === 'network') return 'Die Verbindung zum Server ist gerade gestört.';
-    if (kind === 'render') return 'Die Chatansicht konnte einzelne Inhalte nicht darstellen. Die gespeicherten Nachrichten wurden nicht geloescht. Bitte die Seite nach einem Update neu laden.';
+    if (kind === 'render') return 'Die Chatansicht konnte einen Inhalt nicht darstellen. Der gespeicherte Verlauf bleibt erhalten. Bitte nach der Aktualisierung neu laden.';
     var code = error && error.message ? String(error.message).replace(/[^a-z0-9_]/gi, '').slice(0, 40) : '';
     return 'Der Server konnte den Verlauf nicht liefern' + (code ? ' (' + code + ')' : '') + '.';
   }
