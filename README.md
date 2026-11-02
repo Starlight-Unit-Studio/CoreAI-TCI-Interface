@@ -11,6 +11,10 @@ Current source version: `0.5.89` (numeric only). The last verified ZIP remains a
 
 ## Live-Quellen und natuerliche Fortschrittsanzeige (0.5.89)
 
+### Chat-Stabilitaet bei Websuche (Hotfix 0.5.89)
+
+Ein fehlender interner Verweis im Quellenkarussell konnte die Verlaufsansicht nach einem erfolgreichen API-Request abstuerzen lassen. Der Quellenbereich ist nun vor dem ersten WEB-Ereignis vollstaendig initialisiert. Die Verlaufsansicht wird erst nach erfolgreichem Rendern ausgetauscht. Anzeigeprobleme werden von HTTP-/Verbindungsfehlern getrennt und ohne automatische Endlosschleife gemeldet. Dies betrifft nur die Darstellung, nicht den gespeicherten Chat oder die Modellwarteschlange.
+
 Webquellen aus der normalen WEB-Recherche erscheinen jetzt unmittelbar beim SSE-Ereignis im Favicon-/URL-Karussell, unabhaengig vom animierten Erzaehltext. Schon beim Suchstart wird der Suchstatus angezeigt. Wiederholte agentische Suchschritte und technische Meldungen bleiben eingeklappt; Maras erste Recherchemeldung ist ein natuerlicher Satz. Trefferlose Recherchen zeigen keine erfundenen Webseiten. Der bestehende Playwright-Modus und sein einstellbares Browserfenster bleiben unabhaengig.
 
 ## Websuche, Quellenkarussell und Code-Schritte (0.5.88)
