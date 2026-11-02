@@ -9,7 +9,12 @@ require_once __DIR__ . '/console_personalization_store.php';
 function coreui_console_answer_style_hint(PDO $pdo,int $uid,bool $compact = false): string {
   $p = $GLOBALS['COREUI_PERSONALIZATION_CONTEXT'] ?? coreui_personalization_load($pdo,$uid);
   if (!is_array($p)) $p = coreui_personalization_defaults();
+  return coreui_console_answer_style_from_settings($p,$compact);
+}
 
+/** Pure formatter so style behavior can be tested without touching user data. */
+function coreui_console_answer_style_from_settings(array $p,bool $compact = false): string {
+  $p = coreui_personalization_normalise($p);
   $tones = [
     'standard' => 'natuerlich, klar und sachlich, mit persoenlicher Note',
     'freundlich' => 'freundlich, zugewandt und entspannt',
