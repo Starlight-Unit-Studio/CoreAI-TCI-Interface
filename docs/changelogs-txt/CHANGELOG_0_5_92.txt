@@ -1,0 +1,33 @@
+COREAI: TCI INTERFACE 0.5.92
+Datum: 03.11.2026
+
+HOTFIX: PERSONALISIERUNG SCHLUG MIT HTTP 404 FEHL
+In CoreAI 0.5.91 war die neue Einstellungsseite sichtbar, doch das
+Laden der kontogebundenen Einstellungen zeigte:
+"Personalisierung konnte nicht geladen werden: HTTP_404".
+
+URSACHE
+Die PHP-Datei api/personalization.php war in GitHub main vorhanden,
+wurde aber in den beiden Nginx-API-Allowlist-Regeln nicht freigegeben.
+Die danach folgende generische PHP-Sperre gab daher absichtlich 404
+zurueck. Dies ist ein Routingfehler, kein Hinweis auf fehlende
+MariaDB-Daten oder geloeschte Konversationen.
+
+BEHEBUNG
+- config/runtime/nginx.conf.template: Nur personalization.php in die
+  erlaubte API-PHP-Routenliste aufgenommen (Container).
+- config/nginx.conf.template: Identische begrenzte Freigabe (Native).
+- Der Catch-all-Schutz fuer alle anderen PHP-Dateien bleibt bestehen.
+- scripts/personalization-selftest.php kontrolliert jetzt zusaetzlich
+  beide Nginx-Route-Listen und die generische PHP-Sperre.
+- Die bestehenden Preflight-Pfade starten diesen Test bereits.
+- Installationsweg laedt den aktuellen Main-Quellstand und generiert
+  die Runtime-Nginx-Datei neu, keine manuelle Freigabe notwendig.
+
+AUSSCHLUESSE
+Keine Aenderung an Modelfile, Core, Werkzeugberechtigungen, Sessions,
+Gespeicherten Nachrichten, Datenbanktabellen oder der App-UI.
+Migration 022 wird weiterhin vom normalen Container-Installer geprueft.
+Nach Merge: CoreAI-Updater erneut ausfuehren und GET der
+Personalisierung im angemeldeten Browser testen; reale Netcup-Abnahme
+steht bis dahin aus.
