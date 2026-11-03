@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.5.92 - 03.11.2026
+
+- **Personalisierung repariert:** Das neue `api/personalization.php` aus 0.5.91 wurde von der Nginx-PHP-Allowlist nicht freigegeben, weshalb die funktionierende Einstellungsseite `HTTP_404` meldete.
+- **Gezielte Freigabe:** `config/nginx.conf.template` (native) und `config/runtime/nginx.conf.template` (Container) lassen nur den neuen, authentifizierten API-Endpunkt zusaetzlich passieren. Alle anderen nicht freigegebenen PHP-Skripte bleiben gesperrt.
+- **Regressionstest:** Der bestehende Personalisierungs-Selftest prueft jetzt, dass beide Nginx-Varianten die Route besitzen und der generische PHP-Deny weiterhin existiert; der Test laeuft bereits in beiden Preflights.
+- **Installationsweg:** Der bestehende CoreAI-Updater generiert die Runtime-Nginx-Datei aus dem aktualisierten Template neu. Keine Datenbank-, Modell-, Chat- oder Sicherheitspolicy-Aenderungen.
+- **Live-Abnahme offen:** Nach Merge und Update im angemeldeten Browser Personalisierung laden, speichern und erneut laden.
+
 ## 0.5.91 - 02.11.2026
 
 - **Mein CoreAI / Personalisierung:** Kontogebundene Einstellungen fuer Maras Tonfall, Herzlichkeit, Begeisterung, Emojis, Ueberschriften, Visualisierung, benutzerdefinierte Stilwuensche, Schreibstil-Anpassung und knappe Direktantworten.
