@@ -1,0 +1,46 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.5.92
+Datum: 03.11.2026
+Basis: main 0.5.91, PR #143 gemergt.
+Branch: fix/personalization-nginx-route-0592
+
+FEHLERBILD
+Live-Screenshot 03.11.2026 settings.html#personalisierung:
+"Personalisierung konnte nicht geladen werden: HTTP_404".
+Die HTML-Seite und alle neuen Einstellungs-Schalter aus 0.5.91
+waren bereits sichtbar.
+
+NACHGEWIESENE URSACHE IN main 0.5.91
+api/personalization.php existiert im GitHub-Repository.
+config/nginx.conf.template und config/runtime/nginx.conf.template
+haben aber eine explizite, abgeschlossene API-PHP-Allowlist.
+Dort fehlte personalization, waehrend die nachfolgende
+catch-all location ~ \.php$ einen 404 zurueckgibt. Die Datei
+wurde daher von Nginx nicht an PHP-FPM weitergegeben.
+
+HOTFIX
+- Einzig api/personalization.php in beiden Nginx-API-Allowlisten
+  hinzugefuegt; kein Wildcard-PHP-Zugriff.
+- scripts/personalization-selftest.php erkennt diese vergessene
+  Route kuenftig in beiden Templates und verlangt weiterhin
+  den PHP-Catchall-Deny.
+- Weiterhin versionierte Release-Dateien und Cachebootstrap.
+- Weder Datenbank noch Maras Modelfile geaendert.
+
+INSTALLATION
+1. PR zu main mergen.
+2. Den vorhandenen CoreAI-Updater fuer den neuen Main-Stand nutzen.
+   setup.sh synchronisiert die Quelle und startet scripts/install.sh;
+   dieses generiert var/nginx/coreui.conf aus dem geaenderten
+   config/runtime/nginx.conf.template und erzeugt den Stack neu.
+3. Nach erfolgreichem Preflight die Website neu laden.
+4. Einloggen und settings.html#personalisierung oeffnen.
+   Die Meldung HTTP_404 muss verschwinden und die Optionen muessen
+   aus api/personalization.php geladen und gespeichert werden koennen.
+5. Memory-Schalter synchron im KI-Profil pruefen; dann neu laden.
+6. Sicherheitskontrolle: andere, nicht freigegebene *.php-Dateien
+   bleiben weiterhin per 404 gesperrt.
+
+ABNAHMEGRENZE
+Die Quelltextursache ist bestimmt; keine direkte authentifizierte
+Netcup-/Android-Session in diesem GitHub-Connector verfuegbar.
+Erst nach dem realen Upgrade eine Live-Erfolgsbestaetigung geben.

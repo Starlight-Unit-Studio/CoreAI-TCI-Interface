@@ -75,4 +75,21 @@ personal_expect(str_contains(personal_source('api/account_export.php'),
   'data export omits preferences');
 personal_expect(str_contains(personal_source('database/migrations/022_user_personalization.sql'),
   'ON DELETE CASCADE'),'personal data lacks account deletion cascade');
+// A PHP file on disk is not sufficient: both nginx variants deny all
+// unlisted PHP endpoints with 404. Verify the exact route in the allowlists.
+foreach (['config/nginx.conf.template', 'config/runtime/nginx.conf.template'] as $template) {
+  $nginx = personal_source($template);
+  $prefix = 'location ~ ^/api/(?:';
+  $start = strpos($nginx, $prefix);
+  personal_expect($start !== false, 'missing nginx API allowlist: ' . $template);
+  $start += strlen($prefix);
+  $end = strpos($nginx, ')\\.php$ {', $start);
+  personal_expect($end !== false, 'invalid nginx API allowlist: ' . $template);
+  $names = explode('|', substr($nginx, $start, $end - $start));
+  personal_expect(in_array('personalization', $names, true),
+    'HTTP 404: personalization.php fehlt in nginx API allowlist: ' . $template);
+  personal_expect(str_contains($nginx, 'location ~ \\.php$ {')
+    && str_contains($nginx, 'try_files $uri =404;'),
+    'Nginx must keep the catch-all PHP deny and only route existing approved files: ' . $template);
+}
 echo "Personalisierungs-Selftest OK: Konto, Antwortstil, Memory, Suche, Export und UI verbunden.\n";

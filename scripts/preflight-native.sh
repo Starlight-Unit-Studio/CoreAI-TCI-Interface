@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.91 Per-account personalization and Markdown.
+# CoreAI: TCI Interface 0.5.92 Personalization Nginx route hotfix.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
