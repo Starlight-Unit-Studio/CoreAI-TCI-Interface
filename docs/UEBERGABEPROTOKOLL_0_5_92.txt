@@ -13,7 +13,7 @@ NACHGEWIESENE URSACHE IN main 0.5.91
 api/personalization.php existiert im GitHub-Repository.
 config/nginx.conf.template und config/runtime/nginx.conf.template
 haben aber eine explizite, abgeschlossene API-PHP-Allowlist.
-Dort fehlte personalisation/personalization, waehrend die nachfolgende
+Dort fehlte personalization, waehrend die nachfolgende
 catch-all location ~ \.php$ einen 404 zurueckgibt. Die Datei
 wurde daher von Nginx nicht an PHP-FPM weitergegeben.
 
