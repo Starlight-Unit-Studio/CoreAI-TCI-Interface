@@ -7,7 +7,18 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.91` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.92` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Personalisierung: HTTP-404-Fix (0.5.92)
+
+The account personalization API introduced in 0.5.91 is now explicitly
+allowed by both native and container Nginx API allowlists. Before this
+change, `settings.html#personalisierung` could render but
+`api/personalization.php` returned 404 due to the deliberate generic
+PHP-deny rule. This hotfix grants only that endpoint; other unlisted
+PHP files remain blocked. The existing personalization selftest now
+guards both Nginx templates. Apply the normal updater so Nginx
+configuration is regenerated before testing account save/load.
 
 ## Maras Personalisierung (0.5.91)
 
