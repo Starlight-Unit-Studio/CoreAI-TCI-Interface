@@ -34,10 +34,10 @@ An archived, separately checksum-verified historical `0.5.3-alpha` ZIP can still
 
 Once the initial setup has installed the host-side update service, **the owner can update CoreAI without SSH**.
 
-1. Sign in using the **owner** account and open **Settings → System → CoreAI Update**.
-2. Select **Check now** to request a GitHub check. The host also checks the repository's `main` branch **approximately every 10 minutes** when the systemd update service is running.
-3. When a new commit is available, open the **update window** (or use the update notification shown to the owner). Review the version and available change notes.
-4. Choose whether Ollama should be restarted afterwards, then select **Start update**. CoreAI creates a **database backup** first, runs its official setup and reports progress in the interface.
+1. Sign in using the **owner** account (German UI: **Inhaber**) and open **Settings → System → CoreAI Update**. In the German interface, this is **Einstellungen → System → CoreAI-Update**.
+2. Select **Check now** (German button: **JETZT PRÜFEN**) to request a GitHub check. The host also checks the repository's `main` branch **approximately every 10 minutes** when the systemd update service is running.
+3. When a new commit is available, choose **Open update window** (German: **UPDATE-FENSTER ÖFFNEN**), or use the notification shown to the owner. Review the version and available change notes.
+4. Choose whether Ollama should be restarted afterwards, then select **Start update** (German: **Update starten**). CoreAI creates a **database backup** first, runs its official setup and reports progress in the interface.
 5. During service restarts, connected users see a waiting screen. The application reloads automatically when CoreAI is available again. If an update fails, the owner can inspect its status and update log.
 
 **Important:** CoreAI checks for updates automatically, but **does not install them without the owner's action**. The owner may dismiss an update notification until the next page load. Other account roles cannot initiate updates.
