@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.4 documentation and version checks; existing voice selftests remain active.
+# CoreAI: TCI Interface 0.6.5: Vorlesen spricht englische Woerter, E.M.B.E.R., Uhrzeiten richtig und ohne lange Pausen; Eve-Pruefungen aktiv.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

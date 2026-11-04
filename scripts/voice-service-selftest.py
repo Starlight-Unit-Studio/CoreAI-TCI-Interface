@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""CoreAI 0.6.1: Mara's voice service (P20.3) without Pocket and without network.
+"""CoreAI 0.6.1 (0.6.5): Mara's voice service (P20.3) without Pocket and without network.
 
 What of an answer is read (code, tables, links, lists, emojis), the German
 text preparation in between, the parts (first one short), and the service
@@ -73,13 +73,55 @@ check('Ein Absatz, der umgebrochen ist.' in plain, 'wrapped lines joined')
 parts = speakable.plan(answer, textprep.prepare)
 check(parts[0].startswith('Ergebnis. Hier ist deine Übersicht vom vierten November zweitausendsechsundzwanzig'), 'first part: ' + parts[0])
 check(len(parts[0]) <= speakable.FIRST_PART and all(len(p) <= speakable.MAX_PART for p in parts), 'first part short, others bounded')
+check(all(len(parts[i]) <= speakable.part_limit(parts[:i]) for i in range(1, len(parts))), 'each part at most GROWTH times the one before')
 check(not re.search(r'\d', ' '.join(parts)) and 'index Punkt Ha Te Em El' in ' '.join(parts), 'no digits reach the voice')
-check(all(re.search(r'[.!?…:]$', p) for p in parts), 'every part ends a sentence')
+check(all(re.search(r'[.!?…:,;]$', p) for p in parts), 'every part ends with punctuation')
+# 0.6.5: a short first sentence and then a long one left seconds of silence (Eve computes
+# the long part while the short one plays). Parts now grow step by step, cut at commas.
+grown = speakable.split_parts('Hallo, ich bin Mara und helfe dir gern. ' + ('Das ist ein langer Satz, der immer weiter geht, '
+                              'weil er viele Nebensätze hat, und noch mehr Inhalt bringt. ') * 6 + 'Ende.')
+check(len(grown[0]) <= speakable.FIRST_PART and len(grown[1]) <= int(speakable.GROWTH * len(grown[0])), 'no long part right after a short one')
+check(all(len(grown[i]) <= speakable.part_limit(grown[:i]) for i in range(1, len(grown))) and max(map(len, grown)) > 2 * len(grown[0]),
+      'parts grow step by step: ' + repr([len(g) for g in grown]))
+check(' '.join(grown).count('langer Satz') == 6 and grown[-1].endswith('Ende.'), 'nothing lost')
+tiny = speakable.split_parts('Ja. ' + 'Wort ' * 30)
+check(len(tiny[0]) > 40 and all(len(tiny[i]) <= speakable.part_limit(tiny[:i]) for i in range(1, len(tiny)))
+      and ' '.join(tiny).count('Wort') == 30, 'a tiny first sentence is filled up, the next part stays within GROWTH: ' + repr([len(t) for t in tiny]))
+check(not any(re.search(r'[a-zäöü]\.$', g) and not g.endswith(('Inhalt bringt.', 'gern.', 'Ende.')) for g in grown),
+      'a sentence cut between parts ends with a comma, not a full stop')
 long_sentence = 'Wort ' * 200
 cut = speakable.split_parts(long_sentence)
 check(len(cut) > 2 and all(len(p) <= speakable.MAX_PART + 1 for p in cut) and ''.join(cut).count('Wort') == 200, 'long sentences cut at words, nothing lost')
+check(all(p.endswith(',') for p in cut[:-1]) and cut[-1].endswith('.'), 'a cut sentence goes on with a comma')
+check(speakable.plan('Ich bin die TCI von E.M.B.E.R. und helfe dir gern bei allem.', textprep.prepare)
+      == ['Ich bin die TCI von Ember und helfe dir gern bei allem.'], 'E.M.B.E.R. is read as a name')
 check(speakable.plan('```\nnur code\n```', textprep.prepare) == ['Codeblock ausgelassen.'], 'only code: says so')
 check(speakable.plan('   ', textprep.prepare) == [], 'nothing to read')
+
+# --- 0.6.5: no long silence -------------------------------------------------------------------
+service_module = load('voice_service', ROOT / 'tools' / 'voice' / 'voice_service.py')
+RATE = 24000
+
+
+def tone(seconds: float) -> list[float]:
+    return [0.3 * __import__('math').sin(2 * 3.14159 * 220 * i / RATE) for i in range(int(RATE * seconds))]
+
+
+def quiet(seconds: float) -> list[float]:
+    return [0.0] * int(RATE * seconds)
+
+
+pcm = service_module.pcm16(quiet(1.0) + tone(0.5) + quiet(0.2) + tone(0.5) + quiet(2.5) + tone(0.5) + quiet(1.5))
+tight = service_module.tighten_pcm(pcm, RATE)
+seconds = len(tight) / 2 / RATE
+expected = service_module.EDGE_S * 2 + 1.5 + 0.2 + service_module.MAX_PAUSE_S
+check(abs(seconds - expected) < 0.03, f'silence: edges cut to {service_module.EDGE_S} s, long pause to {service_module.MAX_PAUSE_S} s, '
+      f'short pause kept ({seconds:.2f} s, expected {expected:.2f} s)')
+plain = service_module.pcm16(tone(1.0))
+check(service_module.tighten_pcm(plain, RATE) == plain, 'speech without silence stays as it is')
+check(service_module.tighten_pcm(service_module.pcm16(quiet(1.0)), RATE) == service_module.pcm16(quiet(1.0)), 'only silence: unchanged')
+source_service = (ROOT / 'tools' / 'voice' / 'voice_service.py').read_text(encoding='utf-8')
+check('return wav_from_pcm(tighten_pcm(pcm16(samples), rate), rate)' in source_service, 'every spoken part is tightened')
 
 # --- The service with the probe engine -------------------------------------------------------
 with socket.socket() as probe_socket:
@@ -112,7 +154,7 @@ try:
             pass
         time.sleep(0.1)
     health = json.loads(call('GET', '/health')[2])
-    check(health['ok'] and health['ready'] and not health['loading'] and health['textprep'] == 'de-1' and health['cores'] == 4, 'health')
+    check(health['ok'] and health['ready'] and not health['loading'] and health['textprep'] == 'de-2' and health['cores'] == 4, 'health')
     status, _, body = call('POST', '/plan', {'text': answer})
     check(status == 200 and json.loads(body)['parts'] == parts, 'plan from the service is the same')
     status, ctype, wav = call('POST', '/speak', {'text': 'Hallo, ich bin Mara.'})
@@ -137,6 +179,31 @@ finally:
 check(f'bereit auf 127.0.0.1:{port}' in output, 'listens on loopback only')
 check('Hallo, ich bin Mara.' not in output and 'Erster Satz' not in output, 'no spoken text in the log')
 
+# --- 0.6.5: new code after an update restarts the service ---------------------------------------
+import tempfile
+with tempfile.TemporaryDirectory() as tmp:
+    marker = Path(tmp) / 'code.txt'
+    marker.write_text('alt', encoding='utf-8')
+    with socket.socket() as probe_socket:
+        probe_socket.bind(('127.0.0.1', 0))
+        watch_port = probe_socket.getsockname()[1]
+    watcher = subprocess.Popen([sys.executable, '-I', str(ROOT / 'tools' / 'voice' / 'voice_service.py')],
+                               env=dict(os.environ, COREAI_VOICE_ENGINE='probe', COREAI_VOICE_PORT=str(watch_port),
+                                        COREAI_VOICE_WATCH_S='0.2', COREAI_VOICE_WATCH_FILES=str(marker)),
+                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    time.sleep(0.8)
+    check(watcher.poll() is None, 'the service keeps running while nothing changes')
+    marker.write_text('neu', encoding='utf-8')
+    os.utime(marker, ns=(time.time_ns() + 10**9, time.time_ns() + 10**9))
+    try:
+        code = watcher.wait(timeout=10)
+    except subprocess.TimeoutExpired:
+        watcher.kill()
+        code = None
+    log = watcher.communicate(timeout=10)[0]
+    check(code == 0 and 'Sprachdienst startet neu' in log, 'a changed file ends the service cleanly, Docker starts it again')
+check('COREAI_VOICE_WATCH_S: "20"' in (ROOT / 'compose.yaml').read_text(encoding='utf-8'), 'compose turns the watcher on')
+
 # --- Wiring ------------------------------------------------------------------------------------
 source = (ROOT / 'tools' / 'voice' / 'voice_service.py').read_text(encoding='utf-8')
 check("ThreadingHTTPServer(('127.0.0.1', port)" in source, 'bound to 127.0.0.1')
@@ -149,7 +216,7 @@ check('COPY docker/tts-spike/constraints-pocket.txt /tmp/constraints.txt' in doc
       and 'download.pytorch.org/whl/cpu' in dockerfile and 'USER 33:33' in dockerfile, 'image: same pins as the voice test, CPU torch, not root')
 compose = (ROOT / 'compose.yaml').read_text(encoding='utf-8')
 block = compose[compose.index('\n  voice:\n'):compose.index('\n  pyworker:\n')]
-for needle in ('profiles: ["voice"]', 'user: "33:33"', 'read_only: true', 'cpus: ${COREUI_VOICE_CORES:-4}', 'mem_limit: 6g',
+for needle in ('profiles: ["voice"]', 'restart: unless-stopped', 'user: "33:33"', 'read_only: true', 'cpus: ${COREUI_VOICE_CORES:-4}', 'mem_limit: 6g',
                '- .:/var/www/coreui:ro', '- ./var/voice-models:/models', 'HF_HOME: /models/hf'):
     check(needle in block, 'compose voice: ' + needle)
 check('- ./var/voice_cache:/var/www/coreui/var/voice_cache' in compose, 'PHP may write the read-aloud cache')

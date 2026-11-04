@@ -55,10 +55,11 @@ def load_textprep():
 
 
 def spoken_text(reg: dict, text: str) -> str:
-    """0.5.98: what the voice really gets (numbers, dates, file names as words)."""
-    if reg.get('textprep') != 'de-1':
+    """0.5.98: what the voice really gets (numbers, dates, file names as words; 0.6.5 de-2)."""
+    prep = load_textprep()
+    if reg.get('textprep') != prep.VERSION:
         return text
-    return load_textprep().prepare(text)
+    return prep.prepare(text)
 
 
 def use_hf_home(models: Path, group: dict) -> None:

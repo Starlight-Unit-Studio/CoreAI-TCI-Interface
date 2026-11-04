@@ -93,7 +93,7 @@ for gid, source, language in (('pocket-de-stimmdatei', 'pocket-de-kerstin', 'ger
 run_source = (ROOT / 'tools' / 'tts_spike' / 'run.py').read_text(encoding='utf-8')
 check("export_model_state(states[0], str(target))" in run_source and "key='voice-file'" in run_source, 'the clone exports its voice file')
 check(next(v for v in reg['voices'] if v['id'] == 'chatterbox-standard')['gender'] == 'männlich', 'the Chatterbox standard voice is male')
-check(reg['textprep'] == 'de-1', 'German text preparation on')
+check(reg['textprep'] == 'de-2', 'German text preparation on')
 check(all(re.match(r'^de_rhasspy-[0-9]{4}\.flac$', c) for c in ref['clips']), 'reference clips by name')
 check(reg['groups']['chatterbox']['allow'] == ['ve.pt', 't3_mtl23ls_v2.safetensors', 's3gen.pt', 'grapheme_mtl_merged_expanded_v1.json', 'conds.pt'],
       'Chatterbox loads only the multilingual files')
@@ -108,7 +108,7 @@ check(mara['format'] == 1 and mara['voice']['name'] == 'eve' and mara['model'] =
 check(mara['engine']['package'] == reg['engines']['pocket']['package']
       and mara['engine']['package'] in (ROOT / 'docker' / 'tts-spike' / 'constraints-pocket.txt').read_text(encoding='utf-8').splitlines(),
       'the same pinned engine as in the test')
-check(mara['textprep'] == reg['textprep'] == 'de-1', 'the same text preparation')
+check(mara['textprep'] == reg['textprep'] == 'de-2', 'the same text preparation')
 check([f['key'] for f in mara['files']] == ['model', 'tokenizer', 'voice'], 'model, tokenizer and voice state registered')
 for entry in mara['files']:
     check(re.fullmatch(r'[0-9a-f]{64}', entry['sha256']) is not None and re.fullmatch(r'[0-9a-f]{40}', entry['revision']) is not None
@@ -153,6 +153,54 @@ for text, words in (
 ):
     check(prep.prepare(text) == words, f'{text!r} -> {prep.prepare(text)!r}')
 check(not re.search(r'\d', ' '.join(spoken.values())), 'no digit reaches a voice in the test sentences')
+
+# --- 0.6.5: de-2, after the first live read-aloud (dotted names, times, English words) ------------
+check(prep.VERSION == 'de-2', 'text preparation de-2')
+for text, words in (
+    # E.M.B.E.R. broke the reading; dotted letters are a name or spelled.
+    ('Ich bin die TCI von E.M.B.E.R. und helfe dir.', 'Ich bin die TCI von Ember und helfe dir.'),
+    ('Das E.M.B.E.R.-Framework läuft auf E.M.B.E.R. Das ist neu.', 'Das Ember-Freimwörk läuft auf Ember. Das ist neu.'),
+    ('Teil von e.m.b.e.r.', 'Teil von Ember.'),
+    ('U.S.A. und J.R.R. Tolkien', 'U Es A und Jot Er Er Tolkien'),
+    ('Das ist z.B. so, d.h. es geht, i.d.R. gut, etc. Die Sache.',
+     'Das ist zum Beispiel so, das heißt es geht, in der Regel gut, et cetera. Die Sache.'),
+    # 12:00-20:00 CET came out as gibberish.
+    ('Geöffnet von 12:00-20:00 CET.', 'Geöffnet von zwölf Uhr bis zwanzig Uhr mitteleuropäischer Zeit.'),
+    ('Am Wochenende 10:00 \u2013 14:30 Uhr, sonst 9-17 Uhr.', 'Am Wochenende zehn Uhr bis vierzehn Uhr dreißig, sonst neun bis siebzehn Uhr.'),
+    ('Server-Zeit UTC+2, Sommer CEST, um 8.30 Uhr.', 'Server-Zeit U Te Ze plus zwei, Sommer mitteleuropäischer Sommerzeit, um acht Uhr dreißig.'),
+    ('Start 18:45, Laufzeit 1:02:30, Pause 2:30 min.',
+     'Start achtzehn Uhr fünfundvierzig, Laufzeit eine Stunde, zwei Minuten und dreißig Sekunden, Pause zwei Minuten und dreißig Sekunden.'),
+    ('Am 2026-11-04 und am 4.11. geht es.', 'Am vierten November zweitausendsechsundzwanzig und am vierten November geht es.'),
+    ('Format 16:9, Ergebnis 2:1, Seiten 3-5, 2024\u20132026.',
+     'Format sechzehn zu neun, Ergebnis zwei zu eins, Seiten drei bis fünf, zweitausendvierundzwanzig bis zweitausendsechsundzwanzig.'),
+    ('Version v0.6.3 und Python 3.11', 'Version null Punkt sechs Punkt drei und Paiten drei Punkt elf'),
+    ('Es ist ~20 °C -> perfekt - wirklich.', 'Es ist circa zwanzig Grad Celsius, perfekt, wirklich.'),
+    ('Offen 8:00\u201412:00, Pause \u2014 dann weiter.', 'Offen acht Uhr bis zwölf Uhr, Pause, dann weiter.'),
+    ('Schreib an info@starlight-unit.de', 'Schreib an info ät starlait-junit Punkt De'),
+    # English words were read the German way.
+    ('Das Update für den Browser und die Cloud ist online, check mal das Interface und den Chat.',
+     'Das Apdeit für den Brauser und die Klaud ist onlein, tscheck mal das Interfehs und den Tschätt.'),
+    ('Updates, updaten, geupdatet, Chats, chatten, Teams, Caches, Interfaces, debuggen, Designerin, Updatefenster, Checkliste.',
+     'Apdeits, apdeiten, geapdeitet, Tschätts, tschätten, Tiems, Käsches, Interfehses, dibaggen, Disainerin, Apdeit-fenster, Tscheck-liste.'),
+    ('Mara Thorne von CoreAI: TCI Interface, OK, sorry, die E-Mail-Adresse.',
+     'Mara Thorn von Kohr Ey Ei: TCI Interfehs, Okeh, sorri, die Imeil-Adresse.'),
+    # The operator's ear test chose "Kohr Ey Ei" (English AI) over Äi, Ej and Eh; OpenAI the same way.
+    ('CoreAI und OpenAI', 'Kohr Ey Ei und Oupen Ey Ei'),
+    # Review of PR #156: scores by context, Min. with its stop, decimals vs versions, sentence stops after names.
+    ('Ergebnis 2:10, Format 16:09, es steht 3:2, gewann mit 4:12, um 18:45.',
+     'Ergebnis zwei zu zehn, Format sechzehn zu neun, es steht drei zu zwei, gewann mit vier zu zwölf, um achtzehn Uhr fünfundvierzig.'),
+    ('Pause 2:30 Min. Danach weiter.', 'Pause zwei Minuten und dreißig Sekunden. Danach weiter.'),
+    ('Der Wert ist 3.14 Euro, Python 3.11, Kapitel 3.2, 0.6.3.',
+     'Der Wert ist drei Komma eins vier Euro, Paiten drei Punkt elf, Kapitel drei Punkt zwei, null Punkt sechs Punkt drei.'),
+    ('Teil von E.M.B.E.R. Morgen geht es weiter, mit E.M.B.E.R. Anschließend mehr. Das E.M.B.E.R. Framework.',
+     'Teil von Ember. Morgen geht es weiter, mit Ember. Anschließend mehr. Das Ember Freimwörk.'),
+    ('Homer, Corelli, Gamelan, Hostessen, Hosts, Gamer, Updater.', 'Homer, Corelli, Gamelan, Hostessen, Housts, Gehmer, Apdeiter.'),
+    # German words that only look like English ones stay.
+    ('Tablette, Mailand, Hostie, hier, Bugatti, Eventuell, Homeoffice.', 'Tablette, Mailand, Hostie, hier, Bugatti, Eventuell, Houm-office.'),
+):
+    check(prep.prepare(text) == words, f'de-2: {text!r} -> {prep.prepare(text)!r}')
+for key, (spoken_word, kind) in prep.PRONUNCIATION.items():
+    check(key == key.lower() and kind in ('n', 'w', 'x') and spoken_word.strip() == spoken_word and spoken_word, 'pronunciation entry ' + key)
 
 # --- Pinned images ------------------------------------------------------------------
 docker = ROOT / 'docker' / 'tts-spike'
@@ -276,7 +324,7 @@ check("[[ \"$stamp\" =~ ^[0-9]{8}-[0-9]{6}$ ]] && rm -rf -- \"${RUNS:?}/$stamp\"
 with tempfile.TemporaryDirectory() as tmp:
     tmp_path = Path(tmp)
     test_reg = {
-        'format': 1, 'sample_cores': 4, 'textprep': 'de-1', 'sentences': reg['sentences'], 'references': reg['references'],
+        'format': 1, 'sample_cores': 4, 'textprep': 'de-2', 'sentences': reg['sentences'], 'references': reg['references'],
         'engines': {'probe': {'label': 'Testton', 'package': 'probe', 'code_license': 'MIT'}},
         'groups': {'probe-a': {'engine': 'probe', 'label': 'Testton A'}, 'probe-b': {'engine': 'probe', 'label': 'Testton B'},
                    'probe-klon': {'engine': 'probe', 'label': 'Testton Klon', 'clone': True, 'hf_home': 'hf-clone', 'reference': 'kerstin'},
@@ -331,7 +379,7 @@ with tempfile.TemporaryDirectory() as tmp:
     kaputt = next(v for v in result['voices'] if v['id'] == 'probe-a-kaputt')
     check(eins['ok'] and len(eins['samples']) == 7, 'every sentence spoken')
     check(not kaputt['ok'] and 'absichtlich defekt' in kaputt['error'], 'a broken voice is reported, the group goes on')
-    check(result['textprep'] == 'de-1', 'text preparation recorded')
+    check(result['textprep'] == 'de-2', 'text preparation recorded')
     s2 = next(x for x in eins['samples'] if x['sentence'] == 's2')
     check(abs(s2['audio_s'] - 0.03 * len(spoken['s2'])) < 0.01, 'the engine got the prepared text')
     for sample in eins['samples']:
@@ -350,7 +398,7 @@ with tempfile.TemporaryDirectory() as tmp:
     report = json.loads((out / 'report.json').read_text())
     check(report['format'] == 1 and report['stamp'] == '20261104-120000' and report['sample_cores'] == 4, 'report head')
     check(report['host'] == ['Zeit: test', 'CPU(s): 20'] and len(report['sentences']) == 7, 'host and sentences')
-    check(report['textprep'] == 'de-1' and {x['id']: x['spoken'] for x in report['sentences']} == spoken, 'the report names the spoken text')
+    check(report['textprep'] == 'de-2' and {x['id']: x['spoken'] for x in report['sentences']} == spoken, 'the report names the spoken text')
     voices = {v['id']: v for v in report['voices']}
     check(set(voices) == {'probe-a-eins', 'probe-a-kaputt', 'probe-b-zwei', 'probe-klon', 'probe-datei'}, 'every voice in the report')
     check(not voices['probe-klon']['ok'] and 'Klon-Gewichte von Kyutai nicht freigegeben' in voices['probe-klon']['error'], 'the locked clone shows why')

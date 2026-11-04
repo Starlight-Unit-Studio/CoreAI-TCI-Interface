@@ -11,13 +11,22 @@ into the words a German speaker would say, before the text reaches any engine:
   index.html        index Punkt Ha Te Em El
   z. B.             zum Beispiel
 
+de-2 (0.6.5), after the first live read-aloud:
+  E.M.B.E.R.        Ember            (other dotted letters are spelled: U.S.A. -> U Es A)
+  12:00-20:00 CET   zwölf Uhr bis zwanzig Uhr mitteleuropäischer Zeit
+  2026-11-04        vierte November zweitausendsechsundzwanzig
+  3-5, 16:9, 2:1    drei bis fünf, sechzehn zu neun, zwei zu eins
+  v0.6.3, 3.11      Version null Punkt sechs Punkt drei, drei Punkt elf
+  Update, Browser   Apdeit, Brauser  (English words respelled so a German voice says them right)
+  dash, arrow      a comma between words (a short pause instead of a read sign)
+
 Standard library only, so the host (report) and every engine image can use it.
 """
 from __future__ import annotations
 
 import re
 
-VERSION = 'de-1'
+VERSION = 'de-2'
 
 ONES = ['null', 'eins', 'zwei', 'drei', 'vier', 'fünf', 'sechs', 'sieben', 'acht', 'neun', 'zehn', 'elf', 'zwölf',
         'dreizehn', 'vierzehn', 'fünfzehn', 'sechzehn', 'siebzehn', 'achtzehn', 'neunzehn']
@@ -38,7 +47,73 @@ ABBREVIATIONS = [
     (r'\bz\.\s?B\.', 'zum Beispiel'), (r'\bd\.\s?h\.', 'das heißt'), (r'\bu\.\s?a\.', 'unter anderem'),
     (r'\busw\.', 'und so weiter'), (r'\bbzw\.', 'beziehungsweise'), (r'\bca\.', 'circa'), (r'\bevtl\.', 'eventuell'),
     (r'\bggf\.', 'gegebenenfalls'), (r'\bNr\.', 'Nummer'), (r'\binkl\.', 'inklusive'), (r'\bvgl\.', 'vergleiche'),
+    (r'\bi\.\s?d\.\s?R\.', 'in der Regel'), (r'\bo\.\s?[äÄ]\.', 'oder Ähnliches'), (r'\bs\.\s?o\.', 'siehe oben'),
+    (r'\bs\.\s?u\.', 'siehe unten'), (r'\bu\.\s?U\.', 'unter Umständen'), (r'\bz\.\s?T\.', 'zum Teil'),
+    (r'\bv\.\s?a\.', 'vor allem'), (r'\be\.\s?V\.', 'eingetragener Verein'), (r'\betc\.', 'et cetera'),
+    (r'\bDr\.', 'Doktor'), (r'\bProf\.', 'Professor'), (r'\bzzgl\.', 'zuzüglich'), (r'\bggü\.', 'gegenüber'),
+    (r'(?<!\d\s)(?<!\d)\bmax\.', 'maximal'), (r'(?<!\d\s)(?<!\d)\bmin\.', 'minimal'), (r'\bmind\.', 'mindestens'),
+    (r'\bTel\.', 'Telefon'), (r'\bStr\.', 'Straße'), (r'\bkm/h\b', 'Kilometer pro Stunde'), (r'\bund/oder\b', 'und oder'),
 ]
+# Dotted letters with their own spoken name; all others are spelled letter by letter.
+DOTTED = {'EMBER': 'Ember'}
+# A dotted name at the end of a sentence keeps its full stop when one of these starts the next.
+# German nouns are capitalized as well ("E.M.B.E.R. Framework"), so this is a list of words that
+# usually begin a sentence, not every capitalized word.
+SENTENCE_STARTERS = {
+    'Das', 'Die', 'Der', 'Dies', 'Diese', 'Dieser', 'Dieses', 'Den', 'Dem', 'Ein', 'Eine', 'Einen', 'Kein', 'Keine',
+    'Es', 'Ich', 'Du', 'Wir', 'Sie', 'Er', 'Ihr', 'Man', 'Mein', 'Meine', 'Dein', 'Deine', 'Sein', 'Seine', 'Unser', 'Unsere',
+    'Wenn', 'Dann', 'Damit', 'Dabei', 'Danach', 'Davor', 'Dafür', 'Darum', 'Deshalb', 'Daher', 'Dadurch', 'Trotzdem',
+    'Hier', 'Jetzt', 'Heute', 'Morgen', 'Gestern', 'Bald', 'Später', 'Zuerst', 'Zuletzt', 'Anschließend', 'Außerdem',
+    'Zudem', 'Allerdings', 'Leider', 'Gerne', 'Gern', 'Natürlich', 'Vielleicht', 'Bitte', 'Danke', 'Auch', 'So', 'Also',
+    'Aber', 'Und', 'Oder', 'Doch', 'Nur', 'Noch', 'Schon', 'Ja', 'Nein', 'Okay', 'Was', 'Wie', 'Wo', 'Wann', 'Warum',
+    'Wer', 'Welche', 'Welcher', 'Im', 'In', 'Am', 'An', 'Auf', 'Aus', 'Bei', 'Mit', 'Nach', 'Vor', 'Für', 'Ohne', 'Seit',
+    'Zum', 'Zur', 'Alle', 'Viele', 'Einige', 'Mara', 'Eve',
+}
+# A colon between two numbers after these words is a score or a ratio, not a time (Ergebnis 2:10).
+SCORE_WORDS = (r'(?i:Ergebnis|Endstand|Spielstand|Zwischenstand|Halbzeitstand|Stand|steht(?:\s+es)?|Format|Verhältnis|'
+               r'Seitenverhältnis|gewinnt|gewann|gewonnen|verliert|verlor|verloren|Sieg|Niederlage|Remis|Tore)')
+# Two numbers with one dot are said with "Punkt" only after these words (Python 3.11, Kapitel 3.2);
+# otherwise they are a decimal number (3.14 -> drei Komma eins vier). Three or four parts are always a version.
+POINT_WORDS = re.compile(r'(?i)\b(?:version|release|update|python|php|node(?:js)?|ubuntu|debian|gemma\d?|ollama|mariadb|nginx|'
+                         r'docker|pocket|torch|pytorch|playwright|chrome|firefox|android|ios|macos|windows|kernel|coreai|'
+                         r'kapitel|abschnitt|punkt|schritt|paragraph|nummer|nr)\.?\s*$')
+TIME_ZONES = {'CET': 'mitteleuropäischer Zeit', 'MEZ': 'mitteleuropäischer Zeit', 'CEST': 'mitteleuropäischer Sommerzeit',
+              'MESZ': 'mitteleuropäischer Sommerzeit', 'UTC': 'U Te Ze', 'GMT': 'Ge Em Te'}
+DOMAINS = {'de': 'De', 'com': 'Komm', 'org': 'Org', 'net': 'Nett', 'io': 'I O', 'ai': 'A I', 'eu': 'E U', 'info': 'Info',
+           'app': 'Äpp', 'dev': 'Dev'}
+
+# English words a German voice misreads, respelled the German way. Kinds:
+#   n  noun: endings (Updates, Browsern) and compounds (Updatefenster -> Apdeit-fenster)
+#   w  word: endings only (online, cool, Jobs)
+#   x  exact: the word, or with a plural s (names, brands, fixed forms)
+PRONUNCIATION = {
+    'update': ('Apdeit', 'n'), 'upgrade': ('Apgreid', 'n'), 'download': ('Daunloud', 'n'), 'upload': ('Aploud', 'n'),
+    'browser': ('Brauser', 'n'), 'chat': ('Tschätt', 'n'), 'chatbot': ('Tschättbott', 'n'), 'cloud': ('Klaud', 'n'),
+    'interface': ('Interfehs', 'n'), 'core': ('Kohr', 'n'), 'team': ('Tiem', 'n'), 'feature': ('Fietscher', 'n'),
+    'software': ('Softwär', 'n'), 'hardware': ('Hardwär', 'n'), 'website': ('Websait', 'n'), 'framework': ('Freimwörk', 'n'),
+    'container': ('Kontehner', 'n'), 'account': ('Äkaunt', 'n'), 'feedback': ('Fiedbäck', 'n'), 'meeting': ('Mieting', 'n'),
+    'design': ('Disain', 'n'), 'backup': ('Bäckapp', 'n'), 'cache': ('Käsch', 'n'), 'setup': ('Settapp', 'n'),
+    'laptop': ('Läptop', 'n'), 'smartphone': ('Smartfohn', 'n'), 'display': ('Displeh', 'n'), 'game': ('Gehm', 'n'),
+    'gaming': ('Gehming', 'n'), 'player': ('Pleijer', 'n'), 'level': ('Lewel', 'n'), 'workflow': ('Wörkflou', 'n'),
+    'highlight': ('Hailait', 'n'), 'home': ('Houm', 'n'), 'host': ('Houst', 'w'), 'hosting': ('Housting', 'n'),
+    'shell': ('Schell', 'n'), 'preflight': ('Priflait', 'n'), 'memory': ('Memmori', 'n'), 'thread': ('Tredd', 'n'),
+    'release': ('Rilies', 'n'), 'dashboard': ('Däschbord', 'n'), 'pipeline': ('Paiplain', 'n'), 'queue': ('Kju', 'n'),
+    'voice': ('Weus', 'n'), 'email': ('Imeil', 'n'), 'weekend': ('Wiekend', 'n'), 'headset': ('Hedset', 'n'),
+    'keyboard': ('Kiebord', 'n'), 'password': ('Passwörd', 'n'), 'logout': ('Logaut', 'n'), 'user': ('Juser', 'n'),
+    'check': ('Tscheck', 'n'), 'debugging': ('Dibagging', 'n'), 'gamer': ('Gehmer', 'n'), 'updater': ('Apdeiter', 'n'),
+    'online': ('onlein', 'w'), 'offline': ('offlein', 'w'), 'cool': ('kuhl', 'w'), 'nice': ('neis', 'w'), 'fan': ('Fän', 'w'),
+    'job': ('Dschobb', 'w'), 'show': ('Schou', 'w'), 'bug': ('Bagg', 'w'), 'debug': ('Dibagg', 'w'), 'mail': ('Meil', 'w'),
+    'unit': ('Junit', 'w'),
+    'okay': ('Okeh', 'x'), 'ok': ('Okeh', 'x'), 'hi': ('Hai', 'x'), 'sorry': ('Sorri', 'x'), 'live': ('leif', 'x'),
+    'tablet': ('Täblet', 'x'), 'gecheckt': ('getscheckt', 'x'), 'geupdatet': ('geapdeitet', 'x'), 'gechattet': ('getschättet', 'x'),
+    'coreai': ('Kohr Ey Ei', 'x'), 'eve': ('Iev', 'x'), 'thorne': ('Thorn', 'x'), 'starlight': ('Starlait', 'x'),
+    'python': ('Paiten', 'x'), 'javascript': ('Dschawaskript', 'x'), 'java': ('Dschawa', 'x'), 'github': ('Gitt Habb', 'x'),
+    'google': ('Guhgel', 'x'), 'youtube': ('Jutjub', 'x'), 'whatsapp': ('Wotsäpp', 'x'), 'iphone': ('Eifohn', 'x'),
+    'windows': ('Windous', 'x'), 'chrome': ('Krohm', 'x'), 'firefox': ('Feierfox', 'x'), 'chatgpt': ('Tschätt Ge Pe Te', 'x'),
+    'claude': ('Klohd', 'x'), 'openai': ('Oupen Ey Ei', 'x'), 'nvidia': ('Enwidia', 'x'), 'microsoft': ('Maikrosoft', 'x'),
+    'apple': ('Äppel', 'x'), 'amazon': ('Ämason', 'x'), 'searxng': ('Sörks En Ge', 'x'), 'playwright': ('Pleirait', 'x'),
+}
+ENDINGS = ('s', 'e', 'es', 'en', 'er', 'em', 'ern', 'ers', 'n', 't', 'te', 'ten', 'tet', 'st', 'in', 'innen', 'erin', 'erinnen')
 
 
 def _under_100(n: int, final: bool = True) -> str:
@@ -126,6 +201,59 @@ def _number(token: str) -> str:
     return cardinal(value)
 
 
+def _match_case(original: str, spoken: str) -> str:
+    return (spoken[:1].upper() if original[:1].isupper() else spoken[:1].lower()) + spoken[1:]
+
+
+def _attach(spoken: str, key: str, ending: str) -> str:
+    """Respelling plus a German ending: updaten -> apdeiten, Caches -> Käsches, chatten -> tschätten."""
+    if key.endswith('e') and ending in ('n', 'r', 't', 'te', 'ten', 'tet', 'st'):
+        ending = 'e' + ending
+    if ending == 's' and re.search(r'(?:s|ß|sch)$', spoken):
+        ending = 'es'
+    if len(spoken) >= 2 and spoken[-1] == spoken[-2] and ending[:1] == spoken[-1]:
+        ending = ending[1:]
+    return spoken + ending
+
+
+def respell(word: str) -> str:
+    """An English word the German way (PRONUNCIATION); any other word unchanged."""
+    lower = word.lower()
+    for size in range(len(lower), 1, -1):
+        entry = PRONUNCIATION.get(lower[:size])
+        if not entry:
+            continue
+        spoken, kind = entry
+        key, rest = lower[:size], lower[size:]
+        if rest[:1] == key[-1:] and rest[1:] in ENDINGS:  # debuggen, chatten: English doubles the last letter
+            rest = rest[1:]
+        if not rest:
+            return _match_case(word, spoken)
+        if kind == 'x':
+            return _match_case(word, _attach(spoken, key, 's')) if rest == 's' else word
+        if rest in ENDINGS:
+            return _match_case(word, _attach(spoken, key, rest))
+        if kind == 'n' and len(rest) >= 4 and word[size:].islower():
+            return _match_case(word, spoken) + '-' + word[size:]
+        return word
+    return word
+
+
+def _sentence_ends(m: re.Match) -> bool:
+    """After a dotted abbreviation: does a new sentence start (end of line, or a typical first word)?"""
+    rest = m.string[m.end():]
+    following = re.match(r'[ \t]*(\w+)', rest)
+    return not rest.strip() or rest.lstrip(' \t').startswith('\n') or bool(following and following.group(1) in SENTENCE_STARTERS)
+
+
+def _amount(value: int, one: str, many: str) -> str:
+    return f'eine {one}' if value == 1 else f'{cardinal(value)} {many}'
+
+
+def _clock_words(hours: int, minutes: int) -> str:
+    return ('ein' if hours == 1 else cardinal(hours)) + ' Uhr' + (' ' + cardinal(minutes) if minutes else '')
+
+
 _MONTH_RE = '|'.join(MONTHS)
 _PREFIX_RE = r'(?P<pre>\b(?i:am|vom|zum|den|dem|im|ab|seit|bis|nach|vor)\s+)?'
 _EXT_RE = '|'.join(sorted(EXTENSIONS, key=len, reverse=True))
@@ -135,13 +263,42 @@ def prepare(text: str) -> str:
     """The text as a German speaker says it."""
     out = text
     for pattern, words in ABBREVIATIONS:
-        out = re.sub(pattern, words, out)
+        out = re.sub(pattern, lambda m, words=words: words + ('.' if m.group(0).endswith('.') and _sentence_ends(m) else ''), out)
     out = re.sub(r'\s&\s', ' und ', out)
+    out = re.sub(r'\b[Ee]-[Mm]ail', 'Imeil', out)
+    out = re.sub(r'\b[Kk]now-[Hh]ow\b', 'Nouhau', out)
+
+    def dotted(m: re.Match) -> str:
+        raw = m.group(0)
+        letters = raw.replace('.', '')
+        if len(letters) == 2 and not letters.isupper():
+            return raw
+        spoken = DOTTED.get(letters.upper()) or ' '.join(LETTERS.get(c.lower(), c) for c in letters)
+        return spoken + ('.' if raw.endswith('.') and _sentence_ends(m) else '')
+    out = re.sub(r'(?<![\w.])(?:[A-Za-zÄÖÜäöü]\.){2,}(?:[A-Za-zÄÖÜäöü](?![\w.]))?', dotted, out)
 
     def file_name(m: re.Match) -> str:
         name = re.sub(r'[_-]+', ' ', m.group(1))
         return f'{name} Punkt {_spell_extension(m.group(2))}'
     out = re.sub(rf'\b([A-Za-z0-9][A-Za-z0-9_-]*)\.({_EXT_RE})\b', file_name, out, flags=re.IGNORECASE)
+    out = re.sub(rf"\b([A-Za-z0-9][A-Za-z0-9-]*)\.({'|'.join(DOMAINS)})\b(?!\.\w)",
+                 lambda m: f'{m.group(1)} Punkt {DOMAINS[m.group(2).lower()]}', out, flags=re.IGNORECASE)
+
+    def zone(m: re.Match) -> str:
+        spoken = TIME_ZONES[m.group('z')]
+        if m.group('sign'):
+            spoken += (' plus ' if m.group('sign') == '+' else ' minus ') + cardinal(int(m.group('oh')))
+            if m.group('om') and int(m.group('om')):
+                spoken += ' ' + cardinal(int(m.group('om')))
+        return spoken
+    out = re.sub(rf"\b(?P<z>{'|'.join(TIME_ZONES)})\b(?:\s*(?P<sign>[+-])\s*(?P<oh>\d{{1,2}})(?::?(?P<om>\d{{2}}))?\b)?", zone, out)
+
+    def iso_date(m: re.Match) -> str:
+        yr, month, day = int(m.group('y')), int(m.group('m')), int(m.group('d'))
+        if not (1 <= day <= 31 and 1 <= month <= 12):
+            return m.group(0)
+        return f"{m.group('pre') or ''}{ordinal(day, _ending(m.group('pre')))} {MONTHS[month - 1]} {year(yr)}"
+    out = re.sub(_PREFIX_RE + r'\b(?P<y>\d{4})-(?P<m>\d{2})-(?P<d>\d{2})\b', iso_date, out)
 
     def numeric_date(m: re.Match) -> str:
         day, month, yr = int(m.group('d')), int(m.group('m')), int(m.group('y'))
@@ -161,21 +318,81 @@ def prepare(text: str) -> str:
     out = re.sub(_PREFIX_RE + r'\b(?P<d>\d{1,2})\.(?=\s+bis\s)',
                  lambda m: f"{m.group('pre') or ''}{ordinal(int(m.group('d')), _ending(m.group('pre')))}", out)
 
+    def short_date(m: re.Match) -> str:
+        day, month = int(m.group('d')), int(m.group('m'))
+        if not (1 <= day <= 31 and 1 <= month <= 12):
+            return m.group(0)
+        return f"{m.group('pre')}{ordinal(day, _ending(m.group('pre')))} {MONTHS[month - 1]}"
+    out = re.sub(r'(?P<pre>\b(?i:am|vom|zum|den|dem|ab|seit|bis|der|heute)\s+)(?P<d>\d{1,2})\.(?P<m>\d{1,2})\.(?!\d)', short_date, out)
+
+    def time_range(m: re.Match) -> str:
+        h1, m1, h2, m2 = int(m.group('h1')), int(m.group('m1') or 0), int(m.group('h2')), int(m.group('m2') or 0)
+        with_uhr = bool(m.group('uhr'))
+        if max(h1, h2) > 24 or max(m1, m2) > 59 or not (with_uhr or m.group('m1') or m.group('m2')):
+            return m.group(0)
+        if '.' in m.group(0) and not with_uhr:
+            return m.group(0)
+        if with_uhr and not m.group('m1') and not m.group('m2'):
+            return f'{cardinal(h1)} bis {_clock_words(h2, 0)}'
+        return f'{_clock_words(h1, m1)} bis {_clock_words(h2, m2)}'
+    out = re.sub(r'(?<![\d.:])(?P<h1>\d{1,2})(?:[:.](?P<m1>\d{2}))?\s*[-\u2013\u2014]\s*(?P<h2>\d{1,2})(?:[:.](?P<m2>\d{2}))?(?![\d:])(?P<uhr>\s*Uhr\b)?',
+                 time_range, out)
+
     def clock(m: re.Match) -> str:
         hours, minutes = int(m.group('h')), int(m.group('min') or 0)
         if hours > 24 or minutes > 59:
             return m.group(0)
-        spoken = ('ein' if hours == 1 else cardinal(hours)) + ' Uhr'
-        return spoken + (' ' + cardinal(minutes) if minutes else '')
-    out = re.sub(r'\b(?P<h>\d{1,2})(?::(?P<min>\d{2}))?\s*Uhr\b', clock, out)
+        return _clock_words(hours, minutes)
+    out = re.sub(r'\b(?P<h>\d{1,2})(?:[:.](?P<min>\d{2}))?\s*Uhr\b', clock, out)
     out = re.sub(r'\b(?P<um>[Uu]m)\s+(?P<h>\d{1,2}):(?P<min>\d{2})\b', lambda m: m.group('um') + ' ' + clock(m), out)
+
+    # 1:02:30 is a duration (Laufzeit), 2:30 min too.
+    def duration(m: re.Match) -> str:
+        hours, minutes, secs = int(m.group('h') or 0), int(m.group('min')), int(m.group('s') or 0)
+        if minutes > 59 or secs > 59:
+            return m.group(0)
+        spoken = [_amount(v, one, many) for v, one, many in ((hours, 'Stunde', 'Stunden'), (minutes, 'Minute', 'Minuten'),
+                                                              (secs, 'Sekunde', 'Sekunden')) if v]
+        said = (spoken[0] if len(spoken) == 1 else ', '.join(spoken[:-1]) + ' und ' + spoken[-1]) if spoken else 'null Sekunden'
+        dot = m.groupdict().get('dot') or m.groupdict().get('dot2')
+        return said + ('.' if dot and _sentence_ends(m) else '')
+    out = re.sub(rf'(?P<pre>\b{SCORE_WORDS}\b:?\s+(?:(?i:von|mit|auf)\s+)?)(?P<a>\d{{1,4}}):(?P<b>\d{{1,4}})(?![\d:])',
+                 lambda m: f"{m.group('pre')}{cardinal(int(m.group('a')))} zu {cardinal(int(m.group('b')))}", out)
+    out = re.sub(r'(?<![\d:])(?P<h>\d{1,2}):(?P<min>\d{2}):(?P<s>\d{2})(?![\d:])', duration, out)
+    out = re.sub(r'(?<![\d:])(?P<min>\d{1,2}):(?P<s>\d{2})\s*(?:min\b(?P<dot>\.)?|Min(?P<dot2>\.)|Minuten\b)(?P<h>)', duration, out)
+    out = re.sub(r'(?<=\d)\s*(?:min\b|Min\b)(?P<dot>\.)?', lambda m: ' Minuten' + ('.' if m.group('dot') and _sentence_ends(m) else ''), out)
+    out = re.sub(r'(?<=\d)\s*(?:Std\b|h\b)(?P<dot>\.)?', lambda m: ' Stunden' + ('.' if m.group('dot') and _sentence_ends(m) else ''), out)
+    out = re.sub(r'(?<![\d:])(?P<h>\d{1,2}):(?P<min>\d{2})(?![\d:])', clock, out)
+    # What is left with a colon between numbers is a ratio or a score: 16:9, 2:1.
+    out = re.sub(r'(?<![\d:])(\d{1,4}):(\d{1,4})(?![\d:])', lambda m: f'{_number(m.group(1))} zu {_number(m.group(2))}', out)
 
     def decimal(m: re.Match) -> str:
         whole = int(m.group(1).replace('.', ''))
         return f'{cardinal(whole)} Komma {_digits(m.group(2))}'
     out = re.sub(r'\b(\d{1,3}(?:\.\d{3})+|\d+),(\d+)\b', decimal, out)
     out = re.sub(r'\b(\d{1,3}(?:\.\d{3})+)\b', lambda m: cardinal(int(m.group(1).replace('.', ''))), out)
+    out = re.sub(r'(?<![\d.,:])([1-9]\d{0,3}|0)\s*[-\u2013\u2014]\s*([1-9]\d{0,3}|0)(?!\d|[.,:]\d)',
+                 lambda m: f'{_number(m.group(1))} bis {_number(m.group(2))}', out)
+
+    def version(m: re.Match) -> str:
+        groups = m.group('num').split('.')
+        if len(groups) == 2 and not m.group('v') and not POINT_WORDS.search(m.string[:m.start()]):
+            return f'{_number(groups[0])} Komma {_digits(groups[1])}'
+        spoken = ' Punkt '.join(_number(group) for group in groups)
+        said = m.group('v') and not re.search(r'Version\s*$', m.string[:m.start()], re.IGNORECASE)
+        return ('Version ' if said else '') + spoken
+    out = re.sub(r'(?<![\w.])(?P<v>[vV])?(?P<num>\d+(?:\.\d+){1,3})(?!\.?\d)', version, out)
     out = re.sub(r'\b\d+\b', lambda m: _number(m.group(0)), out)
     out = re.sub(r'\s?%', ' Prozent', out)
     out = re.sub(r'\s?€', ' Euro', out)
+    out = re.sub(r'\s?°C\b', ' Grad Celsius', out)
+    out = re.sub(r'\s?°', ' Grad', out)
+    out = re.sub(r'[~≈]\s*(?=\w)', 'circa ', out)
+    out = re.sub(r'(?<=\w)@(?=\w)', ' ät ', out)
+    # A dot left between lower-case letters or digits is said: game.starlight-unit -> game Punkt starlight-unit.
+    out = re.sub(r'(?<=[a-zäöüß0-9])\.(?=[a-zäöüß0-9])', ' Punkt ', out)
+    out = re.sub(r'[A-Za-zÄÖÜäöüß]+', lambda m: respell(m.group(0)), out)
+    # Dashes and arrows between words are a short pause, not a read sign.
+    out = re.sub(r'\s*(?:->|=>|→|⇒)\s*', ', ', out)
+    out = re.sub(r'\s+[-\u2013\u2014]\s+|(?<=\w)[\u2013\u2014](?=\w)', ', ', out)
     return re.sub(r'[ \t]{2,}', ' ', out)

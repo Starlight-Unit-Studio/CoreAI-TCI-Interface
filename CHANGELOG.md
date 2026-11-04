@@ -1,5 +1,24 @@
 # CoreAI: TCI Interface
 
+## 0.6.5 - 04.11.2026
+
+Rueckmeldung nach dem ersten Live-Vorlesen auf dem Server: Englische Woerter klangen deutsch gelesen, bei "E.M.B.E.R." brach das Vorlesen ab, "12:00-20:00 CET" wurde Kauderwelsch, und es gab oft lange Pausen.
+
+- **Textaufbereitung `de-2`** (`tools/tts_spike/textprep_de.py`, auch im Register `config/voice/mara-voice.json` und im Stimmtest):
+  - Abkuerzungen mit Punkten: "E.M.B.E.R." wird "Ember", andere werden buchstabiert ("U.S.A." wird "U Es A"). Mehr feste Abkuerzungen (i.d.R., s.o., etc., Dr., max., min., mind. und weitere). Der Satzpunkt bleibt erhalten, wenn danach ein neuer Satz beginnt.
+  - Uhrzeiten ohne "Uhr" ("18:45"), Zeitbereiche ("12:00-20:00", "9-17 Uhr"), Zeitzonen (CET, MEZ, CEST, MESZ, UTC, GMT mit Versatz), ISO-Datum ("2026-11-04"), Kurzdatum ("am 4.11."), Dauer ("1:02:30", "2:30 min"), Verhaeltnisse und Ergebnisse ("16:9", "2:1"), Zahlenbereiche ("3-5", "2024-2026"), Versionen ("v0.6.3" wird "Version null Punkt sechs Punkt drei"), Domains und E-Mail-Adressen, Grad, "circa".
+  - Englische Woerter: ein Aussprache-Woerterbuch mit rund 100 Eintraegen schreibt gaengige Begriffe deutsch lautlich um ("Update" wird "Apdeit", "Browser" wird "Brauser", "Chat" wird "Tschaett", "CoreAI" als "Kohr Ey Ei" mit englischem AI, vom Betreiber per Hoertest unter vier Schreibweisen gewaehlt), mit deutschen Endungen ("updaten", "Chats") und Zusammensetzungen ("Updatefenster"). Deutsche Woerter, die nur aehnlich aussehen (Tablette, Mailand, Hostie), bleiben.
+  - Striche und Pfeile zwischen Woertern werden eine kurze Pause statt eines gelesenen Zeichens.
+- **Keine langen Pausen mehr:**
+  - Aufteilung (`tools/voice/speakable.py`): Jeder Teil ist hoechstens 1,8-mal so lang wie der vorige (erster Teil hoechstens 120 Zeichen, dann bis 320). Eve rechnet etwa doppelt so schnell, wie sie spricht, deshalb ist der naechste Teil fertig, bevor der aktuelle endet. Bisher konnte auf einen kurzen ersten Satz ein Teil mit 320 Zeichen folgen, und die Rechenzeit dafuer war als Stille zu hoeren. Geteilt wird an Satz- und Kommagrenzen; ein Satz, der im naechsten Teil weitergeht, endet mit Komma statt Punkt.
+  - Sprachdienst (`tools/voice/voice_service.py`): Stille am Anfang und Ende jedes Teils wird auf 0,15 s gekuerzt, Pausen im Teil auf hoechstens 0,7 s.
+  - Wiedergabe (`js/coreui-voice-read.js`): Die Teile werden der Reihe nach geholt, immer nur einer gleichzeitig, bis zu drei im Voraus, und in einem einzigen Audio-Element abgespielt. Das funktioniert auch auf Handys, die das Vorladen ignorieren. Ein Teil, der zweimal scheitert, wird uebersprungen; erst zwei Fehler in Folge beenden das Vorlesen.
+- **Neue Regeln kommen nach einem Update an:** Der Sprachdienst prueft alle 20 s, ob sich sein Code oder das Register geaendert hat, beendet dann die laufende Ansage und startet neu (Docker startet ihn wieder). `compose.yaml` schaltet das mit `COREAI_VOICE_WATCH_S` ein; dadurch wird der Container beim naechsten Update einmal neu erstellt. Der Installer bleibt unveraendert.
+- Nach dem Codex-Review von PR #156: Ergebnisse und Verhaeltnisse mit zweistelliger Zahl werden am Kontext erkannt ("Ergebnis 2:10" wird "zwei zu zehn", "um 18:45" bleibt Uhrzeit); "3.14" wird eine Kommazahl, nur nach Version, Kapitel oder Softwarenamen ("Python 3.11") und bei drei Teilen ("0.6.3") "Punkt"; "2:30 Min." behaelt den Satzpunkt; mehr Satzanfaenge nach "E.M.B.E.R." erkannt ("Morgen", "Anschliessend"); Namen wie Homer, Corelli, Gamelan, Hostessen bleiben unveraendert; ein sehr kurzer erster Satz ("Ja.") wird aufgefuellt, damit der zweite Teil nicht viel laenger ist; ein Abspielfehler bekommt wie ein Ladefehler einen zweiten Versuch.
+- Gespeicherte Plaene und Audiodateien aus `de-1` werden nicht wiederverwendet (anderer Registerstand), sondern nach 7 Tagen aufgeraeumt.
+- Tests: `tts-spike-selftest.py` mit den Beispielen aus der Rueckmeldung und Gegenproben, `voice-service-selftest.py` mit wachsenden Teilen, Stillekuerzung und Neustart bei neuem Code, `voice-read-ui-selftest.cjs` mit der neuen Wiedergabe (nie zwei Teile gleichzeitig, hoechstens drei voraus, ueberspringen und abbrechen). Ob die Umschreibungen gut klingen, zeigt erst der Live-Test.
+- Keine Aenderung an Cores, Modelfile, Datenbank, Installer, Warteschlange oder Stimme.
+
 ## 0.6.4 - 04.11.2026
 
 - **English README restored:** All current product, setup, hardware, feature, operation and licensing guidance is now in English, the default language for public GitHub documentation. Historical German records and the legally controlling German license are preserved.

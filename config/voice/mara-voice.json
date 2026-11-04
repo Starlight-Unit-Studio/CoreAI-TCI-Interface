@@ -22,7 +22,7 @@
     "license": "CC BY 4.0",
     "origin": "VCTK-Sprecherin p361 (kyutai/tts-voices vctk/p361_023_enhanced.wav), Stimmzustand von Kyutai"
   },
-  "textprep": "de-1",
+  "textprep": "de-2",
   "attribution": "Stimme: Eve aus Pocket TTS von Kyutai (CC BY 4.0), Stimmzustand nach der VCTK-Sprecherin p361 (CSTR, University of Edinburgh, CC BY 4.0).",
   "files": [
     {

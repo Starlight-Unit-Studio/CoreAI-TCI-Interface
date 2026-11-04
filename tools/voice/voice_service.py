@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""CoreAI 0.6.1: Mara's voice service (P20.3, read aloud).
+"""CoreAI 0.6.1 (0.6.5: no long silence): Mara's voice service (P20.3, read aloud).
 
 Runs in its own container (compose service "voice"), listens on 127.0.0.1
 only and keeps Eve loaded:
@@ -26,6 +26,7 @@ import struct
 import sys
 import threading
 import time
+from array import array
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
@@ -36,6 +37,7 @@ REGISTRY = Path(os.environ.get('COREAI_VOICE_REGISTRY', str(ROOT / 'config' / 'v
 MAX_BODY = 200_000
 MAX_PART_CHARS = 1200
 QUEUE_WAIT_S = float(os.environ.get('COREAI_VOICE_QUEUE_WAIT', '90'))
+WATCH_S = float(os.environ.get('COREAI_VOICE_WATCH_S', '20'))
 
 
 def _load(name: str, path: Path):
@@ -57,17 +59,69 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def wav_bytes(samples: Any, rate: int) -> bytes:
-    """Float samples in [-1, 1] -> 16 bit mono WAV."""
+def pcm16(samples: Any) -> bytes:
+    """Float samples in [-1, 1] -> 16 bit little-endian PCM."""
     if hasattr(samples, 'detach'):
         samples = samples.detach().cpu().numpy()
     if hasattr(samples, 'reshape'):
         import numpy as np
-        pcm = (np.clip(samples.reshape(-1), -1.0, 1.0) * 32767.0).astype('<i2').tobytes()
-    else:
-        pcm = b''.join(struct.pack('<h', int(max(-1.0, min(1.0, float(x))) * 32767.0)) for x in samples)
+        return (np.clip(samples.reshape(-1), -1.0, 1.0) * 32767.0).astype('<i2').tobytes()
+    return b''.join(struct.pack('<h', int(max(-1.0, min(1.0, float(x))) * 32767.0)) for x in samples)
+
+
+def wav_from_pcm(pcm: bytes, rate: int) -> bytes:
     header = b'RIFF' + struct.pack('<I', 36 + len(pcm)) + b'WAVEfmt ' + struct.pack('<IHHIIHH', 16, 1, 1, rate, rate * 2, 2, 16)
     return header + b'data' + struct.pack('<I', len(pcm)) + pcm
+
+
+def wav_bytes(samples: Any, rate: int) -> bytes:
+    """Float samples in [-1, 1] -> 16 bit mono WAV."""
+    return wav_from_pcm(pcm16(samples), rate)
+
+
+EDGE_S = 0.15        # silence kept before the first and after the last sound of a part
+MAX_PAUSE_S = 0.7    # a pause inside a part is never longer than this
+QUIET = 0.02         # below this peak (of full scale) a 10 ms frame counts as silence
+
+
+def tighten_pcm(pcm: bytes, rate: int, edge_s: float = EDGE_S, max_pause_s: float = MAX_PAUSE_S, quiet: float = QUIET) -> bytes:
+    """0.6.5: no long silence. Leading and trailing silence is cut to edge_s, any pause inside
+    the part to max_pause_s (half kept at each side, so sounds fade out and in as spoken).
+    Parts are played one after another, so this is the gap between parts, too."""
+    samples = array('h')
+    samples.frombytes(pcm[:len(pcm) - len(pcm) % 2])
+    if sys.byteorder == 'big':
+        samples.byteswap()
+    frame = max(1, rate // 100)
+    limit = int(quiet * 32767)
+    frames = [samples[i:i + frame] for i in range(0, len(samples), frame)]
+    loud = [max(chunk) > limit or -min(chunk) > limit for chunk in frames]
+    if True not in loud:
+        return pcm
+    first = loud.index(True)
+    last = len(loud) - 1 - loud[::-1].index(True)
+    edge = max(1, round(edge_s * 100))
+    keep_pause = max(2, round(max_pause_s * 100))
+    kept: list[int] = list(range(max(0, first - edge), first))
+    index = first
+    while index <= last:
+        if loud[index]:
+            kept.append(index)
+            index += 1
+            continue
+        end = index
+        while end <= last and not loud[end]:
+            end += 1
+        run = list(range(index, end))
+        kept.extend(run if len(run) <= keep_pause else run[:keep_pause // 2] + run[-(keep_pause - keep_pause // 2):])
+        index = end
+    kept.extend(range(last + 1, min(len(frames), last + 1 + edge)))
+    out = array('h')
+    for index in kept:
+        out.extend(frames[index])
+    if sys.byteorder == 'big':
+        out.byteswap()
+    return out.tobytes()
 
 
 def time_limit(text: str) -> float:
@@ -159,6 +213,22 @@ class PocketEngine:
         return (np.concatenate(chunks) if chunks else np.zeros(0, dtype='float32')), self.rate
 
 
+def watched_files() -> list[Path]:
+    """The code and registry this process runs with (the repository is mounted read-only)."""
+    extra = [Path(x) for x in os.environ.get('COREAI_VOICE_WATCH_FILES', '').split(':') if x]
+    return [HERE / 'voice_service.py', HERE / 'speakable.py', ROOT / 'tools' / 'tts_spike' / 'textprep_de.py', REGISTRY] + extra
+
+
+def code_stamp(paths: list[Path]) -> dict:
+    stamp = {}
+    for path in paths:
+        try:
+            stamp[str(path)] = path.stat().st_mtime_ns
+        except OSError:
+            stamp[str(path)] = 0
+    return stamp
+
+
 class Service:
     def __init__(self, registry: dict, engine_name: str, cores: int):
         self.registry = registry
@@ -181,6 +251,24 @@ class Service:
                 self.loading = False
         threading.Thread(target=run, daemon=True).start()
 
+    def watch(self, interval: float) -> None:
+        """0.6.5: an update brings new code into the mounted folder, but a running container
+        keeps the old one. When a watched file changes, the running part is finished, then
+        the process ends and Docker starts it again (restart: unless-stopped) with the new code."""
+        if interval <= 0:
+            return
+        paths = watched_files()
+        started = code_stamp(paths)
+
+        def run() -> None:
+            while True:
+                time.sleep(interval)
+                if code_stamp(paths) != started:
+                    self.lock.acquire()
+                    print('[CoreAI Stimme] Code oder Register geaendert, Sprachdienst startet neu.', flush=True)
+                    os._exit(0)
+        threading.Thread(target=run, daemon=True).start()
+
     def health(self) -> dict:
         return {'ok': True, 'ready': self.ready, 'loading': self.loading, 'error': self.error,
                 'voice': self.engine.label, 'cores': self.cores, 'textprep': TEXTPREP.VERSION}
@@ -195,7 +283,7 @@ class Service:
             samples, rate = self.engine.synth(text, time_limit(text))
         finally:
             self.lock.release()
-        return wav_bytes(samples, rate)
+        return wav_from_pcm(tighten_pcm(pcm16(samples), rate), rate)
 
 
 def make_handler(service: Service):
@@ -265,6 +353,7 @@ def main() -> int:
     engine = os.environ.get('COREAI_VOICE_ENGINE', 'pocket')
     service = Service(registry, engine, cores)
     service.start()
+    service.watch(WATCH_S)
     server = ThreadingHTTPServer(('127.0.0.1', port), make_handler(service))
     server.daemon_threads = True
     print(f'[CoreAI Stimme] bereit auf 127.0.0.1:{port} ({engine}, {cores} Kerne)', flush=True)
