@@ -1,5 +1,15 @@
 # CoreAI: TCI Interface
 
+## 0.6.7 - 04.11.2026
+
+Rueckmeldung des Betreibers nach dem Update auf 0.6.5: Mara spricht Denglisch einwandfrei, nur bei "TCI" fehlt das I, es klingt wie "TC".
+
+- **TCI** steht jetzt im Aussprache-Woerterbuch und wird mit englischen Buchstabennamen gesprochen: "Ti Si Ei" (wie "CoreAI" als "Kohr Ey Ei"). Auch "TCIs" und "TCI-Kern".
+- **Interface** klingt jetzt "Interfeys" statt "Interfehs" (Wunsch des Betreibers, passend zu "Kohr Ey Ei").
+- **Gespeicherte Vorlese-Plaene folgen dem Code:** Die Kennung eines Plans haengt jetzt neben dem Register auch von `tools/tts_spike/textprep_de.py` und `tools/voice/speakable.py` ab. Ein neuer Woerterbuch-Eintrag ist damit sofort zu hoeren, auch bei Antworten, die schon einmal vorgelesen wurden; bisher kam eine solche Antwort bis zu 7 Tage lang aus dem Speicher mit der alten Aussprache. Alte Plaene werden nach 7 Tagen aufgeraeumt.
+- Tests: `tts-spike-selftest.py` und `voice-service-selftest.py` mit "Ti Si Ei", `voice-read-selftest.php` prueft die Quellen der Plan-Kennung.
+- Keine Aenderung an Cores, Modelfile, Datenbank, Installer oder Warteschlange.
+
 ## 0.6.6 - 04.11.2026
 
 Vorbereitung fuer Englisch (P20.3b). Entscheidungen des Betreibers: Sprachmodell nach Bedarf laden (ein Sprachdienst fuer alle Konten), Spracheinstellung pro Konto im KI-Profil fuer Antworten und Vorlesen (Mara bleibt mehrsprachig, Deutsch und Englisch sind die Hauptsprachen), zuerst Hoertest der englischen Eve.

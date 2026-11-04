@@ -1,0 +1,22 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.6.7
+Stand: 04.11.2026
+Ausgangsbasis: main 0.6.6 nach Merge von PR #157.
+
+AUFTRAG (Rueckmeldung des Betreibers): "Mara spricht denglisch einwandfrei, nur bei dem Begriff TCI macht sie
+einfach ein TC draus, das Ei also I fehlt komplett."
+
+UMSETZUNG:
+- tools/tts_spike/textprep_de.py: PRONUNCIATION 'tci' -> 'Ti Si Ei' (Art x, also auch TCIs), passend zu
+  'coreai' -> 'Kohr Ey Ei' (Hoertest 0.6.5). Dazu 'interface' -> 'Interfeys' statt 'Interfehs' (Wunsch des
+  Betreibers). Falls der Betreiber eine andere Schreibweise besser findet:
+  dieselbe Zeile aendern und die Erwartungen in tts-spike-selftest.py und voice-service-selftest.py anpassen.
+- api/voice_store.php: coreui_voice_plan_id() haengt von COREUI_VOICE_PLAN_SOURCES ab (Register,
+  textprep_de.py, speakable.py). Vorher nur vom Register: Eine schon vorgelesene Antwort kam nach einer
+  Woerterbuch-Aenderung bis zu 7 Tage aus dem Speicher mit der alten Aussprache.
+
+GEPRUEFT: tts-spike-selftest.py, voice-service-selftest.py, voice-read-selftest.php (auch mit Datenbank),
+volle Testreihe, version-merge-check gegen 0.6.6. NICHT hier: Klang von "Ti Si Ei" mit Eve.
+
+NACH DEM MERGE (Betreiber): Update; der Sprachdienst startet mit dem neuen Woerterbuch von selbst neu. Dann eine
+Antwort mit "TCI" vorlesen lassen. Offen wie in 0.6.6: Hoertest der englischen Eve, danach Spracheinstellung
+im KI-Profil und Laden nach Bedarf.

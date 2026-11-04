@@ -1,0 +1,5 @@
+CoreAI: TCI Interface 0.6.7 - 04.11.2026
+- Vorlesen: TCI wird "Ti Si Ei" gesprochen (vorher fehlte das I); auch TCIs und TCI-Kern.
+- Interface wird "Interfeys" gesprochen (Wunsch des Betreibers).
+- Vorlese-Plaene folgen dem Code: Kennung aus Register, textprep_de.py und speakable.py; neue Woerterbuch-Eintraege sind sofort zu hoeren, auch bei schon vorgelesenen Antworten.
+- Tests angepasst. Keine Aenderung an Cores, Modelfile, Datenbank, Installer oder Warteschlange.

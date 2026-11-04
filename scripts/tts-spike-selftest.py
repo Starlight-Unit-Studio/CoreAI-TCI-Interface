@@ -171,7 +171,9 @@ check(not re.search(r'\d', ' '.join(spoken.values())), 'no digit reaches a voice
 check(prep.VERSION == 'de-2', 'text preparation de-2')
 for text, words in (
     # E.M.B.E.R. broke the reading; dotted letters are a name or spelled.
-    ('Ich bin die TCI von E.M.B.E.R. und helfe dir.', 'Ich bin die TCI von Ember und helfe dir.'),
+    ('Ich bin die TCI von E.M.B.E.R. und helfe dir.', 'Ich bin die Ti Si Ei von Ember und helfe dir.'),
+    # 0.6.7: TCI lost its I when read as letters; English letter names like CoreAI.
+    ('TCI, die TCIs und Maras TCI-Kern.', 'Ti Si Ei, die Ti Si Eis und Maras Ti Si Ei-Kern.'),
     ('Das E.M.B.E.R.-Framework läuft auf E.M.B.E.R. Das ist neu.', 'Das Ember-Freimwörk läuft auf Ember. Das ist neu.'),
     ('Teil von e.m.b.e.r.', 'Teil von Ember.'),
     ('U.S.A. und J.R.R. Tolkien', 'U Es A und Jot Er Er Tolkien'),
@@ -192,11 +194,11 @@ for text, words in (
     ('Schreib an info@starlight-unit.de', 'Schreib an info ät starlait-junit Punkt De'),
     # English words were read the German way.
     ('Das Update für den Browser und die Cloud ist online, check mal das Interface und den Chat.',
-     'Das Apdeit für den Brauser und die Klaud ist onlein, tscheck mal das Interfehs und den Tschätt.'),
+     'Das Apdeit für den Brauser und die Klaud ist onlein, tscheck mal das Interfeys und den Tschätt.'),
     ('Updates, updaten, geupdatet, Chats, chatten, Teams, Caches, Interfaces, debuggen, Designerin, Updatefenster, Checkliste.',
-     'Apdeits, apdeiten, geapdeitet, Tschätts, tschätten, Tiems, Käsches, Interfehses, dibaggen, Disainerin, Apdeit-fenster, Tscheck-liste.'),
+     'Apdeits, apdeiten, geapdeitet, Tschätts, tschätten, Tiems, Käsches, Interfeyses, dibaggen, Disainerin, Apdeit-fenster, Tscheck-liste.'),
     ('Mara Thorne von CoreAI: TCI Interface, OK, sorry, die E-Mail-Adresse.',
-     'Mara Thorn von Kohr Ey Ei: TCI Interfehs, Okeh, sorri, die Imeil-Adresse.'),
+     'Mara Thorn von Kohr Ey Ei: Ti Si Ei Interfeys, Okeh, sorri, die Imeil-Adresse.'),
     # The operator's ear test chose "Kohr Ey Ei" (English AI) over Äi, Ej and Eh; OpenAI the same way.
     ('CoreAI und OpenAI', 'Kohr Ey Ei und Oupen Ey Ei'),
     # Review of PR #156: scores by context, Min. with its stop, decimals vs versions, sentence stops after names.

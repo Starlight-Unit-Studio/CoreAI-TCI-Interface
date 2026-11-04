@@ -38,9 +38,19 @@ function coreui_voice_user_dir(string $root, int $uid, bool $create): ?string {
 }
 
 /** Same answer, same voice, same text preparation: same id (and cache). */
+/** 0.6.7: the id follows the registry and the code that turns an answer into spoken text, so a
+    new dictionary entry (TCI) is heard at once and no stored plan keeps the old reading. */
+const COREUI_VOICE_PLAN_SOURCES = ['config/voice/mara-voice.json', 'tools/tts_spike/textprep_de.py', 'tools/voice/speakable.py'];
+
 function coreui_voice_plan_id(string $text): string {
-  $registry = (string)@file_get_contents(dirname(__DIR__) . '/config/voice/mara-voice.json');
-  return hash('sha256', hash('sha256', $registry) . "\n" . $text);
+  static $basis = null;
+  if ($basis === null) {
+    $basis = '';
+    foreach (COREUI_VOICE_PLAN_SOURCES as $file) {
+      $basis .= hash('sha256', (string)@file_get_contents(dirname(__DIR__) . '/' . $file)) . "\n";
+    }
+  }
+  return hash('sha256', $basis . $text);
 }
 
 /** Removes plans and audio older than 7 days; only files this feature writes. */

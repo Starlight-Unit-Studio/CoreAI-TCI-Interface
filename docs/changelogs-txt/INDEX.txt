@@ -151,3 +151,4 @@ Jede Version liegt als eigenstaendige UTF-8-TXT-Datei vor.
 * CHANGELOG_0_6_4.txt
 * CHANGELOG_0_6_5.txt
 * CHANGELOG_0_6_6.txt
+* CHANGELOG_0_6_7.txt

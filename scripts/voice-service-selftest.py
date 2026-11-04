@@ -94,7 +94,7 @@ cut = speakable.split_parts(long_sentence)
 check(len(cut) > 2 and all(len(p) <= speakable.MAX_PART + 1 for p in cut) and ''.join(cut).count('Wort') == 200, 'long sentences cut at words, nothing lost')
 check(all(p.endswith(',') for p in cut[:-1]) and cut[-1].endswith('.'), 'a cut sentence goes on with a comma')
 check(speakable.plan('Ich bin die TCI von E.M.B.E.R. und helfe dir gern bei allem.', textprep.prepare)
-      == ['Ich bin die TCI von Ember und helfe dir gern bei allem.'], 'E.M.B.E.R. is read as a name')
+      == ['Ich bin die Ti Si Ei von Ember und helfe dir gern bei allem.'], 'E.M.B.E.R. is read as a name, TCI with its I')
 check(speakable.plan('```\nnur code\n```', textprep.prepare) == ['Codeblock ausgelassen.'], 'only code: says so')
 check(speakable.plan('   ', textprep.prepare) == [], 'nothing to read')
 
