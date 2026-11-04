@@ -6,7 +6,7 @@
 
 CoreAI combines Ollama-based models with private conversations, browser research, personal knowledge, file tools and an administration interface. Its standard deployment runs an isolated Nginx, PHP-FPM, MariaDB and worker stack on a Linux server. CoreAI is an application, **not a standalone operating system**.
 
-**Current source version: `0.6.10`** | [Changelog](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Documentation policy](docs/VERSIONING_POLICY.md) | [License](LICENSE.md)
+**Current source version: `0.6.11`** | [Changelog](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Documentation policy](docs/VERSIONING_POLICY.md) | [License](LICENSE.md)
 
 > **Development status:** The features below describe the current source code, not guaranteed capabilities of every model or cloud provider. A merged commit does not by itself prove a successful production deployment.
 
@@ -112,6 +112,7 @@ An existing installation's settings are not silently overwritten. `COREUI_FORCE_
 ## Current capabilities
 
 - **Mara and models:** Core selection in the chat, Gemma 4 tiers, supported connected cloud models and a thinking toggle. Model inference shares one serial work queue.
+- **Local time awareness:** Mara uses the browser's IANA time zone to calculate date and time for private chats. No location permission is needed; invalid or unavailable values fall back to the configured server time zone.
 - **Conversations and accounts:** Persistent sessions, history, follow-up suggestions, context management and distinct owner, admin, user and optional guest roles.
 - **Research:** SearXNG-backed web search and a separate Playwright browsing mode. Sources and actual tool activity can be shown in the chat; a search result alone is not proof that its page was read.
 - **Knowledge and tools:** Account-scoped RAG-Lite, memory, skill selection, file uploads and isolated Python tasks with registered outputs. Media handling depends on the selected model and available tools.
