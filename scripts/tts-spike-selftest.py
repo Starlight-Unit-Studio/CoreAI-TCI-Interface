@@ -129,13 +129,25 @@ check('if [[ -n "$DRY_RUN" && -n "${COREAI_TTS_SPIKE_BASE:-}" ]]; then' in scrip
 bad = dry_run('--cores', '2;rm')
 check(bad.returncode != 0, 'bad --cores refused')
 # 0.5.95: --run adds groups to an existing run (e.g. after a fix), the report covers all of it.
+# 0.5.97: "letzter" takes the newest run; an unknown name lists the runs there are.
+none_yet = dry_run('--run', 'letzter')
+check(none_yet.returncode != 0 and 'Noch kein Testlauf vorhanden' in none_yet.stderr, 'letzter without any run')
+for stamp in ('20261104-120000', '20261104-141500'):
+    (sandbox / 'runs' / stamp).mkdir(parents=True)
+(sandbox / 'runs' / 'notizen').mkdir()
+missing = dry_run('--run', '20261104-155136')
+check(missing.returncode != 0 and 'Lauf 20261104-155136 nicht gefunden. Vorhanden: 20261104-141500 20261104-120000. Einfacher: --run letzter'
+      in missing.stderr, 'unknown run: the existing ones are named, newest first: ' + missing.stderr)
+latest = dry_run('--skip-build', '--groups', 'pocket-de', '--run', 'letzter')
+check(latest.returncode == 0 and 'Schreibe in den vorhandenen Lauf 20261104-141500.' in latest.stdout
+      and all('/runs/20261104-141500:/out' in l for l in latest.stdout.splitlines() if 'run.py run ' in l), 'letzter is the newest run')
 again = dry_run('--skip-build', '--groups', 'pocket-de,pocket-de24', '--run', '20261104-141500')
 check(again.returncode == 0, '--run dry run: ' + again.stderr)
 again_runs = [l for l in again.stdout.splitlines() if 'run.py run ' in l]
 check(len(again_runs) == 4 and all('/runs/20261104-141500:/out' in l for l in again_runs), 'measured into the given run')
 check(not any('docker build' in l or 'run.py fetch' in l and 'chatterbox' in l for l in again.stdout.splitlines()), 'only the chosen groups')
 check(any('run.py report --run-dir ' in l and l.endswith('/runs/20261104-141500') for l in again.stdout.splitlines()), 'report rebuilt for that run')
-for wrong in ('2026', '../20261104-141500', '20261104-141500;rm'):
+for wrong in ('2026', '../20261104-141500', '20261104-141500;rm', 'ZEITSTEMPEL'):
     check(dry_run('--run', wrong).returncode != 0, 'bad --run refused: ' + wrong)
 shutil.rmtree(sandbox)
 shell = script.read_text(encoding='utf-8')

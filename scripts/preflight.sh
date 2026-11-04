@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.96 voice test selftest no longer depends on weights a real run left on the server.
+# CoreAI: TCI Interface 0.5.97 voice test: --run letzter picks the newest run, an unknown run lists the existing ones.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

@@ -1,5 +1,12 @@
 # CoreAI: TCI Interface
 
+## 0.5.97 - 04.11.2026
+
+- **Pocket nachholen ohne Ordnernamen:** Die Anleitung aus 0.5.95 nannte `--run ZEITSTEMPEL` als Platzhalter; auf dem Server wurde das verstaendlicherweise woertlich eingegeben. Jetzt reicht `--run letzter` (auch `latest`): Das Skript nimmt den neuesten Testlauf und meldet, in welchen es schreibt.
+- Ein unbekannter Lauf nennt die vorhandenen (neueste zuerst) und schlaegt `--run letzter` vor; ohne jeden Lauf sagt es, dass zuerst ein voller Test noetig ist. Die Pruefung gilt jetzt auch im Probelauf.
+- Tests: `tts-spike-selftest.py` prueft `letzter` (neuester Lauf, fremde Ordner zaehlen nicht), die Meldung bei unbekanntem Lauf und den Fall ohne Lauf; `ZEITSTEMPEL` wird abgelehnt.
+- Keine Aenderung an der Messung, an Cores, Modelfile, Datenbank oder Warteschlange.
+
 ## 0.5.96 - 04.11.2026
 
 - **Update-Preflight repariert:** Das Update auf 0.5.95 stoppte mit "Stimmtest-Selbsttest fehlgeschlagen". Der Selbsttest liess `tts-spike.sh --dry-run` auf den echten Ordner `var/tts-spike` schauen. Nach dem ersten Stimmtest auf dem Server liegen dort die registrierten Gewichte (`lock-*.json`), das Skript ueberspringt dann zu Recht das Laden, und der Test erwartete trotzdem fest sieben Ladeschritte. Lokal gab es keine Gewichte, deshalb fiel es vor dem Merge nicht auf.

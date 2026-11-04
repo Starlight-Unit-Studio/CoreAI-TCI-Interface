@@ -44,8 +44,10 @@ Optionen:
   --skip-build      Container nicht neu bauen (nur wenn sie schon existieren)
   --refetch         Gewichte neu laden und neu registrieren, auch wenn sie schon da sind
   --keep N          So viele Testlaeufe behalten (Standard: 5)
-  --run ZEITSTEMPEL In einen vorhandenen Lauf schreiben, z. B. um Gruppen nachzuholen:
-                    --groups pocket-de,pocket-de24 --run 20261104-141500
+  --run letzter     In den letzten Lauf schreiben, z. B. um Gruppen nachzuholen:
+                    --skip-build --groups pocket-de,pocket-de24 --run letzter
+                    Statt "letzter" geht auch ein bestimmter Lauf (Ordnername wie 20261104-141500,
+                    die vorhandenen nennt "--run" mit einem falschen Namen).
                     Der Bericht wird danach aus allen Ergebnissen des Laufs neu erstellt.
   --dry-run         Nur zeigen, was passieren wuerde
   -h, --help        Diese Hilfe
@@ -85,7 +87,8 @@ die() { printf '[CoreAI Stimmtest] FEHLER: %s\n' "$*" >&2; exit 1; }
 [[ -z "$GROUP_FILTER" || "$GROUP_FILTER" =~ ^[a-z0-9_,-]+$ ]] || die 'Ungueltige --groups'
 [[ "$CORES" =~ ^[0-9]+(,[0-9]+)*$ ]] || die 'Ungueltige --cores'
 [[ "$KEEP" =~ ^[0-9]+$ ]] && (( KEEP >= 1 )) || die 'Ungueltiges --keep'
-[[ -z "$RUN_STAMP" || "$RUN_STAMP" =~ ^[0-9]{8}-[0-9]{6}$ ]] || die 'Ungueltiges --run (Form JJJJMMTT-HHMMSS)'
+[[ -z "$RUN_STAMP" || "$RUN_STAMP" =~ ^([0-9]{8}-[0-9]{6}|letzter|latest)$ ]] \
+  || die 'Ungueltiges --run: "letzter" oder ein Ordnername wie 20261104-141500'
 command -v python3 >/dev/null 2>&1 || die 'python3 fehlt auf dem Server'
 # 0.5.96: only a dry run may look at another folder. The selftest gives it an
 # empty one, so it never depends on what a real run left on this server.
@@ -136,11 +139,27 @@ for line in "${SELECTED[@]}"; do
   ENGINES_NEEDED+=("$engine")
 done
 
+# Existing runs, newest first (only folders named like a time stamp).
+list_runs() {
+  [[ -d "$RUNS" ]] || return 0
+  find "$RUNS" -mindepth 1 -maxdepth 1 -type d -regextype posix-extended \
+    -regex '.*/[0-9]{8}-[0-9]{6}' -printf '%f\n' | sort -r
+}
+
 OUT="$RUNS/$STAMP"
 if [[ -n "$RUN_STAMP" ]]; then
+  # 0.5.97: "letzter" takes the newest run, nobody has to look up its name.
+  if [[ "$RUN_STAMP" == 'letzter' || "$RUN_STAMP" == 'latest' ]]; then
+    RUN_STAMP="$(list_runs | head -n 1)"
+    [[ -n "$RUN_STAMP" ]] || die 'Noch kein Testlauf vorhanden; zuerst ohne --run starten.'
+  fi
   OUT="$RUNS/$RUN_STAMP"
-  [[ -n "$DRY_RUN" || -d "$OUT" ]] || die "Lauf $RUN_STAMP nicht gefunden unter var/tts-spike/runs"
+  if [[ ! -d "$OUT" ]]; then
+    known="$(list_runs | head -n 5 | paste -sd ' ' -)"
+    die "Lauf $RUN_STAMP nicht gefunden. Vorhanden: ${known:-keiner}. Einfacher: --run letzter"
+  fi
   STAMP="$RUN_STAMP"
+  log "Schreibe in den vorhandenen Lauf $RUN_STAMP."
 fi
 if [[ -z "$DRY_RUN" ]]; then
   install -d -m 0750 -o root -g 33 "$BASE" "$RUNS"
