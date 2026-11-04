@@ -1,0 +1,26 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.6.4
+Stand: 04.11.2026
+Basis: main 0.6.3 (nach README-Merge und Voice-Selbsttest-Fix).
+
+AUFTRAG:
+Oeffentliche README durchgaengig auf Englisch als GitHub-Standardsprache umstellen.
+Den bereits existierenden internen Updater in CoreAIs Einstellungen deutlich erlaeutern, statt nur den One-Liner zu nennen.
+
+UMSETZUNG:
+- README.md auf Englisch, mit einheitlichen Abschnitten zu Produkt, Installation, Hardware (CPU-only), Funktionen, Admin, Betrieb und Lizenz.
+- Eigenes Kapitel "Updating CoreAI": bevorzugter In-App-Weg Settings > System > CoreAI Update fuer Inhaber; automatischer Check ca. alle 10 Min. ueber systemd, manueller Check, Update-Dialog mit Notizen, DB-Backup, optionalem Ollama-Neustart, Fortschritt und automatischem Reload.
+- Buttons und Menuepfade der englischen README sind ausnahmslos ins Englische uebersetzt, ohne deutsche UI-Originaltexte in Klammern. Die eigentlichen UI-Texte werden nicht geaendert. Sprachwahl Englisch/Deutsch und Tag-/Nachtmodus sind fuer spaeter geplant.
+- One-Liner unter Quick start fuer Erstinstallation und SSH-Fallback unveraendert ueber den kanonischen Repo-Pfad.
+- Sprachregel Englisch fuer neue oeffentliche GitHub-Dokumentation in AGENTS.md, CLAUDE.md, docs/VERSIONING_POLICY.md. Historische deutsche Texte und rechtlich massgebliche LICENSE.de.md bleiben unangetastet.
+- scripts/version-merge-check.py auf "Quick start" umgestellt; Guard fuer integrierten Updater ergaenzt.
+- tests/test_version_merge_check.py mit aktualisierter englischer Vorlage und neuen Gegenproben.
+- VERSION, sechs HTML-Versionen, js/console-gate.js, Branding-Test, Preflight-Header, CHANGELOG, TXT-Archiv und aktuelle Uebergabe auf 0.6.4.
+
+UNVERAENDERT:
+- scripts/coreai-updater.sh, setup.sh, Installer, Datenbank und Migrationen, Core-Ausfuehrung, Modelfile und Ollama.
+- Kein neues Updateverfahren und keine Aenderung am Frontend-Verhalten.
+
+ABNAHME:
+- Versions-Guard und Testdatei offline ausfuehren; keinen GitHub-Action-Lauf voraussetzen.
+- Netcup-Live-Update und UI-Tests nicht durch Dokumentationsarbeit behaupten.
+- Jeden Merge als neue Version behandeln.

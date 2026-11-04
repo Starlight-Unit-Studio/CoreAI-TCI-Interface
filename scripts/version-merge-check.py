@@ -57,8 +57,12 @@ def validate(root: Path, base: str) -> str:
         raise ValueError("README.md must contain the official current installation one-liner")
     if "[CHANGELOG.md](CHANGELOG.md)" not in readme:
         raise ValueError("README.md must link CHANGELOG.md")
-    if not re.search(r"(?m)^## Schnellstart:", readme):
-        raise ValueError("README.md must display an installation section near the top")
+    if not re.search(r"(?m)^## Quick start:", readme):
+        raise ValueError("README.md must provide an English Quick start section near the top")
+    if not re.search(r"(?m)^## Updating CoreAI$", readme):
+        raise ValueError("README.md must explain the integrated update method")
+    if not all(text in readme for text in ("Settings", "System", "CoreAI Update")):
+        raise ValueError("README.md must identify the built-in Settings > System updater")
     version_heading = re.compile(
         r"^#{2,4}\s+(?:v?\d+\.\d+\.\d+\b|.*\(\d+\.\d+\.\d+\)|"
         r"changelog\b|release notes\b|versionshistorie\b)",
