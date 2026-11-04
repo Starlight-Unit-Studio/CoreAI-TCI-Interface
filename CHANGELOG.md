@@ -1,5 +1,12 @@
 # CoreAI: TCI Interface
 
+## 0.6.3 - 04.11.2026
+
+- **Preflight-Fehler "Vorlesen-Selbsttest: service down: not available" behoben.** Der Test stellte "Sprachdienst aus" mit der Adresse `127.0.0.1:1` nach. Die Adresspruefung nimmt aber nur Ports mit zwei bis fuenf Ziffern an und fiel deshalb auf den echten Port 18790 zurueck. Lief dort Eve schon und war bereit (so auf dem Server nach dem Update auf 0.6.1), meldete der Test "Dienst an" und der Preflight schlug fehl. Fehler im Test, nicht im Vorlesen.
+- `scripts/voice-read-selftest.php` nutzt fuer "Dienst aus" jetzt einen freien Port, auf dem nichts lauscht, und prueft vorher, dass die Adresse wirklich verwendet wird und nicht auf den echten Dienst zurueckfaellt. Nachgestellt mit einem bereiten Dienst auf 18790: alter Test scheitert mit derselben Meldung, neuer besteht.
+- `tests/test_version_merge_check.py`: Die Testvorlage hatte seit 0.6.2 keine gueltige README (One-Liner, CHANGELOG-Link, Schnellstart), drei Tests schlugen deshalb schon auf `main` fehl. Vorlage ergaenzt, dazu zwei Tests fuer die neuen README-Regeln (offizieller One-Liner, keine Versionsabschnitte). Der Preflight fuehrt diesen Entwicklertest nicht aus.
+- Keine Aenderung an Vorlesen, Sprachdienst, Cores, Modelfile, Datenbank, Installer oder Warteschlange.
+
 ## 0.6.2 - 04.11.2026
 
 - **README repariert:** Die Projekt-README beschreibt wieder Produkt, aktuellen Funktionsumfang, Installation, Betrieb, Lizenz und Diagnose statt einer zweiten Versionschronik.
