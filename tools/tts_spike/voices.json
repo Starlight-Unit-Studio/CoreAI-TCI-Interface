@@ -2,7 +2,7 @@
   "format": 1,
   "note": "CoreAI 0.5.94: Kandidaten fuer Maras Stimme (P20.0). Jede Stimme mit Herkunft und Lizenz; die Gewichte werden beim Laden mit Revision und SHA-256 registriert (var/tts-spike/models/lock-GRUPPE.json) und nie mit CoreAI ausgeliefert. 0.5.98: Textaufbereitung de-1 vor dem Sprechen, Kerstin als Klon fuer Pocket TTS.",
   "sample_cores": 4,
-  "textprep": "de-1",
+  "textprep": "de-2",
   "sentences": [
     {
       "id": "s1",

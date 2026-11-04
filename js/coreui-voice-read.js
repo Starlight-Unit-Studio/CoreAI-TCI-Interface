@@ -1,8 +1,8 @@
-/* CoreAI: TCI Interface 0.6.1: Mara reads her answers aloud with Eve (P20.3).
+/* CoreAI: TCI Interface 0.6.1 (playback 0.6.5): Mara reads her answers aloud with Eve (P20.3).
    A speaker button under every Mara answer. The server cuts the answer into
    parts (the first one short); playback starts as soon as the first part is
-   ready and the next part loads while the current one plays. A second click
-   stops. Optional: read new answers aloud automatically (KI-Profil).
+   ready and the next parts are fetched in order while the current one plays.
+   A part that fails twice is skipped. A second click stops. Optional: read new answers aloud automatically (KI-Profil).
    Signed-in accounts only; guests never see the button. */
 (function () {
   'use strict';
@@ -85,15 +85,24 @@
     else waiting.push(fn);
   }
 
+  // 0.6.5: parts are fetched one after another (never two at once, Eve speaks one at a
+  // time anyway), up to LOOKAHEAD parts ahead of the one playing, and kept as blobs. The
+  // next part is ready when the current one ends, also on phones that ignore preload.
+  var LOOKAHEAD = 3;
+  var RETRY_MS = 2000;
+
   function stop() {
     if (!current) return;
     var playing = current;
     current = null;
     playing.cancelled = true;
-    playing.audios.forEach(function (audio) {
-      try { audio.pause(); } catch (e) {}
-      audio.removeAttribute('src');
-    });
+    if (playing.controller) { try { playing.controller.abort(); } catch (e) {} }
+    try { playing.audio.pause(); } catch (e) {}
+    playing.audio.onended = null;
+    playing.audio.onerror = null;
+    playing.audio.removeAttribute('src');
+    Object.keys(playing.urls).forEach(function (key) { if (playing.urls[key]) URL.revokeObjectURL(playing.urls[key]); });
+    playing.urls = {};
     playing.button.classList.remove('speaking', 'loading');
     icon(playing.button, SPEAKER);
     label(playing.button);
@@ -112,42 +121,78 @@
     setTimeout(function () { run.button.classList.remove('error'); label(run.button); }, 4000);
   }
 
-  function playPart(run, index) {
-    if (run.cancelled) return;
-    if (index >= run.parts) { stop(); return; }
-    var audio = run.audios[index] || prepare(run, index);
-    // The next part loads while this one plays.
-    if (index + 1 < run.parts && !run.audios[index + 1]) prepare(run, index + 1);
-    audio.onended = function () { playPart(run, index + 1); };
-    audio.onerror = function () {
-      if (run.retried[index]) { fail(run, 'Vorlesen fehlgeschlagen'); return; }
-      run.retried[index] = true;
-      setTimeout(function () {
-        if (run.cancelled) return;
-        audio.src = partUrl(run.id, index) + '&retry=1';
-        playPart(run, index);
-      }, 2000);
-    };
-    var started = audio.play();
-    if (started && typeof started.then === 'function') {
-      started.then(function () { run.button.classList.remove('loading'); })
-        .catch(function (error) { if (error && error.name === 'NotAllowedError') fail(run, 'Der Browser hat das Abspielen blockiert'); });
-    } else {
-      run.button.classList.remove('loading');
-    }
+  /* One part as a blob URL; one retry after RETRY_MS; null when it cannot be had. */
+  function fetchPart(run, index, retried) {
+    run.controller = typeof AbortController === 'function' ? new AbortController() : null;
+    return fetch(partUrl(run.id, index), { credentials: 'include', cache: 'no-store', signal: run.controller ? run.controller.signal : undefined })
+      .then(function (response) {
+        if (!response.ok) throw new Error('status ' + response.status);
+        return response.blob();
+      })
+      .then(function (blob) { return URL.createObjectURL(blob); })
+      .catch(function () {
+        if (run.cancelled || retried) return null;
+        return new Promise(function (resolve) { setTimeout(resolve, RETRY_MS); })
+          .then(function () { return run.cancelled ? null : fetchPart(run, index, true); });
+      });
   }
 
-  function prepare(run, index) {
-    var audio = new Audio();
-    audio.preload = 'auto';
-    audio.src = partUrl(run.id, index);
-    run.audios[index] = audio;
-    return audio;
+  function pump(run) {
+    if (run.cancelled || run.fetching || run.next >= run.parts || run.next > run.index + LOOKAHEAD) return;
+    var index = run.next;
+    run.next += 1;
+    run.fetching = true;
+    fetchPart(run, index, false).then(function (url) {
+      run.fetching = false;
+      if (run.cancelled) { if (url) URL.revokeObjectURL(url); return; }
+      run.urls[index] = url;
+      run.ready[index] = true;
+      if (run.waiting === index) playPart(run, index);
+      pump(run);
+    });
+  }
+
+  function playPart(run, index) {
+    if (run.cancelled) return;
+    run.index = index;
+    if (index >= run.parts) { stop(); return; }
+    if (!run.ready[index]) {
+      run.waiting = index;
+      run.button.classList.add('loading');
+      pump(run);
+      return;
+    }
+    run.waiting = -1;
+    var url = run.urls[index];
+    delete run.urls[index];
+    var next = function () {
+      if (url) URL.revokeObjectURL(url);
+      playPart(run, index + 1);
+    };
+    if (!url) {
+      // This part failed twice: skip it; two in a row means the voice is gone.
+      run.failures += 1;
+      if (run.failures >= 2) { fail(run, 'Vorlesen fehlgeschlagen'); return; }
+      next();
+      return;
+    }
+    run.button.classList.remove('loading');
+    run.audio.onended = function () { run.failures = 0; next(); };
+    run.audio.onerror = function () { run.failures += 1; if (run.failures >= 2) fail(run, 'Vorlesen fehlgeschlagen'); else next(); };
+    run.audio.src = url;
+    var started = run.audio.play();
+    if (started && typeof started.catch === 'function') {
+      started.catch(function (error) { if (error && error.name === 'NotAllowedError') fail(run, 'Der Browser hat das Abspielen blockiert'); });
+    }
+    pump(run);
   }
 
   function start(record, button) {
     stop();
-    var run = { button: button, messageId: Number(record.id), cancelled: false, audios: [], retried: {}, parts: 0, id: '' };
+    var audio = new Audio();
+    audio.preload = 'auto';
+    var run = { button: button, messageId: Number(record.id), cancelled: false, audio: audio, urls: {}, ready: {}, parts: 0, id: '',
+      index: 0, next: 0, waiting: -1, fetching: false, failures: 0, controller: null };
     current = run;
     button.classList.add('speaking', 'loading');
     icon(button, STOP);

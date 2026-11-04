@@ -1,4 +1,4 @@
-"""CoreAI 0.6.1: what of a Mara answer is read aloud (P20.3), standard library only.
+"""CoreAI 0.6.1 (parts 0.6.5): what of a Mara answer is read aloud (P20.3), standard library only.
 
 A chat answer is Markdown. Before Eve speaks it:
   - code blocks and tables are named, not read ("Codeblock ausgelassen.")
@@ -7,14 +7,20 @@ A chat answer is Markdown. Before Eve speaks it:
   - tool markers such as [WEB: ...] and emojis are dropped
 Then the German text preparation runs (numbers, dates, file names as words)
 and the text is cut into parts: the first one short, so the voice starts
-quickly, the following ones up to a few sentences.
+quickly, each next one at most GROWTH times as long as the one before (up to
+MAX_PART). Eve computes about twice as fast as she speaks, so the next part
+is ready before the current one ends and there is no gap (0.6.5: a short
+first sentence followed by a 320 character part left several seconds of
+silence).
 """
 from __future__ import annotations
 
 import re
 
 MAX_INPUT = 40000
-FIRST_PART = 160
+FIRST_PART = 120
+MIN_PART = 40
+GROWTH = 1.8
 MAX_PART = 320
 MAX_PARTS = 240
 
@@ -22,6 +28,7 @@ _FENCE = re.compile(r'```.*?(?:```|\Z)', re.S)
 _TOOL_LINE = re.compile(r'\[[A-Z][A-Z_ ]{1,30}:[^\]\n]*\]')
 _EMOJI = re.compile('[\U0001F000-\U0001FAFF\u2600-\u27BF\uFE0F\u200D\u2B00-\u2BFF]')
 _SENTENCE_END = re.compile(r'(?<=[.!?\u2026])\s+')
+_CLAUSE_END = re.compile(r'(?<=[,;:])\s+')
 
 
 def speakable(markdown: str) -> str:
@@ -70,9 +77,12 @@ def speakable(markdown: str) -> str:
     return '\n'.join(paragraphs)
 
 
-def _end(part: str) -> str:
+def _end(part: str, continues: bool = False) -> str:
+    """A part ends with punctuation: a comma when its sentence goes on in the next part."""
     part = part.strip()
-    return part if re.search(r'[.!?\u2026:]$', part) else part + '.'
+    if re.search(r'[.!?\u2026:,;]$', part):
+        return part
+    return part + (',' if continues else '.')
 
 
 def _cut_long(sentence: str, limit: int) -> list[str]:
@@ -93,28 +103,50 @@ def _cut_long(sentence: str, limit: int) -> list[str]:
     return out
 
 
-def split_parts(text: str) -> list[str]:
-    """Plain text -> parts: the first short (quick start), then up to MAX_PART characters."""
-    sentences: list[str] = []
+def _units(text: str) -> list[tuple[str, bool]]:
+    """Sentences cut into clauses (after , ; :); a clause longer than MAX_PART into word runs.
+    Each unit says whether its sentence goes on without punctuation (a cut inside a clause)."""
+    units: list[tuple[str, bool]] = []
     for paragraph in str(text or '').split('\n'):
         for sentence in _SENTENCE_END.split(paragraph.strip()):
-            if sentence.strip():
-                sentences.extend(_cut_long(sentence, MAX_PART))
+            for clause in _CLAUSE_END.split(sentence.strip()):
+                pieces = _cut_long(clause, MAX_PART) if clause.strip() else []
+                units.extend((piece, index < len(pieces) - 1) for index, piece in enumerate(pieces))
+    return units
+
+
+def part_limit(parts: list[str]) -> int:
+    """How long the next part may be: FIRST_PART at first, then GROWTH times the last part."""
+    if not parts:
+        return FIRST_PART
+    return min(MAX_PART, max(MIN_PART, int(GROWTH * len(parts[-1]))))
+
+
+def split_parts(text: str) -> list[str]:
+    """Plain text -> parts: the first short (quick start), then growing up to MAX_PART characters.
+    Parts are filled with whole clauses; only a clause too long for its part is cut at a word."""
+    units = _units(text)
     parts: list[str] = []
-    current = ''
-    for sentence in sentences:
-        limit = FIRST_PART if not parts else MAX_PART
-        if current and len(current) + 1 + len(sentence) > limit:
-            parts.append(_end(current))
-            current = sentence
-        else:
-            current = f'{current} {sentence}'.strip()
-        if not parts and len(current) >= 40:
-            parts.append(_end(current))
+    current, continues = '', False
+    while units and len(parts) < MAX_PARTS:
+        unit, cut = units.pop(0)
+        limit = part_limit(parts)
+        if current and len(current) + 1 + len(unit) > limit:
+            parts.append(_end(current, continues))
             current = ''
-    if current:
-        parts.append(_end(current))
-    return parts[:MAX_PARTS]
+            limit = part_limit(parts)
+        if not current and len(unit) > limit:
+            head, *tail = _cut_long(unit, limit)
+            units[0:0] = [(piece, True) for piece in tail[:-1]] + ([(tail[-1], cut)] if tail else [])
+            unit, cut = head, bool(tail) or cut
+        current = f'{current} {unit}'.strip()
+        continues = cut
+        if not parts and len(current) >= MIN_PART:
+            parts.append(_end(current, continues))
+            current = ''
+    if current and len(parts) < MAX_PARTS:
+        parts.append(_end(current, continues))
+    return parts
 
 
 def plan(markdown: str, prepare) -> list[str]:

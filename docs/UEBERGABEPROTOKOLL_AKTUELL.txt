@@ -1,9 +1,10 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
 Stand: 04.11.2026
-Repository-Version: 0.6.4
-BASIS: main 0.6.3; README Englisch und integrierten Updater dokumentiert.
+Repository-Version: 0.6.5
+BASIS: main 0.6.4, PR #155 gemergt.
 NEUE ARBEIT ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_6_5.txt
   docs/UEBERGABEPROTOKOLL_0_6_4.txt
   docs/UEBERGABEPROTOKOLL_0_6_3.txt
   docs/UEBERGABEPROTOKOLL_0_6_2.txt

@@ -149,6 +149,8 @@ services:
     environment:
       COREAI_VOICE_PORT: ${COREUI_VOICE_PORT:-18790}
       COREAI_VOICE_CORES: ${COREUI_VOICE_CORES:-4}
+      # Seconds between checks for new code after an update; then the service restarts itself.
+      COREAI_VOICE_WATCH_S: "20"
       HF_HOME: /models/hf
       HOME: /tmp
     volumes:

@@ -1,0 +1,41 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.6.5
+Stand: 04.11.2026
+Ausgangsbasis: main 0.6.4 nach Merge von PR #155.
+
+AUFTRAG (Rueckmeldung des Betreibers nach dem ersten Live-Vorlesen):
+"Das laeuft super bis auf englische Woerter spricht sie auch auf deutsch aus und sobald Punkte kommen wie bei
+e.m.b.e.r. wars das komplett. Und es gibt oft lange Pausen. Bei Angaben wie 12:00-20:00 CET wird auch
+Kauderwelsch draus."
+
+URSACHEN:
+- E.M.B.E.R. ging unveraendert an Eve; Pocket kommt mit Buchstaben-Punkt-Folgen nicht zurecht.
+- 12:00-20:00 CET wurde zu "zwoelf:null null-zwanzig:null null CET" (Uhrzeiten nur mit "Uhr" erkannt).
+- Englische Woerter gingen unveraendert an ein rein deutsches Modell.
+- Pausen: Der erste Teil konnte ein kurzer Satz sein (etwa 3 s Audio), der zweite bis 320 Zeichen (etwa 10 s
+  Rechenzeit). Ausserdem verliess sich die Wiedergabe auf preload, das Handy-Browser oft ignorieren; dann
+  wurde jeder Teil erst beim Abspielen berechnet.
+
+UMSETZUNG:
+- tools/tts_spike/textprep_de.py VERSION de-2: DOTTED (EMBER -> Ember), weitere ABBREVIATIONS, TIME_ZONES,
+  DOMAINS, PRONUNCIATION (Art n/w/x, ENDINGS, respell()), Zeitbereiche, Dauer, Verhaeltnisse, Zahlenbereiche,
+  Versionen, Grad, circa, @, Punkt zwischen Kleinbuchstaben, Striche und Pfeile als Komma.
+  Register config/voice/mara-voice.json und tools/tts_spike/voices.json auf de-2; run.py vergleicht mit VERSION.
+- tools/voice/speakable.py: Einheiten = Teilsaetze; part_limit() = 120 am Anfang, dann 1,8 x vorheriger Teil,
+  hoechstens 320; ein weitergehender Satz endet mit Komma.
+- tools/voice/voice_service.py: tighten_pcm() (Rand 0,15 s, Pause hoechstens 0,7 s, Schwelle 2 Prozent);
+  Service.watch(): Code oder Register geaendert -> laufenden Teil beenden, os._exit(0), Docker startet neu.
+- compose.yaml: COREAI_VOICE_WATCH_S "20" fuer voice (Konfiguration geaendert, also beim Update neu erstellt).
+- js/coreui-voice-read.js: pump()/fetchPart()/playPart(): ein Abruf zur Zeit, LOOKAHEAD 3, Blob-URLs, ein
+  Audio-Element, Wiederholung nach 2 s, Teil ueberspringen, zwei Fehler in Folge beenden.
+- README (englisch): Satz zu "Read aloud" als aktueller Stand ergaenzt.
+
+GEPRUEFT:
+- tts-spike-selftest.py (alle Beispiele aus der Rueckmeldung plus Gegenproben), voice-service-selftest.py
+  (Teilung, Stillekuerzung, Neustart bei neuem Code), voice-read-ui-selftest.cjs (Chromium), volle Testreihe,
+  version-merge-check gegen 0.6.4.
+- NICHT hier: echter Klang der Umschreibungen mit Eve (kein Zugang zu Pocket), echter Containerneustart.
+
+NACH DEM MERGE (Betreiber): Update wie gewohnt. Der Container voice wird neu erstellt, Eve laedt einige Sekunden.
+Dann eine Antwort mit englischen Woertern, E.M.B.E.R. und Uhrzeiten vorlesen lassen. Falsch klingende Woerter
+melden; sie lassen sich im Woerterbuch PRONUNCIATION nachbessern.
+OFFEN: Klang der Umschreibungen live pruefen; Live-Runde mit paralleler Core-Anfrage; dann P20.1 Spracheingabe.
