@@ -77,6 +77,14 @@ for target, package in (('piper', 'piper-tts==1.8.0'), ('pocket', 'pocket-tts==4
     check(not re.search(r'^nvidia-', pins, re.M), 'no CUDA packages for ' + target)
 check(dockerfile.count('--index-url https://download.pytorch.org/whl/cpu torch==2.6.0') == 2, 'torch from the CPU index')
 check(dockerfile.count('--only-binary=:all:') == 5, 'only prebuilt packages')
+# 0.5.95: Pocket generates in its own thread and updates the state in place; under
+# torch.inference_mode() that state is refused, so its stream must not use it.
+import ast
+tree = ast.parse((ROOT / 'tools' / 'tts_spike' / 'run.py').read_text(encoding='utf-8'))
+pocket = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == 'Pocket')
+stream = next(n for n in pocket.body if isinstance(n, ast.FunctionDef) and n.name == 'stream')
+check('inference_mode' not in ast.unparse(stream), 'Pocket stream runs without inference_mode')
+check('generate_audio_stream' in ast.unparse(stream), 'Pocket streams its chunks')
 
 # --- tts-spike.sh: measures without network and with a core limit --------------------
 script = ROOT / 'scripts' / 'tts-spike.sh'
@@ -97,6 +105,16 @@ for line in fetches:
     check('--network none' not in line and '/models:ro' not in line, 'fetching needs network and write access')
 check(any('run.py report' in l for l in lines), 'report at the end')
 bad = subprocess.run(['bash', str(script), '--dry-run', '--cores', '2;rm'], capture_output=True, text=True)
+# 0.5.95: --run adds groups to an existing run (e.g. after a fix), the report covers all of it.
+again = subprocess.run(['bash', str(script), '--dry-run', '--skip-build', '--groups', 'pocket-de,pocket-de24', '--run', '20261104-141500'],
+                       capture_output=True, text=True, timeout=60)
+check(again.returncode == 0, '--run dry run: ' + again.stderr)
+again_runs = [l for l in again.stdout.splitlines() if 'run.py run ' in l]
+check(len(again_runs) == 4 and all('/runs/20261104-141500:/out' in l for l in again_runs), 'measured into the given run')
+check(not any('docker build' in l or 'run.py fetch' in l and 'chatterbox' in l for l in again.stdout.splitlines()), 'only the chosen groups')
+check(any('run.py report --run-dir ' in l and l.endswith('/runs/20261104-141500') for l in again.stdout.splitlines()), 'report rebuilt for that run')
+for wrong in ('2026', '../20261104-141500', '20261104-141500;rm'):
+    check(subprocess.run(['bash', str(script), '--dry-run', '--run', wrong], capture_output=True, text=True).returncode != 0, 'bad --run refused: ' + wrong)
 check(bad.returncode != 0, 'bad --cores refused')
 shell = script.read_text(encoding='utf-8')
 check('chown -R root:33 "$OUT"' in shell and "-exec chmod 0640 {} +" in shell, 'samples readable for PHP only (root:33, 0640)')

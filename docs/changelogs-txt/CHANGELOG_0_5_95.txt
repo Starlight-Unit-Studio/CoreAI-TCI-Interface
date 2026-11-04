@@ -1,0 +1,5 @@
+CoreAI: TCI Interface 0.5.95 - 04.11.2026
+- Stimmtest: Pocket TTS laeuft ohne torch.inference_mode (Pocket rechnet in einem eigenen Thread; der Modus erreichte ihn nicht und jede Probe brach ab).
+- Neu: --run ZEITSTEMPEL schreibt Gruppen in einen vorhandenen Lauf, Bericht danach neu.
+- Chatterbox-Meldungen beim Laden sind harmlos (Gewichte beim Messen nur lesbar).
+- Selbsttest prueft beides.

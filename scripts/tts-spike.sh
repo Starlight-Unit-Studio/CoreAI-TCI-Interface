@@ -16,7 +16,7 @@ BASE="$PROJECT_ROOT/var/tts-spike"
 MODELS="$BASE/models"
 RUNS="$BASE/runs"
 STAMP="$(date +%Y%m%d-%H%M%S)"
-IMAGE_TAG='0.5.94'
+IMAGE_TAG='0.5.94'  # follows docker/tts-spike, not the app version: 0.5.95 reuses the images
 VERSION_TAG="coreai-tts-spike"
 
 ENGINES='piper,pocket,chatterbox'
@@ -26,6 +26,7 @@ SKIP_BUILD=''
 REFETCH=''
 DRY_RUN=''
 KEEP='5'
+RUN_STAMP=''
 TIME_LIMIT='3600'
 MEMORY='24g'
 
@@ -43,6 +44,9 @@ Optionen:
   --skip-build      Container nicht neu bauen (nur wenn sie schon existieren)
   --refetch         Gewichte neu laden und neu registrieren, auch wenn sie schon da sind
   --keep N          So viele Testlaeufe behalten (Standard: 5)
+  --run ZEITSTEMPEL In einen vorhandenen Lauf schreiben, z. B. um Gruppen nachzuholen:
+                    --groups pocket-de,pocket-de24 --run 20261104-141500
+                    Der Bericht wird danach aus allen Ergebnissen des Laufs neu erstellt.
   --dry-run         Nur zeigen, was passieren wuerde
   -h, --help        Diese Hilfe
 
@@ -67,6 +71,7 @@ while (($#)); do
     --skip-build) SKIP_BUILD='1'; shift ;;
     --refetch) REFETCH='1'; shift ;;
     --keep) KEEP="${2:-}"; shift 2 ;;
+    --run) RUN_STAMP="${2:-}"; shift 2 ;;
     --dry-run) DRY_RUN='1'; shift ;;
     -h|--help) usage; exit 0 ;;
     *) printf 'Unbekannte Option: %s\n\n' "$1" >&2; usage >&2; exit 2 ;;
@@ -80,6 +85,7 @@ die() { printf '[CoreAI Stimmtest] FEHLER: %s\n' "$*" >&2; exit 1; }
 [[ -z "$GROUP_FILTER" || "$GROUP_FILTER" =~ ^[a-z0-9_,-]+$ ]] || die 'Ungueltige --groups'
 [[ "$CORES" =~ ^[0-9]+(,[0-9]+)*$ ]] || die 'Ungueltige --cores'
 [[ "$KEEP" =~ ^[0-9]+$ ]] && (( KEEP >= 1 )) || die 'Ungueltiges --keep'
+[[ -z "$RUN_STAMP" || "$RUN_STAMP" =~ ^[0-9]{8}-[0-9]{6}$ ]] || die 'Ungueltiges --run (Form JJJJMMTT-HHMMSS)'
 command -v python3 >/dev/null 2>&1 || die 'python3 fehlt auf dem Server'
 [[ -f "$REGISTRY" ]] || die 'tools/tts_spike/voices.json fehlt'
 if [[ -z "$DRY_RUN" ]]; then
@@ -124,10 +130,15 @@ for line in "${SELECTED[@]}"; do
 done
 
 OUT="$RUNS/$STAMP"
+if [[ -n "$RUN_STAMP" ]]; then
+  OUT="$RUNS/$RUN_STAMP"
+  [[ -n "$DRY_RUN" || -d "$OUT" ]] || die "Lauf $RUN_STAMP nicht gefunden unter var/tts-spike/runs"
+  STAMP="$RUN_STAMP"
+fi
 if [[ -z "$DRY_RUN" ]]; then
   install -d -m 0750 -o root -g 33 "$BASE" "$RUNS"
   install -d -m 0700 -o root -g root "$MODELS"
-  install -d -m 0750 -o root -g 33 "$OUT"
+  [[ -d "$OUT" ]] || install -d -m 0750 -o root -g 33 "$OUT"
   free_gb="$(df -Pk "$BASE" | awk 'NR==2 {printf "%d", $4/1048576}')"
   (( free_gb >= 15 )) || log "Hinweis: nur ${free_gb} GB frei; Gewichte und Container brauchen beim ersten Mal etwa 10 GB."
   exec > >(tee -a "$OUT/run.log") 2>&1
@@ -135,7 +146,7 @@ fi
 log "Lauf $STAMP: ${#SELECTED[@]} Gruppen, Kerne $CORES, Hoerproben mit $SAMPLE_CORES Kernen"
 
 # --- Server ----------------------------------------------------------------
-if [[ -z "$DRY_RUN" ]]; then
+if [[ -z "$DRY_RUN" && ! -f "$OUT/host.txt" ]]; then
   {
     printf 'Zeit: %s\n' "$(date --iso-8601=seconds 2>/dev/null || date)"
     if command -v lscpu >/dev/null 2>&1; then

@@ -1,5 +1,12 @@
 # CoreAI: TCI Interface
 
+## 0.5.95 - 04.11.2026
+
+- **Pocket TTS spricht wieder:** Beim ersten Lauf auf dem Server brach jede Pocket-Probe mit "Inplace update to inference tensor outside InferenceMode" ab. Ursache war der Test selbst: Er rief Pocket in `torch.inference_mode()` auf, Pocket rechnet die Sprache aber in einem eigenen Thread, den dieser Modus nicht erreicht, und aendert dort den vorbereiteten Zustand. Pocket laeuft jetzt ohne diesen Rahmen; es schaltet die Gradienten selbst ab (`torch.no_grad`). Piper und Chatterbox waren nicht betroffen.
+- **Gruppen nachholen:** `--run ZEITSTEMPEL` schreibt in einen vorhandenen Testlauf; der Bericht entsteht danach aus allen Ergebnissen des Laufs neu. So laesst sich Pocket nachmessen, ohne Piper und Chatterbox zu wiederholen. Die Container bleiben dieselben (`--skip-build` reicht).
+- Die Meldungen von Chatterbox beim Laden (Cache nicht beschreibbar, veraltete Funktionen, NNPACK) sind harmlos: Die Gewichte sind beim Messen absichtlich nur lesbar.
+- Tests: `tts-spike-selftest.py` prueft, dass der Pocket-Weg ohne `inference_mode` laeuft, und `--run` (richtiger Ordner, nur die gewaehlten Gruppen, Bericht neu, falsche Werte abgelehnt).
+
 ## 0.5.94 - 04.11.2026
 
 - **Stimmtest fuer Maras eigene Stimme (P20.0 Rest):** `sudo bash scripts/tts-spike.sh` vergleicht auf dem Server Piper 1.8.0 (Kerstin, Ramona, Eva K; Thorsten maennlich als Vergleich), Pocket TTS 4.0.1 Deutsch mit 6 und 24 Schichten (Alba, Anna, Vera, Eve, Caro Davy, Estelle; ohne Stimmklon) und Chatterbox Multilingual 0.1.7 (Klon der freien Datensatz-Stimme Kerstin, CC0, dazu die eingebaute Stimme nur als Vergleich).
