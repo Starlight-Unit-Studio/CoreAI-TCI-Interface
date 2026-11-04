@@ -7,7 +7,27 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.93` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.94` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Stimmtest fuer Maras Stimme (0.5.94)
+
+Der Stimmtest (P20.0) vergleicht die Kandidaten fuer Maras eigene Stimme direkt
+auf dem Server: Piper (Kerstin, Ramona, Eva K, Thorsten als Vergleich), Pocket
+TTS Deutsch in zwei Groessen mit frei lizenzierten Stimmen und Chatterbox
+Multilingual mit einem Klon der freien Datensatz-Stimme Kerstin (CC0).
+
+```
+sudo bash /opt/ember-coreui/scripts/tts-spike.sh
+```
+
+Jede Engine laeuft in ihrem eigenen Container mit festen Versionen. Die Gewichte
+werden einmal mit Netz geladen und mit Herkunft, Revision und SHA-256
+registriert; gemessen wird ohne Netz, mit festem Kernlimit (2 und 4 Kerne) und
+erst nach der Pruefung jeder Datei. Ergebnis: Echtzeitfaktor, Zeit bis zum
+ersten Ton, Ladezeit, Spitzen-RAM und Hoerproben derselben sieben Saetze. Die
+Proben stehen unter **Admin Core > Betrieb > Stimmproben** (nur Inhaber) mit
+der Lizenz jeder Stimme. Keine Aenderung an Cores, Modelfile, Datenbank oder
+Warteschlange; nichts davon wird mit CoreAI ausgeliefert.
 
 ## Tests auf heutigem Stand (0.5.93)
 

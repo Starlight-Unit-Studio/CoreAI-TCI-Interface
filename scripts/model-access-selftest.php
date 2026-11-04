@@ -81,7 +81,10 @@ access_test(str_contains($settings, "if (!coreui_model_access_allowed(\$pdo, \$u
 access_test(str_contains($read('api/ai_settings.php'), "if (!coreui_model_access_allowed(\$pdo, \$uid, (string)\$settings['model_override'])) \$settings['model_override'] = '';"),
   'a withdrawn Core falls back at the next message');
 $admin = $read('api/admin.php');
-access_test(substr_count($admin, "if (\$actorLevel !== 0) stu_json(['ok' => false, 'error' => 'owner_only'], 403);") === 2
+// Each model action checks for the Inhaber first (0.5.94 added more owner-only actions, so no plain count).
+$ownerFirst = static fn(string $open, string $indent): bool => str_contains($admin,
+  $open . "\n" . $indent . "if (\$actorLevel !== 0) stu_json(['ok' => false, 'error' => 'owner_only'], 403);");
+access_test($ownerFirst("  if (\$action === 'model_access') {", '    ') && $ownerFirst("if (\$action === 'model_access_save') {", '  ')
   && str_contains($admin, "coreui_admin_audit(\$pdo, \$actorId, 'model_access_save', 'user'")
   && str_contains($admin, "'error' => 'owner_has_all'") && str_contains($admin, "'error' => 'guest_core_locked'"), 'admin API: Inhaber only, audited');
 access_test(str_contains($read('js/admin.js'), "post('model_access_save', { user_id: Number(user.id), models: chosen })")

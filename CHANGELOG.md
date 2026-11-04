@@ -1,5 +1,15 @@
 # CoreAI: TCI Interface
 
+## 0.5.94 - 04.11.2026
+
+- **Stimmtest fuer Maras eigene Stimme (P20.0 Rest):** `sudo bash scripts/tts-spike.sh` vergleicht auf dem Server Piper 1.8.0 (Kerstin, Ramona, Eva K; Thorsten maennlich als Vergleich), Pocket TTS 4.0.1 Deutsch mit 6 und 24 Schichten (Alba, Anna, Vera, Eve, Caro Davy, Estelle; ohne Stimmklon) und Chatterbox Multilingual 0.1.7 (Klon der freien Datensatz-Stimme Kerstin, CC0, dazu die eingebaute Stimme nur als Vergleich).
+- **Messung:** sieben deutsche Saetze (Begruessung, Zahlen, Datum und Uhrzeit, Frage, Dateinamen, Umlaute und ss, laengerer Absatz). Je Probe Rechenzeit, Audiodauer, Echtzeitfaktor und Zeit bis zum ersten Ton; je Engine Ladezeit, Aufwaermen und Spitzen-RAM. Alle Stimmen sprechen mit 4 Kernen, mit 2 Kernen misst je Gruppe die erste Stimme.
+- **Abgeschottet und nachvollziehbar:** jede Engine in ihrem eigenen Container (`docker/tts-spike/`, Python 3.11, genaue Versionen in `constraints-*.txt`, torch nur fuer die CPU). Die Gewichte werden einmal mit Netz geladen und mit Herkunft, Revision und SHA-256 in `var/tts-spike/models/lock-GRUPPE.json` registriert; gemessen wird mit `--network none`, festem Kernlimit, Gewichten nur lesbar und erst nach der SHA-256-Pruefung jeder Datei. Nichts davon wird mit CoreAI ausgeliefert.
+- **Lizenz je Stimme:** `tools/tts_spike/voices.json` fuehrt Herkunft, Stimm-, Gewichts- und Engine-Lizenz. Frei: Kerstin, Thorsten (CC0), die Pocket-Stimmen (CC BY 4.0 oder CC0), der Kerstin-Klon. Pruefen: Ramona und Eva K (M-AILABS) sowie die undokumentierte Chatterbox-Standardstimme. Stimmen mit nicht-kommerzieller Lizenz (Expresso, EARS) sind ausgeschlossen. Piper-Code steht unter GPL-3.0.
+- **Admin Core > Betrieb > Stimmproben (nur Inhaber):** jede Stimme mit FREI/PRUEFEN, Echtzeitfaktor, erstem Ton, RAM, Ladezeit, Lizenzen und einem Abspielknopf je Satz; aeltere Testlaeufe waehlbar, Tabelle der Engines und Kerne. Neue Aktionen `tts_runs` und `tts_sample` in `api/admin.php` (nur GET, nur Inhaber); eine Probe wird nur geliefert, wenn ihr Lauf sie auflistet, sie ein echtes WAV ist und im Laufordner liegt (`api/tts_spike_store.php`). `var/` bleibt in nginx gesperrt.
+- Tests: neu `tts-spike-selftest.py` (Pruef-Engine statt Sprache: Registrierung mit SHA-256, geaenderte Gewichte abgelehnt, Proben und Bericht, Lizenzregeln, feste Versionen, Probelauf des Skripts ohne Netz mit Kernlimit), `tts-spike-store-selftest.php` (Laeufe, oeffentliche Form, nur gelistete Proben, kein Weg aus dem Laufordner, auch nicht ueber Links) und `voice-samples-ui-selftest.cjs` (Chromium: Stimmen, Lizenz, deutsche Zahlen, Abspielen und Stoppen je Satz, Laufwahl, leerer Server, Admin sieht nichts, Handy ohne Querscrollen), in beiden Preflights.
+- Keine Aenderung an Cores, Modelfile, Datenbank oder Warteschlange.
+
 ## 0.5.93 - 04.11.2026
 
 - **Zwei veraltete Oberflaechentests nachgezogen:** Auf main 0.5.92 bestanden 76 Selbsttests, zwei schlugen fehl, beide wegen gewollter Aenderungen, nicht wegen Fehlern im Produkt.

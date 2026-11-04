@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.93 outdated UI tests brought up to date (personalization tab, browser window without search carousel).
+# CoreAI: TCI Interface 0.5.94 voice test: candidates for Mara's voice with samples and licenses in Admin Core (Inhaber).
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -134,6 +134,18 @@ UI_FILES=(
   database/migrations/021_user_policies.sql
   scripts/user-policy-selftest.php
   scripts/memory-length-selftest.php
+  api/tts_spike_store.php
+  js/coreui-voice-samples.js
+  scripts/tts-spike.sh
+  scripts/tts-spike-selftest.py
+  scripts/tts-spike-store-selftest.php
+  scripts/voice-samples-ui-selftest.cjs
+  tools/tts_spike/run.py
+  tools/tts_spike/voices.json
+  docker/tts-spike/Dockerfile
+  docker/tts-spike/constraints-piper.txt
+  docker/tts-spike/constraints-pocket.txt
+  docker/tts-spike/constraints-chatterbox.txt
   scripts/update-ui-selftest.cjs
   tests/update-runner-selftest.sh
   config/systemd/coreai-update.service.template
@@ -294,6 +306,14 @@ if python3 "$PROJECT_ROOT/scripts/workspace-output-selftest.py" >/dev/null 2>&1;
   ok 'Python-Worker: gerettete HTML/ZIP-Dateien und sichere Ausgabepfade geprueft.'
 else
   fail 'Python-Ausgabedatei-Selbsttest fehlgeschlagen.'
+fi
+
+# 0.5.94: voice test (P20.0) with a probe engine: registry and licenses, pinned
+# images, measuring without network and with a core limit, SHA-256 check, report.
+if python3 "$PROJECT_ROOT/scripts/tts-spike-selftest.py" >/dev/null 2>&1; then
+  ok 'Stimmtest: Lizenzen je Stimme, feste Versionen, Messen ohne Netz mit Kernlimit, SHA-256-Pruefung und Bericht geprueft.'
+else
+  fail 'Stimmtest-Selbsttest fehlgeschlagen.'
 fi
 
 if python3 "$PROJECT_ROOT/scripts/python-input-selftest.py" >/dev/null 2>&1; then
@@ -607,6 +627,14 @@ if command -v php >/dev/null 2>&1; then
     fail "Memory-Laengen-Selbsttest: ${memory_length_test:-Unbekannter Fehler}"
   fi
 
+  # 0.5.94: Stimmproben in Admin Core: runs, samples only when listed, Inhaber only.
+  tts_store_test=''
+  if tts_store_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/tts-spike-store-selftest.php" 2>&1)"; then
+    ok 'Stimmproben: Testlaeufe, nur gelistete Hoerproben aus ihrem Lauf, nur fuer den Inhaber geprueft.'
+  else
+    fail "Stimmproben-Selbsttest: ${tts_store_test:-Unbekannter Fehler}"
+  fi
+
   compact_test=''
   if compact_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/compaction-selftest.php" 2>&1)"; then
     ok 'Chat komprimieren: Fenster, laufende Zusammenfassung, Archiv zuerst, Suche und Loeschen geprueft.'
@@ -715,6 +743,16 @@ if command -v php >/dev/null 2>&1; then
       fi
     else
       ok 'Update-Fenster: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+    fi
+    # 0.5.94: Stimmproben card (Inhaber only); needs Playwright for Node.
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/voice-samples-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'Stimmproben: Stimmen mit Lizenz, Abspielen je Satz, Testlaeufe, nur Inhaber und Handy-Breite geprueft.'
+      else
+        fail 'Stimmproben: Oberflaechentest fehlgeschlagen.'
+      fi
+    else
+      ok 'Stimmproben: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
     fi
     if node "$PROJECT_ROOT/scripts/webui-resilience-selftest.cjs" >/dev/null 2>&1; then
       ok 'WebUI: abbrechbares Laden, Reconnect ohne Doppelauftrag, Backoff und lange Chats geprueft.'
