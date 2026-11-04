@@ -66,6 +66,8 @@ try {
   voice_test(coreui_voice_plan($dir, 'Eine Antwort von Mara.') === $plan && $calls('POST /plan') === 1, 'plan from the cache');
   voice_test(coreui_voice_plan($dir, 'Eine andere Antwort.')['id'] !== $plan['id'], 'another answer, another id');
   voice_test(coreui_voice_plan_id('x') === coreui_voice_plan_id('x') && strlen(coreui_voice_plan_id('x')) === 64, 'stable id');
+  voice_test(COREUI_VOICE_PLAN_SOURCES === ['config/voice/mara-voice.json', 'tools/tts_spike/textprep_de.py', 'tools/voice/speakable.py'],
+    'the plan id follows registry, text preparation and splitting, so a new dictionary entry is heard at once');
 
   // Audio: computed once per part, then from the cache.
   $file = coreui_voice_audio($dir, $plan['id'], 0);

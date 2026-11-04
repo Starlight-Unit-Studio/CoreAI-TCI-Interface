@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.6: Stimmtest mit englischer Eve (englische Testsaetze, eigene Gruppen); Eve-Pruefungen aktiv.
+# CoreAI: TCI Interface 0.6.7: Vorlesen sagt TCI mit I (Ti Si Ei); Vorlese-Plaene folgen dem Code der Textaufbereitung; Eve-Pruefungen aktiv.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
