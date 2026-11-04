@@ -28,6 +28,26 @@ Bei einer **Aktualisierung** denselben One-Liner erneut ausführen. Das Setup er
 
 Der gesondert archivierte, SHA-256-verifizierte ZIP-Stand `0.5.3-alpha` bleibt explizit über `COREUI_SETUP_SOURCE=release` verfügbar. Er ist **nicht** der aktuelle Quellstand. `main` wird nicht als neu geprüftes ZIP-Release ausgegeben.
 
+## Hardwareanforderungen
+
+**Hardware-Richtwerte fuer Selbsthosting, keine garantierten oder live vermessenen Mindestwerte.** Die Zahlen gelten fuer einen Linux-Server mit CoreAI, Ollama und Docker, ein aktives lokal laufendes Modell in **4-Bit-Quantisierung (Q4)** und zunaechst einem begrenzten Kontextfenster (z. B. 4K bis 8K Tokens). Fuer andere Quantisierungen, grosse Kontextfenster, mehrere aktive Nutzer und weitere Dienste mehr Ressourcen einplanen.
+
+| Betriebsprofil | RAM gesamt | CPU | Freier Speicherplatz | Einordnung |
+| --- | --- | --- | --- | --- |
+| E2B, eingeschraenkter Test | ab **8 GB** | ab 4 vCPU | ab 40 GB | Nur mit kurzem Kontext, ohne optionalen Voice- und Browse-Worker; nicht als Standardinstallation empfohlen |
+| **E2B, empfohlen** | **16 GB** | 4 bis 6 vCPU | 60 bis 80 GB | Reserve fuer CoreAI-Dienste, kurze bis mittlere Chats und optionale Werkzeuge |
+| **E4B, empfohlen** | **24 bis 32 GB** | 6 bis 8 vCPU | ab 80 GB | Sinnvolle Orientierung fuer die regulaere lokale Nutzung; die Standardinstallation verwendet E4B, falls kein geeignetes Basismodell vorhanden ist |
+| 12B, Orientierung | ab **32 GB** | ab 8 vCPU | ab 100 GB | 4-Bit-Modell, begrenzter Kontext; CPU-Ausgabe kann deutlich langsamer sein |
+| 26B A4B / 31B, Orientierung | **64 bis 96 GB oder mehr** | 12 bis 16 vCPU | ab 120 GB | Fuer grosse lokale Cores; Kontextfenster und Antwortgeschwindigkeit koennen wesentlich hoehere Anforderungen verursachen |
+
+**Warum RAM nicht nur die Modellgroesse ist:** Google nennt fuer Gemma 4 bei Q4 ungefaehr 2,9 GB (E2B), 4,5 GB (E4B), 6,7 GB (12B), 14,4 GB (26B A4B) und 17,5 GB (31B) fuer das Laden des Modells. **KV-Cache, Kontextfenster, Ollama, Linux, Docker, MariaDB, Websuche und laufende Arbeitsprozesse kommen hinzu.** Daher sind diese Modellwerte keine vollstaendigen Server-Mindestanforderungen. Quelle: [Google Gemma 4 Modelldokumentation](https://ai.google.dev/gemma/docs/core).
+
+**Optionale Sprachausgabe:** Eve benoetigt im gemessenen Test etwa 2,5 GB RAM und verwendet bis zu 4 CPU-Kerne; das Containerlimit ist 6 GB. Bei wenig RAM den Sprachdienst mit `COREUI_INSTALL_VOICE=0` bereits bei der Erstinstallation abwaehlen. Bei bestehenden Installationen Installationsoptionen nicht ohne Konfigurationspruefung aendern.
+
+**CPU statt GPU:** Eine dedizierte Grafikkarte ist fuer den CPU-Betrieb nicht zwingend. Genuegend RAM bedeutet aber nicht automatisch gute Geschwindigkeit: CPU-Leistung, Speicherbandbreite, Quantisierung und Kontextgroesse bestimmen die nutzbare Ausgabe. Die Tabellenwerte sind Planungsempfehlungen, **keine Benchmarks und keine Zusage einer bestimmten Tokens-pro-Sekunde-Rate**.
+
+**Serververgleich:** Der Netcup-Tarif *VPS 8000 G12.5* bietet nach Anbieterangaben 16 vCores und 64 GB RAM. Das ist ein Beispiel fuer einen groesseren Ausbau und **keine Mindestvoraussetzung fuer E2B**. Tarife und Leistungen koennen sich aendern. Quelle: [netcup VPS 8000 G12.5](https://www.netcup.com/de/server/vps/vps-8000-g12.5-24m-eu).
+
 ## Zugriff und wichtige Optionen
 
 Standardmäßig lauscht die Weboberfläche nur auf `127.0.0.1:9080`. Sie wird nicht automatisch öffentlich freigegeben. Für Zugriffe von anderen Geräten einen SSH-Tunnel oder einen separat abgesicherten Reverse-Proxy verwenden. Bei einer Internetfreigabe müssen HTTPS, Zugangsschutz und die Betreiberpflichten geprüft werden.
