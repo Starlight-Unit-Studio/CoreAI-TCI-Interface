@@ -14,8 +14,9 @@ const root = path.resolve(__dirname, '..');
 const types = {'.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.woff2': 'font/woff2'};
 
 const SENTENCES = [
-  {id: 's1', topic: 'Begrüßung', text: 'Hallo, ich bin Mara. Schön, dass du da bist.'},
-  {id: 's2', topic: 'Zahlen', text: 'Dein Kontextfenster ist auf 32.768 Tokens eingestellt.'},
+  {id: 's1', topic: 'Begrüßung', text: 'Hallo, ich bin Mara. Schön, dass du da bist.', spoken: 'Hallo, ich bin Mara. Schön, dass du da bist.'},
+  {id: 's2', topic: 'Zahlen', text: 'Dein Kontextfenster ist auf 32.768 Tokens eingestellt.',
+    spoken: 'Dein Kontextfenster ist auf zweiunddreißigtausendsiebenhundertachtundsechzig Tokens eingestellt.'},
 ];
 const sample = (voice, sid, rtf) => ({sentence: sid, file: `${voice}-4c-${sid}.wav`, synth_s: 0.5, audio_s: 2.5, rtf, first_audio_s: 0.12});
 function voice(id, label, status, ok, samples, extra) {
@@ -119,7 +120,9 @@ async function open(browser, level, viewport, state) {
     assert.equal(await page.textContent('#ttsMeta'),
       'Lauf vom 04.11.2026, 15:30 Uhr: 2 von 3 Stimmen gesprochen, Hörproben mit 4 Kernen, 1 Fehler (siehe report.md).');
     assert.deepEqual(await page.$$eval('#ttsSentences li', l => l.map(x => x.textContent)),
-      ['Begrüßung: Hallo, ich bin Mara. Schön, dass du da bist.', 'Zahlen: Dein Kontextfenster ist auf 32.768 Tokens eingestellt.']);
+      ['Begrüßung: Hallo, ich bin Mara. Schön, dass du da bist.',
+        'Zahlen: Dein Kontextfenster ist auf 32.768 Tokens eingestellt.Gesprochen als: Dein Kontextfenster ist auf zweiunddreißigtausendsiebenhundertachtundsechzig Tokens eingestellt.']);
+    assert.equal(await page.locator('#ttsSentences .tts-spoken').count(), 1, 'spoken text only where it differs');
     assert.deepEqual(await page.$$eval('.tts-voice-name strong', l => l.map(x => x.textContent)), ['Anna', 'Ramona', 'Kerstin (Klon)']);
     assert.deepEqual(await page.$$eval('.tts-badge', l => l.map(x => x.textContent)), ['FREI', 'PRÜFEN', 'FREI'], 'license badge per voice');
     assert.deepEqual(await page.$$eval('[data-voice="pocket-de-anna"] .tts-metric strong', l => l.map(x => x.textContent)),

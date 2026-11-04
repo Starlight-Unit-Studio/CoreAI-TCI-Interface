@@ -1,15 +1,44 @@
 {
   "format": 1,
-  "note": "CoreAI 0.5.94: Kandidaten fuer Maras Stimme (P20.0). Jede Stimme mit Herkunft und Lizenz; die Gewichte werden beim Laden mit Revision und SHA-256 registriert (var/tts-spike/models/lock-GRUPPE.json) und nie mit CoreAI ausgeliefert.",
+  "note": "CoreAI 0.5.94: Kandidaten fuer Maras Stimme (P20.0). Jede Stimme mit Herkunft und Lizenz; die Gewichte werden beim Laden mit Revision und SHA-256 registriert (var/tts-spike/models/lock-GRUPPE.json) und nie mit CoreAI ausgeliefert. 0.5.98: Textaufbereitung de-1 vor dem Sprechen, Kerstin als Klon fuer Pocket TTS.",
   "sample_cores": 4,
+  "textprep": "de-1",
   "sentences": [
-    {"id": "s1", "topic": "Begrüßung", "text": "Hallo, ich bin Mara. Schön, dass du da bist."},
-    {"id": "s2", "topic": "Zahlen", "text": "Dein Kontextfenster ist auf 32.768 Tokens eingestellt, und 3 von 4 Werkzeugen sind aktiv."},
-    {"id": "s3", "topic": "Datum und Uhrzeit", "text": "Heute ist Mittwoch, der 4. November 2026, und es ist 14:30 Uhr."},
-    {"id": "s4", "topic": "Frage", "text": "Soll ich die Datei jetzt speichern, oder möchtest du sie vorher noch einmal sehen?"},
-    {"id": "s5", "topic": "Namen und Liste", "text": "Im Projekt liegen drei Dateien: index.html, style.css und script.js."},
-    {"id": "s6", "topic": "Umlaute und ß", "text": "Jürgen grüßt die Bäckerin, die süße Brötchen über die große Straße trägt."},
-    {"id": "s7", "topic": "Längerer Absatz", "text": "Ich habe die Webseite durchsucht und drei passende Quellen gefunden. Die erste ist ein Artikel aus dem Jahr 2024, die zweite eine offizielle Dokumentation. Wenn du möchtest, fasse ich dir die wichtigsten Punkte kurz zusammen."}
+    {
+      "id": "s1",
+      "topic": "Begrüßung",
+      "text": "Hallo, ich bin Mara. Schön, dass du da bist."
+    },
+    {
+      "id": "s2",
+      "topic": "Zahlen",
+      "text": "Dein Kontextfenster ist auf 32.768 Tokens eingestellt, und 3 von 4 Werkzeugen sind aktiv."
+    },
+    {
+      "id": "s3",
+      "topic": "Datum und Uhrzeit",
+      "text": "Heute ist Mittwoch, der 4. November 2026, und es ist 14:30 Uhr."
+    },
+    {
+      "id": "s4",
+      "topic": "Frage",
+      "text": "Soll ich die Datei jetzt speichern, oder möchtest du sie vorher noch einmal sehen?"
+    },
+    {
+      "id": "s5",
+      "topic": "Namen und Liste",
+      "text": "Im Projekt liegen drei Dateien: index.html, style.css und script.js."
+    },
+    {
+      "id": "s6",
+      "topic": "Umlaute und ß",
+      "text": "Jürgen grüßt die Bäckerin, die süße Brötchen über die große Straße trägt."
+    },
+    {
+      "id": "s7",
+      "topic": "Längerer Absatz",
+      "text": "Ich habe die Webseite durchsucht und drei passende Quellen gefunden. Die erste ist ein Artikel aus dem Jahr 2024, die zweite eine offizielle Dokumentation. Wenn du möchtest, fasse ich dir die wichtigsten Punkte kurz zusammen."
+    }
   ],
   "engines": {
     "piper": {
@@ -23,7 +52,7 @@
       "label": "Pocket TTS",
       "package": "pocket-tts==4.0.1",
       "code_license": "MIT",
-      "code_note": "Gewichte ohne Stimmklon (CC BY 4.0, Namensnennung Kyutai).",
+      "code_note": "Gewichte CC BY 4.0 (Namensnennung Kyutai). Die Klon-Gewichte sind auf Hugging Face gesperrt und erst nach Zustimmung zu den Bedingungen von Kyutai ladbar.",
       "home": "https://github.com/kyutai-labs/pocket-tts"
     },
     "chatterbox": {
@@ -39,32 +68,56 @@
       "engine": "piper",
       "label": "Piper, Kerstin (low, 16 kHz)",
       "files": [
-        {"repo": "rhasspy/piper-voices", "path": "de/de_DE/kerstin/low/de_DE-kerstin-low.onnx"},
-        {"repo": "rhasspy/piper-voices", "path": "de/de_DE/kerstin/low/de_DE-kerstin-low.onnx.json"}
+        {
+          "repo": "rhasspy/piper-voices",
+          "path": "de/de_DE/kerstin/low/de_DE-kerstin-low.onnx"
+        },
+        {
+          "repo": "rhasspy/piper-voices",
+          "path": "de/de_DE/kerstin/low/de_DE-kerstin-low.onnx.json"
+        }
       ]
     },
     "piper-ramona": {
       "engine": "piper",
       "label": "Piper, Ramona (low, 16 kHz)",
       "files": [
-        {"repo": "rhasspy/piper-voices", "path": "de/de_DE/ramona/low/de_DE-ramona-low.onnx"},
-        {"repo": "rhasspy/piper-voices", "path": "de/de_DE/ramona/low/de_DE-ramona-low.onnx.json"}
+        {
+          "repo": "rhasspy/piper-voices",
+          "path": "de/de_DE/ramona/low/de_DE-ramona-low.onnx"
+        },
+        {
+          "repo": "rhasspy/piper-voices",
+          "path": "de/de_DE/ramona/low/de_DE-ramona-low.onnx.json"
+        }
       ]
     },
     "piper-eva_k": {
       "engine": "piper",
       "label": "Piper, Eva K (x_low, 16 kHz)",
       "files": [
-        {"repo": "rhasspy/piper-voices", "path": "de/de_DE/eva_k/x_low/de_DE-eva_k-x_low.onnx"},
-        {"repo": "rhasspy/piper-voices", "path": "de/de_DE/eva_k/x_low/de_DE-eva_k-x_low.onnx.json"}
+        {
+          "repo": "rhasspy/piper-voices",
+          "path": "de/de_DE/eva_k/x_low/de_DE-eva_k-x_low.onnx"
+        },
+        {
+          "repo": "rhasspy/piper-voices",
+          "path": "de/de_DE/eva_k/x_low/de_DE-eva_k-x_low.onnx.json"
+        }
       ]
     },
     "piper-thorsten": {
       "engine": "piper",
       "label": "Piper, Thorsten (high, 22 kHz)",
       "files": [
-        {"repo": "rhasspy/piper-voices", "path": "de/de_DE/thorsten/high/de_DE-thorsten-high.onnx"},
-        {"repo": "rhasspy/piper-voices", "path": "de/de_DE/thorsten/high/de_DE-thorsten-high.onnx.json"}
+        {
+          "repo": "rhasspy/piper-voices",
+          "path": "de/de_DE/thorsten/high/de_DE-thorsten-high.onnx"
+        },
+        {
+          "repo": "rhasspy/piper-voices",
+          "path": "de/de_DE/thorsten/high/de_DE-thorsten-high.onnx.json"
+        }
       ]
     },
     "pocket-de": {
@@ -77,28 +130,43 @@
       "label": "Pocket TTS Deutsch (24 Schichten)",
       "language": "german_24l"
     },
+    "pocket-de-kerstin": {
+      "engine": "pocket",
+      "label": "Pocket TTS Deutsch (6 Schichten), Klon",
+      "language": "german",
+      "clone": true,
+      "hf_home": "hf-clone",
+      "reference": "kerstin"
+    },
+    "pocket-de24-kerstin": {
+      "engine": "pocket",
+      "label": "Pocket TTS Deutsch (24 Schichten), Klon",
+      "language": "german_24l",
+      "clone": true,
+      "hf_home": "hf-clone",
+      "reference": "kerstin"
+    },
     "chatterbox": {
       "engine": "chatterbox",
       "label": "Chatterbox Multilingual",
       "repo": "ResembleAI/chatterbox",
       "revision": "main",
-      "allow": ["ve.pt", "t3_mtl23ls_v2.safetensors", "s3gen.pt", "grapheme_mtl_merged_expanded_v1.json", "conds.pt"],
-      "reference": {
-        "label": "Kerstin (Datensatz, CC0 1.0)",
-        "dataset": "https://github.com/rhasspy/dataset-voice-kerstin",
-        "license": "CC0 1.0",
-        "base_urls": [
-          "https://raw.githubusercontent.com/rhasspy/dataset-voice-kerstin/master/verified/",
-          "https://media.githubusercontent.com/media/rhasspy/dataset-voice-kerstin/master/verified/"
-        ],
-        "clips": ["de_rhasspy-0018.flac", "de_rhasspy-0020.flac", "de_rhasspy-0014.flac", "de_rhasspy-0016.flac"],
-        "seconds": 10
-      }
+      "allow": [
+        "ve.pt",
+        "t3_mtl23ls_v2.safetensors",
+        "s3gen.pt",
+        "grapheme_mtl_merged_expanded_v1.json",
+        "conds.pt"
+      ],
+      "reference": "kerstin"
     }
   },
   "voices": [
     {
-      "id": "piper-kerstin", "group": "piper-kerstin", "label": "Kerstin", "gender": "weiblich",
+      "id": "piper-kerstin",
+      "group": "piper-kerstin",
+      "label": "Kerstin",
+      "gender": "weiblich",
       "status": "frei",
       "voice_license": "CC0 1.0 (Datensatz Kerstin, eigens für Sprachsynthese aufgenommen)",
       "weights_license": "MIT (rhasspy/piper-voices)",
@@ -106,7 +174,10 @@
       "note": "Nur in niedriger Qualität (16 kHz) verfügbar."
     },
     {
-      "id": "piper-ramona", "group": "piper-ramona", "label": "Ramona", "gender": "weiblich",
+      "id": "piper-ramona",
+      "group": "piper-ramona",
+      "label": "Ramona",
+      "gender": "weiblich",
       "status": "pruefen",
       "voice_license": "M-AILABS-Lizenz (Hörbuchaufnahmen), vor einer Auslieferung prüfen",
       "weights_license": "MIT (rhasspy/piper-voices)",
@@ -114,7 +185,10 @@
       "note": ""
     },
     {
-      "id": "piper-eva_k", "group": "piper-eva_k", "label": "Eva K", "gender": "weiblich",
+      "id": "piper-eva_k",
+      "group": "piper-eva_k",
+      "label": "Eva K",
+      "gender": "weiblich",
       "status": "pruefen",
       "voice_license": "M-AILABS-Lizenz (Hörbuchaufnahmen), vor einer Auslieferung prüfen",
       "weights_license": "MIT (rhasspy/piper-voices)",
@@ -122,54 +196,190 @@
       "note": "Sehr niedrige Qualität (x_low)."
     },
     {
-      "id": "piper-thorsten", "group": "piper-thorsten", "label": "Thorsten", "gender": "männlich",
+      "id": "piper-thorsten",
+      "group": "piper-thorsten",
+      "label": "Thorsten",
+      "gender": "männlich",
       "status": "frei",
       "voice_license": "CC0 1.0 (Thorsten-Voice, eigens für Sprachsynthese aufgenommen)",
       "weights_license": "MIT (rhasspy/piper-voices)",
       "origin": "https://huggingface.co/rhasspy/piper-voices (de_DE-thorsten-high), Datensatz https://github.com/thorstenMueller/Thorsten-Voice",
       "note": "Männlich: nur als Qualitätsvergleich für Piper."
     },
-
-    {"id": "pocket-de-alba", "group": "pocket-de", "voice": "alba", "label": "Alba", "gender": "weiblich", "status": "frei",
-     "voice_license": "CC BY 4.0 (Alba McKenna, Namensnennung)", "weights_license": "CC BY 4.0 (Kyutai, Namensnennung)",
-     "origin": "kyutai/tts-voices alba-mackenna/casual.wav, Stimmzustand aus kyutai/pocket-tts-without-voice-cloning", "note": "Englische Sprecherin, Deutsch über das deutsche Modell."},
-    {"id": "pocket-de-anna", "group": "pocket-de", "voice": "anna", "label": "Anna", "gender": "weiblich", "status": "frei",
-     "voice_license": "CC BY 4.0 (VCTK p228, Namensnennung)", "weights_license": "CC BY 4.0 (Kyutai, Namensnennung)",
-     "origin": "kyutai/tts-voices vctk/p228, Stimmzustand aus kyutai/pocket-tts-without-voice-cloning", "note": "Englische Sprecherin."},
-    {"id": "pocket-de-vera", "group": "pocket-de", "voice": "vera", "label": "Vera", "gender": "weiblich", "status": "frei",
-     "voice_license": "CC BY 4.0 (VCTK p229, Namensnennung)", "weights_license": "CC BY 4.0 (Kyutai, Namensnennung)",
-     "origin": "kyutai/tts-voices vctk/p229, Stimmzustand aus kyutai/pocket-tts-without-voice-cloning", "note": "Englische Sprecherin."},
-    {"id": "pocket-de-eve", "group": "pocket-de", "voice": "eve", "label": "Eve", "gender": "weiblich", "status": "frei",
-     "voice_license": "CC BY 4.0 (VCTK p361, Namensnennung)", "weights_license": "CC BY 4.0 (Kyutai, Namensnennung)",
-     "origin": "kyutai/tts-voices vctk/p361, Stimmzustand aus kyutai/pocket-tts-without-voice-cloning", "note": "Englische Sprecherin."},
-    {"id": "pocket-de-caro_davy", "group": "pocket-de", "voice": "caro_davy", "label": "Caro Davy", "gender": "weiblich", "status": "frei",
-     "voice_license": "CC0 1.0 (voice-zero)", "weights_license": "CC BY 4.0 (Kyutai, Namensnennung)",
-     "origin": "kyutai/tts-voices voice-zero/caro_davy.wav, Stimmzustand aus kyutai/pocket-tts-without-voice-cloning", "note": ""},
-    {"id": "pocket-de-estelle", "group": "pocket-de", "voice": "estelle", "label": "Estelle", "gender": "weiblich", "status": "frei",
-     "voice_license": "CC0 1.0 (eigene Aufnahme von Kyutai)", "weights_license": "CC BY 4.0 (Kyutai, Namensnennung)",
-     "origin": "kyutai/tts-voices unmute-prod-website/developpeuse-3.wav, Stimmzustand aus kyutai/pocket-tts-without-voice-cloning", "note": "Französische Sprecherin."},
-
-    {"id": "pocket-de24-alba", "group": "pocket-de24", "voice": "alba", "label": "Alba", "gender": "weiblich", "status": "frei",
-     "voice_license": "CC BY 4.0 (Alba McKenna, Namensnennung)", "weights_license": "CC BY 4.0 (Kyutai, Namensnennung)",
-     "origin": "kyutai/tts-voices alba-mackenna/casual.wav, Stimmzustand aus kyutai/pocket-tts-without-voice-cloning", "note": "Englische Sprecherin, Deutsch über das deutsche Modell."},
-    {"id": "pocket-de24-anna", "group": "pocket-de24", "voice": "anna", "label": "Anna", "gender": "weiblich", "status": "frei",
-     "voice_license": "CC BY 4.0 (VCTK p228, Namensnennung)", "weights_license": "CC BY 4.0 (Kyutai, Namensnennung)",
-     "origin": "kyutai/tts-voices vctk/p228, Stimmzustand aus kyutai/pocket-tts-without-voice-cloning", "note": "Englische Sprecherin."},
-    {"id": "pocket-de24-vera", "group": "pocket-de24", "voice": "vera", "label": "Vera", "gender": "weiblich", "status": "frei",
-     "voice_license": "CC BY 4.0 (VCTK p229, Namensnennung)", "weights_license": "CC BY 4.0 (Kyutai, Namensnennung)",
-     "origin": "kyutai/tts-voices vctk/p229, Stimmzustand aus kyutai/pocket-tts-without-voice-cloning", "note": "Englische Sprecherin."},
-    {"id": "pocket-de24-eve", "group": "pocket-de24", "voice": "eve", "label": "Eve", "gender": "weiblich", "status": "frei",
-     "voice_license": "CC BY 4.0 (VCTK p361, Namensnennung)", "weights_license": "CC BY 4.0 (Kyutai, Namensnennung)",
-     "origin": "kyutai/tts-voices vctk/p361, Stimmzustand aus kyutai/pocket-tts-without-voice-cloning", "note": "Englische Sprecherin."},
-    {"id": "pocket-de24-caro_davy", "group": "pocket-de24", "voice": "caro_davy", "label": "Caro Davy", "gender": "weiblich", "status": "frei",
-     "voice_license": "CC0 1.0 (voice-zero)", "weights_license": "CC BY 4.0 (Kyutai, Namensnennung)",
-     "origin": "kyutai/tts-voices voice-zero/caro_davy.wav, Stimmzustand aus kyutai/pocket-tts-without-voice-cloning", "note": ""},
-    {"id": "pocket-de24-estelle", "group": "pocket-de24", "voice": "estelle", "label": "Estelle", "gender": "weiblich", "status": "frei",
-     "voice_license": "CC0 1.0 (eigene Aufnahme von Kyutai)", "weights_license": "CC BY 4.0 (Kyutai, Namensnennung)",
-     "origin": "kyutai/tts-voices unmute-prod-website/developpeuse-3.wav, Stimmzustand aus kyutai/pocket-tts-without-voice-cloning", "note": "Französische Sprecherin."},
-
     {
-      "id": "chatterbox-kerstin", "group": "chatterbox", "voice": "reference", "label": "Kerstin (Klon)", "gender": "weiblich",
+      "id": "pocket-de-alba",
+      "group": "pocket-de",
+      "voice": "alba",
+      "label": "Alba",
+      "gender": "weiblich",
+      "status": "frei",
+      "voice_license": "CC BY 4.0 (Alba McKenna, Namensnennung)",
+      "weights_license": "CC BY 4.0 (Kyutai, Namensnennung)",
+      "origin": "kyutai/tts-voices alba-mackenna/casual.wav, Stimmzustand aus kyutai/pocket-tts-without-voice-cloning",
+      "note": "Englische Sprecherin, Deutsch über das deutsche Modell."
+    },
+    {
+      "id": "pocket-de-anna",
+      "group": "pocket-de",
+      "voice": "anna",
+      "label": "Anna",
+      "gender": "weiblich",
+      "status": "frei",
+      "voice_license": "CC BY 4.0 (VCTK p228, Namensnennung)",
+      "weights_license": "CC BY 4.0 (Kyutai, Namensnennung)",
+      "origin": "kyutai/tts-voices vctk/p228, Stimmzustand aus kyutai/pocket-tts-without-voice-cloning",
+      "note": "Englische Sprecherin."
+    },
+    {
+      "id": "pocket-de-vera",
+      "group": "pocket-de",
+      "voice": "vera",
+      "label": "Vera",
+      "gender": "weiblich",
+      "status": "frei",
+      "voice_license": "CC BY 4.0 (VCTK p229, Namensnennung)",
+      "weights_license": "CC BY 4.0 (Kyutai, Namensnennung)",
+      "origin": "kyutai/tts-voices vctk/p229, Stimmzustand aus kyutai/pocket-tts-without-voice-cloning",
+      "note": "Englische Sprecherin."
+    },
+    {
+      "id": "pocket-de-eve",
+      "group": "pocket-de",
+      "voice": "eve",
+      "label": "Eve",
+      "gender": "weiblich",
+      "status": "frei",
+      "voice_license": "CC BY 4.0 (VCTK p361, Namensnennung)",
+      "weights_license": "CC BY 4.0 (Kyutai, Namensnennung)",
+      "origin": "kyutai/tts-voices vctk/p361, Stimmzustand aus kyutai/pocket-tts-without-voice-cloning",
+      "note": "Englische Sprecherin."
+    },
+    {
+      "id": "pocket-de-caro_davy",
+      "group": "pocket-de",
+      "voice": "caro_davy",
+      "label": "Caro Davy",
+      "gender": "weiblich",
+      "status": "frei",
+      "voice_license": "CC0 1.0 (voice-zero)",
+      "weights_license": "CC BY 4.0 (Kyutai, Namensnennung)",
+      "origin": "kyutai/tts-voices voice-zero/caro_davy.wav, Stimmzustand aus kyutai/pocket-tts-without-voice-cloning",
+      "note": ""
+    },
+    {
+      "id": "pocket-de-estelle",
+      "group": "pocket-de",
+      "voice": "estelle",
+      "label": "Estelle",
+      "gender": "weiblich",
+      "status": "frei",
+      "voice_license": "CC0 1.0 (eigene Aufnahme von Kyutai)",
+      "weights_license": "CC BY 4.0 (Kyutai, Namensnennung)",
+      "origin": "kyutai/tts-voices unmute-prod-website/developpeuse-3.wav, Stimmzustand aus kyutai/pocket-tts-without-voice-cloning",
+      "note": "Französische Sprecherin."
+    },
+    {
+      "id": "pocket-de24-alba",
+      "group": "pocket-de24",
+      "voice": "alba",
+      "label": "Alba",
+      "gender": "weiblich",
+      "status": "frei",
+      "voice_license": "CC BY 4.0 (Alba McKenna, Namensnennung)",
+      "weights_license": "CC BY 4.0 (Kyutai, Namensnennung)",
+      "origin": "kyutai/tts-voices alba-mackenna/casual.wav, Stimmzustand aus kyutai/pocket-tts-without-voice-cloning",
+      "note": "Englische Sprecherin, Deutsch über das deutsche Modell."
+    },
+    {
+      "id": "pocket-de24-anna",
+      "group": "pocket-de24",
+      "voice": "anna",
+      "label": "Anna",
+      "gender": "weiblich",
+      "status": "frei",
+      "voice_license": "CC BY 4.0 (VCTK p228, Namensnennung)",
+      "weights_license": "CC BY 4.0 (Kyutai, Namensnennung)",
+      "origin": "kyutai/tts-voices vctk/p228, Stimmzustand aus kyutai/pocket-tts-without-voice-cloning",
+      "note": "Englische Sprecherin."
+    },
+    {
+      "id": "pocket-de24-vera",
+      "group": "pocket-de24",
+      "voice": "vera",
+      "label": "Vera",
+      "gender": "weiblich",
+      "status": "frei",
+      "voice_license": "CC BY 4.0 (VCTK p229, Namensnennung)",
+      "weights_license": "CC BY 4.0 (Kyutai, Namensnennung)",
+      "origin": "kyutai/tts-voices vctk/p229, Stimmzustand aus kyutai/pocket-tts-without-voice-cloning",
+      "note": "Englische Sprecherin."
+    },
+    {
+      "id": "pocket-de24-eve",
+      "group": "pocket-de24",
+      "voice": "eve",
+      "label": "Eve",
+      "gender": "weiblich",
+      "status": "frei",
+      "voice_license": "CC BY 4.0 (VCTK p361, Namensnennung)",
+      "weights_license": "CC BY 4.0 (Kyutai, Namensnennung)",
+      "origin": "kyutai/tts-voices vctk/p361, Stimmzustand aus kyutai/pocket-tts-without-voice-cloning",
+      "note": "Englische Sprecherin."
+    },
+    {
+      "id": "pocket-de24-caro_davy",
+      "group": "pocket-de24",
+      "voice": "caro_davy",
+      "label": "Caro Davy",
+      "gender": "weiblich",
+      "status": "frei",
+      "voice_license": "CC0 1.0 (voice-zero)",
+      "weights_license": "CC BY 4.0 (Kyutai, Namensnennung)",
+      "origin": "kyutai/tts-voices voice-zero/caro_davy.wav, Stimmzustand aus kyutai/pocket-tts-without-voice-cloning",
+      "note": ""
+    },
+    {
+      "id": "pocket-de24-estelle",
+      "group": "pocket-de24",
+      "voice": "estelle",
+      "label": "Estelle",
+      "gender": "weiblich",
+      "status": "frei",
+      "voice_license": "CC0 1.0 (eigene Aufnahme von Kyutai)",
+      "weights_license": "CC BY 4.0 (Kyutai, Namensnennung)",
+      "origin": "kyutai/tts-voices unmute-prod-website/developpeuse-3.wav, Stimmzustand aus kyutai/pocket-tts-without-voice-cloning",
+      "note": "Französische Sprecherin."
+    },
+    {
+      "id": "pocket-de-kerstin",
+      "group": "pocket-de-kerstin",
+      "voice": "reference",
+      "label": "Kerstin (Klon)",
+      "gender": "weiblich",
+      "status": "frei",
+      "voice_license": "CC0 1.0 (Referenz aus dem Datensatz Kerstin, eigens für Sprachsynthese aufgenommen)",
+      "weights_license": "CC BY 4.0 (Kyutai, Namensnennung; Klon-Gewichte erst nach Zustimmung auf Hugging Face)",
+      "origin": "Referenz: 10 Sekunden aus https://github.com/rhasspy/dataset-voice-kerstin (verified/*.flac), Gewichte kyutai/pocket-tts",
+      "note": "Deutsche Muttersprachlerin, geklont aus einer freien Datensatz-Stimme mit Einwilligung (CC0)."
+    },
+    {
+      "id": "pocket-de24-kerstin",
+      "group": "pocket-de24-kerstin",
+      "voice": "reference",
+      "label": "Kerstin (Klon)",
+      "gender": "weiblich",
+      "status": "frei",
+      "voice_license": "CC0 1.0 (Referenz aus dem Datensatz Kerstin, eigens für Sprachsynthese aufgenommen)",
+      "weights_license": "CC BY 4.0 (Kyutai, Namensnennung; Klon-Gewichte erst nach Zustimmung auf Hugging Face)",
+      "origin": "Referenz: 10 Sekunden aus https://github.com/rhasspy/dataset-voice-kerstin (verified/*.flac), Gewichte kyutai/pocket-tts",
+      "note": "Deutsche Muttersprachlerin, geklont aus einer freien Datensatz-Stimme mit Einwilligung (CC0)."
+    },
+    {
+      "id": "chatterbox-kerstin",
+      "group": "chatterbox",
+      "voice": "reference",
+      "label": "Kerstin (Klon)",
+      "gender": "weiblich",
       "status": "frei",
       "voice_license": "CC0 1.0 (Referenz aus dem Datensatz Kerstin, eigens für Sprachsynthese aufgenommen)",
       "weights_license": "MIT (ResembleAI/chatterbox)",
@@ -177,12 +387,34 @@
       "note": "Geklont aus einer freien Datensatz-Stimme mit Einwilligung (CC0)."
     },
     {
-      "id": "chatterbox-standard", "group": "chatterbox", "voice": "builtin", "label": "Standardstimme", "gender": "weiblich",
+      "id": "chatterbox-standard",
+      "group": "chatterbox",
+      "voice": "builtin",
+      "label": "Standardstimme",
+      "gender": "männlich",
       "status": "pruefen",
       "voice_license": "Herkunft der eingebauten Stimme (conds.pt) nicht dokumentiert",
       "weights_license": "MIT (ResembleAI/chatterbox)",
       "origin": "ResembleAI/chatterbox conds.pt",
-      "note": "Nur Vergleich, nicht als Maras Stimme gedacht."
+      "note": "Nur Vergleich. Beim Anhören (04.11.2026): männlich, starker englischer Akzent, las aber alles fehlerfrei."
     }
-  ]
+  ],
+  "references": {
+    "kerstin": {
+      "label": "Kerstin (Datensatz, CC0 1.0)",
+      "dataset": "https://github.com/rhasspy/dataset-voice-kerstin",
+      "license": "CC0 1.0",
+      "base_urls": [
+        "https://raw.githubusercontent.com/rhasspy/dataset-voice-kerstin/master/verified/",
+        "https://media.githubusercontent.com/media/rhasspy/dataset-voice-kerstin/master/verified/"
+      ],
+      "clips": [
+        "de_rhasspy-0018.flac",
+        "de_rhasspy-0020.flac",
+        "de_rhasspy-0014.flac",
+        "de_rhasspy-0016.flac"
+      ],
+      "seconds": 10
+    }
+  }
 }

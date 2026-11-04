@@ -1,6 +1,6 @@
 # Mara hört und spricht: Sprachplan (Planungsstand 28.10.2026)
 
-**Status: geplant und noch nicht implementiert. Das Hören über Ollama ist auf dem echten Server gemessen (P20.0, vier Läufe am 28.10.2026, siehe [Messprotokoll](#messprotokoll-p200-28102026)); der Weg der Mitschrift ist entschieden. Die Stimme (TTS) ist seit dem 04.11.2026 gemessen (siehe [Messprotokoll Stimmtest](#messprotokoll-stimmtest-04112026)); Favorit ist Pocket TTS Deutsch mit 6 Schichten, die Stimme wählt der Betreiber nach Gehör.** Dieser Plan beschreibt die Spracheingabe, das Hören von Videos, die Sprachausgabe und das Live-Gespräch in CoreAI: TCI Interface. Er ergänzt den [Bild-Technikplan](COREUI_IMAGE_ENGINE_PLAN.md) und bildet zusammen mit ihm das Paket P20 der [Roadmap](../ROADMAP.md) (Matrix `CF-057`, `CF-058`, `CF-059`).
+**Status: geplant und noch nicht implementiert. Das Hören über Ollama ist auf dem echten Server gemessen (P20.0, vier Läufe am 28.10.2026, siehe [Messprotokoll](#messprotokoll-p200-28102026)); der Weg der Mitschrift ist entschieden. Die Stimme (TTS) ist seit dem 04.11.2026 gemessen (siehe [Messprotokoll Stimmtest](#messprotokoll-stimmtest-04112026)); beim Anhören las keine schnelle Stimme fehlerfrei; deshalb kommen eine deutsche Textaufbereitung und Kerstin als Pocket-Klon dazu (0.5.98).** Dieser Plan beschreibt die Spracheingabe, das Hören von Videos, die Sprachausgabe und das Live-Gespräch in CoreAI: TCI Interface. Er ergänzt den [Bild-Technikplan](COREUI_IMAGE_ENGINE_PLAN.md) und bildet zusammen mit ihm das Paket P20 der [Roadmap](../ROADMAP.md) (Matrix `CF-057`, `CF-058`, `CF-059`).
 
 ## Entscheidungen des Betreibers (28.10.2026)
 
@@ -227,6 +227,22 @@ Offen:
 - **Auswahl der Mara-Stimme nach Gehör** (Admin Core > Betrieb > Stimmproben), besonders: Aussprache von Zahlen, Datum und Uhrzeit (Sätze 2 und 3), Dateinamen (Satz 5), Umlaute (Satz 6) und der Fluss im längeren Absatz (Satz 7). Was beim Vorlesen vorher aufbereitet werden muss, legt P20.3 fest.
 - Messung einer Live-Runde mit paralleler TTS (Pocket mit 2 Kernen neben einer laufenden Core-Anfrage).
 - Nach der Wahl: die Gewichte der gewählten Stimme mit Herkunft, SHA-256 und Lizenz im Repo registrieren.
+
+**Höreindruck des Betreibers (04.11.2026):**
+- Fehlerfrei gelesen hat nur die Standardstimme von Chatterbox. Sie ist aber männlich (im Bericht stand irrtümlich "weiblich"), hat einen starken englischen Akzent und klingt teils undeutlich. Sie scheidet aus, Chatterbox ist ohnehin zu langsam.
+- Die schnellen Stimmen (Pocket mit 6 Schichten, Piper) machten Fehler bei Zahlen, Datum und Uhrzeit, bei Dateinamen und auch bei normalen deutschen Wörtern. Ein starker fremder Akzent war nicht das Hauptproblem.
+
+**Antwort darauf (0.5.98):**
+- **Deutsche Textaufbereitung vor jeder Stimme** (`tools/tts_spike/textprep_de.py`, Stufe `de-1`): Zahlen, Jahre, Datum (mit "am vierten", "der vierte"), Uhrzeit, Dezimalzahlen, Prozent, Euro, Dateinamen ("index Punkt Ha Te Em El") und gängige Abkürzungen werden als Wörter gesprochen. In den sieben Testsätzen erreicht keine Ziffer mehr eine Stimme. Stimmproben und `report.md` zeigen, was gesprochen wurde. Dieselbe Aufbereitung nutzt später P20.3.
+- **Kerstin als Pocket-Klon** (6 und 24 Schichten): eine deutsche Muttersprachlerin aus dem freien Datensatz (CC0) bei der Geschwindigkeit von Pocket. Die Klon-Gewichte von Kyutai sind auf Hugging Face gesperrt; der Betreiber stimmt den Bedingungen zu und hinterlegt einmal einen Lese-Token (`tts-spike.sh --hf-token`, verdeckte Eingabe, Datei nur für root). Der Token wird nur beim Laden benutzt, nie beim Messen. Die Klon-Gewichte liegen in einem eigenen Cache (`hf-clone`), damit die übrigen Gruppen nur ihre registrierten Dateien laden.
+- Normale Wörter, die trotz Aufbereitung falsch klingen, sammelt der nächste Lauf: Der Betreiber nennt die Wörter, daraus entsteht eine Ausspracheliste.
+
+Nächster Lauf (ohne Chatterbox):
+
+```
+sudo bash /opt/ember-coreui/scripts/tts-spike.sh --hf-token
+sudo bash /opt/ember-coreui/scripts/tts-spike.sh --skip-build --engines piper,pocket
+```
 
 
 ### P20.1: Spracheingabe

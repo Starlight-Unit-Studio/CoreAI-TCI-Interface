@@ -1,17 +1,30 @@
 COREAI: TCI INTERFACE - UEBERGABE 0.5.98
 Stand: 04.11.2026
-Branch: claude/bold-galileo-myoyi0 (neu auf main 0.5.97, PR #149 gemergt)
+Branch: claude/bold-galileo-myoyi0 (neu auf main 0.5.97, PR #149 gemergt), PR #150
 
 ERGEBNIS STIMMTEST (Lauf 20261104-152135, report.md vom Betreiber):
 - Piper low/x_low: RTF 0,01 bis 0,02, erster Ton unter 0,1 s, 0,3 GB. Thorsten high: RTF 0,12 (4 Kerne) / 0,21 (2).
-- Pocket 6 Schichten: RTF 0,32 (4 Kerne) / 0,38 (2), erster Ton 0,14 s, 1,0 GB, Laden 3,8 s.
-- Pocket 24 Schichten: RTF 1,13 / 1,21, erster Ton 0,5 s, 2,4 GB.
-- Chatterbox: RTF 5,83 (Klon 6,64, Standard 5,51), erster Ton 36 s, 6,8 GB, Laden 19 s. 2-Kern-Ergebnis fehlt.
-Alle 18 Stimmen ok. Gewichte mit Revision und SHA-256 in report.md und var/tts-spike/models/lock-*.json.
+- Pocket 6 Schichten: RTF 0,32 / 0,38, erster Ton 0,14 s, 1,0 GB. Pocket 24 Schichten: RTF 1,13 / 1,21, 2,4 GB.
+- Chatterbox: RTF 5,83, erster Ton 36 s, 6,8 GB. Alle 18 Stimmen ok.
+HOEREINDRUCK (Betreiber): fehlerfrei nur Chatterbox-Standard, aber maennlich, starker englischer Akzent. Schnelle
+Stimmen: Fehler bei Zahlen, Datum, Uhrzeit, Dateinamen UND normalen deutschen Woertern; kein starker Akzent.
+Betreiberentscheidung: Kerstin mit Pocket klonen (Zustimmung zu Kyutais Bedingungen, Token auf dem Server).
 
-EINSCHAETZUNG: Favorit Pocket 6 Schichten (live tauglich mit 2 Kernen); Chatterbox nur fuer vorab erzeugte Ansagen;
-Pocket 24 nur mit mehr Kernen; Piper Kerstin als schneller Rueckfall (CC0, klingt einfacher).
-Vorlaeufig: Kernlimit TTS 2 Kerne, Zeitlimit je Satz 5 x Audiodauer, mindestens 10 s.
+NEU:
+- tools/tts_spike/textprep_de.py (de-1): cardinal, ordinal (te/ten nach am, vom, zum, den, dem, ...), year, prepare().
+  run.py laedt es per Pfad (python3 -I), spricht spoken_text(), Bericht hat sentences[].spoken und textprep.
+- voices.json: textprep de-1, references.kerstin (statt inline bei Chatterbox), Gruppen pocket-de-kerstin und
+  pocket-de24-kerstin (clone, hf_home hf-clone), 20 Stimmen, chatterbox-standard maennlich.
+- run.py: use_hf_home() setzt HF_HOME je Gruppe vor jedem Import; Pocket.fetch/load mit clone (has_voice_cloning muss
+  passen), fetch_reference() als Funktion (Ordner reference-GRUPPE fuer Pocket, reference fuer Chatterbox wie bisher).
+- tts-spike.sh: --hf-token (read -rs, hf_ + 20 Zeichen, var/tts-spike/hf_token root 0600), Klon-Fetch nur mit Token,
+  -e HF_TOKEN nur dort. Ohne Token werden Klone uebersprungen, Messen meldet den Grund.
+- Karte und Store zeigen "Gesprochen als".
+IMAGE_TAG bleibt 0.5.94 (Dockerfile unveraendert).
 
-NAECHSTER SCHRITT: Betreiber waehlt Maras Stimme nach Gehoer (Admin Core > Betrieb > Stimmproben). Danach:
-Registrierung der Gewichte im Repo, Live-Runde mit paralleler TTS messen, P20.1 Spracheingabe und P20.3 Vorlesen.
+NAECHSTER SCHRITT (Betreiber):
+1. Auf huggingface.co/kyutai/pocket-tts anmelden und den Bedingungen zustimmen.
+2. Auf huggingface.co/settings/tokens einen Lese-Token anlegen.
+3. sudo bash /opt/ember-coreui/scripts/tts-spike.sh --hf-token
+4. sudo bash /opt/ember-coreui/scripts/tts-spike.sh --skip-build --engines piper,pocket
+Dann anhoeren und falsch gesprochene normale Woerter nennen (fuer eine Ausspracheliste).

@@ -1530,6 +1530,7 @@
   line-height: 1.5;
 }
 .settings-body .tts-sentences b { color: var(--txt); font-weight: 600; }
+.settings-body .tts-spoken { display: block; color: var(--muted); font-size: 12.5px; font-style: italic; }
 .settings-body .tts-voices {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr));

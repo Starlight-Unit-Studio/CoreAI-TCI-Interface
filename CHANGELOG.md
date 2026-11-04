@@ -2,11 +2,12 @@
 
 ## 0.5.98 - 04.11.2026
 
-- **Stimmtest gemessen:** Lauf `20261104-152135` auf dem Server, alle 18 Stimmen haben gesprochen. Messprotokoll im Sprachplan (`docs/COREUI_VOICE_PLAN.md`, Abschnitt "Messprotokoll Stimmtest").
-- Echtzeitfaktor mit 4 Kernen: Piper 0,01 bis 0,02 (Thorsten high 0,12), Pocket TTS 6 Schichten 0,32 (mit 2 Kernen 0,38), Pocket TTS 24 Schichten 1,13, Chatterbox 5,83. Erster Ton: Piper unter 0,1 s, Pocket 6 Schichten 0,14 s, Pocket 24 Schichten 0,5 s, Chatterbox 36 s. RAM: Piper 0,3 GB, Pocket 1,0 und 2,4 GB, Chatterbox 6,8 GB.
-- **Favorit:** Pocket TTS Deutsch mit 6 Schichten. Chatterbox scheidet fuer Vorlesen und Live aus, Pocket mit 24 Schichten ist mit 2 oder 4 Kernen zu langsam fuer fortlaufendes Sprechen, Piper bleibt der schnelle Rueckfall.
-- Vorlaeufiges Kernlimit der parallelen TTS: 2 Kerne. Offen: Wahl der Stimme nach Gehoer, Live-Runde mit paralleler TTS, danach Registrierung der gewaehlten Gewichte im Repo.
-- Nur Doku, keine Codeaenderung.
+- **Stimmtest gemessen:** Lauf `20261104-152135` auf dem Server, alle 18 Stimmen haben gesprochen. Messprotokoll im Sprachplan (`docs/COREUI_VOICE_PLAN.md`, Abschnitt "Messprotokoll Stimmtest"). Echtzeitfaktor mit 4 Kernen: Piper 0,01 bis 0,02 (Thorsten high 0,12), Pocket TTS 6 Schichten 0,32 (mit 2 Kernen 0,38), Pocket TTS 24 Schichten 1,13, Chatterbox 5,83. Erster Ton: Piper unter 0,1 s, Pocket 6 Schichten 0,14 s, Pocket 24 Schichten 0,5 s, Chatterbox 36 s.
+- **Hoereindruck des Betreibers:** Fehlerfrei las nur die Chatterbox-Standardstimme, die aber maennlich ist (im Bericht stand irrtuemlich "weiblich", korrigiert) und stark englisch klingt. Die schnellen Stimmen machten Fehler bei Zahlen, Datum, Uhrzeit, Dateinamen und auch bei normalen Woertern.
+- **Deutsche Textaufbereitung vor jeder Stimme** (`tools/tts_spike/textprep_de.py`, Stufe `de-1`, nur Standardbibliothek): Zahlen ("32.768" wird "zweiunddreissigtausendsiebenhundertachtundsechzig"), Jahre, Datum mit richtiger Endung ("am vierten", "der vierte"), Uhrzeit ("vierzehn Uhr dreissig", "ein Uhr"), Dezimalzahlen, Prozent, Euro, Dateinamen ("index Punkt Ha Te Em El") und gaengige Abkuerzungen. In den Testsaetzen erreicht keine Ziffer mehr eine Stimme. Bericht und Stimmproben-Karte zeigen "Gesprochen als".
+- **Kerstin als Pocket-Klon:** zwei neue Gruppen (6 und 24 Schichten) klonen die deutsche Datensatz-Stimme Kerstin (CC0). Die Klon-Gewichte von Kyutai sind auf Hugging Face gesperrt: `tts-spike.sh --hf-token` nimmt den Lese-Token verdeckt entgegen und legt ihn nur fuer root lesbar ab; er geht nur beim Laden an den Container (per Name, nie in der Befehlszeile), nie beim Messen. Die Klon-Gewichte liegen in einem eigenen Cache, die uebrigen Gruppen laden weiter nur ihre registrierten Dateien. Ohne Token ueberspringt der Test die Klone und sagt, wie man sie freischaltet.
+- Tests: `tts-spike-selftest.py` prueft die Textaufbereitung (Saetze und viele Einzelfaelle), dass die Stimme den aufbereiteten Text bekommt, die Klon-Gruppen, Token nur beim Laden der Klone und nie in der Ausgabe, falsche Tokens abgelehnt; Stimmproben-Tests zeigen den gesprochenen Text.
+- Keine Aenderung an Cores, Modelfile, Datenbank oder Warteschlange.
 
 ## 0.5.97 - 04.11.2026
 

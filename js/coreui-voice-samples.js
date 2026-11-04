@@ -112,7 +112,7 @@
       } else {
         button.dataset.file = sample.file;
         button.setAttribute('aria-label', voice.label + ', Satz ' + (index + 1) + ' abspielen: ' + sentence.topic);
-        button.title = sentence.text + ' (' + num(sample.audio_s, 1) + ' s, Echtzeitfaktor ' + num(sample.rtf, 2) + ')';
+        button.title = (sentence.spoken || sentence.text) + ' (' + num(sample.audio_s, 1) + ' s, Echtzeitfaktor ' + num(sample.rtf, 2) + ')';
         button.addEventListener('click', function () { play(button, sample.file); });
       }
       samples.appendChild(button);
@@ -193,6 +193,8 @@
       var item = el('li');
       item.appendChild(el('b', '', sentence.topic + ': '));
       item.appendChild(document.createTextNode(sentence.text));
+      // 0.5.98: numbers, dates and file names are spoken as words.
+      if (sentence.spoken && sentence.spoken !== sentence.text) item.appendChild(el('small', 'tts-spoken', 'Gesprochen als: ' + sentence.spoken));
       list.appendChild(item);
     });
     var voices = document.getElementById('ttsVoices');

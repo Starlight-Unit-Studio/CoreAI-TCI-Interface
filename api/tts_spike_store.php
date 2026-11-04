@@ -67,7 +67,9 @@ function coreui_tts_spike_public(array $report): array {
   $sentences = [];
   foreach ((array)($report['sentences'] ?? []) as $s) {
     if (!is_array($s) || !preg_match('/^s[0-9]{1,2}$/', (string)($s['id'] ?? ''))) continue;
-    $sentences[] = ['id' => (string)$s['id'], 'topic' => coreui_tts_spike_text($s['topic'] ?? '', 80), 'text' => coreui_tts_spike_text($s['text'] ?? '', 600)];
+    $sentences[] = ['id' => (string)$s['id'], 'topic' => coreui_tts_spike_text($s['topic'] ?? '', 80), 'text' => coreui_tts_spike_text($s['text'] ?? '', 600),
+      // 0.5.98: what the voice really got after the German text preparation.
+      'spoken' => coreui_tts_spike_text($s['spoken'] ?? ($s['text'] ?? ''), 900)];
   }
   $voices = [];
   foreach ($report['voices'] as $v) {
