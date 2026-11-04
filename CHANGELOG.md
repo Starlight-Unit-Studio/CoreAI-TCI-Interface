@@ -4,7 +4,7 @@
 
 - **Maras Stimme gewaehlt: Eve** (Pocket TTS Deutsch, 24 Schichten, int8). Lauf `20261104-173047`: Echtzeitfaktor mit int8 0,45 / 0,48 / 0,46 bei 4 / 6 / 8 Kernen, ohne int8 1,07 / 1,26 / 1,31; erster Ton mit int8 0,13 s statt 0,46 s; 2,5 GB RAM, Laden 8 s. Mehr Kerne helfen nicht.
 - **Registriert:** `config/voice/mara-voice.json` mit Engine (`pocket-tts==4.0.1`), Modell (`german_24l`, int8, freie Gewichte), Stimme (`eve`), Textaufbereitung (`de-1`), den drei Dateien mit Repository, Revision, Pfad, SHA-256, Groesse und Lizenz, der Namensnennung (Kyutai, VCTK p361) und dem vorlaeufigen Kernlimit 4. Kein Token noetig. Nichts davon wird ausgeliefert; die spaetere Sprachausgabe laedt genau diese Dateien und prueft sie.
-- Messprotokoll und Festlegung im Sprachplan.
+- Messprotokoll und Festlegung im Sprachplan. Hoereindruck des Betreibers: kein Unterschied zwischen int8 und normal; der Stimmtest (P20.0) ist abgeschlossen.
 - Tests: `tts-spike-selftest.py` prueft die Registrierung (gleiche Engine-Version wie im Test, gleiche Textaufbereitung, SHA-256 und Revisionen, Namensnennung, Kernlimit unter Echtzeit), in beiden Preflights gelistet.
 - Keine Aenderung an Cores, Modelfile, Datenbank oder Warteschlange.
 

@@ -258,7 +258,8 @@ Ziel: Echtzeitfaktor unter 0,8 mit möglichst wenigen Kernen, damit genug Puffer
 - **Mehr Kerne helfen nicht:** Ohne int8 wird Eve mit 6 und 8 Kernen sogar langsamer, mit int8 bleibt sie gleich. Pocket ist auf wenige Kerne ausgelegt (Kyutai nennt 2).
 - **Festlegung (vorläufig):** Eve mit int8 und **4 Kernen** als festes Kernlimit der parallelen Sprachausgabe; 16 Kerne bleiben für Core. Ob 2 oder 3 Kerne reichen, zeigt bei Bedarf ein kurzer Lauf mit `--groups pocket-de24-eve-int8 --cores 2,3,4`.
 - **Registriert** in `config/voice/mara-voice.json`: Engine `pocket-tts==4.0.1`, Modell `german_24l` mit int8, Stimme `eve`, Textaufbereitung `de-1`, die drei Dateien mit Repository, Revision, Pfad, SHA-256, Größe und Lizenz sowie die Namensnennung (Kyutai, VCTK p361). Kein Token nötig.
-- Offen: Höreindruck int8 gegen normal (der Betreiber bestätigt, dass int8 nicht schlechter klingt), Live-Runde mit paralleler Core-Anfrage, dann P20.3 (Vorlesen) und P20.1 (Spracheingabe).
+- **Höreindruck bestätigt (04.11.2026):** Der Betreiber hört keinen Unterschied zwischen Eve mit int8 und ohne. Damit ist der Stimmtest (P20.0) abgeschlossen.
+- Offen: Live-Runde mit paralleler Core-Anfrage, dann P20.3 (Vorlesen) und P20.1 (Spracheingabe).
 
 Nächster Lauf (ohne Chatterbox):
 

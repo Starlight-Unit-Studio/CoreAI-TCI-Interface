@@ -2,6 +2,7 @@
   "format": 1,
   "note": "CoreAI 0.6.0: Maras Stimme, gewaehlt vom Betreiber am 04.11.2026 nach dem Stimmtest (P20.0). Die Gewichte werden nicht mit CoreAI ausgeliefert; die Sprachausgabe laedt genau diese Dateien und prueft jede gegen ihren SHA-256.",
   "decided_at": "2026-11-04",
+  "listening": "Betreiber 04.11.2026: kein hoerbarer Unterschied zwischen int8 und normal.",
   "engine": {
     "package": "pocket-tts==4.0.1",
     "code_license": "MIT",

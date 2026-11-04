@@ -11,5 +11,6 @@ REGISTRIERT: config/voice/mara-voice.json (Engine, Modell, Stimme, drei Dateien 
 Namensnennung Kyutai und VCTK p361, gemessene Werte, Limits). Selbsttest prueft die Datei gegen voices.json und die
 Constraints. config/ ist in nginx gesperrt.
 
-OFFEN: Betreiber bestaetigt, dass int8 nicht schlechter klingt; Live-Runde mit paralleler Core-Anfrage; danach P20.3
+HOEREINDRUCK: Betreiber hoert keinen Unterschied zwischen int8 und normal (04.11.2026). P20.0 abgeschlossen.
+OFFEN: Live-Runde mit paralleler Core-Anfrage; danach P20.3
 (Vorlesen im Chat mit Eve, Textaufbereitung aus tools/tts_spike/textprep_de.py uebernehmen) und P20.1 (Spracheingabe).
