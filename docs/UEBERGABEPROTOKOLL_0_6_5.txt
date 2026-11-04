@@ -17,7 +17,7 @@ URSACHEN:
 
 UMSETZUNG:
 - tools/tts_spike/textprep_de.py VERSION de-2: DOTTED (EMBER -> Ember), weitere ABBREVIATIONS, TIME_ZONES,
-  DOMAINS, PRONUNCIATION (Art n/w/x, ENDINGS, respell()), Zeitbereiche, Dauer, Verhaeltnisse, Zahlenbereiche,
+  DOMAINS, PRONUNCIATION (Art n/w/x, ENDINGS, respell(); CoreAI = "Kohr Äi Ei" nach Wunsch des Betreibers), Zeitbereiche, Dauer, Verhaeltnisse, Zahlenbereiche,
   Versionen, Grad, circa, @, Punkt zwischen Kleinbuchstaben, Striche und Pfeile als Komma.
   Register config/voice/mara-voice.json und tools/tts_spike/voices.json auf de-2; run.py vergleicht mit VERSION.
 - tools/voice/speakable.py: Einheiten = Teilsaetze; part_limit() = 120 am Anfang, dann 1,8 x vorheriger Teil,

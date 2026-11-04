@@ -183,7 +183,9 @@ for text, words in (
     ('Updates, updaten, geupdatet, Chats, chatten, Teams, Caches, Interfaces, debuggen, Designerin, Updatefenster, Checkliste.',
      'Apdeits, apdeiten, geapdeitet, Tschätts, tschätten, Tiems, Käsches, Interfehses, dibaggen, Disainerin, Apdeit-fenster, Tscheck-liste.'),
     ('Mara Thorne von CoreAI: TCI Interface, OK, sorry, die E-Mail-Adresse.',
-     'Mara Thorn von Kohr Ei Ei: TCI Interfehs, Okeh, sorri, die Imeil-Adresse.'),
+     'Mara Thorn von Kohr Äi Ei: TCI Interfehs, Okeh, sorri, die Imeil-Adresse.'),
+    # Operator's choice for the product name: "Kohr Äi Ei" (English AI); OpenAI the same way.
+    ('CoreAI und OpenAI', 'Kohr Äi Ei und Oupen Äi Ei'),
     # German words that only look like English ones stay.
     ('Tablette, Mailand, Hostie, hier, Bugatti, Eventuell, Homeoffice.', 'Tablette, Mailand, Hostie, hier, Bugatti, Eventuell, Houm-office.'),
 ):

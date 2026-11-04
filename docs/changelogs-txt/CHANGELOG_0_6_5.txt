@@ -1,6 +1,6 @@
 CoreAI: TCI Interface 0.6.5 - 04.11.2026
 - Vorlesen nach der ersten Live-Rueckmeldung: Textaufbereitung de-2 fuer Abkuerzungen mit Punkten (E.M.B.E.R. wird Ember), Uhrzeiten, Zeitbereiche, Zeitzonen, ISO- und Kurzdatum, Dauer, Verhaeltnisse, Zahlenbereiche, Versionen, Domains und E-Mail-Adressen.
-- Aussprache-Woerterbuch fuer gaengige englische Begriffe (Update, Browser, Chat, Cloud, Interface und weitere) mit deutschen Endungen und Zusammensetzungen; aehnlich aussehende deutsche Woerter bleiben.
+- Aussprache-Woerterbuch fuer gaengige englische Begriffe (Update, Browser, Chat, Cloud, Interface und weitere; CoreAI als "Kohr Aei Ei" nach Wunsch des Betreibers) mit deutschen Endungen und Zusammensetzungen; aehnlich aussehende deutsche Woerter bleiben.
 - Keine langen Pausen: Teile wachsen schrittweise (hoechstens 1,8-mal der vorige, erster bis 120 Zeichen), Stille am Rand auf 0,15 s und im Teil auf 0,7 s gekuerzt, Wiedergabe holt die Teile der Reihe nach bis zu drei voraus in ein Audio-Element, ein kaputter Teil wird uebersprungen.
 - Sprachdienst startet nach einem Update mit neuem Code von selbst neu (COREAI_VOICE_WATCH_S in compose.yaml); Installer unveraendert.
 - Tests fuer Textaufbereitung, Teilung, Stillekuerzung, Neustart und Wiedergabe. Klang der Umschreibungen erst im Live-Test pruefbar.

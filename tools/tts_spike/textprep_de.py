@@ -88,11 +88,11 @@ PRONUNCIATION = {
     'unit': ('Junit', 'w'),
     'okay': ('Okeh', 'x'), 'ok': ('Okeh', 'x'), 'hi': ('Hai', 'x'), 'sorry': ('Sorri', 'x'), 'live': ('leif', 'x'),
     'tablet': ('Täblet', 'x'), 'gecheckt': ('getscheckt', 'x'), 'geupdatet': ('geapdeitet', 'x'), 'gechattet': ('getschättet', 'x'),
-    'coreai': ('Kohr Ei Ei', 'x'), 'eve': ('Iev', 'x'), 'thorne': ('Thorn', 'x'), 'starlight': ('Starlait', 'x'),
+    'coreai': ('Kohr Äi Ei', 'x'), 'eve': ('Iev', 'x'), 'thorne': ('Thorn', 'x'), 'starlight': ('Starlait', 'x'),
     'python': ('Paiten', 'x'), 'javascript': ('Dschawaskript', 'x'), 'java': ('Dschawa', 'x'), 'github': ('Gitt Habb', 'x'),
     'google': ('Guhgel', 'x'), 'youtube': ('Jutjub', 'x'), 'whatsapp': ('Wotsäpp', 'x'), 'iphone': ('Eifohn', 'x'),
     'windows': ('Windous', 'x'), 'chrome': ('Krohm', 'x'), 'firefox': ('Feierfox', 'x'), 'chatgpt': ('Tschätt Ge Pe Te', 'x'),
-    'claude': ('Klohd', 'x'), 'openai': ('Oupen Ei Ei', 'x'), 'nvidia': ('Enwidia', 'x'), 'microsoft': ('Maikrosoft', 'x'),
+    'claude': ('Klohd', 'x'), 'openai': ('Oupen Äi Ei', 'x'), 'nvidia': ('Enwidia', 'x'), 'microsoft': ('Maikrosoft', 'x'),
     'apple': ('Äppel', 'x'), 'amazon': ('Ämason', 'x'), 'searxng': ('Sörks En Ge', 'x'), 'playwright': ('Pleirait', 'x'),
 }
 ENDINGS = ('s', 'e', 'es', 'en', 'er', 'em', 'ern', 'ers', 'n', 'r', 't', 'te', 'ten', 'tet', 'st', 'in', 'innen', 'erin', 'erinnen')
