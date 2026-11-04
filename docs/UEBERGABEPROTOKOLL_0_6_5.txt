@@ -29,6 +29,16 @@ UMSETZUNG:
   Audio-Element, Wiederholung nach 2 s, Teil ueberspringen, zwei Fehler in Folge beenden.
 - README (englisch): Satz zu "Read aloud" als aktueller Stand ergaenzt.
 
+NACH DEM CODEX-REVIEW (PR #156, 7 Hinweise, alle behoben):
+- SCORE_WORDS: Doppelpunkt zwischen Zahlen nach Ergebnis, Stand, Format, gewann usw. ist "zu", sonst Uhrzeit.
+- POINT_WORDS: zwei Zahlen mit Punkt nur nach Version, Kapitel, Softwarenamen mit "Punkt", sonst Kommazahl.
+- duration(): dot2 ("Min.") behaelt den Satzpunkt. SENTENCE_STARTERS deutlich erweitert (Nomen sind
+  auch gross, darum bleibt es eine Liste).
+- respell(): keine reine r-Endung mehr (Homer), Zusammensetzungen erst ab 4 Buchstaben (Corelli, Gamelan),
+  host ohne Zusammensetzungen (Hostessen); gamer und updater als eigene Eintraege.
+- split_parts(): ein kurzer Anfang wird aus dem naechsten Teilsatz aufgefuellt, Wachstumsgrenze gilt immer.
+- js/coreui-voice-read.js: Abspielfehler -> Teil einmal neu laden, dann ueberspringen.
+
 GEPRUEFT:
 - tts-spike-selftest.py (alle Beispiele aus der Rueckmeldung plus Gegenproben), voice-service-selftest.py
   (Teilung, Stillekuerzung, Neustart bei neuem Code), voice-read-ui-selftest.cjs (Chromium), volle Testreihe,

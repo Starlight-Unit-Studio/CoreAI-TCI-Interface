@@ -84,6 +84,9 @@ check(len(grown[0]) <= speakable.FIRST_PART and len(grown[1]) <= int(speakable.G
 check(all(len(grown[i]) <= speakable.part_limit(grown[:i]) for i in range(1, len(grown))) and max(map(len, grown)) > 2 * len(grown[0]),
       'parts grow step by step: ' + repr([len(g) for g in grown]))
 check(' '.join(grown).count('langer Satz') == 6 and grown[-1].endswith('Ende.'), 'nothing lost')
+tiny = speakable.split_parts('Ja. ' + 'Wort ' * 30)
+check(len(tiny[0]) > 40 and all(len(tiny[i]) <= speakable.part_limit(tiny[:i]) for i in range(1, len(tiny)))
+      and ' '.join(tiny).count('Wort') == 30, 'a tiny first sentence is filled up, the next part stays within GROWTH: ' + repr([len(t) for t in tiny]))
 check(not any(re.search(r'[a-zäöü]\.$', g) and not g.endswith(('Inhalt bringt.', 'gern.', 'Ende.')) for g in grown),
       'a sentence cut between parts ends with a comma, not a full stop')
 long_sentence = 'Wort ' * 200

@@ -3,5 +3,6 @@ CoreAI: TCI Interface 0.6.5 - 04.11.2026
 - Aussprache-Woerterbuch fuer gaengige englische Begriffe (Update, Browser, Chat, Cloud, Interface und weitere; CoreAI als "Kohr Aei Ei" nach Wunsch des Betreibers) mit deutschen Endungen und Zusammensetzungen; aehnlich aussehende deutsche Woerter bleiben.
 - Keine langen Pausen: Teile wachsen schrittweise (hoechstens 1,8-mal der vorige, erster bis 120 Zeichen), Stille am Rand auf 0,15 s und im Teil auf 0,7 s gekuerzt, Wiedergabe holt die Teile der Reihe nach bis zu drei voraus in ein Audio-Element, ein kaputter Teil wird uebersprungen.
 - Sprachdienst startet nach einem Update mit neuem Code von selbst neu (COREAI_VOICE_WATCH_S in compose.yaml); Installer unveraendert.
+- Nach Review: Ergebnisse mit Kontext (Ergebnis 2:10), 3.14 als Kommazahl, Versionen nur mit Kontext oder drei Teilen, Satzpunkt nach Min., mehr Satzanfaenge, Namen wie Homer und Corelli unveraendert, kurzer erster Satz aufgefuellt, zweiter Versuch bei Abspielfehlern.
 - Tests fuer Textaufbereitung, Teilung, Stillekuerzung, Neustart und Wiedergabe. Klang der Umschreibungen erst im Live-Test pruefbar.
 - Keine Aenderung an Cores, Modelfile, Datenbank, Installer, Warteschlange oder Stimme.

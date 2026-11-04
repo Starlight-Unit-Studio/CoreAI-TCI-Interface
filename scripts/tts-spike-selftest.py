@@ -186,6 +186,15 @@ for text, words in (
      'Mara Thorn von Kohr Äi Ei: TCI Interfehs, Okeh, sorri, die Imeil-Adresse.'),
     # Operator's choice for the product name: "Kohr Äi Ei" (English AI); OpenAI the same way.
     ('CoreAI und OpenAI', 'Kohr Äi Ei und Oupen Äi Ei'),
+    # Review of PR #156: scores by context, Min. with its stop, decimals vs versions, sentence stops after names.
+    ('Ergebnis 2:10, Format 16:09, es steht 3:2, gewann mit 4:12, um 18:45.',
+     'Ergebnis zwei zu zehn, Format sechzehn zu neun, es steht drei zu zwei, gewann mit vier zu zwölf, um achtzehn Uhr fünfundvierzig.'),
+    ('Pause 2:30 Min. Danach weiter.', 'Pause zwei Minuten und dreißig Sekunden. Danach weiter.'),
+    ('Der Wert ist 3.14 Euro, Python 3.11, Kapitel 3.2, 0.6.3.',
+     'Der Wert ist drei Komma eins vier Euro, Paiten drei Punkt elf, Kapitel drei Punkt zwei, null Punkt sechs Punkt drei.'),
+    ('Teil von E.M.B.E.R. Morgen geht es weiter, mit E.M.B.E.R. Anschließend mehr. Das E.M.B.E.R. Framework.',
+     'Teil von Ember. Morgen geht es weiter, mit Ember. Anschließend mehr. Das Ember Freimwörk.'),
+    ('Homer, Corelli, Gamelan, Hostessen, Hosts, Gamer, Updater.', 'Homer, Corelli, Gamelan, Hostessen, Housts, Gehmer, Apdeiter.'),
     # German words that only look like English ones stay.
     ('Tablette, Mailand, Hostie, hier, Bugatti, Eventuell, Homeoffice.', 'Tablette, Mailand, Hostie, hier, Bugatti, Eventuell, Houm-office.'),
 ):

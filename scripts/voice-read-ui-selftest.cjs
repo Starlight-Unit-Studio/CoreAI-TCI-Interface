@@ -30,7 +30,8 @@ function wav(part) {
   return Buffer.concat([head, Buffer.alloc(data)]);
 }
 
-// options.parts: parts in the plan; options.fail: parts that always answer 503; options.hold: parts held until released.
+// options.parts: parts in the plan; options.fail: parts that always answer 503; options.broken: parts whose audio
+// cannot be played (no WAV); options.hold: parts held until released.
 async function open(browser, status, planAnswer, options = {}) {
   const calls = [];
   const held = {};
@@ -64,6 +65,9 @@ async function open(browser, status, planAnswer, options = {}) {
         if ((options.hold || []).includes(Number(part))) await new Promise(resolve => { held[part] = resolve; });
         call.done = true;
         if ((options.fail || []).includes(Number(part))) return route.fulfill({status: 503, json: {ok: false, error: 'voice_busy'}});
+        if ((options.broken || []).includes(Number(part))) {
+          return route.fulfill({status: 200, contentType: 'audio/wav', body: Buffer.alloc(wav(Number(part)).length, 120)});
+        }
         return route.fulfill({status: 200, contentType: 'audio/wav', body: wav(Number(part))});
       }
     }
@@ -171,6 +175,18 @@ const until = (page, fn, arg) => page.waitForFunction(fn, arg, {timeout: 8000});
     assert.deepEqual(await page.evaluate(() => window.__played), [0, 2], 'part 1 skipped after two tries, part 2 plays');
     assert.equal(audio(calls).filter(p => p === 1).length, 2, 'part 1 tried twice');
     assert.match(await page.getAttribute(button, 'class'), /speaking/, 'still reading');
+    await page.close();
+
+    // A part that cannot be played gets a second try too, then it is skipped.
+    ({page, calls, errors, audio} = await open(browser, {allowed: true, available: true, loading: false, auto_read: false}, null, {parts: 3, broken: [1]}));
+    button = '#' + await addButton(page, 13);
+    await page.click(button);
+    await until(page, () => window.__played.length === 1);
+    await ended(page);
+    await until(page, () => window.__played.length === 4);
+    assert.deepEqual(await page.evaluate(() => window.__played), [0, 1, 1, 2], 'part 1 played, tried again, then part 2');
+    assert.equal(audio(calls).filter(p => p === 1).length, 2, 'part 1 fetched again for the second try');
+    assert.match(await page.getAttribute(button, 'class'), /speaking/, 'one broken part does not stop the reading');
     await page.close();
 
     // Two failing parts in a row: the voice is gone, stop with a message.

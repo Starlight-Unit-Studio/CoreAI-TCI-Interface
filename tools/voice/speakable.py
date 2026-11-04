@@ -128,16 +128,29 @@ def split_parts(text: str) -> list[str]:
     units = _units(text)
     parts: list[str] = []
     current, continues = '', False
+
+    def push_back(pieces: list[str], cut: bool) -> None:
+        units[0:0] = [(piece, True) for piece in pieces[:-1]] + ([(pieces[-1], cut)] if pieces else [])
+
     while units and len(parts) < MAX_PARTS:
         unit, cut = units.pop(0)
         limit = part_limit(parts)
         if current and len(current) + 1 + len(unit) > limit:
+            room = limit - len(current) - 1
+            if len(current) < limit // 2 and room >= MIN_PART // 2:
+                # A short start ("Ja.") is filled up from the next clause, so the part after it
+                # stays within GROWTH instead of being much longer than a tiny first part.
+                head, *tail = _cut_long(unit, room)
+                push_back(tail, cut)
+                parts.append(_end(f'{current} {head}', bool(tail) or cut))
+                current = ''
+                continue
             parts.append(_end(current, continues))
             current = ''
             limit = part_limit(parts)
         if not current and len(unit) > limit:
             head, *tail = _cut_long(unit, limit)
-            units[0:0] = [(piece, True) for piece in tail[:-1]] + ([(tail[-1], cut)] if tail else [])
+            push_back(tail, cut)
             unit, cut = head, bool(tail) or cut
         current = f'{current} {unit}'.strip()
         continues = cut

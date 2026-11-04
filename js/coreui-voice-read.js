@@ -2,7 +2,7 @@
    A speaker button under every Mara answer. The server cuts the answer into
    parts (the first one short); playback starts as soon as the first part is
    ready and the next parts are fetched in order while the current one plays.
-   A part that fails twice is skipped. A second click stops. Optional: read new answers aloud automatically (KI-Profil).
+   A part that fails twice (download or playback) is skipped. A second click stops. Optional: read new answers aloud automatically (KI-Profil).
    Signed-in accounts only; guests never see the button. */
 (function () {
   'use strict';
@@ -178,7 +178,22 @@
     }
     run.button.classList.remove('loading');
     run.audio.onended = function () { run.failures = 0; next(); };
-    run.audio.onerror = function () { run.failures += 1; if (run.failures >= 2) fail(run, 'Vorlesen fehlgeschlagen'); else next(); };
+    run.audio.onerror = function () {
+      if (!run.mediaRetried[index]) {
+        // A playback error gets the same second try as a failed download.
+        run.mediaRetried[index] = true;
+        URL.revokeObjectURL(url);
+        run.button.classList.add('loading');
+        fetchPart(run, index, true).then(function (again) {
+          if (run.cancelled) { if (again) URL.revokeObjectURL(again); return; }
+          run.urls[index] = again;
+          playPart(run, index);
+        });
+        return;
+      }
+      run.failures += 1;
+      if (run.failures >= 2) fail(run, 'Vorlesen fehlgeschlagen'); else next();
+    };
     run.audio.src = url;
     var started = run.audio.play();
     if (started && typeof started.catch === 'function') {
@@ -192,7 +207,7 @@
     var audio = new Audio();
     audio.preload = 'auto';
     var run = { button: button, messageId: Number(record.id), cancelled: false, audio: audio, urls: {}, ready: {}, parts: 0, id: '',
-      index: 0, next: 0, waiting: -1, fetching: false, failures: 0, controller: null };
+      index: 0, next: 0, waiting: -1, fetching: false, failures: 0, controller: null, mediaRetried: {} };
     current = run;
     button.classList.add('speaking', 'loading');
     icon(button, STOP);

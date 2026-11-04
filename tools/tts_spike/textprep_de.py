@@ -57,8 +57,26 @@ ABBREVIATIONS = [
 # Dotted letters with their own spoken name; all others are spelled letter by letter.
 DOTTED = {'EMBER': 'Ember'}
 # A dotted name at the end of a sentence keeps its full stop when one of these starts the next.
-SENTENCE_STARTERS = {'Das', 'Die', 'Der', 'Dies', 'Diese', 'Dieser', 'Es', 'Ich', 'Du', 'Wir', 'Sie', 'Er', 'Ihr', 'Man',
-                     'Wenn', 'Dann', 'Damit', 'Dabei', 'Danach', 'Hier', 'Jetzt', 'Bitte', 'Auch', 'So', 'Mara', 'Eve'}
+# German nouns are capitalized as well ("E.M.B.E.R. Framework"), so this is a list of words that
+# usually begin a sentence, not every capitalized word.
+SENTENCE_STARTERS = {
+    'Das', 'Die', 'Der', 'Dies', 'Diese', 'Dieser', 'Dieses', 'Den', 'Dem', 'Ein', 'Eine', 'Einen', 'Kein', 'Keine',
+    'Es', 'Ich', 'Du', 'Wir', 'Sie', 'Er', 'Ihr', 'Man', 'Mein', 'Meine', 'Dein', 'Deine', 'Sein', 'Seine', 'Unser', 'Unsere',
+    'Wenn', 'Dann', 'Damit', 'Dabei', 'Danach', 'Davor', 'Dafür', 'Darum', 'Deshalb', 'Daher', 'Dadurch', 'Trotzdem',
+    'Hier', 'Jetzt', 'Heute', 'Morgen', 'Gestern', 'Bald', 'Später', 'Zuerst', 'Zuletzt', 'Anschließend', 'Außerdem',
+    'Zudem', 'Allerdings', 'Leider', 'Gerne', 'Gern', 'Natürlich', 'Vielleicht', 'Bitte', 'Danke', 'Auch', 'So', 'Also',
+    'Aber', 'Und', 'Oder', 'Doch', 'Nur', 'Noch', 'Schon', 'Ja', 'Nein', 'Okay', 'Was', 'Wie', 'Wo', 'Wann', 'Warum',
+    'Wer', 'Welche', 'Welcher', 'Im', 'In', 'Am', 'An', 'Auf', 'Aus', 'Bei', 'Mit', 'Nach', 'Vor', 'Für', 'Ohne', 'Seit',
+    'Zum', 'Zur', 'Alle', 'Viele', 'Einige', 'Mara', 'Eve',
+}
+# A colon between two numbers after these words is a score or a ratio, not a time (Ergebnis 2:10).
+SCORE_WORDS = (r'(?i:Ergebnis|Endstand|Spielstand|Zwischenstand|Halbzeitstand|Stand|steht(?:\s+es)?|Format|Verhältnis|'
+               r'Seitenverhältnis|gewinnt|gewann|gewonnen|verliert|verlor|verloren|Sieg|Niederlage|Remis|Tore)')
+# Two numbers with one dot are said with "Punkt" only after these words (Python 3.11, Kapitel 3.2);
+# otherwise they are a decimal number (3.14 -> drei Komma eins vier). Three or four parts are always a version.
+POINT_WORDS = re.compile(r'(?i)\b(?:version|release|update|python|php|node(?:js)?|ubuntu|debian|gemma\d?|ollama|mariadb|nginx|'
+                         r'docker|pocket|torch|pytorch|playwright|chrome|firefox|android|ios|macos|windows|kernel|coreai|'
+                         r'kapitel|abschnitt|punkt|schritt|paragraph|nummer|nr)\.?\s*$')
 TIME_ZONES = {'CET': 'mitteleuropäischer Zeit', 'MEZ': 'mitteleuropäischer Zeit', 'CEST': 'mitteleuropäischer Sommerzeit',
               'MESZ': 'mitteleuropäischer Sommerzeit', 'UTC': 'U Te Ze', 'GMT': 'Ge Em Te'}
 DOMAINS = {'de': 'De', 'com': 'Komm', 'org': 'Org', 'net': 'Nett', 'io': 'I O', 'ai': 'A I', 'eu': 'E U', 'info': 'Info',
@@ -77,12 +95,12 @@ PRONUNCIATION = {
     'design': ('Disain', 'n'), 'backup': ('Bäckapp', 'n'), 'cache': ('Käsch', 'n'), 'setup': ('Settapp', 'n'),
     'laptop': ('Läptop', 'n'), 'smartphone': ('Smartfohn', 'n'), 'display': ('Displeh', 'n'), 'game': ('Gehm', 'n'),
     'gaming': ('Gehming', 'n'), 'player': ('Pleijer', 'n'), 'level': ('Lewel', 'n'), 'workflow': ('Wörkflou', 'n'),
-    'highlight': ('Hailait', 'n'), 'home': ('Houm', 'n'), 'host': ('Houst', 'n'), 'hosting': ('Housting', 'n'),
+    'highlight': ('Hailait', 'n'), 'home': ('Houm', 'n'), 'host': ('Houst', 'w'), 'hosting': ('Housting', 'n'),
     'shell': ('Schell', 'n'), 'preflight': ('Priflait', 'n'), 'memory': ('Memmori', 'n'), 'thread': ('Tredd', 'n'),
     'release': ('Rilies', 'n'), 'dashboard': ('Däschbord', 'n'), 'pipeline': ('Paiplain', 'n'), 'queue': ('Kju', 'n'),
     'voice': ('Weus', 'n'), 'email': ('Imeil', 'n'), 'weekend': ('Wiekend', 'n'), 'headset': ('Hedset', 'n'),
     'keyboard': ('Kiebord', 'n'), 'password': ('Passwörd', 'n'), 'logout': ('Logaut', 'n'), 'user': ('Juser', 'n'),
-    'check': ('Tscheck', 'n'), 'debugging': ('Dibagging', 'n'),
+    'check': ('Tscheck', 'n'), 'debugging': ('Dibagging', 'n'), 'gamer': ('Gehmer', 'n'), 'updater': ('Apdeiter', 'n'),
     'online': ('onlein', 'w'), 'offline': ('offlein', 'w'), 'cool': ('kuhl', 'w'), 'nice': ('neis', 'w'), 'fan': ('Fän', 'w'),
     'job': ('Dschobb', 'w'), 'show': ('Schou', 'w'), 'bug': ('Bagg', 'w'), 'debug': ('Dibagg', 'w'), 'mail': ('Meil', 'w'),
     'unit': ('Junit', 'w'),
@@ -95,7 +113,7 @@ PRONUNCIATION = {
     'claude': ('Klohd', 'x'), 'openai': ('Oupen Äi Ei', 'x'), 'nvidia': ('Enwidia', 'x'), 'microsoft': ('Maikrosoft', 'x'),
     'apple': ('Äppel', 'x'), 'amazon': ('Ämason', 'x'), 'searxng': ('Sörks En Ge', 'x'), 'playwright': ('Pleirait', 'x'),
 }
-ENDINGS = ('s', 'e', 'es', 'en', 'er', 'em', 'ern', 'ers', 'n', 'r', 't', 'te', 'ten', 'tet', 'st', 'in', 'innen', 'erin', 'erinnen')
+ENDINGS = ('s', 'e', 'es', 'en', 'er', 'em', 'ern', 'ers', 'n', 't', 'te', 'ten', 'tet', 'st', 'in', 'innen', 'erin', 'erinnen')
 
 
 def _under_100(n: int, final: bool = True) -> str:
@@ -215,7 +233,7 @@ def respell(word: str) -> str:
             return _match_case(word, _attach(spoken, key, 's')) if rest == 's' else word
         if rest in ENDINGS:
             return _match_case(word, _attach(spoken, key, rest))
-        if kind == 'n' and len(rest) >= 3 and word[size:].islower():
+        if kind == 'n' and len(rest) >= 4 and word[size:].islower():
             return _match_case(word, spoken) + '-' + word[size:]
         return word
     return word
@@ -336,7 +354,10 @@ def prepare(text: str) -> str:
         spoken = [_amount(v, one, many) for v, one, many in ((hours, 'Stunde', 'Stunden'), (minutes, 'Minute', 'Minuten'),
                                                               (secs, 'Sekunde', 'Sekunden')) if v]
         said = (spoken[0] if len(spoken) == 1 else ', '.join(spoken[:-1]) + ' und ' + spoken[-1]) if spoken else 'null Sekunden'
-        return said + ('.' if m.groupdict().get('dot') and _sentence_ends(m) else '')
+        dot = m.groupdict().get('dot') or m.groupdict().get('dot2')
+        return said + ('.' if dot and _sentence_ends(m) else '')
+    out = re.sub(rf'(?P<pre>\b{SCORE_WORDS}\b:?\s+(?:(?i:von|mit|auf)\s+)?)(?P<a>\d{{1,4}}):(?P<b>\d{{1,4}})(?![\d:])',
+                 lambda m: f"{m.group('pre')}{cardinal(int(m.group('a')))} zu {cardinal(int(m.group('b')))}", out)
     out = re.sub(r'(?<![\d:])(?P<h>\d{1,2}):(?P<min>\d{2}):(?P<s>\d{2})(?![\d:])', duration, out)
     out = re.sub(r'(?<![\d:])(?P<min>\d{1,2}):(?P<s>\d{2})\s*(?:min\b(?P<dot>\.)?|Min(?P<dot2>\.)|Minuten\b)(?P<h>)', duration, out)
     out = re.sub(r'(?<=\d)\s*(?:min\b|Min\b)(?P<dot>\.)?', lambda m: ' Minuten' + ('.' if m.group('dot') and _sentence_ends(m) else ''), out)
@@ -354,7 +375,10 @@ def prepare(text: str) -> str:
                  lambda m: f'{_number(m.group(1))} bis {_number(m.group(2))}', out)
 
     def version(m: re.Match) -> str:
-        spoken = ' Punkt '.join(_number(group) for group in m.group('num').split('.'))
+        groups = m.group('num').split('.')
+        if len(groups) == 2 and not m.group('v') and not POINT_WORDS.search(m.string[:m.start()]):
+            return f'{_number(groups[0])} Komma {_digits(groups[1])}'
+        spoken = ' Punkt '.join(_number(group) for group in groups)
         said = m.group('v') and not re.search(r'Version\s*$', m.string[:m.start()], re.IGNORECASE)
         return ('Version ' if said else '') + spoken
     out = re.sub(r'(?<![\w.])(?P<v>[vV])?(?P<num>\d+(?:\.\d+){1,3})(?!\.?\d)', version, out)
