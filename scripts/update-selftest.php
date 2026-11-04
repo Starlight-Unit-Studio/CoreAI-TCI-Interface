@@ -119,7 +119,9 @@ update_test(str_contains($api, "(int)\$row['permission_level'] !== 0 || (int)(\$
   && str_contains($api, 'stu_require_csrf();') && str_contains($api, "'update_start', 'coreai'"), 'API: Inhaber only, CSRF, audited');
 update_test(strpos($api, 'stu_require_csrf();') < strpos($api, "if (\$action === 'start')"), 'CSRF before every action');
 foreach (['config/nginx.conf.template', 'config/runtime/nginx.conf.template'] as $nginx) {
-  update_test(str_contains($read($nginx), '|models|admin|update|health)\.php$'), 'nginx allows api/update.php: ' . $nginx);
+  // The allowlist grows (0.6.1 added voice); update must stay in it.
+  $allowed = preg_match('#location ~ \^/api/\(\?:([a-z_|]+)\)\\\.php\$ \{#', $read($nginx), $m) === 1 ? explode('|', $m[1]) : [];
+  update_test(in_array('update', $allowed, true), 'nginx allows api/update.php: ' . $nginx);
 }
 $compose = $read('compose.yaml');
 update_test(str_contains($compose, '- ./var/update-request:/var/www/coreui/var/update-request') && str_contains($compose, '- ./var/php_sessions:/var/www/coreui/var/php_sessions')

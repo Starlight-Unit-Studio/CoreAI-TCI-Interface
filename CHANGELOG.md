@@ -1,5 +1,23 @@
 # CoreAI: TCI Interface
 
+## 0.6.1 - 04.11.2026
+
+- **Mara liest vor (P20.3):** Lautsprecher-Knopf unter jeder Mara-Antwort. Eve (Pocket TTS Deutsch, 24 Schichten, int8) liest Satz fuer Satz: Der erste Teil ist kurz, damit sie schnell anfaengt, der naechste laedt waehrend der Wiedergabe, ein zweiter Klick stoppt. Beim Neuzeichnen des Chats behaelt der Knopf seinen Zustand.
+- **Was gelesen wird** (`tools/voice/speakable.py`): Codebloecke und Tabellen werden benannt ("Codeblock ausgelassen."), Links behalten ihren Text, Adressen werden zu "Link", Ueberschriften und Listenpunkte werden eigene Saetze, Markdown-Zeichen, Werkzeug-Marker und Emojis fallen weg. Danach die Textaufbereitung `de-1` (Zahlen, Datum, Uhrzeit, Dateinamen als Woerter).
+- **Sprachdienst** (`tools/voice/voice_service.py`, Container `voice`, optional): haelt Eve geladen, nur auf 127.0.0.1, ein Auftrag gleichzeitig (andere warten, dann "beschaeftigt"), 4 Kerne, Zeitlimit je Teil (fuenffache Sprechdauer, mindestens 10 s). Beim Start prueft er, dass Pocket genau die registrierten Dateien laedt, holt sie zu den registrierten Revisionen und vergleicht jeden SHA-256 mit `config/voice/mara-voice.json`; kein Token noetig. Laeuft als uid 33, Dateisystem nur lesbar, Speicher begrenzt. Scheitert Bau oder Start, laeuft CoreAI ohne Vorlesen weiter (`COREUI_INSTALL_VOICE=0` laesst ihn ganz weg).
+- **Rechte und Speicher** (`api/voice.php`, `api/voice_store.php`): nur angemeldete Konten, nie Gaeste; vorgelesen wird nur eine eigene Mara-Antwort (gleiche Pruefung wie bei Bewertungen). Plan und Audio pro Konto unter `var/voice_cache/<id>`, 7 Tage, dann geloescht; das Loeschen eines Kontos entfernt sie sofort. nginx gibt `api/voice.php` frei.
+- **KI-Profil:** "Antworten automatisch vorlesen" (Standard aus, Migration 023 `stu_user_voice_settings`). Ist es an, liest Eve jede neue Antwort nach dem Fertigwerden vor.
+- Tests: neu `voice-service-selftest.py` (vorlesbarer Text, Teile, Dienst mit Testton: Gesundheit, Plan, WAV, ein Auftrag gleichzeitig, Zeitlimit, falsche Eingaben, nur lokal, Image und Verdrahtung), `voice-read-selftest.php` (nachgebauter Dienst: Plan und Audio nur einmal berechnet, beschaeftigt und kaputte Antworten, Aufraeumen nach 7 Tagen, fremde Ordner, Dienst aus; Verdrahtung; mit Datenbank der Schalter mit Rollback) und `voice-read-ui-selftest.cjs` (Chromium: CSRF, Teil fuer Teil mit Vorladen, Stopp, Neuzeichnen, automatisch vorlesen, nichts zu lesen, Laden, ohne Dienst, Gaeste, Schalter). In beiden Preflights; der Container-Preflight meldet den Zustand des Sprachdienstes als Hinweis, nie als Fehler.
+- Keine Aenderung an Cores, Modelfile oder Warteschlange.
+
+## 0.6.0 - 04.11.2026
+
+- **Maras Stimme gewaehlt: Eve** (Pocket TTS Deutsch, 24 Schichten, int8). Lauf `20261104-173047`: Echtzeitfaktor mit int8 0,45 / 0,48 / 0,46 bei 4 / 6 / 8 Kernen, ohne int8 1,07 / 1,26 / 1,31; erster Ton mit int8 0,13 s statt 0,46 s; 2,5 GB RAM, Laden 8 s. Mehr Kerne helfen nicht.
+- **Registriert:** `config/voice/mara-voice.json` mit Engine (`pocket-tts==4.0.1`), Modell (`german_24l`, int8, freie Gewichte), Stimme (`eve`), Textaufbereitung (`de-1`), den drei Dateien mit Repository, Revision, Pfad, SHA-256, Groesse und Lizenz, der Namensnennung (Kyutai, VCTK p361) und dem vorlaeufigen Kernlimit 4. Kein Token noetig. Nichts davon wird ausgeliefert; die spaetere Sprachausgabe laedt genau diese Dateien und prueft sie.
+- Messprotokoll und Festlegung im Sprachplan. Hoereindruck des Betreibers: kein Unterschied zwischen int8 und normal; der Stimmtest (P20.0) ist abgeschlossen.
+- Tests: `tts-spike-selftest.py` prueft die Registrierung (gleiche Engine-Version wie im Test, gleiche Textaufbereitung, SHA-256 und Revisionen, Namensnennung, Kernlimit unter Echtzeit), in beiden Preflights gelistet.
+- Keine Aenderung an Cores, Modelfile, Datenbank oder Warteschlange.
+
 ## 0.5.99 - 04.11.2026
 
 - **Token nie in der Befehlszeile:** Auf dem Server wurde der Token direkt an die Option gehaengt (`--hf-hf_...`). Das Skript kannte die Option nicht und gab sie samt Token in der Fehlermeldung wieder aus. Jetzt wird jedes Argument mit `hf_` abgelehnt, ohne den Token auszugeben, mit dem richtigen Befehl und dem Hinweis, den Token neu anzulegen (er steht dann in der Shell-Historie).

@@ -1710,6 +1710,12 @@
     var turnId = Number(record && record.reply_to_id) || 0;
     if (messageId <= 0 || turnId <= 0) return actions;
 
+    // 0.6.1: read aloud with Mara's voice (signed-in accounts, own answers).
+    if (window.CoreAIVoiceRead) {
+      var speak = window.CoreAIVoiceRead.button(record, state.activeSessionId);
+      if (speak) actions.appendChild(speak);
+    }
+
     var up = createActionButton('up', 'Antwort hilfreich');
     var down = createActionButton('down', 'Antwort nicht hilfreich');
     up.classList.toggle('active', record && record.feedback === 'up');
@@ -2897,6 +2903,8 @@
       renderHistory(ses);
       var finalRow = messagesInner.querySelector('[data-message-id="' + String(emberId) + '"]');
       if (finalRow) showResponseTime(finalRow, sessionId);
+      // 0.6.1: read the new answer aloud when the account switched that on.
+      if (window.CoreAIVoiceRead) window.CoreAIVoiceRead.onAnswer({ id: emberId, session_id: sessionId });
     } else if (state.typingEl) {
       if (!text && browseJobId > 0) {
         // Browse-Turn: keine leere Bubble. Live-Fenster übernimmt, Ergebnis kommt per Poll.

@@ -6,14 +6,14 @@
   <meta name="language" content="de-DE" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#f0f4fa" />
-  <meta name="application-version" content="0.5.99" />
+  <meta name="application-version" content="0.6.1" />
   <meta name="application-name" content="CoreAI: TCI Interface" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface - Einstellungen</title>
-  <link rel="stylesheet" href="./css/console.css?v=0054702136497516009836207" />
+  <link rel="stylesheet" href="./css/console.css?v=0259622859279484496258387" />
   <link rel="stylesheet" href="./css/settings.css?v=0365945250101497403441087" />
   <link rel="stylesheet" href="./css/coreui-update.css?v=1027839363176318351849490" />
-  <script src="./js/console-gate.js?v=0130220023476493132053427"></script>
+  <script src="./js/console-gate.js?v=0033367652507201528866867"></script>
   <script src="./js/coreui-preferences.js?v=0413330848560779596296331"></script>
 </head>
 <body class="settings-body">
@@ -48,7 +48,7 @@
           <h1>EINSTELLUNGEN</h1>
         </div>
       </div>
-      <div class="settings-version">COREAI: TCI INTERFACE // v0.5.99</div>
+      <div class="settings-version">COREAI: TCI INTERFACE // v0.6.1</div>
     </header>
 
     <!-- 0.5.79: one page, categories as tabs. Each category is its own view
@@ -292,6 +292,10 @@
               <label class="setting-row" for="aiMemoryEnabled">
                 <span class="setting-copy"><strong>LANGZEITGEDÄCHTNIS VERWENDEN</strong><small>Persönliche und charakterbezogene Fakten in neue Antworten einbeziehen.</small></span>
                 <span class="settings-switch"><input id="aiMemoryEnabled" type="checkbox" /><i aria-hidden="true"></i></span>
+              </label>
+              <label class="setting-row" for="voiceAutoRead" id="voiceAutoReadRow" hidden>
+                <span class="setting-copy"><strong>ANTWORTEN AUTOMATISCH VORLESEN</strong><small id="voiceAutoReadNote">Eve liest neue Antworten von selbst vor.</small></span>
+                <span class="settings-switch"><input id="voiceAutoRead" type="checkbox" /><i aria-hidden="true"></i></span>
               </label>
               <div class="settings-local-note" id="thinkingMovedNote">
                 <span aria-hidden="true">◇</span>
@@ -802,6 +806,7 @@
   <script src="./js/settings.js?v=0694243875093812746250899"></script>
   <script src="./js/coreui-personalization-settings.js?v=1055555289996254500304399"></script>
   <script src="./js/admin.js?v=0876858939640698403610180"></script>
+  <script src="./js/coreui-voice-read.js?v=0052719397622031721965306"></script>
   <script src="./js/coreui-voice-samples.js?v=0510457036023282189039802"></script>
   <script src="./js/coreui-update.js?v=0294648939860149727532714"></script>
 </body>

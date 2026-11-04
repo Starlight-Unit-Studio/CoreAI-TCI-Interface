@@ -223,6 +223,13 @@ function coreui_account_delete(PDO $pdo, int $uid): array {
     @rmdir($archives);
   }
 
+  // 0.6.1: read-aloud audio of the account (var/voice_cache/<id>).
+  $voice = $root . '/var/voice_cache/' . $uid;
+  if (is_dir($voice) && !is_link($voice)) {
+    $files += coreui_account_delete_named_files($voice, array_map('basename', glob($voice . '/*.{json,wav}', GLOB_BRACE) ?: []));
+    @rmdir($voice);
+  }
+
   foreach (['artifact_keys', 'media_paths', 'knowledge_files', 'profile_files', 'photo_paths'] as $key) unset($result[$key]);
   return $result + ['files_deleted' => $files];
 }

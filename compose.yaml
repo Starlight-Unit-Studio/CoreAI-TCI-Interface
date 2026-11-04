@@ -53,6 +53,8 @@ services:
       # window drops its request here (var/update itself stays read-only).
       - ./var/php_sessions:/var/www/coreui/var/php_sessions
       - ./var/update-request:/var/www/coreui/var/update-request
+      # 0.6.1: read-aloud audio per account, kept 7 days.
+      - ./var/voice_cache:/var/www/coreui/var/voice_cache
       - ./uploads/ember_browse:/var/www/coreui/uploads/ember_browse
       - ./assets/chat_media:/var/www/coreui/assets/chat_media
       - ./assets/profile_photos:/var/www/coreui/assets/profile_photos
@@ -128,6 +130,41 @@ services:
       - ./uploads/ember_browse:/var/www/coreui/uploads/ember_browse
       - ./var/browser-home:/tmp/coreui-browser-home
     stop_grace_period: 25s
+
+  # 0.6.1: Mara's voice (read aloud, P20.3). Optional (profile "voice"): the
+  # installer builds and starts it; Eve's weights live in var/voice-models.
+  voice:
+    profiles: ["voice"]
+    build:
+      context: .
+      dockerfile: docker/voice/Dockerfile
+    network_mode: host
+    restart: unless-stopped
+    user: "33:33"
+    read_only: true
+    tmpfs:
+      - /tmp:size=1g
+    cpus: ${COREUI_VOICE_CORES:-4}
+    mem_limit: 6g
+    environment:
+      COREAI_VOICE_PORT: ${COREUI_VOICE_PORT:-18790}
+      COREAI_VOICE_CORES: ${COREUI_VOICE_CORES:-4}
+      HF_HOME: /models/hf
+      HOME: /tmp
+    volumes:
+      - .:/var/www/coreui:ro
+      - ./var/voice-models:/models
+    healthcheck:
+      test:
+        - CMD
+        - python3
+        - -c
+        - 'import os,urllib.request,json; d=json.load(urllib.request.urlopen("http://127.0.0.1:%s/health" % os.environ.get("COREAI_VOICE_PORT","18790"), timeout=3)); raise SystemExit(0 if d.get("ok") else 1)'
+      interval: 20s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+    stop_grace_period: 10s
 
   pyworker:
     build:

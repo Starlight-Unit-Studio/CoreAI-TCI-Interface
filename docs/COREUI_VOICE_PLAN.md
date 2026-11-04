@@ -1,6 +1,6 @@
 # Mara hört und spricht: Sprachplan (Planungsstand 28.10.2026)
 
-**Status: geplant und noch nicht implementiert. Das Hören über Ollama ist auf dem echten Server gemessen (P20.0, vier Läufe am 28.10.2026, siehe [Messprotokoll](#messprotokoll-p200-28102026)); der Weg der Mitschrift ist entschieden. Die Stimme (TTS) ist seit dem 04.11.2026 gemessen (siehe [Messprotokoll Stimmtest](#messprotokoll-stimmtest-04112026)); beim Anhören las keine schnelle Stimme fehlerfrei; deshalb kommen eine deutsche Textaufbereitung und Kerstin als Pocket-Klon dazu (0.5.98).** Dieser Plan beschreibt die Spracheingabe, das Hören von Videos, die Sprachausgabe und das Live-Gespräch in CoreAI: TCI Interface. Er ergänzt den [Bild-Technikplan](COREUI_IMAGE_ENGINE_PLAN.md) und bildet zusammen mit ihm das Paket P20 der [Roadmap](../ROADMAP.md) (Matrix `CF-057`, `CF-058`, `CF-059`).
+**Status: geplant und noch nicht implementiert. Das Hören über Ollama ist auf dem echten Server gemessen (P20.0, vier Läufe am 28.10.2026, siehe [Messprotokoll](#messprotokoll-p200-28102026)); der Weg der Mitschrift ist entschieden. Maras Stimme ist gewählt: Eve mit Pocket TTS Deutsch, 24 Schichten, int8 (siehe [Messprotokoll Stimmtest](#messprotokoll-stimmtest-04112026), registriert in `config/voice/mara-voice.json`).** Dieser Plan beschreibt die Spracheingabe, das Hören von Videos, die Sprachausgabe und das Live-Gespräch in CoreAI: TCI Interface. Er ergänzt den [Bild-Technikplan](COREUI_IMAGE_ENGINE_PLAN.md) und bildet zusammen mit ihm das Paket P20 der [Roadmap](../ROADMAP.md) (Matrix `CF-057`, `CF-058`, `CF-059`).
 
 ## Entscheidungen des Betreibers (28.10.2026)
 
@@ -247,6 +247,20 @@ sudo bash /opt/ember-coreui/scripts/tts-spike.sh --skip-build --groups pocket-de
 
 Ziel: Echtzeitfaktor unter 0,8 mit möglichst wenigen Kernen, damit genug Puffer bleibt, wenn Core parallel rechnet. Ob int8 hörbar anders klingt, entscheidet der Betreiber an den Proben mit 4 Kernen.
 
+**Ergebnis (Lauf `20261104-173047`):**
+
+| Eve, 24 Schichten | Kerne | Echtzeitfaktor | Erster Ton s | Laden s | RAM MB |
+|---|---|---|---|---|---|
+| normal | 4 / 6 / 8 | 1,07 / 1,26 / 1,31 | 0,46 / 0,52 / 0,56 | 5,1 bis 5,6 | 2.300 bis 2.400 |
+| int8 | 4 / 6 / 8 | 0,45 / 0,48 / 0,46 | 0,13 / 0,15 / 0,14 | 7,0 bis 8,0 | 2.400 bis 2.500 |
+
+- **int8 macht Eve mehr als doppelt so schnell:** Echtzeitfaktor 0,45 statt 1,07 mit 4 Kernen, der erste Ton kommt nach 0,13 statt 0,46 Sekunden. Damit spricht Eve flüssig, mit reichlich Puffer.
+- **Mehr Kerne helfen nicht:** Ohne int8 wird Eve mit 6 und 8 Kernen sogar langsamer, mit int8 bleibt sie gleich. Pocket ist auf wenige Kerne ausgelegt (Kyutai nennt 2).
+- **Festlegung (vorläufig):** Eve mit int8 und **4 Kernen** als festes Kernlimit der parallelen Sprachausgabe; 16 Kerne bleiben für Core. Ob 2 oder 3 Kerne reichen, zeigt bei Bedarf ein kurzer Lauf mit `--groups pocket-de24-eve-int8 --cores 2,3,4`.
+- **Registriert** in `config/voice/mara-voice.json`: Engine `pocket-tts==4.0.1`, Modell `german_24l` mit int8, Stimme `eve`, Textaufbereitung `de-1`, die drei Dateien mit Repository, Revision, Pfad, SHA-256, Größe und Lizenz sowie die Namensnennung (Kyutai, VCTK p361). Kein Token nötig.
+- **Höreindruck bestätigt (04.11.2026):** Der Betreiber hört keinen Unterschied zwischen Eve mit int8 und ohne. Damit ist der Stimmtest (P20.0) abgeschlossen.
+- Offen: Live-Runde mit paralleler Core-Anfrage, dann P20.3 (Vorlesen) und P20.1 (Spracheingabe).
+
 Nächster Lauf (ohne Chatterbox):
 
 ```
@@ -273,6 +287,8 @@ sudo bash /opt/ember-coreui/scripts/tts-spike.sh --skip-build --engines piper,po
 - Längengrenzen und Stichproben werden offen genannt (welche Abschnitte gehört und gesehen wurden).
 
 ### P20.3: Sprachausgabe (Vorlesen)
+
+**Stand 0.6.1: gebaut.** Entscheidungen des Betreibers (04.11.2026): angemeldete Konten ohne Gäste, "Antworten automatisch vorlesen" aus und im KI-Profil einschaltbar, Audio 7 Tage pro Konto gespeichert. Umsetzung: Sprachdienst `voice` (Container, Eve mit int8 auf 4 Kernen, nur 127.0.0.1, ein Auftrag gleichzeitig, SHA-256-Prüfung der registrierten Dateien), `api/voice.php` (Plan und Audio je Teil), `js/coreui-voice-read.js` (Knopf, Satz für Satz mit Vorladen, Stopp). Was nicht vorgelesen wird, legt `tools/voice/speakable.py` fest. Offen: Live-Abnahme auf dem Server und die Messung mit paralleler Core-Anfrage.
 
 - Lautsprecher-Knopf unter jeder Mara-Antwort, Pause und Stopp; optional "Antworten automatisch vorlesen" im KI-Profil.
 - Vor dem Sprechen wird der Text aufbereitet: Codeblöcke, Links und Tabellen werden nicht vorgelesen, sondern kurz benannt; Zahlen, Daten und Uhrzeiten deutsch ausgesprochen.

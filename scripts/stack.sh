@@ -35,12 +35,16 @@ ensure_private_storage_dirs() {
   local python_dir="$PROJECT_ROOT/var/ember_py"
   local session_dir="$PROJECT_ROOT/var/php_sessions"
   local request_dir="$PROJECT_ROOT/var/update-request"
+  # 0.6.1: read-aloud cache (PHP) and Eve's weights (voice service, uid 33).
+  local voice_cache_dir="$PROJECT_ROOT/var/voice_cache"
+  local voice_models_dir="$PROJECT_ROOT/var/voice-models"
   if (( EUID == 0 )); then
-    install -d -m 0770 -o 33 -g 33 "$profile_dir" "$knowledge_dir" "$python_dir" "$session_dir" "$request_dir"
+    install -d -m 0770 -o 33 -g 33 "$profile_dir" "$knowledge_dir" "$python_dir" "$session_dir" "$request_dir" \
+      "$voice_cache_dir" "$voice_models_dir"
     return
   fi
-  mkdir -p "$profile_dir" "$knowledge_dir" "$python_dir" "$session_dir" "$request_dir"
-  chmod 0770 "$profile_dir" "$knowledge_dir" "$python_dir" "$session_dir" "$request_dir" 2>/dev/null || true
+  mkdir -p "$profile_dir" "$knowledge_dir" "$python_dir" "$session_dir" "$request_dir" "$voice_cache_dir" "$voice_models_dir"
+  chmod 0770 "$profile_dir" "$knowledge_dir" "$python_dir" "$session_dir" "$request_dir" "$voice_cache_dir" "$voice_models_dir" 2>/dev/null || true
 }
 
 remove_private_studio_lore_files() {

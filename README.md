@@ -7,7 +7,36 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.99` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.6.1` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Mara liest vor (0.6.1)
+
+Unter jeder Antwort von Mara steht ein Lautsprecher-Knopf: Eve liest die
+Antwort vor. Die Wiedergabe beginnt nach dem ersten Satz, der naechste Teil
+wird schon geladen, waehrend der aktuelle laeuft; ein zweiter Klick stoppt.
+Code, Tabellen und Links werden nicht vorgelesen, sondern kurz benannt;
+Zahlen, Datum, Uhrzeit und Dateinamen spricht Eve als Woerter. Im KI-Profil
+laesst sich "Antworten automatisch vorlesen" einschalten (Standard aus).
+
+- Nur angemeldete Konten, keine Gaeste; jedes Konto hoert nur eigene Antworten.
+- Erzeugte Audiodateien bleiben 7 Tage pro Konto gespeichert (erneutes
+  Abspielen rechnet nichts neu) und verschwinden mit dem Konto.
+- Neuer, optionaler Container `voice` (Pocket TTS auf 4 Kernen, rund 2,5 GB
+  RAM, nur auf 127.0.0.1). Beim ersten Start laedt er Eves Gewichte (etwa
+  0,7 GB) zu den registrierten Revisionen und prueft jede Datei gegen ihren
+  SHA-256 (`config/voice/mara-voice.json`). Scheitert der Bau oder Start,
+  laeuft CoreAI ohne Vorlesen weiter; `COREUI_INSTALL_VOICE=0` laesst ihn weg.
+- Migration 023 (`stu_user_voice_settings`).
+
+## Maras Stimme: Eve (0.6.0)
+
+Gewaehlt nach dem Stimmtest auf dem Server: **Eve** mit Pocket TTS Deutsch,
+24 Schichten, mit int8-Beschleunigung. Sie spricht mehr als doppelt so schnell
+wie gesprochen (Echtzeitfaktor 0,45 mit 4 Kernen), der erste Ton kommt nach
+0,13 Sekunden. Mehr Kerne bringen nichts; vorlaeufiges Kernlimit 4. Die drei
+Dateien (Modell, Tokenizer, Stimmzustand) sind mit Herkunft, Revision, SHA-256
+und Lizenz in `config/voice/mara-voice.json` registriert; ein Token ist nicht
+noetig. Naechste Schritte: Vorlesen im Chat (P20.3) und Spracheingabe (P20.1).
 
 ## Stimmtest: Token nie in der Befehlszeile (0.5.99)
 

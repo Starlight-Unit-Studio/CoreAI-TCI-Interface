@@ -2089,6 +2089,29 @@ a:focus-visible {
   opacity: 0.46;
 }
 
+/* 0.6.1: read aloud with Mara's voice. */
+.msg-action.msg-speak[hidden] {
+  display: none;
+}
+
+.msg-action.msg-speak.speaking {
+  border-color: rgba(226, 155, 57, 0.5);
+  background: rgba(226, 155, 57, 0.14);
+  color: #a86a12;
+}
+
+.msg-action.msg-speak.loading svg {
+  animation: msg-speak-pulse 1s ease-in-out infinite;
+}
+
+@keyframes msg-speak-pulse {
+  50% { opacity: 0.35; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .msg-action.msg-speak.loading svg { animation: none; }
+}
+
 .msg-action-details {
   display: flex;
   flex: 1 0 100%;

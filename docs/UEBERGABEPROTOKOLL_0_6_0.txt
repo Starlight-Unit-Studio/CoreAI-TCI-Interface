@@ -1,0 +1,16 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.6.0
+Stand: 04.11.2026
+Branch: claude/bold-galileo-myoyi0 (neu auf main 0.5.99, PR #151 gemergt)
+
+ERGEBNIS (Lauf 20261104-173047, report.md vom Betreiber):
+- Eve 24 Schichten normal: RTF 1,07 / 1,26 / 1,31 bei 4 / 6 / 8 Kernen, erster Ton 0,46 bis 0,56 s.
+- Eve 24 Schichten int8:   RTF 0,45 / 0,48 / 0,46, erster Ton 0,13 bis 0,15 s, 2,4 bis 2,5 GB, Laden 7 bis 8 s.
+- Mehr Kerne helfen nicht (ohne int8 sogar langsamer).
+FESTLEGUNG: Maras Stimme = Eve, german_24l, int8, 4 Kerne (vorlaeufig), Textaufbereitung de-1.
+REGISTRIERT: config/voice/mara-voice.json (Engine, Modell, Stimme, drei Dateien mit repo/revision/path/sha256/size/license,
+Namensnennung Kyutai und VCTK p361, gemessene Werte, Limits). Selbsttest prueft die Datei gegen voices.json und die
+Constraints. config/ ist in nginx gesperrt.
+
+HOEREINDRUCK: Betreiber hoert keinen Unterschied zwischen int8 und normal (04.11.2026). P20.0 abgeschlossen.
+OFFEN: Live-Runde mit paralleler Core-Anfrage; danach P20.3
+(Vorlesen im Chat mit Eve, Textaufbereitung aus tools/tts_spike/textprep_de.py uebernehmen) und P20.1 (Spracheingabe).
