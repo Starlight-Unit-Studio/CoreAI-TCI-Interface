@@ -136,7 +136,10 @@ const smallText = page => page.evaluate(() => {
     assert.equal(await page.getAttribute('#tab-ki-profil', 'aria-selected'), 'true');
     assert.equal(await page.getAttribute('#tab-start', 'aria-selected'), 'false');
     await page.keyboard.press('ArrowDown');
-    assert.deepEqual(await visibleViews(page), ['view-wissen'], 'arrow keys move between tabs');
+    // 0.5.91: Personalisierung sits between KI-Profil and Wissen.
+    assert.deepEqual(await visibleViews(page), ['view-personalisierung'], 'arrow keys move between tabs');
+    await page.keyboard.press('ArrowDown');
+    assert.deepEqual(await visibleViews(page), ['view-wissen'], 'and on to the next one');
     assert.equal(await page.locator('#tab-skills').count(), 0, 'no Skills tab: Mara picks her skills herself');
     await page.keyboard.press('Home');
     assert.deepEqual(await visibleViews(page), ['view-start']);
@@ -273,7 +276,7 @@ const smallText = page => page.evaluate(() => {
     await page.waitForFunction(() => document.querySelectorAll('#auditRows .audit-item').length === 1);
     await page.click('#tab-admin-protokoll');
     await page.waitForFunction(() => document.getElementById('logOutput').textContent.includes('ok'));
-    for (const view of ['start', 'anzeige', 'profil', 'ki-profil', 'wissen', 'memory', 'konto', 'system', 'admin-uebersicht', 'admin-zugang', 'admin-betrieb']) {
+    for (const view of ['start', 'anzeige', 'profil', 'ki-profil', 'personalisierung', 'wissen', 'memory', 'konto', 'system', 'admin-uebersicht', 'admin-zugang', 'admin-betrieb']) {
       await page.click('#tab-' + view);
       assert.deepEqual(await smallText(page), [], 'no text below 11 px in ' + view);
     }

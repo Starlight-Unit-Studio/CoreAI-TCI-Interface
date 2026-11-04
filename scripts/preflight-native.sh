@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.92 Personalization Nginx route hotfix.
+# CoreAI: TCI Interface 0.5.93 outdated UI tests brought up to date (personalization tab, browser window without search carousel).
 set -Eeuo pipefail
 IFS=$'\n\t'
 

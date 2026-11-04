@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.5.93 - 04.11.2026
+
+- **Zwei veraltete Oberflaechentests nachgezogen:** Auf main 0.5.92 bestanden 76 Selbsttests, zwei schlugen fehl, beide wegen gewollter Aenderungen, nicht wegen Fehlern im Produkt.
+- `settings-tabs-ui-selftest.cjs` erwartete nach KI-Profil mit der Pfeiltaste noch "Wissen"; seit 0.5.91 sitzt dort der Tab Personalisierung. Der Test geht jetzt beide Schritte und prueft auch im Tab Personalisierung, dass keine Schrift unter 11 px liegt.
+- `browse-live-ui-selftest.cjs` erwartete, dass Bilder des Playwright-Browserfensters als "Aktuelle Seite" ins Quellenkarussell wandern. Das hat 0.5.88 auf Wunsch des Betreibers getrennt (das Karussell gehoert nur zur Websuche). Der Test prueft jetzt genau das: Ein Browserlauf fuellt das Karussell nie (Gegenprobe mit dem alten Verhalten schlaegt an).
+- Die aktuelle Uebergabe nannte 0.5.92 noch "nicht gemergt" und den Stand vor 0.5.87 als naechsten Schritt; beides korrigiert.
+- Keine Aenderung an Produktcode, Datenbank, Modelfile oder Konfiguration.
+
 ## 0.5.92 - 03.11.2026
 
 - **Personalisierung repariert:** Das neue `api/personalization.php` aus 0.5.91 wurde von der Nginx-PHP-Allowlist nicht freigegeben, weshalb die funktionierende Einstellungsseite `HTTP_404` meldete.

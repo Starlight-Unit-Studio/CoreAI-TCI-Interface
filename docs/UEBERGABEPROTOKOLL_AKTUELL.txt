@@ -1,9 +1,10 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
-Stand: 03.11.2026
-Repository-Version: 0.5.92 (PR-Branch, noch nicht gemergt)
-BASIS: main 0.5.91, PR #143 gemergt.
+Stand: 04.11.2026
+Repository-Version: 0.5.93
+BASIS: main 0.5.92, PR #144 gemergt.
 NEUE ARBEIT ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_5_93.txt
   docs/UEBERGABEPROTOKOLL_0_5_92.txt
   docs/UEBERGABEPROTOKOLL_0_5_91.txt
   docs/UEBERGABEPROTOKOLL_0_5_90.txt
@@ -134,7 +135,11 @@ Update-Fenster fuer den Inhaber (Host-Dienst coreai-update per systemd, Datenban
 0.5.84: Benutzer loeschen unter Admin Core > Benutzer (Bestaetigung per E-Mail, alles oder nichts, Audit).
 0.5.84 ist gemergt (PR #135). 0.5.85: BEARBEITEN pro Konto mit Name und E-Mail, Passwort und Anmeldungen, Werkzeuge und Limits (Migration 021).
 0.5.85 ist gemergt (PR #136). 0.5.86: Maras Erinnerungen ohne 240-Zeichen-Kuerzung, ganze Fakten im Prompt.
-NAECHSTER SCHRITT: Audio (TTS-Kandidaten), Benutzerverwaltung nach Betreiberwunsch, dann P20.1.
+0.5.86 (PR #137). 0.5.87 Python-Uploads und Recherche-UI (PR #138), 0.5.88 Quellenkarussell getrennt vom
+Browserfenster, Code eingeklappt (PR #139), 0.5.89 Verlauf atomar statt Flackern (PR #140/#141), 0.5.90 Sitzungs-Test
+(PR #142), 0.5.91 Personalisierung mit Migration 022 (PR #143), 0.5.92 nginx-Route Personalisierung (PR #144).
+0.5.93: zwei veraltete Oberflaechentests nachgezogen, keine Produktaenderung.
+NAECHSTER SCHRITT: Audio (TTS-Kandidaten fuer Maras Stimme), dann P20.1 Spracheingabe.
 Mara/Ember, Ollama-Modelfile, serielle Queue und private Projekt-
 plaene NICHT ungefragt veraendern.
 Externe STU-Homepage wird in einem ANDEREN Chat bearbeitet.
