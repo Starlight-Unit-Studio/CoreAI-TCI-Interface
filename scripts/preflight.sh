@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.2 docs/hardware update; existing 0.6.1 Eve checks remain active.
+# CoreAI: TCI Interface 0.6.3: Vorlesen-Selbsttest prueft "Dienst aus" an einem wirklich freien Port; Eve-Pruefungen aus 0.6.1 bleiben aktiv.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

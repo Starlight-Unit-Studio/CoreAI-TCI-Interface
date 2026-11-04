@@ -1,0 +1,6 @@
+CoreAI: TCI Interface 0.6.3 - 04.11.2026
+- Preflight-Fehler "Vorlesen-Selbsttest: service down: not available" behoben: Der Test nutzte fuer "Sprachdienst aus" 127.0.0.1:1, das die Adresspruefung nicht annimmt; er fiel auf den echten Port 18790 zurueck und traf dort die laufende Eve.
+- voice-read-selftest.php prueft "Dienst aus" jetzt an einem freien Port und stellt vorher sicher, dass genau diese Adresse verwendet wird.
+- Nachgestellt mit einem bereiten Dienst auf 18790: alter Test scheitert wie auf dem Server, neuer besteht.
+- tests/test_version_merge_check.py: Testvorlage mit gueltiger README (seit 0.6.2 schlugen drei Tests schon auf main fehl), zwei neue Tests fuer die README-Regeln. Nicht Teil des Preflights.
+- Keine Aenderung an Vorlesen, Sprachdienst, Cores, Modelfile, Datenbank, Installer oder Warteschlange.

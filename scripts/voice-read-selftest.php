@@ -93,8 +93,13 @@ try {
   touch($dir . '/notiz.txt', time() - 30 * 86400);
   voice_test(coreui_voice_cleanup($dir) === 2 && !is_file($file) && is_file($dir . '/notiz.txt') && is_file($dir . '/' . $plan['id'] . '-1.wav'), 'old audio removed, the rest stays');
 
-  // Service down.
-  putenv('COREUI_VOICE_URL=http://127.0.0.1:1');
+  // Service down: a free port nobody listens on. It must be a URL the store
+  // accepts; otherwise it falls back to 18790, where the real Eve may be running.
+  $closed = stream_socket_server('tcp://127.0.0.1:0');
+  $downUrl = 'http://127.0.0.1:' . (int)substr(strrchr(stream_socket_get_name($closed, false), ':'), 1);
+  fclose($closed);
+  putenv('COREUI_VOICE_URL=' . $downUrl);
+  voice_test(coreui_voice_url() === $downUrl, 'service down: really points at the closed port, not at the real service');
   voice_test(coreui_voice_health()['available'] === false, 'service down: not available');
   voice_test($expect(fn() => coreui_voice_plan($dir, 'Neu, ohne Dienst.'), 'voice_unavailable'), 'service down: plan says so');
   putenv('COREUI_VOICE_URL=http://example.com:80');

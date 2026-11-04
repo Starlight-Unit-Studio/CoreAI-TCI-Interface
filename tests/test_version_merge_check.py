@@ -11,6 +11,15 @@ mod = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(mod)
 
 
+README = (
+    "# CoreAI: TCI Interface\n\n"
+    "**Aktueller Quellstand: `0.5.6`** | [CHANGELOG.md](CHANGELOG.md)\n\n"
+    "## Schnellstart: Installation und Aktualisierung\n\n"
+    "curl -fsSL https://raw.githubusercontent.com/Starlight-Unit-Studio/"
+    "CoreAI-TCI-Interface/main/setup.sh\n"
+)
+
+
 class MergeVersionTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -18,6 +27,9 @@ class MergeVersionTests(unittest.TestCase):
         self.write("VERSION", "0.5.6\n")
         for p in mod.PAGES + mod.REQUIRED_ACTIVE:
             self.write(p, "CoreUI version 0.5.6\n")
+        # Since 0.6.2 the README is checked as a guide: official one-liner,
+        # CHANGELOG link, a Schnellstart section, no per-version headings.
+        self.write("README.md", README)
         self.write("CHANGELOG.md", "## 0.5.6 - 20.10.2026\n")
         self.write("docs/changelogs-txt/INDEX.txt", "* CHANGELOG_0_5_6.txt\n")
         self.write("docs/changelogs-txt/CHANGELOG_0_5_6.txt", "0.5.6\n")
@@ -65,6 +77,16 @@ class MergeVersionTests(unittest.TestCase):
     def test_changelog_heading_required(self):
         self.write("CHANGELOG.md", "Only an arbitrary 0.5.6 reference")
         with self.assertRaisesRegex(ValueError, "heading"):
+            mod.validate(self.root, "0.5.5")
+
+    def test_readme_needs_official_one_liner(self):
+        self.write("README.md", README.replace("CoreAI-TCI-Interface/main", "coreui/main"))
+        with self.assertRaisesRegex(ValueError, "one-liner"):
+            mod.validate(self.root, "0.5.5")
+
+    def test_readme_is_no_changelog(self):
+        self.write("README.md", README + "\n## Mara liest vor (0.5.6)\n\nNeu.\n")
+        with self.assertRaisesRegex(ValueError, "per-version changelog"):
             mod.validate(self.root, "0.5.5")
 
 

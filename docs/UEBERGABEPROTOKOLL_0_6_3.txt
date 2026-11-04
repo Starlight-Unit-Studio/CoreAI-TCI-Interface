@@ -1,0 +1,34 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.6.3
+Stand: 04.11.2026
+Ausgangsbasis: main 0.6.2 nach Merge von PR #153.
+
+AUFTRAG:
+Nach dem Update auf dem Server schlug der Preflight mit genau einem Problem fehl:
+"[FEHLER] Vorlesen-Selbsttest: Voice read FAIL: service down: not available".
+
+URSACHE:
+- scripts/voice-read-selftest.php stellte "Dienst aus" mit COREUI_VOICE_URL=http://127.0.0.1:1 nach.
+- coreui_voice_url() nimmt nur http://127.0.0.1 mit zwei bis fuenf Ziffern als Port an und faellt sonst auf 18790 zurueck.
+- PHP und der Sprachdienst laufen mit Host-Netz. Auf dem Server lief Eve auf 18790 und war bereit, also meldete
+  der Test "verfuegbar". In der Testumgebung ohne Dienst auf 18790 fiel das nicht auf.
+- Fehler im Test. Vorlesen und Sprachdienst arbeiten wie vorgesehen; der Fehler zeigt sogar, dass Eve geladen ist.
+
+UMSETZUNG:
+- "Dienst aus" nutzt einen freien Port (stream_socket_server auf Port 0, danach geschlossen).
+- Neue Pruefung davor: coreui_voice_url() liefert genau diese Adresse, faellt also nicht auf den echten Dienst zurueck.
+- tests/test_version_merge_check.py: Seit 0.6.2 prueft version-merge-check.py die README, die Testvorlage hatte
+  aber keine gueltige README; drei Tests schlugen schon auf main fehl. Vorlage ergaenzt, zwei Tests fuer die
+  README-Regeln dazu. Der Preflight fuehrt diesen Test nicht aus, der Server war davon nicht betroffen.
+- Version 0.6.3 an allen Stellen; README nur Versionsnummer (README ist kein Changelog).
+
+GEPRUEFT:
+- Nachgestellt: ein bereiter Ersatzdienst auf 127.0.0.1:18790. Alter Test: "service down: not available" (exit 1).
+  Neuer Test: besteht.
+- Volle Testreihe; version-merge-check gegen 0.6.2.
+
+UNVERAENDERT:
+- Vorlesen, Sprachdienst, API, Cores, Modelfile, Datenbank/Migrationen, Installer, Compose, Warteschlange.
+
+NACH DEM MERGE (Betreiber): normales Update mit dem One-Liner. Der Preflight sollte ohne Fehler durchlaufen.
+Danach im Chat den Lautsprecher-Knopf unter einer Antwort testen.
+OFFEN: Live-Test Vorlesen; Live-Runde mit paralleler Core-Anfrage messen; dann P20.1 Spracheingabe.

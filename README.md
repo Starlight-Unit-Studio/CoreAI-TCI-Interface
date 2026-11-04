@@ -6,7 +6,7 @@
 
 CoreAI verbindet Ollama-Cores mit Chats, Recherche, persönlichem Wissen, Dateiverarbeitung und einem eigenen Administrationsbereich. Der Standardbetrieb nutzt einen isolierten Web-, Datenbank- und Worker-Stack auf dem eigenen Linux-Server. CoreAI ist eine Anwendung, kein eigenständiges Betriebssystem.
 
-**Aktueller Quellstand: `0.6.2`** | [CHANGELOG.md](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Lizenz (DE)](LICENSE.de.md)
+**Aktueller Quellstand: `0.6.3`** | [CHANGELOG.md](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Lizenz (DE)](LICENSE.de.md)
 
 > **Entwicklungsstand:** Die folgenden Funktionen beschreiben vorhandene Bestandteile des Quellstands. Nicht jedes Modell oder jede Cloud-Verbindung unterstützt alle Werkzeuge. Ein GitHub-Merge ist kein Nachweis eines erfolgreichen Live-Deployments.
 
