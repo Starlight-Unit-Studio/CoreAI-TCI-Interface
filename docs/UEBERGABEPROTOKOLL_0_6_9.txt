@@ -1,0 +1,39 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.6.9
+Stand: 04.11.2026
+Ausgangsbasis: main 0.6.8 nach Merge von PR #159.
+
+AUFTRAG (Betreiber, mit Screenshot): Sobald Mara auf Englisch antworten will, haengt sich die Anfrage auf
+("Core denkt nach - 23 Min."), "Abbruch angefordert ..." bleibt stehen, mehrere Chats im Archiv lassen sich nicht
+loeschen ("es wird noch etwas ausgefuehrt"). Erst danach weiter mit der Spracheinstellung (P20.3b Schritt 2).
+
+URSACHEN:
+1. api/chat.php ember_reply_looks_like_internal_meta(): "(i|we) need/should/must to answer|respond|...",
+   "system/developer prompt|instruction", "ich muss/sollte antworten|erwaehnen|..." waren Hochsicherheits-Muster.
+   Ein einziger Treffer verwarf die ganze Antwort (nachgestellt: "I need to respond in English ...", "Ich muss
+   antworten, dass ...", jede Erklaerung eines System-Prompts -> leer). console_stream.php startet bei leerer
+   Antwort ember_generate_reply (weitere volle Generierung mit eigenen Zeitlimits bis 420 s), die wieder verworfen
+   wird. ember_public_candidate_clean() schnitt zudem jeden Absatz ab "Actually"/"Maybe" ab.
+2. stu_console_agent_runs: Ein "running"-Lauf endet nur durch seinen Worker. Bei hartem Prozessende (Update:
+   compose up --force-recreate php web; kill) laeuft die Shutdown-Funktion nicht. Die Sitzungsloeschung blockiert
+   bei status queued/running ohne Zeitgrenze; der Abbruch setzt nur cancel_requested_at.
+
+UMSETZUNG:
+- chat.php: die drei Muster (System-/Entwickler-Prompt als ein Muster) zaehlen als Signal (2 noetig); eindeutige
+  Lecks bleiben hoch. Absatztrennung nur bei Analyse-Anfaengen.
+- console_agent_runs.php: COREUI_AGENT_RUN_STALE_SECONDS 180, ..._CANCEL_STALE_SECONDS 45, ..._QUEUED_STALE_SECONDS
+  600; coreui_agent_run_heartbeat(); coreui_agent_run_reap_stale() (worker_lost: cancelled bei Abbruchwunsch, sonst
+  interrupted; never_started fuer alte queued). active_snapshot raeumt zuerst auf.
+- chat.php: ember_agent_heartbeat() (hoechstens alle 15 s) in ember_agent_cancel_requested() und in der Python-
+  Warteschleife.
+- console_actions.php: run_status raeumt auf; cancel_run beendet einen Lauf ohne Lebenszeichen seit 45 s sofort.
+- console_session_store.php: coreui_console_session_delete() raeumt vor der Busy-Pruefung auf.
+- Kein neues Datenbankschema (updated_at ist der Herzschlag).
+
+GEPRUEFT: agent-run-liveness-selftest.php (offline und gegen MariaDB), agent-runs-selftest.php,
+thinking-sanitize-selftest.php (23 Faelle), weitere Selbsttests, volle Testreihe, version-merge-check gegen 0.6.8.
+NICHT hier: der echte Lauf mit Gemma auf dem Server.
+
+NACH DEM MERGE (Betreiber): Update. Haengende Chats im Archiv sollten sich danach loeschen lassen (der Lauf wird
+beim Loeschen beendet). Dann Mara auf Englisch schreiben. Falls es trotzdem lange dauert: "technische Schritte
+anzeigen" oeffnen und einen Screenshot schicken.
+OFFEN: Spracheinstellung im KI-Profil (P20.3b Schritt 2).

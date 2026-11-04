@@ -42,6 +42,8 @@ try {
       }
       $sessionId = coreui_console_session_normalize_id($_GET['session_id'] ?? '');
       $runId = strtolower(trim((string)($_GET['run_id'] ?? '')));
+      // 0.6.9: a run whose worker is gone ends here instead of "running" for ever.
+      coreui_agent_run_reap_stale($pdo,(int)$uid,$sessionId);
       $run = coreui_agent_run_get($pdo,(int)$uid,$sessionId,$runId);
       if ($run === null) stu_json(['ok'=>false,'error'=>'agent_run_not_found'],404);
       if ((string)$run['status'] === 'waiting_tool') {
@@ -104,6 +106,8 @@ try {
     if (!preg_match('/^[a-f0-9]{32}$/D',$runId)) {
       stu_json(['ok'=>false,'error'=>'invalid_agent_run'],400);
     }
+    // 0.6.9: without a sign of life for 45 s the worker is gone: cancelled at once, not "requested" for ever.
+    coreui_agent_run_reap_stale($pdo,(int)$uid,$sessionId,COREUI_AGENT_RUN_CANCEL_STALE_SECONDS,true);
     $result = coreui_agent_run_request_cancel($pdo,(int)$uid,$sessionId,$runId);
     stu_json(['ok'=>true,'run_id'=>$runId] + $result);
   }
