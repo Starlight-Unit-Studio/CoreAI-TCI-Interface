@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.5.98 - 04.11.2026
+
+- **Stimmtest gemessen:** Lauf `20261104-152135` auf dem Server, alle 18 Stimmen haben gesprochen. Messprotokoll im Sprachplan (`docs/COREUI_VOICE_PLAN.md`, Abschnitt "Messprotokoll Stimmtest").
+- Echtzeitfaktor mit 4 Kernen: Piper 0,01 bis 0,02 (Thorsten high 0,12), Pocket TTS 6 Schichten 0,32 (mit 2 Kernen 0,38), Pocket TTS 24 Schichten 1,13, Chatterbox 5,83. Erster Ton: Piper unter 0,1 s, Pocket 6 Schichten 0,14 s, Pocket 24 Schichten 0,5 s, Chatterbox 36 s. RAM: Piper 0,3 GB, Pocket 1,0 und 2,4 GB, Chatterbox 6,8 GB.
+- **Favorit:** Pocket TTS Deutsch mit 6 Schichten. Chatterbox scheidet fuer Vorlesen und Live aus, Pocket mit 24 Schichten ist mit 2 oder 4 Kernen zu langsam fuer fortlaufendes Sprechen, Piper bleibt der schnelle Rueckfall.
+- Vorlaeufiges Kernlimit der parallelen TTS: 2 Kerne. Offen: Wahl der Stimme nach Gehoer, Live-Runde mit paralleler TTS, danach Registrierung der gewaehlten Gewichte im Repo.
+- Nur Doku, keine Codeaenderung.
+
 ## 0.5.97 - 04.11.2026
 
 - **Pocket nachholen ohne Ordnernamen:** Die Anleitung aus 0.5.95 nannte `--run ZEITSTEMPEL` als Platzhalter; auf dem Server wurde das verstaendlicherweise woertlich eingegeben. Jetzt reicht `--run letzter` (auch `latest`): Das Skript nimmt den neuesten Testlauf und meldet, in welchen es schreibt.

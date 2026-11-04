@@ -1,0 +1,17 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.5.98
+Stand: 04.11.2026
+Branch: claude/bold-galileo-myoyi0 (neu auf main 0.5.97, PR #149 gemergt)
+
+ERGEBNIS STIMMTEST (Lauf 20261104-152135, report.md vom Betreiber):
+- Piper low/x_low: RTF 0,01 bis 0,02, erster Ton unter 0,1 s, 0,3 GB. Thorsten high: RTF 0,12 (4 Kerne) / 0,21 (2).
+- Pocket 6 Schichten: RTF 0,32 (4 Kerne) / 0,38 (2), erster Ton 0,14 s, 1,0 GB, Laden 3,8 s.
+- Pocket 24 Schichten: RTF 1,13 / 1,21, erster Ton 0,5 s, 2,4 GB.
+- Chatterbox: RTF 5,83 (Klon 6,64, Standard 5,51), erster Ton 36 s, 6,8 GB, Laden 19 s. 2-Kern-Ergebnis fehlt.
+Alle 18 Stimmen ok. Gewichte mit Revision und SHA-256 in report.md und var/tts-spike/models/lock-*.json.
+
+EINSCHAETZUNG: Favorit Pocket 6 Schichten (live tauglich mit 2 Kernen); Chatterbox nur fuer vorab erzeugte Ansagen;
+Pocket 24 nur mit mehr Kernen; Piper Kerstin als schneller Rueckfall (CC0, klingt einfacher).
+Vorlaeufig: Kernlimit TTS 2 Kerne, Zeitlimit je Satz 5 x Audiodauer, mindestens 10 s.
+
+NAECHSTER SCHRITT: Betreiber waehlt Maras Stimme nach Gehoer (Admin Core > Betrieb > Stimmproben). Danach:
+Registrierung der Gewichte im Repo, Live-Runde mit paralleler TTS messen, P20.1 Spracheingabe und P20.3 Vorlesen.

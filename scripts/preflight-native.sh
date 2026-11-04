@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.97 voice test: --run letzter picks the newest run, an unknown run lists the existing ones.
+# CoreAI: TCI Interface 0.5.98 voice test measured on the server, protocol in the voice plan.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

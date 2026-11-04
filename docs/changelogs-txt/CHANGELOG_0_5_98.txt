@@ -1,0 +1,5 @@
+CoreAI: TCI Interface 0.5.98 - 04.11.2026
+- Stimmtest auf dem Server gemessen (Lauf 20261104-152135), alle 18 Stimmen gesprochen.
+- Messprotokoll im Sprachplan: Echtzeitfaktor, erster Ton, Laden, RAM je Engine und Kernzahl.
+- Favorit Pocket TTS Deutsch 6 Schichten; Chatterbox und Pocket 24 Schichten zu langsam fuer Live; Piper als Rueckfall.
+- Vorlaeufiges Kernlimit der parallelen TTS: 2 Kerne. Nur Doku.

@@ -7,7 +7,17 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.97` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.98` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Stimmtest gemessen (0.5.98)
+
+Alle 18 Stimmen haben auf dem Server gesprochen; das Messprotokoll steht im
+[Sprachplan](docs/COREUI_VOICE_PLAN.md#messprotokoll-stimmtest-04112026).
+Favorit fuer Vorlesen und Live: Pocket TTS Deutsch mit 6 Schichten (etwa
+dreimal schneller als gesprochen schon mit 2 Kernen, erster Ton nach 0,15 s,
+rund 1 GB RAM). Chatterbox ist auf der CPU zu langsam (Echtzeitfaktor 5,8),
+Pocket mit 24 Schichten knapp zu langsam (1,1). Die Stimme waehlt der
+Betreiber nach Gehoer. Keine Codeaenderung.
 
 ## Stimmtest: Lauf nachholen ohne Ordnernamen (0.5.97)
 
