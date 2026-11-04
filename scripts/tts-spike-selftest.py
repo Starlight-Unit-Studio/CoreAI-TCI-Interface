@@ -183,9 +183,9 @@ for text, words in (
     ('Updates, updaten, geupdatet, Chats, chatten, Teams, Caches, Interfaces, debuggen, Designerin, Updatefenster, Checkliste.',
      'Apdeits, apdeiten, geapdeitet, Tschätts, tschätten, Tiems, Käsches, Interfehses, dibaggen, Disainerin, Apdeit-fenster, Tscheck-liste.'),
     ('Mara Thorne von CoreAI: TCI Interface, OK, sorry, die E-Mail-Adresse.',
-     'Mara Thorn von Kohr Äi Ei: TCI Interfehs, Okeh, sorri, die Imeil-Adresse.'),
-    # Operator's choice for the product name: "Kohr Äi Ei" (English AI); OpenAI the same way.
-    ('CoreAI und OpenAI', 'Kohr Äi Ei und Oupen Äi Ei'),
+     'Mara Thorn von Kohr Ey Ei: TCI Interfehs, Okeh, sorri, die Imeil-Adresse.'),
+    # The operator's ear test chose "Kohr Ey Ei" (English AI) over Äi, Ej and Eh; OpenAI the same way.
+    ('CoreAI und OpenAI', 'Kohr Ey Ei und Oupen Ey Ei'),
     # Review of PR #156: scores by context, Min. with its stop, decimals vs versions, sentence stops after names.
     ('Ergebnis 2:10, Format 16:09, es steht 3:2, gewann mit 4:12, um 18:45.',
      'Ergebnis zwei zu zehn, Format sechzehn zu neun, es steht drei zu zwei, gewann mit vier zu zwölf, um achtzehn Uhr fünfundvierzig.'),
