@@ -16,6 +16,7 @@ require_once __DIR__ . '/guest_access.php';
 require_once __DIR__ . '/console_compaction.php';
 require_once __DIR__ . '/console_agent_loop.php';
 require_once __DIR__ . '/console_answer_style.php';
+require_once __DIR__ . '/console_timezone.php';
 
 // -----------------------------------------------------------------------------
 // Ember - Global-Chat NPC (Ollama local)
@@ -1830,6 +1831,12 @@ function ember_tools_enabled(): bool {
 }
 
 function ember_tz(): string {
+  // Only the private CoreAI console may use the time zone of its current
+  // browser request. The global/game channel retains its server policy.
+  $console = $GLOBALS['COREUI_CONSOLE_CLIENT_TZ'] ?? null;
+  if (is_string($console) && $console !== ''
+      && (!empty($GLOBALS['COREUI_CONSOLE_DATE_AWARE'])
+          || is_array($GLOBALS['COREUI_WORK_CONTEXT'] ?? null))) return $console;
   $tz = (string)ember_cfg('STU_EMBER_TZ', 'Europe/Berlin');
   return $tz !== '' ? $tz : 'Europe/Berlin';
 }
@@ -1915,6 +1922,21 @@ function ember_today_line(?DateTime $dt = null): string {
 function ember_clock_line(?DateTime $dt = null): string {
   $dt ??= ember_now_berlin();
   return '[UHRZEIT JETZT: ' . $dt->format('H:i') . ' Uhr, ' . ember_tz() . ']';
+}
+
+/** Main prompt: keep legacy game/server time unchanged, localize console. */
+function ember_formatted_chat_time(string $channel): string {
+  $name = $channel === 'console' ? ember_tz() : 'Europe/Berlin';
+  try {
+    $tz = new DateTimeZone($name);
+  } catch (Throwable $ignored) {
+    $name = 'Europe/Berlin';
+    $tz = new DateTimeZone($name);
+  }
+  $dt = new DateTime('now', $tz);
+  $days = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+  return $days[(int)$dt->format('w')] . ', ' . $dt->format('d.m.Y') . ', '
+    . $dt->format('H:i') . ' Uhr' . ($channel === 'console' ? ', ' . $name : '');
 }
 
 function ember_with_today(string $prompt): string {
@@ -4935,12 +4957,7 @@ function ember_build_chat_prompt(
     : '';
   if ($channel === 'console') ember_record_knowledge_lookup($pdo);
 
-  $emberZeit = (function() {
-    $tz = new DateTimeZone('Europe/Berlin');
-    $dt = new DateTime('now', $tz);
-    $wochentage = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
-    return $wochentage[(int)$dt->format('w')] . ', ' . $dt->format('d.m.Y') . ', ' . $dt->format('H:i') . ' Uhr';
-  })();
+  $emberZeit = ember_formatted_chat_time($channel);
   // 0.5.76: empty for Mara's own Core (Modelfile SYSTEM), her persona for other Cores.
   $sys = ember_persona_system_for(ember_model());
 
@@ -5210,12 +5227,7 @@ function ember_generate_reply(
   // vollstaendig im Modelfile-SYSTEM, ein gesetzter system-Parameter wuerde es ersetzen.
   // Andere Cores ohne SYSTEM bekommen seit 0.5.76 denselben Text (ember_persona_system_for).
   // Datum/Uhrzeit wird pro Nachricht direkt in $u eingefuegt.
-  $emberZeit = (function() {
-    $tz = new DateTimeZone('Europe/Berlin');
-    $dt = new DateTime('now', $tz);
-    $wochentage = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
-    return $wochentage[(int)$dt->format('w')] . ', ' . $dt->format('d.m.Y') . ', ' . $dt->format('H:i') . ' Uhr';
-  })();
+  $emberZeit = ember_formatted_chat_time($channel);
   $sysBase = ember_persona_system_for(ember_model());
   $sys = $sysBase;
   // Memory wird in $u eingefuegt (nicht in $sys) damit das Modelfile-SYSTEM nicht ueberschrieben wird
@@ -9005,6 +9017,11 @@ if ($action === 'send') {
     }
   }
   $channel      = chat_channel_norm((string)($body['channel'] ?? 'global'));
+  // Do not apply device time zones to the public/game or alliance channels.
+  if ($channel === 'console') {
+    $GLOBALS['COREUI_CONSOLE_DATE_AWARE'] = true;
+    coreui_console_timezone_set($body['client_tz'] ?? null);
+  }
   $character_id = (string)($body['character_id'] ?? '');
   $emberClientAsync = !empty($body['ember_client_async']);
   $consoleSessionId = null;
