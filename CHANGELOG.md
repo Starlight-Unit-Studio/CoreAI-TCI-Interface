@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.6.4 - 04.11.2026
+
+- **English README restored:** All current product, setup, hardware, feature, operation and licensing guidance is now in English, the default language for public GitHub documentation. Historical German records and the legally controlling German license are preserved.
+- **Built-in updater documented:** A dedicated section explains **Settings > System > CoreAI Update** (owner only), automatic GitHub checks every ten minutes where systemd services are configured, manual checks, update notifications, backup before installation, optional Ollama restart, live progress and automatic page reload. The SSH one-liner remains the initial-install and fallback method.
+- **Repository policy:** `AGENTS.md`, `CLAUDE.md` and `docs/VERSIONING_POLICY.md` now explicitly require an English README and documentation of both update paths. The README remains a current manual, not a changelog.
+- **Version guard and tests:** `scripts/version-merge-check.py` expects the English Quick start section and requires the built-in updater section. `tests/test_version_merge_check.py` includes regression tests for the language and updater rules.
+- **Version synchronization:** `VERSION`, six HTML pages, JavaScript bootstrap, branding test, preflight version headers, changelog archive and handover aligned to `0.6.4`.
+- No changes to the actual updater, installer, database, models, Modelfile, Ollama configuration or runtime logic. Live server checks remain separate.
+
 ## 0.6.3 - 04.11.2026
 
 - **Preflight-Fehler "Vorlesen-Selbsttest: service down: not available" behoben.** Der Test stellte "Sprachdienst aus" mit der Adresse `127.0.0.1:1` nach. Die Adresspruefung nimmt aber nur Ports mit zwei bis fuenf Ziffern an und fiel deshalb auf den echten Port 18790 zurueck. Lief dort Eve schon und war bereit (so auf dem Server nach dem Update auf 0.6.1), meldete der Test "Dienst an" und der Preflight schlug fehl. Fehler im Test, nicht im Vorlesen.

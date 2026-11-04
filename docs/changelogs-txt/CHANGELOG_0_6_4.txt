@@ -1,0 +1,8 @@
+CoreAI: TCI Interface 0.6.4 - 04.11.2026
+- README.md fully translated to English, the default for public GitHub documentation.
+- Built-in owner-only updater documented under Settings > System > CoreAI Update: automatic update checks, Check now, owner confirmation, DB backup, optional Ollama restart, progress and auto-reload.
+- The canonical SSH one-liner remains for first installation and fallback; the existing updater is preferred for routine updates.
+- AGENTS.md, CLAUDE.md and VERSIONING_POLICY.md set English README language and updater documentation as permanent requirements.
+- Merge guard and its offline tests updated for English Quick start and integrated updater sections.
+- Version and changelog/handover metadata synchronized to 0.6.4.
+- No code changes to the actual runtime, installer, database, models or update service. Live tests pending.

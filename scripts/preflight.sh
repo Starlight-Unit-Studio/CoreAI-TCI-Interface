@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.3: Vorlesen-Selbsttest prueft "Dienst aus" an einem wirklich freien Port; Eve-Pruefungen aus 0.6.1 bleiben aktiv.
+# CoreAI: TCI Interface 0.6.4 documentation and version checks; existing voice selftests remain active.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
