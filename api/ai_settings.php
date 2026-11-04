@@ -34,6 +34,27 @@ function coreui_ai_num_ctx_schema_ready(PDO $pdo): bool {
   }
 }
 
+/** 0.6.10 (P20.3b): the main languages an account can choose (migration 024). */
+const COREUI_AI_LANGUAGES = ['de', 'en'];
+
+function coreui_ai_language_schema_ready(PDO $pdo): bool {
+  static $ready = [];
+  $key = spl_object_id($pdo);
+  if (array_key_exists($key, $ready)) return $ready[$key];
+  try {
+    $pdo->query('SELECT main_language FROM stu_user_ai_settings LIMIT 0');
+    return $ready[$key] = true;
+  } catch (Throwable $e) {
+    return $ready[$key] = false;
+  }
+}
+
+/** 'de' or 'en'; anything else is German. */
+function coreui_ai_language_normalise($value): string {
+  $value = is_string($value) ? strtolower(trim($value)) : '';
+  return in_array($value, COREUI_AI_LANGUAGES, true) ? $value : 'de';
+}
+
 /**
  * Context windows the KI-Profil slider offers (4K to 128K). An operator may
  * lower the top with STU_EMBER_NUM_CTX_MAX; nothing outside this list is
@@ -80,6 +101,8 @@ function coreui_ai_settings_defaults(PDO $pdo): array {
     'num_predict' => max(256, min(16384, $numPredict)),
     // NULL: keep the Core's own Modelfile window (default for every account).
     'num_ctx' => null,
+    // 0.6.10: German unless the account chooses English.
+    'main_language' => 'de',
     'temperature' => max(0.1, min(1.5, $temperature)),
     'provider' => 'local',
     'model_override' => '',
@@ -153,6 +176,7 @@ function coreui_ai_settings_normalise(PDO $pdo, array $input): array {
     'memory_limit' => max(0, min(60, (int)($input['memory_limit'] ?? $defaults['memory_limit']))),
     'num_predict' => max(256, min(16384, (int)($input['num_predict'] ?? $defaults['num_predict']))),
     'num_ctx' => coreui_ai_num_ctx_normalise($input['num_ctx'] ?? null),
+    'main_language' => coreui_ai_language_normalise($input['main_language'] ?? $defaults['main_language']),
     'temperature' => max(0.1, min(1.5, (float)($input['temperature'] ?? $defaults['temperature']))),
     'provider' => $provider,
     'model_override' => (string)$model,
@@ -165,9 +189,10 @@ function coreui_ai_settings_load(PDO $pdo, int $uid): array {
 
   try {
     $ctxColumn = coreui_ai_num_ctx_schema_ready($pdo) ? ', num_ctx' : '';
+    $languageColumn = coreui_ai_language_schema_ready($pdo) ? ', main_language' : '';
     $st = $pdo->prepare(
       'SELECT system_prompt, memory_enabled, thinking_enabled, memory_limit, num_predict, temperature, provider, model_override'
-      . $ctxColumn . ' FROM stu_user_ai_settings WHERE user_id = ? LIMIT 1'
+      . $ctxColumn . $languageColumn . ' FROM stu_user_ai_settings WHERE user_id = ? LIMIT 1'
     );
     $st->execute([$uid]);
     $row = $st->fetch(PDO::FETCH_ASSOC);
@@ -189,16 +214,19 @@ function coreui_ai_settings_save(PDO $pdo, int $uid, array $input): array {
   // A chosen window must never be dropped silently: without migration 017
   // only "Core-Standard" (NULL) can be stored.
   if (!$withCtx && $value['num_ctx'] !== null) throw new RuntimeException('missing_schema_017');
+  // 0.6.10: English is never dropped silently either: without migration 024 only German can be stored.
+  $withLanguage = coreui_ai_language_schema_ready($pdo);
+  if (!$withLanguage && $value['main_language'] !== 'de') throw new RuntimeException('missing_schema_024');
   $st = $pdo->prepare(
     'INSERT INTO stu_user_ai_settings '
     . '(user_id, system_prompt, memory_enabled, thinking_enabled, memory_limit, num_predict, temperature, provider, model_override'
-    . ($withCtx ? ', num_ctx' : '') . ', updated_at) '
-    . 'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?' . ($withCtx ? ', ?' : '') . ', NOW()) '
+    . ($withCtx ? ', num_ctx' : '') . ($withLanguage ? ', main_language' : '') . ', updated_at) '
+    . 'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?' . ($withCtx ? ', ?' : '') . ($withLanguage ? ', ?' : '') . ', NOW()) '
     . 'ON DUPLICATE KEY UPDATE system_prompt = VALUES(system_prompt), memory_enabled = VALUES(memory_enabled), '
     . 'thinking_enabled = VALUES(thinking_enabled), memory_limit = VALUES(memory_limit), '
     . 'num_predict = VALUES(num_predict), temperature = VALUES(temperature), '
     . 'provider = VALUES(provider), model_override = VALUES(model_override), '
-    . ($withCtx ? 'num_ctx = VALUES(num_ctx), ' : '') . 'updated_at = NOW()'
+    . ($withCtx ? 'num_ctx = VALUES(num_ctx), ' : '') . ($withLanguage ? 'main_language = VALUES(main_language), ' : '') . 'updated_at = NOW()'
   );
   $params = [
     $uid,
@@ -212,6 +240,7 @@ function coreui_ai_settings_save(PDO $pdo, int $uid, array $input): array {
     $value['model_override'] !== '' ? $value['model_override'] : null,
   ];
   if ($withCtx) $params[] = $value['num_ctx'];
+  if ($withLanguage) $params[] = $value['main_language'];
   $st->execute($params);
   return $value;
 }
@@ -316,11 +345,25 @@ function coreui_runtime_tool_enabled(string $tool, bool $fallback): bool {
   return (bool)$settings[$tool];
 }
 
+/**
+ * 0.6.10 (P20.3b): the account's main language. German is Mara's default anyway (Modelfile),
+ * so only English adds a line. Mara keeps answering in the language a person writes in.
+ */
+function coreui_ai_language_prompt_block(): string {
+  $language = coreui_ai_language_normalise(coreui_ai_runtime_settings()['main_language'] ?? 'de');
+  if ($language !== 'en') return '';
+  return "\n\n--- SPRACHE ---\n"
+    . "Main language of this person: English. Answer in English by default. If the person writes in another "
+    . "language, answer in that language. German and English are your main languages."
+    . "\n--- ENDE SPRACHE ---";
+}
+
 function coreui_ai_user_prompt_block(): string {
   $settings = coreui_ai_runtime_settings();
+  $language = coreui_ai_language_prompt_block();
   $prompt = trim((string)($settings['system_prompt'] ?? ''));
-  if ($prompt === '') return '';
-  return "\n\n--- BENUTZERKONFIGURATION (Stil und Arbeitsweise) ---\n"
+  if ($prompt === '') return $language;
+  return $language . "\n\n--- BENUTZERKONFIGURATION (Stil und Arbeitsweise) ---\n"
     . $prompt
     . "\n--- ENDE BENUTZERKONFIGURATION ---";
 }

@@ -1,0 +1,29 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.6.10
+Stand: 04.11.2026
+Ausgangsbasis: main 0.6.9 nach Merge von PR #160 (Betreiber: "geht wieder, dann mal zurueck").
+
+AUFTRAG: P20.3b Schritt 2, Spracheinstellung pro Konto. Entscheidungen (AskUserQuestion 04.11.2026): sichtbar im
+KI-Profil, gilt fuer Maras Antworten und das Vorlesen, Knoepfe bleiben deutsch (ehrlicher Hinweis); Mara bleibt
+mehrsprachig, Deutsch und Englisch sind Hauptsprachen.
+
+UMSETZUNG:
+- database/migrations/024_account_language.sql: stu_user_ai_settings.main_language CHAR(2) NOT NULL DEFAULT 'de'
+  (nicht "language": Schluesselwort in MariaDB).
+- api/ai_settings.php: COREUI_AI_LANGUAGES, coreui_ai_language_schema_ready(), coreui_ai_language_normalise(),
+  main_language in defaults/normalise/load/save (missing_schema_024 wie bei num_ctx und 017),
+  coreui_ai_language_prompt_block() (nur bei 'en'), in coreui_ai_user_prompt_block() vor dem eigenen KI-Prompt; damit
+  bekommen Streaming- und synchroner Pfad (chat.php 4984 und 5260) die Vorgabe ohne Aenderung in chat.php.
+- api/user_settings.php: limits.language_available; invalid_language vor dem Speichern; ohne main_language bleibt die
+  gespeicherte (aeltere Seite).
+- api/voice.php und api/voice_store.php: Kontosprache als Hinweis an /plan; Plan-Kennung mit Hinweis (nur bei 'en',
+  deutsche Plaene behalten ihre Kennung).
+- settings.html und js/settings.js: Auswahl "SPRACHE" im KI-Profil, laden, speichern, Fehlertexte.
+- README (englisch): "Main language" als aktueller Stand, uebersetzte Oberflaeche als geplant.
+
+GEPRUEFT: account-language-selftest.php (offline und gegen MariaDB mit Migration 024), voice-read-selftest.php,
+settings-tabs-ui-selftest.cjs, volle Testreihe, version-merge-check gegen 0.6.9.
+NICHT hier: Maras Antworten mit Gemma auf dem Server.
+
+NACH DEM MERGE (Betreiber): Update (Migration 024 laeuft automatisch). Einstellungen > KI-Profil > Sprache auf
+ENGLISH, speichern, Mara etwas fragen und vorlesen lassen.
+OFFEN: uebersetzte Oberflaeche und Tag-/Nachtmodus (P19, geplant); P20.1 Spracheingabe.

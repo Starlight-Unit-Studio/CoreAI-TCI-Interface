@@ -1,5 +1,16 @@
 # CoreAI: TCI Interface
 
+## 0.6.10 - 04.11.2026
+
+P20.3b, Schritt 2: die Bruecke zur Sprachauswahl, wie vom Betreiber entschieden (Spracheinstellung pro Konto im KI-Profil fuer Antworten und Vorlesen; Mara bleibt mehrsprachig, Deutsch und Englisch sind die Hauptsprachen).
+
+- **KI-Profil, "Sprache":** Deutsch oder English. Darunter steht ehrlich, dass Knoepfe und Menues vorerst deutsch bleiben; die uebersetzte Oberflaeche ist weiter geplant.
+- **Maras Antworten:** Bei Englisch bekommt der Prompt einen kurzen Block (standardmaessig Englisch, schreibt die Person in einer anderen Sprache, antwortet Mara in dieser; Deutsch und Englisch sind ihre Hauptsprachen). Bei Deutsch bleibt der Prompt wie bisher, das Modelfile antwortet ohnehin deutsch und folgt der Sprache der Person.
+- **Vorlesen:** Die Kontosprache ist die Vorgabe, wenn die Sprache einer Antwort unklar ist (kurze Antworten wie "OK"). Sie gehoert zum Plan; deutsche Plaene behalten ihre Kennung.
+- **Speichern:** Migration 024 (`stu_user_ai_settings.main_language`, Standard `de`). Eine unbekannte Sprache wird abgelehnt (`invalid_language`), ohne Migration 024 wird Englisch nicht still verworfen (`missing_schema_024`), und ein Speichern ohne Sprache (aeltere Seite) behaelt die gespeicherte.
+- Tests: neu `account-language-selftest.php` (Regeln, Prompt, Vorlese-Vorgabe, Verdrahtung; mit Datenbank Speichern und Laden in einer zurueckgerollten Transaktion; in beiden Preflights), `voice-read-selftest.php` (Vorgabe beim Sprachdienst), `settings-tabs-ui-selftest.cjs` (Auswahl zeigt den gespeicherten Wert und wird gespeichert).
+- Keine Aenderung an Cores, Modelfile, Installer oder Warteschlange.
+
 ## 0.6.9 - 04.11.2026
 
 Rueckmeldung des Betreibers: Sobald Mara auf Englisch antworten will, haengt sich die Anfrage auf ("Core denkt nach" ueber 20 Minuten). Ein Abbruch bleibt bei "Abbruch angefordert" stehen, und mehrere Chats im Archiv lassen sich nicht loeschen, weil angeblich noch etwas laeuft.

@@ -31,7 +31,7 @@ Diese Roadmap ordnet die Anforderungen in **29 abschließbare Arbeitspakete** un
 | 2. P20.1 | Spracheingabe: Mikrofon, Sprachnachrichten, Audiodateien, Mitschrift im Chat | Sprachplan |
 | 3. P20.2 | Videos hören: Tonspur zusammen mit den Bildern | Sprachplan |
 | 4. P20.3 | Sprachausgabe: Lautsprecher-Knopf, optional automatisch vorlesen, eigene Mara-Stimme vom Server | Sprachplan |
-| 4b. P20.3b | Englische Eve und Sprachwahl pro Konto: Hörtest erledigt, seit 0.6.8 liest Eve englische Antworten auf Englisch (Sprache je Antwort erkannt, englisches Modell nach Bedarf). Offen: Spracheinstellung im KI-Profil für Antworten und Vorlesen. Übersetzte Oberfläche sowie Tag- und Nachtmodus sind weiter geplant (P19). | Sprachplan |
+| 4b. P20.3b | Englische Eve und Sprachwahl pro Konto: Hörtest erledigt, seit 0.6.8 liest Eve englische Antworten auf Englisch (Sprache je Antwort erkannt, englisches Modell nach Bedarf). Seit 0.6.10 wählt jedes Konto im KI-Profil Deutsch oder Englisch für Maras Antworten und das Vorlesen. Übersetzte Oberfläche sowie Tag- und Nachtmodus sind weiter geplant (P19). | Sprachplan |
 | 5. P20.4 | Live-Gespräch: freihändig oder Halten-zum-Sprechen, satzweise Antwort, Unterbrechen | Sprachplan |
 | 6. P20.5 | Bildgenerierung als Werkzeug nach dem Bild-Technikplan | [Bildplan](docs/COREUI_IMAGE_ENGINE_PLAN.md) |
 | 7. P09 | Projekt-Workspace: gebaute Projekte bleiben als Ordner, gezielte Änderungen einzelner Dateien, neues ZIP | dieses Dokument, M3 |

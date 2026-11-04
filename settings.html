@@ -6,14 +6,14 @@
   <meta name="language" content="de-DE" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#f0f4fa" />
-  <meta name="application-version" content="0.6.9" />
+  <meta name="application-version" content="0.6.10" />
   <meta name="application-name" content="CoreAI: TCI Interface" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface - Einstellungen</title>
   <link rel="stylesheet" href="./css/console.css?v=0259622859279484496258387" />
   <link rel="stylesheet" href="./css/settings.css?v=0365945250101497403441087" />
   <link rel="stylesheet" href="./css/coreui-update.css?v=1027839363176318351849490" />
-  <script src="./js/console-gate.js?v=0265531051966772777857802"></script>
+  <script src="./js/console-gate.js?v=0968553758411321184511544"></script>
   <script src="./js/coreui-preferences.js?v=0413330848560779596296331"></script>
 </head>
 <body class="settings-body">
@@ -48,7 +48,7 @@
           <h1>EINSTELLUNGEN</h1>
         </div>
       </div>
-      <div class="settings-version">COREAI: TCI INTERFACE // v0.6.9</div>
+      <div class="settings-version">COREAI: TCI INTERFACE // v0.6.10</div>
     </header>
 
     <!-- 0.5.79: one page, categories as tabs. Each category is its own view
@@ -283,6 +283,10 @@
                 <label class="settings-field" for="aiTemperature">
                   <span><strong>TEMPERATUR</strong><small>0,1 präziser, 1,5 freier. Standard: 1,0.</small></span>
                   <input id="aiTemperature" type="number" min="0.1" max="1.5" step="0.05" value="1.0" />
+                </label>
+                <label class="settings-field" for="aiLanguage">
+                  <span><strong>SPRACHE</strong><small>Hauptsprache für Maras Antworten und das Vorlesen. Schreibst du in einer anderen Sprache, antwortet Mara in dieser. Knöpfe und Menüs bleiben vorerst deutsch.</small></span>
+                  <select id="aiLanguage"><option value="de">DEUTSCH</option><option value="en">ENGLISH</option></select>
                 </label>
                 <label class="settings-field" for="aiProvider">
                   <span><strong>CORE-PFAD</strong><small>CoreAI: TCI Interface ist für lokale Gemma-4-Cores ausgelegt.</small></span>
@@ -803,7 +807,7 @@
 
   <script src="./js/coreui-settings-tabs.js?v=1135950849260775405607445"></script>
   <script src="./js/coreui-context-slider.js?v=0071279618529070371071429"></script>
-  <script src="./js/settings.js?v=0694243875093812746250899"></script>
+  <script src="./js/settings.js?v=1010085583239212807636098"></script>
   <script src="./js/coreui-personalization-settings.js?v=1055555289996254500304399"></script>
   <script src="./js/admin.js?v=0876858939640698403610180"></script>
   <script src="./js/coreui-voice-read.js?v=0593983730870206685697575"></script>
