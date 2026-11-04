@@ -7,7 +7,16 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.96` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.97` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Stimmtest: Lauf nachholen ohne Ordnernamen (0.5.97)
+
+`--run letzter` schreibt in den neuesten Testlauf; niemand muss mehr einen
+Ordnernamen heraussuchen. Ein unbekannter Name nennt die vorhandenen Laeufe.
+
+```
+sudo bash /opt/ember-coreui/scripts/tts-spike.sh --skip-build --groups pocket-de,pocket-de24 --run letzter
+```
 
 ## Update-Preflight: Stimmtest-Selbsttest repariert (0.5.96)
 
@@ -30,7 +39,7 @@ schreibt Gruppen in einen vorhandenen Lauf, damit sich Pocket nachholen laesst,
 ohne Piper und Chatterbox noch einmal zu messen:
 
 ```
-sudo bash /opt/ember-coreui/scripts/tts-spike.sh --skip-build --groups pocket-de,pocket-de24 --run ZEITSTEMPEL
+sudo bash /opt/ember-coreui/scripts/tts-spike.sh --skip-build --groups pocket-de,pocket-de24 --run letzter
 ```
 
 ## Stimmtest fuer Maras Stimme (0.5.94)

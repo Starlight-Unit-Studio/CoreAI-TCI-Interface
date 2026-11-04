@@ -1,0 +1,16 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.5.97
+Stand: 04.11.2026
+Branch: claude/bold-galileo-myoyi0 (neu auf main 0.5.96, PR #148 gemergt)
+
+ANLASS: Auf dem Server wurde "--run ZEITSTEMPEL" woertlich eingegeben (Platzhalter aus meiner Anleitung), danach ein
+nicht vorhandener Name (20261104-155136). Beides wurde korrekt abgelehnt, half aber nicht weiter.
+AENDERUNG: scripts/tts-spike.sh --run letzter (oder latest) nimmt den neuesten Ordner unter var/tts-spike/runs
+(nur Zeitstempel-Ordner, sort -r) und meldet "Schreibe in den vorhandenen Lauf ...". Unbekannter Name: Fehlermeldung
+mit den vorhandenen Laeufen (bis 5, neueste zuerst) und dem Hinweis auf --run letzter. Die Pruefung gilt jetzt auch im
+Probelauf (Selbsttest legt die Ordner in seinem Sandbox-Ordner an).
+REGEL FUER ANLEITUNGEN: keine Platzhalter in Befehlen, die der Betreiber kopiert; immer einen direkt lauffaehigen
+Befehl angeben.
+
+NAECHSTER SCHRITT: nach Update auf 0.5.97
+  sudo bash /opt/ember-coreui/scripts/tts-spike.sh --skip-build --groups pocket-de,pocket-de24 --run letzter
+Stimmproben anhoeren, report.md schicken.

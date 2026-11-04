@@ -1,9 +1,10 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
 Stand: 04.11.2026
-Repository-Version: 0.5.96
-BASIS: main 0.5.95, PR #147 gemergt.
+Repository-Version: 0.5.97
+BASIS: main 0.5.96, PR #148 gemergt.
 NEUE ARBEIT ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_5_97.txt
   docs/UEBERGABEPROTOKOLL_0_5_96.txt
   docs/UEBERGABEPROTOKOLL_0_5_95.txt
   docs/UEBERGABEPROTOKOLL_0_5_94.txt
@@ -149,10 +150,13 @@ ein Container, Gewichte mit SHA-256 registriert, Messen ohne Netz mit Kernlimit;
 0.5.95: Pocket ohne inference_mode, --run ZEITSTEMPEL zum Nachholen von Gruppen.
 0.5.95 gemergt (PR #147); Update brach im Preflight ab, weil der Stimmtest-Selbsttest die Gewichte des echten Laufs
 sah. 0.5.96: Probelauf mit eigenem leeren Ordner, Grund des Fehlschlags im Update-Protokoll.
+0.5.96 gemergt (PR #148). 0.5.97: --run letzter statt Ordnername (Platzhalter ZEITSTEMPEL war woertlich eingegeben worden).
+NAECHSTER SCHRITT: sudo bash /opt/ember-coreui/scripts/tts-spike.sh --skip-build --groups pocket-de,pocket-de24 --run letzter,
+dann Stimmproben anhoeren und report.md schicken.
 NAECHSTER SCHRITT: Pocket mit --skip-build --groups pocket-de,pocket-de24 --run ZEITSTEMPEL nachholen, anhoeren,
 Maras Stimme waehlen, report.md ins Messprotokoll; dann P20.1 Spracheingabe.
 ARBEITSWEISE (Betreiber, 04.11.2026): Nach jedem Push direkt einen PR oeffnen, ohne Rueckfrage. Mergen macht der
-Betreiber selbst.
+Betreiber selbst. In Befehlen fuer den Betreiber keine Platzhalter, immer direkt lauffaehig.
 Mara/Ember, Ollama-Modelfile, serielle Queue und private Projekt-
 plaene NICHT ungefragt veraendern.
 Externe STU-Homepage wird in einem ANDEREN Chat bearbeitet.
