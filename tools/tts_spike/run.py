@@ -296,10 +296,13 @@ class Pocket:
         return self.model.get_state_for_audio_prompt(voice['voice'])
 
     def stream(self, state: Any, text: str) -> Iterator[Any]:
-        import torch
-        with torch.inference_mode():
-            for chunk in self.model.generate_audio_stream(state, text):
-                yield to_floats(chunk)
+        # 0.5.95: no torch.inference_mode() here. Pocket generates in its own
+        # thread (inference mode does not reach it) and updates the state in
+        # place; a state copied under inference mode is then refused ("Inplace
+        # update to inference tensor outside InferenceMode"). Pocket already
+        # runs under torch.no_grad itself.
+        for chunk in self.model.generate_audio_stream(state, text):
+            yield to_floats(chunk)
 
 
 class Chatterbox:

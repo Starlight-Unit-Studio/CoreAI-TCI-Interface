@@ -7,7 +7,21 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.94` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.95` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Stimmtest: Pocket TTS repariert (0.5.95)
+
+Beim ersten Lauf auf dem Server sprach Pocket TTS keine einzige Probe ("Inplace
+update to inference tensor outside InferenceMode"). Der Test hatte Pocket in
+`torch.inference_mode()` gestartet; Pocket rechnet aber in einem eigenen Thread
+weiter, den dieser Modus nicht erreicht. Pocket laeuft jetzt ohne diesen
+Rahmen (es schaltet die Gradienten selbst ab). Neu: `--run ZEITSTEMPEL`
+schreibt Gruppen in einen vorhandenen Lauf, damit sich Pocket nachholen laesst,
+ohne Piper und Chatterbox noch einmal zu messen:
+
+```
+sudo bash /opt/ember-coreui/scripts/tts-spike.sh --skip-build --groups pocket-de,pocket-de24 --run ZEITSTEMPEL
+```
 
 ## Stimmtest fuer Maras Stimme (0.5.94)
 

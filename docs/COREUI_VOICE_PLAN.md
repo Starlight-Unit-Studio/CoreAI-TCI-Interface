@@ -193,6 +193,7 @@ So läuft der Test:
 - Sieben Sätze: Begrüßung, Zahlen, Datum und Uhrzeit, Frage, Dateinamen, Umlaute und ß, ein längerer Absatz.
 - Je Probe: Rechenzeit, Audiodauer, Echtzeitfaktor und Zeit bis zum ersten Ton. Je Engine: Ladezeit, Aufwärmen, Spitzen-RAM.
 - Ergebnis: `var/tts-spike/runs/ZEITSTEMPEL/report.json` und `report.md`; anhören unter **Admin Core > Betrieb > Stimmproben**.
+- Fällt eine Gruppe aus, lässt sie sich nach einem Fix in denselben Lauf nachholen: `--skip-build --groups GRUPPEN --run ZEITSTEMPEL` (ab 0.5.95). Erster Lauf am 04.11.2026: Pocket TTS brach im Test selbst ab (behoben in 0.5.95).
 
 Offen nach dem Lauf: Auswahl der Mara-Stimme, Kernlimit für die parallele TTS und Messung einer Live-Runde mit paralleler TTS.
 

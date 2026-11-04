@@ -1,9 +1,10 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
 Stand: 04.11.2026
-Repository-Version: 0.5.94
-BASIS: main 0.5.93, PR #145 gemergt.
+Repository-Version: 0.5.95
+BASIS: main 0.5.94, PR #146 gemergt.
 NEUE ARBEIT ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_5_95.txt
   docs/UEBERGABEPROTOKOLL_0_5_94.txt
   docs/UEBERGABEPROTOKOLL_0_5_93.txt
   docs/UEBERGABEPROTOKOLL_0_5_92.txt
@@ -143,8 +144,10 @@ Browserfenster, Code eingeklappt (PR #139), 0.5.89 Verlauf atomar statt Flackern
 0.5.94: Stimmtest scripts/tts-spike.sh (Piper, Pocket TTS, Chatterbox mit Kerstin-Klon aus CC0-Datensatz), je Engine
 ein Container, Gewichte mit SHA-256 registriert, Messen ohne Netz mit Kernlimit; Hoerproben unter Admin Core > Betrieb
 > Stimmproben (nur Inhaber).
-NAECHSTER SCHRITT: nach dem Update sudo bash /opt/ember-coreui/scripts/tts-spike.sh, anhoeren, Maras Stimme waehlen,
-report.md ins Messprotokoll; dann P20.1 Spracheingabe.
+0.5.94 ist gemergt (PR #146), erster Lauf auf dem Server: Pocket TTS brach ab (inference_mode und eigener Thread).
+0.5.95: Pocket ohne inference_mode, --run ZEITSTEMPEL zum Nachholen von Gruppen.
+NAECHSTER SCHRITT: Pocket mit --skip-build --groups pocket-de,pocket-de24 --run ZEITSTEMPEL nachholen, anhoeren,
+Maras Stimme waehlen, report.md ins Messprotokoll; dann P20.1 Spracheingabe.
 Mara/Ember, Ollama-Modelfile, serielle Queue und private Projekt-
 plaene NICHT ungefragt veraendern.
 Externe STU-Homepage wird in einem ANDEREN Chat bearbeitet.

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.94 voice test: candidates for Mara's voice with samples and licenses in Admin Core (Inhaber).
+# CoreAI: TCI Interface 0.5.95 voice test: Pocket TTS speaks (no inference mode around its own thread), --run to add groups to a run.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

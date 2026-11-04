@@ -1,0 +1,19 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.5.95
+Stand: 04.11.2026
+Branch: claude/bold-galileo-myoyi0 (neu auf main 0.5.94, PR #146 gemergt)
+
+ANLASS: Erster Stimmtest auf dem Server. Pocket TTS (beide Gruppen, 4 und 2 Kerne) meldete fuer jede Stimme
+"Error in autoregressive generation: Inplace update to inference tensor outside InferenceMode".
+URSACHE: tools/tts_spike/run.py rief generate_audio_stream in torch.inference_mode() auf. Pocket erweitert den
+KV-Cache und fuettert den Text im aufrufenden Thread (damit entstehen Inference-Tensoren) und rechnet dann in einem
+eigenen Thread weiter, in dem inference_mode nicht gilt; dort aendert es den Zustand in place.
+FIX: Pocket.stream ohne inference_mode (Pocket nutzt selbst torch.no_grad). Chatterbox behaelt inference_mode
+(eigene Methode, ein Thread, lief auf dem Server).
+NEU: scripts/tts-spike.sh --run ZEITSTEMPEL (vorhandener Lauf, host.txt bleibt, Bericht aus allen result-*.json neu).
+IMAGE_TAG bleibt 0.5.94 (Dockerfile unveraendert), --skip-build reicht.
+HARMLOS im Log: Cache-Ordner nicht beschreibbar (Gewichte absichtlich nur lesbar), LoRACompatibleLinear und
+sdp_kernel veraltet, NNPACK nicht verfuegbar, output_attentions.
+
+NAECHSTER SCHRITT: nach Update auf dem Server
+  sudo bash /opt/ember-coreui/scripts/tts-spike.sh --skip-build --groups pocket-de,pocket-de24 --run ZEITSTEMPEL
+(ZEITSTEMPEL = Ordner des ersten Laufs unter var/tts-spike/runs), dann Stimmproben anhoeren und report.md schicken.
