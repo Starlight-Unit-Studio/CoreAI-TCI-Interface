@@ -9,6 +9,7 @@ Den bereits existierenden internen Updater in CoreAIs Einstellungen deutlich erl
 UMSETZUNG:
 - README.md auf Englisch, mit einheitlichen Abschnitten zu Produkt, Installation, Hardware (CPU-only), Funktionen, Admin, Betrieb und Lizenz.
 - Eigenes Kapitel "Updating CoreAI": bevorzugter In-App-Weg Settings > System > CoreAI Update fuer Inhaber; automatischer Check ca. alle 10 Min. ueber systemd, manueller Check, Update-Dialog mit Notizen, DB-Backup, optionalem Ollama-Neustart, Fortschritt und automatischem Reload.
+- Buttons und Menuepfade der englischen README sind ausnahmslos ins Englische uebersetzt, ohne deutsche UI-Originaltexte in Klammern. Die eigentlichen UI-Texte werden nicht geaendert. Sprachwahl Englisch/Deutsch und Tag-/Nachtmodus sind fuer spaeter geplant.
 - One-Liner unter Quick start fuer Erstinstallation und SSH-Fallback unveraendert ueber den kanonischen Repo-Pfad.
 - Sprachregel Englisch fuer neue oeffentliche GitHub-Dokumentation in AGENTS.md, CLAUDE.md, docs/VERSIONING_POLICY.md. Historische deutsche Texte und rechtlich massgebliche LICENSE.de.md bleiben unangetastet.
 - scripts/version-merge-check.py auf "Quick start" umgestellt; Guard fuer integrierten Updater ergaenzt.

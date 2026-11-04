@@ -34,13 +34,15 @@ An archived, separately checksum-verified historical `0.5.3-alpha` ZIP can still
 
 Once the initial setup has installed the host-side update service, **the owner can update CoreAI without SSH**.
 
-1. Sign in using the **owner** account (German UI: **Inhaber**) and open **Settings → System → CoreAI Update**. In the German interface, this is **Einstellungen → System → CoreAI-Update**.
-2. Select **Check now** (German button: **JETZT PRÜFEN**) to request a GitHub check. The host also checks the repository's `main` branch **approximately every 10 minutes** when the systemd update service is running.
-3. When a new commit is available, choose **Open update window** (German: **UPDATE-FENSTER ÖFFNEN**), or use the notification shown to the owner. Review the version and available change notes.
-4. Choose whether Ollama should be restarted afterwards, then select **Start update** (German: **Update starten**). CoreAI creates a **database backup** first, runs its official setup and reports progress in the interface.
+1. Sign in with the **owner** account and navigate to **Settings → System → CoreAI Update**.
+2. Select **Check now** to request a GitHub check. The host also checks the repository's `main` branch **approximately every 10 minutes** when the systemd update service is running.
+3. When a new commit is available, choose **Open update window**, or use the notification shown to the owner. Review the version and available change notes.
+4. Choose whether Ollama should be restarted afterwards, then select **Start update**. CoreAI creates a **database backup** first, runs its official setup and reports progress in the interface.
 5. During service restarts, connected users see a waiting screen. The application reloads automatically when CoreAI is available again. If an update fails, the owner can inspect its status and update log.
 
 **Important:** CoreAI checks for updates automatically, but **does not install them without the owner's action**. The owner may dismiss an update notification until the next page load. Other account roles cannot initiate updates.
+
+> **Interface language:** Button and menu names are presented in English throughout this documentation. The current application may still show German labels. A selectable English/German interface language and day/night appearance modes are planned for a future update; neither is claimed as available here.
 
 The updater is implemented by `scripts/coreai-updater.sh` and host-side systemd services; the web UI submits requests, not shell commands. Backups are stored under `/opt/ember-coreui/var/backups`, with the updater retaining the five most recent automatic SQL backups. The built-in updater follows the same official `main` setup path as the one-liner.
 
@@ -117,7 +119,7 @@ An existing installation's settings are not silently overwritten. `COREUI_FORCE_
 - **Read aloud:** Mara can read answers using **Eve** (German Pocket TTS). Automatic read-aloud is optional and disabled by default. CoreAI remains usable if the optional voice service is unavailable.
 - **Admin Core:** Account and model management, permissions, diagnostics, audit information, runtime controls and the integrated update interface.
 
-**Not yet a completed feature:** Continuous live voice chat, speech input and other roadmap items must not be presented as implemented just because they are planned. See the [Roadmap](ROADMAP.md), [Feature matrix](docs/COREUI_FEATURE_MATRIX.md) and [Voice plan](docs/COREUI_VOICE_PLAN.md) for scope and status.
+**Not yet a completed feature:** Continuous live voice chat, speech input, selectable English/German interface language and day/night themes are planned and must not be presented as implemented. See the [Roadmap](ROADMAP.md), [Feature matrix](docs/COREUI_FEATURE_MATRIX.md) and [Voice plan](docs/COREUI_VOICE_PLAN.md) for scope and status.
 
 ## Operations and diagnostics
 

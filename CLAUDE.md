@@ -2,7 +2,7 @@
 
 **Vor jeder Aufgabe `AGENTS.md` und `docs/VERSIONING_POLICY.md` lesen.**
 
-**PUBLIC GITHUB DOCUMENTATION DEFAULTS TO ENGLISH.** The entire active `README.md` must be written in English. This includes Quick start, Hardware requirements, Updating CoreAI, explanations and tables. Historical German changelogs, handovers, UI strings and the legally binding `LICENSE.de.md` are not to be translated automatically.
+**PUBLIC GITHUB DOCUMENTATION DEFAULTS TO ENGLISH.** The entire active `README.md` must be written in English. This includes Quick start, Hardware requirements, Updating CoreAI, explanations and tables. **Translate button names and settings paths into English in the README too, without German labels in parentheses.** This is documentation-only. The future English/German UI language switch and day/night modes are planned, not yet implemented. Historical German changelogs, handovers, UI strings and the legally binding `LICENSE.de.md` are not to be translated automatically.
 
 **README.md IST KEIN CHANGELOG.**
 
