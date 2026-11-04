@@ -203,6 +203,11 @@ check(stored.returncode == 0 and 'nur fuer root lesbar' in stored.stdout and tok
 for wrong in ('', 'abc', 'hf_short', 'hf_' + 'x' * 20 + ';rm'):
     refused = subprocess.run(['bash', str(script), '--dry-run', '--hf-token'], input=wrong + '\n', capture_output=True, text=True, timeout=30)
     check(refused.returncode != 0 and 'kein Hugging-Face-Token' in refused.stderr, 'bad token refused: ' + repr(wrong))
+# 0.5.99: a token typed into the command is refused and never printed back.
+for args in (['--hf-' + token], ['--hf-token', token], [token], ['--skip-build', '--hf_token=' + token]):
+    leaked = subprocess.run(['bash', str(script), '--dry-run', *args], capture_output=True, text=True, timeout=30)
+    check(leaked.returncode == 2 and 'Den Token nicht in den Befehl schreiben' in leaked.stderr, 'token on the command line refused: ' + args[0][:8])
+    check(token not in leaked.stdout + leaked.stderr, 'the token is not printed back')
 shell_text = script.read_text(encoding='utf-8')
 check("IFS= read -rs token" in shell_text and 'chmod 0600 "$TOKEN_FILE.tmp"' in shell_text and 'chown root:root "$TOKEN_FILE.tmp"' in shell_text,
       'hidden input, root only')

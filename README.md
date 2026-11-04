@@ -7,7 +7,14 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.98` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.99` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Stimmtest: Token nie in der Befehlszeile (0.5.99)
+
+Ein Token, der in den Befehl geschrieben wird (etwa `--hf-hf_...` oder
+`--hf-token hf_...`), wird abgelehnt und nie wieder ausgegeben; das Skript
+sagt, wie es richtig geht. Der Token gehoert nur in die verdeckte Abfrage von
+`sudo bash /opt/ember-coreui/scripts/tts-spike.sh --hf-token`.
 
 ## Stimmtest gemessen, Textaufbereitung und Kerstin-Klon (0.5.98)
 

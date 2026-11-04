@@ -81,6 +81,9 @@ while (($#)); do
     --dry-run) DRY_RUN='1'; shift ;;
     --hf-token) HF_TOKEN_MODE='1'; shift ;;
     -h|--help) usage; exit 0 ;;
+    # 0.5.99: a token never belongs on the command line (shell history, process list),
+    # and it is never printed back.
+    *hf_*) printf '[CoreAI Stimmtest] FEHLER: Den Token nicht in den Befehl schreiben. Nur:\n  sudo bash %s/scripts/tts-spike.sh --hf-token\nDann fragt das Skript danach (unsichtbare Eingabe). Der Token stand jetzt in der Befehlszeile: bitte auf huggingface.co/settings/tokens loeschen und neu anlegen.\n' "$PROJECT_ROOT" >&2; exit 2 ;;
     *) printf 'Unbekannte Option: %s\n\n' "$1" >&2; usage >&2; exit 2 ;;
   esac
 done

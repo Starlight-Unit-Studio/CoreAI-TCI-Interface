@@ -1,5 +1,11 @@
 # CoreAI: TCI Interface
 
+## 0.5.99 - 04.11.2026
+
+- **Token nie in der Befehlszeile:** Auf dem Server wurde der Token direkt an die Option gehaengt (`--hf-hf_...`). Das Skript kannte die Option nicht und gab sie samt Token in der Fehlermeldung wieder aus. Jetzt wird jedes Argument mit `hf_` abgelehnt, ohne den Token auszugeben, mit dem richtigen Befehl und dem Hinweis, den Token neu anzulegen (er steht dann in der Shell-Historie).
+- Tests: `tts-spike-selftest.py` prueft vier Schreibweisen (an der Option, nach `--hf-token`, allein, mit `=`): immer abgelehnt, Token nie in der Ausgabe.
+- Keine Aenderung an der Messung, an Cores, Modelfile, Datenbank oder Warteschlange.
+
 ## 0.5.98 - 04.11.2026
 
 - **Stimmtest gemessen:** Lauf `20261104-152135` auf dem Server, alle 18 Stimmen haben gesprochen. Messprotokoll im Sprachplan (`docs/COREUI_VOICE_PLAN.md`, Abschnitt "Messprotokoll Stimmtest"). Echtzeitfaktor mit 4 Kernen: Piper 0,01 bis 0,02 (Thorsten high 0,12), Pocket TTS 6 Schichten 0,32 (mit 2 Kernen 0,38), Pocket TTS 24 Schichten 1,13, Chatterbox 5,83. Erster Ton: Piper unter 0,1 s, Pocket 6 Schichten 0,14 s, Pocket 24 Schichten 0,5 s, Chatterbox 36 s.

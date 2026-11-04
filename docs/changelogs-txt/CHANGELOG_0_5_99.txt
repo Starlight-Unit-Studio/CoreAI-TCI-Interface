@@ -1,0 +1,3 @@
+CoreAI: TCI Interface 0.5.99 - 04.11.2026
+- Stimmtest: ein Token in der Befehlszeile wird abgelehnt und nie ausgegeben; Hinweis auf --hf-token und neuen Token.
+- Selbsttest prueft vier Schreibweisen.
