@@ -30,23 +30,38 @@ Der gesondert archivierte, SHA-256-verifizierte ZIP-Stand `0.5.3-alpha` bleibt e
 
 ## Hardwareanforderungen
 
-**Hardware-Richtwerte fuer Selbsthosting, keine garantierten oder live vermessenen Mindestwerte.** Die Zahlen gelten fuer einen Linux-Server mit CoreAI, Ollama und Docker, ein aktives lokal laufendes Modell in **4-Bit-Quantisierung (Q4)** und zunaechst einem begrenzten Kontextfenster (z. B. 4K bis 8K Tokens). Fuer andere Quantisierungen, grosse Kontextfenster, mehrere aktive Nutzer und weitere Dienste mehr Ressourcen einplanen.
+**CoreAI wurde fuer CPU-only-Betrieb konzipiert. Ein Linux-Root-Server ohne GPU ist die Referenzplattform.** Die Hauptanforderungen sind ausreichende CPU-Leistung, RAM, SSD-/NVMe-Speicher und die im Schnellstart genannten Linux-Voraussetzungen. Eine dedizierte Grafikkarte und VRAM sind **nicht erforderlich**.
 
-| Betriebsprofil | RAM gesamt | CPU | Freier Speicherplatz | Einordnung |
+Die folgenden Profile sind **vorsichtige Planungsrichtwerte, keine auf allen Servern getesteten Mindestwerte**. Sie beziehen sich auf einen gleichzeitig aktiven lokalen Ollama-Core mit Q4-Quantisierung und ein begrenztes Kontextfenster von etwa 4K bis 8K Tokens. Mehr Kontext (etwa 131K), andere Quantisierungen, zusaetzliche Dienste und Nutzer erhoehen den Bedarf deutlich.
+
+| CPU-only-Profil | RAM gesamt | CPU-Leistung | Freier SSD-/NVMe-Speicher | Einordnung |
 | --- | --- | --- | --- | --- |
-| E2B, eingeschraenkter Test | ab **8 GB** | ab 4 vCPU | ab 40 GB | Nur mit kurzem Kontext, ohne optionalen Voice- und Browse-Worker; nicht als Standardinstallation empfohlen |
-| **E2B, empfohlen** | **16 GB** | 4 bis 6 vCPU | 60 bis 80 GB | Reserve fuer CoreAI-Dienste, kurze bis mittlere Chats und optionale Werkzeuge |
-| **E4B, empfohlen** | **24 bis 32 GB** | 6 bis 8 vCPU | ab 80 GB | Sinnvolle Orientierung fuer die regulaere lokale Nutzung; die Standardinstallation verwendet E4B, falls kein geeignetes Basismodell vorhanden ist |
-| 12B, Orientierung | ab **32 GB** | ab 8 vCPU | ab 100 GB | 4-Bit-Modell, begrenzter Kontext; CPU-Ausgabe kann deutlich langsamer sein |
-| 26B A4B / 31B, Orientierung | **64 bis 96 GB oder mehr** | 12 bis 16 vCPU | ab 120 GB | Fuer grosse lokale Cores; Kontextfenster und Antwortgeschwindigkeit koennen wesentlich hoehere Anforderungen verursachen |
+| **E2B: einfacher Einstieg** | ab **8 GB** | ab 4 dedizierte Kerne | ab 40 GB | Kurzer Kontext, ohne Eve und Browser-Worker; eingeschraenkter Betrieb |
+| **E2B: empfohlen** | **16 GB** | 4 bis 8 dedizierte Kerne | 60 bis 80 GB | Mehr Spielraum fuer Chat, Systemdienste und Werkzeuge |
+| **E4B: empfohlen** | **24 bis 32 GB** | 6 bis 12 dedizierte Kerne | ab 80 GB | Komfortablere CPU-only-Konfiguration |
+| **12B: groesserer Core** | ab **32 GB** | ab 8 dedizierte Kerne | ab 100 GB | CPU-Antworten koennen merklich langsamer ausfallen |
+| **26B A4B / 31B: grosse Cores** | **64 bis 96 GB oder mehr** | ab 12 bis 16 dedizierte Kerne | ab 120 GB | Modell, Kontextgroesse und Tempo gesondert pruefen |
 
-**Warum RAM nicht nur die Modellgroesse ist:** Google nennt fuer Gemma 4 bei Q4 ungefaehr 2,9 GB (E2B), 4,5 GB (E4B), 6,7 GB (12B), 14,4 GB (26B A4B) und 17,5 GB (31B) fuer das Laden des Modells. **KV-Cache, Kontextfenster, Ollama, Linux, Docker, MariaDB, Websuche und laufende Arbeitsprozesse kommen hinzu.** Daher sind diese Modellwerte keine vollstaendigen Server-Mindestanforderungen. Quelle: [Google Gemma 4 Modelldokumentation](https://ai.google.dev/gemma/docs/core).
+**Modell-RAM ist nicht gleich Server-RAM:** Die [Gemma-4-Dokumentation von Google](https://ai.google.dev/gemma/docs/core) nennt fuer Q4 ungefaehr 2,9 GB (E2B), 4,5 GB (E4B), 6,7 GB (12B), 14,4 GB (26B A4B) und 17,5 GB (31B) als grobe Modell-Speicherwerte mit pauschalem Puffer. Diese Tabelle beschreibt urspruenglich GPU-/TPU-Modellspeicher, **nicht** den vollstaendigen RAM-Verbrauch von CoreAI auf einem CPU-Server. KV-Cache, Kontextfenster, Ollama, Linux, Docker, Datenbank, Browser-Worker und weitere Prozesse kommen hinzu.
 
-**Optionale Sprachausgabe:** Eve benoetigt im gemessenen Test etwa 2,5 GB RAM und verwendet bis zu 4 CPU-Kerne; das Containerlimit ist 6 GB. Bei wenig RAM den Sprachdienst mit `COREUI_INSTALL_VOICE=0` bereits bei der Erstinstallation abwaehlen. Bei bestehenden Installationen Installationsoptionen nicht ohne Konfigurationspruefung aendern.
+**Optionale Eve-Sprachausgabe:** Der bisherige Test ermittelte etwa 2,5 GB RAM und bis zu vier CPU-Kerne. Das Containerlimit betraegt 6 GB. Auf kleinen Servern bei der Erstinstallation gegebenenfalls `COREUI_INSTALL_VOICE=0` nutzen. Vor Aenderungen an einer vorhandenen Installation erst Konfiguration und Daten sichern.
 
-**CPU statt GPU:** Eine dedizierte Grafikkarte ist fuer den CPU-Betrieb nicht zwingend. Genuegend RAM bedeutet aber nicht automatisch gute Geschwindigkeit: CPU-Leistung, Speicherbandbreite, Quantisierung und Kontextgroesse bestimmen die nutzbare Ausgabe. Die Tabellenwerte sind Planungsempfehlungen, **keine Benchmarks und keine Zusage einer bestimmten Tokens-pro-Sekunde-Rate**.
+### Optional: GPU- und VRAM-High-Performance
 
-**Serververgleich:** Der Netcup-Tarif *VPS 8000 G12.5* bietet nach Anbieterangaben 16 vCores und 64 GB RAM. Das ist ein Beispiel fuer einen groesseren Ausbau und **keine Mindestvoraussetzung fuer E2B**. Tarife und Leistungen koennen sich aendern. Quelle: [netcup VPS 8000 G12.5](https://www.netcup.com/de/server/vps/vps-8000-g12.5-24m-eu).
+Eine kompatible GPU bzw. vGPU mit ausreichend **VRAM** kann die Modellinferenz ueber Ollama erheblich beschleunigen. **Dies ist eine optionale Leistungsstufe, keine Voraussetzung fuer CoreAI.** Ob und wie stark der Core beschleunigt wird, haengt von GPU-/Treiberunterstuetzung, Modell, Quantisierung und davon ab, wie viel Modell und KV-Cache in den VRAM passen. Nicht alle CoreAI-Werkzeuge werden durch eine GPU schneller.
+
+### Unverbindliche Serverbeispiele
+
+[netcup Root-Server](https://www.netcup.com/de/server/root-server) dienen hier **nur als preisorientierte Beispiele fuer CPU-Root-Server mit dedizierten Ressourcen**. CoreAI ist weder an netcup gebunden noch wird eine allgemeingueltige Aussage ueber den guenstigsten Anbieter getroffen. Produktnamen, Verfuegbarkeit, Hardware und Preise koennen sich aendern.
+
+| Beispiel bei netcup | CPU-Kerne | RAM | Einordnung |
+| --- | ---: | ---: | --- |
+| RS 1000 G12 | 4 | 8 GB | E2B-Einstieg mit eingeschraenktem Funktionsumfang |
+| RS 2000 G12 | 8 | 16 GB | E2B-Empfehlung |
+| RS 4000 G12 | 12 | 32 GB | E4B / 12B, je nach Kontext und Last |
+| RS 8000 G12 | 16 | 64 GB | Groessere CPU-Cores und mehr Spielraum |
+
+**Wichtig:** Kein konkretes Hostingprodukt ist als Pflicht-Mindesthardware definiert. CPU-only funktioniert ohne GPU, aber Antwortgeschwindigkeit und RAM-Reserven muessen zum persoenlichen Einsatz passen.
 
 ## Zugriff und wichtige Optionen
 
