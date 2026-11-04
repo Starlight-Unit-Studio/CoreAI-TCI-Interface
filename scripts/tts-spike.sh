@@ -87,6 +87,13 @@ die() { printf '[CoreAI Stimmtest] FEHLER: %s\n' "$*" >&2; exit 1; }
 [[ "$KEEP" =~ ^[0-9]+$ ]] && (( KEEP >= 1 )) || die 'Ungueltiges --keep'
 [[ -z "$RUN_STAMP" || "$RUN_STAMP" =~ ^[0-9]{8}-[0-9]{6}$ ]] || die 'Ungueltiges --run (Form JJJJMMTT-HHMMSS)'
 command -v python3 >/dev/null 2>&1 || die 'python3 fehlt auf dem Server'
+# 0.5.96: only a dry run may look at another folder. The selftest gives it an
+# empty one, so it never depends on what a real run left on this server.
+if [[ -n "$DRY_RUN" && -n "${COREAI_TTS_SPIKE_BASE:-}" ]]; then
+  BASE="$COREAI_TTS_SPIKE_BASE"
+  MODELS="$BASE/models"
+  RUNS="$BASE/runs"
+fi
 [[ -f "$REGISTRY" ]] || die 'tools/tts_spike/voices.json fehlt'
 if [[ -z "$DRY_RUN" ]]; then
   command -v docker >/dev/null 2>&1 || die 'docker fehlt'

@@ -140,3 +140,4 @@ Jede Version liegt als eigenstaendige UTF-8-TXT-Datei vor.
 * CHANGELOG_0_5_93.txt
 * CHANGELOG_0_5_94.txt
 * CHANGELOG_0_5_95.txt
+* CHANGELOG_0_5_96.txt

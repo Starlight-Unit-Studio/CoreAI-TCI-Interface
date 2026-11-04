@@ -1,0 +1,4 @@
+CoreAI: TCI Interface 0.5.96 - 04.11.2026
+- Update-Preflight: Stimmtest-Selbsttest haengt nicht mehr von Gewichten ab, die ein echter Lauf auf dem Server hinterlassen hat.
+- Probelauf mit eigenem leeren Ordner (COREAI_TTS_SPIKE_BASE, nur mit --dry-run); Ueberspringen registrierter Gewichte und --refetch geprueft.
+- Preflights schreiben den Grund eines Fehlschlags dieses Tests ins Update-Protokoll.

@@ -7,7 +7,17 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.95` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.96` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Update-Preflight: Stimmtest-Selbsttest repariert (0.5.96)
+
+Das Update auf 0.5.95 brach im Preflight ab ("Stimmtest-Selbsttest
+fehlgeschlagen"). Der Test schaute in den echten Ordner `var/tts-spike`. Nach
+dem ersten Stimmtest liegen dort registrierte Gewichte, und das Skript
+ueberspringt dann zu Recht das Laden; der Test erwartete aber fest sieben
+Ladeschritte. Jetzt nutzt der Probelauf einen eigenen leeren Ordner (nur im
+Probelauf erlaubt) und prueft das Ueberspringen zusaetzlich. Der Preflight
+schreibt den Grund eines Fehlschlags kuenftig ins Update-Protokoll.
 
 ## Stimmtest: Pocket TTS repariert (0.5.95)
 

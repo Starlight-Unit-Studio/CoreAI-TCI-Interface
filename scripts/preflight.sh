@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.95 voice test: Pocket TTS speaks (no inference mode around its own thread), --run to add groups to a run.
+# CoreAI: TCI Interface 0.5.96 voice test selftest no longer depends on weights a real run left on the server.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -346,10 +346,12 @@ fi
 
 # 0.5.94: voice test (P20.0) with a probe engine: registry and licenses, pinned
 # images, measuring without network and with a core limit, SHA-256 check, report.
-if python3 "$PROJECT_ROOT/scripts/tts-spike-selftest.py" >/dev/null 2>&1; then
+# 0.5.96: the reason goes into the update log.
+tts_spike_test=''
+if tts_spike_test="$(python3 "$PROJECT_ROOT/scripts/tts-spike-selftest.py" 2>&1)"; then
   ok 'Stimmtest: Lizenzen je Stimme, feste Versionen, Messen ohne Netz mit Kernlimit, SHA-256-Pruefung und Bericht geprueft.'
 else
-  fail 'Stimmtest-Selbsttest fehlgeschlagen.'
+  fail "Stimmtest-Selbsttest: ${tts_spike_test:-Unbekannter Fehler}"
 fi
 
 if python3 "$PROJECT_ROOT/scripts/python-input-selftest.py" >/dev/null 2>&1; then

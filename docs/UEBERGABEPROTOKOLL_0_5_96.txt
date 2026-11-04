@@ -1,0 +1,17 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.5.96
+Stand: 04.11.2026
+Branch: claude/bold-galileo-myoyi0 (neu auf main 0.5.95, PR #147 gemergt)
+
+ANLASS: Update auf 0.5.95 auf dem Server, Preflight: "[FEHLER] Stimmtest-Selbsttest fehlgeschlagen", 1 Problem.
+URSACHE: scripts/tts-spike-selftest.py rief tts-spike.sh --dry-run gegen den echten Ordner var/tts-spike auf. Nach dem
+ersten echten Lauf liegen dort models/lock-*.json; das Skript ueberspringt dann das Laden, der Test erwartete fest
+7 fetch-Zeilen. Lokal nachgestellt (Lock-Dateien angelegt: Test schlug genauso fehl).
+FIX: tts-spike.sh nimmt COREAI_TTS_SPIKE_BASE nur zusammen mit --dry-run; der Selbsttest nutzt dafuer einen leeren
+Temp-Ordner und prueft zusaetzlich: registrierte Gewichte werden uebersprungen, --refetch laedt sie. Beide Preflights
+geben die Ausgabe des Tests im Fehlerfall ins Protokoll.
+STAND AUF DEM SERVER: Die Dateien von 0.5.95 sind installiert (Fenster zeigte 0.5.95 -> 0.5.95), nur der Preflight
+schlug fehl. Das Update auf 0.5.96 sollte sauber durchlaufen.
+
+NAECHSTER SCHRITT: Update auf 0.5.96, dann Pocket nachholen:
+  sudo bash /opt/ember-coreui/scripts/tts-spike.sh --skip-build --groups pocket-de,pocket-de24 --run ZEITSTEMPEL
+Stimmproben anhoeren, report.md schicken.
