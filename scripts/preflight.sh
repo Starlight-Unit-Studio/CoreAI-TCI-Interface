@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.0 Mara's voice chosen: Eve (Pocket TTS German, 24 layers, int8), registered with SHA-256.
+# CoreAI: TCI Interface 0.6.1 read aloud: Mara speaks her answers with Eve (voice service, speaker button, auto-read switch).
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -178,6 +178,16 @@ UI_FILES=(
   tools/tts_spike/voices.json
   tools/tts_spike/textprep_de.py
   config/voice/mara-voice.json
+  api/voice.php
+  api/voice_store.php
+  js/coreui-voice-read.js
+  tools/voice/voice_service.py
+  tools/voice/speakable.py
+  docker/voice/Dockerfile
+  database/migrations/023_voice_settings.sql
+  scripts/voice-service-selftest.py
+  scripts/voice-read-selftest.php
+  scripts/voice-read-ui-selftest.cjs
   docker/tts-spike/Dockerfile
   docker/tts-spike/constraints-piper.txt
   docker/tts-spike/constraints-pocket.txt
@@ -344,6 +354,14 @@ if python3 "$PROJECT_ROOT/scripts/workspace-output-selftest.py" >/dev/null 2>&1;
   ok 'Python-Worker: gerettete HTML/ZIP-Dateien und sichere Ausgabepfade geprueft.'
 else
   fail 'Python-Ausgabedatei-Selbsttest fehlgeschlagen.'
+fi
+
+# 0.6.1: read aloud: what is read, parts, the voice service with its probe engine, wiring.
+voice_service_test=''
+if voice_service_test="$(python3 "$PROJECT_ROOT/scripts/voice-service-selftest.py" 2>&1)"; then
+  ok 'Vorlesen: vorlesbarer Text, Saetze, Sprachdienst mit Testton (ein Auftrag gleichzeitig, Zeitlimit, nur lokal) geprueft.'
+else
+  fail "Sprachdienst-Selbsttest: ${voice_service_test:-Unbekannter Fehler}"
 fi
 
 # 0.5.94: voice test (P20.0) with a probe engine: registry and licenses, pinned
@@ -827,6 +845,14 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail "Memory-Laengen-Selbsttest: ${memory_length_test:-Unbekannter Fehler}"
   fi
 
+  # 0.6.1: read aloud on the PHP side: cache per account, 7 days, guests never, only own answers.
+  voice_read_test=''
+  if voice_read_test="$(compose exec -T php php scripts/voice-read-selftest.php 2>&1)"; then
+    ok 'Vorlesen: Zwischenspeicher pro Konto (7 Tage), keine Gaeste, nur eigene Antworten, Schalter im KI-Profil geprueft.'
+  else
+    fail "Vorlesen-Selbsttest: ${voice_read_test:-Unbekannter Fehler}"
+  fi
+
   # 0.5.94: Stimmproben in Admin Core: runs, samples only when listed, Inhaber only.
   tts_store_test=''
   if tts_store_test="$(compose exec -T php php scripts/tts-spike-store-selftest.php 2>&1)"; then
@@ -939,6 +965,16 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       fi
     else
       warn 'Update-Fenster: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+    fi
+    # 0.6.1: speaker button and auto-read switch; needs Playwright for Node.
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/voice-read-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'Vorlesen: Knopf, Satz fuer Satz mit Vorladen, Stopp, automatisch vorlesen, Gaeste ohne Knopf geprueft.'
+      else
+        fail 'Vorlesen: Oberflaechentest fehlgeschlagen.'
+      fi
+    else
+      warn 'Vorlesen: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
     fi
     # 0.5.94: Stimmproben card (Inhaber only); needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
@@ -1124,6 +1160,22 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       ok 'Private Live-Browser-Frame-Tabelle ist bereit.'
     else
       fail 'Private Live-Browser-Frame-Tabelle fehlt. Browse-Worker neu starten.'
+    fi
+  fi
+
+  # 0.6.1: Mara's voice. Optional: missing or still loading is a hint, never a failure.
+  if is_enabled "${COREUI_INSTALL_VOICE:-1}"; then
+    if service_running voice; then
+      voice_health="$(curl -fsS --max-time 5 "http://127.0.0.1:${COREUI_VOICE_PORT:-18790}/health" 2>/dev/null || true)"
+      if [[ "$voice_health" == *'"ready": true'* ]]; then
+        ok 'Sprachdienst bereit: Mara kann mit Eve vorlesen.'
+      elif [[ "$voice_health" == *'"loading": true'* ]]; then
+        warn 'Sprachdienst laedt Eve noch (beim ersten Start etwa 0,7 GB); Vorlesen folgt von selbst.'
+      else
+        warn 'Sprachdienst laeuft, ist aber nicht bereit. Protokoll: scripts/stack.sh logs voice'
+      fi
+    else
+      warn 'Sprachdienst laeuft nicht; CoreAI arbeitet ohne Vorlesen. Start: scripts/stack.sh up -d voice'
     fi
   fi
 

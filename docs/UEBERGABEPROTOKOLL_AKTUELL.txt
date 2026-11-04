@@ -1,9 +1,10 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
 Stand: 04.11.2026
-Repository-Version: 0.6.0
+Repository-Version: 0.6.1
 BASIS: main 0.5.99, PR #151 gemergt.
 NEUE ARBEIT ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_6_1.txt
   docs/UEBERGABEPROTOKOLL_0_6_0.txt
   docs/UEBERGABEPROTOKOLL_0_5_99.txt
   docs/UEBERGABEPROTOKOLL_0_5_98.txt
@@ -166,7 +167,8 @@ WAHL: Maras Stimme ist Eve (Pocket 24 Schichten). Naechster Lauf misst Eve mit 4
 (Befehl in UEBERGABEPROTOKOLL_0_5_99.txt), dann Kernlimit und P20.3 Vorlesen.
 0.6.0: Eve mit int8 gemessen (RTF 0,45 mit 4 Kernen), registriert in config/voice/mara-voice.json.
 int8 klingt laut Betreiber gleich; P20.0 abgeschlossen.
-NAECHSTER SCHRITT: P20.3 Vorlesen mit Eve, dann P20.1 Spracheingabe.
+0.6.1: P20.3 Vorlesen mit Eve (Sprachdienst voice, Knopf, KI-Profil-Schalter, 7 Tage Cache, Migration 023).
+NAECHSTER SCHRITT: Update, Vorlesen live pruefen, Live-Runde mit paralleler Core-Anfrage, dann P20.1 Spracheingabe.
 NAECHSTER SCHRITT: Pocket mit --skip-build --groups pocket-de,pocket-de24 --run ZEITSTEMPEL nachholen, anhoeren,
 Maras Stimme waehlen, report.md ins Messprotokoll; dann P20.1 Spracheingabe.
 ARBEITSWEISE (Betreiber, 04.11.2026): Nach jedem Push direkt einen PR oeffnen, ohne Rueckfrage. Mergen macht der

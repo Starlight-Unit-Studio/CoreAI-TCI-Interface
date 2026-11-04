@@ -288,6 +288,8 @@ sudo bash /opt/ember-coreui/scripts/tts-spike.sh --skip-build --engines piper,po
 
 ### P20.3: Sprachausgabe (Vorlesen)
 
+**Stand 0.6.1: gebaut.** Entscheidungen des Betreibers (04.11.2026): angemeldete Konten ohne Gäste, "Antworten automatisch vorlesen" aus und im KI-Profil einschaltbar, Audio 7 Tage pro Konto gespeichert. Umsetzung: Sprachdienst `voice` (Container, Eve mit int8 auf 4 Kernen, nur 127.0.0.1, ein Auftrag gleichzeitig, SHA-256-Prüfung der registrierten Dateien), `api/voice.php` (Plan und Audio je Teil), `js/coreui-voice-read.js` (Knopf, Satz für Satz mit Vorladen, Stopp). Was nicht vorgelesen wird, legt `tools/voice/speakable.py` fest. Offen: Live-Abnahme auf dem Server und die Messung mit paralleler Core-Anfrage.
+
 - Lautsprecher-Knopf unter jeder Mara-Antwort, Pause und Stopp; optional "Antworten automatisch vorlesen" im KI-Profil.
 - Vor dem Sprechen wird der Text aufbereitet: Codeblöcke, Links und Tabellen werden nicht vorgelesen, sondern kurz benannt; Zahlen, Daten und Uhrzeiten deutsch ausgesprochen.
 - Wiedergabe startet nach dem ersten Satz (satzweise Erzeugung), nicht erst nach der ganzen Antwort.

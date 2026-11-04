@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.0 Mara's voice chosen: Eve (Pocket TTS German, 24 layers, int8), registered with SHA-256.
+# CoreAI: TCI Interface 0.6.1 read aloud: Mara speaks her answers with Eve (voice service, speaker button, auto-read switch).
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -144,6 +144,16 @@ UI_FILES=(
   tools/tts_spike/voices.json
   tools/tts_spike/textprep_de.py
   config/voice/mara-voice.json
+  api/voice.php
+  api/voice_store.php
+  js/coreui-voice-read.js
+  tools/voice/voice_service.py
+  tools/voice/speakable.py
+  docker/voice/Dockerfile
+  database/migrations/023_voice_settings.sql
+  scripts/voice-service-selftest.py
+  scripts/voice-read-selftest.php
+  scripts/voice-read-ui-selftest.cjs
   docker/tts-spike/Dockerfile
   docker/tts-spike/constraints-piper.txt
   docker/tts-spike/constraints-pocket.txt
@@ -308,6 +318,14 @@ if python3 "$PROJECT_ROOT/scripts/workspace-output-selftest.py" >/dev/null 2>&1;
   ok 'Python-Worker: gerettete HTML/ZIP-Dateien und sichere Ausgabepfade geprueft.'
 else
   fail 'Python-Ausgabedatei-Selbsttest fehlgeschlagen.'
+fi
+
+# 0.6.1: read aloud: what is read, parts, the voice service with its probe engine, wiring.
+voice_service_test=''
+if voice_service_test="$(python3 "$PROJECT_ROOT/scripts/voice-service-selftest.py" 2>&1)"; then
+  ok 'Vorlesen: vorlesbarer Text, Saetze, Sprachdienst mit Testton (ein Auftrag gleichzeitig, Zeitlimit, nur lokal) geprueft.'
+else
+  fail "Sprachdienst-Selbsttest: ${voice_service_test:-Unbekannter Fehler}"
 fi
 
 # 0.5.94: voice test (P20.0) with a probe engine: registry and licenses, pinned
@@ -631,6 +649,14 @@ if command -v php >/dev/null 2>&1; then
     fail "Memory-Laengen-Selbsttest: ${memory_length_test:-Unbekannter Fehler}"
   fi
 
+  # 0.6.1: read aloud on the PHP side: cache per account, 7 days, guests never, only own answers.
+  voice_read_test=''
+  if voice_read_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/voice-read-selftest.php" 2>&1)"; then
+    ok 'Vorlesen: Zwischenspeicher pro Konto (7 Tage), keine Gaeste, nur eigene Antworten, Schalter im KI-Profil geprueft.'
+  else
+    fail "Vorlesen-Selbsttest: ${voice_read_test:-Unbekannter Fehler}"
+  fi
+
   # 0.5.94: Stimmproben in Admin Core: runs, samples only when listed, Inhaber only.
   tts_store_test=''
   if tts_store_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/tts-spike-store-selftest.php" 2>&1)"; then
@@ -747,6 +773,16 @@ if command -v php >/dev/null 2>&1; then
       fi
     else
       ok 'Update-Fenster: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+    fi
+    # 0.6.1: speaker button and auto-read switch; needs Playwright for Node.
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/voice-read-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'Vorlesen: Knopf, Satz fuer Satz mit Vorladen, Stopp, automatisch vorlesen, Gaeste ohne Knopf geprueft.'
+      else
+        fail 'Vorlesen: Oberflaechentest fehlgeschlagen.'
+      fi
+    else
+      ok 'Vorlesen: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
     fi
     # 0.5.94: Stimmproben card (Inhaber only); needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then

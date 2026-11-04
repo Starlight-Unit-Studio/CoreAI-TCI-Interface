@@ -1,0 +1,7 @@
+CoreAI: TCI Interface 0.6.1 - 04.11.2026
+- Mara liest vor (P20.3): Lautsprecher-Knopf unter jeder Antwort, Eve Satz fuer Satz, Stopp, Vorladen.
+- Code, Tabellen und Links werden benannt statt gelesen; Zahlen, Datum, Dateinamen als Woerter.
+- Neuer optionaler Container voice (4 Kerne, nur 127.0.0.1, SHA-256-Pruefung der registrierten Dateien).
+- Nur angemeldete Konten, nur eigene Antworten; Audio 7 Tage pro Konto gespeichert.
+- KI-Profil: Antworten automatisch vorlesen (Standard aus), Migration 023.
+- Neue Tests in beiden Preflights.

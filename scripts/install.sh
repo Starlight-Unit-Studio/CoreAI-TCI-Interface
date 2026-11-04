@@ -246,6 +246,8 @@ prepare_permissions() {
     "$PROJECT_ROOT/var/browser-home" \
     "$PROJECT_ROOT/var/php_sessions" \
     "$PROJECT_ROOT/var/update-request" \
+    "$PROJECT_ROOT/var/voice_cache" \
+    "$PROJECT_ROOT/var/voice-models" \
     "$PROJECT_ROOT/uploads/ember_browse" \
     "$PROJECT_ROOT/assets/chat_media" \
     "$PROJECT_ROOT/assets/profile_photos" \
@@ -298,6 +300,7 @@ COREUI_BIND_ADDRESS=$BIND_ADDRESS
 COREUI_PROJECT_ROOT=$PROJECT_ROOT
 COREUI_INSTALL_SEARXNG=$INSTALL_SEARXNG
 COREUI_INSTALL_BROWSE=$INSTALL_BROWSE
+COREUI_INSTALL_VOICE=$INSTALL_VOICE
 COREUI_SEARXNG_URL=$SEARXNG_URL
 COREUI_SEARXNG_SECRET=$SEARXNG_SECRET
 ENV
@@ -526,6 +529,7 @@ REQUEST_LOCK_NAMESPACE="${COREUI_LOCK_NAMESPACE:-}"
 REQUEST_BIND_ADDRESS="${COREUI_BIND_ADDRESS:-}"
 REQUEST_INSTALL_SEARXNG="${COREUI_INSTALL_SEARXNG:-}"
 REQUEST_INSTALL_BROWSE="${COREUI_INSTALL_BROWSE:-}"
+REQUEST_INSTALL_VOICE="${COREUI_INSTALL_VOICE:-}"
 REQUEST_SEARXNG_URL="${COREUI_SEARXNG_URL:-}"
 
 SAVED_HTTP_PORT="$(read_saved_env COREUI_HTTP_PORT || true)"
@@ -541,6 +545,7 @@ SAVED_LOCK_NAMESPACE="$(read_saved_env COREUI_LOCK_NAMESPACE || true)"
 SAVED_BIND_ADDRESS="$(read_saved_env COREUI_BIND_ADDRESS || true)"
 SAVED_INSTALL_SEARXNG="$(read_saved_env COREUI_INSTALL_SEARXNG || true)"
 SAVED_INSTALL_BROWSE="$(read_saved_env COREUI_INSTALL_BROWSE || true)"
+SAVED_INSTALL_VOICE="$(read_saved_env COREUI_INSTALL_VOICE || true)"
 SAVED_SEARXNG_URL="$(read_saved_env COREUI_SEARXNG_URL || true)"
 SAVED_SEARXNG_SECRET="$(read_saved_env COREUI_SEARXNG_SECRET || true)"
 
@@ -566,6 +571,8 @@ LOCK_NAMESPACE="${REQUEST_LOCK_NAMESPACE:-${SAVED_LOCK_NAMESPACE:-ember_coreui}}
 BIND_ADDRESS="${REQUEST_BIND_ADDRESS:-${SAVED_BIND_ADDRESS:-127.0.0.1}}"
 INSTALL_SEARXNG="${REQUEST_INSTALL_SEARXNG:-${SAVED_INSTALL_SEARXNG:-1}}"
 INSTALL_BROWSE="${REQUEST_INSTALL_BROWSE:-${SAVED_INSTALL_BROWSE:-1}}"
+# 0.6.1: Maras Stimme (Vorlesen). Standard an; COREUI_INSTALL_VOICE=0 laesst sie weg.
+INSTALL_VOICE="${REQUEST_INSTALL_VOICE:-${SAVED_INSTALL_VOICE:-1}}"
 INSTALL_DOCKER="${COREUI_INSTALL_DOCKER:-1}"
 INSTALL_OLLAMA="${COREUI_INSTALL_OLLAMA:-1}"
 FORCE_CONFIG="${COREUI_FORCE_CONFIG:-0}"
@@ -590,6 +597,7 @@ if [[ -f "$CONFIG_FILE" && -f "$ENV_FILE" && "$FORCE_CONFIG" != '1' ]]; then
       || -n "$REQUEST_BIND_ADDRESS" \
       || -n "$REQUEST_INSTALL_SEARXNG" \
       || -n "$REQUEST_INSTALL_BROWSE" \
+      || -n "$REQUEST_INSTALL_VOICE" \
       || -n "$REQUEST_SEARXNG_URL" \
       || -n "${COREUI_PUBLIC_URL:-}" ]]; then
     die 'Konfigurationswerte wurden fuer eine bestehende Installation geaendert. Sichere den Stand und wiederhole bewusst mit COREUI_FORCE_CONFIG=1.'
@@ -675,6 +683,17 @@ fi
 if is_enabled "$INSTALL_BROWSE"; then
   compose build browse
 fi
+# 0.6.1: Maras Stimme. Optional: scheitert der Bau (etwa ohne Netz zum
+# PyTorch-Index), laeuft CoreAI ohne Vorlesen weiter.
+VOICE_READY=0
+if is_enabled "$INSTALL_VOICE"; then
+  log 'Baue den Sprachdienst (Maras Stimme Eve, Pocket TTS auf der CPU).'
+  if compose build voice; then
+    VOICE_READY=1
+  else
+    warn 'Sprachdienst konnte nicht gebaut werden; CoreAI laeuft ohne Vorlesen weiter.'
+  fi
+fi
 log 'Baue das wegwerfbare Python-Sandbox-Image ohne Projekt- oder Geheimnis-Mounts.'
 docker build -t ember-py:1 -f "$PROJECT_ROOT/tools/ember_py.Dockerfile" "$PROJECT_ROOT/tools"
 
@@ -750,6 +769,14 @@ fi
 
 log 'Starte den isolierten CoreAI: TCI Interface-Python-Worker.'
 compose up -d pyworker
+
+if [[ "$VOICE_READY" == '1' ]]; then
+  # Beim ersten Start laedt der Dienst Eves Gewichte (etwa 0,7 GB) und prueft jede Datei gegen ihren SHA-256.
+  log 'Starte den Sprachdienst (Maras Stimme).'
+  compose up -d voice || warn 'Sprachdienst startet nicht; CoreAI laeuft ohne Vorlesen weiter.'
+else
+  compose stop voice >/dev/null 2>&1 || true
+fi
 
 chmod 0750 "$PROJECT_ROOT/scripts/install.sh" "$PROJECT_ROOT/scripts/preflight.sh" \
   "$PROJECT_ROOT/scripts/install-native.sh" "$PROJECT_ROOT/scripts/preflight-native.sh" \

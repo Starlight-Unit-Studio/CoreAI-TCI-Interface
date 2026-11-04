@@ -37,6 +37,7 @@ try {
     'stu_abuse_counters',
     'stu_user_model_access',
     'stu_user_policies',
+    'stu_user_voice_settings',
   ];
   $missing = [];
   foreach ($required as $table) {

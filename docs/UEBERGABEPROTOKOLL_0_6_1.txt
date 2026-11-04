@@ -1,0 +1,30 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.6.1
+Stand: 04.11.2026
+Branch: claude/bold-galileo-myoyi0 (auf 0.6.0, PR #152 noch offen; dieser Stand kommt in denselben PR)
+
+AUFTRAG: P20.3 Vorlesen mit Eve. Betreiberentscheidungen: angemeldete Konten (keine Gaeste), automatisch vorlesen
+aus und im KI-Profil einschaltbar, Audio 7 Tage speichern.
+
+NEU:
+- tools/voice/speakable.py: Markdown -> vorlesbarer Text (Code/Tabellen benannt, Links, Listen als Saetze, Emojis weg),
+  split_parts (erster Teil bis 160 Zeichen, dann bis 320, max. 240 Teile), plan() mit textprep_de.
+- tools/voice/voice_service.py: HTTP auf 127.0.0.1:COREAI_VOICE_PORT (18790): /health, /plan, /speak (WAV).
+  PocketEngine: _check_pins (Pocket-Pins == mara-voice.json), _fetch_and_verify (hf_hub_download zu den Revisionen,
+  SHA-256), load_model(german_24l, quantize), Zustand eve, Aufwaermen. Ein Lock (ein Auftrag), Warten 90 s, Zeitlimit
+  5 x Sprechdauer (mind. 10 s) ueber stop-Event. ProbeEngine nur fuer Selbsttests (COREAI_VOICE_ENGINE=probe).
+- docker/voice/Dockerfile (Constraints aus docker/tts-spike, torch CPU, USER 33:33), compose-Dienst voice (Profil voice,
+  host-Netz, read_only, cpus 4, mem 6g, ./var/voice-models:/models), php bekommt ./var/voice_cache.
+- install.sh: COREUI_INSTALL_VOICE (Standard 1), compose build voice optional, compose up -d voice am Ende; Ordner
+  voice_cache und voice-models (33:33, 0770); stack.sh legt sie ebenfalls an.
+- api/voice_store.php, api/voice.php (status/settings/plan/audio), nginx-Freigabe voice, Migration 023, health-Tabelle,
+  account_delete entfernt var/voice_cache/<uid>.
+- js/coreui-voice-read.js: Knopf (console-app buildMessageActions), onAnswer (finalizeStream), Schalter #voiceAutoRead
+  im KI-Profil; Knopf nur sichtbar, wenn der Dienst bereit ist oder laedt.
+
+GEPRUEFT: drei neue Tests, volle Testreihe, DB-Teil gegen MariaDB 10.11. NICHT hier: echter Pocket-Lauf (kein Zugang
+zu Hugging Face und PyTorch-Index), echter Containerbau.
+
+NACH DEM MERGE (Betreiber): normales Update. Beim ersten Start laedt der Dienst Eve (etwa 0,7 GB); der Preflight zeigt
+"Sprachdienst laedt Eve noch" als Hinweis. Danach im Chat den Lautsprecher-Knopf unter einer Antwort testen.
+Bei Problemen: scripts/stack.sh logs voice.
+OFFEN: Live-Runde mit paralleler Core-Anfrage messen, dann P20.1 Spracheingabe.
