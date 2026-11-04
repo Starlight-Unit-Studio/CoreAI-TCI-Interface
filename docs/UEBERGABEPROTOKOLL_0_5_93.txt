@@ -1,0 +1,26 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.5.93
+Stand: 04.11.2026
+Branch: claude/bold-galileo-myoyi0 (neu auf main 0.5.92, PR #144 gemergt)
+
+AUSGANGSLAGE:
+Volle Selbsttest-Runde auf main 0.5.92: 76 bestanden, 2 fehlgeschlagen.
+- scripts/settings-tabs-ui-selftest.cjs: "arrow keys move between tabs" erwartete view-wissen nach KI-Profil;
+  0.5.91 hat den Tab Personalisierung dazwischen gesetzt.
+- scripts/browse-live-ui-selftest.cjs: "frame supplies actual current page" erwartete researchPage(...,
+  'Aktuelle Seite') aus queueFrame; 0.5.88 (Commit a7134e9, "separate WEB search carousel from optional
+  Playwright browser window") hat das auf Betreiberwunsch entfernt.
+Beide Tests waren veraltet, das Produkt verhaelt sich wie gewollt. Auf dem Server liefen sie offenbar nicht mit
+(der Preflight beim 0.5.90-Update meldete nur den Sitzungs-Test), vermutlich fehlt dort Node fuer diese Tests.
+
+AENDERUNGEN (nur Tests und Doku):
+- settings-tabs-ui-selftest.cjs: Pfeil runter -> Personalisierung, nochmal -> Wissen; Personalisierung in der
+  11-px-Schleife.
+- browse-live-ui-selftest.cjs: Browserbilder fuellen das Karussell nie (calls.research leer, auch am Ende,
+  researchFinished 0). Gegenprobe: mit dem alten researchPage-Aufruf in queueFrame schlaegt der Test an.
+- docs/UEBERGABEPROTOKOLL_AKTUELL.txt korrigiert.
+
+GEPRUEFT: volle Selbsttest-Runde gruen.
+
+NAECHSTER SCHRITT: Audio, TTS-Kandidaten fuer Maras eigene Stimme (P20.0 Rest), danach P20.1 Spracheingabe.
+Offene Live-Abnahmen aus 0.5.89 (zwei WEB-Suchen mit Neuladen und Sitzungswechsel) und 0.5.91/0.5.92
+(Personalisierung mit zwei Konten nach Migration 022) bleiben beim Betreiber.

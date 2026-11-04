@@ -7,7 +7,13 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.92` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.93` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Tests auf heutigem Stand (0.5.93)
+
+Zwei Oberflaechentests kennen jetzt den Tab Personalisierung (0.5.91) und die
+Trennung von Quellenkarussell und Browserfenster (0.5.88). Kein Produktcode
+geaendert.
 
 ## Personalisierung: HTTP-404-Fix (0.5.92)
 

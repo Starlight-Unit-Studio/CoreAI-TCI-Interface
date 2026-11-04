@@ -1,0 +1,5 @@
+CoreAI: TCI Interface 0.5.93 - 04.11.2026
+- settings-tabs-ui-selftest.cjs: Tab Personalisierung zwischen KI-Profil und Wissen (seit 0.5.91), auch in der 11-px-Pruefung.
+- browse-live-ui-selftest.cjs: Bilder des Browserfensters fuellen das Quellenkarussell nie (seit 0.5.88 getrennt).
+- Aktuelle Uebergabe korrigiert (0.5.92 ist gemergt, naechster Schritt TTS).
+- Kein Produktcode geaendert.

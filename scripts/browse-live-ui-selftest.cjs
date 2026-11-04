@@ -183,7 +183,9 @@ advance(60000);
 assert.equal(h.part('browse-think-time').textContent, '1 min 23 s');
 // A fresh picture while thinking does not overwrite her status.
 es.emit('frame', frame(2, {label: 'Mara liest die Seite'}));
-assert(h.calls.research.some(site=>site.url==='https://shop.example/' && site.label==='Aktuelle Seite'),'frame supplies actual current page');
+// 0.5.88: the Playwright window is a different channel from [WEB] search;
+// its pictures never feed the search source carousel.
+assert.equal(h.calls.research.length, 0, 'browser frames stay out of the WEB source carousel');
 advance(300);
 assert.equal(h.part('browse-live-status').textContent, 'Mara überlegt noch, 15 s (2 von 12)');
 
@@ -267,6 +269,9 @@ h = harness();
 sources[0].emit('error', {error: 'forbidden'});
 advance(20000);
 assert.equal(sources.length, 1, 'no reconnect when access is refused');
+
+assert.equal(h.calls.research.length, 0, 'no search carousel at any point of a browser run (0.5.88)');
+assert.equal(h.calls.researchFinished, 0, 'and nothing to finish there');
 
 // --- styles -----------------------------------------------------------------
 assert.match(css, /\.browse-live\.thinking:not\(\.reading\) \.browse-ghost-cursor \{\s*animation: browse-cursor-read/, 'soft motion only without real reading steps');
