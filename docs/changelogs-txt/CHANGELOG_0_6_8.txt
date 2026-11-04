@@ -1,0 +1,7 @@
+CoreAI: TCI Interface 0.6.8 - 04.11.2026
+- Hoertest englische Eve: beide Modelle gleich gut; gewaehlt das Standardmodell (RTF 0,19, 1066 MB).
+- Vorlesen auf Englisch: Sprache je Antwort erkannt, jeder Teil mit der passenden Eve; deutsche Antworten mit englischen Begriffen bleiben deutsch.
+- Register: englische Eve unter languages.en mit Revisionen, SHA-256, Lizenz und Messwerten.
+- Englische Eve laedt nach Bedarf, der Knopf wartet; beide Stimmen bleiben geladen, solange sie zusammen unter 5600 MB passen.
+- Englische Textaufbereitung en-1 und englische Hinweise fuer Code, Tabellen und Links.
+- Tests fuer Erkennung, Laden, Entladen, PHP und Browser. Keine Aenderung an Cores, Modelfile, Datenbank, Installer oder Warteschlange.

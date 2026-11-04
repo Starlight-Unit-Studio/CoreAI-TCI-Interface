@@ -6,7 +6,7 @@
 
 CoreAI combines Ollama-based models with private conversations, browser research, personal knowledge, file tools and an administration interface. Its standard deployment runs an isolated Nginx, PHP-FPM, MariaDB and worker stack on a Linux server. CoreAI is an application, **not a standalone operating system**.
 
-**Current source version: `0.6.7`** | [Changelog](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Documentation policy](docs/VERSIONING_POLICY.md) | [License](LICENSE.md)
+**Current source version: `0.6.8`** | [Changelog](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Documentation policy](docs/VERSIONING_POLICY.md) | [License](LICENSE.md)
 
 > **Development status:** The features below describe the current source code, not guaranteed capabilities of every model or cloud provider. A merged commit does not by itself prove a successful production deployment.
 
@@ -116,7 +116,7 @@ An existing installation's settings are not silently overwritten. `COREUI_FORCE_
 - **Research:** SearXNG-backed web search and a separate Playwright browsing mode. Sources and actual tool activity can be shown in the chat; a search result alone is not proof that its page was read.
 - **Knowledge and tools:** Account-scoped RAG-Lite, memory, skill selection, file uploads and isolated Python tasks with registered outputs. Media handling depends on the selected model and available tools.
 - **Personalization:** Account-specific settings for tone, formatting, emoji density, tool preferences and custom instructions.
-- **Read aloud:** Mara can read answers using **Eve** (German Pocket TTS). Before Eve speaks, numbers, dates, times and time ranges, time zones, version numbers, dotted abbreviations such as E.M.B.E.R. and common English terms are turned into spoken German; code blocks and tables are only named. Answers are read in growing parts so playback continues without long gaps. Automatic read-aloud is optional and disabled by default. CoreAI remains usable if the optional voice service is unavailable.
+- **Read aloud:** Mara can read answers using **Eve** (Pocket TTS) in German and English. The language is detected per answer; the English voice is loaded the first time an English answer is read and stays loaded while both voices fit into the service's memory limit. Before Eve speaks, numbers, dates, times and time ranges, time zones, version numbers, dotted abbreviations such as E.M.B.E.R. and common English terms are turned into spoken German; code blocks and tables are only named. Answers are read in growing parts so playback continues without long gaps. Automatic read-aloud is optional and disabled by default. CoreAI remains usable if the optional voice service is unavailable.
 - **Admin Core:** Account and model management, permissions, diagnostics, audit information, runtime controls and the integrated update interface.
 
 **Not yet a completed feature:** Continuous live voice chat, speech input, selectable English/German interface language and day/night themes are planned and must not be presented as implemented. See the [Roadmap](ROADMAP.md), [Feature matrix](docs/COREUI_FEATURE_MATRIX.md) and [Voice plan](docs/COREUI_VOICE_PLAN.md) for scope and status.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""CoreAI 0.6.1 (0.6.5): Mara's voice service (P20.3) without Pocket and without network.
+"""CoreAI 0.6.1 (0.6.5, English 0.6.8): Mara's voice service (P20.3) without Pocket and without network.
 
 What of an answer is read (code, tables, links, lists, emojis), the German
 text preparation in between, the parts (first one short), and the service
@@ -96,6 +96,24 @@ check(all(p.endswith(',') for p in cut[:-1]) and cut[-1].endswith('.'), 'a cut s
 check(speakable.plan('Ich bin die TCI von E.M.B.E.R. und helfe dir gern bei allem.', textprep.prepare)
       == ['Ich bin die Ti Si Ei von Ember und helfe dir gern bei allem.'], 'E.M.B.E.R. is read as a name, TCI with its I')
 check(speakable.plan('```\nnur code\n```', textprep.prepare) == ['Codeblock ausgelassen.'], 'only code: says so')
+
+# --- 0.6.8: English answers ---------------------------------------------------------------
+textprep_en = load('textprep_en', ROOT / 'tools' / 'voice' / 'textprep_en.py')
+english_answer = ("Hello! I'm Mara, the TCI of E.M.B.E.R. Here is what I found for you:\n\n```python\nprint('x')\n```\n\n"
+                  "| A | B |\n|---|---|\n| 1 | 2 |\n\nThe shop is open 12:00-20:00 CET, e.g. on Monday. See https://example.com/x.")
+check(speakable.detect_language(english_answer) == 'en', 'an English answer is English')
+check(speakable.detect_language('Hallo, ich bin Mara. Hier ist dein Update für den Browser.') == 'de', 'German with English words stays German')
+check(speakable.detect_language('The Update ist fertig und der Browser läuft.') == 'de', 'mixed but mostly German')
+check(speakable.detect_language('OK') == 'de' and speakable.detect_language('OK', 'en') == 'en', 'unclear: the hint decides')
+check(speakable.detect_language('```\nthe and is are you we this that\n```\nDas ist der Code, den du wolltest.') == 'de', 'code is not counted')
+en_parts = speakable.plan(english_answer, textprep_en.prepare, 'en')
+en_text = ' '.join(en_parts)
+check('Code block skipped.' in en_text and 'Table skipped.' in en_text and 'See link.' in en_text and 'Codeblock' not in en_text,
+      'English answers name code, tables and links in English: ' + en_text)
+check('TCI of Ember.' in en_text and '12:00 to 20:00 Central European Time' in en_text and 'for example on Monday' in en_text,
+      'English text preparation: ' + en_text)
+check(textprep_en.prepare('U.S.A. and v1.2 -> done - really.') == 'U S A and v1.2, done, really.', 'dotted letters, arrows and dashes')
+check(textprep_en.VERSION == 'en-1', 'English text preparation en-1')
 check(speakable.plan('   ', textprep.prepare) == [], 'nothing to read')
 
 # --- 0.6.5: no long silence -------------------------------------------------------------------
@@ -128,7 +146,7 @@ with socket.socket() as probe_socket:
     probe_socket.bind(('127.0.0.1', 0))
     port = probe_socket.getsockname()[1]
 env = dict(os.environ, COREAI_VOICE_ENGINE='probe', COREAI_VOICE_PORT=str(port), COREAI_VOICE_PROBE_DELAY='0.6',
-           COREAI_VOICE_QUEUE_WAIT='0.2')
+           COREAI_VOICE_QUEUE_WAIT='0.2', COREAI_VOICE_PROBE_LOAD_EN='0.5')
 service = subprocess.Popen([sys.executable, '-I', str(ROOT / 'tools' / 'voice' / 'voice_service.py')], env=env,
                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
 
@@ -173,11 +191,79 @@ try:
     check(call('POST', '/speak', {'text': ''})[0] == 400 and call('POST', '/speak', {'text': 'x' * 1300})[0] == 400, 'empty or long part refused')
     check(call('POST', '/plan', raw=b'not json')[0] == 400 and call('POST', '/speak', {'nope': 1})[0] == 400, 'bad bodies refused')
     check(call('GET', '/nothing')[0] == 404 and call('POST', '/nothing', {'text': 'x'})[0] == 404, 'unknown paths')
+    # 0.6.8: an English answer is planned in English; English Eve loads on first use, German stays.
+    check(health['languages']['de']['ready'] and not health['languages']['en']['ready'] and not health['languages']['en']['loading'],
+          'at start only German is loaded')
+    status, _, body = call('POST', '/plan', {'text': english_answer})
+    check(status == 200 and json.loads(body) == {'ok': True, 'parts': en_parts, 'language': 'en', 'textprep': 'en-1'}, 'English plan')
+    status, _, body = call('POST', '/plan', {'text': 'OK', 'language': 'en'})
+    check(json.loads(body)['language'] == 'en' and json.loads(call('POST', '/plan', {'text': 'OK'})[2])['language'] == 'de', 'the hint decides when unclear')
+    first = call('POST', '/speak', {'text': 'Hello, I am Mara.', 'language': 'en'})
+    check(first[0] == 503 and json.loads(first[2])['error'] == 'voice_loading', 'English first loads: voice_loading')
+    check(json.loads(call('GET', '/health')[2])['languages']['en']['loading'], 'health shows English loading')
+    for _ in range(40):
+        spoken = urllib.request.urlopen(urllib.request.Request(f'http://127.0.0.1:{port}/speak', method='POST',
+                                        data=json.dumps({'text': 'Hello, I am Mara.', 'language': 'en'}).encode()), timeout=10) \
+            if json.loads(call('GET', '/health')[2])['languages']['en']['ready'] else None
+        if spoken:
+            break
+        time.sleep(0.1)
+    check(spoken is not None and spoken.status == 200 and spoken.headers['X-CoreAI-Voice-Language'] == 'en', 'then English Eve speaks')
+    both = json.loads(call('GET', '/health')[2])['languages']
+    check(both['de']['ready'] and both['en']['ready'], 'both voices stay loaded while they fit')
+    german = urllib.request.urlopen(urllib.request.Request(f'http://127.0.0.1:{port}/speak', method='POST',
+                                    data=json.dumps({'text': 'Hallo.'}).encode()), timeout=10)
+    check(german.headers['X-CoreAI-Voice-Language'] == 'de', 'without a language: German')
+    check(call('POST', '/speak', {'text': 'x', 'language': 'fr'})[0] == 400 and call('POST', '/plan', {'text': 'x', 'language': 7})[0] == 400,
+          'unknown languages refused')
 finally:
     service.terminate()
     output = service.communicate(timeout=10)[0]
 check(f'bereit auf 127.0.0.1:{port}' in output, 'listens on loopback only')
 check('Hallo, ich bin Mara.' not in output and 'Erster Satz' not in output, 'no spoken text in the log')
+
+# --- 0.6.8: when both voices do not fit, the one used longest ago is unloaded --------------------
+with socket.socket() as probe_socket:
+    probe_socket.bind(('127.0.0.1', 0))
+    small_port = probe_socket.getsockname()[1]
+small = subprocess.Popen([sys.executable, '-I', str(ROOT / 'tools' / 'voice' / 'voice_service.py')],
+                         env=dict(os.environ, COREAI_VOICE_ENGINE='probe', COREAI_VOICE_PORT=str(small_port), COREAI_VOICE_MEM_MB='3000',
+                                  COREAI_VOICE_WATCH_S='0'),
+                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+
+
+def small_call(path: str, body: dict | None = None):
+    request = urllib.request.Request(f'http://127.0.0.1:{small_port}{path}', data=json.dumps(body).encode() if body else None,
+                                     method='POST' if body else 'GET')
+    try:
+        with urllib.request.urlopen(request, timeout=10) as response:
+            return response.status, response.read()
+    except urllib.error.HTTPError as error:
+        return error.code, error.read()
+    except (urllib.error.URLError, ConnectionError):
+        return 0, b''
+
+
+def speak_when_ready(language: str) -> int:
+    for _ in range(60):
+        status, _ = small_call('/speak', {'text': 'Hallo.', 'language': language})
+        if status == 200:
+            return 200
+        time.sleep(0.1)
+    return status
+
+
+try:
+    check(speak_when_ready('de') == 200 and speak_when_ready('en') == 200, 'German, then English (loaded on demand)')
+    languages = json.loads(small_call('/health')[1])['languages']
+    check(languages['en']['ready'] and not languages['de']['ready'], 'only one fits (3000 MB): German, used longest ago, was unloaded')
+    check(speak_when_ready('de') == 200, 'German loads again when needed')
+    languages = json.loads(small_call('/health')[1])['languages']
+    check(languages['de']['ready'] and not languages['en']['ready'], 'and English made room')
+finally:
+    small.terminate()
+    small_log = small.communicate(timeout=10)[0]
+check('Sprache de entladen, Platz fuer en' in small_log and 'Sprache en entladen, Platz fuer de' in small_log, 'unloading is logged')
 
 # --- 0.6.5: new code after an update restarts the service ---------------------------------------
 import tempfile

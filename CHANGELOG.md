@@ -1,5 +1,17 @@
 # CoreAI: TCI Interface
 
+## 0.6.8 - 04.11.2026
+
+Hoertest der englischen Eve (Lauf 20261104-215318): Beide Modelle klingen fuer den Betreiber gleich gut, mit perfektem Englisch. Gewaehlt wurde das Standardmodell (RTF 0,19 und 1066 MB statt 0,47 und 3014 MB).
+
+- **Eve liest englische Antworten auf Englisch.** Der Sprachdienst erkennt die Sprache einer Antwort an ihren Woertern (Codebloecke zaehlen nicht mit, im Zweifel Deutsch) und spricht jeden Teil mit der passenden Eve. Deutsche Antworten mit englischen Begriffen bleiben deutsch.
+- **Registriert:** `config/voice/mara-voice.json` fuehrt die englische Eve unter `languages.en` mit Modell (`english`, int8), Stimme, Textaufbereitung `en-1`, den drei Dateien mit Revision, SHA-256, Groesse und Lizenz und den Messwerten. Die deutsche Eve steht unveraendert oben.
+- **Nach Bedarf geladen:** Die englische Eve laedt beim ersten englischen Vorlesen (beim allerersten Mal mit Download von etwa 0,23 GB). Der Lautsprecher-Knopf wartet so lange (bis zu 3 Minuten), statt den Teil zu ueberspringen. Beide Stimmen bleiben geladen, solange ihre gemessenen Werte zusammen unter `COREAI_VOICE_MEM_MB` (5600 MB) liegen; sonst wird die am laengsten nicht genutzte entladen, nie mitten in einer Ansage.
+- **Englische Textaufbereitung `en-1`** (`tools/voice/textprep_en.py`): E.M.B.E.R. wird "Ember", e.g./i.e./etc., Zeit- und Zahlenbereiche ("12:00 to 20:00"), Zeitzonen, Striche und Pfeile als Pause. Zahlen, Datum und Uhrzeit liest das englische Modell selbst. Englische Hinweise: "Code block skipped.", "Table skipped.", "link".
+- Gespeicherte Plaene merken sich ihre Sprache; Plaene von vorher gelten als Deutsch. Die Plan-Kennung folgt auch `textprep_en.py`.
+- Tests: `voice-service-selftest.py` (Erkennung, englischer Plan, Laden nach Bedarf, beide geladen, Entladen bei knappem Speicher), `voice-read-selftest.php` (Sprache im Plan und beim Sprechen, alte Plaene), `voice-read-ui-selftest.cjs` (Warten, solange die Stimme laedt), `tts-spike-selftest.py` (Registereintrag).
+- Keine Aenderung an Cores, Modelfile, Datenbank, Installer oder Warteschlange. Offen: Spracheinstellung im KI-Profil.
+
 ## 0.6.7 - 04.11.2026
 
 Rueckmeldung des Betreibers nach dem Update auf 0.6.5: Mara spricht Denglisch einwandfrei, nur bei "TCI" fehlt das I, es klingt wie "TC".

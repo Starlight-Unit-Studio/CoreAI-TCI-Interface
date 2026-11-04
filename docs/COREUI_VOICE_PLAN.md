@@ -314,6 +314,10 @@ sudo bash /opt/ember-coreui/scripts/tts-spike.sh --skip-build --groups pocket-en
 
 Danach in Admin Core unter Betrieb, Stimmproben anhören. Offen nach dem Hörtest: Wahl des englischen Modells und Registrierung mit SHA-256, englische Textaufbereitung (falls nötig), Laden nach Bedarf im Sprachdienst, Spracheinstellung im KI-Profil.
 
+**Hörtest 04.11.2026 (Lauf 20261104-215318):** Beide englischen Modelle klingen für den Betreiber gleich gut, mit perfektem Englisch auch bei Zahlen, Datum, Uhrzeit und Dateinamen. Standardmodell: RTF 0,19, erster Ton 0,07 s, 1066 MB, Laden 4,4 s. 24 Schichten: RTF 0,47, erster Ton 0,15 s, 3014 MB, Laden 7,3 s. **Gewählt: das Standardmodell.** Mit der deutschen Eve (2503 MB) zusammen etwa 3,6 GB, beide passen ins Limit.
+
+**Stand 0.6.8: englische Eve im Vorlesen.** Registriert in `config/voice/mara-voice.json` unter `languages.en` (Revisionen, SHA-256, Lizenz, Messwerte). Der Sprachdienst erkennt die Sprache einer Antwort an ihren Wörtern (Code zählt nicht mit; im Zweifel Deutsch) und spricht jeden Teil mit der passenden Eve. Die englische Eve lädt beim ersten englischen Vorlesen (beim allerersten Mal mit Download); der Knopf wartet so lange. Beide Stimmen bleiben geladen, solange ihre gemessenen Werte zusammen unter `COREAI_VOICE_MEM_MB` (5600) liegen, sonst wird die am längsten nicht genutzte entladen. Englische Antworten: kleine Textaufbereitung `en-1` (E.M.B.E.R., Abkürzungen, Bereiche, Zeitzonen) und englische Hinweise ("Code block skipped."). **Offen (nächster Schritt):** Spracheinstellung im KI-Profil für Maras Antworten und als Vorgabe beim Vorlesen, wenn die Erkennung unsicher ist.
+
 ### P20.4: Live-Gespräch
 
 - Eigener Gesprächsmodus (Vollbild, auch am Handy): freihändig mit Sprechpausen-Erkennung im Browser oder per Halten-zum-Sprechen.

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.7: Vorlesen sagt TCI mit I (Ti Si Ei); Vorlese-Plaene folgen dem Code der Textaufbereitung; Eve-Pruefungen aktiv.
+# CoreAI: TCI Interface 0.6.8: Vorlesen auf Deutsch und Englisch (Sprache je Antwort, englische Eve nach Bedarf); Eve-Pruefungen aktiv.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -149,6 +149,7 @@ UI_FILES=(
   js/coreui-voice-read.js
   tools/voice/voice_service.py
   tools/voice/speakable.py
+  tools/voice/textprep_en.py
   docker/voice/Dockerfile
   database/migrations/023_voice_settings.sql
   scripts/voice-service-selftest.py
