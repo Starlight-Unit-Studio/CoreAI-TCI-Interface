@@ -1,0 +1,8 @@
+CoreAI: TCI Interface 0.6.2 - 04.11.2026
+- README auf kompakte aktuelle Projekt-, Installations- und Betriebsanleitung zurueckgefuehrt.
+- CPU-only-Root-Server als Standard; optionale GPU-/VRAM-High-Performance separat. Hardwareprofile fuer E2B, E4B und groessere Cores als unverbindliche Richtwerte.
+- netcup Root-Server RS1000/2000/4000/8000 G12 als preisorientierte Hardwarebeispiele, nicht als Pflichtplattform oder belegter billigster Anbieter.
+- Kanonischen Setup-One-Liner am Anfang der README wieder sichtbar gemacht; bestehendes setup.sh nicht geaendert.
+- AGENTS.md, CLAUDE.md und VERSIONING_POLICY: README ist kein Changelog.
+- Versions-Guard ergaenzt; aktive Versionsanzeigen, Bootstrap, Branding-Test und Preflight-Header auf 0.6.2 angeglichen.
+- Keine Runtime-, Datenbank-, Modelfile- oder Installer-Aenderungen. Server- und Hardware-Live-Abnahme separat.

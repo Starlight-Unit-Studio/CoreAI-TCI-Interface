@@ -45,6 +45,28 @@ def validate(root: Path, base: str) -> str:
         source = (root / path).read_text(encoding="utf-8")
         if version not in source and slug not in source:
             raise ValueError(f"Current version {version} missing in {path}")
+    # Documentation contract: README is a stable guide, not a release diary.
+    readme = (root / "README.md").read_text(encoding="utf-8")
+    if len(readme.encode("utf-8")) > 24_000:
+        raise ValueError("README.md exceeds 24 KB; move release notes to CHANGELOG.md")
+    setup_url = (
+        "https://raw.githubusercontent.com/"
+        "Starlight-Unit-Studio/CoreAI-TCI-Interface/main/setup.sh"
+    )
+    if setup_url not in readme or "Starlight-Unit-Studio/coreui/main/setup.sh" in readme:
+        raise ValueError("README.md must contain the official current installation one-liner")
+    if "[CHANGELOG.md](CHANGELOG.md)" not in readme:
+        raise ValueError("README.md must link CHANGELOG.md")
+    if not re.search(r"(?m)^## Schnellstart:", readme):
+        raise ValueError("README.md must display an installation section near the top")
+    version_heading = re.compile(
+        r"^#{2,4}\s+(?:v?\d+\.\d+\.\d+\b|.*\(\d+\.\d+\.\d+\)|"
+        r"changelog\b|release notes\b|versionshistorie\b)",
+        re.IGNORECASE | re.MULTILINE,
+    )
+    if version_heading.search(readme):
+        raise ValueError("README.md contains per-version changelog sections")
+
     # The changelog must have a dedicated heading, not just a stray reference.
     changelog = (root / "CHANGELOG.md").read_text(encoding="utf-8")
     if f"## {version} " not in changelog:

@@ -1,5 +1,15 @@
 # CoreAI: TCI Interface
 
+## 0.6.2 - 04.11.2026
+
+- **README repariert:** Die Projekt-README beschreibt wieder Produkt, aktuellen Funktionsumfang, Installation, Betrieb, Lizenz und Diagnose statt einer zweiten Versionschronik.
+- **CPU-only-Hardwareprofile:** Richtwerte fuer den Einstieg mit E2B, E4B und groessere Cores, Modell-/Kontext-RAM getrennt vom Serverbedarf. Ein GPU-loser Root-Server ist die Referenzplattform. Optionale GPU-/VRAM-Beschleunigung getrennt beschrieben.
+- **Preisorientierte Beispiele:** netcup Root-Server RS 1000 bis RS 8000 G12 als unverbindliche Hardwarebeispiele. Keine Aussage, netcup sei nachweislich immer der guenstigste deutsche Anbieter.
+- **Setup-One-Liner:** Direkt beim Schnellstart und unter der kanonischen URL `Starlight-Unit-Studio/CoreAI-TCI-Interface/main/setup.sh`. Eine fruehere GitHub-Weiterleitung vom historischen `coreui`-Pfad konnte weiterhin funktionieren; der eigentliche Installer wurde nicht geaendert.
+- **Regeln fuer Coding-Assistenten:** Neue `AGENTS.md` und `CLAUDE.md` sowie Dokumentationsrichtlinie in `docs/VERSIONING_POLICY.md` verbieten Release-Notizen in der README; die Versionshistorie gehoert nach `CHANGELOG.md` und `docs/changelogs-txt/`.
+- **Versions-Guard:** `scripts/version-merge-check.py` prueft README-Laenge, kanonischen Installationslink, Changelog-Verweis und unerwuenschte Versionsabschnitte. Aktive Versionsanzeigen, JS-Bootstrap, Branding-Test, Preflights und TXT-Archiv auf 0.6.2 aktualisiert.
+- **Kein Eingriff in die Runtime:** Keine Aenderungen an Cores, Modelfile, Datenbank, SQL-Migrationen, Ollama-Konfiguration oder Installer. Hardwareempfehlungen sind nicht als gemessene Netcup-Benchmarks zu verstehen; Live-Abnahme steht aus.
+
 ## 0.6.1 - 04.11.2026
 
 - **Mara liest vor (P20.3):** Lautsprecher-Knopf unter jeder Mara-Antwort. Eve (Pocket TTS Deutsch, 24 Schichten, int8) liest Satz fuer Satz: Der erste Teil ist kurz, damit sie schnell anfaengt, der naechste laedt waehrend der Wiedergabe, ein zweiter Klick stoppt. Beim Neuzeichnen des Chats behaelt der Knopf seinen Zustand.

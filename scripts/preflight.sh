@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.1 read aloud: Mara speaks her answers with Eve (voice service, speaker button, auto-read switch).
+# CoreAI: TCI Interface 0.6.2 docs/hardware update; existing 0.6.1 Eve checks remain active.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

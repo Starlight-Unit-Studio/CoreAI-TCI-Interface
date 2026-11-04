@@ -1,6 +1,6 @@
 # Verbindliche Versionierung von CoreAI: TCI Interface
 
-Stand: 26.10.2026
+Stand: 04.11.2026
 
 ## Unveraenderliche Regeln
 
@@ -25,6 +25,15 @@ Stand: 26.10.2026
    werden, solange das passende Paket nicht geprueft vorhanden ist.
 6. Der eine bestehende One-Liner und Live-Tests am Server bleiben der
    Standard. Keine GitHub Actions zum Erfuellen dieser Versionierungsregel.
+
+## Dokumentationsrollen: README ist kein Changelog (seit 04.11.2026)
+
+- `README.md` ist die **aktuelle Produkt- und Installationsanleitung**, kein Changelog. Die Datei enthaelt Produktzweck, nachvollziehbare Hardware-Richtwerte, aktuelle Funktionen, den offiziellen One-Liner, Updates, Diagnose, Lizenz und weiterfuehrende Links.
+- Bei Funktionsaenderungen die betroffene Aussage im vorhandenen README-Abschnitt aktualisieren. **Keine neue versionierte Ueberschrift und keine chronologischen Release-/Bugfix-Notizen** anhaengen.
+- `CHANGELOG.md` ist die kanonische Versionshistorie. Je Merge zusaetzlich `docs/changelogs-txt/CHANGELOG_X_Y_Z.txt` und den INDEX pflegen. Historische Eintraege werden nicht nach README kopiert.
+- Geplante oder nicht verifizierte Funktionen und Hardwarewerte klar als Planung bzw. Richtwerte kennzeichnen, niemals als durchgefuehrte Live-Abnahme ausgeben.
+- `AGENTS.md` und `CLAUDE.md` enthalten diese Repo-Regeln fuer Coding-Assistenten. `scripts/version-merge-check.py` prueft die Dokumentationsstruktur vor dem Merge.
+- Der kanonische README-One-Liner laedt `https://raw.githubusercontent.com/Starlight-Unit-Studio/CoreAI-TCI-Interface/main/setup.sh`. Alte Repository-Weiterleitungen sind kein Grund, den offiziellen Pfad falsch zu dokumentieren.
 
 ## Verpflichtender Check VOR jedem Merge
 
