@@ -1,0 +1,22 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.6.2
+Stand: 04.11.2026
+Ausgangsbasis: main 0.6.1 nach Merge von PR #152.
+
+AUFTRAG:
+README.md war zur zweiten Changelog-Sammlung gewachsen. Der offizielle Installations-One-Liner war schwer zu finden und verwendete den historischen GitHub-Repo-Pfad.
+
+UMSETZUNG:
+- README.md als aktuelle Produkt-, Installations-, Hardware-, Betriebs- und Lizenzanleitung neu strukturiert.
+- Kanonischer One-Liner laedt CoreAI-TCI-Interface/main/setup.sh. Historischer URL-Pfad war nicht als defekt nachgewiesen, weil GitHub umleiten kann.
+- Hardware: CPU-only-Linux-Root-Server ohne GPU als Referenz; CPU/RAM/SSD-Richtwerte fuer E2B, E4B, 12B, 26B und 31B. GPU-/VRAM-Server nur optionale Beschleunigung. netcup G12 Root-Server als preisorientierte Beispiele, keine pauschale Billigstgarantie.
+- AGENTS.md und CLAUDE.md definieren die Repo-Regel: README ist kein Changelog. Historie in CHANGELOG.md und docs/changelogs-txt/.
+- docs/VERSIONING_POLICY.md ergaenzt; scripts/version-merge-check.py kontrolliert README-Laenge, offiziellen Installer-Link, Changelog-Link und fehlende Versionschronik.
+- VERSION, HTML-Anzeigen, js/console-gate.js, Branding-Test, Preflight-Header, Changelog und TXT-Index auf 0.6.2 angehoben.
+
+UNVERAENDERT:
+- Runtime, API-Logik, Installer, Compose, Datenbank/Migrationen, Modelfile, Ollama.
+- Historische Versionsaufzeichnungen im CHANGELOG.
+
+ABNAHME:
+- Offline-Versionierungscheck und Dokumentationsstruktur vor Merge verifizieren.
+- Keine GitHub Actions erforderlich. Kein Netcup-Live-Deployment oder Hardwarebenchmark durch diese Dokumentationsarbeit belegt.
