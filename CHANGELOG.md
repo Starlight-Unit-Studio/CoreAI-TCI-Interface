@@ -3,8 +3,9 @@
 ## 0.5.99 - 04.11.2026
 
 - **Token nie in der Befehlszeile:** Auf dem Server wurde der Token direkt an die Option gehaengt (`--hf-hf_...`). Das Skript kannte die Option nicht und gab sie samt Token in der Fehlermeldung wieder aus. Jetzt wird jedes Argument mit `hf_` abgelehnt, ohne den Token auszugeben, mit dem richtigen Befehl und dem Hinweis, den Token neu anzulegen (er steht dann in der Shell-Historie).
-- Tests: `tts-spike-selftest.py` prueft vier Schreibweisen (an der Option, nach `--hf-token`, allein, mit `=`): immer abgelehnt, Token nie in der Ausgabe.
-- Keine Aenderung an der Messung, an Cores, Modelfile, Datenbank oder Warteschlange.
+- Tests: `tts-spike-selftest.py` prueft vier Schreibweisen (an der Option, nach `--hf-token`, allein, mit `=`): immer abgelehnt, Token nie in der Ausgabe. Dazu die Eve-Gruppen (Eve allein, int8 nur dort, wo die Gruppe es verlangt).
+- **Maras Stimme gewaehlt: Eve (Pocket TTS Deutsch, 24 Schichten).** Die Aussprache ist mit der Textaufbereitung gut. Eve ist mit 4 Kernen aber knapp zu langsam (Echtzeitfaktor 1,23). Zwei neue Gruppen messen Eve allein mit 4, 6 und 8 Kernen, einmal normal und einmal mit Pockets int8-Beschleunigung (`quantize: true` in `voices.json`, nur der Transformer). Eve braucht keinen Token (vordefinierter Stimmzustand, CC BY 4.0).
+- Keine Aenderung an Cores, Modelfile, Datenbank oder Warteschlange.
 
 ## 0.5.98 - 04.11.2026
 

@@ -239,6 +239,14 @@ Offen:
 - **Kein Token für Nutzer und andere Installationen:** Der Klon erzeugt einmal eine kleine **Stimmdatei** (`export_model_state`, wenige MB). Sie funktioniert mit den frei ladbaren Pocket-Gewichten ohne Token und ohne Konto, so wie Kyutai seine eigenen Stimmen verteilt. Der Test beweist das mit den Gruppen `pocket-de-stimmdatei` und `pocket-de24-stimmdatei`: Kerstins Stimmdatei spricht dieselben Sätze mit den freien Gewichten, gemessen ohne Netz. Später wird die gewählte Stimmdatei mit Herkunft, SHA-256 und Lizenz registriert und bei der Installation geladen.
 - **Bedingungen von Kyutai (gelesen am 04.11.2026):** Lizenz CC BY 4.0. Verboten sind unter anderem Klonen ohne ausdrückliche Einwilligung, Täuschung (Erzeugtes als echte Aufnahme echter Menschen ausgeben) und rechtswidrige oder schädliche Inhalte. Kerstin ist ein CC0-Datensatz, eigens für Sprachsynthese aufgenommen; Mara tritt offen als KI-Stimme auf. Eine Weitergabe der Stimmdatei verbieten die Bedingungen nicht, die Namensnennung (Kyutai, Datensatz Kerstin) gehört dazu.
 
+**Wahl des Betreibers (04.11.2026, Lauf mit Textaufbereitung):** Die Aussprache ist mit der Textaufbereitung "super". Die beste und passendste Stimme ist **Eve mit Pocket TTS Deutsch, 24 Schichten** (VCTK p361, CC BY 4.0, vordefinierter Stimmzustand, also ohne Token für alle Installationen). Gemessen: Echtzeitfaktor 1,23 mit 4 Kernen, erster Ton 0,50 s, 2,3 GB RAM, Laden 5,3 s. Über 1 würde die Wiedergabe stocken; deshalb misst 0.5.99 Eve allein mit 4, 6 und 8 Kernen, jeweils normal und mit Pockets int8-Beschleunigung (`quantize`, nur die Rechenwerke des Transformers, laut Kyutai etwa 27 Prozent schneller ohne messbaren Qualitätsverlust):
+
+```
+sudo bash /opt/ember-coreui/scripts/tts-spike.sh --skip-build --groups pocket-de24-eve,pocket-de24-eve-int8 --cores 4,6,8
+```
+
+Ziel: Echtzeitfaktor unter 0,8 mit möglichst wenigen Kernen, damit genug Puffer bleibt, wenn Core parallel rechnet. Ob int8 hörbar anders klingt, entscheidet der Betreiber an den Proben mit 4 Kernen.
+
 Nächster Lauf (ohne Chatterbox):
 
 ```

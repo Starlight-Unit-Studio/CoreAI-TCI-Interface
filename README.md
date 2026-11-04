@@ -16,6 +16,14 @@ Ein Token, der in den Befehl geschrieben wird (etwa `--hf-hf_...` oder
 sagt, wie es richtig geht. Der Token gehoert nur in die verdeckte Abfrage von
 `sudo bash /opt/ember-coreui/scripts/tts-spike.sh --hf-token`.
 
+Maras Stimme ist gewaehlt: **Eve** (Pocket TTS Deutsch, 24 Schichten). Weil
+sie mit 4 Kernen knapp langsamer als Echtzeit ist, misst der naechste Lauf Eve
+allein mit 4, 6 und 8 Kernen, normal und mit int8-Beschleunigung:
+
+```
+sudo bash /opt/ember-coreui/scripts/tts-spike.sh --skip-build --groups pocket-de24-eve,pocket-de24-eve-int8 --cores 4,6,8
+```
+
 ## Stimmtest gemessen, Textaufbereitung und Kerstin-Klon (0.5.98)
 
 Alle 18 Stimmen haben auf dem Server gesprochen; das Messprotokoll steht im

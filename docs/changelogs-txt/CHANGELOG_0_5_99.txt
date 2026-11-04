@@ -1,3 +1,4 @@
 CoreAI: TCI Interface 0.5.99 - 04.11.2026
 - Stimmtest: ein Token in der Befehlszeile wird abgelehnt und nie ausgegeben; Hinweis auf --hf-token und neuen Token.
 - Selbsttest prueft vier Schreibweisen.
+- Maras Stimme gewaehlt: Eve (Pocket 24 Schichten). Neue Gruppen messen Eve allein mit 4, 6, 8 Kernen, normal und int8.

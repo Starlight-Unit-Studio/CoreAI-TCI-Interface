@@ -158,6 +158,17 @@
       "language": "german_24l",
       "voice_file_from": "pocket-de24-kerstin"
     },
+    "pocket-de24-eve": {
+      "engine": "pocket",
+      "label": "Pocket TTS Deutsch (24 Schichten), nur Eve",
+      "language": "german_24l"
+    },
+    "pocket-de24-eve-int8": {
+      "engine": "pocket",
+      "label": "Pocket TTS Deutsch (24 Schichten), nur Eve, int8",
+      "language": "german_24l",
+      "quantize": true
+    },
     "chatterbox": {
       "engine": "chatterbox",
       "label": "Chatterbox Multilingual",
@@ -409,6 +420,30 @@
       "weights_license": "CC BY 4.0 (Kyutai, Namensnennung; freie Gewichte, kein Token)",
       "origin": "Stimmdatei aus dem Kerstin-Klon (export_model_state), gesprochen mit kyutai/pocket-tts-without-voice-cloning",
       "note": "So bekäme jede Installation Maras Stimme: freie Gewichte plus Stimmdatei, ohne Token und ohne Konto."
+    },
+    {
+      "id": "pocket-de24-eve-solo",
+      "group": "pocket-de24-eve",
+      "voice": "eve",
+      "label": "Eve",
+      "gender": "weiblich",
+      "status": "frei",
+      "voice_license": "CC BY 4.0 (VCTK p361, Namensnennung)",
+      "weights_license": "CC BY 4.0 (Kyutai, Namensnennung)",
+      "origin": "kyutai/tts-voices vctk/p361, Stimmzustand aus kyutai/pocket-tts-without-voice-cloning",
+      "note": "Wahl des Betreibers (04.11.2026). Gemessen mit 4, 6 und 8 Kernen."
+    },
+    {
+      "id": "pocket-de24-eve-int8",
+      "group": "pocket-de24-eve-int8",
+      "voice": "eve",
+      "label": "Eve (int8)",
+      "gender": "weiblich",
+      "status": "frei",
+      "voice_license": "CC BY 4.0 (VCTK p361, Namensnennung)",
+      "weights_license": "CC BY 4.0 (Kyutai, Namensnennung)",
+      "origin": "kyutai/tts-voices vctk/p361, Stimmzustand aus kyutai/pocket-tts-without-voice-cloning",
+      "note": "Wahl des Betreibers, mit Pockets int8-Beschleunigung. Gemessen mit 4, 6 und 8 Kernen."
     },
     {
       "id": "chatterbox-kerstin",

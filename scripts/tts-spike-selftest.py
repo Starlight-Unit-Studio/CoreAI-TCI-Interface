@@ -48,7 +48,17 @@ check(set(reg['engines']) == {'piper', 'pocket', 'chatterbox'}, 'three engines')
 check(reg['engines']['piper']['package'] == 'piper-tts==1.8.0' and reg['engines']['piper']['code_license'] == 'GPL-3.0-or-later', 'Piper pinned, GPL named')
 check(reg['engines']['pocket']['package'] == 'pocket-tts==4.0.1' and reg['engines']['chatterbox']['package'] == 'chatterbox-tts==0.1.7', 'engines pinned')
 ids = [v['id'] for v in reg['voices']]
-check(len(ids) == len(set(ids)) == 22, '22 voices, each once')
+check(len(ids) == len(set(ids)) == 24, '24 voices, each once')
+# 0.5.99: the operator chose Eve (24 layers); she is measured alone with and without int8, at 4, 6 and 8 cores.
+check(reg['groups']['pocket-de24-eve'] == {'engine': 'pocket', 'label': reg['groups']['pocket-de24-eve']['label'], 'language': 'german_24l'}
+      and reg['groups']['pocket-de24-eve-int8'].get('quantize') is True and reg['groups']['pocket-de24-eve-int8']['language'] == 'german_24l',
+      'Eve groups')
+for vid, gid in (('pocket-de24-eve-solo', 'pocket-de24-eve'), ('pocket-de24-eve-int8', 'pocket-de24-eve-int8')):
+    voice = next(v for v in reg['voices'] if v['id'] == vid)
+    check(voice['group'] == gid and voice['voice'] == 'eve' and voice['status'] == 'frei' and 'p361' in voice['voice_license'], 'Eve voice ' + vid)
+    check([v['id'] for v in reg['voices'] if v['group'] == gid] == [vid], gid + ' has Eve alone')
+check("TTSModel.load_model(language=group['language'], quantize=bool(group.get('quantize')))"
+      in (ROOT / 'tools' / 'tts_spike' / 'run.py').read_text(encoding='utf-8'), 'int8 only where the group asks for it')
 for voice in reg['voices']:
     check(re.match(r'^[a-z0-9][a-z0-9_-]{0,60}$', voice['id']) is not None, 'voice id ' + voice['id'])
     check(voice['group'] in reg['groups'], 'voice group ' + voice['id'])
@@ -163,7 +173,7 @@ builds = [l for l in lines if l.startswith('+ docker build')]
 check(len(builds) == 3, 'one image per engine')
 runs = [l for l in lines if 'run.py run ' in l]
 fetches = [l for l in lines if 'run.py fetch ' in l]
-check(len(fetches) == 7 and len(runs) == 22, 'seven groups fetched (clones wait for the token, voice files for the clones), eleven measured')
+check(len(fetches) == 9 and len(runs) == 26, 'nine groups fetched (clones wait for the token, voice files for the clones), thirteen measured')
 check(dry.stdout.count('wartet auf die Stimmdatei') == 2, 'voice file groups wait for their clone')
 check(dry.stdout.count('braucht die Klon-Gewichte von Kyutai') == 2 and 'tts-spike.sh --hf-token' in dry.stdout, 'how to unlock the clone')
 for line in runs:
@@ -178,19 +188,19 @@ check(any('run.py report' in l for l in lines), 'report at the end')
 (sandbox / 'models').mkdir(parents=True)
 (sandbox / 'models' / 'lock-pocket-de.json').write_text('{}', encoding='utf-8')
 kept = [l for l in dry_run().stdout.splitlines() if 'run.py fetch ' in l]
-check(len(kept) == 6 and not any('--group pocket-de ' in l for l in kept), 'registered weights are kept')
-check(len([l for l in dry_run('--refetch').stdout.splitlines() if 'run.py fetch ' in l]) == 7, '--refetch loads them again')
+check(len(kept) == 8 and not any('--group pocket-de ' in l for l in kept), 'registered weights are kept')
+check(len([l for l in dry_run('--refetch').stdout.splitlines() if 'run.py fetch ' in l]) == 9, '--refetch loads them again')
 # 0.5.98: the token, typed in hidden and stored for root only, reaches only the clone fetches, by name.
 token = 'hf_' + 'Ab1' * 10
 (sandbox / 'hf_token').write_text(token + '\n', encoding='utf-8')
 unlocked = dry_run('--refetch')
 clone_fetches = [l for l in unlocked.stdout.splitlines() if 'run.py fetch ' in l]
-check(len(clone_fetches) == 9, 'with the token the clones are fetched too')
+check(len(clone_fetches) == 11, 'with the token the clones are fetched too')
 for clone_group in ('pocket-de-kerstin', 'pocket-de24-kerstin'):
     (sandbox / 'models' / f'lock-{clone_group}.json').write_text('{}', encoding='utf-8')
 unlocked = dry_run('--refetch')
 clone_fetches = [l for l in unlocked.stdout.splitlines() if 'run.py fetch ' in l]
-check(len(clone_fetches) == 11, 'with the clones loaded, the voice file groups are fetched too')
+check(len(clone_fetches) == 13, 'with the clones loaded, the voice file groups are fetched too')
 for line in clone_fetches:
     check(('-e HF_TOKEN ' in line) == bool(re.search(r'--group pocket-de(24)?-kerstin ', line)), 'token only for the clone fetches: ' + line[-60:])
 check(any('--group pocket-de-stimmdatei ' in l and '-e HF_TOKEN' not in l for l in clone_fetches), 'the voice file path never sees the token')
