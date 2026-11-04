@@ -1,0 +1,33 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.5.94
+Stand: 04.11.2026
+Branch: claude/bold-galileo-myoyi0 (neu auf main 0.5.93, PR #145 gemergt)
+
+AUFTRAG: Audio, zuerst die TTS-Kandidaten fuer Maras eigene Stimme (P20.0 Rest).
+Betreiberentscheidungen: Referenz fuer einen Klon nur eine freie Datensatz-Stimme mit Einwilligung (Kerstin, CC0);
+Hoerproben in Admin Core unter Betrieb, nur fuer den Inhaber.
+
+NEU:
+- tools/tts_spike/voices.json: Saetze, Engines, Gruppen und 18 Stimmen mit Herkunft und Lizenz (Stimme, Gewichte,
+  Engine), Status frei/pruefen. Ausgeschlossen: Expresso und EARS (CC BY-NC), juergen (unklare Herkunft).
+- tools/tts_spike/run.py: fetch (mit Netz, Lock mit Revision und SHA-256), run (ohne Netz, prueft jede Datei,
+  misst load_s, warmup_s, Peak-RSS, je Probe synth_s, audio_s, RTF, first_audio_s, schreibt WAV), report (nur
+  Standardbibliothek, report.json und report.md). Engines: probe (nur Selbsttest), piper (ONNX mit festen Threads),
+  pocket (vordefinierte Stimmzustaende, Klon-Gewichte duerfen nicht laden), chatterbox (from_local, chinesische
+  Hilfsdaten abgeschaltet, Referenz 10 s aus verified/*.flac des Kerstin-Datensatzes).
+- docker/tts-spike/Dockerfile mit Zielen piper/pocket/chatterbox, constraints-*.txt (mit uv fuer Python 3.11
+  aufgeloest, ohne CUDA-Pakete), torch 2.6.0 vom CPU-Index.
+- scripts/tts-spike.sh: baut die Container, laedt Gewichte (nur wenn kein Lock, sonst --refetch), misst mit
+  --network none, --cpuset-cpus (die letzten N Kerne), --memory 24g, --read-only, --cap-drop ALL; Proben root:33
+  0640 unter var/tts-spike/runs/ZEITSTEMPEL, die letzten 5 Laeufe bleiben.
+- api/tts_spike_store.php und admin.php tts_runs/tts_sample (GET, nur Inhaber).
+- settings.html Karte #ttsSamplesCard unter Betrieb, js/coreui-voice-samples.js, Stile in css/settings.css.
+
+GEPRUEFT HIER: die drei neuen Tests, Probelauf des Skripts; Abhaengigkeiten aller drei Images fuer Python 3.11
+aufgeloest (nur fertige Pakete). Piper-API gegen das echte Paket 1.8.0 geprueft. NICHT moeglich hier: echter
+Lauf der Engines (huggingface.co und download.pytorch.org gesperrt).
+
+NAECHSTER SCHRITT: nach Merge und Update auf dem Server
+  sudo bash /opt/ember-coreui/scripts/tts-spike.sh
+dann in Admin Core > Betrieb > Stimmproben hoeren und Maras Stimme waehlen; report.md fuer das Messprotokoll im
+Sprachplan schicken. Danach P20.1 (Spracheingabe), P20.3 (Vorlesen) mit der gewaehlten Stimme.
+Schlaegt eine Gruppe fehl, steht der Grund im Bericht und auf der Karte; die anderen Gruppen laufen weiter.

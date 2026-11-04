@@ -1,9 +1,10 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
 Stand: 04.11.2026
-Repository-Version: 0.5.93
-BASIS: main 0.5.92, PR #144 gemergt.
+Repository-Version: 0.5.94
+BASIS: main 0.5.93, PR #145 gemergt.
 NEUE ARBEIT ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_5_94.txt
   docs/UEBERGABEPROTOKOLL_0_5_93.txt
   docs/UEBERGABEPROTOKOLL_0_5_92.txt
   docs/UEBERGABEPROTOKOLL_0_5_91.txt
@@ -138,8 +139,12 @@ Update-Fenster fuer den Inhaber (Host-Dienst coreai-update per systemd, Datenban
 0.5.86 (PR #137). 0.5.87 Python-Uploads und Recherche-UI (PR #138), 0.5.88 Quellenkarussell getrennt vom
 Browserfenster, Code eingeklappt (PR #139), 0.5.89 Verlauf atomar statt Flackern (PR #140/#141), 0.5.90 Sitzungs-Test
 (PR #142), 0.5.91 Personalisierung mit Migration 022 (PR #143), 0.5.92 nginx-Route Personalisierung (PR #144).
-0.5.93: zwei veraltete Oberflaechentests nachgezogen, keine Produktaenderung.
-NAECHSTER SCHRITT: Audio (TTS-Kandidaten fuer Maras Stimme), dann P20.1 Spracheingabe.
+0.5.93: zwei veraltete Oberflaechentests nachgezogen, keine Produktaenderung (PR #145).
+0.5.94: Stimmtest scripts/tts-spike.sh (Piper, Pocket TTS, Chatterbox mit Kerstin-Klon aus CC0-Datensatz), je Engine
+ein Container, Gewichte mit SHA-256 registriert, Messen ohne Netz mit Kernlimit; Hoerproben unter Admin Core > Betrieb
+> Stimmproben (nur Inhaber).
+NAECHSTER SCHRITT: nach dem Update sudo bash /opt/ember-coreui/scripts/tts-spike.sh, anhoeren, Maras Stimme waehlen,
+report.md ins Messprotokoll; dann P20.1 Spracheingabe.
 Mara/Ember, Ollama-Modelfile, serielle Queue und private Projekt-
 plaene NICHT ungefragt veraendern.
 Externe STU-Homepage wird in einem ANDEREN Chat bearbeitet.

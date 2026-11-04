@@ -10,6 +10,7 @@ require_once __DIR__ . '/profile_store.php';
 require_once __DIR__ . '/model_access.php';
 require_once __DIR__ . '/account_delete.php';
 require_once __DIR__ . '/account_admin.php';
+require_once __DIR__ . '/tts_spike_store.php';
 
 $pdo = stu_pdo();
 $actorId = stu_require_user_id();
@@ -162,6 +163,33 @@ if ($method === 'GET') {
     sort($external, SORT_NATURAL | SORT_FLAG_CASE);
     stu_json(['ok' => true, 'models' => $external, 'grants' => (object)$grants, 'ollama' => $ollama,
       'ready' => coreui_model_access_ready($pdo)]);
+  }
+
+  // 0.5.94: voice test results (P20.0), Inhaber only. The runs come from
+  // scripts/tts-spike.sh; a sample is served only when its run lists it.
+  if ($action === 'tts_runs') {
+    if ($actorLevel !== 0) stu_json(['ok' => false, 'error' => 'owner_only'], 403);
+    $root = coreui_tts_spike_root();
+    $runs = coreui_tts_spike_runs($root);
+    $asked = (string)($_GET['run'] ?? '');
+    $stamp = $asked !== '' ? $asked : ($runs[0]['stamp'] ?? '');
+    $report = $stamp !== '' ? coreui_tts_spike_report($root, $stamp) : null;
+    if ($asked !== '' && $report === null) stu_json(['ok' => false, 'error' => 'run_not_found'], 404);
+    stu_json(['ok' => true, 'runs' => $runs, 'run' => $report === null ? null : coreui_tts_spike_public($report)]);
+  }
+
+  if ($action === 'tts_sample') {
+    if ($actorLevel !== 0) stu_json(['ok' => false, 'error' => 'owner_only'], 403);
+    $path = coreui_tts_spike_sample_path(coreui_tts_spike_root(), (string)($_GET['run'] ?? ''), (string)($_GET['file'] ?? ''));
+    if ($path === null) stu_json(['ok' => false, 'error' => 'sample_not_found'], 404);
+    while (ob_get_level() > 0) { @ob_end_clean(); }
+    header('Content-Type: audio/wav');
+    header('Content-Length: ' . (string)filesize($path));
+    header('Content-Disposition: inline; filename="' . basename($path) . '"');
+    header('X-Content-Type-Options: nosniff');
+    header('Cache-Control: private, max-age=3600');
+    readfile($path);
+    exit;
   }
 
   if ($action === 'memories') {

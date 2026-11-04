@@ -1,6 +1,6 @@
 # Mara hört und spricht: Sprachplan (Planungsstand 28.10.2026)
 
-**Status: geplant und noch nicht implementiert. Das Hören über Ollama ist auf dem echten Server gemessen (P20.0, vier Läufe am 28.10.2026, siehe [Messprotokoll](#messprotokoll-p200-28102026)); der Weg der Mitschrift ist entschieden, die Stimme (TTS) ist noch nicht gemessen.** Dieser Plan beschreibt die Spracheingabe, das Hören von Videos, die Sprachausgabe und das Live-Gespräch in CoreAI: TCI Interface. Er ergänzt den [Bild-Technikplan](COREUI_IMAGE_ENGINE_PLAN.md) und bildet zusammen mit ihm das Paket P20 der [Roadmap](../ROADMAP.md) (Matrix `CF-057`, `CF-058`, `CF-059`).
+**Status: geplant und noch nicht implementiert. Das Hören über Ollama ist auf dem echten Server gemessen (P20.0, vier Läufe am 28.10.2026, siehe [Messprotokoll](#messprotokoll-p200-28102026)); der Weg der Mitschrift ist entschieden. Für die Stimme (TTS) steht seit 0.5.94 der Stimmtest bereit (siehe [Stimmtest](#stimmtest-ab-0594)); gemessen ist sie noch nicht.** Dieser Plan beschreibt die Spracheingabe, das Hören von Videos, die Sprachausgabe und das Live-Gespräch in CoreAI: TCI Interface. Er ergänzt den [Bild-Technikplan](COREUI_IMAGE_ENGINE_PLAN.md) und bildet zusammen mit ihm das Paket P20 der [Roadmap](../ROADMAP.md) (Matrix `CF-057`, `CF-058`, `CF-059`).
 
 ## Entscheidungen des Betreibers (28.10.2026)
 
@@ -167,6 +167,34 @@ bash /opt/ember-coreui/scripts/media-spike.sh --audio DATEI --skip-formats --dur
 - **Mitschrift:** immer über Googles Vorlage mit neutralem SYSTEM-Text, ohne Denken und parameterfrei (`coreui_voice_transcribe_prompt`, `coreui_voice_transcribe_system`). Sie erreicht 10 von 10 ohne `temperature 0`; Stille davor bringt nichts. `temperature 0` bleibt eine reine Testvariante.
 - **Sprachnachricht im Chat (P20.1):** zweistufig. Erst die Mitschrift, die als Nachricht des Nutzers im Chat steht, dann antwortet Mara auf den Text wie auf jede andere Nachricht, mit dem Denkschalter des Kontos.
 - **Live-Gespräch (P20.4):** einstufig für die schnellste Antwort (Audio direkt an Mara, ohne Denken), die Mitschrift für den Verlauf entsteht danach im Hintergrund.
+
+### Stimmtest (ab 0.5.94)
+
+**Entscheidungen des Betreibers (04.11.2026):** Wird eine Stimme geklont, dann nur aus einer freien Datensatz-Stimme mit Einwilligung (Kerstin, CC0, eigens für Sprachsynthese aufgenommen). Die Hörproben stehen in Admin Core unter Betrieb, nur für den Inhaber.
+
+```
+sudo bash /opt/ember-coreui/scripts/tts-spike.sh
+```
+
+Kandidaten (`tools/tts_spike/voices.json`, jede Stimme mit Herkunft und Lizenz):
+
+| Engine | Stimmen | Lizenz der Stimme | Engine-Code |
+|---|---|---|---|
+| Piper 1.8.0 | Kerstin (low), Ramona (low), Eva K (x_low), Thorsten (high, männlich, nur Vergleich) | Kerstin und Thorsten CC0; Ramona und Eva K M-AILABS (prüfen) | GPL-3.0-or-later |
+| Pocket TTS 4.0.1, Deutsch mit 6 und mit 24 Schichten | Alba, Anna, Vera, Eve (CC BY 4.0), Caro Davy, Estelle (CC0); ohne Stimmklon | frei, Gewichte CC BY 4.0 (Kyutai) | MIT |
+| Chatterbox Multilingual 0.1.7 | Kerstin als Klon aus 10 Sekunden des Datensatzes; eingebaute Stimme nur als Vergleich | Klon CC0; eingebaute Stimme undokumentiert (prüfen) | MIT, Wasserzeichen in jeder Ausgabe |
+
+Ausgeschlossen sind Stimmen mit nicht-kommerzieller Lizenz (Expresso, EARS) und ohne klare Herkunft.
+
+So läuft der Test:
+- Je Engine ein eigener Container (`docker/tts-spike/`, genaue Versionen in `constraints-*.txt`, torch nur für die CPU).
+- Die Gewichte werden einmal mit Netz geladen und mit Herkunft, Revision und SHA-256 in `var/tts-spike/models/lock-GRUPPE.json` registriert. Nichts davon wird mit CoreAI ausgeliefert.
+- Gemessen wird ohne Netz, mit festem Kernlimit und erst nach der SHA-256-Prüfung jeder Datei. Alle Stimmen sprechen mit 4 Kernen; mit 2 Kernen misst je Gruppe die erste Stimme.
+- Sieben Sätze: Begrüßung, Zahlen, Datum und Uhrzeit, Frage, Dateinamen, Umlaute und ß, ein längerer Absatz.
+- Je Probe: Rechenzeit, Audiodauer, Echtzeitfaktor und Zeit bis zum ersten Ton. Je Engine: Ladezeit, Aufwärmen, Spitzen-RAM.
+- Ergebnis: `var/tts-spike/runs/ZEITSTEMPEL/report.json` und `report.md`; anhören unter **Admin Core > Betrieb > Stimmproben**.
+
+Offen nach dem Lauf: Auswahl der Mara-Stimme, Kernlimit für die parallele TTS und Messung einer Live-Runde mit paralleler TTS.
 
 ### P20.1: Spracheingabe
 

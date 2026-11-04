@@ -1,0 +1,8 @@
+CoreAI: TCI Interface 0.5.94 - 04.11.2026
+- Stimmtest P20.0: scripts/tts-spike.sh vergleicht Piper, Pocket TTS und Chatterbox auf dem Server.
+- Je Engine ein eigener Container mit festen Versionen; Gewichte mit Herkunft, Revision und SHA-256 registriert.
+- Messen ohne Netz mit festem Kernlimit (2 und 4 Kerne), sieben deutsche Testsaetze.
+- Lizenz je Stimme in tools/tts_spike/voices.json; Kerstin-Klon aus freier Datensatz-Stimme (CC0).
+- Admin Core > Betrieb > Stimmproben (nur Inhaber): Hoerproben, Echtzeitfaktor, erster Ton, RAM, Ladezeit, Lizenz.
+- Neue Tests in beiden Preflights: tts-spike-selftest.py, tts-spike-store-selftest.php, voice-samples-ui-selftest.cjs.
+- Keine Aenderung an Cores, Modelfile, Datenbank oder Warteschlange.

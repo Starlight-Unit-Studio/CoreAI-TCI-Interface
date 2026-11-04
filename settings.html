@@ -6,14 +6,14 @@
   <meta name="language" content="de-DE" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#f0f4fa" />
-  <meta name="application-version" content="0.5.93" />
+  <meta name="application-version" content="0.5.94" />
   <meta name="application-name" content="CoreAI: TCI Interface" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface - Einstellungen</title>
   <link rel="stylesheet" href="./css/console.css?v=0054702136497516009836207" />
-  <link rel="stylesheet" href="./css/settings.css?v=1166979239907609251272238" />
+  <link rel="stylesheet" href="./css/settings.css?v=0511411175542921282398443" />
   <link rel="stylesheet" href="./css/coreui-update.css?v=1027839363176318351849490" />
-  <script src="./js/console-gate.js?v=1076184561013020964245213"></script>
+  <script src="./js/console-gate.js?v=0618564251317363248688348"></script>
   <script src="./js/coreui-preferences.js?v=0413330848560779596296331"></script>
 </head>
 <body class="settings-body">
@@ -48,7 +48,7 @@
           <h1>EINSTELLUNGEN</h1>
         </div>
       </div>
-      <div class="settings-version">COREAI: TCI INTERFACE // v0.5.93</div>
+      <div class="settings-version">COREAI: TCI INTERFACE // v0.5.94</div>
     </header>
 
     <!-- 0.5.79: one page, categories as tabs. Each category is its own view
@@ -681,6 +681,30 @@
               <label class="settings-field" for="externalBaseUrl"><span><strong>HTTPS BASE-URL</strong></span><input id="externalBaseUrl" type="url" placeholder="https://api.example.com/v1" /></label>
               <label class="settings-field" for="externalModel"><span><strong>CORE-NAME</strong></span><input id="externalModel" type="text" maxlength="160" /></label>
             </section>
+            <section class="settings-panel cfg-card wide green tts-card" id="ttsSamplesCard" aria-labelledby="adminTtsTitle" hidden>
+              <header class="settings-panel-head">
+                <span class="settings-panel-glyph" aria-hidden="true">♪</span>
+                <div><span>STIMMPROBEN</span><h3 id="adminTtsTitle">Maras Stimme</h3></div>
+                <label class="tts-run-pick" for="ttsRunSelect" hidden><span>TESTLAUF</span><select id="ttsRunSelect"></select></label>
+                <button class="settings-action compact" id="ttsReload" type="button">NEU LADEN</button>
+              </header>
+              <p class="cfg-card-note">Hörproben aus dem Stimmtest (P20.0): jede Stimme spricht dieselben Sätze. Echtzeitfaktor unter 1 heißt schneller als gesprochen. Nur Stimmen mit freier Lizenz kommen für Mara infrage.</p>
+              <div class="tts-empty" id="ttsEmpty" hidden>
+                <p>Noch kein Stimmtest auf diesem Server. Starten mit:</p>
+                <code>sudo bash /opt/ember-coreui/scripts/tts-spike.sh</code>
+                <p>Beim ersten Mal dauert es 20 bis 40 Minuten, danach etwa 15. Die Ergebnisse erscheinen hier.</p>
+              </div>
+              <div class="tts-body" id="ttsBody" hidden>
+                <p class="tts-meta" id="ttsMeta"></p>
+                <ol class="tts-sentences" id="ttsSentences"></ol>
+                <div class="tts-voices" id="ttsVoices" role="list" aria-label="Stimmen"></div>
+                <details class="tts-engines">
+                  <summary>Engines, Kerne und Ladezeiten</summary>
+                  <div class="tts-groups" id="ttsGroups"></div>
+                </details>
+              </div>
+              <audio id="ttsAudio" preload="none"></audio>
+            </section>
             <div class="admin-callout wide"><b>KEIN KOMPATIBILITÄTSVERSPRECHEN</b><p>Der lokale Ollama-Pfad mit Gemma 4 bleibt der Referenzbetrieb.</p></div>
           </div>
         </section>
@@ -778,6 +802,7 @@
   <script src="./js/settings.js?v=0694243875093812746250899"></script>
   <script src="./js/coreui-personalization-settings.js?v=1055555289996254500304399"></script>
   <script src="./js/admin.js?v=0876858939640698403610180"></script>
+  <script src="./js/coreui-voice-samples.js?v=0021709346766415670011911"></script>
   <script src="./js/coreui-update.js?v=0294648939860149727532714"></script>
 </body>
 </html>
