@@ -1,5 +1,12 @@
 # CoreAI: TCI Interface
 
+## 0.5.96 - 04.11.2026
+
+- **Update-Preflight repariert:** Das Update auf 0.5.95 stoppte mit "Stimmtest-Selbsttest fehlgeschlagen". Der Selbsttest liess `tts-spike.sh --dry-run` auf den echten Ordner `var/tts-spike` schauen. Nach dem ersten Stimmtest auf dem Server liegen dort die registrierten Gewichte (`lock-*.json`), das Skript ueberspringt dann zu Recht das Laden, und der Test erwartete trotzdem fest sieben Ladeschritte. Lokal gab es keine Gewichte, deshalb fiel es vor dem Merge nicht auf.
+- Der Probelauf bekommt jetzt einen eigenen leeren Ordner (`COREAI_TTS_SPIKE_BASE`, wirkt nur zusammen mit `--dry-run`). Der Test prueft zusaetzlich, dass registrierte Gewichte nicht neu geladen werden und `--refetch` sie doch laedt. Nachgestellt mit Lock-Dateien wie auf dem Server.
+- Beide Preflights schreiben den Grund eines Fehlschlags dieses Tests ins Update-Protokoll statt nur "fehlgeschlagen".
+- Keine Aenderung am Stimmtest selbst, an Cores, Modelfile, Datenbank oder Warteschlange.
+
 ## 0.5.95 - 04.11.2026
 
 - **Pocket TTS spricht wieder:** Beim ersten Lauf auf dem Server brach jede Pocket-Probe mit "Inplace update to inference tensor outside InferenceMode" ab. Ursache war der Test selbst: Er rief Pocket in `torch.inference_mode()` auf, Pocket rechnet die Sprache aber in einem eigenen Thread, den dieser Modus nicht erreicht, und aendert dort den vorbereiteten Zustand. Pocket laeuft jetzt ohne diesen Rahmen; es schaltet die Gradienten selbst ab (`torch.no_grad`). Piper und Chatterbox waren nicht betroffen.

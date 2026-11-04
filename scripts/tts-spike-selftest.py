@@ -10,7 +10,9 @@ and that tts-spike.sh measures without network and with a core limit.
 from __future__ import annotations
 
 import json
+import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -87,9 +89,20 @@ check('inference_mode' not in ast.unparse(stream), 'Pocket stream runs without i
 check('generate_audio_stream' in ast.unparse(stream), 'Pocket streams its chunks')
 
 # --- tts-spike.sh: measures without network and with a core limit --------------------
+# 0.5.96: the dry runs look at an empty folder of their own. On the server a real
+# run leaves registered weights behind (lock-*.json), and the script then rightly
+# skips fetching them; the test must not depend on that.
 script = ROOT / 'scripts' / 'tts-spike.sh'
 check(subprocess.run(['bash', '-n', str(script)]).returncode == 0, 'tts-spike.sh syntax')
-dry = subprocess.run(['bash', str(script), '--dry-run'], capture_output=True, text=True, timeout=60)
+sandbox = Path(tempfile.mkdtemp(prefix='coreai-tts-dry-'))
+
+
+def dry_run(*args: str) -> subprocess.CompletedProcess:
+    env = dict(os.environ, COREAI_TTS_SPIKE_BASE=str(sandbox))
+    return subprocess.run(['bash', str(script), '--dry-run', *args], capture_output=True, text=True, timeout=60, env=env)
+
+
+dry = dry_run()
 check(dry.returncode == 0, 'dry run: ' + dry.stderr)
 lines = dry.stdout.splitlines()
 builds = [l for l in lines if l.startswith('+ docker build')]
@@ -101,21 +114,30 @@ for line in runs:
     check('--network none' in line and '--cpuset-cpus' in line and 'HF_HUB_OFFLINE=1' in line, 'measuring without network, core limit')
     check('/models:ro' in line and '--cap-drop ALL' in line and '--read-only' in line, 'weights read-only, container locked down')
     check(('--cores 2 --first-only' in line) or line.endswith('--cores 4'), 'all voices at 4 cores, the first one at 2')
+    check(f'{sandbox}/models:/models:ro' in line, 'the dry run uses its own folder')
 for line in fetches:
     check('--network none' not in line and '/models:ro' not in line, 'fetching needs network and write access')
 check(any('run.py report' in l for l in lines), 'report at the end')
-bad = subprocess.run(['bash', str(script), '--dry-run', '--cores', '2;rm'], capture_output=True, text=True)
+# Registered weights are not fetched again, unless --refetch asks for it.
+(sandbox / 'models').mkdir(parents=True)
+(sandbox / 'models' / 'lock-pocket-de.json').write_text('{}', encoding='utf-8')
+kept = [l for l in dry_run().stdout.splitlines() if 'run.py fetch ' in l]
+check(len(kept) == 6 and not any('--group pocket-de ' in l for l in kept), 'registered weights are kept')
+check(len([l for l in dry_run('--refetch').stdout.splitlines() if 'run.py fetch ' in l]) == 7, '--refetch loads them again')
+check('if [[ -n "$DRY_RUN" && -n "${COREAI_TTS_SPIKE_BASE:-}" ]]; then' in script.read_text(encoding='utf-8'),
+      'another folder only for a dry run')
+bad = dry_run('--cores', '2;rm')
+check(bad.returncode != 0, 'bad --cores refused')
 # 0.5.95: --run adds groups to an existing run (e.g. after a fix), the report covers all of it.
-again = subprocess.run(['bash', str(script), '--dry-run', '--skip-build', '--groups', 'pocket-de,pocket-de24', '--run', '20261104-141500'],
-                       capture_output=True, text=True, timeout=60)
+again = dry_run('--skip-build', '--groups', 'pocket-de,pocket-de24', '--run', '20261104-141500')
 check(again.returncode == 0, '--run dry run: ' + again.stderr)
 again_runs = [l for l in again.stdout.splitlines() if 'run.py run ' in l]
 check(len(again_runs) == 4 and all('/runs/20261104-141500:/out' in l for l in again_runs), 'measured into the given run')
 check(not any('docker build' in l or 'run.py fetch' in l and 'chatterbox' in l for l in again.stdout.splitlines()), 'only the chosen groups')
 check(any('run.py report --run-dir ' in l and l.endswith('/runs/20261104-141500') for l in again.stdout.splitlines()), 'report rebuilt for that run')
 for wrong in ('2026', '../20261104-141500', '20261104-141500;rm'):
-    check(subprocess.run(['bash', str(script), '--dry-run', '--run', wrong], capture_output=True, text=True).returncode != 0, 'bad --run refused: ' + wrong)
-check(bad.returncode != 0, 'bad --cores refused')
+    check(dry_run('--run', wrong).returncode != 0, 'bad --run refused: ' + wrong)
+shutil.rmtree(sandbox)
 shell = script.read_text(encoding='utf-8')
 check('chown -R root:33 "$OUT"' in shell and "-exec chmod 0640 {} +" in shell, 'samples readable for PHP only (root:33, 0640)')
 check("[[ \"$stamp\" =~ ^[0-9]{8}-[0-9]{6}$ ]] && rm -rf -- \"${RUNS:?}/$stamp\"" in shell, 'cleanup touches only time stamp folders')
