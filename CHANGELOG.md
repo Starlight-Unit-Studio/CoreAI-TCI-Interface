@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.6.9 - 04.11.2026
+
+Rueckmeldung des Betreibers: Sobald Mara auf Englisch antworten will, haengt sich die Anfrage auf ("Core denkt nach" ueber 20 Minuten). Ein Abbruch bleibt bei "Abbruch angefordert" stehen, und mehrere Chats im Archiv lassen sich nicht loeschen, weil angeblich noch etwas laeuft.
+
+- **Echte Antworten wurden als Gedankenleck verworfen.** Die Bereinigung hielt Saetze wie "I need to respond in English ...", "Ich muss antworten, dass ..." oder jede Antwort, die einen System-Prompt erklaert, fuer interne Modellanalyse und warf die ganze Antwort weg. Eine leere Antwort startete eine neue Generierung, die wieder verworfen wurde; auf der CPU dauerte das viele Minuten. Gerade ein Gespraech ueber die Antwortsprache loeste das aus. Diese Muster zaehlen jetzt nur noch zusammen mit einem zweiten Signal; eindeutige Lecks ("the user is asking", "der Nutzer fragt", "the prompt says", beschriftete Entwuerfe) bleiben sofort intern. Ein Absatz wird nur noch abgeschnitten, wenn er wie Analyse beginnt ("Maybe I should", "Actually, the prompt"), nicht bei jedem "Actually" oder "Maybe".
+- **Verlorene Laeufe enden.** Ein Lauf, dessen PHP-Prozess verschwunden ist (der PHP-Container wird bei jedem Update neu erstellt, oder der Prozess wurde beendet), blieb bisher fuer immer "running": "Core denkt nach" bis zu 45 Minuten, ein Abbruch, der nie fertig wurde, und ein Chat, der sich nicht loeschen liess. Jetzt meldet ein laufender Prozess mindestens alle 15 Sekunden ein Lebenszeichen (bei jeder Abbruchpruefung im Modellstream, in der Warteschlange und beim Warten auf Python). Ohne Lebenszeichen endet der Lauf: nach 45 Sekunden, wenn ein Abbruch angefordert ist (dann "abgebrochen"), sonst nach 3 Minuten ("unterbrochen"). Ein Lauf, der nie gestartet wurde, endet nach 10 Minuten. Das passiert beim Neuladen des Chats, beim Abfragen und Abbrechen eines Laufs und beim Loeschen eines Chats; bereits haengende Chats im Archiv werden dadurch beim naechsten Loeschversuch frei.
+- Tests: neu `agent-run-liveness-selftest.php` (Verdrahtung und, mit Datenbank, das Beenden verlorener Laeufe in einer zurueckgerollten Transaktion; in beiden Preflights), `thinking-sanitize-selftest.php` mit sieben echten Antworten, die erhalten bleiben, und einem Leck aus zwei schwachen Signalen.
+- Keine Aenderung an Cores, Modelfile, Datenbankschema, Installer oder Warteschlange.
+
 ## 0.6.8 - 04.11.2026
 
 Hoertest der englischen Eve (Lauf 20261104-215318): Beide Modelle klingen fuer den Betreiber gleich gut, mit perfektem Englisch. Gewaehlt wurde das Standardmodell (RTF 0,19 und 1066 MB statt 0,47 und 3014 MB).

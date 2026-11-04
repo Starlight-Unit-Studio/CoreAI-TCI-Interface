@@ -15,6 +15,57 @@ function coreui_agent_run_schema_ready(PDO $pdo): bool {
   }
 }
 
+/**
+ * 0.6.9: a live worker refreshes its run at least every 15 seconds (ember_agent_heartbeat in
+ * chat.php, from every cancellation check during a model stream, the model queue and tool waits).
+ * A run without that sign of life has lost its worker: the PHP container was recreated by an
+ * update, or the process was killed. Before, such a run stayed "running" for ever: the chat
+ * showed "Core denkt nach", a cancel never finished and the chat could not be deleted.
+ */
+const COREUI_AGENT_RUN_STALE_SECONDS = 180;
+/** After a cancel request the worker answers within a second; without a sign of life for this long it is gone. */
+const COREUI_AGENT_RUN_CANCEL_STALE_SECONDS = 45;
+/** A queued run is claimed by its stream at once; one that waited this long was never started. */
+const COREUI_AGENT_RUN_QUEUED_STALE_SECONDS = 600;
+
+function coreui_agent_run_heartbeat(PDO $pdo, int $uid, string $sessionId, string $runId): void {
+  $stmt = $pdo->prepare("UPDATE stu_console_agent_runs SET updated_at=NOW(3) "
+    . "WHERE run_id=? AND user_id=? AND session_id=? AND status IN ('running','waiting_tool')");
+  $stmt->execute([$runId,$uid,$sessionId]);
+}
+
+/**
+ * Ends the runs of this session whose worker is gone: cancelled when the user asked for it
+ * (or $asCancel), otherwise interrupted (error_code worker_lost). Never touches a run that
+ * showed a sign of life within $staleSeconds. Returns the number of runs ended.
+ */
+function coreui_agent_run_reap_stale(PDO $pdo, int $uid, string $sessionId,
+    int $staleSeconds = COREUI_AGENT_RUN_STALE_SECONDS, bool $asCancel = false): int {
+  if ($uid <= 0 || !preg_match('/^[a-z0-9_-]{8,40}$/iD', $sessionId)
+      || !coreui_agent_run_schema_ready($pdo)) return 0;
+  $stale = max(15, $staleSeconds);
+  $cancel = $asCancel ? 1 : 0;
+  // finished_at first: MariaDB applies the assignments from left to right.
+  $lost = $pdo->prepare(
+    "UPDATE stu_console_agent_runs SET error_code='worker_lost',"
+    . "finished_at=CASE WHEN ?=1 OR cancel_requested_at IS NOT NULL THEN NOW(3) ELSE finished_at END,"
+    . "status=CASE WHEN ?=1 OR cancel_requested_at IS NOT NULL THEN 'cancelled' ELSE 'interrupted' END,"
+    . "updated_at=NOW(3) "
+    . "WHERE user_id=? AND session_id=? AND status='running' AND updated_at < DATE_SUB(NOW(3), INTERVAL "
+    // A run with a cancel request answers within a second when its worker lives: the short limit
+    // applies, so the page that polls after "Auftrag abbrechen" sees the end in time.
+    . "CASE WHEN cancel_requested_at IS NOT NULL THEN ? ELSE ? END SECOND)"
+  );
+  $lost->execute([$cancel,$cancel,$uid,$sessionId,min($stale, COREUI_AGENT_RUN_CANCEL_STALE_SECONDS),$stale]);
+  $ended = $lost->rowCount();
+  $never = $pdo->prepare(
+    "UPDATE stu_console_agent_runs SET error_code='never_started',finished_at=NOW(3),status='cancelled',updated_at=NOW(3) "
+    . "WHERE user_id=? AND session_id=? AND status='queued' AND updated_at < DATE_SUB(NOW(3), INTERVAL ? SECOND)"
+  );
+  $never->execute([$uid,$sessionId,COREUI_AGENT_RUN_QUEUED_STALE_SECONDS]);
+  return $ended + $never->rowCount();
+}
+
 function coreui_agent_run_valid_key(string $runKey): bool {
   return (bool)preg_match('/^[a-z0-9_-]{1,48}$/D', $runKey);
 }
@@ -83,6 +134,8 @@ function coreui_agent_run_ensure(
 function coreui_agent_run_active_snapshot(PDO $pdo, int $uid, string $sessionId): ?array {
   if ($uid <= 0 || !preg_match('/^[a-z0-9_-]{8,40}$/iD', $sessionId)
       || !coreui_agent_run_schema_ready($pdo)) return null;
+  // 0.6.9: a run whose worker is gone is no active run (no endless "Core denkt nach").
+  coreui_agent_run_reap_stale($pdo, $uid, $sessionId);
   $stmt = $pdo->prepare("SELECT run_id,turn_id,run_key,status,cancel_requested_at
     FROM stu_console_agent_runs
     WHERE user_id=? AND session_id=?

@@ -220,20 +220,24 @@ function ember_reply_looks_like_internal_meta(string $text): bool {
   if (preg_match('~^[\s*"“„«]*' . $labels . '\s*:\s*\**~iu', $text)) return true;
 
   $head = function_exists('mb_substr') ? mb_substr($text, 0, 700, 'UTF-8') : substr($text, 0, 700);
+  // Only phrases a reply to the user never needs: it says "you"/"du", not "the user".
   foreach ([
     '~\bactually\s*,?\s+the\s+prompt\s+(?:says|asks|requires)\b~iu',
     '~\bthe\s+user\s+(?:is\s+asking|asks|wants)\b~iu',
     '~\blet[\'’]?s\s+try\s*:\s*~iu',
-    '~\b(?:system|developer)\s+(?:prompt|instruction)s?\b~iu',
-    '~\b(?:i|we)\s+(?:need|should|must)\s+to\s+(?:answer|respond|mention|avoid|follow|ensure)\b~iu',
     '~\bder\s+nutz(?:er|erin)\s+(?:fragt|moechte|möchte|will)\b~iu',
-    '~\bich\s+(?:muss|sollte)\s+(?:antworten|erwaehnen|erwähnen|vermeiden|sicherstellen)\b~iu',
-    '~\b(?:system|entwickler)[\s-]*(?:prompt|anweisung)\b~iu',
   ] as $highConfidencePattern) {
     if (preg_match($highConfidencePattern, $head)) return true;
   }
+  // 0.6.9: these also occur in genuine answers ("I need to respond in English", a reply
+  // that explains what a system prompt is, "ich muss antworten, dass ..."). Alone they
+  // discarded real replies and started a new generation each time; now they only count
+  // together with another signal.
   $signals = 0;
   foreach ([
+    '~\b(?:system|developer|entwickler)[\s-]*(?:prompt|instruction|anweisung)(?:s|en)?\b~iu',
+    '~\b(?:i|we)\s+(?:need|should|must)\s+to\s+(?:answer|respond|mention|avoid|follow|ensure)\b~iu',
+    '~\bich\s+(?:muss|sollte)\s+(?:antworten|erwaehnen|erwähnen|vermeiden|sicherstellen)\b~iu',
     '~\bmaybe\s+i\s+should\b~iu',
     '~\b(?:the\s+)?instruction\s+is\b~iu',
     '~\bthe\s+prompt\s+(?:says|asks|requires)\b~iu',
@@ -262,8 +266,11 @@ function ember_public_candidate_clean(string $candidate): string {
       }
     }
   } else {
+    // 0.6.9: only a paragraph that opens like model analysis is cut, not every
+    // "Actually, ..." or "Maybe you ..." of an English answer.
     $parts = preg_split(
-      '~\n\s*\n(?=\s*(?:actually\b|maybe\b|the\s+user\b|the\s+prompt\b|let[\'’]?s\s+try\b|checking\b|constraint\b))~iu',
+      '~\n\s*\n(?=\s*(?:actually\s*,?\s+the\s+(?:prompt|user)\b|maybe\s+i\s+should\b|the\s+user\b|the\s+prompt\b|'
+      . 'let[\'’]?s\s+try\s*:|checking\s+(?:the\s+)?constraints?\b|constraint\s+check\b))~iu',
       $candidate,
       2
     );
@@ -2961,6 +2968,7 @@ function ember_py_run(PDO $pdo, string $code, string $channel = 'global', ?int $
 
   while (microtime(true) < $deadline) {
     usleep(400000); // 0.4s
+    ember_agent_heartbeat();
     try {
       $sel->execute([$jobId]);
       $row = $sel->fetch(PDO::FETCH_ASSOC);
@@ -4290,11 +4298,32 @@ function ember_generation_lock_acquire(string $channel, int $afterId, array $sen
 
 require_once __DIR__ . '/console_model_queue.php';
 
+/**
+ * 0.6.9: a sign of life for the current run, at most every 15 seconds. Called from every
+ * cancellation check (model stream, model queue, step boundaries) and from tool waits, so a
+ * run whose worker vanished can be told apart from a slow one (coreui_agent_run_reap_stale).
+ */
+function ember_agent_heartbeat(): void {
+  $ctx = $GLOBALS['COREUI_WORK_CONTEXT'] ?? null;
+  if (!is_array($ctx) || empty($ctx['agent_run_id']) || !function_exists('coreui_agent_run_heartbeat')) return;
+  $now = microtime(true);
+  if ($now - (float)($GLOBALS['COREUI_AGENT_HEARTBEAT_AT'] ?? 0) < 15.0) return;
+  $GLOBALS['COREUI_AGENT_HEARTBEAT_AT'] = $now;
+  $db = $GLOBALS['COREUI_WORK_PDO'] ?? null;
+  if (!$db instanceof PDO) return;
+  try {
+    coreui_agent_run_heartbeat($db, (int)$ctx['user_id'], (string)$ctx['session_id'], (string)$ctx['agent_run_id']);
+  } catch (Throwable $e) {
+    // A missed heartbeat only makes the run look older; never break the answer for it.
+  }
+}
+
 /** Only the scoped private agent may request cooperative cancellation. */
 function ember_agent_cancel_requested(bool $force = false): bool {
   $ctx = $GLOBALS['COREUI_WORK_CONTEXT'] ?? null;
   if (!is_array($ctx) || empty($ctx['agent_run_id'])
       || !function_exists('coreui_agent_run_cancel_requested')) return false;
+  ember_agent_heartbeat();
   $now = microtime(true);
   if (!empty($GLOBALS['COREUI_AGENT_CANCEL_SEEN'])) return true;
   if (!$force && $now - (float)($GLOBALS['COREUI_AGENT_CANCEL_CHECK_AT'] ?? 0) < 1.0) {

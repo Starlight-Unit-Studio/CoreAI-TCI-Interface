@@ -143,4 +143,26 @@ thinking_test_not_contains(
   $streamSource
 );
 
-fwrite(STDOUT, "Thinking-Selftest OK: 15 Faelle.\n");
+// 0.6.9: genuine answers were taken for leaked thinking. An empty reply started a new
+// generation each time; in a chat about English answers ("I need to respond in English")
+// this ran for many minutes. These replies stay as they are.
+$genuine = [
+  "You're absolutely right, Rick! Sorry about that. Of course I can speak English. As for my voice, I'd describe it as calm and clear.",
+  'Haha, you got me! Sorry, Rick. I need to respond in English when you write in English, so here we go: my voice is calm and warm.',
+  'Good question! The system prompt is the hidden instruction that tells a model how to behave. In CoreAI you can set your own in the KI-Profil.',
+  "Sure!\n\nActually, there is a faster way: just press the speaker button.",
+  "Maybe I should explain this better: the voice runs on your server.\n\nMaybe you want to try it now?",
+  'Natuerlich, Rick. Ich muss antworten, dass ich beide Sprachen kann.',
+  'Klar! Der System-Prompt ist die versteckte Anweisung fuer das Modell.',
+];
+foreach ($genuine as $index => $reply) {
+  thinking_test_same('Echte Antwort ' . ($index + 1) . ' bleibt erhalten', $reply, ember_sanitize_public_reply($reply, ''));
+}
+// Two weak signals together are still a leak.
+thinking_test_same(
+  'Zwei schwache Signale zusammen bleiben intern',
+  '',
+  ember_sanitize_public_reply('I need to respond without revealing the system prompt. Maybe I should keep it short.', '')
+);
+
+fwrite(STDOUT, "Thinking-Selftest OK: 23 Faelle.\n");

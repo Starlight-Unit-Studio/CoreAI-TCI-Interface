@@ -1,0 +1,5 @@
+CoreAI: TCI Interface 0.6.9 - 04.11.2026
+- Echte Antworten nicht mehr als Gedankenleck verworfen ("I need to respond in English", "Ich muss antworten, dass", Erklaerungen zum System-Prompt); verworfene Antworten loesten lange neue Generierungen aus. Absatz nur noch bei echter Analyse abgeschnitten.
+- Verlorene Agentenlaeufe enden: Lebenszeichen alle 15 s; ohne Lebenszeichen nach 45 s (Abbruch angefordert) bzw. 3 Minuten beendet; nie gestartete Laeufe nach 10 Minuten. Beim Neuladen, Abfragen, Abbrechen und Loeschen. Haengende Chats im Archiv werden loeschbar.
+- Tests: agent-run-liveness-selftest.php (auch in den Preflights), thinking-sanitize-selftest.php erweitert.
+- Keine Aenderung an Cores, Modelfile, Datenbankschema, Installer oder Warteschlange.

@@ -422,6 +422,10 @@ function coreui_console_session_delete_media_files(array $relativePaths): array 
 
 function coreui_console_session_delete(PDO $pdo, int $uid, string $sessionId): array {
   if ($pdo->inTransaction()) throw new LogicException('delete_nested_transaction');
+  // 0.6.9: a run whose worker is gone no longer keeps the chat "busy" for ever.
+  if (function_exists('coreui_agent_run_reap_stale')) {
+    coreui_agent_run_reap_stale($pdo, $uid, coreui_console_session_normalize_id($sessionId));
+  }
   $pdo->beginTransaction();
   try {
     $result = coreui_console_session_delete_tx($pdo, $uid, $sessionId);

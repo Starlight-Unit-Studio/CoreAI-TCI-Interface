@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.8: Vorlesen auf Deutsch und Englisch (Sprache je Antwort, englische Eve nach Bedarf); Eve-Pruefungen aktiv.
+# CoreAI: TCI Interface 0.6.9: verlorene Agentenlaeufe enden (Herzschlag), echte Antworten werden nicht mehr als Gedankenleck verworfen.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -257,6 +257,7 @@ UI_FILES=(
   config/Modelfile.template
   scripts/response-timing-ui-selftest.js
   scripts/agent-runs-selftest.php
+  scripts/agent-run-liveness-selftest.php
   scripts/model-queue-selftest.php
   scripts/workspace-output-selftest.py
   scripts/python-input-selftest.py
@@ -639,6 +640,12 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     ok 'P05: Agentenlauf-Idempotenz und Kontotrennung offline geprueft.'
   else
     fail 'P05-Agentenlauf-Selbsttest fehlgeschlagen.'
+  fi
+
+  if compose exec -T php php scripts/agent-run-liveness-selftest.php >/dev/null 2>&1; then
+    ok '0.6.9: Verlorene Agentenlaeufe enden (Herzschlag, Abbruch, Loeschen) geprueft.'
+  else
+    fail 'Selbsttest fuer verlorene Agentenlaeufe fehlgeschlagen.'
   fi
 
   if compose exec -T php php scripts/model-queue-selftest.php >/dev/null 2>&1; then
