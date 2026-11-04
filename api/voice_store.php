@@ -45,7 +45,7 @@ const COREUI_VOICE_PLAN_SOURCES = ['config/voice/mara-voice.json', 'tools/tts_sp
 /** 0.6.8: languages Eve speaks; the service detects the language of an answer. */
 const COREUI_VOICE_LANGUAGES = ['de', 'en'];
 
-function coreui_voice_plan_id(string $text): string {
+function coreui_voice_plan_id(string $text, string $hint = 'de'): string {
   static $basis = null;
   if ($basis === null) {
     $basis = '';
@@ -53,7 +53,8 @@ function coreui_voice_plan_id(string $text): string {
       $basis .= hash('sha256', (string)@file_get_contents(dirname(__DIR__) . '/' . $file)) . "\n";
     }
   }
-  return hash('sha256', $basis . $text);
+  // 0.6.10: the account's main language decides an unclear answer, so it is part of the plan.
+  return hash('sha256', $basis . ($hint !== 'de' ? 'hint:' . $hint . "\n" : '') . $text);
 }
 
 /** Removes plans and audio older than 7 days; only files this feature writes. */
@@ -103,12 +104,13 @@ function coreui_voice_health(): array {
 }
 
 /** The plan of an answer: from the cache or from the service (then cached). */
-function coreui_voice_plan(string $dir, string $text): array {
-  $id = coreui_voice_plan_id($text);
+function coreui_voice_plan(string $dir, string $text, string $hint = 'de'): array {
+  if (!in_array($hint, COREUI_VOICE_LANGUAGES, true)) $hint = 'de';
+  $id = coreui_voice_plan_id($text, $hint);
   $file = $dir . '/' . $id . '.json';
   $plan = is_file($file) ? json_decode((string)@file_get_contents($file), true) : null;
   if (!is_array($plan) || !is_array($plan['parts'] ?? null)) {
-    [$status, , $body] = coreui_voice_http('POST', '/plan', ['text' => $text], 15);
+    [$status, , $body] = coreui_voice_http('POST', '/plan', ['text' => $text, 'language' => $hint], 15);
     $data = $status === 200 ? json_decode($body, true) : null;
     if (!is_array($data) || !is_array($data['parts'] ?? null)) throw new RuntimeException('voice_unavailable');
     $parts = array_values(array_filter(array_map('strval', $data['parts']), static fn(string $p): bool => trim($p) !== ''));

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.9: verlorene Agentenlaeufe enden (Herzschlag), echte Antworten werden nicht mehr als Gedankenleck verworfen.
+# CoreAI: TCI Interface 0.6.10: Hauptsprache pro Konto (Antworten und Vorlesen, Migration 024); Agentenlauf-Herzschlag aktiv.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -186,6 +186,7 @@ UI_FILES=(
   tools/voice/textprep_en.py
   docker/voice/Dockerfile
   database/migrations/023_voice_settings.sql
+  database/migrations/024_account_language.sql
   scripts/voice-service-selftest.py
   scripts/voice-read-selftest.php
   scripts/voice-read-ui-selftest.cjs
@@ -258,6 +259,7 @@ UI_FILES=(
   scripts/response-timing-ui-selftest.js
   scripts/agent-runs-selftest.php
   scripts/agent-run-liveness-selftest.php
+  scripts/account-language-selftest.php
   scripts/model-queue-selftest.php
   scripts/workspace-output-selftest.py
   scripts/python-input-selftest.py
@@ -646,6 +648,12 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     ok '0.6.9: Verlorene Agentenlaeufe enden (Herzschlag, Abbruch, Loeschen) geprueft.'
   else
     fail 'Selbsttest fuer verlorene Agentenlaeufe fehlgeschlagen.'
+  fi
+
+  if compose exec -T php php scripts/account-language-selftest.php >/dev/null 2>&1; then
+    ok '0.6.10: Hauptsprache pro Konto (Antworten und Vorlesen) geprueft.'
+  else
+    fail 'Selbsttest fuer die Hauptsprache pro Konto fehlgeschlagen.'
   fi
 
   if compose exec -T php php scripts/model-queue-selftest.php >/dev/null 2>&1; then

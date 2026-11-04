@@ -98,6 +98,10 @@ try {
     'an English plan, stored with its language');
   coreui_voice_audio($dir, $english['id'], 0);
   voice_test($calls('POST /speak en') === 1 && $calls('POST /speak de') >= 1, 'English parts are spoken in English, German ones in German');
+  // 0.6.10: the account's main language goes to the service as hint for unclear answers.
+  $hinted = coreui_voice_plan($dir, 'Eine Antwort von Mara.', 'en');
+  voice_test($hinted['id'] !== $plan['id'] && $calls('POST /plan en') === 1, 'the account language is the hint, a plan of its own');
+  voice_test(coreui_voice_plan($dir, 'Eine Antwort von Mara.', 'xx')['id'] === $plan['id'], 'an unknown hint counts as German');
   // A plan stored before 0.6.8 has no language: German.
   $legacyId = coreui_voice_plan_id('Alte Antwort.');
   file_put_contents($dir . '/' . $legacyId . '.json', json_encode(['parts' => ['Alt.'], 'textprep' => 'de-1']));

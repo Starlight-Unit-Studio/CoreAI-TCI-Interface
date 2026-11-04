@@ -1,0 +1,7 @@
+CoreAI: TCI Interface 0.6.10 - 04.11.2026
+- KI-Profil "Sprache": Deutsch oder English pro Konto (Migration 024, main_language). Knoepfe und Menues bleiben vorerst deutsch.
+- Englisch: kurzer Prompt-Block (standardmaessig Englisch, andere Sprachen weiter in der Sprache der Person). Deutsch: Prompt unveraendert.
+- Vorlesen: Kontosprache als Vorgabe, wenn die Sprache einer Antwort unklar ist.
+- Speichern streng: invalid_language, missing_schema_024, ohne Sprache bleibt die gespeicherte.
+- Tests: account-language-selftest.php (auch in den Preflights), voice-read-selftest.php, settings-tabs-ui-selftest.cjs.
+- Keine Aenderung an Cores, Modelfile, Installer oder Warteschlange.

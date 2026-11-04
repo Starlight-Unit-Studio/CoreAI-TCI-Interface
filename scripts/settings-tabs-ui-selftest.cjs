@@ -25,8 +25,9 @@ function server(level) {
     'profile.php': () => ({ok: true, csrf_token: 'tok', profile: {display_name: 'Patrick', assistant_name: 'Mara', avatars: {}}}),
     'user_settings.php': () => ({ok: true, csrf_token: 'tok', default_model: 'ember-coreui:latest', default_label: 'TCI: Mara Normal',
       core_label: 'TCI: Mara Normal', permission_level: level, settings: {system_prompt: '', memory_enabled: true, thinking_enabled: true,
-        memory_limit: 16, num_predict: 6500, temperature: 1, provider: 'local', model_override: '', num_ctx: null},
-      limits: {system_prompt_chars: 6000, num_ctx_choices: [4096, 8192, 16384, 32768, 65536, 131072], num_ctx_available: true},
+        memory_limit: 16, num_predict: 6500, temperature: 1, provider: 'local', model_override: '', num_ctx: null, main_language: 'en'},
+      limits: {system_prompt_chars: 6000, num_ctx_choices: [4096, 8192, 16384, 32768, 65536, 131072], num_ctx_available: true,
+        language_available: true},
       external: {enabled: false, configured: false}}),
     'knowledge.php': () => ({ok: true, csrf_token: 'tok', sources: [{uuid: 'a', title: 'Serverhandbuch', chunk_count: 42, file_size: 182000}],
       totals: {sources: 1, chunks: 42, global_chunks: 310}}),
@@ -153,10 +154,15 @@ const smallText = page => page.evaluate(() => {
     // KI-Profil: no Core list, the save sends no Core (it is chosen in the chat).
     await page.click('#tab-ki-profil');
     assert.equal(await page.locator('#aiModelOverride').count(), 0);
+    // 0.6.10: the main language shows what the account saved and is sent along.
+    await page.waitForFunction(() => document.getElementById('aiLanguage').value === 'en');
+    assert.equal(await page.isDisabled('#aiLanguage'), false, 'the language can be chosen');
+    await page.selectOption('#aiLanguage', 'de');
     await page.click('#saveAiSettings');
     await page.waitForFunction(() => document.getElementById('settingsSaveState').classList.contains('visible'));
     const aiPost = srv.calls.find(c => c.key === 'user_settings.php' && c.post);
     assert(aiPost && !('model_override' in aiPost.post) && aiPost.post.provider === 'local', 'KI-Profil saves without a Core');
+    assert.equal(aiPost.post.main_language, 'de', 'the chosen language is saved');
     assert.deepEqual(errors, []);
     await page.close();
 

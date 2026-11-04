@@ -79,7 +79,9 @@ if ($action === 'plan') {
   if ($dir === null) stu_json(['ok' => false, 'error' => 'voice_cache_failed'], 500);
   coreui_voice_cleanup($dir);
   try {
-    $plan = coreui_voice_plan($dir, (string)$row['message']);
+    // 0.6.10: the account's main language (KI-Profil) decides when an answer's language is unclear.
+    $hint = function_exists('coreui_ai_settings_load') ? (string)(coreui_ai_settings_load($pdo, $uid)['main_language'] ?? 'de') : 'de';
+    $plan = coreui_voice_plan($dir, (string)$row['message'], $hint);
   } catch (RuntimeException $e) {
     $code = $e->getMessage();
     stu_json(['ok' => false, 'error' => $code], $code === 'nothing_to_read' ? 422 : 503);

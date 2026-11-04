@@ -32,6 +32,7 @@
   var aiNumPredict = document.getElementById('aiNumPredict');
   var aiTemperature = document.getElementById('aiTemperature');
   var aiProvider = document.getElementById('aiProvider');
+  var aiLanguage = document.getElementById('aiLanguage');
   var externalNote = document.getElementById('externalProviderNote');
   var memoryFact = document.getElementById('memoryFact');
   var memoryRelevance = document.getElementById('memoryRelevance');
@@ -350,6 +351,11 @@
       if (aiMemoryLimit) aiMemoryLimit.value = String(s.memory_limit == null ? 16 : s.memory_limit);
       if (aiNumPredict) aiNumPredict.value = String(s.num_predict == null ? 6500 : s.num_predict);
       if (aiTemperature) aiTemperature.value = String(s.temperature == null ? 1 : s.temperature);
+      // 0.6.10: main language for answers and read-aloud; without migration 024 only German.
+      if (aiLanguage) {
+        aiLanguage.value = s.main_language === 'en' ? 'en' : 'de';
+        aiLanguage.disabled = !!(data.limits && data.limits.language_available === false);
+      }
       defaultModel = String(data.default_model || defaultModel || '');
       if (contextSlider) {
         contextSlider.apply(s.num_ctx, data.limits && data.limits.num_ctx_choices,
@@ -399,7 +405,8 @@
       num_predict: aiNumPredict ? Number(aiNumPredict.value) : 6500,
       temperature: aiTemperature ? Number(aiTemperature.value) : 1,
       provider: aiProvider ? aiProvider.value : 'local',
-      num_ctx: contextSlider ? contextSlider.value() : null
+      num_ctx: contextSlider ? contextSlider.value() : null,
+      main_language: aiLanguage && aiLanguage.value === 'en' ? 'en' : 'de'
     };
     api('./api/user_settings.php', { method: 'POST', body: JSON.stringify(body) })
       .then(function () {
@@ -415,7 +422,9 @@
           invalid_num_ctx: 'UNGÜLTIGES KONTEXTFENSTER',
           num_ctx_not_allowed: 'KONTEXTFENSTER ÜBER DEM LIMIT DIESES KONTOS',
           guest_core_locked: 'ALS GAST GELTEN STANDARD-CORE UND -KONTEXTFENSTER',
-          missing_schema_017: 'MIGRATION 017 FEHLT: KONTEXTFENSTER NICHT GESPEICHERT'
+          missing_schema_017: 'MIGRATION 017 FEHLT: KONTEXTFENSTER NICHT GESPEICHERT',
+          invalid_language: 'UNBEKANNTE SPRACHE',
+          missing_schema_024: 'MIGRATION 024 FEHLT: SPRACHE NICHT GESPEICHERT'
         };
         announceSaved(labels[error.message] || ('SPEICHERN FEHLGESCHLAGEN: ' + error.message), true);
       })

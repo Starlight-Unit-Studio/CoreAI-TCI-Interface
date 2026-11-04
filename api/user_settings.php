@@ -101,6 +101,8 @@ if ($method === 'GET') {
       // 0.5.85: up to the account's limit, if the Inhaber or an Admin set one.
       'num_ctx_choices' => coreui_user_policy_ctx_choices(coreui_ai_num_ctx_choices(), coreui_user_policy_load($pdo, (int)$uid)),
       'num_ctx_available' => coreui_ai_num_ctx_schema_ready($pdo),
+      // 0.6.10: the main language can be stored (migration 024).
+      'language_available' => coreui_ai_language_schema_ready($pdo),
     ],
     'default_model' => defined('STU_EMBER_MODEL') ? (string)STU_EMBER_MODEL : '',
     'external' => coreui_ai_external_capability($pdo),
@@ -310,6 +312,14 @@ if (($body['action'] ?? '') === 'core_update') {
 // The KI-Profil no longer carries the switch: keep the stored value.
 if (!array_key_exists('thinking_enabled', $body)) {
   $body['thinking_enabled'] = coreui_ai_settings_load($pdo, $uid)['thinking_enabled'];
+}
+// 0.6.10: only German or English; an unknown language is refused, not turned into German.
+if (array_key_exists('main_language', $body) && !in_array($body['main_language'], COREUI_AI_LANGUAGES, true)) {
+  stu_json(['ok'=>false, 'error'=>'invalid_language'], 400);
+}
+// A save without the language (an older page) keeps the stored one.
+if (!array_key_exists('main_language', $body)) {
+  $body['main_language'] = coreui_ai_settings_load($pdo, $uid)['main_language'];
 }
 // Strict whitelist: an unknown window is refused, never rounded silently.
 $requestedCtx = $body['num_ctx'] ?? null;
