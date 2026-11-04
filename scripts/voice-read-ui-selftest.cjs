@@ -65,6 +65,12 @@ async function open(browser, status, planAnswer, options = {}) {
         if ((options.hold || []).includes(Number(part))) await new Promise(resolve => { held[part] = resolve; });
         call.done = true;
         if ((options.fail || []).includes(Number(part))) return route.fulfill({status: 503, json: {ok: false, error: 'voice_busy'}});
+        // 0.6.8: a voice that is still loading answers 503 voice_loading (options.loadingFirst: that many times).
+        const loadingLeft = (options.loadingFirst || {})[part] || 0;
+        if (loadingLeft > 0) {
+          options.loadingFirst[part] = loadingLeft - 1;
+          return route.fulfill({status: 503, json: {ok: false, error: 'voice_loading'}});
+        }
         if ((options.broken || []).includes(Number(part))) {
           return route.fulfill({status: 200, contentType: 'audio/wav', body: Buffer.alloc(wav(Number(part)).length, 120)});
         }
@@ -187,6 +193,20 @@ const until = (page, fn, arg) => page.waitForFunction(fn, arg, {timeout: 8000});
     assert.deepEqual(await page.evaluate(() => window.__played), [0, 1, 1, 2], 'part 1 played, tried again, then part 2');
     assert.equal(audio(calls).filter(p => p === 1).length, 2, 'part 1 fetched again for the second try');
     assert.match(await page.getAttribute(button, 'class'), /speaking/, 'one broken part does not stop the reading');
+    await page.close();
+
+    // 0.6.8: while the voice loads (English the first time), the part waits; it is no failure.
+    ({page, calls, errors, audio} = await open(browser, {allowed: true, available: true, loading: false, auto_read: false}, null,
+      {parts: 2, loadingFirst: {0: 2}}));
+    button = '#' + await addButton(page, 14);
+    await page.click(button);
+    await until(page, sel => document.querySelector(sel).classList.contains('loading'), button);
+    await until(page, () => window.__played.length === 1);
+    assert.equal(audio(calls).filter(p => p === 0).length, 3, 'part 0 asked again while the voice loaded');
+    assert.deepEqual(await page.evaluate(() => window.__played), [0], 'then it plays');
+    await ended(page);
+    await until(page, () => window.__played.length === 2);
+    assert.match(await page.getAttribute(button, 'class'), /speaking/, 'loading is no failure, the reading goes on');
     await page.close();
 
     // Two failing parts in a row: the voice is gone, stop with a message.

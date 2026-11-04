@@ -40,7 +40,10 @@ function coreui_voice_user_dir(string $root, int $uid, bool $create): ?string {
 /** Same answer, same voice, same text preparation: same id (and cache). */
 /** 0.6.7: the id follows the registry and the code that turns an answer into spoken text, so a
     new dictionary entry (TCI) is heard at once and no stored plan keeps the old reading. */
-const COREUI_VOICE_PLAN_SOURCES = ['config/voice/mara-voice.json', 'tools/tts_spike/textprep_de.py', 'tools/voice/speakable.py'];
+const COREUI_VOICE_PLAN_SOURCES = ['config/voice/mara-voice.json', 'tools/tts_spike/textprep_de.py', 'tools/voice/textprep_en.py',
+  'tools/voice/speakable.py'];
+/** 0.6.8: languages Eve speaks; the service detects the language of an answer. */
+const COREUI_VOICE_LANGUAGES = ['de', 'en'];
 
 function coreui_voice_plan_id(string $text): string {
   static $basis = null;
@@ -109,11 +112,13 @@ function coreui_voice_plan(string $dir, string $text): array {
     $data = $status === 200 ? json_decode($body, true) : null;
     if (!is_array($data) || !is_array($data['parts'] ?? null)) throw new RuntimeException('voice_unavailable');
     $parts = array_values(array_filter(array_map('strval', $data['parts']), static fn(string $p): bool => trim($p) !== ''));
-    $plan = ['parts' => array_slice($parts, 0, COREUI_VOICE_MAX_PARTS), 'textprep' => (string)($data['textprep'] ?? '')];
+    $language = in_array($data['language'] ?? 'de', COREUI_VOICE_LANGUAGES, true) ? (string)($data['language'] ?? 'de') : 'de';
+    $plan = ['parts' => array_slice($parts, 0, COREUI_VOICE_MAX_PARTS), 'textprep' => (string)($data['textprep'] ?? ''), 'language' => $language];
     coreui_voice_write($file, json_encode($plan, JSON_UNESCAPED_UNICODE));
   }
   if ($plan['parts'] === []) throw new RuntimeException('nothing_to_read');
-  return ['id' => $id, 'parts' => count($plan['parts'])];
+  $language = (string)($plan['language'] ?? 'de');
+  return ['id' => $id, 'parts' => count($plan['parts']), 'language' => in_array($language, COREUI_VOICE_LANGUAGES, true) ? $language : 'de'];
 }
 
 /** Path of one spoken part (WAV), computed by the service when not cached. */
@@ -123,7 +128,10 @@ function coreui_voice_audio(string $dir, string $id, int $part): string {
   if (!is_array($plan) || !isset($plan['parts'][$part])) throw new RuntimeException('plan_not_found');
   $file = $dir . '/' . $id . '-' . $part . '.wav';
   if (is_file($file) && !is_link($file)) return $file;
-  [$status, $type, $body] = coreui_voice_http('POST', '/speak', ['text' => (string)$plan['parts'][$part]], 120);
+  // Plans from before 0.6.8 have no language: German.
+  $language = (string)($plan['language'] ?? 'de');
+  if (!in_array($language, COREUI_VOICE_LANGUAGES, true)) $language = 'de';
+  [$status, $type, $body] = coreui_voice_http('POST', '/speak', ['text' => (string)$plan['parts'][$part], 'language' => $language], 120);
   if ($status !== 200 || stripos($type, 'audio/wav') !== 0 || substr($body, 0, 4) !== 'RIFF' || substr($body, 8, 4) !== 'WAVE') {
     $error = json_decode($body, true);
     $code = is_array($error) ? (string)($error['error'] ?? '') : '';

@@ -19,15 +19,17 @@ $base = sys_get_temp_dir() . '/coreai-voice-' . bin2hex(random_bytes(4));
 mkdir($base . '/cache', 0700, true);
 file_put_contents($base . '/router.php', <<<'PHP'
 <?php
-file_put_contents(__DIR__ . '/calls.log', $_SERVER['REQUEST_METHOD'] . ' ' . $_SERVER['REQUEST_URI'] . "\n", FILE_APPEND);
 $uri = $_SERVER['REQUEST_URI'];
 $body = json_decode((string)file_get_contents('php://input'), true);
+// 0.6.8: the language a part is spoken in goes into the log ("POST /speak en").
+file_put_contents(__DIR__ . '/calls.log', $_SERVER['REQUEST_METHOD'] . ' ' . $uri . (is_array($body) && isset($body['language']) ? ' ' . $body['language'] : '') . "\n", FILE_APPEND);
 $text = is_array($body) ? (string)($body['text'] ?? '') : '';
 header('Content-Type: application/json');
 if ($uri === '/health') { echo json_encode(['ok' => true, 'ready' => true, 'loading' => false, 'voice' => 'Testton']); return; }
 if ($uri === '/plan') {
   $parts = str_contains($text, 'LEER') ? [] : (str_contains($text, 'BUSY') ? ['BUSY'] : (str_contains($text, 'KAPUTT') ? ['KAPUTT'] : ['Hallo.', 'Zweiter Teil.']));
-  echo json_encode(['ok' => true, 'parts' => $parts, 'textprep' => 'de-1']);
+  $english = str_contains($text, 'ENGLISH');
+  echo json_encode(['ok' => true, 'parts' => $parts, 'textprep' => $english ? 'en-1' : 'de-1', 'language' => $english ? 'en' : 'de']);
   return;
 }
 if ($uri === '/speak') {
@@ -66,7 +68,8 @@ try {
   voice_test(coreui_voice_plan($dir, 'Eine Antwort von Mara.') === $plan && $calls('POST /plan') === 1, 'plan from the cache');
   voice_test(coreui_voice_plan($dir, 'Eine andere Antwort.')['id'] !== $plan['id'], 'another answer, another id');
   voice_test(coreui_voice_plan_id('x') === coreui_voice_plan_id('x') && strlen(coreui_voice_plan_id('x')) === 64, 'stable id');
-  voice_test(COREUI_VOICE_PLAN_SOURCES === ['config/voice/mara-voice.json', 'tools/tts_spike/textprep_de.py', 'tools/voice/speakable.py'],
+  voice_test(COREUI_VOICE_PLAN_SOURCES === ['config/voice/mara-voice.json', 'tools/tts_spike/textprep_de.py', 'tools/voice/textprep_en.py',
+    'tools/voice/speakable.py'],
     'the plan id follows registry, text preparation and splitting, so a new dictionary entry is heard at once');
 
   // Audio: computed once per part, then from the cache.
@@ -87,6 +90,20 @@ try {
   $broken = coreui_voice_plan($dir, 'KAPUTT');
   voice_test($expect(fn() => coreui_voice_audio($dir, $broken['id'], 0), 'voice_unavailable'), 'a non-WAV answer is never cached or played');
   voice_test($expect(fn() => coreui_voice_plan($dir, 'LEER'), 'nothing_to_read'), 'nothing to read');
+
+  // 0.6.8: the plan keeps the language the service detected; every part is spoken in it.
+  voice_test($plan['language'] === 'de', 'a German plan');
+  $english = coreui_voice_plan($dir, 'An ENGLISH answer from Mara.');
+  voice_test($english['language'] === 'en' && json_decode((string)file_get_contents($dir . '/' . $english['id'] . '.json'), true)['language'] === 'en',
+    'an English plan, stored with its language');
+  coreui_voice_audio($dir, $english['id'], 0);
+  voice_test($calls('POST /speak en') === 1 && $calls('POST /speak de') >= 1, 'English parts are spoken in English, German ones in German');
+  // A plan stored before 0.6.8 has no language: German.
+  $legacyId = coreui_voice_plan_id('Alte Antwort.');
+  file_put_contents($dir . '/' . $legacyId . '.json', json_encode(['parts' => ['Alt.'], 'textprep' => 'de-1']));
+  $before = $calls('POST /speak de');
+  coreui_voice_audio($dir, $legacyId, 0);
+  voice_test($calls('POST /speak de') === $before + 1 && coreui_voice_plan($dir, 'Alte Antwort.')['language'] === 'de', 'old plans are German');
 
   // Cleanup after 7 days; foreign files stay.
   touch($file, time() - 8 * 86400);

@@ -131,6 +131,22 @@ check(mara['files'][0]['path'] == 'languages/german_24l/model.safetensors' and m
       'the 24 layer model and Eve')
 check('Kyutai' in mara['attribution'] and 'VCTK' in mara['attribution'] and 'p361' in mara['attribution'], 'attribution names Kyutai and VCTK')
 check(mara['limits']['cores'] == 4 and mara['measured']['rtf'] < 0.8, 'core limit with room below real time')
+# 0.6.8: English Eve (P20.3b), chosen after the listening test: the standard model, int8.
+english = mara['languages']['en']
+check(set(mara['languages']) == {'en'} and english['model'] == {
+    'label': english['model']['label'], 'language': 'english', 'quantize': True, 'weights_license': 'CC BY 4.0 (Kyutai)',
+    'voice_cloning_weights': False} and english['voice'] == mara['voice'], 'English: standard model, int8, the same Eve')
+check([f['key'] for f in english['files']] == ['model', 'tokenizer', 'voice'] and english['textprep'] == 'en-1', 'English files and text preparation')
+for entry in english['files']:
+    check(re.fullmatch(r'[0-9a-f]{64}', entry['sha256']) is not None and re.fullmatch(r'[0-9a-f]{40}', entry['revision']) is not None
+          and entry['size'] > 0 and entry['repo'] == 'kyutai/pocket-tts-without-voice-cloning' and 'CC BY 4.0' in entry['license']
+          and entry['path'].startswith('languages/english/'), 'English registered file ' + entry['key'])
+check(english['files'][0]['revision'] == english['files'][2]['revision'] == 'a7056f505a4a8ca72d8b5fb1440071d6f1a35739'
+      and english['files'][1]['revision'] == '00eac05ed3d16bdc3f6b5d598874019c34a89214', 'English revisions as Pocket 4.0.1 pins them')
+check(english['measured']['rtf'] < mara['measured']['rtf'] and english['measured']['peak_rss_mb'] + mara['measured']['peak_rss_mb'] < 5600,
+      'English is faster and both voices fit together')
+en_group = reg['groups']['pocket-en-eve-int8']
+check(en_group['language'] == english['model']['language'] and en_group['quantize'] is True, 'the measured English group is the registered one')
 eve_int8 = next(v for v in reg['voices'] if v['id'] == 'pocket-de24-eve-int8')
 check(reg['groups'][eve_int8['group']].get('quantize') is True and eve_int8['voice'] == mara['voice']['name'], 'the measured voice is the registered one')
 

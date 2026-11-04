@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "note": "CoreAI 0.6.0: Maras Stimme, gewaehlt vom Betreiber am 04.11.2026 nach dem Stimmtest (P20.0). Die Gewichte werden nicht mit CoreAI ausgeliefert; die Sprachausgabe laedt genau diese Dateien und prueft jede gegen ihren SHA-256.",
+  "note": "CoreAI 0.6.0: Maras Stimme, gewaehlt vom Betreiber am 04.11.2026 nach dem Stimmtest (P20.0). Die Gewichte werden nicht mit CoreAI ausgeliefert; die Sprachausgabe laedt genau diese Dateien und prueft jede gegen ihren SHA-256. 0.6.8: Die Hauptsprache (Deutsch) steht oben; weitere Sprachen stehen unter \"languages\" und werden erst geladen, wenn eine Antwort in dieser Sprache vorgelesen wird.",
   "decided_at": "2026-11-04",
   "listening": "Betreiber 04.11.2026: kein hoerbarer Unterschied zwischen int8 und normal.",
   "engine": {
@@ -66,5 +66,64 @@
     "cores": 4,
     "time_per_sentence": "5 x Audiodauer, mindestens 10 Sekunden",
     "note": "Vorlaeufig. Mehr Kerne machen Eve nicht schneller (int8: 0,45 / 0,48 / 0,46 bei 4 / 6 / 8 Kernen)."
+  },
+  "languages": {
+    "en": {
+      "decided_at": "2026-11-04",
+      "listening": "Betreiber 04.11.2026: beide englischen Modelle (Standard und 24 Schichten) gleich gut, perfektes Englisch auch bei Zahlen, Datum, Uhrzeit und Dateinamen. Gewaehlt: das Standardmodell, es braucht ein Drittel des Speichers und rechnet mehr als doppelt so schnell.",
+      "model": {
+        "label": "Pocket TTS Englisch, Standardmodell, int8",
+        "language": "english",
+        "quantize": true,
+        "weights_license": "CC BY 4.0 (Kyutai)",
+        "voice_cloning_weights": false
+      },
+      "voice": {
+        "name": "eve",
+        "label": "Eve",
+        "gender": "weiblich",
+        "license": "CC BY 4.0",
+        "origin": "VCTK-Sprecherin p361 (kyutai/tts-voices vctk/p361_023_enhanced.wav), Stimmzustand von Kyutai"
+      },
+      "textprep": "en-1",
+      "files": [
+        {
+          "key": "model",
+          "repo": "kyutai/pocket-tts-without-voice-cloning",
+          "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+          "path": "languages/english/model.safetensors",
+          "sha256": "4c56cbd171c63e8a26ea61f5d48b8a0cd8f3c51f4652c0ab9a19bfcced8c931d",
+          "size": 219029196,
+          "license": "CC BY 4.0 (Kyutai)"
+        },
+        {
+          "key": "tokenizer",
+          "repo": "kyutai/pocket-tts-without-voice-cloning",
+          "revision": "00eac05ed3d16bdc3f6b5d598874019c34a89214",
+          "path": "languages/english/tokenizer.json",
+          "sha256": "f498428e1eafee50492f7be13dc9bfafcfc12e508cd0eb1b01c92ecd5d8c6687",
+          "size": 245020,
+          "license": "CC BY 4.0 (Kyutai)"
+        },
+        {
+          "key": "voice",
+          "repo": "kyutai/pocket-tts-without-voice-cloning",
+          "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+          "path": "languages/english/embeddings/eve.safetensors",
+          "sha256": "4444e6c2671a068ce385bba95fa6dd079e6432e51979ad1bfccd48d618363412",
+          "size": 6145848,
+          "license": "CC BY 4.0 (VCTK p361, Kyutai)"
+        }
+      ],
+      "measured": {
+        "run": "20261104-215318",
+        "cores": 4,
+        "rtf": 0.19,
+        "first_audio_s": 0.07,
+        "load_s": 4.38,
+        "peak_rss_mb": 1066,
+        "note": "Ohne parallele Core-Anfrage gemessen. Zum Vergleich 24 Schichten: RTF 0,47, 3014 MB."
+      }
+    }
   }
 }

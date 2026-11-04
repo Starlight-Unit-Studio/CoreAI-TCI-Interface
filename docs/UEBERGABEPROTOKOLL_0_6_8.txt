@@ -1,0 +1,32 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.6.8
+Stand: 04.11.2026
+Ausgangsbasis: main 0.6.7 nach Merge von PR #158.
+
+AUFTRAG: Hoertest der englischen Eve ausgewertet (report.md, Lauf 20261104-215318). Betreiber: "bei beiden englischen
+Maras dieselbe Qualitaet und dasselbe ueberperfekte Englisch, also kein Unterschied." Schritt 1 von P20.3b: englische
+Eve ins Vorlesen. Schritt 2 (offen): Spracheinstellung im KI-Profil.
+
+MESSUNG (4 Kerne, int8): english RTF 0,19, erster Ton 0,07 s, 1066 MB, Laden 4,38 s;
+english_2026-09_24l RTF 0,47, 0,15 s, 3014 MB, 7,26 s. Gewaehlt: english (Standardmodell).
+
+UMSETZUNG:
+- config/voice/mara-voice.json: languages.en (Modell english, int8, Stimme eve, textprep en-1, Dateien mit Revision
+  a7056f50 / 00eac05e, SHA-256, Groesse, Lizenz, measured). Deutsch bleibt oben (abwaertskompatibel).
+- tools/voice/voice_service.py: voice_entries(), eine Engine je Sprache, Service.ensure()/_load()/_make_room(),
+  COREAI_VOICE_MEM_MB (5600), /plan erkennt die Sprache (Hinweis "language" entscheidet im Zweifel) und meldet sie,
+  /speak nimmt "language", antwortet mit X-CoreAI-Voice-Language, 503 voice_loading waehrend eine Sprache laedt,
+  400 bad_language. /health mit "languages". Probe: 440 Hz fuer Englisch, COREAI_VOICE_PROBE_LOAD_EN.
+- tools/voice/speakable.py: LABELS je Sprache, detect_language(), speakable(..., language), plan(..., language).
+- tools/voice/textprep_en.py (neu, en-1).
+- api/voice_store.php: COREUI_VOICE_LANGUAGES, Plan speichert language (alte Plaene: de), /speak mit language,
+  Plan-Kennung auch aus textprep_en.py. api/voice.php gibt language im Plan zurueck.
+- js/coreui-voice-read.js: fetchPart wartet bei 503 voice_loading (alle 2 s, bis 90 Mal), ohne Fehler zu zaehlen.
+- Preflights: textprep_en.py in der Dateiliste. README (englisch): "Read aloud" als aktueller Stand.
+
+GEPRUEFT: voice-service-selftest.py, voice-read-selftest.php (auch mit Datenbank), voice-read-ui-selftest.cjs,
+tts-spike-selftest.py, volle Testreihe, version-merge-check gegen 0.6.7.
+NICHT hier: echter Lauf mit Pocket (Download und Laden der englischen Eve im Container).
+
+NACH DEM MERGE (Betreiber): Update; der Sprachdienst startet von selbst neu. Mara etwas auf Englisch fragen und die
+Antwort vorlesen lassen: Beim ersten Mal laedt die englische Eve (Knopf pulsiert), danach sofort.
+OFFEN: Spracheinstellung im KI-Profil (Antworten und Vorgabe fuers Vorlesen), dann P20.1 Spracheingabe.

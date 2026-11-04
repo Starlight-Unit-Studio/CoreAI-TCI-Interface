@@ -1,4 +1,4 @@
-"""CoreAI 0.6.1 (parts 0.6.5): what of a Mara answer is read aloud (P20.3), standard library only.
+"""CoreAI 0.6.1 (parts 0.6.5, English 0.6.8): what of a Mara answer is read aloud (P20.3), standard library only.
 
 A chat answer is Markdown. Before Eve speaks it:
   - code blocks and tables are named, not read ("Codeblock ausgelassen.")
@@ -31,17 +31,46 @@ _SENTENCE_END = re.compile(r'(?<=[.!?\u2026])\s+')
 _CLAUSE_END = re.compile(r'(?<=[,;:])\s+')
 
 
-def speakable(markdown: str) -> str:
+# 0.6.8: what is said instead of code, tables, images and addresses, per language.
+LABELS = {
+    'de': {'code': 'Codeblock ausgelassen.', 'table': 'Tabelle ausgelassen.', 'image': 'Bild', 'link': 'Link'},
+    'en': {'code': 'Code block skipped.', 'table': 'Table skipped.', 'image': 'Image', 'link': 'link'},
+}
+# Words that mark a German or an English answer; words both languages use (in, so, also, was) stay out.
+_DE_WORDS = set('der die das und ist nicht ich du sie wir ihr ein eine einen einem mit für auf zu den dem des von sich auch '
+                'wie aber oder wenn dann noch nur schon hier kann können bitte danke ja nein sind wird werden habe haben '
+                'mein dein dass weil nach bei über unter durch zum zur gibt mir dir uns euch sehr mehr jetzt heute gerne '
+                'kein keine diese dieser dieses'.split())
+_EN_WORDS = set("the and is are not you we they it this that with for on of to be have has had will can would should "
+                "could your my our their there what which who please thanks yes been does do did from at by about if "
+                "then just only here now today very more these those i i'm it's don't can't you're let's".split())
+
+
+def detect_language(markdown: str, fallback: str = 'de') -> str:
+    """'de' or 'en' for an answer, from the words it uses (code left out); fallback when unclear."""
+    text = _FENCE.sub(' ', str(markdown or '')[:MAX_INPUT]).lower()
+    words = re.findall(r"[a-zäöüß']+", text)
+    german = sum(word in _DE_WORDS for word in words) + len(re.findall('[äöüß]', text))
+    english = sum(word in _EN_WORDS for word in words)
+    if english >= 3 and english > 1.5 * german:
+        return 'en'
+    if german >= 3 and german > 1.5 * english:
+        return 'de'
+    return fallback if fallback in LABELS else 'de'
+
+
+def speakable(markdown: str, language: str = 'de') -> str:
     """Markdown answer -> plain text a voice can read; paragraphs on separate lines."""
+    label = LABELS.get(language, LABELS['de'])
     text = str(markdown or '')[:MAX_INPUT].replace('\r\n', '\n').replace('\r', '\n')
-    text = _FENCE.sub('\nCodeblock ausgelassen.\n', text)
+    text = _FENCE.sub('\n' + label['code'] + '\n', text)
     lines_out: list[str] = []
     in_table = False
     for raw in text.split('\n'):
         line = raw.strip()
         if line.startswith('|') and line.count('|') >= 2:
             if not in_table:
-                lines_out.append('Tabelle ausgelassen.')
+                lines_out.append(label['table'])
                 in_table = True
             continue
         in_table = False
@@ -59,9 +88,9 @@ def speakable(markdown: str) -> str:
             lines_out.append(line)
     text = '\n'.join(lines_out)
     text = _TOOL_LINE.sub('', text)
-    text = re.sub(r'!\[([^\]]*)\]\([^)]*\)', lambda m: f'Bild: {m.group(1)}' if m.group(1).strip() else 'Bild', text)
+    text = re.sub(r'!\[([^\]]*)\]\([^)]*\)', lambda m: f"{label['image']}: {m.group(1)}" if m.group(1).strip() else label['image'], text)
     text = re.sub(r'\[([^\]]+)\]\([^)]*\)', r'\1', text)
-    text = re.sub(r'<?\bhttps?://[^\s<>()]*[^\s<>().,;:!?]>?', 'Link', text)
+    text = re.sub(r'<?\bhttps?://[^\s<>()]*[^\s<>().,;:!?]>?', label['link'], text)
     text = re.sub(r'`([^`\n]*)`', r'\1', text)
     for mark in ('**', '__', '~~', '*', '_'):
         quoted = re.escape(mark)
@@ -162,6 +191,6 @@ def split_parts(text: str) -> list[str]:
     return parts
 
 
-def plan(markdown: str, prepare) -> list[str]:
-    """Answer -> spoken parts, with the German text preparation in between."""
-    return split_parts(prepare(speakable(markdown)))
+def plan(markdown: str, prepare, language: str = 'de') -> list[str]:
+    """Answer -> spoken parts, with the text preparation of that language in between."""
+    return split_parts(prepare(speakable(markdown, language)))

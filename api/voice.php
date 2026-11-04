@@ -84,7 +84,7 @@ if ($action === 'plan') {
     $code = $e->getMessage();
     stu_json(['ok' => false, 'error' => $code], $code === 'nothing_to_read' ? 422 : 503);
   }
-  stu_json(['ok' => true, 'id' => $plan['id'], 'parts' => $plan['parts']]);
+  stu_json(['ok' => true, 'id' => $plan['id'], 'parts' => $plan['parts'], 'language' => $plan['language']]);
 }
 
 stu_json(['ok' => false, 'error' => 'unknown_action'], 404);

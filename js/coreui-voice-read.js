@@ -90,6 +90,8 @@
   // next part is ready when the current one ends, also on phones that ignore preload.
   var LOOKAHEAD = 3;
   var RETRY_MS = 2000;
+  var LOADING_POLL_MS = 2000;
+  var LOADING_TRIES = 90;  // up to 3 minutes for a voice that loads (first English answer, download included)
 
   function stop() {
     if (!current) return;
@@ -121,19 +123,27 @@
     setTimeout(function () { run.button.classList.remove('error'); label(run.button); }, 4000);
   }
 
-  /* One part as a blob URL; one retry after RETRY_MS; null when it cannot be had. */
-  function fetchPart(run, index, retried) {
+  function later(ms) { return new Promise(function (resolve) { setTimeout(resolve, ms); }); }
+
+  /* One part as a blob URL; one retry after RETRY_MS; null when it cannot be had.
+     0.6.8: while the voice of this language is still loading (English the first time,
+     with its download), the part waits instead of counting as failed. */
+  function fetchPart(run, index, retried, waited) {
     run.controller = typeof AbortController === 'function' ? new AbortController() : null;
     return fetch(partUrl(run.id, index), { credentials: 'include', cache: 'no-store', signal: run.controller ? run.controller.signal : undefined })
       .then(function (response) {
-        if (!response.ok) throw new Error('status ' + response.status);
-        return response.blob();
+        if (response.ok) return response.blob().then(function (blob) { return URL.createObjectURL(blob); });
+        return response.json().catch(function () { return {}; }).then(function (data) {
+          if (response.status === 503 && data && data.error === 'voice_loading' && (waited || 0) < LOADING_TRIES) {
+            run.button.classList.add('loading');
+            return later(LOADING_POLL_MS).then(function () { return run.cancelled ? null : fetchPart(run, index, retried, (waited || 0) + 1); });
+          }
+          throw new Error('status ' + response.status);
+        });
       })
-      .then(function (blob) { return URL.createObjectURL(blob); })
       .catch(function () {
         if (run.cancelled || retried) return null;
-        return new Promise(function (resolve) { setTimeout(resolve, RETRY_MS); })
-          .then(function () { return run.cancelled ? null : fetchPart(run, index, true); });
+        return later(RETRY_MS).then(function () { return run.cancelled ? null : fetchPart(run, index, true, waited); });
       });
   }
 
