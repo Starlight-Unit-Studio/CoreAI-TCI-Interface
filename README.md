@@ -2,97 +2,126 @@
 
 [![DOI](https://zenodo.org/badge/1349352973.svg)](https://doi.org/10.5281/zenodo.22201310)
 
-**CoreAI: TCI Interface** ist die kostenlose, selbst hostbare Chat- und Arbeitsoberfläche von **Starlight Unit Studios** aus der Quantum-Softwarefamilie. **Mara Thorne** ist die integrierte TCI-Assistentin. E.M.B.E.R. bezeichnet das zugrunde liegende Framework.
+**CoreAI: TCI Interface** is a free, self-hosted chat and work interface developed by **Starlight Unit Studios** as part of the Quantum software family. **Mara Thorne** is its TCI assistant; **E.M.B.E.R.** is the underlying framework.
 
-CoreAI verbindet Ollama-Cores mit Chats, Recherche, persönlichem Wissen, Dateiverarbeitung und einem eigenen Administrationsbereich. Der Standardbetrieb nutzt einen isolierten Web-, Datenbank- und Worker-Stack auf dem eigenen Linux-Server. CoreAI ist eine Anwendung, kein eigenständiges Betriebssystem.
+CoreAI combines Ollama-based models with private conversations, browser research, personal knowledge, file tools and an administration interface. Its standard deployment runs an isolated Nginx, PHP-FPM, MariaDB and worker stack on a Linux server. CoreAI is an application, **not a standalone operating system**.
 
-**Aktueller Quellstand: `0.6.3`** | [CHANGELOG.md](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Lizenz (DE)](LICENSE.de.md)
+**Current source version: `0.6.4`** | [Changelog](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Documentation policy](docs/VERSIONING_POLICY.md) | [License](LICENSE.md)
 
-> **Entwicklungsstand:** Die folgenden Funktionen beschreiben vorhandene Bestandteile des Quellstands. Nicht jedes Modell oder jede Cloud-Verbindung unterstützt alle Werkzeuge. Ein GitHub-Merge ist kein Nachweis eines erfolgreichen Live-Deployments.
+> **Development status:** The features below describe the current source code, not guaranteed capabilities of every model or cloud provider. A merged commit does not by itself prove a successful production deployment.
 
-## Schnellstart: Installation und Aktualisierung
+## Quick start: install CoreAI
 
-Der **offizielle One-Liner** installiert CoreAI erstmals oder aktualisiert eine vorhandene Installation auf den neuesten gemergten Stand des Branches `main`:
+Run the **official one-line installer** on the target server over an interactive SSH connection:
 
 ```bash
 ( setup_file="$(mktemp)" && trap 'rm -f -- "$setup_file"' EXIT && curl -fsSL https://raw.githubusercontent.com/Starlight-Unit-Studio/CoreAI-TCI-Interface/main/setup.sh -o "$setup_file" && sudo bash "$setup_file" )
 ```
 
-Den Befehl **auf dem Zielserver in einer interaktiven SSH-Shell** ausführen, nicht im Browser. Der Launcher wird in eine temporäre Datei geladen, mit Root-Rechten gestartet und anschließend entfernt.
+This command downloads the setup launcher to a temporary file, executes it with root privileges and removes the temporary file afterwards. The same command can also update an existing installation, although the **built-in updater is the preferred day-to-day update method** after initial setup.
 
-**Voraussetzungen:** Debian 12+ oder Ubuntu 24.04+, `sudo`/Root-Rechte, Internetzugang und ausreichend Ressourcen für das gewählte Ollama-Modell. Der Installer kann benötigte Pakete sowie Docker, Compose und Ollama nachinstallieren. Der Modell- und Container-Download benötigt entsprechend Speicherplatz und Bandbreite.
+**Requirements:** Debian 12+ or Ubuntu 24.04+, root or `sudo` access, internet connectivity and sufficient CPU, RAM and storage for the chosen Ollama model. The installer can provision necessary host tools, Docker/Compose and Ollama. Downloads and model builds require additional disk space and bandwidth.
 
-Bei der **Erstinstallation** fragt das Setup Admin-E-Mail und ein Passwort mit mindestens 12 Zeichen über das Terminal ab. Das Standardverzeichnis ist `/opt/ember-coreui`. Dieser historische technische Pfad bleibt aus Kompatibilitätsgründen erhalten.
+On first installation, the setup prompts for an administrator email and a password of at least 12 characters at the terminal. Its default installation path is `/opt/ember-coreui`; that historical directory name remains unchanged for compatibility.
 
-Bei einer **Aktualisierung** denselben One-Liner erneut ausführen. Das Setup erkennt die Installation, bewahrt lokale Konfiguration, Datenbank, Konten, Uploads und Logs und führt erforderliche Migrationen sowie den Preflight aus. Danach die Oberfläche im Browser tatsächlich prüfen.
+The launcher installs the latest merged commit from `main` and runs the installer and preflight. An existing installation retains its local configuration, database, user accounts, uploads and logs. Complete the installation by checking the application in your browser.
 
-Der gesondert archivierte, SHA-256-verifizierte ZIP-Stand `0.5.3-alpha` bleibt explizit über `COREUI_SETUP_SOURCE=release` verfügbar. Er ist **nicht** der aktuelle Quellstand. `main` wird nicht als neu geprüftes ZIP-Release ausgegeben.
+An archived, separately checksum-verified historical `0.5.3-alpha` ZIP can still be selected explicitly through `COREUI_SETUP_SOURCE=release`. It is **not** the current source version. A `main` source checkout must not be represented as a newly verified ZIP release.
 
-## Hardwareanforderungen
+## Updating CoreAI
 
-**CoreAI wurde fuer CPU-only-Betrieb konzipiert. Ein Linux-Root-Server ohne GPU ist die Referenzplattform.** Die Hauptanforderungen sind ausreichende CPU-Leistung, RAM, SSD-/NVMe-Speicher und die im Schnellstart genannten Linux-Voraussetzungen. Eine dedizierte Grafikkarte und VRAM sind **nicht erforderlich**.
+### Recommended: update from the CoreAI interface
 
-Die folgenden Profile sind **vorsichtige Planungsrichtwerte, keine auf allen Servern getesteten Mindestwerte**. Sie beziehen sich auf einen gleichzeitig aktiven lokalen Ollama-Core mit Q4-Quantisierung und ein begrenztes Kontextfenster von etwa 4K bis 8K Tokens. Mehr Kontext (etwa 131K), andere Quantisierungen, zusaetzliche Dienste und Nutzer erhoehen den Bedarf deutlich.
+Once the initial setup has installed the host-side update service, **the owner can update CoreAI without SSH**.
 
-| CPU-only-Profil | RAM gesamt | CPU-Leistung | Freier SSD-/NVMe-Speicher | Einordnung |
+1. Sign in using the **owner** account and open **Settings → System → CoreAI Update**.
+2. Select **Check now** to request a GitHub check. The host also checks the repository's `main` branch **approximately every 10 minutes** when the systemd update service is running.
+3. When a new commit is available, open the **update window** (or use the update notification shown to the owner). Review the version and available change notes.
+4. Choose whether Ollama should be restarted afterwards, then select **Start update**. CoreAI creates a **database backup** first, runs its official setup and reports progress in the interface.
+5. During service restarts, connected users see a waiting screen. The application reloads automatically when CoreAI is available again. If an update fails, the owner can inspect its status and update log.
+
+**Important:** CoreAI checks for updates automatically, but **does not install them without the owner's action**. The owner may dismiss an update notification until the next page load. Other account roles cannot initiate updates.
+
+The updater is implemented by `scripts/coreai-updater.sh` and host-side systemd services; the web UI submits requests, not shell commands. Backups are stored under `/opt/ember-coreui/var/backups`, with the updater retaining the five most recent automatic SQL backups. The built-in updater follows the same official `main` setup path as the one-liner.
+
+### Alternative: update over SSH
+
+If the built-in updater is not yet installed or a server has no working systemd update service, rerun the **same one-liner from Quick start** on the host. This also installs/configures the update service where supported. Avoid treating a GitHub merge as an already completed server update.
+
+For diagnostics:
+
+```bash
+systemctl status coreai-update.path coreai-update-check.timer
+sudo tail -n 80 /opt/ember-coreui/var/update/update.log
+```
+
+The last command reads the updater's log; if no update has run, the log may not exist yet.
+
+## Hardware requirements
+
+**CPU-only is the baseline.** CoreAI is designed to operate on a Linux root server **without a dedicated GPU or VRAM**. CPU performance, system RAM and SSD/NVMe storage matter more than a graphics card for the standard deployment.
+
+These configurations are **planning guidelines, not benchmarks or guarantees**. They assume one locally active Ollama model in roughly 4-bit quantization and a relatively short 4K-8K token context. Much larger contexts, such as 131K tokens, can increase memory requirements substantially.
+
+| CPU-only profile | System RAM | CPU | Available SSD/NVMe space | Intended use |
 | --- | --- | --- | --- | --- |
-| **E2B: einfacher Einstieg** | ab **8 GB** | ab 4 dedizierte Kerne | ab 40 GB | Kurzer Kontext, ohne Eve und Browser-Worker; eingeschraenkter Betrieb |
-| **E2B: empfohlen** | **16 GB** | 4 bis 8 dedizierte Kerne | 60 bis 80 GB | Mehr Spielraum fuer Chat, Systemdienste und Werkzeuge |
-| **E4B: empfohlen** | **24 bis 32 GB** | 6 bis 12 dedizierte Kerne | ab 80 GB | Komfortablere CPU-only-Konfiguration |
-| **12B: groesserer Core** | ab **32 GB** | ab 8 dedizierte Kerne | ab 100 GB | CPU-Antworten koennen merklich langsamer ausfallen |
-| **26B A4B / 31B: grosse Cores** | **64 bis 96 GB oder mehr** | ab 12 bis 16 dedizierte Kerne | ab 120 GB | Modell, Kontextgroesse und Tempo gesondert pruefen |
+| **E2B, restricted minimum** | **8 GB** | 4 dedicated cores | 40 GB | Short context; omit optional voice and browser worker; limited features |
+| **E2B, recommended** | **16 GB** | 4-8 dedicated cores | 60-80 GB | More room for CoreAI services and tools |
+| **E4B, recommended** | **24-32 GB** | 6-12 dedicated cores | 80 GB+ | Comfortable starting point for the standard local model |
+| **12B, larger model** | **32 GB+** | 8+ dedicated cores | 100 GB+ | CPU generation may be noticeably slower |
+| **26B A4B / 31B, large models** | **64-96 GB or more** | 12-16+ dedicated cores | 120 GB+ | Plan separately for context size, responsiveness and concurrency |
 
-**Modell-RAM ist nicht gleich Server-RAM:** Die [Gemma-4-Dokumentation von Google](https://ai.google.dev/gemma/docs/core) nennt fuer Q4 ungefaehr 2,9 GB (E2B), 4,5 GB (E4B), 6,7 GB (12B), 14,4 GB (26B A4B) und 17,5 GB (31B) als grobe Modell-Speicherwerte mit pauschalem Puffer. Diese Tabelle beschreibt urspruenglich GPU-/TPU-Modellspeicher, **nicht** den vollstaendigen RAM-Verbrauch von CoreAI auf einem CPU-Server. KV-Cache, Kontextfenster, Ollama, Linux, Docker, Datenbank, Browser-Worker und weitere Prozesse kommen hinzu.
+**Model memory is not server memory.** Google's [Gemma 4 model documentation](https://ai.google.dev/gemma/docs/core) gives approximate Q4 model memory figures of 2.9 GB (E2B), 4.5 GB (E4B), 6.7 GB (12B), 14.4 GB (26B A4B) and 17.5 GB (31B). Those figures concern model loading and **are not total CPU-server RAM requirements**. Allow additional memory for the KV cache, context window, Ollama, Linux, containers, MariaDB, search and other worker processes.
 
-**Optionale Eve-Sprachausgabe:** Der bisherige Test ermittelte etwa 2,5 GB RAM und bis zu vier CPU-Kerne. Das Containerlimit betraegt 6 GB. Auf kleinen Servern bei der Erstinstallation gegebenenfalls `COREUI_INSTALL_VOICE=0` nutzen. Vor Aenderungen an einer vorhandenen Installation erst Konfiguration und Daten sichern.
+**Optional voice service:** Eve's measured voice configuration used about 2.5 GB RAM and up to four CPU cores; the container has a 6 GB memory limit. On small servers, consider disabling voice at first installation with `COREUI_INSTALL_VOICE=0`. Changes to an existing installation's settings require a deliberate configuration review and backup.
 
-### Optional: GPU- und VRAM-High-Performance
+### Optional high performance: GPU and VRAM
 
-Eine kompatible GPU bzw. vGPU mit ausreichend **VRAM** kann die Modellinferenz ueber Ollama erheblich beschleunigen. **Dies ist eine optionale Leistungsstufe, keine Voraussetzung fuer CoreAI.** Ob und wie stark der Core beschleunigt wird, haengt von GPU-/Treiberunterstuetzung, Modell, Quantisierung und davon ab, wie viel Modell und KV-Cache in den VRAM passen. Nicht alle CoreAI-Werkzeuge werden durch eine GPU schneller.
+A compatible GPU or vGPU with sufficient VRAM **may substantially accelerate Ollama model inference**, but is **not required to run CoreAI**. Benefits depend on drivers, model support, quantization and how much model data and KV cache fit in VRAM. GPU offloading may need additional host configuration and does not automatically speed up every CoreAI tool.
 
-### Unverbindliche Serverbeispiele
+### Example CPU root-server configurations
 
-[netcup Root-Server](https://www.netcup.com/de/server/root-server) dienen hier **nur als preisorientierte Beispiele fuer CPU-Root-Server mit dedizierten Ressourcen**. CoreAI ist weder an netcup gebunden noch wird eine allgemeingueltige Aussage ueber den guenstigsten Anbieter getroffen. Produktnamen, Verfuegbarkeit, Hardware und Preise koennen sich aendern.
+[netcup root servers](https://www.netcup.com/de/server/root-server) are included as **price-oriented examples**, not mandatory hardware or a claim that one provider always has the lowest prices in Germany. Server specifications and availability can change.
 
-| Beispiel bei netcup | CPU-Kerne | RAM | Einordnung |
+| Example netcup plan | CPU cores | RAM | Suggested profile |
 | --- | ---: | ---: | --- |
-| RS 1000 G12 | 4 | 8 GB | E2B-Einstieg mit eingeschraenktem Funktionsumfang |
-| RS 2000 G12 | 8 | 16 GB | E2B-Empfehlung |
-| RS 4000 G12 | 12 | 32 GB | E4B / 12B, je nach Kontext und Last |
-| RS 8000 G12 | 16 | 64 GB | Groessere CPU-Cores und mehr Spielraum |
+| RS 1000 G12 | 4 | 8 GB | Restricted E2B entry point |
+| RS 2000 G12 | 8 | 16 GB | Recommended E2B |
+| RS 4000 G12 | 12 | 32 GB | E4B / 12B, depending on workload |
+| RS 8000 G12 | 16 | 64 GB | Larger CPU-only models and more headroom |
 
-**Wichtig:** Kein konkretes Hostingprodukt ist als Pflicht-Mindesthardware definiert. CPU-only funktioniert ohne GPU, aber Antwortgeschwindigkeit und RAM-Reserven muessen zum persoenlichen Einsatz passen.
+No named hosting product is a required minimum. A GPU-free server can run CoreAI, but available RAM, memory bandwidth and CPU speed determine the practical experience.
 
-## Zugriff und wichtige Optionen
+## Access and important settings
 
-Standardmäßig lauscht die Weboberfläche nur auf `127.0.0.1:9080`. Sie wird nicht automatisch öffentlich freigegeben. Für Zugriffe von anderen Geräten einen SSH-Tunnel oder einen separat abgesicherten Reverse-Proxy verwenden. Bei einer Internetfreigabe müssen HTTPS, Zugangsschutz und die Betreiberpflichten geprüft werden.
+By default, CoreAI binds to `127.0.0.1:9080` and is **not directly exposed to the public internet**. Use an SSH tunnel or a separately secured reverse proxy for remote access. Public deployment also requires appropriate HTTPS, access control and operator compliance measures.
 
-| Variable | Standard | Bedeutung |
+| Variable | Default | Purpose |
 | --- | --- | --- |
-| `COREUI_HTTP_PORT` | `9080` | Lokaler Web-Port |
-| `COREUI_BIND_ADDRESS` | `127.0.0.1` | Bind-Adresse der Weboberfläche |
-| `COREUI_MODEL_NAME` | `ember-coreui:latest` | Technischer Name des eigenen Ollama-Cores |
-| `COREUI_INSTALL_BROWSE` | `1` | Playwright-Browser-Worker |
-| `COREUI_INSTALL_SEARXNG` | `1` | Eigene Suchinstanz |
-| `COREUI_INSTALL_VOICE` | `1` | Optionalen Eve-Sprachdienst versuchen zu installieren |
+| `COREUI_HTTP_PORT` | `9080` | Local HTTP port |
+| `COREUI_BIND_ADDRESS` | `127.0.0.1` | Web interface bind address |
+| `COREUI_MODEL_NAME` | `ember-coreui:latest` | Technical name of CoreAI's Ollama model |
+| `COREUI_INSTALL_BROWSE` | `1` | Install the Playwright browser worker |
+| `COREUI_INSTALL_SEARXNG` | `1` | Set up the dedicated search service |
+| `COREUI_INSTALL_VOICE` | `1` | Attempt to build the optional Eve voice service |
 
-Konfigurationen vorhandener Installationen werden nicht stillschweigend überschrieben. Das bewusste Neuerzeugen mit `COREUI_FORCE_CONFIG=1` ist **kein normaler Update-Schritt** und erfordert zuvor eine Datensicherung. Weitere Parameter stehen in [`scripts/install.sh`](scripts/install.sh).
+An existing installation's settings are not silently overwritten. `COREUI_FORCE_CONFIG=1` permits deliberate regeneration, **not a routine update**; review and back up configuration beforehand. See [`scripts/install.sh`](scripts/install.sh) for the full list of options.
 
-## Funktionen im aktuellen Stand
+## Current capabilities
 
-- **Mara und Cores:** Ollama-basierte Core-Auswahl im Chat, Gemma-4-Stufen, Cloud-Optionen bei verbundenen Anbietern und ein Denken-Schalter. Modellanfragen laufen über eine gemeinsame serielle Warteschlange.
-- **Chats und Konten:** Persistente Sitzungen, Verlauf, Folgefragen, Kontextverwaltung sowie Rollen für Inhaber, Admins, Nutzer und optionale Gäste.
-- **Recherche:** Websuche über SearXNG und gesonderte Playwright-Browserrecherche. Quellen und tatsächliche Arbeitsschritte werden im Chat sichtbar. Ein Suchtreffer allein gilt nicht als gelesene Webseite.
-- **Wissen und Werkzeuge:** Kontogetrenntes RAG-Lite und Memory, automatische Skill-Auswahl, Dateiuploads sowie isolierte Python-Ausführung mit registrierten Ergebnissen. Medienfähigkeiten hängen vom Modell und den verfügbaren Werkzeugen ab.
-- **Personalisierung:** Kontobezogene Einstellungen für Ton, Darstellung, Emoji-Dichte, Werkzeuge und persönliche Anweisungen.
-- **Sprachausgabe:** Mara kann Antworten mit **Eve** (Pocket TTS Deutsch) vorlesen. Automatisches Vorlesen ist optional und zunächst ausgeschaltet. Scheitert der Bau oder Start des Sprachdienstes, bleibt CoreAI ohne Vorlesen nutzbar.
-- **Admin Core:** Benutzer- und Core-Verwaltung, Zugriffsrechte, Diagnose, Betriebsstatus, Audit und ein geführter Update-Weg.
+- **Mara and models:** Core selection in the chat, Gemma 4 tiers, supported connected cloud models and a thinking toggle. Model inference shares one serial work queue.
+- **Conversations and accounts:** Persistent sessions, history, follow-up suggestions, context management and distinct owner, admin, user and optional guest roles.
+- **Research:** SearXNG-backed web search and a separate Playwright browsing mode. Sources and actual tool activity can be shown in the chat; a search result alone is not proof that its page was read.
+- **Knowledge and tools:** Account-scoped RAG-Lite, memory, skill selection, file uploads and isolated Python tasks with registered outputs. Media handling depends on the selected model and available tools.
+- **Personalization:** Account-specific settings for tone, formatting, emoji density, tool preferences and custom instructions.
+- **Read aloud:** Mara can read answers using **Eve** (German Pocket TTS). Automatic read-aloud is optional and disabled by default. CoreAI remains usable if the optional voice service is unavailable.
+- **Admin Core:** Account and model management, permissions, diagnostics, audit information, runtime controls and the integrated update interface.
 
-**Noch nicht als fertig zu betrachten:** Durchgehender Live-Sprachchat, Spracheingabe und weitere geplante Funktionen sind nicht allein deshalb implementiert, weil sie in der Planung stehen. Der Soll-/Ist-Stand ist in [ROADMAP.md](ROADMAP.md), der [Funktionsmatrix](docs/COREUI_FEATURE_MATRIX.md) und dem [Sprachplan](docs/COREUI_VOICE_PLAN.md) getrennt dokumentiert.
+**Not yet a completed feature:** Continuous live voice chat, speech input and other roadmap items must not be presented as implemented just because they are planned. See the [Roadmap](ROADMAP.md), [Feature matrix](docs/COREUI_FEATURE_MATRIX.md) and [Voice plan](docs/COREUI_VOICE_PLAN.md) for scope and status.
 
-## Betrieb und Diagnose
+## Operations and diagnostics
 
-Diese Befehle auf dem installierten Server ausführen:
+Run these commands on the installed host:
 
 ```bash
 cd /opt/ember-coreui
@@ -102,36 +131,36 @@ sudo ./scripts/stack.sh logs --tail=100
 curl -fsS http://127.0.0.1:9080/api/health.php
 ```
 
-Für den optionalen Sprachdienst gezielt die Logs lesen:
+To inspect the optional voice service:
 
 ```bash
 cd /opt/ember-coreui
 sudo ./scripts/stack.sh logs --tail=100 voice
 ```
 
-Ein regulärer Neustart erfolgt über `sudo ./scripts/stack.sh restart`, ein Stopp ohne Datenlöschung über `sudo ./scripts/stack.sh stop`. Der Admin-Updater verwendet den offiziellen Setup-Weg.
+Use `sudo ./scripts/stack.sh restart` for a normal stack restart or `sudo ./scripts/stack.sh stop` to stop services without deleting data.
 
-**Abgrenzung:** `scripts/install-native.sh` ist ein alternativer nativer Installer für einen *dedizierten, leeren Server*. Er verändert Host-Dienste und ist nicht der Standard für den Parallelbetrieb mit anderen Starlight-Unit-Projekten.
+**Separate installation path:** `scripts/install-native.sh` is intended for an explicitly dedicated, empty host. It changes system-level services and is **not** the standard installer for parallel operation alongside other Starlight Unit applications.
 
-## Projektaufbau und Dokumentation
+## Repository structure and documentation
 
-| Pfad | Aufgabe |
+| Path | Purpose |
 | --- | --- |
-| `api/`, `js/`, `css/` | APIs, Chats und Oberflächen |
+| `api/`, `js/`, `css/` | Web APIs, chat and settings UI |
 | `admin/` | Admin Core |
-| `database/migrations/` | Additive Datenbankmigrationen |
-| `config/` | Runtime-Vorlagen und Betreiber-Modelfile |
-| `docker/`, `compose.yaml` | Isolierter Standard-Stack |
-| `scripts/` | Installer, Update, Preflight und Selbsttests |
-| `skills/`, `tools/` | Skills und ausführbare Werkzeuge |
-| `var/`, `uploads/` | Lokale Laufzeit- und Nutzerdaten, nicht für Git |
+| `database/migrations/` | Additive database migrations |
+| `config/` | Runtime templates and the owner-maintained Modelfile |
+| `docker/`, `compose.yaml` | Isolated standard deployment |
+| `scripts/` | Setup, updater, preflight and self-tests |
+| `skills/`, `tools/` | Skill instructions and executable tools |
+| `var/`, `uploads/` | Local runtime and user data; do not commit to Git |
 
-**Dokumentationsregel:** `README.md` erklärt den **aktuellen Zustand und die Installation**. Sie ist **kein Changelog**. Die vollständige Versionshistorie steht in [CHANGELOG.md](CHANGELOG.md) und im [TXT-Changelogarchiv](docs/changelogs-txt/INDEX.txt). Entwicklerregeln stehen in [AGENTS.md](AGENTS.md), [CLAUDE.md](CLAUDE.md) und der [Versionierungsrichtlinie](docs/VERSIONING_POLICY.md).
+**Documentation policy:** This English-language `README.md` explains the product **as it exists today** and is **not a changelog**. Release history belongs in [CHANGELOG.md](CHANGELOG.md) and the [per-version TXT archive](docs/changelogs-txt/INDEX.txt). Developer rules are maintained in [AGENTS.md](AGENTS.md), [CLAUDE.md](CLAUDE.md) and [docs/VERSIONING_POLICY.md](docs/VERSIONING_POLICY.md). Historical records and the authoritative German license are preserved.
 
-## Lizenz, Datenschutz und Grenzen
+## License, privacy and limitations
 
-CoreAI ist kostenlos und steht unter der **Community-Source-Lizenz**. Sie ist **keine von der Open Source Initiative anerkannte Open-Source-Lizenz**. Die interne Nutzung ist im Rahmen der Lizenz gebührenfrei. Für Weitergabe, Marken und kostenpflichtiges Hosting gelten zusätzliche Bedingungen. Maßgeblich ist [LICENSE.de.md](LICENSE.de.md); ergänzend gelten [LICENSE.md](LICENSE.md), [COMMUNITY_POLICY.md](COMMUNITY_POLICY.md), [NOTICE.md](NOTICE.md) und [TRADEMARKS.md](TRADEMARKS.md).
+CoreAI is free to use under a **Community Source license**. It is **not an OSI-approved open-source license**. Internal use is royalty-free within its terms; redistribution, protected branding and monetized hosting have additional conditions. The legally controlling text is [LICENSE.de.md](LICENSE.de.md); see also [LICENSE.md](LICENSE.md), [COMMUNITY_POLICY.md](COMMUNITY_POLICY.md), [NOTICE.md](NOTICE.md) and [TRADEMARKS.md](TRADEMARKS.md).
 
-Der lokale Betrieb erfordert keinen obligatorischen Hersteller-Account und keine Lizenz-Telemetrie. **Cloud-Cores und externe Dienste können Daten an Dritte übertragen und Nutzungskontingenten unterliegen.** Hierfür sind deren jeweilige Datenschutz- und Vertragsbedingungen zu beachten.
+Self-hosting does not require a vendor subscription or license phone-home. **Cloud models and external services may process data off-server and may have their own usage limits, prices and privacy terms.** Evaluate those services separately from the CoreAI project license.
 
 Copyright © 2023-2026 Patrick Schildgen, Starlight Unit Studios.
