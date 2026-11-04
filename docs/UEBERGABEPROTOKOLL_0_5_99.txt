@@ -1,0 +1,21 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.5.99
+Stand: 04.11.2026
+Branch: claude/bold-galileo-myoyi0 (neu auf main 0.5.98, PR #150 gemergt)
+
+ANLASS: Auf dem Server wurde "tts-spike.sh --hf-hf_..." eingegeben (Token an die Option gehaengt), dazu in derselben
+Eingabe der Messbefehl. Folge: "Unbekannte Option" mit dem Token im Klartext, dann Lauf 20261104-164446 ohne Token
+(Piper und Pocket mit Textaufbereitung, Klone uebersprungen, Stimmdateien warten).
+AENDERUNG: tts-spike.sh lehnt jedes Argument mit "hf_" ab (Exit 2), gibt den Token nie aus, nennt den richtigen Befehl
+und empfiehlt einen neuen Token. Selbsttest mit vier Schreibweisen.
+WAHL DES BETREIBERS: Eve, Pocket TTS Deutsch 24 Schichten (Lauf mit Textaufbereitung: "Aussprache super").
+Eve 24: RTF 1,23 bei 4 Kernen, erster Ton 0,50 s, 2,3 GB, Laden 5,3 s. Kein Token noetig (vordefinierter Zustand).
+NEU: Gruppen pocket-de24-eve und pocket-de24-eve-int8 (quantize: true, Pockets apply_dynamic_int8 ueber torch.ao bei
+torch 2.6). run.py: load_model(quantize=...) nur fuer Pocket.load, result.quantize. Messen mit --cores 4,6,8.
+NAECHSTER VERSIONSSPRUNG: nach 0.5.99 folgt 0.6.0 (docs/VERSIONING_POLICY.md).
+
+NAECHSTER SCHRITT (Betreiber): alten Token auf huggingface.co/settings/tokens loeschen, neuen anlegen, dann
+  sudo bash /opt/ember-coreui/scripts/tts-spike.sh --hf-token
+  sudo bash /opt/ember-coreui/scripts/tts-spike.sh --skip-build --groups pocket-de-kerstin,pocket-de24-kerstin,pocket-de-stimmdatei,pocket-de24-stimmdatei --run letzter
+Anhoeren: Kerstin (Klon) gegen Kerstin (Stimmdatei), Lesefehler sammeln. (Erledigt: Wahl Eve, siehe oben.)
+DANACH: sudo bash /opt/ember-coreui/scripts/tts-spike.sh --skip-build --groups pocket-de24-eve,pocket-de24-eve-int8 --cores 4,6,8
+und report.md schicken; dann Kernlimit festlegen (Ziel RTF unter 0,8) und P20.3 Vorlesen mit Eve bauen.

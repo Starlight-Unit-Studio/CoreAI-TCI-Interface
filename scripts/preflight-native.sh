@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.98 voice test: measured, German text preparation, Kerstin as a Pocket clone.
+# CoreAI: TCI Interface 0.5.99 voice test refuses a token on the command line and never prints it.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

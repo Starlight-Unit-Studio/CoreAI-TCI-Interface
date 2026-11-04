@@ -89,6 +89,8 @@ def load_registry(path: Path) -> dict:
             raise SystemExit('voices.json: unknown reference for ' + group_id)
         if group.get('hf_home', 'hf') not in ('hf', 'hf-clone'):
             raise SystemExit('voices.json: unknown hf_home for ' + group_id)
+        if not isinstance(group.get('quantize', False), bool):
+            raise SystemExit('voices.json: quantize must be true or false for ' + group_id)
         source = group.get('voice_file_from')
         if source is not None and not reg.get('groups', {}).get(source, {}).get('clone'):
             raise SystemExit('voices.json: voice_file_from must name a clone group: ' + group_id)
@@ -306,7 +308,7 @@ class Piper:
 
 
 class Pocket:
-    params: dict = {'temperature': 'Standard des Modells (0,3)', 'quantize': False,
+    params: dict = {'temperature': 'Standard des Modells (0,3)', 'quantize': 'je Gruppe, Standard aus (int8 nur bei quantize: true)',
                     'voices': 'vordefinierte Stimmzustaende; Klon-Gruppen: Referenzaufnahme'}
     REPO = 'kyutai/pocket-tts-without-voice-cloning'
     CLONE_REPO = 'kyutai/pocket-tts'
@@ -362,7 +364,8 @@ class Pocket:
     def load(self, models: Path, group: dict, files: list[dict], cores: int) -> None:
         torch_threads(cores)
         from pocket_tts import TTSModel
-        self.model = TTSModel.load_model(language=group['language'])
+        # 0.5.99: int8 for the transformer (Pocket's own quantize), to bring the 24 layer model under real time.
+        self.model = TTSModel.load_model(language=group['language'], quantize=bool(group.get('quantize')))
         clone = bool(group.get('clone'))
         if bool(getattr(self.model, 'has_voice_cloning', False)) != clone:
             raise RuntimeError('Pocket TTS: Klon-Gewichte fehlen' if clone else 'Pocket TTS hat unerwartet die Klon-Gewichte geladen')
@@ -555,6 +558,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         'files': [], 'voices': [],
     }
     result['textprep'] = reg.get('textprep')
+    result['quantize'] = bool(group.get('quantize'))
     result_file = out / f'result-{args.group}-{args.cores}c.json'
     use_hf_home(models, group)
     try:
