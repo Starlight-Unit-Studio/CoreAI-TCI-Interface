@@ -1,0 +1,69 @@
+{
+  "format": 1,
+  "note": "CoreAI 0.6.0: Maras Stimme, gewaehlt vom Betreiber am 04.11.2026 nach dem Stimmtest (P20.0). Die Gewichte werden nicht mit CoreAI ausgeliefert; die Sprachausgabe laedt genau diese Dateien und prueft jede gegen ihren SHA-256.",
+  "decided_at": "2026-11-04",
+  "engine": {
+    "package": "pocket-tts==4.0.1",
+    "code_license": "MIT",
+    "home": "https://github.com/kyutai-labs/pocket-tts"
+  },
+  "model": {
+    "label": "Pocket TTS Deutsch, 24 Schichten, int8",
+    "language": "german_24l",
+    "quantize": true,
+    "weights_license": "CC BY 4.0 (Kyutai)",
+    "voice_cloning_weights": false
+  },
+  "voice": {
+    "name": "eve",
+    "label": "Eve",
+    "gender": "weiblich",
+    "license": "CC BY 4.0",
+    "origin": "VCTK-Sprecherin p361 (kyutai/tts-voices vctk/p361_023_enhanced.wav), Stimmzustand von Kyutai"
+  },
+  "textprep": "de-1",
+  "attribution": "Stimme: Eve aus Pocket TTS von Kyutai (CC BY 4.0), Stimmzustand nach der VCTK-Sprecherin p361 (CSTR, University of Edinburgh, CC BY 4.0).",
+  "files": [
+    {
+      "key": "model",
+      "repo": "kyutai/pocket-tts-without-voice-cloning",
+      "revision": "4e1e0a3e611c51c0b4ed8174fc10f32a54644303",
+      "path": "languages/german_24l/model.safetensors",
+      "sha256": "78d0155b017a6d1222989af521c60d7df5b4a179fa70ef65ce0379b5a1a59312",
+      "size": 672178676,
+      "license": "CC BY 4.0 (Kyutai)"
+    },
+    {
+      "key": "tokenizer",
+      "repo": "kyutai/pocket-tts-without-voice-cloning",
+      "revision": "4e1e0a3e611c51c0b4ed8174fc10f32a54644303",
+      "path": "languages/german_24l/tokenizer.json",
+      "sha256": "2d77849811e3d1b6ae80e5b11b203f57e1847901104d8a0573b34f46f8dddb53",
+      "size": 245966,
+      "license": "CC BY 4.0 (Kyutai)"
+    },
+    {
+      "key": "voice",
+      "repo": "kyutai/pocket-tts-without-voice-cloning",
+      "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+      "path": "languages/german_24l/embeddings/eve.safetensors",
+      "sha256": "b734cfed90bfb86494f7f892b219bf9c85be1bc7dd3dde1ac6b997cd2a69cba7",
+      "size": 24583512,
+      "license": "CC BY 4.0 (VCTK p361, Kyutai)"
+    }
+  ],
+  "measured": {
+    "run": "20261104-173047",
+    "cores": 4,
+    "rtf": 0.45,
+    "first_audio_s": 0.13,
+    "load_s": 7.95,
+    "peak_rss_mb": 2503,
+    "note": "Ohne parallele Core-Anfrage gemessen; die Live-Messung mit Core folgt."
+  },
+  "limits": {
+    "cores": 4,
+    "time_per_sentence": "5 x Audiodauer, mindestens 10 Sekunden",
+    "note": "Vorlaeufig. Mehr Kerne machen Eve nicht schneller (int8: 0,45 / 0,48 / 0,46 bei 4 / 6 / 8 Kernen)."
+  }
+}

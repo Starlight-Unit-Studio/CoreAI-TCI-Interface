@@ -7,7 +7,17 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.99` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.6.0` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Maras Stimme: Eve (0.6.0)
+
+Gewaehlt nach dem Stimmtest auf dem Server: **Eve** mit Pocket TTS Deutsch,
+24 Schichten, mit int8-Beschleunigung. Sie spricht mehr als doppelt so schnell
+wie gesprochen (Echtzeitfaktor 0,45 mit 4 Kernen), der erste Ton kommt nach
+0,13 Sekunden. Mehr Kerne bringen nichts; vorlaeufiges Kernlimit 4. Die drei
+Dateien (Modell, Tokenizer, Stimmzustand) sind mit Herkunft, Revision, SHA-256
+und Lizenz in `config/voice/mara-voice.json` registriert; ein Token ist nicht
+noetig. Naechste Schritte: Vorlesen im Chat (P20.3) und Spracheingabe (P20.1).
 
 ## Stimmtest: Token nie in der Befehlszeile (0.5.99)
 

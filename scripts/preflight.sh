@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.99 voice test refuses a token on the command line and never prints it.
+# CoreAI: TCI Interface 0.6.0 Mara's voice chosen: Eve (Pocket TTS German, 24 layers, int8), registered with SHA-256.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -177,6 +177,7 @@ UI_FILES=(
   tools/tts_spike/run.py
   tools/tts_spike/voices.json
   tools/tts_spike/textprep_de.py
+  config/voice/mara-voice.json
   docker/tts-spike/Dockerfile
   docker/tts-spike/constraints-piper.txt
   docker/tts-spike/constraints-pocket.txt

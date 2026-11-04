@@ -1,0 +1,4 @@
+CoreAI: TCI Interface 0.6.0 - 04.11.2026
+- Maras Stimme gewaehlt: Eve, Pocket TTS Deutsch 24 Schichten, int8 (RTF 0,45 mit 4 Kernen, erster Ton 0,13 s).
+- Registriert in config/voice/mara-voice.json mit Revision, SHA-256, Lizenz und Namensnennung; kein Token noetig.
+- Messprotokoll im Sprachplan; vorlaeufiges Kernlimit 4.

@@ -100,6 +100,27 @@ check(reg['groups']['chatterbox']['allow'] == ['ve.pt', 't3_mtl23ls_v2.safetenso
 for gid in ('pocket-de', 'pocket-de24'):
     check(all(v['group'] != gid or v['voice'] in ('alba', 'anna', 'vera', 'eve', 'caro_davy', 'estelle') for v in reg['voices']), 'Pocket voices of ' + gid)
 
+# --- 0.6.0: Mara's chosen voice, registered with origin, SHA-256 and license ------------------
+mara = json.loads((ROOT / 'config' / 'voice' / 'mara-voice.json').read_text(encoding='utf-8'))
+check(mara['format'] == 1 and mara['voice']['name'] == 'eve' and mara['model'] == {
+    'label': mara['model']['label'], 'language': 'german_24l', 'quantize': True, 'weights_license': 'CC BY 4.0 (Kyutai)',
+    'voice_cloning_weights': False}, 'Mara speaks as Eve, 24 layers, int8, free weights')
+check(mara['engine']['package'] == reg['engines']['pocket']['package']
+      and mara['engine']['package'] in (ROOT / 'docker' / 'tts-spike' / 'constraints-pocket.txt').read_text(encoding='utf-8').splitlines(),
+      'the same pinned engine as in the test')
+check(mara['textprep'] == reg['textprep'] == 'de-1', 'the same text preparation')
+check([f['key'] for f in mara['files']] == ['model', 'tokenizer', 'voice'], 'model, tokenizer and voice state registered')
+for entry in mara['files']:
+    check(re.fullmatch(r'[0-9a-f]{64}', entry['sha256']) is not None and re.fullmatch(r'[0-9a-f]{40}', entry['revision']) is not None
+          and entry['size'] > 0 and entry['repo'] == 'kyutai/pocket-tts-without-voice-cloning' and 'CC BY 4.0' in entry['license'],
+          'registered file ' + entry['key'])
+check(mara['files'][0]['path'] == 'languages/german_24l/model.safetensors' and mara['files'][2]['path'] == 'languages/german_24l/embeddings/eve.safetensors',
+      'the 24 layer model and Eve')
+check('Kyutai' in mara['attribution'] and 'VCTK' in mara['attribution'] and 'p361' in mara['attribution'], 'attribution names Kyutai and VCTK')
+check(mara['limits']['cores'] == 4 and mara['measured']['rtf'] < 0.8, 'core limit with room below real time')
+eve_int8 = next(v for v in reg['voices'] if v['id'] == 'pocket-de24-eve-int8')
+check(reg['groups'][eve_int8['group']].get('quantize') is True and eve_int8['voice'] == mara['voice']['name'], 'the measured voice is the registered one')
+
 # --- 0.5.98: German text preparation ----------------------------------------------------
 import importlib.util
 spec = importlib.util.spec_from_file_location('textprep_de', ROOT / 'tools' / 'tts_spike' / 'textprep_de.py')
