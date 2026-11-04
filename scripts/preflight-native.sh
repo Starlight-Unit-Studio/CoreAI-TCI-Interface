@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.5.97 voice test: --run letzter picks the newest run, an unknown run lists the existing ones.
+# CoreAI: TCI Interface 0.5.98 voice test: measured, German text preparation, Kerstin as a Pocket clone.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -142,6 +142,7 @@ UI_FILES=(
   scripts/voice-samples-ui-selftest.cjs
   tools/tts_spike/run.py
   tools/tts_spike/voices.json
+  tools/tts_spike/textprep_de.py
   docker/tts-spike/Dockerfile
   docker/tts-spike/constraints-piper.txt
   docker/tts-spike/constraints-pocket.txt

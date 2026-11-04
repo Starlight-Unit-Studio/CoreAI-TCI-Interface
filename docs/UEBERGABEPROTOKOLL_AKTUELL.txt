@@ -1,9 +1,10 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
 Stand: 04.11.2026
-Repository-Version: 0.5.97
-BASIS: main 0.5.96, PR #148 gemergt.
+Repository-Version: 0.5.98
+BASIS: main 0.5.97, PR #149 gemergt.
 NEUE ARBEIT ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_5_98.txt
   docs/UEBERGABEPROTOKOLL_0_5_97.txt
   docs/UEBERGABEPROTOKOLL_0_5_96.txt
   docs/UEBERGABEPROTOKOLL_0_5_95.txt
@@ -151,8 +152,11 @@ ein Container, Gewichte mit SHA-256 registriert, Messen ohne Netz mit Kernlimit;
 0.5.95 gemergt (PR #147); Update brach im Preflight ab, weil der Stimmtest-Selbsttest die Gewichte des echten Laufs
 sah. 0.5.96: Probelauf mit eigenem leeren Ordner, Grund des Fehlschlags im Update-Protokoll.
 0.5.96 gemergt (PR #148). 0.5.97: --run letzter statt Ordnername (Platzhalter ZEITSTEMPEL war woertlich eingegeben worden).
-NAECHSTER SCHRITT: sudo bash /opt/ember-coreui/scripts/tts-spike.sh --skip-build --groups pocket-de,pocket-de24 --run letzter,
-dann Stimmproben anhoeren und report.md schicken.
+0.5.97 gemergt (PR #149), Pocket nachgeholt, alle 18 Stimmen gemessen. 0.5.98 (PR #150): Messprotokoll im Sprachplan;
+Hoereindruck: keine schnelle Stimme fehlerfrei. Neu: deutsche Textaufbereitung (textprep_de.py) und Kerstin als
+Pocket-Klon (Kyutai-Freigabe, Token per tts-spike.sh --hf-token).
+NAECHSTER SCHRITT: Betreiber gibt auf Hugging Face frei, hinterlegt den Token, Lauf mit --skip-build --engines piper,pocket,
+dann anhoeren; falsch gesprochene Woerter sammeln (Ausspracheliste), Stimme waehlen, P20.1 und P20.3.
 NAECHSTER SCHRITT: Pocket mit --skip-build --groups pocket-de,pocket-de24 --run ZEITSTEMPEL nachholen, anhoeren,
 Maras Stimme waehlen, report.md ins Messprotokoll; dann P20.1 Spracheingabe.
 ARBEITSWEISE (Betreiber, 04.11.2026): Nach jedem Push direkt einen PR oeffnen, ohne Rueckfrage. Mergen macht der

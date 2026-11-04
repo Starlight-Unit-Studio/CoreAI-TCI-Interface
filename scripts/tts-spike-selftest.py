@@ -48,7 +48,7 @@ check(set(reg['engines']) == {'piper', 'pocket', 'chatterbox'}, 'three engines')
 check(reg['engines']['piper']['package'] == 'piper-tts==1.8.0' and reg['engines']['piper']['code_license'] == 'GPL-3.0-or-later', 'Piper pinned, GPL named')
 check(reg['engines']['pocket']['package'] == 'pocket-tts==4.0.1' and reg['engines']['chatterbox']['package'] == 'chatterbox-tts==0.1.7', 'engines pinned')
 ids = [v['id'] for v in reg['voices']]
-check(len(ids) == len(set(ids)) == 18, '18 voices, each once')
+check(len(ids) == len(set(ids)) == 22, '22 voices, each once')
 for voice in reg['voices']:
     check(re.match(r'^[a-z0-9][a-z0-9_-]{0,60}$', voice['id']) is not None, 'voice id ' + voice['id'])
     check(voice['group'] in reg['groups'], 'voice group ' + voice['id'])
@@ -61,13 +61,67 @@ for voice in reg['voices']:
         check(any(free in voice['voice_license'] for free in ('CC0', 'CC BY 4.0')), 'free voice has a free license: ' + voice['id'])
 check(next(v for v in reg['voices'] if v['id'] == 'piper-ramona')['status'] == 'pruefen', 'M-AILABS voices are marked for review')
 check(next(v for v in reg['voices'] if v['id'] == 'chatterbox-standard')['status'] == 'pruefen', 'undocumented built-in voice marked for review')
-ref = reg['groups']['chatterbox']['reference']
+ref = reg['references']['kerstin']
 check(ref['license'] == 'CC0 1.0' and 'dataset-voice-kerstin' in ref['dataset'] and ref['seconds'] == 10, 'clone reference: Kerstin, CC0, 10 s')
+check(reg['groups']['chatterbox']['reference'] == 'kerstin', 'Chatterbox clones Kerstin')
+# 0.5.98: Kerstin also as a Pocket clone, in a cache of its own (the gated Kyutai weights never reach the other groups).
+for gid, language in (('pocket-de-kerstin', 'german'), ('pocket-de24-kerstin', 'german_24l')):
+    group = reg['groups'][gid]
+    check(group == {'engine': 'pocket', 'label': group['label'], 'language': language, 'clone': True, 'hf_home': 'hf-clone',
+                    'reference': 'kerstin'}, 'clone group ' + gid)
+    voice = next(v for v in reg['voices'] if v['id'] == gid)
+    check(voice['voice'] == 'reference' and voice['gender'] == 'weiblich' and voice['status'] == 'frei' and 'CC0' in voice['voice_license'],
+          'clone voice ' + gid)
+check(all(g.get('hf_home', 'hf') == 'hf' for g in reg['groups'].values() if not g.get('clone')), 'every other group in the shared cache')
+# 0.5.98: the token-free way for every installation: the clone's exported voice file on the free weights.
+for gid, source, language in (('pocket-de-stimmdatei', 'pocket-de-kerstin', 'german'), ('pocket-de24-stimmdatei', 'pocket-de24-kerstin', 'german_24l')):
+    group = reg['groups'][gid]
+    check(group == {'engine': 'pocket', 'label': group['label'], 'language': language, 'voice_file_from': source}, 'voice file group ' + gid)
+    check(list(reg['groups']).index(gid) > list(reg['groups']).index(source), gid + ' after its clone')
+    voice = next(v for v in reg['voices'] if v['id'] == gid)
+    check(voice['voice'] == 'file' and voice['status'] == 'frei' and 'kein Token' in voice['weights_license'], 'voice file voice ' + gid)
+run_source = (ROOT / 'tools' / 'tts_spike' / 'run.py').read_text(encoding='utf-8')
+check("export_model_state(states[0], str(target))" in run_source and "key='voice-file'" in run_source, 'the clone exports its voice file')
+check(next(v for v in reg['voices'] if v['id'] == 'chatterbox-standard')['gender'] == 'männlich', 'the Chatterbox standard voice is male')
+check(reg['textprep'] == 'de-1', 'German text preparation on')
 check(all(re.match(r'^de_rhasspy-[0-9]{4}\.flac$', c) for c in ref['clips']), 'reference clips by name')
 check(reg['groups']['chatterbox']['allow'] == ['ve.pt', 't3_mtl23ls_v2.safetensors', 's3gen.pt', 'grapheme_mtl_merged_expanded_v1.json', 'conds.pt'],
       'Chatterbox loads only the multilingual files')
 for gid in ('pocket-de', 'pocket-de24'):
     check(all(v['group'] != gid or v['voice'] in ('alba', 'anna', 'vera', 'eve', 'caro_davy', 'estelle') for v in reg['voices']), 'Pocket voices of ' + gid)
+
+# --- 0.5.98: German text preparation ----------------------------------------------------
+import importlib.util
+spec = importlib.util.spec_from_file_location('textprep_de', ROOT / 'tools' / 'tts_spike' / 'textprep_de.py')
+prep = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(prep)
+spoken = {s['id']: prep.prepare(s['text']) for s in reg['sentences']}
+check(spoken['s2'] == 'Dein Kontextfenster ist auf zweiunddreißigtausendsiebenhundertachtundsechzig Tokens eingestellt, und drei von vier Werkzeugen sind aktiv.', 's2: ' + spoken['s2'])
+check(spoken['s3'] == 'Heute ist Mittwoch, der vierte November zweitausendsechsundzwanzig, und es ist vierzehn Uhr dreißig.', 's3: ' + spoken['s3'])
+check(spoken['s5'] == 'Im Projekt liegen drei Dateien: index Punkt Ha Te Em El, style Punkt Ze Es Es und script Punkt Jot Es.', 's5: ' + spoken['s5'])
+check('aus dem Jahr zweitausendvierundzwanzig,' in spoken['s7'], 's7: ' + spoken['s7'])
+for sid in ('s1', 's4', 's6'):
+    check(spoken[sid] == next(s['text'] for s in reg['sentences'] if s['id'] == sid), sid + ' stays as written')
+for value, words in ((0, 'null'), (1, 'eins'), (16, 'sechzehn'), (17, 'siebzehn'), (21, 'einundzwanzig'), (30, 'dreißig'),
+                     (100, 'hundert'), (101, 'hunderteins'), (1000, 'tausend'), (1001, 'tausendeins'), (21000, 'einundzwanzigtausend'),
+                     (101000, 'hunderteintausend'), (1000000, 'eine Million'), (2500000, 'zwei Millionen fünfhunderttausend')):
+    check(prep.cardinal(value) == words, f'{value} -> {prep.cardinal(value)}')
+for value, te, ten in ((1, 'erste', 'ersten'), (3, 'dritte', 'dritten'), (7, 'siebte', 'siebten'), (8, 'achte', 'achten'),
+                       (20, 'zwanzigste', 'zwanzigsten'), (31, 'einunddreißigste', 'einunddreißigsten')):
+    check(prep.ordinal(value) == te and prep.ordinal(value, 'ten') == ten, f'ordinal {value}')
+check(prep.year(1999) == 'neunzehnhundertneunundneunzig' and prep.year(1901) == 'neunzehnhunderteins' and prep.year(2000) == 'zweitausend', 'years')
+for text, words in (
+    ('Am 1. Mai 1999 um 7:05 war es 1 Uhr.', 'Am ersten Mai neunzehnhundertneunundneunzig um sieben Uhr fünf war es ein Uhr.'),
+    ('Um 14:30 treffen wir uns.', 'Um vierzehn Uhr dreißig treffen wir uns.'),
+    ('Vom 3. bis 5. Juni', 'Vom dritten bis fünften Juni'),
+    ('Termin: 04.11.2026, seit dem 24. Dezember.', 'Termin: vierte November zweitausendsechsundzwanzig, seit dem vierundzwanzigsten Dezember.'),
+    ('Das kostet 15 € und ist 15,2 % teurer, z. B. bei Nr. 5.',
+     'Das kostet fünfzehn Euro und ist fünfzehn Komma zwei Prozent teurer, zum Beispiel bei Nummer fünf.'),
+    ('data_v2.json, logo-neu.PNG, README.md, archiv.zip', 'data v2 Punkt Jason, logo neu Punkt Pe En Ge, README Punkt Em De, archiv Punkt Zipp'),
+    ('007 Punkte, 3,14 und 1.234,5 & mehr', 'null null sieben Punkte, drei Komma eins vier und tausendzweihundertvierunddreißig Komma fünf und mehr'),
+):
+    check(prep.prepare(text) == words, f'{text!r} -> {prep.prepare(text)!r}')
+check(not re.search(r'\d', ' '.join(spoken.values())), 'no digit reaches a voice in the test sentences')
 
 # --- Pinned images ------------------------------------------------------------------
 docker = ROOT / 'docker' / 'tts-spike'
@@ -109,7 +163,9 @@ builds = [l for l in lines if l.startswith('+ docker build')]
 check(len(builds) == 3, 'one image per engine')
 runs = [l for l in lines if 'run.py run ' in l]
 fetches = [l for l in lines if 'run.py fetch ' in l]
-check(len(fetches) == 7 and len(runs) == 14, 'seven groups fetched, each measured with 2 and 4 cores')
+check(len(fetches) == 7 and len(runs) == 22, 'seven groups fetched (clones wait for the token, voice files for the clones), eleven measured')
+check(dry.stdout.count('wartet auf die Stimmdatei') == 2, 'voice file groups wait for their clone')
+check(dry.stdout.count('braucht die Klon-Gewichte von Kyutai') == 2 and 'tts-spike.sh --hf-token' in dry.stdout, 'how to unlock the clone')
 for line in runs:
     check('--network none' in line and '--cpuset-cpus' in line and 'HF_HUB_OFFLINE=1' in line, 'measuring without network, core limit')
     check('/models:ro' in line and '--cap-drop ALL' in line and '--read-only' in line, 'weights read-only, container locked down')
@@ -124,6 +180,32 @@ check(any('run.py report' in l for l in lines), 'report at the end')
 kept = [l for l in dry_run().stdout.splitlines() if 'run.py fetch ' in l]
 check(len(kept) == 6 and not any('--group pocket-de ' in l for l in kept), 'registered weights are kept')
 check(len([l for l in dry_run('--refetch').stdout.splitlines() if 'run.py fetch ' in l]) == 7, '--refetch loads them again')
+# 0.5.98: the token, typed in hidden and stored for root only, reaches only the clone fetches, by name.
+token = 'hf_' + 'Ab1' * 10
+(sandbox / 'hf_token').write_text(token + '\n', encoding='utf-8')
+unlocked = dry_run('--refetch')
+clone_fetches = [l for l in unlocked.stdout.splitlines() if 'run.py fetch ' in l]
+check(len(clone_fetches) == 9, 'with the token the clones are fetched too')
+for clone_group in ('pocket-de-kerstin', 'pocket-de24-kerstin'):
+    (sandbox / 'models' / f'lock-{clone_group}.json').write_text('{}', encoding='utf-8')
+unlocked = dry_run('--refetch')
+clone_fetches = [l for l in unlocked.stdout.splitlines() if 'run.py fetch ' in l]
+check(len(clone_fetches) == 11, 'with the clones loaded, the voice file groups are fetched too')
+for line in clone_fetches:
+    check(('-e HF_TOKEN ' in line) == bool(re.search(r'--group pocket-de(24)?-kerstin ', line)), 'token only for the clone fetches: ' + line[-60:])
+check(any('--group pocket-de-stimmdatei ' in l and '-e HF_TOKEN' not in l for l in clone_fetches), 'the voice file path never sees the token')
+check(not any('HF_TOKEN' in l for l in unlocked.stdout.splitlines() if 'run.py run ' in l), 'never while measuring')
+check(token not in unlocked.stdout + unlocked.stderr, 'the token itself is never printed')
+(sandbox / 'hf_token').unlink()
+stored = subprocess.run(['bash', str(script), '--dry-run', '--hf-token'], input=token + '\n', capture_output=True, text=True, timeout=30,
+                        env=dict(os.environ, COREAI_TTS_SPIKE_BASE=str(sandbox)))
+check(stored.returncode == 0 and 'nur fuer root lesbar' in stored.stdout and token not in stored.stdout + stored.stderr, 'token accepted')
+for wrong in ('', 'abc', 'hf_short', 'hf_' + 'x' * 20 + ';rm'):
+    refused = subprocess.run(['bash', str(script), '--dry-run', '--hf-token'], input=wrong + '\n', capture_output=True, text=True, timeout=30)
+    check(refused.returncode != 0 and 'kein Hugging-Face-Token' in refused.stderr, 'bad token refused: ' + repr(wrong))
+shell_text = script.read_text(encoding='utf-8')
+check("IFS= read -rs token" in shell_text and 'chmod 0600 "$TOKEN_FILE.tmp"' in shell_text and 'chown root:root "$TOKEN_FILE.tmp"' in shell_text,
+      'hidden input, root only')
 check('if [[ -n "$DRY_RUN" && -n "${COREAI_TTS_SPIKE_BASE:-}" ]]; then' in script.read_text(encoding='utf-8'),
       'another folder only for a dry run')
 bad = dry_run('--cores', '2;rm')
@@ -158,9 +240,11 @@ check("[[ \"$stamp\" =~ ^[0-9]{8}-[0-9]{6}$ ]] && rm -rf -- \"${RUNS:?}/$stamp\"
 with tempfile.TemporaryDirectory() as tmp:
     tmp_path = Path(tmp)
     test_reg = {
-        'format': 1, 'sample_cores': 4, 'sentences': reg['sentences'],
+        'format': 1, 'sample_cores': 4, 'textprep': 'de-1', 'sentences': reg['sentences'], 'references': reg['references'],
         'engines': {'probe': {'label': 'Testton', 'package': 'probe', 'code_license': 'MIT'}},
-        'groups': {'probe-a': {'engine': 'probe', 'label': 'Testton A'}, 'probe-b': {'engine': 'probe', 'label': 'Testton B'}},
+        'groups': {'probe-a': {'engine': 'probe', 'label': 'Testton A'}, 'probe-b': {'engine': 'probe', 'label': 'Testton B'},
+                   'probe-klon': {'engine': 'probe', 'label': 'Testton Klon', 'clone': True, 'hf_home': 'hf-clone', 'reference': 'kerstin'},
+                   'probe-datei': {'engine': 'probe', 'label': 'Testton Stimmdatei', 'voice_file_from': 'probe-klon'}},
         'voices': [
             {'id': 'probe-a-eins', 'group': 'probe-a', 'voice': 'eins', 'label': 'Eins', 'gender': 'weiblich', 'status': 'frei',
              'voice_license': 'CC0 1.0', 'weights_license': 'MIT', 'origin': 'Test'},
@@ -168,6 +252,10 @@ with tempfile.TemporaryDirectory() as tmp:
              'voice_license': 'CC0 1.0', 'weights_license': 'MIT', 'origin': 'Test'},
             {'id': 'probe-b-zwei', 'group': 'probe-b', 'voice': 'zwei', 'label': 'Zwei', 'gender': 'weiblich', 'status': 'frei',
              'voice_license': 'CC BY 4.0', 'weights_license': 'MIT', 'origin': 'Test'},
+            {'id': 'probe-klon', 'group': 'probe-klon', 'voice': 'reference', 'label': 'Klon', 'gender': 'weiblich', 'status': 'frei',
+             'voice_license': 'CC0 1.0', 'weights_license': 'MIT', 'origin': 'Test'},
+            {'id': 'probe-datei', 'group': 'probe-datei', 'voice': 'file', 'label': 'Stimmdatei', 'gender': 'weiblich', 'status': 'frei',
+             'voice_license': 'CC0 1.0', 'weights_license': 'MIT', 'origin': 'Test'},
         ],
     }
     registry = tmp_path / 'voices.json'
@@ -176,6 +264,12 @@ with tempfile.TemporaryDirectory() as tmp:
     r = call('--registry', str(registry), 'run', '--group', 'probe-a', '--models', str(models), '--out', str(out), '--cores', '4')
     check(r.returncode == 1, 'no run without registered weights')
     check('lock-probe-a.json fehlt' in json.loads((out / 'result-probe-a-4c.json').read_text())['error'], 'missing weights reported')
+    r = call('--registry', str(registry), 'run', '--group', 'probe-klon', '--models', str(models), '--out', str(out), '--cores', '4')
+    check(r.returncode == 1 and 'Klon-Gewichte von Kyutai nicht freigegeben' in json.loads((out / 'result-probe-klon-4c.json').read_text())['error'],
+          'a clone without weights says how to unlock it')
+    r = call('--registry', str(registry), 'run', '--group', 'probe-datei', '--models', str(models), '--out', str(out), '--cores', '4')
+    check(r.returncode == 1 and 'Stimmdatei fehlt: zuerst den Klon probe-klon laden' in json.loads((out / 'result-probe-datei-4c.json').read_text())['error'],
+          'a voice file group without its clone says what to do')
     for group in ('probe-a', 'probe-b'):
         r = call('--registry', str(registry), 'fetch', '--group', group, '--models', str(models))
         check(r.returncode == 0, 'fetch ' + group + ': ' + r.stderr)
@@ -201,6 +295,9 @@ with tempfile.TemporaryDirectory() as tmp:
     kaputt = next(v for v in result['voices'] if v['id'] == 'probe-a-kaputt')
     check(eins['ok'] and len(eins['samples']) == 7, 'every sentence spoken')
     check(not kaputt['ok'] and 'absichtlich defekt' in kaputt['error'], 'a broken voice is reported, the group goes on')
+    check(result['textprep'] == 'de-1', 'text preparation recorded')
+    s2 = next(x for x in eins['samples'] if x['sentence'] == 's2')
+    check(abs(s2['audio_s'] - 0.03 * len(spoken['s2'])) < 0.01, 'the engine got the prepared text')
     for sample in eins['samples']:
         check(SAMPLE_RE.match(sample['file']) is not None, 'sample name ' + sample['file'])
         check(sample['audio_s'] > 0 and sample['synth_s'] > 0 and abs(sample['rtf'] - sample['synth_s'] / sample['audio_s']) < 0.01, 'RTF of ' + sample['sentence'])
@@ -217,8 +314,10 @@ with tempfile.TemporaryDirectory() as tmp:
     report = json.loads((out / 'report.json').read_text())
     check(report['format'] == 1 and report['stamp'] == '20261104-120000' and report['sample_cores'] == 4, 'report head')
     check(report['host'] == ['Zeit: test', 'CPU(s): 20'] and len(report['sentences']) == 7, 'host and sentences')
+    check(report['textprep'] == 'de-1' and {x['id']: x['spoken'] for x in report['sentences']} == spoken, 'the report names the spoken text')
     voices = {v['id']: v for v in report['voices']}
-    check(set(voices) == {'probe-a-eins', 'probe-a-kaputt', 'probe-b-zwei'}, 'every voice in the report')
+    check(set(voices) == {'probe-a-eins', 'probe-a-kaputt', 'probe-b-zwei', 'probe-klon', 'probe-datei'}, 'every voice in the report')
+    check(not voices['probe-klon']['ok'] and 'Klon-Gewichte von Kyutai nicht freigegeben' in voices['probe-klon']['error'], 'the locked clone shows why')
     check(voices['probe-a-eins']['ok'] and voices['probe-a-eins']['cores'] == 4 and len(voices['probe-a-eins']['samples']) == 7, 'samples from the 4 core run')
     check(voices['probe-a-eins']['rtf_median'] is not None and voices['probe-a-eins']['first_audio_median_s'] is not None, 'medians per voice')
     check(voices['probe-a-eins']['status'] == 'frei' and voices['probe-a-eins']['voice_license'] == 'CC0 1.0', 'license per voice')

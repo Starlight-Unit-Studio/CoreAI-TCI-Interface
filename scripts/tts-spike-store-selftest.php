@@ -22,7 +22,7 @@ $wav = static function (string $file): void {
 };
 $report = static fn(string $stamp, array $voices, array $extra = []): array => array_merge([
   'format' => 1, 'stamp' => $stamp, 'created_at' => '2026-11-04T12:00:00+00:00', 'sample_cores' => 4,
-  'sentences' => [['id' => 's1', 'topic' => 'Begrüßung', 'text' => 'Hallo, ich bin Mara.'], ['id' => 'bad', 'topic' => 'x', 'text' => 'y']],
+  'sentences' => [['id' => 's1', 'topic' => 'Begrüßung', 'text' => 'Hallo, ich bin Mara.'], ['id' => 's2', 'topic' => 'Zahlen', 'text' => '3 von 4', 'spoken' => 'drei von vier'], ['id' => 'bad', 'topic' => 'x', 'text' => 'y']],
   'voices' => $voices, 'groups' => [['id' => 'pocket-de', 'label' => 'Pocket TTS Deutsch', 'engine_label' => 'Pocket TTS', 'package' => 'pocket-tts==4.0.1',
     'code_license' => 'MIT', 'code_note' => '', 'files' => [['path' => 'a', 'sha256' => str_repeat('a', 64)]],
     'runs' => [['cores' => 4, 'ok' => true, 'error' => '', 'load_s' => 1.23456, 'warmup_s' => 0.5, 'peak_rss_mb' => 900.4, 'rtf_median' => 0.21,
@@ -75,7 +75,9 @@ $public = coreui_tts_spike_public(coreui_tts_spike_report($runs, $new));
 tts_test(array_column($public['voices'], 'id') === ['pocket-de-alba', 'pocket-de-anna', 'pocket-de-vera'], 'bad voice ids dropped');
 tts_test(array_column($public['voices'][0]['samples'], 'file') === ['pocket-de-alba-4c-s1.wav'], 'only sample names of the right shape');
 tts_test(!isset($public['voices'][0]['secret']) && $public['voices'][0]['status'] === 'frei', 'unknown keys never leave the server');
-tts_test(array_column($public['sentences'], 'id') === ['s1'], 'sentence ids checked');
+tts_test(array_column($public['sentences'], 'id') === ['s1', 's2'], 'sentence ids checked');
+tts_test($public['sentences'][1]['spoken'] === 'drei von vier' && $public['sentences'][0]['spoken'] === 'Hallo, ich bin Mara.',
+  'spoken text shown (older reports: the written text)');
 tts_test($public['groups'][0]['runs'] === [['cores' => 4, 'ok' => true, 'error' => '', 'load_s' => 1.235, 'warmup_s' => 0.5, 'peak_rss_mb' => 900.4,
   'rtf_median' => 0.21, 'first_audio_median_s' => 0.18]], 'group runs with numbers, bad rows dropped');
 tts_test($public['groups'][0]['files'] === 1 && $public['errors'] === 1 && $public['sample_cores'] === 4, 'files and errors only counted');

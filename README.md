@@ -7,7 +7,25 @@ It combines private conversations and sessions, user-scoped RAG-Lite, local long
 
 CoreAI: TCI Interface runs on its own containerized Nginx, PHP-FPM, MariaDB, SearXNG, browser, and Python-worker stack and remains isolated from STΛRLIɢHT The Game and other Starlight Unit systems.
 
-Current source version: `0.5.97` (numeric only). The last verified ZIP remains archived under its original historical name.
+Current source version: `0.5.98` (numeric only). The last verified ZIP remains archived under its original historical name.
+
+## Stimmtest gemessen, Textaufbereitung und Kerstin-Klon (0.5.98)
+
+Alle 18 Stimmen haben auf dem Server gesprochen; das Messprotokoll steht im
+[Sprachplan](docs/COREUI_VOICE_PLAN.md#messprotokoll-stimmtest-04112026).
+Beim Anhoeren las keine schnelle Stimme fehlerfrei. Neu ist deshalb eine
+deutsche Textaufbereitung vor jeder Stimme (Zahlen, Datum, Uhrzeit,
+Dateinamen und Abkuerzungen als Woerter) und Kerstin, die deutsche
+Datensatz-Stimme (CC0), als Klon fuer Pocket TTS. Die Klon-Gewichte von Kyutai
+sind gesperrt; nach der Zustimmung auf Hugging Face einmal den Lese-Token
+hinterlegen. Nutzer und andere Installationen brauchen das nie: Der Klon
+erzeugt eine kleine Stimmdatei, die mit den freien Gewichten spricht, und der
+Test prueft genau diesen Weg gleich mit.
+
+```
+sudo bash /opt/ember-coreui/scripts/tts-spike.sh --hf-token
+sudo bash /opt/ember-coreui/scripts/tts-spike.sh --skip-build --engines piper,pocket
+```
 
 ## Stimmtest: Lauf nachholen ohne Ordnernamen (0.5.97)
 

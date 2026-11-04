@@ -19,6 +19,7 @@ Nothing here touches a Core, the Modelfile, the database or the serial queue.
 from __future__ import annotations
 
 import argparse
+import functools
 import hashlib
 import json
 import math
@@ -43,6 +44,34 @@ PACKAGES = ('piper-tts', 'onnxruntime', 'pocket-tts', 'chatterbox-tts', 'torch',
 
 # --- Registry --------------------------------------------------------------
 
+@functools.lru_cache(maxsize=1)
+def load_textprep():
+    """tools/tts_spike/textprep_de.py, loaded by path (python3 -I leaves the script folder out)."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('coreai_textprep_de', Path(__file__).resolve().with_name('textprep_de.py'))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def spoken_text(reg: dict, text: str) -> str:
+    """0.5.98: what the voice really gets (numbers, dates, file names as words)."""
+    if reg.get('textprep') != 'de-1':
+        return text
+    return load_textprep().prepare(text)
+
+
+def use_hf_home(models: Path, group: dict) -> None:
+    """0.5.98: the Kerstin clone keeps the gated Kyutai weights in their own cache, so
+    the other groups never load a file they did not register."""
+    os.environ['HF_HOME'] = str(models / group.get('hf_home', 'hf'))
+
+
+def group_reference(reg: dict, group: dict) -> dict | None:
+    name = group.get('reference')
+    return reg.get('references', {}).get(name) if isinstance(name, str) else None
+
+
 def load_registry(path: Path) -> dict:
     reg = json.loads(path.read_text(encoding='utf-8'))
     if reg.get('format') != FORMAT:
@@ -56,6 +85,13 @@ def load_registry(path: Path) -> dict:
             raise SystemExit('voices.json: bad group id ' + repr(group_id))
         if group.get('engine') not in ENGINES:
             raise SystemExit('voices.json: unknown engine for ' + group_id)
+        if 'reference' in group and group['reference'] not in reg.get('references', {}):
+            raise SystemExit('voices.json: unknown reference for ' + group_id)
+        if group.get('hf_home', 'hf') not in ('hf', 'hf-clone'):
+            raise SystemExit('voices.json: unknown hf_home for ' + group_id)
+        source = group.get('voice_file_from')
+        if source is not None and not reg.get('groups', {}).get(source, {}).get('clone'):
+            raise SystemExit('voices.json: voice_file_from must name a clone group: ' + group_id)
     for voice in reg.get('voices', []):
         vid = str(voice.get('id', ''))
         if not ID_RE.match(vid) or vid in seen:
@@ -137,9 +173,9 @@ def hf_revision(path: Path) -> str | None:
     return None
 
 
-def hf_scan(models: Path, repo: str, prefix: str) -> list[dict]:
+def hf_scan(models: Path, repo: str, prefix: str, hf_dir: str = 'hf') -> list[dict]:
     """Registers every cached file of a Hugging Face repo below a prefix."""
-    base = models / 'hf' / 'hub' / ('models--' + repo.replace('/', '--')) / 'snapshots'
+    base = models / hf_dir / 'hub' / ('models--' + repo.replace('/', '--')) / 'snapshots'
     out = []
     if not base.is_dir():
         return out
@@ -209,7 +245,7 @@ class Probe:
     """Selftest only: a tone instead of speech, with the same measuring path."""
     params: dict = {'note': 'Testton statt Sprache'}
 
-    def fetch(self, models: Path, group_id: str, group: dict, voices: list[dict]) -> list[dict]:
+    def fetch(self, models: Path, group_id: str, group: dict, voices: list[dict], reg: dict) -> list[dict]:
         target = models / 'probe' / f'{group_id}.bin'
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(b'probe-weights-' + group_id.encode())
@@ -235,7 +271,7 @@ class Probe:
 class Piper:
     params: dict = {'synthesis': 'Standard der Stimme (length_scale, noise_scale aus der .onnx.json)'}
 
-    def fetch(self, models: Path, group_id: str, group: dict, voices: list[dict]) -> list[dict]:
+    def fetch(self, models: Path, group_id: str, group: dict, voices: list[dict], reg: dict) -> list[dict]:
         from huggingface_hub import hf_hub_download
         out = []
         for spec in group['files']:
@@ -270,29 +306,75 @@ class Piper:
 
 
 class Pocket:
-    params: dict = {'temperature': 'Standard des Modells (0,3)', 'quantize': False, 'voices': 'vordefinierte Stimmzustaende, kein Klon'}
+    params: dict = {'temperature': 'Standard des Modells (0,3)', 'quantize': False,
+                    'voices': 'vordefinierte Stimmzustaende; Klon-Gruppen: Referenzaufnahme'}
     REPO = 'kyutai/pocket-tts-without-voice-cloning'
+    CLONE_REPO = 'kyutai/pocket-tts'
+    NO_TOKEN = ('Klon-Gewichte von Kyutai nicht freigegeben: auf huggingface.co/kyutai/pocket-tts den Bedingungen '
+                'zustimmen und den Lese-Token mit "tts-spike.sh --hf-token" hinterlegen')
+    NO_VOICE_FILE = 'Stimmdatei fehlt: zuerst den Klon {source} laden (dafuer einmal der Token)'
 
-    def fetch(self, models: Path, group_id: str, group: dict, voices: list[dict]) -> list[dict]:
+    @staticmethod
+    def voice_file_path(models: Path, group_id: str) -> Path:
+        return models / 'voices' / f'{group_id}.safetensors'
+
+    def fetch(self, models: Path, group_id: str, group: dict, voices: list[dict], reg: dict) -> list[dict]:
         from pocket_tts import TTSModel
+        clone = bool(group.get('clone'))
+        if clone and not os.environ.get('HF_TOKEN'):
+            raise RuntimeError(self.NO_TOKEN)
         model = TTSModel.load_model(language=group['language'])
-        states = [model.get_state_for_audio_prompt(voice['voice']) for voice in voices]
+        if bool(getattr(model, 'has_voice_cloning', False)) != clone:
+            raise RuntimeError(self.NO_TOKEN if clone else 'Pocket TTS hat unerwartet die Klon-Gewichte geladen')
+        files: list[dict] = []
+        if clone:
+            files.extend(fetch_reference(models, group_reference(reg, group), f'reference-{group_id}'))
+            reference = models / find_entry(files, 'reference')
+            states = [model.get_state_for_audio_prompt(reference)]
+            # 0.5.98: the voice as a small state file. It works with the free weights, so an
+            # installation never needs the token (Kyutai ships its own voices the same way).
+            from pocket_tts.models.model_state import export_model_state
+            target = self.voice_file_path(models, group_id)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            export_model_state(states[0], str(target))
+            files.append(file_entry(models, target, key='voice-file', source='aus der Referenz exportiert (export_model_state)',
+                                    license='Stimme CC0 1.0 (Kerstin), Modell CC BY 4.0 (Kyutai)'))
+        elif group.get('voice_file_from'):
+            source = group['voice_file_from']
+            if not lock_path(models, source).is_file():
+                raise RuntimeError(self.NO_VOICE_FILE.format(source=source))
+            voice_file = models / find_entry(verify_lock(models, source), 'voice-file')
+            files.append(file_entry(models, voice_file, key='voice-file', source=f'Stimmdatei aus {source}',
+                                    license='Stimme CC0 1.0 (Kerstin), Modell CC BY 4.0 (Kyutai)'))
+            states = [model.get_state_for_audio_prompt(voice_file)]
+        else:
+            states = [model.get_state_for_audio_prompt(voice['voice']) for voice in voices]
         if states:
             model.generate_audio(states[0], WARMUP_TEXT)
-        files = hf_scan(models, self.REPO, f"languages/{group['language']}/")
-        if not files:
+        hf_dir = group.get('hf_home', 'hf')
+        cached = hf_scan(models, self.REPO, f"languages/{group['language']}/", hf_dir)
+        if clone:
+            cached += hf_scan(models, self.CLONE_REPO, f"languages/{group['language']}/", hf_dir)
+        if not cached:
             raise RuntimeError('Pocket TTS: keine Dateien im Cache gefunden')
-        return files
+        return cached + files
 
     def load(self, models: Path, group: dict, files: list[dict], cores: int) -> None:
         torch_threads(cores)
         from pocket_tts import TTSModel
         self.model = TTSModel.load_model(language=group['language'])
-        if getattr(self.model, 'has_voice_cloning', False):
-            raise RuntimeError('Pocket TTS hat unerwartet die Klon-Gewichte geladen')
+        clone = bool(group.get('clone'))
+        if bool(getattr(self.model, 'has_voice_cloning', False)) != clone:
+            raise RuntimeError('Pocket TTS: Klon-Gewichte fehlen' if clone else 'Pocket TTS hat unerwartet die Klon-Gewichte geladen')
+        self.reference = models / find_entry(files, 'reference') if clone else None
+        self.voice_file = models / find_entry(files, 'voice-file') if group.get('voice_file_from') else None
         self.sample_rate = int(self.model.sample_rate)
 
     def prepare(self, voice: dict) -> Any:
+        if voice.get('voice') == 'reference':
+            return self.model.get_state_for_audio_prompt(self.reference)
+        if voice.get('voice') == 'file':
+            return self.model.get_state_for_audio_prompt(self.voice_file)
         return self.model.get_state_for_audio_prompt(voice['voice'])
 
     def stream(self, state: Any, text: str) -> Iterator[Any]:
@@ -303,6 +385,51 @@ class Pocket:
         # runs under torch.no_grad itself.
         for chunk in self.model.generate_audio_stream(state, text):
             yield to_floats(chunk)
+
+
+def fetch_reference(models: Path, ref: dict | None, folder_name: str) -> list[dict]:
+    """Clips of a free dataset voice, joined to one reference WAV (per group folder)."""
+    import urllib.request
+    import numpy as np
+    import soundfile
+    if not ref:
+        raise RuntimeError('Referenz fehlt in voices.json')
+    folder = models / folder_name
+    folder.mkdir(parents=True, exist_ok=True)
+    out, parts, rate, total = [], [], None, 0.0
+    for clip in ref['clips']:
+        if not re.match(r'^[A-Za-z0-9_.-]+\.flac$', clip):
+            raise RuntimeError('ungueltiger Clipname: ' + clip)
+        target = folder / clip
+        source = ''
+        for base in ref['base_urls']:
+            with urllib.request.urlopen(base + clip, timeout=60) as response:
+                data = response.read()
+            if data[:4] == b'fLaC':
+                target.write_bytes(data)
+                source = base + clip
+                break
+        if not source:
+            raise RuntimeError('Referenzclip nicht als FLAC erhalten: ' + clip)
+        out.append(file_entry(models, target, key='clip:' + clip, source=source, license=ref['license']))
+        audio, clip_rate = soundfile.read(str(target), dtype='float32', always_2d=True)
+        audio = audio.mean(axis=1)
+        if rate is None:
+            rate = clip_rate
+        if clip_rate != rate:
+            continue
+        parts.extend([audio, np.zeros(int(rate * 0.25), dtype='float32')])
+        total += len(audio) / rate
+        if total >= float(ref['seconds']):
+            break
+    if rate is None or total < 3.0:
+        raise RuntimeError('Referenz zu kurz')
+    joined = np.concatenate(parts)[: int(rate * float(ref['seconds']))]
+    reference = folder / 'reference.wav'
+    soundfile.write(str(reference), joined, rate, subtype='PCM_16')
+    out.append(file_entry(models, reference, key='reference', source='zusammengesetzt aus den Clips oben',
+                          license=ref['license']))
+    return out
 
 
 class Chatterbox:
@@ -317,7 +444,7 @@ class Chatterbox:
         cb_tokenizer.ChineseCangjieConverter._load_cangjie_mapping = lambda self, model_dir=None: None
         cb_tokenizer.ChineseCangjieConverter._init_segmenter = lambda self: setattr(self, 'segmenter', None)
 
-    def fetch(self, models: Path, group_id: str, group: dict, voices: list[dict]) -> list[dict]:
+    def fetch(self, models: Path, group_id: str, group: dict, voices: list[dict], reg: dict) -> list[dict]:
         from huggingface_hub import snapshot_download
         ckpt = Path(snapshot_download(repo_id=group['repo'], repo_type='model', revision=group.get('revision', 'main'),
                                       allow_patterns=group['allow']))
@@ -329,48 +456,7 @@ class Chatterbox:
                 raise RuntimeError('Chatterbox: Datei fehlt nach dem Laden: ' + name)
             out.append(file_entry(models, path, key=name, repo=group['repo'], revision=rev,
                                   source=f"https://huggingface.co/{group['repo']}/resolve/{rev}/{name}"))
-        out.extend(self._fetch_reference(models, group['reference']))
-        return out
-
-    def _fetch_reference(self, models: Path, ref: dict) -> list[dict]:
-        import urllib.request
-        import numpy as np
-        import soundfile
-        folder = models / 'reference'
-        folder.mkdir(parents=True, exist_ok=True)
-        out, parts, rate, total = [], [], None, 0.0
-        for clip in ref['clips']:
-            if not re.match(r'^[A-Za-z0-9_.-]+\.flac$', clip):
-                raise RuntimeError('ungueltiger Clipname: ' + clip)
-            target = folder / clip
-            source = ''
-            for base in ref['base_urls']:
-                with urllib.request.urlopen(base + clip, timeout=60) as response:
-                    data = response.read()
-                if data[:4] == b'fLaC':
-                    target.write_bytes(data)
-                    source = base + clip
-                    break
-            if not source:
-                raise RuntimeError('Referenzclip nicht als FLAC erhalten: ' + clip)
-            out.append(file_entry(models, target, key='clip:' + clip, source=source, license=ref['license']))
-            audio, clip_rate = soundfile.read(str(target), dtype='float32', always_2d=True)
-            audio = audio.mean(axis=1)
-            if rate is None:
-                rate = clip_rate
-            if clip_rate != rate:
-                continue
-            parts.extend([audio, np.zeros(int(rate * 0.25), dtype='float32')])
-            total += len(audio) / rate
-            if total >= float(ref['seconds']):
-                break
-        if rate is None or total < 3.0:
-            raise RuntimeError('Referenz zu kurz')
-        joined = np.concatenate(parts)[: int(rate * float(ref['seconds']))]
-        reference = folder / 'reference.wav'
-        soundfile.write(str(reference), joined, rate, subtype='PCM_16')
-        out.append(file_entry(models, reference, key='reference', source='zusammengesetzt aus den Clips oben',
-                              license=ref['license']))
+        out.extend(fetch_reference(models, group_reference(reg, group), 'reference'))
         return out
 
     def load(self, models: Path, group: dict, files: list[dict], cores: int) -> None:
@@ -428,7 +514,8 @@ def cmd_fetch(args: argparse.Namespace) -> int:
     models.mkdir(parents=True, exist_ok=True)
     engine = ENGINES[group['engine']]()
     started = time.perf_counter()
-    files = engine.fetch(models, args.group, group, group_voices(reg, args.group))
+    use_hf_home(models, group)
+    files = engine.fetch(models, args.group, group, group_voices(reg, args.group), reg)
     write_json(lock_path(models, args.group), {
         'format': FORMAT, 'group': args.group, 'engine': group['engine'], 'fetched_at': now_iso(),
         'seconds': round(time.perf_counter() - started, 1), 'versions': package_versions(), 'files': files,
@@ -467,8 +554,14 @@ def cmd_run(args: argparse.Namespace) -> int:
         'params': getattr(ENGINES[group['engine']], 'params', {}), 'versions': package_versions(),
         'files': [], 'voices': [],
     }
+    result['textprep'] = reg.get('textprep')
     result_file = out / f'result-{args.group}-{args.cores}c.json'
+    use_hf_home(models, group)
     try:
+        if group.get('clone') and not lock_path(models, args.group).is_file():
+            raise RuntimeError(Pocket.NO_TOKEN)
+        if group.get('voice_file_from') and not lock_path(models, args.group).is_file():
+            raise RuntimeError(Pocket.NO_VOICE_FILE.format(source=group['voice_file_from']))
         result['files'] = verify_lock(models, args.group)
         engine = ENGINES[group['engine']]()
         started = time.perf_counter()
@@ -490,7 +583,7 @@ def cmd_run(args: argparse.Namespace) -> int:
                     result['warmup_s'] = round(warm, 3)
                     warm_state = state
                 for sentence in reg['sentences']:
-                    chunks, synth, first = measure(engine, state, sentence['text'])
+                    chunks, synth, first = measure(engine, state, spoken_text(reg, sentence['text']))
                     name = sample_name(voice['id'], args.cores, sentence['id'])
                     count = write_wav(out / name, chunks, engine.sample_rate)
                     audio = count / float(engine.sample_rate)
@@ -584,7 +677,8 @@ def build_report(reg: dict, run_dir: Path, stamp: str) -> dict:
             })
     return {
         'format': FORMAT, 'stamp': stamp, 'created_at': now_iso(), 'sample_cores': sample_cores, 'host': host,
-        'sentences': reg['sentences'], 'groups': groups, 'voices': voices, 'errors': errors,
+        'sentences': [dict(s, spoken=spoken_text(reg, s['text'])) for s in reg['sentences']],
+        'textprep': reg.get('textprep'), 'groups': groups, 'voices': voices, 'errors': errors,
     }
 
 
@@ -615,7 +709,10 @@ def report_markdown(report: dict) -> str:
         lines.append(f"| {voice['label']} ({voice['gender']}) | {voice['model']} | {voice['status']}: {voice['voice_license']} | "
                      f"{fmt(voice['rtf_median'])} | {fmt(voice['first_audio_median_s'])} | {status} |")
     lines += ['', '## Sätze', '']
-    lines += [f"- {s['id']} ({s['topic']}): {s['text']}" for s in report['sentences']]
+    for s in report['sentences']:
+        lines.append(f"- {s['id']} ({s['topic']}): {s['text']}")
+        if s.get('spoken') and s['spoken'] != s['text']:
+            lines.append(f"  gesprochen als: {s['spoken']}")
     lines += ['', '## Registrierte Dateien', '']
     for group in report['groups']:
         for f in group['files']:

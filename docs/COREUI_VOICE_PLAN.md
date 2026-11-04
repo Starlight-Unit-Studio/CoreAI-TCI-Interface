@@ -1,6 +1,6 @@
 # Mara hört und spricht: Sprachplan (Planungsstand 28.10.2026)
 
-**Status: geplant und noch nicht implementiert. Das Hören über Ollama ist auf dem echten Server gemessen (P20.0, vier Läufe am 28.10.2026, siehe [Messprotokoll](#messprotokoll-p200-28102026)); der Weg der Mitschrift ist entschieden. Für die Stimme (TTS) steht seit 0.5.94 der Stimmtest bereit (siehe [Stimmtest](#stimmtest-ab-0594)); gemessen ist sie noch nicht.** Dieser Plan beschreibt die Spracheingabe, das Hören von Videos, die Sprachausgabe und das Live-Gespräch in CoreAI: TCI Interface. Er ergänzt den [Bild-Technikplan](COREUI_IMAGE_ENGINE_PLAN.md) und bildet zusammen mit ihm das Paket P20 der [Roadmap](../ROADMAP.md) (Matrix `CF-057`, `CF-058`, `CF-059`).
+**Status: geplant und noch nicht implementiert. Das Hören über Ollama ist auf dem echten Server gemessen (P20.0, vier Läufe am 28.10.2026, siehe [Messprotokoll](#messprotokoll-p200-28102026)); der Weg der Mitschrift ist entschieden. Die Stimme (TTS) ist seit dem 04.11.2026 gemessen (siehe [Messprotokoll Stimmtest](#messprotokoll-stimmtest-04112026)); beim Anhören las keine schnelle Stimme fehlerfrei; deshalb kommen eine deutsche Textaufbereitung und Kerstin als Pocket-Klon dazu (0.5.98).** Dieser Plan beschreibt die Spracheingabe, das Hören von Videos, die Sprachausgabe und das Live-Gespräch in CoreAI: TCI Interface. Er ergänzt den [Bild-Technikplan](COREUI_IMAGE_ENGINE_PLAN.md) und bildet zusammen mit ihm das Paket P20 der [Roadmap](../ROADMAP.md) (Matrix `CF-057`, `CF-058`, `CF-059`).
 
 ## Entscheidungen des Betreibers (28.10.2026)
 
@@ -195,7 +195,57 @@ So läuft der Test:
 - Ergebnis: `var/tts-spike/runs/ZEITSTEMPEL/report.json` und `report.md`; anhören unter **Admin Core > Betrieb > Stimmproben**.
 - Fällt eine Gruppe aus, lässt sie sich nach einem Fix in denselben Lauf nachholen: `--skip-build --groups GRUPPEN --run letzter` (ab 0.5.95, `letzter` ab 0.5.97). Erster Lauf am 04.11.2026: Pocket TTS brach im Test selbst ab (behoben in 0.5.95).
 
-Offen nach dem Lauf: Auswahl der Mara-Stimme, Kernlimit für die parallele TTS und Messung einer Live-Runde mit paralleler TTS.
+#### Messprotokoll Stimmtest (04.11.2026)
+
+Lauf `20261104-152135` auf dem echten Server (20 Kerne mit AVX-512, 94 GiB RAM, Docker 26.1.5). Piper und Chatterbox im ersten Durchgang, Pocket TTS mit 0.5.95 in denselben Lauf nachgeholt. Alle 18 Stimmen haben gesprochen; jede Gewichtsdatei ist mit Revision und SHA-256 registriert (`var/tts-spike/models/lock-*.json`, Liste in `report.md`).
+
+| Engine und Modell | Kerne | Echtzeitfaktor (Median) | Erster Ton s | Laden s | RAM MB |
+|---|---|---|---|---|---|
+| Piper, Kerstin/Ramona/Eva K (low und x_low, 16 kHz) | 4 | 0,01 bis 0,02 | 0,05 bis 0,08 | 1,4 bis 1,5 | 270 bis 300 |
+| Piper, Kerstin/Ramona/Eva K | 2 | 0,02 | 0,09 bis 0,10 | 1,5 bis 1,6 | 260 bis 300 |
+| Piper, Thorsten (high, 22 kHz) | 4 / 2 | 0,12 / 0,21 | 0,46 / 0,76 | 1,7 | 390 |
+| Pocket TTS Deutsch, 6 Schichten | 4 | 0,32 (Stimmen 0,31 bis 0,34) | 0,14 | 3,8 | 1.040 |
+| Pocket TTS Deutsch, 6 Schichten | 2 | 0,38 | 0,15 | 4,0 | 1.040 |
+| Pocket TTS Deutsch, 24 Schichten | 4 | 1,13 (Stimmen 1,07 bis 1,30) | 0,51 | 5,3 | 2.410 |
+| Pocket TTS Deutsch, 24 Schichten | 2 | 1,21 | 0,52 | 5,6 | 2.410 |
+| Chatterbox Multilingual | 4 | 5,83 (Klon 6,64, Standard 5,51) | 36,3 | 18,9 | 6.800 |
+
+Echtzeitfaktor = Rechenzeit / Audiodauer; unter 1 ist schneller als gesprochen. "Erster Ton" ist die Zeit bis zum ersten fertigen Audiostück; Piper und Pocket liefern satzweise beziehungsweise fortlaufend, Chatterbox erst die ganze Probe. Chatterbox mit 2 Kernen fehlt im Bericht (für diesen Durchgang liegt kein Ergebnis vor); schon mit 4 Kernen ist es weit zu langsam.
+
+Auswertung:
+- **Chatterbox scheidet für Vorlesen und Live aus:** fast sechsmal langsamer als gesprochen, über 30 Sekunden bis zum ersten Ton, 6,8 GB RAM. Der Kerstin-Klon funktioniert technisch; brauchbar wäre er nur für vorab erzeugte Ansagen.
+- **Pocket TTS mit 24 Schichten ist zu langsam für fortlaufendes Sprechen** mit 2 oder 4 Kernen (Echtzeitfaktor über 1, die Wiedergabe würde stocken). Klingt es deutlich besser, wäre ein Lauf mit mehr Kernen nötig (`--cores 8`), was dem Core Rechenzeit nimmt.
+- **Pocket TTS mit 6 Schichten ist der Favorit:** etwa dreimal schneller als gesprochen schon mit 2 Kernen, erster Ton nach 0,15 Sekunden, rund 1 GB RAM, Laden in 4 Sekunden. Von 2 auf 4 Kerne gewinnt es nur wenig (0,38 auf 0,32).
+- **Piper ist der schnelle Rückfall:** etwa fünfzigmal schneller als gesprochen, 0,3 GB RAM. Kerstin ist frei (CC0), klingt aber in 16 kHz deutlich einfacher; Thorsten (high) ist männlich und nur ein Vergleich.
+- Lizenzen der Pocket-Stimmen: alle frei. Die Gewichte von Kyutai stehen unter CC BY 4.0, eine Namensnennung ist also in jedem Fall nötig; Caro Davy und Estelle sind als Stimme selbst CC0.
+
+Vorläufige Grenzwerte (vor der Live-Messung):
+- **Kernlimit der parallelen TTS: 2 Kerne** (mit Pocket 6 Schichten reicht das dreifach); 18 Kerne bleiben für Core.
+- **Zeitlimit je Satz:** großzügig das Fünffache der Audiodauer, mindestens 10 Sekunden.
+
+Offen:
+- **Auswahl der Mara-Stimme nach Gehör** (Admin Core > Betrieb > Stimmproben), besonders: Aussprache von Zahlen, Datum und Uhrzeit (Sätze 2 und 3), Dateinamen (Satz 5), Umlaute (Satz 6) und der Fluss im längeren Absatz (Satz 7). Was beim Vorlesen vorher aufbereitet werden muss, legt P20.3 fest.
+- Messung einer Live-Runde mit paralleler TTS (Pocket mit 2 Kernen neben einer laufenden Core-Anfrage).
+- Nach der Wahl: die Gewichte der gewählten Stimme mit Herkunft, SHA-256 und Lizenz im Repo registrieren.
+
+**Höreindruck des Betreibers (04.11.2026):**
+- Fehlerfrei gelesen hat nur die Standardstimme von Chatterbox. Sie ist aber männlich (im Bericht stand irrtümlich "weiblich"), hat einen starken englischen Akzent und klingt teils undeutlich. Sie scheidet aus, Chatterbox ist ohnehin zu langsam.
+- Die schnellen Stimmen (Pocket mit 6 Schichten, Piper) machten Fehler bei Zahlen, Datum und Uhrzeit, bei Dateinamen und auch bei normalen deutschen Wörtern. Ein starker fremder Akzent war nicht das Hauptproblem.
+
+**Antwort darauf (0.5.98):**
+- **Deutsche Textaufbereitung vor jeder Stimme** (`tools/tts_spike/textprep_de.py`, Stufe `de-1`): Zahlen, Jahre, Datum (mit "am vierten", "der vierte"), Uhrzeit, Dezimalzahlen, Prozent, Euro, Dateinamen ("index Punkt Ha Te Em El") und gängige Abkürzungen werden als Wörter gesprochen. In den sieben Testsätzen erreicht keine Ziffer mehr eine Stimme. Stimmproben und `report.md` zeigen, was gesprochen wurde. Dieselbe Aufbereitung nutzt später P20.3.
+- **Kerstin als Pocket-Klon** (6 und 24 Schichten): eine deutsche Muttersprachlerin aus dem freien Datensatz (CC0) bei der Geschwindigkeit von Pocket. Die Klon-Gewichte von Kyutai sind auf Hugging Face gesperrt; der Betreiber stimmt den Bedingungen zu und hinterlegt einmal einen Lese-Token (`tts-spike.sh --hf-token`, verdeckte Eingabe, Datei nur für root). Der Token wird nur beim Laden benutzt, nie beim Messen. Die Klon-Gewichte liegen in einem eigenen Cache (`hf-clone`), damit die übrigen Gruppen nur ihre registrierten Dateien laden.
+- Normale Wörter, die trotz Aufbereitung falsch klingen, sammelt der nächste Lauf: Der Betreiber nennt die Wörter, daraus entsteht eine Ausspracheliste.
+- **Kein Token für Nutzer und andere Installationen:** Der Klon erzeugt einmal eine kleine **Stimmdatei** (`export_model_state`, wenige MB). Sie funktioniert mit den frei ladbaren Pocket-Gewichten ohne Token und ohne Konto, so wie Kyutai seine eigenen Stimmen verteilt. Der Test beweist das mit den Gruppen `pocket-de-stimmdatei` und `pocket-de24-stimmdatei`: Kerstins Stimmdatei spricht dieselben Sätze mit den freien Gewichten, gemessen ohne Netz. Später wird die gewählte Stimmdatei mit Herkunft, SHA-256 und Lizenz registriert und bei der Installation geladen.
+- **Bedingungen von Kyutai (gelesen am 04.11.2026):** Lizenz CC BY 4.0. Verboten sind unter anderem Klonen ohne ausdrückliche Einwilligung, Täuschung (Erzeugtes als echte Aufnahme echter Menschen ausgeben) und rechtswidrige oder schädliche Inhalte. Kerstin ist ein CC0-Datensatz, eigens für Sprachsynthese aufgenommen; Mara tritt offen als KI-Stimme auf. Eine Weitergabe der Stimmdatei verbieten die Bedingungen nicht, die Namensnennung (Kyutai, Datensatz Kerstin) gehört dazu.
+
+Nächster Lauf (ohne Chatterbox):
+
+```
+sudo bash /opt/ember-coreui/scripts/tts-spike.sh --hf-token
+sudo bash /opt/ember-coreui/scripts/tts-spike.sh --skip-build --engines piper,pocket
+```
+
 
 ### P20.1: Spracheingabe
 

@@ -27,6 +27,7 @@ REFETCH=''
 DRY_RUN=''
 KEEP='5'
 RUN_STAMP=''
+HF_TOKEN_MODE=''
 TIME_LIMIT='3600'
 MEMORY='24g'
 
@@ -49,6 +50,9 @@ Optionen:
                     Statt "letzter" geht auch ein bestimmter Lauf (Ordnername wie 20261104-141500,
                     die vorhandenen nennt "--run" mit einem falschen Namen).
                     Der Bericht wird danach aus allen Ergebnissen des Laufs neu erstellt.
+  --hf-token        Lese-Token von Hugging Face fuer den Kerstin-Klon hinterlegen (Eingabe bleibt
+                    unsichtbar, Datei nur fuer root lesbar). Vorher auf huggingface.co/kyutai/pocket-tts
+                    den Bedingungen von Kyutai zustimmen. Der Token wird nur beim Laden benutzt.
   --dry-run         Nur zeigen, was passieren wuerde
   -h, --help        Diese Hilfe
 
@@ -75,6 +79,7 @@ while (($#)); do
     --keep) KEEP="${2:-}"; shift 2 ;;
     --run) RUN_STAMP="${2:-}"; shift 2 ;;
     --dry-run) DRY_RUN='1'; shift ;;
+    --hf-token) HF_TOKEN_MODE='1'; shift ;;
     -h|--help) usage; exit 0 ;;
     *) printf 'Unbekannte Option: %s\n\n' "$1" >&2; usage >&2; exit 2 ;;
   esac
@@ -97,6 +102,7 @@ if [[ -n "$DRY_RUN" && -n "${COREAI_TTS_SPIKE_BASE:-}" ]]; then
   MODELS="$BASE/models"
   RUNS="$BASE/runs"
 fi
+TOKEN_FILE="$BASE/hf_token"
 [[ -f "$REGISTRY" ]] || die 'tools/tts_spike/voices.json fehlt'
 if [[ -z "$DRY_RUN" ]]; then
   command -v docker >/dev/null 2>&1 || die 'docker fehlt'
@@ -107,6 +113,32 @@ run() {
   if [[ -n "$DRY_RUN" ]]; then printf '+'; printf ' %q' "$@"; printf '\n'; return 0; fi
   "$@"
 }
+
+# 0.5.98: the read token for Kyutai's gated clone weights. Typed in hidden,
+# stored for root only, used only while fetching, never measured with.
+if [[ -n "$HF_TOKEN_MODE" ]]; then
+  token=''
+  if [[ -t 0 ]]; then
+    printf 'Hugging-Face-Lese-Token einfuegen (die Eingabe bleibt unsichtbar), dann Enter: ' >&2
+    IFS= read -rs token || true
+    printf '\n' >&2
+  else
+    IFS= read -r token || true
+  fi
+  token="${token//[[:space:]]/}"
+  [[ "$token" =~ ^hf_[A-Za-z0-9]{20,}$ ]] || die 'Das ist kein Hugging-Face-Token (er beginnt mit hf_). Nichts gespeichert.'
+  if [[ -n "$DRY_RUN" ]]; then
+    log "Token waere gueltig und kaeme nach $TOKEN_FILE (nur fuer root lesbar)."
+    exit 0
+  fi
+  install -d -m 0750 -o root -g 33 "$BASE"
+  ( umask 077 && printf '%s\n' "$token" > "$TOKEN_FILE.tmp" )
+  chown root:root "$TOKEN_FILE.tmp"
+  chmod 0600 "$TOKEN_FILE.tmp"
+  mv -f -- "$TOKEN_FILE.tmp" "$TOKEN_FILE"
+  log "Token gespeichert (nur fuer root lesbar). Jetzt den Stimmtest starten; der Klon wird dabei geladen."
+  exit 0
+fi
 
 # Groups to test: "group engine" lines, in registry order.
 mapfile -t SELECTED < <(python3 -I - "$REGISTRY" "$ENGINES" "$GROUP_FILTER" <<'PY'
@@ -120,6 +152,14 @@ for gid, group in reg['groups'].items():
 PY
 )
 ((${#SELECTED[@]})) || die 'Keine Gruppe ausgewaehlt (--engines oder --groups pruefen).'
+# 0.5.98: groups that clone a voice need Kyutai's gated weights (and the token once).
+mapfile -t CLONES < <(python3 -I -c 'import json,sys; [print(g) for g, v in json.load(open(sys.argv[1], encoding="utf-8"))["groups"].items() if v.get("clone")]' "$REGISTRY")
+declare -A IS_CLONE=()
+for clone_group in "${CLONES[@]}"; do IS_CLONE[$clone_group]=1; done
+# Groups that speak with a clone's exported voice file (free weights, no token): "group source" lines.
+mapfile -t FILE_GROUPS < <(python3 -I -c 'import json,sys; [print(g, v["voice_file_from"]) for g, v in json.load(open(sys.argv[1], encoding="utf-8"))["groups"].items() if v.get("voice_file_from")]' "$REGISTRY")
+declare -A VOICE_FILE_FROM=()
+for file_line in "${FILE_GROUPS[@]}"; do VOICE_FILE_FROM[${file_line%% *}]="${file_line#* }"; done
 SAMPLE_CORES="$(python3 -I -c 'import json,sys; print(int(json.load(open(sys.argv[1]))["sample_cores"]))' "$REGISTRY")"
 IFS=',' read -r -a CORE_LIST <<< "$CORES"
 NPROC="$(nproc 2>/dev/null || echo 4)"
@@ -206,9 +246,26 @@ for line in "${SELECTED[@]}"; do
     log "Gewichte fuer $group schon registriert (--refetch laedt neu)."
     continue
   fi
+  token_args=()
+  token_value=''
+  if [[ -n "${IS_CLONE[$group]:-}" ]]; then
+    if [[ ! -s "$TOKEN_FILE" ]]; then
+      log "  $group braucht die Klon-Gewichte von Kyutai: auf huggingface.co/kyutai/pocket-tts zustimmen, dann"
+      log "  sudo bash $PROJECT_ROOT/scripts/tts-spike.sh --hf-token"
+      continue
+    fi
+    token_args=(-e HF_TOKEN)
+    [[ -n "$DRY_RUN" ]] || token_value="$(tr -d '[:space:]' < "$TOKEN_FILE")"
+  fi
+  source_group="${VOICE_FILE_FROM[$group]:-}"
+  if [[ -n "$source_group" && ! -f "$MODELS/lock-$source_group.json" ]]; then
+    log "  $group wartet auf die Stimmdatei aus $source_group (erst den Klon laden)."
+    continue
+  fi
   log "Lade Gewichte fuer $group ..."
-  if ! run timeout --foreground "$TIME_LIMIT" docker run --rm --name "coreai-tts-fetch-$group" "${SAFE[@]}" \
-      -v "$MODELS:/models" "$(image_of "$engine")" python3 -I /app/run.py fetch --group "$group" --models /models; then
+  # The token reaches only this container, by name from the environment (never on the command line).
+  if ! HF_TOKEN="$token_value" run timeout --foreground "$TIME_LIMIT" docker run --rm --name "coreai-tts-fetch-$group" "${SAFE[@]}" \
+      "${token_args[@]}" -v "$MODELS:/models" "$(image_of "$engine")" python3 -I /app/run.py fetch --group "$group" --models /models; then
     docker rm -f "coreai-tts-fetch-$group" >/dev/null 2>&1 || true
     log "  Laden fehlgeschlagen; $group wird ohne Gewichte gemessen und meldet den Fehler im Bericht."
   fi
