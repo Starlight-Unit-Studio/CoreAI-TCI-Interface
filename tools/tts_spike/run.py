@@ -37,6 +37,7 @@ from typing import Any, Iterable, Iterator
 FORMAT = 1
 ID_RE = re.compile(r'^[a-z0-9][a-z0-9_-]{0,60}$')
 SENTENCE_RE = re.compile(r'^s[0-9]{1,2}$')
+SENTENCE_EN_RE = re.compile(r'^e[0-9]{1,2}$')
 WARMUP_TEXT = 'Test.'
 PACKAGES = ('piper-tts', 'onnxruntime', 'pocket-tts', 'chatterbox-tts', 'torch', 'torchaudio',
             'transformers', 'huggingface-hub', 'numpy', 'soundfile', 'librosa')
@@ -54,12 +55,22 @@ def load_textprep():
     return module
 
 
-def spoken_text(reg: dict, text: str) -> str:
-    """0.5.98: what the voice really gets (numbers, dates, file names as words; 0.6.5 de-2)."""
+def spoken_text(reg: dict, text: str, language: str = 'de') -> str:
+    """0.5.98: what the voice really gets (numbers, dates, file names as words; 0.6.5 de-2).
+    0.6.6: the German text preparation is for German sentences only; English ones are spoken as written."""
     prep = load_textprep()
-    if reg.get('textprep') != prep.VERSION:
+    if language != 'de' or reg.get('textprep') != prep.VERSION:
         return text
     return prep.prepare(text)
+
+
+def group_language(group: dict) -> str:
+    """0.6.6: Pocket's English models (english, english_2026-09_24l, ...) speak the English sentences."""
+    return 'en' if str(group.get('language', '')).startswith('english') else 'de'
+
+
+def group_sentences(reg: dict, group: dict) -> list[dict]:
+    return reg.get('sentences_en', []) if group_language(group) == 'en' else reg.get('sentences', [])
 
 
 def use_hf_home(models: Path, group: dict) -> None:
@@ -78,9 +89,10 @@ def load_registry(path: Path) -> dict:
     if reg.get('format') != FORMAT:
         raise SystemExit('voices.json: unknown format')
     seen = set()
-    for sentence in reg.get('sentences', []):
-        if not SENTENCE_RE.match(str(sentence.get('id', ''))) or not str(sentence.get('text', '')).strip():
-            raise SystemExit('voices.json: bad sentence ' + repr(sentence.get('id')))
+    for key, pattern in (('sentences', SENTENCE_RE), ('sentences_en', SENTENCE_EN_RE)):
+        for sentence in reg.get(key, []):
+            if not pattern.match(str(sentence.get('id', ''))) or not str(sentence.get('text', '')).strip():
+                raise SystemExit('voices.json: bad sentence ' + repr(sentence.get('id')))
     for group_id, group in reg.get('groups', {}).items():
         if not ID_RE.match(group_id):
             raise SystemExit('voices.json: bad group id ' + repr(group_id))
@@ -558,7 +570,9 @@ def cmd_run(args: argparse.Namespace) -> int:
         'params': getattr(ENGINES[group['engine']], 'params', {}), 'versions': package_versions(),
         'files': [], 'voices': [],
     }
-    result['textprep'] = reg.get('textprep')
+    language = group_language(group)
+    result['language'] = language
+    result['textprep'] = reg.get('textprep') if language == 'de' else None
     result['quantize'] = bool(group.get('quantize'))
     result_file = out / f'result-{args.group}-{args.cores}c.json'
     use_hf_home(models, group)
@@ -587,8 +601,8 @@ def cmd_run(args: argparse.Namespace) -> int:
                     _, warm, _ = measure(engine, state, WARMUP_TEXT)
                     result['warmup_s'] = round(warm, 3)
                     warm_state = state
-                for sentence in reg['sentences']:
-                    chunks, synth, first = measure(engine, state, spoken_text(reg, sentence['text']))
+                for sentence in group_sentences(reg, group):
+                    chunks, synth, first = measure(engine, state, spoken_text(reg, sentence['text'], language))
                     name = sample_name(voice['id'], args.cores, sentence['id'])
                     count = write_wav(out / name, chunks, engine.sample_rate)
                     audio = count / float(engine.sample_rate)
@@ -669,7 +683,8 @@ def build_report(reg: dict, run_dir: Path, stamp: str) -> dict:
             produced = next((v for v in sample_run.get('voices', []) if v.get('id') == voice['id']), None)
             samples = produced.get('samples', []) if produced else []
             voices.append({
-                'id': voice['id'], 'group': group_id, 'engine': group['engine'], 'label': voice.get('label', voice['id']),
+                'id': voice['id'], 'group': group_id, 'engine': group['engine'], 'language': group_language(group),
+                'label': voice.get('label', voice['id']),
                 'model': group.get('label', group_id), 'gender': voice.get('gender', ''), 'status': voice['status'],
                 'voice_license': voice.get('voice_license', ''), 'weights_license': voice.get('weights_license', ''),
                 'code_license': engine.get('code_license', ''), 'origin': voice.get('origin', ''), 'note': voice.get('note', ''),
@@ -682,7 +697,9 @@ def build_report(reg: dict, run_dir: Path, stamp: str) -> dict:
             })
     return {
         'format': FORMAT, 'stamp': stamp, 'created_at': now_iso(), 'sample_cores': sample_cores, 'host': host,
-        'sentences': [dict(s, spoken=spoken_text(reg, s['text'])) for s in reg['sentences']],
+        'sentences': [dict(s, spoken=spoken_text(reg, s['text']), language='de') for s in reg['sentences']]
+        + ([dict(s, spoken=s['text'], language='en') for s in reg.get('sentences_en', [])]
+           if any(group_language(reg['groups'][r['group']]) == 'en' for r in results) else []),
         'textprep': reg.get('textprep'), 'groups': groups, 'voices': voices, 'errors': errors,
     }
 

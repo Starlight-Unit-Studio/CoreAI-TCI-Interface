@@ -22,7 +22,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 RUN = ROOT / 'tools' / 'tts_spike' / 'run.py'
 REGISTRY = ROOT / 'tools' / 'tts_spike' / 'voices.json'
-SAMPLE_RE = re.compile(r'^[a-z0-9][a-z0-9_-]{0,60}-[0-9]{1,2}c-s[0-9]{1,2}\.wav$')
+SAMPLE_RE = re.compile(r'^[a-z0-9][a-z0-9_-]{0,60}-[0-9]{1,2}c-[se][0-9]{1,2}\.wav$')
 
 
 def check(ok: bool, why: str) -> None:
@@ -48,7 +48,20 @@ check(set(reg['engines']) == {'piper', 'pocket', 'chatterbox'}, 'three engines')
 check(reg['engines']['piper']['package'] == 'piper-tts==1.8.0' and reg['engines']['piper']['code_license'] == 'GPL-3.0-or-later', 'Piper pinned, GPL named')
 check(reg['engines']['pocket']['package'] == 'pocket-tts==4.0.1' and reg['engines']['chatterbox']['package'] == 'chatterbox-tts==0.1.7', 'engines pinned')
 ids = [v['id'] for v in reg['voices']]
-check(len(ids) == len(set(ids)) == 24, '24 voices, each once')
+check(len(ids) == len(set(ids)) == 26, '26 voices, each once')
+# 0.6.6: Eve in English (P20.0-EN): the small standard model and the 24 layer model, int8, English sentences.
+check([s['id'] for s in reg['sentences_en']] == [f'e{i}' for i in range(1, 8)], 'seven English test sentences')
+for sentence in reg['sentences_en']:
+    check(chr(0x2013) not in sentence['text'] and chr(0x2014) not in sentence['text'] and sentence['topic'].startswith('Englisch, '),
+          'English sentence ' + sentence['id'])
+check(any(re.search(r'\d', s['text']) for s in reg['sentences_en']) and 'CoreAI' in ' '.join(s['text'] for s in reg['sentences_en']),
+      'the English sentences test numbers and the product name')
+for gid, language in (('pocket-en-eve-int8', 'english'), ('pocket-en24-eve-int8', 'english_2026-09_24l')):
+    group = reg['groups'][gid]
+    check(group == {'engine': 'pocket', 'label': group['label'], 'language': language, 'quantize': True}, 'English group ' + gid)
+    voice = next(v for v in reg['voices'] if v['id'] == gid)
+    check(voice['group'] == gid and voice['voice'] == 'eve' and voice['status'] == 'frei' and 'p361' in voice['voice_license']
+          and [v['id'] for v in reg['voices'] if v['group'] == gid] == [gid], 'English Eve alone in ' + gid)
 # 0.5.99: the operator chose Eve (24 layers); she is measured alone with and without int8, at 4, 6 and 8 cores.
 check(reg['groups']['pocket-de24-eve'] == {'engine': 'pocket', 'label': reg['groups']['pocket-de24-eve']['label'], 'language': 'german_24l'}
       and reg['groups']['pocket-de24-eve-int8'].get('quantize') is True and reg['groups']['pocket-de24-eve-int8']['language'] == 'german_24l',
@@ -242,7 +255,7 @@ builds = [l for l in lines if l.startswith('+ docker build')]
 check(len(builds) == 3, 'one image per engine')
 runs = [l for l in lines if 'run.py run ' in l]
 fetches = [l for l in lines if 'run.py fetch ' in l]
-check(len(fetches) == 9 and len(runs) == 26, 'nine groups fetched (clones wait for the token, voice files for the clones), thirteen measured')
+check(len(fetches) == 11 and len(runs) == 30, 'eleven groups fetched (clones wait for the token, voice files for the clones), fifteen measured')
 check(dry.stdout.count('wartet auf die Stimmdatei') == 2, 'voice file groups wait for their clone')
 check(dry.stdout.count('braucht die Klon-Gewichte von Kyutai') == 2 and 'tts-spike.sh --hf-token' in dry.stdout, 'how to unlock the clone')
 for line in runs:
@@ -257,19 +270,19 @@ check(any('run.py report' in l for l in lines), 'report at the end')
 (sandbox / 'models').mkdir(parents=True)
 (sandbox / 'models' / 'lock-pocket-de.json').write_text('{}', encoding='utf-8')
 kept = [l for l in dry_run().stdout.splitlines() if 'run.py fetch ' in l]
-check(len(kept) == 8 and not any('--group pocket-de ' in l for l in kept), 'registered weights are kept')
-check(len([l for l in dry_run('--refetch').stdout.splitlines() if 'run.py fetch ' in l]) == 9, '--refetch loads them again')
+check(len(kept) == 10 and not any('--group pocket-de ' in l for l in kept), 'registered weights are kept')
+check(len([l for l in dry_run('--refetch').stdout.splitlines() if 'run.py fetch ' in l]) == 11, '--refetch loads them again')
 # 0.5.98: the token, typed in hidden and stored for root only, reaches only the clone fetches, by name.
 token = 'hf_' + 'Ab1' * 10
 (sandbox / 'hf_token').write_text(token + '\n', encoding='utf-8')
 unlocked = dry_run('--refetch')
 clone_fetches = [l for l in unlocked.stdout.splitlines() if 'run.py fetch ' in l]
-check(len(clone_fetches) == 11, 'with the token the clones are fetched too')
+check(len(clone_fetches) == 13, 'with the token the clones are fetched too')
 for clone_group in ('pocket-de-kerstin', 'pocket-de24-kerstin'):
     (sandbox / 'models' / f'lock-{clone_group}.json').write_text('{}', encoding='utf-8')
 unlocked = dry_run('--refetch')
 clone_fetches = [l for l in unlocked.stdout.splitlines() if 'run.py fetch ' in l]
-check(len(clone_fetches) == 13, 'with the clones loaded, the voice file groups are fetched too')
+check(len(clone_fetches) == 15, 'with the clones loaded, the voice file groups are fetched too')
 for line in clone_fetches:
     check(('-e HF_TOKEN ' in line) == bool(re.search(r'--group pocket-de(24)?-kerstin ', line)), 'token only for the clone fetches: ' + line[-60:])
 check(any('--group pocket-de-stimmdatei ' in l and '-e HF_TOKEN' not in l for l in clone_fetches), 'the voice file path never sees the token')
@@ -324,11 +337,13 @@ check("[[ \"$stamp\" =~ ^[0-9]{8}-[0-9]{6}$ ]] && rm -rf -- \"${RUNS:?}/$stamp\"
 with tempfile.TemporaryDirectory() as tmp:
     tmp_path = Path(tmp)
     test_reg = {
-        'format': 1, 'sample_cores': 4, 'textprep': 'de-2', 'sentences': reg['sentences'], 'references': reg['references'],
+        'format': 1, 'sample_cores': 4, 'textprep': 'de-2', 'sentences': reg['sentences'], 'sentences_en': reg['sentences_en'],
+        'references': reg['references'],
         'engines': {'probe': {'label': 'Testton', 'package': 'probe', 'code_license': 'MIT'}},
         'groups': {'probe-a': {'engine': 'probe', 'label': 'Testton A'}, 'probe-b': {'engine': 'probe', 'label': 'Testton B'},
                    'probe-klon': {'engine': 'probe', 'label': 'Testton Klon', 'clone': True, 'hf_home': 'hf-clone', 'reference': 'kerstin'},
-                   'probe-datei': {'engine': 'probe', 'label': 'Testton Stimmdatei', 'voice_file_from': 'probe-klon'}},
+                   'probe-datei': {'engine': 'probe', 'label': 'Testton Stimmdatei', 'voice_file_from': 'probe-klon'},
+                   'probe-en': {'engine': 'probe', 'label': 'Testton Englisch', 'language': 'english'}},
         'voices': [
             {'id': 'probe-a-eins', 'group': 'probe-a', 'voice': 'eins', 'label': 'Eins', 'gender': 'weiblich', 'status': 'frei',
              'voice_license': 'CC0 1.0', 'weights_license': 'MIT', 'origin': 'Test'},
@@ -340,6 +355,8 @@ with tempfile.TemporaryDirectory() as tmp:
              'voice_license': 'CC0 1.0', 'weights_license': 'MIT', 'origin': 'Test'},
             {'id': 'probe-datei', 'group': 'probe-datei', 'voice': 'file', 'label': 'Stimmdatei', 'gender': 'weiblich', 'status': 'frei',
              'voice_license': 'CC0 1.0', 'weights_license': 'MIT', 'origin': 'Test'},
+            {'id': 'probe-en-eve', 'group': 'probe-en', 'voice': 'eve', 'label': 'Eve englisch', 'gender': 'weiblich', 'status': 'frei',
+             'voice_license': 'CC BY 4.0', 'weights_license': 'MIT', 'origin': 'Test'},
         ],
     }
     registry = tmp_path / 'voices.json'
@@ -354,7 +371,7 @@ with tempfile.TemporaryDirectory() as tmp:
     r = call('--registry', str(registry), 'run', '--group', 'probe-datei', '--models', str(models), '--out', str(out), '--cores', '4')
     check(r.returncode == 1 and 'Stimmdatei fehlt: zuerst den Klon probe-klon laden' in json.loads((out / 'result-probe-datei-4c.json').read_text())['error'],
           'a voice file group without its clone says what to do')
-    for group in ('probe-a', 'probe-b'):
+    for group in ('probe-a', 'probe-b', 'probe-en'):
         r = call('--registry', str(registry), 'fetch', '--group', group, '--models', str(models))
         check(r.returncode == 0, 'fetch ' + group + ': ' + r.stderr)
     lock = json.loads((models / 'lock-probe-a.json').read_text())
@@ -366,6 +383,16 @@ with tempfile.TemporaryDirectory() as tmp:
     check(r.returncode == 0, 'run probe-a with 2 cores')
     r = call('--registry', str(registry), 'run', '--group', 'probe-b', '--models', str(models), '--out', str(out), '--cores', '4')
     check(r.returncode == 0, 'run probe-b')
+    # 0.6.6: an English group speaks the English sentences as written (no German text preparation).
+    r = call('--registry', str(registry), 'run', '--group', 'probe-en', '--models', str(models), '--out', str(out), '--cores', '4')
+    check(r.returncode == 0, 'run probe-en: ' + r.stderr + r.stdout)
+    english = json.loads((out / 'result-probe-en-4c.json').read_text())
+    check(english['language'] == 'en' and english['textprep'] is None, 'English run without the German text preparation')
+    en_samples = english['voices'][0]['samples']
+    check([x['sentence'] for x in en_samples] == [f'e{i}' for i in range(1, 8)], 'the English group speaks e1 to e7')
+    e2 = next(x for x in en_samples if x['sentence'] == 'e2')
+    check(abs(e2['audio_s'] - 0.03 * len(next(x['text'] for x in reg['sentences_en'] if x['id'] == 'e2'))) < 0.01, 'English text as written')
+    check(all(SAMPLE_RE.match(x['file']) for x in en_samples), 'English sample names')
     # Changed weights are refused.
     (models / 'probe' / 'probe-b.bin').write_bytes(b'changed')
     r = call('--registry', str(registry), 'run', '--group', 'probe-b', '--models', str(models), '--out', str(out), '--cores', '2', '--first-only')
@@ -397,10 +424,15 @@ with tempfile.TemporaryDirectory() as tmp:
     check(r.returncode == 0, 'report: ' + r.stderr)
     report = json.loads((out / 'report.json').read_text())
     check(report['format'] == 1 and report['stamp'] == '20261104-120000' and report['sample_cores'] == 4, 'report head')
-    check(report['host'] == ['Zeit: test', 'CPU(s): 20'] and len(report['sentences']) == 7, 'host and sentences')
-    check(report['textprep'] == 'de-2' and {x['id']: x['spoken'] for x in report['sentences']} == spoken, 'the report names the spoken text')
+    check(report['host'] == ['Zeit: test', 'CPU(s): 20'] and len(report['sentences']) == 14, 'host and sentences, German and English')
+    german = [x for x in report['sentences'] if x['language'] == 'de']
+    check(report['textprep'] == 'de-2' and {x['id']: x['spoken'] for x in german} == spoken, 'the report names the spoken text')
+    check([x['id'] for x in report['sentences'] if x['language'] == 'en'] == [f'e{i}' for i in range(1, 8)]
+          and all(x['spoken'] == x['text'] for x in report['sentences'] if x['language'] == 'en'), 'English sentences as written')
     voices = {v['id']: v for v in report['voices']}
-    check(set(voices) == {'probe-a-eins', 'probe-a-kaputt', 'probe-b-zwei', 'probe-klon', 'probe-datei'}, 'every voice in the report')
+    check(set(voices) == {'probe-a-eins', 'probe-a-kaputt', 'probe-b-zwei', 'probe-klon', 'probe-datei', 'probe-en-eve'}, 'every voice in the report')
+    check(voices['probe-en-eve']['language'] == 'en' and voices['probe-a-eins']['language'] == 'de' and len(voices['probe-en-eve']['samples']) == 7,
+          'each voice says its language')
     check(not voices['probe-klon']['ok'] and 'Klon-Gewichte von Kyutai nicht freigegeben' in voices['probe-klon']['error'], 'the locked clone shows why')
     check(voices['probe-a-eins']['ok'] and voices['probe-a-eins']['cores'] == 4 and len(voices['probe-a-eins']['samples']) == 7, 'samples from the 4 core run')
     check(voices['probe-a-eins']['rtf_median'] is not None and voices['probe-a-eins']['first_audio_median_s'] is not None, 'medians per voice')

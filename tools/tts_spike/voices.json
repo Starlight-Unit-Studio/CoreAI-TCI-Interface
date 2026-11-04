@@ -40,6 +40,43 @@
       "text": "Ich habe die Webseite durchsucht und drei passende Quellen gefunden. Die erste ist ein Artikel aus dem Jahr 2024, die zweite eine offizielle Dokumentation. Wenn du möchtest, fasse ich dir die wichtigsten Punkte kurz zusammen."
     }
   ],
+  "sentences_en": [
+    {
+      "id": "e1",
+      "topic": "Englisch, Begrüßung",
+      "text": "Hello, I'm Mara. It's nice to have you here."
+    },
+    {
+      "id": "e2",
+      "topic": "Englisch, Zahlen",
+      "text": "Your context window is set to 32,768 tokens, and 3 of 4 tools are active."
+    },
+    {
+      "id": "e3",
+      "topic": "Englisch, Datum und Uhrzeit",
+      "text": "Today is Wednesday, November 4, 2026, and it's 2:30 PM."
+    },
+    {
+      "id": "e4",
+      "topic": "Englisch, Frage",
+      "text": "Should I save the file now, or would you like to look at it once more first?"
+    },
+    {
+      "id": "e5",
+      "topic": "Englisch, Dateinamen",
+      "text": "The project contains three files: index.html, style.css and script.js."
+    },
+    {
+      "id": "e6",
+      "topic": "Englisch, Produktnamen",
+      "text": "CoreAI: TCI Interface runs on the Ember framework, and Mara Thorne is its assistant."
+    },
+    {
+      "id": "e7",
+      "topic": "Englisch, längerer Absatz",
+      "text": "I searched the website and found three matching sources. The first is an article from 2024, the second is the official documentation. If you like, I can briefly summarize the most important points for you."
+    }
+  ],
   "engines": {
     "piper": {
       "label": "Piper",
@@ -182,6 +219,18 @@
         "conds.pt"
       ],
       "reference": "kerstin"
+    },
+    "pocket-en-eve-int8": {
+      "engine": "pocket",
+      "label": "Pocket TTS Englisch (Standardmodell), nur Eve, int8",
+      "language": "english",
+      "quantize": true
+    },
+    "pocket-en24-eve-int8": {
+      "engine": "pocket",
+      "label": "Pocket TTS Englisch (24 Schichten, 2026-09), nur Eve, int8",
+      "language": "english_2026-09_24l",
+      "quantize": true
     }
   },
   "voices": [
@@ -468,6 +517,30 @@
       "weights_license": "MIT (ResembleAI/chatterbox)",
       "origin": "ResembleAI/chatterbox conds.pt",
       "note": "Nur Vergleich. Beim Anhören (04.11.2026): männlich, starker englischer Akzent, las aber alles fehlerfrei."
+    },
+    {
+      "voice": "eve",
+      "gender": "weiblich",
+      "status": "frei",
+      "voice_license": "CC BY 4.0 (VCTK p361, Namensnennung)",
+      "weights_license": "CC BY 4.0 (Kyutai, Namensnennung)",
+      "origin": "kyutai/tts-voices vctk/p361, Stimmzustand aus kyutai/pocket-tts-without-voice-cloning",
+      "id": "pocket-en-eve-int8",
+      "group": "pocket-en-eve-int8",
+      "label": "Eve englisch (int8)",
+      "note": "Maras Stimme auf Englisch, kleines Standardmodell. Liest die englischen Testsätze ohne deutsche Textaufbereitung."
+    },
+    {
+      "voice": "eve",
+      "gender": "weiblich",
+      "status": "frei",
+      "voice_license": "CC BY 4.0 (VCTK p361, Namensnennung)",
+      "weights_license": "CC BY 4.0 (Kyutai, Namensnennung)",
+      "origin": "kyutai/tts-voices vctk/p361, Stimmzustand aus kyutai/pocket-tts-without-voice-cloning",
+      "id": "pocket-en24-eve-int8",
+      "group": "pocket-en24-eve-int8",
+      "label": "Eve englisch, 24 Schichten (int8)",
+      "note": "Maras Stimme auf Englisch, großes Modell wie bei der deutschen Eve. Liest die englischen Testsätze ohne deutsche Textaufbereitung."
     }
   ],
   "references": {

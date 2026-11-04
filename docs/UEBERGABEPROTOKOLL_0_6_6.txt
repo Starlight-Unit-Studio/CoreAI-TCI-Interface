@@ -1,0 +1,40 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.6.6
+Stand: 04.11.2026
+Ausgangsbasis: main 0.6.5 nach Merge von PR #156.
+
+AUFTRAG:
+Frage des Betreibers: Wie regeln wir Nutzer aus dem Ausland, wenn die Oberflaeche spaeter Deutsch/Englisch
+(und Tag/Nacht) bekommt? Idee: beim Umschalten das deutsche Sprachmodell entladen und das englische laden,
+und gleich die Bruecke zur Sprachauswahl vorbereiten.
+
+ENTSCHEIDUNGEN DES BETREIBERS (AskUserQuestion, 04.11.2026):
+- Sprachmodell nach Bedarf laden (nicht beim Umschalten eines Kontos: ein Sprachdienst fuer alle Konten).
+- Bruecke: Spracheinstellung Deutsch/Englisch pro Konto im KI-Profil, gilt fuer Maras Antworten und das
+  Vorlesen; Knoepfe bleiben deutsch bis zur Uebersetzung (ehrlicher Hinweis). Mara bleibt mehrsprachig:
+  schreibt jemand in einer anderen Gemma-Sprache, antwortet sie darin. Deutsch und Englisch sind Hauptsprachen.
+- Reihenfolge: zuerst Hoertest der englischen Eve.
+
+GEPRUEFT (Hugging Face und Pocket-Paket 4.0.1):
+- Pocket 4.0.1 kennt english, english_2026-04_24l, english_2026-09_24l und weitere; dazu dutch, french,
+  italian, portuguese, spanish. Eve liegt in english und english_2026-09_24l (get_predefined_voice pinnt
+  Revision a7056f50 fuer alle Sprachen). Modelldatei english_2026-09_24l: 1,3 GB (german_24l: 0,67 GB).
+
+UMSETZUNG:
+- tools/tts_spike/voices.json: sentences_en (e1 bis e7), Gruppen pocket-en-eve-int8 (english) und
+  pocket-en24-eve-int8 (english_2026-09_24l), je nur Eve mit int8.
+- tools/tts_spike/run.py: SENTENCE_EN_RE, group_language(), group_sentences(), spoken_text(..., language):
+  deutsche Textaufbereitung nur fuer deutsche Saetze; result/report mit language.
+- api/tts_spike_store.php: Satz-IDs s und e, Hoerproben -sN und -eN, language je Satz und Stimme.
+- js/coreui-voice-samples.js: pro Stimme nur die Saetze ihrer Sprache; englische Saetze lang="en".
+- Sprachplan P20.3b, Roadmap-Zeile 4b.
+
+GEPRUEFT:
+- tts-spike-selftest.py, tts-spike-store-selftest.php, voice-samples-ui-selftest.cjs, volle Testreihe,
+  version-merge-check gegen 0.6.5.
+- NICHT hier: echter Lauf der englischen Eve (Hugging Face und Pocket laufen nur auf dem Server).
+
+NACH DEM MERGE (Betreiber): Update, dann auf dem Server:
+  sudo bash /opt/ember-coreui/scripts/tts-spike.sh --skip-build --groups pocket-en-eve-int8,pocket-en24-eve-int8 --cores 4
+Danach Admin Core > Betrieb > Stimmproben: beide englischen Eves anhoeren, report.md hochladen (RAM, Tempo).
+OFFEN: Modellwahl Englisch und Registrierung, englische Textaufbereitung falls noetig, Laden nach Bedarf im
+Sprachdienst, Spracheinstellung im KI-Profil (Antworten und Vorlesen), danach P20.1 Spracheingabe.

@@ -17,6 +17,8 @@ const SENTENCES = [
   {id: 's1', topic: 'Begrüßung', text: 'Hallo, ich bin Mara. Schön, dass du da bist.', spoken: 'Hallo, ich bin Mara. Schön, dass du da bist.'},
   {id: 's2', topic: 'Zahlen', text: 'Dein Kontextfenster ist auf 32.768 Tokens eingestellt.',
     spoken: 'Dein Kontextfenster ist auf zweiunddreißigtausendsiebenhundertachtundsechzig Tokens eingestellt.'},
+  // 0.6.6: English test sentences for the English voices.
+  {id: 'e1', topic: 'Englisch, Begrüßung', text: "Hello, I'm Mara.", spoken: "Hello, I'm Mara.", language: 'en'},
 ];
 const sample = (voice, sid, rtf) => ({sentence: sid, file: `${voice}-4c-${sid}.wav`, synth_s: 0.5, audio_s: 2.5, rtf, first_audio_s: 0.12});
 function voice(id, label, status, ok, samples, extra) {
@@ -31,6 +33,7 @@ const NEW = {stamp: '20261104-153000', created_at: '2026-11-04T14:30:00+00:00', 
     voice('pocket-de-anna', 'Anna', 'frei', true, [sample('pocket-de-anna', 's1', 0.21), sample('pocket-de-anna', 's2', 0.22)]),
     voice('piper-ramona', 'Ramona', 'pruefen', true, [sample('piper-ramona', 's1', 0.05)], {model: 'Piper, Ramona (low, 16 kHz)', code_license: 'GPL-3.0-or-later'}),
     voice('chatterbox-kerstin', 'Kerstin (Klon)', 'frei', false, []),
+    voice('pocket-en-eve_int', 'Eve englisch', 'frei', true, [sample('pocket-en-eve_int', 'e1', 0.3)], {language: 'en', model: 'Pocket TTS Englisch'}),
   ],
   groups: [{id: 'pocket-de', label: 'Pocket TTS Deutsch (6 Schichten)', engine_label: 'Pocket TTS', package: 'pocket-tts==4.0.1', code_license: 'MIT',
     code_note: 'Gewichte ohne Stimmklon (CC BY 4.0, Namensnennung Kyutai).', files: 9,
@@ -41,7 +44,7 @@ const NEW = {stamp: '20261104-153000', created_at: '2026-11-04T14:30:00+00:00', 
         peak_rss_mb: 120, rtf_median: null, first_audio_median_s: null}]}],
 };
 const OLD = Object.assign({}, NEW, {stamp: '20261103-090000', errors: 0, voices: [voice('pocket-de-anna', 'Anna', 'frei', true, [sample('pocket-de-anna', 's1', 0.3)])]});
-const RUNS = [{stamp: NEW.stamp, created_at: NEW.created_at, voices: 3, spoken: 2, errors: 1}, {stamp: OLD.stamp, created_at: '', voices: 1, spoken: 1, errors: 0}];
+const RUNS = [{stamp: NEW.stamp, created_at: NEW.created_at, voices: 4, spoken: 3, errors: 1}, {stamp: OLD.stamp, created_at: '', voices: 1, spoken: 1, errors: 0}];
 
 function wav() {
   const data = Buffer.alloc(3200);
@@ -118,13 +121,19 @@ async function open(browser, level, viewport, state) {
     assert.equal(await page.isVisible('#view-admin-betrieb'), true, 'Betrieb is open');
     assert.equal(await page.textContent('#adminTtsTitle'), 'Maras Stimme');
     assert.equal(await page.textContent('#ttsMeta'),
-      'Lauf vom 04.11.2026, 15:30 Uhr: 2 von 3 Stimmen gesprochen, Hörproben mit 4 Kernen, 1 Fehler (siehe report.md).');
+      'Lauf vom 04.11.2026, 15:30 Uhr: 3 von 4 Stimmen gesprochen, Hörproben mit 4 Kernen, 1 Fehler (siehe report.md).');
     assert.deepEqual(await page.$$eval('#ttsSentences li', l => l.map(x => x.textContent)),
       ['Begrüßung: Hallo, ich bin Mara. Schön, dass du da bist.',
-        'Zahlen: Dein Kontextfenster ist auf 32.768 Tokens eingestellt.Gesprochen als: Dein Kontextfenster ist auf zweiunddreißigtausendsiebenhundertachtundsechzig Tokens eingestellt.']);
+        'Zahlen: Dein Kontextfenster ist auf 32.768 Tokens eingestellt.Gesprochen als: Dein Kontextfenster ist auf zweiunddreißigtausendsiebenhundertachtundsechzig Tokens eingestellt.',
+        "Englisch, Begrüßung: Hello, I'm Mara."]);
     assert.equal(await page.locator('#ttsSentences .tts-spoken').count(), 1, 'spoken text only where it differs');
-    assert.deepEqual(await page.$$eval('.tts-voice-name strong', l => l.map(x => x.textContent)), ['Anna', 'Ramona', 'Kerstin (Klon)']);
-    assert.deepEqual(await page.$$eval('.tts-badge', l => l.map(x => x.textContent)), ['FREI', 'PRÜFEN', 'FREI'], 'license badge per voice');
+    assert.deepEqual(await page.$$eval('.tts-voice-name strong', l => l.map(x => x.textContent)), ['Anna', 'Ramona', 'Kerstin (Klon)', 'Eve englisch']);
+    assert.deepEqual(await page.$$eval('.tts-badge', l => l.map(x => x.textContent)), ['FREI', 'PRÜFEN', 'FREI', 'FREI'], 'license badge per voice');
+    // 0.6.6: each voice gets the sentences of its language only.
+    assert.equal(await page.locator('[data-voice="pocket-de-anna"] .tts-play').count(), 2, 'German voice: German sentences');
+    assert.equal(await page.locator('[data-voice="pocket-en-eve_int"] .tts-play').count(), 1, 'English voice: English sentences');
+    assert.equal(await page.getAttribute('[data-voice="pocket-en-eve_int"] .tts-play', 'aria-label'), 'Eve englisch, Satz 1 abspielen: Englisch, Begrüßung');
+    assert.equal(await page.getAttribute('#ttsSentences li >> nth=2', 'lang'), 'en', 'English sentence marked as English');
     assert.deepEqual(await page.$$eval('[data-voice="pocket-de-anna"] .tts-metric strong', l => l.map(x => x.textContent)),
       ['0,21', '0,12 s', '912 MB', '3,5 s'], 'figures in German');
     assert.deepEqual(await page.$$eval('[data-voice="pocket-de-anna"] .tts-license dt', l => l.map(x => x.textContent)), ['Stimme', 'Gewichte', 'Engine', 'Herkunft']);
@@ -161,7 +170,7 @@ async function open(browser, level, viewport, state) {
     // Older run.
     assert.equal(await page.isVisible('.tts-run-pick'), true, 'run picker with two runs');
     assert.deepEqual(await page.$$eval('#ttsRunSelect option', l => l.map(o => o.textContent)),
-      ['04.11.2026, 15:30 Uhr (2 von 3)', '03.11.2026, 09:00 Uhr (1 von 1)']);
+      ['04.11.2026, 15:30 Uhr (3 von 4)', '03.11.2026, 09:00 Uhr (1 von 1)']);
     await page.selectOption('#ttsRunSelect', OLD.stamp);
     await page.waitForFunction(() => document.querySelectorAll('.tts-voice').length === 1);
     assert.equal(srv.calls.filter(c => c.action === 'tts_runs').pop().run, OLD.stamp, 'asks for the chosen run');

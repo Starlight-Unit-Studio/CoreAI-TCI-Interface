@@ -296,6 +296,24 @@ sudo bash /opt/ember-coreui/scripts/tts-spike.sh --skip-build --engines piper,po
 - Erzeugte Audiodateien werden kontogebunden zwischengespeichert, damit erneutes Abspielen nichts neu berechnet; Aufräumen nach einer festen Frist.
 - Eine feste Mara-Stimme mit festen Parametern, überall gleich.
 
+### P20.3b: Englische Eve und Sprachwahl pro Konto
+
+**Entscheidungen des Betreibers (04.11.2026):**
+
+- **Sprachmodell nach Bedarf:** Der Sprachdienst lädt die Sprache, in der gerade vorgelesen wird. Eine Sprache, die eine Weile niemand nutzt, wird entladen. Passen beide in den RAM, bleiben beide geladen. Grund: Pro Server gibt es einen Sprachdienst für alle Konten; ein Wechsel beim Umschalten eines Kontos würde andere Konten ausbremsen.
+- **Brücke zur Sprachwahl:** Jedes Konto bekommt im KI-Profil eine Spracheinstellung Deutsch oder Englisch. Sie gilt schon vor der übersetzten Oberfläche für Maras Antworten und für das Vorlesen. Knöpfe und Menüs bleiben deutsch, bis die Übersetzung kommt; das steht ehrlich neben dem Schalter. Deutsch und Englisch sind die Hauptsprachen. Mara antwortet weiterhin in jeder Sprache, die das Gemma-Modell beherrscht, wenn jemand darin schreibt.
+- **Reihenfolge:** zuerst Hörtest und Messung der englischen Eve, dann Brücke und Sprachwechsel mit den echten Zahlen.
+
+**Grundlage (geprüft 04.11.2026):** Pocket TTS 4.0.1 kennt ohne Stimmklon auch Englisch, Französisch, Spanisch, Italienisch, Portugiesisch und Niederländisch. Eve (VCTK p361) gibt es im englischen Standardmodell `english` und im englischen 24-Schichten-Modell `english_2026-09_24l`. Die Modelldatei mit 24 Schichten ist 1,3 GB groß, die deutsche 0,67 GB; ob beide gleichzeitig unter das Containerlimit von 6 GB passen, zeigt die Messung.
+
+**Stand 0.6.6: Hörtest bereit.** Der Stimmtest kennt sieben englische Testsätze (`e1` bis `e7`: Begrüßung, Zahlen, Datum und Uhrzeit, Frage, Dateinamen, Produktnamen, längerer Absatz). Sie gehen ohne deutsche Textaufbereitung an die Stimme, damit hörbar wird, ob Englisch eine eigene Aufbereitung für Zahlen und Uhrzeiten braucht. Zwei Gruppen, nur Eve, mit int8: `pocket-en-eve-int8` (Standardmodell) und `pocket-en24-eve-int8` (24 Schichten). Admin Core zeigt bei jeder Stimme nur die Sätze ihrer Sprache. Lauf auf dem Server:
+
+```
+sudo bash /opt/ember-coreui/scripts/tts-spike.sh --skip-build --groups pocket-en-eve-int8,pocket-en24-eve-int8 --cores 4
+```
+
+Danach in Admin Core unter Betrieb, Stimmproben anhören. Offen nach dem Hörtest: Wahl des englischen Modells und Registrierung mit SHA-256, englische Textaufbereitung (falls nötig), Laden nach Bedarf im Sprachdienst, Spracheinstellung im KI-Profil.
+
 ### P20.4: Live-Gespräch
 
 - Eigener Gesprächsmodus (Vollbild, auch am Handy): freihändig mit Sprechpausen-Erkennung im Browser oder per Halten-zum-Sprechen.

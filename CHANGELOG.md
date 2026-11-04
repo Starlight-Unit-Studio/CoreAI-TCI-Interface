@@ -1,5 +1,17 @@
 # CoreAI: TCI Interface
 
+## 0.6.6 - 04.11.2026
+
+Vorbereitung fuer Englisch (P20.3b). Entscheidungen des Betreibers: Sprachmodell nach Bedarf laden (ein Sprachdienst fuer alle Konten), Spracheinstellung pro Konto im KI-Profil fuer Antworten und Vorlesen (Mara bleibt mehrsprachig, Deutsch und Englisch sind die Hauptsprachen), zuerst Hoertest der englischen Eve.
+
+- **Stimmtest mit englischer Eve:** zwei neue Gruppen, nur Eve mit int8: `pocket-en-eve-int8` (englisches Standardmodell) und `pocket-en24-eve-int8` (englisch, 24 Schichten, Stand 2026-09). Beide in Pocket TTS 4.0.1 enthalten, ohne Token. Eve ist dieselbe Sprecherin wie auf Deutsch (VCTK p361).
+- **Englische Testsaetze** `e1` bis `e7` in `tools/tts_spike/voices.json` (Begruessung, Zahlen, Datum und Uhrzeit, Frage, Dateinamen, Produktnamen, laengerer Absatz). Englische Gruppen sprechen sie ohne die deutsche Textaufbereitung; so ist hoerbar, ob Englisch eine eigene Aufbereitung braucht.
+- `tools/tts_spike/run.py`: Sprache je Gruppe (`english...` ist Englisch), Saetze je Sprache, Ergebnis und Bericht nennen die Sprache; der Bericht fuehrt die englischen Saetze nur, wenn eine englische Gruppe gemessen wurde.
+- Admin Core, Stimmproben: englische Hoerproben werden angenommen (`...-e1.wav`), jede Stimme zeigt nur die Saetze ihrer Sprache, englische Saetze sind als Englisch markiert.
+- Sprachplan (P20.3b) und Roadmap mit den Entscheidungen und dem Befehl fuer den Hoertest. Uebersetzte Oberflaeche sowie Tag- und Nachtmodus bleiben Planung.
+- Tests: `tts-spike-selftest.py` (Register, englische Probegruppe spricht e1 bis e7 unveraendert, Bericht mit Sprache), `tts-spike-store-selftest.php` (englische Saetze und Hoerproben), `voice-samples-ui-selftest.cjs` (Saetze je Sprache).
+- Keine Aenderung am Vorlesen, an Cores, Modelfile, Datenbank, Installer oder Warteschlange.
+
 ## 0.6.5 - 04.11.2026
 
 Rueckmeldung nach dem ersten Live-Vorlesen auf dem Server: Englische Woerter klangen deutsch gelesen, bei "E.M.B.E.R." brach das Vorlesen ab, "12:00-20:00 CET" wurde Kauderwelsch, und es gab oft lange Pausen.

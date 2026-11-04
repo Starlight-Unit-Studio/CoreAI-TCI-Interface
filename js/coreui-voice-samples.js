@@ -102,7 +102,8 @@
     var samples = el('div', 'tts-samples');
     var byId = {};
     (voice.samples || []).forEach(function (sample) { byId[sample.sentence] = sample; });
-    sentences.forEach(function (sentence, index) {
+    // 0.6.6: German voices speak the German sentences, English voices the English ones.
+    sentences.filter(function (sentence) { return (sentence.language || 'de') === (voice.language || 'de'); }).forEach(function (sentence, index) {
       var sample = byId[sentence.id];
       var button = el('button', 'tts-play', String(index + 1));
       button.type = 'button';
@@ -192,6 +193,7 @@
     run.sentences.forEach(function (sentence) {
       var item = el('li');
       item.appendChild(el('b', '', sentence.topic + ': '));
+      if (sentence.language === 'en') item.lang = 'en';
       item.appendChild(document.createTextNode(sentence.text));
       // 0.5.98: numbers, dates and file names are spoken as words.
       if (sentence.spoken && sentence.spoken !== sentence.text) item.appendChild(el('small', 'tts-spoken', 'Gesprochen als: ' + sentence.spoken));
