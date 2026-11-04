@@ -11,7 +11,8 @@ declare(strict_types=1);
  */
 
 const COREUI_TTS_SPIKE_STAMP_RE = '/^[0-9]{8}-[0-9]{6}$/';
-const COREUI_TTS_SPIKE_FILE_RE = '/^[a-z0-9][a-z0-9_-]{0,60}-[0-9]{1,2}c-s[0-9]{1,2}\.wav$/';
+// 0.6.6: s1..s99 German, e1..e99 English test sentences.
+const COREUI_TTS_SPIKE_FILE_RE = '/^[a-z0-9][a-z0-9_-]{0,60}-[0-9]{1,2}c-[se][0-9]{1,2}\.wav$/';
 const COREUI_TTS_SPIKE_REPORT_MAX = 2097152;
 
 function coreui_tts_spike_root(): string {
@@ -66,8 +67,9 @@ function coreui_tts_spike_text($value, int $max = 400): string {
 function coreui_tts_spike_public(array $report): array {
   $sentences = [];
   foreach ((array)($report['sentences'] ?? []) as $s) {
-    if (!is_array($s) || !preg_match('/^s[0-9]{1,2}$/', (string)($s['id'] ?? ''))) continue;
+    if (!is_array($s) || !preg_match('/^[se][0-9]{1,2}$/', (string)($s['id'] ?? ''))) continue;
     $sentences[] = ['id' => (string)$s['id'], 'topic' => coreui_tts_spike_text($s['topic'] ?? '', 80), 'text' => coreui_tts_spike_text($s['text'] ?? '', 600),
+      'language' => ($s['language'] ?? '') === 'en' ? 'en' : 'de',
       // 0.5.98: what the voice really got after the German text preparation.
       'spoken' => coreui_tts_spike_text($s['spoken'] ?? ($s['text'] ?? ''), 900)];
   }
@@ -85,6 +87,7 @@ function coreui_tts_spike_public(array $report): array {
     }
     $voices[] = [
       'id' => (string)$v['id'], 'group' => coreui_tts_spike_text($v['group'] ?? '', 64), 'engine' => coreui_tts_spike_text($v['engine'] ?? '', 32),
+      'language' => ($v['language'] ?? '') === 'en' ? 'en' : 'de',
       'label' => coreui_tts_spike_text($v['label'] ?? '', 80), 'model' => coreui_tts_spike_text($v['model'] ?? '', 120),
       'gender' => coreui_tts_spike_text($v['gender'] ?? '', 20), 'status' => ($v['status'] ?? '') === 'frei' ? 'frei' : 'pruefen',
       'voice_license' => coreui_tts_spike_text($v['voice_license'] ?? ''), 'weights_license' => coreui_tts_spike_text($v['weights_license'] ?? ''),

@@ -1,0 +1,7 @@
+CoreAI: TCI Interface 0.6.6 - 04.11.2026
+- Stimmtest mit englischer Eve: Gruppen pocket-en-eve-int8 (Standardmodell) und pocket-en24-eve-int8 (24 Schichten, 2026-09), nur Eve, int8, ohne Token.
+- Englische Testsaetze e1 bis e7; englische Gruppen sprechen sie ohne deutsche Textaufbereitung.
+- run.py: Sprache je Gruppe, Saetze je Sprache, Sprache in Ergebnis und Bericht.
+- Admin Core, Stimmproben: englische Hoerproben angenommen, jede Stimme zeigt nur die Saetze ihrer Sprache.
+- Sprachplan P20.3b und Roadmap: Entscheidungen des Betreibers (Modell nach Bedarf, Spracheinstellung pro Konto fuer Antworten und Vorlesen, zuerst Hoertest).
+- Keine Aenderung am Vorlesen, an Cores, Modelfile, Datenbank, Installer oder Warteschlange.
