@@ -156,6 +156,10 @@ PY
 mapfile -t CLONES < <(python3 -I -c 'import json,sys; [print(g) for g, v in json.load(open(sys.argv[1], encoding="utf-8"))["groups"].items() if v.get("clone")]' "$REGISTRY")
 declare -A IS_CLONE=()
 for clone_group in "${CLONES[@]}"; do IS_CLONE[$clone_group]=1; done
+# Groups that speak with a clone's exported voice file (free weights, no token): "group source" lines.
+mapfile -t FILE_GROUPS < <(python3 -I -c 'import json,sys; [print(g, v["voice_file_from"]) for g, v in json.load(open(sys.argv[1], encoding="utf-8"))["groups"].items() if v.get("voice_file_from")]' "$REGISTRY")
+declare -A VOICE_FILE_FROM=()
+for file_line in "${FILE_GROUPS[@]}"; do VOICE_FILE_FROM[${file_line%% *}]="${file_line#* }"; done
 SAMPLE_CORES="$(python3 -I -c 'import json,sys; print(int(json.load(open(sys.argv[1]))["sample_cores"]))' "$REGISTRY")"
 IFS=',' read -r -a CORE_LIST <<< "$CORES"
 NPROC="$(nproc 2>/dev/null || echo 4)"
@@ -252,6 +256,11 @@ for line in "${SELECTED[@]}"; do
     fi
     token_args=(-e HF_TOKEN)
     [[ -n "$DRY_RUN" ]] || token_value="$(tr -d '[:space:]' < "$TOKEN_FILE")"
+  fi
+  source_group="${VOICE_FILE_FROM[$group]:-}"
+  if [[ -n "$source_group" && ! -f "$MODELS/lock-$source_group.json" ]]; then
+    log "  $group wartet auf die Stimmdatei aus $source_group (erst den Klon laden)."
+    continue
   fi
   log "Lade Gewichte fuer $group ..."
   # The token reaches only this container, by name from the environment (never on the command line).

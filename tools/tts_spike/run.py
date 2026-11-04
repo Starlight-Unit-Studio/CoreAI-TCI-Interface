@@ -89,6 +89,9 @@ def load_registry(path: Path) -> dict:
             raise SystemExit('voices.json: unknown reference for ' + group_id)
         if group.get('hf_home', 'hf') not in ('hf', 'hf-clone'):
             raise SystemExit('voices.json: unknown hf_home for ' + group_id)
+        source = group.get('voice_file_from')
+        if source is not None and not reg.get('groups', {}).get(source, {}).get('clone'):
+            raise SystemExit('voices.json: voice_file_from must name a clone group: ' + group_id)
     for voice in reg.get('voices', []):
         vid = str(voice.get('id', ''))
         if not ID_RE.match(vid) or vid in seen:
@@ -309,6 +312,11 @@ class Pocket:
     CLONE_REPO = 'kyutai/pocket-tts'
     NO_TOKEN = ('Klon-Gewichte von Kyutai nicht freigegeben: auf huggingface.co/kyutai/pocket-tts den Bedingungen '
                 'zustimmen und den Lese-Token mit "tts-spike.sh --hf-token" hinterlegen')
+    NO_VOICE_FILE = 'Stimmdatei fehlt: zuerst den Klon {source} laden (dafuer einmal der Token)'
+
+    @staticmethod
+    def voice_file_path(models: Path, group_id: str) -> Path:
+        return models / 'voices' / f'{group_id}.safetensors'
 
     def fetch(self, models: Path, group_id: str, group: dict, voices: list[dict], reg: dict) -> list[dict]:
         from pocket_tts import TTSModel
@@ -323,6 +331,22 @@ class Pocket:
             files.extend(fetch_reference(models, group_reference(reg, group), f'reference-{group_id}'))
             reference = models / find_entry(files, 'reference')
             states = [model.get_state_for_audio_prompt(reference)]
+            # 0.5.98: the voice as a small state file. It works with the free weights, so an
+            # installation never needs the token (Kyutai ships its own voices the same way).
+            from pocket_tts.models.model_state import export_model_state
+            target = self.voice_file_path(models, group_id)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            export_model_state(states[0], str(target))
+            files.append(file_entry(models, target, key='voice-file', source='aus der Referenz exportiert (export_model_state)',
+                                    license='Stimme CC0 1.0 (Kerstin), Modell CC BY 4.0 (Kyutai)'))
+        elif group.get('voice_file_from'):
+            source = group['voice_file_from']
+            if not lock_path(models, source).is_file():
+                raise RuntimeError(self.NO_VOICE_FILE.format(source=source))
+            voice_file = models / find_entry(verify_lock(models, source), 'voice-file')
+            files.append(file_entry(models, voice_file, key='voice-file', source=f'Stimmdatei aus {source}',
+                                    license='Stimme CC0 1.0 (Kerstin), Modell CC BY 4.0 (Kyutai)'))
+            states = [model.get_state_for_audio_prompt(voice_file)]
         else:
             states = [model.get_state_for_audio_prompt(voice['voice']) for voice in voices]
         if states:
@@ -343,11 +367,14 @@ class Pocket:
         if bool(getattr(self.model, 'has_voice_cloning', False)) != clone:
             raise RuntimeError('Pocket TTS: Klon-Gewichte fehlen' if clone else 'Pocket TTS hat unerwartet die Klon-Gewichte geladen')
         self.reference = models / find_entry(files, 'reference') if clone else None
+        self.voice_file = models / find_entry(files, 'voice-file') if group.get('voice_file_from') else None
         self.sample_rate = int(self.model.sample_rate)
 
     def prepare(self, voice: dict) -> Any:
         if voice.get('voice') == 'reference':
             return self.model.get_state_for_audio_prompt(self.reference)
+        if voice.get('voice') == 'file':
+            return self.model.get_state_for_audio_prompt(self.voice_file)
         return self.model.get_state_for_audio_prompt(voice['voice'])
 
     def stream(self, state: Any, text: str) -> Iterator[Any]:
@@ -533,6 +560,8 @@ def cmd_run(args: argparse.Namespace) -> int:
     try:
         if group.get('clone') and not lock_path(models, args.group).is_file():
             raise RuntimeError(Pocket.NO_TOKEN)
+        if group.get('voice_file_from') and not lock_path(models, args.group).is_file():
+            raise RuntimeError(Pocket.NO_VOICE_FILE.format(source=group['voice_file_from']))
         result['files'] = verify_lock(models, args.group)
         engine = ENGINES[group['engine']]()
         started = time.perf_counter()

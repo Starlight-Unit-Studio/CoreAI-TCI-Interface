@@ -18,7 +18,9 @@ deutsche Textaufbereitung vor jeder Stimme (Zahlen, Datum, Uhrzeit,
 Dateinamen und Abkuerzungen als Woerter) und Kerstin, die deutsche
 Datensatz-Stimme (CC0), als Klon fuer Pocket TTS. Die Klon-Gewichte von Kyutai
 sind gesperrt; nach der Zustimmung auf Hugging Face einmal den Lese-Token
-hinterlegen:
+hinterlegen. Nutzer und andere Installationen brauchen das nie: Der Klon
+erzeugt eine kleine Stimmdatei, die mit den freien Gewichten spricht, und der
+Test prueft genau diesen Weg gleich mit.
 
 ```
 sudo bash /opt/ember-coreui/scripts/tts-spike.sh --hf-token

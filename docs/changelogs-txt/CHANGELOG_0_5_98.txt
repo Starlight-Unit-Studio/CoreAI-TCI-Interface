@@ -3,4 +3,5 @@ CoreAI: TCI Interface 0.5.98 - 04.11.2026
 - Hoereindruck: nur die maennliche Chatterbox-Standardstimme las fehlerfrei; schnelle Stimmen mit Fehlern bei Zahlen, Datum, Dateinamen und normalen Woertern.
 - Neu: deutsche Textaufbereitung vor jeder Stimme (tools/tts_spike/textprep_de.py, de-1).
 - Neu: Kerstin als Pocket-Klon (6 und 24 Schichten), Lese-Token per tts-spike.sh --hf-token, eigener Cache fuer die Klon-Gewichte.
+- Kein Token fuer Nutzer: Kerstins Stimmdatei (export_model_state) spricht mit den freien Pocket-Gewichten; zwei Gruppen beweisen das im Test.
 - Chatterbox-Standardstimme als maennlich korrigiert.

@@ -146,6 +146,18 @@
       "hf_home": "hf-clone",
       "reference": "kerstin"
     },
+    "pocket-de-stimmdatei": {
+      "engine": "pocket",
+      "label": "Pocket TTS Deutsch (6 Schichten), Stimmdatei ohne Token",
+      "language": "german",
+      "voice_file_from": "pocket-de-kerstin"
+    },
+    "pocket-de24-stimmdatei": {
+      "engine": "pocket",
+      "label": "Pocket TTS Deutsch (24 Schichten), Stimmdatei ohne Token",
+      "language": "german_24l",
+      "voice_file_from": "pocket-de24-kerstin"
+    },
     "chatterbox": {
       "engine": "chatterbox",
       "label": "Chatterbox Multilingual",
@@ -373,6 +385,30 @@
       "weights_license": "CC BY 4.0 (Kyutai, Namensnennung; Klon-Gewichte erst nach Zustimmung auf Hugging Face)",
       "origin": "Referenz: 10 Sekunden aus https://github.com/rhasspy/dataset-voice-kerstin (verified/*.flac), Gewichte kyutai/pocket-tts",
       "note": "Deutsche Muttersprachlerin, geklont aus einer freien Datensatz-Stimme mit Einwilligung (CC0)."
+    },
+    {
+      "id": "pocket-de-stimmdatei",
+      "group": "pocket-de-stimmdatei",
+      "voice": "file",
+      "label": "Kerstin (Stimmdatei)",
+      "gender": "weiblich",
+      "status": "frei",
+      "voice_license": "CC0 1.0 (Datensatz Kerstin, eigens für Sprachsynthese aufgenommen)",
+      "weights_license": "CC BY 4.0 (Kyutai, Namensnennung; freie Gewichte, kein Token)",
+      "origin": "Stimmdatei aus dem Kerstin-Klon (export_model_state), gesprochen mit kyutai/pocket-tts-without-voice-cloning",
+      "note": "So bekäme jede Installation Maras Stimme: freie Gewichte plus Stimmdatei, ohne Token und ohne Konto."
+    },
+    {
+      "id": "pocket-de24-stimmdatei",
+      "group": "pocket-de24-stimmdatei",
+      "voice": "file",
+      "label": "Kerstin (Stimmdatei)",
+      "gender": "weiblich",
+      "status": "frei",
+      "voice_license": "CC0 1.0 (Datensatz Kerstin, eigens für Sprachsynthese aufgenommen)",
+      "weights_license": "CC BY 4.0 (Kyutai, Namensnennung; freie Gewichte, kein Token)",
+      "origin": "Stimmdatei aus dem Kerstin-Klon (export_model_state), gesprochen mit kyutai/pocket-tts-without-voice-cloning",
+      "note": "So bekäme jede Installation Maras Stimme: freie Gewichte plus Stimmdatei, ohne Token und ohne Konto."
     },
     {
       "id": "chatterbox-kerstin",

@@ -48,7 +48,7 @@ check(set(reg['engines']) == {'piper', 'pocket', 'chatterbox'}, 'three engines')
 check(reg['engines']['piper']['package'] == 'piper-tts==1.8.0' and reg['engines']['piper']['code_license'] == 'GPL-3.0-or-later', 'Piper pinned, GPL named')
 check(reg['engines']['pocket']['package'] == 'pocket-tts==4.0.1' and reg['engines']['chatterbox']['package'] == 'chatterbox-tts==0.1.7', 'engines pinned')
 ids = [v['id'] for v in reg['voices']]
-check(len(ids) == len(set(ids)) == 20, '20 voices, each once')
+check(len(ids) == len(set(ids)) == 22, '22 voices, each once')
 for voice in reg['voices']:
     check(re.match(r'^[a-z0-9][a-z0-9_-]{0,60}$', voice['id']) is not None, 'voice id ' + voice['id'])
     check(voice['group'] in reg['groups'], 'voice group ' + voice['id'])
@@ -73,6 +73,15 @@ for gid, language in (('pocket-de-kerstin', 'german'), ('pocket-de24-kerstin', '
     check(voice['voice'] == 'reference' and voice['gender'] == 'weiblich' and voice['status'] == 'frei' and 'CC0' in voice['voice_license'],
           'clone voice ' + gid)
 check(all(g.get('hf_home', 'hf') == 'hf' for g in reg['groups'].values() if not g.get('clone')), 'every other group in the shared cache')
+# 0.5.98: the token-free way for every installation: the clone's exported voice file on the free weights.
+for gid, source, language in (('pocket-de-stimmdatei', 'pocket-de-kerstin', 'german'), ('pocket-de24-stimmdatei', 'pocket-de24-kerstin', 'german_24l')):
+    group = reg['groups'][gid]
+    check(group == {'engine': 'pocket', 'label': group['label'], 'language': language, 'voice_file_from': source}, 'voice file group ' + gid)
+    check(list(reg['groups']).index(gid) > list(reg['groups']).index(source), gid + ' after its clone')
+    voice = next(v for v in reg['voices'] if v['id'] == gid)
+    check(voice['voice'] == 'file' and voice['status'] == 'frei' and 'kein Token' in voice['weights_license'], 'voice file voice ' + gid)
+run_source = (ROOT / 'tools' / 'tts_spike' / 'run.py').read_text(encoding='utf-8')
+check("export_model_state(states[0], str(target))" in run_source and "key='voice-file'" in run_source, 'the clone exports its voice file')
 check(next(v for v in reg['voices'] if v['id'] == 'chatterbox-standard')['gender'] == 'männlich', 'the Chatterbox standard voice is male')
 check(reg['textprep'] == 'de-1', 'German text preparation on')
 check(all(re.match(r'^de_rhasspy-[0-9]{4}\.flac$', c) for c in ref['clips']), 'reference clips by name')
@@ -154,7 +163,8 @@ builds = [l for l in lines if l.startswith('+ docker build')]
 check(len(builds) == 3, 'one image per engine')
 runs = [l for l in lines if 'run.py run ' in l]
 fetches = [l for l in lines if 'run.py fetch ' in l]
-check(len(fetches) == 7 and len(runs) == 18, 'seven groups fetched (the clones wait for the token), nine measured with 2 and 4 cores')
+check(len(fetches) == 7 and len(runs) == 22, 'seven groups fetched (clones wait for the token, voice files for the clones), eleven measured')
+check(dry.stdout.count('wartet auf die Stimmdatei') == 2, 'voice file groups wait for their clone')
 check(dry.stdout.count('braucht die Klon-Gewichte von Kyutai') == 2 and 'tts-spike.sh --hf-token' in dry.stdout, 'how to unlock the clone')
 for line in runs:
     check('--network none' in line and '--cpuset-cpus' in line and 'HF_HUB_OFFLINE=1' in line, 'measuring without network, core limit')
@@ -176,8 +186,14 @@ token = 'hf_' + 'Ab1' * 10
 unlocked = dry_run('--refetch')
 clone_fetches = [l for l in unlocked.stdout.splitlines() if 'run.py fetch ' in l]
 check(len(clone_fetches) == 9, 'with the token the clones are fetched too')
+for clone_group in ('pocket-de-kerstin', 'pocket-de24-kerstin'):
+    (sandbox / 'models' / f'lock-{clone_group}.json').write_text('{}', encoding='utf-8')
+unlocked = dry_run('--refetch')
+clone_fetches = [l for l in unlocked.stdout.splitlines() if 'run.py fetch ' in l]
+check(len(clone_fetches) == 11, 'with the clones loaded, the voice file groups are fetched too')
 for line in clone_fetches:
     check(('-e HF_TOKEN ' in line) == bool(re.search(r'--group pocket-de(24)?-kerstin ', line)), 'token only for the clone fetches: ' + line[-60:])
+check(any('--group pocket-de-stimmdatei ' in l and '-e HF_TOKEN' not in l for l in clone_fetches), 'the voice file path never sees the token')
 check(not any('HF_TOKEN' in l for l in unlocked.stdout.splitlines() if 'run.py run ' in l), 'never while measuring')
 check(token not in unlocked.stdout + unlocked.stderr, 'the token itself is never printed')
 (sandbox / 'hf_token').unlink()
@@ -227,7 +243,8 @@ with tempfile.TemporaryDirectory() as tmp:
         'format': 1, 'sample_cores': 4, 'textprep': 'de-1', 'sentences': reg['sentences'], 'references': reg['references'],
         'engines': {'probe': {'label': 'Testton', 'package': 'probe', 'code_license': 'MIT'}},
         'groups': {'probe-a': {'engine': 'probe', 'label': 'Testton A'}, 'probe-b': {'engine': 'probe', 'label': 'Testton B'},
-                   'probe-klon': {'engine': 'probe', 'label': 'Testton Klon', 'clone': True, 'hf_home': 'hf-clone', 'reference': 'kerstin'}},
+                   'probe-klon': {'engine': 'probe', 'label': 'Testton Klon', 'clone': True, 'hf_home': 'hf-clone', 'reference': 'kerstin'},
+                   'probe-datei': {'engine': 'probe', 'label': 'Testton Stimmdatei', 'voice_file_from': 'probe-klon'}},
         'voices': [
             {'id': 'probe-a-eins', 'group': 'probe-a', 'voice': 'eins', 'label': 'Eins', 'gender': 'weiblich', 'status': 'frei',
              'voice_license': 'CC0 1.0', 'weights_license': 'MIT', 'origin': 'Test'},
@@ -236,6 +253,8 @@ with tempfile.TemporaryDirectory() as tmp:
             {'id': 'probe-b-zwei', 'group': 'probe-b', 'voice': 'zwei', 'label': 'Zwei', 'gender': 'weiblich', 'status': 'frei',
              'voice_license': 'CC BY 4.0', 'weights_license': 'MIT', 'origin': 'Test'},
             {'id': 'probe-klon', 'group': 'probe-klon', 'voice': 'reference', 'label': 'Klon', 'gender': 'weiblich', 'status': 'frei',
+             'voice_license': 'CC0 1.0', 'weights_license': 'MIT', 'origin': 'Test'},
+            {'id': 'probe-datei', 'group': 'probe-datei', 'voice': 'file', 'label': 'Stimmdatei', 'gender': 'weiblich', 'status': 'frei',
              'voice_license': 'CC0 1.0', 'weights_license': 'MIT', 'origin': 'Test'},
         ],
     }
@@ -248,6 +267,9 @@ with tempfile.TemporaryDirectory() as tmp:
     r = call('--registry', str(registry), 'run', '--group', 'probe-klon', '--models', str(models), '--out', str(out), '--cores', '4')
     check(r.returncode == 1 and 'Klon-Gewichte von Kyutai nicht freigegeben' in json.loads((out / 'result-probe-klon-4c.json').read_text())['error'],
           'a clone without weights says how to unlock it')
+    r = call('--registry', str(registry), 'run', '--group', 'probe-datei', '--models', str(models), '--out', str(out), '--cores', '4')
+    check(r.returncode == 1 and 'Stimmdatei fehlt: zuerst den Klon probe-klon laden' in json.loads((out / 'result-probe-datei-4c.json').read_text())['error'],
+          'a voice file group without its clone says what to do')
     for group in ('probe-a', 'probe-b'):
         r = call('--registry', str(registry), 'fetch', '--group', group, '--models', str(models))
         check(r.returncode == 0, 'fetch ' + group + ': ' + r.stderr)
@@ -294,7 +316,7 @@ with tempfile.TemporaryDirectory() as tmp:
     check(report['host'] == ['Zeit: test', 'CPU(s): 20'] and len(report['sentences']) == 7, 'host and sentences')
     check(report['textprep'] == 'de-1' and {x['id']: x['spoken'] for x in report['sentences']} == spoken, 'the report names the spoken text')
     voices = {v['id']: v for v in report['voices']}
-    check(set(voices) == {'probe-a-eins', 'probe-a-kaputt', 'probe-b-zwei', 'probe-klon'}, 'every voice in the report')
+    check(set(voices) == {'probe-a-eins', 'probe-a-kaputt', 'probe-b-zwei', 'probe-klon', 'probe-datei'}, 'every voice in the report')
     check(not voices['probe-klon']['ok'] and 'Klon-Gewichte von Kyutai nicht freigegeben' in voices['probe-klon']['error'], 'the locked clone shows why')
     check(voices['probe-a-eins']['ok'] and voices['probe-a-eins']['cores'] == 4 and len(voices['probe-a-eins']['samples']) == 7, 'samples from the 4 core run')
     check(voices['probe-a-eins']['rtf_median'] is not None and voices['probe-a-eins']['first_audio_median_s'] is not None, 'medians per voice')
