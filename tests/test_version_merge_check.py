@@ -14,7 +14,9 @@ spec.loader.exec_module(mod)
 README = (
     "# CoreAI: TCI Interface\n\n"
     "**Aktueller Quellstand: `0.5.6`** | [CHANGELOG.md](CHANGELOG.md)\n\n"
-    "## Schnellstart: Installation und Aktualisierung\n\n"
+    "## Quick start: install CoreAI\n\n"
+    "## Updating CoreAI\n\n"
+    "Use Settings > System > CoreAI Update after initial installation.\n\n"
     "curl -fsSL https://raw.githubusercontent.com/Starlight-Unit-Studio/"
     "CoreAI-TCI-Interface/main/setup.sh\n"
 )
@@ -28,7 +30,7 @@ class MergeVersionTests(unittest.TestCase):
         for p in mod.PAGES + mod.REQUIRED_ACTIVE:
             self.write(p, "CoreUI version 0.5.6\n")
         # Since 0.6.2 the README is checked as a guide: official one-liner,
-        # CHANGELOG link, a Schnellstart section, no per-version headings.
+        # CHANGELOG link, English Quick start, integrated updater, no release diary.
         self.write("README.md", README)
         self.write("CHANGELOG.md", "## 0.5.6 - 20.10.2026\n")
         self.write("docs/changelogs-txt/INDEX.txt", "* CHANGELOG_0_5_6.txt\n")
@@ -82,6 +84,22 @@ class MergeVersionTests(unittest.TestCase):
     def test_readme_needs_official_one_liner(self):
         self.write("README.md", README.replace("CoreAI-TCI-Interface/main", "coreui/main"))
         with self.assertRaisesRegex(ValueError, "one-liner"):
+            mod.validate(self.root, "0.5.5")
+
+    def test_readme_must_be_english_quick_start(self):
+        self.write("README.md", README.replace("## Quick start: install CoreAI",
+                                               "## Schnellstart: Installation"))
+        with self.assertRaisesRegex(ValueError, "English Quick start"):
+            mod.validate(self.root, "0.5.5")
+
+    def test_readme_must_document_integrated_updater(self):
+        self.write("README.md", README.replace("## Updating CoreAI", "## Updater missing"))
+        with self.assertRaisesRegex(ValueError, "integrated update"):
+            mod.validate(self.root, "0.5.5")
+
+    def test_readme_must_identify_settings_updater(self):
+        self.write("README.md", README.replace("CoreAI Update", "Update panel"))
+        with self.assertRaisesRegex(ValueError, "Settings > System updater"):
             mod.validate(self.root, "0.5.5")
 
     def test_readme_is_no_changelog(self):
