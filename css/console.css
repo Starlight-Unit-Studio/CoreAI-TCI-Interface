@@ -3374,6 +3374,22 @@ audio.msg-image {
   display: none;
 }
 
+/* 0.6.17: transcript of a voice message, small under its player. */
+.msg-transcript {
+  max-width: 520px;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+
+.msg-transcript[data-state="pending"],
+.msg-transcript[data-state="silent"] {
+  font-style: italic;
+  opacity: 0.8;
+}
+
 @keyframes voice-input-pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.45; }

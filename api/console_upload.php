@@ -166,6 +166,15 @@ if ($origName === '') $origName = 'datei';
 $ext = strtolower((string)pathinfo($origName, PATHINFO_EXTENSION));
 $ext = preg_replace('~[^a-z0-9]~', '', $ext);
 $kind = console_media_kind($mime, $ext);
+// 0.6.17: a recording in a video container without a picture (Chrome records
+// voice messages as WebM) is audio. As "video" Mara would look for frames.
+if ($kind === 'video') {
+  require_once __DIR__ . '/voice_transcribe.php';
+  if (coreui_voice_has_video_stream((string)$file['tmp_name']) === false) {
+    $kind = 'audio';
+    $mime = 'audio/' . substr($mime, strlen('video/'));
+  }
+}
 
 $limit = ($kind === 'image') ? CONSOLE_MAX_IMAGE_BYTES : CONSOLE_MAX_FILE_BYTES;
 if ($size > $limit) {

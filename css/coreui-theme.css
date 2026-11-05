@@ -487,6 +487,9 @@ html[data-coreui-theme="dark"] .voice-input-actions button {
   border-color: var(--theme-info-outline, rgba(147, 183, 248, .46));
   color: var(--theme-info-copy, #edf3ff);
 }
+html[data-coreui-theme="dark"] .msg-transcript {
+  color: var(--theme-info-muted, #b9cbe6);
+}
 html[data-coreui-theme="dark"] .voice-input-actions .voice-input-done {
   border-color: rgba(255, 145, 158, .6);
   color: #ffc4cc;

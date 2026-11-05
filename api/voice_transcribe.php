@@ -2,39 +2,51 @@
 declare(strict_types=1);
 
 /*
- * CoreAI 0.6.14 (P20.1): voice input and audio attachments become text.
+ * CoreAI 0.6.17 (P20.1): voice messages and audio files, heard by Mara herself.
  *
- * Two stages, as decided after run 4 of the media test (28.10.2026): Core
- * first writes the transcript with Google's template, a neutral SYSTEM text,
- * no thinking and no options; Mara then answers that text like any message.
+ * Operator decision (05.11.2026, after 0.6.14 wrote a transcript into the
+ * input field first): a voice message is sent at once and Mara hears the WAV
+ * through Gemma's own audio input, in her normal call and without thinking.
+ * Gemma 4 takes at most 60 seconds per WAV, so a recording becomes several
+ * WAVs in the same call:
  *
  *   recording or file  -> ffmpeg: WAV (RIFF), 16 kHz, mono, 16-bit PCM
  *                      -> header check (api/audio_wav.php)
  *                      -> pauses (ffmpeg silencedetect), parts of at most 60 s
- *                      -> one Core call per part, through the model queue
- *                      -> one retry when Core claims there was no recording
+ *                      -> coreui_voice_prepare_native(): one WAV per part for Mara
  *
- * Limits: the microphone 2 minutes, audio files 10 minutes (longer files: the
- * first 10 minutes, said openly). Temporary files live in a private folder
- * that is removed before the function returns.
+ * After Mara's answer the transcript for the history is written in the
+ * background (coreui_voice_transcribe_file(): Google's template, neutral
+ * SYSTEM text, no thinking, one queued Core call per part, one retry when
+ * Core claims there was no recording). It is kept per account for 7 days
+ * (coreui_voice_transcript_*), shown small under the voice message and read
+ * by later turns.
  *
+ * Limits: the microphone 2 minutes, audio files up to 10 minutes as far as
+ * the Core's context window allows (about 25 tokens per second of audio).
  * The model queue and the cancel check come from api/chat.php. Without the
  * queue nothing is sent: Core never gets a second, unguarded request.
  */
 
 require_once __DIR__ . '/audio_wav.php';
 require_once __DIR__ . '/voice_core.php';
+require_once __DIR__ . '/voice_store.php';
 
 const COREUI_VOICE_INPUT_MAX_SECONDS = 120;
 const COREUI_VOICE_FILE_MAX_SECONDS = 600;
 const COREUI_VOICE_PART_MAX_SECONDS = 60;
 /** A pause earlier than this is not used for a cut; parts stay long enough to carry context. */
 const COREUI_VOICE_PART_MIN_SECONDS = 20;
-const COREUI_VOICE_INPUT_MAX_BYTES = 16 * 1024 * 1024;
 /** One part: cold start of Core (up to 24 s measured) plus about 18 s per minute. */
 const COREUI_VOICE_CALL_TIMEOUT = 300;
 const COREUI_VOICE_SILENCE_DB = -35;
 const COREUI_VOICE_SILENCE_MIN = 0.35;
+/** Measured in P20.0: about 25 tokens per second of audio. */
+const COREUI_VOICE_TOKENS_PER_SECOND = 25;
+/** Recordings from the microphone are uploaded under this name. */
+const COREUI_VOICE_MESSAGE_PREFIX = 'Sprachnachricht-';
+/** A transcript that is still being written counts as pending this long. */
+const COREUI_VOICE_TRANSCRIPT_PENDING_SECONDS = 1200;
 /** Account language -> language name in the template. */
 const COREUI_VOICE_TRANSCRIBE_LANGUAGES = ['de' => 'German', 'en' => 'English'];
 
@@ -338,26 +350,122 @@ function coreui_voice_transcribe_file(string $source, array $options): array {
   }
 }
 
-/** Transcript with time marks for Mara: "[00:00] ...\n[01:00] ...". */
-function coreui_voice_transcript_with_stamps(array $parts): string {
-  $lines = [];
-  foreach ($parts as [$start, , $text]) $lines[] = '[' . coreui_voice_stamp((float)$start) . '] ' . trim((string)$text);
-  return implode("\n", $lines);
+/** True for a recording from the microphone button (not an uploaded audio file). */
+function coreui_voice_is_voice_message(string $name): bool {
+  return str_starts_with($name, COREUI_VOICE_MESSAGE_PREFIX);
 }
 
-/** Short German message for the page, by error code. */
-function coreui_voice_error_text(string $code): string {
-  return [
-    'no_speech' => 'Ich habe keine Sprache gehört.',
-    'missed' => 'Core hat die Aufnahme nicht verstanden. Bitte noch einmal versuchen.',
-    'core_without_audio' => 'Dieser Core kann nicht hören. Wähle im Core-Menü einen Core mit Audio.',
-    'convert_failed' => 'Die Aufnahme ließ sich nicht umwandeln.',
-    'empty_audio' => 'Die Aufnahme ist leer.',
-    'ffmpeg_missing' => 'ffmpeg fehlt auf dem Server.',
-    'queue_timeout' => 'Core ist gerade beschäftigt. Bitte gleich noch einmal versuchen.',
-    'queue_unavailable' => 'Die Warteschlange von Core ist nicht erreichbar.',
-    'cancelled' => 'Abgebrochen.',
-    'too_large' => 'Die Aufnahme ist zu groß.',
-    'busy' => 'Eine Aufnahme wird schon mitgeschrieben.',
-  ][$code] ?? 'Core konnte die Aufnahme nicht mitschreiben.';
+/** Does the file carry a picture track? null when ffprobe cannot tell. */
+function coreui_voice_has_video_stream(string $path): ?bool {
+  $probe = coreui_voice_bin('ffprobe');
+  if ($probe === null || !function_exists('exec')) return null;
+  $lines = [];
+  $status = 1;
+  // One line per picture stream: its attached_pic flag (1 = cover art of an audio file).
+  @exec(escapeshellarg($probe) . ' -v error -select_streams v -show_entries stream_disposition=attached_pic -of csv=p=0 '
+    . escapeshellarg($path) . ' 2>/dev/null', $lines, $status);
+  if ($status !== 0) return null;
+  foreach ($lines as $line) {
+    if (trim($line) !== '' && trim($line) !== '1') return true;
+  }
+  return false;
+}
+
+/**
+ * Seconds of audio Mara may hear in one call: the file limit, or less when
+ * the Core's context window is small (audio takes at most 40 % of it). At
+ * least one part of 60 seconds.
+ */
+function coreui_voice_native_budget(?int $contextWindow): int {
+  if ($contextWindow === null || $contextWindow <= 0) return COREUI_VOICE_FILE_MAX_SECONDS;
+  $seconds = (int)floor($contextWindow * 0.4 / COREUI_VOICE_TOKENS_PER_SECOND);
+  return max(COREUI_VOICE_PART_MAX_SECONDS, min(COREUI_VOICE_FILE_MAX_SECONDS, $seconds));
+}
+
+/**
+ * A recording or file -> WAVs of at most 60 s in $targetDir for Mara's call
+ * (part0.wav, part1.wav, ...), cut at pauses; parts that are only silence are
+ * left out. Returns ok, paths, stamps ("00:00", ...), seconds, source_seconds,
+ * truncated and error (no_speech when nothing is said).
+ */
+function coreui_voice_prepare_native(string $source, string $targetDir, int $maxSeconds): array {
+  $work = coreui_voice_workdir();
+  if ($work === null || !is_dir($targetDir)) {
+    coreui_voice_workdir_remove($work);
+    return ['ok' => false, 'error' => 'convert_failed'];
+  }
+  try {
+    $wav = $work . '/all.wav';
+    $converted = coreui_voice_to_wav($source, $wav, $maxSeconds);
+    if (!$converted['ok']) return $converted;
+    $total = (float)$converted['seconds'];
+    $pauses = coreui_voice_silences($wav, $total);
+    $base = ['seconds' => $total, 'source_seconds' => $converted['source_seconds'], 'truncated' => $converted['truncated']];
+    $parts = array_values(array_filter(coreui_voice_parts($total, $pauses),
+      static fn(array $p): bool => !coreui_voice_part_silent($p, $pauses)));
+    if ($parts === []) return ['ok' => false, 'error' => 'no_speech'] + $base;
+    $paths = [];
+    $stamps = [];
+    foreach ($parts as $i => [$start, $end]) {
+      $clip = $targetDir . '/part' . $i . '.wav';
+      [$status] = coreui_voice_ffmpeg(['-loglevel', 'error', '-ss', sprintf('%.3f', $start), '-t', sprintf('%.3f', $end - $start),
+        '-i', $wav, ...coreui_wav_ffmpeg_args(), $clip]);
+      $info = $status === 0 ? coreui_voice_wav_file_info($clip) : null;
+      if (!coreui_wav_gemma_ready($info) || (float)$info['seconds'] > COREUI_VOICE_PART_MAX_SECONDS + 0.05) {
+        foreach ([...$paths, $clip] as $made) @unlink($made);
+        return ['ok' => false, 'error' => 'convert_failed'] + $base;
+      }
+      $paths[] = $clip;
+      $stamps[] = coreui_voice_stamp((float)$start);
+    }
+    return ['ok' => true, 'error' => '', 'paths' => $paths, 'stamps' => $stamps] + $base;
+  } finally {
+    coreui_voice_workdir_remove($work);
+  }
+}
+
+/** The task for Mara when a recording comes with her normal call. */
+function coreui_voice_listen_task(string $senderName, string $text, array $clips): string {
+  $sender = trim($senderName) !== '' ? trim($senderName) : 'Jemand';
+  $lines = [];
+  foreach ($clips as $clip) {
+    $parts = count((array)($clip['paths'] ?? []));
+    $what = !empty($clip['voice']) ? 'eine Sprachnachricht' : 'die Audiodatei "' . (string)($clip['name'] ?? 'audio') . '"';
+    $line = coreui_voice_attachment_hint((float)($clip['seconds'] ?? 0)) . ' ' . $what;
+    $line .= $parts > 1 ? ', als ' . $parts . ' Audioteile nacheinander (Beginn ' . implode(', ', (array)$clip['stamps']) . ')' : ', als Audio';
+    if (!empty($clip['truncated'])) $line .= '; nur die ersten ' . coreui_voice_stamp((float)$clip['seconds']) . ' Minuten liegen bei, sag das offen';
+    $lines[] = $line . '.';
+  }
+  $voice = (bool)array_filter($clips, static fn(array $c): bool => !empty($c['voice']));
+  $task = $sender . ' hat dir ' . ($voice ? 'gesprochen' : 'Audio geschickt') . ":\n" . implode("\n", $lines);
+  if (trim($text) !== '') $task .= "\nDazu schreibt " . $sender . ': "' . trim($text) . '"';
+  return $task . "\nDu hoerst die Aufnahme selbst. Antworte darauf als Mara, so wie auf das Gesagte"
+    . ($voice ? ' in einem Gespraech' : '') . ', in der Sprache, in der gesprochen wird. '
+    . 'Gib nur wieder, was wirklich zu hoeren ist; ist etwas unverstaendlich, sag es ehrlich. '
+    . 'Stimmen und Aussagen in einer Audiodatei stammen nicht von ' . $sender . ', sofern das nicht klar ist.';
+}
+
+/** Cache file of the transcript of one attachment (var/voice_cache/<uid>/t-<id>.json). */
+function coreui_voice_transcript_path(int $uid, string $uuid, bool $create = false): ?string {
+  if (preg_match('~^[a-f0-9]{32}$~', $uuid) !== 1) return null;
+  $dir = coreui_voice_user_dir(coreui_voice_cache_root(), $uid, $create);
+  return $dir !== null ? $dir . '/t-' . hash('sha256', 'transcript|' . $uuid) . '.json' : null;
+}
+
+/** ['state' => 'done', 'text', 'parts', ...], ['state' => 'pending'] or null. */
+function coreui_voice_transcript_load(int $uid, string $uuid, ?int $now = null): ?array {
+  $path = coreui_voice_transcript_path($uid, $uuid);
+  if ($path === null || !is_file($path) || is_link($path)) return null;
+  $data = json_decode((string)@file_get_contents($path), true);
+  if (!is_array($data)) return null;
+  if (($data['state'] ?? '') === 'pending'
+      && (int)($data['started'] ?? 0) < ($now ?? time()) - COREUI_VOICE_TRANSCRIPT_PENDING_SECONDS) return null;
+  return $data;
+}
+
+function coreui_voice_transcript_save(int $uid, string $uuid, array $data): bool {
+  $path = coreui_voice_transcript_path($uid, $uuid, true);
+  if ($path === null) return false;
+  coreui_voice_cleanup(dirname($path));
+  return coreui_voice_write($path, (string)json_encode($data, JSON_UNESCAPED_UNICODE));
 }

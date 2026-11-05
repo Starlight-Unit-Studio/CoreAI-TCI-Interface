@@ -1794,10 +1794,13 @@
 
     if (kind === 'audio') {
       var aud = document.createElement('audio');
-      aud.className = 'msg-image';
+      aud.className = 'msg-image msg-audio';
       aud.src = url;
       aud.controls = true;
       aud.preload = 'metadata';
+      // 0.6.17: js/coreui-voice-input.js shows the transcript under it.
+      if (att.uuid) aud.setAttribute('data-uuid', String(att.uuid));
+      if (/^Sprachnachricht-/.test(String(att.name || ''))) aud.setAttribute('data-voice', '1');
       return aud;
     }
 
@@ -2209,6 +2212,26 @@
 
     xhr.send(fd);
   }
+
+  // 0.6.17 (P20.1): the microphone button sends a recording at once as a voice
+  // message: it is uploaded like any attachment and sent with whatever is
+  // already in the input field. Mara hears it herself on the server.
+  window.CoreUIComposer = {
+    sendVoice: function (file) {
+      if (!file || !file.size) return 'empty';
+      if (state.waitingEmber) return 'busy';
+      if (state.editingMessage) return 'editing';
+      if (attachmentSlotsUsed() >= MAX_MESSAGE_ATTACHMENTS) return 'full';
+      var ses = activeSession();
+      if (!ses) return 'no_session';
+      if (state.pendingBySession[ses.id]) return 'busy';
+      uploadQueue.push(file);
+      pendingSendAfterUpload = {text: inputEl ? String(inputEl.value || '') : '', sessionId: String(ses.id)};
+      renderAttachmentList();
+      processUploadQueue();
+      return 'ok';
+    }
+  };
 
   function queueFiles(fileList) {
     var selected = Array.prototype.slice.call(fileList || []);

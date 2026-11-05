@@ -1,0 +1,9 @@
+CoreAI: TCI Interface 0.6.17 - 05.11.2026
+- Sprachnachrichten: FERTIG sendet sofort (mit dem Text im Eingabefeld); antwortet Mara noch, wartet die Nachricht.
+- Mara hoert die WAV selbst in ihrem normalen Aufruf: WAVs bis 60 s (Gemma-4-Grenze), an Sprechpausen geschnitten, ohne Denken.
+- Eine Wiederholung, wenn Core behauptet, es gebe keine Aufnahme; Fortsetzungen bleiben ohne Denken.
+- Audiodateien genauso, bis 10 Minuten, soweit das Kontextfenster reicht (offen gesagt).
+- Mitschrift nach der Antwort im Hintergrund: klein unter der Sprachnachricht und im Verlauf, 7 Tage pro Konto.
+- WebM nur mit Ton wird als Audio gespeichert (vorher Video).
+- Tests: voice-input-selftest.php, voice-input-ui-selftest.cjs (mit echtem Sendeweg), vision-persona-selftest.php.
+- Keine Aenderung an Cores, Modelfile, Datenbankschema, Installer oder Warteschlange.

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.16: Terranische Interface-Bezeichnungen und Terra-Net, bestehende Preflight-Tests beibehalten.
+# CoreAI: TCI Interface 0.6.17: Sprachnachrichten hoert Mara selbst (WAVs bis 60 s, ohne Denken), Mitschrift nach der Antwort.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -491,7 +491,7 @@ if command -v php >/dev/null 2>&1; then
 
   voice_input_test=''
   if voice_input_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/voice-input-selftest.php" 2>&1)"; then
-    ok '0.6.14: Spracheingabe (Umwandlung mit ffmpeg, Schnitt an Sprechpausen, Mitschrift ueber die Warteschlange, Audioanhaenge) geprueft.'
+    ok '0.6.17: Sprachnachrichten (WAVs bis 60 s in Maras Aufruf, ohne Denken, Mitschrift nach der Antwort, Verlauf, WebM als Audio) geprueft.'
   else
     fail "Spracheingabe-Selbsttest: ${voice_input_test:-Unbekannter Fehler}"
   fi
@@ -834,7 +834,7 @@ if command -v php >/dev/null 2>&1; then
     # 0.6.14: microphone button in the input field; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/voice-input-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Spracheingabe: Mikrofon-Knopf, Aufnahme, Mitschrift ins Eingabefeld, Stille, Abbrechen, Gaeste ohne Knopf geprueft.'
+        ok 'Sprachnachrichten: Mikrofon-Knopf, sofort senden, Warten auf Mara, Stille, Mitschrift-Zeile, Gaeste ohne Knopf geprueft.'
       else
         fail 'Spracheingabe: Oberflaechentest fehlgeschlagen.'
       fi

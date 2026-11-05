@@ -55,6 +55,8 @@
     switch (event.title) {
       case 'Anhang wird angesehen':
         return 'Ich sehe mir den Anhang an. Bilder, Videos und PDF-Seiten laufen bewusst über den Bildpfad von Core, nicht über den Textstream.';
+      case 'Aufnahme wird angehoert':
+        return 'Ich höre mir die Aufnahme selbst an, über den Audio-Eingang von Core, in Teilen von höchstens 60 Sekunden.';
       case 'Privates Wissen durchsucht':
         return Number(event.meta.knowledge_hits) > 0
           ? 'Ich habe in deinem hochgeladenen Wissen (RAG-Lite) gesucht und '
@@ -498,7 +500,7 @@
   // routine operations fold into ONE muted, expandable line per sequence.
   var NARRATED = {
     'Kontextfenster ermittelt':1,'Projektdateien geplant':1,
-    'Anhang wird angesehen':1,'Privates Wissen durchsucht':1,
+    'Anhang wird angesehen':1,'Aufnahme wird angehoert':1,'Privates Wissen durchsucht':1,
     'Browserauftrag eingereiht':1,
     'Mara hat die Umsetzung des gespeicherten Plans gewaehlt':1,
     'Mara hat ein natives Werkzeug angefordert':1,
@@ -571,7 +573,7 @@
     'Python-Job eingereiht':'Python läuft','Werkzeugantwort wird einmal korrigiert':'Korrigiere die Werkzeugantwort',
     'Mara hat selbst den Projekt-Writer aufgerufen':'Starte den Projekt-Writer',
     'Projektdateien geplant':'Plane die Projektdateien','Kontextfenster ermittelt':'Plane den Kontext',
-    'Privates Wissen durchsucht':'Durchsuche dein Wissen','Anhang wird angesehen':'Sehe mir den Anhang an',
+    'Privates Wissen durchsucht':'Durchsuche dein Wissen','Anhang wird angesehen':'Sehe mir den Anhang an','Aufnahme wird angehoert':'Höre mir die Aufnahme an',
     'Websuche gestartet':'Prüfe Webquellen','Websuche beendet':'Ordne Quellen ein'
   };
   function activity(event) {
@@ -1006,7 +1008,7 @@
       if (e.state === 'error' || e.kind === 'commentary' || e.kind === 'artifact') return true;
       if (NARRATED[e.title] === 1 || meta.reason === 'context_window_full') return true;
       if (e.kind === 'tool') return e.title !== 'Privates Wissen durchsucht' || Number(meta.knowledge_hits) > 0;
-      return e.title === 'Anhang wird angesehen';
+      return e.title === 'Anhang wird angesehen' || e.title === 'Aufnahme wird angehoert';
     });
   }
 

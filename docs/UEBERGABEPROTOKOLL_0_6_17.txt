@@ -1,0 +1,43 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.6.17
+Stand: 05.11.2026
+Ausgangsbasis: main 0.6.16 nach Merge von PR #167 (Terra-Net).
+
+AUFTRAG: Betreiber zu 0.6.14: "Mara bekommt erst gar keine WAV-Datei ... nix da Nutzung der nativen Audiofunktion."
+Entscheidungen (AskUserQuestion 05.11.2026): sofort senden; Mitschrift danach im Hintergrund (klein unter der Nachricht,
+im Verlauf); ohne Denken bei Sprachnachrichten; "Bei den Gemma-4-Modellen gehen maximal 60 Sekunden pro WAV-Datei"
+(gilt fuer Mikrofon und Audiodateien; Audiodateien damit ebenfalls nativ).
+
+UMSETZUNG:
+- api/voice_transcribe.php: coreui_voice_prepare_native() (Umwandlung, Pausen, WAVs bis 60 s in einen Zielordner),
+  coreui_voice_native_budget() (40 % des Kontextfensters bei 25 Tokens/s, 60 bis 600 s), coreui_voice_listen_task()
+  (Auftrag fuer Mara mit coreui_voice_attachment_hint und Teilen), coreui_voice_has_video_stream() (ffprobe, exec mit
+  Rueckgabecode; shell_exec gibt bei leerer Ausgabe null), Mitschrift-Zwischenspeicher coreui_voice_transcript_*
+  (var/voice_cache/<uid>/t-<sha256(uuid)>.json, state pending/done/silent/failed, pending verfaellt nach 20 min).
+  Entfernt: COREUI_VOICE_INPUT_MAX_BYTES, coreui_voice_transcript_with_stamps, coreui_voice_error_text.
+- api/ember_attachments.php: Audio-Zweig ember_attach_audio_native() legt WAVs in ember_video_frame_dir()/audio_*
+  (Laufzeitwurzel von ember_call_ollama) und STU_EMBER_AUDIO_CLIPS; ember_attachment_block reicht sie als type audio
+  in STU_EMBER_ATTACHMENT_IMAGES und VISION_META weiter. ember_attach_needs_vision_path: Audio -> Medienaufruf, wenn
+  ember_attach_audio_allowed (Konto, kein Gast, Core hoert). ember_attach_audio_transcribe_after() (nach der Antwort),
+  ember_attach_audio_history_notes() (Verlauf), ember_attach_audio_cleanup() (nur audio_* im Frame-Ordner).
+- api/chat.php: Medienzweig erkennt type audio: coreui_voice_listen_task, think false ($listenThink), eine Wiederholung
+  bei coreui_voice_reply_kind 'missed', ember_continue_truncated_reply mit neuem Parameter $thinkOverride, Aufraeumen
+  der WAVs, ehrliche Antwort wenn nichts ankam. ember_build_context liest id und haengt Mitschrift-Zeilen an.
+- api/console_stream.php: Arbeitsweg "Aufnahme wird angehoert"; nach 'done' und vor dem Komprimieren die Mitschrift.
+- api/console_upload.php: video/* ohne Bildspur -> kind audio, mime audio/*.
+- api/voice_input.php: nur status und transcript (eigene Audiodatei, Gaeste 403).
+- js/console-app.js: window.CoreUIComposer.sendVoice(file) (uploadQueue + pendingSendAfterUpload mit dem Text im
+  Feld; Rueckgaben ok, busy, editing, full, empty, no_session); Audio-Player mit data-uuid, data-voice, Klasse msg-audio.
+- js/coreui-voice-input.js: Datei "Sprachnachricht-JJJJ-MM-TT_hh-mm-ss.webm", Senden, Warten bei busy (bis 5 Minuten,
+  abbrechbar), Mitschrift-Zeile .msg-transcript per MutationObserver und Abfrage alle 6 s solange pending.
+- js/coreui-work-events.js: Titel "Aufnahme wird angehoert". CSS: .msg-transcript, Nachtmodus.
+
+GEPRUEFT: voice-input-selftest.php (Gegenproben: Denken, images-Feld, Cache, Verlauf erkannt; die 60-s-Pruefung nach dem
+Schnitt ist doppelt abgesichert), voice-input-ui-selftest.cjs (inkl. Sendeweg aus console-app.js in vm),
+vision-persona-selftest.php, volle Testreihe, Ende-zu-Ende durch ember_call_ollama gegen ein nachgebautes Ollama
+(WAVs byte-gleich, think false, Warteschlange auf MariaDB), cache-bust, version-merge-check gegen 0.6.16.
+NICHT hier: Gemma auf dem Server, echtes Mikrofon am Handy.
+OFFEN: Gedaechtnis-Reflexion fuer Sprachnachrichten (COREUI_VISION_TURN schaltet sie wie bei Bildern ab), P20.2 Ton von
+Videos, P20.4 Live-Gespraech.
+
+NACH DEM MERGE (Betreiber): Update unter Einstellungen > System > CoreAI Update, Chat neu laden, Mikrofon druecken,
+sprechen, FERTIG. Mara antwortet auf das Gesagte; kurz danach steht die Mitschrift unter der Sprachnachricht.
