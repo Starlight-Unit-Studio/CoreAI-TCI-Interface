@@ -1,0 +1,515 @@
+/* CoreAI 0.6.12: native dark palette + display theme selector.
+   Loaded AFTER page styles. Light mode retains the existing Holo design.
+   No global filter or color inversion: artwork, browser captures and images
+   must remain faithful to their original colours. */
+
+/* Three accessible, native-radio choices in Settings > Anzeige. */
+.theme-mode-fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+.theme-mode-fieldset legend {
+  margin: 0 0 12px; padding: 0; color: var(--muted);
+  font: 12px "Share Tech Mono", monospace; letter-spacing: .13em;
+}
+.theme-mode-choices {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px;
+}
+.theme-mode-choice {
+  position: relative; display: flex; min-width: 0; flex-direction: column;
+  gap: 10px; padding: 10px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--panel-soft);
+  transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+.theme-mode-choice:hover { border-color: var(--line-strong); transform: translateY(-1px); }
+.theme-mode-choice:has(input:checked) { border-color: var(--cx); box-shadow: inset 0 0 0 1px var(--cx); }
+.theme-mode-choice:has(input:focus-visible) { outline: 2px solid var(--amb); outline-offset: 3px; }
+.theme-mode-choice > input {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: 0;
+  opacity: 0; overflow: hidden;
+}
+.theme-mode-preview {
+  position: relative; display: block; height: 68px; overflow: hidden;
+  border: 1px solid rgba(117, 156, 229, .35);
+  background: linear-gradient(130deg, #f6faff, #dfeaff);
+}
+.theme-preview-dark { background: linear-gradient(145deg, #111c33, #263957); }
+.theme-preview-system { background: linear-gradient(90deg, #eff5ff 0 50%, #14223d 50%); }
+.theme-mode-preview i {
+  position: absolute; inset: 9px 12px auto; display: block; height: 11px;
+  border: 1px solid rgba(93, 146, 231, .3); background: rgba(255,255,255,.8);
+}
+.theme-mode-preview b, .theme-mode-preview em {
+  position: absolute; left: 19px; right: 33px; top: 30px; height: 6px;
+  display: block; background: rgba(93, 146, 231, .35);
+}
+.theme-mode-preview em { top: 42px; right: 47px; height: 4px; opacity: .85; }
+.theme-preview-dark i { border-color: #5775ae; background: #233854; }
+.theme-preview-dark b, .theme-preview-dark em { background: #658de0; }
+.theme-preview-system i { background: linear-gradient(90deg, #fff 0 50%, #233854 50%); }
+.theme-preview-system b, .theme-preview-system em {
+  background: linear-gradient(90deg, #86adef 0 50%, #658de0 50%);
+}
+.theme-mode-caption { display: flex; min-width: 0; flex-direction: column; gap: 3px; }
+.theme-mode-caption strong { color: var(--txt); font-size: 16px; font-weight: 700; }
+.theme-mode-caption small { color: var(--muted); font-size: 13px; line-height: 1.3; }
+.theme-mode-help { color: var(--muted); margin: 13px 0 0; font-size: 14px; line-height: 1.45; }
+@media (max-width: 570px) {
+  .theme-mode-choices { gap: 7px; }
+  .theme-mode-choice { padding: 7px; }
+  .theme-mode-preview { height: 49px; }
+  .theme-mode-caption small { font-size: 11px; }
+}
+
+/* Dark design tokens. These override the original light tokens only. */
+:root[data-coreui-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0c1427;
+  --panel: rgba(19, 30, 51, .93);
+  --panel-solid: #17263f;
+  --panel-soft: rgba(22, 34, 56, .93);
+  --panel-cx: rgba(121, 164, 255, .14);
+  --panel-amb: rgba(239, 180, 88, .13);
+  --cx: #91b7ff;
+  --amb: #f0b96b;
+  --txt: #eef4ff;
+  --green: #72e1b0;
+  --red: #ff919e;
+  --violet: #c0adff;
+  --muted: #b2c3dc;
+  --muted-soft: #91a4c1;
+  --line: rgba(125, 162, 236, .25);
+  --line-strong: rgba(131, 174, 252, .48);
+  --line-amber: rgba(240, 185, 107, .46);
+  --ink-inverse: #0c1427;
+  --shadow-soft: 0 18px 46px rgba(0, 3, 15, .4);
+  --shadow-tight: 0 8px 22px rgba(0, 4, 17, .4);
+  --glow-cx: 0 0 24px rgba(100, 155, 255, .28);
+  --glow-amb: 0 0 22px rgba(235, 177, 84, .25);
+}
+html[data-coreui-theme="dark"] {
+  background: #0c1427; color: var(--txt);
+}
+html[data-coreui-theme="dark"] body {
+  color: var(--txt);
+  background:
+    radial-gradient(circle at 12% 8%, rgba(73, 106, 190, .18), transparent 30rem),
+    radial-gradient(circle at 95% 90%, rgba(129, 104, 190, .12), transparent 37rem),
+    linear-gradient(150deg, #0e182b, #0c1427 48%, #101c33);
+}
+html[data-coreui-theme="dark"] body::before {
+  background-image: radial-gradient(circle, rgba(166, 192, 239, .5) .7px, transparent .8px);
+  opacity: .12;
+}
+html[data-coreui-theme="dark"] body::after { opacity: .45; }
+html[data-coreui-theme="dark"] input,
+html[data-coreui-theme="dark"] select,
+html[data-coreui-theme="dark"] textarea { color-scheme: dark; }
+html[data-coreui-theme="dark"] input::placeholder,
+html[data-coreui-theme="dark"] textarea::placeholder { color: #9fb1ce; opacity: 1; }
+
+/* Main chat and history surfaces. */
+html[data-coreui-theme="dark"] .drawer {
+  background: linear-gradient(165deg, rgba(25, 39, 64, .97), rgba(14, 23, 40, .97));
+  box-shadow: 16px 0 45px rgba(0, 0, 0, .3);
+}
+html[data-coreui-theme="dark"] .app-header,
+html[data-coreui-theme="dark"] .composer {
+  background: linear-gradient(120deg, rgba(27, 40, 65, .97), rgba(15, 26, 46, .94));
+  box-shadow: 0 9px 38px rgba(0, 0, 0, .32);
+}
+html[data-coreui-theme="dark"] .composer { box-shadow: 0 -9px 38px rgba(0,0,0,.28); }
+html[data-coreui-theme="dark"] .msg-bubble {
+  color: var(--txt);
+  background: linear-gradient(145deg, rgba(32, 47, 73, .98), rgba(20, 32, 53, .96));
+  border-color: var(--line);
+}
+html[data-coreui-theme="dark"] .msg-row.user .msg-bubble {
+  background: linear-gradient(145deg, rgba(51, 47, 57, .98), rgba(36, 41, 59, .97));
+  border-color: rgba(240, 185, 107, .36);
+}
+html[data-coreui-theme="dark"] .msg-row.system .msg-bubble {
+  background: rgba(29, 42, 66, .94); color: var(--muted);
+}
+html[data-coreui-theme="dark"] .msg-avatar,
+html[data-coreui-theme="dark"] .msg-row.user .msg-avatar,
+html[data-coreui-theme="dark"] .settings-profile-avatar {
+  background: linear-gradient(145deg, #243858, #17263c);
+  border-color: var(--line-strong);
+}
+html[data-coreui-theme="dark"] .session-item,
+html[data-coreui-theme="dark"] .session-archive-toggle,
+html[data-coreui-theme="dark"] .session-action,
+html[data-coreui-theme="dark"] .history-load-older,
+html[data-coreui-theme="dark"] .history-retry button,
+html[data-coreui-theme="dark"] .hud-button-quiet,
+html[data-coreui-theme="dark"] .hud-button-primary,
+html[data-coreui-theme="dark"] .header-menu-btn,
+html[data-coreui-theme="dark"] .header-telemetry,
+html[data-coreui-theme="dark"] .drawer-close,
+html[data-coreui-theme="dark"] .jump-latest {
+  background: rgba(28, 43, 69, .94); color: var(--txt);
+  border-color: var(--line);
+}
+html[data-coreui-theme="dark"] .session-item.active {
+  background: linear-gradient(90deg, rgba(239, 179, 89, .18), rgba(28, 44, 68, .98));
+  border-color: var(--line-amber);
+}
+html[data-coreui-theme="dark"] .composer-inner,
+html[data-coreui-theme="dark"] .composer-input,
+html[data-coreui-theme="dark"] .composer-attach,
+html[data-coreui-theme="dark"] .composer-upload-state,
+html[data-coreui-theme="dark"] .attach-remove,
+html[data-coreui-theme="dark"] .core-mode-menu,
+html[data-coreui-theme="dark"] .core-mode-option,
+html[data-coreui-theme="dark"] .core-mode-variant,
+html[data-coreui-theme="dark"] .core-install-panel {
+  background: var(--panel-solid); color: var(--txt);
+  border-color: var(--line);
+}
+html[data-coreui-theme="dark"] .md-codeblock,
+html[data-coreui-theme="dark"] .md-code-toolbar,
+html[data-coreui-theme="dark"] .md-inline-code {
+  background: #101b30; color: #e9f0ff; border-color: var(--line);
+}
+html[data-coreui-theme="dark"] .md-codeblock pre,
+html[data-coreui-theme="dark"] .md-codeblock code { color: #e9f0ff; }
+html[data-coreui-theme="dark"] .md-table-wrap table,
+html[data-coreui-theme="dark"] .msg-file,
+html[data-coreui-theme="dark"] .msg-image,
+html[data-coreui-theme="dark"] .work-entry,
+html[data-coreui-theme="dark"] .tool-panel,
+html[data-coreui-theme="dark"] .rag-panel,
+html[data-coreui-theme="dark"] .memory-panel,
+html[data-coreui-theme="dark"] .thinking-toggle,
+html[data-coreui-theme="dark"] .thinking-panel {
+  background: rgba(25, 39, 62, .95); color: var(--txt); border-color: var(--line);
+}
+html[data-coreui-theme="dark"] .work-state { background: #243c64; color: #c6daff; }
+html[data-coreui-theme="dark"] .work-entry.work-error .work-state { background: #563039; color: #ffd6dc; }
+html[data-coreui-theme="dark"] .browse-live,
+html[data-coreui-theme="dark"] .browse-live-chrome,
+html[data-coreui-theme="dark"] .browse-live-url,
+html[data-coreui-theme="dark"] .browse-live-think,
+html[data-coreui-theme="dark"] .browse-live-footer {
+  background: rgba(24, 37, 59, .96); color: var(--txt); border-color: var(--line);
+}
+/* Do not alter webpage screenshots, uploaded images, or embedded content. */
+
+/* Settings / admin, including panels that hardcoded white gradients. */
+html[data-coreui-theme="dark"] .settings-body {
+  --cfg-text: #e6eeff;
+  --cfg-soft: #adbed8;
+}
+html[data-coreui-theme="dark"] .settings-header,
+html[data-coreui-theme="dark"] .cfg-nav,
+html[data-coreui-theme="dark"] .settings-panel,
+html[data-coreui-theme="dark"] .cfg-tile,
+html[data-coreui-theme="dark"] .cfg-stat,
+html[data-coreui-theme="dark"] .stat-grid article,
+html[data-coreui-theme="dark"] .cfg-hero,
+html[data-coreui-theme="dark"] .user-edit-section {
+  color: var(--txt);
+  background: linear-gradient(145deg, rgba(29, 43, 66, .98), rgba(18, 30, 51, .96));
+  border-color: var(--line);
+  box-shadow: var(--shadow-soft);
+}
+html[data-coreui-theme="dark"] .cfg-tile:hover,
+html[data-coreui-theme="dark"] .cfg-stat:hover {
+  background: #263b5b;
+  border-color: var(--cx);
+}
+html[data-coreui-theme="dark"] .cfg-tab[aria-selected="true"] {
+  color: var(--txt);
+  background: linear-gradient(90deg, rgba(107, 157, 255, .2), rgba(107, 157, 255, .06));
+}
+html[data-coreui-theme="dark"] .settings-back,
+html[data-coreui-theme="dark"] .settings-action,
+html[data-coreui-theme="dark"] .settings-body .settings-action,
+html[data-coreui-theme="dark"] .cfg-nav-admin .cfg-tab,
+html[data-coreui-theme="dark"] .ctx-stop-button,
+html[data-coreui-theme="dark"] .model-access-choice {
+  background: rgba(26, 42, 67, .94); color: var(--txt);
+  border-color: var(--line);
+}
+html[data-coreui-theme="dark"] .settings-field input,
+html[data-coreui-theme="dark"] .settings-field textarea,
+html[data-coreui-theme="dark"] .settings-field select,
+html[data-coreui-theme="dark"] .memory-editor input,
+html[data-coreui-theme="dark"] .memory-editor textarea,
+html[data-coreui-theme="dark"] .toolbar input,
+html[data-coreui-theme="dark"] .toolbar select,
+html[data-coreui-theme="dark"] .settings-body td input,
+html[data-coreui-theme="dark"] .settings-body td select {
+  background: rgba(12, 23, 41, .94); color: var(--txt); border-color: var(--line-strong);
+}
+html[data-coreui-theme="dark"] .table-wrap,
+html[data-coreui-theme="dark"] .table-wrap th,
+html[data-coreui-theme="dark"] .table-wrap td,
+html[data-coreui-theme="dark"] .memory-admin-item,
+html[data-coreui-theme="dark"] .lore-item,
+html[data-coreui-theme="dark"] .audit-item,
+html[data-coreui-theme="dark"] .memory-item,
+html[data-coreui-theme="dark"] .health-node,
+html[data-coreui-theme="dark"] .health-facts > div,
+html[data-coreui-theme="dark"] .account-export-row,
+html[data-coreui-theme="dark"] .login-session-current,
+html[data-coreui-theme="dark"] .tts-voice,
+html[data-coreui-theme="dark"] .tts-metric,
+html[data-coreui-theme="dark"] .tts-table-wrap {
+  background: rgba(22, 35, 57, .97); color: var(--txt); border-color: var(--line);
+}
+html[data-coreui-theme="dark"] .cfg-nav-admin .cfg-nav-label,
+html[data-coreui-theme="dark"] .cfg-kicker.amber { color: var(--amb); }
+html[data-coreui-theme="dark"] .settings-body .health-summary.ok,
+html[data-coreui-theme="dark"] .health-node.ok { color: var(--green); }
+html[data-coreui-theme="dark"] .settings-body .persona-status.error { color: var(--red); }
+html[data-coreui-theme="dark"] .settings-body .cfg-card-note,
+html[data-coreui-theme="dark"] .settings-body .settings-field small { color: var(--cfg-soft); }
+
+/* Authentication and archive routes. */
+html[data-coreui-theme="dark"] .login-overlay,
+html[data-coreui-theme="dark"] .protocols-overlay {
+  background: linear-gradient(145deg, rgba(8, 16, 31, .92), rgba(18, 29, 48, .88));
+}
+html[data-coreui-theme="dark"] .login-card,
+html[data-coreui-theme="dark"] .protocols-wrap,
+html[data-coreui-theme="dark"] .proto-entry,
+html[data-coreui-theme="dark"] .proto-back,
+html[data-coreui-theme="dark"] .proto-settings,
+html[data-coreui-theme="dark"] .login-mode-toggle,
+html[data-coreui-theme="dark"] .login-guest {
+  background: rgba(22, 36, 60, .94); color: var(--txt); border-color: var(--line);
+}
+html[data-coreui-theme="dark"] .login-field-group input {
+  background: rgba(11, 22, 40, .96); color: var(--txt); border-color: var(--line);
+}
+html[data-coreui-theme="dark"] .login-field-group input:focus { background: #172b49; }
+
+/* Artifacts, markdown previews and file downloads. */
+html[data-coreui-theme="dark"] .msg-artifact-preview,
+html[data-coreui-theme="dark"] .md-preview-header,
+html[data-coreui-theme="dark"] .md-preview-scroller,
+html[data-coreui-theme="dark"] .md-preview-toolbar,
+html[data-coreui-theme="dark"] .md-preview-action,
+html[data-coreui-theme="dark"] .md-preview-content,
+html[data-coreui-theme="dark"] .md-preview-file-icon {
+  background: #192943; color: var(--txt); border-color: var(--line);
+}
+html[data-coreui-theme="dark"] .md-preview-content .md-codeblock {
+  background: #0d1a30; color: #e6f1ff;
+}
+html[data-coreui-theme="dark"] .md-preview-modal { background: rgba(4, 9, 22, .8); }
+
+/* Keep official golden update dialogs readable in either theme. */
+html[data-coreui-theme="dark"] .cu-window,
+html[data-coreui-theme="dark"] .cu-wait {
+  color: var(--cu-ink, #22180a);
+  color-scheme: light;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-mode-choice { transition: none; }
+}
+html.pref-reduced-motion .theme-mode-choice { transition: none; }
+
+/* 0.6.13 contrast regression repair.
+   The original CoreAI design contains explicit light-mode surfaces and
+   dark text values. Scope these corrections to dark mode so Light stays
+   pixel-identical. All selectors below exist in the current markup/CSS. */
+:root[data-coreui-theme="dark"] {
+  --theme-info-surface: #172944;
+  --theme-info-surface-raised: #243954;
+  --theme-info-outline: rgba(147, 183, 248, .46);
+  --theme-info-copy: #edf3ff;
+  --theme-info-muted: #b9cbe6;
+}
+
+/* Sticky Core / Context / Tools / Project strip on narrow layouts.
+   The former #f0f4fa and white chips caused the broad white band. */
+@media (max-width: 1399px) {
+  html[data-coreui-theme="dark"] .insight-chips {
+    background: #101d34;
+    color: var(--theme-info-copy);
+    box-shadow: 0 1px 0 var(--theme-info-outline);
+  }
+  html[data-coreui-theme="dark"] .insight-chips::after {
+    background: linear-gradient(180deg, rgba(16, 29, 52, .96), rgba(16, 29, 52, 0));
+  }
+  html[data-coreui-theme="dark"] .insight-chip {
+    background: var(--theme-info-surface);
+    color: var(--theme-info-copy);
+    box-shadow: inset 0 0 0 1px var(--theme-info-outline);
+  }
+  html[data-coreui-theme="dark"] .insight-chip:hover {
+    background: var(--theme-info-surface-raised);
+    box-shadow: inset 0 0 0 1px var(--cx);
+  }
+  html[data-coreui-theme="dark"] .insight-chip.is-open,
+  html[data-coreui-theme="dark"] .insight-chip[aria-expanded="true"] {
+    color: #fff8e9;
+    background: linear-gradient(105deg, #2a4165, #303a62 55%, #453d49);
+    box-shadow: inset 0 0 0 1px var(--amb);
+  }
+  html[data-coreui-theme="dark"] .insight-chip:focus-visible {
+    outline: 2px solid var(--amb);
+    outline-offset: 3px;
+  }
+  html[data-coreui-theme="dark"] .insight-sheet {
+    filter: drop-shadow(0 14px 25px rgba(0, 3, 15, .65));
+  }
+  html[data-coreui-theme="dark"] .insight-sheet .insight-box {
+    color: var(--theme-info-copy);
+    background: linear-gradient(145deg, #1e314f, #14243e);
+  }
+}
+
+/* Box also renders in a fixed right column on large desktops. */
+html[data-coreui-theme="dark"] .insight-box {
+  background: linear-gradient(145deg, #1e314f, #14243e);
+  color: var(--theme-info-copy);
+  box-shadow: inset 0 0 0 1px var(--theme-info-outline);
+}
+html[data-coreui-theme="dark"] .insight-box .insight-head,
+html[data-coreui-theme="dark"] .insight-box .insight-body,
+html[data-coreui-theme="dark"] .insight-box .insight-file-name {
+  color: var(--theme-info-copy);
+}
+html[data-coreui-theme="dark"] .insight-box .insight-row dt,
+html[data-coreui-theme="dark"] .insight-box .insight-note,
+html[data-coreui-theme="dark"] .insight-box .insight-empty,
+html[data-coreui-theme="dark"] .insight-box .insight-file-meta,
+html[data-coreui-theme="dark"] .insight-box .insight-tool-detail {
+  color: var(--theme-info-muted);
+}
+html[data-coreui-theme="dark"] .insight-box a.insight-file-name {
+  color: #a6ccff;
+}
+html[data-coreui-theme="dark"] .insight-box .insight-head:focus-visible {
+  outline-color: var(--amb);
+  outline-offset: -3px;
+}
+
+/* The open navigation drawer still had hardcoded white gradients, white
+   footer and a ticker using var(--txt) as the background. */
+html[data-coreui-theme="dark"] .drawer .drawer-header {
+  background:
+    radial-gradient(circle at 50% 30%, rgba(99, 151, 239, .18), transparent 51%),
+    linear-gradient(180deg, rgba(32, 49, 77, .78), rgba(16, 27, 46, .16));
+  border-bottom-color: var(--line);
+}
+html[data-coreui-theme="dark"] .drawer .drawer-footer {
+  background: #14233d;
+  border-top-color: var(--line);
+}
+html[data-coreui-theme="dark"] .drawer .core-ticker {
+  color: var(--theme-info-copy);
+  background: #0a172c;
+  border-top-color: var(--theme-info-outline);
+  border-bottom-color: var(--amb);
+}
+html[data-coreui-theme="dark"] .drawer .ticker-unit {
+  color: var(--theme-info-copy);
+}
+html[data-coreui-theme="dark"] .drawer .session-unread {
+  color: #ffdb9b;
+}
+html[data-coreui-theme="dark"] .drawer .session-action.permanent-danger {
+  color: #ffb2ba;
+  background: rgba(210, 67, 92, .15);
+}
+html[data-coreui-theme="dark"] .drawer .session-action.permanent-danger:hover,
+html[data-coreui-theme="dark"] .drawer .session-action.permanent-danger:focus-visible {
+  color: #ffe4e7;
+  background: rgba(210, 67, 92, .24);
+}
+html[data-coreui-theme="dark"] .drawer .drawer-copyright,
+html[data-coreui-theme="dark"] .drawer .drawer-copyright strong,
+html[data-coreui-theme="dark"] .login-copyright,
+html[data-coreui-theme="dark"] .login-copyright strong,
+html[data-coreui-theme="dark"] .splash-copyright,
+html[data-coreui-theme="dark"] .splash-copyright strong,
+html[data-coreui-theme="dark"] .proto-footer,
+html[data-coreui-theme="dark"] .proto-footer strong {
+  color: var(--theme-info-muted);
+}
+
+/* Settings copyright has explicit #503719 and #18243a in console.css,
+   which both disappear on dark cards. Preserve the amber + blue identity
+   while ensuring text contrast, including the owner's full name. */
+html[data-coreui-theme="dark"] .settings-body .about-copy .copyright-line {
+  color: #f4c686;
+}
+html[data-coreui-theme="dark"] .settings-body .about-copy .copyright-line strong {
+  color: #f4f7ff;
+}
+html[data-coreui-theme="dark"] .settings-body .about-copy h2 .about-family {
+  color: #a5c7ff;
+}
+html[data-coreui-theme="dark"] .settings-body .settings-footer,
+html[data-coreui-theme="dark"] .settings-body .settings-footer span,
+html[data-coreui-theme="dark"] .settings-body .settings-footer strong {
+  color: var(--theme-info-muted);
+}
+
+/* Secondary tool and status chips were still using white fills and dark
+   amber text; darken their surface without hiding state indicators. */
+html[data-coreui-theme="dark"] .capability-item {
+  background: #1b2d4a;
+  color: var(--theme-info-muted);
+  border-color: var(--theme-info-outline);
+}
+html[data-coreui-theme="dark"] .capability-item[data-state="active"] {
+  color: #ffd698;
+  border-color: rgba(240, 185, 107, .65);
+  background: #433b39;
+}
+html[data-coreui-theme="dark"] .capability-item[data-state="done"] {
+  color: #b8f2db;
+}
+html[data-coreui-theme="dark"] .capability-item[data-state="error"] {
+  color: #ffc4cc;
+}
+
+/* 0.6.14: voice input (P20.1). The microphone button and its strip above the
+   input field use the night surfaces; recording stays clearly red. */
+html[data-coreui-theme="dark"] .composer-mic-btn {
+  border-left-color: var(--line);
+  color: var(--cx);
+}
+html[data-coreui-theme="dark"] .composer-mic-btn:hover {
+  background: rgba(145, 183, 255, .12);
+  color: #c3d7ff;
+}
+html[data-coreui-theme="dark"] .composer-mic-btn.recording {
+  background: rgba(255, 145, 158, .14);
+  color: var(--red);
+}
+html[data-coreui-theme="dark"] .composer-mic-btn[aria-disabled="true"] {
+  color: var(--muted-soft);
+}
+html[data-coreui-theme="dark"] .composer-voice-state {
+  background: var(--theme-info-surface, #172944);
+  border-color: var(--theme-info-outline, rgba(147, 183, 248, .46));
+}
+html[data-coreui-theme="dark"] .composer-voice-state[data-mode="recording"] {
+  border-color: rgba(255, 145, 158, .5);
+}
+html[data-coreui-theme="dark"] .voice-input-copy strong {
+  color: var(--theme-info-copy, #edf3ff);
+}
+html[data-coreui-theme="dark"] .voice-input-copy small {
+  color: var(--theme-info-muted, #b9cbe6);
+}
+html[data-coreui-theme="dark"] .voice-input-level {
+  background: rgba(145, 183, 255, .18);
+}
+html[data-coreui-theme="dark"] .voice-input-actions button {
+  background: var(--theme-info-surface-raised, #243954);
+  border-color: var(--theme-info-outline, rgba(147, 183, 248, .46));
+  color: var(--theme-info-copy, #edf3ff);
+}
+html[data-coreui-theme="dark"] .voice-input-actions .voice-input-done {
+  border-color: rgba(255, 145, 158, .6);
+  color: #ffc4cc;
+}
+
+/* Do not invert media, photographs, site previews or remote browser frames. */
+

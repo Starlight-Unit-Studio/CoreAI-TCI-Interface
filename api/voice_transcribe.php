@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /*
- * CoreAI 0.6.11 (P20.1): voice input and audio attachments become text.
+ * CoreAI 0.6.14 (P20.1): voice input and audio attachments become text.
  *
  * Two stages, as decided after run 4 of the media test (28.10.2026): Core
  * first writes the transcript with Google's template, a neutral SYSTEM text,

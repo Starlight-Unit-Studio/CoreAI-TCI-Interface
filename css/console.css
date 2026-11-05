@@ -3278,7 +3278,7 @@ audio.msg-image {
   stroke-width: 1.7;
 }
 
-/* 0.6.11: voice input (P20.1), between the text and the send button. */
+/* 0.6.14: voice input (P20.1), between the text and the send button. */
 .composer-inner.has-mic {
   grid-template-columns: 52px minmax(0, 1fr) 46px 56px;
 }

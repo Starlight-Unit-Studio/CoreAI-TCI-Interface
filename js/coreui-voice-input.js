@@ -1,4 +1,4 @@
-/* CoreAI: TCI Interface 0.6.11: voice input (P20.1).
+/* CoreAI: TCI Interface 0.6.14: voice input (P20.1).
    A microphone button in the input field. One click records (up to 2 minutes,
    the time is shown), a second click or "Fertig" ends the recording, Core
    writes the transcript and it lands in the input field, where it can be

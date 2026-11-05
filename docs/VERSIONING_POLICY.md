@@ -30,7 +30,7 @@ Stand: 04.11.2026
 
 - Die oeffentliche `README.md` und neue nutzergerichtete GitHub-Anleitungen werden **standardmaessig auf Englisch** geschrieben. Bei Aktualisierungen die gesamte README konsistent englisch halten, nicht deutsch-englisch mischen.
 - Die README muss die Erstinstallation per **offiziellem One-Liner** und den danach bevorzugten integrierten **Owner-Updater unter Settings > System > CoreAI Update** dokumentieren, einschliesslich seiner Voraussetzungen und des SSH-Fallbacks.
-- **Alle in der README erwaehnten Buttons, Registerkarten und Menuepfade ins Englische uebersetzen.** Keine deutschen Original-Buttontexte in Klammern einfuegen. Die README darf auf die geplante Englisch/Deutsch-Sprachwahl zusammen mit dem Tag-/Nachtmodus hinweisen, darf diese aber nicht als bereits implementiert beschreiben.
+- **Alle in der README erwaehnten Buttons, Registerkarten und Menuepfade ins Englische uebersetzen.** Keine deutschen Original-Buttontexte in Klammern einfuegen. Die README beschreibt den seit 0.6.12 implementierten Tag-/Nachtmodus (System/Hell/Dunkel) als aktuelle Funktion. Die vollstaendige Englisch/Deutsch-Uebersetzung bleibt als geplant ausgewiesen.
 - Historische Changelogs, Uebergabeprotokolle, bestehende UI-Texte und die rechtlich massgebliche deutsche `LICENSE.de.md` bleiben bei einer README-Ueberarbeitung unangetastet. Kein rueckwirkendes Uebersetzen.
 
 ## Dokumentationsrollen: README ist kein Changelog (seit 04.11.2026)

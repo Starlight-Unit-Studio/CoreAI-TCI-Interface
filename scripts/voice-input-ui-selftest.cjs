@@ -1,4 +1,4 @@
-// CoreAI 0.6.11 (P20.1): voice input in a real browser (Playwright), js/coreui-voice-input.js.
+// CoreAI 0.6.14 (P20.1): voice input in a real browser (Playwright), js/coreui-voice-input.js.
 //   node scripts/voice-input-ui-selftest.cjs
 // A small page with the input field and mocked APIs. Chromium records from a
 // fake microphone that plays a tone (or pure silence) from a WAV file. Checked:

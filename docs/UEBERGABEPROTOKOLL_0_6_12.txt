@@ -1,0 +1,22 @@
+COREAI: TCI INTERFACE - HANDOVER 0.6.12
+Date: 05.11.2026
+Base: main 0.6.11, after PR #162 was merged.
+
+GOAL:
+Implement real day/night appearance for CoreAI from Settings, including System device mode, and persist user choice without breaking existing light styles.
+
+IMPLEMENTATION:
+- Settings > Anzeige has accessible System, Hell and Dunkel radio options with graphic previews.
+- js/coreui-preferences.js stores theme in the existing browser-local preferences. Device changes update System mode automatically, other tabs synchronize and mobile browser chrome receives the theme colour.
+- js/settings.js saves and resets the theme alongside existing display settings.
+- css/coreui-theme.css is loaded last to skin chat, navigation, composer, settings, Admin Core, login, archives, code and document previews. Uploaded images are never inverted.
+- scripts/theme-preferences-selftest.cjs verifies mode resolution, saved settings, legacy values, OS changes, blocked localStorage, tab sync and HTML/CSS wiring; both preflight scripts invoke it when Node is installed.
+- 0.6.12 VERSION, HTML, JS bootstrap, branding check, README, roadmap, changelog, asset hashes and handover.
+
+LIMITATIONS:
+- Display preference is per browser, not per server account, matching existing display settings.
+- Language localization of UI is still planned separately.
+- Full browser and server live tests have not been run here.
+
+MERGE STATUS:
+PR #162 has merged into main as version 0.6.11. This 0.6.12 appearance PR may now target main.

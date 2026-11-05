@@ -1,6 +1,6 @@
 # CoreAI: TCI Interface
 
-## 0.6.11 - 05.11.2026
+## 0.6.14 - 05.11.2026
 
 P20.1 Spracheingabe, wie vom Betreiber entschieden: Die Mitschrift landet im Eingabefeld und wird dort geprueft und gesendet; die Aufnahme wird nach der Mitschrift sofort geloescht; nur angemeldete Konten (Inhaber, Admins, Nutzer), keine Gaeste; Mikrofon bis 2 Minuten, Audiodateien bis 10 Minuten.
 
@@ -11,6 +11,34 @@ P20.1 Spracheingabe, wie vom Betreiber entschieden: Die Mitschrift landet im Ein
 - **Cores ohne Audio** (laut `/api/show`, zum Beispiel Cloud-Cores ohne Audioeingang): Der Knopf bleibt sichtbar, ist aber abgeschaltet und nennt den Grund; ein Wechsel im Core-Menue prueft neu. Audioanhaenge bekommen dann wie bisher den ehrlichen Hinweis, ebenso Gaeste.
 - Tests: neu `voice-input-selftest.php` (Schnitt, Auftrag, Verdrahtung; mit ffmpeg echte Umwandlung einer Opus-Aufnahme, 2-Minuten-Grenze, Sprechpausen und der ganze Weg gegen ein nachgebautes Ollama mit gezaehlter Warteschlange: Wiederholung, Stille, Abbruch, volle Warteschlange, Core ohne Audio, Audioanhang mit Zwischenspeicher, Gaeste) und `voice-input-ui-selftest.cjs` (Chromium mit simuliertem Mikrofon); beide in beiden Preflights.
 - Keine Aenderung an Cores, Modelfile, Datenbankschema, Installer oder Warteschlange. Videos hoeren (P20.2) folgt.
+
+## 0.6.13 - 05.11.2026
+
+- **Dark-mode contrast hotfix:** Removed the conspicuous light band beneath the chat header. Its real selectors `.insight-chips`, `.insight-chip` and `.insight-sheet .insight-box` now use dark high-contrast surfaces, readable labels, distinct active and hover states, and a dark sticky fade. Both narrow-screen chips and wide-screen insight panels are covered.
+- **Owner attribution visible:** Corrected the hardcoded dark-on-dark colours on `.about-copy .copyright-line` and the `strong` owner name. The Quantum family heading and secondary copyright/footer lines are readable in Night mode.
+- **Navigation surfaces:** Fixed old light backgrounds in the expanded sidebar header and footer, ticker, status/action chips and file links. No image inversion and no change to the Light theme.
+- **Regression protection:** Extended the offline `scripts/theme-preferences-selftest.cjs` with direct checks for the real CSS selectors and expected dark overrides. Existing preflight scripts already invoke it when Node is available.
+- **Cache and version:** Recomputed the SHA-256-derived numeric theme CSS/JS keys and aligned VERSION, six visible HTML pages, JavaScript bootstrap, branding/preflights, changelog and handover to `0.6.13`.
+- **Scope:** CSS, a browser regression test and release metadata only. No database, installer, runtime, model or other-repository changes. Browser/server visual verification remains separate.
+
+## 0.6.12 - 05.11.2026
+
+- **Native day/night appearance:** A new **Settings → Display** selector provides **System**, **Light** and **Dark** with swatch previews and accessible radio controls. Changes apply instantly; System follows device appearance changes.
+- **Persistence without a migration:** Uses the existing browser-local `CoreUIPreferences` storage key, preserving older display settings. The mode survives reloads and syncs across tabs; invalid values fall back safely. Display reset restores System.
+- **Native dark Holo palette:** New `css/coreui-theme.css` covers chat messages, drawer, composer, settings, Admin Core, code, login, protocols and file previews. The original light palette and image pixels are untouched; no inversion filters.
+- **Offline regression checks:** New `scripts/theme-preferences-selftest.cjs` tests System changes, explicit overrides, old preference data, storage failure, cross-tab updates and required UI wiring. Registered in both preflight variants when Node is present.
+- **Documentation:** README and roadmap describe appearance as available; the full English/German interface localization remains a separate planned feature.
+- **Release metadata:** Version displays, numeric content hashes, bootstrap, branding checks, changelog and handover aligned to `0.6.12`. No model, database, server API, Ollama or installer changes.
+- **Validation scope:** Full Node and browser preflight must be executed on a checkout and the deployment separately verified.
+
+## 0.6.11 - 05.11.2026
+
+- **User-local date and time:** Mara's private CoreAI chat now receives the browser-configured IANA time zone (such as `Asia/Manila`) on new messages and streamed requests. The server validates identifiers and computes the current local time using PHP's timezone database.
+- **No location permission:** There is no GPS request, IP lookup, or database migration. Invalid or missing client zones safely use the configured server timezone.
+- **Consistent execution:** The main response, normal and streamed generation, and additional per-file Core calls use the active request's timezone. Other request contexts retain their existing time behavior.
+- **Regression tests:** `scripts/date-awareness-selftest.php` now checks Philippines/Berlin midnight, DST transitions, invalid timezone input and the frontend/backend connection. This test is already invoked in both preflight variants.
+- **Version synchronization:** `0.6.11` across README, versioned pages, bootstrap, changelogs, branding and preflight markers. No changes to database, installer, models, Modelfile, Ollama or other repositories.
+- **Testing limit:** Code and static test coverage added; production device/browser and full server preflight must be verified separately.
 
 ## 0.6.10 - 04.11.2026
 

@@ -2518,6 +2518,7 @@
       character_id: state.characterId,
       message:      msgToSend,
       attachment_uuids: atts.map(function (item) { return item.uuid; }),
+      client_tz:    clientTimezone(),
       ember_client_async: USE_STREAM
     });
     fetch(API_BASE + '/chat.php', {
@@ -2633,6 +2634,16 @@
   // Tokens werden absichtlich verworfen, auch wenn ein alter Server sie sendet.
   // Fällt bei jedem Problem auf den normalen Poll zurück (der Server generiert
   // serverseitig zu Ende und legt die Antwort in der DB ab).
+  function clientTimezone() {
+    try {
+      var zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      return typeof zone === 'string' && /^[A-Za-z0-9_+/-]{1,64}$/.test(zone)
+        ? zone : '';
+    } catch (ignored) {
+      return '';
+    }
+  }
+
   function openStreamForReply(ses, userMsgId, generationRequest) {
     var sessionId = String(ses.id);
     var streamCharacterId = generationRequest && generationRequest.character_id
@@ -2641,6 +2652,8 @@
     var url = API_BASE + '/console_stream.php'
       + '?character_id=' + encodeURIComponent(streamCharacterId)
       + '&session_id=' + encodeURIComponent(sessionId);
+    var zone = clientTimezone();
+    if (zone) url += '&client_tz=' + encodeURIComponent(zone);
     if (generationRequest && generationRequest.id) {
       url += '&generation_request=' + encodeURIComponent(String(generationRequest.id));
     } else {

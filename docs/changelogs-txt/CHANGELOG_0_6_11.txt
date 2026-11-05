@@ -1,8 +1,7 @@
 CoreAI: TCI Interface 0.6.11 - 05.11.2026
-- P20.1 Spracheingabe: Mikrofon-Knopf im Eingabefeld (bis 2 Minuten), Mitschrift landet im Eingabefeld, Aufnahme sofort geloescht.
-- Nur angemeldete Konten, keine Gaeste. Reine Stille wird nicht gesendet. Cores ohne Audio: Knopf aus, mit Grund.
-- Core hoert selbst (Gemma-Audio): Googles Vorlage, neutraler SYSTEM-Text, ohne Denken, ohne Parameter, Sprache des Kontos.
-- Server: ffmpeg nach WAV 16 kHz Mono 16 Bit, Schnitt an Sprechpausen (hoechstens 60 s), jeder Abschnitt ueber die Modellwarteschlange, eine Wiederholung bei "keine Aufnahme".
-- Audiodateien als Anhang: bis 10 Minuten als Mitschrift mit Zeitmarken, 7 Tage im Zwischenspeicher des Kontos.
-- Tests: voice-input-selftest.php und voice-input-ui-selftest.cjs (auch in den Preflights).
-- Keine Aenderung an Cores, Modelfile, Datenbankschema, Installer oder Warteschlange.
+- User-local IANA time zone for Mara's private CoreAI chat, supplied by the browser on POST and SSE.
+- Server validation; same local time in normal prompts and follow-up generation. Invalid values use existing server fallback.
+- No GPS, IP geolocation, database migration, installer changes or cross-repository work.
+- Regression checks for Asia/Manila, Berlin midnight, DST, invalid identifiers and client wiring.
+- README, UI version displays, preflight markers, branding and change-history metadata synchronized.
+- Full production verification pending.

@@ -195,7 +195,7 @@ function ember_attach_read_archive(string $path, int $max): ?string {
   return ember_attach_clean_text($txt, $max);
 }
 
-// --- Audio (0.6.11, P20.1) ----------------------------------------------------
+// --- Audio (0.6.14, P20.1) ----------------------------------------------------
 
 require_once __DIR__ . '/voice_store.php';
 require_once __DIR__ . '/voice_transcribe.php';
@@ -335,7 +335,7 @@ function ember_attachment_single_block(PDO $pdo, string $uuid, int $uid, int $ma
             . 'und frag nach, worum es geht.';
     }
   } elseif ($kind === 'audio') {
-    // 0.6.11 (P20.1): a Core with audio input hears the file through a
+    // 0.6.14 (P20.1): a Core with audio input hears the file through a
     // transcript (up to 10 minutes, with time marks); guests and Cores
     // without audio get the honest note as before.
     $heard = ember_attach_audio_transcript($pdo, $uuid, $uid, $path, max($max, $audioMax));
@@ -425,7 +425,7 @@ function ember_attachment_block(PDO $pdo, string &$msg, int $uid = 0): string {
     min(40000, (int)ember_cfg('STU_EMBER_ATTACH_TOTAL_MAX_CHARS', 16000))
   );
   $perFileMax = max(500, min(ember_attach_max_chars(), (int)floor($totalMax / max(1, $count))));
-  // 0.6.11: a transcript of 10 minutes is about 9000 characters; it may use
+  // 0.6.14: a transcript of 10 minutes is about 9000 characters; it may use
   // more of the shared budget than a document, never more than the budget.
   $audioMax = max(500, min(12000, (int)floor($totalMax / max(1, $count))));
   $blocks = [];

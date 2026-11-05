@@ -1,0 +1,8 @@
+CoreAI: TCI Interface 0.6.13 - 05.11.2026
+- Dark-mode contrast fix for the sticky Core / Context / Tools / Project bar, its buttons, active states and info sheets.
+- Readable owner copyright name and Quantum brand line under Settings; proper muted copyright text in footer, login and protocols.
+- Dark navigation drawer header/footer, ticker and secondary tool status chips, with no image inversion.
+- Regression assertions in scripts/theme-preferences-selftest.cjs for real selectors and dark colour declarations.
+- CSS/JS fingerprint keys refreshed, all six visible HTML versions and supporting release files synchronized.
+- Light mode unchanged; no API, database, model, installer or cross-repo changes.
+- Static regression checks prepared. Live phone/desktop and full preflight QA outstanding.

@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /*
- * 0.6.11: voice input (P20.1). Signed-in accounts only (Inhaber, Admins,
+ * 0.6.14: voice input (P20.1). Signed-in accounts only (Inhaber, Admins,
  * Nutzer), never guests.
  *
  *   GET  ?action=status       allowed, hears (true, false or null), ready, max_seconds

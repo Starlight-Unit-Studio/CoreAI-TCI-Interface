@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-// CoreAI 0.6.11 (P20.1): voice input and audio attachments become text.
+// CoreAI 0.6.14 (P20.1): voice input and audio attachments become text.
 //   php scripts/voice-input-selftest.php
 // Offline: cutting at pauses, the transcription request (Google's template,
 // neutral SYSTEM text, no thinking, no options except the KI-Profil context
@@ -123,6 +123,9 @@ $app = $read('app.html');
 vi_test(strpos($app, 'js/coreui-voice-input.js') !== false && strpos($app, 'js/coreui-voice-input.js') < strpos($app, 'js/console-app.js'),
   'chat page loads the voice input');
 vi_test(str_contains($read('css/console.css'), '.composer-inner.has-mic {'), 'input field has room for the button');
+$theme = $read('css/coreui-theme.css');
+vi_test(str_contains($theme, 'html[data-coreui-theme="dark"] .composer-voice-state {') && str_contains($theme, 'html[data-coreui-theme="dark"] .composer-mic-btn {'),
+  'night mode: button and strip use the dark surfaces, no bright band');
 
 $ffmpeg = coreui_voice_bin('ffmpeg');
 if ($ffmpeg === null || coreui_voice_bin('ffprobe') === null || !function_exists('proc_open')) {
