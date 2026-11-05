@@ -1,0 +1,8 @@
+CoreAI: TCI Interface 0.6.16 - 05.11.2026
+- Corrected terran terminal terminology across Settings, splash and chat connection notices.
+- Ayal'ren system configuration becomes TERRANISCHE SYSTEMKONFIGURATION.
+- Arch-Net connection strings become Terra-Net connection strings.
+- Current UI matrix label, image description and ticker accessibility label updated without altering artwork or technical identifiers.
+- Added independent terminology regression selftest and both preflight registrations; developer rules updated.
+- VERSION, six HTML pages, JavaScript bootstrap, README, branding/preflight versions, changelog and handover synchronized.
+- No modifications to models, databases, installers or actual communication implementation; live verification is separate.
