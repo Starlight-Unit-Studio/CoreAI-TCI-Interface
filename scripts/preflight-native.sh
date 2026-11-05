@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.15: Spracheingabe freigeschaltet (nginx laesst api/voice_input.php durch, Mikrofon fuer die eigene Seite erlaubt).
+# CoreAI: TCI Interface 0.6.16: Terranische Interface-Bezeichnungen und Terra-Net, bestehende Preflight-Tests beibehalten.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -66,6 +66,7 @@ UI_FILES=(
   js/coreui-settings-tabs.js
   scripts/settings-tabs-ui-selftest.cjs
   scripts/theme-preferences-selftest.cjs
+  scripts/terran-terminology-selftest.cjs
   setup.sh
   api/rag_lite.php
   api/ai_settings.php
@@ -750,6 +751,11 @@ if command -v php >/dev/null 2>&1; then
   fi
 
   if command -v node >/dev/null 2>&1; then
+    if node "$PROJECT_ROOT/scripts/terran-terminology-selftest.cjs" >/dev/null 2>&1; then
+      ok 'Terranische CoreAI-Bezeichnungen: Terra-Net und Systemtexte geprueft.'
+    else
+      fail 'Terranische CoreAI-Bezeichnungen: Arch-Net/Ayalren-Rueckfall gefunden.'
+    fi
     if node "$PROJECT_ROOT/scripts/theme-preferences-selftest.cjs" >/dev/null 2>&1; then
       ok 'Anzeige: System/Hell/Dunkel mit Speichern, Betriebssystem-Wechsel und Browser-Tabs geprueft.'
     else

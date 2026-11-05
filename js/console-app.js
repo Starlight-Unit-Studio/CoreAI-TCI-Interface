@@ -926,7 +926,7 @@
       appendOlderButton(ses);
       renderConversationRows(ses);
       if (!state.messageCacheBySession[ses.id] || !state.messageCacheBySession[ses.id].length) {
-        appendMessageEl('system', 'ARCHNET VERBINDUNG HERGESTELLT. COREUI TERMINAL AKTIV.');
+        appendMessageEl('system', 'TERRA-NET VERBINDUNG HERGESTELLT. COREUI TERMINAL AKTIV.');
       }
       if (state.pendingBySession[ses.id]) {
         showTypingIndicator();
@@ -3742,7 +3742,7 @@
             var preferred = rememberedActiveSession();
             var ses = sessionById(preferred) || state.sessions[0] || null;
             if (!ses) {
-              appendMessageEl('system', 'ARCHNET VERBINDUNG HERGESTELLT. E.M.B.E.R. COREUI AKTIV.');
+              appendMessageEl('system', 'TERRA-NET VERBINDUNG HERGESTELLT. E.M.B.E.R. COREUI AKTIV.');
               scrollToBottom();
               setStatus('online', 'VERBUNDEN');
               return;

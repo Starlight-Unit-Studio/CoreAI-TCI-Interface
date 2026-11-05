@@ -1,0 +1,22 @@
+COREAI: TCI INTERFACE - HANDOVER 0.6.16
+Stand: 05.11.2026
+Basis: main 0.6.15 (Microphone endpoint / nginx correction).
+
+AUFTRAG
+The user identified a canon mismatch: CoreAI is a Terran interface. Ayal'ren in the settings headline and Arch-Net connection messages are inappropriate. The intended Terran network name is Terra-Net.
+
+UMSETZUNG
+- settings.html: TERRANISCHE SYSTEMKONFIGURATION replaces AYAL'REN SYSTEMKONFIGURATION.
+- index.html: splash status uses TERRA-NET MATRIX INIT and TERRA-NET VERBINDUNG.
+- app.html: visible matrix signature is TERRA-NET MATRIX; accessible ticker label says Terra-Net; image description uses neutral geometric glyphs.
+- js/console-app.js: two status notices now say TERRA-NET VERBINDUNG HERGESTELLT.
+- scripts/terran-terminology-selftest.cjs: checks correct UI terms and rejects old labels, included in both preflight variants.
+- AGENTS.md and CLAUDE.md: permanent wording rule for the Terran interface, while historical lore material remains untouched.
+- VERSION and HTML pages, README, JS bootstrap, branding/preflight headers, TXT history, cache-busting, current handover synchronized to 0.6.16.
+
+NICHT VERAENDERT
+No actual network route, chat channel, database, model, Modelfile, protocol, installer, CSS themes, icons, matrix SVG geometry, or other repository changes.
+Historical release notes are retained as originally recorded.
+
+ABNAHME
+Run node scripts/terran-terminology-selftest.cjs, python3 scripts/cache-bust.py --verify, python3 scripts/version-merge-check.py --base-version 0.6.15, then preflight and live browser check on the operator server. These live checks are not claimed as completed here.

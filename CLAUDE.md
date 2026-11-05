@@ -14,3 +14,7 @@
 - Jeder Merge erhaelt einen neuen numerischen Versionsstand. Der lokale Versions-Guard muss vor Merge bestehen; Tests nur als erfolgreich dokumentieren, wenn sie tatsaechlich ausgefuehrt wurden.
 
 **Kurzregel:** README = Anleitung. CHANGELOG = Geschichte. ROADMAP = Zukunft.
+
+## Terran terminology rule (05.11.2026)
+
+CoreAI is a **Terran interface**: its UI connects through **Terra-Net**, never Arch-Net. Do not label its settings or startup screens as Ayal'ren systems. Use `TERRANISCHE SYSTEMKONFIGURATION` in Settings. Retain historical lore files, matrix artwork, internal identifiers and real network code. Check `scripts/terran-terminology-selftest.cjs` before releasing UI changes.

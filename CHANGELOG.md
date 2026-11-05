@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.6.16 - 05.11.2026
+
+- **Terran UI canon correction:** Replaced the inappropriate Ayal'ren system label in Settings with `TERRANISCHE SYSTEMKONFIGURATION`. The splash screen and visible app matrix signature now refer to Terra-Net rather than Ayal'ren.
+- **Terra-Net, not Arch-Net:** Updated the splash connection phase and both chat connection messages to use `TERRA-NET VERBINDUNG`. Also corrected the accessible ticker label and neutralized the matrix artwork description without changing the art.
+- **Regression protection:** New offline `scripts/terran-terminology-selftest.cjs` verifies visible CoreAI labels and rejects Arch-Net/Ayal'ren references in the four relevant user-facing source files. Registered in both preflight variants.
+- **Developer guidance:** Added the terran-interface terminology rule to `AGENTS.md` and `CLAUDE.md` so future assistant changes do not reintroduce the lore mismatch.
+- **Version and cache:** Updated to `0.6.16`, aligned six HTML pages, bootstrap, branding checks, preflight headers, changelog TXT index and handover, with fresh asset fingerprint references.
+- **Safe scope:** Only presentation text, tests and release metadata. No changes to communication protocols, PHP APIs, database, installers, models, Modelfile, visual matrix art or historical changelog entries. Live deployment and browser QA remain separate.
+
 ## 0.6.15 - 05.11.2026
 
 Rueckmeldung des Betreibers nach dem Update auf 0.6.14: kein Mikrofon-Knopf zu sehen.

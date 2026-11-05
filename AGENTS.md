@@ -32,3 +32,10 @@ Diese Regeln gelten fuer jede Arbeit im Repository **CoreAI: TCI Interface**, au
 - Ohne Auftrag keine Modelfile-, Ollama-, Datenbank-, Installer- oder Fremdprojekt-Aenderungen.
 - Keine Secrets, Nutzerdaten, vertrauliche Studio-Lore oder private Uploads in Git committen.
 - Die Lizenz ist **Community Source** und nicht OSI Open Source. `LICENSE.de.md` ist massgeblich.
+
+## Terran UI lore and naming (05.11.2026)
+
+- CoreAI is a **Terran** terminal. In user-facing text use **Terra-Net** for the Terran connection, never `Arch-Net` or `ARCHNET`.
+- Do not describe CoreAI's settings or status screens as an `Ayal'ren` system. Use `TERRANISCHE SYSTEMKONFIGURATION` and appropriate Terra-Net labels.
+- Preserve existing protocol identifiers, matrix artwork, historical changelogs and source-lore records. Correct UI copy without rewriting functional network logic or the game repository.
+- Before release run `node scripts/terran-terminology-selftest.cjs` and existing preflights.
