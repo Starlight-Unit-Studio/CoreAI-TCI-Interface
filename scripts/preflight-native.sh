@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.17: Sprachnachrichten hoert Mara selbst (WAVs bis 60 s, ohne Denken), Mitschrift nach der Antwort.
+# CoreAI: TCI Interface 0.6.18: Laengenangaben fuer Sprachnachrichten gerundet (ffmpeg 5.1 im php-Container); Mara hoert selbst.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

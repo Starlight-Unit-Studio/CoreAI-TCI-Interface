@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.6.18 - 05.11.2026
+
+Preflight auf dem Server nach dem Update auf 0.6.17: "Spracheingabe-Selbsttest: Voice input FAIL: Mara is told: a voice message, its length, 3 parts, 2 minutes kept". Alle anderen Pruefungen bestanden.
+
+- **Ursache:** Die Laenge einer Aufnahme wurde auf ganze Sekunden abgeschnitten statt gerundet. ffprobe misst dieselbe Datei je nach ffmpeg-Version um einige Millisekunden verschieden: Im php-Container laeuft Debians ffmpeg 5.1, in der Entwicklungsumgebung 6.1. Bei 149,978 statt 150,008 Sekunden hiess es "Laenge etwa 02:29" statt "02:30", und der Test erwartete "02:30". Mara haette im Betrieb nur eine Sekunde zu wenig gehoert, die Aufnahme selbst war nicht betroffen.
+- **Behoben:** Laengen werden gerundet (`coreui_voice_length`), in Maras Hinweis zur Sprachnachricht und bei "nur die ersten ... Minuten". Zeitmarken der Teile bleiben abgeschnitten (Beginn eines Abschnitts).
+- **Test:** `voice-input-selftest.php` prueft das Runden (149,98 und 150,008 s ergeben "02:30") und meldet bei einem Fehler jetzt, was Mara gesagt wurde und was ffprobe gemessen hat, statt nur einer Sammelmeldung.
+- Keine Aenderung an Cores, Modelfile, Datenbankschema, Installer oder Warteschlange.
+
 ## 0.6.17 - 05.11.2026
 
 Rueckmeldung des Betreibers zu 0.6.14: "Mara bekommt erst gar keine WAV-Datei, das Gesprochene wird fehlerhaft als Text geschrieben und dann muss ich die Textnachricht abschicken. Nix da Nutzung der nativen Audiofunktion vom Core." Neue Entscheidungen (05.11.2026): sofort senden, Mara hoert die WAV selbst, Mitschrift danach im Hintergrund fuer den Verlauf, ohne Denken bei Sprachnachrichten, hoechstens 60 Sekunden je WAV (Grenze der Gemma-4-Modelle).

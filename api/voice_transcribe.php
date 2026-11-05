@@ -196,6 +196,16 @@ function coreui_voice_part_silent(array $part, array $pauses): bool {
   return false;
 }
 
+/**
+ * 0.6.18: the length of a recording, rounded to the second ("02:30" for
+ * 149.99 s). ffprobe and ffmpeg versions report a container's length a few
+ * milliseconds apart (Debian's ffmpeg 5.1 in the php container, 6.1
+ * elsewhere); cut off, 150 seconds read "02:29" on one server.
+ */
+function coreui_voice_length(float $seconds): string {
+  return coreui_voice_stamp(round($seconds));
+}
+
 /** 75 -> "01:15", the time mark of a part in a transcript. */
 function coreui_voice_stamp(float $seconds): string {
   $s = max(0, (int)floor($seconds));
@@ -433,7 +443,7 @@ function coreui_voice_listen_task(string $senderName, string $text, array $clips
     $what = !empty($clip['voice']) ? 'eine Sprachnachricht' : 'die Audiodatei "' . (string)($clip['name'] ?? 'audio') . '"';
     $line = coreui_voice_attachment_hint((float)($clip['seconds'] ?? 0)) . ' ' . $what;
     $line .= $parts > 1 ? ', als ' . $parts . ' Audioteile nacheinander (Beginn ' . implode(', ', (array)$clip['stamps']) . ')' : ', als Audio';
-    if (!empty($clip['truncated'])) $line .= '; nur die ersten ' . coreui_voice_stamp((float)$clip['seconds']) . ' Minuten liegen bei, sag das offen';
+    if (!empty($clip['truncated'])) $line .= '; nur die ersten ' . coreui_voice_length((float)$clip['seconds']) . ' Minuten liegen bei, sag das offen';
     $lines[] = $line . '.';
   }
   $voice = (bool)array_filter($clips, static fn(array $c): bool => !empty($c['voice']));

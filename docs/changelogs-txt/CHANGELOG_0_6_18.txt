@@ -1,0 +1,6 @@
+CoreAI: TCI Interface 0.6.18 - 05.11.2026
+- Preflight auf dem Server: Spracheingabe-Selbsttest meldete "Mara is told: a voice message, its length, 3 parts, 2 minutes kept".
+- Ursache: Laengen wurden abgeschnitten; ffmpeg 5.1 (php-Container) misst 149,978 s statt 150,008 s, das ergab "02:29".
+- Laengen werden jetzt gerundet (coreui_voice_length); Zeitmarken der Abschnitte bleiben unveraendert.
+- Selbsttest prueft das Runden und zeigt bei einem Fehler den Hinweis an Mara und den Messwert von ffprobe.
+- Keine Aenderung an Cores, Modelfile, Datenbankschema, Installer oder Warteschlange.
