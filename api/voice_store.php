@@ -62,7 +62,8 @@ function coreui_voice_cleanup(string $dir, ?int $now = null, int $keep = COREUI_
   $now = $now ?? time();
   $removed = 0;
   foreach ((array)@scandir($dir) as $name) {
-    if (!is_string($name) || !preg_match('/^[0-9a-f]{64}(?:-\d{1,3}\.wav|\.json)$/', $name)) continue;
+    // 0.6.11: transcripts of audio attachments (t-<id>.json) expire with the read-aloud audio.
+    if (!is_string($name) || !preg_match('/^(?:[0-9a-f]{64}(?:-\d{1,3}\.wav|\.json)|t-[0-9a-f]{64}\.json)$/', $name)) continue;
     $path = $dir . '/' . $name;
     if (is_file($path) && !is_link($path) && (int)@filemtime($path) < $now - $keep && @unlink($path)) $removed++;
   }

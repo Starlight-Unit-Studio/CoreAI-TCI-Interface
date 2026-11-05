@@ -3278,6 +3278,187 @@ audio.msg-image {
   stroke-width: 1.7;
 }
 
+/* 0.6.11: voice input (P20.1), between the text and the send button. */
+.composer-inner.has-mic {
+  grid-template-columns: 52px minmax(0, 1fr) 46px 56px;
+}
+
+.composer-mic-btn {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  place-items: center;
+  border: 0;
+  border-left: 1px solid rgba(91, 146, 255, 0.17);
+  background: transparent;
+  color: var(--cx);
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.composer-mic-btn:hover {
+  background: rgba(91, 146, 255, 0.1);
+  color: #356fdc;
+}
+
+.composer-mic-btn svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.composer-mic-btn.recording {
+  background: rgba(212, 80, 93, 0.1);
+  color: var(--red);
+}
+
+.composer-mic-btn.recording svg {
+  fill: currentColor;
+  animation: voice-input-pulse 1.2s ease-in-out infinite;
+}
+
+.composer-mic-btn.working svg {
+  animation: voice-input-pulse 1.6s ease-in-out infinite;
+}
+
+.composer-mic-btn[aria-disabled="true"] {
+  color: var(--muted-soft);
+  cursor: help;
+  opacity: 0.55;
+}
+
+.composer-voice-state {
+  display: grid;
+  width: min(1120px, 100%);
+  min-height: 46px;
+  grid-template-columns: auto minmax(0, 1fr) minmax(48px, 120px) auto;
+  align-items: center;
+  align-self: center;
+  gap: 10px;
+  margin: 0 0 6px;
+  padding: 7px 10px;
+  border: 1px solid rgba(91, 146, 255, 0.34);
+  background: rgba(244, 249, 255, 0.94);
+  box-shadow: var(--shadow-tight);
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+}
+
+.composer-voice-state[hidden] {
+  display: none;
+}
+
+.composer-voice-state[data-mode="recording"] {
+  border-color: rgba(212, 80, 93, 0.42);
+}
+
+.voice-input-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--cx);
+}
+
+.composer-voice-state[data-mode="recording"] .voice-input-dot {
+  background: var(--red);
+  animation: voice-input-pulse 1.2s ease-in-out infinite;
+}
+
+.composer-voice-state[data-mode="message"] .voice-input-dot {
+  background: var(--muted-soft);
+}
+
+.voice-input-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.voice-input-copy strong,
+.voice-input-copy small,
+.voice-input-actions button {
+  font-family: "Share Tech Mono", monospace;
+  letter-spacing: 0.055em;
+}
+
+.voice-input-copy strong {
+  color: #395f98;
+  font-size: 10px;
+}
+
+.voice-input-copy small {
+  overflow: hidden;
+  color: #75849a;
+  font-size: 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.composer-voice-state[data-mode="message"] .voice-input-copy strong {
+  font-family: inherit;
+  font-size: 12px;
+  letter-spacing: 0;
+  white-space: normal;
+}
+
+.voice-input-level {
+  height: 4px;
+  overflow: hidden;
+  background: rgba(91, 146, 255, 0.14);
+}
+
+.voice-input-level i {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: var(--red);
+  transition: width 90ms linear;
+}
+
+.composer-voice-state:not([data-mode="recording"]) .voice-input-level {
+  visibility: hidden;
+}
+
+.voice-input-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.voice-input-actions button {
+  min-height: 28px;
+  padding: 4px 9px;
+  border: 1px solid rgba(91, 146, 255, 0.24);
+  background: rgba(255, 255, 255, 0.7);
+  color: #557099;
+  cursor: pointer;
+  font-size: 8px;
+}
+
+.voice-input-actions .voice-input-done {
+  border-color: rgba(212, 80, 93, 0.4);
+  color: var(--red);
+}
+
+.voice-input-actions button[hidden] {
+  display: none;
+}
+
+@keyframes voice-input-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .composer-mic-btn svg,
+  .voice-input-dot {
+    animation: none !important;
+  }
+}
+
 .composer-field {
   position: relative;
   display: flex;
@@ -4645,6 +4826,18 @@ a.core-install-btn {
   .composer-inner {
     min-height: 58px;
     grid-template-columns: 46px minmax(0, 1fr) 50px;
+  }
+
+  .composer-inner.has-mic {
+    grid-template-columns: 46px minmax(0, 1fr) 42px 50px;
+  }
+
+  .composer-voice-state {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .composer-voice-state .voice-input-level {
+    display: none;
   }
 
   .composer-field {

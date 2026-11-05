@@ -1,0 +1,41 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.6.11
+Stand: 05.11.2026
+Ausgangsbasis: main 0.6.10 nach Merge von PR #161 (Betreiber: "Alles klar laeuft, dann machen wir uns an die naechste ran").
+
+AUFTRAG: P20.1 Spracheingabe. Entscheidungen (AskUserQuestion 04.11.2026): Mitschrift ins Eingabefeld (pruefen und
+selbst senden), Aufnahme nach der Mitschrift sofort loeschen (hochgeladene Audiodateien bleiben normale Anhaenge),
+nur angemeldete Konten (Inhaber, Admins, Nutzer), Mikrofon bis 2 Minuten, Audiodateien bis 10 Minuten.
+
+UMSETZUNG:
+- api/voice_transcribe.php (neu): Bibliothek fuer beide Wege. coreui_voice_to_wav() (ffmpeg, coreui_wav_ffmpeg_args,
+  Header-Pruefung, Grenze mit -t, truncated ueber ffprobe), coreui_voice_silences() (silencedetect -35 dB, 0,35 s),
+  coreui_voice_parts() (hoechstens 60 s, Schnitt in der Mitte der letzten Pause nach mindestens 20 s, sonst hart),
+  coreui_voice_part_silent() (reine Stille geht nicht an Core), coreui_voice_transcribe_payload() (Vorlage aus
+  voice_core.php, neutraler SYSTEM-Text, think false, keine Optionen ausser num_ctx aus dem KI-Profil, damit Ollama Core
+  nicht zweimal neu laedt), coreui_voice_transcribe_part() (ember_global_lock_acquire je Aufruf, ohne Warteschlange
+  'queue_unavailable', eine Wiederholung bei 'missed', '(keine Sprache)' wird verworfen), coreui_voice_transcribe_file()
+  (privater Ordner unter sys_get_temp_dir, in finally entfernt), coreui_voice_core_hears() ('audio' in capabilities
+  von /api/show; null = unbekannt, dann entscheidet der Aufruf), Fehlertexte.
+- api/voice_input.php (neu): GET status (allowed, hears, ready = ffmpeg da, max_seconds, csrf), POST transcribe
+  (multipart "audio", 16 MB, Gaeste 403, CSRF, Core ohne Audio 409, eine Mitschrift je Konto per flock, Sprache aus
+  coreui_ai_settings_load, Aufnahme in finally geloescht, stu_json erst danach, weil exit kein finally ausfuehrt).
+- js/coreui-voice-input.js (neu): Knopf #btnMic vor #btnSend (.composer-inner.has-mic), Leiste #voiceInputState,
+  MediaRecorder (webm/opus, ogg, mp4), Pegelpruefung (VOICED_MIN_MS 300), Grenze aus dem Status, Text an die
+  Cursorstelle plus input-Ereignis, aria-disabled statt disabled (Klick zeigt den Grund), Esc bricht ab, neues
+  Ereignis 'coreui:core' aus js/coreui-core-mode.js prueft nach einem Core-Wechsel neu.
+- api/ember_attachments.php: Audio-Zweig ruft ember_attach_audio_transcript() (Gaeste und Cores ohne Audio: ehrlicher
+  Hinweis; sonst bis 10 Minuten mit Zeitmarken, Arbeitsweg-Zeilen, Abbruch wirft agent_cancelled wie die Warteschlange).
+  Eigenes Budget bis 12000 Zeichen (aus dem gemeinsamen Gesamtbudget). Zwischenspeicher var/voice_cache/<uid>/t-<sha256>.json,
+  Schluessel aus Datei-uuid, Groesse, mtime, Sprache und Core; api/voice_store.php raeumt t-*.json nach 7 Tagen mit auf,
+  die Kontoloeschung erfasst sie ueber *.json.
+- css/console.css: Knopf, Leiste, Handy-Breite, prefers-reduced-motion.
+
+GEPRUEFT: voice-input-selftest.php (mit ffmpeg; sieben gezielt eingebaute Fehler, sechs erkannt, der siebte war
+gleichwertig), voice-input-ui-selftest.cjs (Chromium mit simuliertem Mikrofon, Ton und Stille), Bildschirmfotos
+Desktop und Handy, volle Testreihe, cache-bust, version-merge-check gegen 0.6.10.
+NICHT hier: echte Mitschrift mit Gemma auf dem Server, echtes Mikrofon auf Android Chrome und DeX.
+
+NACH DEM MERGE (Betreiber): Update unter Einstellungen > System > CoreAI Update. Dann im Chat den Mikrofon-Knopf
+neben Senden druecken (der Browser fragt einmal nach dem Mikrofon; das braucht HTTPS), etwas sagen, "Fertig", Text
+pruefen und senden. Ausserdem eine Audiodatei anhaengen und Mara nach dem Inhalt fragen.
+OFFEN: P20.2 Videos hoeren, P20.4 Live-Gespraech, Silero-VAD (Sprechbeginn) statt der einfachen Pegelpruefung.
