@@ -254,10 +254,10 @@ function ember_attach_audio_native(PDO $pdo, string $uuid, int $uid, string $pat
   }
   $GLOBALS['STU_EMBER_AUDIO_CLIPS'] = $prepared + ['name' => $name, 'voice' => $voice, 'dir' => $dir, 'uuid' => $uuid];
   $length = $prepared['source_seconds'] !== null ? (float)$prepared['source_seconds'] : (float)$prepared['seconds'];
-  $note = 'Das ist ' . $what . ' (Laenge etwa ' . coreui_voice_stamp($length) . ', Minuten:Sekunden). Du hoerst sie selbst: '
+  $note = 'Das ist ' . $what . ' (Laenge etwa ' . coreui_voice_length($length) . ', Minuten:Sekunden). Du hoerst sie selbst: '
     . 'Sie liegt dir als Audio bei' . (count($prepared['paths']) > 1 ? ', in ' . count($prepared['paths']) . ' Teilen nacheinander' : '') . '.';
   if (!empty($prepared['truncated'])) {
-    $note .= ' Es liegen nur die ersten ' . coreui_voice_stamp((float)$prepared['seconds']) . ' Minuten bei; sag das offen.';
+    $note .= ' Es liegen nur die ersten ' . coreui_voice_length((float)$prepared['seconds']) . ' Minuten bei; sag das offen.';
   }
   return $note;
 }

@@ -1,0 +1,23 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.6.18
+Stand: 05.11.2026
+Ausgangsbasis: main 0.6.17 nach Merge von PR #168.
+
+AUFTRAG: Preflight des Betreibers nach dem Update (Screenshot): "[FEHLER] Spracheingabe-Selbsttest: Voice input FAIL: Mara is
+told: a voice message, its length, 3 parts, 2 minutes kept". Alle uebrigen Pruefungen OK.
+
+URSACHE: ember_attach_audio_native nannte die Laenge mit coreui_voice_stamp() (floor). Der php-Container nutzt Debian
+bookworm (ffmpeg 5.1), die Entwicklungsumgebung ffmpeg 6.1; ffprobe misst die Opus/WebM-Testaufnahme von 150 s dort
+etwas kuerzer. Hier nachgestellt mit 149,97 s Ton: ffprobe 149.978, alt "02:29", neu "02:30". Bis zu dieser Pruefung
+lief der Test auf dem Server identisch (vier Pausen, drei WAVs, Zeitmarken 00:00, 00:51, 01:43).
+
+UMSETZUNG:
+- api/voice_transcribe.php: coreui_voice_length() rundet; genutzt in coreui_voice_listen_task (gekuerzt) und in
+  api/ember_attachments.php (Laenge, gekuerzt). Zeitmarken der Abschnitte (coreui_voice_stamp) bleiben floor.
+- scripts/voice-input-selftest.php: Rundung geprueft; die Sammelpruefung in vier Einzelpruefungen geteilt, die bei einem
+  Fehler den Hinweis an Mara und den ffprobe-Wert ausgeben.
+
+GEPRUEFT: voice-input-selftest.php, volle Testreihe, cache-bust, version-merge-check gegen 0.6.17.
+NICHT hier: ffmpeg 5.1 selbst (kein Zugriff); der Fall ist mit einer kuerzeren Aufnahme nachgestellt.
+
+NACH DEM MERGE (Betreiber): Update unter Einstellungen > System > CoreAI Update; der Preflight sollte ohne Fehler laufen:
+sudo bash /opt/ember-coreui/scripts/preflight.sh

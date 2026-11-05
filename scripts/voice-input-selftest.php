@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-// CoreAI 0.6.17 (P20.1): voice messages and audio files, heard by Mara herself.
+// CoreAI 0.6.17 (P20.1, 0.6.18): voice messages and audio files, heard by Mara herself.
 //   php scripts/voice-input-selftest.php
 // Offline: cutting at pauses (at most 60 s per WAV, Gemma 4's limit), the
 // audio budget of the context window, the task for Mara, the transcription
@@ -88,6 +88,9 @@ vi_test($cut === [[0.0, 54.5], [54.5, 100.6], [100.6, 150.0]] && $partsOk($cut, 
 vi_test(coreui_voice_parts(120.1, []) === [[0.0, 60.0], [60.0, 120.0]], 'a rest under 0.3 s is dropped');
 vi_test(coreui_voice_part_silent([0.0, 5.0], [[0.0, 5.0]]) && !coreui_voice_part_silent([0.0, 5.0], [[1.0, 5.0]]), 'a part that is all pause');
 vi_test(coreui_voice_stamp(75.9) === '01:15' && coreui_voice_stamp(600) === '10:00', 'time marks');
+// 0.6.18: ffmpeg 5.1 (Debian, php container) and 6.1 report 150 s a few milliseconds apart.
+vi_test(coreui_voice_length(149.98) === '02:30' && coreui_voice_length(150.008) === '02:30' && coreui_voice_length(119.996) === '02:00'
+  && coreui_voice_length(64.6) === '01:05', 'a length is rounded, never cut down by a few milliseconds');
 
 $task = coreui_voice_listen_task('Patrick', '', [['voice' => true, 'seconds' => 120.0, 'paths' => ['a', 'b', 'c'],
   'stamps' => ['00:00', '00:51', '01:43'], 'truncated' => true]]);
@@ -284,8 +287,13 @@ try {
   $block = ember_attachment_block($pdo, $message, 7);
   $images = $GLOBALS['STU_EMBER_ATTACHMENT_IMAGES'] ?? [];
   $meta = $GLOBALS['STU_EMBER_ATTACHMENT_VISION_META'] ?? [];
-  vi_test($message === '' && str_contains($block, 'Das ist eine Sprachnachricht (Laenge etwa 02:30') && str_contains($block, 'in 3 Teilen nacheinander')
-    && str_contains($block, 'nur die ersten 02:00 Minuten'), 'Mara is told: a voice message, its length, 3 parts, 2 minutes kept');
+  // 0.6.18: one check per statement, each showing what Mara was told when it fails.
+  $told = trim((string)preg_replace('~\s+~', ' ', $block));
+  vi_test($message === '', 'the marker leaves the message');
+  vi_test(str_contains($block, 'Das ist eine Sprachnachricht (Laenge etwa 02:30, Minuten:Sekunden)'),
+    'Mara is told it is a voice message of about 02:30: ' . $told . ' (ffprobe: ' . var_export(coreui_voice_probe_seconds($long), true) . ' s)');
+  vi_test(str_contains($block, 'in 3 Teilen nacheinander'), 'Mara is told it comes in 3 parts: ' . $told);
+  vi_test(str_contains($block, 'nur die ersten 02:00 Minuten'), 'Mara is told that 2 minutes are kept: ' . $told);
   vi_test(count($images) === 3 && count($meta) === 1 && $meta[0]['type'] === 'audio' && $meta[0]['voice'] === true && $meta[0]['paths'] === $images,
     'the three WAVs travel in the images field like video frames');
   $clipDir = (string)$meta[0]['dir'];
@@ -302,7 +310,7 @@ try {
   $note = ember_attachment_single_block($pdo, $fileId, 7, 4000);
   $clips = $GLOBALS['STU_EMBER_AUDIO_CLIPS'] ?? [];
   vi_test(str_contains($note, 'Das ist eine Audiodatei') && count($clips['paths'] ?? []) === 3 && empty($clips['truncated']) && $clips['voice'] === false,
-    'an audio file of 2:30 is heard completely');
+    'an audio file of 2:30 is heard completely: ' . trim((string)preg_replace('~\s+~', ' ', $note)));
   ember_attach_audio_cleanup($clips['dir'] ?? null);
   vi_reset();
   $GLOBALS['VI']['ctx'] = 4096;
@@ -310,7 +318,7 @@ try {
   $note = ember_attachment_single_block($pdo, $fileId, 7, 4000);
   $clips = $GLOBALS['STU_EMBER_AUDIO_CLIPS'] ?? [];
   vi_test(count($clips['paths'] ?? []) === 2 && !empty($clips['truncated']) && str_contains($note, 'nur die ersten 01:05 Minuten'),
-    'a small context window: the first 65 s, said openly');
+    'a small context window: the first 65 s, said openly: ' . trim((string)preg_replace('~\s+~', ' ', $note)));
   ember_attach_audio_cleanup($clips['dir'] ?? null);
 
   // Guests and Cores without audio: the honest note, nothing prepared, nothing sent.
