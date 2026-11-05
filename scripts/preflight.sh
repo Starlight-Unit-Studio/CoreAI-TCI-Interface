@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.11: Hauptsprache pro Konto (Antworten und Vorlesen, Migration 024); Agentenlauf-Herzschlag aktiv.
+# CoreAI: TCI Interface 0.6.12: Hauptsprache pro Konto (Antworten und Vorlesen, Migration 024); Agentenlauf-Herzschlag aktiv.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -86,8 +86,10 @@ UI_FILES=(
   css/console.css
   css/artifacts.css
   css/settings.css
+  css/coreui-theme.css
   js/coreui-settings-tabs.js
   scripts/settings-tabs-ui-selftest.cjs
+  scripts/theme-preferences-selftest.cjs
   js/console-app.js
   js/coreui-markdown.js
   js/coreui-markdown-preview.js
@@ -651,7 +653,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   fi
 
   if compose exec -T php php scripts/account-language-selftest.php >/dev/null 2>&1; then
-    ok '0.6.11: Hauptsprache pro Konto (Antworten und Vorlesen) geprueft.'
+    ok '0.6.12: Hauptsprache pro Konto (Antworten und Vorlesen) geprueft.'
   else
     fail 'Selbsttest fuer die Hauptsprache pro Konto fehlgeschlagen.'
   fi
@@ -922,6 +924,11 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   fi
 
   if command -v node >/dev/null 2>&1; then
+    if node "$PROJECT_ROOT/scripts/theme-preferences-selftest.cjs" >/dev/null 2>&1; then
+      ok 'Anzeige: System/Hell/Dunkel mit Speichern, Betriebssystem-Wechsel und Browser-Tabs geprueft.'
+    else
+      fail 'Anzeige: Tag-/Nachtmodus-Selbsttest fehlgeschlagen.'
+    fi
     if node "$PROJECT_ROOT/scripts/response-timing-ui-selftest.js" >/dev/null 2>&1; then
       ok 'Antwortdauer: gespeicherte Gesamt- und Modellzeit in der Infoanzeige geprueft.'
     else
