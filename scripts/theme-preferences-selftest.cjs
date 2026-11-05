@@ -157,4 +157,29 @@ for (const selector of ['.msg-bubble', '.drawer', '.settings-panel', '.login-car
 }
 assert.doesNotMatch(themeCSS, /filter\s*:\s*invert\(/i);
 
+
+// Regression for the user-reported 0.6.12 dark-mode contrast defects.
+// Match real CSS/HTML selectors, not guessed class names or broad !important rules.
+const chatMarkup = fs.readFileSync(path.join(root, 'app.html'), 'utf8');
+const settingsMarkup = fs.readFileSync(path.join(root, 'settings.html'), 'utf8');
+for (const selector of [
+  '.insight-chips', '.insight-chips::after', '.insight-chip',
+  '.insight-chip.is-open', '.insight-sheet .insight-box', '.insight-box',
+  '.drawer .drawer-header', '.drawer .drawer-footer', '.drawer .core-ticker',
+  '.settings-body .about-copy .copyright-line',
+  '.settings-body .about-copy .copyright-line strong',
+  '.settings-body .settings-footer', '.capability-item'
+]) {
+  const escaped = selector.replace(/[.*+?^{}()|[\\]\\]/g, '\\console.log('CoreAI appearance preferences: 3 modes, OS sync, storage, pages and palette OK');');
+  assert.match(themeCSS, new RegExp('html\\[data-coreui-theme="dark"\\]\\s+' + escaped));
+}
+assert.match(chatMarkup, /class="insight-chips"/);
+assert.match(settingsMarkup, /class="copyright-line"/);
+assert.match(settingsMarkup, /Patrick Schildgen/);
+assert.match(themeCSS, /\.insight-chips\\s*\\{\\s*background:\s*#101d34;/);
+assert.match(themeCSS, /\.insight-chip\\s*\\{\\s*background:\s*var\(--theme-info-surface\)/);
+assert.match(themeCSS, /\.copyright-line strong\\s*\\{\\s*color:\s*#f4f7ff;/);
+assert.match(themeCSS, /\.drawer \.core-ticker\\s*\\{[\\s\\S]*?background:\s*#0a172c;/);
+console.log('CoreAI contrast regression: Core/Context/Tools/Project, drawer and copyright OK');
+
 console.log('CoreAI appearance preferences: 3 modes, OS sync, storage, pages and palette OK');

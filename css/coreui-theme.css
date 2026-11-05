@@ -309,3 +309,164 @@ html[data-coreui-theme="dark"] .cu-wait {
   .theme-mode-choice { transition: none; }
 }
 html.pref-reduced-motion .theme-mode-choice { transition: none; }
+
+/* 0.6.13 contrast regression repair.
+   The original CoreAI design contains explicit light-mode surfaces and
+   dark text values. Scope these corrections to dark mode so Light stays
+   pixel-identical. All selectors below exist in the current markup/CSS. */
+:root[data-coreui-theme="dark"] {
+  --theme-info-surface: #172944;
+  --theme-info-surface-raised: #243954;
+  --theme-info-outline: rgba(147, 183, 248, .46);
+  --theme-info-copy: #edf3ff;
+  --theme-info-muted: #b9cbe6;
+}
+
+/* Sticky Core / Context / Tools / Project strip on narrow layouts.
+   The former #f0f4fa and white chips caused the broad white band. */
+@media (max-width: 1399px) {
+  html[data-coreui-theme="dark"] .insight-chips {
+    background: #101d34;
+    color: var(--theme-info-copy);
+    box-shadow: 0 1px 0 var(--theme-info-outline);
+  }
+  html[data-coreui-theme="dark"] .insight-chips::after {
+    background: linear-gradient(180deg, rgba(16, 29, 52, .96), rgba(16, 29, 52, 0));
+  }
+  html[data-coreui-theme="dark"] .insight-chip {
+    background: var(--theme-info-surface);
+    color: var(--theme-info-copy);
+    box-shadow: inset 0 0 0 1px var(--theme-info-outline);
+  }
+  html[data-coreui-theme="dark"] .insight-chip:hover {
+    background: var(--theme-info-surface-raised);
+    box-shadow: inset 0 0 0 1px var(--cx);
+  }
+  html[data-coreui-theme="dark"] .insight-chip.is-open,
+  html[data-coreui-theme="dark"] .insight-chip[aria-expanded="true"] {
+    color: #fff8e9;
+    background: linear-gradient(105deg, #2a4165, #303a62 55%, #453d49);
+    box-shadow: inset 0 0 0 1px var(--amb);
+  }
+  html[data-coreui-theme="dark"] .insight-chip:focus-visible {
+    outline: 2px solid var(--amb);
+    outline-offset: 3px;
+  }
+  html[data-coreui-theme="dark"] .insight-sheet {
+    filter: drop-shadow(0 14px 25px rgba(0, 3, 15, .65));
+  }
+  html[data-coreui-theme="dark"] .insight-sheet .insight-box {
+    color: var(--theme-info-copy);
+    background: linear-gradient(145deg, #1e314f, #14243e);
+  }
+}
+
+/* Box also renders in a fixed right column on large desktops. */
+html[data-coreui-theme="dark"] .insight-box {
+  background: linear-gradient(145deg, #1e314f, #14243e);
+  color: var(--theme-info-copy);
+  box-shadow: inset 0 0 0 1px var(--theme-info-outline);
+}
+html[data-coreui-theme="dark"] .insight-box .insight-head,
+html[data-coreui-theme="dark"] .insight-box .insight-body,
+html[data-coreui-theme="dark"] .insight-box .insight-file-name {
+  color: var(--theme-info-copy);
+}
+html[data-coreui-theme="dark"] .insight-box .insight-row dt,
+html[data-coreui-theme="dark"] .insight-box .insight-note,
+html[data-coreui-theme="dark"] .insight-box .insight-empty,
+html[data-coreui-theme="dark"] .insight-box .insight-file-meta,
+html[data-coreui-theme="dark"] .insight-box .insight-tool-detail {
+  color: var(--theme-info-muted);
+}
+html[data-coreui-theme="dark"] .insight-box a.insight-file-name {
+  color: #a6ccff;
+}
+html[data-coreui-theme="dark"] .insight-box .insight-head:focus-visible {
+  outline-color: var(--amb);
+  outline-offset: -3px;
+}
+
+/* The open navigation drawer still had hardcoded white gradients, white
+   footer and a ticker using var(--txt) as the background. */
+html[data-coreui-theme="dark"] .drawer .drawer-header {
+  background:
+    radial-gradient(circle at 50% 30%, rgba(99, 151, 239, .18), transparent 51%),
+    linear-gradient(180deg, rgba(32, 49, 77, .78), rgba(16, 27, 46, .16));
+  border-bottom-color: var(--line);
+}
+html[data-coreui-theme="dark"] .drawer .drawer-footer {
+  background: #14233d;
+  border-top-color: var(--line);
+}
+html[data-coreui-theme="dark"] .drawer .core-ticker {
+  color: var(--theme-info-copy);
+  background: #0a172c;
+  border-top-color: var(--theme-info-outline);
+  border-bottom-color: var(--amb);
+}
+html[data-coreui-theme="dark"] .drawer .ticker-unit {
+  color: var(--theme-info-copy);
+}
+html[data-coreui-theme="dark"] .drawer .session-unread {
+  color: #ffdb9b;
+}
+html[data-coreui-theme="dark"] .drawer .session-action.permanent-danger {
+  color: #ffb2ba;
+  background: rgba(210, 67, 92, .15);
+}
+html[data-coreui-theme="dark"] .drawer .session-action.permanent-danger:hover,
+html[data-coreui-theme="dark"] .drawer .session-action.permanent-danger:focus-visible {
+  color: #ffe4e7;
+  background: rgba(210, 67, 92, .24);
+}
+html[data-coreui-theme="dark"] .drawer .drawer-copyright,
+html[data-coreui-theme="dark"] .drawer .drawer-copyright strong,
+html[data-coreui-theme="dark"] .login-copyright,
+html[data-coreui-theme="dark"] .login-copyright strong,
+html[data-coreui-theme="dark"] .splash-copyright,
+html[data-coreui-theme="dark"] .splash-copyright strong,
+html[data-coreui-theme="dark"] .proto-footer,
+html[data-coreui-theme="dark"] .proto-footer strong {
+  color: var(--theme-info-muted);
+}
+
+/* Settings copyright has explicit #503719 and #18243a in console.css,
+   which both disappear on dark cards. Preserve the amber + blue identity
+   while ensuring text contrast, including the owner's full name. */
+html[data-coreui-theme="dark"] .settings-body .about-copy .copyright-line {
+  color: #f4c686;
+}
+html[data-coreui-theme="dark"] .settings-body .about-copy .copyright-line strong {
+  color: #f4f7ff;
+}
+html[data-coreui-theme="dark"] .settings-body .about-copy h2 .about-family {
+  color: #a5c7ff;
+}
+html[data-coreui-theme="dark"] .settings-body .settings-footer,
+html[data-coreui-theme="dark"] .settings-body .settings-footer span,
+html[data-coreui-theme="dark"] .settings-body .settings-footer strong {
+  color: var(--theme-info-muted);
+}
+
+/* Secondary tool and status chips were still using white fills and dark
+   amber text; darken their surface without hiding state indicators. */
+html[data-coreui-theme="dark"] .capability-item {
+  background: #1b2d4a;
+  color: var(--theme-info-muted);
+  border-color: var(--theme-info-outline);
+}
+html[data-coreui-theme="dark"] .capability-item[data-state="active"] {
+  color: #ffd698;
+  border-color: rgba(240, 185, 107, .65);
+  background: #433b39;
+}
+html[data-coreui-theme="dark"] .capability-item[data-state="done"] {
+  color: #b8f2db;
+}
+html[data-coreui-theme="dark"] .capability-item[data-state="error"] {
+  color: #ffc4cc;
+}
+
+/* Do not invert media, photographs, site previews or remote browser frames. */
+
