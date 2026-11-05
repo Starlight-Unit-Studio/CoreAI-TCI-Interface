@@ -1,0 +1,27 @@
+COREAI: TCI INTERFACE - HANDOVER 0.6.13
+Date: 05.11.2026
+Base: main version 0.6.12 after PR #163 merged.
+
+ISSUE:
+Night mode in CoreAI 0.6.12 made UI panels or text nearly invisible. User screenshots show a white sticky Core/Context/Tools/Project info strip, pale buttons, a faded open sidebar header/footer and very dark owner copyright text in Settings.
+
+ROOT CAUSE:
+css/console.css hardcodes #f0f4fa on .insight-chips, white chip backgrounds and popup gradients, and #503719 and #18243a on the copyright paragraph and owner strong element. The core-ticker uses var(--txt) as background; in dark mode this token is nearly white.
+
+FIX:
+- Added dark-scoped overrides to css/coreui-theme.css, preserving the Light theme untouched.
+- .insight-chips, .insight-chip, .insight-chip.is-open, .insight-chips::after, .insight-sheet .insight-box and wide .insight-box now have coordinated high-contrast dark surfaces.
+- .settings-body .about-copy .copyright-line/strong and related family/footer labels now visibly contrast.
+- Navigation drawer header, footer and ticker; selected chips, actions and secondary status labels also corrected.
+- scripts/theme-preferences-selftest.cjs verifies real selectors and CSS declarations.
+- Versioned documentation, browser cache keys, all six HTML pages, JS bootstrap, branding/preflight headers synchronized to 0.6.13.
+
+UNCHANGED:
+- Runtime/API, MariaDB, migration files, setup/install, Ollama, Modelfile, model choices, browser content/screenshots and original Light CSS.
+
+CHECKS:
+1. node scripts/theme-preferences-selftest.cjs
+2. python3 scripts/cache-bust.py --verify
+3. python3 scripts/version-merge-check.py --base-version 0.6.12
+4. Browser: open Settings/System, confirm readable owner name and footer; open chat with core info strip and test open/close buttons; expand sidebar; compare Dark, Light and System on mobile/desktop.
+5. No live server or full preflight check is claimed by this GitHub-only change.
