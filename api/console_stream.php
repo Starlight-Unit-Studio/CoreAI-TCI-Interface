@@ -809,6 +809,8 @@ try {
         $emberMsgId = (int)($sid->fetchColumn() ?: 0);
       } catch (Throwable $eId) {}
     }
+    // 0.6.19: read before ember_after_insert_tasks clears it; reflected after the transcript.
+    $voiceTurn = !empty($GLOBALS['COREUI_VOICE_TURN']) && $generationRequest === null && !ember_last_call_is_guardrail();
     if ($generationRequest === null && !ember_last_call_is_guardrail()) {
       ember_after_insert_tasks($pdo, $char, $message, $replyFinal);
     }
@@ -895,6 +897,11 @@ try {
     @set_time_limit(900);
     try {
       ember_attach_audio_transcribe_after($pdo, (int)$uid, $attachmentIds);
+      // 0.6.19: Mara decides herself what of the spoken words goes into her long-term
+      // memory, with the same reflection as for text (and the relationship value).
+      if (!empty($voiceTurn) && is_string($replyFinal ?? null)) {
+        ember_attach_voice_reflect($pdo, $char, (int)$uid, $attachmentIds, ember_attach_strip_marker($message), $replyFinal);
+      }
     } catch (Throwable $eTranscript) {
       if (function_exists('stu__log_error')) {
         stu__log_error(['type'=>'console_audio_transcript_failed', 'uid'=>(int)$uid, 'message'=>$eTranscript->getMessage()]);

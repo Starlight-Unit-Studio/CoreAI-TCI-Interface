@@ -52,6 +52,16 @@ function ember_ollama_show_json(string $model): ?array {
 }
 function coreui_guest_is(PDO $pdo, int $uid): bool { return $GLOBALS['VI']['guest']; }
 function coreui_ai_runtime_settings(): array { return ['main_language' => $GLOBALS['VI']['language']]; }
+// 0.6.19: Mara's own memory reflection and the relationship value (api/chat.php), recorded here.
+$GLOBALS['VI_MEMORY'] = [];
+function ember_should_reflect_exchange(string $userMsg, string $emberReply): bool { return mb_strlen(trim($userMsg)) >= 14; }
+function ember_reflect_maybe_store(PDO $pdo, int $uid, string $characterId, string $userMsg, string $emberAnswer): void {
+  $GLOBALS['VI_MEMORY'][] = ['reflect', $uid, $characterId, $userMsg, $emberAnswer];
+}
+function ember_reputation_maybe_update(PDO $pdo, int $uid, string $characterId, string $userMsg, string $emberAnswer): void {
+  $GLOBALS['VI_MEMORY'][] = ['reputation', $uid, $characterId, $userMsg, $emberAnswer];
+}
+function ember_is_fail_message(string $reply): bool { return str_starts_with($reply, 'FEHLER'); }
 require_once $root . '/api/ember_attachments.php';
 
 // --- Offline ---------------------------------------------------------------------------------
@@ -135,6 +145,12 @@ $doneAt = strpos($stream, "  sse_send('done', [\n    'work_events'");
 $transcriptAt = strpos($stream, 'ember_attach_audio_transcribe_after($pdo, (int)$uid, $attachmentIds);');
 vi_test($doneAt !== false && $transcriptAt > $doneAt && $transcriptAt < strpos($stream, 'coreui_compact_with_core($pdo, (int)$uid, $sessionId, false);'),
   'the transcript is written after the answer is out, before the summary');
+vi_test(str_contains($chat, "\$GLOBALS['COREUI_VOICE_TURN'] = true;") && str_contains($chat, "if (!\$voiceTurn) ember_reputation_maybe_update(\$pdo, \$uid, \$cid, \$userMsg, \$emberReply);"),
+  'a voice turn is reflected later, not now with an empty text');
+$voiceAt = strpos($stream, "\$voiceTurn = !empty(\$GLOBALS['COREUI_VOICE_TURN'])");
+vi_test($voiceAt !== false && $voiceAt < strpos($stream, 'ember_after_insert_tasks($pdo, $char, $message, $replyFinal);')
+  && strpos($stream, 'ember_attach_voice_reflect($pdo, $char, (int)$uid, $attachmentIds, ember_attach_strip_marker($message), $replyFinal);') > $transcriptAt,
+  'the stream reflects the voice message right after its transcript');
 vi_test(str_contains($read('api/console_upload.php'), "if (coreui_voice_has_video_stream((string)\$file['tmp_name']) === false) {"),
   'audio-only WebM is stored as audio');
 $app = $read('js/console-app.js');
@@ -366,6 +382,27 @@ try {
     && ($notes[12] ?? '') === '[Sprachnachricht ohne gesprochene Worte]' && !isset($notes[13]), 'the history knows what was said');
   vi_test(ember_attach_audio_history_notes($pdo, 8, [10, 11]) === [], 'never from another account');
 
+  // 0.6.19: after the transcript Mara decides herself what goes into her long-term memory,
+  // with the same reflection as for text; the relationship value follows the spoken words.
+  $char = ['id' => 'mara-user-7', 'user_id' => 7];
+  $GLOBALS['VI_MEMORY'] = [];
+  vi_test(ember_attach_voice_reflect($pdo, $char, 7, [$voiceId], 'Hör mal:', 'Klingt gut, mache ich.')
+    && $GLOBALS['VI_MEMORY'] === [
+      ['reflect', 7, 'mara-user-7', 'Hör mal: Erster Teil. Dritter Teil.', 'Klingt gut, mache ich.'],
+      ['reputation', 7, 'mara-user-7', 'Hör mal: Erster Teil. Dritter Teil.', 'Klingt gut, mache ich.'],
+    ], 'a voice message reaches the memory reflection with what was said (and the typed text)');
+  $GLOBALS['VI_MEMORY'] = [];
+  vi_test(!ember_attach_voice_reflect($pdo, $char, 7, [$fileId], '', 'Antwort.') && !ember_attach_voice_reflect($pdo, $char, 7, [$voiceId, $fileId], '', 'Antwort.')
+    && !ember_attach_voice_reflect($pdo, $char, 7, [$voiceId, str_repeat('d4', 16)], '', 'Antwort.') && $GLOBALS['VI_MEMORY'] === [],
+    'an uploaded audio file or a mix with other attachments is not the sender\'s words (like an image)');
+  vi_test(!ember_attach_voice_reflect($pdo, $char, 7, [$quietId], '', 'Antwort.') && !ember_attach_voice_reflect($pdo, $char, 7, [$voiceId], '', 'FEHLER: nichts')
+    && !ember_attach_voice_reflect($pdo, $char, 8, [$voiceId], '', 'Antwort.') && $GLOBALS['VI_MEMORY'] === [],
+    'nothing said, a failed answer or another account: nothing reflected');
+  coreui_voice_transcript_save(7, $quietId, ['state' => 'done', 'text' => 'Ja.']);
+  vi_test(ember_attach_voice_reflect($pdo, $char, 7, [$quietId], '', 'Gut.') && $GLOBALS['VI_MEMORY'] === [['reputation', 7, 'mara-user-7', 'Ja.', 'Gut.']],
+    'a short "Ja." is no memory, as with text; the relationship value still counts it');
+  coreui_voice_transcript_save(7, $quietId, ['state' => 'silent']);
+
   // The transcript itself: errors, cancel, full queue, outside the queue.
   vi_reset();
   $replies(['Es ist kein Audio zur Analyse vorhanden.', 'Bitte stellen Sie die Aufnahme zur Verfügung.']);
@@ -399,4 +436,4 @@ try {
 }
 echo "CoreAI voice input: Mara hears voice messages and audio files herself (WAVs of at most 60 s in her own call, no thinking),"
   . " guests and Cores without audio get the honest note, audio-only WebM is audio, the transcript after the answer"
-  . " (queue, retry, silence, cache) and the history OK\n";
+  . " (queue, retry, silence, cache), the history and Mara's own memory reflection of what was said OK\n";

@@ -1,5 +1,15 @@
 # CoreAI: TCI Interface
 
+## 0.6.19 - 05.11.2026
+
+Betreiber: "Mara sollte selbst entscheiden koennen, was in ihr LTM gehoert, wie bisher auch." Bis 0.6.18 liefen Sprachnachrichten wie Bilder ohne Gedaechtnis-Reflexion (seit 0.5.71 bewusst fuer Bilder, Videos und PDFs, damit fremde Worte in einem Anhang nicht als Fakten ueber den Nutzer gespeichert werden), und der Beziehungswert sah nur eine leere Nachricht.
+
+- **Nach der Mitschrift entscheidet Mara selbst:** Sobald die Mitschrift einer Sprachnachricht im Hintergrund fertig ist, geht der Austausch durch dieselbe Reflexion wie ein Text: das Gesagte (und was dazu getippt wurde) und Maras Antwort. Mara entscheidet wie gewohnt, ob und was ins Langzeitgedaechtnis kommt. Die bekannten Regeln gelten weiter (keine Passwoerter, Tokens oder privaten Daten, kurze Antworten wie "Ja." oder Fragen nach Uhrzeit und Wetter nicht).
+- **Beziehungswert:** wird bei Sprachnachrichten aus dem Gesagten bewertet, ebenfalls nach der Mitschrift, und nicht mehr zusaetzlich mit der leeren Nachricht.
+- **Bewusst nicht:** hochgeladene Audiodateien und Nachrichten, in denen eine Sprachnachricht zusammen mit Bildern oder Dateien kommt. Worte in einer Aufnahme von anderen (Podcast, Mitschnitt) sind keine Aussagen des Nutzers, wie Text in einem Bild.
+- Tests: `voice-input-selftest.php` prueft, was an die Reflexion geht (Gesagtes und Getipptes, nicht bei Audiodateien, Mischungen, Stille, Fehlantworten oder anderem Konto) und die Verdrahtung im Stream; Gegenproben erkannt.
+- Keine Aenderung an Cores, Modelfile, Datenbankschema, Installer oder Warteschlange.
+
 ## 0.6.18 - 05.11.2026
 
 Preflight auf dem Server nach dem Update auf 0.6.17: "Spracheingabe-Selbsttest: Voice input FAIL: Mara is told: a voice message, its length, 3 parts, 2 minutes kept". Alle anderen Pruefungen bestanden.

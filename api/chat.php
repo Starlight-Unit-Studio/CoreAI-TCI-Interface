@@ -5349,6 +5349,11 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
     $audioClips = array_values(array_filter(is_array($visionMeta) ? $visionMeta : [],
       static fn($m): bool => is_array($m) && ($m['type'] ?? '') === 'audio'));
     $hasAudio = $audioClips !== [];
+    // 0.6.19: what the sender said in a voice message reaches the memory reflection after
+    // its transcript exists (api/console_stream.php), not now with an empty text.
+    if ($channel === 'console' && array_filter($audioClips, static fn(array $c): bool => !empty($c['voice']))) {
+      $GLOBALS['COREUI_VOICE_TURN'] = true;
+    }
     $vf = null;
     $pf = null;
     if (is_array($visionMeta) && count($visionMeta) === 1) {
@@ -6488,6 +6493,10 @@ function ember_after_insert_tasks(PDO $pdo, array $senderChar, string $userMsg, 
   // screenshot) as facts about the user, which then coloured later replies.
   $visionTurn = !empty($GLOBALS['COREUI_VISION_TURN']);
   unset($GLOBALS['COREUI_VISION_TURN']);
+  // 0.6.19: a voice message is reflected (memory and relationship) after its transcript,
+  // with what was said; here its text is empty or only an attachment marker.
+  $voiceTurn = !empty($GLOBALS['COREUI_VOICE_TURN']);
+  unset($GLOBALS['COREUI_VOICE_TURN']);
   try {
     ember_store_runtime_memory($pdo, $senderChar, $userMsg, $emberReply);
   } catch (Throwable $e) {
@@ -6508,7 +6517,7 @@ function ember_after_insert_tasks(PDO $pdo, array $senderChar, string $userMsg, 
   // oberhalb. Ein Fehler hier darf niemals das Gedaechtnis (ember_reflect_maybe_store) oder
   // den restlichen Chat-Flow beeintraechtigen.
   try {
-    ember_reputation_maybe_update($pdo, $uid, $cid, $userMsg, $emberReply);
+    if (!$voiceTurn) ember_reputation_maybe_update($pdo, $uid, $cid, $userMsg, $emberReply);
   } catch (Throwable $e) {
     if (function_exists('stu__log_error')) {
       stu__log_error(['type'=>'ember_reputation_exception','message'=>$e->getMessage(),'uid'=>$uid,'character_id'=>$cid]);

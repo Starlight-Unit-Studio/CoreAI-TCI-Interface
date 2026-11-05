@@ -1,0 +1,30 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.6.19
+Stand: 05.11.2026
+Ausgangsbasis: main 0.6.18 nach Merge von PR #169 (Betreiber: "Preflight laeuft durch, alles gruen").
+
+AUFTRAG: "Mara sollte selbst entscheiden koennen, was in ihr LTM gehoert, wie bisher auch."
+
+URSACHE: ember_after_insert_tasks() ueberspringt die Reflexion bei COREUI_VISION_TURN (0.5.71, Bilder/Videos/PDFs); der
+Audio-Weg (0.6.17) laeuft durch denselben Medienzweig. Ausserdem war der Nutzertext einer Sprachnachricht leer oder nur
+ein Anhang-Marker, und die Mitschrift entsteht erst nach der Antwort.
+
+UMSETZUNG:
+- api/chat.php: der Medienzweig setzt COREUI_VOICE_TURN, wenn eine Sprachnachricht (voice) dabei ist;
+  ember_after_insert_tasks() liest und loescht ihn und laesst den Beziehungswert dann aus (die Reflexion entfiel dort
+  ohnehin durch COREUI_VISION_TURN). Laufzeit-Erinnerungen (Name, Rechte) bleiben unveraendert.
+- api/console_stream.php: $voiceTurn wird vor ember_after_insert_tasks gelesen (nur normale Turns, keine Guardrail);
+  nach ember_attach_audio_transcribe_after() folgt ember_attach_voice_reflect() mit ember_attach_strip_marker($message).
+- api/ember_attachments.php: ember_attach_voice_reflect(): nur wenn ALLE Anhaenge des Turns Sprachnachrichten sind
+  (keine Audiodatei, kein Bild); Gesagtes = fertige Mitschriften; ember_should_reflect_exchange() und
+  ember_reflect_maybe_store() wie bei Text, dazu ember_reputation_maybe_update(); nicht bei Fehlantwort.
+- README: Sprachnachrichten-Absatz um das Gedaechtnis ergaenzt (aktueller Stand).
+
+GEPRUEFT: voice-input-selftest.php (Reflexion mit Gesagtem und Getipptem, Ausnahmen, Verdrahtung; drei Gegenproben
+erkannt), volle Testreihe, cache-bust, version-merge-check gegen 0.6.18.
+NICHT hier: Gemma auf dem Server.
+OFFEN: Der synchrone Chatpfad ohne SSE (chat.php, Fallback ohne EventSource) schreibt keine Mitschrift und reflektiert
+Sprachnachrichten daher nicht; im Browser laeuft immer der Stream.
+
+NACH DEM MERGE (Betreiber): Update unter Einstellungen > System > CoreAI Update. Eine Sprachnachricht mit etwas
+Merkenswertem schicken (zum Beispiel ein Termin oder eine Vorliebe), die Mitschrift abwarten und unter
+Einstellungen > Memory nachsehen, was Mara behalten hat.

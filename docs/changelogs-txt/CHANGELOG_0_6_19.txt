@@ -1,0 +1,6 @@
+CoreAI: TCI Interface 0.6.19 - 05.11.2026
+- Sprachnachrichten: nach der Mitschrift dieselbe Gedaechtnis-Reflexion wie bei Text; Mara entscheidet selbst, was ins LTM kommt.
+- Beziehungswert aus dem Gesagten (nach der Mitschrift), nicht mehr aus der leeren Nachricht.
+- Nicht fuer hochgeladene Audiodateien und Mischungen mit Bildern oder Dateien (fremde Worte, wie Text in Bildern).
+- Tests: voice-input-selftest.php (Reflexion, Ausnahmen, Verdrahtung).
+- Keine Aenderung an Cores, Modelfile, Datenbankschema, Installer oder Warteschlange.
