@@ -1,0 +1,7 @@
+CoreAI: TCI Interface 0.6.15 - 05.11.2026
+- Kein Mikrofon-Knopf nach dem Update auf 0.6.14: nginx liess api/voice_input.php nicht durch (404).
+- Und nginx verbot das Mikrofon (Permissions-Policy microphone=()); jetzt microphone=(self), Kamera und Standort bleiben aus.
+- Beide nginx-Vorlagen (Docker und nativ) korrigiert; das Update baut die Konfiguration neu.
+- Knopf: Grund eines gescheiterten Status in der Browser-Konsole, bis zu drei neue Versuche.
+- Tests: voice-input-selftest.php (nginx-Vorlagen), voice-input-ui-selftest.cjs (404), Preflights pruefen die Vorlage.
+- Keine Aenderung an Cores, Modelfile, Datenbankschema, Installer oder Warteschlange.

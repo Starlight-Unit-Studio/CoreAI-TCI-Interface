@@ -1,9 +1,10 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
 Stand: 05.11.2026
-Repository-Version: 0.6.14
-BASIS: main 0.6.13 nach PR #164 (Tag-/Nachtmodus mit Kontrast-Fix); darauf P20.1 Spracheingabe.
+Repository-Version: 0.6.15
+BASIS: main 0.6.14 nach PR #165 (Spracheingabe); nginx-Freigabe fuer die Spracheingabe.
 NEUE ARBEIT ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_6_15.txt
   docs/UEBERGABEPROTOKOLL_0_6_14.txt
   docs/UEBERGABEPROTOKOLL_0_6_13.txt
   docs/UEBERGABEPROTOKOLL_0_6_12.txt

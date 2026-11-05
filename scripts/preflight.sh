@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.14: Spracheingabe (Mikrofon im Eingabefeld, Audiodateien als Mitschrift, ueber die Modellwarteschlange); Tag-/Nachtmodus aktiv.
+# CoreAI: TCI Interface 0.6.15: Spracheingabe freigeschaltet (nginx laesst api/voice_input.php durch, Mikrofon fuer die eigene Seite erlaubt).
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -405,6 +405,12 @@ if grep -Fq '|console_insights|' "$PROJECT_ROOT/config/runtime/nginx.conf.templa
   ok 'Nginx erlaubt die Infokaesten (Core, Kontext, Werkzeuge, Projekt).'
 else
   fail 'Nginx-Routing fuer die Infokaesten fehlt.'
+fi
+if grep -Fq '|voice_input|' "$PROJECT_ROOT/config/runtime/nginx.conf.template" && grep -Fq 'microphone=(self)' "$PROJECT_ROOT/config/runtime/nginx.conf.template" \
+   && ! grep -Fq 'microphone=()' "$PROJECT_ROOT/config/runtime/nginx.conf.template"; then
+  ok 'Nginx erlaubt die Spracheingabe (api/voice_input.php und Mikrofon fuer die eigene Seite).'
+else
+  fail 'Nginx sperrt die Spracheingabe (voice_input fehlt oder Mikrofon verboten).'
 fi
 
 if (( FAILURES == 0 )); then
