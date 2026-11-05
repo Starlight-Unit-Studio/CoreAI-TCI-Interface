@@ -3,6 +3,7 @@
   'use strict';
 
   var preferences = window.CoreUIPreferences;
+  var themeOptions = Array.prototype.slice.call(document.querySelectorAll('input[name="coreuiTheme"]'));
   var fields = {
     reduceMotion: document.getElementById('prefReduceMotion'),
     compactFeed: document.getElementById('prefCompactFeed'),
@@ -120,8 +121,13 @@
   }
 
   function syncFields(value) {
+    value = value || {};
     Object.keys(fields).forEach(function (key) {
       if (fields[key]) fields[key].checked = value[key] === true;
+    });
+    var selectedTheme = value.theme || 'system';
+    themeOptions.forEach(function (option) {
+      option.checked = option.value === selectedTheme;
     });
   }
 
@@ -130,6 +136,8 @@
     Object.keys(fields).forEach(function (key) {
       value[key] = fields[key] ? fields[key].checked : false;
     });
+    var selected = themeOptions.filter(function (option) { return option.checked; })[0];
+    value.theme = selected ? selected.value : (preferences ? preferences.load().theme : 'system');
     return value;
   }
 
@@ -773,6 +781,12 @@
 
   Object.keys(fields).forEach(function (key) {
     if (fields[key]) fields[key].addEventListener('change', saveLocal);
+  });
+  themeOptions.forEach(function (option) {
+    option.addEventListener('change', saveLocal);
+  });
+  window.addEventListener('coreui:preferences', function (event) {
+    if (event && event.detail) syncFields(event.detail);
   });
   if (aiSystemPrompt) aiSystemPrompt.addEventListener('input', updatePromptCounter);
   if (aiSaveButton) aiSaveButton.addEventListener('click', saveAiSettings);

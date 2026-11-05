@@ -120,7 +120,7 @@
 
           <h3 class="cfg-section-title">KATEGORIEN</h3>
           <div class="cfg-tiles">
-            <button class="cfg-tile" type="button" data-goto="anzeige"><svg aria-hidden="true"><use href="#i-display" /></svg><strong>Anzeige</strong><small>Bewegung, kompakter Chat, Telemetrie und Live-Browser.</small></button>
+            <button class="cfg-tile" type="button" data-goto="anzeige"><svg aria-hidden="true"><use href="#i-display" /></svg><strong>Anzeige</strong><small>Tag-/Nachtmodus, Bewegung, kompakter Chat und Live-Browser.</small></button>
             <button class="cfg-tile" type="button" data-goto="profil"><svg aria-hidden="true"><use href="#i-profile" /></svg><strong>Profil</strong><small>Dein Name und Bild, Name und Bild deiner CoreAI.</small></button>
             <button class="cfg-tile" type="button" data-goto="ki-profil"><svg aria-hidden="true"><use href="#i-core" /></svg><strong>KI-Profil</strong><small>System-Prompt, Antwortbudget, Temperatur und Kontextfenster.</small></button>
             <button class="cfg-tile" type="button" data-goto="personalisierung"><svg aria-hidden="true"><use href="#i-sliders" /></svg><strong>Personalisierung</strong><small>Stil, Emojis, Erinnerungen, eigene Anweisungen und Werkzeuge.</small></button>
@@ -152,6 +152,33 @@
             <button class="settings-action" id="resetPreferences" type="button">ANZEIGE ZURÜCKSETZEN</button>
           </header>
           <div class="cfg-cards">
+            <section class="settings-panel cfg-card wide settings-panel-theme" aria-labelledby="themeTitle">
+              <header class="settings-panel-head">
+                <span class="settings-panel-glyph" aria-hidden="true">◐</span>
+                <div><span>ERSCHEINUNGSBILD</span><h3 id="themeTitle">Tag- und Nachtmodus</h3></div>
+              </header>
+              <fieldset class="theme-mode-fieldset" aria-describedby="themeModeHelp">
+                <legend>FARBSCHEMA AUSWÄHLEN</legend>
+                <div class="theme-mode-choices">
+                  <label class="theme-mode-choice">
+                    <input type="radio" name="coreuiTheme" value="system" checked />
+                    <span class="theme-mode-preview theme-preview-system" aria-hidden="true"><i></i><b></b><em></em></span>
+                    <span class="theme-mode-caption"><strong>System</strong><small>Geräteeinstellung übernehmen</small></span>
+                  </label>
+                  <label class="theme-mode-choice">
+                    <input type="radio" name="coreuiTheme" value="light" />
+                    <span class="theme-mode-preview theme-preview-light" aria-hidden="true"><i></i><b></b><em></em></span>
+                    <span class="theme-mode-caption"><strong>Hell</strong><small>Helles Holo-Interface</small></span>
+                  </label>
+                  <label class="theme-mode-choice">
+                    <input type="radio" name="coreuiTheme" value="dark" />
+                    <span class="theme-mode-preview theme-preview-dark" aria-hidden="true"><i></i><b></b><em></em></span>
+                    <span class="theme-mode-caption"><strong>Dunkel</strong><small>Dunkles Holo-Interface</small></span>
+                  </label>
+                </div>
+              </fieldset>
+              <p class="theme-mode-help" id="themeModeHelp">Der Wechsel gilt sofort für Chat, Einstellungen, Anmeldung und Protokolle. Die Auswahl bleibt in diesem Browser gespeichert. Im Systemmodus folgt CoreAI automatisch dem Tag-/Nachtmodus deines Geräts.</p>
+            </section>
             <section class="settings-panel cfg-card settings-panel-interface" aria-labelledby="interfaceTitle">
               <header class="settings-panel-head">
                 <span class="settings-panel-glyph" aria-hidden="true">⟐</span>
