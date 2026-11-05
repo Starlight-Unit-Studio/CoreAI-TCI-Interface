@@ -1,6 +1,6 @@
 COREAI: TCI INTERFACE - HANDOVER 0.6.12
 Date: 05.11.2026
-Base: PR #162 (0.6.11), not yet merged into main.
+Base: main 0.6.11, after PR #162 was merged.
 
 GOAL:
 Implement real day/night appearance for CoreAI from Settings, including System device mode, and persist user choice without breaking existing light styles.
@@ -18,5 +18,5 @@ LIMITATIONS:
 - Language localization of UI is still planned separately.
 - Full browser and server live tests have not been run here.
 
-MERGE ORDER:
-PR #162, version 0.6.11, must merge before the stacked 0.6.12 theme PR is merged to main.
+MERGE STATUS:
+PR #162 has merged into main as version 0.6.11. This 0.6.12 appearance PR may now target main.
