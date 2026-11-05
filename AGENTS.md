@@ -7,7 +7,7 @@ Diese Regeln gelten fuer jede Arbeit im Repository **CoreAI: TCI Interface**, au
 - **English is the default language for the public GitHub README and newly written user-facing documentation.** Keep the entire active `README.md` in English, including titles, installation, hardware profiles, instructions and update procedures.
 - **Translate all UI button names, settings tabs and menu paths into English in the public README.** Do not include parenthetical German button labels alongside their English equivalents. This is a documentation rule, not a change to the current application UI.
 - Explain **both** the one-line first-install/fallback command **and** the built-in owner-only updater under **Settings > System > CoreAI Update**. The built-in updater is the preferred method after initial setup.
-- Do not retroactively translate or modify historical change logs, handover records, or the legally binding German `LICENSE.de.md` solely to meet the English README standard. Application interface labels may remain in German until the planned English/German language selector ships alongside day/night mode. Treat both as future work, never as existing features.
+- Do not retroactively translate or modify historical change logs, handover records, or the legally binding German `LICENSE.de.md` solely to meet the English README standard. Application interface labels may remain in German until full English/German localization ships. **System/Light/Dark appearance is available from 0.6.12**, while complete interface localization remains planned.
 
 ## README ist kein Changelog
 

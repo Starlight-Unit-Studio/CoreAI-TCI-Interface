@@ -5,6 +5,7 @@
 
   var STORAGE_KEY = 'emberCoreUI.preferences.v1';
   var defaults = {
+    theme: 'system',
     reduceMotion: false,
     compactFeed: false,
     thinkingExpanded: false,
@@ -16,6 +17,7 @@
   function normalise(input) {
     var source = input && typeof input === 'object' ? input : {};
     return {
+      theme: source.theme === 'light' || source.theme === 'dark' ? source.theme : 'system',
       reduceMotion: source.reduceMotion === true,
       compactFeed: source.compactFeed === true,
       thinkingExpanded: source.thinkingExpanded === true,
@@ -34,11 +36,33 @@
     }
   }
 
+  var systemDark = null;
+  try {
+    if (typeof window.matchMedia === 'function') {
+      systemDark = window.matchMedia('(prefers-color-scheme: dark)');
+    }
+  } catch (ignored) { /* Old WebViews continue in light mode. */ }
+
+  function resolvedTheme(choice) {
+    return choice === 'dark' || (choice === 'system' && systemDark && systemDark.matches)
+      ? 'dark' : 'light';
+  }
+
   function apply(targetDocument, value) {
     var doc = targetDocument || document;
     var root = doc.documentElement;
     var prefs = normalise(value || load());
     if (!root) return prefs;
+
+    var activeTheme = resolvedTheme(prefs.theme);
+    root.setAttribute('data-coreui-theme', activeTheme);
+    root.setAttribute('data-coreui-theme-choice', prefs.theme);
+    if (root.style) root.style.colorScheme = activeTheme;
+    // Android browser chrome should match the currently displayed surface.
+    var themeMeta = doc.querySelector && doc.querySelector('meta[name="theme-color"]');
+    if (themeMeta) themeMeta.setAttribute('content', activeTheme === 'dark' ? '#0c1427' : '#f0f4fa');
+    var schemeMeta = doc.querySelector && doc.querySelector('meta[name="color-scheme"]');
+    if (schemeMeta) schemeMeta.setAttribute('content', activeTheme);
 
     root.classList.toggle('pref-reduced-motion', prefs.reduceMotion);
     root.classList.toggle('pref-compact-feed', prefs.compactFeed);
@@ -78,7 +102,24 @@
   });
 
   apply(document, load());
+
+  function onSystemChange() {
+    var prefs = load();
+    if (prefs.theme === 'system') apply(document, prefs);
+  }
+  if (systemDark) {
+    if (typeof systemDark.addEventListener === 'function') {
+      systemDark.addEventListener('change', onSystemChange);
+    } else if (typeof systemDark.addListener === 'function') {
+      systemDark.addListener(onSystemChange);
+    }
+  }
   window.addEventListener('storage', function (event) {
-    if (event.key === STORAGE_KEY) apply(document, load());
+    if (event.key !== STORAGE_KEY && event.key !== null) return;
+    var prefs = load();
+    apply(document, prefs);
+    try {
+      window.dispatchEvent(new CustomEvent('coreui:preferences', { detail: prefs }));
+    } catch (ignored) {}
   });
 })();

@@ -1,0 +1,7 @@
+CoreAI: TCI Interface 0.6.12 - 05.11.2026
+- System, Light and Dark theme selector under Settings > Display, immediate and persisted.
+- OS theme following, legacy browser preferences, cross-tab sync, reset and validation.
+- Native dark Holo surfaces for main chat, settings, Admin Core, login, protocols and previews without image inversion.
+- Node regression test and preflight registration, new content-based browser cache keys.
+- English README and roadmap separate the implemented themes from future interface localization.
+- Versioned as 0.6.12. No migrations, models or installer changes. Live verification pending.
