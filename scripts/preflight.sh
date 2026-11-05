@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.10: Hauptsprache pro Konto (Antworten und Vorlesen, Migration 024); Agentenlauf-Herzschlag aktiv.
+# CoreAI: TCI Interface 0.6.11: Hauptsprache pro Konto (Antworten und Vorlesen, Migration 024); Agentenlauf-Herzschlag aktiv.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -651,7 +651,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   fi
 
   if compose exec -T php php scripts/account-language-selftest.php >/dev/null 2>&1; then
-    ok '0.6.10: Hauptsprache pro Konto (Antworten und Vorlesen) geprueft.'
+    ok '0.6.11: Hauptsprache pro Konto (Antworten und Vorlesen) geprueft.'
   else
     fail 'Selbsttest fuer die Hauptsprache pro Konto fehlgeschlagen.'
   fi

@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.6.11 - 05.11.2026
+
+- **User-local date and time:** Mara's private CoreAI chat now receives the browser-configured IANA time zone (such as `Asia/Manila`) on new messages and streamed requests. The server validates identifiers and computes the current local time using PHP's timezone database.
+- **No location permission:** There is no GPS request, IP lookup, or database migration. Invalid or missing client zones safely use the configured server timezone.
+- **Consistent execution:** The main response, normal and streamed generation, and additional per-file Core calls use the active request's timezone. Other request contexts retain their existing time behavior.
+- **Regression tests:** `scripts/date-awareness-selftest.php` now checks Philippines/Berlin midnight, DST transitions, invalid timezone input and the frontend/backend connection. This test is already invoked in both preflight variants.
+- **Version synchronization:** `0.6.11` across README, versioned pages, bootstrap, changelogs, branding and preflight markers. No changes to database, installer, models, Modelfile, Ollama or other repositories.
+- **Testing limit:** Code and static test coverage added; production device/browser and full server preflight must be verified separately.
+
 ## 0.6.10 - 04.11.2026
 
 P20.3b, Schritt 2: die Bruecke zur Sprachauswahl, wie vom Betreiber entschieden (Spracheinstellung pro Konto im KI-Profil fuer Antworten und Vorlesen; Mara bleibt mehrsprachig, Deutsch und Englisch sind die Hauptsprachen).

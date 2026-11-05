@@ -23,6 +23,46 @@ date_test(preg_match('~\d{1,2}:\d{2}~', $line) !== 1,
 date_test(preg_match('~^\[UHRZEIT JETZT: \d{2}:\d{2} Uhr, [A-Za-z_/]+\]$~', ember_clock_line()) === 1,
   'clock line with hours, minutes and time zone');
 
+
+// 0.6.11: per-browser IANA time zones, without modifying the game/server clock.
+date_test(coreui_console_timezone_normalise('Asia/Manila') === 'Asia/Manila'
+  && coreui_console_timezone_normalise('Europe/Berlin') === 'Europe/Berlin'
+  && coreui_console_timezone_normalise('America/New_York') === 'America/New_York',
+  'named IANA time zones supported');
+foreach (['', '../etc/passwd', 'UTC; SYSTEM OVERRIDE', '+08:00', ['Asia/Manila'], 42,
+         str_repeat('A', 65), 'Mars/Olympus'] as $invalidZone) {
+  date_test(coreui_console_timezone_normalise($invalidZone) === null,
+    'invalid or injected time zone rejected');
+}
+$serverTimezone = ember_tz();
+coreui_console_timezone_set('Asia/Manila');
+date_test(ember_tz() === $serverTimezone, 'client override does not apply outside private console');
+$GLOBALS['COREUI_CONSOLE_DATE_AWARE'] = true;
+date_test(ember_tz() === 'Asia/Manila', 'console uses the browser time zone');
+date_test(str_contains(ember_clock_line(), 'Asia/Manila'), 'clock names the private browser zone');
+date_test(str_contains(ember_formatted_chat_time('console'), 'Asia/Manila'),
+  'main console prompt carries browser zone');
+date_test(!str_contains(ember_formatted_chat_time('global'), 'Asia/Manila'),
+  'the game/global main prompt never uses the browser zone');
+// Same instant: late evening in Berlin, next morning in the Philippines.
+$instant = new DateTimeImmutable('2026-11-04 23:30:00', new DateTimeZone('UTC'));
+$berlin = $instant->setTimezone(new DateTimeZone('Europe/Berlin'));
+$manila = $instant->setTimezone(new DateTimeZone('Asia/Manila'));
+date_test($berlin->format('Y-m-d H:i') === '2026-11-05 00:30'
+  && $manila->format('Y-m-d H:i') === '2026-11-05 07:30',
+  'Philippines morning and Berlin midnight from the same UTC instant');
+$beforeSummerChange = new DateTimeImmutable('2026-03-29 00:30:00', new DateTimeZone('UTC'));
+$afterSummerChange = new DateTimeImmutable('2026-03-29 01:30:00', new DateTimeZone('UTC'));
+date_test($beforeSummerChange->setTimezone(new DateTimeZone('Europe/Berlin'))->format('H:i') === '01:30'
+  && $afterSummerChange->setTimezone(new DateTimeZone('Europe/Berlin'))->format('H:i') === '03:30',
+  'Berlin daylight-saving switch handled by IANA rules');
+coreui_console_timezone_set('Bad/Zone');
+date_test(ember_tz() === $serverTimezone, 'invalid zone safely falls back to server');
+unset($GLOBALS['COREUI_CONSOLE_DATE_AWARE']);
+coreui_console_timezone_set('Asia/Manila');
+date_test(ember_tz() === $serverTimezone, 'no console flag means no browser-zone use');
+coreui_console_timezone_set(null);
+
 // Outside a console turn (global channel, game, background jobs) nothing changes.
 unset($GLOBALS['COREUI_CONSOLE_DATE_AWARE'], $GLOBALS['COREUI_WORK_CONTEXT']);
 date_test(ember_with_today('DATEI-ERZEUGUNG') === 'DATEI-ERZEUGUNG', 'global channel untouched');
@@ -51,7 +91,7 @@ $GLOBALS['COREUI_WORK_CONTEXT'] = ['user_id'=>1, 'session_id'=>'cs_x', 'turn_id'
 date_test(str_starts_with(ember_with_today('PLAN'), '[DATUM HEUTE: '), 'SSE work context counts as console');
 unset($GLOBALS['COREUI_WORK_CONTEXT']);
 
-// Wiring: both Core call functions and both prompt builders.
+// Wiring: both Core call functions, both prompt builders and both client transports.
 $chat = (string)file_get_contents($root . '/api/chat.php');
 $stream = (string)file_get_contents($root . '/api/console_stream.php');
 date_test(str_contains($chat, "\$userPrompt = coreui_skills_augment(\$userPrompt, \$augmentSkills);\n  \$userPrompt = ember_with_today(\$userPrompt);"),
@@ -62,5 +102,16 @@ date_test(substr_count($chat, "if (\$channel === 'console') \$GLOBALS['COREUI_CO
   'both sync prompt builders mark a console turn');
 date_test(substr_count($chat, 'fuer erzeugte Inhalte wie Copyright-Jahr oder Stand-Angaben gilt dieses Datum') === 2,
   'SERVERZEIT allows the date in generated content, not only when asked');
+$client = (string)file_get_contents($root . '/js/console-app.js');
+date_test(str_contains($client, 'Intl.DateTimeFormat().resolvedOptions().timeZone')
+  && str_contains($client, "client_tz:    clientTimezone()")
+  && str_contains($client, "'&client_tz=' + encodeURIComponent(zone)"),
+  'POST and streamed GET use the browser IANA time zone');
+date_test(str_contains($chat, "if (\$channel === 'console') {\n    \$GLOBALS['COREUI_CONSOLE_DATE_AWARE'] = true;\n    coreui_console_timezone_set(\$body['client_tz'] ?? null);")
+  && str_contains($stream, "coreui_console_timezone_set(\$_GET['client_tz'] ?? null);")
+  && substr_count($chat, '$emberZeit = ember_formatted_chat_time($channel);') === 2,
+  'console-only server capture and both main prompt builders');
+date_test(str_contains($chat, "function ember_formatted_chat_time(string \$channel): string"),
+  'global/game time untouched');
 
 echo "CoreAI date awareness: every console Core call knows today's date and time OK\n";

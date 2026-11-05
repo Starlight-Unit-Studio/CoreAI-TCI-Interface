@@ -1,0 +1,7 @@
+CoreAI: TCI Interface 0.6.11 - 05.11.2026
+- User-local IANA time zone for Mara's private CoreAI chat, supplied by the browser on POST and SSE.
+- Server validation; same local time in normal prompts and follow-up generation. Invalid values use existing server fallback.
+- No GPS, IP geolocation, database migration, installer changes or cross-repository work.
+- Regression checks for Asia/Manila, Berlin midnight, DST, invalid identifiers and client wiring.
+- README, UI version displays, preflight markers, branding and change-history metadata synchronized.
+- Full production verification pending.

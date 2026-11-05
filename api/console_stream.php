@@ -81,6 +81,8 @@ $afterId = (int)($_GET['after_id'] ?? 0);
 $sessionId = coreui_console_session_normalize_id($_GET['session_id'] ?? '');
 $channel = 'console';
 $GLOBALS['COREUI_CONSOLE_DATE_AWARE'] = true;
+// EventSource has no JSON body. Validate the browser zone on each stream.
+coreui_console_timezone_set($_GET['client_tz'] ?? null);
 
 if ($generationRequestId !== '') {
   try {

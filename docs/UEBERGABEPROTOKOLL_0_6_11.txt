@@ -1,0 +1,22 @@
+COREAI: TCI INTERFACE - HANDOVER 0.6.11
+Date: 05.11.2026
+Base: main 0.6.10.
+
+GOAL:
+Mara should use the user's configured local time zone instead of always Europe/Berlin.
+
+IMPLEMENTATION:
+- api/console_timezone.php validates the browser's IANA time zone.
+- js/console-app.js sends it on the main chat POST and streamed GET. No GPS or IP guess.
+- api/chat.php computes private CoreAI dates and times per request; api/console_stream.php reads the zone on each SSE request including regeneration.
+- Extra Core calls share the validated zone; other contexts retain their original behavior.
+- scripts/date-awareness-selftest.php checks Asia/Manila, dates across midnight, daylight savings, invalid input and wiring.
+- VERSION, HTML, JS bootstrap, README, changelogs, preflight version strings, branding selftest and handover synchronized.
+
+LIMITS:
+- Device clock zone may differ from physical location.
+- Requests without valid time zone use server fallback. Jobs without a browser context may also use fallback.
+- No database or model changes, no changes to other repositories, no automatic deployment claimed.
+
+NEXT:
+Run php scripts/date-awareness-selftest.php, python3 scripts/version-merge-check.py --base-version 0.6.10 and server preflight before considering production-tested.
