@@ -66,6 +66,26 @@ function coreui_agent_run_reap_stale(PDO $pdo, int $uid, string $sessionId,
   return $ended + $never->rowCount();
 }
 
+/**
+ * 0.6.19: chats in which Mara is working right now, for the spinner in the chat
+ * list ([session_id => true]). Only runs with a recent sign of life count, with
+ * the same limits as the reaper, so a lost worker never shows a spinner for long;
+ * a run waiting for a tool (browser job) counts for up to 30 minutes.
+ */
+function coreui_agent_run_working_sessions(PDO $pdo, int $uid): array {
+  if ($uid <= 0 || !coreui_agent_run_schema_ready($pdo)) return [];
+  $st = $pdo->prepare(
+    "SELECT DISTINCT session_id FROM stu_console_agent_runs WHERE user_id=? AND ("
+    . "(status='running' AND updated_at >= DATE_SUB(NOW(3), INTERVAL ? SECOND)) OR "
+    . "(status='queued' AND updated_at >= DATE_SUB(NOW(3), INTERVAL ? SECOND)) OR "
+    . "(status='waiting_tool' AND updated_at >= DATE_SUB(NOW(3), INTERVAL 1800 SECOND)))"
+  );
+  $st->execute([$uid, COREUI_AGENT_RUN_STALE_SECONDS, COREUI_AGENT_RUN_QUEUED_STALE_SECONDS]);
+  $working = [];
+  foreach ($st->fetchAll(PDO::FETCH_COLUMN) ?: [] as $sessionId) $working[(string)$sessionId] = true;
+  return $working;
+}
+
 function coreui_agent_run_valid_key(string $runKey): bool {
   return (bool)preg_match('/^[a-z0-9_-]{1,48}$/D', $runKey);
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/console_session_store.php';
+require_once __DIR__ . '/console_agent_runs.php';
 
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 $pdo = stu_pdo();
@@ -25,6 +26,14 @@ try {
   if ($action === 'list') {
     $includeArchived = !empty($_GET['include_archived']);
     $rows = coreui_console_session_list($pdo, (int)$uid, $includeArchived);
+    // 0.6.19: a spinner in the list while Mara works in a chat (also from another tab or device).
+    try {
+      $working = coreui_agent_run_working_sessions($pdo, (int)$uid);
+    } catch (Throwable $e) {
+      $working = [];
+    }
+    foreach ($rows as &$row) $row['working'] = isset($working[(string)$row['id']]);
+    unset($row);
     stu_json(['ok'=>true, 'sessions'=>$rows, 'count'=>count($rows)]);
   }
 

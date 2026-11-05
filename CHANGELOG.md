@@ -8,6 +8,13 @@ Betreiber: "Mara sollte selbst entscheiden koennen, was in ihr LTM gehoert, wie 
 - **Beziehungswert:** wird bei Sprachnachrichten aus dem Gesagten bewertet, ebenfalls nach der Mitschrift, und nicht mehr zusaetzlich mit der leeren Nachricht.
 - **Bewusst nicht:** hochgeladene Audiodateien und Nachrichten, in denen eine Sprachnachricht zusammen mit Bildern oder Dateien kommt. Worte in einer Aufnahme von anderen (Podcast, Mitschnitt) sind keine Aussagen des Nutzers, wie Text in einem Bild.
 - Tests: `voice-input-selftest.php` prueft, was an die Reflexion geht (Gesagtes und Getipptes, nicht bei Audiodateien, Mischungen, Stille, Fehlantworten oder anderem Konto) und die Verdrahtung im Stream; Gegenproben erkannt.
+
+Dazu die Chatliste (Rueckmeldung mit Screenshot: "Archivieren und so sind echt sehr schwer zu treffen und auch nur halb zu sehen"; Wunsch: "ein Ladekreis im Chat-Button, wenn Mara dort gerade arbeitet"):
+
+- **Knoepfe ganz sichtbar:** Die Liste ist eine Flex-Spalte; bei vielen Chats drueckte der Browser die Eintraege auf ihre Mindesthoehe von 53 Pixeln, und der schraege Rahmen (`clip-path`) schnitt UMBENENNEN und ARCHIVIEREN halb ab. Eintraege werden nicht mehr gestaucht, die Liste scrollt stattdessen.
+- **Groessere Knoepfe:** mindestens 30 Pixel hoch und 10 statt 8 Pixel Schrift, auf Touch-Geraeten (Tablet, Handy, DeX mit Finger) 36 Pixel. Drei Knoepfe eines archivierten Chats brechen sauber in zwei Zeilen um.
+- **Ladekreis:** Arbeitet Mara in einem Chat, dreht sich vor seinem Namen ein Ring, sofort beim Senden und auch fuer Laeufe aus einem anderen Tab, von einem anderen Geraet oder nach dem Neuladen. Die Chatliste meldet dazu `working` (Laeufe mit Lebenszeichen, dieselben Fristen wie beim Aufraeumen verlorener Laeufe, ein verlorener Lauf dreht also nicht ewig). Solange irgendwo gearbeitet wird, fragt die Seite alle 15 Sekunden nach, sonst jede Minute, nur bei sichtbarem Tab; neu gezeichnet wird die Liste nur, wenn sich etwas geaendert hat, damit kein Klick verloren geht. Bei reduzierter Bewegung steht der Ring still.
+- Tests: neu `session-list-ui-selftest.cjs` (echte Seite, echtes Stylesheet, echtes `renderSessionList`, Tag und Nacht, Maus und Touch, Ladekreis; mit dem alten Stylesheet rot; in beiden Preflights), `agent-run-liveness-selftest.php` (welche Chats als arbeitend gelten, gegen MariaDB in einer zurueckgerollten Transaktion).
 - Keine Aenderung an Cores, Modelfile, Datenbankschema, Installer oder Warteschlange.
 
 ## 0.6.18 - 05.11.2026

@@ -3,4 +3,7 @@ CoreAI: TCI Interface 0.6.19 - 05.11.2026
 - Beziehungswert aus dem Gesagten (nach der Mitschrift), nicht mehr aus der leeren Nachricht.
 - Nicht fuer hochgeladene Audiodateien und Mischungen mit Bildern oder Dateien (fremde Worte, wie Text in Bildern).
 - Tests: voice-input-selftest.php (Reflexion, Ausnahmen, Verdrahtung).
+- Chatliste: Eintraege werden nicht mehr gestaucht (Knoepfe waren halb abgeschnitten), Knoepfe 30 px, per Touch 36 px.
+- Ladekreis vor dem Chatnamen, solange Mara dort arbeitet (sofort beim Senden und laut Server, auch aus anderem Tab).
+- Tests: session-list-ui-selftest.cjs (neu, auch in den Preflights), agent-run-liveness-selftest.php (arbeitende Chats).
 - Keine Aenderung an Cores, Modelfile, Datenbankschema, Installer oder Warteschlange.

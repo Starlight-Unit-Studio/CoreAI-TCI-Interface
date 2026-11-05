@@ -198,6 +198,7 @@ UI_FILES=(
   js/coreui-voice-input.js
   scripts/voice-input-selftest.php
   scripts/voice-input-ui-selftest.cjs
+  scripts/session-list-ui-selftest.cjs
   docker/tts-spike/Dockerfile
   docker/tts-spike/constraints-piper.txt
   docker/tts-spike/constraints-pocket.txt
@@ -1032,6 +1033,16 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       fi
     else
       warn 'Spracheingabe: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+    fi
+    # 0.6.19: chat list in the drawer, buttons whole and large enough; needs Playwright for Node.
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/session-list-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'Chatliste: Knoepfe ganz sichtbar und gross genug (Maus und Touch, Tag und Nacht) geprueft.'
+      else
+        fail 'Chatliste: Oberflaechentest fehlgeschlagen.'
+      fi
+    else
+      warn 'Chatliste: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
     fi
     # 0.5.94: Stimmproben card (Inhaber only); needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
