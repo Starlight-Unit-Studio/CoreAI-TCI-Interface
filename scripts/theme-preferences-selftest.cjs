@@ -157,4 +157,39 @@ for (const selector of ['.msg-bubble', '.drawer', '.settings-panel', '.login-car
 }
 assert.doesNotMatch(themeCSS, /filter\s*:\s*invert\(/i);
 
+
+// Regression for the user-reported 0.6.12 dark-mode contrast defects.
+// Use real selectors from the codebase, not hypothetical toolbar classes.
+const chatMarkup = fs.readFileSync(path.join(root, 'app.html'), 'utf8');
+const settingsMarkup = fs.readFileSync(path.join(root, 'settings.html'), 'utf8');
+const contrastRules = themeCSS.split('/* 0.6.13 contrast regression repair.')[1] || '';
+assert.ok(contrastRules, 'Contrast hotfix section is missing');
+for (const selector of [
+  '.insight-chips', '.insight-chips::after', '.insight-chip',
+  '.insight-chip.is-open', '.insight-sheet .insight-box', '.insight-box',
+  '.drawer .drawer-header', '.drawer .drawer-footer', '.drawer .core-ticker',
+  '.settings-body .about-copy .copyright-line',
+  '.settings-body .about-copy .copyright-line strong',
+  '.settings-body .settings-footer', '.capability-item'
+]) {
+  assert.ok(
+    contrastRules.includes('html[data-coreui-theme="dark"] ' + selector),
+    'Missing dark-mode contrast override for ' + selector
+  );
+}
+assert.match(chatMarkup, /class="insight-chips"/);
+assert.match(settingsMarkup, /class="copyright-line"/);
+assert.match(settingsMarkup, /Patrick Schildgen/);
+for (const declaration of [
+  'background: #101d34;',
+  'background: var(--theme-info-surface);',
+  'background: #0a172c;',
+  'color: #f4f7ff;',
+  'color: #f4c686;',
+  'color: var(--theme-info-muted);'
+]) {
+  assert.ok(contrastRules.includes(declaration), 'Missing readable surface: ' + declaration);
+}
+console.log('CoreAI contrast regression: info tabs, drawer and copyright OK');
+
 console.log('CoreAI appearance preferences: 3 modes, OS sync, storage, pages and palette OK');

@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.6.13 - 05.11.2026
+
+- **Dark-mode contrast hotfix:** Removed the conspicuous light band beneath the chat header. Its real selectors `.insight-chips`, `.insight-chip` and `.insight-sheet .insight-box` now use dark high-contrast surfaces, readable labels, distinct active and hover states, and a dark sticky fade. Both narrow-screen chips and wide-screen insight panels are covered.
+- **Owner attribution visible:** Corrected the hardcoded dark-on-dark colours on `.about-copy .copyright-line` and the `strong` owner name. The Quantum family heading and secondary copyright/footer lines are readable in Night mode.
+- **Navigation surfaces:** Fixed old light backgrounds in the expanded sidebar header and footer, ticker, status/action chips and file links. No image inversion and no change to the Light theme.
+- **Regression protection:** Extended the offline `scripts/theme-preferences-selftest.cjs` with direct checks for the real CSS selectors and expected dark overrides. Existing preflight scripts already invoke it when Node is available.
+- **Cache and version:** Recomputed the SHA-256-derived numeric theme CSS/JS keys and aligned VERSION, six visible HTML pages, JavaScript bootstrap, branding/preflights, changelog and handover to `0.6.13`.
+- **Scope:** CSS, a browser regression test and release metadata only. No database, installer, runtime, model or other-repository changes. Browser/server visual verification remains separate.
+
 ## 0.6.12 - 05.11.2026
 
 - **Native day/night appearance:** A new **Settings → Display** selector provides **System**, **Light** and **Dark** with swatch previews and accessible radio controls. Changes apply instantly; System follows device appearance changes.
