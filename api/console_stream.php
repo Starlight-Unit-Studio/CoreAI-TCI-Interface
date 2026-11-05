@@ -635,7 +635,9 @@ try {
     } elseif ($isVisionTurn) {
       // 0.5.71: images, videos and PDF pages never stream on purpose; the
       // synchronous vision path below is the normal route, not a failure.
-      coreui_work_record($pdo, 'model', 'running', 'Anhang wird angesehen');
+      // 0.6.17: audio takes the same route; Mara hears it herself.
+      $listening = function_exists('ember_attach_audio_of') && ember_attach_audio_of($pdo, (int)$uid, $attachmentIds) !== [];
+      coreui_work_record($pdo, 'model', 'running', $listening ? 'Aufnahme wird angehoert' : 'Anhang wird angesehen');
     } elseif ($streamUnsafe) {
       coreui_work_record($pdo, 'error', 'error', 'Modellstream unvollstaendig',
         ['reason'=>'stream_incomplete']);
@@ -882,6 +884,23 @@ try {
     'generation_mode' => $generationMode !== '' ? $generationMode : null,
     'source_response_id' => $sourceResponseId > 0 ? $sourceResponseId : null,
   ]);
+  // 0.6.17 (P20.1): after the answer is out, the transcript of the voice
+  // messages and audio files of this turn, for the history and the small line
+  // under the recording. Mara has already heard the audio herself.
+  if ($emberMsgId > 0 && $attachmentIds !== [] && !ember_agent_cancel_requested()
+      && function_exists('ember_attach_audio_of') && ember_attach_audio_of($pdo, (int)$uid, $attachmentIds) !== []
+      && ember_attach_audio_allowed($pdo, (int)$uid)) {
+    unset($GLOBALS['COREUI_WORK_CONTEXT'], $GLOBALS['COREUI_WORK_PUBLISH'], $GLOBALS['COREUI_SOURCE_PREVIEW_PUBLISH']);
+    ignore_user_abort(true);
+    @set_time_limit(900);
+    try {
+      ember_attach_audio_transcribe_after($pdo, (int)$uid, $attachmentIds);
+    } catch (Throwable $eTranscript) {
+      if (function_exists('stu__log_error')) {
+        stu__log_error(['type'=>'console_audio_transcript_failed', 'uid'=>(int)$uid, 'message'=>$eTranscript->getMessage()]);
+      }
+    }
+  }
   // 0.5.77: messages that fell out of Mara's window are folded into the
   // summary and the archive, after the answer is out and still inside the
   // turn's queue slot, so the next message already knows the older part.

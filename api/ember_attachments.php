@@ -195,87 +195,161 @@ function ember_attach_read_archive(string $path, int $max): ?string {
   return ember_attach_clean_text($txt, $max);
 }
 
-// --- Audio (0.6.14, P20.1) ----------------------------------------------------
+// --- Audio (0.6.17, P20.1) ----------------------------------------------------
 
 require_once __DIR__ . '/voice_store.php';
 require_once __DIR__ . '/voice_transcribe.php';
 
-/** Progress line in the chat's work path, while Core listens. */
-function ember_attach_audio_progress(PDO $pdo, string $state, string $title): void {
-  if (function_exists('coreui_work_record')) coreui_work_record($pdo, 'tool', $state, $title);
+/** Can Mara hear for this account right now? (signed in, not a guest, the chosen Core has audio) */
+function ember_attach_audio_allowed(PDO $pdo, int $uid): bool {
+  if ($uid <= 0 || (function_exists('coreui_guest_is') && coreui_guest_is($pdo, $uid))) return false;
+  if (function_exists('coreui_ai_runtime_apply')) coreui_ai_runtime_apply($pdo, $uid);
+  return coreui_voice_core_hears(ember_ollama_show_json(ember_model())) !== false;
+}
+
+/** Removes the WAVs made for one call (only inside the frame folder). */
+function ember_attach_audio_cleanup(?string $dir): void {
+  if (!is_string($dir) || $dir === '' || !is_dir($dir) || is_link($dir)) return;
+  $root = rtrim((string)(realpath(ember_video_frame_dir()) ?: ''), '/');
+  $real = (string)(realpath($dir) ?: '');
+  if ($root === '' || !str_starts_with($real, $root . '/') || !str_starts_with(basename($real), 'audio_')) return;
+  foreach ((array)@glob($real . '/part*.wav') as $file) @unlink($file);
+  @rmdir($real);
 }
 
 /**
- * An audio file becomes a transcript with time marks: body (the transcript,
- * or null) and note (what Mara is told about it). Signed-in accounts only,
- * never guests, and only with a Core that can hear. The transcript is kept
- * with the account's read-aloud cache (var/voice_cache/<uid>, 7 days), so a
- * repeated answer does not listen to the same file again.
+ * 0.6.17: Mara hears a voice message or audio file herself. The recording is
+ * cut into WAVs of at most 60 s (Gemma 4 takes no more per WAV) in the frame
+ * folder, which api/chat.php sends in the images field like video frames.
+ * Returns the note for the prompt; the clips go to STU_EMBER_AUDIO_CLIPS.
+ * Guests and Cores without audio input get the honest note as before.
  */
-function ember_attach_audio_transcript(PDO $pdo, string $uuid, int $uid, string $path, int $max): array {
-  $deaf = static fn(string $why): array => ['body' => null,
-    'note' => 'Das ist eine Audiodatei. ' . $why . ' Dir liegen nur Name, Typ und Groesse vor. '
-      . 'Sag ehrlich, dass du sie nicht anhoeren kannst, und frag nach, worum es geht.'];
+function ember_attach_audio_native(PDO $pdo, string $uuid, int $uid, string $path, string $name): string {
+  $voice = coreui_voice_is_voice_message($name);
+  $what = $voice ? 'eine Sprachnachricht' : 'eine Audiodatei';
+  $deaf = static fn(string $why): string => 'Das ist ' . $what . '. Du kannst sie NICHT anhoeren: ' . $why
+    . ' Dir liegen nur Name, Typ und Groesse vor. Sag das ehrlich und frag nach, worum es geht.';
   if ($uid <= 0 || (function_exists('coreui_guest_is') && coreui_guest_is($pdo, $uid))) {
-    return $deaf('Du kannst sie NICHT anhoeren: Audiodateien hoert Core nur fuer angemeldete Konten.');
+    return $deaf('Audio hoert Core nur fuer angemeldete Konten.');
   }
-  if (function_exists('coreui_ai_runtime_apply')) coreui_ai_runtime_apply($pdo, $uid);
-  $model = ember_model();
-  if (coreui_voice_core_hears(ember_ollama_show_json($model)) === false) {
-    return $deaf('Du kannst sie NICHT anhoeren: Der gewaehlte Core hat keinen Audio-Eingang.');
-  }
-  $runtime = function_exists('coreui_ai_runtime_settings') ? coreui_ai_runtime_settings() : [];
-  $language = (string)(is_array($runtime) ? ($runtime['main_language'] ?? 'de') : 'de');
+  if (!ember_attach_audio_allowed($pdo, $uid)) return $deaf('Der gewaehlte Core hat keinen Audio-Eingang.');
 
-  $dir = coreui_voice_user_dir(coreui_voice_cache_root(), $uid, true);
-  $key = hash('sha256', implode('|', ['transcript', $uuid, (string)@filesize($path), (string)@filemtime($path), $language, $model]));
-  $cache = $dir !== null ? $dir . '/t-' . $key . '.json' : null;
-  $result = $cache !== null && is_file($cache) ? json_decode((string)@file_get_contents($cache), true) : null;
-  if (!is_array($result) || empty($result['ok'])) {
+  $max = $voice ? COREUI_VOICE_INPUT_MAX_SECONDS
+    : coreui_voice_native_budget(function_exists('ember_ollama_context_window') ? ember_ollama_context_window(ember_model()) : null);
+  $base = ember_video_frame_dir();
+  if (!is_dir($base)) @mkdir($base, 0770, true);
+  $dir = $base . '/audio_' . bin2hex(random_bytes(8));
+  if (!@mkdir($dir, 0700)) return 'Das ist ' . $what . '. Sie liess sich gerade nicht fuer dich aufbereiten. Sag das ehrlich.';
+  $prepared = coreui_voice_prepare_native($path, $dir, $max);
+  ember_debug_log('ember_attach_audio', ['uuid' => $uuid, 'voice' => $voice, 'ok' => $prepared['ok'],
+    'error' => (string)($prepared['error'] ?? ''), 'parts' => count((array)($prepared['paths'] ?? [])),
+    'seconds' => isset($prepared['seconds']) ? round((float)$prepared['seconds'], 1) : null]);
+  if (!$prepared['ok']) {
+    ember_attach_audio_cleanup($dir);
+    if (($prepared['error'] ?? '') === 'no_speech') {
+      return 'Das ist ' . $what . '. Darin ist nur Stille oder Rauschen, es wird nichts gesprochen. Sag das ehrlich.';
+    }
+    return 'Das ist ' . $what . '. Sie liess sich nicht in das Audioformat fuer dich umwandeln. Sag ehrlich, dass du sie '
+      . 'diesmal nicht anhoeren konntest.';
+  }
+  $GLOBALS['STU_EMBER_AUDIO_CLIPS'] = $prepared + ['name' => $name, 'voice' => $voice, 'dir' => $dir, 'uuid' => $uuid];
+  $length = $prepared['source_seconds'] !== null ? (float)$prepared['source_seconds'] : (float)$prepared['seconds'];
+  $note = 'Das ist ' . $what . ' (Laenge etwa ' . coreui_voice_stamp($length) . ', Minuten:Sekunden). Du hoerst sie selbst: '
+    . 'Sie liegt dir als Audio bei' . (count($prepared['paths']) > 1 ? ', in ' . count($prepared['paths']) . ' Teilen nacheinander' : '') . '.';
+  if (!empty($prepared['truncated'])) {
+    $note .= ' Es liegen nur die ersten ' . coreui_voice_stamp((float)$prepared['seconds']) . ' Minuten bei; sag das offen.';
+  }
+  return $note;
+}
+
+/** Audio attachments of one turn: [uuid => name] (only the account's own files). */
+function ember_attach_audio_of(PDO $pdo, int $uid, array $uuids): array {
+  $uuids = array_values(array_filter(array_map('strval', $uuids), static fn(string $u): bool => preg_match('~^[a-f0-9]{32}$~', $u) === 1));
+  if ($uid <= 0 || $uuids === []) return [];
+  try {
+    $st = $pdo->prepare('SELECT uuid, orig_name FROM stu_console_media WHERE user_id = ? AND kind = ? AND uuid IN ('
+      . implode(',', array_fill(0, count($uuids), '?')) . ')');
+    $st->execute([$uid, 'audio', ...$uuids]);
+    $found = [];
+    foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) $found[(string)$row['uuid']] = (string)$row['orig_name'];
+    $ordered = [];
+    foreach ($uuids as $u) if (isset($found[$u])) $ordered[$u] = $found[$u];
+    return $ordered;
+  } catch (Throwable $e) {
+    return [];
+  }
+}
+
+/**
+ * After Mara's answer: the transcript of each audio attachment of the turn, for
+ * the history and the small line under the voice message. One queued Core call
+ * per part (Google's template, no thinking), in the account language; a file
+ * already transcribed is skipped. Returns how many transcripts were written.
+ */
+function ember_attach_audio_transcribe_after(PDO $pdo, int $uid, array $uuids, ?string $language = null): int {
+  $written = 0;
+  foreach (ember_attach_audio_of($pdo, $uid, $uuids) as $uuid => $name) {
+    $known = coreui_voice_transcript_load($uid, $uuid);
+    if (is_array($known)) continue;
+    try {
+      $st = $pdo->prepare('SELECT rel_path FROM stu_console_media WHERE uuid = ? AND user_id = ? LIMIT 1');
+      $st->execute([$uuid, $uid]);
+      $path = dirname(__DIR__) . '/' . ltrim((string)$st->fetchColumn(), '/');
+    } catch (Throwable $e) {
+      continue;
+    }
+    if (!is_file($path)) continue;
+    if ($language === null) {
+      $runtime = function_exists('coreui_ai_runtime_settings') ? coreui_ai_runtime_settings() : [];
+      $language = (string)(is_array($runtime) ? ($runtime['main_language'] ?? 'de') : 'de');
+    }
+    coreui_voice_transcript_save($uid, $uuid, ['state' => 'pending', 'started' => time()]);
+    $model = ember_model();
     $result = coreui_voice_transcribe_file($path, [
       'url' => ember_url(), 'model' => $model, 'language' => $language,
-      'max_seconds' => COREUI_VOICE_FILE_MAX_SECONDS, 'queue_wait' => 600,
-      'keep_alive' => ember_keep_alive(), 'num_ctx' => ember_profile_num_ctx($model),
-      'progress' => static function (int $done, int $total) use ($pdo): void {
-        if ($done < $total) ember_attach_audio_progress($pdo, 'running', 'Core hoert die Audiodatei (Abschnitt ' . ($done + 1) . ' von ' . $total . ')');
-      },
+      'max_seconds' => coreui_voice_is_voice_message($name) ? COREUI_VOICE_INPUT_MAX_SECONDS : COREUI_VOICE_FILE_MAX_SECONDS,
+      'queue_wait' => 600, 'keep_alive' => ember_keep_alive(), 'num_ctx' => ember_profile_num_ctx($model),
     ]);
-    if (($result['error'] ?? '') === 'cancelled') throw new RuntimeException('agent_cancelled');
-    if (!empty($result['ok'])) {
-      ember_attach_audio_progress($pdo, 'success', 'Audiodatei mitgeschrieben');
-      if ($cache !== null) {
-        coreui_voice_cleanup((string)$dir);
-        coreui_voice_write($cache, (string)json_encode(array_intersect_key($result,
-          array_flip(['ok', 'parts', 'seconds', 'source_seconds', 'truncated', 'missed_parts'])), JSON_UNESCAPED_UNICODE));
-      }
-    } else {
-      ember_attach_audio_progress($pdo, 'error', 'Audiodatei nicht mitgeschrieben');
-    }
+    $data = !empty($result['ok'])
+      ? ['state' => 'done', 'text' => (string)$result['text'], 'parts' => (array)$result['parts'],
+         'seconds' => $result['seconds'], 'source_seconds' => $result['source_seconds'], 'truncated' => !empty($result['truncated'])]
+      : ['state' => (($result['error'] ?? '') === 'no_speech') ? 'silent' : 'failed', 'error' => (string)($result['error'] ?? '')];
+    if (coreui_voice_transcript_save($uid, $uuid, $data)) $written++;
+    ember_debug_log('ember_attach_audio_transcript', ['uuid' => $uuid, 'state' => $data['state'], 'error' => (string)($data['error'] ?? '')]);
   }
-  ember_debug_log('ember_attach_audio', ['uuid' => $uuid, 'ok' => !empty($result['ok']), 'error' => (string)($result['error'] ?? ''),
-    'seconds' => isset($result['seconds']) ? round((float)$result['seconds'], 1) : null]);
+  return $written;
+}
 
-  $length = isset($result['source_seconds']) && $result['source_seconds'] !== null ? (float)$result['source_seconds'] : (float)($result['seconds'] ?? 0);
-  $about = $length > 0 ? ' Laenge etwa ' . coreui_voice_stamp($length) . ' (Minuten:Sekunden).' : '';
-  if (empty($result['ok'])) {
-    $error = (string)($result['error'] ?? '');
-    if ($error === 'no_speech') {
-      return ['body' => null, 'note' => 'Das ist eine Audiodatei.' . $about . ' Core hat sie angehoert, darin wird aber nicht '
-        . 'gesprochen (Musik, Geraeusche oder Stille). Sag das ehrlich; den Inhalt von Musik kannst du nicht beschreiben.'];
-    }
-    return ['body' => null, 'note' => 'Das ist eine Audiodatei.' . $about . ' Die Mitschrift ist gerade fehlgeschlagen ('
-      . $error . '). Sag ehrlich, dass du sie diesmal nicht anhoeren konntest, und biete an, es noch einmal zu versuchen.'];
+/**
+ * Lines for the history: what was said in the voice messages and audio files
+ * of earlier turns. [message_id => "[Sprachnachricht: ...]"].
+ */
+function ember_attach_audio_history_notes(PDO $pdo, int $uid, array $messageIds): array {
+  $messageIds = array_values(array_filter(array_map('intval', $messageIds), static fn(int $id): bool => $id > 0));
+  if ($uid <= 0 || $messageIds === []) return [];
+  try {
+    $st = $pdo->prepare('SELECT a.message_id, m.uuid, m.orig_name FROM stu_console_message_attachments a '
+      . 'JOIN stu_console_media m ON m.uuid = a.media_uuid AND m.user_id = a.user_id '
+      . 'WHERE a.user_id = ? AND m.kind = ? AND a.message_id IN (' . implode(',', array_fill(0, count($messageIds), '?')) . ') '
+      . 'ORDER BY a.message_id, a.position');
+    $st->execute([$uid, 'audio', ...$messageIds]);
+    $rows = $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+  } catch (Throwable $e) {
+    return [];
   }
-  $transcript = coreui_voice_transcript_with_stamps((array)$result['parts']);
-  $body = ember_attach_clean_text($transcript, $max);
-  $note = 'Das ist eine Audiodatei.' . $about . ' Core hat sie angehoert. Unten steht die automatische Mitschrift mit '
-    . 'Zeitmarken (Minuten:Sekunden); sie kann Hoerfehler enthalten. Beziehe dich auf das Gesagte.';
-  if (!empty($result['truncated'])) {
-    $note .= ' Die Datei ist laenger als ' . intdiv(COREUI_VOICE_FILE_MAX_SECONDS, 60) . ' Minuten; mitgeschrieben sind nur die ersten '
-      . intdiv(COREUI_VOICE_FILE_MAX_SECONDS, 60) . ' Minuten. Sag das offen.';
+  $notes = [];
+  foreach ($rows as $row) {
+    $voice = coreui_voice_is_voice_message((string)$row['orig_name']);
+    $label = $voice ? 'Sprachnachricht' : 'Audiodatei "' . (string)$row['orig_name'] . '"';
+    $t = coreui_voice_transcript_load($uid, (string)$row['uuid']);
+    $state = is_array($t) ? (string)($t['state'] ?? '') : '';
+    $text = $state === 'done' ? trim((string)($t['text'] ?? '')) : '';
+    $line = $text !== '' ? '[' . $label . ', Mitschrift: ' . $text . ']'
+      : ($state === 'silent' ? '[' . $label . ' ohne gesprochene Worte]' : '[' . $label . ']');
+    $id = (int)$row['message_id'];
+    $notes[$id] = isset($notes[$id]) ? $notes[$id] . ' ' . $line : $line;
   }
-  if ((int)($result['missed_parts'] ?? 0) > 0) $note .= ' Einzelne Abschnitte konnte Core nicht verstehen; dort fehlt Text.';
-  return ['body' => $body, 'note' => $note];
+  return $notes;
 }
 
 // --- Hauptfunktion -----------------------------------------------------------
@@ -284,7 +358,7 @@ function ember_attach_audio_transcript(PDO $pdo, string $uuid, int $uid, string 
  * Baut den Anhang-Block fuer $u. Entfernt den Marker aus $msg (per Referenz).
  * Rueckgabe: '' wenn kein Anhang vorhanden oder nicht auffindbar.
  */
-function ember_attachment_single_block(PDO $pdo, string $uuid, int $uid, int $max, int $audioMax = 0): string {
+function ember_attachment_single_block(PDO $pdo, string $uuid, int $uid, int $max): string {
   try {
     $st = $uid > 0
       ? $pdo->prepare("SELECT * FROM stu_console_media WHERE uuid = ? AND user_id = ? LIMIT 1")
@@ -335,12 +409,10 @@ function ember_attachment_single_block(PDO $pdo, string $uuid, int $uid, int $ma
             . 'und frag nach, worum es geht.';
     }
   } elseif ($kind === 'audio') {
-    // 0.6.14 (P20.1): a Core with audio input hears the file through a
-    // transcript (up to 10 minutes, with time marks); guests and Cores
-    // without audio get the honest note as before.
-    $heard = ember_attach_audio_transcript($pdo, $uuid, $uid, $path, max($max, $audioMax));
-    $body = $heard['body'];
-    $note = $heard['note'];
+    // 0.6.17 (P20.1): Mara hears voice messages and audio files herself, as
+    // WAVs of at most 60 s in her own call; guests and Cores without audio
+    // input get the honest note.
+    $note = ember_attach_audio_native($pdo, $uuid, $uid, $path, $name);
   } elseif ($kind === 'image') {
     $note = 'Das ist ein Bild und wird dir ueber den Bildpfad separat gezeigt.';
     $imagePath = trim((string)($row['public_url'] ?? ''));
@@ -425,23 +497,21 @@ function ember_attachment_block(PDO $pdo, string &$msg, int $uid = 0): string {
     min(40000, (int)ember_cfg('STU_EMBER_ATTACH_TOTAL_MAX_CHARS', 16000))
   );
   $perFileMax = max(500, min(ember_attach_max_chars(), (int)floor($totalMax / max(1, $count))));
-  // 0.6.14: a transcript of 10 minutes is about 9000 characters; it may use
-  // more of the shared budget than a document, never more than the budget.
-  $audioMax = max(500, min(12000, (int)floor($totalMax / max(1, $count))));
   $blocks = [];
 
   foreach ($uuids as $uuid) {
-    unset($GLOBALS['STU_EMBER_VIDEO_FRAMES'], $GLOBALS['STU_EMBER_PDF_PAGES']);
-    $blocks[] = ember_attachment_single_block($pdo, $uuid, $uid, $perFileMax, $audioMax);
+    unset($GLOBALS['STU_EMBER_VIDEO_FRAMES'], $GLOBALS['STU_EMBER_PDF_PAGES'], $GLOBALS['STU_EMBER_AUDIO_CLIPS']);
+    $blocks[] = ember_attachment_single_block($pdo, $uuid, $uid, $perFileMax);
 
-    foreach (['STU_EMBER_VIDEO_FRAMES', 'STU_EMBER_PDF_PAGES'] as $globalName) {
+    // 0.6.17: audio parts travel in the same images field as frames and pages.
+    foreach (['STU_EMBER_VIDEO_FRAMES', 'STU_EMBER_PDF_PAGES', 'STU_EMBER_AUDIO_CLIPS'] as $globalName) {
       $vision = $GLOBALS[$globalName] ?? null;
       if (!is_array($vision) || empty($vision['paths'])) continue;
       if (!isset($GLOBALS['STU_EMBER_ATTACHMENT_VISION_META']) || !is_array($GLOBALS['STU_EMBER_ATTACHMENT_VISION_META'])) {
         $GLOBALS['STU_EMBER_ATTACHMENT_VISION_META'] = [];
       }
       $GLOBALS['STU_EMBER_ATTACHMENT_VISION_META'][] = $vision + [
-        'type' => $globalName === 'STU_EMBER_VIDEO_FRAMES' ? 'video' : 'pdf',
+        'type' => ['STU_EMBER_VIDEO_FRAMES' => 'video', 'STU_EMBER_PDF_PAGES' => 'pdf', 'STU_EMBER_AUDIO_CLIPS' => 'audio'][$globalName],
       ];
       if (!isset($GLOBALS['STU_EMBER_ATTACHMENT_IMAGES']) || !is_array($GLOBALS['STU_EMBER_ATTACHMENT_IMAGES'])) {
         $GLOBALS['STU_EMBER_ATTACHMENT_IMAGES'] = [];
@@ -457,7 +527,7 @@ function ember_attachment_block(PDO $pdo, string &$msg, int $uid = 0): string {
     $images = array_values(array_unique(array_filter($images, 'is_string')));
     $GLOBALS['STU_EMBER_ATTACHMENT_IMAGES'] = array_slice($images, 0, 16);
   }
-  unset($GLOBALS['STU_EMBER_VIDEO_FRAMES'], $GLOBALS['STU_EMBER_PDF_PAGES']);
+  unset($GLOBALS['STU_EMBER_VIDEO_FRAMES'], $GLOBALS['STU_EMBER_PDF_PAGES'], $GLOBALS['STU_EMBER_AUDIO_CLIPS']);
   return implode('', $blocks);
 }
 
@@ -675,6 +745,8 @@ function ember_attach_needs_vision_path(PDO $pdo, string $uuid, int $uid = 0): b
   }
   if (!is_array($row)) return false;
   if (in_array((string)($row['kind'] ?? ''), ['image', 'video'], true)) return true;
+  // 0.6.17: Mara hears audio in the same synchronous media call (not the text stream).
+  if ((string)($row['kind'] ?? '') === 'audio') return ember_attach_audio_allowed($pdo, $uid);
   $mime = strtolower(trim((string)($row['mime_type'] ?? '')));
   $ext = strtolower((string)pathinfo((string)($row['orig_name'] ?? ''), PATHINFO_EXTENSION));
   return $mime === 'application/pdf' || $ext === 'pdf';

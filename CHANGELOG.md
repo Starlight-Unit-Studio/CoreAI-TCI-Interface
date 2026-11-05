@@ -1,5 +1,19 @@
 # CoreAI: TCI Interface
 
+## 0.6.17 - 05.11.2026
+
+Rueckmeldung des Betreibers zu 0.6.14: "Mara bekommt erst gar keine WAV-Datei, das Gesprochene wird fehlerhaft als Text geschrieben und dann muss ich die Textnachricht abschicken. Nix da Nutzung der nativen Audiofunktion vom Core." Neue Entscheidungen (05.11.2026): sofort senden, Mara hoert die WAV selbst, Mitschrift danach im Hintergrund fuer den Verlauf, ohne Denken bei Sprachnachrichten, hoechstens 60 Sekunden je WAV (Grenze der Gemma-4-Modelle).
+
+- **Mikrofon sendet sofort:** FERTIG (oder ein zweiter Klick auf den Knopf) schickt die Aufnahme als Sprachnachricht in den Chat, mit Abspielknopf und mit dem Text, der schon im Eingabefeld steht. Kein Text muss mehr geprueft werden. Antwortet Mara gerade noch, wartet die Sprachnachricht und geht danach raus ("SPRACHNACHRICHT WARTET", abbrechbar).
+- **Mara hoert selbst:** Die Aufnahme wird mit ffmpeg in WAVs mit 16 kHz, Mono und 16 Bit von hoechstens 60 Sekunden geschnitten (an Sprechpausen) und geht ueber denselben Weg wie Bilder und Videobilder (das images-Feld von Ollama) in Maras normalen Aufruf: mit ihrer Persona, ihrem Verlauf und KI-Profil, ohne Denken. Zwei Minuten sind so drei WAVs in einem Aufruf. Behauptet Core trotzdem, es gebe keine Aufnahme, wird einmal wiederholt. Eine fortgesetzte lange Antwort bleibt ohne Denken.
+- **Audiodateien** hoert Mara genauso, bis 10 Minuten, soweit das Kontextfenster des Cores reicht (etwa 25 Tokens je Sekunde Audio, hoechstens 40 Prozent des Fensters); was nicht mehr passt, sagt sie offen.
+- **Mitschrift danach:** Nach Maras Antwort schreibt Core im Hintergrund mit (Googles Vorlage, ohne Denken, ueber die Warteschlange, in der Hauptsprache des Kontos). Sie steht klein unter der Sprachnachricht ("Mitschrift folgt ..." waehrenddessen) und geht in den Verlauf, damit Mara sich in spaeteren Runden an das Gesagte erinnert. Gespeichert 7 Tage im Zwischenspeicher des Kontos, wie die Vorlese-Audios.
+- **Fehler behoben:** Chrome nimmt Sprachnachrichten als WebM auf; eine WebM-Datei nur mit Ton wurde als Video gespeichert, Mara haette Einzelbilder gesucht. Dateien ohne Bildspur (Cover-Bilder zaehlen nicht) sind jetzt Audio.
+- `api/voice_input.php` liefert nur noch den Status des Knopfs und den Stand der Mitschrift; der Weg ueber eine Mitschrift ins Eingabefeld (0.6.14) ist entfernt. Der Arbeitsweg zeigt "Hoere mir die Aufnahme an".
+- Tests: `voice-input-selftest.php` (WAVs fuer Maras Aufruf, Budget, Gaeste und Cores ohne Audio, WebM als Audio, Mitschrift nach der Antwort mit Warteschlange und Wiederholung, Verlauf), `voice-input-ui-selftest.cjs` (sofort senden, Warten auf Mara, Mitschrift-Zeile, der echte Sendeweg aus `console-app.js`), `vision-persona-selftest.php` angepasst. Zusaetzlich geprueft: Durch den echten `ember_call_ollama` kommen die WAVs Byte fuer Byte und mit `think: false` bei einem nachgebauten Ollama an.
+- Offen: Gedaechtnis-Reflexion fuer Sprachnachrichten (sie laufen wie Bilder ohne Reflexion), Abnahme mit Gemma auf dem Server.
+- Keine Aenderung an Cores, Modelfile, Datenbankschema, Installer oder Warteschlange.
+
 ## 0.6.16 - 05.11.2026
 
 - **Terran UI canon correction:** Replaced the inappropriate Ayal'ren system label in Settings with `TERRANISCHE SYSTEMKONFIGURATION`. The splash screen and visible app matrix signature now refer to Terra-Net rather than Ayal'ren.

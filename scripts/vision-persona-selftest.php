@@ -43,10 +43,16 @@ vision_test(str_contains($chat, '$visionTurn = !empty($GLOBALS[\'COREUI_VISION_T
 
 // The SSE endpoint names the vision path instead of a false error.
 $stream = (string)file_get_contents($root . '/api/console_stream.php');
-vision_test(preg_match("~elseif \\(\\\$isVisionTurn\\) \\{\\s*//[^\\n]*\\n[^\\n]*\\n\\s*coreui_work_record\\(\\\$pdo, 'model', 'running', 'Anhang wird angesehen'\\);\\s*\\} elseif \\(\\\$streamUnsafe\\)~", $stream) === 1,
-  'vision turns record "Anhang wird angesehen" before the incomplete-stream error');
+// 0.6.17: an audio turn takes the same path and names it "Aufnahme wird angehoert".
+$visionAt = strpos($stream, '    } elseif ($isVisionTurn) {' . "\n" . '      // 0.5.71: images, videos and PDF pages never stream on purpose;');
+$unsafeAt = $visionAt === false ? false : strpos($stream, '} elseif ($streamUnsafe) {', $visionAt);
+vision_test($visionAt !== false && $unsafeAt !== false
+  && str_contains(substr($stream, $visionAt, $unsafeAt - $visionAt),
+    "coreui_work_record(\$pdo, 'model', 'running', \$listening ? 'Aufnahme wird angehoert' : 'Anhang wird angesehen');"),
+  'vision turns record "Anhang wird angesehen" (audio: "Aufnahme wird angehoert") before the incomplete-stream error');
 $js = (string)file_get_contents($root . '/js/coreui-work-events.js');
-vision_test(str_contains($js, "case 'Anhang wird angesehen':") && str_contains($js, "'Anhang wird angesehen':'Sehe mir den Anhang an'"),
-  'the work view explains the vision step');
+vision_test(str_contains($js, "case 'Anhang wird angesehen':") && str_contains($js, "'Anhang wird angesehen':'Sehe mir den Anhang an'")
+  && str_contains($js, "case 'Aufnahme wird angehoert':") && str_contains($js, "'Aufnahme wird angehoert':'Höre mir die Aufnahme an'"),
+  'the work view explains the vision and the listening step');
 
 echo "CoreAI vision: same Mara, full context, no false error, no image facts in memory OK\n";

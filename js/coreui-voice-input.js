@@ -1,9 +1,11 @@
-/* CoreAI: TCI Interface 0.6.14: voice input (P20.1).
+/* CoreAI: TCI Interface 0.6.17: voice messages (P20.1).
    A microphone button in the input field. One click records (up to 2 minutes,
-   the time is shown), a second click or "Fertig" ends the recording, Core
-   writes the transcript and it lands in the input field, where it can be
-   checked and sent. Pure silence is never sent (a small level check in the
-   browser). The server deletes the recording right after the transcript.
+   the time is shown), a second click or "Fertig" sends the recording at once
+   as a voice message, together with whatever is already in the input field.
+   Mara hears the WAV herself on the server (Gemma's audio input); no
+   transcript has to be checked first. Pure silence is never sent (a small
+   level check in the browser). After Mara's answer the server writes a
+   transcript for the history; it appears small under the voice message.
    Signed-in accounts only; guests never see the button. A Core that cannot
    hear keeps the button visible but switched off, with the reason. */
 (function () {
@@ -16,8 +18,9 @@
   var VOICED_MIN_MS = 300;   // less sound than this in a whole recording: nothing is sent
   var state = { allowed: false, hears: null, ready: true, maxSeconds: 120, csrf: '', checkedAt: 0 };
   var rec = null;            // the running recording
-  var job = null;            // the running transcript request
+  var job = null;            // a finished recording that waits until Mara has answered
   var button = null;
+  var transcripts = {};      // uuid -> answer of the transcript endpoint
   var strip = null;
   var messageTimer = 0;
   var statusRetries = 0;
@@ -47,7 +50,7 @@
     if (!button) return;
     var off = reason();
     var busy = !!job;
-    var text = rec ? 'Aufnahme beenden und mitschreiben' : (busy ? 'Core schreibt mit' : (off || 'Spracheingabe: Aufnahme starten'));
+    var text = rec ? 'Aufnahme beenden und senden' : (busy ? 'Sprachnachricht wartet auf Mara' : (off || 'Sprachnachricht aufnehmen'));
     button.classList.toggle('recording', !!rec);
     button.classList.toggle('working', busy);
     button.setAttribute('aria-disabled', off && !rec ? 'true' : 'false');
@@ -138,6 +141,7 @@
         state.csrf = data.csrf_token || state.csrf;
         makeButton();
         render();
+        bindTranscripts(document);
       })
       .catch(function (error) {
         // 0.6.15: without a status there is no button (guests must never see it), but the
@@ -162,7 +166,7 @@
 
   function toggle() {
     if (rec) { stop(true); return; }
-    if (job) { say('Core schreibt noch mit.'); return; }
+    if (job) { say('Die letzte Sprachnachricht wartet noch, bis Mara fertig ist.'); return; }
     var off = reason();
     if (off) { say(off); return; }
     if (Date.now() - state.checkedAt > 60000) loadStatus();
@@ -268,70 +272,107 @@
     }
     var blob = new Blob(current.chunks, { type: current.type });
     if (!blob.size) { say('Die Aufnahme ist leer.'); return; }
-    upload(blob, current.type, (Date.now() - current.started) / 1000);
+    var ext = current.type.indexOf('mp4') >= 0 ? 'm4a' : (current.type.indexOf('ogg') >= 0 ? 'ogg' : 'webm');
+    var stamp = new Date();
+    var pad = function (n) { return ('0' + n).slice(-2); };
+    var name = 'Sprachnachricht-' + stamp.getFullYear() + '-' + pad(stamp.getMonth() + 1) + '-' + pad(stamp.getDate())
+      + '_' + pad(stamp.getHours()) + '-' + pad(stamp.getMinutes()) + '-' + pad(stamp.getSeconds()) + '.' + ext;
+    var file;
+    try { file = new File([blob], name, { type: current.type.split(';')[0] }); } catch (e) { file = blob; file.name = name; }
+    send(file, 0);
   }
 
-  function upload(blob, type, seconds) {
-    var ext = type.indexOf('mp4') >= 0 ? 'm4a' : (type.indexOf('ogg') >= 0 ? 'ogg' : 'webm');
-    var form = new FormData();
-    form.append('audio', blob, 'aufnahme.' + ext);
-    var controller = window.AbortController ? new AbortController() : null;
-    job = { controller: controller };
+  // Into the chat as a voice message. While Mara is still answering, the
+  // recording waits (up to five minutes) instead of being thrown away.
+  function send(file, tries) {
+    var composer = window.CoreUIComposer;
+    var result = composer && composer.sendVoice ? composer.sendVoice(file) : 'unavailable';
+    if (result === 'ok') { job = null; render(); hide(); return; }
+    if (result === 'busy' && tries < 300) {
+      job = { file: file, timer: setTimeout(function () { send(file, tries + 1); }, 1000) };
+      render();
+      if (tries === 0) show('waiting', 'SPRACHNACHRICHT WARTET', 'Sie geht raus, sobald Mara fertig geantwortet hat.');
+      return;
+    }
+    job = null;
     render();
-    show('working', 'CORE SCHREIBT MIT …', 'Aufnahme ' + clock(seconds) + '. Etwa 20 Sekunden je Minute.');
-    fetch(API + '?action=transcribe', {
-      method: 'POST', credentials: 'include', cache: 'no-store', body: form,
-      headers: { 'Accept': 'application/json', 'X-CoreUI-CSRF': state.csrf },
-      signal: controller ? controller.signal : undefined
-    })
-      .then(function (response) { return response.json().catch(function () { return { ok: false }; }); })
-      .then(function (data) {
-        job = null;
-        render();
-        if (data && data.ok && data.text) {
-          insert(String(data.text));
-          if (data.truncated) say('Nur die ersten ' + clock(state.maxSeconds) + ' Minuten wurden mitgeschrieben.');
-          else hide();
-          return;
-        }
-        if (data && data.error === 'core_without_audio') { state.hears = false; render(); }
-        say((data && data.message) || 'Core konnte die Aufnahme nicht mitschreiben.');
-      })
-      .catch(function (error) {
-        job = null;
-        render();
-        if (error && error.name === 'AbortError') { hide(); return; }
-        say('Keine Verbindung zum Server. Bitte noch einmal versuchen.');
-      });
+    say(result === 'full' ? 'Es sind schon zehn Anhänge ausgewählt. Bitte erst einen entfernen.'
+      : (result === 'editing' ? 'Während du eine Nachricht bearbeitest, geht keine Sprachnachricht.'
+      : (result === 'busy' ? 'Mara antwortet noch. Die Sprachnachricht wurde nicht gesendet.'
+      : 'Die Sprachnachricht ließ sich nicht senden.')));
   }
 
-  // The transcript goes where the cursor is; the person checks it and sends.
-  function insert(text) {
-    var input = document.getElementById('inputMessage');
-    if (!input) return;
-    var value = input.value;
-    var at = typeof input.selectionStart === 'number' && document.activeElement === input ? input.selectionStart : value.length;
-    var end = typeof input.selectionEnd === 'number' && document.activeElement === input ? input.selectionEnd : value.length;
-    var before = value.slice(0, at);
-    var after = value.slice(end);
-    var lead = before && !/\s$/.test(before) ? ' ' : '';
-    var tail = after && !/^\s/.test(after) ? ' ' : '';
-    input.value = before + lead + text + tail + after;
-    var caret = (before + lead + text).length;
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-    input.focus();
-    try { input.setSelectionRange(caret, caret); } catch (e) { /* not every input type allows it */ }
+  // The transcript, written on the server after Mara's answer, small under the
+  // voice message; while it is still being written the page asks again.
+  function bindTranscripts(root) {
+    if (!state.allowed) return;
+    var players = (root && root.querySelectorAll ? root : document).querySelectorAll('audio.msg-audio[data-uuid]');
+    Array.prototype.forEach.call(players, function (player) {
+      if (player.getAttribute('data-transcript') === 'bound') return;
+      player.setAttribute('data-transcript', 'bound');
+      var line = document.createElement('div');
+      line.className = 'msg-transcript';
+      line.hidden = true;
+      player.parentNode.insertBefore(line, player.nextSibling);
+      loadTranscript(player.getAttribute('data-uuid'), line, 0);
+    });
+  }
+
+  function showTranscript(line, data) {
+    var text = data && data.state === 'done' ? String(data.text || '').trim() : '';
+    if (text) {
+      line.hidden = false;
+      line.setAttribute('data-state', 'done');
+      line.textContent = 'Mitschrift: ' + text;
+    } else if (data && data.state === 'silent') {
+      line.hidden = false;
+      line.setAttribute('data-state', 'silent');
+      line.textContent = 'Keine gesprochenen Worte.';
+    } else if (data && data.state === 'pending') {
+      line.hidden = false;
+      line.setAttribute('data-state', 'pending');
+      line.textContent = 'Mitschrift folgt …';
+    } else {
+      line.hidden = true;
+    }
+  }
+
+  function loadTranscript(uuid, line, tries) {
+    if (!uuid || !line.isConnected && tries > 0) return;
+    var known = transcripts[uuid];
+    if (known && known.state !== 'pending') { showTranscript(line, known); return; }
+    fetch(API + '?action=transcript&uuid=' + encodeURIComponent(uuid), { credentials: 'include', cache: 'no-store', headers: { 'Accept': 'application/json' } })
+      .then(function (response) { return response.ok ? response.json() : null; })
+      .then(function (data) {
+        if (!data || !data.ok) { line.hidden = true; return; }
+        transcripts[uuid] = data;
+        showTranscript(line, data);
+        if (data.state === 'pending' && tries < 150) setTimeout(function () { loadTranscript(uuid, line, tries + 1); }, 6000);
+      })
+      .catch(function () { line.hidden = true; });
   }
 
   function cancel() {
     if (rec) { stop(false); return; }
-    if (job && job.controller) job.controller.abort();
+    if (job && job.timer) clearTimeout(job.timer);
     job = null;
     render();
     hide();
   }
 
   window.addEventListener('coreui:core', function () { if (state.allowed) loadStatus(); });
+  // Chat rows are drawn and redrawn by console-app.js; new voice messages get their line.
+  if (window.MutationObserver) {
+    new MutationObserver(function (records) {
+      if (!state.allowed) return;
+      for (var i = 0; i < records.length; i++) {
+        for (var j = 0; j < records[i].addedNodes.length; j++) {
+          var node = records[i].addedNodes[j];
+          if (node.nodeType === 1) bindTranscripts(node.matches && node.matches('audio.msg-audio') ? node.parentNode : node);
+        }
+      }
+    }).observe(document.documentElement, { childList: true, subtree: true });
+  }
   document.addEventListener('keydown', function (event) {
     if (event.key === 'Escape' && (rec || job)) cancel();
   });
