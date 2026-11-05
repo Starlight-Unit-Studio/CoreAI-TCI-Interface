@@ -1,5 +1,15 @@
 # CoreAI: TCI Interface
 
+## 0.6.12 - 05.11.2026
+
+- **Native day/night appearance:** A new **Settings → Display** selector provides **System**, **Light** and **Dark** with swatch previews and accessible radio controls. Changes apply instantly; System follows device appearance changes.
+- **Persistence without a migration:** Uses the existing browser-local `CoreUIPreferences` storage key, preserving older display settings. The mode survives reloads and syncs across tabs; invalid values fall back safely. Display reset restores System.
+- **Native dark Holo palette:** New `css/coreui-theme.css` covers chat messages, drawer, composer, settings, Admin Core, code, login, protocols and file previews. The original light palette and image pixels are untouched; no inversion filters.
+- **Offline regression checks:** New `scripts/theme-preferences-selftest.cjs` tests System changes, explicit overrides, old preference data, storage failure, cross-tab updates and required UI wiring. Registered in both preflight variants when Node is present.
+- **Documentation:** README and roadmap describe appearance as available; the full English/German interface localization remains a separate planned feature.
+- **Release metadata:** Version displays, numeric content hashes, bootstrap, branding checks, changelog and handover aligned to `0.6.12`. No model, database, server API, Ollama or installer changes.
+- **Validation scope:** Full Node and browser preflight must be executed on a checkout and the deployment separately verified.
+
 ## 0.6.11 - 05.11.2026
 
 - **User-local date and time:** Mara's private CoreAI chat now receives the browser-configured IANA time zone (such as `Asia/Manila`) on new messages and streamed requests. The server validates identifiers and computes the current local time using PHP's timezone database.

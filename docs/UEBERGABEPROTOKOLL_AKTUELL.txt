@@ -1,9 +1,10 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
 Stand: 04.11.2026
-Repository-Version: 0.6.11
-BASIS: main 0.6.10; user timezone in CoreAI 0.6.11.
+Repository-Version: 0.6.12
+BASIS: PR #162 pending (0.6.11); stacked theme version 0.6.12.
 NEUE ARBEIT ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_6_12.txt
   docs/UEBERGABEPROTOKOLL_0_6_11.txt
   docs/UEBERGABEPROTOKOLL_0_6_10.txt
   docs/UEBERGABEPROTOKOLL_0_6_9.txt

@@ -6,7 +6,7 @@
 
 CoreAI combines Ollama-based models with private conversations, browser research, personal knowledge, file tools and an administration interface. Its standard deployment runs an isolated Nginx, PHP-FPM, MariaDB and worker stack on a Linux server. CoreAI is an application, **not a standalone operating system**.
 
-**Current source version: `0.6.11`** | [Changelog](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Documentation policy](docs/VERSIONING_POLICY.md) | [License](LICENSE.md)
+**Current source version: `0.6.12`** | [Changelog](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Documentation policy](docs/VERSIONING_POLICY.md) | [License](LICENSE.md)
 
 > **Development status:** The features below describe the current source code, not guaranteed capabilities of every model or cloud provider. A merged commit does not by itself prove a successful production deployment.
 
@@ -42,7 +42,7 @@ Once the initial setup has installed the host-side update service, **the owner c
 
 **Important:** CoreAI checks for updates automatically, but **does not install them without the owner's action**. The owner may dismiss an update notification until the next page load. Other account roles cannot initiate updates.
 
-> **Interface language:** Button and menu names are presented in English throughout this documentation. The current application may still show German labels. A selectable English/German interface language and day/night appearance modes are planned for a future update; neither is claimed as available here.
+> **Interface language:** Button and menu names are presented in English throughout this documentation. The current application may still show German labels. A selectable English/German interface language remains planned. A system-aware light/dark appearance mode is already available under **Settings → Display**.
 
 The updater is implemented by `scripts/coreai-updater.sh` and host-side systemd services; the web UI submits requests, not shell commands. Backups are stored under `/opt/ember-coreui/var/backups`, with the updater retaining the five most recent automatic SQL backups. The built-in updater follows the same official `main` setup path as the one-liner.
 
@@ -116,12 +116,13 @@ An existing installation's settings are not silently overwritten. `COREUI_FORCE_
 - **Conversations and accounts:** Persistent sessions, history, follow-up suggestions, context management and distinct owner, admin, user and optional guest roles.
 - **Research:** SearXNG-backed web search and a separate Playwright browsing mode. Sources and actual tool activity can be shown in the chat; a search result alone is not proof that its page was read.
 - **Knowledge and tools:** Account-scoped RAG-Lite, memory, skill selection, file uploads and isolated Python tasks with registered outputs. Media handling depends on the selected model and available tools.
+- **Appearance:** Select **System**, **Light**, or **Dark** under **Settings → Display**. Changes apply instantly to chat, settings, login and archives, follow OS changes in System mode, and are saved in the current browser.
 - **Personalization:** Account-specific settings for tone, formatting, emoji density, tool preferences and custom instructions.
 - **Main language:** each account chooses German or English in the AI profile. Mara answers in it by default and still replies in any other language a person writes in; read-aloud uses it when an answer's language is unclear. Buttons and menus are still German; an English interface is planned.
 - **Read aloud:** Mara can read answers using **Eve** (Pocket TTS) in German and English. The language is detected per answer; the English voice is loaded the first time an English answer is read and stays loaded while both voices fit into the service's memory limit. Before Eve speaks, numbers, dates, times and time ranges, time zones, version numbers, dotted abbreviations such as E.M.B.E.R. and common English terms are turned into spoken German; code blocks and tables are only named. Answers are read in growing parts so playback continues without long gaps. Automatic read-aloud is optional and disabled by default. CoreAI remains usable if the optional voice service is unavailable.
 - **Admin Core:** Account and model management, permissions, diagnostics, audit information, runtime controls and the integrated update interface.
 
-**Not yet a completed feature:** Continuous live voice chat, speech input, selectable English/German interface language and day/night themes are planned and must not be presented as implemented. See the [Roadmap](ROADMAP.md), [Feature matrix](docs/COREUI_FEATURE_MATRIX.md) and [Voice plan](docs/COREUI_VOICE_PLAN.md) for scope and status.
+**Not yet a completed feature:** Continuous live voice chat, speech input, selectable English/German interface localization is planned and must not be presented as implemented. See the [Roadmap](ROADMAP.md), [Feature matrix](docs/COREUI_FEATURE_MATRIX.md) and [Voice plan](docs/COREUI_VOICE_PLAN.md) for scope and status.
 
 ## Operations and diagnostics
 
