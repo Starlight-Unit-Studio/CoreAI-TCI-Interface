@@ -31,6 +31,11 @@ UMSETZUNG:
   Schluessel aus Datei-uuid, Groesse, mtime, Sprache und Core; api/voice_store.php raeumt t-*.json nach 7 Tagen mit auf,
   die Kontoloeschung erfasst sie ueber *.json.
 - css/console.css: Knopf, Leiste, Handy-Breite, prefers-reduced-motion.
+- Nachtrag auf Wunsch des Betreibers: Werkzeugleiste "TOOL BUS" (.capability-strip, #ragState, #memoryState, #webState,
+  #browseState) aus app.html entfernt, samt Stilen in css/console.css und css/coreui-theme.css. Kein Skript hat sie je
+  gesetzt; die Werkzeuge zeigt der Werkzeug-Tab (js/coreui-insights.js). @keyframes capability-pulse bleibt, sie wird
+  an zwei anderen Stellen genutzt. theme-preferences-selftest.cjs erwartet .capability-item nicht mehr und prueft,
+  dass Leiste und Stile weg bleiben.
 
 GEPRUEFT: voice-input-selftest.php (mit ffmpeg; sieben gezielt eingebaute Fehler, sechs erkannt, der siebte war
 gleichwertig), voice-input-ui-selftest.cjs (Chromium mit simuliertem Mikrofon, Ton und Stille), Bildschirmfotos

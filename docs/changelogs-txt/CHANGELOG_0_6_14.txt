@@ -4,5 +4,6 @@ CoreAI: TCI Interface 0.6.14 - 05.11.2026
 - Core hoert selbst (Gemma-Audio): Googles Vorlage, neutraler SYSTEM-Text, ohne Denken, ohne Parameter, Sprache des Kontos.
 - Server: ffmpeg nach WAV 16 kHz Mono 16 Bit, Schnitt an Sprechpausen (hoechstens 60 s), jeder Abschnitt ueber die Modellwarteschlange, eine Wiederholung bei "keine Aufnahme".
 - Audiodateien als Anhang: bis 10 Minuten als Mitschrift mit Zeitmarken, 7 Tage im Zwischenspeicher des Kontos.
+- Werkzeugleiste "TOOL BUS" ueber dem Eingabefeld entfernt (reine Deko, Werkzeuge stehen im Werkzeug-Tab); Eingabebereich etwa 30 px niedriger.
 - Tests: voice-input-selftest.php und voice-input-ui-selftest.cjs (auch in den Preflights).
 - Keine Aenderung an Cores, Modelfile, Datenbankschema, Installer oder Warteschlange.

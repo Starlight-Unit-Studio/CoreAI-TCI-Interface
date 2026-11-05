@@ -2941,79 +2941,6 @@ audio.msg-image {
   background: linear-gradient(90deg, var(--amb), var(--cx), transparent);
 }
 
-.capability-strip {
-  display: flex;
-  width: min(1120px, 100%);
-  min-height: 24px;
-  align-items: center;
-  align-self: center;
-  gap: 7px;
-  margin-bottom: 6px;
-  overflow: hidden;
-  color: var(--muted-soft);
-  font-family: "Share Tech Mono", monospace;
-  font-size: 7px;
-  letter-spacing: 0.08em;
-  white-space: nowrap;
-}
-
-.capability-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-right: 3px;
-  color: var(--muted);
-}
-
-.capability-label > span:first-child {
-  color: var(--amb);
-  font-size: 11px;
-}
-
-.capability-item {
-  display: inline-flex;
-  min-height: 20px;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 8px;
-  border: 1px solid rgba(91, 146, 255, 0.14);
-  background: rgba(255, 255, 255, 0.55);
-  transition:
-    color 180ms ease,
-    border-color 180ms ease,
-    background 180ms ease;
-}
-
-.capability-item i {
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--cx);
-  box-shadow: 0 0 6px rgba(91, 146, 255, 0.5);
-}
-
-.capability-item[data-state="active"] {
-  border-color: rgba(226, 155, 57, 0.38);
-  background: rgba(226, 155, 57, 0.08);
-  color: #99661e;
-}
-
-.capability-item[data-state="active"] i {
-  background: var(--amb);
-  box-shadow: 0 0 8px rgba(226, 155, 57, 0.68);
-  animation: capability-pulse 1.2s ease-in-out infinite;
-}
-
-.capability-item[data-state="done"] i {
-  background: var(--green);
-  box-shadow: 0 0 7px rgba(42, 175, 117, 0.58);
-}
-
-.capability-item[data-state="error"] i {
-  background: var(--red);
-  box-shadow: 0 0 7px rgba(212, 80, 93, 0.5);
-}
-
 .composer-attachments {
   display: grid;
   width: min(1120px, 100%);
@@ -4795,20 +4722,6 @@ a.core-install-btn {
     width: 100%;
   }
 
-  .capability-label {
-    display: none;
-  }
-
-  .capability-strip {
-    justify-content: center;
-    gap: 4px;
-  }
-
-  .capability-item {
-    padding: 3px 6px;
-    font-size: 6px;
-  }
-
   .composer {
     padding-top: 6px;
     padding-right: 8px;
@@ -4983,10 +4896,6 @@ a.core-install-btn {
 
   .msg-file {
     min-width: 220px;
-  }
-
-  .capability-item:nth-last-child(2) {
-    display: none;
   }
 }
 
