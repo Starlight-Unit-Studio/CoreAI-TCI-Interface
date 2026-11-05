@@ -422,6 +422,8 @@
       return request(API, 'POST', {action: 'core', model_override: value}).then(function (data) {
         state.override = String(data.model_override || '');
         if (data.label) state.labels[modelKey(data.model)] = String(data.label);
+        // 0.6.14: the microphone button checks whether the new Core can hear.
+        try { window.dispatchEvent(new CustomEvent('coreui:core', { detail: { model: String(data.model || '') } })); } catch (e) { /* old browser */ }
         if (data.preload === 'started') {
           state.loading = modelKey(data.model);
           state.polls = 0;

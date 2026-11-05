@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.13: Hauptsprache pro Konto (Antworten und Vorlesen, Migration 024); Agentenlauf-Herzschlag aktiv.
+# CoreAI: TCI Interface 0.6.14: Spracheingabe (Mikrofon im Eingabefeld, Audiodateien als Mitschrift, ueber die Modellwarteschlange); Tag-/Nachtmodus aktiv.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -192,6 +192,11 @@ UI_FILES=(
   scripts/voice-service-selftest.py
   scripts/voice-read-selftest.php
   scripts/voice-read-ui-selftest.cjs
+  api/voice_transcribe.php
+  api/voice_input.php
+  js/coreui-voice-input.js
+  scripts/voice-input-selftest.php
+  scripts/voice-input-ui-selftest.cjs
   docker/tts-spike/Dockerfile
   docker/tts-spike/constraints-piper.txt
   docker/tts-spike/constraints-pocket.txt
@@ -658,6 +663,13 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail 'Selbsttest fuer die Hauptsprache pro Konto fehlgeschlagen.'
   fi
 
+  voice_input_test=''
+  if voice_input_test="$(compose exec -T php php scripts/voice-input-selftest.php 2>&1)"; then
+    ok '0.6.14: Spracheingabe (Umwandlung mit ffmpeg, Schnitt an Sprechpausen, Mitschrift ueber die Warteschlange, Audioanhaenge) geprueft.'
+  else
+    fail "Spracheingabe-Selbsttest: ${voice_input_test:-Unbekannter Fehler}"
+  fi
+
   if compose exec -T php php scripts/model-queue-selftest.php >/dev/null 2>&1; then
     ok 'P05: Modell-FIFO, Timeout, Abbruch und Sperrenfreigabe offline geprueft.'
   else
@@ -998,6 +1010,16 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       fi
     else
       warn 'Vorlesen: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+    fi
+    # 0.6.14: microphone button in the input field; needs Playwright for Node.
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/voice-input-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'Spracheingabe: Mikrofon-Knopf, Aufnahme, Mitschrift ins Eingabefeld, Stille, Abbrechen, Gaeste ohne Knopf geprueft.'
+      else
+        fail 'Spracheingabe: Oberflaechentest fehlgeschlagen.'
+      fi
+    else
+      warn 'Spracheingabe: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
     fi
     # 0.5.94: Stimmproben card (Inhaber only); needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then

@@ -170,7 +170,7 @@ for (const selector of [
   '.drawer .drawer-header', '.drawer .drawer-footer', '.drawer .core-ticker',
   '.settings-body .about-copy .copyright-line',
   '.settings-body .about-copy .copyright-line strong',
-  '.settings-body .settings-footer', '.capability-item'
+  '.settings-body .settings-footer'
 ]) {
   assert.ok(
     contrastRules.includes('html[data-coreui-theme="dark"] ' + selector),
@@ -178,6 +178,10 @@ for (const selector of [
   );
 }
 assert.match(chatMarkup, /class="insight-chips"/);
+// 0.6.14: the decorative tool strip above the input field is gone (the Werkzeuge tab lists the tools).
+assert.doesNotMatch(chatMarkup, /capability-strip|capability-item/, 'No tool strip above the input field');
+assert.doesNotMatch(fs.readFileSync(path.join(root, 'css/console.css'), 'utf8') + themeCSS,
+  /\.capability-(?:strip|item|label)/, 'No leftover tool strip styles');
 assert.match(settingsMarkup, /class="copyright-line"/);
 assert.match(settingsMarkup, /Patrick Schildgen/);
 for (const declaration of [

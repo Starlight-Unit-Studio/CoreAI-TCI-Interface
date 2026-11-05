@@ -449,22 +449,46 @@ html[data-coreui-theme="dark"] .settings-body .settings-footer strong {
   color: var(--theme-info-muted);
 }
 
-/* Secondary tool and status chips were still using white fills and dark
-   amber text; darken their surface without hiding state indicators. */
-html[data-coreui-theme="dark"] .capability-item {
-  background: #1b2d4a;
-  color: var(--theme-info-muted);
-  border-color: var(--theme-info-outline);
+/* 0.6.14: voice input (P20.1). The microphone button and its strip above the
+   input field use the night surfaces; recording stays clearly red. */
+html[data-coreui-theme="dark"] .composer-mic-btn {
+  border-left-color: var(--line);
+  color: var(--cx);
 }
-html[data-coreui-theme="dark"] .capability-item[data-state="active"] {
-  color: #ffd698;
-  border-color: rgba(240, 185, 107, .65);
-  background: #433b39;
+html[data-coreui-theme="dark"] .composer-mic-btn:hover {
+  background: rgba(145, 183, 255, .12);
+  color: #c3d7ff;
 }
-html[data-coreui-theme="dark"] .capability-item[data-state="done"] {
-  color: #b8f2db;
+html[data-coreui-theme="dark"] .composer-mic-btn.recording {
+  background: rgba(255, 145, 158, .14);
+  color: var(--red);
 }
-html[data-coreui-theme="dark"] .capability-item[data-state="error"] {
+html[data-coreui-theme="dark"] .composer-mic-btn[aria-disabled="true"] {
+  color: var(--muted-soft);
+}
+html[data-coreui-theme="dark"] .composer-voice-state {
+  background: var(--theme-info-surface, #172944);
+  border-color: var(--theme-info-outline, rgba(147, 183, 248, .46));
+}
+html[data-coreui-theme="dark"] .composer-voice-state[data-mode="recording"] {
+  border-color: rgba(255, 145, 158, .5);
+}
+html[data-coreui-theme="dark"] .voice-input-copy strong {
+  color: var(--theme-info-copy, #edf3ff);
+}
+html[data-coreui-theme="dark"] .voice-input-copy small {
+  color: var(--theme-info-muted, #b9cbe6);
+}
+html[data-coreui-theme="dark"] .voice-input-level {
+  background: rgba(145, 183, 255, .18);
+}
+html[data-coreui-theme="dark"] .voice-input-actions button {
+  background: var(--theme-info-surface-raised, #243954);
+  border-color: var(--theme-info-outline, rgba(147, 183, 248, .46));
+  color: var(--theme-info-copy, #edf3ff);
+}
+html[data-coreui-theme="dark"] .voice-input-actions .voice-input-done {
+  border-color: rgba(255, 145, 158, .6);
   color: #ffc4cc;
 }
 
