@@ -159,9 +159,11 @@ assert.doesNotMatch(themeCSS, /filter\s*:\s*invert\(/i);
 
 
 // Regression for the user-reported 0.6.12 dark-mode contrast defects.
-// Match real CSS/HTML selectors, not guessed class names or broad !important rules.
+// Use real selectors from the codebase, not hypothetical toolbar classes.
 const chatMarkup = fs.readFileSync(path.join(root, 'app.html'), 'utf8');
 const settingsMarkup = fs.readFileSync(path.join(root, 'settings.html'), 'utf8');
+const contrastRules = themeCSS.split('/* 0.6.13 contrast regression repair.')[1] || '';
+assert.ok(contrastRules, 'Contrast hotfix section is missing');
 for (const selector of [
   '.insight-chips', '.insight-chips::after', '.insight-chip',
   '.insight-chip.is-open', '.insight-sheet .insight-box', '.insight-box',
@@ -170,16 +172,24 @@ for (const selector of [
   '.settings-body .about-copy .copyright-line strong',
   '.settings-body .settings-footer', '.capability-item'
 ]) {
-  const escaped = selector.replace(/[.*+?^{}()|[\\]\\]/g, '\\console.log('CoreAI appearance preferences: 3 modes, OS sync, storage, pages and palette OK');');
-  assert.match(themeCSS, new RegExp('html\\[data-coreui-theme="dark"\\]\\s+' + escaped));
+  assert.ok(
+    contrastRules.includes('html[data-coreui-theme="dark"] ' + selector),
+    'Missing dark-mode contrast override for ' + selector
+  );
 }
 assert.match(chatMarkup, /class="insight-chips"/);
 assert.match(settingsMarkup, /class="copyright-line"/);
 assert.match(settingsMarkup, /Patrick Schildgen/);
-assert.match(themeCSS, /\.insight-chips\\s*\\{\\s*background:\s*#101d34;/);
-assert.match(themeCSS, /\.insight-chip\\s*\\{\\s*background:\s*var\(--theme-info-surface\)/);
-assert.match(themeCSS, /\.copyright-line strong\\s*\\{\\s*color:\s*#f4f7ff;/);
-assert.match(themeCSS, /\.drawer \.core-ticker\\s*\\{[\\s\\S]*?background:\s*#0a172c;/);
-console.log('CoreAI contrast regression: Core/Context/Tools/Project, drawer and copyright OK');
+for (const declaration of [
+  'background: #101d34;',
+  'background: var(--theme-info-surface);',
+  'background: #0a172c;',
+  'color: #f4f7ff;',
+  'color: #f4c686;',
+  'color: var(--theme-info-muted);'
+]) {
+  assert.ok(contrastRules.includes(declaration), 'Missing readable surface: ' + declaration);
+}
+console.log('CoreAI contrast regression: info tabs, drawer and copyright OK');
 
 console.log('CoreAI appearance preferences: 3 modes, OS sync, storage, pages and palette OK');
