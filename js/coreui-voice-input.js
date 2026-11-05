@@ -20,6 +20,7 @@
   var button = null;
   var strip = null;
   var messageTimer = 0;
+  var statusRetries = 0;
 
   function supported() {
     return !!(window.isSecureContext && navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
@@ -122,8 +123,12 @@
 
   function loadStatus() {
     return fetch(API + '?action=status', { credentials: 'include', cache: 'no-store', headers: { 'Accept': 'application/json' } })
-      .then(function (response) { return response.json(); })
+      .then(function (response) {
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        return response.json();
+      })
       .then(function (data) {
+        statusRetries = 0;
         state.checkedAt = Date.now();
         state.allowed = !!(data && data.ok && data.allowed);
         if (!state.allowed) return;
@@ -134,7 +139,17 @@
         makeButton();
         render();
       })
-      .catch(function () { /* no button when the status cannot be read */ });
+      .catch(function (error) {
+        // 0.6.15: without a status there is no button (guests must never see it), but the
+        // reason goes to the console and the page asks again, at most three times.
+        if (window.console && console.warn) {
+          console.warn('CoreAI Spracheingabe: Status nicht lesbar (' + ((error && error.message) || error) + ').');
+        }
+        if (statusRetries < 3) {
+          statusRetries++;
+          setTimeout(loadStatus, 60000);
+        }
+      });
   }
 
   function pickType() {

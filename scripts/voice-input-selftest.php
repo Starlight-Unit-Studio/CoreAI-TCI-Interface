@@ -123,6 +123,15 @@ $app = $read('app.html');
 vi_test(strpos($app, 'js/coreui-voice-input.js') !== false && strpos($app, 'js/coreui-voice-input.js') < strpos($app, 'js/console-app.js'),
   'chat page loads the voice input');
 vi_test(str_contains($read('css/console.css'), '.composer-inner.has-mic {'), 'input field has room for the button');
+// 0.6.15: on the server nginx answered api/voice_input.php with 404 (not in the list of
+// endpoints) and forbade the microphone for the whole page (Permissions-Policy).
+foreach (['config/nginx.conf.template', 'config/runtime/nginx.conf.template'] as $nginx) {
+  $conf = $read($nginx);
+  $routes = preg_match('#location ~ \^/api/\(\?:([a-z_|]+)\)#', $conf, $m) === 1 ? explode('|', $m[1]) : [];
+  vi_test(in_array('voice_input', $routes, true) && in_array('voice', $routes, true), $nginx . ' lets api/voice_input.php through');
+  vi_test(substr_count($conf, 'camera=(), microphone=(self), geolocation=()') === 3 && !str_contains($conf, 'microphone=()'),
+    $nginx . ': the page itself may use the microphone, camera and location stay off');
+}
 $theme = $read('css/coreui-theme.css');
 vi_test(str_contains($theme, 'html[data-coreui-theme="dark"] .composer-voice-state {') && str_contains($theme, 'html[data-coreui-theme="dark"] .composer-mic-btn {'),
   'night mode: button and strip use the dark surfaces, no bright band');

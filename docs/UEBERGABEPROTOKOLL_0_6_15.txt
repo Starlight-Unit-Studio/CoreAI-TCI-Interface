@@ -1,0 +1,27 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.6.15
+Stand: 05.11.2026
+Ausgangsbasis: main 0.6.14 nach Merge von PR #165.
+
+AUFTRAG: Betreiber nach dem Update: "Es gibt keinen Mikrofon-Button und in den Einstellungen finde ich auch nix dazu."
+
+URSACHE (zwei Fehler in der nginx-Vorlage, von den Tests aus 0.6.14 nicht erfasst, weil der UI-Test die API nachbildet):
+- Die API-Route ist eine Allowlist (location ~ ^/api/(?:...)\.php$). voice_input fehlte; api/voice_input.php gab 404,
+  js/coreui-voice-input.js blendet den Knopf ohne Status aus (Gaeste duerfen ihn nie sehen).
+- Permissions-Policy "camera=(), microphone=(), geolocation=()" an allen drei Stellen je Vorlage: getUserMedia waere
+  auch mit Knopf verweigert worden.
+
+UMSETZUNG:
+- config/runtime/nginx.conf.template und config/nginx.conf.template: voice_input nach console_insights in der Route
+  (die Zeichenfolge "|update|voice|health)" bleibt, voice-read-selftest prueft sie), microphone=(self) an allen drei
+  Stellen. Ausgerollt durch das Update: setup.sh -> scripts/install.sh rendert var/nginx/coreui.conf neu.
+- js/coreui-voice-input.js: response.ok pruefen, console.warn mit dem Grund, bis zu drei neue Versuche nach 60 s.
+- Tests: voice-input-selftest.php (Route und Mikrofon-Regel beider Vorlagen; Gegenprobe mit der alten Vorlage rot),
+  voice-input-ui-selftest.cjs (404: kein Knopf, Warnung in der Konsole), Preflights (grep auf die Vorlage).
+- Keine Einstellung: Die Spracheingabe braucht keinen Schalter; die Mitschrift folgt der Hauptsprache im KI-Profil.
+
+GEPRUEFT: volle Testreihe, cache-bust, version-merge-check gegen 0.6.14.
+NICHT hier: der Server selbst (nginx-Neuaufbau beim Update) und ein echtes Mikrofon.
+
+NACH DEM MERGE (Betreiber): Update unter Einstellungen > System > CoreAI Update, dann den Chat neu laden. Der Knopf
+steht rechts im Eingabefeld neben Senden. Der Browser fragt beim ersten Klick nach dem Mikrofon (nur ueber HTTPS;
+ueber http://IP zeigt der Knopf den Grund).

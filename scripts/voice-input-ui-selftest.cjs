@@ -62,6 +62,7 @@ async function open(browser, status, options = {}) {
       const body = request.postDataBuffer();
       calls.push({action, csrf: request.headers()['x-coreui-csrf'] || '', type: request.headers()['content-type'] || '',
         body: body ? body.toString('latin1') : '', size: body ? body.length : 0});
+      if (action === 'status' && options.statusCode) return route.fulfill({status: options.statusCode, contentType: 'text/html', body: '<h1>404</h1>'});
       if (action === 'status') return route.fulfill({json: Object.assign({ok: true, csrf_token: 'tok'}, typeof status === 'function' ? status() : status)});
       if (action === 'transcribe') {
         if (options.hold) await new Promise(resolve => held.push(resolve));
@@ -214,6 +215,17 @@ async function launch(file) {
     await page.waitForSelector('#btnMic');
     assert.equal(await page.getAttribute('#btnMic', 'aria-disabled'), 'true');
     assert.match(await page.getAttribute('#btnMic', 'title'), /ffmpeg fehlt/);
+    await page.close();
+
+    // 0.6.15: a status the server does not answer (404) shows no button but says why in the console.
+    ({page} = await open(browser, {allowed: true, hears: true}, {statusCode: 404}));
+    const warnings = [];
+    page.on('console', message => { if (message.type() === 'warning') warnings.push(message.text()); });
+    await page.reload();
+    await until(page, () => true);
+    for (let i = 0; i < 40 && !warnings.length; i++) await page.waitForTimeout(50);
+    assert.equal(await page.$('#btnMic'), null, 'no button without a status');
+    assert.ok(warnings.some(text => text.includes('Spracheingabe: Status nicht lesbar (HTTP 404)')), 'the reason is in the console: ' + warnings);
     await page.close();
 
     // Guests never see the button.

@@ -1,5 +1,17 @@
 # CoreAI: TCI Interface
 
+## 0.6.15 - 05.11.2026
+
+Rueckmeldung des Betreibers nach dem Update auf 0.6.14: kein Mikrofon-Knopf zu sehen.
+
+- **Ursache 1, Endpunkt gesperrt:** nginx laesst nur PHP-Dateien aus einer festen Liste durch. `voice_input` fehlte darin, der Server antwortete auf `api/voice_input.php` mit 404, und der Knopf blendete sich ohne Status still aus. Jetzt steht `voice_input` in beiden Vorlagen (`config/runtime/nginx.conf.template` fuer Docker, `config/nginx.conf.template` fuer die native Installation).
+- **Ursache 2, Mikrofon verboten:** nginx schickte `Permissions-Policy: microphone=()` mit. Damit haette der Browser das Mikrofon auch mit Knopf verweigert. Jetzt `microphone=(self)`: nur CoreAI selbst darf es nutzen, eingebettete fremde Seiten nicht. Kamera und Standort bleiben aus.
+- Das Update bringt beides ohne Handgriff auf den Server: Der Installer baut die nginx-Konfiguration bei jedem Update aus der Vorlage neu.
+- **Knopf:** Scheitert die Statusabfrage, steht der Grund jetzt in der Browser-Konsole ("CoreAI Spracheingabe: Status nicht lesbar (HTTP 404)"), und die Seite fragt bis zu dreimal im Minutenabstand erneut.
+- Tests: `voice-input-selftest.php` prueft beide nginx-Vorlagen (Route und Mikrofon-Regel; mit der alten Vorlage schlaegt er fehl), `voice-input-ui-selftest.cjs` den Fall 404, beide Preflights pruefen die Vorlage.
+- Keine Einstellung noetig: Die Spracheingabe ist der Knopf im Eingabefeld; die Sprache der Mitschrift kommt aus der Hauptsprache im KI-Profil.
+- Keine Aenderung an Cores, Modelfile, Datenbankschema, Installer oder Warteschlange.
+
 ## 0.6.14 - 05.11.2026
 
 P20.1 Spracheingabe, wie vom Betreiber entschieden: Die Mitschrift landet im Eingabefeld und wird dort geprueft und gesendet; die Aufnahme wird nach der Mitschrift sofort geloescht; nur angemeldete Konten (Inhaber, Admins, Nutzer), keine Gaeste; Mikrofon bis 2 Minuten, Audiodateien bis 10 Minuten.
