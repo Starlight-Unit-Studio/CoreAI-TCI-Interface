@@ -1,5 +1,16 @@
 # CoreAI: TCI Interface
 
+## 0.6.33 - 06.11.2026
+
+Rueckmeldung des Betreibers zu 0.6.32: "die Geschwindigkeit ist top", aber Mara verstand Unsinn. "Hallo" wurde zu "Hallo Bergisch Gladbach", "ich hab nur hallo gesagt" zu "Ich bin Anfaenger. Ich habe nur hallo gesagt.", "na dann" zu "Schopner danke gesagt." Dazu die Messwerte aus `logs/stu_error.log`.
+
+- **Mara Normal schreibt wieder mit:** Die Messwerte zeigen, dass Mara Schnell keine Zeit spart. Mitschrift 1,5 bis 2,2 s (mit Mara Normal in 0.6.31: 2,0 und 2,2 s), Antwort bis zum ersten Satz danach 0,8 bis 2,2 s (0.6.31: 0,8 und 1,3 s). Die Annahme aus 0.6.32 war falsch: `prompt_eval_count` zaehlt bei Ollama den ganzen Prompt, auch was im Zwischenspeicher lag (ein Vorwaermen mit 1.081 Tokens dauerte 0,3 s). Die 5,9 s der Live-Probe kamen vermutlich von der Aufnahme in Maras eigenem Aufruf, die es seit 0.6.31 nicht mehr gibt. Mara Schnell hoerte kurze Saetze aber deutlich schlechter. Darum schreibt im Live-Gespraech wieder der Live-Core mit; Mara Schnell wird dafuer nicht mehr geladen (das Oeffnen dauerte mit beiden Cores 20 s).
+- **Schneller bleibt:** Eve ohne Pausen (Teile vorab), 0,7 s Pause bis zum Rundenende und der Live-Knopf im Senden-Platz bleiben wie in 0.6.32.
+- **Keine Emojis vorlesen:** Ein einzelnes "😊" erschien als mein Satz und ging an Eve. Emojis werden aus den gesprochenen und angezeigten Saetzen entfernt, ein Satz ohne Buchstaben oder Ziffern entfaellt. In der Chat-Antwort bleiben sie stehen.
+- **Ehrliche Messwerte:** Das Protokoll (`coreui_live_turn`, `coreui_live_warm`) nennt jetzt `prompt_tokens` (der ganze Prompt), `prompt_s` (wie lange Ollama wirklich gelesen hat) und `load_s` (Laden des Cores) statt der irrefuehrenden `new_tokens`.
+- Tests: `voice-live-selftest.php` (Emojis, Messwerte; ueber HTTP mit Datenbank: Vorwaermen nur mit Mara Normal, Mitschrift durch Mara Normal, obwohl Mara Schnell installiert ist; ein Emoji am Ende der Antwort wird nicht gesprochen, bleibt aber im Chat), `voice-live-ui-selftest.cjs` (Runde ohne Mitschreib-Core, sonst wie 0.6.32).
+- Keine Aenderung an Cores, Modelfile, Datenbankschema, Installer, nginx oder Warteschlange.
+
 ## 0.6.32 - 06.11.2026
 
 Rueckmeldung des Betreibers nach dem ersten Live-Gespraech: "die Erkennung von meinem Gesprochenem ist etwas traege" und "Mara macht bei ihren Antworten lange Pausen zwischen den Saetzen oder nach nem Komma". Dazu die Idee: der Senden-Knopf soll der Live-Knopf sein, solange nichts in der Eingabezeile steht. Entscheidung des Betreibers: Mara Schnell schreibt im Live-Gespraech mit.

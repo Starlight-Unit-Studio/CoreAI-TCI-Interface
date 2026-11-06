@@ -1,0 +1,8 @@
+CoreAI: TCI Interface 0.6.33 - 06.11.2026
+- Live-Gespraech: Mara Normal (der Live-Core) schreibt wieder mit; Mara Schnell sparte beim Betreiber keine Zeit und hoerte kurze Saetze falsch.
+- Mara Schnell wird beim Oeffnen nicht mehr geladen (Oeffnen dauerte mit beiden Cores 20 s).
+- Emojis werden nicht vorgelesen und nicht als eigener Satz angezeigt; im Chat bleiben sie.
+- Protokoll coreui_live_turn/coreui_live_warm mit prompt_tokens, prompt_s (echte Lesezeit) und load_s statt new_tokens.
+- Unveraendert aus 0.6.32: Eve ohne Pausen, 0,7 s Pause, Live-Knopf im Senden-Platz.
+- Tests: voice-live-selftest.php (auch ueber HTTP mit Datenbank), voice-live-ui-selftest.cjs.
+- Keine Aenderung an Cores, Modelfile, Datenbankschema, Installer, nginx oder Warteschlange.

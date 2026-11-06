@@ -9,9 +9,9 @@
    it is there. Signed-in accounts only. Mara Normal answers live (operator, 06.11.2026).
    0.6.32 (operator after the first test): the parts Eve reads are fetched ahead, one after
    the other, while the part before is playing (before, each part was only computed when the
-   one before had ended: pauses after commas and between sentences); Mara Schnell writes the
-   transcript when both Cores fit into memory; a pause of 0.7 s ends the round; the live
-   button sits in the place of the send button while the input row is empty. */
+   one before had ended: pauses after commas and between sentences); a pause of 0.7 s ends
+   the round; the live button sits in the place of the send button while the input row is
+   empty. 0.6.33: the live Core writes the transcript again (Mara Schnell misheard). */
 (function () {
   'use strict';
 
@@ -163,7 +163,7 @@
     var ctx = composer && composer.liveContext ? composer.liveContext() : null;
     live = { view: buildView(), state: 'preparing', muted: false, ctx: ctx, pairs: [], queue: [], playing: null,
       controller: null, utterance: null, preRoll: [], floor: 0.006, speechMs: 0, closed: false, audio: new Audio(), wake: null,
-      hear: '', epoch: 0, fetching: Promise.resolve(), urls: [] };
+      epoch: 0, fetching: Promise.resolve(), urls: [] };
     document.body.appendChild(live.view);
     document.documentElement.classList.add('live-open');
     live.view.querySelector('.live-mute').setAttribute('aria-label', 'Mikrofon stummschalten');
@@ -178,9 +178,7 @@
     var Ctx = window.AudioContext || window.webkitAudioContext;
     live.audioCtx = new Ctx();
     if (live.audioCtx.resume) live.audioCtx.resume().catch(function () {});
-    var opened = live;
     var warmed = post('warm', { session_id: ctx.sessionId, character_id: ctx.characterId, since_id: ctx.lastMessageId })
-      .then(function (d) { if (d && d.hear_core) opened.hear = String(d.hear_core); return d; })
       .catch(function () { return null; });
     navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: true, channelCount: 1 } })
       .then(function (stream) {
@@ -324,7 +322,7 @@
           signal: controller ? controller.signal : undefined,
           headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream', 'X-CoreUI-CSRF': status.csrf },
           body: JSON.stringify({ session_id: round.ctx.sessionId, character_id: round.ctx.characterId,
-            since_id: round.ctx.lastMessageId, uuid: up.uuid, hear: round.hear }) });
+            since_id: round.ctx.lastMessageId, uuid: up.uuid }) });
       })
       .then(function (r) {
         if (!r.ok || !r.body) throw new Error('turn');
@@ -369,8 +367,6 @@
     if (live !== round) return;
     if (event === 'heard') {
       setLine('.live-heard', '„' + String(data.text || '') + '“');
-    } else if (event === 'hear') {
-      round.hear = String(data.core || '');
     } else if (event === 'silence') {
       setState('listening', TEXT.silence);
     } else if (event === 'sentence') {
