@@ -1,5 +1,16 @@
 # CoreAI: TCI Interface
 
+## 0.6.25 - 06.11.2026
+
+Hotfix fuer die fehlgeschlagene Installation von 0.6.24: Im Update-Protokoll wurde ein PHP-Syntaxfehler in `api/voice_transcribe.php` gemeldet. Bei der Umstellung auf "Stimmsequenz" fehlte in einer zusammengesetzten Zeichenkette das schliessende einfache Anfuehrungszeichen. Dieselbe Ursache bestand in `api/ember_attachments.php`, waere also beim naechsten Syntaxcheck aufgetaucht.
+
+- **PHP-Quote-Fix:** In beiden Dateinamen-Formatierungen den gueltigen Ausdruck `'Die Audiodatei "' . ... . '"'` beziehungsweise `'Audiodatei "' . ... . '"'` wiederhergestellt. Der Stimmsequenz-Begriff bleibt erhalten; Audioformate, Dateinamen und Datenbank bleiben unveraendert.
+- **Voice-Selbsttest:** Die beiden Verlaufserwartungen von "Sprachnachricht" auf "Stimmsequenz" korrigiert. Der bestehende Test prueft ausserdem die formatierte gewoehnliche Audiodatei mit Dateinamen.
+- **Merge-Schutz:** `AGENTS.md` und `CLAUDE.md` verlangen bei PHP-Aenderungen einen echten `php -l`-Lauf und passende Offline-Tests vor dem Merge. Ohne PHP-Laufzeit darf ein PR nicht ungeprueft gemergt werden.
+- **Bootstrap-Cache-Fix:** Der Fingerprint von `js/console-gate.js` war nach dem Versionswechsel 0.6.23 -> 0.6.24 in den HTML-Seiten veraltet. Fuer 0.6.25 neu berechnet und auf allen fuenf Seiten mit Bootstrap-Script aktualisiert.
+- **Versionierung:** Neuer Versionsstand 0.6.25 samt Oberflaechen, Bootstrap, Branding-Test, Changelog-Archiv und Uebergabe gemaess Versionsrichtlinie.
+- Lokal geprueft: die beiden betroffenen PHP-Ausdruecke als eigenstaendige PHP-8.4-Syntax- und Formatierungsprobe. Gesamter PHP-Checkout, Preflight, Server-Update und echte Audio-End-to-End-Tests muessen separat ausgefuehrt werden; keine erfolgreichen ungetesteten Ergebnisse behauptet.
+
 ## 0.6.24 - 06.11.2026
 
 Mara spricht als eine einheitliche Terran Cognitive Intelligence (TCI). Der Core und die Werkzeuge sind Bestandteile ihrer Verarbeitung, keine weiteren Akteure. In sichtbaren Texten heissen gesprochene Chatnachrichten jetzt Stimmsequenzen.

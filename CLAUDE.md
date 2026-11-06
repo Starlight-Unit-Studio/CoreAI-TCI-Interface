@@ -15,6 +15,8 @@
 
 **Kurzregel:** README = Anleitung. CHANGELOG = Geschichte. ROADMAP = Zukunft.
 
+**PHP-Gate:** Bei jeder PHP-Aenderung vor dem Merge `php -l` fuer die geaenderten PHP-Dateien und betroffene Offline-Selbsttests ausfuehren. Ein reiner GitHub-Diff- oder Textcheck ist kein Syntaxnachweis. Falls PHP-Lint nicht moeglich ist, PR als Draft lassen; niemals ohne Testnachweis mergen.
+
 ## Terran terminology rule (05.11.2026)
 
 CoreAI is a **Terran interface**: its UI connects through **Terra-Net**, never Arch-Net. Do not label its settings or startup screens as Ayal'ren systems. Use `TERRANISCHE SYSTEMKONFIGURATION` in Settings. Retain historical lore files, matrix artwork, internal identifiers and real network code. Check `scripts/terran-terminology-selftest.cjs` before releasing UI changes.
