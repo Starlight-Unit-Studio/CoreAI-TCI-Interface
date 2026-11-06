@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.29: Zeiten im Chat mit Zeitzone (nachgeladene Antworten nicht mehr eine Stunde zu frueh).
+# CoreAI: TCI Interface 0.6.30: Live-Probe fuer das Live-Gespraech (P20.4).
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -172,6 +172,7 @@ UI_FILES=(
   api/weather_live.php
   scripts/weather-live-selftest.php
   scripts/voice-hear-check.php
+  scripts/voice-live-check.php
   scripts/message-time-selftest.php
   docker/tts-spike/Dockerfile
   docker/tts-spike/constraints-piper.txt

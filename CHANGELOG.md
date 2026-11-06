@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.6.30 - 06.11.2026
+
+Zurueck zum Live-Gespraech (P20.4). Vor dem Bau wird auf dem Server gemessen, welcher Weg im Gespraech am schnellsten zu Maras erstem gesprochenem Satz fuehrt und dabei zuverlaessig auf die neue Stimmsequenz antwortet.
+
+- **Live-Probe (`scripts/voice-live-check.php`):** nimmt die letzten drei Stimmsequenzen des Inhaber-Kontos als drei Gespraechsrunden, mit dem Verlauf des neuesten Chats und Maras Persona, waermt den Core vor wie spaeter der Gespraechsmodus und spielt drei Wege durch: A zweistufig wie im Chat (Mitschrift mit Googles Vorlage, dann WAV und Mitschrift an Mara), B ein einziger Aufruf, in dem Mara zuerst eine Zeile "Gehoert: ..." schreibt und dann antwortet, C nur die WAV. Ausgegeben werden je Runde die Sekunden bis zum ersten sprechbaren Satz (Eve braucht danach etwa 0,15 s bis zum ersten Ton), die Tokens, die der Core neu lesen musste (wenige heisst: der Cache greift), was gehoert wurde und Maras Antwort. Mit `--cores alle` fuer jeden installierten Core mit Audio-Eingang, `--uuids` fuer bestimmte Aufnahmen, `--ways` fuer einzelne Wege. Ohne Denken, ueber Maras Warteschlange, speichert nichts, raeumt temporaere Dateien auch bei Fehlern weg.
+- Sprachplan P20.4 um die Probe und die gewuenschte Bedienung ergaenzt: Live-Knopf neben dem Mikrofon in der Eingabezeile, Vollbild-Ansicht im CoreAI-Stil mit Begruessung, Zustandsanzeige (zuhoeren, nachdenken, sprechen), Stummschalten und Beenden.
+- Tests: `voice-input-selftest.php` (erster sprechbarer Satz nach der "Gehoert:"-Zeile, die Zeile als Mitschrift, Verdrahtung). Die Probe lief hier gegen einen nachgebauten, streamenden Core und MariaDB (drei Runden, drei Wege, zwei Cores, wachsender Verlauf, keine Reste).
+- Keine Aenderung an Chat, Cores, Modelfile, Datenbankschema, Installer oder Warteschlange.
+
 ## 0.6.29 - 06.11.2026
 
 Screenshot des Betreibers: Die Antwort der Browser-Recherche zur Wetterfrage stand mit 13:33 unter einer Stimmsequenz von 14:29.

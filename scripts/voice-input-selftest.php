@@ -234,6 +234,24 @@ vi_test(str_contains($check, 'coreui_voice_transcribe_part(ember_url(), $core, (
   && str_contains($check, 'coreui_voice_prepare_native($source, $plain, COREUI_VOICE_INPUT_MAX_SECONDS)')
   && str_contains($check, "'loudnorm=I=-18:TP=-1.5:LRA=11'") && str_contains($check, 'register_shutdown_function('),
   'the hearing check: same WAVs and calls as CoreAI, loudness variant, temporary files removed');
+// 0.6.30: the live probe (P20.4) measures three ways to the first sentence Eve could speak.
+$live = (string)file_get_contents($root . '/scripts/voice-live-check.php');
+foreach (['live_first_sentence', 'live_heard_line'] as $fnName) {
+  if (preg_match('~^function ' . $fnName . '\(.*?^}~ms', $live, $fn) !== 1) vi_test(false, $fnName . ' missing');
+  eval($fn[0]);
+}
+vi_test(live_first_sentence("Gehört: Wie wird das Wetter?\nIch schaue gleich nach. Morgen", true) === 'Ich schaue gleich nach.'
+  && live_first_sentence('Gehört: Wie wird das Wetter?', true) === null
+  && live_first_sentence('[Analyse: kurz', false) === null && live_first_sentence('Ja.', false) === null
+  && live_first_sentence('Ja. Das klingt gut, oder?', false) === 'Ja. Das klingt gut, oder?',
+  'the first sentence Eve could speak, after the "Gehört:" line of way B');
+vi_test(live_heard_line("**Gehört:** \"Wie wird das Wetter?\"\nAntwort") === 'Wie wird das Wetter?' && live_heard_line('Antwort ohne Zeile') === '',
+  'the "Gehört:" line is the transcript of way B');
+vi_test(str_contains($live, "'think' => false") && str_contains($live, 'ember_global_lock_acquire(1800)')
+  && str_contains($live, 'ember_generation_lock_release($lock)') && str_contains($live, 'coreui_voice_listen_task($sender')
+  && str_contains($live, 'coreui_voice_transcribe_part(ember_url(), $core,') && str_contains($live, "'prompt_eval_count'")
+  && str_contains($live, 'register_shutdown_function('),
+  'the live probe: no thinking, Mara\'s queue, the chat\'s task and transcript, tokens read anew, no files left');
 $attach = (string)file_get_contents($root . '/api/ember_attachments.php');
 vi_test(str_contains($attach, "'terms' => ember_attach_voice_terms(\$pdo, \$uid),") && str_contains($attach, 'ember_profile_num_ctx($model), $terms);'),
   'both transcripts get the terms');

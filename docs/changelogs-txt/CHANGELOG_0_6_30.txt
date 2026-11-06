@@ -1,0 +1,6 @@
+CoreAI: TCI Interface 0.6.30 - 06.11.2026
+- Live-Gespraech (P20.4) vorbereitet: Live-Probe scripts/voice-live-check.php fuer den Server.
+- Drei Runden mit den letzten drei Stimmsequenzen und echtem Verlauf, drei Wege: zweistufig wie im Chat,
+  ein Aufruf mit "Gehoert:"-Zeile, nur WAV. Gemessen: erster sprechbarer Satz, neu gelesene Tokens (Cache).
+- Sprachplan P20.4 ergaenzt. Tests: voice-input-selftest.php.
+- Keine Aenderung an Chat, Cores, Modelfile, Datenbankschema, Installer oder Warteschlange.
