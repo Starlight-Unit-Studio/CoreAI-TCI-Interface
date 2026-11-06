@@ -1,5 +1,15 @@
 # CoreAI: TCI Interface
 
+## 0.6.26 - 06.11.2026
+
+Preflight-Hotfix nach der Betreiberpruefung von 0.6.25: Der komplette Testlauf meldete genau zwei Fehler, weil die Textumstellung auf "Stimmsequenz" und Maras Ich-Perspektive in zwei aelteren Test-Erwartungen noch nicht nachvollzogen war.
+
+- **Spracheingabe-Selbsttest:** `scripts/voice-input-selftest.php` prueft weiter, dass die automatische Mitschrift als Anker der aktuellen Nachricht dient und fruehere Nachrichten nicht erneut beantwortet werden. Die beiden Erwartungstexte sind nun "im Zweifel gilt der Audioinhalt" und "Fruehere Stimmsequenzen". Die Testlogik bleibt unveraendert.
+- **Bild-/Video-Persona-Selbsttest:** `scripts/vision-persona-selftest.php` prueft weiter die unveraenderten internen Ereigniskennungen und den gemeinsamen Mara-Kontext. Seine sichtbaren Aktivitaetstexte entsprechen jetzt "Ich sehe mir den Anhang an" und "Ich hoere die Stimmsequenz an".
+- **Kompatibilitaet:** Keine Aenderung an Core, Ollama, Backend-Logik, Audioformaten, Bild-/Video-Pipeline, Datenbank oder Modelfile. Die korrekt gestarteten Funktionschecks bleiben erhalten.
+- **Versionspflege:** 0.6.26 in den sechs HTML-Seiten, Bootstrap, SHA-256-Cache-Fingerprint, README, Changelog/Index/TXT-Archiv, Uebergabe, Branding und Preflight-Kopfzeilen synchronisiert.
+- **Tests:** Die beiden Fehler sind durch den Betreiber-Preflight fuer 0.6.25 bestaetigt. Ein vollstaendiger neuer Runtime-/Server-Preflight fuer 0.6.26 muss vor dem Merge und Live-Update ausgefuehrt werden; keine ungeprueften Erfolgsbehauptungen.
+
 ## 0.6.25 - 06.11.2026
 
 Hotfix fuer die fehlgeschlagene Installation von 0.6.24: Im Update-Protokoll wurde ein PHP-Syntaxfehler in `api/voice_transcribe.php` gemeldet. Bei der Umstellung auf "Stimmsequenz" fehlte in einer zusammengesetzten Zeichenkette das schliessende einfache Anfuehrungszeichen. Dieselbe Ursache bestand in `api/ember_attachments.php`, waere also beim naechsten Syntaxcheck aufgetaucht.

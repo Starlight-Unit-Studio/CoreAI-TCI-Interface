@@ -15,6 +15,8 @@
 
 **Kurzregel:** README = Anleitung. CHANGELOG = Geschichte. ROADMAP = Zukunft.
 
+**Sprach-/UI-Gate:** Bei geaenderten sichtbaren Texten auch alle Selbsttests mit wortwoertlichen Textvergleichen suchen, aktualisieren und vor Merge ausfuehren. Keine Assertions abschalten, um die Tests gruen zu bekommen. Ohne echte Testergebnisse PR als Draft belassen.
+
 **PHP-Gate:** Bei jeder PHP-Aenderung vor dem Merge `php -l` fuer die geaenderten PHP-Dateien und betroffene Offline-Selbsttests ausfuehren. Ein reiner GitHub-Diff- oder Textcheck ist kein Syntaxnachweis. Falls PHP-Lint nicht moeglich ist, PR als Draft lassen; niemals ohne Testnachweis mergen.
 
 ## Terran terminology rule (05.11.2026)

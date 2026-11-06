@@ -22,6 +22,7 @@ Diese Regeln gelten fuer jede Arbeit im Repository **CoreAI: TCI Interface**, au
 - **Jeder Merge nach `main` benoetigt eine neue numerische Version**, auch rein dokumentarische Merger. Es gilt `docs/VERSIONING_POLICY.md`.
 - `VERSION`, sechs HTML-Seiten, JS-Bootstrap, README, CHANGELOG, TXT-Archiv, Uebergabe, Branding-Test und Preflights synchron halten.
 - Vor Merge lokal `python3 scripts/version-merge-check.py --base-version <aktuelle-main-version>` ausfuehren.
+- **UI-Text-Regression:** Nach jeder Aenderung sichtbarer Formulierungen alle Testdateien nach den alten Texten durchsuchen, exakte Solltexte aktualisieren und die betroffenen Tests real ausfuehren. Assertions zu Funktionen, Berechtigungen, Kanon und Event-Kennungen nicht entfernen oder umgehen. Ein ungetesteter Sprachfix ist nicht mergefertig.
 - **PHP-Syntax ist ein Merge-Blocker:** Nach PHP-Textaenderungen alle geaenderten `.php`-Dateien mit `php -l` pruefen und die betroffenen Selbsttests laufen lassen. Bei fehlender PHP-Laufzeit PR als Draft belassen und NICHT mergen. Insbesondere Quotes und Konkatenation bei User-Textaenderungen pruefen.
 - Keine GitHub Actions als Voraussetzung. Keine nicht durchgefuehrten Tests als erfolgreich beschreiben.
 - Ein Merge ist nicht gleich Live-Deployment.

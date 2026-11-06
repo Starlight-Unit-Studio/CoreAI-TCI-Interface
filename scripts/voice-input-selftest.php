@@ -167,8 +167,8 @@ vi_test(coreui_voice_clean_reply('Ich habe deine Nachricht gehört.') === 'Ich h
   'never an empty answer, a sentence that goes on stays, a tag that was opened stays');
 $task = coreui_voice_listen_task('Rick', '', [['voice' => true, 'seconds' => 4.2, 'paths' => ['a'], 'stamps' => ['00:00'],
   'transcript' => 'Was gibt es bei dir Neues?']]);
-vi_test(str_contains($task, 'Automatische Mitschrift dazu (kann Hoerfehler enthalten, im Zweifel gilt die Aufnahme): "Was gibt es bei dir Neues?"')
-  && str_contains($task, 'Das ist die NEUE Nachricht') && str_contains($task, 'Fruehere Sprachnachrichten im Verlauf sind schon beantwortet')
+vi_test(str_contains($task, 'Automatische Mitschrift dazu (kann Hoerfehler enthalten, im Zweifel gilt der Audioinhalt): "Was gibt es bei dir Neues?"')
+  && str_contains($task, 'Das ist die NEUE Nachricht') && str_contains($task, 'Fruehere Stimmsequenzen im Verlauf sind schon beantwortet')
   && str_contains($task, 'Kuendige nicht an, dass du die Nachricht gehoert'), 'Mara gets the transcript as anchor, only the new message counts');
 
 $payload = coreui_voice_transcribe_payload('core-test:latest', 'QUJD', 'German');
