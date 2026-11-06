@@ -1,0 +1,18 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.6.21
+Stand: 06.11.2026
+Ausgangsbasis: main 0.6.20 nach Merge von PR #171.
+
+RUECKMELDUNG: "Mara sagt immer Bergisch Glaeaedbach, als wuerde sie Platt versuchen" (Vorlesen mit Eve).
+
+UMSETZUNG:
+- tools/tts_spike/textprep_de.py: PRONUNCIATION 'gladbach' -> 'Glattbach' (w: mit Endungen),
+  'moenchengladbach' -> 'Moenchenglattbach' (w). Die Textaufbereitung bleibt 'de-2'; die Plan-Kennung folgt dem
+  Dateiinhalt (COREUI_VOICE_PLAN_SOURCES), alte Plaene und Audios werden nicht wiederverwendet. Der Sprachdienst
+  laedt neuen Code nach dem Update selbst (0.6.5).
+- scripts/tts-spike-selftest.py: Testfall.
+
+GEPRUEFT: tts-spike-selftest.py, volle Testreihe, cache-bust, version-merge-check gegen 0.6.20.
+NICHT hier: der Klang mit Eve (Hoertest beim Betreiber).
+
+NACH DEM MERGE (Betreiber): Update unter Einstellungen > System > CoreAI Update, eine Antwort mit Bergisch Gladbach
+vorlesen lassen. Klingt es noch falsch, liegt die naechste Schreibweise bereit (etwa "Glatt Bach" mit Pause).

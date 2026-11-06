@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.20: Sprachnachrichten mit WAV und Mitschrift vor der Antwort, ohne Klammern, Skill-Block oder Ankuendigung.
+# CoreAI: TCI Interface 0.6.21: Eve spricht Gladbach mit kurzem a (Glattbach).
 set -Eeuo pipefail
 IFS=$'\n\t'
 

@@ -7,7 +7,7 @@
   var projectUrl = new URL('../', scriptUrl);
 
   window.EMBER_COREUI = Object.freeze({
-    version: '0.6.20',
+    version: '0.6.21',
     projectUrl: projectUrl.href,
     apiUrl: new URL('api/', projectUrl).href
   });

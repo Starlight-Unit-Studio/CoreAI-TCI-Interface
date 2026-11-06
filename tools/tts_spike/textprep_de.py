@@ -112,6 +112,8 @@ PRONUNCIATION = {
     'windows': ('Windous', 'x'), 'chrome': ('Krohm', 'x'), 'firefox': ('Feierfox', 'x'), 'chatgpt': ('Tschätt Ge Pe Te', 'x'),
     'claude': ('Klohd', 'x'), 'openai': ('Oupen Ey Ei', 'x'), 'nvidia': ('Enwidia', 'x'), 'microsoft': ('Maikrosoft', 'x'),
     'apple': ('Äppel', 'x'), 'amazon': ('Ämason', 'x'), 'searxng': ('Sörks En Ge', 'x'), 'playwright': ('Pleirait', 'x'),
+    # German place names the voice read like English "glad" ("Bergisch Gläädbach", operator 06.11.2026).
+    'gladbach': ('Glattbach', 'w'), 'mönchengladbach': ('Mönchenglattbach', 'w'),
 }
 ENDINGS = ('s', 'e', 'es', 'en', 'er', 'em', 'ern', 'ers', 'n', 't', 'te', 'ten', 'tet', 'st', 'in', 'innen', 'erin', 'erinnen')
 
