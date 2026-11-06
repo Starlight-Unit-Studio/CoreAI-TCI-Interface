@@ -1,0 +1,24 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.27
+Stand: 06.11.2026
+Basis: main 0.6.26, gemergter PR #177.
+
+FEHLER
+Betreiber-Preflight: 1 Problem, Spracheingabe-Selbsttest mit Detail:
+"Voice input FAIL: Mara is told it is a voice message of about 02:30"
+Der ausgegebene Anhang zeigt "Das ist eine Stimmsequenz (Laenge etwa 02:30, Minuten:Sekunden)", der Test suchte weiterhin "Das ist eine Sprachnachricht ...".
+
+URSACHE
+Der Runtime-Code in api/ember_attachments.php wurde auf den neuen Begriff "Stimmsequenz" umgestellt. In scripts/voice-input-selftest.php, Zeile 412, war ein einzelner alter Solltext stehengeblieben. Nach dem Testlauf 0.6.26 war dieser die letzte sichtbare fehlgeschlagene Pruefung.
+
+UMSETZUNG
+- scripts/voice-input-selftest.php: Exakten Solltext mit dem tatsaechlichen Runtime-Text synchronisiert. Verifikation von ca. 02:30 Dauer, drei Audioteilen und Begrenzung auf erste 02:00 bleibt aktiv.
+- scripts/tci-language-selftest.cjs: Schutz gegen erneute Abweichung zwischen Runtime-Audiohinweis und Selbsttest hinzugefuegt.
+- Alle 88 Testdateien auf relevante Altformulierungen geprueft. Historische Sprachnachricht-Dateipraefixe und Testeingaben unangetastet.
+- VERSION 0.6.27, alle sechs HTML-Seiten, js/console-gate.js samt SHA256-Cache-Schluessel, README, CHANGELOG.md, TXT-Archiv, Uebergabe, Branding-Selbsttest und Preflight-Kopfzeilen.
+- Keine PHP-Runtime-Aenderung, keine Migration, keine Modelfile- oder Ollama-Aenderung.
+
+VALIDIERUNG
+- Runtime-Text aus api/ember_attachments.php und aktualisierter Test-Erwartung stimmen statisch ueberein.
+- Zielstring mit isoliertem PHP-8.4-Snippet verifiziert.
+- Vor Merge im kompletten Checkout: php -l scripts/voice-input-selftest.php, php scripts/voice-input-selftest.php, node scripts/tci-language-selftest.cjs, Branding, Versionsguard und Cache-Bust verifizieren.
+- Vollstaendigen Preflight auf Server nach Merge wiederholen; ungetestete Schritte nicht als bestanden werten.

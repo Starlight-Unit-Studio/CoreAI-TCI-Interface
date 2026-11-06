@@ -1,5 +1,16 @@
 # CoreAI: TCI Interface
 
+## 0.6.27 - 06.11.2026
+
+Preflight-Folgekorrektur nach dem Betreiberlauf von 0.6.26: Die Spracheingabe pruefte in `scripts/voice-input-selftest.php` noch die historische sichtbare Formulierung "Das ist eine Sprachnachricht", obwohl `api/ember_attachments.php` sie seit 0.6.24 korrekt als "Das ist eine Stimmsequenz" ausgibt.
+
+- **Spracheingabe-Test:** Ausschliesslich den veralteten Solltext in der bestehenden Assertion auf "Das ist eine Stimmsequenz (Laenge etwa 02:30, Minuten:Sekunden)" umgestellt. Alle echten Pruefungen fuer Dauer, drei Teile und Zweiminutenlimit bleiben unveraendert.
+- **Regressionsschutz:** `scripts/tci-language-selftest.cjs` prueft zusaetzlich die Uebereinstimmung zwischen dem sichtbaren Audio-Anhangstext und der erwarteten Testformulierung. Technische Dateinamen mit `Sprachnachricht-` bleiben absichtlich unveraendert.
+- **Audit:** Alle 88 Testdateien auf einschlaegige alte Sprach-/Core-Formulierungen durchsucht. Weitere Treffer beziehen sich auf historische Eingaben oder weiterhin verwendete technische Dateikennungen; keine pauschale Ersetzung.
+- **Versionierung:** 0.6.27 mit `VERSION`, sechs HTML-Seiten, JavaScript-Bootstrap und inhaltbasiertem Cache-Schluessel, README, Changelog/Archiv, Uebergabe, Brandingtest und Preflight-Header synchronisiert.
+- **Abgrenzung:** Keine Aenderung an Runtime-PHP, Audio-/Vision-Verarbeitung, Datenbank, Modelfile, Ollama oder Installer.
+- **Pruefung:** Zieltext wurde gegen die aktuelle Runtime-Quelle abgeglichen und die PHP-String-Assertion isoliert mit PHP 8.4 geprueft. Vollstaendiger PHP-Selbsttest und Server-Preflight stehen bis zur tatsaechlichen Ausfuehrung aus.
+
 ## 0.6.26 - 06.11.2026
 
 Preflight-Hotfix nach der Betreiberpruefung von 0.6.25: Der komplette Testlauf meldete genau zwei Fehler, weil die Textumstellung auf "Stimmsequenz" und Maras Ich-Perspektive in zwei aelteren Test-Erwartungen noch nicht nachvollzogen war.
