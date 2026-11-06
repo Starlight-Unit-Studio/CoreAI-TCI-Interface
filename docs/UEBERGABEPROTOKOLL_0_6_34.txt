@@ -1,0 +1,29 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.34
+Stand: 06.11.2026
+Basis: main 0.6.33 nach Merge von PR #184.
+
+AUFTRAG (Betreiber, 06.11.2026, nach dem gelungenen Live-Test mit 0.6.33):
+- Wahl des Live-Cores NICHT aendern (kein automatischer Wechsel auf einen kleineren hoerenden Core).
+- Core-Liste: bei Audio-Cores rechts, links neben dem Haken, ein Lautsprecher fuer Audio und ein Symbol fuer Live-Chat.
+- Live-Knopf soll leicht pulsieren, nur als Live-Knopf, nicht als Senden-Taste.
+Danach normal weiter mit der Roadmap.
+
+UMSETZUNG
+- api/model_catalog.php: coreui_core_audio_flags(models, show) (rein): audio aus /api/show capabilities, live = audio
+  bei lokalem Core; Cloud nicht gefragt; nach dem ersten nicht beschriebenen lokalen Core bleibt der Rest unbekannt.
+- api/models.php: nach dem Freigabefilter coreui_core_audio_flags mit coreui_ollama_read_json('show', ...).
+- js/coreui-core-mode.js: state.caps je Core; capsOf/capIcon haengen span.core-mode-caps mit span.core-mode-cap--audio
+  und --live (role img, aria-label, title) als fuenftes Kind an die Zeile; children[2] bleibt der Haken.
+- css/console.css: Zeilenraster 10px | Name | Symbole | 14px Haken; Symbole per CSS-Maske (eingebettetes SVG,
+  currentColor); Live-Knopf-Pulsieren composer-live-pulse (2,4 s) nur bei .has-live.is-empty, aus bei reduzierter Bewegung.
+
+GEPRUEFT (hier ausgefuehrt): php -l (model_catalog.php, models.php), core-tiers-selftest.php, thinking-switch-ui-selftest.cjs,
+voice-live-ui-selftest.cjs (Chromium, Tag und Nacht, Handy), tci-language-selftest.cjs, terran-terminology-selftest.cjs,
+volle Testreihe, cache-bust, version-merge-check gegen 0.6.33. Bildschirmfotos der Core-Liste (Nacht, Tag) angesehen.
+NICHT HIER GEPRUEFT: echtes Ollama /api/show auf dem Server (welche Cores dort "audio" melden).
+
+NACH DEM MERGE (Betreiber):
+1. Update unter Einstellungen > System > CoreAI Update.
+2. Core-Liste unter der Eingabezeile oeffnen: Lautsprecher und Wellen bei Mara Schnell und Mara Normal (und bei jedem
+   weiteren Core, den Ollama mit Audio meldet); Haken weiter rechts.
+3. Leere Eingabezeile: Wellen-Symbol pulsiert sanft; etwas tippen: Senden-Pfeil ohne Pulsieren.

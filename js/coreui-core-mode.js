@@ -15,7 +15,9 @@
    installed Core on standby, red one that is missing or not available;
    the gold pulse marks the Core that is loading.
    0.5.83: the Ollama list loads when the chat opens; the legend lists the
-   TCI tiers only. */
+   TCI tiers only.
+   0.6.34: a Core that hears audio shows a speaker, one the live conversation
+   can run on the live waves, both left of the check mark. */
 (function () {
   'use strict';
 
@@ -68,7 +70,7 @@
     var manageBtn = doc.getElementById('coreModeManage');
     var state = {thinking: true, override: '', defaultModel: '', defaultLabel: '', labels: {}, csrf: '',
       loaded: false, saving: false, models: null, inMemory: [], loading: '', polls: 0, listError: false,
-      missing: [], install: null, mara: {}, admin: false};
+      missing: [], install: null, mara: {}, admin: false, caps: {}};
 
     function effective() { return state.override || state.defaultModel; }
     function labelOf(name) {
@@ -122,6 +124,27 @@
       return button;
     }
 
+    // 0.6.34: what a Core can do, as symbols left of the check mark (speaker: hears audio,
+    // waves: the live conversation can run on it); nothing when it cannot or it is unknown.
+    function capsOf(core) {
+      var c = state.caps[modelKey(core)] || {};
+      if (!c.audio && !c.live) return null;
+      var wrap = doc.createElement('span');
+      wrap.className = 'core-mode-caps';
+      if (c.audio) wrap.appendChild(capIcon('audio', 'Audioeingabe: Stimmsequenzen und Audiodateien'));
+      if (c.live) wrap.appendChild(capIcon('live', 'Live-Gespräch möglich'));
+      return wrap;
+    }
+
+    function capIcon(kind, text) {
+      var icon = doc.createElement('span');
+      icon.className = 'core-mode-cap core-mode-cap--' + kind;
+      icon.setAttribute('role', 'img');
+      icon.setAttribute('aria-label', text);
+      icon.setAttribute('title', text);
+      return icon;
+    }
+
     function option(value, label, meta, disabled) {
       var checked = value === state.override;
       var core = value || state.defaultModel;
@@ -133,6 +156,8 @@
       button.setAttribute('data-value', value);
       button.disabled = !!disabled || state.saving;
       button.children[2].textContent = checked ? '✓' : '';
+      var caps = capsOf(core);
+      if (caps) button.appendChild(caps);
       button.addEventListener('click', function (event) {
         // The list is rebuilt on choice; the click must not count as outside the menu.
         if (event && typeof event.stopPropagation === 'function') event.stopPropagation();
@@ -375,9 +400,11 @@
           if (both[0].default_model) state.defaultModel = String(both[0].default_model);
           if (both[0].default_label) state.defaultLabel = String(both[0].default_label);
           state.mara = {};
+          state.caps = {};
           state.models.forEach(function (m) {
             if (m && m.name && m.label) state.labels[modelKey(m.name)] = String(m.label);
             if (m && m.name && m.mara) state.mara[modelKey(m.name)] = true;
+            if (m && m.name) state.caps[modelKey(m.name)] = {audio: m.audio === true, live: m.live === true};
           });
           state.missing = (Array.isArray(both[0].missing_tiers) ? both[0].missing_tiers : []).filter(function (m) {
             return m && m.tier && m.label;

@@ -1,0 +1,7 @@
+CoreAI: TCI Interface 0.6.34 - 06.11.2026
+- Core-Liste im Chat: Lautsprecher fuer Cores mit Audioeingabe, Wellen fuer Cores, auf denen das Live-Gespraech laufen kann, beide links neben dem Haken.
+- api/models.php liefert audio und live je Core (Ollama /api/show capabilities); Cloud-Cores werden nicht gefragt, ein stummes Ollama haelt die Liste nicht auf.
+- Live-Knopf pulsiert sanft, nur als Live-Knopf und nicht bei reduzierter Bewegung; die Senden-Taste pulsiert nie.
+- Wahl des Live-Cores unveraendert.
+- Tests: core-tiers-selftest.php, thinking-switch-ui-selftest.cjs, voice-live-ui-selftest.cjs.
+- Keine Aenderung an Cores, Modelfile, Datenbankschema, Installer, nginx oder Warteschlange.

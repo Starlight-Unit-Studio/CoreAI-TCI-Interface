@@ -13,6 +13,7 @@
 // 0.6.32: the live button sits in the send button's place while the input row is empty (the
 // real updateComposerEmpty from js/console-app.js decides) and send comes back with text or an
 // attachment; Eve's parts are fetched ahead while the part before plays.
+// 0.6.34: the live button pulses gently (not with reduced motion), the send button never.
 const {chromium} = require('playwright');
 const fs = require('node:fs');
 const os = require('node:os');
@@ -181,6 +182,16 @@ const smallText = page => page.evaluate(() => {
       await page.evaluate(() => window.__setAttachments(0));
       await page.fill('#inputMessage', '');
       assert.deepEqual(await shown(), ['btnMic', 'btnLive'], theme + ': emptied again: live');
+      // 0.6.34: the live button pulses gently, the send button never.
+      const pulse = id => page.evaluate(id => [document.getElementById(id), ...document.querySelectorAll('#' + id + ' *')]
+        .map(el => getComputedStyle(el).animationName).filter(n => n !== 'none'), id);
+      assert.deepEqual(await pulse('btnLive'), ['composer-live-pulse'], theme + ': the live button pulses');
+      await page.fill('#inputMessage', 'Hallo');
+      assert.deepEqual(await pulse('btnSend'), [], theme + ': the send button does not pulse');
+      await page.fill('#inputMessage', '');
+      await page.emulateMedia({reducedMotion: 'reduce'});
+      assert.deepEqual(await pulse('btnLive'), [], theme + ': no pulse with reduced motion');
+      await page.emulateMedia({reducedMotion: 'no-preference'});
       assert.equal(await page.getAttribute('#btnLive', 'aria-label'), 'Live-Gespräch mit Mara');
       const btn = await page.evaluate(() => { const r = document.getElementById('btnLive').getBoundingClientRect(); return {w: r.width, h: r.height}; });
       assert.ok(btn.w >= 40 && btn.h >= 44, theme + ': the live button is large enough to hit: ' + JSON.stringify(btn));
