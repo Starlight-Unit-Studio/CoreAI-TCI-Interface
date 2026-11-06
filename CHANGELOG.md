@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.6.23 - 06.11.2026
+
+Screenshot des Betreibers nach 0.6.22: Auf eine Sprachnachricht beschrieb Mara "[Bildbeschreibung: Das Bild zeigt eine Nahaufnahme von zwei Haenden, die ein Stueck Brot halten ...]", zum zweiten Mal ein Bild, das nie geschickt wurde. Und Core hoerte "joder, alles glatt" statt "Bergisch Gladbach", obwohl die Aufnahme beim Abspielen im Chat normal klingt.
+
+- **Kein erfundenes Bild mehr:** Sprachnachrichten und Audiodateien reisen im selben Medienfeld wie Bilder. Der Grundauftrag haengte bei jedem Medienanhang "[Bild wurde mitgesendet - beschreibe und kommentiere es als Mara.]" an, also auch bei einer reinen Sprachnachricht, und Mara beschrieb ein Bild. Bei reinen Audio-Anhaengen faellt der Satz jetzt weg; der Auftrag zur Aufnahme sagt, was gekommen ist. Bilder, Videos, PDF-Seiten und Bild plus Sprachnachricht behalten ihn.
+- **Hoerprobe fuer den Server (`scripts/voice-hear-check.php`):** nimmt die neueste Sprachnachricht des Inhaber-Kontos (oder `--uuid`, `--file`, `--user`) und laesst sie genau so mitschreiben wie CoreAI, in drei Varianten: A wie bisher ohne Begriffe, B mit den Begriffen aus dem KI-Profil (oder `--terms`), C wie B mit vorher angeglichener Lautstaerke (ffmpeg loudnorm). Fuer den Core des Kontos oder mit `--cores alle` fuer jeden installierten Core mit Audio-Eingang, `--repeat` fuer Wiederholungen. Speichert und aendert nichts, jeder Aufruf wartet in Maras Warteschlange, temporaere Dateien werden auch bei Fehlern entfernt. Damit entscheiden wir anhand der echten Aufnahme, was hilft (Begriffe, Lautstaerke, ein anderer Core), statt zu raten.
+- Tests: `voice-input-selftest.php` (kein Bild-Satz bei Audio, Bild plus Audio, Video, Bild ohne Beschreibung, beide Prompt-Bauer; Hoerprobe nutzt dieselben WAVs und Aufrufe). Die Hoerprobe lief hier gegen einen nachgebauten Core und MariaDB (drei Varianten, zwei Cores, Cloud-Core uebersprungen, keine Reste).
+- Keine Aenderung an Cores, Modelfile, Datenbankschema, Installer oder Warteschlange.
+
 ## 0.6.22 - 06.11.2026
 
 Betreiber mit zwei Screenshots: "Es wird alles verstanden, nur Bergisch Gladbach nicht: entweder kommt Berlin oder 'der Tisch ist glatt'. Kriegen wir die Erkennung allgemein nicht genauer hin?" Dazu im Arbeitsweg "Ich fuehre gerade 'Core schreibt die Aufnahme mit (Teil 1 von 1)' aus. Der Abschluss steht noch aus." und als Antwort auf eine gesprochene Wetterfrage nur die Zeile "WEB: Wetter Berchtesgaden heute". Und: "Ich finde das Wetter vom WDR am genauesten."

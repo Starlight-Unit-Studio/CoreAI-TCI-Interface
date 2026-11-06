@@ -1,0 +1,7 @@
+CoreAI: TCI Interface 0.6.23 - 06.11.2026
+- Sprachnachrichten: Mara beschrieb ein Bild, das nie geschickt wurde ("[Bildbeschreibung: ... Brot ...]").
+- Ursache: Der Grundauftrag sagte bei jedem Medienanhang "Bild wurde mitgesendet", auch bei reinem Audio. Behoben.
+- Neu: scripts/voice-hear-check.php, Hoerprobe mit der echten Sprachnachricht (ohne Begriffe, mit Begriffen,
+  angeglichene Lautstaerke; je Core oder alle Cores mit Audio-Eingang).
+- Tests: voice-input-selftest.php.
+- Keine Aenderung an Cores, Modelfile, Datenbankschema, Installer oder Warteschlange.

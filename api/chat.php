@@ -2493,6 +2493,23 @@ function ember_web_search(string $query, int $limit = 5, int $timeout = 12): arr
   return [];
 }
 
+/**
+ * 0.6.23: the line after "Antworte als Mara:" when media go with the call. Voice
+ * messages and audio files travel in the same images field as pictures; the line
+ * "[Bild wurde mitgesendet ...]" made Mara describe a picture that was never sent
+ * ("[Bildbeschreibung: zwei Haende mit Brot ...]", operator's screenshot, 06.11.2026).
+ * Only audio: no line, the task of the recording says what came. Pictures, videos,
+ * PDF pages, or media without a description: the line as before.
+ */
+function ember_attachment_prompt_note($imageUrl): string {
+  if ($imageUrl === null) return '';
+  $meta = $GLOBALS['STU_EMBER_ATTACHMENT_VISION_META'] ?? null;
+  if (is_array($meta) && $meta !== [] && !array_filter($meta, static fn($m): bool => !is_array($m) || ($m['type'] ?? '') !== 'audio')) {
+    return '';
+  }
+  return "\n[Bild wurde mitgesendet - beschreibe und kommentiere es als Mara.]";
+}
+
 // Untrusted-Data-Block aus den Web-Treffern bauen (hart getruncated).
 function ember_web_results_block(string $query, ?callable $onResults = null): string {
   if (!ember_web_enabled()) return '';
@@ -5115,7 +5132,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
    . $nativeToolHint
    . ($channel === 'console' ? ("\n" . coreui_console_answer_style_hint($pdo,$uid,$profile['compact']) . "\n") : "")
    . "Antworte als Mara:"
-   . ($imageUrl !== null ? "\n[Bild wurde mitgesendet - beschreibe und kommentiere es als Mara.]" : "");
+   . ember_attachment_prompt_note($imageUrl);
 
   $GLOBALS['STU_EMBER_PROMPT_META'] = [
     'smalltalk' => 0,
@@ -5382,7 +5399,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
    . ($pyHint !== '' ? ($pyHint . "\n\n") : "")
    . ($channel === 'console' ? ("\n" . coreui_console_answer_style_hint($pdo,$uid,$promptProfile['compact']) . "\n") : "")
    . "Antworte als Mara:"
-   . ($imageUrl !== null ? "\n[Bild wurde mitgesendet - beschreibe und kommentiere es als Mara.]" : "");
+   . ember_attachment_prompt_note($imageUrl);
 
   $GLOBALS['STU_EMBER_PROMPT_META'] = [
     'smalltalk' => 0,

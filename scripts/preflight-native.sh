@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.22: Begriffe fuer Sprachnachrichten, Werkzeuge nach Sprachnachrichten, Live-Wetter (WDR fuer NRW).
+# CoreAI: TCI Interface 0.6.23: kein erfundenes Bild bei Sprachnachrichten, Hoerprobe fuer den Server.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -170,6 +170,7 @@ UI_FILES=(
   scripts/voice-terms-ui-selftest.cjs
   api/weather_live.php
   scripts/weather-live-selftest.php
+  scripts/voice-hear-check.php
   docker/tts-spike/Dockerfile
   docker/tts-spike/constraints-piper.txt
   docker/tts-spike/constraints-pocket.txt
