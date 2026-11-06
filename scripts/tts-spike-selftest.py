@@ -226,6 +226,9 @@ for text, words in (
     ('Teil von E.M.B.E.R. Morgen geht es weiter, mit E.M.B.E.R. Anschließend mehr. Das E.M.B.E.R. Framework.',
      'Teil von Ember. Morgen geht es weiter, mit Ember. Anschließend mehr. Das Ember Freimwörk.'),
     ('Homer, Corelli, Gamelan, Hostessen, Hosts, Gamer, Updater.', 'Homer, Corelli, Gamelan, Hostessen, Housts, Gehmer, Apdeiter.'),
+    # Gladbach with a short a, as said there (Eve read "Gläädbach", operator 06.11.2026).
+    ('Termin in Bergisch Gladbach, die Gladbacher Straße und Mönchengladbach.',
+     'Termin in Bergisch Glattbach, die Glattbacher Straße und Mönchenglattbach.'),
     # German words that only look like English ones stay.
     ('Tablette, Mailand, Hostie, hier, Bugatti, Eventuell, Homeoffice.', 'Tablette, Mailand, Hostie, hier, Bugatti, Eventuell, Houm-office.'),
 ):

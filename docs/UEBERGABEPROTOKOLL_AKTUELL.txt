@@ -1,9 +1,10 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
 Stand: 05.11.2026
-Repository-Version: 0.6.20
-BASIS: main 0.6.19 nach PR #170; Antworten auf Sprachnachrichten ohne eckige Klammer am Anfang.
+Repository-Version: 0.6.21
+BASIS: main 0.6.20 nach PR #171; Eve spricht Gladbach mit kurzem a.
 NEUE ARBEIT ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_6_21.txt
   docs/UEBERGABEPROTOKOLL_0_6_20.txt
   docs/UEBERGABEPROTOKOLL_0_6_19.txt
   docs/UEBERGABEPROTOKOLL_0_6_18.txt

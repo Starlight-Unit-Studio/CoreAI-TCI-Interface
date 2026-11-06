@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.6.21 - 06.11.2026
+
+Betreiber: "Mara sagt immer Bergisch Glaeaedbach, als wuerde sie Platt versuchen."
+
+- **Vorlesen:** Eve las "Gladbach" wie das englische "glad", mit langem, gedehntem a. Das Aussprache-Woerterbuch der deutschen Textaufbereitung schreibt es jetzt so, wie es gesprochen wird: "Glattbach", mit Endungen ("Gladbacher" wird "Glattbacher"), dazu "Moenchengladbach". Gespeicherte Vorlese-Audios mit der alten Aussprache werden nicht weiterverwendet, weil die Textaufbereitung Teil ihrer Kennung ist.
+- Tests: `tts-spike-selftest.py` mit "Bergisch Gladbach", "Gladbacher Strasse" und "Moenchengladbach".
+- Keine Aenderung an Cores, Modelfile, Datenbankschema, Installer oder Warteschlange.
+
 ## 0.6.20 - 06.11.2026
 
 Screenshot des Betreibers (erste echte Sprachnachricht): Mara hoert die Aufnahme selbst, die Mitschrift erscheint, das Gedaechtnis speichert. Maras Antwort begann aber mit einer einzelnen eckigen Klammer: "[Hey Rick, vielen Dank fuer die Nachricht! ...", ohne schliessende Klammer.

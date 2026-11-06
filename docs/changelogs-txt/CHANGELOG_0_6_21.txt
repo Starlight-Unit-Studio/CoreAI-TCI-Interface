@@ -1,0 +1,5 @@
+CoreAI: TCI Interface 0.6.21 - 06.11.2026
+- Vorlesen: "Gladbach" klang wie englisch "glad" ("Glaeaedbach"); das Woerterbuch spricht es jetzt "Glattbach".
+- Mit Endungen (Gladbacher) und Moenchengladbach; alte Vorlese-Audios werden nicht weiterverwendet.
+- Tests: tts-spike-selftest.py.
+- Keine Aenderung an Cores, Modelfile, Datenbankschema, Installer oder Warteschlange.
