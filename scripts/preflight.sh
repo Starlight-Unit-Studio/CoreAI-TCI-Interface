@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.27: Audio-Anhang-Solltext fuer Stimmsequenz synchronisiert.
+# CoreAI: TCI Interface 0.6.28: Sperrfall ohne Audioeingabe mit TCI-Sprachtest abgesichert.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

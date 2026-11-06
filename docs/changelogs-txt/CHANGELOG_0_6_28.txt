@@ -1,0 +1,10 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.28
+06.11.2026
+
+- Spracheingabe-Preflight 0.6.27 scheiterte am alten Solltext "keinen Audio-Eingang".
+- Test fuer einen Core ohne Audiofaehigkeit verlangt jetzt "Der gewaehlte Core unterstuetzt keine Audioeingabe." und prueft weiterhin "Du kannst sie NICHT anhoeren", fehlende Audioteile sowie deaktivierten Vision-/Audio-Pfad.
+- Bei Testfehlern wird die tatsaechliche Meldung mit ausgegeben.
+- TCI-Sprach-Selbsttest prueft neuen Runtime-/Testvertrag, damit die alte Formulierung nicht unbemerkt wiederkehrt.
+- Versionsdateien, HTML, Browser-Cache, Changelog-Archiv, Uebergabe, Branding- und Preflight-Kopfzeilen auf 0.6.28 aktualisiert.
+- Keine produktive Audio-/Vision-Codeaenderung und kein Eingriff in die Modelfiles.
+- Isolierte PHP-8.4- und Node-22-Pruefungen fuer den neuen Sperrfall erfolgreich; vollstaendige Voice-/Server-Preflights vor Merge noch ausstehend.

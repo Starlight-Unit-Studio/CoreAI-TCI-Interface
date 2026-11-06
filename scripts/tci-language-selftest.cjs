@@ -30,6 +30,12 @@ assert.match(insights, /In dieser Sitzung liegt noch keine Antwort vor/);
 assert.match(attachPhp, /\$what = \$voice \? 'eine Stimmsequenz' : 'eine Audiodatei'/);
 assert.match(voiceSelftest, /str_contains\(\$block, 'Das ist eine Stimmsequenz \(Laenge etwa 02:30, Minuten:Sekunden\)'/);
 assert.doesNotMatch(voiceSelftest, /str_contains\(\$block, 'Das ist eine Sprachnachricht/);
+// The no-audio-capability branch and its test must agree, while denying the audio path.
+assert.match(attachPhp, /if \(!ember_attach_audio_allowed\(\$pdo, \$uid\)\) return \$deaf\('Der gewaehlte Core unterstuetzt keine Audioeingabe\.'\);/);
+assert.match(voiceSelftest, /str_contains\(\$unsupportedAudioNote, 'Du kannst sie NICHT anhoeren'\)/);
+assert.match(voiceSelftest, /str_contains\(\$unsupportedAudioNote, 'Der gewaehlte Core unterstuetzt keine Audioeingabe\.'\)/);
+assert.match(voiceSelftest, /!ember_attach_needs_vision_path\(\$pdo, \$voiceId, 7\)/);
+assert.doesNotMatch(voiceSelftest, /keinen Audio-Eingang/);
 // Legacy media filenames and persisted event identities MUST NOT be renamed.
 assert.match(voice, /'Sprachnachricht-' \+ stamp/);
 assert.match(phpAudio, /COREUI_VOICE_MESSAGE_PREFIX = 'Sprachnachricht-'/);

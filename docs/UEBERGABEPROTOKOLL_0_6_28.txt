@@ -1,0 +1,26 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.28
+Stand: 06.11.2026
+Basis: main 0.6.27 nach PR #178.
+
+FEHLERBILD
+Betreiber-Preflight zeigt genau einen Fehler:
+"Voice input FAIL: a Core without audio: honest note, no audio".
+Das Endprotokoll meldet "Preflight fehlgeschlagen: 1 Problem(e)."
+
+URSACHE
+scripts/voice-input-selftest.php, bisher Zeile 506, pruefte auf "keinen Audio-Eingang".
+api/ember_attachments.php liefert nach der Korrektur von 0.6.24:
+"Der gewaehlte Core unterstuetzt keine Audioeingabe."
+Die Sperrlogik hat sich nicht geaendert, lediglich die sichtbare Formulierung. Die Assertion brach vor den restlichen Testschritten ab.
+
+UMSETZUNG
+- scripts/voice-input-selftest.php: neue Testvariable $unsupportedAudioNote, prueft sowohl die ausdrueckliche Ablehnung "Du kannst sie NICHT anhoeren" als auch den aktuellen Grund "Der gewaehlte Core unterstuetzt keine Audioeingabe.", ferner dass keine Audio-Clips gesetzt werden und kein Vision-/Audio-Pfad gewaehlt wird. Der Fehlertext gibt bei Scheitern die tatsaechliche Meldung mit aus.
+- scripts/tci-language-selftest.cjs: Runtime-/Testvertrag fuer den Fall "Core ohne Audio" statisch abgesichert.
+- VERSION 0.6.28, alle sechs HTML-Seiten, js/console-gate.js und der SHA-256-basierte Cache-Schluessel, README, CHANGELOG, TXT-Archiv, Uebergabe, Branding/Preflight.
+- Keine Modelfile-, DB-, Ollama-, Audio-Runtime-, Vision- oder Installer-Aenderung.
+
+ABNAHME / MERGE-BLOCKER
+- Lokal (isolierte Probe): PHP 8.4 -l und Ausfuehrung der neuen Assertion, Node 22 -check und Regex-Assertions bestanden.
+- Statischer Vergleich zeigt dieselben Formulierungen in Test und Runtime; weitere alte Solltexte im verbleibenden Voice-Test nicht ersichtlich.
+- Vor Merge aus dem vollstaendigen Branch-Checkout: php -l scripts/voice-input-selftest.php, php scripts/voice-input-selftest.php, node scripts/tci-language-selftest.cjs, cache-bust --verify, version-merge-check --base-version 0.6.27 und komplette Preflights.
+- Lokal keine SQLite-PDO-Unterstuetzung im Modell-Container, deshalb kein valider vollstaendiger Voice-Runner. Kein Merge-/Deployment-Erfolg behauptet.
