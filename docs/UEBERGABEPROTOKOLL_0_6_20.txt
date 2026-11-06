@@ -1,0 +1,37 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.6.20
+Stand: 06.11.2026
+Ausgangsbasis: main 0.6.19 nach Merge von PR #170.
+
+RUECKMELDUNG (Screenshots 06.11.2026): Erste echte Sprachnachricht. Mara hoert selbst, Mitschrift kommt, Gedaechtnis
+speichert ("Der Nutzer hat fuer morgen ... einen Termin um 9 Uhr beim EVK Alt in Berlin"). Gesagt war: "eyyy, ich habe
+morgen nen Termin, mal wieder wie immer ... irgendwann um 9 Uhr beim EVK, alter", dazu eine zweite Person "morgen?".
+Mitschrift: "Hey, ich rufe an. Aeh, ich habe morgen nach Berlin, wird mich schaffe Gaeste wieder, aeh irgendwann um
+9 Uhr beim EvK alter. Morgen." Maras Antwort begann mit "[".
+
+UMSETZUNG:
+- api/voice_transcribe.php: coreui_voice_listen_task() ohne Klammer-Kuerzel ("Eine Sprachnachricht von N Sekunden");
+  coreui_voice_attachment_hint() bleibt fuer den Medientest. Neu coreui_voice_strip_stray_bracket().
+- api/chat.php: im Medienzweig nach der Bereinigung, nur bei $hasAudio.
+
+ZWEITE RUNDE (Screenshots 11:58 und 12:01): Mara antwortete auf "Was gibt's denn so bei dir ab?" wieder zu Berlin,
+begann jede Antwort mit "hab die Sprachnachricht gehoert", einmal mit "[COREAI KERN-SKILLS: ...]" (Kopf von
+coreui_skills_augment, wird vor jeden Auftrag gesetzt), einmal endete sie mit "</blockquote>". Die Mitschrift hatte den
+neuen Satz richtig. Entscheidung (AskUserQuestion 06.11.2026): "WAV + Mitschrift".
+- api/ember_attachments.php: ember_attach_audio_transcribe_now() nach coreui_voice_prepare_native(): dieselben WAVs,
+  coreui_voice_transcribe_part() je Teil (Warteschlange, Wiederholung bei missed, agent_cancelled durchgereicht),
+  Arbeitsweg "Core schreibt die Aufnahme mit (Teil N von M)", Speichern als done/silent (nicht bei einer fuers
+  Kontextfenster gekuerzten Datei), Ergebnis als clip['transcript']. Verlaufszeilen ohne eckige Klammern.
+- api/voice_transcribe.php: prepare_native liefert ranges; coreui_voice_listen_task() mit Mitschrift und den Regeln
+  (nur die neue Nachricht, keine Ankuendigung); coreui_voice_clean_reply() (Klammer, verwaiste End-Tags, Ankuendigung).
+- api/chat.php: $listenOptions = ['__skills' => 'none'] bei Audio (Aufruf, Wiederholung, Fortsetzung ueber den neuen
+  Parameter $optionOverrides von ember_continue_truncated_reply), coreui_voice_clean_reply().
+
+GEPRUEFT: voice-input-selftest.php, volle Testreihe, Ende-zu-Ende gegen ember_call_ollama (Skill-Block nur ohne Audio),
+cache-bust, version-merge-check gegen 0.6.19.
+
+EINORDNUNG HOEREN: Mitschrift und Antwort verhoerten unabhaengig dasselbe ("Berlin"), der Fehler liegt im Hoeren des
+Cores (hier "Mara Normal"), nicht im Weg der Aufnahme. Offen, nicht umgesetzt: Vergleich e4b gegen 12b und mit
+Lautstaerke-Ausgleich im Medientest; der Reflexion sagen, dass der Nutzertext eine automatische Mitschrift mit
+moeglichen Hoerfehlern ist. Der falsche Fakt aus der ersten Sprachnachricht steht noch im Gedaechtnis (Betreiber).
+
+NACH DEM MERGE (Betreiber): Update unter Einstellungen > System > CoreAI Update, eine Sprachnachricht schicken.

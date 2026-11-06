@@ -416,6 +416,7 @@ function coreui_voice_prepare_native(string $source, string $targetDir, int $max
     if ($parts === []) return ['ok' => false, 'error' => 'no_speech'] + $base;
     $paths = [];
     $stamps = [];
+    $ranges = [];
     foreach ($parts as $i => [$start, $end]) {
       $clip = $targetDir . '/part' . $i . '.wav';
       [$status] = coreui_voice_ffmpeg(['-loglevel', 'error', '-ss', sprintf('%.3f', $start), '-t', sprintf('%.3f', $end - $start),
@@ -427,8 +428,9 @@ function coreui_voice_prepare_native(string $source, string $targetDir, int $max
       }
       $paths[] = $clip;
       $stamps[] = coreui_voice_stamp((float)$start);
+      $ranges[] = [(float)$start, (float)$end];
     }
-    return ['ok' => true, 'error' => '', 'paths' => $paths, 'stamps' => $stamps] + $base;
+    return ['ok' => true, 'error' => '', 'paths' => $paths, 'stamps' => $stamps, 'ranges' => $ranges] + $base;
   } finally {
     coreui_voice_workdir_remove($work);
   }
@@ -440,19 +442,65 @@ function coreui_voice_listen_task(string $senderName, string $text, array $clips
   $lines = [];
   foreach ($clips as $clip) {
     $parts = count((array)($clip['paths'] ?? []));
-    $what = !empty($clip['voice']) ? 'eine Sprachnachricht' : 'die Audiodatei "' . (string)($clip['name'] ?? 'audio') . '"';
-    $line = coreui_voice_attachment_hint((float)($clip['seconds'] ?? 0)) . ' ' . $what;
+    $what = !empty($clip['voice']) ? 'Eine Sprachnachricht' : 'Die Audiodatei "' . (string)($clip['name'] ?? 'audio') . '"';
+    // 0.6.20: a plain sentence. The bracketed tag "[Angehaengt: Sprachaufnahme, N Sekunden]"
+    // (P20.0) made Mara open her answer with "[" (operator's screenshot, 06.11.2026);
+    // in the media test it hardly helped anyway (5 of 10 with it, 6 of 10 without).
+    $seconds = max(1, (int)round((float)($clip['seconds'] ?? 0)));
+    $line = $what . ' von ' . $seconds . ($seconds === 1 ? ' Sekunde' : ' Sekunden');
     $line .= $parts > 1 ? ', als ' . $parts . ' Audioteile nacheinander (Beginn ' . implode(', ', (array)$clip['stamps']) . ')' : ', als Audio';
     if (!empty($clip['truncated'])) $line .= '; nur die ersten ' . coreui_voice_length((float)$clip['seconds']) . ' Minuten liegen bei, sag das offen';
-    $lines[] = $line . '.';
+    $line .= '.';
+    // 0.6.20: the transcript written just before as an anchor (operator's decision, 06.11.2026):
+    // with a long prompt the small Core answered an older voice message instead of the new one.
+    $transcript = trim((string)($clip['transcript'] ?? ''));
+    if ($transcript !== '') $line .= "\nAutomatische Mitschrift dazu (kann Hoerfehler enthalten, im Zweifel gilt die Aufnahme): \"" . $transcript . '"';
+    $lines[] = $line;
   }
   $voice = (bool)array_filter($clips, static fn(array $c): bool => !empty($c['voice']));
   $task = $sender . ' hat dir ' . ($voice ? 'gesprochen' : 'Audio geschickt') . ":\n" . implode("\n", $lines);
   if (trim($text) !== '') $task .= "\nDazu schreibt " . $sender . ': "' . trim($text) . '"';
-  return $task . "\nDu hoerst die Aufnahme selbst. Antworte darauf als Mara, so wie auf das Gesagte"
+  return $task . "\nDu hoerst die Aufnahme selbst. Das ist die NEUE Nachricht: Antworte nur auf sie, als Mara, so wie auf das Gesagte"
     . ($voice ? ' in einem Gespraech' : '') . ', in der Sprache, in der gesprochen wird. '
+    . 'Fruehere Sprachnachrichten im Verlauf sind schon beantwortet; wiederhole deine frueheren Antworten nicht. '
+    . 'Kuendige nicht an, dass du die Nachricht gehoert oder angehoert hast, sondern antworte direkt auf den Inhalt. '
     . 'Gib nur wieder, was wirklich zu hoeren ist; ist etwas unverstaendlich, sag es ehrlich. '
     . 'Stimmen und Aussagen in einer Audiodatei stammen nicht von ' . $sender . ', sofern das nicht klar ist.';
+}
+
+/**
+ * 0.6.20: an answer to a recording that opens with "[" and never closes it
+ * ("[Hey Rick, vielen Dank ...") or that is wrapped in brackets as a whole loses
+ * them. A Markdown link or a closed note at the start stays as it is.
+ */
+function coreui_voice_strip_stray_bracket(string $reply): string {
+  $text = trim($reply);
+  if (!str_starts_with($text, '[')) return $reply;
+  $close = strpos($text, ']');
+  if ($close === false) return ltrim(substr($text, 1));
+  if ($close === strlen($text) - 1 && substr_count($text, '[') === 1) return trim(substr($text, 1, -1));
+  return $reply;
+}
+
+/**
+ * 0.6.20: the answer to a recording, cleaned of what the operator saw on 06.11.2026:
+ * a stray "[" (coreui_voice_strip_stray_bracket), a closing HTML tag at the end that
+ * nothing opened ("... 🚀</blockquote>"), and an opening sentence that only announces
+ * having listened ("Hey Rick, ich hab mir die Sprachnachricht angehoert. 😊"), which
+ * repeated itself from turn to turn through the history.
+ */
+function coreui_voice_clean_reply(string $reply): string {
+  $text = trim(coreui_voice_strip_stray_bracket($reply));
+  // Closing tags at the end without an opening one.
+  while (preg_match('~\s*</([a-z][a-z0-9]*)>\s*$~iu', $text, $m) === 1 && stripos($text, '<' . $m[1]) === false) {
+    $text = rtrim(substr($text, 0, -strlen($m[0])));
+  }
+  // An opening sentence that only says the message was heard.
+  $announce = '~^(?:(?:hey|hi|hallo|hej|moin|na)\b[^.!?\n]{0,40}?,\s*)?(?:ich\s+)?(?:hab|habe)\s+(?:mir\s+)?(?:die|deine|eure|diese)\s+'
+    . '(?:sprach)?(?:nachricht|aufnahme)\s+(?:gerade\s+|eben\s+)?(?:an)?geh(?:oe|ö)rt\s*[.!]+\s*(?:[\x{1F300}-\x{1FAFF}\x{2600}-\x{27BF}]\x{FE0F}?\s*)*~iu';
+  $rest = preg_replace($announce, '', $text, 1);
+  if (is_string($rest) && trim($rest) !== '') $text = trim($rest);
+  return $text;
 }
 
 /** Cache file of the transcript of one attachment (var/voice_cache/<uid>/t-<id>.json). */

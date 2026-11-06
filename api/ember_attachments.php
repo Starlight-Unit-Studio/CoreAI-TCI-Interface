@@ -252,7 +252,10 @@ function ember_attach_audio_native(PDO $pdo, string $uuid, int $uid, string $pat
     return 'Das ist ' . $what . '. Sie liess sich nicht in das Audioformat fuer dich umwandeln. Sag ehrlich, dass du sie '
       . 'diesmal nicht anhoeren konntest.';
   }
-  $GLOBALS['STU_EMBER_AUDIO_CLIPS'] = $prepared + ['name' => $name, 'voice' => $voice, 'dir' => $dir, 'uuid' => $uuid];
+  // 0.6.20: the transcript first, as an anchor next to the WAVs in Mara's call.
+  $transcript = ember_attach_audio_transcribe_now($pdo, $uid, $uuid, $name, $prepared);
+  $GLOBALS['STU_EMBER_AUDIO_CLIPS'] = $prepared + ['name' => $name, 'voice' => $voice, 'dir' => $dir, 'uuid' => $uuid,
+    'transcript' => $transcript];
   $length = $prepared['source_seconds'] !== null ? (float)$prepared['source_seconds'] : (float)$prepared['seconds'];
   $note = 'Das ist ' . $what . ' (Laenge etwa ' . coreui_voice_length($length) . ', Minuten:Sekunden). Du hoerst sie selbst: '
     . 'Sie liegt dir als Audio bei' . (count($prepared['paths']) > 1 ? ', in ' . count($prepared['paths']) . ' Teilen nacheinander' : '') . '.';
@@ -260,6 +263,53 @@ function ember_attach_audio_native(PDO $pdo, string $uuid, int $uid, string $pat
     $note .= ' Es liegen nur die ersten ' . coreui_voice_length((float)$prepared['seconds']) . ' Minuten bei; sag das offen.';
   }
   return $note;
+}
+
+/**
+ * 0.6.20 (operator's decision, 06.11.2026): before Mara answers, Core writes the
+ * transcript of the WAVs just made (Google's template, no thinking, one queued call
+ * per part, one retry when Core claims there was no recording). With a long prompt
+ * (history, memory, profile) the small Core had answered an older voice message;
+ * the transcript anchors the new one while Mara still hears the WAV herself. It is
+ * kept for the history and the line under the message, so the background job after
+ * the answer skips it. A file cut to fit the context window is not kept: the job
+ * after the answer writes the full ten minutes. Returns the text ('' when nothing).
+ */
+function ember_attach_audio_transcribe_now(PDO $pdo, int $uid, string $uuid, string $name, array $prepared): string {
+  $known = coreui_voice_transcript_load($uid, $uuid);
+  if (is_array($known) && ($known['state'] ?? '') === 'done') return trim((string)($known['text'] ?? ''));
+  $runtime = function_exists('coreui_ai_runtime_settings') ? coreui_ai_runtime_settings() : [];
+  $language = coreui_voice_language_name((string)(is_array($runtime) ? ($runtime['main_language'] ?? 'de') : 'de'));
+  $model = ember_model();
+  $paths = (array)($prepared['paths'] ?? []);
+  $ranges = (array)($prepared['ranges'] ?? []);
+  $parts = [];
+  $silent = 0;
+  foreach ($paths as $i => $path) {
+    if (function_exists('coreui_work_record') && count($paths) > 0) {
+      coreui_work_record($pdo, 'tool', 'running', 'Core schreibt die Aufnahme mit (Teil ' . ($i + 1) . ' von ' . count($paths) . ')');
+    }
+    $heard = coreui_voice_transcribe_part(ember_url(), $model, (string)@file_get_contents($path), $language, 600,
+      ember_keep_alive(), ember_profile_num_ctx($model));
+    if (($heard['error'] ?? '') === 'cancelled') throw new RuntimeException('agent_cancelled');
+    if (empty($heard['ok'])) {
+      if (($heard['error'] ?? '') === 'missed') continue;
+      return implode(' ', array_column($parts, 2)); // Core unreachable or refusing: Mara still hears the WAV.
+    }
+    if (($heard['kind'] ?? '') === 'silence' || trim((string)$heard['text']) === '') { $silent++; continue; }
+    [$start, $end] = $ranges[$i] ?? [0.0, 0.0];
+    $parts[] = [(float)$start, (float)$end, trim((string)$heard['text'])];
+  }
+  $text = implode(' ', array_column($parts, 2));
+  $cutToWindow = !empty($prepared['truncated']) && !coreui_voice_is_voice_message($name)
+    && (float)($prepared['seconds'] ?? 0) < COREUI_VOICE_FILE_MAX_SECONDS - 0.5;
+  if (!$cutToWindow && ($text !== '' || $silent === count($paths))) {
+    coreui_voice_transcript_save($uid, $uuid, $text !== ''
+      ? ['state' => 'done', 'text' => $text, 'parts' => $parts, 'seconds' => $prepared['seconds'] ?? null,
+         'source_seconds' => $prepared['source_seconds'] ?? null, 'truncated' => !empty($prepared['truncated'])]
+      : ['state' => 'silent']);
+  }
+  return $text;
 }
 
 /** Audio attachments of one turn: [uuid => name] (only the account's own files). */
@@ -371,8 +421,9 @@ function ember_attach_audio_history_notes(PDO $pdo, int $uid, array $messageIds)
     $t = coreui_voice_transcript_load($uid, (string)$row['uuid']);
     $state = is_array($t) ? (string)($t['state'] ?? '') : '';
     $text = $state === 'done' ? trim((string)($t['text'] ?? '')) : '';
-    $line = $text !== '' ? '[' . $label . ', Mitschrift: ' . $text . ']'
-      : ($state === 'silent' ? '[' . $label . ' ohne gesprochene Worte]' : '[' . $label . ']');
+    // 0.6.20: no brackets: Mara copied bracket formats into her answers.
+    $line = $text !== '' ? $label . ': "' . $text . '"'
+      : ($state === 'silent' ? '(' . $label . ' ohne gesprochene Worte)' : '(' . $label . ')');
     $id = (int)$row['message_id'];
     $notes[$id] = isset($notes[$id]) ? $notes[$id] . ' ' . $line : $line;
   }

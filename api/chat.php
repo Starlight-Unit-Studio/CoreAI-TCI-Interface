@@ -4122,7 +4122,8 @@ function ember_continue_truncated_reply(
   string $userPrompt,
   ?string $partial,
   $imageUrl = null,
-  ?bool $thinkOverride = null
+  ?bool $thinkOverride = null,
+  array $optionOverrides = []
 ): ?string {
   if (!is_string($partial) || trim($partial) === '' || !ember_last_call_was_truncated()) return $partial;
 
@@ -4150,7 +4151,7 @@ function ember_continue_truncated_reply(
       $systemPrompt,
       $continuationPrompt,
       ember_timeout_for_model($model),
-      [],
+      $optionOverrides,
       $imageUrl,
       $thinkOverride
     );
@@ -5406,19 +5407,22 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
     $isVideoVision = is_array($vf) && !empty($vf['paths']);
     $isPdfVision = is_array($pf) && !empty($pf['paths']);
     $listenThink = $hasAudio ? false : null;
+    // 0.6.20: no skill documents in front of a recording: Mara read their header
+    // "[COREAI KERN-SKILLS: ...]" out as the start of her answer; this path runs no tools.
+    $listenOptions = $hasAudio ? ['__skills' => 'none'] : [];
     $imgReply = ember_call_ollama(
       $primaryModel,
       $visionSys,
       $visionPrompt,
       $visionTimeout,
-      [],
+      $listenOptions,
       $imageUrl,
       $listenThink
     );
     // Core sometimes claims there was no recording although it arrived (P20.0): ask once more.
     if ($hasAudio && is_string($imgReply) && coreui_voice_reply_kind($imgReply) === 'missed') {
       ember_debug_log('ember_audio_missed_retry', ['chars' => mb_strlen($imgReply, 'UTF-8')]);
-      $imgReply = ember_call_ollama($primaryModel, $visionSys, $visionPrompt, $visionTimeout, [], $imageUrl, $listenThink);
+      $imgReply = ember_call_ollama($primaryModel, $visionSys, $visionPrompt, $visionTimeout, $listenOptions, $imageUrl, $listenThink);
     }
     $imgReply = ember_continue_truncated_reply(
       $primaryModel,
@@ -5426,7 +5430,8 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       $visionPrompt,
       $imgReply,
       $imageUrl,
-      $listenThink
+      $listenThink,
+      $listenOptions
     );
     // Servergenerierte Frames und Seiten nach dem Einbetten bereinigen.
     foreach ((is_array($visionMeta) ? $visionMeta : []) as $meta) {
@@ -5460,6 +5465,8 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       $imgReply = preg_replace('~^\*+\s*[A-Za-z][\w\s]*?\s*\d*\s*(?:\([^)]*\))?\s*:\s*\*+\s*~u', '', $imgReply);
       $imgReply = preg_replace('/^(assistant|ember)\s*:\s*/i', '', $imgReply);
       $imgReply = ember_strip_wrapping_quotes($imgReply);
+      // 0.6.20: no stray "[" in front of an answer to a recording.
+      if ($hasAudio) $imgReply = coreui_voice_clean_reply((string)$imgReply);
       $imgReply = trim((string)$imgReply);
       if ($imgReply !== '') return $imgReply;
     }

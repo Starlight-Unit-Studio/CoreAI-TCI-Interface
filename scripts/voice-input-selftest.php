@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-// CoreAI 0.6.17 (P20.1, 0.6.18): voice messages and audio files, heard by Mara herself.
+// CoreAI 0.6.17 (P20.1, 0.6.18 to 0.6.20): voice messages and audio files, heard by Mara herself.
 //   php scripts/voice-input-selftest.php
 // Offline: cutting at pauses (at most 60 s per WAV, Gemma 4's limit), the
 // audio budget of the context window, the task for Mara, the transcription
@@ -104,13 +104,38 @@ vi_test(coreui_voice_length(149.98) === '02:30' && coreui_voice_length(150.008) 
 
 $task = coreui_voice_listen_task('Patrick', '', [['voice' => true, 'seconds' => 120.0, 'paths' => ['a', 'b', 'c'],
   'stamps' => ['00:00', '00:51', '01:43'], 'truncated' => true]]);
-vi_test(str_starts_with($task, 'Patrick hat dir gesprochen:') && str_contains($task, '[Angehaengt: Sprachaufnahme, 120 Sekunden] eine Sprachnachricht')
+vi_test(str_starts_with($task, 'Patrick hat dir gesprochen:') && str_contains($task, "\nEine Sprachnachricht von 120 Sekunden, als 3 Audioteile")
   && str_contains($task, 'als 3 Audioteile nacheinander (Beginn 00:00, 00:51, 01:43)') && str_contains($task, 'nur die ersten 02:00 Minuten')
   && str_contains($task, 'Du hoerst die Aufnahme selbst.') && !str_contains($task, 'schreibt'), 'Mara is told she hears the recording, in how many WAVs');
 $task = coreui_voice_listen_task('Patrick', 'Was meinst du?', [['voice' => false, 'name' => 'besprechung.mp3', 'seconds' => 42.0,
   'paths' => ['a'], 'stamps' => ['00:00']]]);
-vi_test(str_contains($task, 'die Audiodatei "besprechung.mp3", als Audio.') && str_contains($task, 'Dazu schreibt Patrick: "Was meinst du?"')
+vi_test(str_contains($task, 'Die Audiodatei "besprechung.mp3" von 42 Sekunden, als Audio.') && str_contains($task, 'Dazu schreibt Patrick: "Was meinst du?"')
   && str_contains($task, 'stammen nicht von Patrick'), 'an audio file with text: both reach Mara');
+
+// 0.6.20: no bracketed tag in the task (Mara copied it and opened her answer with "["),
+// and a stray "[" in front of an answer to a recording is removed.
+vi_test(!str_contains($task, '[') && !str_contains($task, ']'), 'the task has no bracketed tag for Mara to copy');
+vi_test(coreui_voice_strip_stray_bracket("[Hey Rick, vielen Dank!\n\nGute Fahrt!") === "Hey Rick, vielen Dank!\n\nGute Fahrt!"
+  && coreui_voice_strip_stray_bracket('[Klingt gut, bis morgen.]') === 'Klingt gut, bis morgen.',
+  'an answer that opens a bracket and never closes it, or sits in one, loses it');
+vi_test(coreui_voice_strip_stray_bracket('[Link](https://example.org) ist hier.') === '[Link](https://example.org) ist hier.'
+  && coreui_voice_strip_stray_bracket('[Analyse: kurz] Hallo') === '[Analyse: kurz] Hallo' && coreui_voice_strip_stray_bracket('Hallo [Rick]') === 'Hallo [Rick]'
+  && coreui_voice_strip_stray_bracket('[a] und [b]') === '[a] und [b]', 'links and closed notes stay');
+
+// 0.6.20 (operator's screenshots): a closing tag nothing opened, and the sentence that only
+// announces having listened, which repeated itself through the history; normal text stays.
+vi_test(coreui_voice_clean_reply("Hey Rick, ich hab mir die Sprachnachricht angehört. 😊\n\nIch hoffe, das klärt die Sache! 🗺️🚀</blockquote>")
+  === 'Ich hoffe, das klärt die Sache! 🗺️🚀', 'no announcing sentence, no orphan closing tag');
+vi_test(coreui_voice_clean_reply("[Hey Rick, hab die Sprachnachricht gehört!\n\nAlles gut.") === 'Alles gut.', 'together with a stray bracket');
+vi_test(coreui_voice_clean_reply('Ich habe deine Nachricht gehört.') === 'Ich habe deine Nachricht gehört.'
+  && coreui_voice_clean_reply('Hab die Aufnahme gehört und finde sie super, weil du lachst.') === 'Hab die Aufnahme gehört und finde sie super, weil du lachst.'
+  && coreui_voice_clean_reply('Das ist ein Zitat <blockquote>x</blockquote>') === 'Das ist ein Zitat <blockquote>x</blockquote>',
+  'never an empty answer, a sentence that goes on stays, a tag that was opened stays');
+$task = coreui_voice_listen_task('Rick', '', [['voice' => true, 'seconds' => 4.2, 'paths' => ['a'], 'stamps' => ['00:00'],
+  'transcript' => 'Was gibt es bei dir Neues?']]);
+vi_test(str_contains($task, 'Automatische Mitschrift dazu (kann Hoerfehler enthalten, im Zweifel gilt die Aufnahme): "Was gibt es bei dir Neues?"')
+  && str_contains($task, 'Das ist die NEUE Nachricht') && str_contains($task, 'Fruehere Sprachnachrichten im Verlauf sind schon beantwortet')
+  && str_contains($task, 'Kuendige nicht an, dass du die Nachricht gehoert'), 'Mara gets the transcript as anchor, only the new message counts');
 
 $payload = coreui_voice_transcribe_payload('core-test:latest', 'QUJD', 'German');
 vi_test($payload['stream'] === false && $payload['think'] === false && !array_key_exists('options', $payload)
@@ -129,13 +154,19 @@ $noDash = static fn(string $t): bool => preg_match('/[\x{2013}\x{2014}]/u', $t) 
 vi_test($noDash($read('api/voice_transcribe.php') . $read('js/coreui-voice-input.js') . $read('api/voice_input.php')), 'no long dashes');
 $chat = $read('api/chat.php');
 vi_test(str_contains($chat, '$listenThink = $hasAudio ? false : null;')
-  && str_contains($chat, "      [],\n      \$imageUrl,\n      \$listenThink\n    );"), 'Mara hears without thinking (operator decision)');
+  && str_contains($chat, "      \$listenOptions,\n      \$imageUrl,\n      \$listenThink\n    );"), 'Mara hears without thinking (operator decision)');
+// 0.6.20: Mara read the header of the skill documents out ("[COREAI KERN-SKILLS: ...]"); none in front of a recording.
+vi_test(str_contains($chat, "\$listenOptions = \$hasAudio ? ['__skills' => 'none'] : [];")
+  && str_contains($chat, '$imgReply = ember_call_ollama($primaryModel, $visionSys, $visionPrompt, $visionTimeout, $listenOptions, $imageUrl, $listenThink);'),
+  'no skill documents in front of a recording, also on the retry');
 vi_test(str_contains($chat, "if (\$hasAudio && is_string(\$imgReply) && coreui_voice_reply_kind(\$imgReply) === 'missed') {"),
   'one retry when Core claims there was no recording');
-vi_test(str_contains($chat, "      \$imageUrl,\n      \$listenThink\n    );\n    // Servergenerierte") || str_contains($chat, "\$imgReply,\n      \$imageUrl,\n      \$listenThink\n    );"),
+vi_test(str_contains($chat, "\$imgReply,\n      \$imageUrl,\n      \$listenThink,\n      \$listenOptions\n    );"),
   'a continued answer keeps thinking off');
-vi_test(str_contains($chat, "  ?bool \$thinkOverride = null\n): ?string {") && str_contains($chat, "      \$imageUrl,\n      \$thinkOverride\n    );"),
+vi_test(str_contains($chat, "  ?bool \$thinkOverride = null,\n  array \$optionOverrides = []\n): ?string {")
+  && str_contains($chat, "      \$optionOverrides,\n      \$imageUrl,\n      \$thinkOverride\n    );"),
   'the continuation passes the think switch on');
+vi_test(str_contains($chat, "if (\$hasAudio) \$imgReply = coreui_voice_clean_reply((string)\$imgReply);"), 'answers to recordings are cleaned');
 vi_test(str_contains($chat, "ember_attach_audio_cleanup(\$meta['dir'] ?? null);") && str_contains($chat, '$visionPrompt = coreui_voice_listen_task($senderName,'),
   'the WAVs are removed after the call; Mara gets the listening task');
 vi_test(str_contains($chat, '"SELECT id, user_id, character_id, character_name, message FROM stu_chat_messages')
@@ -300,6 +331,8 @@ try {
   vi_reset();
   $message = '[file:' . $voiceId . ']';
   unset($GLOBALS['STU_EMBER_ATTACHMENT_IMAGES'], $GLOBALS['STU_EMBER_ATTACHMENT_VISION_META']);
+  // 0.6.20: the transcript first (one queued call per part, one retry), as an anchor in Mara's call.
+  $replies(['Es ist kein Audio zur Analyse vorhanden.', 'Was gibt es', '(keine Sprache)', 'bei dir Neues?']);
   $block = ember_attachment_block($pdo, $message, 7);
   $images = $GLOBALS['STU_EMBER_ATTACHMENT_IMAGES'] ?? [];
   $meta = $GLOBALS['STU_EMBER_ATTACHMENT_VISION_META'] ?? [];
@@ -314,7 +347,23 @@ try {
     'the three WAVs travel in the images field like video frames');
   $clipDir = (string)$meta[0]['dir'];
   vi_test(str_starts_with($clipDir, $frames . '/audio_') && dirname($images[0]) === $clipDir, 'in the frame folder that api/chat.php sends from');
-  vi_test($GLOBALS['VI']['acquire'] === 0 && $requests() === [], 'hearing needs no extra Core call before the answer');
+  $sent = $requests();
+  vi_test(count($sent) === 4 && $GLOBALS['VI']['acquire'] === 4 && $GLOBALS['VI']['release'] === 4 && $GLOBALS['VI']['max_depth'] === 1,
+    'before the answer: one queued transcript call per WAV and one retry');
+  foreach ($sent as $i => $call) {
+    vi_test($call['think'] === false && $call['messages'][1]['content'] === coreui_voice_transcribe_prompt('German')
+      && base64_decode((string)$call['messages'][1]['images'][0], true) === file_get_contents($images[min(2, max(0, $i - 1))]),
+      'the transcript hears exactly the WAVs Mara gets');
+  }
+  vi_test($meta[0]['transcript'] === 'Was gibt es bei dir Neues?', 'the transcript goes with the WAVs into Mara\'s call');
+  $kept = coreui_voice_transcript_load(7, $voiceId);
+  vi_test(($kept['state'] ?? '') === 'done' && $kept['text'] === 'Was gibt es bei dir Neues?' && count($kept['parts']) === 2
+    && abs($kept['parts'][1][0] - 103.5) < 0.3, 'kept at once for the history and the line under the message');
+  $GLOBALS['VI']['acquire'] = 0;
+  unset($GLOBALS['STU_EMBER_AUDIO_CLIPS']);
+  $again = ember_attachment_single_block($pdo, $voiceId, 7, 4000);
+  vi_test($requests() === [] && ($GLOBALS['STU_EMBER_AUDIO_CLIPS']['transcript'] ?? '') === 'Was gibt es bei dir Neues?', 'a regenerated answer takes the kept transcript');
+  ember_attach_audio_cleanup($GLOBALS['STU_EMBER_AUDIO_CLIPS']['dir'] ?? null);
   ember_attach_audio_cleanup($base);
   vi_test(is_dir($base), 'cleanup never touches a folder outside the frame folder');
   ember_attach_audio_cleanup($clipDir);
@@ -323,15 +372,21 @@ try {
   // An uploaded file: the whole file, or what the context window allows (said openly).
   vi_reset();
   unset($GLOBALS['STU_EMBER_AUDIO_CLIPS']);
+  $replies(['Eins.', 'Zwei.', 'Drei.']);
   $note = ember_attachment_single_block($pdo, $fileId, 7, 4000);
   $clips = $GLOBALS['STU_EMBER_AUDIO_CLIPS'] ?? [];
+  vi_test(count($requests()) === 3 && $clips['transcript'] === 'Eins. Zwei. Drei.', 'an audio file is transcribed first, too');
   vi_test(str_contains($note, 'Das ist eine Audiodatei') && count($clips['paths'] ?? []) === 3 && empty($clips['truncated']) && $clips['voice'] === false,
     'an audio file of 2:30 is heard completely: ' . trim((string)preg_replace('~\s+~', ' ', $note)));
   ember_attach_audio_cleanup($clips['dir'] ?? null);
   vi_reset();
   $GLOBALS['VI']['ctx'] = 4096;
   unset($GLOBALS['STU_EMBER_AUDIO_CLIPS']);
+  foreach (glob($base . '/cache/7/t-*.json') ?: [] as $file) unlink($file);
+  $replies(['Eins.', 'Zwei.']);
   $note = ember_attachment_single_block($pdo, $fileId, 7, 4000);
+  vi_test(count($requests()) === 2 && coreui_voice_transcript_load(7, $fileId) === null,
+    'a file cut to fit the window is not kept: the job after the answer writes all ten minutes');
   $clips = $GLOBALS['STU_EMBER_AUDIO_CLIPS'] ?? [];
   vi_test(count($clips['paths'] ?? []) === 2 && !empty($clips['truncated']) && str_contains($note, 'nur die ersten 01:05 Minuten'),
     'a small context window: the first 65 s, said openly: ' . trim((string)preg_replace('~\s+~', ' ', $note)));
@@ -352,7 +407,9 @@ try {
     'a silent recording is named as such');
   vi_test(glob($frames . '/audio_*') === [], 'no WAVs left behind');
 
-  // After the answer: the transcript for the history, through the queue, with one retry.
+  // After the answer: the transcript for the history, through the queue, with one retry
+  // (here for recordings whose transcript before the answer failed).
+  foreach (glob($base . '/cache/7/t-*.json') ?: [] as $file) unlink($file);
   vi_reset();
   $replies(['Bitte stellen Sie die Aufnahme zur Verfügung.', 'Erster Teil.', '(keine Sprache)', 'Dritter Teil.']);
   vi_test(ember_attach_audio_transcribe_after($pdo, 7, [$voiceId, 'nichts', $quietId]) === 2, 'two transcripts written (voice and silence)');
@@ -378,8 +435,8 @@ try {
     $pdo->prepare('INSERT INTO stu_console_message_attachments VALUES (?, ?, 7, 0)')->execute([$msg, $uuid]);
   }
   $notes = ember_attach_audio_history_notes($pdo, 7, [10, 11, 12, 13]);
-  vi_test(($notes[10] ?? '') === '[Sprachnachricht, Mitschrift: Erster Teil. Dritter Teil.]' && ($notes[11] ?? '') === '[Audiodatei "besprechung.webm"]'
-    && ($notes[12] ?? '') === '[Sprachnachricht ohne gesprochene Worte]' && !isset($notes[13]), 'the history knows what was said');
+  vi_test(($notes[10] ?? '') === 'Sprachnachricht: "Erster Teil. Dritter Teil."' && ($notes[11] ?? '') === '(Audiodatei "besprechung.webm")'
+    && ($notes[12] ?? '') === '(Sprachnachricht ohne gesprochene Worte)' && !isset($notes[13]), 'the history knows what was said');
   vi_test(ember_attach_audio_history_notes($pdo, 8, [10, 11]) === [], 'never from another account');
 
   // 0.6.19: after the transcript Mara decides herself what goes into her long-term memory,
