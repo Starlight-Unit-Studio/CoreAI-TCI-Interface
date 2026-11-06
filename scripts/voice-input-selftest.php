@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-// CoreAI 0.6.17 (P20.1, 0.6.18): voice messages and audio files, heard by Mara herself.
+// CoreAI 0.6.17 (P20.1, 0.6.18 to 0.6.20): voice messages and audio files, heard by Mara herself.
 //   php scripts/voice-input-selftest.php
 // Offline: cutting at pauses (at most 60 s per WAV, Gemma 4's limit), the
 // audio budget of the context window, the task for Mara, the transcription
@@ -104,13 +104,23 @@ vi_test(coreui_voice_length(149.98) === '02:30' && coreui_voice_length(150.008) 
 
 $task = coreui_voice_listen_task('Patrick', '', [['voice' => true, 'seconds' => 120.0, 'paths' => ['a', 'b', 'c'],
   'stamps' => ['00:00', '00:51', '01:43'], 'truncated' => true]]);
-vi_test(str_starts_with($task, 'Patrick hat dir gesprochen:') && str_contains($task, '[Angehaengt: Sprachaufnahme, 120 Sekunden] eine Sprachnachricht')
+vi_test(str_starts_with($task, 'Patrick hat dir gesprochen:') && str_contains($task, "\nEine Sprachnachricht von 120 Sekunden, als 3 Audioteile")
   && str_contains($task, 'als 3 Audioteile nacheinander (Beginn 00:00, 00:51, 01:43)') && str_contains($task, 'nur die ersten 02:00 Minuten')
   && str_contains($task, 'Du hoerst die Aufnahme selbst.') && !str_contains($task, 'schreibt'), 'Mara is told she hears the recording, in how many WAVs');
 $task = coreui_voice_listen_task('Patrick', 'Was meinst du?', [['voice' => false, 'name' => 'besprechung.mp3', 'seconds' => 42.0,
   'paths' => ['a'], 'stamps' => ['00:00']]]);
-vi_test(str_contains($task, 'die Audiodatei "besprechung.mp3", als Audio.') && str_contains($task, 'Dazu schreibt Patrick: "Was meinst du?"')
+vi_test(str_contains($task, 'Die Audiodatei "besprechung.mp3" von 42 Sekunden, als Audio.') && str_contains($task, 'Dazu schreibt Patrick: "Was meinst du?"')
   && str_contains($task, 'stammen nicht von Patrick'), 'an audio file with text: both reach Mara');
+
+// 0.6.20: no bracketed tag in the task (Mara copied it and opened her answer with "["),
+// and a stray "[" in front of an answer to a recording is removed.
+vi_test(!str_contains($task, '[') && !str_contains($task, ']'), 'the task has no bracketed tag for Mara to copy');
+vi_test(coreui_voice_strip_stray_bracket("[Hey Rick, vielen Dank!\n\nGute Fahrt!") === "Hey Rick, vielen Dank!\n\nGute Fahrt!"
+  && coreui_voice_strip_stray_bracket('[Klingt gut, bis morgen.]') === 'Klingt gut, bis morgen.',
+  'an answer that opens a bracket and never closes it, or sits in one, loses it');
+vi_test(coreui_voice_strip_stray_bracket('[Link](https://example.org) ist hier.') === '[Link](https://example.org) ist hier.'
+  && coreui_voice_strip_stray_bracket('[Analyse: kurz] Hallo') === '[Analyse: kurz] Hallo' && coreui_voice_strip_stray_bracket('Hallo [Rick]') === 'Hallo [Rick]'
+  && coreui_voice_strip_stray_bracket('[a] und [b]') === '[a] und [b]', 'links and closed notes stay');
 
 $payload = coreui_voice_transcribe_payload('core-test:latest', 'QUJD', 'German');
 vi_test($payload['stream'] === false && $payload['think'] === false && !array_key_exists('options', $payload)
@@ -136,6 +146,7 @@ vi_test(str_contains($chat, "      \$imageUrl,\n      \$listenThink\n    );\n   
   'a continued answer keeps thinking off');
 vi_test(str_contains($chat, "  ?bool \$thinkOverride = null\n): ?string {") && str_contains($chat, "      \$imageUrl,\n      \$thinkOverride\n    );"),
   'the continuation passes the think switch on');
+vi_test(str_contains($chat, "if (\$hasAudio) \$imgReply = coreui_voice_strip_stray_bracket((string)\$imgReply);"), 'answers to recordings lose a stray bracket');
 vi_test(str_contains($chat, "ember_attach_audio_cleanup(\$meta['dir'] ?? null);") && str_contains($chat, '$visionPrompt = coreui_voice_listen_task($senderName,'),
   'the WAVs are removed after the call; Mara gets the listening task');
 vi_test(str_contains($chat, '"SELECT id, user_id, character_id, character_name, message FROM stu_chat_messages')

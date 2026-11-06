@@ -1,9 +1,10 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
 Stand: 05.11.2026
-Repository-Version: 0.6.19
-BASIS: main 0.6.18 nach PR #169; Sprachnachrichten gehen nach der Mitschrift durch Maras Gedaechtnis-Reflexion.
+Repository-Version: 0.6.20
+BASIS: main 0.6.19 nach PR #170; Antworten auf Sprachnachrichten ohne eckige Klammer am Anfang.
 NEUE ARBEIT ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_6_20.txt
   docs/UEBERGABEPROTOKOLL_0_6_19.txt
   docs/UEBERGABEPROTOKOLL_0_6_18.txt
   docs/UEBERGABEPROTOKOLL_0_6_17.txt

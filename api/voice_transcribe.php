@@ -440,8 +440,12 @@ function coreui_voice_listen_task(string $senderName, string $text, array $clips
   $lines = [];
   foreach ($clips as $clip) {
     $parts = count((array)($clip['paths'] ?? []));
-    $what = !empty($clip['voice']) ? 'eine Sprachnachricht' : 'die Audiodatei "' . (string)($clip['name'] ?? 'audio') . '"';
-    $line = coreui_voice_attachment_hint((float)($clip['seconds'] ?? 0)) . ' ' . $what;
+    $what = !empty($clip['voice']) ? 'Eine Sprachnachricht' : 'Die Audiodatei "' . (string)($clip['name'] ?? 'audio') . '"';
+    // 0.6.20: a plain sentence. The bracketed tag "[Angehaengt: Sprachaufnahme, N Sekunden]"
+    // (P20.0) made Mara open her answer with "[" (operator's screenshot, 06.11.2026);
+    // in the media test it hardly helped anyway (5 of 10 with it, 6 of 10 without).
+    $seconds = max(1, (int)round((float)($clip['seconds'] ?? 0)));
+    $line = $what . ' von ' . $seconds . ($seconds === 1 ? ' Sekunde' : ' Sekunden');
     $line .= $parts > 1 ? ', als ' . $parts . ' Audioteile nacheinander (Beginn ' . implode(', ', (array)$clip['stamps']) . ')' : ', als Audio';
     if (!empty($clip['truncated'])) $line .= '; nur die ersten ' . coreui_voice_length((float)$clip['seconds']) . ' Minuten liegen bei, sag das offen';
     $lines[] = $line . '.';
@@ -453,6 +457,20 @@ function coreui_voice_listen_task(string $senderName, string $text, array $clips
     . ($voice ? ' in einem Gespraech' : '') . ', in der Sprache, in der gesprochen wird. '
     . 'Gib nur wieder, was wirklich zu hoeren ist; ist etwas unverstaendlich, sag es ehrlich. '
     . 'Stimmen und Aussagen in einer Audiodatei stammen nicht von ' . $sender . ', sofern das nicht klar ist.';
+}
+
+/**
+ * 0.6.20: an answer to a recording that opens with "[" and never closes it
+ * ("[Hey Rick, vielen Dank ...") or that is wrapped in brackets as a whole loses
+ * them. A Markdown link or a closed note at the start stays as it is.
+ */
+function coreui_voice_strip_stray_bracket(string $reply): string {
+  $text = trim($reply);
+  if (!str_starts_with($text, '[')) return $reply;
+  $close = strpos($text, ']');
+  if ($close === false) return ltrim(substr($text, 1));
+  if ($close === strlen($text) - 1 && substr_count($text, '[') === 1) return trim(substr($text, 1, -1));
+  return $reply;
 }
 
 /** Cache file of the transcript of one attachment (var/voice_cache/<uid>/t-<id>.json). */

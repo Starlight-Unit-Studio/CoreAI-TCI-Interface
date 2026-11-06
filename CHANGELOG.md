@@ -1,5 +1,15 @@
 # CoreAI: TCI Interface
 
+## 0.6.20 - 06.11.2026
+
+Screenshot des Betreibers (erste echte Sprachnachricht): Mara hoert die Aufnahme selbst, die Mitschrift erscheint, das Gedaechtnis speichert. Maras Antwort begann aber mit einer einzelnen eckigen Klammer: "[Hey Rick, vielen Dank fuer die Nachricht! ...", ohne schliessende Klammer.
+
+- **Ursache:** Der Auftrag an Mara nannte jede Aufnahme mit dem Kuerzel "[Angehaengt: Sprachaufnahme, N Sekunden]" (aus dem Medientest P20.0), und Mara ahmte das Format nach. Im Medientest hatte das Kuerzel kaum etwas gebracht (5 von 10 mit, 6 von 10 ohne).
+- **Behoben:** Der Auftrag nennt die Aufnahme jetzt in einem normalen Satz ("Eine Sprachnachricht von 31 Sekunden, als Audio."). Zusaetzlich verliert eine Antwort auf eine Aufnahme eine eckige Klammer am Anfang, die nie geschlossen wird, oder eine Klammer um die ganze Antwort. Markdown-Links und geschlossene Notizen am Anfang bleiben.
+- Die verhoerten Woerter ("nach Berlin" statt "nen Termin") kommen aus Gemmas eigenem Hoeren: Mitschrift und Maras Antwort verhoerten unabhaengig voneinander dasselbe. Daran aendert diese Version nichts.
+- Tests: `voice-input-selftest.php` (kein Klammer-Kuerzel im Auftrag, Klammer-Regel mit Gegenbeispielen, Verdrahtung).
+- Keine Aenderung an Cores, Modelfile, Datenbankschema, Installer oder Warteschlange.
+
 ## 0.6.19 - 05.11.2026
 
 Betreiber: "Mara sollte selbst entscheiden koennen, was in ihr LTM gehoert, wie bisher auch." Bis 0.6.18 liefen Sprachnachrichten wie Bilder ohne Gedaechtnis-Reflexion (seit 0.5.71 bewusst fuer Bilder, Videos und PDFs, damit fremde Worte in einem Anhang nicht als Fakten ueber den Nutzer gespeichert werden), und der Beziehungswert sah nur eine leere Nachricht.

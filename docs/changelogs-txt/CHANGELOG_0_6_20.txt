@@ -1,0 +1,6 @@
+CoreAI: TCI Interface 0.6.20 - 06.11.2026
+- Antwort auf eine Sprachnachricht begann mit "[" ohne schliessende Klammer.
+- Ursache: Kuerzel "[Angehaengt: Sprachaufnahme, N Sekunden]" im Auftrag, Mara ahmte es nach; jetzt ein normaler Satz.
+- Zusaetzlich: einzelne offene Klammer am Anfang oder Klammer um die ganze Antwort wird bei Aufnahmen entfernt.
+- Tests: voice-input-selftest.php.
+- Keine Aenderung an Cores, Modelfile, Datenbankschema, Installer oder Warteschlange.

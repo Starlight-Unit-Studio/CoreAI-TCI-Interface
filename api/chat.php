@@ -5460,6 +5460,8 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       $imgReply = preg_replace('~^\*+\s*[A-Za-z][\w\s]*?\s*\d*\s*(?:\([^)]*\))?\s*:\s*\*+\s*~u', '', $imgReply);
       $imgReply = preg_replace('/^(assistant|ember)\s*:\s*/i', '', $imgReply);
       $imgReply = ember_strip_wrapping_quotes($imgReply);
+      // 0.6.20: no stray "[" in front of an answer to a recording.
+      if ($hasAudio) $imgReply = coreui_voice_strip_stray_bracket((string)$imgReply);
       $imgReply = trim((string)$imgReply);
       if ($imgReply !== '') return $imgReply;
     }

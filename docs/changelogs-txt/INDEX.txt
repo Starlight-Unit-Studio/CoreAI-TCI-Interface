@@ -164,3 +164,4 @@ Jede Version liegt als eigenstaendige UTF-8-TXT-Datei vor.
 * CHANGELOG_0_6_17.txt
 * CHANGELOG_0_6_18.txt
 * CHANGELOG_0_6_19.txt
+* CHANGELOG_0_6_20.txt
