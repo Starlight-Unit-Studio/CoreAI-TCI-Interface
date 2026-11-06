@@ -3311,6 +3311,22 @@ audio.msg-image {
   stroke-width: 2.2;
 }
 
+/* 0.6.34: the live button pulses gently so it is noticed; the send button never does. */
+.composer-inner.has-live.is-empty > .composer-live-btn svg {
+  animation: composer-live-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes composer-live-pulse {
+  0%, 100% { opacity: 0.78; transform: scale(1); filter: drop-shadow(0 0 0 rgba(91, 146, 255, 0)); }
+  50% { opacity: 1; transform: scale(1.12); filter: drop-shadow(0 0 6px rgba(91, 146, 255, 0.75)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .composer-inner.has-live.is-empty > .composer-live-btn svg {
+    animation: none;
+  }
+}
+
 html.live-open,
 html.live-open body {
   overflow: hidden;
@@ -3856,7 +3872,7 @@ html.live-open body {
 .core-mode-option {
   display: grid;
   min-height: 40px;
-  grid-template-columns: 10px minmax(0, 1fr) auto;
+  grid-template-columns: 10px minmax(0, 1fr) auto 14px;
   align-items: center;
   column-gap: 8px;
   padding: 6px 8px;
@@ -3899,8 +3915,36 @@ html.live-open body {
 
 .core-mode-check {
   grid-row: 1 / span 2;
-  grid-column: 3;
+  grid-column: 4;
   color: var(--cx);
+  text-align: center;
+}
+
+/* 0.6.34: speaker (hears audio) and live waves (the live conversation can run on it), left of the check mark. */
+.core-mode-caps {
+  display: inline-flex;
+  grid-row: 1 / span 2;
+  grid-column: 3;
+  align-items: center;
+  gap: 6px;
+  color: var(--cx);
+}
+
+.core-mode-cap {
+  display: block;
+  width: 16px;
+  height: 16px;
+  background: currentColor;
+  -webkit-mask: var(--cap-icon) center / contain no-repeat;
+  mask: var(--cap-icon) center / contain no-repeat;
+}
+
+.core-mode-cap--audio {
+  --cap-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M11 5 6 9H2v6h4l5 4V5z'/%3E%3Cpath d='M15.5 8.5a5 5 0 0 1 0 7'/%3E%3Cpath d='M19 5a10 10 0 0 1 0 14'/%3E%3C/svg%3E");
+}
+
+.core-mode-cap--live {
+  --cap-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M5 10v4M9 6v12M13 8v8M17 10v4'/%3E%3C/svg%3E");
 }
 
 /* 0.5.79: green dot = the Core in use, yellow = installed on standby,

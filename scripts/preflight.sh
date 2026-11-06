@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.33: Live-Gespraech, Mara Normal schreibt wieder mit, Emojis nicht vorlesen.
+# CoreAI: TCI Interface 0.6.34: Audio- und Live-Symbol in der Core-Liste, Live-Knopf pulsiert.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

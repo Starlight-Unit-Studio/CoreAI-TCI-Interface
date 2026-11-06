@@ -1,5 +1,15 @@
 # CoreAI: TCI Interface
 
+## 0.6.34 - 06.11.2026
+
+Wunsch des Betreibers nach dem gelungenen Live-Test: In der Core-Liste sollen Audio-Cores rechts, links neben dem Haken, ein Lautsprecher-Symbol und ein Symbol fuer das Live-Gespraech tragen; der Live-Knopf soll leicht pulsieren, damit er auffaellt, aber nur als Live-Knopf, nie als Senden-Taste. Die Wahl des Live-Cores bleibt unveraendert (Wunsch des Betreibers).
+
+- **Symbole in der Core-Liste:** Ein Lautsprecher zeigt, dass ein Core Audioeingabe hat (Stimmsequenzen und Audiodateien), die Wellen des Live-Knopfs, dass das Live-Gespraech auf ihm laufen kann (ein lokaler Core mit Audioeingabe). Beide sitzen rechts vor dem Haken, mit Beschriftung fuer Bildschirmleser und als Hinweis beim Darueberfahren. Die Haken-Spalte hat eine feste Breite, damit die Symbole untereinander stehen.
+- **Woher CoreAI das weiss:** `api/models.php` fragt Ollama je lokalem Core nach seinen Faehigkeiten (`/api/show`, Feld `capabilities`) und liefert `audio` und `live` mit. Cloud-Cores werden nicht gefragt. Antwortet Ollama fuer einen Core nicht, bleiben die uebrigen unbekannt (kein Symbol), damit die Liste nie auf ein langsames Ollama wartet.
+- **Live-Knopf pulsiert:** Das Wellen-Symbol wird sanft heller und etwas groesser mit leichtem Leuchten (2,4 s). Nur solange der Knopf der Live-Knopf ist; die Senden-Taste pulsiert nie. Wer im System reduzierte Bewegung eingestellt hat, sieht kein Pulsieren.
+- Tests: `core-tiers-selftest.php` (Audio und Live je Core, Cloud nicht gefragt, Abbruch ohne Warten), `thinking-switch-ui-selftest.cjs` (Symbole und Beschriftung in den Zeilen, keine bei Cloud und Cores ohne Audio, Haken an seinem Platz), `voice-live-ui-selftest.cjs` (Live-Knopf pulsiert, Senden nicht, keine Bewegung bei reduzierter Bewegung). Bildschirmfotos der Core-Liste in Nacht und Tag angesehen.
+- Keine Aenderung an Cores, Modelfile, Datenbankschema, Installer, nginx oder Warteschlange.
+
 ## 0.6.33 - 06.11.2026
 
 Rueckmeldung des Betreibers zu 0.6.32: "die Geschwindigkeit ist top", aber Mara verstand Unsinn. "Hallo" wurde zu "Hallo Bergisch Gladbach", "ich hab nur hallo gesagt" zu "Ich bin Anfaenger. Ich habe nur hallo gesagt.", "na dann" zu "Schopner danke gesagt." Dazu die Messwerte aus `logs/stu_error.log`.

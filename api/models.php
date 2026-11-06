@@ -23,6 +23,8 @@ try {
   ], coreui_ollama_models());
   // 0.5.83: models outside CoreAI only for the Inhaber and accounts he released them to.
   $models = coreui_model_access_filter(stu_pdo(), $uid, $models);
+  // 0.6.34: speaker and live symbol for the Cores that hear audio.
+  $models = coreui_core_audio_flags($models, static fn(string $name): ?array => coreui_ollama_read_json('show', ['model' => $name]));
   $default = defined('STU_EMBER_MODEL') ? (string)STU_EMBER_MODEL : '';
   if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
   stu_json([

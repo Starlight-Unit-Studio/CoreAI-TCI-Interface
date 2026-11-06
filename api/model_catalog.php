@@ -150,6 +150,29 @@ function coreui_core_tier_of(string $model): ?string {
   return $tier;
 }
 
+/**
+ * 0.6.34: which Cores hear audio, for the speaker and the live symbol in the chat's Core menu
+ * (Ollama /api/show "capabilities"; $show(string $name): ?array). Adds audio (true, false or null
+ * when unknown) and live (a local Core that hears: the live conversation can run on it). Cloud
+ * Cores are not asked; after the first local Core Ollama does not describe, the rest stay unknown,
+ * so a slow Ollama never holds the list up.
+ */
+function coreui_core_audio_flags(array $models, callable $show): array {
+  $out = [];
+  $stop = false;
+  foreach ($models as $m) {
+    $name = (string)($m['name'] ?? '');
+    $audio = null;
+    if (!$stop && $name !== '' && preg_match('~(?:^|[:._-])cloud(?:$|[:._-])~i', $name) !== 1) {
+      $info = $show($name);
+      if (!is_array($info)) $stop = true;
+      elseif (is_array($info['capabilities'] ?? null)) $audio = in_array('audio', array_map('strval', $info['capabilities']), true);
+    }
+    $out[] = $m + ['audio' => $audio, 'live' => $audio === true];
+  }
+  return $out;
+}
+
 /** Name shown in the chat: the TCI tier name, or the Core's own name. */
 function coreui_core_label(string $model): string {
   $tier = coreui_core_tier_of($model);
