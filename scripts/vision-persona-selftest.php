@@ -51,8 +51,8 @@ vision_test($visionAt !== false && $unsafeAt !== false
     "coreui_work_record(\$pdo, 'model', 'running', \$listening ? 'Aufnahme wird angehoert' : 'Anhang wird angesehen');"),
   'vision turns record "Anhang wird angesehen" (audio: "Aufnahme wird angehoert") before the incomplete-stream error');
 $js = (string)file_get_contents($root . '/js/coreui-work-events.js');
-vision_test(str_contains($js, "case 'Anhang wird angesehen':") && str_contains($js, "'Anhang wird angesehen':'Sehe mir den Anhang an'")
-  && str_contains($js, "case 'Aufnahme wird angehoert':") && str_contains($js, "'Aufnahme wird angehoert':'Höre mir die Aufnahme an'"),
+vision_test(str_contains($js, "case 'Anhang wird angesehen':") && str_contains($js, "'Anhang wird angesehen':'Ich sehe mir den Anhang an'")
+  && str_contains($js, "case 'Aufnahme wird angehoert':") && str_contains($js, "'Aufnahme wird angehoert':'Ich höre die Stimmsequenz an'"),
   'the work view explains the vision and the listening step');
 
 echo "CoreAI vision: same Mara, full context, no false error, no image facts in memory OK\n";

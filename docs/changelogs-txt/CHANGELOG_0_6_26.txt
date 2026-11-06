@@ -1,0 +1,9 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.26
+06.11.2026
+
+Preflight-Hotfix zur Version 0.6.25:
+- scripts/voice-input-selftest.php: Zwei veraltete Solltexte zum Audioinhalt und zu frueheren Stimmsequenzen korrigiert. Pruefung der aktuellen Mitschrift, des neuen Auftrags und der korrekt begrenzten Antwort bleibt aktiv.
+- scripts/vision-persona-selftest.php: Solltexte der visuellen Arbeitsanzeige auf Maras Ich-Perspektive und "Stimmsequenz" korrigiert; technische Ereignisnamen und Persona-Pruefung bleiben unveraendert.
+- Keine Produktfunktionen oder Medienverarbeitung veraendert. Kein Abschalten, Ueberspringen oder Abschwaechen von Tests.
+- Neue Versionsangaben, JS-Bootstrap-Cache-Schluessel, Dokumentation und Uebergabe synchronisiert.
+- Kompletten Runtime-/Server-Preflight vor Merge pruefen.

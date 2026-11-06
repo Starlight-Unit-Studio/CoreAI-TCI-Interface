@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.25: PHP-Quote-Fix fuer Audio und Voice-Selbsttest.
+# CoreAI: TCI Interface 0.6.26: Sprach- und Vision-Regressions-Sollwerte aktualisiert.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

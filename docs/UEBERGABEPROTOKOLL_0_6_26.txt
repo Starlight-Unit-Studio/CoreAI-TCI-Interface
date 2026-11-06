@@ -1,0 +1,27 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.26
+Stand: 06.11.2026
+Basis: main 0.6.25 nach Merge PR #176.
+
+AUSGANGSLAGE
+Betreiber-Screenshots von der Root-Konsole: Preflight fehlgeschlagen mit zwei Problemen:
+1. Spracheingabe-Selbsttest: "Voice input FAIL: Mara gets the transcript as anchor, only the new message counts"
+2. Bild-/Video-Persona: "Vision persona FAIL: the work view explains the vision and the listening step"
+Andere auf den Screenshots sichtbare Pruefungen sind OK, Nginx-Default-Site wird nur als WARN gemeldet.
+
+URSACHE
+In 0.6.24 wurden sichtbare Formulierungen und der an Mara gerichtete Audio-Text geaendert:
+- "im Zweifel gilt die Aufnahme" -> "im Zweifel gilt der Audioinhalt"
+- "Fruehere Sprachnachrichten" -> "Fruehere Stimmsequenzen"
+- "Sehe mir den Anhang an" -> "Ich sehe mir den Anhang an"
+- "Hoere mir die Aufnahme an" -> "Ich hoere die Stimmsequenz an"
+Die zugehoerigen zwei PHP-Regressionstests enthielten noch die alten exakten Vergleichsstrings.
+
+UMSETZUNG
+- scripts/voice-input-selftest.php: zwei textuelle Erwartungswerte angeglichen, Testbedingungen fuer Transkript-Anker, neue Nachricht und Vorherige-Vermeidung unveraendert.
+- scripts/vision-persona-selftest.php: sichtbare Anzeigen-Sollwerte auf die tatsaechliche neue UI-Ausgabe angepasst, Event-/Persona-Assertions unveraendert.
+- Versionssprung 0.6.25 -> 0.6.26: VERSION, sechs HTML-Seiten, js/console-gate.js, inhaltbasierter Browser-Cache-Schluessel, README, CHANGELOG, Archiv, Branding-Pruefung, Preflight-Header, Uebergabe.
+- Keine Runtime-PHP-Aenderung, keine Modell-, Datenbank-, Ollama- oder Installer-Aenderung; historischer Sprachdatei-Praefix Sprachnachricht- bleibt erhalten.
+
+ABNAHME
+Vor Merge aus vollstaendigem Checkout: php -l fuer beide Testdateien, php scripts/voice-input-selftest.php, php scripts/vision-persona-selftest.php, bestehende PHP-/Node-/Version-/Cache-Preflights. Danach Live-Update und erneuter Preflight.
+Nicht durchgefuehrte Servertests nicht als OK melden.
