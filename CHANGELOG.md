@@ -1,5 +1,16 @@
 # CoreAI: TCI Interface
 
+## 0.6.28 - 06.11.2026
+
+Preflight-Korrektur nach dem Betreiberlauf von 0.6.27: Der Spracheingabe-Selbsttest scheiterte bei einem Core ohne Audiofaehigkeit an der veralteten Erwartung "keinen Audio-Eingang". Der Laufzeitcode gibt seit der TCI-Sprachueberarbeitung korrekt "Der gewaehlte Core unterstuetzt keine Audioeingabe." aus.
+
+- **Sicherheitspruefung unveraendert:** Der bestehende Test fordert weiterhin eine ausdrueckliche Ablehnung der Audioverarbeitung und kontrolliert, dass keine Audioteile vorbereitet und kein Vision-/Audio-Pfad gestartet werden. Der neue Solltext wird an der konkreten Runtime-Meldung gemessen. Bei Fehlschlag erscheint die tatsaechlich erhaltene Nachricht in der Testdiagnose.
+- **Regression:** `scripts/tci-language-selftest.cjs` prueft jetzt auch die Uebereinstimmung von Audio-Sperrmeldung und Spracheingabe-Selbsttest, einschliesslich des verbotenen Audio-Pfades. Technische Dateikennungen und alte Testeingaben bleiben erhalten.
+- **Folgepruefung:** Der verbleibende Abschnitt von `scripts/voice-input-selftest.php` wurde auf weitere terminologisch veraltete Textvergleiche kontrolliert; das erwartete "nur Stille" ist weiterhin in der Runtime vorhanden.
+- **Versionierung:** 0.6.28 in VERSION, allen sechs HTML-Oberflaechen, JavaScript-Bootstrap mit inhaltbasiertem Cache-Schluessel, README, Changelog, TXT-Archiv, Uebergabe, Branding-Test und Preflight-Kopfzeilen.
+- **Unveraendert:** Kein Eingriff in die produktive Audio-/Vision-Verarbeitung, API, Ollama, Modelfile, Datenbank oder Installer.
+- **Validierung:** Gezielt isolierte PHP-8.4- und Node-22-Pruefungen des Audio-Sperrfalls bestanden; statischer Vergleich mit Runtime-Quelltext und Versionspruefung vorbereitet. Vollstaendiger Voice-Selbsttest und Server-Preflight sind vor Merge erforderlich, da der lokale Runner nicht ueber den vollstaendigen Checkout samt SQLite verfuegt.
+
 ## 0.6.27 - 06.11.2026
 
 Preflight-Folgekorrektur nach dem Betreiberlauf von 0.6.26: Die Spracheingabe pruefte in `scripts/voice-input-selftest.php` noch die historische sichtbare Formulierung "Das ist eine Sprachnachricht", obwohl `api/ember_attachments.php` sie seit 0.6.24 korrekt als "Das ist eine Stimmsequenz" ausgibt.

@@ -503,8 +503,12 @@ try {
     && !ember_attach_needs_vision_path($pdo, $voiceId, 7), 'guests: honest note, no audio');
   vi_reset();
   $GLOBALS['VI']['hears'] = ['completion', 'vision'];
-  vi_test(str_contains(ember_attachment_single_block($pdo, $voiceId, 7, 4000), 'keinen Audio-Eingang') && !isset($GLOBALS['STU_EMBER_AUDIO_CLIPS']),
-    'a Core without audio: honest note, no audio');
+  $unsupportedAudioNote = ember_attachment_single_block($pdo, $voiceId, 7, 4000);
+  vi_test(str_contains($unsupportedAudioNote, 'Du kannst sie NICHT anhoeren')
+    && str_contains($unsupportedAudioNote, 'Der gewaehlte Core unterstuetzt keine Audioeingabe.')
+    && !isset($GLOBALS['STU_EMBER_AUDIO_CLIPS'])
+    && !ember_attach_needs_vision_path($pdo, $voiceId, 7),
+    'a Core without audio: honest note, no audio (note: ' . trim((string)preg_replace('~\s+~', ' ', $unsupportedAudioNote)) . ')');
   vi_reset();
   vi_test(str_contains(ember_attachment_single_block($pdo, $quietId, 7, 4000), 'nur Stille') && !isset($GLOBALS['STU_EMBER_AUDIO_CLIPS']),
     'a silent recording is named as such');
