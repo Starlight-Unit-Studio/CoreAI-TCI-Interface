@@ -12,8 +12,7 @@
 // width, no text below 11 px, buttons at least 44 px.
 // 0.6.32: the live button sits in the send button's place while the input row is empty (the
 // real updateComposerEmpty from js/console-app.js decides) and send comes back with text or an
-// attachment; Eve's parts are fetched ahead while the part before plays; the Core that writes
-// the transcript (from the warm-up) goes with every round and changes when the server says so.
+// attachment; Eve's parts are fetched ahead while the part before plays.
 const {chromium} = require('playwright');
 const fs = require('node:fs');
 const os = require('node:os');
@@ -98,7 +97,7 @@ async function openPage(browser, opts = {}) {
     }
     if (url.pathname === '/api/voice_live.php' && action === 'warm') {
       calls.warm.push({body: JSON.parse(route.request().postData() || '{}'), csrf: route.request().headers()['x-coreui-csrf']});
-      return route.fulfill({json: {ok: true, seconds: 0.4, hear_core: 'ember-coreui:e2b', hear_label: 'TCI: Mara Schnell'}});
+      return route.fulfill({json: {ok: true, seconds: 0.4}});
     }
     if (url.pathname === '/api/console_upload.php') {
       const body = route.request().postDataBuffer() || Buffer.alloc(0);
@@ -114,7 +113,6 @@ async function openPage(browser, opts = {}) {
       const n = calls.turn.length;
       const ev = (e, d) => `event: ${e}\ndata: ${JSON.stringify(d)}\n\n`;
       return route.fulfill({contentType: 'text/event-stream', body: ev('start', {core: 'ember-coreui:latest'})
-        + (n === 1 ? ev('hear', {core: 'ember-coreui:latest', label: 'TCI: Mara Normal'}) : '')
         + ev('heard', {text: n === 1 ? 'Wie wird das Wetter morgen?' : 'Danke dir.', user_message_id: 10 * n + 1})
         + ev('sentence', {index: 0, text: n === 1 ? 'Morgen wird es trocken und mild.' : 'Sehr gern, Rick.'})
         + (n === 1 ? ev('sentence', {index: 1, text: 'Ich schaue später gern noch genauer nach!'}) : '')
@@ -205,8 +203,7 @@ const smallText = page => page.evaluate(() => {
       assert.ok(calls.upload.length >= 1 && /^Sprachnachricht-\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.wav$/.test(calls.upload[0].name)
         && calls.upload[0].riff && calls.upload[0].audioWav && calls.upload[0].character && calls.upload[0].csrf === 'tok-live',
         theme + ': the round goes out as a WAV Stimmsequenz: ' + JSON.stringify(calls.upload[0]));
-      assert.deepEqual(calls.turn[0], {session_id: 'cs_live', character_id: 'rick', since_id: 41, uuid: '1'.padStart(32, 'a'),
-        hear: 'ember-coreui:e2b'}, theme + ': the round says who writes the transcript (from the warm-up)');
+      assert.deepEqual(calls.turn[0], {session_id: 'cs_live', character_id: 'rick', since_id: 41, uuid: '1'.padStart(32, 'a')});
       assert.equal(await page.textContent('.live-heard'), '„Wie wird das Wetter morgen?“');
       assert.deepEqual(calls.say.slice(0, 2), ['Morgen wird es trocken und mild.', 'Ich schaue später gern noch genauer nach!'],
         theme + ': every sentence to Eve, in order');
@@ -250,9 +247,6 @@ const smallText = page => page.evaluate(() => {
       await until(page, () => window.__states.filter(s => s === 'thinking').length >= 2, null, 20000);
       for (let i = 0; i < 50 && calls.upload.length < 2; i++) await page.waitForTimeout(100);
       assert.ok(calls.upload.length >= 2, 'the interrupting words go out as the next round');
-      for (let i = 0; i < 50 && calls.turn.length < 2; i++) await page.waitForTimeout(100);
-      assert.ok(calls.turn[0].hear === 'ember-coreui:e2b' && calls.turn[1].hear === 'ember-coreui:latest',
-        'after the server said so, Mara Normal writes: ' + calls.turn.map(t => t.hear));
       await page.click('.live-end');
       await page.close();
     }
@@ -301,7 +295,7 @@ const smallText = page => page.evaluate(() => {
     fs.rmSync(dir, {recursive: true, force: true});
   }
   console.log('CoreAI live conversation UI: live in the send button\'s place while the row is empty (send with text or attachment),'
-    + ' full-screen view with greeting, warm up, rounds as WAV Stimmsequenzen with the transcribing Core, sentences read in order and'
+    + ' full-screen view with greeting, warm up, rounds as WAV Stimmsequenzen, sentences read in order and'
     + ' fetched ahead, mute, interrupt, end with memory step and reload, guests none, Core without audio off, no chat, night and day, phone OK');
 })().catch(error => {
   console.error(error);

@@ -4,9 +4,8 @@ declare(strict_types=1);
 /*
  * CoreAI 0.6.31 (P20.4): the live conversation.
  *
- * 0.6.32 (operator after the first live test: "die Erkennung ist etwas traege", "lange Pausen
- * zwischen den Saetzen oder nach nem Komma"): Mara Schnell writes the transcript when she fits
- * into memory next to Mara Normal (operator's decision), so Mara Normal keeps her cache.
+ * 0.6.33: the live Core writes the transcript again (0.6.32 tried Mara Schnell: no time saved on
+ * the operator's server, short phrases misheard). Emojis are not spoken.
  *
  * Operator's decisions (06.11.2026, after the live probe of 0.6.30):
  *   - each round: the Core writes the transcript of the recording first, then Mara
@@ -42,17 +41,6 @@ function coreui_live_pick_core(string $chatCore, array $installed, string $famil
   return $found !== '' ? $found : $chatCore;
 }
 
-/**
- * 0.6.32: the Core that writes the transcript live (pure): Mara Schnell, chosen like the
- * live Core, so Mara Normal keeps her cache between the rounds (Ollama holds one cache per
- * Core, and the transcription call would overwrite hers). '' when there is none.
- */
-function coreui_live_pick_hear_core(string $liveCore, array $installed, string $family, callable $tierOf, callable $hears,
-                                    callable $allowed): string {
-  $found = coreui_live_pick_tier('schnell', $installed, $family, $tierOf, $hears, $allowed);
-  return $found !== '' && coreui_live_model_key($found) !== coreui_live_model_key($liveCore) ? $found : '';
-}
-
 /** The installed local Core of one tier that hears and is allowed, Mara's own Core first (pure); '' when none. */
 function coreui_live_pick_tier(string $tier, array $installed, string $family, callable $tierOf, callable $hears,
                                callable $allowed): string {
@@ -72,22 +60,6 @@ function coreui_live_pick_tier(string $tier, array $installed, string $family, c
     if ($hears($name) === true && $allowed($name)) return $name;
   }
   return '';
-}
-
-/** A model name as Ollama lists it (pure): lower case, ":latest" when no tag is given. */
-function coreui_live_model_key(string $name): string {
-  $name = strtolower(trim($name));
-  return ($name !== '' && !str_contains($name, ':')) ? $name . ':latest' : $name;
-}
-
-/**
- * 0.6.32 (pure): whether both Cores are in memory at the same time ($loaded: the names Ollama's
- * /api/ps lists). Only then does Mara Schnell write the transcript; when Ollama had to unload
- * Mara Normal to load her, Mara Normal writes it again (no reloading in every round).
- */
-function coreui_live_both_loaded(array $loaded, string $a, string $b): bool {
-  $keys = array_map(static fn($n): string => coreui_live_model_key((string)$n), $loaded);
-  return in_array(coreui_live_model_key($a), $keys, true) && in_array(coreui_live_model_key($b), $keys, true);
 }
 
 /**
@@ -123,6 +95,27 @@ function coreui_live_take_sentences(string &$buffer, bool $final = false): array
   }
   $buffer = ltrim($rest);
   return $out;
+}
+
+/**
+ * 0.6.33: a sentence as Eve reads it and the live view shows it (pure): without emojis; '' when
+ * nothing speakable is left (the operator saw a lone "😊" as my sentence). The chat keeps them.
+ */
+function coreui_live_spoken(string $sentence): string {
+  $text = (string)preg_replace('~[\x{1F000}-\x{1FAFF}\x{2600}-\x{27BF}\x{2B00}-\x{2BFF}\x{FE0F}\x{200D}]~u', '', $sentence);
+  $text = trim((string)preg_replace('~\s{2,}~u', ' ', $text));
+  return preg_match('~[\p{L}\p{N}]~u', $text) === 1 ? $text : '';
+}
+
+/**
+ * 0.6.33 (pure): what a Core call cost, from Ollama's final line: prompt_tokens is the whole
+ * prompt (Ollama counts cached tokens too: a warm-up with 1081 tokens took 0.3 s on the operator's
+ * server), prompt_s the time it really spent reading it, load_s loading the Core.
+ */
+function coreui_live_prompt_stats(array $final): array {
+  $ns = static fn(string $key): ?float => isset($final[$key]) && is_numeric($final[$key]) ? round((float)$final[$key] / 1e9, 2) : null;
+  return ['prompt_tokens' => isset($final['prompt_eval_count']) ? (int)$final['prompt_eval_count'] : null,
+    'prompt_s' => $ns('prompt_eval_duration'), 'load_s' => $ns('load_duration')];
 }
 
 /** A reply as it is spoken and kept (pure): no tool markers, no Markdown marks, no stray brackets. */

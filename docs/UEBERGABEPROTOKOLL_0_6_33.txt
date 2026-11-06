@@ -1,0 +1,36 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.33
+Stand: 06.11.2026
+Basis: main 0.6.32 nach Merge von PR #183.
+
+RUECKMELDUNG DES BETREIBERS ZU 0.6.32: "die Geschwindigkeit ist top", aber falsch verstanden: "Hallo" -> "Hallo
+Bergisch Gladbach", "ich hab nur hallo gesagt" -> "Ich bin Anfaenger. Ich habe nur hallo gesagt.", "na dann" ->
+"Schopner danke gesagt." Ausserdem ein einzelnes "😊" als gesprochener Satz.
+
+MESSWERTE (logs/stu_error.log beim Betreiber)
+- 0.6.31, Mara Normal schreibt: transcript_s 2,0 / 2,2; first_sentence_s 2,8 / 3,5 (Antwort danach 0,8 / 1,3 s).
+- 0.6.32, Mara Schnell schreibt: transcript_s 1,8 / 2,2 / 2,1 / 1,5; first_sentence_s 2,6 / 3,9 / 4,3 / 2,7.
+- Vorwaermen mit beiden Cores 20,1 s; ein zweites Vorwaermen 0,3 s bei prompt_eval_count 1.081.
+SCHLUSS: kein Zeitgewinn durch Mara Schnell. prompt_eval_count zaehlt bei Ollama den ganzen Prompt (auch Zwischen-
+gespeichertes), also war "new_tokens" irrefuehrend. Die 5,9 s der Live-Probe 0.6.30 kamen vermutlich von der WAV in Maras Aufruf.
+Die Geschwindigkeit, die der Betreiber jetzt lobt, kommt vom Vorabladen der Eve-Teile und der kuerzeren Pause.
+
+UMSETZUNG
+- api/voice_live.php: Mitschrift wieder mit $core; warm laedt nur den Live-Core; kein hear-Parameter, kein hear-Event,
+  kein ai_context_estimate.php. Saetze an den Browser ueber coreui_live_spoken(coreui_live_clean_reply(...)).
+  Protokoll und done.timings mit coreui_live_prompt_stats (prompt_tokens, prompt_s, load_s).
+- api/voice_live_lib.php: coreui_live_pick_hear_core, coreui_live_model_key, coreui_live_both_loaded entfernt;
+  coreui_live_pick_tier bleibt (von coreui_live_pick_core genutzt); neu coreui_live_spoken, coreui_live_prompt_stats.
+- js/coreui-voice-live.js: hear-Weitergabe entfernt; Vorabladen, Live-Knopf, 0,7 s bleiben.
+
+GEPRUEFT (hier ausgefuehrt): php -l (voice_live.php, voice_live_lib.php, voice-live-selftest.php), voice-live-selftest.php
+offline und mit MariaDB ueber HTTP, voice-live-ui-selftest.cjs (Chromium, Tag und Nacht, Handy), tci-language-selftest.cjs,
+terran-terminology-selftest.cjs, volle Testreihe, cache-bust, version-merge-check gegen 0.6.32.
+NICHT HIER GEPRUEFT: echte Cores; ob Mara Normal bei sehr kurzen Saetzen die Begriffe aus dem KI-Profil dazudichtet
+("Hallo Bergisch Gladbach" kam von Mara Schnell; die Begriffsliste steht im Mitschrift-Auftrag).
+
+NACH DEM MERGE (Betreiber):
+1. Update unter Einstellungen > System > CoreAI Update.
+2. Live-Gespraech mit kurzen Saetzen ("Hallo", "na dann", "ich hab nur hallo gesagt") und einem laengeren.
+3. Messwerte: cd /opt/ember-coreui && grep -E 'coreui_live_(turn|warm)' logs/stu_error.log | tail -n 8
+4. Falls Mara Normal bei "Hallo" Begriffe aus dem KI-Profil dazuschreibt: melden (dann Begriffe im Live-Gespraech
+   vorsichtiger einsetzen).

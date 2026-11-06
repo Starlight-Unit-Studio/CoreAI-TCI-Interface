@@ -6,12 +6,14 @@ declare(strict_types=1);
  *
  *   GET  ?action=status                       allowed, core, core_label, hears, ready, voice, name
  *   POST ?action=warm  {session_id, character_id, since_id}
- *        loads the live Core with the opening of the conversation (cache); 0.6.32: also loads
- *        Mara Schnell and answers hear_core: the Core that writes the transcripts
- *   POST ?action=turn  {session_id, character_id, since_id, uuid, hear}
+ *        loads the live Core with the opening of the conversation (cache)
+ *   POST ?action=turn  {session_id, character_id, since_id, uuid}
  *        server-sent events: heard {text, user_message_id} | silence | sentence {index, text}
- *        | hear {core} (0.6.32: Mara Normal writes again) | done {user_message_id, reply_id,
- *        interrupted, timings} | error {error}
+ *        | done {user_message_id, reply_id, interrupted, timings} | error {error}
+ *
+ * 0.6.33: the live Core writes the transcript again (0.6.32 had Mara Schnell write it; on the
+ * operator's server that saved no time and she misheard short phrases: "Hallo" became "Hallo
+ * Bergisch Gladbach", "Na dann" became "Schopner danke gesagt").
  *   POST ?action=say   {text}                  Eve: plan of one sentence {id, parts} (audio: api/voice.php)
  *   POST ?action=end   {session_id, pairs: [[user_message_id, reply_id], ...]}
  *        Mara's memory reflection for the rounds, after the conversation (not during it)
@@ -25,7 +27,6 @@ define('STU_CHAT_LIB', 1);
 require __DIR__ . '/chat.php';
 require_once __DIR__ . '/guest_access.php';
 require_once __DIR__ . '/model_catalog.php';
-require_once __DIR__ . '/ai_context_estimate.php';
 require_once __DIR__ . '/voice_store.php';
 require_once __DIR__ . '/voice_live_lib.php';
 
@@ -46,41 +47,6 @@ function coreui_live_core(PDO $pdo, int $uid): string {
   return coreui_live_pick_core($chatCore, $installed, coreui_core_mara_family(), 'coreui_core_tier_of',
     static fn(string $m): ?bool => coreui_voice_core_hears(ember_ollama_show_json($m)),
     static fn(string $m): bool => coreui_model_access_allowed($pdo, $uid, $m));
-}
-
-/** 0.6.32: Mara Schnell, when she can write the transcripts live for this account; '' when not. */
-function coreui_live_hear_candidate(PDO $pdo, int $uid, string $liveCore): string {
-  try {
-    $installed = array_map(static fn(array $m): string => (string)$m['name'], coreui_ollama_models());
-  } catch (Throwable $e) {
-    return '';
-  }
-  return coreui_live_pick_hear_core($liveCore, $installed, coreui_core_mara_family(), 'coreui_core_tier_of',
-    static fn(string $m): ?bool => coreui_voice_core_hears(ember_ollama_show_json($m)),
-    static fn(string $m): bool => coreui_model_access_allowed($pdo, $uid, $m));
-}
-
-/** 0.6.32: loads a Core into memory without a prompt (with the context window its calls use), in Mara's queue. */
-function coreui_live_load(string $model): bool {
-  $body = ['model' => $model, 'messages' => [], 'stream' => false];
-  $keep = ember_keep_alive();
-  if ($keep !== null) $body['keep_alive'] = $keep;
-  $numCtx = ember_profile_num_ctx($model);
-  if ($numCtx !== null && $numCtx >= 256) $body['options'] = ['num_ctx' => $numCtx];
-  $lock = ember_global_lock_acquire(600);
-  if ($lock === false) return false;
-  try {
-    $ch = curl_init(ember_url());
-    curl_setopt_array($ch, [CURLOPT_POST => true, CURLOPT_RETURNTRANSFER => true, CURLOPT_CONNECTTIMEOUT => 5, CURLOPT_TIMEOUT => 300,
-      CURLOPT_POSTFIELDS => json_encode($body, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
-      CURLOPT_HTTPHEADER => ['Content-Type: application/json']]);
-    curl_exec($ch);
-    $status = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
-    curl_close($ch);
-    return $status === 200;
-  } finally {
-    ember_generation_lock_release($lock);
-  }
 }
 
 /** The name Mara calls the account by. */
@@ -239,19 +205,13 @@ function coreui_live_stream(string $model, array $messages, callable $onPiece): 
 if ($action === 'warm') {
   // The opening and history go into the Core's cache before the first round.
   $start = microtime(true);
-  $hearCandidate = coreui_live_hear_candidate($pdo, $uid, $core);
   $messages = coreui_live_call_messages($pdo, $uid, $char, $sessionId, $sinceId, $core);
   $messages[] = ['role' => 'user', 'content' => 'Das Live-Gespraech beginnt gleich. Antworte nur mit: Bereit.'];
   if (session_status() === PHP_SESSION_ACTIVE) @session_write_close();
-  // 0.6.32: Mara Schnell first, then Mara Normal with the opening; Mara Schnell writes the
-  // transcripts only when Ollama keeps both in memory (otherwise every round would reload one).
-  if ($hearCandidate !== '') coreui_live_load($hearCandidate);
   $r = coreui_live_stream($core, $messages, static fn(string $p): bool => true);
-  $hear = $hearCandidate !== '' && coreui_live_both_loaded(coreui_ollama_loaded_names(), $hearCandidate, $core) ? $hearCandidate : $core;
-  ember_debug_log('coreui_live_warm', ['core' => $core, 'hear_core' => $hear, 'hear_candidate' => $hearCandidate,
-    'seconds' => round(microtime(true) - $start, 1), 'new_tokens' => $r['final']['prompt_eval_count'] ?? null]);
+  ember_debug_log('coreui_live_warm', ['core' => $core, 'seconds' => round(microtime(true) - $start, 1)] + coreui_live_prompt_stats($r['final']));
   stu_json(['ok' => $r['error'] === '', 'error' => $r['error'], 'seconds' => round(microtime(true) - $start, 1),
-    'core' => $core, 'core_label' => coreui_core_label($core), 'hear_core' => $hear, 'hear_label' => coreui_core_label($hear)]);
+    'core' => $core, 'core_label' => coreui_core_label($core)]);
 }
 
 if ($action !== 'turn') stu_json(['ok' => false, 'error' => 'unknown_action'], 404);
@@ -283,15 +243,6 @@ $send = static function (string $event, array $data): bool {
 };
 $send('start', ['core' => $core, 'core_label' => coreui_core_label($core)]);
 
-// 0.6.32: who writes the transcript. Mara Schnell only when the warm-up found both Cores in
-// memory (the browser passes that on) and she still qualifies; otherwise the live Core.
-$hearCore = $core;
-$askedHear = trim((string)($body['hear'] ?? ''));
-if ($askedHear !== '' && coreui_live_model_key($askedHear) !== coreui_live_model_key($core)) {
-  $candidate = coreui_live_hear_candidate($pdo, $uid, $core);
-  if ($candidate !== '' && coreui_live_model_key($candidate) === coreui_live_model_key($askedHear)) $hearCore = $candidate;
-}
-
 $t0 = microtime(true);
 $work = coreui_voice_workdir();
 // The WAVs go away in every case, also after an early end (exit skips finally).
@@ -305,31 +256,18 @@ if (empty($wavs['ok'])) {
 } else {
   $language = coreui_voice_language_name((string)(coreui_ai_runtime_settings()['main_language'] ?? 'de'));
   $terms = function_exists('ember_attach_voice_terms') ? ember_attach_voice_terms($pdo, $uid) : [];
-  $transcribe = static function (string $writer) use ($wavs, $language, $terms): array {
-    $parts = [];
-    foreach ((array)$wavs['paths'] as $i => $path) {
-      $h = coreui_voice_transcribe_part(ember_url(), $writer, (string)@file_get_contents($path), $language, 600,
-        ember_keep_alive(), ember_profile_num_ctx($writer), $terms);
-      if (empty($h['ok'])) {
-        if (($h['error'] ?? '') === 'missed') continue;
-        return [$parts, (string)($h['error'] ?? 'core_failed')];
-      }
-      if (($h['kind'] ?? '') === 'heard' && trim((string)$h['text']) !== '') {
-        [$a, $b] = $wavs['ranges'][$i] ?? [0.0, 0.0];
-        $parts[] = [(float)$a, (float)$b, trim((string)$h['text'])];
-      }
+  foreach ((array)$wavs['paths'] as $i => $path) {
+    $h = coreui_voice_transcribe_part(ember_url(), $core, (string)@file_get_contents($path), $language, 600,
+      ember_keep_alive(), ember_profile_num_ctx($core), $terms);
+    if (empty($h['ok'])) {
+      if (($h['error'] ?? '') === 'missed') continue;
+      $failure = (string)($h['error'] ?? 'core_failed');
+      break;
     }
-    return [$parts, ''];
-  };
-  [$parts, $failure] = $transcribe($hearCore);
-  if ($hearCore !== $core && $failure !== '') {
-    // Mara Schnell failed: Mara Normal writes this round and the rest of the conversation.
-    $hearCore = $core;
-    [$parts, $failure] = $transcribe($core);
-    $send('hear', ['core' => $core, 'label' => coreui_core_label($core)]);
-  } elseif ($hearCore !== $core && !coreui_live_both_loaded(coreui_ollama_loaded_names(), $hearCore, $core)) {
-    // Ollama had to unload Mara Normal meanwhile: from the next round on she writes again.
-    $send('hear', ['core' => $core, 'label' => coreui_core_label($core)]);
+    if (($h['kind'] ?? '') === 'heard' && trim((string)$h['text']) !== '') {
+      [$a, $b] = $wavs['ranges'][$i] ?? [0.0, 0.0];
+      $parts[] = [(float)$a, (float)$b, trim((string)$h['text'])];
+    }
   }
   $heard = trim(implode(' ', array_column($parts, 2)));
 }
@@ -379,7 +317,7 @@ $t1 = microtime(true);
 $result = coreui_live_stream($core, $messages, static function (string $piece) use (&$buffer, &$index, &$firstSentence, $t1, $send): bool {
   $buffer .= $piece;
   foreach (coreui_live_take_sentences($buffer) as $sentence) {
-    $sentence = coreui_live_clean_reply($sentence);
+    $sentence = coreui_live_spoken(coreui_live_clean_reply($sentence));
     if ($sentence === '') continue;
     if ($firstSentence === null) $firstSentence = microtime(true) - $t1;
     if (!$send('sentence', ['index' => $index++, 'text' => $sentence])) return false;
@@ -389,7 +327,7 @@ $result = coreui_live_stream($core, $messages, static function (string $piece) u
 $interrupted = !empty($result['stopped']) || connection_aborted();
 if (!$interrupted) {
   foreach (coreui_live_take_sentences($buffer, true) as $sentence) {
-    $sentence = coreui_live_clean_reply($sentence);
+    $sentence = coreui_live_spoken(coreui_live_clean_reply($sentence));
     if ($sentence === '') continue;
     if ($firstSentence === null) $firstSentence = microtime(true) - $t1;
     $send('sentence', ['index' => $index++, 'text' => $sentence]);
@@ -401,7 +339,7 @@ if ($reply !== '') {
   $replyId = ember_insert($pdo, $reply, 'console', null, $uid, $sessionId, $userMessageId);
 }
 $timings = ['transcript_s' => round($transcriptS, 1), 'first_sentence_s' => $firstSentence !== null ? round($transcriptS + $firstSentence, 1) : null,
-  'new_tokens' => $result['final']['prompt_eval_count'] ?? null, 'core' => $core, 'hear_core' => $hearCore];
+  'core' => $core] + coreui_live_prompt_stats($result['final']);
 ember_debug_log('coreui_live_turn', $timings + ['interrupted' => $interrupted, 'chars' => mb_strlen($reply)]);
 if ($result['error'] !== '' && $reply === '') {
   $send('error', ['error' => 'core_failed', 'user_message_id' => $userMessageId]);
