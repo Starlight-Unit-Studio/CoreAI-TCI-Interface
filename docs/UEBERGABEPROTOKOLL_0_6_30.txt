@@ -1,0 +1,35 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.30
+Stand: 06.11.2026
+Basis: main 0.6.29 nach Merge von PR #180.
+
+AUFTRAG: "Zurueck ans Eigentliche": das Live-Gespraech (P20.4). Vorher (Antwort auf "koennen wir native Audio mit
+Transkribierer gemischt auch live machen?") war eine Messung angeboten: drei Runden mit echtem Verlauf, drei Wege, bis
+zum ersten gesprochenen Satz, mit Pruefung, ob Mara auf die neue Aufnahme antwortet. Seit der Hoerprobe (0.6.23)
+bekannt: Mara Plus (12b) hoert deutlich schlechter als Mara Normal (e4b).
+
+UMSETZUNG
+- scripts/voice-live-check.php (neu): Konto Inhaber (--user), die letzten drei Stimmsequenzen (--uuids), Verlauf des
+  neuesten Chats ueber ember_build_context, SYSTEM wie im Medienweg (ember_persona_system_for ohne Denkschalter),
+  Vorwaermen, dann je Core (--cores alle|liste) und Weg (--ways ABC) drei Runden mit wachsendem Gespraechsverlauf.
+  Weg A: coreui_voice_transcribe_part, dann gestreamter Aufruf mit WAV und Mitschrift (coreui_voice_listen_task).
+  Weg B: ein gestreamter Aufruf mit WAV, Mara schreibt zuerst "Gehoert: ..." (nicht gesprochen, ist die Mitschrift).
+  Weg C: ein gestreamter Aufruf nur mit WAV. Gemessen: Sekunden bis zum ersten sprechbaren Satz (live_first_sentence,
+  mind. 12 Zeichen bis Satzende, nach der Gehoert-Zeile), prompt_eval_count (neu gelesene Tokens), Text.
+  think false, num_ctx aus dem KI-Profil, keep_alive von CoreAI, jede Anfrage ueber ember_global_lock_acquire.
+- docs/COREUI_VOICE_PLAN.md (P20.4): Probe und die Bedienung nach Vorstellung des Betreibers (Screenshots, 06.11.2026):
+  Live-Knopf neben dem Mikrofon in der Eingabezeile, Vollbild im CoreAI-Stil mit Begruessung "Du kannst jetzt sprechen,
+  <Name>", Zustandsanzeige in der Mitte (zuhoeren, nachdenken, sprechen), unten Stummschalten und Beenden. Kamera und
+  Bildschirm teilen spaeter.
+- voice-input-selftest.php, beide Preflights (Pflichtliste).
+
+GEPRUEFT (hier ausgefuehrt): php -l, voice-input-selftest.php, tci-language-selftest.cjs, terran-terminology-selftest.cjs,
+Probe gegen nachgebauten streamenden Core und MariaDB (3 Runden, 3 Wege, 2 Cores, Verlauf waechst, keine Reste),
+volle Testreihe, cache-bust, version-merge-check gegen 0.6.29.
+NICHT HIER GEPRUEFT: echte Gemma-Cores (keine hier), echte Latenzen.
+
+NACH DEM MERGE (Betreiber):
+1. Update unter Einstellungen > System > CoreAI Update.
+2. Drei kurze Stimmsequenzen im Chat schicken, wie in einem Gespraech (zum Beispiel Frage, Nachfrage, Dank).
+3. Live-Probe:
+   cd /opt/ember-coreui && sudo docker compose --project-name ember-coreui --env-file var/compose.env -f compose.yaml exec -T php php scripts/voice-live-check.php --cores alle
+4. Die ganze Ausgabe schicken. Danach: Entscheidung ueber Weg und Core fuer das Live-Gespraech, dann Bau P20.4.
