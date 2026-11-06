@@ -321,6 +321,33 @@ function ember_attach_audio_transcribe_after(PDO $pdo, int $uid, array $uuids, ?
 }
 
 /**
+ * 0.6.19: after the transcript, the same memory reflection as for a text turn,
+ * with what was said (plus any typed text) and Mara's answer: Mara decides
+ * herself what goes into her long-term memory; the relationship value follows
+ * the spoken words too. Only when every attachment of the turn is a voice
+ * message: words in an uploaded audio file, like text in an image, are not the
+ * sender's (0.5.71). Returns true when the exchange was handed to Mara.
+ */
+function ember_attach_voice_reflect(PDO $pdo, array $senderChar, int $uid, array $uuids, string $typed, string $reply): bool {
+  $uuids = array_values(array_unique(array_filter(array_map('strval', $uuids))));
+  $audio = ember_attach_audio_of($pdo, $uid, $uuids);
+  if ($audio === [] || count($audio) !== count($uuids)) return false;
+  $spoken = [];
+  foreach ($audio as $uuid => $name) {
+    if (!coreui_voice_is_voice_message($name)) return false;
+    $t = coreui_voice_transcript_load($uid, $uuid);
+    $text = is_array($t) && ($t['state'] ?? '') === 'done' ? trim((string)($t['text'] ?? '')) : '';
+    if ($text !== '') $spoken[] = $text;
+  }
+  if ($spoken === [] || trim($reply) === '' || (function_exists('ember_is_fail_message') && ember_is_fail_message($reply))) return false;
+  $userMsg = trim(trim($typed) . ' ' . implode(' ', $spoken));
+  $cid = (string)($senderChar['id'] ?? '');
+  if (ember_should_reflect_exchange($userMsg, $reply)) ember_reflect_maybe_store($pdo, $uid, $cid, $userMsg, $reply);
+  ember_reputation_maybe_update($pdo, $uid, $cid, $userMsg, $reply);
+  return true;
+}
+
+/**
  * Lines for the history: what was said in the voice messages and audio files
  * of earlier turns. [message_id => "[Sprachnachricht: ...]"].
  */

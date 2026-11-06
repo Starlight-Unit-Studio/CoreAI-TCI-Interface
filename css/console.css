@@ -766,6 +766,9 @@ a:focus-visible {
 .session-item {
   position: relative;
   display: grid;
+  /* 0.6.19: never squeezed by the list (a flex column): with many chats the
+     items shrank to 53 px and the clip-path cut the buttons in half. */
+  flex: 0 0 auto;
   min-height: 53px;
   cursor: pointer;
   grid-template-columns: 1fr auto;
@@ -830,6 +833,30 @@ a:focus-visible {
   white-space: nowrap;
 }
 
+/* 0.6.19: Mara works in this chat (js/console-app.js markSessionWorking). */
+.session-working {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  margin-right: 7px;
+  vertical-align: -1px;
+  border: 2px solid rgba(226, 155, 57, 0.28);
+  border-top-color: var(--amb);
+  border-radius: 50%;
+  animation: session-working-spin 0.9s linear infinite;
+}
+
+@keyframes session-working-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .session-working {
+    border-color: var(--amb);
+    animation: none;
+  }
+}
+
 .session-item-meta {
   align-self: center;
   color: var(--muted-soft);
@@ -857,7 +884,7 @@ a:focus-visible {
   display: flex;
   flex-wrap: wrap;
   grid-column: 1 / -1;
-  gap: 6px;
+  gap: 8px;
   max-height: 0;
   overflow: hidden;
   opacity: 0;
@@ -868,20 +895,30 @@ a:focus-visible {
 .session-item:focus-within .session-item-actions,
 .session-item.active .session-item-actions,
 .session-item.archived .session-item-actions {
-  max-height: 64px;
-  margin-top: 5px;
+  max-height: 128px;
+  margin-top: 7px;
   opacity: 1;
 }
 
 .session-action {
-  padding: 4px 7px;
+  min-height: 30px;
+  padding: 6px 11px;
   border: 1px solid rgba(91, 146, 255, 0.28);
   background: rgba(255, 255, 255, 0.72);
   color: var(--muted);
   cursor: pointer;
   font-family: "Share Tech Mono", monospace;
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: 0.08em;
+}
+
+/* Fingers on tablets, phones and DeX: a target of at least 36 px. */
+@media (pointer: coarse) {
+  .session-action {
+    min-height: 36px;
+    padding: 8px 13px;
+    font-size: 11px;
+  }
 }
 
 .session-action:hover {

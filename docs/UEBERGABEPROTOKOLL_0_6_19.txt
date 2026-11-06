@@ -1,0 +1,45 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.6.19
+Stand: 05.11.2026
+Ausgangsbasis: main 0.6.18 nach Merge von PR #169 (Betreiber: "Preflight laeuft durch, alles gruen").
+
+AUFTRAG: "Mara sollte selbst entscheiden koennen, was in ihr LTM gehoert, wie bisher auch."
+
+URSACHE: ember_after_insert_tasks() ueberspringt die Reflexion bei COREUI_VISION_TURN (0.5.71, Bilder/Videos/PDFs); der
+Audio-Weg (0.6.17) laeuft durch denselben Medienzweig. Ausserdem war der Nutzertext einer Sprachnachricht leer oder nur
+ein Anhang-Marker, und die Mitschrift entsteht erst nach der Antwort.
+
+UMSETZUNG:
+- api/chat.php: der Medienzweig setzt COREUI_VOICE_TURN, wenn eine Sprachnachricht (voice) dabei ist;
+  ember_after_insert_tasks() liest und loescht ihn und laesst den Beziehungswert dann aus (die Reflexion entfiel dort
+  ohnehin durch COREUI_VISION_TURN). Laufzeit-Erinnerungen (Name, Rechte) bleiben unveraendert.
+- api/console_stream.php: $voiceTurn wird vor ember_after_insert_tasks gelesen (nur normale Turns, keine Guardrail);
+  nach ember_attach_audio_transcribe_after() folgt ember_attach_voice_reflect() mit ember_attach_strip_marker($message).
+- api/ember_attachments.php: ember_attach_voice_reflect(): nur wenn ALLE Anhaenge des Turns Sprachnachrichten sind
+  (keine Audiodatei, kein Bild); Gesagtes = fertige Mitschriften; ember_should_reflect_exchange() und
+  ember_reflect_maybe_store() wie bei Text, dazu ember_reputation_maybe_update(); nicht bei Fehlantwort.
+- README: Sprachnachrichten-Absatz um das Gedaechtnis ergaenzt (aktueller Stand).
+
+NACHTRAG CHATLISTE (Screenshot des Betreibers, Knoepfe halb abgeschnitten; Wunsch Ladekreis):
+- css/console.css: .session-item flex 0 0 auto (die Liste ist eine Flex-Spalte mit begrenzter Hoehe; mit gesetztem
+  min-height 53px schrumpften die Eintraege, clip-path schnitt die Knoepfe), .session-action min-height 30px, 10px
+  Schrift, @media (pointer: coarse) 36px; .session-item-actions max-height 128px; .session-working (Ring, Bernstein,
+  bei prefers-reduced-motion still).
+- api/console_agent_runs.php: coreui_agent_run_working_sessions() (running < 180 s, queued < 600 s, waiting_tool
+  < 30 min seit updated_at); api/console_sessions.php ?action=list liefert working je Chat.
+- js/console-app.js: li data-session-id, sessionIsWorking() (pendingBySession oder working, nie archiviert),
+  markSessionWorking() nach dem Zusammensetzen des Eintrags, refreshSessionWorking() jede Sekunde,
+  pollSessionWork() 15 s solange gearbeitet wird, sonst 60 s, nur bei sichtbarem Tab; neu zeichnen nur bei geaenderter
+  Signatur (id, Titel, Ungelesene, Anzahl, Archiv).
+- scripts/session-list-ui-selftest.cjs (neu, in beiden Preflights): echtes renderSessionList aus console-app.js;
+  der Test fand selbst einen Fehler (Ring vor dem Einhaengen des Titels gesetzt, er erschien erst nach einer Sekunde).
+
+GEPRUEFT: voice-input-selftest.php (Reflexion mit Gesagtem und Getipptem, Ausnahmen, Verdrahtung; drei Gegenproben
+erkannt), session-list-ui-selftest.cjs (mit altem Stylesheet rot), agent-run-liveness-selftest.php gegen MariaDB,
+Bildschirmfotos Tag/Nacht/Touch, volle Testreihe, cache-bust, version-merge-check gegen 0.6.18.
+NICHT hier: Gemma auf dem Server.
+OFFEN: Der synchrone Chatpfad ohne SSE (chat.php, Fallback ohne EventSource) schreibt keine Mitschrift und reflektiert
+Sprachnachrichten daher nicht; im Browser laeuft immer der Stream.
+
+NACH DEM MERGE (Betreiber): Update unter Einstellungen > System > CoreAI Update. Eine Sprachnachricht mit etwas
+Merkenswertem schicken (zum Beispiel ein Termin oder eine Vorliebe), die Mitschrift abwarten und unter
+Einstellungen > Memory nachsehen, was Mara behalten hat.

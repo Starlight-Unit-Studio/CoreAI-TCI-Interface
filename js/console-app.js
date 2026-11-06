@@ -473,10 +473,11 @@
     state.sessions.forEach(function(s) {
       var li = document.createElement('li');
       li.className = 'session-item' + (isActiveSession(s.id) ? ' active' : '') + (s.archived ? ' archived' : '');
+      li.setAttribute('data-session-id', String(s.id));
 
       var titleEl = document.createElement('div');
       titleEl.className = 'session-item-title';
-      titleEl.textContent = s.title;
+      titleEl.appendChild(document.createTextNode(String(s.title || '')));
 
       var metaEl = document.createElement('div');
       metaEl.className = 'session-item-meta';
@@ -609,6 +610,7 @@
       li.appendChild(titleEl);
       li.appendChild(metaEl);
       li.appendChild(actions);
+      markSessionWorking(li, sessionIsWorking(s));
 
       li.addEventListener('click', function() {
         if (s.archived) return;
@@ -618,6 +620,58 @@
       sessionListEl.appendChild(li);
     });
   }
+
+  // 0.6.19: a spinner in the chat list while Mara works in a chat: at once for a
+  // turn sent from this tab (pendingBySession), and from the server for runs from
+  // another tab, another device or before a reload (sessions[].working).
+  function sessionIsWorking(s) {
+    return !!(s && !s.archived && (state.pendingBySession[s.id] || s.working));
+  }
+
+  function markSessionWorking(li, working) {
+    var title = li.querySelector('.session-item-title');
+    var spinner = title ? title.querySelector('.session-working') : null;
+    li.classList.toggle('working', !!working);
+    if (working && title && !spinner) {
+      spinner = document.createElement('span');
+      spinner.className = 'session-working';
+      spinner.setAttribute('role', 'img');
+      spinner.setAttribute('aria-label', 'Mara arbeitet in diesem Chat');
+      spinner.title = 'Mara arbeitet in diesem Chat';
+      title.insertBefore(spinner, title.firstChild);
+    } else if (!working && spinner) {
+      spinner.remove();
+    }
+  }
+
+  function refreshSessionWorking() {
+    if (!sessionListEl) return;
+    Array.prototype.forEach.call(sessionListEl.querySelectorAll('.session-item[data-session-id]'), function (li) {
+      markSessionWorking(li, sessionIsWorking(sessionById(li.getAttribute('data-session-id'))));
+    });
+  }
+
+  // The list is drawn again only when something visible changed, so a poll never swallows a click on its buttons.
+  function sessionListSignature() {
+    return JSON.stringify(state.sessions.map(function (s) {
+      return [s.id, s.title, s.unread_count, s.message_count, !!s.archived];
+    }));
+  }
+
+  var sessionWorkPollTimer = 0;
+  function pollSessionWork() {
+    clearTimeout(sessionWorkPollTimer);
+    var anyWorking = state.sessions.some(function (s) { return s.working; });
+    sessionWorkPollTimer = setTimeout(function () {
+      if (document.visibilityState !== 'visible') { pollSessionWork(); return; }
+      var before = sessionListSignature();
+      dbLoadSessions().then(function () {
+        if (sessionListSignature() !== before) renderSessionList(); else refreshSessionWorking();
+      }).catch(function () {}).then(pollSessionWork);
+    }, anyWorking ? 15000 : 60000);
+  }
+  setInterval(refreshSessionWorking, 1000);
+  pollSessionWork();
 
   function netJson(url, opts) {
     if (window.CoreUINet) return window.CoreUINet.fetchJson(url, opts);

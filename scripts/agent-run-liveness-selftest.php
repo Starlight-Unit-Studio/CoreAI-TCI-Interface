@@ -41,6 +41,10 @@ $store = $read('api/console_session_store.php');
 $deleteAt = strpos($store, 'function coreui_console_session_delete(PDO $pdo');
 liveness_test($deleteAt !== false && strpos($store, 'coreui_agent_run_reap_stale($pdo, $uid,', $deleteAt) < strpos($store, '$pdo->beginTransaction();', $deleteAt),
   'deleting a chat ends lost runs first');
+// 0.6.19: the chat list shows a spinner where Mara works (console_sessions.php ?action=list).
+$sessionsApi = $read('api/console_sessions.php');
+liveness_test(str_contains($sessionsApi, '$working = coreui_agent_run_working_sessions($pdo, (int)$uid);')
+  && str_contains($sessionsApi, "\$row['working'] = isset(\$working[(string)\$row['id']]);"), 'the chat list says where Mara works');
 
 $dbWanted = is_file($root . '/api/config.local.php') || getenv('COREUI_SELFTEST_DB') === '1';
 if (!$dbWanted) {
@@ -113,6 +117,21 @@ try {
   liveness_test(coreui_agent_run_active_snapshot($pdo, $uid, $session) === null || coreui_agent_run_active_snapshot($pdo, $uid, $session)['id'] === $justQueued,
     'after a reload a lost run shows no "Core denkt nach"');
   liveness_test($get($session, $live)['status'] === 'interrupted', 'and it is marked interrupted');
+
+  // 0.6.19: chats with a run that shows a sign of life get the spinner; lost and finished runs do not.
+  $fresh = 'frsh' . bin2hex(random_bytes(6));
+  $queued = 'qued' . bin2hex(random_bytes(6));
+  $tool = 'tool' . bin2hex(random_bytes(6));
+  $gone = 'gone' . bin2hex(random_bytes(6));
+  $add($fresh, 20, 'running', 20);
+  $add($queued, 21, 'queued', 30);
+  $add($tool, 22, 'waiting_tool', 900);
+  $add($gone, 23, 'running', COREUI_AGENT_RUN_STALE_SECONDS + 60);
+  $add($gone, 24, 'completed', 5);
+  $working = coreui_agent_run_working_sessions($pdo, $uid);
+  liveness_test(isset($working[$fresh], $working[$queued], $working[$tool]) && !isset($working[$gone]) && !isset($working[$other]),
+    'spinner for running, queued and tool-waiting runs with a sign of life; none for a lost or finished one');
+  liveness_test(coreui_agent_run_working_sessions($pdo, $uid + 1) === [], 'never for another account');
 } finally {
   if ($pdo->inTransaction()) $pdo->rollBack();
   $pdo->exec('SET FOREIGN_KEY_CHECKS=1');
