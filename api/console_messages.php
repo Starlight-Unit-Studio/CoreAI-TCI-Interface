@@ -39,7 +39,7 @@ if ($afterId > 0 && $beforeId > 0) stu_json(['ok'=>false, 'error'=>'invalid_curs
 
 $select = "SELECT m.id, m.session_id, m.reply_to_id, m.user_id, m.character_id,
                   m.character_name, m.message, m.thinking_content, m.image_url,
-                  m.file_uuid, m.created_at,
+                  m.file_uuid, m.created_at, UNIX_TIMESTAMP(m.created_at) AS created_ts,
                   DATE_FORMAT(m.created_at, '%H:%i') AS time_label,
                   DATE_FORMAT(m.created_at, '%d.%m.%Y') AS date_label,
                   cm.kind AS attachment_kind, cm.orig_name AS attachment_name,
@@ -170,6 +170,11 @@ foreach ($rows as &$row) {
   if ($oldestId === 0 || ($id > 0 && $id < $oldestId)) $oldestId = $id;
   if ($id > $maxId) $maxId = $id;
   $row['id'] = $id;
+  // 0.6.24: the time with its zone. The database stores NOW() in its own zone (UTC in
+  // the container) and the browser read "2026-11-06 13:33:10" as local time: the answer
+  // of the browser research showed 13:33 under a question from 14:29 (operator, 06.11.2026).
+  $row['created_at'] = coreui_db_time_iso($row['created_ts'] ?? null, $row['created_at'] ?? null);
+  unset($row['created_ts']);
   $row['artifacts'] = $artifactMap[$id] ?? [];
   $row['work_events'] = $workMap[$id] ?? [];
   $row['reply_to_id'] = (int)($row['reply_to_id'] ?? 0);

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.28: Sperrfall ohne Audioeingabe mit TCI-Sprachtest abgesichert.
+# CoreAI: TCI Interface 0.6.29: Zeiten im Chat mit Zeitzone (nachgeladene Antworten nicht mehr eine Stunde zu frueh).
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -206,6 +206,7 @@ UI_FILES=(
   api/weather_live.php
   scripts/weather-live-selftest.php
   scripts/voice-hear-check.php
+  scripts/message-time-selftest.php
   docker/tts-spike/Dockerfile
   docker/tts-spike/constraints-piper.txt
   docker/tts-spike/constraints-pocket.txt
@@ -676,6 +677,13 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     ok '0.6.13: Hauptsprache pro Konto (Antworten und Vorlesen) geprueft.'
   else
     fail 'Selbsttest fuer die Hauptsprache pro Konto fehlgeschlagen.'
+  fi
+
+  time_test=''
+  if time_test="$(compose exec -T php php scripts/message-time-selftest.php 2>&1)"; then
+    ok '0.6.29: Zeiten im Chat mit Zeitzone (Nachrichten und Chatliste, Datenbank in UTC und Ortszeit) geprueft.'
+  else
+    fail "Zeit-Selbsttest: ${time_test:-Unbekannter Fehler}"
   fi
 
   voice_input_test=''

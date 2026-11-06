@@ -1,0 +1,6 @@
+CoreAI: TCI Interface 0.6.29 - 06.11.2026
+- Chat: nachgeladene Nachrichten zeigten die Uhrzeit eine Stunde zu frueh (Antwort 13:33 unter Frage 14:29).
+- Ursache: Datenbankzeit in UTC ohne Zeitzone an den Browser.
+- Verlauf und Chatliste schicken Zeiten jetzt als ISO 8601 in UTC; der Browser zeigt Ortszeit.
+- Tests: message-time-selftest.php (neu, mit Datenbank in UTC und +01:00), beide Preflights.
+- Keine Aenderung an Daten, Schema, Cores, Modelfile, Installer oder Warteschlange.

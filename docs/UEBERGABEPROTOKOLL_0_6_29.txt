@@ -1,0 +1,25 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.29
+Stand: 06.11.2026
+Basis: main 0.6.28 nach Merge von PR #179.
+
+FEHLERBILD (Screenshot des Betreibers, 14:36): Stimmsequenz "Ne, guck mal, wie das Wetter dort heute ist." um 14:29,
+die Antwort der Browser-Recherche (WDR-Ortssuche, 4-Tage-Prognose Bergisch Gladbach) darunter mit 13:33.
+
+URSACHE: Der MariaDB-Container hat keine Zeitzone gesetzt, NOW() schreibt UTC. api/console_messages.php gab created_at
+als "2026-11-06 13:33:10" aus; js/console-app.js (appendMessageEl) liest es mit new Date() als Ortszeit. Live gesendete
+Nachrichten bekommen die Browserzeit, daher fiel es bei nachgeladenen Antworten auf (Browser-Worker, Neuladen).
+
+UMSETZUNG
+- api/console_session_store.php: coreui_db_time_iso($ts, $fallback): UNIX_TIMESTAMP der Spalte -> gmdate('c').
+  UNIX_TIMESTAMP liest den Wert in der Sitzungszeitzone, in der NOW() geschrieben hat: richtig im Container (UTC) und
+  nativ (Ortszeit). Chatliste: created_at, updated_at, archived_at.
+- api/console_messages.php: UNIX_TIMESTAMP(m.created_at) AS created_ts; created_at als ISO 8601, created_ts entfernt.
+  time_label/date_label (vom Browser nicht genutzt) unveraendert.
+- scripts/message-time-selftest.php (neu), beide Preflights (Pflichtliste und Lauf).
+- Keine Datenmigration: gespeicherte Werte bleiben, nur die Ausgabe nennt die Zeitzone.
+
+GEPRUEFT (hier ausgefuehrt): message-time-selftest.php offline und gegen MariaDB 11 (Sitzung +00:00 und +01:00,
+zurueckgerollt), volle Testreihe, cache-bust, version-merge-check gegen 0.6.28.
+
+NACH DEM MERGE (Betreiber): Update unter Einstellungen > System > CoreAI Update, den Chat neu laden: die Zeiten unter
+aelteren Nachrichten und unter der Wetterantwort stimmen mit der Uhr ueberein.
