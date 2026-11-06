@@ -1439,6 +1439,7 @@
 
   function clearMessageEdit(restoreFocus) {
     state.editingMessage = null;
+    updateComposerEmpty();
     if (composerEditState) composerEditState.hidden = true;
     if (composerEditLabel) composerEditLabel.textContent = 'NACHRICHT BEARBEITEN';
     if (restoreFocus && inputEl) inputEl.focus();
@@ -1456,6 +1457,7 @@
       message_id: Number(record.id),
       original_text: String(text || '')
     };
+    updateComposerEmpty();
     if (composerEditState) composerEditState.hidden = false;
     if (composerEditLabel) composerEditLabel.textContent = 'NACHRICHT #' + String(record.id) + ' BEARBEITEN';
     updateActivePendingUi();
@@ -2030,6 +2032,7 @@
   }
 
   function renderAttachmentList() {
+    updateComposerEmpty();
     if (!attachList) return;
     attachList.innerHTML = '';
     pendingFiles.forEach(function (item, index) {
@@ -2154,6 +2157,16 @@
     if (!inputEl) return;
     inputEl.value = String(text || '');
     resizeMessageComposer();
+    updateComposerEmpty();
+  }
+
+  // 0.6.32: an empty input row (no text, no attachment, no edit) shows the live button in the
+  // place of the send button (js/coreui-voice-live.js); typing turns it into send again.
+  function updateComposerEmpty() {
+    var inner = inputEl && inputEl.closest ? inputEl.closest('.composer-inner') : null;
+    if (!inner) return;
+    var empty = !String(inputEl.value || '').trim() && attachmentSlotsUsed() === 0 && !state.editingMessage;
+    inner.classList.toggle('is-empty', empty);
   }
 
   function restoreFailedAutoPaste(file) {
@@ -2337,6 +2350,7 @@
     });
     inputEl.addEventListener('input', function(e) {
       resizeMessageComposer();
+      updateComposerEmpty();
       // Android may expose insertFromPaste only through InputEvent, not
       // ClipboardEvent.clipboardData. Convert 8k+ content in either case.
       var pasted = e && e.inputType === 'insertFromPaste';
@@ -2347,6 +2361,7 @@
       if (queueAutoTextAttachment(text)) setComposerText('');
     });
     resizeMessageComposer();
+    updateComposerEmpty();
   }
 
   // ── Nachricht senden ─────────────────────────────────────

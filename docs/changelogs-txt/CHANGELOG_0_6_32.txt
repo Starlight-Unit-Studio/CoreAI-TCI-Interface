@@ -1,0 +1,9 @@
+CoreAI: TCI Interface 0.6.32 - 06.11.2026
+- Live-Gespraech: Eve ohne Pausen, alle Satzteile werden der Reihe nach vorab geholt, waehrend der vorige spielt.
+- Mara Schnell schreibt mit, wenn beide Cores zugleich im Arbeitsspeicher sind (beim Oeffnen geprueft); Mara Normal behaelt ihren Zwischenspeicher.
+- Rueckfall auf Mara Normal als Mitschreiberin, wenn Ollama sie entladen muss oder Mara Schnell scheitert.
+- 0,7 s Stille beenden die eigene Runde (vorher 0,9 s).
+- Live-Knopf im Platz des Senden-Knopfs, solange die Eingabezeile leer ist; mit Text oder Anhang wieder Senden.
+- Messwerte je Runde und beim Vorwaermen im Fehlerprotokoll (coreui_live_turn, coreui_live_warm).
+- Tests: voice-live-selftest.php (auch ueber HTTP mit Datenbank), voice-live-ui-selftest.cjs.
+- Keine Aenderung an Cores, Modelfile, Datenbankschema, Installer, nginx oder Warteschlange.
