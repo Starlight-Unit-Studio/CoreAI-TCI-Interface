@@ -226,13 +226,13 @@ function ember_attach_audio_cleanup(?string $dir): void {
  */
 function ember_attach_audio_native(PDO $pdo, string $uuid, int $uid, string $path, string $name): string {
   $voice = coreui_voice_is_voice_message($name);
-  $what = $voice ? 'eine Sprachnachricht' : 'eine Audiodatei';
+  $what = $voice ? 'eine Stimmsequenz' : 'eine Audiodatei';
   $deaf = static fn(string $why): string => 'Das ist ' . $what . '. Du kannst sie NICHT anhoeren: ' . $why
     . ' Dir liegen nur Name, Typ und Groesse vor. Sag das ehrlich und frag nach, worum es geht.';
   if ($uid <= 0 || (function_exists('coreui_guest_is') && coreui_guest_is($pdo, $uid))) {
-    return $deaf('Audio hoert Core nur fuer angemeldete Konten.');
+    return $deaf('Die Stimmsequenz kann ich nur fuer angemeldete Konten verarbeiten.');
   }
-  if (!ember_attach_audio_allowed($pdo, $uid)) return $deaf('Der gewaehlte Core hat keinen Audio-Eingang.');
+  if (!ember_attach_audio_allowed($pdo, $uid)) return $deaf('Der gewaehlte Core unterstuetzt keine Audioeingabe.');
 
   $max = $voice ? COREUI_VOICE_INPUT_MAX_SECONDS
     : coreui_voice_native_budget(function_exists('ember_ollama_context_window') ? ember_ollama_context_window(ember_model()) : null);
@@ -431,7 +431,7 @@ function ember_attach_audio_history_notes(PDO $pdo, int $uid, array $messageIds)
   $notes = [];
   foreach ($rows as $row) {
     $voice = coreui_voice_is_voice_message((string)$row['orig_name']);
-    $label = $voice ? 'Sprachnachricht' : 'Audiodatei "' . (string)$row['orig_name'] . '"';
+    $label = $voice ? 'Stimmsequenz' : 'Audiodatei " . (string)$row['orig_name'] . '"';
     $t = coreui_voice_transcript_load($uid, (string)$row['uuid']);
     $state = is_array($t) ? (string)($t['state'] ?? '') : '';
     $text = $state === 'done' ? trim((string)($t['text'] ?? '')) : '';

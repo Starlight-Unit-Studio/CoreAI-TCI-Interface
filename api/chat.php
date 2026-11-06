@@ -5890,13 +5890,13 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         coreui_work_record($pdo, 'artifact', 'error', 'Projektquellen unvollstaendig',
           ['reason'=>'source_files_incomplete','file_name'=>(string)$name]);
         if ($reason === 'context_window_full') {
-          return 'Fuer ' . $name . ' war das Kontextfenster des lokalen Core voll ('
+          return 'Fuer ' . $name . ' war das Kontextfenster des lokalen Cores voll ('
             . (int)($lastMeta['context_tokens'] ?? 0) . ' Tokens). Auftrag und Denkphase haben '
             . 'den Platz belegt, bevor genug Quelltext entstand. Es wurde keine ZIP-Datei '
             . 'vorgetaeuscht. Abhilfe: ein groesseres Kontextfenster unter Einstellungen > '
             . 'KI-Profil, OLLAMA_CONTEXT_LENGTH oder ein Cloud-Core aus der Ollama-Liste.';
         }
-        return 'Die Ausgabe des lokalen Core fuer ' . $name
+        return 'Die Ausgabe des lokalen Cores fuer ' . $name
           . ' ist fehlgeschlagen. Im Arbeitsverlauf stehen jetzt der '
           . 'konkrete Ollama-Fehlergrund, HTTP-Status und die Aufrufdauer. '
           . 'Es wurde keine ZIP-Datei vorgetaeuscht.';
@@ -6024,7 +6024,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
           ? 'Die lokale Gemma-Dateiausgabe wurde abgeschnitten oder der [PY]-Block '
             . 'nicht geschlossen. Nach einem erneuten Versuch wird kein '
             . 'unvollstaendiger Python-Code ausgefuehrt und kein Download vorgetaeuscht.'
-          : 'Die Antwort von Core konnte nicht als ausfuehrbarer Datei-Auftrag verarbeitet werden. '
+          : 'Ich konnte meine Antwort nicht als ausfuehrbaren Datei-Auftrag verarbeiten. '
             . 'Es wurde kein Python-Job gestartet und keine Downloaddatei gespeichert.';
       }
       $out = $retry;
@@ -6121,10 +6121,10 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         ember_truncation_meta($outMeta) + ['source_chars'=>strlen((string)$pyCode)]);
       $handoff = $projectHandoff($pyCode);
       if (is_string($handoff)) return $handoff;
-      return 'Mein Python-Skript wurde beim Schreiben abgeschnitten, weil die Antwort von Core '
+      return 'Mein Python-Skript wurde beim Schreiben abgeschnitten, '
         . ($contextFull > 0
-          ? 'das Kontextfenster (' . $contextFull . ' Tokens) gefuellt hat'
-          : 'am Ausgabelimit endete')
+          ? 'weil mein Kontextfenster (' . $contextFull . ' Tokens) ausgeschoepft war'
+          : 'weil meine Ausgabe am Ausgabelimit endete')
         . '. Ich habe es deshalb nicht ausgefuehrt und keine Datei vorgetaeuscht. '
         . 'Ein mehrseitiges Projekt baue ich ueber den geprueften Projekt-Writer Datei fuer Datei, '
         . 'sobald du die Umsetzung des gespeicherten Plans freigibst.';

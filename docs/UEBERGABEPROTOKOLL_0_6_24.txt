@@ -1,0 +1,22 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.24
+Stand: 06.11.2026
+Basis: main 0.6.23 nach Merge von PR #174.
+
+AUFTRAG
+Mara ist eine einzige Terran Cognitive Intelligence. In Benutzertexten sprechen keine getrennten Instanzen "Mara" und "Core". Neuer Begriff fuer gesprochene Chat-Nachrichten: "Stimmsequenz". Der technische Core-Begriff bleibt fuer Auswahllisten, Parameter und Diagnosen erhalten.
+
+UMSETZUNG
+- js/coreui-work-events.js: Statusmeldungen und Detailtexte in Ich-Form, inklusive Audio/Context/Fehler. Interne Event-Kennungen bleiben unveraendert.
+- js/coreui-voice-input.js, settings.html, api/voice_transcribe.php, api/ember_attachments.php: sichtbare und an Mara gerichtete Begriffe "Stimmsequenz". Der Datei-Praefix Sprachnachricht- bleibt kompatibel.
+- api/console_answer_style.php: runtimegebundene Sprachregel fuer private Konversationen ohne Eingriff ins Betreiber-Modelfile.
+- js/coreui-insights.js, js/coreui-core-mode.js, js/coreui-context-slider.js, js/settings.js, api/chat.php, api/console_native_tools.php: gezielte Grammatik- und Identitaetskorrekturen.
+- scripts/tci-language-selftest.cjs, bestehende Voice-/Arbeitsweg-Tests, beide Preflights: Regressionen gegen alte Formulierungen.
+- Version, sichtbare HTML-Staende, Browser-Bootstrap, Cache-Schluessel, README, Changelog und Archiv werden synchron auf 0.6.24 gesetzt.
+
+KOMPATIBILITAET
+Keine Migration, kein neuer Ollama-Core, keine Aenderung der Modellparameter, kein neues Audio-Dateiformat. Protokolltitel wie "Modellstream gestartet" und "Aufnahme wird mitgeschrieben" bleiben intern erhalten. Allgemeine Audio-Dateien bleiben von Stimmsequenzen unterscheidbar.
+
+ABNAHME
+- Node/PHP-Syntax der geaenderten Dateien, TCI-Sprachtest, bestehende UI-/Voice-Tests, Branding-/Terminologie-/Versionspruefung und Cache-Bust verifizieren.
+- Nach Merge per integriertem Updater aktualisieren und im privaten Chat auf Stimmeingabe, Mitschrift, Fortschrittstexte, Core-Wechsel und Fehlermeldungen pruefen.
+- Nicht ausgefuehrte lokale oder Server-Tests nicht als bestanden werten.

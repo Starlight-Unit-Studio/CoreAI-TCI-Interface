@@ -1,0 +1,7 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.24
+06.11.2026
+
+Mara ist eine einzige TCI; ihre Cores, Werkzeuge und Audioverarbeitung werden in sichtbaren Arbeitsmeldungen nicht mehr als weitere Personen behandelt.
+Die Nutzerbezeichnung fuer gesprochene Chatnachrichten lautet Stimmsequenz. Bestehende Sprachnachricht-Dateinamen und persistierte Modellstream-/Aufnahme-Eventtitel bleiben unveraendert.
+Statusmeldungen, Core-Grammatik, KI-Profil und Audio-Eingabe wurden sprachlich korrigiert. Neue TCI-Sprachregression in Compose-/Native-Preflight. Keine Modelfile-, Modell- oder Datenbank-Aenderungen.
+Tests und Live-Deployment muessen vor Freigabe separat am kompletten Checkout bzw. Server verifiziert werden.

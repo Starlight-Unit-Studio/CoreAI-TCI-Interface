@@ -423,7 +423,7 @@
       })
       .catch(function (error) {
         var labels = {
-          model_not_available: 'CORE IST NICHT MEHR IN OLLAMA INSTALLIERT',
+          model_not_available: 'DER CORE IST NICHT MEHR IN OLLAMA INSTALLIERT',
           model_catalog_unavailable: 'OLLAMA-CORE-LISTE IST NICHT ERREICHBAR',
           model_catalog_invalid_response: 'OLLAMA-CORE-LISTE IST UNGÜLTIG',
           invalid_model_name: 'UNGÜLTIGER CORE-NAME',

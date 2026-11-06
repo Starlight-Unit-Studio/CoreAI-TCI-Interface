@@ -115,7 +115,7 @@
     function renderContext(body) {
       var usage = state.live.usage || (state.data && state.data.usage) || null;
       if (!usage) {
-        body.appendChild(el('p', 'insight-empty', 'Core hat in dieser Sitzung noch nicht geantwortet.'));
+        body.appendChild(el('p', 'insight-empty', 'In dieser Sitzung liegt noch keine Antwort vor.'));
         return;
       }
       var prompt = Number(usage.prompt_tokens) || 0;

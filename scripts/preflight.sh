@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.23: kein erfundenes Bild bei Sprachnachrichten, Hoerprobe fuer den Server.
+# CoreAI: TCI Interface 0.6.24: TCI-Ich-Perspektive, Stimmsequenz und Sprachregression.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -91,6 +91,7 @@ UI_FILES=(
   scripts/settings-tabs-ui-selftest.cjs
   scripts/theme-preferences-selftest.cjs
   scripts/terran-terminology-selftest.cjs
+  scripts/tci-language-selftest.cjs
   js/console-app.js
   js/coreui-markdown.js
   js/coreui-markdown-preview.js
@@ -961,6 +962,11 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       ok 'Terranische CoreAI-Bezeichnungen: Terra-Net und Systemtexte geprueft.'
     else
       fail 'Terranische CoreAI-Bezeichnungen: Arch-Net/Ayalren-Rueckfall gefunden.'
+    fi
+    if node "$PROJECT_ROOT/scripts/tci-language-selftest.cjs" >/dev/null 2>&1; then
+      ok 'Mara-TCI-Sprache und Stimmsequenz-Terminologie geprueft.'
+    else
+      fail 'Mara-TCI-Sprache: Terminologie-Selbsttest fehlgeschlagen.'
     fi
     if node "$PROJECT_ROOT/scripts/theme-preferences-selftest.cjs" >/dev/null 2>&1; then
       ok 'Anzeige: System/Hell/Dunkel mit Speichern, Betriebssystem-Wechsel und Browser-Tabs geprueft.'
