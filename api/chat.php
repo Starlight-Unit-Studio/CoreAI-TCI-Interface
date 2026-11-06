@@ -1911,16 +1911,33 @@ function ember_http_get_html(string $url, int $timeout = 8): ?string {
  * 0.6.22: live weather sources for a [WEB:] weather query (api/weather_live.php),
  * Open-Meteo answers cached 10 minutes, the WDR page 15 minutes.
  */
+/** Open-Meteo answers (geocoding, forecast), cached 10 minutes. */
+function ember_weather_get_json(string $url): ?array {
+  $key = 'wxj:' . sha1($url);
+  $hit = ember_cache_get($key, 600);
+  if (is_string($hit)) { $j = json_decode($hit, true); if (is_array($j)) return $j; }
+  $j = ember_http_get_json($url, 8);
+  if (is_array($j)) ember_cache_set($key, (string)json_encode($j));
+  return $j;
+}
+
+/**
+ * 0.6.22: the route of a work-loop step: a weather question about a place in NRW goes to
+ * the WDR place search in the browser (coreui_weather_route). The operator can switch it
+ * off with STU_EMBER_WEATHER_NRW_BROWSE = false; then NRW gets the quick web step too.
+ */
+function ember_weather_route_tool(array $tool, array $allowed): array {
+  if (!(bool)ember_cfg('STU_EMBER_WEATHER_NRW_BROWSE', true)) return $tool;
+  try {
+    return coreui_weather_route($tool, $allowed, 'ember_weather_get_json');
+  } catch (Throwable $e) {
+    return $tool;
+  }
+}
+
 function ember_weather_live_sources(string $query): array {
   if (!coreui_weather_is_query($query)) return [];
-  $getJson = static function (string $url): ?array {
-    $key = 'wxj:' . sha1($url);
-    $hit = ember_cache_get($key, 600);
-    if (is_string($hit)) { $j = json_decode($hit, true); if (is_array($j)) return $j; }
-    $j = ember_http_get_json($url, 8);
-    if (is_array($j)) ember_cache_set($key, (string)json_encode($j));
-    return $j;
-  };
+  $getJson = 'ember_weather_get_json';
   // Only the readable text of the WDR page is cached, not the page.
   $wdrText = static function (): string {
     $hit = ember_cache_get('wxwdr:text', 900);
@@ -5536,7 +5553,8 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         static function (string $kind, string $state, string $title, array $meta) use ($pdo): void {
           coreui_work_record($pdo, $kind, $state, $title, $meta);
         },
-        static fn(): bool => ember_agent_cancel_requested(true));
+        static fn(): bool => ember_agent_cancel_requested(true),
+        static fn(array $tool): array => ember_weather_route_tool($tool, $voiceTools));
       if ($voiceLoop['browse'] !== null) {
         $GLOBALS['STU_EMBER_BROWSE_REQUEST'] = $voiceLoop['browse'];
         return null;
@@ -6344,7 +6362,8 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         static function (string $kind, string $state, string $title, array $meta) use ($pdo): void {
           coreui_work_record($pdo, $kind, $state, $title, $meta);
         },
-        static fn(): bool => ember_agent_cancel_requested(true));
+        static fn(): bool => ember_agent_cancel_requested(true),
+        static fn(array $tool): array => ember_weather_route_tool($tool, $loopAllowed));
       if ($loop['browse'] !== null) {
         $GLOBALS['STU_EMBER_BROWSE_REQUEST'] = $loop['browse'];
         return null;

@@ -8,7 +8,9 @@ CoreAI: TCI Interface 0.6.22 - 06.11.2026
 - Live-Wetter im Websuche-Schritt: WDR-Vorhersage fuer NRW und Open-Meteo statt alter Suchtreffer.
 - WDR nach Analyse des Betreibers: "Prognose fuer" bis vor "Symbolerklaerungen", Stand hoechstens 36 h alt,
   naechste der elf Regionen (Bergisch Gladbach: Koeln).
-- WDR-Ortssuche per Browser; der Browser startet an der https-Adresse im Auftrag (nie lokal oder privat).
+- NRW-Wetterfragen gehen an die WDR-Ortssuche im Browser (Start auf der WDR-Wetterseite, eine Quelle genuegt);
+  alle anderen Orte und Laender wie bisher; abschaltbar in api/config.local.php: define('STU_EMBER_WEATHER_NRW_BROWSE', false);
+- Browser startet an der https-Adresse im Auftrag (nie lokal oder privat).
 - Tests: voice-input, voice-read (Datenbank), voice-terms-ui (neu), weather-live (neu), web-search, work-events-ui,
-  agent-loop.
+  agent-loop, browse-worker.
 - Keine Aenderung an Cores, Modelfile, Installer oder Warteschlange.

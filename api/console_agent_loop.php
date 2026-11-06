@@ -153,14 +153,20 @@ function coreui_agent_loop_hint(bool $compact, bool $archive): string {
  *   $cancelled(): bool
  */
 function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $allowed, int $used,
-    callable $callModel, callable $runTool, callable $record, callable $cancelled): array {
+    callable $callModel, callable $runTool, callable $record, callable $cancelled, ?callable $route = null): array {
   $steps = [];
   $prompt = null;
+  // 0.6.22: $route(array $tool): array may send a step another way (a weather question about
+  // a place in NRW goes to the WDR place search in the browser, api/weather_live.php).
+  if ($tool !== null && $route !== null) $tool = $route($tool);
   while ($tool !== null && $used < COREUI_AGENT_MAX_STEPS) {
     $title = coreui_agent_step_title($tool, $used + 1, COREUI_AGENT_MAX_STEPS);
     $note = coreui_agent_step_note($tool);
     if ($note !== null) $record('commentary', 'info', 'Mara meldet ihren naechsten Schritt', ['public_note'=>$note, 'source'=>'agent_loop']);
     if ($tool['tool'] === 'browse') {
+      if (($tool['route'] ?? '') === 'wdr_place_search') {
+        $record('tool', 'info', 'Wetter in NRW: WDR-Ortssuche im Browser', ['step'=>$used + 1, 'reason'=>'weather_nrw']);
+      }
       $record('tool', 'info', $title, ['step'=>$used + 1, 'reason'=>'agent_loop_browse']);
       return ['out'=>null, 'browse'=>(string)$tool['input'], 'steps'=>count($steps), 'prompt'=>$prompt];
     }
@@ -175,6 +181,7 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
     $out = (is_string($next) && trim($next) !== '') ? $next : '';
     if ($out === '') break;
     $tool = $used < COREUI_AGENT_MAX_STEPS ? coreui_agent_next_tool($out, $allowed) : null;
+    if ($tool !== null && $route !== null) $tool = $route($tool);
   }
   // Still asking for a tool after the last step: keep only the prose.
   if ($out !== '' && coreui_agent_next_tool($out, $allowed) !== null) {

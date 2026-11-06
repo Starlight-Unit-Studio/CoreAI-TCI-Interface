@@ -39,6 +39,15 @@ UMSETZUNG:
   api/console_agent_loop.php coreui_browse_goal_start_url(): erste https-Adresse im Ziel wird start_url des
   Browse-Jobs (keine Zugangsdaten, nicht localhost, keine privaten oder reservierten IP-Adressen; der Worker prueft
   zusaetzlich mit safe_browser_url und navigation_block_reason).
+- Entscheidung des Betreibers danach: "fuer NRW-Anfragen am sinnvollsten (die Suchmaske), fuer alle anderen Orte und
+  Laender wie bisher". coreui_weather_route(): ein web-Schritt mit Wetterfrage, dessen Ort laut Open-Meteo-Geocoding in
+  Nordrhein-Westfalen liegt, wird zu browse mit dem Ziel coreui_weather_wdr_browse_goal() (hoechstens 200 Zeichen,
+  WDR-Adresse darin -> start_url). coreui_agent_loop_run() hat dafuer den optionalen Parameter $route (erster und
+  spaetere Schritte); chat.php uebergibt ember_weather_route_tool() in der Text- und der Audio-Schleife. Ohne Browse-
+  Freigabe bleibt der schnelle Weg. Schalter: STU_EMBER_WEATHER_NRW_BROWSE (api/config.php, Standard true, COREUI_WEATHER_NRW_BROWSE). Arbeitsweg: "Wetter in
+  NRW: WDR-Ortssuche im Browser". Der globale Kanal (ein Websuche-Schritt) bleibt beim schnellen Weg.
+- tools/ember_browse_worker.py job_min_sources(): mit Startadresse genuegt eine Webseite, sonst
+  STU_EMBER_BROWSE_MIN_SOURCES (2).
 - js/coreui-voice-terms.js (neu), settings.html: Feld im KI-Profil (Antwort und Gedaechtnis), speichert 2 s nach dem
   Tippen und beim Verlassen, uebernimmt die bereinigte Liste, meldet Fehler; ohne Migration gesperrt.
 - js/coreui-voice-input.js: getUserMedia ohne noiseSuppression (echoCancellation und autoGainControl an),
@@ -46,11 +55,12 @@ UMSETZUNG:
 - js/coreui-work-events.js: Erzaehltext fuer "Aufnahme wird mitgeschrieben"; alte Titel "Core schreibt die Aufnahme
   mit (Teil N von M)" lesen sich genauso.
 
-GEPRUEFT (hier ausgefuehrt): agent-loop-selftest.php, voice-input-selftest.php, voice-read-selftest.php gegen MariaDB mit allen Migrationen
+GEPRUEFT (hier ausgefuehrt): agent-loop-selftest.php, browse-worker-selftest.py (Regeln), voice-input-selftest.php, voice-read-selftest.php gegen MariaDB mit allen Migrationen
 (Migration 025 zweimal angewendet), voice-terms-ui-selftest.cjs, weather-live-selftest.php, web-search-selftest.php,
 work-events-ui-selftest.js, volle Testreihe, cache-bust, version-merge-check gegen 0.6.21.
-NICHT HIER GEPRUEFT: die echte WDR-Seite und Open-Meteo (aus der Entwicklungsumgebung gesperrt), die Hoerqualitaet
-mit echten Aufnahmen.
+NICHT HIER GEPRUEFT: die echte WDR-Seite, die Suchmaske im echten Browser und Open-Meteo (aus der
+Entwicklungsumgebung gesperrt), der Live-Teil des Browser-Selbsttests (kein Playwright fuer Python hier), die
+Hoerqualitaet mit echten Aufnahmen.
 
 NACH DEM MERGE (Betreiber):
 1. Update unter Einstellungen > System > CoreAI Update (die Migration 025 laeuft dabei mit).
@@ -62,6 +72,11 @@ NACH DEM MERGE (Betreiber):
    schicken. Zeigt der erste Abruf eine 0 statt 200, erreicht der PHP-Container das Netz nicht (Transport, kein
    Parserfehler).
 4. Eine Sprachnachricht mit "Bergisch Gladbach" und eine gesprochene Wetterfrage.
-5. WDR-Ortssuche: "Schau mal beim WDR genau fuer Bergisch Gladbach nach" (Browser-Recherche, meldet sich danach).
+5. Wetterfrage zu Bergisch Gladbach (getippt und gesprochen): Mara schickt den Browser auf die WDR-Seite, das
+   Live-Fenster zeigt die Ortssuche, danach meldet sie sich mit der Vorhersage. Klappt die Suchmaske nicht (Ort nicht
+   eingetragen, Ergebnis nicht gelesen), bitte Screenshot des Live-Fensters schicken. Notfalls abschalten (dann wieder
+   der schnelle Weg mit der WDR-Uebersicht): in /opt/ember-coreui/api/config.local.php die Zeile
+   define('STU_EMBER_WEATHER_NRW_BROWSE', false);
+6. Wetterfrage zu einem Ort ausserhalb NRW: sofort mit Live-Daten.
 
 OFFEN: Live-Audio (Messung angeboten), P20.4.

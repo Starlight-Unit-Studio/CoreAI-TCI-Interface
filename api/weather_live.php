@@ -112,15 +112,22 @@ function coreui_weather_lines(array $forecast): array {
   return $lines;
 }
 
+/** The first Open-Meteo geocoding hit for a place (name, admin1, country, latitude, longitude, timezone), or null. */
+function coreui_weather_geocode(string $place, callable $getJson): ?array {
+  if ($place === '') return null;
+  $geo = $getJson('https://geocoding-api.open-meteo.com/v1/search?name=' . rawurlencode($place) . '&count=1&language=de&format=json');
+  $hit = is_array($geo) && is_array($geo['results'][0] ?? null) ? $geo['results'][0] : null;
+  if ($hit === null || !is_numeric($hit['latitude'] ?? null) || !is_numeric($hit['longitude'] ?? null)) return null;
+  return $hit;
+}
+
 /**
  * Open-Meteo for a place: ['place' => 'Bergisch Gladbach, Nordrhein-Westfalen, Deutschland',
  * 'region' => 'Nordrhein-Westfalen', 'lines' => [...]] or null. $getJson(string $url): ?array.
  */
 function coreui_weather_open_meteo(string $place, callable $getJson): ?array {
-  if ($place === '') return null;
-  $geo = $getJson('https://geocoding-api.open-meteo.com/v1/search?name=' . rawurlencode($place) . '&count=1&language=de&format=json');
-  $hit = is_array($geo) && is_array($geo['results'][0] ?? null) ? $geo['results'][0] : null;
-  if ($hit === null || !is_numeric($hit['latitude'] ?? null) || !is_numeric($hit['longitude'] ?? null)) return null;
+  $hit = coreui_weather_geocode($place, $getJson);
+  if ($hit === null) return null;
   $forecast = $getJson('https://api.open-meteo.com/v1/forecast?latitude=' . rawurlencode((string)$hit['latitude'])
     . '&longitude=' . rawurlencode((string)$hit['longitude'])
     . '&current=temperature_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m'
@@ -265,4 +272,32 @@ function coreui_weather_block(array $rows): string {
 function coreui_weather_browse_hint(): string {
   return 'Will jemand die WDR-Vorhersage genau fuer seinen Ort in NRW, nutze [BROWSE: WDR-Wetter <Ort> ueber die Ortssuche auf '
     . COREUI_WEATHER_WDR_URL . '].';
+}
+
+/** 0.6.22: the browser goal for a weather question about a place in NRW (pure, at most 200 characters). */
+function coreui_weather_wdr_browse_goal(string $query, string $place): string {
+  $goal = 'WDR-Wetter fuer ' . $place . ': Ort in "PLZ oder Ort suchen" eingeben auf ' . COREUI_WEATHER_WDR_URL;
+  $ask = trim((string)preg_replace('~\s+~u', ' ', $query));
+  $room = 200 - mb_strlen($goal) - mb_strlen('. Frage: ');
+  if ($ask === '' || $room < 12) return mb_substr($goal, 0, 200);
+  if (mb_strlen($ask) > $room) $ask = rtrim(mb_substr($ask, 0, $room - 1)) . '…';
+  return $goal . '. Frage: ' . $ask;
+}
+
+/**
+ * 0.6.22 (operator, 06.11.2026: "fuer NRW-Anfragen am sinnvollsten, fuer alle anderen Orte und
+ * Laender wie bisher"): a weather question about a place in Nordrhein-Westfalen goes to the place
+ * search of the WDR weather page, by Mara's browser research, instead of the quick web step. Every
+ * other tool, place or country stays as it is, and so does NRW when browser research is not allowed.
+ * $getJson(string $url): ?array for the geocoding.
+ */
+function coreui_weather_route(array $tool, array $allowed, callable $getJson): array {
+  if (($tool['tool'] ?? '') !== 'web' || !in_array('browse', $allowed, true)) return $tool;
+  $query = (string)($tool['input'] ?? '');
+  if (!coreui_weather_is_query($query)) return $tool;
+  $place = coreui_weather_place($query);
+  $hit = coreui_weather_geocode($place, $getJson);
+  if ($hit === null || (string)($hit['admin1'] ?? '') !== COREUI_WEATHER_WDR_REGION) return $tool;
+  $name = trim((string)($hit['name'] ?? $place));
+  return ['tool' => 'browse', 'input' => coreui_weather_wdr_browse_goal($query, $name !== '' ? $name : $place), 'route' => 'wdr_place_search'];
 }

@@ -68,7 +68,9 @@ wx_test($lines === [
 ], 'Open-Meteo as readable German lines: ' . json_encode($lines, JSON_UNESCAPED_UNICODE));
 
 $asked = [];
-$geo = ['Bergisch Gladbach' => ['name' => 'Bergisch Gladbach', 'admin1' => 'Nordrhein-Westfalen', 'country' => 'Deutschland',
+$geo = ['Köln' => ['name' => 'Köln', 'admin1' => 'Nordrhein-Westfalen', 'country' => 'Deutschland', 'country_code' => 'DE',
+    'latitude' => 50.94, 'longitude' => 6.96, 'timezone' => 'Europe/Berlin'],
+  'Bergisch Gladbach' => ['name' => 'Bergisch Gladbach', 'admin1' => 'Nordrhein-Westfalen', 'country' => 'Deutschland',
     'country_code' => 'DE', 'latitude' => 50.99, 'longitude' => 7.13, 'timezone' => 'Europe/Berlin'],
   'Berchtesgaden' => ['name' => 'Berchtesgaden', 'admin1' => 'Bayern', 'country' => 'Deutschland', 'country_code' => 'DE',
     'latitude' => 47.63, 'longitude' => 13.0, 'timezone' => 'Europe/Berlin']];
@@ -173,6 +175,30 @@ wx_test(str_contains(coreui_weather_browse_hint(), '[BROWSE: WDR-Wetter <Ort> ue
   && mb_strlen('WDR-Wetter Bergisch Gladbach ueber die Ortssuche auf ' . COREUI_WEATHER_WDR_URL) <= 200,
   'the browser goal for the WDR place search fits the 200 characters of a goal');
 
+// 0.6.22 (operator: "fuer NRW-Anfragen am sinnvollsten, fuer alle anderen Orte und Laender wie bisher"):
+// a weather question about a place in NRW goes to the WDR place search in the browser.
+$web = ['tool' => 'web', 'input' => 'Wetter Bergisch Gladbach morgen'];
+$routed = coreui_weather_route($web, ['web', 'browse', 'archive'], $getJson);
+wx_test($routed['tool'] === 'browse' && ($routed['route'] ?? '') === 'wdr_place_search'
+  && $routed['input'] === 'WDR-Wetter fuer Bergisch Gladbach: Ort in "PLZ oder Ort suchen" eingeben auf ' . COREUI_WEATHER_WDR_URL
+    . '. Frage: Wetter Bergisch Gladbach morgen',
+  'NRW: the browser goes to the WDR place search: ' . json_encode($routed, JSON_UNESCAPED_UNICODE));
+wx_test(mb_strlen($routed['input']) <= 200, 'the goal fits the 200 characters of a browser goal');
+$longAsk = coreui_weather_wdr_browse_goal(str_repeat('Wie wird das Wetter ', 20), 'Bergisch Gladbach');
+wx_test(mb_strlen($longAsk) <= 200, 'a long question is shortened in the goal (' . mb_strlen($longAsk) . ')');
+if (!function_exists('coreui_browse_goal_start_url')) require_once $root . '/api/console_agent_loop.php';
+wx_test(coreui_browse_goal_start_url($routed['input']) === COREUI_WEATHER_WDR_URL, 'the browser starts on the WDR weather page');
+wx_test(coreui_weather_route(['tool' => 'web', 'input' => 'Wetter Berchtesgaden heute'], ['web', 'browse'], $getJson)
+  === ['tool' => 'web', 'input' => 'Wetter Berchtesgaden heute'], 'outside NRW: the quick web step as before');
+wx_test(coreui_weather_route($web, ['web', 'archive'], $getJson) === $web, 'browser research not allowed: the quick web step for NRW too');
+wx_test(coreui_weather_route(['tool' => 'web', 'input' => 'Wetter heute'], ['web', 'browse'], $getJson)['tool'] === 'web'
+  && coreui_weather_route(['tool' => 'web', 'input' => 'ollama neu'], ['web', 'browse'], $getJson)['tool'] === 'web'
+  && coreui_weather_route(['tool' => 'web', 'input' => 'Wetter Atlantis'], ['web', 'browse'], $getJson)['tool'] === 'web',
+  'no place, no weather or an unknown place: unchanged');
+wx_test(coreui_weather_route(['tool' => 'archive', 'input' => 'Wetter Bergisch Gladbach'], ['web', 'browse', 'archive'], $getJson)['tool'] === 'archive'
+  && coreui_weather_route(['tool' => 'web', 'input' => 'Wetter Köln'], ['web', 'browse'], static fn(string $u): ?array => null)['tool'] === 'web',
+  'other tools stay; geocoding unreachable: the quick web step');
+
 $block = coreui_weather_block(coreui_weather_sources('Wetter Bergisch Gladbach heute', $getJson, $wdrText, '2026-11-06'));
 wx_test(str_starts_with($block, "LIVE-WETTER (gerade abgerufen, aktueller als jede Suchtrefferliste):\n1. WDR Wetter, Vorhersage fuer Nordrhein-Westfalen (abgerufen 2026-11-06) [" . COREUI_WEATHER_WDR_URL . "]\n   Naechste WDR-Region zu Bergisch Gladbach: Köln")
   && str_contains($block, "\n   Wettervorhersage für NRW")
@@ -187,6 +213,10 @@ wx_test(str_contains($chat, "require_once __DIR__ . '/weather_live.php';")
   && strpos($chat, '$weather = ember_weather_live_sources($query);') < strpos($chat, '$rows = ember_web_search($query, ember_web_limit(), ember_web_timeout());')
   && str_contains($chat, "ember_cache_set('wxwdr:text', \$text);") && str_contains($chat, 'function ember_http_get_html('),
   'wired into the web step, before the search');
+wx_test(str_contains($chat, "static fn(array \$tool): array => ember_weather_route_tool(\$tool, \$loopAllowed));")
+  && str_contains($chat, "static fn(array \$tool): array => ember_weather_route_tool(\$tool, \$voiceTools));")
+  && str_contains($chat, "if (!(bool)ember_cfg('STU_EMBER_WEATHER_NRW_BROWSE', true)) return \$tool;"),
+  'both work loops (typed and voice messages) route NRW weather; the operator can switch it off');
 wx_test(substr_count($chat, 'coreui_weather_browse_hint()') === 2 && str_contains($chat, '$startUrl = coreui_browse_goal_start_url($goal);')
   && str_contains($chat, '$st->execute([$goal, $startUrl, $ch,'), 'Mara knows the WDR place search; the browser starts at the address of its goal');
 $voiceSrc = (string)file_get_contents($root . '/api/voice_transcribe.php');

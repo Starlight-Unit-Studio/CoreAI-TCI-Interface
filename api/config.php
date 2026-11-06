@@ -93,6 +93,8 @@ coreui_define('STU_EMBER_WEB_TIMEOUT', (int)coreui_env('COREUI_WEB_TIMEOUT', '15
 coreui_define('STU_EMBER_WEB_MAX_CHARS', (int)coreui_env('COREUI_WEB_MAX_CHARS', '5000'));
 coreui_define('STU_EMBER_WEB_SNIPPET_CHARS', (int)coreui_env('COREUI_WEB_SNIPPET_CHARS', '300'));
 coreui_define('STU_EMBER_BROWSE_ENABLED', coreui_env_bool('COREUI_BROWSE_ENABLED', true));
+// 0.6.22: weather questions about a place in NRW go to the WDR place search in the browser.
+coreui_define('STU_EMBER_WEATHER_NRW_BROWSE', coreui_env_bool('COREUI_WEATHER_NRW_BROWSE', true));
 coreui_define('STU_EMBER_BROWSE_MAX_STEPS', (int)coreui_env('COREUI_BROWSE_MAX_STEPS', '20'));
 coreui_define('STU_EMBER_BROWSE_AGENT_TIMEOUT', (int)coreui_env('COREUI_BROWSE_AGENT_TIMEOUT', '420'));
 coreui_define('STU_EMBER_BROWSE_REPORT_TIMEOUT', (int)coreui_env('COREUI_BROWSE_REPORT_TIMEOUT', '420'));
