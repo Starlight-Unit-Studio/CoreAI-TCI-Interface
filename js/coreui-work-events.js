@@ -52,11 +52,17 @@
       return 'Das Kontextfenster von Core war voll' + windowSize + '. Auftrag, Denkphase und Antwort '
         + 'passten nicht gemeinsam hinein, deshalb endete die Ausgabe vorzeitig.';
     }
+    // 0.6.22: older runs recorded one open step per part; they read like the new single step.
+    if (/^Core schreibt die Aufnahme mit/.test(event.title)) return workNote({kind: event.kind, state: event.state,
+      title: 'Aufnahme wird mitgeschrieben', meta: event.meta});
     switch (event.title) {
       case 'Anhang wird angesehen':
         return 'Ich sehe mir den Anhang an. Bilder, Videos und PDF-Seiten laufen bewusst über den Bildpfad von Core, nicht über den Textstream.';
       case 'Aufnahme wird angehoert':
         return 'Ich höre mir die Aufnahme selbst an, über den Audio-Eingang von Core, in Teilen von höchstens 60 Sekunden.';
+      case 'Aufnahme wird mitgeschrieben':
+        return 'Core schreibt die Aufnahme zuerst mit, damit ich sicher auf die neue Nachricht antworte. '
+          + 'Die Mitschrift steht danach klein unter der Sprachnachricht.';
       case 'Privates Wissen durchsucht':
         return Number(event.meta.knowledge_hits) > 0
           ? 'Ich habe in deinem hochgeladenen Wissen (RAG-Lite) gesucht und '
@@ -500,7 +506,7 @@
   // routine operations fold into ONE muted, expandable line per sequence.
   var NARRATED = {
     'Kontextfenster ermittelt':1,'Projektdateien geplant':1,
-    'Anhang wird angesehen':1,'Aufnahme wird angehoert':1,'Privates Wissen durchsucht':1,
+    'Anhang wird angesehen':1,'Aufnahme wird angehoert':1,'Aufnahme wird mitgeschrieben':1,'Privates Wissen durchsucht':1,
     'Browserauftrag eingereiht':1,
     'Mara hat die Umsetzung des gespeicherten Plans gewaehlt':1,
     'Mara hat ein natives Werkzeug angefordert':1,
@@ -574,6 +580,7 @@
     'Mara hat selbst den Projekt-Writer aufgerufen':'Starte den Projekt-Writer',
     'Projektdateien geplant':'Plane die Projektdateien','Kontextfenster ermittelt':'Plane den Kontext',
     'Privates Wissen durchsucht':'Durchsuche dein Wissen','Anhang wird angesehen':'Sehe mir den Anhang an','Aufnahme wird angehoert':'Höre mir die Aufnahme an',
+    'Aufnahme wird mitgeschrieben':'Schreibe die Aufnahme mit',
     'Websuche gestartet':'Prüfe Webquellen','Websuche beendet':'Ordne Quellen ein'
   };
   function activity(event) {

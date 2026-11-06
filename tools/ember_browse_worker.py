@@ -1365,6 +1365,15 @@ def render_results(results):
     return "\n".join(rows)
 
 
+def job_min_sources(cfg, start_url):
+    """0.6.22: how many different websites a job checks before it is done. A job with a
+    start address (the goal names the page, such as the place search of the WDR weather)
+    is answered from that page; otherwise STU_EMBER_BROWSE_MIN_SOURCES (default 2)."""
+    if safe_browser_url(start_url):
+        return 1
+    return cfg_int(cfg, "STU_EMBER_BROWSE_MIN_SOURCES", 2, 1, 5)
+
+
 def safe_browser_url(value):
     """Erlaubt fuer Playwright und gerenderte Treffer nur normale Web-URLs."""
     candidate = str(value or "").strip()
@@ -1813,7 +1822,7 @@ def run_browse(cfg, job, log, push_frame=None, say=None):
     forms = cfg_bool(cfg, "STU_EMBER_BROWSE_FORMS", True)
     system = action_system(forms)
     name = character_name(cfg)
-    min_sources = cfg_int(cfg, "STU_EMBER_BROWSE_MIN_SOURCES", 2, 1, 5)
+    min_sources = job_min_sources(cfg, start_url)
     steps, summary, sources = [], "", []
     notes, visited_hosts = [], []
 

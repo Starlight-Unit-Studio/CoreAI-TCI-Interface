@@ -1,0 +1,82 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.6.22
+Stand: 06.11.2026
+Ausgangsbasis: main 0.6.21 nach Merge von PR #172.
+
+RUECKMELDUNG (zwei Screenshots):
+- "Es wird alles verstanden, nur Bergisch Gladbach nicht: entweder Berlin oder 'der Tisch ist glatt'. Kriegen wir die
+  Erkennung allgemein nicht genauer hin?"
+- Arbeitsweg: "Ich fuehre gerade 'Core schreibt die Aufnahme mit (Teil 1 von 1)' aus. Der Abschluss steht noch aus."
+- Gesprochene Wetterfrage, Antwort nur "WEB: Wetter Berchtesgaden heute" (Betreiber hatte zwischendurch abgebrochen,
+  die Zeile war aber Maras Suchwunsch, kein Abbruch-Rest).
+- "Ich finde das Wetter vom WDR am genauesten fuer Deutschland" (www1.wdr.de/nrw/wetter/wettervorhersage).
+ENTSCHEIDUNG DES BETREIBERS: "Eigene Begriffe" (Liste im KI-Profil).
+
+UMSETZUNG:
+- database/migrations/025_voice_vocabulary.sql: stu_user_voice_settings.vocabulary TEXT NULL (ADD COLUMN IF NOT EXISTS).
+- api/voice_transcribe.php: coreui_voice_terms_normalise/ready/load/save (einer pro Zeile, Komma und Semikolon
+  trennen, nur Buchstaben, Ziffern, Leerzeichen und . ' ’ - & / +, je 60 Zeichen, hoechstens 40, ohne Doppelte);
+  coreui_voice_transcribe_payload/part/file nehmen terms; coreui_voice_listen_task(sender, text, clips, terms, tools)
+  nennt Begriffe und die freigegebenen Werkzeuge; coreui_voice_strip_stray_bracket laesst Werkzeug-Marker ganz.
+- api/voice_core.php: coreui_voice_transcribe_prompt(language, terms): ohne Begriffe exakt Googles Vorlage wie bisher,
+  mit Begriffen eine Zeile mehr ("spell it exactly like this ... Do not add them when they are not spoken").
+- api/voice_input.php: status liefert terms, terms_ready, terms_max; POST ?action=terms {terms} mit CSRF, nie Gaeste.
+- api/ember_attachments.php: ember_attach_voice_terms(); beide Mitschriften mit Begriffen; Arbeitsweg ein Schritt
+  "Aufnahme wird mitgeschrieben" (running) und danach "Aufnahme mitgeschrieben" (success) bzw. "Mitschrift ohne Text".
+- api/chat.php (Audio-Zweig): $voiceTools = freigegebene web/browse/archive (ohne Skills, deren Index fehlt dort);
+  ein Marker in Maras Antwort startet coreui_agent_loop_run mit Text-Aufrufen (kein erneutes Audio, think false,
+  __skills none), [BROWSE:] geht an den Browser-Worker; ein Marker fuer ein abgeschaltetes Werkzeug wird entfernt.
+- api/weather_live.php (neu) und api/chat.php: ember_web_results_block fragt zuerst ember_weather_live_sources:
+  Wetterfrage mit Ort -> Open-Meteo (Geocoding, jetzt plus 3 Tage), bei admin1 Nordrhein-Westfalen zuerst der
+  lesbare Text der WDR-Seite (main-Teil, ohne Skripte, Navigation, Kopf, Fuss; nur mit Temperaturangabe; 1800
+  Zeichen). Cache: Open-Meteo 10 Minuten, WDR-Text 15 Minuten. Kein Ort oder keine Quelle: normale Suche.
+- Nachtrag nach der WDR-Analyse des Betreibers (Upload "wdr_wetter_coreai_analyse.md" und Screenshot, 06.11.2026):
+  coreui_weather_wdr_text schneidet von "Prognose fuer" bis vor "Symbolerklaerungen"/"Weitere Beitraege"/"Mehr zum
+  Thema", Inline-Teile einer Zeile bleiben getrennt ("Region Aachen Max: 9° | Min: 2°"); coreui_weather_wdr_stand
+  liest "Stand:", aelter als 36 h -> kein WDR; coreui_weather_wdr_region (11 Regionen mit Koordinaten, naechste per
+  Entfernung) und coreui_weather_wdr_region_values. Keine CSS-Klassen, keine eap-Adressen, keine Regionsseiten.
+- coreui_weather_browse_hint() im Browse-Hinweis (normal und kompakt) und im Auftrag zur Sprachnachricht:
+  [BROWSE: WDR-Wetter <Ort> ueber die Ortssuche auf https://www1.wdr.de/nrw/wetter/wettervorhersage/index.html].
+  api/console_agent_loop.php coreui_browse_goal_start_url(): erste https-Adresse im Ziel wird start_url des
+  Browse-Jobs (keine Zugangsdaten, nicht localhost, keine privaten oder reservierten IP-Adressen; der Worker prueft
+  zusaetzlich mit safe_browser_url und navigation_block_reason).
+- Entscheidung des Betreibers danach: "fuer NRW-Anfragen am sinnvollsten (die Suchmaske), fuer alle anderen Orte und
+  Laender wie bisher". coreui_weather_route(): ein web-Schritt mit Wetterfrage, dessen Ort laut Open-Meteo-Geocoding in
+  Nordrhein-Westfalen liegt, wird zu browse mit dem Ziel coreui_weather_wdr_browse_goal() (hoechstens 200 Zeichen,
+  WDR-Adresse darin -> start_url). coreui_agent_loop_run() hat dafuer den optionalen Parameter $route (erster und
+  spaetere Schritte); chat.php uebergibt ember_weather_route_tool() in der Text- und der Audio-Schleife. Ohne Browse-
+  Freigabe bleibt der schnelle Weg. Schalter: STU_EMBER_WEATHER_NRW_BROWSE (api/config.php, Standard true, COREUI_WEATHER_NRW_BROWSE). Arbeitsweg: "Wetter in
+  NRW: WDR-Ortssuche im Browser". Der globale Kanal (ein Websuche-Schritt) bleibt beim schnellen Weg.
+- tools/ember_browse_worker.py job_min_sources(): mit Startadresse genuegt eine Webseite, sonst
+  STU_EMBER_BROWSE_MIN_SOURCES (2).
+- js/coreui-voice-terms.js (neu), settings.html: Feld im KI-Profil (Antwort und Gedaechtnis), speichert 2 s nach dem
+  Tippen und beim Verlassen, uebernimmt die bereinigte Liste, meldet Fehler; ohne Migration gesperrt.
+- js/coreui-voice-input.js: getUserMedia ohne noiseSuppression (echoCancellation und autoGainControl an),
+  MediaRecorder audioBitsPerSecond 64000.
+- js/coreui-work-events.js: Erzaehltext fuer "Aufnahme wird mitgeschrieben"; alte Titel "Core schreibt die Aufnahme
+  mit (Teil N von M)" lesen sich genauso.
+
+GEPRUEFT (hier ausgefuehrt): agent-loop-selftest.php, browse-worker-selftest.py (Regeln), voice-input-selftest.php, voice-read-selftest.php gegen MariaDB mit allen Migrationen
+(Migration 025 zweimal angewendet), voice-terms-ui-selftest.cjs, weather-live-selftest.php, web-search-selftest.php,
+work-events-ui-selftest.js, volle Testreihe, cache-bust, version-merge-check gegen 0.6.21.
+NICHT HIER GEPRUEFT: die echte WDR-Seite, die Suchmaske im echten Browser und Open-Meteo (aus der
+Entwicklungsumgebung gesperrt), der Live-Teil des Browser-Selbsttests (kein Playwright fuer Python hier), die
+Hoerqualitaet mit echten Aufnahmen.
+
+NACH DEM MERGE (Betreiber):
+1. Update unter Einstellungen > System > CoreAI Update (die Migration 025 laeuft dabei mit).
+2. Einstellungen > KI-Profil > "Namen und Begriffe fuer Sprachnachrichten": zum Beispiel Bergisch Gladbach, EVK.
+3. WDR-Pruefung auf dem Server:
+   cd /opt/ember-coreui && sudo docker compose --project-name ember-coreui --env-file var/compose.env -f compose.yaml exec -T php php scripts/weather-live-selftest.php --live "Bergisch Gladbach"
+   Zeigt "WDR-Text: ja" und darueber "Naechste WDR-Region zu Bergisch Gladbach: Koeln ..., Max: ..." mit dem
+   Vorhersagetext, nutzt Mara den WDR. Steht dort Menue- oder Fremdtext oder fehlen die Werte, bitte die Ausgabe
+   schicken. Zeigt der erste Abruf eine 0 statt 200, erreicht der PHP-Container das Netz nicht (Transport, kein
+   Parserfehler).
+4. Eine Sprachnachricht mit "Bergisch Gladbach" und eine gesprochene Wetterfrage.
+5. Wetterfrage zu Bergisch Gladbach (getippt und gesprochen): Mara schickt den Browser auf die WDR-Seite, das
+   Live-Fenster zeigt die Ortssuche, danach meldet sie sich mit der Vorhersage. Klappt die Suchmaske nicht (Ort nicht
+   eingetragen, Ergebnis nicht gelesen), bitte Screenshot des Live-Fensters schicken. Notfalls abschalten (dann wieder
+   der schnelle Weg mit der WDR-Uebersicht): in /opt/ember-coreui/api/config.local.php die Zeile
+   define('STU_EMBER_WEATHER_NRW_BROWSE', false);
+6. Wetterfrage zu einem Ort ausserhalb NRW: sofort mit Live-Daten.
+
+OFFEN: Live-Audio (Messung angeboten), P20.4.

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.21: Eve spricht Gladbach mit kurzem a (Glattbach).
+# CoreAI: TCI Interface 0.6.22: Begriffe fuer Sprachnachrichten, Werkzeuge nach Sprachnachrichten, Live-Wetter (WDR fuer NRW).
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -165,6 +165,11 @@ UI_FILES=(
   scripts/voice-input-selftest.php
   scripts/voice-input-ui-selftest.cjs
   scripts/session-list-ui-selftest.cjs
+  database/migrations/025_voice_vocabulary.sql
+  js/coreui-voice-terms.js
+  scripts/voice-terms-ui-selftest.cjs
+  api/weather_live.php
+  scripts/weather-live-selftest.php
   docker/tts-spike/Dockerfile
   docker/tts-spike/constraints-piper.txt
   docker/tts-spike/constraints-pocket.txt
@@ -492,7 +497,7 @@ if command -v php >/dev/null 2>&1; then
 
   voice_input_test=''
   if voice_input_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/voice-input-selftest.php" 2>&1)"; then
-    ok '0.6.17: Sprachnachrichten (WAVs bis 60 s in Maras Aufruf, ohne Denken, Mitschrift nach der Antwort, Verlauf, WebM als Audio) geprueft.'
+    ok '0.6.17: Sprachnachrichten (WAVs bis 60 s in Maras Aufruf, ohne Denken, Mitschrift nach der Antwort, Verlauf, WebM als Audio; 0.6.22 Begriffe und Werkzeuge) geprueft.'
   else
     fail "Spracheingabe-Selbsttest: ${voice_input_test:-Unbekannter Fehler}"
   fi
@@ -724,6 +729,13 @@ if command -v php >/dev/null 2>&1; then
     fail "Websuche-Selbsttest: ${web_test:-Unbekannter Fehler}"
   fi
 
+  weather_test=''
+  if weather_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/weather-live-selftest.php" 2>&1)"; then
+    ok '0.6.22: Live-Wetter im Websuche-Schritt (WDR fuer NRW, Live-Daten fuer jeden Ort, keine alten Suchtreffer) geprueft.'
+  else
+    fail "Wetter-Selbsttest: ${weather_test:-Unbekannter Fehler}"
+  fi
+
   mention_test=''
   if mention_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/tool-mention-selftest.php" 2>&1)"; then
     ok 'Werkzeug-Erwaehnungen: Erklaerungen starten kein Werkzeug und keine Korrekturrunde.'
@@ -851,6 +863,16 @@ if command -v php >/dev/null 2>&1; then
       fi
     else
       ok 'Chatliste: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+    fi
+    # 0.6.22: names and terms for voice messages in the KI-Profil; needs Playwright for Node.
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/voice-terms-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'Begriffe fuer Sprachnachrichten: Liste im KI-Profil, Speichern, Bereinigung, Gaeste ohne Feld, Tag und Nacht, Handy geprueft.'
+      else
+        fail 'Begriffe fuer Sprachnachrichten: Oberflaechentest fehlgeschlagen.'
+      fi
+    else
+      ok 'Begriffe fuer Sprachnachrichten: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
     fi
     # 0.5.94: Stimmproben card (Inhaber only); needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then

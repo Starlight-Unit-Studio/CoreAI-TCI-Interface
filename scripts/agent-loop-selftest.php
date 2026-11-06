@@ -98,4 +98,38 @@ loop_test(str_contains($chatSource, '\[ARCHIV:\s*.*?\]') && substr_count((string
   'coreui_extract_archive_marker($reply) !== null') === 2, 'ARCHIV recognised in the stream and never shown');
 loop_test(substr_count($chatSource, 'coreui_agent_loop_hint(') === 2, 'both prompt builders tell Mara how to work');
 
+// 0.6.22: a route sends a step another way, first and later steps (NRW weather to the WDR place search).
+$routeSeen = [];
+$route = static function (array $tool) use (&$routeSeen): array {
+  $routeSeen[] = $tool['input'];
+  return str_contains($tool['input'], 'Gladbach') ? ['tool' => 'browse', 'input' => 'WDR-Ortssuche Gladbach', 'route' => 'wdr_place_search'] : $tool;
+};
+$recorded = [];
+$rec = static function (string $kind, string $state, string $title, array $meta) use (&$recorded): void { $recorded[] = $title; };
+$ran = [];
+$first = coreui_agent_loop_run('[WEB: Wetter Bergisch Gladbach]', ['tool' => 'web', 'input' => 'Wetter Bergisch Gladbach'], 'Basis', ['web', 'browse'], 0,
+  static fn(string $p): ?string => 'nie', static function (array $t) use (&$ran): string { $ran[] = $t; return 'x'; }, $rec,
+  static fn(): bool => false, $route);
+loop_test($first['browse'] === 'WDR-Ortssuche Gladbach' && $ran === [] && in_array('Wetter in NRW: WDR-Ortssuche im Browser', $recorded, true),
+  'a routed first step goes to the browser before any search: ' . json_encode($recorded));
+$recorded = [];
+$later = coreui_agent_loop_run('[WEB: Termine heute]', ['tool' => 'web', 'input' => 'Termine heute'], 'Basis', ['web', 'browse'], 0,
+  static fn(string $p): ?string => '[WEB: Wetter Bergisch Gladbach morgen]', static fn(array $t): string => 'Treffer', $rec,
+  static fn(): bool => false, $route);
+loop_test($later['browse'] === 'WDR-Ortssuche Gladbach' && $routeSeen[count($routeSeen) - 1] === 'Wetter Bergisch Gladbach morgen',
+  'a later step is routed too');
+$plain = coreui_agent_loop_run('[WEB: Termine heute]', ['tool' => 'web', 'input' => 'Termine heute'], 'Basis', ['web'], 0,
+  static fn(string $p): ?string => 'Fertig.', static fn(array $t): string => 'Treffer', $rec, static fn(): bool => false);
+loop_test($plain['out'] === 'Fertig.' && $plain['browse'] === null, 'without a route nothing changes');
+
+// 0.6.22: an https address in a browser goal is where the worker starts (WDR place search); never a local one.
+loop_test(coreui_browse_goal_start_url('WDR-Wetter Bergisch Gladbach ueber die Ortssuche auf https://www1.wdr.de/nrw/wetter/wettervorhersage/index.html')
+  === 'https://www1.wdr.de/nrw/wetter/wettervorhersage/index.html'
+  && coreui_browse_goal_start_url('schau auf https://example.org/a?b=1).') === 'https://example.org/a?b=1'
+  && coreui_browse_goal_start_url('Termine im EVK recherchieren') === null, 'the start address of a browser goal');
+foreach (['http://example.org/', 'https://user:pw@example.org/', 'https://localhost/a', 'https://127.0.0.1/x', 'https://[::1]/',
+    'https://10.0.0.5/', 'https://192.168.1.2/', 'https://169.254.169.254/latest'] as $bad) {
+  loop_test(coreui_browse_goal_start_url('geh auf ' . $bad) === null, 'no start at ' . $bad);
+}
+
 echo "CoreAI agent loop: chaining, answer, browser hand-over, six steps, cancel, work view OK\n";

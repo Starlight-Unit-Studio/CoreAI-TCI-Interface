@@ -283,24 +283,32 @@ function ember_attach_audio_transcribe_now(PDO $pdo, int $uid, string $uuid, str
   $model = ember_model();
   $paths = (array)($prepared['paths'] ?? []);
   $ranges = (array)($prepared['ranges'] ?? []);
+  $terms = ember_attach_voice_terms($pdo, $uid);
   $parts = [];
   $silent = 0;
+  // 0.6.22: one step with its end in the work path. A "running" step per part stayed
+  // open and was told as "Der Abschluss steht noch aus" (operator's screenshot, 06.11.2026).
+  $record = static function (string $state, string $title, array $meta = []) use ($pdo, $paths): void {
+    if (function_exists('coreui_work_record') && count($paths) > 0) coreui_work_record($pdo, 'tool', $state, $title, $meta);
+  };
+  $record('running', 'Aufnahme wird mitgeschrieben', ['parts' => count($paths)]);
+  $failed = false;
   foreach ($paths as $i => $path) {
-    if (function_exists('coreui_work_record') && count($paths) > 0) {
-      coreui_work_record($pdo, 'tool', 'running', 'Core schreibt die Aufnahme mit (Teil ' . ($i + 1) . ' von ' . count($paths) . ')');
-    }
     $heard = coreui_voice_transcribe_part(ember_url(), $model, (string)@file_get_contents($path), $language, 600,
-      ember_keep_alive(), ember_profile_num_ctx($model));
+      ember_keep_alive(), ember_profile_num_ctx($model), $terms);
     if (($heard['error'] ?? '') === 'cancelled') throw new RuntimeException('agent_cancelled');
     if (empty($heard['ok'])) {
       if (($heard['error'] ?? '') === 'missed') continue;
-      return implode(' ', array_column($parts, 2)); // Core unreachable or refusing: Mara still hears the WAV.
+      $failed = true; // Core unreachable or refusing: Mara still hears the WAV.
+      break;
     }
     if (($heard['kind'] ?? '') === 'silence' || trim((string)$heard['text']) === '') { $silent++; continue; }
     [$start, $end] = $ranges[$i] ?? [0.0, 0.0];
     $parts[] = [(float)$start, (float)$end, trim((string)$heard['text'])];
   }
   $text = implode(' ', array_column($parts, 2));
+  $record($text !== '' ? 'success' : 'info', $text !== '' ? 'Aufnahme mitgeschrieben' : 'Mitschrift ohne Text', ['parts' => count($paths)]);
+  if ($failed) return $text;
   $cutToWindow = !empty($prepared['truncated']) && !coreui_voice_is_voice_message($name)
     && (float)($prepared['seconds'] ?? 0) < COREUI_VOICE_FILE_MAX_SECONDS - 0.5;
   if (!$cutToWindow && ($text !== '' || $silent === count($paths))) {
@@ -310,6 +318,11 @@ function ember_attach_audio_transcribe_now(PDO $pdo, int $uid, string $uuid, str
       : ['state' => 'silent']);
   }
   return $text;
+}
+
+/** 0.6.22: the account's names and terms for voice messages (KI-Profil). */
+function ember_attach_voice_terms(PDO $pdo, int $uid): array {
+  return $uid > 0 ? coreui_voice_terms_load($pdo, $uid) : [];
 }
 
 /** Audio attachments of one turn: [uuid => name] (only the account's own files). */
@@ -359,6 +372,7 @@ function ember_attach_audio_transcribe_after(PDO $pdo, int $uid, array $uuids, ?
       'url' => ember_url(), 'model' => $model, 'language' => $language,
       'max_seconds' => coreui_voice_is_voice_message($name) ? COREUI_VOICE_INPUT_MAX_SECONDS : COREUI_VOICE_FILE_MAX_SECONDS,
       'queue_wait' => 600, 'keep_alive' => ember_keep_alive(), 'num_ctx' => ember_profile_num_ctx($model),
+      'terms' => ember_attach_voice_terms($pdo, $uid),
     ]);
     $data = !empty($result['ok'])
       ? ['state' => 'done', 'text' => (string)$result['text'], 'parts' => (array)$result['parts'],

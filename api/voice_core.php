@@ -20,11 +20,19 @@ function coreui_voice_attachment_hint(float $seconds): string {
  * offers no "no speech" way out, which Core took far too often on short
  * clips that did contain speech.
  */
-function coreui_voice_transcribe_prompt(string $language = 'German'): string {
-  return "Transcribe the following speech segment in {$language} into {$language} text.\n\n"
+function coreui_voice_transcribe_prompt(string $language = 'German', array $terms = []): string {
+  $prompt = "Transcribe the following speech segment in {$language} into {$language} text.\n\n"
     . "Follow these specific instructions for formatting the answer:\n"
     . "* Only output the transcription, with no newlines.\n"
     . "* When transcribing numbers, write the digits, i.e. write 1.7 and not one point seven, and write 3 instead of three.";
+  // 0.6.22: names and terms of the account (KI-Profil). Core heard "Bergisch Gladbach"
+  // as "Berlin", "Berchtesgaden" or "der Tisch ist glatt" (operator, 06.11.2026).
+  $terms = array_values(array_filter(array_map(static fn($t): string => trim((string)$t), $terms), static fn(string $t): bool => $t !== ''));
+  if ($terms !== []) {
+    $prompt .= "\n* The speaker often uses these names and terms. When you hear one of them, spell it exactly like this: "
+      . implode(', ', $terms) . '. Do not add them when they are not spoken.';
+  }
+  return $prompt;
 }
 
 /** Neutral SYSTEM text for a transcription call: no persona, no thinking switch. */

@@ -5,8 +5,10 @@ declare(strict_types=1);
  * 0.6.17: voice messages (P20.1). Signed-in accounts only (Inhaber, Admins,
  * Nutzer), never guests.
  *
- *   GET ?action=status               allowed, hears (true, false or null), ready, max_seconds
+ *   GET ?action=status               allowed, hears (true, false or null), ready, max_seconds,
+ *                                    terms, terms_ready (0.6.22)
  *   GET ?action=transcript&uuid=..   state: done (text), pending, silent, failed or none
+ *   POST ?action=terms {terms}       KI-Profil: names and terms for voice messages (0.6.22)
  *
  * A voice message itself is an ordinary attachment (api/console_upload.php)
  * that is sent at once; Mara hears the WAV in her own call (api/chat.php).
@@ -26,17 +28,32 @@ $method = strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET'));
 $action = strtolower(trim((string)($_GET['action'] ?? 'status')));
 $guest = coreui_guest_is($pdo, $uid);
 
-if ($method !== 'GET') stu_json(['ok' => false, 'error' => 'method_not_allowed'], 405);
-
-if ($action === 'status') {
+if ($method === 'GET' && $action === 'status') {
   if ($guest) stu_json(['ok' => true, 'allowed' => false]);
   coreui_ai_runtime_apply($pdo, $uid);
   stu_json(['ok' => true, 'allowed' => true, 'hears' => coreui_voice_core_hears(ember_ollama_show_json(ember_model())),
     'ready' => coreui_voice_bin('ffmpeg') !== null, 'max_seconds' => COREUI_VOICE_INPUT_MAX_SECONDS,
-    'csrf_token' => stu_csrf_token()]);
+    'terms' => coreui_voice_terms_load($pdo, $uid), 'terms_ready' => coreui_voice_terms_ready($pdo),
+    'terms_max' => COREUI_VOICE_TERMS_MAX, 'csrf_token' => stu_csrf_token()]);
 }
 
 if ($guest) stu_json(['ok' => false, 'error' => 'guests_not_allowed'], 403);
+
+// 0.6.22: names and terms for voice messages (KI-Profil), one per line.
+if ($method === 'POST' && $action === 'terms') {
+  stu_require_csrf();
+  $body = stu_read_json_body();
+  $terms = $body['terms'] ?? null;
+  if (!is_string($terms) && !is_array($terms)) stu_json(['ok' => false, 'error' => 'invalid_terms'], 400);
+  if (is_string($terms) && strlen($terms) > 8000) stu_json(['ok' => false, 'error' => 'terms_too_long'], 400);
+  try {
+    stu_json(['ok' => true, 'terms' => coreui_voice_terms_save($pdo, $uid, $terms)]);
+  } catch (RuntimeException $e) {
+    stu_json(['ok' => false, 'error' => $e->getMessage()], 503);
+  }
+}
+
+if ($method !== 'GET') stu_json(['ok' => false, 'error' => 'method_not_allowed'], 405);
 
 if ($action === 'transcript') {
   $uuid = strtolower(trim((string)($_GET['uuid'] ?? '')));

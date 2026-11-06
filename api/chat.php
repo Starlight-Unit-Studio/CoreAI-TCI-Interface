@@ -17,6 +17,7 @@ require_once __DIR__ . '/console_compaction.php';
 require_once __DIR__ . '/console_agent_loop.php';
 require_once __DIR__ . '/console_answer_style.php';
 require_once __DIR__ . '/console_timezone.php';
+require_once __DIR__ . '/weather_live.php';
 
 // -----------------------------------------------------------------------------
 // Ember - Global-Chat NPC (Ollama local)
@@ -1884,6 +1885,75 @@ function ember_http_get_json(string $url, int $timeout = 6): ?array {
   return is_array($j) ? $j : null;
 }
 
+/** 0.6.22: an HTML page (for the WDR weather), at most 1.5 MB, or null. */
+function ember_http_get_html(string $url, int $timeout = 8): ?string {
+  $ch = curl_init($url);
+  if (!$ch) return null;
+  curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_FOLLOWLOCATION => true,
+    CURLOPT_MAXREDIRS => 3,
+    CURLOPT_CONNECTTIMEOUT => 3,
+    CURLOPT_TIMEOUT => max(3, min(20, $timeout)),
+    CURLOPT_ENCODING => '',
+    CURLOPT_HTTPHEADER => ['Accept: text/html', 'Accept-Language: de-DE,de;q=0.9',
+      'User-Agent: Mozilla/5.0 (compatible; CoreAI-TCI-Interface; +server-side weather)'],
+    CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
+  ]);
+  $raw = curl_exec($ch);
+  $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+  curl_close($ch);
+  if (!is_string($raw) || $raw === '' || $code < 200 || $code >= 300 || strlen($raw) > 1572864) return null;
+  return $raw;
+}
+
+/**
+ * 0.6.22: live weather sources for a [WEB:] weather query (api/weather_live.php),
+ * Open-Meteo answers cached 10 minutes, the WDR page 15 minutes.
+ */
+/** Open-Meteo answers (geocoding, forecast), cached 10 minutes. */
+function ember_weather_get_json(string $url): ?array {
+  $key = 'wxj:' . sha1($url);
+  $hit = ember_cache_get($key, 600);
+  if (is_string($hit)) { $j = json_decode($hit, true); if (is_array($j)) return $j; }
+  $j = ember_http_get_json($url, 8);
+  if (is_array($j)) ember_cache_set($key, (string)json_encode($j));
+  return $j;
+}
+
+/**
+ * 0.6.22: the route of a work-loop step: a weather question about a place in NRW goes to
+ * the WDR place search in the browser (coreui_weather_route). The operator can switch it
+ * off with STU_EMBER_WEATHER_NRW_BROWSE = false; then NRW gets the quick web step too.
+ */
+function ember_weather_route_tool(array $tool, array $allowed): array {
+  if (!(bool)ember_cfg('STU_EMBER_WEATHER_NRW_BROWSE', true)) return $tool;
+  try {
+    return coreui_weather_route($tool, $allowed, 'ember_weather_get_json');
+  } catch (Throwable $e) {
+    return $tool;
+  }
+}
+
+function ember_weather_live_sources(string $query): array {
+  if (!coreui_weather_is_query($query)) return [];
+  $getJson = 'ember_weather_get_json';
+  // Only the readable text of the WDR page is cached, not the page.
+  $wdrText = static function (): string {
+    $hit = ember_cache_get('wxwdr:text', 900);
+    if (is_string($hit) && $hit !== '') return $hit;
+    $html = ember_http_get_html(COREUI_WEATHER_WDR_URL, 10);
+    $text = is_string($html) ? coreui_weather_wdr_text($html) : '';
+    if ($text !== '') ember_cache_set('wxwdr:text', $text);
+    return $text;
+  };
+  try {
+    return coreui_weather_sources($query, $getJson, $wdrText, (new DateTime('now', new DateTimeZone(ember_tz())))->format('Y-m-d'));
+  } catch (Throwable $e) {
+    return [];
+  }
+}
+
 function ember_tool_time(): string {
   $tz = ember_tz();
   try {
@@ -2426,6 +2496,13 @@ function ember_web_search(string $query, int $limit = 5, int $timeout = 12): arr
 // Untrusted-Data-Block aus den Web-Treffern bauen (hart getruncated).
 function ember_web_results_block(string $query, ?callable $onResults = null): string {
   if (!ember_web_enabled()) return '';
+  // 0.6.22: a weather question gets live data (WDR for NRW, Open-Meteo) instead of
+  // old search snippets; the normal search runs only when neither answers.
+  $weather = ember_weather_live_sources($query);
+  if ($weather !== []) {
+    if ($onResults !== null) $onResults($weather);
+    return coreui_weather_block($weather);
+  }
   $rows = ember_web_search($query, ember_web_limit(), ember_web_timeout());
   if ($onResults !== null) $onResults($rows);
   if (empty($rows)) return '';
@@ -2474,6 +2551,7 @@ function ember_browse_capability_hint(): string {
     . "WICHTIG: Enthaelt die Bitte sowas wie \"guck mal richtig\", \"schau mal genauer\", \"recherchier mal\", "
     . "\"guck/schau selbst\", \"surf mal\", \"geh ins Netz\", \"schau dir das mal an\" -> dann IMMER [BROWSE:], NIEMALS [WEB:]. "
     . "Im Zweifel bei einer echten Recherche-Bitte lieber [BROWSE:].\n"
+    . coreui_weather_browse_hint() . "\n"
     . "Antworte in DIESEM Fall AUSSCHLIESSLICH mit genau EINER Zeile in genau diesem Format:\n"
     . "[BROWSE: was du herausfinden sollst]\n"
     . "und sonst GAR NICHTS (kein Zusatztext, keine Begruessung).";
@@ -2481,7 +2559,7 @@ function ember_browse_capability_hint(): string {
 
 function ember_browse_capability_hint_compact(): string {
   return "BROWSE: Fuer eine gruendliche Recherche auf echten Webseiten (\"recherchier mal\", "
-    . "\"schau selbst nach\") antworte nur mit einer Zeile [BROWSE: was du herausfinden sollst].";
+    . "\"schau selbst nach\") antworte nur mit einer Zeile [BROWSE: was du herausfinden sollst]. " . coreui_weather_browse_hint();
 }
 
 /**
@@ -2598,14 +2676,16 @@ function ember_browse_enqueue(
   // so the worker never loads a second Core next to the one in use.
   $model = ember_model();
   $numCtx = ember_profile_num_ctx($model);
+  // 0.6.22: an https address in the goal is where the worker starts (it checks it again).
+  $startUrl = coreui_browse_goal_start_url($goal);
   try {
     try {
       $st = $pdo->prepare(
         "INSERT INTO stu_ember_browse_jobs
-           (status, goal, channel, recipient_uid, session_id, trigger_message_id, trigger_user_id, max_steps, model, num_ctx)
-         VALUES ('queued', ?, ?, ?, ?, ?, ?, 12, ?, ?)"
+           (status, goal, start_url, channel, recipient_uid, session_id, trigger_message_id, trigger_user_id, max_steps, model, num_ctx)
+         VALUES ('queued', ?, ?, ?, ?, ?, ?, ?, 12, ?, ?)"
       );
-      $st->execute([$goal, $ch, $recipientUid, $sessionId, $triggerMessageId, $triggerUid, $model, $numCtx]);
+      $st->execute([$goal, $startUrl, $ch, $recipientUid, $sessionId, $triggerMessageId, $triggerUid, $model, $numCtx]);
     } catch (Throwable $eColumns) {
       // Table without the 0.5.77 columns: the worker falls back to STU_EMBER_MODEL.
       $st = $pdo->prepare(
@@ -5350,6 +5430,13 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
     $audioClips = array_values(array_filter(is_array($visionMeta) ? $visionMeta : [],
       static fn($m): bool => is_array($m) && ($m['type'] ?? '') === 'audio'));
     $hasAudio = $audioClips !== [];
+    // 0.6.22: Mara may use her tools after a voice message too (operator's screenshot, 06.11.2026:
+    // "[WEB: Wetter ...]" stood as her answer). Without skills: their index is not in this prompt.
+    $voiceTools = ($hasAudio && $channel === 'console')
+      ? array_values(array_intersect(ember_agent_allowed_tools($consoleUid, (string)$consoleSessionId), ['web', 'browse', 'archive']))
+      : [];
+    $voiceTerms = $hasAudio && function_exists('ember_attach_voice_terms')
+      ? ember_attach_voice_terms($pdo, (int)($senderChar['user_id'] ?? $consoleUid)) : [];
     // 0.6.19: what the sender said in a voice message reaches the memory reflection after
     // its transcript exists (api/console_stream.php), not now with an empty text.
     if ($channel === 'console' && array_filter($audioClips, static fn(array $c): bool => !empty($c['voice']))) {
@@ -5390,14 +5477,14 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
     } elseif ($hasAudio && count($audioClips) === count((array)$visionMeta)
         && count((array)$imageUrl) === array_sum(array_map(static fn(array $c): int => count((array)($c['paths'] ?? [])), $audioClips))) {
       $visionPrompt = coreui_voice_listen_task($senderName,
-        $userMsgClean !== 'hat dir ein Bild geschickt' ? $userMsgClean : '', $audioClips);
+        $userMsgClean !== 'hat dir ein Bild geschickt' ? $userMsgClean : '', $audioClips, $voiceTerms, $voiceTools);
     } else {
       $visionPrompt = $senderName . " hat dir einen oder mehrere Anhaenge geschickt"
         . ($userMsgClean !== 'hat dir ein Bild geschickt' ? " und schreibt: \"" . $userMsgClean . "\"" : "")
         . ". Werte die sichtbaren Bilder in der gesendeten Reihenfolge aus. Erfinde nichts, "
         . "was nicht klar erkennbar ist. Was siehst du und was sagst du dazu als Mara? Antworte auf Deutsch. "
         . $visionRules;
-      if ($hasAudio) $visionPrompt .= "\n" . coreui_voice_listen_task($senderName, '', $audioClips);
+      if ($hasAudio) $visionPrompt .= "\n" . coreui_voice_listen_task($senderName, '', $audioClips, $voiceTerms);
     }
     // $u already carries the attachment block, memory, KI-Profil and history.
     $visionPrompt = $u . "\n\nANHANG-AUFGABE: " . $visionPrompt;
@@ -5452,6 +5539,33 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       $GLOBALS['STU_EMBER_ATTACHMENT_IMAGES'],
       $GLOBALS['STU_EMBER_ATTACHMENT_VISION_META']
     );
+    // 0.6.22: a tool marker in the answer to a voice message starts Mara's work loop, as
+    // for a typed message. The steps are text calls: the transcript in the task stands
+    // for the recording, which is not sent again.
+    $voiceTool = ($voiceTools !== [] && is_string($imgReply)) ? coreui_agent_next_tool($imgReply, $voiceTools) : null;
+    if ($voiceTool !== null) {
+      $voiceBase = $visionPrompt . "\nDie Aufnahme hast du schon gehoert; die Mitschrift oben gibt sie wieder.";
+      $voiceLoop = coreui_agent_loop_run($imgReply, $voiceTool, $voiceBase, $voiceTools, 0,
+        static fn(string $prompt): ?string => ember_call_ollama($primaryModel, $visionSys, $prompt, $visionTimeout,
+          $listenOptions, null, $listenThink),
+        static fn(array $tool): string => ember_agent_run_tool($pdo, $tool, $channel, $consoleUid, (string)$consoleSessionId,
+          $triggerMessageId, $triggerRevision),
+        static function (string $kind, string $state, string $title, array $meta) use ($pdo): void {
+          coreui_work_record($pdo, $kind, $state, $title, $meta);
+        },
+        static fn(): bool => ember_agent_cancel_requested(true),
+        static fn(array $tool): array => ember_weather_route_tool($tool, $voiceTools));
+      if ($voiceLoop['browse'] !== null) {
+        $GLOBALS['STU_EMBER_BROWSE_REQUEST'] = $voiceLoop['browse'];
+        return null;
+      }
+      $imgReply = $voiceLoop['out'];
+    } elseif ($hasAudio && is_string($imgReply) && coreui_agent_next_tool($imgReply, ['web', 'browse', 'archive', 'skill']) !== null) {
+      // A marker for a tool that is switched off for this account: no marker as the answer.
+      $prose = trim(ember_strip_stray_tool_markers($imgReply));
+      $imgReply = $prose !== '' ? $prose
+        : 'Dafuer muesste ich erst nachsehen, aber dieses Werkzeug ist fuer dich gerade nicht freigegeben.';
+    }
     if (is_string($imgReply) && trim($imgReply) !== '') {
       // Auch Vision-, Video- und PDF-Antworten passieren dieselbe letzte
       // Thinking-Schranke wie normale Textantworten.
@@ -6248,7 +6362,8 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         static function (string $kind, string $state, string $title, array $meta) use ($pdo): void {
           coreui_work_record($pdo, $kind, $state, $title, $meta);
         },
-        static fn(): bool => ember_agent_cancel_requested(true));
+        static fn(): bool => ember_agent_cancel_requested(true),
+        static fn(array $tool): array => ember_weather_route_tool($tool, $loopAllowed));
       if ($loop['browse'] !== null) {
         $GLOBALS['STU_EMBER_BROWSE_REQUEST'] = $loop['browse'];
         return null;

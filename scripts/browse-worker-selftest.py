@@ -213,6 +213,11 @@ check(w.web_query_variants("Wie ist das Wetter morgen in Mönchengladbach?")
       == ["Wie ist das Wetter morgen in Mönchengladbach?", "Wetter morgen Mönchengladbach"], "key words")
 check(w.web_query_variants("gemma4 12b") == ["gemma4 12b"] and w.web_query_variants(" ") == [], "plain query")
 check(w.web_url_key("https://www.Example.org/a/?utm_source=x&b=2&a=1#top") == "example.org/a?a=1&b=2", "url key like PHP")
+# 0.6.22: a job with a start page (the WDR place search) is answered from that page; others check two websites.
+check(w.job_min_sources(dict(w.DEFAULTS), "https://www1.wdr.de/nrw/wetter/wettervorhersage/index.html") == 1
+      and w.job_min_sources(dict(w.DEFAULTS), None) == 2 and w.job_min_sources(dict(w.DEFAULTS), "") == 2
+      and w.job_min_sources(dict(w.DEFAULTS), "javascript:alert(1)") == 2
+      and w.job_min_sources(dict(w.DEFAULTS, STU_EMBER_BROWSE_MIN_SOURCES="3"), None) == 3, "sources needed per job")
 cleaned = w.clean_results([
     {"title": "Gemma &amp; Co", "url": "https://ollama.com/library/gemma4?utm_source=searx", "content": "<b>12b</b>  braucht&nbsp;8 GB"},
     {"title": "Doppelt", "url": "https://www.ollama.com/library/gemma4/", "content": "gleiches Ziel"},

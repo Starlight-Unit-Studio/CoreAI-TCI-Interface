@@ -37,6 +37,27 @@ function coreui_agent_next_tool(string $reply, array $allowed): ?array {
   return null;
 }
 
+/**
+ * 0.6.22: the first https address in a browser goal, where the worker starts
+ * (pure), or null. The worker checks it again (safe_browser_url, no private
+ * hosts). Lets Mara send the browser straight to a page with a form, such as
+ * the place search of the WDR weather.
+ */
+function coreui_browse_goal_start_url(string $goal): ?string {
+  if (preg_match('~https://[^\s<>"\'\[\]{}|\\^`]+~u', $goal, $m) !== 1) return null;
+  $url = rtrim($m[0], '.,;:!?)');
+  if (strlen($url) > 2048 || filter_var($url, FILTER_VALIDATE_URL) === false) return null;
+  $parts = parse_url($url);
+  if (!is_array($parts) || ($parts['scheme'] ?? '') !== 'https' || ($parts['host'] ?? '') === ''
+      || isset($parts['user']) || isset($parts['pass'])) return null;
+  // No local or private address (the worker also resolves names and refuses private hosts).
+  $host = strtolower(trim((string)$parts['host'], '[]'));
+  if ($host === 'localhost' || str_ends_with($host, '.localhost')) return null;
+  if (filter_var($host, FILTER_VALIDATE_IP) !== false
+      && filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) return null;
+  return $url;
+}
+
 /** Work view title of a step (pure, ASCII as the work store requires). */
 function coreui_agent_step_title(array $tool, int $step, int $max): string {
   $what = ['web'=>'Websuche', 'archive'=>'Archiv durchsucht', 'python'=>'Python-Rechnung', 'browse'=>'Browser-Recherche',
@@ -132,14 +153,20 @@ function coreui_agent_loop_hint(bool $compact, bool $archive): string {
  *   $cancelled(): bool
  */
 function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $allowed, int $used,
-    callable $callModel, callable $runTool, callable $record, callable $cancelled): array {
+    callable $callModel, callable $runTool, callable $record, callable $cancelled, ?callable $route = null): array {
   $steps = [];
   $prompt = null;
+  // 0.6.22: $route(array $tool): array may send a step another way (a weather question about
+  // a place in NRW goes to the WDR place search in the browser, api/weather_live.php).
+  if ($tool !== null && $route !== null) $tool = $route($tool);
   while ($tool !== null && $used < COREUI_AGENT_MAX_STEPS) {
     $title = coreui_agent_step_title($tool, $used + 1, COREUI_AGENT_MAX_STEPS);
     $note = coreui_agent_step_note($tool);
     if ($note !== null) $record('commentary', 'info', 'Mara meldet ihren naechsten Schritt', ['public_note'=>$note, 'source'=>'agent_loop']);
     if ($tool['tool'] === 'browse') {
+      if (($tool['route'] ?? '') === 'wdr_place_search') {
+        $record('tool', 'info', 'Wetter in NRW: WDR-Ortssuche im Browser', ['step'=>$used + 1, 'reason'=>'weather_nrw']);
+      }
       $record('tool', 'info', $title, ['step'=>$used + 1, 'reason'=>'agent_loop_browse']);
       return ['out'=>null, 'browse'=>(string)$tool['input'], 'steps'=>count($steps), 'prompt'=>$prompt];
     }
@@ -154,6 +181,7 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
     $out = (is_string($next) && trim($next) !== '') ? $next : '';
     if ($out === '') break;
     $tool = $used < COREUI_AGENT_MAX_STEPS ? coreui_agent_next_tool($out, $allowed) : null;
+    if ($tool !== null && $route !== null) $tool = $route($tool);
   }
   // Still asking for a tool after the last step: keep only the prose.
   if ($out !== '' && coreui_agent_next_tool($out, $allowed) !== null) {

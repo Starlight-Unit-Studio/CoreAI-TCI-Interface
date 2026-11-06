@@ -1,9 +1,10 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
-Stand: 05.11.2026
-Repository-Version: 0.6.21
-BASIS: main 0.6.20 nach PR #171; Eve spricht Gladbach mit kurzem a.
+Stand: 06.11.2026
+Repository-Version: 0.6.22
+BASIS: main 0.6.21 nach PR #172; Begriffe fuer Sprachnachrichten, Werkzeuge nach Sprachnachrichten, Live-Wetter (WDR fuer NRW).
 NEUE ARBEIT ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_6_22.txt
   docs/UEBERGABEPROTOKOLL_0_6_21.txt
   docs/UEBERGABEPROTOKOLL_0_6_20.txt
   docs/UEBERGABEPROTOKOLL_0_6_19.txt

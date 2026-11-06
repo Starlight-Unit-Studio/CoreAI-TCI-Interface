@@ -498,3 +498,23 @@ const emptyWebHistory = work.create({events:[
 ]});
 assert.equal(emptyWebHistory.querySelector('.work-research-label').textContent,
   'Keine Quellen gefunden','finished empty searches must not look like ongoing work');
+
+// 0.6.22: the transcript before the answer is one step with an end. An open step per part was told as
+// "Ich führe gerade „Core schreibt die Aufnahme mit (Teil 1 von 1)“ aus. Der Abschluss steht noch aus." (operator, 06.11.2026).
+const voice = work.create({events:[
+  {id:1001,kind:'run',state:'running',title:'Auftrag gestartet',meta:{}},
+  {id:1002,kind:'tool',state:'running',title:'Aufnahme wird mitgeschrieben',meta:{parts:1}},
+  {id:1003,kind:'tool',state:'success',title:'Aufnahme mitgeschrieben',meta:{parts:1}},
+  {id:1004,kind:'model',state:'running',title:'Aufnahme wird angehoert',meta:{}},
+],expanded:true});
+assert(voice.textContent.includes('Core schreibt die Aufnahme zuerst mit, damit ich sicher auf die neue Nachricht antworte.'),
+  'the transcript step is told plainly');
+assert(!voice.textContent.includes('Der Abschluss steht noch aus'), 'no open step left in a voice turn');
+const oldVoice = work.create({events:[
+  {id:1101,kind:'tool',state:'running',title:'Core schreibt die Aufnahme mit (Teil 1 von 1)',meta:{}},
+],expanded:true});
+assert(oldVoice.textContent.includes('Core schreibt die Aufnahme zuerst mit') && !oldVoice.textContent.includes('Der Abschluss steht noch aus'),
+  'older runs from 0.6.20 and 0.6.21 read the same');
+assert(work.substantive([{id:1,kind:'tool',state:'running',title:'Aufnahme wird mitgeschrieben',meta:{}}]),
+  'a voice turn keeps its work path under the answer');
+console.log('CoreAI work events: transcript step of a voice message told with its end OK');
