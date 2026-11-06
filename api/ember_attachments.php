@@ -431,7 +431,7 @@ function ember_attach_audio_history_notes(PDO $pdo, int $uid, array $messageIds)
   $notes = [];
   foreach ($rows as $row) {
     $voice = coreui_voice_is_voice_message((string)$row['orig_name']);
-    $label = $voice ? 'Stimmsequenz' : 'Audiodatei " . (string)$row['orig_name'] . '"';
+    $label = $voice ? 'Stimmsequenz' : 'Audiodatei "' . (string)$row['orig_name'] . '"';
     $t = coreui_voice_transcript_load($uid, (string)$row['uuid']);
     $state = is_array($t) ? (string)($t['state'] ?? '') : '';
     $text = $state === 'done' ? trim((string)($t['text'] ?? '')) : '';

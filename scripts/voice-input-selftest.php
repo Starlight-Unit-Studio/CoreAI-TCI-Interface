@@ -538,8 +538,8 @@ try {
     $pdo->prepare('INSERT INTO stu_console_message_attachments VALUES (?, ?, 7, 0)')->execute([$msg, $uuid]);
   }
   $notes = ember_attach_audio_history_notes($pdo, 7, [10, 11, 12, 13]);
-  vi_test(($notes[10] ?? '') === 'Sprachnachricht: "Erster Teil. Dritter Teil."' && ($notes[11] ?? '') === '(Audiodatei "besprechung.webm")'
-    && ($notes[12] ?? '') === '(Sprachnachricht ohne gesprochene Worte)' && !isset($notes[13]), 'the history knows what was said');
+  vi_test(($notes[10] ?? '') === 'Stimmsequenz: "Erster Teil. Dritter Teil."' && ($notes[11] ?? '') === '(Audiodatei "besprechung.webm")'
+    && ($notes[12] ?? '') === '(Stimmsequenz ohne gesprochene Worte)' && !isset($notes[13]), 'the history knows what was said');
   vi_test(ember_attach_audio_history_notes($pdo, 8, [10, 11]) === [], 'never from another account');
 
   // 0.6.19: after the transcript Mara decides herself what goes into her long-term memory,

@@ -1,0 +1,11 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.25
+06.11.2026
+
+Installations-Hotfix fuer 0.6.24:
+- api/voice_transcribe.php: fehlendes PHP-String-Anfuehrungszeichen bei "Die Audiodatei ..." korrigiert.
+- api/ember_attachments.php: denselben Fehler in der historischen Audiodatei-Beschriftung korrigiert.
+- scripts/voice-input-selftest.php: Verlaufserwartungen an die bereits implementierte "Stimmsequenz"-Benennung angepasst.
+- AGENTS.md / CLAUDE.md: php -l und betroffene Selbsttests vor jedem PHP-Merge verbindlich.
+- Bootstrap-Cache: SHA-256-Fingerprint von js/console-gate.js nach Versionswechsel in allen fuenf referenzierenden HTML-Seiten aktualisiert.
+- VERSION, sechs HTML-Seiten, JS-Bootstrap, README, Branding-/Preflight-Versionsangaben, CHANGELOG, INDEX, Uebergabe synchron auf 0.6.25.
+PHP-8.4-Syntaxprobe fuer die beiden reparierten Ausdruecke ausgefuehrt. Komplettes Runtime-Preflight/Server-Update vor produktiver Freigabe noch zu pruefen.

@@ -443,7 +443,7 @@ function coreui_voice_listen_task(string $senderName, string $text, array $clips
   $lines = [];
   foreach ($clips as $clip) {
     $parts = count((array)($clip['paths'] ?? []));
-    $what = !empty($clip['voice']) ? 'Eine Stimmsequenz' : 'Die Audiodatei " . (string)($clip['name'] ?? 'audio') . '"';
+    $what = !empty($clip['voice']) ? 'Eine Stimmsequenz' : 'Die Audiodatei "' . (string)($clip['name'] ?? 'audio') . '"';
     // 0.6.20: a plain sentence. The bracketed tag "[Angehaengt: Sprachaufnahme, N Sekunden]"
     // (P20.0) made Mara open her answer with "[" (operator's screenshot, 06.11.2026);
     // in the media test it hardly helped anyway (5 of 10 with it, 6 of 10 without).

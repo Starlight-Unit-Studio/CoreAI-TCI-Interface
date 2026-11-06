@@ -1,0 +1,24 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.25
+Stand: 06.11.2026
+Basis: main 0.6.24 nach Merge von PR #175.
+
+AUSGANGSLAGE
+Betreiber meldet Update fehlgeschlagen: [PHP-SYNTAXFEHLER] api/voice_transcribe.php.
+Screenshot zeigt 0.6.24 -> 0.6.24: Installation abgebrochen in Phase install.
+
+URSACHE
+In 0.6.24 beim Textwechsel "Sprachnachricht" zu "Stimmsequenz" das einfache Abschlusszeichen in zwei konkatenierenden PHP-Strings versehentlich entfernt. Fehler sowohl in api/voice_transcribe.php (Zeile 446) als auch api/ember_attachments.php (Zeile 434).
+Beide Vorkommen mit Schliessquote korrigiert. Die Fehler waren durch einen isolierten Text-/Diff-Check statt eines PHP-Linters uebersehen worden.
+
+UMSETZUNG
+- PHP-Dateien: syntaktisch korrekte Audiodatei-Namensformate wiederhergestellt.
+- scripts/voice-input-selftest.php: zwei alte Erwartungen auf "Stimmsequenz" korrigiert.
+- AGENTS.md und CLAUDE.md: PHP-Lint vor Merge verbindlich; ohne lokale Syntaxabnahme PR nicht mergen.
+- VERSION 0.6.25, sechs HTML-Seiten, js/console-gate.js, README, CHANGELOG.md, TXT-Archiv, Branding-Selbsttest und Preflight-Header nachgezogen.
+- Der statische Cache-Fingerprint fuer js/console-gate.js war auf 0.6.23 stehen geblieben; in 0.6.25 wurde er fuer alle fuenf HTML-Referenzen passend zum neuen Dateiinhalt erneuert.
+- Keine Datenbank-/Installer-/Modelfile-/Core-Parameter-Aenderung; kein Einfluss auf Dateipraefix Sprachnachricht- oder gespeicherte Events.
+
+VALIDIERUNG
+- PHP 8.4 auf isolierten korrigierten Quell-Ausdruecken: Syntax und Formatierung bestanden.
+- Bestehender Installer enthaelt den echten PHP-Lint aller paketierten Dateien. Nach Merge sind lokale php -l auf den geaenderten kompletten Dateien, der Voice-Eingabe-Test und die gesamte Preflight-/Live-Abnahme erforderlich.
+- Keine ausstehende Pruefung als bestanden deklarieren.
