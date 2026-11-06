@@ -1,0 +1,35 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.6.23
+Stand: 06.11.2026
+Ausgangsbasis: main 0.6.22 nach Merge von PR #173.
+
+RUECKMELDUNG (Screenshot, 14:01): Auf eine Sprachnachricht antwortete Mara mit "[Bildbeschreibung: Das Bild zeigt eine
+Nahaufnahme von zwei Haenden, die ein Stueck helles, knusprig aussehendes Brot ... halten ...]" (zum zweiten Mal ein
+erfundenes Bild). Core verstand "joder, alles glatt" statt "Bergisch Gladbach"; die Aufnahme klingt im Chat normal.
+
+URSACHE BILD: Beide Prompt-Bauer in api/chat.php haengten nach "Antworte als Mara:" bei $imageUrl !== null die Zeile
+"[Bild wurde mitgesendet - beschreibe und kommentiere es als Mara.]" an. Seit 0.6.17 reisen die WAVs im selben Feld.
+UMSETZUNG:
+- api/chat.php: ember_attachment_prompt_note($imageUrl): nur Audio laut STU_EMBER_ATTACHMENT_VISION_META -> keine
+  Zeile; sonst wie bisher. Beide Prompt-Bauer nutzen sie. Der Bild-Ersatzweg weiter unten (nach dem Audio-Return)
+  bleibt unveraendert.
+- scripts/voice-hear-check.php (neu): Hoerprobe auf dem Server, siehe unten. Nutzt coreui_voice_prepare_native und
+  coreui_voice_transcribe_part wie CoreAI (Vorlage, ohne Denken, Warteschlange, Wiederholung bei "keine Aufnahme"),
+  Variante C mit ffmpeg loudnorm (I=-18, TP=-1.5, LRA=11). Keine Speicherung.
+- Preflights: Datei in der Pflichtliste.
+
+ZUR ERKENNUNG (offen, Messung beim Betreiber): Ob die Begriffe aus dem KI-Profil eingetragen waren, ist nicht bekannt.
+Ohne Messung mit der echten Aufnahme wird nichts weiter fest eingebaut (Lautstaerke angleichen, anderer Core fuer die
+Mitschrift, Nachkorrektur mit den Begriffen).
+
+GEPRUEFT (hier ausgefuehrt): voice-input-selftest.php; Hoerprobe gegen einen nachgebauten Core und MariaDB (drei
+Varianten, --cores alle mit zwei Cores, Cloud-Core uebersprungen, --terms, unbekanntes Konto, keine Temp-Reste); volle
+Testreihe, cache-bust, version-merge-check gegen 0.6.22.
+NICHT HIER GEPRUEFT: echte Gemma-Cores (keine hier).
+
+NACH DEM MERGE (Betreiber):
+1. Update unter Einstellungen > System > CoreAI Update.
+2. Einstellungen > KI-Profil > "Namen und Begriffe fuer Sprachnachrichten": Bergisch Gladbach eintragen (falls noch
+   nicht geschehen).
+3. Eine Sprachnachricht mit "Bergisch Gladbach" schicken, dann die Hoerprobe:
+   cd /opt/ember-coreui && sudo docker compose --project-name ember-coreui --env-file var/compose.env -f compose.yaml exec -T php php scripts/voice-hear-check.php --cores alle --repeat 2
+   Die Ausgabe schicken. Daraus folgt, was fest uebernommen wird.

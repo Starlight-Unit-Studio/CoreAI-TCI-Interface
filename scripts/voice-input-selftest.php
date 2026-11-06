@@ -211,6 +211,29 @@ vi_test(str_contains($chat, '$voiceTool = ($voiceTools !== [] && is_string($imgR
   && strpos($chat, '$voiceLoop = coreui_agent_loop_run(') < strpos($chat, 'if ($hasAudio) $imgReply = coreui_voice_clean_reply('),
   'tools after a voice message: the work loop before the reply is cleaned');
 vi_test(str_contains($chat, '$userMsgClean : \'\', $audioClips, $voiceTerms, $voiceTools);'), 'Mara\'s task gets the terms and tools');
+// 0.6.23: no "[Bild wurde mitgesendet ...]" for audio: Mara described a picture that was never sent
+// ("[Bildbeschreibung: zwei Haende mit Brot ...]", operator's screenshot, 06.11.2026).
+if (preg_match('~^function ember_attachment_prompt_note\(.*?^}~ms', $chat, $fn) !== 1) vi_test(false, 'ember_attachment_prompt_note missing');
+eval($fn[0]);
+$imageLine = "\n[Bild wurde mitgesendet - beschreibe und kommentiere es als Mara.]";
+$GLOBALS['STU_EMBER_ATTACHMENT_VISION_META'] = [['type' => 'audio'], ['type' => 'audio']];
+vi_test(ember_attachment_prompt_note(['a.wav', 'b.wav']) === '', 'voice messages: no picture line');
+$GLOBALS['STU_EMBER_ATTACHMENT_VISION_META'] = [['type' => 'audio'], ['type' => 'image']];
+vi_test(ember_attachment_prompt_note(['a.wav', 'b.png']) === $imageLine, 'a picture with a voice message: the line stays');
+$GLOBALS['STU_EMBER_ATTACHMENT_VISION_META'] = [['type' => 'video']];
+vi_test(ember_attachment_prompt_note(['f1.jpg']) === $imageLine, 'video frames: the line stays');
+unset($GLOBALS['STU_EMBER_ATTACHMENT_VISION_META']);
+vi_test(ember_attachment_prompt_note('data:image/png;base64,AAA') === $imageLine && ember_attachment_prompt_note(null) === '',
+  'a picture without a description: the line; no media: nothing');
+vi_test(substr_count($chat, '. ember_attachment_prompt_note($imageUrl);') === 2
+  && substr_count($chat, '[Bild wurde mitgesendet - beschreibe und kommentiere es als Mara.]') === 1,
+  'both prompt builders ask first');
+// 0.6.23: the hearing check on the server uses the very same transcription as CoreAI.
+$check = (string)file_get_contents($root . '/scripts/voice-hear-check.php');
+vi_test(str_contains($check, 'coreui_voice_transcribe_part(ember_url(), $core, (string)@file_get_contents($path), $language, 600,')
+  && str_contains($check, 'coreui_voice_prepare_native($source, $plain, COREUI_VOICE_INPUT_MAX_SECONDS)')
+  && str_contains($check, "'loudnorm=I=-18:TP=-1.5:LRA=11'") && str_contains($check, 'register_shutdown_function('),
+  'the hearing check: same WAVs and calls as CoreAI, loudness variant, temporary files removed');
 $attach = (string)file_get_contents($root . '/api/ember_attachments.php');
 vi_test(str_contains($attach, "'terms' => ember_attach_voice_terms(\$pdo, \$uid),") && str_contains($attach, 'ember_profile_num_ctx($model), $terms);'),
   'both transcripts get the terms');

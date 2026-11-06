@@ -1,9 +1,10 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
 Stand: 06.11.2026
-Repository-Version: 0.6.22
-BASIS: main 0.6.21 nach PR #172; Begriffe fuer Sprachnachrichten, Werkzeuge nach Sprachnachrichten, Live-Wetter (WDR fuer NRW).
+Repository-Version: 0.6.23
+BASIS: main 0.6.22 nach PR #173; kein erfundenes Bild bei Sprachnachrichten, Hoerprobe fuer den Server.
 NEUE ARBEIT ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_6_23.txt
   docs/UEBERGABEPROTOKOLL_0_6_22.txt
   docs/UEBERGABEPROTOKOLL_0_6_21.txt
   docs/UEBERGABEPROTOKOLL_0_6_20.txt
