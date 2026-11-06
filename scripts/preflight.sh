@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.30: Live-Probe fuer das Live-Gespraech (P20.4).
+# CoreAI: TCI Interface 0.6.31: Live-Gespraech (P20.4) mit Mara Normal, freihaendig, satzweise mit Eve.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -207,6 +207,11 @@ UI_FILES=(
   scripts/weather-live-selftest.php
   scripts/voice-hear-check.php
   scripts/voice-live-check.php
+  api/voice_live.php
+  api/voice_live_lib.php
+  js/coreui-voice-live.js
+  scripts/voice-live-selftest.php
+  scripts/voice-live-ui-selftest.cjs
   scripts/message-time-selftest.php
   docker/tts-spike/Dockerfile
   docker/tts-spike/constraints-piper.txt
@@ -416,6 +421,11 @@ if grep -Fq '|console_insights|' "$PROJECT_ROOT/config/runtime/nginx.conf.templa
   ok 'Nginx erlaubt die Infokaesten (Core, Kontext, Werkzeuge, Projekt).'
 else
   fail 'Nginx-Routing fuer die Infokaesten fehlt.'
+fi
+if grep -Fq '|voice_live|' "$PROJECT_ROOT/config/runtime/nginx.conf.template"; then
+  ok '0.6.31: Nginx erlaubt das Live-Gespraech (api/voice_live.php).'
+else
+  fail 'Nginx sperrt das Live-Gespraech (voice_live fehlt in der Freigabe).'
 fi
 if grep -Fq '|voice_input|' "$PROJECT_ROOT/config/runtime/nginx.conf.template" && grep -Fq 'microphone=(self)' "$PROJECT_ROOT/config/runtime/nginx.conf.template" \
    && ! grep -Fq 'microphone=()' "$PROJECT_ROOT/config/runtime/nginx.conf.template"; then
@@ -685,6 +695,13 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     ok '0.6.29: Zeiten im Chat mit Zeitzone (Nachrichten und Chatliste, Datenbank in UTC und Ortszeit) geprueft.'
   else
     fail "Zeit-Selbsttest: ${time_test:-Unbekannter Fehler}"
+  fi
+
+  live_test=''
+  if live_test="$(compose exec -T php php scripts/voice-live-selftest.php 2>&1)"; then
+    ok '0.6.31: Live-Gespraech (Live-Core, Saetze fuer Eve, gesprochene Antwort, fester Anfang fuer den Cache, Modelfile-SYSTEM bleibt) geprueft.'
+  else
+    fail "Live-Gespraech-Selbsttest: ${live_test:-Unbekannter Fehler}"
   fi
 
   voice_input_test=''
@@ -1061,6 +1078,16 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       fi
     else
       warn 'Spracheingabe: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+    fi
+    # 0.6.31: the live conversation (P20.4); needs Playwright for Node.
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/voice-live-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'Live-Gespraech: Knopf neben dem Mikrofon, Vollbild, Runden als Stimmsequenz, Vorlesen, Stummschalten, Unterbrechen, Beenden geprueft.'
+      else
+        fail 'Live-Gespraech: Oberflaechentest fehlgeschlagen.'
+      fi
+    else
+      warn 'Live-Gespraech: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
     fi
     # 0.6.19: chat list in the drawer, buttons whole and large enough; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then

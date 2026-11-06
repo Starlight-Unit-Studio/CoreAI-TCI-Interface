@@ -1,5 +1,18 @@
 # CoreAI: TCI Interface
 
+## 0.6.31 - 06.11.2026
+
+Das Live-Gespraech (P20.4). Grundlage ist die Live-Probe auf dem Server: Nur der zweistufige Weg (erst Mitschrift, dann Antwort) verstand zuverlaessig; Mara Plus hoerte die WAV im eigenen Aufruf gar nicht und brauchte etwa 16 s bis zum ersten Satz, Mara Normal etwa 7 s; der Core las in jeder Runde den ganzen Aufruf neu. Entscheidungen des Betreibers: Mara bekommt die Mitschrift als Text, im Live-Gespraech antwortet immer Mara Normal, der Sprecherwechsel ist freihaendig. Vorbild fuer die Bedienung: die Screenshots des Betreibers (Live-Knopf neben dem Mikrofon, Vollbild).
+
+- **Live-Knopf und Vollbild:** In der Eingabezeile direkt neben dem Mikrofon. Die Vollbild-Ansicht im CoreAI-Stil (Tag und Nacht, Handy) zeigt "Du kannst jetzt sprechen, <Name>", den Core, ein lebendiges Element fuer zuhoeren, nachdenken und sprechen, darunter was ich gehoert habe und meinen aktuellen Satz, unten Stummschalten und Beenden. Der Bildschirm bleibt an. Nur angemeldete Konten, nie Gaeste; mit einem Core ohne Audioeingabe ist der Knopf mit Begruendung gesperrt.
+- **Freihaendig:** Eine einfache Sprecherkennung im Browser mit gleitender Rauschschwelle startet die Runde beim Sprechen (mit 0,4 s Vorlauf, damit das erste Wort nicht fehlt) und beendet sie nach 0,9 s Pause. Spricht die Person, waehrend ich rede oder nachdenke, stoppe ich sofort, und das Gesagte wird die naechste Runde.
+- **Eine Runde:** Die Aufnahme geht als WAV-Stimmsequenz ueber den normalen Upload an `api/voice_live.php`. Der Core schreibt sie mit (mit den Begriffen aus dem KI-Profil), die Stimmsequenz kommt mit Mitschrift in den Chat, dann antworte ich auf den Text, ohne Denken, ueber die serielle Warteschlange. Die Antwort kommt als Server-Sent Events Satz fuer Satz; Eve liest jeden Satz, sobald er da ist. Meine Antwort wird als normale Chat-Antwort gespeichert, bei einer Unterbrechung das bis dahin Gesagte.
+- **Schneller durch den Cache:** Jeder Aufruf beginnt gleich: das Modelfile-SYSTEM des Betreibers bleibt unveraendert (keine eigene Systemnachricht fuer Maras Core), dann eine feste Kontext-Nachricht (Name, Datum, KI-Profil, Gedaechtnis, Regeln fuer gesprochene Antworten), der Verlauf bis zum Start (hoechstens 10 Nachrichten) und danach jede Runde. Beim Oeffnen wird dieser Anfang vorgeladen.
+- **Gedaechtnis:** Meine Reflexion ueber die Runden laeuft erst nach dem Gespraech (Beenden), damit keine Runde hinter ihr wartet.
+- **Dienste:** nginx gibt `api/voice_live.php` frei (beide Vorlagen), das Tageslimit des Kontos zaehlt jede Runde.
+- Tests: neu `voice-live-selftest.php` (Live-Core, Satzschnitt, gesprochene Antwort, fester Anfang, Modelfile-SYSTEM, Verdrahtung; mit `COREUI_SELFTEST_DB=1` zusaetzlich der echte Endpunkt ueber HTTP mit Anmeldung, nachgebautem Core und Datenbank: Status, CSRF, Vorwaermen, zwei Runden als Chat-Nachrichten mit Mitschrift, gleicher Anfang fuer den Cache, Unterbrechen, Eve nicht erreichbar, Gedaechtnis am Ende, alles wieder entfernt) und `voice-live-ui-selftest.cjs` (Chromium mit Fake-Mikrofon: Knopf nach dem Mikrofon, Vollbild, Vorwaermen, Runde als WAV-Stimmsequenz, Saetze in Reihenfolge vorgelesen, Stummschalten, Unterbrechen, Beenden mit Gedaechtnis und Neuladen, Gaeste, Core ohne Audio, kein Chat, Tag und Nacht, Handy). Beide Preflights.
+- Keine Aenderung an Cores, Modelfile, Datenbankschema, Installer oder Warteschlange.
+
 ## 0.6.30 - 06.11.2026
 
 Zurueck zum Live-Gespraech (P20.4). Vor dem Bau wird auf dem Server gemessen, welcher Weg im Gespraech am schnellsten zu Maras erstem gesprochenem Satz fuehrt und dabei zuverlaessig auf die neue Stimmsequenz antwortet.
