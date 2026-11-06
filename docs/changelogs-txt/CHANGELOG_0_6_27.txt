@@ -1,0 +1,9 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.27
+06.11.2026
+
+- Spracheingabe-Preflight: Letzten veralteten Nutzertextvergleich in scripts/voice-input-selftest.php von "Sprachnachricht" auf "Stimmsequenz" korrigiert.
+- Laufzeitcode und Audio-Anhang bleiben unveraendert. Dauer, Anzahl Audioteile und Laengenbegrenzung werden weiterhin vollstaendig geprueft.
+- scripts/tci-language-selftest.cjs sichert die sichtbare Audio-Bezeichnung und dazu passende Test-Erwartung ab.
+- Alle 88 Testdateien auf bekannte Altformulierungen durchgesehen; technische Dateipraefixe, historische Belege und andere semantisch korrekte Begriffe beibehalten.
+- VERSION, Bootstrap-Cache-Key, sechs HTML-Seiten, README, Changelog-Archiv, Uebergabe, Brandingtest und Preflight-Koepfe auf 0.6.27 nachgezogen.
+- Isolierte PHP-8.4-Pruefung des Solltexts erfolgreich. Gesamte Runtime-Selbsttests und Server-Preflight vor Merge nochmals ausfuehren.

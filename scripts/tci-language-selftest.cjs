@@ -12,6 +12,8 @@ const settings = read('settings.html');
 const answerStyle = read('api/console_answer_style.php');
 const phpAudio = read('api/voice_transcribe.php');
 const insights = read('js/coreui-insights.js');
+const attachPhp = read('api/ember_attachments.php');
+const voiceSelftest = read('scripts/voice-input-selftest.php');
 
 assert.match(work, /Ich erstelle zuerst eine Mitschrift deiner Stimmsequenz/);
 assert.match(work, /Ich bearbeite deine Anfrage/);
@@ -24,6 +26,10 @@ assert.doesNotMatch(settings, /Core und Mara schreiben sie dann genau so/);
 assert.match(answerStyle, /eine einzige zusammenhaengende Terran Cognitive Intelligence/);
 assert.match(phpAudio, /Eine Stimmsequenz/);
 assert.match(insights, /In dieser Sitzung liegt noch keine Antwort vor/);
+// The actual voice attachment note and its end-to-end test must use the same user-facing term.
+assert.match(attachPhp, /\$what = \$voice \? 'eine Stimmsequenz' : 'eine Audiodatei'/);
+assert.match(voiceSelftest, /str_contains\(\$block, 'Das ist eine Stimmsequenz \(Laenge etwa 02:30, Minuten:Sekunden\)'/);
+assert.doesNotMatch(voiceSelftest, /str_contains\(\$block, 'Das ist eine Sprachnachricht/);
 // Legacy media filenames and persisted event identities MUST NOT be renamed.
 assert.match(voice, /'Sprachnachricht-' \+ stamp/);
 assert.match(phpAudio, /COREUI_VOICE_MESSAGE_PREFIX = 'Sprachnachricht-'/);

@@ -409,7 +409,7 @@ try {
   // 0.6.18: one check per statement, each showing what Mara was told when it fails.
   $told = trim((string)preg_replace('~\s+~', ' ', $block));
   vi_test($message === '', 'the marker leaves the message');
-  vi_test(str_contains($block, 'Das ist eine Sprachnachricht (Laenge etwa 02:30, Minuten:Sekunden)'),
+  vi_test(str_contains($block, 'Das ist eine Stimmsequenz (Laenge etwa 02:30, Minuten:Sekunden)'),
     'Mara is told it is a voice message of about 02:30: ' . $told . ' (ffprobe: ' . var_export(coreui_voice_probe_seconds($long), true) . ' s)');
   vi_test(str_contains($block, 'in 3 Teilen nacheinander'), 'Mara is told it comes in 3 parts: ' . $told);
   vi_test(str_contains($block, 'nur die ersten 02:00 Minuten'), 'Mara is told that 2 minutes are kept: ' . $told);

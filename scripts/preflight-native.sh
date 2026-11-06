@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.26: Sprach- und Vision-Regressions-Sollwerte aktualisiert.
+# CoreAI: TCI Interface 0.6.27: Audio-Anhang-Solltext fuer Stimmsequenz synchronisiert.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
