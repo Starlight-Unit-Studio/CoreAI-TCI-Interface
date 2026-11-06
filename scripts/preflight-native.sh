@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.20: Antworten auf Sprachnachrichten ohne eckige Klammer am Anfang.
+# CoreAI: TCI Interface 0.6.20: Sprachnachrichten mit WAV und Mitschrift vor der Antwort, ohne Klammern, Skill-Block oder Ankuendigung.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

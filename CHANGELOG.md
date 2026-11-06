@@ -6,8 +6,18 @@ Screenshot des Betreibers (erste echte Sprachnachricht): Mara hoert die Aufnahme
 
 - **Ursache:** Der Auftrag an Mara nannte jede Aufnahme mit dem Kuerzel "[Angehaengt: Sprachaufnahme, N Sekunden]" (aus dem Medientest P20.0), und Mara ahmte das Format nach. Im Medientest hatte das Kuerzel kaum etwas gebracht (5 von 10 mit, 6 von 10 ohne).
 - **Behoben:** Der Auftrag nennt die Aufnahme jetzt in einem normalen Satz ("Eine Sprachnachricht von 31 Sekunden, als Audio."). Zusaetzlich verliert eine Antwort auf eine Aufnahme eine eckige Klammer am Anfang, die nie geschlossen wird, oder eine Klammer um die ganze Antwort. Markdown-Links und geschlossene Notizen am Anfang bleiben.
-- Die verhoerten Woerter ("nach Berlin" statt "nen Termin") kommen aus Gemmas eigenem Hoeren: Mitschrift und Maras Antwort verhoerten unabhaengig voneinander dasselbe. Daran aendert diese Version nichts.
-- Tests: `voice-input-selftest.php` (kein Klammer-Kuerzel im Auftrag, Klammer-Regel mit Gegenbeispielen, Verdrahtung).
+- Die verhoerten Woerter ("nach Berlin" statt "nen Termin") kommen aus Gemmas eigenem Hoeren: Mitschrift und Maras Antwort verhoerten unabhaengig voneinander dasselbe.
+
+Zweite Runde Screenshots am selben Tag: Auf "Was gibt's denn so bei dir ab?" antwortete Mara wieder zum Termin in Berlin, jede Antwort begann mit "hab die Sprachnachricht gehoert", einmal stand der Kopf der Skill-Anleitungen "[COREAI KERN-SKILLS: ...]" vor der Antwort, einmal ein verwaistes "</blockquote>" am Ende. Die Mitschrift hatte den neuen Satz dagegen richtig gehoert. Entscheidung des Betreibers (06.11.2026): Mara bekommt die WAV und dazu die Mitschrift.
+
+- **Mitschrift vor der Antwort:** Core schreibt die WAVs zuerst mit (Googles Vorlage, ohne Denken, ueber die Warteschlange, eine Wiederholung bei "keine Aufnahme"; im Arbeitsweg "Core schreibt die Aufnahme mit (Teil 1 von 2)"). Mara bekommt dieselben WAVs und die Mitschrift als Anker in ihrem Aufruf, hoert also weiter selbst. Grund: Ihr Aufruf ist lang (Verlauf, Gedaechtnis, Profil), darin ging die kurze neue Aufnahme bei der kleinen Stufe unter; der kurze Mitschrift-Auftrag traf sie. Das deckt sich mit dem Medientest (Aufnahmen direkt in Maras Persona ohne Denken scheiterten bei laengeren Clips, die Vorlage traf 10 von 10). Kosten: etwa 1 bis 3 Sekunden bei kurzen Nachrichten, etwa 18 Sekunden je Minute.
+- **Die Mitschrift steht sofort unter der Nachricht** und im Verlauf; die Mitschrift nach der Antwort ueberspringt bereits erledigte Aufnahmen und springt nur ein, wenn die erste scheiterte. Eine Audiodatei, die fuers Kontextfenster gekuerzt wurde, schreibt sie danach vollstaendig (bis 10 Minuten) mit.
+- **Auftrag:** Nur die neue Aufnahme zaehlt, fruehere Sprachnachrichten sind beantwortet, keine Ankuendigung "hab die Nachricht gehoert".
+- **Kein Skill-Block bei Aufnahmen** (auch nicht in der Fortsetzung langer Antworten); dieser Weg fuehrt keine Werkzeuge aus.
+- **Bereinigung der Antwort auf Aufnahmen:** ein reiner Ankuendigungssatz am Anfang ("Hey Rick, ich hab mir die Sprachnachricht angehoert. 😊") und schliessende HTML-Tags am Ende ohne oeffnenden fallen weg. Bleibt sonst nichts, bleibt die Antwort, wie sie ist.
+- **Verlauf ohne eckige Klammern:** `Sprachnachricht: "..."` statt `[Sprachnachricht, Mitschrift: ...]`.
+- Hinweis: Der falsch verstandene Fakt aus der ersten Sprachnachricht steht in Maras Gedaechtnis und lenkt weiter; er laesst sich unter Einstellungen > Memory mit dem x loeschen.
+- Tests: `voice-input-selftest.php` (kein Klammer-Kuerzel im Auftrag, Klammer-Regel mit Gegenbeispielen, Mitschrift vor der Antwort mit Warteschlange und Wiederholung, dieselben WAVs, sofort gespeichert, Wiederverwendung beim Neu-Generieren, gekuerzte Datei nicht gespeichert, Bereinigung, Auftrag, Verdrahtung). Gegen den echten `ember_call_ollama`: bei Aufnahmen kein Skill-Block im Auftrag, bei Text weiterhin.
 - Keine Aenderung an Cores, Modelfile, Datenbankschema, Installer oder Warteschlange.
 
 ## 0.6.19 - 05.11.2026
