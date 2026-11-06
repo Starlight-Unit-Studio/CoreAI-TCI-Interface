@@ -50,7 +50,7 @@
     if (!button) return;
     var off = reason();
     var busy = !!job;
-    var text = rec ? 'Aufnahme beenden und senden' : (busy ? 'Sprachnachricht wartet auf Mara' : (off || 'Sprachnachricht aufnehmen'));
+    var text = rec ? 'Stimmsequenz beenden und senden' : (busy ? 'Stimmsequenz wartet auf Mara' : (off || 'Stimmsequenz aufnehmen'));
     button.classList.toggle('recording', !!rec);
     button.classList.toggle('working', busy);
     button.setAttribute('aria-disabled', off && !rec ? 'true' : 'false');
@@ -166,7 +166,7 @@
 
   function toggle() {
     if (rec) { stop(true); return; }
-    if (job) { say('Die letzte Sprachnachricht wartet noch, bis Mara fertig ist.'); return; }
+    if (job) { say('Deine letzte Stimmsequenz wartet noch, bis Mara ihre Antwort beendet hat.'); return; }
     var off = reason();
     if (off) { say(off); return; }
     if (Date.now() - state.checkedAt > 60000) loadStatus();
@@ -249,8 +249,8 @@
     if (!rec) return;
     var seconds = (Date.now() - rec.started) / 1000;
     var rms = level(rec);
-    show('recording', 'AUFNAHME ' + clock(seconds) + ' / ' + clock(state.maxSeconds),
-      'Sprich jetzt. Fertig oder Mikrofon-Knopf beendet die Aufnahme.');
+    show('recording', 'STIMMSEQUENZ ' + clock(seconds) + ' / ' + clock(state.maxSeconds),
+      'Sprich jetzt. Mit „Fertig“ oder dem Mikrofonknopf beendest du die Stimmsequenz.');
     var bar = strip && strip.querySelector('.voice-input-level i');
     if (bar) bar.style.width = Math.min(100, Math.round(rms * 600)) + '%';
     if (seconds >= state.maxSeconds) stop(true);
@@ -281,7 +281,7 @@
       return;
     }
     var blob = new Blob(current.chunks, { type: current.type });
-    if (!blob.size) { say('Die Aufnahme ist leer.'); return; }
+    if (!blob.size) { say('Die Stimmsequenz ist leer.'); return; }
     var ext = current.type.indexOf('mp4') >= 0 ? 'm4a' : (current.type.indexOf('ogg') >= 0 ? 'ogg' : 'webm');
     var stamp = new Date();
     var pad = function (n) { return ('0' + n).slice(-2); };
@@ -301,15 +301,15 @@
     if (result === 'busy' && tries < 300) {
       job = { file: file, timer: setTimeout(function () { send(file, tries + 1); }, 1000) };
       render();
-      if (tries === 0) show('waiting', 'SPRACHNACHRICHT WARTET', 'Sie geht raus, sobald Mara fertig geantwortet hat.');
+      if (tries === 0) show('waiting', 'STIMMSEQUENZ WARTET', 'Ich sende sie, sobald ich meine vorherige Antwort abgeschlossen habe.');
       return;
     }
     job = null;
     render();
     say(result === 'full' ? 'Es sind schon zehn Anhänge ausgewählt. Bitte erst einen entfernen.'
-      : (result === 'editing' ? 'Während du eine Nachricht bearbeitest, geht keine Sprachnachricht.'
-      : (result === 'busy' ? 'Mara antwortet noch. Die Sprachnachricht wurde nicht gesendet.'
-      : 'Die Sprachnachricht ließ sich nicht senden.')));
+      : (result === 'editing' ? 'Während du eine Nachricht bearbeitest, kannst du keine Stimmsequenz senden.'
+      : (result === 'busy' ? 'Ich bin noch mit einer Antwort beschäftigt. Deine Stimmsequenz wurde nicht gesendet.'
+      : 'Die Stimmsequenz ließ sich nicht senden.')));
   }
 
   // The transcript, written on the server after Mara's answer, small under the

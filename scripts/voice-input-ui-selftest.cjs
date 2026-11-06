@@ -185,15 +185,15 @@ async function record(page, ms) {
     await page.waitForSelector('#btnMic');
     assert.equal(await page.evaluate(() => document.getElementById('btnMic').nextElementSibling.id), 'btnSend', 'next to send');
     assert.equal(await page.evaluate(() => document.querySelector('.composer-inner').classList.contains('has-mic')), true);
-    assert.equal(await page.getAttribute('#btnMic', 'aria-label'), 'Sprachnachricht aufnehmen');
+    assert.equal(await page.getAttribute('#btnMic', 'aria-label'), 'Stimmsequenz aufnehmen');
 
     // Record, see the time, "Fertig": the recording goes out at once as a voice message.
     await page.fill('#inputMessage', 'Hör mal:');
     await record(page, 1600);
-    assert.equal(await page.getAttribute('#btnMic', 'aria-label'), 'Aufnahme beenden und senden');
+    assert.equal(await page.getAttribute('#btnMic', 'aria-label'), 'Stimmsequenz beenden und senden');
     let s = await strip(page);
     assert.equal(s.mode, 'recording');
-    assert.match(s.title, /^AUFNAHME 0:0[12] \/ 2:00$/, 'time shown: ' + s.title);
+    assert.match(s.title, /^STIMMSEQUENZ 0:0[12] \/ 2:00$/, 'time shown: ' + s.title);
     await page.click('.voice-input-done');
     await until(page, () => window.__sent.length === 1);
     let voice = (await sent(page))[0];
@@ -221,8 +221,8 @@ async function record(page, ms) {
     await record(page, 1200);
     await page.click('.voice-input-done');
     await until(page, () => document.getElementById('voiceInputState').getAttribute('data-mode') === 'waiting');
-    assert.equal((await strip(page)).title, 'SPRACHNACHRICHT WARTET');
-    assert.equal(await page.getAttribute('#btnMic', 'aria-label'), 'Sprachnachricht wartet auf Mara');
+    assert.equal((await strip(page)).title, 'STIMMSEQUENZ WARTET');
+    assert.equal(await page.getAttribute('#btnMic', 'aria-label'), 'Stimmsequenz wartet auf Mara');
     await until(page, () => window.__sent.length === 5 && window.__sent[4].answer === 'ok', null, 6000);
     assert.equal((await strip(page)).hidden, true, 'sent after Mara answered');
     // ... or is dropped on "Abbrechen".

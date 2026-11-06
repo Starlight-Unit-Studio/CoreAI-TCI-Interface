@@ -157,7 +157,7 @@ const windowFull = work.create({events:[
 ],expanded:true});
 assert(windowFull.textContent.includes('Kontextfenster (4096 Tokens)'),
   'the detected window size must be explained');
-assert(windowFull.textContent.includes('Das Kontextfenster von Core war voll (4096 Tokens)'),
+assert(windowFull.textContent.includes('Mein Kontextfenster war ausgeschöpft (4096 Tokens)'),
   'a full window must not be shown as a generic truncation');
 assert(windowFull.textContent.includes('Kontextfenster (Tokens)4096'),
   'the window size must be available in the details');
@@ -229,11 +229,11 @@ const coreWording = work.create({expanded:true,events:coreTitles.map((title,n)=>
   id:400+n,kind:'model',state:n%3 ? 'info' : 'error',title,meta:{model:'gemma4:31b-cloud'}}))});
 assert(!/Modell|Core-Aufruf|Core-Übertragung/.test(coreWording.textContent),
   'no "Modell" or "Core-Aufruf" anywhere in the visible work history');
-assert(coreWording.textContent.includes('Ich bereite Core vor. Eine Antwort liegt noch nicht vor.')
-  && coreWording.textContent.includes('Core arbeitet jetzt. Ich warte auf das vollständige Ergebnis.')
-  && coreWording.textContent.includes('Core hat keine bestätigte vollständige Antwort geliefert. Ich prüfe die Ursache.'),
+assert(coreWording.textContent.includes('Ich bereite meine Antwort vor. Sie ist noch nicht fertig.')
+  && coreWording.textContent.includes('Ich bearbeite deine Anfrage.')
+  && coreWording.textContent.includes('Ich konnte meine Antwort nicht vollständig abschließen. Ich prüfe die Ursache.'),
   'the #115 sentences are phrased naturally');
-assert.equal(work.displayTitle('Modellstream gestartet'),'Core arbeitet');
+assert.equal(work.displayTitle('Modellstream gestartet'),'Ich bearbeite deine Anfrage');
 assert.equal(work.normalize({id:1,kind:'model',state:'info',title:'Modellstream gestartet'}).title,
   'Modellstream gestartet','the stored event name itself is not renamed');
 
@@ -507,13 +507,13 @@ const voice = work.create({events:[
   {id:1003,kind:'tool',state:'success',title:'Aufnahme mitgeschrieben',meta:{parts:1}},
   {id:1004,kind:'model',state:'running',title:'Aufnahme wird angehoert',meta:{}},
 ],expanded:true});
-assert(voice.textContent.includes('Core schreibt die Aufnahme zuerst mit, damit ich sicher auf die neue Nachricht antworte.'),
+assert(voice.textContent.includes('Ich erstelle zuerst eine Mitschrift deiner Stimmsequenz, damit ich auf deine aktuelle Nachricht eingehen kann.'),
   'the transcript step is told plainly');
 assert(!voice.textContent.includes('Der Abschluss steht noch aus'), 'no open step left in a voice turn');
 const oldVoice = work.create({events:[
   {id:1101,kind:'tool',state:'running',title:'Core schreibt die Aufnahme mit (Teil 1 von 1)',meta:{}},
 ],expanded:true});
-assert(oldVoice.textContent.includes('Core schreibt die Aufnahme zuerst mit') && !oldVoice.textContent.includes('Der Abschluss steht noch aus'),
+assert(oldVoice.textContent.includes('Ich erstelle zuerst eine Mitschrift deiner Stimmsequenz') && !oldVoice.textContent.includes('Der Abschluss steht noch aus'),
   'older runs from 0.6.20 and 0.6.21 read the same');
 assert(work.substantive([{id:1,kind:'tool',state:'running',title:'Aufnahme wird mitgeschrieben',meta:{}}]),
   'a voice turn keeps its work path under the answer');

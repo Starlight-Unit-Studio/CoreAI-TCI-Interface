@@ -6,7 +6,7 @@
   <meta name="language" content="de-DE" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#f0f4fa" />
-  <meta name="application-version" content="0.6.23" />
+  <meta name="application-version" content="0.6.24" />
   <meta name="application-name" content="CoreAI: TCI Interface" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface - Einstellungen</title>
@@ -49,7 +49,7 @@
           <h1>EINSTELLUNGEN</h1>
         </div>
       </div>
-      <div class="settings-version">COREAI: TCI INTERFACE // v0.6.23</div>
+      <div class="settings-version">COREAI: TCI INTERFACE // v0.6.24</div>
     </header>
 
     <!-- 0.5.79: one page, categories as tabs. Each category is its own view
@@ -326,11 +326,11 @@
                 <span class="settings-switch"><input id="aiMemoryEnabled" type="checkbox" /><i aria-hidden="true"></i></span>
               </label>
               <label class="setting-row" for="voiceAutoRead" id="voiceAutoReadRow" hidden>
-                <span class="setting-copy"><strong>ANTWORTEN AUTOMATISCH VORLESEN</strong><small id="voiceAutoReadNote">Eve liest neue Antworten von selbst vor.</small></span>
+                <span class="setting-copy"><strong>ANTWORTEN AUTOMATISCH VORLESEN</strong><small id="voiceAutoReadNote">Mara liest neue Antworten auf Wunsch automatisch vor.</small></span>
                 <span class="settings-switch"><input id="voiceAutoRead" type="checkbox" /><i aria-hidden="true"></i></span>
               </label>
               <label class="settings-field voice-terms-field" for="voiceTerms" id="voiceTermsRow" hidden>
-                <span><strong>NAMEN UND BEGRIFFE FÜR SPRACHNACHRICHTEN</strong><small>Ein Begriff pro Zeile: Orte, Namen oder Fachwörter, die Core in deinen Sprachnachrichten falsch versteht. Core und Mara schreiben sie dann genau so. Höchstens 40.</small></span>
+                <span><strong>NAMEN UND BEGRIFFE FÜR STIMMSEQUENZEN</strong><small>Ein Begriff pro Zeile: Orte, Namen oder Fachwörter, die Mara in deinen Stimmsequenzen möglicherweise falsch erkennt. Damit unterstützt du ihre Mitschrift. Höchstens 40.</small></span>
                 <textarea id="voiceTerms" rows="4" maxlength="2400" spellcheck="false" autocomplete="off" placeholder="Bergisch Gladbach"></textarea>
                 <em id="voiceTermsState" role="status" aria-live="polite"></em>
               </label>
@@ -350,7 +350,7 @@
                 <div><span>SPEICHER</span><h3 id="aiCtxTitle">Kontextfenster</h3></div>
               </header>
               <div class="settings-field settings-ctx" id="aiCtxField">
-                <span><strong>KONTEXTFENSTER (num_ctx)</strong><small>Obergrenze für Eingabe, Verlauf, Werkzeugergebnisse und Antwort eines lokalen Core. Größere Fenster brauchen mehr Speicher und können langsamer werden. Der Wert ist eine Obergrenze, nicht die tatsächlich gefüllte Länge.</small></span>
+                <span><strong>KONTEXTFENSTER (num_ctx)</strong><small>Obergrenze für Eingabe, Verlauf, Werkzeugergebnisse und Antwort eines lokalen Cores. Größere Fenster brauchen mehr Speicher und können langsamer werden. Der Wert ist eine Obergrenze, nicht die tatsächlich gefüllte Länge.</small></span>
                 <label class="setting-row ctx-default-row" for="aiCtxDefault">
                   <span class="setting-copy"><strong>CORE-STANDARD ÜBERNEHMEN</strong><small>Kein Override: der lokale Core behält das Fenster aus seinem Modelfile. Voreinstellung für jedes Konto.</small></span>
                   <span class="settings-switch"><input id="aiCtxDefault" type="checkbox" checked /><i aria-hidden="true"></i></span>
@@ -549,7 +549,7 @@
               <div class="about-copy">
                 <span class="settings-kicker">HERAUSGEBER UND PROJEKTZUORDNUNG</span>
                 <h2 id="aboutTitle"><span class="about-family">QUANTUM SOFTWARE</span><span class="about-product">COREAI: TCI INTERFACE</span></h2>
-                <p>CoreAI: TCI Interface ist Teil der Quantum-Softwarefamilie. Eigenständiges, isoliertes WebUI für Mara und den lokalen E.M.B.E.R.-Kern. Die Versionierung bleibt bis zur finalen Repack-Aufnahme getrennt.</p>
+                <p>CoreAI: TCI Interface ist Teil der Quantum-Softwarefamilie. Eigenständiges, isoliertes WebUI, in dem Mara als einheitliche TCI über das E.M.B.E.R.-Framework arbeitet. Die Versionierung bleibt bis zur finalen Repack-Aufnahme getrennt.</p>
                 <p class="copyright-line">© 2023-2026 <strong>Patrick Schildgen</strong> · Starlight Unit Studios. Alle Rechte vorbehalten.</p>
               </div>
             </section>
@@ -839,8 +839,8 @@
   </div>
 
   <script src="./js/coreui-settings-tabs.js?v=1135950849260775405607445"></script>
-  <script src="./js/coreui-context-slider.js?v=0071279618529070371071429"></script>
-  <script src="./js/settings.js?v=1030207897755271253960152"></script>
+  <script src="./js/coreui-context-slider.js?v=1058131433773441189843644"></script>
+  <script src="./js/settings.js?v=0527608013016496035660496"></script>
   <script src="./js/coreui-personalization-settings.js?v=1055555289996254500304399"></script>
   <script src="./js/admin.js?v=0876858939640698403610180"></script>
   <script src="./js/coreui-voice-read.js?v=0593983730870206685697575"></script>

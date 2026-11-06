@@ -126,7 +126,7 @@
         estimate.textContent = info.default_context
           ? 'Core-Standard: ' + fullTokens(info.default_context) + ' · geschätzt: '
             + (text || (label === 'RAM' ? 'RAM-Bedarf' : 'Speicherbedarf') + ' derzeit nicht zuverlässig schätzbar')
-          : 'Core-Standard: Fenster aus dem Modelfile dieses Core, derzeit nicht ermittelbar';
+          : 'Core-Standard: Fenster aus dem Modelfile dieses Cores, derzeit nicht ermittelbar';
       } else {
         estimate.textContent = 'geschätzt: ' + (text
           || (label === 'RAM' ? 'RAM-Bedarf' : 'Speicherbedarf') + ' derzeit nicht zuverlässig schätzbar');

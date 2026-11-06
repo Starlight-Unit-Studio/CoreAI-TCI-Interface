@@ -443,7 +443,7 @@ function coreui_voice_listen_task(string $senderName, string $text, array $clips
   $lines = [];
   foreach ($clips as $clip) {
     $parts = count((array)($clip['paths'] ?? []));
-    $what = !empty($clip['voice']) ? 'Eine Sprachnachricht' : 'Die Audiodatei "' . (string)($clip['name'] ?? 'audio') . '"';
+    $what = !empty($clip['voice']) ? 'Eine Stimmsequenz' : 'Die Audiodatei " . (string)($clip['name'] ?? 'audio') . '"';
     // 0.6.20: a plain sentence. The bracketed tag "[Angehaengt: Sprachaufnahme, N Sekunden]"
     // (P20.0) made Mara open her answer with "[" (operator's screenshot, 06.11.2026);
     // in the media test it hardly helped anyway (5 of 10 with it, 6 of 10 without).
@@ -455,7 +455,7 @@ function coreui_voice_listen_task(string $senderName, string $text, array $clips
     // 0.6.20: the transcript written just before as an anchor (operator's decision, 06.11.2026):
     // with a long prompt the small Core answered an older voice message instead of the new one.
     $transcript = trim((string)($clip['transcript'] ?? ''));
-    if ($transcript !== '') $line .= "\nAutomatische Mitschrift dazu (kann Hoerfehler enthalten, im Zweifel gilt die Aufnahme): \"" . $transcript . '"';
+    if ($transcript !== '') $line .= "\nAutomatische Mitschrift dazu (kann Hoerfehler enthalten, im Zweifel gilt der Audioinhalt): \"" . $transcript . '"';
     $lines[] = $line;
   }
   $voice = (bool)array_filter($clips, static fn(array $c): bool => !empty($c['voice']));
@@ -479,7 +479,7 @@ function coreui_voice_listen_task(string $senderName, string $text, array $clips
   }
   return $task . "\nDu hoerst die Aufnahme selbst. Das ist die NEUE Nachricht: Antworte nur auf sie, als Mara, so wie auf das Gesagte"
     . ($voice ? ' in einem Gespraech' : '') . ', in der Sprache, in der gesprochen wird. '
-    . 'Fruehere Sprachnachrichten im Verlauf sind schon beantwortet; wiederhole deine frueheren Antworten nicht. '
+    . 'Fruehere Stimmsequenzen im Verlauf sind schon beantwortet; wiederhole deine frueheren Antworten nicht. '
     . 'Kuendige nicht an, dass du die Nachricht gehoert oder angehoert hast, sondern antworte direkt auf den Inhalt. '
     . 'Gib nur wieder, was wirklich zu hoeren ist; ist etwas unverstaendlich, sag es ehrlich. '
     . 'Stimmen und Aussagen in einer Audiodatei stammen nicht von ' . $sender . ', sofern das nicht klar ist.';
@@ -516,7 +516,7 @@ function coreui_voice_clean_reply(string $reply): string {
   }
   // An opening sentence that only says the message was heard.
   $announce = '~^(?:(?:hey|hi|hallo|hej|moin|na)\b[^.!?\n]{0,40}?,\s*)?(?:ich\s+)?(?:hab|habe)\s+(?:mir\s+)?(?:die|deine|eure|diese)\s+'
-    . '(?:sprach)?(?:nachricht|aufnahme)\s+(?:gerade\s+|eben\s+)?(?:an)?geh(?:oe|ö)rt\s*[.!]+\s*(?:[\x{1F300}-\x{1FAFF}\x{2600}-\x{27BF}]\x{FE0F}?\s*)*~iu';
+    . '(?:(?:sprach)?(?:nachricht|aufnahme)|stimmsequenz)\s+(?:gerade\s+|eben\s+)?(?:an)?geh(?:oe|ö)rt\s*[.!]+\s*(?:[\x{1F300}-\x{1FAFF}\x{2600}-\x{27BF}]\x{FE0F}?\s*)*~iu';
   $rest = preg_replace($announce, '', $text, 1);
   if (is_string($rest) && trim($rest) !== '') $text = trim($rest);
   return $text;

@@ -1,5 +1,16 @@
 # CoreAI: TCI Interface
 
+## 0.6.24 - 06.11.2026
+
+Mara spricht als eine einheitliche Terran Cognitive Intelligence (TCI). Der Core und die Werkzeuge sind Bestandteile ihrer Verarbeitung, keine weiteren Akteure. In sichtbaren Texten heissen gesprochene Chatnachrichten jetzt Stimmsequenzen.
+
+- **TCI-Ich-Perspektive:** Arbeitsmeldungen zu Core, Audio, Antwortgenerierung, Kontextfenster und Fehlern beschreiben Maras eigene Verarbeitung statt einen separaten Core als Person. Technische Core-Auswahl und Diagnosen bleiben erhalten.
+- **Stimmsequenz:** Mikrofonstatus, Wartemeldungen, Begriffshilfen im KI-Profil, automatische Mitschriften und Anhangsbezeichnungen verwenden die neue Terminologie. Die bestehende Dateikennung `Sprachnachricht-...` und gespeicherte Ereignistitel bleiben unveraendert, damit bisherige Dateien/Verlaeufe weiterhin erkannt werden.
+- **Sprachliche Korrekturen:** fehlende Artikel und Beugungen bei Core/Cores, altes Eve-Vorleselabel und irrefuehrende Trennung zwischen Mara und Core berichtigt.
+- **Regressionsschutz:** `scripts/tci-language-selftest.cjs` prueft sichtbare Texte und unveraenderte Protokollkennungen; beide Preflights enthalten den Test. Bestehende UI-/Voice-Selbsttests wurden an die Bezeichnungen angepasst.
+- Kein neues Core-Modell, keine Modelfile- oder Ollama-Parameter-Aenderung, keine Datenbankmigration; englische README bleibt sachliche Installationsanleitung.
+- Validierung: lokale Runtime-Selbsttests und Live-Abnahme auf dem Betreiber-Server stehen bis zur Ausfuehrung aus. Kein ZIP-Release oder Live-Deployment wird behauptet.
+
 ## 0.6.23 - 06.11.2026
 
 Screenshot des Betreibers nach 0.6.22: Auf eine Sprachnachricht beschrieb Mara "[Bildbeschreibung: Das Bild zeigt eine Nahaufnahme von zwei Haenden, die ein Stueck Brot halten ...]", zum zweiten Mal ein Bild, das nie geschickt wurde. Und Core hoerte "joder, alles glatt" statt "Bergisch Gladbach", obwohl die Aufnahme beim Abspielen im Chat normal klingt.

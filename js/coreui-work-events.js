@@ -49,7 +49,7 @@
     var windowSize = Number(event.meta.context_tokens) > 0
       ? ' (' + Number(event.meta.context_tokens) + ' Tokens)' : '';
     if (event.meta.reason === 'context_window_full' && event.state !== 'success') {
-      return 'Das Kontextfenster von Core war voll' + windowSize + '. Auftrag, Denkphase und Antwort '
+      return 'Mein Kontextfenster war ausgeschöpft' + windowSize + '. Auftrag, Denkphase und Antwort '
         + 'passten nicht gemeinsam hinein, deshalb endete die Ausgabe vorzeitig.';
     }
     // 0.6.22: older runs recorded one open step per part; they read like the new single step.
@@ -57,12 +57,12 @@
       title: 'Aufnahme wird mitgeschrieben', meta: event.meta});
     switch (event.title) {
       case 'Anhang wird angesehen':
-        return 'Ich sehe mir den Anhang an. Bilder, Videos und PDF-Seiten laufen bewusst über den Bildpfad von Core, nicht über den Textstream.';
+        return 'Ich sehe mir den Anhang an. Bilder, Videos und PDF-Seiten verarbeite ich über meinen Bildpfad.';
       case 'Aufnahme wird angehoert':
-        return 'Ich höre mir die Aufnahme selbst an, über den Audio-Eingang von Core, in Teilen von höchstens 60 Sekunden.';
+        return 'Ich höre mir deine Stimmsequenz an. Längere Sequenzen verarbeite ich in Abschnitten von höchstens 60 Sekunden.';
       case 'Aufnahme wird mitgeschrieben':
-        return 'Core schreibt die Aufnahme zuerst mit, damit ich sicher auf die neue Nachricht antworte. '
-          + 'Die Mitschrift steht danach klein unter der Sprachnachricht.';
+        return 'Ich erstelle zuerst eine Mitschrift deiner Stimmsequenz, damit ich auf deine aktuelle Nachricht eingehen kann. '
+          + 'Die Mitschrift erscheint anschließend unter deiner Stimmsequenz.';
       case 'Privates Wissen durchsucht':
         return Number(event.meta.knowledge_hits) > 0
           ? 'Ich habe in deinem hochgeladenen Wissen (RAG-Lite) gesucht und '
@@ -71,7 +71,7 @@
             + (event.meta.reason === 'followup_context' ? ', anhand des bisherigen Gesprächs' : '') + '.'
           : 'Ich habe in deinem hochgeladenen Wissen (RAG-Lite) gesucht, aber keinen passenden Abschnitt gefunden.';
       case 'Kontextfenster ermittelt':
-        return 'Der lokale Core arbeitet mit einem Kontextfenster' + windowSize + '. Ich teile Auftrag '
+        return 'Mir steht ein Kontextfenster' + windowSize + ' zur Verfügung. Ich teile Auftrag '
           + 'und Plan pro Datei so zu, dass Platz für den eigentlichen Quelltext bleibt.';
       case 'Projektdateien geplant':
         return Array.isArray(event.meta.file_list) && event.meta.file_list.length
@@ -98,19 +98,19 @@
       case 'Kontext vorbereitet':
         return 'Ich habe den Kontext vorbereitet. Als Nächstes prüfe ich, welche Antwort oder Werkzeugaktion erforderlich ist.';
       case 'Modellstream vorbereitet':
-        return 'Ich bereite Core vor. Eine Antwort liegt noch nicht vor.';
+        return 'Ich bereite meine Antwort vor. Sie ist noch nicht fertig.';
       case 'Modellstream gestartet':
       case 'Modellaufruf gestartet':
-        return 'Core arbeitet jetzt. Ich warte auf das vollständige Ergebnis.';
+        return 'Ich bearbeite deine Anfrage.';
       case 'Modellstream abgeschnitten':
         return 'Meine Ausgabe endete vorzeitig. Ich kann nur den bestätigten Text weiterverwenden.';
       case 'Modellstream empfangen':
         return event.meta.reason === 'output_truncated'
-          ? 'Core hat nur eine unvollständige Ausgabe geliefert. Ich prüfe, ob ich sie sicher fortsetzen kann.'
+          ? 'Meine Ausgabe ist unvollständig. Ich prüfe, ob ich sie sicher fortsetzen kann.'
           : 'Meine Antwort ist eingetroffen. Ich prüfe jetzt, ob sie vollständig und für den Auftrag verwendbar ist.';
       case 'Modellstream fehlgeschlagen':
       case 'Modellaufruf ohne Antwort':
-        return 'Core hat keine bestätigte vollständige Antwort geliefert. Ich prüfe die Ursache.';
+        return 'Ich konnte meine Antwort nicht vollständig abschließen. Ich prüfe die Ursache.';
       case 'Kurze Werkzeugentscheidung nicht bestaetigt':
         return 'Ich konnte die Werkzeugentscheidung nicht sicher bestätigen. Deshalb starte ich keinen unbelegten Projektbau.';
       case 'Mara hat die Umsetzung des gespeicherten Plans gewaehlt':
@@ -135,7 +135,7 @@
       case 'Quelldatei ausgeblieben':
         if (event.meta.reason === 'model_output_truncated'
             && Number(event.meta.source_chars) === 0) {
-          return 'Core hat für ' + file + ' noch keinen sichtbaren Quelltext geliefert. Ich kann daraus keine Datei bestätigen; im Detail stehen Ausgabe- und Denkstatus-Längen.';
+          return 'Ich habe für ' + file + ' noch keinen sichtbaren Quelltext erzeugt. Ich kann daraus keine Datei bestätigen; im Detail stehen Ausgabe- und Denkstatus-Längen.';
         }
         return 'Für ' + file + ' fehlt noch ein nutzbares Ergebnis. Ich prüfe den Fehlergrund; ein fertiges Dateipaket kann ich damit nicht bestätigen.';
       case 'JavaScript-Ausgabe fortgesetzt':
@@ -196,7 +196,7 @@
       case 'Antwort blieb nach Fortsetzung unvollstaendig':
         return 'Meine Antwort ist trotz Fortsetzung noch unvollständig. Der vorhandene Teil bleibt erhalten; er ist kein bestätigter Abschluss.';
       case 'Modellstream unvollstaendig':
-        return 'Die Übertragung von Core war unvollständig. Ich prüfe den Werkzeug- oder Ersatzweg, ohne den Abbruch zu verschweigen.';
+        return 'Meine Antwortübertragung war unvollständig. Ich prüfe den Werkzeug- oder Ersatzweg, ohne den Abbruch zu verschweigen.';
       case 'Antwort gespeichert':
         return 'Die Antwort ist im privaten Verlauf gesichert. Die einzelnen Schritte bleiben im Verlauf verfügbar.';
       case 'Auftrag auf Wunsch abgebrochen':
@@ -482,24 +482,26 @@
   // names, API fields and logs keep their technical identifiers; only the
   // visible label is phrased naturally.
   var DISPLAY_TITLES = {
-    'Modellstream vorbereitet':'Core wird vorbereitet',
-    'Modellstream gestartet':'Core arbeitet',
-    'Modellaufruf gestartet':'Core arbeitet',
-    'Modellstream empfangen':'Antwort von Core empfangen',
-    'Modellantwort empfangen':'Antwort von Core empfangen',
-    'Modellantwort erhalten':'Antwort von Core erhalten',
-    'Modellstream abgeschnitten':'Ausgabe von Core abgeschnitten',
-    'Modellstream fehlgeschlagen':'Core ohne vollständige Antwort',
-    'Modellaufruf ohne Antwort':'Core ohne Antwort',
-    'Modellstream unvollstaendig':'Übertragung von Core unvollständig',
-    'Modellwarteschlange nicht verfuegbar':'Warteschlange von Core nicht verfügbar'
+    'Modellstream vorbereitet':'Ich bereite meine Antwort vor',
+    'Modellstream gestartet':'Ich bearbeite deine Anfrage',
+    'Modellaufruf gestartet':'Ich bearbeite deine Anfrage',
+    'Modellstream empfangen':'Ich prüfe meine Antwort',
+    'Modellantwort empfangen':'Ich prüfe meine Antwort',
+    'Modellantwort erhalten':'Ich prüfe meine Antwort',
+    'Modellstream abgeschnitten':'Meine Ausgabe wurde unterbrochen',
+    'Modellstream fehlgeschlagen':'Meine Antwort ist unvollständig',
+    'Modellaufruf ohne Antwort':'Ich konnte noch nicht antworten',
+    'Modellstream unvollstaendig':'Meine Antwortübertragung ist unvollständig',
+    'Modellwarteschlange nicht verfuegbar':'Meine Warteschlange ist nicht verfügbar'
   };
   function displayTitle(title) {
     var text = String(title || '');
     if (Object.prototype.hasOwnProperty.call(DISPLAY_TITLES, text)) return DISPLAY_TITLES[text];
     // Future titles: never show the word "Modell" in the interface.
-    return text.replace(/Modellantwort/g, 'Antwort von Core')
-      .replace(/Modell(?:stream|aufruf)?/g, 'Core');
+    return text.replace(/Modellantwort/g, 'Antwort')
+      .replace(/Modellstream/g, 'Antwortübertragung')
+      .replace(/Modellaufruf/g, 'Verarbeitung')
+      .replace(/Modell/g, 'Core');
   }
 
   // Claude-Code-like flow: Mara's meaningful progress reads as normal text,
@@ -570,8 +572,8 @@
 
   var ACTIVITY = {
     'Auftrag gestartet':'Ich starte den Auftrag','Kontext vorbereitet':'Kontext vorbereitet',
-    'Modellstream vorbereitet':'Core wird vorbereitet','Modellstream gestartet':'Core denkt nach',
-    'Modellaufruf gestartet':'Core denkt nach','Modellstream empfangen':'Ich prüfe die Antwort',
+    'Modellstream vorbereitet':'Ich bereite meine Antwort vor','Modellstream gestartet':'Ich bearbeite deine Anfrage',
+    'Modellaufruf gestartet':'Ich bearbeite deine Anfrage','Modellstream empfangen':'Ich prüfe die Antwort',
     'Einzeldatei angefordert':'Fordere {f} an','Fehlende Quelldatei angefordert':'Fordere {f} an',
     'Quelldatei wird erzeugt':'Schreibe {f}','Quelldatei empfangen':'Prüfe {f}',
     'Fehlender Quelltext-Teil wird erzeugt':'Setze {f} fort',
@@ -579,8 +581,8 @@
     'Python-Job eingereiht':'Python läuft','Werkzeugantwort wird einmal korrigiert':'Korrigiere die Werkzeugantwort',
     'Mara hat selbst den Projekt-Writer aufgerufen':'Starte den Projekt-Writer',
     'Projektdateien geplant':'Plane die Projektdateien','Kontextfenster ermittelt':'Plane den Kontext',
-    'Privates Wissen durchsucht':'Durchsuche dein Wissen','Anhang wird angesehen':'Sehe mir den Anhang an','Aufnahme wird angehoert':'Höre mir die Aufnahme an',
-    'Aufnahme wird mitgeschrieben':'Schreibe die Aufnahme mit',
+    'Privates Wissen durchsucht':'Durchsuche dein Wissen','Anhang wird angesehen':'Ich sehe mir den Anhang an','Aufnahme wird angehoert':'Ich höre die Stimmsequenz an',
+    'Aufnahme wird mitgeschrieben':'Ich schreibe die Stimmsequenz mit',
     'Websuche gestartet':'Prüfe Webquellen','Websuche beendet':'Ordne Quellen ein'
   };
   function activity(event) {

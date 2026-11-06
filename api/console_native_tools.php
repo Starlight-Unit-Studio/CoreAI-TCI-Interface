@@ -647,7 +647,7 @@ function coreui_native_tool_apply(
           . (int)$saved['version'] . ' gesichert. '
           . ($autoSegments > 0
             ? 'Ich habe selbststaendig ' . $autoSegments . ' weitere Teilabschnitte geschrieben. '
-            : 'Ein weiterer Planabschnitt von Core konnte noch nicht bestaetigt werden. ')
+            : 'Ich konnte einen weiteren Planabschnitt noch nicht sicher abschliessen. ')
           . 'Der Markdown-Download ist vorhanden; die Planung ist noch nicht abgeschlossen. '
           . 'Es wurde kein Projektbau gestartet.';
       }

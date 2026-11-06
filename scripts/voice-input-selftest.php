@@ -109,7 +109,7 @@ vi_test(coreui_voice_length(149.98) === '02:30' && coreui_voice_length(150.008) 
 
 $task = coreui_voice_listen_task('Patrick', '', [['voice' => true, 'seconds' => 120.0, 'paths' => ['a', 'b', 'c'],
   'stamps' => ['00:00', '00:51', '01:43'], 'truncated' => true]]);
-vi_test(str_starts_with($task, 'Patrick hat dir gesprochen:') && str_contains($task, "\nEine Sprachnachricht von 120 Sekunden, als 3 Audioteile")
+vi_test(str_starts_with($task, 'Patrick hat dir gesprochen:') && str_contains($task, "\nEine Stimmsequenz von 120 Sekunden, als 3 Audioteile")
   && str_contains($task, 'als 3 Audioteile nacheinander (Beginn 00:00, 00:51, 01:43)') && str_contains($task, 'nur die ersten 02:00 Minuten')
   && str_contains($task, 'Du hoerst die Aufnahme selbst.') && !str_contains($task, 'schreibt'), 'Mara is told she hears the recording, in how many WAVs');
 $task = coreui_voice_listen_task('Patrick', 'Was meinst du?', [['voice' => false, 'name' => 'besprechung.mp3', 'seconds' => 42.0,

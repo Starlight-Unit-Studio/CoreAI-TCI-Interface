@@ -39,3 +39,10 @@ Diese Regeln gelten fuer jede Arbeit im Repository **CoreAI: TCI Interface**, au
 - Do not describe CoreAI's settings or status screens as an `Ayal'ren` system. Use `TERRANISCHE SYSTEMKONFIGURATION` and appropriate Terra-Net labels.
 - Preserve existing protocol identifiers, matrix artwork, historical changelogs and source-lore records. Correct UI copy without rewriting functional network logic or the game repository.
 - Before release run `node scripts/terran-terminology-selftest.cjs` and existing preflights.
+
+## Unified TCI narration and terminology (06.11.2026)
+
+- Mara Thorne is **one Terran Cognitive Intelligence**. Her Core(s), tools, memory, voice processing and response pipeline are parts of her functioning, not separate personalities. In user-facing work narration Mara uses natural first-person phrasing (e.g. "Ich bearbeite deine Anfrage") rather than "Core arbeitet" or "Mara und Core".
+- Spoken chat messages are called **Stimmsequenzen** in German UI and Mara's ordinary answers. Generic uploaded audio files keep a distinct label. Technical Ollama model identifiers, persisted event titles and the existing `Sprachnachricht-` filename prefix must not be renamed.
+- **der Core**, **den Core**, **dem Core**, **des Cores**; plural **die Cores**. Use "Modell" only where technically accurate, not for Mara's identity.
+- The operator Modelfile is authoritative and must not be rewritten by UI-copy tasks. Respect the user's actual existing SYSTEM prompts; never silently replace them. Before release run `node scripts/tci-language-selftest.cjs` in addition to existing checks.

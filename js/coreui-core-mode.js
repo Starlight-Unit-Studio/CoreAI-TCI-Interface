@@ -416,7 +416,7 @@
       }
       if (!state.loaded || state.saving || value === state.override) return Promise.resolve(state.override);
       state.saving = true;
-      say('Core wird gewählt …');
+      say('Die Core-Auswahl wird gespeichert …');
       renderList();
       render();
       return request(API, 'POST', {action: 'core', model_override: value}).then(function (data) {
@@ -427,11 +427,11 @@
         if (data.preload === 'started') {
           state.loading = modelKey(data.model);
           state.polls = 0;
-          say('Core wird geladen …');
+          say('Der Core wird geladen …');
           schedule(poll, POLL_MS);
         } else {
           state.loading = '';
-          say(data.preload === 'cloud' ? 'Cloud-Core gewählt, er muss nicht geladen werden.' : 'Core ist bereits geladen.');
+          say(data.preload === 'cloud' ? 'Cloud-Core gewählt, er muss nicht geladen werden.' : 'Der Core ist bereits geladen.');
         }
       }).catch(function (error) {
         say(error.code === 'model_not_available' ? 'Dieser Core ist nicht mehr installiert.'
