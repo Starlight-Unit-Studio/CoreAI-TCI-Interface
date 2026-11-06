@@ -1,0 +1,8 @@
+CoreAI: TCI Interface 0.6.31 - 06.11.2026
+- Live-Gespraech (P20.4): Live-Knopf neben dem Mikrofon, Vollbild mit Begruessung, Zustand, Stummschalten, Beenden.
+- Freihaendig: Sprecherkennung im Browser (0,4 s Vorlauf, 0,9 s Pause), Unterbrechen durch Sprechen.
+- Je Runde: WAV-Stimmsequenz, Mitschrift, dann Text-Antwort von Mara Normal, Satz fuer Satz mit Eve; beide Seiten im Chat.
+- Fester Anfang jedes Aufrufs fuer den Ollama-Cache, Modelfile-SYSTEM unveraendert; Gedaechtnis nach dem Gespraech.
+- Neu: api/voice_live.php, api/voice_live_lib.php, js/coreui-voice-live.js; nginx-Freigabe.
+- Tests: voice-live-selftest.php (mit Datenbank auch ueber HTTP), voice-live-ui-selftest.cjs, beide Preflights.
+- Keine Aenderung an Cores, Modelfile, Datenbankschema, Installer oder Warteschlange.

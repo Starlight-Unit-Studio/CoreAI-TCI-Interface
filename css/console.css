@@ -3295,6 +3295,222 @@ audio.msg-image {
   opacity: 0.55;
 }
 
+/* 0.6.31 (P20.4): the live button next to the microphone and the full-screen live conversation. */
+.composer-inner.has-live:not(.has-mic) {
+  grid-template-columns: 52px minmax(0, 1fr) 46px 56px;
+}
+
+.composer-inner.has-mic.has-live {
+  grid-template-columns: 52px minmax(0, 1fr) 46px 46px 56px;
+}
+
+.composer-live-btn {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  place-items: center;
+  border: 0;
+  border-left: 1px solid rgba(91, 146, 255, 0.17);
+  background: transparent;
+  color: var(--cx);
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.composer-live-btn:hover {
+  background: rgba(91, 146, 255, 0.1);
+}
+
+.composer-live-btn svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 2.2;
+}
+
+.composer-live-btn[aria-disabled="true"] {
+  color: var(--muted-soft);
+  cursor: help;
+  opacity: 0.55;
+}
+
+html.live-open,
+html.live-open body {
+  overflow: hidden;
+}
+
+.live-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  padding: max(18px, env(safe-area-inset-top)) 18px max(22px, env(safe-area-inset-bottom));
+  background:
+    radial-gradient(120% 70% at 50% 100%, var(--panel-cx, rgba(91, 146, 255, 0.18)), transparent 70%),
+    var(--bg);
+  color: var(--txt);
+}
+
+.live-top {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-family: "Share Tech Mono", monospace;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  color: var(--muted);
+}
+
+.live-badge {
+  padding: 3px 9px;
+  border: 1px solid var(--line-strong, rgba(91, 146, 255, 0.45));
+  color: var(--cx);
+}
+
+.live-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  min-height: 0;
+  text-align: center;
+}
+
+.live-orb {
+  position: relative;
+  width: min(42vw, 190px);
+  aspect-ratio: 1;
+  margin-bottom: 14px;
+}
+
+.live-orb i,
+.live-orb b {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+}
+
+.live-orb i {
+  border: 2px solid var(--cx);
+  opacity: 0.35;
+  animation: live-ring 3.2s ease-in-out infinite;
+}
+
+.live-orb i:nth-child(2) { inset: 12%; animation-delay: -1.05s; }
+.live-orb i:nth-child(3) { inset: 24%; animation-delay: -2.1s; }
+
+.live-orb b {
+  inset: 34%;
+  background: radial-gradient(circle at 40% 35%, #fff 0%, var(--cx) 45%, rgba(91, 146, 255, 0.15) 100%);
+  box-shadow: var(--glow-cx, 0 0 24px rgba(100, 155, 255, 0.35));
+  animation: live-core 3.2s ease-in-out infinite;
+}
+
+.live-orb[data-state="preparing"] i { border-color: var(--amb); animation-duration: 1.6s; }
+.live-orb[data-state="preparing"] b { background: radial-gradient(circle at 40% 35%, #fff 0%, var(--amb) 50%, transparent 100%); }
+.live-orb[data-state="hearing"] i { opacity: 0.75; animation-duration: 0.9s; }
+.live-orb[data-state="hearing"] b { animation-duration: 0.9s; }
+.live-orb[data-state="thinking"] i { border-style: dashed; animation: live-spin 2.4s linear infinite; }
+.live-orb[data-state="thinking"] i:nth-child(2) { animation-direction: reverse; }
+.live-orb[data-state="speaking"] i { border-color: var(--green); opacity: 0.7; animation-duration: 1.1s; }
+.live-orb[data-state="speaking"] b { background: radial-gradient(circle at 40% 35%, #fff 0%, var(--green) 50%, transparent 100%); animation-duration: 0.55s; }
+.live-orb[data-state="muted"] i,
+.live-orb[data-state="failed"] i { animation: none; opacity: 0.2; border-color: var(--muted-soft); }
+.live-orb[data-state="muted"] b,
+.live-orb[data-state="failed"] b { animation: none; background: var(--muted-soft); box-shadow: none; opacity: 0.45; }
+
+@keyframes live-ring {
+  0%, 100% { transform: scale(0.94); opacity: 0.25; }
+  50% { transform: scale(1.04); opacity: 0.6; }
+}
+
+@keyframes live-core {
+  0%, 100% { transform: scale(0.92); }
+  50% { transform: scale(1.06); }
+}
+
+@keyframes live-spin {
+  to { transform: rotate(360deg); }
+}
+
+.live-greeting {
+  margin: 0;
+  max-width: 20ch;
+  font-family: "Rajdhani", "Segoe UI", sans-serif;
+  font-size: clamp(28px, 7vw, 44px);
+  font-weight: 600;
+  line-height: 1.12;
+}
+
+.live-status {
+  min-height: 1.4em;
+  margin: 0;
+  color: var(--cx);
+  font-family: "Share Tech Mono", monospace;
+  font-size: 14px;
+  letter-spacing: 0.06em;
+}
+
+.live-heard,
+.live-said {
+  max-width: 36ch;
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.live-heard { color: var(--muted); font-style: italic; }
+.live-said { color: var(--txt); }
+
+.live-controls {
+  display: flex;
+  justify-content: center;
+  gap: 28px;
+}
+
+.live-controls button {
+  display: grid;
+  width: 64px;
+  height: 64px;
+  place-items: center;
+  border: 1px solid var(--line-strong, rgba(91, 146, 255, 0.45));
+  border-radius: 50%;
+  background: var(--panel-solid, #fff);
+  color: var(--txt);
+  cursor: pointer;
+}
+
+.live-controls button:focus-visible {
+  outline: 2px solid var(--cx);
+  outline-offset: 3px;
+}
+
+.live-controls svg {
+  width: 26px;
+  height: 26px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.live-mute .live-icon-off { display: none; }
+.live-mute[aria-pressed="true"] { color: var(--red); }
+.live-mute[aria-pressed="true"] .live-icon-mic { display: none; }
+.live-mute[aria-pressed="true"] .live-icon-off { display: block; }
+.live-end { color: var(--red) !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  .live-orb i,
+  .live-orb b { animation: none !important; }
+}
+
 .composer-voice-state {
   display: grid;
   width: min(1120px, 100%);
@@ -4795,6 +5011,14 @@ a.core-install-btn {
   }
 
   .composer-inner.has-mic {
+    grid-template-columns: 46px minmax(0, 1fr) 42px 50px;
+  }
+
+  .composer-inner.has-mic.has-live {
+    grid-template-columns: 46px minmax(0, 1fr) 42px 42px 50px;
+  }
+
+  .composer-inner.has-live:not(.has-mic) {
     grid-template-columns: 46px minmax(0, 1fr) 42px 50px;
   }
 

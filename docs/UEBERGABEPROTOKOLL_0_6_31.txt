@@ -1,0 +1,43 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.31
+Stand: 06.11.2026
+Basis: main 0.6.30 nach Merge von PR #181.
+
+AUFTRAG: Live-Gespraech (P20.4) nach der Live-Probe. Entscheidungen des Betreibers (06.11.2026): Mitschrift als Text an
+Mara (kein WAV im Antwortaufruf), immer Mara Normal, freihaendig. Bedienung nach Screenshots des Betreibers: Live-Knopf
+neben dem Mikrofon, Vollbild mit Begruessung, Zustandsanzeige, Stummschalten, Beenden.
+
+MESSUNG (Live-Probe 0.6.30 beim Betreiber): Weg A (Mitschrift, dann Antwort) verstand zuverlaessig; B (Gehoert-Zeile)
+und C (nur WAV) nicht; Mara Plus hoerte die WAV im eigenen Aufruf nicht. Erster Satz Weg A: Plus ~16 s, Normal ~7 s,
+Schnell ~4,6 s. Neu gelesene Tokens je Runde ~1.100 bis 1.300 (kein Cache), vermutlich Audiodaten vorne in der Nachricht.
+Schwaeche der Probe: die drei Aufnahmen standen schon im Chat-Verlauf (Antworten teils kopiert), Zeiten unbeeinflusst.
+
+UMSETZUNG
+- api/voice_live_lib.php: coreui_live_pick_core (Tier normal, hoert, erlaubt, Maras Familie zuerst, keine Cloud, sonst
+  Chat-Core), coreui_live_take_sentences (Satzende . ! ? … vor Leerraum oder Zeilenumbruch; nicht nach Zahl, Einzel-
+  buchstabe, Abkuerzung; Stuecke unter 12 Zeichen warten), coreui_live_clean_reply (Marker, Markdown), coreui_live_context
+  (Name, Datum ohne Uhrzeit, KI-Profil, Gedaechtnis ohne Suchanfrage, Regeln fuer gesprochene Antworten),
+  coreui_live_messages (keine Systemnachricht fuer Cores mit eigenem SYSTEM), coreui_live_history (bis 10 Nachrichten
+  bis since_id, danach alle; Stimmsequenzen als reine Mitschrift, lange Antworten gleichbleibend gekuerzt), coreui_live_sse.
+- api/voice_live.php: status, warm, turn (SSE start/heard/silence/sentence/done/error; Mitschrift mit Begriffen und
+  Live-Core, Transkript-Cache, Nutzer-Nachricht mit Anhang, Antwort per ember_insert als reply_to; Abbruch durch den
+  Browser stoppt den Core-Strom, das bis dahin Gesagte wird gespeichert), say (Eve-Plan eines Satzes, Audio ueber
+  api/voice.php), end (Reflexion und Beziehungswert je Runde, nur eigene Nachrichten der Sitzung). Nie Gaeste, CSRF,
+  Tageslimit, Core-Freigaben, think false, Warteschlange, X-Accel-Buffering no.
+- js/coreui-voice-live.js, css/console.css, app.html: Knopf (Reihenfolge Mikrofon, Live, Senden per MutationObserver),
+  Vollbild, Zustaende (preparing, listening, hearing, thinking, speaking, muted, failed), ScriptProcessor mit RMS und
+  gleitender Rauschschwelle (Start 3x/0,015, beim Sprechen 5x/0,04 und 320 ms), Ende nach 900 ms Pause, min 300 ms
+  Stimme, max 58 s, WAV 16 kHz, Upload ueber console_upload.php ("Sprachnachricht-<Zeit>.wav"), Turn-Stream, Eve-Queue,
+  Wake Lock, Beenden mit end (keepalive) und Neuladen des Chats. js/console-app.js: CoreUIComposer.liveContext, reload.
+- nginx (beide Vorlagen) voice_live; Preflights: Pflichtliste, nginx-Pruefung, PHP- und UI-Selbsttest.
+
+GEPRUEFT (hier ausgefuehrt): php -l (neue und geaenderte PHP-Dateien), voice-live-selftest.php offline und mit MariaDB
+ueber HTTP (php -S, nachgebauter streamender Core), voice-live-ui-selftest.cjs (Chromium, Fake-Mikrofon, Tag und Nacht,
+Handy), tci-language-selftest.cjs, terran-terminology-selftest.cjs, volle Testreihe, cache-bust, version-merge-check gegen
+0.6.30. Screenshots der Live-Ansicht (Nacht, Tag, Handy) angesehen.
+NICHT HIER GEPRUEFT: echte Cores und Latenz, Eve im Live-Betrieb, Echo bei Lautsprecher am Handy, Android Chrome und DeX.
+
+NACH DEM MERGE (Betreiber):
+1. Update unter Einstellungen > System > CoreAI Update (nginx-Freigabe kommt mit dem Update).
+2. Im Chat auf den Live-Knopf neben dem Mikrofon tippen, Mikrofon erlauben, warten bis "Ich hoere zu".
+3. Drei Runden sprechen, einmal mittendrin dazwischenreden, mit X beenden. Danach stehen alle Runden im Chat.
+4. Rueckmeldung: Wartezeit je Runde, ob Mara sich durch den eigenen Lautsprecher unterbricht (Echo), ob Saetze fehlen.

@@ -2284,6 +2284,19 @@
       renderAttachmentList();
       processUploadQueue();
       return 'ok';
+    },
+    // 0.6.31 (P20.4): the live conversation works in the open chat and reloads it afterwards.
+    liveContext: function () {
+      var ses = activeSession();
+      if (!ses || !state.characterId) return null;
+      var last = Number(ses.last_message_id) || 0;
+      (state.messageCacheBySession[ses.id] || []).forEach(function (m) { last = Math.max(last, Number(m && m.id) || 0); });
+      return {sessionId: String(ses.id), characterId: String(state.characterId), lastMessageId: last,
+        busy: !!(state.waitingEmber || state.pendingBySession[ses.id])};
+    },
+    reload: function () {
+      var ses = activeSession();
+      return ses ? loadChatHistory(ses) : Promise.resolve();
     }
   };
 
