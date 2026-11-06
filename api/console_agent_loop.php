@@ -37,6 +37,27 @@ function coreui_agent_next_tool(string $reply, array $allowed): ?array {
   return null;
 }
 
+/**
+ * 0.6.22: the first https address in a browser goal, where the worker starts
+ * (pure), or null. The worker checks it again (safe_browser_url, no private
+ * hosts). Lets Mara send the browser straight to a page with a form, such as
+ * the place search of the WDR weather.
+ */
+function coreui_browse_goal_start_url(string $goal): ?string {
+  if (preg_match('~https://[^\s<>"\'\[\]{}|\\^`]+~u', $goal, $m) !== 1) return null;
+  $url = rtrim($m[0], '.,;:!?)');
+  if (strlen($url) > 2048 || filter_var($url, FILTER_VALIDATE_URL) === false) return null;
+  $parts = parse_url($url);
+  if (!is_array($parts) || ($parts['scheme'] ?? '') !== 'https' || ($parts['host'] ?? '') === ''
+      || isset($parts['user']) || isset($parts['pass'])) return null;
+  // No local or private address (the worker also resolves names and refuses private hosts).
+  $host = strtolower(trim((string)$parts['host'], '[]'));
+  if ($host === 'localhost' || str_ends_with($host, '.localhost')) return null;
+  if (filter_var($host, FILTER_VALIDATE_IP) !== false
+      && filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) return null;
+  return $url;
+}
+
 /** Work view title of a step (pure, ASCII as the work store requires). */
 function coreui_agent_step_title(array $tool, int $step, int $max): string {
   $what = ['web'=>'Websuche', 'archive'=>'Archiv durchsucht', 'python'=>'Python-Rechnung', 'browse'=>'Browser-Recherche',

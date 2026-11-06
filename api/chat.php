@@ -2534,6 +2534,7 @@ function ember_browse_capability_hint(): string {
     . "WICHTIG: Enthaelt die Bitte sowas wie \"guck mal richtig\", \"schau mal genauer\", \"recherchier mal\", "
     . "\"guck/schau selbst\", \"surf mal\", \"geh ins Netz\", \"schau dir das mal an\" -> dann IMMER [BROWSE:], NIEMALS [WEB:]. "
     . "Im Zweifel bei einer echten Recherche-Bitte lieber [BROWSE:].\n"
+    . coreui_weather_browse_hint() . "\n"
     . "Antworte in DIESEM Fall AUSSCHLIESSLICH mit genau EINER Zeile in genau diesem Format:\n"
     . "[BROWSE: was du herausfinden sollst]\n"
     . "und sonst GAR NICHTS (kein Zusatztext, keine Begruessung).";
@@ -2541,7 +2542,7 @@ function ember_browse_capability_hint(): string {
 
 function ember_browse_capability_hint_compact(): string {
   return "BROWSE: Fuer eine gruendliche Recherche auf echten Webseiten (\"recherchier mal\", "
-    . "\"schau selbst nach\") antworte nur mit einer Zeile [BROWSE: was du herausfinden sollst].";
+    . "\"schau selbst nach\") antworte nur mit einer Zeile [BROWSE: was du herausfinden sollst]. " . coreui_weather_browse_hint();
 }
 
 /**
@@ -2658,14 +2659,16 @@ function ember_browse_enqueue(
   // so the worker never loads a second Core next to the one in use.
   $model = ember_model();
   $numCtx = ember_profile_num_ctx($model);
+  // 0.6.22: an https address in the goal is where the worker starts (it checks it again).
+  $startUrl = coreui_browse_goal_start_url($goal);
   try {
     try {
       $st = $pdo->prepare(
         "INSERT INTO stu_ember_browse_jobs
-           (status, goal, channel, recipient_uid, session_id, trigger_message_id, trigger_user_id, max_steps, model, num_ctx)
-         VALUES ('queued', ?, ?, ?, ?, ?, ?, 12, ?, ?)"
+           (status, goal, start_url, channel, recipient_uid, session_id, trigger_message_id, trigger_user_id, max_steps, model, num_ctx)
+         VALUES ('queued', ?, ?, ?, ?, ?, ?, ?, 12, ?, ?)"
       );
-      $st->execute([$goal, $ch, $recipientUid, $sessionId, $triggerMessageId, $triggerUid, $model, $numCtx]);
+      $st->execute([$goal, $startUrl, $ch, $recipientUid, $sessionId, $triggerMessageId, $triggerUid, $model, $numCtx]);
     } catch (Throwable $eColumns) {
       // Table without the 0.5.77 columns: the worker falls back to STU_EMBER_MODEL.
       $st = $pdo->prepare(

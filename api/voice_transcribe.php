@@ -475,6 +475,7 @@ function coreui_voice_listen_task(string $senderName, string $text, array $clips
   if ($menu !== []) {
     $task .= "\nBrauchst du fuer die Antwort aktuelle Fakten, antworte NUR mit genau einem dieser Marker und sonst nichts; "
       . "das Ergebnis bekommst du sofort:\n- " . implode("\n- ", $menu);
+    if (in_array('browse', $tools, true) && function_exists('coreui_weather_browse_hint')) $task .= "\n" . coreui_weather_browse_hint();
   }
   return $task . "\nDu hoerst die Aufnahme selbst. Das ist die NEUE Nachricht: Antworte nur auf sie, als Mara, so wie auf das Gesagte"
     . ($voice ? ' in einem Gespraech' : '') . ', in der Sprache, in der gesprochen wird. '

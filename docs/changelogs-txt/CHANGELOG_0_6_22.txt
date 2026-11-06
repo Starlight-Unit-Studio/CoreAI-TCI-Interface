@@ -6,5 +6,9 @@ CoreAI: TCI Interface 0.6.22 - 06.11.2026
 - Arbeitsweg: Mitschrift als ein Schritt mit Abschluss (kein "Der Abschluss steht noch aus").
 - Werkzeuge nach Sprachnachrichten: [WEB:], [BROWSE:], [ARCHIV:] starten Maras Arbeitsschleife.
 - Live-Wetter im Websuche-Schritt: WDR-Vorhersage fuer NRW und Open-Meteo statt alter Suchtreffer.
-- Tests: voice-input, voice-read (Datenbank), voice-terms-ui (neu), weather-live (neu), web-search, work-events-ui.
+- WDR nach Analyse des Betreibers: "Prognose fuer" bis vor "Symbolerklaerungen", Stand hoechstens 36 h alt,
+  naechste der elf Regionen (Bergisch Gladbach: Koeln).
+- WDR-Ortssuche per Browser; der Browser startet an der https-Adresse im Auftrag (nie lokal oder privat).
+- Tests: voice-input, voice-read (Datenbank), voice-terms-ui (neu), weather-live (neu), web-search, work-events-ui,
+  agent-loop.
 - Keine Aenderung an Cores, Modelfile, Installer oder Warteschlange.

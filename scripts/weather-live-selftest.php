@@ -95,7 +95,9 @@ wx_test(mb_strlen($capped) <= COREUI_WEATHER_WDR_CHARS + 1 && mb_strlen($capped)
 $wdrAsked = 0;
 $wdrText = static function () use (&$wdrAsked, $wdr): string { $wdrAsked++; return $wdr; };
 $rows = coreui_weather_sources('Wetter Bergisch Gladbach heute', $getJson, $wdrText, '2026-11-06');
-wx_test(count($rows) === 2 && $rows[0]['url'] === COREUI_WEATHER_WDR_URL && $rows[0]['content'] === $wdr && $wdrAsked === 1
+wx_test(count($rows) === 2 && $rows[0]['url'] === COREUI_WEATHER_WDR_URL && $wdrAsked === 1
+  && $rows[0]['content'] === "Naechste WDR-Region zu Bergisch Gladbach: Köln (etwa 13 km entfernt). Fuer genau diesen Ort hat die WDR-Seite "
+    . "eine Ortssuche (PLZ oder Ort suchen).\n" . $wdr
   && $rows[1]['url'] === 'https://open-meteo.com/' && str_contains($rows[1]['title'], 'Bergisch Gladbach, Nordrhein-Westfalen, Deutschland')
   && $rows[1]['content'] === implode("\n", $lines) && $rows[0]['date'] === '2026-11-06',
   'a place in NRW: the WDR forecast first, then the live data of the place');
@@ -111,8 +113,69 @@ wx_test(coreui_weather_sources('Wetter Atlantis', $getJson, $wdrText) === [], 'u
 wx_test(coreui_weather_sources('ollama neu', $getJson, $wdrText) === [], 'no weather question: nothing');
 wx_test(coreui_weather_sources('Wetter Köln', static fn(string $u): ?array => null, $wdrText) === [], 'Open-Meteo unreachable: the search runs');
 
+// The real page as the operator's analysis and screenshot showed it (06.11.2026): navigation, list view and rain
+// radar, the place search, "Prognose für NRW", the day, the tabs, eleven regions with Max and Min, the map,
+// "Stand:", the forecast text, then the symbol legend, further articles and the footer. No CSS class is relied on.
+$regions = ['Aachen' => [9, 2], 'Bielefeld' => [9, 0], 'Bonn' => [10, 0], 'Dortmund' => [10, 0], 'Duisburg' => [11, 1],
+  'Düsseldorf' => [11, 0], 'Essen' => [10, 1], 'Köln' => [11, 1], 'Münster' => [10, 0], 'Siegen' => [10, -1], 'Wuppertal' => [11, 0]];
+$cards = '';
+foreach ($regions as $name => [$max, $min]) {
+  $cards .= '<li><a href="/nrw/wetter/nrw-wetter-138~_eam-x.html?eap=1"><span class="h">Region ' . htmlspecialchars($name) . '</span>'
+    . '<span class="t"><strong>Max: ' . $max . '&deg;</strong> | Min: ' . $min . '&deg;</span><img alt="leicht bewölkt" src="i.svg"></a></li>';
+}
+$page = '<!doctype html><html lang="de"><head><title>Wetter NRW - WDR</title><script>window.wx={"t":"88 Grad"};</script></head><body>'
+  . '<header><a href="/">WDR</a><nav><a>Mein NRW</a><a>Politik</a><a>Wirtschaft</a><a>Mehr</a></nav></header>'
+  . '<main><ol class="crumbs"><li>Wetter</li><li>Heute</li></ol><div><a href="liste.html">Listenansicht</a><a href="regenradar/index.html">Regenradar</a></div>'
+  . '<form action="/suche"><input placeholder="PLZ oder Ort suchen"><button>Suchen</button></form>'
+  . '<section><h2>Prognose für NRW</h2><p>Heute, 06.11.2026</p><div role="tablist"><button>Heute</button><button>Nachts</button><button>Morgen</button></div>'
+  . '<img src="https://exporte.wdr.de/rbWDRWetterWebsite/maps/nrw/nrw.day.png" alt="Karte NRW"><ul>' . $cards . '</ul>'
+  . '<p>Stand: 06.11.2026, 08:15 Uhr</p><h3>Wettervorhersage</h3><p>Heute erst grau und gebietsweise Regen, am Nachmittag von Westen '
+  . 'Auflockerungen. Höchstwerte 9 bis 11 Grad, im Bergland um 7 Grad.</p></section>'
+  . '<section><h2>Symbolerklärungen</h2><p>Sonne: klar</p><p>Wolke mit Regen: Regen</p></section>'
+  . '<section><h2>Weitere Beiträge zum Thema Wetter</h2><p>Herbststurm: 120 km/h am Kahlen Asten</p></section></main>'
+  . '<footer>Impressum · Datenschutz · 5 °C im Archiv</footer></body></html>';
+$real = coreui_weather_wdr_text($page);
+wx_test(str_starts_with($real, "Prognose für NRW\nHeute, 06.11.2026\nHeute\nNachts\nMorgen\nRegion Aachen Max: 9° | Min: 2°\n"),
+  'the forecast starts at "Prognose für NRW": ' . json_encode(mb_substr($real, 0, 120), JSON_UNESCAPED_UNICODE));
+wx_test(str_contains($real, "\nRegion Köln Max: 11° | Min: 1°\n") && str_contains($real, "\nRegion Siegen Max: 10° | Min: -1°\n")
+  && substr_count($real, 'Region ') === 11, 'all eleven regions with Max and Min, one line each');
+// The same cards with block elements: name and values on two lines.
+$blocky = coreui_weather_wdr_text(str_replace(['<span class="h">', '</span><span class="t">', '</span><img'], ['<h3>', '</h3><p>', '</p><img'], $page));
+wx_test(str_contains($blocky, "Region Köln\nMax: 11° | Min: 1°") && coreui_weather_wdr_region_values($blocky, 'Köln') === 'Max: 11° | Min: 1°',
+  'cards with headings: the values on the next line are found too');
+wx_test(str_contains($real, "Stand: 06.11.2026, 08:15 Uhr\nWettervorhersage\nHeute erst grau") && str_ends_with($real, 'im Bergland um 7 Grad.'),
+  'the time stamp and the forecast text, nothing after it');
+foreach (['Symbolerklärungen', 'Weitere Beiträge', 'Herbststurm', 'Listenansicht', 'Regenradar', 'PLZ oder Ort suchen', 'Mein NRW', 'Impressum', '88 Grad']
+    as $gone) wx_test(!str_contains($real, $gone), 'not in the forecast: ' . $gone);
+wx_test(coreui_weather_wdr_stand($real) === '2026-11-06 08:15' && coreui_weather_wdr_stand('Stand: 31.02.2026') === null
+  && coreui_weather_wdr_stand('ohne Zeit') === null, 'the "Stand:" of the forecast');
+wx_test(coreui_weather_wdr_region_values($real, 'Köln') === 'Max: 11° | Min: 1°'
+  && coreui_weather_wdr_region_values($real, 'Siegen') === 'Max: 10° | Min: -1°'
+  && coreui_weather_wdr_region_values("Region Bonn 10° / 0°", 'Bonn') === '10° / 0°'
+  && coreui_weather_wdr_region_values($real, 'Gummersbach') === '', 'the values of one region');
+$near = coreui_weather_wdr_region(50.99, 7.13);
+wx_test($near['name'] === 'Köln' && round($near['km']) === 13.0 && coreui_weather_wdr_region(51.96, 7.63)['name'] === 'Münster'
+  && coreui_weather_wdr_region(50.87, 8.02)['name'] === 'Siegen' && count(COREUI_WEATHER_WDR_REGIONS) === 11,
+  'the nearest of the eleven WDR regions: Bergisch Gladbach lies next to Köln');
+$rows = coreui_weather_sources('Wetter Bergisch Gladbach heute', $getJson, static fn(): string => $real, '2026-11-06');
+wx_test($rows[0]['title'] === 'WDR Wetter, Vorhersage fuer Nordrhein-Westfalen (Stand 06.11.2026, 08:15 Uhr)'
+  && str_starts_with($rows[0]['content'], 'Naechste WDR-Region zu Bergisch Gladbach: Köln (etwa 13 km entfernt), Max: 11° | Min: 1°. '),
+  'Mara gets the region next to the place with its values and the time stamp: ' . json_encode($rows[0], JSON_UNESCAPED_UNICODE));
+// A forecast from days ago (a region page carried "Stand: 02.11.2026" on 06.11.2026) is not today's weather.
+$old = str_replace('Stand: 06.11.2026, 08:15 Uhr', 'Stand: 02.11.2026, 14:00 Uhr', $real);
+$rows = coreui_weather_sources('Wetter Bergisch Gladbach heute', $getJson, static fn(): string => $old, '2026-11-06');
+wx_test(count($rows) === 1 && $rows[0]['url'] === 'https://open-meteo.com/', 'an old WDR forecast is left out');
+$late = str_replace('Stand: 06.11.2026, 08:15 Uhr', 'Stand: 05.11.2026, 22:00 Uhr', $real);
+wx_test(coreui_weather_sources('Wetter Bergisch Gladbach heute', $getJson, static fn(): string => $late, '2026-11-06')[0]['url']
+  === COREUI_WEATHER_WDR_URL, 'last night\'s forecast still counts');
+// The place search on the WDR page: Mara can send the browser there (operator's idea, 06.11.2026).
+wx_test(str_contains(coreui_weather_browse_hint(), '[BROWSE: WDR-Wetter <Ort> ueber die Ortssuche auf ' . COREUI_WEATHER_WDR_URL . ']')
+  && mb_strlen('WDR-Wetter Bergisch Gladbach ueber die Ortssuche auf ' . COREUI_WEATHER_WDR_URL) <= 200,
+  'the browser goal for the WDR place search fits the 200 characters of a goal');
+
 $block = coreui_weather_block(coreui_weather_sources('Wetter Bergisch Gladbach heute', $getJson, $wdrText, '2026-11-06'));
-wx_test(str_starts_with($block, "LIVE-WETTER (gerade abgerufen, aktueller als jede Suchtrefferliste):\n1. WDR Wetter, Vorhersage fuer Nordrhein-Westfalen (abgerufen 2026-11-06) [" . COREUI_WEATHER_WDR_URL . "]\n   Wettervorhersage für NRW")
+wx_test(str_starts_with($block, "LIVE-WETTER (gerade abgerufen, aktueller als jede Suchtrefferliste):\n1. WDR Wetter, Vorhersage fuer Nordrhein-Westfalen (abgerufen 2026-11-06) [" . COREUI_WEATHER_WDR_URL . "]\n   Naechste WDR-Region zu Bergisch Gladbach: Köln")
+  && str_contains($block, "\n   Wettervorhersage für NRW")
   && str_contains($block, "\n2. Live-Wetterdaten fuer Bergisch Gladbach") && str_contains($block, "\n   Heute (Fr 06.11.): 4 bis 10 °C"),
   'the block for Mara: numbered sources with their address, indented lines');
 wx_test(coreui_weather_block([]) === '', 'no sources, no block');
@@ -124,5 +187,10 @@ wx_test(str_contains($chat, "require_once __DIR__ . '/weather_live.php';")
   && strpos($chat, '$weather = ember_weather_live_sources($query);') < strpos($chat, '$rows = ember_web_search($query, ember_web_limit(), ember_web_timeout());')
   && str_contains($chat, "ember_cache_set('wxwdr:text', \$text);") && str_contains($chat, 'function ember_http_get_html('),
   'wired into the web step, before the search');
+wx_test(substr_count($chat, 'coreui_weather_browse_hint()') === 2 && str_contains($chat, '$startUrl = coreui_browse_goal_start_url($goal);')
+  && str_contains($chat, '$st->execute([$goal, $startUrl, $ch,'), 'Mara knows the WDR place search; the browser starts at the address of its goal');
+$voiceSrc = (string)file_get_contents($root . '/api/voice_transcribe.php');
+wx_test(str_contains($voiceSrc, "if (in_array('browse', \$tools, true) && function_exists('coreui_weather_browse_hint')) \$task .= \"\\n\" . coreui_weather_browse_hint();"),
+  'after a voice message too');
 
 echo "CoreAI live weather: WDR for NRW and live data for every place instead of old search snippets OK\n";

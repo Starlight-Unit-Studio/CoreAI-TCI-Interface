@@ -29,6 +29,16 @@ UMSETZUNG:
   Wetterfrage mit Ort -> Open-Meteo (Geocoding, jetzt plus 3 Tage), bei admin1 Nordrhein-Westfalen zuerst der
   lesbare Text der WDR-Seite (main-Teil, ohne Skripte, Navigation, Kopf, Fuss; nur mit Temperaturangabe; 1800
   Zeichen). Cache: Open-Meteo 10 Minuten, WDR-Text 15 Minuten. Kein Ort oder keine Quelle: normale Suche.
+- Nachtrag nach der WDR-Analyse des Betreibers (Upload "wdr_wetter_coreai_analyse.md" und Screenshot, 06.11.2026):
+  coreui_weather_wdr_text schneidet von "Prognose fuer" bis vor "Symbolerklaerungen"/"Weitere Beitraege"/"Mehr zum
+  Thema", Inline-Teile einer Zeile bleiben getrennt ("Region Aachen Max: 9° | Min: 2°"); coreui_weather_wdr_stand
+  liest "Stand:", aelter als 36 h -> kein WDR; coreui_weather_wdr_region (11 Regionen mit Koordinaten, naechste per
+  Entfernung) und coreui_weather_wdr_region_values. Keine CSS-Klassen, keine eap-Adressen, keine Regionsseiten.
+- coreui_weather_browse_hint() im Browse-Hinweis (normal und kompakt) und im Auftrag zur Sprachnachricht:
+  [BROWSE: WDR-Wetter <Ort> ueber die Ortssuche auf https://www1.wdr.de/nrw/wetter/wettervorhersage/index.html].
+  api/console_agent_loop.php coreui_browse_goal_start_url(): erste https-Adresse im Ziel wird start_url des
+  Browse-Jobs (keine Zugangsdaten, nicht localhost, keine privaten oder reservierten IP-Adressen; der Worker prueft
+  zusaetzlich mit safe_browser_url und navigation_block_reason).
 - js/coreui-voice-terms.js (neu), settings.html: Feld im KI-Profil (Antwort und Gedaechtnis), speichert 2 s nach dem
   Tippen und beim Verlassen, uebernimmt die bereinigte Liste, meldet Fehler; ohne Migration gesperrt.
 - js/coreui-voice-input.js: getUserMedia ohne noiseSuppression (echoCancellation und autoGainControl an),
@@ -36,7 +46,7 @@ UMSETZUNG:
 - js/coreui-work-events.js: Erzaehltext fuer "Aufnahme wird mitgeschrieben"; alte Titel "Core schreibt die Aufnahme
   mit (Teil N von M)" lesen sich genauso.
 
-GEPRUEFT (hier ausgefuehrt): voice-input-selftest.php, voice-read-selftest.php gegen MariaDB mit allen Migrationen
+GEPRUEFT (hier ausgefuehrt): agent-loop-selftest.php, voice-input-selftest.php, voice-read-selftest.php gegen MariaDB mit allen Migrationen
 (Migration 025 zweimal angewendet), voice-terms-ui-selftest.cjs, weather-live-selftest.php, web-search-selftest.php,
 work-events-ui-selftest.js, volle Testreihe, cache-bust, version-merge-check gegen 0.6.21.
 NICHT HIER GEPRUEFT: die echte WDR-Seite und Open-Meteo (aus der Entwicklungsumgebung gesperrt), die Hoerqualitaet
@@ -47,8 +57,11 @@ NACH DEM MERGE (Betreiber):
 2. Einstellungen > KI-Profil > "Namen und Begriffe fuer Sprachnachrichten": zum Beispiel Bergisch Gladbach, EVK.
 3. WDR-Pruefung auf dem Server:
    cd /opt/ember-coreui && sudo docker compose --project-name ember-coreui --env-file var/compose.env -f compose.yaml exec -T php php scripts/weather-live-selftest.php --live "Bergisch Gladbach"
-   Zeigt "WDR-Text: ja" und darueber einen lesbaren Vorhersagetext, nutzt Mara den WDR. Steht dort Menue- oder
-   Fremdtext, bitte die Ausgabe schicken, dann wird die Auswahl auf die Seite zugeschnitten.
+   Zeigt "WDR-Text: ja" und darueber "Naechste WDR-Region zu Bergisch Gladbach: Koeln ..., Max: ..." mit dem
+   Vorhersagetext, nutzt Mara den WDR. Steht dort Menue- oder Fremdtext oder fehlen die Werte, bitte die Ausgabe
+   schicken. Zeigt der erste Abruf eine 0 statt 200, erreicht der PHP-Container das Netz nicht (Transport, kein
+   Parserfehler).
 4. Eine Sprachnachricht mit "Bergisch Gladbach" und eine gesprochene Wetterfrage.
+5. WDR-Ortssuche: "Schau mal beim WDR genau fuer Bergisch Gladbach nach" (Browser-Recherche, meldet sich danach).
 
 OFFEN: Live-Audio (Messung angeboten), P20.4.

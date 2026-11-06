@@ -9,7 +9,9 @@ declare(strict_types=1);
  * ("Wetter Bergisch Gladbach heute") therefore gets live data instead:
  *
  *   - WDR Wetter NRW, the source the operator trusts most (06.11.2026), for a
- *     place in Nordrhein-Westfalen: the readable text of the forecast page;
+ *     place in Nordrhein-Westfalen: the forecast part of the page (from
+ *     "Prognose fuer" to the forecast text, before "Symbolerklaerungen"), with
+ *     its "Stand:" checked and the nearest of the eleven WDR regions named;
  *   - Open-Meteo for every place: now, today, tomorrow and the day after,
  *     from the weather models for that place (no key needed).
  *
@@ -23,6 +25,15 @@ const COREUI_WEATHER_WDR_URL = 'https://www1.wdr.de/nrw/wetter/wettervorhersage/
 const COREUI_WEATHER_WDR_REGION = 'Nordrhein-Westfalen';
 const COREUI_WEATHER_WDR_CHARS = 1800;
 const COREUI_WEATHER_DAYS = 3;
+// A WDR forecast older than this is not given as today's weather (a region page
+// was seen on 06.11.2026 with "Stand: 02.11.2026").
+const COREUI_WEATHER_WDR_MAX_AGE_HOURS = 36;
+// The eleven regions of the WDR overview (operator's analysis, 06.11.2026), with coordinates.
+const COREUI_WEATHER_WDR_REGIONS = [
+  'Aachen' => [50.776, 6.084], 'Bielefeld' => [52.021, 8.535], 'Bonn' => [50.737, 7.098], 'Dortmund' => [51.514, 7.466],
+  'Duisburg' => [51.435, 6.763], 'Düsseldorf' => [51.227, 6.774], 'Essen' => [51.456, 7.012], 'Köln' => [50.938, 6.960],
+  'Münster' => [51.960, 7.626], 'Siegen' => [50.874, 8.024], 'Wuppertal' => [51.256, 7.151],
+];
 
 /** A web query that asks for the weather (pure). */
 function coreui_weather_is_query(string $query): bool {
@@ -120,14 +131,21 @@ function coreui_weather_open_meteo(string $place, callable $getJson): ?array {
   if ($lines === []) return null;
   $name = implode(', ', array_values(array_unique(array_filter([(string)($hit['name'] ?? $place), (string)($hit['admin1'] ?? ''),
     (string)($hit['country'] ?? '')], static fn(string $s): bool => trim($s) !== ''))));
-  return ['place' => $name, 'region' => (string)($hit['admin1'] ?? ''), 'country_code' => (string)($hit['country_code'] ?? ''),
+  return ['place' => $name, 'name' => (string)($hit['name'] ?? $place), 'region' => (string)($hit['admin1'] ?? ''),
+    'country_code' => (string)($hit['country_code'] ?? ''), 'lat' => (float)$hit['latitude'], 'lon' => (float)$hit['longitude'],
     'lines' => $lines];
 }
 
 /**
- * The readable forecast text of a WDR weather page (pure): no scripts, styles,
- * navigation, header or footer; the <main> part when there is one; block
- * elements become line breaks; only kept when it names a temperature.
+ * The forecast part of a WDR weather page (pure). Structure seen on 06.11.2026
+ * (operator's analysis and screenshot): navigation and search, "Prognose fuer
+ * NRW" with the day ("Heute, 06.11.2026"), the tabs Heute, Nachts, Morgen, eleven
+ * lines "Region Aachen" with "Max: 9° | Min: 2°", "Stand: 06.11.2026, 08:15 Uhr",
+ * "Wettervorhersage" with the editorial text, then "Symbolerklaerungen" and
+ * "Weitere Beitraege". No CSS classes are relied on: scripts, styles, forms,
+ * navigation, header and footer go, block elements become lines, the text runs
+ * from "Prognose fuer" to just before the symbol legend or further articles. Only
+ * kept when it names a temperature; at most 1800 characters.
  */
 function coreui_weather_wdr_text(string $html): string {
   if ($html === '') return '';
@@ -135,7 +153,9 @@ function coreui_weather_wdr_text(string $html): string {
   $html = (string)preg_replace('~<!--.*?-->~su', ' ', $html);
   if (preg_match('~<main\b[^>]*>(.*)</main\s*>~isu', $html, $m) === 1) $html = $m[1];
   elseif (preg_match('~<body\b[^>]*>(.*)</body\s*>~isu', $html, $m) === 1) $html = $m[1];
-  $html = (string)preg_replace('~<(?:br|/p|/div|/li|/h[1-6]|/tr|/section|/article|/dd|/dt)\b[^>]*>~iu', "\n", $html);
+  $html = (string)preg_replace('~<(?:br|/p|/div|/li|/h[1-6]|/tr|/section|/article|/dd|/dt|/a|/button)\b[^>]*>~iu', "\n", $html);
+  // Inline parts of one line stay apart: "<span>Region Aachen</span><span>Max: 9°</span>" -> "Region Aachen Max: 9°".
+  $html = (string)preg_replace('~</t[dh]\s*>|</(?:span|strong|em|b|i|label|time|small)\s*>|<img\b[^>]*>~iu', ' ', $html);
   $text = html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5, 'UTF-8');
   $lines = [];
   foreach (preg_split('~\R~u', $text) ?: [] as $line) {
@@ -144,10 +164,51 @@ function coreui_weather_wdr_text(string $html): string {
     if ($lines !== [] && end($lines) === $line) continue;
     $lines[] = $line;
   }
+  $from = 0;
+  foreach ($lines as $i => $line) {
+    if (preg_match('~^Prognose\s+f(?:ü|ue)r\b~iu', $line) === 1) { $from = $i; break; }
+  }
+  $lines = array_slice($lines, $from);
+  foreach ($lines as $i => $line) {
+    if ($i > 0 && preg_match('~^(?:Symbolerkl(?:ä|ae)rung|Weitere\s+Beitr(?:ä|ae)ge|Mehr\s+zum\s+Thema|Mehr\s+Wetter)~iu', $line) === 1) {
+      $lines = array_slice($lines, 0, $i);
+      break;
+    }
+  }
   $text = implode("\n", $lines);
   if (preg_match('~-?\d{1,2}\s*(?:°|Grad)~u', $text) !== 1) return '';
   if (mb_strlen($text) > COREUI_WEATHER_WDR_CHARS) $text = rtrim(mb_substr($text, 0, COREUI_WEATHER_WDR_CHARS)) . '…';
   return $text;
+}
+
+/** "Stand: 06.11.2026, 08:15 Uhr" in a WDR text as "2026-11-06 08:15" (pure), or null. */
+function coreui_weather_wdr_stand(string $text): ?string {
+  if (preg_match('~Stand:?\s*(\d{1,2})\.(\d{1,2})\.(\d{4})(?:,?\s*(\d{1,2})[:.](\d{2}))?~u', $text, $m) !== 1) return null;
+  if (!checkdate((int)$m[2], (int)$m[1], (int)$m[3])) return null;
+  return sprintf('%04d-%02d-%02d %02d:%02d', (int)$m[3], (int)$m[2], (int)$m[1], (int)($m[4] ?? 0), (int)($m[5] ?? 0));
+}
+
+/** The nearest of the eleven WDR regions to a place (pure): ['name', 'km']. */
+function coreui_weather_wdr_region(float $lat, float $lon): array {
+  $best = ['name' => '', 'km' => INF];
+  foreach (COREUI_WEATHER_WDR_REGIONS as $name => [$rLat, $rLon]) {
+    $dLat = deg2rad($rLat - $lat);
+    $dLon = deg2rad($rLon - $lon);
+    $a = sin($dLat / 2) ** 2 + cos(deg2rad($lat)) * cos(deg2rad($rLat)) * sin($dLon / 2) ** 2;
+    $km = 6371.0 * 2 * atan2(sqrt($a), sqrt(1 - $a));
+    if ($km < $best['km']) $best = ['name' => (string)$name, 'km' => $km];
+  }
+  return $best;
+}
+
+/** The values of one region in a WDR text (pure): "Max: 11° | Min: 1°", or ''. */
+function coreui_weather_wdr_region_values(string $text, string $region): string {
+  $q = preg_quote($region, '~');
+  if (preg_match('~Region\s+' . $q . '\b[ \t|:]*([^\n]*)(?:\n([^\n]*))?~u', $text, $m) !== 1) return '';
+  foreach ([trim($m[1] ?? ''), trim($m[2] ?? '')] as $part) {
+    if ($part !== '' && preg_match('~-?\d{1,2}\s*°~u', $part) === 1 && preg_match('~^Region\b~u', $part) !== 1) return $part;
+  }
+  return '';
 }
 
 /**
@@ -165,9 +226,18 @@ function coreui_weather_sources(string $query, callable $getJson, callable $wdrT
   $rows = [];
   if ($live['region'] === COREUI_WEATHER_WDR_REGION) {
     $wdr = trim((string)$wdrText());
-    if ($wdr !== '') {
-      $rows[] = ['title' => 'WDR Wetter, Vorhersage fuer Nordrhein-Westfalen', 'url' => COREUI_WEATHER_WDR_URL,
-        'content' => $wdr, 'date' => $today];
+    $stand = $wdr !== '' ? coreui_weather_wdr_stand($wdr) : null;
+    // An old forecast is never given as today's weather.
+    $fresh = $stand === null || strtotime($stand) >= strtotime($today . ' 12:00') - COREUI_WEATHER_WDR_MAX_AGE_HOURS * 3600;
+    if ($wdr !== '' && $fresh) {
+      $region = coreui_weather_wdr_region((float)$live['lat'], (float)$live['lon']);
+      $values = coreui_weather_wdr_region_values($wdr, $region['name']);
+      $near = 'Naechste WDR-Region zu ' . $live['name'] . ': ' . $region['name']
+        . ($region['km'] >= 3 ? ' (etwa ' . (int)round($region['km']) . ' km entfernt)' : '')
+        . ($values !== '' ? ', ' . $values : '') . '. Fuer genau diesen Ort hat die WDR-Seite eine Ortssuche (PLZ oder Ort suchen).';
+      $rows[] = ['title' => 'WDR Wetter, Vorhersage fuer Nordrhein-Westfalen'
+          . ($stand !== null ? ' (Stand ' . date('d.m.Y, H:i', (int)strtotime($stand)) . ' Uhr)' : ''),
+        'url' => COREUI_WEATHER_WDR_URL, 'content' => $near . "\n" . $wdr, 'date' => $today];
     }
   }
   $rows[] = ['title' => 'Live-Wetterdaten fuer ' . $live['place'] . ' (Open-Meteo, Wettermodelle)', 'url' => 'https://open-meteo.com/',
@@ -185,4 +255,14 @@ function coreui_weather_block(array $rows): string {
     $out[] = $head . "\n" . $body;
   }
   return $out === [] ? '' : "LIVE-WETTER (gerade abgerufen, aktueller als jede Suchtrefferliste):\n" . implode("\n", $out);
+}
+
+/**
+ * One sentence for Mara's browser research: a WDR forecast for exactly one place
+ * comes from the place search of the WDR weather page (operator's idea, 06.11.2026;
+ * the browser worker fills in forms). The address in the goal is where it starts.
+ */
+function coreui_weather_browse_hint(): string {
+  return 'Will jemand die WDR-Vorhersage genau fuer seinen Ort in NRW, nutze [BROWSE: WDR-Wetter <Ort> ueber die Ortssuche auf '
+    . COREUI_WEATHER_WDR_URL . '].';
 }
