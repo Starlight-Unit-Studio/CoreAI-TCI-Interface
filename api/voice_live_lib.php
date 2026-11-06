@@ -4,6 +4,10 @@ declare(strict_types=1);
 /*
  * CoreAI 0.6.31 (P20.4): the live conversation.
  *
+ * 0.6.32 (operator after the first live test: "die Erkennung ist etwas traege", "lange Pausen
+ * zwischen den Saetzen oder nach nem Komma"): Mara Schnell writes the transcript when she fits
+ * into memory next to Mara Normal (operator's decision), so Mara Normal keeps her cache.
+ *
  * Operator's decisions (06.11.2026, after the live probe of 0.6.30):
  *   - each round: the Core writes the transcript of the recording first, then Mara
  *     answers the TEXT (in the probe only the two-step way understood reliably; the
@@ -34,11 +38,29 @@ const COREUI_LIVE_ABBREVIATIONS = ['z', 'b', 'd', 'h', 'bzw', 'ca', 'dr', 'nr', 
  */
 function coreui_live_pick_core(string $chatCore, array $installed, string $family, callable $tierOf, callable $hears,
                                callable $allowed): string {
+  $found = coreui_live_pick_tier('normal', $installed, $family, $tierOf, $hears, $allowed);
+  return $found !== '' ? $found : $chatCore;
+}
+
+/**
+ * 0.6.32: the Core that writes the transcript live (pure): Mara Schnell, chosen like the
+ * live Core, so Mara Normal keeps her cache between the rounds (Ollama holds one cache per
+ * Core, and the transcription call would overwrite hers). '' when there is none.
+ */
+function coreui_live_pick_hear_core(string $liveCore, array $installed, string $family, callable $tierOf, callable $hears,
+                                    callable $allowed): string {
+  $found = coreui_live_pick_tier('schnell', $installed, $family, $tierOf, $hears, $allowed);
+  return $found !== '' && coreui_live_model_key($found) !== coreui_live_model_key($liveCore) ? $found : '';
+}
+
+/** The installed local Core of one tier that hears and is allowed, Mara's own Core first (pure); '' when none. */
+function coreui_live_pick_tier(string $tier, array $installed, string $family, callable $tierOf, callable $hears,
+                               callable $allowed): string {
   $candidates = [];
   foreach ($installed as $name) {
     $name = (string)$name;
     if ($name === '' || str_ends_with($name, '-cloud') || str_contains($name, ':cloud')) continue;
-    if ($tierOf($name) !== 'normal') continue;
+    if ($tierOf($name) !== $tier) continue;
     $candidates[] = $name;
   }
   usort($candidates, static function (string $a, string $b) use ($family): int {
@@ -49,7 +71,23 @@ function coreui_live_pick_core(string $chatCore, array $installed, string $famil
   foreach ($candidates as $name) {
     if ($hears($name) === true && $allowed($name)) return $name;
   }
-  return $chatCore;
+  return '';
+}
+
+/** A model name as Ollama lists it (pure): lower case, ":latest" when no tag is given. */
+function coreui_live_model_key(string $name): string {
+  $name = strtolower(trim($name));
+  return ($name !== '' && !str_contains($name, ':')) ? $name . ':latest' : $name;
+}
+
+/**
+ * 0.6.32 (pure): whether both Cores are in memory at the same time ($loaded: the names Ollama's
+ * /api/ps lists). Only then does Mara Schnell write the transcript; when Ollama had to unload
+ * Mara Normal to load her, Mara Normal writes it again (no reloading in every round).
+ */
+function coreui_live_both_loaded(array $loaded, string $a, string $b): bool {
+  $keys = array_map(static fn($n): string => coreui_live_model_key((string)$n), $loaded);
+  return in_array(coreui_live_model_key($a), $keys, true) && in_array(coreui_live_model_key($b), $keys, true);
 }
 
 /**

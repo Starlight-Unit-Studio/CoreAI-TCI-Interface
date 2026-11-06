@@ -6,7 +6,12 @@
    Each round: the recording (WAV, with 0.4 s before the first word) is uploaded like a
    Stimmsequenz, api/voice_live.php writes the transcript, keeps both sides as normal chat
    messages and streams my answer sentence by sentence; Eve reads each sentence as soon as
-   it is there. Signed-in accounts only. Mara Normal answers live (operator, 06.11.2026). */
+   it is there. Signed-in accounts only. Mara Normal answers live (operator, 06.11.2026).
+   0.6.32 (operator after the first test): the parts Eve reads are fetched ahead, one after
+   the other, while the part before is playing (before, each part was only computed when the
+   one before had ended: pauses after commas and between sentences); Mara Schnell writes the
+   transcript when both Cores fit into memory; a pause of 0.7 s ends the round; the live
+   button sits in the place of the send button while the input row is empty. */
 (function () {
   'use strict';
 
@@ -17,7 +22,7 @@
   var MIC = 'M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z M5 11a7 7 0 0 0 14 0 M12 18v3';
   var MIC_OFF = 'M3 3l18 18 M9 9v3a3 3 0 0 0 5.1 2.1 M15 9.3V6a3 3 0 0 0-5.9-.8 M5 11a7 7 0 0 0 11.7 5.2 M19 11a7 7 0 0 1-.6 2.8 M12 18v3';
   var CLOSE = 'M6 6l12 12 M18 6L6 18';
-  var VAD = { preRollMs: 400, startMs: 130, bargeMs: 320, endSilenceMs: 900, minVoicedMs: 300, maxMs: 58000 };
+  var VAD = { preRollMs: 400, startMs: 130, bargeMs: 320, endSilenceMs: 700, minVoicedMs: 300, maxMs: 58000 };
   var TEXT = {
     preparing: 'Ich mache mich bereit …',
     listening: 'Ich höre zu',
@@ -59,7 +64,7 @@
     return '';
   }
 
-  // --- The button in the input row, right after the microphone ---------------
+  // --- The button in the input row: in the place of the send button while the row is empty ---
   function placeButton() {
     var send = document.getElementById('btnSend');
     var inner = send && send.parentNode;
@@ -68,7 +73,7 @@
       button = document.createElement('button');
       button.type = 'button';
       button.id = 'btnLive';
-      button.className = 'composer-live-btn';
+      button.className = 'composer-send composer-live-btn';
       button.appendChild(svgIcon(WAVE));
       button.addEventListener('click', function () {
         var why = reason();
@@ -76,11 +81,11 @@
         open();
       });
     }
-    var mic = document.getElementById('btnMic');
-    var anchor = mic && mic.parentNode === inner ? mic.nextSibling : send;
-    if (button.parentNode !== inner || button.nextSibling !== anchor) inner.insertBefore(button, anchor);
-    inner.classList.add('has-live');
+    if (button.parentNode !== inner || button.previousSibling !== send) inner.insertBefore(button, send.nextSibling);
+    // 0.6.32: only a usable live button takes the send button's place; otherwise sending stays.
     var why = reason();
+    inner.classList.toggle('has-live', !why);
+    button.hidden = !!why;
     button.setAttribute('aria-disabled', why ? 'true' : 'false');
     button.title = why || 'Live-Gespräch mit Mara';
     button.setAttribute('aria-label', why ? 'Live-Gespräch nicht verfügbar' : 'Live-Gespräch mit Mara');
@@ -100,7 +105,7 @@
         status.csrf = String(d.csrf_token || status.csrf);
         status.core = String(d.core_label || d.core || '');
         placeButton();
-        // The microphone button may come a moment later: keep the order microphone, live, send.
+        // The microphone button may come a moment later: the live button stays right after send.
         var inner = button && button.parentNode;
         if (inner && window.MutationObserver) new MutationObserver(placeButton).observe(inner, { childList: true });
       })
@@ -157,7 +162,8 @@
     var composer = window.CoreUIComposer;
     var ctx = composer && composer.liveContext ? composer.liveContext() : null;
     live = { view: buildView(), state: 'preparing', muted: false, ctx: ctx, pairs: [], queue: [], playing: null,
-      controller: null, utterance: null, preRoll: [], floor: 0.006, speechMs: 0, closed: false, audio: new Audio(), wake: null };
+      controller: null, utterance: null, preRoll: [], floor: 0.006, speechMs: 0, closed: false, audio: new Audio(), wake: null,
+      hear: '', epoch: 0, fetching: Promise.resolve(), urls: [] };
     document.body.appendChild(live.view);
     document.documentElement.classList.add('live-open');
     live.view.querySelector('.live-mute').setAttribute('aria-label', 'Mikrofon stummschalten');
@@ -172,7 +178,9 @@
     var Ctx = window.AudioContext || window.webkitAudioContext;
     live.audioCtx = new Ctx();
     if (live.audioCtx.resume) live.audioCtx.resume().catch(function () {});
+    var opened = live;
     var warmed = post('warm', { session_id: ctx.sessionId, character_id: ctx.characterId, since_id: ctx.lastMessageId })
+      .then(function (d) { if (d && d.hear_core) opened.hear = String(d.hear_core); return d; })
       .catch(function () { return null; });
     navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: true, channelCount: 1 } })
       .then(function (stream) {
@@ -316,7 +324,7 @@
           signal: controller ? controller.signal : undefined,
           headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream', 'X-CoreUI-CSRF': status.csrf },
           body: JSON.stringify({ session_id: round.ctx.sessionId, character_id: round.ctx.characterId,
-            since_id: round.ctx.lastMessageId, uuid: up.uuid }) });
+            since_id: round.ctx.lastMessageId, uuid: up.uuid, hear: round.hear }) });
       })
       .then(function (r) {
         if (!r.ok || !r.body) throw new Error('turn');
@@ -361,6 +369,8 @@
     if (live !== round) return;
     if (event === 'heard') {
       setLine('.live-heard', '„' + String(data.text || '') + '“');
+    } else if (event === 'hear') {
+      round.hear = String(data.core || '');
     } else if (event === 'silence') {
       setState('listening', TEXT.silence);
     } else if (event === 'sentence') {
@@ -372,35 +382,78 @@
     }
   }
 
-  // --- My voice: one sentence after the other ---------------------------------------
+  // --- My voice: one sentence after the other, fetched ahead ---------------------------
+  // Eve computes one part at a time (about twice as fast as she speaks). Every part is
+  // requested as soon as its sentence is planned, in order, one download after the other,
+  // so the next part is ready when the current one ends: no pause after a comma or between
+  // sentences (0.6.31 only asked for a part when the one before had ended).
   function enqueue(sentence) {
     if (!live || !sentence) return;
     setLine('.live-said', sentence);
     if (!status.voice) { setState('speaking', TEXT.noVoice); return; }
-    var plan = post('say', { text: sentence }).catch(function () { return null; });
-    live.queue.push({ text: sentence, plan: plan });
-    if (!live.playing) playNext();
+    var round = live;
+    var epoch = round.epoch;
+    var item = { text: sentence };
+    item.parts = post('say', { text: sentence })
+      .catch(function () { return null; })
+      .then(function (plan) {
+        var count = plan && plan.ok ? Math.min(Number(plan.parts) || 0, 64) : 0;
+        var list = [];
+        for (var i = 0; i < count; i++) list.push(fetchPart(round, epoch, plan.id, i));
+        return list;
+      });
+    round.queue.push(item);
+    if (!round.playing) playNext();
+  }
+
+  // One part as a blob URL, after the downloads before it; null when it cannot be had.
+  function fetchPart(round, epoch, id, part) {
+    var got = round.fetching.then(function () {
+      if (live !== round || round.epoch !== epoch) return null;
+      return fetch(AUDIO + '&id=' + encodeURIComponent(id) + '&part=' + part, { credentials: 'include' })
+        .then(function (r) { return r.ok ? r.blob() : null; })
+        .then(function (blob) {
+          if (!blob || !blob.size || live !== round || round.epoch !== epoch) return null;
+          var url = URL.createObjectURL(blob);
+          round.urls.push(url);
+          return url;
+        })
+        .catch(function () { return null; });
+    });
+    round.fetching = got.then(function () {}, function () {});
+    return got;
+  }
+
+  function forget(round, url) {
+    var at = round.urls.indexOf(url);
+    if (at >= 0) round.urls.splice(at, 1);
+    try { URL.revokeObjectURL(url); } catch (e) {}
   }
 
   function playNext() {
     if (!live) return;
-    var item = live.queue.shift();
-    if (!item) { live.playing = null; settle(); return; }
-    live.playing = item;
+    var round = live;
+    var item = round.queue.shift();
+    if (!item) { round.playing = null; settle(); return; }
+    round.playing = item;
     setState('speaking');
     setLine('.live-said', item.text);
-    item.plan.then(function (plan) {
-      if (!live || live.playing !== item) return;
-      var parts = plan && plan.ok ? Number(plan.parts) || 0 : 0;
+    item.parts.then(function (list) {
       var part = 0;
       function next() {
-        if (!live || live.playing !== item) return;
-        if (part >= parts) { playNext(); return; }
-        live.audio.src = AUDIO + '&id=' + encodeURIComponent(plan.id) + '&part=' + (part++);
-        live.audio.onended = next;
-        live.audio.onerror = next;
-        var played = live.audio.play();
-        if (played && played.catch) played.catch(next);
+        if (live !== round || round.playing !== item) return;
+        if (part >= list.length) { playNext(); return; }
+        list[part++].then(function (url) {
+          if (live !== round || round.playing !== item) { if (url) forget(round, url); return; }
+          if (!url) { next(); return; }
+          var done = false;
+          function after() { if (done) return; done = true; forget(round, url); next(); }
+          round.audio.src = url;
+          round.audio.onended = after;
+          round.audio.onerror = after;
+          var played = round.audio.play();
+          if (played && played.catch) played.catch(after);
+        });
       }
       next();
     });
@@ -416,9 +469,11 @@
   function interrupt() {
     if (!live) return;
     if (live.controller) { try { live.controller.abort(); } catch (e) {} live.controller = null; }
+    live.epoch++;
     live.queue = [];
     live.playing = null;
     try { live.audio.pause(); live.audio.removeAttribute('src'); live.audio.load(); } catch (e) {}
+    live.urls.splice(0).forEach(function (url) { try { URL.revokeObjectURL(url); } catch (e) {} });
   }
 
   window.CoreAIVoiceLive = { open: open, close: close, status: function () { return status; }, wav: wav };

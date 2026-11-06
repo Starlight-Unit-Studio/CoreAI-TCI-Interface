@@ -2,7 +2,7 @@
 //   node scripts/voice-live-ui-selftest.cjs
 // The input row with the real stylesheets, the microphone script and the live script,
 // a stand-in for the chat (js/console-app.js) and mocked APIs. Chromium hears a fake
-// microphone that loops pauses and a tone. Checked: the live button sits right after the
+// microphone that loops pauses and a tone. Checked: the live button sits after the
 // microphone, never for guests, switched off with the reason for a Core without audio; it
 // opens the full-screen view with the greeting and the Core; the opening is warmed with the
 // chat's session; a pause after speaking sends the round as a WAV Stimmsequenz; what was
@@ -10,6 +10,10 @@
 // muting stops sending; speaking while I talk interrupts me; X ends, hands the rounds to the
 // memory step and reloads the chat; without an open chat it says so. Night and day, phone
 // width, no text below 11 px, buttons at least 44 px.
+// 0.6.32: the live button sits in the send button's place while the input row is empty (the
+// real updateComposerEmpty from js/console-app.js decides) and send comes back with text or an
+// attachment; Eve's parts are fetched ahead while the part before plays; the Core that writes
+// the transcript (from the warm-up) goes with every round and changes when the server says so.
 const {chromium} = require('playwright');
 const fs = require('node:fs');
 const os = require('node:os');
@@ -18,13 +22,27 @@ const assert = require('node:assert/strict');
 const root = path.resolve(__dirname, '..');
 
 const css = ['css/console.css', 'css/coreui-theme.css'].map(f => `<link rel="stylesheet" href="/${f}">`).join('');
+// The real switch between send and live from js/console-app.js, run with stand-ins.
+const appSource = fs.readFileSync(path.join(root, 'js/console-app.js'), 'utf8');
+const emptyFrom = appSource.indexOf('  function updateComposerEmpty() {');
+const emptyTo = appSource.indexOf('\n  }\n', emptyFrom);
+assert.ok(emptyFrom > 0 && emptyTo > emptyFrom, 'updateComposerEmpty missing in console-app.js');
+const updateComposerEmpty = appSource.slice(emptyFrom, emptyTo + 4);
 const page = (theme, context) => `<!doctype html><html lang="de" data-coreui-theme="${theme}"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">${css}<title>t</title></head><body>
 <footer class="composer"><div class="composer-frame"><div class="composer-inner">
 <button id="btnAttach" type="button">A</button>
 <label class="composer-field" for="inputMessage"><textarea id="inputMessage"></textarea></label>
-<button id="btnSend" type="button">S</button></div></div></footer>
+<button id="btnSend" class="composer-send" type="button">S</button></div></div></footer>
 <script>
+  var inputEl = document.getElementById('inputMessage');
+  var state = { editingMessage: null };
+  var attachments = 0;
+  function attachmentSlotsUsed() { return attachments; }
+${updateComposerEmpty}
+  inputEl.addEventListener('input', updateComposerEmpty);
+  updateComposerEmpty();
+  window.__setAttachments = function (n) { attachments = n; updateComposerEmpty(); };
   window.__reloads = 0;
   window.CoreUIComposer = { sendVoice: function () { return 'ok'; },
     liveContext: function () { return ${context === null ? 'null' : JSON.stringify(context)}; },
@@ -59,7 +77,7 @@ async function until(page, fn, arg, timeout = 15000) {
 }
 
 async function openPage(browser, opts = {}) {
-  const calls = {status: 0, warm: [], upload: [], turn: [], say: [], audio: 0, end: []};
+  const calls = {status: 0, warm: [], upload: [], turn: [], say: [], audio: 0, audioAt: [], end: []};
   const theme = opts.theme || 'dark';
   const context = opts.context === undefined ? {sessionId: 'cs_live', characterId: 'rick', lastMessageId: 41, busy: false} : opts.context;
   const pageObj = await browser.newPage({viewport: opts.viewport || {width: 1280, height: 860}});
@@ -80,7 +98,7 @@ async function openPage(browser, opts = {}) {
     }
     if (url.pathname === '/api/voice_live.php' && action === 'warm') {
       calls.warm.push({body: JSON.parse(route.request().postData() || '{}'), csrf: route.request().headers()['x-coreui-csrf']});
-      return route.fulfill({json: {ok: true, seconds: 0.4}});
+      return route.fulfill({json: {ok: true, seconds: 0.4, hear_core: 'ember-coreui:e2b', hear_label: 'TCI: Mara Schnell'}});
     }
     if (url.pathname === '/api/console_upload.php') {
       const body = route.request().postDataBuffer() || Buffer.alloc(0);
@@ -96,6 +114,7 @@ async function openPage(browser, opts = {}) {
       const n = calls.turn.length;
       const ev = (e, d) => `event: ${e}\ndata: ${JSON.stringify(d)}\n\n`;
       return route.fulfill({contentType: 'text/event-stream', body: ev('start', {core: 'ember-coreui:latest'})
+        + (n === 1 ? ev('hear', {core: 'ember-coreui:latest', label: 'TCI: Mara Normal'}) : '')
         + ev('heard', {text: n === 1 ? 'Wie wird das Wetter morgen?' : 'Danke dir.', user_message_id: 10 * n + 1})
         + ev('sentence', {index: 0, text: n === 1 ? 'Morgen wird es trocken und mild.' : 'Sehr gern, Rick.'})
         + (n === 1 ? ev('sentence', {index: 1, text: 'Ich schaue später gern noch genauer nach!'}) : '')
@@ -107,6 +126,7 @@ async function openPage(browser, opts = {}) {
     }
     if (url.pathname === '/api/voice.php' && action === 'audio') {
       calls.audio++;
+      calls.audioAt.push(Date.now());
       return route.fulfill({contentType: 'audio/wav', body: wav([[opts.voiceSeconds || 0.4, false]])});
     }
     if (url.pathname === '/api/voice_live.php' && action === 'end') {
@@ -147,7 +167,22 @@ const smallText = page => page.evaluate(() => {
       const {page, calls, errors} = await openPage(browser, {theme});
       await until(page, () => document.getElementById('btnLive') && document.getElementById('btnMic'));
       const order = await page.evaluate(() => [...document.querySelector('.composer-inner').children].map(b => b.id || b.className));
-      assert.deepEqual(order.slice(-3), ['btnMic', 'btnLive', 'btnSend'], theme + ': microphone, live, send: ' + order);
+      assert.deepEqual(order.slice(-3), ['btnMic', 'btnSend', 'btnLive'], theme + ': microphone, send, live: ' + order);
+      // Empty row: live in the send button's place; text or an attachment: send; empty again: live.
+      const shown = () => page.evaluate(() => ['btnMic', 'btnSend', 'btnLive'].filter(id => {
+        const el = document.getElementById(id); return el && getComputedStyle(el).display !== 'none' && el.getBoundingClientRect().width > 0; }));
+      assert.deepEqual(await shown(), ['btnMic', 'btnLive'], theme + ': empty row: microphone and live');
+      const slot = await page.evaluate(() => { const r = document.getElementById('btnLive').getBoundingClientRect(); const c = document.querySelector('.composer-inner').getBoundingClientRect(); return c.right - r.right; });
+      assert.ok(slot < 2, theme + ': live sits at the end of the row, where send was: ' + slot);
+      await page.fill('#inputMessage', 'Hallo Mara');
+      assert.deepEqual(await shown(), ['btnMic', 'btnSend'], theme + ': with text: send');
+      await page.fill('#inputMessage', '   ');
+      assert.deepEqual(await shown(), ['btnMic', 'btnLive'], theme + ': only spaces count as empty');
+      await page.evaluate(() => window.__setAttachments(1));
+      assert.deepEqual(await shown(), ['btnMic', 'btnSend'], theme + ': an attachment: send');
+      await page.evaluate(() => window.__setAttachments(0));
+      await page.fill('#inputMessage', '');
+      assert.deepEqual(await shown(), ['btnMic', 'btnLive'], theme + ': emptied again: live');
       assert.equal(await page.getAttribute('#btnLive', 'aria-label'), 'Live-Gespräch mit Mara');
       const btn = await page.evaluate(() => { const r = document.getElementById('btnLive').getBoundingClientRect(); return {w: r.width, h: r.height}; });
       assert.ok(btn.w >= 40 && btn.h >= 44, theme + ': the live button is large enough to hit: ' + JSON.stringify(btn));
@@ -170,7 +205,8 @@ const smallText = page => page.evaluate(() => {
       assert.ok(calls.upload.length >= 1 && /^Sprachnachricht-\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.wav$/.test(calls.upload[0].name)
         && calls.upload[0].riff && calls.upload[0].audioWav && calls.upload[0].character && calls.upload[0].csrf === 'tok-live',
         theme + ': the round goes out as a WAV Stimmsequenz: ' + JSON.stringify(calls.upload[0]));
-      assert.deepEqual(calls.turn[0], {session_id: 'cs_live', character_id: 'rick', since_id: 41, uuid: '1'.padStart(32, 'a')});
+      assert.deepEqual(calls.turn[0], {session_id: 'cs_live', character_id: 'rick', since_id: 41, uuid: '1'.padStart(32, 'a'),
+        hear: 'ember-coreui:e2b'}, theme + ': the round says who writes the transcript (from the warm-up)');
       assert.equal(await page.textContent('.live-heard'), '„Wie wird das Wetter morgen?“');
       assert.deepEqual(calls.say.slice(0, 2), ['Morgen wird es trocken und mild.', 'Ich schaue später gern noch genauer nach!'],
         theme + ': every sentence to Eve, in order');
@@ -206,10 +242,17 @@ const smallText = page => page.evaluate(() => {
       await until(page, () => document.getElementById('btnLive'));
       await page.click('#btnLive');
       await until(page, () => window.__states.includes('speaking'), null, 20000);
+      // Both sentences (6 s each) are fetched while the first one plays, not one after the other.
+      for (let i = 0; i < 30 && calls.audio < 2; i++) await page.waitForTimeout(100);
+      assert.ok(calls.audio >= 2 && calls.audioAt[1] - calls.audioAt[0] < 3000,
+        'Eve\'s next part is fetched ahead while the part before plays: ' + (calls.audioAt[1] - calls.audioAt[0]) + ' ms');
       await until(page, () => { const s = window.__states; const i = s.indexOf('speaking'); return i > 0 && s.indexOf('hearing', i) > i; }, null, 20000);
       await until(page, () => window.__states.filter(s => s === 'thinking').length >= 2, null, 20000);
       for (let i = 0; i < 50 && calls.upload.length < 2; i++) await page.waitForTimeout(100);
       assert.ok(calls.upload.length >= 2, 'the interrupting words go out as the next round');
+      for (let i = 0; i < 50 && calls.turn.length < 2; i++) await page.waitForTimeout(100);
+      assert.ok(calls.turn[0].hear === 'ember-coreui:e2b' && calls.turn[1].hear === 'ember-coreui:latest',
+        'after the server said so, Mara Normal writes: ' + calls.turn.map(t => t.hear));
       await page.click('.live-end');
       await page.close();
     }
@@ -226,9 +269,8 @@ const smallText = page => page.evaluate(() => {
       await until(page, () => document.getElementById('btnLive'));
       assert.equal(await page.getAttribute('#btnLive', 'aria-disabled'), 'true');
       assert.equal(await page.getAttribute('#btnLive', 'title'), 'Der Core für das Live-Gespräch unterstützt keine Audioeingabe.');
-      await page.click('#btnLive', {force: true});
-      await page.waitForTimeout(300);
-      assert.equal(await page.$('.live-overlay'), null, 'a Core without audio opens nothing');
+      const visible = await page.evaluate(() => ['btnSend', 'btnLive'].map(id => getComputedStyle(document.getElementById(id)).display !== 'none'));
+      assert.deepEqual(visible, [true, false], 'a Core without audio: send stays, no live button in its place');
       await page.close();
     }
     {
@@ -258,8 +300,9 @@ const smallText = page => page.evaluate(() => {
     await browser.close();
     fs.rmSync(dir, {recursive: true, force: true});
   }
-  console.log('CoreAI live conversation UI: button after the microphone, full-screen view with greeting, warm up, rounds as WAV Stimmsequenzen,'
-    + ' sentences read in order, mute, interrupt, end with memory step and reload, guests none, Core without audio off, no chat, night and day, phone OK');
+  console.log('CoreAI live conversation UI: live in the send button\'s place while the row is empty (send with text or attachment),'
+    + ' full-screen view with greeting, warm up, rounds as WAV Stimmsequenzen with the transcribing Core, sentences read in order and'
+    + ' fetched ahead, mute, interrupt, end with memory step and reload, guests none, Core without audio off, no chat, night and day, phone OK');
 })().catch(error => {
   console.error(error);
   process.exit(1);

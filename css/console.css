@@ -3295,45 +3295,20 @@ audio.msg-image {
   opacity: 0.55;
 }
 
-/* 0.6.31 (P20.4): the live button next to the microphone and the full-screen live conversation. */
-.composer-inner.has-live:not(.has-mic) {
-  grid-template-columns: 52px minmax(0, 1fr) 46px 56px;
+/* 0.6.31 (P20.4): the live button and the full-screen live conversation.
+   0.6.32: the live button takes the send button's place (same look) while the input row is
+   empty (console-app.js sets .is-empty); as soon as there is text or an attachment, send is back. */
+.composer-inner.has-live.is-empty > .composer-send:not(.composer-live-btn),
+.composer-inner:not(.has-live) > .composer-live-btn,
+.composer-inner.has-live:not(.is-empty) > .composer-live-btn {
+  display: none;
 }
 
-.composer-inner.has-mic.has-live {
-  grid-template-columns: 52px minmax(0, 1fr) 46px 46px 56px;
-}
-
-.composer-live-btn {
-  position: relative;
-  display: grid;
-  min-width: 0;
-  place-items: center;
-  border: 0;
-  border-left: 1px solid rgba(91, 146, 255, 0.17);
-  background: transparent;
-  color: var(--cx);
-  cursor: pointer;
-  transition: background 160ms ease, color 160ms ease;
-}
-
-.composer-live-btn:hover {
-  background: rgba(91, 146, 255, 0.1);
-}
-
-.composer-live-btn svg {
-  width: 22px;
-  height: 22px;
-  fill: none;
-  stroke: currentColor;
+.composer-send.composer-live-btn svg {
+  width: 24px;
+  height: 24px;
   stroke-linecap: round;
   stroke-width: 2.2;
-}
-
-.composer-live-btn[aria-disabled="true"] {
-  color: var(--muted-soft);
-  cursor: help;
-  opacity: 0.55;
 }
 
 html.live-open,
@@ -5014,13 +4989,6 @@ a.core-install-btn {
     grid-template-columns: 46px minmax(0, 1fr) 42px 50px;
   }
 
-  .composer-inner.has-mic.has-live {
-    grid-template-columns: 46px minmax(0, 1fr) 42px 42px 50px;
-  }
-
-  .composer-inner.has-live:not(.has-mic) {
-    grid-template-columns: 46px minmax(0, 1fr) 42px 50px;
-  }
 
   .composer-voice-state {
     grid-template-columns: auto minmax(0, 1fr) auto;

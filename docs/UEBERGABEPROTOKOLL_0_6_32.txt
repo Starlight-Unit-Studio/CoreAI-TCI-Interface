@@ -1,0 +1,47 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.32
+Stand: 06.11.2026
+Basis: main 0.6.31 nach Merge von PR #182.
+
+AUFTRAG: Rueckmeldung des Betreibers zum ersten Live-Gespraech: "die Erkennung von meinem Gesprochenem ist etwas
+traege", "Mara macht bei ihren Antworten lange Pausen zwischen den Saetzen oder nach nem Komma". Idee des Betreibers:
+der Senden-Knopf ist der Live-Knopf, solange die Eingabezeile leer ist (Screenshots wie bei Gemini).
+Entscheidung des Betreibers (06.11.2026): Mara Schnell schreibt im Live-Gespraech mit (Empfehlung).
+
+URSACHEN
+- Pausen: js/coreui-voice-live.js setzte audio.src fuer Teil N erst nach dem Ende von Teil N-1; api/voice.php rechnet
+  einen Teil erst beim Abruf (coreui_voice_audio -> /speak). speakable.py schneidet den ersten Teil ab 40 Zeichen am
+  Satzzeichen, oft am ersten Komma. Die Rechenzeit war die Pause. Der Vorlese-Knopf im Chat holt laengst vorab.
+- Wartezeit: Ollama haelt je Core einen Zwischenspeicher (OLLAMA_NUM_PARALLEL=1). Der Mitschrift-Aufruf mit eigener
+  Systemzeile und Audio ueberschrieb ihn, der Antwortaufruf las Modelfile-SYSTEM, Kontext und Verlauf jedes Mal neu
+  (Live-Probe 0.6.30: Mara Normal 1.136 Tokens, Antwort 5,9 s nach 1,7 s Mitschrift).
+- Der Quelltext von Ollama (kvcache, ollamarunner) war unter den bekannten Pfaden nicht mehr abrufbar; ob Ollama den
+  Anfang bei Gemmas Sliding-Window-Schichten wirklich weiterverwendet, zeigt erst die Messung auf dem Server (new_tokens).
+
+UMSETZUNG
+- api/voice_live_lib.php: coreui_live_pick_tier (gemeinsam), coreui_live_pick_hear_core (Stufe schnell, hoert, erlaubt,
+  nicht der Live-Core), coreui_live_model_key, coreui_live_both_loaded.
+- api/voice_live.php: warm laedt Mara Schnell ohne Prompt (gleiches num_ctx wie ihre Mitschrift-Aufrufe), dann Mara
+  Normal mit dem Anfang; danach /api/ps (coreui_ollama_loaded_names): beide da -> hear_core = Mara Schnell, sonst Live-
+  Core. turn nimmt hear vom Browser nur, wenn es der aktuell zulaessige Kandidat ist. Scheitert die Mitschrift mit Mara
+  Schnell, schreibt Mara Normal diese Runde neu (Event hear). Ist Mara Normal nach der Mitschrift nicht mehr geladen,
+  Event hear fuer die naechsten Runden. Protokoll coreui_live_warm und hear_core in coreui_live_turn.
+- js/coreui-voice-live.js: Teile je Satz sofort nach dem Plan in Reihenfolge als Blob holen (eine Kette, Epoche gegen
+  veraltete Teile nach Unterbrechung, Blob-URLs werden freigegeben); hear aus warm mit jeder Runde, Wechsel bei Event hear;
+  endSilenceMs 700; Knopf hinter #btnSend mit Klasse composer-send, sichtbar nur bei .has-live.is-empty.
+- js/console-app.js: updateComposerEmpty() setzt .is-empty (kein Text ausser Leerzeichen, kein Anhang, keine Bearbeitung);
+  aufgerufen bei Eingabe, setComposerText, renderAttachmentList, Bearbeiten an/aus, Start.
+- css/console.css: Spalten wie mit Mikrofon allein; Sichtbarkeit Senden/Live; Wellen-Symbol im Senden-Stil.
+
+GEPRUEFT (hier ausgefuehrt): php -l (voice_live.php, voice_live_lib.php, voice-live-selftest.php), voice-live-selftest.php
+offline und mit MariaDB ueber HTTP, voice-live-ui-selftest.cjs (Chromium, Fake-Mikrofon, Tag und Nacht, Handy),
+tci-language-selftest.cjs, terran-terminology-selftest.cjs, volle Testreihe, cache-bust, version-merge-check gegen 0.6.31.
+Bildschirmfotos der Eingabezeile leer und mit Text (Nacht, Tag, Handy) angesehen.
+NICHT HIER GEPRUEFT: echte Cores (ob beide in den Arbeitsspeicher passen, wie viele Tokens Mara Normal jetzt neu liest),
+Eve und die Pausen auf dem Server, Handy.
+
+NACH DEM MERGE (Betreiber):
+1. Update unter Einstellungen > System > CoreAI Update.
+2. Leere Eingabezeile: rechts das Wellen-Symbol; etwas tippen: Senden-Pfeil; loeschen: wieder Wellen.
+3. Live-Gespraech, drei Runden, eine davon mit Komma-Saetzen; auf Pausen achten.
+4. Messwerte ansehen (zeigt Mitschreib-Core, Zeiten und neu gelesene Tokens der letzten Runden):
+   cd /opt/ember-coreui && grep -E 'coreui_live_(turn|warm)' logs/stu_error.log | tail -n 8

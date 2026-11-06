@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.31: Live-Gespraech (P20.4) mit Mara Normal, freihaendig, satzweise mit Eve.
+# CoreAI: TCI Interface 0.6.32: Live-Gespraech schneller (Mara Schnell schreibt mit, Eve ohne Pausen), Live-Knopf im Senden-Platz.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

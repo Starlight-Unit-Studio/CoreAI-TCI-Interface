@@ -12,6 +12,9 @@ declare(strict_types=1);
 // sentences as they come, no audio in Mara's call, the first round's call is the beginning
 // of the second one, so Ollama can keep it), an interrupted round, the memory step at the
 // end; every row and file it made is removed again.
+// 0.6.32: Mara Schnell writes the transcripts when Ollama keeps both Cores in memory (warm-up
+// loads her and checks /api/ps); when Mara Normal was unloaded or Mara Schnell fails, Mara
+// Normal writes again and the browser is told.
 if (PHP_SAPI !== 'cli') exit(1);
 $root = dirname(__DIR__);
 require_once $root . '/api/voice_live_lib.php';
@@ -35,6 +38,20 @@ live_test(coreui_live_pick_core('ember-coreui:12b', $installed, 'ember-coreui', 
   === 'ember-coreui:12b', 'no Normal that hears: the chat Core');
 live_test(coreui_live_pick_core('ember-coreui:12b', ['ember-coreui:12b', 'gemma4:e4b-cloud'], 'ember-coreui', $tierOf, $hears, $all)
   === 'ember-coreui:12b', 'a cloud Core is never the live Core');
+
+// --- 0.6.32: who writes the transcript --------------------------------------------------
+live_test(coreui_live_pick_hear_core('ember-coreui:latest', $installed, 'ember-coreui', $tierOf, $hears, $all) === 'ember-coreui:e2b',
+  'Mara Schnell writes the transcript');
+live_test(coreui_live_pick_hear_core('ember-coreui:latest', $installed, 'ember-coreui', $tierOf, $hears,
+  static fn(string $m): bool => $m !== 'ember-coreui:e2b') === '', 'not when the account may not use her');
+live_test(coreui_live_pick_hear_core('ember-coreui:latest', $installed, 'ember-coreui', $tierOf,
+  static fn(string $m): ?bool => $m !== 'ember-coreui:e2b', $all) === '', 'not when she does not hear');
+live_test(coreui_live_pick_hear_core('ember-coreui:e2b', $installed, 'ember-coreui', $tierOf, $hears, $all) === '',
+  'not when she answers live herself');
+live_test(coreui_live_both_loaded(['ember-coreui', 'ember-coreui:e2b'], 'ember-coreui:latest', 'ember-coreui:12b') === false
+  && coreui_live_both_loaded(['ember-coreui', 'ember-coreui:e2b'], 'ember-coreui:latest', 'Ember-Coreui:e2b') === true
+  && coreui_live_both_loaded(['ember-coreui:e2b'], 'ember-coreui:latest', 'ember-coreui:e2b') === false,
+  'both in memory (":latest" and case as Ollama lists them), or not');
 
 // --- Sentences for Eve --------------------------------------------------------------
 $buffer = 'Ja. Gerne, das mache ich. Am 3. November ist es z. B. kalt. Und dann';
@@ -76,8 +93,11 @@ live_test(str_contains($endpoint, "if (\$guest) stu_json(['ok' => false, 'error'
   && str_contains($endpoint, 'coreui_user_policy_reserve_turn($pdo, $uid);') && str_contains($endpoint, "header('X-Accel-Buffering: no');")
   && str_contains($endpoint, 'ignore_user_abort(true);') && str_contains($endpoint, 'coreui_voice_transcript_save($uid, $uuid,')
   && str_contains($endpoint, 'ember_insert($pdo, $reply, \'console\', null, $uid, $sessionId, $userMessageId)')
-  && str_contains($endpoint, 'coreui_model_access_allowed($pdo, $uid, $m)'),
-  'endpoint: never guests, CSRF, no thinking, Mara\'s queue, daily limit, no proxy buffering, transcript, both sides kept, Core permissions');
+  && str_contains($endpoint, 'coreui_model_access_allowed($pdo, $uid, $m)')
+  && str_contains($endpoint, 'coreui_live_both_loaded(coreui_ollama_loaded_names(), $hearCandidate, $core)')
+  && str_contains($endpoint, "'hear_core' => \$hearCore"),
+  'endpoint: never guests, CSRF, no thinking, Mara\'s queue, daily limit, no proxy buffering, transcript, both sides kept, Core permissions,'
+  . ' Mara Schnell writes only with both Cores in memory');
 foreach (['config/nginx.conf.template', 'config/runtime/nginx.conf.template'] as $tpl) {
   live_test(str_contains((string)file_get_contents($root . '/' . $tpl), '|voice_input|voice_live|'), $tpl . ' lets the live endpoint through');
 }
@@ -118,12 +138,32 @@ $uri = $_SERVER['REQUEST_URI'];
 $body = json_decode((string)file_get_contents('php://input'), true);
 $log = __DIR__ . '/calls.jsonl';
 if (str_starts_with($uri, '/api/show')) { header('Content-Type: application/json'); echo json_encode(['capabilities' => ['completion', 'vision', 'audio']]); return; }
-if (str_starts_with($uri, '/api/tags')) { header('Content-Type: application/json'); echo json_encode(['models' => [['name' => 'ember-coreui:12b'], ['name' => 'ember-coreui:latest']]]); return; }
+if (str_starts_with($uri, '/api/tags')) { header('Content-Type: application/json'); echo json_encode(['models' => [['name' => 'ember-coreui:12b'], ['name' => 'ember-coreui:latest'], ['name' => 'ember-coreui:e2b']]]); return; }
+if (str_starts_with($uri, '/api/ps')) {
+  // What Ollama holds in memory: both Cores, unless the test says otherwise.
+  $names = is_file(__DIR__ . '/ps.json') ? json_decode((string)file_get_contents(__DIR__ . '/ps.json'), true) : ['ember-coreui:latest', 'ember-coreui:e2b'];
+  header('Content-Type: application/json');
+  echo json_encode(['models' => array_map(static fn($n) => ['name' => $n, 'model' => $n], $names)]);
+  return;
+}
 if (!str_starts_with($uri, '/api/chat')) { http_response_code(404); return; }
 $messages = (array)($body['messages'] ?? []);
 $last = (array)end($messages);
 file_put_contents($log, json_encode(['model' => $body['model'] ?? '', 'stream' => !empty($body['stream']), 'think' => $body['think'] ?? null,
+  'num_ctx' => $body['options']['num_ctx'] ?? null,
   'messages' => array_map(static fn($m) => ['role' => $m['role'] ?? '', 'content' => $m['content'] ?? '', 'images' => count((array)($m['images'] ?? []))], $messages)]) . "\n", FILE_APPEND);
+if ($messages === []) {
+  // Only loading the Core.
+  header('Content-Type: application/json');
+  echo json_encode(['model' => $body['model'] ?? '', 'done_reason' => 'load', 'done' => true]);
+  return;
+}
+if (empty($body['stream']) && ($body['model'] ?? '') === 'ember-coreui:e2b' && is_file(__DIR__ . '/e2b.fails')) {
+  http_response_code(500);
+  header('Content-Type: application/json');
+  echo json_encode(['error' => 'model failed']);
+  return;
+}
 if (empty($body['stream'])) {
   // A transcription: the round number decides what was said.
   $n = (int)@file_get_contents(__DIR__ . '/heard.count') + 1;
@@ -253,14 +293,24 @@ live_test($code === 200 && ($status['allowed'] ?? false) === true && $status['co
 [$code, $raw] = $http('POST', '/api/voice_live.php?action=turn', ['session_id' => $sessionId], null, 'falsch');
 live_test($code === 403 && str_contains($raw, 'csrf_failed'), 'no round without the CSRF token');
 
-// Warming up: the opening goes into the cache.
+// Warming up: Mara Schnell is loaded, then the opening goes into Mara Normal's cache.
 $turnBody = ['session_id' => $sessionId, 'character_id' => $cid, 'since_id' => $sinceId];
 [$code, $raw] = $http('POST', '/api/voice_live.php?action=warm', $turnBody, null, $csrf);
 $warm = json_decode($raw, true);
 $sent = $calls();
-live_test($code === 200 && ($warm['ok'] ?? false) === true && count($sent) === 1 && $sent[0]['model'] === 'ember-coreui:latest'
-  && $sent[0]['stream'] === true && $sent[0]['think'] === false && str_starts_with($sent[0]['messages'][0]['content'], 'LIVE-GESPRAECH'),
-  'warm: Mara Normal loads the opening of the conversation: ' . $raw);
+live_test($code === 200 && ($warm['ok'] ?? false) === true && count($sent) === 2
+  && $sent[0]['model'] === 'ember-coreui:e2b' && $sent[0]['messages'] === []
+  && $sent[1]['model'] === 'ember-coreui:latest' && $sent[1]['stream'] === true && $sent[1]['think'] === false
+  && str_starts_with($sent[1]['messages'][0]['content'], 'LIVE-GESPRAECH'),
+  'warm: Mara Schnell is loaded (no prompt), Mara Normal loads the opening of the conversation: ' . $raw);
+live_test(($warm['hear_core'] ?? '') === 'ember-coreui:e2b' && ($warm['hear_label'] ?? '') === 'TCI: Mara Schnell',
+  'both in memory: Mara Schnell writes the transcripts: ' . $raw);
+file_put_contents($base . '/ps.json', json_encode(['ember-coreui:latest']));
+[, $raw] = $http('POST', '/api/voice_live.php?action=warm', $turnBody, null, $csrf);
+live_test((json_decode($raw, true)['hear_core'] ?? '') === 'ember-coreui:latest', 'Ollama could not keep both: Mara Normal writes: ' . $raw);
+@unlink($base . '/ps.json');
+$calls();
+$turnBody['hear'] = 'ember-coreui:e2b';
 
 // Round 1.
 [$code, $raw] = $http('POST', '/api/voice_live.php?action=turn', $turnBody + ['uuid' => $recordings[0]], null, $csrf);
@@ -276,7 +326,10 @@ live_test(array_column($byName['sentence'], 'text') === ['Morgen wird es trocken
 $done1 = $byName['done'][0];
 $sent1 = $calls();
 live_test(count($sent1) === 2 && $sent1[0]['stream'] === false && $sent1[0]['messages'][count($sent1[0]['messages']) - 1]['images'] === 1
-  && $sent1[0]['model'] === 'ember-coreui:latest', 'the transcript: the recording to Mara Normal, no stream');
+  && $sent1[0]['model'] === 'ember-coreui:e2b' && $sent1[1]['model'] === 'ember-coreui:latest',
+  'the transcript: the recording to Mara Schnell, no stream; Mara Normal answers');
+live_test(!in_array('hear', $names, true) && ($byName['done'][0]['timings']['hear_core'] ?? '') === 'ember-coreui:e2b',
+  'both stay in memory: no change of who writes');
 $answer1 = $sent1[1]['messages'];
 live_test($sent1[1]['think'] === false && array_sum(array_column($answer1, 'images')) === 0
   && end($answer1)['content'] === 'Wie wird das Wetter morgen?' && end($answer1)['role'] === 'user'
@@ -297,9 +350,15 @@ $kept = coreui_voice_transcript_load($uid, $recordings[0]);
 live_test(($kept['state'] ?? '') === 'done' && $kept['text'] === 'Wie wird das Wetter morgen?', 'the transcript stands under the Stimmsequenz');
 
 // Round 2: the call of round 1 plus its answer is the beginning of the call of round 2 (cache).
+// Meanwhile Ollama had to unload Mara Normal: from the next round on she writes again.
+file_put_contents($base . '/ps.json', json_encode(['ember-coreui:e2b']));
 [$code, $raw] = $http('POST', '/api/voice_live.php?action=turn', $turnBody + ['uuid' => $recordings[1]], null, $csrf);
+@unlink($base . '/ps.json');
 $ev2 = $events($raw);
 $sent2 = $calls();
+$hear2 = array_values(array_filter($ev2, static fn($e) => $e[0] === 'hear'));
+live_test($sent2[0]['model'] === 'ember-coreui:e2b' && count($hear2) === 1 && $hear2[0][1]['core'] === 'ember-coreui:latest',
+  'Mara Normal no longer in memory: the browser is told that she writes again: ' . json_encode($hear2));
 $answer2 = $sent2[1]['messages'];
 $prefix = array_merge($answer1, [['role' => 'assistant', 'content' => $rows[1]['message'], 'images' => 0]]);
 live_test(array_slice($answer2, 0, count($prefix)) === $prefix && end($answer2)['content'] === 'Und am Wochenende?',
@@ -309,10 +368,14 @@ live_test($sentences2 === ['Am Wochenende wird es sonnig.', 'Samstag bis 12 Grad
 $done2 = end($ev2)[1];
 
 // Round 3 interrupted: the person speaks while I talk; the browser ends the round.
+// Mara Schnell fails here: Mara Normal writes this round, and the browser is told.
+touch($base . '/e2b.fails');
 $seen = 0;
 [$code, $raw] = $http('POST', '/api/voice_live.php?action=turn', $turnBody + ['uuid' => $recordings[2]],
   static function (string $sofar) use (&$seen): bool { $seen = substr_count($sofar, 'event: sentence'); return $seen < 2; }, $csrf);
 live_test($seen >= 2 && !str_contains($raw, 'event: done'), 'the round stops when the browser ends it');
+live_test(str_contains($raw, "event: hear\ndata: {\"core\":\"ember-coreui:latest\"") && str_contains($raw, 'Erzähl mir was Langes.'),
+  'Mara Schnell failed: Mara Normal wrote the transcript: ' . substr($raw, 0, 300));
 $wait = 0;
 do {
   usleep(200000);
@@ -335,4 +398,5 @@ live_test($code === 200 && (json_decode($raw, true)['reflected'] ?? -1) === 2, '
 
 echo "CoreAI live conversation: live Core, sentences for Eve, spoken reply, fixed opening, Modelfile SYSTEM kept, wiring;"
   . " over HTTP with the database: status, CSRF, warm up, two rounds kept as chat messages with transcript, the same beginning for the cache,"
+  . " Mara Schnell writes with both Cores in memory, Mara Normal again when unloaded or failing,"
   . " interruption, Eve unavailable, memory step at the end OK\n";
