@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.6.29 - 06.11.2026
+
+Screenshot des Betreibers: Die Antwort der Browser-Recherche zur Wetterfrage stand mit 13:33 unter einer Stimmsequenz von 14:29.
+
+- **Ursache:** Die Datenbank speichert Zeiten mit NOW() in ihrer eigenen Zeitzone, im Container UTC. Der Verlauf schickte sie als "2026-11-06 13:33:10" ohne Zeitzone, und der Browser las das als Ortszeit. Live gesendete Nachrichten stempelt der Browser selbst, deshalb fiel es vor allem bei nachgeladenen Antworten auf (Browser-Recherche, Neuladen des Chats: dort waren alle Zeiten eine Stunde zu frueh).
+- **Behoben:** Verlauf (`api/console_messages.php`) und Chatliste schicken Zeiten als ISO 8601 in UTC ("2026-11-06T13:33:10+00:00"), berechnet mit UNIX_TIMESTAMP in derselben Datenbank-Zeitzone, in der NOW() geschrieben hat. Damit stimmt der Zeitpunkt im Container (UTC) und bei einer nativen Installation (Ortszeit); der Browser zeigt ihn in der Ortszeit des Geraets. Die Sortierung der Chatliste vergleicht jetzt ebenfalls gleichartige Zeiten.
+- Tests: neu `message-time-selftest.php` (Umrechnung, Verdrahtung; mit Datenbank: Nachricht und Chat mit NOW(), Datenbank-Sitzung in UTC und in +01:00, zurueckgerollt), in beiden Preflights.
+- Keine Aenderung an gespeicherten Daten, Datenbankschema, Cores, Modelfile, Installer oder Warteschlange.
+
 ## 0.6.28 - 06.11.2026
 
 Preflight-Korrektur nach dem Betreiberlauf von 0.6.27: Der Spracheingabe-Selbsttest scheiterte bei einem Core ohne Audiofaehigkeit an der veralteten Erwartung "keinen Audio-Eingang". Der Laufzeitcode gibt seit der TCI-Sprachueberarbeitung korrekt "Der gewaehlte Core unterstuetzt keine Audioeingabe." aus.

@@ -55,6 +55,8 @@ function coreui_console_session_require(
 function coreui_console_session_list(PDO $pdo, int $uid, bool $includeArchived = false): array {
   $sql = "SELECT s.id, s.title, s.since_id, s.last_message_id, s.last_read_message_id,
                  s.created_at, s.updated_at, s.archived_at,
+                 UNIX_TIMESTAMP(s.created_at) AS created_ts, UNIX_TIMESTAMP(s.updated_at) AS updated_ts,
+                 UNIX_TIMESTAMP(s.archived_at) AS archived_ts,
                  (SELECT COUNT(*) FROM stu_chat_messages m
                    WHERE m.channel='console' AND m.user_id=s.user_id
                      AND m.session_id=s.id AND m.deleted_at IS NULL) AS message_count,
@@ -76,9 +78,25 @@ function coreui_console_session_list(PDO $pdo, int $uid, bool $includeArchived =
     $row['message_count'] = (int)($row['message_count'] ?? 0);
     $row['unread_count'] = (int)($row['unread_count'] ?? 0);
     $row['archived'] = !empty($row['archived_at']);
+    // 0.6.24: times with their zone (see coreui_db_time_iso).
+    foreach (['created', 'updated', 'archived'] as $key) {
+      if ($row[$key . '_at'] !== null) $row[$key . '_at'] = coreui_db_time_iso($row[$key . '_ts'] ?? null, $row[$key . '_at']);
+      unset($row[$key . '_ts']);
+    }
   }
   unset($row);
   return $rows;
+}
+
+/**
+ * 0.6.24: a database time for the browser, as ISO 8601 in UTC ("2026-11-06T13:33:10+00:00").
+ * $ts is UNIX_TIMESTAMP() of the column, which reads the value in the zone NOW() wrote it in
+ * (UTC in the container, local time on a native install), so both give the right instant;
+ * the browser shows it in the viewer's local time. Without a timestamp the value stays.
+ */
+function coreui_db_time_iso($ts, $fallback = null): ?string {
+  if (is_numeric($ts) && (float)$ts > 0) return gmdate('c', (int)floor((float)$ts));
+  return $fallback === null ? null : (string)$fallback;
 }
 
 function coreui_console_session_create(PDO $pdo, int $uid, string $title = ''): array {
