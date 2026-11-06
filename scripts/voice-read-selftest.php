@@ -181,8 +181,19 @@ try {
   voice_test(coreui_voice_set_auto_read($pdo, $uid, true) === true && coreui_voice_auto_read($pdo, $uid) === true, 'switched on');
   voice_test(coreui_voice_set_auto_read($pdo, $uid, false) === false, 'switched off');
   voice_test(coreui_voice_auto_read($pdo, 0) === false, 'nobody: off');
+  // 0.6.22: names and terms for voice messages in the same row (migration 025).
+  require_once $root . '/api/voice_transcribe.php';
+  voice_test(coreui_voice_terms_ready($pdo), 'migration 025 applied');
+  voice_test(coreui_voice_terms_load($pdo, $uid) === [], 'no terms by default');
+  voice_test(coreui_voice_terms_save($pdo, $uid, "Bergisch Gladbach\nEVK, evk\n[WEB: x]") === ['Bergisch Gladbach', 'EVK', 'WEB x']
+    && coreui_voice_terms_load($pdo, $uid) === ['Bergisch Gladbach', 'EVK', 'WEB x'], 'terms saved cleaned and read back');
+  voice_test(coreui_voice_auto_read($pdo, $uid) === false, 'saving terms leaves reading aloud as it was');
+  coreui_voice_set_auto_read($pdo, $uid, true);
+  voice_test(coreui_voice_terms_load($pdo, $uid) === ['Bergisch Gladbach', 'EVK', 'WEB x'], 'switching reading aloud keeps the terms');
+  voice_test(coreui_voice_terms_save($pdo, $uid, '  ') === [] && $pdo->query('SELECT vocabulary FROM stu_user_voice_settings WHERE user_id = ' . (int)$uid)
+    ->fetchColumn() === null, 'an empty list is stored as nothing');
   voice_test($pdo->inTransaction() && (int)$pdo->query('SELECT @@in_transaction')->fetchColumn() === 1, 'still inside the transaction');
 } finally {
   if ($pdo->inTransaction()) $pdo->rollBack();
 }
-echo "CoreAI voice read: plan and audio cached per account, busy and broken answers, 7 day cleanup, loopback only, wiring and the setting on the database (rolled back) OK\n";
+echo "CoreAI voice read: plan and audio cached per account, busy and broken answers, 7 day cleanup, loopback only, wiring and the settings (reading aloud, names and terms) on the database (rolled back) OK\n";

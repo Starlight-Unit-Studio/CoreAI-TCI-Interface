@@ -1,0 +1,54 @@
+COREAI: TCI INTERFACE - UEBERGABE 0.6.22
+Stand: 06.11.2026
+Ausgangsbasis: main 0.6.21 nach Merge von PR #172.
+
+RUECKMELDUNG (zwei Screenshots):
+- "Es wird alles verstanden, nur Bergisch Gladbach nicht: entweder Berlin oder 'der Tisch ist glatt'. Kriegen wir die
+  Erkennung allgemein nicht genauer hin?"
+- Arbeitsweg: "Ich fuehre gerade 'Core schreibt die Aufnahme mit (Teil 1 von 1)' aus. Der Abschluss steht noch aus."
+- Gesprochene Wetterfrage, Antwort nur "WEB: Wetter Berchtesgaden heute" (Betreiber hatte zwischendurch abgebrochen,
+  die Zeile war aber Maras Suchwunsch, kein Abbruch-Rest).
+- "Ich finde das Wetter vom WDR am genauesten fuer Deutschland" (www1.wdr.de/nrw/wetter/wettervorhersage).
+ENTSCHEIDUNG DES BETREIBERS: "Eigene Begriffe" (Liste im KI-Profil).
+
+UMSETZUNG:
+- database/migrations/025_voice_vocabulary.sql: stu_user_voice_settings.vocabulary TEXT NULL (ADD COLUMN IF NOT EXISTS).
+- api/voice_transcribe.php: coreui_voice_terms_normalise/ready/load/save (einer pro Zeile, Komma und Semikolon
+  trennen, nur Buchstaben, Ziffern, Leerzeichen und . ' ’ - & / +, je 60 Zeichen, hoechstens 40, ohne Doppelte);
+  coreui_voice_transcribe_payload/part/file nehmen terms; coreui_voice_listen_task(sender, text, clips, terms, tools)
+  nennt Begriffe und die freigegebenen Werkzeuge; coreui_voice_strip_stray_bracket laesst Werkzeug-Marker ganz.
+- api/voice_core.php: coreui_voice_transcribe_prompt(language, terms): ohne Begriffe exakt Googles Vorlage wie bisher,
+  mit Begriffen eine Zeile mehr ("spell it exactly like this ... Do not add them when they are not spoken").
+- api/voice_input.php: status liefert terms, terms_ready, terms_max; POST ?action=terms {terms} mit CSRF, nie Gaeste.
+- api/ember_attachments.php: ember_attach_voice_terms(); beide Mitschriften mit Begriffen; Arbeitsweg ein Schritt
+  "Aufnahme wird mitgeschrieben" (running) und danach "Aufnahme mitgeschrieben" (success) bzw. "Mitschrift ohne Text".
+- api/chat.php (Audio-Zweig): $voiceTools = freigegebene web/browse/archive (ohne Skills, deren Index fehlt dort);
+  ein Marker in Maras Antwort startet coreui_agent_loop_run mit Text-Aufrufen (kein erneutes Audio, think false,
+  __skills none), [BROWSE:] geht an den Browser-Worker; ein Marker fuer ein abgeschaltetes Werkzeug wird entfernt.
+- api/weather_live.php (neu) und api/chat.php: ember_web_results_block fragt zuerst ember_weather_live_sources:
+  Wetterfrage mit Ort -> Open-Meteo (Geocoding, jetzt plus 3 Tage), bei admin1 Nordrhein-Westfalen zuerst der
+  lesbare Text der WDR-Seite (main-Teil, ohne Skripte, Navigation, Kopf, Fuss; nur mit Temperaturangabe; 1800
+  Zeichen). Cache: Open-Meteo 10 Minuten, WDR-Text 15 Minuten. Kein Ort oder keine Quelle: normale Suche.
+- js/coreui-voice-terms.js (neu), settings.html: Feld im KI-Profil (Antwort und Gedaechtnis), speichert 2 s nach dem
+  Tippen und beim Verlassen, uebernimmt die bereinigte Liste, meldet Fehler; ohne Migration gesperrt.
+- js/coreui-voice-input.js: getUserMedia ohne noiseSuppression (echoCancellation und autoGainControl an),
+  MediaRecorder audioBitsPerSecond 64000.
+- js/coreui-work-events.js: Erzaehltext fuer "Aufnahme wird mitgeschrieben"; alte Titel "Core schreibt die Aufnahme
+  mit (Teil N von M)" lesen sich genauso.
+
+GEPRUEFT (hier ausgefuehrt): voice-input-selftest.php, voice-read-selftest.php gegen MariaDB mit allen Migrationen
+(Migration 025 zweimal angewendet), voice-terms-ui-selftest.cjs, weather-live-selftest.php, web-search-selftest.php,
+work-events-ui-selftest.js, volle Testreihe, cache-bust, version-merge-check gegen 0.6.21.
+NICHT HIER GEPRUEFT: die echte WDR-Seite und Open-Meteo (aus der Entwicklungsumgebung gesperrt), die Hoerqualitaet
+mit echten Aufnahmen.
+
+NACH DEM MERGE (Betreiber):
+1. Update unter Einstellungen > System > CoreAI Update (die Migration 025 laeuft dabei mit).
+2. Einstellungen > KI-Profil > "Namen und Begriffe fuer Sprachnachrichten": zum Beispiel Bergisch Gladbach, EVK.
+3. WDR-Pruefung auf dem Server:
+   cd /opt/ember-coreui && sudo docker compose --project-name ember-coreui --env-file var/compose.env -f compose.yaml exec -T php php scripts/weather-live-selftest.php --live "Bergisch Gladbach"
+   Zeigt "WDR-Text: ja" und darueber einen lesbaren Vorhersagetext, nutzt Mara den WDR. Steht dort Menue- oder
+   Fremdtext, bitte die Ausgabe schicken, dann wird die Auswahl auf die Seite zugeschnitten.
+4. Eine Sprachnachricht mit "Bergisch Gladbach" und eine gesprochene Wetterfrage.
+
+OFFEN: Live-Audio (Messung angeboten), P20.4.

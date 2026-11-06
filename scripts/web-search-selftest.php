@@ -24,6 +24,16 @@ foreach (['ember_web_url', 'ember_web_limit', 'ember_web_timeout', 'ember_web_ma
   eval($m[0]);
 }
 
+// 0.6.22: live weather (api/weather_live.php); the sources are scripted here.
+require_once $root . '/api/weather_live.php';
+$weather = [];
+$weatherAsked = [];
+function ember_weather_live_sources(string $query): array {
+  global $weather, $weatherAsked;
+  $weatherAsked[] = $query;
+  return coreui_weather_is_query($query) ? $weather : [];
+}
+
 function web_test(bool $ok, string $why): void {
   if (!$ok) { fwrite(STDERR, "Web search FAIL: {$why}\n"); exit(1); }
 }
@@ -83,3 +93,18 @@ web_test(is_array($seenRows) && count($seenRows) === 1 && $seenRows[0]['url'] ==
 $answers = [null];
 ember_web_results_block('leer', static function(array $rows) use (&$seenRows): void { $seenRows = $rows; });
 web_test($seenRows === [], 'no invented cards for empty results');
+
+// 0.6.22: a weather question gets live data, old search snippets are not asked.
+$weather = [['title' => 'WDR Wetter, Vorhersage fuer Nordrhein-Westfalen', 'url' => COREUI_WEATHER_WDR_URL,
+  'content' => "Heute: Regen, 9 Grad", 'date' => '2026-11-06']];
+$calls = [];
+$answers = [['results'=>[['title'=>'Wetter alt', 'url'=>'https://wetter.example/alt', 'content'=>'28 Grad im Juli']]]];
+$seenRows = null;
+$block = ember_web_results_block('Wetter Bergisch Gladbach heute', static function(array $rows) use (&$seenRows): void { $seenRows = $rows; });
+web_test($calls === [] && str_starts_with($block, 'LIVE-WETTER') && str_contains($block, '9 Grad') && !str_contains($block, '28 Grad')
+  && $seenRows === $weather, 'weather: live sources instead of the search, shown as sources in the work path');
+$weather = [];
+$block = ember_web_results_block('Wetter Atlantis heute');
+web_test(count($calls) === 1 && str_contains($block, '28 Grad'), 'no live source answered: the normal search');
+web_test(end($weatherAsked) === 'Wetter Atlantis heute', 'every web step asks for live weather first');
+echo "CoreAI web search: live weather before old snippets OK\n";

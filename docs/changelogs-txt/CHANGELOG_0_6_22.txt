@@ -1,0 +1,10 @@
+CoreAI: TCI Interface 0.6.22 - 06.11.2026
+- Sprachnachrichten: Eigennamen wie "Bergisch Gladbach" wurden zu "Berlin" oder "der Tisch ist glatt".
+- KI-Profil: Namen und Begriffe fuer Sprachnachrichten (bis 40, einer pro Zeile); Core und Mara schreiben sie so.
+- Migration 025: Spalte stu_user_voice_settings.vocabulary.
+- Aufnahme ohne Rauschunterdrueckung des Browsers, Opus mit 64 kbit/s.
+- Arbeitsweg: Mitschrift als ein Schritt mit Abschluss (kein "Der Abschluss steht noch aus").
+- Werkzeuge nach Sprachnachrichten: [WEB:], [BROWSE:], [ARCHIV:] starten Maras Arbeitsschleife.
+- Live-Wetter im Websuche-Schritt: WDR-Vorhersage fuer NRW und Open-Meteo statt alter Suchtreffer.
+- Tests: voice-input, voice-read (Datenbank), voice-terms-ui (neu), weather-live (neu), web-search, work-events-ui.
+- Keine Aenderung an Cores, Modelfile, Installer oder Warteschlange.

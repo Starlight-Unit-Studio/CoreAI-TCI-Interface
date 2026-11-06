@@ -173,13 +173,23 @@
     start();
   }
 
+  /* 0.6.22: the speech as it is, for Core's ear. The browser's noise suppression can
+     smooth away soft consonants ("Gladbach" or "glatt"), and speech recognition
+     generally does better on unfiltered audio. Echo cancellation stays (Eve may be
+     reading aloud), the level control too (phone microphones are quiet). Opus at a
+     fixed 64 kbit/s, plenty for speech, instead of leaving it to the browser. */
+  var CAPTURE = { echoCancellation: true, noiseSuppression: false, autoGainControl: true, channelCount: 1 };
+  var BITRATE = 64000;
+
   function start() {
-    navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, channelCount: 1 } })
+    navigator.mediaDevices.getUserMedia({ audio: CAPTURE })
       .then(function (stream) {
         var type = pickType();
         var recorder;
         try {
-          recorder = type ? new MediaRecorder(stream, { mimeType: type }) : new MediaRecorder(stream);
+          var options = { audioBitsPerSecond: BITRATE };
+          if (type) options.mimeType = type;
+          recorder = new MediaRecorder(stream, options);
         } catch (e) {
           stream.getTracks().forEach(function (t) { t.stop(); });
           say('Dieser Browser kann nicht aufnehmen.');

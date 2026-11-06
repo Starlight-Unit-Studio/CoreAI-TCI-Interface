@@ -62,6 +62,11 @@ function ember_reputation_maybe_update(PDO $pdo, int $uid, string $characterId, 
   $GLOBALS['VI_MEMORY'][] = ['reputation', $uid, $characterId, $userMsg, $emberAnswer];
 }
 function ember_is_fail_message(string $reply): bool { return str_starts_with($reply, 'FEHLER'); }
+// 0.6.22: the work path, recorded here.
+$GLOBALS['VI_WORK'] = [];
+function coreui_work_record(PDO $pdo, string $kind, string $state, string $title, array $meta = []): void {
+  $GLOBALS['VI_WORK'][] = [$kind, $state, $title];
+}
 require_once $root . '/api/ember_attachments.php';
 
 // --- Offline ---------------------------------------------------------------------------------
@@ -121,6 +126,35 @@ vi_test(coreui_voice_strip_stray_bracket("[Hey Rick, vielen Dank!\n\nGute Fahrt!
 vi_test(coreui_voice_strip_stray_bracket('[Link](https://example.org) ist hier.') === '[Link](https://example.org) ist hier.'
   && coreui_voice_strip_stray_bracket('[Analyse: kurz] Hallo') === '[Analyse: kurz] Hallo' && coreui_voice_strip_stray_bracket('Hallo [Rick]') === 'Hallo [Rick]'
   && coreui_voice_strip_stray_bracket('[a] und [b]') === '[a] und [b]', 'links and closed notes stay');
+// 0.6.22: a tool marker stays whole ("[WEB: Wetter ...]" had become "WEB: Wetter ..." as the answer).
+vi_test(coreui_voice_strip_stray_bracket('[WEB: Wetter Bergisch Gladbach heute]') === '[WEB: Wetter Bergisch Gladbach heute]'
+  && coreui_voice_clean_reply('[BROWSE: Termine EVK]') === '[BROWSE: Termine EVK]'
+  && coreui_voice_clean_reply('[ARCHIV: Termin morgen') === '[ARCHIV: Termin morgen', 'tool markers are not stray brackets');
+
+// 0.6.22: names and terms for voice messages (KI-Profil): one per line, cleaned, at most 40.
+vi_test(coreui_voice_terms_normalise("Bergisch Gladbach\n  EVK ,evk; [WEB: x]\n\"Nicki\"\n- Mönchengladbach -\n...\nO’Brien")
+  === ['Bergisch Gladbach', 'EVK', 'WEB x', 'Nicki', 'Mönchengladbach', 'O’Brien'],
+  'terms: trimmed, split at lines, commas and semicolons, no brackets or quotes, no duplicates');
+vi_test(count(coreui_voice_terms_normalise(implode("\n", array_map(static fn(int $i): string => 'Ort ' . $i, range(1, 60))))) === 40
+  && mb_strlen(coreui_voice_terms_normalise(str_repeat('ä', 90))[0]) === 60 && coreui_voice_terms_normalise(['A', 'B']) === ['A', 'B']
+  && coreui_voice_terms_normalise('') === [], 'at most 40 terms of at most 60 characters');
+$plain = coreui_voice_transcribe_prompt('German');
+$hinted = coreui_voice_transcribe_prompt('German', ['Bergisch Gladbach', 'EVK']);
+vi_test(!str_contains($plain, 'names and terms') && coreui_voice_transcribe_prompt('German', []) === $plain
+  && str_starts_with($hinted, $plain . "\n* ") && str_contains($hinted, 'spell it exactly like this: Bergisch Gladbach, EVK.')
+  && str_contains($hinted, 'Do not add them when they are not spoken.'),
+  'without terms Google\'s template as before; with terms one more instruction');
+$payload = coreui_voice_transcribe_payload('core:latest', 'QUJD', 'German', null, null, ['Bergisch Gladbach']);
+vi_test($payload['messages'][1]['content'] === coreui_voice_transcribe_prompt('German', ['Bergisch Gladbach']) && !isset($payload['options']),
+  'the transcription call carries the terms, still without options');
+$clip = [['voice' => true, 'seconds' => 6.0, 'paths' => ['a'], 'stamps' => ['00:00'], 'transcript' => 'Ich wohne in Bergisch Gladbach.']];
+$task = coreui_voice_listen_task('Rick', '', $clip, ['Bergisch Gladbach', 'EVK'], ['web', 'archive']);
+vi_test(str_contains($task, 'Namen und Begriffe, die Rick oft sagt (so geschrieben): Bergisch Gladbach, EVK.')
+  && str_contains($task, '[WEB: suchbegriffe]') && str_contains($task, '[ARCHIV: stichworte]') && !str_contains($task, '[BROWSE:')
+  && str_contains($task, 'antworte NUR mit genau einem dieser Marker'), 'Mara gets the terms and the tools she may use');
+$task = coreui_voice_listen_task('Rick', '', $clip);
+vi_test(!str_contains($task, 'Namen und Begriffe') && !str_contains($task, '[WEB:'), 'without terms and tools: neither is mentioned');
+
 
 // 0.6.20 (operator's screenshots): a closing tag nothing opened, and the sentence that only
 // announces having listened, which repeated itself through the history; normal text stays.
@@ -167,6 +201,19 @@ vi_test(str_contains($chat, "  ?bool \$thinkOverride = null,\n  array \$optionOv
   && str_contains($chat, "      \$optionOverrides,\n      \$imageUrl,\n      \$thinkOverride\n    );"),
   'the continuation passes the think switch on');
 vi_test(str_contains($chat, "if (\$hasAudio) \$imgReply = coreui_voice_clean_reply((string)\$imgReply);"), 'answers to recordings are cleaned');
+// 0.6.22: a tool marker in the answer to a voice message runs Mara's work loop (text calls, the
+// recording is not sent again); a marker for a tool that is off never stands as the answer.
+vi_test(str_contains($chat, '$voiceTool = ($voiceTools !== [] && is_string($imgReply)) ? coreui_agent_next_tool($imgReply, $voiceTools) : null;')
+  && str_contains($chat, 'coreui_agent_loop_run($imgReply, $voiceTool, $voiceBase, $voiceTools, 0,')
+  && str_contains($chat, '$listenOptions, null, $listenThink)') && str_contains($chat, "\$GLOBALS['STU_EMBER_BROWSE_REQUEST'] = \$voiceLoop['browse'];")
+  && str_contains($chat, "array_intersect(ember_agent_allowed_tools(\$consoleUid, (string)\$consoleSessionId), ['web', 'browse', 'archive'])")
+  && str_contains($chat, '$prose = trim(ember_strip_stray_tool_markers($imgReply));')
+  && strpos($chat, '$voiceLoop = coreui_agent_loop_run(') < strpos($chat, 'if ($hasAudio) $imgReply = coreui_voice_clean_reply('),
+  'tools after a voice message: the work loop before the reply is cleaned');
+vi_test(str_contains($chat, '$userMsgClean : \'\', $audioClips, $voiceTerms, $voiceTools);'), 'Mara\'s task gets the terms and tools');
+$attach = (string)file_get_contents($root . '/api/ember_attachments.php');
+vi_test(str_contains($attach, "'terms' => ember_attach_voice_terms(\$pdo, \$uid),") && str_contains($attach, 'ember_profile_num_ctx($model), $terms);'),
+  'both transcripts get the terms');
 vi_test(str_contains($chat, "ember_attach_audio_cleanup(\$meta['dir'] ?? null);") && str_contains($chat, '$visionPrompt = coreui_voice_listen_task($senderName,'),
   'the WAVs are removed after the call; Mara gets the listening task');
 vi_test(str_contains($chat, '"SELECT id, user_id, character_id, character_name, message FROM stu_chat_messages')
@@ -356,6 +403,9 @@ try {
       'the transcript hears exactly the WAVs Mara gets');
   }
   vi_test($meta[0]['transcript'] === 'Was gibt es bei dir Neues?', 'the transcript goes with the WAVs into Mara\'s call');
+  // 0.6.22: one step with its end; an open step per part was told as "Der Abschluss steht noch aus".
+  vi_test($GLOBALS['VI_WORK'] === [['tool', 'running', 'Aufnahme wird mitgeschrieben'], ['tool', 'success', 'Aufnahme mitgeschrieben']],
+    'the work path: one transcript step, then its end: ' . json_encode($GLOBALS['VI_WORK']));
   $kept = coreui_voice_transcript_load(7, $voiceId);
   vi_test(($kept['state'] ?? '') === 'done' && $kept['text'] === 'Was gibt es bei dir Neues?' && count($kept['parts']) === 2
     && abs($kept['parts'][1][0] - 103.5) < 0.3, 'kept at once for the history and the line under the message');
@@ -363,6 +413,36 @@ try {
   unset($GLOBALS['STU_EMBER_AUDIO_CLIPS']);
   $again = ember_attachment_single_block($pdo, $voiceId, 7, 4000);
   vi_test($requests() === [] && ($GLOBALS['STU_EMBER_AUDIO_CLIPS']['transcript'] ?? '') === 'Was gibt es bei dir Neues?', 'a regenerated answer takes the kept transcript');
+  ember_attach_audio_cleanup($GLOBALS['STU_EMBER_AUDIO_CLIPS']['dir'] ?? null);
+
+  // 0.6.22: the account's names and terms reach the transcript (migration 025: column vocabulary).
+  vi_test(!coreui_voice_terms_ready($pdo) && ember_attach_voice_terms($pdo, 7) === [], 'no column yet: no terms, no error');
+  $pdo->exec('CREATE TABLE stu_user_voice_settings (user_id INTEGER PRIMARY KEY, auto_read INTEGER NOT NULL DEFAULT 0, vocabulary TEXT NULL)');
+  $pdo->exec("INSERT INTO stu_user_voice_settings (user_id, auto_read, vocabulary) VALUES (7, 0, 'Bergisch Gladbach\nEVK')");
+  vi_test(coreui_voice_terms_ready($pdo) && ember_attach_voice_terms($pdo, 7) === ['Bergisch Gladbach', 'EVK'] && ember_attach_voice_terms($pdo, 8) === [],
+    'the terms of account 7, none for another account');
+  $termsId = str_repeat('d4', 16);
+  $addMedia($termsId, $short, 'Sprachnachricht-2026-11-06_09-00-00.webm');
+  vi_reset();
+  $GLOBALS['VI_WORK'] = [];
+  unset($GLOBALS['STU_EMBER_AUDIO_CLIPS']);
+  $replies(['Ich wohne in Bergisch Gladbach.']);
+  ember_attachment_single_block($pdo, $termsId, 7, 4000);
+  $sent = $requests();
+  vi_test(count($sent) >= 1 && $sent[0]['messages'][1]['content'] === coreui_voice_transcribe_prompt('German', ['Bergisch Gladbach', 'EVK']),
+    'the transcript before the answer is asked with the terms');
+  ember_attach_audio_cleanup($GLOBALS['STU_EMBER_AUDIO_CLIPS']['dir'] ?? null);
+  @unlink((string)coreui_voice_transcript_path(7, $termsId));
+  $replies(array_fill(0, 6, 'Ich wohne in Bergisch Gladbach.'));
+  vi_test(ember_attach_audio_transcribe_after($pdo, 7, [$termsId]) === 1, 'the transcript after the answer is written');
+  $sent = $requests();
+  vi_test($sent !== [] && $sent[0]['messages'][1]['content'] === coreui_voice_transcribe_prompt('German', ['Bergisch Gladbach', 'EVK']),
+    'the transcript after the answer is asked with the terms too');
+  $pdo->exec('DROP TABLE stu_user_voice_settings');
+  $pdo->exec('DELETE FROM stu_console_media WHERE uuid = ' . $pdo->quote($termsId));
+  @unlink((string)coreui_voice_transcript_path(7, $termsId));
+  vi_reset();
+  unset($GLOBALS['STU_EMBER_AUDIO_CLIPS']);
   ember_attach_audio_cleanup($GLOBALS['STU_EMBER_AUDIO_CLIPS']['dir'] ?? null);
   ember_attach_audio_cleanup($base);
   vi_test(is_dir($base), 'cleanup never touches a folder outside the frame folder');

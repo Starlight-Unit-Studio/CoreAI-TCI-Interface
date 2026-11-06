@@ -219,14 +219,14 @@ function coreui_voice_stamp(float $seconds): string {
  * reload Core twice, once for the transcript and once for Mara's answer.
  */
 function coreui_voice_transcribe_payload(string $model, string $wavBase64, string $language, $keepAlive = null,
-                                         ?int $numCtx = null): array {
+                                         ?int $numCtx = null, array $terms = []): array {
   $payload = [
     'model' => $model,
     'stream' => false,
     'think' => false,
     'messages' => [
       ['role' => 'system', 'content' => coreui_voice_transcribe_system()],
-      ['role' => 'user', 'content' => coreui_voice_transcribe_prompt($language), 'images' => [$wavBase64]],
+      ['role' => 'user', 'content' => coreui_voice_transcribe_prompt($language, $terms), 'images' => [$wavBase64]],
     ],
   ];
   if ($keepAlive !== null) $payload['keep_alive'] = $keepAlive;
@@ -281,11 +281,11 @@ function coreui_voice_cancelled(): bool {
  * was no recording. Returns ok, text, kind ('heard' or 'silence'), error.
  */
 function coreui_voice_transcribe_part(string $url, string $model, string $wavBytes, string $language,
-                                      int $queueWait, $keepAlive = null, ?int $numCtx = null): array {
+                                      int $queueWait, $keepAlive = null, ?int $numCtx = null, array $terms = []): array {
   if (!function_exists('ember_global_lock_acquire') || !function_exists('ember_generation_lock_release')) {
     return ['ok' => false, 'error' => 'queue_unavailable'];
   }
-  $payload = coreui_voice_transcribe_payload($model, base64_encode($wavBytes), $language, $keepAlive, $numCtx);
+  $payload = coreui_voice_transcribe_payload($model, base64_encode($wavBytes), $language, $keepAlive, $numCtx, $terms);
   $last = ['ok' => false, 'error' => 'core_failed'];
   for ($attempt = 1; $attempt <= 2; $attempt++) {
     $slot = ember_global_lock_acquire($queueWait);
@@ -308,7 +308,8 @@ function coreui_voice_transcribe_part(string $url, string $model, string $wavByt
  * The whole way from a recording or file to text.
  *
  * Options: url, model, language ('de' or 'en'), max_seconds, queue_wait,
- * keep_alive, num_ctx, progress (callable(int $done, int $total)).
+ * keep_alive, num_ctx, terms (names and terms of the account, 0.6.22),
+ * progress (callable(int $done, int $total)).
  * Returns ok, text (parts joined), parts [[start, end, text]], seconds,
  * source_seconds, truncated, error. Errors: ffmpeg_missing, convert_failed,
  * empty_audio, no_speech, missed, core_without_audio, core_failed,
@@ -345,7 +346,7 @@ function coreui_voice_transcribe_file(string $source, array $options): array {
       if (!coreui_wav_gemma_ready(coreui_wav_info($bytes))) return ['ok' => false, 'error' => 'convert_failed'] + $base;
       $heard = coreui_voice_transcribe_part((string)$options['url'], (string)$options['model'], $bytes, $language,
         (int)($options['queue_wait'] ?? 300), $options['keep_alive'] ?? null,
-        isset($options['num_ctx']) ? (int)$options['num_ctx'] : null);
+        isset($options['num_ctx']) ? (int)$options['num_ctx'] : null, (array)($options['terms'] ?? []));
       if (!$heard['ok'] && $heard['error'] === 'missed') { $missed++; continue; }
       if (!$heard['ok']) return ['ok' => false, 'error' => $heard['error']] + $base;
       $done++;
@@ -437,7 +438,7 @@ function coreui_voice_prepare_native(string $source, string $targetDir, int $max
 }
 
 /** The task for Mara when a recording comes with her normal call. */
-function coreui_voice_listen_task(string $senderName, string $text, array $clips): string {
+function coreui_voice_listen_task(string $senderName, string $text, array $clips, array $terms = [], array $tools = []): string {
   $sender = trim($senderName) !== '' ? trim($senderName) : 'Jemand';
   $lines = [];
   foreach ($clips as $clip) {
@@ -460,6 +461,21 @@ function coreui_voice_listen_task(string $senderName, string $text, array $clips
   $voice = (bool)array_filter($clips, static fn(array $c): bool => !empty($c['voice']));
   $task = $sender . ' hat dir ' . ($voice ? 'gesprochen' : 'Audio geschickt') . ":\n" . implode("\n", $lines);
   if (trim($text) !== '') $task .= "\nDazu schreibt " . $sender . ': "' . trim($text) . '"';
+  // 0.6.22: names and terms from the KI-Profil, as they are written.
+  $terms = array_values(array_filter(array_map(static fn($t): string => trim((string)$t), $terms), static fn(string $t): bool => $t !== ''));
+  if ($terms !== []) {
+    $task .= "\nNamen und Begriffe, die " . $sender . ' oft sagt (so geschrieben): ' . implode(', ', $terms)
+      . '. Klingt etwas im Audio wie einer davon, ist er gemeint.';
+  }
+  // 0.6.22: the tools of the work loop, as for a typed message.
+  $menu = [];
+  if (in_array('web', $tools, true)) $menu[] = '[WEB: suchbegriffe] fuer einen schnellen Fakt aus dem Netz (Wetter, ein Datum, ein Preis, eine kurze Info)';
+  if (in_array('browse', $tools, true)) $menu[] = '[BROWSE: was du herausfinden sollst] wenn du dafuer selbst in Ruhe Webseiten lesen sollst';
+  if (in_array('archive', $tools, true)) $menu[] = '[ARCHIV: stichworte] um in der Mitschrift dieses Chats nachzusehen';
+  if ($menu !== []) {
+    $task .= "\nBrauchst du fuer die Antwort aktuelle Fakten, antworte NUR mit genau einem dieser Marker und sonst nichts; "
+      . "das Ergebnis bekommst du sofort:\n- " . implode("\n- ", $menu);
+  }
   return $task . "\nDu hoerst die Aufnahme selbst. Das ist die NEUE Nachricht: Antworte nur auf sie, als Mara, so wie auf das Gesagte"
     . ($voice ? ' in einem Gespraech' : '') . ', in der Sprache, in der gesprochen wird. '
     . 'Fruehere Sprachnachrichten im Verlauf sind schon beantwortet; wiederhole deine frueheren Antworten nicht. '
@@ -476,6 +492,8 @@ function coreui_voice_listen_task(string $senderName, string $text, array $clips
 function coreui_voice_strip_stray_bracket(string $reply): string {
   $text = trim($reply);
   if (!str_starts_with($text, '[')) return $reply;
+  // 0.6.22: a tool marker stays whole ("[WEB: Wetter ...]" had become "WEB: Wetter ...").
+  if (preg_match('~^\[(?:WEB|BROWSE|ARCHIV|SKILL|PY)\b~iu', $text) === 1) return $reply;
   $close = strpos($text, ']');
   if ($close === false) return ltrim(substr($text, 1));
   if ($close === strlen($text) - 1 && substr_count($text, '[') === 1) return trim(substr($text, 1, -1));
@@ -501,6 +519,66 @@ function coreui_voice_clean_reply(string $reply): string {
   $rest = preg_replace($announce, '', $text, 1);
   if (is_string($rest) && trim($rest) !== '') $text = trim($rest);
   return $text;
+}
+
+// --- 0.6.22: names and terms for voice messages (KI-Profil) -------------------
+
+const COREUI_VOICE_TERMS_MAX = 40;
+const COREUI_VOICE_TERM_CHARS = 60;
+
+/**
+ * The account's list of names and terms, one per line (commas and semicolons
+ * separate too): trimmed, inner spaces collapsed, characters other than
+ * letters, digits, space, dot, apostrophe, hyphen, ampersand, slash and plus
+ * removed (no brackets, quotes or tool markers reach a prompt), at most 60
+ * characters each, duplicates dropped regardless of case, at most 40.
+ */
+function coreui_voice_terms_normalise($input): array {
+  $raw = is_array($input) ? implode("\n", array_map('strval', $input)) : (string)$input;
+  $terms = [];
+  $seen = [];
+  foreach (preg_split('~[\r\n,;]+~u', $raw) ?: [] as $term) {
+    $term = (string)preg_replace('~[^\p{L}\p{M}\p{N} .\'’&/+\-]~u', '', $term);
+    $term = (string)preg_replace(['~\s+~u', '~^[ .\'’&/+\-]+|[ .\'’&/+\-]+$~u'], [' ', ''], $term);
+    if ($term === '') continue;
+    if (mb_strlen($term) > COREUI_VOICE_TERM_CHARS) $term = rtrim(mb_substr($term, 0, COREUI_VOICE_TERM_CHARS));
+    $key = mb_strtolower($term);
+    if (isset($seen[$key])) continue;
+    $seen[$key] = true;
+    $terms[] = $term;
+    if (count($terms) >= COREUI_VOICE_TERMS_MAX) break;
+  }
+  return $terms;
+}
+
+/** Column vocabulary exists (migration 025). */
+function coreui_voice_terms_ready(PDO $pdo): bool {
+  try {
+    $pdo->query('SELECT vocabulary FROM stu_user_voice_settings LIMIT 0');
+    return true;
+  } catch (Throwable $e) {
+    return false;
+  }
+}
+
+function coreui_voice_terms_load(PDO $pdo, int $uid): array {
+  if ($uid <= 0 || !coreui_voice_terms_ready($pdo)) return [];
+  try {
+    $st = $pdo->prepare('SELECT vocabulary FROM stu_user_voice_settings WHERE user_id = ? LIMIT 1');
+    $st->execute([$uid]);
+    return coreui_voice_terms_normalise((string)$st->fetchColumn());
+  } catch (Throwable $e) {
+    return [];
+  }
+}
+
+function coreui_voice_terms_save(PDO $pdo, int $uid, $input): array {
+  if ($uid <= 0) throw new InvalidArgumentException('invalid_user');
+  if (!coreui_voice_terms_ready($pdo)) throw new RuntimeException('missing_schema_025');
+  $terms = coreui_voice_terms_normalise($input);
+  $pdo->prepare('INSERT INTO stu_user_voice_settings (user_id, vocabulary) VALUES (?, ?) ON DUPLICATE KEY UPDATE vocabulary = VALUES(vocabulary)')
+    ->execute([$uid, $terms !== [] ? implode("\n", $terms) : null]);
+  return coreui_voice_terms_load($pdo, $uid);
 }
 
 /** Cache file of the transcript of one attachment (var/voice_cache/<uid>/t-<id>.json). */
