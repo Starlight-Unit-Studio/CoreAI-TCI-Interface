@@ -367,6 +367,7 @@ UI_FILES=(
   docker/pyworker/Dockerfile
   docker/pyworker/entrypoint.sh
   images/starlight_unit_studios_logo_original.png
+  images/watermark_logo.png
 )
 for ui_file in "${UI_FILES[@]}"; do
   if [[ ! -s "$PROJECT_ROOT/$ui_file" ]]; then
