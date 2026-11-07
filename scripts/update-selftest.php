@@ -115,6 +115,22 @@ catch (RuntimeException $e) { update_test($e->getMessage() === 'request_dir_miss
 // Wiring.
 $read = static fn(string $f): string => (string)file_get_contents($root . '/' . $f);
 $api = $read('api/update.php');
+// The external root-only SSH entry must reuse the SAME update pipeline.
+// It cannot create a fake owner request or discard an owner's queued request.
+$operator = $read('scripts/coreai-updater.sh');
+update_test(str_contains($operator, 'operator-update) do_run operator ;;')
+  && str_contains($operator, 'run) do_run owner ;;'), 'CLI: distinct root operator and owner actions');
+update_test(str_contains($operator, 'requested_by=0 # Host operator')
+  && str_contains($operator, 'if [[ "$mode" != operator ]]; then rm -f -- "$REQUEST_FILE"; fi'),
+  'operator provenance and owner queue isolation');
+update_test(str_contains($operator, '[[ -f "$PROJECT_ROOT/api/config.local.php" && -f "$PROJECT_ROOT/var/compose.env" ]]')
+  && str_contains($operator, '[[ "$(state get "$STATUS_FILE" state)" != running ]]')
+  && str_contains($operator, 'if ! take_lock; then'), 'existing install, active state and exclusive lock are required');
+update_test(str_contains($operator, 'exec > >(tee -a "$LOG_FILE") 2>&1')
+  && str_contains($operator, 'backup="$(backup_database)"')
+  && str_contains($operator, 'download_setup || result=$?')
+  && str_contains($operator, 'restart_services "$restart_ollama"')
+  && str_contains($operator, 'health_ok || message='), 'SSH progress mirrors the existing backup-update-restart-health path');
 update_test(str_contains($api, "(int)\$row['permission_level'] !== 0 || (int)(\$row['is_guest'] ?? 0) === 1") && str_contains($api, "'error' => 'owner_only'], 403")
   && str_contains($api, 'stu_require_csrf();') && str_contains($api, "'update_start', 'coreai'"), 'API: Inhaber only, CSRF, audited');
 update_test(strpos($api, 'stu_require_csrf();') < strpos($api, "if (\$action === 'start')"), 'CSRF before every action');
