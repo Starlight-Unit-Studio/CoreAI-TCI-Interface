@@ -268,7 +268,9 @@ async function record(page, ms) {
     assert.equal((await transcriptLine(page)).hidden, true, 'no transcript: no line');
     await page.close();
     // 0.6.35 (P20.2): a video gets the line of its sound track, like a voice message.
-    ({page, calls} = await open(browser, {allowed: true, hears: true}, {transcript: {ok: true, state: 'done', text: 'Hallo aus dem Urlaub.'}}));
+    // 0.6.36: drawn while the transcript is still written ("pending"), the page asks again.
+    let videoTranscript = {ok: true, state: 'pending'};
+    ({page, calls} = await open(browser, {allowed: true, hears: true}, {transcript: () => videoTranscript}));
     await page.waitForSelector('#btnMic');
     await page.evaluate(uuid => {
       const row = document.createElement('div');
@@ -279,6 +281,9 @@ async function record(page, ms) {
       document.getElementById('rows').appendChild(row);
     }, 'ef'.repeat(16));
     await until(page, () => { const l = document.querySelector('#rows .msg-transcript'); return l && !l.hidden; });
+    assert.deepEqual(await transcriptLine(page), {hidden: false, text: 'Mitschrift folgt …', state: 'pending'});
+    videoTranscript = {ok: true, state: 'done', text: 'Hallo aus dem Urlaub.'};
+    await until(page, () => document.querySelector('#rows .msg-transcript').getAttribute('data-state') === 'done', null, 10000);
     assert.deepEqual(await transcriptLine(page), {hidden: false, text: 'Mitschrift: Hallo aus dem Urlaub.', state: 'done'});
     assert.equal(await page.evaluate(() => document.querySelector('#rows video').nextElementSibling.className), 'msg-transcript',
       'the line sits right under the video');

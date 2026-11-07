@@ -273,8 +273,16 @@ function ember_attach_audio_native(PDO $pdo, string $uuid, int $uid, string $pat
  * honestly also when there is none, it is silent, the Core cannot hear or she is a guest's Mara.
  */
 function ember_attach_video_sound(PDO $pdo, string $uuid, int $uid, string $path, string $name): array {
-  $none = static fn(string $note): array => ['clips' => null, 'note' => $note];
-  if ($uid <= 0 || (function_exists('coreui_guest_is') && coreui_guest_is($pdo, $uid))) return $none('Ton hast du nicht.');
+  // 0.6.36: every video ends with a state for the line under it ("none" or "silent"), so the page,
+  // which asks while the transcript is being written, knows when to stop. A written transcript stays.
+  $none = static function (string $note, string $state = 'none') use ($uid, $uuid): array {
+    $known = $uid > 0 ? coreui_voice_transcript_load($uid, $uuid) : null;
+    if ($uid > 0 && !in_array(is_array($known) ? ($known['state'] ?? '') : '', ['done', 'silent'], true)) {
+      coreui_voice_transcript_save($uid, $uuid, ['state' => $state]);
+    }
+    return ['clips' => null, 'note' => $note];
+  };
+  if ($uid <= 0 || (function_exists('coreui_guest_is') && coreui_guest_is($pdo, $uid))) return ['clips' => null, 'note' => 'Ton hast du nicht.'];
   $stream = coreui_voice_has_audio_stream($path);
   if ($stream === false) return $none('Das Video hat keine Tonspur.');
   if (!ember_attach_audio_allowed($pdo, $uid)) {
@@ -290,7 +298,7 @@ function ember_attach_video_sound(PDO $pdo, string $uuid, int $uid, string $path
     'parts' => count((array)($prepared['paths'] ?? [])), 'seconds' => isset($prepared['seconds']) ? round((float)$prepared['seconds'], 1) : null]);
   if (!$prepared['ok']) {
     ember_attach_audio_cleanup($dir);
-    if (($prepared['error'] ?? '') === 'no_speech') return $none('Die Tonspur ist still, darin ist nichts zu hoeren.');
+    if (($prepared['error'] ?? '') === 'no_speech') return $none('Die Tonspur ist still, darin ist nichts zu hoeren.', 'silent');
     return $none($stream === null ? 'Ton hast du nicht.' : 'Den Ton konntest du diesmal nicht hoeren; sag das, wenn es um den Ton geht.');
   }
   $transcript = ember_attach_audio_transcribe_now($pdo, $uid, $uuid, $name, $prepared, true);
@@ -371,7 +379,11 @@ function ember_attach_audio_transcribe_now(PDO $pdo, int $uid, string $uuid, str
   $text = implode(' ', array_column($parts, 2));
   $record($text !== '' ? 'success' : 'info', $text !== '' ? ($video ? 'Tonspur mitgeschrieben' : 'Aufnahme mitgeschrieben') : 'Mitschrift ohne Text',
     ['parts' => count($paths)]);
-  if ($failed) return $text;
+  if ($failed) {
+    // 0.6.36: a video gets no second try after the answer: what was written, or "failed".
+    if ($video) coreui_voice_transcript_save($uid, $uuid, $text !== '' ? ['state' => 'done', 'text' => $text, 'parts' => $parts] : ['state' => 'failed']);
+    return $text;
+  }
   // An audio file cut to the window gets its full transcript after the answer; a video does not, so it keeps this one.
   $cutToWindow = !$video && !empty($prepared['truncated']) && !coreui_voice_is_voice_message($name)
     && (float)($prepared['seconds'] ?? 0) < COREUI_VOICE_FILE_MAX_SECONDS - 0.5;

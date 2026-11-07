@@ -1,0 +1,24 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.36
+Stand: 07.11.2026
+Basis: main 0.6.35 nach Merge von PR #186.
+
+RUECKMELDUNG: Zwei Handyvideos (8 s, Selfie mit Sprache, einmal Englisch) - "alle angaben von mara sind korrekt"
+(Bild mit Zeitmarken, Gesprochenes woertlich, Uebersetzung). Auf den Screenshots fehlte die Zeile "Mitschrift:" unter
+den Videos, obwohl der Arbeitsweg sie ankuendigt.
+
+URSACHE: js/coreui-voice-input.js fragt api/voice_input.php?action=transcript, sobald das Video gezeichnet wird. Der
+Server schreibt die Mitschrift erst danach (beim Aufbereiten des Anhangs). 0.6.35 antwortete fuer Videos ohne Eintrag
+sofort "none"; die Seite speichert jeden Stand ausser "pending" und fragt nie wieder.
+
+UMSETZUNG
+- api/voice_input.php: kein Sonderfall mehr fuer Videos; frisch ohne Eintrag -> "pending" (wie Stimmsequenzen);
+  neuer Endstand "none" wird wie silent/failed weitergegeben.
+- api/ember_attachments.php: ember_attach_video_sound schreibt "none" (keine Tonspur, Core ohne Audio, Aufbereitung
+  gescheitert) bzw. "silent" (stille Spur), ohne eine vorhandene Mitschrift (done/silent) zu ueberschreiben; Gaeste
+  bekommen keinen Eintrag. ember_attach_audio_transcribe_now speichert fuer Videos bei Fehlern das Geschriebene oder
+  "failed" (kein Nachlauf nach der Antwort fuer Videos).
+
+GEPRUEFT (hier ausgefuehrt): php -l, voice-input-selftest.php, voice-input-ui-selftest.cjs, tci-language-selftest.cjs,
+terran-terminology-selftest.cjs, volle Testreihe mit Test-Datenbank, cache-bust, version-merge-check gegen 0.6.35.
+
+NACH DEM MERGE: Update, ein Video mit Sprache schicken: unter dem Video zuerst "Mitschrift folgt …", dann die Mitschrift.

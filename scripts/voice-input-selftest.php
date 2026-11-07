@@ -204,6 +204,9 @@ vi_test(str_contains($chat, "\$imgReply,\n      \$imageUrl,\n      \$listenThink
 vi_test(str_contains($chat, "ember_video_sound_task(\$videoSound, (string)(\$vf['sound_note'] ?? 'Ton hast du nicht.'))")
   && !str_contains($chat, '"Ton hast du nicht. Was sagst du dazu')
   && str_contains($chat, "ember_attach_audio_cleanup(\$meta['sound']['dir'] ?? null);"), 'the video task hears the sound track, its WAVs are removed');
+vi_test(str_contains($read('api/voice_input.php'), "['pending', 'silent', 'failed', 'none']")
+  && !str_contains($read('api/voice_input.php'), "=== 'video') stu_json(['ok' => true, 'state' => 'none']);"),
+  'a fresh video is asked again until its state is written (0.6.36)');
 vi_test(str_contains($read('api/voice_input.php'), "kind IN (?, ?) LIMIT 1')") && str_contains($read('api/voice_input.php'), "\$st->execute([\$uuid, \$uid, 'audio', 'video']);")
   && str_contains($read('js/coreui-voice-input.js'), "querySelectorAll('audio.msg-audio[data-uuid], video.msg-video[data-uuid]')")
   && str_contains($read('js/console-app.js'), "vid.className = 'msg-image msg-video';")
@@ -592,20 +595,34 @@ try {
   [$b, $sound, $note] = $videoNote($muteId);
   vi_test($sound === null && $note === 'Das Video hat keine Tonspur.' && str_contains($b, 'Das Video hat keine Tonspur.') && $requests() === [],
     'a mute video: no track, nothing transcribed: ' . $note);
+  // 0.6.36: every video ends with a state, so the page stops asking (no line under a mute video).
+  vi_test((coreui_voice_transcript_load(7, $muteId)['state'] ?? '') === 'none', 'a mute video ends as "none"');
   vi_test(ember_video_sound_task(null, $note) === 'Das Video hat keine Tonspur.', 'the task names it');
   vi_reset();
   [$b, $sound, $note] = $videoNote($quietVideoId);
   vi_test($sound === null && str_contains($note, 'Die Tonspur ist still') && $requests() === [], 'a silent track: said so, nothing sent: ' . $note);
+  vi_test((coreui_voice_transcript_load(7, $quietVideoId)['state'] ?? '') === 'silent', 'a silent track ends as "silent" ("Keine gesprochenen Worte.")');
   vi_reset();
   $GLOBALS['VI']['hears'] = ['completion', 'vision'];
   [$b, $sound, $note] = $videoNote($videoId);
   vi_test($sound === null && str_contains($note, 'Der gewaehlte Core unterstuetzt keine Audioeingabe') && $requests() === [],
     'a Core without audio: the frames, and the honest note about the sound: ' . $note);
+  vi_test((coreui_voice_transcript_load(7, $videoId)['state'] ?? '') === 'done', 'a transcript written before stays, also with another Core');
   vi_reset();
   $GLOBALS['VI']['guest'] = true;
   [$b, $sound, $note] = $videoNote($videoId);
   vi_test($sound === null && $note === 'Ton hast du nicht.' && str_contains($b, 'Einzelbilder'), 'guests: frames only, as before');
   // (The frames' cleanup only works under /ember_frames/, a safety net; this test folder is removed at the end.)
+  // 0.6.36: the transcription fails: the video ends as "failed", not as an endless "follows".
+  $failedVideoId = str_repeat('b8', 16);
+  $addVideo($failedVideoId, $video, 'kaputt.webm');
+  vi_reset();
+  $replies([['status' => 500, 'error' => 'boom']]);
+  [$b, $sound, $note] = $videoNote($failedVideoId);
+  $requests();
+  vi_test(is_array($sound) && (coreui_voice_transcript_load(7, $failedVideoId)['state'] ?? '') === 'failed',
+    'a failed transcript: Mara still hears the track, the video ends as "failed"');
+  ember_attach_audio_cleanup($sound['dir'] ?? null);
   vi_test(glob($frames . '/audio_*') === [], 'no WAVs of a sound track left behind: ' . json_encode(array_map('basename', glob($frames . '/audio_*') ?: [])));
   // The history: what was said in a video; a video without written sound keeps no line.
   foreach ([[20, $videoId], [21, $muteId]] as [$msg, $uuid]) {
