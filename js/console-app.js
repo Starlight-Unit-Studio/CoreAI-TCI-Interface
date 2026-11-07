@@ -984,7 +984,7 @@
       }
       if (state.pendingBySession[ses.id]) {
         showTypingIndicator();
-        setStatus('waiting', 'MARA ANTWORTET\u2026');
+        setStatus('waiting', (state.assistantName || 'Mara').toUpperCase() + ' ANTWORTET\u2026');
       }
       renderQueuedTurns(ses);
     } catch (error) {
@@ -1661,7 +1661,7 @@
       guestTurnCounted();
       state.pendingBySession[ses.id] = Number(request.trigger_message_id) || true;
       updateActivePendingUi();
-      setStatus('waiting', mode === 'continue' ? 'MARA SETZT FORT\u2026' : 'MARA ERZEUGT ALTERNATIVE\u2026');
+      setStatus('waiting', (state.assistantName || 'Mara').toUpperCase() + (mode === 'continue' ? ' SETZT FORT\u2026' : ' ERZEUGT ALTERNATIVE\u2026'));
       showTypingIndicator(true);
       openStreamForReply(ses, Number(request.trigger_message_id) || 0, request);
     }).catch(function (error) {
@@ -2389,7 +2389,7 @@
     var selected = Array.prototype.slice.call(fileList || []);
     if (!selected.length) return;
     if (state.waitingEmber) {
-      appendMessageEl('system', '\u231b Mara antwortet gerade\u2026 Anhaenge bitte danach.');
+      appendMessageEl('system', '\u231b ' + (state.assistantName || 'Mara') + ' antwortet gerade\u2026 Anhaenge bitte danach.');
       scrollToBottom();
       return;
     }
@@ -2583,7 +2583,7 @@
     return postConsoleAction({ action: 'compact', session_id: sessionId }).then(function (d) {
       var folded = Number(d.folded) || 0;
       var text = folded > 0 ? 'Chat komprimiert: ' + folded + ' ältere Nachrichten zusammengefasst, insgesamt ' + (Number(d.total) || folded)
-        + '. Die Mitschrift liegt im Archiv (.md).' : 'Noch nichts zu komprimieren: alles passt in Maras Fenster.';
+        + '. Die Mitschrift liegt im Archiv (.md).' : 'Noch nichts zu komprimieren: alles passt in das Kontextfenster von ' + (state.assistantName || 'Mara') + '.';
       if (compactStatus) compactStatus.textContent = text;
       compactShowArchive(sessionId, !!d.has_archive);
       if (folded > 0 && isActiveSession(sessionId)) {
@@ -2681,7 +2681,7 @@
     if (!options.from_queue) clearAttachments();
     scrollToBottom(true); // A new user turn intentionally opens the latest view.
 
-    setStatus('waiting', 'MARA ANTWORTET\u2026');
+    setStatus('waiting', (state.assistantName || 'Mara').toUpperCase() + ' ANTWORTET\u2026');
     state.pendingBySession[sessionId] = true;
     state.waitingEmber = true;
     state.sendTimestamp = Date.now();
@@ -2729,7 +2729,7 @@
           'guest_limit_reached': '\u26a0 Deine Gast-Nachrichten sind aufgebraucht. Mit einem eigenen Konto geht es weiter.',
           'guest_network_limit': '\u26a0 Die Gast-Nachrichten für dein Netzwerk sind für heute aufgebraucht. Mit einem eigenen Konto geht es weiter.',
           'guest_daily_limit':   '\u26a0 Der Gast-Zugang ist für heute ausgelastet. Mit einem eigenen Konto geht es weiter.',
-          'guest_console_only':  '\u26a0 Als Gast chattest du nur im privaten Chat mit Mara.',
+          'guest_console_only':  '\u26a0 Als Gast chattest du nur im privaten CoreAI-Chat.',
           'daily_message_limit': '\u26a0 Dein Tageslimit an Nachrichten ist erreicht.'
             + (d.retry_at ? ' Wieder möglich ab ' + new Date(d.retry_at).toLocaleString('de-DE', { weekday: 'short', hour: '2-digit', minute: '2-digit' }) + '.' : '')
         };
@@ -3142,7 +3142,7 @@
     if (browseJobId > 0) {
       // Die FINALE Antwort kommt erst NACH dem Surfen (per Hintergrund-Poll). Bis dahin arbeitet
       // Ember weiter -> Status sichtbar "arbeitet" (amber) lassen, NICHT vorschnell auf grün.
-      setStatus('waiting', 'MARA ANTWORTET\u2026');
+      setStatus('waiting', (state.assistantName || 'Mara').toUpperCase() + ' ANTWORTET\u2026');
       openBrowseWindow(browseJobId, sessionId);
       if (data && data.generation_request) {
         startGenerationStatusPoll(ses, { id: data.generation_request });
