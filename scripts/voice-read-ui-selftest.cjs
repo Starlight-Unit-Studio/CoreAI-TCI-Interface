@@ -241,8 +241,8 @@ const until = (page, fn, arg) => page.waitForFunction(fn, arg, {timeout: 8000});
     ({page, calls, errors} = await open(browser, {allowed: true, available: false, loading: true, auto_read: false}));
     button = '#' + await addButton(page, 6);
     assert.equal(await page.isDisabled(button), true);
-    assert.equal(await page.getAttribute(button, 'aria-label'), 'Maras Stimme wird geladen');
-    assert.equal(await page.textContent('#voiceAutoReadNote'), 'Maras Stimme wird gerade geladen.');
+    assert.equal(await page.getAttribute(button, 'aria-label'), 'Die Stimme wird geladen');
+    assert.equal(await page.textContent('#voiceAutoReadNote'), 'Die Stimme deiner CoreAI wird gerade geladen.');
     await page.close();
 
     // A server without the voice service: nothing shown.
