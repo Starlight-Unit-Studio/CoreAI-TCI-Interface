@@ -1,7 +1,7 @@
 CoreAI: TCI Interface 0.6.44 - 07.11.2026
-- Bildgenerierung: nur noch "Erzeugt von Quantum CoreAI [Jahr]©" als Text-Credit, Jahr automatisch aus der Serverzeit.
-- Studio-Logo aus den erzeugten Bildern entfernt, Logo-Datei fuer andere Oberflaechen unveraendert.
-- Bestehende Rajdhani-Schrift, weisser Text und Schatten, 50 % Deckkraft, unten rechts.
-- Bild-Selbsttest fuer Jahreswechsel, Bilddimensionen, Position, Deckkraft und Logo-Freiheit aktualisiert.
-- Keine Aenderung an Cores, Modelfile, Bildmodell, Datenbank, Installer oder Warteschlange.
-- Vollstaendiger Lauf der Bildtests benoetigt eine Umgebung mit PHP-GD und Testdatenbank.
+- Bildgenerierung wie im Referenzbild: unten links kleiner Copyright-Vermerk "© [Jahr] Quantum CoreAI" mit Jahreszahl aus der Erzeugungszeit.
+- Unten rechts neues, halbtransparentes Quantum-Wasserzeichen aus images/watermark_logo.png. Dunkelblauer Bildhintergrund des Logos wird beim Zeichnen ausgeblendet.
+- Altes Starlight-Unit-Logo wird nicht mehr auf erzeugte Bilder gesetzt; Originaldatei bleibt fuer andere UI-Teile erhalten.
+- Neue Tests fuer 512/1024, zwei getrennte Ecken, Jahr 2026/2027, transparenten Logo-Hintergrund und unveraenderten restlichen Bildbereich.
+- Keine Aenderungen an Modell, Modelfile, Datenbank, Installer oder Warteschlange.
+- Vollstaendiger Image-Test und Preflights vor dem Merge erforderlich.
