@@ -15,5 +15,5 @@ UMSETZUNG
 
 TESTSTATUS / FREIGABE
 - Neue Quelltexte im PR kontrollieren, PHP-Lint, image-gen-selftest.php und Version-Guard vor Merge ausfuehren.
-- Vollstaendiger Bildtest erfordert PHP-GD; lokal ist diese Erweiterung nicht vorhanden. Daher PR im Entwurfsstatus belassen.
+- Vollstaendiger Bildtest erfordert PHP-GD; lokal ist diese Erweiterung nicht vorhanden. PR #196 ist zur Durchsicht freigegeben; Server-Integrationstests bleiben offen und sind vor produktivem Einsatz separat nachzuweisen.
 - Ein PR ist noch kein Live-Deployment. Keine Veraenderung an Cores, Modelfile, Bildmodell, Datenbank oder Warteschlange.
