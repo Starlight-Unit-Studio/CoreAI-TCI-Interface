@@ -70,8 +70,8 @@ function coreui_composer_intent_hint(array $intent, bool $allowed): string {
       . $what . "). Sag das kurz und freundlich und hilf, so gut es ohne geht.";
   }
   return match ($tool) {
-    'image' => "AUSWAHL IM MENUE: Die Person hat \"Bild erstellen\" gewaehlt. Male ein Bild zu ihrer Nachricht: antworte NUR mit "
-      . (($intent['size'] ?? '') === 'large' ? '[BILD GROSS: ausfuehrliche Bildbeschreibung auf Englisch]' : '[BILD: ausfuehrliche Bildbeschreibung auf Englisch]')
+    'image' => "AUSWAHL IM MENUE: Die Person hat \"Bild erstellen\" gewaehlt. Male ein Bild zu ihrer Nachricht. Fuer dich selbst (auch im Rollenspiel) nutze den Marker mit ICH und dein Referenzportraet; bei fremden Motiven nie ICH: antworte NUR mit "
+      . (($intent['size'] ?? '') === 'large' ? '[BILD GROSS: ...] oder [BILD GROSS ICH: ...]' : '[BILD: ...] oder [BILD ICH: ...]')
       . " und sonst nichts.",
     'web' => "AUSWAHL IM MENUE: Die Person hat \"Websuche\" gewaehlt. Suche zuerst im Netz: antworte NUR mit [WEB: genaue Suchbegriffe] und sonst nichts.",
     default => "AUSWAHL IM MENUE: Die Person hat \"Recherche\" gewaehlt. Lies selbst Webseiten: antworte NUR mit "
@@ -96,8 +96,9 @@ function coreui_composer_intent_ensure(array $intent, string $reply, string $use
   $words = trim((string)preg_replace('~\s+~u', ' ', (string)preg_replace('~[\[\]]+~u', ' ', $userText)));
   if (mb_strlen($words) < 3) return $reply;
   $words = mb_substr($words, 0, $tool === 'image' ? 1000 : 300);
+  $self = $tool === 'image' && function_exists('coreui_image_is_self_request') && coreui_image_is_self_request($words);
   return match ($tool) {
-    'image' => '[BILD' . (($intent['size'] ?? '') === 'large' ? ' GROSS' : '') . ': ' . $words . ']',
+    'image' => '[BILD' . (($intent['size'] ?? '') === 'large' ? ' GROSS' : '') . ($self ? ' ICH' : '') . ': ' . $words . ']',
     'web' => '[WEB: ' . $words . ']',
     default => '[BROWSE: ' . $words . ']',
   };
