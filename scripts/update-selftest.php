@@ -126,6 +126,11 @@ update_test(str_contains($operator, 'requested_by=0 # Host operator')
 update_test(str_contains($operator, '[[ -f "$PROJECT_ROOT/api/config.local.php" && -f "$PROJECT_ROOT/var/compose.env" ]]')
   && str_contains($operator, '[[ "$(state get "$STATUS_FILE" state)" != running ]]')
   && str_contains($operator, 'if ! take_lock; then'), 'existing install, active state and exclusive lock are required');
+$native = $read('scripts/lib/coreai_update_state.py');
+update_test(str_contains($operator, 'operator_progress "$mode"')
+  && str_contains($operator, 'COREAI_OPERATOR_PROGRESS=1')
+  && str_contains($native, '__COREAI_PROGRESS__:'),
+  'operator uses exact native progress markers rather than guessed values');
 update_test(str_contains($operator, 'exec > >(tee -a "$LOG_FILE") 2>&1')
   && str_contains($operator, 'backup="$(backup_database)"')
   && str_contains($operator, 'download_setup || result=$?')
