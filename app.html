@@ -270,7 +270,7 @@
       <div class="feed-vector feed-vector-a" aria-hidden="true"></div>
       <div class="feed-vector feed-vector-b" aria-hidden="true"></div>
 
-      <section class="feed-shell" aria-label="Private Unterhaltung mit Mara CoreAI">
+      <section class="feed-shell" aria-label="Private Unterhaltung mit deiner CoreAI">
         <header class="feed-header">
           <div class="feed-header-title">
             <span class="feed-rune" aria-hidden="true">⟐</span>
@@ -345,9 +345,9 @@
               id="inputMessage"
               class="composer-input"
               rows="1"
-              placeholder="Nachricht an Mara…"
+              placeholder="Nachricht an CoreAI…"
               aria-describedby="composerHint"
-              aria-label="Nachricht an Mara, langer Text wird automatisch als Markdown angehängt"
+              aria-label="Nachricht an deine CoreAI, langer Text wird automatisch als Markdown angehängt"
             ></textarea>
           </label>
 
@@ -389,7 +389,7 @@
         <label class="core-mode-row" for="coreThinkToggle">
           <span class="core-mode-copy">
             <strong>DENKEN</strong>
-            <small>Mara denkt vor der Antwort nach: gründlicher, aber langsamer. Gilt ab der nächsten Nachricht, für alle deine Chats.</small>
+            <small>Deine CoreAI denkt vor der Antwort nach: gründlicher, aber langsamer. Gilt ab der nächsten Nachricht, für alle deine Chats.</small>
           </span>
           <span class="settings-switch"><input id="coreThinkToggle" type="checkbox" checked /><i aria-hidden="true"></i></span>
         </label>
@@ -398,8 +398,8 @@
 
       <div class="core-mode-menu compact-menu" id="compactMenu" role="dialog" aria-label="Chat komprimieren" hidden>
         <span class="core-mode-kicker">CHAT KOMPRIMIEREN</span>
-        <p class="compact-copy">Fallen ältere Nachrichten aus Maras Fenster, fasst sie den Verlauf selbst zusammen. Die wörtliche
-          Mitschrift bleibt als .md-Archiv, bis du den Chat löschst; Mara schlägt darin nach, wenn ihr ein Detail fehlt.</p>
+        <p class="compact-copy">Fallen ältere Nachrichten aus dem Kontextfenster, fasst sie den Verlauf selbst zusammen. Die wörtliche
+          Mitschrift bleibt als .md-Archiv, bis du den Chat löschst; deine CoreAI schlägt darin nach, wenn ihr ein Detail fehlt.</p>
         <p class="core-mode-status" id="compactStatus" role="status" aria-live="polite"></p>
         <div class="compact-actions">
           <button class="core-install-btn core-install-btn--go" id="compactNow" type="button">Jetzt komprimieren</button>
@@ -414,7 +414,7 @@
             <thead><tr><th scope="col">TCI-Name</th><th scope="col">Core</th><th scope="col">Status</th></tr></thead>
             <tbody id="coreLegendRows"></tbody>
           </table>
-          <p class="core-legend-note">Jede Stufe antwortet als Mara. Die Punkte im Core-Menü: grün ist der Core, mit dem Mara dir gerade antwortet, gelb ein installierter Core in Bereitschaft, rot ein Core, der fehlt oder gerade nicht erreichbar ist; golden pulsiert der Core, der gerade geladen wird. Eine ausgegraute Stufe fehlt noch und lässt sich dort installieren (nur Admins). Gibt es eine Stufe auch in der Cloud, wählst du in ihrer Zeile Lokal oder Cloud. Cloud-Cores laufen über Ollama in der Cloud und brauchen auf dem Server ein Ollama-Konto; Admins verbinden es unter "Cores verwalten".</p>
+          <p class="core-legend-note">Jede Stufe antwortet als deine CoreAI. Die Punkte im Core-Menü: grün ist der Core, mit dem deine CoreAI dir gerade antwortet, gelb ein installierter Core in Bereitschaft, rot ein Core, der fehlt oder gerade nicht erreichbar ist; golden pulsiert der Core, der gerade geladen wird. Eine ausgegraute Stufe fehlt noch und lässt sich dort installieren (nur Admins). Gibt es eine Stufe auch in der Cloud, wählst du in ihrer Zeile Lokal oder Cloud. Cloud-Cores laufen über Ollama in der Cloud und brauchen auf dem Server ein Ollama-Konto; Admins verbinden es unter "Cores verwalten".</p>
         </section>
         <section class="core-legend-section" aria-labelledby="coreLegendFormat">
           <h3 id="coreLegendFormat">FORMATIERUNG</h3>
@@ -438,7 +438,7 @@
           <dl class="core-legend-list">
             <dt>Enter</dt><dd>Nachricht senden</dd>
             <dt>Shift+Enter</dt><dd>Neue Zeile</dd>
-            <dt><code>/skill kennung</code> oder <code>$kennung</code></dt><dd>Einen Skill vorgeben. Meist nicht nötig: Mara wählt ihre Arbeitsanleitungen selbst aus ihrer Skill-Bibliothek</dd>
+            <dt><code>/skill kennung</code> oder <code>$kennung</code></dt><dd>Einen Skill vorgeben. Meist nicht nötig: deine CoreAI wählt ihre Arbeitsanleitungen selbst aus ihrer Skill-Bibliothek</dd>
             <dt>+</dt><dd>Fotos, Kamera oder bis zu zehn Dateien anhängen, oder ein Werkzeug wählen: Bild erstellen, Websuche, Recherche</dd>
             <dt>Langer Text</dt><dd>Ab 8000 Zeichen automatisch als <code>.md</code>-Anhang</dd>
             <dt>Core-Chip</dt><dd>Core-Stufe wählen und Denken an- oder ausschalten</dd>
@@ -480,7 +480,7 @@
         <label class="core-mode-row" for="coreInstallAuto">
           <span class="core-mode-copy">
             <strong>AUTO-UPDATE</strong>
-            <small>Einmal pro Woche prüft Ollama alle lokalen Stufen auf neue Fassungen; Maras Cores werden danach neu gebaut.</small>
+            <small>Einmal pro Woche prüft Ollama alle lokalen Stufen auf neue Fassungen; die Cores deiner CoreAI werden danach neu gebaut.</small>
           </span>
           <span class="settings-switch"><input id="coreInstallAuto" type="checkbox" /><i aria-hidden="true"></i></span>
         </label>
