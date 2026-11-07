@@ -164,56 +164,61 @@ img_gen_test($row['uuid'] === $r['uuid'] && (int)$row['user_id'] === 5 && $row['
   'kept as a private media entry of the account: ' . json_encode($row));
 $kept = (string)file_get_contents($tmp . '/images/' . $r['uuid'] . '.png');
 img_gen_test(coreui_image_png_size($kept) === [512, 512] && $kept !== $png && (int)$row['file_size'] === strlen($kept)
-  && substr(sprintf('%o', fileperms($tmp . '/images/' . $r['uuid'] . '.png')), -4) === '0640', 'the PNG on disk with the text-only credit, 0640');
+  && substr(sprintf('%o', fileperms($tmp . '/images/' . $r['uuid'] . '.png')), -4) === '0640', 'the PNG on disk with the two-corner mark, 0640');
 $meta = coreui_image_meta($r['uuid']);
 img_gen_test(($meta['prompt'] ?? '') === 'A red fox, sitting in snow' && ($meta['seconds'] ?? 0) == 61.8 && ($meta['model'] ?? '') === 'FLUX.2-klein 4B (Q8_0)'
   && ($meta['watermark'] ?? null) === true, 'its description next to it');
 
-// Text-only credit in the lower right corner, with the current year and no logo.
-img_gen_test(coreui_image_mark_text(2026) === 'Erzeugt von Quantum CoreAI 2026©'
-  && coreui_image_mark_text(2027) === 'Erzeugt von Quantum CoreAI 2027©'
-  && coreui_image_mark_text() === 'Erzeugt von Quantum CoreAI ' . date('Y') . '©',
-  'the Quantum CoreAI credit uses the actual year');
+// Reference: small dynamic-year credit at lower left and the new logo at lower right.
+img_gen_test(coreui_image_mark_text(2026) === '© 2026 Quantum CoreAI'
+  && coreui_image_mark_text(2027) === '© 2027 Quantum CoreAI'
+  && coreui_image_mark_text() === '© ' . date('Y') . ' Quantum CoreAI', 'year-aware copyright');
+$logoPath = $root . '/images/watermark_logo.png';
+$logoDims = @getimagesize($logoPath);
+img_gen_test(is_array($logoDims) && $logoDims[0] > 0 && $logoDims[1] > 0,
+  'watermark_logo.png must ship with the image generator');
 foreach ([512, 1024] as $n) {
   $gray = imagecreatetruecolor($n, $n);
   imagefill($gray, 0, 0, imagecolorallocate($gray, 128, 128, 128));
   ob_start(); imagepng($gray); $plain = (string)ob_get_clean();
   $marked = coreui_image_watermark($plain);
-  img_gen_test(is_string($marked) && coreui_image_png_size($marked) === [$n, $n], "credit on {$n}: same size");
+  img_gen_test(is_string($marked) && coreui_image_png_size($marked) === [$n, $n],
+    "two-corner mark {$n}: original PNG dimensions");
   $im = imagecreatefromstring($marked);
-  $markW = min($n - 2 * max(4, (int)round($n * COREUI_IMAGE_MARK_MARGIN)),
-    max(COREUI_IMAGE_MARK_MIN_PX, (int)round($n * COREUI_IMAGE_MARK_WIDTH)));
-  $margin = (int)round($n * COREUI_IMAGE_MARK_MARGIN);
-  $changed = []; $strongest = 0;
+  $margin = max(4, (int)round($n * COREUI_IMAGE_MARK_MARGIN));
+  $logoW = (int)round($n * COREUI_IMAGE_LOGO_WIDTH);
+  $logoH = (int)round($logoW * $logoDims[1] / $logoDims[0]);
+  $logoX = $n - $logoW - $margin;
+  $logoY = $n - $logoH - $margin;
+  $left = 0; $right = 0; $outside = 0; $leftBottom = 0;
   for ($y = 0; $y < $n; $y++) {
     for ($x = 0; $x < $n; $x++) {
       $c = imagecolorat($im, $x, $y);
-      $r = ($c >> 16) & 255; $g = ($c >> 8) & 255; $b = $c & 255;
-      $d = max(abs($r - 128), abs($g - 128), abs($b - 128));
-      if ($d === 0) continue;
-      $changed[] = [$x, $y];
-      $strongest = max($strongest, $d);
+      if ((($c >> 16) & 255) === 128 && (($c >> 8) & 255) === 128 && ($c & 255) === 128) continue;
+      if ($x >= $margin - 1 && $x < $logoX - $margin && $y >= $n - $margin - 40) {
+        ++$left;
+        if ($y >= $n - $margin - 3) ++$leftBottom;
+      } elseif ($x >= $logoX && $x < $n - $margin && $y >= $logoY && $y < $n - $margin) {
+        ++$right;
+      } else ++$outside;
     }
   }
-  img_gen_test(count($changed) > 20, "credit on {$n}: text pixels exist");
-  $xs = array_column($changed, 0); $ys = array_column($changed, 1);
-  $left = min($xs); $right = max($xs); $top = min($ys); $bottom = max($ys);
-  img_gen_test($right <= $n - $margin && $bottom <= $n - $margin
-    && $right >= $n - $margin - 3 && $bottom >= $n - $margin - 3,
-    "credit on {$n}: lower right with its margin");
-  img_gen_test($right - $left + 1 <= $markW + 4
-    && $right - $left + 1 >= (int)($markW * 0.7), "credit on {$n}: readable and compact");
-  img_gen_test($bottom - $top + 1 <= (int)($markW * 0.19),
-    "credit on {$n}: single text line, no studio logo");
-  img_gen_test($strongest >= 20 && $strongest <= 66,
-    "credit on {$n}: half opacity (strongest change {$strongest} of 128)");
+  img_gen_test($left >= 12 && $leftBottom >= 2, "two-corner mark {$n}: credit at bottom left");
+  img_gen_test($right >= 30, "two-corner mark {$n}: new logo at bottom right");
+  img_gen_test($outside === 0, "two-corner mark {$n}: image untouched elsewhere");
+  $corner = imagecolorat($im, $logoX + 1, $logoY + 1);
+  $delta = max(abs((($corner >> 16) & 255) - 128), abs((($corner >> 8) & 255) - 128),
+    abs(($corner & 255) - 128));
+  img_gen_test($delta <= 8, "two-corner mark {$n}: no dark square around the logo");
 }
-img_gen_test(coreui_image_watermark('no png') === null, 'no PNG: no mark, no crash');
-img_gen_test(!str_contains((string)file_get_contents($root . '/api/image_gen.php'),
-  'starlight_unit_studios_logo_original.png'), 'image credit does not load the studio logo');
+img_gen_test(coreui_image_watermark('no png') === null, 'invalid PNG: no mark, no crash');
+$markSource = (string)file_get_contents($root . '/api/image_gen.php');
+img_gen_test(str_contains($markSource, "'/images/watermark_logo.png'")
+  && !str_contains($markSource, "'/images/starlight_unit_studios_logo_original.png'"),
+  'new logo replaces the old studio mark in generated files');
 img_gen_test(is_file($root . '/assets/fonts/rajdhani_700.ttf')
   && str_contains((string)file_get_contents($root . '/assets/fonts/LICENSES.md'), 'rajdhani_700.ttf'),
-  'the text credit uses Rajdhani Bold (OFL) as TTF, named in the font notes');
+  'copyright line retains Rajdhani Bold (OFL)');
 img_gen_test(coreui_image_meta('../x') === null, 'no paths as image names');
 
 // 0.6.42: step previews go to the chat as small data URLs, each new one once, never after the job.
