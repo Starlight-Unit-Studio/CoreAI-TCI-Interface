@@ -76,6 +76,16 @@ function coreui_profile_load(PDO $pdo, int $uid): array {
   ];
 }
 
+/** The account's preferred display name, distinct from Mara Thorne's identity. */
+function coreui_profile_assistant_name(PDO $pdo, int $uid): string {
+  if ($uid <= 0) return 'Mara';
+  try {
+    return coreui_profile_name((string)(coreui_profile_load($pdo, $uid)['assistant_name'] ?? ''), 'Mara');
+  } catch (Throwable $e) {
+    return 'Mara';
+  }
+}
+
 function coreui_profile_save(PDO $pdo, int $uid, string $displayName, string $assistantName): array {
   if (!coreui_profile_schema_ready($pdo)) throw new RuntimeException('missing_schema_004');
   $displayName = coreui_profile_name($displayName, 'Operator');
