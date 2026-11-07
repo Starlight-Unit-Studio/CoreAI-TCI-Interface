@@ -95,12 +95,14 @@ function coreui_composer_intent_ensure(array $intent, string $reply, string $use
   if ($has) {
     // If the requested subject is explicitly this account's TCI, preserve that
     // intent even if the Core used the old generic image marker.
-    if ($tool === 'image' && function_exists('coreui_image_is_self_request')
-        && coreui_image_is_self_request($userText, $assistantName)
+    if ($tool === 'image' && trim($userText) !== ''
+        && function_exists('coreui_image_is_self_request')
         && function_exists('coreui_image_extract_marker') && function_exists('coreui_image_parse_input')) {
       $parsed = coreui_image_parse_input((string)coreui_image_extract_marker($reply));
-      if (empty($parsed['self_reference'])) {
-        return '[BILD' . ($parsed['size'] === 'large' ? ' GROSS' : '') . ' ICH: ' . $parsed['prompt'] . ']';
+      $wantsSelf = coreui_image_is_self_request($userText, $assistantName);
+      if ((bool)($parsed['self_reference'] ?? false) !== $wantsSelf) {
+        return '[BILD' . ($parsed['size'] === 'large' ? ' GROSS' : '')
+          . ($wantsSelf ? ' ICH' : '') . ': ' . $parsed['prompt'] . ']';
       }
     }
     return $reply;
