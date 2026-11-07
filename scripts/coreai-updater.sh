@@ -216,44 +216,61 @@ health_ok() {
 }
 
 do_run() {
-  local request restart_ollama=0 requested_by=0 line backup='' result=0 message
+  local mode="${1:-owner}" request restart_ollama=0 requested_by=0 line backup='' result=0 message
   ensure_dirs
-  if [[ ! -e "$REQUEST_FILE" && ! -L "$REQUEST_FILE" ]]; then
-    log 'Keine Update-Anfrage vorhanden.'
-    return 0
+  if [[ "$mode" == operator ]]; then
+    # Root SSH operator updates an EXISTING instance using this SAME
+    # backup/install/restart/health pipeline as the owner's settings.
+    [[ -f "$PROJECT_ROOT/api/config.local.php" && -f "$PROJECT_ROOT/var/compose.env" ]] ||
+      die 'Keine bestehende CoreAI-Installation fuer den Operator-Updatepfad erkannt.'
+    [[ ! -e "$REQUEST_FILE" && ! -L "$REQUEST_FILE" ]] ||
+      die 'Eine Web-Update-Anfrage wartet bereits. Operator-Update nicht gestartet.'
+    [[ "$(state get "$STATUS_FILE" state)" != running ]] ||
+      die 'Ein CoreAI-Update ist bereits aktiv.'
+    requested_by=0 # Host operator; never falsely attribute this to an owner account.
+  else
+    if [[ ! -e "$REQUEST_FILE" && ! -L "$REQUEST_FILE" ]]; then
+      log 'Keine Update-Anfrage vorhanden.'
+      return 0
+    fi
+    if ! request="$(state request "$REQUEST_FILE")"; then
+      rm -f -- "$REQUEST_FILE"
+      log 'Ungueltige Update-Anfrage verworfen.'
+      return 0
+    fi
+    while IFS= read -r line; do
+      case "$line" in
+        restart_ollama=1) restart_ollama=1 ;;
+        requested_by=*) requested_by="${line#requested_by=}" ;;
+      esac
+    done <<<"$request"
   fi
-  if ! request="$(state request "$REQUEST_FILE")"; then
-    rm -f -- "$REQUEST_FILE"
-    log 'Ungueltige Update-Anfrage verworfen.'
-    return 0
-  fi
-  while IFS= read -r line; do
-    case "$line" in
-      restart_ollama=1) restart_ollama=1 ;;
-      requested_by=*) requested_by="${line#requested_by=}" ;;
-    esac
-  done <<<"$request"
   if ! take_lock; then
-    rm -f -- "$REQUEST_FILE"
+    if [[ "$mode" != operator ]]; then rm -f -- "$REQUEST_FILE"; fi
     log 'Ein Update laeuft bereits.'
-    return 0
+    return 1
   fi
 
   [[ ! -f "$LOG_FILE" ]] || mv -f -- "$LOG_FILE" "$LOG_FILE.1"
   : > "$LOG_FILE"
   chgrp 33 "$LOG_FILE" 2>/dev/null || true
   chmod 0640 "$LOG_FILE"
-  exec >>"$LOG_FILE" 2>&1
-
-  log "Update angefordert von Konto $requested_by, Ollama-Neustart: $restart_ollama."
+  if [[ "$mode" == operator ]]; then
+    # Mirror updates to authenticated SSH without duplicating installer logic.
+    exec > >(tee -a "$LOG_FILE") 2>&1
+    log 'Operator-Update ueber authentifizierten SSH-Root-Zugang angefordert.'
+  else
+    exec >>"$LOG_FILE" 2>&1
+    log "Update angefordert von Konto $requested_by, Ollama-Neustart: $restart_ollama."
+  fi
   # Progress for the window: backup 0-8, download 8-10, installation 10-90
   # (milestones of the installer, see coreai_update_state.py), restart 90-99.
   state status "$STATUS_FILE" state=running phase=backup message='Datenbank wird gesichert.' \
     started_at="$(utc_now)" finished_at='' from_version="$(local_version)" to_version='' commit='' \
     restart_ollama="$restart_ollama" requested_by="$requested_by" backup='' \
     percent=2 step='Die Datenbank wird gesichert.'
-  # Only now: the window never sees "no request" before "running" (no early reload).
-  rm -f -- "$REQUEST_FILE"
+  # Never consume a queued owner request from an operator-initiated run.
+  if [[ "$mode" != operator ]]; then rm -f -- "$REQUEST_FILE"; fi
 
   backup="$(backup_database)" || fail_run backup 'Die Datenbanksicherung ist fehlgeschlagen. CoreAI bleibt unverändert.'
   log "Datenbank gesichert: $backup"
@@ -294,6 +311,7 @@ do_run() {
 [[ -f "$STATE_TOOL" ]] || die 'scripts/lib/coreai_update_state.py fehlt.'
 case "${1:-}" in
   check) do_check ;;
-  run) do_run ;;
-  *) die 'Aufruf: coreai-updater.sh check|run' ;;
+  run) do_run owner ;;
+  operator-update) do_run operator ;;
+  *) die 'Aufruf: coreai-updater.sh check|run|operator-update' ;;
 esac
