@@ -1,0 +1,9 @@
+CoreAI: TCI Interface 0.6.37 - 07.11.2026
+- P20.5 Schritt A: Bildtest fuer den Server (scripts/image-spike.sh), wie der Stimmtest.
+- stable-diffusion.cpp master-1046-d308544 im Container fuer die Server-CPU gebaut (-march=native).
+- Z-Image-Turbo (6B) und FLUX.2-klein 4B (beide Apache 2.0, Q8_0) mit Qwen3-4B und VAE; etwa 20 GB, Revision und SHA-256 je Datei.
+- Testbilder mit festen Prompts und Seeds (512 und 1024), Zeiten je Phase und Spitzen-RAM je Bild.
+- Admin Core > Betrieb > Bildproben (nur Inhaber): Bilder, Zeiten, RAM, Lizenzen, Dateien.
+- Bildgenerierung im Chat folgt nach der Modellwahl.
+- Tests: image-spike-selftest.py, image-spike-store-selftest.php, beide Preflights.
+- Keine Aenderung an Cores, Modelfile, Datenbankschema, Installer, nginx oder Warteschlange.

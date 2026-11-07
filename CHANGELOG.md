@@ -1,5 +1,17 @@
 # CoreAI: TCI Interface
 
+## 0.6.37 - 07.11.2026
+
+P20.5, Schritt A: der Bildtest. Nach dem Bild-Technikplan kommt vor dem Einbau ein Test auf dem echten Server: kann seine CPU Bilder erzeugen, wie schnell und mit wie viel Arbeitsspeicher. Recherche vom 07.11.2026: Ollamas Bildfunktion lief nur auf macOS und ist laut Bericht von Anfang November wieder entfernt; stable-diffusion.cpp kann inzwischen kleinere Modelle als FLUX.1-schnell. Entscheidung des Betreibers: Z-Image-Turbo und FLUX.2-klein 4B, beide Apache 2.0.
+
+- **`scripts/image-spike.sh`** (wie der Stimmtest): baut stable-diffusion.cpp auf dem festen Release-Stand `master-1046-d308544` in einem Container fuer genau die CPU des Servers (`-march=native`, AVX-512 wenn vorhanden; nur das ggml-Untermodul, keine CUDA-, WebP- oder WebM-Teile), laedt die Gewichte mit Netz und misst ohne Netz, mit Speichergrenze, ohne Rechte im Container und mit nur lesbaren Gewichten. Optionen: `--groups`, `--threads`, `--full`, `--skip-build`, `--refetch`, `--keep`, `--dry-run`.
+- **Gewichte (etwa 20 GB):** Z-Image-Turbo Q8_0, FLUX.2-klein 4B Q8_0 (beide GGUF von leejet), Qwen3-4B als Textverstaendnis (Q8_0 von unsloth) und die beiden VAEs (Comfy-Org). Jede Datei wird beim ersten Laden mit Repository, Commit und SHA-256 registriert und mit dem SHA-256 von Hugging Face verglichen (bei Abweichung geloescht); ein abgebrochener Download wird fortgesetzt; vor jedem Lauf wird jede Datei gegen ihren Eintrag geprueft.
+- **Messung:** drei Prompts (Foto, Schrift, Illustration) mit festem Seed in 512 × 512, der erste auch in 1024 × 1024 (`--full`: alle). Je Bild: Gesamtzeit, Laden, Textverstaendnis, Rechenschritte, Dekodieren (aus der Ausgabe von stable-diffusion.cpp) und der hoechste Arbeitsspeicher genau dieses Aufrufs. Bericht: `var/image-spike/runs/ZEITSTEMPEL/report.md` und `report.json`.
+- **Admin Core > Betrieb > Bildproben** (nur Inhaber): je Modell die Bilder (antippen oeffnet sie gross), Zeiten je Groesse, RAM, Laden und Lizenz; dazu Prompts mit Seeds, die registrierten Dateien mit Revision und SHA-256 und der Server. Ein Bild wird nur ausgeliefert, wenn sein Lauf es als erzeugt fuehrt und es wirklich ein PNG in diesem Lauf ist.
+- **Bildgenerierung im Chat gibt es noch nicht;** sie folgt nach der Modellwahl mit den echten Zahlen (Schritte B und C des Bildplans).
+- Tests: neu `image-spike-selftest.py` (Register und Lizenzen, Commit wie im Dockerfile, Zeitangaben, PNG-Groesse; Laden gegen ein nachgebautes Hugging Face mit Umleitung, Commit, SHA-256, fortgesetztem Download und falschem SHA-256; Lock-Pruefung mit veraenderter Datei; Lauf mit nachgebautem sd-cli: genau die Argumente, Bildgroesse, Zeiten, Spitzen-RAM, Fehler, falsche Groesse, fehlende Gewichte; Bericht; Trockenlauf des Skripts) und `image-spike-store-selftest.php` (Laeufe, oeffentliche Form, nur gelistete echte PNGs aus ihrem Lauf, kein Weg nach draussen, nur Inhaber, Karte). Beide Preflights. stable-diffusion.cpp auf dem festen Stand hier mit `-march=native` gebaut, alle Aufrufparameter des Tests in seiner Hilfe geprueft. Bildschirmfotos der Karte (Handy Nacht, Desktop Tag) angesehen.
+- Keine Aenderung an Cores, Modelfile, Datenbankschema, Installer, nginx oder Warteschlange.
+
 ## 0.6.36 - 07.11.2026
 
 Rueckmeldung des Betreibers zu 0.6.35: Mara hat bei zwei Handyvideos Bild und Ton richtig erkannt und den englischen Satz korrekt uebersetzt ("alle angaben von mara sind korrekt"). Auf den Screenshots fehlte aber die angekuendigte Zeile "Mitschrift:" unter den Videos.

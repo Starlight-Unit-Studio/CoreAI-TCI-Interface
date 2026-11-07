@@ -1473,6 +1473,57 @@
   .settings-body .persona-links .settings-action { font-size: 10px; }
 }
 
+/* 0.6.37: Admin Core > Betrieb > Bildproben (image test P20.5 A, Inhaber only). */
+.settings-body .img-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 120px), 1fr));
+  gap: 8px;
+}
+.settings-body .img-shot {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+}
+.settings-body .img-open {
+  display: block;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel-soft);
+  aspect-ratio: 1 / 1;
+}
+.settings-body .img-open:focus-visible { outline: 2px solid var(--amb); outline-offset: 2px; }
+.settings-body .img-open img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.settings-body .img-missing {
+  display: grid;
+  place-items: center;
+  padding: 10px;
+  border: 1px dashed rgba(212, 80, 93, 0.5);
+  border-radius: 10px;
+  color: var(--red);
+  font-size: 12.5px;
+  line-height: 1.35;
+  text-align: center;
+  aspect-ratio: 1 / 1;
+  overflow-wrap: anywhere;
+}
+.settings-body .img-shot figcaption { display: grid; gap: 2px; font-size: 12.5px; line-height: 1.3; }
+.settings-body .img-shot figcaption b { color: var(--txt); font-weight: 600; }
+.settings-body .img-shot figcaption span { color: var(--muted); }
+.settings-body .img-files { margin: 0 0 10px; padding-left: 18px; color: var(--cfg-soft); font-size: 12.5px; line-height: 1.45; overflow-wrap: anywhere; }
+.settings-body .img-files b { color: var(--txt); font-weight: 600; }
+.settings-body .img-host {
+  margin: 0;
+  padding: 10px 12px;
+  overflow-x: auto;
+  border-radius: 8px;
+  background: var(--panel-soft);
+  color: var(--cfg-soft);
+  font: 12px/1.45 "Share Tech Mono", monospace;
+  white-space: pre-wrap;
+}
+
 /* 0.5.94: Admin Core > Betrieb > Stimmproben (voice test P20.0, Inhaber only). */
 .settings-body .tts-card .settings-panel-head { flex-wrap: wrap; }
 .settings-body .tts-run-pick {

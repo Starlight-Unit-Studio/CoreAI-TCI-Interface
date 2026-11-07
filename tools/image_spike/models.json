@@ -1,0 +1,51 @@
+{
+  "format": 1,
+  "note": "CoreAI 0.6.37 (P20.5 A): Bildtest auf dem echten Server. Entscheidung des Betreibers (07.11.2026): Z-Image-Turbo und FLUX.2-klein 4B, beide Apache 2.0. Die Gewichte werden beim ersten Laden mit Revision und SHA-256 registriert (var/image-spike/models/lock-GRUPPE.json) und vor jedem Lauf gegen diesen Eintrag geprueft.",
+  "runtime": {
+    "name": "stable-diffusion.cpp",
+    "repo": "https://github.com/leejet/stable-diffusion.cpp",
+    "tag": "master-1046-d308544",
+    "commit": "d30854463dbc75fb3671209b79016bb0d8ac321e",
+    "ggml_commit": "ccb88f810be05bccc9621e706354611ccc2462c7",
+    "license": "MIT (stable-diffusion.cpp und ggml)",
+    "build": "CPU, -march=native auf dem Server gebaut (AVX-512, wenn die CPU es hat)"
+  },
+  "prompts": [
+    {"id": "p1", "topic": "Foto", "seed": 42,
+     "text": "A red fox sitting in a snowy forest at sunrise, soft golden light, shallow depth of field, photorealistic"},
+    {"id": "p2", "topic": "Schrift", "seed": 7,
+     "text": "A cozy cafe interior in the evening, a chalkboard on the wall with the words \"CoreAI\" written in white chalk, warm light, detailed"},
+    {"id": "p3", "topic": "Illustration", "seed": 1234,
+     "text": "A friendly robot gardener watering tomato plants on a balcony, colorful flat illustration, clean lines"}
+  ],
+  "plan": [
+    {"size": "512x512", "prompts": ["p1", "p2", "p3"]},
+    {"size": "1024x1024", "prompts": ["p1"]}
+  ],
+  "groups": {
+    "zimage-turbo": {
+      "label": "Z-Image-Turbo (6B, Q8_0)",
+      "origin": "Tongyi-MAI (Alibaba); GGUF von leejet, dem Autor von stable-diffusion.cpp",
+      "license": "Apache-2.0",
+      "steps": 8,
+      "cfg_scale": 1.0,
+      "files": [
+        {"role": "diffusion_model", "repo": "leejet/Z-Image-Turbo-GGUF", "path": "z_image_turbo-Q8_0.gguf", "size": 6577440704, "license": "Apache-2.0"},
+        {"role": "llm", "repo": "unsloth/Qwen3-4B-Instruct-2507-GGUF", "path": "Qwen3-4B-Instruct-2507-Q8_0.gguf", "size": 4280405600, "license": "Apache-2.0"},
+        {"role": "vae", "repo": "Comfy-Org/z_image_turbo", "path": "split_files/vae/ae.safetensors", "size": 335304388, "license": "Apache-2.0"}
+      ]
+    },
+    "flux2-klein-4b": {
+      "label": "FLUX.2-klein 4B (Q8_0)",
+      "origin": "Black Forest Labs; GGUF von leejet, dem Autor von stable-diffusion.cpp",
+      "license": "Apache-2.0",
+      "steps": 4,
+      "cfg_scale": 1.0,
+      "files": [
+        {"role": "diffusion_model", "repo": "leejet/FLUX.2-klein-4B-GGUF", "path": "flux-2-klein-4b-Q8_0.gguf", "size": 4300629440, "license": "Apache-2.0"},
+        {"role": "llm", "repo": "unsloth/Qwen3-4B-GGUF", "path": "Qwen3-4B-Q8_0.gguf", "size": 4280405792, "license": "Apache-2.0"},
+        {"role": "vae", "repo": "Comfy-Org/flux2-klein-4B", "path": "split_files/vae/flux2-vae.safetensors", "size": 336211292, "license": "Apache-2.0"}
+      ]
+    }
+  }
+}
