@@ -1,0 +1,7 @@
+CoreAI: TCI Interface 0.6.41 - 07.11.2026
+- Bildkarte in Maras Live-Antwort: Punkteraster mit wanderndem Lichtfleck, Stufe und Prozentanzeige.
+- Prozente folgen dem echten Fortschritt (Laden, Schritt 1 bis 4, Dekodieren), weich, nie ueber die Stufe hinaus, nie zurueck.
+- Das fertige Bild blendet in der Karte auf, waehrend Mara schreibt; Fehler: "Kein Bild entstanden".
+- Weniger Bewegung: Raster steht still. Handy ohne seitliches Scrollen.
+- Tests: image-progress-ui-selftest.cjs, image-gen-selftest.php, beide Preflights.
+- Keine Aenderung an Cores, Modelfile, Bilddienst, Datenbankschema oder Warteschlange.

@@ -218,6 +218,18 @@ function coreui_image_png_size(string $png): ?array {
   return is_array($dims) ? [(int)$dims['w'], (int)$dims['h']] : null;
 }
 
+/**
+ * 0.6.41: what the progress card in the chat needs of a job (pure): phase, finished steps,
+ * all steps and the image's width (512 or 1024), for the stage text and the percent.
+ */
+function coreui_image_progress_meta(array $job): array {
+  $phase = (string)($job['phase'] ?? 'load');
+  if (!in_array($phase, ['load', 'text', 'sampling', 'decode', 'save', 'done'], true)) $phase = 'load';
+  return ['source' => 'image', 'reason' => 'image_' . ($phase === 'save' ? 'decode' : $phase),
+    'step' => max(0, (int)($job['step'] ?? 0)), 'steps' => max(1, (int)($job['steps'] ?? 4)),
+    'image_px' => max(64, (int)($job['width'] ?? 512))];
+}
+
 /** Work view title of a job's progress (pure, ASCII as the work store requires). */
 function coreui_image_progress_title(array $job): string {
   $phase = (string)($job['phase'] ?? '');

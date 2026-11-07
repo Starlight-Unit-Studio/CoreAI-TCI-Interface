@@ -67,6 +67,11 @@ img_gen_test(coreui_image_progress_title(['phase' => 'load']) === 'Bild: Gewicht
   && coreui_image_progress_title(['phase' => 'sampling', 'step' => 2, 'steps' => 4]) === 'Bild: Schritt 3 von 4'
   && coreui_image_progress_title(['phase' => 'sampling', 'step' => 4, 'steps' => 4]) === 'Bild: Schritt 4 von 4'
   && coreui_image_progress_title(['phase' => 'decode']) === 'Bild: Pixel werden berechnet', 'progress titles');
+// 0.6.41: what the progress card in the chat gets with every step (js/coreui-image-progress.js).
+img_gen_test(coreui_image_progress_meta(['phase' => 'sampling', 'step' => 2, 'steps' => 4, 'width' => 1024])
+  === ['source' => 'image', 'reason' => 'image_sampling', 'step' => 2, 'steps' => 4, 'image_px' => 1024]
+  && coreui_image_progress_meta(['phase' => 'save', 'step' => 4, 'steps' => 4, 'width' => 512])['reason'] === 'image_decode'
+  && coreui_image_progress_meta(['phase' => '<x>'])['reason'] === 'image_load', 'progress data for the card');
 foreach (['load', 'text', 'sampling', 'decode', 'x'] as $phase) {
   img_gen_test(preg_match('/^[a-zA-Z0-9 \-.,:()\/]{3,110}$/D', coreui_image_progress_title(['phase' => $phase, 'step' => 1, 'steps' => 4])) === 1,
     'the work store accepts the title of ' . $phase);

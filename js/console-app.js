@@ -2007,6 +2007,11 @@
     row.appendChild(content);
     messagesInner.appendChild(row);
     state.typingEl = row;
+    // 0.6.41 (P20.5): a rebuilt row shows the image card again with what is known so far.
+    if (window.CoreAIImageProgress && bucket && session
+        && bucket.turnId === Number(state.pendingBySession[String(session.id)])) {
+      window.CoreAIImageProgress.replay(row, bucket.events);
+    }
     if (chatFollow) chatFollow.refresh();
     scrollToBottom(forceFollow === true);
   }
@@ -2847,6 +2852,8 @@
         var event = rememberLiveWorkEvent(sessionId,Number(userMsgId),
           workRunKey,JSON.parse(ev.data));
         if (insights && event) insights.observe(event);
+        // 0.6.41 (P20.5): the image Mara paints, as a card with its real progress.
+        if (event && state.typingEl && window.CoreAIImageProgress) window.CoreAIImageProgress.observe(state.typingEl, event);
         var body = panelBody();
         if (body && event) {
           window.CoreUIWorkEvents.add(body,event);
