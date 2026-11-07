@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.42: Bild entsteht sichtbar Schritt fuer Schritt in der Bildkarte (Vorschau je Schritt).
+# CoreAI: TCI Interface 0.6.43: + Menue im Eingabefeld (Fotos, Kamera, Dateien, Bild erstellen, Websuche, Recherche).
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -165,6 +165,11 @@ UI_FILES=(
   scripts/image-chat-ui-selftest.cjs
   js/coreui-image-progress.js
   scripts/image-progress-ui-selftest.cjs
+  api/console_composer_intent.php
+  api/composer_tools.php
+  js/coreui-composer-menu.js
+  scripts/composer-intent-selftest.php
+  scripts/composer-menu-ui-selftest.cjs
   assets/fonts/rajdhani_700.ttf
   config/voice/mara-voice.json
   api/voice.php
@@ -429,6 +434,11 @@ if grep -Fq '|voice_live|' "$PROJECT_ROOT/config/nginx.conf.template"; then
   ok '0.6.31: Nginx erlaubt das Live-Gespraech (api/voice_live.php).'
 else
   fail 'Nginx sperrt das Live-Gespraech (voice_live fehlt in der Freigabe).'
+fi
+if grep -Fq '|composer_tools|' "$PROJECT_ROOT/config/nginx.conf.template"; then
+  ok '0.6.43: Nginx erlaubt die Werkzeug-Freigaben des + Menues (api/composer_tools.php).'
+else
+  fail 'Nginx sperrt das + Menue (composer_tools fehlt in der Freigabe).'
 fi
 if grep -Fq '|voice_input|' "$PROJECT_ROOT/config/nginx.conf.template" && grep -Fq 'microphone=(self)' "$PROJECT_ROOT/config/nginx.conf.template" \
    && ! grep -Fq 'microphone=()' "$PROJECT_ROOT/config/nginx.conf.template"; then
@@ -790,6 +800,15 @@ if command -v php >/dev/null 2>&1; then
     ok 'Bilder im Chat: Marker, Arbeitsschritt, Speichern fuer das Konto, Abbruch, Verlauf, Loeschen und Schalter geprueft.'
   else
     fail "Bilder-im-Chat-Selbsttest: ${image_gen_test:-Unbekannter Fehler}"
+  fi
+
+  # 0.6.43: the + menu of the input field: marks, Mara's instruction, the tool started with the
+  # person's own words, the endpoint's answer for accounts and guests, the readable archive.
+  composer_intent_test=''
+  if composer_intent_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/composer-intent-selftest.php" 2>&1)"; then
+    ok '+ Menue: Werkzeug-Auswahl, Anweisung an Mara, Absicherung, Freigaben und Archiv geprueft.'
+  else
+    fail "+-Menue-Selbsttest: ${composer_intent_test:-Unbekannter Fehler}"
   fi
 
   compact_test=''

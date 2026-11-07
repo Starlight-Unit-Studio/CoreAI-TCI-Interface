@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/console_composer_intent.php';
+
 /*
  * 0.5.77: Chat komprimieren.
  *
@@ -73,7 +75,9 @@ function coreui_compact_messages(PDO $pdo, int $uid, string $sessionId, int $aft
     'id'=>(int)$r['id'],
     'mara'=>strtolower((string)$r['character_id']) === $ember,
     'name'=>(string)$r['character_name'],
-    'message'=>(string)$r['message'],
+    // 0.6.43: a tool chosen in the + menu reads "(Bild erstellen) ..." in the archive and summary.
+    'message'=>strtolower((string)$r['character_id']) === $ember ? (string)$r['message']
+      : coreui_composer_intent_readable((string)$r['message']),
     'created_at'=>(string)$r['created_at'],
   ], $st->fetchAll(PDO::FETCH_ASSOC) ?: []);
 }

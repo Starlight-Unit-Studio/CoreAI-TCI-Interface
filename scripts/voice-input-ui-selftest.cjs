@@ -131,7 +131,7 @@ function chatSendPath() {
     MAX_MESSAGE_ATTACHMENTS: 10, autoPasteSources: new Map(), inputEl: {value: 'Hör mal:'}, btnAttach: null,
     attachBarFill: null, attachUploadSub: null, API_BASE: './api', UPLOAD_ERRORS: {},
     attachmentSlotsUsed() { return this.pendingFiles.length + this.uploadQueue.length + (this.uploadCurrentFile ? 1 : 0); },
-    activeSession: () => ({id: 'cs_1'}), renderAttachmentList() {}, showUploadState() {}, restoreFailedAutoPaste() {},
+    activeSession: () => ({id: 'cs_1'}), renderAttachmentList() {}, showUploadState() {}, restoreFailedAutoPaste() {}, setFilesAvailable() {},
     appendMessageEl() {}, scrollToBottom() {}, FormData, XMLHttpRequest: FakeXhr,
     sendMessage(text) { sentMessages.push({text, files: sandbox.pendingFiles.map(f => f.uuid)}); },
   };

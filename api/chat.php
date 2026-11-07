@@ -19,6 +19,7 @@ require_once __DIR__ . '/console_answer_style.php';
 require_once __DIR__ . '/console_timezone.php';
 require_once __DIR__ . '/weather_live.php';
 require_once __DIR__ . '/image_gen.php';
+require_once __DIR__ . '/console_composer_intent.php';
 
 // -----------------------------------------------------------------------------
 // Ember - Global-Chat NPC (Ollama local)
@@ -4972,6 +4973,8 @@ function ember_build_context(
     $msg = ($channel === 'console')
       ? chat_clean_console_message($msg)
       : chat_clean_message($msg);
+    // 0.6.43: the + menu's mark is no text of the person.
+    if ($channel === 'console' && !$isEmberRow) $msg = trim(coreui_composer_intent_strip($msg));
     if (!$isEmberRow && isset($audioNotes[(int)($r['id'] ?? 0)])) {
       $msg = trim($msg . ' ' . $audioNotes[(int)$r['id']]);
     }
@@ -5021,6 +5024,8 @@ function ember_build_chat_prompt(
   // und Ember sah den rohen [file:...]-Marker. Zweiter Vorfall derselben Klasse:
   // der Fix sass an einer Schicht, die der betroffene Pfad nicht durchlaeuft.
   // Idempotent: ist der Marker schon entfernt, liefert die Funktion '' zurueck.
+  // 0.6.43: a tool chosen in the + menu ([[bild]], [[websuche]], [[recherche]]) leaves the text.
+  $composerIntent = $channel === 'console' ? coreui_composer_intent_take($userMsg) : null;
   $attachBlock = ember_attachment_block($pdo, $userMsg, (int)($senderChar['user_id'] ?? 0));
 
   // Erst NACH dem Entfernen pruefen, sonst landet der Hex-String als Lore-Suchbegriff.
@@ -5099,6 +5104,7 @@ function ember_build_chat_prompt(
   $pyHint = (ember_py_enabled() && $imageUrl === null)
     ? ember_py_capability_hint(ember_model(), $profile['compact'], $nativeProjects) : '';
   $imageHint = ember_image_hint($channel, $imageUrl, $profile['compact'], $consoleUid);
+  $intentHint = ember_composer_intent_hint($composerIntent, $imageUrl, $consoleUid);
   $loreBlock = '';
   if (is_string($lore) && trim($lore) !== '') {
     $loreBlock = "
@@ -5146,6 +5152,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
    . ($browseHint !== '' ? ($browseHint . "\n\n") : "")
    . ($pyHint !== '' ? ($pyHint . "\n\n") : "")
    . ($imageHint !== '' ? ($imageHint . "\n\n") : "")
+   . ($intentHint !== '' ? ($intentHint . "\n\n") : "")
    . $nativeToolHint
    . ($channel === 'console' ? ("\n" . coreui_console_answer_style_hint($pdo,$uid,$profile['compact']) . "\n") : "")
    . "Antworte als Mara:"
@@ -5229,6 +5236,22 @@ function ember_image_allowed(int $uid): bool {
 function ember_image_hint(string $channel, $imageUrl, bool $compact, int $uid): string {
   if ($channel !== 'console' || $imageUrl !== null || !ember_image_allowed($uid)) return '';
   return coreui_image_capability_hint($compact);
+}
+
+/** 0.6.43: whether this account may use the tool chosen in the + menu. */
+function ember_composer_intent_allowed(array $intent, int $uid): bool {
+  return match ((string)($intent['tool'] ?? '')) {
+    'image' => ember_image_allowed($uid),
+    'web' => ember_web_enabled(),
+    'browse' => ember_browse_enabled(),
+    default => false,
+  };
+}
+
+/** 0.6.43: the instruction for a tool chosen in the + menu, or ''. */
+function ember_composer_intent_hint(?array $intent, $imageUrl, int $uid): string {
+  if ($intent === null || $imageUrl !== null) return '';
+  return coreui_composer_intent_hint($intent, ember_composer_intent_allowed($intent, $uid));
 }
 
 /** A reply asks for an image this account may have (starts the work loop). */
@@ -5323,6 +5346,8 @@ function ember_generate_reply(
   unset($GLOBALS['STU_EMBER_PDF_FAILURE']);
   unset($GLOBALS['STU_EMBER_ATTACHMENT_IMAGES']);
   unset($GLOBALS['STU_EMBER_ATTACHMENT_VISION_META']);
+  // 0.6.43: a tool chosen in the + menu ([[bild]], [[websuche]], [[recherche]]) leaves the text.
+  $composerIntent = $channel === 'console' ? coreui_composer_intent_take($userMsg) : null;
   $attachBlock = ember_attachment_block($pdo, $userMsg, (int)($senderChar['user_id'] ?? 0));
 
   // Bilder, Videoframes und gerasterte PDF-Seiten aus allen Anhaengen laufen
@@ -5449,6 +5474,7 @@ function ember_generate_reply(
     ? ember_py_capability_hint(ember_model(), $promptProfile['compact'],
         $channel === 'console' && empty($GLOBALS['COREUI_NATIVE_TOOL_REENTRY'])) : '';
   $imageHint = ember_image_hint($channel, $imageUrl, $promptProfile['compact'], $consoleUid);
+  $intentHint = ember_composer_intent_hint($composerIntent, $imageUrl, $consoleUid);
   $loreBlock = '';
   if (is_string($lore) && trim($lore) !== '') {
     $loreBlock = "
@@ -5493,6 +5519,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
    . ($browseHint !== '' ? ($browseHint . "\n\n") : "")
    . ($pyHint !== '' ? ($pyHint . "\n\n") : "")
    . ($imageHint !== '' ? ($imageHint . "\n\n") : "")
+   . ($intentHint !== '' ? ($intentHint . "\n\n") : "")
    . ($channel === 'console' ? ("\n" . coreui_console_answer_style_hint($pdo,$uid,$promptProfile['compact']) . "\n") : "")
    . "Antworte als Mara:"
    . ember_attachment_prompt_note($imageUrl);
@@ -6165,6 +6192,12 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
     if (is_string($nativeResult)) return $nativeResult;
   }
 
+  // 0.6.43: a tool chosen in the + menu is not left to chance: without its marker the step
+  // starts with the person's own words (only when the account may use the tool).
+  if ($composerIntent !== null && !$fileTask && $imageUrl === null && is_string($out)) {
+    $out = coreui_composer_intent_ensure($composerIntent, $out, $userMsg, ember_composer_intent_allowed($composerIntent, $consoleUid));
+  }
+
   // === Phase 2: Asynchroner Browse-Trigger ([BROWSE:]) - VOR der synchronen Websuche ===
   // Hat Ember [BROWSE:] gesetzt, gibt es keine sofortige Antwort: der Worker meldet sich
   // asynchron mit dem Ergebnis. Der Aufrufer reiht den Job via ember_browse_consume_request() ein.
@@ -6470,7 +6503,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       $agentLoopHandled = true;
       $uBase = $u;
       if (isset($loreBlock) && $loreBlock !== '') $uBase = str_replace($loreBlock, '', $uBase);
-      foreach ([$webHint ?? '', $browseHint ?? '', $pyHint ?? '', $imageHint ?? ''] as $hint) {
+      foreach ([$webHint ?? '', $browseHint ?? '', $pyHint ?? '', $imageHint ?? '', $intentHint ?? ''] as $hint) {
         if ($hint !== '') $uBase = str_replace($hint . "\n\n", '', $uBase);
       }
       $loop = coreui_agent_loop_run($out, $loopTool, $uBase, $loopAllowed, $pyHandled ? 1 : 0,
@@ -9586,7 +9619,7 @@ if ($action === 'send') {
       $pdo,
       (int)$uid,
       $consoleSessionId,
-      $message
+      coreui_composer_intent_strip($message)
     );
   }
 

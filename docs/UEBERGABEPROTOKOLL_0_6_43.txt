@@ -1,0 +1,44 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.43
+Stand: 07.11.2026
+Basis: main 0.6.42 nach Merge von PR #194.
+
+AUFTRAG: Betreiber (Screenshots einer anderen Chat-KI): "sollen wir den uploadbutton bei uns auch nicht zu mehr machen so
+wie hier?". Auswahl: Fotos und Kamera, Dateien, Bild erstellen, Websuche / Recherche, "und konnektoren vorbereiten da sie
+teil der roadmap sind". Nachtrag: "deep research ist bei uns auch geplant".
+
+UMSETZUNG
+- js/coreui-composer-menu.js (neu): macht aus #btnAttach ein "+" (aria-haspopup=menu), Menue in .composer-frame mit
+  Anhaengen (Fotos accept=image/*; Kamera accept=image/* capture=environment, nur bei pointer:coarse oder Touch; Dateien
+  mit dem bisherigen accept, danach zurueckgesetzt), Werkzeuge (Bild erstellen, Websuche, Recherche; Deep Research
+  "In Vorbereitung", ohne Funktion) und Konnektoren ("In Vorbereitung"; registerConnector({id,label,detail,onSelect})
+  fuer P14). Freigaben aus api/composer_tools.php (60 s gemerkt), gesperrte Eintraege grau mit Grund. Chip im
+  Eingabefeld (Normal/Groß fuer Bilder, ×). API: parse, label, consume(text, withFiles), loadFrom, set, clear, icon,
+  filesAvailable, registerConnector. Tastatur: Enter, Pfeiltasten, Escape; Handy (<= 620 px) als Blatt von unten.
+- Marken: [[bild]], [[bild:gross]], [[websuche]], [[recherche]] nur ganz am Anfang der Nachricht, gespeichert mit der
+  Nachricht (Chip bleibt nach Reload, Bearbeiten, Warteschlange).
+- api/console_composer_intent.php (neu, rein): peek/strip/take, label, readable ("(Bild erstellen) ..."), hint
+  (AUSWAHL IM MENUE ... NUR mit [BILD: ...]/[BILD GROSS: ...]/[WEB: ...]/[BROWSE: ...]; gesperrt: freundlich sagen),
+  ensure (fehlt der Marker, mit den Worten der Person; gesperrt oder zu wenig Worte: nichts erzwingen),
+  tools_answer (Gaeste nie Bilder).
+- api/composer_tools.php (neu): GET, angemeldet, dieselben Schalter wie die Arbeitsschleife (ember_image_allowed,
+  ember_web_enabled, ember_browse_enabled). nginx: |composer_tools| in beiden Vorlagen.
+- api/chat.php: beide Prompt-Bauer nehmen die Marke aus $userMsg und haengen $intentHint an (nicht bei Bildanhang);
+  ensure vor Phase 2 (Browse) in ember_generate_reply; Verlaufzeilen und Auto-Titel ohne Marke.
+- api/console_stream.php: Marke -> direkt Werkzeugweg (kein Rechen-/Dateiweg, synchron wie Vision, $hasMarker).
+- api/console_compaction.php: Archiv und Zusammenfassung lesen "(Bild erstellen) ...".
+- js/console-app.js: Senden/Warteschlange/Bearbeiten setzen die Marke (consume), Blase zeigt .msg-intent-Chip,
+  Bearbeiten laedt den Chip, Abbrechen loescht ihn; volle Anhaenge graut nur Fotos/Kamera/Dateien (setFilesAvailable).
+- app.html: "+"-Symbol, Legende "+" statt Bueroklammer, Modul vor console-app.js. CSS in console.css und coreui-theme.css.
+
+GEPRUEFT (hier ausgefuehrt): php -l (geaenderte PHP-Dateien), composer-intent-selftest.php, composer-menu-ui-selftest.cjs
+(Bildschirmfotos hell, dunkel, Handy angesehen), voice-input-ui-selftest.cjs, voice-live-ui-selftest.cjs,
+image-gen-selftest.php (wortwoertliche Pruefungen nachgezogen), volle Testreihe mit Test-Datenbank,
+Sprachtests (terran, tci), cache-bust, version-merge-check.
+NICHT HIER GEPRUEFT: echte Antworten eines Cores auf die Anweisung (keine Cores hier); die Absicherung startet den
+Schritt aber auch ohne passenden Marker. Kamera nur im Browser-Test (capture=environment), nicht auf einem echten Handy.
+
+NACH DEM MERGE (Betreiber):
+1. Update unter Einstellungen > System > CoreAI Update, Seite neu laden.
+2. "+" antippen: Fotos, Kamera (Handy), Dateien, Bild erstellen, Websuche, Recherche; Deep Research und Konnektoren
+   stehen als "In Vorbereitung" darin.
+3. "Bild erstellen" waehlen, "Groß" antippen, "ein Leuchtturm bei Sturm" senden: Chip in der Blase, Bild 1024 x 1024.

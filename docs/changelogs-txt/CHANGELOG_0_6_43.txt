@@ -1,0 +1,7 @@
+CoreAI: TCI Interface 0.6.43 - 07.11.2026
+- Bueroklammer wird "+" mit Menue: Anhaengen (Fotos, Kamera, Dateien), Werkzeuge (Bild erstellen, Websuche, Recherche), Konnektoren.
+- Gewaehltes Werkzeug als Chip (Bild: Normal oder Groß), als Marke vor der Nachricht gespeichert, in der eigenen Blase wieder als Chip.
+- Mara folgt der Wahl; ohne Marker startet der Schritt mit den Worten der Person; gesperrte Werkzeuge werden nicht erzwungen.
+- Gesperrte Werkzeuge ausgegraut mit Grund (api/composer_tools.php); Deep Research und Konnektoren "In Vorbereitung".
+- Tests: composer-intent-selftest.php, composer-menu-ui-selftest.cjs, voice-input-ui-selftest.cjs, image-gen-selftest.php.
+- Keine Aenderung an Cores, Modelfile, Datenbankschema, Installer, Bilddienst oder Warteschlange.

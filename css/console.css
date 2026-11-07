@@ -3338,6 +3338,289 @@ audio.msg-image {
   stroke-width: 1.7;
 }
 
+/* 0.6.43: the + button opens a menu (Anhängen, Werkzeuge, Konnektoren), js/coreui-composer-menu.js. */
+.composer-plus-btn svg {
+  width: 22px;
+  height: 22px;
+  stroke-width: 1.9;
+  transition: transform 180ms ease;
+}
+
+.composer-plus-btn.is-open {
+  background: var(--panel-cx);
+}
+
+.composer-plus-btn.is-open svg {
+  transform: rotate(45deg);
+}
+
+.composer-plus-btn:focus-visible {
+  outline: 2px solid var(--amb);
+  outline-offset: -3px;
+}
+
+.composer-menu {
+  position: absolute;
+  z-index: 30;
+  bottom: calc(100% + 10px);
+  left: 14px;
+  display: grid;
+  width: min(340px, calc(100vw - 32px));
+  max-height: min(70vh, 560px);
+  gap: 4px;
+  overflow-y: auto;
+  padding: 8px;
+  border: 1px solid var(--line-strong);
+  background: var(--panel-solid);
+  box-shadow: var(--shadow-soft);
+  color: var(--txt);
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
+  animation: composer-menu-in 140ms ease-out;
+}
+
+.composer-menu.is-settled {
+  animation: none;
+}
+
+@keyframes composer-menu-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+.cm-section {
+  display: grid;
+  gap: 2px;
+  padding: 4px 0 6px;
+}
+
+.cm-section + .cm-section {
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
+
+.cm-title {
+  padding: 0 8px 3px;
+  color: var(--muted);
+  font-family: "Share Tech Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.cm-item {
+  display: grid;
+  min-height: 44px;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 11px;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--txt);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.cm-item:hover:not(.is-off),
+.cm-item:focus-visible,
+.cm-item.is-active {
+  border-color: var(--line);
+  background: var(--panel-cx);
+}
+
+.cm-item:focus-visible {
+  outline: 2px solid var(--amb);
+  outline-offset: 1px;
+}
+
+.cm-item.is-off {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.cm-icon {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.6;
+}
+
+.cm-item .cm-icon {
+  color: var(--cx);
+}
+
+.cm-text {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+}
+
+.cm-label {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.cm-detail {
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.cm-badge {
+  padding: 2px 6px;
+  border: 1px solid var(--line-amber);
+  color: #9b651e;
+  font-family: "Share Tech Mono", monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* The chosen tool as a chip above the text in the input field. */
+.composer-intent {
+  display: flex;
+  align-self: flex-start;
+  align-items: center;
+  max-width: 100%;
+  gap: 6px;
+  margin: 2px 0 4px;
+  padding: 3px 4px 3px 8px;
+  border: 1px solid var(--line-strong);
+  background: var(--panel-cx);
+  color: #356fdc;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.composer-intent[hidden],
+.composer-intent-size[hidden] {
+  display: none;
+}
+
+.composer-intent-label {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  gap: 5px;
+}
+
+.composer-intent .cm-icon,
+.msg-intent-icon {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+}
+
+.composer-intent-size {
+  display: inline-flex;
+  border: 1px solid var(--line);
+}
+
+.composer-intent-size-btn {
+  min-height: 24px;
+  padding: 0 7px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+}
+
+.composer-intent-size-btn[aria-pressed="true"] {
+  background: var(--cx);
+  color: var(--ink-inverse, #fff);
+}
+
+.composer-intent-close {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.composer-intent-close:hover {
+  color: var(--txt);
+}
+
+.composer-intent-close .cm-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.composer-intent-size-btn:focus-visible,
+.composer-intent-close:focus-visible {
+  outline: 2px solid var(--amb);
+  outline-offset: 1px;
+}
+
+/* The tool in the person's own bubble. */
+.msg-intent {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0 7px 5px;
+  padding: 2px 8px;
+  border: 1px solid var(--line-amber);
+  background: var(--panel-amb);
+  color: #9b651e;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.msg-intent-icon {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+@media (max-width: 620px) {
+  /* On a phone the menu opens as a sheet from the bottom edge. */
+  .composer-menu {
+    position: fixed;
+    z-index: 60;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    max-height: 78vh;
+    padding: 10px 12px max(14px, env(safe-area-inset-bottom));
+    border-width: 1px 0 0;
+    clip-path: none;
+    box-shadow: 0 -18px 46px rgba(0, 3, 15, 0.28);
+  }
+
+  .cm-item {
+    min-height: 50px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .composer-menu {
+    animation: none;
+  }
+
+  .composer-plus-btn svg {
+    transition: none;
+  }
+}
+
 /* 0.6.14: voice input (P20.1), between the text and the send button. */
 .composer-inner.has-mic {
   grid-template-columns: 52px minmax(0, 1fr) 46px 56px;
