@@ -1,5 +1,12 @@
 # CoreAI: TCI Interface
 
+## 0.6.47 - 08.11.2026
+
+- Use the canonical `images/mara_winter.jpg` portrait as the visible TCI avatar and image-generation reference whenever an account has no custom TCI portrait. Account-specific uploads override it only for that account; removing the upload restores the original.
+- Route explicitly requested TCI self-portraits, including roleplay and costumes, through the pinned FLUX.2-klein reference-image option (`sd-cli -r`). Keep ordinary image requests free of TCI reference data. Restrict the image service to canonical or validated private UUID-based reference tokens, never arbitrary filesystem paths.
+- Preserve Mara Thorne as the immutable technical identity. Apply each account's chosen display name to chat status, prompt guidance, image labels and other personal UI, using neutral wording before the account profile is known. Keep technical and persisted event identifiers intact.
+- Add regression cases for image marker classification, nickname-aware self-portraits, service reference validation, composer fallback and image UI names. Full PHP lint, integration/browser preflights and a live FLUX.2 likeness test remain required before merge.
+
 ## 0.6.46 - 07.11.2026
 
 - Fix false update failures in the Docker preflight: settings and Admin Core HTTP checks now consume the full response instead of closing the pipe on the first match. This prevents curl error 23 under pipefail.
