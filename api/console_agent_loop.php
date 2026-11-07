@@ -169,7 +169,7 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
   while ($tool !== null && $used < COREUI_AGENT_MAX_STEPS) {
     $title = coreui_agent_step_title($tool, $used + 1, COREUI_AGENT_MAX_STEPS);
     $note = coreui_agent_step_note($tool);
-    if ($note !== null) $record('commentary', 'info', 'TCI meldet ihren naechsten Schritt', ['public_note'=>$note, 'source'=>'agent_loop']);
+    if ($note !== null) $record('commentary', 'info', 'Mara meldet ihren naechsten Schritt', ['public_note'=>$note, 'source'=>'agent_loop']);
     if ($tool['tool'] === 'browse') {
       if (($tool['route'] ?? '') === 'wdr_place_search') {
         $record('tool', 'info', 'Wetter in NRW: WDR-Ortssuche im Browser', ['step'=>$used + 1, 'reason'=>'weather_nrw']);
