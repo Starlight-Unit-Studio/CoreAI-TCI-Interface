@@ -197,7 +197,7 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
   // Still asking for a tool after the last step: keep only the prose.
   if ($out !== '' && coreui_agent_next_tool($out, $allowed) !== null) {
     $prose = trim(function_exists('ember_strip_stray_tool_markers') ? ember_strip_stray_tool_markers($out)
-      : (string)preg_replace('~\[(?:WEB|BROWSE|ARCHIV|SKILL|BILD(?:\s+GROSS)?):[^\]]*\]|\[/?PY\]~iu', '', $out));
+      : (string)preg_replace('~\[(?:WEB|BROWSE|ARCHIV|SKILL|BILD(?:\s+GROSS)?(?:\s+ICH)?):[^\]]*\]|\[/?PY\]~iu', '', $out));
     $out = $prose !== '' ? $prose : 'Ich habe alle ' . COREUI_AGENT_MAX_STEPS . ' Arbeitsschritte genutzt und noch keine '
       . 'sichere Antwort gefunden. Sag mir, worauf ich mich konzentrieren soll, dann suche ich gezielter weiter.';
   }
