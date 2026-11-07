@@ -56,17 +56,27 @@ function coreui_image_dir(): string {
  * and may not contain brackets; at most 1200 characters.
  */
 function coreui_image_extract_marker(string $reply): ?string {
-  if (preg_match('~\[\s*BILD(\s+GRO(?:SS|ß))?\s*:\s*([^\[\]]{3,1200}?)\s*\]~iu', $reply, $m) !== 1) return null;
-  $prompt = trim((string)preg_replace('~\s+~u', ' ', $m[2]));
+  if (preg_match('~\[\s*BILD(\s+GRO(?:SS|ß))?(\s+ICH)?\s*:\s*([^\[\]]{3,1200}?)\s*\]~iu', $reply, $m) !== 1) return null;
+  $prompt = trim((string)preg_replace('~\s+~u', ' ', $m[3]));
   if (mb_strlen($prompt) < 3) return null;
-  return (trim((string)$m[1]) !== '' ? 'GROSS: ' : '') . $prompt;
+  return (trim((string)$m[1]) !== '' ? 'GROSS: ' : '')
+    . (trim((string)$m[2]) !== '' ? 'ICH: ' : '') . $prompt;
 }
 
 /** Size and description from the tool input (pure). */
 function coreui_image_parse_input(string $input): array {
   $input = trim($input);
-  if (preg_match('~^GROSS:\s*(.+)$~su', $input, $m) === 1) return ['size' => 'large', 'prompt' => trim($m[1])];
-  return ['size' => 'normal', 'prompt' => $input];
+  $size = 'normal';
+  if (preg_match('~^GROSS:\s*(.+)$~su', $input, $m) === 1) {
+    $size = 'large';
+    $input = trim($m[1]);
+  }
+  $self = false;
+  if (preg_match('~^ICH:\s*(.+)$~su', $input, $m) === 1) {
+    $self = true;
+    $input = trim($m[1]);
+  }
+  return ['size' => $size, 'prompt' => $input, 'self_reference' => $self];
 }
 
 /** "512 × 512" for a size of the registry (pure). */
@@ -266,7 +276,7 @@ function coreui_image_progress_title(array $job): string {
  */
 function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $prompt, string $size,
     callable $lease, callable $unlease, callable $progress, callable $cancelled, ?callable $http = null,
-    ?callable $preview = null): array {
+    ?callable $preview = null, ?string $reference = null): array {
   $http = $http ?? 'coreui_image_http';
   $previews = 0; // 0.6.42: $preview(string $dataUrl, array $job) gets every new step preview
   $registry = coreui_image_registry();
@@ -291,7 +301,9 @@ function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $
   $jobId = '';
   try {
     if ($cancelled()) return ['ok' => false, 'error' => 'cancelled', 'detail' => ''];
-    [$code, $answer] = $http('POST', '/jobs', ['prompt' => $prompt, 'size' => $size], 10);
+    $body = ['prompt' => $prompt, 'size' => $size];
+    if ($reference !== null) $body['reference'] = $reference;
+    [$code, $answer] = $http('POST', '/jobs', $body, 10);
     if ($code !== 202 || !is_array($answer) || !is_array($answer['job'] ?? null)) {
       return ['ok' => false, 'error' => (string)($answer['error'] ?? 'image_failed'), 'detail' => (string)($answer['detail'] ?? '')];
     }
@@ -359,7 +371,12 @@ function coreui_image_store(PDO $pdo, int $uid, string $characterId, string $png
   @chmod($file, 0640);
   $meta['created_at'] = gmdate('c');
   @file_put_contents($dir . '/' . $uuid . '.json', json_encode($meta, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), LOCK_EX);
-  $name = 'Mara-Bild-' . date('Ymd-His') . '.png';
+  $alias = 'Mara';
+  if (function_exists('coreui_profile_load') && $uid > 0) {
+    try { $alias = coreui_profile_name((string)(coreui_profile_load($pdo, $uid)['assistant_name'] ?? ''), 'Mara'); }
+    catch (Throwable $e) {}
+  }
+  $name = $alias . '-Bild-' . date('Ymd-His') . '.png';
   try {
     $pdo->prepare('INSERT INTO stu_console_media (uuid, user_id, character_id, kind, orig_name, stored_name, rel_path, public_url, mime_type, file_size) '
       . 'VALUES (?,?,?,?,?,?,?,?,?,?)')
@@ -506,14 +523,16 @@ function coreui_image_strip_placeholders(string $text): string {
 /** The hint in Mara's prompt that she can make images (pure). */
 function coreui_image_capability_hint(bool $compact): string {
   if ($compact) {
-    return "BILDER: Moechte die Person ein Bild von dir, antworte NUR mit [BILD: genaue Bildbeschreibung auf Englisch]. "
-      . "Gross (1024) nur auf ausdruecklichen Wunsch: [BILD GROSS: ...]. Ohne Wunsch kein Bild.";
+    return "BILDER: Moechte die Person ein Bild von dir, antworte NUR mit [BILD ICH: genaue Bildbeschreibung auf Englisch]. "
+      . "Gross (1024) nur auf ausdruecklichen Wunsch: [BILD GROSS: ...]; fuer dich selbst [BILD GROSS ICH: ...]. Andere Motive [BILD: ...]. Ohne Wunsch kein Bild.";
   }
   return "BILDER: Du kannst selbst Bilder malen (Fotos, Illustrationen, Szenen, Schrift auf Schildern). Moechte die Person "
     . "ausdruecklich ein Bild, Foto, eine Zeichnung oder Illustration von dir, antworte NUR mit einem Marker: "
-    . "[BILD: ausfuehrliche Bildbeschreibung auf Englisch: Motiv, Umgebung, Licht, Stil; Text im Bild in Anfuehrungszeichen]. "
+    . "[BILD ICH: ausfuehrliche Bildbeschreibung auf Englisch: Motiv, Umgebung, Licht, Stil; Text im Bild in Anfuehrungszeichen]. "
+    . "Nur fuer ausdrueckliche Selbstportraets verwende ICH und nutze dabei dein aktives Profilbild als Gesichtsvorlage, auch bei Kostuem und Rollenspiel. "
+    . "Fuer fremde Personen, Tiere oder Szenen benutze [BILD: ...] ohne ICH. "
     . "Standard sind 512 × 512 Pixel (etwa eine Minute). Nur wenn die Person ausdruecklich ein grosses oder hochaufloesendes "
-    . "Bild will: [BILD GROSS: ...] (1024 × 1024, drei bis vier Minuten). Ohne Bildwunsch malst du nichts; fuer Fragen "
+    . "Bild will: [BILD GROSS: ...] bzw. [BILD GROSS ICH: ...] (1024 × 1024, drei bis vier Minuten). Ohne Bildwunsch malst du nichts; fuer Fragen "
     . "ueber Bilder brauchst du keinen Marker. Personen des echten Lebens malst du nicht als Foto. "
     . "Ohne den Marker entsteht kein Bild: schreibe nie, dass ein Bild erscheint, und keine Platzhalter wie \"(Hier erscheint das Bild)\".";
 }
