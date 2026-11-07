@@ -371,7 +371,7 @@ foreach (["require_once __DIR__ . '/image_gen.php';", "if (\$sessionId !== '' &&
     "coreui_console_attachment_store(\$pdo, \$insertedId, \$uid, coreui_image_pending_take());",
     "\$slot = ember_global_lock_acquire(600);", "coreui_model_queue_mark_long(\$connection, ember_lock_name('global_ollama_image'));",
     "ember_lock_name('global_ollama_image')\n    );", "coreui_image_history_notes(\$pdo, \$consoleUid,",
-    '|\[\s*BILD(?:\s+GRO(?:SS|ß))?\s*:[^\[\]]*\]|'] as $needle) {
+    '|\[\s*BILD(?:\s+GRO(?:SS|ß))?(?:\s+ICH)?\s*:[^\[\]]*\]|'] as $needle) {
   img_gen_test(str_contains($chat, $needle), 'chat.php: ' . $needle);
 }
 img_gen_test(substr_count($chat, "   . (\$imageHint !== '' ? (\$imageHint . \"\\n\\n\") : \"\")") === 2, 'the hint in both prompts');
