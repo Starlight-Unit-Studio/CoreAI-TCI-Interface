@@ -220,7 +220,7 @@ operator_progress() {
   local percent
   percent="$(state get "$STATUS_FILE" percent 2>/dev/null || true)"
   [[ "$percent" =~ ^[0-9]{1,3}$ ]] || return 0
-  printf '__COREAI_PROGRESS__:%s\\n' "$percent"
+  printf '__COREAI_PROGRESS__:%s\n' "$percent"
 }
 
 do_run() {
