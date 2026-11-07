@@ -43,9 +43,7 @@ img_gen_test(coreui_image_registry_pinned($pinned), 'pinned registry');
 $half = $pinned;
 $half['files'][2]['sha256'] = '';
 img_gen_test(!coreui_image_registry_pinned($half), 'one missing SHA-256: not usable');
-if (!coreui_image_registry_pinned($registry)) {
-  img_gen_test(!coreui_image_tool_allowed(new PDO('sqlite::memory:'), 1), 'without pins Mara offers no images');
-}
+img_gen_test(coreui_image_registry_pinned($registry), 'the registry is pinned (revision and SHA-256 of every file)');
 
 // --- Work loop --------------------------------------------------------------------------
 $tool = coreui_agent_next_tool('Klar, ich male es dir. [BILD: a red fox in the snow at sunrise]', ['web', 'image']);

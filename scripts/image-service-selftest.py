@@ -61,7 +61,14 @@ check(all(spike_files.get((f['repo'], f['path'])) == f['size'] for f in reg['fil
       'same files and sizes as in the image test (so its weights can be adopted)')
 check(reg['sizes']['normal']['width'] == 512 and reg['sizes']['large']['width'] == 1024, '512 normal, 1024 only large')
 pin_errors = service_mod.registry_errors(reg)
-check(all('Revision' in e or 'SHA-256' in e for e in pin_errors), 'the registry is complete apart from pins: ' + '; '.join(pin_errors))
+check(pin_errors == [], 'the registry is complete and pinned (revision and SHA-256 per file): ' + '; '.join(pin_errors))
+# Pinned from the image test on the server (lock-flux2-klein-4b.json, 07.11.2026).
+check({f['role']: (f['revision'][:12], f['sha256'][:12]) for f in reg['files']} == {
+    'diffusion_model': ('3b1f5a9dc3ab', '0bba6951258e'), 'llm': ('22c9fc8a8c77', 'eed555233267'), 'vae': ('5b3abca5c0dc', '868fe7b343cc')},
+    'the pins of the operator\'s image test')
+unpinned_reg = json.loads(json.dumps(reg))
+unpinned_reg['files'][2]['sha256'] = ''
+check(any('SHA-256' in e for e in service_mod.registry_errors(unpinned_reg)), 'a file without SHA-256 is refused')
 check(reg['runtime'] == {**spike_reg['runtime'], 'build': reg['runtime']['build']}, 'the runtime of the image test')
 dockerfile = (ROOT / 'docker' / 'image' / 'Dockerfile').read_text(encoding='utf-8')
 check(f'ARG SD_COMMIT={reg["runtime"]["commit"]}' in dockerfile and f'ARG GGML_COMMIT={reg["runtime"]["ggml_commit"]}' in dockerfile
@@ -153,13 +160,12 @@ with tempfile.TemporaryDirectory(prefix='coreai-image-service-') as tmp_name:
     models = tmp / 'models'
     models.mkdir()
     svc = service_mod.Service(test_reg, models, tmp / 'work', threads=2)
-    unpinned = service_mod.Service(reg, models, tmp / 'work', threads=2)
-    if pin_errors:
-        try:
-            unpinned.ensure_weights()
-            check(False, 'without pins the service must not load anything')
-        except RuntimeError as failure:
-            check('Register unvollstaendig' in str(failure) and hub['gets'] == 0, 'without pins nothing is loaded: ' + str(failure))
+    unpinned = service_mod.Service(unpinned_reg, models, tmp / 'work', threads=2)
+    try:
+        unpinned.ensure_weights()
+        check(False, 'without pins the service must not load anything')
+    except RuntimeError as failure:
+        check('Register unvollstaendig' in str(failure) and hub['gets'] == 0, 'without pins nothing is loaded: ' + str(failure))
     paths = svc.ensure_weights()
     check(set(paths) == {'diffusion_model', 'llm', 'vae'} and hub['gets'] == 3 and set(hub['heads']) == {commit},
           'all three files loaded at the pinned revision: ' + str(hub['heads']))

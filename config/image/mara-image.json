@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "note": "CoreAI 0.6.39 (P20.5 B/C): Maras Bilder. Entscheidung des Betreibers am 07.11.2026 nach dem Bildtest (Lauf 20261107-121303): FLUX.2-klein 4B, Standard 512 x 512, 1024 x 1024 nur auf ausdruecklichen Wunsch. Die Gewichte werden nicht mit CoreAI ausgeliefert; der Bilddienst laedt genau diese Dateien in ihrer Revision und prueft jede gegen ihren SHA-256. Ohne festgelegte Revision und SHA-256 startet er nicht.",
+  "note": "CoreAI 0.6.39 (P20.5 B/C): Maras Bilder. Entscheidung des Betreibers am 07.11.2026 nach dem Bildtest (Lauf 20261107-121303): FLUX.2-klein 4B, Standard 512 x 512, 1024 x 1024 nur auf ausdruecklichen Wunsch. Die Gewichte werden nicht mit CoreAI ausgeliefert; der Bilddienst laedt genau diese Dateien in ihrer Revision und prueft jede gegen ihren SHA-256. Ohne festgelegte Revision und SHA-256 startet er nicht. Revision und SHA-256 stammen aus dem Bildtest auf dem Server (lock-flux2-klein-4b.json vom 07.11.2026, SHA-256 dort gleich dem von Hugging Face).",
   "decided_at": "2026-11-07",
   "runtime": {
     "name": "stable-diffusion.cpp",
@@ -20,9 +20,9 @@
     "cfg_scale": 1.0
   },
   "files": [
-    {"role": "diffusion_model", "repo": "leejet/FLUX.2-klein-4B-GGUF", "path": "flux-2-klein-4b-Q8_0.gguf", "revision": "", "sha256": "", "size": 4300629440, "license": "Apache-2.0"},
-    {"role": "llm", "repo": "unsloth/Qwen3-4B-GGUF", "path": "Qwen3-4B-Q8_0.gguf", "revision": "", "sha256": "", "size": 4280405792, "license": "Apache-2.0"},
-    {"role": "vae", "repo": "Comfy-Org/Flux-2-Klein-4B", "path": "split_files/vae/flux2-vae.safetensors", "revision": "", "sha256": "", "size": 336211292, "license": "Apache-2.0"}
+    {"role": "diffusion_model", "repo": "leejet/FLUX.2-klein-4B-GGUF", "path": "flux-2-klein-4b-Q8_0.gguf", "revision": "3b1f5a9dc3abb32238b053aeb3d823c30afdacbd", "sha256": "0bba6951258ec8f92d51114a8fa13e66828297bfff58a738f52729b3ef66fa28", "size": 4300629440, "license": "Apache-2.0"},
+    {"role": "llm", "repo": "unsloth/Qwen3-4B-GGUF", "path": "Qwen3-4B-Q8_0.gguf", "revision": "22c9fc8a8c7700b76a1789366280a6a5a1ad1120", "sha256": "eed555233267a33c7e8ee31682762cc7751b3f6d224039086e0e846f05fffa5d", "size": 4280405792, "license": "Apache-2.0"},
+    {"role": "vae", "repo": "Comfy-Org/Flux-2-Klein-4B", "path": "split_files/vae/flux2-vae.safetensors", "revision": "5b3abca5c0dc1ecd4eaf3340868d09063fc1c965", "sha256": "868fe7b343cc8f3a19dbcfcafbc3d5f888802be3f89bd81b65b3621a066ce8f3", "size": 336211292, "license": "Apache-2.0"}
   ],
   "sizes": {
     "normal": {"width": 512, "height": 512, "time_limit_s": 300},

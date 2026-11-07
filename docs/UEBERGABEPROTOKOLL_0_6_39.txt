@@ -47,8 +47,11 @@ Warteschlange), image-chat-ui-selftest.cjs, php -l, tci-language-selftest.cjs, t
 volle Testreihe mit Test-Datenbank, cache-bust, version-merge-check gegen 0.6.38.
 NICHT HIER GEPRUEFT: Docker-Bau und echte Bilder (kein Docker, kein Hugging Face aus dieser Umgebung).
 
-OFFEN VOR DEM MERGE: Revision und SHA-256 der drei Dateien im Register aus der Lock-Datei des Bildtests
-(var/image-spike/models/lock-flux2-klein-4b.json) eintragen; bis dahin bleibt der PR ein Entwurf.
+FESTGELEGT: Revision und SHA-256 der drei Dateien stammen aus der Lock-Datei des Bildtests auf dem Server
+(var/image-spike/models/lock-flux2-klein-4b.json vom 07.11.2026, dort gleich dem SHA-256 von Hugging Face):
+  flux-2-klein-4b-Q8_0.gguf     3b1f5a9dc3abb32238b053aeb3d823c30afdacbd  0bba6951258ec8f92d51114a8fa13e66828297bfff58a738f52729b3ef66fa28
+  Qwen3-4B-Q8_0.gguf            22c9fc8a8c7700b76a1789366280a6a5a1ad1120  eed555233267a33c7e8ee31682762cc7751b3f6d224039086e0e846f05fffa5d
+  flux2-vae.safetensors         5b3abca5c0dc1ecd4eaf3340868d09063fc1c965  868fe7b343cc8f3a19dbcfcafbc3d5f888802be3f89bd81b65b3621a066ce8f3
 
 NACH DEM MERGE (Betreiber):
 1. Update unter Einstellungen > System > CoreAI Update (der erste Bau des Bilddienstes dauert 10 bis 20 Minuten).
