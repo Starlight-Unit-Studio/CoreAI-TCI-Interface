@@ -1,5 +1,17 @@
 # CoreAI: TCI Interface
 
+## 0.6.41 - 07.11.2026
+
+Wunsch des Betreibers (Screenshots einer anderen Bild-KI): Waehrend ein Bild entsteht, soll man den Vorgang sehen, mit einer Flaeche, einer wechselnden Stufe und einer Prozentanzeige.
+
+- **Bildkarte im Chat:** Sobald Mara malt, steht in ihrer Live-Antwort eine quadratische Karte im CoreAI-Stil: ein Punkteraster in CoreAI-Blau mit einem wandernden Lichtfleck, darueber die Stufe ("Bild wird vorbereitet", "Beschreibung wird gelesen", "Erste Skizze entsteht", "Die Szene nimmt Gestalt an", "Details werden verfeinert", "Letzter Feinschliff", "Fast fertig", "Fertig") und unten rechts die Prozentanzeige. Die Karte ersetzt waehrenddessen die Tipp-Punkte.
+- **Echter Fortschritt:** Die Prozente folgen den Ereignissen des Bilddienstes (Laden, Schritt 1 bis 4, Dekodieren). Zwischen zwei Ereignissen laufen sie weich weiter, nach den gemessenen Zeiten (512: etwa 13,5 s je Schritt, 1024: etwa 46 s), aber nie ueber das Ende der erreichten Stufe hinaus und nie zurueck; ein verspaetetes aelteres Ereignis aendert nichts.
+- **Das Bild blendet auf:** Ist das Bild fertig, erscheint es direkt in der Karte (ueber `console_media.php`, nur fuer den Besitzer), waehrend Mara ihren Text schreibt; danach zeigt die gespeicherte Antwort es wie gewohnt mit "Herunterladen". Scheitert das Bild, sagt die Karte "Kein Bild entstanden".
+- **Barrierearm:** Mit "weniger Bewegung" im System steht das Raster still; die Stufe wird vorgelesen (role status). Auf dem Handy ohne seitliches Scrollen.
+- Technisch: Die Fortschrittsereignisse tragen Phase, Schritte und Bildbreite, "Bild erzeugt" die Bild-ID (`coreui_image_progress_meta`, Arbeitsspeicher-Felder `steps`, `image_px`, `image_uuid`). Neues Modul `js/coreui-image-progress.js`.
+- Tests: neu `image-progress-ui-selftest.cjs` (Chromium: Ereignisse, Stufentexte, Prozentbereiche, nie zurueck, Karte statt Tipp-Punkte, bewegte und bei weniger Bewegung stehende Punkte, Bild blendet auf, Fehler, wieder aufgebaute Zeile, Handybreite, Verdrahtung), `image-gen-selftest.php` (Fortschrittsdaten). Beide Preflights.
+- Keine Aenderung an Cores, Modelfile, Bilddienst, Datenbankschema oder Warteschlange.
+
 ## 0.6.40 - 07.11.2026
 
 Rueckmeldung des Betreibers zu 0.6.39: Geschrieben klappt es ("Katze im Schnee" mit Bild und Wasserzeichen). Nach der Stimmsequenz "Und jetzt mal eine Wildkatze im Wald" kam aber kein Bild, sondern nur Text mit "*(Hier erscheint das Bild der Wildkatze im Wald) (Von dir erzeugtes Bild (512 × 512): ...)". Auch unter dem Katzenbild stand "*(Hier erscheint das Bild der Katze im Schnee)".

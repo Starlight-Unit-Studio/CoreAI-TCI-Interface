@@ -2248,6 +2248,74 @@ a:focus-visible {
   clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px));
 }
 
+/* 0.6.41 (P20.5): the image while Mara paints it (js/coreui-image-progress.js). */
+.img-progress {
+  width: min(100%, 420px);
+  margin: 10px 0 6px;
+}
+
+.img-progress-stage {
+  margin: 0 0 8px;
+  color: var(--txt);
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  opacity: 0.86;
+}
+
+.img-progress-frame {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: var(--panel-soft);
+  box-shadow: var(--shadow-soft);
+  clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px));
+}
+
+.img-progress-dots,
+.img-progress-picture {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.img-progress-dots {
+  transition: opacity 0.7s var(--ease-holo);
+}
+
+.img-progress-picture {
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.9s var(--ease-holo);
+}
+
+.img-progress-pct {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  min-width: 64px;
+  padding: 5px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--panel-solid);
+  color: var(--cx);
+  font-family: "Share Tech Mono", monospace;
+  font-size: 0.95rem;
+  text-align: center;
+  transition: opacity 0.4s;
+}
+
+.img-progress.is-revealed .img-progress-picture { opacity: 1; }
+.img-progress.is-revealed .img-progress-dots,
+.img-progress.is-revealed .img-progress-pct { opacity: 0; }
+.img-progress.is-failed .img-progress-dots { opacity: 0.3; }
+.img-progress.is-failed .img-progress-pct { color: var(--red); }
+
+/* While the image is being made, the card is the sign of life; the typing dots wait. */
+.msg-content:has(> .img-progress:not(.is-done):not(.is-failed)) > .msg-bubble { display: none; }
+
 /* 0.6.39 (P20.5): an image Mara made, with its line underneath. */
 .msg-generated {
   margin: 0;

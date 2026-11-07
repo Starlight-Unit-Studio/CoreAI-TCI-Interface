@@ -1,0 +1,26 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.41
+Stand: 07.11.2026
+Basis: main 0.6.40 nach Merge von PR #192.
+
+AUFTRAG: Betreiber-Screenshots einer anderen Bild-KI (16:19/16:20): Vorgang sichtbar machen mit Flaeche aus Punkten,
+Stufentext ("Erste Skizze entsteht", "Details werden verfeinert", "Fast fertig", "Letzter Feinschliff") und Prozent.
+Umgesetzt im CoreAI-Stil (Blau statt Gruen, abgeschraegte Ecken wie die Chatbilder), mit echtem Fortschritt.
+
+UMSETZUNG
+- api/image_gen.php: coreui_image_progress_meta (source image, reason image_PHASE, step, steps, image_px).
+- api/chat.php: Fortschrittsereignisse mit diesen Daten; "Bild erzeugt" mit image_uuid und image_px.
+- api/console_work_store.php: steps und image_px als Zahlen, image_uuid (32 hex) als Wert.
+- js/coreui-image-progress.js: read (Ereignis -> Stufe), band (Text, Prozentbereich: Start 0-4, Laden 4-9, Beschreibung
+  9-15, Schritte 15-90 gleichmaessig, Dekodieren 90-98, fertig 100), percent (1 - exp(-t * 2,2 / erwartete Dauer), hoechstens
+  Bereichsende - 1), Karte mit Canvas (25 x 25 Punkte, zwei wandernde Lichtflecken, Farbe --cx), nie zurueck, veraltete
+  Ereignisse ignoriert, Bild blendet bei "Bild erzeugt" ein, Fehlerzustand; prefers-reduced-motion: keine Animation.
+- js/console-app.js: work-Ereignis -> CoreAIImageProgress.observe(state.typingEl, event); neu aufgebaute Antwortzeile ->
+  replay. app.html laedt das Modul nach coreui-work-events.js. css/console.css: .img-progress*, Tipp-Punkte waehrenddessen aus.
+
+GEPRUEFT (hier ausgefuehrt): image-progress-ui-selftest.cjs (Bildschirmfotos hell und dunkel angesehen), image-gen-selftest.php,
+volle Testreihe mit Test-Datenbank, tci-language-selftest.cjs, terran-terminology-selftest.cjs, cache-bust, version-merge-check.
+NICHT HIER GEPRUEFT: echter Bildlauf auf dem Server mit der Karte.
+
+NACH DEM MERGE (Betreiber):
+1. Update unter Einstellungen > System > CoreAI Update, Seite neu laden.
+2. "Mal mir einen Leuchtturm bei Sturm": erwartet die Karte mit Stufen und Prozent, am Ende blendet das Bild auf.

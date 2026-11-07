@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.40: Bilder auch nach Stimmsequenzen, keine Platzhalter statt Bild, Bildliste als eigener Block im Verlauf.
+# CoreAI: TCI Interface 0.6.41: Bildkarte mit echtem Fortschritt waehrend Mara malt.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -163,6 +163,8 @@ UI_FILES=(
   scripts/image-service-selftest.py
   scripts/image-gen-selftest.php
   scripts/image-chat-ui-selftest.cjs
+  js/coreui-image-progress.js
+  scripts/image-progress-ui-selftest.cjs
   assets/fonts/rajdhani_700.ttf
   config/voice/mara-voice.json
   api/voice.php

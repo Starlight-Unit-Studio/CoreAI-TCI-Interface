@@ -5260,14 +5260,15 @@ function ember_image_run_tool(PDO $pdo, int $uid, string $input): string {
   $result = coreui_image_generate($pdo, $uid, ember_character_id(), $request['prompt'], $request['size'],
     'ember_image_lease', 'ember_image_unlease',
     static function (array $job) use ($pdo): void {
-      coreui_work_record($pdo, 'tool', 'info', coreui_image_progress_title($job),
-        ['source'=>'image', 'step'=>(int)($job['step'] ?? 0), 'steps'=>(int)($job['steps'] ?? 0)]);
+      // 0.6.41: phase, steps and size for the progress card in the chat (js/coreui-image-progress.js).
+      coreui_work_record($pdo, 'tool', 'info', coreui_image_progress_title($job), coreui_image_progress_meta($job));
     },
     static fn(): bool => ember_agent_cancel_requested(true));
   if (!empty($result['ok'])) {
     coreui_image_pending_add((string)$result['uuid']);
     coreui_work_record($pdo, 'artifact', 'success', 'Bild erzeugt',
-      ['source'=>'image', 'elapsed_ms'=>(int)round(1000 * (float)$result['seconds'])]);
+      ['source'=>'image', 'elapsed_ms'=>(int)round(1000 * (float)$result['seconds']),
+        'image_uuid'=>(string)$result['uuid'], 'image_px'=>(int)$result['width']]);
   } else {
     coreui_work_record($pdo, 'tool', 'error', 'Bild nicht erzeugt', ['reason'=>(string)($result['error'] ?? 'image_failed')]);
   }
