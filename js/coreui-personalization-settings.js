@@ -72,7 +72,7 @@
     notice('Einstellungen werden gespeichert …');
     request('POST',{action:'save',settings:collect()}).then(function (data) {
       show(data.settings);
-      notice('Maras Personalisierung wurde für dein Konto gespeichert. ✓');
+      notice('Die Personalisierung deiner CoreAI wurde für dein Konto gespeichert. ✓');
     }).catch(function (error) {
       notice('Speichern fehlgeschlagen: ' + error.message,true);
     }).finally(function () { save.disabled = !canSave; });
