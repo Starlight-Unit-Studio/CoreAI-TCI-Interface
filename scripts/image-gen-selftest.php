@@ -164,24 +164,27 @@ img_gen_test($row['uuid'] === $r['uuid'] && (int)$row['user_id'] === 5 && $row['
   'kept as a private media entry of the account: ' . json_encode($row));
 $kept = (string)file_get_contents($tmp . '/images/' . $r['uuid'] . '.png');
 img_gen_test(coreui_image_png_size($kept) === [512, 512] && $kept !== $png && (int)$row['file_size'] === strlen($kept)
-  && substr(sprintf('%o', fileperms($tmp . '/images/' . $r['uuid'] . '.png')), -4) === '0640', 'the PNG on disk with the studio mark, 0640');
+  && substr(sprintf('%o', fileperms($tmp . '/images/' . $r['uuid'] . '.png')), -4) === '0640', 'the PNG on disk with the text-only credit, 0640');
 $meta = coreui_image_meta($r['uuid']);
 img_gen_test(($meta['prompt'] ?? '') === 'A red fox, sitting in snow' && ($meta['seconds'] ?? 0) == 61.8 && ($meta['model'] ?? '') === 'FLUX.2-klein 4B (Q8_0)'
   && ($meta['watermark'] ?? null) === true, 'its description next to it');
 
-// The studio's mark: the logo with "Erzeugt von TCI: Mara©" flush under it, lower right corner,
-// small, half opacity; the rest of the image untouched (operator, 07.11.2026).
-img_gen_test(COREUI_IMAGE_MARK_TEXT === 'Erzeugt von TCI: Mara©', 'the line under the logo');
+// Text-only credit in the lower right corner, with the current year and no logo.
+img_gen_test(coreui_image_mark_text(2026) === 'Erzeugt von Quantum CoreAI 2026©'
+  && coreui_image_mark_text(2027) === 'Erzeugt von Quantum CoreAI 2027©'
+  && coreui_image_mark_text() === 'Erzeugt von Quantum CoreAI ' . date('Y') . '©',
+  'the Quantum CoreAI credit uses the actual year');
 foreach ([512, 1024] as $n) {
   $gray = imagecreatetruecolor($n, $n);
   imagefill($gray, 0, 0, imagecolorallocate($gray, 128, 128, 128));
   ob_start(); imagepng($gray); $plain = (string)ob_get_clean();
   $marked = coreui_image_watermark($plain);
-  img_gen_test(is_string($marked) && coreui_image_png_size($marked) === [$n, $n], "mark on {$n}: same size");
+  img_gen_test(is_string($marked) && coreui_image_png_size($marked) === [$n, $n], "credit on {$n}: same size");
   $im = imagecreatefromstring($marked);
-  $markW = max(COREUI_IMAGE_MARK_MIN_PX, (int)round($n * COREUI_IMAGE_MARK_WIDTH));
+  $markW = min($n - 2 * max(4, (int)round($n * COREUI_IMAGE_MARK_MARGIN)),
+    max(COREUI_IMAGE_MARK_MIN_PX, (int)round($n * COREUI_IMAGE_MARK_WIDTH)));
   $margin = (int)round($n * COREUI_IMAGE_MARK_MARGIN);
-  $changed = []; $outside = 0; $strongest = 0; $white = [];
+  $changed = []; $strongest = 0;
   for ($y = 0; $y < $n; $y++) {
     for ($x = 0; $x < $n; $x++) {
       $c = imagecolorat($im, $x, $y);
@@ -190,25 +193,27 @@ foreach ([512, 1024] as $n) {
       if ($d === 0) continue;
       $changed[] = [$x, $y];
       $strongest = max($strongest, $d);
-      if ($r > 175 && $g > 175 && $b > 175) $white[] = $y;
     }
   }
+  img_gen_test(count($changed) > 20, "credit on {$n}: text pixels exist");
   $xs = array_column($changed, 0); $ys = array_column($changed, 1);
   $left = min($xs); $right = max($xs); $top = min($ys); $bottom = max($ys);
-  img_gen_test($right <= $n - $margin && $bottom <= $n - $margin && $right >= $n - $margin - 3 && $bottom >= $n - $margin - 3,
-    "mark on {$n}: in the lower right corner with its margin");
-  img_gen_test($right - $left + 1 <= $markW + 2 && $right - $left + 1 >= (int)($markW * 0.85), "mark on {$n}: small ({$left}..{$right} of {$n})");
-  img_gen_test($bottom - $top + 1 <= (int)($markW * 0.75), "mark on {$n}: logo and line together stay low");
-  img_gen_test($strongest >= 20 && $strongest <= 66, "mark on {$n}: at half opacity (strongest change {$strongest} of 128)");
-  // White letters in the lowest fifth of the mark: the line sits under the logo.
-  $line = array_filter($white, static fn(int $y): bool => $y >= $bottom - (int)(($bottom - $top) * 0.2));
-  img_gen_test(count($line) >= 10, "mark on {$n}: the white line under the logo");
+  img_gen_test($right <= $n - $margin && $bottom <= $n - $margin
+    && $right >= $n - $margin - 3 && $bottom >= $n - $margin - 3,
+    "credit on {$n}: lower right with its margin");
+  img_gen_test($right - $left + 1 <= $markW + 4
+    && $right - $left + 1 >= (int)($markW * 0.7), "credit on {$n}: readable and compact");
+  img_gen_test($bottom - $top + 1 <= (int)($markW * 0.19),
+    "credit on {$n}: single text line, no studio logo");
+  img_gen_test($strongest >= 20 && $strongest <= 66,
+    "credit on {$n}: half opacity (strongest change {$strongest} of 128)");
 }
 img_gen_test(coreui_image_watermark('no png') === null, 'no PNG: no mark, no crash');
-img_gen_test(hash_file('sha256', $root . '/images/starlight_unit_studios_logo_original.png') === '3463758e8e2265315267fa2c45ea5f377b03df37beee9df878331873a4971274',
-  'the mark is the approved studio logo');
-img_gen_test(is_file($root . '/assets/fonts/rajdhani_700.ttf') && str_contains((string)file_get_contents($root . '/assets/fonts/LICENSES.md'), 'rajdhani_700.ttf'),
-  'the line uses Rajdhani Bold (OFL) as TTF, named in the font notes');
+img_gen_test(!str_contains((string)file_get_contents($root . '/api/image_gen.php'),
+  'starlight_unit_studios_logo_original.png'), 'image credit does not load the studio logo');
+img_gen_test(is_file($root . '/assets/fonts/rajdhani_700.ttf')
+  && str_contains((string)file_get_contents($root . '/assets/fonts/LICENSES.md'), 'rajdhani_700.ttf'),
+  'the text credit uses Rajdhani Bold (OFL) as TTF, named in the font notes');
 img_gen_test(coreui_image_meta('../x') === null, 'no paths as image names');
 
 // 0.6.42: step previews go to the chat as small data URLs, each new one once, never after the job.
