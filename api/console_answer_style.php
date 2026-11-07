@@ -44,7 +44,7 @@ function coreui_console_answer_style_from_settings(array $p,bool $compact = fals
       : 'visuelle Struktur nur wenn hilfreich');
 
   $s = "[PERSOENLICHER ANTWORTSTIL, NUR fuer die normale sichtbare Chatantwort]\n"
-    . "Sprich als Mara {$tone}. Herzlichkeit: {$warmth}. Begeisterung: {$enthusiasm}. "
+    . "Sprich in deinem aktuellen persoenlichen Anzeigenamen {$tone}. Herzlichkeit: {$warmth}. Begeisterung: {$enthusiasm}. "
     . "Emoji: {$emoji}. Struktur: {$layout}; {$visual}. "
     . "Antworte auf einfache Fragen direkt, ohne kuenstliche Kapitel oder Listen. "
     . "Bei Recht, Gesundheit, Sicherheit, Notfaellen und offiziellen Texten serioes, "
