@@ -85,7 +85,7 @@ img_gen_test(coreui_agent_step_note(['tool' => 'image', 'input' => 'GROSS: a cas
 img_gen_test(str_contains(coreui_agent_tool_menu(['image']), '[BILD ICH: Bildbeschreibung auf Englisch]'),
   'the menu names the marker');
 $hint = coreui_image_capability_hint(false);
-img_gen_test(str_contains($hint, '[BILD ICH: ausfuehrliche Bildbeschreibung auf Englisch') && str_contains($hint, '[BILD GROSS: ...] (1024 × 1024')
+img_gen_test(str_contains($hint, '[BILD ICH: ausfuehrliche Bildbeschreibung auf Englisch') && str_contains($hint, '[BILD GROSS: ...] bzw. [BILD GROSS ICH: ...] (1024 × 1024')
   && str_contains($hint, 'Standard sind 512 × 512 Pixel') && str_contains($hint, 'Ohne Bildwunsch malst du nichts')
   && !str_contains($hint, 'Modell'), 'the prompt hint: 512 normal, big only on request, no image without a wish');
 img_gen_test(str_contains(coreui_image_capability_hint(true), '[BILD GROSS ICH: ...]'), 'compact hint');
