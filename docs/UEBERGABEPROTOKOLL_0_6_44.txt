@@ -1,0 +1,19 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.44
+Stand: 07.11.2026
+Basis: main 0.6.43 nach Merge von PR #195.
+
+AUFTRAG
+Bildvermerk von "Erzeugt von TCI: Mara©" auf "Erzeugt von Quantum CoreAI [Jahr]©" aendern und das Starlight-Unit-Logo aus den erzeugten Bildern entfernen.
+
+UMSETZUNG
+- api/image_gen.php: Logo-Zeichnung und Logo-Abhaengigkeit entfernt; unten rechts wird nur noch eine weisse Textsignatur in Rajdhani Bold mit Schatten und 50 % Deckkraft eingebrannt.
+- Das Jahr stammt zur Erzeugungszeit aus date('Y') (Serverzeitzone), optionaler Jahresparameter fuer deterministische Tests.
+- scripts/image-gen-selftest.php: Regressionstests zu 2026/2027, Bildgroessen, Position, Deckkraft, einzeiliger Signatur und fehlendem Logo-Zugriff.
+- README.md: aktuelle Bildfunktion aktualisiert. Logo-Datei bleibt fuer die restliche Produktoberflaeche im Repository erhalten.
+- VERSION und die sechs HTML-Seiten, js/console-gate.js, Branding-Selbsttest, Preflights, CHANGELOG.md und das TXT-Archiv auf 0.6.44 nachgezogen.
+
+TEST / FREIGABE
+- PHP-Syntax und statische Textpruefungen koennen lokal laufen; der komplette Bild-Selbsttest braucht PHP-GD und die Testdatenbank.
+- Vor Merge zwingend den Versions-Guard, image-gen-selftest.php und beide Preflights real ausfuehren.
+- Falls diese Voraussetzungen nicht erfuellt sind, Draft-PR belassen und NICHT mergen.
+- Kein Live-Deployment durch den GitHub-PR allein.
