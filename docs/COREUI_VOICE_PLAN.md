@@ -284,6 +284,8 @@ sudo bash /opt/ember-coreui/scripts/tts-spike.sh --skip-build --engines piper,po
 
 ### P20.2: Videos hören
 
+**Stand 0.6.35: gebaut.** `ember_attach_video_sound` (api/ember_attachments.php): Tonspur per ffprobe erkannt, mit `coreui_voice_prepare_native` in WAVs von höchstens 60 s im Audio-Budget des Kontextfensters, vorher mitgeschrieben (`ember_attach_audio_transcribe_now`, Schritt "Tonspur wird mitgeschrieben"), im Medienfeld direkt nach den Einzelbildern. Maras Auftrag (`ember_video_sound_task`) nennt Teile mit Startzeiten, die Mitschrift als Anker, Kürzungen; ohne Denken und ohne Skills wie bei Audio, eine Wiederholung bei "kein Ton". Ohne Tonspur, bei stiller Spur, Core ohne Audio und für Gäste der ehrliche Hinweis. Mitschrift unter dem Video (api/voice_input.php, js/coreui-voice-input.js) und im Verlauf. Offen: Abnahme mit echten Videos (Sprache, Musik) auf dem Server.
+
 - ffmpeg trennt die Tonspur (WAV, 16 kHz, Mono, 16 Bit PCM signed) und teilt sie in Abschnitte von höchstens 60 Sekunden. Bilder und passende Tonabschnitte gehen gemeinsam in dieselbe Anfrage, mit Zeitmarken.
 - Der heutige Hinweis "Ton hast du nicht" entfällt, wenn eine Tonspur vorhanden ist; Videos ohne Ton bleiben wie bisher.
 - Längengrenzen und Stichproben werden offen genannt (welche Abschnitte gehört und gesehen wurden).

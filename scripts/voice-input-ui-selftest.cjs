@@ -10,7 +10,8 @@
 // "Abbrechen"; pure silence is not sent; the limit sends on its own; a Core
 // without audio keeps the button switched off with the reason and does not open
 // the microphone; a Core change asks again; a refused microphone is explained;
-// a status the server does not answer shows no button; the transcript written
+// a status the server does not answer shows no button; 0.6.35: a video gets the line of its
+// sound track; the transcript written
 // after Mara's answer appears small under the voice message.
 const {chromium} = require('playwright');
 const fs = require('node:fs');
@@ -265,6 +266,22 @@ async function record(page, ms) {
     await until(page, () => document.querySelector('#rows .msg-transcript') !== null);
     await page.waitForTimeout(300);
     assert.equal((await transcriptLine(page)).hidden, true, 'no transcript: no line');
+    await page.close();
+    // 0.6.35 (P20.2): a video gets the line of its sound track, like a voice message.
+    ({page, calls} = await open(browser, {allowed: true, hears: true}, {transcript: {ok: true, state: 'done', text: 'Hallo aus dem Urlaub.'}}));
+    await page.waitForSelector('#btnMic');
+    await page.evaluate(uuid => {
+      const row = document.createElement('div');
+      const video = document.createElement('video');
+      video.className = 'msg-image msg-video';
+      video.setAttribute('data-uuid', uuid);
+      row.appendChild(video);
+      document.getElementById('rows').appendChild(row);
+    }, 'ef'.repeat(16));
+    await until(page, () => { const l = document.querySelector('#rows .msg-transcript'); return l && !l.hidden; });
+    assert.deepEqual(await transcriptLine(page), {hidden: false, text: 'Mitschrift: Hallo aus dem Urlaub.', state: 'done'});
+    assert.equal(await page.evaluate(() => document.querySelector('#rows video').nextElementSibling.className), 'msg-transcript',
+      'the line sits right under the video');
     await page.close();
 
     // The limit ends the recording and sends it on its own (here 10 seconds).

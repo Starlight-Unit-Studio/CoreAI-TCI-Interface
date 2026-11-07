@@ -366,6 +366,21 @@ function coreui_voice_is_voice_message(string $name): bool {
   return str_starts_with($name, COREUI_VOICE_MESSAGE_PREFIX);
 }
 
+/** 0.6.35 (P20.2): does the file carry a sound track? null when ffprobe cannot tell. */
+function coreui_voice_has_audio_stream(string $path): ?bool {
+  $probe = coreui_voice_bin('ffprobe');
+  if ($probe === null || !function_exists('exec')) return null;
+  $lines = [];
+  $status = 1;
+  @exec(escapeshellarg($probe) . ' -v error -select_streams a -show_entries stream=index -of csv=p=0 '
+    . escapeshellarg($path) . ' 2>/dev/null', $lines, $status);
+  if ($status !== 0) return null;
+  foreach ($lines as $line) {
+    if (trim($line) !== '') return true;
+  }
+  return false;
+}
+
 /** Does the file carry a picture track? null when ffprobe cannot tell. */
 function coreui_voice_has_video_stream(string $path): ?bool {
   $probe = coreui_voice_bin('ffprobe');

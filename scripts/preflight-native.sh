@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.34: Audio- und Live-Symbol in der Core-Liste, Live-Knopf pulsiert.
+# CoreAI: TCI Interface 0.6.35: Videos hoeren (P20.2), Tonspur mit den Einzelbildern im selben Aufruf.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

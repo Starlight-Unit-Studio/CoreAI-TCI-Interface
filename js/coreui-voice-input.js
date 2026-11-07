@@ -316,7 +316,8 @@
   // voice message; while it is still being written the page asks again.
   function bindTranscripts(root) {
     if (!state.allowed) return;
-    var players = (root && root.querySelectorAll ? root : document).querySelectorAll('audio.msg-audio[data-uuid]');
+    // 0.6.35: videos too: what was said in their sound track.
+    var players = (root && root.querySelectorAll ? root : document).querySelectorAll('audio.msg-audio[data-uuid], video.msg-video[data-uuid]');
     Array.prototype.forEach.call(players, function (player) {
       if (player.getAttribute('data-transcript') === 'bound') return;
       player.setAttribute('data-transcript', 'bound');
@@ -378,7 +379,7 @@
       for (var i = 0; i < records.length; i++) {
         for (var j = 0; j < records[i].addedNodes.length; j++) {
           var node = records[i].addedNodes[j];
-          if (node.nodeType === 1) bindTranscripts(node.matches && node.matches('audio.msg-audio') ? node.parentNode : node);
+          if (node.nodeType === 1) bindTranscripts(node.matches && node.matches('audio.msg-audio, video.msg-video') ? node.parentNode : node);
         }
       }
     }).observe(document.documentElement, { childList: true, subtree: true });

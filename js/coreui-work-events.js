@@ -63,6 +63,9 @@
       case 'Aufnahme wird mitgeschrieben':
         return 'Ich erstelle zuerst eine Mitschrift deiner Stimmsequenz, damit ich auf deine aktuelle Nachricht eingehen kann. '
           + 'Die Mitschrift erscheint anschließend unter deiner Stimmsequenz.';
+      case 'Tonspur wird mitgeschrieben':
+        return 'Ich schreibe zuerst mit, was im Video gesprochen wird, und höre mir danach Bilder und Ton zusammen an. '
+          + 'Die Mitschrift erscheint anschließend unter dem Video.';
       case 'Privates Wissen durchsucht':
         return Number(event.meta.knowledge_hits) > 0
           ? 'Ich habe in deinem hochgeladenen Wissen (RAG-Lite) gesucht und '
@@ -508,7 +511,7 @@
   // routine operations fold into ONE muted, expandable line per sequence.
   var NARRATED = {
     'Kontextfenster ermittelt':1,'Projektdateien geplant':1,
-    'Anhang wird angesehen':1,'Aufnahme wird angehoert':1,'Aufnahme wird mitgeschrieben':1,'Privates Wissen durchsucht':1,
+    'Anhang wird angesehen':1,'Aufnahme wird angehoert':1,'Aufnahme wird mitgeschrieben':1,'Tonspur wird mitgeschrieben':1,'Privates Wissen durchsucht':1,
     'Browserauftrag eingereiht':1,
     'Mara hat die Umsetzung des gespeicherten Plans gewaehlt':1,
     'Mara hat ein natives Werkzeug angefordert':1,
@@ -582,7 +585,7 @@
     'Mara hat selbst den Projekt-Writer aufgerufen':'Starte den Projekt-Writer',
     'Projektdateien geplant':'Plane die Projektdateien','Kontextfenster ermittelt':'Plane den Kontext',
     'Privates Wissen durchsucht':'Durchsuche dein Wissen','Anhang wird angesehen':'Ich sehe mir den Anhang an','Aufnahme wird angehoert':'Ich höre die Stimmsequenz an',
-    'Aufnahme wird mitgeschrieben':'Ich schreibe die Stimmsequenz mit',
+    'Aufnahme wird mitgeschrieben':'Ich schreibe die Stimmsequenz mit','Tonspur wird mitgeschrieben':'Ich schreibe den Ton des Videos mit',
     'Websuche gestartet':'Prüfe Webquellen','Websuche beendet':'Ordne Quellen ein'
   };
   function activity(event) {

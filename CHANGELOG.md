@@ -1,5 +1,18 @@
 # CoreAI: TCI Interface
 
+## 0.6.35 - 07.11.2026
+
+P20.2: Videos hoeren. Bisher sah Mara ein Video nur als Einzelbilder und bekam "Ton hast du nicht" gesagt. Jetzt hoert sie die Tonspur mit, wie im Sprachplan festgelegt: ffmpeg trennt den Ton, teilt ihn in Abschnitte von hoechstens 60 Sekunden, und Bilder und Ton gehen gemeinsam in dieselbe Anfrage, mit Zeitmarken.
+
+- **Ton zum Bild:** Hat ein Video eine Tonspur und hoert der gewaehlte Core Audio (angemeldete Konten, keine Gaeste), wird der Ton wie eine Audiodatei aufbereitet: WAV mit 16 kHz, Mono, 16 Bit, Teile von hoechstens 60 s, innerhalb desselben Audio-Budgets des Kontextfensters (hoechstens 40 Prozent, bis 10 Minuten). Die WAVs liegen im selben Medienfeld direkt nach den Einzelbildern.
+- **Mitschrift zuerst:** Wie bei Stimmsequenzen und Audiodateien schreibt der Core vorher mit, was gesprochen wird (mit den Begriffen aus dem KI-Profil). Die Mitschrift steht als Anker in Maras Auftrag ("im Zweifel gilt der Ton"), unter dem Video im Chat und im Verlauf ("Ton des Videos ..."). Der Arbeitsweg zeigt den neuen Schritt "Ich schreibe den Ton des Videos mit".
+- **Maras Auftrag:** Sie hoert die Tonspur nach den Einzelbildern, bei mehreren Teilen mit deren Startzeiten, bezieht Sprache, Musik und Geraeusche ein, soweit sie sie wirklich hoert, und erfindet keinen Ton. Ohne gesprochene Worte heisst es, dass vielleicht nur Musik oder Geraeusch zu hoeren ist. Ein gekuerzter Ton wird offen genannt. Wie bei Audio ohne Denken und ohne Skill-Dokumente davor; behauptet der Core, es gebe keinen Ton, wird einmal wiederholt.
+- **Ehrlich ohne Ton:** Video ohne Tonspur ("Das Video hat keine Tonspur."), stille Tonspur ("Die Tonspur ist still"), Core ohne Audioeingabe (sagt es, wenn es um den Ton geht) und Gaeste (wie bisher "Ton hast du nicht.") bekommen die Einzelbilder und den passenden Hinweis.
+- **Aufraeumen:** Die WAVs der Tonspur werden nach dem Aufruf entfernt, wie Einzelbilder und Audioteile.
+- **README:** Live-Gespraech und Video-Ton stehen nicht mehr als "geplant" da (beides ist umgesetzt); geplant bleibt die waehlbare englische Oberflaeche.
+- Tests: `voice-input-selftest.php` (Tonspur erkannt oder nicht; Video mit Ton: Einzelbilder, dann eine WAV im Medienfeld, gueltig fuer Gemma, vorher genau diese WAV mitgeschrieben, Arbeitsweg, Mitschrift gespeichert; Auftrag mit Mitschrift, Teilen, Kuerzung, ohne Worte; Video ohne Tonspur, stille Tonspur, Core ohne Audio, Gast; keine WAVs uebrig; Verlauf; Verdrahtung in Chat, Endpunkt und Oberflaeche), `voice-input-ui-selftest.cjs` (Mitschrift-Zeile direkt unter dem Video).
+- Keine Aenderung an Cores, Modelfile, Datenbankschema, Installer, nginx oder Warteschlange.
+
 ## 0.6.34 - 06.11.2026
 
 Wunsch des Betreibers nach dem gelungenen Live-Test: In der Core-Liste sollen Audio-Cores rechts, links neben dem Haken, ein Lautsprecher-Symbol und ein Symbol fuer das Live-Gespraech tragen; der Live-Knopf soll leicht pulsieren, damit er auffaellt, aber nur als Live-Knopf, nie als Senden-Taste. Die Wahl des Live-Cores bleibt unveraendert (Wunsch des Betreibers).
