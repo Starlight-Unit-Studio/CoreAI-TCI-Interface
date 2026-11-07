@@ -936,6 +936,22 @@ try {
   }
 } catch (Throwable $e) {
   $cancelled = $e->getMessage() === 'agent_cancelled';
+  // A cancelled batch can already have finished images. Attach them before ending the run,
+  // using the same account/session/turn transaction as an ordinary answer.
+  if ($cancelled && empty($emberMsgId) && !empty($GLOBALS['COREUI_PENDING_IMAGES'])) {
+    try {
+      $partialText = 'Die Bildgenerierung wurde abgebrochen. ' . count($GLOBALS['COREUI_PENDING_IMAGES'])
+        . ' fertige Bilder bleiben hier erhalten.';
+      $emberMsgId = ember_insert($pdo, $partialText, $channel, null, (int)$uid, $sessionId, $afterId);
+      if ($emberMsgId > 0) {
+        coreui_work_bind_response($pdo, (int)$uid, $sessionId, $afterId, $workRunKey, $emberMsgId);
+        coreui_agent_run_bind_response($pdo, (int)$uid, $sessionId, $agentRunId, $emberMsgId);
+      }
+    } catch (Throwable $partialError) {
+      error_log('[CoreAI] Cancelled image batch could not be attached: ' . get_class($partialError));
+    }
+  }
+
   if ($agentRunId !== '') {
     try {
       coreui_agent_run_transition($pdo, (int)$uid, $sessionId, $agentRunId,

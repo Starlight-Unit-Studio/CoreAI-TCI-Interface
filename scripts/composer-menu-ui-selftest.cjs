@@ -144,6 +144,20 @@ const item = (page, id, force = false) => page.click('#composerMenu .cm-item[dat
     assert.deepEqual(pure.labels, ['Bild erstellen', 'Bild erstellen · Groß', 'Websuche', 'Recherche', '']);
     assert(pure.icon && pure.noIcon === '', 'symbols for the bubble');
 
+    for (const count of [1, 2, 4]) {
+      const roundTrip = await page.evaluate(n => {
+        const M = window.CoreAIComposerMenu;
+        M.set('image', 'large');
+        document.querySelector('[aria-label="' + n + (n === 1 ? ' Bild' : ' Bilder') + '"]').click();
+        const stored = M.consume('a fox', false);
+        M.loadFrom(stored, stored);
+        const result = {stored, current: M.current(), text: M.parse(stored).text};
+        M.clear();
+        return result;
+      }, count);
+      assert.deepEqual(roundTrip, {stored: '[[bild:gross:' + count + ']] a fox', current: {tool:'image', size:'large', count}, text:'a fox'});
+    }
+
     // --- the + button ---
     const btn = await page.evaluate(() => {
       const b = document.getElementById('btnAttach');
@@ -226,10 +240,10 @@ const item = (page, id, force = false) => page.click('#composerMenu .cm-item[dat
     assert.equal(await page.evaluate(() => document.activeElement.id), 'inputMessage', 'back to typing');
     let chip = await chipState(page);
     assert.deepEqual([chip.hidden, chip.tool, chip.label, chip.sizeHidden, chip.pressed],
-      [false, 'image', 'Bild erstellen', false, ['Normal:true', 'Groß:false']]);
-    await page.click('.composer-intent-size-btn:nth-child(2)');
+      [false, 'image', 'Bild erstellen', false, ['Normal:true', 'Groß:false', '1:true', '2:false', '4:false']]);
+    await page.getByRole('button', {name: 'Groß', exact: true}).click();
     chip = await chipState(page);
-    assert.deepEqual(chip.pressed, ['Normal:false', 'Groß:true'], 'Groß chosen');
+    assert.deepEqual(chip.pressed, ['Normal:false', 'Groß:true', '1:true', '2:false', '4:false'], 'Groß chosen');
     await page.click('#btnAttach');
     m = await menuState(page);
     assert(await page.evaluate(() => document.querySelector('#composerMenu .cm-item[data-id="image"]').classList.contains('is-active')), 'the chosen tool is marked');

@@ -182,6 +182,10 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
     $result = $runTool($tool);
     $record('tool', 'success', $title, ['step'=>$used, 'source_chars'=>strlen($result)]);
     $steps[] = ['label'=>coreui_agent_step_label($tool, $used, COREUI_AGENT_MAX_STEPS), 'result'=>$result];
+    // Image batches are terminal: never feed their result back into another tool decision.
+    if ($tool['tool'] === 'image') {
+      return ['out'=>$result, 'browse'=>null, 'steps'=>count($steps), 'prompt'=>null, 'terminal'=>true];
+    }
     if ($cancelled()) break;
     $prompt = coreui_agent_step_prompt($base, $steps, $used, COREUI_AGENT_MAX_STEPS, $allowed);
     $next = $callModel($prompt);

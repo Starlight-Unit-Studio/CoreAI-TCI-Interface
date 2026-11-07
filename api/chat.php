@@ -5189,7 +5189,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
  * for the next prompt. Python only calculates here; files keep their own path.
  */
 function ember_agent_run_tool(PDO $pdo, array $tool, string $channel, int $uid, string $sessionId,
-    int $triggerId, int $triggerRevision): string {
+    int $triggerId, int $triggerRevision, int $imageCount = 1): string {
   if ($tool['tool'] === 'web') {
     coreui_work_record($pdo, 'tool', 'running', 'Websuche gestartet', ['source'=>'web']);
     $block = ember_web_results_block((string)$tool['input'], static function (array $rows) use ($pdo): void {
@@ -5205,8 +5205,10 @@ function ember_agent_run_tool(PDO $pdo, array $tool, string $channel, int $uid, 
   if ($tool['tool'] === 'skill') return coreui_skills_tool_result((string)$tool['input']);
   // 0.6.39 (P20.5): an image, made while this step holds Mara's model queue.
   if ($tool['tool'] === 'image') {
-    if ($channel !== 'console' || !ember_image_allowed($uid)) return 'Bilder sind fuer diesen Chat nicht freigegeben. Sag das kurz.';
-    return ember_image_run_tool($pdo, $uid, (string)$tool['input']);
+    if ($channel !== 'console' || !ember_image_allowed($uid)) return 'Bilder sind fuer diesen Chat nicht freigegeben.';
+    return coreui_image_batch_run($imageCount,
+      static fn(): array => ember_image_run_tool($pdo, $uid, (string)$tool['input']),
+      static fn(): bool => ember_agent_cancel_requested(true));
   }
   if ($tool['tool'] === 'python') {
     $code = (string)$tool['input'];
@@ -5277,8 +5279,9 @@ function ember_image_unlease($slot): void {
   ember_generation_lock_release($slot);
 }
 
-/** One image step of the work loop: makes the image, shows its progress, returns Mara's result text. */
-function ember_image_run_tool(PDO $pdo, int $uid, string $input): string {
+/** One image step of the work loop: makes the image, shows its progress, returns the structured result. */
+function ember_image_run_tool(PDO $pdo, int $uid, string $input): array {
+  coreui_work_record($pdo, 'tool', 'running', 'Bild wird vorbereitet', ['source'=>'image', 'reason'=>'image_start']);
   $request = coreui_image_parse_input($input);
   $result = coreui_image_generate($pdo, $uid, ember_character_id(), $request['prompt'], $request['size'],
     'ember_image_lease', 'ember_image_unlease',
@@ -5301,7 +5304,7 @@ function ember_image_run_tool(PDO $pdo, int $uid, string $input): string {
   } else {
     coreui_work_record($pdo, 'tool', 'error', 'Bild nicht erzeugt', ['reason'=>(string)($result['error'] ?? 'image_failed')]);
   }
-  return coreui_image_result_text($result);
+  return $result;
 }
 
 /** Tools of the work loop for this chat. */
@@ -5694,7 +5697,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         static fn(string $prompt): ?string => ember_call_ollama($primaryModel, $visionSys, $prompt, $visionTimeout,
           $listenOptions, null, $listenThink),
         static fn(array $tool): string => ember_agent_run_tool($pdo, $tool, $channel, $consoleUid, (string)$consoleSessionId,
-          $triggerMessageId, $triggerRevision),
+          $triggerMessageId, $triggerRevision, coreui_image_count($composerIntent['count'] ?? 1)),
         static function (string $kind, string $state, string $title, array $meta) use ($pdo): void {
           coreui_work_record($pdo, $kind, $state, $title, $meta);
         },
@@ -6509,7 +6512,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       $loop = coreui_agent_loop_run($out, $loopTool, $uBase, $loopAllowed, $pyHandled ? 1 : 0,
         static fn(string $prompt): ?string => ember_call_ollama($primaryModel, $sys, $prompt, ember_timeout_for_model($primaryModel), []),
         static fn(array $tool): string => ember_agent_run_tool($pdo, $tool, $channel, $consoleUid, (string)$consoleSessionId,
-          $triggerMessageId, $triggerRevision),
+          $triggerMessageId, $triggerRevision, coreui_image_count($composerIntent['count'] ?? 1)),
         static function (string $kind, string $state, string $title, array $meta) use ($pdo): void {
           coreui_work_record($pdo, $kind, $state, $title, $meta);
         },
@@ -6521,6 +6524,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       }
       if (is_string($loop['prompt'])) $finalPrompt = $loop['prompt'];
       $out = $loop['out'];
+      if (!empty($loop['terminal'])) return $out;
     }
   }
 

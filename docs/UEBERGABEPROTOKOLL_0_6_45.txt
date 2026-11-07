@@ -1,0 +1,11 @@
+CoreAI: TCI Interface 0.6.45
+
+Finite serial image batches, composer count controls (1, 2, 4; default 1), and a vertical completed-image strip left of the active preview. Completed images are attached on cancellation. No further model call follows an image batch.
+
+Validation:
+- PHP 8.4 syntax and image-generation, composer-intent and agent-loop selftests passed.
+- Standalone DOM execution passed: click/send/edit round trips, four ordered thumbnails, reset between images, duplicate completion and partial-failure replay.
+- Version gate against main 0.6.44, cache hashes, branding and terminology passed.
+- Full Playwright layout/animation tests could not run: Chromium cannot create the required socket in this environment.
+- Work-events and reply-pipeline selftests passed. The attachment-pipeline integration test returned server_error without configured stu_pdo/MySQL; it did not pass.
+- Production preflights, MySQL-backed image integration and live Ollama/FLUX runs were not performed. No production deployment.

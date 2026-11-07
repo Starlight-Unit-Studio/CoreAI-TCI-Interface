@@ -391,7 +391,12 @@ function coreui_image_result_text(array $result): string {
       . 'Schreibe keinen Platzhalter wie "(Hier erscheint das Bild)"; das Bild haengt schon an deiner Antwort. '
       . 'Kein weiteres [BILD:], ausser die Person will ausdruecklich noch ein Bild.';
   }
-  $why = match ((string)($result['error'] ?? '')) {
+  return 'Es gibt KEIN Bild: ' . coreui_image_error_text($result) . ' Sag das offen und kurz; behaupte nicht, dass ein Bild da ist.';
+}
+
+/** Public explanation shared by single-image tool results and finite batches. */
+function coreui_image_error_text(array $result): string {
+  return match ((string)($result['error'] ?? '')) {
     'image_loading' => 'Der Bilddienst laedt gerade noch seine Gewichte'
       . (($result['detail'] ?? '') !== '' ? ' (' . (int)$result['detail'] . ' Prozent)' : '') . '. Bitte in ein paar Minuten noch einmal.',
     'image_unreachable', 'image_unavailable' => 'Der Bilddienst ist gerade nicht bereit.',
@@ -402,7 +407,32 @@ function coreui_image_result_text(array $result): string {
     'bad_prompt' => 'Die Bildbeschreibung war leer oder zu lang.',
     default => 'Das Bild konnte nicht erzeugt werden.',
   };
-  return 'Es gibt KEIN Bild: ' . $why . ' Sag das offen und kurz; behaupte nicht, dass ein Bild da ist.';
+}
+
+/** Only the operator-selected sizes of a batch are accepted; default is one. */
+function coreui_image_count(mixed $count): int {
+  return in_array($count, [1, 2, 4], true) ? $count : 1;
+}
+
+/** One serial, finite batch. Stop on the first failure or cancellation, retain prior images. */
+function coreui_image_batch_run(mixed $count, callable $generate, callable $cancelled): string {
+  $requested = coreui_image_count($count);
+  $done = 0;
+  $failure = '';
+  for ($i = 0; $i < $requested; $i++) {
+    if ($cancelled()) { $failure = 'Die Bildgenerierung wurde abgebrochen.'; break; }
+    $result = $generate();
+    if (empty($result['ok'])) {
+      $failure = coreui_image_error_text($result);
+      break;
+    }
+    $done++;
+  }
+  $summary = $done === 1 ? 'Ich habe ein Bild erstellt.' : 'Ich habe ' . $done . ' Bilder erstellt.';
+  if ($done === 0) $summary = 'Ich konnte kein Bild erstellen.';
+  if ($done > 0 && $done < $requested) $summary .= ' Fertig sind ' . $done . ' von ' . $requested . '.';
+  // A failed later image must not deny the successfully attached earlier images.
+  return $summary . ($failure !== '' ? ' ' . $failure : '');
 }
 
 /** Images made in this turn, attached to the answer when it is saved. */
