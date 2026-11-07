@@ -1,6 +1,6 @@
 CoreAI: TCI Interface 0.6.44 - 07.11.2026
 - Bildgenerierung wie im Referenzbild: unten links kleiner Copyright-Vermerk "© [Jahr] Quantum CoreAI" mit Jahreszahl aus der Erzeugungszeit.
-- Unten rechts neues, halbtransparentes Quantum-Wasserzeichen aus images/watermark_logo.png. Vorhandener Alphakanal wird direkt respektiert; keine Farbfilterung der blauen Leiterbahnen.
+- Unten rechts neues Quantum-Wasserzeichen aus images/watermark_logo.png: 12 % Bildbreite, 50 % Deckkraft. Vorhandener Alphakanal wird direkt respektiert; keine Farbfilterung der blauen Leiterbahnen.
 - Altes Starlight-Unit-Logo wird nicht mehr auf erzeugte Bilder gesetzt; Originaldatei bleibt fuer andere UI-Teile erhalten.
 - Neue Tests fuer 512/1024, zwei getrennte Ecken, Jahr 2026/2027, vorhandenen PNG-Alphakanal und unveraenderten restlichen Bildbereich.
 - Keine Aenderungen an Modell, Modelfile, Datenbank, Installer oder Warteschlange.
