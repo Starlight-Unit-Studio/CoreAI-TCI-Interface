@@ -2,12 +2,12 @@
 
 ## 0.6.44 - 07.11.2026
 
-Wunsch des Betreibers: Der Bildvermerk soll Quantum CoreAI mit automatisch aktualisiertem Jahr nennen, ohne das Studio-Logo.
+Planänderung des Betreibers nach einem Referenzbild: kleine Copyright-Zeile links unten, das neue Quantum-Wasserzeichen rechts unten. Das alte Studio-Logo erscheint nicht mehr in erzeugten Bildern.
 
-- **Text statt Logo:** Jedes fertige Bild traegt unten rechts nur "Erzeugt von Quantum CoreAI [Jahr]©". Die Jahreszahl stammt aus der Serverzeit beim Erzeugen, nicht aus der festen Versionsnummer. Die vorhandene Rajdhani-Schrift bleibt weiss mit leichtem Schatten und 50 % Deckkraft.
-- **Unabhaengiger Vermerk:** Das Studio-Logo wird nicht mehr auf Bildern platziert, bleibt aber fuer andere Oberflaechen im Repository. Der Bildvermerk benoetigt weiterhin PHP-GD und die vorhandene Schriftdatei.
-- **Regressionstests:** `scripts/image-gen-selftest.php` prueft das Jahr 2026/2027, die unveraenderte Bildgroesse, Position, Deckkraft, die einzelne Textzeile und den fehlenden Logo-Zugriff.
-- Keine Aenderung an Cores, Modelfile, Bildmodell, Datenbankschema, Installer oder Warteschlange. Ein vollstaendiger Image-Selbsttest und die Preflights erfordern die passende Server-Testumgebung.
+- **Copyright links unten:** `© [Jahr] Quantum CoreAI` statt `Erzeugt von TCI: Mara©` oder einer großen Credit-Zeile. Das Jahr wird beim Erzeugen aus der Serverzeit ermittelt; die kleine Rajdhani-Schrift ist weiß mit dezentem Schatten.
+- **Neues Logo rechts unten:** `images/watermark_logo.png` (vom Betreiber in `main` hochgeladen), proportional zum Bild verkleinert und bei 50 % Deckkraft in das fertige PNG eingebrannt. Der dunkle Hintergrund des gelieferten Logos wird beim Zeichnen transparent gemacht, sodass nur die leuchtenden Konturen über dem Bild liegen. Die andere Studio-Logo-Datei bleibt für die Oberflächen erhalten.
+- **Getrennte Ecken:** Copyright und Logo berühren sich nicht. Das restliche Bild sowie die Größe 512 × 512 / 1024 × 1024 bleiben erhalten. Die Bildtests prüfen das dynamische Jahr, beide Bereiche, das Fehlen einer dunklen quadratischen Fläche, die Bildgröße und die fehlende Verwendung des alten Studio-Logos.
+- Keine Änderungen an Cores, Modelfile, Bildmodell, Datenbankschema, Installer oder Warteschlange. Für den vollständigen Image-Selbsttest und die Preflights ist die dafür eingerichtete Testumgebung erforderlich.
 
 ## 0.6.43 - 07.11.2026
 
