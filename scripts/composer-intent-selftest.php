@@ -70,6 +70,8 @@ intent_test(coreui_composer_intent_ensure(['tool' => 'image', 'size' => 'large']
   === '[BILD GROSS: ein Schloss bei Nacht]', 'large, brackets out of the words');
 intent_test(coreui_composer_intent_ensure($img, 'Gern!', 'Zeig dich als Superwoman', true)
   === '[BILD ICH: Zeig dich als Superwoman]', 'self portrait from composer intent');
+intent_test(coreui_composer_intent_ensure($img, 'Gern!', 'Nova als Superwoman', true, 'Nova')
+  === '[BILD ICH: Nova als Superwoman]', 'renamed TCI in roleplay keeps personal reference');
 intent_test(coreui_composer_intent_ensure($img, 'Klar!', 'ab', true) === 'Klar!', 'too few words: nothing forced');
 intent_test(coreui_composer_intent_ensure($img, 'Klar!', '', true) === 'Klar!', 'a Stimmsequenz: Mara heard it, nothing forced');
 intent_test(coreui_composer_intent_ensure($img, 'Das darf ich hier nicht.', 'ein Fuchs', false) === 'Das darf ich hier nicht.', 'off: nothing forced');
