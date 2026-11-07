@@ -2,6 +2,7 @@
 
 Der Webinstaller braucht fuer bereits vorhandene CoreAI-Instanzen denselben geprueften Updatepfad wie das bisherige Inhaber-Updatefenster, aber ohne fremde Login-Cookies ueber `install.starlight-unit.de` zu transportieren.
 
+- **Echter Fortschritt:** Im SSH-Operator-Modus werden die bestehenden Statusprozente der CoreAI-Host-State-Maschine in kurze Kontrollzeilen gespiegelt. Der externe Installer zeigt exakt diese Zahlen und keine geschaetzten Prozentwerte an. Im normalen Inhaber-Modus gibt es keine zusaetzlichen Kontrollzeilen.
 - **Keine zweite Update-Engine:** `scripts/coreai-updater.sh operator-update` startet den vorhandenen Root-Updater ueber einen authentifizierten SSH-Root-Zugang. Die bisherige Kette bleibt dieselbe: exklusive Sperre, MariaDB-Backup, Download des offiziellen main-Setups, Installation mit erhaltenen lokalen Daten, Dienstneustart und Healthcheck.
 - **Eigener Betreiberkontext:** Der SSH-Aufruf wird als Host-Operator (Kennung 0) protokolliert, niemals faelschlich als angemeldeter CoreAI-Inhaber. Die bestehende Owner-API inklusive Session, CSRF, Audit und Anfragewarteschlange bleibt unveraendert.
 - **Sicherheitsgrenzen:** Operator-Ausfuehrung nur fuer bestehende CoreAI-Konfigurationen; eine bereits ausstehende Inhaber-Anfrage, ein laufendes Update oder ein belegtes Lock verhindern einen parallelen Start. Der Operator loescht keine fremde Warteschlangenanforderung. Der Fortschritt wird zusaetzlich in die authentifizierte SSH-Ausgabe gespiegelt.
