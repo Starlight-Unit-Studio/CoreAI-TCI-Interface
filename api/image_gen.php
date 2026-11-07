@@ -13,19 +13,22 @@ declare(strict_types=1);
  * reload, is served only to its owner (console_media.php) and is deleted with its chat or
  * account. Next to it a small JSON keeps the description, size, seed and time, so Mara knows
  * later what she made. Guests never make images; the Inhaber can switch them off for
- * everyone (Betrieb) or per account (Benutzer). Every image carries the studio's mark
- * (images/starlight_unit_studios_logo_original.png) with "Erzeugt von TCI: Mara©" under it,
- * small in its lower right corner at half opacity (operator, 07.11.2026).
+ * everyone (Betrieb) or per account (Benutzer). Every exported image has a small
+ * text-only credit in its lower right corner at half opacity, with the current year.
  */
 
 const COREUI_IMAGE_DEFAULT_PORT = 18791;
 const COREUI_IMAGE_MAX_BYTES = 25 * 1024 * 1024;
-const COREUI_IMAGE_MARK_WIDTH = 0.18;   // of the image width
-const COREUI_IMAGE_MARK_MIN_PX = 120;
-const COREUI_IMAGE_MARK_GAP = 0.45;     // of the line's height, between logo and line
+const COREUI_IMAGE_MARK_WIDTH = 0.42;   // of the image width
+const COREUI_IMAGE_MARK_MIN_PX = 220;   // readable at 512 px
 const COREUI_IMAGE_MARK_MARGIN = 0.025; // of the image width
 const COREUI_IMAGE_MARK_OPACITY = 0.5;
-const COREUI_IMAGE_MARK_TEXT = 'Erzeugt von TCI: Mara©';
+const COREUI_IMAGE_MARK_TEXT = 'Erzeugt von Quantum CoreAI';
+
+/** Credit uses the actual generation year, not the source release year. */
+function coreui_image_mark_text(?int $year = null): string {
+  return COREUI_IMAGE_MARK_TEXT . ' ' . ($year ?? (int)date('Y')) . '©';
+}
 
 function coreui_image_service_url(): string {
   $port = (int)(getenv('COREUI_IMAGE_PORT') ?: COREUI_IMAGE_DEFAULT_PORT);
@@ -120,54 +123,46 @@ function coreui_image_http(string $method, string $path, ?array $body = null, in
 }
 
 /**
- * The studio's mark in the lower right corner (GD): the logo without its empty border and,
- * flush under it, "Erzeugt von TCI: Mara©" in white with a soft shadow like the logo's own
- * letters, exactly as wide as the logo; all of it at half opacity (operator, 07.11.2026).
- * Returns the new PNG, or null when GD, the logo or the font is missing (the image is then
- * kept without the mark).
+ * A small, text-only credit in the lower right corner (GD), white with a soft
+ * shadow at half opacity. The original generated image keeps its dimensions.
+ * Returns null when GD or the font is unavailable; the PNG is then kept as-is.
  */
 function coreui_image_watermark(string $png): ?string {
-  $logoPath = dirname(__DIR__) . '/images/starlight_unit_studios_logo_original.png';
   $fontPath = dirname(__DIR__) . '/assets/fonts/rajdhani_700.ttf';
-  if (!function_exists('imagecreatefromstring') || !function_exists('imagettftext') || !is_file($logoPath) || !is_file($fontPath)) return null;
+  if (!function_exists('imagecreatefromstring') || !function_exists('imagettftext')
+      || !function_exists('imagettfbbox') || !is_file($fontPath)) return null;
   $base = @imagecreatefromstring($png);
-  $logo = @imagecreatefrompng($logoPath);
-  if ($base === false || $logo === false) return null;
+  if ($base === false) return null;
   if (!imageistruecolor($base)) imagepalettetotruecolor($base);
   $width = imagesx($base);
   $height = imagesy($base);
-  // At least 120 px wide, so the line under the logo stays readable on a 512 image.
-  $scaledWidth = max(COREUI_IMAGE_MARK_MIN_PX, (int)round($width * COREUI_IMAGE_MARK_WIDTH));
-  $scaledHeight = max(1, (int)round($scaledWidth * imagesy($logo) / imagesx($logo)));
   $margin = max(4, (int)round($width * COREUI_IMAGE_MARK_MARGIN));
-  $scaled = coreui_image_canvas($scaledWidth, $scaledHeight);
-  imagecopyresampled($scaled, $logo, 0, 0, 0, 0, $scaledWidth, $scaledHeight, imagesx($logo), imagesy($logo));
-  // The logo without its transparent border, so the line sits right under its letters.
-  [$left, $top, $right, $bottom] = coreui_image_visible_box($scaled);
-  $logoWidth = $right - $left + 1;
-  $logoHeight = $bottom - $top + 1;
-  // The line as wide as the logo.
-  $text = COREUI_IMAGE_MARK_TEXT;
+  $availableWidth = $width - 2 * $margin;
+  if ($availableWidth <= 0) return null;
+  $targetWidth = min($availableWidth, max(COREUI_IMAGE_MARK_MIN_PX, (int)round($width * COREUI_IMAGE_MARK_WIDTH)));
+  $text = coreui_image_mark_text();
   $probe = imagettfbbox(100, 0, $fontPath, $text);
-  $size = 100 * $logoWidth / max(1, $probe[2] - $probe[0]);
+  if ($probe === false) return null;
+  $size = max(1, 100 * $targetWidth / max(1, $probe[2] - $probe[0]));
   $box = imagettfbbox($size, 0, $fontPath, $text);
+  if ($box === false) return null;
   $textWidth = $box[2] - $box[0];
   $textHeight = $box[1] - $box[7];
+  if ($textWidth <= 0 || $textHeight <= 0) return null;
   $shadow = max(1, (int)round($textHeight * 0.08));
-  // Operator 07.11.2026: the line a little lower, with some air under "STUDIOS".
-  $gap = max(2, (int)round($textHeight * COREUI_IMAGE_MARK_GAP));
-  $markWidth = $logoWidth + $shadow;
-  $markHeight = $logoHeight + $gap + $textHeight + $shadow;
+  $markWidth = $textWidth + $shadow + 2;
+  $markHeight = $textHeight + $shadow + 2;
   if ($markWidth + 2 * $margin > $width || $markHeight + 2 * $margin > $height) return null;
   $mark = coreui_image_canvas($markWidth, $markHeight);
-  imagecopy($mark, $scaled, 0, 0, $left, $top, $logoWidth, $logoHeight);
   imagealphablending($mark, true);
-  $x = (int)round(($logoWidth - $textWidth) / 2) - $box[0];
-  $y = $logoHeight + $gap - $box[7];
-  imagettftext($mark, $size, 0, $x + $shadow, $y + $shadow, imagecolorallocatealpha($mark, 40, 40, 52, 70), $fontPath, $text);
-  imagettftext($mark, $size, 0, $x, $y, imagecolorallocatealpha($mark, 255, 255, 255, 0), $fontPath, $text);
+  $x = 1 - $box[0];
+  $y = 1 - $box[7];
+  imagettftext($mark, $size, 0, $x + $shadow, $y + $shadow,
+    imagecolorallocatealpha($mark, 40, 40, 52, 70), $fontPath, $text);
+  imagettftext($mark, $size, 0, $x, $y,
+    imagecolorallocatealpha($mark, 255, 255, 255, 0), $fontPath, $text);
   imagealphablending($mark, false);
-  // Half opacity: every pixel keeps its colour, its alpha moves halfway to transparent.
+  // Half opacity: keep each pixel's colour and move its alpha halfway to transparent.
   for ($py = 0; $py < $markHeight; $py++) {
     for ($px = 0; $px < $markWidth; $px++) {
       $rgba = imagecolorat($mark, $px, $py);
@@ -177,7 +172,8 @@ function coreui_image_watermark(string $png): ?string {
     }
   }
   imagealphablending($base, true);
-  imagecopy($base, $mark, $width - $markWidth - $margin, $height - $markHeight - $margin, 0, 0, $markWidth, $markHeight);
+  imagecopy($base, $mark, $width - $markWidth - $margin, $height - $markHeight - $margin,
+    0, 0, $markWidth, $markHeight);
   imagesavealpha($base, false);
   ob_start();
   $ok = imagepng($base, null, 6);
@@ -192,23 +188,6 @@ function coreui_image_canvas(int $width, int $height): GdImage {
   imagesavealpha($canvas, true);
   imagefill($canvas, 0, 0, imagecolorallocatealpha($canvas, 0, 0, 0, 127));
   return $canvas;
-}
-
-/** [left, top, right, bottom] of the pixels that are clearly visible (not nearly transparent). */
-function coreui_image_visible_box(GdImage $image): array {
-  $w = imagesx($image);
-  $h = imagesy($image);
-  $left = $w; $top = $h; $right = -1; $bottom = -1;
-  for ($y = 0; $y < $h; $y++) {
-    for ($x = 0; $x < $w; $x++) {
-      if (((imagecolorat($image, $x, $y) >> 24) & 0x7F) > 100) continue;
-      if ($x < $left) $left = $x;
-      if ($x > $right) $right = $x;
-      if ($y < $top) $top = $y;
-      if ($y > $bottom) $bottom = $y;
-    }
-  }
-  return $right < 0 ? [0, 0, $w - 1, $h - 1] : [$left, $top, $right, $bottom];
 }
 
 /**
@@ -345,7 +324,7 @@ function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $
     return ['ok' => false, 'error' => 'image_failed', 'detail' => 'kein gueltiges PNG'];
   }
   $marked = coreui_image_watermark($png);
-  if ($marked === null) error_log('[CoreUI] Image kept without the studio mark (GD, logo or font missing)');
+  if ($marked === null) error_log('[CoreUI] Image kept without the credit (GD or font missing)');
   return coreui_image_store($pdo, $uid, $characterId, $marked ?? $png, [
     'watermark' => $marked !== null,
     'prompt' => $prompt, 'size' => $size, 'width' => $dims[0], 'height' => $dims[1],
