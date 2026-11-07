@@ -192,7 +192,7 @@ const smallText = page => page.evaluate(() => {
       await page.emulateMedia({reducedMotion: 'reduce'});
       assert.deepEqual(await pulse('btnLive'), [], theme + ': no pulse with reduced motion');
       await page.emulateMedia({reducedMotion: 'no-preference'});
-      assert.equal(await page.getAttribute('#btnLive', 'aria-label'), 'Live-Gespräch mit Mara');
+      assert.equal(await page.getAttribute('#btnLive', 'aria-label'), 'Live-Gespräch mit deiner CoreAI');
       const btn = await page.evaluate(() => { const r = document.getElementById('btnLive').getBoundingClientRect(); return {w: r.width, h: r.height}; });
       assert.ok(btn.w >= 40 && btn.h >= 44, theme + ': the live button is large enough to hit: ' + JSON.stringify(btn));
 
