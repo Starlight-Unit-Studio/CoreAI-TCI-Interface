@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.45: dynamischer Quantum CoreAI Bildvermerk ohne Studio-Logo.
+# CoreAI: TCI Interface 0.6.46: dynamischer Quantum CoreAI Bildvermerk ohne Studio-Logo.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -1454,16 +1454,17 @@ else
   fail "CoreAI: TCI Interface-Healthcheck antwortet nicht auf Port ${COREUI_HTTP_PORT}."
 fi
 
+# Drain each HTTP body completely: grep -q closes early and makes curl fail under pipefail.
 if curl -fsS --max-time 10 "http://127.0.0.1:${COREUI_HTTP_PORT}/settings.html" \
-    | grep -Fq 'EINSTELLUNGEN'; then
+    | grep -F 'EINSTELLUNGEN' >/dev/null; then
   ok 'CoreAI: TCI Interface-Einstellungen werden vom isolierten Webserver ausgeliefert.'
 else
   fail 'CoreAI: TCI Interface-Einstellungen sind nicht erreichbar. Fuehre scripts/stack.sh refresh-runtime und danach scripts/stack.sh restart web aus.'
 fi
 
 # 0.5.79: Admin Core is a tab group of the settings page; the old address forwards there.
-if curl -fsS --max-time 10 "http://127.0.0.1:${COREUI_HTTP_PORT}/settings.html" | grep -Fq 'id="adminNavGroup"' \
-    && curl -fsS --max-time 10 "http://127.0.0.1:${COREUI_HTTP_PORT}/admin/index.html" | grep -Fq 'ADMIN CORE'; then
+if curl -fsS --max-time 10 "http://127.0.0.1:${COREUI_HTTP_PORT}/settings.html" | grep -F 'id="adminNavGroup"' >/dev/null \
+    && curl -fsS --max-time 10 "http://127.0.0.1:${COREUI_HTTP_PORT}/admin/index.html" | grep -F 'ADMIN CORE' >/dev/null; then
   ok 'Admin Core wird als Tab-Gruppe der Einstellungen ausgeliefert, die alte Adresse leitet dorthin.'
 else
   fail 'Admin Core ist nicht erreichbar.'

@@ -1,0 +1,7 @@
+CoreAI: TCI Interface 0.6.46
+
+Fix: three Docker preflight HTTP pipelines used grep -q under pipefail. Early matches closed the read end while curl was still writing, causing error 23 and a false failed update. Use non-quiet grep with output redirected to /dev/null to drain the response.
+
+Validation: four regression tests passed, including real curl reproduction of the old error, successful 2 MB responses, missing markers, and simulated HTTP/write/timeout failures with matching partial bodies. Shell syntax, version gate against 0.6.45, cache hashes, branding and terminology passed. Full production preflight and live deployment were not performed.
+
+After merge, retry the built-in updater to install 0.6.46. No runtime refresh or web restart is required merely to address this false page-check result.
