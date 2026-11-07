@@ -64,6 +64,8 @@ foreach ([$hint, $offHint] as $h) intent_test(!preg_match('/Modell/u', $h), 'no 
 // --- Not left to chance ---------------------------------------------------------------------
 $img = ['tool' => 'image', 'size' => 'normal'];
 intent_test(coreui_composer_intent_ensure($img, '[BILD: a red fox in the snow]', 'ein Fuchs', true) === '[BILD: a red fox in the snow]', 'marker kept');
+intent_test(coreui_composer_intent_ensure($img, '[BILD: Mara as Superwoman]', 'Zeig dich als Superwoman', true)
+  === '[BILD ICH: Mara as Superwoman]', 'old marker upgraded only for explicit self portrait');
 intent_test(coreui_composer_intent_ensure($img, 'Gern male ich dir einen Fuchs!', 'ein roter Fuchs im Schnee', true)
   === '[BILD: ein roter Fuchs im Schnee]', 'no marker: the person\'s words');
 intent_test(coreui_composer_intent_ensure(['tool' => 'image', 'size' => 'large'], 'Klar!', 'ein [Schloss] bei Nacht', true)
