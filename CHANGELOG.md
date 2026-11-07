@@ -1,5 +1,10 @@
 # CoreAI: TCI Interface
 
+## 0.6.46 - 07.11.2026
+
+- Fix false update failures in the Docker preflight: settings and Admin Core HTTP checks now consume the full response instead of closing the pipe on the first match. This prevents curl error 23 under pipefail.
+- Keep transfer failures and missing content markers as failures. Add regression tests with real curl transfers, large pages, missing markers and transfer errors, including reproduction of the original bug.
+
 ## 0.6.45 - 07.11.2026
 
 - Finish image requests after one finite batch, without sending the result back into the model/tool loop.
