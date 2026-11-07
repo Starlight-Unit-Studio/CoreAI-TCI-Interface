@@ -1,5 +1,15 @@
 # CoreAI: TCI Interface
 
+## 0.6.40 - 07.11.2026
+
+Rueckmeldung des Betreibers zu 0.6.39: Geschrieben klappt es ("Katze im Schnee" mit Bild und Wasserzeichen). Nach der Stimmsequenz "Und jetzt mal eine Wildkatze im Wald" kam aber kein Bild, sondern nur Text mit "*(Hier erscheint das Bild der Wildkatze im Wald) (Von dir erzeugtes Bild (512 × 512): ...)". Auch unter dem Katzenbild stand "*(Hier erscheint das Bild der Katze im Schnee)".
+
+- **Bilder nach Stimmsequenzen:** Nach einer Stimmsequenz bot Mara nur Websuche, Browser und Archiv an; das Bild-Werkzeug fehlte dort, und der Marker waere beim Aufraeumen der Antwort beschaedigt worden. Jetzt nennt ihr Auftrag nach einer Stimmsequenz auch `[BILD: ...]` (gross nur auf Wunsch), der Marker bleibt ganz, und das Bild entsteht wie nach einer geschriebenen Nachricht.
+- **Bildliste im Verlauf:** Die Notiz "(Von dir erzeugtes Bild ...)" stand bisher hinter Maras alter Antwort; sie hielt sie fuer ein Antwortformat und schrieb sie ab, statt zu malen. Die gemalten Bilder stehen jetzt als eigener Block nach dem Gespraech ("Bilder, die du in diesem Chat schon gemalt hast", hoechstens fuenf) mit dem Satz, dass ein neues Bild nur mit dem Marker entsteht.
+- **Keine Platzhalter:** Maras Hinweis und ihr Ergebnistext sagen, dass das Bild von selbst an der Antwort haengt und kein "(Hier erscheint das Bild)" dazugehoert. Eine solche Platzhalterzeile in Klammern und eine abgeschriebene Bildnotiz werden aus jeder Antwort entfernt, auch aus Maras alten Zeilen im Verlauf. Ein normaler Satz wie "Hier ist dein Bild!" bleibt.
+- Tests: `image-gen-selftest.php` (Block statt Zeile, hoechstens fuenf, Platzhalter und abgeschriebene Notiz aus den Screenshots entfernt, normale Saetze bleiben, Werkzeug nach Stimmsequenzen), `voice-input-selftest.php` (Bild im Auftrag nach einer Stimmsequenz, Marker bleibt ganz, Werkzeugliste wortwoertlich nachgezogen).
+- Keine Aenderung an Cores, Modelfile, Datenbankschema, Installer oder Warteschlange.
+
 ## 0.6.39 - 07.11.2026
 
 P20.5, Schritte B und C: Mara malt Bilder im Chat. Der Bildtest auf dem Server (Lauf 20261107-121303) brachte 8 von 8 Bildern; beide Kandidaten sahen gut aus, "CoreAI" stand bei beiden lesbar auf der Kreidetafel. FLUX.2-klein 4B brauchte fuer 512 × 512 etwa 63 s (Z-Image-Turbo 128 s) und fuer 1024 × 1024 etwa 211 s (Z-Image-Turbo 606 s), bei 9,4 bzw. 14,4 GB RAM. Entscheidung des Betreibers: FLUX.2-klein 4B, Standard 512 × 512, gross nur auf Wunsch.

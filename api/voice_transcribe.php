@@ -492,6 +492,13 @@ function coreui_voice_listen_task(string $senderName, string $text, array $clips
       . "das Ergebnis bekommst du sofort:\n- " . implode("\n- ", $menu);
     if (in_array('browse', $tools, true) && function_exists('coreui_weather_browse_hint')) $task .= "\n" . coreui_weather_browse_hint();
   }
+  // 0.6.40 (P20.5): an image after a voice message, as after a typed one (operator, 07.11.2026:
+  // "eine Wildkatze im Wald" was answered with a description instead of an image).
+  if (in_array('image', $tools, true)) {
+    $task .= "\nMoechte " . $sender . ' ein Bild, Foto, eine Zeichnung oder Illustration von dir, antworte NUR mit dem Marker '
+      . '[BILD: ausfuehrliche Bildbeschreibung auf Englisch] (gross nur auf ausdruecklichen Wunsch: [BILD GROSS: ...]); '
+      . 'das Bild entsteht danach und haengt sich an deine Antwort. Ohne den Marker entsteht kein Bild.';
+  }
   return $task . "\nDu hoerst die Aufnahme selbst. Das ist die NEUE Nachricht: Antworte nur auf sie, als Mara, so wie auf das Gesagte"
     . ($voice ? ' in einem Gespraech' : '') . ', in der Sprache, in der gesprochen wird. '
     . 'Fruehere Stimmsequenzen im Verlauf sind schon beantwortet; wiederhole deine frueheren Antworten nicht. '
@@ -509,7 +516,7 @@ function coreui_voice_strip_stray_bracket(string $reply): string {
   $text = trim($reply);
   if (!str_starts_with($text, '[')) return $reply;
   // 0.6.22: a tool marker stays whole ("[WEB: Wetter ...]" had become "WEB: Wetter ...").
-  if (preg_match('~^\[(?:WEB|BROWSE|ARCHIV|SKILL|PY)\b~iu', $text) === 1) return $reply;
+  if (preg_match('~^\[(?:WEB|BROWSE|ARCHIV|SKILL|PY|BILD)\b~iu', $text) === 1) return $reply;
   $close = strpos($text, ']');
   if ($close === false) return ltrim(substr($text, 1));
   if ($close === strlen($text) - 1 && substr_count($text, '[') === 1) return trim(substr($text, 1, -1));

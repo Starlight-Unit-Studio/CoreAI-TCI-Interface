@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.39: Maras Bilder (P20.5 B/C) mit FLUX.2-klein 4B als Werkzeug im Chat, Bilddienst in der seriellen Warteschlange.
+# CoreAI: TCI Interface 0.6.40: Bilder auch nach Stimmsequenzen, keine Platzhalter statt Bild, Bildliste als eigener Block im Verlauf.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
