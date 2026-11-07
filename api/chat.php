@@ -358,7 +358,7 @@ function ember_extract_explicit_reply_candidate(string $source): string {
  */
 function ember_strip_stray_tool_markers(string $out): string {
   return (string)preg_replace_callback(
-    '~(```[\s\S]*?```|`[^`\r\n]*`)|\[WEB:\s*.*?\]|\[BROWSE:\s*.*?\]|\[ARCHIV:\s*.*?\]|\[SKILL:\s*.*?\]|\[\s*BILD(?:\s+GRO(?:SS|ß))?\s*:[^\[\]]*\]|\[/?PY\]~iu',
+    '~(```[\s\S]*?```|`[^`\r\n]*`)|\[WEB:\s*.*?\]|\[BROWSE:\s*.*?\]|\[ARCHIV:\s*.*?\]|\[SKILL:\s*.*?\]|\[\s*BILD(?:\s+GRO(?:SS|ß))?(?:\s+ICH)?\s*:[^\[\]]*\]|\[/?PY\]~iu',
     static fn(array $m): string => ($m[1] ?? '') !== '' ? $m[1] : '',
     $out);
 }
