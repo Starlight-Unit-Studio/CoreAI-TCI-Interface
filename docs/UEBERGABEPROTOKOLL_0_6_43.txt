@@ -31,7 +31,8 @@ UMSETZUNG
 - app.html: "+"-Symbol, Legende "+" statt Bueroklammer, Modul vor console-app.js. CSS in console.css und coreui-theme.css.
 
 GEPRUEFT (hier ausgefuehrt): php -l (geaenderte PHP-Dateien), composer-intent-selftest.php, composer-menu-ui-selftest.cjs
-(Bildschirmfotos hell, dunkel, Handy angesehen), voice-input-ui-selftest.cjs, voice-live-ui-selftest.cjs, volle Testreihe,
+(Bildschirmfotos hell, dunkel, Handy angesehen), voice-input-ui-selftest.cjs, voice-live-ui-selftest.cjs,
+image-gen-selftest.php (wortwoertliche Pruefungen nachgezogen), volle Testreihe mit Test-Datenbank,
 Sprachtests (terran, tci), cache-bust, version-merge-check.
 NICHT HIER GEPRUEFT: echte Antworten eines Cores auf die Anweisung (keine Cores hier); die Absicherung startet den
 Schritt aber auch ohne passenden Marker. Kamera nur im Browser-Test (capture=environment), nicht auf einem echten Handy.

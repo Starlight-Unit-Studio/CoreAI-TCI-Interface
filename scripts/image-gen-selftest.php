@@ -307,7 +307,7 @@ $chat = $read('api/chat.php');
 foreach (["require_once __DIR__ . '/image_gen.php';", "if (\$sessionId !== '' && ember_image_allowed(\$uid)) \$tools[] = 'image';",
     "if (\$tool['tool'] === 'image') {", "\$imageHint = ember_image_hint(\$channel, \$imageUrl, \$profile['compact'], \$consoleUid);",
     "\$imageHint = ember_image_hint(\$channel, \$imageUrl, \$promptProfile['compact'], \$consoleUid);",
-    "array_intersect(\$loopAllowed, ['web', 'archive', 'skill', 'image'])", "foreach ([\$webHint ?? '', \$browseHint ?? '', \$pyHint ?? '', \$imageHint ?? ''] as \$hint) {",
+    "array_intersect(\$loopAllowed, ['web', 'archive', 'skill', 'image'])", "foreach ([\$webHint ?? '', \$browseHint ?? '', \$pyHint ?? '', \$imageHint ?? '', \$intentHint ?? ''] as \$hint) {",
     "coreui_console_attachment_store(\$pdo, \$insertedId, \$uid, coreui_image_pending_take());",
     "\$slot = ember_global_lock_acquire(600);", "coreui_model_queue_mark_long(\$connection, ember_lock_name('global_ollama_image'));",
     "ember_lock_name('global_ollama_image')\n    );", "coreui_image_history_notes(\$pdo, \$consoleUid,",
@@ -328,7 +328,10 @@ img_gen_test(str_contains($chat, "(string)\$consoleSessionId), ['web', 'browse',
 $stream = $read('api/console_stream.php');
 img_gen_test(str_contains($chat, "sse_send('image_preview', ['image' => \$image, 'step' => (int)(\$job['step'] ?? 0), 'steps' => (int)(\$job['steps'] ?? 0)]);"),
   '0.6.42: previews go to the live stream of this request');
-img_gen_test(substr_count($stream, '|| ember_image_marker_in($reply, (int)$uid);') === 2
+// 0.6.43: the first check also takes a tool chosen in the + menu (composer-intent-selftest.php).
+img_gen_test(substr_count($stream, '|| ember_image_marker_in($reply, (int)$uid)') === 2
+  && substr_count($stream, '|| ember_image_marker_in($reply, (int)$uid);') === 1
+  && str_contains($stream, "|| ember_image_marker_in(\$reply, (int)\$uid)\n            || (\$composerIntentStream !== null && !\$isVisionTurn && !\$fileTaskHandled);")
   && str_contains($stream, "'attachments'   => coreui_image_message_attachments(\$pdo, (int)\$uid, \$emberMsgId),"),
   'the stream hands an image wish to the work loop and sends the image with the answer');
 img_gen_test(str_contains($read('api/console_session_store.php'), "\$allowedPrefixes = ['var/console_media/images/', 'var/console_media/',"),
