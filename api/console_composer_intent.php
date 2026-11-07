@@ -70,8 +70,8 @@ function coreui_composer_intent_hint(array $intent, bool $allowed): string {
       . $what . "). Sag das kurz und freundlich und hilf, so gut es ohne geht.";
   }
   return match ($tool) {
-    'image' => "AUSWAHL IM MENUE: Die Person hat \"Bild erstellen\" gewaehlt. Male ein Bild zu ihrer Nachricht: antworte NUR mit "
-      . (($intent['size'] ?? '') === 'large' ? '[BILD GROSS: ausfuehrliche Bildbeschreibung auf Englisch]' : '[BILD: ausfuehrliche Bildbeschreibung auf Englisch]')
+    'image' => "AUSWAHL IM MENUE: Die Person hat \"Bild erstellen\" gewaehlt. Male ein Bild zu ihrer Nachricht. Fuer dich selbst (auch im Rollenspiel) nutze den Marker mit ICH und dein Referenzportraet; bei fremden Motiven nie ICH: antworte NUR mit "
+      . (($intent['size'] ?? '') === 'large' ? '[BILD GROSS: ...] oder [BILD GROSS ICH: ...]' : '[BILD: ...] oder [BILD ICH: ...]')
       . " und sonst nichts.",
     'web' => "AUSWAHL IM MENUE: Die Person hat \"Websuche\" gewaehlt. Suche zuerst im Netz: antworte NUR mit [WEB: genaue Suchbegriffe] und sonst nichts.",
     default => "AUSWAHL IM MENUE: Die Person hat \"Recherche\" gewaehlt. Lies selbst Webseiten: antworte NUR mit "
@@ -83,7 +83,7 @@ function coreui_composer_intent_hint(array $intent, bool $allowed): string {
  * Mara's first reply with the chosen tool's marker (pure): unchanged when it has one, else the
  * marker with the person's own words. Nothing is forced when the account may not use the tool.
  */
-function coreui_composer_intent_ensure(array $intent, string $reply, string $userText, bool $allowed): string {
+function coreui_composer_intent_ensure(array $intent, string $reply, string $userText, bool $allowed, string $assistantName = 'Mara'): string {
   if (!$allowed) return $reply;
   $tool = (string)($intent['tool'] ?? '');
   $has = match ($tool) {
@@ -92,12 +92,27 @@ function coreui_composer_intent_ensure(array $intent, string $reply, string $use
     'browse' => preg_match('~\[BROWSE:\s*[^\]]{2,}\]~iu', $reply) === 1,
     default => true,
   };
-  if ($has) return $reply;
+  if ($has) {
+    // If the requested subject is explicitly this account's TCI, preserve that
+    // intent even if the Core used the old generic image marker.
+    if ($tool === 'image' && trim($userText) !== ''
+        && function_exists('coreui_image_is_self_request')
+        && function_exists('coreui_image_extract_marker') && function_exists('coreui_image_parse_input')) {
+      $parsed = coreui_image_parse_input((string)coreui_image_extract_marker($reply));
+      $wantsSelf = coreui_image_is_self_request($userText, $assistantName);
+      if ((bool)($parsed['self_reference'] ?? false) !== $wantsSelf) {
+        return '[BILD' . ($parsed['size'] === 'large' ? ' GROSS' : '')
+          . ($wantsSelf ? ' ICH' : '') . ': ' . $parsed['prompt'] . ']';
+      }
+    }
+    return $reply;
+  }
   $words = trim((string)preg_replace('~\s+~u', ' ', (string)preg_replace('~[\[\]]+~u', ' ', $userText)));
   if (mb_strlen($words) < 3) return $reply;
   $words = mb_substr($words, 0, $tool === 'image' ? 1000 : 300);
+  $self = $tool === 'image' && function_exists('coreui_image_is_self_request') && coreui_image_is_self_request($words, $assistantName);
   return match ($tool) {
-    'image' => '[BILD' . (($intent['size'] ?? '') === 'large' ? ' GROSS' : '') . ': ' . $words . ']',
+    'image' => '[BILD' . (($intent['size'] ?? '') === 'large' ? ' GROSS' : '') . ($self ? ' ICH' : '') . ': ' . $words . ']',
     'web' => '[WEB: ' . $words . ']',
     default => '[BROWSE: ' . $words . ']',
   };

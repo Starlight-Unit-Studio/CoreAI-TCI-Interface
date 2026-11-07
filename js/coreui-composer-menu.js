@@ -207,17 +207,17 @@
         run: function () { pick('image/*', null); } }
     ];
     if (hasCamera()) {
-      attach.push({ id: 'camera', icon: 'camera', label: 'Kamera', detail: 'Foto aufnehmen und Mara zeigen', disabled: !filesAvailable,
+      attach.push({ id: 'camera', icon: 'camera', label: 'Kamera', detail: 'Foto aufnehmen und deiner CoreAI zeigen', disabled: !filesAvailable,
         run: function () { pick('image/*', 'environment'); } });
     }
     attach.push({ id: 'files', icon: 'file', label: 'Dateien', detail: filesAvailable ? 'PDF, Audio, Video, Dokumente' : 'Zehn Anhänge sind schon gewählt',
       disabled: !filesAvailable, run: function () { pick(DEFAULT_ACCEPT, null); } });
     var work = [
-      { id: 'image', tool: 'image', icon: 'image', label: 'Bild erstellen', detail: image.on ? 'Mara malt ein Bild zu deiner Nachricht' : image.why,
+      { id: 'image', tool: 'image', icon: 'image', label: 'Bild erstellen', detail: image.on ? 'Deine CoreAI malt ein Bild zu deiner Nachricht' : image.why,
         disabled: !image.on, run: function () { choose('image'); } },
       { id: 'web', tool: 'web', icon: 'web', label: 'Websuche', detail: web.on ? 'Aktuelles aus dem Netz' : web.why,
         disabled: !web.on, run: function () { choose('web'); } },
-      { id: 'browse', tool: 'browse', icon: 'browse', label: 'Recherche', detail: browse.on ? 'Mara liest selbst Webseiten' : browse.why,
+      { id: 'browse', tool: 'browse', icon: 'browse', label: 'Recherche', detail: browse.on ? 'Deine CoreAI liest selbst Webseiten' : browse.why,
         disabled: !browse.on, run: function () { choose('browse'); } },
       { id: 'deep', icon: 'deep', label: 'Deep Research', detail: 'Bericht aus vielen Quellen', badge: 'In Vorbereitung',
         disabled: true, run: function () {} }

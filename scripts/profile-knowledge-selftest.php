@@ -59,6 +59,14 @@ try {
   $profile = coreui_profile_save($pdo, $uidA, 'Alpha Sichtbar', 'Nova Core');
   coreui_pk_assert(($profile['display_name'] ?? '') === 'Alpha Sichtbar', 'Benutzername wurde nicht gespeichert.');
   coreui_pk_assert(($profile['assistant_name'] ?? '') === 'Nova Core', 'CoreAI-Name wurde nicht gespeichert.');
+  coreui_pk_assert(coreui_profile_assistant_name($pdo, $uidA) === 'Nova Core',
+    'Die private Anrede muss dem angepassten Anzeigenamen entsprechen.');
+  coreui_pk_assert(str_contains((string)($profile['avatars']['assistant'] ?? ''), 'images/mara_winter.jpg'),
+    'Ohne persoenliches TCI-Bild muss das kanonische Mara-Bild angezeigt werden.');
+  coreui_pk_assert(coreui_profile_image_reference($pdo, $uidA) === 'default'
+    && coreui_profile_image_reference($pdo, $uidB) === 'default',
+    'Ohne persoenliches Assistant-Bild muss fuer jedes Konto die Standardreferenz gelten.');
+
 
   $avatarUuid = bin2hex(random_bytes(16));
   $avatarStoredName = $avatarUuid . '.png';
@@ -84,6 +92,8 @@ try {
     str_contains($avatarUrl, 'api/profile_media.php?slot=user') && str_contains($avatarUrl, $avatarUuid),
     'Profil-API liefert keinen eindeutigen Benutzerbild-Endpunkt.'
   );
+  coreui_pk_assert(coreui_profile_image_reference($pdo, $uidA) === 'default',
+    'Das eigene Benutzerbild darf die TCI-Referenz nicht ersetzen.');
   $avatarRecord = coreui_profile_media_record($pdo, $uidA, 'user');
   coreui_pk_assert(
     is_array($avatarRecord) && ($avatarRecord['path'] ?? '') === $avatarPath,

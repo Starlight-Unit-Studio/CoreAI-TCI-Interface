@@ -53,6 +53,7 @@ ROLES = ('diffusion_model', 'llm', 'vae')
 HEX40 = re.compile(r'[0-9a-f]{40}')
 HEX64 = re.compile(r'[0-9a-f]{64}')
 JOB_ID = re.compile(r'[0-9a-f]{32}')
+CUSTOM_REFERENCE = re.compile(r'custom:([0-9a-f]{32})')
 
 
 def _load(name: str, path: Path):
@@ -161,6 +162,25 @@ def png_ok(path: Path) -> bool:
             return handle.read(8) == b'\x89PNG\r\n\x1a\n'
     except OSError:
         return False
+
+
+# Resolve an internal reference token, never a browser-supplied filesystem path.
+# Each custom token was read from the current account's database record by PHP.
+def resolve_reference(token: str | None) -> str | None:
+    if token is None:
+        return None
+    if token == 'default':
+        path = ROOT / 'images' / 'mara_winter.jpg'
+        if not path.is_file() or path.stat().st_size > 8 * 1024 * 1024:
+            raise ValueError('reference_unavailable')
+        return str(path)
+    match = CUSTOM_REFERENCE.fullmatch(token)
+    if not match:
+        raise ValueError('bad_reference')
+    path = ROOT / 'var' / 'profile_media' / (match.group(1) + '.png')
+    if not path.is_file() or not png_ok(path) or path.stat().st_size > 4 * 1024 * 1024:
+        raise ValueError('reference_unavailable')
+    return str(path)
 
 
 # --- Service ---------------------------------------------------------------------------
@@ -284,7 +304,9 @@ class Service:
                 for key in ('png', 'log', 'preview_png'):
                     Path(job[key]).unlink(missing_ok=True)
 
-    def create(self, prompt: str, size_key: str, seed: int | None) -> dict:
+    def create(self, prompt: str, size_key: str, seed: int | None, reference: str | None = None) -> dict:
+        # Validate before accepting a job; the service never accepts arbitrary paths.
+        reference_path = resolve_reference(reference)
         self._clean()
         size = self.reg['sizes'][size_key]
         need = float(((self.reg.get('measured') or {}).get(size_key) or {}).get('peak_rss_mb') or 0)
@@ -301,7 +323,8 @@ class Service:
                    'seconds': None, 'peak_rss_mb': None, 'started': time.monotonic(), 'finished': None,
                    'png': str(self.work / (job_id + '.png')), 'log': str(self.work / (job_id + '.log')),
                    'preview_png': str(self.work / (job_id + '-preview.png')), 'preview': 0, 'preview_stamp': None,
-                   'pid': 0, 'cancel': False, 'limit': int(size['time_limit_s'])}
+                   'pid': 0, 'cancel': False, 'limit': int(size['time_limit_s']),
+                   'reference_path': reference_path}
             self.jobs[job_id] = job
         threading.Thread(target=self._run, args=(job, prompt), daemon=True).start()
         return job
@@ -311,7 +334,7 @@ class Service:
         return [self.sd_cli, '--diffusion-model', self.paths['diffusion_model'], '--llm', self.paths['llm'],
                 '--vae', self.paths['vae'], '-p', prompt, '--cfg-scale', str(float(model['cfg_scale'])), '--steps', str(model['steps']),
                 '-W', str(job['width']), '-H', str(job['height']), '-s', str(job['seed']), '-t', str(self.threads),
-                '-o', job['png'], '-v'] + (['--preview', 'proj', '--preview-path', job['preview_png'], '--preview-interval', '1']
+                '-o', job['png'], '-v'] + (['-r', job['reference_path']] if job.get('reference_path') else []) + (['--preview', 'proj', '--preview-path', job['preview_png'], '--preview-interval', '1']
                                            if self.preview else [])
 
     def _run(self, job: dict, prompt: str) -> None:
@@ -520,21 +543,27 @@ def make_handler(service: Service):
             prompt = data.get('prompt') if isinstance(data, dict) else None
             size = data.get('size', 'normal') if isinstance(data, dict) else None
             seed = data.get('seed') if isinstance(data, dict) else None
+            reference = data.get('reference') if isinstance(data, dict) else None
             if not isinstance(prompt, str) or not prompt.strip() or len(prompt) > limit or '\x00' in prompt:
                 return self._json(400, {'ok': False, 'error': 'bad_prompt'})
             if size not in (service.reg.get('sizes') or {}):
                 return self._json(400, {'ok': False, 'error': 'bad_size'})
             if seed is not None and (not isinstance(seed, int) or isinstance(seed, bool) or not 0 <= seed < 2 ** 31):
                 return self._json(400, {'ok': False, 'error': 'bad_seed'})
+            if reference is not None and (not isinstance(reference, str) or
+                                          (reference != 'default' and CUSTOM_REFERENCE.fullmatch(reference) is None)):
+                return self._json(400, {'ok': False, 'error': 'bad_reference'})
             if not service.ready:
                 return self._json(503, {'ok': False, 'error': 'image_loading' if service.loading else 'image_unavailable',
                                         'detail': service.error})
             try:
-                job = service.create(prompt.strip(), size, seed)
+                job = service.create(prompt.strip(), size, seed, reference)
             except BlockingIOError:
                 return self._json(503, {'ok': False, 'error': 'image_busy'})
             except MemoryError as error:
                 return self._json(503, {'ok': False, 'error': 'image_memory', 'detail': str(error)})
+            except ValueError as error:
+                return self._json(400, {'ok': False, 'error': str(error)})
             return self._json(202, {'ok': True, 'job': service.public(job)})
 
     return Handler

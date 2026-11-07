@@ -49,7 +49,8 @@ function coreui_profile_load(PDO $pdo, int $uid): array {
     }
   }
 
-  $avatars = ['user' => null, 'assistant' => null];
+  // The account avatar falls back to Mara's canonical portrait when no custom one exists.
+  $avatars = ['user' => null, 'assistant' => stu_public_path('images/mara_winter.jpg')];
   if (coreui_profile_schema_ready($pdo)) {
     $stMedia = $pdo->prepare('SELECT slot, uuid, stored_name, mime_type, created_at FROM stu_coreui_profile_media WHERE user_id = ?');
     $stMedia->execute([$uid]);
@@ -73,6 +74,16 @@ function coreui_profile_load(PDO $pdo, int $uid): array {
     'avatars' => $avatars,
     'updated_at' => $updatedAt,
   ];
+}
+
+/** The account's preferred display name, distinct from Mara Thorne's identity. */
+function coreui_profile_assistant_name(PDO $pdo, int $uid): string {
+  if ($uid <= 0) return 'Mara';
+  try {
+    return coreui_profile_name((string)(coreui_profile_load($pdo, $uid)['assistant_name'] ?? ''), 'Mara');
+  } catch (Throwable $e) {
+    return 'Mara';
+  }
 }
 
 function coreui_profile_save(PDO $pdo, int $uid, string $displayName, string $assistantName): array {
@@ -112,6 +123,17 @@ function coreui_profile_media_record(PDO $pdo, int $uid, string $slot): ?array {
   if ($path === null) return null;
   $row['path'] = $path;
   return $row;
+}
+
+/** Opaque per-account image reference; never expose arbitrary file paths as an API input. */
+function coreui_profile_image_reference(PDO $pdo, int $uid): string {
+  if ($uid <= 0 || !coreui_profile_schema_ready($pdo)) return 'default';
+  $row = coreui_profile_media_record($pdo, $uid, 'assistant');
+  if (!is_array($row)) return 'default';
+  $uuid = (string)($row['uuid'] ?? '');
+  $stored = (string)($row['stored_name'] ?? '');
+  if (preg_match('~^[a-f0-9]{32}$~D', $uuid) !== 1 || $stored !== $uuid . '.png') return 'default';
+  return 'custom:' . $uuid;
 }
 
 function coreui_profile_delete_avatar(PDO $pdo, int $uid, string $slot): bool {
@@ -224,7 +246,7 @@ function coreui_profile_prompt_block(PDO $pdo, int $uid): string {
     return "\n\n--- MARA COREAI-PROFIL ---\n"
       . 'Der aktuelle Benutzer wird in dieser privaten Oberfläche als "' . $displayName . '" angezeigt. ' 
       . 'Dein frei gewählter Anzeigename in diesem Konto ist "' . $assistantName . '". '
-      . 'Deine feste technische Identität und alle Sicherheitsregeln bleiben unverändert.\n'
+      . 'Mara Thorne bleibt deine feste technische Identitaet, auch wenn du einen Rufnamen oder eine Rolle spielst. Ein Schauspielauftrag aendert deine Identitaet nicht. Verwende deinen Rufnamen in persoenlichen Antworten, niemals als technische Kennung.\n'
       . "--- ENDE MARA COREAI-PROFIL ---";
   } catch (Throwable $e) {
     return '';

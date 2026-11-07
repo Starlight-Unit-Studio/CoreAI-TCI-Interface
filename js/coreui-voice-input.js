@@ -50,7 +50,7 @@
     if (!button) return;
     var off = reason();
     var busy = !!job;
-    var text = rec ? 'Stimmsequenz beenden und senden' : (busy ? 'Stimmsequenz wartet auf Mara' : (off || 'Stimmsequenz aufnehmen'));
+    var text = rec ? 'Stimmsequenz beenden und senden' : (busy ? 'Stimmsequenz wartet auf deine CoreAI' : (off || 'Stimmsequenz aufnehmen'));
     button.classList.toggle('recording', !!rec);
     button.classList.toggle('working', busy);
     button.setAttribute('aria-disabled', off && !rec ? 'true' : 'false');
@@ -166,7 +166,7 @@
 
   function toggle() {
     if (rec) { stop(true); return; }
-    if (job) { say('Deine letzte Stimmsequenz wartet noch, bis Mara ihre Antwort beendet hat.'); return; }
+    if (job) { say('Deine letzte Stimmsequenz wartet noch, bis deine CoreAI ihre Antwort beendet hat.'); return; }
     var off = reason();
     if (off) { say(off); return; }
     if (Date.now() - state.checkedAt > 60000) loadStatus();

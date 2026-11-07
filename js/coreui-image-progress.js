@@ -263,7 +263,7 @@
   function reveal(card, uuid) {
     if (!uuid || card.querySelector('.img-progress-picture')) return;
     var img = el('img', 'img-progress-picture');
-    img.alt = 'Bild von TCI: Mara';
+    img.alt = 'Generiertes Bild der TCI';
     img.decoding = 'async';
     var generation = card._p.generation;
     img.addEventListener('load', function () { if (generation === card._p.generation && img.isConnected) card.classList.add('is-revealed'); });

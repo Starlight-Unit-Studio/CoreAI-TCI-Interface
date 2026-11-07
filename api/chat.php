@@ -358,7 +358,7 @@ function ember_extract_explicit_reply_candidate(string $source): string {
  */
 function ember_strip_stray_tool_markers(string $out): string {
   return (string)preg_replace_callback(
-    '~(```[\s\S]*?```|`[^`\r\n]*`)|\[WEB:\s*.*?\]|\[BROWSE:\s*.*?\]|\[ARCHIV:\s*.*?\]|\[SKILL:\s*.*?\]|\[\s*BILD(?:\s+GRO(?:SS|ß))?\s*:[^\[\]]*\]|\[/?PY\]~iu',
+    '~(```[\s\S]*?```|`[^`\r\n]*`)|\[WEB:\s*.*?\]|\[BROWSE:\s*.*?\]|\[ARCHIV:\s*.*?\]|\[SKILL:\s*.*?\]|\[\s*BILD(?:\s+GRO(?:SS|ß))?(?:\s+ICH)?\s*:[^\[\]]*\]|\[/?PY\]~iu',
     static fn(array $m): string => ($m[1] ?? '') !== '' ? $m[1] : '',
     $out);
 }
@@ -5155,7 +5155,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
    . ($intentHint !== '' ? ($intentHint . "\n\n") : "")
    . $nativeToolHint
    . ($channel === 'console' ? ("\n" . coreui_console_answer_style_hint($pdo,$uid,$profile['compact']) . "\n") : "")
-   . "Antworte als Mara:"
+   . "Antworte als " . coreui_profile_assistant_name($pdo, $uid) . ":"
    . ember_attachment_prompt_note($imageUrl);
 
   $GLOBALS['STU_EMBER_PROMPT_META'] = [
@@ -5283,6 +5283,7 @@ function ember_image_unlease($slot): void {
 function ember_image_run_tool(PDO $pdo, int $uid, string $input): array {
   coreui_work_record($pdo, 'tool', 'running', 'Bild wird vorbereitet', ['source'=>'image', 'reason'=>'image_start']);
   $request = coreui_image_parse_input($input);
+  $reference = !empty($request['self_reference']) ? coreui_profile_image_reference($pdo, $uid) : null;
   $result = coreui_image_generate($pdo, $uid, ember_character_id(), $request['prompt'], $request['size'],
     'ember_image_lease', 'ember_image_unlease',
     static function (array $job) use ($pdo): void {
@@ -5295,7 +5296,7 @@ function ember_image_run_tool(PDO $pdo, int $uid, string $input): array {
       if (function_exists('sse_send')) {
         sse_send('image_preview', ['image' => $image, 'step' => (int)($job['step'] ?? 0), 'steps' => (int)($job['steps'] ?? 0)]);
       }
-    });
+    }, $reference);
   if (!empty($result['ok'])) {
     coreui_image_pending_add((string)$result['uuid']);
     coreui_work_record($pdo, 'artifact', 'success', 'Bild erzeugt',
@@ -5524,7 +5525,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
    . ($imageHint !== '' ? ($imageHint . "\n\n") : "")
    . ($intentHint !== '' ? ($intentHint . "\n\n") : "")
    . ($channel === 'console' ? ("\n" . coreui_console_answer_style_hint($pdo,$uid,$promptProfile['compact']) . "\n") : "")
-   . "Antworte als Mara:"
+   . "Antworte als " . coreui_profile_assistant_name($pdo, $uid) . ":"
    . ember_attachment_prompt_note($imageUrl);
 
   $GLOBALS['STU_EMBER_PROMPT_META'] = [
@@ -6198,7 +6199,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   // 0.6.43: a tool chosen in the + menu is not left to chance: without its marker the step
   // starts with the person's own words (only when the account may use the tool).
   if ($composerIntent !== null && !$fileTask && $imageUrl === null && is_string($out)) {
-    $out = coreui_composer_intent_ensure($composerIntent, $out, $userMsg, ember_composer_intent_allowed($composerIntent, $consoleUid));
+    $out = coreui_composer_intent_ensure($composerIntent, $out, $userMsg, ember_composer_intent_allowed($composerIntent, $consoleUid), coreui_profile_assistant_name($pdo, $consoleUid));
   }
 
   // === Phase 2: Asynchroner Browse-Trigger ([BROWSE:]) - VOR der synchronen Websuche ===

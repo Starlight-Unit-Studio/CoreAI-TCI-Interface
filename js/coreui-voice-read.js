@@ -37,7 +37,7 @@
   }
 
   function label(button) {
-    var text = state.available ? 'Antwort vorlesen' : (state.loading ? 'Maras Stimme wird geladen' : 'Vorlesen gerade nicht verfuegbar');
+    var text = state.available ? 'Antwort vorlesen' : (state.loading ? 'Die Stimme wird geladen' : 'Vorlesen gerade nicht verfuegbar');
     if (button.classList.contains('speaking')) text = 'Vorlesen stoppen';
     button.title = text;
     button.setAttribute('aria-label', text);
@@ -289,7 +289,7 @@
     input.checked = state.autoRead;
     var note = document.getElementById('voiceAutoReadNote');
     if (note) note.textContent = state.available ? 'Eve liest neue Antworten von selbst vor.'
-      : (state.loading ? 'Maras Stimme wird gerade geladen.' : 'Die Stimme ist auf diesem Server gerade nicht verfuegbar.');
+      : (state.loading ? 'Die Stimme deiner CoreAI wird gerade geladen.' : 'Die Stimme ist auf diesem Server gerade nicht verfuegbar.');
     if (input.dataset.bound) return;
     input.dataset.bound = '1';
     input.addEventListener('change', function () {

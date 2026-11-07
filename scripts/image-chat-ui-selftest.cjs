@@ -45,7 +45,7 @@ const HARNESS = `<!doctype html><html lang="de"><head><meta charset="utf-8"><met
 <div class="msg-row ember"><div class="msg-content" id="mara"></div></div>
 <div class="msg-row user"><div class="msg-content" id="user"></div></div>
 <script>
-  var state = { assistantName: 'Mara' };
+  var state = { assistantName: 'Nova' };
   var API_BASE = './api';
   var KIND_ICON = {};
   function formatBytes(n) { return String(n) + ' B'; }
@@ -92,7 +92,7 @@ ${builder}
     assert.equal(made.target, '_blank');
     assert.equal(made.rel, 'noopener');
     assert.equal(made.label, 'Bild in voller Größe öffnen');
-    assert.equal(made.alt, 'Bild von TCI: Mara');
+    assert.equal(made.alt, 'Bild von TCI: Nova');
     assert.equal(made.caption, 'Herunterladen');
     assert.equal(made.download, 'Mara-Bild-20261107-1213.png');
     assert.equal(made.saveHref, made.link);

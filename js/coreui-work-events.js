@@ -899,7 +899,7 @@
     var events = live ? [] : initialEvents;
     if (!live && events.length === 0 && !options.codeOnly) return null;
     var timeline = el('section','work-panel work-flow');
-    timeline.setAttribute('aria-label','Maras Fortschritt');
+    timeline.setAttribute('aria-label','Fortschritt deiner CoreAI');
     var counters = el('span','work-counts');
     if (options.codeOnly) counters.hidden = true;
     var body = el('div','work-body');

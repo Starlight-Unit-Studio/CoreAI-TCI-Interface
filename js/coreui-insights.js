@@ -176,7 +176,7 @@
       // 0.5.80: Mara picks from her whole library herself.
       var library = Number(skills.library) || 0;
       body.appendChild(el('p', 'insight-note', 'Skills: Werkzeuge (Pflicht)'
-        + (library ? ', ' + library + ' weitere wählt Mara selbst' : '')));
+        + (library ? ', ' + library + ' weitere wählt deine CoreAI selbst' : '')));
     }
 
     function link(name, url, meta) {

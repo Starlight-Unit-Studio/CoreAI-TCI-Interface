@@ -75,7 +75,7 @@ function coreui_agent_step_note(array $tool): ?string {
   $prefix = ['web'=>'Ich suche nach: ', 'archive'=>'Ich schaue im Archiv nach: ', 'browse'=>'Ich recherchiere auf Webseiten: ',
     'skill'=>'Ich lade die Arbeitsanleitung: ', 'image'=>'Ich male: '];
   // An image shows its description without the size word.
-  if ($tool['tool'] === 'image') $input = trim((string)preg_replace('~^GROSS:\s*~u', '', $input));
+  if ($tool['tool'] === 'image') $input = trim((string)preg_replace('~^(?:GROSS:\s*)?(?:ICH:\s*)?~u', '', $input));
   $note = ($prefix[(string)$tool['tool']] ?? '') . (mb_strlen($input) > 200 ? mb_substr($input, 0, 197) . '...' : $input);
   return strlen($note) >= 12 && strpbrk($note, '<>[]{}`$') === false && preg_match('~https?://~i', $note) !== 1 ? $note : null;
 }
@@ -104,7 +104,7 @@ function coreui_agent_tool_menu(array $allowed): string {
   if (in_array('python', $allowed, true)) $lines[] = '[PY]Rechencode[/PY] um etwas zu berechnen oder zu pruefen';
   if (in_array('archive', $allowed, true)) $lines[] = '[ARCHIV: Stichworte] um in der Mitschrift dieses Chats nachzusehen';
   if (in_array('skill', $allowed, true)) $lines[] = '[SKILL: kennung] um eine Arbeitsanleitung aus deiner Skill-Bibliothek zu laden';
-  if (in_array('image', $allowed, true)) $lines[] = '[BILD: Bildbeschreibung auf Englisch] nur wenn die Person ausdruecklich ein Bild von dir will';
+  if (in_array('image', $allowed, true)) $lines[] = '[BILD: Bildbeschreibung auf Englisch] fuer normale Bilder; [BILD ICH: Bildbeschreibung auf Englisch] ausschliesslich fuer Bilder von dir selbst (auch im Rollenspiel)';
   return implode("\n", array_map(static fn(string $l): string => '- ' . $l, $lines));
 }
 
@@ -125,14 +125,14 @@ function coreui_agent_step_prompt(string $base, array $steps, int $used, int $ma
     . "\n--- ENDE ARBEITSSCHRITTE ---\n\n"
     . 'Du hast ' . $used . ' von ' . $max . " Arbeitsschritten genutzt.\n"
     . ($last
-      ? "Das war dein letzter Schritt: antworte jetzt als Mara mit dem, was du herausgefunden hast, ohne Werkzeugmarker. "
+      ? "Das war dein letzter Schritt: antworte jetzt in deinem persoenlichen Anzeigenamen mit dem, was du herausgefunden hast, ohne Werkzeugmarker. "
         . "Sag offen, was offen geblieben ist.\n"
-      : "Reicht das fuer eine gute Antwort, antworte jetzt als Mara, vollstaendig und ohne Werkzeugmarker; nenne kurz die "
+      : "Reicht das fuer eine gute Antwort, antworte jetzt in deinem persoenlichen Anzeigenamen, vollstaendig und ohne Werkzeugmarker; nenne kurz die "
         . "Quellen, die du genutzt hast. Erfinde nichts, was nicht in den Ergebnissen oder deinem sicheren Wissen steht.\n"
         . "Fehlt dir noch etwas Wichtiges, antworte NUR mit genau einem Marker fuer den naechsten Schritt:\n"
         . coreui_agent_tool_menu($allowed) . "\n"
         . "Wiederhole keine Suche, die du schon gemacht hast.\n")
-    . 'Antworte als Mara:';
+    . 'Antworte in deinem persoenlichen Anzeigenamen:';
 }
 
 /** Hint in the first prompt: Mara may work on her own (pure). */
@@ -197,7 +197,7 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
   // Still asking for a tool after the last step: keep only the prose.
   if ($out !== '' && coreui_agent_next_tool($out, $allowed) !== null) {
     $prose = trim(function_exists('ember_strip_stray_tool_markers') ? ember_strip_stray_tool_markers($out)
-      : (string)preg_replace('~\[(?:WEB|BROWSE|ARCHIV|SKILL|BILD(?:\s+GROSS)?):[^\]]*\]|\[/?PY\]~iu', '', $out));
+      : (string)preg_replace('~\[(?:WEB|BROWSE|ARCHIV|SKILL|BILD(?:\s+GROSS)?(?:\s+ICH)?):[^\]]*\]|\[/?PY\]~iu', '', $out));
     $out = $prose !== '' ? $prose : 'Ich habe alle ' . COREUI_AGENT_MAX_STEPS . ' Arbeitsschritte genutzt und noch keine '
       . 'sichere Antwort gefunden. Sag mir, worauf ich mich konzentrieren soll, dann suche ich gezielter weiter.';
   }

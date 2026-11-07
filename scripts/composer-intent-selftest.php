@@ -48,8 +48,8 @@ intent_test(coreui_composer_intent_readable('Hallo [[bild]]') === 'Hallo [[bild]
 // --- Mara's instruction ---------------------------------------------------------------------
 $hint = coreui_composer_intent_hint(['tool' => 'image', 'size' => 'normal'], true);
 intent_test(str_starts_with($hint, 'AUSWAHL IM MENUE: Die Person hat "Bild erstellen" gewaehlt.')
-  && str_contains($hint, 'antworte NUR mit [BILD: ausfuehrliche Bildbeschreibung auf Englisch] und sonst nichts.'), 'image instruction');
-intent_test(str_contains(coreui_composer_intent_hint(['tool' => 'image', 'size' => 'large'], true), '[BILD GROSS: ausfuehrliche Bildbeschreibung auf Englisch]'),
+  && str_contains($hint, 'antworte NUR mit [BILD: ...] oder [BILD ICH: ...] und sonst nichts.'), 'image instruction');
+intent_test(str_contains(coreui_composer_intent_hint(['tool' => 'image', 'size' => 'large'], true), '[BILD GROSS: ...] oder [BILD GROSS ICH: ...]'),
   'large image instruction');
 intent_test(str_contains(coreui_composer_intent_hint(['tool' => 'web'], true), 'antworte NUR mit [WEB: genaue Suchbegriffe] und sonst nichts.'), 'web instruction');
 intent_test(str_contains(coreui_composer_intent_hint(['tool' => 'browse'], true), 'antworte NUR mit [BROWSE: was du herausfinden sollst] und sonst nichts.'),
@@ -64,10 +64,18 @@ foreach ([$hint, $offHint] as $h) intent_test(!preg_match('/Modell/u', $h), 'no 
 // --- Not left to chance ---------------------------------------------------------------------
 $img = ['tool' => 'image', 'size' => 'normal'];
 intent_test(coreui_composer_intent_ensure($img, '[BILD: a red fox in the snow]', 'ein Fuchs', true) === '[BILD: a red fox in the snow]', 'marker kept');
+intent_test(coreui_composer_intent_ensure($img, '[BILD: Mara as Superwoman]', 'Zeig dich als Superwoman', true)
+  === '[BILD ICH: Mara as Superwoman]', 'old marker upgraded only for explicit self portrait');
+intent_test(coreui_composer_intent_ensure($img, '[BILD ICH: Superwoman over the city]', 'Zeichne Superwoman', true)
+  === '[BILD: Superwoman over the city]', 'fictional role cannot force a Mara reference onto unrelated pictures');
 intent_test(coreui_composer_intent_ensure($img, 'Gern male ich dir einen Fuchs!', 'ein roter Fuchs im Schnee', true)
   === '[BILD: ein roter Fuchs im Schnee]', 'no marker: the person\'s words');
 intent_test(coreui_composer_intent_ensure(['tool' => 'image', 'size' => 'large'], 'Klar!', 'ein [Schloss] bei Nacht', true)
   === '[BILD GROSS: ein Schloss bei Nacht]', 'large, brackets out of the words');
+intent_test(coreui_composer_intent_ensure($img, 'Gern!', 'Zeig dich als Superwoman', true)
+  === '[BILD ICH: Zeig dich als Superwoman]', 'self portrait from composer intent');
+intent_test(coreui_composer_intent_ensure($img, 'Gern!', 'Nova als Superwoman', true, 'Nova')
+  === '[BILD ICH: Nova als Superwoman]', 'renamed TCI in roleplay keeps personal reference');
 intent_test(coreui_composer_intent_ensure($img, 'Klar!', 'ab', true) === 'Klar!', 'too few words: nothing forced');
 intent_test(coreui_composer_intent_ensure($img, 'Klar!', '', true) === 'Klar!', 'a Stimmsequenz: Mara heard it, nothing forced');
 intent_test(coreui_composer_intent_ensure($img, 'Das darf ich hier nicht.', 'ein Fuchs', false) === 'Das darf ich hier nicht.', 'off: nothing forced');

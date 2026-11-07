@@ -30,8 +30,16 @@ img_gen_test(coreui_image_extract_marker('[bild groß:  a  cat ]') === 'GROSS: a
 img_gen_test(coreui_image_extract_marker('[BILD: ab]') === null && coreui_image_extract_marker('Ich kann dir gern ein Bild malen.') === null
   && coreui_image_extract_marker('[BILD: a [nested] thing]') === null && coreui_image_extract_marker('[BILDER: x y z]') === null,
   'no marker, too short or brackets inside');
-img_gen_test(coreui_image_parse_input('GROSS: a castle') === ['size' => 'large', 'prompt' => 'a castle']
-  && coreui_image_parse_input('a fox') === ['size' => 'normal', 'prompt' => 'a fox'], 'size from the input');
+img_gen_test(coreui_image_parse_input('GROSS: a castle') === ['size' => 'large', 'prompt' => 'a castle', 'self_reference' => false]
+  && coreui_image_parse_input('a fox') === ['size' => 'normal', 'prompt' => 'a fox', 'self_reference' => false], 'size from the input');
+img_gen_test(coreui_image_extract_marker('[BILD ICH: Mara in winter]') === 'ICH: Mara in winter'
+  && coreui_image_extract_marker('[BILD GROSS ICH: Mara as a captain]') === 'GROSS: ICH: Mara as a captain'
+  && coreui_image_parse_input('GROSS: ICH: Mara as a captain') === ['size' => 'large', 'prompt' => 'Mara as a captain', 'self_reference' => true],
+  'self portrait marker selects account reference and allows roleplay');
+img_gen_test(coreui_image_is_self_request('Zeig dich als Superwoman')
+  && coreui_image_is_self_request('Ein Bild von dir auf der Bruecke')
+  && !coreui_image_is_self_request('Zeichne Superwoman')
+  && !coreui_image_is_self_request('Mal eine Katze'), 'self request never changes unrelated images');
 
 // Finite batches: default/invalid counts, serial success, partial failure, cancel and no model retry.
 foreach ([1, 2, 4, 9, '4', null] as $count) {
@@ -74,13 +82,13 @@ img_gen_test(coreui_agent_next_tool('[BILD: a red fox in the snow]', ['web']) ==
 img_gen_test(coreui_agent_step_title($tool, 1, 6) === 'Schritt 1 von 6: Bild', 'step title');
 img_gen_test(coreui_agent_step_note(['tool' => 'image', 'input' => 'GROSS: a castle at night']) === 'Ich male: a castle at night',
   'Mara says in first person what she paints, without the size word');
-img_gen_test(str_contains(coreui_agent_tool_menu(['image']), '[BILD: Bildbeschreibung auf Englisch] nur wenn die Person ausdruecklich ein Bild von dir will'),
+img_gen_test(str_contains(coreui_agent_tool_menu(['image']), '[BILD ICH: Bildbeschreibung auf Englisch]'),
   'the menu names the marker');
 $hint = coreui_image_capability_hint(false);
-img_gen_test(str_contains($hint, '[BILD: ausfuehrliche Bildbeschreibung auf Englisch') && str_contains($hint, '[BILD GROSS: ...] (1024 × 1024')
+img_gen_test(str_contains($hint, '[BILD ICH: ausfuehrliche Bildbeschreibung auf Englisch') && str_contains($hint, '[BILD GROSS: ...] bzw. [BILD GROSS ICH: ...] (1024 × 1024')
   && str_contains($hint, 'Standard sind 512 × 512 Pixel') && str_contains($hint, 'Ohne Bildwunsch malst du nichts')
   && !str_contains($hint, 'Modell'), 'the prompt hint: 512 normal, big only on request, no image without a wish');
-img_gen_test(str_contains(coreui_image_capability_hint(true), '[BILD GROSS: ...]'), 'compact hint');
+img_gen_test(str_contains(coreui_image_capability_hint(true), '[BILD GROSS ICH: ...]'), 'compact hint');
 
 // --- Progress and result ----------------------------------------------------------------
 img_gen_test(coreui_image_progress_title(['phase' => 'load']) === 'Bild: Gewichte werden geladen'
@@ -163,6 +171,13 @@ $http = $fake([['GET', '/health', $ready], ['POST', '/jobs', [503, ['ok' => fals
 $leases = $unleases = 0;
 $r = coreui_image_generate($pdo, 5, 'ember', 'a fox', 'normal', $lease, $unlease, static function (): void {}, $never, $http);
 img_gen_test($r['error'] === 'image_busy' && $leases === 1 && $unleases === 1, 'busy: queue given back');
+// The reference is sent only for explicit images of the TCI, not for ordinary foxes.
+$http = $fake([['GET', '/health', $ready], ['POST', '/jobs', [503, ['ok' => false, 'error' => 'image_busy'], '']]]);
+$r = coreui_image_generate($pdo, 5, 'ember', 'Mara as Superwoman', 'normal',
+  $lease, $unlease, static function (): void {}, $never, $http, null, 'default');
+img_gen_test($r['error'] === 'image_busy' && ($GLOBALS['img_calls'][1][2]['reference'] ?? null) === 'default',
+  'explicit self portrait routes canonical reference to the service');
+
 
 // A whole image.
 $png = img_gen_png(512, 512);
@@ -356,7 +371,7 @@ foreach (["require_once __DIR__ . '/image_gen.php';", "if (\$sessionId !== '' &&
     "coreui_console_attachment_store(\$pdo, \$insertedId, \$uid, coreui_image_pending_take());",
     "\$slot = ember_global_lock_acquire(600);", "coreui_model_queue_mark_long(\$connection, ember_lock_name('global_ollama_image'));",
     "ember_lock_name('global_ollama_image')\n    );", "coreui_image_history_notes(\$pdo, \$consoleUid,",
-    '|\[\s*BILD(?:\s+GRO(?:SS|ß))?\s*:[^\[\]]*\]|'] as $needle) {
+    '|\[\s*BILD(?:\s+GRO(?:SS|ß))?(?:\s+ICH)?\s*:[^\[\]]*\]|'] as $needle) {
   img_gen_test(str_contains($chat, $needle), 'chat.php: ' . $needle);
 }
 img_gen_test(substr_count($chat, "   . (\$imageHint !== '' ? (\$imageHint . \"\\n\\n\") : \"\")") === 2, 'the hint in both prompts');

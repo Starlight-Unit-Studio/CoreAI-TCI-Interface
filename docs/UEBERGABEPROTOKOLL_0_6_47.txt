@@ -1,0 +1,37 @@
+CoreAI: TCI Interface | Handover 0.6.47
+Date: 08.11.2026
+Source: feat/tci-personal-reference-alias-20261107
+Target: main (currently 0.6.46)
+
+Goal
+- An account's CoreAI portrait is also its image-generation self-portrait reference.
+- The canonical Mara photo is images/mara_winter.jpg. Custom upload wins for that account; removal restores the original.
+- Per-account assistant display names are applied to personal UI while Mara Thorne's canonical identity remains unchanged.
+- Fictional roleplay changes clothes/scenery/persona acting, not the TCI identity. Requests for unrelated subjects never inherit her reference portrait.
+
+Architecture
+- api/profile_store.php resolves account-scoped assistant media through a database record.
+- api/image_gen.php distinguishes [BILD:] from [BILD ICH:] and [BILD GROSS ICH:], routes an optional opaque reference to the local image service.
+- tools/image/image_service.py validates an internal "default" or "custom:<32 hex>" token and passes a locally resolved file as sd-cli -r; no user-supplied path is honored.
+- api/chat.php and api/console_composer_intent.php carry the selected account nickname and recover explicit self-portrait requests when an older generic marker is used.
+- UI strings use the account's chosen name or neutral wording, preserving technical IDs and stored event names. Model files, pinned weights, installer and database migrations are unchanged.
+- Browser asset keys for modified scripts are content-derived SHA-256 digit strings.
+
+Added/updated tests
+- scripts/image-gen-selftest.php
+- scripts/image-service-selftest.py
+- scripts/composer-intent-selftest.php
+- scripts/image-chat-ui-selftest.cjs
+
+Verification performed
+- Modified browser JS files parsed successfully in a JavaScript parser.
+- Standalone PHP PCRE smoke check passed for self-portrait versus ordinary-image phrases.
+- The GitHub connector confirmed the canonical file is present.
+
+Still required BEFORE MERGE
+- Run php -l on every modified PHP file in a checkout.
+- Run all affected PHP/Python/browser selftests and the standard preflight scripts.
+- Run python3 scripts/version-merge-check.py --base-version 0.6.46 and confirm it passes.
+- On the operator's server, verify FLUX.2 reference-image generation with default and custom portrait, delete fallback, cross-account isolation, a normal unrelated picture, 1/2/4 image batches and memory usage.
+- Verify the UI at both phone and desktop sizes and confirm cache invalidation.
+- Do not mark this draft PR as merged or deployed before the required checks.

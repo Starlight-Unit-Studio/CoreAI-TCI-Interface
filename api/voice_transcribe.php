@@ -495,11 +495,12 @@ function coreui_voice_listen_task(string $senderName, string $text, array $clips
   // 0.6.40 (P20.5): an image after a voice message, as after a typed one (operator, 07.11.2026:
   // "eine Wildkatze im Wald" was answered with a description instead of an image).
   if (in_array('image', $tools, true)) {
-    $task .= "\nMoechte " . $sender . ' ein Bild, Foto, eine Zeichnung oder Illustration von dir, antworte NUR mit dem Marker '
-      . '[BILD: ausfuehrliche Bildbeschreibung auf Englisch] (gross nur auf ausdruecklichen Wunsch: [BILD GROSS: ...]); '
-      . 'das Bild entsteht danach und haengt sich an deine Antwort. Ohne den Marker entsteht kein Bild.';
+    $task .= "\nMoechte " . $sender . ' ein Selbstportraet von dir, auch in einer Rolle oder einem Kostuem, antworte NUR mit '
+      . '[BILD ICH: genaue Bildbeschreibung auf Englisch] (gross: [BILD GROSS ICH: ...]). '
+      . 'Fuer andere Motive benutze [BILD: Bildbeschreibung auf Englisch] (gross: [BILD GROSS: ...]). '
+      . 'Nur bei ICH wird dein persoenliches Referenzbild mitgegeben. Ohne Marker entsteht kein Bild.';
   }
-  return $task . "\nDu hoerst die Aufnahme selbst. Das ist die NEUE Nachricht: Antworte nur auf sie, als Mara, so wie auf das Gesagte"
+  return $task . "\nDu hoerst die Aufnahme selbst. Das ist die NEUE Nachricht: Antworte nur auf sie, als dieselbe TCI unter deinem persoenlichen Anzeigenamen, so wie auf das Gesagte"
     . ($voice ? ' in einem Gespraech' : '') . ', in der Sprache, in der gesprochen wird. '
     . 'Fruehere Stimmsequenzen im Verlauf sind schon beantwortet; wiederhole deine frueheren Antworten nicht. '
     . 'Kuendige nicht an, dass du die Nachricht gehoert oder angehoert hast, sondern antworte direkt auf den Inhalt. '

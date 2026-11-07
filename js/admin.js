@@ -409,7 +409,7 @@
     var who = (user.display_name || accountName(user)) + (user.username ? ' (' + user.username + ')' : '');
     td.appendChild(el('p', 'user-delete-title', 'Konto ' + who + ' endgültig löschen?'));
     td.appendChild(el('p', 'model-access-note', 'Gelöscht werden alle Chats mit Nachrichten, Anhängen und Dateien, hochgeladenes Wissen, '
-      + 'Maras Erinnerungen an dieses Konto, Profil und Avatare, Einstellungen, Core-Freigaben und alle Anmeldungen. '
+      + 'Erinnerungen deiner CoreAI an dieses Konto, Profil und Avatare, Einstellungen, Core-Freigaben und alle Anmeldungen. '
       + 'Das lässt sich nicht rückgängig machen. Im Audit bleibt nur ein Eintrag mit der E-Mail.'));
     var label = el('label', 'user-delete-confirm');
     label.appendChild(el('span', '', 'Zum Bestätigen eintippen: '));
@@ -467,7 +467,7 @@
     var granted = grantsOf(user);
     td.appendChild(el('p', 'model-access-note', models.length
       ? 'Fremde Cores außerhalb von CoreAI für ' + (user.display_name || user.username || ('Konto ' + user.id))
-        + '. Maras Cores brauchen keine Freigabe.'
+        + '. Die Cores der TCI brauchen keine Freigabe.'
       : 'Keine fremden Cores außerhalb von CoreAI in Ollama installiert.'));
     if (modelAccess && modelAccess.ollama === false) {
       td.appendChild(el('p', 'model-access-note warn', 'Ollama-Liste gerade nicht erreichbar; gezeigt werden nur bestehende Freigaben.'));

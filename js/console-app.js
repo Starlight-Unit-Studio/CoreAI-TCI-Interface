@@ -636,8 +636,8 @@
       spinner = document.createElement('span');
       spinner.className = 'session-working';
       spinner.setAttribute('role', 'img');
-      spinner.setAttribute('aria-label', 'Mara arbeitet in diesem Chat');
-      spinner.title = 'Mara arbeitet in diesem Chat';
+      spinner.setAttribute('aria-label', (state.assistantName || 'Mara') + ' arbeitet in diesem Chat');
+      spinner.title = (state.assistantName || 'Mara') + ' arbeitet in diesem Chat';
       title.insertBefore(spinner, title.firstChild);
     } else if (!working && spinner) {
       spinner.remove();
@@ -984,7 +984,7 @@
       }
       if (state.pendingBySession[ses.id]) {
         showTypingIndicator();
-        setStatus('waiting', 'MARA ANTWORTET\u2026');
+        setStatus('waiting', (state.assistantName || 'Mara').toUpperCase() + ' ANTWORTET\u2026');
       }
       renderQueuedTurns(ses);
     } catch (error) {
@@ -1661,7 +1661,7 @@
       guestTurnCounted();
       state.pendingBySession[ses.id] = Number(request.trigger_message_id) || true;
       updateActivePendingUi();
-      setStatus('waiting', mode === 'continue' ? 'MARA SETZT FORT\u2026' : 'MARA ERZEUGT ALTERNATIVE\u2026');
+      setStatus('waiting', (state.assistantName || 'Mara').toUpperCase() + (mode === 'continue' ? ' SETZT FORT\u2026' : ' ERZEUGT ALTERNATIVE\u2026'));
       showTypingIndicator(true);
       openStreamForReply(ses, Number(request.trigger_message_id) || 0, request);
     }).catch(function (error) {
@@ -1761,7 +1761,7 @@
     var actions = document.createElement('div');
     actions.className = 'msg-actions';
     actions.setAttribute('role', 'toolbar');
-    actions.setAttribute('aria-label', role === 'ember' ? 'Aktionen fuer Mara-Antwort' : 'Aktionen fuer Benutzernachricht');
+    actions.setAttribute('aria-label', role === 'ember' ? 'Aktionen fuer ' + (state.assistantName || 'Mara') + '-Antwort' : 'Aktionen fuer Benutzernachricht');
 
     var copy = createActionButton('copy', 'Nachricht kopieren');
     copy.addEventListener('click', function () { copyMessageText(copy, text); });
@@ -1863,7 +1863,7 @@
       var picture = document.createElement('img');
       picture.className = 'msg-image';
       picture.src = url;
-      picture.alt = 'Bild von TCI: Mara';
+      picture.alt = 'Bild von TCI: ' + (state.assistantName || 'Mara');
       picture.loading = 'lazy';
       open.appendChild(picture);
       figure.appendChild(open);
@@ -1872,7 +1872,7 @@
       // The studio's mark sits in the image itself (api/image_gen.php); the line offers the download.
       var save = document.createElement('a');
       save.href = url;
-      save.setAttribute('download', att.name || 'Mara-Bild.png');
+      save.setAttribute('download', att.name || ((state.assistantName || 'Mara') + '-Bild.png'));
       save.textContent = 'Herunterladen';
       caption.appendChild(save);
       figure.appendChild(caption);
@@ -2389,7 +2389,7 @@
     var selected = Array.prototype.slice.call(fileList || []);
     if (!selected.length) return;
     if (state.waitingEmber) {
-      appendMessageEl('system', '\u231b Mara antwortet gerade\u2026 Anhaenge bitte danach.');
+      appendMessageEl('system', '\u231b ' + (state.assistantName || 'Mara') + ' antwortet gerade\u2026 Anhaenge bitte danach.');
       scrollToBottom();
       return;
     }
@@ -2517,7 +2517,7 @@
       state.sendTimestampBySession[ses.id] = Date.now();
       updateActivePendingUi();
       renderHistory(ses);
-      setStatus('waiting', 'MARA VERARBEITET DIE AENDERUNG…');
+      setStatus('waiting', (state.assistantName || 'Mara').toUpperCase() + ' VERARBEITET DIE AENDERUNG…');
       showTypingIndicator();
       scrollToBottom();
       openStreamForReply(ses, editedId, request);
@@ -2547,7 +2547,7 @@
 
   function compactSummaryText(folded) {
     return folded > 0 ? folded + ' ältere Nachrichten sind zusammengefasst und im Archiv.'
-      : 'Noch nichts zusammengefasst: der Chat passt in Maras Fenster.';
+      : 'Noch nichts zusammengefasst: der Chat passt in das Kontextfenster von ' + (state.assistantName || 'Mara') + '.';
   }
 
   function openCompactMenu() {
@@ -2579,11 +2579,11 @@
     if (!ses || (compactNowBtn && compactNowBtn.disabled)) return Promise.resolve();
     var sessionId = String(ses.id);
     if (compactNowBtn) compactNowBtn.disabled = true;
-    if (compactStatus) compactStatus.textContent = 'Mara fasst den älteren Verlauf zusammen … auf dem Prozessor kann das eine Minute dauern.';
+    if (compactStatus) compactStatus.textContent = (state.assistantName || 'Mara') + ' fasst den älteren Verlauf zusammen … auf dem Prozessor kann das eine Minute dauern.';
     return postConsoleAction({ action: 'compact', session_id: sessionId }).then(function (d) {
       var folded = Number(d.folded) || 0;
       var text = folded > 0 ? 'Chat komprimiert: ' + folded + ' ältere Nachrichten zusammengefasst, insgesamt ' + (Number(d.total) || folded)
-        + '. Die Mitschrift liegt im Archiv (.md).' : 'Noch nichts zu komprimieren: alles passt in Maras Fenster.';
+        + '. Die Mitschrift liegt im Archiv (.md).' : 'Noch nichts zu komprimieren: alles passt in das Kontextfenster von ' + (state.assistantName || 'Mara') + '.';
       if (compactStatus) compactStatus.textContent = text;
       compactShowArchive(sessionId, !!d.has_archive);
       if (folded > 0 && isActiveSession(sessionId)) {
@@ -2681,7 +2681,7 @@
     if (!options.from_queue) clearAttachments();
     scrollToBottom(true); // A new user turn intentionally opens the latest view.
 
-    setStatus('waiting', 'MARA ANTWORTET\u2026');
+    setStatus('waiting', (state.assistantName || 'Mara').toUpperCase() + ' ANTWORTET\u2026');
     state.pendingBySession[sessionId] = true;
     state.waitingEmber = true;
     state.sendTimestamp = Date.now();
@@ -2729,7 +2729,7 @@
           'guest_limit_reached': '\u26a0 Deine Gast-Nachrichten sind aufgebraucht. Mit einem eigenen Konto geht es weiter.',
           'guest_network_limit': '\u26a0 Die Gast-Nachrichten für dein Netzwerk sind für heute aufgebraucht. Mit einem eigenen Konto geht es weiter.',
           'guest_daily_limit':   '\u26a0 Der Gast-Zugang ist für heute ausgelastet. Mit einem eigenen Konto geht es weiter.',
-          'guest_console_only':  '\u26a0 Als Gast chattest du nur im privaten Chat mit Mara.',
+          'guest_console_only':  '\u26a0 Als Gast chattest du nur im privaten CoreAI-Chat.',
           'daily_message_limit': '\u26a0 Dein Tageslimit an Nachrichten ist erreicht.'
             + (d.retry_at ? ' Wieder möglich ab ' + new Date(d.retry_at).toLocaleString('de-DE', { weekday: 'short', hour: '2-digit', minute: '2-digit' }) + '.' : '')
         };
@@ -3063,7 +3063,7 @@
         session_id: sessionId,
         reply_to_id: Number(userMsgId) || 0,
         character_id: 'ember',
-        character_name: 'Mara',
+        character_name: state.assistantName || 'Mara',
         message: text,
         is_ember: true,
         thinking_content: thinking,
@@ -3142,7 +3142,7 @@
     if (browseJobId > 0) {
       // Die FINALE Antwort kommt erst NACH dem Surfen (per Hintergrund-Poll). Bis dahin arbeitet
       // Ember weiter -> Status sichtbar "arbeitet" (amber) lassen, NICHT vorschnell auf grün.
-      setStatus('waiting', 'MARA ANTWORTET\u2026');
+      setStatus('waiting', (state.assistantName || 'Mara').toUpperCase() + ' ANTWORTET\u2026');
       openBrowseWindow(browseJobId, sessionId);
       if (data && data.generation_request) {
         startGenerationStatusPoll(ses, { id: data.generation_request });
@@ -3355,8 +3355,8 @@
 
     function showQueued() {
       if (head) head.textContent = 'WARTET';
-      if (placeholderText && !gotFrame) placeholderText.textContent = 'WARTET AUF MARA';
-      setStatusText('Mara ist noch beschäftigt, die Recherche startet gleich.', false);
+      if (placeholderText && !gotFrame) placeholderText.textContent = 'WARTET AUF ' + (state.assistantName || 'Mara').toUpperCase();
+      setStatusText((state.assistantName || 'Mara') + ' ist noch beschäftigt, die Recherche startet gleich.', false);
     }
 
     function finishB(label) {
@@ -3498,7 +3498,7 @@
       +   '<span class="browse-ghost-cursor active" aria-hidden="true"></span>'
       +   '<div class="browse-live-think" role="status" aria-live="polite" hidden>'
       +     '<span class="browse-think-dots" aria-hidden="true"><i></i><i></i><i></i></span>'
-      +     '<span class="browse-think-text">Mara überlegt</span>'
+      +     '<span class="browse-think-text">' + (state.assistantName || 'Mara') + ' überlegt</span>'
       +     '<span class="browse-think-time">0 s</span></div>'
       + '</div>'
       + '<div class="browse-live-footer"><span class="browse-live-pulse"></span>'
@@ -3748,7 +3748,7 @@
         state.uid = d.user_id;
         state.csrfToken = d.csrf_token || '';
         state.userDisplayName = d.display_name || null;
-        state.assistantName = d.assistant_name || 'Ember';
+        state.assistantName = d.assistant_name || 'Mara';
         state.userAvatarUrl = d.avatars && d.avatars.user ? d.avatars.user : null;
         state.assistantAvatarUrl = d.avatars && d.avatars.assistant ? d.avatars.assistant : null;
         if (inputEl) inputEl.placeholder = 'Nachricht an ' + state.assistantName + '…';

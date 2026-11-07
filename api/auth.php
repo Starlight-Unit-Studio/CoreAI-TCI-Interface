@@ -87,7 +87,7 @@ if ($action === 'me') {
           'user_id' => $uid,
           'username' => $urow['username'] ?? null,
           'display_name' => is_array($profile) ? ($profile['display_name'] ?? null) : null,
-          'assistant_name' => is_array($profile) ? ($profile['assistant_name'] ?? 'Ember') : 'Ember',
+          'assistant_name' => is_array($profile) ? ($profile['assistant_name'] ?? 'Mara') : 'Mara',
           'avatars' => is_array($profile) ? ($profile['avatars'] ?? ['user' => null, 'assistant' => null]) : ['user' => null, 'assistant' => null],
           'permission_level' => $lvl,
           'permission_label' => stu_permission_label($lvl),
