@@ -182,7 +182,7 @@ const item = (page, id, force = false) => page.click('#composerMenu .cm-item[dat
     assert.deepEqual([by('photos').label, by('files').label, by('image').label, by('web').label, by('browse').label, by('deep').label, by('connectors').label],
       ['Fotos', 'Dateien', 'Bild erstellen', 'Websuche', 'Recherche', 'Deep Research', 'Konnektoren']);
     assert.equal(by('files').detail, 'PDF, Audio, Video, Dokumente');
-    assert.equal(by('image').detail, 'Mara malt ein Bild zu deiner Nachricht');
+    assert.equal(by('image').detail, 'Deine CoreAI malt ein Bild zu deiner Nachricht');
     assert.equal(by('image').off, false);
     assert.deepEqual([by('deep').off, by('deep').aria, by('deep').badge], [true, 'true', 'In Vorbereitung'], 'Deep Research is planned, not offered');
     assert.deepEqual([by('connectors').off, by('connectors').aria, by('connectors').badge], [true, 'true', 'In Vorbereitung'], 'connectors are planned');
@@ -366,7 +366,7 @@ const item = (page, id, force = false) => page.click('#composerMenu .cm-item[dat
     await phone.page.waitForFunction(() => document.querySelector('#composerMenu .cm-item[data-id="image"] .cm-detail').textContent.includes('malt'));
     m = await menuState(phone.page);
     assert.deepEqual(m.items.map(i => i.id).slice(0, 3), ['photos', 'camera', 'files'], 'Kamera on a device with a camera');
-    assert.equal(m.items.find(i => i.id === 'camera').detail, 'Foto aufnehmen und Mara zeigen');
+    assert.equal(m.items.find(i => i.id === 'camera').detail, 'Foto aufnehmen und deiner CoreAI zeigen');
     const sheet = await phone.page.evaluate(() => {
       const r = document.getElementById('composerMenu').getBoundingClientRect();
       return {left: r.left, right: r.right, bottom: Math.round(r.bottom), top: r.top, view: window.innerWidth, h: window.innerHeight,
