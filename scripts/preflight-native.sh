@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.43: + Menue im Eingabefeld (Fotos, Kamera, Dateien, Bild erstellen, Websuche, Recherche).
+# CoreAI: TCI Interface 0.6.44: dynamischer Quantum CoreAI Bildvermerk ohne Studio-Logo.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
