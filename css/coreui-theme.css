@@ -495,5 +495,14 @@ html[data-coreui-theme="dark"] .voice-input-actions .voice-input-done {
   color: #ffc4cc;
 }
 
+/* 0.6.43: + menu of the input field and the chosen tool's chip. */
+html[data-coreui-theme="dark"] .composer-menu {
+  background: var(--panel-solid);
+  border-color: var(--line-strong);
+}
+html[data-coreui-theme="dark"] .composer-intent { color: var(--cx); }
+html[data-coreui-theme="dark"] .msg-intent,
+html[data-coreui-theme="dark"] .cm-badge { color: var(--amb); }
+
 /* Do not invert media, photographs, site previews or remote browser frames. */
 

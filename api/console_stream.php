@@ -204,6 +204,9 @@ if ($imageUrl === null && $attachmentIds === [] && is_array($turnRow)) {
 }
 
 $promptMessage = $message;
+// 0.6.43: a tool chosen in the + menu ([[bild]], [[websuche]], [[recherche]]) goes straight to the
+// tool path; the prompt builders take the mark out of the text themselves.
+$composerIntentStream = coreui_composer_intent_peek($promptMessage);
 $excludeReplyToId = null;
 if ($generationRequest !== null) {
   if ($generationMode === 'regenerate' || $generationMode === 'edit') {
@@ -397,7 +400,7 @@ try {
   };
   coreui_work_record($pdo, 'run', 'running', 'Auftrag gestartet');
 
-  $exactCalculation = (!$isVisionTurn && $attachmentIds === [] && $generationMode !== 'continue')
+  $exactCalculation = (!$isVisionTurn && $attachmentIds === [] && $generationMode !== 'continue' && $composerIntentStream === null)
     ? ember_exact_integer_calculation($promptMessage)
     : null;
   console_stream_progress($thinkingEnabled, 'request');
@@ -406,7 +409,7 @@ try {
   $fileTaskPrompt = $promptMessage;
   // The existing sandbox is selected by the resolved project request, not
   // just by download keywords in the short follow-up message.
-  $fileTaskHandled = !$isVisionTurn && $attachmentIds === []
+  $fileTaskHandled = !$isVisionTurn && $attachmentIds === [] && $composerIntentStream === null
     && $generationMode !== 'continue' && ember_py_enabled()
     && coreui_console_download_requested($fileTaskPrompt)
     && (ember_console_file_tool_is_local(ember_model())
@@ -443,9 +446,9 @@ try {
         ? trim($fileReply) : 'Die Dateierstellung konnte nicht bestaetigt werden.',
       'ok'=>true,'done'=>true,'truncated'=>false,
     ];
-  } elseif ($isVisionTurn) {
+  } elseif ($isVisionTurn || $composerIntentStream !== null) {
     ember_prepare_background_runtime();
-    sse_comment('vision-sync');
+    sse_comment($isVisionTurn ? 'vision-sync' : 'tool-sync');
     console_stream_progress($thinkingEnabled, 'context');
     $acc = ['thinking' => '', 'content' => ''];
   } else {
@@ -543,7 +546,8 @@ try {
             || (function_exists('ember_py_extract_marker') && ember_py_extract_marker($reply) !== null)
             || coreui_extract_archive_marker($reply) !== null
             || coreui_skills_extract_marker($reply) !== null
-            || ember_image_marker_in($reply, (int)$uid);
+            || ember_image_marker_in($reply, (int)$uid)
+            || ($composerIntentStream !== null && !$isVisionTurn && !$fileTaskHandled);
 
   if (!$isVisionTurn && !$fileTaskHandled
       && !$hasMarker

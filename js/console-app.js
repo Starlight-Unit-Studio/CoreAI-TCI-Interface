@@ -1362,6 +1362,22 @@
       thinkingText = safeThinkingText(thinkingText);
       text = safeReplyText(text);
     }
+    // 0.6.43: a tool chosen in the + menu ([[bild]], [[websuche]], ...) shows as a chip above
+    // the person's bubble; the mark itself is no text of the message.
+    var intentChip = null;
+    if (role === 'user' && window.CoreAIComposerMenu) {
+      var parsedIntent = window.CoreAIComposerMenu.parse(text);
+      if (parsedIntent.intent) {
+        text = parsedIntent.text.trim();
+        intentChip = document.createElement('div');
+        intentChip.className = 'msg-intent';
+        intentChip.setAttribute('data-tool', parsedIntent.intent.tool);
+        intentChip.innerHTML = window.CoreAIComposerMenu.icon(parsedIntent.intent.tool);
+        var intentLabel = document.createElement('span');
+        intentLabel.textContent = parsedIntent.label;
+        intentChip.appendChild(intentLabel);
+      }
+    }
 
     // Echte, persistierte Arbeitsereignisse mit sicheren oeffentlichen
     // Fortschrittsnotizen bleiben Teil der Antwort; nur Schrittgruppen sind klappbar.
@@ -1380,6 +1396,7 @@
       ? (name || state.userDisplayName || state.charName || 'DU').toUpperCase()
       : (state.assistantName || 'Mara').toUpperCase();
     content.appendChild(nameEl);
+    if (intentChip) content.appendChild(intentChip);
     if (workTimeline) content.appendChild(workTimeline);
 
     var bubble = document.createElement('div');
@@ -1438,6 +1455,7 @@
   }
 
   function clearMessageEdit(restoreFocus) {
+    if (state.editingMessage && window.CoreAIComposerMenu) window.CoreAIComposerMenu.clear();
     state.editingMessage = null;
     updateComposerEmpty();
     if (composerEditState) composerEditState.hidden = true;
@@ -1462,6 +1480,8 @@
     if (composerEditLabel) composerEditLabel.textContent = 'NACHRICHT #' + String(record.id) + ' BEARBEITEN';
     updateActivePendingUi();
     if (!inputEl) return;
+    // 0.6.43: the tool chosen for this message comes back as the chip in the input field.
+    if (window.CoreAIComposerMenu) text = window.CoreAIComposerMenu.loadFrom(String(record.message || ''), text);
     setComposerText(text);
     inputEl.focus();
     inputEl.setSelectionRange(inputEl.value.length, inputEl.value.length);
@@ -2108,7 +2128,23 @@
       attachList.appendChild(chip);
     });
     attachList.hidden = pendingFiles.length === 0;
-    if (btnAttach) btnAttach.disabled = attachmentSlotsUsed() >= MAX_MESSAGE_ATTACHMENTS;
+    setFilesAvailable(attachmentSlotsUsed() < MAX_MESSAGE_ATTACHMENTS);
+  }
+
+  // 0.6.43: the + button also opens Mara's tools, so it stays usable; only the entries
+  // Fotos, Kamera and Dateien follow the free slots and a running upload.
+  function setFilesAvailable(yes) {
+    if (window.CoreAIComposerMenu) {
+      window.CoreAIComposerMenu.filesAvailable(yes);
+      if (btnAttach) btnAttach.disabled = false;
+    } else if (btnAttach) {
+      btnAttach.disabled = !yes;
+    }
+  }
+
+  // 0.6.43: the chosen tool's mark goes in front of the text that is sent (js/coreui-composer-menu.js).
+  function composerIntentText(text, withFiles) {
+    return window.CoreAIComposerMenu ? window.CoreAIComposerMenu.consume(text, !!withFiles) : String(text || '');
   }
 
   function showUploadState(file, sub) {
@@ -2255,7 +2291,7 @@
     var file = uploadQueue.shift();
     uploadCurrentFile = file;
     showUploadState(file, 'wird hochgeladen\u2026');
-    if (btnAttach) btnAttach.disabled = true;
+    setFilesAvailable(false);
 
     var fd = new FormData();
     fd.append('file', file);
@@ -2368,7 +2404,8 @@
     processUploadQueue();
   }
 
-  if (btnAttach) btnAttach.addEventListener('click', function() { if (fileInput) fileInput.click(); });
+  // 0.6.43: with the + menu the button opens the menu (Fotos, Kamera, Dateien, Mara's tools).
+  if (btnAttach && !window.CoreAIComposerMenu) btnAttach.addEventListener('click', function() { if (fileInput) fileInput.click(); });
   if (fileInput) fileInput.addEventListener('change', function(e) {
     queueFiles(e.target && e.target.files ? e.target.files : []);
   });
@@ -2583,7 +2620,8 @@
   function sendMessage(text, options) {
     options = options || {};
     if (state.editingMessage && !options.from_queue) {
-      submitMessageEdit(text);
+      // The chip stays until the edit is saved (clearMessageEdit), so a failed save keeps it.
+      submitMessageEdit(window.CoreAIComposerMenu ? window.CoreAIComposerMenu.marked(text, false) : text);
       return;
     }
     // 0.5.77: "/komprimieren" (or "/compact") is a command, not a message.
@@ -2624,12 +2662,12 @@
         scrollToBottom();
         return;
       }
-      queueTurnAfterCurrentReply(ses, text);
+      queueTurnAfterCurrentReply(ses, composerIntentText(text, false));
       return;
     }
     var sessionId = String(ses.id);
 
-    var userText = (text || '').trim();
+    var userText = (options.from_queue ? String(text || '') : composerIntentText(text, pendingFiles.length > 0)).trim();
     var atts = options.from_queue ? [] : pendingFiles.slice(0, MAX_MESSAGE_ATTACHMENTS);
     var sentCreatedAt = new Date().toISOString();
     if (!options.from_queue) setComposerText('');
