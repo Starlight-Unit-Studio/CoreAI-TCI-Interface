@@ -1,0 +1,6 @@
+CoreAI: TCI Interface 0.6.36 - 07.11.2026
+- Abnahme P20.2 durch den Betreiber: Bild, Gesprochenes und Uebersetzung korrekt.
+- Behoben: Die Zeile "Mitschrift:" fehlte unter frischen Videos (Server antwortete sofort "keine", die Seite fragte nicht erneut).
+- Frische Videos zeigen "Mitschrift folgt …" und die Seite fragt nach; der Server schreibt je Video einen Endstand (Mitschrift, still, keine, fehlgeschlagen).
+- Tests: voice-input-selftest.php, voice-input-ui-selftest.cjs.
+- Keine Aenderung an Cores, Modelfile, Datenbankschema, Installer, nginx oder Warteschlange.

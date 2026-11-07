@@ -68,12 +68,13 @@ if ($action === 'transcript') {
   if (is_array($data) && ($data['state'] ?? '') === 'done') {
     stu_json(['ok' => true, 'state' => 'done', 'text' => (string)($data['text'] ?? ''), 'truncated' => !empty($data['truncated'])]);
   }
-  if (is_array($data) && in_array($data['state'] ?? '', ['pending', 'silent', 'failed'], true)) {
+  // 0.6.36: "none" ends a video without a sound track Mara could hear (no track, Core without audio).
+  if (is_array($data) && in_array($data['state'] ?? '', ['pending', 'silent', 'failed', 'none'], true)) {
     stu_json(['ok' => true, 'state' => (string)$data['state']]);
   }
-  // Not started yet: the transcript follows Mara's answer, which can take a while.
-  // A video's sound track is written before her answer or never (no track, Core without audio).
-  if (($media['kind'] ?? '') === 'video') stu_json(['ok' => true, 'state' => 'none']);
+  // Not started yet: a voice message's transcript follows Mara's answer, a video's is written
+  // while she prepares it; until then the page asks again (0.6.35 said "none" at once for a
+  // video, and the page never asked again: no line under a fresh video).
   $fresh = strtotime((string)$created) >= time() - COREUI_VOICE_TRANSCRIPT_PENDING_SECONDS;
   stu_json(['ok' => true, 'state' => $fresh ? 'pending' : 'none']);
 }

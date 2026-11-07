@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.6.36 - 07.11.2026
+
+Rueckmeldung des Betreibers zu 0.6.35: Mara hat bei zwei Handyvideos Bild und Ton richtig erkannt und den englischen Satz korrekt uebersetzt ("alle angaben von mara sind korrekt"). Auf den Screenshots fehlte aber die angekuendigte Zeile "Mitschrift:" unter den Videos.
+
+- **Ursache:** Die Seite fragt die Mitschrift ab, sobald das Video im Chat erscheint. Zu diesem Zeitpunkt schreibt der Core sie gerade erst. Fuer Videos antwortete der Server in 0.6.35 dann sofort "keine Mitschrift", und die Seite merkte sich das, ohne erneut zu fragen. Erst nach einem Neuladen waere die Zeile erschienen.
+- **Behoben:** Ein frisches Video zeigt wie eine Stimmsequenz "Mitschrift folgt …", die Seite fragt alle paar Sekunden erneut, und die Zeile erscheint, sobald die Mitschrift fertig ist. Damit das Nachfragen endet, schreibt der Server fuer jedes Video einen Endstand: die Mitschrift, "still" (die Zeile sagt "Keine gesprochenen Worte."), "keine" bei einem Video ohne Tonspur oder mit einem Core ohne Audioeingabe (keine Zeile) oder "fehlgeschlagen", wenn das Mitschreiben scheitert (keine Zeile; Mara hoert den Ton trotzdem). Eine einmal geschriebene Mitschrift bleibt auch, wenn spaeter ein Core ohne Audio gewaehlt ist.
+- Tests: `voice-input-selftest.php` (Endstaende "none", "silent", "failed", vorhandene Mitschrift bleibt; Endpunkt fragt frische Videos erneut), `voice-input-ui-selftest.cjs` (Video erscheint mit "Mitschrift folgt …", danach die Mitschrift).
+- Keine Aenderung an Cores, Modelfile, Datenbankschema, Installer, nginx oder Warteschlange.
+
 ## 0.6.35 - 07.11.2026
 
 P20.2: Videos hoeren. Bisher sah Mara ein Video nur als Einzelbilder und bekam "Ton hast du nicht" gesagt. Jetzt hoert sie die Tonspur mit, wie im Sprachplan festgelegt: ffmpeg trennt den Ton, teilt ihn in Abschnitte von hoechstens 60 Sekunden, und Bilder und Ton gehen gemeinsam in dieselbe Anfrage, mit Zeitmarken.
