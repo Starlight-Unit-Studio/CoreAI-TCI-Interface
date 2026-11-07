@@ -171,6 +171,13 @@ $http = $fake([['GET', '/health', $ready], ['POST', '/jobs', [503, ['ok' => fals
 $leases = $unleases = 0;
 $r = coreui_image_generate($pdo, 5, 'ember', 'a fox', 'normal', $lease, $unlease, static function (): void {}, $never, $http);
 img_gen_test($r['error'] === 'image_busy' && $leases === 1 && $unleases === 1, 'busy: queue given back');
+// The reference is sent only for explicit images of the TCI, not for ordinary foxes.
+$http = $fake([['GET', '/health', $ready], ['POST', '/jobs', [503, ['ok' => false, 'error' => 'image_busy'], '']]]);
+$r = coreui_image_generate($pdo, 5, 'ember', 'Mara as Superwoman', 'normal',
+  $lease, $unlease, static function (): void {}, $never, $http, null, 'default');
+img_gen_test($r['error'] === 'image_busy' && ($GLOBALS['img_calls'][1][2]['reference'] ?? null) === 'default',
+  'explicit self portrait routes canonical reference to the service');
+
 
 // A whole image.
 $png = img_gen_png(512, 512);
