@@ -1,0 +1,7 @@
+CoreAI: TCI Interface 0.6.44 - 07.11.2026
+- Bildgenerierung: nur noch "Erzeugt von Quantum CoreAI [Jahr]©" als Text-Credit, Jahr automatisch aus der Serverzeit.
+- Studio-Logo aus den erzeugten Bildern entfernt, Logo-Datei fuer andere Oberflaechen unveraendert.
+- Bestehende Rajdhani-Schrift, weisser Text und Schatten, 50 % Deckkraft, unten rechts.
+- Bild-Selbsttest fuer Jahreswechsel, Bilddimensionen, Position, Deckkraft und Logo-Freiheit aktualisiert.
+- Keine Aenderung an Cores, Modelfile, Bildmodell, Datenbank, Installer oder Warteschlange.
+- Vollstaendiger Lauf der Bildtests benoetigt eine Umgebung mit PHP-GD und Testdatenbank.
