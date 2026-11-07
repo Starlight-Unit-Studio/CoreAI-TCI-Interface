@@ -169,7 +169,10 @@ $meta = coreui_image_meta($r['uuid']);
 img_gen_test(($meta['prompt'] ?? '') === 'A red fox, sitting in snow' && ($meta['seconds'] ?? 0) == 61.8 && ($meta['model'] ?? '') === 'FLUX.2-klein 4B (Q8_0)'
   && ($meta['watermark'] ?? null) === true, 'its description next to it');
 
-// Reference: small dynamic-year credit at lower left and the new logo at lower right.
+// Reference: small dynamic-year credit at lower left and a 12%-wide, half-opacity logo at lower right.
+img_gen_test(abs(COREUI_IMAGE_LOGO_WIDTH - 0.12) < 0.000001
+  && COREUI_IMAGE_MARK_OPACITY === 0.5,
+  'Quantum logo must stay at 12% width and 50% opacity');
 img_gen_test(coreui_image_mark_text(2026) === '© 2026 Quantum CoreAI'
   && coreui_image_mark_text(2027) === '© 2027 Quantum CoreAI'
   && coreui_image_mark_text() === '© ' . date('Y') . ' Quantum CoreAI', 'year-aware copyright');
