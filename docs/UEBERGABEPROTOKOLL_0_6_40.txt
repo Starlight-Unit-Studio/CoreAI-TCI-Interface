@@ -1,0 +1,30 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.40
+Stand: 07.11.2026
+Basis: main 0.6.39 nach Merge von PR #191.
+
+AUFTRAG: Rueckmeldung des Betreibers zu 0.6.39 (Screenshots 15:57/15:58): geschrieben "Katze im Schnee" ergab ein
+Bild mit Wasserzeichen; die Stimmsequenz "Und jetzt mal eine Wildkatze im Wald" ergab nur Text mit
+"*(Hier erscheint das Bild der Wildkatze im Wald) (Von dir erzeugtes Bild (512 × 512): ...)". Unter dem Katzenbild
+stand "*(Hier erscheint das Bild der Katze im Schnee)".
+
+URSACHEN
+- chat.php: $voiceTools schnitt die Werkzeuge auf web, browse, archive zu; coreui_voice_listen_task kannte kein Bild;
+  coreui_voice_strip_stray_bracket haette "[BILD: ..." als losen Klammerbeginn behandelt.
+- ember_build_context haengte "(Von dir erzeugtes Bild (W × H): "...")" an Maras eigene Zeile; das Modell kopierte das Format.
+- Kein Hinweis und kein Filter gegen Platzhalterzeilen.
+
+UMSETZUNG
+- chat.php: $voiceTools mit 'image'; Marker-Pruefung fuer gesperrte Werkzeuge mit 'image'; Bildnotizen als
+  coreui_image_history_block nach den Gespraechszeilen; ember_sanitize_public_reply ruft coreui_image_strip_placeholders.
+- voice_transcribe.php: Bildzeile im Hoerauftrag, wenn 'image' erlaubt ist; BILD in coreui_voice_strip_stray_bracket.
+- image_gen.php: Notizformat "W × H: "..."", coreui_image_history_block (hoechstens fuenf), coreui_image_strip_placeholders
+  (abgeschriebene Notiz; Zeile in Klammern mit hier/an dieser stelle/unten/darunter + erscheint/folgt/kommt/ist/... + Bild),
+  Hinweis und Ergebnistext ohne Platzhalter.
+
+GEPRUEFT (hier ausgefuehrt): image-gen-selftest.php, voice-input-selftest.php, php -l, volle Testreihe mit Test-Datenbank,
+tci-language-selftest.cjs, terran-terminology-selftest.cjs, cache-bust, version-merge-check gegen 0.6.39.
+NICHT HIER GEPRUEFT: echte Stimmsequenz mit Bild auf dem Server.
+
+NACH DEM MERGE (Betreiber):
+1. Update unter Einstellungen > System > CoreAI Update.
+2. Stimmsequenz "Mal mir eine Wildkatze im Wald": erwartet Arbeitsweg "Ich male" und das Bild an der Antwort, ohne Platzhalterzeile.

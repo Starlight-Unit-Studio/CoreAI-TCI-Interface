@@ -354,6 +354,7 @@ function coreui_image_result_text(array $result): string {
       . (int)round((float)$result['seconds']) . ' Sekunden) und erscheint direkt unter deiner Antwort. '
       . 'Sag kurz, dass es da ist, und beschreibe in ein, zwei Saetzen, was du gemalt hast. '
       . 'Du kannst es nicht sehen; erfinde keine Einzelheiten, die nicht in deiner Beschreibung standen. '
+      . 'Schreibe keinen Platzhalter wie "(Hier erscheint das Bild)"; das Bild haengt schon an deiner Antwort. '
       . 'Kein weiteres [BILD:], ausser die Person will ausdruecklich noch ein Bild.';
   }
   $why = match ((string)($result['error'] ?? '')) {
@@ -403,12 +404,39 @@ function coreui_image_history_notes(PDO $pdo, int $uid, array $messageIds): arra
   foreach ($rows as $row) {
     $meta = coreui_image_meta((string)$row['uuid']);
     if ($meta === null) continue;
-    $line = 'Von dir erzeugtes Bild (' . (int)($meta['width'] ?? 0) . ' × ' . (int)($meta['height'] ?? 0) . '): "'
+    $line = (int)($meta['width'] ?? 0) . ' × ' . (int)($meta['height'] ?? 0) . ': "'
       . mb_substr((string)($meta['prompt'] ?? ''), 0, 300) . '"';
     $id = (int)$row['message_id'];
-    $notes[$id] = isset($notes[$id]) ? $notes[$id] . ' ' . $line : $line;
+    $notes[$id] = isset($notes[$id]) ? $notes[$id] . "\n- " . $line : $line;
   }
   return $notes;
+}
+
+/**
+ * 0.6.40: the images of the chat as one block after the conversation, not inside Mara's own
+ * lines. As "(Von dir erzeugtes Bild ...)" behind her answer she copied the line into a new
+ * answer instead of painting (operator's screenshot, 07.11.2026). The last five, oldest first.
+ */
+function coreui_image_history_block(array $notes): string {
+  $notes = array_slice(array_values(array_filter(array_map('strval', $notes), static fn(string $n): bool => $n !== '')), -5);
+  if ($notes === []) return '';
+  return "--- BILDER, DIE DU IN DIESEM CHAT SCHON GEMALT HAST (nur Hintergrund; sie haengen an deinen Antworten) ---\n- "
+    . implode("\n- ", $notes) . "\n--- ENDE BILDER ---\n"
+    . 'Ein NEUES Bild entsteht nur, wenn du mit dem Marker [BILD: ...] antwortest. Uebernimm diese Liste nie in deine Antwort.';
+}
+
+/**
+ * 0.6.40: what Mara wrote instead of an image, out of a reply (pure): a copied history line
+ * ("(Von dir erzeugtes Bild (512 × 512): "...")") and a placeholder line in brackets
+ * ("*(Hier erscheint das Bild der Katze im Schnee)"). The image itself is attached to the
+ * answer; a sentence like "Hier ist dein Bild!" without brackets stays.
+ */
+function coreui_image_strip_placeholders(string $text): string {
+  if (stripos($text, 'bild') === false) return $text;
+  $out = (string)preg_replace('~[ \t]*\(?\s*Von dir erzeugtes Bild \(\d+\s*[×x]\s*\d+\):\s*"[^"\n]*"\s*\)?~u', '', $text);
+  $out = (string)preg_replace('~^[ \t]*[*_]*\([ \t]*[*_]*[ \t]*(?:hier|an dieser stelle|unten|darunter)\s+'
+    . '(?:erscheint|folgt|kommt|ist|siehst du|wuerde|würde|wird)\b[^\n]*?\bbild\b[^\n]*\)[*_]*[ \t]*$\n?~imu', '', $out);
+  return $out === $text ? $text : trim((string)preg_replace("~\n{3,}~", "\n\n", $out));
 }
 
 /** The hint in Mara's prompt that she can make images (pure). */
@@ -422,7 +450,8 @@ function coreui_image_capability_hint(bool $compact): string {
     . "[BILD: ausfuehrliche Bildbeschreibung auf Englisch: Motiv, Umgebung, Licht, Stil; Text im Bild in Anfuehrungszeichen]. "
     . "Standard sind 512 × 512 Pixel (etwa eine Minute). Nur wenn die Person ausdruecklich ein grosses oder hochaufloesendes "
     . "Bild will: [BILD GROSS: ...] (1024 × 1024, drei bis vier Minuten). Ohne Bildwunsch malst du nichts; fuer Fragen "
-    . "ueber Bilder brauchst du keinen Marker. Personen des echten Lebens malst du nicht als Foto.";
+    . "ueber Bilder brauchst du keinen Marker. Personen des echten Lebens malst du nicht als Foto. "
+    . "Ohne den Marker entsteht kein Bild: schreibe nie, dass ein Bild erscheint, und keine Platzhalter wie \"(Hier erscheint das Bild)\".";
 }
 
 /** The attachments of one message in the shape of the chat history (console_messages.php). */

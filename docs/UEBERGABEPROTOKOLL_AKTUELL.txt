@@ -1,9 +1,10 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
 Stand: 07.11.2026
-Repository-Version: 0.6.39
-BASIS: main 0.6.38 nach PR #189; P20.5 B/C: Mara malt Bilder (FLUX.2-klein 4B).
+Repository-Version: 0.6.40
+BASIS: main 0.6.39 nach PR #191; Bilder auch nach Stimmsequenzen, keine Platzhalter.
 NEUE ARBEIT ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_6_40.txt
   docs/UEBERGABEPROTOKOLL_0_6_39.txt
   docs/UEBERGABEPROTOKOLL_0_6_38.txt
   docs/UEBERGABEPROTOKOLL_0_6_37.txt

@@ -240,8 +240,26 @@ img_gen_test(count($attachments) === 1 && $attachments[0]['uuid'] === $uuid && $
   && $attachments[0]['url'] === 'api/console_media.php?uuid=' . $uuid, 'the answer carries the image: ' . json_encode($attachments));
 img_gen_test(coreui_image_message_attachments($pdo, 6, 77) === [], 'another account sees nothing');
 $notes = coreui_image_history_notes($pdo, 5, [77, 78]);
-img_gen_test(($notes[77] ?? '') === 'Von dir erzeugtes Bild (512 × 512): "A red fox, sitting in snow"' && !isset($notes[78]),
-  'the history line: what Mara painted');
+img_gen_test(($notes[77] ?? '') === '512 × 512: "A red fox, sitting in snow"' && !isset($notes[78]), 'the history note: what Mara painted');
+// 0.6.40: one block after the conversation, not inside Mara's own lines (she copied the line into a new
+// answer instead of painting, operator's screenshot 07.11.2026).
+$block = coreui_image_history_block($notes);
+img_gen_test(str_starts_with($block, '--- BILDER, DIE DU IN DIESEM CHAT SCHON GEMALT HAST') && str_contains($block, "\n- 512 × 512: \"A red fox, sitting in snow\"\n")
+  && str_contains($block, 'Ein NEUES Bild entsteht nur, wenn du mit dem Marker [BILD: ...] antwortest.')
+  && coreui_image_history_block([]) === '', 'the history block');
+img_gen_test(substr_count(coreui_image_history_block(['a', 'b', 'c', 'd', 'e', 'f', 'g']), "\n- ") === 5, 'at most the last five images');
+
+// 0.6.40: what Mara wrote instead of an image is taken out of her answer (operator's screenshots, 07.11.2026).
+$voice = "Hallo Rick! 👋\n\nOkay, eine Wildkatze im Wald. Gerne versuche ich, das für dich umzusetzen! 🐆🌿\n\n"
+  . "*(Hier erscheint das Bild der Wildkatze im Wald) (Von dir erzeugtes Bild (512 × 512): \"A sleek wild cat sitting stealthily in a dense forest.\")";
+img_gen_test(coreui_image_strip_placeholders($voice) === "Hallo Rick! 👋\n\nOkay, eine Wildkatze im Wald. Gerne versuche ich, das für dich umzusetzen! 🐆🌿",
+  'a copied history line and a placeholder go');
+$typed = "Hier ist deine Katze im Schnee. Ich hoffe, das Bild gefällt dir! 😊\n\n*(Hier erscheint das Bild der Katze im Schnee)";
+img_gen_test(coreui_image_strip_placeholders($typed) === 'Hier ist deine Katze im Schnee. Ich hoffe, das Bild gefällt dir! 😊', 'a placeholder line goes');
+foreach (["Hier ist dein Bild! Ein Fuchs im Schnee.", "(Das Bild zeigt einen Fuchs.)", "Ich mag Bilder (hier ist eins von mir).",
+    "[BILD: a red fox in the snow]", "Kein Thema."] as $keep) {
+  img_gen_test(coreui_image_strip_placeholders($keep) === $keep, 'stays: ' . $keep);
+}
 
 // --- Deleting a chat removes the image and its description ------------------------------
 require_once $root . '/api/console_session_store.php';
@@ -272,6 +290,14 @@ foreach (["require_once __DIR__ . '/image_gen.php';", "if (\$sessionId !== '' &&
 img_gen_test(substr_count($chat, "   . (\$imageHint !== '' ? (\$imageHint . \"\\n\\n\") : \"\")") === 2, 'the hint in both prompts');
 $guest = strpos($read('api/image_gen.php'), "coreui_ai_account_is_guest(\$pdo, \$uid)) return false;");
 img_gen_test($guest !== false, 'guests never make images');
+img_gen_test(str_contains($chat, "  \$content = coreui_image_strip_placeholders(\$content);\n")
+  && strpos($chat, '$content = coreui_image_strip_placeholders($content);') > strpos($chat, 'function ember_sanitize_public_reply('),
+  'every public answer (and Mara\'s lines in the history) loses placeholders');
+img_gen_test(str_contains($chat, "\$imageBlock = coreui_image_history_block(\$imageNotes);")
+  && !str_contains($chat, "\$msg = trim(\$msg . ' (' . \$imageNotes["), 'the image notes stand as one block, not in Mara\'s lines');
+img_gen_test(str_contains($chat, "(string)\$consoleSessionId), ['web', 'browse', 'archive', 'image']))")
+  && str_contains($chat, "coreui_agent_next_tool(\$imgReply, ['web', 'browse', 'archive', 'skill', 'image']) !== null"),
+  'after a voice message Mara may paint too');
 $stream = $read('api/console_stream.php');
 img_gen_test(substr_count($stream, '|| ember_image_marker_in($reply, (int)$uid);') === 2
   && str_contains($stream, "'attachments'   => coreui_image_message_attachments(\$pdo, (int)\$uid, \$emberMsgId),"),

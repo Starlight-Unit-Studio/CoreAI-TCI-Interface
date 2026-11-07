@@ -1,0 +1,6 @@
+CoreAI: TCI Interface 0.6.40 - 07.11.2026
+- Mara malt auch nach einer Stimmsequenz ([BILD: ...] im Auftrag, Marker bleibt ganz).
+- Gemalte Bilder stehen im Verlauf als eigener Block statt hinter Maras Antwort (sie hatte die Notiz abgeschrieben).
+- Keine Platzhalter wie "(Hier erscheint das Bild)" und keine abgeschriebene Bildnotiz in Antworten.
+- Tests: image-gen-selftest.php, voice-input-selftest.php.
+- Keine Aenderung an Cores, Modelfile, Datenbankschema, Installer oder Warteschlange.

@@ -380,6 +380,8 @@ function ember_strip_leading_bracket_meta(string $content): string {
 
 function ember_sanitize_public_reply(string $content, string $thinking = ''): string {
   $content = trim(ember_strip_leading_bracket_meta(ember_strip_thinking_block($content)));
+  // 0.6.40: no copied image note and no "(Hier erscheint das Bild ...)" in place of an image.
+  $content = coreui_image_strip_placeholders($content);
   if ($content === '') {
     return ember_extract_explicit_reply_candidate($thinking);
   }
@@ -4977,7 +4979,6 @@ function ember_build_context(
       // Historische Entwuerfe duerfen nicht als Kontext wieder ins Modell
       // gelangen und sich dadurch in einer spaeteren Antwort wiederholen.
       $msg = ember_sanitize_public_reply($msg, '');
-      if (isset($imageNotes[(int)($r['id'] ?? 0)])) $msg = trim($msg . ' (' . $imageNotes[(int)$r['id']] . ')');
     }
     if ($name === '' || $msg === '') continue;
     // Der private CoreAI: TCI Interface-Dialog braucht echten Arbeitskontext. Das alte
@@ -4989,6 +4990,9 @@ function ember_build_context(
     else $msg = substr($msg, 0, $lineLimit);
     $lines[] = ($isEmberRow ? (($name !== '' ? $name : 'Mara') . ' (du)') : $name) . ': ' . $msg;
   }
+  // 0.6.40: the images of these turns as one block after the conversation (not in Mara's lines).
+  $imageBlock = coreui_image_history_block($imageNotes);
+  if ($imageBlock !== '') $lines[] = "\n" . $imageBlock;
   // 0.5.77: older messages that fell out of the window ride along as summary.
   if ($channel === 'console' && $consoleUid > 0 && isset($sessionId) && function_exists('coreui_compact_context_block')) {
     $summary = coreui_compact_context_block(coreui_compact_load($pdo, $consoleUid, (string)$sessionId));
@@ -5535,7 +5539,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
     // 0.6.22: Mara may use her tools after a voice message too (operator's screenshot, 06.11.2026:
     // "[WEB: Wetter ...]" stood as her answer). Without skills: their index is not in this prompt.
     $voiceTools = ($hasAudio && $channel === 'console')
-      ? array_values(array_intersect(ember_agent_allowed_tools($consoleUid, (string)$consoleSessionId), ['web', 'browse', 'archive']))
+      ? array_values(array_intersect(ember_agent_allowed_tools($consoleUid, (string)$consoleSessionId), ['web', 'browse', 'archive', 'image']))
       : [];
     $voiceTerms = $hasAudio && function_exists('ember_attach_voice_terms')
       ? ember_attach_voice_terms($pdo, (int)($senderChar['user_id'] ?? $consoleUid)) : [];
@@ -5667,7 +5671,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         return null;
       }
       $imgReply = $voiceLoop['out'];
-    } elseif ($hasAudio && is_string($imgReply) && coreui_agent_next_tool($imgReply, ['web', 'browse', 'archive', 'skill']) !== null) {
+    } elseif ($hasAudio && is_string($imgReply) && coreui_agent_next_tool($imgReply, ['web', 'browse', 'archive', 'skill', 'image']) !== null) {
       // A marker for a tool that is switched off for this account: no marker as the answer.
       $prose = trim(ember_strip_stray_tool_markers($imgReply));
       $imgReply = $prose !== '' ? $prose
