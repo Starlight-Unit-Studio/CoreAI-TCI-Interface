@@ -5155,7 +5155,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
    . ($intentHint !== '' ? ($intentHint . "\n\n") : "")
    . $nativeToolHint
    . ($channel === 'console' ? ("\n" . coreui_console_answer_style_hint($pdo,$uid,$profile['compact']) . "\n") : "")
-   . "Antworte als Mara:"
+   . "Antworte als " . coreui_profile_assistant_name($pdo, $uid) . ":"
    . ember_attachment_prompt_note($imageUrl);
 
   $GLOBALS['STU_EMBER_PROMPT_META'] = [
@@ -5283,6 +5283,7 @@ function ember_image_unlease($slot): void {
 function ember_image_run_tool(PDO $pdo, int $uid, string $input): array {
   coreui_work_record($pdo, 'tool', 'running', 'Bild wird vorbereitet', ['source'=>'image', 'reason'=>'image_start']);
   $request = coreui_image_parse_input($input);
+  $reference = !empty($request['self_reference']) ? coreui_profile_image_reference($pdo, $uid) : null;
   $result = coreui_image_generate($pdo, $uid, ember_character_id(), $request['prompt'], $request['size'],
     'ember_image_lease', 'ember_image_unlease',
     static function (array $job) use ($pdo): void {
@@ -5295,7 +5296,7 @@ function ember_image_run_tool(PDO $pdo, int $uid, string $input): array {
       if (function_exists('sse_send')) {
         sse_send('image_preview', ['image' => $image, 'step' => (int)($job['step'] ?? 0), 'steps' => (int)($job['steps'] ?? 0)]);
       }
-    });
+    }, $reference);
   if (!empty($result['ok'])) {
     coreui_image_pending_add((string)$result['uuid']);
     coreui_work_record($pdo, 'artifact', 'success', 'Bild erzeugt',
@@ -5524,7 +5525,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
    . ($imageHint !== '' ? ($imageHint . "\n\n") : "")
    . ($intentHint !== '' ? ($intentHint . "\n\n") : "")
    . ($channel === 'console' ? ("\n" . coreui_console_answer_style_hint($pdo,$uid,$promptProfile['compact']) . "\n") : "")
-   . "Antworte als Mara:"
+   . "Antworte als " . coreui_profile_assistant_name($pdo, $uid) . ":"
    . ember_attachment_prompt_note($imageUrl);
 
   $GLOBALS['STU_EMBER_PROMPT_META'] = [
