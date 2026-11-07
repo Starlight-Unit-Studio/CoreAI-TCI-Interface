@@ -20,7 +20,7 @@ declare(strict_types=1);
 
 const COREUI_IMAGE_DEFAULT_PORT = 18791;
 const COREUI_IMAGE_MAX_BYTES = 25 * 1024 * 1024;
-const COREUI_IMAGE_LOGO_WIDTH = 0.14;  // relative to the image width
+const COREUI_IMAGE_LOGO_WIDTH = 0.12;  // 12% of the image width
 const COREUI_IMAGE_MARK_MARGIN = 0.025; // relative to the image width
 const COREUI_IMAGE_MARK_OPACITY = 0.5;  // logo opacity
 const COREUI_IMAGE_CREDIT_OPACITY = 0.75;
