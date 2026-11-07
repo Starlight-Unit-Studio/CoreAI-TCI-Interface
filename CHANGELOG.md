@@ -1,3 +1,13 @@
+## 0.6.39 - 07.11.2026
+
+Der Webinstaller braucht fuer bereits vorhandene CoreAI-Instanzen denselben geprueften Updatepfad wie das bisherige Inhaber-Updatefenster, aber ohne fremde Login-Cookies ueber `install.starlight-unit.de` zu transportieren.
+
+- **Keine zweite Update-Engine:** `scripts/coreai-updater.sh operator-update` startet den vorhandenen Root-Updater ueber einen authentifizierten SSH-Root-Zugang. Die bisherige Kette bleibt dieselbe: exklusive Sperre, MariaDB-Backup, Download des offiziellen main-Setups, Installation mit erhaltenen lokalen Daten, Dienstneustart und Healthcheck.
+- **Eigener Betreiberkontext:** Der SSH-Aufruf wird als Host-Operator (Kennung 0) protokolliert, niemals faelschlich als angemeldeter CoreAI-Inhaber. Die bestehende Owner-API inklusive Session, CSRF, Audit und Anfragewarteschlange bleibt unveraendert.
+- **Sicherheitsgrenzen:** Operator-Ausfuehrung nur fuer bestehende CoreAI-Konfigurationen; eine bereits ausstehende Inhaber-Anfrage, ein laufendes Update oder ein belegtes Lock verhindern einen parallelen Start. Der Operator loescht keine fremde Warteschlangenanforderung. Der Fortschritt wird zusaetzlich in die authentifizierte SSH-Ausgabe gespiegelt.
+- **Integration:** CoreAI stellt nur die lokale, root-geschuetzte Schnittstelle bereit. Die externe Game-Repack-Webseite muss separat eine auf einen autorisierten Testserver begrenzte und standardmaessig gesperrte SSH-Freigabe implementieren.
+- **Tests:** Erweiterte CoreAI-Updater-Contracts; syntaktische GitHub-CI-Pruefung steht noch aus. Es wurde kein Live-Update auf dem Produktivserver gestartet.
+
 # CoreAI: TCI Interface
 
 ## 0.6.38 - 07.11.2026
