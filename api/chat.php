@@ -18,6 +18,7 @@ require_once __DIR__ . '/console_agent_loop.php';
 require_once __DIR__ . '/console_answer_style.php';
 require_once __DIR__ . '/console_timezone.php';
 require_once __DIR__ . '/weather_live.php';
+require_once __DIR__ . '/image_gen.php';
 
 // -----------------------------------------------------------------------------
 // Ember - Global-Chat NPC (Ollama local)
@@ -356,7 +357,7 @@ function ember_extract_explicit_reply_candidate(string $source): string {
  */
 function ember_strip_stray_tool_markers(string $out): string {
   return (string)preg_replace_callback(
-    '~(```[\s\S]*?```|`[^`\r\n]*`)|\[WEB:\s*.*?\]|\[BROWSE:\s*.*?\]|\[ARCHIV:\s*.*?\]|\[SKILL:\s*.*?\]|\[/?PY\]~iu',
+    '~(```[\s\S]*?```|`[^`\r\n]*`)|\[WEB:\s*.*?\]|\[BROWSE:\s*.*?\]|\[ARCHIV:\s*.*?\]|\[SKILL:\s*.*?\]|\[\s*BILD(?:\s+GRO(?:SS|ß))?\s*:[^\[\]]*\]|\[/?PY\]~iu',
     static fn(array $m): string => ($m[1] ?? '') !== '' ? $m[1] : '',
     $out);
 }
@@ -3473,6 +3474,10 @@ function ember_insert(
   if ($targetChannel === 'console' && $insertedId > 0 && $sessionId !== null) {
     if ($pendingArtifacts !== null) coreui_console_artifact_attach($pdo, $uid, $sessionId, (int)$replyToId, $insertedId, $pendingArtifacts);
     if ((int)$replyToId > 0) coreui_plan_bind_response($pdo,$uid,$sessionId,(int)$replyToId,$insertedId);
+    // 0.6.39 (P20.5): the images Mara made in this turn belong to her answer.
+    if ((int)$replyToId > 0 && !empty($GLOBALS['COREUI_PENDING_IMAGES'])) {
+      coreui_console_attachment_store($pdo, $insertedId, $uid, coreui_image_pending_take());
+    }
     coreui_console_session_touch($pdo, $uid, $sessionId, $insertedId);
   }
     if ($ownTransaction) $pdo->commit();
@@ -4505,7 +4510,8 @@ function ember_global_lock_acquire(int $timeoutSeconds = 90): mixed {
     if (!coreui_model_queue_schema_ready($connection)) return false;
     $ticket = coreui_model_queue_acquire(
       $connection,ember_lock_name('global_ollama'),$timeoutSeconds,
-      static fn(): bool => ember_agent_cancel_requested()
+      static fn(): bool => ember_agent_cancel_requested(),
+      ember_lock_name('global_ollama_image')
     );
     if ($ticket === false) return false;
     $GLOBALS['COREUI_MODEL_QUEUE_TICKET'] = $ticket;
@@ -4944,6 +4950,10 @@ function ember_build_context(
   $audioNotes = ($channel === 'console' && $consoleUid > 0 && function_exists('ember_attach_audio_history_notes'))
     ? ember_attach_audio_history_notes($pdo, $consoleUid, array_map(static fn($r): int => (int)($r['id'] ?? 0), $rows))
     : [];
+  // 0.6.39 (P20.5): what Mara painted in earlier answers (the description she wrote).
+  $imageNotes = ($channel === 'console' && $consoleUid > 0)
+    ? coreui_image_history_notes($pdo, $consoleUid, array_map(static fn($r): int => (int)($r['id'] ?? 0), $rows))
+    : [];
   $emberUid = ember_user_id();
   $emberCid = strtolower(ember_character_id());
 
@@ -4967,6 +4977,7 @@ function ember_build_context(
       // Historische Entwuerfe duerfen nicht als Kontext wieder ins Modell
       // gelangen und sich dadurch in einer spaeteren Antwort wiederholen.
       $msg = ember_sanitize_public_reply($msg, '');
+      if (isset($imageNotes[(int)($r['id'] ?? 0)])) $msg = trim($msg . ' (' . $imageNotes[(int)$r['id']] . ')');
     }
     if ($name === '' || $msg === '') continue;
     // Der private CoreAI: TCI Interface-Dialog braucht echten Arbeitskontext. Das alte
@@ -5083,6 +5094,7 @@ function ember_build_chat_prompt(
     ? ($profile['compact'] ? ember_browse_capability_hint_compact() : ember_browse_capability_hint()) : '';
   $pyHint = (ember_py_enabled() && $imageUrl === null)
     ? ember_py_capability_hint(ember_model(), $profile['compact'], $nativeProjects) : '';
+  $imageHint = ember_image_hint($channel, $imageUrl, $profile['compact'], $consoleUid);
   $loreBlock = '';
   if (is_string($lore) && trim($lore) !== '') {
     $loreBlock = "
@@ -5129,6 +5141,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
    . ($webHint !== '' ? ($webHint . "\n\n") : "")
    . ($browseHint !== '' ? ($browseHint . "\n\n") : "")
    . ($pyHint !== '' ? ($pyHint . "\n\n") : "")
+   . ($imageHint !== '' ? ($imageHint . "\n\n") : "")
    . $nativeToolHint
    . ($channel === 'console' ? ("\n" . coreui_console_answer_style_hint($pdo,$uid,$profile['compact']) . "\n") : "")
    . "Antworte als Mara:"
@@ -5179,6 +5192,11 @@ function ember_agent_run_tool(PDO $pdo, array $tool, string $channel, int $uid, 
   }
   if ($tool['tool'] === 'archive') return coreui_compact_archive_block($uid, $sessionId, (string)$tool['input']);
   if ($tool['tool'] === 'skill') return coreui_skills_tool_result((string)$tool['input']);
+  // 0.6.39 (P20.5): an image, made while this step holds Mara's model queue.
+  if ($tool['tool'] === 'image') {
+    if ($channel !== 'console' || !ember_image_allowed($uid)) return 'Bilder sind fuer diesen Chat nicht freigegeben. Sag das kurz.';
+    return ember_image_run_tool($pdo, $uid, (string)$tool['input']);
+  }
   if ($tool['tool'] === 'python') {
     $code = (string)$tool['input'];
     if (ember_py_code_writes_output($code)) {
@@ -5187,6 +5205,69 @@ function ember_agent_run_tool(PDO $pdo, array $tool, string $channel, int $uid, 
     return ember_py_result_block($code, ember_py_run($pdo, $code, $channel, $uid, $sessionId, $triggerId, $triggerRevision));
   }
   return 'Unbekanntes Werkzeug.';
+}
+
+/** 0.6.39 (P20.5): Mara may make images in this private chat (cached per request). */
+function ember_image_allowed(int $uid): bool {
+  static $known = [];
+  if ($uid <= 0) return false;
+  if (!array_key_exists($uid, $known)) {
+    try {
+      $known[$uid] = coreui_image_tool_allowed(stu_pdo(), $uid);
+    } catch (Throwable $e) {
+      $known[$uid] = false;
+    }
+  }
+  return $known[$uid];
+}
+
+/** The image hint for Mara's prompt, or ''. */
+function ember_image_hint(string $channel, $imageUrl, bool $compact, int $uid): string {
+  if ($channel !== 'console' || $imageUrl !== null || !ember_image_allowed($uid)) return '';
+  return coreui_image_capability_hint($compact);
+}
+
+/** A reply asks for an image this account may have (starts the work loop). */
+function ember_image_marker_in(string $reply, int $uid): bool {
+  return coreui_image_extract_marker($reply) !== null && ember_image_allowed($uid);
+}
+
+/**
+ * Takes Mara's model queue for one image and marks it as a long job, so calls waiting
+ * behind it wait longer (console_model_queue.php). Returns the slot or false.
+ */
+function ember_image_lease(): mixed {
+  $slot = ember_global_lock_acquire(600);
+  if ($slot === false) return false;
+  $connection = $GLOBALS['COREUI_MODEL_LOCK_PDO'] ?? null;
+  if ($connection instanceof PDO) coreui_model_queue_mark_long($connection, ember_lock_name('global_ollama_image'));
+  return $slot;
+}
+
+function ember_image_unlease($slot): void {
+  $connection = $GLOBALS['COREUI_MODEL_LOCK_PDO'] ?? null;
+  if ($connection instanceof PDO) coreui_model_queue_unmark_long($connection, ember_lock_name('global_ollama_image'));
+  ember_generation_lock_release($slot);
+}
+
+/** One image step of the work loop: makes the image, shows its progress, returns Mara's result text. */
+function ember_image_run_tool(PDO $pdo, int $uid, string $input): string {
+  $request = coreui_image_parse_input($input);
+  $result = coreui_image_generate($pdo, $uid, ember_character_id(), $request['prompt'], $request['size'],
+    'ember_image_lease', 'ember_image_unlease',
+    static function (array $job) use ($pdo): void {
+      coreui_work_record($pdo, 'tool', 'info', coreui_image_progress_title($job),
+        ['source'=>'image', 'step'=>(int)($job['step'] ?? 0), 'steps'=>(int)($job['steps'] ?? 0)]);
+    },
+    static fn(): bool => ember_agent_cancel_requested(true));
+  if (!empty($result['ok'])) {
+    coreui_image_pending_add((string)$result['uuid']);
+    coreui_work_record($pdo, 'artifact', 'success', 'Bild erzeugt',
+      ['source'=>'image', 'elapsed_ms'=>(int)round(1000 * (float)$result['seconds'])]);
+  } else {
+    coreui_work_record($pdo, 'tool', 'error', 'Bild nicht erzeugt', ['reason'=>(string)($result['error'] ?? 'image_failed')]);
+  }
+  return coreui_image_result_text($result);
 }
 
 /** Tools of the work loop for this chat. */
@@ -5198,6 +5279,8 @@ function ember_agent_allowed_tools(int $uid, string $sessionId): array {
   if ($uid > 0 && $sessionId !== '' && is_file(coreui_compact_archive_path($uid, $sessionId))) $tools[] = 'archive';
   // 0.5.80: the skill library is offered in the prompt of this turn.
   if (coreui_skills_index_active()) $tools[] = 'skill';
+  // 0.6.39 (P20.5): images, when this account may have them.
+  if ($sessionId !== '' && ember_image_allowed($uid)) $tools[] = 'image';
   return $tools;
 }
 
@@ -5354,6 +5437,7 @@ function ember_generate_reply(
   $pyHint = (ember_py_enabled() && $imageUrl === null)
     ? ember_py_capability_hint(ember_model(), $promptProfile['compact'],
         $channel === 'console' && empty($GLOBALS['COREUI_NATIVE_TOOL_REENTRY'])) : '';
+  $imageHint = ember_image_hint($channel, $imageUrl, $promptProfile['compact'], $consoleUid);
   $loreBlock = '';
   if (is_string($lore) && trim($lore) !== '') {
     $loreBlock = "
@@ -5397,6 +5481,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
    . ($webHint !== '' ? ($webHint . "\n\n") : "")
    . ($browseHint !== '' ? ($browseHint . "\n\n") : "")
    . ($pyHint !== '' ? ($pyHint . "\n\n") : "")
+   . ($imageHint !== '' ? ($imageHint . "\n\n") : "")
    . ($channel === 'console' ? ("\n" . coreui_console_answer_style_hint($pdo,$uid,$promptProfile['compact']) . "\n") : "")
    . "Antworte als Mara:"
    . ember_attachment_prompt_note($imageUrl);
@@ -6369,12 +6454,12 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   $agentLoopHandled = false;
   if ($channel === 'console' && $imageUrl === null && empty($fileTask) && is_string($out)) {
     $loopAllowed = ember_agent_allowed_tools($consoleUid, (string)$consoleSessionId);
-    $loopTool = coreui_agent_next_tool($out, array_values(array_intersect($loopAllowed, ['web', 'archive', 'skill'])));
+    $loopTool = coreui_agent_next_tool($out, array_values(array_intersect($loopAllowed, ['web', 'archive', 'skill', 'image'])));
     if ($loopTool !== null) {
       $agentLoopHandled = true;
       $uBase = $u;
       if (isset($loreBlock) && $loreBlock !== '') $uBase = str_replace($loreBlock, '', $uBase);
-      foreach ([$webHint ?? '', $browseHint ?? '', $pyHint ?? ''] as $hint) {
+      foreach ([$webHint ?? '', $browseHint ?? '', $pyHint ?? '', $imageHint ?? ''] as $hint) {
         if ($hint !== '') $uBase = str_replace($hint . "\n\n", '', $uBase);
       }
       $loop = coreui_agent_loop_run($out, $loopTool, $uBase, $loopAllowed, $pyHandled ? 1 : 0,

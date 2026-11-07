@@ -396,7 +396,8 @@ function coreui_console_session_delete_tx(PDO $pdo, int $uid, string $sessionId)
  */
 function coreui_console_session_delete_media_files(array $relativePaths): array {
   $root = dirname(__DIR__);
-  $allowedPrefixes = ['var/console_media/', 'assets/chat_media/', 'uploads/ember_browse/'];
+  // 0.6.39: Mara's images first (var/console_media/images/<uuid>.png, their description next to them).
+  $allowedPrefixes = ['var/console_media/images/', 'var/console_media/', 'assets/chat_media/', 'uploads/ember_browse/'];
   $deleted = 0;
   $missing = 0;
   $failed = 0;
@@ -433,6 +434,10 @@ function coreui_console_session_delete_media_files(array $relativePaths): array 
     }
     if (@unlink($realPath)) $deleted++;
     else $failed++;
+    if (preg_match('~^var/console_media/images/([a-f0-9]{32})\.png$~D', $relativePath, $image) === 1) {
+      $description = $basePath . '/' . $image[1] . '.json';
+      if (@is_file($description) && !@is_link($description) && @unlink($description)) $deleted++;
+    }
   }
 
   return ['files_deleted'=>$deleted, 'files_missing'=>$missing, 'files_failed'=>$failed];

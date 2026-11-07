@@ -190,7 +190,7 @@
   var userPolicies = {};
   var globalTools = {};
   var policyReady = true;
-  var TOOL_LABELS = [['web', 'Websuche'], ['browse', 'Browser'], ['python', 'Python']];
+  var TOOL_LABELS = [['web', 'Websuche'], ['browse', 'Browser'], ['python', 'Python'], ['image', 'Bilder']];
   var ctxChoices = [];
 
   function ctxLabel(n) {
@@ -763,6 +763,7 @@
     document.getElementById('toolWebEnabled').checked = boolSetting(settings.tool_web_enabled);
     document.getElementById('toolBrowseEnabled').checked = boolSetting(settings.tool_browse_enabled);
     document.getElementById('toolPythonEnabled').checked = boolSetting(settings.tool_python_enabled);
+    document.getElementById('toolImageEnabled').checked = settings.tool_image_enabled == null ? true : boolSetting(settings.tool_image_enabled);
     document.getElementById('externalEnabled').checked = boolSetting(settings.external_api_enabled);
     document.getElementById('externalLabel').value = settings.external_api_label || 'OpenAI-kompatibel';
     document.getElementById('externalBaseUrl').value = settings.external_api_base_url || '';
@@ -784,6 +785,7 @@
       tool_web_enabled: document.getElementById('toolWebEnabled').checked ? '1' : '0',
       tool_browse_enabled: document.getElementById('toolBrowseEnabled').checked ? '1' : '0',
       tool_python_enabled: document.getElementById('toolPythonEnabled').checked ? '1' : '0',
+      tool_image_enabled: document.getElementById('toolImageEnabled').checked ? '1' : '0',
       external_api_enabled: document.getElementById('externalEnabled').checked ? '1' : '0',
       external_api_label: document.getElementById('externalLabel').value,
       external_api_base_url: document.getElementById('externalBaseUrl').value,

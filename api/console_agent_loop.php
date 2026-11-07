@@ -16,6 +16,8 @@ declare(strict_types=1);
  * The global channel keeps its single step.
  * 0.5.80: [SKILL: kennung] loads a working guide from Mara's skill library
  * (skills.php) as a step, before she goes on with the task.
+ * 0.6.39 (P20.5): [BILD: description] makes an image (api/image_gen.php) as a step;
+ * it is attached to her answer, and she says in her answer that it is there.
  */
 
 const COREUI_AGENT_MAX_STEPS = 6;
@@ -28,6 +30,7 @@ function coreui_agent_next_tool(string $reply, array $allowed): ?array {
     'web'=>static fn(string $r): ?string => function_exists('ember_extract_web_marker') ? ember_extract_web_marker($r) : null,
     'archive'=>static fn(string $r): ?string => coreui_extract_archive_marker($r),
     'python'=>static fn(string $r): ?string => function_exists('ember_py_extract_marker') ? ember_py_extract_marker($r) : null,
+    'image'=>static fn(string $r): ?string => function_exists('coreui_image_extract_marker') ? coreui_image_extract_marker($r) : null,
   ];
   foreach ($checks as $tool => $find) {
     if (!in_array($tool, $allowed, true)) continue;
@@ -61,7 +64,7 @@ function coreui_browse_goal_start_url(string $goal): ?string {
 /** Work view title of a step (pure, ASCII as the work store requires). */
 function coreui_agent_step_title(array $tool, int $step, int $max): string {
   $what = ['web'=>'Websuche', 'archive'=>'Archiv durchsucht', 'python'=>'Python-Rechnung', 'browse'=>'Browser-Recherche',
-    'skill'=>'Skill geladen'];
+    'skill'=>'Skill geladen', 'image'=>'Bild'];
   return 'Schritt ' . $step . ' von ' . $max . ': ' . ($what[(string)$tool['tool']] ?? 'Werkzeug');
 }
 
@@ -70,7 +73,9 @@ function coreui_agent_step_note(array $tool): ?string {
   $input = trim((string)preg_replace('~\s+~u', ' ', (string)$tool['input']));
   if ($tool['tool'] === 'python' || $input === '') return null;
   $prefix = ['web'=>'Ich suche nach: ', 'archive'=>'Ich schaue im Archiv nach: ', 'browse'=>'Ich recherchiere auf Webseiten: ',
-    'skill'=>'Ich lade die Arbeitsanleitung: '];
+    'skill'=>'Ich lade die Arbeitsanleitung: ', 'image'=>'Ich male: '];
+  // An image shows its description without the size word.
+  if ($tool['tool'] === 'image') $input = trim((string)preg_replace('~^GROSS:\s*~u', '', $input));
   $note = ($prefix[(string)$tool['tool']] ?? '') . (mb_strlen($input) > 200 ? mb_substr($input, 0, 197) . '...' : $input);
   return strlen($note) >= 12 && strpbrk($note, '<>[]{}`$') === false && preg_match('~https?://~i', $note) !== 1 ? $note : null;
 }
@@ -85,6 +90,7 @@ function coreui_agent_step_label(array $tool, int $step, int $max): string {
     'python' => 'Python-Rechnung',
     'browse' => 'Recherche im Browser: „' . $short . '“',
     'skill' => 'Skill geladen: ' . $short,
+    'image' => 'Bild gemalt: „' . $short . '“',
     default => 'Werkzeug',
   };
   return $what;
@@ -98,6 +104,7 @@ function coreui_agent_tool_menu(array $allowed): string {
   if (in_array('python', $allowed, true)) $lines[] = '[PY]Rechencode[/PY] um etwas zu berechnen oder zu pruefen';
   if (in_array('archive', $allowed, true)) $lines[] = '[ARCHIV: Stichworte] um in der Mitschrift dieses Chats nachzusehen';
   if (in_array('skill', $allowed, true)) $lines[] = '[SKILL: kennung] um eine Arbeitsanleitung aus deiner Skill-Bibliothek zu laden';
+  if (in_array('image', $allowed, true)) $lines[] = '[BILD: Bildbeschreibung auf Englisch] nur wenn die Person ausdruecklich ein Bild von dir will';
   return implode("\n", array_map(static fn(string $l): string => '- ' . $l, $lines));
 }
 
@@ -186,7 +193,7 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
   // Still asking for a tool after the last step: keep only the prose.
   if ($out !== '' && coreui_agent_next_tool($out, $allowed) !== null) {
     $prose = trim(function_exists('ember_strip_stray_tool_markers') ? ember_strip_stray_tool_markers($out)
-      : (string)preg_replace('~\[(?:WEB|BROWSE|ARCHIV|SKILL):[^\]]*\]|\[/?PY\]~iu', '', $out));
+      : (string)preg_replace('~\[(?:WEB|BROWSE|ARCHIV|SKILL|BILD(?:\s+GROSS)?):[^\]]*\]|\[/?PY\]~iu', '', $out));
     $out = $prose !== '' ? $prose : 'Ich habe alle ' . COREUI_AGENT_MAX_STEPS . ' Arbeitsschritte genutzt und noch keine '
       . 'sichere Antwort gefunden. Sag mir, worauf ich mich konzentrieren soll, dann suche ich gezielter weiter.';
   }

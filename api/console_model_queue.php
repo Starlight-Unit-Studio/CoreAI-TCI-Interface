@@ -15,8 +15,43 @@ function coreui_model_queue_schema_ready(PDO $pdo): bool {
   }
 }
 
+/**
+ * 0.6.39: while one of Mara's images is being made, its request holds $longJobLock next
+ * to the model lock (one to four minutes). A call waiting behind it then waits longer
+ * instead of giving up after its usual time; the order stays first come, first served.
+ */
+function coreui_model_queue_long_job_running(PDO $pdo, ?string $longJobLock): bool {
+  if ($longJobLock === null || $longJobLock === '') return false;
+  try {
+    $st = $pdo->prepare('SELECT IS_USED_LOCK(?)');
+    $st->execute([$longJobLock]);
+    return $st->fetchColumn() !== null;
+  } catch (Throwable $e) {
+    return false;
+  }
+}
+
+/** Marks the slot this connection holds as a long job (an image); see above. */
+function coreui_model_queue_mark_long(PDO $pdo, string $longJobLock): bool {
+  try {
+    $st = $pdo->prepare('SELECT GET_LOCK(?,0)');
+    $st->execute([$longJobLock]);
+    return (int)$st->fetchColumn() === 1;
+  } catch (Throwable $e) {
+    return false;
+  }
+}
+
+function coreui_model_queue_unmark_long(PDO $pdo, string $longJobLock): void {
+  try {
+    $pdo->prepare('SELECT RELEASE_LOCK(?)')->execute([$longJobLock]);
+  } catch (Throwable $e) {
+    // Closing the connection releases it as well.
+  }
+}
+
 function coreui_model_queue_acquire(
-  PDO $pdo, string $lockName, int $timeoutSeconds, ?callable $cancelRequested = null
+  PDO $pdo, string $lockName, int $timeoutSeconds, ?callable $cancelRequested = null, ?string $longJobLock = null
 ): string|false {
   $ticketId = bin2hex(random_bytes(16));
   $context = $GLOBALS['COREUI_WORK_CONTEXT'] ?? [];
@@ -31,6 +66,8 @@ function coreui_model_queue_acquire(
   $claimed = false;
   $cancelled = false;
   $deadline = microtime(true) + max(0, min(600, $timeoutSeconds));
+  // Behind an image a call may wait up to 14 minutes in all (PHP and nginx allow 15).
+  $longDeadline = microtime(true) + 840;
   $lastHeartbeat = 0.0;
   $lastCleanup = 0.0;
   try {
@@ -113,6 +150,10 @@ function coreui_model_queue_acquire(
         $GLOBALS['COREUI_QUEUE_SSE_AT'] = $now;
       }
       usleep(250000);
+      if (microtime(true) >= $deadline && $deadline < $longDeadline
+          && coreui_model_queue_long_job_running($pdo, $longJobLock)) {
+        $deadline = min($longDeadline, microtime(true) + 20);
+      }
     } while (microtime(true) < $deadline);
     return false;
   } finally {

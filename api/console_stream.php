@@ -107,6 +107,7 @@ if ($generationRequestId !== '') {
         'elapsed' => 0,
         'id' => $doneId,
         'artifacts' => coreui_console_artifact_for_message($pdo, (int)$uid, $doneId),
+        'attachments' => coreui_image_message_attachments($pdo, (int)$uid, $doneId),
         'session_id' => $sessionId,
         'reply_to_id' => $afterId,
         'generation_request' => $generationRequestId,
@@ -541,7 +542,8 @@ try {
             || (ember_extract_browse_marker($reply) !== null)
             || (function_exists('ember_py_extract_marker') && ember_py_extract_marker($reply) !== null)
             || coreui_extract_archive_marker($reply) !== null
-            || coreui_skills_extract_marker($reply) !== null;
+            || coreui_skills_extract_marker($reply) !== null
+            || ember_image_marker_in($reply, (int)$uid);
 
   if (!$isVisionTurn && !$fileTaskHandled
       && !$hasMarker
@@ -569,7 +571,8 @@ try {
               || (ember_extract_browse_marker($reply) !== null)
               || (function_exists('ember_py_extract_marker') && ember_py_extract_marker($reply) !== null)
             || coreui_extract_archive_marker($reply) !== null
-            || coreui_skills_extract_marker($reply) !== null;
+            || coreui_skills_extract_marker($reply) !== null
+            || ember_image_marker_in($reply, (int)$uid);
   }
 
   // A plan with an unfinished marker may be stored as an explicitly marked
@@ -879,6 +882,8 @@ try {
     'elapsed_ms'    => $elapsedMs,
     'id'            => $emberMsgId,
     'artifacts'     => coreui_console_artifact_for_message($pdo, (int)$uid, $emberMsgId),
+    // 0.6.39 (P20.5): Mara's images of this answer show at once, not only after a reload.
+    'attachments'   => coreui_image_message_attachments($pdo, (int)$uid, $emberMsgId),
     'browse_job_id' => $browseJobId,
     'session_id'    => $sessionId,
     'reply_to_id'   => $afterId,

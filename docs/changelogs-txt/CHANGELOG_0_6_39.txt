@@ -1,0 +1,12 @@
+CoreAI: TCI Interface 0.6.39 - 07.11.2026
+- P20.5 B/C: Mara malt Bilder im Chat mit FLUX.2-klein 4B (Apache 2.0), Entscheidung des Betreibers nach dem Bildtest.
+- Bilddienst als eigener Container (stable-diffusion.cpp fuer die Server-CPU), Gewichte mit Revision und SHA-256, Uebernahme aus dem Bildtest.
+- Standard 512 x 512 (etwa 1 Minute), 1024 x 1024 nur auf ausdruecklichen Wunsch (etwa 3,5 Minuten).
+- Ein Bild belegt Maras serielle Warteschlange; Anfragen dahinter warten laenger statt aufzugeben.
+- Echter Fortschritt im Arbeitsweg, Abbruch, Zeitlimit, ehrliche Fehlermeldungen.
+- Bild an Maras Antwort: gross oeffnen, herunterladen, privat, mit Chat und Konto geloescht.
+- Wasserzeichen im Bild: Studio-Logo mit "Erzeugt von TCI: Mara(C)" in Weiss darunter, klein unten rechts, 50 % Deckkraft.
+- Schalter unter Admin Core > Betrieb und pro Konto (Migration 026); Gaeste malen nie.
+- Installation: COREUI_INSTALL_IMAGE (Standard ab 32 GB RAM), erster Bau 10 bis 20 Minuten.
+- Tests: image-service-selftest.py, image-gen-selftest.php, image-chat-ui-selftest.cjs, beide Preflights.
+- Keine Aenderung an Cores, Modelfile oder Eve.

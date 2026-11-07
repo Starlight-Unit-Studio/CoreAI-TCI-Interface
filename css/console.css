@@ -2248,6 +2248,34 @@ a:focus-visible {
   clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px));
 }
 
+/* 0.6.39 (P20.5): an image Mara made, with its line underneath. */
+.msg-generated {
+  margin: 0;
+  width: min(100%, 520px);
+}
+
+.msg-generated .msg-image-link {
+  display: block;
+}
+
+.msg-generated .msg-image {
+  width: 100%;
+  cursor: zoom-in;
+}
+
+.msg-generated-caption {
+  margin-top: 6px;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  opacity: 0.78;
+}
+
+.msg-generated-caption a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 audio.msg-image {
   min-width: min(360px, 75vw);
   height: 52px;

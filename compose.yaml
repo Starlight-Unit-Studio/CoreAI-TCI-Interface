@@ -168,6 +168,42 @@ services:
       start_period: 30s
     stop_grace_period: 10s
 
+  # 0.6.39: Mara's images (P20.5). Optional (profile "image"): the installer builds
+  # stable-diffusion.cpp for this CPU and starts it; FLUX.2-klein's weights live in
+  # var/image-models. PHP holds Mara's serial model queue while an image is made.
+  image:
+    profiles: ["image"]
+    build:
+      context: .
+      dockerfile: docker/image/Dockerfile
+    network_mode: host
+    restart: unless-stopped
+    user: "33:33"
+    read_only: true
+    tmpfs:
+      - /tmp:size=2g
+    mem_limit: 20g
+    environment:
+      COREAI_IMAGE_PORT: ${COREUI_IMAGE_PORT:-18791}
+      COREAI_IMAGE_THREADS: ${COREUI_IMAGE_THREADS:-0}
+      # Seconds between checks for new code after an update; then the service restarts itself.
+      COREAI_IMAGE_WATCH_S: "20"
+      HOME: /tmp
+    volumes:
+      - .:/var/www/coreui:ro
+      - ./var/image-models:/models
+    healthcheck:
+      test:
+        - CMD
+        - python3
+        - -c
+        - 'import os,urllib.request,json; d=json.load(urllib.request.urlopen("http://127.0.0.1:%s/health" % os.environ.get("COREAI_IMAGE_PORT","18791"), timeout=3)); raise SystemExit(0 if d.get("ok") else 1)'
+      interval: 30s
+      timeout: 5s
+      retries: 6
+      start_period: 60s
+    stop_grace_period: 10s
+
   pyworker:
     build:
       context: .

@@ -1,0 +1,42 @@
+{
+  "format": 1,
+  "note": "CoreAI 0.6.39 (P20.5 B/C): Maras Bilder. Entscheidung des Betreibers am 07.11.2026 nach dem Bildtest (Lauf 20261107-121303): FLUX.2-klein 4B, Standard 512 x 512, 1024 x 1024 nur auf ausdruecklichen Wunsch. Die Gewichte werden nicht mit CoreAI ausgeliefert; der Bilddienst laedt genau diese Dateien in ihrer Revision und prueft jede gegen ihren SHA-256. Ohne festgelegte Revision und SHA-256 startet er nicht. Revision und SHA-256 stammen aus dem Bildtest auf dem Server (lock-flux2-klein-4b.json vom 07.11.2026, SHA-256 dort gleich dem von Hugging Face).",
+  "decided_at": "2026-11-07",
+  "runtime": {
+    "name": "stable-diffusion.cpp",
+    "repo": "https://github.com/leejet/stable-diffusion.cpp",
+    "tag": "master-1046-d308544",
+    "commit": "d30854463dbc75fb3671209b79016bb0d8ac321e",
+    "ggml_commit": "ccb88f810be05bccc9621e706354611ccc2462c7",
+    "license": "MIT (stable-diffusion.cpp und ggml)",
+    "build": "CPU, -march=native auf dem Server gebaut (docker/image/Dockerfile)"
+  },
+  "model": {
+    "id": "flux2-klein-4b",
+    "label": "FLUX.2-klein 4B (Q8_0)",
+    "origin": "Black Forest Labs; GGUF von leejet, dem Autor von stable-diffusion.cpp",
+    "license": "Apache-2.0",
+    "steps": 4,
+    "cfg_scale": 1.0
+  },
+  "files": [
+    {"role": "diffusion_model", "repo": "leejet/FLUX.2-klein-4B-GGUF", "path": "flux-2-klein-4b-Q8_0.gguf", "revision": "3b1f5a9dc3abb32238b053aeb3d823c30afdacbd", "sha256": "0bba6951258ec8f92d51114a8fa13e66828297bfff58a738f52729b3ef66fa28", "size": 4300629440, "license": "Apache-2.0"},
+    {"role": "llm", "repo": "unsloth/Qwen3-4B-GGUF", "path": "Qwen3-4B-Q8_0.gguf", "revision": "22c9fc8a8c7700b76a1789366280a6a5a1ad1120", "sha256": "eed555233267a33c7e8ee31682762cc7751b3f6d224039086e0e846f05fffa5d", "size": 4280405792, "license": "Apache-2.0"},
+    {"role": "vae", "repo": "Comfy-Org/Flux-2-Klein-4B", "path": "split_files/vae/flux2-vae.safetensors", "revision": "5b3abca5c0dc1ecd4eaf3340868d09063fc1c965", "sha256": "868fe7b343cc8f3a19dbcfcafbc3d5f888802be3f89bd81b65b3621a066ce8f3", "size": 336211292, "license": "Apache-2.0"}
+  ],
+  "sizes": {
+    "normal": {"width": 512, "height": 512, "time_limit_s": 300},
+    "large": {"width": 1024, "height": 1024, "time_limit_s": 720}
+  },
+  "measured": {
+    "run": "20261107-121303",
+    "threads": 20,
+    "normal": {"wall_s": 62.6, "sampling_s": 53.0, "peak_rss_mb": 9372},
+    "large": {"wall_s": 211.0, "sampling_s": 186.0, "peak_rss_mb": 14369},
+    "note": "Ohne parallele Core-Anfrage gemessen; die Gewichte lagen schon im Datei-Cache."
+  },
+  "limits": {
+    "memory_note": "Container mit 20 GB Speichergrenze; 1024 x 1024 braucht etwa 14 GB.",
+    "prompt_chars": 1200
+  }
+}

@@ -209,11 +209,11 @@ const smallText = page => page.evaluate(() => {
     assert.deepEqual(srv.calls.filter(c => c.action === 'user_policy').pop().post, {user_id: 3, daily_messages: null, max_num_ctx: 32768});
     // Werkzeuge: Python blocked for Lena, the browser is off for everyone.
     assert.deepEqual(await page.$$eval('.user-tool-choice', l => l.map(x => [x.textContent, x.querySelector('input').checked, x.querySelector('input').disabled])),
-      [['Websuche', true, false], ['Browser (global aus)', true, true], ['Python', false, false]]);
+      [['Websuche', true, false], ['Browser (global aus)', true, true], ['Python', false, false], ['Bilder', true, false]]);
     await page.click('.user-tool-choice:has-text("Websuche") input');
     await page.click('.user-edit-row button:has-text("WERKZEUGE SPEICHERN")');
     await page.waitForFunction(() => /gesperrt: Websuche, Python\./.test(document.getElementById('adminFlash').textContent));
-    assert.deepEqual(srv.calls.find(c => c.action === 'user_policy' && c.post.tools).post, {user_id: 3, tools: {web: false, browse: true, python: false}});
+    assert.deepEqual(srv.calls.find(c => c.action === 'user_policy' && c.post.tools).post, {user_id: 3, tools: {web: false, browse: true, python: false, image: true}});
     assert.match(await page.textContent('.user-edit-row'), /Aktive Anmeldungen: 2\./);
     assert.equal(await page.inputValue('.user-edit-row input[type="email"]'), 'lena@example.test');
     await page.fill('.user-edit-row input[type="text"]', 'Lena Berg');
@@ -276,7 +276,7 @@ const smallText = page => page.evaluate(() => {
     assert(save, 'Zugang und Schutz saves');
     assert.equal(save.post.settings.captcha_enabled, '0');
     assert.equal(save.post.settings.tool_python_enabled, '0', 'the Betrieb values travel along');
-    assert.equal(Object.keys(save.post.settings).length, 17);
+    assert.equal(Object.keys(save.post.settings).length, 18);
     // Every admin category loads its data when its tab opens.
     await page.click('#tab-admin-audit');
     await page.waitForFunction(() => document.querySelectorAll('#auditRows .audit-item').length === 1);

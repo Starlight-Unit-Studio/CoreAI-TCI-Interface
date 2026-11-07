@@ -51,6 +51,7 @@ MILESTONES = [
     ('Pruefe die paketierten Python-Quellen.', 22, 'Die Python-Quellen werden geprüft.'),
     ('Baue die isolierten PHP-, Python-Worker- und optionalen Browse-Images.', 24, 'Die Images werden gebaut.'),
     ('Pruefe pdo_mysql im frisch gebauten PHP-Image.', 40, 'Das PHP-Image wird geprüft.'),
+    ('Baue den Bilddienst', 41, 'Der Bilddienst wird gebaut; beim ersten Mal dauert das 10 bis 20 Minuten.'),
     ('Baue das wegwerfbare Python-Sandbox-Image', 42, 'Die Python-Sandbox wird gebaut.'),
     ('Ollama-Basismodell', 50, 'Die Cores werden geprüft.'),
     ('Erzeuge das getrennte Ollama-Modell', 53, 'Maras Core wird erzeugt.'),

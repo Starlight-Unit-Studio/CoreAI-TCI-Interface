@@ -1,0 +1,59 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.39
+Stand: 07.11.2026
+Basis: main 0.6.38 nach Merge von PR #189.
+
+AUFTRAG: P20.5 Schritte B und C des Bildplans. Bildtest 20261107-121303 auf dem Server: 8 von 8 Bildern.
+FLUX.2-klein 4B: 512 x 512 im Mittel 63 s (Schritte 54 s), 1024 x 1024 211 s, RAM 9,4 / 14,4 GB. Z-Image-Turbo:
+128 s / 606 s, 12,3 / 17,4 GB. Laden praktisch 0 s (Gewichte im Datei-Cache). Entscheidung des Betreibers
+(07.11.2026): FLUX.2-klein 4B, Standard 512, 1024 nur auf Wunsch. Wasserzeichen laut Betreiber: Studio-Logo im Bild und buendig darunter "Erzeugt von TCI: Mara(C)" in Weiss, klein unten
+rechts, 50 % Deckkraft.
+
+UMSETZUNG
+- config/image/mara-image.json: Register (Laufzeit wie der Bildtest, Modell, drei Dateien mit revision/sha256/size,
+  Groessen normal 512 / large 1024 mit Zeitlimit 300 / 720 s, Messwerte des Laufs).
+- tools/image/image_service.py: HTTP auf 127.0.0.1:18791 (/health, POST /jobs, GET /jobs/ID, GET /jobs/ID/image,
+  DELETE /jobs/ID). Gewichte: registry_errors verlangt 40-stellige Revision und 64-stelligen SHA-256; Download ueber
+  die Funktionen von tools/image_spike/run.py (hf_resolve folgt Weiterleitungen, Range-Fortsetzung); verified.json
+  merkt Groesse, mtime und SHA-256. Auftraege: ein Bild zur Zeit, sd-cli per posix_spawn (setsid) mit den Argumenten
+  des Bildtests, Fortschritt aus dem Log (Schritte zaehlen erst nach get_learned_condition), Abbruch per killpg,
+  Zeitlimit, MemAvailable-Pruefung gegen den gemessenen Spitzenwert plus 1 GB, Bilder 10 Minuten abrufbar.
+- tools/image/adopt_spike.py: Installer (root) verlinkt Dateien gleicher Groesse aus var/image-spike/models nach
+  var/image-models (uid 33, 0640), nichts wird geloescht oder geladen.
+- docker/image/Dockerfile, compose.yaml (Dienst image, Profil image), install.sh (COREUI_INSTALL_IMAGE, Standard ab
+  31 GiB MemTotal, Bau nach Eve, Uebernahme, Start), stack.sh (var/image-models), Update-Meilenstein "Baue den Bilddienst".
+- api/console_model_queue.php: coreui_model_queue_acquire(..., $longJobLock); laeuft ein Bild (Name
+  global_ollama_image, GET_LOCK auf derselben Verbindung wie die Warteschlange), verlaengert sich die Wartezeit in
+  20-s-Schritten bis 840 s.
+- api/image_gen.php: Marker, Groesse, Freigabe (kein Gast, Schalter, Register festgelegt), coreui_image_generate
+  (Health, Lease, Auftrag, Fortschritt, Abbruch, PNG pruefen, speichern), Speichern als stu_console_media
+  (kind image, var/console_media/images/UUID.png, JSON daneben), Ergebnistext fuer Mara, Verlaufszeilen, Anhaenge.
+- api/chat.php: Werkzeug image in der Arbeitsschleife, Hinweis in beiden Prompts, Bild-Lease, Anhaengen an die
+  gespeicherte Antwort (ember_insert), Verlaufszeile, Marker entfernen. api/console_stream.php: Marker erkannt,
+  done mit attachments. api/console_agent_loop.php: Schritt, Notiz ("Ich male: ..."), Menue.
+- Rechte: ai_settings (image), admin.php (tool_image_enabled), user_policy (tool_image, Migration 026),
+  settings.html und js/admin.js (Schalter BILDER ERZEUGEN, Werkzeug Bilder pro Konto).
+- Wasserzeichen: coreui_image_watermark (GD) skaliert images/starlight_unit_studios_logo_original.png auf 18 % der
+  Bildbreite (mindestens 120 px), schneidet den leeren Rand ab, setzt darunter COREUI_IMAGE_MARK_TEXT in
+  assets/fonts/rajdhani_700.ttf (aus der WOFF2 umgewandelt, OFL) so breit wie das Logo, weiss mit leichtem Schatten,
+  mit einem Abstand von 45 % der Zeilenhoehe unter "STUDIOS" (Betreiber: etwas weiter runter),
+  halbiert das Alpha je Pixel und legt alles mit 2,5 % Rand unten rechts ins Bild; ohne GD, Logo oder Schrift bleibt
+  das Bild ohne Zeichen.
+- Oberflaeche: js/console-app.js (figure.msg-generated mit Link und Download, finalizeStream uebernimmt attachments),
+  css/console.css, js/coreui-work-events.js (Fortschritt "Ich male · ...").
+- api/console_session_store.php: Bilderordner beim Loeschen von Chat und Konto, samt JSON.
+
+GEPRUEFT (hier ausgefuehrt): image-service-selftest.py, image-gen-selftest.php (mit Testdatenbank, Wartetest der
+Warteschlange), image-chat-ui-selftest.cjs, php -l, tci-language-selftest.cjs, terran-terminology-selftest.cjs,
+volle Testreihe mit Test-Datenbank, cache-bust, version-merge-check gegen 0.6.38.
+NICHT HIER GEPRUEFT: Docker-Bau und echte Bilder (kein Docker, kein Hugging Face aus dieser Umgebung).
+
+FESTGELEGT: Revision und SHA-256 der drei Dateien stammen aus der Lock-Datei des Bildtests auf dem Server
+(var/image-spike/models/lock-flux2-klein-4b.json vom 07.11.2026, dort gleich dem SHA-256 von Hugging Face):
+  flux-2-klein-4b-Q8_0.gguf     3b1f5a9dc3abb32238b053aeb3d823c30afdacbd  0bba6951258ec8f92d51114a8fa13e66828297bfff58a738f52729b3ef66fa28
+  Qwen3-4B-Q8_0.gguf            22c9fc8a8c7700b76a1789366280a6a5a1ad1120  eed555233267a33c7e8ee31682762cc7751b3f6d224039086e0e846f05fffa5d
+  flux2-vae.safetensors         5b3abca5c0dc1ecd4eaf3340868d09063fc1c965  868fe7b343cc8f3a19dbcfcafbc3d5f888802be3f89bd81b65b3621a066ce8f3
+
+NACH DEM MERGE (Betreiber):
+1. Update unter Einstellungen > System > CoreAI Update (der erste Bau des Bilddienstes dauert 10 bis 20 Minuten).
+2. Im Chat: "Mal mir einen Fuchs im Schnee." Erwartet: Arbeitsweg mit "Ich male", etwa eine Minute, Bild an der Antwort.
+3. Diagnose: sudo /opt/ember-coreui/scripts/stack.sh logs --tail=100 image
