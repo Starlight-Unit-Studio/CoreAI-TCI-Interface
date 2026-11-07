@@ -1,0 +1,6 @@
+CoreAI: TCI Interface 0.6.42 - 07.11.2026
+- Bildkarte zeigt das echte Bild beim Entstehen: Vorschau nach jedem Schritt (sd-cli --preview proj, ohne Mehrkosten).
+- Weiches Zwischenbild unter den Punkten, Punkte in den Farben des Bildes, Lichtfleck bleibt obenauf bis zum fertigen Bild.
+- Vorschau nur an die eigene Anfrage, hoechstens 64 Pixel; abschaltbar mit COREAI_IMAGE_PREVIEW=0.
+- Tests: image-service-selftest.py, image-gen-selftest.php, image-progress-ui-selftest.cjs.
+- Keine Aenderung an Cores, Modelfile, Datenbankschema, Installer oder Warteschlange.

@@ -2861,6 +2861,15 @@
         }
       } catch (e) {}
     });
+    // 0.6.42 (P20.5): a step preview of the image Mara paints, for the dots of its card.
+    es.addEventListener('image_preview', function(ev) {
+      armWatchdog();
+      try {
+        if (!isActiveSession(sessionId) || !state.typingEl || !window.CoreAIImageProgress) return;
+        var shot = JSON.parse(ev.data) || {};
+        window.CoreAIImageProgress.preview(state.typingEl, String(shot.image || ''));
+      } catch (e) {}
+    });
     es.addEventListener('source_preview', function(ev) {
       armWatchdog();
       try {

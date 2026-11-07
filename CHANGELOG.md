@@ -1,5 +1,16 @@
 # CoreAI: TCI Interface
 
+## 0.6.42 - 07.11.2026
+
+Wunsch des Betreibers: in der Bildkarte den echten optischen Fortschritt sehen, also wie das Bild Stueck fuer Stueck entsteht; die Punkte und der Effekt sollen dabei ueber dem Bild bleiben, bis es fertig ist.
+
+- **Vorschau je Schritt:** stable-diffusion.cpp auf unserem festen Stand kann nach jedem Rechenschritt eine Vorschau schreiben (`--preview proj`). Dabei werden die Zwischendaten direkt in Farben umgerechnet, ohne zusaetzliches Dekodieren; fuer FLUX.2-klein ist das eingebaut. Bei 512 × 512 entsteht nach jedem der 4 Schritte ein 64 × 64 Pixel grosses Bild des aktuellen Stands, erst grob, dann immer klarer. Der Bilddienst schaltet das ein, wenn sein sd-cli es kann (`--help` nennt `--preview-path`), zaehlt die Vorschauen und liefert die neueste aus (`GET /jobs/ID/preview`); nach dem Auftrag wird sie geloescht. `COREAI_IMAGE_PREVIEW=0` schaltet es ab.
+- **Ins Raster:** PHP holt jede neue Vorschau einmal ab, verkleinert sie auf hoechstens 64 Pixel und schickt sie als kleines PNG ueber den Live-Stream nur an diese Anfrage (`image_preview`). In der Karte liegt das weiche Zwischenbild unter den Punkten, jeder Punkt nimmt die Farbe seiner Stelle an, und der naechste Schritt blendet weich ueber. Die Punkte und ihr wandernder Lichtfleck bleiben obenauf, bis das Bild fertig ist; dann blendet das scharfe Bild auf.
+- Mit "weniger Bewegung" steht das Raster still und die Prozentanzeige springt nur bei echten Ereignissen.
+- Kein Umbau des Bilddienstes noetig: Der Container bleibt gleich, nur `tools/image/image_service.py` ist neu und laedt nach dem Update von selbst neu.
+- Tests: `image-service-selftest.py` (Vorschau nach jedem Schritt, waehrend des Auftrags abrufbar, danach weg, abschaltbar), `image-gen-selftest.php` (jede neue Vorschau einmal, keine nach dem Auftrag, Verkleinern auf 64), `image-progress-ui-selftest.cjs` (Punkte nehmen die Farben der Vorschau an, naechster Schritt blendet ueber, nur PNG-Daten, Bildschirmfoto angesehen).
+- Keine Aenderung an Cores, Modelfile, Datenbankschema, Installer oder Warteschlange.
+
 ## 0.6.41 - 07.11.2026
 
 Wunsch des Betreibers (Screenshots einer anderen Bild-KI): Waehrend ein Bild entsteht, soll man den Vorgang sehen, mit einer Flaeche, einer wechselnden Stufe und einer Prozentanzeige.

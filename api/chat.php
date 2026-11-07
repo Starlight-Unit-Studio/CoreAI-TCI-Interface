@@ -5263,7 +5263,13 @@ function ember_image_run_tool(PDO $pdo, int $uid, string $input): string {
       // 0.6.41: phase, steps and size for the progress card in the chat (js/coreui-image-progress.js).
       coreui_work_record($pdo, 'tool', 'info', coreui_image_progress_title($job), coreui_image_progress_meta($job));
     },
-    static fn(): bool => ember_agent_cancel_requested(true));
+    static fn(): bool => ember_agent_cancel_requested(true), null,
+    // 0.6.42: every step preview goes live to the card in the chat (only this request's own stream).
+    static function (string $image, array $job): void {
+      if (function_exists('sse_send')) {
+        sse_send('image_preview', ['image' => $image, 'step' => (int)($job['step'] ?? 0), 'steps' => (int)($job['steps'] ?? 0)]);
+      }
+    });
   if (!empty($result['ok'])) {
     coreui_image_pending_add((string)$result['uuid']);
     coreui_work_record($pdo, 'artifact', 'success', 'Bild erzeugt',
