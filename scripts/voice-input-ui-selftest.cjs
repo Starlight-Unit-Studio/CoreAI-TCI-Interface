@@ -223,7 +223,7 @@ async function record(page, ms) {
     await page.click('.voice-input-done');
     await until(page, () => document.getElementById('voiceInputState').getAttribute('data-mode') === 'waiting');
     assert.equal((await strip(page)).title, 'STIMMSEQUENZ WARTET');
-    assert.equal(await page.getAttribute('#btnMic', 'aria-label'), 'Stimmsequenz wartet auf Mara');
+    assert.equal(await page.getAttribute('#btnMic', 'aria-label'), 'Stimmsequenz wartet auf deine CoreAI');
     await until(page, () => window.__sent.length === 5 && window.__sent[4].answer === 'ok', null, 6000);
     assert.equal((await strip(page)).hidden, true, 'sent after Mara answered');
     // ... or is dropped on "Abbrechen".
