@@ -1,6 +1,13 @@
 # Native Bildgenerierung: Ember Image Engine (Planungsstand 21.10.2026, ergänzt 28.10.2026)
 
-**Status: geplant, nicht implementiert und nicht live gemessen.** Die Engine ist ein eigener Medienpfad im E.M.B.E.R. CoreUI. Sie ist kein Aufruf von ComfyUI, kein Wechsel der Textmodell-Laufzeit und kein fertiges Bildmodell. Schnittstellen, Gewichte und Lizenzbedingungen werden vor einer Aktivierung überprüft.
+**Stand 0.6.37 (07.11.2026): Schritt A, der Technologie-Test, ist gebaut und wartet auf den Lauf auf dem Server.**
+
+- **Recherche 07.11.2026:** Ollama hatte im Januar 2026 eine experimentelle Bildgenerierung (Z-Image-Turbo, FLUX.2 Klein) zuerst für macOS angekündigt; laut Bericht von Anfang November ist sie vorerst entfernt und lief auf Linux nie. stable-diffusion.cpp (MIT, CPU mit AVX/AVX2/AVX-512) kann inzwischen deutlich kleinere Modelle als FLUX.1-schnell, darunter Z-Image (6B) und FLUX.2-klein (4B/9B). FLUX.2-klein 4B und Z-Image-Turbo stehen unter Apache 2.0, FLUX.2-klein 9B nur nicht-kommerziell. CPU-Messwerte gibt es öffentlich nicht.
+- **Entscheidung des Betreibers (07.11.2026):** Im Test laufen Z-Image-Turbo (6B, 8 Schritte) und FLUX.2-klein 4B (4 Schritte), beide als Q8_0-GGUF von leejet, mit Qwen3-4B als Textverständnis und dem jeweiligen VAE. FLUX.1-schnell und SDXL-Turbo aus dem früheren Plan sind nicht mehr im Test.
+- **Test:** `scripts/image-spike.sh` baut stable-diffusion.cpp `master-1046-d308544` (Commit `d30854463dbc75fb3671209b79016bb0d8ac321e`, ggml `ccb88f810be05bccc9621e706354611ccc2462c7`) in einem Container für genau die Server-CPU (`-march=native`), lädt die Gewichte (etwa 20 GB) mit Revision und SHA-256 (Abgleich mit Hugging Face, Lock-Datei je Modell), erzeugt ohne Netz drei Prompts in 512 × 512 und einen in 1024 × 1024 mit festem Seed und misst Laden, Textverständnis, Rechenschritte, Dekodieren, Gesamtzeit und Spitzen-RAM je Bild. Register: `tools/image_spike/models.json`; Ergebnisse in Admin Core > Betrieb > Bildproben (nur Inhaber) und `var/image-spike/runs/*/report.md`.
+- **Danach:** Modellwahl mit echten Zeiten und Bildern, dann Schritt B (Modellregister mit festen SHA-256, Worker in der gemeinsamen seriellen Warteschlange) und C (Werkzeug im Chat).
+
+**Ursprünglicher Status: geplant, nicht implementiert und nicht live gemessen.** Die Engine ist ein eigener Medienpfad im E.M.B.E.R. CoreUI. Sie ist kein Aufruf von ComfyUI, kein Wechsel der Textmodell-Laufzeit und kein fertiges Bildmodell. Schnittstellen, Gewichte und Lizenzbedingungen werden vor einer Aktivierung überprüft.
 
 ## Ziel und Einbindung
 

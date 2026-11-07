@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.36: Mitschrift-Zeile unter frischen Videos (P20.2 Nachtrag).
+# CoreAI: TCI Interface 0.6.37: Bildtest (P20.5 A) mit stable-diffusion.cpp, Z-Image-Turbo und FLUX.2-klein 4B; Bildproben in Admin Core.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -139,14 +139,21 @@ UI_FILES=(
   scripts/user-policy-selftest.php
   scripts/memory-length-selftest.php
   api/tts_spike_store.php
+  api/image_spike_store.php
+  js/coreui-image-samples.js
   js/coreui-voice-samples.js
   scripts/tts-spike.sh
   scripts/tts-spike-selftest.py
   scripts/tts-spike-store-selftest.php
+  scripts/image-spike.sh
+  scripts/image-spike-selftest.py
+  scripts/image-spike-store-selftest.php
   scripts/voice-samples-ui-selftest.cjs
   tools/tts_spike/run.py
   tools/tts_spike/voices.json
   tools/tts_spike/textprep_de.py
+  tools/image_spike/run.py
+  tools/image_spike/models.json
   config/voice/mara-voice.json
   api/voice.php
   api/voice_store.php
@@ -183,6 +190,7 @@ UI_FILES=(
   docker/tts-spike/constraints-piper.txt
   docker/tts-spike/constraints-pocket.txt
   docker/tts-spike/constraints-chatterbox.txt
+  docker/image-spike/Dockerfile
   scripts/update-ui-selftest.cjs
   tests/update-runner-selftest.sh
   config/systemd/coreai-update.service.template
@@ -363,6 +371,15 @@ if tts_spike_test="$(python3 "$PROJECT_ROOT/scripts/tts-spike-selftest.py" 2>&1)
   ok 'Stimmtest: Lizenzen je Stimme, feste Versionen, Messen ohne Netz mit Kernlimit, SHA-256-Pruefung und Bericht geprueft.'
 else
   fail "Stimmtest-Selbsttest: ${tts_spike_test:-Unbekannter Fehler}"
+fi
+
+# 0.6.37 (P20.5 A): image test: registry (Apache 2.0, commit as in the Dockerfile), loading with
+# resume and SHA-256 against a stand-in Hugging Face, lock check, a run with a stand-in sd-cli, report.
+image_spike_test=''
+if image_spike_test="$(python3 "$PROJECT_ROOT/scripts/image-spike-selftest.py" 2>&1)"; then
+  ok 'Bildtest: Register und Lizenzen, Laden mit Wiederaufnahme und SHA-256, Lock-Pruefung, Messlauf und Bericht geprueft.'
+else
+  fail "Bildtest-Selbsttest: ${image_spike_test:-Unbekannter Fehler}"
 fi
 
 if python3 "$PROJECT_ROOT/scripts/python-input-selftest.py" >/dev/null 2>&1; then
@@ -734,6 +751,14 @@ if command -v php >/dev/null 2>&1; then
     ok 'Stimmproben: Testlaeufe, nur gelistete Hoerproben aus ihrem Lauf, nur fuer den Inhaber geprueft.'
   else
     fail "Stimmproben-Selbsttest: ${tts_store_test:-Unbekannter Fehler}"
+  fi
+
+  # 0.6.37 (P20.5 A): Bildproben in Admin Core: runs, images only when listed and real PNGs, Inhaber only.
+  image_store_test=''
+  if image_store_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/image-spike-store-selftest.php" 2>&1)"; then
+    ok 'Bildproben: Testlaeufe, nur gelistete PNG-Bilder aus ihrem Lauf, nur fuer den Inhaber geprueft.'
+  else
+    fail "Bildproben-Selbsttest: ${image_store_test:-Unbekannter Fehler}"
   fi
 
   compact_test=''

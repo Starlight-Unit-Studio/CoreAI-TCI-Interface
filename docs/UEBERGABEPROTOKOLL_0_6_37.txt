@@ -1,0 +1,41 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.37
+Stand: 07.11.2026
+Basis: main 0.6.36 nach Merge von PR #187.
+
+AUFTRAG: P20.5 (Bildgenerierung), Schritt A des Bildplans: Technologie-Test auf dem echten Server.
+Recherche: Ollama-Bildfunktion nur macOS und laut Bericht von Anfang November wieder entfernt; stable-diffusion.cpp
+(MIT, CPU mit AVX-512) kann Z-Image und FLUX.2-klein. Entscheidung des Betreibers (07.11.2026): Z-Image-Turbo und
+FLUX.2-klein 4B (Apache 2.0) im Test; FLUX.1-schnell und SDXL-Turbo nicht mehr.
+
+UMSETZUNG
+- tools/image_spike/models.json: Laufzeit (Tag master-1046-d308544, Commit d30854463dbc75fb3671209b79016bb0d8ac321e,
+  ggml ccb88f810be05bccc9621e706354611ccc2462c7, MIT), drei Prompts mit Seeds, Plan (3x 512, 1x 1024), Gruppen
+  zimage-turbo (8 Schritte, cfg 1.0) und flux2-klein-4b (4 Schritte, cfg 1.0) mit je diffusion_model/llm/vae:
+    leejet/Z-Image-Turbo-GGUF z_image_turbo-Q8_0.gguf (6577440704), unsloth/Qwen3-4B-Instruct-2507-GGUF
+    Qwen3-4B-Instruct-2507-Q8_0.gguf (4280405600), Comfy-Org/z_image_turbo split_files/vae/ae.safetensors (335304388);
+    leejet/FLUX.2-klein-4B-GGUF flux-2-klein-4b-Q8_0.gguf (4300629440), unsloth/Qwen3-4B-GGUF Qwen3-4B-Q8_0.gguf
+    (4280405792), Comfy-Org/flux2-klein-4B split_files/vae/flux2-vae.safetensors (336211292). Alle Apache 2.0.
+- tools/image_spike/run.py (nur Standardbibliothek): fetch (HEAD auf /resolve/main ohne Umleitung: X-Repo-Commit,
+  X-Linked-Etag = SHA-256, X-Linked-Size; Download mit Range-Fortsetzung; SHA-256-Abgleich; lock-GRUPPE.json),
+  run (Lock pruefen, sd-cli mit festen Argumenten per posix_spawn, wait4 fuer Spitzen-RAM genau dieses Aufrufs,
+  Zeiten aus der Ausgabe, PNG-Groesse aus dem Kopf), report (report.json Format 1, report.md), validate.
+- docker/image-spike/Dockerfile: Build-Stufe bookworm (git, cmake), Checkout des Commits, nur ggml-Submodul (Commit
+  geprueft), cmake -DGGML_NATIVE=ON -DSD_WEBP=OFF -DSD_WEBM=OFF, Ziel sd-cli; Laufstufe bookworm-slim mit python3,
+  libgomp1, libstdc++6, Lizenzen unter /usr/share/doc/stable-diffusion.cpp.
+- scripts/image-spike.sh: Host-Daten (lscpu, AVX-512, free), Build, Laden mit Netz, Messen mit --network none,
+  --memory 48g, --cap-drop ALL, --read-only, Gewichte nur lesbar; Bericht; behaelt 5 Laeufe; Rechte root:33.
+- api/image_spike_store.php, api/admin.php (image_runs, image_sample; nur Inhaber, nur GET), js/coreui-image-samples.js,
+  Karte in settings.html (Admin Core > Betrieb), Stile in css/settings.css.
+
+GEPRUEFT (hier ausgefuehrt): stable-diffusion.cpp auf dem festen Commit mit -march=native gebaut (sd-cli, gelinkt gegen
+libgomp/libstdc++), Aufrufparameter in --help geprueft; image-spike-selftest.py; image-spike-store-selftest.php; php -l;
+tci-language-selftest.cjs, terran-terminology-selftest.cjs; volle Testreihe mit Test-Datenbank; cache-bust;
+version-merge-check gegen 0.6.36. Bildschirmfotos der Karte (Handy Nacht, Desktop Tag).
+NICHT HIER GEPRUEFT: Docker-Build und echte Bilder (kein Docker, kein Zugriff auf Hugging Face aus dieser Umgebung);
+Zeiten und RAM auf dem Server.
+
+NACH DEM MERGE (Betreiber):
+1. Update unter Einstellungen > System > CoreAI Update.
+2. Wenn Mara gerade nichts rechnet: sudo bash /opt/ember-coreui/scripts/image-spike.sh
+   (erstes Mal: Build etwa 10 bis 20 Minuten, Download etwa 20 GB, dann 8 Bilder).
+3. Ergebnis: Admin Core > Betrieb > Bildproben; Zeiten und Eindruck der Bilder zurueckmelden, dann Modellwahl.

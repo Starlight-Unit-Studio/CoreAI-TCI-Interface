@@ -11,6 +11,7 @@ require_once __DIR__ . '/model_access.php';
 require_once __DIR__ . '/account_delete.php';
 require_once __DIR__ . '/account_admin.php';
 require_once __DIR__ . '/tts_spike_store.php';
+require_once __DIR__ . '/image_spike_store.php';
 
 $pdo = stu_pdo();
 $actorId = stu_require_user_id();
@@ -184,6 +185,33 @@ if ($method === 'GET') {
     if ($path === null) stu_json(['ok' => false, 'error' => 'sample_not_found'], 404);
     while (ob_get_level() > 0) { @ob_end_clean(); }
     header('Content-Type: audio/wav');
+    header('Content-Length: ' . (string)filesize($path));
+    header('Content-Disposition: inline; filename="' . basename($path) . '"');
+    header('X-Content-Type-Options: nosniff');
+    header('Cache-Control: private, max-age=3600');
+    readfile($path);
+    exit;
+  }
+
+  // 0.6.37 (P20.5 A): image test results, Inhaber only. The runs come from
+  // scripts/image-spike.sh; an image is served only when its run lists it.
+  if ($action === 'image_runs') {
+    if ($actorLevel !== 0) stu_json(['ok' => false, 'error' => 'owner_only'], 403);
+    $root = coreui_image_spike_root();
+    $runs = coreui_image_spike_runs($root);
+    $asked = (string)($_GET['run'] ?? '');
+    $stamp = $asked !== '' ? $asked : ($runs[0]['stamp'] ?? '');
+    $report = $stamp !== '' ? coreui_image_spike_report($root, $stamp) : null;
+    if ($asked !== '' && $report === null) stu_json(['ok' => false, 'error' => 'run_not_found'], 404);
+    stu_json(['ok' => true, 'runs' => $runs, 'run' => $report === null ? null : coreui_image_spike_public($report)]);
+  }
+
+  if ($action === 'image_sample') {
+    if ($actorLevel !== 0) stu_json(['ok' => false, 'error' => 'owner_only'], 403);
+    $path = coreui_image_spike_image_path(coreui_image_spike_root(), (string)($_GET['run'] ?? ''), (string)($_GET['file'] ?? ''));
+    if ($path === null) stu_json(['ok' => false, 'error' => 'image_not_found'], 404);
+    while (ob_get_level() > 0) { @ob_end_clean(); }
+    header('Content-Type: image/png');
     header('Content-Length: ' . (string)filesize($path));
     header('Content-Disposition: inline; filename="' . basename($path) . '"');
     header('X-Content-Type-Options: nosniff');

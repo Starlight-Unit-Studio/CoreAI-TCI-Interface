@@ -6,15 +6,15 @@
   <meta name="language" content="de-DE" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#f0f4fa" />
-  <meta name="application-version" content="0.6.36" />
+  <meta name="application-version" content="0.6.37" />
   <meta name="application-name" content="CoreAI: TCI Interface" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface - Einstellungen</title>
   <link rel="stylesheet" href="./css/console.css?v=0182859681432322364653878" />
-  <link rel="stylesheet" href="./css/settings.css?v=0365945250101497403441087" />
+  <link rel="stylesheet" href="./css/settings.css?v=0269384087769295706944554" />
   <link rel="stylesheet" href="./css/coreui-update.css?v=1027839363176318351849490" />
   <link rel="stylesheet" href="./css/coreui-theme.css?v=1119820378816132687465896" />
-  <script src="./js/console-gate.js?v=0405615087151769210402672"></script>
+  <script src="./js/console-gate.js?v=0813649266958692491722324"></script>
   <script src="./js/coreui-preferences.js?v=1000807238115881895880748"></script>
 </head>
 <body class="settings-body">
@@ -49,7 +49,7 @@
           <h1>EINSTELLUNGEN</h1>
         </div>
       </div>
-      <div class="settings-version">COREAI: TCI INTERFACE // v0.6.36</div>
+      <div class="settings-version">COREAI: TCI INTERFACE // v0.6.37</div>
     </header>
 
     <!-- 0.5.79: one page, categories as tabs. Each category is its own view
@@ -746,6 +746,29 @@
               </div>
               <audio id="ttsAudio" preload="none"></audio>
             </section>
+            <section class="settings-panel cfg-card wide green tts-card img-card" id="imageSamplesCard" aria-labelledby="adminImageTitle" hidden>
+              <header class="settings-panel-head">
+                <span class="settings-panel-glyph" aria-hidden="true">◧</span>
+                <div><span>BILDPROBEN</span><h3 id="adminImageTitle">Bildgenerierung</h3></div>
+                <label class="tts-run-pick" for="imageRunSelect" hidden><span>TESTLAUF</span><select id="imageRunSelect"></select></label>
+                <button class="settings-action compact" id="imageReload" type="button">NEU LADEN</button>
+              </header>
+              <p class="cfg-card-note">Testbilder aus dem Bildtest (P20.5): jeder Kandidat erzeugt dieselben Prompts mit demselben Seed auf der CPU dieses Servers. Gezeigt werden die Zeit je Bild, der höchste Arbeitsspeicher und die Lizenz der Gewichte. Antippen öffnet ein Bild in voller Größe.</p>
+              <div class="tts-empty" id="imageEmpty" hidden>
+                <p>Noch kein Bildtest auf diesem Server. Starten mit:</p>
+                <code>sudo bash /opt/ember-coreui/scripts/image-spike.sh</code>
+                <p>Beim ersten Mal baut der Test stable-diffusion.cpp für diese CPU und lädt etwa 20 GB Gewichte. Die Ergebnisse erscheinen hier.</p>
+              </div>
+              <div class="tts-body" id="imageBody" hidden>
+                <p class="tts-meta" id="imageMeta"></p>
+                <ol class="tts-sentences" id="imagePrompts"></ol>
+                <div class="tts-voices img-models" id="imageModels" role="list" aria-label="Bildkandidaten"></div>
+                <details class="tts-engines">
+                  <summary>Dateien, Lizenzen und Server</summary>
+                  <div class="tts-groups" id="imageFiles"></div>
+                </details>
+              </div>
+            </section>
             <div class="admin-callout wide"><b>KEIN KOMPATIBILITÄTSVERSPRECHEN</b><p>Der lokale Ollama-Pfad mit Gemma 4 bleibt der Referenzbetrieb.</p></div>
           </div>
         </section>
@@ -845,6 +868,7 @@
   <script src="./js/admin.js?v=0876858939640698403610180"></script>
   <script src="./js/coreui-voice-read.js?v=0593983730870206685697575"></script>
   <script src="./js/coreui-voice-terms.js?v=0470347751915481307845714"></script>
+  <script src="./js/coreui-image-samples.js?v=0798570739082275554879029"></script>
   <script src="./js/coreui-voice-samples.js?v=0251087124208928463400825"></script>
   <script src="./js/coreui-update.js?v=0294648939860149727532714"></script>
 </body>
