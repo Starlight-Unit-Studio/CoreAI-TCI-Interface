@@ -215,6 +215,14 @@ health_ok() {
   return 1
 }
 
+operator_progress() {
+  [[ "${1:-}" == operator ]] || return 0
+  local percent
+  percent="$(state get "$STATUS_FILE" percent 2>/dev/null || true)"
+  [[ "$percent" =~ ^[0-9]{1,3}$ ]] || return 0
+  printf '__COREAI_PROGRESS__:%s\\n' "$percent"
+}
+
 do_run() {
   local mode="${1:-owner}" request restart_ollama=0 requested_by=0 line backup='' result=0 message
   ensure_dirs
@@ -269,6 +277,7 @@ do_run() {
     started_at="$(utc_now)" finished_at='' from_version="$(local_version)" to_version='' commit='' \
     restart_ollama="$restart_ollama" requested_by="$requested_by" backup='' \
     percent=2 step='Die Datenbank wird gesichert.'
+  operator_progress "$mode"
   # Never consume a queued owner request from an operator-initiated run.
   if [[ "$mode" != operator ]]; then rm -f -- "$REQUEST_FILE"; fi
 
@@ -276,6 +285,7 @@ do_run() {
   log "Datenbank gesichert: $backup"
   state status "$STATUS_FILE" phase=download message='Neuer Stand wird geladen.' backup="$backup" \
     percent=8 step='Das Setup des neuen Stands wird geladen.'
+  operator_progress "$mode"
 
   download_setup || result=$?
   if (( result == 2 )); then
@@ -286,6 +296,8 @@ do_run() {
 
   state status "$STATUS_FILE" phase=install message='CoreAI wird installiert und neu gestartet.' \
     percent=10 step='Der Installer startet.'
+  operator_progress "$mode"
+  if [[ "$mode" == operator ]]; then export COREAI_OPERATOR_PROGRESS=1; fi
   # The output goes through the follower into the log; it turns the installer's
   # milestones into percent and step. pipefail keeps the installer's exit code.
   if ! (cd "$TMP_DIR" && COREUI_SETUP_SOURCE=main bash ./setup.sh </dev/null 2>&1) | state follow "$STATUS_FILE"; then
@@ -296,13 +308,16 @@ do_run() {
 
   state status "$STATUS_FILE" phase=restart message='Dienste werden neu gestartet.' \
     percent=91 step='Die Worker starten neu.'
+  operator_progress "$mode"
   restart_services "$restart_ollama" || fail_run restart 'Ein Dienst ließ sich nicht neu starten. Details im Update-Protokoll.'
 
   state status "$STATUS_FILE" percent=97 step='CoreAI wird ein letztes Mal geprüft.'
+  operator_progress "$mode"
   message='Update abgeschlossen.'
   health_ok || message='Update abgeschlossen; der Health-Check meldet noch Fehler.'
   state status "$STATUS_FILE" state=done phase=done message="$message" finished_at="$(utc_now)" \
     to_version="$(local_version)" commit="$(local_commit)" percent=100 step='Fertig.'
+  operator_progress "$mode"
   log "$message Version $(local_version), Commit $(local_commit)."
   check_now || true
 }
