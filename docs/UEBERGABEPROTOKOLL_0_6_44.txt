@@ -1,19 +1,19 @@
 COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.44
 Stand: 07.11.2026
-Basis: main 0.6.43 nach Merge von PR #195.
+Basis: main 0.6.43 nach Merge von PR #195, inkl. spaeter hochgeladenem Wasserzeichenbild.
 
 AUFTRAG
-Bildvermerk von "Erzeugt von TCI: Mara©" auf "Erzeugt von Quantum CoreAI [Jahr]©" aendern und das Starlight-Unit-Logo aus den erzeugten Bildern entfernen.
+Planänderung: Aufbau der Bildsignaturen wie im Beispielbild. Unten links steht anstelle "STARLIGHT UNIT STUDIOS" nun "Quantum CoreAI" mit Copyright und automatisch aktualisiertem Jahr. Unten rechts erscheint das neue Betreiberlogo images/watermark_logo.png.
 
 UMSETZUNG
-- api/image_gen.php: Logo-Zeichnung und Logo-Abhaengigkeit entfernt; unten rechts wird nur noch eine weisse Textsignatur in Rajdhani Bold mit Schatten und 50 % Deckkraft eingebrannt.
-- Das Jahr stammt zur Erzeugungszeit aus date('Y') (Serverzeitzone), optionaler Jahresparameter fuer deterministische Tests.
-- scripts/image-gen-selftest.php: Regressionstests zu 2026/2027, Bildgroessen, Position, Deckkraft, einzeiliger Signatur und fehlendem Logo-Zugriff.
-- README.md: aktuelle Bildfunktion aktualisiert. Logo-Datei bleibt fuer die restliche Produktoberflaeche im Repository erhalten.
-- VERSION und die sechs HTML-Seiten, js/console-gate.js, Branding-Selbsttest, Preflights, CHANGELOG.md und das TXT-Archiv auf 0.6.44 nachgezogen.
+- api/image_gen.php: Copyright als kleine weisse Rajdhani-Textzeile "© [Jahr] Quantum CoreAI" links unten, dynamisches Jahr aus date('Y').
+- api/image_gen.php: wasserzeichenartiges Quantum-Logo rechts unten, proportional skaliert und 50 % transparent.
+- Der dunkle Hintergrund des hochgeladenen PNG-Logos wird nur beim Zeichnen entfernt; Originaldatei bleibt unveraendert.
+- scripts/image-gen-selftest.php prueft Copyright 2026/2027, beide Bildecken, Originalgroesse, unveraenderten Bildmittelteil, keinen dunklen Logohintergrund und keine Verwendung des alten Studio-Logos.
+- scripts/preflight.sh und scripts/preflight-native.sh verlangen die neue Logo-Datei, damit installierte Systeme sie bereitstellen.
+- README.md, CHANGELOG.md, das TXT-Archiv und Versionsangaben bleiben auf 0.6.44. Es gibt keinen zweiten Versionssprung, solange PR #196 nicht gemergt ist.
 
-TEST / FREIGABE
-- PHP-Syntax und statische Textpruefungen koennen lokal laufen; der komplette Bild-Selbsttest braucht PHP-GD und die Testdatenbank.
-- Vor Merge zwingend den Versions-Guard, image-gen-selftest.php und beide Preflights real ausfuehren.
-- Falls diese Voraussetzungen nicht erfuellt sind, Draft-PR belassen und NICHT mergen.
-- Kein Live-Deployment durch den GitHub-PR allein.
+TESTSTATUS / FREIGABE
+- Neue Quelltexte im PR kontrollieren, PHP-Lint, image-gen-selftest.php und Version-Guard vor Merge ausfuehren.
+- Vollstaendiger Bildtest erfordert PHP-GD; lokal ist diese Erweiterung nicht vorhanden. Daher PR im Entwurfsstatus belassen.
+- Ein PR ist noch kein Live-Deployment. Keine Veraenderung an Cores, Modelfile, Bildmodell, Datenbank oder Warteschlange.
