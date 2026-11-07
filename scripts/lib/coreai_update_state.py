@@ -261,6 +261,11 @@ def cmd_follow(path):
                     data['step'] = step
                 data['updated_at'] = now()
                 write_json(path, data)
+                # Root-only operator SSH path can mirror the SAME computed
+                # native percentage; normal owner UI/log output is unchanged.
+                if os.environ.get('COREAI_OPERATOR_PROGRESS') == '1':
+                    out.write(f'__COREAI_PROGRESS__:{percent}\\n'.encode('ascii'))
+                    out.flush()
         except Exception:  # noqa: BLE001
             continue
     if preflight:
