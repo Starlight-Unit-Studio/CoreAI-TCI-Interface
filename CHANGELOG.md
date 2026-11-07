@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.6.44 - 07.11.2026
+
+Planänderung des Betreibers nach einem Referenzbild: kleine Copyright-Zeile links unten, das neue Quantum-Wasserzeichen rechts unten. Das alte Studio-Logo erscheint nicht mehr in erzeugten Bildern.
+
+- **Copyright links unten:** `© [Jahr] Quantum CoreAI` statt `Erzeugt von TCI: Mara©` oder einer großen Credit-Zeile. Das Jahr wird beim Erzeugen aus der Serverzeit ermittelt; die kleine Rajdhani-Schrift ist weiß mit dezentem Schatten.
+- **Neues Logo rechts unten:** `images/watermark_logo.png` (vom Betreiber in `main` hochgeladen), auf 12 % der Bildbreite verkleinert und bei 50 % Deckkraft in das fertige PNG eingebrannt. Die bereits vorhandene PNG-Transparenz wird beim Skalieren und Einblenden erhalten; eine farbbasierte Entfernung vermeintlich dunkler Hintergrundpixel findet nicht statt. Die andere Studio-Logo-Datei bleibt für die Oberflächen erhalten.
+- **Getrennte Ecken:** Copyright und Logo berühren sich nicht. Das restliche Bild sowie die Größe 512 × 512 / 1024 × 1024 bleiben erhalten. Die Bildtests prüfen das dynamische Jahr, beide Bereiche, die transparente Darstellung ohne farbbasierte Entfernung der Leiterbahnen, die Bildgröße und die fehlende Verwendung des alten Studio-Logos.
+- Keine Änderungen an Cores, Modelfile, Bildmodell, Datenbankschema, Installer oder Warteschlange. Für den vollständigen Image-Selbsttest und die Preflights ist die dafür eingerichtete Testumgebung erforderlich.
+
 ## 0.6.43 - 07.11.2026
 
 Wunsch des Betreibers (Screenshots einer anderen Chat-KI): Der Anhang-Knopf soll ein "+" mit Menue werden, mit Fotos und Kamera, Dateien, Bild erstellen sowie Websuche und Recherche; Konnektoren sollen vorbereitet werden, da sie Teil der Roadmap sind, und Deep Research ist ebenfalls geplant.

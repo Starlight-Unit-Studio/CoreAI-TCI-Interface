@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.43: + Menue im Eingabefeld (Fotos, Kamera, Dateien, Bild erstellen, Websuche, Recherche).
+# CoreAI: TCI Interface 0.6.44: dynamischer Quantum CoreAI Bildvermerk ohne Studio-Logo.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -367,6 +367,7 @@ UI_FILES=(
   docker/pyworker/Dockerfile
   docker/pyworker/entrypoint.sh
   images/starlight_unit_studios_logo_original.png
+  images/watermark_logo.png
 )
 for ui_file in "${UI_FILES[@]}"; do
   if [[ ! -s "$PROJECT_ROOT/$ui_file" ]]; then

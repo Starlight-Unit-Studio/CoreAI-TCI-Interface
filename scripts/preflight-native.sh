@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.43: + Menue im Eingabefeld (Fotos, Kamera, Dateien, Bild erstellen, Websuche, Recherche).
+# CoreAI: TCI Interface 0.6.44: dynamischer Quantum CoreAI Bildvermerk ohne Studio-Logo.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -331,6 +331,7 @@ UI_FILES=(
   docs/UEBERGABEPROTOKOLL_0_5_53.txt
   docs/UEBERGABEPROTOKOLL_0_5_54.txt
   images/starlight_unit_studios_logo_original.png
+  images/watermark_logo.png
 )
 for ui_file in "${UI_FILES[@]}"; do
   if [[ ! -s "$PROJECT_ROOT/$ui_file" ]]; then

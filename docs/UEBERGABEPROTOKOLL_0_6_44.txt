@@ -1,0 +1,19 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.44
+Stand: 07.11.2026
+Basis: main 0.6.43 nach Merge von PR #195, inkl. spaeter hochgeladenem Wasserzeichenbild.
+
+AUFTRAG
+Planänderung: Aufbau der Bildsignaturen wie im Beispielbild. Unten links steht anstelle "STARLIGHT UNIT STUDIOS" nun "Quantum CoreAI" mit Copyright und automatisch aktualisiertem Jahr. Unten rechts erscheint das neue Betreiberlogo images/watermark_logo.png.
+
+UMSETZUNG
+- api/image_gen.php: Copyright als kleine weisse Rajdhani-Textzeile "© [Jahr] Quantum CoreAI" links unten, dynamisches Jahr aus date('Y').
+- api/image_gen.php: wasserzeichenartiges Quantum-Logo rechts unten, auf 12 % der Bildbreite skaliert, bei 50 % Deckkraft.
+- Das hochgeladene PNG ist bereits transparent. Sein echter Alphakanal wird genutzt, ohne dunkelblaue Farbpixel nachtraeglich herauszufiltern. Originaldatei bleibt unveraendert.
+- scripts/image-gen-selftest.php prueft Copyright 2026/2027, beide Bildecken, Originalgroesse, unveraenderten Bildmittelteil, unveraenderten nativen PNG-Alphakanal und keine Verwendung des alten Studio-Logos.
+- scripts/preflight.sh und scripts/preflight-native.sh verlangen die neue Logo-Datei, damit installierte Systeme sie bereitstellen.
+- README.md, CHANGELOG.md, das TXT-Archiv und Versionsangaben bleiben auf 0.6.44. Es gibt keinen zweiten Versionssprung, solange PR #196 nicht gemergt ist.
+
+TESTSTATUS / FREIGABE
+- Neue Quelltexte im PR kontrollieren, PHP-Lint, image-gen-selftest.php und Version-Guard vor Merge ausfuehren.
+- Vollstaendiger Bildtest erfordert PHP-GD; lokal ist diese Erweiterung nicht vorhanden. PR #196 ist zur Durchsicht freigegeben; Server-Integrationstests bleiben offen und sind vor produktivem Einsatz separat nachzuweisen.
+- Ein PR ist noch kein Live-Deployment. Keine Veraenderung an Cores, Modelfile, Bildmodell, Datenbank oder Warteschlange.

@@ -164,51 +164,74 @@ img_gen_test($row['uuid'] === $r['uuid'] && (int)$row['user_id'] === 5 && $row['
   'kept as a private media entry of the account: ' . json_encode($row));
 $kept = (string)file_get_contents($tmp . '/images/' . $r['uuid'] . '.png');
 img_gen_test(coreui_image_png_size($kept) === [512, 512] && $kept !== $png && (int)$row['file_size'] === strlen($kept)
-  && substr(sprintf('%o', fileperms($tmp . '/images/' . $r['uuid'] . '.png')), -4) === '0640', 'the PNG on disk with the studio mark, 0640');
+  && substr(sprintf('%o', fileperms($tmp . '/images/' . $r['uuid'] . '.png')), -4) === '0640', 'the PNG on disk with the two-corner mark, 0640');
 $meta = coreui_image_meta($r['uuid']);
 img_gen_test(($meta['prompt'] ?? '') === 'A red fox, sitting in snow' && ($meta['seconds'] ?? 0) == 61.8 && ($meta['model'] ?? '') === 'FLUX.2-klein 4B (Q8_0)'
   && ($meta['watermark'] ?? null) === true, 'its description next to it');
 
-// The studio's mark: the logo with "Erzeugt von TCI: Mara©" flush under it, lower right corner,
-// small, half opacity; the rest of the image untouched (operator, 07.11.2026).
-img_gen_test(COREUI_IMAGE_MARK_TEXT === 'Erzeugt von TCI: Mara©', 'the line under the logo');
+// Reference: small dynamic-year credit at lower left and a 12%-wide, half-opacity logo at lower right.
+img_gen_test(abs(COREUI_IMAGE_LOGO_WIDTH - 0.12) < 0.000001
+  && COREUI_IMAGE_MARK_OPACITY === 0.5,
+  'Quantum logo must stay at 12% width and 50% opacity');
+img_gen_test(coreui_image_mark_text(2026) === '© 2026 Quantum CoreAI'
+  && coreui_image_mark_text(2027) === '© 2027 Quantum CoreAI'
+  && coreui_image_mark_text() === '© ' . date('Y') . ' Quantum CoreAI', 'year-aware copyright');
+$logoPath = $root . '/images/watermark_logo.png';
+$logoDims = @getimagesize($logoPath);
+img_gen_test(is_array($logoDims) && $logoDims[0] > 0 && $logoDims[1] > 0,
+  'watermark_logo.png must ship with the image generator');
+$sourceLogo = imagecreatefrompng($logoPath);
+img_gen_test($sourceLogo !== false
+  && ((imagecolorat($sourceLogo, 0, 0) >> 24) & 0x7F) === 127
+  && ((imagecolorat($sourceLogo, imagesx($sourceLogo) - 1, imagesy($sourceLogo) - 1) >> 24) & 0x7F) === 127,
+  'provided Quantum watermark is already transparent at its corners');
+$centreAlpha = (imagecolorat($sourceLogo, intdiv(imagesx($sourceLogo), 2), intdiv(imagesy($sourceLogo), 2)) >> 24) & 0x7F;
+img_gen_test($centreAlpha > 0 && $centreAlpha < 127,
+  'provided Quantum watermark has native partial alpha to preserve');
 foreach ([512, 1024] as $n) {
   $gray = imagecreatetruecolor($n, $n);
   imagefill($gray, 0, 0, imagecolorallocate($gray, 128, 128, 128));
   ob_start(); imagepng($gray); $plain = (string)ob_get_clean();
   $marked = coreui_image_watermark($plain);
-  img_gen_test(is_string($marked) && coreui_image_png_size($marked) === [$n, $n], "mark on {$n}: same size");
+  img_gen_test(is_string($marked) && coreui_image_png_size($marked) === [$n, $n],
+    "two-corner mark {$n}: original PNG dimensions");
   $im = imagecreatefromstring($marked);
-  $markW = max(COREUI_IMAGE_MARK_MIN_PX, (int)round($n * COREUI_IMAGE_MARK_WIDTH));
-  $margin = (int)round($n * COREUI_IMAGE_MARK_MARGIN);
-  $changed = []; $outside = 0; $strongest = 0; $white = [];
+  $margin = max(4, (int)round($n * COREUI_IMAGE_MARK_MARGIN));
+  $logoW = (int)round($n * COREUI_IMAGE_LOGO_WIDTH);
+  $logoH = (int)round($logoW * $logoDims[1] / $logoDims[0]);
+  $logoX = $n - $logoW - $margin;
+  $logoY = $n - $logoH - $margin;
+  $left = 0; $right = 0; $outside = 0; $leftBottom = 0;
   for ($y = 0; $y < $n; $y++) {
     for ($x = 0; $x < $n; $x++) {
       $c = imagecolorat($im, $x, $y);
-      $r = ($c >> 16) & 255; $g = ($c >> 8) & 255; $b = $c & 255;
-      $d = max(abs($r - 128), abs($g - 128), abs($b - 128));
-      if ($d === 0) continue;
-      $changed[] = [$x, $y];
-      $strongest = max($strongest, $d);
-      if ($r > 175 && $g > 175 && $b > 175) $white[] = $y;
+      if ((($c >> 16) & 255) === 128 && (($c >> 8) & 255) === 128 && ($c & 255) === 128) continue;
+      if ($x >= $margin - 1 && $x < $logoX - $margin && $y >= $n - $margin - 40) {
+        ++$left;
+        if ($y >= $n - $margin - 3) ++$leftBottom;
+      } elseif ($x >= $logoX && $x < $n - $margin && $y >= $logoY && $y < $n - $margin) {
+        ++$right;
+      } else ++$outside;
     }
   }
-  $xs = array_column($changed, 0); $ys = array_column($changed, 1);
-  $left = min($xs); $right = max($xs); $top = min($ys); $bottom = max($ys);
-  img_gen_test($right <= $n - $margin && $bottom <= $n - $margin && $right >= $n - $margin - 3 && $bottom >= $n - $margin - 3,
-    "mark on {$n}: in the lower right corner with its margin");
-  img_gen_test($right - $left + 1 <= $markW + 2 && $right - $left + 1 >= (int)($markW * 0.85), "mark on {$n}: small ({$left}..{$right} of {$n})");
-  img_gen_test($bottom - $top + 1 <= (int)($markW * 0.75), "mark on {$n}: logo and line together stay low");
-  img_gen_test($strongest >= 20 && $strongest <= 66, "mark on {$n}: at half opacity (strongest change {$strongest} of 128)");
-  // White letters in the lowest fifth of the mark: the line sits under the logo.
-  $line = array_filter($white, static fn(int $y): bool => $y >= $bottom - (int)(($bottom - $top) * 0.2));
-  img_gen_test(count($line) >= 10, "mark on {$n}: the white line under the logo");
+  img_gen_test($left >= 12 && $leftBottom >= 2, "two-corner mark {$n}: credit at bottom left");
+  img_gen_test($right >= 30, "two-corner mark {$n}: new logo at bottom right");
+  img_gen_test($outside === 0, "two-corner mark {$n}: image untouched elsewhere");
+  $corner = imagecolorat($im, $logoX + 1, $logoY + 1);
+  $delta = max(abs((($corner >> 16) & 255) - 128), abs((($corner >> 8) & 255) - 128),
+    abs(($corner & 255) - 128));
+  img_gen_test($delta <= 8, "two-corner mark {$n}: no dark square around the logo");
 }
-img_gen_test(coreui_image_watermark('no png') === null, 'no PNG: no mark, no crash');
-img_gen_test(hash_file('sha256', $root . '/images/starlight_unit_studios_logo_original.png') === '3463758e8e2265315267fa2c45ea5f377b03df37beee9df878331873a4971274',
-  'the mark is the approved studio logo');
-img_gen_test(is_file($root . '/assets/fonts/rajdhani_700.ttf') && str_contains((string)file_get_contents($root . '/assets/fonts/LICENSES.md'), 'rajdhani_700.ttf'),
-  'the line uses Rajdhani Bold (OFL) as TTF, named in the font notes');
+img_gen_test(coreui_image_watermark('no png') === null, 'invalid PNG: no mark, no crash');
+$markSource = (string)file_get_contents($root . '/api/image_gen.php');
+img_gen_test(str_contains($markSource, "'/images/watermark_logo.png'")
+  && !str_contains($markSource, "'/images/starlight_unit_studios_logo_original.png'")
+  && !str_contains($markSource, 'removeDarkBackdrop')
+  && !str_contains($markSource, 'cornerBright'),
+  'new logo is used with native transparency, without brightness keying');
+img_gen_test(is_file($root . '/assets/fonts/rajdhani_700.ttf')
+  && str_contains((string)file_get_contents($root . '/assets/fonts/LICENSES.md'), 'rajdhani_700.ttf'),
+  'copyright line retains Rajdhani Bold (OFL)');
 img_gen_test(coreui_image_meta('../x') === null, 'no paths as image names');
 
 // 0.6.42: step previews go to the chat as small data URLs, each new one once, never after the job.
