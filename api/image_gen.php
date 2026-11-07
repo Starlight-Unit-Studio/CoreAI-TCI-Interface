@@ -125,9 +125,9 @@ function coreui_image_http(string $method, string $path, ?array $body = null, in
 
 /**
  * Reference-image layout: tiny copyright at bottom left, studio-independent
- * Quantum watermark logo at bottom right. The source watermark_logo.png has a
- * dark navy backdrop; its dark background is keyed out when necessary, without
- * altering the repository asset. Both elements are included in the stored PNG.
+ * Quantum watermark logo at bottom right. The source watermark_logo.png already
+ * has real RGBA transparency; preserve its native alpha when scaling and fading.
+ * Both elements are included in the stored PNG.
  * Returns null if required imaging support or assets are missing.
  */
 function coreui_image_watermark(string $png): ?string {
@@ -160,22 +160,13 @@ function coreui_image_watermark(string $png): ?string {
 
   $scaled = coreui_image_canvas($logoWidth, $logoHeight);
   imagecopyresampled($scaled, $logo, 0, 0, 0, 0, $logoWidth, $logoHeight, imagesx($logo), imagesy($logo));
-  $corner = imagecolorat($logo, 0, 0);
-  $cornerAlpha = ($corner >> 24) & 0x7F;
-  $cornerBright = max(($corner >> 16) & 255, ($corner >> 8) & 255, $corner & 255);
-  $removeDarkBackdrop = $cornerAlpha < 10 && $cornerBright < 110;
   $mark = coreui_image_canvas($logoWidth, $logoHeight);
   for ($y = 0; $y < $logoHeight; $y++) {
     for ($x = 0; $x < $logoWidth; $x++) {
       $rgba = imagecolorat($scaled, $x, $y);
-      $r = ($rgba >> 16) & 255;
-      $g = ($rgba >> 8) & 255;
-      $b = $rgba & 255;
+      // Respect the PNG's native alpha, including partially transparent pixels.
+      // Only reduce its existing opacity; never key out colours by brightness.
       $nativeOpacity = 1 - ((($rgba >> 24) & 0x7F) / 127);
-      if ($removeDarkBackdrop) {
-        // Preserve the cyan/gold luminous lines, not the original navy square.
-        $nativeOpacity *= max(0.0, min(1.0, (max($r, $g, $b) - 85) / 95));
-      }
       $opacity = $nativeOpacity * COREUI_IMAGE_MARK_OPACITY;
       if ($opacity <= 0) continue;
       $alpha = 127 - (int)round(127 * $opacity);
