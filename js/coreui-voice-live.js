@@ -87,8 +87,8 @@
     inner.classList.toggle('has-live', !why);
     button.hidden = !!why;
     button.setAttribute('aria-disabled', why ? 'true' : 'false');
-    button.title = why || 'Live-Gespräch mit Mara';
-    button.setAttribute('aria-label', why ? 'Live-Gespräch nicht verfügbar' : 'Live-Gespräch mit Mara');
+    button.title = why || 'Live-Gespräch mit deiner CoreAI';
+    button.setAttribute('aria-label', why ? 'Live-Gespräch nicht verfügbar' : 'Live-Gespräch mit deiner CoreAI');
   }
 
   function loadStatus() {
@@ -118,7 +118,7 @@
     root.className = 'live-overlay';
     root.setAttribute('role', 'dialog');
     root.setAttribute('aria-modal', 'true');
-    root.setAttribute('aria-label', 'Live-Gespräch mit Mara');
+    root.setAttribute('aria-label', 'Live-Gespräch mit deiner CoreAI');
     root.innerHTML = '<div class="live-top"><span class="live-badge">LIVE</span><span class="live-core"></span></div>'
       + '<div class="live-center"><div class="live-orb" data-state="preparing" aria-hidden="true"><i></i><i></i><i></i><b></b></div>'
       + '<h2 class="live-greeting"></h2><p class="live-status" aria-live="polite"></p>'
