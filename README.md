@@ -6,7 +6,7 @@
 
 CoreAI combines Ollama-based models with private conversations, browser research, personal knowledge, file tools and an administration interface. Its standard deployment runs an isolated Nginx, PHP-FPM, MariaDB and worker stack on a Linux server. CoreAI is an application, **not a standalone operating system**.
 
-**Current source version: `0.6.38`** | [Changelog](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Documentation policy](docs/VERSIONING_POLICY.md) | [License](LICENSE.md)
+**Current source version: `0.6.39`** | [Changelog](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Documentation policy](docs/VERSIONING_POLICY.md) | [License](LICENSE.md)
 
 > **Development status:** The features below describe the current source code, not guaranteed capabilities of every model or cloud provider. A merged commit does not by itself prove a successful production deployment.
 
@@ -77,6 +77,8 @@ These configurations are **planning guidelines, not benchmarks or guarantees**. 
 
 **Optional voice service:** Eve's measured voice configuration used about 2.5 GB RAM and up to four CPU cores; the container has a 6 GB memory limit. On small servers, consider disabling voice at first installation with `COREUI_INSTALL_VOICE=0`. Changes to an existing installation's settings require a deliberate configuration review and backup.
 
+**Optional image service:** FLUX.2-klein 4B needs about 9.4 GB RAM for a 512 × 512 image and about 14.4 GB for 1024 × 1024 (measured on a 20-thread AVX-512 CPU: about one minute and three and a half minutes); the container has a 20 GB memory limit, and the weights take about 9 GB of disk space. It is installed by default on servers with 32 GB RAM or more; `COREUI_INSTALL_IMAGE=0` leaves it out, `COREUI_INSTALL_IMAGE=1` forces it. The first installation compiles stable-diffusion.cpp for the server's CPU, which takes 10 to 20 minutes.
+
 ### Optional high performance: GPU and VRAM
 
 A compatible GPU or vGPU with sufficient VRAM **may substantially accelerate Ollama model inference**, but is **not required to run CoreAI**. Benefits depend on drivers, model support, quantization and how much model data and KV cache fit in VRAM. GPU offloading may need additional host configuration and does not automatically speed up every CoreAI tool.
@@ -106,6 +108,7 @@ By default, CoreAI binds to `127.0.0.1:9080` and is **not directly exposed to th
 | `COREUI_INSTALL_BROWSE` | `1` | Install the Playwright browser worker |
 | `COREUI_INSTALL_SEARXNG` | `1` | Set up the dedicated search service |
 | `COREUI_INSTALL_VOICE` | `1` | Attempt to build the optional Eve voice service |
+| `COREUI_INSTALL_IMAGE` | `1` from 32 GB RAM, else `0` | Build the optional image service (FLUX.2-klein 4B) |
 
 An existing installation's settings are not silently overwritten. `COREUI_FORCE_CONFIG=1` permits deliberate regeneration, **not a routine update**; review and back up configuration beforehand. See [`scripts/install.sh`](scripts/install.sh) for the full list of options.
 
@@ -123,7 +126,8 @@ An existing installation's settings are not silently overwritten. `COREUI_FORCE_
 - **Voice messages:** signed-in accounts (not guests) get a microphone button next to the send button. A recording of up to two minutes is sent at once, together with any text already typed, and Mara hears it herself through the selected Core's audio input (Gemma 4 takes at most 60 seconds per WAV, so ffmpeg converts the recording to 16 kHz mono WAV and splits it at pauses). Voice messages are answered without the thinking phase. Uploaded audio files are heard the same way, up to ten minutes as far as the context window allows. Before Mara answers, the selected Core first transcribes the recording through the same serial work queue; Mara then gets both the audio and the transcript, which keeps her answer on the new message. The transcript appears under the voice message, keeps the conversation history readable and lets Mara decide what to keep in her long-term memory, as she does for text. Words in uploaded audio files are not treated as the user's own statements. In the AI profile, each account can list names and terms that the Core mishears (places, people, technical words, one per line, up to 40); the Core and Mara are told to spell them exactly that way. After a voice message Mara can use her tools like after a typed message, for example a web search. The browser records without its own noise suppression, which can blur soft consonants. Cores without audio input show the button as unavailable. The browser needs HTTPS for microphone access.
 - **Videos:** Mara watches a video as a series of frames with timestamps. For signed-in accounts whose selected Core accepts audio input, she also hears its sound track: it is cut into WAV parts of at most 60 seconds (within the same audio budget of the context window as audio files), the spoken words are transcribed first, and frames and sound go into the same call. The transcript appears under the video and stays in the conversation history. A video without a sound track, with a silent track, a Core without audio input or a guest account get an honest note instead; a shortened sound track is named.
 - **Live conversation:** while the input row is empty, the send button turns into the live button (a gently pulsing wave icon, still when the system asks for reduced motion); as soon as you type or attach something it is the send button again. The live button opens a full-screen conversation view (greeting, a state indicator for listening, thinking and speaking, mute and end). It works hands-free: a short pause (about 0.7 s) ends your turn, and speaking while Mara talks interrupts her. Each turn is transcribed first and Mara answers the text; her answer is streamed sentence by sentence and read aloud by Eve as soon as each sentence is ready, with the next part prepared while the current one plays (emojis are shown in the chat but not spoken). The live conversation always uses the Mara Normal Core when it is installed, hears and is allowed for the account, otherwise the chat's Core. The same Core writes the transcript of each turn. The conversation history is sent in a fixed order so Ollama can reuse its cache. Both sides of every turn are stored as normal chat messages (the spoken turn with its transcript, then Mara's answer), and Mara's long-term memory step runs after the conversation ends. Signed-in accounts only; it needs HTTPS and, for the voice, the optional voice service. On a CPU server expect a few seconds per turn: it is a fast turn-taking conversation, not a native speech-to-speech model.
-- **Admin Core:** Account and model management, permissions, diagnostics, audit information, runtime controls and the integrated update interface. Owner-only cards show the results of the server tests for Mara's voice and for image generation (`scripts/tts-spike.sh`, `scripts/image-spike.sh`). Image generation itself is not available in the chat yet.
+- **Images:** Mara paints images on request in the private chat with FLUX.2-klein 4B (Apache 2.0) through stable-diffusion.cpp, built for the server's CPU. She writes the image description herself; the default size is 512 × 512 (about a minute on a 20-thread CPU), 1024 × 1024 only when you explicitly ask for a large or high-resolution image (three to four minutes). While an image is being made, it holds Mara's serial work queue, so no Core runs at the same time; requests waiting behind it wait longer instead of failing. The work view shows the real progress (loading, steps 1 to 4, decoding) and the work can be cancelled. The image is attached to Mara's answer: tap it to open it in full size, or download it. Every image carries the Starlight Unit Studios logo small in its lower right corner at 50 % opacity. It is stored privately for the account, survives a reload and is deleted with its chat or account. Mara remembers in the conversation history what she painted. The weights are loaded once at their pinned revision and checked against their SHA-256; weights already downloaded by the server image test are reused. Guests never generate images; the owner can switch images off for everyone under **Admin Core > Operations** or per account under **Admin Core > Users**.
+- **Admin Core:** Account and model management, permissions, diagnostics, audit information, runtime controls and the integrated update interface. Owner-only cards show the results of the server tests for Mara's voice and for image generation (`scripts/tts-spike.sh`, `scripts/image-spike.sh`).
 
 **Not yet a completed feature:** A selectable English/German interface localization is planned and must not be presented as implemented. See the [Roadmap](ROADMAP.md), [Feature matrix](docs/COREUI_FEATURE_MATRIX.md) and [Voice plan](docs/COREUI_VOICE_PLAN.md) for scope and status.
 
@@ -144,6 +148,13 @@ To inspect the optional voice service:
 ```bash
 cd /opt/ember-coreui
 sudo ./scripts/stack.sh logs --tail=100 voice
+```
+
+To inspect the optional image service:
+
+```bash
+cd /opt/ember-coreui
+sudo ./scripts/stack.sh logs --tail=100 image
 ```
 
 Use `sudo ./scripts/stack.sh restart` for a normal stack restart or `sudo ./scripts/stack.sh stop` to stop services without deleting data.

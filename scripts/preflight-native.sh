@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.38: Bildtest laedt die VAEs richtig (Weiterleitung bei Hugging Face), Ladefehler in den Bildproben sichtbar.
+# CoreAI: TCI Interface 0.6.39: Maras Bilder (P20.5 B/C) mit FLUX.2-klein 4B als Werkzeug im Chat, Bilddienst in der seriellen Warteschlange.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -154,6 +154,15 @@ UI_FILES=(
   tools/tts_spike/textprep_de.py
   tools/image_spike/run.py
   tools/image_spike/models.json
+  tools/image/image_service.py
+  tools/image/adopt_spike.py
+  config/image/mara-image.json
+  api/image_gen.php
+  docker/image/Dockerfile
+  database/migrations/026_image_tool.sql
+  scripts/image-service-selftest.py
+  scripts/image-gen-selftest.php
+  scripts/image-chat-ui-selftest.cjs
   config/voice/mara-voice.json
   api/voice.php
   api/voice_store.php
@@ -380,6 +389,16 @@ if image_spike_test="$(python3 "$PROJECT_ROOT/scripts/image-spike-selftest.py" 2
   ok 'Bildtest: Register und Lizenzen, Laden mit Wiederaufnahme und SHA-256, Lock-Pruefung, Messlauf und Bericht geprueft.'
 else
   fail "Bildtest-Selbsttest: ${image_spike_test:-Unbekannter Fehler}"
+fi
+
+# 0.6.39 (P20.5 B): Mara's image service: registry (FLUX.2-klein 4B, pins required), progress
+# from sd-cli, weights at their pinned revision and SHA-256, one job at a time, cancel, time
+# limit, adopting the image test's weights, compose and installer.
+image_service_test=''
+if image_service_test="$(python3 "$PROJECT_ROOT/scripts/image-service-selftest.py" 2>&1)"; then
+  ok 'Bilddienst: Register, echte Schritte, Gewichte mit festem SHA-256, ein Bild zur Zeit, Abbruch, Zeitlimit und Uebernahme aus dem Bildtest geprueft.'
+else
+  fail "Bilddienst-Selbsttest: ${image_service_test:-Unbekannter Fehler}"
 fi
 
 if python3 "$PROJECT_ROOT/scripts/python-input-selftest.py" >/dev/null 2>&1; then
@@ -759,6 +778,15 @@ if command -v php >/dev/null 2>&1; then
     ok 'Bildproben: Testlaeufe, nur gelistete PNG-Bilder aus ihrem Lauf, nur fuer den Inhaber geprueft.'
   else
     fail "Bildproben-Selbsttest: ${image_store_test:-Unbekannter Fehler}"
+  fi
+
+  # 0.6.39 (P20.5 C): Mara's images in the chat: marker, work loop step, keeping the image for
+  # the account, cancel, history, deletion with the chat, switches under Betrieb and per account.
+  image_gen_test=''
+  if image_gen_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/image-gen-selftest.php" 2>&1)"; then
+    ok 'Bilder im Chat: Marker, Arbeitsschritt, Speichern fuer das Konto, Abbruch, Verlauf, Loeschen und Schalter geprueft.'
+  else
+    fail "Bilder-im-Chat-Selbsttest: ${image_gen_test:-Unbekannter Fehler}"
   fi
 
   compact_test=''

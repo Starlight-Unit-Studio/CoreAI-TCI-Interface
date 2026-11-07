@@ -69,6 +69,7 @@ function coreui_admin_setting_rows(PDO $pdo): array {
     'tool_web_enabled' => defined('STU_EMBER_WEB_ENABLED') && STU_EMBER_WEB_ENABLED ? '1' : '0',
     'tool_browse_enabled' => defined('STU_EMBER_BROWSE_ENABLED') && STU_EMBER_BROWSE_ENABLED ? '1' : '0',
     'tool_python_enabled' => defined('STU_EMBER_PY_ENABLED') && STU_EMBER_PY_ENABLED ? '1' : '0',
+    'tool_image_enabled' => defined('STU_IMAGE_ENABLED') && !STU_IMAGE_ENABLED ? '0' : '1',
     'external_api_enabled' => '0',
     'external_api_label' => 'OpenAI-kompatibel',
     'external_api_base_url' => '',
@@ -535,7 +536,7 @@ if ($action === 'settings_save') {
     'registration_enabled', 'guest_enabled', 'guest_message_limit', 'guest_network_guests', 'guest_daily_messages',
     'captcha_enabled', 'maintenance_enabled', 'maintenance_message',
     'memory_default_enabled', 'user_system_prompt_max_chars',
-    'tool_web_enabled', 'tool_browse_enabled', 'tool_python_enabled',
+    'tool_web_enabled', 'tool_browse_enabled', 'tool_python_enabled', 'tool_image_enabled',
     'external_api_enabled', 'external_api_label', 'external_api_base_url', 'external_api_model',
   ];
   $incoming = $body['settings'] ?? [];

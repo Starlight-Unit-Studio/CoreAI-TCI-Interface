@@ -81,7 +81,7 @@ if ($messageIds !== [] && coreui_console_attachment_schema_ready($pdo)) {
   $placeholders = implode(',', array_fill(0, count($messageIds), '?'));
   $stAttachments = $pdo->prepare(
     'SELECT a.message_id, a.media_uuid, a.position, cm.kind, cm.orig_name, '
-    . 'cm.mime_type, cm.file_size, cm.public_url '
+    . 'cm.mime_type, cm.file_size, cm.public_url, cm.rel_path '
     . 'FROM stu_console_message_attachments a '
     . 'JOIN stu_console_media cm ON cm.uuid=a.media_uuid AND cm.user_id=a.user_id '
     . 'WHERE a.user_id=? AND a.message_id IN (' . $placeholders . ') '
@@ -101,6 +101,8 @@ if ($messageIds !== [] && coreui_console_attachment_schema_ready($pdo)) {
       'size' => (int)($media['file_size'] ?? 0),
       'url' => stu_public_path('api/console_media.php?uuid=' . rawurlencode($uuid)),
       'image_url' => $media['public_url'] ?: null,
+      // 0.6.39 (P20.5): an image Mara made herself.
+      'generated' => str_starts_with((string)($media['rel_path'] ?? ''), 'var/console_media/images/'),
     ];
   }
 }

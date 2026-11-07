@@ -204,6 +204,11 @@
         return 'Die Antwort ist im privaten Verlauf gesichert. Die einzelnen Schritte bleiben im Verlauf verfügbar.';
       case 'Auftrag auf Wunsch abgebrochen':
         return 'Der Auftrag wurde auf Wunsch abgebrochen. Ich starte keine weitere Ausführung.';
+      // 0.6.39 (P20.5): Mara's images.
+      case 'Bild erzeugt':
+        return 'Das Bild ist fertig und hängt an meiner Antwort.';
+      case 'Bild nicht erzeugt':
+        return 'Ich konnte das Bild nicht erzeugen. Den Grund nenne ich in meiner Antwort.';
       default:
         // Future and plugin-defined work events also get a truthful note,
         // without shipping one dedicated model-specific UI workaround.
@@ -522,7 +527,8 @@
     'Markdown-Projektplan gespeichert':1,'Markdown-Projektplan abgeschlossen':1,
     'Werkzeugantwort wird einmal korrigiert':1,'Werkzeugantwort korrigiert':1,
     'Korrekturversuch vorbereitet':1,'Unvollstaendiger Python-Code nicht ausgefuehrt':1,
-    'Antwort blieb nach Fortsetzung unvollstaendig':1,'Auftrag auf Wunsch abgebrochen':1
+    'Antwort blieb nach Fortsetzung unvollstaendig':1,'Auftrag auf Wunsch abgebrochen':1,
+    'Bild erzeugt':1
   };
   function isNarration(event) {
     return !!event && (event.kind === 'commentary' || event.state === 'error'
@@ -590,6 +596,8 @@
   };
   function activity(event) {
     if (!event) return 'Warte auf den ersten Schritt';
+    // 0.6.39 (P20.5): the image's real progress ("Bild: Schritt 2 von 4").
+    if (/^Bild: /.test(String(event.title))) return 'Ich male · ' + String(event.title).slice(6);
     var text = ACTIVITY[event.title];
     if (!text) return event.state === 'running' ? displayTitle(event.title) : 'Arbeite weiter';
     return text.replace('{f}', event.meta.file_name || 'die Datei');

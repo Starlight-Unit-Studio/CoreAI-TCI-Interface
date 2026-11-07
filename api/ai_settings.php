@@ -278,12 +278,15 @@ function coreui_operator_runtime_load(PDO $pdo): array {
     'web' => defined('STU_EMBER_WEB_ENABLED') ? (bool)STU_EMBER_WEB_ENABLED : true,
     'browse' => defined('STU_EMBER_BROWSE_ENABLED') ? (bool)STU_EMBER_BROWSE_ENABLED : true,
     'python' => defined('STU_EMBER_PY_ENABLED') ? (bool)STU_EMBER_PY_ENABLED : true,
+    // 0.6.39 (P20.5): Mara's images.
+    'image' => defined('STU_IMAGE_ENABLED') ? (bool)STU_IMAGE_ENABLED : true,
   ];
   if (!function_exists('stu_app_setting_get')) return $defaults;
   return [
     'web' => stu_app_setting_get($pdo, 'tool_web_enabled', $defaults['web'] ? '1' : '0') === '1',
     'browse' => stu_app_setting_get($pdo, 'tool_browse_enabled', $defaults['browse'] ? '1' : '0') === '1',
     'python' => stu_app_setting_get($pdo, 'tool_python_enabled', $defaults['python'] ? '1' : '0') === '1',
+    'image' => stu_app_setting_get($pdo, 'tool_image_enabled', $defaults['image'] ? '1' : '0') === '1',
   ];
 }
 

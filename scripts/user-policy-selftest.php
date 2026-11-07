@@ -24,7 +24,10 @@ policy_test(coreui_user_policy_tools($all, $policy) === ['web' => true, 'browse'
 policy_test(coreui_user_policy_tools(['web' => false, 'browse' => true, 'python' => true], coreui_user_policy_default())['web'] === false,
   'global off stays off');
 $row = coreui_user_policy_from_row(['tool_web' => '0', 'tool_browse' => '1', 'tool_python' => '1', 'daily_messages' => '40', 'max_num_ctx' => '16384']);
-policy_test($row === ['tools' => ['web' => false, 'browse' => true, 'python' => true], 'daily_messages' => 40, 'max_num_ctx' => 16384], 'row read back');
+policy_test($row === ['tools' => ['web' => false, 'browse' => true, 'python' => true, 'image' => true], 'daily_messages' => 40, 'max_num_ctx' => 16384], 'row read back');
+// 0.6.39 (P20.5): images are a tool of their own; a row without the column (before migration 026) keeps them.
+$row = coreui_user_policy_from_row(['tool_web' => '1', 'tool_browse' => '1', 'tool_python' => '1', 'tool_image' => '0']);
+policy_test($row['tools']['image'] === false, 'images blocked for the account read back');
 
 // Limits: the slider offers only the allowed windows; an own choice above is cut.
 $capped = ['tools' => $all, 'daily_messages' => null, 'max_num_ctx' => 16384];
@@ -87,9 +90,15 @@ try {
 
   policy_test(coreui_user_policy_load($pdo, $uid) === coreui_user_policy_default(), 'no row: defaults');
   $saved = coreui_user_policy_save($pdo, $uid, ['tools' => ['python' => false, 'browse' => false]], 1, $choices);
-  policy_test($saved['tools'] === ['web' => true, 'browse' => false, 'python' => false], 'tools saved');
+  policy_test($saved['tools'] === ['web' => true, 'browse' => false, 'python' => false, 'image' => true], 'tools saved');
   $saved = coreui_user_policy_save($pdo, $uid, ['tools' => ['browse' => true]], 1, $choices);
-  policy_test($saved['tools'] === ['web' => true, 'browse' => true, 'python' => false], 'only the given tools change');
+  policy_test($saved['tools'] === ['web' => true, 'browse' => true, 'python' => false, 'image' => true], 'only the given tools change');
+  if (coreui_user_policy_image_ready($pdo)) {
+    $saved = coreui_user_policy_save($pdo, $uid, ['tools' => ['image' => false]], 1, $choices);
+    policy_test($saved['tools'] === ['web' => true, 'browse' => true, 'python' => false, 'image' => false], 'images blocked for the account (migration 026)');
+    $saved = coreui_user_policy_save($pdo, $uid, ['tools' => ['image' => true]], 1, $choices);
+    policy_test($saved['tools']['image'] === true, 'and allowed again');
+  }
   foreach ([['tools' => ['shell' => false]], ['tools' => ['web' => 'no']], ['tools' => 'all']] as $bad) {
     try { coreui_user_policy_save($pdo, $uid, $bad, 1, $choices); policy_test(false, 'bad tools accepted'); }
     catch (InvalidArgumentException $e) { policy_test($e->getMessage() === 'invalid_tools', 'bad tools refused'); }

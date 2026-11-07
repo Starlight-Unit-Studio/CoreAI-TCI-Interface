@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 /*
  * 0.5.85: rules per account (Admin Core > Benutzer > BEARBEITEN).
+ * 0.6.39 (P20.5): images are a tool of their own (column tool_image, migration 026).
  *
  * Tools: web search, browser and Python can be blocked for one account; the
  * global switch under Betrieb stays the upper bound (a tool that is off there
@@ -11,7 +12,7 @@ declare(strict_types=1);
  * every account has the defaults, and nothing breaks.
  */
 
-const COREUI_USER_POLICY_TOOLS = ['web', 'browse', 'python'];
+const COREUI_USER_POLICY_TOOLS = ['web', 'browse', 'python', 'image'];
 const COREUI_USER_POLICY_DAILY_MAX = 100000;
 
 function coreui_user_policy_ready(PDO $pdo): bool {
@@ -23,8 +24,17 @@ function coreui_user_policy_ready(PDO $pdo): bool {
   }
 }
 
+function coreui_user_policy_image_ready(PDO $pdo): bool {
+  try {
+    $pdo->query('SELECT tool_image FROM stu_user_policies LIMIT 0');
+    return true;
+  } catch (Throwable $e) {
+    return false;
+  }
+}
+
 function coreui_user_policy_default(): array {
-  return ['tools' => ['web' => true, 'browse' => true, 'python' => true], 'daily_messages' => null, 'max_num_ctx' => null];
+  return ['tools' => ['web' => true, 'browse' => true, 'python' => true, 'image' => true], 'daily_messages' => null, 'max_num_ctx' => null];
 }
 
 function coreui_user_policy_from_row(array $row): array {
@@ -99,6 +109,13 @@ function coreui_user_policy_save(PDO $pdo, int $uid, array $patch, int $actorId,
     $uid, $policy['tools']['web'] ? 1 : 0, $policy['tools']['browse'] ? 1 : 0, $policy['tools']['python'] ? 1 : 0,
     $policy['daily_messages'], $policy['max_num_ctx'], $actorId > 0 ? $actorId : null,
   ]);
+  // 0.6.39: the image switch needs migration 026; without it every account keeps images.
+  if (coreui_user_policy_image_ready($pdo)) {
+    $pdo->prepare('UPDATE stu_user_policies SET tool_image = ? WHERE user_id = ?')
+      ->execute([$policy['tools']['image'] ? 1 : 0, $uid]);
+  } elseif (empty($policy['tools']['image'])) {
+    throw new RuntimeException('missing_schema_026');
+  }
   return coreui_user_policy_load($pdo, $uid);
 }
 

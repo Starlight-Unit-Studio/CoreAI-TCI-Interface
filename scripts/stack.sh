@@ -38,13 +38,17 @@ ensure_private_storage_dirs() {
   # 0.6.1: read-aloud cache (PHP) and Eve's weights (voice service, uid 33).
   local voice_cache_dir="$PROJECT_ROOT/var/voice_cache"
   local voice_models_dir="$PROJECT_ROOT/var/voice-models"
+  # 0.6.39: FLUX.2-klein's weights (image service, uid 33).
+  local image_models_dir="$PROJECT_ROOT/var/image-models"
   if (( EUID == 0 )); then
     install -d -m 0770 -o 33 -g 33 "$profile_dir" "$knowledge_dir" "$python_dir" "$session_dir" "$request_dir" \
-      "$voice_cache_dir" "$voice_models_dir"
+      "$voice_cache_dir" "$voice_models_dir" "$image_models_dir"
     return
   fi
-  mkdir -p "$profile_dir" "$knowledge_dir" "$python_dir" "$session_dir" "$request_dir" "$voice_cache_dir" "$voice_models_dir"
-  chmod 0770 "$profile_dir" "$knowledge_dir" "$python_dir" "$session_dir" "$request_dir" "$voice_cache_dir" "$voice_models_dir" 2>/dev/null || true
+  mkdir -p "$profile_dir" "$knowledge_dir" "$python_dir" "$session_dir" "$request_dir" "$voice_cache_dir" "$voice_models_dir" \
+    "$image_models_dir"
+  chmod 0770 "$profile_dir" "$knowledge_dir" "$python_dir" "$session_dir" "$request_dir" "$voice_cache_dir" "$voice_models_dir" \
+    "$image_models_dir" 2>/dev/null || true
 }
 
 remove_private_studio_lore_files() {

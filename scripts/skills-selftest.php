@@ -170,7 +170,7 @@ foreach (['chat.php', 'console_stream.php'] as $file) {
 skill_assert(substr_count($chat, 'coreui_skills_prepare($pdo, $userMsg, $channel, ') === 2, 'Both prompt builders prepare skills');
 skill_assert(str_contains($chat, "if (\$tool['tool'] === 'skill') return coreui_skills_tool_result((string)\$tool['input']);")
   && str_contains($chat, "if (coreui_skills_index_active()) \$tools[] = 'skill';")
-  && str_contains($chat, "array_intersect(\$loopAllowed, ['web', 'archive', 'skill'])")
+  && str_contains($chat, "array_intersect(\$loopAllowed, ['web', 'archive', 'skill', 'image'])")
   && str_contains($chat, "if (\$fileTask) coreui_skills_drop_index();")
   && str_contains($chat, '|\[SKILL:\s*.*?\]|'), 'chat.php runs, offers, drops and strips the skill step');
 skill_assert(substr_count((string)file_get_contents($root . '/api/console_stream.php'), '|| coreui_skills_extract_marker($reply) !== null') === 2,

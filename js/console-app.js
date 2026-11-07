@@ -1830,6 +1830,35 @@
     var kind = att.kind || 'document';
     var url  = att.url || (att.uuid ? (API_BASE + '/console_media.php?uuid=' + encodeURIComponent(att.uuid)) : '');
 
+    if (kind === 'image' && att.generated === true && url) {
+      // 0.6.39 (P20.5): an image Mara made. Tapping opens it in full size; it can be saved.
+      var figure = document.createElement('figure');
+      figure.className = 'msg-generated';
+      var open = document.createElement('a');
+      open.className = 'msg-image-link';
+      open.href = url;
+      open.target = '_blank';
+      open.rel = 'noopener';
+      open.setAttribute('aria-label', 'Bild in voller Größe öffnen');
+      var picture = document.createElement('img');
+      picture.className = 'msg-image';
+      picture.src = url;
+      picture.alt = 'Bild von TCI: Mara';
+      picture.loading = 'lazy';
+      open.appendChild(picture);
+      figure.appendChild(open);
+      var caption = document.createElement('figcaption');
+      caption.className = 'msg-generated-caption';
+      // The studio's mark sits in the image itself (api/image_gen.php); the line offers the download.
+      var save = document.createElement('a');
+      save.href = url;
+      save.setAttribute('download', att.name || 'Mara-Bild.png');
+      save.textContent = 'Herunterladen';
+      caption.appendChild(save);
+      figure.appendChild(caption);
+      return figure;
+    }
+
     if (kind === 'image' && (att.image_url || url)) {
       var img = document.createElement('img');
       img.className = 'msg-image';
@@ -2992,6 +3021,8 @@
           mode: data.generation_mode,
           source_response_id: data.source_response_id || 0
         } : null,
+        // 0.6.39 (P20.5): images Mara made in this answer show at once.
+        attachments: data && Array.isArray(data.attachments) && data.attachments.length ? data.attachments : null,
         attachment: null,
         created_at: new Date().toISOString()
       }]);

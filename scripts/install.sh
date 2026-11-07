@@ -248,6 +248,7 @@ prepare_permissions() {
     "$PROJECT_ROOT/var/update-request" \
     "$PROJECT_ROOT/var/voice_cache" \
     "$PROJECT_ROOT/var/voice-models" \
+    "$PROJECT_ROOT/var/image-models" \
     "$PROJECT_ROOT/uploads/ember_browse" \
     "$PROJECT_ROOT/assets/chat_media" \
     "$PROJECT_ROOT/assets/profile_photos" \
@@ -301,6 +302,7 @@ COREUI_PROJECT_ROOT=$PROJECT_ROOT
 COREUI_INSTALL_SEARXNG=$INSTALL_SEARXNG
 COREUI_INSTALL_BROWSE=$INSTALL_BROWSE
 COREUI_INSTALL_VOICE=$INSTALL_VOICE
+COREUI_INSTALL_IMAGE=$INSTALL_IMAGE
 COREUI_SEARXNG_URL=$SEARXNG_URL
 COREUI_SEARXNG_SECRET=$SEARXNG_SECRET
 ENV
@@ -530,6 +532,7 @@ REQUEST_BIND_ADDRESS="${COREUI_BIND_ADDRESS:-}"
 REQUEST_INSTALL_SEARXNG="${COREUI_INSTALL_SEARXNG:-}"
 REQUEST_INSTALL_BROWSE="${COREUI_INSTALL_BROWSE:-}"
 REQUEST_INSTALL_VOICE="${COREUI_INSTALL_VOICE:-}"
+REQUEST_INSTALL_IMAGE="${COREUI_INSTALL_IMAGE:-}"
 REQUEST_SEARXNG_URL="${COREUI_SEARXNG_URL:-}"
 
 SAVED_HTTP_PORT="$(read_saved_env COREUI_HTTP_PORT || true)"
@@ -546,6 +549,7 @@ SAVED_BIND_ADDRESS="$(read_saved_env COREUI_BIND_ADDRESS || true)"
 SAVED_INSTALL_SEARXNG="$(read_saved_env COREUI_INSTALL_SEARXNG || true)"
 SAVED_INSTALL_BROWSE="$(read_saved_env COREUI_INSTALL_BROWSE || true)"
 SAVED_INSTALL_VOICE="$(read_saved_env COREUI_INSTALL_VOICE || true)"
+SAVED_INSTALL_IMAGE="$(read_saved_env COREUI_INSTALL_IMAGE || true)"
 SAVED_SEARXNG_URL="$(read_saved_env COREUI_SEARXNG_URL || true)"
 SAVED_SEARXNG_SECRET="$(read_saved_env COREUI_SEARXNG_SECRET || true)"
 
@@ -573,6 +577,12 @@ INSTALL_SEARXNG="${REQUEST_INSTALL_SEARXNG:-${SAVED_INSTALL_SEARXNG:-1}}"
 INSTALL_BROWSE="${REQUEST_INSTALL_BROWSE:-${SAVED_INSTALL_BROWSE:-1}}"
 # 0.6.1: Maras Stimme (Vorlesen). Standard an; COREUI_INSTALL_VOICE=0 laesst sie weg.
 INSTALL_VOICE="${REQUEST_INSTALL_VOICE:-${SAVED_INSTALL_VOICE:-1}}"
+# 0.6.39: Maras Bilder (FLUX.2-klein 4B, bis etwa 14 GB RAM je Bild). Standard an ab
+# 32 GB Arbeitsspeicher; COREUI_INSTALL_IMAGE=0 laesst den Bilddienst weg, =1 erzwingt ihn.
+MEM_TOTAL_GB="$(awk '/^MemTotal:/ {printf "%d", $2/1048576}' /proc/meminfo 2>/dev/null || printf '0')"
+[[ "$MEM_TOTAL_GB" =~ ^[0-9]+$ ]] || MEM_TOTAL_GB=0
+if (( MEM_TOTAL_GB >= 31 )); then IMAGE_DEFAULT=1; else IMAGE_DEFAULT=0; fi
+INSTALL_IMAGE="${REQUEST_INSTALL_IMAGE:-${SAVED_INSTALL_IMAGE:-$IMAGE_DEFAULT}}"
 INSTALL_DOCKER="${COREUI_INSTALL_DOCKER:-1}"
 INSTALL_OLLAMA="${COREUI_INSTALL_OLLAMA:-1}"
 FORCE_CONFIG="${COREUI_FORCE_CONFIG:-0}"
@@ -598,6 +608,7 @@ if [[ -f "$CONFIG_FILE" && -f "$ENV_FILE" && "$FORCE_CONFIG" != '1' ]]; then
       || -n "$REQUEST_INSTALL_SEARXNG" \
       || -n "$REQUEST_INSTALL_BROWSE" \
       || -n "$REQUEST_INSTALL_VOICE" \
+      || -n "$REQUEST_INSTALL_IMAGE" \
       || -n "$REQUEST_SEARXNG_URL" \
       || -n "${COREUI_PUBLIC_URL:-}" ]]; then
     die 'Konfigurationswerte wurden fuer eine bestehende Installation geaendert. Sichere den Stand und wiederhole bewusst mit COREUI_FORCE_CONFIG=1.'
@@ -694,6 +705,18 @@ if is_enabled "$INSTALL_VOICE"; then
     warn 'Sprachdienst konnte nicht gebaut werden; CoreAI laeuft ohne Vorlesen weiter.'
   fi
 fi
+# 0.6.39: Maras Bilder. Optional: stable-diffusion.cpp wird fuer genau diese CPU gebaut
+# (beim ersten Mal 10 bis 20 Minuten, danach aus dem Docker-Cache). Scheitert der Bau,
+# laeuft CoreAI ohne Bilder weiter.
+IMAGE_READY=0
+if is_enabled "$INSTALL_IMAGE"; then
+  log 'Baue den Bilddienst (stable-diffusion.cpp fuer diese CPU, FLUX.2-klein 4B).'
+  if compose build image; then
+    IMAGE_READY=1
+  else
+    warn 'Bilddienst konnte nicht gebaut werden; CoreAI laeuft ohne Bilder weiter.'
+  fi
+fi
 log 'Baue das wegwerfbare Python-Sandbox-Image ohne Projekt- oder Geheimnis-Mounts.'
 docker build -t ember-py:1 -f "$PROJECT_ROOT/tools/ember_py.Dockerfile" "$PROJECT_ROOT/tools"
 
@@ -776,6 +799,18 @@ if [[ "$VOICE_READY" == '1' ]]; then
   compose up -d voice || warn 'Sprachdienst startet nicht; CoreAI laeuft ohne Vorlesen weiter.'
 else
   compose stop voice >/dev/null 2>&1 || true
+fi
+
+if [[ "$IMAGE_READY" == '1' ]]; then
+  # Gewichte, die der Bildtest schon geladen hat, werden uebernommen statt neu geladen
+  # (etwa 9 GB). Fehlende laedt der Dienst selbst; er prueft jede Datei gegen ihren SHA-256.
+  python3 -I "$PROJECT_ROOT/tools/image/adopt_spike.py" "$PROJECT_ROOT/config/image/mara-image.json" \
+    "$PROJECT_ROOT/var/image-spike/models" "$PROJECT_ROOT/var/image-models" \
+    || warn 'Gewichte aus dem Bildtest konnten nicht uebernommen werden; der Bilddienst laedt sie selbst.'
+  log 'Starte den Bilddienst (Maras Bilder).'
+  compose up -d image || warn 'Bilddienst startet nicht; CoreAI laeuft ohne Bilder weiter.'
+else
+  compose stop image >/dev/null 2>&1 || true
 fi
 
 chmod 0750 "$PROJECT_ROOT/scripts/install.sh" "$PROJECT_ROOT/scripts/preflight.sh" \
