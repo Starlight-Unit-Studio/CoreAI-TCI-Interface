@@ -93,7 +93,7 @@ vm.runInNewContext(source, sandbox);
     'Kontext box shows the share of the window');
   assert(text.includes('Eingabe2.833') && text.includes('Ausgabe1.373'), 'Kontext legend counts');
   assert(text.includes('WEBSearXNG-Suche') && text.includes('BROWSEaus'), 'tool states are explicit');
-  assert(text.includes('Skills: Werkzeuge (Pflicht), 32 weitere wählt Mara selbst'));
+  assert(text.includes('Skills: Werkzeuge (Pflicht), 32 weitere wählt deine CoreAI selbst'));
   const links = aside.all('insight-file-name');
   const plan = links.find(link => link.textContent === 'projektplan-v3.md');
   assert.equal(plan.href, 'api/console_plan.php?id=abc', 'plan download link');
