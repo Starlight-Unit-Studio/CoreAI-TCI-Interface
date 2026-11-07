@@ -8,8 +8,8 @@ Planänderung: Aufbau der Bildsignaturen wie im Beispielbild. Unten links steht 
 UMSETZUNG
 - api/image_gen.php: Copyright als kleine weisse Rajdhani-Textzeile "© [Jahr] Quantum CoreAI" links unten, dynamisches Jahr aus date('Y').
 - api/image_gen.php: wasserzeichenartiges Quantum-Logo rechts unten, proportional skaliert und 50 % transparent.
-- Der dunkle Hintergrund des hochgeladenen PNG-Logos wird nur beim Zeichnen entfernt; Originaldatei bleibt unveraendert.
-- scripts/image-gen-selftest.php prueft Copyright 2026/2027, beide Bildecken, Originalgroesse, unveraenderten Bildmittelteil, keinen dunklen Logohintergrund und keine Verwendung des alten Studio-Logos.
+- Das hochgeladene PNG ist bereits transparent. Sein echter Alphakanal wird genutzt, ohne dunkelblaue Farbpixel nachtraeglich herauszufiltern. Originaldatei bleibt unveraendert.
+- scripts/image-gen-selftest.php prueft Copyright 2026/2027, beide Bildecken, Originalgroesse, unveraenderten Bildmittelteil, unveraenderten nativen PNG-Alphakanal und keine Verwendung des alten Studio-Logos.
 - scripts/preflight.sh und scripts/preflight-native.sh verlangen die neue Logo-Datei, damit installierte Systeme sie bereitstellen.
 - README.md, CHANGELOG.md, das TXT-Archiv und Versionsangaben bleiben auf 0.6.44. Es gibt keinen zweiten Versionssprung, solange PR #196 nicht gemergt ist.
 
