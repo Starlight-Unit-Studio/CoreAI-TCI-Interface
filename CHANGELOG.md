@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.6.44 - 07.11.2026
+
+Wunsch des Betreibers: Der Bildvermerk soll Quantum CoreAI mit automatisch aktualisiertem Jahr nennen, ohne das Studio-Logo.
+
+- **Text statt Logo:** Jedes fertige Bild traegt unten rechts nur "Erzeugt von Quantum CoreAI [Jahr]©". Die Jahreszahl stammt aus der Serverzeit beim Erzeugen, nicht aus der festen Versionsnummer. Die vorhandene Rajdhani-Schrift bleibt weiss mit leichtem Schatten und 50 % Deckkraft.
+- **Unabhaengiger Vermerk:** Das Studio-Logo wird nicht mehr auf Bildern platziert, bleibt aber fuer andere Oberflaechen im Repository. Der Bildvermerk benoetigt weiterhin PHP-GD und die vorhandene Schriftdatei.
+- **Regressionstests:** `scripts/image-gen-selftest.php` prueft das Jahr 2026/2027, die unveraenderte Bildgroesse, Position, Deckkraft, die einzelne Textzeile und den fehlenden Logo-Zugriff.
+- Keine Aenderung an Cores, Modelfile, Bildmodell, Datenbankschema, Installer oder Warteschlange. Ein vollstaendiger Image-Selbsttest und die Preflights erfordern die passende Server-Testumgebung.
+
 ## 0.6.43 - 07.11.2026
 
 Wunsch des Betreibers (Screenshots einer anderen Chat-KI): Der Anhang-Knopf soll ein "+" mit Menue werden, mit Fotos und Kamera, Dateien, Bild erstellen sowie Websuche und Recherche; Konnektoren sollen vorbereitet werden, da sie Teil der Roadmap sind, und Deep Research ist ebenfalls geplant.
