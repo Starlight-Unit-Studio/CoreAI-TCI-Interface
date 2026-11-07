@@ -6199,7 +6199,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   // 0.6.43: a tool chosen in the + menu is not left to chance: without its marker the step
   // starts with the person's own words (only when the account may use the tool).
   if ($composerIntent !== null && !$fileTask && $imageUrl === null && is_string($out)) {
-    $out = coreui_composer_intent_ensure($composerIntent, $out, $userMsg, ember_composer_intent_allowed($composerIntent, $consoleUid));
+    $out = coreui_composer_intent_ensure($composerIntent, $out, $userMsg, ember_composer_intent_allowed($composerIntent, $consoleUid), coreui_profile_assistant_name($pdo, $consoleUid));
   }
 
   // === Phase 2: Asynchroner Browse-Trigger ([BROWSE:]) - VOR der synchronen Websuche ===
