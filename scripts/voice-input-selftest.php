@@ -14,6 +14,9 @@ declare(strict_types=1);
 // the answer (one queued call per part, one retry when Core claims there was
 // no recording, silence never sent, cancel, full queue), its cache and the
 // lines it gives the history.
+// 0.6.35 (P20.2): videos are heard too: the sound track becomes WAVs after the frames in the
+// same images field, transcribed first; no track, a silent track, a Core without audio and
+// guests get the honest note; the transcript goes under the video and into the history.
 if (PHP_SAPI !== 'cli') exit(1);
 $root = dirname(__DIR__);
 $frames = sys_get_temp_dir() . '/coreai-vi-frames-' . bin2hex(random_bytes(4));
@@ -187,16 +190,25 @@ $read = static fn(string $f): string => (string)file_get_contents($root . '/' . 
 $noDash = static fn(string $t): bool => preg_match('/[\x{2013}\x{2014}]/u', $t) !== 1;
 vi_test($noDash($read('api/voice_transcribe.php') . $read('js/coreui-voice-input.js') . $read('api/voice_input.php')), 'no long dashes');
 $chat = $read('api/chat.php');
-vi_test(str_contains($chat, '$listenThink = $hasAudio ? false : null;')
+vi_test(str_contains($chat, '$listenThink = ($hasAudio || $videoSound !== null) ? false : null;')
   && str_contains($chat, "      \$listenOptions,\n      \$imageUrl,\n      \$listenThink\n    );"), 'Mara hears without thinking (operator decision)');
 // 0.6.20: Mara read the header of the skill documents out ("[COREAI KERN-SKILLS: ...]"); none in front of a recording.
-vi_test(str_contains($chat, "\$listenOptions = \$hasAudio ? ['__skills' => 'none'] : [];")
+vi_test(str_contains($chat, "\$listenOptions = (\$hasAudio || \$videoSound !== null) ? ['__skills' => 'none'] : [];")
   && str_contains($chat, '$imgReply = ember_call_ollama($primaryModel, $visionSys, $visionPrompt, $visionTimeout, $listenOptions, $imageUrl, $listenThink);'),
   'no skill documents in front of a recording, also on the retry');
-vi_test(str_contains($chat, "if (\$hasAudio && is_string(\$imgReply) && coreui_voice_reply_kind(\$imgReply) === 'missed') {"),
+vi_test(str_contains($chat, "if ((\$hasAudio || \$videoSound !== null) && is_string(\$imgReply) && coreui_voice_reply_kind(\$imgReply) === 'missed') {"),
   'one retry when Core claims there was no recording');
 vi_test(str_contains($chat, "\$imgReply,\n      \$imageUrl,\n      \$listenThink,\n      \$listenOptions\n    );"),
   'a continued answer keeps thinking off');
+// 0.6.35 (P20.2): the video's task names its sound track; its WAVs are removed after the call; the line under the video.
+vi_test(str_contains($chat, "ember_video_sound_task(\$videoSound, (string)(\$vf['sound_note'] ?? 'Ton hast du nicht.'))")
+  && !str_contains($chat, '"Ton hast du nicht. Was sagst du dazu')
+  && str_contains($chat, "ember_attach_audio_cleanup(\$meta['sound']['dir'] ?? null);"), 'the video task hears the sound track, its WAVs are removed');
+vi_test(str_contains($read('api/voice_input.php'), "kind IN (?, ?) LIMIT 1')") && str_contains($read('api/voice_input.php'), "\$st->execute([\$uuid, \$uid, 'audio', 'video']);")
+  && str_contains($read('js/coreui-voice-input.js'), "querySelectorAll('audio.msg-audio[data-uuid], video.msg-video[data-uuid]')")
+  && str_contains($read('js/console-app.js'), "vid.className = 'msg-image msg-video';")
+  && str_contains($read('js/console-app.js'), "if (att.uuid) vid.setAttribute('data-uuid', String(att.uuid));"),
+  'the transcript of a video\'s sound track shows under the video');
 vi_test(str_contains($chat, "  ?bool \$thinkOverride = null,\n  array \$optionOverrides = []\n): ?string {")
   && str_contains($chat, "      \$optionOverrides,\n      \$imageUrl,\n      \$thinkOverride\n    );"),
   'the continuation passes the think switch on');
@@ -279,7 +291,7 @@ vi_test(str_contains($app, 'window.CoreUIComposer = {') && str_contains($app, "a
 $api = $read('api/voice_input.php');
 vi_test(!str_contains($api, '$_FILES') && !str_contains($api, "'transcribe'")
   && strpos($api, "if (\$guest) stu_json(['ok' => false, 'error' => 'guests_not_allowed'], 403);") < strpos($api, "if (\$action === 'transcript') {")
-  && str_contains($api, "WHERE uuid = ? AND user_id = ? AND kind = ? LIMIT 1"), 'endpoint: status and the own transcript only, no guests');
+  && str_contains($api, "WHERE uuid = ? AND user_id = ? AND kind IN (?, ?) LIMIT 1"), 'endpoint: status and the own transcript only, no guests');
 $js = $read('js/coreui-voice-input.js');
 vi_test(str_contains($js, 'composer.sendVoice(file)') && str_contains($js, "var name = 'Sprachnachricht-'")
   && !str_contains($js, "getElementById('inputMessage')") && str_contains($js, 'VOICED_MIN_MS') && str_contains($js, 'if (!state.allowed) return;'),
@@ -350,6 +362,11 @@ $ff(['-f', 'lavfi', '-i', 'testsrc=d=2:s=160x120', '-f', 'lavfi', '-i', 'sine=d=
 $cover = $base . '/song.mp3';
 $ff(['-f', 'lavfi', '-i', 'sine=d=2', '-f', 'lavfi', '-i', 'color=c=red:s=64x64:d=1', '-map', '0', '-map', '1', '-c:a', 'libmp3lame',
   '-c:v', 'mjpeg', '-disposition:v', 'attached_pic', '-frames:v', '1', $cover]);
+$videoMute = $base . '/mute.webm';
+$ff(['-f', 'lavfi', '-i', 'testsrc=d=2:s=160x120', '-c:v', 'libvpx', $videoMute]);
+$videoQuiet = $base . '/quiet.webm';
+$ff(['-f', 'lavfi', '-i', 'testsrc=d=2:s=160x120', '-f', 'lavfi', '-i', 'anullsrc=r=48000:cl=mono', '-t', '2', '-c:v', 'libvpx',
+  '-c:a', 'libopus', $videoQuiet]);
 $junk = $base . '/junk.webm';
 file_put_contents($junk, str_repeat('kein Audio ', 400));
 
@@ -513,6 +530,91 @@ try {
     'a small context window: the first 65 s, said openly: ' . trim((string)preg_replace('~\s+~', ' ', $note)));
   ember_attach_audio_cleanup($clips['dir'] ?? null);
 
+  // 0.6.35 (P20.2): a video with sound: frames, then its sound track as WAV, transcribed first.
+  vi_test(coreui_voice_has_audio_stream($video) === true && coreui_voice_has_audio_stream($videoMute) === false
+    && coreui_voice_has_audio_stream($junk) === null, 'a sound track is found, a mute video has none');
+  $addVideo = static function (string $uuid, string $file, string $name) use ($pdo, $rel): void {
+    $pdo->prepare('INSERT INTO stu_console_media VALUES (?, 7, ?, ?, ?, ?, ?, ?, ?)')
+      ->execute([$uuid, 'video', $rel($file), $name, 'video/webm', filesize($file), '', gmdate('Y-m-d H:i:s')]);
+  };
+  $videoId = str_repeat('e5', 16);
+  $muteId = str_repeat('f6', 16);
+  $quietVideoId = str_repeat('a7', 16);
+  $addVideo($videoId, $video, 'urlaub.webm');
+  $addVideo($muteId, $videoMute, 'stumm.webm');
+  $addVideo($quietVideoId, $videoQuiet, 'leise.webm');
+  vi_reset();
+  $GLOBALS['VI_WORK'] = [];
+  unset($GLOBALS['STU_EMBER_ATTACHMENT_IMAGES'], $GLOBALS['STU_EMBER_ATTACHMENT_VISION_META']);
+  $replies(['Hallo aus dem Urlaub.']);
+  $message = '[file:' . $videoId . ']';
+  $block = ember_attachment_block($pdo, $message, 7);
+  $images = $GLOBALS['STU_EMBER_ATTACHMENT_IMAGES'] ?? [];
+  $meta = $GLOBALS['STU_EMBER_ATTACHMENT_VISION_META'] ?? [];
+  $told = trim((string)preg_replace('~\s+~', ' ', $block));
+  vi_test(count($meta) === 1 && $meta[0]['type'] === 'video' && is_array($meta[0]['sound']) && count($meta[0]['sound']['paths']) === 1,
+    'one video, its sound track as one WAV: ' . json_encode(array_map(static fn($m) => [$m['type'] ?? '', isset($m['sound'])], $meta)));
+  $frameCount = count($meta[0]['paths']);
+  vi_test($frameCount >= 1 && count($images) === $frameCount + 1 && array_slice($images, 0, $frameCount) === $meta[0]['paths']
+    && end($images) === $meta[0]['sound']['paths'][0] && str_ends_with((string)end($images), '.wav'),
+    'the frames first, then the sound track, in the same images field');
+  vi_test(coreui_wav_gemma_ready(coreui_voice_wav_file_info($meta[0]['sound']['paths'][0])), 'the sound track is a WAV Gemma accepts');
+  vi_test(str_contains($block, 'Du hoerst auch die Tonspur: Sie liegt dir nach den Einzelbildern als Audio bei.') && !str_contains($block, 'Ton hast du nicht'),
+    'Mara is told she hears the sound track: ' . $told);
+  $sent = $requests();
+  vi_test(count($sent) === 1 && $sent[0]['think'] === false && base64_decode((string)$sent[0]['messages'][1]['images'][0], true)
+    === file_get_contents($meta[0]['sound']['paths'][0]), 'transcribed first, exactly the WAV Mara gets');
+  vi_test($meta[0]['sound']['transcript'] === 'Hallo aus dem Urlaub.' && (coreui_voice_transcript_load(7, $videoId)['text'] ?? '') === 'Hallo aus dem Urlaub.',
+    'the transcript goes with the sound and is kept for the line under the video');
+  vi_test($GLOBALS['VI_WORK'] === [['tool', 'running', 'Tonspur wird mitgeschrieben'], ['tool', 'success', 'Tonspur mitgeschrieben']],
+    'the work path names the sound track: ' . json_encode($GLOBALS['VI_WORK']));
+  $task = ember_video_sound_task($meta[0]['sound'], (string)$meta[0]['sound_note']);
+  vi_test(str_contains($task, 'Du hoerst auch die Tonspur des Videos') && str_contains($task, 'laut Mitschrift: "Hallo aus dem Urlaub."')
+    && str_contains($task, 'im Zweifel gilt der Ton') && str_contains($task, 'erfinde keinen Ton') && !str_contains($task, 'Teilen'),
+    'Mara\'s task: hear the track, the transcript as an anchor, nothing invented: ' . $task);
+  vi_test(str_contains(ember_video_sound_task(['paths' => ['a', 'b'], 'stamps' => ['00:00', '00:58'], 'transcript' => '', 'truncated' => true,
+    'seconds' => 120.0], ''), 'in 2 Teilen ab 00:00, 00:58') && str_contains(ember_video_sound_task(['paths' => ['a'], 'transcript' => '',
+    'truncated' => true, 'seconds' => 120.0], ''), 'nur die ersten 02:00 Minuten des Tons')
+    && str_contains(ember_video_sound_task(['paths' => ['a'], 'transcript' => ''], ''), 'nur Musik oder Geraeusch'),
+    'parts with their starts, a cut track and a track without words are said');
+  ember_attach_frames_cleanup($meta[0]['dir'] ?? null);
+  ember_attach_audio_cleanup($meta[0]['sound']['dir'] ?? null);
+
+  // No track, a silent track, a Core without audio, a guest: the frames as before and the honest note.
+  $videoNote = static function (string $uuid) use ($pdo): array {
+    unset($GLOBALS['STU_EMBER_VIDEO_FRAMES']);
+    $block = ember_attachment_single_block($pdo, $uuid, 7, 4000);
+    $fr = $GLOBALS['STU_EMBER_VIDEO_FRAMES'] ?? [];
+    ember_attach_frames_cleanup($fr['dir'] ?? null);
+    return [$block, array_key_exists('sound', $fr) ? $fr['sound'] : 'missing', (string)($fr['sound_note'] ?? '')];
+  };
+  vi_reset();
+  [$b, $sound, $note] = $videoNote($muteId);
+  vi_test($sound === null && $note === 'Das Video hat keine Tonspur.' && str_contains($b, 'Das Video hat keine Tonspur.') && $requests() === [],
+    'a mute video: no track, nothing transcribed: ' . $note);
+  vi_test(ember_video_sound_task(null, $note) === 'Das Video hat keine Tonspur.', 'the task names it');
+  vi_reset();
+  [$b, $sound, $note] = $videoNote($quietVideoId);
+  vi_test($sound === null && str_contains($note, 'Die Tonspur ist still') && $requests() === [], 'a silent track: said so, nothing sent: ' . $note);
+  vi_reset();
+  $GLOBALS['VI']['hears'] = ['completion', 'vision'];
+  [$b, $sound, $note] = $videoNote($videoId);
+  vi_test($sound === null && str_contains($note, 'Der gewaehlte Core unterstuetzt keine Audioeingabe') && $requests() === [],
+    'a Core without audio: the frames, and the honest note about the sound: ' . $note);
+  vi_reset();
+  $GLOBALS['VI']['guest'] = true;
+  [$b, $sound, $note] = $videoNote($videoId);
+  vi_test($sound === null && $note === 'Ton hast du nicht.' && str_contains($b, 'Einzelbilder'), 'guests: frames only, as before');
+  // (The frames' cleanup only works under /ember_frames/, a safety net; this test folder is removed at the end.)
+  vi_test(glob($frames . '/audio_*') === [], 'no WAVs of a sound track left behind: ' . json_encode(array_map('basename', glob($frames . '/audio_*') ?: [])));
+  // The history: what was said in a video; a video without written sound keeps no line.
+  foreach ([[20, $videoId], [21, $muteId]] as [$msg, $uuid]) {
+    $pdo->prepare('INSERT INTO stu_console_message_attachments VALUES (?, ?, 7, 0)')->execute([$msg, $uuid]);
+  }
+  $notes = ember_attach_audio_history_notes($pdo, 7, [20, 21]);
+  vi_test(($notes[20] ?? '') === 'Ton des Videos "urlaub.webm": "Hallo aus dem Urlaub."' && !isset($notes[21]),
+    'the history knows what was said in the video: ' . json_encode($notes, JSON_UNESCAPED_UNICODE));
+
   // Guests and Cores without audio: the honest note, nothing prepared, nothing sent.
   vi_reset();
   $GLOBALS['VI']['guest'] = true;
@@ -618,4 +720,5 @@ try {
 }
 echo "CoreAI voice input: Mara hears voice messages and audio files herself (WAVs of at most 60 s in her own call, no thinking),"
   . " guests and Cores without audio get the honest note, audio-only WebM is audio, the transcript after the answer"
-  . " (queue, retry, silence, cache), the history and Mara's own memory reflection of what was said OK\n";
+  . " (queue, retry, silence, cache), the history and Mara's own memory reflection of what was said;"
+  . " videos with their sound track after the frames, transcribed first, honest without track, silent, without audio Core or as guest OK\n";

@@ -266,6 +266,67 @@ function ember_attach_audio_native(PDO $pdo, string $uuid, int $uid, string $pat
 }
 
 /**
+ * 0.6.35 (P20.2): Mara hears the sound track of a video, too. It is cut into WAVs of at most
+ * 60 s (like an audio file, within the audio budget of the context window), transcribed first
+ * as an anchor, and travels after the video's frames in the same call. Returns clips (the
+ * prepared WAVs with dir and transcript, or null) and note: what Mara is told about the sound,
+ * honestly also when there is none, it is silent, the Core cannot hear or she is a guest's Mara.
+ */
+function ember_attach_video_sound(PDO $pdo, string $uuid, int $uid, string $path, string $name): array {
+  $none = static fn(string $note): array => ['clips' => null, 'note' => $note];
+  if ($uid <= 0 || (function_exists('coreui_guest_is') && coreui_guest_is($pdo, $uid))) return $none('Ton hast du nicht.');
+  $stream = coreui_voice_has_audio_stream($path);
+  if ($stream === false) return $none('Das Video hat keine Tonspur.');
+  if (!ember_attach_audio_allowed($pdo, $uid)) {
+    return $none('Den Ton hoerst du nicht: Der gewaehlte Core unterstuetzt keine Audioeingabe. Sag das, wenn es um den Ton geht.');
+  }
+  $max = coreui_voice_native_budget(function_exists('ember_ollama_context_window') ? ember_ollama_context_window(ember_model()) : null);
+  $base = ember_video_frame_dir();
+  if (!is_dir($base)) @mkdir($base, 0770, true);
+  $dir = $base . '/audio_' . bin2hex(random_bytes(8));
+  if (!@mkdir($dir, 0700)) return $none('Den Ton konntest du diesmal nicht hoeren; sag das, wenn es um den Ton geht.');
+  $prepared = coreui_voice_prepare_native($path, $dir, $max);
+  ember_debug_log('ember_video_sound', ['uuid' => $uuid, 'ok' => $prepared['ok'], 'error' => (string)($prepared['error'] ?? ''),
+    'parts' => count((array)($prepared['paths'] ?? [])), 'seconds' => isset($prepared['seconds']) ? round((float)$prepared['seconds'], 1) : null]);
+  if (!$prepared['ok']) {
+    ember_attach_audio_cleanup($dir);
+    if (($prepared['error'] ?? '') === 'no_speech') return $none('Die Tonspur ist still, darin ist nichts zu hoeren.');
+    return $none($stream === null ? 'Ton hast du nicht.' : 'Den Ton konntest du diesmal nicht hoeren; sag das, wenn es um den Ton geht.');
+  }
+  $transcript = ember_attach_audio_transcribe_now($pdo, $uid, $uuid, $name, $prepared, true);
+  $clips = $prepared + ['name' => $name, 'voice' => false, 'dir' => $dir, 'uuid' => $uuid, 'transcript' => $transcript];
+  $parts = count((array)$prepared['paths']);
+  $note = 'Du hoerst auch die Tonspur: Sie liegt dir nach den Einzelbildern als Audio bei'
+    . ($parts > 1 ? ', in ' . $parts . ' Teilen ab ' . implode(', ', (array)$prepared['stamps']) . ' (Minuten:Sekunden)' : '') . '.';
+  if (!empty($prepared['truncated'])) {
+    $note .= ' Es liegen nur die ersten ' . coreui_voice_length((float)$prepared['seconds']) . ' Minuten des Tons bei; sag das offen.';
+  }
+  return ['clips' => $clips, 'note' => $note];
+}
+
+/**
+ * 0.6.35 (P20.2): what Mara is told about the sound of a video (pure). With the sound track:
+ * where it lies, its parts with start times, the transcript as an anchor (it may contain
+ * mishearings, the sound counts) and that she weighs only what she really hears. Without it:
+ * the honest note from the attachment (no track, silent, Core without audio, guests).
+ */
+function ember_video_sound_task(?array $sound, string $note): string {
+  if ($sound === null || empty($sound['paths'])) return trim($note) !== '' ? trim($note) : 'Ton hast du nicht.';
+  $parts = count((array)$sound['paths']);
+  $text = 'Du hoerst auch die Tonspur des Videos: Sie liegt dir nach den Einzelbildern als Audio bei'
+    . ($parts > 1 ? ', in ' . $parts . ' Teilen ab ' . implode(', ', (array)($sound['stamps'] ?? [])) . ' (Minuten:Sekunden)' : '') . '.';
+  $heard = trim((string)($sound['transcript'] ?? ''));
+  $text .= $heard !== ''
+    ? ' Gesprochen wird laut Mitschrift: "' . $heard . '". Die Mitschrift kann Hoerfehler enthalten; im Zweifel gilt der Ton.'
+    : ' Eine Mitschrift gesprochener Worte gibt es nicht; vielleicht ist nur Musik oder Geraeusch zu hoeren.';
+  $text .= ' Beziehe ein, was du wirklich hoerst (Sprache, Musik, Geraeusche), und verbinde es mit den Bildern; erfinde keinen Ton.';
+  if (!empty($sound['truncated'])) {
+    $text .= ' Du hoerst nur die ersten ' . coreui_voice_length((float)($sound['seconds'] ?? 0)) . ' Minuten des Tons; sag das offen.';
+  }
+  return $text;
+}
+
+/**
  * 0.6.20 (operator's decision, 06.11.2026): before Mara answers, Core writes the
  * transcript of the WAVs just made (Google's template, no thinking, one queued call
  * per part, one retry when Core claims there was no recording). With a long prompt
@@ -275,7 +336,7 @@ function ember_attach_audio_native(PDO $pdo, string $uuid, int $uid, string $pat
  * the answer skips it. A file cut to fit the context window is not kept: the job
  * after the answer writes the full ten minutes. Returns the text ('' when nothing).
  */
-function ember_attach_audio_transcribe_now(PDO $pdo, int $uid, string $uuid, string $name, array $prepared): string {
+function ember_attach_audio_transcribe_now(PDO $pdo, int $uid, string $uuid, string $name, array $prepared, bool $video = false): string {
   $known = coreui_voice_transcript_load($uid, $uuid);
   if (is_array($known) && ($known['state'] ?? '') === 'done') return trim((string)($known['text'] ?? ''));
   $runtime = function_exists('coreui_ai_runtime_settings') ? coreui_ai_runtime_settings() : [];
@@ -291,7 +352,8 @@ function ember_attach_audio_transcribe_now(PDO $pdo, int $uid, string $uuid, str
   $record = static function (string $state, string $title, array $meta = []) use ($pdo, $paths): void {
     if (function_exists('coreui_work_record') && count($paths) > 0) coreui_work_record($pdo, 'tool', $state, $title, $meta);
   };
-  $record('running', 'Aufnahme wird mitgeschrieben', ['parts' => count($paths)]);
+  // 0.6.35: the sound track of a video has its own step ("Tonspur"), not "Stimmsequenz".
+  $record('running', $video ? 'Tonspur wird mitgeschrieben' : 'Aufnahme wird mitgeschrieben', ['parts' => count($paths)]);
   $failed = false;
   foreach ($paths as $i => $path) {
     $heard = coreui_voice_transcribe_part(ember_url(), $model, (string)@file_get_contents($path), $language, 600,
@@ -307,9 +369,11 @@ function ember_attach_audio_transcribe_now(PDO $pdo, int $uid, string $uuid, str
     $parts[] = [(float)$start, (float)$end, trim((string)$heard['text'])];
   }
   $text = implode(' ', array_column($parts, 2));
-  $record($text !== '' ? 'success' : 'info', $text !== '' ? 'Aufnahme mitgeschrieben' : 'Mitschrift ohne Text', ['parts' => count($paths)]);
+  $record($text !== '' ? 'success' : 'info', $text !== '' ? ($video ? 'Tonspur mitgeschrieben' : 'Aufnahme mitgeschrieben') : 'Mitschrift ohne Text',
+    ['parts' => count($paths)]);
   if ($failed) return $text;
-  $cutToWindow = !empty($prepared['truncated']) && !coreui_voice_is_voice_message($name)
+  // An audio file cut to the window gets its full transcript after the answer; a video does not, so it keeps this one.
+  $cutToWindow = !$video && !empty($prepared['truncated']) && !coreui_voice_is_voice_message($name)
     && (float)($prepared['seconds'] ?? 0) < COREUI_VOICE_FILE_MAX_SECONDS - 0.5;
   if (!$cutToWindow && ($text !== '' || $silent === count($paths))) {
     coreui_voice_transcript_save($uid, $uuid, $text !== ''
@@ -413,28 +477,33 @@ function ember_attach_voice_reflect(PDO $pdo, array $senderChar, int $uid, array
 
 /**
  * Lines for the history: what was said in the voice messages and audio files
- * of earlier turns. [message_id => "[Sprachnachricht: ...]"].
+ * of earlier turns. [message_id => "[Sprachnachricht: ...]"]. 0.6.35: and in the sound
+ * track of a video, when it was transcribed.
  */
 function ember_attach_audio_history_notes(PDO $pdo, int $uid, array $messageIds): array {
   $messageIds = array_values(array_filter(array_map('intval', $messageIds), static fn(int $id): bool => $id > 0));
   if ($uid <= 0 || $messageIds === []) return [];
   try {
-    $st = $pdo->prepare('SELECT a.message_id, m.uuid, m.orig_name FROM stu_console_message_attachments a '
+    $st = $pdo->prepare('SELECT a.message_id, m.uuid, m.orig_name, m.kind FROM stu_console_message_attachments a '
       . 'JOIN stu_console_media m ON m.uuid = a.media_uuid AND m.user_id = a.user_id '
-      . 'WHERE a.user_id = ? AND m.kind = ? AND a.message_id IN (' . implode(',', array_fill(0, count($messageIds), '?')) . ') '
+      . 'WHERE a.user_id = ? AND m.kind IN (?, ?) AND a.message_id IN (' . implode(',', array_fill(0, count($messageIds), '?')) . ') '
       . 'ORDER BY a.message_id, a.position');
-    $st->execute([$uid, 'audio', ...$messageIds]);
+    $st->execute([$uid, 'audio', 'video', ...$messageIds]);
     $rows = $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
   } catch (Throwable $e) {
     return [];
   }
   $notes = [];
   foreach ($rows as $row) {
-    $voice = coreui_voice_is_voice_message((string)$row['orig_name']);
-    $label = $voice ? 'Stimmsequenz' : 'Audiodatei "' . (string)$row['orig_name'] . '"';
+    $video = ($row['kind'] ?? 'audio') === 'video';
+    $voice = !$video && coreui_voice_is_voice_message((string)$row['orig_name']);
+    $label = $video ? 'Ton des Videos "' . (string)$row['orig_name'] . '"'
+      : ($voice ? 'Stimmsequenz' : 'Audiodatei "' . (string)$row['orig_name'] . '"');
     $t = coreui_voice_transcript_load($uid, (string)$row['uuid']);
     $state = is_array($t) ? (string)($t['state'] ?? '') : '';
     $text = $state === 'done' ? trim((string)($t['text'] ?? '')) : '';
+    // A video without a written sound track keeps its old history line (none).
+    if ($video && $text === '' && $state !== 'silent') continue;
     // 0.6.20: no brackets: Mara copied bracket formats into her answers.
     $line = $text !== '' ? $label . ': "' . $text . '"'
       : ($state === 'silent' ? '(' . $label . ' ohne gesprochene Worte)' : '(' . $label . ')');
@@ -488,13 +557,15 @@ function ember_attachment_single_block(PDO $pdo, string $uuid, int $uid, int $ma
     // $imageUrl-Array braucht -- gleiches Muster wie STU_EMBER_BROWSE_REQUEST.
     $fr = ember_attach_video_frames($path);
     if (is_array($fr)) {
-      $GLOBALS['STU_EMBER_VIDEO_FRAMES'] = $fr + ['name' => $name];
+      // 0.6.35 (P20.2): the sound track comes along (or the honest reason why not).
+      $sound = ember_attach_video_sound($pdo, $uuid, $uid, $path, $name);
+      $GLOBALS['STU_EMBER_VIDEO_FRAMES'] = $fr + ['name' => $name, 'sound' => $sound['clips'], 'sound_note' => $sound['note']];
       $dur = $fr['duration'] !== null ? (' Laenge etwa ' . round($fr['duration']) . ' Sekunden.') : '';
       $note = 'Das ist ein Video.' . $dur . ' Du bekommst ' . count($fr['paths'])
             . ' Einzelbilder daraus als Bilder mitgeliefert, aufgenommen bei '
             . implode(', ', $fr['stamps']) . ' (Minuten:Sekunden, in dieser Reihenfolge). '
             . 'Beschreibe, was darauf zu sehen ist und wie es sich ueber die Zeit veraendert. '
-            . 'Ton hast du nicht.';
+            . $sound['note'];
     } else {
       $note = 'Das ist eine Videodatei. Du kannst sie NICHT ansehen, dir liegen nur Name, '
             . 'Typ und Groesse vor. Sag ehrlich, dass du den Inhalt nicht abspielen kannst, '
@@ -609,6 +680,10 @@ function ember_attachment_block(PDO $pdo, string &$msg, int $uid = 0): string {
         $GLOBALS['STU_EMBER_ATTACHMENT_IMAGES'] = [];
       }
       foreach ((array)$vision['paths'] as $path) {
+        $GLOBALS['STU_EMBER_ATTACHMENT_IMAGES'][] = $path;
+      }
+      // 0.6.35: a video's sound track right after its frames, in the same images field.
+      foreach ((array)(is_array($vision['sound'] ?? null) ? ($vision['sound']['paths'] ?? []) : []) as $path) {
         $GLOBALS['STU_EMBER_ATTACHMENT_IMAGES'][] = $path;
       }
     }

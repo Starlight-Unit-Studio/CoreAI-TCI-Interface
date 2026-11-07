@@ -1,0 +1,38 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.35
+Stand: 07.11.2026
+Basis: main 0.6.34 nach Merge von PR #185.
+
+AUFTRAG: P20.2 Videos hoeren (Roadmap Schritt 3, Betreiber: "jap bitte"). Sprachplan: ffmpeg trennt die Tonspur
+(WAV 16 kHz Mono 16 Bit), Abschnitte von hoechstens 60 s; Bilder und Tonabschnitte gemeinsam in derselben Anfrage, mit
+Zeitmarken; "Ton hast du nicht" entfaellt bei vorhandener Tonspur; Grenzen offen nennen.
+
+UMSETZUNG
+- api/voice_transcribe.php: coreui_voice_has_audio_stream (ffprobe -select_streams a).
+- api/ember_attachments.php:
+  - ember_attach_video_sound(pdo, uuid, uid, path, name) -> [clips|null, note]: Gast -> "Ton hast du nicht."; keine
+    Tonspur -> "Das Video hat keine Tonspur."; Core ohne Audio -> Hinweis; prepare_native im Budget
+    (coreui_voice_native_budget); no_speech -> "Die Tonspur ist still"; sonst Mitschrift (transcribe_now mit $video=true)
+    und Hinweis "Du hoerst auch die Tonspur ..." (Teile mit Startzeiten, Kuerzung).
+  - ember_attach_audio_transcribe_now(..., bool $video): Schritt "Tonspur wird mitgeschrieben"/"Tonspur mitgeschrieben";
+    eine Video-Mitschrift wird auch bei Kuerzung gespeichert (kein Nachlauf nach der Antwort fuer Videos).
+  - ember_video_sound_task(sound, note) (rein): Auftragstext fuer Maras Video-Aufruf.
+  - Video-Zweig: STU_EMBER_VIDEO_FRAMES + sound + sound_note; Sammelschleife haengt die Ton-WAVs direkt nach den
+    Einzelbildern an STU_EMBER_ATTACHMENT_IMAGES.
+  - ember_attach_audio_history_notes: auch Videos mit Mitschrift ('Ton des Videos "name": "..."'), sonst keine Zeile.
+- api/chat.php: $videoSound; Video-Auftrag mit ember_video_sound_task statt "Ton hast du nicht."; listenThink false
+  und __skills none auch mit Video-Ton; Wiederholung bei "missed"; Aufraeumen der Ton-WAVs.
+- api/voice_input.php: transcript auch fuer kind video (eigene Medien), fuer Videos nie "pending".
+- js/console-app.js: video.msg-video mit data-uuid; js/coreui-voice-input.js: Mitschrift-Zeile auch unter Videos;
+  js/coreui-work-events.js: Schritt "Tonspur wird mitgeschrieben" erzaehlt.
+- README: Abschnitt Videos; "geplant" nur noch die englische Oberflaeche.
+
+GEPRUEFT (hier ausgefuehrt): php -l (geaenderte PHP-Dateien), voice-input-selftest.php (mit ffmpeg und nachgebautem
+Ollama), voice-input-ui-selftest.cjs (Chromium), video-selftest.php, vision-persona-selftest.php, tci-language-selftest.cjs,
+terran-terminology-selftest.cjs, volle Testreihe mit Test-Datenbank, cache-bust, version-merge-check gegen 0.6.34.
+NICHT HIER GEPRUEFT: echte Gemma-Cores mit echten Videos (Sprache, Musik), Laufzeit langer Videos auf dem Server.
+
+NACH DEM MERGE (Betreiber):
+1. Update unter Einstellungen > System > CoreAI Update.
+2. Ein kurzes Handyvideo mit Sprache schicken (Core mit Lautsprecher-Symbol in der Core-Liste): Mara soll Bild und
+   Gesagtes verbinden; unter dem Video erscheint die Mitschrift.
+3. Ein Video ohne Ton (oder nur Musik) schicken: ehrlicher Hinweis bzw. Musik/Geraeusch statt erfundener Worte.

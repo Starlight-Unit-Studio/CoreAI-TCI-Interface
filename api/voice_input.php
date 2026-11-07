@@ -58,11 +58,12 @@ if ($method !== 'GET') stu_json(['ok' => false, 'error' => 'method_not_allowed']
 if ($action === 'transcript') {
   $uuid = strtolower(trim((string)($_GET['uuid'] ?? '')));
   if (preg_match('~^[a-f0-9]{32}$~', $uuid) !== 1) stu_json(['ok' => false, 'error' => 'invalid_uuid'], 400);
-  // Only the account's own audio attachments.
-  $st = $pdo->prepare('SELECT created_at FROM stu_console_media WHERE uuid = ? AND user_id = ? AND kind = ? LIMIT 1');
-  $st->execute([$uuid, $uid, 'audio']);
-  $created = $st->fetchColumn();
-  if ($created === false) stu_json(['ok' => false, 'error' => 'not_found'], 404);
+  // Only the account's own audio attachments; 0.6.35: and videos (their sound track).
+  $st = $pdo->prepare('SELECT created_at, kind FROM stu_console_media WHERE uuid = ? AND user_id = ? AND kind IN (?, ?) LIMIT 1');
+  $st->execute([$uuid, $uid, 'audio', 'video']);
+  $media = $st->fetch(PDO::FETCH_ASSOC);
+  if (!is_array($media)) stu_json(['ok' => false, 'error' => 'not_found'], 404);
+  $created = $media['created_at'];
   $data = coreui_voice_transcript_load($uid, $uuid);
   if (is_array($data) && ($data['state'] ?? '') === 'done') {
     stu_json(['ok' => true, 'state' => 'done', 'text' => (string)($data['text'] ?? ''), 'truncated' => !empty($data['truncated'])]);
@@ -71,6 +72,8 @@ if ($action === 'transcript') {
     stu_json(['ok' => true, 'state' => (string)$data['state']]);
   }
   // Not started yet: the transcript follows Mara's answer, which can take a while.
+  // A video's sound track is written before her answer or never (no track, Core without audio).
+  if (($media['kind'] ?? '') === 'video') stu_json(['ok' => true, 'state' => 'none']);
   $fresh = strtotime((string)$created) >= time() - COREUI_VOICE_TRANSCRIPT_PENDING_SECONDS;
   stu_json(['ok' => true, 'state' => $fresh ? 'pending' : 'none']);
 }

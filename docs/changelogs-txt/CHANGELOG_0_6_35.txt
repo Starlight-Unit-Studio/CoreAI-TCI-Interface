@@ -1,0 +1,8 @@
+CoreAI: TCI Interface 0.6.35 - 07.11.2026
+- P20.2 Videos hoeren: Tonspur als WAV-Teile (hoechstens 60 s, Audio-Budget des Kontextfensters) direkt nach den Einzelbildern im selben Aufruf.
+- Vorher mitgeschrieben (Begriffe aus dem KI-Profil); Mitschrift als Anker in Maras Auftrag, unter dem Video und im Verlauf.
+- Ohne Denken und ohne Skill-Dokumente wie bei Audio; eine Wiederholung, wenn der Core keinen Ton gehoert haben will.
+- Ehrliche Hinweise: keine Tonspur, stille Tonspur, Core ohne Audioeingabe, Gaeste; gekuerzter Ton wird genannt.
+- README: Live-Gespraech und Video-Ton nicht mehr als geplant gefuehrt.
+- Tests: voice-input-selftest.php, voice-input-ui-selftest.cjs.
+- Keine Aenderung an Cores, Modelfile, Datenbankschema, Installer, nginx oder Warteschlange.

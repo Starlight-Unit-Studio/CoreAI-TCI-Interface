@@ -5466,6 +5466,8 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       if (is_array($onlyMeta) && ($onlyMeta['type'] ?? '') === 'video') $vf = $onlyMeta;
       if (is_array($onlyMeta) && ($onlyMeta['type'] ?? '') === 'pdf') $pf = $onlyMeta;
     }
+    // 0.6.35 (P20.2): the sound track of the video, after its frames in the same call.
+    $videoSound = is_array($vf) && is_array($vf['sound'] ?? null) && !empty($vf['sound']['paths']) ? $vf['sound'] : null;
     if (is_array($vf) && !empty($vf['stamps'])) {
       $visionPrompt = $senderName . " hat dir ein Video geschickt (\"" . ($vf['name'] ?? 'video') . "\")"
         . ($userMsgClean !== 'hat dir ein Bild geschickt' ? " und schreibt: \"" . $userMsgClean . "\"" : "")
@@ -5476,7 +5478,8 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         . "Gespraechskontext und erfinde insbesondere keine Sci-Fi-, Androiden-, HUD- oder "
         . "Hologramm-Elemente, wenn sie in den Frames nicht klar sichtbar sind. Beschreibe danach, "
         . "was passiert und was sich veraendert. Bei Unsicherheit benennst du sie ehrlich. "
-        . "Ton hast du nicht. Was sagst du dazu als Mara? Antworte auf Deutsch. " . $visionRules;
+        . ember_video_sound_task($videoSound, (string)($vf['sound_note'] ?? 'Ton hast du nicht.'))
+        . " Was sagst du dazu als Mara? Antworte auf Deutsch. " . $visionRules;
     } elseif (is_array($pf) && !empty($pf['page_numbers'])) {
       $totalPages = isset($pf['total_pages']) && $pf['total_pages'] !== null
         ? (int)$pf['total_pages']
@@ -5510,10 +5513,11 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
     $visionTimeout = ember_timeout_for_model($primaryModel);
     $isVideoVision = is_array($vf) && !empty($vf['paths']);
     $isPdfVision = is_array($pf) && !empty($pf['paths']);
-    $listenThink = $hasAudio ? false : null;
+    // 0.6.35: a video with its sound track is heard like an audio file: no thinking, no skills.
+    $listenThink = ($hasAudio || $videoSound !== null) ? false : null;
     // 0.6.20: no skill documents in front of a recording: Mara read their header
     // "[COREAI KERN-SKILLS: ...]" out as the start of her answer; this path runs no tools.
-    $listenOptions = $hasAudio ? ['__skills' => 'none'] : [];
+    $listenOptions = ($hasAudio || $videoSound !== null) ? ['__skills' => 'none'] : [];
     $imgReply = ember_call_ollama(
       $primaryModel,
       $visionSys,
@@ -5524,7 +5528,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       $listenThink
     );
     // Core sometimes claims there was no recording although it arrived (P20.0): ask once more.
-    if ($hasAudio && is_string($imgReply) && coreui_voice_reply_kind($imgReply) === 'missed') {
+    if (($hasAudio || $videoSound !== null) && is_string($imgReply) && coreui_voice_reply_kind($imgReply) === 'missed') {
       ember_debug_log('ember_audio_missed_retry', ['chars' => mb_strlen($imgReply, 'UTF-8')]);
       $imgReply = ember_call_ollama($primaryModel, $visionSys, $visionPrompt, $visionTimeout, $listenOptions, $imageUrl, $listenThink);
     }
@@ -5542,6 +5546,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       if (!is_array($meta)) continue;
       if (($meta['type'] ?? '') === 'video' && function_exists('ember_attach_frames_cleanup')) {
         ember_attach_frames_cleanup($meta['dir'] ?? null);
+        if (is_array($meta['sound'] ?? null) && function_exists('ember_attach_audio_cleanup')) ember_attach_audio_cleanup($meta['sound']['dir'] ?? null);
       }
       if (($meta['type'] ?? '') === 'pdf' && function_exists('ember_attach_pdf_pages_cleanup')) {
         ember_attach_pdf_pages_cleanup($meta['dir'] ?? null);

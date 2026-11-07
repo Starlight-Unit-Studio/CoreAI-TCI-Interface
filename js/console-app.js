@@ -1841,10 +1841,12 @@
 
     if (kind === 'video') {
       var vid = document.createElement('video');
-      vid.className = 'msg-image';
+      vid.className = 'msg-image msg-video';
       vid.src = url;
       vid.controls = true;
       vid.preload = 'metadata';
+      // 0.6.35 (P20.2): the transcript of its sound track shows under it (coreui-voice-input.js).
+      if (att.uuid) vid.setAttribute('data-uuid', String(att.uuid));
       return vid;
     }
 
