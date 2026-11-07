@@ -1,0 +1,39 @@
+name: CoreAI Updater Security CI
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/coreai-updater.sh'
+      - 'scripts/lib/coreai_update_state.py'
+      - 'scripts/update-selftest.php'
+      - 'api/update.php'
+      - 'api/update_store.php'
+      - 'VERSION'
+      - '.github/workflows/coreai-updater-ci.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'scripts/coreai-updater.sh'
+      - 'scripts/lib/coreai_update_state.py'
+      - 'scripts/update-selftest.php'
+      - 'api/update.php'
+      - 'api/update_store.php'
+      - 'VERSION'
+      - '.github/workflows/coreai-updater-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  updater:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Bash syntax
+        run: bash -n scripts/coreai-updater.sh
+      - name: PHP updater contracts
+        run: php scripts/update-selftest.php
+      - name: Status helper syntax
+        run: python3 -m py_compile scripts/lib/coreai_update_state.py
