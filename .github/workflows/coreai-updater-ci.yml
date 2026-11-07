@@ -37,3 +37,5 @@ jobs:
         run: php scripts/update-selftest.php
       - name: Status helper syntax
         run: python3 -m py_compile scripts/lib/coreai_update_state.py
+      - name: Native SSH progress regression
+        run: python3 scripts/coreai-operator-progress-selftest.py
