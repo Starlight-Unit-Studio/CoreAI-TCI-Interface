@@ -28,7 +28,7 @@ $report = static fn(string $stamp, array $groups, array $extra = []): array => a
 ], $extra);
 $group = static fn(string $id, array $images, bool $ok = true) => ['id' => $id, 'label' => 'Z-Image-Turbo (6B, Q8_0)',
   'origin' => 'Tongyi-MAI', 'license' => 'Apache-2.0', 'steps' => 8, 'threads' => 20, 'ok' => $ok, 'error' => $ok ? '' : 'kaputt',
-  'images' => $images, 'files' => [['role' => 'vae', 'repo' => 'Comfy-Org/z_image_turbo', 'path' => 'split_files/vae/ae.safetensors',
+  'images' => $images, 'files' => [['role' => 'vae', 'repo' => 'Comfy-Org/Z-Image-Turbo', 'path' => 'split_files/vae/ae.safetensors',
     'revision' => str_repeat('a', 40), 'sha256' => str_repeat('b', 64), 'size' => 335304388, 'license' => 'Apache-2.0', 'secret' => 'x']]];
 
 $old = '20261106-090000';

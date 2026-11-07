@@ -1,0 +1,37 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.38
+Stand: 07.11.2026
+Basis: main 0.6.37 nach Merge von PR #188.
+
+AUFTRAG: Erster Bildtest des Betreibers (Lauf 20261107-101029) brachte keine Bilder. Karte: 0 von 0, "kein lock".
+run.log: grosse Dateien geladen; beide Gruppen scheitern am VAE: "Hugging Face meldet 103 Bytes, eingetragen sind
+335304388" (zimage-turbo) bzw. "112 Bytes, eingetragen sind 336211292" (flux2-klein-4b).
+
+URSACHE
+- models.json fuehrte Comfy-Org/z_image_turbo und Comfy-Org/flux2-klein-4B. Hugging Face leitet diese Namen auf die
+  eigene Schreibweise um (Comfy-Org/Z-Image-Turbo, Comfy-Org/Flux-2-Klein-4B). hf_resolve fragt per HEAD ohne
+  Umleitung und nahm bei einer Umleitung ohne X-Linked-Size das Content-Length der Umleitung als Dateigroesse.
+
+UMSETZUNG
+- tools/image_spike/models.json: VAE-Repositories in der Schreibweise von Hugging Face; Groessen per Hub geprueft
+  (335304388 und 336211292, beide LFS).
+- tools/image_spike/run.py hf_resolve: bis zu 6 HEAD-Anfragen; eine Umleitung ohne X-Linked-Etag auf denselben Host
+  (Hugging Face) wird weiterverfolgt; bei einer Umleitung kommen SHA-256 und Groesse nur aus X-Linked-Etag und
+  X-Linked-Size, Content-Length und ETag nur bei einer direkten Antwort (200). Sonst "zu viele Weiterleitungen".
+- run.py main fetch: Fehler -> models/fetch-error-GRUPPE.json (group, error, at); Erfolg loescht die Datei.
+  verify(): ohne Lock, aber mit fetch-error -> "Laden fehlgeschlagen: GRUND" (hoechstens 300 Zeichen), damit Bericht
+  und Karte den echten Grund zeigen.
+- scripts/image-spike-selftest.py: nachgebautes Hugging Face antwortet auf org/vae mit 307 und Content-Length 103
+  auf Org/VAE; org/loop leitet endlos um (Fehler gespeichert, sichtbar, spaeter weggeraeumt).
+- Container-Tag bleibt coreai-image-spike:0.6.37 (Dockerfile unveraendert, run.py wird nur eingehaengt).
+
+GEPRUEFT (hier ausgefuehrt): image-spike-selftest.py (Gegenprobe mit run.py aus 0.6.37: scheitert mit "Hugging Face
+meldet 103 Bytes"); image-spike-store-selftest.php; php -l; tci-language-selftest.cjs, terran-terminology-selftest.cjs;
+volle Testreihe mit Test-Datenbank; cache-bust; version-merge-check gegen 0.6.37.
+NICHT HIER GEPRUEFT: echter Download von Hugging Face (aus dieser Umgebung gesperrt); Groessen und Schreibweise ueber
+den Hugging-Face-Zugang geprueft.
+
+NACH DEM MERGE (Betreiber):
+1. Update unter Einstellungen > System > CoreAI Update.
+2. sudo bash /opt/ember-coreui/scripts/image-spike.sh --skip-build
+   (laedt nur die beiden VAEs nach, etwa 670 MB; die grossen Dateien sind schon da).
+3. Ergebnis: Admin Core > Betrieb > Bildproben; Zeiten und Eindruck der Bilder zurueckmelden, dann Modellwahl.

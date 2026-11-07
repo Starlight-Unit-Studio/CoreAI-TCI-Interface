@@ -1,0 +1,7 @@
+CoreAI: TCI Interface 0.6.38 - 07.11.2026
+- Bildtest: VAE-Repositories in der Schreibweise von Hugging Face (Comfy-Org/Z-Image-Turbo, Comfy-Org/Flux-2-Klein-4B).
+- Der Test folgt Weiterleitungen innerhalb von Hugging Face; die Groesse kommt nie mehr aus einer Weiterleitung (vorher 103 bzw. 112 Bytes).
+- Ladefehler bleiben gespeichert (fetch-error-GRUPPE.json) und erscheinen in Bericht und Bildproben statt nur "kein lock".
+- Bereits geladene Dateien werden wiederverwendet; kein neuer Container noetig.
+- Tests: image-spike-selftest.py mit Weiterleitung wie beim Betreiber und sichtbarem Ladefehler.
+- Keine Aenderung an Cores, Modelfile, Datenbankschema, Installer, nginx oder Warteschlange.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""CoreAI 0.6.37 (P20.5 A): selftest of the image test, offline (standard library only).
+"""CoreAI 0.6.37 (P20.5 A), 0.6.38: selftest of the image test, offline (standard library only).
 
   python3 scripts/image-spike-selftest.py
 
@@ -84,7 +84,11 @@ with tempfile.TemporaryDirectory(prefix='coreai-image-spike-') as tmp_name:
     # --- Loading against a stand-in Hugging Face -------------------------------------------
     blobs = {'org/model/weights.gguf': os.urandom(300_000), 'org/text/encoder.gguf': os.urandom(120_000),
              'org/vae/split_files/vae/ae.safetensors': os.urandom(50_000)}
-    state = {'drop_once': True, 'bad_sha': False, 'gets': []}
+    state = {'drop_once': True, 'bad_sha': False, 'gets': [], 'heads': []}
+    # 0.6.38: Hugging Face answers a repository name in other letter case with a short redirect
+    # (103 bytes) to its own spelling; 0.6.37 took that for the size of the VAE.
+    renamed = {'org/vae': 'Org/VAE', 'org/loop': 'org/loop'}
+    canonical = {'Org/VAE': 'org/vae'}
 
     class Hub(http.server.BaseHTTPRequestHandler):
         def log_message(self, *args):
@@ -94,7 +98,15 @@ with tempfile.TemporaryDirectory(prefix='coreai-image-spike-') as tmp_name:
             parts = self.path.split('/resolve/')
             repo, rest = parts[0].strip('/'), parts[1]
             revision, path = rest.split('/', 1)
-            key = repo + '/' + path
+            state['heads'].append(repo)
+            if repo in renamed:
+                self.send_response(307)
+                self.send_header('Location', '/' + renamed[repo] + '/resolve/' + rest)
+                self.send_header('Content-Type', 'text/plain; charset=utf-8')
+                self.send_header('Content-Length', '103')
+                self.end_headers()
+                return
+            key = canonical.get(repo, repo) + '/' + path
             if key not in blobs:
                 self.send_response(404)
                 self.end_headers()
@@ -146,6 +158,9 @@ with tempfile.TemporaryDirectory(prefix='coreai-image-spike-') as tmp_name:
           and all(e['sha256'] == hashlib.sha256(blobs[e['repo'] + '/' + e['path']]).hexdigest() == e['hf_sha256'] for e in lock['files'])
           and all(e['revision'] == 'c0ffee' + '0' * 34 for e in lock['files']),
           'every file registered with commit and SHA-256, equal to Hugging Face\'s')
+    check(state['heads'].count('org/vae') == 1 and state['heads'].count('Org/VAE') == 1
+          and lock['files'][2]['size'] == 50_000 and lock['files'][2]['revision'] == 'c0ffee' + '0' * 34,
+          'a redirect inside Hugging Face (other letter case) is followed; its short body is not the file: ' + str(state['heads']))
     check(('org/model/weights.gguf', 'bytes=100000-') in state['gets'],
           'a dropped connection is resumed where it stopped: ' + str(state['gets']))
     check(not list(models.rglob('*.part')), 'no partial files left')
@@ -168,6 +183,21 @@ with tempfile.TemporaryDirectory(prefix='coreai-image-spike-') as tmp_name:
     spike.fetch_file(models, test_reg['groups']['mini']['files'][1])
     check(spike.verify(models, 'mini')[2] == '', 'loaded again, it checks out')
     check(spike.verify(models, 'other')[2].startswith('Gewichte nicht geladen'), 'no lock: said so')
+    # 0.6.38: a failed loading keeps its reason for the report and Admin Core; a later success clears it.
+    loop_reg = json.loads(json.dumps(test_reg))
+    loop_reg['groups']['mini']['files'][2]['repo'] = 'org/loop'
+    real_registry = spike.load_registry
+    spike.load_registry = lambda *_: loop_reg
+    fresh = tmp / 'fresh'
+    fresh.mkdir()
+    check(spike.main(['fetch', '--group', 'mini', '--models', str(fresh)]) == 1, 'a failed loading ends with 1')
+    error = spike.verify(fresh, 'mini')[2]
+    check(error.startswith('Laden fehlgeschlagen: org/loop/split_files/vae/ae.safetensors: zu viele Weiterleitungen'),
+          'the reason shows instead of "kein lock": ' + error)
+    spike.load_registry = lambda *_: test_reg
+    check(spike.main(['fetch', '--group', 'mini', '--models', str(fresh)]) == 0 and not (fresh / 'fetch-error-mini.json').exists()
+          and spike.verify(fresh, 'mini')[2] == '', 'loaded later: the old reason is gone, the lock checks out')
+    spike.load_registry = real_registry
     server.shutdown()
 
     # --- A run with a stand-in sd-cli ----------------------------------------------------------

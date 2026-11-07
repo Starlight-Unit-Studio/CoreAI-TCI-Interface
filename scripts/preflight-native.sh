@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.37: Bildtest (P20.5 A) mit stable-diffusion.cpp, Z-Image-Turbo und FLUX.2-klein 4B; Bildproben in Admin Core.
+# CoreAI: TCI Interface 0.6.38: Bildtest laedt die VAEs richtig (Weiterleitung bei Hugging Face), Ladefehler in den Bildproben sichtbar.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
