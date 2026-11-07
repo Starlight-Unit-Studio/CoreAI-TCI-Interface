@@ -20,6 +20,8 @@ const app = read('js/console-app.js');
 assert(app.includes('if (event && state.typingEl && window.CoreAIImageProgress) window.CoreAIImageProgress.observe(state.typingEl, event);'),
   'live work events reach the image card');
 assert(app.includes('window.CoreAIImageProgress.replay(row, bucket.events);'), 'a rebuilt answer row gets the card back');
+assert(app.includes("es.addEventListener('image_preview', function(ev) {")
+  && app.includes("window.CoreAIImageProgress.preview(state.typingEl, String(shot.image || ''));"), '0.6.42: step previews reach the card');
 assert(/<script src="\.\/js\/coreui-image-progress\.js\?v=\d+"><\/script>\n  <script src="\.\/js\/coreui-work-events\.js/.test(read('app.html')) === false
   && /coreui-work-events\.js\?v=\d+"><\/script>\n  <script src="\.\/js\/coreui-image-progress\.js\?v=\d+"><\/script>/.test(read('app.html')),
   'app.html loads the module after the work view');
@@ -29,6 +31,25 @@ assert(store.includes("'steps','image_px'];") && store.includes("preg_match('/^[
 const chat = read('api/chat.php');
 assert(chat.includes("coreui_work_record($pdo, 'tool', 'info', coreui_image_progress_title($job), coreui_image_progress_meta($job));")
   && chat.includes("'image_uuid'=>(string)$result['uuid'], 'image_px'=>(int)$result['width']]);"), 'progress and the finished image are announced');
+
+// 0.6.42: a preview image, pixel by pixel.
+function pngOf(width, height, fn) {
+  const chunk = (kind, data) => {
+    const head = Buffer.alloc(4); head.writeUInt32BE(data.length);
+    const crc = Buffer.alloc(4); crc.writeUInt32BE(zlib.crc32 ? zlib.crc32(Buffer.concat([Buffer.from(kind), data])) >>> 0 : 0);
+    return Buffer.concat([head, Buffer.from(kind), data, crc]);
+  };
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(width, 0); ihdr.writeUInt32BE(height, 4); ihdr[8] = 8; ihdr[9] = 2;
+  const rows = [];
+  for (let y = 0; y < height; y++) {
+    const row = Buffer.alloc(1 + width * 3);
+    for (let x = 0; x < width; x++) { const c = fn(x, y); row[1 + x * 3] = c[0]; row[2 + x * 3] = c[1]; row[3 + x * 3] = c[2]; }
+    rows.push(row);
+  }
+  return 'data:image/png;base64,' + Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), chunk('IHDR', ihdr),
+    chunk('IDAT', zlib.deflateSync(Buffer.concat(rows))), chunk('IEND', Buffer.alloc(0))]).toString('base64');
+}
 
 function png(width, height) {
   const chunk = (kind, data) => {
@@ -160,6 +181,44 @@ const dots = page => page.evaluate(() => {
     assert(c.cls.includes('is-done') && c.bubble !== 'none', 'done: the typing dots come back while Mara writes');
     assert.deepEqual(media, [UUID], 'the image comes from the owner-only endpoint');
     assert.equal(await page.getAttribute('.img-progress-picture', 'src'), './api/console_media.php?uuid=' + UUID);
+
+    // 0.6.42: step previews colour the dots: the real image comes into being in the grid.
+    await page.evaluate(html => document.getElementById('rows').insertAdjacentHTML('beforeend', html), ROW('row4'));
+    await observe(page, ev('Schritt 1 von 6: Bild', {}, 'running'), 'row4');
+    await observe(page, progress('image_sampling', 1), 'row4');
+    const dotColor = (fx, fy) => page.evaluate(([x, y]) => {
+      const c = document.querySelector('#row4 .img-progress-dots');
+      const px = c.getContext('2d').getImageData(Math.floor(c.width * x), Math.floor(c.height * y), 1, 1).data;
+      return [px[0], px[1], px[2], px[3]];
+    }, [fx, fy]);
+    const cell = 1 / 30;
+    await page.evaluate(() => window.CoreAIImageProgress.preview(document.getElementById('row4'), 'javascript:alert(1)'));
+    assert.equal(await page.getAttribute('#row4 .img-progress', 'data-previews'), null, 'only PNG data URLs are taken');
+    await page.evaluate(url => window.CoreAIImageProgress.preview(document.getElementById('row4'), url),
+      pngOf(64, 64, x => (x < 32 ? [220, 40, 40] : [40, 60, 230])));
+    await page.waitForFunction(() => document.querySelector('#row4 .img-progress').getAttribute('data-previews') === '1');
+    await page.waitForTimeout(1100);
+    const left = await dotColor(cell * 5.5, cell * 15.5);
+    const right = await dotColor(cell * 24.5, cell * 15.5);
+    assert(left[0] > 150 && left[2] < 100 && right[2] > 150 && right[0] < 100, 'the dots take the colours of the preview: ' + left + ' / ' + right);
+    await page.evaluate(url => window.CoreAIImageProgress.preview(document.getElementById('row4'), url), pngOf(64, 64, () => [40, 200, 70]));
+    await page.waitForFunction(() => document.querySelector('#row4 .img-progress').getAttribute('data-previews') === '2');
+    const between = await dotColor(cell * 5.5, cell * 15.5);
+    await page.waitForTimeout(1100);
+    const green = await dotColor(cell * 5.5, cell * 15.5);
+    assert(green[1] > 150 && green[0] < 100 && between[0] > green[0], 'the next step blends over: ' + between + ' -> ' + green);
+    assert(await page.evaluate(() => document.querySelector('#row4 .img-progress').classList.contains('has-preview')));
+    if (process.env.COREAI_SHOT) {
+      await page.evaluate(url => window.CoreAIImageProgress.preview(document.getElementById('row4'), url), pngOf(64, 64, (x, y) => {
+        const sky = y < 40, sun = (x - 44) * (x - 44) + (y - 22) * (y - 22) < 60, hill = y > 38 + 6 * Math.sin(x / 9);
+        if (sun) return [255, 214, 120];
+        if (hill) return [40 + y, 90 + y, 50];
+        return sky ? [70 + y * 2, 120 + y * 2, 220] : [40, 80, 60];
+      }));
+      await page.waitForTimeout(1100);
+      const box = await page.evaluate(() => { const r = document.querySelector('#row4 .img-progress').getBoundingClientRect(); return {x: r.x, y: r.y, w: r.width, h: r.height}; });
+      await page.screenshot({path: process.env.COREAI_SHOT.replace('.png', '-preview.png'), clip: {x: Math.max(0, box.x - 10), y: Math.max(0, box.y - 10), width: box.w + 20, height: box.h + 20}});
+    }
 
     // A failed image, and a rebuilt row.
     await page.evaluate(html => document.getElementById('rows').insertAdjacentHTML('beforeend', html), ROW('row2'));

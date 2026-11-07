@@ -211,6 +211,28 @@ function coreui_image_visible_box(GdImage $image): array {
   return $right < 0 ? [0, 0, $w - 1, $h - 1] : [$left, $top, $right, $bottom];
 }
 
+/**
+ * 0.6.42: a step preview as a small data URL for the chat (at most 64 x 64; the card only
+ * needs its colours for the dots), or null when it is no PNG of a sensible size.
+ */
+function coreui_image_preview_data_url(string $png, int $max = 64): ?string {
+  $dims = coreui_image_png_size($png);
+  if ($dims === null || $dims[0] < 4 || $dims[1] < 4 || $dims[0] > 2048 || $dims[1] > 2048 || strlen($png) > 4 * 1024 * 1024) return null;
+  if (($dims[0] > $max || $dims[1] > $max) && function_exists('imagecreatefromstring')) {
+    $image = @imagecreatefromstring($png);
+    if ($image === false) return null;
+    $scale = $max / max($dims[0], $dims[1]);
+    $small = imagescale($image, max(1, (int)round($dims[0] * $scale)), max(1, (int)round($dims[1] * $scale)), IMG_BICUBIC);
+    if ($small === false) return null;
+    ob_start();
+    imagepng($small, null, 6);
+    $png = (string)ob_get_clean();
+  } elseif ($dims[0] > $max || $dims[1] > $max) {
+    return null;
+  }
+  return 'data:image/png;base64,' . base64_encode($png);
+}
+
 /** Width and height from a PNG's header, or null (pure). */
 function coreui_image_png_size(string $png): ?array {
   if (strlen($png) < 24 || substr($png, 0, 8) !== "\x89PNG\r\n\x1a\n" || substr($png, 12, 4) !== 'IHDR') return null;
@@ -251,8 +273,10 @@ function coreui_image_progress_title(array $job): string {
  * ['ok' => false, 'error' => code, 'detail' => text].
  */
 function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $prompt, string $size,
-    callable $lease, callable $unlease, callable $progress, callable $cancelled, ?callable $http = null): array {
+    callable $lease, callable $unlease, callable $progress, callable $cancelled, ?callable $http = null,
+    ?callable $preview = null): array {
   $http = $http ?? 'coreui_image_http';
+  $previews = 0; // 0.6.42: $preview(string $dataUrl, array $job) gets every new step preview
   $registry = coreui_image_registry();
   $limit = (int)($registry['limits']['prompt_chars'] ?? 1200);
   $prompt = trim((string)preg_replace('~\s+~u', ' ', $prompt));
@@ -300,6 +324,12 @@ function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $
       [$code, $answer] = $http('GET', '/jobs/' . $jobId, null, 5);
       if ($code === 200 && is_array($answer['job'] ?? null)) $job = $answer['job'];
       elseif ($code === 404) return ['ok' => false, 'error' => 'image_failed', 'detail' => 'Auftrag verloren'];
+      if ($preview !== null && (int)($job['preview'] ?? 0) > $previews && ($job['state'] ?? '') === 'running') {
+        $previews = (int)$job['preview'];
+        [$shot, , $raw] = $http('GET', '/jobs/' . $jobId . '/preview', null, 3);
+        $url = $shot === 200 ? coreui_image_preview_data_url($raw) : null;
+        if ($url !== null) $preview($url, $job);
+      }
     }
     if (($job['state'] ?? '') !== 'done') {
       return ['ok' => false, 'error' => ($job['state'] ?? '') === 'cancelled' ? 'cancelled' : 'image_failed',

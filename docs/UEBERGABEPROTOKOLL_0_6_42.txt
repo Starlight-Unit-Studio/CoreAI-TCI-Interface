@@ -1,0 +1,32 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.42
+Stand: 07.11.2026
+Basis: main 0.6.41 nach Merge von PR #193.
+
+AUFTRAG: Betreiber: "den echten aktuellen optischen fortschritt sehen und das in dem raster anzeigen", dazu: "die punkte
+und der effekt sollen trotzdem bleiben ueber dem bild bis es fertig ist".
+
+PRUEFUNG DES FESTEN STANDS (master-1046-d308544, hier gebaut): sd-cli --help nennt --preview {none,proj,tae,vae},
+--preview-path, --preview-interval (Standard 1), --preview-noisy. src/pipeline/diffusion_engine.cpp: PREVIEW_PROJ kennt
+FLUX.2 (128 Kanaele, flux2_latent_rgb_proj, patch 2) -> Vorschau in 1/8 Aufloesung (512 -> 64 x 64). examples/cli
+schreibt die Vorschau nach jedem Schritt in dieselbe Datei.
+
+UMSETZUNG
+- tools/image/image_service.py: supports_preview (einmal sd-cli --help, COREAI_IMAGE_PREVIEW=0 schaltet ab), sd-cli mit
+  --preview proj --preview-path WORK/ID-preview.png --preview-interval 1, Zaehler "preview" (mtime/Groesse),
+  GET /jobs/ID/preview nur waehrend des Auftrags und nur ein vollstaendiges PNG (IEND), Datei danach geloescht.
+- api/image_gen.php: coreui_image_generate(..., $http, $preview) holt jede neue Vorschau einmal; coreui_image_preview_data_url
+  (PNG pruefen, auf hoechstens 64 verkleinern, data URL).
+- api/chat.php: sse_send('image_preview', image, step, steps) nur im eigenen Live-Stream.
+- js/console-app.js: image_preview -> CoreAIImageProgress.preview(state.typingEl, image).
+- js/coreui-image-progress.js: preview() tastet das Bild auf 30 x 30 ab, weiches Bild (42 % Deckkraft) unter den Punkten,
+  Punkte in Bildfarbe mit Lichtfleck (aufgehellt, groesser), Ueberblendung 0,9 s, bei weniger Bewegung keine
+  Zeit-Animation der Prozentanzeige.
+
+GEPRUEFT (hier ausgefuehrt): image-service-selftest.py, image-gen-selftest.php, image-progress-ui-selftest.cjs (Bildschirmfoto
+mit Beispielvorschau angesehen), volle Testreihe mit Test-Datenbank, Sprachtests, cache-bust, version-merge-check.
+NICHT HIER GEPRUEFT: echte FLUX.2-Vorschau auf dem Server (keine Gewichte hier). Kann sd-cli fuer ein Modell keine
+Projektion, schreibt es keine Vorschau; die Karte bleibt dann beim blauen Raster.
+
+NACH DEM MERGE (Betreiber):
+1. Update unter Einstellungen > System > CoreAI Update, Seite neu laden (der Bilddienst laedt den neuen Code von selbst).
+2. Ein Bild anfordern: nach etwa 20 s erscheint das erste grobe Bild im Raster, dann wird es mit jedem Schritt klarer.

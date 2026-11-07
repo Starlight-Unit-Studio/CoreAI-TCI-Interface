@@ -9,7 +9,13 @@ the model in config/image/mara-image.json (FLUX.2-klein 4B, decided 07.11.2026):
   POST   /jobs              {"prompt": text, "size": "normal"|"large", "seed"?: int} -> 202 {"ok", "job": {...}}
   GET    /jobs/ID           {"ok", "job": {"state", "phase", "step", "steps", "seconds", ...}}
   GET    /jobs/ID/image     image/png, once the job is done
+  GET    /jobs/ID/preview   0.6.42: the latest preview of the job (image/png, small)
   DELETE /jobs/ID           stops the job (sd-cli is killed)
+
+0.6.42: when sd-cli can (its --help names --preview-path), every sampling step writes a
+preview: the latent projected to colours ("proj", no extra decoding; for FLUX.2-klein a
+64 x 64 image at 512 x 512). The job counts them ("preview"), so the chat can show the
+image coming into being step by step. COREAI_IMAGE_PREVIEW=0 switches this off.
 
 The PHP side holds Mara's serial model queue while a job runs, so the image never
 competes with a Core for the CPU. Every weight file is used exactly at its registered
@@ -26,6 +32,7 @@ import os
 import re
 import secrets
 import signal
+import subprocess
 import sys
 import threading
 import time
@@ -127,6 +134,17 @@ def progress(output: str, steps: int) -> dict:
     return {'phase': phase, 'step': step, 'steps': steps}
 
 
+def supports_preview(sd_cli: str) -> bool:
+    """Whether this sd-cli writes step previews (pure apart from one --help call)."""
+    if os.environ.get('COREAI_IMAGE_PREVIEW', '1') == '0':
+        return False
+    try:
+        done = subprocess.run([sd_cli, '--help'], capture_output=True, text=True, timeout=30)
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return '--preview-path' in (done.stdout or '') + (done.stderr or '')
+
+
 def mem_available_mb() -> float | None:
     try:
         for line in Path('/proc/meminfo').read_text().splitlines():
@@ -158,6 +176,7 @@ class Service:
         self.loading = False
         self.error = ''
         self.paths: dict[str, str] = {}
+        self.preview = False
         self.jobs: dict[str, dict] = {}
         self.lock = threading.Lock()        # one job at a time
         self.state_lock = threading.Lock()
@@ -242,6 +261,7 @@ class Service:
             if not (os.path.isfile(self.sd_cli) and os.access(self.sd_cli, os.X_OK)):
                 raise RuntimeError('sd-cli fehlt im Container')
             self.work.mkdir(parents=True, exist_ok=True)
+            self.preview = supports_preview(self.sd_cli)
             self.paths = self.ensure_weights()
             self.ready = True
             log('bereit: ' + self.reg['model']['label'])
@@ -261,7 +281,7 @@ class Service:
         with self.state_lock:
             for job_id in [j for j, job in self.jobs.items() if job.get('finished') and now - job['finished'] > KEEP_S]:
                 job = self.jobs.pop(job_id)
-                for key in ('png', 'log'):
+                for key in ('png', 'log', 'preview_png'):
                     Path(job[key]).unlink(missing_ok=True)
 
     def create(self, prompt: str, size_key: str, seed: int | None) -> dict:
@@ -280,6 +300,7 @@ class Service:
                    'seed': seed if seed is not None else secrets.randbelow(2 ** 31 - 1),
                    'seconds': None, 'peak_rss_mb': None, 'started': time.monotonic(), 'finished': None,
                    'png': str(self.work / (job_id + '.png')), 'log': str(self.work / (job_id + '.log')),
+                   'preview_png': str(self.work / (job_id + '-preview.png')), 'preview': 0, 'preview_stamp': None,
                    'pid': 0, 'cancel': False, 'limit': int(size['time_limit_s'])}
             self.jobs[job_id] = job
         threading.Thread(target=self._run, args=(job, prompt), daemon=True).start()
@@ -290,7 +311,8 @@ class Service:
         return [self.sd_cli, '--diffusion-model', self.paths['diffusion_model'], '--llm', self.paths['llm'],
                 '--vae', self.paths['vae'], '-p', prompt, '--cfg-scale', str(float(model['cfg_scale'])), '--steps', str(model['steps']),
                 '-W', str(job['width']), '-H', str(job['height']), '-s', str(job['seed']), '-t', str(self.threads),
-                '-o', job['png'], '-v']
+                '-o', job['png'], '-v'] + (['--preview', 'proj', '--preview-path', job['preview_png'], '--preview-interval', '1']
+                                           if self.preview else [])
 
     def _run(self, job: dict, prompt: str) -> None:
         with self.lock:
@@ -334,6 +356,7 @@ class Service:
                 job.update(state='failed', error=f'{type(error).__name__}: {error}'[:300])
             finally:
                 job['finished'] = time.monotonic()
+                Path(job['preview_png']).unlink(missing_ok=True)
                 if job['state'] != 'done':
                     Path(job['png']).unlink(missing_ok=True)
                 log(f'Auftrag {job["id"][:8]}: {job["state"]}, {job["width"]}x{job["height"]}, {job["seconds"]} s'
@@ -351,6 +374,15 @@ class Service:
 
     @staticmethod
     def _update_progress(job: dict) -> None:
+        # 0.6.42: a new preview (sd-cli rewrites the same file after every step).
+        try:
+            stat = os.stat(job['preview_png'])
+            stamp = (stat.st_mtime_ns, stat.st_size)
+            if stat.st_size > 0 and stamp != job['preview_stamp']:
+                job['preview_stamp'] = stamp
+                job['preview'] += 1
+        except OSError:
+            pass
         try:
             with open(job['log'], 'rb') as handle:
                 handle.seek(0, 2)
@@ -371,13 +403,14 @@ class Service:
             return job
 
     def public(self, job: dict) -> dict:
-        keys = ('id', 'state', 'phase', 'step', 'steps', 'error', 'size', 'width', 'height', 'seed', 'seconds', 'peak_rss_mb')
+        keys = ('id', 'state', 'phase', 'step', 'steps', 'error', 'size', 'width', 'height', 'seed', 'seconds', 'peak_rss_mb', 'preview')
         return {key: job[key] for key in keys}
 
     def health(self) -> dict:
         model = self.reg.get('model') or {}
         return {'ok': True, 'ready': self.ready, 'loading': self.loading, 'error': self.error, 'busy': self.busy(),
                 'model': model.get('label', ''), 'license': model.get('license', ''), 'threads': self.threads,
+                'preview': self.preview,
                 'sizes': {key: {'width': s['width'], 'height': s['height']} for key, s in (self.reg.get('sizes') or {}).items()},
                 'weights': self.weights_progress()}
 
@@ -440,6 +473,20 @@ def make_handler(service: Service):
                 return self._json(404, {'ok': False, 'error': 'not_found'})
             if rest == '':
                 return self._json(200, {'ok': True, 'job': service.public(job)})
+            if rest == 'preview':
+                # 0.6.42: the latest step preview; a file sd-cli is still writing is no PNG yet.
+                try:
+                    data = Path(job['preview_png']).read_bytes()
+                except OSError:
+                    data = b''
+                if job['state'] not in ('queued', 'running') or not data.startswith(b'\x89PNG\r\n\x1a\n') or not data.endswith(b'IEND\xaeB`\x82'):
+                    return self._json(404, {'ok': False, 'error': 'no_preview'})
+                self.send_response(200)
+                self.send_header('Content-Type', 'image/png')
+                self.send_header('Content-Length', str(len(data)))
+                self.end_headers()
+                self.wfile.write(data)
+                return None
             if rest != 'image' or job['state'] != 'done':
                 return self._json(404, {'ok': False, 'error': 'no_image'})
             try:

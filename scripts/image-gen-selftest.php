@@ -211,6 +211,28 @@ img_gen_test(is_file($root . '/assets/fonts/rajdhani_700.ttf') && str_contains((
   'the line uses Rajdhani Bold (OFL) as TTF, named in the font notes');
 img_gen_test(coreui_image_meta('../x') === null, 'no paths as image names');
 
+// 0.6.42: step previews go to the chat as small data URLs, each new one once, never after the job.
+img_gen_test(coreui_image_preview_data_url('no png') === null && coreui_image_preview_data_url(img_gen_png(2, 2)) === null,
+  'no PNG or a tiny one: no preview');
+$small = coreui_image_preview_data_url(img_gen_png(48, 48));
+img_gen_test(is_string($small) && str_starts_with($small, 'data:image/png;base64,')
+  && coreui_image_png_size((string)base64_decode(substr($small, 22))) === [48, 48], 'a small preview stays as it is');
+$scaled = coreui_image_preview_data_url(img_gen_png(128, 128));
+img_gen_test(is_string($scaled) && coreui_image_png_size((string)base64_decode(substr($scaled, 22))) === [64, 64], 'a large preview is scaled to 64');
+$withPreview = static fn(string $state, int $step, int $preview) => [200, ['ok' => true, 'job' => ['id' => $jobId, 'state' => $state,
+  'phase' => $state === 'done' ? 'done' : 'sampling', 'step' => $step, 'steps' => 4, 'width' => 512, 'height' => 512, 'seed' => 7,
+  'seconds' => 60.0, 'error' => '', 'preview' => $preview]], ''];
+$http = $fake([['GET', '/health', $ready], ['POST', '/jobs', [202, ['ok' => true, 'job' => $job('queued', 'load')[1]['job']], '']],
+  ['GET', '/jobs/' . $jobId, [$withPreview('running', 1, 1), $withPreview('running', 1, 1), $withPreview('running', 2, 2), $withPreview('done', 4, 4)]],
+  ['GET', '/jobs/' . $jobId . '/preview', [200, null, img_gen_png(64, 64)]],
+  ['GET', '/jobs/' . $jobId . '/image', [200, null, img_gen_png(512, 512)]]]);
+$shots = [];
+$r = coreui_image_generate($pdo, 5, 'ember', 'a fox', 'normal', $lease, $unlease, static function (): void {}, $never, $http,
+  static function (string $url, array $j) use (&$shots): void { $shots[] = [(int)$j['preview'], strlen($url) > 30]; });
+$asked = array_values(array_filter($GLOBALS['img_calls'], static fn(array $c): bool => str_ends_with($c[1], '/preview')));
+img_gen_test($r['ok'] === true && $shots === [[1, true], [2, true]] && count($asked) === 2,
+  'every new preview once, none after the job: ' . json_encode($shots));
+
 // Cancelled during the job: the service is told, the queue given back.
 $http = $fake([['GET', '/health', $ready], ['POST', '/jobs', [202, ['ok' => true, 'job' => $job('queued', 'load')[1]['job']], '']],
   ['GET', '/jobs/' . $jobId, $job('running', 'sampling', 1)], ['DELETE', '/jobs/' . $jobId, [200, ['ok' => true], '']]]);
@@ -304,6 +326,8 @@ img_gen_test(str_contains($chat, "(string)\$consoleSessionId), ['web', 'browse',
   && str_contains($chat, "coreui_agent_next_tool(\$imgReply, ['web', 'browse', 'archive', 'skill', 'image']) !== null"),
   'after a voice message Mara may paint too');
 $stream = $read('api/console_stream.php');
+img_gen_test(str_contains($chat, "sse_send('image_preview', ['image' => \$image, 'step' => (int)(\$job['step'] ?? 0), 'steps' => (int)(\$job['steps'] ?? 0)]);"),
+  '0.6.42: previews go to the live stream of this request');
 img_gen_test(substr_count($stream, '|| ember_image_marker_in($reply, (int)$uid);') === 2
   && str_contains($stream, "'attachments'   => coreui_image_message_attachments(\$pdo, (int)\$uid, \$emberMsgId),"),
   'the stream hands an image wish to the work loop and sends the image with the answer');

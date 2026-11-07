@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.41: Bildkarte mit echtem Fortschritt waehrend Mara malt.
+# CoreAI: TCI Interface 0.6.42: Bild entsteht sichtbar Schritt fuer Schritt in der Bildkarte (Vorschau je Schritt).
 set -Eeuo pipefail
 IFS=$'\n\t'
 

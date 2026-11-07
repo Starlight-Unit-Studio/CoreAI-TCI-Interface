@@ -206,7 +206,14 @@ with tempfile.TemporaryDirectory(prefix='coreai-image-service-') as tmp_name:
     stub.write_text(f'''#!{sys.executable}
 import json, struct, sys, time, zlib
 args = sys.argv[1:]
+if args == ['--help']:
+    print('  --preview-path <string>        path to write preview image to'); sys.exit(0)
 open({str(args_log)!r}, 'a').write(json.dumps(args) + '\\n')
+def chunk(k, d):
+    return struct.pack('>I', len(d)) + k + d + struct.pack('>I', zlib.crc32(k + d) & 0xffffffff)
+def png(w, h, rgb):
+    raw = b''.join(b'\\x00' + bytes(rgb) * w for _ in range(h))
+    return b'\\x89PNG\\r\\n\\x1a\\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', w, h, 8, 2, 0, 0, 0)) + chunk(b'IDAT', zlib.compress(raw)) + chunk(b'IEND', b'')
 prompt = args[args.index('-p') + 1]
 steps = int(args[args.index('--steps') + 1])
 w, h = int(args[args.index('-W') + 1]), int(args[args.index('-H') + 1])
@@ -218,15 +225,14 @@ if 'FAIL' in prompt:
     sys.exit(3)
 for i in range(1, steps + 1):
     sys.stdout.write('\\r  |===>   | %d/%d - 0.10s/it' % (i, steps)); sys.stdout.flush()
+    if '--preview-path' in args:
+        open(args[args.index('--preview-path') + 1], 'wb').write(png(w // 8, h // 8, (40 * i, 80, 200)))
     time.sleep(30 if 'SLOW' in prompt else 0.35)
 print('\\n[INFO ] sampling completed, taking 0.40s', flush=True)
 print('[INFO ] decode_first_stage completed, taking 0.05s', flush=True)
 if 'NOPNG' in prompt:
     sys.exit(0)
-def chunk(k, d):
-    return struct.pack('>I', len(d)) + k + d + struct.pack('>I', zlib.crc32(k + d) & 0xffffffff)
-raw = b''.join(b'\\x00' + b'\\x10\\x20\\x30' * w for _ in range(h))
-open(out, 'wb').write(b'\\x89PNG\\r\\n\\x1a\\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', w, h, 8, 2, 0, 0, 0)) + chunk(b'IDAT', zlib.compress(raw)) + chunk(b'IEND', b''))
+open(out, 'wb').write(png(w, h, (16, 32, 48)))
 ''', encoding='utf-8')
     stub.chmod(0o755)
 
@@ -254,6 +260,7 @@ open(out, 'wb').write(b'\\x89PNG\\r\\n\\x1a\\n' + chunk(b'IHDR', struct.pack('>I
             break
         time.sleep(0.05)
     health = call('GET', '/health')[1]
+    check(health['preview'] is True, '0.6.42: this sd-cli writes step previews')
     check(health['ready'] and not health['busy'] and health['weights']['have'] == health['weights']['total'] > 0
           and health['sizes']['normal'] == {'width': 64, 'height': 64}, 'health: ready, weights complete: ' + json.dumps(health))
 
@@ -270,13 +277,22 @@ open(out, 'wb').write(b'\\x89PNG\\r\\n\\x1a\\n' + chunk(b'IHDR', struct.pack('>I
     status, busy = call('POST', '/jobs', {'prompt': 'another', 'size': 'normal'})
     check(status == 503 and busy['error'] == 'image_busy', 'one job at a time')
     seen = []
+    shots = []
     for _ in range(200):
         job = call('GET', '/jobs/' + job_id)[1]['job']
         if not seen or seen[-1] != (job['phase'], job['step']):
             seen.append((job['phase'], job['step']))
+        if job['state'] == 'running' and job['preview'] > len(shots):
+            status, shot = call('GET', f'/jobs/{job_id}/preview')
+            if status == 200:
+                shots.append(shot)
         if job['state'] not in ('queued', 'running'):
             break
         time.sleep(0.05)
+    check(job['preview'] >= 3 and len(shots) >= 2 and all(isinstance(s, bytes) and s[:8] == b'\x89PNG\r\n\x1a\n' for s in shots)
+          and len(set(shots)) == len(shots), '0.6.42: a new preview after every step, served while the job runs: ' + str(job['preview']))
+    check(call('GET', f'/jobs/{job_id}/preview')[0] == 404 and not (tmp / 'work' / (job_id + '-preview.png')).exists(),
+          'after the job no preview is left')
     check(job['state'] == 'done' and job['step'] == 4 and job['width'] == 64 and job['seconds'] > 0,
           'the job is done: ' + json.dumps(job))
     check(any(phase == 'sampling' and 0 < step < 4 for phase, step in seen), 'real steps were seen on the way: ' + str(seen))
@@ -285,7 +301,8 @@ open(out, 'wb').write(b'\\x89PNG\\r\\n\\x1a\\n' + chunk(b'IHDR', struct.pack('>I
     argv = json.loads(args_log.read_text(encoding='utf-8').splitlines()[-1])
     check(argv == ['--diffusion-model', paths['diffusion_model'], '--llm', paths['llm'], '--vae', paths['vae'], '-p', prompt,
                    '--cfg-scale', '1.0', '--steps', '4', '-W', '64', '-H', '64', '-s', '42', '-t', '3',
-                   '-o', str(tmp / 'work' / (job_id + '.png')), '-v'],
+                   '-o', str(tmp / 'work' / (job_id + '.png')), '-v',
+                   '--preview', 'proj', '--preview-path', str(tmp / 'work' / (job_id + '-preview.png')), '--preview-interval', '1'],
           'fixed arguments, the prompt as one argument: ' + json.dumps(argv))
 
     status, body = call('POST', '/jobs', {'prompt': 'SLOW fox', 'size': 'normal'})
@@ -318,6 +335,10 @@ open(out, 'wb').write(b'\\x89PNG\\r\\n\\x1a\\n' + chunk(b'IHDR', struct.pack('>I
             time.sleep(0.05)
         check(job['state'] == 'failed' and job['error'] == expect, f'{word}: {job}')
     check(call('GET', '/jobs/' + 'f' * 32)[0] == 404 and call('GET', '/jobs/../etc')[0] == 404, 'unknown jobs: 404')
+    os.environ['COREAI_IMAGE_PREVIEW'] = '0'
+    check(not service_mod.supports_preview(str(stub)), 'COREAI_IMAGE_PREVIEW=0 switches the previews off')
+    del os.environ['COREAI_IMAGE_PREVIEW']
+    check(not service_mod.supports_preview(str(tmp / 'missing-sd-cli')), 'no sd-cli: no previews')
     service_mod.mem_available_mb = lambda: 100.0
     svc.reg['measured'] = {'normal': {'peak_rss_mb': 9000}}
     status, body = call('POST', '/jobs', {'prompt': 'a fox', 'size': 'normal'})
