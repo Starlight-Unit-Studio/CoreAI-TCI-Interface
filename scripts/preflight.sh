@@ -197,6 +197,7 @@ UI_FILES=(
   scripts/image-service-selftest.py
   scripts/image-gen-selftest.php
   scripts/image-chat-ui-selftest.cjs
+  assets/fonts/rajdhani_700.ttf
   config/voice/mara-voice.json
   api/voice.php
   api/voice_store.php

@@ -5,7 +5,8 @@ Basis: main 0.6.38 nach Merge von PR #189.
 AUFTRAG: P20.5 Schritte B und C des Bildplans. Bildtest 20261107-121303 auf dem Server: 8 von 8 Bildern.
 FLUX.2-klein 4B: 512 x 512 im Mittel 63 s (Schritte 54 s), 1024 x 1024 211 s, RAM 9,4 / 14,4 GB. Z-Image-Turbo:
 128 s / 606 s, 12,3 / 17,4 GB. Laden praktisch 0 s (Gewichte im Datei-Cache). Entscheidung des Betreibers
-(07.11.2026): FLUX.2-klein 4B, Standard 512, 1024 nur auf Wunsch. Wasserzeichen laut Betreiber: Studio-Logo im Bild, klein unten rechts, 50 % Deckkraft (statt einer Textzeile).
+(07.11.2026): FLUX.2-klein 4B, Standard 512, 1024 nur auf Wunsch. Wasserzeichen laut Betreiber: Studio-Logo im Bild und buendig darunter "Erzeugt von TCI: Mara(C)" in Weiss, klein unten
+rechts, 50 % Deckkraft.
 
 UMSETZUNG
 - config/image/mara-image.json: Register (Laufzeit wie der Bildtest, Modell, drei Dateien mit revision/sha256/size,
@@ -31,8 +32,12 @@ UMSETZUNG
   done mit attachments. api/console_agent_loop.php: Schritt, Notiz ("Ich male: ..."), Menue.
 - Rechte: ai_settings (image), admin.php (tool_image_enabled), user_policy (tool_image, Migration 026),
   settings.html und js/admin.js (Schalter BILDER ERZEUGEN, Werkzeug Bilder pro Konto).
-- Wasserzeichen: coreui_image_watermark (GD) legt images/starlight_unit_studios_logo_original.png auf 18 % der
-  Bildbreite, 2,5 % Rand, unten rechts, Alpha je Pixel halbiert; ohne GD oder Logo bleibt das Bild ohne Zeichen.
+- Wasserzeichen: coreui_image_watermark (GD) skaliert images/starlight_unit_studios_logo_original.png auf 18 % der
+  Bildbreite (mindestens 120 px), schneidet den leeren Rand ab, setzt darunter COREUI_IMAGE_MARK_TEXT in
+  assets/fonts/rajdhani_700.ttf (aus der WOFF2 umgewandelt, OFL) so breit wie das Logo, weiss mit leichtem Schatten,
+  mit einem Abstand von 45 % der Zeilenhoehe unter "STUDIOS" (Betreiber: etwas weiter runter),
+  halbiert das Alpha je Pixel und legt alles mit 2,5 % Rand unten rechts ins Bild; ohne GD, Logo oder Schrift bleibt
+  das Bild ohne Zeichen.
 - Oberflaeche: js/console-app.js (figure.msg-generated mit Link und Download, finalizeStream uebernimmt attachments),
   css/console.css, js/coreui-work-events.js (Fortschritt "Ich male · ...").
 - api/console_session_store.php: Bilderordner beim Loeschen von Chat und Konto, samt JSON.

@@ -166,7 +166,9 @@ $meta = coreui_image_meta($r['uuid']);
 img_gen_test(($meta['prompt'] ?? '') === 'A red fox, sitting in snow' && ($meta['seconds'] ?? 0) == 61.8 && ($meta['model'] ?? '') === 'FLUX.2-klein 4B (Q8_0)'
   && ($meta['watermark'] ?? null) === true, 'its description next to it');
 
-// The studio's mark: lower right corner, small, half opacity; the rest of the image untouched (operator, 07.11.2026).
+// The studio's mark: the logo with "Erzeugt von TCI: Mara©" flush under it, lower right corner,
+// small, half opacity; the rest of the image untouched (operator, 07.11.2026).
+img_gen_test(COREUI_IMAGE_MARK_TEXT === 'Erzeugt von TCI: Mara©', 'the line under the logo');
 foreach ([512, 1024] as $n) {
   $gray = imagecreatetruecolor($n, $n);
   imagefill($gray, 0, 0, imagecolorallocate($gray, 128, 128, 128));
@@ -174,24 +176,36 @@ foreach ([512, 1024] as $n) {
   $marked = coreui_image_watermark($plain);
   img_gen_test(is_string($marked) && coreui_image_png_size($marked) === [$n, $n], "mark on {$n}: same size");
   $im = imagecreatefromstring($marked);
-  $markW = (int)round($n * COREUI_IMAGE_MARK_WIDTH);
+  $markW = max(COREUI_IMAGE_MARK_MIN_PX, (int)round($n * COREUI_IMAGE_MARK_WIDTH));
   $margin = (int)round($n * COREUI_IMAGE_MARK_MARGIN);
-  $markH = (int)round($markW * 589 / 1120);
-  $inside = 0; $outside = 0;
-  for ($y = 0; $y < $n; $y += 2) {
-    for ($x = 0; $x < $n; $x += 2) {
+  $changed = []; $outside = 0; $strongest = 0; $white = [];
+  for ($y = 0; $y < $n; $y++) {
+    for ($x = 0; $x < $n; $x++) {
       $c = imagecolorat($im, $x, $y);
-      $d = max(abs((($c >> 16) & 255) - 128), abs((($c >> 8) & 255) - 128), abs(($c & 255) - 128));
-      $inMark = $x >= $n - $markW - $margin && $x < $n - $margin && $y >= $n - $markH - $margin && $y < $n - $margin;
-      if ($inMark) $inside = max($inside, $d); else $outside = max($outside, $d);
+      $r = ($c >> 16) & 255; $g = ($c >> 8) & 255; $b = $c & 255;
+      $d = max(abs($r - 128), abs($g - 128), abs($b - 128));
+      if ($d === 0) continue;
+      $changed[] = [$x, $y];
+      $strongest = max($strongest, $d);
+      if ($r > 175 && $g > 175 && $b > 175) $white[] = $y;
     }
   }
-  img_gen_test($outside === 0, "mark on {$n}: nothing outside the corner changes");
-  img_gen_test($inside >= 20 && $inside <= 66, "mark on {$n}: visible, at half opacity (strongest change {$inside} of 128)");
+  $xs = array_column($changed, 0); $ys = array_column($changed, 1);
+  $left = min($xs); $right = max($xs); $top = min($ys); $bottom = max($ys);
+  img_gen_test($right <= $n - $margin && $bottom <= $n - $margin && $right >= $n - $margin - 3 && $bottom >= $n - $margin - 3,
+    "mark on {$n}: in the lower right corner with its margin");
+  img_gen_test($right - $left + 1 <= $markW + 2 && $right - $left + 1 >= (int)($markW * 0.85), "mark on {$n}: small ({$left}..{$right} of {$n})");
+  img_gen_test($bottom - $top + 1 <= (int)($markW * 0.75), "mark on {$n}: logo and line together stay low");
+  img_gen_test($strongest >= 20 && $strongest <= 66, "mark on {$n}: at half opacity (strongest change {$strongest} of 128)");
+  // White letters in the lowest fifth of the mark: the line sits under the logo.
+  $line = array_filter($white, static fn(int $y): bool => $y >= $bottom - (int)(($bottom - $top) * 0.2));
+  img_gen_test(count($line) >= 10, "mark on {$n}: the white line under the logo");
 }
 img_gen_test(coreui_image_watermark('no png') === null, 'no PNG: no mark, no crash');
 img_gen_test(hash_file('sha256', $root . '/images/starlight_unit_studios_logo_original.png') === '3463758e8e2265315267fa2c45ea5f377b03df37beee9df878331873a4971274',
   'the mark is the approved studio logo');
+img_gen_test(is_file($root . '/assets/fonts/rajdhani_700.ttf') && str_contains((string)file_get_contents($root . '/assets/fonts/LICENSES.md'), 'rajdhani_700.ttf'),
+  'the line uses Rajdhani Bold (OFL) as TTF, named in the font notes');
 img_gen_test(coreui_image_meta('../x') === null, 'no paths as image names');
 
 // Cancelled during the job: the service is told, the queue given back.
