@@ -83,7 +83,7 @@ function coreui_composer_intent_hint(array $intent, bool $allowed): string {
  * Mara's first reply with the chosen tool's marker (pure): unchanged when it has one, else the
  * marker with the person's own words. Nothing is forced when the account may not use the tool.
  */
-function coreui_composer_intent_ensure(array $intent, string $reply, string $userText, bool $allowed): string {
+function coreui_composer_intent_ensure(array $intent, string $reply, string $userText, bool $allowed, string $assistantName = 'Mara'): string {
   if (!$allowed) return $reply;
   $tool = (string)($intent['tool'] ?? '');
   $has = match ($tool) {
@@ -96,7 +96,7 @@ function coreui_composer_intent_ensure(array $intent, string $reply, string $use
   $words = trim((string)preg_replace('~\s+~u', ' ', (string)preg_replace('~[\[\]]+~u', ' ', $userText)));
   if (mb_strlen($words) < 3) return $reply;
   $words = mb_substr($words, 0, $tool === 'image' ? 1000 : 300);
-  $self = $tool === 'image' && function_exists('coreui_image_is_self_request') && coreui_image_is_self_request($words);
+  $self = $tool === 'image' && function_exists('coreui_image_is_self_request') && coreui_image_is_self_request($words, $assistantName);
   return match ($tool) {
     'image' => '[BILD' . (($intent['size'] ?? '') === 'large' ? ' GROSS' : '') . ($self ? ' ICH' : '') . ': ' . $words . ']',
     'web' => '[WEB: ' . $words . ']',
