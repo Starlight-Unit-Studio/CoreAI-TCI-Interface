@@ -12,11 +12,16 @@ declare(strict_types=1);
  * account may not use is not forced: Mara is told it is not available and says so.
  */
 
-const COREUI_COMPOSER_INTENT_RE = '~^\s*\[\[(bild|bild:gross|websuche|recherche)\]\]\s*~u';
+const COREUI_COMPOSER_INTENT_RE = '~^\s*\[\[(bild(?::gross)?(?::[124])?|websuche|recherche)\]\]\s*~u';
 
 /** The tool chosen for a message (pure): ['tool' => image|web|browse, 'size' => normal|large] or null. */
 function coreui_composer_intent_peek(string $message): ?array {
   if (preg_match(COREUI_COMPOSER_INTENT_RE, $message, $m) !== 1) return null;
+  if (preg_match('~^bild(?::gross)?(?::([124]))?$~', $m[1], $count) === 1) {
+    $intent = ['tool' => 'image', 'size' => str_contains($m[1], ':gross') ? 'large' : 'normal'];
+    if (isset($count[1])) $intent['count'] = (int)$count[1];
+    return $intent;
+  }
   return match ($m[1]) {
     'bild' => ['tool' => 'image', 'size' => 'normal'],
     'bild:gross' => ['tool' => 'image', 'size' => 'large'],
@@ -48,7 +53,8 @@ function coreui_composer_intent_readable(string $message): string {
 /** The label of the chip (pure). */
 function coreui_composer_intent_label(array $intent): string {
   return match ((string)($intent['tool'] ?? '')) {
-    'image' => ($intent['size'] ?? '') === 'large' ? 'Bild erstellen (groß)' : 'Bild erstellen',
+    'image' => (($intent['size'] ?? '') === 'large' ? 'Bild erstellen (groß)' : 'Bild erstellen')
+      . (isset($intent['count']) ? ' · ' . (int)$intent['count'] . ((int)$intent['count'] === 1 ? ' Bild' : ' Bilder') : ''),
     'web' => 'Websuche',
     'browse' => 'Recherche',
     default => '',

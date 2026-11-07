@@ -133,3 +133,11 @@ foreach (['scripts/preflight.sh', 'scripts/preflight-native.sh'] as $f) {
 
 echo "CoreAI composer intent: marks only at the start, strip/take, labels, readable archive form, Mara's instruction (and 'not available'), "
   . "marker with the person's words, endpoint answer for accounts and guests, archive and summary (SQLite), wiring OK\n";
+
+foreach ([1, 2, 4] as $count) {
+  foreach (['', ':gross'] as $size) {
+    $parsed = coreui_composer_intent_peek('[[bild' . $size . ':' . $count . ']] fox');
+    if (($parsed['count'] ?? null) !== $count || coreui_composer_intent_strip('[[bild' . $size . ':' . $count . ']] fox') !== 'fox') throw new RuntimeException('Image count round trip');
+  }
+}
+if (coreui_composer_intent_peek('[[bild:8]] fox') !== null) throw new RuntimeException('Invalid count accepted');

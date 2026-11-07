@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.6.45 - 07.11.2026
+
+- Finish image requests after one finite batch, without sending the result back into the model/tool loop.
+- Add 1, 2 and 4 image buttons directly beside the composer image size controls. Default: one image. Preserve the count in sent, queued and edited messages and history chips.
+- Generate images serially; stop on failure or cancellation and keep completed images. Validate counts on the server.
+- Keep completed image thumbnails in a vertical strip left of the live image. Reset progress and preview for each new image; ignore stale image load callbacks.
+- Add regression coverage for repeated model requests, batch limits, partial failure, cancellation and composer round trips.
+
 ## 0.6.44 - 07.11.2026
 
 Planänderung des Betreibers nach einem Referenzbild: kleine Copyright-Zeile links unten, das neue Quantum-Wasserzeichen rechts unten. Das alte Studio-Logo erscheint nicht mehr in erzeugten Bildern.

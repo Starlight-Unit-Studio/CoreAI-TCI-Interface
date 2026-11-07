@@ -47,6 +47,7 @@
     if (title === 'Bild nicht erzeugt') return { stage: 'failed' };
     if (meta.source !== 'image') return null;
     var reason = String(meta.reason || '');
+    if (reason === 'image_start') return { stage: 'start', batchStart: true };
     var phase = reason.indexOf('image_') === 0 ? reason.slice(6) : '';
     if (['load', 'text', 'sampling', 'decode', 'done'].indexOf(phase) < 0) return null;
     return { stage: phase === 'done' ? 'decode' : phase, step: Math.max(0, Number(meta.step) || 0),
@@ -108,12 +109,18 @@
     frame.appendChild(canvas);
     frame.appendChild(pct);
     card.appendChild(stage);
-    card.appendChild(frame);
+    var body = el('div', 'img-progress-body');
+    var thumbs = el('div', 'img-progress-thumbs');
+    thumbs.setAttribute('aria-label', 'Fertige Bilder');
+    thumbs.hidden = true;
+    body.appendChild(thumbs);
+    body.appendChild(frame);
+    card.appendChild(body);
     var before = content.querySelector('.agent-stop-button') || content.querySelector('.msg-bubble');
     content.insertBefore(card, before || null);
     card._p = { state: { stage: 'start' }, since: performance.now(), shown: 0, stage: stage, pct: pct, canvas: canvas,
       frame: frame, rgb: color(card), raf: 0, t0: performance.now(), colors: null, prev: null, blendAt: 0, previews: 0,
-      img: null, prevImg: null };
+      img: null, prevImg: null, thumbs: thumbs, completed: [], generation: 0, lastEventId: 0 };
     loop(card);
     return card;
   }
@@ -203,9 +210,10 @@
     if (!row || !row.isConnected || !/^data:image\/png;base64,[A-Za-z0-9+\/=]+$/.test(String(dataUrl || ''))) return null;
     var card = row.querySelector('.img-progress') || create(row);
     var p = card._p;
+    var generation = p.generation;
     var img = new Image();
     img.addEventListener('load', function () {
-      if (!card.isConnected || card.classList.contains('is-revealed')) return;
+      if (!card.isConnected || generation !== p.generation || p.state.stage === 'done' || card.classList.contains('is-revealed')) return;
       var colors = sample(img);
       if (!colors) return;
       if (p.colors) {
@@ -257,9 +265,43 @@
     var img = el('img', 'img-progress-picture');
     img.alt = 'Bild von TCI: Mara';
     img.decoding = 'async';
-    img.addEventListener('load', function () { card.classList.add('is-revealed'); });
+    var generation = card._p.generation;
+    img.addEventListener('load', function () { if (generation === card._p.generation && img.isConnected) card.classList.add('is-revealed'); });
     img.src = './api/console_media.php?uuid=' + encodeURIComponent(uuid);
     card._p.frame.insertBefore(img, card._p.pct);
+  }
+
+  // Keep completed images in order, using the same authenticated media endpoint as the chat.
+  function remember(card, uuid) {
+    var p = card._p;
+    if (!uuid || p.completed.indexOf(uuid) !== -1 || p.completed.length >= 4) return;
+    p.completed.push(uuid);
+    var link = el('a', 'img-progress-thumb');
+    link.href = './api/console_media.php?uuid=' + encodeURIComponent(uuid);
+    link.target = '_blank';
+    link.rel = 'noopener';
+    var img = el('img');
+    img.alt = 'Fertiges Bild ' + p.completed.length;
+    img.src = link.href;
+    link.appendChild(img);
+    p.thumbs.appendChild(link);
+    p.thumbs.hidden = p.completed.length === 1;
+  }
+
+  function nextImage(card) {
+    var p = card._p;
+    p.generation++;
+    p.thumbs.hidden = p.completed.length === 0;
+    var picture = card.querySelector('.img-progress-picture');
+    if (picture) picture.remove();
+    card.classList.remove('is-revealed', 'is-done', 'is-failed', 'has-preview');
+    card.removeAttribute('data-previews');
+    p.state = {stage: 'start'};
+    p.shown = 0;
+    p.since = performance.now();
+    p.colors = p.prev = p.img = p.prevImg = null;
+    p.previews = 0;
+    p.blendAt = 0;
   }
 
   /** One event of the live work stream for the typing row `row`. */
@@ -273,6 +315,10 @@
       card = create(row);
     }
     var p = card._p;
+    var eventId = Number(event.id) || 0;
+    if (eventId && eventId <= p.lastEventId) return card;
+    if (eventId) p.lastEventId = eventId;
+    if (next.batchStart && p.state.stage === 'done') nextImage(card);
     // A late, older event (it arrives after a newer one) changes nothing: neither text nor percent go back.
     if (next.stage !== 'done' && next.stage !== 'failed' && p.state.stage !== 'failed'
         && (p.state.stage === 'done' || band(next).low < band(p.state).low)) return card;
@@ -284,7 +330,7 @@
     }
     card.classList.toggle('is-done', next.stage === 'done');
     card.classList.toggle('is-failed', next.stage === 'failed');
-    if (next.stage === 'done') reveal(card, next.uuid);
+    if (next.stage === 'done') { remember(card, next.uuid); reveal(card, next.uuid); }
     if (!p.raf && !card.classList.contains('is-revealed')) loop(card);
     tick(card, performance.now());
     return card;

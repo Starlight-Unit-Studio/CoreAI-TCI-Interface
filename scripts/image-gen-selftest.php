@@ -33,6 +33,28 @@ img_gen_test(coreui_image_extract_marker('[BILD: ab]') === null && coreui_image_
 img_gen_test(coreui_image_parse_input('GROSS: a castle') === ['size' => 'large', 'prompt' => 'a castle']
   && coreui_image_parse_input('a fox') === ['size' => 'normal', 'prompt' => 'a fox'], 'size from the input');
 
+// Finite batches: default/invalid counts, serial success, partial failure, cancel and no model retry.
+foreach ([1, 2, 4, 9, '4', null] as $count) {
+  $calls = 0;
+  $answer = coreui_image_batch_run($count, static function () use (&$calls): array { $calls++; return ['ok'=>true]; }, static fn(): bool => false);
+  img_gen_test($calls === (in_array($count, [1, 2, 4], true) ? $count : 1), 'batch count enforced');
+}
+$calls = 0;
+$partial = coreui_image_batch_run(4, static function () use (&$calls): array {
+  return ++$calls === 1 ? ['ok'=>true] : ['ok'=>false, 'error'=>'image_memory'];
+}, static fn(): bool => false);
+img_gen_test($calls === 2 && str_contains($partial, '1 von 4') && !str_contains($partial, 'KEIN Bild'), 'stop on error and retain partial result');
+$calls = 0;
+coreui_image_batch_run(4, static function () use (&$calls): array { $calls++; return ['ok'=>true]; }, static function () use (&$calls): bool { return $calls === 1; });
+img_gen_test($calls === 1, 'cancel between images');
+$modelCalls = 0;
+$toolCalls = 0;
+$loop = coreui_agent_loop_run('[BILD: a fox]', ['tool'=>'image', 'input'=>'a fox'], 'Make an image', ['image'], 0,
+  static function () use (&$modelCalls): string { $modelCalls++; return '[BILD: another fox]'; },
+  static function () use (&$toolCalls): string { $toolCalls++; return 'Ich habe ein Bild erstellt.'; },
+  static function (): void {}, static fn(): bool => false);
+img_gen_test($modelCalls === 0 && $toolCalls === 1 && $loop['out'] === 'Ich habe ein Bild erstellt.', 'image is terminal even if model would repeat forever');
+
 // --- Registry ---------------------------------------------------------------------------
 $registry = coreui_image_registry();
 img_gen_test(($registry['model']['id'] ?? '') === 'flux2-klein-4b' && coreui_image_size_label('normal') === '512 × 512'

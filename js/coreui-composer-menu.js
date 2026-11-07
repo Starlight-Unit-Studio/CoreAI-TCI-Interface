@@ -19,7 +19,7 @@
   var frame = btn ? btn.closest('.composer-frame') : null;
   if (!btn || !input || !field || !frame) return;
 
-  var MARK_RE = /^\s*\[\[(bild|bild:gross|websuche|recherche)\]\]\s*/;
+  var MARK_RE = /^\s*\[\[(bild(?::gross)?(?::[124])?|websuche|recherche)\]\]\s*/;
   var MARKS = { image: '[[bild]]', imageLarge: '[[bild:gross]]', web: '[[websuche]]', browse: '[[recherche]]' };
   var LABEL = { image: 'Bild erstellen', web: 'Websuche', browse: 'Recherche' };
   var DEFAULT_ACCEPT = input.getAttribute('accept') || '';
@@ -61,15 +61,21 @@
     var intent = m[1] === 'bild' ? { tool: 'image', size: 'normal' }
       : m[1] === 'bild:gross' ? { tool: 'image', size: 'large' }
       : m[1] === 'websuche' ? { tool: 'web', size: 'normal' } : { tool: 'browse', size: 'normal' };
+    if (m[1].indexOf('bild') === 0) {
+      intent = { tool: 'image', size: m[1].indexOf(':gross') !== -1 ? 'large' : 'normal' };
+      var countMatch = /:([124])$/.exec(m[1]);
+      if (countMatch) intent.count = Number(countMatch[1]);
+    }
     return { intent: intent, text: value.slice(m[0].length), label: label(intent) };
   }
   function label(intent) {
     if (!intent) return '';
+    if (intent.tool === 'image' && intent.count) return 'Bild erstellen · ' + intent.count + (intent.count === 1 ? ' Bild' : ' Bilder') + (intent.size === 'large' ? ' · Groß' : '');
     return intent.tool === 'image' && intent.size === 'large' ? 'Bild erstellen · Groß' : LABEL[intent.tool];
   }
   function mark(intent) {
     if (!intent) return '';
-    if (intent.tool === 'image') return intent.size === 'large' ? MARKS.imageLarge : MARKS.image;
+    if (intent.tool === 'image') return '[[bild' + (intent.size === 'large' ? ':gross' : '') + (intent.count ? ':' + intent.count : '') + ']]';
     return MARKS[intent.tool] || '';
   }
 
@@ -86,12 +92,24 @@
   sizeLarge.title = '1024 × 1024, drei bis vier Minuten';
   sizeBox.appendChild(sizeNormal);
   sizeBox.appendChild(sizeLarge);
+  var countBox = el('span', 'composer-intent-size');
+  countBox.setAttribute('role', 'group');
+  countBox.setAttribute('aria-label', 'Anzahl der Bilder');
+  var countButtons = [1, 2, 4].map(function (n) {
+    var b = el('button', 'composer-intent-size-btn', String(n));
+    b.type = 'button';
+    b.setAttribute('aria-label', n + (n === 1 ? ' Bild' : ' Bilder'));
+    b.addEventListener('click', function () { if (current) { current.count = n; renderChip(); } });
+    countBox.appendChild(b);
+    return b;
+  });
   var chipClose = el('button', 'composer-intent-close');
   chipClose.type = 'button';
   chipClose.setAttribute('aria-label', 'Werkzeug entfernen');
   chipClose.innerHTML = svg('close');
   chip.appendChild(chipLabel);
   chip.appendChild(sizeBox);
+  chip.appendChild(countBox);
   chip.appendChild(chipClose);
   field.insertBefore(chip, textarea);
 
@@ -101,11 +119,14 @@
     chip.setAttribute('data-tool', current.tool);
     chipLabel.innerHTML = svg(current.tool === 'image' ? 'image' : current.tool) + '<span>' + LABEL[current.tool] + '</span>';
     sizeBox.hidden = current.tool !== 'image';
+    countBox.hidden = current.tool !== 'image';
+    countButtons.forEach(function (b, i) { b.setAttribute('aria-pressed', (current.count || 1) === [1, 2, 4][i] ? 'true' : 'false'); });
     sizeNormal.setAttribute('aria-pressed', current.size === 'large' ? 'false' : 'true');
     sizeLarge.setAttribute('aria-pressed', current.size === 'large' ? 'true' : 'false');
   }
-  function setIntent(tool, size) {
+  function setIntent(tool, size, count) {
     current = tool ? { tool: tool, size: size === 'large' ? 'large' : 'normal' } : null;
+    if (current && tool === 'image' && [1, 2, 4].indexOf(count) !== -1) current.count = count;
     renderChip();
   }
   sizeNormal.addEventListener('click', function () { if (current) { current.size = 'normal'; renderChip(); } });
@@ -218,7 +239,7 @@
   }
 
   function choose(tool) {
-    setIntent(tool, current && current.tool === tool ? current.size : 'normal');
+    setIntent(tool, current && current.tool === tool ? current.size : 'normal', current && current.count);
     close();
     textarea.focus();
   }
@@ -303,10 +324,10 @@
     /** For an edit: the chip from the stored message, its text without the mark. */
     loadFrom: function (stored, text) {
       var parsed = parse(stored);
-      setIntent(parsed.intent ? parsed.intent.tool : null, parsed.intent ? parsed.intent.size : null);
+      setIntent(parsed.intent ? parsed.intent.tool : null, parsed.intent ? parsed.intent.size : null, parsed.intent && parsed.intent.count);
       return parse(text).text;
     },
-    current: function () { return current ? { tool: current.tool, size: current.size } : null; },
+    current: function () { return current ? Object.assign({}, current) : null; },
     set: setIntent,
     clear: function () { setIntent(null); },
     open: open,

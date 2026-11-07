@@ -254,6 +254,25 @@ const dots = page => page.evaluate(() => {
     const fit = await phone.page.evaluate(() => ({w: document.querySelector('.img-progress').getBoundingClientRect().width,
       scroll: document.documentElement.scrollWidth, view: window.innerWidth}));
     assert(fit.w <= fit.view && fit.scroll <= fit.view, 'fits a phone: ' + JSON.stringify(fit));
+    const batch = await phone.page.evaluate(() => {
+      const P = window.CoreAIImageProgress, row = document.getElementById('row1');
+      const events = [];
+      for (let i = 1; i <= 4; i++) {
+        events.push({id:i*2, title:'Bild wird vorbereitet', meta:{source:'image', reason:'image_start'}});
+        P.observe(row, events[events.length-1]);
+        const card = row.querySelector('.img-progress');
+        if (card._p.shown >= 5 || card.querySelector('.img-progress-picture')) throw new Error('New image did not reset');
+        events.push({id:i*2+1, title:'Bild erzeugt', meta:{image_uuid:String(i).repeat(32), image_px:512}});
+        P.observe(row, events[events.length-1]);
+      }
+      P.replay(row, events); // replaying the same event IDs must not reset current work
+      const card = row.querySelector('.img-progress');
+      const thumbs = card.querySelector('.img-progress-thumbs').getBoundingClientRect();
+      const frame = card.querySelector('.img-progress-frame').getBoundingClientRect();
+      return {count:card.querySelectorAll('.img-progress-thumb').length, percent:card._p.shown,
+        left:thumbs.right <= frame.left, fits:document.documentElement.scrollWidth <= innerWidth};
+    });
+    assert.deepEqual(batch, {count:4, percent:100, left:true, fits:true}, 'four thumbnails on the left and no stale replay/reset');
     await phone.page.close();
   } finally {
     await browser.close();
