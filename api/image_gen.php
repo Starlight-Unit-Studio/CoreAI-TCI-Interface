@@ -63,6 +63,13 @@ function coreui_image_extract_marker(string $reply): ?string {
     . (trim((string)$m[2]) !== '' ? 'ICH: ' : '') . $prompt;
 }
 
+/** Deterministic safety net for the chat's image button; never infer identity from a random character. */
+function coreui_image_is_self_request(string $message): bool {
+  $text = trim((string)preg_replace('~\\s+~u', ' ', $message));
+  if ($text === '') return false;
+  return preg_match('~\\b(?:mara(?:\\s+thorne)?|du)\\s+(?:als|in\\s+einem|auf\\s+der)\\b|\\b(?:von\\s+dir|mit\\s+dir|dein(?:\\s+eigenes)?\\s+(?:portrait|portraet|porträt|bild|foto)|zeige\\s+dich|zeichne\\s+dich|mal\\s+dich|male\\s+dich|dich\\s+als|yourself\\s+as|picture\\s+of\\s+you|portrait\\s+of\\s+you)\\b~iu', $text) === 1;
+}
+
 /** Size and description from the tool input (pure). */
 function coreui_image_parse_input(string $input): array {
   $input = trim($input);
