@@ -154,25 +154,37 @@ class _NoRedirect(urllib.request.HTTPRedirectHandler):
 
 
 def hf_resolve(spec: dict, revision: str = 'main') -> dict:
-    """Hugging Face's answer for one file: commit, SHA-256 (LFS), size and the download address."""
+    """Hugging Face's answer for one file: commit, SHA-256 (LFS), size and the download address.
+
+    0.6.38: a redirect inside Hugging Face itself (a repository name in other letter case, a
+    renamed repository) is followed; only the answer that names the file counts. 0.6.37 took
+    the size of such a redirect (103 bytes) for the size of the VAE (operator's run, 07.11.2026).
+    """
     url = HF + '/' + spec['repo'] + '/resolve/' + urllib.parse.quote(revision, safe='') + '/' \
         + '/'.join(urllib.parse.quote(part) for part in spec['path'].split('/'))
+    home = urllib.parse.urlsplit(HF).netloc
     opener = urllib.request.build_opener(_NoRedirect)
-    request = urllib.request.Request(url, method='HEAD', headers={'User-Agent': 'CoreAI-image-spike/1'})
-    try:
-        response = opener.open(request, timeout=60)
-        headers, location = response.headers, url
-    except urllib.error.HTTPError as error:
-        if error.code not in (301, 302, 303, 307, 308):
-            raise RuntimeError(f'{spec["repo"]}/{spec["path"]}: HTTP {error.code}') from None
-        headers, location = error.headers, urllib.parse.urljoin(url, error.headers.get('Location', ''))
-    etag = (headers.get('X-Linked-Etag') or headers.get('ETag') or '').strip().strip('"').lower()
-    if etag.startswith('w/'):
-        etag = etag[2:].strip('"')
-    size = headers.get('X-Linked-Size') or headers.get('Content-Length')
-    return {'commit': (headers.get('X-Repo-Commit') or '').strip().lower(),
-            'sha256': etag if re.fullmatch(r'[0-9a-f]{64}', etag) else '',
-            'size': int(size) if size and size.isdigit() else None, 'url': location}
+    for _hop in range(6):
+        request = urllib.request.Request(url, method='HEAD', headers={'User-Agent': 'CoreAI-image-spike/1'})
+        try:
+            response = opener.open(request, timeout=60)
+            headers, location, redirected = response.headers, url, False
+        except urllib.error.HTTPError as error:
+            if error.code not in (301, 302, 303, 307, 308):
+                raise RuntimeError(f'{spec["repo"]}/{spec["path"]}: HTTP {error.code}') from None
+            headers, location, redirected = error.headers, urllib.parse.urljoin(url, error.headers.get('Location', '')), True
+        if redirected and not headers.get('X-Linked-Etag') and urllib.parse.urlsplit(location).netloc == home:
+            url = location  # still Hugging Face, not yet the file: ask there
+            continue
+        etag = (headers.get('X-Linked-Etag') or ('' if redirected else headers.get('ETag')) or '').strip().strip('"').lower()
+        if etag.startswith('w/'):
+            etag = etag[2:].strip('"')
+        # The size of the file, never the size of a redirect's own short body.
+        size = headers.get('X-Linked-Size') or ('' if redirected else headers.get('Content-Length'))
+        return {'commit': (headers.get('X-Repo-Commit') or '').strip().lower(),
+                'sha256': etag if re.fullmatch(r'[0-9a-f]{64}', etag) else '',
+                'size': int(size) if size and size.isdigit() else None, 'url': location}
+    raise RuntimeError(f'{spec["repo"]}/{spec["path"]}: zu viele Weiterleitungen')
 
 
 def download(url: str, part: Path, expected: int, attempts: int = 4) -> None:
@@ -230,6 +242,15 @@ def verify(models: Path, group_id: str) -> tuple[dict, list[dict], str]:
     """Paths by role and the registered files; an error text when a file is missing or changed."""
     lock_path = models / f'lock-{group_id}.json'
     if not lock_path.is_file():
+        # 0.6.38: the reason the loading failed, so Admin Core shows it (not only "no lock").
+        failed = models / f'fetch-error-{group_id}.json'
+        if failed.is_file():
+            try:
+                reason = str(json.loads(failed.read_text(encoding='utf-8')).get('error', '')).strip()
+            except (OSError, ValueError):
+                reason = ''
+            if reason:
+                return {}, [], 'Laden fehlgeschlagen: ' + reason[:300]
         return {}, [], 'Gewichte nicht geladen (kein lock-' + group_id + '.json)'
     lock = json.loads(lock_path.read_text(encoding='utf-8'))
     paths: dict[str, str] = {}
@@ -436,11 +457,14 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd in ('fetch', 'run') and args.group not in reg['groups']:
         parser.error('unbekannte Gruppe ' + args.group)
     if args.cmd == 'fetch':
+        failed = args.models / f'fetch-error-{args.group}.json'
         try:
             fetch(reg, args.group, args.models)
         except (RuntimeError, OSError, urllib.error.URLError) as error:
             log(f'{args.group}: Laden fehlgeschlagen: {error}')
+            write_json(failed, {'group': args.group, 'error': str(error), 'at': time.strftime('%Y-%m-%dT%H:%M:%S%z')})
             return 1
+        failed.unlink(missing_ok=True)
         return 0
     if args.cmd == 'run':
         if not 1 <= args.threads <= 512:

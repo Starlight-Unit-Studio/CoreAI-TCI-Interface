@@ -1,5 +1,16 @@
 # CoreAI: TCI Interface
 
+## 0.6.38 - 07.11.2026
+
+Rueckmeldung des Betreibers zum ersten Bildtest (Lauf 20261107-101029): Die Karte Bildproben zeigte 0 von 0 Bildern und nur "kein lock". Laut run.log waren die grossen Dateien (Z-Image-Turbo, FLUX.2-klein 4B und beide Qwen3-4B) geladen; beide Gruppen scheiterten erst am kleinen VAE von Comfy-Org mit "Hugging Face meldet 103 Bytes" bzw. "112 Bytes" statt etwa 335 MB.
+
+- **Ursache:** In `tools/image_spike/models.json` standen die VAE-Repositories kleingeschrieben (`Comfy-Org/z_image_turbo`, `Comfy-Org/flux2-klein-4B`). Hugging Face leitet solche Namen auf die eigene Schreibweise weiter. Der Bildtest fragte ohne Umleitung und nahm die Laenge dieser kurzen Weiterleitung fuer die Dateigroesse.
+- **Behoben:** Die Repositories stehen jetzt in der Schreibweise von Hugging Face (`Comfy-Org/Z-Image-Turbo`, `Comfy-Org/Flux-2-Klein-4B`; Dateigroessen dort geprueft). Ausserdem folgt der Test einer Weiterleitung innerhalb von Hugging Face (hoechstens 5), bis eine Antwort die Datei selbst nennt; die Groesse kommt bei einer Weiterleitung nur noch aus `X-Linked-Size`, nie aus ihrer eigenen kurzen Antwort.
+- **Ladefehler sichtbar:** Scheitert das Laden, steht der Grund in `var/image-spike/models/fetch-error-GRUPPE.json`; Bericht und Admin Core > Betrieb > Bildproben zeigen "Laden fehlgeschlagen: ..." statt nur "kein lock". Ein spaeteres erfolgreiches Laden entfernt den alten Grund.
+- Bereits geladene Dateien werden wiederverwendet (gleiche Groesse, SHA-256 geprueft); der Container muss nicht neu gebaut werden.
+- Tests: `image-spike-selftest.py` (das nachgebaute Hugging Face leitet einen kleingeschriebenen Namen mit 307 und 103 Bytes um, wie beim Betreiber; eine endlose Weiterleitung bricht ab und ihr Grund erscheint statt "kein lock"; ein spaeteres Laden raeumt ihn weg). Gegenprobe: mit dem run.py von 0.6.37 scheitert der neue Test mit genau der Meldung vom Server.
+- Keine Aenderung an Cores, Modelfile, Datenbankschema, Installer, nginx oder Warteschlange.
+
 ## 0.6.37 - 07.11.2026
 
 P20.5, Schritt A: der Bildtest. Nach dem Bild-Technikplan kommt vor dem Einbau ein Test auf dem echten Server: kann seine CPU Bilder erzeugen, wie schnell und mit wie viel Arbeitsspeicher. Recherche vom 07.11.2026: Ollamas Bildfunktion lief nur auf macOS und ist laut Bericht von Anfang November wieder entfernt; stable-diffusion.cpp kann inzwischen kleinere Modelle als FLUX.1-schnell. Entscheidung des Betreibers: Z-Image-Turbo und FLUX.2-klein 4B, beide Apache 2.0.

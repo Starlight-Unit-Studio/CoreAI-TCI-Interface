@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "note": "CoreAI 0.6.37 (P20.5 A): Bildtest auf dem echten Server. Entscheidung des Betreibers (07.11.2026): Z-Image-Turbo und FLUX.2-klein 4B, beide Apache 2.0. Die Gewichte werden beim ersten Laden mit Revision und SHA-256 registriert (var/image-spike/models/lock-GRUPPE.json) und vor jedem Lauf gegen diesen Eintrag geprueft.",
+  "note": "CoreAI 0.6.37 (P20.5 A), 0.6.38: Repository-Namen in der Schreibweise von Hugging Face. Bildtest auf dem echten Server. Entscheidung des Betreibers (07.11.2026): Z-Image-Turbo und FLUX.2-klein 4B, beide Apache 2.0. Die Gewichte werden beim ersten Laden mit Revision und SHA-256 registriert (var/image-spike/models/lock-GRUPPE.json) und vor jedem Lauf gegen diesen Eintrag geprueft.",
   "runtime": {
     "name": "stable-diffusion.cpp",
     "repo": "https://github.com/leejet/stable-diffusion.cpp",
@@ -32,7 +32,7 @@
       "files": [
         {"role": "diffusion_model", "repo": "leejet/Z-Image-Turbo-GGUF", "path": "z_image_turbo-Q8_0.gguf", "size": 6577440704, "license": "Apache-2.0"},
         {"role": "llm", "repo": "unsloth/Qwen3-4B-Instruct-2507-GGUF", "path": "Qwen3-4B-Instruct-2507-Q8_0.gguf", "size": 4280405600, "license": "Apache-2.0"},
-        {"role": "vae", "repo": "Comfy-Org/z_image_turbo", "path": "split_files/vae/ae.safetensors", "size": 335304388, "license": "Apache-2.0"}
+        {"role": "vae", "repo": "Comfy-Org/Z-Image-Turbo", "path": "split_files/vae/ae.safetensors", "size": 335304388, "license": "Apache-2.0"}
       ]
     },
     "flux2-klein-4b": {
@@ -44,7 +44,7 @@
       "files": [
         {"role": "diffusion_model", "repo": "leejet/FLUX.2-klein-4B-GGUF", "path": "flux-2-klein-4b-Q8_0.gguf", "size": 4300629440, "license": "Apache-2.0"},
         {"role": "llm", "repo": "unsloth/Qwen3-4B-GGUF", "path": "Qwen3-4B-Q8_0.gguf", "size": 4280405792, "license": "Apache-2.0"},
-        {"role": "vae", "repo": "Comfy-Org/flux2-klein-4B", "path": "split_files/vae/flux2-vae.safetensors", "size": 336211292, "license": "Apache-2.0"}
+        {"role": "vae", "repo": "Comfy-Org/Flux-2-Klein-4B", "path": "split_files/vae/flux2-vae.safetensors", "size": 336211292, "license": "Apache-2.0"}
       ]
     }
   }
