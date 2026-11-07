@@ -177,6 +177,14 @@ $logoPath = $root . '/images/watermark_logo.png';
 $logoDims = @getimagesize($logoPath);
 img_gen_test(is_array($logoDims) && $logoDims[0] > 0 && $logoDims[1] > 0,
   'watermark_logo.png must ship with the image generator');
+$sourceLogo = imagecreatefrompng($logoPath);
+img_gen_test($sourceLogo !== false
+  && ((imagecolorat($sourceLogo, 0, 0) >> 24) & 0x7F) === 127
+  && ((imagecolorat($sourceLogo, imagesx($sourceLogo) - 1, imagesy($sourceLogo) - 1) >> 24) & 0x7F) === 127,
+  'provided Quantum watermark is already transparent at its corners');
+$centreAlpha = (imagecolorat($sourceLogo, intdiv(imagesx($sourceLogo), 2), intdiv(imagesy($sourceLogo), 2)) >> 24) & 0x7F;
+img_gen_test($centreAlpha > 0 && $centreAlpha < 127,
+  'provided Quantum watermark has native partial alpha to preserve');
 foreach ([512, 1024] as $n) {
   $gray = imagecreatetruecolor($n, $n);
   imagefill($gray, 0, 0, imagecolorallocate($gray, 128, 128, 128));
@@ -214,8 +222,10 @@ foreach ([512, 1024] as $n) {
 img_gen_test(coreui_image_watermark('no png') === null, 'invalid PNG: no mark, no crash');
 $markSource = (string)file_get_contents($root . '/api/image_gen.php');
 img_gen_test(str_contains($markSource, "'/images/watermark_logo.png'")
-  && !str_contains($markSource, "'/images/starlight_unit_studios_logo_original.png'"),
-  'new logo replaces the old studio mark in generated files');
+  && !str_contains($markSource, "'/images/starlight_unit_studios_logo_original.png'")
+  && !str_contains($markSource, 'removeDarkBackdrop')
+  && !str_contains($markSource, 'cornerBright'),
+  'new logo is used with native transparency, without brightness keying');
 img_gen_test(is_file($root . '/assets/fonts/rajdhani_700.ttf')
   && str_contains((string)file_get_contents($root . '/assets/fonts/LICENSES.md'), 'rajdhani_700.ttf'),
   'copyright line retains Rajdhani Bold (OFL)');
