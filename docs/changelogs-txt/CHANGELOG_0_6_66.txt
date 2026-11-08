@@ -1,0 +1,12 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.66
+08.11.2026
+
+- Selbstportraet-Routing korrigiert: Anfragen wie "Mara im Cockpit", "Ember am Strand" und Bilder, in denen die TCI selbst zu sehen sein soll, erhalten wieder die fest zugeordnete Portraet-Referenz.
+- Bindung an das aktive Kontoportraet wird nicht mehr nur vom optionalen ICH-Marker des Modells abhaengig gemacht.
+- Fremde Personen bleiben fremde Motive; eine reine Anrede "Mara, zeichne eine andere Frau" schaltet die TCI-Referenz nicht ein.
+- Kurzform-Folgeanweisungen wie "diesmal im roten Kleid" oder "noch eins" loeschen den vom Core korrekt gesetzten ICH-Marker nicht.
+- System-/Bildwerkzeug-Hinweise praezisieren, dass die Person auf Maras Portraet SIE SELBST ist und kein austauschbares Frauenmotiv.
+- Fail-closed: Bestätigt der Bilddienst weniger geladene Referenzdateien als angefordert, wird der Auftrag abgebrochen statt ohne Referenz fortgesetzt.
+- Ergaenzte Regressionstests fuer Motivwahl, Rufnamen, Folgeanweisungen und fehlende Bildreferenzen.
+- Kanonische Mara-Galerie gilt fuer das Standardportraet; eine bewusst gewaehlte benutzerdefinierte TCI-Portraetvorlage bleibt priorisiert.
+- Keine Aenderung an FLUX, Foto-Originalen, Modelfile, Memory, Accounts, Datenbank oder serieller Queue.
