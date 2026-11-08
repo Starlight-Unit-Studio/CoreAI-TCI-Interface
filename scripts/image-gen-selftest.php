@@ -41,6 +41,44 @@ img_gen_test(coreui_image_is_self_request('Zeig dich als Superwoman')
   && !coreui_image_is_self_request('Zeichne Superwoman')
   && !coreui_image_is_self_request('Mal eine Katze'), 'self request never changes unrelated images');
 
+// 0.6.66: scene-based and conversational requests must ALWAYS route Mara's own
+// visual identity to the account/gallery reference, not to random text-to-image.
+foreach ([
+  'Ein Bild mit Mara auf einer fremden Raumstation',
+  'Mara im Cockpit bei Nacht',
+  'Mara am Strand im roten Kleid',
+  'Erstelle eine Szene mit Mara und einem Raumschiff',
+  'Bitte zeige dich in einer Raumstation',
+  'Generier dich als Pilotin',
+  'Ein Bild, auf dem du stehst',
+  'Wie du im Pilotensitz sitzt',
+  'Mara, wie würdest du selbst aussehen?',
+  'Ein Porträt von Ember im Maschinenraum',
+  'Ember bei einem Konzert',
+] as $phrase) {
+  img_gen_test(coreui_image_is_self_request($phrase, 'Ember'), 'Self portrait scene recognized: ' . $phrase);
+}
+foreach ([
+  'Mara, male eine fremde Frau',
+  'Mara, zeichne Superwoman',
+  'Mara, generiere eine Katze auf dem Mond',
+  'Ein Bild von einer unbekannten Frau',
+  'Zeichne Superwoman',
+  'Ein Bild von einer Katze',
+] as $phrase) {
+  img_gen_test(!coreui_image_is_self_request($phrase, 'Ember'), 'Other subject never becomes Mara: ' . $phrase);
+}
+img_gen_test(coreui_image_parse_input(coreui_image_tool_for_request(
+  ['tool'=>'image', 'input'=>'A red-dressed woman standing in the cockpit'],
+  'Mara im Cockpit bei Nacht', 'Ember')['input'])['self_reference'] === true,
+  'generic model wording cannot suppress the canonical self reference');
+img_gen_test(coreui_image_may_continue_self_portrait('diesmal im roten Kleid')
+  && coreui_image_may_continue_self_portrait('noch eins')
+  && coreui_image_may_continue_self_portrait('now as a pilot')
+  && !coreui_image_may_continue_self_portrait('Zeichne Superwoman')
+  && !coreui_image_may_continue_self_portrait('diesmal eine Katze'),
+  'contextual portrait continuation retains model-selected ICH only');
+
 // Regression: a natural request to show Mara's real appearance formerly used
 // [BILD:] without reference, so Flux invented a new face and neon circuitry.
 $appearanceQuestion = 'wie siehst du eigentlich aus wenn ich fragen darf? kannste mir das auch auf einem bild zeigen?';
@@ -244,6 +282,23 @@ img_gen_test($r['error'] === 'image_busy' && ($GLOBALS['img_calls'][1][2]['refer
   && str_starts_with((string)($GLOBALS['img_calls'][1][2]['prompt'] ?? ''), 'REFERENCE CONSISTENCY (IDENTITY):')
   && str_contains((string)($GLOBALS['img_calls'][1][2]['prompt'] ?? ''), 'Mara as Superwoman'),
   'explicit self portrait sends original scene for canonical gallery selection without losing identity');
+// The worker must confirm that requested image references were actually
+// resolved. A stale worker returning zero -r files must NOT generate a random
+// generic woman and claim it is Mara.
+$queuedNoRefs = $job('queued', 'load')[1]['job'];
+$queuedNoRefs['reference_count'] = 0;
+$http = $fake([
+  ['GET', '/health', $ready],
+  ['POST', '/jobs', [202, ['ok'=>true, 'job'=>$queuedNoRefs], '']],
+  ['DELETE', '/jobs/' . $jobId, [200, ['ok'=>true], '']],
+]);
+$leases = $unleases = 0;
+$r = coreui_image_generate($pdo, 5, 'ember', 'Mara in a blue dress', 'normal',
+  $lease, $unlease, static function (): void {}, $never, $http, null, 'default');
+img_gen_test($r['error'] === 'reference_unavailable' && $leases === 1 && $unleases === 1
+  && in_array(['DELETE','/jobs/' . $jobId,null], $GLOBALS['img_calls'], true),
+  'self-portrait jobs without actually attached references abort instead of drawing another woman');
+
 // A custom account avatar must not receive the official Mara gallery selector.
 $http = $fake([['GET', '/health', $ready], ['POST', '/jobs', [503, ['ok' => false, 'error' => 'image_busy'], '']]]);
 $r = coreui_image_generate($pdo, 5, 'ember', 'Ember wearing a blue jacket', 'normal',
