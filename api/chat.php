@@ -5284,6 +5284,11 @@ function ember_image_run_tool(PDO $pdo, int $uid, string $input): array {
   coreui_work_record($pdo, 'tool', 'running', 'Bild wird vorbereitet', ['source'=>'image', 'reason'=>'image_start']);
   $request = coreui_image_parse_input($input);
   $reference = !empty($request['self_reference']) ? coreui_profile_image_reference($pdo, $uid) : null;
+  if ($reference !== null) {
+    // Only disclose the source type, never an account's private media UUID.
+    coreui_work_record($pdo, 'tool', 'info', 'Portraet-Referenz ausgewaehlt',
+      ['source'=>'image', 'reference_kind'=>$reference === 'default' ? 'canonical' : 'personal']);
+  }
   $result = coreui_image_generate($pdo, $uid, ember_character_id(), $request['prompt'], $request['size'],
     'ember_image_lease', 'ember_image_unlease',
     static function (array $job) use ($pdo): void {
