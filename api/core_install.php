@@ -521,11 +521,15 @@ function coreui_core_update_plan(array $models): array {
   $plan = [];
   foreach (COREUI_CORE_INSTALL_CATALOG as $tier => $entry) {
     $core = coreui_core_install_name($tier);
-    if (!$has($entry['base']) && !$has($core)) continue;
-    // Existing Gemma-only installations get the matching e2b/e4b/12b/26b/31b
-    // CoreAI tag on explicit or weekly update, without deleting foreign tags.
+    $legacy = 'ember-coreui:' . (string)$entry['tag'];
+    if (!$has($entry['base']) && !$has($core) && !$has($legacy)) continue;
+    // Existing Gemma-only and old ember-coreui installations get a current
+    // ember-core:* name on the next explicit/weekly update. Keep any legacy
+    // aliases until the operator has migrated account selections.
+    $cores = [['name'=>$core, 'source'=>'template']];
+    if ($has($legacy)) $cores[] = ['name'=>$legacy, 'source'=>'template'];
     $plan[coreui_ollama_model_key($entry['base'])] = ['base'=>$entry['base'], 'tier'=>$tier,
-      'label'=>COREUI_CORE_TIER_LABELS[$tier], 'cores'=>[['name'=>$core, 'source'=>'template']]];
+      'label'=>COREUI_CORE_TIER_LABELS[$tier], 'cores'=>$cores];
   }
   $default = defined('STU_EMBER_MODEL') ? (string)STU_EMBER_MODEL : 'ember-coreui:latest';
   $base = coreui_core_mara_base();
