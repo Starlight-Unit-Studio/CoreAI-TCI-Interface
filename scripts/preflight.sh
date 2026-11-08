@@ -1004,7 +1004,11 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
 
   profile_reference_test=''
   if profile_reference_test="$(compose exec -T php php scripts/profile-reference-selftest.php 2>&1)"; then
-    ok "$profile_reference_test"
+    if [[ "$profile_reference_test" == PARTIAL:* ]]; then
+      warn "$profile_reference_test"
+    else
+      ok "$profile_reference_test"
+    fi
   else
     fail "Profilreferenz-Selbsttest: ${profile_reference_test:-Unbekannter Fehler}"
   fi
