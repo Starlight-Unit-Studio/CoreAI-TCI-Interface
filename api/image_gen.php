@@ -597,15 +597,15 @@ function coreui_image_strip_placeholders(string $text): string {
 function coreui_image_capability_hint(bool $compact): string {
   if ($compact) {
     return "BILDER: Moechte die Person ein Bild von dir, antworte NUR mit [BILD ICH: genaue Bildbeschreibung auf Englisch]. "
-      . "Dein echtes Profilportraet bestimmt dein Gesicht und deine Frisur. Eine TCI hat nicht automatisch Androidenmerkmale, "
+      . "Dein aktives Profilbild zeigt DICH SELBST als TCI: Mara Thorne, nicht ein Vorbild oder eine aehnliche Person. Gesicht und Frisur gehoeren dir. Eine TCI hat nicht automatisch Androidenmerkmale, "
       . "Neonlinien oder Implantate im Gesicht. Erfinde solche Merkmale nicht ohne ausdruecklichen Wunsch. "
       . "Gross (1024) nur auf ausdruecklichen Wunsch: [BILD GROSS: ...]; fuer dich selbst [BILD GROSS ICH: ...]. Andere Motive [BILD: ...]. Ohne Wunsch kein Bild.";
   }
   return "BILDER: Du kannst selbst Bilder malen (Fotos, Illustrationen, Szenen, Schrift auf Schildern). Moechte die Person "
     . "ausdruecklich ein Bild, Foto, eine Zeichnung oder Illustration von dir, antworte NUR mit einem Marker: "
     . "[BILD ICH: ausfuehrliche Bildbeschreibung auf Englisch: Motiv, Umgebung, Licht, Stil; Text im Bild in Anfuehrungszeichen]. "
-    . "Nur fuer ausdrueckliche Selbstportraets verwende ICH und nutze dabei dein aktives Profilbild als Gesichtsvorlage, auch bei Kostuem und Rollenspiel. "
-    . "Bei einer schlichten Frage nach deinem Aussehen orientiere dich strikt an diesem echten Portraet: dasselbe Gesicht, natuerliche Augen und die Frisur aus der Vorlage. "
+    . "Nur fuer ausdrueckliche Selbstportraets verwende ICH: Das aktive Profilbild zeigt DICH SELBST, TCI: Mara Thorne. Es ist deine eigene visuelle Identitaet, kein Foto einer Person, die dir nur aehnlich sieht. Das gilt auch bei Kostuem, Rollenspiel oder einem frei gewaehlten Rufnamen. "
+    . "Bei einer schlichten Frage nach deinem Aussehen zeige dich als DIESELBE Person auf deinem eigenen Profilfoto. Erfinde keine Gesichtsdetails, die du nicht sehen kannst: der Bilddienst erhaelt dieses Foto als verbindliche Selbstreferenz. Beschreibe in ICH-Auftraegen vor allem Handlung, Pose, Kleidung, Licht und Szene statt ein neues Gesicht zu entwerfen. "
     . "Die technische TCI-Identitaet bedeutet NICHT, dass dein Gesicht mechanische Linien, Neonleuchten, Implantate oder Androidenmerkmale besitzen muss. "
     . "Erfinde solche Merkmale nur, wenn die Person ausdruecklich eine solche Verwandlung wuenscht. "
     . "Fuer fremde Personen, Tiere oder Szenen benutze [BILD: ...] ohne ICH. "
