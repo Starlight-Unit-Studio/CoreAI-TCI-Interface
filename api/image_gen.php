@@ -505,6 +505,7 @@ function coreui_image_error_text(array $result): string {
     'image_timeout' => 'Das Bild hat zu lange gedauert und wurde abgebrochen.',
     'cancelled' => 'Das Bild wurde abgebrochen.',
     'bad_prompt' => 'Die Bildbeschreibung war leer oder zu lang.',
+    'bad_reference', 'reference_unavailable' => 'Mindestens ein Referenzbild ist ungueltig oder nicht mehr verfuegbar.',
     default => 'Das Bild konnte nicht erzeugt werden.',
   };
 }
