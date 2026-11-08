@@ -21,17 +21,17 @@ function install_throws(callable $fn, string $code): bool {
 }
 
 // Canonical numeric tags, with upstream Gemma tags only as temporary sources.
-install_test(coreui_core_may_cleanup_base('gemma4:12b', false, ['ember-coreui:12b'])
-  && coreui_core_may_cleanup_base('gemma4:e2b', false, ['ember-coreui:2b'])
-  && !coreui_core_may_cleanup_base('gemma4:12b', true, ['ember-coreui:12b'])
+install_test(coreui_core_may_cleanup_base('gemma4:12b', false, ['ember-core:12b'])
+  && coreui_core_may_cleanup_base('gemma4:e2b', false, ['ember-core:e2b'])
+  && !coreui_core_may_cleanup_base('gemma4:12b', true, ['ember-core:12b'])
   && !coreui_core_may_cleanup_base('gemma4:12b', false, [])
-  && !coreui_core_may_cleanup_base('gemma4:31b-cloud', false, ['ember-coreui:31b'])
+  && !coreui_core_may_cleanup_base('gemma4:31b-cloud', false, ['ember-core:31b'])
   && !coreui_core_may_cleanup_base('gemma4:12b', false, ['gemma4:12b'])
   && !coreui_core_may_cleanup_base('gemma4:12b', false, ['foreign-model:12b']),
   'temporary base removal requires newly pulled known Gemma and verified CoreAI name');
-// Names: CoreAI family with canonical numeric tags; only catalog tiers.
+// New models preserve exact Gemma tag suffixes under the ember-core family.
 $family = coreui_core_mara_family();
-install_test(coreui_core_install_name('plus') === $family . ':12b' && coreui_core_install_name('schnell') === 'ember-coreui:2b' && coreui_core_install_name('normal') === 'ember-coreui:4b',
+install_test(coreui_core_install_name('plus') === $family . ':12b' && coreui_core_install_name('schnell') === 'ember-core:e2b' && coreui_core_install_name('normal') === 'ember-core:e4b',
   'installed Cores carry Mara\'s name and the size');
 install_test(install_throws(fn() => coreui_core_install_name('gemma4:evil'), 'unknown_tier'), 'unknown tier is refused');
 install_test(install_throws(fn() => coreui_core_install_check('../x'), 'unknown_tier'), 'the check takes catalog tiers only');
@@ -168,13 +168,13 @@ $listing = [['name'=>$default, 'digest'=>'d0'], ['name'=>'gemma4:e4b', 'digest'=
   ['name'=>'gpt-oss:120b-cloud', 'digest'=>'d7']];
 $plan = coreui_core_update_plan($listing);
 $rawOnly = coreui_core_update_plan([['name'=>'gemma4:e2b'], ['name'=>'gemma4:e4b']]);
-install_test($rawOnly[0]['cores'] === [['name'=>'ember-coreui:2b', 'source'=>'template']]
-  && $rawOnly[1]['cores'] === [['name'=>'ember-coreui:4b', 'source'=>'template']],
-  'update migrates old raw Gemma-only tiers into canonical CoreAI tags');
+install_test($rawOnly[0]['cores'] === [['name'=>'ember-core:e2b', 'source'=>'template']]
+  && $rawOnly[1]['cores'] === [['name'=>'ember-core:e4b', 'source'=>'template']],
+  'update creates exact-size CoreAI tags for old raw Gemma-only tiers');
 $oldManaged = coreui_core_update_plan([['name'=>'ember-coreui:e2b']]);
-install_test($oldManaged[0]['cores'] === [['name'=>'ember-coreui:2b', 'source'=>'template'],
+install_test($oldManaged[0]['cores'] === [['name'=>'ember-core:e2b', 'source'=>'template'],
   ['name'=>'ember-coreui:e2b', 'source'=>'template']],
-  'old e2b alias stays available while new 2b tag is created');
+  'old ember-coreui:e2b alias stays available while new ember-core:e2b is created');
 install_test(array_column($plan, 'base') === ['gemma4:e2b', 'gemma4:e4b', 'gemma4:12b', 'gemma4:26b'], 'plan: local bases in tier order, no cloud');
 $byBase = array_column($plan, 'cores', 'base');
 install_test($byBase['gemma4:12b'] === [['name'=>$family . ':12b', 'source'=>'template']], 'installer Core rebuilt from the template');
