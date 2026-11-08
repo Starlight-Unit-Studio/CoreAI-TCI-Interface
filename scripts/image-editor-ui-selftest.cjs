@@ -23,6 +23,11 @@ assert(chat.includes('sendImageEdit: function (files, instruction, size)'), 'cha
 assert(chat.includes('pendingSendAfterUpload = {text:text, sessionId:String(ses.id)}'), 'send waits for uploads');
 assert(editor.includes('drawMarks('), 'brush selection rendering exists');
 assert(viewer.includes("ui.edit.addEventListener('click'"), 'viewer opens editor');
+assert(viewer.includes("ui.info = action('info'"), 'single accessible info action replaces split dropdown');
+assert(!viewer.includes("icon('chevron')"), 'no dropdown chevron in title');
+assert(css.includes('--viewer-accent-gold: var(--amb'), 'TCI amber token used');
+assert(css.includes('--viewer-accent-blue: var(--cx'), 'TCI blue token used');
+assert(css.includes('html[data-coreui-theme="dark"] .coreai-image-viewer'), 'viewer honors theme setting');
 
 const html = [
   '<!doctype html><html lang="de"><head><meta charset="utf-8">',
@@ -62,6 +67,27 @@ const html = [
     await page.goto('http://localhost:8778/test.html');
     await page.waitForFunction(()=>{const i=document.querySelector('.msg-image');return i&&i.complete&&i.naturalWidth>0;});
     await page.locator('a.msg-image-link').click();
+    const infoButton = page.locator('.coreai-image-viewer-info');
+    assert(await infoButton.isVisible(), 'info button visible on phone');
+    assert.equal(await infoButton.textContent(), '', 'info is a single icon, not a split dropdown');
+    await infoButton.click();
+    assert.equal(await infoButton.getAttribute('aria-expanded'), 'true', 'metadata popover opens');
+    assert(await page.locator('.coreai-image-viewer-details').isVisible(), 'metadata visible');
+    await infoButton.click();
+    assert.equal(await infoButton.getAttribute('aria-expanded'), 'false', 'metadata popover closes');
+    const metrics = await page.evaluate(() => {
+      const toolbar = document.querySelector('.coreai-image-viewer-toolbar');
+      const left = document.querySelector('.coreai-image-viewer-info').getBoundingClientRect();
+      const right = document.querySelector('.coreai-image-viewer-close').getBoundingClientRect();
+      const bg = getComputedStyle(toolbar).backgroundImage;
+      return {left:left.left,right:right.right,width:window.innerWidth,bg};
+    });
+    assert(metrics.left>=0 && metrics.right<=metrics.width+1, 'all buttons fit phone viewport: '+JSON.stringify(metrics));
+    assert(metrics.bg.includes('linear-gradient'), 'TCI toolbar has a gradient surface');
+    await page.evaluate(() => document.documentElement.setAttribute('data-coreui-theme','dark'));
+    const darkBg = await page.locator('.coreai-image-viewer-toolbar').evaluate(node=>getComputedStyle(node).backgroundImage);
+    assert.notEqual(darkBg,metrics.bg, 'dark mode changes viewer chrome');
+    await page.evaluate(() => document.documentElement.removeAttribute('data-coreui-theme'));
     await page.locator('.coreai-image-viewer-edit').click();
     await page.waitForSelector('.coreai-image-editor:not([hidden])');
     await page.locator('.coreai-image-editor-input').fill('Ändere die Jacke zu Rot.');
