@@ -242,8 +242,9 @@
       var last = state.install && state.install.kind === 'update' && !state.install.running ? state.install.results || [] : [];
       show(el.Results, state.mode === 'manage' && last.length > 0);
       last.forEach(function (r) {
-        add(el.Results, 'li', '', r.label + ': ' + (r.result === 'error' ? (r.message || 'Fehler') : (RESULT[r.result] || r.result)))
-          .setAttribute('data-state', r.result === 'error' ? 'bad' : 'ok');
+        add(el.Results, 'li', '', r.label + ': ' + (r.result === 'error' ? (r.message || 'Fehler')
+          : (RESULT[r.result] || r.result) + (r.message ? ' · ' + r.message : '')))
+          .setAttribute('data-state', r.result === 'error' ? 'bad' : r.message ? 'warn' : 'ok');
       });
     }
 
@@ -313,7 +314,7 @@
       } else if (running) {
         note = 'Du kannst das Fenster schließen, ' + (j.kind === 'update' ? 'das Update' : 'die Installation') + ' läuft auf dem Server weiter.';
       } else if (done) {
-        note = manage ? (j.kind === 'update' ? j.message || 'Update fertig.' : j.step || '') : '';
+        note = manage ? (j.kind === 'update' ? j.message || 'Update fertig.' : j.step || '') : (j.message || '');
         go = manage ? '' : 'Jetzt nutzen';
       } else if (failed) {
         note = j.message || (j.kind === 'update' ? 'Das Update ist fehlgeschlagen.' : 'Die Installation ist fehlgeschlagen.');
