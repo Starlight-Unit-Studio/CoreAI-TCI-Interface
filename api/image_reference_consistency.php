@@ -24,6 +24,8 @@ function coreui_image_reference_mode(string $scene, bool $selfReference, bool $u
       . '|(?:reference|image|picture)\s+(?:for|as)\s+style[-\s]+only'
       . '|(?:use|take)\s+(?:the\s+)?(?:reference|image|picture)\s+only\s+for\s+(?:the\s+)?style'
       . '|nur\s+(?:als\s+)?stilvorlage|nur\s+den\s+stil|ausschlie(?:ss|ß)lich\s+(?:den\s+)?stil'
+      . '|im\s+stil\s+(?:von\s+)?(?:diesem|dem|dieser)\s+(?:bild|foto)'
+      . '|(?:gleiche\s+farbwelt|same\s+color\s+palette)'
       . '|nur\s+(?:die\s+)?(?:aesthetik|ästhetik|farbwelt))\b~iu',
     $scene
   ) === 1) return 'style';
