@@ -10,6 +10,7 @@ the actual voice task correctly distinguishes normal images and TCI self-portrai
 - Confirm the personal avatar is used only for explicit TCI portraits.
 - Confirm there is no image marker when the image tool is disabled.
 - Confirm all marker variants survive the voice reply bracket sanitizer.
+- Repair SHA-256 80-bit decimal cache fingerprints for JavaScript files modified by 0.6.47, including protocols.html.
 - Preserve runtime logic, model/system prompts, Nginx configuration and queue.
 - Missing Nginx default site is a separate warning, not the reported test failure.
 
