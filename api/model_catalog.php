@@ -82,13 +82,18 @@ function coreui_ollama_model_exists(string $name): bool {
  * Cores keep their own name.
  */
 const COREUI_CORE_TIER_LABELS = [
-  'schnell' => 'TCI: Mara Schnell',
-  'normal' => 'TCI: Mara Normal',
-  'plus' => 'TCI: Mara Plus',
-  'pro' => 'TCI: Mara Pro',
-  'premium' => 'TCI: Mara Premium',
+  'schnell' => 'TCI Core Schnell',
+  'normal' => 'TCI Core Normal',
+  'plus' => 'TCI Core Plus',
+  'pro' => 'TCI Core Pro',
+  'premium' => 'TCI Core Premium',
 ];
-const COREUI_CORE_TIER_SIZES = ['e2b'=>'schnell', 'e4b'=>'normal', '12b'=>'plus', '26b'=>'pro', '31b'=>'premium'];
+// Canonical CoreAI tags have numeric parameter tiers; keep old e2b/e4b
+// tags readable so upgrades never strand an existing account selection.
+const COREUI_CORE_TIER_SIZES = [
+  '2b'=>'schnell', '4b'=>'normal', '12b'=>'plus', '26b'=>'pro', '31b'=>'premium',
+  'e2b'=>'schnell', 'e4b'=>'normal',
+];
 
 /*
  * Local tiers the chat installer may pull (api/core_install.php). Sizes as
@@ -98,11 +103,11 @@ const COREUI_CORE_TIER_SIZES = ['e2b'=>'schnell', 'e4b'=>'normal', '12b'=>'plus'
  * speed hint.
  */
 const COREUI_CORE_INSTALL_CATALOG = [
-  'schnell' => ['base'=>'gemma4:e2b', 'download_gb'=>7.5, 'active_b'=>2.3],
-  'normal' => ['base'=>'gemma4:e4b', 'download_gb'=>9.5, 'active_b'=>4.5],
-  'plus' => ['base'=>'gemma4:12b', 'download_gb'=>8.0, 'active_b'=>12.0],
-  'pro' => ['base'=>'gemma4:26b', 'download_gb'=>19.0, 'active_b'=>4.0],
-  'premium' => ['base'=>'gemma4:31b', 'download_gb'=>20.0, 'active_b'=>31.0],
+  'schnell' => ['base'=>'gemma4:e2b', 'tag'=>'2b', 'download_gb'=>7.5, 'active_b'=>2.3],
+  'normal' => ['base'=>'gemma4:e4b', 'tag'=>'4b', 'download_gb'=>9.5, 'active_b'=>4.5],
+  'plus' => ['base'=>'gemma4:12b', 'tag'=>'12b', 'download_gb'=>8.0, 'active_b'=>12.0],
+  'pro' => ['base'=>'gemma4:26b', 'tag'=>'26b', 'download_gb'=>19.0, 'active_b'=>4.0],
+  'premium' => ['base'=>'gemma4:31b', 'tag'=>'31b', 'download_gb'=>20.0, 'active_b'=>31.0],
 ];
 
 /** Name of Mara's Cores without tag; a plain Gemma default falls back to ember-coreui. */
