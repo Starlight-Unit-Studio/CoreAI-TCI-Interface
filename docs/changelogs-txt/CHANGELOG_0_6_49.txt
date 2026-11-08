@@ -1,6 +1,11 @@
 COREAI: TCI INTERFACE | CHANGELOG 0.6.49
 08.11.2026
 
+- Generate pictures from two or more uploaded source images after the same turn's Vision analysis.
+- Send each account-verified image reference to the pinned FLUX.2-klein service as a separate -r input, while preserving Mara's personal identity reference independently.
+- Do not start generation when the user only asks to analyze the images. Prevent false "image created" replies with an explicit-generation fallback. Enforce account ownership, safe filenames, magic headers and 8 MB upload caps.
+- Test multi-image service arguments, normal image analysis, marker/fallback routing and cross-account isolation.
+
 - Fix generic [BILD: ...] responses to a natural Mara self-portrait request. The request "wie siehst du eigentlich aus ... kannste mir das auch auf einem bild zeigen?" is recognized as a portrait even when Mara did not include ICH.
 - Keep display-name aliases and English appearance questions supported.
 - Apply the same reference selection to genuine recorded voice input, not to third-party uploaded audio.
