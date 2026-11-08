@@ -6,7 +6,7 @@
 
 CoreAI combines Ollama-based models with private conversations, browser research, personal knowledge, file tools and an administration interface. Its standard deployment runs an isolated Nginx, PHP-FPM, MariaDB and worker stack on a Linux server. CoreAI is an application, **not a standalone operating system**.
 
-**Current source version: `0.6.52`** | [Changelog](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Documentation policy](docs/VERSIONING_POLICY.md) | [License](LICENSE.md)
+**Current source version: `0.6.53`** | [Changelog](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Documentation policy](docs/VERSIONING_POLICY.md) | [License](LICENSE.md)
 
 > **Development status:** The features below describe the current source code, not guaranteed capabilities of every model or cloud provider. A merged commit does not by itself prove a successful production deployment.
 
@@ -143,6 +143,8 @@ sudo ./scripts/stack.sh ps
 sudo ./scripts/stack.sh logs --tail=100
 curl -fsS http://127.0.0.1:9080/api/health.php
 ```
+
+The portrait-reference regression check uses optional PDO SQLite for account-isolation and memory-side-effect tests. On hosts without that driver, avatar geometry and prompt consistency are still checked; preflight prints a `PARTIAL` warning instead of reporting full coverage.
 
 To inspect the optional voice service:
 
