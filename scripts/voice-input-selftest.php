@@ -156,14 +156,23 @@ vi_test(str_contains($task, 'Namen und Begriffe, die Rick oft sagt (so geschrieb
   && str_contains($task, '[WEB: suchbegriffe]') && str_contains($task, '[ARCHIV: stichworte]') && !str_contains($task, '[BROWSE:')
   && str_contains($task, 'antworte NUR mit genau einem dieser Marker'), 'Mara gets the terms and the tools she may use');
 $task = coreui_voice_listen_task('Rick', '', $clip);
-vi_test(!str_contains($task, 'Namen und Begriffe') && !str_contains($task, '[WEB:') && !str_contains($task, '[BILD:'),
+vi_test(!str_contains($task, 'Namen und Begriffe') && !str_contains($task, '[WEB:')
+  && !str_contains($task, '[BILD:') && !str_contains($task, '[BILD ICH:'),
   'without terms and tools: neither is mentioned');
 // 0.6.40 (P20.5): an image after a voice message (operator, 07.11.2026: "eine Wildkatze im Wald" got a text only).
 $task = coreui_voice_listen_task('Rick', '', $clip, [], ['web', 'image']);
-vi_test(str_contains($task, 'Moechte Rick ein Bild, Foto, eine Zeichnung oder Illustration von dir, antworte NUR mit dem Marker '
-  . '[BILD: ausfuehrliche Bildbeschreibung auf Englisch] (gross nur auf ausdruecklichen Wunsch: [BILD GROSS: ...]);'),
-  'Mara may paint after a voice message');
-vi_test(coreui_voice_strip_stray_bracket('[BILD: a wild cat in the forest]') === '[BILD: a wild cat in the forest]', 'the image marker stays whole');
+vi_test(str_contains($task, 'Moechte Rick ein Selbstportraet von dir')
+  && str_contains($task, '[BILD ICH: genaue Bildbeschreibung auf Englisch]')
+  && str_contains($task, '[BILD GROSS ICH: ...]')
+  && str_contains($task, 'Fuer andere Motive benutze [BILD: Bildbeschreibung auf Englisch]')
+  && str_contains($task, '[BILD GROSS: ...]')
+  && str_contains($task, 'Nur bei ICH wird dein persoenliches Referenzbild mitgegeben.')
+  && str_contains($task, 'Ohne Marker entsteht kein Bild.'),
+  'Mara may paint normal images and self-portraits after a voice message');
+vi_test(coreui_voice_strip_stray_bracket('[BILD: a wild cat in the forest]') === '[BILD: a wild cat in the forest]'
+  && coreui_voice_strip_stray_bracket('[BILD ICH: Mara as Superwoman]') === '[BILD ICH: Mara as Superwoman]'
+  && coreui_voice_strip_stray_bracket('[BILD GROSS ICH: Mara as Superwoman]') === '[BILD GROSS ICH: Mara as Superwoman]',
+  'normal and self-portrait markers stay whole in spoken replies');
 
 
 // 0.6.20 (operator's screenshots): a closing tag nothing opened, and the sentence that only
