@@ -294,8 +294,8 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
     const p = page();
     const models = MODELS.concat([
       {name: 'gemma4:12b', parameter_size: '12B', label: 'TCI Core Plus'},
-      {name: 'ember-coreui:12b', parameter_size: '12B', label: 'TCI Core Plus', mara: true},
-      {name: 'ember-coreui:31b', parameter_size: '31B', label: 'TCI Core Premium', mara: true},
+      {name: 'ember-core:12b', parameter_size: '12B', label: 'TCI Core Plus', mara: true},
+      {name: 'ember-core:31b', parameter_size: '31B', label: 'TCI Core Premium', mara: true},
     ]);
     const s2 = server({models, missing: MISSING.slice(1, 2), level: 1,
       install: {tier: 'pro', phase: 'pull', running: true, percent: 42}});
@@ -304,13 +304,13 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
     await m2.ready;
     await m2.open();
     const list = entries(p.els.coreModeList);
-    assert.equal(list[2].getAttribute('data-value'), 'ember-coreui:12b', 'Mara\'s Core of the tier is listed');
+    assert.equal(list[2].getAttribute('data-value'), 'ember-core:12b', 'Mara\'s Core of the tier is listed');
     assert.equal(list[2].children[0].textContent, 'TCI Core Plus');
     assert.equal(dot(list[2]), 'standby');
     assert.match(list[3].textContent, /wird installiert · 42 %/, 'running install in the menu');
     // Local and cloud Premium: one row, local first, the switch chooses the cloud.
     let premiumRow = rowItems(p.els.coreModeList)[4];
-    assert.equal(premiumRow.children[0].getAttribute('data-value'), 'ember-coreui:31b');
+    assert.equal(premiumRow.children[0].getAttribute('data-value'), 'ember-core:31b');
     assert.deepEqual(switchOf(premiumRow).children.map(b => b.getAttribute('aria-pressed')), ['true', 'false']);
     assert.equal(entries(p.els.coreModeList).filter(o => o.children[0].textContent === 'TCI Core Premium').length, 1);
     await switchOf(premiumRow).children[1].handlers.click({stopPropagation() {}});
@@ -321,7 +321,7 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
     assert.equal(premiumRow.children[0].getAttribute('aria-checked'), 'true');
     assert.deepEqual(switchOf(premiumRow).children.map(b => b.getAttribute('aria-pressed')), ['false', 'true']);
     await switchOf(premiumRow).children[0].handlers.click({stopPropagation() {}});
-    assert.equal(rowItems(p.els.coreModeList)[4].children[0].getAttribute('data-value'), 'ember-coreui:31b', 'back to local');
+    assert.equal(rowItems(p.els.coreModeList)[4].children[0].getAttribute('data-value'), 'ember-core:31b', 'back to local');
     // Admins get Cores verwalten below the list.
     assert.equal(p.els.coreModeManage.hidden, false);
     await p.els.coreModeManage.handlers.click({stopPropagation() {}});
@@ -329,7 +329,7 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
     assert.equal(p.els.coreModeMenu.hidden, true, 'the menu closes for the window');
     await m2.openLegend();
     const plusRow = p.els.coreLegendRows.children[2].children.map(c => c.textContent);
-    assert.deepEqual(plusRow, ['TCI Core Plus', 'gemma4:12b, ember-coreui:12b (TCI Modelfile)', 'installiert']);
+    assert.deepEqual(plusRow, ['TCI Core Plus', 'gemma4:12b, ember-core:12b (TCI Modelfile)', 'installiert']);
   }
 
   // Thinking switch: only its own value, with CSRF.
