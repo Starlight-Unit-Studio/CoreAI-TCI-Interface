@@ -1,0 +1,32 @@
+CoreAI: TCI Interface 0.6.53
+Date: 08.11.2026
+Branch: fix/reference-preflight-0653
+Base: main 0.6.52 (PR #204 already merged)
+
+OPERATOR REPORT
+- Preflight from the root SSH terminal showed exactly two errors:
+  profile-reference-selftest (no output, "Unbekannter Fehler") and
+  image-reference-consistency-selftest ("two or more references keep separate identities and original user scene").
+- The host reported PDO MySQL but no evidence of PDO SQLite. The profile test
+  unconditionally used SQLite and had an outdated expected phrase following the 1:1 prompt change.
+- The longer 1:1 reference prompt entered compact mode while that mode used
+  different wording for the multi-reference rule; the old assertion failed.
+- More importantly, a very short prompt budget could discard the whole identity
+  instruction; that too is repaired.
+
+CORRECTIONS
+- Compact 1:1 identity, multi-reference separation, and a shorter account
+  portrait overlay remain within the 1200-char image model budget.
+- Even smaller budgets retain a minimal source identity instruction.
+- Pure avatar/scene checks work without SQLite, with explicit PARTIAL warning;
+  DB/account isolation and memory side-effect tests run only when PDO SQLite exists.
+- The previous stale description assertion now checks the current 1:1 wording.
+- The two preflight variants show PARTIAL as a warning, not as a full [OK].
+- Added dedicated regression scenarios (900 / 700 / 620 / 480 limits).
+
+VALIDATION
+- Static source and version checks may be performed on the PR branch.
+- PHP/runtime tests and the full native/Docker preflight have not been run
+  against the operator's server; those must be completed after update.
+- No changes to a model or weight files, installer, production DB or admin
+  memory edit privileges.
