@@ -335,6 +335,9 @@ function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $
   if (!isset(($registry['sizes'] ?? [])[$size])) return ['ok' => false, 'error' => 'bad_size', 'detail' => ''];
   // Every image reference passes through the same identity/subject/style
   // consistency standard, regardless of which chat or voice tool selected it.
+  // The original scene is used ONLY to choose canonical Mara angles/styles.
+  // The image service never selects from its own policy/prompt boilerplate.
+  $sceneHint = $prompt;
   $prompt = coreui_image_reference_prompt($prompt, $reference, $references, $limit, $userReferenceMode);
   if (count($references) > COREUI_IMAGE_MAX_REFERENCES) {
     return ['ok'=>false, 'error'=>'bad_reference', 'detail'=>''];
@@ -366,6 +369,7 @@ function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $
     if ($cancelled()) return ['ok' => false, 'error' => 'cancelled', 'detail' => ''];
     $body = ['prompt' => $prompt, 'size' => $size];
     if ($reference !== null) $body['reference'] = $reference;
+    if ($reference === 'default') $body['scene_hint'] = $sceneHint;
     if ($references !== []) $body['references'] = $references;
     [$code, $answer] = $http('POST', '/jobs', $body, 10);
     if ($code !== 202 || !is_array($answer) || !is_array($answer['job'] ?? null)) {
@@ -419,7 +423,8 @@ function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $
     'prompt' => $prompt, 'size' => $size, 'width' => $dims[0], 'height' => $dims[1],
     'seed' => (int)($job['seed'] ?? 0), 'seconds' => round((float)($job['seconds'] ?? 0), 1),
     'model' => (string)($registry['model']['label'] ?? ''),
-    'reference_count' => count($references) + ($reference !== null ? 1 : 0),
+    // The worker also counts the extra built-in Mara photos it actually used.
+    'reference_count' => (int)($job['reference_count'] ?? (count($references) + ($reference !== null ? 1 : 0))),
     'created_at' => gmdate('Y-m-d\\TH:i:s+00:00'),
   ];
   $image = $marked ?? $png;
