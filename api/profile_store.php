@@ -50,6 +50,7 @@ function coreui_profile_load(PDO $pdo, int $uid): array {
 
   // The account avatar falls back to Mara's canonical portrait when no custom one exists.
   $avatars = ['user' => null, 'assistant' => stu_public_path('images/mara_winter.jpg')];
+  $mediaInfo = [];
   if (coreui_profile_schema_ready($pdo)) {
     $stMedia = $pdo->prepare('SELECT slot, uuid, stored_name, mime_type, created_at FROM stu_coreui_profile_media WHERE user_id = ?');
     $stMedia->execute([$uid]);
@@ -63,6 +64,12 @@ function coreui_profile_load(PDO $pdo, int $uid): array {
       $avatars[$slot] = stu_public_path(
         'api/profile_media.php?slot=' . rawurlencode($slot) . '&v=' . rawurlencode($version)
       );
+      $mediaInfo[$slot] = [
+        'uuid'=>$version,
+        'source_url'=>stu_public_path('api/profile_media.php?slot=' . rawurlencode($slot)
+          . '&variant=source&v=' . rawurlencode($version)),
+        'crop'=>coreui_profile_crop_meta($version),
+      ];
     }
   }
 
@@ -71,6 +78,7 @@ function coreui_profile_load(PDO $pdo, int $uid): array {
     'display_name' => $displayName,
     'assistant_name' => $assistantName,
     'avatars' => $avatars,
+    'media' => $mediaInfo,
     'updated_at' => $updatedAt,
   ];
 }
@@ -175,7 +183,7 @@ function coreui_profile_orient_jpeg(GdImage $image, string $path, string $mime):
   if ($mime !== 'image/jpeg' || !function_exists('exif_read_data')) return $image;
   $exif = @exif_read_data($path, 'IFD0', true, false);
   $orientation = is_array($exif) ? (int)($exif['IFD0']['Orientation'] ?? $exif['Orientation'] ?? 1) : 1;
-  if (in_array($orientation, [2, 4, 5, 7], true)) imageflip($image, IMG_FLIP_HORIZONTAL);
+  if (in_array($orientation, [2, 5, 7], true)) imageflip($image, IMG_FLIP_HORIZONTAL);
   if ($orientation === 4) imageflip($image, IMG_FLIP_VERTICAL);
   $degrees = match ($orientation) {
     3 => 180, 5 => -90, 6 => -90, 7 => 90, 8 => 90, default => 0,
@@ -231,7 +239,7 @@ function coreui_profile_delete_avatar(PDO $pdo, int $uid, string $slot): bool {
   $stored = (string)($st->fetchColumn() ?: '');
   $del = $pdo->prepare('DELETE FROM stu_coreui_profile_media WHERE user_id = ? AND slot = ?');
   $del->execute([$uid, $slot]);
-  if ($stored !== '') @unlink(coreui_profile_media_dir() . '/' . basename($stored));
+  if ($del->rowCount() > 0) coreui_profile_media_cleanup($stored);
   return $del->rowCount() > 0;
 }
 
