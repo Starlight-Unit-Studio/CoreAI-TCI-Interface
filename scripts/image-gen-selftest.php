@@ -350,6 +350,7 @@ $public = coreui_image_provenance([
   'size'=>'normal','reference_count'=>2,'created_at'=>'2026-11-08T12:30:00+00:00',
 ], $registry);
 img_gen_test(($public['generated_by'] ?? null) === 'Quantum CoreAI: TCI Interface'
+  && ($public['tci_identity'] ?? null) === 'TCI: Mara Thorne'
   && ($public['credit'] ?? null) === 'Erstellt mit Quantum CoreAI'
   && ($public['copyright_notice'] ?? null) === '© 2026 Quantum CoreAI'
   && ($public['model']['id'] ?? null) === 'flux2-klein-4b'
@@ -385,9 +386,13 @@ $details = json_decode((string)($chunks['Quantum CoreAI Provenance'] ?? ''), tru
 img_gen_test(is_array($details)
   && ($chunks['Credit'] ?? '') === 'Erstellt mit Quantum CoreAI'
   && ($chunks['Description'] ?? '') === 'Erstellt mit Quantum CoreAI'
+  && ($chunks['Author'] ?? '') === 'TCI: Mara Thorne'
+  && ($chunks['TCI Identity'] ?? '') === 'TCI: Mara Thorne'
   && ($chunks['Digital Source Type'] ?? '') === COREUI_IMAGE_AI_SOURCE_TYPE
   && str_contains((string)($chunks['XML:com.adobe.xmp'] ?? ''), 'Iptc4xmpExt:DigitalSourceType')
   && str_contains((string)($chunks['XML:com.adobe.xmp'] ?? ''), 'Quantum CoreAI')
+  && str_contains((string)($chunks['XML:com.adobe.xmp'] ?? ''), '<dc:creator><rdf:Seq><rdf:li>TCI: Mara Thorne</rdf:li>')
+  && ($details['tci_identity'] ?? null) === 'TCI: Mara Thorne'
   && ($details['generation']['seed'] ?? null) === 7,
   'PNG iTXt and IPTC XMP carry readable Quantum CoreAI source and model information');
 img_gen_test(coreui_image_png_embed_provenance('not a png', [], $registry) === null,
