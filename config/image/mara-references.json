@@ -1,0 +1,21 @@
+{
+  "format": 1,
+  "description": "Canonical Mara Thorne identity photos and optional hologram style-only references. The files are uploaded separately to images/mara_references/. A custom user-selected assistant portrait MUST NOT inherit these canonical references.",
+  "directory": "images/mara_references",
+  "primary": "mara_identity_primary.png",
+  "identity": {
+    "fullbody": "mara_identity_fullbody.jpg",
+    "cockpit": "mara_identity_cockpit.jpg",
+    "profile": "mara_identity_profile.jpg",
+    "city": "mara_identity_city.jpg"
+  },
+  "style_only": {
+    "hologram_seated": "mara_style_hologram_seated.jpg",
+    "hologram_walking": "mara_style_hologram_walking.jpg"
+  },
+  "selection": {
+    "max_extra_identity": 2,
+    "max_extra_style": 1,
+    "max_extra_with_uploaded_references": 0
+  }
+}
