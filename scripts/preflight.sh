@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.64: dynamischer Quantum CoreAI Bildvermerk ohne Studio-Logo.
+# CoreAI: TCI Interface 0.6.65: dynamischer Quantum CoreAI Bildvermerk ohne Studio-Logo.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -1174,7 +1174,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     else
       fail 'Live-Browser-Oberflaechentest fehlgeschlagen.'
     fi
-    # 0.6.64: local Playwright check for viewer -> editor -> FLUX reference handoff.
+    # 0.6.65: local Playwright check for viewer -> editor -> FLUX reference handoff.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/image-editor-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Bildeditor: mobile Ansicht, Touch-Auswahl, Undo/Redo und Bildreferenzen geprueft.'

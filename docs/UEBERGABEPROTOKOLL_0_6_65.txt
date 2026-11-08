@@ -1,0 +1,68 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.65
+Datum: 08.11.2026
+Basis: main 0.6.64
+Branch: fix/image-batch-preview-performance-0665
+
+FEHLERBILD
+Bei 2 bzw. 4 generierten Bildern wird das erste bereits fertige Bild
+nicht sofort als kleine, klickbare Vorschau neben dem Raster fuer das
+naechste Bild gezeigt. Waehrend der Generierung flackern Bilder und
+der Chat reagiert teils verzoegert.
+
+ANALYSE UND KORREKTUREN
+- js/coreui-image-progress.js: p.thumbs.hidden hatte bei genau
+  einem fertigen Bild den Wert true. Jetzt zeigt bereits das erste
+  vorhandene Bild ein anklickbares Thumbnail an.
+- js/coreui-work-events.js: normalisiertes Arbeitsereignis verwarf
+  image_uuid, image_px und steps trotz zulaessiger Werte aus dem
+  serverseitigen Work Store. Bildfertigmeldung erreichte den Client
+  daher ohne Datei-ID. Sicher validierte Bild-Metadaten bleiben jetzt
+  intern fuer das UI vorhanden und erscheinen NICHT in den frei
+  sichtbaren Work-Details; ungueltige/fremde Werte werden verworfen.
+- Bisher bis zu 900 Canvas-Punkte pro Animation Frame im 60-Hz-Takt.
+  Auf Touch-Geraeten begrenzt auf ca. 20 FPS, sonst ca. 25 FPS;
+  echte Status-/Preview-Events werden nicht verzoegert.
+- Canvas-Bitmap-Größe mit Math.round(size*ratio) auf ganze Pixel
+  gebracht. Bisher wurden bei manchen gebrochenen DPRs dieselben
+  Canvas-Abmessungen in jedem Frame erneut gesetzt, was flackerte
+  und CPU/GPU-Zeit verschwendete. Der Effekt nutzt max. DPR 1.25,
+  waehrend die generierten Bilddateien in voller Qualitaet bleiben.
+- Keine konkurrierenden requestAnimationFrame-Schleifen pro Karte.
+- css/console.css: Repaints der Animationsflaeche auf den
+  Fortschrittsrahmen begrenzen; Thumbnail-Layouts/Fokus verbessern.
+- scripts/image-progress-ui-selftest.cjs: Erste Vorschau sichtbar
+  direkt nach Fertigstellung und noch waehrend Bild 2 entsteht,
+  klickbar im gemeinsamen Viewer, DPR-/Canvas-Regression sowie
+  Event-Replay fuer vier Bilder.
+
+KONSTANT
+- Keine Aenderung an FLUX-Worker, Modelfile, Modell, API,
+  Datenbank, Memory, Bildqualitaet, Benutzerrechten, Queue
+  oder laufenden Generierungsauftraegen.
+- Bestehende Serialisierung bleibt erhalten.
+
+VERSION / DOKUMENTATION
+- VERSION 0.6.65 sowie HTML, Bootstrap, README, Changelog,
+  TXT-Archiv und Preflight-Versionen synchronisiert.
+- Numerische, contentbasierte Cache-Fingerprints fuer
+  coreui-image-progress.js, coreui-work-events.js, console.css,
+  console-gate.js erneuert.
+
+PRUEFSTATUS
+- Durchgefuehrt: JavaScript-Syntax, Release-Verweise, README-Limit,
+  SHA-256-Cache-Keys und reine Work-Event-Normalisierung mit
+  validen/invaliden Media-UUIDs.
+- Durchgefuehrt: Zustandspruefung mit simuliertem DOM fuer 4
+  serielle Bildereignisse. Erstes Thumbnail sichtbar beim Start
+  des zweiten Bildes, danach 4 persistente Thumbnail-Links.
+- Playwright-Browser, reale Bildgenerierung und Server-Preflight
+  sind noch NICHT ausgefuehrt.
+
+VOR MERGE
+  python3 scripts/version-merge-check.py --base-version 0.6.64
+  python3 scripts/cache-bust.py --verify
+  node scripts/image-progress-ui-selftest.cjs
+  node scripts/image-chat-ui-selftest.cjs
+  Nativen/Compose-Preflight auf Testinstallation ausfuehren.
+Nach erfolgreicher Abnahme Merge in main, dann Update
+ueber den integrierten CoreAI-Updater und Mobiltest.

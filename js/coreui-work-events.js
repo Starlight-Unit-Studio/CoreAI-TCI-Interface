@@ -412,6 +412,20 @@
         }
       });
     }
+    // 0.6.65: the image-progress view needs validated private media IDs.
+    // These fields are intentionally NOT added to DETAIL_LABELS: the work
+    // timeline must not print owner-only media UUIDs as diagnostic prose.
+    if (raw.meta && raw.meta.source === 'image') {
+      var imagePx = Number(raw.meta.image_px);
+      var imageSteps = Number(raw.meta.steps);
+      if (imagePx === 512 || imagePx === 1024) meta.image_px = String(imagePx);
+      if (Number.isInteger(imageSteps) && imageSteps >= 1 && imageSteps <= 64)
+        meta.steps = String(imageSteps);
+      if (raw.kind === 'artifact' && raw.state === 'success' && title === 'Bild erzeugt') {
+        var imageUuid = String(raw.meta.image_uuid || '');
+        if (/^[a-f0-9]{32}$/.test(imageUuid)) meta.image_uuid = imageUuid;
+      }
+    }
     if (raw.meta) {
       var page = researchURL(raw.meta.page_url);
       if (page) {

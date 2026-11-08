@@ -1,5 +1,15 @@
 # CoreAI: TCI Interface
 
+## 0.6.65 - 08.11.2026
+
+- Fix 2-/4-image generation progress: the first finished image now appears immediately as a clickable thumbnail beside the active dot-grid, not only after the second image completes. Preserve completed thumbnails across subsequent generations and replay of work events.
+- Repair the actual live-event handoff: the shared work-event normalizer was dropping the generated image UUID and canvas-size metadata before the image-progress card could load the file. Retain strictly validated image-only fields without exposing the private UUID in the displayed work timeline.
+- Reduce mobile chat jank and image flicker by limiting the expensive 30x30-dot canvas animation to approximately 20 FPS on coarse-pointer devices (25 FPS otherwise), keeping real progress events immediate and preventing duplicate animation loops.
+- Correct the canvas bitmap resize check to use rounded integer backing dimensions. Fractional device pixel ratios previously caused repeated canvas clears/reallocations on every frame; cap backing pixel density for this effect without changing image output quality.
+- Isolate progress-frame repaints from surrounding chat and refine accessible thumbnail links and focus states.
+- Extend the mobile Playwright regression to verify first-image visibility during the next render, viewer opening, fractional-DPR backing stability, 4-image replay and no horizontal overflow. No image generation engine, model, database, memory or account-permission changes.
+
+
 ## 0.6.64 - 08.11.2026
 
 - Extend the mobile TCI image editor with a functional touch annotation toolbar: select/move existing annotations, freehand brush, text placement, eight shapes (line, arrow, rectangle, ellipse, triangle, diamond, star, heart), preset and custom colors, eraser and undo/redo.
