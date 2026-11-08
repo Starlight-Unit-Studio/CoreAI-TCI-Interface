@@ -41,6 +41,31 @@ img_gen_test(coreui_image_is_self_request('Zeig dich als Superwoman')
   && !coreui_image_is_self_request('Zeichne Superwoman')
   && !coreui_image_is_self_request('Mal eine Katze'), 'self request never changes unrelated images');
 
+// Regression: a natural request to show Mara's real appearance formerly used
+// [BILD:] without reference, so Flux invented a new face and neon circuitry.
+$appearanceQuestion = 'wie siehst du eigentlich aus wenn ich fragen darf? kannste mir das auch auf einem bild zeigen?';
+img_gen_test(coreui_image_is_self_request($appearanceQuestion)
+  && coreui_image_is_self_request('Wie siehst du aus?')
+  && coreui_image_is_self_request('Wie sieht Mara Thorne aus?')
+  && coreui_image_is_self_request('Wie sieht Nova aus?', 'Nova')
+  && coreui_image_is_self_request('Show me what you look like.')
+  && !coreui_image_is_self_request('Wie siehst du das aus deiner Perspektive?')
+  && !coreui_image_is_self_request('Zeichne Superwoman')
+  && !coreui_image_is_self_request('Ein Bild von einer Katze'),
+  'natural appearance intent is about the TCI, never generic image subjects');
+$plainTool = ['tool'=>'image', 'input'=>'A representation of Mara Thorne on a spaceship'];
+$portraitTool = coreui_image_tool_for_request($plainTool, $appearanceQuestion, 'Mara');
+img_gen_test($portraitTool === ['tool'=>'image', 'input'=>'ICH: A representation of Mara Thorne on a spaceship']
+  && coreui_image_parse_input($portraitTool['input'])['self_reference'] === true,
+  'natural text question passes the personal portrait to FLUX');
+$largeTool = ['tool'=>'image', 'input'=>'GROSS: Mara as Superwoman'];
+img_gen_test(coreui_image_tool_for_request($largeTool, 'Zeig dich als Superwoman')['input'] === 'GROSS: ICH: Mara as Superwoman'
+  && coreui_image_tool_for_request($plainTool, 'Zeichne Superwoman') === $plainTool
+  && coreui_image_tool_for_request($plainTool, 'Mal eine Katze') === $plainTool
+  && coreui_image_tool_for_request(['tool'=>'web', 'input'=>'Mara'], $appearanceQuestion)['tool'] === 'web'
+  && coreui_image_tool_for_request(['tool'=>'image', 'input'=>'ICH: Mara in winter'], $appearanceQuestion)['input'] === 'ICH: Mara in winter',
+  'keep roleplay, normal picture requests and existing explicit marker stable');
+
 // Finite batches: default/invalid counts, serial success, partial failure, cancel and no model retry.
 foreach ([1, 2, 4, 9, '4', null] as $count) {
   $calls = 0;
@@ -89,6 +114,8 @@ img_gen_test(str_contains($hint, '[BILD ICH: ausfuehrliche Bildbeschreibung auf 
   && str_contains($hint, 'Standard sind 512 × 512 Pixel') && str_contains($hint, 'Ohne Bildwunsch malst du nichts')
   && !str_contains($hint, 'Modell'), 'the prompt hint: 512 normal, big only on request, no image without a wish');
 img_gen_test(str_contains(coreui_image_capability_hint(true), '[BILD GROSS ICH: ...]'), 'compact hint');
+img_gen_test(str_contains(coreui_image_capability_hint(false), 'Die technische TCI-Identitaet bedeutet NICHT'),
+  'appearance prompt does not invent cybernetic facial implants');
 
 // --- Progress and result ----------------------------------------------------------------
 img_gen_test(coreui_image_progress_title(['phase' => 'load']) === 'Bild: Gewichte werden geladen'
@@ -364,6 +391,9 @@ if ($madeDir) { @rmdir($realDir); @rmdir(dirname($realDir)); }
 // --- Wiring -----------------------------------------------------------------------------
 $read = static fn(string $f): string => (string)file_get_contents($root . '/' . $f);
 $chat = $read('api/chat.php');
+img_gen_test(substr_count($chat, 'coreui_image_tool_for_request(') === 2
+  && str_contains($chat, "if (is_array(\$clip) && !empty(\$clip['voice']))"),
+  'reference safety net is wired into chat and genuine voice turns, not arbitrary files');
 foreach (["require_once __DIR__ . '/image_gen.php';", "if (\$sessionId !== '' && ember_image_allowed(\$uid)) \$tools[] = 'image';",
     "if (\$tool['tool'] === 'image') {", "\$imageHint = ember_image_hint(\$channel, \$imageUrl, \$profile['compact'], \$consoleUid);",
     "\$imageHint = ember_image_hint(\$channel, \$imageUrl, \$promptProfile['compact'], \$consoleUid);",
