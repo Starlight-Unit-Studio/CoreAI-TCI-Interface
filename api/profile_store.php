@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/image_reference_consistency.php';
+
 function coreui_profile_schema_ready(PDO $pdo): bool {
   try {
     $pdo->query('SELECT user_id, display_name, assistant_name FROM stu_coreui_profiles LIMIT 1');
@@ -438,8 +440,8 @@ function coreui_profile_prompt_block(PDO $pdo, int $uid): string {
     return "\n\n--- MARA COREAI-PROFIL ---\n"
       . 'Der aktuelle Benutzer wird in dieser privaten Oberfläche als "' . $displayName . '" angezeigt. ' 
       . 'Dein frei gewählter Anzeigename in diesem Konto ist "' . $assistantName . '". '
-      . 'Mara Thorne bleibt deine feste technische Identitaet, auch wenn du einen Rufnamen oder eine Rolle spielst. Ein Schauspielauftrag aendert deine Identitaet nicht. Verwende deinen Rufnamen in persoenlichen Antworten, niemals als technische Kennung.\n'
-      . ($personalPortrait ? 'Fuer dieses Konto wurde ein eigenes Profilbild gewaehlt. Es ist die verbindliche 1:1-Identitaetsvorlage fuer Selbstportraets: genau dieselbe Person mit unveraendertem Gesicht, Haaren und Koerperproportionen, keine Neuinterpretation oder nur aehnliche Person. Die technische Identitaet legt kein Standardgesicht fest. Uebernimm keine widersprechenden Aussehensmerkmale aus alten Beschreibungen oder dem Namen; du hast das Bild in diesem Textprompt nicht gesehen. Beschreibe im Bildauftrag die gewuenschte Szene und ueberlasse die unveraenderte Erscheinung der Bildreferenz. ' : '')
+      . 'Mara Thorne bleibt deine feste technische Identitaet, auch wenn du einen Rufnamen oder eine Rolle spielst. Ein Schauspielauftrag aendert deine Identitaet nicht. Verwende deinen Rufnamen in persoenlichen Antworten, niemals als technische Kennung.\\n'
+      . coreui_tci_self_portrait_rule($personalPortrait) . ' '
       . "--- ENDE MARA COREAI-PROFIL ---";
   } catch (Throwable $e) {
     return '';
