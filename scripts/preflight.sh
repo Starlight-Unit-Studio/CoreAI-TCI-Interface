@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.56: dynamischer Quantum CoreAI Bildvermerk ohne Studio-Logo.
+# CoreAI: TCI Interface 0.6.57: dynamischer Quantum CoreAI Bildvermerk ohne Studio-Logo.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -1016,7 +1016,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail "Profilreferenz-Selbsttest: ${profile_reference_test:-Unbekannter Fehler}"
   fi
 
-  # 0.6.56: all image references share identity, subject and style preservation.
+  # 0.6.57: all image references share identity, subject and style preservation.
   reference_consistency_test=''
   if reference_consistency_test="$(compose exec -T php php scripts/image-reference-consistency-selftest.php 2>&1)"; then
     ok 'Bildreferenzen: Identitaet, Motivtreue, Stilvorlage und mehrere Quellen geprueft.'
@@ -1130,7 +1130,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     else
       fail 'Chat: Install-Fenster-Oberflaechentest fehlgeschlagen.'
     fi
-    # 0.6.56: touch cropper must preserve originals, per-account re-edit and
+    # 0.6.57: touch cropper must preserve originals, per-account re-edit and
     # user-square / assistant-portrait behavior.
     profile_crop_ui=''
     if profile_crop_ui="$(node "$PROJECT_ROOT/scripts/profile-crop-ui-selftest.cjs" 2>&1)"; then
