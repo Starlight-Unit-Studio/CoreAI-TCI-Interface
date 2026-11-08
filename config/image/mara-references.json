@@ -15,7 +15,6 @@
   },
   "selection": {
     "max_extra_identity": 2,
-    "max_extra_style": 1,
-    "max_extra_with_uploaded_references": 0
+    "max_extra_style": 1
   }
 }
