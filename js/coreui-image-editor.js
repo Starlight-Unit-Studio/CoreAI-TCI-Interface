@@ -1,4 +1,4 @@
-/* CoreAI: TCI Interface 0.6.62 - reference-guided image editor.
+/* CoreAI: TCI Interface 0.6.63 - reference-guided image editor.
  * Uses the existing private image-upload, chat and serial FLUX.2 Klein pipeline.
  * Brush strokes are a visual SECOND reference, not a hard inpainting mask.
  * Original media is left untouched; nothing is stored as a memory entry.
@@ -70,6 +70,7 @@
     brush.min = '8'; brush.max = '96'; brush.step = '2'; brush.value = String(brushSize);
     brush.setAttribute('aria-label', 'Pinselgröße');
     brush.disabled = true;
+    syncBrushTrack();
     brushLabel.appendChild(brush);
     tool.appendChild(brushLabel);
     undoButton = button('coreai-image-editor-tool', '↶', 'Markierung rückgängig');
@@ -120,7 +121,10 @@
       updateControls();
       render();
     });
-    brush.addEventListener('input', function () { brushSize = Number(brush.value) || 28; });
+    brush.addEventListener('input', function () {
+      brushSize = Number(brush.value) || 28;
+      syncBrushTrack();
+    });
     undoButton.addEventListener('click', function () {
       if (strokes.length) undone.push(strokes.pop());
       updateControls(); render();
@@ -158,6 +162,15 @@
     }
     canvas.addEventListener('pointerup', stop);
     canvas.addEventListener('pointercancel', stop);
+  }
+
+  function syncBrushTrack() {
+    // The TCI range track follows the actual brush size (8..96).
+    if (!brush) return;
+    var min = Number(brush.min) || 8;
+    var max = Number(brush.max) || 96;
+    var value = Math.max(min, Math.min(max, Number(brush.value) || min));
+    brush.style.setProperty('--editor-brush-fill', ((value - min) / (max - min) * 100).toFixed(1) + '%');
   }
 
   function pointer(event) {
@@ -228,7 +241,7 @@
     var controller = new AbortController();
     pendingOpen = controller;
     area = false; painting = null; strokes = []; undone = []; brushSize = 28;
-    brush.value = '28'; brush.disabled = true;
+    brush.value = '28'; brush.disabled = true; syncBrushTrack();
     modeButton.textContent = i18n.select;
     modeButton.setAttribute('aria-pressed','false');
     sizePicker.value = 'normal';
