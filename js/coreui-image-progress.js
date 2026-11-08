@@ -296,9 +296,10 @@
     link.href = './api/console_media.php?uuid=' + encodeURIComponent(uuid);
     link.target = '_blank';
     link.rel = 'noopener';
-    link.setAttribute('aria-label', 'Fertiges Bild im Betrachter öffnen');
+    link.setAttribute('aria-label', 'Fertiges Bild ' + p.completed.length + ' im Betrachter öffnen');
     var img = el('img');
     img.alt = 'Fertiges Bild ' + p.completed.length;
+    img.decoding = 'async';
     img.src = link.href;
     link.appendChild(img);
     p.thumbs.appendChild(link);
