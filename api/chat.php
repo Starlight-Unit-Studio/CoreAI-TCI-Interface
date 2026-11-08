@@ -5725,6 +5725,17 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       $GLOBALS['STU_EMBER_ATTACHMENT_IMAGES'],
       $GLOBALS['STU_EMBER_ATTACHMENT_VISION_META']
     );
+    // Only the user's recorded Stimmsequenz (not an uploaded audio file) may
+    // choose style-only references. Text was already handled at turn entry.
+    if ($channel === 'console' && !empty($GLOBALS['COREUI_TURN_IMAGE_REFERENCES'])) {
+      $spokenRequest = $userMsg;
+      foreach ($audioClips as $clip) {
+        if (is_array($clip) && !empty($clip['voice'])) $spokenRequest .= ' ' . (string)($clip['transcript'] ?? '');
+      }
+      if (coreui_image_reference_mode($spokenRequest, false, true) === 'style') {
+        $GLOBALS['COREUI_TURN_IMAGE_STYLE_ONLY'] = true;
+      }
+    }
     // 0.6.22: a tool marker in the answer to a voice message starts Mara's work loop, as
     // for a typed message. The steps are text calls: the transcript in the task stands
     // for the recording, which is not sent again.
