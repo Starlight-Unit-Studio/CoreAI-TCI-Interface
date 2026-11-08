@@ -226,3 +226,5 @@ Jede Version liegt als eigenstaendige UTF-8-TXT-Datei vor.
 * CHANGELOG_0_6_58.txt
 
 * CHANGELOG_0_6_59.txt
+
+* CHANGELOG_0_6_60.txt
