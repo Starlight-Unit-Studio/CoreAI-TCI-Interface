@@ -473,7 +473,7 @@ function coreui_core_install_run(array $state): array {
     $state['step'] = 'Entfernt den temporaeren Gemma-Basistag …';
     coreui_core_install_write($state);
     if (!coreui_core_cleanup_base((string)$state['base'], false, [(string)$state['core']])) {
-      $state['cleanup_warning'] = 'Der TCI Core ist bereit; der Basistag konnte nicht entfernt werden.';
+      $state['message'] = 'Der TCI Core ist bereit; der temporaere Gemma-Basistag konnte nicht entfernt werden.';
     }
   }
   if ($state['phase'] !== 'error') {
