@@ -69,7 +69,9 @@ function coreui_image_reference_block(string $mode, bool $multiple, bool $compac
         . 'Create the new specified subject without copying an unrelated person, face, logo, product or object from the references.',
     };
   }
-  if ($multiple) {
+  if ($multiple && $mode === 'style') {
+    $block .= ' MULTI-STYLE: Combine the requested visual treatment from all sources; do not reproduce their subjects.';
+  } elseif ($multiple) {
     $block .= $compact
       ? ' MULTI-REFERENCE: Keep subjects separate; do not mix faces, features or accessories.'
       : ' MULTI-REFERENCE: Honor ALL supplied references separately. Do not swap faces, merge individuals, '
