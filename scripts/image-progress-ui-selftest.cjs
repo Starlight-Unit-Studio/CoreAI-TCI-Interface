@@ -28,6 +28,8 @@ assert(progressJS.includes('var FRAME_MS ='), 'animated dots are frame-rate limi
 assert(progressJS.includes('Math.round(size * ratio)'), 'canvas backing store uses integer pixels');
 assert(progressJS.includes('if (p.raf) return;'), 'only one raster animation runs per card');
 const viewerJS = read('js/coreui-image-viewer.js');
+const workJS = read('js/coreui-work-events.js');
+assert(workJS.includes("meta.image_uuid = imageUuid"), 'image UUID survives safe work-event normalization');
 assert(viewerJS.includes("a.img-progress-thumb"), 'completed thumbs open in the shared image viewer');
 assert(/<script src="\.\/js\/coreui-image-progress\.js\?v=\d+"><\/script>\n  <script src="\.\/js\/coreui-work-events\.js/.test(read('app.html')) === false
   && /coreui-work-events\.js\?v=\d+"><\/script>\n  <script src="\.\/js\/coreui-image-progress\.js\?v=\d+"><\/script>/.test(read('app.html')),
@@ -79,6 +81,7 @@ const HARNESS = theme => `<!doctype html><html lang="de" data-coreui-theme="${th
 <link rel="stylesheet" href="/css/console.css"><link rel="stylesheet" href="/css/coreui-theme.css">
 <link rel="stylesheet" href="/css/coreui-image-viewer.css"></head>
 <body><main class="messages"><div class="messages-inner" id="rows">${ROW('row1')}</div></main>
+<script src="/js/coreui-work-events.js"></script>
 <script src="/js/coreui-image-progress.js"></script>
 <script src="/js/coreui-image-viewer.js"></script></body></html>`;
 
@@ -281,12 +284,12 @@ const dots = page => page.evaluate(() => {
     });
     assert(canvasResets <= 2, 'fractional DPR must not reallocate the canvas on every frame: ' + canvasResets);
     const batch = await phone.page.evaluate(() => {
-      const P = window.CoreAIImageProgress, row = document.getElementById('row1');
+      const P = window.CoreAIImageProgress, W = window.CoreUIWorkEvents, row = document.getElementById('row1');
       const events = [];
       let firstShownImmediately = false, firstVisibleWhileSecondRenders = false, firstIsClickable = false;
       for (let i = 1; i <= 4; i++) {
-        events.push({id:i*2, title:'Bild wird vorbereitet', meta:{source:'image', reason:'image_start'}});
-        P.observe(row, events[events.length-1]);
+        events.push({id:i*2, kind:'tool', state:'running', title:'Bild wird vorbereitet', meta:{source:'image', reason:'image_start'}});
+        P.observe(row, W.normalize(events[events.length-1]));
         const card = row.querySelector('.img-progress');
         if (card._p.shown >= 5 || card.querySelector('.img-progress-picture')) throw new Error('New image did not reset');
         if (i === 2) {
@@ -294,11 +297,12 @@ const dots = page => page.evaluate(() => {
             && card.querySelectorAll('.img-progress-thumb').length === 1;
           firstIsClickable = !!card.querySelector('.img-progress-thumb[href*="console_media.php?uuid="]');
         }
-        events.push({id:i*2+1, title:'Bild erzeugt', meta:{image_uuid:String(i).repeat(32), image_px:512}});
-        P.observe(row, events[events.length-1]);
+        events.push({id:i*2+1, kind:'artifact', state:'success', title:'Bild erzeugt',
+          meta:{source:'image', image_uuid:String(i).repeat(32), image_px:512}});
+        P.observe(row, W.normalize(events[events.length-1]));
         if (i === 1) firstShownImmediately = !row.querySelector('.img-progress-thumbs').hidden;
       }
-      P.replay(row, events); // replaying the same event IDs must not reset current work
+      P.replay(row, events.map(W.normalize)); // replaying normalized IDs must not reset current work
       const card = row.querySelector('.img-progress');
       const thumbs = card.querySelector('.img-progress-thumbs').getBoundingClientRect();
       const frame = card.querySelector('.img-progress-frame').getBoundingClientRect();
@@ -309,6 +313,19 @@ const dots = page => page.evaluate(() => {
     assert.deepEqual(batch, {count:4, percent:100, left:true, fits:true,
       firstShownImmediately:true, firstVisibleWhileSecondRenders:true, firstIsClickable:true},
       'completed image appears immediately beside the next active 2/4 image grid');
+    const normalizedMedia = await phone.page.evaluate(() => {
+      const W = window.CoreUIWorkEvents;
+      const good = W.normalize({kind:'artifact',state:'success',title:'Bild erzeugt',
+        meta:{source:'image',image_uuid:'ab'.repeat(16),image_px:1024}});
+      const bad = W.normalize({kind:'artifact',state:'success',title:'Bild erzeugt',
+        meta:{source:'image',image_uuid:'../private',image_px:1024}});
+      const unrelated = W.normalize({kind:'tool',state:'info',title:'Anderer Job',
+        meta:{source:'web',image_uuid:'ab'.repeat(16)}});
+      return {uuid:good.meta.image_uuid,px:good.meta.image_px,
+        rejected:!bad.meta.image_uuid,unrelated:!unrelated.meta.image_uuid};
+    });
+    assert.deepEqual(normalizedMedia,{uuid:'ab'.repeat(16),px:'1024',rejected:true,unrelated:true},
+      'only validated account image metadata survives progress normalization');
     // Actual taps on a finished thumb must use the existing image viewer.
     await phone.page.locator('.img-progress-thumb').first().click();
     await phone.page.waitForSelector('.coreai-image-viewer:not([hidden])');
