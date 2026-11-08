@@ -46,7 +46,7 @@ const COREUI_CORE_INSTALL_ACTIVE = ['pull', 'create', 'verify', 'cleanup'];
 function coreui_core_install_name(string $tier): string {
   $entry = COREUI_CORE_INSTALL_CATALOG[$tier] ?? null;
   if (!is_array($entry)) throw new RuntimeException('unknown_tier');
-  return 'ember-coreui:' . (string)$entry['tag'];
+  return coreui_core_mara_family() . ':' . (string)$entry['tag'];
 }
 
 /**
