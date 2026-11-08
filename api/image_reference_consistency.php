@@ -48,7 +48,7 @@ function coreui_image_reference_block(string $mode, bool $multiple, bool $compac
   if (!in_array($mode, ['identity', 'subject', 'style'], true)) throw new InvalidArgumentException('Invalid reference mode');
   if ($compact) {
     $block = match ($mode) {
-      'identity' => 'REFERENCE CONSISTENCY (IDENTITY): EXACT SAME individuals as the visual references, NOT merely similar or inspired. Preserve every visible facial feature and proportion 1:1: eyes and spacing, eyebrows, nose, lips, jaw, cheekbones, chin, hairline, hairstyle, skin and identifying marks. Preserve the exact original body silhouette and proportions. Natural neck, shoulders, limbs and feet. Pose, outfit, expression, camera, lighting and setting may vary; invent a fitting scene when none is specified. Never infer appearance from name or memory.',
+      'identity' => 'REFERENCE CONSISTENCY (IDENTITY): EXACT SAME people as the reference, not lookalikes. Keep unique face geometry 1:1 (eyes, brows, nose, lips, jaw, cheeks, chin, hairline, hairstyle, skin and marks), and original body proportions. Natural neck, shoulders, hands and feet. Pose, clothing, expression, light and setting may vary; invent a fitting scene if none given. Image identity overrides names and memory.',
       'subject' => 'REFERENCE CONSISTENCY (SUBJECT): Preserve every subject, including any human face, its silhouette, proportions, colors, structure, markings and anatomy. Pose, camera, light and setting may vary; invent a suitable setting if none is specified.',
       'style' => 'REFERENCE CONSISTENCY (STYLE ONLY): Copy only the requested visual style and palette, never the pictured identities or objects.',
     };
@@ -75,7 +75,7 @@ function coreui_image_reference_block(string $mode, bool $multiple, bool $compac
     $block .= ' MULTI-STYLE: Combine the requested visual treatment from all sources; do not reproduce their subjects.';
   } elseif ($multiple) {
     $block .= $compact
-      ? ' MULTI-REFERENCE: Keep subjects separate; do not mix faces, features or accessories.'
+      ? ' MULTI-REFERENCE: Do not swap faces, merge identities or mix features, bodies or accessories. Keep subjects separate.'
       : ' MULTI-REFERENCE: Honor ALL supplied references separately. Do not swap faces, merge individuals, '
         . 'mix up identifying features or discard one subject. Combine them only in the scene requested by the user.';
   }
@@ -97,17 +97,42 @@ function coreui_image_reference_prompt(string $scene, ?string $selfReference, ar
   // When portraying Mara, her own photo remains the identity source; other
   // uploaded pictures can be requested as style only without copying faces.
   $multiple = !$styleOverlay && count($uploads) + ($selfReference === null ? 0 : 1) > 1;
-  $overlay = $styleOverlay
-    ? ' OTHER REFERENCES (STYLE ONLY): Take palette, texture and lighting from uploads; do NOT copy their people or objects.'
-    : '';
-  if ($selfReference !== null && str_starts_with($selfReference, 'custom:')) {
-    $overlay .= ' ACCOUNT PORTRAIT: This account portrait overrides all default appearance, stored-memory and name-based descriptions of the assistant. Depict the EXACT SAME person from this portrait, with identical face geometry, hairstyle and body proportions, not an approximation or redesign. The assistant may choose a different pose, clothing and scene without changing that person.';
-  }
-  $block = coreui_image_reference_block($mode, $multiple) . $overlay;
+  $accountPortrait = $selfReference !== null && str_starts_with($selfReference, 'custom:');
+  $styleFull = ' OTHER REFERENCES (STYLE ONLY): Take palette, texture and lighting from uploads; do NOT copy their people or objects.';
+  $styleShort = ' OTHER REFERENCES (STYLE ONLY): Use uploads for style, not their subjects.';
+  $portraitFull = ' ACCOUNT PORTRAIT: This account portrait overrides all default appearance, stored-memory and name-based descriptions of the assistant. Depict the EXACT SAME person from this portrait, with identical face geometry, hairstyle and body proportions, not an approximation or redesign. The assistant may choose a different pose, clothing and scene without changing that person.';
+  $portraitShort = ' ACCOUNT PORTRAIT: EXACT SAME person as uploaded; identical face geometry, hairstyle and body proportions. This image overrides name and memory. Pose, clothing and scene may vary.';
+
+  $block = coreui_image_reference_block($mode, $multiple)
+    . ($styleOverlay ? $styleFull : '')
+    . ($accountPortrait ? $portraitFull : '');
+  // Prefer a shorter core before sacrificing details of a custom portrait.
+  // The account overlay also has a compact form for tighter model limits.
   if (mb_strlen($block) + 1 + mb_strlen($scene) > $limit) {
-    $block = coreui_image_reference_block($mode, $multiple, true) . $overlay;
+    $block = coreui_image_reference_block($mode, $multiple, true)
+      . ($styleOverlay ? $styleFull : '')
+      . ($accountPortrait ? $portraitFull : '');
+  }
+  if (mb_strlen($block) + 1 + mb_strlen($scene) > $limit) {
+    $block = coreui_image_reference_block($mode, $multiple, true)
+      . ($styleOverlay ? $styleShort : '')
+      . ($accountPortrait ? $portraitShort : '');
   }
   if (mb_strlen($block) + 1 >= $limit) {
+    // Even unusually small service limits retain identity and multi-reference
+    // semantics rather than silently discarding every reference instruction.
+    $block = match ($mode) {
+      'identity' => 'REFERENCE CONSISTENCY (IDENTITY): EXACT SAME person, 1:1 face, hair and body from image; never a lookalike.',
+      'subject' => 'REFERENCE CONSISTENCY (SUBJECT): Preserve original subject geometry and identifying marks.',
+      'style' => 'REFERENCE CONSISTENCY (STYLE ONLY): Copy style, not subjects.',
+    };
+    if ($multiple) $block .= ' MULTI-REFERENCE: Keep all sources separate.';
+    if ($styleOverlay) $block .= ' OTHER REFERENCES (STYLE ONLY): Copy styling only.';
+    if ($accountPortrait) $block .= ' ACCOUNT PORTRAIT: Keep the exact uploaded person.';
+  }
+  if (mb_strlen($block) + 1 >= $limit) {
+    // No useful source-plus-scene instruction fits in a pathologically small
+    // limit. Return the scene instead of producing a cut-off instruction.
     return mb_substr($scene, 0, $limit);
   }
   $budget = $limit - mb_strlen($block) - 1;

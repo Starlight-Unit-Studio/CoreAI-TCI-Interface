@@ -108,6 +108,25 @@ ref_test(str_contains($compact, 'EXACT SAME')
   && str_ends_with($compact, 'A new outfit and setting'),
   'compact prompt preserves reference lock and scene');
 
+// 0.6.53: the compact form, including multi-reference and account
+// overlays, must never discard the identity when the prompt budget is small.
+$joint = coreui_image_reference_prompt('Ember in a new room', 'custom:' . str_repeat('a', 32), $one, 900);
+ref_test(mb_strlen($joint) <= 900
+  && str_contains($joint, 'EXACT SAME')
+  && str_contains($joint, 'ACCOUNT PORTRAIT:')
+  && str_contains($joint, 'MULTI-REFERENCE:')
+  && str_contains($joint, 'Do not swap faces')
+  && str_ends_with($joint, 'Ember in a new room'),
+  'combined custom portrait and uploaded reference survive compact budgeting');
+$minimal = coreui_image_reference_prompt('Ember in a new room', 'custom:' . str_repeat('a', 32), $one, 480);
+ref_test(mb_strlen($minimal) <= 480
+  && str_contains($minimal, 'EXACT SAME')
+  && str_contains($minimal, '1:1')
+  && str_contains($minimal, 'MULTI-REFERENCE:')
+  && str_contains($minimal, 'ACCOUNT PORTRAIT:')
+  && str_ends_with($minimal, 'Ember in a new room'),
+  'minimum fallback retains identity and multiple source contract');
+
 // 0.6.52 reference consistency.
 $scene = 'two people on a bridge ' . str_repeat('near the station, ', 23) . 'at sunrise';
 $shortened = coreui_image_reference_prompt($scene, null, $two, 620);

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.52: dynamischer Quantum CoreAI Bildvermerk ohne Studio-Logo.
+# CoreAI: TCI Interface 0.6.53: dynamischer Quantum CoreAI Bildvermerk ohne Studio-Logo.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -808,12 +808,16 @@ if command -v php >/dev/null 2>&1; then
 
   profile_reference_test=''
   if profile_reference_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/profile-reference-selftest.php" 2>&1)"; then
-    ok "$profile_reference_test"
+    if [[ "$profile_reference_test" == PARTIAL:* ]]; then
+      warn "$profile_reference_test"
+    else
+      ok "$profile_reference_test"
+    fi
   else
     fail "Profilreferenz-Selbsttest: ${profile_reference_test:-Unbekannter Fehler}"
   fi
 
-  # 0.6.52: all image references share identity, subject and style preservation.
+  # 0.6.53: all image references share identity, subject and style preservation.
   reference_consistency_test=''
   if reference_consistency_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/image-reference-consistency-selftest.php" 2>&1)"; then
     ok 'Bildreferenzen: Identitaet, Motivtreue, Stilvorlage und mehrere Quellen geprueft.'

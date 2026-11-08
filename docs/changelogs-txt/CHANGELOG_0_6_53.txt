@@ -1,0 +1,6 @@
+## 0.6.53 - 08.11.2026
+
+- Repair the 0.6.52 reference-prompt budget regression: the shortened identity directive still requires the same 1:1 face, hairstyle and physique, and multiple references explicitly forbid swapping or mixing identities. Shorten the account-portrait overlay together with the base instruction so the visual identity rules are never silently displaced by their own length.
+- Repair the profile-reference selftest after the new 1:1 wording. Run image geometry and reference-prompt assertions even when PDO SQLite is absent; explicitly mark database, account-isolation and memory checks as skipped, never as passed.
+- Both Docker and native preflights distinguish partial profile coverage from a complete test pass and display actual uncaught regression errors.
+- No production database migration, memory write, model change or image-service dependency change.
