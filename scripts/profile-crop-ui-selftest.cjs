@@ -78,8 +78,11 @@ global.Image=class {
   constructor(){this.naturalWidth=1200;this.naturalHeight=1800;}
   set src(value){this._src=value;if(this.onload)this.onload();}
 };
+// Reload with browser globals so the IIFE can attach its interactive instance.
+delete require.cache[require.resolve('../js/coreui-profile-crop.js')];
+const browserCrop = require('../js/coreui-profile-crop.js');
 (async()=>{
-  const instance=crop.create();
+  const instance=browserCrop.create();
   let userCrop=null;
   assert(instance.open({slot:'user',file:{type:'image/jpeg'},onConfirm:function(c){userCrop=c;return Promise.resolve();}}));
   assert.equal(nodes.profileCropDialog.hidden,false,'dialog opens without upload');
