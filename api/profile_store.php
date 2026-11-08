@@ -193,7 +193,7 @@ function coreui_profile_orient_jpeg(GdImage $image, string $path, string $mime):
   if (in_array($orientation, [2, 5, 7], true)) imageflip($image, IMG_FLIP_HORIZONTAL);
   if ($orientation === 4) imageflip($image, IMG_FLIP_VERTICAL);
   $degrees = match ($orientation) {
-    3 => 180, 5 => -90, 6 => -90, 7 => 90, 8 => 90, default => 0,
+    3 => 180, 5 => 90, 6 => -90, 7 => -90, 8 => 90, default => 0,
   };
   if ($degrees !== 0) {
     $rotated = imagerotate($image, $degrees, 0);
