@@ -371,7 +371,7 @@ open(out, 'wb').write(png(w, h, (16, 32, 48)))
     # Check the simulator itself before interpreting a failed preview probe
     # as a problem with the real installed image service.
     stub_bytes = stub.read_bytes()
-    check(b'\\x00' not in stub_bytes, 'fixture sd-cli contains an invalid NUL byte')
+    check(b'\x00' not in stub_bytes, 'fixture sd-cli contains an invalid NUL byte')
     probe = subprocess.run([str(stub), '--help'], capture_output=True, text=True, timeout=10)
     check(probe.returncode == 0 and '--preview-path' in (probe.stdout + probe.stderr),
           'fixture sd-cli --help failed: ' + (probe.stderr or probe.stdout)[-500:])
