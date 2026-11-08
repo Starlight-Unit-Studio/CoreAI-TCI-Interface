@@ -20,6 +20,7 @@ declare(strict_types=1);
 
 const COREUI_IMAGE_DEFAULT_PORT = 18791;
 const COREUI_IMAGE_MAX_BYTES = 25 * 1024 * 1024;
+const COREUI_IMAGE_MAX_REFERENCES = 10; // Same limit as attached files per turn.
 const COREUI_IMAGE_LOGO_WIDTH = 0.12;  // 12% of the image width
 const COREUI_IMAGE_MARK_MARGIN = 0.025; // relative to the image width
 const COREUI_IMAGE_MARK_OPACITY = 0.5;  // logo opacity
@@ -68,8 +69,26 @@ function coreui_image_is_self_request(string $message, string $assistantName = '
   $text = trim((string)preg_replace('~\\s+~u', ' ', $message));
   if ($text === '') return false;
   $assistantName = trim($assistantName);
+  // Everyday questions such as "Wie siehst du eigentlich aus?" are self-portraits
+  // too. They must not rely on the Core choosing the optional ICH marker.
+  if (preg_match('~\\b(?:wie\\s+(?:siehst|schaust)\\s+du(?:\\s+(?:eigentlich|denn|gerade|heute|jetzt|wirklich|normalerweise|wohl|so)){0,4}\\s+aus|wie\\s+du\\s+aus(?:siehst|schaust)|what\\s+do\\s+you\\s+look\\s+like|show\\s+me\\s+what\\s+you\\s+look\\s+like)\\b~iu', $text) === 1) return true;
+  // The user may address the account's nickname or Mara Thorne by name.
+  $names = 'mara(?:\\s+thorne)?';
+  if ($assistantName !== '') $names .= '|' . preg_quote($assistantName, '~');
+  if (preg_match('~\\b(?:wie\\s+sieht\\s+(?:' . $names . ')\\s+aus|(?:bild|foto|portr(?:aet|ät|ait))\\s+von\\s+(?:' . $names . '))\\b~iu', $text) === 1) return true;
   if ($assistantName !== '' && preg_match('~\\b' . preg_quote($assistantName, '~') . '\\s+(?:als|in\\s+einem|auf\\s+der)\\b~iu', $text) === 1) return true;
   return preg_match('~\\b(?:mara(?:\\s+thorne)?|du)\\s+(?:als|in\\s+einem|auf\\s+der)\\b|\\b(?:von\\s+dir|mit\\s+dir|dein(?:\\s+eigenes)?\\s+(?:portrait|portraet|porträt|bild|foto)|zeig(?:e)?\\s+dich|zeichne\\s+dich|mal\\s+dich|male\\s+dich|dich\\s+als|yourself\\s+as|picture\\s+of\\s+you|portrait\\s+of\\s+you)\\b~iu', $text) === 1;
+}
+
+/** Upgrade a generic image tool only when the user explicitly asked for THIS TCI. */
+function coreui_image_tool_for_request(array $tool, string $userText, string $assistantName = 'Mara'): array {
+  if (($tool['tool'] ?? '') !== 'image' || !coreui_image_is_self_request($userText, $assistantName)) return $tool;
+  $input = (string)($tool['input'] ?? '');
+  $parsed = coreui_image_parse_input($input);
+  if ($parsed['self_reference'] || $parsed['prompt'] === '') return $tool;
+  $tool['input'] = ($parsed['size'] === 'large' ? 'GROSS: ' : '')
+    . 'ICH: ' . $parsed['prompt'];
+  return $tool;
 }
 
 /** Size and description from the tool input (pure). */
@@ -86,6 +105,42 @@ function coreui_image_parse_input(string $input): array {
     $input = trim($m[1]);
   }
   return ['size' => $size, 'prompt' => $input, 'self_reference' => $self];
+}
+
+/** An opaque, account-scoped image upload reference; no client-supplied file paths. */
+function coreui_image_media_reference_token(array $row, int $uid): ?string {
+  if ($uid <= 0 || (int)($row['user_id'] ?? 0) !== $uid || ($row['kind'] ?? '') !== 'image') return null;
+  $uuid = strtolower((string)($row['uuid'] ?? ''));
+  $name = strtolower((string)($row['stored_name'] ?? ''));
+  $mime = (string)($row['mime_type'] ?? '');
+  $extensions = ['image/png'=>'png', 'image/jpeg'=>'jpg', 'image/webp'=>'webp', 'image/gif'=>'gif'];
+  if (!isset($extensions[$mime]) || preg_match('~^[a-f0-9]{32}$~D', $uuid) !== 1) return null;
+  $expected = $uuid . '.' . $extensions[$mime];
+  if ($name !== $expected || (string)($row['rel_path'] ?? '') !== 'assets/chat_media/' . $expected) return null;
+  $bytes = (int)($row['file_size'] ?? 0);
+  if ($bytes < 1 || $bytes > 8 * 1024 * 1024) return null;
+  return 'upload:' . $expected;
+}
+
+/** The user's wish to create a new image from uploaded pictures, not to just analyze them. */
+function coreui_image_attachment_creation_requested(string $message, ?array $intent = null): bool {
+  if (($intent['tool'] ?? '') === 'image') return true;
+  $message = trim((string)preg_replace('~\\s+~u', ' ', $message));
+  if ($message === '') return false;
+  $verbs = '(?:generier\\w*|erstell\\w*|erzeug\\w*|zeichn\\w*|mal\\w*|render\\w*|gestalt\\w*|kombinier\\w*|montier\\w*|erschaff\\w*|create|generate|draw|render|combine|make|edit)';
+  $targets = '(?:bild\\w*|foto\\w*|illustration\\w*|szene\\w*|image\\w*|picture\\w*|scene\\w*)';
+  if (preg_match('~\\b' . $verbs . '\\b.{0,160}\\b' . $targets . '\\b|\\b' . $targets . '\\b.{0,160}\\b' . $verbs . '\\b~iu', $message) === 1) return true;
+  return preg_match('~\\b(?:lass|lasse|zeig|zeige)\\s+(?:die|diese|beide|beiden|die\\s+beiden)\\b.{0,130}\\b(?:kaempfen|kämpfen|gegeneinander|duellieren|fight|battle)\\b~iu', $message) === 1
+    || preg_match('~\\b(?:kannst|kannste|koenntest|könntest)\\s+du\\b.{0,150}\\b(?:kaempfen|kämpfen|gegeneinander|duellieren)\\s+lassen\\b~iu', $message) === 1;
+}
+
+/** The attachment-vision response was prose, although the user requested a new image. */
+function coreui_image_attachment_fallback_prompt(string $message, string $visionSummary): string {
+  $message = mb_substr(trim((string)preg_replace('~\\s+~u', ' ', $message)), 0, 380);
+  $summary = mb_substr(trim((string)preg_replace('~\\s+~u', ' ', $visionSummary)), 0, 490);
+  return 'Create ONE NEW coherent image using the supplied reference pictures. Preserve the depicted subjects, '
+    . 'their recognizable costumes and distinguishing visual details. Compose the scene requested by the user: '
+    . $message . '. The previously observed subjects were: ' . $summary;
 }
 
 /** "512 × 512" for a size of the registry (pure). */
@@ -285,7 +340,7 @@ function coreui_image_progress_title(array $job): string {
  */
 function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $prompt, string $size,
     callable $lease, callable $unlease, callable $progress, callable $cancelled, ?callable $http = null,
-    ?callable $preview = null, ?string $reference = null): array {
+    ?callable $preview = null, ?string $reference = null, array $references = []): array {
   $http = $http ?? 'coreui_image_http';
   $previews = 0; // 0.6.42: $preview(string $dataUrl, array $job) gets every new step preview
   $registry = coreui_image_registry();
@@ -293,6 +348,28 @@ function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $
   $prompt = trim((string)preg_replace('~\s+~u', ' ', $prompt));
   if ($prompt === '' || mb_strlen($prompt) > $limit) return ['ok' => false, 'error' => 'bad_prompt', 'detail' => ''];
   if (!isset(($registry['sizes'] ?? [])[$size])) return ['ok' => false, 'error' => 'bad_size', 'detail' => ''];
+  if ($reference !== null) {
+    // An identity-reference portrait, whether canonical or personalized.
+    $anchor = 'Use the supplied reference image as the SAME person. Preserve the recognizable facial proportions, '
+      . 'eyes, hair, and overall identity of the subject shown there. Change scenery or clothing as requested, '
+      . 'but do not invent a new face. ';
+    $prompt = mb_substr($anchor . $prompt, 0, $limit);
+  } elseif ($references !== []) {
+    $anchor = 'Use ALL supplied reference pictures as visual sources. Preserve the recognizable subjects and their '
+      . 'distinctive clothing, features and shapes while following the requested scene. ';
+    $prompt = mb_substr($anchor . $prompt, 0, $limit);
+  }
+  if (count($references) > COREUI_IMAGE_MAX_REFERENCES) {
+    return ['ok'=>false, 'error'=>'bad_reference', 'detail'=>''];
+  }
+  foreach ($references as $token) {
+    if (!is_string($token) || preg_match('~^upload:[a-f0-9]{32}\\.(?:png|jpg|webp|gif)$~D', $token) !== 1) {
+      return ['ok'=>false, 'error'=>'bad_reference', 'detail'=>''];
+    }
+  }
+  if (count($references) !== count(array_unique($references))) {
+    return ['ok'=>false, 'error'=>'bad_reference', 'detail'=>''];
+  }
   [$code, $health] = $http('GET', '/health', null, 4);
   if ($code !== 200 || !is_array($health)) return ['ok' => false, 'error' => 'image_unreachable', 'detail' => ''];
   if (empty($health['ready'])) {
@@ -312,6 +389,7 @@ function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $
     if ($cancelled()) return ['ok' => false, 'error' => 'cancelled', 'detail' => ''];
     $body = ['prompt' => $prompt, 'size' => $size];
     if ($reference !== null) $body['reference'] = $reference;
+    if ($references !== []) $body['references'] = $references;
     [$code, $answer] = $http('POST', '/jobs', $body, 10);
     if ($code !== 202 || !is_array($answer) || !is_array($answer['job'] ?? null)) {
       return ['ok' => false, 'error' => (string)($answer['error'] ?? 'image_failed'), 'detail' => (string)($answer['detail'] ?? '')];
@@ -431,6 +509,7 @@ function coreui_image_error_text(array $result): string {
     'image_timeout' => 'Das Bild hat zu lange gedauert und wurde abgebrochen.',
     'cancelled' => 'Das Bild wurde abgebrochen.',
     'bad_prompt' => 'Die Bildbeschreibung war leer oder zu lang.',
+    'bad_reference', 'reference_unavailable' => 'Mindestens ein Referenzbild ist ungueltig oder nicht mehr verfuegbar.',
     default => 'Das Bild konnte nicht erzeugt werden.',
   };
 }
@@ -533,12 +612,17 @@ function coreui_image_strip_placeholders(string $text): string {
 function coreui_image_capability_hint(bool $compact): string {
   if ($compact) {
     return "BILDER: Moechte die Person ein Bild von dir, antworte NUR mit [BILD ICH: genaue Bildbeschreibung auf Englisch]. "
+      . "Dein echtes Profilportraet bestimmt dein Gesicht und deine Frisur. Eine TCI hat nicht automatisch Androidenmerkmale, "
+      . "Neonlinien oder Implantate im Gesicht. Erfinde solche Merkmale nicht ohne ausdruecklichen Wunsch. "
       . "Gross (1024) nur auf ausdruecklichen Wunsch: [BILD GROSS: ...]; fuer dich selbst [BILD GROSS ICH: ...]. Andere Motive [BILD: ...]. Ohne Wunsch kein Bild.";
   }
   return "BILDER: Du kannst selbst Bilder malen (Fotos, Illustrationen, Szenen, Schrift auf Schildern). Moechte die Person "
     . "ausdruecklich ein Bild, Foto, eine Zeichnung oder Illustration von dir, antworte NUR mit einem Marker: "
     . "[BILD ICH: ausfuehrliche Bildbeschreibung auf Englisch: Motiv, Umgebung, Licht, Stil; Text im Bild in Anfuehrungszeichen]. "
     . "Nur fuer ausdrueckliche Selbstportraets verwende ICH und nutze dabei dein aktives Profilbild als Gesichtsvorlage, auch bei Kostuem und Rollenspiel. "
+    . "Bei einer schlichten Frage nach deinem Aussehen orientiere dich strikt an diesem echten Portraet: dasselbe Gesicht, natuerliche Augen und die Frisur aus der Vorlage. "
+    . "Die technische TCI-Identitaet bedeutet NICHT, dass dein Gesicht mechanische Linien, Neonleuchten, Implantate oder Androidenmerkmale besitzen muss. "
+    . "Erfinde solche Merkmale nur, wenn die Person ausdruecklich eine solche Verwandlung wuenscht. "
     . "Fuer fremde Personen, Tiere oder Szenen benutze [BILD: ...] ohne ICH. "
     . "Standard sind 512 × 512 Pixel (etwa eine Minute). Nur wenn die Person ausdruecklich ein grosses oder hochaufloesendes "
     . "Bild will: [BILD GROSS: ...] bzw. [BILD GROSS ICH: ...] (1024 × 1024, drei bis vier Minuten). Ohne Bildwunsch malst du nichts; fuer Fragen "

@@ -1,5 +1,18 @@
 # CoreAI: TCI Interface
 
+## 0.6.49 - 08.11.2026
+
+- Let Mara **generate new images from multiple attached reference pictures** within the same turn. The Vision branch now invokes the existing image tool when the user asks for a new image instead of stopping at a prose promise. If the model gives only prose, an explicit image request still invokes a deterministic fallback prompt.
+- Reuse account-verified uploaded images through opaque reference tokens; the local image service validates exact filenames, image signatures, size and safe paths, then passes each picture as its own `sd-cli -r` argument. The original Mara profile identity reference stays separate. Show reference counts without exposing private UUIDs.
+- Preserve private-account media isolation, the existing serial 1/2/4 output queue and the purely analytical Vision route when no new picture was requested. Extend image, Vision and service selftests with multiple inputs and permission/security regression cases.
+
+- Fix missing visual-reference selection for natural self-portrait questions. A message such as "Wie siehst du eigentlich aus ... kannst du mir das auf einem Bild zeigen?" did not match the previous image-intent logic: when the Core emitted generic `[BILD: ...]`, the image service generated a new face without Maras canonical/reference portrait.
+- Recognize direct appearance questions in German and English, including the user's custom TCI display name. Before running the image tool in ordinary text chats, upgrade a generic image marker to the self-reference marker only for clear requests about the TCI. The same rule applies to genuine recorded Stimmsequenzen, never to voice content in a third-party uploaded audio file.
+- When a self-portrait reference is present, explicitly anchor FLUX.2's prompt to the identity shown in the profile image. Reinforce both full and compact model hints: a TCI does not automatically have visible glowing circuits, facial implants, or an android appearance unless requested. Preserve costumes/roleplay and unrelated image generation.
+- Record only whether a canonical or account-specific portrait was selected in the work log, without disclosing private image identifiers.
+- Add regression tests for the exact failed chat request, display-name aliases, regular image subjects, size and roleplay, composer fallback, reference prompting, voice wiring, and tool permissions.
+- No change to the pinned model files, databases, installer, media access control, or existing finite 1/2/4-image queue. Real visual likeness must be checked with FLUX.2 on the operator's server; a reference improves consistency but cannot guarantee an exact face.
+
 ## 0.6.48 - 08.11.2026
 
 - Repair the voice-input preflight regression introduced with 0.6.47: the selftest now checks the current voice image instructions instead of expecting the removed generic self-portrait wording.

@@ -54,6 +54,8 @@ HEX40 = re.compile(r'[0-9a-f]{40}')
 HEX64 = re.compile(r'[0-9a-f]{64}')
 JOB_ID = re.compile(r'[0-9a-f]{32}')
 CUSTOM_REFERENCE = re.compile(r'custom:([0-9a-f]{32})')
+UPLOAD_REFERENCE = re.compile(r'upload:([0-9a-f]{32})\.(png|jpg|webp|gif)')
+MAX_UPLOAD_REFERENCES = 10
 
 
 def _load(name: str, path: Path):
@@ -183,6 +185,31 @@ def resolve_reference(token: str | None) -> str | None:
     return str(path)
 
 
+def resolve_uploaded_reference(token: str) -> str:
+    """Only immutable UUID filenames in the read-only upload mount may be referenced."""
+    match = UPLOAD_REFERENCE.fullmatch(token)
+    if not match:
+        raise ValueError('bad_reference')
+    name = match.group(1) + '.' + match.group(2)
+    path = ROOT / 'assets' / 'chat_media' / name
+    allowed_dir = ROOT / 'assets' / 'chat_media'
+    if (path.is_symlink() or path.resolve().parent != allowed_dir.resolve() or
+            not path.is_file() or not 0 < path.stat().st_size <= 8 * 1024 * 1024):
+        raise ValueError('reference_unavailable')
+    with path.open('rb') as stream:
+        header = stream.read(16)
+    ext = match.group(2)
+    valid = (
+        (ext == 'png' and header.startswith(b'\x89PNG\r\n\x1a\n')) or
+        (ext == 'jpg' and header.startswith(b'\xff\xd8\xff')) or
+        (ext == 'webp' and header[:4] == b'RIFF' and header[8:12] == b'WEBP') or
+        (ext == 'gif' and header[:6] in (b'GIF87a', b'GIF89a'))
+    )
+    if not valid:
+        raise ValueError('reference_unavailable')
+    return str(path)
+
+
 # --- Service ---------------------------------------------------------------------------
 
 class Service:
@@ -304,9 +331,17 @@ class Service:
                 for key in ('png', 'log', 'preview_png'):
                     Path(job[key]).unlink(missing_ok=True)
 
-    def create(self, prompt: str, size_key: str, seed: int | None, reference: str | None = None) -> dict:
-        # Validate before accepting a job; the service never accepts arbitrary paths.
+    def create(self, prompt: str, size_key: str, seed: int | None, reference: str | None = None,
+               references: list[str] | None = None) -> dict:
+        # Tokens are already account-checked by PHP. No arbitrary paths are accepted here.
         reference_path = resolve_reference(reference)
+        if references is None:
+            references = []
+        if len(references) > MAX_UPLOAD_REFERENCES or len(references) != len(set(references)):
+            raise ValueError('bad_reference')
+        reference_paths = ([reference_path] if reference_path else []) + [
+            resolve_uploaded_reference(token) for token in references
+        ]
         self._clean()
         size = self.reg['sizes'][size_key]
         need = float(((self.reg.get('measured') or {}).get(size_key) or {}).get('peak_rss_mb') or 0)
@@ -324,17 +359,23 @@ class Service:
                    'png': str(self.work / (job_id + '.png')), 'log': str(self.work / (job_id + '.log')),
                    'preview_png': str(self.work / (job_id + '-preview.png')), 'preview': 0, 'preview_stamp': None,
                    'pid': 0, 'cancel': False, 'limit': int(size['time_limit_s']),
-                   'reference_path': reference_path}
+                   'reference_path': reference_path, 'reference_paths': reference_paths}
             self.jobs[job_id] = job
         threading.Thread(target=self._run, args=(job, prompt), daemon=True).start()
         return job
 
     def command(self, job: dict, prompt: str) -> list[str]:
         model = self.reg['model']
+        ref_paths = job.get('reference_paths')
+        if ref_paths is None:
+            ref_paths = [job['reference_path']] if job.get('reference_path') else []
+        reference_args: list[str] = []
+        for path in ref_paths:
+            reference_args.extend(['-r', path])
         return [self.sd_cli, '--diffusion-model', self.paths['diffusion_model'], '--llm', self.paths['llm'],
                 '--vae', self.paths['vae'], '-p', prompt, '--cfg-scale', str(float(model['cfg_scale'])), '--steps', str(model['steps']),
                 '-W', str(job['width']), '-H', str(job['height']), '-s', str(job['seed']), '-t', str(self.threads),
-                '-o', job['png'], '-v'] + (['-r', job['reference_path']] if job.get('reference_path') else []) + (['--preview', 'proj', '--preview-path', job['preview_png'], '--preview-interval', '1']
+                '-o', job['png'], '-v'] + reference_args + (['--preview', 'proj', '--preview-path', job['preview_png'], '--preview-interval', '1']
                                            if self.preview else [])
 
     def _run(self, job: dict, prompt: str) -> None:
@@ -544,6 +585,7 @@ def make_handler(service: Service):
             size = data.get('size', 'normal') if isinstance(data, dict) else None
             seed = data.get('seed') if isinstance(data, dict) else None
             reference = data.get('reference') if isinstance(data, dict) else None
+            references = data.get('references', []) if isinstance(data, dict) else []
             if not isinstance(prompt, str) or not prompt.strip() or len(prompt) > limit or '\x00' in prompt:
                 return self._json(400, {'ok': False, 'error': 'bad_prompt'})
             if size not in (service.reg.get('sizes') or {}):
@@ -553,11 +595,15 @@ def make_handler(service: Service):
             if reference is not None and (not isinstance(reference, str) or
                                           (reference != 'default' and CUSTOM_REFERENCE.fullmatch(reference) is None)):
                 return self._json(400, {'ok': False, 'error': 'bad_reference'})
+            if (not isinstance(references, list) or len(references) > MAX_UPLOAD_REFERENCES or
+                    any(not isinstance(token, str) or not UPLOAD_REFERENCE.fullmatch(token) for token in references) or
+                    len(references) != len(set(references))):
+                return self._json(400, {'ok': False, 'error': 'bad_reference'})
             if not service.ready:
                 return self._json(503, {'ok': False, 'error': 'image_loading' if service.loading else 'image_unavailable',
                                         'detail': service.error})
             try:
-                job = service.create(prompt.strip(), size, seed, reference)
+                job = service.create(prompt.strip(), size, seed, reference, references)
             except BlockingIOError:
                 return self._json(503, {'ok': False, 'error': 'image_busy'})
             except MemoryError as error:

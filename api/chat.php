@@ -5284,6 +5284,19 @@ function ember_image_run_tool(PDO $pdo, int $uid, string $input): array {
   coreui_work_record($pdo, 'tool', 'running', 'Bild wird vorbereitet', ['source'=>'image', 'reason'=>'image_start']);
   $request = coreui_image_parse_input($input);
   $reference = !empty($request['self_reference']) ? coreui_profile_image_reference($pdo, $uid) : null;
+  $references = $GLOBALS['COREUI_TURN_IMAGE_REFERENCES'] ?? [];
+  if (!is_array($references)) $references = [];
+  $references = array_slice(array_values(array_unique($references)), 0, COREUI_IMAGE_MAX_REFERENCES);
+  if ($references !== []) {
+    // No file names, public URLs, account IDs or private UUIDs in the work view.
+    coreui_work_record($pdo, 'tool', 'info', count($references) . ' Referenzbilder fuer die Generierung erkannt',
+      ['source'=>'image','reference_count'=>count($references),'reference_kind'=>'attachments']);
+  }
+  if ($reference !== null) {
+    // Only disclose the source type, never an account's private media UUID.
+    coreui_work_record($pdo, 'tool', 'info', 'Portraet-Referenz ausgewaehlt',
+      ['source'=>'image', 'reference_kind'=>$reference === 'default' ? 'canonical' : 'personal']);
+  }
   $result = coreui_image_generate($pdo, $uid, ember_character_id(), $request['prompt'], $request['size'],
     'ember_image_lease', 'ember_image_unlease',
     static function (array $job) use ($pdo): void {
@@ -5296,7 +5309,7 @@ function ember_image_run_tool(PDO $pdo, int $uid, string $input): array {
       if (function_exists('sse_send')) {
         sse_send('image_preview', ['image' => $image, 'step' => (int)($job['step'] ?? 0), 'steps' => (int)($job['steps'] ?? 0)]);
       }
-    }, $reference);
+    }, $reference, $references);
   if (!empty($result['ok'])) {
     coreui_image_pending_add((string)$result['uuid']);
     coreui_work_record($pdo, 'artifact', 'success', 'Bild erzeugt',
@@ -5350,6 +5363,7 @@ function ember_generate_reply(
   unset($GLOBALS['STU_EMBER_PDF_FAILURE']);
   unset($GLOBALS['STU_EMBER_ATTACHMENT_IMAGES']);
   unset($GLOBALS['STU_EMBER_ATTACHMENT_VISION_META']);
+  unset($GLOBALS['COREUI_TURN_IMAGE_REFERENCES']);
   // 0.6.43: a tool chosen in the + menu ([[bild]], [[websuche]], [[recherche]]) leaves the text.
   $composerIntent = $channel === 'console' ? coreui_composer_intent_take($userMsg) : null;
   $attachBlock = ember_attachment_block($pdo, $userMsg, (int)($senderChar['user_id'] ?? 0));
@@ -5579,6 +5593,14 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
     $voiceTools = ($hasAudio && $channel === 'console')
       ? array_values(array_intersect(ember_agent_allowed_tools($consoleUid, (string)$consoleSessionId), ['web', 'browse', 'archive', 'image']))
       : [];
+    // A picture sent to Mara for editing is still a vision turn. Preserve the
+    // same image tool after analysis rather than ending with an empty promise.
+    $turnReferences = $GLOBALS['COREUI_TURN_IMAGE_REFERENCES'] ?? [];
+    $wantsReferenceImage = $channel === 'console' && is_array($turnReferences) && $turnReferences !== []
+      && coreui_image_attachment_creation_requested($userMsg, $composerIntent);
+    $canCreateReferenceImage = $wantsReferenceImage && ember_image_allowed($consoleUid)
+      && (string)$consoleSessionId !== '';
+    if ($canCreateReferenceImage && !in_array('image', $voiceTools, true)) $voiceTools[] = 'image';
     $voiceTerms = $hasAudio && function_exists('ember_attach_voice_terms')
       ? ember_attach_voice_terms($pdo, (int)($senderChar['user_id'] ?? $consoleUid)) : [];
     // 0.6.19: what the sender said in a voice message reaches the memory reflection after
@@ -5632,6 +5654,15 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         . "was nicht klar erkennbar ist. Was siehst du und was sagst du dazu als Mara? Antworte auf Deutsch. "
         . $visionRules;
       if ($hasAudio) $visionPrompt .= "\n" . coreui_voice_listen_task($senderName, '', $audioClips, $voiceTerms);
+    }
+    if ($canCreateReferenceImage) {
+      $visionPrompt .= "\nBILDGENERIERUNG IST ANGEFORDERT: Du hast die Referenzbilder gerade gesehen. "
+        . "Erstelle KEINE bloesse Ankuendigung und behaupte keinen Erfolg. "
+        . "Gib statt Prosa ausschliesslich [BILD: detailed English image prompt] aus. "
+        . "Beschreibe die beiden oder alle Subjekte der hochgeladenen Bilder praezise, "
+        . "ihre Kleidung, Gesichter und Pose sowie die gewuenschte neue Handlung und Kulisse. "
+        . "Nutze NICHT [BILD ICH:], solange du dich nicht selbst darstellen sollst. "
+        . "Der Bilddienst erhaelt alle Anhaenge als echte visuelle Referenzen.";
     }
     // $u already carries the attachment block, memory, KI-Profil and history.
     $visionPrompt = $u . "\n\nANHANG-AUFGABE: " . $visionPrompt;
@@ -5692,8 +5723,26 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
     // for a typed message. The steps are text calls: the transcript in the task stands
     // for the recording, which is not sent again.
     $voiceTool = ($voiceTools !== [] && is_string($imgReply)) ? coreui_agent_next_tool($imgReply, $voiceTools) : null;
+    if ($voiceTool === null && $canCreateReferenceImage) {
+      // The Core sometimes describes a scene and claims it made an image
+      // without emitting a marker. Run the image tool instead of making a false claim.
+      $visionDescription = is_string($imgReply) ? $imgReply : '';
+      $voiceTool = ['tool'=>'image', 'input'=>coreui_image_attachment_fallback_prompt($userMsg, $visionDescription)];
+    }
     if ($voiceTool !== null) {
-      $voiceBase = $visionPrompt . "\nDie Aufnahme hast du schon gehoert; die Mitschrift oben gibt sie wieder.";
+      // Only a recorded Stimmsequenz belongs to the user; uploaded audio does
+      // not. It must not be able to change the portrait reference selection.
+      $voiceRequest = $userMsg;
+      foreach ($audioClips as $clip) {
+        if (is_array($clip) && !empty($clip['voice'])) {
+          $voiceRequest .= ' ' . (string)($clip['transcript'] ?? '');
+        }
+      }
+      $voiceTool = coreui_image_tool_for_request(
+        $voiceTool, $voiceRequest, coreui_profile_assistant_name($pdo, $consoleUid));
+      $voiceBase = $visionPrompt . ($hasAudio
+        ? "\nDie Aufnahme hast du schon gehoert; die Mitschrift oben gibt sie wieder."
+        : "\nDie Referenzbilder hast du gerade gesehen; fuer ein neues Bild nutze das Bildwerkzeug.");
       $voiceLoop = coreui_agent_loop_run($imgReply, $voiceTool, $voiceBase, $voiceTools, 0,
         static fn(string $prompt): ?string => ember_call_ollama($primaryModel, $visionSys, $prompt, $visionTimeout,
           $listenOptions, null, $listenThink),
@@ -6503,6 +6552,12 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   if ($channel === 'console' && $imageUrl === null && empty($fileTask) && is_string($out)) {
     $loopAllowed = ember_agent_allowed_tools($consoleUid, (string)$consoleSessionId);
     $loopTool = coreui_agent_next_tool($out, array_values(array_intersect($loopAllowed, ['web', 'archive', 'skill', 'image'])));
+    // A natural self-portrait question must use the account's visual reference,
+    // even when the local Core emits the legacy generic [BILD: ...] marker.
+    if ($loopTool !== null) {
+      $loopTool = coreui_image_tool_for_request(
+        $loopTool, $userMsg, coreui_profile_assistant_name($pdo, $consoleUid));
+    }
     if ($loopTool !== null) {
       $agentLoopHandled = true;
       $uBase = $u;

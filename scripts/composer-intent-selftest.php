@@ -66,6 +66,10 @@ $img = ['tool' => 'image', 'size' => 'normal'];
 intent_test(coreui_composer_intent_ensure($img, '[BILD: a red fox in the snow]', 'ein Fuchs', true) === '[BILD: a red fox in the snow]', 'marker kept');
 intent_test(coreui_composer_intent_ensure($img, '[BILD: Mara as Superwoman]', 'Zeig dich als Superwoman', true)
   === '[BILD ICH: Mara as Superwoman]', 'old marker upgraded only for explicit self portrait');
+intent_test(coreui_composer_intent_ensure($img, '[BILD: faithful photo of Mara Thorne]', 
+  'wie siehst du eigentlich aus wenn ich fragen darf? kannste mir das auch auf einem bild zeigen?', true)
+  === '[BILD ICH: faithful photo of Mara Thorne]',
+  'natural Mara appearance request with image chip still upgrades to reference');
 intent_test(coreui_composer_intent_ensure($img, '[BILD ICH: Superwoman over the city]', 'Zeichne Superwoman', true)
   === '[BILD: Superwoman over the city]', 'fictional role cannot force a Mara reference onto unrelated pictures');
 intent_test(coreui_composer_intent_ensure($img, 'Gern male ich dir einen Fuchs!', 'ein roter Fuchs im Schnee', true)
