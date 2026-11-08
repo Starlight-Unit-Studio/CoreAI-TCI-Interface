@@ -168,4 +168,26 @@ ref_test(!str_contains($genericPortrait, 'TCI: Mara Thorne')
 ref_test(!str_contains(coreui_image_reference_prompt('a fox', null, [], 1200), 'Mara Thorne'),
   'Ordinary text-to-image stays independent of the TCI identity');
 
+// 0.6.58: the private static Mara gallery contains repeated ANGLES of one
+// and the same person, not different individuals. The two cyan hologram
+// samples affect rendering style only. Custom account portraits stay separate.
+$canonicalGallery = coreui_image_reference_prompt('Mara on her ship bridge', 'default', [], 1200);
+$shortGallery = coreui_image_reference_prompt('Mara as a hologram', 'default', [], 480);
+$customNoGallery = coreui_image_reference_prompt('Ember in a new room',
+  'custom:' . str_repeat('a', 32), [], 1200);
+ref_test(str_contains($canonicalGallery, 'SAME woman')
+  && str_contains($canonicalGallery, 'hologram STYLE-ONLY')
+  && str_contains($canonicalGallery, 'TCI: Mara Thorne')
+  && str_ends_with($canonicalGallery, 'Mara on her ship bridge'),
+  'curated canonical Mara photos share a single identity, while holograms only provide style');
+ref_test(str_contains($shortGallery, 'TCI: Mara Thorne')
+  && str_contains($shortGallery, 'SAME woman')
+  && str_ends_with($shortGallery, 'Mara as a hologram')
+  && mb_strlen($shortGallery) <= 480,
+  'minimal prompt retains same-person gallery contract and the original scene');
+ref_test(!str_contains($customNoGallery, 'CANONICAL MARA IDENTITY PHOTOS')
+  && str_contains($customNoGallery, 'ACCOUNT PORTRAIT')
+  && str_ends_with($customNoGallery, 'Ember in a new room'),
+  'custom Ember visual identity cannot be overridden by official Mara images');
+
 echo "Reference consistency selftest OK: identity, subject, style, multi-reference and prompt limits.\n";
