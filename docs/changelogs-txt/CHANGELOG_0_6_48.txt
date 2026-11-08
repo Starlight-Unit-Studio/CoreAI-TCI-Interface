@@ -1,0 +1,16 @@
+COREAI: TCI INTERFACE // VERSION 0.6.48
+DATE: 08.11.2026
+
+FIX: The 0.6.47 voice-input selftest still expected the old image-generation instruction.
+It failed with "Voice input FAIL: Mara may paint after a voice message" although
+the actual voice task correctly distinguishes normal images and TCI self-portraits.
+
+- Assert normal voice image markers [BILD: ...] and [BILD GROSS: ...].
+- Assert self-portrait voice markers [BILD ICH: ...] and [BILD GROSS ICH: ...].
+- Confirm the personal avatar is used only for explicit TCI portraits.
+- Confirm there is no image marker when the image tool is disabled.
+- Confirm all marker variants survive the voice reply bracket sanitizer.
+- Preserve runtime logic, model/system prompts, Nginx configuration and queue.
+- Missing Nginx default site is a separate warning, not the reported test failure.
+
+STATUS: Patch prepared for PR. Server preflights must be rerun before merge.
