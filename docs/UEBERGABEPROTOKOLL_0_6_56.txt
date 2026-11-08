@@ -1,0 +1,22 @@
+CoreAI: TCI Interface 0.6.56
+Date: 08.11.2026
+Branch: feat/logo-only-watermark-metadata-0656
+Base: main 0.6.55
+
+REQUEST
+- Remove every visible line of watermark text.
+- Keep only the existing transparent watermark_logo.png at lower right, 11.5% width instead of 12%, retaining 50% opacity.
+- Put all appropriate product, model and creation information into image file metadata instead of painting it over the pixels.
+- Permanent TCI technical identity MUST be "TCI: Mara Thorne" even if the profile display name is changed to Ember. Product and credit name MUST be "Quantum CoreAI", never generic "Generative AI".
+
+IMPLEMENTATION
+- api/image_gen.php overlays only the transparent Quantum CoreAI watermark logo on finished images. No Rajdhani glyph rendering, credits or texts.
+- api/image_png_metadata.php provides fixed technical TCI identity, curated public generation metadata in PNG iTXt plus XMP. Standard XMP dc:creator and PNG Author specify "TCI: Mara Thorne". PNG Credit and XMP CreatorTool specify Quantum CoreAI.
+- Registry details are read from config/image/mara-image.json: FLUX.2-klein, image model components, pinned hashes and licenses.
+- Full scene prompts and visual reference identifiers are NEVER placed in downloadable PNGs. Existing account-private JSON sidecars retain those fields.
+- PNG chunks are appended after IHDR so output pixel data is not recompressed or rewritten; no new dependencies or DB schema changes.
+
+VALIDATION
+- The image-generation PHP regression now checks branding, pixel-only logo watermark, dimensional integrity, PNG iTXt and XMP content and private-field exclusion.
+- Full PHP/GD and SQLite tests, the native/Compose preflight, and sample image metadata inspection on the operator server must be completed before merge.
+- These are ordinary editable metadata, NOT tamper-proof C2PA content credentials.
