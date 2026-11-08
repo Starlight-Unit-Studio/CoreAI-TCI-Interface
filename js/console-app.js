@@ -2131,7 +2131,33 @@
         deleteUnreferencedUpload(removed);
       });
 
-      chip.appendChild(icon);
+      // Uploaded images also get a preview before sending; the authenticated
+      // image media URL is preferred when available.
+      if (item.kind === 'image' && item.uuid) {
+        var previewUrl = API_BASE + '/console_media.php?uuid=' + encodeURIComponent(item.uuid);
+        var preview = document.createElement('button');
+        preview.type = 'button';
+        preview.className = 'attach-preview-button';
+        preview.setAttribute('aria-label', (item.name || 'Bild') + ' anzeigen');
+        var thumb = document.createElement('img');
+        thumb.alt = item.name || 'Hochgeladenes Bild';
+        thumb.src = previewUrl;
+        thumb.loading = 'lazy';
+        thumb.dataset.previewUrl = previewUrl;
+        thumb.dataset.fileName = item.name || 'CoreAI-Bild.png';
+        thumb.dataset.fileSize = String(item.size || 0);
+        thumb.dataset.fileMime = item.mime || '';
+        preview.appendChild(thumb);
+        chip.appendChild(preview);
+        preview.addEventListener('click', function () {
+          if (window.CoreAIImageViewer) window.CoreAIImageViewer.open({
+            src: previewUrl, name: item.name, size: item.size,
+            mime: item.mime, origin: 'Hochgeladen'
+          });
+        });
+      } else {
+        chip.appendChild(icon);
+      }
       chip.appendChild(meta);
       chip.appendChild(remove);
       attachList.appendChild(chip);
