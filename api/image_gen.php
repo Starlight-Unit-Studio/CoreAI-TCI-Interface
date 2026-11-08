@@ -71,9 +71,57 @@ function coreui_image_is_self_request(string $message, string $assistantName = '
   // The user may address the account's nickname or Mara Thorne by name.
   $names = 'mara(?:\\s+thorne)?';
   if ($assistantName !== '') $names .= '|' . preg_quote($assistantName, '~');
+  // 0.6.66: natural self-portrait wording must not depend on the Core
+  // remembering the optional ICH marker. This checks the USER'S request only,
+  // not a model-authored scene, unrelated uploads or conversation memory.
+  // A leading "Mara, ..." alone is deliberately NOT a self-portrait: the
+  // operator may be addressing Mara while requesting a different subject.
+  $selfWords = '~\\b(?:selbstportr(?:aet|ät|ait)|selbstbildnis|self[-\\s]?portrait'
+    . '|(?:zeige?|mal(?:e)?|zeichne|generier(?:e)?|erstell(?:e)?|render|mach|create|draw|paint|show|generate)'
+    . '(?:\\s+[^\\s,.;!?]+){0,7}\\s+(?:dich|yourself)'
+    . '|(?:von|mit)\\s+dir|(?:of|with)\\s+yourself'
+    . '|(?:dein(?:e|en|em|er|es)?|your)\\s+(?:eigen(?:e|es|en)?\\s+|own\\s+)?'
+    . '(?:aussehen|gesicht|erscheinung|portrait|portraet|porträt|foto|bild|face|appearance|look|photo|picture)'
+    . '|(?:bild|foto|aufnahme|portr(?:aet|ät|ait)|selfie|szene|image|picture|photo|portrait|scene)'
+    . '[^.!?]{0,110}\\b(?:dich|yourself|du\\s+(?:selbst|stehst|sitzt|läufst|laeufst|bist|aussiehst))'
+    . '|(?:wie|how)\\s+(?:du\\s+(?:(?:dich\\s+)?(?:darstellst|zeigen|sehen|aussiehst|aussehen|wirkst|stehst|sitzt))'
+    . '|you\\s+(?:look|appear|would\\s+look))'
+    . ')\\b~iu';
+  if (preg_match($selfWords, $text) === 1) return true;
+  if (preg_match('~\\b(?:du\\s+selbst|dich\\s+selbst|yourself)\\b~iu', $text) === 1) return true;
+  if (preg_match('~\\b(?:wie|als)\\s+du\\s+[^.!?]{0,90}\\b(?:aussiehst|aussehen|wirkst|sitzt|stehst|laeufst|läufst|siehst)\\b~iu', $text) === 1) return true;
+  if (preg_match('~\\bdich\\s+[^.!?]{0,65}\\b(?:sehen|abbilden|zeichnen|malen|darstellen|fotografieren)\\b~iu', $text) === 1) return true;
+  // Name-based scenes: "Mara im Cockpit", "Mara am Strand", "Ember as
+  // captain" and "ein Bild mit Mara" all mean the TCI as the SUBJECT.
+  // "Mara, male eine fremde Frau" must stay a generic image.
+  $subjectNames = '(?:' . $names . ')';
+  if (preg_match('~\\b' . $subjectNames
+    . '\\s+(?:selbst|als|im|in|am|auf|bei|vor|hinter|neben|unter|mit|wearing|as|at|on|beside|inside)\\b~iu', $text) === 1) return true;
+  if (preg_match('~\\b(?:bild|foto|aufnahme|portr(?:aet|ät|ait)|selfie|szene|image|picture|photo|portrait|scene)'
+    . '\\b[^.!?]{0,110}\\b' . $subjectNames . '\\b~iu', $text) === 1) return true;
+  if (preg_match('~\\b(?:zeichn\\w*|mal\\w*|generier\\w*|erstell\\w*|render\\w*|fotografier\\w*'
+    . '|draw|paint|generate|create|show|depict)\\b[^.!?]{0,95}\\b' . $subjectNames . '\\b~iu', $text) === 1) return true;
+
+
   if (preg_match('~\\b(?:wie\\s+sieht\\s+(?:' . $names . ')\\s+aus|(?:bild|foto|portr(?:aet|ät|ait))\\s+von\\s+(?:' . $names . '))\\b~iu', $text) === 1) return true;
   if ($assistantName !== '' && preg_match('~\\b' . preg_quote($assistantName, '~') . '\\s+(?:als|in\\s+einem|auf\\s+der)\\b~iu', $text) === 1) return true;
   return preg_match('~\\b(?:mara(?:\\s+thorne)?|du)\\s+(?:als|in\\s+einem|auf\\s+der)\\b|\\b(?:von\\s+dir|mit\\s+dir|dein(?:\\s+eigenes)?\\s+(?:portrait|portraet|porträt|bild|foto)|zeig(?:e)?\\s+dich|zeichne\\s+dich|mal\\s+dich|male\\s+dich|dich\\s+als|yourself\\s+as|picture\\s+of\\s+you|portrait\\s+of\\s+you)\\b~iu', $text) === 1;
+}
+
+/**
+ * A short continuation may refer to a self-portrait in the current chat.
+ * This never turns a generic image into a self-portrait. It only keeps an
+ * explicit ICH marker already chosen from the current conversational context.
+ */
+function coreui_image_may_continue_self_portrait(string $message): bool {
+  $text = trim((string)preg_replace('~\\s+~u', ' ', $message));
+  if ($text === '') return false;
+  return preg_match('~^(?:(?:und|aber|okay|ok)\\s+)?(?:'
+    . '(?:diesmal|jetzt|nun|now|this\\s+time)\\s+(?:als|im|in|am|auf|mit|vor|bei|as|in|on|with)\\b'
+    . '|noch(?:mal)?\\s+(?:eins|eines|ein\\s+(?:bild|foto)|so\\s+eins)\\b'
+    . '|(?:nochmal|wieder|again|same\\s+(?:person|face)|gleiche\\s+person|dieselbe\\s+person)\\s*$'
+    . '|(?:another|one\\s+more)\\s+(?:one|image|picture|photo)\\s*$'
+    . ')~iu', $text) === 1;
 }
 
 /** Upgrade a generic image tool only when the user explicitly asked for THIS TCI. */
@@ -378,6 +426,20 @@ function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $
     $job = $answer['job'];
     $jobId = (string)($job['id'] ?? '');
     if (preg_match('~^[a-f0-9]{32}$~D', $jobId) !== 1) return ['ok' => false, 'error' => 'image_failed', 'detail' => ''];
+    // Fail closed if an outdated/partial worker silently ignores references:
+    // otherwise a self portrait is text-to-image and FLUX invents a stranger.
+    // The worker reports actual resolved -r files (including canonical angles).
+    $requiredReferences = count($references) + ($reference !== null ? 1 : 0);
+    // If this deployment ships Mara's canonical primary photo, an older
+    // worker must not silently fall back to mara_winter.jpg. The selected
+    // custom account portrait never inherits the canonical gallery.
+    $canonicalAvailable = $reference === 'default'
+      && is_file(dirname(__DIR__) . '/images/mara_references/mara_identity_primary.png');
+    if (($requiredReferences > 0 && (int)($job['reference_count'] ?? 0) < $requiredReferences)
+        || ($canonicalAvailable && (int)($job['curated_mara_count'] ?? 0) < 1)) {
+      $http('DELETE', '/jobs/' . $jobId, null, 5);
+      return ['ok' => false, 'error' => 'reference_unavailable', 'detail' => ''];
+    }
     $deadline = microtime(true) + (int)($registry['sizes'][$size]['time_limit_s'] ?? 300) + 60;
     $seen = '';
     while (true) {
@@ -604,6 +666,7 @@ function coreui_image_capability_hint(bool $compact): string {
     return "BILDER: Moechte die Person ein Bild von dir, antworte NUR mit [BILD ICH: genaue Bildbeschreibung auf Englisch]. "
       . "Dein aktives Profilbild zeigt DICH SELBST als TCI: Mara Thorne, nicht ein Vorbild oder eine aehnliche Person. Gesicht und Frisur gehoeren dir. Eine TCI hat nicht automatisch Androidenmerkmale, "
       . "Neonlinien oder Implantate im Gesicht. Erfinde solche Merkmale nicht ohne ausdruecklichen Wunsch. "
+      . "Szenen mit Mara Thorne, deinem Rufnamen oder DIR als Bildmotiv sind immer eigene Selbstportraets mit ICH, auch bei 2 oder 4 Bildern. Eine Anrede wie 'Mara, male eine fremde Frau' ist KEIN Selbstportraet. "
       . "Gross (1024) nur auf ausdruecklichen Wunsch: [BILD GROSS: ...]; fuer dich selbst [BILD GROSS ICH: ...]. Andere Motive [BILD: ...]. Ohne Wunsch kein Bild.";
   }
   return "BILDER: Du kannst selbst Bilder malen (Fotos, Illustrationen, Szenen, Schrift auf Schildern). Moechte die Person "
@@ -611,6 +674,7 @@ function coreui_image_capability_hint(bool $compact): string {
     . "[BILD ICH: ausfuehrliche Bildbeschreibung auf Englisch: Motiv, Umgebung, Licht, Stil; Text im Bild in Anfuehrungszeichen]. "
     . "Nur fuer ausdrueckliche Selbstportraets verwende ICH: Das aktive Profilbild zeigt DICH SELBST, TCI: Mara Thorne. Es ist deine eigene visuelle Identitaet, kein Foto einer Person, die dir nur aehnlich sieht. Das gilt auch bei Kostuem, Rollenspiel oder einem frei gewaehlten Rufnamen. "
     . "Bei einer schlichten Frage nach deinem Aussehen zeige dich als DIESELBE Person auf deinem eigenen Profilfoto. Erfinde keine Gesichtsdetails, die du nicht sehen kannst: der Bilddienst erhaelt dieses Foto als verbindliche Selbstreferenz. Beschreibe in ICH-Auftraegen vor allem Handlung, Pose, Kleidung, Licht und Szene statt ein neues Gesicht zu entwerfen. "
+    . "Auch bei Szenen wie 'Mara im Cockpit' oder 'Ember am Strand' ist Mara selbst das Motiv, kein neues generisches Frauenmodell: IMMER [BILD ICH: ...] fuer ihr festes Referenzgesicht, auch bei 2/4 Bildern. Ein nur als Anrede verwendetes 'Mara, zeichne eine fremde Frau' meint dagegen ein fremdes Motiv mit [BILD: ...]. "
     . "Die technische TCI-Identitaet bedeutet NICHT, dass dein Gesicht mechanische Linien, Neonleuchten, Implantate oder Androidenmerkmale besitzen muss. "
     . "Erfinde solche Merkmale nur, wenn die Person ausdruecklich eine solche Verwandlung wuenscht. "
     . "Fuer fremde Personen, Tiere oder Szenen benutze [BILD: ...] ohne ICH. "

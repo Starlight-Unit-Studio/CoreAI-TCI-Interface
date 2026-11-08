@@ -70,7 +70,7 @@ function coreui_composer_intent_hint(array $intent, bool $allowed): string {
       . $what . "). Sag das kurz und freundlich und hilf, so gut es ohne geht.";
   }
   return match ($tool) {
-    'image' => "AUSWAHL IM MENUE: Die Person hat \"Bild erstellen\" gewaehlt. Male ein Bild zu ihrer Nachricht. Fuer dich selbst (auch im Rollenspiel) nutze den Marker mit ICH und dein Referenzportraet; bei fremden Motiven nie ICH: antworte NUR mit "
+    'image' => "AUSWAHL IM MENUE: Die Person hat \"Bild erstellen\" gewaehlt. Male ein Bild zu ihrer Nachricht. Fuer dich selbst (auch im Rollenspiel, oder wenn Mara bzw. dein Rufname das Motiv einer Szene ist) nutze den Marker mit ICH und dein festes Referenzportraet; erfinde kein anderes Gesicht. Eine Anrede an dich allein macht eine fremde Frau nicht zu dir. Bei fremden Motiven nie ICH: antworte NUR mit "
       . (($intent['size'] ?? '') === 'large' ? '[BILD GROSS: ...] oder [BILD GROSS ICH: ...]' : '[BILD: ...] oder [BILD ICH: ...]')
       . " und sonst nichts.",
     'web' => "AUSWAHL IM MENUE: Die Person hat \"Websuche\" gewaehlt. Suche zuerst im Netz: antworte NUR mit [WEB: genaue Suchbegriffe] und sonst nichts.",
@@ -100,7 +100,14 @@ function coreui_composer_intent_ensure(array $intent, string $reply, string $use
         && function_exists('coreui_image_extract_marker') && function_exists('coreui_image_parse_input')) {
       $parsed = coreui_image_parse_input((string)coreui_image_extract_marker($reply));
       $wantsSelf = coreui_image_is_self_request($userText, $assistantName);
-      if ((bool)($parsed['self_reference'] ?? false) !== $wantsSelf) {
+      $hasSelf = (bool)($parsed['self_reference'] ?? false);
+      // Upgrade unmarked portraits deterministically. Only downgrade a
+      // mismarked generic request when it is NOT an elliptical continuation
+      // ("diesmal im roten Kleid", "noch eins") of a self-portrait that the
+      // Core already identified from the conversation. Never discard that
+      // ICH binding simply because an abbreviated follow-up omits "Mara".
+      if (($wantsSelf && !$hasSelf)
+          || (!$wantsSelf && $hasSelf && !coreui_image_may_continue_self_portrait($userText))) {
         return '[BILD' . ($parsed['size'] === 'large' ? ' GROSS' : '')
           . ($wantsSelf ? ' ICH' : '') . ': ' . $parsed['prompt'] . ']';
       }

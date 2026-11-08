@@ -47,6 +47,9 @@ intent_test(coreui_composer_intent_readable('Hallo [[bild]]') === 'Hallo [[bild]
 
 // --- Mara's instruction ---------------------------------------------------------------------
 $hint = coreui_composer_intent_hint(['tool' => 'image', 'size' => 'normal'], true);
+intent_test(str_contains($hint, 'Mara bzw. dein Rufname')
+  && str_contains($hint, 'erfinde kein anderes Gesicht'),
+  'image composer explains named self-portraits using the account visual identity');
 intent_test(str_starts_with($hint, 'AUSWAHL IM MENUE: Die Person hat "Bild erstellen" gewaehlt.')
   && str_contains($hint, 'antworte NUR mit [BILD: ...] oder [BILD ICH: ...] und sonst nichts.'), 'image instruction');
 intent_test(str_contains(coreui_composer_intent_hint(['tool' => 'image', 'size' => 'large'], true), '[BILD GROSS: ...] oder [BILD GROSS ICH: ...]'),
@@ -72,6 +75,21 @@ intent_test(coreui_composer_intent_ensure($img, '[BILD: faithful photo of Mara T
   'natural Mara appearance request with image chip still upgrades to reference');
 intent_test(coreui_composer_intent_ensure($img, '[BILD ICH: Superwoman over the city]', 'Zeichne Superwoman', true)
   === '[BILD: Superwoman over the city]', 'fictional role cannot force a Mara reference onto unrelated pictures');
+intent_test(coreui_composer_intent_ensure($img, '[BILD: a woman with black hair in a spaceship]', 'Mara im Cockpit', true)
+  === '[BILD ICH: a woman with black hair in a spaceship]',
+  'scene-based Mara requests upgrade generic generated prompts to canonical references');
+intent_test(coreui_composer_intent_ensure($img, '[BILD: red dress, cinematic lighting]', 'Ein Bild mit Ember am Strand', true, 'Ember')
+  === '[BILD ICH: red dress, cinematic lighting]',
+  'the account assistant nickname selects its own portrait identity');
+intent_test(coreui_composer_intent_ensure($img, '[BILD ICH: Mara in a red evening gown]', 'diesmal im roten Kleid', true)
+  === '[BILD ICH: Mara in a red evening gown]',
+  'elliptical follow-up does not silently discard an explicit ICH identity marker');
+intent_test(coreui_composer_intent_ensure(['tool'=>'image','size'=>'large'], '[BILD GROSS ICH: Mara on a bridge]',
+  'noch eins', true) === '[BILD GROSS ICH: Mara on a bridge]',
+  'repeated larger portrait keeps the previously chosen ICH binding');
+intent_test(coreui_composer_intent_ensure($img, '[BILD ICH: generic woman]', 'Mara, male eine fremde Frau', true)
+  === '[BILD: generic woman]', 'vocative Mara plus a DIFFERENT requested woman does not use her photo');
+
 intent_test(coreui_composer_intent_ensure($img, 'Gern male ich dir einen Fuchs!', 'ein roter Fuchs im Schnee', true)
   === '[BILD: ein roter Fuchs im Schnee]', 'no marker: the person\'s words');
 intent_test(coreui_composer_intent_ensure(['tool' => 'image', 'size' => 'large'], 'Klar!', 'ein [Schloss] bei Nacht', true)
