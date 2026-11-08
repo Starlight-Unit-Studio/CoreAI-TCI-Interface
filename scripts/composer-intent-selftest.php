@@ -47,6 +47,9 @@ intent_test(coreui_composer_intent_readable('Hallo [[bild]]') === 'Hallo [[bild]
 
 // --- Mara's instruction ---------------------------------------------------------------------
 $hint = coreui_composer_intent_hint(['tool' => 'image', 'size' => 'normal'], true);
+intent_test(str_contains($hint, 'Mara bzw. dein Rufname')
+  && str_contains($hint, 'erfinde kein anderes Gesicht'),
+  'image composer explains named self-portraits using the account visual identity');
 intent_test(str_starts_with($hint, 'AUSWAHL IM MENUE: Die Person hat "Bild erstellen" gewaehlt.')
   && str_contains($hint, 'antworte NUR mit [BILD: ...] oder [BILD ICH: ...] und sonst nichts.'), 'image instruction');
 intent_test(str_contains(coreui_composer_intent_hint(['tool' => 'image', 'size' => 'large'], true), '[BILD GROSS: ...] oder [BILD GROSS ICH: ...]'),
