@@ -27,7 +27,8 @@
     plus: '<path d="M12 5v14M5 12h14"/>',
     minus: '<path d="M5 12h14"/>',
     left: '<path d="m15 18-6-6 6-6"/>',
-    right: '<path d="m9 18 6-6-6-6"/>'
+    right: '<path d="m9 18 6-6-6-6"/>',
+    edit: '<path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L9 17l-4 1 1-4z"/>'
   };
 
   function icon(name) {
@@ -172,6 +173,9 @@
     stage.appendChild(ui.prev);
     stage.appendChild(ui.scroll);
     stage.appendChild(ui.next);
+    ui.edit = action('edit', 'Bild bearbeiten');
+    ui.edit.innerHTML = icon('edit') + '<span>Bearbeiten</span>';
+    stage.appendChild(ui.edit);
 
     ui.footer = element('footer', 'coreai-image-viewer-footer');
     ui.position = element('span', '', '');
@@ -191,6 +195,11 @@
       ui.info.setAttribute('aria-expanded', ui.details.hidden ? 'false' : 'true');
     });
     ui.close.addEventListener('click', close);
+    ui.edit.addEventListener('click', function () {
+      if (window.CoreAIImageEditor && typeof window.CoreAIImageEditor.open === 'function') {
+        window.CoreAIImageEditor.open(gallery[index]);
+      }
+    });
     ui.prev.addEventListener('click', function () { show(index - 1); });
     ui.next.addEventListener('click', function () { show(index + 1); });
     ui.zoomOut.addEventListener('click', function () { stepZoom(-1); });
@@ -291,6 +300,7 @@
     ui.detailsType.textContent = 'Quelle: ' + item.origin + (item.mime ? ' · ' + item.mime : '');
     ui.detailsDimension.textContent = 'Auflösung: wird ermittelt';
     ui.detailsSize.textContent = 'Dateigröße: ' + bytes(item.size);
+    ui.edit.disabled = !(window.CoreAIImageEditor && typeof window.CoreAIImageEditor.open === 'function');
     ui.position.textContent = gallery.length > 1 ? (index + 1) + ' / ' + gallery.length : '';
     ui.prev.hidden = gallery.length < 2;
     ui.next.hidden = gallery.length < 2;
@@ -432,6 +442,8 @@
   }, false);
 
   document.addEventListener('keydown', function (event) {
+    // Keep the viewer from swallowing keys while its editor is on top.
+    if (window.CoreAIImageEditor && window.CoreAIImageEditor.isOpen()) return;
     if (!active()) {
       if ((event.key === 'Enter' || event.key === ' ') &&
         event.target && event.target.matches && event.target.matches('img.msg-image[tabindex="0"]')) {
