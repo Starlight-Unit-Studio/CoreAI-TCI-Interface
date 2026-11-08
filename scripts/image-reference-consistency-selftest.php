@@ -36,6 +36,8 @@ ref_test(coreui_image_reference_mode('this vehicle in the mountains', false, tru
 ref_test(coreui_image_reference_mode('Use the supplied reference for style only. Make a new subject.', false, true) === 'style'
   && coreui_image_reference_mode('Use the reference only for style; draw a new cat', false, true) === 'style'
   && coreui_image_reference_mode('Nur als Stilvorlage fuer ein neues Motiv', false, true) === 'style'
+  && coreui_image_reference_mode('im Stil von diesem Bild eine neue Landschaft zeichnen', false, true) === 'style'
+  && coreui_image_reference_mode('gleiche Farbwelt, aber anderes Motiv', false, true) === 'style'
   && coreui_image_reference_mode('style-only reference, a different person', false, true) === 'style'
   && coreui_image_reference_mode('Only the color palette, not the person', false, true) === 'style'
   && coreui_image_reference_mode('The same woman in watercolor style', false, true) === 'identity',
