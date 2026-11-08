@@ -44,7 +44,6 @@ function coreui_profile_load(PDO $pdo, int $uid): array {
     if ($row) {
       $displayName = coreui_profile_name((string)($row['display_name'] ?? ''), $displayName);
       $assistantName = coreui_profile_name((string)($row['assistant_name'] ?? ''), 'Mara');
-      if (strcasecmp($assistantName, 'Ember') === 0) $assistantName = 'Mara';
       $updatedAt = $row['updated_at'] ?? null;
     }
   }
@@ -148,6 +147,31 @@ function coreui_profile_delete_avatar(PDO $pdo, int $uid, string $slot): bool {
   return $del->rowCount() > 0;
 }
 
+/** Assistant references retain the whole image; user avatars keep their square crop. */
+function coreui_profile_render_avatar(GdImage $src, string $slot): GdImage {
+  $width = imagesx($src);
+  $height = imagesy($src);
+  if ($slot === 'assistant') {
+    $scale = min(1, 1024 / max($width, $height));
+    $targetWidth = max(1, (int)round($width * $scale));
+    $targetHeight = max(1, (int)round($height * $scale));
+    $srcX = $srcY = 0;
+    $sourceWidth = $width;
+    $sourceHeight = $height;
+  } else {
+    $sourceWidth = $sourceHeight = min($width, $height);
+    $srcX = (int)floor(($width - $sourceWidth) / 2);
+    $srcY = (int)floor(($height - $sourceHeight) / 2);
+    $targetWidth = $targetHeight = min(512, $sourceWidth);
+  }
+  $dst = imagecreatetruecolor($targetWidth, $targetHeight);
+  imagealphablending($dst, false);
+  imagesavealpha($dst, true);
+  imagefill($dst, 0, 0, imagecolorallocatealpha($dst, 0, 0, 0, 127));
+  imagecopyresampled($dst, $src, 0, 0, $srcX, $srcY, $targetWidth, $targetHeight, $sourceWidth, $sourceHeight);
+  return $dst;
+}
+
 function coreui_profile_store_avatar(PDO $pdo, int $uid, string $slot, array $file): array {
   if (!in_array($slot, ['user', 'assistant'], true)) throw new InvalidArgumentException('invalid_slot');
   if (!coreui_profile_schema_ready($pdo)) throw new RuntimeException('missing_schema_004');
@@ -171,16 +195,9 @@ function coreui_profile_store_avatar(PDO $pdo, int $uid, string $slot, array $fi
   $src = is_string($raw) ? @imagecreatefromstring($raw) : false;
   if ($src === false) throw new InvalidArgumentException('avatar_decode_failed');
 
-  $side = min($width, $height);
-  $srcX = (int)floor(($width - $side) / 2);
-  $srcY = (int)floor(($height - $side) / 2);
-  $target = min(512, $side);
-  $dst = imagecreatetruecolor($target, $target);
-  imagealphablending($dst, false);
-  imagesavealpha($dst, true);
-  $transparent = imagecolorallocatealpha($dst, 0, 0, 0, 127);
-  imagefill($dst, 0, 0, $transparent);
-  imagecopyresampled($dst, $src, 0, 0, $srcX, $srcY, $target, $target, $side, $side);
+  $dst = coreui_profile_render_avatar($src, $slot);
+  $targetWidth = imagesx($dst);
+  $targetHeight = imagesy($dst);
   imagedestroy($src);
 
   $dir = coreui_profile_media_dir();
@@ -225,7 +242,7 @@ function coreui_profile_store_avatar(PDO $pdo, int $uid, string $slot, array $fi
       . 'stored_name = VALUES(stored_name), mime_type = VALUES(mime_type), file_size = VALUES(file_size), '
       . 'width_px = VALUES(width_px), height_px = VALUES(height_px), created_at = NOW()'
     );
-    $st->execute([$uuid, $uid, $slot, $originalName, $storedName, 'image/png', $finalSize, $target, $target]);
+    $st->execute([$uuid, $uid, $slot, $originalName, $storedName, 'image/png', $finalSize, $targetWidth, $targetHeight]);
     $pdo->commit();
   } catch (Throwable $e) {
     if ($pdo->inTransaction()) $pdo->rollBack();
@@ -241,12 +258,13 @@ function coreui_profile_prompt_block(PDO $pdo, int $uid): string {
   try {
     $profile = coreui_profile_load($pdo, $uid);
     $assistantName = coreui_profile_name((string)($profile['assistant_name'] ?? ''), 'Mara');
-    if (strcasecmp($assistantName, 'Ember') === 0) $assistantName = 'Mara';
     $displayName = coreui_profile_name((string)($profile['display_name'] ?? ''), 'Operator');
+    $personalPortrait = coreui_profile_image_reference($pdo, $uid) !== 'default';
     return "\n\n--- MARA COREAI-PROFIL ---\n"
       . 'Der aktuelle Benutzer wird in dieser privaten Oberfläche als "' . $displayName . '" angezeigt. ' 
       . 'Dein frei gewählter Anzeigename in diesem Konto ist "' . $assistantName . '". '
       . 'Mara Thorne bleibt deine feste technische Identitaet, auch wenn du einen Rufnamen oder eine Rolle spielst. Ein Schauspielauftrag aendert deine Identitaet nicht. Verwende deinen Rufnamen in persoenlichen Antworten, niemals als technische Kennung.\n'
+      . ($personalPortrait ? 'Fuer dieses Konto wurde ein eigenes Profilbild gewaehlt. Es ist die verbindliche visuelle Vorlage bei Selbstportraets, einschliesslich Gesicht und Frisur. Die technische Identitaet legt kein Standardgesicht fest. Uebernimm keine widersprechenden Aussehensmerkmale aus alten Beschreibungen oder dem Namen; du hast das Bild in diesem Textprompt nicht gesehen. Beschreibe im Bildauftrag die gewuenschte Szene und ueberlasse die unveraenderte Erscheinung der Bildreferenz. ' : '')
       . "--- ENDE MARA COREAI-PROFIL ---";
   } catch (Throwable $e) {
     return '';

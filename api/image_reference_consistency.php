@@ -100,6 +100,9 @@ function coreui_image_reference_prompt(string $scene, ?string $selfReference, ar
   $overlay = $styleOverlay
     ? ' OTHER REFERENCES (STYLE ONLY): Take palette, texture and lighting from uploads; do NOT copy their people or objects.'
     : '';
+  if ($selfReference !== null && str_starts_with($selfReference, 'custom:')) {
+    $overlay .= ' ACCOUNT PORTRAIT: This uploaded portrait overrides any default appearance associated with the assistant name. Preserve its face and hair; the technical name does not select another person.';
+  }
   $block = coreui_image_reference_block($mode, $multiple) . $overlay;
   if (mb_strlen($block) + 1 + mb_strlen($scene) > $limit) {
     $block = coreui_image_reference_block($mode, $multiple, true) . $overlay;

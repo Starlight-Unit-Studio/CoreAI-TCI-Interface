@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.50: dynamischer Quantum CoreAI Bildvermerk ohne Studio-Logo.
+# CoreAI: TCI Interface 0.6.51: dynamischer Quantum CoreAI Bildvermerk ohne Studio-Logo.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -322,6 +322,7 @@ UI_FILES=(
   scripts/attachment-pipeline-selftest.php
   scripts/python-worker-selftest.php
   scripts/profile-knowledge-selftest.php
+  scripts/profile-reference-selftest.php
   scripts/account-security-selftest.php
   scripts/frontend-regression-selftest.php
   scripts/markdown-preview-selftest.php
@@ -1001,7 +1002,14 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail "Bilder-im-Chat-Selbsttest: ${image_gen_test:-Unbekannter Fehler}"
   fi
 
-  # 0.6.50: all image references share identity, subject and style preservation.
+  profile_reference_test=''
+  if profile_reference_test="$(compose exec -T php php scripts/profile-reference-selftest.php 2>&1)"; then
+    ok "$profile_reference_test"
+  else
+    fail "Profilreferenz-Selbsttest: ${profile_reference_test:-Unbekannter Fehler}"
+  fi
+
+  # 0.6.51: all image references share identity, subject and style preservation.
   reference_consistency_test=''
   if reference_consistency_test="$(compose exec -T php php scripts/image-reference-consistency-selftest.php 2>&1)"; then
     ok 'Bildreferenzen: Identitaet, Motivtreue, Stilvorlage und mehrere Quellen geprueft.'
