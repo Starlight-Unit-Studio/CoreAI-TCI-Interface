@@ -70,6 +70,12 @@ def load_manifest(root: Path) -> dict | None:
         return None
     if not isinstance(config.get('identity'), dict) or not isinstance(config.get('style_only'), dict):
         return None
+    if not isinstance(config.get('selection'), dict):
+        return None
+    for key in ('max_extra_identity', 'max_extra_style'):
+        value = config['selection'].get(key)
+        if not isinstance(value, int) or isinstance(value, bool) or not 0 <= value <= 4:
+            return None
     return config
 
 
@@ -94,6 +100,7 @@ def select(root: Path, scene: str, *, has_user_uploads: bool = False) -> list[di
     max_style = min(1, max(0, int(selection.get('max_extra_style', 1))))
     scene = (scene or '').casefold()
     walking = any(word in scene for word in WALK_WORDS)
+    seated = any(word in scene for word in SITTING_WORDS)
     hologram = any(word in scene for word in HOLOGRAM_WORDS)
     if any(word in scene for word in PROFILE_WORDS):
         priority = ('profile', 'cockpit', 'fullbody', 'city')
@@ -110,7 +117,7 @@ def select(root: Path, scene: str, *, has_user_uploads: bool = False) -> list[di
         if file is not None and all(item['name'] != file.name for item in result):
             result.append({'path': str(file), 'name': file.name, 'role': 'identity'})
     if hologram and max_style:
-        style_role = 'hologram_walking' if walking else 'hologram_seated'
+        style_role = 'hologram_seated' if seated else 'hologram_walking' if walking else 'hologram_seated'
         file = _asset(root, DEFAULT_REL, config['style_only'].get(style_role))
         if file is not None and all(item['name'] != file.name for item in result):
             result.append({'path': str(file), 'name': file.name, 'role': 'style_only'})
