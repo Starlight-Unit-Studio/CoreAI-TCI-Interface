@@ -89,10 +89,16 @@ function coreui_image_reference_prompt(string $scene, ?string $selfReference, ar
   // may mention people from the source photos as part of its description.
   if ($userMode === 'style' && $selfReference === null && $uploads !== []) $mode = 'style';
   if ($mode === null || $limit < 1) return $scene;
-  $multiple = count($uploads) + ($selfReference === null ? 0 : 1) > 1;
-  $block = coreui_image_reference_block($mode, $multiple);
+  $styleOverlay = $userMode === 'style' && $selfReference !== null && $uploads !== [];
+  // When portraying Mara, her own photo remains the identity source; other
+  // uploaded pictures can be requested as style only without copying faces.
+  $multiple = !$styleOverlay && count($uploads) + ($selfReference === null ? 0 : 1) > 1;
+  $overlay = $styleOverlay
+    ? ' OTHER REFERENCES (STYLE ONLY): Take palette, texture and lighting from uploads; do NOT copy their people or objects.'
+    : '';
+  $block = coreui_image_reference_block($mode, $multiple) . $overlay;
   if (mb_strlen($block) + 1 + mb_strlen($scene) > $limit) {
-    $block = coreui_image_reference_block($mode, $multiple, true);
+    $block = coreui_image_reference_block($mode, $multiple, true) . $overlay;
   }
   if (mb_strlen($block) + 1 >= $limit) {
     return mb_substr($scene, 0, $limit);
