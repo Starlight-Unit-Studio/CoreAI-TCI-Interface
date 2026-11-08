@@ -423,6 +423,7 @@ ensure_update_service() {
 ensure_ollama_model() {
   local install_tmp
   local owned_model=''
+  local base_new=0
 
   if ! command -v ollama >/dev/null 2>&1; then
     is_enabled "$INSTALL_OLLAMA" || die 'Ollama fehlt. Installiere es oder setze COREUI_INSTALL_OLLAMA=1.'
@@ -445,18 +446,19 @@ ensure_ollama_model() {
   [[ "$MODEL_NAME" != "$BASE_MODEL" ]] \
     || die 'COREUI_MODEL_NAME darf im Isolationsmodus nicht dem Basismodell entsprechen.'
 
-  if ! ollama show "$BASE_MODEL" >/dev/null 2>&1; then
-    log "Lade Ollama-Basismodell $BASE_MODEL."
-    ollama pull "$BASE_MODEL"
-  else
-    log "Ollama-Basismodell $BASE_MODEL bleibt unveraendert und wird wiederverwendet."
-  fi
-
   [[ -f "$MODEL_OWNER_FILE" ]] && owned_model="$(tr -d '\r\n' < "$MODEL_OWNER_FILE")"
   if ollama show "$MODEL_NAME" >/dev/null 2>&1 \
       && [[ "$owned_model" != "$MODEL_NAME" ]] \
       && ! is_enabled "$ADOPT_MODEL"; then
     die "Das Modell $MODEL_NAME existiert bereits, ist aber nicht als CoreAI: TCI Interface-eigen markiert. Waehle einen anderen Namen oder setze COREUI_ADOPT_MODEL=1 bewusst."
+  fi
+
+  if ! ollama show "$BASE_MODEL" >/dev/null 2>&1; then
+    log "Lade temporaeres Ollama-Basismodell $BASE_MODEL."
+    ollama pull "$BASE_MODEL"
+    base_new=1
+  else
+    log "Ollama-Basismodell $BASE_MODEL war schon vorhanden und bleibt aus Sicherheitsgruenden erhalten."
   fi
 
   sed "s|^FROM gemma4:e4b$|FROM $BASE_MODEL|" \
@@ -466,7 +468,15 @@ ensure_ollama_model() {
 
   log "Erzeuge das getrennte Ollama-Modell $MODEL_NAME aus $BASE_MODEL."
   ollama create "$MODEL_NAME" -f "$PROJECT_ROOT/var/Modelfile.generated"
+  ollama show "$MODEL_NAME" >/dev/null 2>&1 || die "Der neue TCI Core $MODEL_NAME konnte nicht verifiziert werden. Basismodell bleibt erhalten."
   log "Eigene Ollama-Modellvorlage fuer $MODEL_NAME enthaelt keine PARAMETER-Vorgaben."
+  if (( base_new == 1 )) && [[ "$BASE_MODEL" == gemma4:* ]]; then
+    if ollama rm "$BASE_MODEL"; then
+      log "Temporaeren Ollama-Basistag $BASE_MODEL nach erfolgreicher Core-Pruefung entfernt."
+    else
+      warn "Core $MODEL_NAME ist bereit, aber der temporaere Basistag $BASE_MODEL konnte nicht entfernt werden."
+    fi
+  fi
   # The upstream FROM model may itself carry defaults, which Ollama can
   # display in 'show --modelfile'. Those are not injected by CoreUI.
   printf '%s\n' "$MODEL_NAME" > "$MODEL_OWNER_FILE"
@@ -570,7 +580,7 @@ DB_NAME="${REQUEST_DB_NAME:-${SAVED_DB_NAME:-ember_coreui}}"
 DB_USER="${REQUEST_DB_USER:-${SAVED_DB_USER:-ember_coreui}}"
 DB_PASS="${REQUEST_DB_PASS:-${SAVED_DB_PASS:-$(openssl rand -hex 24)}}"
 DB_ROOT_PASS="${REQUEST_DB_ROOT_PASS:-${SAVED_DB_ROOT_PASS:-$(openssl rand -hex 24)}}"
-MODEL_NAME="${REQUEST_MODEL_NAME:-${SAVED_MODEL_NAME:-ember-coreui:latest}}"
+MODEL_NAME="${REQUEST_MODEL_NAME:-${SAVED_MODEL_NAME:-ember-coreui:4b}}"
 LOCK_NAMESPACE="${REQUEST_LOCK_NAMESPACE:-${SAVED_LOCK_NAMESPACE:-ember_coreui}}"
 BIND_ADDRESS="${REQUEST_BIND_ADDRESS:-${SAVED_BIND_ADDRESS:-127.0.0.1}}"
 INSTALL_SEARXNG="${REQUEST_INSTALL_SEARXNG:-${SAVED_INSTALL_SEARXNG:-1}}"
