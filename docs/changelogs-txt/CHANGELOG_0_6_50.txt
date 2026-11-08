@@ -1,0 +1,13 @@
+COREAI: TCI INTERFACE | CHANGELOG 0.6.50
+DATE: 08.11.2026
+
+- Universal reference consistency before every FLUX.2 generation using canonical, account-personal, or uploaded pictures.
+- Identity mode: preserve the same faces and body silhouettes, detailed facial proportions, natural neck/shoulder placement and human anatomy without assigning a fixed height to unrelated characters.
+- Subject mode: preserve original animals, vehicles, products, objects and shapes, materials, proportions, colors, markings and details; people present in otherwise generic sources retain their facial identity as well.
+- Style-only mode: use colors, texture and visual mood without copying source subjects, but ONLY after explicit user instruction. Original user intent survives a model's later paraphrase.
+- Multiple references: keep individuals and objects distinct; never swap faces or merge characteristic features.
+- Image prompts remain under the pinned text limit, with a compact fallback that keeps both ends of long scene descriptions.
+- Add scripts/image-reference-consistency-selftest.php to both supported preflights.
+- Unchanged: model weights, Modelfile, permissions, database, installer, serial image queue and 1/2/4 output options.
+
+TESTING: New PHP unit tests and existing image tests must pass on the target server; pixel-exact identity cannot be guaranteed by FLUX.2.
