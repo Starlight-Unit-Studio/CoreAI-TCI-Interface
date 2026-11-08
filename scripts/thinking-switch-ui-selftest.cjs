@@ -111,8 +111,9 @@ const api = sandbox.window.CoreUICoreMode;
 assert.equal(api.shortCore('ember-coreui:latest'), 'ember-coreui');
 assert.equal(api.shortCore(''), 'Core');
 assert.equal(api.modelKey('Ember-CoreUI'), 'ember-coreui:latest');
+assert.equal(api.modelKey('Ember-Core'), 'ember-core:latest');
 // The client mirror of the TCI tiers (names the server has not labelled yet).
-[['ember-coreui:2b', 'TCI Core Schnell'], ['ember-coreui:4b', 'TCI Core Normal'], ['gemma4:e2b', 'TCI Core Schnell'], ['gemma4:e4b', 'TCI Core Normal'], ['gemma4:26b', 'TCI Core Pro'],
+[['ember-core:e2b', 'TCI Core Schnell'], ['ember-core:e4b', 'TCI Core Normal'], ['ember-coreui:e2b', 'TCI Core Schnell'], ['gemma4:e2b', 'TCI Core Schnell'], ['gemma4:e4b', 'TCI Core Normal'], ['gemma4:26b', 'TCI Core Pro'],
  ['gemma4:31b-cloud', 'TCI Core Premium'], ['hf.co/x/gemma-4-E4B-it-GGUF:Q8_0', 'TCI Core Normal'],
  ['gemma4:12b', 'TCI Core Plus'], ['gpt-oss:120b-cloud', ''], ['gemma3:27b', '']]
   .forEach(([name, label]) => assert.equal(api.tierLabel(name), label, 'tier of ' + name));
@@ -151,7 +152,7 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
   assert.deepEqual(opts.map(o => o.getAttribute('data-value')), ['gemma4:e2b', '', 'gemma4:31b-cloud', 'gpt-oss:120b-cloud']);
   assert.deepEqual(opts.map(o => o.children[0].textContent),
     ['TCI Core Schnell', 'TCI Core Normal', 'TCI Core Premium', 'gpt-oss:120b-cloud']);
-  assert(!opts.some(o => /gemma4|ember-coreui/.test(o.textContent)), 'no technical Gemma names in the menu');
+  assert(!opts.some(o => /gemma4|ember-core(?:ui)?/.test(o.textContent)), 'no technical Gemma names in the menu');
   assert.equal(opts[1].getAttribute('aria-checked'), 'true', 'server default is the current choice');
   assert.match(opts[1].textContent, /Standard · 7\.5B · geladen/, 'standard, size and loaded state');
   assert.match(opts[2].textContent, /32\.7B · Cloud/, 'cloud Core is marked');
