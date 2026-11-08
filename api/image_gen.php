@@ -68,8 +68,26 @@ function coreui_image_is_self_request(string $message, string $assistantName = '
   $text = trim((string)preg_replace('~\\s+~u', ' ', $message));
   if ($text === '') return false;
   $assistantName = trim($assistantName);
+  // Everyday questions such as "Wie siehst du eigentlich aus?" are self-portraits
+  // too. They must not rely on the Core choosing the optional ICH marker.
+  if (preg_match('~\\b(?:wie\\s+(?:siehst|schaust)\\s+du(?:\\s+(?:eigentlich|denn|gerade|heute|jetzt|wirklich|normalerweise|wohl|so)){0,4}\\s+aus|wie\\s+du\\s+aus(?:siehst|schaust)|what\\s+do\\s+you\\s+look\\s+like|show\\s+me\\s+what\\s+you\\s+look\\s+like)\\b~iu', $text) === 1) return true;
+  // The user may address the account's nickname or Mara Thorne by name.
+  $names = 'mara(?:\\s+thorne)?';
+  if ($assistantName !== '') $names .= '|' . preg_quote($assistantName, '~');
+  if (preg_match('~\\b(?:wie\\s+sieht\\s+(?:' . $names . ')\\s+aus|(?:bild|foto|portr(?:aet|ät|ait))\\s+von\\s+(?:' . $names . '))\\b~iu', $text) === 1) return true;
   if ($assistantName !== '' && preg_match('~\\b' . preg_quote($assistantName, '~') . '\\s+(?:als|in\\s+einem|auf\\s+der)\\b~iu', $text) === 1) return true;
   return preg_match('~\\b(?:mara(?:\\s+thorne)?|du)\\s+(?:als|in\\s+einem|auf\\s+der)\\b|\\b(?:von\\s+dir|mit\\s+dir|dein(?:\\s+eigenes)?\\s+(?:portrait|portraet|porträt|bild|foto)|zeig(?:e)?\\s+dich|zeichne\\s+dich|mal\\s+dich|male\\s+dich|dich\\s+als|yourself\\s+as|picture\\s+of\\s+you|portrait\\s+of\\s+you)\\b~iu', $text) === 1;
+}
+
+/** Upgrade a generic image tool only when the user explicitly asked for THIS TCI. */
+function coreui_image_tool_for_request(array $tool, string $userText, string $assistantName = 'Mara'): array {
+  if (($tool['tool'] ?? '') !== 'image' || !coreui_image_is_self_request($userText, $assistantName)) return $tool;
+  $input = (string)($tool['input'] ?? '');
+  $parsed = coreui_image_parse_input($input);
+  if ($parsed['self_reference'] || $parsed['prompt'] === '') return $tool;
+  $tool['input'] = ($parsed['size'] === 'large' ? 'GROSS: ' : '')
+    . 'ICH: ' . $parsed['prompt'];
+  return $tool;
 }
 
 /** Size and description from the tool input (pure). */
@@ -539,6 +557,9 @@ function coreui_image_capability_hint(bool $compact): string {
     . "ausdruecklich ein Bild, Foto, eine Zeichnung oder Illustration von dir, antworte NUR mit einem Marker: "
     . "[BILD ICH: ausfuehrliche Bildbeschreibung auf Englisch: Motiv, Umgebung, Licht, Stil; Text im Bild in Anfuehrungszeichen]. "
     . "Nur fuer ausdrueckliche Selbstportraets verwende ICH und nutze dabei dein aktives Profilbild als Gesichtsvorlage, auch bei Kostuem und Rollenspiel. "
+    . "Bei einer schlichten Frage nach deinem Aussehen orientiere dich strikt an diesem echten Portraet: dasselbe Gesicht, natuerliche Augen und die Frisur aus der Vorlage. "
+    . "Die technische TCI-Identitaet bedeutet NICHT, dass dein Gesicht mechanische Linien, Neonleuchten, Implantate oder Androidenmerkmale besitzen muss. "
+    . "Erfinde solche Merkmale nur, wenn die Person ausdruecklich eine solche Verwandlung wuenscht. "
     . "Fuer fremde Personen, Tiere oder Szenen benutze [BILD: ...] ohne ICH. "
     . "Standard sind 512 × 512 Pixel (etwa eine Minute). Nur wenn die Person ausdruecklich ein grosses oder hochaufloesendes "
     . "Bild will: [BILD GROSS: ...] bzw. [BILD GROSS ICH: ...] (1024 × 1024, drei bis vier Minuten). Ohne Bildwunsch malst du nichts; fuer Fragen "
