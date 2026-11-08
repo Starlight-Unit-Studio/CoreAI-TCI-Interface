@@ -84,6 +84,7 @@ img_gen_test(coreui_image_media_reference_token($first, 7) === 'upload:' . $idA 
 img_gen_test(coreui_image_attachment_creation_requested('Erstelle ein Bild, in dem die beiden Figuren gegeneinander kaempfen')
   && coreui_image_attachment_creation_requested('Lass die beiden Figuren gegeneinander kämpfen')
   && coreui_image_attachment_creation_requested('Create an image of the two characters fighting')
+  && coreui_image_attachment_creation_requested('Kannste du die beiden gegeneinander kämpfen lassen?')
   && coreui_image_attachment_creation_requested('Lass sie im Schnee kämpfen', ['tool'=>'image'])
   && !coreui_image_attachment_creation_requested('Analysiere diese beiden Bilder')
   && !coreui_image_attachment_creation_requested('Was zeigen die Fotos?')
