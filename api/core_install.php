@@ -42,7 +42,7 @@ const COREUI_CORE_CLOUD_CATALOG = ['premium' => 'gemma4:31b-cloud'];
 const COREUI_OLLAMA_CLOUD_MIN_VERSION = '0.12.0';
 const COREUI_CORE_INSTALL_ACTIVE = ['pull', 'create', 'verify', 'cleanup'];
 
-/** Canonical local tags: ember-coreui:2b, :4b, :12b, :26b, :31b. */
+/** Local tags mirror the precise upstream suffixes: e2b, e4b, 12b, 26b, 31b. */
 function coreui_core_install_name(string $tier): string {
   $entry = COREUI_CORE_INSTALL_CATALOG[$tier] ?? null;
   if (!is_array($entry)) throw new RuntimeException('unknown_tier');
@@ -521,18 +521,11 @@ function coreui_core_update_plan(array $models): array {
   $plan = [];
   foreach (COREUI_CORE_INSTALL_CATALOG as $tier => $entry) {
     $core = coreui_core_install_name($tier);
-    $oldTag = match ($tier) {
-      'schnell' => 'ember-coreui:e2b',
-      'normal' => 'ember-coreui:e4b',
-      default => '',
-    };
-    if (!$has($entry['base']) && !$has($core) && ($oldTag === '' || !$has($oldTag))) continue;
-    // A legacy installation with only the raw Gemma tag or old e2b/e4b tag
-    // gets the canonical CoreAI model at its next explicit/weekly update.
-    $cores = [['name'=>$core, 'source'=>'template']];
-    if ($oldTag !== '' && $has($oldTag)) $cores[] = ['name'=>$oldTag, 'source'=>'template'];
+    if (!$has($entry['base']) && !$has($core)) continue;
+    // Existing Gemma-only installations get the matching e2b/e4b/12b/26b/31b
+    // CoreAI tag on explicit or weekly update, without deleting foreign tags.
     $plan[coreui_ollama_model_key($entry['base'])] = ['base'=>$entry['base'], 'tier'=>$tier,
-      'label'=>COREUI_CORE_TIER_LABELS[$tier], 'cores'=>$cores];
+      'label'=>COREUI_CORE_TIER_LABELS[$tier], 'cores'=>[['name'=>$core, 'source'=>'template']]];
   }
   $default = defined('STU_EMBER_MODEL') ? (string)STU_EMBER_MODEL : 'ember-coreui:latest';
   $base = coreui_core_mara_base();
