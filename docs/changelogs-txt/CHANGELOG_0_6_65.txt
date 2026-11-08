@@ -3,6 +3,7 @@ COREAI: TCI INTERFACE // CHANGELOG 0.6.65
 
 - Mehrfach-Bilder (2/4): Schon das erste fertige Bild wird sofort links neben dem laufenden Raster angezeigt und ist anklickbar.
 - Alle fertigen Vorschaubilder bleiben sichtbar, waehrend die naechsten Bilder seriell generiert werden.
+- Wichtiger Datenfluss-Fix: Der Work-Event-Normalizer hatte die Media-UUID vor der Bildanzeige entfernt. Nur validierte Bild-UUIDs/Schrittzahlen/Bildgroessen werden nun privat an die Fortschrittsanzeige weitergereicht (nicht als Diagnosetext).
 - Deutlich weniger Renderlast: Animation des 30x30-Punkterasters auf ca. 20 FPS mobil (25 FPS sonst) begrenzt; echte Job-Events bleiben sofort sichtbar.
 - Canvas-Backing-Pixelmasse bei gebrochenem Geraete-DPR korrekt auf Integer gerundet; verhindert staendiges Neuinitialisieren und Flackern.
 - Fortschrittsflaeche isoliert neu zeichnen statt den Chat mitzurepainten; Thumbnails erhalten stabile Klick-/Fokusoberflaechen.
