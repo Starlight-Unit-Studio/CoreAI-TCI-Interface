@@ -1,5 +1,15 @@
 # CoreAI: TCI Interface
 
+## 0.6.58 - 08.11.2026
+
+- Add an optional seven-image canonical Mara reference set at `images/mara_references/`: five photographic identity views (primary portrait, full body, cockpit, side profile, city) and two strictly style-only hologram views (seated/walking). Exact file names are registered in `config/image/mara-references.json`.
+- For a DEFAULT Mara self-portrait, FLUX prefers the new frontal image and chooses up to two complementary angles from the same person, based on the user's actual scene. Only an explicit hologram/wireframe request adds one hologram style sample. Never send all seven images blindly.
+- The model is told every canonical identity photo depicts the SAME TCI: Mara Thorne. Hologram samples change the rendering style, not the face. The original scene remains intact within the 1200-character prompt budget.
+- Respect per-account overrides: a custom assistant/Ember portrait never inherits another person's global Mara reference set; unrelated people uploaded in chat stay separate, and uploaded attachments suppress extra canonical angles.
+- Validate static reference paths, file formats and sizes server-side. Do not accept arbitrary file paths, download assets or duplicate them into a database. Missing assets are skipped, and the existing `images/mara_winter.jpg` remains the fallback until the new portrait is uploaded.
+- Keep image generation on the serial queue, preserve model weights, account memories and UI settings. Expose the actual number of sources used in private job status and downloadable PNG provenance; add offline regression cases and preflight warnings for missing optional gallery files.
+
+
 ## 0.6.57 - 08.11.2026
 
 - Clarify the account's visual self-identity for every local or cloud TCI Core: the person in the active assistant profile photograph **IS TCI: Mara Thorne herself**, never an actress, lookalike, borrowed face or third person. This applies to the default portrait and a chosen custom photo, even when the displayed nickname is Ember.
