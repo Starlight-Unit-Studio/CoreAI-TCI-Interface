@@ -5693,6 +5693,16 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
     // for the recording, which is not sent again.
     $voiceTool = ($voiceTools !== [] && is_string($imgReply)) ? coreui_agent_next_tool($imgReply, $voiceTools) : null;
     if ($voiceTool !== null) {
+      // Only a recorded Stimmsequenz belongs to the user; uploaded audio does
+      // not. It must not be able to change the portrait reference selection.
+      $voiceRequest = $userMsg;
+      foreach ($audioClips as $clip) {
+        if (is_array($clip) && !empty($clip['voice'])) {
+          $voiceRequest .= ' ' . (string)($clip['transcript'] ?? '');
+        }
+      }
+      $voiceTool = coreui_image_tool_for_request(
+        $voiceTool, $voiceRequest, coreui_profile_assistant_name($pdo, $consoleUid));
       $voiceBase = $visionPrompt . "\nDie Aufnahme hast du schon gehoert; die Mitschrift oben gibt sie wieder.";
       $voiceLoop = coreui_agent_loop_run($imgReply, $voiceTool, $voiceBase, $voiceTools, 0,
         static fn(string $prompt): ?string => ember_call_ollama($primaryModel, $visionSys, $prompt, $visionTimeout,
@@ -6503,6 +6513,12 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   if ($channel === 'console' && $imageUrl === null && empty($fileTask) && is_string($out)) {
     $loopAllowed = ember_agent_allowed_tools($consoleUid, (string)$consoleSessionId);
     $loopTool = coreui_agent_next_tool($out, array_values(array_intersect($loopAllowed, ['web', 'archive', 'skill', 'image'])));
+    // A natural self-portrait question must use the account's visual reference,
+    // even when the local Core emits the legacy generic [BILD: ...] marker.
+    if ($loopTool !== null) {
+      $loopTool = coreui_image_tool_for_request(
+        $loopTool, $userMsg, coreui_profile_assistant_name($pdo, $consoleUid));
+    }
     if ($loopTool !== null) {
       $agentLoopHandled = true;
       $uBase = $u;
