@@ -49,9 +49,14 @@ VERSION / DOKUMENTATION
   console-gate.js erneuert.
 
 PRUEFSTATUS
-- Quellcode-/Datei-/Cachechecks: getrennt pruefen.
-- Playwright, reale Bildgenerierung und Server-Preflight NICHT
-  ohne Ausfuehrung als bestanden deklarieren.
+- Durchgefuehrt: JavaScript-Syntax, Release-Verweise, README-Limit,
+  SHA-256-Cache-Keys und reine Work-Event-Normalisierung mit
+  validen/invaliden Media-UUIDs.
+- Durchgefuehrt: Zustandspruefung mit simuliertem DOM fuer 4
+  serielle Bildereignisse. Erstes Thumbnail sichtbar beim Start
+  des zweiten Bildes, danach 4 persistente Thumbnail-Links.
+- Playwright-Browser, reale Bildgenerierung und Server-Preflight
+  sind noch NICHT ausgefuehrt.
 
 VOR MERGE
   python3 scripts/version-merge-check.py --base-version 0.6.64
