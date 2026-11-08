@@ -1,0 +1,9 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.63
+08.11.2026
+
+- Bildeditor: native CoreAI-Holo-Oberflaechen, Blau-Gold-Akzente und technische Formen statt Standardfarben.
+- Header, Schliessen, Bereich markieren, Undo/Redo, Pinselregler, Hinweise, Texteingabe, Groessenauswahl und Start-Button vereinheitlicht.
+- Automatischer System/Hell/Dunkel-Wechsel ueber dieselben Farb-Tokens wie CoreAI-Viewer und Chat.
+- Pinselregler: aktiver Bereich blau, Griff gold, Fuellung folgt der Groesse.
+- Mobile Darstellung und UI-Selbsttest erweitert.
+- Originalbilder, FLUX-Bearbeitung, Modelfile, Memory, Uploads, Datenbank und Berechtigungen unveraendert.
