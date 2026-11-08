@@ -66,6 +66,32 @@ img_gen_test(coreui_image_tool_for_request($largeTool, 'Zeig dich als Superwoman
   && coreui_image_tool_for_request(['tool'=>'image', 'input'=>'ICH: Mara in winter'], $appearanceQuestion)['input'] === 'ICH: Mara in winter',
   'keep roleplay, normal picture requests and existing explicit marker stable');
 
+// Current-turn uploads: only the owner and the exact stored image filename can be forwarded.
+$idA = str_repeat('a', 32);
+$idB = str_repeat('b', 32);
+$first = ['user_id'=>7, 'kind'=>'image', 'uuid'=>$idA, 'stored_name'=>$idA . '.png',
+  'rel_path'=>'assets/chat_media/' . $idA . '.png', 'mime_type'=>'image/png', 'file_size'=>512];
+$second = ['user_id'=>7, 'kind'=>'image', 'uuid'=>$idB, 'stored_name'=>$idB . '.jpg',
+  'rel_path'=>'assets/chat_media/' . $idB . '.jpg', 'mime_type'=>'image/jpeg', 'file_size'=>512];
+img_gen_test(coreui_image_media_reference_token($first, 7) === 'upload:' . $idA . '.png'
+  && coreui_image_media_reference_token($second, 7) === 'upload:' . $idB . '.jpg'
+  && coreui_image_media_reference_token($first, 8) === null
+  && coreui_image_media_reference_token($first + ['invalid'=>1], 0) === null
+  && coreui_image_media_reference_token(array_replace($first, ['rel_path'=>'assets/chat_media/../../secret.png']), 7) === null
+  && coreui_image_media_reference_token(array_replace($first, ['kind'=>'audio']), 7) === null
+  && coreui_image_media_reference_token(array_replace($first, ['file_size'=>9000000]), 7) === null,
+  'uploaded references require exact account ownership, media kind and safe paths');
+img_gen_test(coreui_image_attachment_creation_requested('Erstelle ein Bild, in dem die beiden Figuren gegeneinander kaempfen')
+  && coreui_image_attachment_creation_requested('Lass die beiden Figuren gegeneinander kämpfen')
+  && coreui_image_attachment_creation_requested('Create an image of the two characters fighting')
+  && coreui_image_attachment_creation_requested('Lass sie im Schnee kämpfen', ['tool'=>'image'])
+  && !coreui_image_attachment_creation_requested('Analysiere diese beiden Bilder')
+  && !coreui_image_attachment_creation_requested('Was zeigen die Fotos?')
+  && !coreui_image_attachment_creation_requested('Kannst du Bilder lesen?'),
+  'generating with references is distinct from merely analyzing images');
+img_gen_test(str_contains(coreui_image_attachment_fallback_prompt('Lass die beiden kämpfen', 'Zwei Figuren in Ruestung'),
+  'Zwei Figuren in Ruestung'), 'if vision gives only prose, generation gets a proper fallback prompt');
+
 // Finite batches: default/invalid counts, serial success, partial failure, cancel and no model retry.
 foreach ([1, 2, 4, 9, '4', null] as $count) {
   $calls = 0;
@@ -208,6 +234,16 @@ img_gen_test($r['error'] === 'image_busy' && ($GLOBALS['img_calls'][1][2]['refer
   && str_starts_with((string)($GLOBALS['img_calls'][1][2]['prompt'] ?? ''), 'Use the supplied reference image as the SAME person.')
   && str_contains((string)($GLOBALS['img_calls'][1][2]['prompt'] ?? ''), 'Mara as Superwoman'),
   'explicit self portrait anchors identity and routes canonical reference to the service');
+$refs = ['upload:' . $idA . '.png', 'upload:' . $idB . '.jpg'];
+$http = $fake([['GET', '/health', $ready], ['POST', '/jobs', [503, ['ok'=>false,'error'=>'image_busy'], '']]]);
+$r = coreui_image_generate($pdo, 7, 'ember', 'two warriors fighting', 'normal',
+  $lease, $unlease, static function (): void {}, $never, $http, null, null, $refs);
+img_gen_test($r['error'] === 'image_busy'
+  && ($GLOBALS['img_calls'][1][2]['references'] ?? null) === $refs
+  && !isset($GLOBALS['img_calls'][1][2]['reference'])
+  && str_starts_with((string)$GLOBALS['img_calls'][1][2]['prompt'], 'Use ALL supplied reference pictures'),
+  'two user uploads are forwarded in order, without adding Maras portrait');
+
 
 
 // A whole image.
