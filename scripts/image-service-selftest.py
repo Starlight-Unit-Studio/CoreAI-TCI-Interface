@@ -403,7 +403,7 @@ open(out, 'wb').write(png(w, h, (16, 32, 48)))
             break
         time.sleep(0.05)
     health = call('GET', '/health')[1]
-    check(health['preview'] is True, '0.6.42: this sd-cli writes step previews')
+    check(health['preview'] is True, 'selftest fixture sd-cli must advertise step previews: ' + json.dumps(health))
     check(health['ready'] and not health['busy'] and health['weights']['have'] == health['weights']['total'] > 0
           and health['sizes']['normal'] == {'width': 64, 'height': 64}, 'health: ready, weights complete: ' + json.dumps(health))
 
