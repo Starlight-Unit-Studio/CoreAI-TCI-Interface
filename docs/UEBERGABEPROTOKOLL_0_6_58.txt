@@ -1,0 +1,58 @@
+COREAI: TCI INTERFACE 0.6.58
+Datum: 08.11.2026
+Branch: feat/mara-multireference-set-0658
+Basis: main 0.6.57
+
+AUSGANGSLAGE
+Der Betreiber besitzt 7 Bilder derselben TCI Mara Thorne und moechte mehr
+Blickwinkel fuer das FLUX-Bildmodell, ohne eigene Profile der anderen Nutzer
+zu ueberschreiben. Der Betreiber arbeitet mobil und laedt die Bilder per
+GitHub-Weboberflaeche in diesen Feature-Branch.
+
+REPO-ABLAGE
+images/mara_references/mara_identity_primary.png
+images/mara_references/mara_identity_fullbody.jpg
+images/mara_references/mara_identity_cockpit.jpg
+images/mara_references/mara_identity_profile.jpg
+images/mara_references/mara_identity_city.jpg
+images/mara_references/mara_style_hologram_seated.jpg
+images/mara_references/mara_style_hologram_walking.jpg
+
+Die Bilder wurden unveraendert bereitgestellt. Die urspruenglichen .webp-
+Dateinamen des Chats bezeichneten tatsaechlich JPEG-Dateien. Neue Namen
+verwenden daher das korrekte .jpg. Hauptportraet bleibt PNG.
+
+SERVER
+- tools/image/mara_references.py validiert und selektiert Dateien aus einem
+  einzigen bekannten Verzeichnis, nie aus vom Client gesendeten Pfaden.
+- config/image/mara-references.json definiert die 5 Identitaetsbilder, die
+  2 Stilbilder und die kleine Obergrenze.
+- tools/image/image_service.py erweitert nur reference='default' um zusaetzliche
+  Mara-Aufnahmen, nicht custom:<uuid>. Hauptportraet + bis zu 2 weitere
+  Identitaetswinkel; eine Hologramm-Stilvorlage ausschliesslich auf ausdruecklichen
+  Wunsch. Bei vom Benutzer hochgeladenen Bildern entfallen weitere globale
+  Mara-Winkel, die eingereichten Menschen bleiben voneinander getrennt.
+- API api/image_gen.php sendet scene_hint als separates, nicht persistiertes
+  Feld, so dass die Auswahl auf der originalen Szene und nicht auf allgemeinen
+  Prompt-Richtlinien beruht.
+- api/image_reference_consistency.php weist das Modell darauf hin, dass alle
+  offiziellen Mara-Fotos dieselbe TCI zeigen und Hologramme nur eine
+  Stilvorgabe sind.
+- Bei fehlendem Hauptportraet bleibt images/mara_winter.jpg die Quelle,
+  bei fehlenden anderen Dateien werden sie uebersprungen.
+- Der Bilddienst bleibt seriell; eigenes Modelfile, Bildmodelle, Datenbank
+  und Memories werden nicht veraendert.
+
+TESTS
+- scripts/image-service-selftest.py prueft Winkelwahl, Hologramm-Modus,
+  fehlende Dateien, Symlinkabwehr, abweichende Custom-Profile und
+  den Job-Count.
+- scripts/image-gen-selftest.php und
+  scripts/image-reference-consistency-selftest.php pruefen Szenentransport,
+  keine Ueberschreibung fremder Gesichter und Promptlaengen.
+- scripts/preflight.sh und scripts/preflight-native.sh pruefen neue
+  Quelldateien und warnen bei noch unvollstaendigen optionalen Bilddateien.
+- Vor dem Merge: PHP-/Python-/Docker-Preflight auf dem Server sowie
+  ein Vergleich von Profil-, Ganzkoerper- und Hologramm-Auftraegen.
+- Bildreferenzen verbessern nur die Chance auf Identitaetstreue,
+  pixelgenaue Reproduktion wird nicht garantiert.
