@@ -303,6 +303,23 @@ img_gen_test($r['error'] === 'reference_unavailable' && $leases === 1 && $unleas
   && in_array(['DELETE','/jobs/' . $jobId,null], $GLOBALS['img_calls'], true),
   'self-portrait jobs without actually attached references abort instead of drawing another woman');
 
+// The gallery ships with CoreAI. Even an old worker claiming to have used
+// one fallback picture cannot replace the shipped canonical Mara set.
+$queuedWrongGallery = $job('queued', 'load')[1]['job'];
+$queuedWrongGallery['reference_count'] = 1;
+$queuedWrongGallery['curated_mara_count'] = 0;
+$http = $fake([
+  ['GET', '/health', $ready],
+  ['POST', '/jobs', [202, ['ok'=>true, 'job'=>$queuedWrongGallery], '']],
+  ['DELETE', '/jobs/' . $jobId, [200, ['ok'=>true], '']],
+]);
+$r = coreui_image_generate($pdo, 5, 'ember', 'Mara beside a spaceport', 'normal',
+  $lease, $unlease, static function (): void {}, $never, $http, null, 'default');
+img_gen_test(is_file($root . '/images/mara_references/mara_identity_primary.png')
+  && $r['error'] === 'reference_unavailable'
+  && in_array(['DELETE','/jobs/' . $jobId,null], $GLOBALS['img_calls'], true),
+  'canonical Mara gallery must actually reach the worker, not fallback silently');
+
 // A custom account avatar must not receive the official Mara gallery selector.
 $http = $fake([['GET', '/health', $ready], ['POST', '/jobs', [503, ['ok' => false, 'error' => 'image_busy'], '']]]);
 $r = coreui_image_generate($pdo, 5, 'ember', 'Ember wearing a blue jacket', 'normal',
