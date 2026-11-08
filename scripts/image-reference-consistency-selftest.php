@@ -66,6 +66,14 @@ ref_test(str_starts_with($style, 'REFERENCE CONSISTENCY (STYLE ONLY):')
   && str_ends_with($style, 'draw a new spacecraft'),
   'style-only mode must not copy referenced people and objects');
 
+$forcedStyle = coreui_image_reference_prompt('two people fighting', null, $two, 1200, 'style');
+ref_test(str_starts_with($forcedStyle, 'REFERENCE CONSISTENCY (STYLE ONLY):')
+  && !str_contains($forcedStyle, 'Do not swap faces'),
+  'explicit user style-only choice overrides the model mentioning human subjects');
+$protectedMara = coreui_image_reference_prompt('Mara in watercolor', 'default', $one, 1200, 'style');
+ref_test(str_starts_with($protectedMara, 'REFERENCE CONSISTENCY (IDENTITY):'),
+  'a canonical Mara self-portrait is not replaced with a style-only reference');
+
 $multi = coreui_image_reference_prompt('two warriors fighting at sunset', null, $two, 1200);
 ref_test(str_contains($multi, 'MULTI-REFERENCE:')
   && str_contains($multi, 'Do not swap faces')
