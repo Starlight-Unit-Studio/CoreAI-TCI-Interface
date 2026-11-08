@@ -430,7 +430,13 @@ function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $
     // otherwise a self portrait is text-to-image and FLUX invents a stranger.
     // The worker reports actual resolved -r files (including canonical angles).
     $requiredReferences = count($references) + ($reference !== null ? 1 : 0);
-    if ($requiredReferences > 0 && (int)($job['reference_count'] ?? 0) < $requiredReferences) {
+    // If this deployment ships Mara's canonical primary photo, an older
+    // worker must not silently fall back to mara_winter.jpg. The selected
+    // custom account portrait never inherits the canonical gallery.
+    $canonicalAvailable = $reference === 'default'
+      && is_file(dirname(__DIR__) . '/images/mara_references/mara_identity_primary.png');
+    if (($requiredReferences > 0 && (int)($job['reference_count'] ?? 0) < $requiredReferences)
+        || ($canonicalAvailable && (int)($job['curated_mara_count'] ?? 0) < 1)) {
       $http('DELETE', '/jobs/' . $jobId, null, 5);
       return ['ok' => false, 'error' => 'reference_unavailable', 'detail' => ''];
     }
