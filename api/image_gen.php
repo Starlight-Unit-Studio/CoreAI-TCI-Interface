@@ -140,6 +140,10 @@ function coreui_image_attachment_creation_requested(string $message, ?array $int
 function coreui_image_attachment_fallback_prompt(string $message, string $visionSummary): string {
   $message = mb_substr(trim((string)preg_replace('~\\s+~u', ' ', $message)), 0, 380);
   $summary = mb_substr(trim((string)preg_replace('~\\s+~u', ' ', $visionSummary)), 0, 490);
+  if (coreui_image_reference_mode($message, false, true) === 'style') {
+    return 'Create ONE NEW image of the requested scene. Use the supplied reference images ONLY as visual style guides, '
+      . 'not as subjects to copy. Follow the requested style and scene: ' . $message;
+  }
   return 'Create ONE NEW coherent image using the supplied reference pictures. Preserve the depicted subjects, '
     . 'their recognizable costumes and distinguishing visual details. Compose the scene requested by the user: '
     . $message . '. The previously observed subjects were: ' . $summary;
