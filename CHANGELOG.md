@@ -5,6 +5,7 @@
 - Repair the voice-input preflight regression introduced with 0.6.47: the selftest now checks the current voice image instructions instead of expecting the removed generic self-portrait wording.
 - Verify both kinds of spoken image requests independently: normal subjects continue to use `[BILD: ...]` / `[BILD GROSS: ...]`, while explicit pictures of the TCI use `[BILD ICH: ...]` / `[BILD GROSS ICH: ...]` and the account's portrait reference.
 - Keep the safeguards that disable image markers when the image tool is unavailable and preserve all four markers during voice reply cleanup.
+- Correct the stale browser cache keys left by 0.6.47 using the repository's actual SHA-256-based 80-bit decimal fingerprint algorithm, including the protocols-page bootstrap. All other static assets remain unchanged.
 - No change to Mara's Modelfile, voice engine, image model, Nginx configuration, account data, installer or the 1/2/4-image queue. The missing Nginx default site remains an informational warning, not the cause of this failure.
 
 ## 0.6.47 - 08.11.2026
