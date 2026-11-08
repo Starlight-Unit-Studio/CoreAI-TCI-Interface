@@ -1,0 +1,14 @@
+COREAI: TCI INTERFACE | CHANGELOG 0.6.49
+08.11.2026
+
+- Fix generic [BILD: ...] responses to a natural Mara self-portrait request. The request "wie siehst du eigentlich aus ... kannste mir das auch auf einem bild zeigen?" is recognized as a portrait even when Mara did not include ICH.
+- Keep display-name aliases and English appearance questions supported.
+- Apply the same reference selection to genuine recorded voice input, not to third-party uploaded audio.
+- Preserve the existing user profile avatar override and fallback to images/mara_winter.jpg.
+- Strengthen compact and normal image prompts to preserve the reference person's face and refrain from inventing cyborg markings without a user request.
+- Include a reference identity anchor in image service prompts and a safe canonical/personal source indicator in work diagnostics. Never expose custom media UUIDs.
+- Ensure unrelated subjects such as "Zeichne Superwoman" do not inherit Mara's face and roleplay portraits still do.
+- Add tests for text, voice, model markers, size and normal subjects.
+- Leave FLUX.2 model pin, queue, user media storage, installer, database and Nginx untouched.
+
+VERIFICATION: Isolated PHP request-intent smoke test passed. Repository/production integration and visual reference fidelity remain to be verified before merge.
