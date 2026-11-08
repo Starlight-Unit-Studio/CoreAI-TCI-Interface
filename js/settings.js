@@ -372,7 +372,7 @@
       // 0.5.79: the Core is chosen in the chat menu; the window estimate follows it.
       selectedModelOverride = s.model_override || '';
       startText('core', String(data.core_label || data.default_label || selectedModelOverride || defaultModel || 'Core')
-        .replace(/^TCI:\s*/, ''));
+        .replace(/^TCI(?::\s*|\s+)/, ''));
       startText('thinking', 'Denken ' + (s.thinking_enabled === false ? 'aus' : 'an')
         + (selectedModelOverride ? '' : ' · Standard-Core'));
       var externalConfigured = data.external && data.external.configured === true;

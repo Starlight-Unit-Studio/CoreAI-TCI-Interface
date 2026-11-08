@@ -1,0 +1,21 @@
+CoreAI: TCI Interface 0.6.54
+Date: 08.11.2026
+Branch: feat/core-tier-names-model-cleanup-0654
+Base: main 0.6.53
+
+GOAL
+- Every Core tier label becomes "TCI Core Schnell/Normal/Plus/Pro/Premium".
+- Fresh Ollama model names: ember-core:e2b, ember-core:e4b, ember-core:12b, ember-core:26b, ember-core:31b. Keep each Gemma version suffix exactly, including the e prefix. No "ui" in the new model family.
+- Preserve existing installed model tags such as ember-coreui:latest for backward compatibility, until account choices and model ownership can be migrated safely.
+
+DESIGN
+- api/model_catalog.php owns tier label and tag mappings; recognizes legacy family separately.
+- api/core_install.php owns chat installer and updater. Pull Gemma, build Core, verify Ollama Modelfile SYSTEM text, then delete only a temporary Gemma tag first introduced by this CoreAI job. Protect pre-existing Gemma and cloud tags. A failed cleanup is reported as warning; failed core creation never deletes source.
+- scripts/install.sh and scripts/install-native.sh apply the same guard, with a new default model name ember-core:e4b. Existing on-disk installation configuration remains unchanged.
+- js/coreui-core-mode.js and js/coreui-core-install.js reflect renamed tiers in UI and legends. The technical model identifiers remain exact and truthful.
+
+ROLLBACK / SAFETY
+- No automatic deletion of ember-coreui:latest, and no forced rewrite of user DB model overrides or original operator Modelfile.
+- Ollama deduplicates identical blobs by content, so removing a tag often frees only its manifest, not a duplicate model copy.
+- Cloud tags such as gemma4:31b-cloud stay unchanged, since Ollama Cloud does not create a local model image.
+- Verify php syntax, CLI regressions, asset keys, branding and native/Docker preflight before merge. Live installation and Ollama source removal must be verified on the operator's server.

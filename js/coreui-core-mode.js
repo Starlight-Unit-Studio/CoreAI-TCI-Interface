@@ -36,14 +36,22 @@
   }
   function isCloud(name) { return /(?:^|[:._-])cloud(?:$|[:._-])/i.test(String(name || '')); }
   function sameCore(a, b) { return !!modelKey(a) && modelKey(a) === modelKey(b); }
-  function shortLabel(label) { return String(label || '').replace(/^TCI:\s*/, '') || 'Core'; }
+  function shortLabel(label) { return String(label || '').replace(/^TCI\s+/, '') || 'Core'; }
 
   // Mirror of coreui_core_tier() for names the server has not labelled yet.
-  var TIERS = [['e2b', 'TCI: Mara Schnell', 'Gemma 4 E2B'], ['e4b', 'TCI: Mara Normal', 'Gemma 4 E4B'],
-    ['12b', 'TCI: Mara Plus', 'Gemma 4 12B'], ['26b', 'TCI: Mara Pro', 'Gemma 4 26B'],
-    ['31b', 'TCI: Mara Premium', 'Gemma 4 31B']];
+  var TIERS = [['e2b', 'TCI Core Schnell', 'Gemma 4 E2B'], ['e4b', 'TCI Core Normal', 'Gemma 4 E4B'],
+    ['12b', 'TCI Core Plus', 'Gemma 4 12B'], ['26b', 'TCI Core Pro', 'Gemma 4 26B'],
+    ['31b', 'TCI Core Premium', 'Gemma 4 31B']];
   function tierLabel(name) {
     var m = String(name || '').trim().toLowerCase();
+    if (/^ember-core(?:ui)?:e2b$/.test(m)) return TIERS[0][1];
+    if (/^ember-core(?:ui)?:e4b$/.test(m)) return TIERS[1][1];
+    if (/^ember-core(?:ui)?:(?:12b|26b|31b)$/.test(m)) {
+      var suffix = m.split(':')[1];
+      for (var t = 2; t < TIERS.length; t++) {
+        if (TIERS[t][0] === suffix) return TIERS[t][1];
+      }
+    }
     if (!/gemma-?4/.test(m)) return '';
     for (var i = 0; i < TIERS.length; i++) {
       if (new RegExp('(^|[^a-z0-9])' + TIERS[i][0] + '(?![a-z0-9])').test(m)) return TIERS[i][1];
@@ -341,7 +349,7 @@
       TIERS.forEach(function (tier) {
         var names = models.filter(function (n) { return labelOf(n) === tier[1]; });
         var core = names.length ? names.map(function (n) {
-          return n + (sameCore(n, state.defaultModel) ? ' (Maras Core)' : state.mara[modelKey(n)] ? ' (Maras Modelfile)' : '');
+          return n + (sameCore(n, state.defaultModel) ? ' (Standard-Core)' : state.mara[modelKey(n)] ? ' (TCI Modelfile)' : '');
         }).join(', ') : tier[2];
         var note = !names.length ? (state.models === null ? '' : 'nicht installiert')
           : names.some(function (n) { return sameCore(n, state.defaultModel); }) ? 'Standard'

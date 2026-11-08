@@ -29,7 +29,7 @@
     install_confirm_required: 'Der Check rät ab. Bitte bestätige die Installation noch einmal.',
     nothing_to_update: 'Es ist noch keine lokale Stufe installiert, es gibt nichts zu aktualisieren.',
     cloud_signin_required: 'Erst den Server mit einem Ollama-Konto verbinden (Ollama Cloud, unten).',
-    nothing_to_remove: 'Hier gibt es nichts zu entfernen; Maras Haupt-Core bleibt immer installiert.',
+    nothing_to_remove: 'Hier gibt es nichts zu entfernen; Der Standard-Core bleibt immer installiert.',
     unknown_tier: 'Diese Stufe kennt der Installer nicht.'
   };
   var RESULT = {updated: 'neue Fassung, neu gebaut', rebuilt: 'Modelfile-Text erneuert', current: 'aktuell'};
@@ -138,7 +138,7 @@
           update.disabled = busy;
           update.addEventListener('click', function () { return start({action: 'core_update', tier: tier.tier}); });
           if ((tier.removable || []).length) actions.appendChild(removeButton(tier, false, busy));
-          else add(li, 'small', 'core-install-tier-keep', 'Maras Haupt-Core bleibt immer installiert.');
+          else add(li, 'small', 'core-install-tier-keep', 'Der Standard-Core bleibt immer installiert.');
         }
         if ((tier.cloud || []).length) actions.appendChild(removeButton(tier, true, busy));
         if (state.confirmRemove && state.confirmRemove.tier === tier.tier) {
@@ -233,7 +233,7 @@
       var parts = [state.auto.last ? 'Zuletzt geprüft: ' + when(state.auto.last) + '.' : 'Noch kein Update gelaufen.'];
       if (state.auto.enabled && state.auto.next) parts.push('Nächstes Auto-Update ab ' + when(state.auto.next) + '.');
       if (state.plan) {
-        parts.push(state.plan.length ? 'Ein Update prüft ' + state.plan.map(function (p) { return p.label.replace(/^TCI:\s*/, ''); }).join(', ') + '.'
+        parts.push(state.plan.length ? 'Ein Update prüft ' + state.plan.map(function (p) { return p.label.replace(/^TCI\s+/, ''); }).join(', ') + '.'
           : 'Noch keine lokale Stufe installiert.');
       }
       text(el.UpdateInfo, parts.join(' '));
@@ -242,8 +242,9 @@
       var last = state.install && state.install.kind === 'update' && !state.install.running ? state.install.results || [] : [];
       show(el.Results, state.mode === 'manage' && last.length > 0);
       last.forEach(function (r) {
-        add(el.Results, 'li', '', r.label + ': ' + (r.result === 'error' ? (r.message || 'Fehler') : (RESULT[r.result] || r.result)))
-          .setAttribute('data-state', r.result === 'error' ? 'bad' : 'ok');
+        add(el.Results, 'li', '', r.label + ': ' + (r.result === 'error' ? (r.message || 'Fehler')
+          : (RESULT[r.result] || r.result) + (r.message ? ' · ' + r.message : '')))
+          .setAttribute('data-state', r.result === 'error' ? 'bad' : r.message ? 'warn' : 'ok');
       });
     }
 
@@ -270,7 +271,7 @@
       if (manage) {
         text(el.Title, 'Cores verwalten');
         text(el.Lead, state.tiers ? 'Ollama bringt die Gemma-Stufen in unregelmäßigen Abständen in neuen Fassungen. '
-          + 'Ein Update lädt nur, was sich geändert hat, und baut Maras Cores danach mit ihrem Modelfile neu.'
+          + 'Ein Update lädt nur geänderte Modell-Layer und baut die TCI Cores anschließend mit dem Modelfile neu.'
           : state.error || 'Lädt die Übersicht …');
         renderTiers();
         show(el.Check, false);
@@ -283,9 +284,9 @@
           show(el.Check, !state.error);
           show(el.Verdict, false);
         } else {
-          text(el.Lead, done ? 'Maras Core für diese Stufe ist gebaut und steht jetzt im Core-Menü.'
+          text(el.Lead, done ? 'Der TCI Core dieser Stufe ist fertig und steht im Core-Menü.'
             : 'Diese Stufe ist auf dem Server noch nicht installiert. Ollama lädt dafür ca. '
-              + String(check.download_gb).replace('.', ',') + ' GB herunter, danach baut CoreAI daraus Maras Core mit ihrem Modelfile.'
+              + String(check.download_gb).replace('.', ',') + ' GB herunter, danach baut CoreAI daraus den TCI Core mit dem Modelfile.'
               + (check.cloud_base && state.canInstall ? ' Diese Stufe gibt es auch als Cloud-Core ohne Download (Ollama-Konto nötig): unter Cores verwalten.' : ''));
           text(el.Tech, 'Technisch: ' + check.base + ', angelegt als ' + check.core);
           renderRows();
@@ -313,7 +314,7 @@
       } else if (running) {
         note = 'Du kannst das Fenster schließen, ' + (j.kind === 'update' ? 'das Update' : 'die Installation') + ' läuft auf dem Server weiter.';
       } else if (done) {
-        note = manage ? (j.kind === 'update' ? j.message || 'Update fertig.' : j.step || '') : '';
+        note = manage ? (j.kind === 'update' ? j.message || 'Update fertig.' : j.step || '') : (j.message || '');
         go = manage ? '' : 'Jetzt nutzen';
       } else if (failed) {
         note = j.message || (j.kind === 'update' ? 'Das Update ist fehlgeschlagen.' : 'Die Installation ist fehlgeschlagen.');

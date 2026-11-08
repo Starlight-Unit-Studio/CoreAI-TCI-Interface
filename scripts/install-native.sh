@@ -116,7 +116,7 @@ INSTALL_SEARXNG="${COREUI_INSTALL_SEARXNG:-1}"
 INSTALL_BROWSE="${COREUI_INSTALL_BROWSE:-1}"
 FORCE_CONFIG="${COREUI_FORCE_CONFIG:-0}"
 BASE_MODEL="${COREUI_BASE_MODEL:-}"
-MODEL_NAME="${COREUI_MODEL_NAME:-ember-coreui:latest}"
+MODEL_NAME="${COREUI_MODEL_NAME:-ember-core:e4b}"
 LOCK_NAMESPACE="${COREUI_LOCK_NAMESPACE:-ember_coreui_native}"
 SEARXNG_URL="${COREUI_SEARXNG_URL:-http://127.0.0.1:8888/search}"
 
@@ -396,11 +396,13 @@ if [[ -z "$BASE_MODEL" ]]; then
 fi
 [[ "$BASE_MODEL" =~ ^gemma4: ]] || warn "Basismodell $BASE_MODEL ist kein gemma4-Tag. Die Installation wird trotzdem fortgesetzt."
 
+BASE_MODEL_NEW=0
 if ! ollama show "$BASE_MODEL" >/dev/null 2>&1; then
-  log "Lade Ollama-Basismodell $BASE_MODEL. Das kann je nach Modell laenger dauern."
+  log "Lade temporaeres Ollama-Basismodell $BASE_MODEL. Das kann je nach Modell laenger dauern."
   ollama pull "$BASE_MODEL"
+  BASE_MODEL_NEW=1
 else
-  log "Ollama-Basismodell $BASE_MODEL ist bereits vorhanden."
+  log "Ollama-Basismodell $BASE_MODEL war bereits vorhanden und bleibt erhalten."
 fi
 
 if [[ "$MODEL_NAME" != "$BASE_MODEL" ]]; then
@@ -408,6 +410,14 @@ if [[ "$MODEL_NAME" != "$BASE_MODEL" ]]; then
   sed "s|^FROM gemma4:e4b$|FROM $BASE_MODEL|" "$PROJECT_ROOT/config/Modelfile.template" > "$MODELFILE_GENERATED"
   log "Erzeuge lokales CoreAI: TCI Interface-Modell $MODEL_NAME aus $BASE_MODEL."
   ollama create "$MODEL_NAME" -f "$MODELFILE_GENERATED"
+  ollama show "$MODEL_NAME" >/dev/null 2>&1 || die "Der TCI Core $MODEL_NAME konnte nicht verifiziert werden. Basismodell bleibt erhalten."
+  if (( BASE_MODEL_NEW == 1 )) && [[ "$BASE_MODEL" == gemma4:* ]]; then
+    if ollama rm "$BASE_MODEL"; then
+      log "Temporaeren Ollama-Basistag $BASE_MODEL nach erfolgreicher Core-Pruefung entfernt."
+    else
+      warn "Core $MODEL_NAME ist bereit, aber der temporaere Basistag $BASE_MODEL konnte nicht entfernt werden."
+    fi
+  fi
 else
   warn 'COREUI_MODEL_NAME entspricht dem Basismodell. Das eigene Modelfile wird deshalb nicht erzeugt.'
 fi

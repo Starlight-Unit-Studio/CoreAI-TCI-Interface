@@ -59,22 +59,22 @@ const ROWS = [
   {key: 'disk', label: 'Speicherplatz', value: '800 GB frei · Download ca. 8 GB', state: 'ok'},
   {key: 'speed', label: 'Tempo', value: 'mittel (Richtwert für den Prozessor)', state: 'ok'},
 ];
-const check = extra => Object.assign({tier: 'plus', label: 'TCI: Mara Plus', base: 'gemma4:12b', core: 'ember-coreui:12b',
+const check = extra => Object.assign({tier: 'plus', label: 'TCI Core Plus', base: 'gemma4:12b', core: 'ember-core:12b',
   download_gb: 8, installed: false, verdict: 'gut', blocked: false, rows: ROWS, cloud_base: null}, extra || {});
 const TIERS = [
-  {tier: 'schnell', label: 'TCI: Mara Schnell', base: 'gemma4:e2b', download_gb: 7.5, local: ['gemma4:e2b'], removable: ['gemma4:e2b'], cloud: [],
+  {tier: 'schnell', label: 'TCI Core Schnell', base: 'gemma4:e2b', download_gb: 7.5, local: ['gemma4:e2b'], removable: ['gemma4:e2b'], cloud: [],
     alias_of: 'gemma4:e4b', cloud_base: null, cloud_missing: false, status: 'installed'},
-  {tier: 'normal', label: 'TCI: Mara Normal', base: 'gemma4:e4b', download_gb: 9.5, local: ['ember-coreui:latest', 'gemma4:e4b'], removable: ['gemma4:e4b'],
+  {tier: 'normal', label: 'TCI Core Normal', base: 'gemma4:e4b', download_gb: 9.5, local: ['ember-coreui:latest', 'gemma4:e4b'], removable: ['gemma4:e4b'],
     cloud: [], alias_of: null, cloud_base: null, cloud_missing: false, status: 'installed'},
-  {tier: 'plus', label: 'TCI: Mara Plus', base: 'gemma4:12b', download_gb: 8, local: [], cloud: [], alias_of: null,
+  {tier: 'plus', label: 'TCI Core Plus', base: 'gemma4:12b', download_gb: 8, local: [], cloud: [], alias_of: null,
     cloud_base: null, cloud_missing: false, status: 'missing'},
-  {tier: 'pro', label: 'TCI: Mara Pro', base: 'gemma4:26b', download_gb: 19, local: ['gemma4:26b'], removable: ['gemma4:26b'], cloud: [],
+  {tier: 'pro', label: 'TCI Core Pro', base: 'gemma4:26b', download_gb: 19, local: ['gemma4:26b'], removable: ['gemma4:26b'], cloud: [],
     alias_of: 'gemma4:e4b', cloud_base: null, cloud_missing: false, status: 'installed'},
-  {tier: 'premium', label: 'TCI: Mara Premium', base: 'gemma4:31b', download_gb: 20, local: [], cloud: ['gemma4:31b-cloud'],
+  {tier: 'premium', label: 'TCI Core Premium', base: 'gemma4:31b', download_gb: 20, local: [], cloud: ['gemma4:31b-cloud'],
     alias_of: null, cloud_base: 'gemma4:31b-cloud', cloud_missing: false, status: 'cloud'},
 ];
-const PLAN = [{base: 'gemma4:e2b', label: 'TCI: Mara Schnell'}, {base: 'gemma4:e4b', label: 'TCI: Mara Normal'},
-  {base: 'gemma4:26b', label: 'TCI: Mara Pro'}];
+const PLAN = [{base: 'gemma4:e2b', label: 'TCI Core Schnell'}, {base: 'gemma4:e4b', label: 'TCI Core Normal'},
+  {base: 'gemma4:26b', label: 'TCI Core Pro'}];
 const SIGNIN = 'https://ollama.com/connect?name=coreai&key=c3NoLWVkMjU1MTk';
 
 function server(opts) {
@@ -112,7 +112,7 @@ function server(opts) {
         return reply(200, {ok: true, auto: st.auto});
       }
       if (body.action === 'core_update') {
-        st.install = {kind: 'update', tier: 'schnell', label: 'TCI: Mara Schnell', phase: 'pull', step: 'Startet …', item: 1, items: 3,
+        st.install = {kind: 'update', tier: 'schnell', label: 'TCI Core Schnell', phase: 'pull', step: 'Startet …', item: 1, items: 3,
           percent: 0, completed: 0, total: 0, running: true};
         return reply(200, {ok: true, install: st.install});
       }
@@ -120,11 +120,11 @@ function server(opts) {
         return reply(200, {ok: true, removed: body.tier === 'pro' ? ['gemma4:26b'] : [], failed: []});
       }
       if (body.action === 'core_cloud_add') {
-        st.install = {kind: 'install', cloud: true, tier: 'premium', label: 'TCI: Mara Premium', core: 'gemma4:31b-cloud',
+        st.install = {kind: 'install', cloud: true, tier: 'premium', label: 'TCI Core Premium', core: 'gemma4:31b-cloud',
           phase: 'pull', step: 'Startet …', percent: 0, running: true};
         return reply(200, {ok: true, install: st.install});
       }
-      st.install = {tier: 'plus', label: 'TCI: Mara Plus', core: 'ember-coreui:12b', phase: 'pull', step: 'Startet …',
+      st.install = {tier: 'plus', label: 'TCI Core Plus', core: 'ember-core:12b', phase: 'pull', step: 'Startet …',
         percent: 0, completed: 0, total: 0, running: true};
       return reply(200, {ok: true, install: st.install});
     }
@@ -146,9 +146,9 @@ assert.equal(api.gb(20 * 1073741824), '20 GB');
   // Admin, good verdict: check, install, progress, done, use it.
   let {els, doc} = page();
   let srv = server({statuses: [
-    {tier: 'plus', label: 'TCI: Mara Plus', core: 'ember-coreui:12b', phase: 'pull', step: 'Lädt herunter …',
+    {tier: 'plus', label: 'TCI Core Plus', core: 'ember-core:12b', phase: 'pull', step: 'Lädt herunter …',
       percent: 50, completed: 4 * 1073741824, total: 8 * 1073741824, running: true},
-    {tier: 'plus', label: 'TCI: Mara Plus', core: 'ember-coreui:12b', phase: 'done', step: 'Fertig: TCI: Mara Plus ist bereit.',
+    {tier: 'plus', label: 'TCI Core Plus', core: 'ember-core:12b', phase: 'done', step: 'Fertig: TCI Core Plus ist bereit.',
       percent: 100, running: false},
   ]});
   const timers = [];
@@ -161,9 +161,9 @@ assert.equal(api.gb(20 * 1073741824), '20 GB');
   await win.open('plus');
   assert.equal(els.coreInstall.hidden, false);
   assert.equal(srv.calls[0].url, './api/user_settings.php?core_install=plus');
-  assert.equal(els.coreInstallTitle.textContent, 'TCI: Mara Plus');
-  assert.match(els.coreInstallLead.textContent, /noch nicht installiert.*ca\. 8 GB.*Maras Core mit ihrem Modelfile/);
-  assert.match(els.coreInstallTech.textContent, /gemma4:12b, angelegt als ember-coreui:12b/);
+  assert.equal(els.coreInstallTitle.textContent, 'TCI Core Plus');
+  assert.match(els.coreInstallLead.textContent, /noch nicht installiert.*ca\. 8 GB.*den TCI Core mit dem Modelfile/);
+  assert.match(els.coreInstallTech.textContent, /gemma4:12b, angelegt als ember-core:12b/);
   const rows = els.coreInstallRows.children;
   assert.equal(rows.length, 10, 'five rows: label and value');
   assert.deepEqual([rows[0].textContent, rows[1].textContent], ['Ollama', 'Version 0.40.6 erreichbar']);
@@ -192,14 +192,14 @@ assert.equal(api.gb(20 * 1073741824), '20 GB');
   assert.equal(els.coreInstallBarWrap.getAttribute('aria-valuenow'), '50');
   assert.equal(els.coreInstallStep.textContent, 'Lädt herunter … 4,0 GB von 8,0 GB (50 %)');
   await timers.shift()();
-  assert.deepEqual(installed, ['ember-coreui:12b'], 'the Core list is refreshed once');
+  assert.deepEqual(installed, ['ember-core:12b'], 'the Core list is refreshed once');
   assert.equal(timers.length, 0, 'polling stops when done');
-  assert.match(els.coreInstallStep.textContent, /Fertig: TCI: Mara Plus ist bereit/);
+  assert.match(els.coreInstallStep.textContent, /Fertig: TCI Core Plus ist bereit/);
   assert.match(els.coreInstallLead.textContent, /steht jetzt im Core-Menü/);
   assert.equal(els.coreInstallGo.textContent, 'Jetzt nutzen');
   assert.equal(els.coreInstallVerdict.hidden, true);
   await els.coreInstallGo.handlers.click();
-  assert.deepEqual(chosen, ['ember-coreui:12b'], 'the new Core is chosen');
+  assert.deepEqual(chosen, ['ember-core:12b'], 'the new Core is chosen');
   assert.equal(els.coreInstall.hidden, true);
   assert.equal(closed, 1);
 
@@ -241,10 +241,10 @@ assert.equal(api.gb(20 * 1073741824), '20 GB');
   // Another tier is installing: wait for it, follow it, no start.
   ({els, doc} = page());
   const later = [];
-  srv = server({install: {tier: 'pro', label: 'TCI: Mara Pro', phase: 'pull', percent: 10, running: true}});
+  srv = server({install: {tier: 'pro', label: 'TCI Core Pro', phase: 'pull', percent: 10, running: true}});
   win = api.create(doc, srv.fetch, fn => later.push(fn), {});
   await win.open('plus');
-  assert.match(els.coreInstallNote.textContent, /Gerade wird TCI: Mara Pro installiert/);
+  assert.match(els.coreInstallNote.textContent, /Gerade wird TCI Core Pro installiert/);
   assert.equal(els.coreInstallGo.hidden, true);
   assert.equal(els.coreInstallProgress.hidden, true, 'no progress bar for a foreign tier');
   assert.equal(later.length, 1, 'the window follows until the other install ends');
@@ -287,12 +287,12 @@ assert.equal(api.gb(20 * 1073741824), '20 GB');
   const ticks = [];
   const refreshed = [];
   srv = server({statuses: [
-    {kind: 'update', tier: 'normal', label: 'TCI: Mara Normal', phase: 'pull', step: 'Lädt herunter …', item: 2, items: 3,
+    {kind: 'update', tier: 'normal', label: 'TCI Core Normal', phase: 'pull', step: 'Lädt herunter …', item: 2, items: 3,
       percent: 10, completed: 1073741824, total: 9.5 * 1073741824, running: true},
     {kind: 'update', tier: '', label: 'Update', phase: 'done', step: 'Update fertig.', percent: 100, running: false,
       message: 'Eine Stufe hatte eine neue Fassung und wurde neu gebaut.',
-      results: [{label: 'TCI: Mara Schnell', result: 'current'}, {label: 'TCI: Mara Normal', result: 'updated'},
-        {label: 'TCI: Mara Pro', result: 'error', message: 'Ollama meldet: kaputt'}]},
+      results: [{label: 'TCI Core Schnell', result: 'current'}, {label: 'TCI Core Normal', result: 'updated'},
+        {label: 'TCI Core Pro', result: 'error', message: 'Ollama meldet: kaputt'}]},
   ]});
   win = api.create(doc, srv.fetch, fn => ticks.push(fn), {installed: core => refreshed.push(core || '')});
   await win.manage();
@@ -306,14 +306,14 @@ assert.equal(api.gb(20 * 1073741824), '20 GB');
   assert.equal(els.coreInstallGo.hidden, true);
   const items = els.coreInstallTierList.children;
   assert.equal(items.length, 5);
-  assert.match(items[0].textContent, /TCI: Mara Schnell installiert/);
+  assert.match(items[0].textContent, /TCI Core Schnell installiert/);
   assert.match(items[0].textContent, /gemma4:e2b ist nur ein zweiter Name für gemma4:e4b\. Ein Update lädt das echte e2b \(ca\. 7,5 GB\)/);
   assert.match(items[2].textContent, /nicht installiert/);
   assert.match(items[4].textContent, /nur Cloud.*gemma4:31b-cloud.*Lokal installieren/);
   assert.equal(els.coreInstallMaint.hidden, false);
   assert.equal(els.coreInstallToManage.hidden, true, 'no link to itself');
   assert.equal(els.coreInstallAuto.checked, false);
-  assert.equal(els.coreInstallUpdateInfo.textContent, 'Noch kein Update gelaufen. Ein Update prüft Mara Schnell, Mara Normal, Mara Pro.');
+  assert.equal(els.coreInstallUpdateInfo.textContent, 'Noch kein Update gelaufen. Ein Update prüft Core Schnell, Core Normal, Core Pro.');
   assert.equal(els.coreInstallCancel.textContent, 'Schließen');
 
   els.coreInstallAuto.checked = true;
@@ -329,7 +329,7 @@ assert.equal(api.gb(20 * 1073741824), '20 GB');
   assert.equal(els.coreInstallUpdateNow.disabled, true, 'one job at a time');
   assert.match(els.coreInstallNote.textContent, /das Update läuft auf dem Server weiter/);
   await ticks.shift()();
-  assert.equal(els.coreInstallStep.textContent, 'TCI: Mara Normal (2 von 3): Lädt herunter … 1,0 GB von 9,5 GB (10 %)');
+  assert.equal(els.coreInstallStep.textContent, 'TCI Core Normal (2 von 3): Lädt herunter … 1,0 GB von 9,5 GB (10 %)');
   await ticks.shift()();
   assert.equal(ticks.length, 0, 'polling stops when the update is done');
   assert.equal(refreshed.length, 1, 'the Core menu is refreshed');
@@ -337,8 +337,8 @@ assert.equal(api.gb(20 * 1073741824), '20 GB');
   assert.equal(els.coreInstallNote.textContent, 'Eine Stufe hatte eine neue Fassung und wurde neu gebaut.');
   assert.equal(els.coreInstallResults.hidden, false);
   assert.deepEqual(els.coreInstallResults.children.map(li => [li.textContent, li.getAttribute('data-state')]), [
-    ['TCI: Mara Schnell: aktuell', 'ok'], ['TCI: Mara Normal: neue Fassung, neu gebaut', 'ok'],
-    ['TCI: Mara Pro: Ollama meldet: kaputt', 'bad']]);
+    ['TCI Core Schnell: aktuell', 'ok'], ['TCI Core Normal: neue Fassung, neu gebaut', 'ok'],
+    ['TCI Core Pro: Ollama meldet: kaputt', 'bad']]);
 
   // 0.5.77: each installed tier can be updated alone and removed with two taps;
   // Mara's own Core is never offered for removal.
@@ -353,7 +353,7 @@ assert.equal(api.gb(20 * 1073741824), '20 GB');
   };
   assert.deepEqual(actionsOf(0).map(b => b.textContent), ['Aktualisieren', 'Deinstallieren']);
   assert.deepEqual(actionsOf(1).map(b => b.textContent), ['Aktualisieren'], 'no removal for Mara\'s own Core');
-  assert.match(els.coreInstallTierList.children[1].textContent, /Maras Haupt-Core bleibt immer installiert/);
+  assert.match(els.coreInstallTierList.children[1].textContent, /Der Standard-Core bleibt immer installiert/);
   assert.deepEqual(actionsOf(4).map(b => b.textContent), ['Cloud entfernen', 'Lokal installieren']);
   await actionsOf(0)[0].handlers.click();
   assert.deepEqual(JSON.parse(srv.calls.filter(c => c.init.method === 'POST').pop().init.body), {action: 'core_update', tier: 'schnell'});
@@ -389,8 +389,8 @@ assert.equal(api.gb(20 * 1073741824), '20 GB');
   const cloudTicks = [];
   srv = server({tiers: missingPremium, cloudAfter: {version: '0.40.6', version_ok: true, min_version: '0.12.0',
     account: {state: 'connected', name: 'mara-ops', plan: 'free'}},
-    statuses: [{kind: 'install', cloud: true, tier: 'premium', label: 'TCI: Mara Premium', core: 'gemma4:31b-cloud', phase: 'done',
-      step: 'Fertig: TCI: Mara Premium (Cloud) ist bereit.', percent: 100, running: false}]});
+    statuses: [{kind: 'install', cloud: true, tier: 'premium', label: 'TCI Core Premium', core: 'gemma4:31b-cloud', phase: 'done',
+      step: 'Fertig: TCI Core Premium (Cloud) ist bereit.', percent: 100, running: false}]});
   win = api.create(doc, srv.fetch, fn => cloudTicks.push(fn), {});
   await win.manage();
   assert.equal(els.coreInstallCloud.hidden, false);
@@ -414,7 +414,7 @@ assert.equal(api.gb(20 * 1073741824), '20 GB');
   assert.deepEqual(JSON.parse(srv.calls.filter(c => c.init.method === 'POST').pop().init.body), {action: 'core_cloud_add', tier: 'premium'});
   assert.equal(els.coreInstallProgress.hidden, false, 'the overview follows the cloud Core it added');
   await cloudTicks.shift()();
-  assert.equal(els.coreInstallNote.textContent, 'Fertig: TCI: Mara Premium (Cloud) ist bereit.');
+  assert.equal(els.coreInstallNote.textContent, 'Fertig: TCI Core Premium (Cloud) ist bereit.');
 
   // Old Ollama: a clear note instead of a link.
   ({els, doc} = page());
@@ -427,7 +427,7 @@ assert.equal(api.gb(20 * 1073741824), '20 GB');
   // Install view for admins: switch and update there too, a way to Cores
   // verwalten, and the cloud hint for a tier that also runs in the cloud.
   ({els, doc} = page());
-  srv = server({check: {tier: 'premium', label: 'TCI: Mara Premium', base: 'gemma4:31b', cloud_base: 'gemma4:31b-cloud'}});
+  srv = server({check: {tier: 'premium', label: 'TCI Core Premium', base: 'gemma4:31b', cloud_base: 'gemma4:31b-cloud'}});
   win = api.create(doc, srv.fetch, () => {}, {});
   await win.open('premium');
   assert.equal(els.coreInstallMaint.hidden, false);
@@ -440,7 +440,7 @@ assert.equal(api.gb(20 * 1073741824), '20 GB');
 
   // A running update blocks installing; non-admins see no update controls.
   ({els, doc} = page());
-  srv = server({install: {kind: 'update', tier: 'normal', label: 'TCI: Mara Normal', phase: 'pull', running: true, item: 2, items: 3}});
+  srv = server({install: {kind: 'update', tier: 'normal', label: 'TCI Core Normal', phase: 'pull', running: true, item: 2, items: 3}});
   win = api.create(doc, srv.fetch, () => {}, {});
   await win.open('plus');
   assert.match(els.coreInstallNote.textContent, /Gerade läuft ein Update der Cores/);

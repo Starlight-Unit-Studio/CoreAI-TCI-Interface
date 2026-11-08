@@ -78,17 +78,20 @@ function coreui_ollama_model_exists(string $name): bool {
  * 0.5.76: TCI names for the Gemma 4 tiers (lore in the chat). The size in
  * the name decides, also for cloud variants: e2b Schnell, e4b Normal,
  * 12b Plus, 26b Pro, 31b Premium. Cores the chat installer made from Mara's
- * Modelfile carry her name with the size as tag (ember-coreui:12b). Other
+ * Modelfile carry the stable CoreAI name with its size tag (ember-core:12b). Other
  * Cores keep their own name.
  */
 const COREUI_CORE_TIER_LABELS = [
-  'schnell' => 'TCI: Mara Schnell',
-  'normal' => 'TCI: Mara Normal',
-  'plus' => 'TCI: Mara Plus',
-  'pro' => 'TCI: Mara Pro',
-  'premium' => 'TCI: Mara Premium',
+  'schnell' => 'TCI Core Schnell',
+  'normal' => 'TCI Core Normal',
+  'plus' => 'TCI Core Plus',
+  'pro' => 'TCI Core Pro',
+  'premium' => 'TCI Core Premium',
 ];
-const COREUI_CORE_TIER_SIZES = ['e2b'=>'schnell', 'e4b'=>'normal', '12b'=>'plus', '26b'=>'pro', '31b'=>'premium'];
+// Preserve upstream Gemma tier suffixes verbatim in our CoreAI tags.
+const COREUI_CORE_TIER_SIZES = [
+  'e2b'=>'schnell', 'e4b'=>'normal', '12b'=>'plus', '26b'=>'pro', '31b'=>'premium',
+];
 
 /*
  * Local tiers the chat installer may pull (api/core_install.php). Sizes as
@@ -98,24 +101,23 @@ const COREUI_CORE_TIER_SIZES = ['e2b'=>'schnell', 'e4b'=>'normal', '12b'=>'plus'
  * speed hint.
  */
 const COREUI_CORE_INSTALL_CATALOG = [
-  'schnell' => ['base'=>'gemma4:e2b', 'download_gb'=>7.5, 'active_b'=>2.3],
-  'normal' => ['base'=>'gemma4:e4b', 'download_gb'=>9.5, 'active_b'=>4.5],
-  'plus' => ['base'=>'gemma4:12b', 'download_gb'=>8.0, 'active_b'=>12.0],
-  'pro' => ['base'=>'gemma4:26b', 'download_gb'=>19.0, 'active_b'=>4.0],
-  'premium' => ['base'=>'gemma4:31b', 'download_gb'=>20.0, 'active_b'=>31.0],
+  'schnell' => ['base'=>'gemma4:e2b', 'tag'=>'e2b', 'download_gb'=>7.5, 'active_b'=>2.3],
+  'normal' => ['base'=>'gemma4:e4b', 'tag'=>'e4b', 'download_gb'=>9.5, 'active_b'=>4.5],
+  'plus' => ['base'=>'gemma4:12b', 'tag'=>'12b', 'download_gb'=>8.0, 'active_b'=>12.0],
+  'pro' => ['base'=>'gemma4:26b', 'tag'=>'26b', 'download_gb'=>19.0, 'active_b'=>4.0],
+  'premium' => ['base'=>'gemma4:31b', 'tag'=>'31b', 'download_gb'=>20.0, 'active_b'=>31.0],
 ];
 
-/** Name of Mara's Cores without tag; a plain Gemma default falls back to ember-coreui. */
+/** The current CoreAI model family. The old ember-coreui family remains readable. */
 function coreui_core_mara_family(): string {
-  $default = strtolower(trim(defined('STU_EMBER_MODEL') ? (string)STU_EMBER_MODEL : 'ember-coreui:latest'));
-  $family = (string)preg_replace('~:[^:/]*$~', '', $default);
-  return ($family === '' || preg_match('~gemma~', $family) === 1) ? 'ember-coreui' : $family;
+  return 'ember-core';
 }
 
 function coreui_core_tier(string $model): ?string {
   $m = strtolower(trim($model));
-  $family = coreui_core_mara_family();
-  if (str_starts_with($m, $family . ':')) return COREUI_CORE_TIER_SIZES[substr($m, strlen($family) + 1)] ?? null;
+  foreach (['ember-core', 'ember-coreui'] as $family) {
+    if (str_starts_with($m, $family . ':')) return COREUI_CORE_TIER_SIZES[substr($m, strlen($family) + 1)] ?? null;
+  }
   if (preg_match('~gemma-?4~', $m) !== 1) return null;
   foreach (COREUI_CORE_TIER_SIZES as $size => $tier) {
     if (preg_match('~(?<![a-z0-9])' . $size . '(?![a-z0-9])~', $m) === 1) return $tier;
@@ -182,7 +184,10 @@ function coreui_core_label(string $model): string {
 /** Core made from Mara's Modelfile: her own Core or one the chat installer created. */
 function coreui_core_is_mara(string $model): bool {
   $default = defined('STU_EMBER_MODEL') ? (string)STU_EMBER_MODEL : 'ember-coreui:latest';
-  return coreui_core_same($model, $default) || str_starts_with(strtolower(trim($model)), coreui_core_mara_family() . ':');
+  $normalized = strtolower(trim($model));
+  return coreui_core_same($model, $default)
+    || str_starts_with($normalized, 'ember-core:')
+    || str_starts_with($normalized, 'ember-coreui:');
 }
 
 /**

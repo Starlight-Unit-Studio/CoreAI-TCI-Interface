@@ -1,0 +1,8 @@
+## 0.6.54 - 08.11.2026
+
+- Replace visible "TCI: Mara Schnell/Normal/Plus/Pro/Premium" labels with "TCI Core Schnell/Normal/Plus/Pro/Premium" in core selection, legend, help and Core management. The character/system prompt remains unchanged.
+- Newly downloaded and built local tiers use the exact Gemma suffixes: ember-core:e2b, ember-core:e4b, ember-core:12b, ember-core:26b and ember-core:31b. No invented 2b/4b suffixes and no obsolete "coreui" in the new model names.
+- New Compose/native installations default to ember-core:e4b. Existing configured ember-coreui:latest models, their conversations and user choices stay intact until an explicit safe migration.
+- After building and verifying the own TCI Core, remove a temporary gemma4:* Ollama tag only if the tag was absent before the job and was newly downloaded by that job. Preserve existing upstream tags used by other software and all cloud aliases. Ollama shares underlying weight blobs, so multiple tags do not necessarily occupy duplicate weight storage.
+- Apply this guarded cleanup to chat model installs, native and Compose setup, plus manual and weekly Core updates. Updates also create the new ember-core:* tag for already installed raw-only/legacy tiers without destroying old account selections.
+- Extend selftests for exact tags, UI labels, legacy recognition and cleanup constraints. Preserve operator Modelfiles and original model behavior.

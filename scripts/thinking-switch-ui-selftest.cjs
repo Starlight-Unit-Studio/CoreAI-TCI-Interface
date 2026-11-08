@@ -56,14 +56,14 @@ function page() {
 
 // Labels as api/models.php sends them (coreui_core_label).
 const MODELS = [
-  {name: 'ember-coreui:latest', parameter_size: '7.5B', label: 'TCI: Mara Normal', mara: true, audio: true, live: true},
-  {name: 'gemma4:31b-cloud', parameter_size: '32.7B', label: 'TCI: Mara Premium', audio: null, live: false},
-  {name: 'gemma4:e2b', parameter_size: '5.1B', label: 'TCI: Mara Schnell', audio: true, live: true},
-  {name: 'gemma4:e4b', parameter_size: '7.5B', label: 'TCI: Mara Normal', audio: true, live: true},
+  {name: 'ember-coreui:latest', parameter_size: '7.5B', label: 'TCI Core Normal', mara: true, audio: true, live: true},
+  {name: 'gemma4:31b-cloud', parameter_size: '32.7B', label: 'TCI Core Premium', audio: null, live: false},
+  {name: 'gemma4:e2b', parameter_size: '5.1B', label: 'TCI Core Schnell', audio: true, live: true},
+  {name: 'gemma4:e4b', parameter_size: '7.5B', label: 'TCI Core Normal', audio: true, live: true},
   {name: 'gpt-oss:120b-cloud', parameter_size: '117B', label: 'gpt-oss:120b-cloud'},
 ];
-const MISSING = [{tier: 'plus', label: 'TCI: Mara Plus', base: 'gemma4:12b'},
-  {tier: 'pro', label: 'TCI: Mara Pro', base: 'gemma4:26b'}, {tier: 'premium', label: 'TCI: Mara Premium', base: 'gemma4:31b'}];
+const MISSING = [{tier: 'plus', label: 'TCI Core Plus', base: 'gemma4:12b'},
+  {tier: 'pro', label: 'TCI Core Pro', base: 'gemma4:26b'}, {tier: 'premium', label: 'TCI Core Premium', base: 'gemma4:31b'}];
 
 function server(opts) {
   opts = opts || {};
@@ -76,7 +76,7 @@ function server(opts) {
     calls.push({url, init});
     if (url === './api/models.php') {
       return opts.failModels ? reply(503, {ok: false, error: 'model_catalog_unavailable'})
-        : reply(200, {ok: true, models, default_model: 'ember-coreui:latest', default_label: 'TCI: Mara Normal',
+        : reply(200, {ok: true, models, default_model: 'ember-coreui:latest', default_label: 'TCI Core Normal',
           missing_tiers: opts.missing || MISSING, install: opts.install || null});
     }
     if (url === './api/user_settings.php?core_status=1') return reply(200, {ok: true, loaded: st.loaded});
@@ -96,7 +96,7 @@ function server(opts) {
       }
     }
     return reply(200, {ok: true, settings: {thinking_enabled: st.thinking, model_override: st.override},
-      default_model: 'ember-coreui:latest', default_label: 'TCI: Mara Normal',
+      default_model: 'ember-coreui:latest', default_label: 'TCI Core Normal',
       core_label: labelFor(st.override || 'ember-coreui:latest'), csrf_token: 'tok123', permission_level: opts.level ?? 4});
   };
   return {fetch, calls, st};
@@ -111,10 +111,11 @@ const api = sandbox.window.CoreUICoreMode;
 assert.equal(api.shortCore('ember-coreui:latest'), 'ember-coreui');
 assert.equal(api.shortCore(''), 'Core');
 assert.equal(api.modelKey('Ember-CoreUI'), 'ember-coreui:latest');
+assert.equal(api.modelKey('Ember-Core'), 'ember-core:latest');
 // The client mirror of the TCI tiers (names the server has not labelled yet).
-[['gemma4:e2b', 'TCI: Mara Schnell'], ['gemma4:e4b', 'TCI: Mara Normal'], ['gemma4:26b', 'TCI: Mara Pro'],
- ['gemma4:31b-cloud', 'TCI: Mara Premium'], ['hf.co/x/gemma-4-E4B-it-GGUF:Q8_0', 'TCI: Mara Normal'],
- ['gemma4:12b', 'TCI: Mara Plus'], ['gpt-oss:120b-cloud', ''], ['gemma3:27b', '']]
+[['ember-core:e2b', 'TCI Core Schnell'], ['ember-core:e4b', 'TCI Core Normal'], ['ember-coreui:e2b', 'TCI Core Schnell'], ['gemma4:e2b', 'TCI Core Schnell'], ['gemma4:e4b', 'TCI Core Normal'], ['gemma4:26b', 'TCI Core Pro'],
+ ['gemma4:31b-cloud', 'TCI Core Premium'], ['hf.co/x/gemma-4-E4B-it-GGUF:Q8_0', 'TCI Core Normal'],
+ ['gemma4:12b', 'TCI Core Plus'], ['gpt-oss:120b-cloud', ''], ['gemma3:27b', '']]
   .forEach(([name, label]) => assert.equal(api.tierLabel(name), label, 'tier of ' + name));
 
 // Rows are wrappers (core-mode-item) holding the option and, for cloud tiers, the Lokal/Cloud switch.
@@ -135,7 +136,7 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
   let mode = api.create(doc, srv.fetch, fn => timers.push(fn), {installer: () => ({open: tier => opened.push(tier),
     manage: () => opened.push('manage')})});
   await mode.ready;
-  assert.equal(els.coreModeName.textContent, 'Mara Normal', 'the chip shows the TCI name');
+  assert.equal(els.coreModeName.textContent, 'Core Normal', 'the chip shows the TCI name');
   // 0.5.83: the Ollama list loads with the chat, before the menu is opened.
   assert(srv.calls.some(c => /models\.php/.test(c.url)), 'the Ollama list loads when the chat opens');
   assert.equal(els.coreModeMenu.hidden, true, 'loading the list does not open the menu');
@@ -150,8 +151,8 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
   let opts = options(els.coreModeList);
   assert.deepEqual(opts.map(o => o.getAttribute('data-value')), ['gemma4:e2b', '', 'gemma4:31b-cloud', 'gpt-oss:120b-cloud']);
   assert.deepEqual(opts.map(o => o.children[0].textContent),
-    ['TCI: Mara Schnell', 'TCI: Mara Normal', 'TCI: Mara Premium', 'gpt-oss:120b-cloud']);
-  assert(!opts.some(o => /gemma4|ember-coreui/.test(o.textContent)), 'no technical Gemma names in the menu');
+    ['TCI Core Schnell', 'TCI Core Normal', 'TCI Core Premium', 'gpt-oss:120b-cloud']);
+  assert(!opts.some(o => /gemma4|ember-core(?:ui)?/.test(o.textContent)), 'no technical Gemma names in the menu');
   assert.equal(opts[1].getAttribute('aria-checked'), 'true', 'server default is the current choice');
   assert.match(opts[1].textContent, /Standard · 7\.5B · geladen/, 'standard, size and loaded state');
   assert.match(opts[2].textContent, /32\.7B · Cloud/, 'cloud Core is marked');
@@ -167,8 +168,8 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
   // One row per tier, no name twice. Missing local tiers stay at their place,
   // greyed with a red dot; the Core in use is green, installed ones yellow.
   let all = entries(els.coreModeList);
-  assert.deepEqual(all.map(o => o.children[0].textContent), ['TCI: Mara Schnell', 'TCI: Mara Normal', 'TCI: Mara Plus',
-    'TCI: Mara Pro', 'TCI: Mara Premium', 'gpt-oss:120b-cloud']);
+  assert.deepEqual(all.map(o => o.children[0].textContent), ['TCI Core Schnell', 'TCI Core Normal', 'TCI Core Plus',
+    'TCI Core Pro', 'TCI Core Premium', 'gpt-oss:120b-cloud']);
   assert.equal(new Set(all.map(o => o.children[0].textContent)).size, all.length, 'no name twice');
   assert.deepEqual(all.map(dot), ['standby', 'active', 'missing', 'missing', 'standby', 'standby']);
   // Premium runs in the cloud only: its row shows the cloud Core with a Lokal/Cloud switch,
@@ -203,7 +204,7 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
   const corePost = srv.calls.find(c => c.init.method === 'POST');
   assert.deepEqual(JSON.parse(corePost.init.body), {action: 'core', model_override: 'gemma4:e2b'});
   assert.equal(corePost.init.headers['X-CoreUI-CSRF'], 'tok123');
-  assert.equal(els.coreModeName.textContent, 'Mara Schnell');
+  assert.equal(els.coreModeName.textContent, 'Core Schnell');
   assert.equal(els.coreModeThink.textContent, 'LÄDT');
   assert.equal(els.coreModeChip.getAttribute('data-state'), 'loading');
   assert.match(els.coreModeStatus.textContent, /wird geladen/);
@@ -228,7 +229,7 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
   await mode.choose('gemma4:31b-cloud');
   assert.equal(els.coreModeThink.textContent, 'DENKEN');
   assert.match(els.coreModeStatus.textContent, /Cloud-Core/);
-  assert.equal(els.coreModeName.textContent, 'Mara Premium');
+  assert.equal(els.coreModeName.textContent, 'Core Premium');
   assert.equal(timers.length, 0, 'a cloud Core is never polled');
   await mode.choose('nicht:da');
   assert.match(els.coreModeStatus.textContent, /nicht mehr installiert/);
@@ -269,11 +270,11 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
   assert.equal(els.coreModeMenu.hidden, true, 'opening the legend closes the menu');
   const rows = els.coreLegendRows.children.map(tr => tr.children.map(cell => cell.textContent));
   assert.deepEqual(rows, [
-    ['TCI: Mara Schnell', 'gemma4:e2b', 'installiert'],
-    ['TCI: Mara Normal', 'ember-coreui:latest (Maras Core), gemma4:e4b', 'Standard'],
-    ['TCI: Mara Plus', 'Gemma 4 12B', 'nicht installiert'],
-    ['TCI: Mara Pro', 'Gemma 4 26B', 'nicht installiert'],
-    ['TCI: Mara Premium', 'gemma4:31b-cloud', 'Cloud'],
+    ['TCI Core Schnell', 'gemma4:e2b', 'installiert'],
+    ['TCI Core Normal', 'ember-coreui:latest (Standard-Core), gemma4:e4b', 'Standard'],
+    ['TCI Core Plus', 'Gemma 4 12B', 'nicht installiert'],
+    ['TCI Core Pro', 'Gemma 4 26B', 'nicht installiert'],
+    ['TCI Core Premium', 'gemma4:31b-cloud', 'Cloud'],
   ]);
   // 0.5.83: models outside CoreAI (own names, not Gemma) never appear in the legend.
   assert(!els.coreLegendRows.children.some(tr => tr.children.some(cell => /gpt-oss/.test(cell.textContent))), 'no private model in the legend');
@@ -292,9 +293,9 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
   {
     const p = page();
     const models = MODELS.concat([
-      {name: 'gemma4:12b', parameter_size: '12B', label: 'TCI: Mara Plus'},
-      {name: 'ember-coreui:12b', parameter_size: '12B', label: 'TCI: Mara Plus', mara: true},
-      {name: 'ember-coreui:31b', parameter_size: '31B', label: 'TCI: Mara Premium', mara: true},
+      {name: 'gemma4:12b', parameter_size: '12B', label: 'TCI Core Plus'},
+      {name: 'ember-core:12b', parameter_size: '12B', label: 'TCI Core Plus', mara: true},
+      {name: 'ember-core:31b', parameter_size: '31B', label: 'TCI Core Premium', mara: true},
     ]);
     const s2 = server({models, missing: MISSING.slice(1, 2), level: 1,
       install: {tier: 'pro', phase: 'pull', running: true, percent: 42}});
@@ -303,15 +304,15 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
     await m2.ready;
     await m2.open();
     const list = entries(p.els.coreModeList);
-    assert.equal(list[2].getAttribute('data-value'), 'ember-coreui:12b', 'Mara\'s Core of the tier is listed');
-    assert.equal(list[2].children[0].textContent, 'TCI: Mara Plus');
+    assert.equal(list[2].getAttribute('data-value'), 'ember-core:12b', 'Mara\'s Core of the tier is listed');
+    assert.equal(list[2].children[0].textContent, 'TCI Core Plus');
     assert.equal(dot(list[2]), 'standby');
     assert.match(list[3].textContent, /wird installiert · 42 %/, 'running install in the menu');
     // Local and cloud Premium: one row, local first, the switch chooses the cloud.
     let premiumRow = rowItems(p.els.coreModeList)[4];
-    assert.equal(premiumRow.children[0].getAttribute('data-value'), 'ember-coreui:31b');
+    assert.equal(premiumRow.children[0].getAttribute('data-value'), 'ember-core:31b');
     assert.deepEqual(switchOf(premiumRow).children.map(b => b.getAttribute('aria-pressed')), ['true', 'false']);
-    assert.equal(entries(p.els.coreModeList).filter(o => o.children[0].textContent === 'TCI: Mara Premium').length, 1);
+    assert.equal(entries(p.els.coreModeList).filter(o => o.children[0].textContent === 'TCI Core Premium').length, 1);
     await switchOf(premiumRow).children[1].handlers.click({stopPropagation() {}});
     assert.deepEqual(JSON.parse(s2.calls.filter(c => c.init.method === 'POST').pop().init.body),
       {action: 'core', model_override: 'gemma4:31b-cloud'});
@@ -320,7 +321,7 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
     assert.equal(premiumRow.children[0].getAttribute('aria-checked'), 'true');
     assert.deepEqual(switchOf(premiumRow).children.map(b => b.getAttribute('aria-pressed')), ['false', 'true']);
     await switchOf(premiumRow).children[0].handlers.click({stopPropagation() {}});
-    assert.equal(rowItems(p.els.coreModeList)[4].children[0].getAttribute('data-value'), 'ember-coreui:31b', 'back to local');
+    assert.equal(rowItems(p.els.coreModeList)[4].children[0].getAttribute('data-value'), 'ember-core:31b', 'back to local');
     // Admins get Cores verwalten below the list.
     assert.equal(p.els.coreModeManage.hidden, false);
     await p.els.coreModeManage.handlers.click({stopPropagation() {}});
@@ -328,7 +329,7 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
     assert.equal(p.els.coreModeMenu.hidden, true, 'the menu closes for the window');
     await m2.openLegend();
     const plusRow = p.els.coreLegendRows.children[2].children.map(c => c.textContent);
-    assert.deepEqual(plusRow, ['TCI: Mara Plus', 'gemma4:12b, ember-coreui:12b (Maras Modelfile)', 'installiert']);
+    assert.deepEqual(plusRow, ['TCI Core Plus', 'gemma4:12b, ember-core:12b (TCI Modelfile)', 'installiert']);
   }
 
   // Thinking switch: only its own value, with CSRF.
