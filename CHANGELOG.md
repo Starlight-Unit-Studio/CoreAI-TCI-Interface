@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.6.64 - 08.11.2026
+
+- Extend the mobile TCI image editor with a functional touch annotation toolbar: select/move existing annotations, freehand brush, text placement, eight shapes (line, arrow, rectangle, ellipse, triangle, diamond, star, heart), preset and custom colors, eraser and undo/redo.
+- Add floating brush-width adjustment, compact palettes and a thumbnail preview of the marked reference, all using existing light/dark CoreAI blue-and-gold design tokens.
+- Generate the SECOND annotated reference PNG only when marks are present; keep the original unchanged and reuse account-owned uploads and the serial FLUX.2 pipeline. Marks are visual guidance rather than a hard inpainting mask.
+- Expand offline browser UI coverage for the drawing tools, color/shape/text workflows and reference handoff. Align version 0.6.64, numeric SHA-256 content cache keys, archive, in-repo handover and preflights.
+
+
 ## 0.6.63 - 08.11.2026
 
 - Give the image editor the native CoreAI TCI Color Kit instead of generic control styling. Header, close button, selection controls, undo/redo, brush slider, hint, input, output selector and primary action now share blue and amber tokens and technical HUD geometry.
