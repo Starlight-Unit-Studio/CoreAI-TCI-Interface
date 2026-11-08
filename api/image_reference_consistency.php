@@ -130,6 +130,14 @@ function coreui_image_reference_prompt(string $scene, ?string $selfReference, ar
     . ($styleOverlay ? $styleFull : '')
     . ($accountPortrait ? $portraitFull : '')
     . ($defaultPortrait ? $defaultFull : '');
+  // Prefer the complete 1:1 facial/anatomy lock with a SHORT Mara-gallery
+  // note over a shortened identity lock with verbose gallery wording.
+  if ($defaultPortrait && mb_strlen($block) + 1 + mb_strlen($scene) > $limit) {
+    $fullIdentity = coreui_image_reference_block($mode, $multiple)
+      . ($styleOverlay ? $styleShort : '')
+      . $defaultShort;
+    if (mb_strlen($fullIdentity) + 1 + mb_strlen($scene) <= $limit) $block = $fullIdentity;
+  }
   // Prefer a shorter core before sacrificing details of a custom portrait.
   // The account overlay also has a compact form for tighter model limits.
   if (mb_strlen($block) + 1 + mb_strlen($scene) > $limit) {
