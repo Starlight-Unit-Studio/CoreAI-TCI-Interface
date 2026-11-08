@@ -346,7 +346,7 @@ function coreui_image_progress_title(array $job): string {
  */
 function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $prompt, string $size,
     callable $lease, callable $unlease, callable $progress, callable $cancelled, ?callable $http = null,
-    ?callable $preview = null, ?string $reference = null, array $references = []): array {
+    ?callable $preview = null, ?string $reference = null, array $references = [], ?string $userReferenceMode = null): array {
   $http = $http ?? 'coreui_image_http';
   $previews = 0; // 0.6.42: $preview(string $dataUrl, array $job) gets every new step preview
   $registry = coreui_image_registry();
@@ -356,7 +356,7 @@ function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $
   if (!isset(($registry['sizes'] ?? [])[$size])) return ['ok' => false, 'error' => 'bad_size', 'detail' => ''];
   // Every image reference passes through the same identity/subject/style
   // consistency standard, regardless of which chat or voice tool selected it.
-  $prompt = coreui_image_reference_prompt($prompt, $reference, $references, $limit);
+  $prompt = coreui_image_reference_prompt($prompt, $reference, $references, $limit, $userReferenceMode);
   if (count($references) > COREUI_IMAGE_MAX_REFERENCES) {
     return ['ok'=>false, 'error'=>'bad_reference', 'detail'=>''];
   }
