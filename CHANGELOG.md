@@ -5,7 +5,7 @@
 - Repair Mara self-portrait routing: scene-based requests (e.g. "Mara im Cockpit", "Ember am Strand", portraits with Mara by name, or images depicting "dich") now deterministically select the account's TCI identity reference instead of relying on the model to write the optional ICH marker.
 - Keep clearly unrelated requests (such as "Mara, zeichne eine fremde Frau") free of Mara references. The assistant name is an address only unless it is actually the requested picture subject.
 - Prevent the image composer from stripping a model-selected ICH marker during short contextual self-portrait follow-ups ("diesmal im roten Kleid", "noch eins"). Reinforce both compact and full image instructions to preserve the TCI's existing face and use the private portrait reference instead of inventing a generic woman.
-- Fail closed if the image worker reports fewer resolved reference files than requested: cancel the job and return the existing reference-unavailable error rather than silently producing an unrelated person. The canonical gallery remains exclusive to the default Mara portrait; a deliberately selected account portrait remains authoritative.
+- Fail closed if the image worker reports fewer resolved references than requested or fails to load the canonical Mara gallery when that gallery is deployed: cancel the job instead of silently generating an unrelated woman or reverting to an older fallback face. A deliberately selected custom account portrait remains authoritative.
 - Extend image-gen and composer regression tests for named/natural-language Mara scenes, aliases, contextual continuations, unrelated characters and missing worker references. No change to model weights, original photos, database, memory, permissions or serial queue.
 
 
