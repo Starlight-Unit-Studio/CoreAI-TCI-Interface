@@ -2420,7 +2420,8 @@
       if (!ses || !state.characterId) return 'no_session';
       if (state.waitingEmber || state.pendingBySession[ses.id]) return 'busy';
       if (state.editingMessage) return 'editing';
-      // Never mix the edit's references with unrelated user attachments or jobs.
+      // Never discard an unsent draft or mix the edit with unrelated attachments.
+      if (inputEl && String(inputEl.value || '').trim()) return 'draft';
       if (attachmentSlotsUsed() > 0) return 'full';
       if (window.CoreAIComposerMenu) window.CoreAIComposerMenu.set(
         'image', size === 'large' ? 'large' : 'normal', 1
