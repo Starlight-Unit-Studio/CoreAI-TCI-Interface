@@ -192,7 +192,9 @@ def resolve_uploaded_reference(token: str) -> str:
         raise ValueError('bad_reference')
     name = match.group(1) + '.' + match.group(2)
     path = ROOT / 'assets' / 'chat_media' / name
-    if path.is_symlink() or not path.is_file() or not 0 < path.stat().st_size <= 8 * 1024 * 1024:
+    allowed_dir = ROOT / 'assets' / 'chat_media'
+    if (path.is_symlink() or path.resolve().parent != allowed_dir.resolve() or
+            not path.is_file() or not 0 < path.stat().st_size <= 8 * 1024 * 1024):
         raise ValueError('reference_unavailable')
     with path.open('rb') as stream:
         header = stream.read(16)
