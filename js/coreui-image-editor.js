@@ -8,7 +8,7 @@
   var dialog, canvas, ctx, image, original, current, area, feedback, command, sizePicker;
   var brush, modeButton, undoButton, redoButton, clearButton, sendButton;
   var strokes = [], undone = [], painting = null, brushSize = 28;
-  var opener = null, loading = false;
+  var opener = null, loading = false, epoch = 0, pendingOpen = null;
   var MAX_WIDTH = 1024, MAX_PROMPT = 600, MAX_UPLOAD = 8 * 1024 * 1024;
   var i18n = {
     title:'Bild bearbeiten', whole:'Ganzes Bild', select:'Bereich markieren',
@@ -205,7 +205,10 @@
   }
   function active() { return !!dialog && !dialog.hidden; }
   function close() {
-    if (!active() || loading) return;
+    if (!active()) return;
+    epoch += 1;
+    if (pendingOpen) { pendingOpen.abort(); pendingOpen = null; }
+    loading = false;
     dialog.hidden = true;
     dialog.classList.remove('is-loading');
     strokes = []; undone = []; painting = null; image = null; original = null; current = null;
@@ -220,6 +223,10 @@
     var source = safeURL(item && item.src);
     if (!source) return false;
     opener = document.activeElement;
+    epoch += 1;
+    var openEpoch = epoch;
+    var controller = new AbortController();
+    pendingOpen = controller;
     area = false; painting = null; strokes = []; undone = []; brushSize = 28;
     brush.value = '28'; brush.disabled = true;
     modeButton.textContent = i18n.select;
@@ -232,11 +239,11 @@
     dialog.hidden = false;
     document.body.classList.add('coreai-image-editor-open');
     try {
-      var response = await fetch(source, {credentials:'same-origin'});
+      var response = await fetch(source, {credentials:'same-origin', signal:controller.signal});
       if (!response.ok) throw new Error('HTTP ' + response.status);
       var blob = await response.blob();
       if (!/^image\/(png|jpeg|webp|gif)$/i.test(blob.type)) throw new Error('Nicht unterstütztes Bildformat');
-      if (!active()) return false;
+      if (!active() || epoch !== openEpoch) return false;
       original = blob;
       var temp = URL.createObjectURL(blob);
       var img = new Image();
@@ -247,6 +254,7 @@
           img.src = temp;
         });
       } finally { URL.revokeObjectURL(temp); }
+      if (!active() || epoch !== openEpoch) return false;
       image = img;
       var scale = Math.min(1, MAX_WIDTH / Math.max(img.naturalWidth, img.naturalHeight));
       canvas.width = Math.max(1,Math.round(img.naturalWidth * scale));
@@ -256,10 +264,15 @@
       command.focus();
       return true;
     } catch (err) {
-      feedback.textContent = 'Bild konnte nicht geladen werden: ' + (err.message || err);
+      if (active() && epoch === openEpoch && err.name !== 'AbortError')
+        feedback.textContent = 'Bild konnte nicht geladen werden: ' + (err.message || err);
       return false;
     } finally {
-      loading = false; sendButton.disabled = !image;
+      if (epoch === openEpoch) {
+        pendingOpen = null;
+        loading = false;
+        sendButton.disabled = !image;
+      }
     }
   }
 
@@ -309,10 +322,12 @@
       feedback.textContent = 'Bildbearbeitung ist in dieser Chat-Sitzung nicht verfügbar.';
       return;
     }
+    var submitEpoch = epoch;
     loading = true; sendButton.disabled = true;
     feedback.textContent = 'Referenzbild wird vorbereitet…';
     try {
       var files = await filesForEdit();
+      if (!active() || epoch !== submitEpoch) return;
       var instruction = 'Erzeuge eine bearbeitete Version von Referenzbild 1, kein neues unabhängiges Motiv. '
         + 'Ändere: ' + request + '. Identität, Körperproportionen und übrige Bildbereiche möglichst bewahren.';
       if (strokes.length) instruction += ' Referenzbild 2 enthält PINKFARBENE Markierungen: '
@@ -325,6 +340,7 @@
         busy:'Mara bearbeitet gerade eine andere Anfrage.',
         editing:'Bitte erst die aktuelle Nachrichtenbearbeitung abschließen.',
         full:'Bitte die übrigen Anhänge im Chat entfernen.',
+        draft:'Im Chat liegt noch ein ungesendeter Entwurf. Bitte zuerst senden oder löschen.',
         no_session:'Keine aktive Unterhaltung vorhanden.',
         invalid:'Das Bildformat ist nicht zugelassen.'
       })[result] || 'Das Bild konnte nicht an den Chat übergeben werden.');
@@ -332,8 +348,10 @@
       close();
       if (window.CoreAIImageViewer && window.CoreAIImageViewer.isOpen()) window.CoreAIImageViewer.close();
     } catch (err) {
-      feedback.textContent = err.message || String(err);
-      loading = false; sendButton.disabled = false;
+      if (active() && epoch === submitEpoch) {
+        feedback.textContent = err.message || String(err);
+        loading = false; sendButton.disabled = false;
+      }
     }
   }
 
