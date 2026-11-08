@@ -92,6 +92,11 @@ img_gen_test(coreui_image_attachment_creation_requested('Erstelle ein Bild, in d
   'generating with references is distinct from merely analyzing images');
 img_gen_test(str_contains(coreui_image_attachment_fallback_prompt('Lass die beiden kämpfen', 'Zwei Figuren in Ruestung'),
   'Zwei Figuren in Ruestung'), 'if vision gives only prose, generation gets a proper fallback prompt');
+$styleFallback = coreui_image_attachment_fallback_prompt(
+  'Use the reference for style only, draw a new castle', 'Two people in armor');
+img_gen_test(str_contains($styleFallback, 'ONLY as visual style guides')
+  && !str_contains($styleFallback, 'Two people in armor'),
+  'a style-only Vision fallback must not recreate unrelated pictured characters');
 
 // Finite batches: default/invalid counts, serial success, partial failure, cancel and no model retry.
 foreach ([1, 2, 4, 9, '4', null] as $count) {
