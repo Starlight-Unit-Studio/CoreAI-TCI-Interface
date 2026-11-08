@@ -81,6 +81,20 @@ bad['sizes']['normal']['width'] = 500
 errors = service_mod.registry_errors(bad)
 check(any('Pfad' in e for e in errors) and any('normal' in e for e in errors), 'paths outside and odd sizes refused')
 
+# Optional real asset integrity: before the user uploads the set, the
+# default fallback is valid; already uploaded but malformed files must fail.
+real_gallery = service_mod.MARA_REFS.load_manifest(ROOT)
+check(real_gallery is not None, 'Mara reference manifest is part of the source')
+real_names = [real_gallery['primary'], *real_gallery['identity'].values(),
+              *real_gallery['style_only'].values()]
+check(len(real_names) == 7 and len(set(real_names)) == 7,
+      'exactly five identity and two hologram-style filenames, all distinct')
+for name in real_names:
+    image_path = ROOT / 'images' / 'mara_references' / name
+    if image_path.exists() or image_path.is_symlink():
+        check(service_mod.MARA_REFS._asset(ROOT, service_mod.MARA_REFS.DEFAULT_REL, name) is not None,
+              'curated reference must contain real PNG/JPEG magic bytes: ' + name)
+
 # --- Progress -------------------------------------------------------------------------
 LOG = ('[INFO ] loading tensors\n  |==================================================| 1024/1024 - 900.00it/s\n'
        '[INFO ] model.cpp:1426 - loading tensors completed, taking 2.10s\n')
@@ -125,6 +139,81 @@ with tempfile.TemporaryDirectory(prefix='coreai-image-service-') as tmp_name:
               'canonical portrait fallback')
         check(service_mod.resolve_reference('custom:' + custom_uuid) == str(reference_root / 'var' / 'profile_media' / (custom_uuid + '.png')),
               'custom account reference')
+        # 0.6.58: the operator uploads the images separately. Until then the
+        # original single-image default remains available without a crash.
+        gallery_dir = reference_root / 'images' / 'mara_references'
+        gallery_dir.mkdir()
+        config_dir = reference_root / 'config' / 'image'
+        config_dir.mkdir(parents=True)
+        (config_dir / 'mara-references.json').write_bytes(
+            (real_root / 'config' / 'image' / 'mara-references.json').read_bytes())
+        manifest = service_mod.MARA_REFS.load_manifest(reference_root)
+        check(manifest is not None, 'reference gallery manifest is loadable')
+        gallery_names = [manifest['primary'], *manifest['identity'].values(),
+                         *manifest['style_only'].values()]
+        for name in gallery_names:
+            content = png(64, 64) if name.endswith('.png') else (
+                b'\xff\xd8\xff\xe0' + b'PhotoData' * 8 + b'\xff\xd9')
+            (gallery_dir / name).write_bytes(content)
+        select = service_mod.MARA_REFS.select
+        base_gallery = select(reference_root, 'Mara in an office')
+        check([item['name'] for item in base_gallery] == [
+            'mara_identity_primary.png','mara_identity_cockpit.jpg','mara_identity_fullbody.jpg'
+        ], 'standard portrait uses the frontal anchor with two other angles')
+        check(service_mod.resolve_reference('default') == str(gallery_dir / manifest['primary']),
+              'new Mara primary is preferred over the old fallback portrait')
+        holo = select(reference_root, 'Ein gehendes Hologramm im Hafen')
+        check([i['name'] for i in holo] == [
+            'mara_identity_primary.png','mara_identity_fullbody.jpg',
+            'mara_identity_city.jpg','mara_style_hologram_walking.jpg'
+        ], 'walking hologram uses three photos of SAME Mara, one style-only shot')
+        seated = select(reference_root, 'Mara sitzt als Hologramm auf einer Bank')
+        check(seated[-1]['name'] == 'mara_style_hologram_seated.jpg'
+              and len(seated) <= 4, 'sitting hologram selects seated style only')
+        profile = select(reference_root, 'Ein Seitenprofil von Mara')
+        check(profile[1]['name'] == 'mara_identity_profile.jpg'
+              and all(i['role'] != 'style_only' for i in profile),
+              'profile request uses real face angle without copying hologram look')
+        check([i['name'] for i in select(reference_root, 'Mara mit einer weiteren Person',
+                                         has_user_uploads=True)] == [manifest['primary']],
+              'uploaded people never inherit optional Mara photos')
+        (gallery_dir / 'mara_identity_cockpit.jpg').unlink()
+        (gallery_dir / 'mara_identity_cockpit.jpg').symlink_to('/etc/passwd')
+        check(all(i['name'] != 'mara_identity_cockpit.jpg' for i in select(reference_root, 'Portrait'))
+              and all(str(i['path']).startswith(str(gallery_dir)) for i in base_gallery),
+              'symlinks and paths outside the curated directory are ignored')
+        (gallery_dir / 'mara_identity_cockpit.jpg').unlink()
+        (gallery_dir / 'mara_identity_cockpit.jpg').write_bytes(b'\xff\xd8\xff' + b'Photo' * 12)
+        fake_reg = json.loads(json.dumps(reg))
+        fake_reg['measured'] = {}
+        mock = service_mod.Service(fake_reg, tmp / 'test-models', tmp / 'curated-jobs', threads=1)
+        mock._run = lambda _job, _prompt: None  # only inspect safe job construction
+        canonical_job = mock.create('Mara in a science fiction port', 'normal', 1, 'default', [],
+                                    'Ein gehendes Hologramm im Hafen')
+        check(canonical_job['reference_count'] == 4
+              and canonical_job['curated_mara_count'] == 4
+              and len(canonical_job['reference_paths']) == 4
+              and canonical_job['reference_paths'][0] == str(gallery_dir / manifest['primary'])
+              and mock.public(canonical_job)['reference_count'] == 4,
+              'only the canonical default gets the selected multi-reference set')
+        custom_mock = service_mod.Service(fake_reg, tmp / 'test-models', tmp / 'custom-jobs', threads=1)
+        custom_mock._run = lambda _job, _prompt: None
+        custom_job = custom_mock.create('Mara in another style', 'normal', 1, 'custom:' + custom_uuid, [],
+                                        'Ein gehendes Hologramm im Hafen')
+        check(custom_job['reference_count'] == 1
+              and custom_job['curated_mara_count'] == 0
+              and custom_job['reference_paths'] == [
+                  str(reference_root / 'var' / 'profile_media' / (custom_uuid + '.png'))],
+              'custom assistant photos never mix in the default Mara gallery')
+        joined_mock = service_mod.Service(fake_reg, tmp / 'test-models', tmp / 'join-jobs', threads=1)
+        joined_mock._run = lambda _job, _prompt: None
+        combined = joined_mock.create('Mara with a guest', 'normal', 1, 'default',
+                                      ['upload:' + custom_uuid + '.png'], 'Mara with a guest')
+        check(combined['reference_count'] == 2
+              and combined['curated_mara_count'] == 1
+              and combined['reference_paths'][1] == str(first_upload),
+              'explicit user uploads remain separate and cannot be drowned by gallery photos')
+
         check(service_mod.resolve_uploaded_reference('upload:' + custom_uuid + '.png') == str(first_upload)
               and service_mod.resolve_uploaded_reference('upload:' + second_uuid + '.jpg') == str(second_upload),
               'two user reference files are resolved using validated UUID tokens')
@@ -252,8 +341,8 @@ open({str(args_log)!r}, 'a').write(json.dumps(args) + '\\n')
 def chunk(k, d):
     return struct.pack('>I', len(d)) + k + d + struct.pack('>I', zlib.crc32(k + d) & 0xffffffff)
 def png(w, h, rgb):
-    raw = b''.join(b'\\x00' + bytes(rgb) * w for _ in range(h))
-    return b'\\x89PNG\\r\\n\\x1a\\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', w, h, 8, 2, 0, 0, 0)) + chunk(b'IDAT', zlib.compress(raw)) + chunk(b'IEND', b'')
+    raw = b''.join(b'\x00' + bytes(rgb) * w for _ in range(h))
+    return b'\x89PNG\\r\\n\x1a\\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', w, h, 8, 2, 0, 0, 0)) + chunk(b'IDAT', zlib.compress(raw)) + chunk(b'IEND', b'')
 prompt = args[args.index('-p') + 1]
 steps = int(args[args.index('--steps') + 1])
 w, h = int(args[args.index('-W') + 1]), int(args[args.index('-H') + 1])
@@ -306,6 +395,8 @@ open(out, 'wb').write(png(w, h, (16, 32, 48)))
 
     for bad_body, code in (({'prompt': '', 'size': 'normal'}, 'bad_prompt'), ({'prompt': 'x' * 1300}, 'bad_prompt'),
                            ({'prompt': 'a fox', 'size': 'huge'}, 'bad_size'), ({'prompt': 'a fox', 'seed': -1}, 'bad_seed'),
+                           ({'prompt': 'a fox', 'scene_hint': 42}, 'bad_request'),
+                           ({'prompt': 'a fox', 'scene_hint': 'x' * 1300}, 'bad_request'),
                            ({'prompt': 'a\x00b'}, 'bad_prompt'),
                            ({'prompt': 'a fox', 'reference': '../etc/passwd'}, 'bad_reference'),
                            ({'prompt': 'a fox', 'references': '/etc/passwd'}, 'bad_reference'),

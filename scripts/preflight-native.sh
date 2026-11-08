@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.57: dynamischer Quantum CoreAI Bildvermerk ohne Studio-Logo.
+# CoreAI: TCI Interface 0.6.58: dynamischer Quantum CoreAI Bildvermerk ohne Studio-Logo.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -158,6 +158,9 @@ UI_FILES=(
   tools/image_spike/run.py
   tools/image_spike/models.json
   tools/image/image_service.py
+  tools/image/mara_references.py
+  config/image/mara-references.json
+  images/mara_references/.gitkeep
   tools/image/adopt_spike.py
   config/image/mara-image.json
   api/image_gen.php
@@ -409,6 +412,24 @@ fi
 # 0.6.39 (P20.5 B): Mara's image service: registry (FLUX.2-klein 4B, pins required), progress
 # from sd-cli, weights at their pinned revision and SHA-256, one job at a time, cancel, time
 # limit, adopting the image test's weights, compose and installer.
+# 0.6.58: Optional gallery assets may be uploaded after this code PR.
+# Without a full set, the image service falls back to existing photos.
+mara_missing=0
+for image_name in \
+  mara_identity_primary.png mara_identity_fullbody.jpg \
+  mara_identity_cockpit.jpg mara_identity_profile.jpg \
+  mara_identity_city.jpg mara_style_hologram_seated.jpg \
+  mara_style_hologram_walking.jpg; do
+  if [[ ! -f "$PROJECT_ROOT/images/mara_references/$image_name" ]]; then
+    mara_missing=$((mara_missing + 1))
+  fi
+done
+if (( mara_missing == 0 )); then
+  ok 'Maras sieben Referenzbilder sind im Repository vorhanden.'
+else
+  printf '[WARN] %s\n' "Maras Bildset noch unvollstaendig ($mara_missing von 7 fehlen); fehlende Bilder werden uebersprungen." >&2
+fi
+
 image_service_test=''
 if image_service_test="$(python3 "$PROJECT_ROOT/scripts/image-service-selftest.py" 2>&1)"; then
   ok 'Bilddienst: Register, echte Schritte, Gewichte mit festem SHA-256, ein Bild zur Zeit, Abbruch, Zeitlimit und Uebernahme aus dem Bildtest geprueft.'
@@ -820,7 +841,7 @@ if command -v php >/dev/null 2>&1; then
     fail "Profilreferenz-Selbsttest: ${profile_reference_test:-Unbekannter Fehler}"
   fi
 
-  # 0.6.57: all image references share identity, subject and style preservation.
+  # 0.6.58: all image references share identity, subject and style preservation.
   reference_consistency_test=''
   if reference_consistency_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/image-reference-consistency-selftest.php" 2>&1)"; then
     ok 'Bildreferenzen: Identitaet, Motivtreue, Stilvorlage und mehrere Quellen geprueft.'
@@ -938,7 +959,7 @@ if command -v php >/dev/null 2>&1; then
     else
       fail 'Chat: Install-Fenster-Oberflaechentest fehlgeschlagen.'
     fi
-    # 0.6.57: touch cropper must preserve originals, per-account re-edit and
+    # 0.6.58: touch cropper must preserve originals, per-account re-edit and
     # user-square / assistant-portrait behavior.
     profile_crop_ui=''
     if profile_crop_ui="$(node "$PROJECT_ROOT/scripts/profile-crop-ui-selftest.cjs" 2>&1)"; then
