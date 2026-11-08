@@ -1,0 +1,199 @@
+/* CoreAI 0.6.61: full-screen image viewer for every chat image. */
+.coreai-image-viewer[hidden],
+.coreai-image-viewer-details[hidden],
+.coreai-image-viewer-action[hidden],
+.coreai-image-viewer-nav[hidden] { display: none !important; }
+.coreai-image-viewer-open { overflow: hidden !important; }
+.coreai-image-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 99990;
+  display: flex;
+  flex-direction: column;
+  background: #101113;
+  color: #f5f5f5;
+  width: 100vw;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  clip-path: none;
+}
+.coreai-image-viewer-toolbar {
+  position: relative;
+  z-index: 4;
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  min-height: 64px;
+  padding: max(9px, env(safe-area-inset-top)) 12px 9px;
+  background: #171719;
+  border-bottom: 1px solid rgba(255,255,255,0.12);
+}
+.coreai-image-viewer-tools { display: flex; align-items: center; gap: clamp(3px, 1vw, 8px); }
+.coreai-image-viewer-action,
+.coreai-image-viewer-zoom {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 43px;
+  height: 43px;
+  border: 1px solid #444448;
+  border-radius: 50%;
+  color: #eee;
+  background: #262628;
+  cursor: pointer;
+  clip-path: none;
+  box-shadow: none;
+  padding: 10px;
+  transition: background .15s;
+}
+.coreai-image-viewer-action:active,
+.coreai-image-viewer-zoom:active { background: #424347; }
+.coreai-image-viewer-action svg { display: block; width: 21px; height: 21px; flex: none; }
+.coreai-image-viewer-title {
+  width: auto;
+  max-width: 122px;
+  border-radius: 999px;
+  gap: 7px;
+  padding: 9px;
+  font-size: 14px;
+  white-space: nowrap;
+}
+.coreai-image-viewer-title span { overflow: hidden; text-overflow: ellipsis; }
+.coreai-image-viewer-title svg:last-child { width: 14px; height: 14px; }
+.coreai-image-viewer-zoom {
+  width: 57px;
+  border-radius: 999px;
+  font-size: 12px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  padding: 0 3px;
+}
+.coreai-image-viewer-action:disabled { opacity: .4; cursor: not-allowed; }
+.coreai-image-viewer-action:focus-visible,
+.coreai-image-viewer-zoom:focus-visible,
+.coreai-image-viewer-scroll:focus-visible { outline: 2px solid #8cbcff; outline-offset: 2px; }
+.coreai-image-viewer-details {
+  position: absolute;
+  top: calc(max(9px, env(safe-area-inset-top)) + 60px);
+  left: 12px;
+  right: 12px;
+  z-index: 10;
+  width: min(360px, calc(100% - 24px));
+  display: grid;
+  gap: 9px;
+  padding: 17px;
+  border: 1px solid #444;
+  border-radius: 18px;
+  background: #262629;
+  box-shadow: 0 12px 36px #0008;
+  color: #f3f3f3;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.coreai-image-viewer-stage {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  position: relative;
+  align-items: stretch;
+  justify-content: center;
+}
+.coreai-image-viewer-scroll {
+  display: flex;
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  align-items: safe center;
+  justify-content: safe center;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #555 transparent;
+  touch-action: pan-x pan-y;
+}
+.coreai-image-viewer-picture {
+  display: block;
+  object-fit: contain;
+  flex-shrink: 0;
+  max-width: none !important;
+  max-height: none !important;
+  width: auto;
+  height: auto;
+  margin: auto;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  clip-path: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.coreai-image-viewer-nav {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  margin-top: -22px;
+  background: #292a2bcc;
+}
+.coreai-image-viewer-left { left: 10px; }
+.coreai-image-viewer-right { right: 10px; }
+.coreai-image-viewer-footer {
+  flex: 0 0 auto;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 16px max(9px, env(safe-area-inset-bottom));
+  color: #b8b8b9;
+  font-size: 11px;
+}
+.coreai-image-viewer-status { overflow: hidden; text-overflow: ellipsis; text-align: right; }
+.msg-content img.msg-image,
+.msg-generated img.msg-image { cursor: zoom-in; }
+.msg-content img.msg-image:focus-visible,
+.attach-preview-button:focus-visible { outline: 2px solid var(--cx, #5b92ff); outline-offset: 2px; }
+.attach-preview-button {
+  display: block;
+  flex: 0 0 auto;
+  width: 39px;
+  height: 39px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--line-strong, #6a87a9);
+  border-radius: 7px;
+  background: transparent;
+  cursor: zoom-in;
+  clip-path: none;
+}
+.attach-preview-button img { display: block; width: 100%; height: 100%; object-fit: cover; }
+@media (max-width: 600px) {
+  .coreai-image-viewer-toolbar { padding-inline: 7px; gap: 4px; }
+  .coreai-image-viewer-tools { gap: 4px; }
+  .coreai-image-viewer-action { width: 37px; height: 37px; padding: 8px; }
+  .coreai-image-viewer-action svg { width: 19px; height: 19px; }
+  .coreai-image-viewer-title { max-width: 75px; padding: 5px; gap: 4px; }
+  .coreai-image-viewer-title svg:first-child { width: 18px; height: 18px; }
+  .coreai-image-viewer-zoom { width: 48px; height: 37px; font-size: 11px; }
+  .coreai-image-viewer-nav { width: 36px; height: 36px; }
+  .coreai-image-viewer-left { left: 5px; }
+  .coreai-image-viewer-right { right: 5px; }
+}
+@media (max-width: 380px) {
+  .coreai-image-viewer-title { max-width: 39px; }
+  .coreai-image-viewer-title span,
+  .coreai-image-viewer-title svg:last-child { display: none; }
+  .coreai-image-viewer-action { width: 34px; height: 34px; padding: 7px; }
+  .coreai-image-viewer-zoom { width: 44px; height: 34px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .coreai-image-viewer-action,
+  .coreai-image-viewer-zoom { transition: none; }
+}
