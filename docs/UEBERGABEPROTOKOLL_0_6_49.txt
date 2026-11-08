@@ -1,0 +1,28 @@
+CoreAI: TCI Interface | Uebergabe 0.6.49
+Datum: 08.11.2026
+Branch: fix/mara-reference-selfportrait-intent-0649
+Basis: main 0.6.48
+
+URSACHE
+Ein Nutzer fragte "wie siehst du eigentlich aus wenn ich fragen darf? kannste mir das auch auf einem bild zeigen?".
+Der Bildmarker konnte korrekt ein Bild ausloesen, aber die serverseitige Marker-Erkennung wies die textuelle Anfrage nicht eindeutig als Selbstportraet aus. Wenn das Modell [BILD: ...] statt [BILD ICH: ...] lieferte, wurde keine visuelle Referenz an FLUX.2 uebergeben. Das erklaert einen frei erfundenen generischen Gesichtsentwurf. Das Live-Jobprotokoll des konkreten Nutzers ist nicht vorhanden: fuer genau diese Generation kann die fehlende -r-Uebergabe daher nicht beweiskraeftig rekonstruiert werden.
+
+LOESUNG
+- Erweiterte Erkennung: Wie siehst du eigentlich aus, Wie sieht Mara aus, Wie sieht (persoenlicher Alias) aus, englische Varianten. Unverwandte Motive (Superwoman allein, Katze) bleiben ohne Mara-Referenz.
+- Die normale Chat-Schleife und die Sprachaufnahme-Schleife korrigieren einen vorhandenen [BILD: ...]-Auftrag vor der Ausfuehrung zu ICH, wenn der Nutzer eindeutig Maras eigenes Aussehen sehen moechte. GROSS bleibt erhalten. Nur echte Stimmsequenz-Transkripte werden zur Intent-Pruefung genutzt, fremde hochgeladene Audiodateien nicht.
+- Das Bildprompt des Bilddienstes wird bei Verwendung einer Portraetreferenz auf die Identitaet im Referenzbild geankert. Es werden keine sichtbaren futuristischen Gesichtsmerkmale allein aus dem Wort TCI abgeleitet.
+- Pro Arbeitsschritt wird fuer die Diagnose ausschliesslich die Referenzquelle canonical oder personal erfasst, nie eine private Bilddatei-ID.
+- Das im Repo bereits vorhandene Referenzbild images/mara_winter.jpg bleibt Standard, Nutzer-Upload bleibt kontoindividuell und hat Vorrang.
+
+NICHT GEAENDERT
+- Modelfile, Modell-Pins, Datenbankschema, Rechte, Bilddienst-CLI, Installer, Nginx, serielle 1/2/4-Bildwarteschlange.
+
+TESTS
+- Separater PHP-Syntaxcheck und Intent-Smoke-Test fuer die zentralen neuen Muster bestanden.
+- Regressionen in scripts/image-gen-selftest.php und scripts/composer-intent-selftest.php ergaenzt.
+- Vor Merge: php -l api/image_gen.php api/chat.php scripts/image-gen-selftest.php scripts/composer-intent-selftest.php (einzeln); beide PHP-Selbsttests, Image Service Selftest, preflight und version-merge-check --base-version 0.6.48 in einem vollstaendigen Checkout ausfuehren.
+- Nach Merge im Live-Container die identische Nutzerfrage mit Standard- und eigenem Profilbild testen; Diagnose "Portraet-Referenz ausgewaehlt" pruefen. Visuale Gesichtsuebereinstimmung ist trotz -r modellabhaengig.
+- Gast, fehlende Bildfreigabe, nicht-TCI-Bilder, Voice und 1/2/4-Bilder auf Regression testen.
+
+STATUS
+Als Draft-PR vorbereiten. main und der Live-Server bleiben unveraendert bis zur verifizierten Abnahme.
