@@ -329,17 +329,19 @@ function coreui_profile_store_avatar(PDO $pdo, int $uid, string $slot,
   if (!in_array($mime, ['image/jpeg', 'image/png'], true)) {
     throw new InvalidArgumentException('avatar_format_not_allowed');
   }
+  // Reject oversized dimensions BEFORE GD expands a compressed image in RAM.
   $info = @getimagesizefromstring($raw);
+  $rawWidth = (int)($info[0] ?? 0);
+  $rawHeight = (int)($info[1] ?? 0);
+  if ($rawWidth < 32 || $rawHeight < 32 || $rawWidth > 8000 || $rawHeight > 8000
+      || ($rawWidth * $rawHeight) > 40000000) {
+    throw new InvalidArgumentException('avatar_dimensions_invalid');
+  }
   $src = @imagecreatefromstring($raw);
-  if (!$info || !($src instanceof GdImage)) throw new InvalidArgumentException('avatar_decode_failed');
+  if (!($src instanceof GdImage)) throw new InvalidArgumentException('avatar_decode_failed');
   $src = coreui_profile_orient_jpeg($src, $sourcePath, $mime);
   $width = imagesx($src);
   $height = imagesy($src);
-  if ($width < 32 || $height < 32 || $width > 8000 || $height > 8000
-      || ($width * $height) > 40000000) {
-    imagedestroy($src);
-    throw new InvalidArgumentException('avatar_dimensions_invalid');
-  }
   try {
     $crop = coreui_profile_crop_pixels($cropRaw, $width, $height, $slot);
     if ($recrop && $crop === null) throw new InvalidArgumentException('avatar_crop_invalid');
