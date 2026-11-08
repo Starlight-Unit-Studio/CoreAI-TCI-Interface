@@ -172,7 +172,14 @@ function coreui_profile_crop_pixels(mixed $value, int $width, int $height, strin
   $w = min($width - $x, (int)round($n['w'] * $width));
   $h = min($height - $y, (int)round($n['h'] * $height));
   if ($w < 32 || $h < 32) throw new InvalidArgumentException('avatar_crop_too_small');
-  if ($slot === 'user' && abs($w - $h) > 2) throw new InvalidArgumentException('avatar_crop_must_be_square');
+  if ($slot === 'user') {
+    // Canvas dimensions are rounded for display; tolerate <1% rounding drift,
+    // then always produce an exactly square server-side crop.
+    if (abs($w - $h) > max(2, (int)round(max($w, $h) * 0.01))) {
+      throw new InvalidArgumentException('avatar_crop_must_be_square');
+    }
+    $w = $h = min($w, $h);
+  }
   return [
     'x'=>$x, 'y'=>$y, 'w'=>$w, 'h'=>$h,
     'normalized'=>['x'=>$x / $width, 'y'=>$y / $height, 'w'=>$w / $width, 'h'=>$h / $height],
@@ -301,7 +308,9 @@ function coreui_profile_store_avatar(PDO $pdo, int $uid, string $slot,
     }
     $savedSource = coreui_profile_source_path($expectedUuid);
     $sourcePath = $savedSource['path'] ?? (string)$existing['path'];
-    $originalName = 'profile-original';
+    $oldNameSt = $pdo->prepare('SELECT original_name FROM stu_coreui_profile_media WHERE user_id = ? AND slot = ? LIMIT 1');
+    $oldNameSt->execute([$uid, $slot]);
+    $originalName = (string)($oldNameSt->fetchColumn() ?: 'profile-original');
   } else {
     $size = (int)($file['size'] ?? 0);
     $sourcePath = (string)($file['tmp_name'] ?? '');
