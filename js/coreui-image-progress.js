@@ -10,7 +10,9 @@
    small preview (the latent projected to colours); each dot takes the colour of its spot in
    it, blending over from the previous step, so the picture forms in the grid step by step.
    The soft preview lies under the dots, and the dots with their wandering glow stay on top
-   until the image is done (operator, 07.11.2026); then the sharp image fades in. */
+   until the image is done (operator, 07.11.2026); then the sharp image fades in.
+   0.6.65: make completed batch thumbnails visible immediately and bound canvas rendering
+   to a modest refresh rate on mobile (prevent chat flicker / scroll jank). */
 (function () {
   'use strict';
 
@@ -30,6 +32,10 @@
   };
   var GRID = 30;
   var BLEND_MS = 900;
+  // 900 colored dots plus preview compositing per frame is expensive on phones.
+  // Real progress events still update immediately; only intermediate animation is capped.
+  var FRAME_MS = window.matchMedia && window.matchMedia('(pointer: coarse)').matches ? 50 : 40;
+  var CANVAS_DPR_MAX = 1.25;
   var reduced = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
   function expectFor(px) { return px >= 1000 ? EXPECT[1024] : EXPECT[512]; }
@@ -120,7 +126,7 @@
     content.insertBefore(card, before || null);
     card._p = { state: { stage: 'start' }, since: performance.now(), shown: 0, stage: stage, pct: pct, canvas: canvas,
       frame: frame, rgb: color(card), raf: 0, t0: performance.now(), colors: null, prev: null, blendAt: 0, previews: 0,
-      img: null, prevImg: null, thumbs: thumbs, completed: [], generation: 0, lastEventId: 0 };
+      img: null, prevImg: null, thumbs: thumbs, completed: [], generation: 0, lastEventId: 0, lastFrameAt: 0 };
     loop(card);
     return card;
   }
@@ -129,8 +135,14 @@
     var p = card._p;
     var canvas = p.canvas;
     var size = Math.max(60, Math.round(p.frame.clientWidth || 300));
-    var ratio = Math.min(2, window.devicePixelRatio || 1);
-    if (canvas.width !== size * ratio) { canvas.width = size * ratio; canvas.height = size * ratio; }
+    var ratio = Math.min(CANVAS_DPR_MAX, window.devicePixelRatio || 1);
+    // Canvas dimensions are integers. Comparing them to a fractional target
+    // reallocated/cleared the entire bitmap on EACH frame at some device scales.
+    var pixels = Math.max(1, Math.round(size * ratio));
+    if (canvas.width !== pixels || canvas.height !== pixels) {
+      canvas.width = pixels;
+      canvas.height = pixels;
+    }
     var ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
@@ -251,11 +263,15 @@
 
   function loop(card) {
     var p = card._p;
+    if (p.raf) return; // At most one animation loop per live card.
     function frame(now) {
-      if (!card.isConnected) { p.raf = 0; return; }
-      tick(card, now);
-      var still = reduced || p.state.stage === 'failed' || card.classList.contains('is-revealed');
-      p.raf = still ? 0 : requestAnimationFrame(frame);
+      p.raf = 0;
+      if (!card.isConnected || p.state.stage === 'failed' || card.classList.contains('is-revealed')) return;
+      if (!p.lastFrameAt || now - p.lastFrameAt >= FRAME_MS) {
+        p.lastFrameAt = now;
+        tick(card, now);
+      }
+      if (!reduced) p.raf = requestAnimationFrame(frame);
     }
     p.raf = requestAnimationFrame(frame);
   }
@@ -286,7 +302,8 @@
     img.src = link.href;
     link.appendChild(img);
     p.thumbs.appendChild(link);
-    p.thumbs.hidden = p.completed.length === 1;
+    // Show the FIRST finished image immediately, while the next one renders.
+    p.thumbs.hidden = false;
   }
 
   function nextImage(card) {
@@ -300,6 +317,7 @@
     p.state = {stage: 'start'};
     p.shown = 0;
     p.since = performance.now();
+    p.lastFrameAt = 0;
     p.colors = p.prev = p.img = p.prevImg = null;
     p.previews = 0;
     p.blendAt = 0;
