@@ -88,6 +88,9 @@ function coreui_image_is_self_request(string $message, string $assistantName = '
     . '|you\\s+(?:look|appear|would\\s+look))'
     . ')\\b~iu';
   if (preg_match($selfWords, $text) === 1) return true;
+  if (preg_match('~\\b(?:du\\s+selbst|dich\\s+selbst|yourself)\\b~iu', $text) === 1) return true;
+  if (preg_match('~\\b(?:wie|als)\\s+du\\s+[^.!?]{0,90}\\b(?:aussiehst|aussehen|wirkst|sitzt|stehst|laeufst|läufst|siehst)\\b~iu', $text) === 1) return true;
+  if (preg_match('~\\bdich\\s+[^.!?]{0,65}\\b(?:sehen|abbilden|zeichnen|malen|darstellen|fotografieren)\\b~iu', $text) === 1) return true;
   // Name-based scenes: "Mara im Cockpit", "Mara am Strand", "Ember as
   // captain" and "ein Bild mit Mara" all mean the TCI as the SUBJECT.
   // "Mara, male eine fremde Frau" must stay a generic image.
