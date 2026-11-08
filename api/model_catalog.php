@@ -88,11 +88,9 @@ const COREUI_CORE_TIER_LABELS = [
   'pro' => 'TCI Core Pro',
   'premium' => 'TCI Core Premium',
 ];
-// Canonical CoreAI tags have numeric parameter tiers; keep old e2b/e4b
-// tags readable so upgrades never strand an existing account selection.
+// Preserve upstream Gemma tier suffixes verbatim in our CoreAI tags.
 const COREUI_CORE_TIER_SIZES = [
-  '2b'=>'schnell', '4b'=>'normal', '12b'=>'plus', '26b'=>'pro', '31b'=>'premium',
-  'e2b'=>'schnell', 'e4b'=>'normal',
+  'e2b'=>'schnell', 'e4b'=>'normal', '12b'=>'plus', '26b'=>'pro', '31b'=>'premium',
 ];
 
 /*
@@ -103,8 +101,8 @@ const COREUI_CORE_TIER_SIZES = [
  * speed hint.
  */
 const COREUI_CORE_INSTALL_CATALOG = [
-  'schnell' => ['base'=>'gemma4:e2b', 'tag'=>'2b', 'download_gb'=>7.5, 'active_b'=>2.3],
-  'normal' => ['base'=>'gemma4:e4b', 'tag'=>'4b', 'download_gb'=>9.5, 'active_b'=>4.5],
+  'schnell' => ['base'=>'gemma4:e2b', 'tag'=>'e2b', 'download_gb'=>7.5, 'active_b'=>2.3],
+  'normal' => ['base'=>'gemma4:e4b', 'tag'=>'e4b', 'download_gb'=>9.5, 'active_b'=>4.5],
   'plus' => ['base'=>'gemma4:12b', 'tag'=>'12b', 'download_gb'=>8.0, 'active_b'=>12.0],
   'pro' => ['base'=>'gemma4:26b', 'tag'=>'26b', 'download_gb'=>19.0, 'active_b'=>4.0],
   'premium' => ['base'=>'gemma4:31b', 'tag'=>'31b', 'download_gb'=>20.0, 'active_b'=>31.0],
