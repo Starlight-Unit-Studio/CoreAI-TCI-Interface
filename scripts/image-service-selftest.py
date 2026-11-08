@@ -81,6 +81,20 @@ bad['sizes']['normal']['width'] = 500
 errors = service_mod.registry_errors(bad)
 check(any('Pfad' in e for e in errors) and any('normal' in e for e in errors), 'paths outside and odd sizes refused')
 
+# Optional real asset integrity: before the user uploads the set, the
+# default fallback is valid; already uploaded but malformed files must fail.
+real_gallery = service_mod.MARA_REFS.load_manifest(ROOT)
+check(real_gallery is not None, 'Mara reference manifest is part of the source')
+real_names = [real_gallery['primary'], *real_gallery['identity'].values(),
+              *real_gallery['style_only'].values()]
+check(len(real_names) == 7 and len(set(real_names)) == 7,
+      'exactly five identity and two hologram-style filenames, all distinct')
+for name in real_names:
+    image_path = ROOT / 'images' / 'mara_references' / name
+    if image_path.exists() or image_path.is_symlink():
+        check(service_mod.MARA_REFS._asset(ROOT, service_mod.MARA_REFS.DEFAULT_REL, name) is not None,
+              'curated reference must contain real PNG/JPEG magic bytes: ' + name)
+
 # --- Progress -------------------------------------------------------------------------
 LOG = ('[INFO ] loading tensors\n  |==================================================| 1024/1024 - 900.00it/s\n'
        '[INFO ] model.cpp:1426 - loading tensors completed, taking 2.10s\n')
