@@ -1865,6 +1865,9 @@
       picture.src = url;
       picture.alt = 'Bild von TCI: ' + (state.assistantName || 'Mara');
       picture.loading = 'lazy';
+      picture.setAttribute('data-file-name', att.name || ((state.assistantName || 'Mara') + '-Bild.png'));
+      picture.setAttribute('data-file-size', String(att.size || 0));
+      picture.setAttribute('data-file-mime', att.mime || 'image/png');
       open.appendChild(picture);
       figure.appendChild(open);
       var caption = document.createElement('figcaption');
@@ -1885,6 +1888,12 @@
       img.src = att.image_url || url;
       img.alt = att.name || 'Bild';
       img.loading = 'lazy';
+      img.tabIndex = 0;
+      img.setAttribute('role', 'button');
+      img.setAttribute('aria-label', (att.name || 'Bild') + ' vergrößern');
+      img.setAttribute('data-file-name', att.name || 'CoreAI-Bild.png');
+      img.setAttribute('data-file-size', String(att.size || 0));
+      img.setAttribute('data-file-mime', att.mime || '');
       return img;
     }
 
