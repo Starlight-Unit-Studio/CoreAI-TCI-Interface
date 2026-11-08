@@ -20,7 +20,8 @@ PATCH
 - Verify image markers remain absent when image tool is disabled.
 - Verify all marker variants survive coreui_voice_strip_stray_bracket.
 - No application runtime changes, model or database migrations.
-- Update VERSION, six HTML pages, JS bootstrap, associated cache keys,
+- Correct the stale 0.6.47 JS cache keys using the actual cache-bust.py
+  algorithm (first 10 bytes of SHA-256 as 25 decimal digits).\n- Update VERSION, six HTML pages, JS bootstrap, associated cache keys,
   README, CHANGELOG, TXT archive, branding test and preflight metadata.
 
 OPERATIONS
