@@ -521,9 +521,18 @@ function coreui_core_update_plan(array $models): array {
   $plan = [];
   foreach (COREUI_CORE_INSTALL_CATALOG as $tier => $entry) {
     $core = coreui_core_install_name($tier);
-    if (!$has($entry['base']) && !$has($core)) continue;
+    $oldTag = match ($tier) {
+      'schnell' => 'ember-coreui:e2b',
+      'normal' => 'ember-coreui:e4b',
+      default => '',
+    };
+    if (!$has($entry['base']) && !$has($core) && ($oldTag === '' || !$has($oldTag))) continue;
+    // A legacy installation with only the raw Gemma tag or old e2b/e4b tag
+    // gets the canonical CoreAI model at its next explicit/weekly update.
+    $cores = [['name'=>$core, 'source'=>'template']];
+    if ($oldTag !== '' && $has($oldTag)) $cores[] = ['name'=>$oldTag, 'source'=>'template'];
     $plan[coreui_ollama_model_key($entry['base'])] = ['base'=>$entry['base'], 'tier'=>$tier,
-      'label'=>COREUI_CORE_TIER_LABELS[$tier], 'cores'=>$has($core) ? [['name'=>$core, 'source'=>'template']] : []];
+      'label'=>COREUI_CORE_TIER_LABELS[$tier], 'cores'=>$cores];
   }
   $default = defined('STU_EMBER_MODEL') ? (string)STU_EMBER_MODEL : 'ember-coreui:latest';
   $base = coreui_core_mara_base();
@@ -531,6 +540,8 @@ function coreui_core_update_plan(array $models): array {
     $key = coreui_ollama_model_key($base);
     $tier = coreui_core_tier($base);
     $plan[$key] ??= ['base'=>$base, 'tier'=>$tier, 'label'=>$tier !== null ? COREUI_CORE_TIER_LABELS[$tier] : $base, 'cores'=>[]];
+    $plan[$key]['cores'] = array_values(array_filter($plan[$key]['cores'],
+      static fn(array $core): bool => !coreui_core_same($core['name'], $default)));
     array_unshift($plan[$key]['cores'], ['name'=>$default, 'source'=>'mara']);
   }
   $order = array_flip(array_keys(COREUI_CORE_INSTALL_CATALOG));
@@ -633,6 +644,7 @@ function coreui_core_update_run(array $state): array {
       + array_diff_key($state, ['pulled'=>true, 'error'=>true, 'message'=>true]);
     coreui_core_install_write($state);
     $before = coreui_core_digest_of($item['base']);
+    $basePreexisting = coreui_core_base_was_present((string)$item['base']);
     $state = coreui_core_install_pull($state);
     if ($state['phase'] === 'error') {
       $results[] = ['label'=>$item['label'], 'base'=>$item['base'], 'result'=>'error', 'message'=>(string)$state['message']];
@@ -665,7 +677,18 @@ function coreui_core_update_run(array $state): array {
       }
       $rebuilt[] = $core['name'];
     }
-    $results[] = ['label'=>$item['label'], 'base'=>$item['base'], 'rebuilt'=>$rebuilt, 'message'=>$failure,
+    $cleanupWarning = '';
+    if ($failure === '' && count($item['cores']) > 0
+        && coreui_core_may_cleanup_base((string)$item['base'], $basePreexisting, array_column($item['cores'], 'name'))) {
+      $state['phase'] = 'cleanup';
+      $state['step'] = 'Entfernt den temporaeren Gemma-Basistag …';
+      coreui_core_install_write($state);
+      if (!coreui_core_cleanup_base((string)$item['base'], false, array_column($item['cores'], 'name'))) {
+        $cleanupWarning = 'Der neue TCI Core funktioniert, aber der temporaere Basistag blieb erhalten.';
+      }
+    }
+    $results[] = ['label'=>$item['label'], 'base'=>$item['base'], 'rebuilt'=>$rebuilt,
+      'message'=>$failure !== '' ? $failure : $cleanupWarning,
       'result'=>$failure !== '' ? 'error' : ($changed ? 'updated' : ($rebuilt !== [] ? 'rebuilt' : 'current'))];
   }
   $failed = count(array_filter($results, static fn(array $r): bool => $r['result'] === 'error'));
