@@ -116,6 +116,8 @@ img_gen_test(str_contains($hint, '[BILD ICH: ausfuehrliche Bildbeschreibung auf 
 img_gen_test(str_contains(coreui_image_capability_hint(true), '[BILD GROSS ICH: ...]'), 'compact hint');
 img_gen_test(str_contains(coreui_image_capability_hint(false), 'Die technische TCI-Identitaet bedeutet NICHT'),
   'appearance prompt does not invent cybernetic facial implants');
+img_gen_test(str_contains(coreui_image_capability_hint(true), 'Dein echtes Profilportraet bestimmt dein Gesicht'),
+  'compact image hint also preserves the original Mara face');
 
 // --- Progress and result ----------------------------------------------------------------
 img_gen_test(coreui_image_progress_title(['phase' => 'load']) === 'Bild: Gewichte werden geladen'
@@ -202,8 +204,10 @@ img_gen_test($r['error'] === 'image_busy' && $leases === 1 && $unleases === 1, '
 $http = $fake([['GET', '/health', $ready], ['POST', '/jobs', [503, ['ok' => false, 'error' => 'image_busy'], '']]]);
 $r = coreui_image_generate($pdo, 5, 'ember', 'Mara as Superwoman', 'normal',
   $lease, $unlease, static function (): void {}, $never, $http, null, 'default');
-img_gen_test($r['error'] === 'image_busy' && ($GLOBALS['img_calls'][1][2]['reference'] ?? null) === 'default',
-  'explicit self portrait routes canonical reference to the service');
+img_gen_test($r['error'] === 'image_busy' && ($GLOBALS['img_calls'][1][2]['reference'] ?? null) === 'default'
+  && str_starts_with((string)($GLOBALS['img_calls'][1][2]['prompt'] ?? ''), 'Use the supplied reference image as the SAME person.')
+  && str_contains((string)($GLOBALS['img_calls'][1][2]['prompt'] ?? ''), 'Mara as Superwoman'),
+  'explicit self portrait anchors identity and routes canonical reference to the service');
 
 
 // A whole image.
