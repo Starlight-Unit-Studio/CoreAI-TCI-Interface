@@ -1,0 +1,73 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.66
+Datum: 08.11.2026
+Basis: main 0.6.65
+Branch: fix/mara-self-portrait-reference-routing-0666
+
+PROBLEM
+Mara erzeugt bei eigenen Portraet-/Szenenwuenschen wieder generische,
+zufaellige Frauen. Die kanonische Galerie ist vorhanden, wird jedoch
+nur an den Worker gegeben, wenn der Bildauftrag als ICH markiert ist.
+Natuerliche Formulierungen und manche Folgeanweisungen verlieren
+diese Bindung.
+
+URSACHE
+- coreui_image_is_self_request erkennt bisher nur einen engen Satz
+  Formulierungen. "Mara im Cockpit", "Ember am Strand" und andere
+  nach Namen formulierte Szenen koennen als fremde Motive gelten.
+- coreui_composer_intent_ensure kann ein korrektes Modell-ICH bei
+  verkuerzten Folgewuenschen nachtraeglich entfernen.
+- Bei einem fehlerhaften/veralteten Worker konnte kein pruefbarer
+  Referenzanzahl-Nachweis vor dem eigentlichen Generierungsprozess
+  verlangt werden.
+
+UMSETZUNG
+- api/image_gen.php: Benutzerseitige Selbstbild-Intent-Erkennung
+  fuer Namen, Rufnamen, Selbstportraets, "du/dich/dein", benannte
+  Szenen und deutsche/englische Standard-Formulierungen erweitert.
+  Bloesse Anrede "Mara, ..." loest KEIN Selbstportraet aus.
+- api/image_gen.php: Kurze kontextuelle Selbstbild-Anschlusswuensche
+  erkennen, ohne eigenstaendig einen neuen ICH-Marker zu erfinden.
+- api/console_composer_intent.php: Vorhandenes ICH bei passenden
+  Folgewuenschen erhalten; fremde Charaktere behalten BILD ohne ICH.
+- Bildwerkzeug-Hinweise fuer kompaktes und volles Core-Prompt
+  schaerfen: Mara im Motiv bedeutet ihre bestehende Person,
+  nicht eine beliebige Frauenbeschreibung.
+- api/image_gen.php: Nach erfolgreicher POST-Jobanlage die vom
+  Worker tatsaechlich aufgeloeste Referenzanzahl gegen die
+  angeforderte vergleichen. Bei 0 bzw. zu wenigen Bildern sofort
+  per DELETE abbrechen und vorhandenen Fehler zurueckgeben.
+- scripts/image-gen-selftest.php und scripts/composer-intent-selftest.php:
+  Positiv-/Negativfaelle, Alias, Szenen, Folgewuensche, No-Ref-Job.
+- VERSION, sechs HTML-Seiten, Bootstrap-/Cache-Fingerprint, Branding,
+  README, Changelog, TXT-Archiv, Preflight und dieses Protokoll
+  synchronisiert.
+
+ABGRENZUNG
+- Es wird KEIN Memory-Eintrag erzeugt.
+- Keine Aenderung an Modellgewichten, Modelfile, Datenbank, privaten
+  Originaldateien, Kontoberechtigungen oder serieller FLUX-Queue.
+- Kanonischer Bilder-Satz gilt nur fuer das Default-Portraet.
+  Individuelles Assistenten-Profilbild hat weiterhin Vorrang.
+- Bildidentitaet kann mit FLUX staerker gebunden werden, aber
+  eine exakt pixelgleiche Reproduktion kann nicht garantiert werden.
+
+PRUEFUNGEN
+- PHP-RegEx-Grenzfaelle auf isolierter PHP-8.4-Testumgebung geprueft.
+- GitHub-Diff, Versionsangaben, Cache-Verweise und Dateikonsistenz
+  statisch pruefen; Abnahme-Status nur nach tatsaechlichem Lauf.
+- Zielhost-Preflight, Kompatibilitaets-/Bilddienst-End-to-End und
+  echtes FLUX-Selbstportraet NOCH NICHT ausgefuehrt.
+
+VERBINDLICH VOR MERGE
+  python3 scripts/version-merge-check.py --base-version 0.6.65
+  python3 scripts/cache-bust.py --verify
+  php scripts/image-gen-selftest.php
+  php scripts/composer-intent-selftest.php
+  php scripts/image-reference-consistency-selftest.php
+  php scripts/profile-reference-selftest.php
+  Vollstaendiger Compose- bzw. Native-Preflight auf der Betreiberumgebung.
+
+NACH ABNAHME
+Merge nach main, danach CoreAI-Updater im Owner-Panel und
+Referenz-Test fuer 1/2/4 Mara-Bilder auf Android. Der Merge allein
+aktualisiert keine Live-Installation.
