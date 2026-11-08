@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.6.63 - 08.11.2026
+
+- Give the image editor the native CoreAI TCI Color Kit instead of generic control styling. Header, close button, selection controls, undo/redo, brush slider, hint, input, output selector and primary action now share blue and amber tokens and technical HUD geometry.
+- Respect both light and dark appearance modes using the same interface palette as the image viewer. Image pixels and the existing FLUX reference-editing pipeline remain unchanged.
+- Synchronize the brush slider's blue track fill with its actual value, and extend mobile UI assertions for color, light/dark theme switching and brush progress.
+- Align 0.6.63 version labels, SHA-256 numeric asset fingerprints, mandatory TXT changelog, handover and preflight versions. No changes to API, accounts, images, model or databases.
+
+
 ## 0.6.62 - 08.11.2026
 
 - Add an integrated **image editor** to the 0.6.61 picture viewer. A new Edit action opens the original uploaded or generated image, offers a text instruction, Normal/Large output and an optional touch brush with size, undo, redo and clear controls.

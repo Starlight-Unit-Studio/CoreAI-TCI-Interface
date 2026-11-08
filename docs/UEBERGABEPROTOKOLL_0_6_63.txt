@@ -1,0 +1,43 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.63
+Datum: 08.11.2026
+Branch: fix/image-editor-tci-color-kit-0663
+Basis: main 0.6.62
+
+ZIEL
+Bildeditor vollstaendig an die bereits bestehende native TCI-Farbsprache
+anpassen. Keine Aenderungen der Bildbearbeitungs-Funktionen.
+
+UMSETZUNG
+- css/coreui-image-viewer.css: Alte Editor-Standardfarben durch
+  tokenbasierte Light-/Dark-HUD-Oberflaechen ersetzen. Vorhandene
+  --cx, --amb, --txt, --muted, --line-strong, --line-amber verwenden.
+- Header, Schliessen, Auswahl-Button, Undo/Redo, Pinsel, Hinweise,
+  Textarea, Ausgabe-Select, Hauptaktion und fokussierbare Elemente
+  konsistent in Blau/Gold mit technischen Konturen.
+- js/coreui-image-editor.js: Visuelle Pinsel-Track-Fuellung dem
+  tatsaechlich ausgewaehlten Bereich 8..96 angleichen.
+- scripts/image-editor-ui-selftest.cjs: Light/Dark-Stile, Layout und
+  Pinsel-Fuellstand als Regression pruefen.
+- VERSION, HTML-Seiten, JS-Bootstrap, Branding-Check, README, Changelogs,
+  dieses Protokoll und native/Compose-Preflights aktualisieren.
+- Inhaltsbasierte numerische CSS-/JS-Asset-Fingerprints erneuern.
+
+AUSSCHLUESSE
+Keine Aenderung an FLUX.2, Bilddienst, API, Modelfile, gespeicherten
+Referenzbildern, Memory, Accounts, Datenbank, Uploads oder serieller Queue.
+Bildpixel werden nicht manipuliert.
+
+PRUEFSTATUS
+Statischer Syntax-/Datei-/Verweis-/Cache-Check der Quellen geplant.
+Browser- und Serverabnahmen nur bei tatsaechlicher Ausfuehrung als PASS
+dokumentieren, nicht aus GitHub-Diffs ableiten.
+
+VOR MERGE
+  python3 scripts/version-merge-check.py --base-version 0.6.62
+  python3 scripts/cache-bust.py --verify
+  node scripts/image-editor-ui-selftest.cjs
+  node scripts/image-chat-ui-selftest.cjs
+  node scripts/terran-terminology-selftest.cjs
+  node scripts/tci-language-selftest.cjs
+  Vollstaendige installierte Compose- oder Native-Preflights.
+Danach Merge nach main und Live-Update ueber den integrierten Owner-Updater.
