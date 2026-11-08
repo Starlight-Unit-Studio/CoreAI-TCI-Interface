@@ -62,7 +62,7 @@ function coreui_image_provenance(array $meta, array $registry = []): array {
     'generated_by'=>'Quantum CoreAI: TCI Interface',
     'software_version'=>coreui_image_provenance_version(),
     'publisher'=>'Starlight Unit Studios',
-    'credit'=>'Made with Quantum CoreAI',
+    'credit'=>'Erstellt mit Quantum CoreAI',
     'copyright_notice'=>'© ' . $year . ' Quantum CoreAI',
     'ai_generated'=>true,
     'digital_source_type'=>COREUI_IMAGE_AI_SOURCE_TYPE,
@@ -118,8 +118,8 @@ function coreui_image_provenance_xmp(array $data): string {
     . 'xmlns:xmp="http://ns.adobe.com/xap/1.0/" '
     . 'xmlns:photoshop="http://ns.adobe.com/photoshop/1.0/" '
     . 'xmlns:Iptc4xmpExt="http://iptc.org/std/Iptc4xmpExt/2008-02-29/">'
-    . '<dc:title><rdf:Alt><rdf:li xml:lang="x-default">Quantum CoreAI generated image</rdf:li></rdf:Alt></dc:title>'
-    . '<dc:description><rdf:Alt><rdf:li xml:lang="x-default">AI-generated image</rdf:li></rdf:Alt></dc:description>'
+    . '<dc:title><rdf:Alt><rdf:li xml:lang="x-default">Quantum CoreAI Bild</rdf:li></rdf:Alt></dc:title>'
+    . '<dc:description><rdf:Alt><rdf:li xml:lang="x-default">Erstellt mit Quantum CoreAI</rdf:li></rdf:Alt></dc:description>'
     . '<dc:rights><rdf:Alt><rdf:li xml:lang="x-default">' . $copyright . '</rdf:li></rdf:Alt></dc:rights>'
     . '<dc:publisher><rdf:Seq><rdf:li>' . $producer . '</rdf:li></rdf:Seq></dc:publisher>'
     . '<photoshop:Credit>' . $credit . '</photoshop:Credit>'
@@ -141,8 +141,8 @@ function coreui_image_png_embed_provenance(string $png, array $meta, array $regi
   try {
     $data = coreui_image_provenance($meta, $registry);
     $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
-    $chunks = coreui_image_png_itxt('Title', 'Quantum CoreAI generated image')
-      . coreui_image_png_itxt('Description', 'AI-generated image')
+    $chunks = coreui_image_png_itxt('Title', 'Quantum CoreAI Bild')
+      . coreui_image_png_itxt('Description', 'Erstellt mit Quantum CoreAI')
       . coreui_image_png_itxt('Software', 'Quantum CoreAI ' . $data['software_version'])
       . coreui_image_png_itxt('Creation Time', $data['created_at_utc'])
       . coreui_image_png_itxt('Copyright', $data['copyright_notice'])
