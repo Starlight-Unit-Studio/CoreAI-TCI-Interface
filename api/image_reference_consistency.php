@@ -93,6 +93,17 @@ function coreui_image_reference_prompt(string $scene, ?string $selfReference, ar
   if (mb_strlen($block) + 1 >= $limit) {
     return mb_substr($scene, 0, $limit);
   }
-  $scene = mb_substr($scene, 0, $limit - mb_strlen($block) - 1);
+  $budget = $limit - mb_strlen($block) - 1;
+  if (mb_strlen($scene) > $budget) {
+    // Important scene details can occur at either end of an Ollama-written
+    // description. Preserve both rather than silently discarding the ending.
+    if ($budget > 50) {
+      $tail = min(120, max(22, intdiv($budget, 4)));
+      $head = $budget - $tail - 5;
+      $scene = mb_substr($scene, 0, $head) . ' ... ' . mb_substr($scene, -$tail);
+    } else {
+      $scene = mb_substr($scene, 0, $budget);
+    }
+  }
   return $block . ' ' . $scene;
 }
