@@ -1,0 +1,20 @@
+CoreAI: TCI Interface 0.6.55
+Date: 08.11.2026
+Branch: feat/profile-crop-nondestructive-0655
+Base: main 0.6.54
+
+SCOPE
+- Adapted STU Game's character.html crop overlay and pointer interaction to CoreAI profile settings.
+- Touch-friendly modal with drag, bottom-right resize, pinch gesture, aspect presets, sliders and keyboard closing.
+- User avatar mode: square only. Assistant portrait mode: free source aspect ratio, free width and height, 2:3, 3:4, 1:1.
+- No upload until confirming the preview. API receives original uploaded file plus normalized crop box; server validates and renders the derivative.
+- Re-edit button loads account-authenticated original and saved coordinates. The active UUID changes atomically after successful re-crop; stale edits are rejected.
+- Current FLUX image service still consumes private UUID.png at max 1024px, so image generation contracts and memory logic remain unchanged.
+- New private source and crop files use UUID.source.jpg / UUID.source.png and UUID.crop.json inside var/profile_media. No database migration. Existing images lacking an original may still be cropped, using their saved PNG as the source.
+- Account delete, avatar delete, replacement and account export updated for new private files.
+
+VERIFICATION
+- New PHP cases in scripts/profile-reference-selftest.php and offline Node UI simulation in scripts/profile-crop-ui-selftest.cjs.
+- Registered the Node UI test in both preflight scripts, with visible error output on failure.
+- Full native/Docker preflight, database uploads and image-generation live comparison must run before merging.
+- Live Samsung Android gesture and JPEG EXIF orientation behavior must be tested.
