@@ -1,0 +1,60 @@
+COREAI: TCI INTERFACE 0.6.62
+Datum: 08.11.2026
+Branch: feat/image-editor-flux2-0662
+Basis: main 0.6.61 (Bildbetrachter, PR #213)
+PR: #214
+
+AUSGANGSLAGE
+Die Version 0.6.61 enthaelt den mobilen Bildbetrachter fuer hochgeladene,
+empfangene und von Mara generierte Bilder. Die Folgestufe fuegt die
+Bildbearbeitung mit FLUX.2-Klein-Referenzen hinzu und bringt die
+Bildbetrachter-Leiste in die vorhandene TCI-Gestaltung.
+
+IMPLEMENTIERUNG
+- js/coreui-image-editor.js: Bildeditor mit Textanweisung, wahlweise 512 oder
+  1024 Pixel Ausgabe und Touch-Pinsel inklusive Pinselgroesse, Undo, Redo
+  und Markierungen entfernen.
+- js/coreui-image-viewer.js: Bearbeiten-Einstieg und ein einzelner
+  Dateiinformations-Button statt des unförmigen Bild-Dropdowns.
+- css/coreui-image-viewer.css: TCI-Toolbar mit blau-goldenen Akzenten,
+  technischen Bedienelementen, mobilen Abstaenden und Light-/Dark-Themes.
+- js/console-app.js: Originalbild und bei Auswahl eine zusaetzliche
+  markierte Bildreferenz gehen ueber den vorhandenen Upload- und
+  Bildwerkzeugweg an Maras serielle FLUX.2-Pipeline. Ungesendete
+  Chat-Entwuerfe werden nicht ueberschrieben.
+- app.html: Module eingebunden, inhaltsbasierte numerische Asset-Cache-Keys
+  aktualisiert.
+- scripts/image-editor-ui-selftest.cjs: Browser-Selbsttest fuer Editor,
+  Markierung, Undo/Redo, Referenzen, Info-Button, mobiles Layout und Theme.
+  In scripts/preflight.sh und scripts/preflight-native.sh integriert.
+- VERSION, sechs HTML-Seiten, JS-Versionshinweis, Branding-Test, README,
+  CHANGELOG, TXT-Changelog und INDEX fuer 0.6.62 synchronisiert.
+
+TECHNISCHE GRENZEN
+- Die pinkfarbenen Markierungen sind visuelle Hinweise fuer das Modell,
+  keine harte, pixelgenaue Inpainting-Maske. Nicht markierte Bereiche koennen
+  sich bei der Neugenerierung ebenfalls aendern.
+- Das Originalbild wird nicht ueberschrieben.
+- Keine Aenderung an FLUX-Gewichten, Modelfile, Datenbank, Bildservice,
+  Account-Memory, Benutzerrechten oder vorhandener serieller Queue.
+
+PRUEFSTATUS
+- Statisch im Repository geprueft: JS-Syntax der bearbeiteten Module,
+  Viewer-/Editor-Verknuepfungen, Version 0.6.62, inhaltsbasierte Cache-Keys,
+  README-Laengenlimit sowie vorhandene Abbruch- und Entwurfs-Guards.
+- Noch NICHT auf dem Zielsystem ausgefuehrt: Playwright-Browserlauf,
+  echter FLUX-Bildauftrag, Gesamt-Preflight und Live-Test am Handy.
+- Ungetestete Punkte duerfen nicht als bestanden ausgegeben werden.
+
+VERBINDLICHE ABNAHME VOR MERGE
+  python3 scripts/version-merge-check.py --base-version 0.6.61
+  python3 scripts/cache-bust.py --verify
+  node scripts/image-editor-ui-selftest.cjs
+  node scripts/image-chat-ui-selftest.cjs
+  node scripts/terran-terminology-selftest.cjs
+  node scripts/tci-language-selftest.cjs
+  Vollstaendiger Preflight auf der Betreiberumgebung
+
+Nach erfolgreicher Abnahme Merge nach main, anschliessend Aktualisierung
+ueber den integrierten CoreAI-Updater und mobiler Funktionstest. Der Merge
+allein ist keine Serverinstallation.
