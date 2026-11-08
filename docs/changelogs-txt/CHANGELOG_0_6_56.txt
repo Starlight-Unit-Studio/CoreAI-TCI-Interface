@@ -1,0 +1,8 @@
+## 0.6.56 - 08.11.2026
+
+- Remove all visible copyright/text from generated images. Retain only the transparent Quantum CoreAI logo at bottom-right, minimally reduced from 12% to 11.5% width at the original 50% opacity.
+- Put product, generator, fixed technical TCI identity, origin and model facts in the generated PNG itself using standards-compliant iTXt and XMP. Human-readable names: Quantum CoreAI and "TCI: Mara Thorne", independently of display-name aliases such as Ember. The user-facing credit is "Erstellt mit Quantum CoreAI".
+- Embed creation time (UTC), version, publisher, copyright, dimensions, seed, model identifier/label, model file revisions and hashes, model/runtime licenses, inference steps, CFG scale, duration, size setting and number of visual references. Keep the IPTC DigitalSourceType=trainedAlgorithmicMedia technical classifier without making "Generative AI" the product name.
+- Do not export the prompt text, private account identifiers, image reference tokens, credential material or server filesystem paths in public image metadata. Private sidecar JSON retains its original full prompt and session data.
+- Extend image tests to verify only the logo changes pixels, generated PNG iTXt and XMP fields, TCI author/creator naming, image sizes, and no privacy leaks.
+- No image model or queue behavior change.

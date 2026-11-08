@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.6.56 - 08.11.2026
+
+- Remove all visible copyright and text overlays from generated PNG images, retaining only the existing transparent Quantum CoreAI watermark logo at bottom-right, reduced slightly from 12% to 11.5% width at its previous 50% opacity.
+- Embed extensive public PNG iTXt and XMP metadata: Quantum CoreAI as product and generator; the fixed technical identity **TCI: Mara Thorne** as author/creator; Starlight Unit Studios publisher, current software version, UTC timestamp, copyright, source classification, dimensions, seed, steps, CFG, runtime, model components, revision hashes, licenses and reference count.
+- Use human-readable credits "Erstellt mit Quantum CoreAI", never the generic label "Generative AI" as a product name. Keep the standards-defined algorithmic-media source tag for interoperability.
+- Keep full prompts, account IDs, reference tokens, local paths and credentials out of exported metadata. The existing account-scoped private JSON sidecar keeps the complete prompt and job details.
+- Add regression coverage for logo-only pixel changes, metadata chunks and their CRC-valid PNG layout, XMP creator, trademark, source information and privacy. No image-model, generation queue or profile behavior change.
+
+
 ## 0.6.55 - 08.11.2026
 
 - Reuse the touch-based STU Game player avatar crop workflow in CoreAI Settings > Profile. User photos retain a square selection; assistant references offer free, 2:3, 3:4 and square crops with drag, resize, sliders and two-finger gestures. Cropping is confirmed before upload, and an existing image can be cropped again.
