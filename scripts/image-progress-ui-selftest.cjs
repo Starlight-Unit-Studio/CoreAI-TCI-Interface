@@ -1,4 +1,4 @@
-// CoreAI 0.6.41 (P20.5): the image card while Mara paints, in a real browser (Playwright).
+// CoreAI 0.6.65: the image card and its completed thumbnails in a real browser (Playwright).
 //   node scripts/image-progress-ui-selftest.cjs
 // js/coreui-image-progress.js on a page with the chat's stylesheets and a live answer row
 // as js/console-app.js builds it. Checked: the events it reads (and ignores); the stage
@@ -21,7 +21,14 @@ assert(app.includes('if (event && state.typingEl && window.CoreAIImageProgress) 
   'live work events reach the image card');
 assert(app.includes('window.CoreAIImageProgress.replay(row, bucket.events);'), 'a rebuilt answer row gets the card back');
 assert(app.includes("es.addEventListener('image_preview', function(ev) {")
-  && app.includes("window.CoreAIImageProgress.preview(state.typingEl, String(shot.image || ''));"), '0.6.42: step previews reach the card');
+  && app.includes("window.CoreAIImageProgress.preview(state.typingEl, String(shot.image || ''));"), 'step previews reach the card');
+const progressJS = read('js/coreui-image-progress.js');
+assert(progressJS.includes('p.thumbs.hidden = false;'), 'first completed image must appear as a thumbnail');
+assert(progressJS.includes('var FRAME_MS ='), 'animated dots are frame-rate limited');
+assert(progressJS.includes('Math.round(size * ratio)'), 'canvas backing store uses integer pixels');
+assert(progressJS.includes('if (p.raf) return;'), 'only one raster animation runs per card');
+const viewerJS = read('js/coreui-image-viewer.js');
+assert(viewerJS.includes("a.img-progress-thumb"), 'completed thumbs open in the shared image viewer');
 assert(/<script src="\.\/js\/coreui-image-progress\.js\?v=\d+"><\/script>\n  <script src="\.\/js\/coreui-work-events\.js/.test(read('app.html')) === false
   && /coreui-work-events\.js\?v=\d+"><\/script>\n  <script src="\.\/js\/coreui-image-progress\.js\?v=\d+"><\/script>/.test(read('app.html')),
   'app.html loads the module after the work view');
@@ -69,15 +76,17 @@ const ROW = id => `<div class="msg-row ember" id="${id}"><div class="msg-avatar"
 <div class="msg-bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div></div></div>`;
 const HARNESS = theme => `<!doctype html><html lang="de" data-coreui-theme="${theme}"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>t</title>
-<link rel="stylesheet" href="/css/console.css"><link rel="stylesheet" href="/css/coreui-theme.css"></head>
+<link rel="stylesheet" href="/css/console.css"><link rel="stylesheet" href="/css/coreui-theme.css">
+<link rel="stylesheet" href="/css/coreui-image-viewer.css"></head>
 <body><main class="messages"><div class="messages-inner" id="rows">${ROW('row1')}</div></main>
-<script src="/js/coreui-image-progress.js"></script></body></html>`;
+<script src="/js/coreui-image-progress.js"></script>
+<script src="/js/coreui-image-viewer.js"></script></body></html>`;
 
 const ev = (title, meta = {}, state = 'info') => ({kind: 'tool', state, title, meta});
 const progress = (reason, step = 0, px = 512) => ev('Bild: x', {source: 'image', reason, step, steps: 4, image_px: px});
 
 async function open(browser, options = {}) {
-  const page = await browser.newPage({viewport: options.viewport || {width: 900, height: 1100}, reducedMotion: options.reduced ? 'reduce' : 'no-preference'});
+  const page = await browser.newPage({viewport: options.viewport || {width: 900, height: 1100}, deviceScaleFactor: options.dpr || 1, reducedMotion: options.reduced ? 'reduce' : 'no-preference'});
   const errors = [];
   const media = [];
   page.on('pageerror', error => errors.push(error.message));
@@ -249,30 +258,64 @@ const dots = page => page.evaluate(() => {
     await still.page.close();
 
     // A phone.
-    const phone = await open(browser, {viewport: {width: 390, height: 844}});
+    const phone = await open(browser, {viewport: {width: 390, height: 844}, dpr: 1.5});
     await observe(phone.page, ev('Schritt 1 von 6: Bild', {}, 'running'));
     const fit = await phone.page.evaluate(() => ({w: document.querySelector('.img-progress').getBoundingClientRect().width,
       scroll: document.documentElement.scrollWidth, view: window.innerWidth}));
     assert(fit.w <= fit.view && fit.scroll <= fit.view, 'fits a phone: ' + JSON.stringify(fit));
+    // On fractional display scales, the canvas must not be recreated each frame.
+    const canvasResets = await phone.page.evaluate(async () => {
+      const frame = document.querySelector('.img-progress-frame');
+      const canvas = document.querySelector('.img-progress-dots');
+      frame.style.flex = '0 0 317px';
+      const descriptor = Object.getOwnPropertyDescriptor(HTMLCanvasElement.prototype, 'width');
+      let resets = 0;
+      Object.defineProperty(canvas, 'width', {
+        configurable:true,
+        get() { return descriptor.get.call(this); },
+        set(value) { resets++; descriptor.set.call(this, value); }
+      });
+      await new Promise(resolve => setTimeout(resolve, 210));
+      frame.style.removeProperty('flex');
+      return resets;
+    });
+    assert(canvasResets <= 2, 'fractional DPR must not reallocate the canvas on every frame: ' + canvasResets);
     const batch = await phone.page.evaluate(() => {
       const P = window.CoreAIImageProgress, row = document.getElementById('row1');
       const events = [];
+      let firstShownImmediately = false, firstVisibleWhileSecondRenders = false, firstIsClickable = false;
       for (let i = 1; i <= 4; i++) {
         events.push({id:i*2, title:'Bild wird vorbereitet', meta:{source:'image', reason:'image_start'}});
         P.observe(row, events[events.length-1]);
         const card = row.querySelector('.img-progress');
         if (card._p.shown >= 5 || card.querySelector('.img-progress-picture')) throw new Error('New image did not reset');
+        if (i === 2) {
+          firstVisibleWhileSecondRenders = !card.querySelector('.img-progress-thumbs').hidden
+            && card.querySelectorAll('.img-progress-thumb').length === 1;
+          firstIsClickable = !!card.querySelector('.img-progress-thumb[href*="console_media.php?uuid="]');
+        }
         events.push({id:i*2+1, title:'Bild erzeugt', meta:{image_uuid:String(i).repeat(32), image_px:512}});
         P.observe(row, events[events.length-1]);
+        if (i === 1) firstShownImmediately = !row.querySelector('.img-progress-thumbs').hidden;
       }
       P.replay(row, events); // replaying the same event IDs must not reset current work
       const card = row.querySelector('.img-progress');
       const thumbs = card.querySelector('.img-progress-thumbs').getBoundingClientRect();
       const frame = card.querySelector('.img-progress-frame').getBoundingClientRect();
       return {count:card.querySelectorAll('.img-progress-thumb').length, percent:card._p.shown,
-        left:thumbs.right <= frame.left, fits:document.documentElement.scrollWidth <= innerWidth};
+        left:thumbs.right <= frame.left, fits:document.documentElement.scrollWidth <= innerWidth,
+        firstShownImmediately, firstVisibleWhileSecondRenders, firstIsClickable};
     });
-    assert.deepEqual(batch, {count:4, percent:100, left:true, fits:true}, 'four thumbnails on the left and no stale replay/reset');
+    assert.deepEqual(batch, {count:4, percent:100, left:true, fits:true,
+      firstShownImmediately:true, firstVisibleWhileSecondRenders:true, firstIsClickable:true},
+      'completed image appears immediately beside the next active 2/4 image grid');
+    // Actual taps on a finished thumb must use the existing image viewer.
+    await phone.page.locator('.img-progress-thumb').first().click();
+    await phone.page.waitForSelector('.coreai-image-viewer:not([hidden])');
+    assert(await phone.page.locator('.coreai-image-viewer-scroll img').count() >= 1,
+      'first generated thumbnail opens in the image viewer');
+    await phone.page.locator('.coreai-image-viewer-close').click();
+    assert.deepEqual(phone.errors, [], 'no phone-side page errors');
     await phone.page.close();
   } finally {
     await browser.close();
