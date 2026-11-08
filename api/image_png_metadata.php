@@ -12,6 +12,7 @@ declare(strict_types=1);
  */
 const COREUI_IMAGE_AI_SOURCE_TYPE = 'http://cv.iptc.org/newscodes/digitalsourcetype/trainedAlgorithmicMedia';
 const COREUI_IMAGE_PROVENANCE_FORMAT = 'quantum-coreai-image-provenance/1';
+const COREUI_IMAGE_TCI_IDENTITY = 'TCI: Mara Thorne'; // Technical identity, independent of display aliases.
 
 function coreui_image_png_chunk(string $type, string $payload): string {
   if (strlen($type) !== 4) throw new InvalidArgumentException('invalid_png_chunk');
@@ -60,6 +61,7 @@ function coreui_image_provenance(array $meta, array $registry = []): array {
   return [
     'format'=>COREUI_IMAGE_PROVENANCE_FORMAT,
     'generated_by'=>'Quantum CoreAI: TCI Interface',
+    'tci_identity'=>COREUI_IMAGE_TCI_IDENTITY,
     'software_version'=>coreui_image_provenance_version(),
     'publisher'=>'Starlight Unit Studios',
     'credit'=>'Erstellt mit Quantum CoreAI',
@@ -111,6 +113,7 @@ function coreui_image_provenance_xmp(array $data): string {
   $date = $escape((string)$data['created_at_utc']);
   $credit = $escape((string)$data['credit']);
   $producer = $escape((string)$data['publisher']);
+  $tciIdentity = $escape((string)$data['tci_identity']);
   $sourceType = $escape((string)$data['digital_source_type']);
   return '<?xpacket begin="' . "\xEF\xBB\xBF" . '" id="W5M0MpCehiHzreSzNTczkc9d"?>' . "\n"
     . '<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">'
@@ -122,6 +125,7 @@ function coreui_image_provenance_xmp(array $data): string {
     . '<dc:description><rdf:Alt><rdf:li xml:lang="x-default">Erstellt mit Quantum CoreAI</rdf:li></rdf:Alt></dc:description>'
     . '<dc:rights><rdf:Alt><rdf:li xml:lang="x-default">' . $copyright . '</rdf:li></rdf:Alt></dc:rights>'
     . '<dc:publisher><rdf:Seq><rdf:li>' . $producer . '</rdf:li></rdf:Seq></dc:publisher>'
+    . '<dc:creator><rdf:Seq><rdf:li>' . $tciIdentity . '</rdf:li></rdf:Seq></dc:creator>'
     . '<photoshop:Credit>' . $credit . '</photoshop:Credit>'
     . '<xmp:CreatorTool>Quantum CoreAI ' . $version . '</xmp:CreatorTool>'
     . '<xmp:CreateDate>' . $date . '</xmp:CreateDate>'
@@ -147,6 +151,8 @@ function coreui_image_png_embed_provenance(string $png, array $meta, array $regi
       . coreui_image_png_itxt('Creation Time', $data['created_at_utc'])
       . coreui_image_png_itxt('Copyright', $data['copyright_notice'])
       . coreui_image_png_itxt('Credit', $data['credit'])
+      . coreui_image_png_itxt('Author', $data['tci_identity'])
+      . coreui_image_png_itxt('TCI Identity', $data['tci_identity'])
       . coreui_image_png_itxt('Digital Source Type', $data['digital_source_type'])
       . coreui_image_png_itxt('Quantum CoreAI Provenance', $json)
       . coreui_image_png_itxt('XML:com.adobe.xmp', coreui_image_provenance_xmp($data));
