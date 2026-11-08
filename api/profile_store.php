@@ -102,6 +102,94 @@ function coreui_profile_media_dir(): string {
   return dirname(__DIR__) . '/var/profile_media';
 }
 
+/**
+ * Sidecars are private files, keyed only by the server-generated media UUID.
+ * The PNG remains the generated reference consumed by the current image worker.
+ * Source bytes are preserved separately for repeat crops and later upgrades.
+ */
+function coreui_profile_media_uuid(string $storedName): ?string {
+  if (preg_match('~^([a-f0-9]{32})\\.png$~D', $storedName, $matches) !== 1) return null;
+  return $matches[1];
+}
+
+function coreui_profile_source_path(string $uuid): ?array {
+  if (preg_match('~^[a-f0-9]{32}$~D', $uuid) !== 1) return null;
+  foreach (['jpg'=>'image/jpeg', 'png'=>'image/png'] as $ext=>$mime) {
+    $path = coreui_profile_media_dir() . '/' . $uuid . '.source.' . $ext;
+    if (is_file($path) && is_readable($path) && !is_link($path)) {
+      return ['path'=>$path, 'mime'=>$mime, 'ext'=>$ext];
+    }
+  }
+  return null;
+}
+
+function coreui_profile_crop_meta(string $uuid): ?array {
+  if (preg_match('~^[a-f0-9]{32}$~D', $uuid) !== 1) return null;
+  $path = coreui_profile_media_dir() . '/' . $uuid . '.crop.json';
+  if (!is_file($path) || is_link($path)) return null;
+  $data = json_decode((string)@file_get_contents($path), true);
+  return is_array($data) && is_array($data['crop'] ?? null) ? $data['crop'] : null;
+}
+
+function coreui_profile_media_cleanup(string $storedName): void {
+  $uuid = coreui_profile_media_uuid($storedName);
+  if ($uuid === null) return;
+  $dir = coreui_profile_media_dir() . '/';
+  foreach ([$uuid . '.png', $uuid . '.source.jpg', $uuid . '.source.png', $uuid . '.crop.json'] as $name) {
+    @unlink($dir . $name);
+  }
+}
+
+/** Convert a normalized crop from the browser into validated source pixels. */
+function coreui_profile_crop_pixels(mixed $value, int $width, int $height, string $slot): ?array {
+  if ($value === null || $value === '') return null;
+  if (is_string($value)) {
+    if (strlen($value) > 256) throw new InvalidArgumentException('avatar_crop_invalid');
+    $value = json_decode($value, true);
+  }
+  if (!is_array($value) || $width < 32 || $height < 32) throw new InvalidArgumentException('avatar_crop_invalid');
+  $n = [];
+  foreach (['x', 'y', 'w', 'h'] as $axis) {
+    $v = $value[$axis] ?? null;
+    if (!is_int($v) && !is_float($v)) throw new InvalidArgumentException('avatar_crop_invalid');
+    if (!is_finite((float)$v)) throw new InvalidArgumentException('avatar_crop_invalid');
+    $n[$axis] = (float)$v;
+  }
+  if ($n['x'] < 0 || $n['y'] < 0 || $n['w'] <= 0 || $n['h'] <= 0
+      || $n['x'] + $n['w'] > 1.00001 || $n['y'] + $n['h'] > 1.00001) {
+    throw new InvalidArgumentException('avatar_crop_invalid');
+  }
+  $x = min($width - 1, (int)round($n['x'] * $width));
+  $y = min($height - 1, (int)round($n['y'] * $height));
+  $w = min($width - $x, (int)round($n['w'] * $width));
+  $h = min($height - $y, (int)round($n['h'] * $height));
+  if ($w < 32 || $h < 32) throw new InvalidArgumentException('avatar_crop_too_small');
+  if ($slot === 'user' && abs($w - $h) > 2) throw new InvalidArgumentException('avatar_crop_must_be_square');
+  return [
+    'x'=>$x, 'y'=>$y, 'w'=>$w, 'h'=>$h,
+    'normalized'=>['x'=>$x / $width, 'y'=>$y / $height, 'w'=>$w / $width, 'h'=>$h / $height],
+  ];
+}
+
+function coreui_profile_orient_jpeg(GdImage $image, string $path, string $mime): GdImage {
+  if ($mime !== 'image/jpeg' || !function_exists('exif_read_data')) return $image;
+  $exif = @exif_read_data($path, 'IFD0', true, false);
+  $orientation = is_array($exif) ? (int)($exif['IFD0']['Orientation'] ?? $exif['Orientation'] ?? 1) : 1;
+  if (in_array($orientation, [2, 4, 5, 7], true)) imageflip($image, IMG_FLIP_HORIZONTAL);
+  if ($orientation === 4) imageflip($image, IMG_FLIP_VERTICAL);
+  $degrees = match ($orientation) {
+    3 => 180, 5 => -90, 6 => -90, 7 => 90, 8 => 90, default => 0,
+  };
+  if ($degrees !== 0) {
+    $rotated = imagerotate($image, $degrees, 0);
+    if ($rotated instanceof GdImage) {
+      imagedestroy($image);
+      $image = $rotated;
+    }
+  }
+  return $image;
+}
+
 function coreui_profile_media_path(string $storedName): ?string {
   $storedName = trim($storedName);
   if ($storedName === '' || basename($storedName) !== $storedName) return null;
