@@ -106,8 +106,13 @@ function coreui_image_reference_prompt(string $scene, ?string $selfReference, ar
   $block = coreui_image_reference_block($mode, $multiple)
     . ($styleOverlay ? $styleFull : '')
     . ($accountPortrait ? $portraitFull : '');
-  // The long identity clause can exceed the model prompt limit. Shorten both
-  // its base and its overlays together, preserving the user's scene and source.
+  // Prefer a shorter core before sacrificing details of a custom portrait.
+  // The account overlay also has a compact form for tighter model limits.
+  if (mb_strlen($block) + 1 + mb_strlen($scene) > $limit) {
+    $block = coreui_image_reference_block($mode, $multiple, true)
+      . ($styleOverlay ? $styleFull : '')
+      . ($accountPortrait ? $portraitFull : '');
+  }
   if (mb_strlen($block) + 1 + mb_strlen($scene) > $limit) {
     $block = coreui_image_reference_block($mode, $multiple, true)
       . ($styleOverlay ? $styleShort : '')
