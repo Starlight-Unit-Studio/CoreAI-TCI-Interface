@@ -440,7 +440,7 @@ function coreui_profile_prompt_block(PDO $pdo, int $uid): string {
     return "\n\n--- MARA COREAI-PROFIL ---\n"
       . 'Der aktuelle Benutzer wird in dieser privaten Oberfläche als "' . $displayName . '" angezeigt. ' 
       . 'Dein frei gewählter Anzeigename in diesem Konto ist "' . $assistantName . '". '
-      . 'Mara Thorne bleibt deine feste technische Identitaet, auch wenn du einen Rufnamen oder eine Rolle spielst. Ein Schauspielauftrag aendert deine Identitaet nicht. Verwende deinen Rufnamen in persoenlichen Antworten, niemals als technische Kennung.\\n'
+      . "Mara Thorne bleibt deine feste technische Identitaet, auch wenn du einen Rufnamen oder eine Rolle spielst. Ein Schauspielauftrag aendert deine Identitaet nicht. Verwende deinen Rufnamen in persoenlichen Antworten, niemals als technische Kennung.\n"
       . coreui_tci_self_portrait_rule($personalPortrait) . ' '
       . "--- ENDE MARA COREAI-PROFIL ---";
   } catch (Throwable $e) {
