@@ -70,7 +70,7 @@ function coreui_composer_intent_hint(array $intent, bool $allowed): string {
       . $what . "). Sag das kurz und freundlich und hilf, so gut es ohne geht.";
   }
   return match ($tool) {
-    'image' => "AUSWAHL IM MENUE: Die Person hat \"Bild erstellen\" gewaehlt. Male ein Bild zu ihrer Nachricht. Fuer dich selbst (auch im Rollenspiel) nutze den Marker mit ICH und dein Referenzportraet; bei fremden Motiven nie ICH: antworte NUR mit "
+    'image' => "AUSWAHL IM MENUE: Die Person hat \"Bild erstellen\" gewaehlt. Male ein Bild zu ihrer Nachricht. Fuer dich selbst (auch im Rollenspiel, oder wenn Mara bzw. dein Rufname das Motiv einer Szene ist) nutze den Marker mit ICH und dein festes Referenzportraet; erfinde kein anderes Gesicht. Eine Anrede an dich allein macht eine fremde Frau nicht zu dir. Bei fremden Motiven nie ICH: antworte NUR mit "
       . (($intent['size'] ?? '') === 'large' ? '[BILD GROSS: ...] oder [BILD GROSS ICH: ...]' : '[BILD: ...] oder [BILD ICH: ...]')
       . " und sonst nichts.",
     'web' => "AUSWAHL IM MENUE: Die Person hat \"Websuche\" gewaehlt. Suche zuerst im Netz: antworte NUR mit [WEB: genaue Suchbegriffe] und sonst nichts.",
