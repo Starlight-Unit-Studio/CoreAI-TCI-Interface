@@ -209,7 +209,17 @@ function coreui_account_delete(PDO $pdo, int $uid): array {
   $media = coreui_console_session_delete_media_files($result['media_paths']);
   $files += (int)($media['files_deleted'] ?? 0);
   $files += coreui_account_delete_named_files(coreui_knowledge_upload_dir(), $result['knowledge_files']);
-  $files += coreui_account_delete_named_files(coreui_profile_media_dir(), $result['profile_files']);
+  // Include private source originals and crop coordinates with the account
+  // deletion. Only names derived from this user's stored avatar UUIDs qualify.
+  $ownedAvatarFiles = $result['profile_files'];
+  foreach ($result['profile_files'] as $name) {
+    $uuid = coreui_profile_media_uuid((string)$name);
+    if ($uuid === null) continue;
+    $ownedAvatarFiles[] = $uuid . '.source.jpg';
+    $ownedAvatarFiles[] = $uuid . '.source.png';
+    $ownedAvatarFiles[] = $uuid . '.crop.json';
+  }
+  $files += coreui_account_delete_named_files(coreui_profile_media_dir(), $ownedAvatarFiles);
   foreach ($result['photo_paths'] as $rel) {
     $rel = str_replace('\\', '/', (string)$rel);
     if (preg_match('~^assets/profile_photos/(pending|approved)/([^/]+)$~', $rel, $m)) {
