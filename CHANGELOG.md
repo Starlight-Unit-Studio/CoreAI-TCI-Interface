@@ -7,6 +7,7 @@
 - Explicit limitation: pink selection marks guide FLUX; there is no hard mask/inpainting operation and edits may extend outside the highlighted region.
 - Prevent overwriting an unsent chat draft and support exiting the editor during reference loading. Add a local mobile Playwright image-editor regression, registered conditionally in both deployment preflights.
 - Bump version consistently and update content-hashed asset cache keys. 0.6.61 remains the earlier viewer-only release.
+- Bring the viewer toolbar into the native Quantum CoreAI TCI visual language: replace the split image/dropdown with one accessible info icon, add light blue/white controls with gold/blue accents, compact technical button shapes, mobile-safe spacing and native dark-theme styling. Keep image pixels and the dark canvas unchanged.
 
 
 ## 0.6.61 - 08.11.2026
