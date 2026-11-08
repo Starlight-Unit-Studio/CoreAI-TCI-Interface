@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.49: dynamischer Quantum CoreAI Bildvermerk ohne Studio-Logo.
+# CoreAI: TCI Interface 0.6.50: dynamischer Quantum CoreAI Bildvermerk ohne Studio-Logo.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -192,10 +192,12 @@ UI_FILES=(
   tools/image/adopt_spike.py
   config/image/mara-image.json
   api/image_gen.php
+  api/image_reference_consistency.php
   docker/image/Dockerfile
   database/migrations/026_image_tool.sql
   scripts/image-service-selftest.py
   scripts/image-gen-selftest.php
+  scripts/image-reference-consistency-selftest.php
   scripts/image-chat-ui-selftest.cjs
   js/coreui-image-progress.js
   scripts/image-progress-ui-selftest.cjs
@@ -997,6 +999,14 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     ok 'Bilder im Chat: Marker, Arbeitsschritt, Speichern fuer das Konto, Abbruch, Verlauf, Loeschen und Schalter geprueft.'
   else
     fail "Bilder-im-Chat-Selbsttest: ${image_gen_test:-Unbekannter Fehler}"
+  fi
+
+  # 0.6.50: all image references share identity, subject and style preservation.
+  reference_consistency_test=''
+  if reference_consistency_test="$(compose exec -T php php scripts/image-reference-consistency-selftest.php 2>&1)"; then
+    ok 'Bildreferenzen: Identitaet, Motivtreue, Stilvorlage und mehrere Quellen geprueft.'
+  else
+    fail "Bildreferenz-Konsistenztest: ${reference_consistency_test:-Unbekannter Fehler}"
   fi
 
   # 0.6.43: the + menu of the input field: marks, Mara's instruction, the tool started with the

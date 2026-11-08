@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.6.50 - 08.11.2026
+
+- Apply a universal **reference consistency system standard** to every FLUX.2 image job that uses a visual reference. The central image-generation layer adds a source-preservation prompt regardless of whether the reference is Mara's canonical or personal portrait, or one or several user-uploaded pictures. Ordinary text-to-image requests remain unchanged.
+- Three modes: **identity** for recognizable people and characters (face geometry, eyes, nose, lips, jaw, hairline, skin, build, natural neck/shoulders/limbs/feet); **subject** for other subjects (silhouette, structure, color, material, markings, plus facial identity if people appear); and **style only** when explicitly requested (palette and aesthetic, not the source's subjects). Multiple reference subjects stay distinct instead of merging faces or features.
+- Keep the user's original explicit style-only instruction authoritative even if a Vision/model-generated prompt describes people from the references. The attachment fallback likewise respects style-only requests. No global height or body-shape template is imposed on unrelated subjects.
+- Respect the model service's prompt-size limit without silently dropping the end of long scene descriptions: use a compact consistency instruction and, only when needed, retain both beginning and ending of the requested scene.
+- Add an offline reference-consistency regression selftest and run it in the Docker and native preflights alongside the existing image tests. No new model, database migration, background process or queue behavior.
+
 ## 0.6.49 - 08.11.2026
 
 - Let Mara **generate new images from multiple attached reference pictures** within the same turn. The Vision branch now invokes the existing image tool when the user asks for a new image instead of stopping at a prose promise. If the model gives only prose, an explicit image request still invokes a deterministic fallback prompt.

@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/image_reference_consistency.php';
+
 /*
  * CoreAI 0.6.39 (P20.5 C): Mara makes images.
  *
@@ -138,6 +140,10 @@ function coreui_image_attachment_creation_requested(string $message, ?array $int
 function coreui_image_attachment_fallback_prompt(string $message, string $visionSummary): string {
   $message = mb_substr(trim((string)preg_replace('~\\s+~u', ' ', $message)), 0, 380);
   $summary = mb_substr(trim((string)preg_replace('~\\s+~u', ' ', $visionSummary)), 0, 490);
+  if (coreui_image_reference_mode($message, false, true) === 'style') {
+    return 'Create ONE NEW image of the requested scene. Use the supplied reference images ONLY as visual style guides, '
+      . 'not as subjects to copy. Follow the requested style and scene: ' . $message;
+  }
   return 'Create ONE NEW coherent image using the supplied reference pictures. Preserve the depicted subjects, '
     . 'their recognizable costumes and distinguishing visual details. Compose the scene requested by the user: '
     . $message . '. The previously observed subjects were: ' . $summary;
@@ -340,7 +346,7 @@ function coreui_image_progress_title(array $job): string {
  */
 function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $prompt, string $size,
     callable $lease, callable $unlease, callable $progress, callable $cancelled, ?callable $http = null,
-    ?callable $preview = null, ?string $reference = null, array $references = []): array {
+    ?callable $preview = null, ?string $reference = null, array $references = [], ?string $userReferenceMode = null): array {
   $http = $http ?? 'coreui_image_http';
   $previews = 0; // 0.6.42: $preview(string $dataUrl, array $job) gets every new step preview
   $registry = coreui_image_registry();
@@ -348,17 +354,9 @@ function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $
   $prompt = trim((string)preg_replace('~\s+~u', ' ', $prompt));
   if ($prompt === '' || mb_strlen($prompt) > $limit) return ['ok' => false, 'error' => 'bad_prompt', 'detail' => ''];
   if (!isset(($registry['sizes'] ?? [])[$size])) return ['ok' => false, 'error' => 'bad_size', 'detail' => ''];
-  if ($reference !== null) {
-    // An identity-reference portrait, whether canonical or personalized.
-    $anchor = 'Use the supplied reference image as the SAME person. Preserve the recognizable facial proportions, '
-      . 'eyes, hair, and overall identity of the subject shown there. Change scenery or clothing as requested, '
-      . 'but do not invent a new face. ';
-    $prompt = mb_substr($anchor . $prompt, 0, $limit);
-  } elseif ($references !== []) {
-    $anchor = 'Use ALL supplied reference pictures as visual sources. Preserve the recognizable subjects and their '
-      . 'distinctive clothing, features and shapes while following the requested scene. ';
-    $prompt = mb_substr($anchor . $prompt, 0, $limit);
-  }
+  // Every image reference passes through the same identity/subject/style
+  // consistency standard, regardless of which chat or voice tool selected it.
+  $prompt = coreui_image_reference_prompt($prompt, $reference, $references, $limit, $userReferenceMode);
   if (count($references) > COREUI_IMAGE_MAX_REFERENCES) {
     return ['ok'=>false, 'error'=>'bad_reference', 'detail'=>''];
   }

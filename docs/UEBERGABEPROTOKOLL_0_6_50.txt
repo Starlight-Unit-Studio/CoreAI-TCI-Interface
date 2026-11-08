@@ -1,0 +1,35 @@
+CoreAI: TCI Interface | HANDOVER 0.6.50
+Date: 08.11.2026
+Branch: feat/reference-consistency-standard-0650
+Base: main 0.6.49
+
+GOAL
+Enforce one system-wide image reference consistency layer for EVERY reference image, instead of a weak Mara-only portrait instruction. The standard is applied in the PHP generator after the user/model has selected the existing image tool, before the prompt is sent to the pinned FLUX.2 service.
+
+ARCHITECTURE
+- api/image_reference_consistency.php: pure mode classifier and prompt composer.
+- api/image_gen.php: includes the reusable helper and uses it for canonical self portraits, private personal avatars, and account-scoped multiple uploaded image references.
+- api/chat.php: retains a user-specified style-only decision through Vision and subsequent tool execution. Ordinary picture-only turns stay unchanged.
+- Both Docker and native preflights require/run scripts/image-reference-consistency-selftest.php; existing image selftest expectations adjusted.
+
+REFERENCE MODES
+- identity: humans and recurring characters; preserve individual facial geometry (eyes/nose/lips/jaw/cheekbones/hairline), natural anatomy and recognizable body proportions. No fixed height for every character.
+- subject: objects, vehicles, animals, products or generic unknown subjects; preserve silhouette, geometry, textures, materials, colors, markings and identifying traits, including faces when the input happens to depict people.
+- style: ONLY on an explicit instruction to use references as artistic style. Copy the requested color palette, brushwork, lighting and mood without copying unrelated pictured subjects.
+- multi reference: keep subjects distinct, no swapping or blending faces/markings.
+
+Prompt budget: use full block if it fits; otherwise compact block; if still long, preserve the beginning and ending of the scene description.
+
+KNOWN LIMITS
+FLUX.2-klein is a generative model. Reference input plus prompt guidance improves but cannot guarantee pixel-exact facial or bodily identity. Accurate identity lock might require a stronger identity-consistent editing pipeline in the future. This patch does not replace the model or add a new image worker.
+
+VERIFICATION BEFORE MERGE
+- php -l api/image_reference_consistency.php, api/image_gen.php, api/chat.php, scripts/image-reference-consistency-selftest.php and scripts/image-gen-selftest.php
+- php scripts/image-reference-consistency-selftest.php
+- php scripts/image-gen-selftest.php
+- python3 scripts/version-merge-check.py --base-version 0.6.49
+- python3 scripts/cache-bust.py --verify
+- Both standard preflights in the operator's server environment
+- Live reference images: Mara original, uploaded portrait, two characters fighting, an object/animal, style-only images, combined references, 1/2/4 output queue and browser/mobile.
+
+Do not merge or deploy until the required checks pass. No changes to MariaDB schema, user permissions, model pin, Modelfile, Nginx or installer behavior.
