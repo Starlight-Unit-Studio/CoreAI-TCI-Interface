@@ -1,4 +1,4 @@
-/* CoreAI 0.6.62: real-browser image editor regression. Playwright/Node required.
+/* CoreAI 0.6.63: real-browser image editor regression. Playwright/Node required.
  * Offline: no model, external server, internet, or database.
  */
 'use strict';
@@ -28,6 +28,11 @@ assert(!viewer.includes("icon('chevron')"), 'no dropdown chevron in title');
 assert(css.includes('--viewer-accent-gold: var(--amb'), 'TCI amber token used');
 assert(css.includes('--viewer-accent-blue: var(--cx'), 'TCI blue token used');
 assert(css.includes('html[data-coreui-theme="dark"] .coreai-image-viewer'), 'viewer honors theme setting');
+assert(css.includes('--editor-blue: var(--cx'), 'editor uses the native TCI blue token');
+assert(css.includes('--editor-gold: var(--amb'), 'editor uses the native TCI amber token');
+assert(css.includes('html[data-coreui-theme="dark"] .coreai-image-editor'), 'editor has a native dark theme');
+assert(css.includes('.coreai-image-editor-brush-label input[type="range"]::-webkit-slider-thumb'), 'custom TCI brush thumb exists');
+assert(editor.includes("brush.style.setProperty('--editor-brush-fill'"), 'brush fill follows actual size');
 
 const html = [
   '<!doctype html><html lang="de"><head><meta charset="utf-8">',
@@ -90,6 +95,39 @@ const html = [
     await page.evaluate(() => document.documentElement.removeAttribute('data-coreui-theme'));
     await page.locator('.coreai-image-viewer-edit').click();
     await page.waitForSelector('.coreai-image-editor:not([hidden])');
+    const lightEditor = await page.evaluate(() => {
+      const root = document.querySelector('.coreai-image-editor');
+      const bar = document.querySelector('.coreai-image-editor-header');
+      const button = document.querySelector('.coreai-image-editor-submit');
+      const field = document.querySelector('.coreai-image-editor-input');
+      return {
+        scheme: getComputedStyle(root).colorScheme,
+        header: getComputedStyle(bar).backgroundImage,
+        button: getComputedStyle(button).backgroundImage,
+        field: getComputedStyle(field).backgroundImage,
+        width: document.documentElement.scrollWidth
+      };
+    });
+    assert.equal(lightEditor.scheme, 'light', 'light theme uses the TCI light palette');
+    assert(lightEditor.header.includes('linear-gradient'), 'TCI header gradient is rendered');
+    assert(lightEditor.button.includes('linear-gradient'), 'TCI primary button is rendered');
+    assert(lightEditor.field.includes('linear-gradient'), 'TCI form input is rendered');
+    assert(lightEditor.width <= 390, 'light editor stays within phone width');
+    await page.evaluate(() => document.documentElement.setAttribute('data-coreui-theme','dark'));
+    const darkEditor = await page.evaluate(() => {
+      const root = document.querySelector('.coreai-image-editor');
+      const bar = document.querySelector('.coreai-image-editor-header');
+      const input = document.querySelector('.coreai-image-editor-input');
+      return {
+        scheme: getComputedStyle(root).colorScheme,
+        header: getComputedStyle(bar).backgroundImage,
+        field: getComputedStyle(input).backgroundImage
+      };
+    });
+    assert.equal(darkEditor.scheme, 'dark', 'dark theme uses the TCI dark palette');
+    assert.notEqual(darkEditor.header, lightEditor.header, 'editor header changes with selected theme');
+    assert.notEqual(darkEditor.field, lightEditor.field, 'editor inputs change with selected theme');
+    await page.evaluate(() => document.documentElement.removeAttribute('data-coreui-theme'));
     await page.locator('.coreai-image-editor-input').fill('Ändere die Jacke zu Rot.');
     await page.locator('.coreai-image-editor-size').selectOption('large');
     await page.locator('.coreai-image-editor-submit').click();
@@ -106,6 +144,10 @@ const html = [
     await page.locator('.coreai-image-viewer-edit').click();
     await page.waitForSelector('.coreai-image-editor:not([hidden])');
     await page.locator('.coreai-image-editor-tool[aria-label="Bereiche mit dem Finger markieren"]').click();
+    const brushInput = page.locator('.coreai-image-editor-brush-label input[type="range"]');
+    await brushInput.evaluate(el => { el.value = '80'; el.dispatchEvent(new Event('input', {bubbles:true})); });
+    const brushFill = await brushInput.evaluate(el => el.style.getPropertyValue('--editor-brush-fill').trim());
+    assert.equal(brushFill, '81.8%', 'blue brush track fill follows selected size');
     const box=await page.locator('.coreai-image-editor-canvas').boundingBox();
     assert(box&&box.width>20&&box.height>20,'visible canvas');
     await page.mouse.move(box.x+box.width*.35,box.y+box.height*.35);
