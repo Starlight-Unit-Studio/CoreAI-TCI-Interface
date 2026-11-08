@@ -1,0 +1,10 @@
+## 0.6.58 - 08.11.2026
+
+- Mara's canonical visual identity now supports a curated set of seven original images: five photographic references for facial and body consistency, two separate Hologram/Wireframe style references.
+- Paths are fixed by config/image/mara-references.json. The photos are uploaded separately to images/mara_references/ and must use the exact supplied filenames.
+- When using the default Mara avatar, FLUX selects the new front portrait, up to two complementary identity angles per scene, and at most one explicitly requested hologram style. No indiscriminate seven-image input.
+- A custom assistant avatar always overrides this canonical set. User-uploaded subjects are separate identities, and the official Mara gallery does not dilute them.
+- The image service checks exact filenames, extensions, magic headers, sizes and directory containment. Missing optional photos are skipped and the legacy mara_winter.jpg remains a fallback.
+- All canonical identity photos depict the same TCI: Mara Thorne. Holograms may only change visual style, not the face or body. Scene, clothing and pose may vary.
+- Keep private prompts and source filenames out of exported PNG metadata, while recording actual input count. No model or database changes.
+- Test static selection, fallback, symlink rejection, custom-account isolation, selected reference counts and the 1200-character prompt contract.
