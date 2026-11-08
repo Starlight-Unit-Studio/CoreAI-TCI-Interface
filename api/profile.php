@@ -16,7 +16,7 @@ if ($method === 'GET') {
     'ok' => true,
     'profile' => coreui_profile_load($pdo, $uid),
     'csrf_token' => stu_csrf_token(),
-    'limits' => ['name_chars' => 64, 'avatar_mb' => 4, 'avatar_px' => 512],
+    'limits' => ['name_chars' => 64, 'avatar_mb' => 4, 'avatar_px' => 512, 'assistant_reference_px' => 1024],
   ]);
 }
 

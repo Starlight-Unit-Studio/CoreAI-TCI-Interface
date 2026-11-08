@@ -506,3 +506,17 @@ html[data-coreui-theme="dark"] .cm-badge { color: var(--amb); }
 
 /* Do not invert media, photographs, site previews or remote browser frames. */
 
+
+/* Preserve avatar scaling after the dark theme's background shorthand. */
+html[data-coreui-theme="dark"] .settings-profile-avatar.has-image,
+html[data-coreui-theme="dark"] .account-avatar.has-image,
+html[data-coreui-theme="dark"] .msg-avatar.has-image {
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+.settings-profile-avatar.assistant.has-image,
+html[data-coreui-theme="dark"] .settings-profile-avatar.assistant.has-image {
+  background-size: contain;
+  background-repeat: no-repeat;
+}

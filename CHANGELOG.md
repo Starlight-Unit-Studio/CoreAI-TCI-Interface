@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.6.51 - 08.11.2026
+
+- Honor account display names including Ember instead of silently replacing that alias with Mara. The technical identity remains unchanged.
+- Preserve the entire assistant profile image, with its aspect ratio and a longest edge of at most 1024 pixels, for image-generation references. User avatars retain their existing square crop. Previously cropped assistant uploads must be uploaded again to recover lost image areas.
+- Correct dark-theme avatar background scaling and show the complete assistant image in the profile preview.
+- Make the account portrait authoritative over default appearance descriptions in text and image prompts. This improves reference consistency without promising pixel-exact generated likeness.
+- Keep profile preferences in the profile store only. Do not write memory entries, infer visual facts or run a model during upload.
+
 ## 0.6.50 - 08.11.2026
 
 - Apply a universal **reference consistency system standard** to every FLUX.2 image job that uses a visual reference. The central image-generation layer adds a source-preservation prompt regardless of whether the reference is Mara's canonical or personal portrait, or one or several user-uploaded pictures. Ordinary text-to-image requests remain unchanged.

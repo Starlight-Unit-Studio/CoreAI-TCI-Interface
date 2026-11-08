@@ -1,0 +1,7 @@
+CoreAI: TCI Interface 0.6.51
+
+Fixes: Ember alias rewrite, destructive assistant portrait cropping, dark-theme preview scaling, prompt guidance conflicting with custom portraits.
+
+Re-upload any previously cropped assistant portrait after update. Merely saving the name cannot recover discarded pixels. Profile preferences remain in the profile store; no memory writes or visual-fact extraction.
+
+Offline checks and limitations are recorded in the pull request. No live FLUX generation or production deployment performed. A reference cannot guarantee an exact likeness.
