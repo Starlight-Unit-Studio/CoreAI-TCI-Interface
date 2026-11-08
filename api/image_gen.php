@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/image_reference_consistency.php';
+require_once __DIR__ . '/image_png_metadata.php';
 
 /*
  * CoreAI 0.6.39 (P20.5 C): Mara makes images.
@@ -15,24 +16,17 @@ require_once __DIR__ . '/image_reference_consistency.php';
  * reload, is served only to its owner (console_media.php) and is deleted with its chat or
  * account. Next to it a small JSON keeps the description, size, seed and time, so Mara knows
  * later what she made. Guests never make images; the Inhaber can switch them off for
- * everyone (Betrieb) or per account (Benutzer). Each exported image carries a
- * small dynamic-year Quantum CoreAI copyright at bottom left and the watermark_logo.png
- * in the bottom-right corner, following the operator's reference image.
+ * everyone (Betrieb) or per account (Benutzer). The exported image carries
+ * only the subtle Quantum CoreAI logo at bottom-right; copyright, generator,
+ * model and creation details are embedded in PNG/XMP metadata, not drawn as text.
  */
 
 const COREUI_IMAGE_DEFAULT_PORT = 18791;
 const COREUI_IMAGE_MAX_BYTES = 25 * 1024 * 1024;
 const COREUI_IMAGE_MAX_REFERENCES = 10; // Same limit as attached files per turn.
-const COREUI_IMAGE_LOGO_WIDTH = 0.12;  // 12% of the image width
-const COREUI_IMAGE_MARK_MARGIN = 0.025; // relative to the image width
-const COREUI_IMAGE_MARK_OPACITY = 0.5;  // logo opacity
-const COREUI_IMAGE_CREDIT_OPACITY = 0.75;
-const COREUI_IMAGE_MARK_TEXT = 'Quantum CoreAI';
-
-/** Copyright line follows the image creation year, never a fixed release year. */
-function coreui_image_mark_text(?int $year = null): string {
-  return '© ' . ($year ?? (int)date('Y')) . ' ' . COREUI_IMAGE_MARK_TEXT;
-}
+const COREUI_IMAGE_LOGO_WIDTH = 0.115; // 11.5%, down slightly from 12%
+const COREUI_IMAGE_MARK_MARGIN = 0.025; // relative to image width
+const COREUI_IMAGE_MARK_OPACITY = 0.5;  // 50% opacity, unchanged
 
 function coreui_image_service_url(): string {
   $port = (int)(getenv('COREUI_IMAGE_PORT') ?: COREUI_IMAGE_DEFAULT_PORT);
@@ -204,21 +198,20 @@ function coreui_image_http(string $method, string $path, ?array $body = null, in
 }
 
 /**
- * Reference-image layout: tiny copyright at bottom left, studio-independent
- * Quantum watermark logo at bottom right. The source watermark_logo.png already
- * has real RGBA transparency; preserve its native alpha when scaling and fading.
- * Both elements are included in the stored PNG.
- * Returns null if required imaging support or assets are missing.
+ * The visible mark is only our existing transparent RGBA logo at bottom-right.
+ * All author, creation and model details live in PNG metadata instead.
  */
 function coreui_image_watermark(string $png): ?string {
   $logoPath = dirname(__DIR__) . '/images/watermark_logo.png';
-  $fontPath = dirname(__DIR__) . '/assets/fonts/rajdhani_700.ttf';
   if (!function_exists('imagecreatefromstring') || !function_exists('imagecreatefrompng')
-      || !function_exists('imagecopyresampled') || !function_exists('imagettftext')
-      || !function_exists('imagettfbbox') || !is_file($logoPath) || !is_file($fontPath)) return null;
+      || !function_exists('imagecopyresampled') || !is_file($logoPath)) return null;
   $base = @imagecreatefromstring($png);
   $logo = @imagecreatefrompng($logoPath);
-  if ($base === false || $logo === false) return null;
+  if ($base === false || $logo === false) {
+    if ($base instanceof GdImage) imagedestroy($base);
+    if ($logo instanceof GdImage) imagedestroy($logo);
+    return null;
+  }
   if (!imageistruecolor($base)) imagepalettetotruecolor($base);
   $width = imagesx($base);
   $height = imagesy($base);
@@ -226,17 +219,11 @@ function coreui_image_watermark(string $png): ?string {
   $logoWidth = max(1, (int)round($width * COREUI_IMAGE_LOGO_WIDTH));
   $logoWidth = min($logoWidth, $width - 2 * $margin);
   $logoHeight = max(1, (int)round($logoWidth * imagesy($logo) / imagesx($logo)));
-  if ($logoWidth < 1 || $logoHeight + 2 * $margin > $height) return null;
-
-  $text = coreui_image_mark_text();
-  $fontSize = max(8.0, min(14.0, round($width * 0.012)));
-  $box = imagettfbbox($fontSize, 0, $fontPath, $text);
-  if ($box === false) return null;
-  $textWidth = $box[2] - $box[0];
-  $textHeight = $box[1] - $box[7];
-  if ($textWidth <= 0 || $textHeight <= 0
-      || $textWidth + $logoWidth + 3 * $margin > $width
-      || $textHeight + 2 * $margin > $height) return null;
+  if ($logoWidth < 1 || $logoHeight + 2 * $margin > $height) {
+    imagedestroy($logo);
+    imagedestroy($base);
+    return null;
+  }
 
   $scaled = coreui_image_canvas($logoWidth, $logoHeight);
   imagecopyresampled($scaled, $logo, 0, 0, 0, 0, $logoWidth, $logoHeight, imagesx($logo), imagesy($logo));
@@ -244,33 +231,25 @@ function coreui_image_watermark(string $png): ?string {
   for ($y = 0; $y < $logoHeight; $y++) {
     for ($x = 0; $x < $logoWidth; $x++) {
       $rgba = imagecolorat($scaled, $x, $y);
-      // Respect the PNG's native alpha, including partially transparent pixels.
-      // Only reduce its existing opacity; never key out colours by brightness.
-      $nativeOpacity = 1 - ((($rgba >> 24) & 0x7F) / 127);
+      // Maintain the transparent logo's native alpha, fading only its opacity.
+      $nativeOpacity = 1 - ((($rgba >> 24) & 0x7f) / 127);
       $opacity = $nativeOpacity * COREUI_IMAGE_MARK_OPACITY;
       if ($opacity <= 0) continue;
       $alpha = 127 - (int)round(127 * $opacity);
-      imagesetpixel($mark, $x, $y, ($alpha << 24) | ($rgba & 0xFFFFFF));
+      imagesetpixel($mark, $x, $y, ($alpha << 24) | ($rgba & 0xffffff));
     }
   }
   imagealphablending($base, true);
   imagecopy($base, $mark, $width - $logoWidth - $margin, $height - $logoHeight - $margin,
     0, 0, $logoWidth, $logoHeight);
-
-  // Align the glyphs to the same bottom margin as the watermark logo.
-  $textX = $margin - $box[0];
-  $textY = $height - $margin - $box[1];
-  $whiteAlpha = 127 - (int)round(127 * COREUI_IMAGE_CREDIT_OPACITY);
-  $shadowAlpha = 127 - (int)round(127 * COREUI_IMAGE_CREDIT_OPACITY * 0.48);
-  imagettftext($base, $fontSize, 0, $textX + 1, $textY + 1,
-    imagecolorallocatealpha($base, 0, 0, 0, $shadowAlpha), $fontPath, $text);
-  imagettftext($base, $fontSize, 0, $textX, $textY,
-    imagecolorallocatealpha($base, 255, 255, 255, $whiteAlpha), $fontPath, $text);
-
   imagesavealpha($base, false);
   ob_start();
   $ok = imagepng($base, null, 6);
   $out = (string)ob_get_clean();
+  imagedestroy($base);
+  imagedestroy($logo);
+  imagedestroy($scaled);
+  imagedestroy($mark);
   return $ok && coreui_image_png_size($out) === [$width, $height] ? $out : null;
 }
 
@@ -434,13 +413,21 @@ function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $
     return ['ok' => false, 'error' => 'image_failed', 'detail' => 'kein gueltiges PNG'];
   }
   $marked = coreui_image_watermark($png);
-  if ($marked === null) error_log('[CoreUI] Image kept without credit/logo (GD, font or watermark image missing)');
-  return coreui_image_store($pdo, $uid, $characterId, $marked ?? $png, [
+  if ($marked === null) error_log('[CoreAI] Image saved without logo (GD or logo asset unavailable)');
+  $meta = [
     'watermark' => $marked !== null,
     'prompt' => $prompt, 'size' => $size, 'width' => $dims[0], 'height' => $dims[1],
     'seed' => (int)($job['seed'] ?? 0), 'seconds' => round((float)($job['seconds'] ?? 0), 1),
     'model' => (string)($registry['model']['label'] ?? ''),
-  ]);
+    'reference_count' => count($references) + ($reference !== null ? 1 : 0),
+    'created_at' => gmdate('Y-m-d\\TH:i:s+00:00'),
+  ];
+  $image = $marked ?? $png;
+  $embedded = coreui_image_png_embed_provenance($image, $meta, $registry);
+  if ($embedded === null) error_log('[CoreAI] PNG metadata embedding failed; the generated image is still usable');
+  else $image = $embedded;
+  $meta['metadata_embedded'] = $embedded !== null;
+  return coreui_image_store($pdo, $uid, $characterId, $image, $meta);
 }
 
 /** Keeps a made image as a media entry of the account (and its description next to it). */
@@ -454,7 +441,7 @@ function coreui_image_store(PDO $pdo, int $uid, string $characterId, string $png
     return ['ok' => false, 'error' => 'storage_failed', 'detail' => ''];
   }
   @chmod($file, 0640);
-  $meta['created_at'] = gmdate('c');
+  $meta['created_at'] = $meta['created_at'] ?? gmdate('c');
   @file_put_contents($dir . '/' . $uuid . '.json', json_encode($meta, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), LOCK_EX);
   $alias = 'Mara';
   if (function_exists('coreui_profile_load') && $uid > 0) {
