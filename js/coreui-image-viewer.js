@@ -17,8 +17,7 @@
   var historyEntry = false;
   var scrollRaf = 0;
   var ICONS = {
-    image: '<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>',
-    chevron: '<path d="m6 9 6 6 6-6"/>',
+    info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>',
     close: '<path d="M18 6 6 18M6 6l12 12"/>',
     download: '<path d="M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4"/>',
     share: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.7 10.7 6.6-4.4m-6.6 7 6.6 4.4"/>',
@@ -127,10 +126,10 @@
     overlay.setAttribute('tabindex', '-1');
 
     var toolbar = element('header', 'coreai-image-viewer-toolbar');
-    ui.info = action('image', 'Dateiinformationen anzeigen');
-    ui.info.classList.add('coreai-image-viewer-title');
-    ui.info.innerHTML = icon('image') + '<span>Bild</span>' + icon('chevron');
+    // One compact TCI info control. No split-button or pseudo-dropdown label.
+    ui.info = action('info', 'Dateiinformationen anzeigen');
     ui.info.setAttribute('aria-expanded', 'false');
+    ui.info.setAttribute('aria-controls', 'coreai-image-viewer-details');
     toolbar.appendChild(ui.info);
 
     var tools = element('div', 'coreai-image-viewer-tools');
@@ -149,6 +148,7 @@
     toolbar.appendChild(tools);
 
     ui.details = element('section', 'coreai-image-viewer-details');
+    ui.details.id = 'coreai-image-viewer-details';
     ui.details.hidden = true;
     ui.details.setAttribute('aria-label', 'Dateiinformationen');
     ui.detailsName = element('div');
