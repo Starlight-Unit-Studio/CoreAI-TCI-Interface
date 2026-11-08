@@ -1,5 +1,10 @@
 # CoreAI: TCI Interface
 
+## 0.6.60 - 08.11.2026
+
+- Fix the image-in-chat preflight assertion to match the current self-identity instruction ("kein Foto" instead of "nicht ein Foto"). The stale exact-text expectation incorrectly blocked installation even though the instruction still identifies the active portrait as the TCI herself.
+- Preserve all identity assertions for compact and full prompts. No runtime, model, profile, memory or installer behavior changes.
+
 ## 0.6.59 - 08.11.2026
 
 - Repair the image-service preflight simulator: its nested Python string literal previously expanded raw binary escape sequences into NUL/non-ASCII bytes inside the generated stand-in `sd-cli`. The fake command could not start, so the preview capability assertion failed even though this said nothing about the real image engine.

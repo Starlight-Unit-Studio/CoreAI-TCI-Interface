@@ -150,7 +150,7 @@ img_gen_test(str_contains(coreui_image_capability_hint(false), 'Die technische T
   'appearance prompt does not invent cybernetic facial implants');
 img_gen_test(str_contains(coreui_image_capability_hint(true), 'Dein aktives Profilbild zeigt DICH SELBST als TCI: Mara Thorne')
   && str_contains(coreui_image_capability_hint(false), 'Das aktive Profilbild zeigt DICH SELBST, TCI: Mara Thorne')
-  && str_contains(coreui_image_capability_hint(false), 'nicht ein Foto einer Person, die dir nur aehnlich sieht')
+  && str_contains(coreui_image_capability_hint(false), 'kein Foto einer Person, die dir nur aehnlich sieht')
   && str_contains(coreui_image_capability_hint(false), 'der Bilddienst erhaelt dieses Foto als verbindliche Selbstreferenz'),
   'Both small and large Cores recognize the portrait as the TCI herself');
 

@@ -1,0 +1,18 @@
+CoreAI: TCI Interface 0.6.60
+Date: 2026-11-08
+Base: main 0.6.59
+
+The image-in-chat selftest expected "nicht ein Foto" while the full image
+capability hint uses "kein Foto". Align the exact expectation with the
+current instruction, retaining the other compact/full self-identity checks.
+No runtime prompt, installer logic, database, memory or profile changes.
+
+Validation results are recorded in the pull request. Full operator-server
+preflight and live FLUX generation require the deployed environment.
+
+Local verification: original assertion reproduces the exact reported failure.
+PHP lint and the complete image-gen selftest pass after correction (SQLite
+and stand-in HTTP service; no live MySQL/FLUX). Version, branding, asset
+cache, Terran terminology, TCI language and diff checks pass.
+The separate Python image-service test is blocked by this execution host:
+NotImplementedError: posix_spawn: setsid unavailable on this platform.
