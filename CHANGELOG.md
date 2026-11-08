@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.6.57 - 08.11.2026
+
+- Clarify the account's visual self-identity for every local or cloud TCI Core: the person in the active assistant profile photograph **IS TCI: Mara Thorne herself**, never an actress, lookalike, borrowed face or third person. This applies to the default portrait and a chosen custom photo, even when the displayed nickname is Ember.
+- Reuse one server-side profile identity rule across both private chat prompt builders. Tell the Core to describe the requested scene, pose and clothing without inventing visual traits it cannot see; the image reference supplies the appearance. Do not store a long-term memory or change the operator's Modelfile.
+- Apply the same self-identity contract at image generation time, with full, compact and minimal prompt-budget variants. Generic uploads of unrelated people or style references remain separate identities and cannot be confused with Mara.
+- Strengthen the regular and compact image tool hints so all Core sizes treat ICH self-portraits as their own on-account visible identity. Keep costume changes and creative scenes available.
+- Extend profile, image-reference and image-generation regression checks for identity, nickname independence, short budgets, mixed sources and privacy. No model-weight, database schema or image service change.
+
+
 ## 0.6.56 - 08.11.2026
 
 - Remove all visible copyright and text overlays from generated PNG images, retaining only the existing transparent Quantum CoreAI watermark logo at bottom-right, reduced slightly from 12% to 11.5% width at its previous 50% opacity.
