@@ -2,6 +2,8 @@ COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.61
 08.11.2026 | Basis: 0.6.60, PR #212
 
 - Bildbetrachter: js/coreui-image-viewer.js, css/coreui-image-viewer.css.
+- Bildeditor: js/coreui-image-editor.js mit Touch-Markierung, Undo/Redo, Textanweisung und bestehendem Uploadweg.
+- Auswahl ist ein visueller FLUX.2-Hinweis, keine pixelgenaue Inpainting-Maske. Original bleibt erhalten.
 - Empfangene, hochgeladene und generierte Bilder nutzen die einheitliche Ansicht.
 - X, Escape, Android-Zurueck, Zoom, Bildwechsel, Dateiinformationen, Originaldownload und Teilen.
 - Vorschaubilder vor dem Senden, Integration vorhandener Fertigbild-Karten.
