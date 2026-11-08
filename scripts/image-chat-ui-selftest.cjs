@@ -110,6 +110,17 @@ ${builder}
     });
     assert.deepEqual(upload, {figures: 0, img: 'IMG', cls: 'msg-image', src: '/assets/chat_media/up.png'}, 'an upload keeps its plain look');
     assert.deepEqual(errors, []);
+    const viewerJS = fs.readFileSync(path.join(root, 'js/coreui-image-viewer.js'), 'utf8');
+    const viewerCSS = fs.readFileSync(path.join(root, 'css/coreui-image-viewer.css'), 'utf8');
+    const html = fs.readFileSync(path.join(root, 'app.html'), 'utf8');
+    assert(viewerJS.includes('window.CoreAIImageViewer = Object.freeze'), 'viewer exposes its open/close API');
+    assert(viewerJS.includes("ui.close.addEventListener('click', close)"), 'viewer has a close button');
+    assert(viewerJS.includes("event.key === 'Escape'"), 'viewer supports Escape');
+    assert(viewerJS.includes('await response.blob()'), 'viewer downloads the unchanged file');
+    assert(viewerJS.includes('url.origin === window.location.origin'), 'viewer only fetches same-origin images');
+    assert(viewerCSS.includes('coreai-image-viewer-scroll'), 'viewer has its own responsive layout');
+    assert(/coreui-image-viewer\.js\?v=\d+/.test(html), 'viewer JS loaded by chat page');
+    assert(/coreui-image-viewer\.css\?v=\d+/.test(html), 'viewer CSS loaded by chat page');
     if (process.env.COREAI_SHOT) await page.screenshot({path: process.env.COREAI_SHOT, fullPage: true});
   } finally {
     await browser.close();

@@ -1,5 +1,12 @@
 # CoreAI: TCI Interface
 
+## 0.6.61 - 08.11.2026
+
+- Add a full-screen, mobile-friendly image viewer for received, uploaded and TCI-generated chat images. Close via X, Escape or Android back, zoom in/out, see filename and resolution, move through multi-image replies, and use browser fullscreen when supported.
+- Show previews of ready-to-send photo attachments. Download original image bytes without recompression or removing Quantum CoreAI PNG provenance; offer native file sharing on compatible mobile browsers.
+- Keep protected per-user media URLs, account permissions, generation pipeline, model prompts, and the existing serial image queue unchanged. Extend image-chat UI checks.
+
+
 ## 0.6.60 - 08.11.2026
 
 - Fix the image-in-chat preflight assertion to match the current self-identity instruction ("kein Foto" instead of "nicht ein Foto"). The stale exact-text expectation incorrectly blocked installation even though the instruction still identifies the active portrait as the TCI herself.

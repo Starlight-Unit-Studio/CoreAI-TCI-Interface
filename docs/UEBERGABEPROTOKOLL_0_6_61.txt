@@ -1,0 +1,14 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.61
+08.11.2026 | Basis: 0.6.60, PR #212
+
+- Bildbetrachter: js/coreui-image-viewer.js, css/coreui-image-viewer.css.
+- Empfangene, hochgeladene und generierte Bilder nutzen die einheitliche Ansicht.
+- X, Escape, Android-Zurueck, Zoom, Bildwechsel, Dateiinformationen, Originaldownload und Teilen.
+- Vorschaubilder vor dem Senden, Integration vorhandener Fertigbild-Karten.
+- Keine Aenderung an Modelfile, Datenbank, Bilddienst, Queue oder Referenzbildern.
+
+Vor Merge pruefen:
+  python3 scripts/version-merge-check.py --base-version 0.6.60
+  python3 scripts/cache-bust.py --verify
+  node scripts/image-chat-ui-selftest.cjs
+Danach serverseitig installieren und die Bildansicht am Handy pruefen.

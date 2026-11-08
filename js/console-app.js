@@ -1865,6 +1865,9 @@
       picture.src = url;
       picture.alt = 'Bild von TCI: ' + (state.assistantName || 'Mara');
       picture.loading = 'lazy';
+      picture.setAttribute('data-file-name', att.name || ((state.assistantName || 'Mara') + '-Bild.png'));
+      picture.setAttribute('data-file-size', String(att.size || 0));
+      picture.setAttribute('data-file-mime', att.mime || 'image/png');
       open.appendChild(picture);
       figure.appendChild(open);
       var caption = document.createElement('figcaption');
@@ -1885,6 +1888,12 @@
       img.src = att.image_url || url;
       img.alt = att.name || 'Bild';
       img.loading = 'lazy';
+      img.tabIndex = 0;
+      img.setAttribute('role', 'button');
+      img.setAttribute('aria-label', (att.name || 'Bild') + ' vergrößern');
+      img.setAttribute('data-file-name', att.name || 'CoreAI-Bild.png');
+      img.setAttribute('data-file-size', String(att.size || 0));
+      img.setAttribute('data-file-mime', att.mime || '');
       return img;
     }
 
@@ -2122,7 +2131,33 @@
         deleteUnreferencedUpload(removed);
       });
 
-      chip.appendChild(icon);
+      // Uploaded images also get a preview before sending; the authenticated
+      // image media URL is preferred when available.
+      if (item.kind === 'image' && item.uuid) {
+        var previewUrl = API_BASE + '/console_media.php?uuid=' + encodeURIComponent(item.uuid);
+        var preview = document.createElement('button');
+        preview.type = 'button';
+        preview.className = 'attach-preview-button';
+        preview.setAttribute('aria-label', (item.name || 'Bild') + ' anzeigen');
+        var thumb = document.createElement('img');
+        thumb.alt = item.name || 'Hochgeladenes Bild';
+        thumb.src = previewUrl;
+        thumb.loading = 'lazy';
+        thumb.dataset.previewUrl = previewUrl;
+        thumb.dataset.fileName = item.name || 'CoreAI-Bild.png';
+        thumb.dataset.fileSize = String(item.size || 0);
+        thumb.dataset.fileMime = item.mime || '';
+        preview.appendChild(thumb);
+        chip.appendChild(preview);
+        preview.addEventListener('click', function () {
+          if (window.CoreAIImageViewer) window.CoreAIImageViewer.open({
+            src: previewUrl, name: item.name, size: item.size,
+            mime: item.mime, origin: 'Hochgeladen'
+          });
+        });
+      } else {
+        chip.appendChild(icon);
+      }
       chip.appendChild(meta);
       chip.appendChild(remove);
       attachList.appendChild(chip);
