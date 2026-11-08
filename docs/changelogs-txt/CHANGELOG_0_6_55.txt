@@ -1,0 +1,7 @@
+## 0.6.55 - 08.11.2026
+
+- Adapt STU Game's touch-based avatar crop UI to CoreAI Settings > Profile. User avatars crop square; assistant portraits may use full image, free crop, 2:3, 3:4 or 1:1. Move, resize and pinch with touch; choose the crop before uploading.
+- Preserve the original uploaded PNG/JPEG bytes independently of the 1024px PNG derivative used by the current image generator. Store normalized crop metadata privately; re-crop existing photos without requesting a new upload. Older photos with no original retain the existing derivative as their editing source.
+- Account-scoped, authenticated original access and UUID checks prevent cross-user access and stale edits. All crop boundaries are validated server-side, and the user output remains an exact square.
+- Keep source/metadata in account data export and delete all related files on avatar replacement, avatar delete and account deletion. No long-term memory write.
+- Cover pure PHP crop geometry and source handling, and Node mobile dialog behavior in the native and Compose preflights. No schema migration and no FLUX or persona changes.
