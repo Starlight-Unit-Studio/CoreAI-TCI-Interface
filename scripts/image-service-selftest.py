@@ -395,6 +395,8 @@ open(out, 'wb').write(png(w, h, (16, 32, 48)))
 
     for bad_body, code in (({'prompt': '', 'size': 'normal'}, 'bad_prompt'), ({'prompt': 'x' * 1300}, 'bad_prompt'),
                            ({'prompt': 'a fox', 'size': 'huge'}, 'bad_size'), ({'prompt': 'a fox', 'seed': -1}, 'bad_seed'),
+                           ({'prompt': 'a fox', 'scene_hint': 42}, 'bad_request'),
+                           ({'prompt': 'a fox', 'scene_hint': 'x' * 1300}, 'bad_request'),
                            ({'prompt': 'a\x00b'}, 'bad_prompt'),
                            ({'prompt': 'a fox', 'reference': '../etc/passwd'}, 'bad_reference'),
                            ({'prompt': 'a fox', 'references': '/etc/passwd'}, 'bad_reference'),
