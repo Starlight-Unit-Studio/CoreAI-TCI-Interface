@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.61: dynamischer Quantum CoreAI Bildvermerk ohne Studio-Logo.
+# CoreAI: TCI Interface 0.6.62: dynamischer Quantum CoreAI Bildvermerk ohne Studio-Logo.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -205,6 +205,10 @@ UI_FILES=(
   scripts/image-gen-selftest.php
   scripts/image-reference-consistency-selftest.php
   scripts/image-chat-ui-selftest.cjs
+  scripts/image-editor-ui-selftest.cjs
+  js/coreui-image-viewer.js
+  js/coreui-image-editor.js
+  css/coreui-image-viewer.css
   js/coreui-image-progress.js
   scripts/image-progress-ui-selftest.cjs
   api/console_composer_intent.php
@@ -1169,6 +1173,16 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       ok 'Live-Browser: Mara ueberlegt mit Sekunden, Cursor gleitet, Warteschlange, Fortsetzen nach Abbruch geprueft.'
     else
       fail 'Live-Browser-Oberflaechentest fehlgeschlagen.'
+    fi
+    # 0.6.62: local Playwright check for viewer -> editor -> FLUX reference handoff.
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/image-editor-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'Bildeditor: mobile Ansicht, Touch-Auswahl, Undo/Redo und Bildreferenzen geprueft.'
+      else
+        fail 'Bildeditor: mobile UI-Selbsttest fehlgeschlagen.'
+      fi
+    else
+      warn 'Bildeditor: Playwright fehlt. Browser-Selbsttest uebersprungen (keine Live-Abnahme).'
     fi
     # 0.5.79: settings page with tabs and Admin Core; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then

@@ -2405,6 +2405,38 @@
       processUploadQueue();
       return 'ok';
     },
+    // 0.6.62: Sora-style image edit requests reuse the EXISTING user upload pipeline,
+    // server side account checks and one-at-a-time FLUX image tool. No new queue.
+    sendImageEdit: function (files, instruction, size) {
+      if (!Array.isArray(files) || files.length < 1 || files.length > 2
+          || typeof instruction !== 'string' || instruction.trim().length < 3
+          || instruction.length > 1100) return 'invalid';
+      if (files.some(function (file) {
+        return !file || !(file instanceof File) || file.size < 1
+          || file.size > 8 * 1024 * 1024
+          || !/^image\/(?:png|jpeg|webp|gif)$/.test(file.type);
+      })) return 'invalid';
+      var ses = activeSession();
+      if (!ses || !state.characterId) return 'no_session';
+      if (state.waitingEmber || state.pendingBySession[ses.id]) return 'busy';
+      if (state.editingMessage) return 'editing';
+      // Never discard an unsent draft or mix the edit with unrelated attachments.
+      if (inputEl && String(inputEl.value || '').trim()) return 'draft';
+      if (attachmentSlotsUsed() > 0) return 'full';
+      if (window.CoreAIComposerMenu) window.CoreAIComposerMenu.set(
+        'image', size === 'large' ? 'large' : 'normal', 1
+      );
+      var text = instruction.trim();
+      if (!window.CoreAIComposerMenu) {
+        text = (size === 'large' ? '[[bild:gross]] ' : '[[bild]] ') + text;
+      }
+      setComposerText(text);
+      pendingSendAfterUpload = {text:text, sessionId:String(ses.id)};
+      files.forEach(function (file) { uploadQueue.push(file); });
+      renderAttachmentList();
+      processUploadQueue();
+      return 'ok';
+    },
     // 0.6.31 (P20.4): the live conversation works in the open chat and reloads it afterwards.
     liveContext: function () {
       var ses = activeSession();
