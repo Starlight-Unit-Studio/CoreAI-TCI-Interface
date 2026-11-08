@@ -15,18 +15,21 @@ function tier_test(bool $ok, string $why): void {
 
 // Same table as the client mirror in thinking-switch-ui-selftest.cjs.
 foreach ([
-  'gemma4:e2b' => 'TCI: Mara Schnell',
-  'gemma4:e4b' => 'TCI: Mara Normal',
-  'gemma4:26b' => 'TCI: Mara Pro',
-  'gemma4:31b' => 'TCI: Mara Premium',
-  'gemma4:31b-cloud' => 'TCI: Mara Premium',
-  'gemma4:26b-a4b-it-q4_K_M' => 'TCI: Mara Pro',
-  'hf.co/x/gemma-4-E4B-it-GGUF:Q8_0' => 'TCI: Mara Normal',
-  'gemma4:12b' => 'TCI: Mara Plus',
-  'gemma4:12b-cloud' => 'TCI: Mara Plus',
+  'gemma4:e2b' => 'TCI Core Schnell',
+  'gemma4:e4b' => 'TCI Core Normal',
+  'gemma4:26b' => 'TCI Core Pro',
+  'gemma4:31b' => 'TCI Core Premium',
+  'gemma4:31b-cloud' => 'TCI Core Premium',
+  'gemma4:26b-a4b-it-q4_K_M' => 'TCI Core Pro',
+  'hf.co/x/gemma-4-E4B-it-GGUF:Q8_0' => 'TCI Core Normal',
+  'gemma4:12b' => 'TCI Core Plus',
+  'gemma4:12b-cloud' => 'TCI Core Plus',
   // Cores the chat installer built from Mara's Modelfile (family:size).
-  'ember-coreui:12b' => 'TCI: Mara Plus',
-  'Ember-CoreUI:26b' => 'TCI: Mara Pro',
+  'ember-coreui:2b' => 'TCI Core Schnell',
+  'ember-coreui:4b' => 'TCI Core Normal',
+  'ember-coreui:e2b' => 'TCI Core Schnell', // legacy compatibility
+  'ember-coreui:12b' => 'TCI Core Plus',
+  'Ember-CoreUI:26b' => 'TCI Core Pro',
   'ember-coreui:test' => 'ember-coreui:test',
   'gpt-oss:120b-cloud' => 'gpt-oss:120b-cloud',
   'gemma3:27b' => 'gemma3:27b',
@@ -39,8 +42,9 @@ $default = defined('STU_EMBER_MODEL') ? (string)STU_EMBER_MODEL : 'ember-coreui:
 tier_test(coreui_core_label($default) === COREUI_CORE_TIER_LABELS[coreui_core_tier($base)], 'Mara\'s Core carries the tier of her base');
 tier_test(coreui_core_same('Ember-CoreUI', 'ember-coreui:latest') && !coreui_core_same('', ''), 'names compare like Ollama');
 tier_test(array_keys(COREUI_CORE_TIER_LABELS) === ['schnell', 'normal', 'plus', 'pro', 'premium']
-  && array_values(COREUI_CORE_TIER_SIZES) === array_keys(COREUI_CORE_TIER_LABELS)
-  && array_keys(COREUI_CORE_INSTALL_CATALOG) === array_keys(COREUI_CORE_TIER_LABELS), 'one fixed tier order everywhere');
+  && array_values(array_unique(COREUI_CORE_TIER_SIZES)) === array_keys(COREUI_CORE_TIER_LABELS)
+  && array_keys(COREUI_CORE_INSTALL_CATALOG) === array_keys(COREUI_CORE_TIER_LABELS)
+  && array_column(COREUI_CORE_INSTALL_CATALOG, 'tag') === ['2b', '4b', '12b', '26b', '31b'], 'one fixed tier order everywhere');
 tier_test(coreui_core_is_mara($default) && coreui_core_is_mara('ember-coreui:12b') && !coreui_core_is_mara('gemma4:12b'),
   'Mara\'s Cores are recognised by her name');
 
