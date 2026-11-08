@@ -281,74 +281,118 @@ img_gen_test($row['uuid'] === $r['uuid'] && (int)$row['user_id'] === 5 && $row['
   'kept as a private media entry of the account: ' . json_encode($row));
 $kept = (string)file_get_contents($tmp . '/images/' . $r['uuid'] . '.png');
 img_gen_test(coreui_image_png_size($kept) === [512, 512] && $kept !== $png && (int)$row['file_size'] === strlen($kept)
-  && substr(sprintf('%o', fileperms($tmp . '/images/' . $r['uuid'] . '.png')), -4) === '0640', 'the PNG on disk with the two-corner mark, 0640');
+  && substr(sprintf('%o', fileperms($tmp . '/images/' . $r['uuid'] . '.png')), -4) === '0640', 'the PNG on disk with logo only and provenance, 0640');
 $meta = coreui_image_meta($r['uuid']);
 img_gen_test(($meta['prompt'] ?? '') === 'A red fox, sitting in snow' && ($meta['seconds'] ?? 0) == 61.8 && ($meta['model'] ?? '') === 'FLUX.2-klein 4B (Q8_0)'
-  && ($meta['watermark'] ?? null) === true, 'its description next to it');
+  && ($meta['watermark'] ?? null) === true && ($meta['metadata_embedded'] ?? null) === true,
+  'Private description and successful public PNG/XMP metadata next to it');
 
-// Reference: small dynamic-year credit at lower left and a 12%-wide, half-opacity logo at lower right.
-img_gen_test(abs(COREUI_IMAGE_LOGO_WIDTH - 0.12) < 0.000001
+// Logo-only design: 11.5% of the width, 50% logo opacity, zero visible text.
+img_gen_test(abs(COREUI_IMAGE_LOGO_WIDTH - 0.115) < 0.000001
   && COREUI_IMAGE_MARK_OPACITY === 0.5,
-  'Quantum logo must stay at 12% width and 50% opacity');
-img_gen_test(coreui_image_mark_text(2026) === '© 2026 Quantum CoreAI'
-  && coreui_image_mark_text(2027) === '© 2027 Quantum CoreAI'
-  && coreui_image_mark_text() === '© ' . date('Y') . ' Quantum CoreAI', 'year-aware copyright');
+  'The only visible watermark stays 11.5% wide and 50% opaque');
 $logoPath = $root . '/images/watermark_logo.png';
 $logoDims = @getimagesize($logoPath);
 img_gen_test(is_array($logoDims) && $logoDims[0] > 0 && $logoDims[1] > 0,
   'watermark_logo.png must ship with the image generator');
 $sourceLogo = imagecreatefrompng($logoPath);
 img_gen_test($sourceLogo !== false
-  && ((imagecolorat($sourceLogo, 0, 0) >> 24) & 0x7F) === 127
-  && ((imagecolorat($sourceLogo, imagesx($sourceLogo) - 1, imagesy($sourceLogo) - 1) >> 24) & 0x7F) === 127,
-  'provided Quantum watermark is already transparent at its corners');
-$centreAlpha = (imagecolorat($sourceLogo, intdiv(imagesx($sourceLogo), 2), intdiv(imagesy($sourceLogo), 2)) >> 24) & 0x7F;
+  && ((imagecolorat($sourceLogo, 0, 0) >> 24) & 0x7f) === 127
+  && ((imagecolorat($sourceLogo, imagesx($sourceLogo) - 1, imagesy($sourceLogo) - 1) >> 24) & 0x7f) === 127,
+  'Transparent logo corners remain transparent');
+$centreAlpha = (imagecolorat($sourceLogo, intdiv(imagesx($sourceLogo), 2), intdiv(imagesy($sourceLogo), 2)) >> 24) & 0x7f;
 img_gen_test($centreAlpha > 0 && $centreAlpha < 127,
-  'provided Quantum watermark has native partial alpha to preserve');
+  'Logo native partial alpha is preserved');
 foreach ([512, 1024] as $n) {
   $gray = imagecreatetruecolor($n, $n);
   imagefill($gray, 0, 0, imagecolorallocate($gray, 128, 128, 128));
   ob_start(); imagepng($gray); $plain = (string)ob_get_clean();
   $marked = coreui_image_watermark($plain);
   img_gen_test(is_string($marked) && coreui_image_png_size($marked) === [$n, $n],
-    "two-corner mark {$n}: original PNG dimensions");
+    "logo-only watermark {$n}: dimensions stay identical");
   $im = imagecreatefromstring($marked);
   $margin = max(4, (int)round($n * COREUI_IMAGE_MARK_MARGIN));
   $logoW = (int)round($n * COREUI_IMAGE_LOGO_WIDTH);
   $logoH = (int)round($logoW * $logoDims[1] / $logoDims[0]);
   $logoX = $n - $logoW - $margin;
   $logoY = $n - $logoH - $margin;
-  $left = 0; $right = 0; $outside = 0; $leftBottom = 0;
+  $right = 0;
+  $outside = 0;
   for ($y = 0; $y < $n; $y++) {
     for ($x = 0; $x < $n; $x++) {
       $c = imagecolorat($im, $x, $y);
       if ((($c >> 16) & 255) === 128 && (($c >> 8) & 255) === 128 && ($c & 255) === 128) continue;
-      if ($x >= $margin - 1 && $x < $logoX - $margin && $y >= $n - $margin - 40) {
-        ++$left;
-        if ($y >= $n - $margin - 3) ++$leftBottom;
-      } elseif ($x >= $logoX && $x < $n - $margin && $y >= $logoY && $y < $n - $margin) {
-        ++$right;
-      } else ++$outside;
+      if ($x >= $logoX && $x < $n - $margin && $y >= $logoY && $y < $n - $margin) ++$right;
+      else ++$outside;
     }
   }
-  img_gen_test($left >= 12 && $leftBottom >= 2, "two-corner mark {$n}: credit at bottom left");
-  img_gen_test($right >= 30, "two-corner mark {$n}: new logo at bottom right");
-  img_gen_test($outside === 0, "two-corner mark {$n}: image untouched elsewhere");
+  img_gen_test($right >= 30, "logo-only watermark {$n}: visible logo in lower-right");
+  img_gen_test($outside === 0, "logo-only watermark {$n}: no visible text or altered pixels elsewhere");
   $corner = imagecolorat($im, $logoX + 1, $logoY + 1);
   $delta = max(abs((($corner >> 16) & 255) - 128), abs((($corner >> 8) & 255) - 128),
     abs(($corner & 255) - 128));
-  img_gen_test($delta <= 8, "two-corner mark {$n}: no dark square around the logo");
+  img_gen_test($delta <= 8, "logo-only watermark {$n}: no black rectangle");
+  imagedestroy($gray);
+  imagedestroy($im);
 }
-img_gen_test(coreui_image_watermark('no png') === null, 'invalid PNG: no mark, no crash');
+img_gen_test(coreui_image_watermark('no png') === null, 'invalid PNG cannot receive logo');
 $markSource = (string)file_get_contents($root . '/api/image_gen.php');
 img_gen_test(str_contains($markSource, "'/images/watermark_logo.png'")
-  && !str_contains($markSource, "'/images/starlight_unit_studios_logo_original.png'")
+  && !str_contains($markSource, 'imagettftext(')
+  && !str_contains($markSource, 'coreui_image_mark_text')
   && !str_contains($markSource, 'removeDarkBackdrop')
   && !str_contains($markSource, 'cornerBright'),
-  'new logo is used with native transparency, without brightness keying');
-img_gen_test(is_file($root . '/assets/fonts/rajdhani_700.ttf')
-  && str_contains((string)file_get_contents($root . '/assets/fonts/LICENSES.md'), 'rajdhani_700.ttf'),
-  'copyright line retains Rajdhani Bold (OFL)');
+  'Only the transparent Quantum logo is drawn, with no visible credit text');
+
+// Standard PNG iTXt + XMP encode the provenance and Quantum CoreAI brand.
+$public = coreui_image_provenance([
+  'width'=>512,'height'=>512,'seed'=>7,'seconds'=>61.8,
+  'size'=>'normal','reference_count'=>2,'created_at'=>'2026-11-08T12:30:00+00:00',
+], $registry);
+img_gen_test(($public['generated_by'] ?? null) === 'Quantum CoreAI: TCI Interface'
+  && ($public['credit'] ?? null) === 'Erstellt mit Quantum CoreAI'
+  && ($public['copyright_notice'] ?? null) === '© 2026 Quantum CoreAI'
+  && ($public['model']['id'] ?? null) === 'flux2-klein-4b'
+  && count($public['model']['components'] ?? []) === 3
+  && ($public['generation']['seed'] ?? null) === 7
+  && ($public['generation']['reference_image_count'] ?? null) === 2
+  && $public['digital_source_type'] === COREUI_IMAGE_AI_SOURCE_TYPE,
+  'Public provenance includes exact Quantum CoreAI brand and technical generation details');
+$embedded = coreui_image_png_embed_provenance(img_gen_png(48, 48),
+  ['width'=>48, 'height'=>48, 'seed'=>7,'seconds'=>61.8,
+   'size'=>'normal','reference_count'=>2,'created_at'=>'2026-11-08T12:30:00+00:00',
+   'prompt'=>'PRIVATE_USER_TEXT_DO_NOT_EXPORT','account_id'=>999,
+   'reference'=>'PRIVATE_REFERENCE_DO_NOT_EXPORT'], $registry);
+img_gen_test(is_string($embedded) && coreui_image_png_size($embedded) === [48, 48]
+  && !str_contains($embedded, 'PRIVATE_USER_TEXT_DO_NOT_EXPORT')
+  && !str_contains($embedded, 'PRIVATE_REFERENCE_DO_NOT_EXPORT')
+  && !str_contains($embedded, '"account_id"'),
+  'Embedded metadata preserves PNG size and excludes prompts and private identifiers');
+$chunks = [];
+for ($pos = 8, $len = strlen($embedded); $pos + 12 <= $len; ) {
+  $size = unpack('Nlen', substr($embedded, $pos, 4))['len'];
+  $type = substr($embedded, $pos + 4, 4);
+  if ($size < 0 || $pos + 12 + $size > $len) break;
+  if ($type === 'iTXt') {
+    $text = substr($embedded, $pos + 8, $size);
+    $sep = strpos($text, "\0");
+    if ($sep !== false) $chunks[substr($text, 0, $sep)] = substr($text, $sep + 5);
+  }
+  $pos += 12 + $size;
+  if ($type === 'IEND') break;
+}
+$details = json_decode((string)($chunks['Quantum CoreAI Provenance'] ?? ''), true);
+img_gen_test(is_array($details)
+  && ($chunks['Credit'] ?? '') === 'Erstellt mit Quantum CoreAI'
+  && ($chunks['Description'] ?? '') === 'Erstellt mit Quantum CoreAI'
+  && ($chunks['Digital Source Type'] ?? '') === COREUI_IMAGE_AI_SOURCE_TYPE
+  && str_contains((string)($chunks['XML:com.adobe.xmp'] ?? ''), 'Iptc4xmpExt:DigitalSourceType')
+  && str_contains((string)($chunks['XML:com.adobe.xmp'] ?? ''), 'Quantum CoreAI')
+  && ($details['generation']['seed'] ?? null) === 7,
+  'PNG iTXt and IPTC XMP carry readable Quantum CoreAI source and model information');
+img_gen_test(coreui_image_png_embed_provenance('not a png', [], $registry) === null,
+  'Metadata writer rejects invalid PNG');
+
 img_gen_test(coreui_image_meta('../x') === null, 'no paths as image names');
 
 // 0.6.42: step previews go to the chat as small data URLs, each new one once, never after the job.
