@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.6.52 - 08.11.2026
+
+- Strengthen the immutable server-side reference policy: preserve the exact same individual from visual references with 1:1 facial geometry, hairstyle, identifying details, body shape and proportions, rather than accepting a merely similar or reinterpreted person.
+- Allow the TCI to freely select a new pose, clothing, expression and setting when the user has not specified them, without copying the reference background or changing identity.
+- The current account portrait overrides name-based, canonical and stored-memory descriptions. The visual reference and reference rules are not saved into editable long-term memory and cannot be changed through the Admin Core memory interface.
+- Extend offline identity and compact-prompt regression tests. Exact pixel-level likeness remains dependent on the image generator.
+
+
 ## 0.6.51 - 08.11.2026
 
 - Honor account display names including Ember instead of silently replacing that alias with Mara. The technical identity remains unchanged.
