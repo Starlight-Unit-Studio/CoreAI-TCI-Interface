@@ -67,6 +67,7 @@ def _load(name: str, path: Path):
 
 # Loading from Hugging Face is the code of the image test (redirects, resume, SHA-256).
 SPIKE = _load('coreai_image_spike_run', ROOT / 'tools' / 'image_spike' / 'run.py')
+MARA_REFS = _load('coreai_mara_references', HERE / 'mara_references.py')
 if os.environ.get('COREAI_IMAGE_HF'):
     SPIKE.HF = os.environ['COREAI_IMAGE_HF'].rstrip('/')
 
@@ -172,6 +173,9 @@ def resolve_reference(token: str | None) -> str | None:
     if token is None:
         return None
     if token == 'default':
+        curated = MARA_REFS.select(ROOT, '', has_user_uploads=True)
+        if curated:
+            return curated[0]['path']  # prefer new Mara master, if deployed
         path = ROOT / 'images' / 'mara_winter.jpg'
         if not path.is_file() or path.stat().st_size > 8 * 1024 * 1024:
             raise ValueError('reference_unavailable')
@@ -332,16 +336,25 @@ class Service:
                     Path(job[key]).unlink(missing_ok=True)
 
     def create(self, prompt: str, size_key: str, seed: int | None, reference: str | None = None,
-               references: list[str] | None = None) -> dict:
+               references: list[str] | None = None, scene_hint: str | None = None) -> dict:
         # Tokens are already account-checked by PHP. No arbitrary paths are accepted here.
         reference_path = resolve_reference(reference)
         if references is None:
             references = []
         if len(references) > MAX_UPLOAD_REFERENCES or len(references) != len(set(references)):
             raise ValueError('bad_reference')
-        reference_paths = ([reference_path] if reference_path else []) + [
-            resolve_uploaded_reference(token) for token in references
-        ]
+        uploaded_paths = [resolve_uploaded_reference(token) for token in references]
+        curated = []
+        if reference == 'default':
+            # ONLY the built-in canonical Mara image may be expanded into the
+            # official portrait set. Custom assistant pictures always override
+            # the set; unrelated uploads are never reclassified as Mara.
+            curated = MARA_REFS.select(ROOT, scene_hint or '',
+                                       has_user_uploads=bool(references))
+            if curated:
+                reference_path = curated[0]['path']
+        extra_paths = [item['path'] for item in curated[1:]]
+        reference_paths = ([reference_path] if reference_path else []) + extra_paths + uploaded_paths
         self._clean()
         size = self.reg['sizes'][size_key]
         need = float(((self.reg.get('measured') or {}).get(size_key) or {}).get('peak_rss_mb') or 0)
@@ -359,7 +372,8 @@ class Service:
                    'png': str(self.work / (job_id + '.png')), 'log': str(self.work / (job_id + '.log')),
                    'preview_png': str(self.work / (job_id + '-preview.png')), 'preview': 0, 'preview_stamp': None,
                    'pid': 0, 'cancel': False, 'limit': int(size['time_limit_s']),
-                   'reference_path': reference_path, 'reference_paths': reference_paths}
+                   'reference_path': reference_path, 'reference_paths': reference_paths,
+                   'reference_count': len(reference_paths), 'curated_mara_count': len(curated)}
             self.jobs[job_id] = job
         threading.Thread(target=self._run, args=(job, prompt), daemon=True).start()
         return job
@@ -467,7 +481,7 @@ class Service:
             return job
 
     def public(self, job: dict) -> dict:
-        keys = ('id', 'state', 'phase', 'step', 'steps', 'error', 'size', 'width', 'height', 'seed', 'seconds', 'peak_rss_mb', 'preview')
+        keys = ('id', 'state', 'phase', 'step', 'steps', 'error', 'size', 'width', 'height', 'seed', 'seconds', 'peak_rss_mb', 'preview', 'reference_count', 'curated_mara_count')
         return {key: job[key] for key in keys}
 
     def health(self) -> dict:
@@ -483,7 +497,8 @@ class Service:
         process ends and Docker starts it again with the new code (as Eve's service)."""
         if interval <= 0:
             return
-        paths = [HERE / 'image_service.py', ROOT / 'tools' / 'image_spike' / 'run.py', REGISTRY]
+        paths = [HERE / 'image_service.py', HERE / 'mara_references.py', ROOT / 'tools' / 'image_spike' / 'run.py',
+                 ROOT / 'config' / 'image' / 'mara-references.json', REGISTRY]
 
         def stamp() -> list[int]:
             out = []
@@ -586,6 +601,10 @@ def make_handler(service: Service):
             seed = data.get('seed') if isinstance(data, dict) else None
             reference = data.get('reference') if isinstance(data, dict) else None
             references = data.get('references', []) if isinstance(data, dict) else []
+            scene_hint = data.get('scene_hint') if isinstance(data, dict) else None
+            if (scene_hint is not None and
+                (not isinstance(scene_hint, str) or len(scene_hint) > limit or '\x00' in scene_hint)):
+                return self._json(400, {'ok': False, 'error': 'bad_request'})
             if not isinstance(prompt, str) or not prompt.strip() or len(prompt) > limit or '\x00' in prompt:
                 return self._json(400, {'ok': False, 'error': 'bad_prompt'})
             if size not in (service.reg.get('sizes') or {}):
@@ -603,7 +622,7 @@ def make_handler(service: Service):
                 return self._json(503, {'ok': False, 'error': 'image_loading' if service.loading else 'image_unavailable',
                                         'detail': service.error})
             try:
-                job = service.create(prompt.strip(), size, seed, reference, references)
+                job = service.create(prompt.strip(), size, seed, reference, references, scene_hint)
             except BlockingIOError:
                 return self._json(503, {'ok': False, 'error': 'image_busy'})
             except MemoryError as error:
