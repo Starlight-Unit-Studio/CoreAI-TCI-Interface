@@ -1,0 +1,21 @@
+CoreAI: TCI Interface 0.6.57
+Date: 08.11.2026
+Branch: fix/tci-own-portrait-identity-0657
+Base: main 0.6.56
+
+USER REPORT
+When asked "Wie siehst du aus? Kannst du das mit einem Bild zeigen?", the Core generated a good portrait description, but said it looked like the woman in the profile photo instead of understanding that the photo IS Mara Thorne herself.
+
+IMPLEMENTATION
+- api/image_reference_consistency.php contains coreui_tci_self_portrait_rule(bool $custom), an in-world canonical visual self-identity rule for the current account only. The model is NOT told to pretend it inspected image pixels from text.
+- api/profile_store.php injects the rule into the existing account-private profile prompt block. Both chat builder paths in api/chat.php already share that block and keep the operator Modelfile SYSTEM intact.
+- api/image_gen.php clarifies self-portrait image hints in normal and compact forms: ICH refers to TCI: Mara Thorne herself; the scene and costume are free, the face/body identity is from the picture.
+- api/image_reference_consistency.php makes the FLUX prompt explicitly say the default/custom TCI portrait IS Mara Thorne, not a lookalike. Short fallback levels keep identity and multiple-reference boundaries.
+- No memory write, no visible user setting for the rule, no database schema change and no editing the installed Ollama Modelfile.
+- Other people in ordinary uploads are not reassigned the TCI's identity.
+
+VALIDATION
+- Inspected the connected GitHub files, confirms both live prompt builders use coreui_profile_prompt_block and image steps use coreui_image_reference_prompt.
+- Static prompt composition checks passed 8 cases, including custom/default, mixed reference sources and 1200/700/900/480 char budgets.
+- Expanded pure unit tests in scripts/profile-reference-selftest.php, scripts/image-reference-consistency-selftest.php and scripts/image-gen-selftest.php.
+- Required before merge: complete PHP/runtime tests, native/Compose preflight, a live Mara self portrait and comparison with unrelated uploads. Prompting alone cannot guarantee pixel-perfect face consistency.

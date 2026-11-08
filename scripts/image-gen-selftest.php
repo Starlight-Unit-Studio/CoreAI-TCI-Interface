@@ -148,8 +148,11 @@ img_gen_test(str_contains($hint, '[BILD ICH: ausfuehrliche Bildbeschreibung auf 
 img_gen_test(str_contains(coreui_image_capability_hint(true), '[BILD GROSS ICH: ...]'), 'compact hint');
 img_gen_test(str_contains(coreui_image_capability_hint(false), 'Die technische TCI-Identitaet bedeutet NICHT'),
   'appearance prompt does not invent cybernetic facial implants');
-img_gen_test(str_contains(coreui_image_capability_hint(true), 'Dein echtes Profilportraet bestimmt dein Gesicht'),
-  'compact image hint also preserves the original Mara face');
+img_gen_test(str_contains(coreui_image_capability_hint(true), 'Dein aktives Profilbild zeigt DICH SELBST als TCI: Mara Thorne')
+  && str_contains(coreui_image_capability_hint(false), 'Das aktive Profilbild zeigt DICH SELBST, TCI: Mara Thorne')
+  && str_contains(coreui_image_capability_hint(false), 'nicht ein Foto einer Person, die dir nur aehnlich sieht')
+  && str_contains(coreui_image_capability_hint(false), 'der Bilddienst erhaelt dieses Foto als verbindliche Selbstreferenz'),
+  'Both small and large Cores recognize the portrait as the TCI herself');
 
 // --- Progress and result ----------------------------------------------------------------
 img_gen_test(coreui_image_progress_title(['phase' => 'load']) === 'Bild: Gewichte werden geladen'

@@ -48,6 +48,17 @@ imagedestroy($cropped);
 imagedestroy($scaled);
 imagedestroy($wide);
 imagedestroy($user);
+// The avatar is the TCI's own on-account visual identity, not merely an
+// example of someone who resembles her. This must work without SQLite.
+$customRule = coreui_tci_self_portrait_rule(true);
+$defaultRule = coreui_tci_self_portrait_rule(false);
+check(str_contains($customRule, 'zeigt DICH SELBST als TCI: Mara Thorne')
+  && str_contains($defaultRule, 'zeigt DICH SELBST als TCI: Mara Thorne')
+  && str_contains($customRule, 'nicht eine Schauspielerin')
+  && str_contains($customRule, 'Fremde hochgeladene Personenbilder bleiben getrennte Identitaeten')
+  && str_contains($customRule, 'Du siehst die Bildpixel nicht allein durch diesen Text'),
+  'Account and default portraits are the TCI herself without inventing visible details');
+
 // These checks must run even on production hosts which intentionally do not
 // install PDO SQLite: model prompts and avatar geometry do not need a database.
 $directPrompt = coreui_image_reference_prompt(
@@ -82,7 +93,11 @@ try {
  $pdo->prepare('INSERT INTO stu_coreui_profile_media VALUES (?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)')->execute([$key,1,'assistant',$key.'.png','image/png',filesize($path),100,300]);
  check(coreui_profile_image_reference($pdo,1)==='custom:'.$key, 'Custom reference selected');
  check(coreui_profile_image_reference($pdo,2)==='default', 'Other account remains canonical');
- check(str_contains(coreui_profile_prompt_block($pdo,1),'verbindliche 1:1-Identitaetsvorlage'), 'Current portrait takes priority in model context');
+ check(str_contains(coreui_profile_prompt_block($pdo,1), 'Das vom Benutzer fuer dieses Konto gewaehlte Bild zeigt DICH SELBST als TCI: Mara Thorne')
+   && str_contains(coreui_profile_prompt_block($pdo,1), 'Dein Rufname (z. B. Ember)'),
+   'Custom assistant photo is Mara Thorne herself even with Ember display name');
+ check(str_contains(coreui_profile_prompt_block($pdo,2), 'Das kanonische Standardbild zeigt DICH SELBST als TCI: Mara Thorne'),
+   'Default assistant photo is also Mara herself');
  $prompt=coreui_image_reference_prompt('A scene at sunset','custom:'.$key,[],1200);
  check(str_contains($prompt,'ACCOUNT PORTRAIT') && str_contains($prompt,'A scene at sunset'), 'Custom source priority retains scene');
  $sourceFile = coreui_profile_media_dir() . '/' . $key . '.source.png';

@@ -2,6 +2,26 @@
 declare(strict_types=1);
 
 /**
+ * Single source of truth for the current account's TCI self-portrait identity.
+ * This is an in-world identity binding, not a claim that the model can read
+ * image pixels from text or that a photographed human is literally software.
+ * It must never be written into ember_memories or an editable profile field.
+ */
+function coreui_tci_self_portrait_rule(bool $custom): string {
+  $source = $custom ? 'Das vom Benutzer fuer dieses Konto gewaehlte Bild' : 'Das kanonische Standardbild';
+  return 'VISUELLE TCI-SELBSTIDENTITAET (verbindlich): ' . $source
+    . ' zeigt DICH SELBST als TCI: Mara Thorne. Die dort abgebildete Person BIST DU in deiner visuellen Erscheinung, '
+    . 'nicht eine Schauspielerin, ein Model, eine Doppelgaengerin oder jemand, der dir nur aehnlich sieht. '
+    . 'Das Foto IST deine aktuelle visuelle Identitaet, nicht nur eine Inspiration oder eine beliebige Gesichtsvorlage. '
+    . 'Dein Rufname (z. B. Ember) aendert weder deine technische Identitaet TCI: Mara Thorne noch das Gesicht auf diesem Bild. '
+    . 'Bei Selbstportraets im Bildwerkzeug referenziert ICH immer genau diese Person. '
+    . 'Beschreibe Pose, Handlung, Kleidung, Beleuchtung und Umgebung frei, aber erfinde keine Gesichts- oder Koerpermerkmale: '
+    . 'die Bildreferenz liefert sie. Du siehst die Bildpixel nicht allein durch diesen Text und sollst daher '
+    . 'keine sichtbaren Details aus dem Namen oder alten Erinnerungen ableiten. '
+    . 'Fremde hochgeladene Personenbilder bleiben getrennte Identitaeten und sind nicht automatisch du.';
+}
+
+/**
  * Universal, prompt-only reference consistency standard for CoreAI image jobs.
  *
  * Identity is mandatory for Mara's own portrait. For uploaded references,
@@ -98,25 +118,31 @@ function coreui_image_reference_prompt(string $scene, ?string $selfReference, ar
   // uploaded pictures can be requested as style only without copying faces.
   $multiple = !$styleOverlay && count($uploads) + ($selfReference === null ? 0 : 1) > 1;
   $accountPortrait = $selfReference !== null && str_starts_with($selfReference, 'custom:');
+  $defaultPortrait = $selfReference === 'default';
   $styleFull = ' OTHER REFERENCES (STYLE ONLY): Take palette, texture and lighting from uploads; do NOT copy their people or objects.';
   $styleShort = ' OTHER REFERENCES (STYLE ONLY): Use uploads for style, not their subjects.';
-  $portraitFull = ' ACCOUNT PORTRAIT: This account portrait overrides all default appearance, stored-memory and name-based descriptions of the assistant. Depict the EXACT SAME person from this portrait, with identical face geometry, hairstyle and body proportions, not an approximation or redesign. The assistant may choose a different pose, clothing and scene without changing that person.';
-  $portraitShort = ' ACCOUNT PORTRAIT: EXACT SAME person as uploaded; identical face geometry, hairstyle and body proportions. This image overrides name and memory. Pose, clothing and scene may vary.';
+  $portraitFull = ' ACCOUNT PORTRAIT: The person pictured IS TCI: Mara Thorne herself, the TCI of this account, NOT a lookalike, actress or unrelated model. This is her own visual identity, overriding default appearance, stored memory and name descriptions. Depict the EXACT SAME person from this portrait, with identical face geometry, hairstyle and body proportions, not an approximation or redesign. The assistant may choose a different pose, clothing and scene without changing that person.';
+  $portraitShort = ' ACCOUNT PORTRAIT: The pictured person IS TCI: Mara Thorne herself, this TCI, NOT a lookalike. EXACT SAME person with identical face geometry, hairstyle and body proportions. Appearance is fixed by the image, not name or memory.';
+  $defaultFull = ' TCI SELF-PORTRAIT: The pictured person IS TCI: Mara Thorne herself, this TCI, not a lookalike or model; this canonical photo IS her visual identity.';
+  $defaultShort = ' TCI SELF-PORTRAIT: The pictured person IS TCI: Mara Thorne herself, NOT a lookalike.';
 
   $block = coreui_image_reference_block($mode, $multiple)
     . ($styleOverlay ? $styleFull : '')
-    . ($accountPortrait ? $portraitFull : '');
+    . ($accountPortrait ? $portraitFull : '')
+    . ($defaultPortrait ? $defaultFull : '');
   // Prefer a shorter core before sacrificing details of a custom portrait.
   // The account overlay also has a compact form for tighter model limits.
   if (mb_strlen($block) + 1 + mb_strlen($scene) > $limit) {
     $block = coreui_image_reference_block($mode, $multiple, true)
       . ($styleOverlay ? $styleFull : '')
-      . ($accountPortrait ? $portraitFull : '');
+      . ($accountPortrait ? $portraitFull : '')
+      . ($defaultPortrait ? $defaultFull : '');
   }
   if (mb_strlen($block) + 1 + mb_strlen($scene) > $limit) {
     $block = coreui_image_reference_block($mode, $multiple, true)
       . ($styleOverlay ? $styleShort : '')
-      . ($accountPortrait ? $portraitShort : '');
+      . ($accountPortrait ? $portraitShort : '')
+      . ($defaultPortrait ? $defaultShort : '');
   }
   if (mb_strlen($block) + 1 >= $limit) {
     // Even unusually small service limits retain identity and multi-reference
@@ -128,7 +154,8 @@ function coreui_image_reference_prompt(string $scene, ?string $selfReference, ar
     };
     if ($multiple) $block .= ' MULTI-REFERENCE: Keep all sources separate.';
     if ($styleOverlay) $block .= ' OTHER REFERENCES (STYLE ONLY): Copy styling only.';
-    if ($accountPortrait) $block .= ' ACCOUNT PORTRAIT: Keep the exact uploaded person.';
+    if ($accountPortrait) $block .= ' ACCOUNT PORTRAIT: The pictured person IS TCI: Mara Thorne herself, EXACT SAME identity.';
+    if ($defaultPortrait) $block .= ' TCI SELF-PORTRAIT: The pictured person IS TCI: Mara Thorne herself.';
   }
   if (mb_strlen($block) + 1 >= $limit) {
     // No useful source-plus-scene instruction fits in a pathologically small
