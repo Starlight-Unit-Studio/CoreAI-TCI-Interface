@@ -57,9 +57,13 @@ function coreui_core_install_name(string $tier): string {
 function coreui_core_may_cleanup_base(string $base, bool $preexisting, array $verifiedCores): bool {
   if ($preexisting || $verifiedCores === []) return false;
   if (!in_array($base, array_column(COREUI_CORE_INSTALL_CATALOG, 'base'), true)) return false;
+  $baseTier = coreui_core_tier($base);
+  $default = defined('STU_EMBER_MODEL') ? (string)STU_EMBER_MODEL : 'ember-coreui:latest';
   foreach ($verifiedCores as $core) {
     if (!is_string($core) || !coreui_model_name_valid($core)
         || !coreui_core_is_mara($core) || coreui_core_same($base, $core)) return false;
+    if (coreui_core_tier($core) !== $baseTier
+        && !(coreui_core_same($core, $default) && coreui_core_mara_base() === $base)) return false;
   }
   return true;
 }
