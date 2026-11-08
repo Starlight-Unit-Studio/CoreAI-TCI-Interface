@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.6.55 - 08.11.2026
+
+- Reuse the touch-based STU Game player avatar crop workflow in CoreAI Settings > Profile. User photos retain a square selection; assistant references offer free, 2:3, 3:4 and square crops with drag, resize, sliders and two-finger gestures. Cropping is confirmed before upload, and an existing image can be cropped again.
+- Save the original uploaded JPEG/PNG and normalized crop coordinates as private, UUID-bound source and metadata files alongside the rendered PNG. The server performs crop and PNG resampling, preserving the existing 1024px image-worker reference contract. Previously stored photos remain editable from their existing PNG when no original was kept.
+- Keep every source account-scoped, verify the expected UUID on recrop, reject invalid coordinates and stale edits, and never write profile content into long-term memory.
+- Include newly retained source photos and crop coordinates in account export and securely clean them up on avatar removal, replacement and account deletion.
+- Extend PHP and offline Node regressions and the native/Compose preflight for square/portrait geometry, source preservation, mobile editor wiring, account isolation, deletion and no-memory side effects. No database migration and no changes to Mara's persona, saved names or image-generator model.
+
+
 ## 0.6.54 - 08.11.2026
 
 - Rename five visible local/cloud Core tier labels from "TCI: Mara ..." to "TCI Core ..." in chat selection, chip, legend, install and management UI. Mara Thorne's underlying technical model persona is unchanged.
