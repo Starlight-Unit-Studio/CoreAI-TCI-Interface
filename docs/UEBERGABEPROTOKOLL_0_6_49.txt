@@ -7,6 +7,15 @@ URSACHE
 Ein Nutzer fragte "wie siehst du eigentlich aus wenn ich fragen darf? kannste mir das auch auf einem bild zeigen?".
 Der Bildmarker konnte korrekt ein Bild ausloesen, aber die serverseitige Marker-Erkennung wies die textuelle Anfrage nicht eindeutig als Selbstportraet aus. Wenn das Modell [BILD: ...] statt [BILD ICH: ...] lieferte, wurde keine visuelle Referenz an FLUX.2 uebergeben. Das erklaert einen frei erfundenen generischen Gesichtsentwurf. Das Live-Jobprotokoll des konkreten Nutzers ist nicht vorhanden: fuer genau diese Generation kann die fehlende -r-Uebergabe daher nicht beweiskraeftig rekonstruiert werden.
 
+ERGÄNZUNG: REFERENZBILDER AUS BILDANHAENGEN
+- Analyse und Erstellung laufen im selben Vision-Turn: eine ausdrueckliche Bitte um ein neues Bild loest nach der Bildanalyse den Bilddienst aus. Reine Beschreibung/Analyse loest nichts aus.
+- Im Anhang-Resolver wird aus der bereits kontogeprueften DB-Zeile ein opaker 'upload:<uuid>.<ext>'-Token gebildet. Es gelangen weder fremde Dateipfade noch URLs an den Bilddienst.
+- Der lokale FLUX.2-Dienst prüft den Token gegen UUID-Dateinamen im Read-only-Upload-Verzeichnis, Groesse und Dateisignatur. Die CLI bekommt fuer jede Quelle ein eigenes -r-Argument. Etwa zwei Figuren koennen so gemeinsam in einer neuen Szene landen.
+- Eine echte TCI-Selbstreferenz bleibt separat und kann mit Benutzerreferenzen kombiniert werden.
+- Der Arbeitsweg erfasst nur die Referenzanzahl; IDs bleiben privat.
+- Unveraendert: authentifizierter Upload, vorhandene 1/2/4-Output-Warteschlange und die separaten Voice-Tools.
+- Tests: scripts/image-gen-selftest.php, scripts/vision-persona-selftest.php, scripts/image-service-selftest.py. PHP-Lint/Tests und echtes FLUX.2-Rendering auf dem Server vor Merge zwingend.
+
 LOESUNG
 - Erweiterte Erkennung: Wie siehst du eigentlich aus, Wie sieht Mara aus, Wie sieht (persoenlicher Alias) aus, englische Varianten. Unverwandte Motive (Superwoman allein, Katze) bleiben ohne Mara-Referenz.
 - Die normale Chat-Schleife und die Sprachaufnahme-Schleife korrigieren einen vorhandenen [BILD: ...]-Auftrag vor der Ausfuehrung zu ICH, wenn der Nutzer eindeutig Maras eigenes Aussehen sehen moechte. GROSS bleibt erhalten. Nur echte Stimmsequenz-Transkripte werden zur Intent-Pruefung genutzt, fremde hochgeladene Audiodateien nicht.
