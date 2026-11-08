@@ -70,6 +70,12 @@
 
   function descriptor(img) {
     if (!img || img.tagName !== 'IMG') return null;
+    if (img.closest('.attach-preview-button') && img.dataset.previewUrl) {
+      var pendingUrl = isSafeImageUrl(img.dataset.previewUrl);
+      if (!pendingUrl) return null;
+      return {src:pendingUrl,name:filename(img.dataset.fileName),size:Number(img.dataset.fileSize)||0,
+        mime:img.dataset.fileMime||'',origin:'Hochgeladen'};
+    }
     var anchor = img.closest('a.msg-image-link, a.img-progress-thumb');
     var figure = img.closest('figure.msg-generated');
     var download = figure && figure.querySelector('a[download]');
@@ -226,7 +232,7 @@
       ui.fullscreen.innerHTML = icon(active ? 'shrink' : 'expand');
       ui.fullscreen.setAttribute('aria-label', active ? 'Vollbild verlassen' : 'Vollbildmodus');
     });
-    ui.share.hidden = !(navigator.share && window.File && (!navigator.canShare || navigator.canShare({files:[new File(['x'], 'probe.png', {type:'image/png'})]})));
+    ui.share.hidden = !(navigator.share && window.File);
     ui.fullscreen.hidden = typeof overlay.requestFullscreen !== 'function';
   }
 
@@ -234,7 +240,7 @@
 
   function fitScale() {
     if (!ui.picture.naturalWidth || !ui.picture.naturalHeight) return 1;
-    return Math.min(1, Math.max(0.05,
+    return Math.max(0.05, Math.min(1,
       (ui.scroll.clientWidth - 16) / ui.picture.naturalWidth,
       (ui.scroll.clientHeight - 16) / ui.picture.naturalHeight));
   }
@@ -415,8 +421,8 @@
   // Event delegation also covers saved chat history and cards inserted during streaming.
   document.addEventListener('click', function (event) {
     if (active() || !event.target || !event.target.closest) return;
-    var hit = event.target.closest('a.msg-image-link, a.img-progress-thumb, img.msg-image, .img-progress.is-revealed img.img-progress-picture');
-    if (!hit || !hit.closest('.msg-content') || hit.closest('a[download]')) return;
+    var hit = event.target.closest('a.msg-image-link, a.img-progress-thumb, img.msg-image, .img-progress.is-revealed img.img-progress-picture, .attach-preview-button');
+    if (!hit || (!hit.closest('.msg-content') && !hit.closest('.composer-attachments')) || hit.closest('a[download]')) return;
     var img = hit.tagName === 'IMG' ? hit : hit.querySelector('img');
     var items = collect(img);
     var selected = descriptor(img);
