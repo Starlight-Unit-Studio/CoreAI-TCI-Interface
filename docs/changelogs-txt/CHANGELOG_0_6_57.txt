@@ -1,0 +1,8 @@
+## 0.6.57 - 08.11.2026
+
+- CoreAI's own profile photograph is now explicitly Mara Thorne HERSELF in every user's TCI account. The current image defines the TCI's own canonical visual appearance, not a third-party actress, lookalike, model or merely similar person. This applies both to images/mara_winter.jpg and account-chosen assistant photos.
+- The fixed technical identity remains TCI: Mara Thorne even when the conversational/display alias is Ember or another account-selected nickname.
+- The server-side profile identity rule is shared by both private chat prompt paths, without modifying Modelfiles or writing long-term memories. The Core is not asked to invent details of a photo it has not actually seen.
+- Full, short and minimal image prompts independently bind ICH self-portraits to the same on-account person and image, preserving exact face/body identity while permitting changed scene, costume, pose and lighting.
+- Unrelated user-uploaded faces and visual style references continue to be treated separately; no arbitrary third-party picture is automatically reclassified as Mara.
+- Add selftests for account scope, display-name separation, canonical portrait, custom portrait, multiple references and prompt budgets of 1200/700/480 characters. No DB migration and no image-model change.
