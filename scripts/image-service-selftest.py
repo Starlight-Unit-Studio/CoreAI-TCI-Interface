@@ -139,7 +139,7 @@ with tempfile.TemporaryDirectory(prefix='coreai-image-service-') as tmp_name:
                          *manifest['style_only'].values()]
         for name in gallery_names:
             content = png(64, 64) if name.endswith('.png') else (
-                b'\\xff\\xd8\\xff\\xe0' + b'PhotoData' * 8 + b'\\xff\\xd9')
+                b'\xff\xd8\xff\xe0' + b'PhotoData' * 8 + b'\xff\xd9')
             (gallery_dir / name).write_bytes(content)
         select = service_mod.MARA_REFS.select
         base_gallery = select(reference_root, 'Mara in an office')
@@ -169,7 +169,7 @@ with tempfile.TemporaryDirectory(prefix='coreai-image-service-') as tmp_name:
               and all(str(i['path']).startswith(str(gallery_dir)) for i in base_gallery),
               'symlinks and paths outside the curated directory are ignored')
         (gallery_dir / 'mara_identity_cockpit.jpg').unlink()
-        (gallery_dir / 'mara_identity_cockpit.jpg').write_bytes(b'\\xff\\xd8\\xff' + b'Photo' * 12)
+        (gallery_dir / 'mara_identity_cockpit.jpg').write_bytes(b'\xff\xd8\xff' + b'Photo' * 12)
         fake_reg = json.loads(json.dumps(reg))
         fake_reg['measured'] = {}
         mock = service_mod.Service(fake_reg, tmp / 'test-models', tmp / 'curated-jobs', threads=1)
@@ -327,8 +327,8 @@ open({str(args_log)!r}, 'a').write(json.dumps(args) + '\\n')
 def chunk(k, d):
     return struct.pack('>I', len(d)) + k + d + struct.pack('>I', zlib.crc32(k + d) & 0xffffffff)
 def png(w, h, rgb):
-    raw = b''.join(b'\\x00' + bytes(rgb) * w for _ in range(h))
-    return b'\\x89PNG\\r\\n\\x1a\\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', w, h, 8, 2, 0, 0, 0)) + chunk(b'IDAT', zlib.compress(raw)) + chunk(b'IEND', b'')
+    raw = b''.join(b'\x00' + bytes(rgb) * w for _ in range(h))
+    return b'\x89PNG\\r\\n\x1a\\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', w, h, 8, 2, 0, 0, 0)) + chunk(b'IDAT', zlib.compress(raw)) + chunk(b'IEND', b'')
 prompt = args[args.index('-p') + 1]
 steps = int(args[args.index('--steps') + 1])
 w, h = int(args[args.index('-W') + 1]), int(args[args.index('-H') + 1])
