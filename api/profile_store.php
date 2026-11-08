@@ -243,14 +243,16 @@ function coreui_profile_delete_avatar(PDO $pdo, int $uid, string $slot): bool {
   return $del->rowCount() > 0;
 }
 
-/** Assistant references retain the whole image; user avatars keep their square crop. */
-function coreui_profile_render_avatar(GdImage $src, string $slot): GdImage {
+/** Assistant references retain their selected aspect ratio. User avatars stay square. */
+function coreui_profile_render_avatar(GdImage $src, string $slot, ?array $crop = null): GdImage {
   $width = imagesx($src);
   $height = imagesy($src);
-  if ($slot === 'assistant') {
-    $scale = min(1, 1024 / max($width, $height));
-    $targetWidth = max(1, (int)round($width * $scale));
-    $targetHeight = max(1, (int)round($height * $scale));
+  if ($crop !== null) {
+    $srcX = (int)$crop['x'];
+    $srcY = (int)$crop['y'];
+    $sourceWidth = (int)$crop['w'];
+    $sourceHeight = (int)$crop['h'];
+  } elseif ($slot === 'assistant') {
     $srcX = $srcY = 0;
     $sourceWidth = $width;
     $sourceHeight = $height;
@@ -258,44 +260,86 @@ function coreui_profile_render_avatar(GdImage $src, string $slot): GdImage {
     $sourceWidth = $sourceHeight = min($width, $height);
     $srcX = (int)floor(($width - $sourceWidth) / 2);
     $srcY = (int)floor(($height - $sourceHeight) / 2);
-    $targetWidth = $targetHeight = min(512, $sourceWidth);
+  }
+  if ($slot === 'assistant') {
+    // The existing image worker accepts a private PNG reference up to 4 MB.
+    // Keep the current safe 1024px limit while retaining original source bytes.
+    $scale = min(1, 1024 / max($sourceWidth, $sourceHeight));
+    $targetWidth = max(1, (int)round($sourceWidth * $scale));
+    $targetHeight = max(1, (int)round($sourceHeight * $scale));
+  } else {
+    $targetWidth = $targetHeight = min(512, $sourceWidth, $sourceHeight);
   }
   $dst = imagecreatetruecolor($targetWidth, $targetHeight);
   imagealphablending($dst, false);
   imagesavealpha($dst, true);
   imagefill($dst, 0, 0, imagecolorallocatealpha($dst, 0, 0, 0, 127));
-  imagecopyresampled($dst, $src, 0, 0, $srcX, $srcY, $targetWidth, $targetHeight, $sourceWidth, $sourceHeight);
+  imagecopyresampled($dst, $src, 0, 0, $srcX, $srcY,
+    $targetWidth, $targetHeight, $sourceWidth, $sourceHeight);
   return $dst;
 }
 
-function coreui_profile_store_avatar(PDO $pdo, int $uid, string $slot, array $file): array {
-  if (!in_array($slot, ['user', 'assistant'], true)) throw new InvalidArgumentException('invalid_slot');
+/**
+ * Upload a new image, or re-crop the original already owned by the same account.
+ * The uploaded bytes are never edited or lost. The image-worker-facing UUID.png
+ * and the crop metadata are separate, replaceable derivatives.
+ */
+function coreui_profile_store_avatar(PDO $pdo, int $uid, string $slot,
+    ?array $file, mixed $cropRaw = null, ?string $expectedUuid = null): array {
+  if ($uid <= 0 || !in_array($slot, ['user', 'assistant'], true)) {
+    throw new InvalidArgumentException('invalid_slot');
+  }
   if (!coreui_profile_schema_ready($pdo)) throw new RuntimeException('missing_schema_004');
-  $size = (int)($file['size'] ?? 0);
-  $tmp = (string)($file['tmp_name'] ?? '');
-  if ($size <= 0 || $tmp === '' || !is_uploaded_file($tmp)) throw new InvalidArgumentException('invalid_upload');
-  if ($size > 4 * 1024 * 1024) throw new InvalidArgumentException('avatar_too_large');
-
-  $finfo = new finfo(FILEINFO_MIME_TYPE);
-  $mime = (string)$finfo->file($tmp);
+  $recrop = $file === null;
+  if ($recrop) {
+    if ($expectedUuid === null || preg_match('~^[a-f0-9]{32}$~D', $expectedUuid) !== 1) {
+      throw new InvalidArgumentException('avatar_changed');
+    }
+    $existing = coreui_profile_media_record($pdo, $uid, $slot);
+    if ($existing === null || $existing['uuid'] !== $expectedUuid) {
+      throw new InvalidArgumentException('avatar_changed');
+    }
+    $savedSource = coreui_profile_source_path($expectedUuid);
+    $sourcePath = $savedSource['path'] ?? (string)$existing['path'];
+    $originalName = 'profile-original';
+  } else {
+    $size = (int)($file['size'] ?? 0);
+    $sourcePath = (string)($file['tmp_name'] ?? '');
+    if ($size <= 0 || $sourcePath === '' || !is_uploaded_file($sourcePath)) {
+      throw new InvalidArgumentException('invalid_upload');
+    }
+    if ($size > 4 * 1024 * 1024) throw new InvalidArgumentException('avatar_too_large');
+    $originalName = trim((string)preg_replace('~[\\x00-\\x1F\\x7F/\\\\\\\\]+~u', '', (string)($file['name'] ?? 'avatar')));
+    if ($originalName === '') $originalName = 'avatar';
+  }
+  $raw = @file_get_contents($sourcePath);
+  if (!is_string($raw) || $raw === '' || strlen($raw) > 4 * 1024 * 1024) {
+    throw new InvalidArgumentException('avatar_too_large');
+  }
+  $mime = (string)(new finfo(FILEINFO_MIME_TYPE))->buffer($raw);
   if (!in_array($mime, ['image/jpeg', 'image/png'], true)) {
     throw new InvalidArgumentException('avatar_format_not_allowed');
   }
-  $info = @getimagesize($tmp);
-  $width = (int)($info[0] ?? 0);
-  $height = (int)($info[1] ?? 0);
-  if ($width < 32 || $height < 32 || $width > 8000 || $height > 8000 || ($width * $height) > 40000000) {
+  $info = @getimagesizefromstring($raw);
+  $src = @imagecreatefromstring($raw);
+  if (!$info || !($src instanceof GdImage)) throw new InvalidArgumentException('avatar_decode_failed');
+  $src = coreui_profile_orient_jpeg($src, $sourcePath, $mime);
+  $width = imagesx($src);
+  $height = imagesy($src);
+  if ($width < 32 || $height < 32 || $width > 8000 || $height > 8000
+      || ($width * $height) > 40000000) {
+    imagedestroy($src);
     throw new InvalidArgumentException('avatar_dimensions_invalid');
   }
-  $raw = @file_get_contents($tmp);
-  $src = is_string($raw) ? @imagecreatefromstring($raw) : false;
-  if ($src === false) throw new InvalidArgumentException('avatar_decode_failed');
-
-  $dst = coreui_profile_render_avatar($src, $slot);
+  try {
+    $crop = coreui_profile_crop_pixels($cropRaw, $width, $height, $slot);
+    if ($recrop && $crop === null) throw new InvalidArgumentException('avatar_crop_invalid');
+    $dst = coreui_profile_render_avatar($src, $slot, $crop);
+  } finally {
+    imagedestroy($src);
+  }
   $targetWidth = imagesx($dst);
   $targetHeight = imagesy($dst);
-  imagedestroy($src);
-
   $dir = coreui_profile_media_dir();
   if (!is_dir($dir) && !@mkdir($dir, 0750, true)) {
     imagedestroy($dst);
@@ -308,28 +352,49 @@ function coreui_profile_store_avatar(PDO $pdo, int $uid, string $slot, array $fi
 
   $uuid = bin2hex(random_bytes(16));
   $storedName = $uuid . '.png';
-  $tempName = '.' . $storedName . '.tmp';
-  $tempPath = $dir . '/' . $tempName;
+  $sourceName = $uuid . '.source.' . ($mime === 'image/jpeg' ? 'jpg' : 'png');
+  $metaName = $uuid . '.crop.json';
   $destPath = $dir . '/' . $storedName;
-  $written = imagepng($dst, $tempPath, 6);
-  imagedestroy($dst);
-  if (!$written || !@rename($tempPath, $destPath)) {
-    @unlink($tempPath);
-    throw new RuntimeException('avatar_write_failed');
-  }
-  @chmod($destPath, 0640);
-  $finalSize = (int)(@filesize($destPath) ?: 0);
-  $originalName = trim((string)preg_replace('~[\x00-\x1F\x7F/\\\\]+~u', '', (string)($file['name'] ?? 'avatar')));
-  if ($originalName === '') $originalName = 'avatar';
-  if (function_exists('mb_substr')) $originalName = mb_substr($originalName, 0, 255, 'UTF-8');
-  else $originalName = substr($originalName, 0, 255);
-
+  $sourceDest = $dir . '/' . $sourceName;
+  $metaDest = $dir . '/' . $metaName;
+  $outputTmp = $dir . '/.' . $storedName . '.tmp';
+  $sourceTmp = $dir . '/.' . $sourceName . '.tmp';
+  $metaTmp = $dir . '/.' . $metaName . '.tmp';
+  $meta = json_encode([
+    'crop'=>$crop['normalized'] ?? null,
+    'source_width'=>$width,
+    'source_height'=>$height,
+    'mime'=>$mime,
+  ], JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
   $oldStored = '';
   try {
+    if (!imagepng($dst, $outputTmp, 6) || !@rename($outputTmp, $destPath)) {
+      throw new RuntimeException('avatar_write_failed');
+    }
+    @chmod($destPath, 0640);
+    $finalSize = (int)(@filesize($destPath) ?: 0);
+    if ($finalSize < 1 || $finalSize > 4 * 1024 * 1024) {
+      throw new RuntimeException('avatar_processed_too_large');
+    }
+    if (@file_put_contents($sourceTmp, $raw, LOCK_EX) !== strlen($raw)
+        || !@rename($sourceTmp, $sourceDest)
+        || @file_put_contents($metaTmp, $meta, LOCK_EX) !== strlen($meta)
+        || !@rename($metaTmp, $metaDest)) {
+      throw new RuntimeException('avatar_source_write_failed');
+    }
+    @chmod($sourceDest, 0640);
+    @chmod($metaDest, 0640);
+    if (function_exists('mb_substr')) $originalName = mb_substr($originalName, 0, 255, 'UTF-8');
+    else $originalName = substr($originalName, 0, 255);
+
     $pdo->beginTransaction();
-    $stOld = $pdo->prepare('SELECT stored_name FROM stu_coreui_profile_media WHERE user_id = ? AND slot = ? FOR UPDATE');
-    $stOld->execute([$uid, $slot]);
-    $oldStored = (string)($stOld->fetchColumn() ?: '');
+    $old = $pdo->prepare('SELECT uuid, stored_name FROM stu_coreui_profile_media WHERE user_id = ? AND slot = ? FOR UPDATE');
+    $old->execute([$uid, $slot]);
+    $previous = $old->fetch(PDO::FETCH_ASSOC);
+    if ($recrop && (!is_array($previous) || ($previous['uuid'] ?? '') !== $expectedUuid)) {
+      throw new InvalidArgumentException('avatar_changed');
+    }
+    $oldStored = (string)($previous['stored_name'] ?? '');
     $st = $pdo->prepare(
       'INSERT INTO stu_coreui_profile_media '
       . '(uuid, user_id, slot, original_name, stored_name, mime_type, file_size, width_px, height_px, created_at) '
@@ -338,14 +403,17 @@ function coreui_profile_store_avatar(PDO $pdo, int $uid, string $slot, array $fi
       . 'stored_name = VALUES(stored_name), mime_type = VALUES(mime_type), file_size = VALUES(file_size), '
       . 'width_px = VALUES(width_px), height_px = VALUES(height_px), created_at = NOW()'
     );
-    $st->execute([$uuid, $uid, $slot, $originalName, $storedName, 'image/png', $finalSize, $targetWidth, $targetHeight]);
+    $st->execute([$uuid, $uid, $slot, $originalName, $storedName, 'image/png',
+      $finalSize, $targetWidth, $targetHeight]);
     $pdo->commit();
   } catch (Throwable $e) {
     if ($pdo->inTransaction()) $pdo->rollBack();
-    @unlink($destPath);
+    foreach ([$destPath, $sourceDest, $metaDest, $outputTmp, $sourceTmp, $metaTmp] as $path) @unlink($path);
     throw $e;
+  } finally {
+    imagedestroy($dst);
   }
-  if ($oldStored !== '' && $oldStored !== $storedName) @unlink($dir . '/' . basename($oldStored));
+  if ($oldStored !== '' && $oldStored !== $storedName) coreui_profile_media_cleanup($oldStored);
   return coreui_profile_load($pdo, $uid);
 }
 
