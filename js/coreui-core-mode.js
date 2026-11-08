@@ -44,8 +44,8 @@
     ['31b', 'TCI Core Premium', 'Gemma 4 31B']];
   function tierLabel(name) {
     var m = String(name || '').trim().toLowerCase();
-    if (/^ember-coreui:(?:2b|e2b)$/.test(m)) return TIERS[0][1];
-    if (/^ember-coreui:(?:4b|e4b)$/.test(m)) return TIERS[1][1];
+    if (/^ember-coreui:e2b$/.test(m)) return TIERS[0][1];
+    if (/^ember-coreui:e4b$/.test(m)) return TIERS[1][1];
     if (/^ember-coreui:(?:12b|26b|31b)$/.test(m)) {
       var suffix = m.split(':')[1];
       for (var t = 2; t < TIERS.length; t++) {
