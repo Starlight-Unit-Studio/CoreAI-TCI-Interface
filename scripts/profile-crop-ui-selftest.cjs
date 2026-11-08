@@ -91,7 +91,8 @@ const browserCrop = require('../js/coreui-profile-crop.js');
   nodes.profileCropApply.dispatch('click');
   await new Promise(resolve=>setImmediate(resolve));
   assert(userCrop && userCrop.w>0 && userCrop.h>0,'user crop submitted');
-  approx(userCrop.w*1200,userCrop.h*1800,'user crop is square in original pixel coordinates');
+  assert(Math.abs(userCrop.w*1200 - userCrop.h*1800) < 0.01 * Math.max(userCrop.w*1200,userCrop.h*1800),
+    'user crop corresponds to a square within canvas rounding; server forces exact square');
   assert.equal(nodes.profileCropDialog.hidden,true,'dialog closes after successful submit');
 
   let assistantCrop=null;
