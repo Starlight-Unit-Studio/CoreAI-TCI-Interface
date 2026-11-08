@@ -1,0 +1,156 @@
+/* STU inspired portrait crop modal, independently styled for CoreAI. */
+.settings-body .profile-avatar-actions button[hidden] { display: none !important; }
+.coreui-crop-backdrop[hidden],
+.coreui-crop-format[hidden],
+.coreui-crop-slider-group[hidden],
+.coreui-crop-free-controls[hidden] {
+  display: none !important;
+}
+.coreui-crop-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 12500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+  background: rgba(2, 7, 17, 0.91);
+  overscroll-behavior: contain;
+}
+.coreui-crop-panel {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: min(100%, 610px);
+  max-height: calc(100dvh - 26px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 20px;
+  color: #e8f2ff;
+  border: 1px solid rgba(112, 181, 255, 0.4);
+  border-radius: 18px;
+  background: #0c172a;
+  box-shadow: 0 18px 72px rgba(0,0,0,0.68);
+}
+.coreui-crop-panel h2 {
+  margin: 0 0 4px;
+  font-family: "Share Tech Mono", monospace;
+  font-size: 18px;
+  letter-spacing: 0.04em;
+}
+.coreui-crop-panel p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.4;
+  color: #bcd1ec;
+}
+.coreui-crop-stage {
+  display: flex;
+  position: relative;
+  overflow: hidden;
+  align-self: center;
+  border: 1px solid #355d89;
+  border-radius: 10px;
+  max-width: 100%;
+  background: #09111e;
+}
+#profileCropCanvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: move;
+}
+.coreui-crop-box {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+  box-sizing: border-box;
+  border: 2px solid #79bcff;
+  outline: 1px solid rgba(255,255,255,0.65);
+  box-shadow: 0 0 0 3000px rgba(0,0,0,0.58);
+}
+.coreui-crop-box::after {
+  content: "";
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 17px;
+  height: 17px;
+  border-right: 4px solid #79bcff;
+  border-bottom: 4px solid #79bcff;
+  background: rgba(16, 42, 77, 0.22);
+}
+.coreui-crop-formats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.coreui-crop-formats button,
+.coreui-crop-actions button {
+  padding: 10px 13px;
+  min-height: 42px;
+  border: 1px solid rgba(108, 181, 255, 0.42);
+  border-radius: 9px;
+  color: #dfecfc;
+  background: rgba(12, 30, 56, 0.9);
+  font: 600 13px "Rajdhani", "Segoe UI", sans-serif;
+  cursor: pointer;
+}
+.coreui-crop-formats button[aria-pressed="true"] {
+  color: #061426;
+  background: #79bcff;
+}
+.coreui-crop-slider-group,
+.coreui-crop-free-controls {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+.coreui-crop-slider-group label,
+.coreui-crop-free-controls label {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  color: #c9d9ee;
+  font: 600 13px "Rajdhani", "Segoe UI", sans-serif;
+}
+.coreui-crop-panel input[type="range"] {
+  width: 100%;
+  min-height: 36px;
+  accent-color: #79bcff;
+}
+.coreui-crop-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.coreui-crop-actions .coreui-crop-confirm {
+  color: #04192e;
+  background: #7fc7ff;
+  border-color: #7fc7ff;
+}
+.coreui-crop-actions button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+.coreui-crop-status {
+  min-height: 20px;
+  color: #b8e5ff !important;
+}
+.coreui-crop-status[data-error="1"] {
+  color: #ffb4bd !important;
+}
+@media (max-width: 600px) {
+  .coreui-crop-panel {
+    gap: 9px;
+    padding: 14px;
+  }
+  .coreui-crop-formats button { flex: 1 1 auto; }
+  .coreui-crop-actions button { flex: 1 1 30%; }
+}

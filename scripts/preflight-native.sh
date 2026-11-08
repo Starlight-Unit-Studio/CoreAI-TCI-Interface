@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.54: dynamischer Quantum CoreAI Bildvermerk ohne Studio-Logo.
+# CoreAI: TCI Interface 0.6.55: dynamischer Quantum CoreAI Bildvermerk ohne Studio-Logo.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -60,6 +60,9 @@ UI_FILES=(
   js/coreui-artifacts.js
   js/coreui-preferences.js
   js/settings.js
+  js/coreui-profile-crop.js
+  css/coreui-profile-crop.css
+  scripts/profile-crop-ui-selftest.cjs
   js/admin.js
   css/settings.css
   css/coreui-theme.css
@@ -817,7 +820,7 @@ if command -v php >/dev/null 2>&1; then
     fail "Profilreferenz-Selbsttest: ${profile_reference_test:-Unbekannter Fehler}"
   fi
 
-  # 0.6.54: all image references share identity, subject and style preservation.
+  # 0.6.55: all image references share identity, subject and style preservation.
   reference_consistency_test=''
   if reference_consistency_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/image-reference-consistency-selftest.php" 2>&1)"; then
     ok 'Bildreferenzen: Identitaet, Motivtreue, Stilvorlage und mehrere Quellen geprueft.'
@@ -934,6 +937,15 @@ if command -v php >/dev/null 2>&1; then
       ok 'Chat: Install-Fenster mit Hardware-Check, Bestaetigung, Fortschritt und Jetzt nutzen geprueft.'
     else
       fail 'Chat: Install-Fenster-Oberflaechentest fehlgeschlagen.'
+    fi
+    # 0.6.55: touch cropper must preserve originals, per-account re-edit and
+    # user-square / assistant-portrait behavior.
+    profile_crop_ui=''
+    if profile_crop_ui="$(node "$PROJECT_ROOT/scripts/profile-crop-ui-selftest.cjs" 2>&1)"; then
+      ok 'Profil: Mobiler Zuschnitt, Quadrat/Hochformat, Originalquelle und erneutes Zuschneiden geprueft.'
+    else
+      fail 'Profil: Zuschnitt-Oberflaechentest fehlgeschlagen.'
+      printf '%s\n' "$profile_crop_ui" >&2
     fi
     if node "$PROJECT_ROOT/scripts/registration-ui-selftest.cjs" >/dev/null 2>&1; then
       ok 'Login: Registrieren und Als Gast chatten nur wenn offen, Pruefungen und Fehlerfaelle geprueft.'

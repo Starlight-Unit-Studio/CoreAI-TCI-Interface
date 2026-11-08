@@ -33,6 +33,12 @@ function coreui_export_profile_media(PDO $pdo, int $uid): array {
     $path = coreui_profile_media_dir() . '/' . $storedName;
     $raw = $storedName !== '' && is_file($path) ? @file_get_contents($path) : false;
     $row['data_base64'] = is_string($raw) ? base64_encode($raw) : null;
+    $uuid = coreui_profile_media_uuid($storedName);
+    $source = $uuid !== null ? coreui_profile_source_path($uuid) : null;
+    $original = $source !== null ? @file_get_contents($source['path']) : false;
+    $row['source_mime_type'] = $source['mime'] ?? null;
+    $row['source_data_base64'] = is_string($original) ? base64_encode($original) : null;
+    $row['crop'] = $uuid !== null ? coreui_profile_crop_meta($uuid) : null;
   }
   unset($row);
   return $rows;

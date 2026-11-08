@@ -19,11 +19,23 @@ if (!$row) {
   exit;
 }
 $path = (string)$row['path'];
+$mime = (string)$row['mime_type'] ?: 'image/png';
+$variant = strtolower(trim((string)($_GET['variant'] ?? '')));
+if ($variant === 'source') {
+  $source = coreui_profile_source_path((string)$row['uuid']);
+  if ($source !== null) {
+    $path = $source['path'];
+    $mime = $source['mime'];
+  }
+} elseif ($variant !== '') {
+  http_response_code(404);
+  exit;
+}
 
-header('Content-Type: ' . ((string)$row['mime_type'] ?: 'image/png'));
+header('Content-Type: ' . $mime);
 header('Content-Length: ' . (string)filesize($path));
-header('Cache-Control: private, no-cache, max-age=0');
+header('Cache-Control: ' . ($variant === 'source' ? 'private, no-store' : 'private, no-cache, max-age=0'));
 header('X-Content-Type-Options: nosniff');
-header('Content-Disposition: inline; filename="coreui-' . $slot . '.png"');
+header('Content-Disposition: inline; filename="coreai-' . $slot . ($mime === 'image/jpeg' ? '.jpg' : '.png') . '"');
 readfile($path);
 exit;

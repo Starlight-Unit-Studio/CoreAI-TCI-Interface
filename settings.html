@@ -6,15 +6,16 @@
   <meta name="language" content="de-DE" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#f0f4fa" />
-  <meta name="application-version" content="0.6.54" />
+  <meta name="application-version" content="0.6.55" />
   <meta name="application-name" content="CoreAI: TCI Interface" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface - Einstellungen</title>
   <link rel="stylesheet" href="./css/console.css?v=0546626527856406358760610" />
   <link rel="stylesheet" href="./css/settings.css?v=0269384087769295706944554" />
+  <link rel="stylesheet" href="./css/coreui-profile-crop.css?v=0292386913205485335956569" />
   <link rel="stylesheet" href="./css/coreui-update.css?v=1027839363176318351849490" />
   <link rel="stylesheet" href="./css/coreui-theme.css?v=0315051549183140187394059" />
-  <script src="./js/console-gate.js?v=0606562015280162005901409"></script>
+  <script src="./js/console-gate.js?v=0367888175884046932279142"></script>
   <script src="./js/coreui-preferences.js?v=1000807238115881895880748"></script>
 </head>
 <body class="settings-body">
@@ -49,7 +50,7 @@
           <h1>EINSTELLUNGEN</h1>
         </div>
       </div>
-      <div class="settings-version">COREAI: TCI INTERFACE // v0.6.54</div>
+      <div class="settings-version">COREAI: TCI INTERFACE // v0.6.55</div>
     </header>
 
     <!-- 0.5.79: one page, categories as tabs. Each category is its own view
@@ -239,6 +240,7 @@
                   <small>PNG oder JPG, maximal 4 MB. Das Bild bleibt im privaten CoreAI: TCI Interface-Speicher.</small>
                   <div class="profile-avatar-actions">
                     <label class="settings-action compact" for="userAvatarFile">BILD WÄHLEN</label>
+                    <button class="settings-action compact" id="editUserAvatar" type="button" hidden>ZUSCHNEIDEN</button>
                     <button class="settings-action compact danger" id="removeUserAvatar" type="button">ENTFERNEN</button>
                   </div>
                   <input class="visually-hidden" id="userAvatarFile" type="file" accept="image/png,image/jpeg" />
@@ -262,6 +264,7 @@
                   <small>Persönliche Darstellung deiner CoreAI und Vorlage für Selbstporträts. Die interne Identität bleibt bestehen.</small>
                   <div class="profile-avatar-actions">
                     <label class="settings-action compact" for="assistantAvatarFile">BILD WÄHLEN</label>
+                    <button class="settings-action compact" id="editAssistantAvatar" type="button" hidden>ZUSCHNEIDEN</button>
                     <button class="settings-action compact danger" id="removeAssistantAvatar" type="button">ENTFERNEN</button>
                   </div>
                   <input class="visually-hidden" id="assistantAvatarFile" type="file" accept="image/png,image/jpeg" />
@@ -865,9 +868,43 @@
     <div class="settings-save-state admin-flash" id="adminFlash" role="status" aria-live="polite"></div>
   </div>
 
+  <!-- Based on STU Game's player-avatar crop UI, now with an unmodified original. -->
+  <div id="profileCropDialog" class="coreui-crop-backdrop" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="profileCropTitle" aria-describedby="profileCropNote" hidden>
+    <section class="coreui-crop-panel">
+      <header>
+        <h2 id="profileCropTitle">Bild zuschneiden</h2>
+        <p id="profileCropNote">Wähle den gewünschten Ausschnitt. Das Original bleibt erhalten.</p>
+      </header>
+      <div class="coreui-crop-stage" id="profileCropStage">
+        <canvas id="profileCropCanvas" aria-label="Foto mit verschiebbarem Zuschneidebereich"></canvas>
+        <div id="profileCropBox" class="coreui-crop-box" aria-hidden="true"></div>
+      </div>
+      <div class="coreui-crop-formats" role="group" aria-label="Zuschnittformat">
+        <button type="button" data-crop-ratio="free" aria-pressed="true">FREI</button>
+        <button type="button" data-crop-ratio="2:3" aria-pressed="false">2:3</button>
+        <button type="button" data-crop-ratio="3:4" aria-pressed="false">3:4</button>
+        <button type="button" data-crop-ratio="1:1" aria-pressed="false">1:1</button>
+      </div>
+      <div id="profileCropSizeFields" class="coreui-crop-slider-group" hidden>
+        <label for="profileCropSize">Größe <input id="profileCropSize" type="range" min="10" max="100" value="90" /></label>
+      </div>
+      <div id="profileCropFreeFields" class="coreui-crop-free-controls">
+        <label for="profileCropWidth">Breite <input id="profileCropWidth" type="range" min="10" max="100" value="100" /></label>
+        <label for="profileCropHeight">Höhe <input id="profileCropHeight" type="range" min="10" max="100" value="100" /></label>
+      </div>
+      <p id="profileCropStatus" class="coreui-crop-status" role="status" aria-live="polite"></p>
+      <div class="coreui-crop-actions">
+        <button id="profileCropReset" type="button">ZURÜCKSETZEN</button>
+        <button id="profileCropCancel" type="button">ABBRECHEN</button>
+        <button id="profileCropApply" class="coreui-crop-confirm" type="button">ÜBERNEHMEN</button>
+      </div>
+    </section>
+  </div>
+
+  <script src="./js/coreui-profile-crop.js?v=0895108609815630699003960"></script>
   <script src="./js/coreui-settings-tabs.js?v=1135950849260775405607445"></script>
   <script src="./js/coreui-context-slider.js?v=1058131433773441189843644"></script>
-  <script src="./js/settings.js?v=0439657810707380357037015"></script>
+  <script src="./js/settings.js?v=0243993015634310927196365"></script>
   <script src="./js/coreui-personalization-settings.js?v=0293012758263273966658748"></script>
   <script src="./js/admin.js?v=0104865448637119475773473"></script>
   <script src="./js/coreui-voice-read.js?v=0478836976425824839668688"></script>

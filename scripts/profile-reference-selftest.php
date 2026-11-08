@@ -19,6 +19,35 @@ check(imagesx($user)===100 && imagesy($user)===100, 'User avatar remains square'
 $wide = imagecreatetruecolor(2048,1024);
 $scaled = coreui_profile_render_avatar($wide,'assistant');
 check(imagesx($scaled)===1024 && imagesy($scaled)===512, 'Landscape size bounded without crop');
+
+// 0.6.55: original-relative coordinates are validated server-side, not trusted
+// from the browser. The personal reference may retain any portrait aspect.
+$half = coreui_profile_crop_pixels(['x'=>0.0,'y'=>0.0,'w'=>1.0,'h'=>0.5],100,300,'assistant');
+check($half['w']===100 && $half['h']===150, 'Portrait crop converts to original pixels');
+$cropped = coreui_profile_render_avatar($src, 'assistant', $half);
+check(imagesx($cropped)===100 && imagesy($cropped)===150
+  && (imagecolorat($cropped,50,10)&0xffffff)===0xff0000
+  && (imagecolorat($cropped,50,140)&0xffffff)!==0x00ff00,
+  'Personal reference crop retains selected region and avoids the unselected bottom');
+$square = coreui_profile_crop_pixels(['x'=>0.0,'y'=>0.4,'w'=>1.0,'h'=>1/3],100,300,'user');
+check($square['w']===$square['h'] && $square['w']===100, 'Square crop is enforced on server');
+check(coreui_profile_crop_pixels(null,100,300,'assistant')===null, 'Old uploads keep uncropped assistant behavior');
+foreach ([
+  [['x'=>-0.1,'y'=>0,'w'=>1,'h'=>1], 'assistant'],
+  [['x'=>0,'y'=>0,'w'=>1,'h'=>1.2], 'assistant'],
+  [['x'=>0,'y'=>0,'w'=>0.1,'h'=>0.1], 'user'],
+  [['x'=>0,'y'=>0,'w'=>1,'h'=>0.6], 'user'],
+  [['x'=>'0','y'=>0,'w'=>1,'h'=>1], 'assistant']
+] as [$bad, $slot]) {
+  $caught = false;
+  try { coreui_profile_crop_pixels($bad,100,300,$slot); }
+  catch (InvalidArgumentException $e) { $caught = true; }
+  check($caught, 'Invalid crop geometry rejected for ' . $slot);
+}
+imagedestroy($cropped);
+imagedestroy($scaled);
+imagedestroy($wide);
+imagedestroy($user);
 // These checks must run even on production hosts which intentionally do not
 // install PDO SQLite: model prompts and avatar geometry do not need a database.
 $directPrompt = coreui_image_reference_prompt(
@@ -56,6 +85,24 @@ try {
  check(str_contains(coreui_profile_prompt_block($pdo,1),'verbindliche 1:1-Identitaetsvorlage'), 'Current portrait takes priority in model context');
  $prompt=coreui_image_reference_prompt('A scene at sunset','custom:'.$key,[],1200);
  check(str_contains($prompt,'ACCOUNT PORTRAIT') && str_contains($prompt,'A scene at sunset'), 'Custom source priority retains scene');
+ $sourceFile = coreui_profile_media_dir() . '/' . $key . '.source.png';
+ $metaFile = coreui_profile_media_dir() . '/' . $key . '.crop.json';
+ imagepng($portrait, $sourceFile);
+ file_put_contents($metaFile, json_encode(['crop'=>['x'=>0.0,'y'=>0.0,'w'=>1.0,'h'=>0.5]]));
+ check(coreui_profile_source_path($key)['path'] === $sourceFile, 'Own original source persisted privately');
+ check(coreui_profile_crop_meta($key)['h'] === 0.5, 'Stored crop coordinates can be re-edited');
+ $loaded = coreui_profile_load($pdo, 1);
+ check(($loaded['media']['assistant']['uuid'] ?? null) === $key
+   && str_contains((string)($loaded['media']['assistant']['source_url'] ?? ''), 'variant=source')
+   && ($loaded['media']['assistant']['crop']['h'] ?? null) === 0.5,
+   'Account profile exposes original URL and normalized crop only for its own media');
+ check(!isset(coreui_profile_load($pdo,2)['media']['assistant']),
+   'A second account never sees another account original or crop');
  check((int)$pdo->query('SELECT COUNT(*) FROM ember_memories')->fetchColumn()===0, 'Profile reads and references create no memories');
-} finally { @unlink($path); }
+} finally {
+ coreui_profile_media_cleanup($key . '.png');
+ check(!file_exists($path) && !file_exists(coreui_profile_media_dir() . '/' . $key . '.source.png')
+   && !file_exists(coreui_profile_media_dir() . '/' . $key . '.crop.json'),
+   'Deleting avatar also deletes original bytes and crop coordinates');
+}
 echo "Profile reference: alias, uncropped portrait, account isolation, prompt priority and no memory side effects OK\n";

@@ -16,7 +16,7 @@ if ($method === 'GET') {
     'ok' => true,
     'profile' => coreui_profile_load($pdo, $uid),
     'csrf_token' => stu_csrf_token(),
-    'limits' => ['name_chars' => 64, 'avatar_mb' => 4, 'avatar_px' => 512, 'assistant_reference_px' => 1024],
+    'limits' => ['name_chars' => 64, 'avatar_mb' => 4, 'avatar_px' => 512, 'assistant_reference_px' => 1024, 'crop' => true],
   ]);
 }
 
@@ -30,7 +30,7 @@ try {
     $uploadError = (int)($_FILES['file']['error'] ?? UPLOAD_ERR_NO_FILE);
     if ($uploadError !== UPLOAD_ERR_OK) stu_json(['ok' => false, 'error' => 'upload_failed', 'code' => $uploadError], 400);
     $slot = strtolower(trim((string)($_POST['slot'] ?? '')));
-    $profile = coreui_profile_store_avatar($pdo, $uid, $slot, $_FILES['file']);
+    $profile = coreui_profile_store_avatar($pdo, $uid, $slot, $_FILES['file'], $_POST['crop'] ?? null);
     stu_json(['ok' => true, 'profile' => $profile]);
   }
 
@@ -43,6 +43,13 @@ try {
       (string)($body['display_name'] ?? ''),
       (string)($body['assistant_name'] ?? '')
     );
+    stu_json(['ok' => true, 'profile' => $profile]);
+  }
+  if ($action === 'avatar_crop') {
+    $slot = strtolower(trim((string)($body['slot'] ?? '')));
+    $crop = $body['crop'] ?? null;
+    $uuid = strtolower(trim((string)($body['source_uuid'] ?? '')));
+    $profile = coreui_profile_store_avatar($pdo, $uid, $slot, null, $crop, $uuid);
     stu_json(['ok' => true, 'profile' => $profile]);
   }
   if ($action === 'avatar_delete') {
