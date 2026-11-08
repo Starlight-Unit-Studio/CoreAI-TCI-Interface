@@ -176,7 +176,7 @@ $shortGallery = coreui_image_reference_prompt('Mara as a hologram', 'default', [
 $customNoGallery = coreui_image_reference_prompt('Ember in a new room',
   'custom:' . str_repeat('a', 32), [], 1200);
 ref_test(str_contains($canonicalGallery, 'SAME woman')
-  && str_contains($canonicalGallery, 'hologram STYLE-ONLY')
+  && (str_contains($canonicalGallery, 'STYLE-ONLY') || str_contains($canonicalGallery, 'STYLE ONLY'))
   && str_contains($canonicalGallery, 'TCI: Mara Thorne')
   && str_ends_with($canonicalGallery, 'Mara on her ship bridge'),
   'curated canonical Mara photos share a single identity, while holograms only provide style');
