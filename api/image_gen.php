@@ -130,7 +130,8 @@ function coreui_image_attachment_creation_requested(string $message, ?array $int
   $verbs = '(?:generier\\w*|erstell\\w*|erzeug\\w*|zeichn\\w*|mal\\w*|render\\w*|gestalt\\w*|kombinier\\w*|montier\\w*|erschaff\\w*|create|generate|draw|render|combine|make|edit)';
   $targets = '(?:bild\\w*|foto\\w*|illustration\\w*|szene\\w*|image\\w*|picture\\w*|scene\\w*)';
   if (preg_match('~\\b' . $verbs . '\\b.{0,160}\\b' . $targets . '\\b|\\b' . $targets . '\\b.{0,160}\\b' . $verbs . '\\b~iu', $message) === 1) return true;
-  return preg_match('~\\b(?:lass|lasse|zeig|zeige)\\s+(?:die|diese|beide|beiden|die\\s+beiden)\\b.{0,130}\\b(?:kaempfen|kämpfen|gegeneinander|duellieren|fight|battle)\\b~iu', $message) === 1;
+  return preg_match('~\\b(?:lass|lasse|zeig|zeige)\\s+(?:die|diese|beide|beiden|die\\s+beiden)\\b.{0,130}\\b(?:kaempfen|kämpfen|gegeneinander|duellieren|fight|battle)\\b~iu', $message) === 1
+    || preg_match('~\\b(?:kannst|kannste|koenntest|könntest)\\s+du\\b.{0,150}\\b(?:kaempfen|kämpfen|gegeneinander|duellieren)\\s+lassen\\b~iu', $message) === 1;
 }
 
 /** The attachment-vision response was prose, although the user requested a new image. */
@@ -358,13 +359,16 @@ function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $
       . 'distinctive clothing, features and shapes while following the requested scene. ';
     $prompt = mb_substr($anchor . $prompt, 0, $limit);
   }
-  if (count($references) > COREUI_IMAGE_MAX_REFERENCES || count($references) !== count(array_unique($references))) {
+  if (count($references) > COREUI_IMAGE_MAX_REFERENCES) {
     return ['ok'=>false, 'error'=>'bad_reference', 'detail'=>''];
   }
   foreach ($references as $token) {
     if (!is_string($token) || preg_match('~^upload:[a-f0-9]{32}\\.(?:png|jpg|webp|gif)$~D', $token) !== 1) {
       return ['ok'=>false, 'error'=>'bad_reference', 'detail'=>''];
     }
+  }
+  if (count($references) !== count(array_unique($references))) {
+    return ['ok'=>false, 'error'=>'bad_reference', 'detail'=>''];
   }
   [$code, $health] = $http('GET', '/health', null, 4);
   if ($code !== 200 || !is_array($health)) return ['ok' => false, 'error' => 'image_unreachable', 'detail' => ''];
