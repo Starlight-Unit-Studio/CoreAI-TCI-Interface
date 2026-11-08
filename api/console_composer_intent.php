@@ -100,7 +100,14 @@ function coreui_composer_intent_ensure(array $intent, string $reply, string $use
         && function_exists('coreui_image_extract_marker') && function_exists('coreui_image_parse_input')) {
       $parsed = coreui_image_parse_input((string)coreui_image_extract_marker($reply));
       $wantsSelf = coreui_image_is_self_request($userText, $assistantName);
-      if ((bool)($parsed['self_reference'] ?? false) !== $wantsSelf) {
+      $hasSelf = (bool)($parsed['self_reference'] ?? false);
+      // Upgrade unmarked portraits deterministically. Only downgrade a
+      // mismarked generic request when it is NOT an elliptical continuation
+      // ("diesmal im roten Kleid", "noch eins") of a self-portrait that the
+      // Core already identified from the conversation. Never discard that
+      // ICH binding simply because an abbreviated follow-up omits "Mara".
+      if (($wantsSelf && !$hasSelf)
+          || (!$wantsSelf && $hasSelf && !coreui_image_may_continue_self_portrait($userText))) {
         return '[BILD' . ($parsed['size'] === 'large' ? ' GROSS' : '')
           . ($wantsSelf ? ' ICH' : '') . ': ' . $parsed['prompt'] . ']';
       }
