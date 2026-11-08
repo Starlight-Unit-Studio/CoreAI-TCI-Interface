@@ -140,4 +140,32 @@ $max = coreui_image_reference_prompt('a ship ' . str_repeat('x', 1150), null, $o
 ref_test(mb_strlen($max) <= 1200 && str_starts_with($max, 'REFERENCE CONSISTENCY (SUBJECT):'),
   'prefix and scene are always within the pinned image prompt limit');
 
+// 0.6.57: self portraits MUST be the TCI herself, in all prompt budget tiers.
+// Uploaded images of other people remain standalone references, never Mara.
+$canonical = coreui_image_reference_prompt('a garden selfie', 'default', [], 1200);
+$customIdentity = coreui_image_reference_prompt('at work', 'custom:' . str_repeat('a', 32), [], 1200);
+$customCompact = coreui_image_reference_prompt('at work', 'custom:' . str_repeat('a', 32), [], 700);
+$customMinimum = coreui_image_reference_prompt('at work', 'custom:' . str_repeat('a', 32), $one, 480);
+$genericPortrait = coreui_image_reference_prompt('A portrait of a woman', null, $one, 1200);
+ref_test(str_contains($canonical, 'TCI SELF-PORTRAIT:')
+  && str_contains($canonical, 'person IS TCI: Mara Thorne herself')
+  && str_ends_with($canonical, 'a garden selfie'), 'Default photo is the TCI, not a likeness');
+ref_test(str_contains($customIdentity, 'ACCOUNT PORTRAIT:')
+  && str_contains($customIdentity, 'person pictured IS TCI: Mara Thorne herself')
+  && str_contains($customIdentity, 'identical face geometry')
+  && str_ends_with($customIdentity, 'at work'), 'Custom portrait is Mara herself');
+ref_test(str_contains($customCompact, 'person IS TCI: Mara Thorne herself')
+  && str_ends_with($customCompact, 'at work')
+  && mb_strlen($customCompact) <= 700, 'Compact custom portrait retains actual Mara identity');
+ref_test(str_contains($customMinimum, 'TCI: Mara Thorne herself')
+  && str_contains($customMinimum, 'MULTI-REFERENCE:')
+  && str_ends_with($customMinimum, 'at work')
+  && mb_strlen($customMinimum) <= 480, 'Minimal prompt never drops Mara or the other reference');
+ref_test(!str_contains($genericPortrait, 'TCI: Mara Thorne')
+  && str_contains($genericPortrait, 'REFERENCE CONSISTENCY (IDENTITY)')
+  && str_ends_with($genericPortrait, 'A portrait of a woman'),
+  'Arbitrary uploaded people never inherit Mara identity');
+ref_test(!str_contains(coreui_image_reference_prompt('a fox', null, [], 1200), 'Mara Thorne'),
+  'Ordinary text-to-image stays independent of the TCI identity');
+
 echo "Reference consistency selftest OK: identity, subject, style, multi-reference and prompt limits.\n";
