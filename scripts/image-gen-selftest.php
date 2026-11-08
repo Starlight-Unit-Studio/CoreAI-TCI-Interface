@@ -240,9 +240,18 @@ $http = $fake([['GET', '/health', $ready], ['POST', '/jobs', [503, ['ok' => fals
 $r = coreui_image_generate($pdo, 5, 'ember', 'Mara as Superwoman', 'normal',
   $lease, $unlease, static function (): void {}, $never, $http, null, 'default');
 img_gen_test($r['error'] === 'image_busy' && ($GLOBALS['img_calls'][1][2]['reference'] ?? null) === 'default'
+  && ($GLOBALS['img_calls'][1][2]['scene_hint'] ?? null) === 'Mara as Superwoman'
   && str_starts_with((string)($GLOBALS['img_calls'][1][2]['prompt'] ?? ''), 'REFERENCE CONSISTENCY (IDENTITY):')
   && str_contains((string)($GLOBALS['img_calls'][1][2]['prompt'] ?? ''), 'Mara as Superwoman'),
-  'explicit self portrait anchors identity and routes canonical reference to the service');
+  'explicit self portrait sends original scene for canonical gallery selection without losing identity');
+// A custom account avatar must not receive the official Mara gallery selector.
+$http = $fake([['GET', '/health', $ready], ['POST', '/jobs', [503, ['ok' => false, 'error' => 'image_busy'], '']]]);
+$r = coreui_image_generate($pdo, 5, 'ember', 'Ember wearing a blue jacket', 'normal',
+  $lease, $unlease, static function (): void {}, $never, $http, null, 'custom:' . str_repeat('a', 32));
+img_gen_test($r['error'] === 'image_busy'
+  && ($GLOBALS['img_calls'][1][2]['reference'] ?? null) === 'custom:' . str_repeat('a', 32)
+  && !array_key_exists('scene_hint', $GLOBALS['img_calls'][1][2]),
+  'custom Ember photo never selects the canonical Mara reference gallery');
 $refs = ['upload:' . $idA . '.png', 'upload:' . $idB . '.jpg'];
 img_gen_test(coreui_image_reference_prompt('plain spaceship', null, [], 1200) === 'plain spaceship',
   'no reference does not alter text-to-image prompts');
@@ -276,7 +285,8 @@ img_gen_test($r['ok'] === true && preg_match('~^[a-f0-9]{32}$~', $r['uuid']) ===
 img_gen_test($titles === ['Bild: Gewichte werden geladen', 'Bild: Schritt 2 von 4', 'Bild: Schritt 4 von 4', 'Bild wird erzeugt'],
   'every change of phase and step is shown once: ' . json_encode($titles));
 img_gen_test($leases === 1 && $unleases === 1, 'the queue is held for the job and given back');
-img_gen_test($GLOBALS['img_calls'][1][2] === ['prompt' => 'A red fox, sitting in snow', 'size' => 'normal'], 'the service gets description and size only');
+img_gen_test($GLOBALS['img_calls'][1][2] === ['prompt' => 'A red fox, sitting in snow', 'size' => 'normal'],
+  'generic image tasks do not send Mara identity, scene selection or reference data');
 $row = $pdo->query('SELECT * FROM stu_console_media')->fetch(PDO::FETCH_ASSOC);
 img_gen_test($row['uuid'] === $r['uuid'] && (int)$row['user_id'] === 5 && $row['kind'] === 'image' && $row['public_url'] === null
   && $row['rel_path'] === 'var/console_media/images/' . $r['uuid'] . '.png' && $row['mime_type'] === 'image/png'
