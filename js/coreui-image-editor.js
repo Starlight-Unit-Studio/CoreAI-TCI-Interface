@@ -127,7 +127,10 @@
      ['close','Werkzeuge schließen','close']].forEach(function (item) {
       var b = button('coreai-image-editor-tool coreai-image-editor-tool-' + item[0], item[1], item[2]);
       buttons[item[0]] = b;
-      if (item[0] === 'color') b.appendChild(el('span', 'coreai-image-editor-color-dot'));
+      if (item[0] === 'color') {
+        b.textContent = '';
+        b.appendChild(el('span', 'coreai-image-editor-color-dot'));
+      }
       toolbar.appendChild(b);
     });
     barAnchor.appendChild(toolbar);
@@ -542,6 +545,9 @@
     });
     buttons.undo.disabled=!history.length;
     buttons.redo.disabled=!undone.length;
+    Array.prototype.forEach.call(shapePalette.querySelectorAll('[data-shape]'),function(button){
+      button.setAttribute('aria-pressed',String(button.dataset.shape===shape));
+    });
     var sizePopover=dialog.querySelector('.coreai-image-editor-size-popover');
     if(sizePopover)sizePopover.hidden=!(tool==='brush'||tool==='shape'||tool==='eraser');
     canvas.classList.toggle('is-marking',tool!=='select');
