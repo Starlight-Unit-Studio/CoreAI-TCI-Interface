@@ -1,0 +1,11 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.62
+08.11.2026
+
+- Neuer Bildeditor im vorhandenen Bildbetrachter.
+- Originalfoto als Bildreferenz, Textanweisung, Ausgabe Normal/Gross.
+- Touch-Auswahl mit Pinsel, Undo, Redo und Auswahl loeschen.
+- Bei Markierung zweites Referenzbild; bestehender Upload und serielle FLUX.2 Bildpipeline.
+- Keine echte Inpainting-Maske: unmarkierte Bereiche koennen sich veraendern.
+- Originale bleiben unangetastet, ungesendete Chatentwuerfe werden nicht ueberschrieben.
+- Lokaler Browser-Selbsttest und beide Preflights erweitert.
+- Modelfile, Datenbank, Modellgewichte, Referenzgalerie und Account-Memory bleiben unveraendert.

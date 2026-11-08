@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.6.62 - 08.11.2026
+
+- Add an integrated **image editor** to the 0.6.61 picture viewer. A new Edit action opens the original uploaded or generated image, offers a text instruction, Normal/Large output and an optional touch brush with size, undo, redo and clear controls.
+- Send original and, when selected, a second marked reference through the existing image-upload, account authorization, image tool and serial FLUX.2 Klein 4B queue. The original is never overwritten; no new model, image worker, Modelfile, database migration or account-memory entry is introduced by the editor UI.
+- Explicit limitation: pink selection marks guide FLUX; there is no hard mask/inpainting operation and edits may extend outside the highlighted region.
+- Prevent overwriting an unsent chat draft and support exiting the editor during reference loading. Add a local mobile Playwright image-editor regression, registered conditionally in both deployment preflights.
+- Bump version consistently and update content-hashed asset cache keys. 0.6.61 remains the earlier viewer-only release.
+
+
 ## 0.6.61 - 08.11.2026
 
 - Add a full-screen, mobile-friendly image viewer for received, uploaded and TCI-generated chat images. Close via X, Escape or Android back, zoom in/out, see filename and resolution, move through multi-image replies, and use browser fullscreen when supported.

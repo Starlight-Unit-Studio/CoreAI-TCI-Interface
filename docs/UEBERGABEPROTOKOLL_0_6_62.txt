@@ -1,0 +1,24 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.62
+08.11.2026 | Basis: main 0.6.61 (viewer-only, PR #213)
+
+Neu:
+- js/coreui-image-editor.js
+- Vorhandener Viewer oeffnet Bildeditor per Bearbeiten.
+- Mobile Touch-Markierung, Undo/Redo, Textanweisung, 512/1024 Auswahl.
+- js/console-app.js sendImageEdit nutzt nur bestaenden Upload, Bildwerkzeug und Queue.
+- Auswahl ist NUR visuelle Referenz, keine pixelgenaue Maskenintegration.
+- Eingabeentwuerfe bleiben unberuehrt; Abbruch beim Laden moeglich.
+- scripts/image-editor-ui-selftest.cjs in beiden Preflights optional eingebunden.
+
+Nicht veraendert:
+- FLUX Worker, Modelfile, DB, Referenzgalerie, Memory, Kontorechte.
+
+Vor Merge auf Testhost pruefen:
+  python3 scripts/cache-bust.py --verify
+  python3 scripts/version-merge-check.py --base-version 0.6.61
+  node scripts/image-editor-ui-selftest.cjs
+  node scripts/image-chat-ui-selftest.cjs
+  node scripts/terran-terminology-selftest.cjs
+  node scripts/tci-language-selftest.cjs
+  scripts/preflight.sh (auf installiertem Host)
+Danach PR mergen, integrierten Owner-Updater verwenden und den Handytest ausfuehren.
