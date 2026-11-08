@@ -1,0 +1,40 @@
+COREAI: TCI INTERFACE 0.6.59
+Datum: 08.11.2026
+Branch: fix/image-selftest-stub-0659
+Basis: main 0.6.58
+
+FEHLER
+Der Preflight bricht mit einem Problem ab:
+[FEHLER] Bilddienst-Selbsttest: ...
+CoreAI Bilddienst FAIL: 0.6.42: this sd-cli writes step previews
+
+WURZELURSACHE
+scripts/image-service-selftest.py erstellt lokal einen synthetischen sd-cli
+als Python-Quelltext aus einer verschachtelten f-String-Vorlage. Die
+vorherigen nicht doppelt escapen Sequenzen \x00, \x89 und \x1a wurden
+bereits beim Erzeugen des Scripts zu Steuerzeichen. Der falsche NUL-Byte-
+Inhalt macht die Datei unstartbar. Die preview-Feature-Erkennung liefert
+dann False, auch wenn der echte sd-cli korrekt arbeitet.
+
+FIX
+- Byte-Esacapes in der f-String-Vorlage doppelt escapen.
+- Automatische Erkennung von NUL-Bytes und einen direkten
+  Stand-in-Aufruf von sd-cli --help vor dem HTTP-Endpunkt-Test einbauen.
+- Fuer die isolierte Preview-Pruefung explizit COREAI_IMAGE_PREVIEW=1
+  verwenden; hierdurch werden keinerlei Server-Umgebungsvariablen
+  ausserhalb des Selftest-Prozesses geaendert.
+- Diagnostik bei Fehlern nennt stderr und den HTTP-Health-Status.
+
+PRUEFUNG
+- Lokal reproduzierter Generatorfehler: vor dem Fix Exit 1 mit
+  "SyntaxError: source code cannot contain null bytes".
+- Isolierte Smokeprobe nach dem Fix: Exit 0 und --preview-path vorhanden.
+- GitHub-Quelltext und Versionen muessen statisch gegengeprueft werden.
+- Vollstaendigen Python-Bilddienst-Selbsttest sowie nativen/Compose-
+  Preflight auf dem Betreiber-Server vor Merge ausfuehren.
+- Tests von FLUX/CPU mit mehreren Mara-Referenzen bleiben eigenstaendig.
+
+SCOPE
+Kein Modell, FLUX-Gewicht, Bild-Speicherdienst, Datenbankschema oder
+Profilbild ist von dieser Korrektur betroffen. Die sieben Referenzbilder
+liegen bereits im Hauptbranch.

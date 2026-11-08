@@ -18,6 +18,7 @@ import importlib.util
 import json
 import os
 import struct
+import subprocess
 import sys
 import tempfile
 import threading
@@ -332,6 +333,9 @@ with tempfile.TemporaryDirectory(prefix='coreai-image-service-') as tmp_name:
     # --- The service with a stand-in sd-cli -----------------------------------------------
     args_log = tmp / 'args.jsonl'
     stub = tmp / 'sd-cli'
+    # This is an outer f-string that generates a second Python script.
+    # Escape all byte-literal backslashes twice, or the generated script
+    # will contain a literal NUL and fail before its --help can be read.
     stub.write_text(f'''#!{sys.executable}
 import json, struct, sys, time, zlib
 args = sys.argv[1:]
@@ -341,8 +345,8 @@ open({str(args_log)!r}, 'a').write(json.dumps(args) + '\\n')
 def chunk(k, d):
     return struct.pack('>I', len(d)) + k + d + struct.pack('>I', zlib.crc32(k + d) & 0xffffffff)
 def png(w, h, rgb):
-    raw = b''.join(b'\x00' + bytes(rgb) * w for _ in range(h))
-    return b'\x89PNG\\r\\n\x1a\\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', w, h, 8, 2, 0, 0, 0)) + chunk(b'IDAT', zlib.compress(raw)) + chunk(b'IEND', b'')
+    raw = b''.join(b'\\x00' + bytes(rgb) * w for _ in range(h))
+    return b'\\x89PNG\\r\\n\\x1a\\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', w, h, 8, 2, 0, 0, 0)) + chunk(b'IDAT', zlib.compress(raw)) + chunk(b'IEND', b'')
 prompt = args[args.index('-p') + 1]
 steps = int(args[args.index('--steps') + 1])
 w, h = int(args[args.index('-W') + 1]), int(args[args.index('-H') + 1])
@@ -364,6 +368,16 @@ if 'NOPNG' in prompt:
 open(out, 'wb').write(png(w, h, (16, 32, 48)))
 ''', encoding='utf-8')
     stub.chmod(0o755)
+    # Check the simulator itself before interpreting a failed preview probe
+    # as a problem with the real installed image service.
+    stub_bytes = stub.read_bytes()
+    check(b'\x00' not in stub_bytes, 'fixture sd-cli contains an invalid NUL byte')
+    probe = subprocess.run([str(stub), '--help'], capture_output=True, text=True, timeout=10)
+    check(probe.returncode == 0 and '--preview-path' in (probe.stdout + probe.stderr),
+          'fixture sd-cli --help failed: ' + (probe.stderr or probe.stdout)[-500:])
+    # This regression exercises *enabled* step previews even when the target
+    # deployment intentionally sets COREAI_IMAGE_PREVIEW=0.
+    os.environ['COREAI_IMAGE_PREVIEW'] = '1'
 
     svc = service_mod.Service(test_reg, models, tmp / 'work', threads=3, sd_cli=str(stub))
     server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), service_mod.make_handler(svc))
@@ -389,7 +403,7 @@ open(out, 'wb').write(png(w, h, (16, 32, 48)))
             break
         time.sleep(0.05)
     health = call('GET', '/health')[1]
-    check(health['preview'] is True, '0.6.42: this sd-cli writes step previews')
+    check(health['preview'] is True, 'selftest fixture sd-cli must advertise step previews: ' + json.dumps(health))
     check(health['ready'] and not health['busy'] and health['weights']['have'] == health['weights']['total'] > 0
           and health['sizes']['normal'] == {'width': 64, 'height': 64}, 'health: ready, weights complete: ' + json.dumps(health))
 

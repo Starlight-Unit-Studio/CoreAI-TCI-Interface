@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.6.59 - 08.11.2026
+
+- Repair the image-service preflight simulator: its nested Python string literal previously expanded raw binary escape sequences into NUL/non-ASCII bytes inside the generated stand-in `sd-cli`. The fake command could not start, so the preview capability assertion failed even though this said nothing about the real image engine.
+- Double-escape PNG byte literals in the generated fixture so `sd-cli --help` and its sampled PNG previews run as valid Python.
+- Add a simulator smoke check with useful stderr/health diagnostics before judging image preview support. Force preview-on only inside this isolated selftest, independent of an operator setting `COREAI_IMAGE_PREVIEW=0`.
+- Keep the seven already-uploaded Mara reference images, image service/runtime, models, stored photos, queue and user settings unchanged. No schema migration or new dependency.
+
+
 ## 0.6.58 - 08.11.2026
 
 - Add an optional seven-image canonical Mara reference set at `images/mara_references/`: five photographic identity views (primary portrait, full body, cockpit, side profile, city) and two strictly style-only hologram views (seated/walking). Exact file names are registered in `config/image/mara-references.json`.

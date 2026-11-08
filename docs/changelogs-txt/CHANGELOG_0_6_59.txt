@@ -1,0 +1,8 @@
+## 0.6.59 - 08.11.2026
+
+- Fix the offline image service selftest failure "0.6.42: this sd-cli writes step previews".
+- Root cause: the synthetic Python sd-cli script was constructed inside a Python f-string with unescaped byte literal sequences. The generated script contained a literal NUL and invalid source encoding, failed to launch, and falsely failed the preview feature check.
+- Escape the PNG NUL/signature byte literals in the nested script, while preserving its preview behavior.
+- Smoke-test the synthetic sd-cli --help and verify there are no embedded source NUL bytes. Include subprocess stderr and health state in failures so future fixture problems cannot masquerade as FLUX regressions.
+- Exercise the preview-enabled test with an explicitly scoped COREAI_IMAGE_PREVIEW=1 inside its own process, irrespective of the server's optional preview-disabled configuration.
+- No changes to real sd-cli binaries, FLUX weights, image generation, seven canonical Mara references, model parameters or database.
