@@ -184,6 +184,10 @@ img_gen_test(str_contains($hint, '[BILD ICH: ausfuehrliche Bildbeschreibung auf 
   && str_contains($hint, 'Standard sind 512 × 512 Pixel') && str_contains($hint, 'Ohne Bildwunsch malst du nichts')
   && !str_contains($hint, 'Modell'), 'the prompt hint: 512 normal, big only on request, no image without a wish');
 img_gen_test(str_contains(coreui_image_capability_hint(true), '[BILD GROSS ICH: ...]'), 'compact hint');
+img_gen_test(str_contains(coreui_image_capability_hint(true), 'Szenen mit Mara Thorne')
+  && str_contains(coreui_image_capability_hint(false), "Auch bei Szenen wie 'Mara im Cockpit'")
+  && str_contains(coreui_image_capability_hint(false), 'auch bei 2/4 Bildern'),
+  'both image prompt variants explicitly keep Mara and alias scenes bound to the same visual identity');
 img_gen_test(str_contains(coreui_image_capability_hint(false), 'Die technische TCI-Identitaet bedeutet NICHT'),
   'appearance prompt does not invent cybernetic facial implants');
 img_gen_test(str_contains(coreui_image_capability_hint(true), 'Dein aktives Profilbild zeigt DICH SELBST als TCI: Mara Thorne')
