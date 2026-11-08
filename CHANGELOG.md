@@ -3,9 +3,9 @@
 ## 0.6.54 - 08.11.2026
 
 - Rename five visible local/cloud Core tier labels from "TCI: Mara ..." to "TCI Core ..." in chat selection, chip, legend, install and management UI. Mara Thorne's underlying technical model persona is unchanged.
-- Give newly installed local Gemma 4 tiers canonical Ollama names `ember-coreui:2b`, `:4b`, `:12b`, `:26b`, `:31b`; new setups default to `ember-coreui:4b`. Existing `:latest` and older e2b/e4b aliases remain compatible until explicitly migrated.
+- Give newly installed local Gemma 4 tiers canonical Ollama names `ember-core:e2b`, `:e4b`, `:12b`, `:26b`, `:31b`; new setups default to `ember-core:e4b`. Existing `ember-coreui:*` tags remain compatible and are not removed automatically.
 - After successfully creating and verifying a local CoreAI model, remove the upstream `gemma4:*` source tag only if that tag was newly downloaded by the same CoreAI job. Never delete a pre-existing source tag, a cloud model or an unverified Core. Ollama reuses model blobs, so two tags do not imply two copies of weights.
-- Apply the guarded cleanup to the built-in Core installer, weekly/manual tier updater, Compose and native setup; migrate raw-only legacy tiers to the new numeric model tags on update. Surface cleanup warnings and extend regression checks.
+- Apply the guarded cleanup to the built-in Core installer, weekly/manual tier updater, Compose and native setup; migrate raw-only and old `ember-coreui:*` tiers to the matching `ember-core:*` suffixes on update. Surface cleanup warnings and extend regression checks.
 - Preserve the operator Modelfile, runtime parameters, existing chats and account settings.
 
 
