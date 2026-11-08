@@ -22,6 +22,7 @@ function coreui_image_reference_mode(string $scene, bool $selfReference, bool $u
   if (preg_match(
     '~\b(?:style\s+only|only\s+(?:the\s+)?(?:style|aesthetic|colour\s+palette|color\s+palette)'
       . '|(?:reference|image|picture)\s+(?:for|as)\s+style\s+only'
+      . '|(?:use|take)\s+(?:the\s+)?(?:reference|image|picture)\s+only\s+for\s+(?:the\s+)?style'
       . '|nur\s+(?:als\s+)?stilvorlage|nur\s+den\s+stil|ausschlie(?:ss|ß)lich\s+(?:den\s+)?stil'
       . '|nur\s+(?:die\s+)?(?:aesthetik|ästhetik|farbwelt))\b~iu',
     $scene
