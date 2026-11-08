@@ -36,6 +36,7 @@ ref_test(coreui_image_reference_mode('this vehicle in the mountains', false, tru
 ref_test(coreui_image_reference_mode('Use the supplied reference for style only. Make a new subject.', false, true) === 'style'
   && coreui_image_reference_mode('Use the reference only for style; draw a new cat', false, true) === 'style'
   && coreui_image_reference_mode('Nur als Stilvorlage fuer ein neues Motiv', false, true) === 'style'
+  && coreui_image_reference_mode('style-only reference, a different person', false, true) === 'style'
   && coreui_image_reference_mode('Only the color palette, not the person', false, true) === 'style'
   && coreui_image_reference_mode('The same woman in watercolor style', false, true) === 'identity',
   'style-only requires an explicit request; an artistic transformation retains a depicted identity');
@@ -71,8 +72,10 @@ ref_test(str_starts_with($forcedStyle, 'REFERENCE CONSISTENCY (STYLE ONLY):')
   && !str_contains($forcedStyle, 'Do not swap faces'),
   'explicit user style-only choice overrides the model mentioning human subjects');
 $protectedMara = coreui_image_reference_prompt('Mara in watercolor', 'default', $one, 1200, 'style');
-ref_test(str_starts_with($protectedMara, 'REFERENCE CONSISTENCY (IDENTITY):'),
-  'a canonical Mara self-portrait is not replaced with a style-only reference');
+ref_test(str_starts_with($protectedMara, 'REFERENCE CONSISTENCY (IDENTITY):')
+  && str_contains($protectedMara, 'OTHER REFERENCES (STYLE ONLY):')
+  && !str_contains($protectedMara, 'Do not swap faces'),
+  'a Mara portrait stays the identity while user uploads contribute style only');
 
 $multi = coreui_image_reference_prompt('two warriors fighting at sunset', null, $two, 1200);
 ref_test(str_contains($multi, 'MULTI-REFERENCE:')
