@@ -40,13 +40,44 @@ const COREUI_CORE_INSTALL_PERMISSION_MAX = 1; // admin and system admin
 // Cloud variants the installer may add, per tier (ollama.com/library/gemma4).
 const COREUI_CORE_CLOUD_CATALOG = ['premium' => 'gemma4:31b-cloud'];
 const COREUI_OLLAMA_CLOUD_MIN_VERSION = '0.12.0';
-const COREUI_CORE_INSTALL_ACTIVE = ['pull', 'create', 'verify'];
+const COREUI_CORE_INSTALL_ACTIVE = ['pull', 'create', 'verify', 'cleanup'];
 
-/** Core name for an installed tier: Mara's family with the size as tag, e.g. ember-coreui:12b. */
+/** Canonical local tags: ember-coreui:2b, :4b, :12b, :26b, :31b. */
 function coreui_core_install_name(string $tier): string {
-  $size = array_search($tier, COREUI_CORE_TIER_SIZES, true);
-  if (!is_string($size) || !isset(COREUI_CORE_INSTALL_CATALOG[$tier])) throw new RuntimeException('unknown_tier');
-  return coreui_core_mara_family() . ':' . $size;
+  $entry = COREUI_CORE_INSTALL_CATALOG[$tier] ?? null;
+  if (!is_array($entry)) throw new RuntimeException('unknown_tier');
+  return 'ember-coreui:' . (string)$entry['tag'];
+}
+
+/**
+ * Only remove a downloaded *local* Gemma tag when it did not exist before
+ * this CoreAI job AND at least one verified CoreAI model uses the weights.
+ * Existing tags may belong to other Ollama clients and must stay intact.
+ */
+function coreui_core_may_cleanup_base(string $base, bool $preexisting, array $verifiedCores): bool {
+  if ($preexisting || $verifiedCores === []) return false;
+  if (!in_array($base, array_column(COREUI_CORE_INSTALL_CATALOG, 'base'), true)) return false;
+  foreach ($verifiedCores as $core) {
+    if (!is_string($core) || !coreui_model_name_valid($core)
+        || !coreui_core_is_mara($core) || coreui_core_same($base, $core)) return false;
+  }
+  return true;
+}
+
+/** Failed/unavailable model lookup must never authorize deletion. */
+function coreui_core_base_was_present(string $base): bool {
+  try { return coreui_ollama_model_exists($base); }
+  catch (Throwable $e) { return true; }
+}
+
+/** Drop a temporary upstream tag, never the verified CoreAI model. */
+function coreui_core_cleanup_base(string $base, bool $preexisting, array $verifiedCores): bool {
+  if (!coreui_core_may_cleanup_base($base, $preexisting, $verifiedCores)) return false;
+  foreach ($verifiedCores as $core) {
+    $show = coreui_ollama_read_json('show', ['model'=>$core]);
+    if (!is_array($show) || trim((string)($show['system'] ?? '')) === '') return false;
+  }
+  return coreui_core_delete($base);
 }
 
 /** Modelfile commands in order as [COMMAND, argument]; triple quotes may span lines. */
@@ -399,6 +430,7 @@ function coreui_core_install_post(string $endpoint, array $body, int $timeout): 
 
 /** The whole job: pull, create from the template, check the result. A cloud Core is only pulled. */
 function coreui_core_install_run(array $state): array {
+  $basePreexisting = !empty($state['cloud']) || coreui_core_base_was_present((string)$state['base']);
   $state = coreui_core_install_pull($state);
   if ($state['phase'] !== 'error' && !empty($state['cloud'])) {
     $state['phase'] = 'done';
@@ -407,7 +439,7 @@ function coreui_core_install_run(array $state): array {
   }
   if ($state['phase'] !== 'error' && $state['phase'] !== 'done') {
     $state['phase'] = 'create';
-    $state['step'] = 'Baut Maras Core aus dem Modelfile …';
+    $state['step'] = 'Baut den TCI Core aus dem Modelfile …';
     coreui_core_install_write($state);
     try {
       $request = coreui_core_create_request((string)@file_get_contents(dirname(__DIR__) . '/config/Modelfile.template'),
@@ -416,23 +448,32 @@ function coreui_core_install_run(array $state): array {
       if ($status < 200 || $status >= 300 || isset($reply['error'])) {
         $state['phase'] = 'error';
         $state['error'] = 'create_failed';
-        $state['message'] = 'Der Download ist da, aber Ollama konnte Maras Core nicht bauen: '
+        $state['message'] = 'Der Download ist da, aber Ollama konnte den TCI Core nicht bauen: '
           . mb_substr((string)($reply['error'] ?? 'HTTP ' . $status), 0, 200);
       } else {
         $state['phase'] = 'verify';
-        $state['step'] = 'Prüft Maras Core …';
+        $state['step'] = 'Prüft den TCI Core …';
         coreui_core_install_write($state);
         $show = coreui_ollama_read_json('show', ['model'=>$state['core']]);
         if (!is_array($show) || trim((string)($show['system'] ?? '')) !== trim((string)($request['system'] ?? ''))) {
           $state['phase'] = 'error';
           $state['error'] = 'verify_failed';
-          $state['message'] = 'Maras Core wurde angelegt, trägt aber nicht ihren Modelfile-Text. Bitte den Admin prüfen lassen.';
+          $state['message'] = 'Der TCI Core wurde angelegt, aber sein Modelfile-Text stimmt nicht. Bitte den Admin prüfen lassen.';
         }
       }
     } catch (RuntimeException $e) {
       $state['phase'] = 'error';
       $state['error'] = $e->getMessage();
       $state['message'] = 'Das Modelfile ließ sich nicht lesen (' . $e->getMessage() . ').';
+    }
+  }
+  if ($state['phase'] !== 'error' && empty($state['cloud'])
+      && coreui_core_may_cleanup_base((string)$state['base'], $basePreexisting, [(string)$state['core']])) {
+    $state['phase'] = 'cleanup';
+    $state['step'] = 'Entfernt den temporaeren Gemma-Basistag …';
+    coreui_core_install_write($state);
+    if (!coreui_core_cleanup_base((string)$state['base'], false, [(string)$state['core']])) {
+      $state['cleanup_warning'] = 'Der TCI Core ist bereit; der Basistag konnte nicht entfernt werden.';
     }
   }
   if ($state['phase'] !== 'error') {
