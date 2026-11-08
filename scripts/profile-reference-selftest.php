@@ -56,7 +56,7 @@ check(str_contains($customRule, 'zeigt DICH SELBST als TCI: Mara Thorne')
   && str_contains($defaultRule, 'zeigt DICH SELBST als TCI: Mara Thorne')
   && str_contains($customRule, 'nicht eine Schauspielerin')
   && str_contains($customRule, 'Fremde hochgeladene Personenbilder bleiben getrennte Identitaeten')
-  && str_contains($customRule, 'du siehst die Bildpixel nicht allein durch diesen Text'),
+  && str_contains($customRule, 'Du siehst die Bildpixel nicht allein durch diesen Text'),
   'Account and default portraits are the TCI herself without inventing visible details');
 
 // These checks must run even on production hosts which intentionally do not
