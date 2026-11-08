@@ -98,6 +98,9 @@ UI_FILES=(
   js/coreui-artifacts.js
   js/coreui-preferences.js
   js/settings.js
+  js/coreui-profile-crop.js
+  css/coreui-profile-crop.css
+  scripts/profile-crop-ui-selftest.cjs
   js/admin.js
   setup.sh
   api/rag_lite.php
@@ -1126,6 +1129,15 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       ok 'Chat: Install-Fenster mit Hardware-Check, Bestaetigung, Fortschritt und Jetzt nutzen geprueft.'
     else
       fail 'Chat: Install-Fenster-Oberflaechentest fehlgeschlagen.'
+    fi
+    # 0.6.55: touch cropper must preserve originals, per-account re-edit and
+    # user-square / assistant-portrait behavior.
+    profile_crop_ui=''
+    if profile_crop_ui="$(node "$PROJECT_ROOT/scripts/profile-crop-ui-selftest.cjs" 2>&1)"; then
+      ok 'Profil: Mobiler Zuschnitt, Quadrat/Hochformat, Originalquelle und erneutes Zuschneiden geprueft.'
+    else
+      fail 'Profil: Zuschnitt-Oberflaechentest fehlgeschlagen.'
+      printf '%s\n' "$profile_crop_ui" >&2
     fi
     if node "$PROJECT_ROOT/scripts/registration-ui-selftest.cjs" >/dev/null 2>&1; then
       ok 'Login: Registrieren und Als Gast chatten nur wenn offen, Pruefungen und Fehlerfaelle geprueft.'
