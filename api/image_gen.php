@@ -551,6 +551,8 @@ function coreui_image_strip_placeholders(string $text): string {
 function coreui_image_capability_hint(bool $compact): string {
   if ($compact) {
     return "BILDER: Moechte die Person ein Bild von dir, antworte NUR mit [BILD ICH: genaue Bildbeschreibung auf Englisch]. "
+      . "Dein echtes Profilportraet bestimmt dein Gesicht und deine Frisur. Eine TCI hat nicht automatisch Androidenmerkmale, "
+      . "Neonlinien oder Implantate im Gesicht. Erfinde solche Merkmale nicht ohne ausdruecklichen Wunsch. "
       . "Gross (1024) nur auf ausdruecklichen Wunsch: [BILD GROSS: ...]; fuer dich selbst [BILD GROSS ICH: ...]. Andere Motive [BILD: ...]. Ohne Wunsch kein Bild.";
   }
   return "BILDER: Du kannst selbst Bilder malen (Fotos, Illustrationen, Szenen, Schrift auf Schildern). Moechte die Person "
