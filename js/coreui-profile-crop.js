@@ -184,7 +184,7 @@
         source = image;
         fitCanvas(false);
         say('Ausschnitt mit dem Finger verschieben, über die Regler anpassen.');
-        if (apply) apply.focus();
+        modal.focus({preventScroll:true});
       };
       image.onerror = function () {
         if (thisGeneration === generation) say('Originalbild konnte nicht geöffnet werden.', true);
