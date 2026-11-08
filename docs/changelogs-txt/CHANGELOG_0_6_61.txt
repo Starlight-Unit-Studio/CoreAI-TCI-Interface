@@ -3,6 +3,7 @@ COREAI: TCI INTERFACE // CHANGELOG 0.6.61
 
 - Full-screen image viewer for uploaded and generated chat images.
 - Close, Escape/Android Back, zoom, multi-image navigation and image information.
+- Reference-based editor with touch selection, undo/redo, instructions and existing FLUX.2 service. Marks are guidance, not an inpainting mask.
 - Before-send previews of uploaded pictures.
 - Original download with embedded Quantum CoreAI provenance intact and optional sharing.
 - Protected per-account media and the existing image generator remain unchanged.
