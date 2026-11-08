@@ -426,6 +426,14 @@ function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $
     $job = $answer['job'];
     $jobId = (string)($job['id'] ?? '');
     if (preg_match('~^[a-f0-9]{32}$~D', $jobId) !== 1) return ['ok' => false, 'error' => 'image_failed', 'detail' => ''];
+    // Fail closed if an outdated/partial worker silently ignores references:
+    // otherwise a self portrait is text-to-image and FLUX invents a stranger.
+    // The worker reports actual resolved -r files (including canonical angles).
+    $requiredReferences = count($references) + ($reference !== null ? 1 : 0);
+    if ($requiredReferences > 0 && (int)($job['reference_count'] ?? 0) < $requiredReferences) {
+      $http('DELETE', '/jobs/' . $jobId, null, 5);
+      return ['ok' => false, 'error' => 'reference_unavailable', 'detail' => ''];
+    }
     $deadline = microtime(true) + (int)($registry['sizes'][$size]['time_limit_s'] ?? 300) + 60;
     $seen = '';
     while (true) {
