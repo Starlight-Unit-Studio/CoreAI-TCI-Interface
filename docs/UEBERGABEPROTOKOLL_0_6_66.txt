@@ -34,8 +34,10 @@ UMSETZUNG
   nicht eine beliebige Frauenbeschreibung.
 - api/image_gen.php: Nach erfolgreicher POST-Jobanlage die vom
   Worker tatsaechlich aufgeloeste Referenzanzahl gegen die
-  angeforderte vergleichen. Bei 0 bzw. zu wenigen Bildern sofort
-  per DELETE abbrechen und vorhandenen Fehler zurueckgeben.
+  angeforderte vergleichen. Wenn die kanonische Mara-Primardatei
+  installiert ist, muss der Worker mindestens ein kuratiertes
+  Mara-Bild melden. Bei 0 bzw. zu wenigen oder fehlenden Galerie-
+  Referenzen sofort per DELETE abbrechen und Fehler zurueckgeben.
 - scripts/image-gen-selftest.php und scripts/composer-intent-selftest.php:
   Positiv-/Negativfaelle, Alias, Szenen, Folgewuensche, No-Ref-Job.
 - VERSION, sechs HTML-Seiten, Bootstrap-/Cache-Fingerprint, Branding,
