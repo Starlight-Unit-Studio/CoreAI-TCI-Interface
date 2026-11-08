@@ -49,6 +49,10 @@
   var assistantAvatarFile = document.getElementById('assistantAvatarFile');
   var removeUserAvatar = document.getElementById('removeUserAvatar');
   var removeAssistantAvatar = document.getElementById('removeAssistantAvatar');
+  var editUserAvatar = document.getElementById('editUserAvatar');
+  var editAssistantAvatar = document.getElementById('editAssistantAvatar');
+  var avatarMedia = {};
+  var avatarCropper = window.CoreUIProfileCrop ? window.CoreUIProfileCrop.create() : null;
   var knowledgeTitleInput = document.getElementById('knowledgeTitleInput');
   var knowledgeFile = document.getElementById('knowledgeFile');
   var knowledgeFileName = document.getElementById('knowledgeFileName');
@@ -276,6 +280,9 @@
     if (profileDisplayName) profileDisplayName.value = profile.display_name || '';
     if (assistantDisplayName) assistantDisplayName.value = profile.assistant_name || 'Mara';
     var avatars = profile.avatars || {};
+    avatarMedia = profile.media || {};
+    if (editUserAvatar) editUserAvatar.hidden = !avatarMedia.user;
+    if (editAssistantAvatar) editAssistantAvatar.hidden = !avatarMedia.assistant;
     setAvatarPreview(userAvatarPreview, avatars.user, profile.display_name || 'Operator');
     setAvatarPreview(assistantAvatarPreview, avatars.assistant, profile.assistant_name || 'Mara');
     setAvatarPreview(accountAvatar, avatars.user, profile.display_name || 'Operator');
@@ -311,21 +318,59 @@
     }).finally(function () { saveProfileButton.disabled = false; });
   }
 
-  function uploadAvatar(slot, file) {
-    if (!file) return;
+  function uploadAvatar(slot, file, crop) {
+    if (!file) return Promise.reject(new Error('no_file_uploaded'));
     var form = new FormData();
     form.append('slot', slot);
     form.append('file', file, file.name || 'avatar');
-    announceSaved('PROFILBILD WIRD VERARBEITET');
-    api('./api/profile.php', { method: 'POST', body: form }).then(function (data) {
+    form.append('crop', JSON.stringify(crop));
+    announceSaved('ORIGINALBILD UND ZUSCHNITT WERDEN GESPEICHERT');
+    return api('./api/profile.php', { method: 'POST', body: form }).then(function (data) {
       applyProfile(data.profile || {});
-      announceSaved(slot === 'assistant' ? 'COREAI-BILD GESPEICHERT' : 'BENUTZERBILD GESPEICHERT');
+      announceSaved(slot === 'assistant' ? 'COREAI-REFERENZBILD GESPEICHERT' : 'BENUTZERBILD GESPEICHERT');
+      return data;
     }).catch(function (error) {
       announceSaved('BILDUPLOAD FEHLGESCHLAGEN: ' + error.message, true);
-    }).finally(function () {
-      if (slot === 'assistant' && assistantAvatarFile) assistantAvatarFile.value = '';
-      if (slot === 'user' && userAvatarFile) userAvatarFile.value = '';
+      throw error;
     });
+  }
+
+  function recropAvatar(slot, crop, sourceUuid) {
+    announceSaved('AUSSCHNITT WIRD NEU ERSTELLT');
+    return api('./api/profile.php', {
+      method: 'POST',
+      body: JSON.stringify({action:'avatar_crop', slot:slot, source_uuid:sourceUuid, crop:crop})
+    }).then(function (data) {
+      applyProfile(data.profile || {});
+      announceSaved('ZUSCHNITT ERNEUT GESPEICHERT');
+      return data;
+    }).catch(function (error) {
+      announceSaved('ZUSCHNITT FEHLGESCHLAGEN: ' + error.message, true);
+      throw error;
+    });
+  }
+
+  function openAvatarCrop(slot, file) {
+    if (!avatarCropper) {
+      announceSaved('ZUSCHNITT-FENSTER NICHT VERFÜGBAR', true);
+      return;
+    }
+    var previous = !file && avatarMedia[slot] ? avatarMedia[slot] : null;
+    if (!file && !previous) return;
+    if (file && (!['image/png','image/jpeg'].includes(file.type) || file.size > 4 * 1024 * 1024)) {
+      announceSaved('NUR PNG/JPG BIS 4 MB ERLAUBT', true);
+      return;
+    }
+    var opened = avatarCropper.open({
+      slot: slot,
+      file: file || null,
+      url: previous ? previous.source_url : '',
+      crop: previous ? previous.crop : null,
+      onConfirm: function (crop) {
+        return file ? uploadAvatar(slot, file, crop) : recropAvatar(slot, crop, previous.uuid);
+      }
+    });
+    if (!opened) announceSaved('ZUSCHNITT-FENSTER KONNTE NICHT GEÖFFNET WERDEN', true);
   }
 
   function deleteAvatar(slot) {
@@ -791,8 +836,18 @@
   if (aiSystemPrompt) aiSystemPrompt.addEventListener('input', updatePromptCounter);
   if (aiSaveButton) aiSaveButton.addEventListener('click', saveAiSettings);
   if (saveProfileButton) saveProfileButton.addEventListener('click', saveProfile);
-  if (userAvatarFile) userAvatarFile.addEventListener('change', function () { uploadAvatar('user', userAvatarFile.files && userAvatarFile.files[0]); });
-  if (assistantAvatarFile) assistantAvatarFile.addEventListener('change', function () { uploadAvatar('assistant', assistantAvatarFile.files && assistantAvatarFile.files[0]); });
+  if (userAvatarFile) userAvatarFile.addEventListener('change', function () {
+    var file = userAvatarFile.files && userAvatarFile.files[0];
+    userAvatarFile.value = '';
+    if (file) openAvatarCrop('user', file);
+  });
+  if (assistantAvatarFile) assistantAvatarFile.addEventListener('change', function () {
+    var file = assistantAvatarFile.files && assistantAvatarFile.files[0];
+    assistantAvatarFile.value = '';
+    if (file) openAvatarCrop('assistant', file);
+  });
+  if (editUserAvatar) editUserAvatar.addEventListener('click', function () { openAvatarCrop('user', null); });
+  if (editAssistantAvatar) editAssistantAvatar.addEventListener('click', function () { openAvatarCrop('assistant', null); });
   if (removeUserAvatar) removeUserAvatar.addEventListener('click', function () { deleteAvatar('user'); });
   if (removeAssistantAvatar) removeAssistantAvatar.addEventListener('click', function () { deleteAvatar('assistant'); });
   if (addMemoryButton) addMemoryButton.addEventListener('click', addMemory);
