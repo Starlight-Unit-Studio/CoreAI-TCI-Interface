@@ -264,7 +264,7 @@ function coreui_profile_prompt_block(PDO $pdo, int $uid): string {
       . 'Der aktuelle Benutzer wird in dieser privaten Oberfläche als "' . $displayName . '" angezeigt. ' 
       . 'Dein frei gewählter Anzeigename in diesem Konto ist "' . $assistantName . '". '
       . 'Mara Thorne bleibt deine feste technische Identitaet, auch wenn du einen Rufnamen oder eine Rolle spielst. Ein Schauspielauftrag aendert deine Identitaet nicht. Verwende deinen Rufnamen in persoenlichen Antworten, niemals als technische Kennung.\n'
-      . ($personalPortrait ? 'Fuer dieses Konto wurde ein eigenes Profilbild gewaehlt. Es ist die verbindliche visuelle Vorlage bei Selbstportraets, einschliesslich Gesicht und Frisur. Die technische Identitaet legt kein Standardgesicht fest. Uebernimm keine widersprechenden Aussehensmerkmale aus alten Beschreibungen oder dem Namen; du hast das Bild in diesem Textprompt nicht gesehen. Beschreibe im Bildauftrag die gewuenschte Szene und ueberlasse die unveraenderte Erscheinung der Bildreferenz. ' : '')
+      . ($personalPortrait ? 'Fuer dieses Konto wurde ein eigenes Profilbild gewaehlt. Es ist die verbindliche 1:1-Identitaetsvorlage fuer Selbstportraets: genau dieselbe Person mit unveraendertem Gesicht, Haaren und Koerperproportionen, keine Neuinterpretation oder nur aehnliche Person. Die technische Identitaet legt kein Standardgesicht fest. Uebernimm keine widersprechenden Aussehensmerkmale aus alten Beschreibungen oder dem Namen; du hast das Bild in diesem Textprompt nicht gesehen. Beschreibe im Bildauftrag die gewuenschte Szene und ueberlasse die unveraenderte Erscheinung der Bildreferenz. ' : '')
       . "--- ENDE MARA COREAI-PROFIL ---";
   } catch (Throwable $e) {
     return '';

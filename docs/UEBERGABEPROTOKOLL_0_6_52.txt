@@ -1,0 +1,20 @@
+CoreAI: TCI Interface 0.6.52
+Date: 08.11.2026
+Branch: feat/portrait-scene-0652
+Base: main 0.6.51
+
+GOAL
+Keep exactly the same visible person from a supplied TCI/account or other visual reference, rather than inventing a lookalike. Pose, clothing, expression and the scene can vary, including when the TCI invents the scene.
+
+ARCHITECTURE
+- api/image_reference_consistency.php: hardcoded, central reference identity block applied at the image generation service boundary.
+- api/profile_store.php: prompts reinforce exact same person from the current account portrait.
+- No writing or migration to ember_memories. No automatic image recognition on upload.
+- No Admin Core memory editor API is given an option to edit or override this reference consistency code.
+- Deleting or replacing the profile portrait remains an account profile action and never alters the server-side identity rules.
+
+SCOPE
+The reference is authoritative for facial geometry, hairstyle and physique. A custom portrait overrides remembered or default appearance descriptions. The standard remains universal and keeps style-only intent for explicitly requested style transfers.
+
+VALIDATION
+Offline source regression tests updated. PHP syntax, full preflight, production/MySQL deployment and live FLUX identity comparison have not been verified in this handover. Even a strong 1:1 identity directive is not a guarantee of pixel-perfect likeness from FLUX.

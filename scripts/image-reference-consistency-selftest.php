@@ -91,6 +91,24 @@ ref_test(str_starts_with($mixed, 'REFERENCE CONSISTENCY (IDENTITY):')
   'canonical or custom Mara portraits can coexist with user reference uploads');
 
 // The 1200-character API limit must not silently eat the user\'s scene.
+// The image reference is a source-level identity lock, never an editable long-term memory entry.
+$exact = coreui_image_reference_prompt('A new scene', 'custom:' . str_repeat('a', 32), [], 1200);
+ref_test(str_contains($exact, 'EXACT SAME')
+  && str_contains($exact, '1:1')
+  && str_contains($exact, 'ACCOUNT PORTRAIT')
+  && str_contains($exact, 'identical face geometry')
+  && str_contains($exact, 'may choose a different pose, clothing and scene')
+  && str_ends_with($exact, 'A new scene'),
+  'custom portrait retains original identity while allowing new scene');
+ref_test(coreui_image_reference_prompt('Create a spaceship', null, [], 1200) === 'Create a spaceship',
+  'text only prompt unaffected');
+$compact = coreui_image_reference_prompt('A new outfit and setting', 'custom:' . str_repeat('b', 32), [], 700);
+ref_test(str_contains($compact, 'EXACT SAME')
+  && str_contains($compact, 'ACCOUNT PORTRAIT')
+  && str_ends_with($compact, 'A new outfit and setting'),
+  'compact prompt preserves reference lock and scene');
+
+// 0.6.52 reference consistency.
 $scene = 'two people on a bridge ' . str_repeat('near the station, ', 23) . 'at sunrise';
 $shortened = coreui_image_reference_prompt($scene, null, $two, 620);
 ref_test(mb_strlen($shortened) <= 620
