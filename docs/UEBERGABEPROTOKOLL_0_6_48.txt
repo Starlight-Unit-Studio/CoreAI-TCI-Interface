@@ -1,0 +1,43 @@
+COREAI: TCI INTERFACE // HANDOVER 0.6.48
+Date: 08.11.2026
+PR source: fix/voice-image-preflight-0648
+Base: main / 0.6.47
+
+ROOT CAUSE
+After 0.6.47 added the self-portrait image marker [BILD ICH: ...],
+scripts/voice-input-selftest.php still checked the previous literal voice
+instruction beginning "Moechte Rick ein Bild...". A live Docker preflight
+therefore reported: "Voice input FAIL: Mara may paint after a voice message".
+The actual task in api/voice_transcribe.php already contains the updated
+instruction. This was an outdated test assertion, not evidence that audio
+transcription or image generation has stopped working.
+
+PATCH
+- Update voice-input-selftest.php expectations to cover both normal
+  images and portrait images from a spoken chat message.
+- Include [BILD: ...], [BILD GROSS: ...], [BILD ICH: ...]
+  and [BILD GROSS ICH: ...].
+- Verify image markers remain absent when image tool is disabled.
+- Verify all marker variants survive coreui_voice_strip_stray_bracket.
+- No application runtime changes, model or database migrations.
+- Update VERSION, six HTML pages, JS bootstrap, associated cache keys,
+  README, CHANGELOG, TXT archive, branding test and preflight metadata.
+
+OPERATIONS
+- "Keine Nginx-Default-Site gefunden" is a WARN only. Do not create
+  or enable a default site to resolve the voice selftest failure.
+- Once reviewed and merged, update CoreAI using the existing owner
+  updater and rerun the usual preflight on the real server.
+- Do not treat a GitHub merge as confirmation of a successful deployment.
+
+VERIFICATION
+- Confirm the modified PHP file passes php -l.
+- Run php scripts/voice-input-selftest.php in the CoreAI php service.
+- Run php scripts/image-gen-selftest.php and other affected tests.
+- Run python3 scripts/version-merge-check.py --base-version 0.6.47.
+- Run both standard preflights on the operator's server.
+- Confirm normal and self-portrait images are created after voice requests.
+- Preserve the existing 1/2/4 sequential image batch behavior.
+
+STATUS
+Prepare as a PR; do not merge without required tests.
