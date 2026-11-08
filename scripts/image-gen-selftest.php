@@ -232,17 +232,24 @@ $http = $fake([['GET', '/health', $ready], ['POST', '/jobs', [503, ['ok' => fals
 $r = coreui_image_generate($pdo, 5, 'ember', 'Mara as Superwoman', 'normal',
   $lease, $unlease, static function (): void {}, $never, $http, null, 'default');
 img_gen_test($r['error'] === 'image_busy' && ($GLOBALS['img_calls'][1][2]['reference'] ?? null) === 'default'
-  && str_starts_with((string)($GLOBALS['img_calls'][1][2]['prompt'] ?? ''), 'Use the supplied reference image as the SAME person.')
+  && str_starts_with((string)($GLOBALS['img_calls'][1][2]['prompt'] ?? ''), 'REFERENCE CONSISTENCY (IDENTITY):')
   && str_contains((string)($GLOBALS['img_calls'][1][2]['prompt'] ?? ''), 'Mara as Superwoman'),
   'explicit self portrait anchors identity and routes canonical reference to the service');
 $refs = ['upload:' . $idA . '.png', 'upload:' . $idB . '.jpg'];
+img_gen_test(coreui_image_reference_prompt('plain spaceship', null, [], 1200) === 'plain spaceship',
+  'no reference does not alter text-to-image prompts');
+img_gen_test(coreui_image_reference_mode('Only the style of these images, not the subject', false, true) === 'style'
+  && coreui_image_reference_mode('a watercolor of the same woman', false, true) === 'identity'
+  && coreui_image_reference_mode('an old aircraft', false, true) === 'subject',
+  'reference mode is style only when explicit, otherwise preserve individuals/subjects');
 $http = $fake([['GET', '/health', $ready], ['POST', '/jobs', [503, ['ok'=>false,'error'=>'image_busy'], '']]]);
 $r = coreui_image_generate($pdo, 7, 'ember', 'two warriors fighting', 'normal',
   $lease, $unlease, static function (): void {}, $never, $http, null, null, $refs);
 img_gen_test($r['error'] === 'image_busy'
   && ($GLOBALS['img_calls'][1][2]['references'] ?? null) === $refs
   && !isset($GLOBALS['img_calls'][1][2]['reference'])
-  && str_starts_with((string)$GLOBALS['img_calls'][1][2]['prompt'], 'Use ALL supplied reference pictures'),
+  && str_starts_with((string)$GLOBALS['img_calls'][1][2]['prompt'], 'REFERENCE CONSISTENCY (IDENTITY):')
+  && str_contains((string)$GLOBALS['img_calls'][1][2]['prompt'], 'MULTI-REFERENCE:'),
   'two user uploads are forwarded in order, without adding Maras portrait');
 
 
