@@ -596,6 +596,14 @@ function ember_attachment_single_block(PDO $pdo, string $uuid, int $uid, int $ma
         $GLOBALS['STU_EMBER_ATTACHMENT_IMAGES'] = [];
       }
       $GLOBALS['STU_EMBER_ATTACHMENT_IMAGES'][] = $imagePath;
+      // Also retain an opaque account-checked token for image-to-image work.
+      // The actual image contents and filesystem paths never enter the tool JSON.
+      $token = function_exists('coreui_image_media_reference_token')
+        ? coreui_image_media_reference_token($row, $uid) : null;
+      if (is_string($token) && is_file($path)) {
+        if (!isset($GLOBALS['COREUI_TURN_IMAGE_REFERENCES'])) $GLOBALS['COREUI_TURN_IMAGE_REFERENCES'] = [];
+        $GLOBALS['COREUI_TURN_IMAGE_REFERENCES'][] = $token;
+      }
     }
   } else {
     $ext = strtolower((string)pathinfo($name, PATHINFO_EXTENSION));
@@ -665,6 +673,7 @@ function ember_attachment_block(PDO $pdo, string &$msg, int $uid = 0): string {
   $msg = ember_attach_strip_marker($msg);
   unset($GLOBALS['STU_EMBER_ATTACHMENT_IMAGES']);
   unset($GLOBALS['STU_EMBER_ATTACHMENT_VISION_META']);
+  unset($GLOBALS['COREUI_TURN_IMAGE_REFERENCES']);
 
   $count = count($uuids);
   $totalMax = max(
