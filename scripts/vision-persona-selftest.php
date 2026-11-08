@@ -29,6 +29,20 @@ vision_test(str_contains($vision, 'stammen nicht von') && str_contains($vision, 
 vision_test(str_contains($vision, '$visionTimeout = ember_timeout_for_model($primaryModel);'),
   'configured timeout also for a single image');
 
+// Pictures sent for generation must enter the image tool after Mara has
+// analyzed them, not end in the Vision branch with a fake "I made it" answer.
+vision_test(str_contains($vision, 'coreui_image_attachment_creation_requested($userMsg, $composerIntent)')
+  && str_contains($vision, "\$voiceTool = ['tool'=>'image', 'input'=>coreui_image_attachment_fallback_prompt(\$userMsg, \$visionDescription)]")
+  && str_contains($vision, 'coreui_agent_loop_run($imgReply, $voiceTool, $voiceBase, $voiceTools'),
+  'Vision can render a new image after viewing the current message attachments');
+vision_test(str_contains($vision, 'if ($canCreateReferenceImage)')
+  && str_contains($vision, "Der Bilddienst erhaelt alle Anhaenge als echte visuelle Referenzen.")
+  && str_contains($vision, 'if ($canCreateReferenceImage && !in_array(\'image\', $voiceTools, true))'),
+  'Image generation hint exists only when the user asked and the account is allowed');
+vision_test(str_contains($chat, 'COREUI_TURN_IMAGE_REFERENCES')
+  && str_contains($chat, 'Referenzbilder fuer die Generierung erkannt'),
+  'The image tool forwards scoped references and reports only their count');
+
 // The regular sync prompt keeps the Modelfile SYSTEM: empty for Mara's own
 // Core; since 0.5.76 other Cores get the same persona text. Images use it too.
 vision_test(str_contains($chat, "\$sysBase = ember_persona_system_for(ember_model());\n  \$sys = \$sysBase;"),
