@@ -71,6 +71,34 @@ function coreui_image_is_self_request(string $message, string $assistantName = '
   // The user may address the account's nickname or Mara Thorne by name.
   $names = 'mara(?:\\s+thorne)?';
   if ($assistantName !== '') $names .= '|' . preg_quote($assistantName, '~');
+  // 0.6.66: natural self-portrait wording must not depend on the Core
+  // remembering the optional ICH marker. This checks the USER'S request only,
+  // not a model-authored scene, unrelated uploads or conversation memory.
+  // A leading "Mara, ..." alone is deliberately NOT a self-portrait: the
+  // operator may be addressing Mara while requesting a different subject.
+  $selfWords = '~\\b(?:selbstportr(?:aet|ät|ait)|selbstbildnis|self[-\\s]?portrait'
+    . '|(?:zeige?|mal(?:e)?|zeichne|generier(?:e)?|erstell(?:e)?|render|mach|create|draw|paint|show|generate)'
+    . '(?:\\s+[^\\s,.;!?]+){0,7}\\s+(?:dich|yourself)'
+    . '|(?:von|mit)\\s+dir|(?:of|with)\\s+yourself'
+    . '|(?:dein(?:e|en|em|er|es)?|your)\\s+(?:eigen(?:e|es|en)?\\s+|own\\s+)?'
+    . '(?:aussehen|gesicht|erscheinung|portrait|portraet|porträt|foto|bild|face|appearance|look|photo|picture)'
+    . '|(?:bild|foto|aufnahme|portr(?:aet|ät|ait)|selfie|szene|image|picture|photo|portrait|scene)'
+    . '[^.!?]{0,110}\\b(?:dich|yourself|du\\s+(?:selbst|stehst|sitzt|läufst|laeufst|bist|aussiehst))'
+    . '|(?:wie|how)\\s+(?:du\\s+(?:(?:dich\\s+)?(?:darstellst|zeigen|sehen|aussiehst|aussehen|wirkst|stehst|sitzt))'
+    . '|you\\s+(?:look|appear|would\\s+look))'
+    . ')\\b~iu';
+  if (preg_match($selfWords, $text) === 1) return true;
+  // Name-based scenes: "Mara im Cockpit", "Mara am Strand", "Ember as
+  // captain" and "ein Bild mit Mara" all mean the TCI as the SUBJECT.
+  // "Mara, male eine fremde Frau" must stay a generic image.
+  $subjectNames = '(?:' . $names . ')';
+  if (preg_match('~\\b' . $subjectNames
+    . '\\s+(?:selbst|als|im|in|am|auf|bei|vor|hinter|neben|unter|mit|wearing|as|at|on|beside|inside)\\b~iu', $text) === 1) return true;
+  if (preg_match('~\\b(?:bild|foto|aufnahme|portr(?:aet|ät|ait)|selfie|szene|image|picture|photo|portrait|scene)'
+    . '\\b[^.!?]{0,110}\\b' . $subjectNames . '\\b~iu', $text) === 1) return true;
+  if (preg_match('~\\b(?:zeichn\\w*|mal\\w*|generier\\w*|erstell\\w*|render\\w*|fotografier\\w*'
+    . '|draw|paint|generate|create|show|depict)\\b[^.!?]{0,95}\\b' . $subjectNames . '\\b~iu', $text) === 1) return true;
+
   if (preg_match('~\\b(?:wie\\s+sieht\\s+(?:' . $names . ')\\s+aus|(?:bild|foto|portr(?:aet|ät|ait))\\s+von\\s+(?:' . $names . '))\\b~iu', $text) === 1) return true;
   if ($assistantName !== '' && preg_match('~\\b' . preg_quote($assistantName, '~') . '\\s+(?:als|in\\s+einem|auf\\s+der)\\b~iu', $text) === 1) return true;
   return preg_match('~\\b(?:mara(?:\\s+thorne)?|du)\\s+(?:als|in\\s+einem|auf\\s+der)\\b|\\b(?:von\\s+dir|mit\\s+dir|dein(?:\\s+eigenes)?\\s+(?:portrait|portraet|porträt|bild|foto)|zeig(?:e)?\\s+dich|zeichne\\s+dich|mal\\s+dich|male\\s+dich|dich\\s+als|yourself\\s+as|picture\\s+of\\s+you|portrait\\s+of\\s+you)\\b~iu', $text) === 1;
