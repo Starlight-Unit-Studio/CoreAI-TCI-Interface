@@ -109,9 +109,15 @@ with tempfile.TemporaryDirectory(prefix='coreai-image-service-') as tmp_name:
     reference_root = tmp / 'reference-root'
     (reference_root / 'images').mkdir(parents=True)
     (reference_root / 'var' / 'profile_media').mkdir(parents=True)
+    (reference_root / 'assets' / 'chat_media').mkdir(parents=True)
     (reference_root / 'images' / 'mara_winter.jpg').write_bytes(b'canonical portrait')
     custom_uuid = 'a' * 32
+    second_uuid = 'b' * 32
     (reference_root / 'var' / 'profile_media' / (custom_uuid + '.png')).write_bytes(png(64, 64))
+    first_upload = reference_root / 'assets' / 'chat_media' / (custom_uuid + '.png')
+    second_upload = reference_root / 'assets' / 'chat_media' / (second_uuid + '.jpg')
+    first_upload.write_bytes(png(64, 64))
+    second_upload.write_bytes(bytes.fromhex('ffd8ff') + b'fake-JPEG-bytes')
     service_mod.ROOT = reference_root
     try:
         check(service_mod.resolve_reference(None) is None, 'no reference for an unrelated image')
@@ -119,6 +125,16 @@ with tempfile.TemporaryDirectory(prefix='coreai-image-service-') as tmp_name:
               'canonical portrait fallback')
         check(service_mod.resolve_reference('custom:' + custom_uuid) == str(reference_root / 'var' / 'profile_media' / (custom_uuid + '.png')),
               'custom account reference')
+        check(service_mod.resolve_uploaded_reference('upload:' + custom_uuid + '.png') == str(first_upload)
+              and service_mod.resolve_uploaded_reference('upload:' + second_uuid + '.jpg') == str(second_upload),
+              'two user reference files are resolved using validated UUID tokens')
+        for token in ('/etc/passwd', 'upload:../../etc/passwd', 'upload:' + 'c' * 32 + '.png',
+                      'upload:' + custom_uuid + '.exe'):
+            try:
+                service_mod.resolve_uploaded_reference(token)
+                check(False, 'arbitrary or missing user reference accepted: ' + token)
+            except ValueError:
+                pass
         for bad_ref in ('../etc/passwd', '/etc/passwd', 'custom:../../etc/passwd', 'custom:' + 'b' * 32):
             try:
                 service_mod.resolve_reference(bad_ref)
@@ -291,7 +307,11 @@ open(out, 'wb').write(png(w, h, (16, 32, 48)))
     for bad_body, code in (({'prompt': '', 'size': 'normal'}, 'bad_prompt'), ({'prompt': 'x' * 1300}, 'bad_prompt'),
                            ({'prompt': 'a fox', 'size': 'huge'}, 'bad_size'), ({'prompt': 'a fox', 'seed': -1}, 'bad_seed'),
                            ({'prompt': 'a\x00b'}, 'bad_prompt'),
-                           ({'prompt': 'a fox', 'reference': '../etc/passwd'}, 'bad_reference')):
+                           ({'prompt': 'a fox', 'reference': '../etc/passwd'}, 'bad_reference'),
+                           ({'prompt': 'a fox', 'references': '/etc/passwd'}, 'bad_reference'),
+                           ({'prompt': 'a fox', 'references': ['upload:../../etc/passwd']}, 'bad_reference'),
+                           ({'prompt': 'a fox', 'references': ['upload:' + 'a' * 32 + '.png'] * 2}, 'bad_reference'),
+                           ({'prompt': 'a fox', 'references': ['upload:' + 'a' * 32 + '.png'] * 11}, 'bad_reference')):
         status, body = call('POST', '/jobs', bad_body)
         check(status == 400 and body['error'] == code, f'refused: {bad_body!r} -> {body}')
 
@@ -338,6 +358,20 @@ open(out, 'wb').write(png(w, h, (16, 32, 48)))
     check(custom_command.count('-r') == 1 and custom_command[custom_command.index('-r') + 1] == ref_path,
           'self portraits use the reference file as an sd-cli argument')
     check('-r' not in argv, 'ordinary images do not get a portrait reference')
+    # sd-cli supports multiple -r inputs: both uploaded subjects must reach the model.
+    first_ref = '/var/www/coreui/assets/chat_media/' + 'a' * 32 + '.png'
+    second_ref = '/var/www/coreui/assets/chat_media/' + 'b' * 32 + '.jpg'
+    multi_command = svc.command({'width': 64, 'height': 64, 'seed': 3, 'png': str(tmp / 'multi-test.png'),
+                                 'preview_png': str(tmp / 'multi-preview.png'),
+                                 'reference_paths': [first_ref, second_ref]}, 'two warriors fighting')
+    check(multi_command.count('-r') == 2 and
+          [multi_command[i + 1] for i, arg in enumerate(multi_command) if arg == '-r'] == [first_ref, second_ref],
+          'both attachment references are passed to the generator in stable order')
+    with_identity = svc.command({'width': 64, 'height': 64, 'seed': 3, 'png': str(tmp / 'identity-test.png'),
+                                 'preview_png': str(tmp / 'identity-preview.png'),
+                                 'reference_paths': [ref_path, first_ref]}, 'Mara in uploaded scenery')
+    check(with_identity.count('-r') == 2 and with_identity[with_identity.index('-r') + 1] == ref_path,
+          'Mara identity and additional user reference are both preserved')
 
     status, body = call('POST', '/jobs', {'prompt': 'SLOW fox', 'size': 'normal'})
     slow_id = body['job']['id']
