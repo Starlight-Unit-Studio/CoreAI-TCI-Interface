@@ -311,6 +311,14 @@ function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $
   $prompt = trim((string)preg_replace('~\s+~u', ' ', $prompt));
   if ($prompt === '' || mb_strlen($prompt) > $limit) return ['ok' => false, 'error' => 'bad_prompt', 'detail' => ''];
   if (!isset(($registry['sizes'] ?? [])[$size])) return ['ok' => false, 'error' => 'bad_size', 'detail' => ''];
+  if ($reference !== null) {
+    // An image editing reference is a visual source of truth, not merely a
+    // loose style suggestion. Do not replace this identity with a generic TCI.
+    $anchor = 'Use the supplied reference image as the SAME person. Preserve the recognizable facial proportions, '
+      . 'eyes, hair, and overall identity of the subject shown there. Change scenery or clothing as requested, '
+      . 'but do not invent a new face. ';
+    $prompt = mb_substr($anchor . $prompt, 0, $limit);
+  }
   [$code, $health] = $http('GET', '/health', null, 4);
   if ($code !== 200 || !is_array($health)) return ['ok' => false, 'error' => 'image_unreachable', 'detail' => ''];
   if (empty($health['ready'])) {
