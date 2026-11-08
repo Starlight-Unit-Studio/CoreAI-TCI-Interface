@@ -3,6 +3,7 @@
 ## 0.6.61 - 08.11.2026
 
 - Add a full-screen, mobile-friendly image viewer for received, uploaded and TCI-generated chat images. Close via X, Escape or Android back, zoom in/out, see filename and resolution, move through multi-image replies, and use browser fullscreen when supported.
+- Add a reference-guided FLUX.2 image editor from the viewer: touch brush selection, undo/redo, prompt instruction and 512/1024 output through the existing upload/serial queue. Region marks guide FLUX but do not provide exact inpainting.
 - Show previews of ready-to-send photo attachments. Download original image bytes without recompression or removing Quantum CoreAI PNG provenance; offer native file sharing on compatible mobile browsers.
 - Keep protected per-user media URLs, account permissions, generation pipeline, model prompts, and the existing serial image queue unchanged. Extend image-chat UI checks.
 
