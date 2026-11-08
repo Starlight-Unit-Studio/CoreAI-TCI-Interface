@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.58: dynamischer Quantum CoreAI Bildvermerk ohne Studio-Logo.
+# CoreAI: TCI Interface 0.6.59: dynamischer Quantum CoreAI Bildvermerk ohne Studio-Logo.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -448,7 +448,7 @@ fi
 # 0.6.39 (P20.5 B): Mara's image service: registry (FLUX.2-klein 4B, pins required), progress
 # from sd-cli, weights at their pinned revision and SHA-256, one job at a time, cancel, time
 # limit, adopting the image test's weights, compose and installer.
-# 0.6.58: Optional gallery assets may be uploaded after this code PR.
+# 0.6.59: Optional gallery assets may be uploaded after this code PR.
 # Without a full set, the image service falls back to existing photos.
 mara_missing=0
 for image_name in \
@@ -1037,7 +1037,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail "Profilreferenz-Selbsttest: ${profile_reference_test:-Unbekannter Fehler}"
   fi
 
-  # 0.6.58: all image references share identity, subject and style preservation.
+  # 0.6.59: all image references share identity, subject and style preservation.
   reference_consistency_test=''
   if reference_consistency_test="$(compose exec -T php php scripts/image-reference-consistency-selftest.php 2>&1)"; then
     ok 'Bildreferenzen: Identitaet, Motivtreue, Stilvorlage und mehrere Quellen geprueft.'
@@ -1151,7 +1151,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     else
       fail 'Chat: Install-Fenster-Oberflaechentest fehlgeschlagen.'
     fi
-    # 0.6.58: touch cropper must preserve originals, per-account re-edit and
+    # 0.6.59: touch cropper must preserve originals, per-account re-edit and
     # user-square / assistant-portrait behavior.
     profile_crop_ui=''
     if profile_crop_ui="$(node "$PROJECT_ROOT/scripts/profile-crop-ui-selftest.cjs" 2>&1)"; then
