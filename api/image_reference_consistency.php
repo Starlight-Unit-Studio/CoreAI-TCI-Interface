@@ -48,8 +48,8 @@ function coreui_image_reference_block(string $mode, bool $multiple, bool $compac
   if (!in_array($mode, ['identity', 'subject', 'style'], true)) throw new InvalidArgumentException('Invalid reference mode');
   if ($compact) {
     $block = match ($mode) {
-      'identity' => 'REFERENCE CONSISTENCY (IDENTITY): Same people as in the reference images. Preserve face geometry, eyes, nose, lips, jaw, hairline, skin, distinguishing marks and body shape. Natural anatomy, neck, shoulders, limbs and feet. Change only requested aspects.',
-      'subject' => 'REFERENCE CONSISTENCY (SUBJECT): Preserve each subject, including any human face, its silhouette, proportions, colors, structure, markings and original anatomy. Change only requested aspects.',
+      'identity' => 'REFERENCE CONSISTENCY (IDENTITY): Same individuals as the visual references. Lock face, eyes, nose, lips, jaw, hairline, hair, skin, marks, body shape and proportions. Natural neck, shoulders, limbs and feet. Pose, outfit, expression, camera, lighting and setting may vary; invent a fitting scene when none is specified. Never infer appearance from name or memory.',
+      'subject' => 'REFERENCE CONSISTENCY (SUBJECT): Preserve every subject, including any human face, its silhouette, proportions, colors, structure, markings and anatomy. Pose, camera, light and setting may vary; invent a suitable setting if none is specified.',
       'style' => 'REFERENCE CONSISTENCY (STYLE ONLY): Copy only the requested visual style and palette, never the pictured identities or objects.',
     };
   } else {
@@ -60,12 +60,12 @@ function coreui_image_reference_block(string $mode, bool $multiple, bool $compac
         . 'Keep their original body silhouette and proportions, with realistic human neck length, shoulder placement, '
         . 'hips, thighs, limbs, hands, forefeet and toes where applicable. No elongated neck/toes, distorted anatomy '
         . 'or exaggerated hourglass shape. Do not redesign, beautify, age or recast anyone. '
-        . 'Vary only pose, clothing, lighting, camera angle, expression and surroundings, or other explicitly requested changes.',
+        . 'Face, hairstyle and physique come from the visual reference, never from a name, stored memory or an invented description. Pose, clothing, expression, lighting, camera angle and surroundings may freely vary. When the user does not specify a scene, invent a fitting scene; do not copy the reference background by default.',
       'subject' => 'REFERENCE CONSISTENCY (SUBJECT): Keep each depicted subject recognizable, not redesigned. '
         . 'Preserve silhouette, structural geometry, scale, relative proportions, material, colors, markings, '
         . 'surface details and anatomy. If any people are shown, also preserve their facial identity and natural '
         . 'body proportions; avoid elongated necks, hands, feet or toes. '
-        . 'Only vary pose, scene, lighting, camera angle or the details the user explicitly requested.',
+        . 'Vary pose, scene, lighting and camera angle while keeping the original subject. If the user did not specify a scene, invent one freely instead of copying the reference background.',
       'style' => 'REFERENCE CONSISTENCY (STYLE ONLY): The supplied images are visual style guides, NOT subjects to reproduce. '
         . 'Use their palette, texture, brushwork, lighting, mood and overall visual treatment as requested. '
         . 'Create the new specified subject without copying an unrelated person, face, logo, product or object from the references.',
@@ -101,7 +101,7 @@ function coreui_image_reference_prompt(string $scene, ?string $selfReference, ar
     ? ' OTHER REFERENCES (STYLE ONLY): Take palette, texture and lighting from uploads; do NOT copy their people or objects.'
     : '';
   if ($selfReference !== null && str_starts_with($selfReference, 'custom:')) {
-    $overlay .= ' ACCOUNT PORTRAIT: This uploaded portrait overrides any default appearance associated with the assistant name. Preserve its face and hair; the technical name does not select another person.';
+    $overlay .= ' ACCOUNT PORTRAIT: This account portrait overrides all default appearance, stored-memory and name-based descriptions of the assistant. Lock its face, hair and body proportions. The assistant may choose a new pose, outfit and scene without changing that person.';
   }
   $block = coreui_image_reference_block($mode, $multiple) . $overlay;
   if (mb_strlen($block) + 1 + mb_strlen($scene) > $limit) {
