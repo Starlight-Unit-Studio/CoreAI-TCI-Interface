@@ -13,6 +13,12 @@ ANALYSE UND KORREKTUREN
 - js/coreui-image-progress.js: p.thumbs.hidden hatte bei genau
   einem fertigen Bild den Wert true. Jetzt zeigt bereits das erste
   vorhandene Bild ein anklickbares Thumbnail an.
+- js/coreui-work-events.js: normalisiertes Arbeitsereignis verwarf
+  image_uuid, image_px und steps trotz zulaessiger Werte aus dem
+  serverseitigen Work Store. Bildfertigmeldung erreichte den Client
+  daher ohne Datei-ID. Sicher validierte Bild-Metadaten bleiben jetzt
+  intern fuer das UI vorhanden und erscheinen NICHT in den frei
+  sichtbaren Work-Details; ungueltige/fremde Werte werden verworfen.
 - Bisher bis zu 900 Canvas-Punkte pro Animation Frame im 60-Hz-Takt.
   Auf Touch-Geraeten begrenzt auf ca. 20 FPS, sonst ca. 25 FPS;
   echte Status-/Preview-Events werden nicht verzoegert.
@@ -39,7 +45,8 @@ VERSION / DOKUMENTATION
 - VERSION 0.6.65 sowie HTML, Bootstrap, README, Changelog,
   TXT-Archiv und Preflight-Versionen synchronisiert.
 - Numerische, contentbasierte Cache-Fingerprints fuer
-  coreui-image-progress.js, console.css, console-gate.js erneuert.
+  coreui-image-progress.js, coreui-work-events.js, console.css,
+  console-gate.js erneuert.
 
 PRUEFSTATUS
 - Quellcode-/Datei-/Cachechecks: getrennt pruefen.
