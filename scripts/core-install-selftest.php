@@ -27,8 +27,10 @@ install_test(coreui_core_may_cleanup_base('gemma4:12b', false, ['ember-core:12b'
   && !coreui_core_may_cleanup_base('gemma4:12b', false, [])
   && !coreui_core_may_cleanup_base('gemma4:31b-cloud', false, ['ember-core:31b'])
   && !coreui_core_may_cleanup_base('gemma4:12b', false, ['gemma4:12b'])
-  && !coreui_core_may_cleanup_base('gemma4:12b', false, ['foreign-model:12b']),
-  'temporary base removal requires newly pulled known Gemma and verified CoreAI name');
+  && !coreui_core_may_cleanup_base('gemma4:12b', false, ['foreign-model:12b'])
+  && !coreui_core_may_cleanup_base('gemma4:12b', false, ['ember-core:e2b'])
+  && !coreui_core_may_cleanup_base('gemma4:26b', false, ['ember-core:12b']),
+  'temporary base removal requires a newly pulled known Gemma and matching owned Core');
 // New models preserve exact Gemma tag suffixes under the ember-core family.
 $family = coreui_core_mara_family();
 install_test(coreui_core_install_name('plus') === $family . ':12b' && coreui_core_install_name('schnell') === 'ember-core:e2b' && coreui_core_install_name('normal') === 'ember-core:e4b',
