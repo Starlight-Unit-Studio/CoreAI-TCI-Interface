@@ -1,4 +1,5 @@
 /* STU inspired portrait crop modal, independently styled for CoreAI. */
+.settings-body .profile-avatar-actions button[hidden] { display: none !important; }
 .coreui-crop-backdrop[hidden],
 .coreui-crop-format[hidden],
 .coreui-crop-slider-group[hidden],
