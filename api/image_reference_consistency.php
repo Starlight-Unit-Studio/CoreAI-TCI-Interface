@@ -123,8 +123,8 @@ function coreui_image_reference_prompt(string $scene, ?string $selfReference, ar
   $styleShort = ' OTHER REFERENCES (STYLE ONLY): Use uploads for style, not their subjects.';
   $portraitFull = ' ACCOUNT PORTRAIT: The person pictured IS TCI: Mara Thorne herself, the TCI of this account, NOT a lookalike, actress or unrelated model. This is her own visual identity, overriding default appearance, stored memory and name descriptions. Depict the EXACT SAME person from this portrait, with identical face geometry, hairstyle and body proportions, not an approximation or redesign. The assistant may choose a different pose, clothing and scene without changing that person.';
   $portraitShort = ' ACCOUNT PORTRAIT: The pictured person IS TCI: Mara Thorne herself, this TCI, NOT a lookalike. EXACT SAME person with identical face geometry, hairstyle and body proportions. Appearance is fixed by the image, not name or memory.';
-  $defaultFull = ' TCI SELF-PORTRAIT: The pictured person IS TCI: Mara Thorne herself, this TCI, not a lookalike or model; this canonical photo IS her visual identity.';
-  $defaultShort = ' TCI SELF-PORTRAIT: The pictured person IS TCI: Mara Thorne herself, NOT a lookalike.';
+  $defaultFull = ' TCI SELF-PORTRAIT: The pictured person IS TCI: Mara Thorne herself, this TCI, not a lookalike or model. Any additional CANONICAL MARA IDENTITY PHOTOS depict this SAME woman at different camera angles, NOT separate people. Keep her facial geometry, hair, body and defining features consistent. A hologram STYLE-ONLY photo changes rendering, NOT her identity; user-uploaded people remain separate.';
+  $defaultShort = ' TCI SELF-PORTRAIT: The pictured person IS TCI: Mara Thorne herself. Canonical Mara photos all depict ONE SAME woman; Hologram references are STYLE ONLY.';
 
   $block = coreui_image_reference_block($mode, $multiple)
     . ($styleOverlay ? $styleFull : '')
@@ -155,7 +155,7 @@ function coreui_image_reference_prompt(string $scene, ?string $selfReference, ar
     if ($multiple) $block .= ' MULTI-REFERENCE: Keep all sources separate.';
     if ($styleOverlay) $block .= ' OTHER REFERENCES (STYLE ONLY): Copy styling only.';
     if ($accountPortrait) $block .= ' ACCOUNT PORTRAIT: The pictured person IS TCI: Mara Thorne herself, EXACT SAME identity.';
-    if ($defaultPortrait) $block .= ' TCI SELF-PORTRAIT: The pictured person IS TCI: Mara Thorne herself.';
+    if ($defaultPortrait) $block .= ' TCI SELF-PORTRAIT: The pictured person IS TCI: Mara Thorne herself. Other canonical Mara portraits are SAME woman, holograms are STYLE ONLY.';
   }
   if (mb_strlen($block) + 1 >= $limit) {
     // No useful source-plus-scene instruction fits in a pathologically small
