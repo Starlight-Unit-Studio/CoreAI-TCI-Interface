@@ -5309,7 +5309,8 @@ function ember_image_run_tool(PDO $pdo, int $uid, string $input): array {
       if (function_exists('sse_send')) {
         sse_send('image_preview', ['image' => $image, 'step' => (int)($job['step'] ?? 0), 'steps' => (int)($job['steps'] ?? 0)]);
       }
-    }, $reference, $references);
+    }, $reference, $references,
+    !empty($GLOBALS['COREUI_TURN_IMAGE_STYLE_ONLY']) ? 'style' : null);
   if (!empty($result['ok'])) {
     coreui_image_pending_add((string)$result['uuid']);
     coreui_work_record($pdo, 'artifact', 'success', 'Bild erzeugt',
@@ -5364,9 +5365,14 @@ function ember_generate_reply(
   unset($GLOBALS['STU_EMBER_ATTACHMENT_IMAGES']);
   unset($GLOBALS['STU_EMBER_ATTACHMENT_VISION_META']);
   unset($GLOBALS['COREUI_TURN_IMAGE_REFERENCES']);
+  unset($GLOBALS['COREUI_TURN_IMAGE_STYLE_ONLY']);
   // 0.6.43: a tool chosen in the + menu ([[bild]], [[websuche]], [[recherche]]) leaves the text.
   $composerIntent = $channel === 'console' ? coreui_composer_intent_take($userMsg) : null;
   $attachBlock = ember_attachment_block($pdo, $userMsg, (int)($senderChar['user_id'] ?? 0));
+  // The user's explicit style-only request outranks a Vision model paraphrase.
+  if ($channel === 'console' && coreui_image_reference_mode($userMsg, false, true) === 'style') {
+    $GLOBALS['COREUI_TURN_IMAGE_STYLE_ONLY'] = true;
+  }
 
   // Bilder, Videoframes und gerasterte PDF-Seiten aus allen Anhaengen laufen
   // gemeinsam und begrenzt ueber den Vision-Zweig.
