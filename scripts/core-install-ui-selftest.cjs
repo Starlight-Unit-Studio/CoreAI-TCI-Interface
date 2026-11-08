@@ -59,7 +59,7 @@ const ROWS = [
   {key: 'disk', label: 'Speicherplatz', value: '800 GB frei · Download ca. 8 GB', state: 'ok'},
   {key: 'speed', label: 'Tempo', value: 'mittel (Richtwert für den Prozessor)', state: 'ok'},
 ];
-const check = extra => Object.assign({tier: 'plus', label: 'TCI Core Plus', base: 'gemma4:12b', core: 'ember-coreui:12b',
+const check = extra => Object.assign({tier: 'plus', label: 'TCI Core Plus', base: 'gemma4:12b', core: 'ember-core:12b',
   download_gb: 8, installed: false, verdict: 'gut', blocked: false, rows: ROWS, cloud_base: null}, extra || {});
 const TIERS = [
   {tier: 'schnell', label: 'TCI Core Schnell', base: 'gemma4:e2b', download_gb: 7.5, local: ['gemma4:e2b'], removable: ['gemma4:e2b'], cloud: [],
@@ -124,7 +124,7 @@ function server(opts) {
           phase: 'pull', step: 'Startet …', percent: 0, running: true};
         return reply(200, {ok: true, install: st.install});
       }
-      st.install = {tier: 'plus', label: 'TCI Core Plus', core: 'ember-coreui:12b', phase: 'pull', step: 'Startet …',
+      st.install = {tier: 'plus', label: 'TCI Core Plus', core: 'ember-core:12b', phase: 'pull', step: 'Startet …',
         percent: 0, completed: 0, total: 0, running: true};
       return reply(200, {ok: true, install: st.install});
     }
@@ -146,9 +146,9 @@ assert.equal(api.gb(20 * 1073741824), '20 GB');
   // Admin, good verdict: check, install, progress, done, use it.
   let {els, doc} = page();
   let srv = server({statuses: [
-    {tier: 'plus', label: 'TCI Core Plus', core: 'ember-coreui:12b', phase: 'pull', step: 'Lädt herunter …',
+    {tier: 'plus', label: 'TCI Core Plus', core: 'ember-core:12b', phase: 'pull', step: 'Lädt herunter …',
       percent: 50, completed: 4 * 1073741824, total: 8 * 1073741824, running: true},
-    {tier: 'plus', label: 'TCI Core Plus', core: 'ember-coreui:12b', phase: 'done', step: 'Fertig: TCI Core Plus ist bereit.',
+    {tier: 'plus', label: 'TCI Core Plus', core: 'ember-core:12b', phase: 'done', step: 'Fertig: TCI Core Plus ist bereit.',
       percent: 100, running: false},
   ]});
   const timers = [];
@@ -163,7 +163,7 @@ assert.equal(api.gb(20 * 1073741824), '20 GB');
   assert.equal(srv.calls[0].url, './api/user_settings.php?core_install=plus');
   assert.equal(els.coreInstallTitle.textContent, 'TCI Core Plus');
   assert.match(els.coreInstallLead.textContent, /noch nicht installiert.*ca\. 8 GB.*den TCI Core mit dem Modelfile/);
-  assert.match(els.coreInstallTech.textContent, /gemma4:12b, angelegt als ember-coreui:12b/);
+  assert.match(els.coreInstallTech.textContent, /gemma4:12b, angelegt als ember-core:12b/);
   const rows = els.coreInstallRows.children;
   assert.equal(rows.length, 10, 'five rows: label and value');
   assert.deepEqual([rows[0].textContent, rows[1].textContent], ['Ollama', 'Version 0.40.6 erreichbar']);
@@ -192,14 +192,14 @@ assert.equal(api.gb(20 * 1073741824), '20 GB');
   assert.equal(els.coreInstallBarWrap.getAttribute('aria-valuenow'), '50');
   assert.equal(els.coreInstallStep.textContent, 'Lädt herunter … 4,0 GB von 8,0 GB (50 %)');
   await timers.shift()();
-  assert.deepEqual(installed, ['ember-coreui:12b'], 'the Core list is refreshed once');
+  assert.deepEqual(installed, ['ember-core:12b'], 'the Core list is refreshed once');
   assert.equal(timers.length, 0, 'polling stops when done');
   assert.match(els.coreInstallStep.textContent, /Fertig: TCI Core Plus ist bereit/);
   assert.match(els.coreInstallLead.textContent, /steht jetzt im Core-Menü/);
   assert.equal(els.coreInstallGo.textContent, 'Jetzt nutzen');
   assert.equal(els.coreInstallVerdict.hidden, true);
   await els.coreInstallGo.handlers.click();
-  assert.deepEqual(chosen, ['ember-coreui:12b'], 'the new Core is chosen');
+  assert.deepEqual(chosen, ['ember-core:12b'], 'the new Core is chosen');
   assert.equal(els.coreInstall.hidden, true);
   assert.equal(closed, 1);
 
