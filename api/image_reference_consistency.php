@@ -82,8 +82,12 @@ function coreui_image_reference_block(string $mode, bool $multiple, bool $compac
  * Prepend the reference standard without losing the scene to a fixed 1200-char cap.
  * If necessary fall back to a compact instruction and truncate only as a last resort.
  */
-function coreui_image_reference_prompt(string $scene, ?string $selfReference, array $uploads, int $limit): string {
+function coreui_image_reference_prompt(string $scene, ?string $selfReference, array $uploads, int $limit,
+    ?string $userMode = null): string {
   $mode = coreui_image_reference_mode($scene, $selfReference !== null, $uploads !== []);
+  // The user's explicit style-only request outranks an LLM's paraphrase that
+  // may mention people from the source photos as part of its description.
+  if ($userMode === 'style' && $selfReference === null && $uploads !== []) $mode = 'style';
   if ($mode === null || $limit < 1) return $scene;
   $multiple = count($uploads) + ($selfReference === null ? 0 : 1) > 1;
   $block = coreui_image_reference_block($mode, $multiple);
