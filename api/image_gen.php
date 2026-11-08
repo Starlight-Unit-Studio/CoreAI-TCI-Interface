@@ -20,6 +20,7 @@ declare(strict_types=1);
 
 const COREUI_IMAGE_DEFAULT_PORT = 18791;
 const COREUI_IMAGE_MAX_BYTES = 25 * 1024 * 1024;
+const COREUI_IMAGE_MAX_REFERENCES = 10; // Same limit as attached files per turn.
 const COREUI_IMAGE_LOGO_WIDTH = 0.12;  // 12% of the image width
 const COREUI_IMAGE_MARK_MARGIN = 0.025; // relative to the image width
 const COREUI_IMAGE_MARK_OPACITY = 0.5;  // logo opacity
@@ -104,6 +105,41 @@ function coreui_image_parse_input(string $input): array {
     $input = trim($m[1]);
   }
   return ['size' => $size, 'prompt' => $input, 'self_reference' => $self];
+}
+
+/** An opaque, account-scoped image upload reference; no client-supplied file paths. */
+function coreui_image_media_reference_token(array $row, int $uid): ?string {
+  if ($uid <= 0 || (int)($row['user_id'] ?? 0) !== $uid || ($row['kind'] ?? '') !== 'image') return null;
+  $uuid = strtolower((string)($row['uuid'] ?? ''));
+  $name = strtolower((string)($row['stored_name'] ?? ''));
+  $mime = (string)($row['mime_type'] ?? '');
+  $extensions = ['image/png'=>'png', 'image/jpeg'=>'jpg', 'image/webp'=>'webp', 'image/gif'=>'gif'];
+  if (!isset($extensions[$mime]) || preg_match('~^[a-f0-9]{32}$~D', $uuid) !== 1) return null;
+  $expected = $uuid . '.' . $extensions[$mime];
+  if ($name !== $expected || (string)($row['rel_path'] ?? '') !== 'assets/chat_media/' . $expected) return null;
+  $bytes = (int)($row['file_size'] ?? 0);
+  if ($bytes < 1 || $bytes > 8 * 1024 * 1024) return null;
+  return 'upload:' . $expected;
+}
+
+/** The user's wish to create a new image from uploaded pictures, not to just analyze them. */
+function coreui_image_attachment_creation_requested(string $message, ?array $intent = null): bool {
+  if (($intent['tool'] ?? '') === 'image') return true;
+  $message = trim((string)preg_replace('~\\s+~u', ' ', $message));
+  if ($message === '') return false;
+  $verbs = '(?:generier\\w*|erstell\\w*|erzeug\\w*|zeichn\\w*|mal\\w*|render\\w*|gestalt\\w*|kombinier\\w*|montier\\w*|erschaff\\w*|create|generate|draw|render|combine|make|edit)';
+  $targets = '(?:bild\\w*|foto\\w*|illustration\\w*|szene\\w*|image\\w*|picture\\w*|scene\\w*)';
+  if (preg_match('~\\b' . $verbs . '\\b.{0,160}\\b' . $targets . '\\b|\\b' . $targets . '\\b.{0,160}\\b' . $verbs . '\\b~iu', $message) === 1) return true;
+  return preg_match('~\\b(?:lass|lasse|zeig|zeige)\\s+(?:die|diese|beide|beiden|die\\s+beiden)\\b.{0,130}\\b(?:kaempfen|kämpfen|gegeneinander|duellieren|fight|battle)\\b~iu', $message) === 1;
+}
+
+/** The attachment-vision response was prose, although the user requested a new image. */
+function coreui_image_attachment_fallback_prompt(string $message, string $visionSummary): string {
+  $message = mb_substr(trim((string)preg_replace('~\\s+~u', ' ', $message)), 0, 380);
+  $summary = mb_substr(trim((string)preg_replace('~\\s+~u', ' ', $visionSummary)), 0, 490);
+  return 'Create ONE NEW coherent image using the supplied reference pictures. Preserve the depicted subjects, '
+    . 'their recognizable costumes and distinguishing visual details. Compose the scene requested by the user: '
+    . $message . '. The previously observed subjects were: ' . $summary;
 }
 
 /** "512 × 512" for a size of the registry (pure). */
@@ -303,7 +339,7 @@ function coreui_image_progress_title(array $job): string {
  */
 function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $prompt, string $size,
     callable $lease, callable $unlease, callable $progress, callable $cancelled, ?callable $http = null,
-    ?callable $preview = null, ?string $reference = null): array {
+    ?callable $preview = null, ?string $reference = null, array $references = []): array {
   $http = $http ?? 'coreui_image_http';
   $previews = 0; // 0.6.42: $preview(string $dataUrl, array $job) gets every new step preview
   $registry = coreui_image_registry();
@@ -312,12 +348,23 @@ function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $
   if ($prompt === '' || mb_strlen($prompt) > $limit) return ['ok' => false, 'error' => 'bad_prompt', 'detail' => ''];
   if (!isset(($registry['sizes'] ?? [])[$size])) return ['ok' => false, 'error' => 'bad_size', 'detail' => ''];
   if ($reference !== null) {
-    // An image editing reference is a visual source of truth, not merely a
-    // loose style suggestion. Do not replace this identity with a generic TCI.
+    // An identity-reference portrait, whether canonical or personalized.
     $anchor = 'Use the supplied reference image as the SAME person. Preserve the recognizable facial proportions, '
       . 'eyes, hair, and overall identity of the subject shown there. Change scenery or clothing as requested, '
       . 'but do not invent a new face. ';
     $prompt = mb_substr($anchor . $prompt, 0, $limit);
+  } elseif ($references !== []) {
+    $anchor = 'Use ALL supplied reference pictures as visual sources. Preserve the recognizable subjects and their '
+      . 'distinctive clothing, features and shapes while following the requested scene. ';
+    $prompt = mb_substr($anchor . $prompt, 0, $limit);
+  }
+  if (count($references) > COREUI_IMAGE_MAX_REFERENCES || count($references) !== count(array_unique($references))) {
+    return ['ok'=>false, 'error'=>'bad_reference', 'detail'=>''];
+  }
+  foreach ($references as $token) {
+    if (!is_string($token) || preg_match('~^upload:[a-f0-9]{32}\\.(?:png|jpg|webp|gif)$~D', $token) !== 1) {
+      return ['ok'=>false, 'error'=>'bad_reference', 'detail'=>''];
+    }
   }
   [$code, $health] = $http('GET', '/health', null, 4);
   if ($code !== 200 || !is_array($health)) return ['ok' => false, 'error' => 'image_unreachable', 'detail' => ''];
@@ -338,6 +385,7 @@ function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $
     if ($cancelled()) return ['ok' => false, 'error' => 'cancelled', 'detail' => ''];
     $body = ['prompt' => $prompt, 'size' => $size];
     if ($reference !== null) $body['reference'] = $reference;
+    if ($references !== []) $body['references'] = $references;
     [$code, $answer] = $http('POST', '/jobs', $body, 10);
     if ($code !== 202 || !is_array($answer) || !is_array($answer['job'] ?? null)) {
       return ['ok' => false, 'error' => (string)($answer['error'] ?? 'image_failed'), 'detail' => (string)($answer['detail'] ?? '')];
