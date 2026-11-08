@@ -1,0 +1,44 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.64
+Datum: 08.11.2026
+Basis: main 0.6.63
+Branch: feat/image-editor-annotation-tools-0664
+
+ZIEL
+Bestehenden Bildeditor um mobile Zeichenwerkzeuge mit nativer
+CoreAI/TCI-Farbpalette und echtem Editierverhalten erweitern.
+
+UMSETZUNG
+- js/coreui-image-editor.js: Annotationen auf Canvas als Freihand,
+  Text und acht geometrische Formen. Modus Auswahl/Verschieben,
+  Farbvorgaben plus freie Farbe, Radierer, Undo/Redo und loeschen.
+- css/coreui-image-viewer.css: horizontale TCI-Werkzeugleiste,
+  Farb-/Form-/Text-Pop-ups, Bild-Overlay fuer Pinselstaerke,
+  Annotationsvorschau und responsive Light-/Dark-Styles.
+- scripts/image-editor-ui-selftest.cjs: Bildeditor-Mobiltest fuer
+  Werkzeugleiste, Themes, Farben, Formen, Text, Undo/Redo,
+  Pinselstaerke und zwei Bildreferenzen.
+- Nur bei vorhandenen Markierungen ein zusaetzliches PNG zum
+  Original an die bestehende private Upload-/Bildpipeline geben.
+- Kein echter Inpainting-Maskenmechanismus: Formen/Schrift/Farben
+  weisen FLUX auf Stellen hin, veraendern das Original nicht.
+- VERSION, sechs HTML-Seiten, Bootstrap, Branding, README, Changelog,
+  TXT-Index, dieses Protokoll und Preflight-Versionen synchronisiert.
+- Neue numerische inhaltsbasierte JS-/CSS-/Bootstrap-Cache-Schluessel.
+
+NICHT GEAENDERT
+- Keine Datenbankmigration, keine Aenderung an Modelfile,
+  Modellgewichten, Account-Memory, Zugriffsrechten, Server-API
+  oder serieller Bild-Queue.
+
+PRUEFSTATUS
+- Syntax-/Version-/Dateiverweischecks aus GitHub-Quelltext moeglich.
+- Kein Browser- oder FLUX-Realtest behaupten, bevor ausgefuehrt.
+
+VERBINDLICHE VOR-MERGE-CHECKS
+  python3 scripts/version-merge-check.py --base-version 0.6.63
+  python3 scripts/cache-bust.py --verify
+  node scripts/image-editor-ui-selftest.cjs
+  node scripts/image-chat-ui-selftest.cjs
+  Vollstaendiger Compose- bzw. Native-Preflight auf Betreiberumgebung.
+Nach erfolgreichem Merge den integrierten Updater verwenden und
+die Touchwerkzeuge auf Android testen.

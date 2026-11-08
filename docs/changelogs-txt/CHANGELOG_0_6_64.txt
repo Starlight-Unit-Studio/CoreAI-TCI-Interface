@@ -1,0 +1,10 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.64
+08.11.2026
+
+- Mobile TCI-Werkzeugleiste fuer Bildannotation: Auswahl/Verschieben, Freihand-Pinsel, Textplatzierung, Radierer, Undo/Redo.
+- Acht Formen: Linie, Pfeil, Rechteck, Ellipse, Dreieck, Raute, Stern, Herz.
+- Farbpalette mit 13 Farbvorgaben und benutzerdefinierter Farbe.
+- Vertikaler Pinselstaerkeregler am Bild, Pop-ups und Markierungsvorschau.
+- Mit Annotationen wird eine zusaetzliche PNG-Referenz fuer FLUX.2 erzeugt. Original unveraendert.
+- Zeichnungen, Farben, Formen und Schrift sind visuelle Modellhinweise, keine pixelgenaue Inpainting-Maske.
+- Playwright-UI-Regressionsprobe erweitert, Versionen, Cache-Fingerprints und Pflichtdateien nachgezogen.

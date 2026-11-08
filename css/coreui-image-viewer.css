@@ -802,3 +802,327 @@ html[data-coreui-theme="dark"] .coreai-image-viewer-toolbar .coreai-image-viewer
   .coreai-image-viewer-toolbar .coreai-image-viewer-info { flex-basis: 33px; }
   .coreai-image-viewer-toolbar .coreai-image-viewer-zoom { width: 46px; height: 36px; }
 }
+
+/* 0.6.64 | Touch annotations: own TCI toolbar, editable palettes and brush size. */
+.coreai-image-editor-popover[hidden],
+.coreai-image-editor-size-popover[hidden],
+.coreai-image-editor-mark-preview[hidden] { display:none !important; }
+.coreai-image-editor-frame { position:relative; }
+.coreai-image-editor-toolbar-anchor {
+  position:relative;
+  z-index:5;
+  flex:0 0 auto;
+  min-width:0;
+  width:100%;
+}
+.coreai-image-editor-toolbar {
+  display:flex;
+  flex-wrap:nowrap;
+  justify-content:space-between;
+  align-items:center;
+  gap:4px;
+  width:100%;
+  min-height:53px;
+  padding:5px;
+  overflow-x:auto;
+  overscroll-behavior-x:contain;
+  scrollbar-width:none;
+  border:1px solid var(--editor-line);
+  border-bottom:2px solid var(--editor-gold-line);
+  border-radius:12px 2px 12px 2px;
+  background:linear-gradient(120deg,var(--editor-panel-a),var(--editor-panel-b));
+  box-shadow:0 5px 14px var(--editor-shadow);
+}
+.coreai-image-editor-toolbar::-webkit-scrollbar { display:none; }
+.coreai-image-editor .coreai-image-editor-toolbar .coreai-image-editor-tool {
+  display:inline-flex;
+  flex:1 0 38px;
+  align-items:center;
+  justify-content:center;
+  min-width:38px;
+  max-width:56px;
+  height:41px;
+  min-height:41px;
+  padding:7px;
+  border:1px solid transparent;
+  border-radius:7px 2px 7px 2px;
+  background:transparent;
+  color:var(--editor-text);
+  box-shadow:none;
+}
+.coreai-image-editor-toolbar .coreai-image-editor-tool svg,
+.coreai-image-editor-shape-option svg {
+  flex:0 0 auto;
+  display:block;
+  width:23px;
+  height:23px;
+}
+.coreai-image-editor .coreai-image-editor-toolbar .coreai-image-editor-tool[aria-pressed="true"] {
+  border-color:var(--editor-line);
+  color:var(--editor-blue);
+  background:var(--editor-hover);
+  box-shadow:inset 2px 0 0 var(--editor-gold);
+}
+.coreai-image-editor .coreai-image-editor-toolbar .coreai-image-editor-tool:hover:not(:disabled) {
+  background:var(--editor-hover);
+  border-color:var(--editor-line);
+  box-shadow:inset 2px 0 0 var(--editor-blue);
+}
+.coreai-image-editor-color-dot {
+  display:block;
+  flex:0 0 25px;
+  width:25px;
+  height:25px;
+  border:2px solid var(--editor-field);
+  border-radius:50%;
+  background:var(--selected-color,#ef3256);
+  box-shadow:0 0 0 1px var(--editor-gold-line);
+}
+.coreai-image-editor-popover {
+  position:absolute;
+  left:50%;
+  bottom:calc(100% + 8px);
+  transform:translateX(-50%);
+  z-index:9;
+  width:min(334px,calc(100vw - 24px));
+  padding:12px;
+  border:1px solid var(--editor-line);
+  border-top:2px solid var(--editor-gold);
+  border-radius:12px 2px 12px 2px;
+  color:var(--editor-text);
+  background:linear-gradient(145deg,var(--editor-panel-a),var(--editor-panel-b));
+  box-shadow:0 10px 30px var(--editor-shadow);
+}
+.coreai-image-editor-shape-palette {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:9px;
+}
+.coreai-image-editor .coreai-image-editor-shape-option {
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  min-width:0;
+  min-height:47px;
+  padding:9px;
+  color:var(--editor-text);
+  background:var(--editor-control-a);
+  border:1px solid var(--editor-line);
+  border-radius:7px 2px 7px 2px;
+  clip-path:none;
+}
+.coreai-image-editor .coreai-image-editor-shape-option[aria-pressed="true"] {
+  color:var(--editor-blue);
+  border-color:var(--editor-gold);
+  box-shadow:inset 3px 0 0 var(--editor-gold);
+}
+.coreai-image-editor-color-palette {
+  display:grid;
+  grid-template-columns:repeat(7,minmax(0,1fr));
+  gap:8px;
+}
+.coreai-image-editor .coreai-image-editor-color-option,
+.coreai-image-editor .coreai-image-editor-color-custom {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  position:relative;
+  width:35px;
+  height:35px;
+  margin:auto;
+  padding:0;
+  border:2px solid var(--editor-line);
+  border-radius:50%;
+  color:var(--editor-text);
+  background:var(--swatch,#fff);
+  box-shadow:0 1px 4px var(--editor-shadow);
+  clip-path:none;
+  cursor:pointer;
+}
+.coreai-image-editor .coreai-image-editor-color-option[aria-pressed="true"] {
+  outline:3px solid var(--editor-blue);
+  outline-offset:2px;
+  border-color:var(--editor-gold);
+}
+.coreai-image-editor .coreai-image-editor-color-custom {
+  background:conic-gradient(#ef3256,#f4a827,#16a45e,#08b6d8,#634bf0,#ef3256);
+  overflow:hidden;
+}
+.coreai-image-editor-color-custom input[type="color"] {
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  padding:0;
+  border:0;
+  opacity:0;
+  cursor:pointer;
+}
+.coreai-image-editor-color-custom span {
+  pointer-events:none;
+  color:#fff;
+  font-size:24px;
+  text-shadow:0 1px 3px #000;
+}
+.coreai-image-editor-text-palette {
+  display:flex;
+  flex-direction:column;
+  gap:9px;
+}
+.coreai-image-editor-text-palette label {
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  font-size:14px;
+  font-weight:700;
+}
+.coreai-image-editor .coreai-image-editor-text-value {
+  display:block;
+  width:100%;
+  min-height:42px;
+  padding:9px 11px;
+  background:var(--editor-field);
+  color:var(--editor-text);
+  border:1px solid var(--editor-line);
+  border-radius:9px 2px 9px 2px;
+  font:inherit;
+}
+.coreai-image-editor-text-value::placeholder { color:var(--editor-muted); }
+.coreai-image-editor .coreai-image-editor-text-apply {
+  min-height:41px;
+  border:1px solid var(--editor-blue);
+  border-radius:8px 2px 8px 2px;
+  color:var(--editor-text);
+  background:var(--editor-hover);
+  box-shadow:inset 3px 0 0 var(--editor-gold);
+  font:700 15px "Rajdhani",sans-serif;
+  cursor:pointer;
+}
+.coreai-image-editor-size-popover {
+  position:absolute;
+  top:50%;
+  left:9px;
+  transform:translateY(-50%);
+  width:56px;
+  height:188px;
+  z-index:3;
+  border:1px solid var(--editor-line);
+  border-radius:15px 2px 15px 2px;
+  background:var(--editor-panel-a);
+  box-shadow:inset 2px 0 0 var(--editor-gold),0 4px 15px var(--editor-shadow);
+}
+.coreai-image-editor-size-caption {
+  position:absolute;
+  left:0;
+  right:0;
+  top:9px;
+  font:500 11px "Share Tech Mono",monospace;
+  color:var(--editor-blue);
+  text-align:center;
+  white-space:nowrap;
+}
+.coreai-image-editor .coreai-image-editor-size-popover input[type="range"] {
+  appearance:none;
+  -webkit-appearance:none;
+  position:absolute;
+  left:50%;
+  top:103px;
+  width:133px;
+  height:25px;
+  margin:0;
+  padding:0;
+  border:0;
+  background:transparent;
+  transform:translate(-50%,-50%) rotate(-90deg);
+  transform-origin:center;
+  accent-color:var(--editor-blue);
+  cursor:pointer;
+  --editor-brush-fill:23%;
+}
+.coreai-image-editor .coreai-image-editor-size-popover input[type="range"]::-webkit-slider-runnable-track {
+  height:6px;
+  border:1px solid var(--editor-line);
+  border-radius:5px;
+  background:linear-gradient(90deg,var(--editor-blue) 0 var(--editor-brush-fill),var(--editor-track) var(--editor-brush-fill) 100%);
+}
+.coreai-image-editor .coreai-image-editor-size-popover input[type="range"]::-webkit-slider-thumb {
+  appearance:none;
+  -webkit-appearance:none;
+  height:20px;
+  width:20px;
+  margin-top:-8px;
+  border:2px solid var(--editor-field);
+  border-radius:6px 2px 6px 2px;
+  background:var(--editor-gold);
+  box-shadow:0 1px 5px var(--editor-shadow);
+}
+.coreai-image-editor .coreai-image-editor-size-popover input[type="range"]::-moz-range-track {
+  height:6px;border:1px solid var(--editor-line);border-radius:5px;background:var(--editor-track);
+}
+.coreai-image-editor .coreai-image-editor-size-popover input[type="range"]::-moz-range-progress {
+  height:6px;background:var(--editor-blue);
+}
+.coreai-image-editor .coreai-image-editor-size-popover input[type="range"]::-moz-range-thumb {
+  width:20px;height:20px;border:2px solid var(--editor-field);background:var(--editor-gold);border-radius:6px 2px 6px 2px;
+}
+.coreai-image-editor-mark-preview {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:6px 9px;
+  min-height:59px;
+  color:var(--editor-blue);
+  background:var(--editor-panel-a);
+  border:1px solid var(--editor-line);
+  border-radius:9px 2px 9px 2px;
+  font-weight:600;
+}
+.coreai-image-editor-mark-thumb {
+  width:45px;
+  height:45px;
+  flex:0 0 45px;
+  object-fit:contain;
+  border:1px solid var(--editor-line);
+  border-radius:6px;
+  background:var(--editor-panel-b);
+}
+.coreai-image-editor-mark-preview span {
+  flex:1 1 auto;
+  min-width:0;
+}
+.coreai-image-editor .coreai-image-editor-mark-clear {
+  display:flex;
+  flex:0 0 35px;
+  width:35px;
+  height:35px;
+  padding:8px;
+  align-items:center;
+  justify-content:center;
+  color:var(--editor-text);
+  background:var(--editor-control-b);
+  border:1px solid var(--editor-line);
+  border-radius:7px 2px 7px 2px;
+}
+.coreai-image-editor-mark-clear svg { width:17px;height:17px; }
+.coreai-image-editor .coreai-image-editor-toolbar button:focus-visible,
+.coreai-image-editor .coreai-image-editor-popover button:focus-visible,
+.coreai-image-editor .coreai-image-editor-color-custom:focus-within,
+.coreai-image-editor .coreai-image-editor-size-popover input:focus-visible {
+  outline:2px solid var(--editor-gold);
+  outline-offset:2px;
+}
+@media(max-width:420px){
+  .coreai-image-editor-toolbar { gap:2px;padding:4px; }
+  .coreai-image-editor .coreai-image-editor-toolbar .coreai-image-editor-tool {
+    flex-basis:35px;
+    min-width:35px;
+    max-width:44px;
+    height:39px;
+    min-height:39px;
+    padding:6px;
+  }
+  .coreai-image-editor-toolbar .coreai-image-editor-tool svg { width:21px;height:21px; }
+  .coreai-image-editor-color-dot {width:22px;height:22px;flex-basis:22px;}
+  .coreai-image-editor-size-popover { left:5px; }
+  .coreai-image-editor-body { gap:9px; }
+}
