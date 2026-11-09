@@ -96,8 +96,8 @@
   }
   function setModeColor(key, text) {
     if (!/^#[0-9a-f]{6}$/i.test(text)) {
-      show('Bitte einen Hex-Farbwert im Format #RRGGBB eingeben.', true);
       render();
+      show('Bitte einen Hex-Farbwert im Format #RRGGBB eingeben.', true);
       return;
     }
     commit(function (a, mode) { a[mode][key] = text.toLowerCase(); });
