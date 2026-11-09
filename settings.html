@@ -71,9 +71,9 @@
       <div class="settings-version">COREAI: TCI INTERFACE // v0.6.71</div>
     </header>
 
-    <!-- 0.5.79: one page, categories as tabs. Each category is its own view
-         with cards; the admin categories (Admin Core) appear for Inhaber and
-         Admin only. The address keeps the open tab (#ki-profil, #admin-benutzer). -->
+    <!-- 0.6.71: all categories remain navigable. Expert mode toggles
+         data-expert controls within each category; it never hides tabs or
+         changes authorization. Admin Core remains on a separate page. -->
     <div class="cfg-shell">
       <nav class="cfg-nav" id="cfgNav" aria-label="Einstellungen">
         <div class="cfg-menu-head">
@@ -85,7 +85,7 @@
           <input id="settingsNavSearch" type="search" placeholder="Einstellungen durchsuchen" autocomplete="off" />
         </label>
         <label class="cfg-expert-toggle" for="settingsExpertToggle">
-          <span><strong>EXPERTENEINSTELLUNGEN</strong><small>Erweiterte CoreAI-Systemsteuerung einblenden</small></span>
+          <span><strong>EXPERTENEINSTELLUNGEN</strong><small>Technische Optionen in jeder Kategorie ein- oder ausblenden</small></span>
           <span class="settings-switch"><input id="settingsExpertToggle" type="checkbox" /><i aria-hidden="true"></i></span>
         </label>
         <div id="settingsMenuSearchStatus" class="cfg-search-status" aria-live="polite" hidden>Keine passende Kategorie gefunden.</div>
@@ -126,8 +126,8 @@
           <span class="cfg-nav-label">COREAI // SYSTEM</span>
                   <button class="cfg-tab" type="button" role="tab" id="tab-system" data-view="system" aria-controls="view-system" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-system" /></svg><span>System</span></button>
         </div>
-        <div class="cfg-nav-group cfg-nav-expert" role="tablist" aria-orientation="vertical" aria-label="CoreAI Experten" id="cfgExpertGroup" hidden>
-                  <span class="cfg-nav-label">COREAI // EXPERTEN</span>
+        <div class="cfg-nav-group cfg-nav-core" role="tablist" aria-orientation="vertical" aria-label="CoreAI" id="cfgCoreGroup">
+                  <span class="cfg-nav-label">COREAI // FUNKTIONEN</span>
                   <button class="cfg-tab" type="button" role="tab" id="tab-ki-profil" data-view="ki-profil" aria-controls="view-ki-profil" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-core" /></svg><span>KI-Profil</span></button>
                   <button class="cfg-tab" type="button" role="tab" id="tab-wissen" data-view="wissen" aria-controls="view-wissen" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-knowledge" /></svg><span>Wissen</span></button>
                   <button class="cfg-tab" type="button" role="tab" id="tab-memory" data-view="memory" aria-controls="view-memory" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-memory" /></svg><span>Memory</span></button>
@@ -145,6 +145,63 @@
 
         <!-- START -->
         <section class="cfg-view" id="view-start" role="tabpanel" aria-labelledby="tab-start" tabindex="-1">
+          <!-- GENERAL: settings from the reference UI, preserving the previous overview below. -->
+          <header class="cfg-view-head cfg-general-head">
+            <div><span class="cfg-kicker">PERSÖNLICH</span><h2 id="generalHeading">Allgemein</h2><p>Grundlegende Bedienung deiner CoreAI. Technische Optionen bleiben in ihrer jeweiligen Kategorie.</p></div>
+          </header>
+          <section class="settings-panel cfg-card cfg-general-card" aria-labelledby="generalHeading">
+            <div class="cfg-general-row">
+              <div class="cfg-general-copy">
+                <label for="generalUiLanguage">Sprache</label>
+                <p>Sprache der App-Oberfläche</p>
+              </div>
+              <div class="cfg-general-control">
+                <select id="generalUiLanguage" aria-describedby="generalUiLanguageNote" disabled>
+                  <option value="de">Deutsch (aktuell)</option>
+                  <option value="auto" disabled>Automatisch erkennen (geplant)</option>
+                  <option value="en" disabled>English (geplant)</option>
+                </select>
+                <small id="generalUiLanguageNote">Eine vollständige Oberflächenübersetzung ist noch in Vorbereitung. Die Antwortsprache stellst du im KI-Profil ein.</small>
+              </div>
+            </div>
+            <div class="cfg-general-row">
+              <div class="cfg-general-copy">
+                <label for="generalSendKey">Tastenkürzel zum Senden</label>
+                <p>Lege fest, ob Enter die Nachricht sendet oder eine neue Zeile einfügt.</p>
+              </div>
+              <div class="cfg-general-control">
+                <select id="generalSendKey" aria-describedby="generalSendKeyNote">
+                  <option value="enter">Enter sendet</option>
+                  <option value="mod-enter">Strg/⌘ + Enter sendet</option>
+                </select>
+                <small id="generalSendKeyNote">Im Enter-Modus fügt Shift + Enter einen Zeilenumbruch ein. Im zweiten Modus schreibt Enter eine neue Zeile.</small>
+              </div>
+            </div>
+            <div class="cfg-general-row">
+              <div class="cfg-general-copy">
+                <label for="generalHigherIntelligence">Höhere Intelligenz</label>
+                <p>Bei komplexen Fragen automatisch auf einen leistungsfähigeren Core wechseln.</p>
+              </div>
+              <div class="cfg-general-control cfg-general-switch">
+                <span class="settings-switch"><input id="generalHigherIntelligence" type="checkbox" disabled aria-describedby="generalHigherNote" /><i aria-hidden="true"></i></span>
+                <small id="generalHigherNote">In Vorbereitung. Der Core wird weiterhin manuell im Chat gewählt.</small>
+              </div>
+            </div>
+            <div class="cfg-general-row" data-expert hidden>
+              <div class="cfg-general-copy">
+                <label for="generalReasoningLevels">Verfügbare Reasoning-Stufen</label>
+                <p>Wähle künftig aus, welche Aufwandsstufen in der Core-Steuerung angezeigt werden.</p>
+              </div>
+              <div class="cfg-general-control">
+                <select id="generalReasoningLevels" disabled aria-describedby="generalReasoningNote">
+                  <option>Modellabhängige Stufen (geplant)</option>
+                </select>
+                <small id="generalReasoningNote">Derzeit unterstützt CoreAI den vorhandenen Schalter „Denken an/aus“. Weitere Reasoning-Stufen sind nicht implementiert.</small>
+              </div>
+            </div>
+          </section>
+
+          <h3 class="cfg-section-title">DEIN COREAI IM ÜBERBLICK</h3>
           <div class="settings-panel cfg-hero">
             <span class="settings-profile-avatar" id="startAvatar" aria-hidden="true">OP</span>
             <div class="cfg-hero-copy">
@@ -239,7 +296,7 @@
                 <span class="setting-copy"><strong>KOMPAKTER DATENSTROM</strong><small>Nachrichten enger darstellen und mehr Verlauf sichtbar halten.</small></span>
                 <span class="settings-switch"><input id="prefCompactFeed" type="checkbox" /><i aria-hidden="true"></i></span>
               </label>
-              <label class="setting-row" for="prefShowTelemetry">
+              <label class="setting-row" for="prefShowTelemetry" data-expert hidden>
                 <span class="setting-copy"><strong>KERNTELEMETRIE</strong><small>Link-, Node- und Uhrzeitdaten in der Desktop-Topbar anzeigen.</small></span>
                 <span class="settings-switch"><input id="prefShowTelemetry" type="checkbox" /><i aria-hidden="true"></i></span>
               </label>
@@ -258,7 +315,7 @@
                 <span class="setting-copy"><strong>PLAYWRIGHT-BROWSERFENSTER ANZEIGEN</strong><small>Deaktiviert: bei tiefer Browser-Recherche nur „Web wird durchsucht“ anzeigen. Die normale Websuche behält das Quellenkarussell.</small></span>
                 <span class="settings-switch"><input id="prefShowLiveBrowser" type="checkbox" /><i aria-hidden="true"></i></span>
               </label>
-              <label class="setting-row" for="prefLiveFrameMotion">
+              <label class="setting-row" for="prefLiveFrameMotion" data-expert hidden>
                 <span class="setting-copy"><strong>LIVE-BROWSER-BILDFOLGE</strong><small>Alle empfangenen Playwright-Frames nacheinander wiedergeben.</small></span>
                 <span class="settings-switch"><input id="prefLiveFrameMotion" type="checkbox" /><i aria-hidden="true"></i></span>
               </label>
@@ -326,11 +383,11 @@
         <!-- KI-PROFIL -->
         <section class="cfg-view" id="view-ki-profil" role="tabpanel" aria-labelledby="tab-ki-profil" tabindex="-1" hidden>
           <header class="cfg-view-head">
-            <div><span class="cfg-kicker">MEIN COREAI</span><h2 id="aiTitle">KI-Profil</h2><p>Wie deine CoreAI für dich arbeitet. Den Core und das Denken wählst du direkt im Chat über den Core-Chip unter dem Eingabefeld. Ihre Skills (Arbeitsanleitungen) wählt deine CoreAI selbst.</p></div>
+            <div><span class="cfg-kicker">MEIN COREAI</span><h2 id="aiTitle">KI-Profil</h2><p>Wie deine CoreAI für dich arbeitet. Den Core und das Denken wählst du direkt im Chat. Der Expertenschalter zeigt hier zusätzlich die technischen Core-Parameter, ohne sie zu verändern.</p></div>
             <button class="settings-action" id="saveAiSettings" type="button">SERVERSEITIG SPEICHERN</button>
           </header>
           <div class="cfg-cards">
-            <section class="settings-panel cfg-card wide violet" aria-labelledby="aiPromptTitle">
+            <section class="settings-panel cfg-card wide violet" aria-labelledby="aiPromptTitle" data-expert hidden>
               <header class="settings-panel-head">
                 <span class="settings-panel-glyph violet" aria-hidden="true">⌬</span>
                 <div><span>PERSÖNLICHKEIT</span><h3 id="aiPromptTitle">Eigener System-Prompt</h3></div>
@@ -348,15 +405,15 @@
                 <div><span>ANTWORTVERHALTEN</span><h3 id="aiTuneTitle">Antwort und Gedächtnis</h3></div>
               </header>
               <div class="settings-tuning-grid">
-                <label class="settings-field" for="aiMemoryLimit">
+                <label class="settings-field" for="aiMemoryLimit" data-expert hidden>
                   <span><strong>MEMORY-KONTEXT</strong><small>Maximale Zahl passender Fakten pro Antwort.</small></span>
                   <input id="aiMemoryLimit" type="number" min="0" max="60" step="1" value="16" />
                 </label>
-                <label class="settings-field" for="aiNumPredict">
+                <label class="settings-field" for="aiNumPredict" data-expert hidden>
                   <span><strong>ANTWORTBUDGET</strong><small>Tokenbudget für Thinking plus Antwort. Gemma 4: 6500 empfohlen.</small></span>
                   <input id="aiNumPredict" type="number" min="256" max="16384" step="128" value="6500" />
                 </label>
-                <label class="settings-field" for="aiTemperature">
+                <label class="settings-field" for="aiTemperature" data-expert hidden>
                   <span><strong>TEMPERATUR</strong><small>0,1 präziser, 1,5 freier. Standard: 1,0.</small></span>
                   <input id="aiTemperature" type="number" min="0.1" max="1.5" step="0.05" value="1.0" />
                 </label>
@@ -364,7 +421,7 @@
                   <span><strong>SPRACHE</strong><small>Hauptsprache für die Antworten deiner CoreAI und das Vorlesen. Schreibst du in einer anderen Sprache, antwortet deine CoreAI in dieser. Knöpfe und Menüs bleiben vorerst deutsch.</small></span>
                   <select id="aiLanguage"><option value="de">DEUTSCH</option><option value="en">ENGLISH</option></select>
                 </label>
-                <label class="settings-field" for="aiProvider">
+                <label class="settings-field" for="aiProvider" data-expert hidden>
                   <span><strong>CORE-PFAD</strong><small>CoreAI: TCI Interface ist für lokale Gemma-4-Cores ausgelegt.</small></span>
                   <select id="aiProvider"><option value="local">LOKAL // OLLAMA + GEMMA 4</option><option value="external" disabled>EXTERNE API // VORBEREITET</option></select>
                 </label>
@@ -392,7 +449,7 @@
               </div>
             </section>
 
-            <section class="settings-panel cfg-card wide" aria-labelledby="aiCtxTitle">
+            <section class="settings-panel cfg-card wide" aria-labelledby="aiCtxTitle" data-expert hidden>
               <header class="settings-panel-head">
                 <span class="settings-panel-glyph green" aria-hidden="true">⌁</span>
                 <div><span>SPEICHER</span><h3 id="aiCtxTitle">Kontextfenster</h3></div>
@@ -481,7 +538,7 @@
               </header>
               <div class="memory-editor">
                 <textarea id="memoryFact" rows="3" maxlength="8000" placeholder="Fakt, Präferenz oder Arbeitskontext, den Ember behalten darf..."></textarea>
-                <label>RELEVANZ <input id="memoryRelevance" type="number" min="1" max="10" value="5" /></label>
+                <label data-expert hidden>RELEVANZ <input id="memoryRelevance" type="number" min="1" max="10" value="5" /></label>
                 <button class="settings-action" id="addMemory" type="button">FAKT SPEICHERN</button>
               </div>
             </section>
