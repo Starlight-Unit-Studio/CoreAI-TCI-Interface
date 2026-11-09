@@ -9,7 +9,7 @@ const read = p => fs.readFileSync(path.join(root, p), 'utf8');
 const settings = read('settings.html');
 const admin = read('admin/index.html');
 const css = read('css/settings.css');
-const scripts = ['js/coreui-settings-menu.js','js/coreui-settings-tabs.js','js/coreui-send-keys.js','js/coreui-preferences.js','js/settings.js',
+const scripts = ['js/coreui-settings-menu.js','js/coreui-settings-tabs.js','js/coreui-send-keys.js','js/coreui-ui-language.js','js/coreui-preferences.js','js/settings.js',
   'js/admin.js','js/coreui-image-samples.js','js/coreui-voice-samples.js'];
 scripts.forEach(name => new vm.Script(read(name), {filename:name}));
 const sections = {
@@ -46,9 +46,12 @@ for(const field of ['generalUiLanguage','generalSendKey','generalHigherIntellige
   assert.ok(settings.includes('id="' + field + '"'), 'General field: ' + field);
 }
 assert.ok(settings.includes('id="generalHigherIntelligence" type="checkbox" disabled'),
-  'Core auto-upgrade is explicitly not active');
+  'Core auto-upgrade starts disabled until the server confirms account and migration');
 assert.ok(settings.includes('id="generalReasoningLevels" disabled'),
-  'unsupported reasoning tiers are explicitly not active');
+  'reasoning starts disabled until actual per-model capabilities arrive');
+assert.ok(settings.includes('<option value="en">English (Beta)</option>') &&
+  settings.includes('<option value="auto">Automatisch erkennen</option>'),
+  'two translated interface languages and browser detection are selectable');
 assert.ok(settings.includes('id="settingsNavSearch"'));
 assert.ok(settings.includes('id="settingsMenuToggle"'));
 assert.ok(settings.includes('id="settingsMenuBackdrop"'));
