@@ -10,10 +10,10 @@
     var line = before.slice(before.lastIndexOf('\n') + 1);
     var prefix = before.slice(0, before.lastIndexOf('\n') + 1);
     // Never silently mutate code, JSON, URLs, Markdown links or backtick spans.
-    if (/^\s*(?:```|~~~| {4,}|\t)/m.test(line) ||
+    if (/^(?:\s{4,}|\t|\s{0,3}(?:```|~~~))/.test(line) ||
         /(?:https?:\/\/|www\.|\{[^\n]*:|\[[^\n]*\]\(|\b(?:const|let|var|function|class|def|import|SELECT)\b)/i.test(line) ||
         (before.match(/`/g) || []).length % 2 === 1 ||
-        ((prefix.match(/^`{3}/gm) || []).length % 2 === 1)) return null;
+        ((prefix.match(/^\s{0,3}(?:`{3,}|~{3,})/gm) || []).length % 2 === 1)) return null;
     var replace = [
       [/\.\.\.$/, '…'],
       [/->$/, '→'],
