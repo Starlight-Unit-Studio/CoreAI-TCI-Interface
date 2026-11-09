@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.6.79 - 09.11.2026
+
+- Rebuild **Settings → Darstellung** using the supplied ChatGPT screenshots as a functional reference, but retain CoreAI's angular Holo visual identity and all five existing display toggles. All screenshot-inspired and guided settings are **normal**, not Expert. The technical Expert switch is unchanged.
+- Preserve the existing three operating-system-aware themes **System / Hell / Dunkel**, and add meaningful **Quantum Holo / Terra-Net Terminal / Klar** motifs, blue/green/violet/gold/custom accent, validated #RRGGBB background/foreground colors, and CoreAI/system/terminal font choice. Themes are local-browser preferences and apply across chat, settings, login, logs and Admin Core. Light and dark can have separate motif/accent/font settings while retaining safe independent text/background colors.
+- Add real actions for **Motiv exportieren** (private-data-free JSON) and **Motiv in den anderen Modus kopieren** without blindly copying illegible light/dark backgrounds.
+- Under the screenshot's **Erweitert** disclosure (not Expert), implement UI/content/code font sizes with bounded numeric inputs, OS/on/off reduced motion, separate dark/light personalization, live contrast of secondary text and borders, opt-in smart punctuation for manually typed natural-language text (skips paste, code, URLs and JSON), full-width layout and **Farbe / +/-** display of real fenced-diff lines without mutating copied code.
+- Extend the existing local preference codec compatibly with the v1 storage key. Existing theme, keyboard, telemetry, work-event, browser-frame and composer controls retain their values; partial settings saves no longer wipe new categories. Reject invalid hex and numeric values. Do not touch user database, Modelfile, model FIFO or account permissions.
+- Add static and dynamic local preference/controller/typing selftests, a mobile Playwright regression for no horizontal overflow and persistence, both preflights, DE/EN labels, documentation and content-derived cache fingerprints. Full host/Android run is required before merge.
+
 ## 0.6.78 - 09.11.2026
 
 - Separate the two real Core Channel controls completely. The right-hand **Core** dropdown now only selects local/cloud Cores and retains install/manage access. Remove the duplicate **DENKEN** switch and Thinking status text from the Core dropdown and Core chip, avoiding two controls for the same saved account setting.
