@@ -291,7 +291,7 @@
                 <span class="setting-copy"><strong>KOMPAKTER DATENSTROM</strong><small>Nachrichten enger darstellen und mehr Verlauf sichtbar halten.</small></span>
                 <span class="settings-switch"><input id="prefCompactFeed" type="checkbox" /><i aria-hidden="true"></i></span>
               </label>
-              <label class="setting-row" for="prefShowTelemetry" data-expert hidden>
+              <label class="setting-row" for="prefShowTelemetry">
                 <span class="setting-copy"><strong>KERNTELEMETRIE</strong><small>Link-, Node- und Uhrzeitdaten in der Desktop-Topbar anzeigen.</small></span>
                 <span class="settings-switch"><input id="prefShowTelemetry" type="checkbox" /><i aria-hidden="true"></i></span>
               </label>
@@ -310,7 +310,7 @@
                 <span class="setting-copy"><strong>PLAYWRIGHT-BROWSERFENSTER ANZEIGEN</strong><small>Deaktiviert: bei tiefer Browser-Recherche nur „Web wird durchsucht“ anzeigen. Die normale Websuche behält das Quellenkarussell.</small></span>
                 <span class="settings-switch"><input id="prefShowLiveBrowser" type="checkbox" /><i aria-hidden="true"></i></span>
               </label>
-              <label class="setting-row" for="prefLiveFrameMotion" data-expert hidden>
+              <label class="setting-row" for="prefLiveFrameMotion">
                 <span class="setting-copy"><strong>LIVE-BROWSER-BILDFOLGE</strong><small>Alle empfangenen Playwright-Frames nacheinander wiedergeben.</small></span>
                 <span class="settings-switch"><input id="prefLiveFrameMotion" type="checkbox" /><i aria-hidden="true"></i></span>
               </label>
@@ -378,7 +378,7 @@
         <!-- KI-PROFIL -->
         <section class="cfg-view" id="view-ki-profil" role="tabpanel" aria-labelledby="tab-ki-profil" tabindex="-1" hidden>
           <header class="cfg-view-head">
-            <div><span class="cfg-kicker">MEIN COREAI</span><h2 id="aiTitle">KI-Profil</h2><p>Wie deine CoreAI für dich arbeitet. Den Core und das Denken wählst du direkt im Chat. Der Expertenschalter zeigt hier zusätzlich die technischen Core-Parameter, ohne sie zu verändern.</p></div>
+            <div><span class="cfg-kicker">MEIN COREAI</span><h2 id="aiTitle">KI-Profil</h2><p>Wie deine CoreAI für dich arbeitet. Die verständlichen Einstellungen einschließlich des smarten Kontextfenster-Sliders sind immer sichtbar. Der Expertenmodus ergänzt technische Rohparameter.</p></div>
             <button class="settings-action" id="saveAiSettings" type="button">SERVERSEITIG SPEICHERN</button>
           </header>
           <div class="cfg-cards">
@@ -431,13 +431,13 @@
               </div>
             </section>
 
-            <section class="settings-panel cfg-card wide" aria-labelledby="aiCtxTitle" data-expert hidden>
+            <section class="settings-panel cfg-card wide" aria-labelledby="aiCtxTitle">
               <header class="settings-panel-head">
                 <span class="settings-panel-glyph green" aria-hidden="true">⌁</span>
                 <div><span>SPEICHER</span><h3 id="aiCtxTitle">Kontextfenster</h3></div>
               </header>
               <div class="settings-field settings-ctx" id="aiCtxField">
-                <span><strong>KONTEXTFENSTER (num_ctx)</strong><small>Obergrenze für Eingabe, Verlauf, Werkzeugergebnisse und Antwort eines lokalen Cores. Größere Fenster brauchen mehr Speicher und können langsamer werden. Der Wert ist eine Obergrenze, nicht die tatsächlich gefüllte Länge.</small></span>
+                <span><strong>KONTEXTFENSTER</strong><small>Wähle eine passende Stufe für deinen Core. Die Speicherabschätzung hilft bei der Entscheidung. Größere Fenster können mehr Arbeitsspeicher und Zeit benötigen. Technische Rohwerte gehören zum Expertenmodus.</small></span>
                 <label class="setting-row ctx-default-row" for="aiCtxDefault">
                   <span class="setting-copy"><strong>CORE-STANDARD ÜBERNEHMEN</strong><small>Kein Override: der lokale Core behält das Fenster aus seinem Modelfile. Voreinstellung für jedes Konto.</small></span>
                   <span class="settings-switch"><input id="aiCtxDefault" type="checkbox" checked /><i aria-hidden="true"></i></span>
