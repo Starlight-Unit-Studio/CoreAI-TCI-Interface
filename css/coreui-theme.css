@@ -423,7 +423,6 @@ html[data-coreui-theme="dark"] .drawer .session-action.permanent-danger:focus-vi
 html[data-coreui-theme="dark"] .drawer .drawer-copyright,
 html[data-coreui-theme="dark"] .login-copyright,
 html[data-coreui-theme="dark"] .splash-copyright,
-html[data-coreui-theme="dark"] .proto-footer,
 html[data-coreui-theme="dark"] .proto-footer {
   color: var(--theme-info-muted);
 }
