@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.67: dynamischer Quantum CoreAI Bildvermerk ohne Studio-Logo.
+# CoreAI: TCI Interface 0.6.68: dynamischer Quantum CoreAI Bildvermerk ohne Studio-Logo.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -339,6 +339,7 @@ UI_FILES=(
   scripts/long-chat-selftest.cjs
   scripts/history-render-selftest.cjs
   database/migrations/015_long_chat_messages.sql
+  scripts/welcome-composer-ui-selftest.cjs
   scripts/chat-navigation-recovery-selftest.cjs
   scripts/chat-follow-selftest.cjs
   js/coreui-chat-follow.js
@@ -1129,6 +1130,11 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       ok 'Antwortdauer: gespeicherte Gesamt- und Modellzeit in der Infoanzeige geprueft.'
     else
       fail 'Antwortdauer-JavaScript-Selbsttest fehlgeschlagen.'
+    fi
+    if node "$PROJECT_ROOT/scripts/welcome-composer-ui-selftest.cjs" >/dev/null 2>&1; then
+      ok 'Chat-Start/Composer: Begruessungsentwurf, Erst-Nachricht und Stopp geprueft.'
+    else
+      fail 'Chat-Start/Composer: Lazy-Sitzung oder Stopp-Schaltflaeche fehlgeschlagen.'
     fi
     if node "$PROJECT_ROOT/scripts/chat-navigation-recovery-selftest.cjs" >/dev/null 2>&1; then
       ok 'Chat-Navigation: bestehender Modellauftrag ohne erneute Generierung wiederhergestellt.'
