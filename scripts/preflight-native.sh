@@ -515,7 +515,7 @@ fi
 # Match the actual payload binding, not a frozen PHP source string from 0.5.50.
 # The reply-pipeline selftest verifies the precise runtime contract later.
 if grep -Fq "action: 'thinking'" "$PROJECT_ROOT/js/coreui-core-mode.js" \
-    && grep -Eq "'think'[[:space:]]*=>[[:space:]]*.*ember_thinking_enabled\(\)" "$PROJECT_ROOT/api/console_stream.php"; then
+    && grep -Fq "coreui_general_think_value(\$model, \$thinkOverride ?? ember_thinking_enabled())" "$PROJECT_ROOT/api/console_stream.php"; then
   ok 'Denkschalter im Chat und Modellaufruf inklusive kontobezogenem Standardwert sind paketiert.'
 else
   fail 'Thinking-Schalter oder Modell-Payload-Anbindung fehlen.'
