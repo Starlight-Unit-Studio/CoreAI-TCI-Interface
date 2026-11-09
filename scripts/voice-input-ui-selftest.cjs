@@ -159,6 +159,19 @@ function chatSendPath() {
   sandbox.pendingFiles = [];
   assert.equal(composer.sendVoice(new File([], 'Sprachnachricht-leer.webm')), 'empty');
   assert.equal(xhrs.length, 1, 'refused voice messages upload nothing');
+
+  // 0.6.69: the first recorded turn from the new welcome channel is also
+  // uploaded once, then sent with the entered text to create its chat.
+  sandbox.activeSession = () => null;
+  sandbox.inputEl.value = 'Erster Ton:';
+  assert.equal(composer.sendVoice(file), 'ok', 'voice is allowed before the first chat exists');
+  assert.equal(xhrs.length, 2, 'the welcome draft uploads exactly once');
+  assert.equal(sentMessages.length, 1, 'nothing sent until its upload completes');
+  xhrs[1].status = 200;
+  xhrs[1].responseText = JSON.stringify({ok: true, uuid: 'cd'.repeat(16), kind: 'audio', name: file.name});
+  xhrs[1].onload();
+  assert.deepEqual(sentMessages[1], {text: 'Erster Ton:', files: ['cd'.repeat(16)]},
+    'the first voice turn sends the existing text in the welcome draft');
 }
 
 async function launch(file) {
