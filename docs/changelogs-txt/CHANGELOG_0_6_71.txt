@@ -1,0 +1,25 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.71
+09.11.2026
+
+- Neue Einstellungen mit Suchleiste, responsiver Kategorienleiste und mobilem Seitenmenue statt horizontaler Tab-Leiste.
+- 25 Unterseiten gemass Kategorien Persoenlich, Teams, Integrationen, Programmierung sowie CoreAI System/Experten.
+- Fehlende Funktionen als 16 klar erkennbare Vorbereitungsseiten ohne falsche Schalter, Speicher- oder Verbindungsaktionen.
+- Ein browserlokaler Expertenschalter blendet technische Felder innerhalb ihrer Kategorie ein/aus, keine Kategorien verschwinden. Bestehende Zahlenwerte bleiben erhalten; kein Ersatz fuer Kontoberechtigungen.
+- Bestehende CoreAI-Systemsteuerung inklusive Inhaber-Updater bleibt immer zugaenglich.
+- Acht Admin-Core-Funktionen aus der normalen Einstellungsseite in admin/index.html verschoben.
+- Normale Einstellungen zeigen nur einen rollenabhaengigen Admin-Core-Link, die getrennte Admin-Seite prueft Kontorechte und alle Backend-Aktionen weiterhin serverseitig.
+- Bild- und Stimmproben sowie Admin-API nutzen stabile Root-Pfade; alte Admin-Bookmarks bleiben verwendbar.
+- Vorhandene Einstellungen fuer Profil, Darstellung, KI, Personalisierung, Wissensbasis, Memory, Konto und System bleiben erhalten.
+- Fachliche Matrix docs/SETTINGS_NAVIGATION_MATRIX.md dokumentiert bestehenden und geplanten Funktionsumfang.
+- Playwright-, PHP- und Offline-Tests sowie beide Preflights an neue Architektur angepasst.
+- Keine neue Datenbank, keine Modell-/Modelfile-Aenderung, keine Fremd-API aktiviert.
+- Allgemein im CoreAI-Design ausgebaut, bestehende Core-/System-/Wissens-/Memory-Uebersicht erhalten.
+- Echt nutzbar: Enter oder Strg/Command+Enter als Tastaturkuerzel zum Absenden, browserlokal gespeichert und im Chat ausgewertet, inklusive IME-Schutz und passender Eingabehilfe.
+- Anzeige zuruecksetzen behaelt die gewaehlte Sendetaste bei.
+- Oberflaechensprache, automatische Core-Hochstufung und erweiterte Reasoning-Stufen werden sichtbar vorbereitet, aber nicht faelschlich aktiviert.
+- Numerische/technische Optionen bleiben in KI-Profil und Memory und werden durch einen gemeinsamen Expertenschalter angezeigt.
+- Allgemein: Oberflaechensprache Deutsch/English (Beta)/Browserautomatik speicherbar; Kernnavigation und wichtige Bedienelemente werden wirklich uebersetzt. Antwortsprache im KI-Profil bleibt getrennt.
+- Hoehere Intelligenz: Server schaltet bei komplexen reinen Textauftraegen voruebergehend auf den naechsten installierten, erlaubten lokalen Mara-Core. Gaeste, Audio, Vision und Live bleiben unveraendert. Keine persistente Umstellung oder Parallellast.
+- Reasoning-Aufwand: Ollama /api/show liefert pro Core tatsaechliche Stufen. Nur unterstuetzte low/medium/high/max waehlen; Denken aus im Chat hat Vorrang. Reine Boolean-Cores behalten Denken an/aus.
+- Migration 027: unabhaengige kontobezogene Tabelle fuer automatische Core-Wahl und Reasoning-Stufe; vorhandenes KI-Profil bleibt unveraendert.
+- API, PHP-Selbsttest, Playwright-Mocks und beide Preflights aktualisiert. Voller Browser- und Serverlauf noch ausstehend.

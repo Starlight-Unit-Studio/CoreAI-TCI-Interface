@@ -89,12 +89,12 @@ foreach (['config/nginx.conf.template', 'config/runtime/nginx.conf.template'] as
   $closed = preg_match('#location ~ \^/\(\?:([a-z|]+)\)\(\?:/\|\$\) \{#', $read($nginx), $m) === 1 ? explode('|', $m[1]) : [];
   img_test(in_array('var', $closed, true) && in_array('tools', $closed, true), $nginx . ' keeps var/ and tools/ closed');
 }
-$settings = $read('settings.html');
+$settings = $read('admin/index.html');
 img_test(str_contains($settings, '<section class="settings-panel cfg-card wide green tts-card img-card" id="imageSamplesCard" aria-labelledby="adminImageTitle" hidden>'),
   'card hidden until the Inhaber loads it');
 img_test(strpos($settings, 'id="imageSamplesCard"') > strpos($settings, 'id="view-admin-betrieb"') && strpos($settings, 'id="imageSamplesCard"') < strpos($settings, 'id="view-admin-memory"'),
   'card under Admin Core > Betrieb');
-img_test((bool)preg_match('~<script src="\./js/coreui-image-samples\.js\?v=\d+"></script>~', $settings), 'script loaded');
+img_test((bool)preg_match('~<script src="\.\./js/coreui-image-samples\.js\?v=\d+"></script>~', $settings), 'script loaded');
 img_test(str_contains($settings, '<code>sudo bash /opt/ember-coreui/scripts/image-spike.sh</code>'), 'how to start the test');
 $js = $read('js/coreui-image-samples.js');
 img_test(!preg_match('~innerHTML\s*=(?!\s*\'\';)~', $js) && !str_contains($js, 'insertAdjacentHTML'), 'the card never injects HTML from the report');

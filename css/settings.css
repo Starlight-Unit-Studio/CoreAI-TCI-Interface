@@ -1711,3 +1711,320 @@
   .settings-body .tts-run-pick { width: 100%; }
   .settings-body .tts-run-pick select { flex: 1 1 auto; min-width: 0; }
 }
+
+
+/* 0.6.71: category-first CoreAI settings with a compact mobile drawer.
+   Uses the active TCI day/night tokens; never the reference app's colors. */
+.settings-body .cfg-shell {
+  width: min(1480px, calc(100% - 36px));
+  grid-template-columns: minmax(265px, 308px) minmax(0, 1fr);
+  gap: clamp(18px, 2vw, 32px);
+}
+.settings-body .cfg-shell[hidden], .cfg-admin-auth-gate[hidden],
+.settings-body .cfg-nav-group[hidden], .settings-body .cfg-tab[hidden],
+.settings-body .cfg-menu-backdrop[hidden], .settings-body .cfg-search-status[hidden] {
+  display: none !important;
+}
+.settings-body .cfg-nav {
+  gap: 16px;
+  padding: 18px 12px 22px;
+  border-radius: 18px;
+  clip-path: none;
+  background: var(--panel-solid);
+}
+.cfg-menu-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 10px;
+  color: var(--txt);
+  font: 700 15px/1.4 "Rajdhani",sans-serif;
+  letter-spacing: .12em;
+}
+.cfg-search-field {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  min-height: 43px;
+  padding: 5px 11px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: var(--panel-soft);
+  color: var(--muted);
+}
+.cfg-search-field:focus-within { border-color: var(--cx); outline: 2px solid var(--panel-cx); }
+.cfg-search-field svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+}
+.cfg-search-field input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--txt);
+  font: 500 14px/1.4 "Rajdhani",sans-serif;
+}
+.cfg-search-field input::placeholder { color: var(--muted); opacity: 1; }
+.cfg-expert-toggle {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 12px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--panel-cx);
+  cursor: pointer;
+}
+.cfg-expert-toggle > span:first-child { display: grid; min-width: 0; gap: 4px; }
+.cfg-expert-toggle strong { color: var(--txt); font: 700 13px/1.3 "Rajdhani",sans-serif; letter-spacing: .05em; }
+.cfg-expert-toggle small { color: var(--muted); font: 500 12px/1.4 "Rajdhani",sans-serif; }
+.cfg-expert-toggle input:focus-visible + i { outline: 2px solid var(--amb); outline-offset: 3px; }
+.cfg-expert-toggle .settings-switch { flex-shrink: 0; }
+.settings-body .cfg-nav-group {
+  gap: 3px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.settings-body .cfg-nav-group:first-of-type { border-top: 0; }
+.settings-body .cfg-nav-label {
+  display: block;
+  padding: 2px 11px 9px;
+  color: var(--muted);
+  font: 700 11px/1.4 "Share Tech Mono",monospace;
+  letter-spacing: .12em;
+}
+.settings-body .cfg-tab {
+  width: 100%;
+  grid-template-columns: 22px minmax(0,1fr) auto;
+  gap: 12px;
+  min-height: 43px;
+  padding: 9px 11px;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: .01em;
+  white-space: normal;
+}
+.settings-body .cfg-tab svg { width: 21px; height: 21px; }
+.settings-body .cfg-tab[aria-selected="true"] {
+  border-color: var(--line-strong);
+  background: var(--panel-cx);
+  box-shadow: inset 3px 0 0 var(--cx);
+}
+.settings-body .cfg-nav-expert .cfg-tab[aria-selected="true"] { box-shadow: inset 3px 0 0 var(--amb); }
+.cfg-nav-state {
+  color: var(--muted);
+  font: 500 11px/1.2 "Share Tech Mono",monospace;
+  letter-spacing: .02em;
+}
+.settings-body .cfg-nav-link { text-decoration: none; color: var(--cfg-soft); }
+.settings-body .cfg-nav-link:hover { color: var(--txt); }
+.settings-body .cfg-nav-management .cfg-tab svg { color: var(--amb); }
+.cfg-search-status {
+  padding: 8px 12px;
+  color: var(--muted);
+  font: 500 13px/1.4 "Rajdhani",sans-serif;
+}
+.cfg-menu-open, .cfg-menu-close {
+  cursor: pointer;
+  border: 1px solid var(--line-strong);
+  background: var(--panel-solid);
+  color: var(--txt);
+}
+.cfg-menu-open { display: none; align-items: center; gap: 7px; padding: 9px 12px; border-radius: 10px; font: 700 12px "Rajdhani",sans-serif; }
+.cfg-menu-open svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-width: 2; }
+.cfg-menu-close { display: none; min-width: 36px; min-height: 36px; border-radius: 10px; font-size: 17px; }
+.cfg-menu-backdrop { display: none; }
+.cfg-planned-card { border-left: 3px solid var(--amb) !important; }
+.cfg-planned-card .cfg-planned-state {
+  display: inline-block;
+  margin-bottom: 8px;
+  color: var(--amb);
+  font: 700 11px/1.4 "Share Tech Mono",monospace;
+  letter-spacing: .11em;
+}
+.cfg-planned-card h3 { margin: 0 0 10px; color: var(--txt); font: 700 clamp(20px,2.3vw,28px)/1.2 "Rajdhani",sans-serif; }
+.cfg-planned-card p { max-width: 680px; color: var(--cfg-soft); font: 500 16px/1.55 "Rajdhani",sans-serif; }
+.cfg-planned-card .cfg-planned-hint { font-size: 13px; color: var(--muted); }
+.cfg-planned-card .settings-action { display: inline-flex; margin: 5px 8px 5px 0; }
+.cfg-admin-auth-gate {
+  width: min(740px,calc(100% - 36px));
+  margin: 32px auto;
+  padding: 28px;
+  border-radius: 16px;
+}
+.cfg-admin-auth-gate h2 { color: var(--txt); font: 700 27px/1.2 "Rajdhani",sans-serif; }
+.cfg-admin-auth-gate p { color: var(--muted); font-size: 15px; line-height: 1.5; }
+@media (max-width: 980px) {
+  .settings-body .cfg-shell { display: block; width: calc(100% - 24px); margin: 16px auto 0; }
+  .settings-body .cfg-nav {
+    position: fixed;
+    z-index: 3200;
+    top: 0; bottom: 0; left: 0;
+    width: min(390px, 90vw);
+    max-width: none;
+    max-height: 100vh;
+    max-height: 100dvh;
+    padding: max(16px,env(safe-area-inset-top)) 12px max(24px,env(safe-area-inset-bottom));
+    transform: translateX(-104%);
+    visibility: hidden;
+    pointer-events: none;
+    border-radius: 0 18px 18px 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    transition: transform .2s ease, visibility .2s;
+    clip-path: none;
+  }
+  .settings-body .cfg-nav.is-open { transform: translateX(0); visibility: visible; pointer-events: auto; }
+  .settings-body .cfg-nav-group { display: flex; flex-direction: column; flex: none; padding-top: 12px; border-left: 0; }
+  .settings-body .cfg-nav-label { display: block; }
+  .settings-body .cfg-tab {
+    flex: none;
+    grid-template-columns: 22px minmax(0,1fr) auto;
+    min-height: 48px;
+    padding: 10px 12px;
+    text-align: left;
+    font-size: 16px;
+  }
+  .settings-body .cfg-tab[aria-selected="true"] { box-shadow: inset 3px 0 0 var(--cx); }
+  .cfg-menu-open, .cfg-menu-close { display: inline-flex; justify-content: center; align-items: center; }
+  .cfg-menu-backdrop:not([hidden]) {
+    position: fixed;
+    z-index: 3100;
+    display: block;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    background: rgba(8, 13, 29, .6);
+    border: 0;
+    backdrop-filter: blur(4px);
+  }
+  .settings-body.cfg-menu-opened { overflow: hidden; }
+  .settings-body .cfg-main { width: 100%; }
+  .settings-body .settings-header {
+    display: grid;
+    grid-template-columns: auto minmax(0,1fr);
+    gap: 10px 12px;
+    padding: 14px clamp(12px,3vw,24px);
+  }
+  .settings-body .settings-header .cfg-menu-open {
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: start;
+  }
+  .settings-body .settings-header .settings-back {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+  }
+  .settings-body .settings-header .settings-title-block {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .settings-body .settings-header .settings-version {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+}
+@media (max-width: 480px) {
+  .settings-body .cfg-shell { width: calc(100% - 18px); }
+  .settings-body .cfg-nav { width: min(365px,94vw); }
+  .settings-body .cfg-tab { font-size: 15px; }
+  .cfg-nav-state { font-size: 11px; }
+  .cfg-planned-card p { font-size: 15px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .settings-body .cfg-nav { transition: none; }
+}
+.pref-reduced-motion .cfg-nav { transition: none; }
+
+
+/* 0.6.71: General settings use the same reusable row language as the rest
+   of CoreAI. Tokens keep both light and dark themes readable. */
+.settings-body [data-expert][hidden] { display: none !important; }
+.settings-body .cfg-general-head { margin: 0 0 16px; }
+.settings-body .cfg-general-card {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0 0 24px;
+  padding: 0 clamp(16px,2.4vw,30px);
+  border-radius: 20px;
+  overflow: visible;
+}
+.settings-body .cfg-general-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 43%);
+  gap: clamp(14px,2vw,28px);
+  align-items: center;
+  min-width: 0;
+  padding: 23px 0;
+  border-bottom: 1px solid var(--line);
+}
+.settings-body .cfg-general-row:last-child { border-bottom: 0; }
+.cfg-general-copy { min-width: 0; }
+.cfg-general-copy label {
+  display: block;
+  color: var(--txt);
+  font: 700 clamp(17px,2vw,21px)/1.3 "Rajdhani","Segoe UI",sans-serif;
+}
+.cfg-general-copy p {
+  margin: 5px 0 0;
+  color: var(--cfg-soft);
+  font: 500 15px/1.5 "Rajdhani","Segoe UI",sans-serif;
+}
+.cfg-general-control { display: grid; justify-items: end; gap: 7px; min-width: 0; }
+.cfg-general-control select {
+  box-sizing: border-box;
+  max-width: 100%;
+  width: min(100%,290px);
+  min-height: 44px;
+  padding: 9px 34px 9px 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  background: var(--panel-soft);
+  color: var(--txt);
+  font: 600 15px/1.35 "Rajdhani","Segoe UI",sans-serif;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+.cfg-general-control select:disabled {
+  cursor: not-allowed;
+  opacity: .66;
+}
+.cfg-general-control select:focus-visible {
+  outline: 2px solid var(--cx);
+  outline-offset: 3px;
+}
+.cfg-general-control small {
+  width: min(100%,290px);
+  color: var(--muted);
+  font: 500 12.5px/1.4 "Rajdhani","Segoe UI",sans-serif;
+  text-align: right;
+}
+.cfg-general-switch .settings-switch { margin-left: auto; }
+.cfg-general-switch .settings-switch:has(input:disabled) { opacity: .55; }
+@media (max-width: 660px) {
+  .settings-body .cfg-general-card { padding: 0 16px; }
+  .settings-body .cfg-general-row {
+    grid-template-columns: minmax(0,1fr) minmax(134px,46%);
+    gap: 12px;
+    padding: 21px 0;
+  }
+  .cfg-general-copy label { font-size: 17px; }
+  .cfg-general-copy p { font-size: 14px; line-height: 1.45; }
+  .cfg-general-control select { font-size: 13px; padding: 9px 24px 9px 9px; }
+  .cfg-general-control small { font-size: 11.5px; }
+}
+@media (max-width: 340px) {
+  .settings-body .cfg-general-row { grid-template-columns: 1fr; }
+  .cfg-general-control { justify-items: stretch; }
+  .cfg-general-control select, .cfg-general-control small { width: 100%; text-align: left; }
+}

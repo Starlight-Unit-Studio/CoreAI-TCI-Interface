@@ -7,6 +7,11 @@
 (function () {
   'use strict';
 
+  // Works from the dedicated /admin/ page as well as the root app URL.
+  var apiRoot = window.EMBER_COREUI && window.EMBER_COREUI.apiUrl
+    ? window.EMBER_COREUI.apiUrl : new URL('../api/', document.baseURI).href;
+  var ADMIN_API = new URL('admin.php', apiRoot).href;
+
   var card = document.getElementById('imageSamplesCard');
   if (!card) return;
   var runPick = card.querySelector('.tts-run-pick');
@@ -33,7 +38,7 @@
   }
 
   function api(query) {
-    return fetch('./api/admin.php?action=image_runs' + (query ? '&' + query : ''), {
+    return fetch(ADMIN_API + '?action=image_runs' + (query ? '&' + query : ''), {
       credentials: 'include', cache: 'no-store', headers: { 'Accept': 'application/json' }
     }).then(function (response) {
       return response.json().catch(function () { return {}; }).then(function (data) {
@@ -48,7 +53,7 @@
   }
 
   function imageUrl(file) {
-    return './api/admin.php?action=image_sample&run=' + encodeURIComponent(stamp) + '&file=' + encodeURIComponent(file);
+    return ADMIN_API + '?action=image_sample&run=' + encodeURIComponent(stamp) + '&file=' + encodeURIComponent(file);
   }
 
   function median(values) {

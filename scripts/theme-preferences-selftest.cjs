@@ -85,6 +85,8 @@ function fixture(store, initiallyDark, blockedStorage) {
 // Default picks up the actual operating-system scheme and changes live.
 const first = fixture();
 assert.equal(first.prefs.load().theme, 'system');
+assert.equal(first.prefs.load().sendKey, 'enter', 'existing accounts still use Enter to send');
+assert.equal(first.prefs.load().uiLanguage, 'auto', 'interface language defaults to browser detection');
 assert.equal(first.attributes['data-coreui-theme'], 'light');
 assert.equal(first.attributes['data-coreui-theme-choice'], 'system');
 first.changeOS(true);
@@ -96,13 +98,14 @@ assert.equal(first.attributes['data-coreui-theme'], 'light');
 
 // Manual choices must override OS switches, survive reloads and preserve
 // all previously persisted legacy preferences.
-first.prefs.save(Object.assign({}, first.prefs.load(), { theme: 'dark', compactFeed: true }));
+first.prefs.save(Object.assign({}, first.prefs.load(), { theme: 'dark', compactFeed: true, sendKey: 'mod-enter' }));
 first.changeOS(false);
 assert.equal(first.attributes['data-coreui-theme'], 'dark');
 assert.equal(first.toggles['pref-compact-feed'], true);
 const second = fixture(first.values, false);
 assert.equal(second.prefs.load().theme, 'dark');
 assert.equal(second.prefs.load().compactFeed, true);
+assert.equal(second.prefs.load().sendKey, 'mod-enter');
 second.prefs.save(Object.assign({}, second.prefs.load(), { theme: 'light' }));
 second.changeOS(true);
 assert.equal(second.attributes['data-coreui-theme'], 'light');
@@ -117,7 +120,8 @@ assert.equal(legacy.toggles['pref-hide-telemetry'], true);
 // Invalid values cannot turn into arbitrary attributes or CSS selectors.
 const invalid = fixture({ [key]: JSON.stringify({ theme: 'other" mode' }) }, false);
 assert.equal(invalid.prefs.load().theme, 'system');
-invalid.prefs.save({ theme: 'bogus' });
+invalid.prefs.save({ theme: 'bogus', sendKey: 'nonsense' });
+assert.equal(invalid.prefs.load().sendKey, 'enter', 'invalid shortcut normalized to safe default');
 assert.equal(invalid.attributes['data-coreui-theme-choice'], 'system');
 assert.equal(invalid.attributes['data-coreui-theme'], 'light');
 invalid.prefs.reset();
@@ -142,7 +146,8 @@ for (const name of ['system', 'light', 'dark']) {
 }
 assert.match(settings, /themeOptions\.forEach\(function \(option\)/);
 assert.match(settings, /value\.theme = selected \? selected\.value/);
-assert.match(settings, /syncFields\(preferences\.reset\(\)\)/);
+assert.match(settings, /preferences\.reset\(\)/);
+assert.match(settings, /sendKey: prior.sendKey/, 'Appearance reset preserves the general send shortcut');
 
 // The stylesheet is loaded everywhere. No global inversion is permitted.
 for (const file of ['index.html', 'login.html', 'app.html', 'settings.html',

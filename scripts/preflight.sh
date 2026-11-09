@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.70: dynamischer Quantum CoreAI Bildvermerk ohne Studio-Logo.
+# CoreAI: TCI Interface 0.6.71: dynamischer Quantum CoreAI Bildvermerk ohne Studio-Logo.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -87,7 +87,16 @@ UI_FILES=(
   css/artifacts.css
   css/settings.css
   css/coreui-theme.css
+  js/coreui-settings-menu.js
   js/coreui-settings-tabs.js
+  scripts/send-shortcut-selftest.cjs
+  js/coreui-send-keys.js
+  js/coreui-ui-language.js
+  api/general_core_controls.php
+  database/migrations/027_general_core_controls.sql
+  scripts/general-controls-selftest.php
+  scripts/ui-language-selftest.cjs
+  scripts/settings-navigation-foundation-selftest.cjs
   scripts/settings-tabs-ui-selftest.cjs
   scripts/theme-preferences-selftest.cjs
   scripts/terran-terminology-selftest.cjs
@@ -563,7 +572,7 @@ fi
 # Match the actual payload binding, not a frozen PHP source string from 0.5.50.
 # The reply-pipeline selftest verifies the precise runtime contract later.
 if grep -Fq "action: 'thinking'" "$PROJECT_ROOT/js/coreui-core-mode.js" \
-    && grep -Eq "'think'[[:space:]]*=>[[:space:]]*.*ember_thinking_enabled\(\)" "$PROJECT_ROOT/api/console_stream.php"; then
+    && grep -Fq "coreui_general_think_value(\$model, \$thinkOverride ?? ember_thinking_enabled())" "$PROJECT_ROOT/api/console_stream.php"; then
   ok 'Denkschalter im Chat und Modellaufruf inklusive kontobezogenem Standardwert sind paketiert.'
 else
   fail 'Thinking-Schalter oder Modell-Payload-Anbindung fehlen.'
@@ -1121,6 +1130,21 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     else
       fail 'Mara-TCI-Sprache: Terminologie-Selbsttest fehlgeschlagen.'
     fi
+    if compose exec -T php php /var/www/coreui/scripts/general-controls-selftest.php >/dev/null 2>&1; then
+      ok 'Allgemein: Core-Routing, gespeicherte Einstellungen und echte Denkstufen verifiziert.'
+    else
+      fail 'Allgemein: Core-Routing oder Reasoning-Selbsttest fehlgeschlagen.'
+    fi
+    if node "$PROJECT_ROOT/scripts/ui-language-selftest.cjs" >/dev/null 2>&1; then
+      ok 'Allgemein: App-Sprache DE/EN und automatische Browsererkennung geprueft.'
+    else
+      fail 'Allgemein: App-Sprachumschaltung fehlgeschlagen.'
+    fi
+    if node "$PROJECT_ROOT/scripts/send-shortcut-selftest.cjs" >/dev/null 2>&1; then
+      ok 'Allgemein: Enter, Strg/Command+Enter und IME-Schutz geprueft.'
+    else
+      fail 'Allgemein: Tastatur-Shortcuts oder Composer-Integration fehlgeschlagen.'
+    fi
     if node "$PROJECT_ROOT/scripts/theme-preferences-selftest.cjs" >/dev/null 2>&1; then
       ok 'Anzeige: System/Hell/Dunkel mit Speichern, Betriebssystem-Wechsel und Browser-Tabs geprueft.'
     else
@@ -1190,10 +1214,15 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     else
       warn 'Bildeditor: Playwright fehlt. Browser-Selbsttest uebersprungen (keine Live-Abnahme).'
     fi
-    # 0.5.79: settings page with tabs and Admin Core; needs Playwright for Node.
+    if node "$PROJECT_ROOT/scripts/settings-navigation-foundation-selftest.cjs" >/dev/null 2>&1; then
+      ok 'Einstellungen: 25 Kategorien, Expertenmodus, vorbereitete Unterseiten und Admin-Trennung geprueft.'
+    else
+      fail 'Einstellungen: Kategorie- oder Admin-Strukturtest fehlgeschlagen.'
+    fi
+    # 0.6.71: category navigation, expert mode and standalone Admin Core; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/settings-tabs-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Einstellungen: Tabs, Admin Core nach Rolle, Speichern, lesbare Schrift und Handy-Breite geprueft.'
+        ok 'Einstellungen: Kategorien, Suche, Expertenmodus, mobiles Menue und eigenstaendiger Admin Core geprueft.'
       else
         fail 'Einstellungen: Tab-Oberflaechentest fehlgeschlagen.'
       fi
@@ -1537,12 +1566,12 @@ else
   fail 'CoreAI: TCI Interface-Einstellungen sind nicht erreichbar. Fuehre scripts/stack.sh refresh-runtime und danach scripts/stack.sh restart web aus.'
 fi
 
-# 0.5.79: Admin Core is a tab group of the settings page; the old address forwards there.
-if curl -fsS --max-time 10 "http://127.0.0.1:${COREUI_HTTP_PORT}/settings.html" | grep -F 'id="adminNavGroup"' >/dev/null \
-    && curl -fsS --max-time 10 "http://127.0.0.1:${COREUI_HTTP_PORT}/admin/index.html" | grep -F 'ADMIN CORE' >/dev/null; then
-  ok 'Admin Core wird als Tab-Gruppe der Einstellungen ausgeliefert, die alte Adresse leitet dorthin.'
+# 0.6.71: Admin Core is a separate page, authorized per account and server-side API.
+if curl -fsS --max-time 10 "http://127.0.0.1:${COREUI_HTTP_PORT}/settings.html" | grep -F 'id="adminSettingsLink"' >/dev/null \
+    && curl -fsS --max-time 10 "http://127.0.0.1:${COREUI_HTTP_PORT}/admin/index.html" | grep -F 'id="adminAccessGate"' >/dev/null; then
+  ok 'Einstellungen mit Rollen-Link und eigenstaendige, zugangsgeschuetzte Admin-Core-Seite ausgeliefert.'
 else
-  fail 'Admin Core ist nicht erreichbar.'
+  fail 'Admin-Core-Seite oder getrennte Einstellungen sind nicht erreichbar.'
 fi
 
 SESSION_ROUTE_STATUS="$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' \

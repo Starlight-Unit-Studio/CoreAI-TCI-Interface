@@ -1,10 +1,7 @@
-/* CoreAI 0.5.79: the settings page shows one category at a time. The tabs on
-   the left (on phones a bar at the top) switch the view in place, like a
-   frame, and the address keeps the open tab (#ki-profil). Tiles and the
-   overview figures on the start view jump to their category. Admin Core
-   categories stay hidden until admin.js has confirmed the role; an address
-   that points there waits for that and opens once they show. Each switch
-   sends "coreai:view" so a category can load its data when it opens. */
+/* CoreAI 0.6.71: category navigation on both standard and Admin Core pages.
+   Deep links retain hashes, overview shortcuts can reveal filtered or
+   expert categories, and hidden admin tabs wait for server role approval.
+   Sends coreai:view when the selected settings page changes. */
 (function (root) {
   'use strict';
 
@@ -54,6 +51,14 @@
     function show(name, opts) {
       opts = opts || {};
       var tab = tabOf(name);
+      // An overview shortcut can make its target category available even when
+      // an old search filter or the browser-local expert switch hides it.
+      if (tab && !available(tab) && !opts.keepHash) {
+        var menu = win.CoreAISettingsMenu && win.CoreAISettingsMenu.instance;
+        if (menu && typeof menu.revealCategory === 'function') {
+          menu.revealCategory(name);
+        }
+      }
       if (!available(tab)) {
         if (tab) pending = name;
         tab = tabOf('start');

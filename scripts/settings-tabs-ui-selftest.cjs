@@ -1,11 +1,7 @@
-// CoreAI 0.5.79: settings page with tabs and Admin Core inside it.
+// CoreAI 0.6.71: settings IA, expert mode, mobile category drawer, and
+// standalone Admin Core with the full existing functionality.
 // Browser regression (Playwright): node scripts/settings-tabs-ui-selftest.cjs
-// Serves the real page with mocked APIs and checks: one view at a time, the
-// address keeps the tab, tiles jump, keys move between tabs, Admin Core only
-// for Inhaber and Admin (an admin address waits for the role), the admin
-// views load and save, the KI-Profil sends no Core, the start view sums up,
-// no text below 11 px, no sideways scrolling on a phone, and the old
-// admin/index.html lands on the matching tab.
+// The mocked APIs enforce role distinctions and test actual save actions.
 const {chromium} = require('playwright');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -15,6 +11,7 @@ const types = {'.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript
 
 function server(level) {
   const calls = [];
+  const generalState = {auto_higher_core: false, thinking_level: ''};
   const settings = {registration_enabled: '1', guest_enabled: '1', guest_message_limit: '20', guest_network_guests: '1',
     guest_daily_messages: '200', captcha_enabled: '1', maintenance_enabled: '0', memory_default_enabled: '1',
     user_system_prompt_max_chars: '6000', maintenance_message: '', tool_web_enabled: '1', tool_browse_enabled: '1',
@@ -61,6 +58,13 @@ function server(level) {
       const key = rel.slice(4);
       const post = route.request().method() === 'POST' ? route.request().postData() : null;
       calls.push({key, action: url.searchParams.get('action'), post: post ? JSON.parse(post) : null});
+      if (key === 'user_settings.php' && url.searchParams.has('general') && !post)
+        return route.fulfill({json:{ok:true,csrf_token:'tok',general:generalState,model:'ember-core:e4b',core_label:'TCI Core Normal',
+          available:true,auto_core_allowed:true,reasoning:{levels:['low','medium','high'],metadata_available:true,supports_on_off:false}}});
+      if (key === 'user_settings.php' && post && JSON.parse(post).action === 'general') {
+        Object.assign(generalState, JSON.parse(post).settings);
+        return route.fulfill({json:{ok:true,general:generalState}});
+      }
       if (key === 'admin.php' && post && level > 1) return route.fulfill({status: 403, json: {ok: false, error: 'insufficient_permissions'}});
       if (key === 'admin.php' && post && url.searchParams.get('action') === 'model_access_save') {
         return route.fulfill({json: {ok: true, models: JSON.parse(post).models}});
@@ -100,6 +104,20 @@ async function open(browser, level, hash, viewport) {
   return {page, srv, errors};
 }
 
+async function openAdmin(browser, level, hash, viewport) {
+  const existing = await open(browser, level, '', viewport);
+  await existing.page.goto('http://coreui.test/admin/index.html' + (hash || ''));
+  if (level <= 1) {
+    await existing.page.waitForFunction(() =>
+      document.getElementById('adminShell') && !document.getElementById('adminShell').hidden);
+  } else {
+    await existing.page.waitForFunction(() =>
+      document.getElementById('adminAccessMessage') &&
+      document.getElementById('adminAccessMessage').textContent.includes('nicht freigegeben'));
+  }
+  return existing;
+}
+
 const visibleViews = page => page.$$eval('.cfg-view', views => views.filter(v => !v.hidden).map(v => v.id));
 const smallText = page => page.evaluate(() => {
   const out = [];
@@ -116,11 +134,42 @@ const smallText = page => page.evaluate(() => {
 (async () => {
   const browser = await chromium.launch({headless: true, executablePath: process.env.PW_CHROMIUM_PATH || undefined, args: ['--no-sandbox']});
   try {
-    // A Nutzer: no Admin Core, an admin address falls back to the start view.
+    // All categories stay accessible; Expert only toggles technical fields
+    // in their original categories and never removes existing settings.
     let {page, srv, errors} = await open(browser, 4, '#admin-benutzer');
     assert.deepEqual(await visibleViews(page), ['view-start']);
-    assert.equal(await page.locator('#adminNavGroup').isHidden(), true, 'no Admin Core tabs for a Nutzer');
-    assert.equal(await page.locator('#startAdmin').isHidden(), true, 'no Admin Core tiles for a Nutzer');
+    assert.equal(await page.locator('#adminLinkGroup').isHidden(), true, 'no Admin Core link for a Nutzer');
+    assert.equal(await page.locator('#adminNavGroup').count(), 0, 'no embedded Admin Core tabs');
+    assert.equal(await page.isChecked('#settingsExpertToggle'), false, 'expert mode starts disabled');
+    assert.equal(await page.locator('#cfgCoreGroup').isHidden(), false, 'CoreAI categories always visible');
+    assert.equal(await page.locator('#tab-ki-profil').isHidden(), false);
+    assert.equal(await page.locator('#tab-wissen').isHidden(), false);
+    assert.equal(await page.locator('#tab-memory').isHidden(), false);
+    assert.equal(await page.locator('#generalReasoningLevels').isVisible(), false,
+      'numeric reasoning configuration is hidden until Expert mode is enabled');
+    await page.waitForFunction(() => !document.getElementById('generalHigherIntelligence').disabled);
+    assert.equal(await page.locator('#generalUiLanguage').isDisabled(), false, 'UI language can change');
+    await page.selectOption('#generalUiLanguage', 'en');
+    assert.equal(await page.evaluate(() => document.documentElement.lang), 'en', 'English applies to the interface');
+    assert.equal(await page.locator('#tab-start span').textContent(), 'General', 'navigation is translated');
+    await page.selectOption('#generalUiLanguage', 'de');
+    assert.equal(await page.locator('#tab-start span').textContent(), 'Allgemein', 'switch back to German');
+    assert.equal(await page.locator('#generalHigherIntelligence').isDisabled(), false,
+      'authenticated accounts can enable the real auto-Core routing');
+    await page.check('#generalHigherIntelligence');
+    await page.waitForFunction(() =>
+      document.getElementById('generalHigherIntelligence').checked &&
+      !document.getElementById('generalHigherIntelligence').disabled);
+    assert.ok(srv.calls.some(c => c.key === 'user_settings.php' && c.post &&
+      c.post.action === 'general' && c.post.settings.auto_higher_core === true),
+      'auto Core setting is actually saved through the server');
+    assert.equal(await page.inputValue('#generalSendKey'), 'enter', 'Enter remains the legacy default');
+    await page.selectOption('#generalSendKey', 'mod-enter');
+    assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('emberCoreUI.preferences.v1')).sendKey),
+      'mod-enter', 'the real send shortcut is saved browser-locally');
+    await page.reload();
+    await page.waitForFunction(() => document.getElementById('startHealth').getAttribute('data-state') !== 'checking');
+    assert.equal(await page.inputValue('#generalSendKey'), 'mod-enter', 'send shortcut survives reload');
     assert.equal(srv.calls.filter(c => c.key === 'admin.php').length, 0, 'a Nutzer never asks the admin API');
     // Start view sums up the categories.
     assert.equal(await page.textContent('#startCore'), 'Mara Normal');
@@ -130,17 +179,46 @@ const smallText = page => page.evaluate(() => {
     assert.equal(await page.textContent('#startKnowledgeChunks'), '42 Abschnitte');
     assert.equal(await page.textContent('#startMemory'), '2 Fakten');
     assert.equal(await page.textContent('#startRole'), 'NUTZER');
+    // Planned categories are reachable without pretending to save settings.
+    await page.click('#tab-benachrichtigungen');
+    assert.deepEqual(await visibleViews(page), ['view-benachrichtigungen']);
+    assert.match(await page.textContent('#view-benachrichtigungen'), /IN VORBEREITUNG/);
+    await page.fill('#settingsNavSearch', 'Cloud-Computer');
+    assert.equal(await page.locator('#tab-cloud-computer').isHidden(), false, 'search finds planned categories');
+    assert.equal(await page.locator('#tab-benachrichtigungen').isHidden(), true, 'search filters unrelated entries');
+    await page.fill('#settingsNavSearch', '');
+    await page.click('#tab-start');
+    await page.check('#settingsExpertToggle');
+    assert.equal(await page.locator('#generalReasoningLevels').isVisible(), true,
+      'Expert reveals the General reasoning placeholder inside General');
+    assert.equal(await page.locator('#generalReasoningLevels').isDisabled(), false,
+      'Ollama-declared reasoning levels can be selected');
+    await page.selectOption('#generalReasoningLevels', 'medium');
+    await page.waitForFunction(() =>
+      document.getElementById('generalReasoningLevels').value === 'medium' &&
+      !document.getElementById('generalReasoningLevels').disabled);
+    assert.ok(srv.calls.some(c => c.key === 'user_settings.php' && c.post &&
+      c.post.action === 'general' && c.post.settings.thinking_level === 'medium'),
+      'chosen model-supported effort is persisted server-side');
     // Tabs switch in place and the address keeps the tab.
     await page.click('#tab-ki-profil');
     assert.deepEqual(await visibleViews(page), ['view-ki-profil']);
+    assert.equal(await page.locator('#aiNumPredict').isVisible(), true,
+      'existing technical Core values are visible in Expert mode');
+    const budget = await page.inputValue('#aiNumPredict');
+    await page.uncheck('#settingsExpertToggle');
+    assert.deepEqual(await visibleViews(page), ['view-ki-profil'], 'Expert switch does not leave the category');
+    assert.equal(await page.locator('#aiNumPredict').isVisible(), false, 'technical field hidden in normal mode');
+    assert.equal(await page.inputValue('#aiNumPredict'), budget, 'hiding a field does not reset its value');
+    await page.check('#settingsExpertToggle');
+    assert.equal(await page.locator('#aiNumPredict').isVisible(), true, 'technical field comes back');
     assert.equal(new URL(page.url()).hash, '#ki-profil');
     assert.equal(await page.getAttribute('#tab-ki-profil', 'aria-selected'), 'true');
     assert.equal(await page.getAttribute('#tab-start', 'aria-selected'), 'false');
     await page.keyboard.press('ArrowDown');
-    // 0.5.91: Personalisierung sits between KI-Profil and Wissen.
-    assert.deepEqual(await visibleViews(page), ['view-personalisierung'], 'arrow keys move between tabs');
+    assert.deepEqual(await visibleViews(page), ['view-wissen'], 'arrow keys move across advanced tabs');
     await page.keyboard.press('ArrowDown');
-    assert.deepEqual(await visibleViews(page), ['view-wissen'], 'and on to the next one');
+    assert.deepEqual(await visibleViews(page), ['view-memory'], 'and on to the next advanced category');
     assert.equal(await page.locator('#tab-skills').count(), 0, 'no Skills tab: Mara picks her skills herself');
     await page.keyboard.press('Home');
     assert.deepEqual(await visibleViews(page), ['view-start']);
@@ -166,15 +244,15 @@ const smallText = page => page.evaluate(() => {
     assert.deepEqual(errors, []);
     await page.close();
 
-    // The Inhaber: Admin Core appears and an admin address opens once the role is known.
-    ({page, srv, errors} = await open(browser, 0, '#admin-benutzer'));
+    // The Inhaber: a single Admin Core link leads to a separate authorized page.
+    ({page, srv, errors} = await openAdmin(browser, 0, '#admin-benutzer'));
     await page.waitForFunction(() => !document.getElementById('adminNavGroup').hidden);
     await page.waitForFunction(() => document.querySelectorAll('#userRows tr').length === 3);
     assert.deepEqual(await visibleViews(page), ['view-admin-benutzer'], 'the admin address opens after the role check');
-    assert.equal(await page.$eval('#startAdmin', e => e.hidden), false, 'Admin Core tiles on the start view');
+    assert.equal(await page.locator('#adminAccessGate').isHidden(), true, 'admin shell appears only after authorization');
     assert.equal(await page.textContent('#adminIdentity'), 'patrick@starlight.test // INHABER');
-    assert.deepEqual(await page.$$eval('[data-stat="users"]', nodes => nodes.map(n => n.textContent)), ['12', '12'],
-      'the figures fill the start tile and the overview');
+    assert.deepEqual(await page.$eval('[data-stat="users"]', nodes => nodes.map(n => n.textContent)), ['12'],
+      'the admin overview receives the user count');
     assert.deepEqual(await page.$$eval('#userRows tr:nth-child(2) select option', o => o.map(x => x.textContent)), ['GAST'], 'a guest stays a guest');
     assert.equal(await page.$eval('#newUserLevel option[value="1"]', o => o.disabled), false, 'the Inhaber may create admins');
     // 0.5.83: the Inhaber releases models outside CoreAI per account.
@@ -282,21 +360,24 @@ const smallText = page => page.evaluate(() => {
     await page.waitForFunction(() => document.querySelectorAll('#auditRows .audit-item').length === 1);
     await page.click('#tab-admin-protokoll');
     await page.waitForFunction(() => document.getElementById('logOutput').textContent.includes('ok'));
-    for (const view of ['start', 'anzeige', 'profil', 'ki-profil', 'personalisierung', 'wissen', 'memory', 'konto', 'system', 'admin-uebersicht', 'admin-zugang', 'admin-betrieb']) {
+    for (const view of ['start', 'admin-uebersicht', 'admin-zugang', 'admin-betrieb', 'admin-memory', 'admin-lore', 'admin-protokoll', 'admin-audit']) {
       await page.click('#tab-' + view);
       assert.deepEqual(await smallText(page), [], 'no text below 11 px in ' + view);
     }
     assert.deepEqual(errors, []);
     await page.close();
 
-    // Phone: the tabs scroll sideways, the page never does.
-    ({page, errors} = await open(browser, 1, '#admin-betrieb', {width: 390, height: 844}));
+    // Phone: categories open as a drawer, selection closes it and the page
+    // remains free from horizontal scrolling.
+    ({page, errors} = await openAdmin(browser, 1, '#admin-betrieb', {width: 390, height: 844}));
     await page.waitForFunction(() => !document.getElementById('adminNavGroup').hidden);
-    for (const view of ['admin-betrieb', 'admin-benutzer', 'start', 'ki-profil', 'konto', 'wissen']) {
+    for (const view of ['admin-betrieb', 'admin-benutzer', 'admin-uebersicht', 'admin-lore']) {
+      await page.click('#settingsMenuToggle');
+      assert.equal(await page.getAttribute('#settingsMenuToggle', 'aria-expanded'), 'true');
       await page.click('#tab-' + view);
+      assert.deepEqual(await visibleViews(page), ['view-' + view], 'mobile drawer opened ' + view);
+      assert.equal(await page.getAttribute('#settingsMenuToggle', 'aria-expanded'), 'false', 'drawer closes on selection');
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'no sideways scroll in ' + view);
-      const box = await page.locator('#tab-' + view).boundingBox();
-      assert.ok(box.x >= 0 && box.x + box.width <= 391, 'the open tab is in sight: ' + view);
     }
     assert.equal(await page.$eval('#newUserLevel option[value="1"]', o => o.disabled), true, 'an Admin cannot create admins');
     await page.click('#tab-admin-benutzer');
@@ -311,21 +392,36 @@ const smallText = page => page.evaluate(() => {
     assert.deepEqual(errors, []);
     await page.close();
 
-    // The old admin page lands on the matching tab.
+    // A regular account can open the standalone URL, but sees no admin data.
+    ({page, srv} = await openAdmin(browser, 4, '', {width: 390, height: 844}));
+    assert.equal(await page.locator('#adminShell').isHidden(), true);
+    assert.match(await page.textContent('#adminAccessMessage'), /nicht freigegeben/);
+    assert.equal(srv.calls.filter(c => c.key === 'admin.php').length, 0, 'denied without any admin API request');
+    await page.close();
+
+    // A legacy Admin bookmark keeps its destination on the standalone page.
     const srv2 = server(0);
     page = await browser.newPage();
     await page.route('http://coreui.test/**', route => srv2.route(route));
     await page.goto('http://coreui.test/admin/index.html#users');
-    await page.waitForURL(/settings\.html#admin-benutzer$/);
+    await page.waitForFunction(() => {
+      const nav = document.getElementById('adminNavGroup');
+      const view = document.getElementById('view-admin-benutzer');
+      return nav && !nav.hidden && view && !view.hidden;
+    });
     await page.close();
 
     // Markup and wiring.
     const html = fs.readFileSync(path.join(root, 'settings.html'), 'utf8');
-    assert(html.indexOf('coreui-settings-tabs.js') < html.indexOf('js/settings.js') && html.indexOf('js/settings.js') < html.indexOf('js/admin.js'),
-      'tabs first, then settings, then admin');
+    const adminHtml = fs.readFileSync(path.join(root, 'admin/index.html'), 'utf8');
+    assert(html.indexOf('coreui-settings-menu.js') < html.indexOf('coreui-settings-tabs.js') &&
+      html.indexOf('coreui-settings-tabs.js') < html.indexOf('js/settings.js') &&
+      !html.includes('src="./js/admin.js'), 'user settings load no admin controller');
+    assert(adminHtml.includes('id="adminAccessGate"') && adminHtml.includes('id="view-admin-audit"'),
+      'dedicated admin page keeps its actions behind the account gate');
     assert(/<link rel="stylesheet" href="\.\/css\/settings\.css\?v=\d+" \/>/.test(html), 'settings stylesheet');
-    assert(!fs.existsSync(path.join(root, 'css/admin.css')), 'the old admin stylesheet is gone');
-    console.log('CoreAI settings tabs: one view at a time, address, tiles, keys, Admin Core by role, admin load and save, no Core in the KI-Profil, readable sizes, phone width, old admin link OK');
+    assert(!fs.existsSync(path.join(root, 'css/admin.css')), 'no obsolete admin stylesheet');
+    console.log('CoreAI settings IA: category search, expert mode, mobile drawer, standalone protected Admin Core, role permissions and management API: OK');
   } finally {
     await browser.close();
   }

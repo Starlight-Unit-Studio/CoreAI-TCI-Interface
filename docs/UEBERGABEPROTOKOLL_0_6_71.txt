@@ -1,0 +1,100 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.71
+Datum: 09.11.2026
+Basis: main 0.6.70
+Branch: feat/settings-information-architecture-0671
+
+AUFTRAG
+- Einstellungen besser strukturieren und sichtbar alle vom Referenzbild
+  benoetigten Kategorien vorbereiten.
+- Expertise-Schalter "Experteneinstellungen aktivieren/deaktivieren".
+- Admin-Menue aus normalen Einstellungen auslagern; dort nur Einstieg,
+  auf /admin/ saemtliche vorhandenen Admin-Funktionen erhalten.
+
+UMSETZUNG
+ALLGEMEIN / EXPERTENREGEL 0.6.71
+- User-sichtbare Kategorien bleiben IMMER da (auch KI-Profil, Wissen, Memory).
+- Einziger Expertenschalter zeigt versteckte technische Felder in ihrer
+  urspruenglichen Kategorie, ohne vorhandene Werte zu loeschen.
+- Allgemein: vier Zeilen fuer UI-Sprache (nur Deutsch aktiv),
+  Tastaturkuerzel (Enter oder Ctrl/Command+Enter, echt verdrahtet),
+  automatische Core-Hochstufung (nicht implementiert) und
+  Reasoning-Aufwandsstufen (derzeit nur Denken an/aus, weitere geplant).
+- Alte Core-/System-/Wissens-/Memory-Kacheln weiterhin in Allgemein.
+- Numeric Inputs: Memory-Limit, Tokenbudget, Temperatur, Kontextfenster
+  bleiben in KI-Profil; Relevanz bleibt in Memory.
+- Geaenderte Datei js/coreui-preferences.js verwendet bestehende
+  lokale V1-Speicherstruktur und migriert aeltere Konten ohne Ueberraschung.
+- js/coreui-send-keys.js prueft Tastatur mit IME-/Shift-/Repeat-Schutz.
+- js/console-app.js nutzt diese Funktion und passt die Hilfetextanzeige an.
+- scripts/send-shortcut-selftest.cjs und aktualisierte Theme-/Settings-
+  Regressionen pruefen die Verbindungen; beide Preflights laufen damit.
+- Vorhandene Rechte, Modelfiles, Modell-Warteschlange und Chat-DB bleiben
+  voellig unangetastet.
+
+- settings.html: 25 Kategorien und 16 klar bezeichnete Planungsansichten.
+  Vorhandene neun Standardansichten bleiben und sind an neue Navigation
+  angebunden. System/Updater bleibt auch ohne Expertenmodus sichtbar.
+- js/coreui-settings-menu.js: Suche, persistenter browserlokaler Expertenmodus
+  (nur UI-Sichtbarkeit einzelner technischer Felder), mobile Seitenleiste mit Auf/Zu und Escape.
+- css/settings.css: Desktop-Zwei-Spalten-Layout, Handy-Drawer im CoreAI Color
+  Kit, Statuskennzeichnung, Dark-/Light-Farben aus vorhandenen Tokens.
+- admin/index.html: Acht bisherige Admin-Ansichten mit getrennter
+  Rollenpruefung vor Sichtfreigabe. Erst nach Inhaber-/Admin-Status werden
+  Navigation und Inhalte angezeigt. Backend-API kontrolliert jede Aktion
+  unveraendert. Bestehende Bookmarks werden auf eigene Admin-Seite geleitet.
+- js/admin.js: Root-bezogene API-/Login-Pfade, Auth-Gate,
+  bisherige Benutzer-/Betriebs-/Memory-/Lore-/Audit-Logik bewahrt.
+- js/coreui-image-samples.js und js/coreui-voice-samples.js:
+  Root-bezogene Admin-Proben-URLs.
+- js/settings.js: nur ein Admin-Core-Einstieg, nach Auth-Freigabe.
+- scripts/settings-tabs-ui-selftest.cjs, scripts/voice-samples-ui-selftest.cjs:
+  Browser-Regressionen auf die neue Route angepasst, existierende
+  Verwaltungsassertions nicht absichtlich entfernt.
+- scripts/image-spike-store-selftest.php und tts-spike-store-selftest.php:
+  Verortung der vorhandenen Proben im neuen Admin-Core-Aufbau geprueft.
+- scripts/settings-navigation-foundation-selftest.cjs: Offline-Test.
+- docs/SETTINGS_NAVIGATION_MATRIX.md: welche Kategorien bereits funktionieren,
+  was nur vorbereitet ist und welche Arbeiten pro Seite noch folgen.
+- VERSION, alle sechs HTML-Versionen, JS-Bootstrap, README, Branding-Test,
+  CHANGELOG, TXT-Index, dieses Protokoll, beide Preflights aktualisiert.
+
+ERWEITERUNG: ALLGEMEIN FUNKTIONSANBINDUNG
+- Sprache der App: UI-Praeferenz Auto/DE/EN, vom Antwortsprachfeld
+  unabhaengig. Die vorhandene Kernoberflaeche ist zweisprachig,
+  weitere englische Texte sind noch in Bearbeitung (Beta).
+- Hoehere Intelligenz: nur bei komplexen privaten, medienfreien Text-Turns
+  und vorhandenem/eingeraeumtem lokalem Mara-Core. Heuristischer
+  Dispatcher, kein zusaetzlicher Klassifizierungsmodellaufruf.
+  Automatischer Core ist pro Request, nicht die dauerhafte Core-Wahl.
+- Reasoning: Ollama /api/show als alleinige Quelle fuer benannte Stufen.
+  Aktiviertes Denken bleibt Konto-Standard, ausgeschaltetes Denken
+  hat immer Vorrang. Boolean-only-Cores bekommen keine Schein-Stufen.
+- Neue Dateien api/general_core_controls.php,
+  database/migrations/027_general_core_controls.sql,
+  js/coreui-ui-language.js, scripts/general-controls-selftest.php.
+- Kontoeinstellung wird unabhaengig vom KI-Profil in
+  stu_user_general_settings gespeichert; API GET ?general und POST action=general
+  pruefen Session, CSRF und Berechtigungen.
+- Migration 027 muss vor einem produktiven Test ausgefuehrt werden.
+- Tests zu altem Denken-payload und General-Frontend aktualisiert.
+- Mobile/Audio/Bild und globale Warteschlange wurden nicht umgebaut.
+
+RISIKEN / NOCH ZU PRUEFEN
+- Statische Checks, Struktur-, URL- und Versionspruefung auf Branch.
+- node scripts/settings-navigation-foundation-selftest.cjs
+- node scripts/settings-tabs-ui-selftest.cjs
+- node scripts/voice-samples-ui-selftest.cjs
+- php scripts/image-spike-store-selftest.php
+- php scripts/tts-spike-store-selftest.php
+- python3 scripts/branding-license-selftest.py
+- python3 scripts/version-merge-check.py --base-version 0.6.70
+- python3 scripts/cache-bust.py --verify
+- Voller Installations-Preflight und Mobil-/Desktop-Test in beiden Themen.
+- Alte Bookmarks settings.html#admin-benutzer sowie admin/index.html#users
+  pruefen, Root-Pfade zu Proben, CSRF und Rechte im echten System abnehmen.
+- Browserlokale Expertensicht darf keine Adminberechtigungen ersetzen.
+
+VERSION / ROLLOUT
+JEDER Merge nach main ist ein eigener Versionsstand.
+PR ohne vollstaendigen Host- und Playwright-Test nicht als produktiv
+abgenommen kennzeichnen. Kein automatischer Merge, kein automatisches Update.

@@ -1,7 +1,6 @@
-/* CoreAI: TCI Interface isolated administration controller.
-   0.5.79: Admin Core lives in the settings page as its own tab group. The
-   tabs appear only for Inhaber and Admin (the server checks every call
-   anyway); a category loads its data when its tab opens. */
+/* CoreAI 0.6.71: isolated Admin Core controller on /admin/index.html.
+   The server authorizes every API request; this page also keeps the private
+   administration views hidden until the account role is confirmed. */
 (function () {
   'use strict';
 
@@ -15,6 +14,12 @@
   var identity = document.getElementById('adminIdentity');
   var navGroup = document.getElementById('adminNavGroup');
   var startAdmin = document.getElementById('startAdmin');
+  var adminShell = document.getElementById('adminShell');
+  var adminGate = document.getElementById('adminAccessGate');
+  var adminMessage = document.getElementById('adminAccessMessage');
+  var appRoot = window.EMBER_COREUI && window.EMBER_COREUI.projectUrl
+    ? window.EMBER_COREUI.projectUrl : new URL('../', document.baseURI).href;
+  function rootUrl(path) { return new URL(path, appRoot).href; }
   var VIEWS = {
     'admin-uebersicht': function () { return loadOverview(); },
     'admin-benutzer': function () { return loadUsers(); },
@@ -37,7 +42,7 @@
 
   function api(action, options, query) {
     options = options || {};
-    var url = './api/admin.php?action=' + encodeURIComponent(action);
+    var url = rootUrl('api/admin.php?action=' + encodeURIComponent(action));
     if (query) url += '&' + query;
     options.credentials = 'include';
     options.cache = 'no-store';
@@ -51,7 +56,7 @@
         if (!response.ok || !data.ok) {
           var err = new Error(data.error || ('HTTP_' + response.status));
           err.data = data;
-          if (response.status === 401) location.replace('login.html');
+          if (response.status === 401) location.replace(rootUrl('login.html'));
           if (response.status === 403 && data.error === 'insufficient_permissions') hideAdmin();
           throw err;
         }
@@ -76,16 +81,34 @@
   }
 
   function showAdmin() {
-    if (navGroup) navGroup.hidden = false;
+    if (navGroup) {
+      navGroup.dataset.authorized = '1';
+      navGroup.hidden = false;
+    }
     if (startAdmin) startAdmin.hidden = false;
+    if (adminShell) adminShell.hidden = false;
+    if (adminGate) adminGate.hidden = true;
+    var menu = window.CoreAISettingsMenu && window.CoreAISettingsMenu.instance;
+    if (menu) menu.refresh();
     var instance = tabs();
-    if (instance) instance.refresh();
+    if (instance) {
+      var destination = instance.refresh();
+      if (adminShell && destination === 'start') instance.show('admin-uebersicht');
+    }
   }
 
-  function hideAdmin() {
+  function hideAdmin(message) {
     ready = false;
-    if (navGroup) navGroup.hidden = true;
+    if (navGroup) {
+      navGroup.dataset.authorized = '0';
+      navGroup.hidden = true;
+    }
     if (startAdmin) startAdmin.hidden = true;
+    if (adminShell) adminShell.hidden = true;
+    if (adminGate) adminGate.hidden = false;
+    if (adminMessage) adminMessage.textContent = message || 'Kein Zugriff auf die Verwaltung.';
+    var menu = window.CoreAISettingsMenu && window.CoreAISettingsMenu.instance;
+    if (menu) menu.refresh();
     var instance = tabs();
     if (instance && /^admin-/.test(instance.current())) instance.show('start');
   }
@@ -849,11 +872,19 @@
 
   if (!navGroup) return;
   document.addEventListener('coreai:view', onView);
-  fetch('./api/auth.php?action=me', { credentials: 'include', cache: 'no-store' })
+  fetch(rootUrl('api/auth.php?action=me'), { credentials: 'include', cache: 'no-store' })
     .then(function (response) { return response.json(); })
     .then(function (data) {
-      // Users and guests never see Admin Core; settings.js handles the login.
-      if (!data.ok || data.is_guest || Number(data.permission_level) > 1) return null;
+      // Never reveal the administration before the server confirms the role.
+      if (!data.ok) {
+        hideAdmin('Anmeldung erforderlich.');
+        location.replace(rootUrl('login.html'));
+        return null;
+      }
+      if (data.is_guest || Number(data.permission_level) > 1) {
+        hideAdmin('Für dieses Konto ist die Verwaltung nicht freigegeben.');
+        return null;
+      }
       csrfToken = data.csrf_token || '';
       actorLevel = Number(data.permission_level);
       actorId = Number(data.user_id) || 0;
@@ -865,5 +896,8 @@
       // Showing the group opens an admin tab the address asked for; that tab loads its data itself.
       return loadOverview().then(showAdmin);
     })
-    .catch(function (error) { show('Admin-Initialisierung: ' + error.message, true); });
+    .catch(function (error) {
+      hideAdmin('Verwaltung derzeit nicht erreichbar.');
+      show('Admin-Initialisierung: ' + error.message, true);
+    });
 })();
