@@ -42,9 +42,12 @@ function coreui_general_load(PDO $pdo, int $uid): array {
 
 /** Only the values actually advertised for this exact installed Core. */
 function coreui_general_thinking_capabilities(string $model, ?array $show = null): array {
+  static $requestCache = [];
   if (!coreui_model_name_valid($model)) {
     return ['levels' => [], 'supports_on_off' => false, 'metadata_available' => false];
   }
+  $fromOllama = $show === null;
+  if ($fromOllama && isset($requestCache[$model])) return $requestCache[$model];
   if ($show === null) $show = coreui_ollama_read_json('show', ['model' => $model]) ?? [];
   $thinking = $show['thinking'] ?? null;
   $values = is_array($thinking) && is_array($thinking['values'] ?? null) ? $thinking['values'] : [];
@@ -53,11 +56,14 @@ function coreui_general_thinking_capabilities(string $model, ?array $show = null
     if (is_string($value) && in_array($value, ['low', 'medium', 'high', 'max'], true)
       && !in_array($value, $names, true)) $names[] = $value;
   }
-  return [
+  $result = [
     'levels' => $names,
     'supports_on_off' => in_array(true, $values, true) && in_array(false, $values, true),
     'metadata_available' => is_array($thinking) && is_array($thinking['values'] ?? null),
   ];
+  // Do not query Ollama again for every model/tool step of the same turn.
+  if ($fromOllama) $requestCache[$model] = $result;
+  return $result;
 }
 
 function coreui_general_effective_model(PDO $pdo, int $uid): string {
