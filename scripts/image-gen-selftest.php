@@ -627,9 +627,11 @@ img_gen_test(str_contains($policy, "const COREUI_USER_POLICY_TOOLS = ['web', 'br
 img_gen_test(str_contains($read('api/ai_settings.php'), "'image' => stu_app_setting_get(\$pdo, 'tool_image_enabled',")
   && str_contains($read('api/admin.php'), "'tool_web_enabled', 'tool_browse_enabled', 'tool_python_enabled', 'tool_image_enabled',"),
   'global switch under Betrieb');
-$settings = $read('settings.html');
-img_gen_test(str_contains($settings, '<strong>BILDER ERZEUGEN</strong>') && str_contains($settings, 'id="toolImageEnabled"')
-  && strpos($settings, 'id="toolImageEnabled"') > strpos($settings, 'id="toolPythonEnabled"'), 'the switch sits with the other tools');
+$adminPage = $read('admin/index.html');
+img_gen_test(str_contains($adminPage, '<strong>BILDER ERZEUGEN</strong>') && str_contains($adminPage, 'id="toolImageEnabled"')
+  && strpos($adminPage, 'id="toolImageEnabled"') > strpos($adminPage, 'id="toolPythonEnabled"')
+  && !str_contains($read('settings.html'), 'id="toolImageEnabled"'),
+  'image tool switch lives beside the other tools only in protected Admin Core');
 $admin = $read('js/admin.js');
 img_gen_test(str_contains($admin, "['image', 'Bilder']") && str_contains($admin, "tool_image_enabled: document.getElementById('toolImageEnabled').checked ? '1' : '0',"),
   'admin page saves both switches');
