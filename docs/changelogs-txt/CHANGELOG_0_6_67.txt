@@ -1,0 +1,9 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.67
+09.11.2026
+
+- Kanonkorrektur: Ember Caldwell / Sandra Jansen ist eine eigene Starlight-Unit-Figur und wird nicht als Mara Thorne oder als fest kodierter TCI-Rufname behandelt.
+- Aus Maras laufendem Bild- und Profil-Identitaetsprompt wurde die irrefuehrende Angabe "z. B. Ember" entfernt.
+- Der Bild-Prompt nennt nur Mara Thorne bzw. den im Konto tatsaechlich gespeicherten alternativen TCI-Namen. Keine fest eingebauten Lore-Rufnamen.
+- Identitaets-/Profil-/Bildwerkzeug-Regressionstests verwenden einen kuenstlichen Testnamen statt Ember. Referenzen bleiben an das aktive TCI-Kontoportraet gebunden.
+- Bereits bestehende technische Kennungen (z. B. ember_memories, ember_* und historische Modell-Tags) bleiben aus Kompatibilitaetsgruenden unveraendert.
+- Keine Aenderung an FLUX, Bilddateien, Modelfile, Datenbank, Memory oder der seriellen Modell-Warteschlange.

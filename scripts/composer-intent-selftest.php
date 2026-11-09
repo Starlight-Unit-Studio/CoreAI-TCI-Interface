@@ -78,7 +78,7 @@ intent_test(coreui_composer_intent_ensure($img, '[BILD ICH: Superwoman over the 
 intent_test(coreui_composer_intent_ensure($img, '[BILD: a woman with black hair in a spaceship]', 'Mara im Cockpit', true)
   === '[BILD ICH: a woman with black hair in a spaceship]',
   'scene-based Mara requests upgrade generic generated prompts to canonical references');
-intent_test(coreui_composer_intent_ensure($img, '[BILD: red dress, cinematic lighting]', 'Ein Bild mit Ember am Strand', true, 'Ember')
+intent_test(coreui_composer_intent_ensure($img, '[BILD: red dress, cinematic lighting]', 'Ein Bild mit Testalias am Strand', true, 'Testalias')
   === '[BILD ICH: red dress, cinematic lighting]',
   'the account assistant nickname selects its own portrait identity');
 intent_test(coreui_composer_intent_ensure($img, '[BILD ICH: Mara in a red evening gown]', 'diesmal im roten Kleid', true)

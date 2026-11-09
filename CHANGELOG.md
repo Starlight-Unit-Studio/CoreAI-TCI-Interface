@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.6.67 - 09.11.2026
+
+- Correct the narrative identity boundary: Ember Caldwell / Sandra Jansen is a separate Starlight Unit character and must not appear as a fixed example of TCI Mara Thorne's personal identity.
+- Remove hard-coded "Ember" alias examples from Mara's self-portrait prompt and image-routing hints. Mara and the currently configured account-specific TCI nickname remain eligible to select that account's own portrait; no lore character name is hard-coded as a TCI alias.
+- Replace Ember-as-Mara examples in image-routing, composer, profile and reference-consistency regressions with an explicit synthetic test alias or Mara herself. The test of custom account portraits retaining priority remains in place.
+- Preserve legacy technical IDs, model tags, table names and paths such as `ember_memories` and `ember_*` for compatibility. No FLUX weight/model, original reference image, account, memory, queue or database migration changes.
+
+
 ## 0.6.66 - 08.11.2026
 
 - Repair Mara self-portrait routing: scene-based requests (e.g. "Mara im Cockpit", "Ember am Strand", portraits with Mara by name, or images depicting "dich") now deterministically select the account's TCI identity reference instead of relying on the model to write the optional ICH marker.

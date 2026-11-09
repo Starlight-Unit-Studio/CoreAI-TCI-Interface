@@ -1,0 +1,60 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.67
+Datum: 09.11.2026
+Basis: main 0.6.66 (PR #218 bereits gemergt)
+Branch: fix/mara-ember-canon-separation-0667
+
+KORREKTURANLASS
+PR #218 nutzte "Ember am Strand" als Beispiel einer TCI-Mara-
+Selbstbildszene. Dieses Beispiel vermischt irrtuemlich zwei
+eigenstaendige Figuren: Mara Thorne und Ember Caldwell / Sandra Jansen.
+Das bereits vorhandene Profil-Identitaetssystem nutzte ausserdem
+"z. B. Ember" als festes Rufnamen-Beispiel im Systemprompt.
+
+KORREKTUR
+- api/image_gen.php: Feste Ember-Beispieltexte in Selbstbild-
+  Erkennungskommentar und LLM-Bildhinweis entfernt. Maras Name
+  und der aktive, zur Laufzeit geladene TCI-Anzeigename bleiben
+  dynamisch relevant; kein kanonischer Fremdcharakter wird als
+  TCI-Identitaet eingebaut.
+- api/image_reference_consistency.php: TCI-Profil-Prompt enthaelt
+  keinen fest kodierten Ember-Rufnamen mehr.
+- scripts/image-gen-selftest.php:
+  Alias-/Szenentests mit dem kuenstlichen "Testalias";
+  kanonische Standardreferenz bleibt getrennt von benutzerdefinierten
+  Portraets und fremden Personen.
+- scripts/composer-intent-selftest.php: Gleiches Testalias statt
+  Ember als scheinbare visuelle Mara-Identitaet.
+- scripts/image-reference-consistency-selftest.php:
+  Persona-Beispiele verwenden Mara bzw. neutralen Kontokontext.
+- scripts/profile-reference-selftest.php:
+  Testalias als rein technische Kontokonfiguration;
+  bestehende No-Memory-Assertion bleibt erhalten.
+- VERSION 0.6.67 mit sechs HTML-Seiten, Bootstrap, inhaltsbasiertem
+  Cache-Fingerprint, README, Changelog, TXT-Index, Branding
+  und beiden Preflight-Skripten synchronisiert.
+
+NICHT GEANDERT
+- Ember Caldwell / Sandra Jansen bleibt eigenstaendiger
+  transmedialer Charakter und wird nicht zur TCI umdefiniert.
+- Technische historische Namen wie ember_memories, ember_*,
+  ember-core Modell-Tags und /opt/ember-coreui bleiben erhalten,
+  da ein Rename separate Migrationen erfordern wuerde.
+- Historische Changelogs (einschliesslich 0.6.66) bleiben unveraendert.
+- Keine Memory-Eintraege, keine Modellgewichts- oder Modelfile-
+  Aenderung, keine Datenbankmigration, keine neuen FLUX-Referenzbilder.
+
+ABNAHME
+- Statische Dateidiff-, Link-, Versionierungs- und Cache-Kontrolle
+  im GitHub-Branch durchfuehren.
+- PHP-Tests und vollstaendigen Server-Preflight nicht als bestanden
+  deklarieren, bevor diese wirklich ausgefuehrt wurden.
+
+VOR DEM MERGE
+  python3 scripts/version-merge-check.py --base-version 0.6.66
+  python3 scripts/cache-bust.py --verify
+  php scripts/profile-reference-selftest.php
+  php scripts/image-reference-consistency-selftest.php
+  php scripts/image-gen-selftest.php
+  php scripts/composer-intent-selftest.php
+  Vollstaendiger Preflight im eigentlichen Installationsmodus.
+Danach Merge nach main und Update ueber den integrierten Updater.
