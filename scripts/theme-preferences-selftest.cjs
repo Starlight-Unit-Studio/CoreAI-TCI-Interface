@@ -86,6 +86,7 @@ function fixture(store, initiallyDark, blockedStorage) {
 const first = fixture();
 assert.equal(first.prefs.load().theme, 'system');
 assert.equal(first.prefs.load().sendKey, 'enter', 'existing accounts still use Enter to send');
+assert.equal(first.prefs.load().uiLanguage, 'auto', 'interface language defaults to browser detection');
 assert.equal(first.attributes['data-coreui-theme'], 'light');
 assert.equal(first.attributes['data-coreui-theme-choice'], 'system');
 first.changeOS(true);
@@ -146,7 +147,7 @@ for (const name of ['system', 'light', 'dark']) {
 assert.match(settings, /themeOptions\.forEach\(function \(option\)/);
 assert.match(settings, /value\.theme = selected \? selected\.value/);
 assert.match(settings, /preferences\.reset\(\)/);
-assert.match(settings, /sendKey: oldSendKey/, 'Appearance reset preserves the general send shortcut');
+assert.match(settings, /sendKey: prior.sendKey/, 'Appearance reset preserves the general send shortcut');
 
 // The stylesheet is loaded everywhere. No global inversion is permitted.
 for (const file of ['index.html', 'login.html', 'app.html', 'settings.html',
