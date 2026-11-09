@@ -307,8 +307,9 @@ const smallText = page => page.evaluate(() => {
     await page.waitForFunction(() => !document.getElementById('settingsAdminShortcut').hidden);
     assert.equal(await page.locator('#adminLinkGroup').isHidden(), false,
       'owner still has the category link');
-    await page.click('#settingsAdminShortcut');
-    await page.waitForFunction(() => !document.getElementById('adminNavGroup').hidden);
+    // The click navigates to another page: wait for it first, then for its content.
+    await Promise.all([page.waitForURL(/\/admin\/index\.html/), page.click('#settingsAdminShortcut')]);
+    await page.waitForFunction(() => document.getElementById('adminNavGroup') && !document.getElementById('adminNavGroup').hidden);
     assert.match(page.url(), /\/admin\/index\.html/,
       'header opens the separate, authorized Admin Core');
     assert.deepEqual(errors, []);
