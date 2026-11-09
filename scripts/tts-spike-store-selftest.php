@@ -125,11 +125,11 @@ foreach (['config/nginx.conf.template', 'config/runtime/nginx.conf.template'] as
   $closed = preg_match('#location ~ \^/\(\?:([a-z|]+)\)\(\?:/\|\$\) \{#', $read($nginx), $m) === 1 ? explode('|', $m[1]) : [];
   tts_test(in_array('var', $closed, true) && in_array('tools', $closed, true), $nginx . ' keeps var/ and tools/ closed');
 }
-$settings = $read('settings.html');
+$settings = $read('admin/index.html');
 tts_test(str_contains($settings, '<section class="settings-panel cfg-card wide green tts-card" id="ttsSamplesCard" aria-labelledby="adminTtsTitle" hidden>'), 'card hidden until the Inhaber loads it');
 tts_test(strpos($settings, 'id="ttsSamplesCard"') > strpos($settings, 'id="view-admin-betrieb"') && strpos($settings, 'id="ttsSamplesCard"') < strpos($settings, 'id="view-admin-memory"'),
   'card under Admin Core > Betrieb');
-tts_test((bool)preg_match('~<script src="\./js/coreui-voice-samples\.js\?v=\d+"></script>~', $settings), 'script loaded');
+tts_test((bool)preg_match('~<script src="\.\./js/coreui-voice-samples\.js\?v=\d+"></script>~', $settings), 'script loaded');
 tts_test(str_contains($settings, '<code>sudo bash /opt/ember-coreui/scripts/tts-spike.sh</code>'), 'how to start the test');
 
 // Clean up.
