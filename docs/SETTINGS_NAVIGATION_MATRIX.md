@@ -1,6 +1,6 @@
 # CoreAI settings information architecture
 
-Current foundation: CoreAI 0.6.75 (09 November 2026).
+Current foundation: CoreAI 0.6.76 (09 November 2026).
 
 This file is a development map, **not a claim that every visible category works**.
 Navigation, search, swipe-in mobile drawer, desktop collapse and header Expert control work. A
@@ -53,9 +53,21 @@ has an authenticated API, UI tests and a separate release.
 | Category | Status | Access |
 | --- | --- | --- |
 | System | Existing | Available normally, including owner-only updater |
-| AI profile (KI-Profil) | Existing | System prompt, token budget, temperature, provider, answer language and context window. Technical fields remain under Expert. Memory context limit is on Memory. |
+| AI profile (KI-Profil) | Existing | Main language and smart context slider (including Core default and memory estimate) are normal. Advanced system prompt editing, raw token budget, raw temperature and provider path remain Expert. Memory fact-limit is on Memory. |
 | Knowledge (Wissen) | Existing | Always visible. Existing knowledge controls and their saved data remain unchanged. |
 | Memory | Existing | Memory enable/disable, context-fact limit (Expert), stored facts and fact relevance (Expert). Its Save uses the existing AI settings API and preserves unsaved changes on unrelated pages. |
+
+**Classification rule for all future pages:** The settings shown in the
+user-supplied ChatGPT reference screenshots are ordinary, always-visible
+settings. Our own controls are also ordinary when a nontechnical person can
+understand and use them without raw model parameters. Examples: Denkaufwand,
+automatic higher Core, UI/answer language, voice, display and playback toggles,
+and the context window's guided slider. **Expert** is for direct low-level,
+code/runtime tuning: raw numeric parameters such as token count, temperature
+and a future explicit numeric `num_ctx` input, provider internals, arbitrary
+system instructions and numeric fact-relevance weights. The guided `num_ctx`
+slider is not such a raw input, even though it saves a context choice.
+No raw numeric `num_ctx` input is being added in 0.6.76.
 
 Expert settings is a browser-local **field visibility** preference, not
 an authentication factor or tool permission. It never hides entire categories,
