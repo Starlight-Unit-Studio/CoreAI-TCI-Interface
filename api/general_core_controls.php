@@ -124,7 +124,8 @@ function coreui_general_complex_text(string $message): bool {
   if ($text === '') return false;
   $hasCode = preg_match('~```|(?:^|\n)\s*(?:function |class |CREATE TABLE |SELECT .+ FROM )~i', $text) === 1;
   $requestsWork = preg_match('~\b(?:analysier\w*|analys[ei]s|refactor\w*|debug\w*|implement\w*|architektur|architecture|komplex\w*|mehrstufig\w*|research|recherchier\w*|beweis\w*|mathematisch\w*)\b~iu', $text) === 1;
-  return ($hasCode && $requestsWork) || ($requestsWork && mb_strlen($text, 'UTF-8') >= 240);
+  $length = function_exists('mb_strlen') ? mb_strlen($text, 'UTF-8') : strlen($text);
+  return ($hasCode && $requestsWork) || ($requestsWork && $length >= 240);
 }
 
 /**
