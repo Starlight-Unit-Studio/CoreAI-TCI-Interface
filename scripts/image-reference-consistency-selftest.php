@@ -110,21 +110,21 @@ ref_test(str_contains($compact, 'EXACT SAME')
 
 // 0.6.53: the compact form, including multi-reference and account
 // overlays, must never discard the identity when the prompt budget is small.
-$joint = coreui_image_reference_prompt('Ember in a new room', 'custom:' . str_repeat('a', 32), $one, 900);
+$joint = coreui_image_reference_prompt('Mara in a new room', 'custom:' . str_repeat('a', 32), $one, 900);
 ref_test(mb_strlen($joint) <= 900
   && str_contains($joint, 'EXACT SAME')
   && str_contains($joint, 'ACCOUNT PORTRAIT:')
   && str_contains($joint, 'MULTI-REFERENCE:')
   && str_contains($joint, 'Do not swap faces')
-  && str_ends_with($joint, 'Ember in a new room'),
+  && str_ends_with($joint, 'Mara in a new room'),
   'combined custom portrait and uploaded reference survive compact budgeting');
-$minimal = coreui_image_reference_prompt('Ember in a new room', 'custom:' . str_repeat('a', 32), $one, 480);
+$minimal = coreui_image_reference_prompt('Mara in a new room', 'custom:' . str_repeat('a', 32), $one, 480);
 ref_test(mb_strlen($minimal) <= 480
   && str_contains($minimal, 'EXACT SAME')
   && str_contains($minimal, '1:1')
   && str_contains($minimal, 'MULTI-REFERENCE:')
   && str_contains($minimal, 'ACCOUNT PORTRAIT:')
-  && str_ends_with($minimal, 'Ember in a new room'),
+  && str_ends_with($minimal, 'Mara in a new room'),
   'minimum fallback retains identity and multiple source contract');
 
 // 0.6.52 reference consistency.
@@ -173,7 +173,7 @@ ref_test(!str_contains(coreui_image_reference_prompt('a fox', null, [], 1200), '
 // samples affect rendering style only. Custom account portraits stay separate.
 $canonicalGallery = coreui_image_reference_prompt('Mara on her ship bridge', 'default', [], 1200);
 $shortGallery = coreui_image_reference_prompt('Mara as a hologram', 'default', [], 480);
-$customNoGallery = coreui_image_reference_prompt('Ember in a new room',
+$customNoGallery = coreui_image_reference_prompt('Mara in a new room',
   'custom:' . str_repeat('a', 32), [], 1200);
 ref_test(str_contains($canonicalGallery, 'SAME woman')
   && (str_contains($canonicalGallery, 'STYLE-ONLY') || str_contains($canonicalGallery, 'STYLE ONLY'))
@@ -187,7 +187,7 @@ ref_test(str_contains($shortGallery, 'TCI: Mara Thorne')
   'minimal prompt retains same-person gallery contract and the original scene');
 ref_test(!str_contains($customNoGallery, 'CANONICAL MARA IDENTITY PHOTOS')
   && str_contains($customNoGallery, 'ACCOUNT PORTRAIT')
-  && str_ends_with($customNoGallery, 'Ember in a new room'),
-  'custom Ember visual identity cannot be overridden by official Mara images');
+  && str_ends_with($customNoGallery, 'Mara in a new room'),
+  'custom account portrait cannot be overridden by the canonical Mara gallery');
 
 echo "Reference consistency selftest OK: identity, subject, style, multi-reference and prompt limits.\n";
