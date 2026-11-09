@@ -176,10 +176,21 @@ const shown = (page, id) => page.isVisible('#' + id);
 
     // --- Without SMTP: E-Mail options greyed --------------------------------------------------------
     ({context, page, errors, server} = await open(browser, {mail: false}));
-    assert.match(await page.textContent('#notifyMailStatus'), /kein E-Mail-Versand eingerichtet/);
+    assert.equal(await page.textContent('#notifyMailStatus'),
+      'Auf diesem Server ist kein E-Mail-Versand eingerichtet. E-Mail-Benachrichtigungen werden deshalb nicht verschickt.');
+    assert.equal(await page.isVisible('#notifyMailSetup'), false, '0.6.82: only the Inhaber gets the Admin Core link');
     const options = await page.$$eval('#notify-answers option', o => o.map(x => [x.value, x.disabled]));
     assert.deepEqual(options, [['', false], ['push', false], ['email', true], ['push,email', true]], 'E-Mail choices greyed');
     assert.equal(await page.isDisabled('#notify-security option[value="email"]'), false, 'a saved E-Mail choice stays visible');
+    await context.close();
+
+    // 0.6.82: the Inhaber without SMTP is pointed to Admin Core > Betrieb.
+    ({context, page, errors, server} = await open(browser, {mail: false, owner: true}));
+    assert.equal(await page.textContent('#notifyMailStatus'),
+      'Auf diesem Server ist kein E-Mail-Versand eingerichtet. Als Inhaber kannst du den SMTP-Server in Admin Core unter Betrieb eintragen.');
+    assert.equal(await page.isVisible('#notifyMailSetup'), true, 'link for the Inhaber');
+    assert.equal(await page.textContent('#notifyMailSetup'), 'IN ADMIN CORE EINRICHTEN');
+    assert.equal(await page.getAttribute('#notifyMailSetup', 'href'), 'admin/index.html#admin-betrieb');
     await context.close();
 
     // --- Every reason Push is not possible ----------------------------------------------------------------

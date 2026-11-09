@@ -39,6 +39,7 @@ coreui_define('STU_SESSION_COOKIE_PATH', coreui_env('COREUI_COOKIE_PATH'));
 coreui_define('STU_MAIL_ENABLED', coreui_env_bool('COREUI_MAIL_ENABLED', false));
 coreui_define('STU_SMTP_HOST', coreui_env('COREUI_SMTP_HOST'));
 coreui_define('STU_SMTP_PORT', (int)coreui_env('COREUI_SMTP_PORT', '587'));
+coreui_define('STU_SMTP_SECURITY', coreui_env('COREUI_SMTP_SECURITY'));
 coreui_define('STU_SMTP_USER', coreui_env('COREUI_SMTP_USER'));
 coreui_define('STU_SMTP_PASS', coreui_env('COREUI_SMTP_PASS'));
 coreui_define('STU_MAIL_FROM', coreui_env('COREUI_MAIL_FROM'));

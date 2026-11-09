@@ -1,0 +1,58 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.82
+Datum: 09.11.2026
+Basis: main 0.6.81 nach PR #234 (abb633c)
+Branch: claude/bold-galileo-myoyi0
+
+AUFTRAG
+Betreiber: "sollten wir nicht auch manuelle smtp Konfiguration ermoeglichen?"
+0.6.81 war bereits gemergt, daher eigene Version.
+
+BEFUND
+- E-Mail ging nur ueber COREUI_SMTP_* bzw. STU_SMTP_* in api/config.local.php. Die
+  Docker-Installation gibt dem PHP-Container nur COREUI_PHP_PORT als Umgebung; die
+  Konfiguration kommt aus api/config.local.php, das schreibgeschuetzt eingebunden ist.
+  E-Mail-Benachrichtigungen waren damit praktisch nicht nutzbar.
+- Der alte Mailer konnte Port 465 (SSL/TLS) nicht, verlangte immer eine Anmeldung und
+  erzeugte CR CR LF in den Kopfzeilen (str_replace auf bereits CRLF-Text).
+
+UMGESETZT
+- api/mail_settings.php (neu): wirksame Konfiguration (Server zuerst, sonst Admin Core),
+  Pruefung der Eingaben, Versiegelung des Passworts (AES-256-GCM, HKDF aus STU_DB_PASS
+  plus Salz je Speichern), Speichern in stu_app_settings 'mail_smtp' ohne Datei-
+  Ausweichweg, oeffentliche Sicht ohne Passwort, deutsche Fehlertexte.
+  "none" nur fuer lokale Ziele (Loopback, private IP, Name ohne Punkt, .local, .lan,
+  .internal, .home.arpa) und ohne Benutzer/Passwort.
+- api/mailer.php: stu_mail_enabled(?PDO), stu_send_mail(..., ?array $cfg); starttls/tls/
+  none, AUTH LOGIN nur mit Benutzer, Date, Message-ID, Punkt-Verdopplung nach RFC 5321.
+- api/config.php: STU_SMTP_SECURITY (COREUI_SMTP_SECURITY), optional.
+- api/admin.php: GET mail_settings, POST mail_settings_save, mail_settings_delete,
+  mail_test (nur Inhaber, CSRF, Audit ohne Passwort). settings_save-Liste unveraendert.
+- admin/index.html + js/coreui-admin-mail.js + css/settings.css: Karte "SMTP-Server" unter
+  Betrieb, fuer Admins verborgen (Server antwortet owner_only).
+- settings.html + js/coreui-notify-settings.js: Link "IN ADMIN CORE EINRICHTEN" fuer den
+  Inhaber, wenn kein Versand eingerichtet ist.
+- api/notifications.php, api/notifications_store.php: Verfuegbarkeit und Versand mit der
+  wirksamen Konfiguration (gleiche PDO).
+
+TESTS (hier ausgefuehrt)
+- php scripts/mail-settings-selftest.php (echte SMTP-Sitzung gegen lokalen Testserver,
+  selbstsigniertes Zertifikat abgelehnt)
+- node scripts/admin-mail-ui-selftest.cjs (Bildschirmfotos angesehen)
+- node scripts/notifications-ui-selftest.cjs (Inhaber-Link)
+- volle Testreihe mit MariaDB, php -l, Sprachtests, cache-bust, version-merge-check
+
+NICHT HIER GEPRUEFT
+- Versand ueber einen echten oeffentlichen SMTP-Anbieter (kein Zugang hier). STARTTLS und
+  AUTH LOGIN sind gegenueber vorher unveraendert.
+
+BEKANNT / BEWUSST SO
+- Die Passwort-Reset-Mail (auth.php forgot) bleibt an COREUI_MAIL_ENABLED gebunden und
+  wurde nicht angefasst.
+- Aendert sich das Datenbank-Passwort des Servers, ist das gespeicherte SMTP-Passwort nicht
+  mehr lesbar; Admin Core meldet das und verlangt es neu.
+
+NACH DEM MERGE (Betreiber)
+1. Update unter Einstellungen > System > CoreAI Update.
+2. Admin Core > Betrieb > E-Mail-Versand: Server, Benutzer, Passwort, Absender eintragen,
+   SMTP SPEICHERN, dann TESTMAIL SENDEN.
+3. Einstellungen > Benachrichtigungen: E-Mail-Optionen sind jetzt waehlbar.

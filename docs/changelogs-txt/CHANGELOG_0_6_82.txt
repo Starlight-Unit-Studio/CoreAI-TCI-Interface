@@ -1,0 +1,22 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.82
+09.11.2026
+
+- Admin Core > Betrieb > E-Mail-Versand (nur Inhaber): SMTP-Server, Verschluesselung,
+  Port, Benutzer, Passwort, Absenderadresse und -name eintragen; Speichern, Testmail an
+  die eigene Adresse, Entfernen. Bisher ging E-Mail nur ueber COREUI_SMTP_*, das die
+  Docker-Installation gar nicht an PHP weitergibt.
+- Verschluesselung: STARTTLS (587), SSL/TLS (465, neu) oder keine. Ohne Verschluesselung
+  nur zu einem Server auf diesem Rechner oder im lokalen Netz und dann ohne Anmeldung.
+  Zertifikate werden immer geprueft; selbstsignierte werden abgelehnt.
+- Passwort: AES-256-GCM, Schluessel aus dem Datenbank-Passwort des Servers plus Salz.
+  Wird nie an die Seite zurueckgegeben; leeres Feld behaelt es, aber nur fuer denselben
+  Server und Benutzer. Nach geaendertem Datenbank-Passwort: Hinweis, neu eingeben.
+- Serverkonfiguration (api/config.local.php oder COREUI_SMTP_*) hat Vorrang und ist in
+  Admin Core nur sichtbar. Neu: COREUI_SMTP_SECURITY (starttls, tls, none).
+- Verstaendliche Fehler bei der Testmail; Audit ohne Passwort.
+- Mailer: Versand ohne Anmeldung moeglich (Relay), Punkt-Verdopplung und CRLF korrigiert,
+  Date und Message-ID ergaenzt, Empfaenger geprueft.
+- Benachrichtigungen: ohne SMTP fuehrt fuer den Inhaber ein Link zu Admin Core.
+- Tests: mail-settings-selftest.php (mit echter SMTP-Sitzung gegen einen lokalen
+  Testserver), admin-mail-ui-selftest.cjs; notifications-ui-selftest.cjs ergaenzt.
+  Keine Migration, keine Aenderung an Cores, Modelfile, FIFO oder Rechten.

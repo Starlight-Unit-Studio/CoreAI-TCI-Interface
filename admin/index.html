@@ -5,14 +5,14 @@
   <meta http-equiv="Content-Language" content="de-DE" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#f0f4fa" />
-  <meta name="application-version" content="0.6.81" />
+  <meta name="application-version" content="0.6.82" />
   <meta name="application-name" content="CoreAI: TCI Interface" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface - Admin Core</title>
   <link rel="stylesheet" href="../css/console.css?v=0488039108136251966969049" />
-  <link rel="stylesheet" href="../css/settings.css?v=0384875955586593764931136" />
+  <link rel="stylesheet" href="../css/settings.css?v=0413368338927858783483896" />
   <link rel="stylesheet" href="../css/coreui-theme.css?v=0697431397907702126637895" />
-  <script src="../js/console-gate.js?v=1012195392199562818994250"></script>
+  <script src="../js/console-gate.js?v=0373376787778296921237843"></script>
   <script src="../js/coreui-preferences.js?v=0004145186774094057353830"></script>
   <script src="../js/coreui-ui-language.js?v=0850224961537363286304733"></script>
 </head>
@@ -60,7 +60,7 @@
       <div class="settings-title-block"><span class="settings-rune" aria-hidden="true">⌬</span>
         <div><div class="settings-kicker">TERRANISCHE SYSTEMKONFIGURATION</div><h1>ADMIN CORE</h1></div>
       </div>
-      <div class="settings-version">COREAI: TCI INTERFACE // v0.6.81</div>
+      <div class="settings-version">COREAI: TCI INTERFACE // v0.6.82</div>
     </header>
     <section class="cfg-admin-auth-gate settings-panel" id="adminAccessGate" role="status" aria-live="polite">
       <h2 id="adminAccessMessage">Berechtigung wird geprüft ...</h2>
@@ -260,6 +260,29 @@
               <label class="settings-field" for="externalBaseUrl"><span><strong>HTTPS BASE-URL</strong></span><input id="externalBaseUrl" type="url" placeholder="https://api.example.com/v1" /></label>
               <label class="settings-field" for="externalModel"><span><strong>CORE-NAME</strong></span><input id="externalModel" type="text" maxlength="160" /></label>
             </section>
+            <section class="settings-panel cfg-card wide mail-card" id="mailSmtpCard" aria-labelledby="adminMailTitle" hidden>
+              <header class="settings-panel-head">
+                <span class="settings-panel-glyph" aria-hidden="true">✉</span>
+                <div><span>E-MAIL-VERSAND</span><h3 id="adminMailTitle">SMTP-Server</h3></div>
+              </header>
+              <p class="cfg-card-note">Damit CoreAI E-Mail-Benachrichtigungen verschicken kann. Das Passwort wird verschlüsselt gespeichert, nie wieder angezeigt und bleibt erhalten, solange das Feld leer bleibt. Steht der Versand in der Serverkonfiguration, gilt diese und ist hier nur zu sehen.</p>
+              <p class="mail-status" id="mailStatus" role="status" aria-live="polite">E-Mail-Versand wird geprüft …</p>
+              <form class="admin-form mail-form" id="mailForm" novalidate>
+                <label class="settings-field">SMTP-SERVER<input id="mailHost" type="text" maxlength="253" autocomplete="off" spellcheck="false" placeholder="smtp.example.com" /></label>
+                <label class="settings-field">VERSCHLÜSSELUNG<select id="mailSecurity"><option value="starttls">STARTTLS (Port 587)</option><option value="tls">SSL/TLS (Port 465)</option><option value="none">Keine (nur lokales Netz)</option></select></label>
+                <label class="settings-field">PORT<input id="mailPort" type="number" min="1" max="65535" step="1" placeholder="587" /></label>
+                <label class="settings-field">BENUTZER<input id="mailUser" type="text" maxlength="200" autocomplete="off" spellcheck="false" /></label>
+                <label class="settings-field">PASSWORT<input id="mailPass" type="password" maxlength="300" autocomplete="new-password" /></label>
+                <label class="settings-field">ABSENDERADRESSE<input id="mailFrom" type="email" maxlength="200" autocomplete="off" spellcheck="false" placeholder="coreai@example.com" /></label>
+                <label class="settings-field">ABSENDERNAME<input id="mailFromName" type="text" maxlength="100" placeholder="CoreAI: TCI Interface" /></label>
+                <div class="form-actions wide">
+                  <button class="settings-action" id="mailSave" type="submit">SMTP SPEICHERN</button>
+                  <button class="settings-action" id="mailTest" type="button">TESTMAIL SENDEN</button>
+                  <button class="settings-action compact danger" id="mailDelete" type="button" hidden>ENTFERNEN</button>
+                  <span class="form-hint" id="mailHint"></span>
+                </div>
+              </form>
+            </section>
             <section class="settings-panel cfg-card wide green tts-card" id="ttsSamplesCard" aria-labelledby="adminTtsTitle" hidden>
               <header class="settings-panel-head">
                 <span class="settings-panel-glyph" aria-hidden="true">♪</span>
@@ -400,6 +423,7 @@
   <script src="../js/coreui-settings-tabs.js?v=0131180580469642779294886"></script>
   <script src="../js/admin.js?v=0656856878075217094345926"></script>
   <script src="../js/coreui-image-samples.js?v=0039842433260514192405892"></script>
+  <script src="../js/coreui-admin-mail.js?v=0629149284541751668734734"></script>
   <script src="../js/coreui-voice-samples.js?v=0351976589027105808587511"></script>
 </body>
 </html>

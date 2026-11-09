@@ -1,5 +1,17 @@
 # CoreAI: TCI Interface
 
+## 0.6.82 - 09.11.2026
+
+- **Manual SMTP setup in Admin Core** (owner only): **Admin Core > Betrieb > E-Mail-Versand** holds server, encryption, port, user, password, sender address and sender name, with **SMTP SPEICHERN**, **TESTMAIL SENDEN** (to the owner's own address) and **ENTFERNEN**. Until now E-Mail only worked through `COREUI_SMTP_*`, which the Docker installation does not even pass to PHP, so E-Mail notifications were effectively unavailable.
+  - **Encryption:** STARTTLS (587), SSL/TLS from the first byte (465, new; before, port 465 could not work) or none. Unencrypted only to a server on this machine or in the private network (loopback and private addresses, Docker service names, `.local`, `.lan`, `.internal`) and then without any login, so credentials never travel in plain text. Certificates are always verified; a self-signed certificate is refused.
+  - **Password:** stored with AES-256-GCM, key derived (HKDF) from the server's database password plus a random salt per save, so a database copy alone does not reveal it. It is never sent back to the page; an empty field keeps it, but only for the same server and the same user (a stored password is never sent to a different server). If the database password changes, Admin Core says the password is unreadable and asks for it again.
+  - **The server configuration wins:** SMTP set in `api/config.local.php` or `COREUI_SMTP_*` is shown read-only and cannot be changed or removed in Admin Core. New optional `COREUI_SMTP_SECURITY` (`starttls`, `tls`, `none`); port 465 means SSL/TLS by default.
+  - Plain-German errors for the test mail (no connection, TLS failed, login rejected, sender or recipient rejected, no answer). Audit entries for save, remove and test, never with the password.
+- **Mailer** (`api/mailer.php`) uses the effective configuration: SMTP without login is possible (a relay that trusts the server), dot-stuffing and CRLF fixed (the old code turned every header line ending into CR CR LF, dropped the CR before a stuffed dot and added an empty line at the end), `Date` and `Message-ID` headers added, the recipient is checked.
+- **Settings > Benachrichtigungen:** without SMTP the owner gets a link **IN ADMIN CORE EINRICHTEN** to the new card; other accounts keep the plain hint.
+- Tests: new `mail-settings-selftest.php` (input rules, local-only plain mode, sealing and tampering, password never shown and kept only for the same server and user, server configuration precedence in a separate process, SQLite saving/keeping/removing/unreadable, a real SMTP session against a local test server with headers, dot-stuffing, 550 and refused connections, a self-signed certificate refused, wiring) and `admin-mail-ui-selftest.cjs` (Chromium: setup, port per encryption, exact save with CSRF, keeping the password, unsaved changes before the test, test success and SMTP error, input errors, removing, server configuration read-only, unreadable password, hidden for Admins, phone). `notifications-ui-selftest.cjs` checks the owner link. Both preflights.
+- No database migration (stored in `stu_app_settings`), no change to Cores, Modelfile, FIFO or account rights. The password-reset mail stays controlled by `COREUI_MAIL_ENABLED`.
+
 ## 0.6.81 - 09.11.2026
 
 - **Settings > Benachrichtigungen** is a real page now, modeled on the ChatGPT reference (one choice per category: Aus, Push, E-Mail, Push und E-Mail), in CoreAI style:

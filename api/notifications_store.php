@@ -175,14 +175,14 @@ function coreui_push_vapid(PDO $pdo): array {
   return $found;
 }
 
-/** Whether E-Mail can be sent on this server (SMTP configured). */
-function coreui_notify_mail_available(): bool {
+/** Whether E-Mail can be sent on this server (SMTP from the server or from Admin Core, 0.6.82). */
+function coreui_notify_mail_available(?PDO $pdo = null): bool {
   if (!function_exists('stu_mail_enabled')) {
     $file = __DIR__ . '/mailer.php';
     if (!is_file($file)) return false;
     require_once $file;
   }
-  try { return stu_mail_enabled(); } catch (Throwable $e) { return false; }
+  try { return stu_mail_enabled($pdo); } catch (Throwable $e) { return false; }
 }
 
 /** The VAPID subject: the configured sender, the public URL or a neutral fallback (pure). */
@@ -252,7 +252,7 @@ function coreui_notify_dispatch(PDO $pdo, int $uid, string $category, array $mes
         . "\n\n-- \nCoreAI: TCI Interface. Diese Benachrichtigung kannst du unter Einstellungen > Benachrichtigungen ändern.";
       try {
         if ($mail !== null) $mail($address, $payload['title'], $text);
-        elseif (coreui_notify_mail_available()) stu_send_mail($address, $payload['title'], $text);
+        elseif (coreui_notify_mail_available($pdo)) stu_send_mail($address, $payload['title'], $text, coreui_mail_effective($pdo));
         else throw new RuntimeException('mail_not_configured');
         $result['email'] = true;
       } catch (Throwable $e) {

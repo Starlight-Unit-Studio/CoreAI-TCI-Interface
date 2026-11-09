@@ -42,7 +42,7 @@ function coreui_notify_state(PDO $pdo, int $uid, bool $owner, string $address): 
     'prefs' => coreui_notify_prefs($pdo, $uid),
     'categories' => coreui_notify_categories(),
     'push' => ['available' => $pushReady, 'public_key' => $public, 'devices' => coreui_push_devices($pdo, $uid)],
-    'email' => ['available' => coreui_notify_mail_available(), 'address' => filter_var($address, FILTER_VALIDATE_EMAIL) ? $address : ''],
+    'email' => ['available' => coreui_notify_mail_available($pdo), 'address' => filter_var($address, FILTER_VALIDATE_EMAIL) ? $address : ''],
     'answer_seconds' => COREUI_NOTIFY_ANSWER_SECONDS,
     'csrf_token' => stu_csrf_token(),
   ];
