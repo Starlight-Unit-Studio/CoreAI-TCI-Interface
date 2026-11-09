@@ -1,6 +1,7 @@
-/* CoreAI 0.6.71: settings navigation only.
-   Search, mobile drawer and browser-local expert visibility do not grant
-   permissions or activate unfinished backend features. */
+/* CoreAI 0.6.71: global per-control Expert toggle and category navigation.
+   Expert mode only changes visibility of elements tagged data-expert. All
+   categories and their stored values remain available; backend rights are
+   always enforced independently. */
 (function (root) {
   'use strict';
   function create(doc, win) {
@@ -12,7 +13,7 @@
     var search = doc.getElementById('settingsNavSearch');
     var noResults = doc.getElementById('settingsMenuSearchStatus');
     var expertToggle = doc.getElementById('settingsExpertToggle');
-    var expertGroup = doc.getElementById('cfgExpertGroup');
+    var expertFields = Array.prototype.slice.call(doc.querySelectorAll('[data-expert]'));
     var adminGroup = doc.getElementById('adminLinkGroup');
     var adminRoleGroup = doc.getElementById('adminNavGroup');
     var groups = Array.prototype.slice.call(nav.querySelectorAll('.cfg-nav-group'));
@@ -29,7 +30,8 @@
       catch (error) { /* storage denied: this visit still works */ }
     }
     function reflect() {
-      if (expertGroup && expertToggle) expertGroup.hidden = !expertToggle.checked;
+      var enabled = expertToggle ? expertToggle.checked : stored();
+      expertFields.forEach(function (field) { field.hidden = !enabled; });
       if (adminGroup && adminGroup.dataset.authorized !== '1') adminGroup.hidden = true;
       if (adminRoleGroup && adminRoleGroup.dataset.authorized !== '1') adminRoleGroup.hidden = true;
       filter();
@@ -38,7 +40,6 @@
       var query = search ? String(search.value || '').trim().toLocaleLowerCase() : '';
       var matches = 0;
       groups.forEach(function (group) {
-        var expertOff = group === expertGroup && expertToggle && !expertToggle.checked;
         var adminOff = (group === adminGroup || group === adminRoleGroup)
           && group.dataset.authorized !== '1';
         var tabs = Array.prototype.slice.call(group.querySelectorAll('.cfg-tab'));
@@ -46,10 +47,10 @@
         tabs.forEach(function (tab) {
           var text = String(tab.textContent || '').toLocaleLowerCase();
           var found = !query || text.indexOf(query) !== -1;
-          tab.hidden = !found || expertOff || adminOff;
+          tab.hidden = !found || adminOff;
           if (!tab.hidden) visible++;
         });
-        group.hidden = !!expertOff || !!adminOff || (!!query && visible === 0);
+        group.hidden = !!adminOff || (!!query && visible === 0);
         matches += visible;
       });
       if (noResults) noResults.hidden = !query || matches > 0;
@@ -69,13 +70,7 @@
       expertToggle.addEventListener('change', function () {
         persist(expertToggle.checked);
         reflect();
-        var tabs = win.CoreAISettingsTabs && win.CoreAISettingsTabs.instance;
-        if (!expertToggle.checked && tabs && /^(ki-profil|wissen|memory)$/.test(tabs.current())) {
-          tabs.show('start');
-        } else if (expertToggle.checked && tabs && typeof tabs.refresh === 'function') {
-          // A bookmarked advanced page can open after its user-enabled group appears.
-          tabs.refresh();
-        }
+        // Expert mode never changes the active page or its saved values.
       });
     }
     if (search) search.addEventListener('input', filter);
@@ -98,12 +93,9 @@
     reflect();
     return {
       isExpert: function () { return !!(expertToggle && expertToggle.checked); },
-      revealCategory: function (name) {
+      revealCategory: function () {
+        // A quick link can override a search filter, not the expert preference.
         if (search && search.value) search.value = '';
-        if (expertToggle && /^(ki-profil|wissen|memory)$/.test(name) && !expertToggle.checked) {
-          expertToggle.checked = true;
-          persist(true);
-        }
         reflect();
       },
       refresh: reflect,
