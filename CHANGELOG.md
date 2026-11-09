@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.6.74 - 09.11.2026
+
+- Repair noisy SQLite-only offline preflights: the application-settings installer now uses SQLite's portable `CREATE TABLE` syntax when the PDO connection is SQLite, and SQLite-native `ON CONFLICT` for its value updates. MariaDB's existing `ON UPDATE`, `ENGINE=InnoDB` and `ON DUPLICATE KEY UPDATE` remain unchanged.
+- The abuse-guard selftest intercepts its intentionally missing-table error locally instead of repeatedly appending `abuse_guard_unavailable` to the operational error log. It explicitly verifies that SQLite settings were stored and retrieved and that missing migration 018 is still detected. No real safety checks are disabled.
+- Correct the private RAG-Lite selftest to check both complete prompt predicates: private Console channel, the account's `knowledge_search` permission, and the account-scoped `$uid` lookup. The earlier literal adjacency assertion had become obsolete after the personalization guard was added and incorrectly failed.
+- Preserve production MariaDB authorization, guest quota and rate limiting, both existing prompt pipelines, model/Modelfile behavior, global FIFO and data. No new database migration or runtime service.
+- A cancelled stream with cURL callback abort (42) is distinct from an unexpected completion failure; successful upload/worker events remain informational. Live preflight must still be executed before merging.
+
 ## 0.6.73 - 09.11.2026
 
 - Finish the Chat-inspired settings layout: a left-edge swipe opens the mobile categories drawer, a swipe inside closes it, and desktop navigation can collapse to give the active settings page all available space. Escape, backdrop, keyboard access and 25 deep-linked categories remain.

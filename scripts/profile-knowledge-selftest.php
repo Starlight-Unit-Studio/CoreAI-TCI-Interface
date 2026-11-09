@@ -20,9 +20,16 @@ $pdo = stu_pdo();
 coreui_pk_assert(coreui_profile_schema_ready($pdo), 'Migration 004 Profil-Schema fehlt.');
 coreui_pk_assert(coreui_knowledge_schema_ready($pdo), 'Migration 004 Knowledge-Schema fehlt.');
 $chatSource = (string)file_get_contents(__DIR__ . '/../api/chat.php');
+// The predicate gained a per-account knowledge_search switch. Checking for
+// two adjacent tokens incorrectly reported a breach although BOTH prompt
+// paths still check channel, permission and the account-scoped lookup.
+$privateRagGuard = <<<'REGEX'
+~\$privateKnowledgeBlock\s*=\s*\$channel\s*===\s*'console'\s*&&\s*\(\(\$GLOBALS\['COREUI_PERSONALIZATION_CONTEXT'\]\['knowledge_search'\]\s*\?\?\s*true\)\s*===\s*true\)\s*&&\s*function_exists\('coreui_private_knowledge_block'\)\s*\?\s*coreui_private_knowledge_block\(\$pdo,\s*\$uid,~s
+REGEX;
+$guardMatches = [];
 coreui_pk_assert(
-  substr_count($chatSource, "\$channel === 'console' && function_exists('coreui_private_knowledge_block')") >= 2,
-  'Privates RAG-Lite ist nicht an beiden Promptpfaden hart auf den privaten Console-Kanal begrenzt.'
+  preg_match_all($privateRagGuard, $chatSource, $guardMatches) === 2,
+  'Private RAG-Lite muss in BEIDEN Promptpfaden auf Console, die Konto-Freigabe und die eigene Nutzer-ID begrenzt sein.'
 );
 
 $sample = str_repeat(

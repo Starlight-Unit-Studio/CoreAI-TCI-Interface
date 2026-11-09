@@ -10,6 +10,12 @@ declare(strict_types=1);
 // network rules).
 if (PHP_SAPI !== 'cli') exit(1);
 $root = dirname(__DIR__);
+// The missing-table check below deliberately triggers a recoverable error.
+// Capture it inside the isolated selftest instead of polluting production logs.
+$GLOBALS['COREUI_ABUSE_TEST_ERRORS'] = [];
+function stu__log_error(array $entry): void {
+  $GLOBALS['COREUI_ABUSE_TEST_ERRORS'][] = $entry;
+}
 require_once $root . '/api/helpers.php';
 require_once $root . '/api/guest_access.php';
 
@@ -46,6 +52,10 @@ $pdo->exec('CREATE TABLE stu_abuse_counters (k CHAR(64) NOT NULL PRIMARY KEY, wi
 guard_test(str_contains($migration, "INSERT INTO stu_schema_migrations (version) VALUES ('018_abuse_guard')"), 'migration registers itself');
 coreui_abuse_secret($pdo, str_repeat('ab', 32));
 stu_app_setting_set($pdo, 'guest_message_limit', '5');
+guard_test(stu_app_setting_get($pdo, 'guest_message_limit') === '5',
+  'SQLite settings are really stored and retrieved via PDO');
+guard_test($GLOBALS['COREUI_ABUSE_TEST_ERRORS'] === [],
+  'SQLite settings create/write emits no false maintenance installer errors');
 
 // --- Who is the visitor? -------------------------------------------------------
 $trusted = COREUI_TRUSTED_PROXIES_DEFAULT;
@@ -84,6 +94,9 @@ guard_test(coreui_abuse_count($pdo, $key, 60, 0, $t0 + 62)['n'] === 0, 'give bac
 $nothing = new PDO('sqlite::memory:');
 $nothing->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 guard_test(coreui_abuse_count($nothing, $key, 60, 1, $t0) === ['n'=>0, 'reset'=>$t0 + 60, 'ok'=>false], 'without migration 018 nobody is locked out');
+guard_test(count($GLOBALS['COREUI_ABUSE_TEST_ERRORS']) === 1
+  && ($GLOBALS['COREUI_ABUSE_TEST_ERRORS'][0]['type'] ?? '') === 'abuse_guard_unavailable',
+  'missing migration is detected once inside the test, without writing runtime logs');
 
 // --- Guests: deleting browser data does not give new messages -----------------------
 $net = static fn(string $ip): array => ['ip'=>$ip, 'source'=>'forwarded'];
