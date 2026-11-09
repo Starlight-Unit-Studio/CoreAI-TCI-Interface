@@ -1,0 +1,29 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.68
+Datum: 09.11.2026
+Basis: main 0.6.67
+Branch: feat/welcome-draft-chat-composer-stop-0668
+
+FUNKTION
+- Beim Login unsichtbarer DB-Entwurf und Willkommensansicht mit vier sendbaren Fragen.
+- Alte Chats bleiben in der Sitzungsmatrix.
+- Erster Text, erster Anhang, erste Stimmsequenz oder erste Live-Aeusserung erzeugt genau eine Sitzung.
+- Einheitlicher Composer-Button fuer Live, Senden, pulsierendes Stopp.
+- Abbruchknopf aus dem Arbeitsverlauf entfernt. Frueher Abbruch wird vorgemerkt.
+- Responsives TCI Color Kit mit Tag-, Nacht- und Reduced-Motion-Unterstuetzung.
+
+DATEIEN
+app.html; js/console-app.js; js/coreui-voice-live.js; css/console.css
+scripts/welcome-composer-ui-selftest.cjs; beide Preflights;
+VERSION; sechs HTML-Seiten; js/console-gate.js; README; CHANGELOG;
+docs/changelogs-txt/INDEX.txt; eigenes TXT-Changelog; Branding-Test.
+
+ABNAHME
+node scripts/welcome-composer-ui-selftest.cjs
+node scripts/voice-live-ui-selftest.cjs
+node scripts/terran-terminology-selftest.cjs
+node scripts/tci-language-selftest.cjs
+python3 scripts/version-merge-check.py --base-version 0.6.67
+python3 scripts/cache-bust.py --verify
+scripts/preflight.sh ODER scripts/preflight-native.sh am Installationshost
+
+Ein GitHub-PR ist kein Deployment. Ohne getestete Abnahme nicht mergen.
