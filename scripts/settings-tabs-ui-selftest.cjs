@@ -279,6 +279,19 @@ const smallText = page => page.evaluate(() => {
     assert.deepEqual(errors, []);
     await page.close();
 
+    // The Inhaber gets a visible, role-gated shortcut without scrolling the
+    // categories drawer. Following it still requires the Admin Core gate.
+    ({page, srv, errors} = await open(browser, 0, '#start'));
+    await page.waitForFunction(() => !document.getElementById('settingsAdminShortcut').hidden);
+    assert.equal(await page.locator('#adminLinkGroup').isHidden(), false,
+      'owner still has the category link');
+    await page.click('#settingsAdminShortcut');
+    await page.waitForFunction(() => !document.getElementById('adminNavGroup').hidden);
+    assert.match(page.url(), /\/admin\/index\.html/,
+      'header opens the separate, authorized Admin Core');
+    assert.deepEqual(errors, []);
+    await page.close();
+
     // The Inhaber: a single Admin Core link leads to a separate authorized page.
     ({page, srv, errors} = await openAdmin(browser, 0, '#admin-benutzer'));
     await page.waitForFunction(() => !document.getElementById('adminNavGroup').hidden);
