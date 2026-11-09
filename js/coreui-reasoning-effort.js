@@ -100,11 +100,13 @@
         render();
       }).catch(function () {
         if (seq !== state.sequence) return;
-        state.ready = false;
+        // Keep the existing binary Thinking control usable even when
+        // the model-capabilities endpoint is temporarily unreachable.
+        state.ready = !!(mode && mode.state && mode.state().loaded);
         state.available = false;
         state.levels = [];
         state.loading = false;
-        state.error = 'Core-Einstellungen momentan nicht erreichbar.';
+        state.error = 'Zusätzliche Denkstufen momentan nicht erreichbar.';
         render();
       });
     }
@@ -158,6 +160,7 @@
       if (focus && typeof trigger.focus === 'function') trigger.focus();
     }
     function open() {
+      if (mode && typeof mode.close === 'function') mode.close(false);
       menu.hidden = false;
       trigger.setAttribute('aria-expanded', 'true');
       render();
