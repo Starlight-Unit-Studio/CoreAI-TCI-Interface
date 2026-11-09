@@ -156,12 +156,12 @@
                 <p>Sprache der App-Oberfläche</p>
               </div>
               <div class="cfg-general-control">
-                <select id="generalUiLanguage" aria-describedby="generalUiLanguageNote" disabled>
-                  <option value="de">Deutsch (aktuell)</option>
-                  <option value="auto" disabled>Automatisch erkennen (geplant)</option>
-                  <option value="en" disabled>English (geplant)</option>
+                <select id="generalUiLanguage" aria-describedby="generalUiLanguageNote">
+                  <option value="auto">Automatisch erkennen</option>
+                  <option value="de">Deutsch</option>
+                  <option value="en">English (Beta)</option>
                 </select>
-                <small id="generalUiLanguageNote">Eine vollständige Oberflächenübersetzung ist noch in Vorbereitung. Die Antwortsprache stellst du im KI-Profil ein.</small>
+                <small id="generalUiLanguageNote">Die Auswahl wirkt sofort und bleibt in diesem Browser gespeichert. Englisch übersetzt zunächst die Kernnavigation und die wichtigsten Bedienelemente; weitere Texte folgen. Maras Antwortsprache bleibt separat.</small>
               </div>
             </div>
             <div class="cfg-general-row">
@@ -184,19 +184,19 @@
               </div>
               <div class="cfg-general-control cfg-general-switch">
                 <span class="settings-switch"><input id="generalHigherIntelligence" type="checkbox" disabled aria-describedby="generalHigherNote" /><i aria-hidden="true"></i></span>
-                <small id="generalHigherNote">In Vorbereitung. Der Core wird weiterhin manuell im Chat gewählt.</small>
+                <small id="generalHigherNote">Lade Kontoeinstellung ...</small>
               </div>
             </div>
             <div class="cfg-general-row" data-expert hidden>
               <div class="cfg-general-copy">
-                <label for="generalReasoningLevels">Verfügbare Reasoning-Stufen</label>
-                <p>Wähle künftig aus, welche Aufwandsstufen in der Core-Steuerung angezeigt werden.</p>
+                <label for="generalReasoningLevels">Reasoning-Aufwand</label>
+                <p>Nutze nur die Denkstufen, die dein aktuell ausgewählter Core tatsächlich unterstützt.</p>
               </div>
               <div class="cfg-general-control">
                 <select id="generalReasoningLevels" disabled aria-describedby="generalReasoningNote">
-                  <option>Modellabhängige Stufen (geplant)</option>
+                  <option value="">Core-Standard</option>
                 </select>
-                <small id="generalReasoningNote">Derzeit unterstützt CoreAI den vorhandenen Schalter „Denken an/aus“. Weitere Reasoning-Stufen sind nicht implementiert.</small>
+                <small id="generalReasoningNote">Die verfügbaren Werte werden direkt vom aktiven Ollama-Core abgefragt. Der Denk-Schalter im Chat bleibt weiterhin aktiv.</small>
               </div>
             </div>
           </section>
