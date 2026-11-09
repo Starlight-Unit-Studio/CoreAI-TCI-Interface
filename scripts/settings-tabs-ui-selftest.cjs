@@ -157,7 +157,9 @@ const smallText = page => page.evaluate(() => {
     assert.equal(await page.locator('#generalHigherIntelligence').isDisabled(), false,
       'authenticated accounts can enable the real auto-Core routing');
     await page.check('#generalHigherIntelligence');
-    await page.waitForFunction(() => document.getElementById('generalHigherIntelligence').checked);
+    await page.waitForFunction(() =>
+      document.getElementById('generalHigherIntelligence').checked &&
+      !document.getElementById('generalHigherIntelligence').disabled);
     assert.ok(srv.calls.some(c => c.key === 'user_settings.php' && c.post &&
       c.post.action === 'general' && c.post.settings.auto_higher_core === true),
       'auto Core setting is actually saved through the server');
@@ -192,6 +194,9 @@ const smallText = page => page.evaluate(() => {
     assert.equal(await page.locator('#generalReasoningLevels').isDisabled(), false,
       'Ollama-declared reasoning levels can be selected');
     await page.selectOption('#generalReasoningLevels', 'medium');
+    await page.waitForFunction(() =>
+      document.getElementById('generalReasoningLevels').value === 'medium' &&
+      !document.getElementById('generalReasoningLevels').disabled);
     assert.ok(srv.calls.some(c => c.key === 'user_settings.php' && c.post &&
       c.post.action === 'general' && c.post.settings.thinking_level === 'medium'),
       'chosen model-supported effort is persisted server-side');
