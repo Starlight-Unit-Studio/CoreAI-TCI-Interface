@@ -9,7 +9,7 @@ const read = p => fs.readFileSync(path.join(root, p), 'utf8');
 const settings = read('settings.html');
 const admin = read('admin/index.html');
 const css = read('css/settings.css');
-const scripts = ['js/coreui-settings-menu.js','js/coreui-settings-tabs.js','js/settings.js',
+const scripts = ['js/coreui-settings-menu.js','js/coreui-settings-tabs.js','js/coreui-send-keys.js','js/coreui-preferences.js','js/settings.js',
   'js/admin.js','js/coreui-image-samples.js','js/coreui-voice-samples.js'];
 scripts.forEach(name => new vm.Script(read(name), {filename:name}));
 const sections = {
@@ -34,7 +34,21 @@ for(const entry of entries) {
 const planned = [...settings.matchAll(/class="cfg-view cfg-view-planned"/g)];
 assert.equal(planned.length, 16, 'all missing ChatGPT-style categories show honest scaffolds');
 assert.ok(settings.includes('id="settingsExpertToggle"'));
-assert.ok(settings.includes('id="cfgExpertGroup" hidden'));
+assert.ok(settings.includes('id="cfgCoreGroup"'));
+assert.ok(!settings.includes('id="cfgExpertGroup"'));
+assert.ok(['start','ki-profil','wissen','memory','system'].every(id => settings.includes('id="tab-' + id + '"')),
+  'advanced categories remain accessible with Expert disabled');
+const expertNodes = [...settings.matchAll(/data-expert hidden/g)];
+assert.equal(expertNodes.length, 10, 'numeric and technical controls are conditionally hidden within categories');
+assert.ok(settings.includes('id="aiNumCtx"') && settings.includes('id="aiNumPredict"'),
+  'prior Core settings are retained');
+for(const field of ['generalUiLanguage','generalSendKey','generalHigherIntelligence','generalReasoningLevels']) {
+  assert.ok(settings.includes('id="' + field + '"'), 'General field: ' + field);
+}
+assert.ok(settings.includes('id="generalHigherIntelligence" type="checkbox" disabled'),
+  'Core auto-upgrade is explicitly not active');
+assert.ok(settings.includes('id="generalReasoningLevels" disabled'),
+  'unsupported reasoning tiers are explicitly not active');
 assert.ok(settings.includes('id="settingsNavSearch"'));
 assert.ok(settings.includes('id="settingsMenuToggle"'));
 assert.ok(settings.includes('id="settingsMenuBackdrop"'));
@@ -59,4 +73,4 @@ assert.ok(css.includes('.cfg-nav.is-open'));
 assert.ok(css.includes('.cfg-menu-backdrop:not([hidden])'));
 assert.ok(css.includes('prefers-reduced-motion: reduce'));
 assert.ok(css.includes('.cfg-nav-group[hidden]'));
-console.log('CoreAI settings navigation: 25 categories, 16 honest planning pages, expert toggle, accessible mobile menu and standalone role-gated admin wiring OK');
+console.log('CoreAI settings: 25 categories, General controls, 10 in-category Expert controls, honest planning pages, mobile menu and role-gated admin wiring OK');
