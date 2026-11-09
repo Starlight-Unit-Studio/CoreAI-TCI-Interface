@@ -63,5 +63,26 @@ function classes(){
  assert.equal((await a).id,'fresh');assert.equal((await b).id,'fresh');
  assert.equal(selected,1);
  assert.equal(draft.draftSessionPromise,null);
- console.log('CoreAI welcome draft and Live/Send/Stop: OK');
+
+ // Voice messages must preserve the entered text after upload in both
+ // saved chats and the new, not-yet-persisted welcome channel.
+ for(const [label,session,pendingId,expected] of [
+   ['existing chat',{id:'saved'},'saved',true],
+   ['welcome draft',null,'__draft__',true],
+   ['different chat',{id:'other'},'saved',false]
+ ]){
+   const sent=[];
+   const upload={
+     uploadXhr:null,uploadCurrentFile:null,uploadQueue:[],
+     pendingSendAfterUpload:{text:'Hör mal:',sessionId:pendingId},
+     activeSession:()=>session,
+     sendMessage:text=>sent.push(text)
+   };
+   vm.runInNewContext(extract('sendAfterCompletedUpload')+
+     '\nthis.completeUpload=sendAfterCompletedUpload;',upload);
+   upload.completeUpload();
+   assert.deepEqual(sent,expected?['Hör mal:']:[],label+' after upload');
+   assert.equal(upload.pendingSendAfterUpload,null,label+' pending send consumed');
+ }
+ console.log('CoreAI welcome draft, voice upload and Live/Send/Stop: OK');
 })().catch(e=>{console.error(e);process.exit(1);});
