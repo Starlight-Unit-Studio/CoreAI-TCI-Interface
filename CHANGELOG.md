@@ -1,5 +1,12 @@
 # CoreAI: TCI Interface
 
+## 0.6.73 - 09.11.2026
+
+- Fix the settings navigation on phones and tablets: the retired <=900px horizontal tab bar was still setting `flex-direction: row` on the new fixed drawer, placing Personal and Teams side-by-side and clipping the left edge. Force a single vertical column for the drawer, category groups and tab contents without modifying categories or their behavior.
+- Size the fixed drawer and rows with border-box, keep category labels inside the viewport, and allow only vertical scrolling. Preserve backdrop, Escape, mobile close, role-gated Admin Core and the Expert field switch.
+- Extend the Playwright regression to measure actual drawer width, position, flex direction, item geometry and scrolling at 320, 390, 768 and 900 px; strengthen the offline navigation selftest so the old horizontal style cannot silently return.
+- Synchronize 0.6.73 version, cache fingerprints, TXT changelog and handover. No database migration, Core change, account setting reset, or change to the global model queue.
+
 ## 0.6.72 - 09.11.2026
 
 - Repair eight preflight failures introduced by moving Admin Core to its own protected `admin/index.html` page in 0.6.71. Preserve real guest, captcha, roles, Core-grant, global-memory and image-tool controls; their six source-contract tests now inspect the correct page and assert that admin fields are absent from ordinary settings.
