@@ -20,7 +20,8 @@ assert.match(app, /TERRA-NET MATRIX \/\/ N-73/);
 assert.match(app, /aria-label="Terra-Net Systemticker"/);
 assert.match(splash, /TERRA-NET MATRIX INIT/);
 assert.match(splash, /TERRA-NET VERBINDUNG/);
-assert.equal((chat.match(/TERRA-NET VERBINDUNG HERGESTELLT/g) || []).length, 2);
+// 0.6.68: the welcome screen replaced the second connection line (empty account); one remains.
+assert.equal((chat.match(/TERRA-NET VERBINDUNG HERGESTELLT/g) || []).length, 1);
 for (const [file, content] of [
   ['settings.html', settings],
   ['app.html', app],

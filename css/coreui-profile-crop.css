@@ -97,7 +97,7 @@
   border-radius: 9px;
   color: #dfecfc;
   background: rgba(12, 30, 56, 0.9);
-  font: 600 13px "Rajdhani", "Segoe UI", sans-serif;
+  font: 600 13px var(--coreui-font, "Rajdhani"), "Segoe UI", sans-serif;
   cursor: pointer;
 }
 .coreui-crop-formats button[aria-pressed="true"] {
@@ -117,7 +117,7 @@
   align-items: center;
   gap: 12px;
   color: #c9d9ee;
-  font: 600 13px "Rajdhani", "Segoe UI", sans-serif;
+  font: 600 13px var(--coreui-font, "Rajdhani"), "Segoe UI", sans-serif;
 }
 .coreui-crop-panel input[type="range"] {
   width: 100%;

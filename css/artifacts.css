@@ -89,7 +89,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   color: #263858;
-  font: 700 14px/1.2 "Rajdhani", sans-serif;
+  font: 700 14px/1.2 var(--coreui-font, "Rajdhani"), sans-serif;
 }
 .md-preview-file-info small {
   color: #64748b;
@@ -166,7 +166,7 @@
   margin: 0;
   padding: 0 12px;
   color: #436792;
-  font: 600 11px/1.5 "Rajdhani", sans-serif;
+  font: 600 11px/1.5 var(--coreui-font, "Rajdhani"), sans-serif;
   overflow-wrap: anywhere;
 }
 .md-preview-status:empty { display: none; }
@@ -182,7 +182,7 @@
   border-radius: 7px;
   background: #eef4ff;
   color: #2555a2;
-  font: 600 12px "Rajdhani", sans-serif;
+  font: 600 12px var(--coreui-font, "Rajdhani"), sans-serif;
   cursor: pointer;
 }
 .md-preview-modal {

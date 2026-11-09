@@ -14,6 +14,7 @@
   var appearanceFields = {
     motif: document.getElementById('prefMotif'),
     accent: document.getElementById('prefAccent'),
+    fontFamily: document.getElementById('prefFontFamily'),
     uiFontSize: document.getElementById('prefUiFont'),
     contentFontSize: document.getElementById('prefContentFont'),
     codeFontSize: document.getElementById('prefCodeFont'),
@@ -21,9 +22,32 @@
     motionMode: document.getElementById('prefMotionMode'),
     diffMarkers: document.getElementById('prefDiffMarkers'),
     fullWidth: document.getElementById('prefFullWidth'),
+    separateModes: document.getElementById('prefSeparateModes'),
+    smartPunctuation: document.getElementById('prefSmartPunctuation'),
     background: document.getElementById('prefBackground'),
     foreground: document.getElementById('prefForeground')
   };
+  // 0.6.80: hex text beside each color picker, the Hell/Dunkel edit target, motif transfer.
+  var appearanceHex = {
+    background: document.getElementById('prefBackgroundHex'),
+    foreground: document.getElementById('prefForegroundHex')
+  };
+  var APPEARANCE_CHECKBOXES = ['fullWidth', 'separateModes', 'smartPunctuation'];
+  var APPEARANCE_NUMBERS = ['uiFontSize', 'contentFontSize', 'codeFontSize', 'contrast'];
+  var APPEARANCE_MODE_KEYS = ['motif', 'accent', 'fontFamily'];
+  var editModeRow = document.getElementById('prefEditModeRow');
+  var editModeGroup = document.getElementById('prefEditMode');
+  var appearanceEditMode = null;
+  var motifExportButton = document.getElementById('motifExport');
+  var motifCopyButton = document.getElementById('motifCopy');
+  var motifImportButton = document.getElementById('motifImport');
+  var motifImportPanel = document.getElementById('motifImportPanel');
+  var motifImportText = document.getElementById('motifImportText');
+  var motifImportFile = document.getElementById('motifImportFile');
+  var motifImportChoose = document.getElementById('motifImportChoose');
+  var motifImportCancel = document.getElementById('motifImportCancel');
+  var motifImportApply = document.getElementById('motifImportApply');
+  var motifImportStatus = document.getElementById('motifImportStatus');
   var contrastOutput = document.getElementById('prefContrastValue');
   var saveState = document.getElementById('settingsSaveState');
   var accountMail = document.getElementById('accountMail');
@@ -147,6 +171,40 @@
     });
   }
 
+  // 0.6.80: a segment (role=radiogroup with radios) reads and writes like a select.
+  function isSegment(el) { return !!(el && el.getAttribute && el.getAttribute('role') === 'radiogroup'); }
+  function readField(el) {
+    if (!isSegment(el)) return el.value;
+    var checked = el.querySelector('input:checked');
+    return checked ? checked.value : '';
+  }
+  function writeField(el, value) {
+    if (!isSegment(el)) { el.value = String(value); return; }
+    Array.prototype.forEach.call(el.querySelectorAll('input'), function (input) {
+      input.checked = input.value === String(value);
+    });
+  }
+  function shownMode(theme) {
+    if (preferences && typeof preferences.resolvedTheme === 'function') return preferences.resolvedTheme(theme || 'system');
+    return document.documentElement.getAttribute('data-coreui-theme') === 'dark' ? 'dark' : 'light';
+  }
+  // Which mode the Motiv and color rows edit: the one on screen, or Hell/Dunkel when kept apart.
+  function appearanceTarget(value) {
+    return value.separateModes && appearanceEditMode ? appearanceEditMode : shownMode(value.theme);
+  }
+  function parseHex(text) {
+    var raw = String(text || '').trim().replace(/^#/, '');
+    if (/^[0-9a-fA-F]{3}$/.test(raw)) raw = raw.split('').map(function (c) { return c + c; }).join('');
+    return /^[0-9a-fA-F]{6}$/.test(raw) ? '#' + raw.toLowerCase() : null;
+  }
+  function setColorField(name, hex) {
+    if (appearanceFields[name]) appearanceFields[name].value = hex;
+    if (appearanceHex[name]) {
+      appearanceHex[name].value = hex.toUpperCase();
+      appearanceHex[name].removeAttribute('aria-invalid');
+    }
+  }
+
   function syncFields(value) {
     value = value || {};
     if (generalSendKey) generalSendKey.value = value.sendKey === 'mod-enter' ? 'mod-enter' : 'enter';
@@ -157,17 +215,21 @@
     });
     var selectedTheme = value.theme || 'system';
     themeOptions.forEach(function (option) { option.checked = option.value === selectedTheme; });
+    var target = appearanceTarget(value);
+    var suffix = value.separateModes && target === 'dark' ? 'Dark' : '';
     Object.keys(appearanceFields).forEach(function (key) {
       var el = appearanceFields[key];
       if (!el || key === 'background' || key === 'foreground') return;
-      if (key === 'fullWidth') el.checked = value.fullWidth === true;
-      else if (value[key] !== undefined) el.value = String(value[key]);
+      if (APPEARANCE_CHECKBOXES.indexOf(key) >= 0) el.checked = value[key] === true;
+      else if (APPEARANCE_MODE_KEYS.indexOf(key) >= 0) {
+        if (value[key + suffix] !== undefined) writeField(el, value[key + suffix]);
+      } else if (value[key] !== undefined) writeField(el, value[key]);
     });
-    var dark = document.documentElement.getAttribute('data-coreui-theme') === 'dark';
-    if (appearanceFields.background) appearanceFields.background.value = dark
-      ? (value.backgroundDark || '#0c1427') : (value.backgroundLight || '#f0f4fa');
-    if (appearanceFields.foreground) appearanceFields.foreground.value = dark
-      ? (value.foregroundDark || '#eef4ff') : (value.foregroundLight || '#101626');
+    var dark = target === 'dark';
+    setColorField('background', dark ? (value.backgroundDark || '#0c1427') : (value.backgroundLight || '#f0f4fa'));
+    setColorField('foreground', dark ? (value.foregroundDark || '#eef4ff') : (value.foregroundLight || '#101626'));
+    if (editModeRow) editModeRow.hidden = value.separateModes !== true;
+    if (editModeGroup) writeField(editModeGroup, target);
     if (contrastOutput) contrastOutput.textContent = String(value.contrast || 60);
   }
 
@@ -182,18 +244,22 @@
       : (preferences ? preferences.load().sendKey : 'enter');
     value.uiLanguage = generalUiLanguage ? generalUiLanguage.value
       : (preferences ? preferences.load().uiLanguage : 'auto');
-    // Local appearance preferences preserve the inactive theme's palette.
+    // Local appearance preferences preserve the inactive theme's palette and look.
     var previous = preferences ? preferences.load() : {};
+    ['motif', 'accent', 'fontFamily', 'motifDark', 'accentDark', 'fontFamilyDark'].forEach(function (key) {
+      value[key] = previous[key];
+    });
     Object.keys(appearanceFields).forEach(function (key) {
       var el = appearanceFields[key];
-      if (!el || key === 'background' || key === 'foreground') return;
-      value[key] = key === 'fullWidth' ? el.checked
-        : ['uiFontSize','contentFontSize','codeFontSize','contrast'].indexOf(key) >= 0
-          ? Number(el.value) : el.value;
+      if (!el || key === 'background' || key === 'foreground' || APPEARANCE_MODE_KEYS.indexOf(key) >= 0) return;
+      value[key] = APPEARANCE_CHECKBOXES.indexOf(key) >= 0 ? el.checked
+        : APPEARANCE_NUMBERS.indexOf(key) >= 0 ? Number(readField(el)) : readField(el);
     });
-    var mode = value.theme === 'system'
-      ? (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-      : value.theme;
+    var mode = appearanceTarget(value);
+    var suffix = value.separateModes && mode === 'dark' ? 'Dark' : '';
+    APPEARANCE_MODE_KEYS.forEach(function (key) {
+      if (appearanceFields[key]) value[key + suffix] = readField(appearanceFields[key]);
+    });
     value.backgroundLight = previous.backgroundLight;
     value.backgroundDark = previous.backgroundDark;
     value.foregroundLight = previous.foregroundLight;
@@ -1004,6 +1070,7 @@
   themeOptions.forEach(function (option) {
     option.addEventListener('change', function () {
       // Switching the selected palette must not copy the old mode's colors.
+      appearanceEditMode = null;
       var prior = preferences ? preferences.load() : {};
       if (preferences) {
         var value = Object.assign({}, prior, {theme: option.value});
@@ -1014,8 +1081,146 @@
     });
   });
   Object.keys(appearanceFields).forEach(function (key) {
-    if (appearanceFields[key]) appearanceFields[key].addEventListener(
-      key === 'contrast' ? 'input' : 'change', saveLocal);
+    if (!appearanceFields[key] || key === 'separateModes') return;
+    appearanceFields[key].addEventListener(key === 'contrast' ? 'input' : 'change', saveLocal);
+  });
+  // 0.6.80: "Hell und Dunkel getrennt": switching on starts Dunkel from the current look,
+  // switching off keeps Dunkel's own choice for later and uses the shared look again.
+  if (appearanceFields.separateModes) appearanceFields.separateModes.addEventListener('change', function () {
+    if (!preferences) return;
+    var prior = preferences.load();
+    var on = appearanceFields.separateModes.checked;
+    var next = Object.assign({}, prior, {separateModes: on});
+    if (on && !prior.separateModes) {
+      next.motifDark = prior.motif;
+      next.accentDark = prior.accent;
+      next.fontFamilyDark = prior.fontFamily;
+    }
+    appearanceEditMode = null;
+    syncFields(preferences.save(next));
+    announceSaved('LOKAL GESPEICHERT');
+  });
+  if (editModeGroup) editModeGroup.addEventListener('change', function () {
+    var chosen = readField(editModeGroup);
+    appearanceEditMode = chosen === 'dark' || chosen === 'light' ? chosen : null;
+    if (preferences) syncFields(preferences.load());
+  });
+  ['background', 'foreground'].forEach(function (name) {
+    var picker = appearanceFields[name];
+    var hex = appearanceHex[name];
+    if (!picker || !hex) return;
+    picker.addEventListener('input', function () {
+      hex.value = picker.value.toUpperCase();
+      hex.removeAttribute('aria-invalid');
+    });
+    function commitHex() {
+      var parsed = parseHex(hex.value);
+      if (!parsed) {
+        hex.setAttribute('aria-invalid', 'true');
+        announceSaved('KEIN GÜLTIGER FARBWERT (#RRGGBB)', true);
+        return;
+      }
+      hex.removeAttribute('aria-invalid');
+      hex.value = parsed.toUpperCase();
+      if (parsed !== picker.value) {
+        picker.value = parsed;
+        saveLocal();
+      }
+    }
+    hex.addEventListener('change', commitHex);
+    hex.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter') { event.preventDefault(); commitHex(); }
+    });
+  });
+
+  // 0.6.80: the motif (design, accent, font, colors) as a file, on the clipboard or imported.
+  function motifText() {
+    return JSON.stringify(preferences.exportMotif(preferences.load()), null, 2);
+  }
+  function copyText(text) {
+    if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+      return navigator.clipboard.writeText(text);
+    }
+    return new Promise(function (resolve, reject) {
+      var area = document.createElement('textarea');
+      area.value = text;
+      area.setAttribute('readonly', '');
+      area.style.position = 'fixed';
+      area.style.opacity = '0';
+      document.body.appendChild(area);
+      area.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (error) { ok = false; }
+      area.remove();
+      if (ok) resolve(); else reject(new Error('copy_failed'));
+    });
+  }
+  function setImportStatus(text, isError) {
+    if (!motifImportStatus) return;
+    motifImportStatus.textContent = text || '';
+    motifImportStatus.classList.toggle('error', isError === true);
+  }
+  function toggleImport(open) {
+    if (!motifImportPanel) return;
+    motifImportPanel.hidden = !open;
+    if (motifImportButton) motifImportButton.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open && motifImportText) motifImportText.focus();
+    if (!open) {
+      if (motifImportText) motifImportText.value = '';
+      setImportStatus('');
+    }
+  }
+  function applyImport() {
+    if (!preferences || !motifImportText) return;
+    var next = preferences.importMotif(motifImportText.value, preferences.load());
+    if (!next) {
+      setImportStatus('Das ist kein gültiges CoreAI-Motiv. Erwartet wird ein exportiertes oder kopiertes Motiv.', true);
+      return;
+    }
+    appearanceEditMode = null;
+    syncFields(preferences.save(next));
+    toggleImport(false);
+    announceSaved('MOTIV IMPORTIERT');
+  }
+  if (motifExportButton) motifExportButton.addEventListener('click', function () {
+    if (!preferences) return;
+    var blob = new Blob([motifText() + '\n'], {type: 'application/json'});
+    var link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'coreai-motiv-' + new Date().toISOString().slice(0, 10) + '.json';
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(function () { URL.revokeObjectURL(link.href); link.remove(); }, 0);
+    announceSaved('MOTIV EXPORTIERT');
+  });
+  if (motifCopyButton) motifCopyButton.addEventListener('click', function () {
+    if (!preferences) return;
+    copyText(motifText()).then(function () {
+      announceSaved('MOTIV KOPIERT');
+    }, function () {
+      announceSaved('KOPIEREN NICHT MÖGLICH', true);
+    });
+  });
+  if (motifImportButton) motifImportButton.addEventListener('click', function () {
+    toggleImport(motifImportPanel ? motifImportPanel.hidden : false);
+  });
+  if (motifImportCancel) motifImportCancel.addEventListener('click', function () { toggleImport(false); });
+  if (motifImportApply) motifImportApply.addEventListener('click', applyImport);
+  if (motifImportChoose && motifImportFile) motifImportChoose.addEventListener('click', function () { motifImportFile.click(); });
+  if (motifImportFile) motifImportFile.addEventListener('change', function () {
+    var file = motifImportFile.files && motifImportFile.files[0];
+    motifImportFile.value = '';
+    if (!file) return;
+    if (file.size > 8000) {
+      setImportStatus('Die Datei ist zu groß für ein CoreAI-Motiv.', true);
+      return;
+    }
+    file.text().then(function (text) {
+      if (motifImportText) motifImportText.value = text;
+      applyImport();
+    }, function () {
+      setImportStatus('Die Datei konnte nicht gelesen werden.', true);
+    });
   });
   if (generalSendKey) generalSendKey.addEventListener('change', saveLocal);
   if (generalUiLanguage) generalUiLanguage.addEventListener('change', saveLocal);

@@ -249,7 +249,7 @@
   background:
     radial-gradient(ellipse at 86% 12%, rgba(91,146,255,.15), transparent 56%),
     linear-gradient(145deg, var(--editor-bg-a), var(--editor-bg-b));
-  font-family: "Rajdhani", "Segoe UI", sans-serif;
+  font-family: var(--coreui-font, "Rajdhani"), "Segoe UI", sans-serif;
   font-size: 16px;
   line-height: 1.45;
 }
@@ -280,7 +280,7 @@
 .coreai-image-editor-header strong {
   min-width: 0;
   color: var(--editor-text);
-  font-family: "Rajdhani", "Segoe UI", sans-serif;
+  font-family: var(--coreui-font, "Rajdhani"), "Segoe UI", sans-serif;
   font-size: clamp(18px, 4vw, 22px);
   font-weight: 700;
   letter-spacing: .075em;
@@ -293,7 +293,7 @@
   -webkit-tap-highlight-color: transparent;
   clip-path: none;
   cursor: pointer;
-  font-family: "Rajdhani", "Segoe UI", sans-serif;
+  font-family: var(--coreui-font, "Rajdhani"), "Segoe UI", sans-serif;
   transition: background .16s, border-color .16s, color .16s, box-shadow .16s;
 }
 .coreai-image-editor .coreai-image-editor-close {
@@ -471,7 +471,7 @@
   border-radius: 10px 2px 10px 2px;
   background: linear-gradient(160deg, var(--editor-field), var(--editor-panel-b));
   color: var(--editor-text);
-  font-family: "Rajdhani", "Segoe UI", sans-serif;
+  font-family: var(--coreui-font, "Rajdhani"), "Segoe UI", sans-serif;
   font-size: 16px;
   clip-path: none;
   box-shadow: inset 2px 0 0 var(--editor-blue);
@@ -735,7 +735,7 @@ html[data-coreui-theme="dark"] .coreai-image-editor .coreai-image-editor-submit:
   color: var(--viewer-popover-ink);
   background: var(--viewer-popover-bg);
   box-shadow: 0 16px 32px rgba(10,34,73,.3);
-  font-family: "Rajdhani", system-ui, sans-serif;
+  font-family: var(--coreui-font, "Rajdhani"), system-ui, sans-serif;
   font-size: 15px;
 }
 .coreai-image-viewer-edit {
@@ -745,7 +745,7 @@ html[data-coreui-theme="dark"] .coreai-image-editor .coreai-image-editor-submit:
   color: #f4f8ff;
   background: linear-gradient(118deg, rgba(28,69,120,.96), rgba(39,83,140,.94));
   box-shadow: 0 8px 24px rgba(0,0,0,.38), inset 3px 0 0 var(--viewer-accent-gold);
-  font-family: "Rajdhani", system-ui, sans-serif;
+  font-family: var(--coreui-font, "Rajdhani"), system-ui, sans-serif;
   font-size: 15px;
 }
 html[data-coreui-theme="dark"] .coreai-image-viewer {
@@ -995,7 +995,7 @@ html[data-coreui-theme="dark"] .coreai-image-viewer-toolbar .coreai-image-viewer
   color:var(--editor-text);
   background:var(--editor-hover);
   box-shadow:inset 3px 0 0 var(--editor-gold);
-  font:700 15px "Rajdhani",sans-serif;
+  font:700 15px var(--coreui-font, "Rajdhani"),sans-serif;
   cursor:pointer;
 }
 .coreai-image-editor-size-popover {

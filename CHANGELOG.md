@@ -1,5 +1,20 @@
 # CoreAI: TCI Interface
 
+## 0.6.80 - 09.11.2026
+
+- Finish transferring the three ChatGPT **Darstellung** reference screenshots as ordinary settings (no Expert mode), on top of 0.6.79:
+  - **Motif export, copy and import:** download the motif as `coreai-motiv-DATE.json`, copy it to the clipboard (with a fallback for browsers without the clipboard API) or import it from pasted text or a file. A motif holds design, accent, font and the light/dark colors only; imports are size-limited, strictly validated (format, version, known values, six-digit hex colors) and never change font sizes, motion, the send key or account data.
+  - **Hex values beside the color pickers:** background and foreground show their value (for example `#F0F4FA`) and accept typed values, also without `#` or in short form `#123`. Invalid values are marked and not saved.
+  - **Set light and dark mode separately:** a switch gives Hell and Dunkel their own motif, accent and font. Switching it on starts Dunkel from the current look; an "Einstellen für Hell/Dunkel" segment edits either mode without changing the screen; switching it off keeps Dunkel's choice for later.
+  - **Schriftart:** CoreAI (Rajdhani) or the device's system font. All 77 Rajdhani declarations in the stylesheets now read `var(--coreui-font, "Rajdhani")`; the three `@font-face` rules and the monospace labels stay unchanged.
+  - **Intelligent punctuation** in the chat input (off by default): while typing, `"` and `'` become German or English quotes by interface language, `...` becomes an ellipsis, `--` an en dash (never at the start of a line, so Markdown `---` stays), `->`, `<-`, `<->`, `=>` arrows and `<=`, `>=`, `!=`, `~=`, `+-` math symbols. Pasted text, IME input, inline code, code blocks and URLs stay untouched; Backspace right after a replacement restores exactly what was typed. No long dash (U+2014) is ever produced.
+  - **Segments** instead of dropdowns for reduce motion (System/Ein/Aus) and difference markers (Farbe, +/-), as in the reference; the Erweitert order now follows it.
+- The Darstellung page header now says "ändert weder Core noch Konto" instead of "Modell" (visible-text rule; `frontend-regression-selftest.php` failed on 0.6.79).
+- Fix the **Höhere Intelligenz** switch under General: its visible track was a `<span>` outside any label, so tapping the switch itself did nothing (only its text label worked). It is now a `<label>`.
+- Repair long-failing settings regressions found while testing: `settings-tabs-ui-selftest.cjs` (taps visible switches instead of 1 px checkboxes, opens the phone drawer before choosing a category, waits for the drawer animation and the Admin Core page navigation, checks the newest KI-Profil save, `$$eval` typo), `theme-preferences-selftest.cjs` (expected the owner-credit color rule that 0.6.70 deliberately removed) `branding-license-selftest.py` (version was still 0.6.71) and `terran-terminology-selftest.cjs` (still counted the connection line that the 0.6.68 welcome screen replaced). No assertion was removed.
+- New tests: `appearance-ui-selftest.cjs` (Chromium: segments, font, hex, Hell/Dunkel separate with edit target, export/copy/import with file and invalid input, reset keeps the send key, phone fit, chat smart punctuation in German and English, code and paste untouched, Backspace undo) and the 0.6.80 part of `theme-preferences-selftest.cjs` (font variable, separate modes, motif validation, punctuation rules). Both preflights run them.
+- No database, API, Ollama/Modelfile, account rights or FIFO change. All appearance values stay in the existing local preference key.
+
 ## 0.6.79 - 09.11.2026
 
 - Begin rebuilding **Darstellung** from the screenshot references as ordinary user settings, independent of Expert mode. The existing three working System/Hell/Dunkel modes and all current animation, telemetry, compact-feed, work-path and browser controls remain.

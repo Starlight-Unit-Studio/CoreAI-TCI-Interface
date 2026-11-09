@@ -1,0 +1,17 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.80
+09.11.2026
+
+- Darstellung nach den drei Referenzbildern fertig uebertragen (normale Einstellungen).
+- Motiv exportieren (Datei), kopieren (Zwischenablage) und importieren (Text oder Datei),
+  streng geprueft, aendert nur das Motiv.
+- Hex-Werte neben den Farbwaehlern, auch eintippbar (#123, ohne #); ungueltig wird markiert.
+- Schalter "Hellen und dunklen Modus getrennt einstellen": eigenes Motiv, Akzent und
+  Schriftart je Modus, Bearbeiten fuer Hell oder Dunkel ohne Moduswechsel.
+- Schriftart: CoreAI (Rajdhani) oder Systemschrift; Monospace-Beschriftungen bleiben.
+- Intelligente Zeichensetzung im Chat (standardmaessig aus): Anfuehrungszeichen, --, ...,
+  Pfeile, Mathe-Zeichen; Code, URLs und Eingefuegtes bleiben; Ruecktaste macht rueckgaengig.
+- Bewegung reduzieren und Markierungen fuer Unterschiede als Umschalter wie im Vorbild.
+- Fix: Schalter "Hoehere Intelligenz" reagiert jetzt auch auf Tippen auf den Schalter.
+- Veraltete Einstellungs-, Theme-, Branding- und Terran-Tests repariert, keine Pruefung entfernt.
+- Neu: appearance-ui-selftest.cjs; theme-preferences-selftest.cjs erweitert.
+- Keine Datenbank-, API-, Modelfile-, Rechte- oder FIFO-Aenderung.

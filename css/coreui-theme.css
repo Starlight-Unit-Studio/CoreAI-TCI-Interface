@@ -519,7 +519,11 @@ html {
   --pref-ui-font: 14px;
   --pref-content-font: 16px;
   --pref-code-font: 13px;
+  /* 0.6.80: Schriftart. Every Rajdhani declaration reads var(--coreui-font, "Rajdhani"). */
+  --coreui-font: "Rajdhani";
 }
+/* The system font is wider than Rajdhani: take back the extra letter spacing a little. */
+html.pref-font-system body { letter-spacing: -0.005em; }
 html.pref-custom-background body,
 html.pref-custom-background[data-coreui-theme="dark"] body {
   background: var(--pref-surface, var(--bg));

@@ -118,6 +118,14 @@ async function openAdmin(browser, level, hash, viewport) {
   return existing;
 }
 
+// 0.6.80: a switch is used like a person does: a tap on its visible track (the <i>), which only
+// works when a <label> carries it. The 1 px checkbox underneath is never clicked directly.
+async function setSwitch(page, id, on) {
+  if (await page.isChecked('#' + id) === on) return;
+  await page.click('#' + id + ' + i');
+  await page.waitForFunction(([target, value]) => document.getElementById(target).checked === value, [id, on]);
+}
+
 const visibleViews = page => page.$$eval('.cfg-view', views => views.filter(v => !v.hidden).map(v => v.id));
 const smallText = page => page.evaluate(() => {
   const out = [];
@@ -160,7 +168,8 @@ const smallText = page => page.evaluate(() => {
     assert.equal(await page.locator('#tab-start span').textContent(), 'Allgemein', 'switch back to German');
     assert.equal(await page.locator('#generalHigherIntelligence').isDisabled(), false,
       'authenticated accounts can enable the real auto-Core routing');
-    await page.check('#generalHigherIntelligence');
+    // 0.6.80: tap the visible switch like a person; it used to be a <span> that ignored taps.
+    await setSwitch(page, 'generalHigherIntelligence', true);
     await page.waitForFunction(() =>
       document.getElementById('generalHigherIntelligence').checked &&
       !document.getElementById('generalHigherIntelligence').disabled);
@@ -223,7 +232,7 @@ const smallText = page => page.evaluate(() => {
     assert.equal(await page.locator('#tab-benachrichtigungen').isHidden(), true, 'search filters unrelated entries');
     await page.fill('#settingsNavSearch', '');
     await page.click('#tab-start');
-    await page.check('#settingsExpertToggle');
+    await setSwitch(page, 'settingsExpertToggle', true);
     assert.equal(await page.locator('#generalReasoningLevels').isVisible(), true,
       'Denkaufwand stays visible even after Expert is enabled');
     assert.equal(await page.locator('#generalReasoningLevels').isDisabled(), false,
@@ -241,7 +250,7 @@ const smallText = page => page.evaluate(() => {
     assert.equal(await page.locator('#aiNumPredict').isVisible(), true,
       'existing technical Core values are visible in Expert mode');
     const budget = await page.inputValue('#aiNumPredict');
-    await page.uncheck('#settingsExpertToggle');
+    await setSwitch(page, 'settingsExpertToggle', false);
     assert.deepEqual(await visibleViews(page), ['view-ki-profil'], 'Expert switch does not leave the category');
     assert.equal(await page.locator('#aiNumPredict').isVisible(), false, 'raw token budget hidden in normal mode');
     assert.equal(await page.locator('#aiTemperature').isVisible(), false, 'raw temperature hidden in normal mode');
@@ -256,11 +265,12 @@ const smallText = page => page.evaluate(() => {
     assert.equal(await page.locator('#prefLiveFrameMotion').isVisible(), true,
       'ordinary browser-frame playback toggle is visible without Expert');
     await page.click('#tab-ki-profil');
-    await page.check('#settingsExpertToggle');
+    await setSwitch(page, 'settingsExpertToggle', true);
     assert.equal(await page.locator('#aiNumPredict').isVisible(), true, 'technical field comes back');
     assert.equal(new URL(page.url()).hash, '#ki-profil');
     assert.equal(await page.getAttribute('#tab-ki-profil', 'aria-selected'), 'true');
     assert.equal(await page.getAttribute('#tab-start', 'aria-selected'), 'false');
+    await page.focus('#tab-ki-profil'); // the tap on the Expert switch moved the focus there
     await page.keyboard.press('ArrowDown');
     assert.deepEqual(await visibleViews(page), ['view-wissen'], 'arrow keys move across advanced tabs');
     await page.keyboard.press('ArrowDown');
@@ -284,7 +294,8 @@ const smallText = page => page.evaluate(() => {
     await page.selectOption('#aiLanguage', 'de');
     await page.click('#saveAiSettings');
     await page.waitForFunction(() => document.getElementById('settingsSaveState').classList.contains('visible'));
-    const aiPost = srv.calls.find(c => c.key === 'user_settings.php' && c.post);
+    // The KI-Profil save is the newest POST (Allgemein and Gedächtnis posted earlier in this run).
+    const aiPost = srv.calls.filter(c => c.key === 'user_settings.php' && c.post && c.post.action !== 'general').pop();
     assert(aiPost && !('model_override' in aiPost.post) && aiPost.post.provider === 'local', 'KI-Profil saves without a Core');
     assert.equal(aiPost.post.main_language, 'de', 'the chosen language is saved');
     assert.deepEqual(errors, []);
@@ -296,8 +307,9 @@ const smallText = page => page.evaluate(() => {
     await page.waitForFunction(() => !document.getElementById('settingsAdminShortcut').hidden);
     assert.equal(await page.locator('#adminLinkGroup').isHidden(), false,
       'owner still has the category link');
-    await page.click('#settingsAdminShortcut');
-    await page.waitForFunction(() => !document.getElementById('adminNavGroup').hidden);
+    // The click navigates to another page: wait for it first, then for its content.
+    await Promise.all([page.waitForURL(/\/admin\/index\.html/), page.click('#settingsAdminShortcut')]);
+    await page.waitForFunction(() => document.getElementById('adminNavGroup') && !document.getElementById('adminNavGroup').hidden);
     assert.match(page.url(), /\/admin\/index\.html/,
       'header opens the separate, authorized Admin Core');
     assert.deepEqual(errors, []);
@@ -310,7 +322,7 @@ const smallText = page => page.evaluate(() => {
     assert.deepEqual(await visibleViews(page), ['view-admin-benutzer'], 'the admin address opens after the role check');
     assert.equal(await page.locator('#adminAccessGate').isHidden(), true, 'admin shell appears only after authorization');
     assert.equal(await page.textContent('#adminIdentity'), 'patrick@starlight.test // INHABER');
-    assert.deepEqual(await page.$eval('[data-stat="users"]', nodes => nodes.map(n => n.textContent)), ['12'],
+    assert.deepEqual(await page.$$eval('[data-stat="users"]', nodes => nodes.map(n => n.textContent)), ['12'],
       'the admin overview receives the user count');
     assert.deepEqual(await page.$$eval('#userRows tr:nth-child(2) select option', o => o.map(x => x.textContent)), ['GAST'], 'a guest stays a guest');
     assert.equal(await page.$eval('#newUserLevel option[value="1"]', o => o.disabled), false, 'the Inhaber may create admins');
@@ -439,6 +451,7 @@ const smallText = page => page.evaluate(() => {
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'no sideways scroll in ' + view);
     }
     assert.equal(await page.$eval('#newUserLevel option[value="1"]', o => o.disabled), true, 'an Admin cannot create admins');
+    await page.click('#settingsMenuToggle'); // on a phone the categories sit in the closed drawer
     await page.click('#tab-admin-benutzer');
     await page.waitForFunction(() => document.querySelectorAll('#userRows > tr').length === 3);
     assert.deepEqual(await page.$$eval('#userRows > tr', rows => rows.map(r => !!r.querySelector('.user-delete-toggle'))), [false, true, true],
@@ -477,6 +490,9 @@ const smallText = page => page.evaluate(() => {
       const mobileRun = await open(browser, 4, '#start', {width, height: 760});
       const mobilePage = mobileRun.page;
       await mobilePage.click('#settingsMenuToggle');
+      // The drawer slides in; measure once it has arrived (it fails below if it never does).
+      await mobilePage.waitForFunction(() => document.getElementById('cfgNav').getBoundingClientRect().left >= -1,
+        null, {timeout: 3000}).catch(() => {});
       const layout = await mobilePage.evaluate(() => {
         const nav = document.getElementById('cfgNav');
         const navRect = nav.getBoundingClientRect();
