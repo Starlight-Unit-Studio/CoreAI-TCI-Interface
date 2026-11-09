@@ -411,6 +411,52 @@ const smallText = page => page.evaluate(() => {
     });
     await page.close();
 
+    // 0.6.73: guard the actual computed mobile layout, not just scrollWidth.
+    // The old <=900px horizontal tab-bar styles once arranged Personal and
+    // Teams side-by-side inside the new drawer and clipped the left edge.
+    for (const width of [320, 390, 768, 900]) {
+      const mobileRun = await open(browser, 4, '#start', {width, height: 760});
+      const mobilePage = mobileRun.page;
+      await mobilePage.click('#settingsMenuToggle');
+      const layout = await mobilePage.evaluate(() => {
+        const nav = document.getElementById('cfgNav');
+        const navRect = nav.getBoundingClientRect();
+        const groups = Array.from(nav.querySelectorAll('.cfg-nav-group'))
+          .filter(group => !group.hidden && getComputedStyle(group).display !== 'none');
+        const tabs = Array.from(nav.querySelectorAll('.cfg-tab'))
+          .filter(tab => !tab.hidden && getComputedStyle(tab).display !== 'none');
+        const groupRects = groups.map(group => group.getBoundingClientRect());
+        const tabRects = tabs.map(tab => tab.getBoundingClientRect());
+        return {
+          direction: getComputedStyle(nav).flexDirection,
+          groupDirections: groups.map(group => getComputedStyle(group).flexDirection),
+          navWidth: navRect.width,
+          navLeft: navRect.left,
+          viewport: innerWidth,
+          overflowsX: nav.scrollWidth > nav.clientWidth + 1,
+          topGroups: groupRects.map(rect => rect.top),
+          tabOverflow: tabRects.some(rect => rect.left < navRect.left - 1 ||
+            rect.right > navRect.right + 1),
+          scrollbar: getComputedStyle(nav).overflowY,
+        };
+      });
+      assert.equal(layout.direction, 'column', 'drawer must be vertical at width ' + width);
+      assert(layout.groupDirections.every(value => value === 'column'),
+        'every category group must be vertical at ' + width);
+      assert.equal(layout.overflowsX, false, 'no horizontal content overflow at ' + width);
+      assert.equal(layout.tabOverflow, false, 'all category tabs inside the drawer at ' + width);
+      assert(layout.navLeft >= -1 && layout.navLeft + layout.navWidth <= layout.viewport + 1,
+        'drawer is within the screen at ' + width);
+      assert(layout.topGroups.every((top, index, all) => index === 0 || top >= all[index - 1]),
+        'category groups stack downward at ' + width);
+      assert.equal(layout.scrollbar, 'auto', 'mobile drawer scrolls vertically at ' + width);
+      await mobilePage.click('#settingsMenuClose');
+      assert.equal(await mobilePage.getAttribute('#settingsMenuToggle', 'aria-expanded'), 'false',
+        'close restores the settings page at ' + width);
+      assert.deepEqual(mobileRun.errors, [], 'no browser errors at width ' + width);
+      await mobilePage.close();
+    }
+
     // Markup and wiring.
     const html = fs.readFileSync(path.join(root, 'settings.html'), 'utf8');
     const adminHtml = fs.readFileSync(path.join(root, 'admin/index.html'), 'utf8');
