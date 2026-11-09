@@ -2,6 +2,11 @@
 
 ## 0.6.73 - 09.11.2026
 
+- Finish the Chat-inspired settings layout: a left-edge swipe opens the mobile categories drawer, a swipe inside closes it, and desktop navigation can collapse to give the active settings page all available space. Escape, backdrop, keyboard access and 25 deep-linked categories remain.
+- Move existing real controls to their proper pages without creating replacement APIs: password and login devices to Security & sign-in; account JSON export to Data controls; Enter/Ctrl+Enter to Keyboard; automatic read-aloud and voice recognition term hints to Voice; Memory enable and relevance/context settings to Memory. Existing account and AI endpoints remain authoritative.
+- Put one global Expert switch in the settings header, independent of navigation scrolling. Add a header Admin Core shortcut only after owner/admin role verification, keeping the separate Admin Core authorization gate intact.
+- Prevent Memory-only saves from silently overwriting unsaved AI-profile changes by building the unchanged fields from the last server-loaded snapshot. Keep Expert field visibility browser-local; never delete or reset stored numeric values.
+- Strengthen structural and Playwright regression checks for category ownership, privileged Admin links, desktop collapse, mobile swipe and save persistence. No database schema, Modelfile or global FIFO changes.
 - Fix the settings navigation on phones and tablets: the retired <=900px horizontal tab bar was still setting `flex-direction: row` on the new fixed drawer, placing Personal and Teams side-by-side and clipping the left edge. Force a single vertical column for the drawer, category groups and tab contents without modifying categories or their behavior.
 - Size the fixed drawer and rows with border-box, keep category labels inside the viewport, and allow only vertical scrolling. Preserve backdrop, Escape, mobile close, role-gated Admin Core and the Expert field switch.
 - Extend the Playwright regression to measure actual drawer width, position, flex direction, item geometry and scrolling at 320, 390, 768 and 900 px; strengthen the offline navigation selftest so the old horizontal style cannot silently return.
