@@ -122,11 +122,18 @@
     var colors = activeTheme === 'dark'
       ? {background: prefs.backgroundDark, foreground: prefs.foregroundDark}
       : {background: prefs.backgroundLight, foreground: prefs.foregroundLight};
+    root.classList.toggle('pref-custom-background', colors.background !==
+      (activeTheme === 'dark' ? '#0c1427' : '#f0f4fa'));
     var accents = {blue: activeTheme === 'dark' ? '#91b7ff' : '#5b92ff',
       cyan: '#13a6b5', green: '#299b70', violet: '#8a6ff2', amber: '#ca852a'};
     if (root.style && typeof root.style.setProperty === 'function') {
       root.style.setProperty('--bg', colors.background);
       root.style.setProperty('--cx', accents[prefs.accent]);
+      var accent = accents[prefs.accent];
+      var rgb = [1,3,5].map(function (i) { return parseInt(accent.slice(i, i+2), 16); }).join(',');
+      root.style.setProperty('--line', 'rgba(' + rgb + ',.25)');
+      root.style.setProperty('--line-strong', 'rgba(' + rgb + ',.52)');
+      root.style.setProperty('--panel-cx', 'rgba(' + rgb + ',.10)');
       root.style.setProperty('--pref-ui-font', prefs.uiFontSize + 'px');
       root.style.setProperty('--pref-content-font', prefs.contentFontSize + 'px');
       root.style.setProperty('--pref-code-font', prefs.codeFontSize + 'px');
