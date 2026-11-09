@@ -60,7 +60,8 @@
       if (openButton) openButton.setAttribute('aria-expanded', opened ? 'true' : 'false');
       if (backdrop) backdrop.hidden = !opened;
       if (doc.body) doc.body.classList.toggle('cfg-menu-opened', opened);
-      if (opened && search && typeof search.focus === 'function') search.focus();
+      // Focus a close control, not Search: mobile should not summon the keyboard.
+      if (opened && closeButton && typeof closeButton.focus === 'function') closeButton.focus();
       if (!opened && focusToggle && openButton && typeof openButton.focus === 'function') openButton.focus();
     }
     if (expertToggle) {
