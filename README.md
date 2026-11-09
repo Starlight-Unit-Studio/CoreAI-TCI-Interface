@@ -34,7 +34,7 @@ An archived, separately checksum-verified historical `0.5.3-alpha` ZIP can still
 
 Once the initial setup has installed the host-side update service, **the owner can update CoreAI without SSH**.
 
-1. Sign in with the **owner** account and navigate to **Settings → Expert settings → System → CoreAI Update**.
+1. Sign in with the **owner** account and navigate to **Settings → System → CoreAI Update**.
 2. Select **Check now** to request a GitHub check. The host also checks the repository's `main` branch **approximately every 10 minutes** when the systemd update service is running.
 3. When a new commit is available, choose **Open update window**, or use the notification shown to the owner. Review the version and available change notes.
 4. Choose whether Ollama should be restarted afterwards, then select **Start update**. CoreAI creates a **database backup** first, runs its official setup and reports progress in the interface.
