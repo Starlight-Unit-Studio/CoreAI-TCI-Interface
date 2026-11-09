@@ -4,8 +4,8 @@ declare(strict_types=1);
 //   php scripts/account-language-selftest.php
 // German or English. It sets Mara's default answer language (she still answers
 // in the language a person writes in) and decides the read-aloud voice when the
-// language of an answer is unclear. Interface translation (DE/EN beta) is a
-// translated interface is planned. Offline: rules, prompt and wiring. With a
+// language of an answer is unclear. The interface locale is a separate
+// browser preference (DE/EN beta). Offline: rules, prompt and wiring. With a
 // database (api/config.local.php, or COREUI_SELFTEST_DB=1 with COREUI_DB_* set):
 // saving and loading inside a transaction that is rolled back.
 if (PHP_SAPI !== 'cli') exit(1);
