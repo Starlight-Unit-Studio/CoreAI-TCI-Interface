@@ -1,0 +1,31 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.79
+09.11.2026
+
+- Darstellung aus den ChatGPT-Bildreferenzen in CoreAI-Stil
+  aufgebaut. Alle Funktionen der Referenzbilder sind normale
+  Benutzeroptionen, kein Expertenmodus.
+- Bisherigen System-/Hell-/Dunkelmodus beibehalten.
+- Motive: Quantum Holo, Terra-Net Terminal, Klar.
+- Akzent: Blau, Gruen, Violett, Gold oder frei gewaehlt.
+- Hintergrund/Vordergrund als sichere #RRGGBB-Werte mit
+  Farbauswahl und Kontrasthinweis.
+- Motiv als privatsphaere-freie JSON-Datei exportieren und
+  Motiv, Akzent, Schriftmotiv in den anderen Modus kopieren.
+- Hell/Dunkel auf Wunsch mit getrenntem Motiv, Akzent und
+  Schriftmotiv; Hintergrund und Text bleiben pro Modus lesbar.
+- UI-/Inhalts-/Code-Schriftgroesse als echte, begrenzte Werte.
+- Bewegung reduzieren: System, Ein, Aus. Reaktion auf OS.
+- Kontrastregler fuer Sekundaertext und Linien.
+- Intelligente Zeichensetzung optional fuer manuelles
+  natuerliches Tippen; eingefuegter Text, Code, JSON, URLs
+  werden nicht umformatiert.
+- Volle Seitenbreite und Diff-Markierung Farbe oder +/-.
+- Originale fuenf Anzeige-/Chat-Schalter bleiben erhalten:
+  kompakter Feed, Telemetrie, Arbeitsweg, Browser-Ansicht,
+  Live-Browser-Bildfolge.
+- Vorhandene v1-Einstellungen bleiben lesbar und gespeichert.
+  Grosse/ungueltige Werte sowie fremde Farbstrings abgewehrt.
+- Selbsttests, mobile Browserregression, beide Preflights,
+  DE/EN und Cache-Kennungen aktualisiert.
+- Kein Datenbankschema, keine Core-Rechte, kein Modelfile und
+  keine Aenderung an der globalen Modellwarteschlange.
