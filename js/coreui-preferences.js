@@ -6,6 +6,8 @@
   var STORAGE_KEY = 'emberCoreUI.preferences.v1';
   var defaults = {
     theme: 'system',
+    // Keyboard behavior is a local presentation preference, not a model setting.
+    sendKey: 'enter',
     reduceMotion: false,
     compactFeed: false,
     thinkingExpanded: false,
@@ -18,6 +20,7 @@
     var source = input && typeof input === 'object' ? input : {};
     return {
       theme: source.theme === 'light' || source.theme === 'dark' ? source.theme : 'system',
+      sendKey: source.sendKey === 'mod-enter' ? 'mod-enter' : 'enter',
       reduceMotion: source.reduceMotion === true,
       compactFeed: source.compactFeed === true,
       thinkingExpanded: source.thinkingExpanded === true,
