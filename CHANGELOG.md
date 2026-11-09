@@ -1,5 +1,12 @@
 # CoreAI: TCI Interface
 
+## 0.6.68 - 09.11.2026
+
+- Open on a native CoreAI welcome screen with a personalized greeting and four clickable example questions that immediately send to Mara.
+- Create a persistent chat only upon the first real turn, whether text, attachment, voice recording or the first Live utterance. Prior chats remain in the sidebar. New Connection and login no longer create empty sessions.
+- Use one rightmost composer action for Live, Send and a strongly pulsing Stop while Mara works; remove duplicate Stop from the message timeline. Keep early cancellation requests until the server reports its agent-run identifier.
+- Support reduced-motion preferences and the existing native day/night CoreAI color palette. Include a native regression test. No database migration, model, memory, FLUX or installer change.
+
 ## 0.6.67 - 09.11.2026
 
 - Correct the narrative identity boundary: Ember Caldwell / Sandra Jansen is a separate Starlight Unit character and must not appear as a fixed example of TCI Mara Thorne's personal identity.
