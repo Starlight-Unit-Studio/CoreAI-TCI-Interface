@@ -77,14 +77,20 @@ function coreui_general_save(PDO $pdo, int $uid, array $input, bool $isGuest = f
       throw new InvalidArgumentException('invalid_general_field');
     }
   }
-  $auto = filter_var($input['auto_higher_core'] ?? false, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+  // PATCH semantics: changing auto Core never overwrites a selected effort,
+  // and a Core change must not erase the prior effort until the user edits it.
+  $existing = coreui_general_load($pdo, $uid);
+  $auto = array_key_exists('auto_higher_core', $input)
+    ? filter_var($input['auto_higher_core'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)
+    : $existing['auto_higher_core'];
   if ($auto === null) throw new InvalidArgumentException('invalid_auto_core');
   if ($isGuest && $auto) throw new RuntimeException('guest_core_locked');
-  $level = $input['thinking_level'] ?? '';
+  $changingLevel = array_key_exists('thinking_level', $input);
+  $level = $changingLevel ? $input['thinking_level'] : $existing['thinking_level'];
   if (!is_string($level) || !in_array($level, ['', 'low', 'medium', 'high', 'max'], true)) {
     throw new InvalidArgumentException('invalid_thinking_level');
   }
-  if ($level !== '') {
+  if ($changingLevel && $level !== '') {
     $model = coreui_general_effective_model($pdo, $uid);
     $caps = coreui_general_thinking_capabilities($model);
     if (!in_array($level, $caps['levels'], true)) {
