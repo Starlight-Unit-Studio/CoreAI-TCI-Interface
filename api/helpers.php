@@ -459,15 +459,25 @@ function stu_app_settings_install(PDO $pdo): void {
   static $done = false;
   if ($done) return;
   try {
-    $pdo->exec(
-      "CREATE TABLE IF NOT EXISTS stu_app_settings (" .
-      "`k` VARCHAR(64) NOT NULL PRIMARY KEY," .
-      "`value` TEXT NULL," .
-      "`updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP" .
-      ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
-    );
+    // Production uses MariaDB. Offline PDO-SQLite selftests must not execute
+    // MySQL's ON UPDATE/ENGINE clauses or write false installer errors.
+    if ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite') {
+      $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS stu_app_settings (' .
+        'k TEXT NOT NULL PRIMARY KEY, value TEXT NULL, ' .
+        'updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)'
+      );
+    } else {
+      $pdo->exec(
+        "CREATE TABLE IF NOT EXISTS stu_app_settings (" .
+        "`k` VARCHAR(64) NOT NULL PRIMARY KEY," .
+        "`value` TEXT NULL," .
+        "`updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP" .
+        ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+      );
+    }
   } catch (Throwable $e) {
-    // Do not break the whole game if the host refuses DDL; callers fall back safely.
+    // Never claim the installation succeeded; application fallback remains.
     stu__log_error(['type'=>'maintenance_settings_install_failed','message'=>$e->getMessage()]);
   }
   $done = true;
@@ -491,9 +501,13 @@ function stu_app_setting_get(PDO $pdo, string $key, ?string $default = null): ?s
 function stu_app_setting_set(PDO $pdo, string $key, string $value): void {
   try {
     stu_app_settings_install($pdo);
-    $st = $pdo->prepare(
-      'INSERT INTO stu_app_settings (`k`, `value`, `updated_at`) VALUES (?, ?, NOW()) ' .
-      'ON DUPLICATE KEY UPDATE `value` = VALUES(`value`), `updated_at` = NOW()'
+    // Native SQLite UPSERT for offline selftests; keep MySQL SQL intact.
+    $sqlite = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite';
+    $st = $pdo->prepare($sqlite
+      ? 'INSERT INTO stu_app_settings (`k`, `value`, `updated_at`) VALUES (?, ?, CURRENT_TIMESTAMP) ' .
+        'ON CONFLICT(`k`) DO UPDATE SET `value` = excluded.`value`, `updated_at` = CURRENT_TIMESTAMP'
+      : 'INSERT INTO stu_app_settings (`k`, `value`, `updated_at`) VALUES (?, ?, NOW()) ' .
+        'ON DUPLICATE KEY UPDATE `value` = VALUES(`value`), `updated_at` = NOW()'
     );
     $st->execute([$key, $value]);
     return;
