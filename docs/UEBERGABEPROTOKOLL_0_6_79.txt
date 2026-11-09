@@ -1,0 +1,58 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.79
+Datum: 09.11.2026
+Basis: main 0.6.78 (PR #230 bereits gemergt)
+Branch: feat/appearance-settings-0679
+
+ZIEL
+Nach Allgemein wird Darstellung anhand von drei ChatGPT-
+Bildreferenzen als eigene, funktionsfaehige Seite ueberarbeitet.
+Alle Referenzfunktionen sind NORMAL; Expert nur fuer rohe
+technische Code-/Runtime-Feineinstellungen.
+
+AENDERUNGEN
+- settings.html: System/Hell/Dunkel, Motivauswahl, Akzent und
+  zwei echte Farbwerte pro Mode, Schriftmotiv, Export/Kopieren.
+  Die normalen erweiterten Felder umfassen Schriftgroessen,
+  OS-/Ein-/Aus-Bewegung, getrennte Hell-/Dunkel-Varianten,
+  Kontrast, intelligentes Satzzeichen, volle Breite und
+  echte Diff-Markierungen. Vorhandene fuenf Schalter erhalten.
+- js/coreui-preferences.js: bestehender lokaler v1-Schluessel
+  mit normalisiertem appearance-Objekt erweitert.
+  Kein serverseitiges Konto- oder DB-Schreiben.
+  UI-Variablen und Modusattribut an allen Seiten angewendet.
+- js/coreui-appearance-settings.js: alle Einstellungen
+  angeschlossen, Motiv als JSON ohne private Daten exportieren,
+  Stil in anderen Modus kopieren, abgesicherte Hex-Eingaben.
+- css/coreui-theme.css: Theme-/Motivregeln, mobile Anordnung,
+  Skalierung UI/Inhalt/Code, Kontrast, volle Breite, Diff.
+- js/coreui-smart-punctuation.js: opt-in bei manuellem Tippen,
+  kein Paste/Code/JSON/URL-Rewrite.
+- js/coreui-markdown.js: echte diff-Codezeilen als sichere
+  DOM-Spans markiert, der kopierte Quelltext bleibt original.
+- js/settings.js: lokale Aenderungen erhalten die anderen
+  Praeferenzen; nicht jeder Schalter setzt appearance zurueck.
+- js/coreui-ui-language.js: neue DE/EN Labels.
+- Tests/preflight: funktionale localStorage-/Theme-Tests,
+  UI-Controller-Simulation, Eingabeschutz, Mobilansicht.
+
+GRENZEN
+- Keine neue Datenbank, kein Konto-API und keine Berechtigung.
+- Keine Installation externer Motive aus JSON; Download ist
+  echter Export, Kopieren ist lokal aktiv.
+- Die Farbanpassung arbeitet mit den zentralen Theme-Tokens.
+  Harte Sicherheits-/Systemhinweisfarben bleiben erkennbar.
+- Der alte Browser-Speicherschluessel bleibt erhalten;
+  die Einstellungen sind nicht automatisch account-synchron.
+
+TESTPLAN
+1. node scripts/theme-preferences-selftest.cjs
+2. node scripts/appearance-settings-selftest.cjs
+3. node scripts/appearance-controller-selftest.cjs
+4. node scripts/smart-punctuation-selftest.cjs
+5. node scripts/settings-tabs-ui-selftest.cjs (Playwright)
+6. Kompletter nativer/Compose-Preflight am Server.
+7. Android: Hell/Dunkel/System, 320/390 px, Schrift/Hex-
+   Felder und keine horizontale Verschiebung.
+8. Chat: optionale Satzzeichen und nicht veraendertes Code-
+   oder Diff-Copy pruefen.
+Nur nach erfolgreichem Preflight mergen.
