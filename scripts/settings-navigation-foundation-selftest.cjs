@@ -19,7 +19,8 @@ const sections = {
   teams: ['teams-start','teams-erstellen'],
   integrations: ['plugins','passwoerter','cloud-computer'],
   programming: ['codex-cloud','code-review'],
-  expert: ['ki-profil','wissen','memory','system']
+  system: ['system'],
+  expert: ['ki-profil','wissen','memory']
 };
 const entries = Object.values(sections).flat();
 assert.equal(entries.length, 25);
