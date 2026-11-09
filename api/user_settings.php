@@ -8,6 +8,7 @@ require_once __DIR__ . '/model_catalog.php';
 require_once __DIR__ . '/ai_context_estimate.php';
 require_once __DIR__ . '/guest_access.php';
 require_once __DIR__ . '/model_access.php';
+require_once __DIR__ . '/general_core_controls.php';
 
 $pdo = stu_pdo();
 $uid = stu_require_user_id();
@@ -78,6 +79,19 @@ if ($method === 'GET' && array_key_exists('core_cloud', $_GET)) {
   stu_json(['ok'=>true, 'cloud'=>coreui_ollama_cloud_status()]);
 }
 
+if ($method === 'GET' && array_key_exists('general', $_GET)) {
+  $general = coreui_general_load($pdo, (int)$uid);
+  $model = coreui_general_effective_model($pdo, (int)$uid);
+  $caps = coreui_general_thinking_capabilities($model);
+  stu_json([
+    'ok' => true, 'general' => $general, 'model' => $model,
+    'core_label' => coreui_core_label($model), 'reasoning' => $caps,
+    'available' => coreui_general_schema_ready($pdo),
+    'auto_core_allowed' => !$isGuest,
+    'csrf_token' => stu_csrf_token(),
+  ]);
+}
+
 if ($method === 'GET') {
   $settings = coreui_ai_settings_load($pdo, $uid);
   // 0.5.83: a Core whose release was withdrawn no longer counts as chosen.
@@ -135,6 +149,21 @@ if ($method !== 'POST') stu_json(['ok' => false, 'error' => 'method_not_allowed'
 stu_require_csrf();
 
 $body = stu_read_json_body();
+// General switches are independent from KI-Profil persistence; a narrow
+// endpoint prevents changing the user's saved Core/num_ctx accidentally.
+if (($body['action'] ?? '') === 'general') {
+  $settings = $body['settings'] ?? null;
+  if (!is_array($settings) || array_is_list($settings)) stu_json(['ok'=>false, 'error'=>'invalid_general_fields'], 400);
+  try {
+    $saved = coreui_general_save($pdo, (int)$uid, $settings, $isGuest);
+    stu_json(['ok'=>true, 'general'=>$saved]);
+  } catch (InvalidArgumentException $e) {
+    stu_json(['ok'=>false, 'error'=>$e->getMessage()], 400);
+  } catch (RuntimeException $e) {
+    stu_json(['ok'=>false, 'error'=>$e->getMessage()],
+      $e->getMessage() === 'guest_core_locked' ? 403 : 503);
+  }
+}
 // 0.5.75: the thinking switch lives in the chat and saves only its own value.
 if (($body['action'] ?? '') === 'thinking') {
   $enabled = filter_var($body['thinking_enabled'] ?? null, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
