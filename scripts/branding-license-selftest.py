@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-EXPECTED_VERSION = "0.6.70"
+EXPECTED_VERSION = "0.6.71"
 PUBLIC_PAGES = (
     "index.html",
     "login.html",
@@ -129,6 +129,21 @@ def main() -> int:
         require("2023-2026 Patrick Schildgen" in read(credit_file),
                 f"copyright attribution not consistent: {credit_file}")
     settings_page = read("settings.html")
+
+    # 0.6.71: the public settings menu is not an admin console.
+    require('id="settingsExpertToggle"' in settings_page
+            and 'id="settingsNavSearch"' in settings_page
+            and 'id="adminSettingsLink"' in settings_page,
+            "search, expert mode or separate Admin Core link missing")
+    require('id="adminNavGroup"' not in settings_page
+            and 'id="view-admin-benutzer"' not in settings_page,
+            "old embedded admin views remain on regular settings")
+    require('id="adminAccessGate"' in read("admin/index.html")
+            and 'id="view-admin-benutzer"' in read("admin/index.html"),
+            "standalone Admin Core with authentication gate missing")
+    require('coreui-settings-menu.js' in settings_page
+            and 'coreui-settings-menu.js' in read("admin/index.html"),
+            "shared settings navigation controller missing")
     require('<span class="about-family">QUANTUM SOFTWARE</span>' in settings_page,
             "Quantum family line missing in settings About")
     require('<span class="about-product">COREAI: TCI INTERFACE</span>' in settings_page,
