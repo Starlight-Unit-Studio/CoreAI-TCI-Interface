@@ -1,5 +1,42 @@
 # CoreAI: TCI Interface
 
+## 0.6.85 - 09.11.2026
+
+- **Settings > Sicherheit is rebuilt as "Sicherheit und Anmeldung" after the ChatGPT security screenshots**, in CoreAI style: an overview with **So meldest du dich an**, **Multi-Faktor-Authentifizierung (MFA)**, **Sitzungen**, **Erweiterte Sicherheit** and **App-Sicherheit**; each row opens its own sub page with a back button. "Anmeldeverknüpfungen" was left out on purpose.
+  - **Passkeys und Sicherheitsschlüssel** (real): add a passkey of this device, a phone or a hardware security key, see when it was added and last used, rename or remove it (password confirmation). WebAuthn is verified on the server without an external library: ES256, RS256 and Ed25519, attestation "none", origin and RP ID checked (HTTPS, plain HTTP only on localhost), user presence, signature counter. Up to 20 per account. The sign-in page gets **MIT PASSKEY ANMELDEN**; a passkey counts as both factors and works without typing the e-mail.
+  - **Passwort:** the existing password change, now on its own sub page.
+  - **Authenticator-App** (real, TOTP after RFC 6238): QR code drawn in the browser (no external service), the key in groups of four to copy, confirmation with a first code. The key is stored sealed (AES-256-GCM, key derived from the database password). One step of clock drift is accepted, a code is never accepted twice.
+  - **E-Mail-Code** (real, instead of the reference's SMS): 6-digit codes by mail, valid 10 minutes, 5 tries, a new mail at most once a minute. Needs E-Mail sending (Admin Core); without it the row explains why it is unavailable.
+  - **Wiederherstellungscodes:** 10 one-time codes (like abcde-fghjk), created with the first second factor, shown once, copy and .txt download, new set on request. Stored only as hashes.
+  - **Second step at sign-in:** after the password, accounts with a second factor choose the authenticator app, a code by mail or a recovery code; the half-finished sign-in lives only in the server session (10 minutes, 5 tries).
+  - **Aktive Sitzungen** with the existing device list and a new **ÜBERALL ABMELDEN** (all devices including this one).
+  - **Sicherheitsverlauf:** sign-ins with method and device, failed passwords and codes, sign-outs, removed devices, password changes and resets, every change to second factors, recovery codes, passkeys, advanced security and Lockdown; sign-ins from before the update come from the existing session list.
+  - **Erweiterte Kontosicherheit** (real, after the reference's advanced account security page): sign-in only with a passkey or security key (a password alone is refused before it is even checked), no password reset by e-mail, recovery only with recovery codes or on the server, sessions last 24 hours instead of 30 days, security notifications cannot be switched off (Push and E-Mail), and turning it on signs out everywhere. Needs at least one passkey; the last passkey cannot be removed while it is on. The card "Vertrauliche Gespräche" says what is already true: CoreAI never trains on chats.
+  - **Lockdown-Modus** (real): turns off web search and browser research for the account's chats, so foreign web pages cannot slip instructions to Mara; live weather data, which comes from the web, is off too.
+  - **In Vorbereitung** (shown greyed, never active): **Konto-PIN** (needs locked chats first), **Push-Benachrichtigungen** to approve sign-ins and **CSP für benutzerdefinierte Apps** (CoreAI has no custom apps yet).
+- Every sensitive change asks for the password again (rate-limited). Guests have no security page actions.
+- New migration 030 (`stu_user_security`, `stu_passkeys`, `stu_security_events`, all `ON DELETE CASCADE`); the history keeps the last 300 entries per account.
+- **Emergency reset on the server:** `php scripts/security-reset.php owner@example.com [--passkeys]` turns off the second factors, recovery codes and advanced security of one account (optionally removes its passkeys), signs it out everywhere and writes the history. CLI only.
+- New files: `api/security_store.php`, `api/totp.php`, `api/webauthn.php`, `api/secret_box.php`, `js/coreui-security-settings.js`, `js/coreui-login-security.js`, `js/coreui-qr.js`.
+- Tests: new `sign-in-security-selftest.php` (RFC 4226/6238 vectors, sealing, a software authenticator with ES256, RS256 and Ed25519 plus refused origin, challenge, RP ID, presence, signature and counter, the store on SQLite and MariaDB, wiring) and `security-ui-selftest.cjs` (Chromium with a virtual authenticator: overview, every sub page, QR, codes, passkeys, confirmation dialog, advanced security, sign-in second step and passkey button, phone, font sizes). `settings-tabs-ui-selftest.cjs` opens the password and session sub pages. Both preflights.
+- No change to Cores, Modelfile, FIFO, prompts or account rights.
+
+## 0.6.84 - 09.11.2026
+
+- **Settings > Profil now opens with an overview modeled on the two ChatGPT profile screenshots**, in CoreAI style. The existing name and picture editors stay below; the pencil jumps there.
+  - **Head:** picture, name, role and "dabei seit". The globe (public profile) and share buttons are shown greyed as planned.
+  - **Figures** in German like the reference (2,1 Mrd., 195,4 Mio., 1 Std. 50 Min., 27 Tage): **Tokens insgesamt** and **Token-Spitzenwert** (the highest day), **Längste Aufgabe** (the longest completed answer run), **Längste Serie** and **Aktuelle Serie** (days in a row with an own message; the current streak still counts until the day ends).
+  - **Tokens are counted from this version on** (new migration 029, `stu_usage_daily`): after every Ollama call of a chat turn, per account, day, Core and thinking level, numbers only. CoreAI never stored tokens before, so the page says since when it counts. Streaks, the longest task, tools and what Mara made come from the existing history.
+  - **Tokennutzung** raster of the last 53 weeks with **Täglich, Wöchentlich, Kumulativ** and month labels: tokens (green) from the counting start, own messages per day (blue) before it, explained in a legend; each dot names its day and value.
+  - **Highlights** (featuring a skill on the profile) is shown as planned.
+  - **Von Mara erstellt** (the reference's Sites): the latest images and files Mara made, each opening its chat, with totals; an empty state links to the chat. The assistant's own name is used.
+  - **Top-Werkzeuge** (the reference's Top-Plugins): Websuche, Recherche im Browser, Python, Bilder, Dateien, Skills by use.
+  - **Einblicke:** TCI Core Schnell share of the runs (the reference's Schnellmodus), most used Core, most used Denkaufwand, discovered and used skills, messages, chats, active days.
+- New `api/profile_stats.php` (GET, the signed-in account's own data only, no guests) and `api/usage_store.php`; nginx allows the endpoint in both templates. The account export includes the counted numbers.
+- The "In Vorbereitung" badge is 11 px now (was 10 px), also on Benachrichtigungen.
+- Tests: new `profile-stats-selftest.php` (thinking levels, streaks, counting only with an account, the overview from SQLite with rows of other accounts and Mara that must not count, MariaDB with migration 029, cascade on account deletion, wiring) and `profile-stats-ui-selftest.cjs` (Chromium: head, figures, note, raster in all three modes, made, tools, insights, planned parts, pencil, a saved name, a new account, no migration, a failed request, loading when opened, phone). Both preflights.
+- No change to Cores, Modelfile, FIFO, prompts or account rights.
+
 ## 0.6.83 - 09.11.2026
 
 - **Settings > Benachrichtigungen now has every category of the two ChatGPT reference screenshots**, in their order. 0.6.81 had left out four of the ten:

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.83: Benachrichtigungen mit allen Kategorien der Referenz, Neue Funktionen nach einem installierten Update.
+# CoreAI: TCI Interface 0.6.85: Sicherheit und Anmeldung (Passkeys, Authenticator-App, E-Mail-Code, Wiederherstellungscodes, Lockdown, erweiterte Kontosicherheit, Verlauf).
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -116,6 +116,23 @@ UI_FILES=(
   js/coreui-admin-mail.js
   scripts/mail-settings-selftest.php
   scripts/admin-mail-ui-selftest.cjs
+  database/migrations/029_usage_counter.sql
+  api/usage_store.php
+  api/profile_stats.php
+  js/coreui-profile-stats.js
+  scripts/profile-stats-selftest.php
+  scripts/profile-stats-ui-selftest.cjs
+  database/migrations/030_sign_in_security.sql
+  api/secret_box.php
+  api/totp.php
+  api/webauthn.php
+  api/security_store.php
+  js/coreui-qr.js
+  js/coreui-security-settings.js
+  js/coreui-login-security.js
+  scripts/sign-in-security-selftest.php
+  scripts/security-ui-selftest.cjs
+  scripts/security-reset.php
   scripts/terran-terminology-selftest.cjs
   scripts/tci-language-selftest.cjs
   js/console-app.js
@@ -1078,6 +1095,22 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail "E-Mail-Versand-Selbsttest: ${mail_settings_test:-Unbekannter Fehler}"
   fi
 
+  # 0.6.84: Profil overview: tokens counted per account, streaks, longest task, raster, tools, insights.
+  profile_stats_test=''
+  if profile_stats_test="$(compose exec -T php php scripts/profile-stats-selftest.php 2>&1)"; then
+    ok 'Profil: Token-Zaehlung, Serien, laengste Aufgabe, Raster, Werkzeuge und Einblicke geprueft.'
+  else
+    fail "Profil-Selbsttest: ${profile_stats_test:-Unbekannter Fehler}"
+  fi
+
+  # 0.6.85: Sicherheit und Anmeldung: RFC 6238 codes, WebAuthn, lockdown, recovery, advanced account security.
+  sign_in_security_test=''
+  if sign_in_security_test="$(compose exec -T php php scripts/sign-in-security-selftest.php 2>&1)"; then
+    ok 'Sicherheit: Authenticator-Codes (RFC 6238), Passkeys (WebAuthn), Lockdown, Wiederherstellung und erweiterte Kontosicherheit geprueft.'
+  else
+    fail "Sicherheits-Selbsttest: ${sign_in_security_test:-Unbekannter Fehler}"
+  fi
+
   profile_reference_test=''
   if profile_reference_test="$(compose exec -T php php scripts/profile-reference-selftest.php 2>&1)"; then
     if [[ "$profile_reference_test" == PARTIAL:* ]]; then
@@ -1303,6 +1336,26 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       fi
     else
       warn 'E-Mail-Versand: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+    fi
+    # 0.6.84: Settings > Profil overview (figures, raster, made, tools, insights); needs Playwright for Node.
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/profile-stats-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'Profil: Kennzahlen, Raster (taeglich, woechentlich, kumulativ), Erstelltes, Werkzeuge und Einblicke im Browser geprueft.'
+      else
+        fail 'Profil: Oberflaechentest fehlgeschlagen.'
+      fi
+    else
+      warn 'Profil: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+    fi
+    # 0.6.85: Sicherheit und Anmeldung and the sign-in with second step and passkey; needs Playwright for Node.
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/security-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'Sicherheit: Seite (Passkeys, Authenticator mit QR, E-Mail-Code, Codes, Sitzungen, Verlauf, Lockdown) und Anmeldung im Browser geprueft.'
+      else
+        fail 'Sicherheit: Oberflaechentest fehlgeschlagen.'
+      fi
+    else
+      warn 'Sicherheit: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
     fi
     # 0.5.83: update window (Inhaber) and "Bitte auf Neustart warten"; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then

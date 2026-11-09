@@ -1,0 +1,20 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.84
+09.11.2026
+
+- Einstellungen > Profil beginnt mit einer Uebersicht nach den zwei ChatGPT-Profil-
+  Screenshots. Name und Bild bearbeiten bleibt darunter; der Stift springt dorthin.
+- Kopf: Bild, Name, Rolle, "dabei seit". Oeffentliches Profil und Teilen grau (geplant).
+- Kennzahlen: Tokens insgesamt, Token-Spitzenwert (hoechster Tag), Laengste Aufgabe,
+  Laengste Serie, Aktuelle Serie; deutsch formatiert wie die Vorlage.
+- Tokens werden ab dieser Version gezaehlt (Migration 029, stu_usage_daily): je Konto, Tag,
+  Core und Denkaufwand, nur Zahlen. Serien, Aufgabe, Werkzeuge und Erstelltes stammen aus
+  dem vorhandenen Verlauf.
+- Raster der letzten 53 Wochen: Taeglich, Woechentlich, Kumulativ; Tokens ab Zaehlbeginn,
+  davor eigene Nachrichten pro Tag, mit Legende.
+- Highlights geplant. Von Mara erstellt (Bilder, Dateien, mit Link zum Chat).
+  Top-Werkzeuge. Einblicke (TCI Core Schnell, meistgenutzter Core und Denkaufwand,
+  Skills, Nachrichten, Chats, aktive Tage).
+- api/profile_stats.php (nur eigene Daten, keine Gaeste), nginx-Freigabe in beiden
+  Vorlagen, Kontoexport mit den Zahlen. Abzeichen "In Vorbereitung" jetzt 11 px.
+- Tests: profile-stats-selftest.php (auch MariaDB), profile-stats-ui-selftest.cjs.
+  Keine Aenderung an Cores, Modelfile, FIFO, Prompts oder Rechten.

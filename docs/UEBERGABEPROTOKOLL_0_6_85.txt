@@ -1,0 +1,84 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.85
+Datum: 09.11.2026
+Basis: main 0.6.83 nach PR #236 und 766cda4; 0.6.84 (PR #237) war beim Push noch offen,
+0.6.85 liegt im selben Branch und PR.
+Branch: claude/bold-galileo-myoyi0
+
+AUFTRAG
+Betreiber: drei Screenshots der ChatGPT-Seite "Sicherheit und Anmeldung" ("Anmeldeverknuepfungen"
+durchgestrichen), "dann machen wir jetzt mit sicherheit und Anmeldung weiter"; danach Screenshots
+der Passkey-Seite, der Konto-PIN-Seite und fuenf der Seite chatgpt.com/advanced-account-security.
+Entscheidungen (Rueckfrage): echt umsetzen Verlauf und Sitzungen, Lockdown-Modus,
+Authenticator-App, Passkeys; statt SMS "email und authenthicator wenn das geht".
+chatgpt.com ist aus dieser Umgebung nicht erreichbar; Grundlage sind nur die Screenshots.
+
+UMGESETZT
+- database/migrations/030_sign_in_security.sql: stu_user_security (lockdown, advanced_at,
+  totp_secret versiegelt, totp_last_step, email_mfa_at, recovery_codes als Hashes,
+  webauthn_handle), stu_passkeys (credential_id, rp_id, public_key, sign_count, label),
+  stu_security_events; alle FK CASCADE. stu_app_settings security_events_since.
+- api/secret_box.php: AES-256-GCM, Schluessel per HKDF aus STU_DB_PASS und Zufallssalz.
+- api/totp.php: RFC 4226/6238, SHA-1, 6 Stellen, 30 s, +-1 Schritt, Wiederholschutz.
+- api/webauthn.php: CBOR, COSE nach PEM (ES256, RS256), Ed25519 ueber sodium, Herkunft
+  (HTTPS oder localhost), RP-ID-Hash, Nutzerpraesenz, Signatur, Zaehler.
+- api/security_store.php: Zustand, Verlauf (300 je Konto), TOTP, Mail-Codes, Wiederherstellungs-
+  codes, Passkeys (max. 20), erweiterte Kontosicherheit, Sitzungsdauer (24 h oder 30 Tage).
+- api/auth.php: zweiter Schritt (mfa_required, mfa_verify, mfa_email), Passkey-Anmeldung
+  (passkey_options, passkey_login), erweiterte Sicherheit: Passwort allein abgewiesen
+  (passkey_required), kein Zuruecksetzen per Mail; Verlaufseintraege.
+- api/account_security.php: alle Aktionen der Seite, jede heikle Aenderung mit Passwort.
+- api/ai_settings.php: Lockdown schaltet web und browse fuer das Konto ab.
+- api/notifications_store.php: Sicherheitsmeldungen bei erweiterter Sicherheit nicht abschaltbar.
+- api/auth_session_store.php: Sitzungsdauer je Konto (auch beim tokenlosen Altweg).
+- scripts/security-reset.php: Notfall nur auf dem Server (CLI).
+- settings.html, js/coreui-security-settings.js, js/coreui-qr.js, css/settings.css: Uebersicht
+  und Unterseiten. login.html, js/coreui-login-security.js, css/console.css: Passkey-Knopf und
+  zweiter Schritt.
+
+IN VORBEREITUNG (grau, nie aktiv)
+- Konto-PIN (braucht zuerst gesperrte Chats), Push-Bestaetigung der Anmeldung, CSP fuer
+  benutzerdefinierte Apps.
+
+TESTS (hier ausgefuehrt)
+- php scripts/sign-in-security-selftest.php, auch mit COREUI_SELFTEST_DB=1 gegen MariaDB
+  (Migration 030 zweimal eingespielt, idempotent).
+- node scripts/security-ui-selftest.cjs (Chromium mit virtuellem Authenticator; Bildschirm-
+  fotos von Uebersicht, Handy, zweitem Schritt und erweiterter Sicherheit angesehen).
+- Echter Ende-zu-Ende-Lauf (php -S, MariaDB, Chromium mit virtuellem Authenticator, nicht im
+  Repository): Passwort-Anmeldung, Passkey speichern, TOTP mit 10 Codes, Schluessel in der DB
+  versiegelt, Lockdown, zweiter Schritt (benutzter Code abgewiesen, naechster angenommen),
+  Anmeldung mit Wiederherstellungscode (9 uebrig), Passkey-Anmeldung, erweiterte Sicherheit
+  (ueberall abgemeldet, Passwort abgewiesen, Passkey geht, Sitzung 24 Stunden), Verlauf.
+- Echter E-Mail-Code-Lauf mit lokalem SMTP-Testserver: Code zum Einrichten aus der Mail,
+  10 Wiederherstellungscodes, Anmeldung verlangt den zweiten Schritt, Code per Mail,
+  falscher Code abgewiesen (noch 4 Versuche), richtiger angenommen.
+- Lockdown direkt geprueft: coreui_ai_runtime_apply gegen MariaDB, ohne Lockdown web und
+  browse an, mit Lockdown beide aus.
+- php -l aller geaenderten PHP-Dateien, cache-bust --verify, version-merge-check
+  --base-version 0.6.83 (PASS), tci-language, terran-terminology, branding-license,
+  frontend-regression, settings-navigation-foundation, settings-tabs-ui, profile-stats-ui,
+  notifications-ui.
+- Volle Testreihe mit MariaDB (COREUI_SELFTEST_DB=1): 118 bestanden, 7 fehlgeschlagen,
+  dieselben 7 wie auf main (chat-navigation-recovery, composer-menu-ui, core-install-ui,
+  send-shortcut, voice-live, voice-samples-ui, tests/test_preflight_http.py).
+- Zwei Verdrahtungstests mit woertlichem Text nachgezogen, keine Pruefung abgeschaltet:
+  notifications-selftest.php (Anmeldemeldung jetzt im gemeinsamen Anmeldeabschluss
+  coreui_auth_login_finish fuer Passwort, zweiten Faktor und Passkey).
+  user-policy-selftest.php bleibt unveraendert, die Originalzeile in ai_settings.php steht
+  wieder, der Lockdown folgt dahinter.
+
+NICHT HIER GEPRUEFT
+- Echte Passkeys auf Handys und Hardware-Schluesseln (nur der virtuelle Authenticator von
+  Chromium). Passkeys brauchen HTTPS mit der oeffentlichen Adresse; die RP-ID kommt aus
+  STU_PUBLIC_BASE_URL oder dem Host der Anfrage. Wechselt die Adresse, passen die Passkeys
+  nicht mehr; ohne erweiterte Sicherheit geht das Passwort weiter, mit ihr hilft dann nur
+  scripts/security-reset.php.
+- Echter Mailversand ueber einen oeffentlichen SMTP-Dienst.
+
+NACH DEM MERGE (Betreiber)
+1. Update einspielen (Migration 030 laeuft mit).
+2. Einstellungen > Sicherheit: zuerst einen Passkey hinzufuegen, dann bei Bedarf
+   Authenticator-App oder E-Mail-Code; Wiederherstellungscodes sicher ablegen.
+3. Erweiterte Kontosicherheit erst einschalten, wenn ein Passkey sicher funktioniert.
+4. Notfall: php scripts/security-reset.php konto@example.com [--passkeys] im Projektordner
+   auf dem Server (im Docker-Betrieb im PHP-Container).

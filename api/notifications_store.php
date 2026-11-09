@@ -219,6 +219,10 @@ function coreui_notify_dispatch(PDO $pdo, int $uid, string $category, array $mes
   $cats = coreui_notify_categories();
   if ($uid <= 0 || !isset($cats[$category]) || $cats[$category]['planned'] || !coreui_notify_schema_ready($pdo)) return $result;
   $channels = explode(',', coreui_notify_prefs($pdo, $uid)[$category]);
+  // 0.6.85: with advanced account security sign-in notifications cannot be switched off.
+  if ($category === 'security' && $channels === [''] && function_exists('coreui_security_advanced') && coreui_security_advanced($pdo, $uid)) {
+    $channels = ['push', 'email'];
+  }
   $payload = [
     'title' => mb_substr((string)($message['title'] ?? 'CoreAI'), 0, 120),
     'body' => mb_substr((string)($message['body'] ?? ''), 0, 400),

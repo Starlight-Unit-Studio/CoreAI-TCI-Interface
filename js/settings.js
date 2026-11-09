@@ -431,6 +431,8 @@
     setAvatarPreview(start.avatar, avatars.user, profile.display_name || 'Operator');
     if (profile.display_name) startText('name', profile.display_name);
     if (accountDisplayName) accountDisplayName.textContent = (profile.display_name || 'ANGEMELDETER OPERATOR').toUpperCase();
+    // 0.6.84: the profile overview head follows a saved name or picture (js/coreui-profile-stats.js).
+    try { document.dispatchEvent(new CustomEvent('coreai:profile', {detail: profile})); } catch (e) { /* old browser */ }
   }
 
   function loadProfile() {
@@ -769,10 +771,21 @@
     });
   }
 
+  // 0.6.85: the page Sicherheit und Anmeldung (js/coreui-security-settings.js) renders the rest.
+  function shareAccountSecurity(data) {
+    try { document.dispatchEvent(new CustomEvent('coreai:security', {detail: data})); } catch (e) { /* old browser */ }
+  }
+  document.addEventListener('coreai:security-sessions', function (event) {
+    var detail = event && event.detail ? event.detail : {};
+    if (detail.csrf_token) csrfToken = detail.csrf_token;
+    if (detail.sessions) renderLoginSessions(detail.sessions);
+  });
+
   function loadAccountSecurity() {
     return api('./api/account_security.php').then(function (data) {
       csrfToken = data.csrf_token || csrfToken;
       renderLoginSessions(data.sessions || []);
+      shareAccountSecurity(data);
     }).catch(function (error) {
       renderLoginSessions([]);
       announceSaved(error.message === 'missing_schema_006' ? 'MIGRATION 006 FEHLT' : 'KONTOSICHERHEIT NICHT ERREICHBAR', true);
@@ -806,6 +819,7 @@
       if (confirmPassword) confirmPassword.value = '';
       csrfToken = data.csrf_token || csrfToken;
       renderLoginSessions(data.sessions || []);
+      shareAccountSecurity(data);
       announceSaved('PASSWORT GEÄNDERT, ANDERE GERÄTE ABGEMELDET');
     }).catch(function (error) {
       var labels = {
@@ -826,6 +840,7 @@
       body: JSON.stringify({ action: 'session_revoke', session_id: sessionId })
     }).then(function (data) {
       renderLoginSessions(data.sessions || []);
+      shareAccountSecurity(data);
       announceSaved('GERÄTE-ANMELDUNG WIDERRUFEN');
     }).catch(function (error) { announceSaved('WIDERRUF FEHLGESCHLAGEN: ' + error.message, true); });
   }
@@ -838,6 +853,7 @@
       body: JSON.stringify({ action: 'sessions_revoke_others' })
     }).then(function (data) {
       renderLoginSessions(data.sessions || []);
+      shareAccountSecurity(data);
       announceSaved(String(data.revoked_count || 0) + ' ANDERE ANMELDUNGEN WIDERRUFEN');
     }).catch(function (error) { announceSaved('ABMELDEN FEHLGESCHLAGEN: ' + error.message, true); })
       .finally(function () { if (revokeOtherSessionsButton) revokeOtherSessionsButton.disabled = false; });

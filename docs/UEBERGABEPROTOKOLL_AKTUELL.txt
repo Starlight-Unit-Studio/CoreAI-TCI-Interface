@@ -1,9 +1,11 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
 Stand: 09.11.2026
-Repository-Version: 0.6.83
-BASIS: main 0.6.82 nach PR #235; Benachrichtigungen vollstaendig.
+Repository-Version: 0.6.85
+BASIS: main 0.6.83 nach PR #236; Profil wie ChatGPT (0.6.84) und Sicherheit und Anmeldung (0.6.85) im selben PR #237.
 NEUE ARBEIT ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_6_85.txt
+  docs/UEBERGABEPROTOKOLL_0_6_84.txt
   docs/UEBERGABEPROTOKOLL_0_6_83.txt
   docs/UEBERGABEPROTOKOLL_0_6_82.txt
   docs/UEBERGABEPROTOKOLL_0_6_81.txt
