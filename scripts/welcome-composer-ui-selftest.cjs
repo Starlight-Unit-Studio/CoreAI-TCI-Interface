@@ -1,5 +1,5 @@
 'use strict';
-// CoreAI 0.6.68: offline logic regression for unsaved drafts and composer Stop.
+// CoreAI 0.6.69: offline logic regression for unsaved drafts and composer Stop.
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
