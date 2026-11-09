@@ -226,7 +226,11 @@
 
   function onSystemChange() {
     var prefs = load();
-    if (prefs.theme === 'system') apply(document, prefs);
+    if (prefs.theme === 'system') {
+      apply(document, prefs);
+      try { window.dispatchEvent(new CustomEvent('coreui:appearance', {detail:prefs})); }
+      catch (ignored) {}
+    }
   }
   if (systemDark) {
     if (typeof systemDark.addEventListener === 'function') {
