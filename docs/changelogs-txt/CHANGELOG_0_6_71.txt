@@ -18,3 +18,8 @@ COREAI: TCI INTERFACE // CHANGELOG 0.6.71
 - Anzeige zuruecksetzen behaelt die gewaehlte Sendetaste bei.
 - Oberflaechensprache, automatische Core-Hochstufung und erweiterte Reasoning-Stufen werden sichtbar vorbereitet, aber nicht faelschlich aktiviert.
 - Numerische/technische Optionen bleiben in KI-Profil und Memory und werden durch einen gemeinsamen Expertenschalter angezeigt.
+- Allgemein: Oberflaechensprache Deutsch/English (Beta)/Browserautomatik speicherbar; Kernnavigation und wichtige Bedienelemente werden wirklich uebersetzt. Antwortsprache im KI-Profil bleibt getrennt.
+- Hoehere Intelligenz: Server schaltet bei komplexen reinen Textauftraegen voruebergehend auf den naechsten installierten, erlaubten lokalen Mara-Core. Gaeste, Audio, Vision und Live bleiben unveraendert. Keine persistente Umstellung oder Parallellast.
+- Reasoning-Aufwand: Ollama /api/show liefert pro Core tatsaechliche Stufen. Nur unterstuetzte low/medium/high/max waehlen; Denken aus im Chat hat Vorrang. Reine Boolean-Cores behalten Denken an/aus.
+- Migration 027: unabhaengige kontobezogene Tabelle fuer automatische Core-Wahl und Reasoning-Stufe; vorhandenes KI-Profil bleibt unveraendert.
+- API, PHP-Selbsttest, Playwright-Mocks und beide Preflights aktualisiert. Voller Browser- und Serverlauf noch ausstehend.
