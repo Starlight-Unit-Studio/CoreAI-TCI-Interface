@@ -69,6 +69,8 @@ UI_FILES=(
   js/coreui-settings-menu.js
   js/coreui-settings-tabs.js
   scripts/send-shortcut-selftest.cjs
+  scripts/reasoning-effort-ui-selftest.cjs
+  js/coreui-reasoning-effort.js
   js/coreui-send-keys.js
   js/coreui-ui-language.js
   api/general_core_controls.php
@@ -947,6 +949,11 @@ if command -v php >/dev/null 2>&1; then
       ok 'Allgemein: App-Sprache DE/EN und automatische Browsererkennung geprueft.'
     else
       fail 'Allgemein: App-Sprachumschaltung fehlgeschlagen.'
+    fi
+    if node "$PROJECT_ROOT/scripts/reasoning-effort-ui-selftest.cjs" >/dev/null 2>&1; then
+      ok 'Denkaufwand: Chat-Stufen, echtes Speichern und binaerer Core-Fallback geprueft.'
+    else
+      fail 'Denkaufwand: Chat-Regler, General oder Core-Fallback fehlgeschlagen.'
     fi
     if node "$PROJECT_ROOT/scripts/send-shortcut-selftest.cjs" >/dev/null 2>&1; then
       ok 'Allgemein: Enter, Strg/Command+Enter und IME-Schutz geprueft.'
