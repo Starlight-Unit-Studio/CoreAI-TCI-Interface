@@ -53,10 +53,10 @@ foreach ([
   'Ein Bild, auf dem du stehst',
   'Wie du im Pilotensitz sitzt',
   'Mara, wie würdest du selbst aussehen?',
-  'Ein Porträt von Ember im Maschinenraum',
-  'Ember bei einem Konzert',
+  'Ein Porträt von Testalias im Maschinenraum',
+  'Testalias bei einem Konzert',
 ] as $phrase) {
-  img_gen_test(coreui_image_is_self_request($phrase, 'Ember'), 'Self portrait scene recognized: ' . $phrase);
+  img_gen_test(coreui_image_is_self_request($phrase, 'Testalias'), 'Self portrait scene recognized: ' . $phrase);
 }
 foreach ([
   'Mara, male eine fremde Frau',
@@ -66,11 +66,11 @@ foreach ([
   'Zeichne Superwoman',
   'Ein Bild von einer Katze',
 ] as $phrase) {
-  img_gen_test(!coreui_image_is_self_request($phrase, 'Ember'), 'Other subject never becomes Mara: ' . $phrase);
+  img_gen_test(!coreui_image_is_self_request($phrase, 'Testalias'), 'Other subject never becomes Mara: ' . $phrase);
 }
 img_gen_test(coreui_image_parse_input(coreui_image_tool_for_request(
   ['tool'=>'image', 'input'=>'A red-dressed woman standing in the cockpit'],
-  'Mara im Cockpit bei Nacht', 'Ember')['input'])['self_reference'] === true,
+  'Mara im Cockpit bei Nacht', 'Testalias')['input'])['self_reference'] === true,
   'generic model wording cannot suppress the canonical self reference');
 img_gen_test(coreui_image_may_continue_self_portrait('diesmal im roten Kleid')
   && coreui_image_may_continue_self_portrait('noch eins')
@@ -322,12 +322,12 @@ img_gen_test(is_file($root . '/images/mara_references/mara_identity_primary.png'
 
 // A custom account avatar must not receive the official Mara gallery selector.
 $http = $fake([['GET', '/health', $ready], ['POST', '/jobs', [503, ['ok' => false, 'error' => 'image_busy'], '']]]);
-$r = coreui_image_generate($pdo, 5, 'ember', 'Ember wearing a blue jacket', 'normal',
+$r = coreui_image_generate($pdo, 5, 'ember', 'Mara wearing a blue jacket', 'normal',
   $lease, $unlease, static function (): void {}, $never, $http, null, 'custom:' . str_repeat('a', 32));
 img_gen_test($r['error'] === 'image_busy'
   && ($GLOBALS['img_calls'][1][2]['reference'] ?? null) === 'custom:' . str_repeat('a', 32)
   && !array_key_exists('scene_hint', $GLOBALS['img_calls'][1][2]),
-  'custom Ember photo never selects the canonical Mara reference gallery');
+  'custom account portrait never selects the canonical Mara reference gallery');
 $refs = ['upload:' . $idA . '.png', 'upload:' . $idB . '.jpg'];
 img_gen_test(coreui_image_reference_prompt('plain spaceship', null, [], 1200) === 'plain spaceship',
   'no reference does not alter text-to-image prompts');
