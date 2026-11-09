@@ -304,9 +304,25 @@ vi_test($voiceAt !== false && $voiceAt < strpos($stream, 'ember_after_insert_tas
 vi_test(str_contains($read('api/console_upload.php'), "if (coreui_voice_has_video_stream((string)\$file['tmp_name']) === false) {"),
   'audio-only WebM is stored as audio');
 $app = $read('js/console-app.js');
-vi_test(str_contains($app, 'window.CoreUIComposer = {') && str_contains($app, "aud.setAttribute('data-uuid', String(att.uuid));")
-  && str_contains($app, 'pendingSendAfterUpload = {text: inputEl ? String(inputEl.value || \'\') : \'\', sessionId: String(ses.id)};'),
-  'the chat sends a voice message at once, with the text in the field');
+// 0.6.69: 0.6.68 introduced a non-persistent welcome draft. The former
+// single-line session assertion incorrectly rejected its valid voice route.
+// Verify BOTH existing and unsaved channels, including the auto-send handoff.
+$voiceStart = strpos($app, '    sendVoice: function (file) {');
+$voiceEnd = $voiceStart === false ? false : strpos($app, '    sendImageEdit: function (files, instruction, size) {', $voiceStart);
+$voicePath = ($voiceStart !== false && $voiceEnd !== false)
+  ? substr($app, $voiceStart, $voiceEnd - $voiceStart) : '';
+$handoffStart = strpos($app, '  function sendAfterCompletedUpload() {');
+$handoffEnd = $handoffStart === false ? false : strpos($app, '  function processUploadQueue() {', $handoffStart);
+$handoff = ($handoffStart !== false && $handoffEnd !== false)
+  ? substr($app, $handoffStart, $handoffEnd - $handoffStart) : '';
+vi_test(str_contains($app, 'window.CoreUIComposer = {')
+  && str_contains($app, "aud.setAttribute('data-uuid', String(att.uuid));")
+  && str_contains($voicePath, "pendingSendAfterUpload = {text: inputEl ? String(inputEl.value || '') : '',")
+  && str_contains($voicePath, "sessionId: ses ? String(ses.id) : '__draft__'")
+  && str_contains($handoff, '(ses && String(ses.id) === pending.sessionId)')
+  && str_contains($handoff, "(!ses && pending.sessionId === '__draft__')")
+  && str_contains($handoff, 'sendMessage(pending.text);'),
+  'voice upload keeps typed text and sends it in existing or first unsaved chat');
 $api = $read('api/voice_input.php');
 vi_test(!str_contains($api, '$_FILES') && !str_contains($api, "'transcribe'")
   && strpos($api, "if (\$guest) stu_json(['ok' => false, 'error' => 'guests_not_allowed'], 403);") < strpos($api, "if (\$action === 'transcript') {")
