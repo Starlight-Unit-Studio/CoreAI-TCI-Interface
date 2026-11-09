@@ -81,6 +81,7 @@ UI_FILES=(
   scripts/settings-tabs-ui-selftest.cjs
   scripts/theme-preferences-selftest.cjs
   scripts/appearance-settings-selftest.cjs
+  scripts/appearance-controller-selftest.cjs
   scripts/smart-punctuation-selftest.cjs
   js/coreui-appearance-settings.js
   js/coreui-smart-punctuation.js
@@ -968,6 +969,11 @@ if command -v php >/dev/null 2>&1; then
       ok 'Anzeige: System/Hell/Dunkel mit Speichern, Betriebssystem-Wechsel und Browser-Tabs geprueft.'
     else
       fail 'Anzeige: Tag-/Nachtmodus-Selbsttest fehlgeschlagen.'
+    fi
+    if node "$PROJECT_ROOT/scripts/appearance-controller-selftest.cjs" >/dev/null 2>&1; then
+      ok 'Darstellung: echte Nutzeraktionen, Motiv-Export, Kopieren und Farbpruefung verifiziert.'
+    else
+      fail 'Darstellung: Formularaktionen, Motiv-Export oder Modustrennung fehlgeschlagen.'
     fi
     if node "$PROJECT_ROOT/scripts/appearance-settings-selftest.cjs" >/dev/null 2>&1; then
       ok 'Darstellung: echte Farben, getrennte Designs, Schriften, Bewegung, Kontrast, Diff und Altwerte geprueft.'
