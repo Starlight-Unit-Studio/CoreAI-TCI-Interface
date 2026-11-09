@@ -95,6 +95,7 @@ UI_FILES=(
   api/general_core_controls.php
   database/migrations/027_general_core_controls.sql
   scripts/general-controls-selftest.php
+  scripts/ui-language-selftest.cjs
   scripts/settings-navigation-foundation-selftest.cjs
   scripts/settings-tabs-ui-selftest.cjs
   scripts/theme-preferences-selftest.cjs
@@ -1133,6 +1134,11 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       ok 'Allgemein: Core-Routing, gespeicherte Einstellungen und echte Denkstufen verifiziert.'
     else
       fail 'Allgemein: Core-Routing oder Reasoning-Selbsttest fehlgeschlagen.'
+    fi
+    if node "$PROJECT_ROOT/scripts/ui-language-selftest.cjs" >/dev/null 2>&1; then
+      ok 'Allgemein: App-Sprache DE/EN und automatische Browsererkennung geprueft.'
+    else
+      fail 'Allgemein: App-Sprachumschaltung fehlgeschlagen.'
     fi
     if node "$PROJECT_ROOT/scripts/send-shortcut-selftest.cjs" >/dev/null 2>&1; then
       ok 'Allgemein: Enter, Strg/Command+Enter und IME-Schutz geprueft.'
