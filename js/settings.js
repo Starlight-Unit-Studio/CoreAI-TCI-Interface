@@ -149,7 +149,9 @@
   }
 
   function collect() {
-    var value = {};
+    // Preserve appearance (and any future local categories) when legacy
+    // settings widgets save. A partial collect must not erase other controls.
+    var value = preferences ? preferences.load() : {};
     Object.keys(fields).forEach(function (key) {
       value[key] = fields[key] ? fields[key].checked : false;
     });
