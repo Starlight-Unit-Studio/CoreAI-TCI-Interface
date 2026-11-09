@@ -7,6 +7,7 @@ require_once __DIR__ . '/profile_store.php';
 require_once __DIR__ . '/guest_access.php';
 require_once __DIR__ . '/captcha.php';
 require_once __DIR__ . '/notifications_store.php';
+require_once __DIR__ . '/security_store.php';
 
 // Simple username/password auth for Alpha.
 // - Session cookie stores stu_uid when logged in.
@@ -46,6 +47,57 @@ function stu_clean_username(string $u): string {
 
 function stu_valid_username(string $u): bool {
   return coreui_account_valid_email($u);
+}
+
+/*
+ * 0.6.85: one way to finish a sign-in (password, password plus second factor, passkey): the
+ * account is checked again (guest, ban, maintenance), the session token is issued (24 hours
+ * with advanced account security), the history and the sign-in notification follow.
+ */
+function coreui_auth_login_finish(PDO $pdo, int $uid, string $method): void {
+  $st = $pdo->prepare('SELECT id, username, permission_level, is_guest, banned_until, banned_reason FROM stu_users WHERE id = ? LIMIT 1');
+  $st->execute([$uid]);
+  $row = $st->fetch(PDO::FETCH_ASSOC);
+  if (!is_array($row) || (int)($row['is_guest'] ?? 0) === 1) stu_json(['ok' => false, 'error' => 'invalid_credentials'], 401);
+  if (!empty($row['banned_until'])) {
+    $ts = strtotime((string)$row['banned_until']);
+    if ($ts !== false && $ts > time()) {
+      stu_json(['ok' => false, 'error' => 'banned', 'until' => $row['banned_until'], 'reason' => (string)($row['banned_reason'] ?? '')], 403);
+    }
+  }
+  $lvl = (int)($row['permission_level'] ?? 4);
+  stu_enforce_maintenance($pdo, $uid, $lvl);
+  try {
+    coreui_account_ensure($pdo, $uid, (string)$row['username']);
+  } catch (Throwable $e) {
+    stu_json(['ok' => false, 'error' => $e->getMessage() === 'missing_schema_004' ? 'missing_schema_004' : 'account_provision_failed'], 503);
+  }
+  unset($_SESSION['coreui_mfa_pending']);
+  session_regenerate_id(true);
+  stu_set_user_id($uid);
+  $_SESSION['stu_perm'] = $lvl;
+  $device = coreui_auth_device_label((string)($_SERVER['HTTP_USER_AGENT'] ?? ''));
+  try {
+    $pdo->prepare('UPDATE stu_users SET last_login_at=NOW() WHERE id=?')->execute([$uid]);
+    if (coreui_auth_session_schema_ready($pdo)) coreui_auth_session_issue($pdo, $uid, coreui_security_session_hours($pdo, $uid));
+  } catch (Throwable $e) {
+    stu_logout(false);
+    stu_json(['ok' => false, 'error' => 'auth_session_failed'], 500);
+  }
+  coreui_security_event($pdo, $uid, 'login', $device, $method);
+  // 0.6.81: Settings > Benachrichtigungen > Sicherheit (after the response).
+  coreui_notify_security($pdo, $uid, 'login', $device);
+  stu_json(['ok' => true, 'user_id' => $uid, 'permission_level' => $lvl]);
+}
+
+/** What the sign-in page offers for the second step (no secrets). */
+function coreui_auth_mfa_offer(PDO $pdo, int $uid, array $methods): array {
+  $st = $pdo->prepare('SELECT username FROM stu_users WHERE id = ? LIMIT 1');
+  $st->execute([$uid]);
+  $email = (string)($st->fetchColumn() ?: '');
+  $mail = !empty($methods['email']) && function_exists('coreui_notify_mail_available') && coreui_notify_mail_available($pdo);
+  return ['totp' => !empty($methods['totp']), 'email' => $mail, 'recovery' => (int)($methods['recovery_left'] ?? 0) > 0,
+    'email_hint' => $mail ? coreui_security_mask_email($email) : ''];
 }
 
 /** Public sign-up: the admin switch (Runtime), else the installer's default. */
@@ -181,6 +233,10 @@ if ($action === 'guest') {
 
 if ($action === 'logout') {
   // POST preferred but tolerate GET in alpha tools.
+  $logoutUid = stu_get_user_id();
+  if ($logoutUid) {
+    try { coreui_security_event(stu_pdo(), (int)$logoutUid, 'logout', coreui_auth_device_label((string)($_SERVER['HTTP_USER_AGENT'] ?? ''))); } catch (Throwable $e) {}
+  }
   stu_logout();
   stu_json(['ok' => true]);
 }
@@ -281,8 +337,13 @@ try {
     coreui_login_failed($pdo, $username, $loginNetwork);
     stu_json(['ok' => false, 'error' => 'invalid_credentials'], 401);
   }
+  // 0.6.85: with advanced account security this account signs in with a passkey only.
+  if (coreui_security_advanced($pdo, (int)$row['id'])) {
+    stu_json(['ok' => false, 'error' => 'passkey_required'], 403);
+  }
   if (!password_verify($password, (string)$row['password_hash'])) {
     coreui_login_failed($pdo, $username, $loginNetwork);
+    coreui_security_event($pdo, (int)$row['id'], 'login_failed', coreui_auth_device_label((string)($_SERVER['HTTP_USER_AGENT'] ?? '')), 'Passwort');
     stu_json(['ok' => false, 'error' => 'invalid_credentials'], 401);
   }
   coreui_login_succeeded($pdo, $username, $loginNetwork);
@@ -316,19 +377,118 @@ try {
     }
   }
 
-  session_regenerate_id(true);
-  stu_set_user_id((int)$row['id']);
-  $_SESSION['stu_perm'] = $lvl;
-  try {
-    $pdo->prepare('UPDATE stu_users SET last_login_at=NOW() WHERE id=?')->execute([(int)$row['id']]);
-    if (coreui_auth_session_schema_ready($pdo)) coreui_auth_session_issue($pdo, (int)$row['id']);
-  } catch (Throwable $e) {
-    stu_logout(false);
-    stu_json(['ok' => false, 'error' => 'auth_session_failed'], 500);
+  // 0.6.85: a second factor (authenticator app or E-Mail code) before the session exists.
+  $methods = coreui_security_methods($pdo, (int)$row['id']);
+  if (coreui_security_mfa_required($methods)) {
+    $_SESSION['coreui_mfa_pending'] = ['uid' => (int)$row['id'], 'at' => time(), 'tries' => 0, 'email' => null];
+    stu_json(['ok' => false, 'error' => 'mfa_required', 'mfa_required' => true, 'methods' => coreui_auth_mfa_offer($pdo, (int)$row['id'], $methods)]);
   }
-  // 0.6.81: Settings > Benachrichtigungen > Sicherheit (after the response).
-  coreui_notify_security($pdo, (int)$row['id'], 'login', coreui_auth_device_label((string)($_SERVER['HTTP_USER_AGENT'] ?? '')));
-  stu_json(['ok' => true, 'user_id' => (int)$row['id'], 'permission_level' => $lvl]);
+  coreui_auth_login_finish($pdo, (int)$row['id'], 'Passwort');
+}
+
+// 0.6.85: the second step of a sign-in: a code from the authenticator app, by mail, or a recovery code.
+if ($action === 'mfa_verify' || $action === 'mfa_email') {
+  if ($_SERVER['REQUEST_METHOD'] !== 'POST') stu_json(['ok' => false, 'error' => 'method_not_allowed'], 405);
+  stu_rate_limit($action, 20, 300);
+  $pdo = stu_pdo();
+  $pending = $_SESSION['coreui_mfa_pending'] ?? null;
+  if (!is_array($pending) || (int)($pending['uid'] ?? 0) <= 0 || time() - (int)($pending['at'] ?? 0) > COREUI_SECURITY_CODE_MINUTES * 60) {
+    unset($_SESSION['coreui_mfa_pending']);
+    stu_json(['ok' => false, 'error' => 'mfa_expired'], 401);
+  }
+  $uid = (int)$pending['uid'];
+  $methods = coreui_security_methods($pdo, $uid);
+  $offer = coreui_auth_mfa_offer($pdo, $uid, $methods);
+  $body = stu_read_json_body();
+  if ($action === 'mfa_email') {
+    if (!$offer['email']) stu_json(['ok' => false, 'error' => 'mfa_email_unavailable'], 400);
+    $held = is_array($pending['email'] ?? null) ? $pending['email'] : null;
+    if ($held !== null && time() - (int)($held['sent'] ?? 0) < 60) {
+      stu_json(['ok' => false, 'error' => 'mfa_email_wait', 'retry_after' => 60 - (time() - (int)$held['sent'])], 429);
+    }
+    $code = coreui_security_code_new();
+    $st = $pdo->prepare('SELECT username FROM stu_users WHERE id = ? LIMIT 1');
+    $st->execute([$uid]);
+    try {
+      stu_send_mail((string)$st->fetchColumn(), 'CoreAI: dein Anmeldecode ' . $code,
+        "Dein Code für die Anmeldung bei CoreAI: " . $code . "\n\nEr gilt " . COREUI_SECURITY_CODE_MINUTES . " Minuten.\n"
+        . "Hast du dich nicht gerade angemeldet? Dann kennt jemand dein Passwort: ändere es sofort.\n", coreui_mail_effective($pdo));
+    } catch (Throwable $e) {
+      stu_json(['ok' => false, 'error' => 'mfa_email_failed'], 502);
+    }
+    $pending['email'] = coreui_security_code_hold($code, time());
+    $_SESSION['coreui_mfa_pending'] = $pending;
+    stu_json(['ok' => true, 'sent_to' => $offer['email_hint']]);
+  }
+  $kind = (string)($body['method'] ?? '');
+  $code = trim((string)($body['code'] ?? ''));
+  $passed = false;
+  if ($kind === 'totp' && $offer['totp']) {
+    $passed = coreui_security_totp_check($pdo, $uid, $code, time());
+  } elseif ($kind === 'email' && $offer['email']) {
+    $held = is_array($pending['email'] ?? null) ? $pending['email'] : null;
+    $result = coreui_security_code_check($held, $code, time());
+    $pending['email'] = $held;
+    $passed = $result === 'ok';
+  } elseif ($kind === 'recovery') {
+    $passed = coreui_security_recovery_use($pdo, $uid, $code);
+    if ($passed) coreui_security_event($pdo, $uid, 'recovery_used', coreui_auth_device_label((string)($_SERVER['HTTP_USER_AGENT'] ?? '')));
+  }
+  if (!$passed) {
+    $pending['tries'] = (int)($pending['tries'] ?? 0) + 1;
+    coreui_security_event($pdo, $uid, 'mfa_failed', coreui_auth_device_label((string)($_SERVER['HTTP_USER_AGENT'] ?? '')), $kind);
+    if ($pending['tries'] >= COREUI_SECURITY_MFA_TRIES) {
+      unset($_SESSION['coreui_mfa_pending']);
+      stu_json(['ok' => false, 'error' => 'mfa_expired'], 401);
+    }
+    $_SESSION['coreui_mfa_pending'] = $pending;
+    stu_json(['ok' => false, 'error' => 'mfa_invalid', 'tries_left' => COREUI_SECURITY_MFA_TRIES - $pending['tries']], 401);
+  }
+  $label = ['totp' => 'Passwort und Authenticator-App', 'email' => 'Passwort und E-Mail-Code', 'recovery' => 'Passwort und Wiederherstellungscode'][$kind];
+  coreui_auth_login_finish($pdo, $uid, $label);
+}
+
+// 0.6.85: sign-in with a passkey or security key (WebAuthn). Counts as both factors.
+if ($action === 'passkey_options' || $action === 'passkey_login') {
+  if ($_SERVER['REQUEST_METHOD'] !== 'POST') stu_json(['ok' => false, 'error' => 'method_not_allowed'], 405);
+  stu_rate_limit($action, 30, 300);
+  $pdo = stu_pdo();
+  if (!coreui_security_ready($pdo)) stu_json(['ok' => false, 'error' => 'security_migration_required'], 503);
+  $rpId = coreui_webauthn_rp_id();
+  if ($rpId === '') stu_json(['ok' => false, 'error' => 'passkey_unavailable'], 400);
+  $body = stu_read_json_body();
+  if ($action === 'passkey_options') {
+    $challenge = random_bytes(32);
+    $_SESSION['coreui_webauthn_login'] = ['chal' => base64_encode($challenge), 'exp' => time() + 300, 'rp' => $rpId];
+    $allow = [];
+    $name = stu_clean_username((string)($body['username'] ?? ''));
+    if ($name !== '' && stu_valid_username($name)) {
+      $st = $pdo->prepare('SELECT id FROM stu_users WHERE username = ? AND is_guest = 0 LIMIT 1');
+      $st->execute([$name]);
+      $found = (int)($st->fetchColumn() ?: 0);
+      if ($found > 0) foreach (coreui_security_passkey_ids($pdo, $found) as $id) $allow[] = ['type' => 'public-key', 'id' => $id];
+    }
+    stu_json(['ok' => true, 'publicKey' => ['challenge' => coreui_b64u($challenge), 'rpId' => $rpId, 'timeout' => 120000,
+      'userVerification' => 'preferred', 'allowCredentials' => $allow]]);
+  }
+  $held = $_SESSION['coreui_webauthn_login'] ?? null;
+  unset($_SESSION['coreui_webauthn_login']);
+  if (!is_array($held) || time() > (int)($held['exp'] ?? 0) || ($held['rp'] ?? '') !== $rpId) stu_json(['ok' => false, 'error' => 'passkey_expired'], 400);
+  $cred = is_array($body['credential'] ?? null) ? $body['credential'] : [];
+  $response = is_array($cred['response'] ?? null) ? $cred['response'] : [];
+  $stored = coreui_security_passkey_find($pdo, (string)($cred['id'] ?? ''));
+  if ($stored === null || (string)$stored['rp_id'] !== $rpId) stu_json(['ok' => false, 'error' => 'passkey_unknown'], 401);
+  $uid = (int)$stored['user_id'];
+  $handle = (string)($response['userHandle'] ?? '');
+  if ($handle !== '' && !hash_equals(coreui_security_webauthn_handle($pdo, $uid), $handle)) stu_json(['ok' => false, 'error' => 'passkey_unknown'], 401);
+  try {
+    $count = coreui_webauthn_assert_verify($response, (string)base64_decode((string)$held['chal']), $rpId, $stored);
+  } catch (InvalidArgumentException $e) {
+    coreui_security_event($pdo, $uid, 'login_failed', coreui_auth_device_label((string)($_SERVER['HTTP_USER_AGENT'] ?? '')), 'Passkey');
+    stu_json(['ok' => false, 'error' => 'passkey_invalid'], 401);
+  }
+  coreui_security_passkey_used($pdo, (int)$stored['id'], $count);
+  coreui_auth_login_finish($pdo, $uid, 'Passkey: ' . (string)$stored['label']);
 }
 
 if ($action === 'forgot') {
@@ -359,6 +519,10 @@ if ($action === 'forgot') {
   $uid = $stmt->fetchColumn();
 
   if (!$uid) {
+    stu_json(['ok' => true]);
+  }
+  // 0.6.85: advanced account security: no password reset by mail (same answer, no hint).
+  if (coreui_security_advanced($pdo, (int)$uid)) {
     stu_json(['ok' => true]);
   }
 
@@ -469,6 +633,7 @@ if ($action === 'reset') {
     $stmt->execute([$email]);
     $uid = $stmt->fetchColumn();
     if (!$uid) stu_json(['ok' => false, 'error' => 'invalid_code'], 400);
+    if (coreui_security_advanced($pdo, (int)$uid)) stu_json(['ok' => false, 'error' => 'invalid_code'], 400);
 
     // Ensure schema has code_hash
     $hasCode = false;
@@ -503,6 +668,7 @@ if ($action === 'reset') {
     }
     $pdo->prepare('UPDATE stu_password_resets SET used_at = NOW() WHERE id = ? LIMIT 1')->execute([(int)$row['id']]);
     coreui_auth_session_revoke_all($pdo, (int)$uid, 'password_reset');
+    coreui_security_event($pdo, (int)$uid, 'password_reset', coreui_auth_device_label((string)($_SERVER['HTTP_USER_AGENT'] ?? '')));
     coreui_notify_security($pdo, (int)$uid, 'password', '');
     stu_json(['ok' => true]);
   }
@@ -522,6 +688,7 @@ if ($action === 'reset') {
   if (!$row) stu_json(['ok' => false, 'error' => 'invalid_token'], 400);
   if (!empty($row['used_at'])) stu_json(['ok' => false, 'error' => 'token_used'], 400);
   if (strtotime((string)$row['expires_at']) < time()) stu_json(['ok' => false, 'error' => 'token_expired'], 400);
+  if (coreui_security_advanced($pdo, (int)$row['user_id'])) stu_json(['ok' => false, 'error' => 'invalid_token'], 400);
 
   $hash = password_hash($newPass, PASSWORD_DEFAULT);
   if (!$hash) stu_json(['ok' => false, 'error' => 'hash_failed'], 500);
@@ -533,6 +700,7 @@ if ($action === 'reset') {
   }
   $pdo->prepare('UPDATE stu_password_resets SET used_at = NOW() WHERE id = ? LIMIT 1')->execute([(int)$row['id']]);
   coreui_auth_session_revoke_all($pdo, (int)$row['user_id'], 'password_reset');
+  coreui_security_event($pdo, (int)$row['user_id'], 'password_reset', coreui_auth_device_label((string)($_SERVER['HTTP_USER_AGENT'] ?? '')));
   coreui_notify_security($pdo, (int)$row['user_id'], 'password', '');
 
   stu_json(['ok' => true]);

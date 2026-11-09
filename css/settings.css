@@ -2661,3 +2661,96 @@ html[data-coreui-theme="dark"] .settings-body .notify-planned { color: var(--amb
   .settings-body .po-tool { width: calc(33.33% - 8px); }
   .settings-body .po-insight dt, .settings-body .po-insight dd { font-size: 15px; }
 }
+
+/* 0.6.85: Settings > Sicherheit und Anmeldung (overview rows and sub pages like the reference). */
+.settings-body .sec-main[hidden], .settings-body .sec-sub[hidden], .settings-body .sec-row[hidden],
+.settings-body .sec-confirm[hidden], .settings-body .sec-hint[hidden] { display: none; }
+.settings-body .sec-status { min-height: 0; margin: 0 0 10px; color: var(--green); font-size: 15px; }
+.settings-body .sec-status:empty { display: none; }
+.settings-body .sec-status[data-state="error"] { color: var(--red); }
+.settings-body .sec-heading { margin: 22px 0 10px; color: var(--txt); font-size: 22px; }
+.settings-body .sec-heading:first-child { margin-top: 0; }
+.settings-body .sec-group { display: grid; padding: 4px 22px; margin-bottom: 14px; }
+.settings-body .sec-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+.settings-body .sec-row:last-child { border-bottom: 0; }
+.settings-body .sec-copy { display: grid; gap: 4px; min-width: 0; }
+.settings-body .sec-copy strong { color: var(--txt); font-size: 17px; }
+.settings-body .sec-copy small { color: var(--muted); font-size: 15px; line-height: 1.45; }
+.settings-body .sec-row.is-planned .sec-copy strong, .settings-body .sec-row.is-planned .sec-copy small { opacity: .65; }
+.settings-body .sec-row.is-planned .sec-open { opacity: .55; }
+.settings-body .sec-open {
+  display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; min-height: 40px; padding: 4px 4px 4px 10px;
+  border: 0; background: transparent; color: var(--txt); cursor: pointer; font-size: 17px; font-weight: 700;
+}
+.settings-body .sec-open svg, .settings-body .sec-back svg, .settings-body .sec-item svg, .settings-body .sec-info svg, .settings-body .sec-feature svg {
+  fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+}
+.settings-body .sec-open svg { width: 20px; height: 20px; }
+.settings-body .sec-open:hover { color: var(--cx); }
+.settings-body .sec-row.is-on .sec-open span { color: var(--green); }
+.settings-body .sec-switch:has(input:disabled) { opacity: .5; }
+.settings-body .sec-back {
+  display: inline-flex; align-items: center; gap: 8px; margin: 0 0 14px; padding: 6px 2px; border: 0; background: transparent;
+  color: var(--txt); cursor: pointer; font-size: 17px; font-weight: 700;
+}
+.settings-body .sec-back svg { width: 20px; height: 20px; }
+.settings-body .sec-sub-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 16px; }
+.settings-body .sec-sub-head h3 { margin: 0 0 6px; color: var(--txt); font-size: clamp(24px, 4vw, 32px); line-height: 1.15; }
+.settings-body .sec-sub-head p { margin: 0; color: var(--muted); font-size: 16px; line-height: 1.45; }
+.settings-body .sec-hint { margin: 8px 0 14px; color: var(--muted); font-size: 14px; line-height: 1.45; }
+.settings-body .sec-list, .settings-body .sec-history { display: grid; gap: 10px; margin: 0 0 14px; padding: 0; list-style: none; }
+.settings-body .sec-item {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 16px 18px;
+  border: 1px solid var(--line-strong); border-radius: 18px; background: var(--panel-soft);
+}
+.settings-body .sec-item > svg { width: 24px; height: 24px; color: var(--cx); flex: 0 0 auto; }
+.settings-body .sec-item > div:not(.sec-item-actions) { display: grid; gap: 3px; flex: 1 1 200px; min-width: 0; }
+.settings-body .sec-item strong { color: var(--txt); font-size: 17px; overflow-wrap: anywhere; }
+.settings-body .sec-item small { color: var(--muted); font-size: 14px; }
+.settings-body .sec-item-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.settings-body .sec-empty { padding: 14px 0; color: var(--muted); font-size: 15px; }
+.settings-body .sec-info { display: flex; gap: 14px; align-items: flex-start; }
+.settings-body .sec-info > svg { width: 26px; height: 26px; color: var(--cx); flex: 0 0 auto; }
+.settings-body .sec-info.warn > svg { color: var(--amb, #c58a24); }
+.settings-body .sec-info strong { display: block; margin-bottom: 4px; color: var(--txt); font-size: 16px; }
+.settings-body .sec-info p { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.45; }
+.settings-body .sec-setup { display: grid; gap: 14px; }
+.settings-body .sec-steps { margin: 0; padding-left: 20px; color: var(--txt); font-size: 15px; line-height: 1.5; }
+.settings-body .sec-qr { width: min(240px, 100%); padding: 0; border-radius: 12px; background: #ffffff; }
+.settings-body .sec-qr svg { display: block; width: 100%; height: auto; border-radius: 12px; }
+.settings-body .sec-qr:empty { display: none; }
+.settings-body .sec-secret { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0; color: var(--muted); font-size: 14px; }
+.settings-body .sec-secret code { color: var(--txt); font-size: 15px; letter-spacing: .06em; overflow-wrap: anywhere; }
+.settings-body .sec-codes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 18px; margin: 0; padding-left: 22px; }
+.settings-body .sec-codes li { color: var(--txt); font-family: "Share Tech Mono", monospace; font-size: 17px; letter-spacing: .06em; }
+.settings-body .sec-codes:empty { display: none; }
+.settings-body .sec-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.settings-body .sec-actions [hidden] { display: none; }
+.settings-body .sec-history-item { display: grid; gap: 3px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.settings-body .sec-history-item strong { color: var(--txt); font-size: 16px; }
+.settings-body .sec-history-item small { color: var(--muted); font-size: 14px; }
+.settings-body .sec-history-item.kind-login_failed strong, .settings-body .sec-history-item.kind-mfa_failed strong { color: var(--red); }
+.settings-body .sec-advanced-state { margin: 0 0 12px; color: var(--txt); font-size: 16px; line-height: 1.45; }
+.settings-body .sec-feature-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; margin: 16px 0; }
+.settings-body .sec-feature { display: grid; gap: 8px; align-content: start; }
+.settings-body .sec-feature svg { width: 26px; height: 26px; color: var(--cx); }
+.settings-body .sec-feature strong { color: var(--txt); font-size: 17px; }
+.settings-body .sec-feature p { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.45; }
+.settings-body .sec-confirm {
+  position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 16px; background: rgba(8, 12, 22, .55);
+}
+.settings-body .sec-confirm-box {
+  display: grid; gap: 12px; width: min(440px, 100%); padding: 22px; border: 1px solid var(--line-strong); border-radius: 18px;
+  background: var(--panel, #ffffff); box-shadow: 0 20px 60px rgba(0, 0, 0, .3);
+}
+.settings-body .sec-confirm-box h3 { margin: 0; color: var(--txt); font-size: 20px; }
+.settings-body .sec-confirm-box p { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.45; }
+.settings-body .sec-confirm-error { color: var(--red) !important; }
+.settings-body .sec-confirm-error:empty { display: none; }
+@media (max-width: 600px) {
+  .settings-body .sec-group { padding: 2px 16px; }
+  .settings-body .sec-row { align-items: flex-start; }
+  .settings-body .sec-copy strong { font-size: 16px; }
+  .settings-body .sec-copy small { font-size: 14px; }
+  .settings-body .sec-codes { grid-template-columns: minmax(0, 1fr); }
+}

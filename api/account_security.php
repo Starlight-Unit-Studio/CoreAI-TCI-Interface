@@ -3,6 +3,9 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/notifications_store.php';
+require_once __DIR__ . '/mailer.php';
+require_once __DIR__ . '/security_store.php';
+require_once __DIR__ . '/profile_store.php';
 
 $pdo = stu_pdo();
 $uid = stu_require_user_id();
@@ -36,6 +39,38 @@ function coreui_security_audit(PDO $pdo, int $uid, string $action, array $detail
   } catch (Throwable $e) {}
 }
 
+/** 0.6.85: everything the page Sicherheit und Anmeldung shows (no secrets, no key material). */
+function coreui_account_security_state(PDO $pdo, int $uid): array {
+  $st = $pdo->prepare('SELECT username FROM stu_users WHERE id=? LIMIT 1');
+  $st->execute([$uid]);
+  $email = (string)($st->fetchColumn() ?: '');
+  $methods = coreui_security_methods($pdo, $uid);
+  return [
+    'ready' => $methods['ready'],
+    'methods' => $methods,
+    'passkeys' => coreui_security_passkeys($pdo, $uid),
+    'passkey_rp_id' => coreui_webauthn_rp_id(),
+    'email_available' => filter_var($email, FILTER_VALIDATE_EMAIL) !== false && coreui_notify_mail_available($pdo),
+    'email_hint' => coreui_security_mask_email($email),
+    'history' => coreui_security_history($pdo, $uid, 60),
+  ];
+}
+
+/** Sensitive changes need the current password again. */
+function coreui_account_security_reauth(PDO $pdo, int $uid, string $password): void {
+  coreui_security_rate_limit('reauth', 10, 900);
+  $st = $pdo->prepare('SELECT password_hash FROM stu_users WHERE id=? AND is_guest=0 LIMIT 1');
+  $st->execute([$uid]);
+  $hash = (string)($st->fetchColumn() ?: '');
+  if ($password === '' || strlen($password) > 1024 || $hash === '' || !password_verify($password, $hash)) {
+    stu_json(['ok'=>false, 'error'=>'invalid_current_password'], 403);
+  }
+}
+
+function coreui_account_device(): string {
+  return coreui_auth_device_label((string)($_SERVER['HTTP_USER_AGENT'] ?? ''));
+}
+
 if ($method === 'GET') {
   $st = $pdo->prepare('SELECT username,password_changed_at,last_login_at,created_at FROM stu_users WHERE id=? LIMIT 1');
   $st->execute([$uid]);
@@ -49,6 +84,7 @@ if ($method === 'GET') {
       'last_login_at'=>$account['last_login_at'] ?? null,
     ],
     'sessions'=>coreui_auth_session_list($pdo, $uid),
+    'security'=>coreui_account_security_state($pdo, (int)$uid),
     'csrf_token'=>stu_csrf_token(),
   ]);
 }
@@ -96,7 +132,7 @@ if ($action === 'password_change') {
 
   session_regenerate_id(true);
   try {
-    coreui_auth_session_issue($pdo, $uid);
+    coreui_auth_session_issue($pdo, $uid, coreui_security_session_hours($pdo, (int)$uid));
   } catch (Throwable $sessionError) {
     // Das Passwort wurde bereits sicher geaendert und alle alten Tokens sind
     // widerrufen. Ohne neues SQL-Token muss sich der Benutzer neu anmelden.
@@ -104,6 +140,7 @@ if ($action === 'password_change') {
     stu_json(['ok'=>false, 'error'=>'auth_session_failed', 'reauth_required'=>true], 503);
   }
   coreui_security_audit($pdo, $uid, 'account.password_changed');
+  coreui_security_event($pdo, (int)$uid, 'password_changed', coreui_account_device());
   coreui_notify_security($pdo, $uid, 'password', ''); // 0.6.81: Benachrichtigungen > Sicherheit
   stu_json([
     'ok'=>true,
@@ -120,6 +157,7 @@ if ($action === 'session_revoke') {
   if ($sessionId === $currentId) stu_json(['ok'=>false, 'error'=>'cannot_revoke_current'], 409);
   $deleted = coreui_auth_session_revoke($pdo, $uid, $sessionId, 'user_revoked');
   coreui_security_audit($pdo, $uid, 'account.session_revoked', ['session_id'=>$sessionId]);
+  if ($deleted) coreui_security_event($pdo, (int)$uid, 'session_revoked', coreui_account_device());
   stu_json(['ok'=>true, 'revoked'=>$deleted, 'sessions'=>coreui_auth_session_list($pdo, $uid)]);
 }
 
@@ -127,7 +165,165 @@ if ($action === 'sessions_revoke_others') {
   coreui_security_rate_limit('session_revoke_others', 10, 300);
   $count = coreui_auth_session_revoke_others($pdo, $uid);
   coreui_security_audit($pdo, $uid, 'account.sessions_revoked_others', ['count'=>$count]);
+  coreui_security_event($pdo, (int)$uid, 'sessions_others', coreui_account_device(), (string)$count);
   stu_json(['ok'=>true, 'revoked_count'=>$count, 'sessions'=>coreui_auth_session_list($pdo, $uid)]);
+}
+
+// --- 0.6.85: Sicherheit und Anmeldung --------------------------------------------------------------
+if (!coreui_security_ready($pdo)) stu_json(['ok'=>false, 'error'=>'security_migration_required'], 503);
+$uid = (int)$uid;
+$guestCheck = $pdo->prepare('SELECT is_guest FROM stu_users WHERE id=? LIMIT 1');
+$guestCheck->execute([$uid]);
+$guestFlag = $guestCheck->fetchColumn();
+if ($guestFlag === false || (int)$guestFlag === 1) stu_json(['ok'=>false, 'error'=>'guest_not_allowed'], 403);
+$device = coreui_account_device();
+$reply = static function (array $extra = []) use ($pdo, $uid): void {
+  stu_json(['ok'=>true, 'security'=>coreui_account_security_state($pdo, $uid), 'sessions'=>coreui_auth_session_list($pdo, $uid),
+    'csrf_token'=>stu_csrf_token()] + $extra);
+};
+
+if ($action === 'sessions_revoke_all') {
+  coreui_security_rate_limit('session_revoke_all', 10, 300);
+  $count = coreui_auth_session_revoke_all($pdo, $uid, 'user_revoked_all');
+  coreui_security_event($pdo, $uid, 'sessions_all', $device, (string)$count);
+  coreui_security_audit($pdo, $uid, 'account.sessions_revoked_all', ['count'=>$count]);
+  stu_logout(false);
+  stu_json(['ok'=>true, 'signed_out'=>true, 'revoked_count'=>$count]);
+}
+
+if ($action === 'lockdown') {
+  coreui_security_set_lockdown($pdo, $uid, !empty($body['on']), $device);
+  $reply();
+}
+
+try {
+  if ($action === 'totp_begin') {
+    coreui_account_security_reauth($pdo, $uid, (string)($body['password'] ?? ''));
+    $key = random_bytes(20);
+    $_SESSION['coreui_totp_setup'] = ['key'=>base64_encode($key), 'exp'=>time() + 900];
+    $st = $pdo->prepare('SELECT username FROM stu_users WHERE id=? LIMIT 1');
+    $st->execute([$uid]);
+    $secret = coreui_base32_encode($key);
+    stu_json(['ok'=>true, 'secret'=>$secret, 'uri'=>coreui_totp_uri($secret, (string)$st->fetchColumn()), 'csrf_token'=>stu_csrf_token()]);
+  }
+  if ($action === 'totp_enable') {
+    coreui_security_rate_limit('totp_enable', 10, 300);
+    $setup = $_SESSION['coreui_totp_setup'] ?? null;
+    if (!is_array($setup) || time() > (int)($setup['exp'] ?? 0)) stu_json(['ok'=>false, 'error'=>'setup_expired'], 400);
+    if (!coreui_security_totp_enable($pdo, $uid, (string)base64_decode((string)$setup['key']), (string)($body['code'] ?? ''), time())) {
+      stu_json(['ok'=>false, 'error'=>'code_invalid'], 400);
+    }
+    unset($_SESSION['coreui_totp_setup']);
+    $codes = coreui_security_recovery_left(coreui_security_row($pdo, $uid)) > 0 ? [] : coreui_security_recovery_new($pdo, $uid);
+    coreui_security_event($pdo, $uid, 'totp_on', $device);
+    $reply(['recovery_codes'=>$codes]);
+  }
+  if ($action === 'totp_disable') {
+    coreui_account_security_reauth($pdo, $uid, (string)($body['password'] ?? ''));
+    coreui_security_totp_disable($pdo, $uid);
+    coreui_security_event($pdo, $uid, 'totp_off', $device);
+    $reply();
+  }
+  if ($action === 'email_begin') {
+    coreui_account_security_reauth($pdo, $uid, (string)($body['password'] ?? ''));
+    $st = $pdo->prepare('SELECT username FROM stu_users WHERE id=? LIMIT 1');
+    $st->execute([$uid]);
+    $email = (string)$st->fetchColumn();
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL) || !coreui_notify_mail_available($pdo)) stu_json(['ok'=>false, 'error'=>'mail_not_configured'], 400);
+    $code = coreui_security_code_new();
+    try {
+      stu_send_mail($email, 'CoreAI: Code für die Anmeldung per E-Mail ' . $code,
+        "Mit diesem Code schaltest du den E-Mail-Code als zweiten Faktor ein: " . $code . "\n\nEr gilt "
+        . COREUI_SECURITY_CODE_MINUTES . " Minuten. Warst du das nicht? Ändere dein Passwort.\n", coreui_mail_effective($pdo));
+    } catch (Throwable $e) {
+      stu_json(['ok'=>false, 'error'=>'mail_failed'], 502);
+    }
+    $_SESSION['coreui_email_setup'] = coreui_security_code_hold($code, time());
+    stu_json(['ok'=>true, 'sent_to'=>coreui_security_mask_email($email), 'csrf_token'=>stu_csrf_token()]);
+  }
+  if ($action === 'email_enable') {
+    $held = $_SESSION['coreui_email_setup'] ?? null;
+    $result = coreui_security_code_check($held, (string)($body['code'] ?? ''), time());
+    $_SESSION['coreui_email_setup'] = $held;
+    if ($result !== 'ok') stu_json(['ok'=>false, 'error'=>$result === 'wrong' ? 'code_invalid' : 'setup_expired'], 400);
+    unset($_SESSION['coreui_email_setup']);
+    coreui_security_put($pdo, $uid, ['email_mfa_at'=>date('Y-m-d H:i:s')]);
+    $codes = coreui_security_recovery_left(coreui_security_row($pdo, $uid)) > 0 ? [] : coreui_security_recovery_new($pdo, $uid);
+    coreui_security_event($pdo, $uid, 'email_on', $device);
+    $reply(['recovery_codes'=>$codes]);
+  }
+  if ($action === 'email_disable') {
+    coreui_account_security_reauth($pdo, $uid, (string)($body['password'] ?? ''));
+    coreui_security_put($pdo, $uid, ['email_mfa_at'=>null]);
+    coreui_security_event($pdo, $uid, 'email_off', $device);
+    $reply();
+  }
+  if ($action === 'recovery_new') {
+    coreui_account_security_reauth($pdo, $uid, (string)($body['password'] ?? ''));
+    $codes = coreui_security_recovery_new($pdo, $uid);
+    coreui_security_event($pdo, $uid, 'recovery_new', $device);
+    $reply(['recovery_codes'=>$codes]);
+  }
+  if ($action === 'passkey_options') {
+    coreui_security_rate_limit('passkey_options', 20, 300);
+    $rpId = coreui_webauthn_rp_id();
+    if ($rpId === '') stu_json(['ok'=>false, 'error'=>'passkey_unavailable'], 400);
+    $challenge = random_bytes(32);
+    $_SESSION['coreui_webauthn_register'] = ['chal'=>base64_encode($challenge), 'exp'=>time() + 300, 'rp'=>$rpId];
+    $st = $pdo->prepare('SELECT username FROM stu_users WHERE id=? LIMIT 1');
+    $st->execute([$uid]);
+    $username = (string)$st->fetchColumn();
+    $display = function_exists('coreui_profile_load') ? (string)(coreui_profile_load($pdo, $uid)['display_name'] ?? '') : '';
+    stu_json(['ok'=>true, 'publicKey'=>coreui_security_passkey_create_options($pdo, $uid, $username, $display, $challenge, $rpId),
+      'csrf_token'=>stu_csrf_token()]);
+  }
+  if ($action === 'passkey_add') {
+    coreui_security_rate_limit('passkey_add', 10, 300);
+    $held = $_SESSION['coreui_webauthn_register'] ?? null;
+    unset($_SESSION['coreui_webauthn_register']);
+    $rpId = coreui_webauthn_rp_id();
+    if (!is_array($held) || time() > (int)($held['exp'] ?? 0) || ($held['rp'] ?? '') !== $rpId) stu_json(['ok'=>false, 'error'=>'passkey_expired'], 400);
+    $cred = is_array($body['credential'] ?? null) ? $body['credential'] : [];
+    $reg = coreui_webauthn_register_verify(is_array($cred['response'] ?? null) ? $cred['response'] : [], (string)base64_decode((string)$held['chal']), $rpId);
+    $label = trim((string)($body['label'] ?? ''));
+    coreui_security_passkey_add($pdo, $uid, $reg, $rpId, $label !== '' ? $label : $device);
+    coreui_security_event($pdo, $uid, 'passkey_added', $device, $label !== '' ? $label : $device);
+    $reply();
+  }
+  if ($action === 'passkey_rename') {
+    $label = coreui_security_passkey_label((string)($body['label'] ?? ''));
+    if (!coreui_security_passkey_rename($pdo, $uid, (int)($body['id'] ?? 0), $label)) stu_json(['ok'=>false, 'error'=>'passkey_not_found'], 404);
+    coreui_security_event($pdo, $uid, 'passkey_renamed', $device, $label);
+    $reply();
+  }
+  if ($action === 'passkey_remove') {
+    coreui_account_security_reauth($pdo, $uid, (string)($body['password'] ?? ''));
+    if (!coreui_security_passkey_remove($pdo, $uid, (int)($body['id'] ?? 0))) stu_json(['ok'=>false, 'error'=>'passkey_not_found'], 404);
+    coreui_security_event($pdo, $uid, 'passkey_removed', $device);
+    $reply();
+  }
+  if ($action === 'advanced_enable') {
+    coreui_account_security_reauth($pdo, $uid, (string)($body['password'] ?? ''));
+    $codes = coreui_security_advanced_enable($pdo, $uid, time());
+    coreui_security_event($pdo, $uid, 'advanced_on', $device);
+    coreui_security_audit($pdo, $uid, 'account.advanced_security_on');
+    // Like the reference: switching it on signs out everywhere, this device included.
+    coreui_auth_session_revoke_all($pdo, $uid, 'advanced_security');
+    stu_logout(false);
+    stu_json(['ok'=>true, 'signed_out'=>true, 'recovery_codes'=>$codes]);
+  }
+  if ($action === 'advanced_disable') {
+    coreui_account_security_reauth($pdo, $uid, (string)($body['password'] ?? ''));
+    coreui_security_advanced_disable($pdo, $uid);
+    coreui_security_event($pdo, $uid, 'advanced_off', $device);
+    coreui_security_audit($pdo, $uid, 'account.advanced_security_off');
+    $reply();
+  }
+} catch (InvalidArgumentException $e) {
+  stu_json(['ok'=>false, 'error'=>str_starts_with($e->getMessage(), 'webauthn_') || str_starts_with($e->getMessage(), 'cbor_') ? 'passkey_invalid' : $e->getMessage(),
+    'detail'=>$e->getMessage()], 400);
+} catch (RuntimeException $e) {
+  stu_json(['ok'=>false, 'error'=>$e->getMessage()], 409);
 }
 
 stu_json(['ok'=>false, 'error'=>'unknown_action'], 400);

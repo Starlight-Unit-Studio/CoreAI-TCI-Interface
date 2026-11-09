@@ -44,7 +44,9 @@ function coreui_auth_device_label(string $userAgent): string {
   return $browser !== '' ? ($device . ' / ' . $browser) : $device;
 }
 
-function coreui_auth_session_issue(PDO $pdo, int $uid): ?array {
+/** 0.6.85: $hours is 24 with advanced account security (api/security_store.php), else 30 days. */
+function coreui_auth_session_issue(PDO $pdo, int $uid, int $hours = 720): ?array {
+  $hours = max(1, min(720, $hours));
   if ($uid <= 0 || !coreui_auth_session_schema_ready($pdo)) return null;
   stu_start_session();
   $token = bin2hex(random_bytes(32));
@@ -63,7 +65,7 @@ function coreui_auth_session_issue(PDO $pdo, int $uid): ?array {
     $st = $pdo->prepare(
       'INSERT INTO stu_auth_sessions '
       . '(user_id,token_hash,device_label,user_agent,created_at,last_seen_at,expires_at,revoked_at,revoked_reason) '
-      . 'VALUES (?,?,?,?,NOW(),NOW(),DATE_ADD(NOW(),INTERVAL 30 DAY),NULL,\'\')'
+      . 'VALUES (?,?,?,?,NOW(),NOW(),DATE_ADD(NOW(),INTERVAL ' . $hours . ' HOUR),NULL,\'\')'
     );
     $st->execute([$uid, $hash, $label, $userAgent]);
     $id = (int)$pdo->lastInsertId();
@@ -90,7 +92,9 @@ function coreui_auth_session_validate_current(PDO $pdo, int $uid): bool {
   stu_start_session();
   $token = coreui_auth_session_token();
   if ($token === '') {
-    return coreui_auth_session_issue($pdo, $uid) !== null;
+    // 0.6.85: a token issued here also follows advanced account security (24 hours).
+    $hours = function_exists('coreui_security_session_hours') ? coreui_security_session_hours($pdo, $uid) : 720;
+    return coreui_auth_session_issue($pdo, $uid, $hours) !== null;
   }
 
   $hash = coreui_auth_session_hash($token);

@@ -1,0 +1,29 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.85
+09.11.2026
+
+- Einstellungen > Sicherheit heisst jetzt "Sicherheit und Anmeldung" und folgt den
+  ChatGPT-Screenshots: So meldest du dich an, Multi-Faktor-Authentifizierung (MFA),
+  Sitzungen, Erweiterte Sicherheit, App-Sicherheit. Jede Zeile hat eine Unterseite.
+  Anmeldeverknuepfungen bewusst weggelassen.
+- Passkeys und Sicherheitsschluessel (echt): hinzufuegen, umbenennen, entfernen, mit
+  Datum. WebAuthn ohne Fremdbibliothek (ES256, RS256, Ed25519, Herkunft, RP-ID, Zaehler).
+  Anmeldeseite: MIT PASSKEY ANMELDEN, ohne E-Mail-Eingabe moeglich.
+- Authenticator-App (echt, TOTP): QR-Code im Browser, Schluessel versiegelt gespeichert,
+  kein Code gilt zweimal.
+- E-Mail-Code (echt, statt SMS): 6 Stellen, 10 Minuten gueltig, 5 Versuche, hoechstens
+  eine Mail pro Minute. Braucht den E-Mail-Versand aus Admin Core.
+- Wiederherstellungscodes: 10 Einmalcodes, nur einmal angezeigt, Kopieren und .txt,
+  nur als Hash gespeichert.
+- Zweiter Schritt nach dem Passwort: App-Code, Code per Mail oder Wiederherstellungscode.
+- Aktive Sitzungen mit neuem UEBERALL ABMELDEN. Sicherheitsverlauf mit Anmeldungen,
+  Fehlversuchen und jeder Aenderung an der Sicherheit.
+- Erweiterte Kontosicherheit (echt): nur Passkey oder Sicherheitsschluessel, kein
+  Zuruecksetzen per E-Mail, Sitzungen 24 Stunden, Sicherheitsmeldungen nicht abschaltbar,
+  beim Einschalten ueberall abgemeldet. Braucht mindestens einen Passkey.
+- Lockdown-Modus (echt): Websuche und Browser-Recherche fuer die eigenen Chats aus.
+- In Vorbereitung (grau): Konto-PIN, Push-Bestaetigung der Anmeldung, CSP fuer
+  benutzerdefinierte Apps.
+- Migration 030 (stu_user_security, stu_passkeys, stu_security_events).
+- Notfall auf dem Server: php scripts/security-reset.php konto@example.com [--passkeys]
+- Tests: sign-in-security-selftest.php (auch MariaDB), security-ui-selftest.cjs.
+  Keine Aenderung an Cores, Modelfile, FIFO, Prompts oder Rechten.

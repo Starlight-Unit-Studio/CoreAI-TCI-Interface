@@ -5861,6 +5861,108 @@ a.core-install-btn {
   opacity: 0.64;
 }
 
+/* 0.6.85: passkeys and the second step on the login page. */
+.login-form[hidden],
+.login-mfa[hidden],
+.login-passkey[hidden],
+.login-mfa-send[hidden],
+.login-mfa-switch button[hidden] {
+  display: none;
+}
+
+.login-passkey,
+.login-mfa-send {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 10px;
+  border: 1px solid var(--cx);
+  background: var(--panel-cx);
+  color: var(--cx);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+}
+
+.login-passkey:hover,
+.login-mfa-send:hover {
+  background: var(--panel-soft);
+}
+
+.login-passkey:disabled,
+.login-mfa-send:disabled {
+  cursor: wait;
+  opacity: 0.64;
+}
+
+.login-mfa-title {
+  margin-top: 18px;
+  color: var(--cx);
+  font-family: "Share Tech Mono", monospace;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+}
+
+.login-mfa-text,
+.login-mfa-note {
+  margin: 8px 0 0;
+  color: var(--txt);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.login-mfa-note:empty {
+  display: none;
+}
+
+.login-mfa #mfaCode {
+  font-family: "Share Tech Mono", monospace;
+  font-size: 20px;
+  letter-spacing: 0.3em;
+  text-align: center;
+}
+
+.login-mfa #mfaBtn {
+  width: 100%;
+  min-height: 50px;
+  margin-top: 18px;
+  cursor: pointer;
+  border: 1px solid var(--cx);
+  background: linear-gradient(135deg, var(--cx), #7b76ed);
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+}
+
+.login-mfa #mfaBtn:disabled {
+  cursor: wait;
+  opacity: 0.64;
+}
+
+.login-mfa-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.login-mfa-switch button {
+  flex: 1 1 auto;
+  min-height: 38px;
+  border: 1px dashed var(--line-strong);
+  background: transparent;
+  color: var(--cx);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.login-mfa-switch button:hover {
+  border-style: solid;
+}
+
 /* 0.5.77: sign-up on the login page, only while the admin has it switched on. */
 .login-field-group[hidden],
 .login-mode-toggle[hidden],

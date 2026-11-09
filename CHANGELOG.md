@@ -1,5 +1,26 @@
 # CoreAI: TCI Interface
 
+## 0.6.85 - 09.11.2026
+
+- **Settings > Sicherheit is rebuilt as "Sicherheit und Anmeldung" after the ChatGPT security screenshots**, in CoreAI style: an overview with **So meldest du dich an**, **Multi-Faktor-Authentifizierung (MFA)**, **Sitzungen**, **Erweiterte Sicherheit** and **App-Sicherheit**; each row opens its own sub page with a back button. "Anmeldeverknüpfungen" was left out on purpose.
+  - **Passkeys und Sicherheitsschlüssel** (real): add a passkey of this device, a phone or a hardware security key, see when it was added and last used, rename or remove it (password confirmation). WebAuthn is verified on the server without an external library: ES256, RS256 and Ed25519, attestation "none", origin and RP ID checked (HTTPS, plain HTTP only on localhost), user presence, signature counter. Up to 20 per account. The sign-in page gets **MIT PASSKEY ANMELDEN**; a passkey counts as both factors and works without typing the e-mail.
+  - **Passwort:** the existing password change, now on its own sub page.
+  - **Authenticator-App** (real, TOTP after RFC 6238): QR code drawn in the browser (no external service), the key in groups of four to copy, confirmation with a first code. The key is stored sealed (AES-256-GCM, key derived from the database password). One step of clock drift is accepted, a code is never accepted twice.
+  - **E-Mail-Code** (real, instead of the reference's SMS): 6-digit codes by mail, valid 10 minutes, 5 tries, a new mail at most once a minute. Needs E-Mail sending (Admin Core); without it the row explains why it is unavailable.
+  - **Wiederherstellungscodes:** 10 one-time codes (like abcde-fghjk), created with the first second factor, shown once, copy and .txt download, new set on request. Stored only as hashes.
+  - **Second step at sign-in:** after the password, accounts with a second factor choose the authenticator app, a code by mail or a recovery code; the half-finished sign-in lives only in the server session (10 minutes, 5 tries).
+  - **Aktive Sitzungen** with the existing device list and a new **ÜBERALL ABMELDEN** (all devices including this one).
+  - **Sicherheitsverlauf:** sign-ins with method and device, failed passwords and codes, sign-outs, removed devices, password changes and resets, every change to second factors, recovery codes, passkeys, advanced security and Lockdown; sign-ins from before the update come from the existing session list.
+  - **Erweiterte Kontosicherheit** (real, after the reference's advanced account security page): sign-in only with a passkey or security key (a password alone is refused before it is even checked), no password reset by e-mail, recovery only with recovery codes or on the server, sessions last 24 hours instead of 30 days, security notifications cannot be switched off (Push and E-Mail), and turning it on signs out everywhere. Needs at least one passkey; the last passkey cannot be removed while it is on. The card "Vertrauliche Gespräche" says what is already true: CoreAI never trains on chats.
+  - **Lockdown-Modus** (real): turns off web search and browser research for the account's chats, so foreign web pages cannot slip instructions to Mara; live weather data, which comes from the web, is off too.
+  - **In Vorbereitung** (shown greyed, never active): **Konto-PIN** (needs locked chats first), **Push-Benachrichtigungen** to approve sign-ins and **CSP für benutzerdefinierte Apps** (CoreAI has no custom apps yet).
+- Every sensitive change asks for the password again (rate-limited). Guests have no security page actions.
+- New migration 030 (`stu_user_security`, `stu_passkeys`, `stu_security_events`, all `ON DELETE CASCADE`); the history keeps the last 300 entries per account.
+- **Emergency reset on the server:** `php scripts/security-reset.php owner@example.com [--passkeys]` turns off the second factors, recovery codes and advanced security of one account (optionally removes its passkeys), signs it out everywhere and writes the history. CLI only.
+- New files: `api/security_store.php`, `api/totp.php`, `api/webauthn.php`, `api/secret_box.php`, `js/coreui-security-settings.js`, `js/coreui-login-security.js`, `js/coreui-qr.js`.
+- Tests: new `sign-in-security-selftest.php` (RFC 4226/6238 vectors, sealing, a software authenticator with ES256, RS256 and Ed25519 plus refused origin, challenge, RP ID, presence, signature and counter, the store on SQLite and MariaDB, wiring) and `security-ui-selftest.cjs` (Chromium with a virtual authenticator: overview, every sub page, QR, codes, passkeys, confirmation dialog, advanced security, sign-in second step and passkey button, phone, font sizes). `settings-tabs-ui-selftest.cjs` opens the password and session sub pages. Both preflights.
+- No change to Cores, Modelfile, FIFO, prompts or account rights.
+
 ## 0.6.84 - 09.11.2026
 
 - **Settings > Profil now opens with an overview modeled on the two ChatGPT profile screenshots**, in CoreAI style. The existing name and picture editors stay below; the pencil jumps there.

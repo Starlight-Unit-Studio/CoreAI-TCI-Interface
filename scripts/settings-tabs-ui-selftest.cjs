@@ -199,8 +199,13 @@ const smallText = page => page.evaluate(() => {
     // Existing controls live in their actual settings categories.
     await page.click('#tab-sicherheit');
     assert.deepEqual(await visibleViews(page), ['view-sicherheit']);
+    // 0.6.85: password and sessions are sub pages of Sicherheit und Anmeldung, like the reference.
+    await page.click('#secRow-password .sec-open');
     assert.equal(await page.locator('#changePassword').isVisible(), true);
+    await page.click('#secSub-password [data-sec-back]');
+    await page.click('#secRow-sessions .sec-open');
     assert.equal(await page.locator('#loginSessionList').isVisible(), true);
+    await page.click('#secSub-sessions [data-sec-back]');
     await page.click('#tab-datenkontrollen');
     assert.equal(await page.locator('#exportAccountData').isVisible(), true,
       'existing private JSON export is a real Data controls action');

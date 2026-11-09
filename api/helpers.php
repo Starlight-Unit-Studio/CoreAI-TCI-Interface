@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/auth_session_store.php';
+require_once __DIR__ . '/security_store.php'; // 0.6.85: sign-in security for every endpoint
 
 // --- API crash shielding (returns JSON instead of a blank HTTP 500 page) ---
 // Enable verbose error payloads by defining STU_DEBUG=true in config.local.php or env STU_DEBUG=1

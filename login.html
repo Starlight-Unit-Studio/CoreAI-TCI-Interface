@@ -7,15 +7,16 @@
   <meta http-equiv="Accept-Language" content="de-DE, de;q=0.9, en;q=0.8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="application-name" content="CoreAI: TCI Interface" />
-  <meta name="application-version" content="0.6.84" />
+  <meta name="application-version" content="0.6.85" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface - Login</title>
-  <link rel="stylesheet" href="./css/console.css?v=0488039108136251966969049" />
+  <link rel="stylesheet" href="./css/console.css?v=0217541490576697992638625" />
   <link rel="stylesheet" href="./css/coreui-theme.css?v=0697431397907702126637895" />
-  <script src="./js/console-gate.js?v=0328111438093644641056151"></script>
+  <script src="./js/console-gate.js?v=0907289211908403186501148"></script>
   <script src="./js/coreui-preferences.js?v=0004145186774094057353830"></script>
   <script src="./js/coreui-ui-language.js?v=0850224961537363286304733"></script>
   <script src="./js/coreui-captcha.js?v=0847946519843965556453703"></script>
+  <script src="./js/coreui-login-security.js?v=0779991656207318849704835" defer></script>
 </head>
 <body>
   <div class="login-page" style="background-image:url('./images/login_background.webp')">
@@ -25,8 +26,9 @@
         <img class="logo" src="./images/starlight_unit_studios_logo_original.png?v=3463758e8e226531" alt="Starlight Unit Studios" draggable="false" />
       </div>
       <div class="login-brand">COREAI:<span class="brand-product-part">TCI INTERFACE</span></div>
-      <div class="login-brand-sub">QUANTUM SOFTWARE // N-73 // v0.6.84</div>
+      <div class="login-brand-sub">QUANTUM SOFTWARE // N-73 // v0.6.85</div>
 
+      <div class="login-form" id="loginForm">
       <div class="login-field-group">
         <label for="email">E-MAIL</label>
         <input id="email" type="email" placeholder="name@domain.tld" autocomplete="username" required />
@@ -44,11 +46,33 @@
         <input id="passwordRepeat" type="password" placeholder="••••••••" autocomplete="new-password" />
       </div>
 
-      <div id="loginError" class="login-error" style="display:none"></div>
-
       <button id="loginBtn" type="button">EINLOGGEN</button>
+      <!-- 0.6.85: passkeys and security keys (js/coreui-login-security.js) -->
+      <button id="passkeyBtn" class="login-passkey" type="button" hidden>MIT PASSKEY ANMELDEN</button>
       <button id="loginModeToggle" class="login-mode-toggle" type="button" hidden>NOCH KEIN KONTO? REGISTRIEREN</button>
       <button id="guestBtn" class="login-guest" type="button" hidden>ALS GAST CHATTEN</button>
+      </div>
+
+      <!-- 0.6.85: second step after the password (authenticator app, code by mail, recovery code) -->
+      <div class="login-mfa" id="mfaStep" hidden>
+        <div class="login-mfa-title">ZWEITER SCHRITT</div>
+        <p class="login-mfa-text" id="mfaText"></p>
+        <button id="mfaSend" class="login-mfa-send" type="button" hidden>CODE PER E-MAIL SENDEN</button>
+        <p class="login-mfa-note" id="mfaNote" role="status" aria-live="polite"></p>
+        <div class="login-field-group">
+          <label for="mfaCode" id="mfaCodeLabel">CODE</label>
+          <input id="mfaCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" spellcheck="false" />
+        </div>
+        <button id="mfaBtn" type="button">BESTÄTIGEN</button>
+        <div class="login-mfa-switch">
+          <button id="mfaUse-totp" type="button" hidden>AUTHENTICATOR-APP</button>
+          <button id="mfaUse-email" type="button" hidden>CODE PER E-MAIL</button>
+          <button id="mfaUse-recovery" type="button" hidden>WIEDERHERSTELLUNGSCODE</button>
+          <button id="mfaBack" type="button">ZURÜCK</button>
+        </div>
+      </div>
+
+      <div id="loginError" class="login-error" style="display:none"></div>
       <div class="login-copyright">© 2023-2026 Patrick Schildgen · Starlight Unit Studios. Alle Rechte vorbehalten.</div>
     </div>
   </div>
@@ -82,6 +106,8 @@
       document.getElementById('password').setAttribute('autocomplete', register ? 'new-password' : 'current-password');
       document.getElementById('loginBtn').textContent = register ? 'KONTO ERSTELLEN' : 'EINLOGGEN';
       toggle.textContent = register ? 'SCHON EIN KONTO? EINLOGGEN' : 'NOCH KEIN KONTO? REGISTRIEREN';
+      var passkeyBtn = document.getElementById('passkeyBtn');
+      if (passkeyBtn && window.CoreAILoginSecurity) passkeyBtn.hidden = register || !window.CoreAILoginSecurity.supported;
       hideError();
     }
 
@@ -253,10 +279,16 @@
       .then(function(d) {
         if (d.ok) {
           location.replace('app.html');
+        } else if (d.mfa_required && window.CoreAILoginSecurity) {
+          // 0.6.85: the account uses a second factor.
+          btn.disabled = false;
+          btn.textContent = 'EINLOGGEN';
+          window.CoreAILoginSecurity.mfa(d.methods);
         } else {
           btn.disabled = false;
           btn.textContent = 'EINLOGGEN';
           var errMap = {
+            'passkey_required':    'Für dieses Konto ist die erweiterte Kontosicherheit aktiv: Anmeldung nur mit Passkey oder Sicherheitsschlüssel.',
             'invalid_credentials': 'E-Mail oder Passwort falsch.',
             'invalid_username':    'Ungültige E-Mail-Adresse.',
             'invalid_password':    'Passwort zu kurz (min. 8 Zeichen).',
