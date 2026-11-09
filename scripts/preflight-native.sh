@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.70: dynamischer Quantum CoreAI Bildvermerk ohne Studio-Logo.
+# CoreAI: TCI Interface 0.6.71: dynamischer Quantum CoreAI Bildvermerk ohne Studio-Logo.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -66,6 +66,7 @@ UI_FILES=(
   js/admin.js
   css/settings.css
   css/coreui-theme.css
+  js/coreui-settings-menu.js
   js/coreui-settings-tabs.js
   scripts/settings-tabs-ui-selftest.cjs
   scripts/theme-preferences-selftest.cjs
@@ -998,10 +999,10 @@ if command -v php >/dev/null 2>&1; then
     else
       ok 'Bildeditor: Playwright fehlt. Browser-Selbsttest uebersprungen (keine Live-Abnahme).'
     fi
-    # 0.5.79: settings page with tabs and Admin Core; needs Playwright for Node.
+    # 0.6.71: category navigation, expert mode and standalone Admin Core; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/settings-tabs-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Einstellungen: Tabs, Admin Core nach Rolle, Speichern, lesbare Schrift und Handy-Breite geprueft.'
+        ok 'Einstellungen: Kategorien, Suche, Expertenmodus, mobiles Menue und eigenstaendiger Admin Core geprueft.'
       else
         fail 'Einstellungen: Tab-Oberflaechentest fehlgeschlagen.'
       fi
