@@ -14,6 +14,35 @@ vm.runInNewContext(source, {window: win});
 const html = read('app.html');
 const settings = read('settings.html');
 assert.match(html, /id="reasonEffortChip"/);
+const footerStart = html.indexOf('<div class="composer-footer-line"');
+const footerEnd = html.indexOf('</div>', footerStart);
+const footer = html.slice(footerStart, footerEnd);
+assert.ok(footerStart > 0 && footerEnd > footerStart, 'composer footer exists');
+assert.ok(footer.indexOf('id="reasonEffortChip"') < footer.indexOf('id="coreModeChip"'),
+  'Denkaufwand stands immediately left of the Core chip');
+assert.match(footer, /id="reasonEffortChip"[\s\S]*id="coreModeChip"/,
+  'Core remains the far-right selector');
+const css = read('css/console.css');
+function rule(selector) {
+  const marker = selector + ' {';
+  const at = css.indexOf(marker);
+  assert.ok(at >= 0, marker + ' is defined');
+  const end = css.indexOf('\n}', at);
+  assert.ok(end > at, marker + ' closes');
+  return css.slice(at, end + 2);
+}
+const core = rule('.core-mode-chip'), effort = rule('.reason-effort-chip');
+for (const prop of ['min-height', 'gap', 'padding', 'border', 'background',
+  'color', 'font-family', 'font-size', 'letter-spacing', 'clip-path']) {
+  const extract = r => r.match(new RegExp('(?:^|\\n)\\s*' + prop + ':\\s*([^;]+);'));
+  const c = extract(core), e = extract(effort);
+  assert.ok(c && e && c[1].trim() === e[1].trim(),
+    'Denkaufwand matches the native Core chip ' + prop + ' (' +
+    (e && e[1]) + ' vs ' + (c && c[1]) + ')');
+}
+assert.match(effort, /border-radius:\s*0;/,
+  'Denkaufwand has angular TCI corners, not generic rounded pills');
+
 assert.match(html, /id="reasonEffortMenu"[^>]*role="dialog"|role="dialog"[^>]*id="reasonEffortMenu"/);
 assert.match(html, /id="reasonEffortOptions"/);
 assert.match(html, /src="\.\/js\/coreui-reasoning-effort\.js\?v=\d{25}"/);
