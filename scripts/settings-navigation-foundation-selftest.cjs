@@ -32,8 +32,39 @@ for(const entry of entries) {
   assert.ok(settings.includes('aria-controls="view-' + entry + '"'), entry + ' linked view');
 }
 const planned = [...settings.matchAll(/class="cfg-view cfg-view-planned"/g)];
-assert.equal(planned.length, 16, 'all missing ChatGPT-style categories show honest scaffolds');
+assert.equal(planned.length, 12, 'only genuinely unimplemented settings remain planned');
 assert.ok(settings.includes('id="settingsExpertToggle"'));
+assert.ok(settings.includes('class="cfg-header-expert"') &&
+  settings.indexOf('id="settingsExpertToggle"') < settings.indexOf('<div class="cfg-shell">'),
+  'single Expert control lives in the header, not in the scrolling navigation');
+assert.ok(settings.includes('id="settingsAdminShortcut"') &&
+  settings.includes('id="settingsAdminShortcut" class="cfg-admin-shortcut"') &&
+  settings.includes('href="./admin/index.html" hidden'),
+  'standalone Admin Core has an initially hidden header shortcut');
+const section = id => {
+  const at = settings.indexOf('id="view-' + id + '"');
+  assert(at > -1, 'settings page ' + id + ' exists');
+  const start = settings.lastIndexOf('<section class="cfg-view', at);
+  const next = settings.indexOf('<section class="cfg-view', at + 9);
+  return settings.slice(start, next === -1 ? settings.length : next);
+};
+for (const [id, fields] of Object.entries({
+  sicherheit: ['changePassword', 'currentPassword', 'loginSessionList', 'revokeOtherSessions'],
+  tastatur: ['generalSendKey'],
+  datenkontrollen: ['exportAccountData'],
+  stimme: ['voiceAutoRead', 'voiceTerms'],
+  memory: ['aiMemoryEnabled', 'aiMemoryLimit', 'saveMemoryAiSettings'],
+})) {
+  const html = section(id);
+  assert.ok(!html.includes('cfg-view-planned'), id + ' is a real page');
+  for (const field of fields) assert.ok(html.includes('id="' + field + '"'),
+    field + ' belongs to ' + id);
+}
+assert.ok(!section('konto').includes('id="changePassword"') &&
+  !section('konto').includes('id="exportAccountData"'),
+  'account retains identity and logout without misplaced controls');
+assert.ok(!section('start').includes('id="generalSendKey"'),
+  'the send shortcut is no longer duplicated in General');
 assert.ok(settings.includes('id="cfgCoreGroup"'));
 assert.ok(!settings.includes('id="cfgExpertGroup"'));
 assert.ok(['start','ki-profil','wissen','memory','system'].every(id => settings.includes('id="tab-' + id + '"')),
@@ -70,10 +101,29 @@ assert.ok(!admin.includes('http-equiv="refresh"'));
 assert.ok(read('js/admin.js').includes("rootUrl('api/admin.php?action='"));
 assert.ok(read('js/admin.js').includes('if (data.is_guest || Number(data.permission_level) > 1)'));
 assert.ok(read('js/settings.js').includes("adminLinkGroup.dataset.authorized = mayAdmin ? '1' : '0'"));
+assert.ok(read('js/settings.js').includes('adminShortcut.hidden = !mayAdmin'),
+  'header Admin shortcut follows the same authenticated role gate');
+assert.ok(read('js/settings.js').includes("memorySettingsSaveButton.addEventListener('click', saveAiSettings)"),
+  'relocated Memory controls still save via the existing account API');
 assert.ok(read('js/coreui-image-samples.js').includes("new URL('admin.php', apiRoot)"));
 assert.ok(read('js/coreui-voice-samples.js').includes("new URL('admin.php', apiRoot)"));
 assert.ok(css.includes('.cfg-nav.is-open'));
 assert.ok(css.includes('.cfg-menu-backdrop:not([hidden])'));
 assert.ok(css.includes('prefers-reduced-motion: reduce'));
 assert.ok(css.includes('.cfg-nav-group[hidden]'));
-console.log('CoreAI settings: 25 categories, General controls, 10 in-category Expert controls, honest planning pages, mobile menu and role-gated admin wiring OK');
+// Protect against the legacy horizontal mobile tab bar overriding the drawer.
+const drawerRules = css.slice(css.indexOf('@media (max-width: 980px) {'));
+assert.ok(drawerRules.includes('  .settings-body .cfg-nav {') &&
+  drawerRules.includes('    flex-direction: column;') &&
+  drawerRules.includes('    box-sizing: border-box;') &&
+  drawerRules.includes('    overflow-x: hidden;'),
+  'mobile navigation must be a vertically stacked, width-bounded drawer');
+assert.ok(drawerRules.includes('  .settings-body .cfg-nav-group {') &&
+  drawerRules.includes('    width: 100%;') &&
+  drawerRules.includes('  .settings-body .cfg-tab {'),
+  'mobile groups and tabs fill a single column without horizontal clipping');
+assert.ok(css.includes('cfg-nav-collapsed') && css.includes('cfg-header-expert'));
+assert.ok(read('js/coreui-settings-menu.js').includes("doc.addEventListener('touchstart'") &&
+  read('js/coreui-settings-menu.js').includes("doc.addEventListener('touchend'"),
+  'swipe navigation is implemented alongside keyboard and button access');
+console.log('CoreAI settings: 25 categories, 12 honest planning pages, migrated live controls, header Expert/Admin, responsive swipe navigation OK');

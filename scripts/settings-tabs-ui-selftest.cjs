@@ -139,6 +139,10 @@ const smallText = page => page.evaluate(() => {
     let {page, srv, errors} = await open(browser, 4, '#admin-benutzer');
     assert.deepEqual(await visibleViews(page), ['view-start']);
     assert.equal(await page.locator('#adminLinkGroup').isHidden(), true, 'no Admin Core link for a Nutzer');
+    assert.equal(await page.locator('#settingsAdminShortcut').isHidden(), true,
+      'a regular account never sees the header Admin shortcut');
+    assert.equal(await page.locator('.cfg-header-expert').count(), 1,
+      'one Expert switch remains accessible in the page header');
     assert.equal(await page.locator('#adminNavGroup').count(), 0, 'no embedded Admin Core tabs');
     assert.equal(await page.isChecked('#settingsExpertToggle'), false, 'expert mode starts disabled');
     assert.equal(await page.locator('#cfgCoreGroup').isHidden(), false, 'CoreAI categories always visible');
@@ -163,6 +167,9 @@ const smallText = page => page.evaluate(() => {
     assert.ok(srv.calls.some(c => c.key === 'user_settings.php' && c.post &&
       c.post.action === 'general' && c.post.settings.auto_higher_core === true),
       'auto Core setting is actually saved through the server');
+    await page.click('#tab-tastatur');
+    assert.deepEqual(await visibleViews(page), ['view-tastatur'],
+      'the actual keyboard shortcut moved to its own settings page');
     assert.equal(await page.inputValue('#generalSendKey'), 'enter', 'Enter remains the legacy default');
     await page.selectOption('#generalSendKey', 'mod-enter');
     assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('emberCoreUI.preferences.v1')).sendKey),
@@ -170,6 +177,7 @@ const smallText = page => page.evaluate(() => {
     await page.reload();
     await page.waitForFunction(() => document.getElementById('startHealth').getAttribute('data-state') !== 'checking');
     assert.equal(await page.inputValue('#generalSendKey'), 'mod-enter', 'send shortcut survives reload');
+    await page.click('#tab-start');
     assert.equal(srv.calls.filter(c => c.key === 'admin.php').length, 0, 'a Nutzer never asks the admin API');
     // Start view sums up the categories.
     assert.equal(await page.textContent('#startCore'), 'Mara Normal');
@@ -179,6 +187,33 @@ const smallText = page => page.evaluate(() => {
     assert.equal(await page.textContent('#startKnowledgeChunks'), '42 Abschnitte');
     assert.equal(await page.textContent('#startMemory'), '2 Fakten');
     assert.equal(await page.textContent('#startRole'), 'NUTZER');
+    // Existing controls live in their actual settings categories.
+    await page.click('#tab-sicherheit');
+    assert.deepEqual(await visibleViews(page), ['view-sicherheit']);
+    assert.equal(await page.locator('#changePassword').isVisible(), true);
+    assert.equal(await page.locator('#loginSessionList').isVisible(), true);
+    await page.click('#tab-datenkontrollen');
+    assert.equal(await page.locator('#exportAccountData').isVisible(), true,
+      'existing private JSON export is a real Data controls action');
+    await page.click('#tab-stimme');
+    assert.equal(await page.locator('#voiceAutoReadRow').count(), 1);
+    assert.equal(await page.locator('#voiceTermsRow').count(), 1);
+    await page.click('#tab-memory');
+    assert.equal(await page.locator('#saveMemoryAiSettings').isVisible(), true);
+    await page.check('#aiMemoryEnabled');
+    await page.click('#saveMemoryAiSettings');
+    await page.waitForFunction(() => !document.getElementById('saveMemoryAiSettings').disabled);
+    assert(srv.calls.some(c => c.key === 'user_settings.php' && c.post &&
+      c.post.memory_enabled === true),
+      'moved Memory toggle uses the existing account settings API');
+    await page.click('#tab-start');
+    await page.click('#settingsMenuToggle');
+    assert.equal(await page.locator('body').evaluate(node => node.classList.contains('cfg-nav-collapsed')),
+      true, 'desktop sidebar can collapse while settings content stays visible');
+    assert.equal(await page.locator('#view-start').isVisible(), true);
+    await page.click('#settingsMenuToggle');
+    assert.equal(await page.locator('body').evaluate(node => node.classList.contains('cfg-nav-collapsed')),
+      false, 'desktop sidebar expands without navigating away');
     // Planned categories are reachable without pretending to save settings.
     await page.click('#tab-benachrichtigungen');
     assert.deepEqual(await visibleViews(page), ['view-benachrichtigungen']);
@@ -241,6 +276,19 @@ const smallText = page => page.evaluate(() => {
     const aiPost = srv.calls.find(c => c.key === 'user_settings.php' && c.post);
     assert(aiPost && !('model_override' in aiPost.post) && aiPost.post.provider === 'local', 'KI-Profil saves without a Core');
     assert.equal(aiPost.post.main_language, 'de', 'the chosen language is saved');
+    assert.deepEqual(errors, []);
+    await page.close();
+
+    // The Inhaber gets a visible, role-gated shortcut without scrolling the
+    // categories drawer. Following it still requires the Admin Core gate.
+    ({page, srv, errors} = await open(browser, 0, '#start'));
+    await page.waitForFunction(() => !document.getElementById('settingsAdminShortcut').hidden);
+    assert.equal(await page.locator('#adminLinkGroup').isHidden(), false,
+      'owner still has the category link');
+    await page.click('#settingsAdminShortcut');
+    await page.waitForFunction(() => !document.getElementById('adminNavGroup').hidden);
+    assert.match(page.url(), /\/admin\/index\.html/,
+      'header opens the separate, authorized Admin Core');
     assert.deepEqual(errors, []);
     await page.close();
 
@@ -410,6 +458,79 @@ const smallText = page => page.evaluate(() => {
       return nav && !nav.hidden && view && !view.hidden;
     });
     await page.close();
+
+    // 0.6.73: guard the actual computed mobile layout, not just scrollWidth.
+    // The old <=900px horizontal tab-bar styles once arranged Personal and
+    // Teams side-by-side inside the new drawer and clipped the left edge.
+    for (const width of [320, 390, 768, 900]) {
+      const mobileRun = await open(browser, 4, '#start', {width, height: 760});
+      const mobilePage = mobileRun.page;
+      await mobilePage.click('#settingsMenuToggle');
+      const layout = await mobilePage.evaluate(() => {
+        const nav = document.getElementById('cfgNav');
+        const navRect = nav.getBoundingClientRect();
+        const groups = Array.from(nav.querySelectorAll('.cfg-nav-group'))
+          .filter(group => !group.hidden && getComputedStyle(group).display !== 'none');
+        const tabs = Array.from(nav.querySelectorAll('.cfg-tab'))
+          .filter(tab => !tab.hidden && getComputedStyle(tab).display !== 'none');
+        const groupRects = groups.map(group => group.getBoundingClientRect());
+        const tabRects = tabs.map(tab => tab.getBoundingClientRect());
+        return {
+          direction: getComputedStyle(nav).flexDirection,
+          groupDirections: groups.map(group => getComputedStyle(group).flexDirection),
+          navWidth: navRect.width,
+          navLeft: navRect.left,
+          viewport: innerWidth,
+          overflowsX: nav.scrollWidth > nav.clientWidth + 1,
+          topGroups: groupRects.map(rect => rect.top),
+          tabOverflow: tabRects.some(rect => rect.left < navRect.left - 1 ||
+            rect.right > navRect.right + 1),
+          scrollbar: getComputedStyle(nav).overflowY,
+        };
+      });
+      assert.equal(layout.direction, 'column', 'drawer must be vertical at width ' + width);
+      assert(layout.groupDirections.every(value => value === 'column'),
+        'every category group must be vertical at ' + width);
+      assert.equal(layout.overflowsX, false, 'no horizontal content overflow at ' + width);
+      assert.equal(layout.tabOverflow, false, 'all category tabs inside the drawer at ' + width);
+      assert(layout.navLeft >= -1 && layout.navLeft + layout.navWidth <= layout.viewport + 1,
+        'drawer is within the screen at ' + width);
+      assert(layout.topGroups.every((top, index, all) => index === 0 || top >= all[index - 1]),
+        'category groups stack downward at ' + width);
+      assert.equal(layout.scrollbar, 'auto', 'mobile drawer scrolls vertically at ' + width);
+      await mobilePage.click('#settingsMenuClose');
+      assert.equal(await mobilePage.getAttribute('#settingsMenuToggle', 'aria-expanded'), 'false',
+        'close restores the settings page at ' + width);
+      // Exercise the same event path as real touch input without requiring an
+      // Android browser: edge swipe right opens, swipe left on the nav closes.
+      await mobilePage.evaluate(() => {
+        function touch(target, type, x) {
+          const ev = new Event(type, {bubbles:true});
+          Object.defineProperty(ev, type === 'touchstart' ? 'touches' : 'changedTouches',
+            {value:[{clientX:x, clientY:220}]});
+          target.dispatchEvent(ev);
+        }
+        touch(document.body, 'touchstart', 12);
+        touch(document.body, 'touchend', 128);
+      });
+      assert.equal(await mobilePage.getAttribute('#settingsMenuToggle', 'aria-expanded'), 'true',
+        'swiping right from the edge opens categories at ' + width);
+      await mobilePage.evaluate(() => {
+        const nav = document.getElementById('cfgNav');
+        function touch(type, x) {
+          const ev = new Event(type, {bubbles:true});
+          Object.defineProperty(ev, type === 'touchstart' ? 'touches' : 'changedTouches',
+            {value:[{clientX:x, clientY:220}]});
+          nav.dispatchEvent(ev);
+        }
+        touch('touchstart', 210);
+        touch('touchend', 95);
+      });
+      assert.equal(await mobilePage.getAttribute('#settingsMenuToggle', 'aria-expanded'), 'false',
+        'swiping left on the drawer closes categories at ' + width);
+      assert.deepEqual(mobileRun.errors, [], 'no browser errors at width ' + width);
+      await mobilePage.close();
+    }
 
     // Markup and wiring.
     const html = fs.readFileSync(path.join(root, 'settings.html'), 'utf8');

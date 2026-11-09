@@ -1,0 +1,27 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.73
+09.11.2026
+
+- Mobiles Einstellungsmenue repariert. Alte Tab-Leisten-Regeln hatten
+  die neuen Kategorien ungewollt nebeneinander gelegt und abgeschnitten.
+- Kategoriegruppen und Tabs sind jetzt einspaltig untereinander.
+  Menuebreite inklusive Padding innerhalb des Viewports begrenzt,
+  keine horizontale Ueberlaenge, nur vertikal scrollen.
+- Drawer, Schliessen, Escape, Abdunklung und Konto-Rollen bleiben erhalten.
+- Browser-Regression fuer Breiten 320/390/768/900px misst reale Geometrie,
+  Flex-Richtung, Tab-Position, Scrollverhalten und Schliessen.
+- Offline-Regressionsschutz gegen Wiederauftreten.
+- Keine DB- oder Core-Aenderung, kein Modelfile-Update.
+- Einstellungsnavigation nutzt nun das Chat-Drawer-Prinzip: Wisch vom
+  linken Rand oeffnet Kategorien, Wisch nach links schliesst. Desktop-
+  Seitenleiste laesst sich einklappen; Inhalt nutzt dann volle Breite.
+- Globaler Expertenschalter jetzt im Kopfbereich statt im Drawer.
+- Inhaber/Admin erhalten dort auch einen separat rollenprueften
+  Admin-Core-Link. Andere Nutzer sehen ihn nicht.
+- Bereits vorhandene Funktionen jetzt in passenden Kategorien:
+  Passwort und Anmeldungen -> Sicherheit; Export -> Datenkontrollen;
+  Tastenkombinationen -> Tastatur; Vorlesen und Stimmbegriffe -> Stimme;
+  Memory an/aus und Kontextlimit -> Memory.
+- Memory-Speichern bewahrt noch nicht gespeicherte Aenderungen aus
+  anderen KI-Profil-Feldern durch Snapshot der letzten Serverantwort.
+- Bestehende API, Modelfiles, Kontowerte, Rollen und globale FIFO unveraendert.
+- Erweiterte Layout-, Rechte-, Sprach- und Funktions-Regressionen.

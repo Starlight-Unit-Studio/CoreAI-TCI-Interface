@@ -18,6 +18,7 @@
   var accountAvatar = document.getElementById('accountAvatar');
   var accountLevel = document.getElementById('accountLevel');
   var adminLinkGroup = document.getElementById('adminLinkGroup');
+  var adminShortcut = document.getElementById('settingsAdminShortcut');
   var healthSummary = document.getElementById('healthSummary');
   var healthVersion = document.getElementById('healthVersion');
   var healthModel = document.getElementById('healthModel');
@@ -33,6 +34,7 @@
   var logoutButton = document.getElementById('settingsLogout');
   var backButton = document.getElementById('settingsBack');
   var aiSaveButton = document.getElementById('saveAiSettings');
+  var memorySettingsSaveButton = document.getElementById('saveMemoryAiSettings');
   var aiSystemPrompt = document.getElementById('aiSystemPrompt');
   var aiPromptCounter = document.getElementById('aiPromptCounter');
   var aiMemoryEnabled = document.getElementById('aiMemoryEnabled');
@@ -97,6 +99,7 @@
   var selectedKnowledgeFile = null;
   var selectedModelOverride = '';
   var defaultModel = '';
+  var lastLoadedAiSettings = null;
   var ctxField = document.getElementById('aiCtxField');
   var contextSlider = ctxField && window.CoreUIContextSlider ? window.CoreUIContextSlider.create({
     root: ctxField,
@@ -265,6 +268,10 @@
         var role = data.is_guest ? 'GAST' : (lvl === 0 ? 'INHABER' : (lvl === 1 ? 'ADMIN' : 'NUTZER'));
         if (accountLevel) accountLevel.textContent = role;
         var mayAdmin = !data.is_guest && (lvl === 0 || lvl === 1);
+        // Both shortcuts are invisible until this authenticated role check.
+        // Server-side authorization on admin/index.html and api/admin.php
+        // remains mandatory regardless of DOM state.
+        if (adminShortcut) adminShortcut.hidden = !mayAdmin;
         if (adminLinkGroup) {
           adminLinkGroup.dataset.authorized = mayAdmin ? '1' : '0';
           adminLinkGroup.hidden = !mayAdmin;
@@ -493,6 +500,10 @@
     return api('./api/user_settings.php').then(function (data) {
       csrfToken = data.csrf_token || csrfToken;
       var s = data.settings || {};
+      // Snapshot protects unrelated, unsaved KI-Profil fields when a user
+      // changes only Memory on its separate page.
+      lastLoadedAiSettings = Object.assign({}, s);
+      if (memorySettingsSaveButton) memorySettingsSaveButton.disabled = false;
       promptMax = Number(data.limits && data.limits.system_prompt_chars) || 6000;
       if (aiSystemPrompt) {
         aiSystemPrompt.maxLength = promptMax;
@@ -535,6 +546,8 @@
       updatePromptCounter();
       loadContextEstimate();
     }).catch(function (error) {
+      lastLoadedAiSettings = null;
+      if (memorySettingsSaveButton) memorySettingsSaveButton.disabled = true;
       announceSaved(
         error.message === 'missing_schema_005' ? 'MIGRATION 005 FEHLT' : 'KI-EINSTELLUNGEN NICHT ERREICHBAR',
         true
@@ -548,9 +561,15 @@
     return contextSlider.load(selectedModelOverride || defaultModel);
   }
 
-  function saveAiSettings() {
-    if (!aiSaveButton) return;
-    aiSaveButton.disabled = true;
+  function saveAiSettings(event) {
+    if (!aiSaveButton && !memorySettingsSaveButton) return;
+    var memoryOnly = event && event.currentTarget === memorySettingsSaveButton;
+    if (memoryOnly && !lastLoadedAiSettings) {
+      announceSaved('KI-EINSTELLUNGEN SIND NOCH NICHT GELADEN', true);
+      return;
+    }
+    if (aiSaveButton) aiSaveButton.disabled = true;
+    if (memorySettingsSaveButton) memorySettingsSaveButton.disabled = true;
     var body = {
       system_prompt: aiSystemPrompt ? aiSystemPrompt.value : '',
       memory_enabled: aiMemoryEnabled ? aiMemoryEnabled.checked : true,
@@ -561,9 +580,20 @@
       num_ctx: contextSlider ? contextSlider.value() : null,
       main_language: aiLanguage && aiLanguage.value === 'en' ? 'en' : 'de'
     };
+    if (memoryOnly) {
+      var old = lastLoadedAiSettings;
+      // The existing API accepts a complete AI profile. Supply its last
+      // server snapshot for every field unrelated to Memory.
+      body.system_prompt = old.system_prompt || '';
+      body.num_predict = old.num_predict == null ? 6500 : Number(old.num_predict);
+      body.temperature = old.temperature == null ? 1 : Number(old.temperature);
+      body.provider = old.provider || 'local';
+      body.num_ctx = old.num_ctx == null ? null : Number(old.num_ctx);
+      body.main_language = old.main_language === 'en' ? 'en' : 'de';
+    }
     api('./api/user_settings.php', { method: 'POST', body: JSON.stringify(body) })
       .then(function () {
-        announceSaved('KI-PROFIL SERVERSEITIG GESPEICHERT');
+        announceSaved('KI- UND MEMORY-EINSTELLUNGEN SERVERSEITIG GESPEICHERT');
         return loadAiSettings();
       })
       .catch(function (error) {
@@ -581,7 +611,10 @@
         };
         announceSaved(labels[error.message] || ('SPEICHERN FEHLGESCHLAGEN: ' + error.message), true);
       })
-      .finally(function () { aiSaveButton.disabled = false; });
+      .finally(function () {
+        if (aiSaveButton) aiSaveButton.disabled = false;
+        if (memorySettingsSaveButton) memorySettingsSaveButton.disabled = false;
+      });
   }
 
   function formatSessionDate(value) {
@@ -943,6 +976,7 @@
   });
   if (aiSystemPrompt) aiSystemPrompt.addEventListener('input', updatePromptCounter);
   if (aiSaveButton) aiSaveButton.addEventListener('click', saveAiSettings);
+  if (memorySettingsSaveButton) memorySettingsSaveButton.addEventListener('click', saveAiSettings);
   if (saveProfileButton) saveProfileButton.addEventListener('click', saveProfile);
   if (userAvatarFile) userAvatarFile.addEventListener('change', function () {
     var file = userAvatarFile.files && userAvatarFile.files[0];

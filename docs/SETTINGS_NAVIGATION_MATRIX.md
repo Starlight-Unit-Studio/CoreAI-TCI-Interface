@@ -1,9 +1,9 @@
 # CoreAI settings information architecture
 
-Current foundation: CoreAI 0.6.71 (09 November 2026).
+Current foundation: CoreAI 0.6.73 (09 November 2026).
 
 This file is a development map, **not a claim that every visible category works**.
-Navigation, search, mobile drawer and expert visibility are implemented. A
+Navigation, search, swipe-in mobile drawer, desktop collapse and header Expert control work. A
 planned category opens an honest, read-only placeholder until its real feature
 has an authenticated API, UI tests and a separate release.
 
@@ -11,20 +11,20 @@ has an authenticated API, UI tests and a separate release.
 
 | Menu category | Status | Existing function or next work |
 | --- | --- | --- |
-| General (Allgemein) | Implemented / English beta | App language DE/EN and browser auto work for core UI labels; full English translation remains in progress. Send shortcut is local. Higher Core uses installed permitted Mara tiers only for complex private text. Named reasoning effort uses only /api/show values with the chat Thinking switch authoritative. Backend controls require migration 027. Old overview preserved. |
+| General (Allgemein) | Implemented / English beta | App language DE/EN and browser auto. Higher Core and model-supported reasoning require migration 027. Old overview preserved. Send shortcut moved to Keyboard. |
 | Appearance (Darstellung) | Existing | System/Light/Dark, reduced motion and chat preferences |
 | Notifications (Benachrichtigungen) | Planned | Notification channels, delivery permissions and user controls |
 | Profile (Profil) | Existing | User/assistant display names and avatars with crop |
-| Security & sign-in (Sicherheit und Anmeldung) | Placeholder | Password and sessions currently under Account; consolidate later |
-| Account (Konto) | Existing | Profile identifier, login security, JSON data export |
+| Security & sign-in (Sicherheit und Anmeldung) | Existing | Working password changes, device sessions and session revocation moved intact from Account |
+| Account (Konto) | Existing | Account identity, role and sign out; security under Security and data export under Data controls |
 | Archived chats (Archivierte Chats) | Placeholder | Archive exists in the chat sidebar, dedicated management not yet here |
-| Voice (Stimme) | Placeholder | Live conversation and voice input already work; unify preferences later |
+| Voice (Stimme) | Existing / partial | Automatic read-aloud and recognition-term hints moved intact from AI profile. Voice input and Live remain in chat; other voice settings are future work |
 | Storage (Speicher) | Placeholder | Knowledge and Memory operate under CoreAI expert categories |
 | Personalization (Personalisierung) | Existing | Tone, format, emoji and instruction preferences |
 | Pets | Planned | No companion implementation or persistence |
-| Keyboard (Tastatur) | Planned | Custom keyboard map and mobile input preferences; the core Send shortcut already works under General |
+| Keyboard (Tastatur) | Existing / partial | Existing Enter or Ctrl/Command+Enter option saves locally and is honored in the chat. Custom shortcuts are not yet available |
 | Usage (Nutzung) | Planned | User-facing usage metrics without invented model costs |
-| Data controls (Datenkontrollen) | Placeholder | Export exists under Account; other controls need scoped API work |
+| Data controls (Datenkontrollen) | Existing / partial | Existing private JSON account export moved intact from Account. Other retention and delete controls remain future work |
 
 ## Teams
 
@@ -53,9 +53,9 @@ has an authenticated API, UI tests and a separate release.
 | Category | Status | Access |
 | --- | --- | --- |
 | System | Existing | Available normally, including owner-only updater |
-| AI profile (KI-Profil) | Existing | Always visible. System prompt, numeric memory limits, token budget, temperature, provider and context window are conditionally shown inside this category by Expert mode. |
+| AI profile (KI-Profil) | Existing | System prompt, token budget, temperature, provider, answer language and context window. Technical fields remain under Expert. Memory context limit is on Memory. |
 | Knowledge (Wissen) | Existing | Always visible. Existing knowledge controls and their saved data remain unchanged. |
-| Memory | Existing | Always visible. Numeric relevance input appears in Expert mode; existing facts remain unchanged. |
+| Memory | Existing | Memory enable/disable, context-fact limit (Expert), stored facts and fact relevance (Expert). Its Save uses the existing AI settings API and preserves unsaved changes on unrelated pages. |
 
 Expert settings is a browser-local **field visibility** preference, not
 an authentication factor or tool permission. It never hides entire categories,
@@ -64,8 +64,8 @@ authorizations remain mandatory.
 
 ## Administration
 
-Regular Settings expose one Admin Core link only to server-confirmed owner
-or admin roles. The eight existing administration views now live on
+Regular Settings expose both a header shortcut and a sidebar link only to
+server-confirmed owner or admin roles. The eight existing administration views now live on
 `/admin/index.html`: Overview, Users, Access & security, Runtime, Global
 Memory, RAG-Lore, Logs and Audit. The existing API continues to enforce
 authorization for every action. Browser links do not confer privileges.

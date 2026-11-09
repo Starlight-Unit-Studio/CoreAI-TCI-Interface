@@ -21,6 +21,8 @@
     var mobile = typeof win.matchMedia === 'function'
       ? win.matchMedia('(max-width: 980px)') : {matches:false};
     var opened = false;
+    var desktopCollapsed = false;
+    var swipe = null;
     function stored() {
       try { return !!win.localStorage && win.localStorage.getItem(KEY) === '1'; }
       catch (error) { return false; }
@@ -56,12 +58,27 @@
       if (noResults) noResults.hidden = !query || matches > 0;
     }
     function setOpen(value, focusToggle) {
-      opened = !!value && !!mobile.matches;
+      // Desktop: the categories form a collapsible sidebar alongside the
+      // selected settings page. Mobile: they slide over the content as in Chat.
+      if (mobile.matches) {
+        opened = !!value;
+        desktopCollapsed = false;
+      } else {
+        opened = false;
+        desktopCollapsed = !value;
+      }
       nav.classList.toggle('is-open', opened);
-      if (openButton) openButton.setAttribute('aria-expanded', opened ? 'true' : 'false');
+      if (doc.body) {
+        doc.body.classList.toggle('cfg-menu-opened', opened);
+        doc.body.classList.toggle('cfg-nav-collapsed', desktopCollapsed);
+      }
+      if (openButton) {
+        openButton.setAttribute('aria-expanded',
+          mobile.matches ? (opened ? 'true' : 'false') : (desktopCollapsed ? 'false' : 'true'));
+        openButton.setAttribute('aria-label',
+          (mobile.matches ? opened : !desktopCollapsed) ? 'Kategorien schließen' : 'Kategorien öffnen');
+      }
       if (backdrop) backdrop.hidden = !opened;
-      if (doc.body) doc.body.classList.toggle('cfg-menu-opened', opened);
-      // Focus a close control, not Search: mobile should not summon the keyboard.
       if (opened && closeButton && typeof closeButton.focus === 'function') closeButton.focus();
       if (!opened && focusToggle && openButton && typeof openButton.focus === 'function') openButton.focus();
     }
@@ -74,22 +91,66 @@
       });
     }
     if (search) search.addEventListener('input', filter);
-    if (openButton) openButton.addEventListener('click', function () { setOpen(!opened, false); });
+    if (openButton) openButton.addEventListener('click', function () {
+      setOpen(mobile.matches ? !opened : desktopCollapsed, false);
+    });
     if (closeButton) closeButton.addEventListener('click', function () { setOpen(false, true); });
     if (backdrop) backdrop.addEventListener('click', function () { setOpen(false, true); });
     doc.addEventListener('keydown', function (event) {
       if (event.key === 'Escape' && opened) { event.preventDefault(); setOpen(false, true); }
     });
-    doc.addEventListener('coreai:view', function () { setOpen(false, false); });
+    doc.addEventListener('coreai:view', function (event) {
+      // Page selection only closes the mobile drawer. Desktop navigation
+      // remains present until deliberately collapsed.
+      if (!mobile.matches || !opened) return;
+      setOpen(false, false);
+      var name = event.detail && event.detail.view;
+      var target = name && doc.getElementById('view-' + name);
+      if (target && typeof target.focus === 'function') {
+        try { target.focus({preventScroll:true}); } catch (error) { target.focus(); }
+      }
+    });
     nav.addEventListener('click', function (event) {
       var node = event.target;
-      if (node && node.closest && node.closest('.cfg-tab')) setOpen(false, false);
+      if (mobile.matches && node && node.closest && node.closest('.cfg-tab')) setOpen(false, false);
     });
-    if (typeof mobile.addEventListener === 'function') {
-      mobile.addEventListener('change', function () { setOpen(false, false); });
-    } else if (typeof mobile.addListener === 'function') {
-      mobile.addListener(function () { setOpen(false, false); });
+    function resetForViewport() {
+      opened = false;
+      desktopCollapsed = false;
+      setOpen(!mobile.matches, false);
     }
+    if (typeof mobile.addEventListener === 'function') {
+      mobile.addEventListener('change', resetForViewport);
+    } else if (typeof mobile.addListener === 'function') {
+      mobile.addListener(resetForViewport);
+    }
+    // A short right-swipe from the left edge opens the same drawer as the
+    // categories button. A left-swipe on the open drawer closes it.
+    // Ignore vertical gestures and gestures started on form controls.
+    doc.addEventListener('touchstart', function (event) {
+      swipe = null;
+      if (!mobile.matches || !event.touches || event.touches.length !== 1) return;
+      var point = event.touches[0], target = event.target;
+      var interactive = target && target.closest &&
+        target.closest('input, textarea, select, button, a, [role="slider"]');
+      var fromLeft = !opened && point.clientX <= 44 && !interactive;
+      var fromDrawer = opened && target && nav.contains(target);
+      if (fromLeft || fromDrawer) {
+        swipe = { x: point.clientX, y: point.clientY,
+          type: fromLeft ? 'open' : 'close' };
+      }
+    }, {passive:true});
+    doc.addEventListener('touchend', function (event) {
+      if (!swipe || !event.changedTouches || !event.changedTouches.length) return;
+      var move = swipe; swipe = null;
+      var point = event.changedTouches[0], dx = point.clientX - move.x;
+      var dy = point.clientY - move.y;
+      if (Math.abs(dx) < 68 || Math.abs(dx) < Math.abs(dy) * 1.35) return;
+      if (move.type === 'open' && dx > 0) setOpen(true, false);
+      else if (move.type === 'close' && dx < 0) setOpen(false, true);
+    }, {passive:true});
+    doc.addEventListener('touchcancel', function () { swipe = null; }, {passive:true});
+    resetForViewport();
     reflect();
     return {
       isExpert: function () { return !!(expertToggle && expertToggle.checked); },
