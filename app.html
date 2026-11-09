@@ -402,16 +402,15 @@
           <strong id="reasonEffortLabel">LÄDT</strong>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
         </button>
-        <button class="core-mode-chip" id="coreModeChip" type="button" data-thinking="on"
+        <button class="core-mode-chip" id="coreModeChip" type="button"
           aria-haspopup="dialog" aria-expanded="false" aria-controls="coreModeMenu">
           <span class="core-mode-name" id="coreModeName">Core</span>
-          <span class="core-mode-think" id="coreModeThink">DENKEN</span>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 14l5-5 5 5" /></svg>
         </button>
         <span class="composer-glyphs" aria-hidden="true">⌬ 73 ⟐</span>
       </div>
 
-      <div class="core-mode-menu" id="coreModeMenu" role="dialog" aria-label="Core und Denken" hidden>
+      <div class="core-mode-menu" id="coreModeMenu" role="dialog" aria-label="Core auswählen" hidden>
         <div class="core-mode-section">
           <span class="core-mode-kicker" id="coreModeListLabel">CORE</span>
           <div class="core-mode-list" id="coreModeList" role="radiogroup" aria-labelledby="coreModeListLabel">
@@ -419,22 +418,16 @@
           </div>
           <button class="core-mode-manage" id="coreModeManage" type="button" hidden>Cores verwalten</button>
         </div>
-        <label class="core-mode-row" for="coreThinkToggle">
-          <span class="core-mode-copy">
-            <strong>DENKEN</strong>
-            <small>Deine CoreAI denkt vor der Antwort nach: gründlicher, aber langsamer. Gilt ab der nächsten Nachricht, für alle deine Chats.</small>
-          </span>
-          <span class="settings-switch"><input id="coreThinkToggle" type="checkbox" checked /><i aria-hidden="true"></i></span>
-        </label>
         <p class="core-mode-status" id="coreModeStatus" role="status" aria-live="polite"></p>
       </div>
 
       <div class="core-mode-menu reason-effort-menu" id="reasonEffortMenu" role="dialog"
-        aria-labelledby="reasonEffortTitle" hidden>
+        aria-labelledby="reasonEffortTitle" aria-describedby="reasonEffortIntro" hidden>
         <div class="reason-effort-head">
           <strong id="reasonEffortTitle">DENKAUFWAND</strong>
           <small>Für die nächste Antwort</small>
         </div>
+        <p class="reason-effort-intro" id="reasonEffortIntro">Deine CoreAI denkt vor der Antwort nach: gründlicher, aber langsamer. Gilt ab der nächsten Nachricht, für alle deine Chats.</p>
         <div class="reason-effort-options" id="reasonEffortOptions"
           role="radiogroup" aria-labelledby="reasonEffortTitle"></div>
         <p class="reason-effort-note" id="reasonEffortNote"></p>
@@ -486,7 +479,8 @@
             <dt><code>/skill kennung</code> oder <code>$kennung</code></dt><dd>Einen Skill vorgeben. Meist nicht nötig: deine CoreAI wählt ihre Arbeitsanleitungen selbst aus ihrer Skill-Bibliothek</dd>
             <dt>+</dt><dd>Fotos, Kamera oder bis zu zehn Dateien anhängen, oder ein Werkzeug wählen: Bild erstellen, Websuche, Recherche</dd>
             <dt>Langer Text</dt><dd>Ab 8000 Zeichen automatisch als <code>.md</code>-Anhang</dd>
-            <dt>Core-Chip</dt><dd>Core-Stufe wählen und Denken an- oder ausschalten</dd>
+            <dt>Core-Chip</dt><dd>Core-Stufe wählen</dd>
+            <dt>Denkaufwand</dt><dd>Denken an- oder ausschalten und unterstützte Denkstufen wählen</dd>
             <dt><code>/komprimieren</code> oder ⇊</dt><dd>Älteren Verlauf zusammenfassen; die Mitschrift bleibt als .md-Archiv im Chat</dd>
           </dl>
         </section>
