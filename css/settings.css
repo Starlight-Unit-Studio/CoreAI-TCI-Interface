@@ -1952,6 +1952,7 @@
 .settings-body [data-expert][hidden] { display: none !important; }
 .settings-body .cfg-general-head { margin: 0 0 16px; }
 .settings-body .cfg-general-card {
+  box-sizing: border-box;
   width: 100%;
   margin: 0 0 24px;
   padding: 0 clamp(16px,2.4vw,30px);
