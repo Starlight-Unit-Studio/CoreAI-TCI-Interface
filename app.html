@@ -401,6 +401,13 @@
           <span class="core-mode-think" id="coreModeThink">DENKEN</span>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 14l5-5 5 5" /></svg>
         </button>
+        <button class="reason-effort-chip" id="reasonEffortChip" type="button"
+          aria-haspopup="dialog" aria-expanded="false" aria-controls="reasonEffortMenu"
+          aria-label="Denkaufwand auswählen" disabled>
+          <span>DENKAUFWAND</span>
+          <strong id="reasonEffortLabel">LÄDT</strong>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
         <span class="composer-glyphs" aria-hidden="true">⌬ 73 ⟐</span>
       </div>
 
@@ -420,6 +427,18 @@
           <span class="settings-switch"><input id="coreThinkToggle" type="checkbox" checked /><i aria-hidden="true"></i></span>
         </label>
         <p class="core-mode-status" id="coreModeStatus" role="status" aria-live="polite"></p>
+      </div>
+
+      <div class="core-mode-menu reason-effort-menu" id="reasonEffortMenu" role="dialog"
+        aria-labelledby="reasonEffortTitle" hidden>
+        <div class="reason-effort-head">
+          <strong id="reasonEffortTitle">DENKAUFWAND</strong>
+          <small>Für die nächste Antwort</small>
+        </div>
+        <div class="reason-effort-options" id="reasonEffortOptions"
+          role="radiogroup" aria-labelledby="reasonEffortTitle"></div>
+        <p class="reason-effort-note" id="reasonEffortNote"></p>
+        <p class="core-mode-status" id="reasonEffortStatus" role="status" aria-live="polite"></p>
       </div>
 
       <div class="core-mode-menu compact-menu" id="compactMenu" role="dialog" aria-label="Chat komprimieren" hidden>
@@ -558,6 +577,7 @@
   <script src="./js/coreui-send-keys.js?v=0380580655333207340875842"></script>
   <script src="./js/console-app.js?v=0087713178203196723485024"></script>
   <script src="./js/coreui-core-mode.js?v=1079995267989445902086353"></script>
+  <script src="./js/coreui-reasoning-effort.js?v=0000000000000000000000000"></script>
   <script src="./js/coreui-core-install.js?v=0294816904878640254887997"></script>
   <script src="./js/coreui-artifacts.js?v=1069339270452640197429799"></script>
   <script src="./js/coreui-update.js?v=0294648939860149727532714"></script>
