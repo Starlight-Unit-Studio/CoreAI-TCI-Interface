@@ -7,8 +7,10 @@ CREATE TABLE IF NOT EXISTS stu_user_general_settings (
   user_id BIGINT UNSIGNED NOT NULL PRIMARY KEY,
   auto_higher_core TINYINT(1) NOT NULL DEFAULT 0,
   thinking_level VARCHAR(16) NOT NULL DEFAULT '',
-  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_general_settings_user FOREIGN KEY (user_id)
+    REFERENCES stu_users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO stu_schema_migrations (version) VALUES ('027_general_core_controls')
 ON DUPLICATE KEY UPDATE applied_at=applied_at;
