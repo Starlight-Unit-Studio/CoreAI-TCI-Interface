@@ -14,6 +14,7 @@
     var expertToggle = doc.getElementById('settingsExpertToggle');
     var expertGroup = doc.getElementById('cfgExpertGroup');
     var adminGroup = doc.getElementById('adminLinkGroup');
+    var adminRoleGroup = doc.getElementById('adminNavGroup');
     var groups = Array.prototype.slice.call(nav.querySelectorAll('.cfg-nav-group'));
     var KEY = 'coreai:expert-settings:v1';
     var mobile = typeof win.matchMedia === 'function'
@@ -30,6 +31,7 @@
     function reflect() {
       if (expertGroup && expertToggle) expertGroup.hidden = !expertToggle.checked;
       if (adminGroup && adminGroup.dataset.authorized !== '1') adminGroup.hidden = true;
+      if (adminRoleGroup && adminRoleGroup.dataset.authorized !== '1') adminRoleGroup.hidden = true;
       filter();
     }
     function filter() {
@@ -37,7 +39,8 @@
       var matches = 0;
       groups.forEach(function (group) {
         var expertOff = group === expertGroup && expertToggle && !expertToggle.checked;
-        var adminOff = group === adminGroup && group.dataset.authorized !== '1';
+        var adminOff = (group === adminGroup || group === adminRoleGroup)
+          && group.dataset.authorized !== '1';
         var tabs = Array.prototype.slice.call(group.querySelectorAll('.cfg-tab'));
         var visible = 0;
         tabs.forEach(function (tab) {
