@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/helpers.php';
+require_once __DIR__ . '/notifications_store.php';
 
 $pdo = stu_pdo();
 $uid = stu_require_user_id();
@@ -103,6 +104,7 @@ if ($action === 'password_change') {
     stu_json(['ok'=>false, 'error'=>'auth_session_failed', 'reauth_required'=>true], 503);
   }
   coreui_security_audit($pdo, $uid, 'account.password_changed');
+  coreui_notify_security($pdo, $uid, 'password', ''); // 0.6.81: Benachrichtigungen > Sicherheit
   stu_json([
     'ok'=>true,
     'sessions'=>coreui_auth_session_list($pdo, $uid),

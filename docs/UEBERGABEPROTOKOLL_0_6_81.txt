@@ -1,0 +1,49 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.81
+Datum: 09.11.2026
+Basis: main 0.6.80 nach PR #233 (fda1ac4)
+Branch: claude/bold-galileo-myoyi0
+
+AUFTRAG
+Betreiber: naechste Einstellungsseite nach zwei ChatGPT-Screenshots (Benachrichtigungen).
+Entscheidung: Browser, echtes Push und E-Mail; echte Kategorien plus der Rest als
+"In Vorbereitung".
+
+UMGESETZT
+- database/migrations/028_notifications.sql: stu_notification_prefs (user, category,
+  channels ''/push/email/push,email), stu_push_subscriptions (endpoint_hash unique, p256dh,
+  auth, label, failures). FK ON DELETE CASCADE.
+- api/web_push.php: RFC 8291 aes128gcm, RFC 8292 VAPID (ES256, DER<->raw), Endpunkt-Liste
+  (fcm.googleapis.com, updates.push.services.mozilla.com, web.push.apple.com,
+  *.push.apple.com, *.notify.windows.com; nur https, Port 443, keine Zugangsdaten).
+- api/notifications_store.php: Kategorien/Standards, Speichern (geplante und Inhaber-
+  Kategorien geschuetzt), Geraete (max. 10), VAPID-Schluessel in stu_app_settings
+  (push_vapid, ohne Datei-Ausweichweg), Versand (Push, E-Mail nur an echte Adressen, nicht
+  an Gaeste), Ausloeser coreui_notify_answer (ab 45 s), coreui_notify_security,
+  coreui_notify_update_available (notify_update_announced). Alles nach der Antwort
+  (coreui_notify_later: session_write_close, fastcgi_finish_request).
+- Ausloeser: chat.php ember_insert, auth.php (Anmeldung, zwei Reset-Wege),
+  account_security.php (Passwortwechsel), update.php (Statusabfrage jeder Seite).
+- api/notifications.php: GET Zustand; POST prefs, subscribe, unsubscribe, test (CSRF).
+- sw.js (Wurzel): push, notificationclick; keine fetch-Behandlung. nginx: /sw.js ohne Cache,
+  Service-Worker-Allowed "/", Endpunkt notifications freigegeben (beide Vorlagen).
+- js/coreui-notify.js (Kern, Chat-Sync, Browser-Ersatz), js/coreui-notify-settings.js (Seite).
+- console-app.js: answerDone bei 'done'; ?session=cs_... oeffnet den Chat.
+- Kontoexport: notifications.prefs und push_devices (ohne Endpunkt/Schluessel).
+
+TESTS (hier ausgefuehrt)
+- php scripts/notifications-selftest.php (RFC 8291 Anhang A Byte fuer Byte)
+- node scripts/notifications-ui-selftest.cjs (Bildschirmfotos angesehen)
+- settings-navigation-foundation-selftest.cjs, settings-tabs-ui-selftest.cjs nachgezogen
+- volle Testreihe, php -l, Sprachtests, cache-bust, version-merge-check
+
+NICHT HIER GEPRUEFT
+- Echte Zustellung ueber Google/Mozilla/Apple (headless nicht erreichbar). Der Server muss
+  diese Push-Dienste per HTTPS erreichen koennen.
+- E-Mail-Versand mit echtem SMTP (COREUI_SMTP_* auf dem Server).
+- iOS: Push nur aus der Home-Bildschirm-App; ein Web-App-Manifest fehlt noch (spaeter).
+
+NACH DEM MERGE (Betreiber)
+1. Update unter Einstellungen > System > CoreAI Update (Migration 028 laeuft mit).
+2. Am Handy: Einstellungen > Benachrichtigungen > "Push auf diesem Geraet aktivieren",
+   Erlaubnis geben, "Test senden".
+3. Eine lange Frage stellen (Recherche oder Bild), Browser schliessen: Push kommt.

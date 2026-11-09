@@ -12,8 +12,8 @@ has an authenticated API, UI tests and a separate release.
 | Menu category | Status | Existing function or next work |
 | --- | --- | --- |
 | General (Allgemein) | Implemented / English beta | App language DE/EN and automatic higher Core. Denkaufwand is visible without Expert and uses the same account preference as its chat control. Named efforts require migration 027 and model support; other Cores retain Thinking on/off. Send shortcut is on Keyboard. |
-| Appearance (Darstellung) | Working phase 1 | Existing System/Light/Dark plus two motifs, accent, per-scheme colors, UI/content/code font sizes, contrast, System/Ein/Aus motion, full-width content and diff symbols. Existing chat and browser options retained. All normal settings, no Expert toggle. Still planned: smart punctuation, per-scheme typography, motif import/export. |
-| Notifications (Benachrichtigungen) | Planned | Notification channels, delivery permissions and user controls |
+| Appearance (Darstellung) | Implemented | System/Light/Dark, motifs, accent, font (Rajdhani or system), per-scheme colors with hex input, separate light/dark look, motif export/copy/import, font sizes, contrast, motion, full width, diff markers and smart punctuation in the chat input. All normal settings, no Expert toggle. |
+| Notifications (Benachrichtigungen) | Implemented | Web Push per device (service worker, VAPID, RFC 8291) and E-Mail (SMTP) for long answers, security events and CoreAI updates (owner); tasks, agents, library, projects and workspace requests shown as planned |
 | Profile (Profil) | Existing | User/assistant display names and avatars with crop |
 | Security & sign-in (Sicherheit und Anmeldung) | Existing | Working password changes, device sessions and session revocation moved intact from Account |
 | Account (Konto) | Existing | Account identity, role and sign out; security under Security and data export under Data controls |

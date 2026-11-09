@@ -2476,3 +2476,73 @@
   .settings-body .appearance-motif-tools { justify-self: stretch; width: 100%; }
   .settings-body .appearance-segment span { min-width: 0; padding: 4px 10px; font-size: 14px; }
 }
+
+/* 0.6.81: Benachrichtigungen. Rows like Darstellung, one choice per category on the right. */
+.settings-body .notify-status { margin: 4px 0 12px; color: var(--txt); font-size: 15px; line-height: 1.5; }
+.settings-body .notify-status[data-state="on"]::before { content: "● "; color: var(--green); }
+.settings-body .notify-status[data-state="denied"],
+.settings-body .notify-status[data-state="error"] { color: var(--red); }
+.settings-body .notify-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.settings-body .notify-actions [hidden] { display: none; }
+.settings-body .notify-devices { display: grid; gap: 6px; margin: 0 0 10px; padding: 0; list-style: none; }
+.settings-body .notify-devices[hidden] { display: none; }
+.settings-body .notify-device {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel-soft);
+}
+.settings-body .notify-device-copy { display: grid; gap: 2px; min-width: 0; }
+.settings-body .notify-device-copy strong { color: var(--txt); font-size: 15px; overflow-wrap: anywhere; }
+.settings-body .notify-device-copy small { color: var(--muted); font-size: 13px; }
+.settings-body .notify-hint { margin: 8px 0 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.settings-body .notify-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px 20px;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--line);
+}
+.settings-body .notify-row[hidden] { display: none; }
+.settings-body .notify-copy { display: grid; gap: 4px; min-width: 0; }
+.settings-body .notify-copy strong { color: var(--txt); font-size: 16px; }
+.settings-body .notify-copy small { color: var(--muted); font-size: 13.5px; line-height: 1.5; }
+.settings-body .notify-planned {
+  justify-self: start;
+  margin-top: 2px;
+  padding: 2px 7px;
+  border: 1px solid var(--line-amber);
+  color: #9b651e;
+  font-family: "Share Tech Mono", monospace;
+  font-size: 10px;
+  letter-spacing: .08em;
+}
+html[data-coreui-theme="dark"] .settings-body .notify-planned { color: var(--amb); }
+.settings-body .notify-row.is-planned .notify-copy strong,
+.settings-body .notify-row.is-planned .notify-copy small { opacity: .65; }
+.settings-body .notify-select {
+  min-width: 128px;
+  min-height: 41px;
+  padding: 6px 34px 6px 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--panel-soft);
+  color: var(--txt);
+  font-family: var(--coreui-font, "Rajdhani"), "Segoe UI", sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.settings-body .notify-select:disabled { opacity: .5; cursor: not-allowed; }
+.settings-body .notify-select:focus-visible { outline: 2px solid var(--cx); outline-offset: 2px; }
+@media (max-width: 500px) {
+  .settings-body .notify-row { gap: 8px 12px; }
+  .settings-body .notify-copy strong { font-size: 15px; }
+  .settings-body .notify-copy small { font-size: 12.5px; }
+  .settings-body .notify-select { min-width: 0; max-width: 46vw; padding-left: 12px; }
+}

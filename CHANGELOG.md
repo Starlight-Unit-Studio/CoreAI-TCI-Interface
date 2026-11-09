@@ -1,5 +1,19 @@
 # CoreAI: TCI Interface
 
+## 0.6.81 - 09.11.2026
+
+- **Settings > Benachrichtigungen** is a real page now, modeled on the ChatGPT reference (one choice per category: Aus, Push, E-Mail, Push und E-Mail), in CoreAI style:
+  - **Dieses Gerät:** switch Push on or off for this browser, send a test, see and remove the account's devices ("Dieses Gerät" marked). Clear texts for every case: no HTTPS, browser without Push, iPhone/iPad not opened from the Home screen, notifications blocked, server not ready yet.
+  - **E-Mail:** shows the account address, or that this server has no SMTP; E-Mail choices are greyed then.
+  - **Categories:** **Antworten** (Mara's answer took 45 s or more: research, images, long work; default Push), **Sicherheit** (new sign-in, password changed or reset; default E-Mail), **CoreAI-Updates** (Inhaber only: a new version is ready, once per version; default Push). **Aufgaben, Agenten, Bibliothek, Projekte, Workspace-Anfragen** are shown greyed as "In Vorbereitung" and never send.
+- **Real Web Push without a library** (`api/web_push.php`, PHP openssl): RFC 8291 encryption (aes128gcm) verified byte for byte against the example in RFC 8291 Appendix A, RFC 8292 VAPID with an ES256 JWT, a server key pair created once and kept in the database (`stu_app_settings`, never in Git or a file). Only the push services of the major browsers (Google, Mozilla, Apple, Microsoft) are accepted as targets, so a stored endpoint can never make the server call another address. Gone browsers (404/410) and browsers that failed ten times are removed.
+- **Service worker `/sw.js`** (Push only, no caching): shows the notification, skips an answer while a CoreAI page is open and in front, opens the chat of the answer on tap (`app.html?session=...`). nginx serves it uncached with `Service-Worker-Allowed: /` and allows `api/notifications.php` (both templates).
+- **Browser fallback:** without Push on a browser, a long answer is still announced while a CoreAI tab is open in the background and notifications are allowed.
+- Everything is sent after the response (`fastcgi_finish_request`, session written first), so no request waits for a push service or a mail server.
+- **Migration 028:** `stu_notification_prefs` and `stu_push_subscriptions`, both deleted with the account. The account export includes the choices and device names, never endpoints or keys.
+- Tests: new `notifications-selftest.php` (RFC example, round trip, VAPID verified, allowed push services, key once in the database, the request a push service gets, saving rules, devices, dispatch with removal and failure count, mail only to real addresses, all triggers, wiring) and `notifications-ui-selftest.cjs` (Chromium: every Push state, switching on and off, devices, test, E-Mail greyed, categories saved, Inhaber-only and planned rows, phone, the service worker in a sandbox, the chat fallback). `settings-navigation-foundation-selftest.cjs` (11 planned pages now) and `settings-tabs-ui-selftest.cjs` (Pets as the planned example) updated. Both preflights.
+- No change to Cores, Modelfile, the global FIFO, account rights or existing settings.
+
 ## 0.6.80 - 09.11.2026
 
 - Finish transferring the three ChatGPT **Darstellung** reference screenshots as ordinary settings (no Expert mode), on top of 0.6.79:

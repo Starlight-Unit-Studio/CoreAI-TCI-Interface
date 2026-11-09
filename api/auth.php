@@ -6,6 +6,7 @@ require_once __DIR__ . '/account_store.php';
 require_once __DIR__ . '/profile_store.php';
 require_once __DIR__ . '/guest_access.php';
 require_once __DIR__ . '/captcha.php';
+require_once __DIR__ . '/notifications_store.php';
 
 // Simple username/password auth for Alpha.
 // - Session cookie stores stu_uid when logged in.
@@ -325,6 +326,8 @@ try {
     stu_logout(false);
     stu_json(['ok' => false, 'error' => 'auth_session_failed'], 500);
   }
+  // 0.6.81: Settings > Benachrichtigungen > Sicherheit (after the response).
+  coreui_notify_security($pdo, (int)$row['id'], 'login', coreui_auth_device_label((string)($_SERVER['HTTP_USER_AGENT'] ?? '')));
   stu_json(['ok' => true, 'user_id' => (int)$row['id'], 'permission_level' => $lvl]);
 }
 
@@ -500,6 +503,7 @@ if ($action === 'reset') {
     }
     $pdo->prepare('UPDATE stu_password_resets SET used_at = NOW() WHERE id = ? LIMIT 1')->execute([(int)$row['id']]);
     coreui_auth_session_revoke_all($pdo, (int)$uid, 'password_reset');
+    coreui_notify_security($pdo, (int)$uid, 'password', '');
     stu_json(['ok' => true]);
   }
 
@@ -529,6 +533,7 @@ if ($action === 'reset') {
   }
   $pdo->prepare('UPDATE stu_password_resets SET used_at = NOW() WHERE id = ? LIMIT 1')->execute([(int)$row['id']]);
   coreui_auth_session_revoke_all($pdo, (int)$row['user_id'], 'password_reset');
+  coreui_notify_security($pdo, (int)$row['user_id'], 'password', '');
 
   stu_json(['ok' => true]);
 }
