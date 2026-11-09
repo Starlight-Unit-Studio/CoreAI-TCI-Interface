@@ -257,6 +257,15 @@
   }
 
   function rememberedActiveSession() {
+    // 0.6.81: a notification opens its chat with ?session=cs_...; the address is cleaned afterwards.
+    try {
+      var linked = new URLSearchParams(location.search).get('session') || '';
+      if (/^cs_[A-Za-z0-9]{6,64}$/.test(linked)) {
+        rememberActiveSession(linked);
+        history.replaceState(null, '', location.pathname + location.hash);
+        return linked;
+      }
+    } catch (e) {}
     try { return localStorage.getItem(activeSessionStorageKey()) || ''; } catch (e) { return ''; }
   }
 
@@ -3127,6 +3136,12 @@
       var data = {};
       try { data = JSON.parse(ev.data) || {}; } catch (e) {}
       if (!(data && Number(data.browse_job_id) > 0)) clearAgentRun(sessionId);
+      // 0.6.81: a long answer while the tab is in the background; without Push on this
+      // browser the page announces it itself (Benachrichtigungen > Antworten).
+      if (window.CoreAINotify && data && typeof data.text === 'string' && data.text && !(Number(data.browse_job_id) > 0)) {
+        window.CoreAINotify.answerDone({sessionId: sessionId, startedAt: Number(state.sendTimestampBySession[sessionId]) || 0,
+          text: data.text, name: state.assistantName || 'Mara'});
+      }
       finalizeStream(data, ses, userMsgId, generationRequest || null);
     });
     es.addEventListener('error', function() {

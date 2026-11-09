@@ -6,6 +6,7 @@ require_once __DIR__ . '/ai_settings.php';
 require_once __DIR__ . '/console_personalization_store.php';
 require_once __DIR__ . '/profile_store.php';
 require_once __DIR__ . '/console_artifact_store.php';
+require_once __DIR__ . '/notifications_store.php';
 
 $pdo = stu_pdo();
 $uid = stu_require_user_id();
@@ -140,9 +141,12 @@ try {
       [$uid]
     ),
     'login_sessions' => coreui_auth_session_list($pdo, $uid),
+    // 0.6.81: the chosen channels and the browsers with Push (names only, no endpoint or keys).
+    'notifications' => ['prefs' => coreui_notify_prefs($pdo, $uid), 'push_devices' => coreui_push_devices($pdo, $uid)],
     'security_notice' => [
       'password_hashes_exported' => false,
       'login_tokens_exported' => false,
+      'push_keys_exported' => false,
       'thinking_content_exported' => false,
       'private_server_paths_exported' => false,
       'uploaded_document_binaries_exported' => false,

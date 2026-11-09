@@ -15,6 +15,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/update_store.php';
+require_once __DIR__ . '/notifications_store.php';
 
 header('Cache-Control: no-store');
 
@@ -41,6 +42,11 @@ function coreui_update_owner(): int {
 if ($method === 'GET' && $action === 'status') {
   $state = coreui_update_state($root);
   $out = ['ok' => true] + coreui_update_public($state);
+  // 0.6.81: every page asks for this status, so the first page view after the host found a new
+  // version tells the Inhaber, once per version, after the response (Benachrichtigungen > CoreAI-Updates).
+  if (!empty($state['available'])) {
+    try { coreui_notify_update_available(stu_pdo(), $state); } catch (Throwable $e) {}
+  }
   $owner = coreui_update_owner();
   if ($owner > 0) {
     $out['owner'] = true;

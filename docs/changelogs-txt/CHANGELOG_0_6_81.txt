@@ -1,0 +1,19 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.81
+09.11.2026
+
+- Einstellungen > Benachrichtigungen ist eine echte Seite (Vorbild ChatGPT, CoreAI-Stil):
+  je Kategorie Aus, Push, E-Mail oder Push und E-Mail.
+- Dieses Geraet: Push ein/aus, Test, Geraeteliste; klare Hinweise (kein HTTPS, iPhone ohne
+  Home-Bildschirm, blockiert, Server noch nicht bereit).
+- E-Mail ueber den vorhandenen SMTP-Versand; ohne SMTP ausgegraut mit Hinweis.
+- Echte Kategorien: Antworten (ab 45 s), Sicherheit (Anmeldung, Passwort), CoreAI-Updates
+  (Inhaber, einmal je Version). Aufgaben, Agenten, Bibliothek, Projekte, Workspace
+  "In Vorbereitung", senden nichts.
+- Web Push ohne Bibliothek: RFC 8291 (gegen das RFC-Beispiel geprueft), VAPID ES256,
+  Schluessel einmalig in der Datenbank; nur Push-Dienste der grossen Browser als Ziel.
+- Service Worker /sw.js (nur Push, kein Cache); Antippen oeffnet den passenden Chat.
+- Browser-Ersatz ohne Push, solange ein CoreAI-Tab im Hintergrund offen ist.
+- Versand nach der Antwort, keine Anfrage wartet.
+- Migration 028; Kontoexport mit Auswahl und Geraetenamen, ohne Schluessel.
+- Tests: notifications-selftest.php, notifications-ui-selftest.cjs; zwei Einstellungstests
+  nachgezogen. Keine Aenderung an Cores, Modelfile, FIFO oder Rechten.

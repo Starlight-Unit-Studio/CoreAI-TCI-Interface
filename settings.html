@@ -6,16 +6,16 @@
   <meta name="language" content="de-DE" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#f0f4fa" />
-  <meta name="application-version" content="0.6.80" />
+  <meta name="application-version" content="0.6.81" />
   <meta name="application-name" content="CoreAI: TCI Interface" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface - Einstellungen</title>
   <link rel="stylesheet" href="./css/console.css?v=0488039108136251966969049" />
-  <link rel="stylesheet" href="./css/settings.css?v=0885212368207404597205036" />
+  <link rel="stylesheet" href="./css/settings.css?v=0384875955586593764931136" />
   <link rel="stylesheet" href="./css/coreui-profile-crop.css?v=0852949496159567452926853" />
   <link rel="stylesheet" href="./css/coreui-update.css?v=1027839363176318351849490" />
   <link rel="stylesheet" href="./css/coreui-theme.css?v=0697431397907702126637895" />
-  <script src="./js/console-gate.js?v=0555461051526963995971873"></script>
+  <script src="./js/console-gate.js?v=1012195392199562818994250"></script>
   <script src="./js/coreui-preferences.js?v=0004145186774094057353830"></script>
   <script src="./js/coreui-ui-language.js?v=0850224961537363286304733"></script>
 </head>
@@ -72,7 +72,7 @@
           <h1>EINSTELLUNGEN</h1>
         </div>
       </div>
-      <div class="settings-version">COREAI: TCI INTERFACE // v0.6.80</div>
+      <div class="settings-version">COREAI: TCI INTERFACE // v0.6.81</div>
       <div class="cfg-header-actions" aria-label="Schnellzugriffe Einstellungen">
         <label class="cfg-header-expert" for="settingsExpertToggle" title="Technische Einstellungen in allen Kategorien anzeigen oder ausblenden">
           <span>EXPERTENMODUS</span>
@@ -101,7 +101,7 @@
                   <span class="cfg-nav-label">PERSÖNLICH</span>
                   <button class="cfg-tab" type="button" role="tab" id="tab-start" data-view="start" aria-controls="view-start" aria-selected="true"><svg aria-hidden="true"><use href="#i-start" /></svg><span>Allgemein</span></button>
                   <button class="cfg-tab" type="button" role="tab" id="tab-anzeige" data-view="anzeige" aria-controls="view-anzeige" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-display" /></svg><span>Darstellung</span></button>
-                  <button class="cfg-tab is-planned" type="button" role="tab" id="tab-benachrichtigungen" data-view="benachrichtigungen" aria-controls="view-benachrichtigungen" aria-selected="false" tabindex="-1" title="In Vorbereitung"><svg aria-hidden="true"><use href="#i-bell" /></svg><span>Benachrichtigungen</span><small class="cfg-nav-state">GEPLANT</small></button>
+                  <button class="cfg-tab" type="button" role="tab" id="tab-benachrichtigungen" data-view="benachrichtigungen" aria-controls="view-benachrichtigungen" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-bell" /></svg><span>Benachrichtigungen</span></button>
                   <button class="cfg-tab" type="button" role="tab" id="tab-profil" data-view="profil" aria-controls="view-profil" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-profile" /></svg><span>Profil</span></button>
                   <button class="cfg-tab" type="button" role="tab" id="tab-sicherheit" data-view="sicherheit" aria-controls="view-sicherheit" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-shield" /></svg><span>Sicherheit und Anmeldung</span></button>
                   <button class="cfg-tab" type="button" role="tab" id="tab-konto" data-view="konto" aria-controls="view-konto" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-account" /></svg><span>Konto</span></button>
@@ -696,16 +696,59 @@
         </section>
 
         <!-- CATEGORY FOUNDATION: benachrichtigungen (no fake settings) -->
-        <section class="cfg-view cfg-view-planned" id="view-benachrichtigungen" role="tabpanel" aria-labelledby="tab-benachrichtigungen" tabindex="-1" hidden>
-          <header class="cfg-view-head"><div><span class="cfg-kicker">PERSÖNLICH // AUSBAUPLAN</span><h2>Benachrichtigungen</h2><p>Benachrichtigungen zu Aufgaben, Antworten und Systemereignissen zentral verwalten.</p></div></header>
+        <section class="cfg-view" id="view-benachrichtigungen" role="tabpanel" aria-labelledby="tab-benachrichtigungen" tabindex="-1" hidden>
+          <header class="cfg-view-head"><div><span class="cfg-kicker">PERSÖNLICH // BENACHRICHTIGUNGEN</span><h2>Benachrichtigungen</h2><p>Wähle, worüber dich CoreAI per Push auf deinen Geräten oder per E-Mail informiert.</p></div></header>
           <div class="cfg-cards">
-            <section class="settings-panel cfg-card wide cfg-planned-card">
-              <span class="cfg-planned-state">IN VORBEREITUNG</span>
-              <h3>Diese Unterseite ist vorbereitet</h3>
-              <p>Push- und E-Mail-Benachrichtigungen sind noch nicht implementiert.</p>
-              <p class="cfg-planned-hint">Es werden hier noch keine neuen Kontodaten gespeichert und keine zusätzlichen Dienste aktiviert.</p>
-              
-              
+            <section class="settings-panel cfg-card wide notify-device-card" aria-labelledby="notifyDeviceTitle">
+              <header class="settings-panel-head"><span class="settings-panel-glyph" aria-hidden="true">◉</span><div><span>PUSH</span><h3 id="notifyDeviceTitle">Dieses Gerät</h3></div></header>
+              <p class="notify-status" id="notifyPushStatus" role="status" aria-live="polite">Push wird geprüft …</p>
+              <div class="notify-actions">
+                <button class="settings-action" id="notifyPushEnable" type="button" hidden>PUSH AUF DIESEM GERÄT AKTIVIEREN</button>
+                <button class="settings-action" id="notifyPushDisable" type="button" hidden>PUSH HIER AUSSCHALTEN</button>
+                <button class="settings-action" id="notifyPushTest" type="button" hidden>TEST SENDEN</button>
+              </div>
+              <ul class="notify-devices" id="notifyDevices" aria-label="Geräte mit Push"></ul>
+              <p class="notify-hint">Push kommt auch an, wenn CoreAI geschlossen ist. Ohne Push meldet sich CoreAI, solange ein Tab im Hintergrund offen ist und Benachrichtigungen erlaubt sind. Auf iPhone und iPad zuerst „Zum Home-Bildschirm“ hinzufügen und CoreAI von dort öffnen.</p>
+            </section>
+            <section class="settings-panel cfg-card wide notify-mail-card" aria-labelledby="notifyMailTitle">
+              <header class="settings-panel-head"><span class="settings-panel-glyph" aria-hidden="true">✉</span><div><span>E-MAIL</span><h3 id="notifyMailTitle">E-Mail</h3></div></header>
+              <p class="notify-status" id="notifyMailStatus">E-Mail wird geprüft …</p>
+            </section>
+            <section class="settings-panel cfg-card wide notify-categories" aria-labelledby="notifyCategoriesTitle">
+              <header class="settings-panel-head"><span class="settings-panel-glyph" aria-hidden="true">◇</span><div><span>KATEGORIEN</span><h3 id="notifyCategoriesTitle">CoreAI</h3></div></header>
+              <div class="notify-row" data-category="answers">
+                <div class="notify-copy"><strong id="notifyLabel-answers">Antworten</strong><small>Erhalte eine Benachrichtigung, wenn Maras Antworten etwas länger dauern, z. B. bei Recherchen oder der Erstellung von Bildern.</small></div>
+                <select class="notify-select" id="notify-answers" data-category="answers" aria-labelledby="notifyLabel-answers"><option value="">Aus</option><option value="push" selected>Push</option><option value="email">E-Mail</option><option value="push,email">Push, E-Mail</option></select>
+              </div>
+              <div class="notify-row" data-category="security">
+                <div class="notify-copy"><strong id="notifyLabel-security">Sicherheit</strong><small>Neue Anmeldung bei deinem Konto und Änderungen deines Passworts.</small></div>
+                <select class="notify-select" id="notify-security" data-category="security" aria-labelledby="notifyLabel-security"><option value="">Aus</option><option value="push">Push</option><option value="email" selected>E-Mail</option><option value="push,email">Push, E-Mail</option></select>
+              </div>
+              <div class="notify-row" data-category="updates" data-owner-only hidden>
+                <div class="notify-copy"><strong id="notifyLabel-updates">CoreAI-Updates</strong><small>Eine neue CoreAI-Version kann installiert werden.</small></div>
+                <select class="notify-select" id="notify-updates" data-category="updates" aria-labelledby="notifyLabel-updates"><option value="">Aus</option><option value="push" selected>Push</option><option value="email">E-Mail</option><option value="push,email">Push, E-Mail</option></select>
+              </div>
+              <div class="notify-row is-planned" data-category="tasks">
+                <div class="notify-copy"><strong id="notifyLabel-tasks">Aufgaben</strong><small>Erhalte eine Benachrichtigung, wenn von dir erstellte Aufgaben aktualisiert wurden.</small><span class="notify-planned">IN VORBEREITUNG</span></div>
+                <select class="notify-select" id="notify-tasks" data-category="tasks" aria-labelledby="notifyLabel-tasks" disabled><option value="">Aus</option><option value="push" selected>Push</option><option value="email">E-Mail</option><option value="push,email">Push, E-Mail</option></select>
+              </div>
+              <div class="notify-row is-planned" data-category="agents">
+                <div class="notify-copy"><strong id="notifyLabel-agents">Agenten</strong><small>Lass dich über Probleme mit Konnektoren benachrichtigen, die deine Agenten betreffen.</small><span class="notify-planned">IN VORBEREITUNG</span></div>
+                <select class="notify-select" id="notify-agents" data-category="agents" aria-labelledby="notifyLabel-agents" disabled><option value="">Aus</option><option value="push">Push</option><option value="email" selected>E-Mail</option><option value="push,email">Push, E-Mail</option></select>
+              </div>
+              <div class="notify-row is-planned" data-category="library">
+                <div class="notify-copy"><strong id="notifyLabel-library">Bibliothek</strong><small>Geteilte Dateien, Ordner und Zugriffsanfragen in deiner Bibliothek.</small><span class="notify-planned">IN VORBEREITUNG</span></div>
+                <select class="notify-select" id="notify-library" data-category="library" aria-labelledby="notifyLabel-library" disabled><option value="">Aus</option><option value="push">Push</option><option value="email" selected>E-Mail</option><option value="push,email">Push, E-Mail</option></select>
+              </div>
+              <div class="notify-row is-planned" data-category="projects">
+                <div class="notify-copy"><strong id="notifyLabel-projects">Projekte</strong><small>Einladungen zu einem freigegebenen Projekt.</small><span class="notify-planned">IN VORBEREITUNG</span></div>
+                <select class="notify-select" id="notify-projects" data-category="projects" aria-labelledby="notifyLabel-projects" disabled><option value="">Aus</option><option value="push">Push</option><option value="email" selected>E-Mail</option><option value="push,email">Push, E-Mail</option></select>
+              </div>
+              <div class="notify-row is-planned" data-category="workspace">
+                <div class="notify-copy"><strong id="notifyLabel-workspace">Workspace-Anfragen</strong><small>Ein Workspace-Mitglied fordert eine Verbindung an.</small><span class="notify-planned">IN VORBEREITUNG</span></div>
+                <select class="notify-select" id="notify-workspace" data-category="workspace" aria-labelledby="notifyLabel-workspace" disabled><option value="">Aus</option><option value="push">Push</option><option value="email" selected>E-Mail</option><option value="push,email">Push, E-Mail</option></select>
+              </div>
+              <p class="notify-hint" id="notifyCategoriesHint">Kategorien mit „In Vorbereitung“ gehören zu Funktionen, die CoreAI noch nicht hat; sie senden nichts.</p>
             </section>
           </div>
         </section>
@@ -1013,6 +1056,8 @@
   <script src="./js/coreui-personalization-settings.js?v=0293012758263273966658748"></script>
   <script src="./js/coreui-voice-read.js?v=0478836976425824839668688"></script>
   <script src="./js/coreui-voice-terms.js?v=0470347751915481307845714"></script>
+  <script src="./js/coreui-notify.js?v=1002976330424203629675926"></script>
+  <script src="./js/coreui-notify-settings.js?v=0284807119142511189799272"></script>
   <script src="./js/coreui-update.js?v=0294648939860149727532714"></script>
 </body>
 </html>

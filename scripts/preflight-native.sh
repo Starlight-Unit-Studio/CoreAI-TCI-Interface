@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.80: Darstellung Phase 2 (Motiv-Export/-Import, Hex, Hell/Dunkel getrennt, Schriftart, Zeichensetzung).
+# CoreAI: TCI Interface 0.6.81: Benachrichtigungen (Web Push nach RFC 8291/8292, E-Mail, Browser) als echte Einstellungsseite.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -82,6 +82,15 @@ UI_FILES=(
   scripts/theme-preferences-selftest.cjs
   js/coreui-smart-punctuation.js
   scripts/appearance-ui-selftest.cjs
+  database/migrations/028_notifications.sql
+  api/web_push.php
+  api/notifications_store.php
+  api/notifications.php
+  sw.js
+  js/coreui-notify.js
+  js/coreui-notify-settings.js
+  scripts/notifications-selftest.php
+  scripts/notifications-ui-selftest.cjs
   scripts/terran-terminology-selftest.cjs
   scripts/tci-language-selftest.cjs
   setup.sh
@@ -481,6 +490,11 @@ if grep -Fq '|voice_live|' "$PROJECT_ROOT/config/nginx.conf.template"; then
 else
   fail 'Nginx sperrt das Live-Gespraech (voice_live fehlt in der Freigabe).'
 fi
+if grep -Fq '|notifications|' "$PROJECT_ROOT/config/nginx.conf.template" && grep -Fq 'location = /sw.js' "$PROJECT_ROOT/config/nginx.conf.template"; then
+  ok '0.6.81: Nginx erlaubt Benachrichtigungen (api/notifications.php) und den Service Worker (/sw.js).'
+else
+  fail 'Nginx sperrt Benachrichtigungen oder den Service Worker (notifications oder /sw.js fehlt).'
+fi
 if grep -Fq '|composer_tools|' "$PROJECT_ROOT/config/nginx.conf.template"; then
   ok '0.6.43: Nginx erlaubt die Werkzeug-Freigaben des + Menues (api/composer_tools.php).'
 else
@@ -848,6 +862,14 @@ if command -v php >/dev/null 2>&1; then
     fail "Bilder-im-Chat-Selbsttest: ${image_gen_test:-Unbekannter Fehler}"
   fi
 
+  # 0.6.81: Benachrichtigungen: Web Push (RFC 8291 example, VAPID), saving, dispatch and triggers.
+  notifications_test=''
+  if notifications_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/notifications-selftest.php" 2>&1)"; then
+    ok 'Benachrichtigungen: Web-Push-Verschluesselung (RFC 8291), VAPID, Kategorien, Versand und Ausloeser geprueft.'
+  else
+    fail "Benachrichtigungs-Selbsttest: ${notifications_test:-Unbekannter Fehler}"
+  fi
+
   profile_reference_test=''
   if profile_reference_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/profile-reference-selftest.php" 2>&1)"; then
     if [[ "$profile_reference_test" == PARTIAL:* ]]; then
@@ -1056,6 +1078,17 @@ if command -v php >/dev/null 2>&1; then
       fi
     else
       ok 'Darstellung: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+    fi
+    # 0.6.81: Benachrichtigungen page (Push for this device, E-Mail state, categories) and the
+    # service worker; needs Playwright for Node.
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/notifications-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'Benachrichtigungen: Push-Aktivierung, Geraete, E-Mail-Status, Kategorien und Service Worker im Browser geprueft.'
+      else
+        fail 'Benachrichtigungen: Oberflaechentest fehlgeschlagen.'
+      fi
+    else
+      ok 'Benachrichtigungen: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
     fi
     # 0.5.83: update window (Inhaber) and "Bitte auf Neustart warten"; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then

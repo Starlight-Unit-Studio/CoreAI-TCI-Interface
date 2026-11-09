@@ -224,9 +224,10 @@ const smallText = page => page.evaluate(() => {
     assert.equal(await page.locator('body').evaluate(node => node.classList.contains('cfg-nav-collapsed')),
       false, 'desktop sidebar expands without navigating away');
     // Planned categories are reachable without pretending to save settings.
-    await page.click('#tab-benachrichtigungen');
-    assert.deepEqual(await visibleViews(page), ['view-benachrichtigungen']);
-    assert.match(await page.textContent('#view-benachrichtigungen'), /IN VORBEREITUNG/);
+    // 0.6.81: Benachrichtigungen is real now; Pets stays a planned example.
+    await page.click('#tab-pets');
+    assert.deepEqual(await visibleViews(page), ['view-pets']);
+    assert.match(await page.textContent('#view-pets'), /IN VORBEREITUNG/);
     await page.fill('#settingsNavSearch', 'Cloud-Computer');
     assert.equal(await page.locator('#tab-cloud-computer').isHidden(), false, 'search finds planned categories');
     assert.equal(await page.locator('#tab-benachrichtigungen').isHidden(), true, 'search filters unrelated entries');

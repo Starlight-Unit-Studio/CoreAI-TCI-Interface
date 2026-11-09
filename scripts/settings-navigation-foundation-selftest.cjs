@@ -32,7 +32,8 @@ for(const entry of entries) {
   assert.ok(settings.includes('aria-controls="view-' + entry + '"'), entry + ' linked view');
 }
 const planned = [...settings.matchAll(/class="cfg-view cfg-view-planned"/g)];
-assert.equal(planned.length, 12, 'only genuinely unimplemented settings remain planned');
+// 0.6.81: Benachrichtigungen became a real page (11 planned remain).
+assert.equal(planned.length, 11, 'only genuinely unimplemented settings remain planned');
 assert.ok(settings.includes('id="settingsExpertToggle"'));
 assert.ok(settings.includes('class="cfg-header-expert"') &&
   settings.indexOf('id="settingsExpertToggle"') < settings.indexOf('<div class="cfg-shell">'),
@@ -52,6 +53,7 @@ for (const [id, fields] of Object.entries({
   sicherheit: ['changePassword', 'currentPassword', 'loginSessionList', 'revokeOtherSessions'],
   tastatur: ['generalSendKey'],
   datenkontrollen: ['exportAccountData'],
+  benachrichtigungen: ['notifyPushEnable', 'notifyPushTest', 'notifyDevices', 'notifyMailStatus', 'notify-answers', 'notify-security', 'notify-updates'],
   stimme: ['voiceAutoRead', 'voiceTerms'],
   memory: ['aiMemoryEnabled', 'aiMemoryLimit', 'saveMemoryAiSettings'],
 })) {
@@ -146,4 +148,4 @@ assert.ok(css.includes('cfg-nav-collapsed') && css.includes('cfg-header-expert')
 assert.ok(read('js/coreui-settings-menu.js').includes("doc.addEventListener('touchstart'") &&
   read('js/coreui-settings-menu.js').includes("doc.addEventListener('touchend'"),
   'swipe navigation is implemented alongside keyboard and button access');
-console.log('CoreAI settings: 25 categories, 12 honest planning pages, migrated live controls, header Expert/Admin, responsive swipe navigation OK');
+console.log('CoreAI settings: 25 categories, 11 honest planning pages, migrated live controls, header Expert/Admin, responsive swipe navigation OK');

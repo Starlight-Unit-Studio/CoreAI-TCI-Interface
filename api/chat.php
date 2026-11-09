@@ -21,6 +21,7 @@ require_once __DIR__ . '/console_timezone.php';
 require_once __DIR__ . '/weather_live.php';
 require_once __DIR__ . '/image_gen.php';
 require_once __DIR__ . '/console_composer_intent.php';
+require_once __DIR__ . '/notifications_store.php';
 
 // -----------------------------------------------------------------------------
 // Ember - Global-Chat NPC (Ollama local)
@@ -3490,6 +3491,11 @@ function ember_insert(
     if ($ownTransaction) $pdo->commit();
     elseif ($savepoint) $pdo->exec('RELEASE SAVEPOINT coreui_artifact_message');
     if ($pendingArtifacts !== null) unset($GLOBALS['COREUI_PENDING_ARTIFACTS']);
+    // 0.6.81: a reply that took a while (research, images, long work) is announced on the
+    // account's chosen channels, after the response (Settings > Benachrichtigungen > Antworten).
+    if ($targetChannel === 'console' && $insertedId > 0 && $sessionId !== null && (int)$replyToId > 0) {
+      coreui_notify_answer($pdo, $uid, (string)$sessionId, (int)$replyToId, (string)$text, coreui_profile_assistant_name($pdo, $uid));
+    }
   } catch (Throwable $e) {
     if ($ownTransaction && $pdo->inTransaction()) $pdo->rollBack();
     elseif ($savepoint && $pdo->inTransaction()) {
