@@ -1,5 +1,12 @@
 # CoreAI: TCI Interface
 
+## 0.6.76 - 09.11.2026
+
+- Clarify a single CoreAI rule: settings modeled after the ChatGPT reference images are normal user-facing controls. Custom CoreAI controls are also normal when they are understandable without editing raw model or code parameters. Expert means low-level fine-tuning, not simply a feature that CoreAI added itself.
+- Keep the guided context-window slider, Core-default option and hardware estimates visible in KI-Profil without Expert. Simple telemetry and live-browser frame playback presentation switches remain ordinary. The Denkaufwand control and all existing normal controls are unchanged.
+- Expert hides only six existing raw/advanced controls: custom system prompt, numeric token budget, numeric temperature, Core provider path, numeric Memory context count, and numeric fact relevance. No raw numeric `num_ctx` editor exists yet, and one is not being simulated.
+- Repair stale preflight expectation (9 Expert fields after 0.6.75 already shipped 6), and strengthen static and browser regression tests to verify smart controls remain visible while technical values remain preserved and hidden. No database, API, model queue, permissions or Modelfile changes.
+
 ## 0.6.75 - 09.11.2026
 
 - Make **Denkaufwand** visible in General without the Expert switch. It continues to use the existing per-account authenticated General settings endpoint (migration 027); no duplicated preference or new database schema.
