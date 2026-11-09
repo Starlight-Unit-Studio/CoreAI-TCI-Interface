@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.6.71 - 09.11.2026
+
+- Rebuild the settings information architecture around 25 navigable category pages with a searchable sidebar and a mobile drawer. The sections visible in the supplied reference are included; 16 missing capabilities are explicitly marked as planning placeholders, with no fake saving or account connections.
+- Add a browser-local Expert settings switch that reveals existing advanced CoreAI controls. System diagnostics and the owner updater remain reachable without Expert mode. This preference never grants server permissions.
+- Move all eight working Admin Core sections from the regular settings markup into a dedicated `/admin/index.html` page with an authorization gate. Ordinary settings show exactly one Admin Core entry only after owner/admin authentication; old admin deep links continue to work.
+- Preserve admin users, runtime controls, role restrictions, global memories, lore, logs, audit and owner-only voice/image sample tools; anchor their API endpoints to CoreAI's project root instead of relative page paths.
+- Keep the existing profile, appearance, personalization, security, memory, knowledge, update and account functions, while adding a documented 25-category implementation matrix. Adjust PHP, Playwright and offline regression tests and both preflights.
+- Synchronize the merge-bound 0.6.71 version, documentation, handover and SHA-256 numeric browser cache keys. No database migration, new third-party integration, model prompt or runtime service change.
 ## 0.6.70 - 09.11.2026
 
 - Make the owner name display with the same font weight and text color as the surrounding copyright attribution in all six CoreAI HTML surfaces (splash, sign-in, chat drawer, settings, protocols and admin redirect).
