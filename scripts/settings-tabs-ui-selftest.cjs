@@ -139,6 +139,10 @@ const smallText = page => page.evaluate(() => {
     let {page, srv, errors} = await open(browser, 4, '#admin-benutzer');
     assert.deepEqual(await visibleViews(page), ['view-start']);
     assert.equal(await page.locator('#adminLinkGroup').isHidden(), true, 'no Admin Core link for a Nutzer');
+    assert.equal(await page.locator('#settingsAdminShortcut').isHidden(), true,
+      'a regular account never sees the header Admin shortcut');
+    assert.equal(await page.locator('.cfg-header-expert').count(), 1,
+      'one Expert switch remains accessible in the page header');
     assert.equal(await page.locator('#adminNavGroup').count(), 0, 'no embedded Admin Core tabs');
     assert.equal(await page.isChecked('#settingsExpertToggle'), false, 'expert mode starts disabled');
     assert.equal(await page.locator('#cfgCoreGroup').isHidden(), false, 'CoreAI categories always visible');
@@ -163,6 +167,9 @@ const smallText = page => page.evaluate(() => {
     assert.ok(srv.calls.some(c => c.key === 'user_settings.php' && c.post &&
       c.post.action === 'general' && c.post.settings.auto_higher_core === true),
       'auto Core setting is actually saved through the server');
+    await page.click('#tab-tastatur');
+    assert.deepEqual(await visibleViews(page), ['view-tastatur'],
+      'the actual keyboard shortcut moved to its own settings page');
     assert.equal(await page.inputValue('#generalSendKey'), 'enter', 'Enter remains the legacy default');
     await page.selectOption('#generalSendKey', 'mod-enter');
     assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('emberCoreUI.preferences.v1')).sendKey),
@@ -170,6 +177,7 @@ const smallText = page => page.evaluate(() => {
     await page.reload();
     await page.waitForFunction(() => document.getElementById('startHealth').getAttribute('data-state') !== 'checking');
     assert.equal(await page.inputValue('#generalSendKey'), 'mod-enter', 'send shortcut survives reload');
+    await page.click('#tab-start');
     assert.equal(srv.calls.filter(c => c.key === 'admin.php').length, 0, 'a Nutzer never asks the admin API');
     // Start view sums up the categories.
     assert.equal(await page.textContent('#startCore'), 'Mara Normal');
@@ -179,6 +187,33 @@ const smallText = page => page.evaluate(() => {
     assert.equal(await page.textContent('#startKnowledgeChunks'), '42 Abschnitte');
     assert.equal(await page.textContent('#startMemory'), '2 Fakten');
     assert.equal(await page.textContent('#startRole'), 'NUTZER');
+    // Existing controls live in their actual settings categories.
+    await page.click('#tab-sicherheit');
+    assert.deepEqual(await visibleViews(page), ['view-sicherheit']);
+    assert.equal(await page.locator('#changePassword').isVisible(), true);
+    assert.equal(await page.locator('#loginSessionList').isVisible(), true);
+    await page.click('#tab-datenkontrollen');
+    assert.equal(await page.locator('#exportAccountData').isVisible(), true,
+      'existing private JSON export is a real Data controls action');
+    await page.click('#tab-stimme');
+    assert.equal(await page.locator('#voiceAutoReadRow').count(), 1);
+    assert.equal(await page.locator('#voiceTermsRow').count(), 1);
+    await page.click('#tab-memory');
+    assert.equal(await page.locator('#saveMemoryAiSettings').isVisible(), true);
+    await page.check('#aiMemoryEnabled');
+    await page.click('#saveMemoryAiSettings');
+    await page.waitForFunction(() => !document.getElementById('saveMemoryAiSettings').disabled);
+    assert(srv.calls.some(c => c.key === 'user_settings.php' && c.post &&
+      c.post.memory_enabled === true),
+      'moved Memory toggle uses the existing account settings API');
+    await page.click('#tab-start');
+    await page.click('#settingsMenuToggle');
+    assert.equal(await page.locator('body').evaluate(node => node.classList.contains('cfg-nav-collapsed')),
+      true, 'desktop sidebar can collapse while settings content stays visible');
+    assert.equal(await page.locator('#view-start').isVisible(), true);
+    await page.click('#settingsMenuToggle');
+    assert.equal(await page.locator('body').evaluate(node => node.classList.contains('cfg-nav-collapsed')),
+      false, 'desktop sidebar expands without navigating away');
     // Planned categories are reachable without pretending to save settings.
     await page.click('#tab-benachrichtigungen');
     assert.deepEqual(await visibleViews(page), ['view-benachrichtigungen']);
