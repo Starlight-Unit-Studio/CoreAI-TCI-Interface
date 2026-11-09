@@ -11,7 +11,7 @@ has an authenticated API, UI tests and a separate release.
 
 | Menu category | Status | Existing function or next work |
 | --- | --- | --- |
-| General (Allgemein) | Mixed | Original Core, health, knowledge and memory overview preserved. Enter/Ctrl+Enter shortcut works and is browser-local. App UI language, automatic Core promotion and extra reasoning levels are explicitly disabled pending implementation. |
+| General (Allgemein) | Implemented / English beta | App language DE/EN and browser auto work for core UI labels; full English translation remains in progress. Send shortcut is local. Higher Core uses installed permitted Mara tiers only for complex private text. Named reasoning effort uses only /api/show values with the chat Thinking switch authoritative. Backend controls require migration 027. Old overview preserved. |
 | Appearance (Darstellung) | Existing | System/Light/Dark, reduced motion and chat preferences |
 | Notifications (Benachrichtigungen) | Planned | Notification channels, delivery permissions and user controls |
 | Profile (Profil) | Existing | User/assistant display names and avatars with crop |
