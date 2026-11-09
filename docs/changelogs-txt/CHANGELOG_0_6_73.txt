@@ -11,3 +11,17 @@ COREAI: TCI INTERFACE // CHANGELOG 0.6.73
   Flex-Richtung, Tab-Position, Scrollverhalten und Schliessen.
 - Offline-Regressionsschutz gegen Wiederauftreten.
 - Keine DB- oder Core-Aenderung, kein Modelfile-Update.
+- Einstellungsnavigation nutzt nun das Chat-Drawer-Prinzip: Wisch vom
+  linken Rand oeffnet Kategorien, Wisch nach links schliesst. Desktop-
+  Seitenleiste laesst sich einklappen; Inhalt nutzt dann volle Breite.
+- Globaler Expertenschalter jetzt im Kopfbereich statt im Drawer.
+- Inhaber/Admin erhalten dort auch einen separat rollenprueften
+  Admin-Core-Link. Andere Nutzer sehen ihn nicht.
+- Bereits vorhandene Funktionen jetzt in passenden Kategorien:
+  Passwort und Anmeldungen -> Sicherheit; Export -> Datenkontrollen;
+  Tastenkombinationen -> Tastatur; Vorlesen und Stimmbegriffe -> Stimme;
+  Memory an/aus und Kontextlimit -> Memory.
+- Memory-Speichern bewahrt noch nicht gespeicherte Aenderungen aus
+  anderen KI-Profil-Feldern durch Snapshot der letzten Serverantwort.
+- Bestehende API, Modelfiles, Kontowerte, Rollen und globale FIFO unveraendert.
+- Erweiterte Layout-, Rechte-, Sprach- und Funktions-Regressionen.
