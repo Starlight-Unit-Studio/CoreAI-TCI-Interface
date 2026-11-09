@@ -1,0 +1,35 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.73
+Datum: 09.11.2026
+Ausgangsstand: main 0.6.72 (PR #223 gemergt)
+Branch: fix/settings-mobile-drawer-0673
+
+ANLASS
+Nach 0.6.72 zeigt das Handy-Screenshot die Kategorien PERSONAL und TEAMS
+nebeneinander. Die linke Kante der Menueeintraege ist abgeschnitten.
+Die alte mobile Tab-Leiste (max-width: 900px) setzt flex-direction: row.
+Der neuere Drawer (max-width: 980px) hatte das nicht ueberschrieben.
+
+UMSETZUNG
+css/settings.css:
+- Mobile Drawer explizit display:flex, flex-direction:column,
+  flex-wrap:nowrap, align-items:stretch.
+- border-box und viewportbegrenzte Breiten verhindern Padding-Ueberlauf.
+- Jede Gruppe und jeder Tab fuellt genau eine Spalte.
+- overflow-x:hidden, overflow-y:auto, overscroll-behavior-y:contain.
+- Bisherige Navigation, Suche, Expertenschalter und Adminrechte unveraendert.
+
+TESTABDECKUNG
+scripts/settings-tabs-ui-selftest.cjs:
+- Echte berechnete Breite und Position bei 320, 390, 768, 900 px.
+- Alle Gruppen und Tabs vertikal, keine Tab- oder Drawer-Ueberlaenge.
+- Mobile Schliessen und keine Browserfehler.
+scripts/settings-navigation-foundation-selftest.cjs:
+- Statischer Regressionsschutz fuer Spaltenanordnung und Box-Sizing.
+
+RELEASECHECK
+- VERSION und sechs HTML-Seiten auf 0.6.73.
+- README/CHANGELOG/TXT-Index/Cache-Fingerprints konsistent.
+- Vor Merge: node scripts/settings-navigation-foundation-selftest.cjs,
+  node scripts/settings-tabs-ui-selftest.cjs, Cache-Test und Preflight.
+- Nach Merge auf dem Handy Drawer in Hell/Dunkel pruefen.
+- Kein DB-Update, keine Backend-Aenderung.
