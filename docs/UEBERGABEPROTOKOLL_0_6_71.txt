@@ -11,11 +11,31 @@ AUFTRAG
   auf /admin/ saemtliche vorhandenen Admin-Funktionen erhalten.
 
 UMSETZUNG
+ALLEGMEIN / EXPERTENREGEL 0.6.71
+- User-sichtbare Kategorien bleiben IMMER da (auch KI-Profil, Wissen, Memory).
+- Einziger Expertenschalter zeigt versteckte technische Felder in ihrer
+  urspruenglichen Kategorie, ohne vorhandene Werte zu loeschen.
+- Allgemein: vier Zeilen fuer UI-Sprache (nur Deutsch aktiv),
+  Tastaturkuerzel (Enter oder Ctrl/Command+Enter, echt verdrahtet),
+  automatische Core-Hochstufung (nicht implementiert) und
+  Reasoning-Aufwandsstufen (derzeit nur Denken an/aus, weitere geplant).
+- Alte Core-/System-/Wissens-/Memory-Kacheln weiterhin in Allgemein.
+- Numeric Inputs: Memory-Limit, Tokenbudget, Temperatur, Kontextfenster
+  bleiben in KI-Profil; Relevanz bleibt in Memory.
+- Geaenderte Datei js/coreui-preferences.js verwendet bestehende
+  lokale V1-Speicherstruktur und migriert aeltere Konten ohne Ueberraschung.
+- js/coreui-send-keys.js prueft Tastatur mit IME-/Shift-/Repeat-Schutz.
+- js/console-app.js nutzt diese Funktion und passt die Hilfetextanzeige an.
+- scripts/send-shortcut-selftest.cjs und aktualisierte Theme-/Settings-
+  Regressionen pruefen die Verbindungen; beide Preflights laufen damit.
+- Vorhandene Rechte, Modelfiles, Modell-Warteschlange und Chat-DB bleiben
+  voellig unangetastet.
+
 - settings.html: 25 Kategorien und 16 klar bezeichnete Planungsansichten.
   Vorhandene neun Standardansichten bleiben und sind an neue Navigation
   angebunden. System/Updater bleibt auch ohne Expertenmodus sichtbar.
 - js/coreui-settings-menu.js: Suche, persistenter browserlokaler Expertenmodus
-  (nur UI-Sichtbarkeit), mobile Seitenleiste mit Auf/Zu und Escape.
+  (nur UI-Sichtbarkeit einzelner technischer Felder), mobile Seitenleiste mit Auf/Zu und Escape.
 - css/settings.css: Desktop-Zwei-Spalten-Layout, Handy-Drawer im CoreAI Color
   Kit, Statuskennzeichnung, Dark-/Light-Farben aus vorhandenen Tokens.
 - admin/index.html: Acht bisherige Admin-Ansichten mit getrennter
