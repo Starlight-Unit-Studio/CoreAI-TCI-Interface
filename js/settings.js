@@ -24,6 +24,7 @@
   var healthChecks = document.getElementById('healthChecks');
   var refreshButton = document.getElementById('refreshHealth');
   var resetButton = document.getElementById('resetPreferences');
+  var generalSendKey = document.getElementById('generalSendKey');
   var logoutButton = document.getElementById('settingsLogout');
   var backButton = document.getElementById('settingsBack');
   var aiSaveButton = document.getElementById('saveAiSettings');
@@ -127,6 +128,7 @@
 
   function syncFields(value) {
     value = value || {};
+    if (generalSendKey) generalSendKey.value = value.sendKey === 'mod-enter' ? 'mod-enter' : 'enter';
     Object.keys(fields).forEach(function (key) {
       if (fields[key]) fields[key].checked = value[key] === true;
     });
@@ -143,6 +145,8 @@
     });
     var selected = themeOptions.filter(function (option) { return option.checked; })[0];
     value.theme = selected ? selected.value : (preferences ? preferences.load().theme : 'system');
+    value.sendKey = generalSendKey ? generalSendKey.value
+      : (preferences ? preferences.load().sendKey : 'enter');
     return value;
   }
 
@@ -845,6 +849,7 @@
   themeOptions.forEach(function (option) {
     option.addEventListener('change', saveLocal);
   });
+  if (generalSendKey) generalSendKey.addEventListener('change', saveLocal);
   window.addEventListener('coreui:preferences', function (event) {
     if (event && event.detail) syncFields(event.detail);
   });
@@ -888,7 +893,10 @@
   if (resetButton) {
     resetButton.addEventListener('click', function () {
       if (!preferences) return;
-      syncFields(preferences.reset());
+      // Appearance reset must not silently overwrite the General send shortcut.
+      var oldSendKey = preferences.load().sendKey;
+      preferences.reset();
+      syncFields(preferences.save(Object.assign({}, preferences.defaults, {sendKey: oldSendKey})));
       announceSaved('ANZEIGE-STANDARD WIEDERHERGESTELLT');
     });
   }
