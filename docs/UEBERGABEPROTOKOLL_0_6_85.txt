@@ -52,7 +52,20 @@ TESTS (hier ausgefuehrt)
 - Echter E-Mail-Code-Lauf mit lokalem SMTP-Testserver: Code zum Einrichten aus der Mail,
   10 Wiederherstellungscodes, Anmeldung verlangt den zweiten Schritt, Code per Mail,
   falscher Code abgewiesen (noch 4 Versuche), richtiger angenommen.
-- php -l aller geaenderten PHP-Dateien, cache-bust --verify, version-merge-check.
+- Lockdown direkt geprueft: coreui_ai_runtime_apply gegen MariaDB, ohne Lockdown web und
+  browse an, mit Lockdown beide aus.
+- php -l aller geaenderten PHP-Dateien, cache-bust --verify, version-merge-check
+  --base-version 0.6.83 (PASS), tci-language, terran-terminology, branding-license,
+  frontend-regression, settings-navigation-foundation, settings-tabs-ui, profile-stats-ui,
+  notifications-ui.
+- Volle Testreihe mit MariaDB (COREUI_SELFTEST_DB=1): 118 bestanden, 7 fehlgeschlagen,
+  dieselben 7 wie auf main (chat-navigation-recovery, composer-menu-ui, core-install-ui,
+  send-shortcut, voice-live, voice-samples-ui, tests/test_preflight_http.py).
+- Zwei Verdrahtungstests mit woertlichem Text nachgezogen, keine Pruefung abgeschaltet:
+  notifications-selftest.php (Anmeldemeldung jetzt im gemeinsamen Anmeldeabschluss
+  coreui_auth_login_finish fuer Passwort, zweiten Faktor und Passkey).
+  user-policy-selftest.php bleibt unveraendert, die Originalzeile in ai_settings.php steht
+  wieder, der Lockdown folgt dahinter.
 
 NICHT HIER GEPRUEFT
 - Echte Passkeys auf Handys und Hardware-Schluesseln (nur der virtuelle Authenticator von
