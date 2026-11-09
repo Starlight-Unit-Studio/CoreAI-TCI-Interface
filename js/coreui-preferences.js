@@ -155,6 +155,7 @@
     var accent = accentFor(visual, activeTheme);
     root.setAttribute('data-coreui-motif', visual.motif);
     root.setAttribute('data-coreui-font', visual.font);
+    root.setAttribute('data-coreui-background-custom', part.background !== defaults.appearance[activeTheme].background ? 'true' : 'false');
     root.setAttribute('data-coreui-diff', a.diffMarkers);
     root.setAttribute('data-coreui-motion', a.motion);
     if (root.style) {
