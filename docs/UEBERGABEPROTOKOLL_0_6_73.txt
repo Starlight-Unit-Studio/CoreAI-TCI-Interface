@@ -16,7 +16,28 @@ css/settings.css:
 - border-box und viewportbegrenzte Breiten verhindern Padding-Ueberlauf.
 - Jede Gruppe und jeder Tab fuellt genau eine Spalte.
 - overflow-x:hidden, overflow-y:auto, overscroll-behavior-y:contain.
-- Bisherige Navigation, Suche, Expertenschalter und Adminrechte unveraendert.
+- Suche, Rechtepruefungen und Einstellungswerte bleiben erhalten; Expert- und Adminzugriff wurden in die Kopfzeile verlagert.
+
+ERWEITERUNG EINSTELLUNGEN (SELBES MERGE 0.6.73)
+- Mobile Navigation wie Core-Channel-Drawer: von links hereinswipen,
+  nach links wieder schliessen. Kategorie-Knopf, Escape und Backdrop
+  bleiben erreichbar. Rechts bleibt der Inhalt sichtbar/abgedunkelt.
+- Desktop: linkes Kategorienpanel durch Menueknopf einklappbar;
+  der rechte Inhaltsbereich belegt dann die ganze Seitenbreite.
+- Expertenschalter in der Kopfzeile, nur UI-Sichtbarkeit.
+- Admin-Shortcut ebenfalls in der Kopfzeile, standardmaessig hidden;
+  Inhaber/Admin werden durch auth.php explizit freigegeben.
+  Admin-/API-Autorisierungspruefungen niemals umgehen.
+- Sicherheitsseite: Passwort und aktive Anmeldungen aus Konto.
+- Datenkontrollen: bestehender JSON-Export aus Konto.
+- Tastatur: bestehende Sendetasten aus Allgemein.
+- Stimme: bestehendes Auto-Vorlesen und Begriffslexikon aus KI-Profil.
+- Memory: Nutzung an/aus und Kontextlimit aus KI-Profil. Speicherfunktion
+  verwendet bestehende KI-API; Snapshot verhindert unbeabsichtigte
+  Aenderungen noch nicht gespeicherter anderer Profilfelder.
+- 25 Kategorien bleiben sichtbar, 12 geplante haben ehrliche Platzhalter.
+- Originale DOM-IDs und API-Endpunkte nicht durch Duplikate ersetzen.
+- Kein neues Datenbankschema, keine Ollama-/Modelfile-Aenderung.
 
 TESTABDECKUNG
 scripts/settings-tabs-ui-selftest.cjs:
