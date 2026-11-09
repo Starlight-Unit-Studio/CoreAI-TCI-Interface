@@ -1,0 +1,37 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.77
+Datum: 09.11.2026
+Basis: main 0.6.76 (PR #228 gemergt)
+Branch: fix/composer-effort-order-and-style-0677
+
+ANLASS
+Android-Screenshot zeigt unter der Chat-Eingabe links "Core Normal
+DENKEN" und ganz rechts den neuen, abgerundeten "DENKAUFWAND"-Button.
+Gewuenscht: DENKAUFWAND links davon, CORE ganz rechts. Beide sollen
+den gleichen kantigen CoreAI TCI-Stil verwenden.
+
+UMSETZUNG
+app.html:
+- Bestehende DOM-Buttons direkt nebeneinander umgeordnet.
+  Reihenfolge nach den Hilfe-/Komprimieren-Tasten:
+  DENKAUFWAND, CORE. Die IDs und ihre Dialoge bleiben unveraendert.
+css/console.css:
+- Denkaufwand-Chip an Core-Mode-Chip angeglichen: gleiche Schriftart,
+  Schriftgroesse, Abstand, Rahmen, Clip-Path, Hoehe, Farben, Hover.
+- Mobilregel an gemeinsame Hoehe/Abstaende angepasst.
+scripts/reasoning-effort-ui-selftest.cjs:
+- DOM-Reihenfolge und CSS-Wertegleichheit abgesichert.
+scripts/composer-menu-ui-selftest.cjs:
+- Browser-Pruefung fuer Mobil: Reihenfolge, rechtes Ende, gleiche
+  facettierte Form und Schrift sowie kein horizontaler Ueberlauf.
+
+PRUEFUNG
+- Quelltext- und JavaScript-Syntaxpruefungen.
+- Strukturtests des vorhandenen Bedien- und Funktionspfads.
+- Noch offen: Vollstaendiger Playwright-/Host-Preflight,
+  abschliessende Android-Sichtkontrolle in Hell/Dunkel.
+
+GRENZEN
+- Keine neue Datenbankmigration, keine Modell-, Core-, Modelfile-,
+  Account-, Berechtigungs-, Voice- oder FIFO-Aenderungen.
+- Keine Fake-Auswahl, kein Bild-Rendering als Codeersatz.
+- 0.6.77 wird erst bei Merge zur freigegebenen Version.

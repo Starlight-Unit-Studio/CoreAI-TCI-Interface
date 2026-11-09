@@ -1,5 +1,12 @@
 # CoreAI: TCI Interface
 
+## 0.6.77 - 09.11.2026
+
+- Correct the two Core Channel composer controls on mobile: **Denkaufwand sits immediately to the left of the Core dropdown**, with the **Core dropdown always the rightmost of the pair**. Keep their IDs, menus, accessibility wiring and real server-backed behavior unchanged.
+- Replace the rounded generic styling of the new Denkaufwand chip with the same faceted TCI silhouette, Share Tech Mono typography, spacing, border, colors, hover and focus treatment as the established Core selector. The default mobile overrides use the same geometry.
+- Strengthen the existing reasoning and Playwright composer-menu regressions to verify markup order, visual CSS parity, mobile geometry and no sideways overflow. The responsive layout and established chat/voice controls remain intact.
+- Synchronize merge-bound release 0.6.77, version labels, SHA-256 browser cache fingerprints, Changelog TXT index and handover. No DB/API/AI/Modelfile/FIFO changes.
+
 ## 0.6.76 - 09.11.2026
 
 - Clarify a single CoreAI rule: settings modeled after the ChatGPT reference images are normal user-facing controls. Custom CoreAI controls are also normal when they are understandable without editing raw model or code parameters. Expert means low-level fine-tuning, not simply a feature that CoreAI added itself.

@@ -1,0 +1,13 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.77
+09.11.2026
+
+- Reihenfolge der Buttons unter Maras Chat-Eingabe korrigiert:
+  DENKAUFWAND links neben CORE, CORE ist ganz rechts.
+- DENKAUFWAND erhaelt den kantigen TCI-Buttonstil des Core-Selectors.
+  Share Tech Mono, gleiche Innenabstaende, Farben, Rahmen und Hover.
+- Bestehende Auswahlfunktionen, Ollama-Stufen, API-Speicherung,
+  Core-Auswahl, Denken an/aus, FIFO und Modelfile unveraendert.
+- Struktur- und Browser-Selbsttests pruefen Reihenfolge, Stilvergleich,
+  Mobilansicht und fehlenden horizontalen Seitenueberlauf.
+- Version, Browser-Cache-Fingerabdruecke, TXT-Changelog und
+  Uebergabeprotokoll konsistent aktualisiert.

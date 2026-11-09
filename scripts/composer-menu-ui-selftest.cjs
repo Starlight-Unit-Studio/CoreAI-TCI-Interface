@@ -362,6 +362,31 @@ const item = (page, id, force = false) => page.click('#composerMenu .cm-item[dat
 
     // --- a phone with a camera: Kamera, a sheet from the bottom edge ---
     const phone = await open(browser, {viewport: {width: 390, height: 844}, touch: true, theme: 'dark'});
+    // The two real footer controls must retain CoreAI's angular style, with
+    // the Core selector the rightmost action on the phone.
+    const chips = await phone.page.evaluate(() => {
+      const effort = document.getElementById('reasonEffortChip');
+      const core = document.getElementById('coreModeChip');
+      const r1 = effort.getBoundingClientRect(), r2 = core.getBoundingClientRect();
+      const c1 = getComputedStyle(effort), c2 = getComputedStyle(core);
+      return {effortLeft:r1.left, effortRight:r1.right, coreLeft:r2.left,
+        coreRight:r2.right, effortTop:r1.top, coreTop:r2.top,
+        clipEffort:c1.clipPath, clipCore:c2.clipPath,
+        familyEffort:c1.fontFamily, familyCore:c2.fontFamily,
+        radiusEffort:c1.borderRadius, radiusCore:c2.borderRadius,
+        scroll: document.documentElement.scrollWidth, viewport:innerWidth};
+    });
+    assert(chips.effortLeft < chips.coreLeft && chips.effortRight <= chips.coreRight,
+      'Denkaufwand is left of the Core selector: ' + JSON.stringify(chips));
+    assert(chips.coreRight <= chips.viewport + 1,
+      'Core stays inside the right edge on mobile');
+    assert.equal(chips.clipEffort, chips.clipCore,
+      'both controls use the same angled CoreAI silhouette');
+    assert.equal(chips.familyEffort, chips.familyCore,
+      'both controls use the same TCI typography');
+    assert.equal(chips.radiusEffort, chips.radiusCore,
+      'both controls use the same square/faceted corners');
+    assert(chips.scroll <= chips.viewport, 'buttons do not introduce horizontal scrolling');
     await phone.page.tap('#btnAttach');
     await phone.page.waitForFunction(() => document.querySelector('#composerMenu .cm-item[data-id="image"] .cm-detail').textContent.includes('malt'));
     m = await menuState(phone.page);
