@@ -1,0 +1,55 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.78
+Datum: 09.11.2026
+Basis: main 0.6.77, PR #229 bereits gemergt
+Branch: fix/core-selector-reasoning-separation-0678
+
+ANLASS
+Nach den Button-Korrekturen gab es noch eine doppelte
+Denken-Einstellung: Core-Menue mit DENKEN-Schalter und
+Denkaufwand-Menue mit demselben On/Off. Die vorhandene
+Erklaerung stand nur im Core-Menue. Im sichtbaren Core-Chip
+stand zusaetzlich DENKEN oder SCHNELL.
+
+UMSETZUNG
+- app.html:
+  * Core-Chip: nur Core-Bezeichnung und Pfeil.
+  * Core-Menue: Core-Liste und Core-Verwaltung, kein
+    Schalter coreThinkToggle.
+  * Denkaufwand-Menue: die urspruengliche Erklaerung als
+    Abschnitt reasonEffortIntro mit aria-describedby.
+  * Legende: Core auswaehlen getrennt von Denkaufwand.
+- js/coreui-core-mode.js:
+  * setThinking() bleibt als identische echte Account-API.
+  * Keine Abhaengigkeit von geloeschten UI-Knoten,
+    keine doppelte Meldung im Core-Menue.
+  * Der Core-Namen zeigt weiterhin den Ladezustand.
+- css/console.css:
+  * Alte Thinking-Anzeige-Regeln entfernt.
+  * Der Core-only Picker hat keinen verwaisten Trenner.
+  * Beschreibung im Denkaufwand-Panel responsiv gestaltet.
+- settings.html:
+  * KI-Profil zeigt die richtige Bedienanleitung.
+- Tests:
+  * scripts/thinking-switch-ui-selftest.cjs prueft weiter
+    echtes Thinking-POST mit CSRF und Ruecknahme bei Fehler.
+  * scripts/reasoning-effort-ui-selftest.cjs prueft
+    Beschreibungsuebernahme und keine doppelten Knopfe.
+  * Die vorhandenen mobilen Browser-Tests bleiben aktiv.
+
+TESTPLAN
+1. node scripts/thinking-switch-ui-selftest.cjs
+2. node scripts/reasoning-effort-ui-selftest.cjs
+3. Browser-Test der mobilen Core-/Denkaufwand-Menues
+4. Nativer/Compose-Preflight
+5. Android Hell-/Dunkelmodus:
+   * Core-Menue zeigt nur die Core-Auswahl.
+   * Denkaufwand zeigt Erklaerung, An/Aus oder Core-Stufen.
+   * On/Off speichert und bleibt nach Reload erhalten.
+   * Core-Wechsel erzeugt keine falschen Denkstufen.
+   * Core-Ladezustand bleibt erkennbar.
+
+GRENZEN
+Kein Datenbankschema, keine Accountmigration, keine Modell-
+oder Modelfile-Aenderung, keine Aenderung an FIFO, Rollen,
+KI-Prompts, Voice oder bestehenden Chatverlaeufen.
+Die neue Version gilt erst nach dem Merge.
