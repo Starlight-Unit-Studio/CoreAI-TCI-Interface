@@ -1,0 +1,18 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.76
+09.11.2026
+
+- Normale Einstellungen: Alles aus den ChatGPT-Referenzbildern und
+  selbst entwickelte, benutzerfreundliche Smart-Funktionen.
+- Expertenschalter gilt nur fuer technische Rohwerte und direkte
+  Feinabstimmung, nicht fuer Studio-eigene Funktionen allgemein.
+- Smarter Kontextfenster-Slider, Core-Standard und Hardwareabschaetzung
+  sind normale Einstellungen, kein Expert-Feld.
+- Einfache Anzeigeoptionen fuer Telemetrie und Live-Browserbildfolge
+  bleiben ohne Expertenschalter sichtbar.
+- Sechs technische Expert-Felder: eigener System-Prompt, Tokenbudget,
+  Temperatur, Core-Pfad, numerisches Memory-Faktenlimit und numerische
+  Relevanz. Echte freie num_ctx-Zahleneingabe existiert noch nicht.
+- Alten Selbsttest repariert: erwartet nicht mehr 9 statt 6 Expertfelder.
+- Browser- und Strukturselbsttests pruefen normale Sichtbarkeit und
+  unveraenderte gespeicherte technische Werte.
+- Keine API-, Datenbank-, Modell-, Modelfile- oder FIFO-Aenderung.
