@@ -76,4 +76,15 @@ assert.ok(css.includes('.cfg-nav.is-open'));
 assert.ok(css.includes('.cfg-menu-backdrop:not([hidden])'));
 assert.ok(css.includes('prefers-reduced-motion: reduce'));
 assert.ok(css.includes('.cfg-nav-group[hidden]'));
+// Protect against the legacy horizontal mobile tab bar overriding the drawer.
+const drawerRules = css.slice(css.indexOf('@media (max-width: 980px) {'));
+assert.ok(drawerRules.includes('  .settings-body .cfg-nav {') &&
+  drawerRules.includes('    flex-direction: column;') &&
+  drawerRules.includes('    box-sizing: border-box;') &&
+  drawerRules.includes('    overflow-x: hidden;'),
+  'mobile navigation must be a vertically stacked, width-bounded drawer');
+assert.ok(drawerRules.includes('  .settings-body .cfg-nav-group {') &&
+  drawerRules.includes('    width: 100%;') &&
+  drawerRules.includes('  .settings-body .cfg-tab {'),
+  'mobile groups and tabs fill a single column without horizontal clipping');
 console.log('CoreAI settings: 25 categories, General controls, 10 in-category Expert controls, honest planning pages, mobile menu and role-gated admin wiring OK');
