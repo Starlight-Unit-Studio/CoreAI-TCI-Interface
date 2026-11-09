@@ -1,0 +1,15 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.83
+09.11.2026
+
+- Einstellungen > Benachrichtigungen hat jetzt alle Kategorien der zwei ChatGPT-Screenshots,
+  in deren Reihenfolge. In 0.6.81 fehlten vier von zehn.
+- Neue Funktionen (Marketing der Vorlage) ist echt: einmal je installierter CoreAI-Version
+  erfaehrt jedes Konto, dass neue Werkzeuge und Funktionen bereitstehen (Standard Push).
+  Frische Installation merkt sich nur die Version, ein Zurueckrollen bleibt still, und nur
+  ein Seitenaufruf verschickt (Vergleichen und Tauschen).
+- Code-Aufgaben (Codex), Personalisierte Tipps und Updates zu Anfragen: grau "In
+  Vorbereitung" mit den Standards der Vorlage; senden nichts.
+- Antworten heisst jetzt Reaktionen wie in der Vorlage; volle Beschreibungen.
+- Nicht uebernommen: Link "Aufgaben verwalten" (CoreAI hat noch keine Aufgaben).
+- Tests: notifications-selftest.php (auch MariaDB), notifications-ui-selftest.cjs.
+  Keine Migration, keine Aenderung an Cores, Modelfile, FIFO oder Rechten.

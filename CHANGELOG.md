@@ -1,5 +1,15 @@
 # CoreAI: TCI Interface
 
+## 0.6.83 - 09.11.2026
+
+- **Settings > Benachrichtigungen now has every category of the two ChatGPT reference screenshots**, in their order. 0.6.81 had left out four of the ten:
+  - **Neue Funktionen** (the reference's Marketing) is real: once per installed CoreAI version, every account is told that new tools and features are ready (default Push, like the reference). A fresh install only remembers its version, a rollback is remembered silently, and only the page view that moves the stored version sends (compare and swap), so two page views at once announce it once.
+  - **Code-Aufgaben** (Codex), **Personalisierte Tipps** and **Updates zu Anfragen** are shown greyed as **In Vorbereitung** with the reference defaults (Push; Push und E-Mail; E-Mail). CoreAI has no background code tasks, tip engine or workspace yet, so they never send.
+  - **Antworten** is now called **Reaktionen** as in the reference. Bibliothek, Projekte, Workspace-Anfragen, Sicherheit and CoreAI-Updates use full descriptions like the reference.
+  - Not taken over: the link "Aufgaben verwalten", because CoreAI has no tasks yet.
+- Tests: `notifications-selftest.php` (12 categories with defaults, the order on the page, Neue Funktionen: first run, once per version, each account's own choice, no guests, rollback, MariaDB compare and swap) and `notifications-ui-selftest.cjs` (labels, order, defaults, saving Neue Funktionen).
+- No database migration (the category column takes the new names), no change to Cores, Modelfile, FIFO or account rights.
+
 ## 0.6.82 - 09.11.2026
 
 - **Manual SMTP setup in Admin Core** (owner only): **Admin Core > Betrieb > E-Mail-Versand** holds server, encryption, port, user, password, sender address and sender name, with **SMTP SPEICHERN**, **TESTMAIL SENDEN** (to the owner's own address) and **ENTFERNEN**. Until now E-Mail only worked through `COREUI_SMTP_*`, which the Docker installation does not even pass to PHP, so E-Mail notifications were effectively unavailable.

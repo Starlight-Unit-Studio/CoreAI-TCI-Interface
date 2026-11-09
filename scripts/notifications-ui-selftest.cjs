@@ -20,9 +20,11 @@ const types = {'.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript
 function notifyServer(options) {
   const state = {
     ok: true, ready: true, owner: !!options.owner, csrf_token: 'tok', answer_seconds: 45,
-    prefs: {answers: 'push', security: 'email', updates: 'push', tasks: 'push', agents: 'email', library: 'email', projects: 'email', workspace: 'email'},
-    categories: {answers: {planned: false}, security: {planned: false}, updates: {planned: false, owner: true}, tasks: {planned: true},
-      agents: {planned: true}, library: {planned: true}, projects: {planned: true}, workspace: {planned: true}},
+    prefs: {answers: 'push', security: 'email', updates: 'push', news: 'push', tasks: 'push', agents: 'email', library: 'email', projects: 'email',
+      workspace: 'email', code: 'push', tips: 'push,email', requests: 'email'},
+    categories: {answers: {planned: false}, security: {planned: false}, updates: {planned: false, owner: true}, news: {planned: false},
+      tasks: {planned: true}, agents: {planned: true}, library: {planned: true}, projects: {planned: true}, workspace: {planned: true},
+      code: {planned: true}, tips: {planned: true}, requests: {planned: true}},
     push: {available: options.pushAvailable !== false, public_key: 'BP4z9KsN6nGRTbVYI_c7VJSPQTBtkgcy27mlmlMoZIIgDll6e3vCYLocInmYWAmS6TlzAC8wEqKK6PBru3jl7A8',
       devices: options.devices || []},
     email: {available: options.mail !== false, address: 'lena@example.test'},
@@ -132,10 +134,25 @@ const shown = (page, id) => page.isVisible('#' + id);
     assert.equal(await page.inputValue('#notify-answers'), 'push');
     assert.equal(await page.inputValue('#notify-security'), 'email');
     assert.equal(await page.isHidden('.notify-row[data-category="updates"]'), true, 'Inhaber-only row hidden for a Nutzer');
-    for (const id of ['tasks', 'agents', 'library', 'projects', 'workspace']) {
+    for (const id of ['tasks', 'agents', 'library', 'projects', 'workspace', 'code', 'tips', 'requests']) {
       assert.equal(await page.isDisabled('#notify-' + id), true, id + ' is planned');
       assert.match(await page.textContent('.notify-row[data-category="' + id + '"] .notify-planned'), /IN VORBEREITUNG/);
     }
+    // 0.6.83: every category of the reference page, in its order, with its defaults.
+    assert.deepEqual(await page.$$eval('.notify-row', rows => rows.map(r => r.querySelector('strong').textContent)),
+      ['Agenten', 'Aufgaben', 'Bibliothek', 'Code-Aufgaben', 'CoreAI-Updates', 'Neue Funktionen', 'Personalisierte Tipps', 'Projekte',
+        'Reaktionen', 'Sicherheit', 'Updates zu Anfragen', 'Workspace-Anfragen']);
+    assert.deepEqual(await page.$$eval('.notify-select', l => l.map(x => [x.id.slice(7), x.value])), [['agents', 'email'], ['tasks', 'push'],
+      ['library', 'email'], ['code', 'push'], ['updates', 'push'], ['news', 'push'], ['tips', 'push,email'], ['projects', 'email'],
+      ['answers', 'push'], ['security', 'email'], ['requests', 'email'], ['workspace', 'email']]);
+    assert.equal(await page.isDisabled('#notify-news'), false, 'Neue Funktionen is real for every account');
+    assert.equal(await page.textContent('.notify-row[data-category="news"] small'),
+      'Bleib über neue Werkzeuge und Funktionen von CoreAI auf dem Laufenden. Kommt einmal, nachdem ein Update installiert wurde.');
+    assert.equal(await page.textContent('.notify-row[data-category="answers"] small'),
+      'Erhalte eine Benachrichtigung, wenn Maras Antworten etwas länger dauern, z. B. bei Recherchen oder der Erstellung von Bildern.');
+    await page.selectOption('#notify-news', 'email');
+    await page.waitForFunction(() => document.getElementById('settingsSaveState').textContent === 'GESPEICHERT');
+    assert.deepEqual(server.posts.filter(p => p.action === 'prefs').pop(), {action: 'prefs', prefs: {news: 'email'}});
     await context.addInitScript(() => { window.__answer = 'granted'; });
     await page.evaluate(() => { window.__answer = 'granted'; });
     await page.click('#notifyPushEnable');

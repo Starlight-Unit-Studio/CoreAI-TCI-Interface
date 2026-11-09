@@ -111,8 +111,13 @@ n_test(coreui_notify_channels('email, push') === 'push,email' && coreui_notify_c
 n_test(coreui_notify_snippet("Hier ist es:\n```php\necho 1;\n```\n**Fertig** [BILD: a fox] und gut.") === 'Hier ist es: Fertig und gut.', 'snippet');
 n_test(mb_strlen(coreui_notify_snippet(str_repeat('Wort ', 100), 50)) === 50, 'snippet length');
 $cats = coreui_notify_categories();
-n_test(array_keys(array_filter($cats, static fn($c) => !$c['planned'])) === ['answers', 'security', 'updates'], 'three real categories');
+n_test(array_keys(array_filter($cats, static fn($c) => !$c['planned'])) === ['answers', 'security', 'updates', 'news'], 'four real categories');
 n_test($cats['answers']['default'] === 'push' && $cats['security']['default'] === 'email' && $cats['updates']['owner'] === true, 'defaults');
+// 0.6.83: all ten categories of the reference page (plus Sicherheit and CoreAI-Updates), with its defaults.
+n_test(count($cats) === 12 && array_keys(array_filter($cats, static fn($c) => $c['planned']))
+  === ['tasks', 'agents', 'library', 'projects', 'workspace', 'code', 'tips', 'requests'], 'eight planned categories');
+n_test($cats['news']['default'] === 'push' && !$cats['news']['owner'] && $cats['code']['default'] === 'push'
+  && $cats['tips']['default'] === 'push,email' && $cats['requests']['default'] === 'email', 'defaults of the reference page');
 
 // --- With a database (SQLite) -------------------------------------------------------------------------
 $pdo = new PDO('sqlite::memory:');
@@ -131,8 +136,9 @@ $k2 = coreui_push_vapid($pdo);
 n_test($k1['public'] === $k2['public'], 'one VAPID key per server');
 n_test(str_contains((string)coreui_notify_setting($pdo, 'push_vapid'), 'BEGIN'), 'kept in stu_app_settings');
 
-n_test(coreui_notify_prefs($pdo, 2) === ['answers' => 'push', 'security' => 'email', 'updates' => 'push', 'tasks' => 'push',
-  'agents' => 'email', 'library' => 'email', 'projects' => 'email', 'workspace' => 'email'], 'defaults without a choice');
+n_test(coreui_notify_prefs($pdo, 2) === ['answers' => 'push', 'security' => 'email', 'updates' => 'push', 'news' => 'push', 'tasks' => 'push',
+  'agents' => 'email', 'library' => 'email', 'projects' => 'email', 'workspace' => 'email', 'code' => 'push', 'tips' => 'push,email',
+  'requests' => 'email'], 'defaults without a choice');
 $saved = coreui_notify_save($pdo, 2, ['answers' => 'push,email', 'security' => '', 'updates' => 'email', 'tasks' => 'email',
   'unknown' => 'push', 'agents' => ['x']], false);
 n_test($saved['answers'] === 'push,email' && $saved['security'] === '', 'saved');
@@ -226,6 +232,24 @@ n_test(coreui_notify_update_available($pdo, ['available' => true, 'latest_versio
 n_test(count($pushed) === 1 && $pushed[0][1]['title'] === 'CoreAI 0.6.82 ist bereit' && $mails[0][0] === 'owner@example.test', 'to the Inhaber by push and mail');
 n_test(coreui_notify_update_available($pdo, ['available' => true, 'latest_version' => '0.6.82']) === false && count($pushed) === 1, 'once per version');
 n_test(coreui_notify_update_available($pdo, ['available' => true, 'latest_version' => '0.6.83']) === true, 'the next version again');
+
+// Neue Funktionen (0.6.83): the first run only remembers; a new version tells every account once; a rollback stays quiet.
+$pushed = []; $mails = [];
+n_test(coreui_notify_news_installed($pdo, '0.6.82') === false && $pushed === [] && coreui_notify_setting($pdo, 'notify_news_version') === '0.6.82',
+  'news: first run only remembers the version');
+n_test(coreui_notify_news_installed($pdo, '0.6.82') === false && coreui_notify_news_installed($pdo, "0.6.83'; --") === false
+  && coreui_notify_news_installed($pdo, '') === false && $pushed === [], 'news: same version or no real version number: nothing');
+n_test(coreui_notify_news_installed($pdo, '0.6.83') === true, 'news: a new version is announced');
+n_test(count($pushed) === 2 && $pushed[0][1]['title'] === 'CoreAI 0.6.83 ist da' && $pushed[0][1]['url'] === './app.html'
+  && $pushed[0][0] === $ep('owner') && $pushed[1][0] === $ep('l1') && $mails === [], 'news: every account by Push (default), not the guest');
+n_test(coreui_notify_news_installed($pdo, '0.6.83') === false && count($pushed) === 2, 'news: once per version');
+coreui_notify_save($pdo, 2, ['news' => 'email'], false);
+$pushed = []; $mails = [];
+n_test(coreui_notify_news_installed($pdo, '0.6.84') === true && count($pushed) === 1 && $pushed[0][0] === $ep('owner')
+  && count($mails) === 1 && $mails[0][0] === 'lena@example.test' && $mails[0][1] === 'CoreAI 0.6.84 ist da', 'news: each account\'s own choice');
+$pushed = []; $mails = [];
+n_test(coreui_notify_news_installed($pdo, '0.6.80') === false && $pushed === [] && $mails === []
+  && coreui_notify_setting($pdo, 'notify_news_version') === '0.6.80', 'news: a rollback is remembered silently');
 unset($GLOBALS['COREUI_NOTIFY_INLINE'], $GLOBALS['COREUI_NOTIFY_TEST_PUSH'], $GLOBALS['COREUI_NOTIFY_TEST_MAIL']);
 
 // --- MariaDB (COREUI_SELFTEST_DB=1, never the live database): the MySQL statements ------------------
@@ -256,6 +280,16 @@ if (getenv('COREUI_SELFTEST_DB') === '1') {
     $GLOBALS['COREUI_NOTIFY_TEST_MAIL'] = static function (): void {};
     coreui_notify_answer($my, $tu, 'cs_0123456789abcdef01234567', $msgId, 'Fertig.', 'Mara');
     n_test(count($sentMy) === 1 && $sentMy[0]['title'] === 'Mara hat geantwortet', 'MariaDB: TIMESTAMPDIFF finds the long answer');
+    // 0.6.83: the compare and swap of Neue Funktionen on MariaDB (UPDATE ... WHERE value = old, rowCount).
+    $newsBefore = coreui_notify_setting($my, 'notify_news_version');
+    try {
+      coreui_notify_setting_put($my, 'notify_news_version', '0.0.1');
+      $sentMy = [];
+      n_test(coreui_notify_news_installed($my, '0.0.2') === true && coreui_notify_news_installed($my, '0.0.2') === false, 'MariaDB: news once');
+    } finally {
+      if ($newsBefore === null) $my->prepare("DELETE FROM stu_app_settings WHERE `k` = 'notify_news_version'")->execute();
+      else coreui_notify_setting_put($my, 'notify_news_version', $newsBefore);
+    }
     unset($GLOBALS['COREUI_NOTIFY_INLINE'], $GLOBALS['COREUI_NOTIFY_TEST_PUSH'], $GLOBALS['COREUI_NOTIFY_TEST_MAIL']);
     $my->prepare('DELETE FROM stu_chat_messages WHERE id = ?')->execute([$msgId]);
     $dbChecked = true;
@@ -275,7 +309,12 @@ $auth = $read('api/auth.php');
 n_test(str_contains($auth, "coreui_notify_security(\$pdo, (int)\$row['id'], 'login', coreui_auth_device_label((string)(\$_SERVER['HTTP_USER_AGENT'] ?? '')));")
   && substr_count($auth, "'password', '');") === 2, 'auth: sign-in and both password resets');
 n_test(str_contains($read('api/account_security.php'), "coreui_notify_security(\$pdo, \$uid, 'password', '');"), 'password change');
-n_test(str_contains($read('api/update.php'), 'coreui_notify_update_available(stu_pdo(), $state);'), 'update status');
+n_test(str_contains($read('api/update.php'), 'coreui_notify_update_available(stu_pdo(), $state);')
+  && str_contains($read('api/update.php'), "coreui_notify_news_installed(stu_pdo(), (string)(\$state['current_version'] ?? ''));"), 'update status');
+// 0.6.83: the settings page shows every category, in the order of the reference page.
+preg_match_all('~<div class="notify-row[^"]*" data-category="([a-z]+)"~', $read('settings.html'), $rowsFound);
+n_test($rowsFound[1] === ['agents', 'tasks', 'library', 'code', 'updates', 'news', 'tips', 'projects', 'answers', 'security', 'requests', 'workspace'],
+  'settings: all categories in order: ' . implode(',', $rowsFound[1]));
 foreach (['config/nginx.conf.template', 'config/runtime/nginx.conf.template'] as $f) {
   $conf = $read($f);
   n_test(str_contains($conf, '|composer_tools|notifications|voice_input|') && str_contains($conf, 'location = /sw.js {')
@@ -301,4 +340,4 @@ foreach (['scripts/preflight.sh', 'scripts/preflight-native.sh'] as $f) {
 
 echo "CoreAI notifications: RFC 8291 example byte for byte, round trip, VAPID ES256, only browser push services, key once in the database, "
   . "push request, categories and saving, devices, dispatch with removal and failures, mail only to real addresses, triggers "
-  . "(long answer, sign-in, password, update once per version), wiring OK" . ($dbChecked ? ', MariaDB statements OK' : ', MariaDB part skipped (COREUI_SELFTEST_DB not set)') . "\n";
+  . "(long answer, sign-in, password, update once per version, news once per installed version), wiring OK" . ($dbChecked ? ', MariaDB statements OK' : ', MariaDB part skipped (COREUI_SELFTEST_DB not set)') . "\n";

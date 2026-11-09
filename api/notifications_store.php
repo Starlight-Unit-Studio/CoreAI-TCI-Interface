@@ -9,7 +9,11 @@ declare(strict_types=1);
  *   answers   Mara's answer took a while (research, images, long work): default Push
  *   security  a new sign-in, a changed password: default E-Mail
  *   updates   a new CoreAI version is ready to install (Inhaber only): default Push
+ *   news      0.6.83: CoreAI was updated, new tools and features (every account, once per
+ *             installed version): default Push
  * Planned categories are shown greyed in the settings ("In Vorbereitung") and never fire.
+ * 0.6.83: all ten categories of the reference page are present (Codex as code, Marketing as
+ * news, Personalisierte Tipps as tips, Updates zu Anfragen as requests).
  *
  * Push goes to every browser of the account that switched it on (api/web_push.php); a browser
  * that is gone (404/410) is removed. E-Mail uses the existing SMTP mailer and only when it is
@@ -29,11 +33,15 @@ function coreui_notify_categories(): array {
     'answers' => ['default' => 'push', 'planned' => false, 'owner' => false],
     'security' => ['default' => 'email', 'planned' => false, 'owner' => false],
     'updates' => ['default' => 'push', 'planned' => false, 'owner' => true],
+    'news' => ['default' => 'push', 'planned' => false, 'owner' => false],
     'tasks' => ['default' => 'push', 'planned' => true, 'owner' => false],
     'agents' => ['default' => 'email', 'planned' => true, 'owner' => false],
     'library' => ['default' => 'email', 'planned' => true, 'owner' => false],
     'projects' => ['default' => 'email', 'planned' => true, 'owner' => false],
     'workspace' => ['default' => 'email', 'planned' => true, 'owner' => false],
+    'code' => ['default' => 'push', 'planned' => true, 'owner' => false],
+    'tips' => ['default' => 'push,email', 'planned' => true, 'owner' => false],
+    'requests' => ['default' => 'email', 'planned' => true, 'owner' => false],
   ];
 }
 
@@ -352,5 +360,37 @@ function coreui_notify_update_available(PDO $pdo, array $state): bool {
   foreach ($owners as $owner) {
     coreui_notify_later(static fn() => coreui_notify_dispatch($pdo, (int)$owner, 'updates', $message));
   }
+  return true;
+}
+
+/**
+ * Neue Funktionen (0.6.83): once per installed version, every account hears that CoreAI was
+ * updated. The first run only remembers the version (no message on a fresh install), and an
+ * older version (a rollback) is remembered silently. Only the request that moves the stored
+ * version (compare and swap) sends, so two page views at once announce it once.
+ */
+function coreui_notify_news_installed(PDO $pdo, string $version): bool {
+  if (preg_match('~^\d+\.\d+\.\d+$~', $version) !== 1 || !coreui_notify_schema_ready($pdo)) return false;
+  $known = coreui_notify_setting($pdo, 'notify_news_version');
+  if ($known === null) {
+    try { coreui_notify_setting_put($pdo, 'notify_news_version', $version, true); } catch (Throwable $e) {}
+    return false;
+  }
+  if ($known === $version) return false;
+  try {
+    $st = $pdo->prepare('UPDATE stu_app_settings SET `value` = ? WHERE `k` = ? AND `value` = ?');
+    $st->execute([$version, 'notify_news_version', $known]);
+    if ($st->rowCount() !== 1) return false;
+  } catch (Throwable $e) {
+    return false;
+  }
+  if (version_compare($version, $known, '<=')) return false;
+  $users = $pdo->query('SELECT id FROM stu_users WHERE is_guest = 0 ORDER BY id')->fetchAll(PDO::FETCH_COLUMN) ?: [];
+  $message = ['title' => 'CoreAI ' . $version . ' ist da',
+    'body' => 'CoreAI wurde aktualisiert. Neue Werkzeuge, Funktionen und Verbesserungen stehen bereit.',
+    'url' => './app.html', 'tag' => 'news'];
+  coreui_notify_later(static function () use ($pdo, $users, $message): void {
+    foreach ($users as $uid) coreui_notify_dispatch($pdo, (int)$uid, 'news', $message);
+  });
   return true;
 }
