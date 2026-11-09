@@ -520,6 +520,10 @@ html {
   --pref-content-font: 16px;
   --pref-code-font: 13px;
 }
+html.pref-custom-background body,
+html.pref-custom-background[data-coreui-theme="dark"] body {
+  background: var(--pref-surface, var(--bg));
+}
 html.pref-motif-quiet body,
 html.pref-motif-quiet[data-coreui-theme="dark"] body {
   background: var(--pref-surface, var(--bg));
