@@ -9282,33 +9282,38 @@ a.insight-file-name:hover { text-decoration: underline; }
 /* 0.6.75: real account-bound Denkaufwand, not a mock six-step slider.
    The selected Core decides how many named effort levels are offered. */
 .reason-effort-chip {
-  box-sizing: border-box;
+  /* Same angular TCI geometry and typography as .core-mode-chip. */
   display: inline-flex;
+  min-height: 28px;
   flex: 0 0 auto;
   align-items: center;
-  justify-content: center;
-  min-height: 30px;
   gap: 6px;
-  padding: 5px 9px;
-  border: 1px solid var(--line-strong);
-  border-radius: 9px;
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 0;
   background: var(--panel-soft);
   color: var(--txt);
   cursor: pointer;
-  font: 700 10px/1.25 "Rajdhani", "Segoe UI", sans-serif;
-  letter-spacing: .04em;
+  font-family: "Share Tech Mono", monospace;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
   white-space: nowrap;
-  transition: background .16s ease, border-color .16s ease;
+  clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
+  transition: border-color 160ms ease, background 160ms ease;
 }
-.reason-effort-chip strong { color: var(--cx); font-weight: 700; }
+.reason-effort-chip strong { color: var(--cx); font-weight: 400; }
 .reason-effort-chip svg {
-  width: 12px; height: 12px; flex: none;
-  fill: none; stroke: currentColor; stroke-width: 2;
-  stroke-linecap: round; stroke-linejoin: round;
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
 }
 .reason-effort-chip:hover:not(:disabled),
 .reason-effort-chip[aria-expanded="true"] {
-  background: var(--panel-cx); border-color: var(--cx);
+  border-color: var(--line-strong);
+  background: var(--panel-cx);
 }
 .reason-effort-chip:disabled { cursor: progress; opacity: .62; }
 .reason-effort-chip:focus-visible,
@@ -9376,7 +9381,7 @@ a.insight-file-name:hover { text-decoration: underline; }
   .composer-footer-line #composerSendKeyHint,
   .composer-footer-line > i,
   .composer-footer-line .composer-glyphs { display: none; }
-  .reason-effort-chip { min-height: 30px; padding: 4px 8px; font-size: 10px; }
+  .reason-effort-chip { min-height: 28px; padding: 4px 10px; font-size: 10px; }
   .reason-effort-menu {
     right: 8px;
     bottom: calc(max(10px, env(safe-area-inset-bottom)) + 40px);
