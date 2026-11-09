@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.70: dynamischer Quantum CoreAI Bildvermerk ohne Studio-Logo.
+# CoreAI: TCI Interface 0.6.71: dynamischer Quantum CoreAI Bildvermerk ohne Studio-Logo.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -87,6 +87,7 @@ UI_FILES=(
   css/artifacts.css
   css/settings.css
   css/coreui-theme.css
+  js/coreui-settings-menu.js
   js/coreui-settings-tabs.js
   scripts/settings-tabs-ui-selftest.cjs
   scripts/theme-preferences-selftest.cjs
@@ -1190,10 +1191,10 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     else
       warn 'Bildeditor: Playwright fehlt. Browser-Selbsttest uebersprungen (keine Live-Abnahme).'
     fi
-    # 0.5.79: settings page with tabs and Admin Core; needs Playwright for Node.
+    # 0.6.71: category navigation, expert mode and standalone Admin Core; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/settings-tabs-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Einstellungen: Tabs, Admin Core nach Rolle, Speichern, lesbare Schrift und Handy-Breite geprueft.'
+        ok 'Einstellungen: Kategorien, Suche, Expertenmodus, mobiles Menue und eigenstaendiger Admin Core geprueft.'
       else
         fail 'Einstellungen: Tab-Oberflaechentest fehlgeschlagen.'
       fi
@@ -1537,12 +1538,12 @@ else
   fail 'CoreAI: TCI Interface-Einstellungen sind nicht erreichbar. Fuehre scripts/stack.sh refresh-runtime und danach scripts/stack.sh restart web aus.'
 fi
 
-# 0.5.79: Admin Core is a tab group of the settings page; the old address forwards there.
-if curl -fsS --max-time 10 "http://127.0.0.1:${COREUI_HTTP_PORT}/settings.html" | grep -F 'id="adminNavGroup"' >/dev/null \
-    && curl -fsS --max-time 10 "http://127.0.0.1:${COREUI_HTTP_PORT}/admin/index.html" | grep -F 'ADMIN CORE' >/dev/null; then
-  ok 'Admin Core wird als Tab-Gruppe der Einstellungen ausgeliefert, die alte Adresse leitet dorthin.'
+# 0.6.71: Admin Core is a separate page, authorized per account and server-side API.
+if curl -fsS --max-time 10 "http://127.0.0.1:${COREUI_HTTP_PORT}/settings.html" | grep -F 'id="adminSettingsLink"' >/dev/null \
+    && curl -fsS --max-time 10 "http://127.0.0.1:${COREUI_HTTP_PORT}/admin/index.html" | grep -F 'id="adminAccessGate"' >/dev/null; then
+  ok 'Einstellungen mit Rollen-Link und eigenstaendige, zugangsgeschuetzte Admin-Core-Seite ausgeliefert.'
 else
-  fail 'Admin Core ist nicht erreichbar.'
+  fail 'Admin-Core-Seite oder getrennte Einstellungen sind nicht erreichbar.'
 fi
 
 SESSION_ROUTE_STATUS="$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' \
