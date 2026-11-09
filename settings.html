@@ -103,7 +103,7 @@
                   <button class="cfg-tab" type="button" role="tab" id="tab-sicherheit" data-view="sicherheit" aria-controls="view-sicherheit" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-shield" /></svg><span>Sicherheit und Anmeldung</span></button>
                   <button class="cfg-tab" type="button" role="tab" id="tab-konto" data-view="konto" aria-controls="view-konto" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-account" /></svg><span>Konto</span></button>
                   <button class="cfg-tab is-planned" type="button" role="tab" id="tab-archivierte-chats" data-view="archivierte-chats" aria-controls="view-archivierte-chats" aria-selected="false" tabindex="-1" title="In Vorbereitung"><svg aria-hidden="true"><use href="#i-archive" /></svg><span>Archivierte Chats</span><small class="cfg-nav-state">GEPLANT</small></button>
-                  <button class="cfg-tab is-planned" type="button" role="tab" id="tab-stimme" data-view="stimme" aria-controls="view-stimme" aria-selected="false" tabindex="-1" title="In Vorbereitung"><svg aria-hidden="true"><use href="#i-mic" /></svg><span>Stimme</span><small class="cfg-nav-state">GEPLANT</small></button>
+                  <button class="cfg-tab" type="button" role="tab" id="tab-stimme" data-view="stimme" aria-controls="view-stimme" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-mic" /></svg><span>Stimme</span></button>
                   <button class="cfg-tab is-planned" type="button" role="tab" id="tab-speicher" data-view="speicher" aria-controls="view-speicher" aria-selected="false" tabindex="-1" title="In Vorbereitung"><svg aria-hidden="true"><use href="#i-folder" /></svg><span>Speicher</span><small class="cfg-nav-state">GEPLANT</small></button>
                   <button class="cfg-tab" type="button" role="tab" id="tab-personalisierung" data-view="personalisierung" aria-controls="view-personalisierung" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-sliders" /></svg><span>Personalisierung</span></button>
                   <button class="cfg-tab is-planned" type="button" role="tab" id="tab-pets" data-view="pets" aria-controls="view-pets" aria-selected="false" tabindex="-1" title="In Vorbereitung"><svg aria-hidden="true"><use href="#i-spark" /></svg><span>Pets</span><small class="cfg-nav-state">GEPLANT</small></button>
@@ -425,15 +425,8 @@
                 <span class="setting-copy"><strong>LANGZEITGEDÄCHTNIS VERWENDEN</strong><small>Persönliche und charakterbezogene Fakten in neue Antworten einbeziehen.</small></span>
                 <span class="settings-switch"><input id="aiMemoryEnabled" type="checkbox" /><i aria-hidden="true"></i></span>
               </label>
-              <label class="setting-row" for="voiceAutoRead" id="voiceAutoReadRow" hidden>
-                <span class="setting-copy"><strong>ANTWORTEN AUTOMATISCH VORLESEN</strong><small id="voiceAutoReadNote">Deine CoreAI liest neue Antworten auf Wunsch automatisch vor.</small></span>
-                <span class="settings-switch"><input id="voiceAutoRead" type="checkbox" /><i aria-hidden="true"></i></span>
-              </label>
-              <label class="settings-field voice-terms-field" for="voiceTerms" id="voiceTermsRow" hidden>
-                <span><strong>NAMEN UND BEGRIFFE FÜR STIMMSEQUENZEN</strong><small>Ein Begriff pro Zeile: Orte, Namen oder Fachwörter, die deine CoreAI in deinen Stimmsequenzen möglicherweise falsch erkennt. Damit unterstützt du ihre Mitschrift. Höchstens 40.</small></span>
-                <textarea id="voiceTerms" rows="4" maxlength="2400" spellcheck="false" autocomplete="off" placeholder="Bergisch Gladbach"></textarea>
-                <em id="voiceTermsState" role="status" aria-live="polite"></em>
-              </label>
+
+
               <div class="settings-local-note" id="thinkingMovedNote">
                 <span aria-hidden="true">◇</span>
                 <p>Core und Denken schaltest du direkt im Chat: Tippe unter dem Eingabefeld auf den Core-Chip. Die Wahl gilt für alle deine Chats.</p>
@@ -693,18 +686,21 @@
         </section>
 
         <!-- CATEGORY FOUNDATION: stimme (no fake settings) -->
-        <section class="cfg-view cfg-view-planned" id="view-stimme" role="tabpanel" aria-labelledby="tab-stimme" tabindex="-1" hidden>
-          <header class="cfg-view-head"><div><span class="cfg-kicker">PERSÖNLICH // AUSBAUPLAN</span><h2>Stimme</h2><p>Stimmsequenzen, Live-Gespräch, Vorlesen und spätere Stimmen-Auswahl verwalten.</p></div></header>
-          <div class="cfg-cards">
-            <section class="settings-panel cfg-card wide cfg-planned-card">
-              <span class="cfg-planned-state">IN VORBEREITUNG</span>
-              <h3>Diese Unterseite ist vorbereitet</h3>
-              <p>Stimmsequenzen und Live-Gespräch funktionieren schon im Chat. Einzelne Audiooptionen stehen derzeit noch im KI-Profil.</p>
-              <p class="cfg-planned-hint">Es werden hier noch keine neuen Kontodaten gespeichert und keine zusätzlichen Dienste aktiviert.</p>
-              
-              <a class="settings-action" href="./app.html">Zum Core Channel</a>
-            </section>
-          </div>
+        <section class="cfg-view" id="view-stimme" role="tabpanel" aria-labelledby="tab-stimme" tabindex="-1" hidden>
+          <header class="cfg-view-head"><div><span class="cfg-kicker">PERSÖNLICH // STIMME</span><h2>Stimme</h2><p>Maras bestehende Sprach- und Vorlesefunktionen konfigurieren. Live-Gespräche startest du weiterhin im Chat.</p></div></header>
+          <section class="settings-panel cfg-card wide" aria-label="Vorlesen und Spracherkennung">
+              <label class="setting-row" for="voiceAutoRead" id="voiceAutoReadRow" hidden>
+                <span class="setting-copy"><strong>ANTWORTEN AUTOMATISCH VORLESEN</strong><small id="voiceAutoReadNote">Deine CoreAI liest neue Antworten auf Wunsch automatisch vor.</small></span>
+                <span class="settings-switch"><input id="voiceAutoRead" type="checkbox" /><i aria-hidden="true"></i></span>
+              </label>
+              <label class="settings-field voice-terms-field" for="voiceTerms" id="voiceTermsRow" hidden>
+                <span><strong>NAMEN UND BEGRIFFE FÜR STIMMSEQUENZEN</strong><small>Ein Begriff pro Zeile: Orte, Namen oder Fachwörter, die deine CoreAI in deinen Stimmsequenzen möglicherweise falsch erkennt. Damit unterstützt du ihre Mitschrift. Höchstens 40.</small></span>
+                <textarea id="voiceTerms" rows="4" maxlength="2400" spellcheck="false" autocomplete="off" placeholder="Bergisch Gladbach"></textarea>
+                <em id="voiceTermsState" role="status" aria-live="polite"></em>
+              </label>
+            <p class="cfg-card-note">Die Stimmsequenz-Begriffsliste und das automatische Vorlesen verwenden die vorhandenen Kontofunktionen. Weitere Stimmen werden hier erst angeboten, wenn die Auswahl tatsächlich unterstützt wird.</p>
+            <a class="settings-action" href="./app.html">ZUM CORE CHANNEL</a>
+          </section>
         </section>
 
         <!-- CATEGORY FOUNDATION: speicher (no fake settings) -->
