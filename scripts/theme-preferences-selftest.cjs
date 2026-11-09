@@ -186,7 +186,6 @@ for (const selector of [
   '.insight-chip.is-open', '.insight-sheet .insight-box', '.insight-box',
   '.drawer .drawer-header', '.drawer .drawer-footer', '.drawer .core-ticker',
   '.settings-body .about-copy .copyright-line',
-  '.settings-body .about-copy .copyright-line strong',
   '.settings-body .settings-footer'
 ]) {
   assert.ok(
@@ -205,12 +204,13 @@ for (const declaration of [
   'background: #101d34;',
   'background: var(--theme-info-surface);',
   'background: #0a172c;',
-  'color: #f4f7ff;',
   'color: #f4c686;',
   'color: var(--theme-info-muted);'
 ]) {
   assert.ok(contrastRules.includes(declaration), 'Missing readable surface: ' + declaration);
 }
+// 0.6.70 (operator): the owner credit uses the same copyright color as the line, no special case.
+assert.ok(!contrastRules.includes('.copyright-line strong'), 'no special color for the owner credit');
 console.log('CoreAI contrast regression: info tabs, drawer and copyright OK');
 
 
@@ -261,5 +261,107 @@ for (const id of ['prefMotif', 'prefAccent', 'prefBackground', 'prefForeground',
 }
 assert.ok(settings.includes('appearanceFields') && settings.includes('value.backgroundLight'),
   'appearance controls use the local save pipeline');
+
+// 0.6.80: Schriftart, Hell/Dunkel getrennt, motif export/import, smart punctuation.
+const look = fixture();
+assert.equal(look.prefs.load().fontFamily, 'coreai', 'CoreAI font by default');
+assert.equal(look.prefs.load().separateModes, false);
+assert.equal(look.prefs.load().smartPunctuation, false, 'smart punctuation is opt-in');
+assert.equal(look.rootEl.style['--coreui-font'], '"Rajdhani"');
+look.prefs.save(Object.assign({}, look.prefs.load(), {fontFamily: 'system', motif: 'quiet', accent: 'violet',
+  motifDark: 'holo', accentDark: 'amber', fontFamilyDark: 'coreai'}));
+assert.match(look.rootEl.style['--coreui-font'], /^system-ui, /, 'system font stack');
+assert.equal(look.toggles['pref-font-system'], true);
+look.prefs.save(Object.assign({}, look.prefs.load(), {theme: 'dark'}));
+assert.equal(look.toggles['pref-motif-quiet'], true, 'not separate: dark uses the shared motif');
+assert.equal(look.rootEl.style['--cx'], '#8a6ff2', 'not separate: dark uses the shared accent');
+look.prefs.save(Object.assign({}, look.prefs.load(), {separateModes: true}));
+assert.equal(look.toggles['pref-motif-quiet'], false, 'separate: dark has its own motif');
+assert.equal(look.rootEl.style['--cx'], '#ca852a', 'separate: dark has its own accent');
+assert.equal(look.rootEl.style['--coreui-font'], '"Rajdhani"', 'separate: dark has its own font');
+look.prefs.save(Object.assign({}, look.prefs.load(), {theme: 'light'}));
+assert.equal(look.toggles['pref-motif-quiet'], true, 'light keeps the shared look');
+assert.match(look.rootEl.style['--coreui-font'], /^system-ui/);
+const invalidLook = fixture();
+invalidLook.prefs.save({fontFamily: 'Comic"Sans', motifDark: '<x>', accentDark: 'red', fontFamilyDark: 1, separateModes: 'yes',
+  smartPunctuation: 'true'});
+assert.deepEqual([invalidLook.prefs.load().fontFamily, invalidLook.prefs.load().motifDark, invalidLook.prefs.load().accentDark,
+  invalidLook.prefs.load().fontFamilyDark, invalidLook.prefs.load().separateModes, invalidLook.prefs.load().smartPunctuation],
+  ['coreai', 'holo', 'blue', 'coreai', false, false], 'only known values, strict booleans');
+const older = fixture({[key]: JSON.stringify({motif: 'quiet', accent: 'green'})});
+assert.deepEqual([older.prefs.load().motifDark, older.prefs.load().accentDark], ['quiet', 'green'],
+  '0.6.79 values: the dark look starts from the shared one');
+
+// Objects from the page's own context: compare their JSON form.
+const motif = JSON.parse(JSON.stringify(look.prefs.exportMotif(look.prefs.load())));
+assert.deepEqual(Object.keys(motif), ['format', 'version', 'separateModes', 'light', 'dark']);
+assert.equal(motif.format, 'coreai-motiv');
+assert.deepEqual(motif.light, {motif: 'quiet', accent: 'violet', font: 'system', background: '#f0f4fa', foreground: '#101626'});
+assert.deepEqual(motif.dark, {motif: 'holo', accent: 'amber', font: 'coreai', background: '#0c1427', foreground: '#eef4ff'});
+assert.ok(!JSON.stringify(motif).includes('sendKey') && !JSON.stringify(motif).includes('uiFontSize'), 'a motif carries no other settings');
+const target = fixture();
+target.prefs.save(Object.assign({}, target.prefs.load(), {sendKey: 'mod-enter', uiFontSize: 20}));
+const imported = target.prefs.importMotif(JSON.stringify(motif), target.prefs.load());
+assert.ok(imported, 'an exported motif imports');
+assert.deepEqual([imported.motif, imported.accent, imported.fontFamily, imported.separateModes, imported.motifDark, imported.accentDark],
+  ['quiet', 'violet', 'system', true, 'holo', 'amber']);
+assert.deepEqual([imported.sendKey, imported.uiFontSize], ['mod-enter', 20], 'import keeps everything else');
+const shared = target.prefs.importMotif(Object.assign({}, motif, {separateModes: false}), target.prefs.load());
+assert.deepEqual([shared.separateModes, shared.motifDark, shared.accentDark], [false, 'quiet', 'violet'],
+  'a shared motif gives Dunkel the same look');
+for (const bad of ['', 'nonsense', '{}', JSON.stringify(Object.assign({}, motif, {format: 'x'})),
+  JSON.stringify(Object.assign({}, motif, {version: 2})),
+  JSON.stringify(Object.assign({}, motif, {light: Object.assign({}, motif.light, {background: 'red'})})),
+  JSON.stringify(Object.assign({}, motif, {light: Object.assign({}, motif.light, {background: '#fff; x'})})),
+  JSON.stringify(Object.assign({}, motif, {light: Object.assign({}, motif.light, {accent: 'pink'})})),
+  JSON.stringify(Object.assign({}, motif, {dark: Object.assign({}, motif.dark, {font: 'Comic'})})),
+  JSON.stringify(Object.assign({}, motif, {dark: null})),
+  JSON.stringify(motif) + ' '.repeat(4000)]) {
+  assert.equal(target.prefs.importMotif(bad, target.prefs.load()), null, 'rejected: ' + bad.slice(0, 60));
+}
+
+// Smart punctuation: the pure rules (the typing itself is tested in appearance-ui-selftest.cjs).
+const punctSource = fs.readFileSync(path.join(root, 'js/coreui-smart-punctuation.js'), 'utf8');
+const punctWin = {};
+vm.runInNewContext(punctSource, {window: punctWin, document: {getElementById: () => null, documentElement: {getAttribute: () => 'de'}}});
+const P = punctWin.CoreAISmartPunctuation;
+const typed = (text, lang) => {
+  const hit = P.replacement(text, lang || 'de');
+  return hit ? text.slice(0, text.length - hit.remove) + hit.insert : text;
+};
+const cases = [
+  ['"', '„'], ['Sie sagte "', 'Sie sagte „'], ['Sie sagte „Hallo"', 'Sie sagte „Hallo“'],
+  ['geht\'', 'geht’'], ['\'', '‚'], ['‚so\'', '‚so‘'],
+  ['warte...', 'warte…'], ['....', '....'], ['A --', 'A –'], ['A -', 'A -'], ['Wort -', 'Wort -'],
+  ['Satz--', 'Satz–'], ['---', '---'], ['--', '--'], ['  --', '  --'],
+  ['a ->', 'a →'], ['a <-', 'a ←'], ['a ←>', 'a ↔'], ['a =>', 'a ⇒'],
+  ['x <=', 'x ≤'], ['x >=', 'x ≥'], ['x !=', 'x ≠'], ['x ~=', 'x ≈'], ['5 +-', '5 ±'],
+  ['Satz–>', 'Satz→'], ['x', 'x'], ['a == ', 'a == '],
+  ['`a"', '`a"'], ['```\nx = "', '```\nx = "'], ['```\ncode\n```\nund "', '```\ncode\n```\nund „'],
+  ['siehe https://x.de/a->', 'siehe https://x.de/a->'], ['www.a.de/...', 'www.a.de/...'],
+];
+for (const [input, expected] of cases) assert.equal(typed(input), expected, 'typed ' + JSON.stringify(input));
+assert.equal(typed('He said "', 'en'), 'He said “');
+assert.equal(typed('He said “hi"', 'en'), 'He said “hi”');
+assert.equal(typed('it\'', 'en'), 'it’');
+assert.equal(typed('\'', 'en'), '‘');
+assert.ok(!/[\u2014]/.test(cases.map(c => typed(c[0])).join('')), 'never a long dash (\u2014)');
+const html = page;
+for (const id of ['prefFontFamily', 'prefSeparateModes', 'prefSmartPunctuation', 'prefEditMode', 'prefBackgroundHex',
+  'prefForegroundHex', 'motifExport', 'motifCopy', 'motifImport', 'motifImportPanel', 'motifImportText', 'motifImportFile']) {
+  assert.ok(html.includes('id="' + id + '"'), '0.6.80 Darstellung element ' + id);
+}
+for (const id of ['prefMotionMode', 'prefDiffMarkers', 'prefEditMode']) {
+  assert.ok(new RegExp('id="' + id + '" role="radiogroup"').test(html), id + ' is a segment');
+}
+assert.ok(fs.readFileSync(path.join(root, 'app.html'), 'utf8').match(/coreui-smart-punctuation\.js\?v=\d{25}"><\/script>\n  <script src="\.\/js\/coreui-send-keys\.js/),
+  'the chat loads smart punctuation before the send keys and the chat');
+const cssAll = ['css/console.css', 'css/settings.css', 'css/artifacts.css', 'css/coreui-image-viewer.css', 'css/coreui-profile-crop.css']
+  .map(f => fs.readFileSync(path.join(root, f), 'utf8')).join('\n');
+const outsideFontFace = cssAll.replace(/@font-face\s*\{[^}]*\}/g, '');
+assert.ok(!/(^|[^,(] ?)"Rajdhani"/.test(outsideFontFace.replace(/var\(--coreui-font, "Rajdhani"\)/g, '')),
+  'every Rajdhani declaration follows the chosen font');
+assert.equal((cssAll.match(/@font-face\s*\{[^}]*font-family: "Rajdhani";/g) || []).length, 3, 'the three Rajdhani faces stay');
+console.log('CoreAI appearance 0.6.80: font, Hell/Dunkel separate, motif export/import (validated), smart punctuation rules OK');
 
 console.log('CoreAI appearance preferences: 3 modes, OS sync, storage, pages and palette OK');

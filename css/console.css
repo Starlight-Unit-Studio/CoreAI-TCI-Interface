@@ -77,7 +77,7 @@ html {
   min-height: 100%;
   background: var(--bg);
   color: var(--txt);
-  font-family: "Rajdhani", "Segoe UI", sans-serif;
+  font-family: var(--coreui-font, "Rajdhani"), "Segoe UI", sans-serif;
   -webkit-text-size-adjust: 100%;
   text-rendering: optimizeLegibility;
 }
@@ -593,7 +593,7 @@ a:focus-visible {
   cursor: pointer;
   align-items: center;
   border: 0;
-  font-family: "Rajdhani", sans-serif;
+  font-family: var(--coreui-font, "Rajdhani"), sans-serif;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-align: left;
@@ -1888,7 +1888,7 @@ a:focus-visible {
 .msg-markdown h6 {
   margin: 1.05em 0 0.45em;
   color: #243758;
-  font-family: "Rajdhani", sans-serif;
+  font-family: var(--coreui-font, "Rajdhani"), sans-serif;
   font-weight: 700;
   letter-spacing: 0.025em;
   line-height: 1.16;
@@ -2057,7 +2057,7 @@ a:focus-visible {
 .md-table-wrap th {
   background: rgba(91, 146, 255, 0.1);
   color: #304f7d;
-  font-family: "Rajdhani", sans-serif;
+  font-family: var(--coreui-font, "Rajdhani"), sans-serif;
   font-weight: 700;
   letter-spacing: 0.04em;
 }
@@ -2573,7 +2573,7 @@ audio.msg-image {
   border-top: 1px solid rgba(91,146,255,.18);
 }
 .work-body[hidden] { display: none; }
-.work-empty { padding: 9px 6px; color: #566b86; font: 12px/1.5 "Rajdhani", sans-serif; }
+.work-empty { padding: 9px 6px; color: #566b86; font: 12px/1.5 var(--coreui-font, "Rajdhani"), sans-serif; }
 .work-entries { display: flex; flex-direction: column; gap: 7px; }
 .work-entry {
   display: grid;
@@ -2598,10 +2598,10 @@ audio.msg-image {
 .work-entry.work-error { border-color: rgba(185,74,49,.34); }
 .work-entry.work-running .work-state { animation: thinking-spin 1.6s linear infinite; }
 .work-info { min-width: 0; }
-.work-title { font: 600 13px/1.4 "Rajdhani", sans-serif; overflow-wrap: anywhere; }
+.work-title { font: 600 13px/1.4 var(--coreui-font, "Rajdhani"), sans-serif; overflow-wrap: anywhere; }
 .work-time { color: #77859b; white-space: nowrap; font: 10px "Share Tech Mono", monospace; }
 .work-detail { margin-top: 5px; }
-.work-detail summary { cursor: pointer; font: 11px "Rajdhani", sans-serif; color: #376ad3; }
+.work-detail summary { cursor: pointer; font: 11px var(--coreui-font, "Rajdhani"), sans-serif; color: #376ad3; }
 .work-detail dl { display: grid; grid-template-columns: minmax(75px,auto) minmax(0,1fr); gap: 4px 9px; margin: 7px 0 0; font: 11px/1.5 "Share Tech Mono", monospace; }
 .work-detail dt { color: #586982; }
 .work-detail dd { min-width: 0; margin: 0; color: #2d435f; overflow-wrap: anywhere; }
@@ -3822,7 +3822,7 @@ html.live-open body {
 .live-greeting {
   margin: 0;
   max-width: 20ch;
-  font-family: "Rajdhani", "Segoe UI", sans-serif;
+  font-family: var(--coreui-font, "Rajdhani"), "Segoe UI", sans-serif;
   font-size: clamp(28px, 7vw, 44px);
   font-weight: 600;
   line-height: 1.12;
@@ -4065,7 +4065,7 @@ html.live-open body {
   background: transparent;
   color: var(--txt);
   caret-color: var(--cx);
-  font-family: "Rajdhani", sans-serif;
+  font-family: var(--coreui-font, "Rajdhani"), sans-serif;
   font-size: 16px;
   font-weight: 600;
   letter-spacing: 0.015em;
@@ -8040,7 +8040,7 @@ a.core-install-btn {
   border: 0;
   background: transparent;
   color: #3869bd;
-  font: 600 12px "Rajdhani", sans-serif;
+  font: 600 12px var(--coreui-font, "Rajdhani"), sans-serif;
   letter-spacing: .025em;
   text-transform: none;
   gap: 7px;
@@ -8087,7 +8087,7 @@ a.core-install-btn {
 }
 .msg-row.ember .work-entry.work-running .work-state { animation: none; }
 .msg-row.ember .work-title {
-  font: 500 13px/1.45 "Rajdhani", sans-serif;
+  font: 500 13px/1.45 var(--coreui-font, "Rajdhani"), sans-serif;
 }
 .msg-row.ember .work-time {
   align-self: center;
@@ -8115,7 +8115,7 @@ a.core-install-btn {
   text-decoration: none;
 }
 .msg-row.ember .work-caption {
-  font: 700 12px/1.35 "Rajdhani", sans-serif;
+  font: 700 12px/1.35 var(--coreui-font, "Rajdhani"), sans-serif;
   color: #315fae;
 }
 .msg-row.ember .work-counts {
@@ -8132,7 +8132,7 @@ a.core-install-btn {
   padding: 0 0 0 9px;
   border-left: 2px solid rgba(91,146,255,.36);
   color: #51627d;
-  font: 500 12px/1.55 "Rajdhani", sans-serif;
+  font: 500 12px/1.55 var(--coreui-font, "Rajdhani"), sans-serif;
   overflow-wrap: anywhere;
 }
 .msg-row.ember .work-digest[hidden] { display: none; }
@@ -8169,7 +8169,7 @@ a.core-install-btn {
 .msg-row.ember .work-note-text {
   margin: 0;
   color: #334c70;
-  font: 500 13px/1.5 "Rajdhani", sans-serif;
+  font: 500 13px/1.5 var(--coreui-font, "Rajdhani"), sans-serif;
   overflow-wrap: anywhere;
 }
 @media (max-width: 620px) {
@@ -8203,7 +8203,7 @@ a.core-install-btn {
   border-radius: 7px;
   background: rgba(255, 244, 240, .72);
   color: #994137;
-  font: 600 12px/1.3 "Rajdhani", sans-serif;
+  font: 600 12px/1.3 var(--coreui-font, "Rajdhani"), sans-serif;
   cursor: pointer;
 }
 .msg-row.ember .agent-stop-button:hover:not(:disabled) {
@@ -8238,7 +8238,7 @@ a.core-install-btn {
   border-radius: 11px;
   background: rgba(248, 251, 255, .78);
   color: #285180;
-  font: 600 13px/1.45 "Rajdhani", sans-serif;
+  font: 600 13px/1.45 var(--coreui-font, "Rajdhani"), sans-serif;
   text-align: left;
   overflow-wrap: anywhere;
   cursor: pointer;
@@ -8283,7 +8283,7 @@ a.core-install-btn {
 .about-copy h2 .about-product { display: block; margin-top: 4px; overflow-wrap: anywhere; }
 .about-copy .copyright-line {
   color: #503719;
-  font-family: "Rajdhani", sans-serif;
+  font-family: var(--coreui-font, "Rajdhani"), sans-serif;
   font-size: clamp(14px, 1.5vw, 17px);
   font-weight: 700;
   letter-spacing: .015em;
@@ -8416,7 +8416,7 @@ a.core-install-btn {
 .msg-row.ember .work-note-text {
   margin: 0;
   color: var(--txt);
-  font: 500 14px/1.6 "Rajdhani", sans-serif;
+  font: 500 14px/1.6 var(--coreui-font, "Rajdhani"), sans-serif;
   letter-spacing: 0;
 }
 .msg-row.ember .work-state { opacity: .75; }
@@ -8623,7 +8623,7 @@ a.core-install-btn {
 }
 .msg-row.ember .work-panel.work-flow .work-caption {
   color: var(--muted);
-  font: 600 14px/1.3 "Rajdhani", sans-serif;
+  font: 600 14px/1.3 var(--coreui-font, "Rajdhani"), sans-serif;
   letter-spacing: .02em;
 }
 .msg-row.ember .work-panel.work-flow .work-counts {
@@ -8658,7 +8658,7 @@ a.core-install-btn {
 .msg-row.ember .work-panel.work-flow .work-narration .work-note-text {
   margin: 0;
   color: var(--txt);
-  font: 500 15px/1.54 "Rajdhani", "Segoe UI", sans-serif;
+  font: 500 15px/1.54 var(--coreui-font, "Rajdhani"), "Segoe UI", sans-serif;
 }
 .msg-row.ember .work-panel.work-flow .work-narration.work-error .work-note-text {
   padding-left: 0;
@@ -8675,7 +8675,7 @@ a.core-install-btn {
   border: 0;
   background: transparent;
   color: var(--muted-soft);
-  font: 500 14px/1.4 "Rajdhani", sans-serif;
+  font: 500 14px/1.4 var(--coreui-font, "Rajdhani"), sans-serif;
   text-align: left;
   cursor: pointer;
 }
@@ -8717,13 +8717,13 @@ a.core-install-btn {
   clip-path: none;
   white-space: normal;
   color: #4d5a72;
-  font: 600 13px/1.4 "Rajdhani", sans-serif;
+  font: 600 13px/1.4 var(--coreui-font, "Rajdhani"), sans-serif;
 }
 .msg-row.ember .work-panel.work-flow .work-step-note { padding: 0; }
 .msg-row.ember .work-panel.work-flow .work-step-note .work-note-text {
   margin: 1px 0 0;
   color: var(--muted-soft);
-  font: 500 13px/1.45 "Rajdhani", sans-serif;
+  font: 500 13px/1.45 var(--coreui-font, "Rajdhani"), sans-serif;
 }
 
 /* Task card in the CoreAI frame: cut corners top right and bottom left. */
@@ -8766,7 +8766,7 @@ a.core-install-btn {
   align-items: center;
   gap: 10px;
   color: var(--txt);
-  font: 500 15px/1.3 "Rajdhani", sans-serif;
+  font: 500 15px/1.3 var(--coreui-font, "Rajdhani"), sans-serif;
 }
 .msg-row.ember .work-panel.work-flow .work-task-mark {
   display: grid;
@@ -8802,7 +8802,7 @@ a.core-install-btn {
   gap: 10px;
   margin-top: 14px;
   color: var(--muted);
-  font: 500 14px/1.4 "Rajdhani", sans-serif;
+  font: 500 14px/1.4 var(--coreui-font, "Rajdhani"), sans-serif;
 }
 .msg-row.ember .work-panel.work-flow .work-status-dots {
   display: inline-flex;
@@ -8880,7 +8880,7 @@ a.core-install-btn {
 .insight-body {
   padding: 0 16px 14px;
   color: var(--txt);
-  font: 500 14px/1.45 "Rajdhani", "Segoe UI", sans-serif;
+  font: 500 14px/1.45 var(--coreui-font, "Rajdhani"), "Segoe UI", sans-serif;
 }
 .insight-body[hidden] { display: none; }
 .insight-rows { display: grid; gap: 6px; margin: 0; }
@@ -9101,7 +9101,7 @@ a.insight-file-name:hover { text-decoration: underline; }
 .msg-row.ember .work-site-icon[hidden] { display: none; }
 .msg-row.ember .work-site-link { display: grid; min-width: 0; color: var(--txt); text-decoration: none; }
 .msg-row.ember .work-site-link:hover .work-site-title { text-decoration: underline; }
-.msg-row.ember .work-site-title { overflow-wrap: anywhere; font: 500 14px/1.3 "Rajdhani", sans-serif; }
+.msg-row.ember .work-site-title { overflow-wrap: anywhere; font: 500 14px/1.3 var(--coreui-font, "Rajdhani"), sans-serif; }
 .msg-row.ember .work-site-host { color: var(--muted-soft); font: 11px/1.4 sans-serif; overflow-wrap: anywhere; }
 .msg-row.ember .work-site-status { flex: none; margin-left: auto; color: var(--muted); font: 11px/1.3 sans-serif; }
 @media(max-width:480px) {
@@ -9114,20 +9114,20 @@ a.insight-file-name:hover { text-decoration: underline; }
 .msg-row.ember .work-research {display:block;min-width:0;margin:8px 0 12px}
 .msg-row.ember .work-research[hidden] {display:none}
 .msg-row.ember .work-research-line {display:flex;align-items:center;gap:9px;min-width:0;max-width:100%;padding:6px 0}
-.msg-row.ember .work-research-label {flex:none;color:var(--muted);font:500 12px/1.4 "Rajdhani",sans-serif}
+.msg-row.ember .work-research-label {flex:none;color:var(--muted);font:500 12px/1.4 var(--coreui-font, "Rajdhani"),sans-serif}
 .msg-row.ember .work-research-current {display:flex;min-width:0;flex:1;align-items:center;gap:7px;overflow:hidden;white-space:nowrap;color:var(--txt);text-decoration:none}
 .msg-row.ember .work-research-url {min-width:0;overflow:hidden;text-overflow:ellipsis;font:500 12px/1.4 "Share Tech Mono",monospace}
 .msg-row.ember .work-research-count {flex:none;color:var(--muted-soft);font:11px/1.4 monospace}
 .msg-row.ember .work-research-flip {animation:coreai-research-flip 220ms ease-out}
 @keyframes coreai-research-flip {from{opacity:.25;transform:translateY(5px)}to{opacity:1;transform:none}}
 .msg-row.ember .work-research-history {max-width:100%;margin:2px 0}
-.msg-row.ember .work-research-summary {width:max-content;max-width:100%;cursor:pointer;color:var(--muted-soft);font:12px/1.5 "Rajdhani",sans-serif}
+.msg-row.ember .work-research-summary {width:max-content;max-width:100%;cursor:pointer;color:var(--muted-soft);font:12px/1.5 var(--coreui-font, "Rajdhani"),sans-serif}
 .msg-row.ember .work-research-items {max-height:180px;overflow:auto;padding:5px 0}
 .msg-row.ember .work-research-items .work-site {padding:3px 0}
 .msg-row.ember .work-research-items .work-site-title {font-size:12px}
 .msg-row.ember .work-research-items .work-site-host,.msg-row.ember .work-research-items .work-site-status {font-size:10px}
 .msg-row.ember .work-code-drawer {max-width:100%;margin:8px 0;min-width:0}
-.msg-row.ember .work-code-summary {cursor:pointer;color:var(--muted-soft);font:500 13px/1.5 "Rajdhani",sans-serif}
+.msg-row.ember .work-code-summary {cursor:pointer;color:var(--muted-soft);font:500 13px/1.5 var(--coreui-font, "Rajdhani"),sans-serif}
 .msg-row.ember .work-code-contents {min-width:0;max-height:55vh;overflow:auto}
 .msg-row.ember .work-code-contents .md-codeblock {max-width:100%;width:100%;margin:8px 0}
 .msg-row.ember .work-source {max-width:100%;min-width:0}
@@ -9141,7 +9141,7 @@ a.insight-file-name:hover { text-decoration: underline; }
 
 /* Playwright hidden by preference: its status is not the ordinary WEB carousel. */
 .msg-row.ember .browse-live.browse-live-hidden { display:none !important; }
-.msg-row.ember .browse-live-fallback { display:block; padding:9px 0; color:var(--muted); font:500 13px/1.5 "Rajdhani",sans-serif; }
+.msg-row.ember .browse-live-fallback { display:block; padding:9px 0; color:var(--muted); font:500 13px/1.5 var(--coreui-font, "Rajdhani"),sans-serif; }
 .msg-row.ember .work-research-label:empty { display:none; }
 
 /* 0.5.89: real-time sources are independent of text typing and stay compact. */
@@ -9219,13 +9219,13 @@ a.insight-file-name:hover { text-decoration: underline; }
 }
 .welcome-identity span { color:var(--amb); font-size:17px; vertical-align:middle; }
 .welcome-intro { max-width:680px; margin:auto 0; padding:24px 0; }
-.welcome-greeting { margin:0 0 12px; color:var(--amb); font:500 clamp(17px,2.1vw,22px)/1.35 "Rajdhani",sans-serif; }
+.welcome-greeting { margin:0 0 12px; color:var(--amb); font:500 clamp(17px,2.1vw,22px)/1.35 var(--coreui-font, "Rajdhani"),sans-serif; }
 .welcome-intro h2 {
-  margin:0; color:var(--txt); font:700 clamp(29px,4.5vw,47px)/1.12 "Rajdhani",sans-serif;
+  margin:0; color:var(--txt); font:700 clamp(29px,4.5vw,47px)/1.12 var(--coreui-font, "Rajdhani"),sans-serif;
   letter-spacing:-.025em;
 }
-.welcome-subtitle { margin:17px 0 0; color:var(--muted); font:500 16px/1.5 "Rajdhani",sans-serif; }
-.welcome-error { margin:16px 0 0; color:var(--red); font:600 14px/1.5 "Rajdhani",sans-serif; }
+.welcome-subtitle { margin:17px 0 0; color:var(--muted); font:500 16px/1.5 var(--coreui-font, "Rajdhani"),sans-serif; }
+.welcome-error { margin:16px 0 0; color:var(--red); font:600 14px/1.5 var(--coreui-font, "Rajdhani"),sans-serif; }
 .welcome-suggestions {
   width:100%; display:grid; grid-template-columns:repeat(2,minmax(0,1fr));
   gap:12px; margin-top:auto; text-align:left;
@@ -9235,7 +9235,7 @@ a.insight-file-name:hover { text-decoration: underline; }
   gap:13px; padding:14px 17px; border:1px solid var(--line);
   background:var(--panel-soft); color:var(--txt); box-shadow:var(--shadow-tight);
   clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,12px 100%,0 calc(100% - 12px));
-  cursor:pointer; font:600 16px/1.3 "Rajdhani",sans-serif;
+  cursor:pointer; font:600 16px/1.3 var(--coreui-font, "Rajdhani"),sans-serif;
   transition:border-color .18s ease,background .18s ease,transform .18s ease;
 }
 .welcome-prompt:hover,.welcome-prompt:focus-visible {
@@ -9244,7 +9244,7 @@ a.insight-file-name:hover { text-decoration: underline; }
 .welcome-prompt-icon {
   display:grid; width:35px; height:35px; flex:0 0 35px; place-items:center;
   border:1px solid var(--line-amber); background:var(--panel-amb);
-  color:var(--amb); font:600 23px "Rajdhani",sans-serif;
+  color:var(--amb); font:600 23px var(--coreui-font, "Rajdhani"),sans-serif;
 }
 .welcome-prompt:nth-child(even) .welcome-prompt-icon {
   border-color:var(--line-strong); background:var(--panel-cx); color:var(--cx);
@@ -9333,7 +9333,7 @@ a.insight-file-name:hover { text-decoration: underline; }
 }
 .reason-effort-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
 .reason-effort-head strong {
-  font: 700 13px/1.3 "Rajdhani","Segoe UI",sans-serif;
+  font: 700 13px/1.3 var(--coreui-font, "Rajdhani"),"Segoe UI",sans-serif;
   letter-spacing: .08em;
 }
 .reason-effort-head small { color: var(--muted); font-size: 11px; }
@@ -9361,7 +9361,7 @@ a.insight-file-name:hover { text-decoration: underline; }
   border-radius: 19px;
   background: var(--panel-soft);
   color: var(--txt);
-  font: 600 13px/1.15 "Rajdhani","Segoe UI",sans-serif;
+  font: 600 13px/1.15 var(--coreui-font, "Rajdhani"),"Segoe UI",sans-serif;
   cursor: pointer;
   white-space: nowrap;
 }

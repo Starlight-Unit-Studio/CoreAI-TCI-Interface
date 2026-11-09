@@ -1,0 +1,53 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.80
+Datum: 09.11.2026
+Basis: main 0.6.79 nach PR #232 (d6f13d0)
+Branch: claude/bold-galileo-myoyi0
+
+AUFTRAG
+Betreiber: die drei ChatGPT-Screenshots der Darstellung vollstaendig uebertragen
+("ja bitte umsetzen"), nachdem 0.6.79 die erste Phase geliefert hatte.
+
+UMGESETZT (alles normale Einstellungen, lokal unter emberCoreUI.preferences.v1)
+- Motiv: Export als Datei (coreai-motiv-DATUM.json), Kopieren in die Zwischenablage
+  (Fallback ueber verstecktes Textfeld), Import aus Text oder Datei.
+  CoreUIPreferences.exportMotif / importMotif: Format "coreai-motiv", Version 1,
+  hoechstens 4000 Zeichen, nur bekannte Werte, Farben #RRGGBB. Import aendert nur
+  Motiv, Akzent, Schriftart, getrennt-Schalter und die vier Farben.
+- Hex-Felder neben Hintergrund/Vordergrund (prefBackgroundHex, prefForegroundHex):
+  #123 und Werte ohne # werden angenommen, Ungueltiges aria-invalid, nicht gespeichert.
+- separateModes + motifDark/accentDark/fontFamilyDark; CoreUIPreferences.modeLook(prefs, mode).
+  Einschalten kopiert den gemeinsamen Look nach Dunkel; Segment prefEditMode
+  (Hell/Dunkel) waehlt, was die Zeilen bearbeiten; Ausschalten behaelt die Dunkel-Werte.
+- Schriftart prefFontFamily (coreai/system): --coreui-font auf :root; alle 77
+  Rajdhani-Deklarationen in den CSS-Dateien lesen var(--coreui-font, "Rajdhani"),
+  @font-face und Share Tech Mono unveraendert.
+- js/coreui-smart-punctuation.js (neu, in app.html vor coreui-send-keys.js):
+  nur bei inputType insertText mit einem Zeichen, nicht bei IME, Einfuegen, `Code`,
+  ```Bloecken``` und URLs. Rueckgaengig per beforeinput deleteContentBackward.
+  Sprache der Anfuehrungszeichen = Oberflaechensprache (data-coreui-ui-lang).
+  Nie U+2014 (der Branding-Test verbietet den langen Strich im Repo).
+- Segmente (role=radiogroup) fuer prefMotionMode und prefDiffMarkers; IDs blieben.
+- Fix: generalHigherIntelligence-Schalter war ein <span> ohne Label (Tippen wirkungslos).
+
+TESTS (hier ausgefuehrt)
+- node scripts/theme-preferences-selftest.cjs (erweitert, alte Erwartung zur Inhaber-
+  Farbe nach 0.6.70 korrigiert)
+- node scripts/appearance-ui-selftest.cjs (neu, Chromium, Bildschirmfotos angesehen)
+- node scripts/settings-tabs-ui-selftest.cjs (lief seit 0.6.71 nicht mehr durch;
+  Testablauf repariert, keine Pruefung entfernt)
+- python3 scripts/branding-license-selftest.py (Version war 0.6.71)
+- node scripts/terran-terminology-selftest.cjs (zaehlte noch die Verbindungszeile, die
+  der Willkommensbildschirm in 0.6.68 ersetzt hat)
+- volle Testreihe, Sprachtests (terran, tci), cache-bust --verify, version-merge-check
+
+NICHT HIER GEPRUEFT
+- Echte Android-Tastaturen: Gboard liefert Satzzeichen meist als insertText, Woerter als
+  Komposition (die bleiben unberuehrt). Bitte am Handy "..." und Anfuehrungszeichen tippen.
+- Systemschrift auf Samsung DeX und Windows optisch pruefen.
+
+NACH DEM MERGE (Betreiber)
+1. Update unter Einstellungen > System > CoreAI Update, Seite neu laden.
+2. Einstellungen > Darstellung: Motiv kopieren, auf einem zweiten Geraet importieren.
+3. "Hellen und dunklen Modus getrennt einstellen" an, "Einstellen fuer: Dunkel", Akzent
+   aendern; in den Dunkelmodus wechseln.
+4. Intelligente Zeichensetzung an, im Chat tippen: Er sagte "Hallo" -> gut...

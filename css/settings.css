@@ -98,7 +98,7 @@
   border: 1px solid transparent;
   background: transparent;
   color: var(--cfg-soft);
-  font-family: "Rajdhani", "Segoe UI", sans-serif;
+  font-family: var(--coreui-font, "Rajdhani"), "Segoe UI", sans-serif;
   font-size: 16.5px;
   font-weight: 700;
   letter-spacing: 0.03em;
@@ -320,7 +320,7 @@
 .settings-body .account-security-head small,
 .settings-body .account-export-row small {
   color: var(--cfg-soft);
-  font-family: "Rajdhani", "Segoe UI", sans-serif;
+  font-family: var(--coreui-font, "Rajdhani"), "Segoe UI", sans-serif;
   font-size: 15px;
   font-weight: 500;
   letter-spacing: 0.005em;
@@ -375,7 +375,7 @@
 
 .settings-body .settings-local-note p {
   color: var(--cfg-soft);
-  font-family: "Rajdhani", "Segoe UI", sans-serif;
+  font-family: var(--coreui-font, "Rajdhani"), "Segoe UI", sans-serif;
   font-size: 15px;
   font-weight: 500;
   line-height: 1.45;
@@ -429,7 +429,7 @@
 }
 
 .settings-body .knowledge-file-drop small {
-  font-family: "Rajdhani", "Segoe UI", sans-serif;
+  font-family: var(--coreui-font, "Rajdhani"), "Segoe UI", sans-serif;
   font-size: 14px;
   font-weight: 500;
 }
@@ -452,7 +452,7 @@
 }
 
 .settings-body .memory-item p {
-  font-family: "Rajdhani", "Segoe UI", sans-serif;
+  font-family: var(--coreui-font, "Rajdhani"), "Segoe UI", sans-serif;
   font-size: 16px;
   font-weight: 600;
   line-height: 1.45;
@@ -506,7 +506,7 @@
 }
 
 .settings-body .about-copy p {
-  font-family: "Rajdhani", "Segoe UI", sans-serif;
+  font-family: var(--coreui-font, "Rajdhani"), "Segoe UI", sans-serif;
   font-size: 16px;
   font-weight: 500;
 }
@@ -1422,7 +1422,7 @@
   border-radius: 9px;
   background: rgba(242, 246, 252, .9);
   color: #23395b;
-  font: 600 13px/1.35 "Rajdhani", sans-serif;
+  font: 600 13px/1.35 var(--coreui-font, "Rajdhani"), sans-serif;
   padding: 8px 10px;
   cursor: pointer;
 }
@@ -1457,7 +1457,7 @@
 .settings-body .persona-limit strong { color: #254474; }
 .settings-body .persona-status {
   margin-top: 16px;
-  font: 600 12px/1.6 "Rajdhani", sans-serif;
+  font: 600 12px/1.6 var(--coreui-font, "Rajdhani"), sans-serif;
   color: #2d7464;
 }
 .settings-body .persona-status.error { color: #a34842; }
@@ -1545,7 +1545,7 @@
   border-radius: 10px;
   background: var(--panel-solid);
   color: var(--txt);
-  font: 500 13px/1.3 "Rajdhani", sans-serif;
+  font: 500 13px/1.3 var(--coreui-font, "Rajdhani"), sans-serif;
 }
 .settings-body .tts-empty {
   padding: 14px 16px;
@@ -1620,7 +1620,7 @@
   flex: none;
   padding: 3px 8px;
   border-radius: 999px;
-  font: 700 11px/1.4 "Rajdhani", sans-serif;
+  font: 700 11px/1.4 var(--coreui-font, "Rajdhani"), sans-serif;
   letter-spacing: 0.12em;
 }
 .settings-body .tts-badge.free { background: rgba(42, 175, 117, 0.14); color: #1d7a52; }
@@ -1661,7 +1661,7 @@
   border-radius: 10px;
   background: var(--panel-soft);
   color: var(--txt);
-  font: 700 14px/1 "Rajdhani", sans-serif;
+  font: 700 14px/1 var(--coreui-font, "Rajdhani"), sans-serif;
   cursor: pointer;
 }
 .settings-body .tts-play::before { content: "▶ "; font-size: 10px; color: var(--cx); }
@@ -1738,7 +1738,7 @@
   justify-content: space-between;
   padding: 4px 10px;
   color: var(--txt);
-  font: 700 15px/1.4 "Rajdhani",sans-serif;
+  font: 700 15px/1.4 var(--coreui-font, "Rajdhani"),sans-serif;
   letter-spacing: .12em;
 }
 .cfg-search-field {
@@ -1768,7 +1768,7 @@
   outline: 0;
   background: transparent;
   color: var(--txt);
-  font: 500 14px/1.4 "Rajdhani",sans-serif;
+  font: 500 14px/1.4 var(--coreui-font, "Rajdhani"),sans-serif;
 }
 .cfg-search-field input::placeholder { color: var(--muted); opacity: 1; }
 .cfg-expert-toggle {
@@ -1783,8 +1783,8 @@
   cursor: pointer;
 }
 .cfg-expert-toggle > span:first-child { display: grid; min-width: 0; gap: 4px; }
-.cfg-expert-toggle strong { color: var(--txt); font: 700 13px/1.3 "Rajdhani",sans-serif; letter-spacing: .05em; }
-.cfg-expert-toggle small { color: var(--muted); font: 500 12px/1.4 "Rajdhani",sans-serif; }
+.cfg-expert-toggle strong { color: var(--txt); font: 700 13px/1.3 var(--coreui-font, "Rajdhani"),sans-serif; letter-spacing: .05em; }
+.cfg-expert-toggle small { color: var(--muted); font: 500 12px/1.4 var(--coreui-font, "Rajdhani"),sans-serif; }
 .cfg-expert-toggle input:focus-visible + i { outline: 2px solid var(--amb); outline-offset: 3px; }
 .cfg-expert-toggle .settings-switch { flex-shrink: 0; }
 .settings-body .cfg-nav-group {
@@ -1830,7 +1830,7 @@
 .cfg-search-status {
   padding: 8px 12px;
   color: var(--muted);
-  font: 500 13px/1.4 "Rajdhani",sans-serif;
+  font: 500 13px/1.4 var(--coreui-font, "Rajdhani"),sans-serif;
 }
 .cfg-menu-open, .cfg-menu-close {
   cursor: pointer;
@@ -1838,7 +1838,7 @@
   background: var(--panel-solid);
   color: var(--txt);
 }
-.cfg-menu-open { display: none; align-items: center; gap: 7px; padding: 9px 12px; border-radius: 10px; font: 700 12px "Rajdhani",sans-serif; }
+.cfg-menu-open { display: none; align-items: center; gap: 7px; padding: 9px 12px; border-radius: 10px; font: 700 12px var(--coreui-font, "Rajdhani"),sans-serif; }
 .cfg-menu-open svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-width: 2; }
 .cfg-menu-close { display: none; min-width: 36px; min-height: 36px; border-radius: 10px; font-size: 17px; }
 .cfg-menu-backdrop { display: none; }
@@ -1850,8 +1850,8 @@
   font: 700 11px/1.4 "Share Tech Mono",monospace;
   letter-spacing: .11em;
 }
-.cfg-planned-card h3 { margin: 0 0 10px; color: var(--txt); font: 700 clamp(20px,2.3vw,28px)/1.2 "Rajdhani",sans-serif; }
-.cfg-planned-card p { max-width: 680px; color: var(--cfg-soft); font: 500 16px/1.55 "Rajdhani",sans-serif; }
+.cfg-planned-card h3 { margin: 0 0 10px; color: var(--txt); font: 700 clamp(20px,2.3vw,28px)/1.2 var(--coreui-font, "Rajdhani"),sans-serif; }
+.cfg-planned-card p { max-width: 680px; color: var(--cfg-soft); font: 500 16px/1.55 var(--coreui-font, "Rajdhani"),sans-serif; }
 .cfg-planned-card .cfg-planned-hint { font-size: 13px; color: var(--muted); }
 .cfg-planned-card .settings-action { display: inline-flex; margin: 5px 8px 5px 0; }
 .cfg-admin-auth-gate {
@@ -1860,7 +1860,7 @@
   padding: 28px;
   border-radius: 16px;
 }
-.cfg-admin-auth-gate h2 { color: var(--txt); font: 700 27px/1.2 "Rajdhani",sans-serif; }
+.cfg-admin-auth-gate h2 { color: var(--txt); font: 700 27px/1.2 var(--coreui-font, "Rajdhani"),sans-serif; }
 .cfg-admin-auth-gate p { color: var(--muted); font-size: 15px; line-height: 1.5; }
 @media (max-width: 980px) {
   .settings-body .cfg-shell { display: block; width: calc(100% - 24px); margin: 16px auto 0; }
@@ -2008,12 +2008,12 @@
 .cfg-general-copy label {
   display: block;
   color: var(--txt);
-  font: 700 clamp(17px,2vw,21px)/1.3 "Rajdhani","Segoe UI",sans-serif;
+  font: 700 clamp(17px,2vw,21px)/1.3 var(--coreui-font, "Rajdhani"),"Segoe UI",sans-serif;
 }
 .cfg-general-copy p {
   margin: 5px 0 0;
   color: var(--cfg-soft);
-  font: 500 15px/1.5 "Rajdhani","Segoe UI",sans-serif;
+  font: 500 15px/1.5 var(--coreui-font, "Rajdhani"),"Segoe UI",sans-serif;
 }
 .cfg-general-control { display: grid; justify-items: end; gap: 7px; min-width: 0; }
 .cfg-general-control select {
@@ -2026,7 +2026,7 @@
   border-radius: 14px;
   background: var(--panel-soft);
   color: var(--txt);
-  font: 600 15px/1.35 "Rajdhani","Segoe UI",sans-serif;
+  font: 600 15px/1.35 var(--coreui-font, "Rajdhani"),"Segoe UI",sans-serif;
   text-overflow: ellipsis;
   cursor: pointer;
 }
@@ -2041,7 +2041,7 @@
 .cfg-general-control small {
   width: min(100%,290px);
   color: var(--muted);
-  font: 500 12.5px/1.4 "Rajdhani","Segoe UI",sans-serif;
+  font: 500 12.5px/1.4 var(--coreui-font, "Rajdhani"),"Segoe UI",sans-serif;
   text-align: right;
 }
 .cfg-general-switch .settings-switch { margin-left: auto; }
@@ -2132,7 +2132,7 @@
   border: 1px solid var(--line-strong);
   background: var(--panel-soft);
   color: var(--txt);
-  font: 700 12px/1.3 "Rajdhani","Segoe UI",sans-serif;
+  font: 700 12px/1.3 var(--coreui-font, "Rajdhani"),"Segoe UI",sans-serif;
   letter-spacing: .04em;
 }
 .settings-body .cfg-header-expert { cursor: pointer; }
@@ -2279,7 +2279,7 @@
   border: 1px solid var(--line-strong);
   border-radius: 9px;
   padding: 6px 10px;
-  font-family: "Rajdhani", "Segoe UI", sans-serif;
+  font-family: var(--coreui-font, "Rajdhani"), "Segoe UI", sans-serif;
   font-size: 15px;
 }
 .settings-body .appearance-form-row input[type="color"] {
@@ -2310,4 +2310,169 @@
   .settings-body .appearance-form-row { grid-template-columns: minmax(0,1fr) minmax(105px,40%); gap: 8px; }
   .settings-body .appearance-form-row strong { font-size: 14px; }
   .settings-body .appearance-form-row small { font-size: 12px; }
+}
+
+/* 0.6.80: Darstellung phase two. Segments instead of dropdowns where the choice is short,
+   hex text beside each color picker, motif export/copy/import, Hell/Dunkel edit target. */
+.settings-body .appearance-form-row > .appearance-copy { display: grid; gap: 4px; min-width: 0; }
+.settings-body .appearance-segment {
+  display: inline-flex;
+  justify-self: end;
+  max-width: 100%;
+  padding: 3px;
+  gap: 2px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--panel-soft);
+}
+.settings-body .appearance-segment label {
+  position: relative;
+  display: inline-flex;
+  min-width: 0;
+  cursor: pointer;
+}
+.settings-body .appearance-segment input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.settings-body .appearance-segment span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  min-height: 36px;
+  padding: 4px 13px;
+  border-radius: 999px;
+  color: var(--muted);
+  font-family: var(--coreui-font, "Rajdhani"), "Segoe UI", sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: background 140ms ease, color 140ms ease;
+}
+.settings-body .appearance-segment label:hover span { color: var(--txt); }
+.settings-body .appearance-segment input:checked + span {
+  background: var(--panel-cx);
+  color: var(--txt);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+.settings-body .appearance-segment input:focus-visible + span { outline: 2px solid var(--cx); outline-offset: 1px; }
+
+.settings-body .appearance-motif-tools {
+  display: flex;
+  justify-self: end;
+  align-items: center;
+  gap: 6px;
+  width: min(100%, 340px);
+}
+.settings-body .appearance-motif-tools select { flex: 1 1 140px; }
+.settings-body .appearance-icon-btn {
+  display: inline-grid;
+  flex: 0 0 auto;
+  width: 41px;
+  height: 41px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: 9px;
+  background: var(--panel-soft);
+  color: var(--txt);
+  cursor: pointer;
+}
+.settings-body .appearance-icon-btn:hover,
+.settings-body .appearance-icon-btn[aria-expanded="true"] { background: var(--panel-cx); color: var(--cx); }
+.settings-body .appearance-icon-btn:focus-visible { outline: 2px solid var(--cx); outline-offset: 2px; }
+.settings-body .appearance-icon-btn svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.settings-body .appearance-color {
+  display: inline-flex;
+  justify-self: end;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  padding: 4px 12px 4px 5px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--panel-soft);
+}
+.settings-body .appearance-color input[type="color"] {
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  background: none;
+  overflow: hidden;
+  justify-self: auto;
+}
+.settings-body .appearance-color input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+.settings-body .appearance-color input[type="color"]::-webkit-color-swatch { border: 0; border-radius: 50%; }
+.settings-body .appearance-color input[type="color"]::-moz-color-swatch { border: 0; border-radius: 50%; }
+.settings-body .appearance-hex {
+  width: 9ch;
+  min-width: 0;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: var(--txt);
+  font-family: "Share Tech Mono", monospace;
+  font-size: 15px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.settings-body .appearance-hex:focus-visible { outline: 2px solid var(--cx); outline-offset: 3px; border-radius: 4px; }
+.settings-body .appearance-hex[aria-invalid="true"] { color: var(--red); }
+
+.settings-body .appearance-import {
+  display: grid;
+  gap: 10px;
+  margin: 4px 0 6px;
+  padding: 14px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 12px;
+  background: var(--panel-soft);
+}
+.settings-body .appearance-import[hidden] { display: none; }
+.settings-body .appearance-import > label { display: grid; gap: 4px; }
+.settings-body .appearance-import strong { color: var(--txt); font-size: 15px; }
+.settings-body .appearance-import small { color: var(--muted); font-size: 13px; line-height: 1.5; }
+.settings-body .appearance-import textarea {
+  width: 100%;
+  min-height: 96px;
+  padding: 9px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 9px;
+  background: var(--panel-solid);
+  color: var(--txt);
+  font-family: "Share Tech Mono", monospace;
+  font-size: 13px;
+  resize: vertical;
+}
+.settings-body .appearance-import-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.settings-body .appearance-import-actions .settings-action.primary {
+  border-color: var(--cx);
+  background: var(--panel-cx);
+  color: var(--txt);
+}
+.settings-body .appearance-import-status { min-height: 1.2em; margin: 0; color: var(--muted); font-size: 13px; }
+.settings-body .appearance-import-status.error { color: var(--red); }
+
+@media (max-width: 500px) {
+  .settings-body .appearance-motif-row { grid-template-columns: minmax(0, 1fr); }
+  .settings-body .appearance-motif-tools { justify-self: stretch; width: 100%; }
+  .settings-body .appearance-segment span { min-width: 0; padding: 4px 10px; font-size: 14px; }
 }

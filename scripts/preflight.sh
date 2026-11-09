@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.79: dynamischer Quantum CoreAI Bildvermerk ohne Studio-Logo.
+# CoreAI: TCI Interface 0.6.80: Darstellung Phase 2 (Motiv-Export/-Import, Hex, Hell/Dunkel getrennt, Schriftart, Zeichensetzung).
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -101,6 +101,8 @@ UI_FILES=(
   scripts/settings-navigation-foundation-selftest.cjs
   scripts/settings-tabs-ui-selftest.cjs
   scripts/theme-preferences-selftest.cjs
+  js/coreui-smart-punctuation.js
+  scripts/appearance-ui-selftest.cjs
   scripts/terran-terminology-selftest.cjs
   scripts/tci-language-selftest.cjs
   js/console-app.js
@@ -1153,7 +1155,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       fail 'Allgemein: Tastatur-Shortcuts oder Composer-Integration fehlgeschlagen.'
     fi
     if node "$PROJECT_ROOT/scripts/theme-preferences-selftest.cjs" >/dev/null 2>&1; then
-      ok 'Anzeige: System/Hell/Dunkel mit Speichern, Betriebssystem-Wechsel und Browser-Tabs geprueft.'
+      ok 'Anzeige: System/Hell/Dunkel, Schriftart, Hell/Dunkel getrennt, Motiv-Pruefung und Zeichensetzungsregeln geprueft.'
     else
       fail 'Anzeige: Tag-/Nachtmodus-Selbsttest fehlgeschlagen.'
     fi
@@ -1235,6 +1237,17 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       fi
     else
       warn 'Einstellungen: Tab-Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+    fi
+    # 0.6.80: Darstellung (segments, font, hex, Hell/Dunkel getrennt, motif export/import) and
+    # smart punctuation in the chat input; needs Playwright for Node.
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/appearance-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'Darstellung: Motiv-Export/-Import, Hex-Werte, Hell/Dunkel getrennt, Schriftart und Zeichensetzung im Browser geprueft.'
+      else
+        fail 'Darstellung: Oberflaechentest fehlgeschlagen.'
+      fi
+    else
+      warn 'Darstellung: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
     fi
     # 0.5.83: update window (Inhaber) and "Bitte auf Neustart warten"; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then

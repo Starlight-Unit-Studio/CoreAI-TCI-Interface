@@ -20,8 +20,20 @@
     backgroundDark: '#0c1427', foregroundDark: '#eef4ff',
     uiFontSize: 14, contentFontSize: 16, codeFontSize: 13,
     contrast: 60, motionMode: 'system', fullWidth: false,
-    diffMarkers: 'color'
+    diffMarkers: 'color',
+    // 0.6.80: font family, separate light/dark look, smart punctuation in the chat input.
+    fontFamily: 'coreai', separateModes: false,
+    motifDark: 'holo', accentDark: 'blue', fontFamilyDark: 'coreai',
+    smartPunctuation: false
   };
+  var ACCENTS = ['blue','cyan','green','violet','amber'];
+  // 0.6.80: CSS uses var(--coreui-font, "Rajdhani"); monospace labels keep Share Tech Mono.
+  var FONT_STACKS = {
+    coreai: '"Rajdhani"',
+    system: 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial'
+  };
+  var MOTIF_FORMAT = 'coreai-motiv';
+  var MOTIF_MAX_CHARS = 4000;
 
   function safeHex(input, fallback) {
     return typeof input === 'string' && /^#[0-9a-fA-F]{6}$/.test(input) ? input.toLowerCase() : fallback;
@@ -40,8 +52,15 @@
     return out;
   }
 
+  function pickMotif(value, fallback) { return value === 'quiet' ? 'quiet' : (value === 'holo' ? 'holo' : fallback); }
+  function pickAccent(value, fallback) { return ACCENTS.indexOf(value) >= 0 ? value : fallback; }
+  function pickFont(value, fallback) { return value === 'system' ? 'system' : (value === 'coreai' ? 'coreai' : fallback); }
+
   function normalise(input) {
     var source = input && typeof input === 'object' ? input : {};
+    var motif = pickMotif(source.motif, 'holo');
+    var accent = pickAccent(source.accent, 'blue');
+    var fontFamily = pickFont(source.fontFamily, 'coreai');
     return {
       theme: source.theme === 'light' || source.theme === 'dark' ? source.theme : 'system',
       uiLanguage: source.uiLanguage === 'de' || source.uiLanguage === 'en' ? source.uiLanguage : 'auto',
@@ -52,8 +71,8 @@
       liveFrameMotion: source.liveFrameMotion !== false,
       showLiveBrowser: source.showLiveBrowser !== false,
       showTelemetry: source.showTelemetry !== false,
-      motif: source.motif === 'quiet' ? 'quiet' : 'holo',
-      accent: ['blue','cyan','green','violet','amber'].indexOf(source.accent) >= 0 ? source.accent : 'blue',
+      motif: motif,
+      accent: accent,
       backgroundLight: safeHex(source.backgroundLight, '#f0f4fa'),
       foregroundLight: safeHex(source.foregroundLight, '#101626'),
       backgroundDark: safeHex(source.backgroundDark, '#0c1427'),
@@ -65,8 +84,75 @@
       motionMode: ['system','on','off'].indexOf(source.motionMode) >= 0
         ? source.motionMode : (source.reduceMotion === true ? 'on' : 'system'),
       fullWidth: source.fullWidth === true,
-      diffMarkers: source.diffMarkers === 'symbols' ? 'symbols' : 'color'
+      diffMarkers: source.diffMarkers === 'symbols' ? 'symbols' : 'color',
+      fontFamily: fontFamily,
+      separateModes: source.separateModes === true,
+      // Without its own value the dark look follows the shared one.
+      motifDark: pickMotif(source.motifDark, motif),
+      accentDark: pickAccent(source.accentDark, accent),
+      fontFamilyDark: pickFont(source.fontFamilyDark, fontFamily),
+      smartPunctuation: source.smartPunctuation === true
     };
+  }
+
+  /** 0.6.80: the look of one mode (pure). Shared unless "Hell und Dunkel getrennt" is on. */
+  function modeLook(value, mode) {
+    var prefs = normalise(value);
+    var dark = mode === 'dark';
+    var own = dark && prefs.separateModes;
+    return {
+      motif: own ? prefs.motifDark : prefs.motif,
+      accent: own ? prefs.accentDark : prefs.accent,
+      fontFamily: own ? prefs.fontFamilyDark : prefs.fontFamily,
+      background: dark ? prefs.backgroundDark : prefs.backgroundLight,
+      foreground: dark ? prefs.foregroundDark : prefs.foregroundLight
+    };
+  }
+
+  /** 0.6.80: the motif as a portable object (pure): design, accent, font and colors per mode. */
+  function exportMotif(value) {
+    var prefs = normalise(value);
+    function part(mode) {
+      var look = modeLook(prefs, mode);
+      return {motif: look.motif, accent: look.accent, font: look.fontFamily,
+        background: look.background, foreground: look.foreground};
+    }
+    return {format: MOTIF_FORMAT, version: 1, separateModes: prefs.separateModes,
+      light: part('light'), dark: part('dark')};
+  }
+
+  /**
+   * 0.6.80: preferences with an imported motif (pure), or null. Accepts the object or its JSON
+   * text (at most 4000 characters); only known fields are taken, every value is validated.
+   * Everything that is not part of a motif (fonts sizes, motion, send key ...) stays as it is.
+   */
+  function importMotif(input, current) {
+    var data = input;
+    if (typeof input === 'string') {
+      if (input.length > MOTIF_MAX_CHARS) return null;
+      try { data = JSON.parse(input); } catch (error) { return null; }
+    }
+    if (!data || typeof data !== 'object' || data.format !== MOTIF_FORMAT || data.version !== 1) return null;
+    var light = data.light && typeof data.light === 'object' ? data.light : null;
+    var dark = data.dark && typeof data.dark === 'object' ? data.dark : null;
+    if (!light || !dark) return null;
+    var hex = /^#[0-9a-fA-F]{6}$/;
+    var parts = [light.background, light.foreground, dark.background, dark.foreground];
+    for (var i = 0; i < parts.length; i++) if (typeof parts[i] !== 'string' || !hex.test(parts[i])) return null;
+    if (pickMotif(light.motif, null) === null || pickAccent(light.accent, null) === null || pickFont(light.font, null) === null) return null;
+    var separate = data.separateModes === true;
+    if (separate && (pickMotif(dark.motif, null) === null || pickAccent(dark.accent, null) === null
+      || pickFont(dark.font, null) === null)) return null;
+    var next = Object.assign({}, normalise(current), {
+      motif: light.motif, accent: light.accent, fontFamily: light.font,
+      separateModes: separate,
+      motifDark: separate ? dark.motif : light.motif,
+      accentDark: separate ? dark.accent : light.accent,
+      fontFamilyDark: separate ? dark.font : light.font,
+      backgroundLight: light.background, foregroundLight: light.foreground,
+      backgroundDark: dark.background, foregroundDark: dark.foreground
+    });
+    return normalise(next);
   }
 
   function load() {
@@ -116,20 +202,20 @@
       || (prefs.motionMode === 'system' && typeof window.matchMedia === 'function'
         && window.matchMedia('(prefers-reduced-motion: reduce)').matches === true);
     root.classList.toggle('pref-reduced-motion', reduce);
-    root.classList.toggle('pref-motif-quiet', prefs.motif === 'quiet');
+    var look = modeLook(prefs, activeTheme);
+    root.classList.toggle('pref-motif-quiet', look.motif === 'quiet');
+    root.classList.toggle('pref-font-system', look.fontFamily === 'system');
     root.classList.toggle('pref-full-width', prefs.fullWidth);
     root.classList.toggle('pref-diff-symbols', prefs.diffMarkers === 'symbols');
-    var colors = activeTheme === 'dark'
-      ? {background: prefs.backgroundDark, foreground: prefs.foregroundDark}
-      : {background: prefs.backgroundLight, foreground: prefs.foregroundLight};
+    var colors = {background: look.background, foreground: look.foreground};
     root.classList.toggle('pref-custom-background', colors.background !==
       (activeTheme === 'dark' ? '#0c1427' : '#f0f4fa'));
     var accents = {blue: activeTheme === 'dark' ? '#91b7ff' : '#5b92ff',
       cyan: '#13a6b5', green: '#299b70', violet: '#8a6ff2', amber: '#ca852a'};
     if (root.style && typeof root.style.setProperty === 'function') {
       root.style.setProperty('--bg', colors.background);
-      root.style.setProperty('--cx', accents[prefs.accent]);
-      var accent = accents[prefs.accent];
+      root.style.setProperty('--cx', accents[look.accent]);
+      var accent = accents[look.accent];
       var rgb = [1,3,5].map(function (i) { return parseInt(accent.slice(i, i+2), 16); }).join(',');
       root.style.setProperty('--line', 'rgba(' + rgb + ',.25)');
       root.style.setProperty('--line-strong', 'rgba(' + rgb + ',.52)');
@@ -137,6 +223,7 @@
       root.style.setProperty('--pref-ui-font', prefs.uiFontSize + 'px');
       root.style.setProperty('--pref-content-font', prefs.contentFontSize + 'px');
       root.style.setProperty('--pref-code-font', prefs.codeFontSize + 'px');
+      root.style.setProperty('--coreui-font', FONT_STACKS[look.fontFamily]);
       var strength = (prefs.contrast - 60) / 40;
       var textColor = strength < 0
         ? mixHex(colors.foreground, colors.background, -strength * .38)
@@ -177,7 +264,12 @@
     load: load,
     save: save,
     reset: reset,
-    apply: apply
+    apply: apply,
+    resolvedTheme: resolvedTheme,
+    modeLook: modeLook,
+    exportMotif: exportMotif,
+    importMotif: importMotif,
+    motifFormat: MOTIF_FORMAT
   });
 
   apply(document, load());
