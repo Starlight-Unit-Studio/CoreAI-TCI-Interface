@@ -70,7 +70,7 @@ assert.ok(!settings.includes('id="cfgExpertGroup"'));
 assert.ok(['start','ki-profil','wissen','memory','system'].every(id => settings.includes('id="tab-' + id + '"')),
   'advanced categories remain accessible with Expert disabled');
 const expertNodes = [...settings.matchAll(/data-expert hidden/g)];
-assert.equal(expertNodes.length, 10, 'numeric and technical controls are conditionally hidden within categories');
+assert.equal(expertNodes.length, 9, 'only technical controls remain Expert-gated, Denkaufwand is available to everyone');
 assert.ok(settings.includes('id="aiNumCtx"') && settings.includes('id="aiNumPredict"'),
   'prior Core settings are retained');
 for(const field of ['generalUiLanguage','generalSendKey','generalHigherIntelligence','generalReasoningLevels']) {
@@ -78,6 +78,9 @@ for(const field of ['generalUiLanguage','generalSendKey','generalHigherIntellige
 }
 assert.ok(settings.includes('id="generalHigherIntelligence" type="checkbox" disabled'),
   'Core auto-upgrade starts disabled until the server confirms account and migration');
+assert.ok(settings.includes('<label for="generalReasoningLevels">Denkaufwand</label>') &&
+  !settings.includes('class="cfg-general-row" data-expert hidden>\n              <div class="cfg-general-copy">\n                <label for="generalReasoningLevels">'),
+  'Denkaufwand is directly available in General without Expert mode');
 assert.ok(settings.includes('id="generalReasoningLevels" disabled'),
   'reasoning starts disabled until actual per-model capabilities arrive');
 assert.ok(settings.includes('<option value="en">English (Beta)</option>') &&

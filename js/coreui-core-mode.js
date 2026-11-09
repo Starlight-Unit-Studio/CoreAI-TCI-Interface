@@ -501,6 +501,10 @@
       }).then(function () {
         state.saving = false;
         render();
+        // Keep the composer effort label in sync with this original switch.
+        try { window.dispatchEvent(new CustomEvent('coreui:thinking', {
+          detail: {enabled: state.thinking}
+        })); } catch (e) { /* old browser */ }
         return state.thinking;
       });
     }

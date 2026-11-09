@@ -1,0 +1,20 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.75
+09.11.2026
+
+- Denkaufwand jetzt ohne Expertenschalter unter Einstellungen /
+  Allgemein sichtbar.
+- Neuer "DENKAUFWAND"-Button direkt unter dem Chat-Eingabefeld,
+  neben der vorhandenen Core-Auswahl. Oeffnet ein eigenes Popup
+  mit den echten, vom aktuellen Core gemeldeten Denkstufen.
+- Nur von Ollama erkannte low/medium/high/max Stufen erscheinen.
+  Keine simulierten 6 Stufen; Cores mit Boolean-Thinking bieten
+  ehrlich die vorhandenen Optionen Denken an / aus.
+- Beide Oberflaechen nutzen dieselbe per Konto gespeicherte Einstellung
+  (General API, Migration 027). Denkaufwand gilt ab der naechsten Nachricht.
+- Thinking-Schalter bleibt massgeblich; ausgeschaltetes Denken hat
+  Vorrang, ein gewaehlt-er Aufwand bleibt fuer spaeter erhalten.
+- Neue Auswahl bei Core-Wechsel, Escape-/Aussenklick-Steuerung,
+  mobiles Layout und Tastatur-/Screenreader-Beschriftungen.
+- Keine neuen DB-Tabellen, kein Modelfile-Eingriff,
+  keine separate Modellwarteschlange.
+- Offline-UI-Selbsttest und beide Preflights erweitert.

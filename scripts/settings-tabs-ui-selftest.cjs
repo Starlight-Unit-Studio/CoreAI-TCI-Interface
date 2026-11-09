@@ -149,8 +149,8 @@ const smallText = page => page.evaluate(() => {
     assert.equal(await page.locator('#tab-ki-profil').isHidden(), false);
     assert.equal(await page.locator('#tab-wissen').isHidden(), false);
     assert.equal(await page.locator('#tab-memory').isHidden(), false);
-    assert.equal(await page.locator('#generalReasoningLevels').isVisible(), false,
-      'numeric reasoning configuration is hidden until Expert mode is enabled');
+    assert.equal(await page.locator('#generalReasoningLevels').isVisible(), true,
+      'Denkaufwand is immediately visible in General without Expert');
     await page.waitForFunction(() => !document.getElementById('generalHigherIntelligence').disabled);
     assert.equal(await page.locator('#generalUiLanguage').isDisabled(), false, 'UI language can change');
     await page.selectOption('#generalUiLanguage', 'en');
@@ -225,7 +225,7 @@ const smallText = page => page.evaluate(() => {
     await page.click('#tab-start');
     await page.check('#settingsExpertToggle');
     assert.equal(await page.locator('#generalReasoningLevels').isVisible(), true,
-      'Expert reveals the General reasoning placeholder inside General');
+      'Denkaufwand stays visible even after Expert is enabled');
     assert.equal(await page.locator('#generalReasoningLevels').isDisabled(), false,
       'Ollama-declared reasoning levels can be selected');
     await page.selectOption('#generalReasoningLevels', 'medium');

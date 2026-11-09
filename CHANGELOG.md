@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.6.75 - 09.11.2026
+
+- Make **Denkaufwand** visible in General without the Expert switch. It continues to use the existing per-account authenticated General settings endpoint (migration 027); no duplicated preference or new database schema.
+- Add a clearly visible Denkaufwand button immediately under the Core Channel composer, beside the existing Core picker. The accessible popup displays **only Ollama-declared** named effort levels (low, medium, high, max, where available) plus Core-Standard and Denken aus.
+- Boolean-only Cores show **only Denken an/aus**, wired into the existing per-account Core Thinking switch. Selecting a named effort explicitly turns thinking on; switching it off keeps the saved effort for later. Never claim unsupported extra reasoning tiers.
+- Reload supported choices on Core changes, synchronize the effort label with the existing Thinking toggle, support click-outside and Escape, safe mobile wrapping, and retain the original Core permissions, model queue and operator Modelfile.
+- Add offline regression tests for named/boolean effort, saved API calls and visible settings, both preflights, and update browser cache fingerprints. Full Chromium and host preflight are still required before merge.
+
 ## 0.6.74 - 09.11.2026
 
 - Repair noisy SQLite-only offline preflights: the application-settings installer now uses SQLite's portable `CREATE TABLE` syntax when the PDO connection is SQLite, and SQLite-native `ON CONFLICT` for its value updates. MariaDB's existing `ON UPDATE`, `ENGINE=InnoDB` and `ON DUPLICATE KEY UPDATE` remain unchanged.

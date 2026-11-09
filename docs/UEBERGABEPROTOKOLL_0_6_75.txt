@@ -1,0 +1,47 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.75
+Datum: 09.11.2026
+Ausgangsbasis: main 0.6.74 (PR #226 gemergt)
+Branch: feat/reasoning-effort-chat-0675
+
+PROBLEM
+In Allgemein ist Reasoning durch data-expert hidden nur nach Einschalten
+der Expertenoption sichtbar. Unter der Chat-Eingabe fehlt bislang
+der separate Denkaufwand-Regler aus der ChatGPT-Referenz.
+Der Chat bietet bisher nur Core-Auswahl und Denken an/aus.
+
+LOESUNG
+- General: Denkaufwand ist fuer jedes Konto sichtbar,
+  technische num_ctx-/Temperaturregler bleiben Expertenfelder.
+- app.html: "Denkaufwand" als echter Button im Composer-Footer.
+- js/coreui-reasoning-effort.js: eigener UI-Controller fuer das Popup.
+  API: GET /api/user_settings.php?general=1;
+       POST action=general settings.thinking_level.
+  Die bereits vorhandene per-Account-Einstellung wird wiederverwendet.
+- Ollama /api/show deklariert benannte Werte pro Core. Nur diese Werte
+  erscheinen als Optionen (Gering, Mittel, Hoch, Max).
+- Ohne benannte Werte nutzt die Oberflaeche den existierenden
+  CoreUICoreMode.setThinking() fuer das echte Denken an/aus.
+- Beim gewaehlt-en neuen Denkaufwand wird Denken eingeschaltet;
+  bei Denken aus bleiben die gespeicherten Stufen erhalten.
+- Der Controller lauscht auf coreui:core und coreui:thinking.
+  Es gibt keine zusaetzlichen LLM-Aufrufe neben dem normalen Chatfluss.
+- CSS: Popup, sichtbarer Header-Button, mobile Anordnung, Focus und
+  Reduced-Motion-Unterstuetzung.
+- Scripts/Tests: neue UI-Regression, vorhandene Experten-Annahmen
+  und zwei Preflights an die sichtbare General-Option angepasst.
+
+TESTPLAN
+node scripts/reasoning-effort-ui-selftest.cjs
+node scripts/settings-navigation-foundation-selftest.cjs
+node scripts/settings-tabs-ui-selftest.cjs
+scripts/preflight-native.sh (Host) / scripts/preflight.sh (Container)
+
+MANUELLE ABNAHME
+1. Allgemein ohne Expertenmodus oeffnen: Denkaufwand sichtbar.
+2. Chat: Button unter Eingabe oeffnet Auswahl, Escape schliesst.
+3. Gemma/Core ohne benannte Stufen: nur Denken an/aus.
+4. Core mit Stufen: nur unterstuetzte auswahlen und nach Reload
+   denselben Wert in Allgemein und im Chat sehen.
+5. Nach Core-Wechsel erscheinen keine Stufen des vorherigen Modells.
+6. Mobil Hell-/Dunkelmodus und Android Browser pruefen.
+7. Keine Aenderung an Modelfiles, FIFO, Rollen oder Konten.
