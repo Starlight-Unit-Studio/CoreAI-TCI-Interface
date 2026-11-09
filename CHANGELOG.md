@@ -1,5 +1,16 @@
 # CoreAI: TCI Interface
 
+## 0.6.79 - 09.11.2026
+
+- Begin rebuilding **Darstellung** from the screenshot references as ordinary user settings, independent of Expert mode. The existing three working System/Hell/Dunkel modes and all current animation, telemetry, compact-feed, work-path and browser controls remain.
+- Add two real CoreAI UI motifs (**Holo** and **Klar**) and five accent palettes. The accent changes shared borders and active accents through validated design tokens.
+- Add separate, validated light/dark background and foreground color choices; switching light/dark restores the matching palette, including when system mode follows the device. No unsafe arbitrary CSS injection or image inversion.
+- Add normal user controls for UI font size, chat content font size, code font size, text contrast, motion System/Ein/Aus (including live OS reduced-motion changes), desktop full-width content, and color vs +/- difference markers. Local preferences persist without new server tables.
+- Replace the duplicate "Bewegung reduzieren" checkbox with the three-way selector while preserving the saved legacy reduceMotion preference. Appearance reset continues preserving the unrelated General send shortcut and UI language.
+- Extend the appearance regression test for persistence, validation, OS motion changes, old preferences, independent palettes and real input IDs. Keep other existing settings unchanged.
+- **Next incremental appearance work:** intelligent punctuation, separately customizable light/dark typography and theme export/import. No ineffective toggles were added for unimplemented features.
+- No change to Ollama/Modelfile, global FIFO, account rights or backend schemas; full browser/preflight still required.
+
 ## 0.6.78 - 09.11.2026
 
 - Separate the two real Core Channel controls completely. The right-hand **Core** dropdown now only selects local/cloud Cores and retains install/manage access. Remove the duplicate **DENKEN** switch and Thinking status text from the Core dropdown and Core chip, avoiding two controls for the same saved account setting.
