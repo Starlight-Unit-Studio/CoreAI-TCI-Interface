@@ -1,0 +1,39 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.83
+Datum: 09.11.2026
+Basis: main 0.6.82 nach PR #235 (abf9c8d)
+Branch: claude/bold-galileo-myoyi0
+
+AUFTRAG
+Betreiber: "ich habe das gefuehl nicht alle einstellungen von den zwei screenshots die ich
+dir schickte wurden uebernommen" (Benachrichtigungen, 0.6.81).
+
+BEFUND (Screenshots Zeile fuer Zeile verglichen)
+Vorlage, zehn Kategorien: Agenten, Aufgaben (mit Link "Aufgaben verwalten"), Bibliothek,
+Codex, Marketing, Personalisierte Tipps, Projekte, Reaktionen, Updates zu Anfragen,
+Workspace-Anfragen. Es fehlten Codex, Marketing, Personalisierte Tipps, Updates zu Anfragen;
+Reaktionen hiess Antworten; einige Beschreibungen gekuerzt; andere Reihenfolge.
+
+UMGESETZT
+- api/notifications_store.php: Kategorien news (echt, Standard push), code (push), tips
+  (push,email), requests (email) als geplant. coreui_notify_news_installed($pdo, $version):
+  stu_app_settings 'notify_news_version'; erster Lauf merkt sich nur die Version; neue
+  Version per UPDATE ... WHERE value = alt (rowCount 1) genau einmal an alle Konten ohne
+  Gaeste; Zurueckrollen still.
+- api/update.php: Statusabfrage ruft coreui_notify_news_installed mit current_version.
+- settings.html: zwoelf Zeilen in der Reihenfolge der Vorlage (plus CoreAI-Updates und
+  Sicherheit alphabetisch eingeordnet), volle Beschreibungen, Reaktionen statt Antworten.
+  js/coreui-notify-settings.js arbeitet generisch, keine Aenderung noetig.
+
+TESTS (hier ausgefuehrt)
+- php scripts/notifications-selftest.php (auch mit MariaDB)
+- node scripts/notifications-ui-selftest.cjs (Bildschirmfoto angesehen)
+- volle Testreihe mit MariaDB, php -l, Sprachtests, cache-bust, version-merge-check
+
+BEWUSST NICHT
+- Link "Aufgaben verwalten": CoreAI hat noch keine Aufgaben, kein toter Link.
+- Codex heisst Code-Aufgaben, Marketing heisst Neue Funktionen (CoreAI-Begriffe).
+
+NACH DEM MERGE (Betreiber)
+1. Update einspielen. Die erste Statusabfrage nach diesem Update merkt sich 0.6.83 nur;
+   ab dem naechsten Update kommt "CoreAI X ist da" an alle Konten mit Push.
+2. Einstellungen > Benachrichtigungen ansehen: zwoelf Kategorien.

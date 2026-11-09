@@ -1,9 +1,10 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
 Stand: 09.11.2026
-Repository-Version: 0.6.82
-BASIS: main 0.6.81 nach PR #234; SMTP in Admin Core.
+Repository-Version: 0.6.83
+BASIS: main 0.6.82 nach PR #235; Benachrichtigungen vollstaendig.
 NEUE ARBEIT ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_6_83.txt
   docs/UEBERGABEPROTOKOLL_0_6_82.txt
   docs/UEBERGABEPROTOKOLL_0_6_81.txt
   docs/UEBERGABEPROTOKOLL_0_6_80.txt

@@ -47,6 +47,9 @@ if ($method === 'GET' && $action === 'status') {
   if (!empty($state['available'])) {
     try { coreui_notify_update_available(stu_pdo(), $state); } catch (Throwable $e) {}
   }
+  // 0.6.83: Benachrichtigungen > Neue Funktionen: the first page view after an installed update
+  // tells every account, once per version.
+  try { coreui_notify_news_installed(stu_pdo(), (string)($state['current_version'] ?? '')); } catch (Throwable $e) {}
   $owner = coreui_update_owner();
   if ($owner > 0) {
     $out['owner'] = true;

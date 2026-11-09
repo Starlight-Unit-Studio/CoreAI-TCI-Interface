@@ -6,7 +6,7 @@
   <meta name="language" content="de-DE" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#f0f4fa" />
-  <meta name="application-version" content="0.6.82" />
+  <meta name="application-version" content="0.6.83" />
   <meta name="application-name" content="CoreAI: TCI Interface" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface - Einstellungen</title>
@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="./css/coreui-profile-crop.css?v=0852949496159567452926853" />
   <link rel="stylesheet" href="./css/coreui-update.css?v=1027839363176318351849490" />
   <link rel="stylesheet" href="./css/coreui-theme.css?v=0697431397907702126637895" />
-  <script src="./js/console-gate.js?v=0373376787778296921237843"></script>
+  <script src="./js/console-gate.js?v=0376186823281185274239872"></script>
   <script src="./js/coreui-preferences.js?v=0004145186774094057353830"></script>
   <script src="./js/coreui-ui-language.js?v=0850224961537363286304733"></script>
 </head>
@@ -72,7 +72,7 @@
           <h1>EINSTELLUNGEN</h1>
         </div>
       </div>
-      <div class="settings-version">COREAI: TCI INTERFACE // v0.6.82</div>
+      <div class="settings-version">COREAI: TCI INTERFACE // v0.6.83</div>
       <div class="cfg-header-actions" aria-label="Schnellzugriffe Einstellungen">
         <label class="cfg-header-expert" for="settingsExpertToggle" title="Technische Einstellungen in allen Kategorien anzeigen oder ausblenden">
           <span>EXPERTENMODUS</span>
@@ -717,36 +717,52 @@
             </section>
             <section class="settings-panel cfg-card wide notify-categories" aria-labelledby="notifyCategoriesTitle">
               <header class="settings-panel-head"><span class="settings-panel-glyph" aria-hidden="true">◇</span><div><span>KATEGORIEN</span><h3 id="notifyCategoriesTitle">CoreAI</h3></div></header>
-              <div class="notify-row" data-category="answers">
-                <div class="notify-copy"><strong id="notifyLabel-answers">Antworten</strong><small>Erhalte eine Benachrichtigung, wenn Maras Antworten etwas länger dauern, z. B. bei Recherchen oder der Erstellung von Bildern.</small></div>
-                <select class="notify-select" id="notify-answers" data-category="answers" aria-labelledby="notifyLabel-answers"><option value="">Aus</option><option value="push" selected>Push</option><option value="email">E-Mail</option><option value="push,email">Push, E-Mail</option></select>
-              </div>
-              <div class="notify-row" data-category="security">
-                <div class="notify-copy"><strong id="notifyLabel-security">Sicherheit</strong><small>Neue Anmeldung bei deinem Konto und Änderungen deines Passworts.</small></div>
-                <select class="notify-select" id="notify-security" data-category="security" aria-labelledby="notifyLabel-security"><option value="">Aus</option><option value="push">Push</option><option value="email" selected>E-Mail</option><option value="push,email">Push, E-Mail</option></select>
-              </div>
-              <div class="notify-row" data-category="updates" data-owner-only hidden>
-                <div class="notify-copy"><strong id="notifyLabel-updates">CoreAI-Updates</strong><small>Eine neue CoreAI-Version kann installiert werden.</small></div>
-                <select class="notify-select" id="notify-updates" data-category="updates" aria-labelledby="notifyLabel-updates"><option value="">Aus</option><option value="push" selected>Push</option><option value="email">E-Mail</option><option value="push,email">Push, E-Mail</option></select>
+              <div class="notify-row is-planned" data-category="agents">
+                <div class="notify-copy"><strong id="notifyLabel-agents">Agenten</strong><small>Lass dich über Probleme mit Konnektoren benachrichtigen, die deine Agenten betreffen.</small><span class="notify-planned">IN VORBEREITUNG</span></div>
+                <select class="notify-select" id="notify-agents" data-category="agents" aria-labelledby="notifyLabel-agents" disabled><option value="">Aus</option><option value="push">Push</option><option value="email" selected>E-Mail</option><option value="push,email">Push, E-Mail</option></select>
               </div>
               <div class="notify-row is-planned" data-category="tasks">
                 <div class="notify-copy"><strong id="notifyLabel-tasks">Aufgaben</strong><small>Erhalte eine Benachrichtigung, wenn von dir erstellte Aufgaben aktualisiert wurden.</small><span class="notify-planned">IN VORBEREITUNG</span></div>
                 <select class="notify-select" id="notify-tasks" data-category="tasks" aria-labelledby="notifyLabel-tasks" disabled><option value="">Aus</option><option value="push" selected>Push</option><option value="email">E-Mail</option><option value="push,email">Push, E-Mail</option></select>
               </div>
-              <div class="notify-row is-planned" data-category="agents">
-                <div class="notify-copy"><strong id="notifyLabel-agents">Agenten</strong><small>Lass dich über Probleme mit Konnektoren benachrichtigen, die deine Agenten betreffen.</small><span class="notify-planned">IN VORBEREITUNG</span></div>
-                <select class="notify-select" id="notify-agents" data-category="agents" aria-labelledby="notifyLabel-agents" disabled><option value="">Aus</option><option value="push">Push</option><option value="email" selected>E-Mail</option><option value="push,email">Push, E-Mail</option></select>
-              </div>
               <div class="notify-row is-planned" data-category="library">
-                <div class="notify-copy"><strong id="notifyLabel-library">Bibliothek</strong><small>Geteilte Dateien, Ordner und Zugriffsanfragen in deiner Bibliothek.</small><span class="notify-planned">IN VORBEREITUNG</span></div>
+                <div class="notify-copy"><strong id="notifyLabel-library">Bibliothek</strong><small>Erhalte Benachrichtigungen über geteilte Dateien, Ordner und Zugriffsanfragen in deiner Bibliothek.</small><span class="notify-planned">IN VORBEREITUNG</span></div>
                 <select class="notify-select" id="notify-library" data-category="library" aria-labelledby="notifyLabel-library" disabled><option value="">Aus</option><option value="push">Push</option><option value="email" selected>E-Mail</option><option value="push,email">Push, E-Mail</option></select>
               </div>
+              <div class="notify-row is-planned" data-category="code">
+                <div class="notify-copy"><strong id="notifyLabel-code">Code-Aufgaben</strong><small>Erhalte Benachrichtigungen zu Code-Aufgaben, die im Hintergrund weiterlaufen.</small><span class="notify-planned">IN VORBEREITUNG</span></div>
+                <select class="notify-select" id="notify-code" data-category="code" aria-labelledby="notifyLabel-code" disabled><option value="">Aus</option><option value="push" selected>Push</option><option value="email">E-Mail</option><option value="push,email">Push, E-Mail</option></select>
+              </div>
+              <div class="notify-row" data-category="updates" data-owner-only hidden>
+                <div class="notify-copy"><strong id="notifyLabel-updates">CoreAI-Updates</strong><small>Erhalte eine Benachrichtigung, wenn eine neue CoreAI-Version installiert werden kann.</small></div>
+                <select class="notify-select" id="notify-updates" data-category="updates" aria-labelledby="notifyLabel-updates"><option value="">Aus</option><option value="push" selected>Push</option><option value="email">E-Mail</option><option value="push,email">Push, E-Mail</option></select>
+              </div>
+              <div class="notify-row" data-category="news">
+                <div class="notify-copy"><strong id="notifyLabel-news">Neue Funktionen</strong><small>Bleib über neue Werkzeuge und Funktionen von CoreAI auf dem Laufenden. Kommt einmal, nachdem ein Update installiert wurde.</small></div>
+                <select class="notify-select" id="notify-news" data-category="news" aria-labelledby="notifyLabel-news"><option value="">Aus</option><option value="push" selected>Push</option><option value="email">E-Mail</option><option value="push,email">Push, E-Mail</option></select>
+              </div>
+              <div class="notify-row is-planned" data-category="tips">
+                <div class="notify-copy"><strong id="notifyLabel-tips">Personalisierte Tipps</strong><small>Erhalte hilfreiche Empfehlungen basierend auf deinen Chats mit Mara.</small><span class="notify-planned">IN VORBEREITUNG</span></div>
+                <select class="notify-select" id="notify-tips" data-category="tips" aria-labelledby="notifyLabel-tips" disabled><option value="">Aus</option><option value="push">Push</option><option value="email">E-Mail</option><option value="push,email" selected>Push, E-Mail</option></select>
+              </div>
               <div class="notify-row is-planned" data-category="projects">
-                <div class="notify-copy"><strong id="notifyLabel-projects">Projekte</strong><small>Einladungen zu einem freigegebenen Projekt.</small><span class="notify-planned">IN VORBEREITUNG</span></div>
+                <div class="notify-copy"><strong id="notifyLabel-projects">Projekte</strong><small>Erhalte eine Benachrichtigung, wenn eine E-Mail mit einer Einladung zu einem freigegebenen Projekt eingeht.</small><span class="notify-planned">IN VORBEREITUNG</span></div>
                 <select class="notify-select" id="notify-projects" data-category="projects" aria-labelledby="notifyLabel-projects" disabled><option value="">Aus</option><option value="push">Push</option><option value="email" selected>E-Mail</option><option value="push,email">Push, E-Mail</option></select>
               </div>
+              <div class="notify-row" data-category="answers">
+                <div class="notify-copy"><strong id="notifyLabel-answers">Reaktionen</strong><small>Erhalte eine Benachrichtigung, wenn Maras Antworten etwas länger dauern, z. B. bei Recherchen oder der Erstellung von Bildern.</small></div>
+                <select class="notify-select" id="notify-answers" data-category="answers" aria-labelledby="notifyLabel-answers"><option value="">Aus</option><option value="push" selected>Push</option><option value="email">E-Mail</option><option value="push,email">Push, E-Mail</option></select>
+              </div>
+              <div class="notify-row" data-category="security">
+                <div class="notify-copy"><strong id="notifyLabel-security">Sicherheit</strong><small>Erhalte eine Benachrichtigung bei einer neuen Anmeldung bei deinem Konto und wenn dein Passwort geändert wird.</small></div>
+                <select class="notify-select" id="notify-security" data-category="security" aria-labelledby="notifyLabel-security"><option value="">Aus</option><option value="push">Push</option><option value="email" selected>E-Mail</option><option value="push,email">Push, E-Mail</option></select>
+              </div>
+              <div class="notify-row is-planned" data-category="requests">
+                <div class="notify-copy"><strong id="notifyLabel-requests">Updates zu Anfragen</strong><small>Erhalte E-Mails, wenn deine Verbindungsanfragen im Workspace umgesetzt wurden.</small><span class="notify-planned">IN VORBEREITUNG</span></div>
+                <select class="notify-select" id="notify-requests" data-category="requests" aria-labelledby="notifyLabel-requests" disabled><option value="">Aus</option><option value="push">Push</option><option value="email" selected>E-Mail</option><option value="push,email">Push, E-Mail</option></select>
+              </div>
               <div class="notify-row is-planned" data-category="workspace">
-                <div class="notify-copy"><strong id="notifyLabel-workspace">Workspace-Anfragen</strong><small>Ein Workspace-Mitglied fordert eine Verbindung an.</small><span class="notify-planned">IN VORBEREITUNG</span></div>
+                <div class="notify-copy"><strong id="notifyLabel-workspace">Workspace-Anfragen</strong><small>Erhalte E-Mails, wenn ein Workspace-Mitglied eine Verbindung anfordert.</small><span class="notify-planned">IN VORBEREITUNG</span></div>
                 <select class="notify-select" id="notify-workspace" data-category="workspace" aria-labelledby="notifyLabel-workspace" disabled><option value="">Aus</option><option value="push">Push</option><option value="email" selected>E-Mail</option><option value="push,email">Push, E-Mail</option></select>
               </div>
               <p class="notify-hint" id="notifyCategoriesHint">Kategorien mit „In Vorbereitung“ gehören zu Funktionen, die CoreAI noch nicht hat; sie senden nichts.</p>

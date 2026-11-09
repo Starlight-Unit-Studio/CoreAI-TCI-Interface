@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.82: E-Mail-Versand (SMTP) vom Inhaber in Admin Core einrichtbar, Passwort verschluesselt, Serverkonfiguration hat Vorrang.
+# CoreAI: TCI Interface 0.6.83: Benachrichtigungen mit allen Kategorien der Referenz, Neue Funktionen nach einem installierten Update.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
