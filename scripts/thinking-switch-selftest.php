@@ -132,6 +132,8 @@ think_test(ember_thinking_enabled() === false, 'the stored switch reaches the re
 $GLOBALS['COREUI_AI_RUNTIME_SETTINGS'] = ['thinking_enabled'=>true];
 think_test(ember_thinking_enabled() === true, 'switch on');
 $stream = (string)file_get_contents($root . '/api/console_stream.php');
-think_test(str_contains($stream, "'think'    => \$thinkOverride ?? ember_thinking_enabled(),"), 'chat stream sends the switch as think');
+think_test(str_contains($stream, "'think'    => coreui_general_think_value(\$model, \$thinkOverride ?? ember_thinking_enabled()),")
+  && str_contains($chat, "coreui_general_think_value(\$model, \$thinkOverride ?? ember_thinking_enabled())"),
+  'both reply paths preserve switch priority and optional supported effort');
 
 echo "CoreAI thinking switch and Core choice: Modelfile, save, preload, global channel and analysis filter OK\n";
