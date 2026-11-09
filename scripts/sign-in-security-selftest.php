@@ -277,7 +277,10 @@ foreach (['totp_begin', 'totp_enable', 'totp_disable', 'email_begin', 'email_ena
 }
 s_test(substr_count($page, 'coreui_account_security_reauth($pdo, $uid, (string)($body[\'password\'] ?? \'\'));') === 8, 'account_security: password for every sensitive change');
 s_test(str_contains($page, "'guest_not_allowed'") && str_contains($page, "coreui_auth_session_revoke_all(\$pdo, \$uid, 'advanced_security');"), 'account_security: no guests, advanced signs out everywhere');
-s_test(str_contains($read('api/ai_settings.php'), "\$operator['web'] = false;\n    \$operator['browse'] = false;"), 'Lockdown-Modus switches web and browser off');
+$aiSettings = $read('api/ai_settings.php');
+$policyLine = "\$GLOBALS['COREUI_OPERATOR_RUNTIME_SETTINGS'] = coreui_user_policy_tools(coreui_operator_runtime_load(\$pdo), \$policy);";
+$lockdownAt = strpos($aiSettings, "if (function_exists('coreui_security_lockdown') && coreui_security_lockdown(\$pdo, \$uid)) {\n    \$GLOBALS['COREUI_OPERATOR_RUNTIME_SETTINGS']['web'] = false;\n    \$GLOBALS['COREUI_OPERATOR_RUNTIME_SETTINGS']['browse'] = false;");
+s_test($lockdownAt !== false && strpos($aiSettings, $policyLine) !== false && strpos($aiSettings, $policyLine) < $lockdownAt, 'Lockdown-Modus switches web and browser off (after the account policy)');
 s_test(str_contains($read('api/notifications_store.php'), "\$category === 'security' && \$channels === ['']"), 'advanced: sign-in notifications cannot be switched off');
 s_test(str_contains($read('api/helpers.php'), "require_once __DIR__ . '/security_store.php';"), 'helpers load the store');
 s_test(str_contains($read('api/auth_session_store.php'), "INTERVAL ' . \$hours . ' HOUR"), 'session lifetime per account');

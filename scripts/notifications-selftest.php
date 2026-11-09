@@ -306,7 +306,15 @@ n_test(str_contains($chat, "require_once __DIR__ . '/notifications_store.php';")
   && str_contains($chat, "coreui_notify_answer(\$pdo, \$uid, (string)\$sessionId, (int)\$replyToId, (string)\$text, coreui_profile_assistant_name(\$pdo, \$uid));"),
   'chat: Mara\'s saved reply');
 $auth = $read('api/auth.php');
-n_test(str_contains($auth, "coreui_notify_security(\$pdo, (int)\$row['id'], 'login', coreui_auth_device_label((string)(\$_SERVER['HTTP_USER_AGENT'] ?? '')));")
+// 0.6.85: every sign-in (password, second factor, passkey) ends in coreui_auth_login_finish,
+// which sends the sign-in notification after the session exists.
+$finish = (string)strstr((string)strstr($auth, 'function coreui_auth_login_finish('), 'function coreui_auth_mfa_offer(', true);
+n_test(str_contains($finish, "coreui_notify_security(\$pdo, \$uid, 'login', \$device);")
+  && str_contains($finish, "\$device = coreui_auth_device_label((string)(\$_SERVER['HTTP_USER_AGENT'] ?? ''));")
+  && strpos($finish, 'coreui_auth_session_issue(') < strpos($finish, 'coreui_notify_security(')
+  && str_contains($auth, "coreui_auth_login_finish(\$pdo, (int)\$row['id'], 'Passwort');")
+  && str_contains($auth, "coreui_auth_login_finish(\$pdo, \$uid, \$label);")
+  && str_contains($auth, "coreui_auth_login_finish(\$pdo, \$uid, 'Passkey: ' . (string)\$stored['label']);")
   && substr_count($auth, "'password', '');") === 2, 'auth: sign-in and both password resets');
 n_test(str_contains($read('api/account_security.php'), "coreui_notify_security(\$pdo, \$uid, 'password', '');"), 'password change');
 n_test(str_contains($read('api/update.php'), 'coreui_notify_update_available(stu_pdo(), $state);')

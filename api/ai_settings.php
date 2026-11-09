@@ -328,14 +328,13 @@ function coreui_ai_runtime_apply(PDO $pdo, int $uid): array {
   $GLOBALS['COREUI_AI_RUNTIME_SETTINGS'] = $settings;
   // 0.5.85: tools the Inhaber or an Admin blocked for this account are off
   // for it, everywhere (prompt, work loop, file tasks); global off stays off.
-  $operator = coreui_user_policy_tools(coreui_operator_runtime_load($pdo), $policy);
+  $GLOBALS['COREUI_OPERATOR_RUNTIME_SETTINGS'] = coreui_user_policy_tools(coreui_operator_runtime_load($pdo), $policy);
   // 0.6.85: Lockdown-Modus (Settings > Sicherheit): no web search and no research in the
   // browser for this account, so no foreign page can slip instructions to Mara.
   if (function_exists('coreui_security_lockdown') && coreui_security_lockdown($pdo, $uid)) {
-    $operator['web'] = false;
-    $operator['browse'] = false;
+    $GLOBALS['COREUI_OPERATOR_RUNTIME_SETTINGS']['web'] = false;
+    $GLOBALS['COREUI_OPERATOR_RUNTIME_SETTINGS']['browse'] = false;
   }
-  $GLOBALS['COREUI_OPERATOR_RUNTIME_SETTINGS'] = $operator;
   return $settings;
 }
 
