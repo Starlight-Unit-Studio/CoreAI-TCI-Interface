@@ -12,7 +12,7 @@ diese Bindung.
 
 URSACHE
 - coreui_image_is_self_request erkennt bisher nur einen engen Satz
-  Formulierungen. "Mara im Cockpit", "Ember am Strand" und andere
+  Formulierungen. "Mara im Cockpit", "Mara am Strand" und andere
   nach Namen formulierte Szenen koennen als fremde Motive gelten.
 - coreui_composer_intent_ensure kann ein korrektes Modell-ICH bei
   verkuerzten Folgewuenschen nachtraeglich entfernen.
@@ -43,6 +43,13 @@ UMSETZUNG
 - VERSION, sechs HTML-Seiten, Bootstrap-/Cache-Fingerprint, Branding,
   README, Changelog, TXT-Archiv, Preflight und dieses Protokoll
   synchronisiert.
+
+KANON-TRENNUNG
+- Ember Caldwell / Sandra Jansen ist NICHT Mara Thorne.
+- Der TCI-Bildprompt enthaelt keinen fest eingebauten Beispielnamen
+  Ember; benutzerdefinierte Rufnamen stammen aus den Accountdaten.
+- Alte technische ember_* APIs, Tabellen und Dateipfade bleiben aus
+  Rueckwaertskompatibilitaetsgruenden unveraendert.
 
 ABGRENZUNG
 - Es wird KEIN Memory-Eintrag erzeugt.
