@@ -8287,7 +8287,6 @@ a.core-install-btn {
   line-height: 1.4;
   overflow-wrap: anywhere;
 }
-.about-copy .copyright-line strong { color: #18243a; font-weight: 700; }
 .splash-copyright, .login-copyright, .drawer-copyright, .proto-footer {
   color: #43526d;
   font-size: 11px;
@@ -8295,8 +8294,6 @@ a.core-install-btn {
   line-height: 1.5;
   overflow-wrap: anywhere;
 }
-.splash-copyright strong, .login-copyright strong,
-.drawer-copyright strong, .proto-footer strong { color: #202c42; }
 .settings-footer {
   color: #43526d;
   font-size: 10px;
