@@ -16,6 +16,7 @@
     test: document.getElementById('notifyPushTest'),
     devices: document.getElementById('notifyDevices'),
     mailStatus: document.getElementById('notifyMailStatus'),
+    mailSetup: document.getElementById('notifyMailSetup'),
     saveState: document.getElementById('settingsSaveState')
   };
   var selects = Array.prototype.slice.call(view.querySelectorAll('select.notify-select'));
@@ -102,8 +103,12 @@
     var mail = state.email || {};
     el.mailStatus.textContent = mail.available
       ? 'E-Mails gehen an ' + (mail.address || 'die E-Mail-Adresse deines Kontos') + '.'
-      : 'Auf diesem Server ist kein E-Mail-Versand eingerichtet. E-Mail-Benachrichtigungen werden deshalb nicht verschickt.';
+      : (state.owner
+        ? 'Auf diesem Server ist kein E-Mail-Versand eingerichtet. Als Inhaber kannst du den SMTP-Server in Admin Core unter Betrieb eintragen.'
+        : 'Auf diesem Server ist kein E-Mail-Versand eingerichtet. E-Mail-Benachrichtigungen werden deshalb nicht verschickt.');
     el.mailStatus.setAttribute('data-state', mail.available ? 'on' : 'off');
+    // 0.6.82: the Inhaber can set up SMTP in Admin Core > Betrieb.
+    if (el.mailSetup) el.mailSetup.hidden = !!mail.available || !state.owner;
 
     selects.forEach(function (select) {
       var id = select.getAttribute('data-category');

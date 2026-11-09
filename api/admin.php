@@ -12,6 +12,7 @@ require_once __DIR__ . '/account_delete.php';
 require_once __DIR__ . '/account_admin.php';
 require_once __DIR__ . '/tts_spike_store.php';
 require_once __DIR__ . '/image_spike_store.php';
+require_once __DIR__ . '/mailer.php';
 
 $pdo = stu_pdo();
 $actorId = stu_require_user_id();
@@ -41,6 +42,15 @@ function coreui_admin_audit(PDO $pdo, int $actorId, string $action, string $type
       stu__log_error(['type' => 'admin_audit_failed', 'action' => $action, 'message' => $e->getMessage()]);
     }
   }
+}
+
+/** Admin Core > Betrieb > E-Mail-Versand: what the page shows (0.6.82). */
+function coreui_admin_mail_state(PDO $pdo, int $actorId): array {
+  $st = $pdo->prepare('SELECT username FROM stu_users WHERE id = ? LIMIT 1');
+  $st->execute([$actorId]);
+  $address = (string)($st->fetchColumn() ?: '');
+  return ['ok' => true, 'mail' => coreui_mail_public(coreui_mail_effective($pdo)),
+    'test_address' => filter_var($address, FILTER_VALIDATE_EMAIL) ? $address : '', 'csrf_token' => stu_csrf_token()];
 }
 
 function coreui_admin_log_path(): string {
@@ -165,6 +175,12 @@ if ($method === 'GET') {
     sort($external, SORT_NATURAL | SORT_FLAG_CASE);
     stu_json(['ok' => true, 'models' => $external, 'grants' => (object)$grants, 'ollama' => $ollama,
       'ready' => coreui_model_access_ready($pdo)]);
+  }
+
+  // 0.6.82: E-Mail-Versand (SMTP), Inhaber only. Never returns the password.
+  if ($action === 'mail_settings') {
+    if ($actorLevel !== 0) stu_json(['ok' => false, 'error' => 'owner_only'], 403);
+    stu_json(coreui_admin_mail_state($pdo, (int)$actorId));
   }
 
   // 0.5.94: voice test results (P20.0), Inhaber only. The runs come from
@@ -570,6 +586,50 @@ if ($action === 'settings_save') {
   }
   coreui_admin_audit($pdo, $actorId, 'settings_save', 'app_settings', '', ['keys' => array_keys($saved)]);
   stu_json(['ok' => true, 'settings' => coreui_admin_setting_rows($pdo)]);
+}
+
+// 0.6.82: E-Mail-Versand (SMTP) set up in Admin Core, Inhaber only. The server configuration
+// (api/config.local.php or COREUI_SMTP_*) always wins and cannot be changed here.
+if ($action === 'mail_settings_save' || $action === 'mail_settings_delete' || $action === 'mail_test') {
+  if ($actorLevel !== 0) stu_json(['ok' => false, 'error' => 'owner_only'], 403);
+  try {
+    if ($action === 'mail_settings_save') {
+      $saved = coreui_mail_save($pdo, is_array($body['mail'] ?? null) ? $body['mail'] : []);
+      coreui_admin_audit($pdo, (int)$actorId, 'mail_settings_save', 'app_settings', 'mail_smtp', [
+        'host' => $saved['host'] ?? '', 'port' => $saved['port'] ?? 0, 'security' => $saved['security'] ?? '',
+        'login' => ($saved['user'] ?? '') !== '', 'from' => $saved['from'] ?? '']);
+      stu_json(coreui_admin_mail_state($pdo, (int)$actorId));
+    }
+    if ($action === 'mail_settings_delete') {
+      coreui_mail_delete($pdo);
+      coreui_admin_audit($pdo, (int)$actorId, 'mail_settings_delete', 'app_settings', 'mail_smtp');
+      stu_json(coreui_admin_mail_state($pdo, (int)$actorId));
+    }
+    // mail_test: one mail to the Inhaber's own address with the configuration that is used.
+    $state = coreui_admin_mail_state($pdo, (int)$actorId);
+    if ($state['test_address'] === '') stu_json(['ok' => false, 'error' => 'mail_test_no_address'] + $state, 400);
+    $error = '';
+    // A slow SMTP server must not block the Inhaber's other requests (session lock).
+    if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
+    try {
+      stu_send_mail($state['test_address'], 'CoreAI: Testmail',
+        "Der E-Mail-Versand von CoreAI funktioniert.\n\nDiese Testmail wurde in Admin Core > Betrieb > E-Mail-Versand angefordert.\n",
+        coreui_mail_effective($pdo));
+    } catch (Throwable $e) {
+      $error = (string)$e->getMessage();
+    }
+    coreui_admin_audit($pdo, (int)$actorId, 'mail_test', 'app_settings', 'mail_smtp', ['sent' => $error === '', 'error' => $error]);
+    if ($error !== '') {
+      if (function_exists('stu__log_error')) stu__log_error(['type' => 'mail_test_failed', 'message' => $error]);
+      stu_json(['ok' => false, 'error' => $error, 'message' => coreui_mail_error_text($error)] + $state, 502);
+    }
+    stu_json(['sent_to' => $state['test_address']] + $state);
+  } catch (InvalidArgumentException $e) {
+    stu_json(['ok' => false, 'error' => $e->getMessage()], 400);
+  } catch (RuntimeException $e) {
+    $code = $e->getMessage();
+    stu_json(['ok' => false, 'error' => $code], $code === 'mail_env_locked' ? 409 : 500);
+  }
 }
 
 if ($action === 'logs_clear') {

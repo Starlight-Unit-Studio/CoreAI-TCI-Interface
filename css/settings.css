@@ -2546,3 +2546,14 @@ html[data-coreui-theme="dark"] .settings-body .notify-planned { color: var(--amb
   .settings-body .notify-copy small { font-size: 12.5px; }
   .settings-body .notify-select { min-width: 0; max-width: 46vw; padding-left: 12px; }
 }
+
+/* 0.6.82: Admin Core > Betrieb > E-Mail-Versand (SMTP) and the link from Benachrichtigungen. */
+.settings-body .settings-action[hidden] { display: none; }
+.settings-body .notify-mail-card #notifyMailSetup { justify-self: start; width: max-content; }
+.settings-body .mail-status { margin: 0 0 14px; color: var(--txt); font-size: 15px; line-height: 1.5; }
+.settings-body .mail-status[data-state="ready"]::before { content: "● "; color: var(--green); }
+.settings-body .mail-status[data-state="warn"] { color: var(--red); }
+.settings-body .mail-form input:disabled,
+.settings-body .mail-form select:disabled { opacity: 0.6; cursor: not-allowed; }
+.settings-body .mail-form .form-hint[data-state="ok"] { color: var(--green); }
+.settings-body .mail-form .form-hint[data-state="error"] { color: var(--red); }

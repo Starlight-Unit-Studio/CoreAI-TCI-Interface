@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.81: Benachrichtigungen (Web Push nach RFC 8291/8292, E-Mail, Browser) als echte Einstellungsseite.
+# CoreAI: TCI Interface 0.6.82: E-Mail-Versand (SMTP) vom Inhaber in Admin Core einrichtbar, Passwort verschluesselt, Serverkonfiguration hat Vorrang.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -91,6 +91,10 @@ UI_FILES=(
   js/coreui-notify-settings.js
   scripts/notifications-selftest.php
   scripts/notifications-ui-selftest.cjs
+  api/mail_settings.php
+  js/coreui-admin-mail.js
+  scripts/mail-settings-selftest.php
+  scripts/admin-mail-ui-selftest.cjs
   scripts/terran-terminology-selftest.cjs
   scripts/tci-language-selftest.cjs
   setup.sh
@@ -870,6 +874,14 @@ if command -v php >/dev/null 2>&1; then
     fail "Benachrichtigungs-Selbsttest: ${notifications_test:-Unbekannter Fehler}"
   fi
 
+  # 0.6.82: E-Mail-Versand (SMTP) in Admin Core: input checks, sealed password, a real SMTP session.
+  mail_settings_test=''
+  if mail_settings_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/mail-settings-selftest.php" 2>&1)"; then
+    ok 'E-Mail-Versand: Eingaben, verschluesseltes Passwort, Vorrang der Serverkonfiguration und SMTP-Sitzung geprueft.'
+  else
+    fail "E-Mail-Versand-Selbsttest: ${mail_settings_test:-Unbekannter Fehler}"
+  fi
+
   profile_reference_test=''
   if profile_reference_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/profile-reference-selftest.php" 2>&1)"; then
     if [[ "$profile_reference_test" == PARTIAL:* ]]; then
@@ -1089,6 +1101,16 @@ if command -v php >/dev/null 2>&1; then
       fi
     else
       ok 'Benachrichtigungen: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+    fi
+    # 0.6.82: Admin Core > Betrieb > E-Mail-Versand (SMTP); needs Playwright for Node.
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/admin-mail-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'E-Mail-Versand: SMTP-Karte (Speichern, Passwort behalten, Testmail, Serverkonfiguration) im Browser geprueft.'
+      else
+        fail 'E-Mail-Versand: Oberflaechentest fehlgeschlagen.'
+      fi
+    else
+      ok 'E-Mail-Versand: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
     fi
     # 0.5.83: update window (Inhaber) and "Bitte auf Neustart warten"; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
