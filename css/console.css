@@ -4229,6 +4229,13 @@ html.live-open body {
   display: none;
 }
 
+/* Core picker only contains the Core list. Thinking lives in Denkaufwand. */
+#coreModeMenu .core-mode-section {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+#coreModeStatus:empty { display: none; }
+
 .core-mode-section {
   display: grid;
   gap: 6px;
