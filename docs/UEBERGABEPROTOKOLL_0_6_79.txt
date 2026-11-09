@@ -1,0 +1,46 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.79
+Datum: 09.11.2026
+Basis: main 0.6.78, PR #230 gemergt
+Branch: feat/appearance-controls-0679
+
+AUFTRAG
+Darstellung nach den drei ChatGPT-Screenshots gestalten.
+Alle uebernommenen Einstellungen sind normale Einstellungen,
+keine Expertenwerte. Vorhandene Funktionen bleiben erhalten.
+
+REALER STAND
+- Darstellung: drei bestehende System/Hell/Dunkel-Modi,
+  Holo/Klar-Motiv, Farbpalette und validierte Farbwaehler
+  fuer zwei Farbmodi, Schriftgroessen, Kontrast,
+  Bewegung System/Ein/Aus, Vollbreite und Unterschiedsmarkierungen.
+- Die alte Checkbox Bewegung reduzieren wurde durch eine
+  Dreifachauswahl ersetzt, alte lokale Werte werden eingelesen.
+- Vorhandene Optionen fuer Telemetrie, kompakten Chat, Arbeitsweg,
+  Live-Browser und Bildfolge wurden nicht geloescht.
+- Alle Werte bleiben unter dem bestehenden lokalen Preference-Key;
+  andere Konto- und Core-Einstellungen bleiben unberuehrt.
+- JavaScript-Controller: js/coreui-preferences.js plus js/settings.js.
+  CSS: css/coreui-theme.css plus css/settings.css.
+- Farben werden als sechsstellige Hexwerte validiert, Schriftgroessen
+  und Kontrast haben begrenzte Zahlbereiche.
+- Reduzierte Bewegung folgt bei System der Aenderung des Geraets.
+- Kein globales Filter/Inversion, das Fotos oder Browser-Frames
+  verfaelscht.
+
+OFFEN FUER NAECHSTEN SCHRITT
+- Intelligente Zeichensetzung sicher in der Eingabepipeline.
+- Eigene Schriften/Groessen je Tag-/Nachtmodus.
+- Motiv importieren/exportieren und kopieren.
+Keine unwirksamen Placeholder-Schalter dafuer.
+
+PRUEFPLAN
+node scripts/theme-preferences-selftest.cjs
+node scripts/settings-tabs-ui-selftest.cjs
+scripts/preflight-native.sh / scripts/preflight.sh
+Android: Modus wechseln, Farben pruefen, Schriftgroessen
+sichtbar aendern, groesse/contrast zuruecksetzen.
+Alte lokale Werte und General-Send-Taste erhalten.
+Auch auf Samsung DeX grosse Darstellung pruefen.
+
+Keine Datenbank-, Ollama-, Modelfile-, FIFO- oder Rechte-Aenderung.
+Release gilt erst bei Merge.
