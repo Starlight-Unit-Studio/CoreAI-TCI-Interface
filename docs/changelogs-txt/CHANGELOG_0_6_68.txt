@@ -1,0 +1,8 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.68
+09.11.2026
+
+- Neuer Willkommensbildschirm in CoreAI-Farben mit persoenlicher Begruessung und vier direkt sendbaren Beispielfragen.
+- Bei Anmeldung und "Neue Verbindung" entsteht nur ein ungespeicherter Entwurf. Erst die erste Nachricht legt den Chat an.
+- Text, Anhaenge, Stimmsequenzen und die erste Live-Aeusserung verwenden dieselbe Sitzungsanlage.
+- Die rechte Composer-Taste schaltet zwischen Live, Senden und stark pulsierendem Stopp um; kein Stop-Knopf mitten im Chat.
+- Frueher Abbruchwunsch bleibt bis zur Server-Auftragskennung erhalten. Keine Migration, Modell- oder Memory-Aenderung.
