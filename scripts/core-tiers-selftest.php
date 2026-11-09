@@ -85,13 +85,15 @@ $shows = ['gemma4:e2b' => ['capabilities' => ['completion', 'vision', 'audio']],
 $flags = coreui_core_audio_flags([['name' => 'gemma4:e2b'], ['name' => 'gemma4:31b-cloud'], ['name' => 'gemma4:12b'],
   ['name' => 'ember-coreui:latest']], static function (string $n) use (&$asked, $shows): ?array { $asked[] = $n; return $shows[$n] ?? null; });
 tier_test(array_column($flags, 'audio') === [true, null, false, true] && array_column($flags, 'live') === [true, false, false, true]
-  && !in_array('gemma4:31b-cloud', $asked, true), 'speaker for Cores that hear, live for local ones, cloud Cores not asked');
+  && array_column($flags, 'vision') === [true, null, true, false]
+  && !in_array('gemma4:31b-cloud', $asked, true), 'vision, speaker and live indicators from Ollama, cloud Cores not asked');
 $asked = [];
 $flags = coreui_core_audio_flags([['name' => 'a:1'], ['name' => 'b:1'], ['name' => 'c:1']],
   static function (string $n) use (&$asked): ?array { $asked[] = $n; return null; });
-tier_test($asked === ['a:1'] && array_column($flags, 'audio') === [null, null, null] && array_column($flags, 'live') === [false, false, false],
+tier_test($asked === ['a:1'] && array_column($flags, 'audio') === [null, null, null] && array_column($flags, 'vision') === [null, null, null]
+  && array_column($flags, 'live') === [false, false, false],
   'Ollama does not describe a Core: the rest stay unknown, no symbol, no waiting');
 tier_test(str_contains($models, "coreui_core_audio_flags(\$models, static fn(string \$name): ?array => coreui_ollama_read_json('show'"),
   'the Core list asks Ollama which Cores hear');
 
-echo "CoreAI Core tiers: TCI names, Mara's base and persona for every Core, audio and live symbols OK\n";
+echo "CoreAI Core tiers: TCI names, Mara's base and persona for every Core, vision, audio and live symbols OK\n";

@@ -56,10 +56,10 @@ function page() {
 
 // Labels as api/models.php sends them (coreui_core_label).
 const MODELS = [
-  {name: 'ember-coreui:latest', parameter_size: '7.5B', label: 'TCI Core Normal', mara: true, audio: true, live: true},
-  {name: 'gemma4:31b-cloud', parameter_size: '32.7B', label: 'TCI Core Premium', audio: null, live: false},
-  {name: 'gemma4:e2b', parameter_size: '5.1B', label: 'TCI Core Schnell', audio: true, live: true},
-  {name: 'gemma4:e4b', parameter_size: '7.5B', label: 'TCI Core Normal', audio: true, live: true},
+  {name: 'ember-coreui:latest', parameter_size: '7.5B', label: 'TCI Core Normal', mara: true, vision: true, audio: true, live: true},
+  {name: 'gemma4:31b-cloud', parameter_size: '32.7B', label: 'TCI Core Premium', vision: null, audio: null, live: false},
+  {name: 'gemma4:e2b', parameter_size: '5.1B', label: 'TCI Core Schnell', vision: true, audio: true, live: true},
+  {name: 'gemma4:e4b', parameter_size: '7.5B', label: 'TCI Core Normal', vision: false, audio: true, live: true},
   {name: 'gpt-oss:120b-cloud', parameter_size: '117B', label: 'gpt-oss:120b-cloud'},
 ];
 const MISSING = [{tier: 'plus', label: 'TCI Core Plus', base: 'gemma4:12b'},
@@ -156,12 +156,13 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
   assert.equal(opts[1].getAttribute('aria-checked'), 'true', 'server default is the current choice');
   assert.match(opts[1].textContent, /Standard · 7\.5B · geladen/, 'standard, size and loaded state');
   assert.match(opts[2].textContent, /32\.7B · Cloud/, 'cloud Core is marked');
-  // 0.6.34: speaker and live waves left of the check mark for the Cores that hear.
+  // Confirmed vision, audio and live capabilities appear left of the check mark.
   const capsOf = o => { const c = o.children.find(x => x.className === 'core-mode-caps'); return c ? c.children.map(i => [i.className, i.getAttribute('aria-label')]) : []; };
-  assert.deepEqual(capsOf(opts[0]), [['core-mode-cap core-mode-cap--audio', 'Audioeingabe: Stimmsequenzen und Audiodateien'],
-    ['core-mode-cap core-mode-cap--live', 'Live-Gespräch möglich']], 'Schnell hears: speaker and live');
-  assert.deepEqual(capsOf(opts[1]).map(c => c[0]), ['core-mode-cap core-mode-cap--audio', 'core-mode-cap core-mode-cap--live'], 'the standard (Normal) too');
-  assert.deepEqual(capsOf(opts[2]), [], 'a cloud Core without known audio: no symbols');
+  assert.deepEqual(capsOf(opts[0]), [['core-mode-cap core-mode-cap--vision', 'Bildverständnis: Bilder und Videoframes'],
+    ['core-mode-cap core-mode-cap--audio', 'Audioeingabe: Stimmsequenzen und Audiodateien'],
+    ['core-mode-cap core-mode-cap--live', 'Live-Gespräch möglich']], 'Schnell supports image, speaker and live');
+  assert.deepEqual(capsOf(opts[1]).map(c => c[0]), ['core-mode-cap core-mode-cap--vision', 'core-mode-cap core-mode-cap--audio', 'core-mode-cap core-mode-cap--live'], 'the standard (Normal) supports all three');
+  assert.deepEqual(capsOf(opts[2]), [], 'a cloud Core without known capabilities: no symbols');
   assert.deepEqual(capsOf(opts[3]), [], 'a Core that does not hear: no symbols');
   assert.equal(opts[1].children[2].className, 'core-mode-check', 'the check mark keeps its place');
 

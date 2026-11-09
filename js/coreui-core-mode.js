@@ -124,13 +124,14 @@
       return button;
     }
 
-    // 0.6.34: what a Core can do, as symbols left of the check mark (speaker: hears audio,
-    // waves: the live conversation can run on it); nothing when it cannot or it is unknown.
+    // Confirmed local Ollama capabilities, shown left of the check mark.
+    // No symbol for capabilities that are absent or unknown.
     function capsOf(core) {
       var c = state.caps[modelKey(core)] || {};
-      if (!c.audio && !c.live) return null;
+      if (!c.audio && !c.live && !c.vision) return null;
       var wrap = doc.createElement('span');
       wrap.className = 'core-mode-caps';
+      if (c.vision) wrap.appendChild(capIcon('vision', 'Bildverständnis: Bilder und Videoframes'));
       if (c.audio) wrap.appendChild(capIcon('audio', 'Audioeingabe: Stimmsequenzen und Audiodateien'));
       if (c.live) wrap.appendChild(capIcon('live', 'Live-Gespräch möglich'));
       return wrap;
@@ -404,7 +405,7 @@
           state.models.forEach(function (m) {
             if (m && m.name && m.label) state.labels[modelKey(m.name)] = String(m.label);
             if (m && m.name && m.mara) state.mara[modelKey(m.name)] = true;
-            if (m && m.name) state.caps[modelKey(m.name)] = {audio: m.audio === true, live: m.live === true};
+            if (m && m.name) state.caps[modelKey(m.name)] = {vision: m.vision === true, audio: m.audio === true, live: m.live === true};
           });
           state.missing = (Array.isArray(both[0].missing_tiers) ? both[0].missing_tiers : []).filter(function (m) {
             return m && m.tier && m.label;
