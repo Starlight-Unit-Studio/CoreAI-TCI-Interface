@@ -89,6 +89,8 @@ UI_FILES=(
   css/coreui-theme.css
   js/coreui-settings-menu.js
   js/coreui-settings-tabs.js
+  scripts/send-shortcut-selftest.cjs
+  js/coreui-send-keys.js
   scripts/settings-navigation-foundation-selftest.cjs
   scripts/settings-tabs-ui-selftest.cjs
   scripts/theme-preferences-selftest.cjs
@@ -1122,6 +1124,11 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       ok 'Mara-TCI-Sprache und Stimmsequenz-Terminologie geprueft.'
     else
       fail 'Mara-TCI-Sprache: Terminologie-Selbsttest fehlgeschlagen.'
+    fi
+    if node "$PROJECT_ROOT/scripts/send-shortcut-selftest.cjs" >/dev/null 2>&1; then
+      ok 'Allgemein: Enter, Strg/Command+Enter und IME-Schutz geprueft.'
+    else
+      fail 'Allgemein: Tastatur-Shortcuts oder Composer-Integration fehlgeschlagen.'
     fi
     if node "$PROJECT_ROOT/scripts/theme-preferences-selftest.cjs" >/dev/null 2>&1; then
       ok 'Anzeige: System/Hell/Dunkel mit Speichern, Betriebssystem-Wechsel und Browser-Tabs geprueft.'
