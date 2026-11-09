@@ -81,9 +81,9 @@ CREATE TABLE stu_coreui_profiles (user_id INTEGER, display_name TEXT, assistant_
 CREATE TABLE stu_coreui_profile_media (uuid TEXT,user_id INTEGER,slot TEXT,stored_name TEXT,mime_type TEXT,file_size INTEGER,width_px INTEGER,height_px INTEGER,created_at TEXT);
 CREATE TABLE ember_memories (id INTEGER PRIMARY KEY,fact TEXT,relevance INTEGER,scope TEXT,user_id INTEGER,character_id TEXT,fact_hash TEXT,last_used_at TEXT,updated_at TEXT);
 INSERT INTO stu_users VALUES (1,"one@example.invalid"),(2,"two@example.invalid");
-INSERT INTO stu_coreui_profiles VALUES (1,"One","Ember",CURRENT_TIMESTAMP),(2,"Two","Mara",CURRENT_TIMESTAMP);');
-check(coreui_profile_load($pdo,1)['assistant_name'] === 'Ember', 'Ember is a valid display name');
-check(str_contains(coreui_profile_prompt_block($pdo,1), '"Ember"'), 'Prompt retains alias');
+INSERT INTO stu_coreui_profiles VALUES (1,"One","Testalias",CURRENT_TIMESTAMP),(2,"Two","Mara",CURRENT_TIMESTAMP);');
+check(coreui_profile_load($pdo,1)['assistant_name'] === 'Testalias', 'A configured display name is valid');
+check(str_contains(coreui_profile_prompt_block($pdo,1), '"Testalias"'), 'Prompt retains alias');
 $mediaDir = coreui_profile_media_dir();
 check(is_dir($mediaDir) && is_writable($mediaDir), 'Profile media directory not writable for the test account');
 $key = bin2hex(random_bytes(16));
@@ -94,8 +94,8 @@ try {
  check(coreui_profile_image_reference($pdo,1)==='custom:'.$key, 'Custom reference selected');
  check(coreui_profile_image_reference($pdo,2)==='default', 'Other account remains canonical');
  check(str_contains(coreui_profile_prompt_block($pdo,1), 'Das vom Benutzer fuer dieses Konto gewaehlte Bild zeigt DICH SELBST als TCI: Mara Thorne')
-   && str_contains(coreui_profile_prompt_block($pdo,1), 'Dein Rufname (z. B. Ember)'),
-   'Custom assistant photo is Mara Thorne herself even with Ember display name');
+   && str_contains(coreui_profile_prompt_block($pdo,1), 'Dein individuell eingestellter Rufname'),
+   'Custom assistant photo is Mara Thorne herself with an account-specific nickname');
  check(str_contains(coreui_profile_prompt_block($pdo,2), 'Das kanonische Standardbild zeigt DICH SELBST als TCI: Mara Thorne'),
    'Default assistant photo is also Mara herself');
  $prompt=coreui_image_reference_prompt('A scene at sunset','custom:'.$key,[],1200);
