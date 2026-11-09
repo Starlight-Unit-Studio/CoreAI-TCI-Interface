@@ -57,10 +57,13 @@ $admin = (string)file_get_contents($root . '/api/admin.php');
 guest_test(str_contains($admin, "'registration_enabled', 'guest_enabled', 'guest_message_limit',")
   && str_contains($admin, "if (\$key === 'guest_message_limit') \$value = (string)coreui_guest_limit_normalise(\$value);")
   && str_contains($admin, "'guest_message_limit' => '5',"), 'admin saves the switch and a clamped limit');
-$adminHtml = (string)file_get_contents($root . '/settings.html'); // 0.5.79: Admin Core is a tab group there
+$adminHtml = (string)file_get_contents($root . '/admin/index.html'); // 0.6.71: standalone, role-gated Admin Core
 $adminJs = (string)file_get_contents($root . '/js/admin.js');
 guest_test(strpos($adminHtml, 'id="registrationEnabled"') < strpos($adminHtml, 'id="guestEnabled"')
-  && str_contains($adminHtml, 'id="guestMessageLimit" type="number" min="1" max="100"'), 'admin fields in Runtime');
+  && str_contains($adminHtml, 'id="guestMessageLimit" type="number" min="1" max="100"')
+  && str_contains($adminHtml, 'id="adminShell" hidden')
+  && !str_contains((string)file_get_contents($root . '/settings.html'), 'id="guestEnabled"'),
+  'guest controls exist only in the protected standalone Admin Core');
 guest_test(str_contains($adminJs, "guest_enabled: document.getElementById('guestEnabled').checked ? '1' : '0',")
   && str_contains($adminJs, "guest_message_limit: document.getElementById('guestMessageLimit').value,"), 'admin page sends both');
 
