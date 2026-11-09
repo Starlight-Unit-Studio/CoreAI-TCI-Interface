@@ -11,7 +11,7 @@ has an authenticated API, UI tests and a separate release.
 
 | Menu category | Status | Existing function or next work |
 | --- | --- | --- |
-| General (Allgemein) | Existing | Account overview, Core, health, knowledge and memory summary |
+| General (Allgemein) | Mixed | Original Core, health, knowledge and memory overview preserved. Enter/Ctrl+Enter shortcut works and is browser-local. App UI language, automatic Core promotion and extra reasoning levels are explicitly disabled pending implementation. |
 | Appearance (Darstellung) | Existing | System/Light/Dark, reduced motion and chat preferences |
 | Notifications (Benachrichtigungen) | Planned | Notification channels, delivery permissions and user controls |
 | Profile (Profil) | Existing | User/assistant display names and avatars with crop |
@@ -22,7 +22,7 @@ has an authenticated API, UI tests and a separate release.
 | Storage (Speicher) | Placeholder | Knowledge and Memory operate under CoreAI expert categories |
 | Personalization (Personalisierung) | Existing | Tone, format, emoji and instruction preferences |
 | Pets | Planned | No companion implementation or persistence |
-| Keyboard (Tastatur) | Planned | Per-user keyboard shortcuts and mobile input preferences |
+| Keyboard (Tastatur) | Planned | Custom keyboard map and mobile input preferences; the core Send shortcut already works under General |
 | Usage (Nutzung) | Planned | User-facing usage metrics without invented model costs |
 | Data controls (Datenkontrollen) | Placeholder | Export exists under Account; other controls need scoped API work |
 
@@ -53,13 +53,14 @@ has an authenticated API, UI tests and a separate release.
 | Category | Status | Access |
 | --- | --- | --- |
 | System | Existing | Available normally, including owner-only updater |
-| AI profile (KI-Profil) | Existing | Visible when Expert settings is enabled |
-| Knowledge (Wissen) | Existing | Visible when Expert settings is enabled |
-| Memory | Existing | Visible when Expert settings is enabled |
+| AI profile (KI-Profil) | Existing | Always visible. System prompt, numeric memory limits, token budget, temperature, provider and context window are conditionally shown inside this category by Expert mode. |
+| Knowledge (Wissen) | Existing | Always visible. Existing knowledge controls and their saved data remain unchanged. |
+| Memory | Existing | Always visible. Numeric relevance input appears in Expert mode; existing facts remain unchanged. |
 
-Expert settings is a browser-local **navigation visibility** preference, not
-an authentication factor or tool permission. All backend authorizations remain
-mandatory.
+Expert settings is a browser-local **field visibility** preference, not
+an authentication factor or tool permission. It never hides entire categories,
+changes saved technical values or grants new privileges. All backend
+authorizations remain mandatory.
 
 ## Administration
 
