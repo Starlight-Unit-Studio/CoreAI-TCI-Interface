@@ -2,6 +2,12 @@
 
 ## 0.6.71 - 09.11.2026
 
+- Complete the first General settings page: the interface language selector now changes and stores German, English (beta, core UI strings), or browser-detected language, separately from Mara's answer language.
+- Activate automatic higher-Core routing for eligible private complex text turns only. Use the next actually installed/allowed local Mara Core, preserve the manually chosen Core and the global serial FIFO queue, never auto-switch live/audio/vision or guests.
+- Support model-declared reasoning effort from Ollama /api/show. Present only supported low/medium/high/max values; existing thinking on/off always takes precedence. No synthetic six levels, model option overrides, new Modelfile or missing capabilities.
+- Add dedicated per-user migration 027, authenticated narrow General GET/POST, non-DB tests, and browser regressions for save, i18n, thinking and routing. Keep the PR unmerged until server/browser tests are run.
+
+
 - Rebuild the settings information architecture around 25 navigable category pages with a searchable sidebar and a mobile drawer. The sections visible in the supplied reference are included; 16 missing capabilities are explicitly marked as planning placeholders, with no fake saving or account connections.
 - Use one browser-local Expert settings switch to reveal numeric and technical controls within their original categories (KI profile, memory, appearance, General). All categories, existing values, System diagnostics and owner updater remain accessible regardless of the switch; it grants no permissions.
 - Build the General page in native CoreAI row styling while preserving its existing account/Core/system overview. A new real local send-key setting switches the chat between Enter and Ctrl/Command+Enter (composition-safe), updates the composer hint and survives reloads; Display reset preserves it. UI language, automatic Core promotion and additional reasoning tiers are visible but disabled as not-yet-implemented features.
