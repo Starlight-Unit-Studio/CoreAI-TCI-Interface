@@ -70,6 +70,10 @@ UI_FILES=(
   js/coreui-settings-tabs.js
   scripts/send-shortcut-selftest.cjs
   js/coreui-send-keys.js
+  js/coreui-ui-language.js
+  api/general_core_controls.php
+  database/migrations/027_general_core_controls.sql
+  scripts/general-controls-selftest.php
   scripts/settings-navigation-foundation-selftest.cjs
   scripts/settings-tabs-ui-selftest.cjs
   scripts/theme-preferences-selftest.cjs
@@ -932,6 +936,11 @@ if command -v php >/dev/null 2>&1; then
       ok 'Mara-TCI-Sprache und Stimmsequenz-Terminologie geprueft.'
     else
       fail 'Mara-TCI-Sprache: Terminologie-Selbsttest fehlgeschlagen.'
+    fi
+    if php "$PROJECT_ROOT/scripts/general-controls-selftest.php" >/dev/null 2>&1; then
+      ok 'Allgemein: Core-Routing, gespeicherte Einstellungen und echte Denkstufen verifiziert.'
+    else
+      fail 'Allgemein: Core-Routing oder Reasoning-Selbsttest fehlgeschlagen.'
     fi
     if node "$PROJECT_ROOT/scripts/send-shortcut-selftest.cjs" >/dev/null 2>&1; then
       ok 'Allgemein: Enter, Strg/Command+Enter und IME-Schutz geprueft.'
