@@ -5,13 +5,26 @@
   var preferences = window.CoreUIPreferences;
   var themeOptions = Array.prototype.slice.call(document.querySelectorAll('input[name="coreuiTheme"]'));
   var fields = {
-    reduceMotion: document.getElementById('prefReduceMotion'),
     compactFeed: document.getElementById('prefCompactFeed'),
     thinkingExpanded: document.getElementById('prefThinkingExpanded'),
     liveFrameMotion: document.getElementById('prefLiveFrameMotion'),
     showLiveBrowser: document.getElementById('prefShowLiveBrowser'),
     showTelemetry: document.getElementById('prefShowTelemetry')
   };
+  var appearanceFields = {
+    motif: document.getElementById('prefMotif'),
+    accent: document.getElementById('prefAccent'),
+    uiFontSize: document.getElementById('prefUiFont'),
+    contentFontSize: document.getElementById('prefContentFont'),
+    codeFontSize: document.getElementById('prefCodeFont'),
+    contrast: document.getElementById('prefContrast'),
+    motionMode: document.getElementById('prefMotionMode'),
+    diffMarkers: document.getElementById('prefDiffMarkers'),
+    fullWidth: document.getElementById('prefFullWidth'),
+    background: document.getElementById('prefBackground'),
+    foreground: document.getElementById('prefForeground')
+  };
+  var contrastOutput = document.getElementById('prefContrastValue');
   var saveState = document.getElementById('settingsSaveState');
   var accountMail = document.getElementById('accountMail');
   var accountDisplayName = document.getElementById('accountDisplayName');
@@ -143,9 +156,19 @@
       if (fields[key]) fields[key].checked = value[key] === true;
     });
     var selectedTheme = value.theme || 'system';
-    themeOptions.forEach(function (option) {
-      option.checked = option.value === selectedTheme;
+    themeOptions.forEach(function (option) { option.checked = option.value === selectedTheme; });
+    Object.keys(appearanceFields).forEach(function (key) {
+      var el = appearanceFields[key];
+      if (!el || key === 'background' || key === 'foreground') return;
+      if (key === 'fullWidth') el.checked = value.fullWidth === true;
+      else if (value[key] !== undefined) el.value = String(value[key]);
     });
+    var dark = document.documentElement.getAttribute('data-coreui-theme') === 'dark';
+    if (appearanceFields.background) appearanceFields.background.value = dark
+      ? (value.backgroundDark || '#0c1427') : (value.backgroundLight || '#f0f4fa');
+    if (appearanceFields.foreground) appearanceFields.foreground.value = dark
+      ? (value.foregroundDark || '#eef4ff') : (value.foregroundLight || '#101626');
+    if (contrastOutput) contrastOutput.textContent = String(value.contrast || 60);
   }
 
   function collect() {
@@ -159,6 +182,24 @@
       : (preferences ? preferences.load().sendKey : 'enter');
     value.uiLanguage = generalUiLanguage ? generalUiLanguage.value
       : (preferences ? preferences.load().uiLanguage : 'auto');
+    // Local appearance preferences preserve the inactive theme's palette.
+    var previous = preferences ? preferences.load() : {};
+    Object.keys(appearanceFields).forEach(function (key) {
+      var el = appearanceFields[key];
+      if (!el || key === 'background' || key === 'foreground') return;
+      value[key] = key === 'fullWidth' ? el.checked
+        : ['uiFontSize','contentFontSize','codeFontSize','contrast'].indexOf(key) >= 0
+          ? Number(el.value) : el.value;
+    });
+    var mode = value.theme === 'system'
+      ? (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+      : value.theme;
+    value.backgroundLight = previous.backgroundLight;
+    value.backgroundDark = previous.backgroundDark;
+    value.foregroundLight = previous.foregroundLight;
+    value.foregroundDark = previous.foregroundDark;
+    if (appearanceFields.background) value[mode === 'dark' ? 'backgroundDark' : 'backgroundLight'] = appearanceFields.background.value;
+    if (appearanceFields.foreground) value[mode === 'dark' ? 'foregroundDark' : 'foregroundLight'] = appearanceFields.foreground.value;
     return value;
   }
 
@@ -961,7 +1002,20 @@
     if (fields[key]) fields[key].addEventListener('change', saveLocal);
   });
   themeOptions.forEach(function (option) {
-    option.addEventListener('change', saveLocal);
+    option.addEventListener('change', function () {
+      // Switching the selected palette must not copy the old mode's colors.
+      var prior = preferences ? preferences.load() : {};
+      if (preferences) {
+        var value = Object.assign({}, prior, {theme: option.value});
+        preferences.save(value);
+        syncFields(preferences.load());
+        announceSaved('LOKAL GESPEICHERT');
+      }
+    });
+  });
+  Object.keys(appearanceFields).forEach(function (key) {
+    if (appearanceFields[key]) appearanceFields[key].addEventListener(
+      key === 'contrast' ? 'input' : 'change', saveLocal);
   });
   if (generalSendKey) generalSendKey.addEventListener('change', saveLocal);
   if (generalUiLanguage) generalUiLanguage.addEventListener('change', saveLocal);
