@@ -186,6 +186,20 @@
       systemDark.addListener(onSystemChange);
     }
   }
+  // Motion follows the device independently of the color scheme.
+  var systemReducedMotion = null;
+  try {
+    if (typeof window.matchMedia === 'function') {
+      systemReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    }
+  } catch (ignored) { /* older WebViews */ }
+  if (systemReducedMotion) {
+    if (typeof systemReducedMotion.addEventListener === 'function') {
+      systemReducedMotion.addEventListener('change', onSystemChange);
+    } else if (typeof systemReducedMotion.addListener === 'function') {
+      systemReducedMotion.addListener(onSystemChange);
+    }
+  }
   window.addEventListener('storage', function (event) {
     if (event.key !== STORAGE_KEY && event.key !== null) return;
     var prefs = load();
