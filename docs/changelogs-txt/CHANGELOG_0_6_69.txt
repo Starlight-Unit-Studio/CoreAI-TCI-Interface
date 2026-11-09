@@ -1,0 +1,9 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.69
+09.11.2026
+
+- Behebt den Spracheingabe-Preflight-Fehler nach dem Willkommenschat-Update 0.6.68.
+- Der PHP-Selbsttest erwartete weiterhin ausschliesslich einen gespeicherten Sitzungs-Identifier.
+- Jetzt werden bereits gespeicherte Sitzungen UND der neue ungespeicherte Entwurf samt automatischer Nachricht nach fertigem Upload kontrolliert.
+- JavaScript-Regression: Stimmsequenz mitsamt eingegebenem Text sowohl im vorhandenen Chat als auch bei der ersten Nachricht; kein Versand in eine fremde Sitzung.
+- Playwright-Sprachtest um eine erste Aufnahme aus dem Begruessungsentwurf erweitert.
+- Keine Aenderung der Aufnahme-, Upload-, Modell-, Datenbank-, Memory- oder Live-Voice-Engine.
