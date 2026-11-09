@@ -454,7 +454,9 @@
           choice(previous, previous + ' (mit diesem Core nicht verfügbar)', true);
         }
         generalReasoningLevels.value = previous;
-        generalReasoningLevels.disabled = !ready || names.length === 0;
+        // Even a boolean-only Core can reset a previously selected level
+        // to Core-Standard without faking unsupported choices.
+        generalReasoningLevels.disabled = !ready;
         if (generalReasoningNote) generalReasoningNote.textContent =
           !ready ? 'Migration 027 fehlt. Bitte zuerst CoreAI aktualisieren.'
           : names.length === 0
