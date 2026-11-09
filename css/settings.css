@@ -1821,7 +1821,7 @@
 .settings-body .cfg-nav-expert .cfg-tab[aria-selected="true"] { box-shadow: inset 3px 0 0 var(--amb); }
 .cfg-nav-state {
   color: var(--muted);
-  font: 500 9px/1.2 "Share Tech Mono",monospace;
+  font: 500 11px/1.2 "Share Tech Mono",monospace;
   letter-spacing: .02em;
 }
 .settings-body .cfg-nav-link { text-decoration: none; color: var(--cfg-soft); }
@@ -1916,7 +1916,7 @@
   .settings-body .cfg-shell { width: calc(100% - 18px); }
   .settings-body .cfg-nav { width: min(365px,94vw); }
   .settings-body .cfg-tab { font-size: 15px; }
-  .cfg-nav-state { font-size: 8px; }
+  .cfg-nav-state { font-size: 11px; }
   .cfg-planned-card p { font-size: 15px; }
 }
 @media (prefers-reduced-motion: reduce) {
