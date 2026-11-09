@@ -4064,8 +4064,22 @@
     if (state.waitingEmber) requestActiveRunCancel();
     else sendMessage(inputEl.value);
   });
+  var sendKeyHint = document.getElementById('composerSendKeyHint');
+  function refreshComposerShortcutHint() {
+    if (!sendKeyHint) return;
+    var current = window.CoreUIPreferences ? window.CoreUIPreferences.load() : {sendKey: 'enter'};
+    sendKeyHint.textContent = window.CoreUISendKeys ? window.CoreUISendKeys.hint(current)
+      : 'ENTER SENDEN · SHIFT+ENTER ZEILENUMBRUCH · LANGER TEXT ALS .MD';
+  }
+  refreshComposerShortcutHint();
+  window.addEventListener('coreui:preferences', refreshComposerShortcutHint);
+
   inputEl.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) {
+    var prefs = window.CoreUIPreferences ? window.CoreUIPreferences.load() : {sendKey: 'enter'};
+    var shouldSend = window.CoreUISendKeys ? window.CoreUISendKeys.shouldSend(e, prefs)
+      : (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey
+        && !e.altKey && !e.isComposing && e.keyCode !== 229);
+    if (shouldSend) {
       e.preventDefault();
       sendMessage(inputEl.value);
     }
