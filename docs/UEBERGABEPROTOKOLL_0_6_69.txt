@@ -1,0 +1,43 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.69
+Datum: 09.11.2026
+Basis: main 0.6.68
+Branch: fix/voice-input-draft-preflight-0669
+
+FEHLERBILD
+- Native/Compose-Preflight meldet bei Spracheingabe:
+  Voice input FAIL: the chat sends a voice message at once, with the text in the field.
+- Es handelt sich in diesem konkreten Fall um einen veralteten PHP-Quelltextvergleich:
+  sessionId: String(ses.id)
+  wurde in 0.6.68 fuer den neuen Chat-Entwurf zu
+  sessionId: ses ? String(ses.id) : '__draft__'
+  erweitert.
+- Hinweis "Keine Nginx-Default-Site gefunden" ist eine gesonderte Warnung.
+
+UMSETZUNG
+- scripts/voice-input-selftest.php: bisherige hart kodierte String-Gleichheit
+  durch Pruefung beider tatsaechlichen Upload-/Sendewege ersetzt.
+- scripts/welcome-composer-ui-selftest.cjs: neue Laufzeit-Pruefungen des
+  bestehenden und noch ungespeicherten Chat-Entwurfs sowie falscher Sitzung.
+- scripts/voice-input-ui-selftest.cjs: Aufnahme im Begruessungsentwurf
+  als zusaetzlicher Testfall im realen Browser-Harness.
+- Version auf 0.6.69 synchronisiert (VERSION, sechs HTML-Seiten,
+  Bootstrap, Branding, README, beide Preflight-Header, Changelogs, TXT-Index).
+- Keine Datenbank-Migration oder Aenderung an Audio-/Client-APIs.
+
+ABNAHME
+- PHP-Syntax: php -l scripts/voice-input-selftest.php
+- PHP-Selbsttest: php scripts/voice-input-selftest.php
+- Node: node scripts/welcome-composer-ui-selftest.cjs
+- Browser: node scripts/voice-input-ui-selftest.cjs
+- Version: python3 scripts/version-merge-check.py --base-version 0.6.68
+- Cache: python3 scripts/cache-bust.py --verify
+- Voller Preflight auf produktivem Server: scripts/preflight-native.sh
+  oder scripts/preflight.sh, je nach Installationsmodus.
+- Auf einer realen Installation testen: erste Stimmsequenz aus
+  Begruessungsbildschirm, Text und Audio in derselben ersten Nachricht.
+
+MERGE-REGEL
+- Ein Merge nach main ist eine neue Version.
+- Ohne vollstaendige Abnahme den PR als Draft behalten.
+- Keine GitHub Actions als notwendige Abnahme voraussetzen.
+- Merge ist nicht automatisch Live-Deployment.

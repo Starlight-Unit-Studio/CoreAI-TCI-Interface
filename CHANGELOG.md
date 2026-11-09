@@ -1,5 +1,12 @@
 # CoreAI: TCI Interface
 
+## 0.6.69 - 09.11.2026
+
+- Repair the voice-input preflight regression introduced in 0.6.68: the original PHP source-contract test still expected a fixed session ID, although welcome drafts correctly use a provisional `__draft__` identifier.
+- Verify the two supported voice-upload paths: sending an attachment with its typed text in an existing chat and creating the first chat from a completed voice upload. The PHP check now covers both paths instead of an obsolete single-line source string.
+- Extend the offline welcome/composer test with saved, draft and mismatched-session upload handoff cases, and the browser voice-input test with a first recording from an unsaved welcome chat.
+- Leave actual voice processing, upload APIs, session persistence, model prompts, databases and installations unchanged. Keep the mandatory 0.6.69 merge version, TXT archive, handover and both preflight headers aligned.
+
 ## 0.6.68 - 09.11.2026
 
 - Open on a native CoreAI welcome screen with a personalized greeting and four clickable example questions that immediately send to Mara.
