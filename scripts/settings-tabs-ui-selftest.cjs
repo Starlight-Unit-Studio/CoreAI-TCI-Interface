@@ -11,6 +11,7 @@ const types = {'.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript
 
 function server(level) {
   const calls = [];
+  const generalState = {auto_higher_core: false, thinking_level: ''};
   const settings = {registration_enabled: '1', guest_enabled: '1', guest_message_limit: '20', guest_network_guests: '1',
     guest_daily_messages: '200', captcha_enabled: '1', maintenance_enabled: '0', memory_default_enabled: '1',
     user_system_prompt_max_chars: '6000', maintenance_message: '', tool_web_enabled: '1', tool_browse_enabled: '1',
@@ -57,6 +58,13 @@ function server(level) {
       const key = rel.slice(4);
       const post = route.request().method() === 'POST' ? route.request().postData() : null;
       calls.push({key, action: url.searchParams.get('action'), post: post ? JSON.parse(post) : null});
+      if (key === 'user_settings.php' && url.searchParams.has('general') && !post)
+        return route.fulfill({json:{ok:true,csrf_token:'tok',general:generalState,model:'ember-core:e4b',core_label:'TCI Core Normal',
+          available:true,auto_core_allowed:true,reasoning:{levels:['low','medium','high'],metadata_available:true,supports_on_off:false}}});
+      if (key === 'user_settings.php' && post && JSON.parse(post).action === 'general') {
+        Object.assign(generalState, JSON.parse(post).settings);
+        return route.fulfill({json:{ok:true,general:generalState}});
+      }
       if (key === 'admin.php' && post && level > 1) return route.fulfill({status: 403, json: {ok: false, error: 'insufficient_permissions'}});
       if (key === 'admin.php' && post && url.searchParams.get('action') === 'model_access_save') {
         return route.fulfill({json: {ok: true, models: JSON.parse(post).models}});
@@ -139,10 +147,20 @@ const smallText = page => page.evaluate(() => {
     assert.equal(await page.locator('#tab-memory').isHidden(), false);
     assert.equal(await page.locator('#generalReasoningLevels').isVisible(), false,
       'numeric reasoning configuration is hidden until Expert mode is enabled');
-    assert.equal(await page.locator('#generalUiLanguage').isDisabled(), true,
-      'unimplemented UI language switching is not a fake control');
-    assert.equal(await page.locator('#generalHigherIntelligence').isDisabled(), true,
-      'auto-upgrade cannot silently switch a shared Core');
+    await page.waitForFunction(() => !document.getElementById('generalHigherIntelligence').disabled);
+    assert.equal(await page.locator('#generalUiLanguage').isDisabled(), false, 'UI language can change');
+    await page.selectOption('#generalUiLanguage', 'en');
+    assert.equal(await page.evaluate(() => document.documentElement.lang), 'en', 'English applies to the interface');
+    assert.equal(await page.locator('#tab-start span').textContent(), 'General', 'navigation is translated');
+    await page.selectOption('#generalUiLanguage', 'de');
+    assert.equal(await page.locator('#tab-start span').textContent(), 'Allgemein', 'switch back to German');
+    assert.equal(await page.locator('#generalHigherIntelligence').isDisabled(), false,
+      'authenticated accounts can enable the real auto-Core routing');
+    await page.check('#generalHigherIntelligence');
+    await page.waitForFunction(() => document.getElementById('generalHigherIntelligence').checked);
+    assert.ok(srv.calls.some(c => c.key === 'user_settings.php' && c.post &&
+      c.post.action === 'general' && c.post.settings.auto_higher_core === true),
+      'auto Core setting is actually saved through the server');
     assert.equal(await page.inputValue('#generalSendKey'), 'enter', 'Enter remains the legacy default');
     await page.selectOption('#generalSendKey', 'mod-enter');
     assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('emberCoreUI.preferences.v1')).sendKey),
@@ -171,8 +189,12 @@ const smallText = page => page.evaluate(() => {
     await page.check('#settingsExpertToggle');
     assert.equal(await page.locator('#generalReasoningLevels').isVisible(), true,
       'Expert reveals the General reasoning placeholder inside General');
-    assert.equal(await page.locator('#generalReasoningLevels').isDisabled(), true,
-      'the placeholder stays honest even in Expert mode');
+    assert.equal(await page.locator('#generalReasoningLevels').isDisabled(), false,
+      'Ollama-declared reasoning levels can be selected');
+    await page.selectOption('#generalReasoningLevels', 'medium');
+    assert.ok(srv.calls.some(c => c.key === 'user_settings.php' && c.post &&
+      c.post.action === 'general' && c.post.settings.thinking_level === 'medium'),
+      'chosen model-supported effort is persisted server-side');
     // Tabs switch in place and the address keeps the tab.
     await page.click('#tab-ki-profil');
     assert.deepEqual(await visibleViews(page), ['view-ki-profil']);
