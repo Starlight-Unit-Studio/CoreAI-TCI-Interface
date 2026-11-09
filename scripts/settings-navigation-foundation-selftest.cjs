@@ -70,7 +70,19 @@ assert.ok(!settings.includes('id="cfgExpertGroup"'));
 assert.ok(['start','ki-profil','wissen','memory','system'].every(id => settings.includes('id="tab-' + id + '"')),
   'advanced categories remain accessible with Expert disabled');
 const expertNodes = [...settings.matchAll(/data-expert hidden/g)];
-assert.equal(expertNodes.length, 9, 'only technical controls remain Expert-gated, Denkaufwand is available to everyone');
+assert.equal(expertNodes.length, 6, 'only raw technical controls remain Expert-gated');
+for (const field of ['aiNumPredict', 'aiTemperature', 'aiProvider', 'aiMemoryLimit', 'memoryRelevance']) {
+  const idx = settings.indexOf('id="' + field + '"');
+  assert.ok(idx > -1, 'technical field ' + field + ' is preserved');
+  const enclosing = settings.lastIndexOf(' data-expert hidden', idx);
+  assert.ok(enclosing > -1, 'technical field ' + field + ' keeps an Expert marker');
+}
+for (const field of ['prefShowTelemetry', 'prefLiveFrameMotion', 'aiNumCtx']) {
+  assert.ok(settings.includes('id="' + field + '"'), 'smart/visual control ' + field + ' is preserved');
+}
+assert.ok(settings.includes('aria-labelledby="aiCtxTitle">') &&
+  !settings.includes('aria-labelledby="aiCtxTitle" data-expert'),
+  'smart context slider remains visible for normal users');
 assert.ok(settings.includes('id="aiNumCtx"') && settings.includes('id="aiNumPredict"'),
   'prior Core settings are retained');
 for(const field of ['generalUiLanguage','generalSendKey','generalHigherIntelligence','generalReasoningLevels']) {
