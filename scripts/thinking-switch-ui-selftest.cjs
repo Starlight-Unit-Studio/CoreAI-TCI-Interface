@@ -1,6 +1,6 @@
-/* Offline checks for the Core chip: Ollama list, Core choice with loading
-   state, and the thinking switch (0.5.75). 0.5.76: TCI names, fixed tier
-   order with green dots, missing tiers greyed and opening the installer. */
+/* Offline checks for the Core chip: Ollama list and Core choice with loading
+   state. Denkaufwand owns the Thinking UI; this controller keeps the same
+   account-bound setThinking() API. TCI tier sorting and install are unchanged. */
 'use strict';
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -36,8 +36,8 @@ class Element {
 }
 
 function page() {
-  const ids = ['coreModeChip', 'coreModeMenu', 'coreModeName', 'coreModeThink', 'coreModeList',
-    'coreThinkToggle', 'coreModeStatus', 'coreLegendBtn', 'coreLegend', 'coreLegendRows', 'coreModeManage'];
+  const ids = ['coreModeChip', 'coreModeMenu', 'coreModeName', 'coreModeList',
+    'coreModeStatus', 'coreLegendBtn', 'coreLegend', 'coreLegendRows', 'coreModeManage'];
   const els = Object.fromEntries(ids.map(id => [id, new Element('div', id)]));
   els.coreModeMenu.hidden = true;
   els.coreModeMenu.appendChild(els.coreModeList);
@@ -140,8 +140,8 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
   // 0.5.83: the Ollama list loads with the chat, before the menu is opened.
   assert(srv.calls.some(c => /models\.php/.test(c.url)), 'the Ollama list loads when the chat opens');
   assert.equal(els.coreModeMenu.hidden, true, 'loading the list does not open the menu');
-  assert.equal(els.coreModeThink.textContent, 'DENKEN');
-  assert.equal(els.coreThinkToggle.disabled, false);
+  assert.match(els.coreModeChip.getAttribute('aria-label'), /Core auswählen/);
+  assert.doesNotMatch(els.coreModeChip.getAttribute('aria-label'), /Denken/);
 
   // Opening lists the Ollama Cores with TCI names in a fixed order (Schnell,
   // Normal, Plus, Pro, Premium, local before cloud, then own names). Mara's
@@ -205,16 +205,16 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
   assert.deepEqual(JSON.parse(corePost.init.body), {action: 'core', model_override: 'gemma4:e2b'});
   assert.equal(corePost.init.headers['X-CoreUI-CSRF'], 'tok123');
   assert.equal(els.coreModeName.textContent, 'Core Schnell');
-  assert.equal(els.coreModeThink.textContent, 'LÄDT');
+  assert.equal(els.coreModeChip.getAttribute('data-state'), 'loading');
   assert.equal(els.coreModeChip.getAttribute('data-state'), 'loading');
   assert.match(els.coreModeStatus.textContent, /wird geladen/);
   assert.equal(dot(options(els.coreModeList)[0]), 'loading', 'the Core that loads has an amber dot');
   assert.equal(timers.length, 1, 'one status check is scheduled');
   await timers.shift()();
-  assert.equal(els.coreModeThink.textContent, 'LÄDT', 'still loading while Ollama does not report it');
+  assert.equal(els.coreModeChip.getAttribute('data-state'), 'loading', 'still loading while Ollama does not report it');
   srv.st.loaded.push('gemma4:e2b');
   await timers.shift()();
-  assert.equal(els.coreModeThink.textContent, 'DENKEN', 'loaded: the chip shows the thinking state again');
+  assert.equal(els.coreModeChip.getAttribute('data-state'), 'ready', 'loaded: the Core picker is ready');
   assert.match(els.coreModeStatus.textContent, /geladen und bereit/);
   assert.equal(timers.length, 0, 'polling stops once loaded');
   opts = options(els.coreModeList);
@@ -227,7 +227,7 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
   await mode.choose('gemma4:e2b');
   assert.equal(srv.calls.length, before, 'no request for the current Core');
   await mode.choose('gemma4:31b-cloud');
-  assert.equal(els.coreModeThink.textContent, 'DENKEN');
+  assert.equal(els.coreModeChip.getAttribute('data-state'), 'ready');
   assert.match(els.coreModeStatus.textContent, /Cloud-Core/);
   assert.equal(els.coreModeName.textContent, 'Core Premium');
   assert.equal(timers.length, 0, 'a cloud Core is never polled');
@@ -332,24 +332,24 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
     assert.deepEqual(plusRow, ['TCI Core Plus', 'gemma4:12b, ember-core:12b (TCI Modelfile)', 'installiert']);
   }
 
-  // Thinking switch: only its own value, with CSRF.
-  els.coreThinkToggle.checked = false;
-  await els.coreThinkToggle.handlers.change();
+  // The separate Denkaufwand UI uses this same authenticated save method.
+  await mode.setThinking(false);
   const thinkPost = srv.calls.filter(c => c.init.method === 'POST').pop();
   assert.deepEqual(JSON.parse(thinkPost.init.body), {action: 'thinking', thinking_enabled: false});
-  assert.equal(els.coreModeThink.textContent, 'SCHNELL');
-  assert.match(els.coreModeStatus.textContent, /Denken aus/);
+  assert.equal(thinkPost.init.headers['X-CoreUI-CSRF'], 'tok123');
+  assert.equal(mode.state().thinking, false);
+  assert.doesNotMatch(els.coreModeChip.getAttribute('aria-label'), /Denken/,
+    'Core picker never advertises the Thinking state');
 
-  // A failed save restores the previous state and says so.
+  // A failed save restores state for the separate Denkaufwand picker.
   ({els, doc} = page());
   srv = server({thinking: false, failPost: true});
   mode = api.create(doc, srv.fetch, () => {});
   await mode.ready;
-  els.coreThinkToggle.checked = true;
-  await els.coreThinkToggle.handlers.change();
+  assert.equal(await mode.setThinking(true), false);
   assert.equal(mode.state().thinking, false);
-  assert.equal(els.coreThinkToggle.checked, false);
-  assert.match(els.coreModeStatus.textContent, /Nicht gespeichert/);
+  assert(!els.coreModeStatus.textContent.includes('Denken'),
+    'the Core-only menu does not display hidden Thinking feedback');
 
   // Catalog unreachable: the current Core stays visible, nothing is guessed.
   ({els, doc} = page());
@@ -365,15 +365,19 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
   ({els, doc} = page());
   mode = api.create(doc, () => Promise.reject(new Error('offline')), () => {});
   await mode.ready;
-  assert.equal(els.coreThinkToggle.disabled, true);
+  assert.equal(mode.state().loaded, false);
   assert.equal(await mode.setThinking(false), true, 'no save before the state is known');
   assert.equal(await mode.choose('gemma4:e4b'), '', 'no Core change before the state is known');
 
   // Markup and wiring.
   const html = fs.readFileSync(path.join(__dirname, '../app.html'), 'utf8');
-  for (const id of ['coreModeChip', 'coreModeMenu', 'coreModeList', 'coreThinkToggle', 'coreModeStatus']) {
+  for (const id of ['coreModeChip', 'coreModeMenu', 'coreModeList', 'coreModeStatus',
+    'reasonEffortMenu', 'reasonEffortOptions', 'reasonEffortIntro']) {
     assert(html.includes(`id="${id}"`), 'app.html has ' + id);
   }
+  assert(!html.includes('id="coreThinkToggle"') && !html.includes('id="coreModeThink"'),
+    'Thinking UI is exclusively in Denkaufwand, not duplicated in the Core picker');
+  assert(html.includes('aria-label="Core auswählen"'), 'Core menu only selects the Core');
   assert(html.includes('role="radiogroup"'), 'the Core list is a radio group');
   assert(/<script src="\.\/js\/coreui-core-mode\.js\?v=\d+"><\/script>/.test(html), 'module is loaded');
   const settings = fs.readFileSync(path.join(__dirname, '../settings.html'), 'utf8');
@@ -384,5 +388,5 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
   const saveAi = settingsJs.slice(settingsJs.indexOf('function saveAiSettings('), settingsJs.indexOf('function formatSessionDate('));
   assert(saveAi.length > 100 && !saveAi.includes('thinking_enabled'), 'saving the KI-Profil never sends a thinking value');
 
-  console.log('CoreAI Core chip: TCI names, legend, Core choice with loading, thinking switch and failures OK');
+  console.log('CoreAI Core chip: TCI names, legend, Core choice with loading and headless Thinking API OK');
 })().catch(error => { console.error(error); process.exit(1); });
