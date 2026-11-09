@@ -244,17 +244,18 @@
 
         </section>
 
-        <!-- ANZEIGE -->
+        <!-- DARSTELLUNG: all screenshot-inspired controls are ordinary settings. -->
         <section class="cfg-view" id="view-anzeige" role="tabpanel" aria-labelledby="tab-anzeige" tabindex="-1" hidden>
           <header class="cfg-view-head">
-            <div><span class="cfg-kicker">MEIN COREAI</span><h2>Anzeige</h2><p>Diese Optionen bleiben nur in diesem Browser gespeichert. Konten, Sitzungen und Ember-Daten ändern sich dadurch nicht.</p></div>
-            <button class="settings-action" id="resetPreferences" type="button">ANZEIGE ZURÜCKSETZEN</button>
+            <div><span class="cfg-kicker">MEIN COREAI</span><h2>Darstellung</h2>
+              <p>Design, Lesbarkeit und Chat-Anzeige passen sich sofort an. Diese Optionen bleiben in deinem Browser. Keine Änderung an Mara, dem Modelfile oder anderen Konten.</p></div>
+            <button class="settings-action" id="resetPreferences" type="button">DARSTELLUNG ZURÜCKSETZEN</button>
           </header>
-          <div class="cfg-cards">
+          <div class="cfg-cards appearance-layout">
             <section class="settings-panel cfg-card wide settings-panel-theme" aria-labelledby="themeTitle">
               <header class="settings-panel-head">
                 <span class="settings-panel-glyph" aria-hidden="true">◐</span>
-                <div><span>ERSCHEINUNGSBILD</span><h3 id="themeTitle">Tag- und Nachtmodus</h3></div>
+                <div><span>ERSCHEINUNGSBILD</span><h3 id="themeTitle">Modus</h3></div>
               </header>
               <fieldset class="theme-mode-fieldset" aria-describedby="themeModeHelp">
                 <legend>FARBSCHEMA AUSWÄHLEN</legend>
@@ -262,7 +263,7 @@
                   <label class="theme-mode-choice">
                     <input type="radio" name="coreuiTheme" value="system" checked />
                     <span class="theme-mode-preview theme-preview-system" aria-hidden="true"><i></i><b></b><em></em></span>
-                    <span class="theme-mode-caption"><strong>System</strong><small>Geräteeinstellung übernehmen</small></span>
+                    <span class="theme-mode-caption"><strong>System</strong><small>Dem Gerät folgen</small></span>
                   </label>
                   <label class="theme-mode-choice">
                     <input type="radio" name="coreuiTheme" value="light" />
@@ -276,17 +277,146 @@
                   </label>
                 </div>
               </fieldset>
-              <p class="theme-mode-help" id="themeModeHelp">Der Wechsel gilt sofort für Chat, Einstellungen, Anmeldung und Protokolle. Die Auswahl bleibt in diesem Browser gespeichert. Im Systemmodus folgt CoreAI automatisch dem Tag-/Nachtmodus deines Geräts.</p>
+              <p class="theme-mode-help" id="themeModeHelp">Wie bisher: System folgt dem Gerät. Die Umstellung gilt sofort für Chat, Einstellungen, Anmeldung und Protokolle.</p>
             </section>
-            <section class="settings-panel cfg-card settings-panel-interface" aria-labelledby="interfaceTitle">
+
+            <section class="settings-panel cfg-card wide appearance-motif" aria-labelledby="appearanceMotifTitle">
+              <header class="settings-panel-head">
+                <span class="settings-panel-glyph" aria-hidden="true">✧</span>
+                <div><span>QUANTUM SOFTWARE</span><h3 id="appearanceMotifTitle">Motiv und Farben</h3></div>
+              </header>
+              <div class="appearance-field">
+                <label for="appearanceMotif">Motiv <small>Wähle das CoreAI-Erscheinungsbild</small></label>
+                <div class="appearance-control-line">
+                  <select id="appearanceMotif">
+                    <option value="holo">Quantum Holo</option>
+                    <option value="terminal">Terra-Net Terminal</option>
+                    <option value="minimal">Klar</option>
+                  </select>
+                  <button id="appearanceExport" class="appearance-icon-btn" type="button" aria-label="Motiv als JSON-Datei exportieren" title="Motiv exportieren">⇩</button>
+                  <button id="appearanceCopy" class="appearance-icon-btn" type="button" aria-label="Motiv für den anderen Farbmodus übernehmen" title="Motiv für den anderen Modus kopieren">▣</button>
+                </div>
+              </div>
+              <div class="appearance-field">
+                <label for="appearanceAccent">Akzent <small>Alle Bedienoberflächen verwenden dieselbe ausgewählte Farbe</small></label>
+                <div class="appearance-control-line">
+                  <select id="appearanceAccent">
+                    <option value="blue">CoreAI Blau</option>
+                    <option value="green">Grün</option>
+                    <option value="violet">Violett</option>
+                    <option value="amber">Gold</option>
+                    <option value="custom">Eigene Farbe</option>
+                  </select>
+                  <input type="color" id="appearanceAccentColor" aria-label="Individuelle Akzentfarbe wählen" value="#5b92ff" />
+                </div>
+              </div>
+              <div class="appearance-colors">
+                <label class="appearance-color-field" for="appearanceBackground">
+                  <span>Hintergrund</span>
+                  <span class="appearance-color-controls">
+                    <input id="appearanceBackgroundColor" type="color" value="#f0f4fa" aria-label="Hintergrundfarbe wählen" />
+                    <input id="appearanceBackground" type="text" value="#F0F4FA" maxlength="7" inputmode="text" spellcheck="false" aria-label="Hintergrundfarbe als Hex-Wert" />
+                  </span>
+                </label>
+                <label class="appearance-color-field" for="appearanceForeground">
+                  <span>Vordergrund</span>
+                  <span class="appearance-color-controls">
+                    <input id="appearanceForegroundColor" type="color" value="#101626" aria-label="Textfarbe wählen" />
+                    <input id="appearanceForeground" type="text" value="#101626" maxlength="7" inputmode="text" spellcheck="false" aria-label="Textfarbe als Hex-Wert" />
+                  </span>
+                </label>
+              </div>
+              <div class="appearance-field">
+                <label for="appearanceFont">Schriftmotiv <small>CoreAI-Charakter, Systemschrift oder Terminal</small></label>
+                <select id="appearanceFont">
+                  <option value="coreai">CoreAI Original</option>
+                  <option value="system">Systemschrift</option>
+                  <option value="mono">Terminal Mono</option>
+                </select>
+              </div>
+              <p class="theme-mode-help" id="appearanceActiveMode">Farben werden für den aktuell sichtbaren Modus geändert.</p>
+              <p class="appearance-status" id="appearanceStatus" role="status" aria-live="polite"></p>
+            </section>
+
+            <details class="appearance-advanced wide" id="appearanceAdvanced">
+              <summary>Erweitert <span>Normale Anzeigeoptionen, keine Experteneinstellungen</span></summary>
+              <div class="cfg-cards">
+                <section class="settings-panel cfg-card wide" aria-labelledby="appearanceFontTitle">
+                  <header class="settings-panel-head">
+                    <span class="settings-panel-glyph" aria-hidden="true">Aa</span>
+                    <div><span>LESBARKEIT</span><h3 id="appearanceFontTitle">Schriftgrößen</h3></div>
+                  </header>
+                  <label class="setting-row appearance-number-row" for="appearanceUiSize">
+                    <span class="setting-copy"><strong>UI-Schriftgröße</strong><small>Navigation und Bedienelemente</small></span>
+                    <span><input id="appearanceUiSize" type="number" min="10" max="24" step="1" value="14" /> px</span>
+                  </label>
+                  <label class="setting-row appearance-number-row" for="appearanceContentSize">
+                    <span class="setting-copy"><strong>Schriftgröße des Inhalts</strong><small>Nachrichten und längere Texte</small></span>
+                    <span><input id="appearanceContentSize" type="number" min="10" max="28" step="1" value="14" /> px</span>
+                  </label>
+                  <label class="setting-row appearance-number-row" for="appearanceCodeSize">
+                    <span class="setting-copy"><strong>Code-Schriftgröße</strong><small>Codeblöcke und Diffs</small></span>
+                    <span><input id="appearanceCodeSize" type="number" min="10" max="24" step="1" value="12" /> px</span>
+                  </label>
+                </section>
+                <section class="settings-panel cfg-card wide" aria-labelledby="appearanceDisplayTitle">
+                  <header class="settings-panel-head">
+                    <span class="settings-panel-glyph" aria-hidden="true">◈</span>
+                    <div><span>BEDIENUNG</span><h3 id="appearanceDisplayTitle">Bewegung und Ansichten</h3></div>
+                  </header>
+                  <div class="setting-row">
+                    <span class="setting-copy"><strong>Bewegung reduzieren</strong><small>Animationen minimieren oder dem Gerät folgen</small></span>
+                    <div class="appearance-segments" id="appearanceMotion" role="radiogroup" aria-label="Bewegung reduzieren">
+                      <label><input type="radio" name="appearanceMotion" value="system" checked /><span>System</span></label>
+                      <label><input type="radio" name="appearanceMotion" value="on" /><span>Ein</span></label>
+                      <label><input type="radio" name="appearanceMotion" value="off" /><span>Aus</span></label>
+                    </div>
+                  </div>
+                  <label class="setting-row" for="appearanceSeparate">
+                    <span class="setting-copy"><strong>Hell und Dunkel getrennt einstellen</strong><small>Jeder Modus erhält sein eigenes Motiv, Akzent und Schriftmotiv</small></span>
+                    <span class="settings-switch"><input id="appearanceSeparate" type="checkbox" /><i aria-hidden="true"></i></span>
+                  </label>
+                </section>
+                <section class="settings-panel cfg-card wide" aria-labelledby="appearanceContrastTitle">
+                  <header class="settings-panel-head">
+                    <span class="settings-panel-glyph" aria-hidden="true">◑</span>
+                    <div><span>KONTRAST</span><h3 id="appearanceContrastTitle">Kontrast</h3></div>
+                  </header>
+                  <div class="appearance-range-row">
+                    <label for="appearanceContrast">Kontrast der sekundären Texte und Linien</label>
+                    <input id="appearanceContrast" type="range" min="0" max="100" step="5" value="60" />
+                    <output id="appearanceContrastValue" for="appearanceContrast">60</output>
+                  </div>
+                </section>
+                <section class="settings-panel cfg-card wide" aria-labelledby="appearanceMoreTitle">
+                  <header class="settings-panel-head">
+                    <span class="settings-panel-glyph" aria-hidden="true">⌘</span>
+                    <div><span>EXTRAS</span><h3 id="appearanceMoreTitle">Text und Darstellung</h3></div>
+                  </header>
+                  <label class="setting-row" for="appearanceSmartPunctuation">
+                    <span class="setting-copy"><strong>Intelligente Zeichensetzung</strong><small>Typografische Zeichen beim Schreiben umwandeln. Codeblöcke und eingefügter Text bleiben unangetastet.</small></span>
+                    <span class="settings-switch"><input id="appearanceSmartPunctuation" type="checkbox" /><i aria-hidden="true"></i></span>
+                  </label>
+                  <label class="setting-row" for="appearanceFullWidth">
+                    <span class="setting-copy"><strong>Seiten in voller Breite</strong><small>Den verfügbaren Platz auf großen Bildschirmen besser nutzen</small></span>
+                    <span class="settings-switch"><input id="appearanceFullWidth" type="checkbox" /><i aria-hidden="true"></i></span>
+                  </label>
+                  <div class="setting-row">
+                    <span class="setting-copy"><strong>Markierungen für Unterschiede</strong><small>Änderungen in Diff-Codeblöcken farbig oder nur mit +/− darstellen</small></span>
+                    <div class="appearance-segments" id="appearanceDiffMarkers" role="radiogroup" aria-label="Markierungen für Unterschiede">
+                      <label><input type="radio" name="appearanceDiffMarkers" value="color" checked /><span>Farbe</span></label>
+                      <label><input type="radio" name="appearanceDiffMarkers" value="symbols" /><span>+/−</span></label>
+                    </div>
+                  </div>
+                </section>
+              </div>
+            </details>
+
+            <section class="settings-panel cfg-card wide settings-panel-interface" aria-labelledby="interfaceTitle">
               <header class="settings-panel-head">
                 <span class="settings-panel-glyph" aria-hidden="true">⟐</span>
-                <div><span>OBERFLÄCHE</span><h3 id="interfaceTitle">Bewegung und Layout</h3></div>
+                <div><span>COREAI</span><h3 id="interfaceTitle">Bestehende Anzeigeoptionen</h3></div>
               </header>
-              <label class="setting-row" for="prefReduceMotion">
-                <span class="setting-copy"><strong>BEWEGUNG REDUZIEREN</strong><small>Rotationen, Pulse und Übergänge auf ein Minimum setzen.</small></span>
-                <span class="settings-switch"><input id="prefReduceMotion" type="checkbox" /><i aria-hidden="true"></i></span>
-              </label>
               <label class="setting-row" for="prefCompactFeed">
                 <span class="setting-copy"><strong>KOMPAKTER DATENSTROM</strong><small>Nachrichten enger darstellen und mehr Verlauf sichtbar halten.</small></span>
                 <span class="settings-switch"><input id="prefCompactFeed" type="checkbox" /><i aria-hidden="true"></i></span>
@@ -295,23 +425,16 @@
                 <span class="setting-copy"><strong>KERNTELEMETRIE</strong><small>Link-, Node- und Uhrzeitdaten in der Desktop-Topbar anzeigen.</small></span>
                 <span class="settings-switch"><input id="prefShowTelemetry" type="checkbox" /><i aria-hidden="true"></i></span>
               </label>
-            </section>
-
-            <section class="settings-panel cfg-card amber settings-panel-chat" aria-labelledby="chatTitle">
-              <header class="settings-panel-head">
-                <span class="settings-panel-glyph amber" aria-hidden="true">◇</span>
-                <div><span>EMBER-KANAL</span><h3 id="chatTitle">Chat und Live-Browser</h3></div>
-              </header>
               <label class="setting-row" for="prefThinkingExpanded">
-                <span class="setting-copy"><strong>ARBEITSWEG OFFEN HALTEN</strong><small>Den Arbeitsweg unter einer Antwort standardmäßig ausgeklappt lassen. Einfache Antworten ohne Werkzeug, Datei oder Fehler zeigen keinen Arbeitsweg. Interne Core-Gedanken bleiben verborgen.</small></span>
+                <span class="setting-copy"><strong>ARBEITSWEG OFFEN HALTEN</strong><small>Werkzeug- und Arbeitsereignisse bei längeren Antworten standardmäßig ausgeklappt anzeigen. Private Gedanken bleiben verborgen.</small></span>
                 <span class="settings-switch"><input id="prefThinkingExpanded" type="checkbox" /><i aria-hidden="true"></i></span>
               </label>
               <label class="setting-row" for="prefShowLiveBrowser">
-                <span class="setting-copy"><strong>PLAYWRIGHT-BROWSERFENSTER ANZEIGEN</strong><small>Deaktiviert: bei tiefer Browser-Recherche nur „Web wird durchsucht“ anzeigen. Die normale Websuche behält das Quellenkarussell.</small></span>
+                <span class="setting-copy"><strong>PLAYWRIGHT-BROWSERFENSTER ANZEIGEN</strong><small>Bei tiefer Browser-Recherche die Live-Ansicht zeigen, soweit verfügbar.</small></span>
                 <span class="settings-switch"><input id="prefShowLiveBrowser" type="checkbox" /><i aria-hidden="true"></i></span>
               </label>
               <label class="setting-row" for="prefLiveFrameMotion">
-                <span class="setting-copy"><strong>LIVE-BROWSER-BILDFOLGE</strong><small>Alle empfangenen Playwright-Frames nacheinander wiedergeben.</small></span>
+                <span class="setting-copy"><strong>LIVE-BROWSER-BILDFOLGE</strong><small>Empfangene Playwright-Frames nacheinander wiedergeben.</small></span>
                 <span class="settings-switch"><input id="prefLiveFrameMotion" type="checkbox" /><i aria-hidden="true"></i></span>
               </label>
             </section>
