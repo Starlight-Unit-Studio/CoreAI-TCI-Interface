@@ -387,6 +387,20 @@
 
   function appendHighlightedCode(codeEl, value, language, doc) {
     var lang = canonicalLanguage(language);
+    if (lang === 'diff') {
+      // Keep each original code line intact. The CSS controls whether
+      // differences are shown with color or with literal +/- markers only.
+      String(value || '').split('\n').forEach(function (line) {
+        var span = doc.createElement('span');
+        span.className = 'md-diff-line' +
+          (/^\+(?!\+\+)/.test(line) ? ' md-diff-add' :
+          (/^-(?!--)/.test(line) ? ' md-diff-del' :
+          (/^@@/.test(line) ? ' md-diff-meta' : '')));
+        span.textContent = line || ' ';
+        codeEl.appendChild(span);
+      });
+      return;
+    }
     var keywordList = KEYWORDS[lang] || '';
     var keywordMap = {};
     keywordList.split(/\s+/).filter(Boolean).forEach(function (word) { keywordMap[word] = true; });
