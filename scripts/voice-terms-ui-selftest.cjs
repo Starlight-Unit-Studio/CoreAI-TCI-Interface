@@ -63,7 +63,7 @@ async function open(browser, options, viewport) {
     try { localStorage.setItem('emberCoreUI.preferences.v1', JSON.stringify({theme: theme})); } catch (e) {}
   }, options.theme || 'dark');
   await page.route('http://coreui.test/**', route => srv.route(route));
-  await page.goto('http://coreui.test/settings.html#ki-profil');
+  await page.goto('http://coreui.test/settings.html#stimme');
   return {page, srv, errors};
 }
 
@@ -87,7 +87,7 @@ const smallText = page => page.evaluate(() => {
       assert.equal(await page.getAttribute('html', 'data-coreui-theme'), theme, 'the ' + theme + ' theme is on');
       assert.equal(await page.inputValue('#voiceTerms'), 'Bergisch Gladbach\nEVK', 'the account\'s list, one term per line');
       assert.equal(await page.textContent('#voiceTermsState'), '2 von 40 Begriffen');
-      assert.equal(await page.isVisible('#voiceTermsRow'), true, 'in the KI-Profil');
+      assert.equal(await page.isVisible('#voiceTermsRow'), true, 'on the Voice settings page');
       assert.deepEqual(await smallText(page), [], theme + ': no text below 11 px');
 
       // Typing saves two seconds after the last key; leaving the field takes the cleaned list.
@@ -100,19 +100,19 @@ const smallText = page => page.evaluate(() => {
       assert.equal(srv.posts[0].csrf, 'tok-terms', 'with the CSRF token');
       assert.equal(srv.posts[0].body.terms, 'Bergisch Gladbach\nEVK\nNicki, evk\nGladbach');
       assert.equal(await page.inputValue('#voiceTerms'), 'Bergisch Gladbach\nEVK\nNicki, evk\nGladbach', 'the text is not replaced while typing');
-      await page.click('h3#aiTuneTitle');
+      await page.click('#view-stimme .cfg-view-head h2');
       await page.waitForFunction(() => document.getElementById('voiceTerms').value === 'Bergisch Gladbach\nEVK\nNicki\nGladbach', null, {timeout: 5000});
       assert.equal(await page.textContent('#voiceTermsState'), 'Gespeichert · 4 von 40 Begriffen');
       assert.equal(srv.posts.length, 2, 'leaving the field saves once more and shows the cleaned list');
       await page.click('#voiceTerms');
-      await page.click('h3#aiTuneTitle');
+      await page.click('#view-stimme .cfg-view-head h2');
       await page.waitForTimeout(300);
       assert.equal(srv.posts.length, 2, 'nothing changed: nothing saved');
 
       // A failed save says so and keeps the text.
       srv.state.fail = true;
       await page.fill('#voiceTerms', 'Bergisch Gladbach');
-      await page.click('h3#aiTuneTitle');
+      await page.click('#view-stimme .cfg-view-head h2');
       await page.waitForFunction(() => document.getElementById('voiceTermsState').textContent.startsWith('Nicht gespeichert'), null, {timeout: 5000});
       assert.equal(await page.inputValue('#voiceTerms'), 'Bergisch Gladbach', 'the text stays for another try');
       assert.deepEqual(errors, [], 'no page errors');
@@ -143,7 +143,7 @@ const smallText = page => page.evaluate(() => {
   } finally {
     await browser.close();
   }
-  console.log('CoreAI voice terms: KI-Profil list of names and terms shown, saved (typing pause and leaving), cleaned, errors said, guests none, before migration off, night and day, phone OK');
+  console.log('CoreAI voice terms: Voice settings list of names and terms shown, saved (typing pause and leaving), cleaned, errors said, guests none, before migration off, night and day, phone OK');
 })().catch(error => {
   console.error(error);
   process.exit(1);
