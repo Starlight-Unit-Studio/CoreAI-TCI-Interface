@@ -6,6 +6,7 @@
   var STORAGE_KEY = 'emberCoreUI.preferences.v1';
   var defaults = {
     theme: 'system',
+    uiLanguage: 'auto',
     // Keyboard behavior is a local presentation preference, not a model setting.
     sendKey: 'enter',
     reduceMotion: false,
@@ -20,6 +21,7 @@
     var source = input && typeof input === 'object' ? input : {};
     return {
       theme: source.theme === 'light' || source.theme === 'dark' ? source.theme : 'system',
+      uiLanguage: source.uiLanguage === 'de' || source.uiLanguage === 'en' ? source.uiLanguage : 'auto',
       sendKey: source.sendKey === 'mod-enter' ? 'mod-enter' : 'enter',
       reduceMotion: source.reduceMotion === true,
       compactFeed: source.compactFeed === true,
@@ -59,6 +61,12 @@
 
     var activeTheme = resolvedTheme(prefs.theme);
     root.setAttribute('data-coreui-theme', activeTheme);
+    // Only a supported interface locale is used; independent of Mara's answer language.
+    var browserLang = (window.navigator && window.navigator.language) || 'de';
+    var interfaceLang = prefs.uiLanguage === 'auto'
+      ? (/^en(?:-|$)/i.test(browserLang) ? 'en' : 'de') : prefs.uiLanguage;
+    root.setAttribute('lang', interfaceLang);
+    root.setAttribute('data-coreui-ui-lang', interfaceLang);
     root.setAttribute('data-coreui-theme-choice', prefs.theme);
     if (root.style) root.style.colorScheme = activeTheme;
     // Android browser chrome should match the currently displayed surface.
