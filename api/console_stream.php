@@ -65,6 +65,7 @@ try {
   $pdo = stu_pdo();
   stu_enforce_maintenance($pdo, (int)$uid);
   if (function_exists('coreui_ai_runtime_apply')) coreui_ai_runtime_apply($pdo, (int)$uid);
+  $GLOBALS['COREUI_GENERAL_SETTINGS'] = coreui_general_load($pdo, (int)$uid);
   $thinkingEnabled = ember_thinking_enabled();
 } catch (Throwable $e) {
   sse_send('error', ['error' => 'auth']);
@@ -257,6 +258,15 @@ if (!$isVisionTurn && function_exists('ember_attach_needs_vision_path')) {
     }
   }
 }
+
+// Automatic higher Core only for private plain-text turns. A selected
+// alternative is local to this PHP request; all work stays on the single
+// serial model queue, and the account's Core choice remains unchanged.
+$GLOBALS['COREUI_GENERAL_AUTO_DECIDED'] = true;
+coreui_general_select_auto_core(
+  $pdo, (int)$uid, $message,
+  $isVisionTurn || $attachmentIds !== [] || $generationMode === 'continue'
+);
 
 // ── Charakter laden (Eigentuemer-Pruefung wie im send-Handler) ──
 try {
@@ -1024,7 +1034,7 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
   $payload = [
     'model'    => $model,
     'stream'   => true,
-    'think'    => $thinkOverride ?? ember_thinking_enabled(),
+    'think'    => coreui_general_think_value($model, $thinkOverride ?? ember_thinking_enabled()),
     'messages' => $messages,
   ];
   // Do not send an empty options object for native Gemma defaults.
