@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.6.72 - 09.11.2026
+
+- Repair eight preflight failures introduced by moving Admin Core to its own protected `admin/index.html` page in 0.6.71. Preserve real guest, captcha, roles, Core-grant, global-memory and image-tool controls; their six source-contract tests now inspect the correct page and assert that admin fields are absent from ordinary settings.
+- Replace obsolete frontend regression assumptions about the retired settings hash redirect with checks for the real Admin Core link, protected initial shell, independent navigation, root-based admin API and server-side permission gate. Do not reinstate the old embedded admin UI or a history-modifying redirect.
+- Restore the approved Starlight Unit Studios logo on the standalone Admin Core footer. Apply its original SHA-256 image digest as a consistent image cache key across splash, login, settings and admin. Strengthen the branding selftest to verify each exact relative path and fingerprint, not merely the filename.
+- Keep all existing account settings, Model/Modelfile behavior, migrations, authorization, Core/AI logic, server services and the global FIFO unchanged. Only the approved visual branding and version/cache metadata change at runtime.
+- Reserve the merge-bound 0.6.72 version and archive the matching TXT changelog and handover. Full live preflight on an updated host remains the final acceptance gate.
+
 ## 0.6.71 - 09.11.2026
 
 - Complete the first General settings page: the interface language selector now changes and stores German, English (beta, core UI strings), or browser-detected language, separately from Mara's answer language.
@@ -10,11 +18,11 @@
 
 - Rebuild the settings information architecture around 25 navigable category pages with a searchable sidebar and a mobile drawer. The sections visible in the supplied reference are included; 16 missing capabilities are explicitly marked as planning placeholders, with no fake saving or account connections.
 - Use one browser-local Expert settings switch to reveal numeric and technical controls within their original categories (KI profile, memory, appearance, General). All categories, existing values, System diagnostics and owner updater remain accessible regardless of the switch; it grants no permissions.
-- Build the General page in native CoreAI row styling while preserving its existing account/Core/system overview. A new real local send-key setting switches the chat between Enter and Ctrl/Command+Enter (composition-safe), updates the composer hint and survives reloads; Display reset preserves it. UI language, automatic Core promotion and additional reasoning tiers are visible but disabled as not-yet-implemented features.
+- Build the General page in native CoreAI row styling while preserving its existing account/Core/system overview. A new real local send-key setting switches the chat between Enter and Ctrl/Command+Enter (composition-safe), updates the composer hint and survives reloads; Display reset preserves it. UI language (DE/EN beta), eligible auto-Core routing and model-declared reasoning effort were subsequently activated within the same 0.6.71 merge.
 - Move all eight working Admin Core sections from the regular settings markup into a dedicated `/admin/index.html` page with an authorization gate. Ordinary settings show exactly one Admin Core entry only after owner/admin authentication; old admin deep links continue to work.
 - Preserve admin users, runtime controls, role restrictions, global memories, lore, logs, audit and owner-only voice/image sample tools; anchor their API endpoints to CoreAI's project root instead of relative page paths.
 - Keep the existing profile, appearance, personalization, security, memory, knowledge, update and account functions, while adding a documented 25-category implementation matrix. Adjust PHP, Playwright and offline regression tests and both preflights.
-- Synchronize the merge-bound 0.6.71 version, documentation, handover and SHA-256 numeric browser cache keys. No database migration, new third-party integration, model prompt or runtime service change.
+- Synchronize the merge-bound 0.6.71 version, documentation, handover and SHA-256 numeric browser cache keys. Migration 027 was added for General server-backed controls; no model prompt or runtime service was replaced.
 ## 0.6.70 - 09.11.2026
 
 - Make the owner name display with the same font weight and text color as the surrounding copyright attribution in all six CoreAI HTML surfaces (splash, sign-in, chat drawer, settings, protocols and admin redirect).

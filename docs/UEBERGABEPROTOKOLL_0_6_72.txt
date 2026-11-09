@@ -1,0 +1,44 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.72
+Datum: 09.11.2026
+Ausgangsstand: main 0.6.71, PR #223 gemergt
+Branch: fix/preflight-admin-separation-0672
+
+AUSLOESER
+Der Preflight zeigte acht Fehler nach dem Wechsel zum eigenstaendigen Admin Core:
+1. Guest access FAIL: admin fields in Runtime
+2. Captcha FAIL: admin switch shown (Admin Core tab)
+3. Roles FAIL: new account form
+4. Model access FAIL: Admin Core: CORES column
+5. Memory length FAIL: the text fields allow long memories
+6. Image gen FAIL: the switch sits with the other tools
+7. Studio-Logo ohne korrekte Originalbild-/Cache-Referenz in admin/index.html
+8. Frontend-Regressions-Selbsttest: ueberholte Admin-Weiterleitung zum Einstellungstab
+
+DIAGNOSE UND KORREKTUR
+- Die ersten sechs Fehler waren veraltete Quelltextchecks, die noch settings.html
+  statt admin/index.html prueften. Alle sechs realen Controls sind vorhanden.
+- Die Quelltextchecks verifizieren nun auch die Abwesenheit administrativer
+  Controls in den normalen Einstellungen und den gesperrten Admin-Shell-Start.
+- Frontend-Test verlangt nicht laenger den obsoleten Hash-Redirect, sondern
+  den direkten Link zum Admin Core, den Rechte-Check und die Admin-API im Root.
+- Das freigegebene Studio-Logo wird im separaten Admin Footer gezeigt.
+- Image-Referenzen verwenden den SHA-256-Praefix als Cache-Identifikator.
+- Die Logo-Regression prueft den genauen Bildpfad in den vier HTML-Einstiegen.
+- VERSION/README/HTML/CHANGELOG/TXT-Index werden auf 0.6.72 synchronisiert.
+- Keine Tabellen, Rechte, Core-Warteschlange, Modelfiles oder Laufzeitservices
+  werden durch diese Korrektur geaendert.
+
+PRUEFUNGEN
+- Die acht statischen Bedingungen am GitHub-Branch abgeglichen und bestaetigt.
+- Der komplette Preflight laeuft nicht in der GitHub-Connectorumgebung.
+- Der aktuelle Host muss nach dem Merge/Update selbst pruefen, dass sowohl
+  die aktualisierten Tests als auch die realen Services erfolgreich laufen.
+- Keinen Preflight als bestanden bezeichnen, solange er nicht tatsaechlich
+  auf dem Host mit dem finalen Branch ausgefuehrt wurde.
+
+ABNAHME
+1. Vor Merge branchbezogene Tests bzw. Review.
+2. Nach Merge 0.6.72 ueber den bestehenden CoreAI-Updater installieren.
+3. Native/Compose-Preflight vollstaendig neu ausfuehren, nicht alte Logs lesen.
+4. Falls weitere Probleme auftreten: genaue neue Fehlzeile mit Version und
+   neuem Zeitstempel sichern. Die Live-Daten bleiben unangetastet.

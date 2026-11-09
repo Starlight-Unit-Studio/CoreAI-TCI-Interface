@@ -45,10 +45,13 @@ if ($alpha < 120) {
   exit(4);
 }
 
+$assetVersion = substr($approvedSha256, 0, 16);
 foreach (['index.html', 'login.html', 'settings.html', 'admin/index.html'] as $htmlFile) {
   $html = (string)file_get_contents(dirname(__DIR__) . '/' . $htmlFile);
-  if ($html === '' || !str_contains($html, $fileName)) {
-    fwrite(STDERR, "Studio-Logo besitzt keine eindeutige Cache-Buster-Referenz in {$htmlFile}.\n");
+  $prefix = $htmlFile === 'admin/index.html' ? '../images/' : './images/';
+  $expected = 'src="' . $prefix . $fileName . '?v=' . $assetVersion . '"';
+  if ($html === '' || !str_contains($html, $expected)) {
+    fwrite(STDERR, "Studio-Logo besitzt keine korrekte Originalbild- und Cache-Buster-Referenz in {$htmlFile}.\n");
     exit(5);
   }
 }

@@ -1,0 +1,12 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.72
+Datum: 09.11.2026
+
+- Acht Preflight-Fehler nach der Auslagerung des Admin Core in Version 0.6.71 repariert.
+- Gastzugang-, Captcha-, Rollen-, Core-Freigaben-, Memory-Laengen- und Bildgenerierungs-Selbsttests lesen die Admin-Felder jetzt aus admin/index.html statt settings.html.
+- Zusaetzliche Trennpruefungen sichern ab, dass administrative Controls NICHT in der normalen Einstellungsseite verbleiben und die Admin Shell zunaechst verborgen ist.
+- Frontend-Regression prueft den separaten, berechtigungsgeschuetzten Admin Core, die Direktnavigation und die serverseitige Rechtebehandlung statt der alten Weiterleitung zu einem Einstellungstab.
+- Freigegebenes Starlight Unit Studios Original-Logo ist auch im Admin Core vorhanden; alle vier Logo-Seiten nutzen einen einheitlichen Bild-Cache-Fingerprint nach SHA256.
+- Logo-Selbsttest prueft ab sofort den echten Pfad und Fingerprint, nicht nur den Dateinamen.
+- Kleines responsives Styling fuer das Studio-Logo im Admin Core; CSS-Cache-Fingerprint aktualisiert.
+- Keine Veraenderungen am Modelfile, Serverrecht, Datenbank-Schema, der Modellwarteschlange, der Core-Auswahl oder an bestehenden Benutzerwerten.
+- Vor Merge: kompletter Preflight auf dem aktualisierten Host erforderlich. Die Quelltextpruefungen allein beweisen noch keinen gruenen Gesamt-Preflight.

@@ -2028,3 +2028,16 @@
   .cfg-general-control { justify-items: stretch; }
   .cfg-general-control select, .cfg-general-control small { width: 100%; text-align: left; }
 }
+
+/* 0.6.72: the standalone Admin Core keeps the approved Studio mark legible
+   without turning its footer into a full-width cover image. */
+.settings-body .cfg-admin-brand {
+  width: min(280px, calc(100% - 64px));
+  margin: 24px auto 12px;
+  padding: 0;
+}
+.settings-body .cfg-admin-brand img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
