@@ -1,6 +1,6 @@
 # CoreAI settings information architecture
 
-Current foundation: CoreAI 0.6.76 (09 November 2026).
+Current foundation: CoreAI 0.6.79 (09 November 2026).
 
 This file is a development map, **not a claim that every visible category works**.
 Navigation, search, swipe-in mobile drawer, desktop collapse and header Expert control work. A
@@ -12,7 +12,7 @@ has an authenticated API, UI tests and a separate release.
 | Menu category | Status | Existing function or next work |
 | --- | --- | --- |
 | General (Allgemein) | Implemented / English beta | App language DE/EN and automatic higher Core. Denkaufwand is visible without Expert and uses the same account preference as its chat control. Named efforts require migration 027 and model support; other Cores retain Thinking on/off. Send shortcut is on Keyboard. |
-| Appearance (Darstellung) | Existing | System/Light/Dark, reduced motion and chat preferences |
+| Appearance (Darstellung) | Implemented | System/Light/Dark, Quantum motifs, per-mode accents/fonts, safe hex colors, three font sizes, OS/on/off motion, contrast, full-width, typing and fenced diff choices. Original chat/live-browser switches preserved. All are normal local-browser options, not Expert. |
 | Notifications (Benachrichtigungen) | Planned | Notification channels, delivery permissions and user controls |
 | Profile (Profil) | Existing | User/assistant display names and avatars with crop |
 | Security & sign-in (Sicherheit und Anmeldung) | Existing | Working password changes, device sessions and session revocation moved intact from Account |
