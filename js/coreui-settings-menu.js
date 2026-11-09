@@ -98,6 +98,14 @@
     reflect();
     return {
       isExpert: function () { return !!(expertToggle && expertToggle.checked); },
+      revealCategory: function (name) {
+        if (search && search.value) search.value = '';
+        if (expertToggle && /^(ki-profil|wissen|memory)$/.test(name) && !expertToggle.checked) {
+          expertToggle.checked = true;
+          persist(true);
+        }
+        reflect();
+      },
       refresh: reflect,
       close: function () { setOpen(false, false); }
     };
