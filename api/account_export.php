@@ -7,6 +7,7 @@ require_once __DIR__ . '/console_personalization_store.php';
 require_once __DIR__ . '/profile_store.php';
 require_once __DIR__ . '/console_artifact_store.php';
 require_once __DIR__ . '/notifications_store.php';
+require_once __DIR__ . '/usage_store.php';
 
 $pdo = stu_pdo();
 $uid = stu_require_user_id();
@@ -143,6 +144,9 @@ try {
     'login_sessions' => coreui_auth_session_list($pdo, $uid),
     // 0.6.81: the chosen channels and the browsers with Push (names only, no endpoint or keys).
     'notifications' => ['prefs' => coreui_notify_prefs($pdo, $uid), 'push_devices' => coreui_push_devices($pdo, $uid)],
+    // 0.6.84: tokens per day, Core and thinking level, counted for Settings > Profil (numbers only).
+    'usage_daily' => coreui_usage_ready($pdo) ? coreui_export_rows($pdo,
+      'SELECT day,model,thinking,calls,prompt_tokens,output_tokens FROM stu_usage_daily WHERE user_id=? ORDER BY day,model,thinking', [$uid]) : [],
     'security_notice' => [
       'password_hashes_exported' => false,
       'login_tokens_exported' => false,

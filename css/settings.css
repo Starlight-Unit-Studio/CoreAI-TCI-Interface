@@ -2519,7 +2519,7 @@
   border: 1px solid var(--line-amber);
   color: #9b651e;
   font-family: "Share Tech Mono", monospace;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: .08em;
 }
 html[data-coreui-theme="dark"] .settings-body .notify-planned { color: var(--amb); }
@@ -2557,3 +2557,107 @@ html[data-coreui-theme="dark"] .settings-body .notify-planned { color: var(--amb
 .settings-body .mail-form select:disabled { opacity: 0.6; cursor: not-allowed; }
 .settings-body .mail-form .form-hint[data-state="ok"] { color: var(--green); }
 .settings-body .mail-form .form-hint[data-state="error"] { color: var(--red); }
+
+/* 0.6.84: Settings > Profil, overview modeled on the ChatGPT profile page. */
+.settings-body .profile-overview { position: relative; text-align: center; }
+.settings-body .po-toolbar { display: flex; justify-content: flex-end; gap: 8px; }
+.settings-body .po-icon {
+  display: inline-grid; place-items: center; width: 42px; height: 42px; padding: 0;
+  border: 1px solid var(--line-strong); border-radius: 999px; background: var(--panel-soft); color: var(--txt); cursor: pointer;
+}
+.settings-body .po-icon svg, .settings-body .po-tool svg, .settings-body .po-made-item svg, .settings-body .po-highlight-stack svg {
+  fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+}
+.settings-body .po-icon svg { width: 20px; height: 20px; }
+.settings-body .po-icon:hover:not(:disabled) { border-color: var(--cx); }
+.settings-body .po-icon:disabled { opacity: 0.45; cursor: not-allowed; }
+.settings-body .po-head { display: grid; justify-items: center; gap: 6px; margin: 0 0 18px; }
+.settings-body .po-head .po-avatar { width: 112px; height: 112px; font-size: 34px; }
+.settings-body .po-head h3 { margin: 8px 0 0; color: var(--txt); font-size: clamp(26px, 4vw, 34px); line-height: 1.1; overflow-wrap: anywhere; }
+.settings-body .po-sub { margin: 0; color: var(--muted); font-size: 16px; }
+.settings-body .po-stats {
+  display: grid; grid-template-columns: repeat(6, minmax(0, 1fr));
+  border: 1px solid var(--line-strong); border-radius: 18px; overflow: hidden;
+}
+.settings-body .po-stat { grid-column: span 2; display: grid; align-content: center; gap: 2px; padding: 14px 8px; text-align: center; }
+.settings-body .po-stat.wide { grid-column: span 3; border-top: 1px solid var(--line); }
+.settings-body .po-stat:nth-child(2), .settings-body .po-stat:nth-child(3), .settings-body .po-stat:nth-child(5) { border-left: 1px solid var(--line); }
+.settings-body .po-stat strong { color: var(--txt); font-size: 22px; line-height: 1.2; }
+.settings-body .po-stat span { color: var(--muted); font-size: 15px; line-height: 1.25; }
+.settings-body .po-note { margin: 12px 0 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
+.settings-body .po-section-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 14px; }
+.settings-body .po-section-head h3 { margin: 0; color: var(--txt); font-size: 21px; }
+.settings-body .po-count { color: var(--muted); font-size: 14px; }
+.settings-body .profile-highlights { text-align: center; }
+.settings-body .profile-highlights .po-section-head { text-align: left; }
+.settings-body .po-highlight-stack { display: flex; justify-content: center; align-items: center; margin: 8px 0 14px; opacity: 0.7; }
+.settings-body .po-highlight-stack span {
+  width: 96px; height: 66px; margin: 0 -24px; border: 1px solid var(--line-strong); border-radius: 14px; background: var(--panel-soft);
+}
+.settings-body .po-highlight-stack span:first-child { transform: rotate(-6deg); }
+.settings-body .po-highlight-stack span:last-child { transform: rotate(6deg); }
+.settings-body .po-highlight-stack .front {
+  position: relative; z-index: 1; display: grid; place-items: center; align-content: center; gap: 4px;
+  width: 130px; height: 82px; background: var(--panel-cx); color: var(--txt);
+}
+.settings-body .po-highlight-stack .front svg { width: 24px; height: 24px; color: var(--violet); }
+.settings-body .po-highlight-stack b { font-size: 14px; }
+.settings-body .po-highlight-text { margin: 0 0 12px; color: var(--muted); font-size: 15px; }
+.settings-body .po-raster {
+  display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, auto);
+  grid-template-columns: repeat(var(--po-weeks, 53), minmax(0, 1fr)); gap: 3px;
+}
+.settings-body .po-dot { display: block; width: 100%; aspect-ratio: 1; border-radius: 50%; background: var(--line-strong); opacity: 0.45; }
+.settings-body .po-dot.empty { visibility: hidden; }
+.settings-body .po-dot.tok { background: var(--green); }
+.settings-body .po-dot.msg { background: var(--cx); }
+.settings-body .po-dot.l0 { background: var(--line-strong); opacity: 0.4; }
+.settings-body .po-dot.l1 { opacity: 0.35; }
+.settings-body .po-dot.l2 { opacity: 0.55; }
+.settings-body .po-dot.l3 { opacity: 0.8; }
+.settings-body .po-dot.l4 { opacity: 1; }
+.settings-body .po-months {
+  display: grid; grid-template-columns: repeat(var(--po-weeks, 53), minmax(0, 1fr)); margin: 8px 0 0;
+  color: var(--muted); font-size: 13px; line-height: 1;
+}
+.settings-body .po-months span { width: 0; min-width: 0; overflow: visible; white-space: nowrap; }
+.settings-body .po-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 14px 0 0; color: var(--muted); font-size: 13px; }
+.settings-body .po-legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.settings-body .po-legend .po-dot { width: 10px; height: 10px; }
+.settings-body .po-made { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
+.settings-body .po-made-item a {
+  display: grid; gap: 6px; height: 100%; padding: 8px; border: 1px solid var(--line); border-radius: 14px;
+  background: var(--panel-soft); color: var(--txt); text-decoration: none;
+}
+.settings-body .po-made-item a:hover { border-color: var(--cx); }
+.settings-body .po-made-item img { width: 100%; aspect-ratio: 1; border-radius: 10px; object-fit: cover; }
+.settings-body .po-made-item svg { width: 28px; height: 28px; color: var(--cx); }
+.settings-body .po-made-name { font-size: 14px; font-weight: 700; overflow-wrap: anywhere; }
+.settings-body .po-made-item small { color: var(--muted); font-size: 12px; }
+.settings-body .po-empty { display: grid; justify-items: center; gap: 10px; color: var(--muted); font-size: 15px; text-align: center; }
+.settings-body .po-empty p { margin: 4px 0 0; }
+.settings-body .po-empty[hidden], .settings-body .po-empty-line[hidden] { display: none; }
+.settings-body .po-empty-line { margin: 0; color: var(--muted); font-size: 15px; }
+.settings-body .po-tools { display: flex; flex-wrap: wrap; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.settings-body .po-tool {
+  display: grid; justify-items: center; gap: 4px; width: 100px; padding: 12px 6px;
+  border: 1px solid var(--line-strong); border-radius: 18px; background: var(--panel-soft); text-align: center;
+}
+.settings-body .po-tool svg { width: 30px; height: 30px; color: var(--cx); }
+.settings-body .po-tool strong { color: var(--txt); font-size: 13px; line-height: 1.2; }
+.settings-body .po-tool small { color: var(--muted); font-size: 12px; }
+.settings-body .po-insights { display: grid; margin: 0; }
+.settings-body .po-insight { display: flex; justify-content: space-between; gap: 14px; padding: 11px 0; border-bottom: 1px solid var(--line); }
+.settings-body .po-insight:last-child { border-bottom: 0; }
+.settings-body .po-insight dt { color: var(--muted); font-size: 16px; }
+.settings-body .po-insight dd { margin: 0; color: var(--txt); font-size: 16px; font-weight: 700; text-align: right; }
+@media (max-width: 600px) {
+  .settings-body .po-head .po-avatar { width: 96px; height: 96px; }
+  .settings-body .po-stat strong { font-size: 18px; }
+  .settings-body .po-stat span { font-size: 13px; }
+  .settings-body .po-raster { gap: 2px; }
+  .settings-body .po-months { font-size: 11px; }
+  .settings-body .po-raster-mode span { min-width: 0; padding: 4px 9px; font-size: 13px; }
+  .settings-body .po-tool { width: calc(33.33% - 8px); }
+  .settings-body .po-insight dt, .settings-body .po-insight dd { font-size: 15px; }
+}

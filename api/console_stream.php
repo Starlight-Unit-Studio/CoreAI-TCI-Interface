@@ -1193,6 +1193,10 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
     ]);
   }
 
+  // 0.6.84: Settings > Profil counts the tokens of the account's calls (numbers only).
+  if (function_exists('coreui_usage_record_call')) {
+    coreui_usage_record_call($model, $promptEvalCount, $evalCount, $payload['think'] ?? false);
+  }
   if ($workDb instanceof PDO) {
     // A completed HTTP exchange can still stop at an output-token limit.
     // Never show a green success tick when Ollama reports truncated content.

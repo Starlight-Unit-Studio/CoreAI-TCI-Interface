@@ -1,5 +1,21 @@
 # CoreAI: TCI Interface
 
+## 0.6.84 - 09.11.2026
+
+- **Settings > Profil now opens with an overview modeled on the two ChatGPT profile screenshots**, in CoreAI style. The existing name and picture editors stay below; the pencil jumps there.
+  - **Head:** picture, name, role and "dabei seit". The globe (public profile) and share buttons are shown greyed as planned.
+  - **Figures** in German like the reference (2,1 Mrd., 195,4 Mio., 1 Std. 50 Min., 27 Tage): **Tokens insgesamt** and **Token-Spitzenwert** (the highest day), **Längste Aufgabe** (the longest completed answer run), **Längste Serie** and **Aktuelle Serie** (days in a row with an own message; the current streak still counts until the day ends).
+  - **Tokens are counted from this version on** (new migration 029, `stu_usage_daily`): after every Ollama call of a chat turn, per account, day, Core and thinking level, numbers only. CoreAI never stored tokens before, so the page says since when it counts. Streaks, the longest task, tools and what Mara made come from the existing history.
+  - **Tokennutzung** raster of the last 53 weeks with **Täglich, Wöchentlich, Kumulativ** and month labels: tokens (green) from the counting start, own messages per day (blue) before it, explained in a legend; each dot names its day and value.
+  - **Highlights** (featuring a skill on the profile) is shown as planned.
+  - **Von Mara erstellt** (the reference's Sites): the latest images and files Mara made, each opening its chat, with totals; an empty state links to the chat. The assistant's own name is used.
+  - **Top-Werkzeuge** (the reference's Top-Plugins): Websuche, Recherche im Browser, Python, Bilder, Dateien, Skills by use.
+  - **Einblicke:** TCI Core Schnell share of the runs (the reference's Schnellmodus), most used Core, most used Denkaufwand, discovered and used skills, messages, chats, active days.
+- New `api/profile_stats.php` (GET, the signed-in account's own data only, no guests) and `api/usage_store.php`; nginx allows the endpoint in both templates. The account export includes the counted numbers.
+- The "In Vorbereitung" badge is 11 px now (was 10 px), also on Benachrichtigungen.
+- Tests: new `profile-stats-selftest.php` (thinking levels, streaks, counting only with an account, the overview from SQLite with rows of other accounts and Mara that must not count, MariaDB with migration 029, cascade on account deletion, wiring) and `profile-stats-ui-selftest.cjs` (Chromium: head, figures, note, raster in all three modes, made, tools, insights, planned parts, pencil, a saved name, a new account, no migration, a failed request, loading when opened, phone). Both preflights.
+- No change to Cores, Modelfile, FIFO, prompts or account rights.
+
 ## 0.6.83 - 09.11.2026
 
 - **Settings > Benachrichtigungen now has every category of the two ChatGPT reference screenshots**, in their order. 0.6.81 had left out four of the ten:

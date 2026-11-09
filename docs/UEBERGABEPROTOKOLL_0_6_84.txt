@@ -1,0 +1,47 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.84
+Datum: 09.11.2026
+Basis: main 0.6.83 nach PR #236 und 766cda4 (Modelfile-Vorlage vom Betreiber)
+Branch: claude/bold-galileo-myoyi0
+
+AUFTRAG
+Betreiber: zwei Screenshots der ChatGPT-Profilseite (chatgpt.com/u/...), "machen wir dann
+die zweite subseite"; "wir sind ja gerade auch erstmal alles von gpt am kopieren was alles
+an funktionen in einstellungen zur verfuegung steht".
+Entscheidungen (Rueckfrage): oben in Einstellungen > Profil; Tokens ab jetzt zaehlen;
+Teile ohne CoreAI-Gegenstueck als "In Vorbereitung".
+
+BEFUND
+- Tokens: Ollama liefert eval_count/prompt_eval_count pro Aufruf, CoreAI speicherte sie nie
+  dauerhaft (nur teilweise im Arbeitsweg). Daher Zaehlung ab 0.6.84.
+- Aus dem Verlauf echt berechenbar: eigene Nachrichten pro Tag (Serien, Raster),
+  stu_console_agent_runs (laengste Aufgabe), stu_console_work_events (Websuche, Browser,
+  Python, Bilder, Skills), stu_console_artifacts (Dateien).
+
+UMGESETZT
+- database/migrations/029_usage_counter.sql: stu_usage_daily (user_id, day, model, thinking,
+  calls, prompt_tokens, output_tokens), FK CASCADE; stu_app_settings usage_counting_since.
+- api/usage_store.php: coreui_usage_record (MySQL ON DUPLICATE KEY / SQLite ON CONFLICT),
+  coreui_usage_record_call (Konto aus COREUI_WORK_CONTEXT oder COREUI_USAGE_UID, wirft nie),
+  coreui_usage_streaks, coreui_profile_stats (nur eigene Zeilen; Maras Nachrichten und
+  geloeschte zaehlen nicht).
+- Zaehlpunkte: ember_call_ollama (chat.php) und console_stream_ollama (console_stream.php),
+  jeweils mit dem gesendeten think-Wert.
+- api/profile_stats.php (GET, keine Gaeste), nginx beide Vorlagen, Kontoexport usage_daily.
+- settings.html (Profil): Uebersicht, Highlights (geplant), Tokennutzung, Von Mara erstellt,
+  Top-Werkzeuge, Einblicke; js/coreui-profile-stats.js laedt beim Oeffnen von Profil;
+  js/settings.js meldet gespeicherten Namen/Bild (Ereignis coreai:profile).
+- css/settings.css: Stile; Abzeichen "In Vorbereitung" 11 px.
+
+TESTS (hier ausgefuehrt)
+- php scripts/profile-stats-selftest.php (auch mit MariaDB und Migration 029)
+- node scripts/profile-stats-ui-selftest.cjs (Bildschirmfotos angesehen)
+- volle Testreihe mit MariaDB, php -l, Sprachtests, cache-bust, version-merge-check
+
+NICHT HIER GEPRUEFT
+- Zaehlung mit echtem Ollama (hier kein Ollama); die Zaehlpunkte liegen direkt hinter den
+  vorhandenen eval_count-Auswertungen. Sprachwege (voice_input, voice_live) mit eigenen
+  Ollama-Aufrufen ausserhalb eines Chat-Durchlaufs werden nicht gezaehlt.
+
+NACH DEM MERGE (Betreiber)
+1. Update einspielen (Migration 029 laeuft mit).
+2. Einstellungen > Profil oeffnen; nach einigen Chats fuellen sich Tokens und Raster.

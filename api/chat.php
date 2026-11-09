@@ -22,6 +22,7 @@ require_once __DIR__ . '/weather_live.php';
 require_once __DIR__ . '/image_gen.php';
 require_once __DIR__ . '/console_composer_intent.php';
 require_once __DIR__ . '/notifications_store.php';
+require_once __DIR__ . '/usage_store.php';
 
 // -----------------------------------------------------------------------------
 // Ember - Global-Chat NPC (Ollama local)
@@ -3935,6 +3936,11 @@ function ember_call_ollama(string $model, string $systemPrompt, string $userProm
   $GLOBALS['STU_EMBER_LAST_CALL']['done_reason'] = trim((string)($j['done_reason'] ?? ''));
   $GLOBALS['STU_EMBER_LAST_CALL']['eval_count'] = max(0, (int)($j['eval_count'] ?? 0));
   $GLOBALS['STU_EMBER_LAST_CALL']['prompt_eval_count'] = max(0, (int)($j['prompt_eval_count'] ?? 0));
+  // 0.6.84: Settings > Profil counts the tokens of the account's calls (numbers only).
+  if (function_exists('coreui_usage_record_call')) {
+    coreui_usage_record_call($model, (int)$GLOBALS['STU_EMBER_LAST_CALL']['prompt_eval_count'],
+      (int)$GLOBALS['STU_EMBER_LAST_CALL']['eval_count'], $payload['think'] ?? false);
+  }
   $GLOBALS['STU_EMBER_LAST_CALL']['context_tokens'] = (int)(ember_ollama_context_observe(
     $model, (string)$GLOBALS['STU_EMBER_LAST_CALL']['done_reason'],
     (int)$GLOBALS['STU_EMBER_LAST_CALL']['prompt_eval_count'],

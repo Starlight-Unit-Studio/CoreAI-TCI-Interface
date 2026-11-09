@@ -6,16 +6,16 @@
   <meta name="language" content="de-DE" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#f0f4fa" />
-  <meta name="application-version" content="0.6.83" />
+  <meta name="application-version" content="0.6.84" />
   <meta name="application-name" content="CoreAI: TCI Interface" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface - Einstellungen</title>
   <link rel="stylesheet" href="./css/console.css?v=0488039108136251966969049" />
-  <link rel="stylesheet" href="./css/settings.css?v=0413368338927858783483896" />
+  <link rel="stylesheet" href="./css/settings.css?v=0881442943639076065971325" />
   <link rel="stylesheet" href="./css/coreui-profile-crop.css?v=0852949496159567452926853" />
   <link rel="stylesheet" href="./css/coreui-update.css?v=1027839363176318351849490" />
   <link rel="stylesheet" href="./css/coreui-theme.css?v=0697431397907702126637895" />
-  <script src="./js/console-gate.js?v=0376186823281185274239872"></script>
+  <script src="./js/console-gate.js?v=0328111438093644641056151"></script>
   <script src="./js/coreui-preferences.js?v=0004145186774094057353830"></script>
   <script src="./js/coreui-ui-language.js?v=0850224961537363286304733"></script>
 </head>
@@ -54,6 +54,13 @@
     <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M4.5 15.5V20h15v-4.5"/></symbol>
     <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11.5" height="11.5" rx="2"/><path d="M15.5 8.5V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v9.5a1 1 0 0 0 1 1h3.5"/></symbol>
     <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5M4.5 15.5V20h15v-4.5"/></symbol>
+    <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.5 2.7 3.6 5.6 3.6 9s-1.1 6.3-3.6 9c-2.5-2.7-3.6-5.6-3.6-9S9.5 5.7 12 3z"/></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 15V3M7.5 7.5 12 3l4.5 4.5M5 12v8h14v-8"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><path d="M10.5 4a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM15.5 15.5 20 20"/></symbol>
+    <symbol id="i-browser" viewBox="0 0 24 24"><path d="M3 5h18v14H3zM3 9h18M6 7h.01M9 7h.01"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><path d="M4 5h16v14H4zM4 16l5-5 4 4 2-2 5 5M15.5 9.5h.01"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6zM14 3v4h4M9 12h6M9 16h6"/></symbol>
   </svg>
 
   <div class="settings-page">
@@ -72,7 +79,7 @@
           <h1>EINSTELLUNGEN</h1>
         </div>
       </div>
-      <div class="settings-version">COREAI: TCI INTERFACE // v0.6.83</div>
+      <div class="settings-version">COREAI: TCI INTERFACE // v0.6.84</div>
       <div class="cfg-header-actions" aria-label="Schnellzugriffe Einstellungen">
         <label class="cfg-header-expert" for="settingsExpertToggle" title="Technische Einstellungen in allen Kategorien anzeigen oder ausblenden">
           <span>EXPERTENMODUS</span>
@@ -393,7 +400,64 @@
             <button class="settings-action" id="saveProfile" type="button">PROFILE SPEICHERN</button>
           </header>
           <div class="cfg-cards">
-            <article class="settings-panel cfg-card profile-editor-card">
+            <!-- 0.6.84: overview modeled on the ChatGPT profile page (api/profile_stats.php). -->
+            <section class="settings-panel cfg-card wide profile-overview" id="profileOverview" aria-labelledby="profileOverviewName" aria-busy="true">
+              <div class="po-toolbar">
+                <button class="po-icon" id="profileEditJump" type="button" aria-label="Profil bearbeiten" title="Profil bearbeiten"><svg aria-hidden="true"><use href="#i-pencil" /></svg></button>
+                <button class="po-icon" id="profilePublic" type="button" disabled aria-label="Öffentliches Profil (in Vorbereitung)" title="Öffentliches Profil: In Vorbereitung"><svg aria-hidden="true"><use href="#i-globe" /></svg></button>
+                <button class="po-icon" id="profileShare" type="button" disabled aria-label="Profil teilen (in Vorbereitung)" title="Profil teilen: In Vorbereitung"><svg aria-hidden="true"><use href="#i-share" /></svg></button>
+              </div>
+              <div class="po-head">
+                <span class="settings-profile-avatar po-avatar" id="profileOverviewAvatar" aria-hidden="true">OP</span>
+                <h3 id="profileOverviewName">Profil</h3>
+                <p class="po-sub" id="profileOverviewSub"></p>
+              </div>
+              <div class="po-stats" role="list">
+                <div class="po-stat" role="listitem"><strong id="poTokensTotal">-</strong><span>Tokens insgesamt</span></div>
+                <div class="po-stat" role="listitem"><strong id="poTokensPeak">-</strong><span>Token-Spitzenwert</span></div>
+                <div class="po-stat" role="listitem"><strong id="poLongestTask">-</strong><span>Längste Aufgabe</span></div>
+                <div class="po-stat wide" role="listitem"><strong id="poStreakLongest">-</strong><span>Längste Serie</span></div>
+                <div class="po-stat wide" role="listitem"><strong id="poStreakCurrent">-</strong><span>Aktuelle Serie</span></div>
+              </div>
+              <p class="po-note" id="poTokensNote"></p>
+            </section>
+            <section class="settings-panel cfg-card wide profile-highlights is-planned" aria-labelledby="poHighlightsTitle">
+              <header class="po-section-head"><h3 id="poHighlightsTitle">Highlights</h3><span class="notify-planned">IN VORBEREITUNG</span></header>
+              <div class="po-highlight-stack" aria-hidden="true"><span></span><span class="front"><svg><use href="#i-spark" /></svg><b>Werkzeuge</b></span><span></span></div>
+              <p class="po-highlight-text" id="poHighlightsText">Fähigkeiten im Profil hervorheben.</p>
+              <button class="settings-action compact" type="button" disabled>ZUM PROFIL HINZUFÜGEN</button>
+            </section>
+            <section class="settings-panel cfg-card wide profile-raster" aria-labelledby="poRasterTitle">
+              <header class="po-section-head">
+                <h3 id="poRasterTitle">Tokennutzung</h3>
+                <div class="appearance-segment po-raster-mode" id="poRasterMode" role="radiogroup" aria-labelledby="poRasterTitle">
+                  <label><input type="radio" name="poRasterMode" value="day" checked /><span>Täglich</span></label>
+                  <label><input type="radio" name="poRasterMode" value="week" /><span>Wöchentlich</span></label>
+                  <label><input type="radio" name="poRasterMode" value="sum" /><span>Kumulativ</span></label>
+                </div>
+              </header>
+              <div class="po-raster" id="poRaster" role="img" aria-label="Nutzung der letzten 53 Wochen"></div>
+              <div class="po-months" id="poMonths" aria-hidden="true"></div>
+              <p class="po-legend" id="poLegend"></p>
+            </section>
+            <section class="settings-panel cfg-card wide profile-made" aria-labelledby="poMadeTitle">
+              <header class="po-section-head"><h3 id="poMadeTitle">Von Mara erstellt</h3><span class="po-count" id="poMadeCount"></span></header>
+              <ul class="po-made" id="poMadeList"></ul>
+              <div class="po-empty" id="poMadeEmpty" hidden>
+                <p>Mara hat für dich noch keine Bilder oder Dateien erstellt.</p>
+                <a class="settings-action compact" href="./app.html">IM CHAT ERSTELLEN</a>
+              </div>
+            </section>
+            <section class="settings-panel cfg-card wide profile-tools" aria-labelledby="poToolsTitle">
+              <header class="po-section-head"><h3 id="poToolsTitle">Top-Werkzeuge</h3></header>
+              <ul class="po-tools" id="poTools"></ul>
+              <p class="po-empty-line" id="poToolsEmpty" hidden>Noch keine Werkzeuge benutzt.</p>
+            </section>
+            <section class="settings-panel cfg-card wide profile-insights" aria-labelledby="poInsightsTitle">
+              <header class="po-section-head"><h3 id="poInsightsTitle">Einblicke</h3></header>
+              <dl class="po-insights" id="poInsights"></dl>
+            </section>
+            <article class="settings-panel cfg-card profile-editor-card" id="profileEditorStart">
               <header class="settings-panel-head">
                 <span class="settings-panel-glyph" aria-hidden="true">◈</span>
                 <div><span>DU</span><h3>Dein Profil</h3></div>
@@ -1069,12 +1133,13 @@
   <script src="./js/coreui-settings-menu.js?v=0905731306422182746103357"></script>
   <script src="./js/coreui-settings-tabs.js?v=0131180580469642779294886"></script>
   <script src="./js/coreui-context-slider.js?v=1058131433773441189843644"></script>
-  <script src="./js/settings.js?v=0011783692549444987652907"></script>
+  <script src="./js/settings.js?v=0754811392245175017985136"></script>
   <script src="./js/coreui-personalization-settings.js?v=0293012758263273966658748"></script>
   <script src="./js/coreui-voice-read.js?v=0478836976425824839668688"></script>
   <script src="./js/coreui-voice-terms.js?v=0470347751915481307845714"></script>
   <script src="./js/coreui-notify.js?v=1002976330424203629675926"></script>
   <script src="./js/coreui-notify-settings.js?v=0180900766828442110480559"></script>
+  <script src="./js/coreui-profile-stats.js?v=0455317875090572215591977"></script>
   <script src="./js/coreui-update.js?v=0294648939860149727532714"></script>
 </body>
 </html>

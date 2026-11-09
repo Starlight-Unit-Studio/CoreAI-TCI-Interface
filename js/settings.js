@@ -431,6 +431,8 @@
     setAvatarPreview(start.avatar, avatars.user, profile.display_name || 'Operator');
     if (profile.display_name) startText('name', profile.display_name);
     if (accountDisplayName) accountDisplayName.textContent = (profile.display_name || 'ANGEMELDETER OPERATOR').toUpperCase();
+    // 0.6.84: the profile overview head follows a saved name or picture (js/coreui-profile-stats.js).
+    try { document.dispatchEvent(new CustomEvent('coreai:profile', {detail: profile})); } catch (e) { /* old browser */ }
   }
 
   function loadProfile() {
