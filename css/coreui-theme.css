@@ -511,3 +511,331 @@ html[data-coreui-theme="dark"] .settings-profile-avatar.assistant.has-image {
   background-size: contain;
   background-repeat: no-repeat;
 }
+
+
+/* 0.6.79: Appearance controls. Every screenshot-inspired option is a normal
+   user setting, independent of the Expert/technical mode. */
+
+/* Maintain the shipped Holo background until the user deliberately changes
+   the background hex; never invert artwork or downloaded pictures. */
+html[data-coreui-background-custom="true"],
+html[data-coreui-background-custom="true"] body {
+  background: var(--bg);
+  color: var(--txt);
+}
+html[data-coreui-motif="terminal"] body:not(.login-body) {
+  background-image: linear-gradient(155deg, var(--bg), var(--panel-solid));
+}
+html[data-coreui-motif="terminal"] body::before {
+  background-image: linear-gradient(to right, var(--line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--line) 1px, transparent 1px);
+  background-size: 32px 32px;
+  opacity: .24;
+}
+html[data-coreui-motif="minimal"] body::before,
+html[data-coreui-motif="minimal"] body::after { display: none; }
+html[data-coreui-motif="minimal"] body {
+  background-image: none;
+  background-color: var(--bg);
+}
+html[data-coreui-motif="minimal"] .cfg-card,
+html[data-coreui-motif="minimal"] .settings-panel,
+html[data-coreui-motif="minimal"] .msg-bubble {
+  box-shadow: none;
+}
+html[data-coreui-font="system"] body,
+html[data-coreui-font="system"] .cfg-tab,
+html[data-coreui-font="system"] .msg-bubble {
+  font-family: "Segoe UI", Roboto, Arial, sans-serif;
+}
+html[data-coreui-font="mono"] body,
+html[data-coreui-font="mono"] .cfg-tab,
+html[data-coreui-font="mono"] .msg-bubble {
+  font-family: "Share Tech Mono", "Courier New", monospace;
+}
+
+/* The three pixel controls scale actual rendered UI, prose and code.
+   The original design stays unchanged at default 14/14/12. */
+.settings-body .cfg-tab {
+  font-size: calc(16.5px * var(--appearance-ui-scale, 1));
+}
+.settings-body .setting-copy strong {
+  font-size: calc(15px * var(--appearance-ui-scale, 1));
+}
+.settings-body .setting-copy small,
+.settings-body .cfg-view-head p,
+.settings-body .theme-mode-help {
+  font-size: calc(14px * var(--appearance-ui-scale, 1));
+}
+.settings-body .settings-action,
+.settings-body .appearance-layout select,
+.settings-body .appearance-layout input {
+  font-size: calc(14px * var(--appearance-ui-scale, 1));
+}
+.app-header .header-title,
+.drawer .session-item,
+.composer button,
+.composer-input {
+  font-size: calc(14px * var(--appearance-ui-scale, 1));
+}
+.msg-bubble, .msg-bubble p, .md-table-wrap {
+  font-size: calc(16px * var(--appearance-content-scale, 1));
+}
+.md-codeblock pre, .md-codeblock code, .md-inline-code {
+  font-size: calc(12px * var(--appearance-code-scale, 1));
+}
+
+html.pref-full-width .cfg-shell,
+html.pref-full-width .settings-body .settings-footer {
+  width: calc(100% - 32px);
+  max-width: none;
+}
+html.pref-full-width .messages-area .messages-inner,
+html.pref-full-width .messages-area .messages,
+html.pref-full-width .composer-inner,
+html.pref-full-width .composer-footer-line {
+  max-width: none;
+  width: calc(100% - 24px);
+}
+html.pref-full-width .msg-bubble {
+  max-width: 95%;
+}
+
+/* Color vs literal +/- markers in fenced diff code. Raw code stays
+   byte-for-byte intact for copying, and markup is never inserted as HTML. */
+.md-codeblock .md-diff-line {
+  display: block;
+  white-space: pre;
+}
+html[data-coreui-diff="color"] .md-diff-add {
+  color: var(--green);
+  background: rgba(42, 175, 117, .12);
+}
+html[data-coreui-diff="color"] .md-diff-del {
+  color: var(--red);
+  background: rgba(212, 80, 93, .10);
+}
+html[data-coreui-diff="color"] .md-diff-meta {
+  color: var(--cx);
+  background: var(--panel-cx);
+}
+html[data-coreui-diff="symbols"] .md-diff-line {
+  color: inherit;
+  background: transparent;
+}
+
+/* Normal layout: keep original categories and group the screenshot fields. */
+.appearance-layout .appearance-motif,
+.appearance-layout .appearance-advanced { min-width: 0; }
+.appearance-layout .appearance-field,
+.appearance-layout .appearance-color-field {
+  min-width: 0;
+}
+.appearance-layout .appearance-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(170px, 46%);
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.appearance-layout .appearance-field > label {
+  color: var(--txt);
+  font-weight: 700;
+}
+.appearance-layout .appearance-field > label small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-weight: 400;
+  line-height: 1.35;
+}
+.appearance-layout .appearance-field > select,
+.appearance-layout .appearance-control-line select {
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+  border: 1px solid var(--line-strong);
+  border-radius: 0;
+  background: var(--panel-soft);
+  color: var(--txt);
+  font-family: "Rajdhani", sans-serif;
+  padding: 6px 8px;
+}
+.appearance-layout .appearance-control-line {
+  min-width: 0;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.appearance-layout .appearance-control-line select { flex: 1 1 auto; }
+.appearance-layout .appearance-icon-btn {
+  flex: 0 0 auto;
+  width: 38px;
+  min-height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 0;
+  background: var(--panel-soft);
+  color: var(--cx);
+  font-size: 18px;
+  cursor: pointer;
+}
+.appearance-layout .appearance-icon-btn:focus-visible,
+.appearance-layout .appearance-field select:focus-visible,
+.appearance-layout input:focus-visible {
+  outline: 2px solid var(--amb);
+  outline-offset: 2px;
+}
+.appearance-layout input[type="color"] {
+  width: 38px;
+  min-width: 38px;
+  height: 38px;
+  padding: 2px;
+  border: 1px solid var(--line);
+  background: var(--panel-soft);
+  cursor: pointer;
+}
+.appearance-layout .appearance-colors {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.appearance-layout .appearance-color-field > span:first-child {
+  display: block;
+  color: var(--txt);
+  font-weight: 700;
+  margin-bottom: 9px;
+}
+.appearance-layout .appearance-color-controls {
+  display: flex;
+  min-width: 0;
+  gap: 8px;
+  align-items: center;
+}
+.appearance-layout input[type="text"] {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  min-height: 38px;
+  border: 1px solid var(--line-strong);
+  padding: 7px 8px;
+  background: var(--panel-soft);
+  color: var(--txt);
+  font-family: "Share Tech Mono", monospace;
+}
+.appearance-layout .appearance-status {
+  min-height: 1.25em;
+  color: var(--green);
+  font-size: 13px;
+  line-height: 1.4;
+}
+.appearance-layout .appearance-status[data-error="true"] { color: var(--red); }
+.appearance-layout .appearance-advanced {
+  grid-column: 1 / -1;
+  border: 1px solid var(--line);
+  background: var(--panel-soft);
+}
+.appearance-layout .appearance-advanced > summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  cursor: pointer;
+  padding: 14px 18px;
+  color: var(--txt);
+  font-size: 17px;
+  font-weight: 700;
+  list-style: none;
+}
+.appearance-layout .appearance-advanced > summary::before { content: "›"; color: var(--cx); }
+.appearance-layout .appearance-advanced[open] > summary::before { content: "⌄"; }
+.appearance-layout .appearance-advanced > summary::-webkit-details-marker { display: none; }
+.appearance-layout .appearance-advanced > summary span {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 400;
+}
+.appearance-layout .appearance-advanced .cfg-cards {
+  padding: 12px;
+  gap: 14px;
+}
+.appearance-layout .appearance-number-row > span:last-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+.appearance-layout .appearance-number-row input {
+  width: 68px;
+  min-width: 0;
+  min-height: 36px;
+  padding: 6px 8px;
+  border: 1px solid var(--line-strong);
+  background: var(--panel-soft);
+  color: var(--txt);
+  font-family: "Share Tech Mono", monospace;
+}
+.appearance-layout .appearance-segments {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  justify-content: flex-end;
+}
+.appearance-layout .appearance-segments label {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+.appearance-layout .appearance-segments input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+.appearance-layout .appearance-segments span {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  padding: 6px 10px;
+  background: var(--panel-soft);
+  border: 1px solid transparent;
+  color: var(--muted);
+}
+.appearance-layout .appearance-segments input:checked + span {
+  border-color: var(--cx);
+  background: var(--panel-cx);
+  color: var(--txt);
+}
+.appearance-layout .appearance-segments input:focus-visible + span {
+  outline: 2px solid var(--amb);
+  outline-offset: 2px;
+}
+.appearance-layout .appearance-range-row {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.appearance-layout .appearance-range-row label { flex: 1 1 170px; color: var(--txt); }
+.appearance-layout .appearance-range-row input { flex: 2 1 140px; accent-color: var(--cx); }
+.appearance-layout .appearance-range-row output {
+  flex: 0 0 34px;
+  color: var(--txt);
+  font-family: "Share Tech Mono", monospace;
+  text-align: right;
+}
+
+@media (max-width: 630px) {
+  .appearance-layout .appearance-field { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .appearance-layout .appearance-colors { grid-template-columns: minmax(0, 1fr); }
+  .appearance-layout .appearance-advanced > summary { font-size: 15px; }
+  .appearance-layout .appearance-advanced .cfg-cards { padding: 7px; }
+  .appearance-layout .appearance-number-row { flex-wrap: wrap; }
+  .appearance-layout .appearance-segments { width: 100%; justify-content: flex-start; }
+  .appearance-layout .appearance-range-row input { min-width: 100px; }
+  .appearance-layout .appearance-icon-btn { width: 40px; }
+}
