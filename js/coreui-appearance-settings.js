@@ -200,6 +200,7 @@
     show('Motiv als JSON exportiert (ohne Konto- oder Chatdaten).', false);
   });
   root.addEventListener('coreui:preferences', render);
+  root.addEventListener('coreui:appearance', render);
   render();
   root.CoreUIAppearanceSettings = {render:render, contrastRatio:contrastRatio};
 })(window);
