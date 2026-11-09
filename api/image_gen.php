@@ -91,8 +91,8 @@ function coreui_image_is_self_request(string $message, string $assistantName = '
   if (preg_match('~\\b(?:du\\s+selbst|dich\\s+selbst|yourself)\\b~iu', $text) === 1) return true;
   if (preg_match('~\\b(?:wie|als)\\s+du\\s+[^.!?]{0,90}\\b(?:aussiehst|aussehen|wirkst|sitzt|stehst|laeufst|läufst|siehst)\\b~iu', $text) === 1) return true;
   if (preg_match('~\\bdich\\s+[^.!?]{0,65}\\b(?:sehen|abbilden|zeichnen|malen|darstellen|fotografieren)\\b~iu', $text) === 1) return true;
-  // Name-based scenes: "Mara im Cockpit", "Mara am Strand", "Ember as
-  // captain" and "ein Bild mit Mara" all mean the TCI as the SUBJECT.
+  // Name-based scenes: "Mara im Cockpit", "Mara am Strand", and scenes
+  // with the current account-specific TCI nickname as SUBJECT use the portrait.
   // "Mara, male eine fremde Frau" must stay a generic image.
   $subjectNames = '(?:' . $names . ')';
   if (preg_match('~\\b' . $subjectNames
@@ -674,7 +674,7 @@ function coreui_image_capability_hint(bool $compact): string {
     . "[BILD ICH: ausfuehrliche Bildbeschreibung auf Englisch: Motiv, Umgebung, Licht, Stil; Text im Bild in Anfuehrungszeichen]. "
     . "Nur fuer ausdrueckliche Selbstportraets verwende ICH: Das aktive Profilbild zeigt DICH SELBST, TCI: Mara Thorne. Es ist deine eigene visuelle Identitaet, kein Foto einer Person, die dir nur aehnlich sieht. Das gilt auch bei Kostuem, Rollenspiel oder einem frei gewaehlten Rufnamen. "
     . "Bei einer schlichten Frage nach deinem Aussehen zeige dich als DIESELBE Person auf deinem eigenen Profilfoto. Erfinde keine Gesichtsdetails, die du nicht sehen kannst: der Bilddienst erhaelt dieses Foto als verbindliche Selbstreferenz. Beschreibe in ICH-Auftraegen vor allem Handlung, Pose, Kleidung, Licht und Szene statt ein neues Gesicht zu entwerfen. "
-    . "Auch bei Szenen wie 'Mara im Cockpit' oder 'Ember am Strand' ist Mara selbst das Motiv, kein neues generisches Frauenmodell: IMMER [BILD ICH: ...] fuer ihr festes Referenzgesicht, auch bei 2/4 Bildern. Ein nur als Anrede verwendetes 'Mara, zeichne eine fremde Frau' meint dagegen ein fremdes Motiv mit [BILD: ...]. "
+    . "Auch bei Szenen wie 'Mara im Cockpit' oder mit deinem aktuell eingestellten Rufnamen als Bildmotiv ist Mara selbst das Motiv, kein neues generisches Frauenmodell: IMMER [BILD ICH: ...] fuer ihr festes Referenzgesicht, auch bei 2/4 Bildern. Ein nur als Anrede verwendetes 'Mara, zeichne eine fremde Frau' meint dagegen ein fremdes Motiv mit [BILD: ...]. "
     . "Die technische TCI-Identitaet bedeutet NICHT, dass dein Gesicht mechanische Linien, Neonleuchten, Implantate oder Androidenmerkmale besitzen muss. "
     . "Erfinde solche Merkmale nur, wenn die Person ausdruecklich eine solche Verwandlung wuenscht. "
     . "Fuer fremde Personen, Tiere oder Szenen benutze [BILD: ...] ohne ICH. "
