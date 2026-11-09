@@ -101,6 +101,10 @@ UI_FILES=(
   scripts/settings-navigation-foundation-selftest.cjs
   scripts/settings-tabs-ui-selftest.cjs
   scripts/theme-preferences-selftest.cjs
+  scripts/appearance-settings-selftest.cjs
+  scripts/smart-punctuation-selftest.cjs
+  js/coreui-appearance-settings.js
+  js/coreui-smart-punctuation.js
   scripts/terran-terminology-selftest.cjs
   scripts/tci-language-selftest.cjs
   js/console-app.js
@@ -1156,6 +1160,16 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       ok 'Anzeige: System/Hell/Dunkel mit Speichern, Betriebssystem-Wechsel und Browser-Tabs geprueft.'
     else
       fail 'Anzeige: Tag-/Nachtmodus-Selbsttest fehlgeschlagen.'
+    fi
+    if node "$PROJECT_ROOT/scripts/appearance-settings-selftest.cjs" >/dev/null 2>&1; then
+      ok 'Darstellung: echte Farben, getrennte Designs, Schriften, Bewegung, Kontrast, Diff und Altwerte geprueft.'
+    else
+      fail 'Darstellung: neue Designfunktionen oder Persistenz fehlgeschlagen.'
+    fi
+    if node "$PROJECT_ROOT/scripts/smart-punctuation-selftest.cjs" >/dev/null 2>&1; then
+      ok 'Darstellung: optionale Zeichensetzung ohne Code-/JSON-Manipulation geprueft.'
+    else
+      fail 'Darstellung: Zeichensetzung oder Entwickler-Code-Schutz fehlgeschlagen.'
     fi
     if node "$PROJECT_ROOT/scripts/response-timing-ui-selftest.js" >/dev/null 2>&1; then
       ok 'Antwortdauer: gespeicherte Gesamt- und Modellzeit in der Infoanzeige geprueft.'
