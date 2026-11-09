@@ -71,6 +71,9 @@
         var tabs = win.CoreAISettingsTabs && win.CoreAISettingsTabs.instance;
         if (!expertToggle.checked && tabs && /^(ki-profil|wissen|memory|system)$/.test(tabs.current())) {
           tabs.show('start');
+        } else if (expertToggle.checked && tabs && typeof tabs.refresh === 'function') {
+          // A bookmarked advanced page can open after its user-enabled group appears.
+          tabs.refresh();
         }
       });
     }
