@@ -1,6 +1,6 @@
 // CoreAI 0.5.94: Admin Core > Betrieb > Stimmproben in a real browser (Playwright).
 //   node scripts/voice-samples-ui-selftest.cjs
-// Serves the settings page with mocked APIs and checks: the Inhaber sees every
+// Serves the dedicated /admin/ page with mocked APIs and checks: the Inhaber sees every
 // voice with its license badge, German figures, one play button per sentence
 // (a missing sample is disabled), playing asks admin.php for exactly that
 // sample of that run and a second click stops it, older runs can be picked,
@@ -108,7 +108,7 @@ async function open(browser, level, viewport, state) {
     HTMLMediaElement.prototype.pause = function () { this.__on = false; };
   });
   await page.route('http://coreui.test/**', route => srv.route(route));
-  await page.goto('http://coreui.test/settings.html#admin-betrieb');
+  await page.goto('http://coreui.test/admin/index.html#admin-betrieb');
   return {page, srv, errors};
 }
 
