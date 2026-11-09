@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.6.78 - 09.11.2026
+
+- Separate the two real Core Channel controls completely. The right-hand **Core** dropdown now only selects local/cloud Cores and retains install/manage access. Remove the duplicate **DENKEN** switch and Thinking status text from the Core dropdown and Core chip, avoiding two controls for the same saved account setting.
+- Move the existing explanatory text, **"Deine CoreAI denkt vor der Antwort nach: gründlicher, aber langsamer. Gilt ab der nächsten Nachricht, für alle deine Chats."**, into the **DENKAUFWAND** popup beside its real model-aware selection. The original on/off backend remains unchanged and is still invoked by the Denkaufwand selector through `CoreUICoreMode.setThinking()`.
+- Update Core-only aria labels, the help legend and KI-Profil guidance, give the explanation an accessible `aria-describedby` link, and remove the now-unused Core chip Thinking CSS and separator. Keep Core-loading feedback on its name and respect reduced-motion settings.
+- Update the existing offline Thinking and Denkaufwand regression tests: no duplicate Core switch, working original per-account Thinking POST/rollback, original explanation exactly once in Denkaufwand, and accessible Core-only menu. Release metadata, README, TXT changelog, handover and SHA-256 browser cache keys synchronized.
+- No database migration, Modelfile/model, account authorization, global FIFO, voice or chat-history changes. Full browser and host preflight still required.
+
 ## 0.6.77 - 09.11.2026
 
 - Correct the two Core Channel composer controls on mobile: **Denkaufwand sits immediately to the left of the Core dropdown**, with the **Core dropdown always the rightmost of the pair**. Keep their IDs, menus, accessibility wiring and real server-backed behavior unchanged.

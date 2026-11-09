@@ -1,6 +1,7 @@
 /* CoreAI 0.5.75: Core chip under the composer. The menu lists the Cores
-   installed in Ollama (like the KI-Profil) and holds the thinking switch.
-   Both are stored per account and apply from the next message on; a running
+   installed in Ollama (like the KI-Profil). The separate Denkaufwand picker
+   controls the existing per-account Thinking API; both settings apply from
+   the next message on. A running
    turn keeps what it started with. A chosen local Core is loaded right away
    by the server, the chip shows LÄDT until Ollama holds it in memory.
    0.5.76: Gemma tiers carry TCI names (Schnell, Normal, Pro, Premium; the
@@ -68,9 +69,7 @@
     var installer = typeof opts.installer === 'function' ? opts.installer
       : function () { return window.CoreUICoreInstall && window.CoreUICoreInstall.instance; };
     var nameEl = doc.getElementById('coreModeName');
-    var thinkEl = doc.getElementById('coreModeThink');
     var list = doc.getElementById('coreModeList');
-    var toggle = doc.getElementById('coreThinkToggle');
     var status = doc.getElementById('coreModeStatus');
     var legendBtn = doc.getElementById('coreLegendBtn');
     var legend = doc.getElementById('coreLegend');
@@ -94,16 +93,9 @@
 
     function render() {
       var core = shortLabel(labelOf(effective()));
-      chip.setAttribute('data-thinking', state.thinking ? 'on' : 'off');
       chip.setAttribute('data-state', state.loading ? 'loading' : 'ready');
-      chip.setAttribute('aria-label', 'Core ' + core + (state.loading ? ', wird geladen' : '')
-        + ', Denken ' + (state.thinking ? 'an' : 'aus') + '. Core und Denken einstellen');
+      chip.setAttribute('aria-label', 'Core ' + core + (state.loading ? ', wird geladen' : '') + '. Core auswählen');
       if (nameEl) nameEl.textContent = core;
-      if (thinkEl) thinkEl.textContent = state.loading ? 'LÄDT' : (state.thinking ? 'DENKEN' : 'SCHNELL');
-      if (toggle) {
-        toggle.checked = state.thinking;
-        toggle.disabled = !state.loaded || state.saving;
-      }
     }
 
     // dot: active (green), standby (yellow), loading (gold pulse), missing,
@@ -494,10 +486,10 @@
       render();
       return request(API, 'POST', {action: 'thinking', thinking_enabled: on}).then(function (data) {
         state.thinking = data.thinking_enabled !== false;
-        say(state.thinking ? 'Denken an: gründlicher, aber langsamer.' : 'Denken aus: Mara antwortet direkt.');
+        // Denkaufwand owns its visible state; never announce thinking in the Core picker.
       }).catch(function () {
         state.thinking = before;
-        say('Nicht gespeichert. Bitte noch einmal versuchen.');
+        // The Denkaufwand selector receives false and reports a failed save.
       }).then(function () {
         state.saving = false;
         render();
@@ -547,7 +539,6 @@
       if (isOpen()) { close(false); return Promise.resolve(); }
       return open();
     });
-    if (toggle) toggle.addEventListener('change', function () { return setThinking(toggle.checked); });
     if (manageBtn) manageBtn.addEventListener('click', function (event) {
       if (event && typeof event.stopPropagation === 'function') event.stopPropagation();
       return openManage();

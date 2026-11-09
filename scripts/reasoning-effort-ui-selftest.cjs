@@ -45,6 +45,14 @@ assert.match(effort, /border-radius:\s*0;/,
 
 assert.match(html, /id="reasonEffortMenu"[^>]*role="dialog"|role="dialog"[^>]*id="reasonEffortMenu"/);
 assert.match(html, /id="reasonEffortOptions"/);
+assert.match(html, /id="reasonEffortIntro"/);
+assert.match(html, /id="reasonEffortMenu"[^>]*aria-describedby="reasonEffortIntro"/);
+const intro = 'Deine CoreAI denkt vor der Antwort nach: gründlicher, aber langsamer. Gilt ab der nächsten Nachricht, für alle deine Chats.';
+assert.equal(html.split(intro).length - 1, 1, 'original Thinking explanation exists exactly once in Denkaufwand');
+const coreMenu = html.slice(html.indexOf('id="coreModeMenu"'), html.indexOf('id="reasonEffortMenu"'));
+assert(!coreMenu.includes('id="coreThinkToggle"'), 'Core menu has no duplicate Thinking switch');
+assert(!coreMenu.includes(intro), 'Thinking help no longer belongs to Core selection');
+assert(!html.includes('id="coreModeThink"'), 'Core chip no longer duplicates Thinking status');
 assert.match(html, /src="\.\/js\/coreui-reasoning-effort\.js\?v=\d{25}"/);
 assert.match(settings, /<div class="cfg-general-row">\s*<div class="cfg-general-copy">\s*<label for="generalReasoningLevels">Denkaufwand<\/label>/);
 assert.doesNotMatch(settings, /<div class="cfg-general-row" data-expert hidden>\s*<div class="cfg-general-copy">\s*<label for="generalReasoningLevels">/);

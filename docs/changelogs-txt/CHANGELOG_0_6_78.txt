@@ -1,0 +1,20 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.78
+09.11.2026
+
+- Core-Menue verwaltet nur noch die Core-Auswahl.
+  Der doppelte DENKEN-Schalter im Core-Menue entfällt.
+- Auch die DENKEN/SCHNELL-Anzeige auf dem Core-Chip entfaellt.
+- Die bisherige Erklaerung zum Denken steht nun im
+  DENKAUFWAND-Menue bei den tatsaechlichen Einstellungen:
+  "Deine CoreAI denkt vor der Antwort nach: gruendlicher, aber
+  langsamer. Gilt ab der naechsten Nachricht, fuer alle deine Chats."
+- Denkaufwand behält On/Off und die vom Core gemeldeten Stufen,
+  dieselben Accountwerte und die bestehende Thinking-API.
+- Core-Beschriftungen, Hilfen, KI-Profil-Hinweis und
+  Screenreader-Verknuepfung angepasst.
+- Ladeanzeige fuer den Core bleibt am Core-Namen bestehen.
+- Veraltete Core-Chip-CSS-Regeln und doppelte Trenner entfernt.
+- Selbsttests pruefen die neue Trennung, Server-Speicherung
+  und Fehler-Rollback weiterhin.
+- Keine DB- oder Modelfile-Aenderung, keine FIFO- oder
+  Modellberechtigungs-Aenderung.
