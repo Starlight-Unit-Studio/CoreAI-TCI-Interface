@@ -24,6 +24,9 @@ assert.equal(apply('const x = "word"','"'),'const x = "word"','programming is un
 assert.equal(apply('{"key": "value"}','}'),'{"key": "value"}','JSON is untouched');
 assert.equal(apply('siehe https://coreui.test/...','.'),'siehe https://coreui.test/...','URL not rewritten');
 assert.equal(apply('Einmal \`abc...\`','\`'),'Einmal \`abc...\`','inline code not rewritten');
+assert.equal(apply('~~~js\nNachricht...','.'), '~~~js\nNachricht...', 'tilde fenced code untouched');
+assert.equal(apply('```python\nAntwort...','.'), '```python\nAntwort...', 'backtick fenced code untouched');
+assert.equal(apply('  ```js\nCode ->','>'), '  ```js\nCode ->', 'indented fenced code untouched');
 assert.equal(apply('Heruntergeladen...',null),'Heruntergeladen...','paste/unknown insert ignored');
 assert.match(s,/event\.inputType !== 'insertText'/,'only actual typing');
 assert.match(s,/appearance\.smartPunctuation/,'uses real local toggle');
