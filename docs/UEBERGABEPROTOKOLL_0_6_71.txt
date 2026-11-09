@@ -11,7 +11,7 @@ AUFTRAG
   auf /admin/ saemtliche vorhandenen Admin-Funktionen erhalten.
 
 UMSETZUNG
-ALLEGMEIN / EXPERTENREGEL 0.6.71
+ALLGEMEIN / EXPERTENREGEL 0.6.71
 - User-sichtbare Kategorien bleiben IMMER da (auch KI-Profil, Wissen, Memory).
 - Einziger Expertenschalter zeigt versteckte technische Felder in ihrer
   urspruenglichen Kategorie, ohne vorhandene Werte zu loeschen.
