@@ -25,6 +25,11 @@
   var refreshButton = document.getElementById('refreshHealth');
   var resetButton = document.getElementById('resetPreferences');
   var generalSendKey = document.getElementById('generalSendKey');
+  var generalUiLanguage = document.getElementById('generalUiLanguage');
+  var generalHigherIntelligence = document.getElementById('generalHigherIntelligence');
+  var generalHigherNote = document.getElementById('generalHigherNote');
+  var generalReasoningLevels = document.getElementById('generalReasoningLevels');
+  var generalReasoningNote = document.getElementById('generalReasoningNote');
   var logoutButton = document.getElementById('settingsLogout');
   var backButton = document.getElementById('settingsBack');
   var aiSaveButton = document.getElementById('saveAiSettings');
@@ -129,6 +134,8 @@
   function syncFields(value) {
     value = value || {};
     if (generalSendKey) generalSendKey.value = value.sendKey === 'mod-enter' ? 'mod-enter' : 'enter';
+    if (generalUiLanguage) generalUiLanguage.value = ['auto','de','en'].indexOf(value.uiLanguage) >= 0
+      ? value.uiLanguage : 'auto';
     Object.keys(fields).forEach(function (key) {
       if (fields[key]) fields[key].checked = value[key] === true;
     });
@@ -147,6 +154,8 @@
     value.theme = selected ? selected.value : (preferences ? preferences.load().theme : 'system');
     value.sendKey = generalSendKey ? generalSendKey.value
       : (preferences ? preferences.load().sendKey : 'enter');
+    value.uiLanguage = generalUiLanguage ? generalUiLanguage.value
+      : (preferences ? preferences.load().uiLanguage : 'auto');
     return value;
   }
 
@@ -406,6 +415,76 @@
   function updatePromptCounter() {
     if (!aiPromptCounter || !aiSystemPrompt) return;
     aiPromptCounter.textContent = String(aiSystemPrompt.value.length) + ' / ' + String(promptMax);
+  }
+
+  // Account-wide Core controls are independent of the KI-Profil Save button.
+  // Named effort values are offered only when /api/show advertises them.
+  function loadGeneralControls() {
+    if (!generalHigherIntelligence && !generalReasoningLevels) return Promise.resolve();
+    return api('./api/user_settings.php?general=1').then(function (data) {
+      csrfToken = data.csrf_token || csrfToken;
+      var ready = data.available === true;
+      var general = data.general || {};
+      var caps = data.reasoning || {};
+      var names = Array.isArray(caps.levels) ? caps.levels : [];
+      var canAuto = ready && data.auto_core_allowed === true;
+      if (generalHigherIntelligence) {
+        generalHigherIntelligence.checked = general.auto_higher_core === true;
+        generalHigherIntelligence.disabled = !canAuto;
+      }
+      if (generalHigherNote) generalHigherNote.textContent =
+        !ready ? 'Migration 027 fehlt. Bitte zuerst CoreAI aktualisieren.'
+        : !data.auto_core_allowed ? 'Gäste können keinen automatischen Core-Wechsel auslösen.'
+        : 'Bei komplexen reinen Textaufgaben wird eine bereits installierte, höhere Mara-Core-Stufe verwendet, falls vorhanden. Deine manuelle Auswahl bleibt erhalten.';
+      if (generalReasoningLevels) {
+        var previous = general.thinking_level || '';
+        generalReasoningLevels.textContent = '';
+        function choice(value, label, inactive) {
+          var o = document.createElement('option');
+          o.value = value;
+          o.textContent = label;
+          o.disabled = inactive === true;
+          generalReasoningLevels.appendChild(o);
+        }
+        choice('', 'Core-Standard (Denken an/aus)');
+        [['low','Gering'],['medium','Mittel'],['high','Hoch'],['max','Max']].forEach(function (pair) {
+          if (names.indexOf(pair[0]) !== -1) choice(pair[0], pair[1]);
+        });
+        if (previous !== '' && names.indexOf(previous) === -1) {
+          choice(previous, previous + ' (mit diesem Core nicht verfügbar)', true);
+        }
+        generalReasoningLevels.value = previous;
+        generalReasoningLevels.disabled = !ready || names.length === 0;
+        if (generalReasoningNote) generalReasoningNote.textContent =
+          !ready ? 'Migration 027 fehlt. Bitte zuerst CoreAI aktualisieren.'
+          : names.length === 0
+          ? 'Der aktuelle Core bietet keine benannten Aufwandsstufen. Der vorhandene Denken-Schalter im Chat bleibt voll funktionsfähig.'
+          : 'Verfügbare Aufwandsstufen für ' + String(data.core_label || data.model || 'deinen Core') +
+            '. Denken aus im Chat hat immer Vorrang. Es werden keine unbekannten Stufen an Ollama gesendet.';
+      }
+    }).catch(function (error) {
+      if (generalHigherNote) generalHigherNote.textContent = 'Core-Steuerung nicht erreichbar: ' + error.message;
+      if (generalReasoningNote) generalReasoningNote.textContent = 'Reasoning-Fähigkeiten nicht erreichbar.';
+      if (generalHigherIntelligence) generalHigherIntelligence.disabled = true;
+      if (generalReasoningLevels) generalReasoningLevels.disabled = true;
+    });
+  }
+
+  function saveGeneralControl(setting, value, element) {
+    if (!element || element.disabled) return;
+    element.disabled = true;
+    api('./api/user_settings.php', {
+      method: 'POST', body: JSON.stringify({action: 'general', settings: {[setting]: value}})
+    }).then(function () {
+      announceSaved('ALLGEMEIN SERVERSEITIG GESPEICHERT');
+    }).catch(function (error) {
+      var label = error.message === 'thinking_level_not_supported'
+        ? 'DIESE REASONING-STUFE UNTERSTÜTZT DEIN CORE NICHT'
+        : error.message === 'missing_schema_027'
+          ? 'MIGRATION 027 FEHLT'
+          : 'ALLGEMEIN NICHT GESPEICHERT: ' + error.message;
+      announceSaved(label, true);
+    }).finally(function () { loadGeneralControls(); });
   }
 
   function loadAiSettings() {
@@ -850,6 +929,13 @@
     option.addEventListener('change', saveLocal);
   });
   if (generalSendKey) generalSendKey.addEventListener('change', saveLocal);
+  if (generalUiLanguage) generalUiLanguage.addEventListener('change', saveLocal);
+  if (generalHigherIntelligence) generalHigherIntelligence.addEventListener('change', function () {
+    saveGeneralControl('auto_higher_core', generalHigherIntelligence.checked, generalHigherIntelligence);
+  });
+  if (generalReasoningLevels) generalReasoningLevels.addEventListener('change', function () {
+    saveGeneralControl('thinking_level', generalReasoningLevels.value, generalReasoningLevels);
+  });
   window.addEventListener('coreui:preferences', function (event) {
     if (event && event.detail) syncFields(event.detail);
   });
@@ -894,9 +980,11 @@
     resetButton.addEventListener('click', function () {
       if (!preferences) return;
       // Appearance reset must not silently overwrite the General send shortcut.
-      var oldSendKey = preferences.load().sendKey;
+      var prior = preferences.load();
       preferences.reset();
-      syncFields(preferences.save(Object.assign({}, preferences.defaults, {sendKey: oldSendKey})));
+      syncFields(preferences.save(Object.assign({}, preferences.defaults, {
+        sendKey: prior.sendKey, uiLanguage: prior.uiLanguage
+      })));
       announceSaved('ANZEIGE-STANDARD WIEDERHERGESTELLT');
     });
   }
@@ -917,6 +1005,7 @@
     return Promise.all([
       loadProfile(),
       loadAiSettings(),
+      loadGeneralControls(),
       loadKnowledge(),
       loadMemories(),
       loadHealth(),
