@@ -126,14 +126,30 @@ const smallText = page => page.evaluate(() => {
 (async () => {
   const browser = await chromium.launch({headless: true, executablePath: process.env.PW_CHROMIUM_PATH || undefined, args: ['--no-sandbox']});
   try {
-    // A regular account sees the new category map, but not the admin entry
-    // or the advanced CoreAI controls until explicitly enabled.
+    // All categories stay accessible; Expert only toggles technical fields
+    // in their original categories and never removes existing settings.
     let {page, srv, errors} = await open(browser, 4, '#admin-benutzer');
     assert.deepEqual(await visibleViews(page), ['view-start']);
     assert.equal(await page.locator('#adminLinkGroup').isHidden(), true, 'no Admin Core link for a Nutzer');
     assert.equal(await page.locator('#adminNavGroup').count(), 0, 'no embedded Admin Core tabs');
     assert.equal(await page.isChecked('#settingsExpertToggle'), false, 'expert mode starts disabled');
-    assert.equal(await page.locator('#cfgExpertGroup').isHidden(), true, 'advanced settings hidden by default');
+    assert.equal(await page.locator('#cfgCoreGroup').isHidden(), false, 'CoreAI categories always visible');
+    assert.equal(await page.locator('#tab-ki-profil').isHidden(), false);
+    assert.equal(await page.locator('#tab-wissen').isHidden(), false);
+    assert.equal(await page.locator('#tab-memory').isHidden(), false);
+    assert.equal(await page.locator('#generalReasoningLevels').isVisible(), false,
+      'numeric reasoning configuration is hidden until Expert mode is enabled');
+    assert.equal(await page.locator('#generalUiLanguage').isDisabled(), true,
+      'unimplemented UI language switching is not a fake control');
+    assert.equal(await page.locator('#generalHigherIntelligence').isDisabled(), true,
+      'auto-upgrade cannot silently switch a shared Core');
+    assert.equal(await page.inputValue('#generalSendKey'), 'enter', 'Enter remains the legacy default');
+    await page.selectOption('#generalSendKey', 'mod-enter');
+    assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('emberCoreUI.preferences.v1')).sendKey),
+      'mod-enter', 'the real send shortcut is saved browser-locally');
+    await page.reload();
+    await page.waitForFunction(() => document.getElementById('startHealth').getAttribute('data-state') !== 'checking');
+    assert.equal(await page.inputValue('#generalSendKey'), 'mod-enter', 'send shortcut survives reload');
     assert.equal(srv.calls.filter(c => c.key === 'admin.php').length, 0, 'a Nutzer never asks the admin API');
     // Start view sums up the categories.
     assert.equal(await page.textContent('#startCore'), 'Mara Normal');
@@ -151,11 +167,24 @@ const smallText = page => page.evaluate(() => {
     assert.equal(await page.locator('#tab-cloud-computer').isHidden(), false, 'search finds planned categories');
     assert.equal(await page.locator('#tab-benachrichtigungen').isHidden(), true, 'search filters unrelated entries');
     await page.fill('#settingsNavSearch', '');
+    await page.click('#tab-start');
     await page.check('#settingsExpertToggle');
-    assert.equal(await page.locator('#cfgExpertGroup').isHidden(), false, 'expert mode reveals advanced categories');
+    assert.equal(await page.locator('#generalReasoningLevels').isVisible(), true,
+      'Expert reveals the General reasoning placeholder inside General');
+    assert.equal(await page.locator('#generalReasoningLevels').isDisabled(), true,
+      'the placeholder stays honest even in Expert mode');
     // Tabs switch in place and the address keeps the tab.
     await page.click('#tab-ki-profil');
     assert.deepEqual(await visibleViews(page), ['view-ki-profil']);
+    assert.equal(await page.locator('#aiNumPredict').isVisible(), true,
+      'existing technical Core values are visible in Expert mode');
+    const budget = await page.inputValue('#aiNumPredict');
+    await page.uncheck('#settingsExpertToggle');
+    assert.deepEqual(await visibleViews(page), ['view-ki-profil'], 'Expert switch does not leave the category');
+    assert.equal(await page.locator('#aiNumPredict').isVisible(), false, 'technical field hidden in normal mode');
+    assert.equal(await page.inputValue('#aiNumPredict'), budget, 'hiding a field does not reset its value');
+    await page.check('#settingsExpertToggle');
+    assert.equal(await page.locator('#aiNumPredict').isVisible(), true, 'technical field comes back');
     assert.equal(new URL(page.url()).hash, '#ki-profil');
     assert.equal(await page.getAttribute('#tab-ki-profil', 'aria-selected'), 'true');
     assert.equal(await page.getAttribute('#tab-start', 'aria-selected'), 'false');
