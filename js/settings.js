@@ -99,6 +99,7 @@
   var selectedKnowledgeFile = null;
   var selectedModelOverride = '';
   var defaultModel = '';
+  var lastLoadedAiSettings = null;
   var ctxField = document.getElementById('aiCtxField');
   var contextSlider = ctxField && window.CoreUIContextSlider ? window.CoreUIContextSlider.create({
     root: ctxField,
@@ -499,6 +500,10 @@
     return api('./api/user_settings.php').then(function (data) {
       csrfToken = data.csrf_token || csrfToken;
       var s = data.settings || {};
+      // Snapshot protects unrelated, unsaved KI-Profil fields when a user
+      // changes only Memory on its separate page.
+      lastLoadedAiSettings = Object.assign({}, s);
+      if (memorySettingsSaveButton) memorySettingsSaveButton.disabled = false;
       promptMax = Number(data.limits && data.limits.system_prompt_chars) || 6000;
       if (aiSystemPrompt) {
         aiSystemPrompt.maxLength = promptMax;
@@ -541,6 +546,8 @@
       updatePromptCounter();
       loadContextEstimate();
     }).catch(function (error) {
+      lastLoadedAiSettings = null;
+      if (memorySettingsSaveButton) memorySettingsSaveButton.disabled = true;
       announceSaved(
         error.message === 'missing_schema_005' ? 'MIGRATION 005 FEHLT' : 'KI-EINSTELLUNGEN NICHT ERREICHBAR',
         true
@@ -554,8 +561,13 @@
     return contextSlider.load(selectedModelOverride || defaultModel);
   }
 
-  function saveAiSettings() {
+  function saveAiSettings(event) {
     if (!aiSaveButton && !memorySettingsSaveButton) return;
+    var memoryOnly = event && event.currentTarget === memorySettingsSaveButton;
+    if (memoryOnly && !lastLoadedAiSettings) {
+      announceSaved('KI-EINSTELLUNGEN SIND NOCH NICHT GELADEN', true);
+      return;
+    }
     if (aiSaveButton) aiSaveButton.disabled = true;
     if (memorySettingsSaveButton) memorySettingsSaveButton.disabled = true;
     var body = {
@@ -568,6 +580,17 @@
       num_ctx: contextSlider ? contextSlider.value() : null,
       main_language: aiLanguage && aiLanguage.value === 'en' ? 'en' : 'de'
     };
+    if (memoryOnly) {
+      var old = lastLoadedAiSettings;
+      // The existing API accepts a complete AI profile. Supply its last
+      // server snapshot for every field unrelated to Memory.
+      body.system_prompt = old.system_prompt || '';
+      body.num_predict = old.num_predict == null ? 6500 : Number(old.num_predict);
+      body.temperature = old.temperature == null ? 1 : Number(old.temperature);
+      body.provider = old.provider || 'local';
+      body.num_ctx = old.num_ctx == null ? null : Number(old.num_ctx);
+      body.main_language = old.main_language === 'en' ? 'en' : 'de';
+    }
     api('./api/user_settings.php', { method: 'POST', body: JSON.stringify(body) })
       .then(function () {
         announceSaved('KI- UND MEMORY-EINSTELLUNGEN SERVERSEITIG GESPEICHERT');
