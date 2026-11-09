@@ -88,7 +88,9 @@ access_test($ownerFirst("  if (\$action === 'model_access') {", '    ') && $owne
   && str_contains($admin, "coreui_admin_audit(\$pdo, \$actorId, 'model_access_save', 'user'")
   && str_contains($admin, "'error' => 'owner_has_all'") && str_contains($admin, "'error' => 'guest_core_locked'"), 'admin API: Inhaber only, audited');
 access_test(str_contains($read('js/admin.js'), "post('model_access_save', { user_id: Number(user.id), models: chosen })")
-  && str_contains($read('settings.html'), '<th>SITZUNGEN</th><th>CORES</th><th>AKTION</th>'), 'Admin Core: CORES column');
+  && str_contains($read('admin/index.html'), '<th>SITZUNGEN</th><th>CORES</th><th>AKTION</th>')
+  && !str_contains($read('settings.html'), 'id="userRows"'),
+  'CORES column is present only in standalone Admin Core');
 access_test(str_contains($read('js/coreui-core-mode.js'), "'Dieser Core ist für dein Konto nicht freigegeben.'"), 'chat explains a refusal');
 $migration = $read('database/migrations/020_model_access.sql');
 access_test(str_contains($migration, 'CREATE TABLE IF NOT EXISTS stu_user_model_access')
