@@ -68,16 +68,22 @@ try {
 
   frontend_test_assert(!str_contains($settings, 'history.back()'), 'Einstellungen verwenden weiterhin den Browser-Verlauf.');
   frontend_test_assert(str_contains($settings, "location.replace('app.html')"), 'Core Channel besitzt kein deterministisches Ziel.');
-  // 0.5.79: Admin Core is a tab group of the settings page; the old address
-  // replaces itself with the matching tab, so no history entry is left behind.
-  frontend_test_assert(str_contains($adminHtml, 'id="adminBack"')
-      && str_contains($adminHtml, "location.replace('../settings.html#' + tab);"),
-    'Alte Admin-Adresse fuehrt nicht ohne Verlaufseintrag zum Admin-Core-Tab.');
+  // 0.6.71: Admin Core is a separate, role-gated page. The settings menu
+  // links directly to it. No legacy hash redirect or duplicated admin fields.
   frontend_test_assert(
-    str_contains($settingsPage, 'id="adminNavGroup"') && str_contains($admin, "var url = './api/admin.php?action='")
-      && !str_contains($admin, '../settings.html'),
-    'Admin Core ist nicht als Tab-Gruppe der Einstellungen verdrahtet.'
-  );
+    str_contains($adminHtml, 'id="adminAccessGate"')
+      && str_contains($adminHtml, 'id="adminShell" hidden')
+      && str_contains($adminHtml, 'id="adminNavGroup"')
+      && str_contains($adminHtml, 'href="../settings.html"'),
+    'Eigenstaendiger Admin Core muss geschuetzt starten und den Rueckweg bieten.');
+  frontend_test_assert(
+    str_contains($settingsPage, 'id="adminSettingsLink"')
+      && str_contains($settingsPage, 'href="./admin/index.html"')
+      && !str_contains($settingsPage, 'id="adminNavGroup"')
+      && str_contains($admin, "rootUrl('api/admin.php?action='")
+      && str_contains($admin, "if (response.status === 403 && data.error === 'insufficient_permissions') hideAdmin();")
+      && !str_contains($admin, "location.replace('../settings.html#'"),
+    'Admin Core muss separat erreichbar sein und serverseitige Rechte achten.');
 
   // 0.5.83: after sending a long message the composer kept its grown height,
   // because setting .value fires no input event. Every programmatic change
