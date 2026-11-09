@@ -1,0 +1,11 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.70
+09.11.2026
+
+- Der Name des Urhebers im Copyright wird ohne Sonderhervorhebung angezeigt.
+- Alle sechs aktiven HTML-Oberflaechen betroffen: Splash, Login, Chat, Einstellungen, Protokolle und Admin-Weiterleitung.
+- Die frueheren Besitzer-spezifischen CSS-Farben fuer helles und dunkles Design wurden entfernt.
+- Falschen Satz ueber eine spaetere Repack-Aufnahme im Bereich Einstellungen > Ueber CoreAI vollstaendig entfernt.
+- CoreAI bleibt ein eigenstaendiges Produkt der Quantum-Softwarefamilie.
+- Branding-Selbsttest prueft normale Copyright-Typografie und entferntes Repack-Versprechen.
+- Versions- und SHA-256-basierte numerische Asset-Cache-Kennungen synchronisiert.
+- Kein Eingriff in Account-, Chat-, Bild-, Sprach-, Datenbank- oder Modellfunktionen.

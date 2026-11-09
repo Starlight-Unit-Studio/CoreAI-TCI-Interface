@@ -1,0 +1,44 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.70
+Datum: 09.11.2026
+Basis: main 0.6.69
+Branch: style/uniform-copyright-remove-repack-0670
+
+AUFTRAG
+- Name im Copyright genauso setzen wie den Rest des Copyrights.
+- Falschen Bezug auf eine spaetere Repack-Aufnahme aus der Produktbeschreibung
+  unter dem Studio-Logo in den Einstellungen vollstaendig entfernen.
+
+UMSETZUNG
+- In allen sechs aktiven HTML-Seiten <strong>Patrick Schildgen</strong> durch
+  einfachen sichtbaren Text ersetzt. Inhalt der Urheberangabe bleibt gleich.
+- In css/console.css und css/coreui-theme.css die Sonder-Farben fuer den
+  Urhebernamen entfernt; bestehende Day-/Night-Farben der gesamten Zeile bleiben.
+- Die Beschreibung unter dem Logo endet wieder mit der eigenstaendigen TCI
+  und dem E.M.B.E.R.-Framework. Kein Versprechen einer fremden Repack-Aufnahme.
+- Branding-Selbsttest auf Text/Styling/Fehlaussage erweitert.
+- Versionsfelder in VERSION, sechs HTML-Seiten, JS-Bootstrap, README,
+  Branding-Test, Preflight, CHANGELOG, TXT-Index aktualisiert.
+- CSS-Cache-Schluessel fuer beide bearbeiteten CSS-Dateien nach SHA-256
+  auf allen sechs aktiven HTML-Seiten erneuert.
+
+BETROFFENE DATEIEN
+VERSION, index.html, login.html, app.html, settings.html, protocols.html,
+admin/index.html, css/console.css, css/coreui-theme.css, js/console-gate.js,
+scripts/branding-license-selftest.py, scripts/preflight.sh,
+scripts/preflight-native.sh, README.md, CHANGELOG.md,
+docs/changelogs-txt/INDEX.txt, CHANGELOG_0_6_70.txt, dieses Protokoll.
+
+ABNAHME VOR MERGE
+- python3 scripts/version-merge-check.py --base-version 0.6.69
+- python3 scripts/cache-bust.py --verify
+- python3 scripts/branding-license-selftest.py
+- node scripts/theme-preferences-selftest.cjs
+- node scripts/terran-terminology-selftest.cjs
+- node scripts/tci-language-selftest.cjs
+- Vollstaendiger Preflight auf passendem Installationshost
+- Sichtpruefung auf Mobilgeraet in Hell/Dunkel: Credits ohne Highlight
+  und keine Repack-Aussage mehr im Bereich Ueber CoreAI.
+
+VERSIONIERUNG
+Jeder Merge nach main ist ein neuer Versionsstand.
+PR ist kein produktives Deployment. Vor vollstaendiger Abnahme nicht mergen.

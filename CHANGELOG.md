@@ -1,5 +1,12 @@
 # CoreAI: TCI Interface
 
+## 0.6.70 - 09.11.2026
+
+- Make the owner name display with the same font weight and text color as the surrounding copyright attribution in all six CoreAI HTML surfaces (splash, sign-in, chat drawer, settings, protocols and admin redirect).
+- Remove owner-specific light- and dark-theme CSS rules rather than merely overriding their visual effect. Preserve the visible copyright year range, name and publisher.
+- Delete the incorrect statement about a future Repack integration in the Settings > About panel. CoreAI remains an independent product in the Quantum software family.
+- Extend the branding regression to reject emphasized owner markup, the obsolete Repack statement and leftover special-case copyright colors. Update CSS SHA-256 content fingerprints and the numeric CoreAI version without changing product or runtime logic.
+
 ## 0.6.69 - 09.11.2026
 
 - Repair the voice-input preflight regression introduced in 0.6.68: the original PHP source-contract test still expected a fixed session ID, although welcome drafts correctly use a provisional `__draft__` identifier.

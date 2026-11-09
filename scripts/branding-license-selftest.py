@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-EXPECTED_VERSION = "0.6.69"
+EXPECTED_VERSION = "0.6.70"
 PUBLIC_PAGES = (
     "index.html",
     "login.html",
@@ -123,6 +123,8 @@ def main() -> int:
         page = read(page_name)
         require("2023-2026" in page and "Patrick Schildgen" in page,
                 f"owner copyright or year range missing: {page_name}")
+        require("<strong>Patrick Schildgen</strong>" not in page,
+                f"owner name should use normal copyright typography: {page_name}")
     for credit_file in ("COPYRIGHT.md", "NOTICE.md", "LICENSE.de.md", "LICENSE.md"):
         require("2023-2026 Patrick Schildgen" in read(credit_file),
                 f"copyright attribution not consistent: {credit_file}")
@@ -131,11 +133,19 @@ def main() -> int:
             "Quantum family line missing in settings About")
     require('<span class="about-product">COREAI: TCI INTERFACE</span>' in settings_page,
             "separate CoreAI product line missing in settings About")
+    require("Die Versionierung bleibt bis zur finalen Repack-Aufnahme getrennt." not in settings_page,
+            "incorrect Repack dependency claim remains in About")
     require("PROJECT ST" not in settings_page and "Project ST" not in read("app.html"),
             "obsolete Project Starlight product label still visible")
     style = read("css/console.css")
     require(".about-copy .copyright-line" in style and "font-size: clamp(14px" in style,
             "readable copyright style missing")
+    require(".about-copy .copyright-line strong" not in style and
+            ".splash-copyright strong" not in style and ".login-copyright strong" not in style,
+            "owner-specific copyright color rules remain")
+    dark_style = read("css/coreui-theme.css")
+    require(".copyright-line strong" not in dark_style and ".drawer-copyright strong" not in dark_style,
+            "owner-specific dark copyright rules remain")
 
     model = read("config/Modelfile.template")
     # 0.5.66: the owner renamed the runtime line in the Modelfile to the

@@ -421,24 +421,15 @@ html[data-coreui-theme="dark"] .drawer .session-action.permanent-danger:focus-vi
   background: rgba(210, 67, 92, .24);
 }
 html[data-coreui-theme="dark"] .drawer .drawer-copyright,
-html[data-coreui-theme="dark"] .drawer .drawer-copyright strong,
 html[data-coreui-theme="dark"] .login-copyright,
-html[data-coreui-theme="dark"] .login-copyright strong,
 html[data-coreui-theme="dark"] .splash-copyright,
-html[data-coreui-theme="dark"] .splash-copyright strong,
-html[data-coreui-theme="dark"] .proto-footer,
-html[data-coreui-theme="dark"] .proto-footer strong {
+html[data-coreui-theme="dark"] .proto-footer {
   color: var(--theme-info-muted);
 }
 
-/* Settings copyright has explicit #503719 and #18243a in console.css,
-   which both disappear on dark cards. Preserve the amber + blue identity
-   while ensuring text contrast, including the owner's full name. */
+/* Uniform readable copyright color in dark mode, including the owner credit. */
 html[data-coreui-theme="dark"] .settings-body .about-copy .copyright-line {
   color: #f4c686;
-}
-html[data-coreui-theme="dark"] .settings-body .about-copy .copyright-line strong {
-  color: #f4f7ff;
 }
 html[data-coreui-theme="dark"] .settings-body .about-copy h2 .about-family {
   color: #a5c7ff;
