@@ -6,17 +6,17 @@
   <meta name="language" content="de-DE" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#f0f4fa" />
-  <meta name="application-version" content="0.6.78" />
+  <meta name="application-version" content="0.6.79" />
   <meta name="application-name" content="CoreAI: TCI Interface" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface - Einstellungen</title>
   <link rel="stylesheet" href="./css/console.css?v=0154111092095656366537928" />
-  <link rel="stylesheet" href="./css/settings.css?v=0714422577429575947125434" />
+  <link rel="stylesheet" href="./css/settings.css?v=0948507954532222985075397" />
   <link rel="stylesheet" href="./css/coreui-profile-crop.css?v=0292386913205485335956569" />
   <link rel="stylesheet" href="./css/coreui-update.css?v=1027839363176318351849490" />
-  <link rel="stylesheet" href="./css/coreui-theme.css?v=0597921560434815158529107" />
-  <script src="./js/console-gate.js?v=0288623178089785108710107"></script>
-  <script src="./js/coreui-preferences.js?v=0956190158052966595467130"></script>
+  <link rel="stylesheet" href="./css/coreui-theme.css?v=0105958944669687979718421" />
+  <script src="./js/console-gate.js?v=1118670056660625333099925"></script>
+  <script src="./js/coreui-preferences.js?v=0739118789048711558340598"></script>
   <script src="./js/coreui-ui-language.js?v=0850224961537363286304733"></script>
 </head>
 <body class="settings-body">
@@ -69,7 +69,7 @@
           <h1>EINSTELLUNGEN</h1>
         </div>
       </div>
-      <div class="settings-version">COREAI: TCI INTERFACE // v0.6.78</div>
+      <div class="settings-version">COREAI: TCI INTERFACE // v0.6.79</div>
       <div class="cfg-header-actions" aria-label="Schnellzugriffe Einstellungen">
         <label class="cfg-header-expert" for="settingsExpertToggle" title="Technische Einstellungen in allen Kategorien anzeigen oder ausblenden">
           <span>EXPERTENMODUS</span>
@@ -247,7 +247,7 @@
         <!-- ANZEIGE -->
         <section class="cfg-view" id="view-anzeige" role="tabpanel" aria-labelledby="tab-anzeige" tabindex="-1" hidden>
           <header class="cfg-view-head">
-            <div><span class="cfg-kicker">MEIN COREAI</span><h2>Anzeige</h2><p>Diese Optionen bleiben nur in diesem Browser gespeichert. Konten, Sitzungen und Ember-Daten ändern sich dadurch nicht.</p></div>
+            <div><span class="cfg-kicker">MEIN COREAI</span><h2>Darstellung</h2><p>Design, Schrift und Lesbarkeit deines CoreAI. Die Auswahl wird in diesem Browser gespeichert und ändert weder Modell noch Konto.</p></div>
             <button class="settings-action" id="resetPreferences" type="button">ANZEIGE ZURÜCKSETZEN</button>
           </header>
           <div class="cfg-cards">
@@ -278,15 +278,40 @@
               </fieldset>
               <p class="theme-mode-help" id="themeModeHelp">Der Wechsel gilt sofort für Chat, Einstellungen, Anmeldung und Protokolle. Die Auswahl bleibt in diesem Browser gespeichert. Im Systemmodus folgt CoreAI automatisch dem Tag-/Nachtmodus deines Geräts.</p>
             </section>
+            <section class="settings-panel cfg-card wide appearance-motif-card" aria-labelledby="appearanceMotifTitle">
+              <header class="settings-panel-head"><span class="settings-panel-glyph" aria-hidden="true">✧</span><div><span>GESTALTUNG</span><h3 id="appearanceMotifTitle">Motiv und Farben</h3></div></header>
+              <div class="appearance-form-row">
+                <label for="prefMotif"><strong>MOTIV</strong><small>Wähle zwischen der gewohnten Holo-Oberfläche und einer ruhigeren Darstellung.</small></label>
+                <select id="prefMotif"><option value="holo">CoreAI Holo</option><option value="quiet">CoreAI Klar</option></select>
+              </div>
+              <div class="appearance-form-row">
+                <label for="prefAccent"><strong>AKZENT</strong><small>Akzentfarbe für Rahmen, aktive Schaltflächen und Markierungen.</small></label>
+                <select id="prefAccent">
+                  <option value="blue">CoreAI Blau</option><option value="cyan">Cyan</option>
+                  <option value="green">Grün</option><option value="violet">Violett</option>
+                  <option value="amber">Bernstein</option>
+                </select>
+              </div>
+              <div class="appearance-form-row"><label for="prefBackground"><strong>HINTERGRUND</strong><small>Grundfarbe der Oberfläche im gewählten Modus.</small></label><input id="prefBackground" type="color" value="#f0f4fa" aria-label="Hintergrundfarbe" /></div>
+              <div class="appearance-form-row"><label for="prefForeground"><strong>VORDERGRUND</strong><small>Textgrundfarbe der Oberfläche im gewählten Modus.</small></label><input id="prefForeground" type="color" value="#101626" aria-label="Vordergrundfarbe" /></div>
+              <p class="appearance-hint">Farben werden für den hellen und dunklen Modus getrennt gespeichert. Im Systemmodus wird die passende Palette automatisch verwendet.</p>
+            </section>
+            <section class="settings-panel cfg-card wide appearance-advanced-card" aria-labelledby="appearanceAdvancedTitle">
+              <header class="settings-panel-head"><span class="settings-panel-glyph" aria-hidden="true">◇</span><div><span>FÜR ALLE</span><h3 id="appearanceAdvancedTitle">Erweitert</h3></div></header>
+              <p class="appearance-hint">Diese Optionen sind normale Darstellungseinstellungen und brauchen keinen Expertenmodus.</p>
+              <div class="appearance-form-row"><label for="prefUiFont"><strong>UI-SCHRIFTGRÖSSE</strong><small>Grundgröße für Navigation und Bedienelemente.</small></label><span class="appearance-number"><input id="prefUiFont" type="number" min="12" max="24" step="1" value="14" inputmode="numeric" /> px</span></div>
+              <div class="appearance-form-row"><label for="prefContentFont"><strong>SCHRIFTGRÖSSE DES INHALTS</strong><small>Größe der Chat-Nachrichten und lesbaren Inhalte.</small></label><span class="appearance-number"><input id="prefContentFont" type="number" min="12" max="26" step="1" value="16" inputmode="numeric" /> px</span></div>
+              <div class="appearance-form-row"><label for="prefCodeFont"><strong>CODE-SCHRIFTGRÖSSE</strong><small>Grundgröße für Code in Chats.</small></label><span class="appearance-number"><input id="prefCodeFont" type="number" min="10" max="22" step="1" value="13" inputmode="numeric" /> px</span></div>
+              <div class="appearance-form-row"><label for="prefContrast"><strong>KONTRAST</strong><small>Textkontrast für eine angenehmere Lesbarkeit.</small></label><span class="appearance-range"><input id="prefContrast" type="range" min="40" max="100" step="5" value="60" /><output id="prefContrastValue" for="prefContrast">60</output></span></div>
+              <div class="appearance-form-row"><label for="prefMotionMode"><strong>BEWEGUNG REDUZIEREN</strong><small>Dem Gerät folgen, reduzieren oder Animationen zulassen.</small></label><select id="prefMotionMode"><option value="system">System</option><option value="on">Ein</option><option value="off">Aus</option></select></div>
+              <label class="setting-row" for="prefFullWidth"><span class="setting-copy"><strong>SEITEN IN VOLLER BREITE</strong><small>Breitere Inhalte auf großen Bildschirmen. Auf dem Handy bleibt die Oberfläche passend schmal.</small></span><span class="settings-switch"><input id="prefFullWidth" type="checkbox" /><i aria-hidden="true"></i></span></label>
+              <div class="appearance-form-row"><label for="prefDiffMarkers"><strong>MARKIERUNGEN FÜR UNTERSCHIEDE</strong><small>Änderungen farbig oder mit zusätzlichen +/- Zeichen kennzeichnen.</small></label><select id="prefDiffMarkers"><option value="color">Farbe</option><option value="symbols">Farbe +/−</option></select></div>
+            </section>
             <section class="settings-panel cfg-card settings-panel-interface" aria-labelledby="interfaceTitle">
               <header class="settings-panel-head">
                 <span class="settings-panel-glyph" aria-hidden="true">⟐</span>
                 <div><span>OBERFLÄCHE</span><h3 id="interfaceTitle">Bewegung und Layout</h3></div>
               </header>
-              <label class="setting-row" for="prefReduceMotion">
-                <span class="setting-copy"><strong>BEWEGUNG REDUZIEREN</strong><small>Rotationen, Pulse und Übergänge auf ein Minimum setzen.</small></span>
-                <span class="settings-switch"><input id="prefReduceMotion" type="checkbox" /><i aria-hidden="true"></i></span>
-              </label>
               <label class="setting-row" for="prefCompactFeed">
                 <span class="setting-copy"><strong>KOMPAKTER DATENSTROM</strong><small>Nachrichten enger darstellen und mehr Verlauf sichtbar halten.</small></span>
                 <span class="settings-switch"><input id="prefCompactFeed" type="checkbox" /><i aria-hidden="true"></i></span>
@@ -941,7 +966,7 @@
   <script src="./js/coreui-settings-menu.js?v=0905731306422182746103357"></script>
   <script src="./js/coreui-settings-tabs.js?v=0131180580469642779294886"></script>
   <script src="./js/coreui-context-slider.js?v=1058131433773441189843644"></script>
-  <script src="./js/settings.js?v=0765799437940873721637049"></script>
+  <script src="./js/settings.js?v=0294744328503603714095477"></script>
   <script src="./js/coreui-personalization-settings.js?v=0293012758263273966658748"></script>
   <script src="./js/coreui-voice-read.js?v=0478836976425824839668688"></script>
   <script src="./js/coreui-voice-terms.js?v=0470347751915481307845714"></script>

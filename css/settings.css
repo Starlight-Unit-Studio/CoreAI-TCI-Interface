@@ -2251,3 +2251,63 @@
   .settings-body .cfg-admin-shortcut { min-height: 42px; padding: 6px 9px; font-size: 11px; }
   .settings-body .settings-header .settings-title-block h1 { font-size: clamp(22px,6vw,30px); }
 }
+
+
+/* 0.6.79: native CoreAI Darstellung controls, one column on small screens. */
+.settings-body .appearance-motif-card,
+.settings-body .appearance-advanced-card { min-width: 0; }
+.settings-body .appearance-form-row {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) minmax(126px, 36%);
+  align-items: center;
+  gap: 12px 20px;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--line);
+}
+.settings-body .appearance-form-row > label { display: grid; gap: 4px; min-width: 0; }
+.settings-body .appearance-form-row strong { color: var(--txt); font-size: 15px; }
+.settings-body .appearance-form-row small,
+.settings-body .appearance-hint { color: var(--muted); font-size: 13px; line-height: 1.5; }
+.settings-body .appearance-hint { margin: 10px 0; }
+.settings-body .appearance-form-row select,
+.settings-body .appearance-number input {
+  min-width: 0;
+  width: 100%;
+  min-height: 41px;
+  color: var(--txt);
+  background: var(--panel-soft);
+  border: 1px solid var(--line-strong);
+  border-radius: 9px;
+  padding: 6px 10px;
+  font-family: "Rajdhani", "Segoe UI", sans-serif;
+  font-size: 15px;
+}
+.settings-body .appearance-form-row input[type="color"] {
+  width: min(100%,110px);
+  height: 42px;
+  min-width: 60px;
+  padding: 4px;
+  background: var(--panel-soft);
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  justify-self: end;
+  cursor: pointer;
+}
+.settings-body .appearance-number,
+.settings-body .appearance-range {
+  display: flex;
+  justify-self: end;
+  align-items: center;
+  gap: 8px;
+  width: min(100%,180px);
+  color: var(--muted);
+}
+.settings-body .appearance-number input { width: min(100%,110px); }
+.settings-body .appearance-range input { width: 100%; min-width: 0; accent-color: var(--cx); }
+.settings-body .appearance-range output { color: var(--txt); font-variant-numeric: tabular-nums; min-width: 3ch; }
+.settings-body .appearance-form-row :is(select,input):focus-visible { outline: 2px solid var(--cx); outline-offset: 2px; }
+@media (max-width: 500px) {
+  .settings-body .appearance-form-row { grid-template-columns: minmax(0,1fr) minmax(105px,40%); gap: 8px; }
+  .settings-body .appearance-form-row strong { font-size: 14px; }
+  .settings-body .appearance-form-row small { font-size: 12px; }
+}

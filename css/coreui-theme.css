@@ -511,3 +511,65 @@ html[data-coreui-theme="dark"] .settings-profile-avatar.assistant.has-image {
   background-size: contain;
   background-repeat: no-repeat;
 }
+
+
+/* 0.6.79: account-neutral browser appearance preferences.
+   These use validated CSS tokens, never invert/filter images or browser captures. */
+html {
+  --pref-ui-font: 14px;
+  --pref-content-font: 16px;
+  --pref-code-font: 13px;
+}
+html.pref-custom-background body,
+html.pref-custom-background[data-coreui-theme="dark"] body {
+  background: var(--pref-surface, var(--bg));
+}
+html.pref-motif-quiet body,
+html.pref-motif-quiet[data-coreui-theme="dark"] body {
+  background: var(--pref-surface, var(--bg));
+}
+html.pref-motif-quiet body::before,
+html.pref-motif-quiet body::after { opacity: 0 !important; }
+html.pref-motif-quiet .settings-body,
+html.pref-motif-quiet .app-header { box-shadow: none; }
+html .cfg-nav .cfg-tab,
+html .settings-header,
+html .header-session-name,
+html .core-mode-chip,
+html .reason-effort-chip {
+  font-size: var(--pref-ui-font);
+}
+html .msg-bubble,
+html .msg-markdown,
+html .msg-transcript {
+  font-size: var(--pref-content-font);
+}
+html .msg-markdown pre,
+html .msg-markdown code,
+html .work-source-code,
+html .work-code {
+  font-size: var(--pref-code-font);
+}
+@media (min-width: 1000px) {
+  html.pref-full-width .msg-row .msg-content,
+  html.pref-full-width .browse-row .msg-content {
+    width: min(100%, 1400px);
+    max-width: calc(100% - 72px);
+  }
+  html.pref-full-width .cfg-main,
+  html.pref-full-width .cfg-content {
+    max-width: none;
+  }
+}
+html.pref-diff-symbols ins::before,
+html.pref-diff-symbols .diff-added::before { content: "+ "; font-weight: 700; }
+html.pref-diff-symbols del::before,
+html.pref-diff-symbols .diff-removed::before { content: "- "; font-weight: 700; }
+html.pref-reduced-motion *,
+html.pref-reduced-motion *::before,
+html.pref-reduced-motion *::after {
+  animation-duration: .01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: .01ms !important;
+  scroll-behavior: auto !important;
+}

@@ -14,8 +14,31 @@
     thinkingExpanded: false,
     liveFrameMotion: true,
     showLiveBrowser: true,
-    showTelemetry: true
+    showTelemetry: true,
+    motif: 'holo', accent: 'blue',
+    backgroundLight: '#f0f4fa', foregroundLight: '#101626',
+    backgroundDark: '#0c1427', foregroundDark: '#eef4ff',
+    uiFontSize: 14, contentFontSize: 16, codeFontSize: 13,
+    contrast: 60, motionMode: 'system', fullWidth: false,
+    diffMarkers: 'color'
   };
+
+  function safeHex(input, fallback) {
+    return typeof input === 'string' && /^#[0-9a-fA-F]{6}$/.test(input) ? input.toLowerCase() : fallback;
+  }
+  function boundedNumber(input, fallback, min, max, step) {
+    var number = Number(input);
+    return Number.isFinite(number) && number >= min && number <= max
+      ? Math.round(number / step) * step : fallback;
+  }
+  function mixHex(a, b, weight) {
+    function ch(hex, offset) { return parseInt(hex.slice(offset, offset + 2), 16); }
+    var out = '#';
+    for (var i = 1; i <= 5; i += 2) {
+      out += Math.round(ch(a, i) * (1 - weight) + ch(b, i) * weight).toString(16).padStart(2, '0');
+    }
+    return out;
+  }
 
   function normalise(input) {
     var source = input && typeof input === 'object' ? input : {};
@@ -28,7 +51,21 @@
       thinkingExpanded: source.thinkingExpanded === true,
       liveFrameMotion: source.liveFrameMotion !== false,
       showLiveBrowser: source.showLiveBrowser !== false,
-      showTelemetry: source.showTelemetry !== false
+      showTelemetry: source.showTelemetry !== false,
+      motif: source.motif === 'quiet' ? 'quiet' : 'holo',
+      accent: ['blue','cyan','green','violet','amber'].indexOf(source.accent) >= 0 ? source.accent : 'blue',
+      backgroundLight: safeHex(source.backgroundLight, '#f0f4fa'),
+      foregroundLight: safeHex(source.foregroundLight, '#101626'),
+      backgroundDark: safeHex(source.backgroundDark, '#0c1427'),
+      foregroundDark: safeHex(source.foregroundDark, '#eef4ff'),
+      uiFontSize: boundedNumber(source.uiFontSize, 14, 12, 24, 1),
+      contentFontSize: boundedNumber(source.contentFontSize, 16, 12, 26, 1),
+      codeFontSize: boundedNumber(source.codeFontSize, 13, 10, 22, 1),
+      contrast: boundedNumber(source.contrast, 60, 40, 100, 5),
+      motionMode: ['system','on','off'].indexOf(source.motionMode) >= 0
+        ? source.motionMode : (source.reduceMotion === true ? 'on' : 'system'),
+      fullWidth: source.fullWidth === true,
+      diffMarkers: source.diffMarkers === 'symbols' ? 'symbols' : 'color'
     };
   }
 
@@ -75,7 +112,38 @@
     var schemeMeta = doc.querySelector && doc.querySelector('meta[name="color-scheme"]');
     if (schemeMeta) schemeMeta.setAttribute('content', activeTheme);
 
-    root.classList.toggle('pref-reduced-motion', prefs.reduceMotion);
+    var reduce = prefs.motionMode === 'on'
+      || (prefs.motionMode === 'system' && typeof window.matchMedia === 'function'
+        && window.matchMedia('(prefers-reduced-motion: reduce)').matches === true);
+    root.classList.toggle('pref-reduced-motion', reduce);
+    root.classList.toggle('pref-motif-quiet', prefs.motif === 'quiet');
+    root.classList.toggle('pref-full-width', prefs.fullWidth);
+    root.classList.toggle('pref-diff-symbols', prefs.diffMarkers === 'symbols');
+    var colors = activeTheme === 'dark'
+      ? {background: prefs.backgroundDark, foreground: prefs.foregroundDark}
+      : {background: prefs.backgroundLight, foreground: prefs.foregroundLight};
+    root.classList.toggle('pref-custom-background', colors.background !==
+      (activeTheme === 'dark' ? '#0c1427' : '#f0f4fa'));
+    var accents = {blue: activeTheme === 'dark' ? '#91b7ff' : '#5b92ff',
+      cyan: '#13a6b5', green: '#299b70', violet: '#8a6ff2', amber: '#ca852a'};
+    if (root.style && typeof root.style.setProperty === 'function') {
+      root.style.setProperty('--bg', colors.background);
+      root.style.setProperty('--cx', accents[prefs.accent]);
+      var accent = accents[prefs.accent];
+      var rgb = [1,3,5].map(function (i) { return parseInt(accent.slice(i, i+2), 16); }).join(',');
+      root.style.setProperty('--line', 'rgba(' + rgb + ',.25)');
+      root.style.setProperty('--line-strong', 'rgba(' + rgb + ',.52)');
+      root.style.setProperty('--panel-cx', 'rgba(' + rgb + ',.10)');
+      root.style.setProperty('--pref-ui-font', prefs.uiFontSize + 'px');
+      root.style.setProperty('--pref-content-font', prefs.contentFontSize + 'px');
+      root.style.setProperty('--pref-code-font', prefs.codeFontSize + 'px');
+      var strength = (prefs.contrast - 60) / 40;
+      var textColor = strength < 0
+        ? mixHex(colors.foreground, colors.background, -strength * .38)
+        : mixHex(colors.foreground, activeTheme === 'dark' ? '#ffffff' : '#000000', strength * .45);
+      root.style.setProperty('--txt', textColor);
+      root.style.setProperty('--pref-surface', colors.background);
+    }
     root.classList.toggle('pref-compact-feed', prefs.compactFeed);
     root.classList.toggle('pref-thinking-expanded', prefs.thinkingExpanded);
     root.classList.toggle('pref-live-static', !prefs.liveFrameMotion);
@@ -116,13 +184,27 @@
 
   function onSystemChange() {
     var prefs = load();
-    if (prefs.theme === 'system') apply(document, prefs);
+    if (prefs.theme === 'system' || prefs.motionMode === 'system') apply(document, prefs);
   }
   if (systemDark) {
     if (typeof systemDark.addEventListener === 'function') {
       systemDark.addEventListener('change', onSystemChange);
     } else if (typeof systemDark.addListener === 'function') {
       systemDark.addListener(onSystemChange);
+    }
+  }
+  // Motion follows the device independently of the color scheme.
+  var systemReducedMotion = null;
+  try {
+    if (typeof window.matchMedia === 'function') {
+      systemReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    }
+  } catch (ignored) { /* older WebViews */ }
+  if (systemReducedMotion) {
+    if (typeof systemReducedMotion.addEventListener === 'function') {
+      systemReducedMotion.addEventListener('change', onSystemChange);
+    } else if (typeof systemReducedMotion.addListener === 'function') {
+      systemReducedMotion.addListener(onSystemChange);
     }
   }
   window.addEventListener('storage', function (event) {

@@ -18,11 +18,12 @@ function fixture(store, initiallyDark, blockedStorage) {
   const values = store || Object.create(null);
   const listeners = Object.create(null);
   const mediaListeners = [];
+  const motionListeners = [];
   const attributes = Object.create(null);
   const metaValues = Object.create(null);
   const toggles = Object.create(null);
   const rootEl = {
-    style: {},
+    style: {setProperty(name, value) { this[name] = String(value); }},
     setAttribute(name, value) { attributes[name] = value; },
     classList: {
       toggle(name, enabled) { toggles[name] = !!enabled; }
@@ -45,6 +46,12 @@ function fixture(store, initiallyDark, blockedStorage) {
       if (event === 'change') mediaListeners.push(callback);
     }
   };
+  const reduced = {
+    matches: false,
+    addEventListener(event, callback) {
+      if (event === 'change') motionListeners.push(callback);
+    }
+  };
   const storage = {
     getItem(name) {
       if (blockedStorage) throw new Error('Storage denied');
@@ -62,8 +69,9 @@ function fixture(store, initiallyDark, blockedStorage) {
   const win = {
     localStorage: storage,
     matchMedia(query) {
-      assert.equal(query, '(prefers-color-scheme: dark)');
-      return media;
+      if (query === '(prefers-color-scheme: dark)') return media;
+      if (query === '(prefers-reduced-motion: reduce)') return reduced;
+      throw new Error('unexpected media query ' + query);
     },
     addEventListener(event, fn) { (listeners[event] ||= []).push(fn); },
     dispatchEvent() { return true; }
@@ -75,6 +83,10 @@ function fixture(store, initiallyDark, blockedStorage) {
     changeOS(dark) {
       media.matches = dark;
       mediaListeners.forEach(fn => fn({ matches: dark }));
+    },
+    changeMotion(isReduced) {
+      reduced.matches = isReduced;
+      motionListeners.forEach(fn => fn({ matches: isReduced }));
     },
     storageEvent(name) {
       (listeners.storage || []).forEach(fn => fn({ key: name }));
@@ -200,5 +212,54 @@ for (const declaration of [
   assert.ok(contrastRules.includes(declaration), 'Missing readable surface: ' + declaration);
 }
 console.log('CoreAI contrast regression: info tabs, drawer and copyright OK');
+
+
+// 0.6.79: Appearance colors are per scheme, input validation is strict,
+// and typography/motion/layout survive a reload without touching accounts.
+const custom = fixture();
+custom.prefs.save(Object.assign({}, custom.prefs.load(), {
+  motif: 'quiet', accent: 'green',
+  backgroundLight: '#e9f1ff', foregroundLight: '#142238',
+  backgroundDark: '#101b30', foregroundDark: '#f5efff',
+  uiFontSize: 18, contentFontSize: 20, codeFontSize: 14,
+  contrast: 80, motionMode: 'system', fullWidth: true, diffMarkers: 'symbols'
+}));
+assert.equal(custom.toggles['pref-motif-quiet'], true);
+assert.equal(custom.toggles['pref-full-width'], true);
+assert.equal(custom.toggles['pref-diff-symbols'], true);
+assert.equal(custom.rootEl.style['--bg'], '#e9f1ff');
+assert.equal(custom.rootEl.style['--cx'], '#299b70');
+assert.equal(custom.rootEl.style['--pref-ui-font'], '18px');
+assert.equal(custom.rootEl.style['--pref-content-font'], '20px');
+assert.equal(custom.rootEl.style['--pref-code-font'], '14px');
+assert.equal(custom.toggles['pref-reduced-motion'], false);
+custom.changeMotion(true);
+assert.equal(custom.toggles['pref-reduced-motion'], true);
+custom.changeMotion(false);
+assert.equal(custom.toggles['pref-reduced-motion'], false);
+custom.prefs.save(Object.assign({}, custom.prefs.load(), {theme: 'dark'}));
+assert.equal(custom.rootEl.style['--bg'], '#101b30', 'dark palette is independent');
+assert.equal(custom.prefs.load().backgroundLight, '#e9f1ff', 'switching dark preserves light palette');
+const reloaded = fixture(custom.values);
+assert.equal(reloaded.prefs.load().contrast, 80);
+assert.equal(reloaded.prefs.load().uiFontSize, 18);
+assert.equal(reloaded.prefs.load().foregroundDark, '#f5efff');
+const invalidAppearance = fixture();
+invalidAppearance.prefs.save({backgroundLight: '#1234; color:red', foregroundDark: 'url(x)',
+  accent: 'javascript', uiFontSize: 5000, codeFontSize: -1,
+  contrast: 1000, motionMode: 'invalid', diffMarkers: 'html'});
+assert.equal(invalidAppearance.prefs.load().backgroundLight, '#f0f4fa');
+assert.equal(invalidAppearance.prefs.load().foregroundDark, '#eef4ff');
+assert.equal(invalidAppearance.prefs.load().accent, 'blue');
+assert.equal(invalidAppearance.prefs.load().uiFontSize, 14);
+assert.equal(invalidAppearance.prefs.load().contrast, 60);
+assert.equal(invalidAppearance.prefs.load().diffMarkers, 'color');
+for (const id of ['prefMotif', 'prefAccent', 'prefBackground', 'prefForeground',
+  'prefUiFont', 'prefContentFont', 'prefCodeFont', 'prefContrast',
+  'prefMotionMode', 'prefFullWidth', 'prefDiffMarkers']) {
+  assert.ok(page.includes('id="' + id + '"'), 'real Darstellung input ' + id);
+}
+assert.ok(settings.includes('appearanceFields') && settings.includes('value.backgroundLight'),
+  'appearance controls use the local save pipeline');
 
 console.log('CoreAI appearance preferences: 3 modes, OS sync, storage, pages and palette OK');

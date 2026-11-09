@@ -1,0 +1,20 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.79
+09.11.2026
+
+- Darstellung als naechste normale Einstellungen-Seite begonnen.
+- Bisheriger System/Hell/Dunkel-Modus bleibt erhalten.
+- Echte Motive: CoreAI Holo und CoreAI Klar.
+- Akzentfarbe: Blau, Cyan, Gruen, Violett, Bernstein.
+- Hintergrund/Vordergrund fuer helles und dunkles Design
+  getrennt lokal speicherbar; Systemmodus folgt dem Endgeraet.
+- UI-, Chat-Inhalts- und Code-Schriftgroesse mit validierten Werten.
+- Kontrastregler, System/Ein/Aus fuer reduzierte Bewegung.
+- Vollbreite Inhalte fuer grosse Bildschirme, Farbe oder
+  +/- bei Unterschiedsmarkierungen.
+- Bestehende Optionen fuer kompakten Verlauf, Arbeitsweg,
+  Telemetrie und Live-Browser bleiben unveraendert.
+- Kein zweiter Bewegungsschalter; alte Einstellungen migriert.
+- Lokaler Browser-Speicher, keine Konto- oder Datenbankmigration.
+- Validierung und Selbsttest fuer alte und neue Einstellungen.
+- Weitere Ausbaupunkte: intelligente Zeichensetzung,
+  getrennte Schriftgestaltung je Modus und Motivimport/-export.
