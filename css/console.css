@@ -4204,14 +4204,6 @@ html.live-open body {
   white-space: nowrap;
 }
 
-.core-mode-think {
-  color: var(--cx);
-}
-
-.core-mode-chip[data-thinking="off"] .core-mode-think {
-  color: var(--amb);
-}
-
 .core-mode-chip svg {
   width: 12px;
   height: 12px;
@@ -4459,7 +4451,7 @@ html.live-open body {
   font-size: 12px;
 }
 
-.core-mode-chip[data-state="loading"] .core-mode-think {
+.core-mode-chip[data-state="loading"] .core-mode-name {
   color: var(--amb);
   animation: core-mode-pulse 1.2s ease-in-out infinite;
 }
@@ -5029,7 +5021,7 @@ a.core-install-btn {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .core-mode-chip[data-state="loading"] .core-mode-think,
+  .core-mode-chip[data-state="loading"] .core-mode-name,
   .core-mode-dot[data-state="loading"] {
     animation: none;
   }
@@ -9334,6 +9326,12 @@ a.insight-file-name:hover { text-decoration: underline; }
   letter-spacing: .08em;
 }
 .reason-effort-head small { color: var(--muted); font-size: 11px; }
+.reason-effort-intro {
+  margin: 10px 0 4px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
 .reason-effort-options {
   display: flex;
   flex-wrap: wrap;
