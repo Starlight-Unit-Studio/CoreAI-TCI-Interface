@@ -9204,3 +9204,79 @@ a.insight-file-name:hover { text-decoration: underline; }
   .msg-row.ember .msg-markdown h2 { font-size: 1.25em; }
   .msg-row.ember .msg-markdown blockquote { padding: .3em .55em; }
 }
+
+/* New unsaved welcome view: native CoreAI color kit, both display themes. */
+.messages-area.is-welcome { display:flex; flex-direction:column; }
+.messages-area.is-welcome .feed-shell,.messages-area.is-welcome .jump-latest { display:none; }
+.welcome-screen {
+  position:relative; width:min(910px,calc(100% - 34px)); flex:1 0 auto;
+  min-height:100%; margin:0 auto; padding:clamp(22px,4vh,55px) 0 24px;
+  display:flex; flex-direction:column; align-items:center; text-align:center;
+}
+.welcome-identity {
+  align-self:stretch; color:var(--muted); font:500 10px/1.5 "Share Tech Mono",monospace;
+  letter-spacing:.11em;
+}
+.welcome-identity span { color:var(--amb); font-size:17px; vertical-align:middle; }
+.welcome-intro { max-width:680px; margin:auto 0; padding:24px 0; }
+.welcome-greeting { margin:0 0 12px; color:var(--amb); font:500 clamp(17px,2.1vw,22px)/1.35 "Rajdhani",sans-serif; }
+.welcome-intro h2 {
+  margin:0; color:var(--txt); font:700 clamp(29px,4.5vw,47px)/1.12 "Rajdhani",sans-serif;
+  letter-spacing:-.025em;
+}
+.welcome-subtitle { margin:17px 0 0; color:var(--muted); font:500 16px/1.5 "Rajdhani",sans-serif; }
+.welcome-error { margin:16px 0 0; color:var(--red); font:600 14px/1.5 "Rajdhani",sans-serif; }
+.welcome-suggestions {
+  width:100%; display:grid; grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px; margin-top:auto; text-align:left;
+}
+.welcome-prompt {
+  position:relative; display:flex; min-width:0; min-height:67px; align-items:center;
+  gap:13px; padding:14px 17px; border:1px solid var(--line);
+  background:var(--panel-soft); color:var(--txt); box-shadow:var(--shadow-tight);
+  clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,12px 100%,0 calc(100% - 12px));
+  cursor:pointer; font:600 16px/1.3 "Rajdhani",sans-serif;
+  transition:border-color .18s ease,background .18s ease,transform .18s ease;
+}
+.welcome-prompt:hover,.welcome-prompt:focus-visible {
+  border-color:var(--line-strong); background:var(--panel-cx); transform:translateY(-1px);
+}
+.welcome-prompt-icon {
+  display:grid; width:35px; height:35px; flex:0 0 35px; place-items:center;
+  border:1px solid var(--line-amber); background:var(--panel-amb);
+  color:var(--amb); font:600 23px "Rajdhani",sans-serif;
+}
+.welcome-prompt:nth-child(even) .welcome-prompt-icon {
+  border-color:var(--line-strong); background:var(--panel-cx); color:var(--cx);
+}
+@media (max-width:580px) {
+  .welcome-screen { width:calc(100% - 26px); padding:17px 0 16px; }
+  .welcome-identity { font-size:8px; }
+  .welcome-intro { padding:24px 0; }
+  .welcome-intro h2 { font-size:clamp(28px,8vw,37px); }
+  .welcome-subtitle { font-size:14px; }
+  .welcome-suggestions { gap:8px; }
+  .welcome-prompt { min-height:66px; gap:7px; padding:9px; font-size:13px; }
+  .welcome-prompt-icon { width:29px; height:29px; flex-basis:29px; font-size:20px; }
+}
+@media (max-width:340px) {
+  .welcome-suggestions { grid-template-columns:1fr; }
+  .welcome-prompt { min-height:46px; }
+}
+/* The rightmost composer action is Live / Send / Stop, never a message-row button. */
+.composer-inner.is-working.has-live.is-empty > #btnSend { display:grid; }
+.composer-inner.is-working > .composer-live-btn { display:none !important; }
+.composer-send .stop-icon { display:none; }
+.composer-send.is-stop .send-icon,.composer-send.is-stop .send-rune { display:none; }
+.composer-send.is-stop .stop-icon { display:block; }
+.composer-send.is-stop .stop-icon rect { fill:currentColor; stroke:currentColor; }
+.composer-send.is-stop { color:var(--red); background:var(--panel-amb); }
+.composer-send.is-stop::before { border-color:var(--red); opacity:.6; }
+.composer-send.is-stop:not(:disabled) .stop-icon { animation:coreai-stop-pulse .85s ease-in-out infinite; }
+@keyframes coreai-stop-pulse {
+  0%,100% { transform:scale(.78); filter:drop-shadow(0 0 0 transparent); }
+  50% { transform:scale(1.22); filter:drop-shadow(0 0 8px var(--red)); }
+}
+@media (prefers-reduced-motion:reduce) {
+  .composer-send.is-stop .stop-icon,.welcome-prompt { animation:none; transition:none; }
+}

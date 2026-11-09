@@ -178,8 +178,10 @@
     var Ctx = window.AudioContext || window.webkitAudioContext;
     live.audioCtx = new Ctx();
     if (live.audioCtx.resume) live.audioCtx.resume().catch(function () {});
-    var warmed = post('warm', { session_id: ctx.sessionId, character_id: ctx.characterId, since_id: ctx.lastMessageId })
-      .catch(function () { return null; });
+    var warmed = ctx.sessionId
+      ? post('warm', { session_id: ctx.sessionId, character_id: ctx.characterId, since_id: ctx.lastMessageId })
+        .catch(function () { return null; })
+      : Promise.resolve(null);
     navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: true, channelCount: 1 } })
       .then(function (stream) {
         if (!live || live.closed) { stream.getTracks().forEach(function (t) { t.stop(); }); return; }
@@ -313,10 +315,21 @@
     var fd = new FormData();
     fd.append('file', new File([blob], 'Sprachnachricht-' + stamp() + '.wav', { type: 'audio/wav' }));
     fd.append('character_id', round.ctx.characterId);
-    fetch(UPLOAD, { method: 'POST', credentials: 'include', body: fd, signal: controller ? controller.signal : undefined,
-      headers: { 'X-CoreUI-CSRF': status.csrf, 'Accept': 'application/json' } })
-      .then(function (r) { return r.json(); })
+    var composer = window.CoreUIComposer;
+    var ready = round.ctx.sessionId ? Promise.resolve(round.ctx)
+      : (composer && composer.ensureLiveSession
+        ? composer.ensureLiveSession() : Promise.reject(new Error('no_chat')));
+    ready.then(function (ctx) {
+        if (live !== round || round.closed) return null;
+        if (!ctx || !ctx.sessionId) throw new Error('no_chat');
+        round.ctx = ctx;
+        return fetch(UPLOAD, { method: 'POST', credentials: 'include', body: fd,
+          signal: controller ? controller.signal : undefined,
+          headers: { 'X-CoreUI-CSRF': status.csrf, 'Accept': 'application/json' } });
+      })
+      .then(function (r) { return r ? r.json() : null; })
       .then(function (up) {
+        if (!up && (live !== round || round.closed)) return null;
         if (!up || !up.ok || !up.uuid) throw new Error('upload');
         return fetch(API + '?action=turn', { method: 'POST', credentials: 'include', cache: 'no-store',
           signal: controller ? controller.signal : undefined,
@@ -325,7 +338,8 @@
             since_id: round.ctx.lastMessageId, uuid: up.uuid }) });
       })
       .then(function (r) {
-        if (!r.ok || !r.body) throw new Error('turn');
+        if (!r && (live !== round || round.closed)) return null;
+        if (!r || !r.ok || !r.body) throw new Error('turn');
         return readEvents(r.body, function (event, data) { onEvent(round, event, data); });
       })
       .then(function () { if (live === round && round.controller === controller) { round.controller = null; settle(); } })

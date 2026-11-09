@@ -11,11 +11,11 @@
   />
   <meta name="theme-color" content="#f0f4fa" />
   <meta name="color-scheme" content="light" />
-  <meta name="application-version" content="0.6.67" />
+  <meta name="application-version" content="0.6.68" />
   <meta name="application-name" content="CoreAI: TCI Interface" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface | Quantum Software</title>
-  <link rel="stylesheet" href="./css/console.css?v=0729416686223403984298141" />
+  <link rel="stylesheet" href="./css/console.css?v=0089652936989591986825417" />
   <link rel="stylesheet" href="./css/artifacts.css?v=0620486151135252268178618" />
   <link rel="stylesheet" href="./css/coreui-update.css?v=1027839363176318351849490" />
   <link rel="stylesheet" href="./css/coreui-theme.css?v=0315051549183140187394059" />
@@ -138,7 +138,7 @@
         <div class="brand-copy">
           <div class="brand-kicker">QUANTUM SOFTWARE</div>
           <div class="brand-title">COREAI:<span class="brand-product-part">TCI INTERFACE</span></div>
-          <div class="brand-signature">TERRA-NET MATRIX // N-73 // v0.6.67</div>
+          <div class="brand-signature">TERRA-NET MATRIX // N-73 // v0.6.68</div>
         </div>
       </div>
 
@@ -228,7 +228,7 @@
           <div class="header-title-row">
             <h1 class="header-title">CORE CHANNEL</h1>
             <span class="header-divider" aria-hidden="true"></span>
-            <div class="header-session-name" id="headerSessionName">EMBER</div>
+            <div class="header-session-name" id="headerSessionName">NEUE VERBINDUNG</div>
           </div>
         </div>
       </div>
@@ -267,6 +267,29 @@
     </header>
 
     <main class="messages-area" id="messagesArea">
+      <section class="welcome-screen" id="welcomeScreen" aria-labelledby="welcomeQuestion" hidden>
+        <div class="welcome-identity"><span aria-hidden="true">⌬</span> TERRANISCHER PRIVATKANAL // TCI: MARA THORNE</div>
+        <div class="welcome-intro">
+          <p class="welcome-greeting" id="welcomeGreeting">Guten Tag.</p>
+          <h2 id="welcomeQuestion">Was möchtest du heute machen?</h2>
+          <p class="welcome-subtitle">Schreib mir oder beginne direkt mit einer Beispielfrage.</p>
+          <p class="welcome-error" id="welcomeError" role="alert" hidden></p>
+        </div>
+        <div class="welcome-suggestions" aria-label="Beispielfragen an Mara">
+          <button type="button" class="welcome-prompt" data-welcome-prompt="Kannst du mir helfen, ein Thema gründlich zu recherchieren?">
+            <span class="welcome-prompt-icon" aria-hidden="true">⌕</span><span>Kannst du mir bei einer Recherche helfen?</span>
+          </button>
+          <button type="button" class="welcome-prompt" data-welcome-prompt="Kannst du mir helfen, einen Fehler in meinem Code systematisch zu finden?">
+            <span class="welcome-prompt-icon" aria-hidden="true">⌘</span><span>Kannst du einen Fehler in meinem Code finden?</span>
+          </button>
+          <button type="button" class="welcome-prompt" data-welcome-prompt="Hilfst du mir, eine Bildidee auszuarbeiten?">
+            <span class="welcome-prompt-icon" aria-hidden="true">✧</span><span>Hilfst du mir, eine Bildidee auszuarbeiten?</span>
+          </button>
+          <button type="button" class="welcome-prompt" data-welcome-prompt="Kannst du einen Text von mir sprachlich überarbeiten?">
+            <span class="welcome-prompt-icon" aria-hidden="true">≋</span><span>Kannst du einen Text von mir überarbeiten?</span>
+          </button>
+        </div>
+      </section>
       <div class="insight-chips" id="insightChips" aria-label="Core-Informationen"></div>
       <div class="feed-vector feed-vector-a" aria-hidden="true"></div>
       <div class="feed-vector feed-vector-b" aria-hidden="true"></div>
@@ -353,10 +376,11 @@
           </label>
 
           <button class="composer-send" id="btnSend" type="button" aria-label="Nachricht senden">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
+            <svg class="send-icon" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M4 4.5 21 12 4 19.5l3.1-6.1L15 12l-7.9-1.4z" />
               <path d="M7.1 10.6 15 12l-7.9 1.4" />
             </svg>
+            <svg class="stop-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>
             <span class="send-rune" aria-hidden="true">⟐</span>
           </button>
         </div>
@@ -528,9 +552,9 @@
   <script src="./js/coreui-image-editor.js?v=0032794969750821434063269"></script>
   <script src="./js/coreui-voice-read.js?v=0478836976425824839668688"></script>
   <script src="./js/coreui-voice-input.js?v=1091628864321174313781461"></script>
-  <script src="./js/coreui-voice-live.js?v=0237758995019458615105581"></script>
+  <script src="./js/coreui-voice-live.js?v=0870697924316904110065137"></script>
   <script src="./js/coreui-composer-menu.js?v=0842381822894464327168684"></script>
-  <script src="./js/console-app.js?v=1099380726500518541424349"></script>
+  <script src="./js/console-app.js?v=0179465475288276015486313"></script>
   <script src="./js/coreui-core-mode.js?v=1079995267989445902086353"></script>
   <script src="./js/coreui-core-install.js?v=0294816904878640254887997"></script>
   <script src="./js/coreui-artifacts.js?v=1069339270452640197429799"></script>
