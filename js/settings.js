@@ -18,6 +18,7 @@
   var accountAvatar = document.getElementById('accountAvatar');
   var accountLevel = document.getElementById('accountLevel');
   var adminLinkGroup = document.getElementById('adminLinkGroup');
+  var adminShortcut = document.getElementById('settingsAdminShortcut');
   var healthSummary = document.getElementById('healthSummary');
   var healthVersion = document.getElementById('healthVersion');
   var healthModel = document.getElementById('healthModel');
@@ -33,6 +34,7 @@
   var logoutButton = document.getElementById('settingsLogout');
   var backButton = document.getElementById('settingsBack');
   var aiSaveButton = document.getElementById('saveAiSettings');
+  var memorySettingsSaveButton = document.getElementById('saveMemoryAiSettings');
   var aiSystemPrompt = document.getElementById('aiSystemPrompt');
   var aiPromptCounter = document.getElementById('aiPromptCounter');
   var aiMemoryEnabled = document.getElementById('aiMemoryEnabled');
@@ -265,6 +267,10 @@
         var role = data.is_guest ? 'GAST' : (lvl === 0 ? 'INHABER' : (lvl === 1 ? 'ADMIN' : 'NUTZER'));
         if (accountLevel) accountLevel.textContent = role;
         var mayAdmin = !data.is_guest && (lvl === 0 || lvl === 1);
+        // Both shortcuts are invisible until this authenticated role check.
+        // Server-side authorization on admin/index.html and api/admin.php
+        // remains mandatory regardless of DOM state.
+        if (adminShortcut) adminShortcut.hidden = !mayAdmin;
         if (adminLinkGroup) {
           adminLinkGroup.dataset.authorized = mayAdmin ? '1' : '0';
           adminLinkGroup.hidden = !mayAdmin;
@@ -549,8 +555,9 @@
   }
 
   function saveAiSettings() {
-    if (!aiSaveButton) return;
-    aiSaveButton.disabled = true;
+    if (!aiSaveButton && !memorySettingsSaveButton) return;
+    if (aiSaveButton) aiSaveButton.disabled = true;
+    if (memorySettingsSaveButton) memorySettingsSaveButton.disabled = true;
     var body = {
       system_prompt: aiSystemPrompt ? aiSystemPrompt.value : '',
       memory_enabled: aiMemoryEnabled ? aiMemoryEnabled.checked : true,
@@ -563,7 +570,7 @@
     };
     api('./api/user_settings.php', { method: 'POST', body: JSON.stringify(body) })
       .then(function () {
-        announceSaved('KI-PROFIL SERVERSEITIG GESPEICHERT');
+        announceSaved('KI- UND MEMORY-EINSTELLUNGEN SERVERSEITIG GESPEICHERT');
         return loadAiSettings();
       })
       .catch(function (error) {
@@ -581,7 +588,10 @@
         };
         announceSaved(labels[error.message] || ('SPEICHERN FEHLGESCHLAGEN: ' + error.message), true);
       })
-      .finally(function () { aiSaveButton.disabled = false; });
+      .finally(function () {
+        if (aiSaveButton) aiSaveButton.disabled = false;
+        if (memorySettingsSaveButton) memorySettingsSaveButton.disabled = false;
+      });
   }
 
   function formatSessionDate(value) {
@@ -943,6 +953,7 @@
   });
   if (aiSystemPrompt) aiSystemPrompt.addEventListener('input', updatePromptCounter);
   if (aiSaveButton) aiSaveButton.addEventListener('click', saveAiSettings);
+  if (memorySettingsSaveButton) memorySettingsSaveButton.addEventListener('click', saveAiSettings);
   if (saveProfileButton) saveProfileButton.addEventListener('click', saveProfile);
   if (userAvatarFile) userAvatarFile.addEventListener('change', function () {
     var file = userAvatarFile.files && userAvatarFile.files[0];
