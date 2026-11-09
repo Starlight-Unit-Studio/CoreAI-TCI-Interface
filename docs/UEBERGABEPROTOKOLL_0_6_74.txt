@@ -1,0 +1,51 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.74
+Datum: 09.11.2026
+Ausgangsstand: main 0.6.73, PR #225 bereits gemergt
+Branch: fix/sqlite-selftest-noise-rag-gate-0674
+
+ANLASS
+Log-Auszug vom 04.11. bis 06.11.2026 zeigt wiederholt:
+- maintenance_settings_install_failed: SQLite-SQL-Fehler nahe ON
+- abuse_guard_unavailable: keine stu_abuse_counters
+- profile-knowledge-selftest: angeblich fehlende Console-Abschottung
+- console_stream_incomplete mit agent_cancelled/curl_errno 42
+
+ANALYSE
+Die Produktion verwendet MariaDB. In PHP-Selbsttests wird SQLite
+verwendet. Der App-Settings-Installer versuchte dort MariaDB-DDL.
+Der Abuse-Guard-Selbsttest prueft absichtlich eine Datenbank ohne
+Migration 018 und loggte diesen erwarteten Fehler mit dem normalen
+Laufzeitlogger. In api/chat.php liegen zwei korrekt bewachte private
+RAG-Lite-Aufrufe, jeweils mit Console, knowledge_search und $uid.
+Der alte Selbsttest suchte zwei direkt benachbarte Teilausdruecke,
+die wegen der zusaetzlichen Berechtigungspruefung nicht mehr vorkommen.
+
+GEAENDERT
+- api/helpers.php: nur bei SQLite werden CREATE TABLE und UPSERT auf
+  SQLite-Syntax umgestellt; MariaDB-Statements exakt erhalten.
+- scripts/abuse-guard-selftest.php: Test-Logger isoliert, erwartet
+  nur die eine bewusst erzeugte missing-table-Meldung; Pruefung auf
+  erfolgreiche SQLite-App-Settings-Speicherung.
+- scripts/profile-knowledge-selftest.php: zwei vollstaendige
+  Bewachungen (channel, knowledge_search und $uid) statt veralteter
+  Zeichenfolge. Produktiven Promptcode nicht veraendert.
+
+ZU BEACHTEN
+- Alte Log-Zeilen bleiben historische Daten. Keine automatische
+  Loeschung, kein Logrotations-Eingriff.
+- Ein HTTP 200 mit abgebrochenem Callback beweist keinen Abschluss.
+  agent_cancelled zeigt im vorliegenden Verlauf einen Abbruch an,
+  nicht zwingend einen Laufzeitfehler.
+- Echte fehlende Abuse-Tabelle in MariaDB bleibt ein Fehler und muss
+  durch Migration 018 bzw. Installationsdiagnostik behoben werden.
+- Keine Aenderung an Tokens, DB-Daten, Personenprofilen, Modelfiles,
+  Modellwarteschlange, Rollen oder echten Sicherheitskontrollen.
+
+VERIFIKATION
+- Quelltextanalyse der beiden privaten Promptpfade erfolgreich.
+- Minimales PHP-RegEx-Repro: beide echten Bedingungen erkannt,
+  absichtlich entfernte Berechtigung wird nicht akzeptiert.
+- Vollstaendige SQLite-Tests im aktuellen Container nicht ausfuehrbar:
+  PDO SQLite-Treiber fehlt. Server-/Compose-Preflight ausstehend.
+- Vor Merge lokale/prod-nahe PHP-/SQLite-Selftests und vollstaendigen
+  Preflight pruefen. Version 0.6.74 erst beim Merge freigeben.
