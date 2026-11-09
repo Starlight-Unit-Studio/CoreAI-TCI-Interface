@@ -2,6 +2,7 @@
 require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/ai_settings.php';
+require_once __DIR__ . '/general_core_controls.php';
 require_once __DIR__ . '/skills.php';
 require_once __DIR__ . '/console_attachment_store.php';
 require_once __DIR__ . '/console_artifact_store.php';
@@ -69,6 +70,9 @@ function ember_character_name(): string {
 }
 
 function ember_model(): string {
+  // Validated, per-turn auto route. No persistent Core selection is modified.
+  $auto = trim((string)($GLOBALS['COREUI_AUTO_SELECTED_CORE'] ?? ''));
+  if ($auto !== '' && coreui_model_name_valid($auto)) return $auto;
   $runtime = function_exists('coreui_ai_runtime_settings') ? coreui_ai_runtime_settings() : [];
   $override = is_array($runtime) ? trim((string)($runtime['model_override'] ?? '')) : '';
   if ($override !== '' && preg_match('~^[A-Za-z0-9._:/-]{1,160}$~', $override)) return $override;
@@ -3717,9 +3721,9 @@ function ember_call_ollama(string $model, string $systemPrompt, string $userProm
   // Explizite interne Overrides (z.B. Reflect) haben Vorrang. Hauptantworten
   // folgen dem kontobezogenen CoreAI: TCI Interface-Schalter und deaktivieren Thinking damit
   // wirklich im Ollama-Request, statt lediglich das Statuspanel auszublenden.
-  $payload['think'] = $thinkOverride !== null
-    ? (bool)$thinkOverride
-    : ember_thinking_enabled();
+  // Ollama accepts model-declared named levels as well as on/off.
+  // Explicit think=false from a tool path always wins.
+  $payload['think'] = coreui_general_think_value($model, $thinkOverride ?? ember_thinking_enabled());
 
   // Only include keep_alive if configured; some older Ollama builds ignore/complain.
   if ($keepAlive === null) {
@@ -5033,6 +5037,14 @@ function ember_build_chat_prompt(
   $uid = (int)($senderChar['user_id'] ?? 0);
   $cid = (string)($senderChar['id'] ?? '');
   if (function_exists('coreui_ai_runtime_apply')) coreui_ai_runtime_apply($pdo, $uid);
+  if ($channel === 'console') {
+    $GLOBALS['COREUI_GENERAL_SETTINGS'] = coreui_general_load($pdo, $uid);
+    if (empty($GLOBALS['COREUI_GENERAL_AUTO_DECIDED'])) {
+      $GLOBALS['COREUI_GENERAL_AUTO_DECIDED'] = true;
+      coreui_general_select_auto_core($pdo, $uid, $userMsg,
+        trim($attachBlock) !== '' || $imageUrl !== null);
+    }
+  }
   $GLOBALS['COREUI_PERSONALIZATION_CONTEXT'] = $channel === 'console'
     ? coreui_personalization_load($pdo,$uid) : null;
   // #113: the KI-Profil window belongs to the private console; the global
@@ -5417,6 +5429,14 @@ function ember_generate_reply(
   $uid = (int)($senderChar['user_id'] ?? 0);
   $cid = (string)($senderChar['id'] ?? '');
   if (function_exists('coreui_ai_runtime_apply')) coreui_ai_runtime_apply($pdo, $uid);
+  if ($channel === 'console') {
+    $GLOBALS['COREUI_GENERAL_SETTINGS'] = coreui_general_load($pdo, $uid);
+    if (empty($GLOBALS['COREUI_GENERAL_AUTO_DECIDED'])) {
+      $GLOBALS['COREUI_GENERAL_AUTO_DECIDED'] = true;
+      coreui_general_select_auto_core($pdo, $uid, $userMsg,
+        trim($attachBlock) !== '' || $imageUrl !== null);
+    }
+  }
   $GLOBALS['COREUI_PERSONALIZATION_CONTEXT'] = $channel === 'console'
     ? coreui_personalization_load($pdo,$uid) : null;
   if ($channel !== 'console') $GLOBALS['COREUI_AI_RUNTIME_SETTINGS']['num_ctx'] = null;
