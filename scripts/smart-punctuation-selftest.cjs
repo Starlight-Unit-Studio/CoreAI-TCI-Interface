@@ -1,0 +1,31 @@
+#!/usr/bin/env node
+'use strict';
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+const s = fs.readFileSync(path.join(__dirname, '../js/coreui-smart-punctuation.js'), 'utf8');
+const win = {document:null};
+vm.runInNewContext(s, {window:win});
+const convert = win.CoreUISmartPunctuation.transform;
+const apply = (text, insert, lang) => {
+  const change = convert(text,text.length,insert,lang||'de');
+  return change ? text.slice(0,change.start)+change.value+text.slice(change.end) : text;
+};
+assert.equal(apply('Hallo...','.'),'Hallo…');
+assert.equal(apply('Links ->','>'),'Links →');
+assert.equal(apply('Links <-','-'),'Links ←');
+assert.equal(apply('Wert >=','='),'Wert ≥');
+assert.equal(apply('Wert !=','='),'Wert ≠');
+assert.equal(apply('Ungefähr +-','-'),'Ungefähr ±');
+assert.equal(apply('Er sagt "Hallo"','"'),'Er sagt „Hallo“');
+assert.equal(apply('He says "Hello"','"','en'),'He says “Hello”');
+assert.equal(apply('const x = "word"','"'),'const x = "word"','programming is untouched');
+assert.equal(apply('{"key": "value"}','}'),'{"key": "value"}','JSON is untouched');
+assert.equal(apply('siehe https://coreui.test/...','.'),'siehe https://coreui.test/...','URL not rewritten');
+assert.equal(apply('Einmal \`abc...\`','\`'),'Einmal \`abc...\`','inline code not rewritten');
+assert.equal(apply('Heruntergeladen...',null),'Heruntergeladen...','paste/unknown insert ignored');
+assert.match(s,/event\.inputType !== 'insertText'/,'only actual typing');
+assert.match(s,/appearance\.smartPunctuation/,'uses real local toggle');
+assert.match(s,/el\.setRangeText/,'preserves current typing cursor');
+console.log('CoreAI smart punctuation: natural-language transformations, code/JSON/link protection and opt-in OK.');
