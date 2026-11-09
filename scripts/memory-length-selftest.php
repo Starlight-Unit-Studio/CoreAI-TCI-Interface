@@ -65,7 +65,9 @@ memory_test(str_contains($read('api/memories.php'), '$length > COREUI_MEMORY_FAC
   && str_contains($read('api/admin.php'), '$length > COREUI_MEMORY_FACT_MAX_CHARS'), 'Memory tab and Admin Core accept long memories');
 $settings = $read('settings.html');
 memory_test(str_contains($settings, '<textarea id="memoryFact" rows="3" maxlength="8000"')
-  && str_contains($settings, '<textarea id="adminMemoryFact" rows="4" maxlength="8000" required>'), 'the text fields allow long memories');
+  && !str_contains($settings, 'id="adminMemoryFact"')
+  && str_contains($read('admin/index.html'), '<textarea id="adminMemoryFact" rows="4" maxlength="8000" required>'),
+  'private and global memory inputs remain separate and allow 8000 characters');
 memory_test(!str_contains($read('api/config.php'), 'STU_EMBER_REFLECT_MAX_FACT_LEN'), 'the old 240 setting is gone');
 
 echo "CoreAI memory length: memories stored and used whole, budget per window, guard of 8000 OK\n";
