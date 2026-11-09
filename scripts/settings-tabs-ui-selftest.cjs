@@ -251,6 +251,34 @@ const smallText = page => page.evaluate(() => {
       'the smart Core-standard context option is ordinary');
     assert.equal(await page.inputValue('#aiNumPredict'), budget, 'hidden technical value is not reset');
     await page.click('#tab-anzeige');
+    assert.equal(await page.locator('#appearanceMotif').isVisible(), true,
+      'new motif is visible without Expert');
+    assert.equal(await page.locator('#appearanceAccent').isVisible(), true,
+      'accent picker is an ordinary setting');
+    await page.selectOption('#appearanceMotif', 'terminal');
+    assert.equal(await page.evaluate(() => document.documentElement.getAttribute('data-coreui-motif')), 'terminal',
+      'changing a motif actually affects all page styles');
+    await page.selectOption('#appearanceAccent', 'green');
+    assert.equal(await page.evaluate(() => document.documentElement.style.getPropertyValue('--cx')), '#168663',
+      'green accent actually changes the shared accent token');
+    await page.locator('#appearanceAdvanced > summary').click();
+    assert.equal(await page.locator('#appearanceUiSize').isVisible(), true,
+      'Advanced appearance is ordinary and not behind Expert');
+    await page.locator('#appearanceUiSize').fill('18');
+    await page.locator('#appearanceUiSize').press('Tab');
+    assert.equal(await page.evaluate(() => document.documentElement.style.getPropertyValue('--appearance-ui-scale')),
+      String(18 / 14), 'pixel UI size is used by real page styles');
+    await page.check('#appearanceFullWidth');
+    assert.equal(await page.evaluate(() => document.documentElement.classList.contains('pref-full-width')), true,
+      'full-width setting updates layout');
+    await page.check('#appearanceSeparate');
+    assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('emberCoreUI.preferences.v1')).appearance.separate),
+      true, 'separate dark/light design is saved locally');
+    await page.reload();
+    await page.waitForFunction(() => document.getElementById('appearanceMotif').value === 'terminal');
+    assert.equal(await page.inputValue('#appearanceMotif'), 'terminal', 'motif survives reload');
+    assert.equal(await page.inputValue('#appearanceAccent'), 'green', 'accent survives reload');
+    assert.equal(await page.inputValue('#appearanceUiSize'), '18', 'UI font size survives reload');
     assert.equal(await page.locator('#prefShowTelemetry').isVisible(), true,
       'ordinary telemetry display toggle is visible without Expert');
     assert.equal(await page.locator('#prefLiveFrameMotion').isVisible(), true,
@@ -423,6 +451,16 @@ const smallText = page => page.evaluate(() => {
       await page.click('#tab-' + view);
       assert.deepEqual(await smallText(page), [], 'no text below 11 px in ' + view);
     }
+    assert.deepEqual(errors, []);
+    await page.close();
+
+    // Appearance remains usable on a narrow phone when Advanced is expanded.
+    ({page, errors} = await open(browser, 4, '#anzeige', {width: 390, height: 844}));
+    await page.locator('#appearanceAdvanced > summary').click();
+    assert.equal(await page.locator('#appearanceBackground').isVisible(), true);
+    assert.equal(await page.locator('#appearanceCodeSize').isVisible(), true);
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1),
+      'Darstellung with expanded controls does not cause horizontal phone overflow');
     assert.deepEqual(errors, []);
     await page.close();
 
