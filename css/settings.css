@@ -1945,3 +1945,85 @@
   .settings-body .cfg-nav { transition: none; }
 }
 .pref-reduced-motion .cfg-nav { transition: none; }
+
+
+/* 0.6.71: General settings use the same reusable row language as the rest
+   of CoreAI. Tokens keep both light and dark themes readable. */
+.settings-body [data-expert][hidden] { display: none !important; }
+.settings-body .cfg-general-head { margin: 0 0 16px; }
+.settings-body .cfg-general-card {
+  width: 100%;
+  margin: 0 0 24px;
+  padding: 0 clamp(16px,2.4vw,30px);
+  border-radius: 20px;
+  overflow: visible;
+}
+.settings-body .cfg-general-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 43%);
+  gap: clamp(14px,2vw,28px);
+  align-items: center;
+  min-width: 0;
+  padding: 23px 0;
+  border-bottom: 1px solid var(--line);
+}
+.settings-body .cfg-general-row:last-child { border-bottom: 0; }
+.cfg-general-copy { min-width: 0; }
+.cfg-general-copy label {
+  display: block;
+  color: var(--txt);
+  font: 700 clamp(17px,2vw,21px)/1.3 "Rajdhani","Segoe UI",sans-serif;
+}
+.cfg-general-copy p {
+  margin: 5px 0 0;
+  color: var(--cfg-soft);
+  font: 500 15px/1.5 "Rajdhani","Segoe UI",sans-serif;
+}
+.cfg-general-control { display: grid; justify-items: end; gap: 7px; min-width: 0; }
+.cfg-general-control select {
+  box-sizing: border-box;
+  max-width: 100%;
+  width: min(100%,290px);
+  min-height: 44px;
+  padding: 9px 34px 9px 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  background: var(--panel-soft);
+  color: var(--txt);
+  font: 600 15px/1.35 "Rajdhani","Segoe UI",sans-serif;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+.cfg-general-control select:disabled {
+  cursor: not-allowed;
+  opacity: .66;
+}
+.cfg-general-control select:focus-visible {
+  outline: 2px solid var(--cx);
+  outline-offset: 3px;
+}
+.cfg-general-control small {
+  width: min(100%,290px);
+  color: var(--muted);
+  font: 500 12.5px/1.4 "Rajdhani","Segoe UI",sans-serif;
+  text-align: right;
+}
+.cfg-general-switch .settings-switch { margin-left: auto; }
+.cfg-general-switch .settings-switch:has(input:disabled) { opacity: .55; }
+@media (max-width: 660px) {
+  .settings-body .cfg-general-card { padding: 0 16px; }
+  .settings-body .cfg-general-row {
+    grid-template-columns: minmax(0,1fr) minmax(134px,46%);
+    gap: 12px;
+    padding: 21px 0;
+  }
+  .cfg-general-copy label { font-size: 17px; }
+  .cfg-general-copy p { font-size: 14px; line-height: 1.45; }
+  .cfg-general-control select { font-size: 13px; padding: 9px 24px 9px 9px; }
+  .cfg-general-control small { font-size: 11.5px; }
+}
+@media (max-width: 340px) {
+  .settings-body .cfg-general-row { grid-template-columns: 1fr; }
+  .cfg-general-control { justify-items: stretch; }
+  .cfg-general-control select, .cfg-general-control small { width: 100%; text-align: left; }
+}
