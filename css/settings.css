@@ -1909,8 +1909,30 @@
   }
   .settings-body.cfg-menu-opened { overflow: hidden; }
   .settings-body .cfg-main { width: 100%; }
-  .settings-body .settings-header { gap: 8px; }
-  .settings-body .cfg-menu-open { order: -1; }
+  .settings-body .settings-header {
+    display: grid;
+    grid-template-columns: auto minmax(0,1fr);
+    gap: 10px 12px;
+    padding: 14px clamp(12px,3vw,24px);
+  }
+  .settings-body .settings-header .cfg-menu-open {
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: start;
+  }
+  .settings-body .settings-header .settings-back {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+  }
+  .settings-body .settings-header .settings-title-block {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .settings-body .settings-header .settings-version {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
 }
 @media (max-width: 480px) {
   .settings-body .cfg-shell { width: calc(100% - 18px); }
