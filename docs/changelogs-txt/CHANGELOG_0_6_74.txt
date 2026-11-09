@@ -1,0 +1,17 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.74
+09.11.2026
+
+- Fehlerprotokolle aus SQLite-Selbsttests bereinigt: Die
+  App-Settings-Initialisierung verwendet fuer SQLite gueltige
+  CREATE TABLE-Syntax statt MariaDBs ON UPDATE/ENGINE-Optionen.
+- App-Einstellungen in SQLite-Selbsttests speichern mit ON CONFLICT.
+  Die produktiven MariaDB-SQL-Befehle bleiben unberuehrt.
+- Absichtlich fehlende Abuse-Guard-Testtabelle wird nur im lokalen
+  Testprotokoll erfasst; die reale Fehlerbehandlung bleibt aktiv.
+- Der Test prueft zusaetzlich echtes Speichern/Lesen der Settings.
+- Privates RAG-Lite: Der alte Stringvergleich ergab Fehlalarm.
+  Der neue Test prueft beide Promptpfade mit Console-Kanal,
+  Personalisierungs-Freigabe knowledge_search und Konto-ID.
+- Keine neue Migration, kein neues Modell, keine Aenderung an
+  Modelfile, FIFO, Konten, Rate-Limits oder Berechtigungen.
+- Cancelled/Callback aborted bleibt getrennt von echten Fehlern.
