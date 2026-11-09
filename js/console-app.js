@@ -146,6 +146,9 @@
     sendTimestampBySession: {},
     streamedIds:     {},
     pendingBySession: {},
+    pendingCancelBySession: {},
+    draftSessionPromise: null,
+    draftSendRequested: false,
     activeAgentRunsBySession: {},
     finishedRunsBySession: {},
     agentStopEl: null,
@@ -179,6 +182,9 @@
   var sessionArchiveToggle = document.getElementById('sessionArchiveToggle');
   var messagesInner = document.getElementById('messagesInner');
   var messagesArea  = document.getElementById('messagesArea');
+  var welcomeScreen = document.getElementById('welcomeScreen');
+  var welcomeGreeting = document.getElementById('welcomeGreeting');
+  var welcomeError = document.getElementById('welcomeError');
   var jumpLatest    = document.getElementById('jumpLatest');
   var chatFollow    = window.CoreUIChatFollow
     ? window.CoreUIChatFollow.create(messagesArea, jumpLatest,
@@ -261,13 +267,18 @@
 
   function updateAgentCancelControl() {
     var ses = activeSession();
-    var run = ses && state.activeAgentRunsBySession[String(ses.id)];
-    if (!state.agentStopEl) return;
-    state.agentStopEl.hidden = !run || !state.waitingEmber;
-    state.agentStopEl.disabled = !!(run && run.cancel_requested);
-    state.agentStopEl.textContent = run && run.cancel_requested
-      ? 'Abbruch angefordert ...'
-      : '■ Auftrag abbrechen';
+    var id = ses ? String(ses.id) : '';
+    var working = !!(ses && state.pendingBySession[id]);
+    var run = working && state.activeAgentRunsBySession[id];
+    var cancelling = !!(working && (state.pendingCancelBySession[id] || (run && run.cancel_requested)));
+    var inner = btnSend.closest ? btnSend.closest('.composer-inner') : null;
+    if (inner) inner.classList.toggle('is-working', working);
+    btnSend.classList.toggle('is-stop', working);
+    btnSend.disabled = !!state.draftSessionPromise || cancelling;
+    var label = working ? (cancelling ? 'Stopp angefordert' : 'Antwort von Mara stoppen')
+      : (state.editingMessage ? 'Bearbeitete Nachricht speichern' : 'Nachricht senden');
+    btnSend.setAttribute('aria-label', label);
+    btnSend.title = label;
   }
 
   // A run this tab saw finish (or gave up on) must never be resurrected by
@@ -283,6 +294,7 @@
     var current = state.activeAgentRunsBySession[String(sessionId)];
     if (current) rememberFinishedRun(sessionId, current.id);
     delete state.activeAgentRunsBySession[String(sessionId)];
+    delete state.pendingCancelBySession[String(sessionId)];
     updateAgentCancelControl();
   }
 
@@ -322,9 +334,17 @@
 
   function requestActiveRunCancel() {
     var ses = activeSession();
-    var run = ses && state.activeAgentRunsBySession[String(ses.id)];
-    if (!ses || !run || run.cancel_requested) return;
+    if (!ses || !state.pendingBySession[ses.id]) return;
     var sessionId = String(ses.id);
+    var run = state.activeAgentRunsBySession[sessionId];
+    // Keep a Stop tap until the server reports its agent-run ID.
+    if (!run) {
+      state.pendingCancelBySession[sessionId] = true;
+      updateAgentCancelControl();
+      return;
+    }
+    if (run.cancel_requested) return;
+    delete state.pendingCancelBySession[sessionId];
     var runId = String(run.id);
     run.cancel_requested = true;
     updateAgentCancelControl();
@@ -355,14 +375,65 @@
   function updateActivePendingUi() {
     var ses = activeSession();
     state.waitingEmber = !!(ses && state.pendingBySession[ses.id]);
-    // Der Editor bleibt waehrend der Generierung benutzbar. Ein weiterer Text
-    // wird vorgemerkt und nach der laufenden Antwort automatisch gesendet.
-    btnSend.disabled = false;
-    btnSend.setAttribute('aria-label', state.waitingEmber
-      ? 'Nachricht nach der laufenden Antwort senden'
-      : (state.editingMessage ? 'Bearbeitete Nachricht speichern' : 'Nachricht senden'));
     updateAgentCancelControl();
     if (chatFollow) chatFollow.refresh();
+  }
+
+  function updateWelcomeGreeting() {
+    if (!welcomeGreeting) return;
+    var hour = new Date().getHours();
+    var greeting = hour < 11 ? 'Guten Morgen' : (hour < 18 ? 'Guten Tag' : 'Guten Abend');
+    var name = String(state.userDisplayName || '').trim().split(/\s+/)[0];
+    welcomeGreeting.textContent = greeting + (name ? ', ' + name : '') + '.';
+  }
+
+  // A new chat is a view-only draft until the first real user turn.
+  function showDraftChat() {
+    if (state.draftSessionPromise) return;
+    if (state.bgTimer) clearTimeout(state.bgTimer);
+    if (state.historyAbort) state.historyAbort.abort();
+    state.historyAbort = null;
+    if (state.historyRetryTimer) clearTimeout(state.historyRetryTimer);
+    state.historyRetryTimer = null;
+    state.viewEpoch++;
+    state.activeSessionId = null;
+    rememberActiveSession('');
+    if (state.editingMessage) clearMessageEdit(false);
+    messagesInner.replaceChildren();
+    state.typingEl = null;
+    state.thinkingPanelEl = null;
+    state.agentStopEl = null;
+    if (chatFollow) chatFollow.reset();
+    if (jumpLatest) jumpLatest.hidden = true;
+    messagesArea.classList.add('is-welcome');
+    if (welcomeScreen) welcomeScreen.hidden = false;
+    if (welcomeError) { welcomeError.textContent = ''; welcomeError.hidden = true; }
+    updateWelcomeGreeting();
+    headerSessionName.textContent = 'NEUE VERBINDUNG';
+    setComposerText('');
+    updateActivePendingUi();
+    renderSessionList();
+    setStatus('online', 'VERBUNDEN');
+  }
+
+  // Concurrent first turns must never create duplicate sessions.
+  function ensureDraftSession() {
+    var current = activeSession();
+    if (current) return Promise.resolve(current);
+    if (!state.characterId) return Promise.reject(new Error('character_missing'));
+    if (state.draftSessionPromise) return state.draftSessionPromise;
+    var epoch = state.viewEpoch;
+    state.draftSessionPromise = dbCreateSession('SITZUNG ' + (state.sessions.length + 1))
+      .then(function(created) {
+        if (state.viewEpoch !== epoch || activeSession()) throw new Error('draft_view_changed');
+        return Promise.resolve(selectSession(created.id)).then(function() { return created; });
+      })
+      .finally(function() {
+        state.draftSessionPromise = null;
+        updateActivePendingUi();
+      });
+    updateActivePendingUi();
+    return state.draftSessionPromise;
   }
 
   // ── DB: Sessions laden ───────────────────────────────────
@@ -543,7 +614,8 @@
               selectSession(next.id);
               return null;
             }
-            return dbCreateSession('SITZUNG 1').then(function(created) { selectSession(created.id); });
+            showDraftChat();
+            return null;
           } else {
             renderSessionList();
           }
@@ -728,7 +800,9 @@
     trimSessionCaches(state.activeSessionId);
     if (chatFollow) chatFollow.reset();
     var ses = activeSession();
-    if (!ses) return;
+    if (!ses) return Promise.resolve();
+    messagesArea.classList.remove('is-welcome');
+    if (welcomeScreen) welcomeScreen.hidden = true;
     if (state.editingMessage && String(state.editingMessage.session_id) !== String(ses.id)) {
       clearMessageEdit(false);
     }
@@ -752,7 +826,7 @@
         console.error('[CoreAI] Cached conversation render failed:',error);
       }
     }
-    loadChatHistory(ses).then(function () { drainQueuedTurn(ses.id); });
+    return loadChatHistory(ses).then(function () { drainQueuedTurn(ses.id); });
   }
 
   function workEventMerge(serverEvents, liveEvents) {
@@ -952,7 +1026,8 @@
       turnId:turnId,runKey:runKey,events:events
     };
     if (isActiveSession(sessionId)) {
-      updateActivePendingUi();
+      if (state.pendingCancelBySession[sessionId]) requestActiveRunCancel();
+      else updateActivePendingUi();
       if (wasPending && state.thinkingPanelEl && window.CoreUIWorkEvents) {
         var body = state.thinkingPanelEl.querySelector('.work-body');
         if (body) events.forEach(function (event) {
@@ -2019,15 +2094,8 @@
         })
       : null;
     if (state.thinkingPanelEl) content.appendChild(state.thinkingPanelEl);
-    var stop = document.createElement('button');
-    stop.type = 'button';
-    stop.className = 'agent-stop-button';
-    stop.hidden = true;
-    stop.textContent = '■ Auftrag abbrechen';
-    stop.addEventListener('click',requestActiveRunCancel);
-    content.appendChild(stop);
-    state.agentStopEl = stop;
-    updateAgentCancelControl();
+    // Stop stays in the composer, not in the work timeline.
+    state.agentStopEl = null;
 
     var bubble = document.createElement('div');
     bubble.className = 'msg-bubble';
@@ -2314,7 +2382,8 @@
     var pending = pendingSendAfterUpload;
     pendingSendAfterUpload = null;
     var ses = activeSession();
-    if (ses && String(ses.id) === pending.sessionId) sendMessage(pending.text);
+    if ((ses && String(ses.id) === pending.sessionId)
+        || (!ses && pending.sessionId === '__draft__')) sendMessage(pending.text);
   }
 
   function processUploadQueue() {
@@ -2397,10 +2466,11 @@
       if (state.editingMessage) return 'editing';
       if (attachmentSlotsUsed() >= MAX_MESSAGE_ATTACHMENTS) return 'full';
       var ses = activeSession();
-      if (!ses) return 'no_session';
-      if (state.pendingBySession[ses.id]) return 'busy';
+      if (!ses && (state.draftSessionPromise || state.draftSendRequested)) return 'busy';
+      if (ses && state.pendingBySession[ses.id]) return 'busy';
       uploadQueue.push(file);
-      pendingSendAfterUpload = {text: inputEl ? String(inputEl.value || '') : '', sessionId: String(ses.id)};
+      pendingSendAfterUpload = {text: inputEl ? String(inputEl.value || '') : '',
+        sessionId: ses ? String(ses.id) : '__draft__'};
       renderAttachmentList();
       processUploadQueue();
       return 'ok';
@@ -2417,8 +2487,9 @@
           || !/^image\/(?:png|jpeg|webp|gif)$/.test(file.type);
       })) return 'invalid';
       var ses = activeSession();
-      if (!ses || !state.characterId) return 'no_session';
-      if (state.waitingEmber || state.pendingBySession[ses.id]) return 'busy';
+      if (!state.characterId) return 'no_session';
+      if (!ses && (state.draftSessionPromise || state.draftSendRequested)) return 'busy';
+      if (state.waitingEmber || (ses && state.pendingBySession[ses.id])) return 'busy';
       if (state.editingMessage) return 'editing';
       // Never discard an unsent draft or mix the edit with unrelated attachments.
       if (inputEl && String(inputEl.value || '').trim()) return 'draft';
@@ -2431,7 +2502,7 @@
         text = (size === 'large' ? '[[bild:gross]] ' : '[[bild]] ') + text;
       }
       setComposerText(text);
-      pendingSendAfterUpload = {text:text, sessionId:String(ses.id)};
+      pendingSendAfterUpload = {text:text, sessionId:ses ? String(ses.id) : '__draft__'};
       files.forEach(function (file) { uploadQueue.push(file); });
       renderAttachmentList();
       processUploadQueue();
@@ -2440,11 +2511,16 @@
     // 0.6.31 (P20.4): the live conversation works in the open chat and reloads it afterwards.
     liveContext: function () {
       var ses = activeSession();
-      if (!ses || !state.characterId) return null;
+      if (!state.characterId) return null;
+      if (!ses) return {sessionId:'',characterId:String(state.characterId),lastMessageId:0,
+        busy:!!(state.draftSessionPromise || state.draftSendRequested)};
       var last = Number(ses.last_message_id) || 0;
       (state.messageCacheBySession[ses.id] || []).forEach(function (m) { last = Math.max(last, Number(m && m.id) || 0); });
       return {sessionId: String(ses.id), characterId: String(state.characterId), lastMessageId: last,
         busy: !!(state.waitingEmber || state.pendingBySession[ses.id])};
+    },
+    ensureLiveSession: function () {
+      return ensureDraftSession().then(function() { return window.CoreUIComposer.liveContext(); });
     },
     reload: function () {
       var ses = activeSession();
@@ -2698,6 +2774,24 @@
       compactActiveSession();
       return;
     }
+    // Welcome is only a UI draft: the first real turn commits a session.
+    if (!activeSession()) {
+      var hasTurn = !!String(text || '').trim() || pendingFiles.length > 0
+        || uploadQueue.length > 0 || !!uploadCurrentFile || !!uploadXhr;
+      if (!hasTurn || state.draftSendRequested) return;
+      state.draftSendRequested = true;
+      ensureDraftSession().then(function() {
+        state.draftSendRequested = false;
+        sendMessage(text, options);
+      }).catch(function() {
+        state.draftSendRequested = false;
+        if (welcomeError) {
+          welcomeError.textContent = 'Der neue Chat konnte nicht angelegt werden. Versuche es erneut.';
+          welcomeError.hidden = false;
+        }
+      });
+      return;
+    }
     // Auch lange, langsam getippte Texte werden vor dem Senden verlustfrei
     // in eine echte Datei verwandelt. Nie die ersten 12k Zeichen wegschneiden.
     if (!options.from_queue && String(text || '').length > INLINE_TEXT_LIMIT) {
@@ -2751,6 +2845,7 @@
     setStatus('waiting', (state.assistantName || 'Mara').toUpperCase() + ' ANTWORTET\u2026');
     state.pendingBySession[sessionId] = true;
     state.waitingEmber = true;
+    updateActivePendingUi();
     state.sendTimestamp = Date.now();
     state.sendTimestampBySession[sessionId] = state.sendTimestamp;
     // One explicit send owns the viewport; subsequent SSE work updates must
@@ -2991,7 +3086,8 @@
         var info = JSON.parse(ev.data) || {};
         if (!/^[a-f0-9]{32}$/.test(String(info.id || ''))) return;
         state.activeAgentRunsBySession[sessionId] = {id:String(info.id),cancel_requested:false};
-        updateAgentCancelControl();
+        if (isActiveSession(sessionId) && state.pendingCancelBySession[sessionId]) requestActiveRunCancel();
+        else updateAgentCancelControl();
       } catch (e) {}
     });
     es.addEventListener('cancelled', function(ev) {
@@ -3819,6 +3915,7 @@
         state.userAvatarUrl = d.avatars && d.avatars.user ? d.avatars.user : null;
         state.assistantAvatarUrl = d.avatars && d.avatars.assistant ? d.avatars.assistant : null;
         if (inputEl) inputEl.placeholder = 'Nachricht an ' + state.assistantName + '…';
+        updateWelcomeGreeting();
         state.guest = d.is_guest && d.guest ? d.guest : null;
         renderGuestQuota();
       });
@@ -3856,6 +3953,7 @@
         state.userAvatarUrl = d.profile.avatars && d.profile.avatars.user ? d.profile.avatars.user : null;
         state.assistantAvatarUrl = d.profile.avatars && d.profile.avatars.assistant ? d.profile.avatars.assistant : null;
         if (inputEl) inputEl.placeholder = 'Nachricht an ' + state.assistantName + '…';
+        updateWelcomeGreeting();
         var ses = activeSession();
         if (ses && isActiveSession(ses.id)) renderHistory(ses);
       })
@@ -3928,14 +4026,14 @@
 
   btnNewSession.addEventListener('click', function() {
     closeDrawer();
-    var num = state.sessions.length + 1;
-    dbCreateSession('SITZUNG ' + num)
-      .then(function(ses) {
-        selectSession(ses.id);
-      })
-      .catch(function() {
-        appendMessageEl('system', '\u26a0 Sitzung konnte nicht angelegt werden.');
-      });
+    showDraftChat();
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll('[data-welcome-prompt]'), function(button) {
+    button.addEventListener('click', function() {
+      if (state.draftSessionPromise || state.draftSendRequested) return;
+      sendMessage(button.getAttribute('data-welcome-prompt'));
+    });
   });
 
   btnProtocols.addEventListener('click', function() {
@@ -3962,7 +4060,10 @@
 
   window.addEventListener('pageshow', function () { refreshRuntimeProfile(); });
 
-  btnSend.addEventListener('click', function() { sendMessage(inputEl.value); });
+  btnSend.addEventListener('click', function() {
+    if (state.waitingEmber) requestActiveRunCancel();
+    else sendMessage(inputEl.value);
+  });
   inputEl.addEventListener('keydown', function(e) {
     if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) {
       e.preventDefault();
@@ -3990,24 +4091,9 @@
           scrollToBottom();
           return;
         }
-        // Sessions laden - Fehler hier killen nicht die App
+        // Login starts with an unsaved draft; older conversations remain in the drawer.
         return dbLoadSessions()
-          .then(function() {
-            if (state.sessions.length === 0) {
-              return dbCreateSession('SITZUNG 1');
-            }
-          })
-          .then(function() {
-            var preferred = rememberedActiveSession();
-            var ses = sessionById(preferred) || state.sessions[0] || null;
-            if (!ses) {
-              appendMessageEl('system', 'TERRA-NET VERBINDUNG HERGESTELLT. E.M.B.E.R. COREUI AKTIV.');
-              scrollToBottom();
-              setStatus('online', 'VERBUNDEN');
-              return;
-            }
-            selectSession(ses.id);
-          })
+          .then(showDraftChat)
           .catch(function() {
             appendMessageEl('system', '\u26a0 Sitzungsdienst nicht verfuegbar. Bitte Migration 003 und Preflight pruefen.');
             scrollToBottom();
