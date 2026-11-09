@@ -6,7 +6,7 @@
 
 CoreAI combines Ollama-based models with private conversations, browser research, personal knowledge, file tools and an administration interface. Its standard deployment runs an isolated Nginx, PHP-FPM, MariaDB and worker stack on a Linux server. CoreAI is an application, **not a standalone operating system**.
 
-**Current source version: `0.6.77`** | [Changelog](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Documentation policy](docs/VERSIONING_POLICY.md) | [License](LICENSE.md)
+**Current source version: `0.6.78`** | [Changelog](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Documentation policy](docs/VERSIONING_POLICY.md) | [License](LICENSE.md)
 
 > **Development status:** The features below describe the current source code, not guaranteed capabilities of every model or cloud provider. A merged commit does not by itself prove a successful production deployment.
 
@@ -114,7 +114,7 @@ An existing installation's settings are not silently overwritten. `COREUI_FORCE_
 
 ## Current capabilities
 
-- **Mara and models:** Core selection in the chat, Gemma 4 tiers, supported connected cloud models and a thinking toggle. In the Core list, a speaker marks Cores that accept audio input and a wave symbol marks local Cores the live conversation can run on. Model inference shares one serial work queue.
+- **Mara and models:** The Core selector in chat only chooses the Core. The separate Denkaufwand control owns Thinking on/off and model-supported effort levels for the account. Gemma 4 tiers and supported connected cloud models remain available. In the Core list, a speaker marks Cores that accept audio input and a wave symbol marks local Cores the live conversation can run on. Model inference shares one serial work queue.
 - **Local time awareness:** Mara uses the browser's IANA time zone to calculate date and time for private chats. No location permission is needed; invalid or unavailable values fall back to the configured server time zone.
 - **Conversations and accounts:** The chat opens on an unsaved welcome screen with a personalized greeting and four tappable example questions. A new chat is saved only on its first submitted text, attachment or spoken turn; prior conversations remain in the sidebar. Persistent history, follow-up suggestions, context management and distinct owner, admin, user and optional guest roles remain available.
 - **Research:** SearXNG search and a Playwright browser display research activity and sources. NRW weather uses WDR place search in browser mode; other locations get current Open-Meteo data. Without browser mode, WDR overview is used only when current. Search is a fallback. The free Open-Meteo API is for non-commercial use.
