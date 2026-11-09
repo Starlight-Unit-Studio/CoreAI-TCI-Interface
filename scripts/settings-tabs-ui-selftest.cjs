@@ -243,8 +243,19 @@ const smallText = page => page.evaluate(() => {
     const budget = await page.inputValue('#aiNumPredict');
     await page.uncheck('#settingsExpertToggle');
     assert.deepEqual(await visibleViews(page), ['view-ki-profil'], 'Expert switch does not leave the category');
-    assert.equal(await page.locator('#aiNumPredict').isVisible(), false, 'technical field hidden in normal mode');
-    assert.equal(await page.inputValue('#aiNumPredict'), budget, 'hiding a field does not reset its value');
+    assert.equal(await page.locator('#aiNumPredict').isVisible(), false, 'raw token budget hidden in normal mode');
+    assert.equal(await page.locator('#aiTemperature').isVisible(), false, 'raw temperature hidden in normal mode');
+    assert.equal(await page.locator('#aiNumCtx').isVisible(), true,
+      'smart context slider remains available to every account');
+    assert.equal(await page.locator('#aiCtxDefault').isVisible(), true,
+      'the smart Core-standard context option is ordinary');
+    assert.equal(await page.inputValue('#aiNumPredict'), budget, 'hidden technical value is not reset');
+    await page.click('#tab-anzeige');
+    assert.equal(await page.locator('#prefShowTelemetry').isVisible(), true,
+      'ordinary telemetry display toggle is visible without Expert');
+    assert.equal(await page.locator('#prefLiveFrameMotion').isVisible(), true,
+      'ordinary browser-frame playback toggle is visible without Expert');
+    await page.click('#tab-ki-profil');
     await page.check('#settingsExpertToggle');
     assert.equal(await page.locator('#aiNumPredict').isVisible(), true, 'technical field comes back');
     assert.equal(new URL(page.url()).hash, '#ki-profil');

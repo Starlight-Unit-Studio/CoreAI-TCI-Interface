@@ -70,7 +70,24 @@ assert.ok(!settings.includes('id="cfgExpertGroup"'));
 assert.ok(['start','ki-profil','wissen','memory','system'].every(id => settings.includes('id="tab-' + id + '"')),
   'advanced categories remain accessible with Expert disabled');
 const expertNodes = [...settings.matchAll(/data-expert hidden/g)];
-assert.equal(expertNodes.length, 9, 'only technical controls remain Expert-gated, Denkaufwand is available to everyone');
+assert.equal(expertNodes.length, 6, 'only raw technical controls remain Expert-gated, while smart controls stay visible');
+for (const id of ['aiNumPredict', 'aiTemperature', 'aiProvider', 'aiMemoryLimit']) {
+  assert.ok(new RegExp('<label[^>]*for="' + id + '"[^>]*data-expert hidden>').test(settings),
+    id + ' is a raw technical input kept behind Expert');
+}
+assert.ok(/<label data-expert hidden>RELEVANZ\s*<input id="memoryRelevance"/.test(settings),
+  'raw numeric fact relevance remains Expert-only');
+assert.ok(/<section[^>]*aria-labelledby="aiPromptTitle" data-expert hidden>/.test(settings),
+  'system prompt editing remains an advanced instruction tool');
+for (const id of ['prefShowTelemetry', 'prefLiveFrameMotion']) {
+  assert.ok(new RegExp('<label[^>]*for="' + id + '"[^>]*>').test(settings),
+    'normal display control ' + id + ' is present');
+  assert.ok(!new RegExp('<label[^>]*for="' + id + '"[^>]*data-expert').test(settings),
+    'normal display control ' + id + ' is not Expert-only');
+}
+assert.ok(/<section[^>]*aria-labelledby="aiCtxTitle">/.test(settings) &&
+  !/<section[^>]*aria-labelledby="aiCtxTitle" data-expert/.test(settings),
+  'smart context slider remains ordinary; raw numeric context inputs would be Expert-only');
 assert.ok(settings.includes('id="aiNumCtx"') && settings.includes('id="aiNumPredict"'),
   'prior Core settings are retained');
 for(const field of ['generalUiLanguage','generalSendKey','generalHigherIntelligence','generalReasoningLevels']) {

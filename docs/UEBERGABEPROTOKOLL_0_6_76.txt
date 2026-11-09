@@ -1,0 +1,41 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.76
+Datum: 09.11.2026
+Basis: main 0.6.75, PR #227 gemergt
+Branch: fix/expert-settings-classification-0676
+
+PROBLEM
+CoreAI muss zwischen benutzerfreundlichen Einstellungen und
+technischer Feinabstimmung unterscheiden. Alle Funktionen aus den
+ChatGPT-Bildreferenzen sind normale Einstellungen. Eigene Funktionen
+sind ebenfalls normal, wenn ihre Bedienung klar ist. Der smarte
+Kontextfenster-Slider war in 0.6.75 bereits auf normal gestellt;
+ein Selbsttest erwartete faelschlich noch 9 statt 6 Expertfelder.
+
+REGELN
+- Normale Optionen: einfache Schalter, Sprache, Denkaufwand,
+  Core-Auswahl, vom Modell erklaerte Stufen und gefuehrte Slider.
+- Expert: echte technische Zahlen und manuelle Runtime-/Code-Parameter
+  wie Tokenbudget, Temperatur, eigener System-Prompt und Memory-Gewichte.
+- Der smarte num_ctx-Slider ist normal. Eine direkte freie numerische
+  num_ctx-Eingabe waere Expert; sie existiert aktuell nicht und wird
+  in dieser Version nicht als Fake-Eingabe eingebaut.
+- Einzelne Felder werden verborgen, keine ganze Einstellungsseite.
+  Ein-/Ausblenden darf gespeicherte Werte oder Serverrechte nicht aendern.
+
+CODE
+- settings.html: sechs bisher vorhandene Expert-Markierungen bleiben
+  exakt erhalten. Der smarte Kontextslider und einfache Anzeigeschalter
+  sind in der gemergten 0.6.75 bereits normale Einstellungen.
+- scripts/settings-navigation-foundation-selftest.cjs erwartet 6 statt 9
+  und prueft direkt die Klassifizierung der Steuerelemente.
+- scripts/settings-tabs-ui-selftest.cjs testet die Sichtbarkeit
+  von Slider/Core-Standard und Display-Optionen ohne Expertenmodus.
+- docs/SETTINGS_NAVIGATION_MATRIX.md und README dokumentieren die Regel.
+- VERSION und sechs HTML-Seiten 0.6.76, Changelogs und Cache-Fingerprint.
+
+TESTS
+1. node scripts/settings-navigation-foundation-selftest.cjs
+2. node scripts/settings-tabs-ui-selftest.cjs (Playwright erforderlich)
+3. Ganzer nativer/Compose-Preflight auf dem Host.
+4. Android: normale Einstellungen ohne Expert; Rohparameter mit Expert.
+Kein automatisches Merge ohne Browser- und Host-Abnahme.
