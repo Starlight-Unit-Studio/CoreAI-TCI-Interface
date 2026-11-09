@@ -17,6 +17,7 @@
   var accountDisplayName = document.getElementById('accountDisplayName');
   var accountAvatar = document.getElementById('accountAvatar');
   var accountLevel = document.getElementById('accountLevel');
+  var adminLinkGroup = document.getElementById('adminLinkGroup');
   var healthSummary = document.getElementById('healthSummary');
   var healthVersion = document.getElementById('healthVersion');
   var healthModel = document.getElementById('healthModel');
@@ -250,6 +251,20 @@
         var lvl = Number(data.permission_level == null ? 4 : data.permission_level);
         var role = data.is_guest ? 'GAST' : (lvl === 0 ? 'INHABER' : (lvl === 1 ? 'ADMIN' : 'NUTZER'));
         if (accountLevel) accountLevel.textContent = role;
+        var mayAdmin = !data.is_guest && (lvl === 0 || lvl === 1);
+        if (adminLinkGroup) {
+          adminLinkGroup.dataset.authorized = mayAdmin ? '1' : '0';
+          adminLinkGroup.hidden = !mayAdmin;
+          var menu = window.CoreAISettingsMenu && window.CoreAISettingsMenu.instance;
+          if (menu) menu.refresh();
+        }
+        // Preserve existing bookmarks from the former embedded Admin Core.
+        var oldAdmin = String(location.hash || '').replace(/^#/, '');
+        if (mayAdmin && (/^admin-/.test(oldAdmin) ||
+          /^(overview|users|runtime|memories|lore|logs|audit)$/.test(oldAdmin))) {
+          location.replace('./admin/index.html#' + encodeURIComponent(oldAdmin));
+          return;
+        }
         startText('role', role);
         startText('mail', data.username || '');
         startText('name', data.display_name || data.username || 'Operator');
