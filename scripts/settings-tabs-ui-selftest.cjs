@@ -488,6 +488,33 @@ const smallText = page => page.evaluate(() => {
       await mobilePage.click('#settingsMenuClose');
       assert.equal(await mobilePage.getAttribute('#settingsMenuToggle', 'aria-expanded'), 'false',
         'close restores the settings page at ' + width);
+      // Exercise the same event path as real touch input without requiring an
+      // Android browser: edge swipe right opens, swipe left on the nav closes.
+      await mobilePage.evaluate(() => {
+        function touch(target, type, x) {
+          const ev = new Event(type, {bubbles:true});
+          Object.defineProperty(ev, type === 'touchstart' ? 'touches' : 'changedTouches',
+            {value:[{clientX:x, clientY:220}]});
+          target.dispatchEvent(ev);
+        }
+        touch(document.body, 'touchstart', 12);
+        touch(document.body, 'touchend', 128);
+      });
+      assert.equal(await mobilePage.getAttribute('#settingsMenuToggle', 'aria-expanded'), 'true',
+        'swiping right from the edge opens categories at ' + width);
+      await mobilePage.evaluate(() => {
+        const nav = document.getElementById('cfgNav');
+        function touch(type, x) {
+          const ev = new Event(type, {bubbles:true});
+          Object.defineProperty(ev, type === 'touchstart' ? 'touches' : 'changedTouches',
+            {value:[{clientX:x, clientY:220}]});
+          nav.dispatchEvent(ev);
+        }
+        touch('touchstart', 210);
+        touch('touchend', 95);
+      });
+      assert.equal(await mobilePage.getAttribute('#settingsMenuToggle', 'aria-expanded'), 'false',
+        'swiping left on the drawer closes categories at ' + width);
       assert.deepEqual(mobileRun.errors, [], 'no browser errors at width ' + width);
       await mobilePage.close();
     }
