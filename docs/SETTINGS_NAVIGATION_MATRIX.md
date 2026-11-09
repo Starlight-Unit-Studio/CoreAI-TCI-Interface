@@ -1,6 +1,6 @@
 # CoreAI settings information architecture
 
-Current foundation: CoreAI 0.6.73 (09 November 2026).
+Current foundation: CoreAI 0.6.75 (09 November 2026).
 
 This file is a development map, **not a claim that every visible category works**.
 Navigation, search, swipe-in mobile drawer, desktop collapse and header Expert control work. A
@@ -11,7 +11,7 @@ has an authenticated API, UI tests and a separate release.
 
 | Menu category | Status | Existing function or next work |
 | --- | --- | --- |
-| General (Allgemein) | Implemented / English beta | App language DE/EN and browser auto. Higher Core and model-supported reasoning require migration 027. Old overview preserved. Send shortcut moved to Keyboard. |
+| General (Allgemein) | Implemented / English beta | App language DE/EN and automatic higher Core. Denkaufwand is visible without Expert and uses the same account preference as its chat control. Named efforts require migration 027 and model support; other Cores retain Thinking on/off. Send shortcut is on Keyboard. |
 | Appearance (Darstellung) | Existing | System/Light/Dark, reduced motion and chat preferences |
 | Notifications (Benachrichtigungen) | Planned | Notification channels, delivery permissions and user controls |
 | Profile (Profil) | Existing | User/assistant display names and avatars with crop |
