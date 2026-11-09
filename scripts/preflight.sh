@@ -89,6 +89,7 @@ UI_FILES=(
   css/coreui-theme.css
   js/coreui-settings-menu.js
   js/coreui-settings-tabs.js
+  scripts/settings-navigation-foundation-selftest.cjs
   scripts/settings-tabs-ui-selftest.cjs
   scripts/theme-preferences-selftest.cjs
   scripts/terran-terminology-selftest.cjs
@@ -1190,6 +1191,11 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       fi
     else
       warn 'Bildeditor: Playwright fehlt. Browser-Selbsttest uebersprungen (keine Live-Abnahme).'
+    fi
+    if node "$PROJECT_ROOT/scripts/settings-navigation-foundation-selftest.cjs" >/dev/null 2>&1; then
+      ok 'Einstellungen: 25 Kategorien, Expertenmodus, vorbereitete Unterseiten und Admin-Trennung geprueft.'
+    else
+      fail 'Einstellungen: Kategorie- oder Admin-Strukturtest fehlgeschlagen.'
     fi
     # 0.6.71: category navigation, expert mode and standalone Admin Core; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
