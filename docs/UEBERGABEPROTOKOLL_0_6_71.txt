@@ -58,6 +58,27 @@ ALLGEMEIN / EXPERTENREGEL 0.6.71
 - VERSION, alle sechs HTML-Versionen, JS-Bootstrap, README, Branding-Test,
   CHANGELOG, TXT-Index, dieses Protokoll, beide Preflights aktualisiert.
 
+ERWEITERUNG: ALLGEMEIN FUNKTIONSANBINDUNG
+- Sprache der App: UI-Praeferenz Auto/DE/EN, vom Antwortsprachfeld
+  unabhaengig. Die vorhandene Kernoberflaeche ist zweisprachig,
+  weitere englische Texte sind noch in Bearbeitung (Beta).
+- Hoehere Intelligenz: nur bei komplexen privaten, medienfreien Text-Turns
+  und vorhandenem/eingeraeumtem lokalem Mara-Core. Heuristischer
+  Dispatcher, kein zusaetzlicher Klassifizierungsmodellaufruf.
+  Automatischer Core ist pro Request, nicht die dauerhafte Core-Wahl.
+- Reasoning: Ollama /api/show als alleinige Quelle fuer benannte Stufen.
+  Aktiviertes Denken bleibt Konto-Standard, ausgeschaltetes Denken
+  hat immer Vorrang. Boolean-only-Cores bekommen keine Schein-Stufen.
+- Neue Dateien api/general_core_controls.php,
+  database/migrations/027_general_core_controls.sql,
+  js/coreui-ui-language.js, scripts/general-controls-selftest.php.
+- Kontoeinstellung wird unabhaengig vom KI-Profil in
+  stu_user_general_settings gespeichert; API GET ?general und POST action=general
+  pruefen Session, CSRF und Berechtigungen.
+- Migration 027 muss vor einem produktiven Test ausgefuehrt werden.
+- Tests zu altem Denken-payload und General-Frontend aktualisiert.
+- Mobile/Audio/Bild und globale Warteschlange wurden nicht umgebaut.
+
 RISIKEN / NOCH ZU PRUEFEN
 - Statische Checks, Struktur-, URL- und Versionspruefung auf Branch.
 - node scripts/settings-navigation-foundation-selftest.cjs
