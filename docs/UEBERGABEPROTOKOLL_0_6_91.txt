@@ -1,0 +1,77 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.91
+Datum: 10.11.2026
+Basis: main 0.6.90 nach Merge PR #242
+Branch: feat/0.6.91-unified-core-library
+Status: Entwicklung und Regressionstests, vor Merge offene PHP-/Live-Pruefungen
+
+ZIEL
+Der Link in der optionalen Ollama-Kontoanbindung war zu speziell
+platziert. Die eigenstaendige LLM/Core-Verwaltung erhaelt einen
+allgemeinen Einstieg und neben Ollama und Hugging Face den Reiter
+"Installiert" mit Einzel-Deinstallation.
+
+FUNKTION
+1. In der vorhandenen Admin-Core-Verwaltung gibt es jetzt den
+   Abschnitt LLM-BIBLIOTHEK mit "LLMs & Cores verwalten".
+   Die Ollama-Verbindungsbuttons sind weiterhin optional,
+   enthalten jedoch keinen zweiten Einstieg zur Bibliothek.
+2. Das Bibliotheks-Overlay hat drei mobile Reiter:
+   - Ollama: bisherige offizielle Suchliste, Tags und Installation.
+   - Hugging Face: In Vorbereitung, keine vorgetaeuschte Funktion.
+   - Installiert: Ollamas echte /api/tags-Liste mit TCI-Cores,
+     zusaetzlichen lokalen LLMs, Cloud-Stubs und vorhandenen
+     hf.co/... Namen. Groesse/Parameter soweit Ollama sie liefert.
+3. Pro entfernbaren Core ein Button "Deinstallieren" und eine
+   zweite Bestaetigung mit Hinweis zum Standard-Core.
+4. Geschuetzt sind der Standard-Core und dessen FROM-Basis.
+   Fremde Namen werden weder blind geladen noch geloescht:
+   erlaubt ist nur ein exakt in Ollama vorhandener Name.
+5. Der Server verwendet die bisherige CoreAI-Deinstallation
+   (Ollama entladen, Loeschen, betroffene model_override-
+   Auswahlen auf den Standard-Core zuruecksetzen).
+   Admin-/CSRF-Pruefungen und die gemeinsame Installations-
+   Sperre gelten unveraendert. Kein Loeschen bei laufendem
+   Installer/Update.
+6. Nach Erfolg aktualisieren sich installierte Cores,
+   der Core-Chip und die TCI-Stufenuebersicht.
+
+DATEIEN
+- api/installed_cores.php: getrennte Inventar-/Schutzlogik.
+- api/user_settings.php: admin-only GET core_installed,
+  POST installed_core_uninstall mit Lock und Live-Revalidierung.
+- app.html: allgemeiner Einstieg, drei Tabs, installierte Liste.
+- js/coreui-model-library.js: Reiter, Inventar, Bestaetigung,
+  Einzel-Deinstallation, Fehler und Aktualisierungen.
+- js/coreui-core-install.js: Bibliothek nur im Admin-Managemodus,
+  Methode fuer Aktualisierung der TCI-Uebersicht.
+- css/console.css: drei mobile Reiter und geschuetzte
+  Listeneintraege.
+- scripts/installed-cores-selftest.php: Schutz/Exaktheit.
+- scripts/model-library-ui-selftest.cjs: UI, CSRF,
+  Bestaetigung, Lade-/Entfernungsfluss.
+- Beide Preflights um PHP-Test erweitert.
+- VERSION, UI-Version, Asset-Caches, README, CHANGELOG,
+  Archiv und Branding nach Regeln auf 0.6.91 nachgezogen.
+
+BISHER PRUEFBAR
+- Die tatsaechlichen GitHub-JavaScript-Dateien wurden in einem
+  isolierten Node-aehnlichen VM-/DOM-Mock ausgefuehrt: PASS.
+- PHP-8.4-CLI: die pure Inventar-/Loeschziel-Logik in einer
+  isolierten Fixture mit nachgebildeten Core-Funktionen: PASS.
+  PHP-Syntax dieser Helper-Fixture: PASS.
+- Kein echtes Modell wurde geloescht. Keine Nutzerkonten
+  oder produktiven Systeme wurden angefasst.
+
+NOCH OFFEN
+- Vollstaendiger PHP-Syntaxcheck aller Aenderungen auf dem
+  CoreAI-Zielhost, inklusive api/user_settings.php.
+- scripts/installed-cores-selftest.php im echten Repo,
+  mit allen Dependencies, sowie beide Preflights.
+- Echte Anzeige des Ollama-Inventars und das Entfernen eines
+  unkritischen Test-LLMs, nur mit gesonderter Betreiberfreigabe.
+- Merge erst nach Testabnahme, nicht durch den Assistenten.
+
+RELEASE-REGELN
+Jeder Merge nach main ist eine Version.
+0.6.90 -> 0.6.91. Kein alternativer Installer oder Staging.
+Der integrierte GitHub-Updater bleibt der regulaere Auslieferungsweg.
