@@ -274,7 +274,7 @@ do_run() {
   state status "$STATUS_FILE" state=running phase=backup message='Datenbank wird gesichert.' \
     started_at="$(utc_now)" finished_at='' from_version="$(local_version)" to_version='' commit='' \
     restart_ollama="$restart_ollama" requested_by="$requested_by" automatic="$automatic" backup='' \
-    failure_kind='' attempted_commit="${automatic_commit:-$(state get "$AVAILABLE_FILE" latest_commit")}" \
+    failure_kind='' attempted_commit="${automatic_commit:-$(state get "$AVAILABLE_FILE" latest_commit)}" \
     percent=2 step='Die Datenbank wird gesichert.'
   # Only now: the window never sees "no request" before "running" (no early reload).
   rm -f -- "$REQUEST_FILE"
