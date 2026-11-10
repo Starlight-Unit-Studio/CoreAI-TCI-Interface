@@ -1,0 +1,62 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.94
+Datum: 10.11.2026
+Basis: main 0.6.93 nach PR #245
+Branch: fix/0.6.94-host-updater-bash-syntax
+
+BESTAETIGTER SERVERFEHLER
+CoreAI 0.6.93 Compose-Preflight zeigt genau einen neuen
+Fehler: Update-Dienst: Host-Updater-Selbsttest fehlgeschlagen.
+Die Auto-Update-/Preflight-Retry-Pruefung selbst war OK.
+
+Der Betreiber fuehrte folgenden Offline-Test als root aus:
+  bash -x /opt/ember-coreui/tests/update-runner-selftest.sh 2>&1 | tail -n 60
+Ergebnis:
+  /opt/ember-coreui/scripts/coreai-updater.sh:
+  Zeile 315: Syntaxfehler beim unerwarteten Symbol "}"
+Das geschah bereits beim ersten "$UPD check" der Test-Fixure,
+noch vor irgendeinem Backup, einer Installation oder einem
+Modellaufruf.
+
+URSACHE UND BEHEBUNG
+In scripts/coreai-updater.sh, urspruenglich Zeile 277,
+war die Bash-Command-Substitution syntaktisch kaputt:
+  attempted_commit="${automatic_commit:-$(state get "$AVAILABLE_FILE" latest_commit")}"
+Die korrekt geschlossene Schreibweise ist:
+  attempted_commit="${automatic_commit:-$(state get "$AVAILABLE_FILE" latest_commit)}"
+Das zusaetzliche doppelte Anfuehrungszeichen direkt hinter
+latest_commit hatte die Bash-Interpretation zerstoert.
+Bash meldete den Fehler erst beim Abschluss der Funktion.
+
+VALIDIERUNG
+- Exakt betroffenen do_run-Code in einem isolierten Bash-5.2-
+  Skript rekonstruiert und mit bash -n geprueft.
+- Vor dem Fix: unerwartetes Symbol "}" reproduziert.
+- Nach dem Fix: bash -n erfolgreich.
+- Produktionslogik ansonsten unveraendert.
+- tests/update-runner-selftest.sh bricht jetzt sofort und
+  aussagekraeftig bei einer ungueltigen Host-Updater-Syntax ab.
+- Beide Preflights pruefen zuerst bash -n gegen die echte Datei.
+  Bei Fehlern wird die genaue Ausgabe angezeigt. Sie wird nicht
+  mehr durch >/dev/null 2>&1 verborgen.
+- Vollstaendiger Host-Test/Preflight auf echter Server-Runtime
+  weiterhin offen. Kein vollstaendiger PASS behauptet.
+
+WICHTIG: 0.6.93 KANN NICHT SELBST AKTUALISIEREN
+Der installierte Updater ist syntaktisch defekt. Nach dem Merge
+von 0.6.94 ist daher einmalig dieser Reparaturschritt am
+bestehenden Server als root noetig, wenn die Installation
+den kaputten Updater aus 0.6.93 nutzt:
+  sed -i 's/latest_commit")}/latest_commit)}/' /opt/ember-coreui/scripts/coreai-updater.sh
+  bash -n /opt/ember-coreui/scripts/coreai-updater.sh
+Anschliessend den integrierten CoreAI-Updater wie gewohnt
+verwenden. Kein neuer Installationsworkflow, keine neue
+Serverinstanz und kein Loeschen bestehender Daten.
+Nach dem Update:
+  bash /opt/ember-coreui/tests/update-runner-selftest.sh
+  bash /opt/ember-coreui/scripts/preflight.sh
+
+VERSION
+VERSION, alle sechs HTML-Seiten, JS-Bootstrap, README,
+CHANGELOG, TXT-Changelog, INDEX, Branding und Preflights
+auf 0.6.94 vorbereitet. Ein Merge nach main = eine Version.
+Nur der Betreiber mergt. Main bleibt vor Merge 0.6.93.

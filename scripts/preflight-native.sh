@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.93: optionales Auto-Update, Spaeter-Pause und Preflight-Retry.
+# CoreAI: TCI Interface 0.6.94: Host-Updater Bash-Syntax und sichtbare Selbsttestfehler.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -428,13 +428,20 @@ else
   fail 'Migration: Berechtigungs-/Aufruf-Selbsttest fehlgeschlagen.'
 fi
 
-# 0.5.83: host updater (update window) with stand-ins for git, curl and systemd.
-if [[ "${EUID:-$(id -u)}" -eq 0 ]]; then
-  if bash "$PROJECT_ROOT/tests/update-runner-selftest.sh" >/dev/null 2>&1; then
-    ok 'Update-Dienst: Pruefung, Sicherung zuerst, offizielles Setup, Installationsfortschritt, Neustart der Dienste und Fehlerfaelle geprueft.'
-  else
-    fail 'Update-Dienst: Host-Updater-Selbsttest fehlgeschlagen.'
+# 0.6.94: syntax is a release blocker. Report the concrete parse error;
+# do not hide host-updater failures in /dev/null.
+host_updater_syntax=''
+if host_updater_syntax="$(bash -n "$PROJECT_ROOT/scripts/coreai-updater.sh" 2>&1)"; then
+  if [[ "${EUID:-$(id -u)}" -eq 0 ]]; then
+    host_updater_test=''
+    if host_updater_test="$(bash "$PROJECT_ROOT/tests/update-runner-selftest.sh" 2>&1)"; then
+      ok 'Update-Dienst: Pruefung, Sicherung zuerst, offizielles Setup, Installationsfortschritt, Neustart der Dienste und Fehlerfaelle geprueft.'
+    else
+      fail "Update-Dienst: Host-Updater-Selbsttest fehlgeschlagen. Details: $(printf '%s\n' "$host_updater_test" | tail -n 12)"
+    fi
   fi
+else
+  fail "Update-Dienst: Bash-Syntaxfehler in scripts/coreai-updater.sh: $host_updater_syntax"
 fi
 
 # 0.6.93: automatic updates require opt-in, survive page reloads and respect Later.

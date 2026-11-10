@@ -1,0 +1,26 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.94
+10.11.2026
+
+- Kritischen Bash-Syntaxfehler im Host-Updater behoben.
+- In scripts/coreai-updater.sh, Zeile 277, stand ein
+  ueberfluessiges Anfuehrungszeichen hinter latest_commit.
+  Bash meldete daraufhin einen Fehler an der schliessenden
+  Klammer der do_run-Funktion (bisher Zeile 315).
+- Die Status-Abfrage fuer attempted_commit ist korrigiert;
+  alle bisherigen Sicherheitspruefungen und Update-Regeln
+  bleiben unveraendert.
+- tests/update-runner-selftest.sh prueft die Bash-Syntax
+  des Host-Updaters jetzt vor allen anderen Tests.
+- Beide Preflights pruefen die Bash-Syntax und geben bei
+  einem fehlgeschlagenen Host-Updater-Selbsttest die
+  konkrete Fehlermeldung aus, statt sie zu unterdruecken.
+- Keine Aenderungen an Datenbank, Ollama, Modelfiles,
+  Konten oder der optionalen automatischen Updatefreigabe.
+- Betroffene Installationen von 0.6.93 benoetigen einmalig
+  eine lokale Syntaxkorrektur, bevor ihr bestehender
+  integrierter Updater wieder Versionen installieren kann.
+- Bash 5.2: isolierte Reproduktion des Syntaxfehlers
+  fehlgeschlagen wie erwartet, korrigierte Anweisung
+  bestand bash -n. Vollstaendigen Host-Selbsttest auf
+  dem CoreAI-Server erneut ausfuehren.
+- Ein Merge entspricht einer Version: 0.6.94.
