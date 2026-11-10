@@ -7,9 +7,9 @@
    closed meanwhile.
    The same window opens as "Cores verwalten" for admins: every tier with its
    Cores, "Jetzt aktualisieren" and the weekly auto-update switch (both also
-   sit in the install view), and the Ollama Cloud connection: like
-   `ollama signin`, the server's Ollama hands out a connect link on
-   ollama.com; after confirming it there, cloud Cores can be added. */
+   sit in the install view), and an optional Ollama account connection for
+   operators who already use Ollama's online services. CoreAI's local
+   TCI Cores do not depend on this connection. */
 (function () {
   'use strict';
 
@@ -28,7 +28,7 @@
     install_running: 'Gerade läuft schon eine Installation oder ein Update.',
     install_confirm_required: 'Der Check rät ab. Bitte bestätige die Installation noch einmal.',
     nothing_to_update: 'Es ist noch keine lokale Stufe installiert, es gibt nichts zu aktualisieren.',
-    cloud_signin_required: 'Erst den Server mit einem Ollama-Konto verbinden (Ollama Cloud, unten).',
+    cloud_signin_required: 'Für diese optionale Funktion zuerst ein bestehendes Ollama-Konto verbinden (Ollama-Verbindung, unten).',
     nothing_to_remove: 'Hier gibt es nichts zu entfernen; Der Standard-Core bleibt immer installiert.',
     unknown_tier: 'Diese Stufe kennt der Installer nicht.'
   };
@@ -57,7 +57,7 @@
       'Cloud', 'CloudState', 'CloudSteps', 'CloudLink', 'CloudCheck', 'Note', 'Go', 'Cancel', 'Close'].forEach(function (key) { el[key] = doc.getElementById('coreInstall' + key); });
     var state = {mode: 'tier', tier: '', check: null, canInstall: false, install: null, confirm: false, busy: false,
       csrf: '', polling: false, error: '', auto: null, tiers: null, plan: null, cloud: null, cloudBusy: false,
-      confirmRemove: null, notice: ''};
+      confirmRemove: null, notice: '', awaitingOllama: false};
 
     function isOpen() { return !root.hidden; }
     function clear(node) { while (node && node.firstChild) node.removeChild(node.firstChild); }
@@ -200,23 +200,23 @@
       show(el.Cloud, state.mode === 'manage' && !!state.tiers);
       var c = state.cloud;
       var account = c && c.account ? c.account.state : '';
-      var line = !c ? 'Prüft die Verbindung zu Ollama …'
-        : account === 'connected' ? 'Verbunden als ' + c.account.name + ' (Plan: ' + c.account.plan + ').'
-        : account === 'signed_out' ? 'Noch nicht mit einem Ollama-Konto verbunden.'
-          + (c.account.signin_url ? '' : ' Ollama hat keinen Anmeldelink geliefert, bitte gleich noch einmal prüfen.')
+      var line = !c ? 'Prüft die optionale Ollama-Verbindung …'
+        : account === 'connected' ? 'Mit Ollama verbunden: ' + (c.account.name || 'bestehendes Konto') + '.'
+        : account === 'signed_out' ? 'Noch kein Ollama-Konto verbunden.'
+          + (c.account.signin_url ? '' : ' Zurzeit liegt kein Verbindungslink vor. Bitte den Status erneut prüfen.')
         : account === 'unreachable' ? 'Ollama ist gerade nicht erreichbar.'
-        : !c.version_ok ? 'Ollama ' + (c.version || '') + ' ist zu alt für Cloud-Cores (ab ' + c.min_version + '). Bitte Ollama auf dem Server aktualisieren.'
-        : account === 'unsupported' ? 'Diese Ollama-Version kennt die Anmeldung nicht. Bitte Ollama auf dem Server aktualisieren.'
-        : 'Ollama erreicht ollama.com gerade nicht. Später noch einmal prüfen.';
+        : !c.version_ok ? 'Ollama ' + (c.version || '') + ' ist für die optionalen Online-Funktionen zu alt (ab ' + c.min_version + '). Bitte Ollama auf dem Server aktualisieren.'
+        : account === 'unsupported' ? 'Diese Ollama-Version unterstützt die Konto-Verbindung nicht. Bitte Ollama auf dem Server aktualisieren.'
+        : 'Die Ollama-Verbindung konnte nicht geprüft werden. Bitte später erneut versuchen.';
       text(el.CloudState, line);
       if (el.CloudState) el.CloudState.setAttribute('data-state', account === 'connected' ? 'ok' : c ? 'warn' : '');
       var link = account === 'signed_out' && c.account.signin_url ? c.account.signin_url : '';
-      show(el.CloudSteps, account === 'signed_out');
+      show(el.CloudSteps, !!link);
       show(el.CloudLink, !!link);
       if (el.CloudLink && link) el.CloudLink.setAttribute('href', link);
       if (el.CloudCheck) {
         el.CloudCheck.disabled = state.cloudBusy;
-        el.CloudCheck.textContent = account === 'connected' ? 'Erneut prüfen' : 'Verbindung prüfen';
+        el.CloudCheck.textContent = account === 'connected' ? 'Status aktualisieren' : 'Status prüfen';
       }
     }
 
@@ -369,6 +369,7 @@
       state.error = '';
       state.notice = '';
       state.confirmRemove = null;
+      state.awaitingOllama = false;
       state.confirm = false;
       state.busy = false;
       root.hidden = false;
@@ -435,6 +436,7 @@
       if (!isOpen()) return;
       root.hidden = true;
       state.polling = false;
+      state.awaitingOllama = false;
       state.confirm = false;
       if (typeof hooks.closed === 'function') hooks.closed();
     }
@@ -510,6 +512,18 @@
     if (el.UpdateNow) el.UpdateNow.addEventListener('click', function () { return updateNow(); });
     if (el.ToManage) el.ToManage.addEventListener('click', function () { return manage(); });
     if (el.CloudCheck) el.CloudCheck.addEventListener('click', function () { return loadCloud(); });
+    // The existing Ollama sign-in link opens a new tab. Refresh the account
+    // state on return rather than requiring the operator to press Check.
+    function checkOllamaOnReturn() {
+      if (!state.awaitingOllama || state.cloudBusy || state.mode !== 'manage' || !isOpen()) return;
+      state.awaitingOllama = false;
+      return loadCloud();
+    }
+    if (el.CloudLink) el.CloudLink.addEventListener('click', function () { state.awaitingOllama = true; });
+    if (typeof window.addEventListener === 'function') window.addEventListener('focus', checkOllamaOnReturn);
+    doc.addEventListener('visibilitychange', function () {
+      if (doc.visibilityState === 'visible') return checkOllamaOnReturn();
+    });
     if (el.Auto) el.Auto.addEventListener('change', function () { return setAuto(el.Auto.checked); });
     if (el.Cancel) el.Cancel.addEventListener('click', function () { close(); });
     if (el.Close) el.Close.addEventListener('click', function () { close(); });
