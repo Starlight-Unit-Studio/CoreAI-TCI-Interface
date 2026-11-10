@@ -16,6 +16,7 @@ declare(strict_types=1);
 const COREUI_UPDATE_STALE_SECONDS = 2700;   // a "running" update older than 45 min is dead
 const COREUI_UPDATE_QUEUE_SECONDS = 120;    // the host service should pick a request up by then
 const COREUI_UPDATE_JSON_MAX = 65536;
+const COREUI_UPDATE_SNOOZE_SECONDS = 3600;  // 'Später' postpones auto update and popup for one hour
 
 function coreui_update_paths(string $root): array {
   $root = rtrim($root, '/');
@@ -29,6 +30,7 @@ function coreui_update_paths(string $root): array {
     'requests' => $root . '/var/update-request',
     'request' => $root . '/var/update-request/request.json',
     'check' => $root . '/var/update-request/check',
+    'auto' => $root . '/var/update-request/auto.json',
   ];
 }
 
@@ -57,6 +59,44 @@ function coreui_update_local(string $root): array {
   ];
 }
 
+/**
+ * Explicit opt-in policy, stored in the PHP-writable request directory.
+ * This is read by the root-owned timer; no web user can run shell commands.
+ */
+function coreui_update_auto_policy(string $root): array {
+  $raw = coreui_update_read_json(coreui_update_paths($root)['auto']);
+  $uid = $raw['requested_by'] ?? 0;
+  $until = $raw['snooze_until'] ?? 0;
+  return [
+    'enabled' => ($raw['enabled'] ?? false) === true && is_int($uid) && $uid > 0,
+    'requested_by' => is_int($uid) && $uid > 0 ? $uid : 0,
+    'restart_ollama' => ($raw['restart_ollama'] ?? false) === true,
+    'snooze_until' => is_int($until) && $until > 0 ? $until : 0,
+  ];
+}
+
+/** Only the verified Inhaber is allowed to call these helpers through update.php. */
+function coreui_update_set_auto(string $root, int $uid, bool $enabled): array {
+  if ($uid <= 0) throw new InvalidArgumentException('invalid_user');
+  $policy = coreui_update_auto_policy($root);
+  if ($enabled && !coreui_update_state($root)['installed']) throw new RuntimeException('updater_missing');
+  $policy['enabled'] = $enabled;
+  $policy['requested_by'] = $uid;
+  // Automatic updates avoid an unnecessary Ollama restart by default.
+  $policy['restart_ollama'] = false;
+  coreui_update_write_request(coreui_update_paths($root)['auto'], (string)json_encode($policy, JSON_UNESCAPED_SLASHES));
+  return $policy;
+}
+
+function coreui_update_snooze(string $root, int $uid, ?int $now = null): array {
+  if ($uid <= 0) throw new InvalidArgumentException('invalid_user');
+  $policy = coreui_update_auto_policy($root);
+  $policy['requested_by'] = $uid;
+  $policy['snooze_until'] = ($now ?? time()) + COREUI_UPDATE_SNOOZE_SECONDS;
+  coreui_update_write_request(coreui_update_paths($root)['auto'], (string)json_encode($policy, JSON_UNESCAPED_SLASHES));
+  return $policy;
+}
+
 /** Everything about the update, as the Inhaber sees it. */
 function coreui_update_state(string $root, ?int $now = null): array {
   $now = $now ?? time();
@@ -65,6 +105,7 @@ function coreui_update_state(string $root, ?int $now = null): array {
   $installed = coreui_update_read_json($paths['installed']);
   $available = coreui_update_read_json($paths['available']);
   $status = coreui_update_read_json($paths['status']);
+  $auto = coreui_update_auto_policy($root);
 
   $latestCommit = (string)($available['latest_commit'] ?? '');
   $latestVersion = (string)($available['latest_version'] ?? '');
@@ -108,6 +149,7 @@ function coreui_update_state(string $root, ?int $now = null): array {
     'queued_seconds' => $queuedFor,
     'stalled' => $state === 'queued' && $queuedFor > COREUI_UPDATE_QUEUE_SECONDS,
     'message' => $message,
+    'failure_kind' => $state === 'failed' && ($status['failure_kind'] ?? '') === 'preflight' ? 'preflight' : '',
     'percent' => $percent,
     'step' => $step,
     'available' => $isNew && $state !== 'running' && $state !== 'queued',
@@ -124,6 +166,9 @@ function coreui_update_state(string $root, ?int $now = null): array {
     'from_version' => (string)($status['from_version'] ?? ''),
     'to_version' => (string)($status['to_version'] ?? ''),
     'restart_ollama' => ($status['restart_ollama'] ?? false) === true,
+    'auto_enabled' => $auto['enabled'],
+    'snooze_until' => $auto['snooze_until'],
+    'snooze_seconds' => max(0, $auto['snooze_until'] - $now),
   ];
 }
 
@@ -164,7 +209,11 @@ function coreui_update_request(string $root, int $uid, bool $restartOllama, ?int
   $state = coreui_update_state($root, $now);
   if (!$state['installed']) throw new RuntimeException('updater_missing');
   if ($state['running']) throw new RuntimeException('update_running');
-  if (!$state['available']) throw new RuntimeException('no_update');
+  // A failed Preflight can leave main's current commit on disk. Allow the
+  // owner to retry even when the commit comparator says 'up to date'.
+  if (!$state['available'] && !($state['state'] === 'failed' && $state['latest_commit'] !== '')) {
+    throw new RuntimeException('no_update');
+  }
   if ($uid <= 0) throw new InvalidArgumentException('invalid_user');
   $request = json_encode([
     'action' => 'update',
