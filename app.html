@@ -535,20 +535,19 @@
         </div>
       </section>
       <section class="core-install-cloud" id="coreInstallCloud" aria-labelledby="coreInstallCloudTitle" hidden>
-        <h4 id="coreInstallCloudTitle">OLLAMA CLOUD</h4>
-        <p class="core-install-update-info">Cloud-Cores laufen auf Ollamas Servern: kein Download, keine Grafikkarte, dafür Internet
-          und ein Ollama-Konto auf diesem Server. Die Registrierung auf ollama.com ist kostenlos; wie viel du nutzen kannst,
-          hängt vom Ollama-Plan ab.</p>
+        <h4 id="coreInstallCloudTitle">OLLAMA-VERBINDUNG <span class="core-install-optional">(OPTIONAL)</span></h4>
+        <p class="core-install-update-info">Du hast bereits ein Ollama-Abonnement? Dann kannst du dein bestehendes Konto
+          mit dieser CoreAI-Installation verbinden und deine vorhandenen Freigaben nutzen. Die Verbindung ist freiwillig:
+          Lokale TCI Cores funktionieren ohne Ollama-Konto und ohne Cloud-Dienst.</p>
         <p class="core-install-cloud-state" id="coreInstallCloudState" data-state="" role="status" aria-live="polite"></p>
         <ol class="core-install-cloud-steps" id="coreInstallCloudSteps" hidden>
-          <li>Auf ollama.com ein Konto anlegen, falls du noch keins hast.</li>
-          <li>"Bei Ollama anmelden" öffnen, einloggen und diesen Server verbinden.</li>
-          <li>Hierher zurückkommen und "Verbindung prüfen" tippen.</li>
+          <li>„Ollama verbinden“ öffnen und die Verbindung mit deinem bestehenden Konto bestätigen.</li>
+          <li>Zu CoreAI zurückkehren. Der Verbindungsstatus wird automatisch erneut geprüft.</li>
         </ol>
         <div class="core-install-actions core-install-actions--start">
           <a class="core-install-btn core-install-btn--go" id="coreInstallCloudLink" href="https://ollama.com" target="_blank"
-            rel="noopener noreferrer" hidden>Bei Ollama anmelden</a>
-          <button class="core-install-btn" id="coreInstallCloudCheck" type="button">Verbindung prüfen</button>
+            rel="noopener noreferrer" hidden>Ollama verbinden</a>
+          <button class="core-install-btn" id="coreInstallCloudCheck" type="button">Status prüfen</button>
         </div>
       </section>
       <p class="core-install-note" id="coreInstallNote" role="status" aria-live="polite"></p>
