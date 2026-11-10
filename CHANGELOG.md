@@ -1,5 +1,11 @@
 # CoreAI: TCI Interface
 
+## 0.6.92 - 10.11.2026
+
+- **Installed-Core regression test:** Corrected the expected error for a deliberately malformed, synthetic name with two tag separators (`qwen3:8b:latest`). The name validator correctly raises `invalid_model_name`; the previous fixture incorrectly expected `model_not_installed`.
+- **Safety unchanged:** The exact-name check, protected standard and base Cores, administrator/CSRF checks, install/update lock and uninstall implementation have not been modified. No Qwen Core is installed or downloaded by this offline test.
+- Version 0.6.92 follows the one-merge-one-version policy. Updated required release markers and their numeric asset cache keys. Run the installed-Core self-test and full preflight on the target host after the regular GitHub updater.
+
 ## 0.6.91 - 10.11.2026
 
 - **Unified Core management:** The optional Ollama-account section no longer owns the library button. A dedicated **Cores verwalten** entry in admin Core management now opens the shared library with three mobile-friendly tabs: **Ollama**, **Hugging Face** (clearly marked *In preparation*) and **Installed**.
