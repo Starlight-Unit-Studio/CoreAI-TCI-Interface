@@ -85,6 +85,7 @@ function coreui_update_set_auto(string $root, int $uid, bool $enabled): array {
   // Automatic updates avoid an unnecessary Ollama restart by default.
   $policy['restart_ollama'] = false;
   coreui_update_write_request(coreui_update_paths($root)['auto'], (string)json_encode($policy, JSON_UNESCAPED_SLASHES));
+  if (!$enabled) coreui_update_cancel_automatic_request($root);
   return $policy;
 }
 
@@ -94,6 +95,7 @@ function coreui_update_snooze(string $root, int $uid, ?int $now = null): array {
   $policy['requested_by'] = $uid;
   $policy['snooze_until'] = ($now ?? time()) + COREUI_UPDATE_SNOOZE_SECONDS;
   coreui_update_write_request(coreui_update_paths($root)['auto'], (string)json_encode($policy, JSON_UNESCAPED_SLASHES));
+  coreui_update_cancel_automatic_request($root);
   return $policy;
 }
 
@@ -170,6 +172,15 @@ function coreui_update_state(string $root, ?int $now = null): array {
     'snooze_until' => $auto['snooze_until'],
     'snooze_seconds' => max(0, $auto['snooze_until'] - $now),
   ];
+}
+
+/** A freshly queued automatic request can still be withdrawn by 'Später'.
+ * A running installation is never interrupted and manual requests are untouched. */
+function coreui_update_cancel_automatic_request(string $root): bool {
+  $paths = coreui_update_paths($root);
+  $pending = coreui_update_read_json($paths['request']);
+  if (($pending['automatic'] ?? false) !== true) return false;
+  return coreui_update_cancel($root);
 }
 
 /** What every account (and the login page) sees: whether CoreAI restarts, and how far it is. */
