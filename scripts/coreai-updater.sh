@@ -222,7 +222,7 @@ health_ok() {
 }
 
 do_run() {
-  local request restart_ollama=0 requested_by=0 automatic=0 line backup='' result=0 message
+  local request restart_ollama=0 requested_by=0 automatic=0 automatic_commit='' line backup='' result=0 message
   ensure_dirs
   if [[ ! -e "$REQUEST_FILE" && ! -L "$REQUEST_FILE" ]]; then
     log 'Keine Update-Anfrage vorhanden.'
@@ -238,12 +238,28 @@ do_run() {
       restart_ollama=1) restart_ollama=1 ;;
       requested_by=*) requested_by="${line#requested_by=}" ;;
       automatic=1) automatic=1 ;;
+      automatic_commit=*) automatic_commit="${line#automatic_commit=}" ;;
     esac
   done <<<"$request"
+  if (( automatic == 1 )) && ! state auto-allowed "$REQUEST_DIR/auto.json"; then
+    rm -f -- "$REQUEST_FILE"
+    log 'Automatische Update-Anfrage nach Spaeter oder Deaktivieren verworfen.'
+    return 0
+  fi
   if ! take_lock; then
     rm -f -- "$REQUEST_FILE"
     log 'Ein Update laeuft bereits.'
     return 0
+  fi
+
+  if (( automatic == 1 )); then
+    # A late snooze or switch-off must still win before the backup.
+    if ! state auto-allowed "$REQUEST_DIR/auto.json" \
+      || ! state auto-mark "$UPDATE_DIR/auto-attempt.json" "$automatic_commit"; then
+      rm -f -- "$REQUEST_FILE"
+      log 'Auto-Update vor dem Start gestoppt; kein Backup oder Installer ausgefuehrt.'
+      return 0
+    fi
   fi
 
   [[ ! -f "$LOG_FILE" ]] || mv -f -- "$LOG_FILE" "$LOG_FILE.1"
@@ -258,7 +274,7 @@ do_run() {
   state status "$STATUS_FILE" state=running phase=backup message='Datenbank wird gesichert.' \
     started_at="$(utc_now)" finished_at='' from_version="$(local_version)" to_version='' commit='' \
     restart_ollama="$restart_ollama" requested_by="$requested_by" automatic="$automatic" backup='' \
-    failure_kind='' attempted_commit="$(state get "$AVAILABLE_FILE" latest_commit)" \
+    failure_kind='' attempted_commit="${automatic_commit:-$(state get "$AVAILABLE_FILE" latest_commit")}" \
     percent=2 step='Die Datenbank wird gesichert.'
   # Only now: the window never sees "no request" before "running" (no early reload).
   rm -f -- "$REQUEST_FILE"
