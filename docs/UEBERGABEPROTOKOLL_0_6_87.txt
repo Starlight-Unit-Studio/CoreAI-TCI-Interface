@@ -52,12 +52,15 @@ TESTS (hier ausgefuehrt)
   (Migration 032 zweimal eingespielt, idempotent).
 - node scripts/chat-menu-ui-selftest.cjs und node scripts/archived-chats-ui-selftest.cjs
   (Bildschirmfotos von Menue, Suche, Archivieren-Dialog, Archivseite, Handy angesehen).
+- php scripts/core-install-selftest.php (Premium nicht mehr aus der Cloud angeboten,
+  installierter Cloud-Core findet seine Stufe).
 - Echter HTTP-Lauf (php -S, MariaDB): Anpinnen (Liste oben), Suche mit Umlaut und Gross-
   schreibung, Export (wetter-in-koeln.md), Dateien, fremder Chat abgewiesen, Archiv mit
   Suche, aktives Loeschen ohne archive_first abgewiesen, mit archive_first geloescht
   (Chat und Nachrichten weg).
 - php -l, cache-bust --verify, version-merge-check --base-version 0.6.86 (PASS).
-- Volle Testreihe mit MariaDB (COREUI_SELFTEST_DB=1): 123 bestanden, 7 fehlgeschlagen,
+- Volle Testreihe mit MariaDB (COREUI_SELFTEST_DB=1), letzter Stand mit Archivmenues,
+  Typ Cloud, Premium nur lokal und Profil-Fix: 123 bestanden, 7 fehlgeschlagen,
   dieselben 7 wie auf main (chat-navigation-recovery, composer-menu-ui, core-install-ui,
   send-shortcut, voice-live, voice-samples-ui, tests/test_preflight_http.py).
 - Nachgezogen, keine Pruefung abgeschaltet: settings-navigation-foundation-selftest.cjs
