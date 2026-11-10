@@ -1,0 +1,64 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.89
+Datum: 10.11.2026
+Basis: main 0.6.88 nach PR #240
+Branch: fix/coreai-0.6.89-regression-tests
+PR: #241 (Draft, nicht gemergt)
+
+AUFTRAG
+- Die sieben seit Uebergabe 0.6.87 bekannten fehlschlagenden
+  Selbsttests nachvollziehbar korrigieren, ohne produktive Funktionen
+  oder Benutzerkonten zu veraendern.
+- In "Cores verwalten" soll die Ollama-Verbindung lediglich ein
+  optionales Extra fuer bestehende Ollama-Abonnenten sein. Keine Werbung
+  fuer Cloudmodelle, Registrierungen oder Tarife.
+
+AENDERUNGEN
+- scripts/chat-navigation-recovery-selftest.cjs:
+  Zustand fuer ausstehende Abbruchanforderungen im Testmodell ergaenzt.
+- scripts/composer-menu-ui-selftest.cjs:
+  Reihenfolge der Skripte statt unnoetiger Direktnachbarschaft pruefen.
+- scripts/core-install-ui-selftest.cjs:
+  31B Premium nur lokal testen; bestehende Cloud-Anbindung nicht
+  verbieten. Testfall fuer Ollama-Rueckkehr und automatischen Statusabruf.
+- scripts/send-shortcut-selftest.cjs:
+  Aktuelle Namen beim Zuruecksetzen der Anzeige-Einstellungen pruefen.
+- scripts/voice-samples-ui-selftest.cjs:
+  Aktuelle Beschriftung "Stimme der TCI" pruefen.
+- tests/test_preflight_http.py:
+  Aktuelle Marker der getrennten Einstellungs- und Adminseiten pruefen.
+- app.html und js/coreui-core-install.js:
+  Ollama-Verbindung explizit freiwillig und nur fuer vorhandene Konten
+  erklaert, kein Verweis auf Tarife/Kaufangebote, kein Anzeigen des Plans.
+  Bestehender Ollama-Verbindungslink und API bleiben. Nach dem externen
+  Verbindungsdialog wird der Status beim Rueckwechsel automatisch geprueft.
+- Versionierung nach AGENTS.md/docs/VERSIONING_POLICY.md vorbereitet:
+  VERSION, sechs Oberflaechen, JS-Bootstrap, README, CHANGELOG, TXT-Archiv,
+  aktuelle Uebergabe, Branding-Test und beide Preflight-Kopfzeilen.
+  Statische Script-Cache-Keys wurden aus dem SHA-256-Inhalt berechnet.
+
+TESTSTAND
+- GitHub-Quelltexte abgeglichen. In dieser Sitzung kein vollstaendiger
+  lokaler Testlauf; das Arbeitscontainer-Netzwerk kann GitHub nicht
+  erreichen. Es duerfen keine Tests als bestanden deklariert werden.
+- Playwright-Tests: im Entwurf, komplett auszufuehren.
+- Live-Sprache/Voice Live (siebter Punkt): Offline und DB/HTTP getrennt
+  zu pruefen. Kein reparierter DB-/HTTP-Befund in dieser Sitzung.
+- Version-, Branding-, Cache- und allgemeine Regressionstests vor
+  einem Merge ausfuehren und dokumentieren.
+
+SICHERHEIT / NICHT GEANDERT
+- Kein Merge auf main, kein Serverupdate, keine Auslieferung an Nutzer.
+- Keine Aenderung an Core-Routing, Ollama-Modelfiles, FIFO, Installer,
+  Datenbank, Accounts, bestehenden Cloud-Cores oder Berechtigungen.
+- 31B wird nur lokal neu angeboten; bereits installierte Cloud-Cores
+  koennen weiterhin bestehen bleiben.
+
+NAECHSTE PRUEFUNGEN
+- Alle sechs angepassten Selbsttests real ausfuehren.
+- Browsertests mit funktionierendem Playwright/Chromium pruefen.
+- Live-Sprach-Test mit einer isolierten Testdatenbank und echtem HTTP
+  nachvollziehen, nicht am produktiven Gastkonto.
+- python3 scripts/version-merge-check.py --base-version 0.6.88
+- python3 scripts/cache-bust.py --verify
+- python3 scripts/branding-license-selftest.py
+- Erst nach Gruenstatus PR #241 manuell mergen.
