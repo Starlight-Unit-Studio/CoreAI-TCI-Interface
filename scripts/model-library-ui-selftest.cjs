@@ -13,6 +13,12 @@ const css = read('css/console.css');
 new vm.Script(code, {filename:'coreui-model-library.js'});
 assert(!/innerHTML|insertAdjacentHTML/.test(code), 'external catalog entries are rendered as text');
 assert(html.includes('id="coreInstallLibraryOpen"'), 'general Core management has one library entry');
+assert(!html.includes('id="insightChips"'), 'the redundant Core/Kontext/Werkzeuge/Projekt toolbar is removed');
+assert(html.includes('id="welcomeGreeting"') && html.includes('class="welcome-suggestions"')
+  && html.includes('id="inputMessage"'), 'greeting, example prompts and composer remain intact');
+assert(html.includes('<span>DENKEN</span>') && !html.includes('DENKAUFWAND'),
+  'the compact thinking control uses Denken');
+assert(!/\bLLMs?\b/.test(html), 'the visible CoreAI markup contains no LLM wording');
 assert(html.indexOf('id="coreInstallTiers"') < html.indexOf('id="coreInstallLibraryEntry"')
   && html.indexOf('id="coreInstallLibraryEntry"') < html.indexOf('id="coreInstallCloud"'),
   'library entry is not part of optional Ollama account connection');
@@ -70,6 +76,7 @@ const doc = {
 };
 const calls = [], timers = [];
 let installed = false, deleted = false, modeRefresh = 0;
+let requestedUpdate = '', updateKind = '';
 const reply = json => Promise.resolve({ok:true, status:200, json: () => Promise.resolve(json)});
 function server(url, init) {
   calls.push({url, method:init.method, body:init.body || '', token:init.headers['X-CoreUI-CSRF']});
@@ -78,6 +85,10 @@ function server(url, init) {
   if (url.includes('ollama_detail=')) return reply({ok:true, detail:{name:'qwen3.5',
     description:'Official local model page', url:'https://ollama.com/library/qwen3.5',
     tags:[{name:'qwen3.5:4b',size:'3.3GB',installed}]}, csrf_token:'csrf1'});
+  if (url.includes('core_install_status=1') && requestedUpdate) return reply({ok:true, install:{
+    kind:updateKind, core:updateKind==='library' ? requestedUpdate : '',
+    phase:'done', step:'Update fertig.', percent:100, running:false
+  }});
   if (url.includes('core_install_status=1')) return reply({ok:true, install:installed
     ? {kind:'library',core:'qwen3.5:4b',phase:'done',step:'Das LLM ist lokal installiert.',percent:100,running:false}
     : null});
@@ -92,6 +103,13 @@ function server(url, init) {
   ]});
   if (init.method === 'POST') {
     const body = JSON.parse(init.body);
+    if (body.action === 'installed_core_update') {
+      requestedUpdate = body.model;
+      updateKind = body.model.startsWith('ember-') ? 'update' : 'library';
+      return reply({ok:true,install:{kind:updateKind,
+        core:updateKind==='library' ? body.model : '',
+        phase:'pull',step:'Prüft Core-Update …',percent:0,running:true}});
+    }
     if (body.action === 'installed_core_uninstall') {
       if (body.model === 'ember-coreui:latest') {
         return Promise.resolve({ok:false,status:409,json:()=>Promise.resolve({ok:false,error:'core_protected'})});
@@ -155,21 +173,51 @@ const flush = async () => { for(let i=0;i<24;i++) await Promise.resolve(); };
   const standardRow = cardByName('ember-coreui:latest');
   const baseRow = cardByName('gemma4:26b');
   assert(standardRow && baseRow, 'default Core and its source are visible');
-  assert.equal(standardRow.children.some(c=>c.tagName === 'BUTTON'), false,
-    'default Core cannot have a delete action');
-  assert.equal(baseRow.children.some(c=>c.tagName === 'BUTTON'), false,
-    'default source cannot have a delete action');
+  assert.equal(standardRow.children.filter(c=>c.tagName === 'BUTTON').length, 1,
+    'default Core can update but cannot be deleted');
+  assert.equal(baseRow.children.filter(c=>c.tagName === 'BUTTON').length, 1,
+    'default source can update but cannot be deleted');
+  assert.equal(standardRow.children.find(c=>c.tagName==='BUTTON').textContent, 'Aktualisieren');
+  assert.equal(baseRow.children.find(c=>c.tagName==='BUTTON').textContent, 'Aktualisieren');
   const removable = cardByName('qwen3.5:4b');
-  const removeButton = removable.children.find(c=>c.tagName === 'BUTTON');
-  assert(removeButton, 'third-party LLM has a removal action');
+  const updateButton = removable.children.find(c=>c.tagName==='BUTTON' && c.textContent==='Aktualisieren');
+  const removeButton = removable.children.find(c=>c.tagName==='BUTTON' && c.textContent==='Deinstallieren');
+  assert(updateButton && removeButton, 'third-party Core has update and removal actions');
+  const updates = () => calls.filter(c=>c.method==='POST'
+    && JSON.parse(c.body).action==='installed_core_update');
+  await updateButton.handlers.click();
+  await flush();
+  assert.equal(updates().length, 1, 'one specific Core update requested');
+  assert.equal(updates()[0].token, 'csrf1', 'Core update requires CSRF');
+  assert.equal(JSON.parse(updates()[0].body).model,'qwen3.5:4b');
+  assert.equal(timers.length, 1, 'update progress is polled with the existing worker');
+  await timers.shift()();
+  await flush();
+  assert.equal(ui.state().updating, '', 'completed local update clears pending state');
+  assert.equal(modeRefresh, 2, 'updating refreshes chat Core list');
+  const plus = cardByName('ember-core:12b');
+  const plusUpdate = plus.children.find(c=>c.tagName==='BUTTON' && c.textContent==='Aktualisieren');
+  await plusUpdate.handlers.click();
+  await flush();
+  assert.equal(updates().length, 2);
+  assert.equal(JSON.parse(updates()[1].body).model, 'ember-core:12b');
+  assert.equal(updateKind, 'update', 'TCI Core update runs through the rebuild worker');
+  await timers.shift()();
+  await flush();
+  assert.equal(ui.state().updating, '', 'completed TCI update clears pending state');
+  assert.equal(modeRefresh, 3);
+  const refreshedRemove = cardByName('qwen3.5:4b').children
+    .find(c=>c.tagName==='BUTTON' && c.textContent==='Deinstallieren');
+  assert(refreshedRemove, 'Core remains installed after update');
   const removals = () => calls.filter(c=>c.method==='POST'
     && JSON.parse(c.body).action==='installed_core_uninstall');
-  await removeButton.handlers.click();
+  await refreshedRemove.handlers.click();
   assert.equal(removals().length, 0, 'first tap only asks to confirm');
   const confirmedRow = cardByName('qwen3.5:4b');
   assert(confirmedRow.textContent.includes('Betroffene Konten wechseln zum Standard-Core'),
     'the consequences are explained before deletion');
-  const confirm = confirmedRow.children.find(c=>c.tagName === 'BUTTON');
+  const confirm = confirmedRow.children.find(c=>c.tagName === 'BUTTON'
+    && c.textContent === 'Wirklich entfernen?');
   await confirm.handlers.click();
   await flush();
   assert.equal(removals().length, 1, 'second tap sends one removal');
@@ -178,7 +226,7 @@ const flush = async () => { for(let i=0;i<24;i++) await Promise.resolve(); };
     'only the explicitly selected tag can be removed');
   assert.equal(els.coreLibraryInstalledList.children.length, 3,
     'the removed Core disappears from the refreshed inventory');
-  assert.equal(modeRefresh, 2, 'both installing and removing refresh the chat Core selector');
+  assert.equal(modeRefresh, 4, 'installing, updating and removing refresh the Core selector');
   await ui.switchTab('ollama');
   await flush();
   assert.equal(els.coreLibraryInstalled.hidden, true);
