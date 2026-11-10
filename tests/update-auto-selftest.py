@@ -49,10 +49,14 @@ with tempfile.TemporaryDirectory(prefix="coreai-update-auto-test-") as tmp:
     check(queue(t + 3600 + 600) == 0 and request.exists(), "post-grace auto-update queued")
     data = json.loads(request.read_text())
     check(data["automatic"] is True and data["requested_by"] == 7
-          and data["restart_ollama"] is False and data["action"] == "update",
+          and data["restart_ollama"] is False and data["action"] == "update"
+          and data["automatic_commit"] == B,
           "official updater request with strict auto provenance")
+    with patch.object(state.time, "time", return_value=t + 4200):
+        check(state.cmd_auto_allowed(str(policy)) == 0, "auto request allowed when snooze expired")
     request.unlink()
-    check(queue(t + 7200) == 0 and not request.exists(), "one attempt maximum per commit")
+    state.cmd_auto_mark(str(attempts), B)  # only the actual runner may do this
+    check(queue(t + 7200) == 0 and not request.exists(), "one executed attempt maximum per commit")
     put(available, {"latest_commit": C, "error": ""})
     put(status, {"state": "failed", "attempted_commit": C})
     check(queue(t + 9000) == 0 and not request.exists(), "failed commit cannot retry itself")
