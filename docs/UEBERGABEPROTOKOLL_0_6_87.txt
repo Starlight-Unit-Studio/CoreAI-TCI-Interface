@@ -17,10 +17,16 @@ In Vorbereitung):
 - Zum Projekt hinzufuegen und der Projektfilter: In Vorbereitung (keine Projekte).
 - Menues der Archivseite nach den nachgereichten Screenshots: "Alle Chats" mit Typ (Alle
   Chats, Cloud) und Sortieren nach (Aktualisiert, Erstellt, Alphabetisch); "Alle Projekte"
-  mit Chats und Geplante Aufgaben. Sortieren ist echt. "Cloud" ist In Vorbereitung
-  (Cloud-Computer): der Betreiber entfernt alles zu Ollama-Cloud-Modellen, weil Ollama
-  auf kostenpflichtige Pakete umgestellt hat; 31b nur noch lokal (eigene Version danach).
+  mit Chats und Geplante Aufgaben. Sortieren ist echt. "Cloud" ist echt: Chats, in denen
+  ein Cloud-Core geantwortet hat (Arbeitsweg-Ereignis kind=model mit einem Tag auf -cloud
+  oder :cloud), in der Liste mit Wolke markiert.
   "Geplante Aufgaben" ist In Vorbereitung (Automationen, Roadmap P21).
+- Betreiber: "wir entfernen eh alles was mit ollama cloud modellen zu tun hat da ollama
+  auf kostenpflichtige pakete umgestellt hat. 31b bieten wir nur noch lokal an", dann
+  praezisiert: "ich rede jetzt nur von den gemma4:31b cloud sachen alles andere kann
+  bleiben fuer user die ollama abo haben". Umgesetzt: COREUI_CORE_CLOUD_CATALOG ist leer,
+  der Installer bietet gemma4:31b-cloud nicht mehr an. Ollama-Konto verbinden, andere
+  Cloud-Modelle und installierte Cloud-Cores bleiben.
 
 UMGESETZT
 - database/migrations/032_chat_menu.sql: stu_console_sessions.pinned_at.

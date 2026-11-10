@@ -4,7 +4,7 @@ declare(strict_types=1);
 /*
  * CoreAI 0.6.87: the chat menu and Settings > Archivierte Chats (like the ChatGPT reference).
  *   - pin and unpin a chat (migration 032), archiving releases the pin
- *   - the archived chats, searchable by title, sorted like the reference
+ *   - the archived chats, searchable by title, only the cloud ones, sorted like the reference
  *   - the files the person uploaded in one chat ("Hochgeladene Dateien")
  *   - search inside one chat ("Im Chat suchen"), every message, not only the loaded ones
  *   - the chat as Markdown ("Teilen": the person decides where it goes; no public link)
@@ -55,14 +55,32 @@ function coreui_chat_unpin_archived(PDO $pdo, int $uid, string $sessionId): void
 
 // --- Archived chats ---------------------------------------------------------------------------------
 
+/** Every answer writes a 'model' work event with the Core it used (api/console_work_store.php). */
+function coreui_chat_cloud_ready(PDO $pdo): bool {
+  try {
+    $pdo->query('SELECT kind, details_json FROM stu_console_work_events LIMIT 0');
+    return true;
+  } catch (Throwable $e) {
+    return false;
+  }
+}
+
 /**
- * The account's archived chats, sorted like the reference's "Sortieren nach": $sort 'updated'
- * (newest activity), 'created' (newest chat) or 'alpha' (title). $query searches the titles.
+ * The account's archived chats, like the reference's "Alle Chats" menu: $type 'all' or 'cloud'
+ * (a cloud Core answered in the chat: Ollama Cloud tags end in -cloud or :cloud, for accounts
+ * with an Ollama subscription), sorted by $sort 'updated' (newest activity), 'created' (newest
+ * chat) or 'alpha' (title). $query searches the titles.
  */
-function coreui_chat_archived(PDO $pdo, int $uid, string $query = '', string $sort = 'updated', int $limit = 500): array {
+function coreui_chat_archived(PDO $pdo, int $uid, string $query = '', string $type = 'all', string $sort = 'updated', int $limit = 500): array {
+  $cloud = coreui_chat_cloud_ready($pdo)
+    ? "EXISTS (SELECT 1 FROM stu_console_work_events w
+         WHERE w.user_id = s.user_id AND w.session_id = s.id AND w.kind = 'model'
+           AND (w.details_json LIKE '%-cloud\"%' OR w.details_json LIKE '%:cloud\"%'))"
+    : '0';
   $sql = "SELECT s.id, s.title, s.created_at, s.updated_at, s.archived_at,
                  (SELECT COUNT(*) FROM stu_chat_messages m
-                   WHERE m.channel = 'console' AND m.user_id = s.user_id AND m.session_id = s.id AND m.deleted_at IS NULL) AS message_count
+                   WHERE m.channel = 'console' AND m.user_id = s.user_id AND m.session_id = s.id AND m.deleted_at IS NULL) AS message_count,
+                 $cloud AS has_cloud
             FROM stu_console_sessions s
            WHERE s.user_id = ? AND s.archived_at IS NOT NULL";
   $params = [$uid];
@@ -71,6 +89,7 @@ function coreui_chat_archived(PDO $pdo, int $uid, string $query = '', string $so
     $sql .= " AND s.title LIKE ? ESCAPE '!'";
     $params[] = coreui_chat_like($query);
   }
+  if ($type === 'cloud') $sql .= ' AND ' . $cloud;
   $order = ['updated' => 's.updated_at DESC, s.created_at DESC', 'created' => 's.created_at DESC, s.updated_at DESC',
     'alpha' => 's.title ASC, s.created_at DESC'];
   $sql .= ' ORDER BY ' . ($order[$sort] ?? $order['updated']) . ' LIMIT ' . max(1, min(1000, $limit));
@@ -85,6 +104,7 @@ function coreui_chat_archived(PDO $pdo, int $uid, string $query = '', string $so
       'updated_at' => coreui_chat_iso($row['updated_at'] ?? null),
       'archived_at' => coreui_chat_iso($row['archived_at'] ?? null),
       'message_count' => (int)($row['message_count'] ?? 0),
+      'cloud' => (bool)(int)($row['has_cloud'] ?? 0),
       'project' => null,
     ];
   }

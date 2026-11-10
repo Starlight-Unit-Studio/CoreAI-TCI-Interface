@@ -38,7 +38,10 @@ require_once __DIR__ . '/ai_context_estimate.php';
 
 const COREUI_CORE_INSTALL_PERMISSION_MAX = 1; // admin and system admin
 // Cloud variants the installer may add, per tier (ollama.com/library/gemma4).
-const COREUI_CORE_CLOUD_CATALOG = ['premium' => 'gemma4:31b-cloud'];
+// 0.6.87: none. Premium (gemma4:31b) is offered locally only, since Ollama moved its cloud to paid
+// plans. Connecting an Ollama account and cloud Cores an admin installs with a subscription keep
+// working (they are recognised by their tag); the installer just no longer offers one.
+const COREUI_CORE_CLOUD_CATALOG = [];
 const COREUI_OLLAMA_CLOUD_MIN_VERSION = '0.12.0';
 const COREUI_CORE_INSTALL_ACTIVE = ['pull', 'create', 'verify', 'cleanup'];
 

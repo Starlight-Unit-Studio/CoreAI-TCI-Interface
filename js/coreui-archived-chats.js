@@ -1,6 +1,6 @@
 /* CoreAI: TCI Interface 0.6.87: Settings > Archivierte Chats, modeled on the ChatGPT reference.
-   Search over the titles; the menu "Alle Chats" with Typ (Alle Chats; Cloud for the planned
-   Cloud-Computer) and Sortieren nach (Aktualisiert, Erstellt, Alphabetisch); the menu "Alle
+   Search over the titles; the menu "Alle Chats" with Typ (Alle Chats; Cloud: a cloud Core answered,
+   marked with a cloud) and Sortieren nach (Aktualisiert, Erstellt, Alphabetisch); the menu "Alle
    Projekte" (projects are planned, so every chat stands under "Kein Projekt"; Chats; Geplante
    Aufgaben planned). The
    chats grouped with their count, each with its date, "Dearchivieren" and "Löschen" (with a
@@ -12,7 +12,8 @@
   if (!view || !document.getElementById('arcGroups')) return;
   var $ = function (id) { return document.getElementById(id); };
   var API = './api/console_sessions.php';
-  var state = {sessions: [], loaded: false, seq: 0, timer: null, pending: null, sort: 'updated', project: 'all', menu: null};
+  var state = {sessions: [], loaded: false, seq: 0, timer: null, pending: null, type: 'all', sort: 'updated', project: 'all', menu: null};
+  var TYPE_LABEL = {all: 'Alle Chats', cloud: 'Cloud'};
   var PROJECT_LABEL = {all: 'Alle Projekte', chats: 'Chats'};
 
   var ERRORS = {
@@ -50,7 +51,7 @@
 
   function load() {
     var seq = ++state.seq;
-    var params = new URLSearchParams({action: 'archived', q: $('arcSearch').value.trim(), sort: state.sort});
+    var params = new URLSearchParams({action: 'archived', q: $('arcSearch').value.trim(), type: state.type, sort: state.sort});
     return request(API + '?' + params.toString()).then(function (d) {
       if (seq !== state.seq) return;
       state.sessions = d.sessions || [];
@@ -65,7 +66,7 @@
   function render() {
     var groups = $('arcGroups');
     groups.textContent = '';
-    var searching = $('arcSearch').value.trim() !== '';
+    var searching = $('arcSearch').value.trim() !== '' || state.type !== 'all';
     var list = state.sessions.filter(function (s) { return !s.project; });
     $('arcEmpty').hidden = list.length > 0;
     $('arcEmptyText').textContent = searching ? 'Keine passenden archivierten Chats' : 'Keine archivierten Chats';
@@ -96,6 +97,15 @@
       var title = document.createElement('strong');
       title.textContent = s.title || 'Chat';
       title.title = s.title || '';
+      // A cloud Core answered in this chat: marked with a cloud like the reference.
+      if (s.cloud) {
+        row.classList.add('is-cloud');
+        var mark = document.createElement('span');
+        mark.className = 'arc-cloud';
+        mark.title = 'Cloud: ein Cloud-Core hat in diesem Chat geantwortet';
+        mark.innerHTML = '<svg aria-hidden="true"><use href="#i-cloud" /></svg>';
+        row.appendChild(mark);
+      }
       var when = document.createElement('small');
       when.textContent = dateText(s.updated_at || s.archived_at);
       copy.appendChild(title);
@@ -198,7 +208,7 @@
       var project = opt.getAttribute('data-arc-project');
       closeMenu();
       if (project === 'tasks') { status('Geplante Aufgaben sind in Vorbereitung.'); return; }
-      if (type === 'cloud') { status('Cloud ist in Vorbereitung: dafür kommt der Cloud-Computer.'); return; }
+      if (type) { state.type = type; mark('data-arc-type', type); $('arcTypeLabel').textContent = TYPE_LABEL[type]; load(); }
       if (sort) { state.sort = sort; mark('data-arc-sort', sort); load(); }
       if (project) { state.project = project; mark('data-arc-project', project); $('arcProjectLabel').textContent = PROJECT_LABEL[project]; render(); }
     });

@@ -2867,6 +2867,9 @@ html[data-coreui-theme="dark"] .settings-body .notify-planned { color: var(--amb
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 0; border-bottom: 1px solid var(--line);
 }
 .settings-body .arc-row:last-child { border-bottom: 0; }
+.settings-body .arc-cloud { display: inline-grid; place-items: center; flex: 0 0 auto; width: 26px; color: var(--muted); }
+.settings-body .arc-cloud svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
+.settings-body .arc-row.is-cloud .arc-copy strong { color: var(--green); }
 .settings-body .arc-copy { display: grid; gap: 4px; flex: 1 1 200px; min-width: 0; }
 .settings-body .arc-copy strong { overflow: hidden; color: var(--txt); font-size: 17px; text-overflow: ellipsis; white-space: nowrap; }
 .settings-body .arc-copy small { color: var(--muted); font-size: 15px; }

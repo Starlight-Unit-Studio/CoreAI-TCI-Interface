@@ -3,7 +3,7 @@ COREAI: TCI INTERFACE // CHANGELOG 0.6.87
 
 - Einstellungen > Archivierte Chats ist eine echte Seite wie in den ChatGPT-Screenshots:
   "Keine archivierten Chats", Suche nach Titeln, Menue "Alle Chats" mit Typ (Alle Chats;
-  Cloud in Vorbereitung fuer den Cloud-Computer) und Sortieren nach (Aktualisiert,
+  Cloud: Chats, in denen ein Cloud-Core geantwortet hat) und Sortieren nach (Aktualisiert,
   Erstellt, Alphabetisch), Menue "Alle Projekte" (Chats; Geplante Aufgaben in
   Vorbereitung), Gruppe "Kein Projekt" mit Anzahl, je Chat Titel, Datum, Dearchivieren
   und Loeschen mit Bestaetigung. Projekte geplant.
@@ -12,6 +12,9 @@ COREAI: TCI INTERFACE // CHANGELOG 0.6.87
   bleibt oben in der Liste), Chat sperren und Zum Projekt hinzufuegen (In Vorbereitung),
   Hochgeladene Dateien, Im Chat suchen (alle Nachrichten, Sprung zum Treffer), Zum
   Startbildschirm hinzufuegen (Direktlink), Archivieren (Dialog der Vorlage), Loeschen.
+- Premium (gemma4:31b) nur noch lokal: der Installer bietet gemma4:31b-cloud nicht mehr an
+  (Ollama-Cloud kostenpflichtig). Ollama-Konto, andere Cloud-Modelle und installierte
+  Cloud-Cores bleiben fuer Nutzer mit Ollama-Abo.
 - Behoben: ein Link app.html?session=... oeffnete den leeren Start statt des Chats
   (Benachrichtigungen seit 0.6.81). Ohne Link startet die App weiter mit leerem Entwurf.
 - api/console_chat_tools.php; console_sessions.php: archived (sort), files, search, export, pin,

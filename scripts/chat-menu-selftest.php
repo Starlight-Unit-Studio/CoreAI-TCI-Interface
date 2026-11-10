@@ -82,6 +82,13 @@ if (getenv('COREUI_SELFTEST_DB') === '1') {
     $exp = coreui_chat_export($my, $ua, $a['id']);
     c_test($exp['filename'] === 'wetter-in-koeln.md' && $exp['messages'] === 2 && str_starts_with($exp['markdown'], "# Wetter in Köln\n")
       && str_contains($exp['markdown'], 'Wie wird das Wetter morgen in Köln?') && str_contains($exp['markdown'], 'Morgen wird es in Köln sonnig.'), 'MariaDB: Markdown');
+    // A cloud Core answered in chat b (a work event of kind 'model', as every answer writes one).
+    $turn = $my->prepare('SELECT MIN(id) FROM stu_chat_messages WHERE user_id = ? AND session_id = ?');
+    $work = $my->prepare("INSERT INTO stu_console_work_events (user_id, session_id, turn_id, run_key, kind, state, title, details_json) VALUES (?, ?, ?, 'base', 'model', 'success', 'Modellaufruf beendet', ?)");
+    foreach ([[$b, 'gpt-oss:120b-cloud'], [$a, 'ember-core:e4b']] as [$sess, $model]) {
+      $turn->execute([$ua, $sess['id']]);
+      $work->execute([$ua, $sess['id'], (int)$turn->fetchColumn(), json_encode(['model' => $model, 'eval_count' => 12])]);
+    }
     foreach ([$a, $b, $c] as $s) {
       coreui_console_session_archive($my, $ua, $s['id']);
       coreui_chat_unpin_archived($my, $ua, $s['id']);
@@ -93,20 +100,23 @@ if (getenv('COREUI_SELFTEST_DB') === '1') {
     c_test(count($arch) === 3 && !in_array($other['id'], array_column($arch, 'id'), true), 'MariaDB: own archive only');
     $byTitle = array_column($arch, null, 'title');
     c_test($byTitle['Wetter in Köln']['message_count'] === 2 && $byTitle['Bilder']['project'] === null, 'MariaDB: counts, no project');
+    c_test($byTitle['Rezept 100% vegan']['cloud'] === true && $byTitle['Wetter in Köln']['cloud'] === false && $byTitle['Bilder']['cloud'] === false, 'MariaDB: cloud mark');
+    c_test(array_column(coreui_chat_archived($my, $ua, '', 'cloud'), 'title') === ['Rezept 100% vegan'], 'MariaDB: type Cloud');
     // Sortieren nach: Aktualisiert, Erstellt, Alphabetisch.
     $touch = $my->prepare('UPDATE stu_console_sessions SET created_at = ?, updated_at = ? WHERE id = ?');
     $touch->execute(['2026-01-01 10:00:00', '2026-03-01 10:00:00', $a['id']]);
     $touch->execute(['2026-02-01 10:00:00', '2026-02-02 10:00:00', $b['id']]);
     $touch->execute(['2026-01-15 10:00:00', '2026-01-16 10:00:00', $c['id']]);
-    c_test(array_column(coreui_chat_archived($my, $ua, '', 'updated'), 'title') === ['Wetter in Köln', 'Rezept 100% vegan', 'Bilder'], 'MariaDB: sorted by update');
-    c_test(array_column(coreui_chat_archived($my, $ua, '', 'created'), 'title') === ['Rezept 100% vegan', 'Bilder', 'Wetter in Köln'], 'MariaDB: sorted by creation');
-    c_test(array_column(coreui_chat_archived($my, $ua, '', 'alpha'), 'title') === ['Bilder', 'Rezept 100% vegan', 'Wetter in Köln'], 'MariaDB: sorted by title');
+    c_test(array_column(coreui_chat_archived($my, $ua, '', 'all', 'updated'), 'title') === ['Wetter in Köln', 'Rezept 100% vegan', 'Bilder'], 'MariaDB: sorted by update');
+    c_test(array_column(coreui_chat_archived($my, $ua, '', 'all', 'created'), 'title') === ['Rezept 100% vegan', 'Bilder', 'Wetter in Köln'], 'MariaDB: sorted by creation');
+    c_test(array_column(coreui_chat_archived($my, $ua, '', 'all', 'alpha'), 'title') === ['Bilder', 'Rezept 100% vegan', 'Wetter in Köln'], 'MariaDB: sorted by title');
     c_test(array_column(coreui_chat_archived($my, $ua, '100%'), 'title') === ['Rezept 100% vegan'] && coreui_chat_archived($my, $ua, '_') === []
       && array_column(coreui_chat_archived($my, $ua, 'köln'), 'title') === ['Wetter in Köln'], 'MariaDB: search by title');
     c_test(c_code(fn() => coreui_chat_pin($my, $ua, $a['id'], true)) === 'session_not_found', 'MariaDB: an archived chat cannot be pinned');
     $dbChecked = true;
   } finally {
     foreach ([$ua, $ub] as $u) {
+      $my->prepare('DELETE FROM stu_console_work_events WHERE user_id = ?')->execute([$u]);
       $my->prepare('DELETE FROM stu_console_message_attachments WHERE user_id = ?')->execute([$u]);
       $my->prepare('DELETE FROM stu_chat_messages WHERE user_id = ?')->execute([$u]);
       $my->prepare('DELETE FROM stu_console_media WHERE user_id = ?')->execute([$u]);
@@ -143,7 +153,10 @@ c_test(str_contains($settings, 'id="view-archivierte-chats"') && !str_contains($
   && str_contains($settings, '<div class="arc-menu-head">Sortieren nach</div>') && str_contains($settings, 'data-arc-sort="alpha"')
   && str_contains($settings, '<span id="arcProjectLabel">Alle Projekte</span>') && str_contains($settings, '<span>Geplante Aufgaben</span><em>IN VORBEREITUNG</em>')
   && str_contains($settings, '>Keine archivierten Chats<'), 'settings: Archivierte Chats with the menus of the reference');
-c_test(str_contains($api, "if (!in_array(\$sort, ['updated', 'created', 'alpha'], true)) \$sort = 'updated';"), 'API: the three sort orders');
+c_test(str_contains($api, "if (!in_array(\$sort, ['updated', 'created', 'alpha'], true)) \$sort = 'updated';")
+  && str_contains($api, "if (!in_array(\$type, ['all', 'cloud'], true)) \$type = 'all';"), 'API: type and the three sort orders');
+c_test(str_contains($settings, 'data-arc-type="cloud" aria-checked="false"><span>Cloud</span>'), 'settings: Cloud is a real choice');
+c_test(str_contains($read('api/core_install.php'), 'const COREUI_CORE_CLOUD_CATALOG = [];'), 'Premium is offered locally only');
 c_test((bool)preg_match('~<script src="\./js/coreui-archived-chats\.js\?v=\d{25}"></script>~', $settings), 'archive script with version');
 foreach (['scripts/preflight.sh', 'scripts/preflight-native.sh'] as $pf) {
   $text = $read($pf);
@@ -153,4 +166,4 @@ foreach (['scripts/preflight.sh', 'scripts/preflight-native.sh'] as $pf) {
 }
 
 echo "CoreAI chat menu: LIKE escaping, snippets, file names, wiring OK"
-  . ($dbChecked ? ', MariaDB (pin order, archive search and sort, files, search, Markdown, other accounts) OK' : ', MariaDB part skipped (COREUI_SELFTEST_DB not set)') . "\n";
+  . ($dbChecked ? ', MariaDB (pin order, archive search, Cloud and sort, files, search, Markdown, other accounts) OK' : ', MariaDB part skipped (COREUI_SELFTEST_DB not set)') . "\n";
