@@ -34,7 +34,7 @@ function coreui_library_fetch(string $url): string {
   $parts = parse_url($url);
   if (!is_array($parts) || ($parts['scheme'] ?? '') !== 'https'
       || ($parts['host'] ?? '') !== 'ollama.com'
-      || isset($parts['user'], $parts['pass']) || isset($parts['port'])
+      || isset($parts['user']) || isset($parts['pass']) || isset($parts['port'])
       || !in_array($parts['path'] ?? '', ['/search'], true)
         && preg_match('~^/(?:library/)?[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)?$~D', (string)($parts['path'] ?? '')) !== 1) {
     throw new RuntimeException('invalid_registry_url');
@@ -91,6 +91,8 @@ function coreui_library_search_parse(string $html): array {
   $out = [];
   foreach ($xpath->query('//a[@href]') as $link) {
     $href = (string)$link->getAttribute('href');
+    $linkHost = parse_url($href, PHP_URL_HOST);
+    if ($linkHost !== null && $linkHost !== 'ollama.com') continue;
     $path = parse_url($href, PHP_URL_PATH);
     if (!is_string($path)) continue;
     if (preg_match('~^/(?:library/)?([A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)?)$~D', $path, $match) !== 1) continue;
@@ -131,7 +133,10 @@ function coreui_library_detail_parse(string $html, string $name): array {
   }
   $tags = [];
   foreach ($xpath->query('//a[@href]') as $link) {
-    $path = parse_url((string)$link->getAttribute('href'), PHP_URL_PATH);
+    $href = (string)$link->getAttribute('href');
+    $linkHost = parse_url($href, PHP_URL_HOST);
+    if ($linkHost !== null && $linkHost !== 'ollama.com') continue;
+    $path = parse_url($href, PHP_URL_PATH);
     if (!is_string($path)) continue;
     $prefix = '/' . (str_contains($name, '/') ? '' : 'library/') . $name . ':';
     if (!str_starts_with($path, $prefix)) continue;
@@ -179,6 +184,13 @@ function coreui_library_begin(string $model): array {
 /** Shares the TCI install lock and progress, but never builds or cleans up a model. */
 function coreui_library_run(array $state): array {
   $state = coreui_core_install_pull($state);
+  // The tier installer's generic Ollama error is written for Gemma. Here we
+  // report a generic registry-model error instead of pretending every model
+  // belongs to the Gemma family.
+  if (($state['phase'] ?? '') === 'error'
+      && str_contains((string)($state['message'] ?? ''), 'Gemma 4')) {
+    $state['message'] = 'Ollama konnte das ausgewählte Modell nicht finden. Bitte Modellname und Version prüfen.';
+  }
   if (($state['phase'] ?? '') !== 'error') {
     $state['phase'] = 'verify';
     $state['step'] = 'Prüft das lokal installierte Modell …';
