@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.6.93 - 10.11.2026
+
+- **Preflight retry UI:** Failed update jobs now carry a specific `failure_kind=preflight` marker when the installer emits a real `Preflight fehlgeschlagen` line. Only this error gets a friendly retry explanation; the existing detailed update log stays visible. The action becomes **Wiederholen** with a circular-arrow icon. Even a failed Preflight that has already written the newest commit can be retried by the owner through the same built-in updater.
+- **Later snooze:** **Später** persists an owner-controlled 60-minute hold on the server, across page reloads and across incoming GitHub merges. It suppresses the automatic popup and, when enabled, the automatic installation. Manual opening and manual updates remain possible at any time. Pending automatic requests are cancelled on snooze or switch-off; running installations are never interrupted.
+- **Opt-in auto-update:** Added a real **Automatische Updates** switch to Settings → System. **Off by default**. The existing host 10-minute GitHub check detects changes; after one additional check interval for owner notice, the systemd request service can install the official `main` release with the existing database backup and restart workflow. No cloud account is required and Ollama is not restarted by auto-updates unless explicitly configured in the future.
+- **Safety:** An automatic job rechecks its server-side opt-in and snooze immediately before the backup; manual requests take priority. Each commit is attempted automatically at most once, failed commits do not loop, and a newer merge may be considered after a new grace interval. A cancelled, never-started job does not consume its retry allowance.
+- **Regression gates:** Added an isolated auto-update scheduler and Preflight-failure parser test, extended the offline PHP update-state tests and host runner tests, and updated Playwright coverage for the switch, persisted snooze and retry icon. Docker and native preflights include these checks. Full target-host integration tests remain necessary before live use.
+- Version 0.6.93 follows the existing one-merge-one-version policy and uses the usual GitHub updater. No new deployment path, staging installation or monetized provider dependency.
+
 ## 0.6.92 - 10.11.2026
 
 - **Installed-Core regression test:** Corrected the expected error for a deliberately malformed, synthetic name with two tag separators (`qwen3:8b:latest`). The name validator correctly raises `invalid_model_name`; the previous fixture incorrectly expected `model_not_installed`.

@@ -10,6 +10,8 @@ declare(strict_types=1);
  * POST ?action=start   Inhaber only: install the newest main {restart_ollama}
  * POST ?action=check   Inhaber only: look for a new merge right now
  * POST ?action=cancel  Inhaber only: withdraw a request not yet picked up
+ * POST ?action=auto    Inhaber only: opt in/out of automatic updates
+ * POST ?action=later   Inhaber only: postpone popup and automatic update for 60 minutes
  */
 
 require_once __DIR__ . '/helpers.php';
@@ -83,6 +85,24 @@ try {
     }
     stu_json(['ok' => true, 'update' => $state] + coreui_update_public($state));
   }
+  if ($action === 'auto') {
+    if (!array_key_exists('enabled', $body) || !is_bool($body['enabled'])) {
+      stu_json(['ok' => false, 'error' => 'invalid_auto_setting'], 400);
+    }
+    $policy = coreui_update_set_auto($root, $owner, $body['enabled']);
+    if ($policy['enabled']) {
+      // The existing systemd check unit decides whether/when to enqueue.
+      // A user toggle never directly starts an installation.
+      try { coreui_update_request_check($root); } catch (RuntimeException $e) {}
+    }
+    stu_json(['ok' => true, 'auto_enabled' => $policy['enabled'],
+      'snooze_until' => $policy['snooze_until']]);
+  }
+  if ($action === 'later') {
+    $policy = coreui_update_snooze($root, $owner);
+    stu_json(['ok' => true, 'snooze_until' => $policy['snooze_until'],
+      'snooze_seconds' => COREUI_UPDATE_SNOOZE_SECONDS]);
+  }
   if ($action === 'check') {
     coreui_update_request_check($root);
     stu_json(['ok' => true]);
@@ -92,7 +112,7 @@ try {
   }
 } catch (RuntimeException | InvalidArgumentException $e) {
   $code = $e->getMessage();
-  $known = ['updater_missing', 'update_running', 'no_update', 'request_dir_missing', 'request_failed', 'invalid_user'];
+  $known = ['updater_missing', 'update_running', 'no_update', 'request_dir_missing', 'request_failed', 'invalid_user', 'invalid_auto_setting'];
   stu_json(['ok' => false, 'error' => in_array($code, $known, true) ? $code : 'update_failed'], $code === 'update_running' ? 409 : 400);
 }
 

@@ -1,9 +1,10 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
 Stand: 10.11.2026
-Repository-Version: 0.6.92 (Fix-Branch, noch NICHT auf main)
-BASIS: main 0.6.91 nach Merge PR #243; Offline-Installed-Cores-Selbsttest korrigiert die Erwartung eines ungueltigen doppelt getaggten Namens.
+Repository-Version: 0.6.93 (Entwicklungsbranch, noch NICHT auf main)
+BASIS: main 0.6.92 nach Merge PR #244; optionales Auto-Update, einstuendige Spaeter-Pause und Preflight-Retry im integrierten Updater.
 NEUE ARBEIT ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_6_93.txt
   docs/UEBERGABEPROTOKOLL_0_6_92.txt
   docs/UEBERGABEPROTOKOLL_0_6_91.txt
   docs/UEBERGABEPROTOKOLL_0_6_90.txt

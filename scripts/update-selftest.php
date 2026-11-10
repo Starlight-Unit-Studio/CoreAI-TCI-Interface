@@ -41,6 +41,32 @@ $put('var/update/available.json', ['latest_commit' => $B, 'latest_version' => '0
 $s = coreui_update_state($work, $now);
 update_test($s['installed'] && $s['available'] && $s['latest_version'] === '0.5.84' && $s['latest_commit'] === 'bbbbbbb', 'new commit on main');
 update_test($s['notes'] === "## 0.5.84\n- neu", 'notes for the window');
+update_test(!$s['auto_enabled'] && $s['snooze_until'] === 0, 'auto-updates are opt-in and disabled by default');
+$auto = coreui_update_set_auto($work, 7, true);
+update_test($auto['enabled'] && $auto['requested_by'] === 7 && !$auto['restart_ollama'],
+  'only the owner may opt into server auto-updates; no automatic Ollama reboot');
+$held = coreui_update_snooze($work, 7, $now);
+$s = coreui_update_state($work, $now);
+update_test($held['snooze_until'] === $now + 3600 && $s['snooze_seconds'] === 3600
+  && $s['auto_enabled'], 'Später pauses automatic updates and the popup for 60 minutes');
+update_test(coreui_update_state($work, $now + 3599)['snooze_seconds'] === 1
+  && coreui_update_state($work, $now + 3600)['snooze_seconds'] === 0,
+  'snooze expires after exactly one hour independent of merges');
+$put('var/update-request/request.json', [
+  'action' => 'update', 'requested_by' => 7, 'restart_ollama' => false, 'automatic' => true
+]);
+coreui_update_snooze($work, 7, $now);
+update_test(!is_file($work . '/var/update-request/request.json'),
+  'Später withdraws only an unstarted automatic request');
+$put('var/update-request/request.json', [
+  'action' => 'update', 'requested_by' => 7, 'restart_ollama' => false
+]);
+coreui_update_snooze($work, 7, $now);
+update_test(is_file($work . '/var/update-request/request.json'),
+  'Später never cancels a manually requested update');
+unlink($work . '/var/update-request/request.json');
+coreui_update_set_auto($work, 7, false);
+update_test(!coreui_update_state($work, $now)['auto_enabled'], 'automatic update can be disabled');
 // Decided at read time: once installed (marker = B), the same check result shows nothing.
 $put('var/dev_source_commit', $B . "\n");
 update_test(!coreui_update_state($work, $now)['available'], 'a check during the installation never shows a stale window');
@@ -101,6 +127,20 @@ symlink($work . '/var/update/available.json', $work . '/var/update/status.json')
 update_test(coreui_update_state($work, $now)['state'] === 'idle', 'symlinks are not read');
 unlink($work . '/var/update/status.json');
 
+// A preflight error can leave the newest commit already deployed. The
+// Inhaber must still be able to retry a full setup.
+$put('var/dev_source_commit', $B . "\n");
+$put('var/update/status.json', ['state' => 'failed', 'phase' => 'install',
+  'failure_kind' => 'preflight', 'message' => 'Preflight fehlgeschlagen: 2 Problem(e).']);
+$s = coreui_update_state($work, $now);
+update_test(!$s['available'] && $s['failure_kind'] === 'preflight', 'preflight error distinguished from general failure');
+coreui_update_request($work, 7, false, $now);
+update_test(coreui_update_state($work, $now)['state'] === 'queued',
+  'retry is allowed even when the failed setup already wrote main commit');
+update_test(coreui_update_cancel($work), 'queued retry can be cancelled');
+$put('var/dev_source_commit', $A . "\n");
+unlink($work . '/var/update/status.json');
+
 // "Jetzt pruefen" and the log.
 coreui_update_request_check($work);
 update_test(is_file($work . '/var/update-request/check') && coreui_update_state($work, $now)['checking'], 'check request');
@@ -108,6 +148,7 @@ $put('var/update/update.log', implode("\n", array_map(static fn($i) => 'line ' .
 $tail = coreui_update_log_tail($work, 3);
 update_test($tail === ['line 98', 'line 99', 'line 100'], 'log tail');
 unlink($work . '/var/update-request/check');
+@unlink($work . '/var/update-request/auto.json');
 rmdir($work . '/var/update-request');
 try { coreui_update_write_request($work . '/var/update-request/request.json', '{}'); update_test(false, 'missing folder'); }
 catch (RuntimeException $e) { update_test($e->getMessage() === 'request_dir_missing', 'missing request folder named'); }

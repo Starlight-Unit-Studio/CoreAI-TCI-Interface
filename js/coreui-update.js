@@ -2,7 +2,7 @@
  *
  * When a new merge lands on main, the host notices it (every 10 minutes) and
  * the Inhaber gets a matte golden window over a third of the screen, at every
- * page load until he starts it ("Später" hides it until the next load).
+ * page load until he starts it ("Später" snoozes popup and opt-in auto-updates for one hour).
  * "Update starten" asks the host to install it; then everyone, the Inhaber and
  * every other account with CoreAI open, sees "Bitte auf Neustart warten" with
  * the real progress: the host reads the installer's output and reports the step
@@ -35,7 +35,8 @@
 
   var csrf = '';
   var last = null;
-  var dismissed = false;
+  var dismissedUntil = 0;
+  var SNOOZE_MS = 60 * 60 * 1000;
   var root = null;
   var mode = '';
   var idleTimer = 0;
@@ -127,6 +128,30 @@
     return root;
   }
 
+  function snoozed(info) {
+    // The host decides the time window. Use its remaining seconds so a
+    // phone with an incorrect wall clock cannot defeat or extend the pause.
+    if (info && Number.isFinite(Number(info.snooze_seconds))) {
+      return Number(info.snooze_seconds) > 0 || dismissedUntil > Date.now();
+    }
+    var serverUntil = Number(info && info.snooze_until) * 1000 || 0;
+    return Math.max(serverUntil, dismissedUntil) > Date.now();
+  }
+
+  function retryIcon(button) {
+    var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('width', '18');
+    svg.setAttribute('height', '18');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.classList.add('cu-retry-icon');
+    var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', 'M3 12a9 9 0 1 0 3-6.7L3 8 M3 3v5h5');
+    svg.appendChild(path);
+    button.appendChild(svg);
+    button.appendChild(el('span', '', 'Wiederholen'));
+  }
+
   // --- The golden window (Inhaber) ---
   function showWindow(info, failure) {
     var backdrop = frame('window');
@@ -147,6 +172,12 @@
     if (failure) {
       var problem = box.appendChild(el('p', 'cu-error', info.message || 'Das Update ist fehlgeschlagen.'));
       problem.setAttribute('role', 'alert');
+      if (info.failure_kind === 'preflight') {
+        var hint = box.appendChild(el('p', 'cu-retry-hint',
+          'Der Preflight hat Fehler gemeldet. Bitte versuche es in ein paar Minuten erneut. '
+          + 'Die Details stehen im Update-Protokoll. Nach einem korrigierten Merge lässt sich das Update wiederholen.'));
+        hint.setAttribute('role', 'status');
+      }
       if (last && last.log && last.log.length) {
         var details = box.appendChild(el('details', 'cu-log'));
         details.appendChild(el('summary', '', 'Update-Protokoll (letzte Zeilen)'));
@@ -174,8 +205,9 @@
     var actions = box.appendChild(el('footer', 'cu-actions'));
     var later = actions.appendChild(el('button', 'cu-later', 'Später'));
     later.type = 'button';
-    var start = actions.appendChild(el('button', 'cu-start', failure ? 'Erneut versuchen' : 'Update starten'));
+    var start = actions.appendChild(el('button', 'cu-start', failure ? null : 'Update starten'));
     start.type = 'button';
+    if (failure) retryIcon(start);
     if (!info.installed) {
       start.disabled = true;
       error.hidden = false;
@@ -183,9 +215,25 @@
     }
 
     later.addEventListener('click', function () {
-      dismissed = true;
-      close();
-      renderCard();
+      later.disabled = true;
+      start.disabled = true;
+      error.hidden = true;
+      request('POST', 'later', {}).then(function (data) {
+        var remaining = Number(data.snooze_seconds);
+        dismissedUntil = Date.now() + (Number.isFinite(remaining) && remaining > 0
+          ? remaining * 1000 : SNOOZE_MS);
+        if (last && last.update) {
+          last.update.snooze_until = Number(data.snooze_until) || 0;
+          last.update.snooze_seconds = Math.max(0, Number(data.snooze_seconds) || 3600);
+        }
+        close();
+        renderCard();
+      }).catch(function () {
+        later.disabled = false;
+        start.disabled = !info.installed;
+        error.hidden = false;
+        error.textContent = 'Die Pause konnte nicht gespeichert werden. Bitte erneut versuchen.';
+      });
     });
     start.addEventListener('click', function () {
       start.disabled = true;
@@ -373,6 +421,20 @@
     document.getElementById('updateCardLatest').textContent = info.latest_version || (info.latest_commit ? 'Commit ' + info.latest_commit : 'noch nicht geprüft');
     document.getElementById('updateCardOpen').hidden = !(info.available || info.state === 'failed') || info.running;
     document.getElementById('updateCardCheck').disabled = !info.installed || info.checking || info.running;
+    var auto = document.getElementById('updateAutoEnable');
+    if (auto) {
+      auto.checked = info.auto_enabled === true;
+      auto.disabled = !info.installed;
+    }
+    var hold = document.getElementById('updateAutoHint');
+    if (hold) {
+      var seconds = Math.max(0, Number(info.snooze_seconds) || 0);
+      hold.textContent = seconds > 0
+        ? '„Später“ aktiv: automatischer Start und Erinnerungsfenster pausieren noch etwa '
+          + Math.ceil(seconds / 60) + ' Minuten. Manuell aktualisieren ist möglich.'
+        : 'Standardmäßig aus. Wenn aktiviert, installiert CoreAI neue GitHub-Merges nach der regelmäßigen Prüfung. '
+          + 'Dazu werden die Datenbank gesichert und Dienste neu gestartet.';
+    }
   }
 
   function bindCard() {
@@ -391,6 +453,20 @@
     if (open) open.addEventListener('click', function () {
       if (last && last.update) showWindow(last.update, last.update.state === 'failed');
     });
+    var auto = document.getElementById('updateAutoEnable');
+    if (auto) auto.addEventListener('change', function () {
+      var enabled = auto.checked;
+      auto.disabled = true;
+      request('POST', 'auto', { enabled: enabled }).then(function (data) {
+        if (last && last.update) last.update.auto_enabled = data.auto_enabled === true;
+        renderCard();
+      }).catch(function (problem) {
+        auto.checked = !enabled;
+        auto.disabled = false;
+        document.getElementById('updateCardState').textContent =
+          'Automatische Updates konnten nicht geändert werden: ' + errorText(problem.message);
+      });
+    });
   }
 
   // --- Idle: look for a new update or a started one ---
@@ -403,7 +479,10 @@
       return;
     }
     var info = data.owner ? data.update : null;
-    if (info && info.available && !dismissed && mode !== 'window') showWindow(info, info.state === 'failed');
+    if (info && (info.available || info.state === 'failed')
+        && !snoozed(info) && mode !== 'window') {
+      showWindow(info, info.state === 'failed');
+    }
   }
 
   function scheduleIdle() {

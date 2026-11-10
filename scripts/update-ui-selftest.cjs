@@ -2,7 +2,7 @@
 //   node scripts/update-ui-selftest.cjs
 // Serves the settings page with mocked APIs and checks: the Inhaber gets the
 // matte golden window (a third of the screen, slightly transparent) at load,
-// "Später" hides it until the next load, the settings card reopens it,
+// "Später" pauses it across reloads for an hour, the settings card reopens it,
 // "Update starten" sends the Ollama choice and shows "Bitte auf Neustart
 // warten" with the host's real step and percent (kept while CoreAI is down,
 // never going back), the page reloads once CoreAI is back (not after a fixed wait), a
@@ -27,9 +27,9 @@ function info(over) {
 
 function server(level) {
   const calls = [];
-  const srv = {calls, level, status: null};
+  const srv = {calls, level, status: null, autoEnabled: false, snoozeUntil: 0};
   // What update.php answers for GET status; 'down' simulates the restart (502).
-  srv.status = () => level === 0 ? {ok: true, running: false, state: 'idle', phase: '', version: '0.5.83', owner: true, update: info(), csrf_token: 'tok'}
+  srv.status = () => level === 0 ? {ok: true, running: false, state: 'idle', phase: '', version: '0.5.83', owner: true, update: info({auto_enabled: srv.autoEnabled, snooze_until: srv.snoozeUntil}), csrf_token: 'tok'}
     : {ok: true, running: false, state: 'idle', phase: '', version: '0.5.83'};
   const api = {
     'auth.php': () => ({ok: true, username: 'patrick@starlight.test', display_name: 'Patrick', permission_level: level, is_guest: false, csrf_token: 'tok', avatars: {}}),
@@ -56,6 +56,14 @@ function server(level) {
         if (post) {
           if (level !== 0) return route.fulfill({status: 403, json: {ok: false, error: 'owner_only'}});
           const action = url.searchParams.get('action');
+          if (action === 'later') {
+            srv.snoozeUntil = Math.floor(Date.now() / 1000) + 3600;
+            return route.fulfill({json: {ok: true, snooze_until: srv.snoozeUntil, snooze_seconds: 3600}});
+          }
+          if (action === 'auto') {
+            srv.autoEnabled = JSON.parse(post).enabled === true;
+            return route.fulfill({json: {ok: true, auto_enabled: srv.autoEnabled, snooze_until: srv.snoozeUntil}});
+          }
           if (action === 'start') {
             srv.status = () => ({ok: true, running: true, state: 'queued', phase: 'queued', version: '0.5.83', owner: true,
               update: info({state: 'queued', phase: 'queued', running: true, available: false}), csrf_token: 'tok'});
@@ -114,12 +122,28 @@ async function advance(page, ms) {
     assert.equal(await page.$eval('.cu-notes li strong', e => e.textContent), 'Neue Stimme:', 'bold stays bold, no HTML from the changelog');
     assert.equal(await page.isChecked('#cuOllama'), true, 'Ollama restart is preselected');
     assert.equal(await page.evaluate(() => document.activeElement.className), 'cu-start', 'focus on Update starten');
-    // "Später": gone until the next load, also on the next poll.
+    // The modal covers settings, so the owner first chooses Later,
+    // then enables optional auto-updates through the regular settings UI.
+    assert.equal(await page.isChecked('#updateAutoEnable'), false, 'automatic updates are disabled by default');
     await page.click('.cu-later');
-    assert.equal(await page.locator('#coreaiUpdate').count(), 0);
+    await page.waitForSelector('#coreaiUpdate', {state:'detached'});
+    await page.check('#updateAutoEnable');
+    await page.waitForFunction(() => !document.querySelector('#updateAutoEnable').disabled);
+    assert(srv.calls.some(c=>c.key==='update.php' && c.action==='auto' && c.post.enabled===true),
+      'the opt-in is an authenticated server action');
+    // The settings card must still allow manual opening during the snooze.
+    await page.click('#updateCardOpen');
+    await page.waitForSelector('.cu-window');
+    // 'Später' persists for 60 min, suppressing the popup AND automatic start.
+    await page.click('.cu-later');
+    await page.waitForSelector('#coreaiUpdate', {state:'detached'});
+    assert(srv.calls.some(c=>c.key==='update.php' && c.action==='later'),
+      'Later uses server-side scheduling, not just a tab flag');
+    await page.reload();
     await advance(page, 61000);
-    assert.equal(await page.locator('#coreaiUpdate').count(), 0, 'Später holds for this page load');
-    assert.equal(await page.isVisible('#updateCard'), true, 'the settings card shows for the Inhaber');
+    assert.equal(await page.locator('#coreaiUpdate').count(), 0, 'Später survives a page reload and repeated polling');
+    assert.equal(await page.isChecked('#updateAutoEnable'), true, 'the opt-in survives the next page load');
+    assert.equal(await page.isVisible('#updateCard'), true, 'the settings card remains available');
     assert.match(await page.textContent('#updateCardState'), /^Neue Version 0\.5\.84 verfügbar\./);
     assert.equal(await page.textContent('#updateCardLatest'), '0.5.84');
     // The card reopens it; start without Ollama restart.
@@ -188,14 +212,18 @@ async function advance(page, ms) {
     // A failed update: the Inhaber sees the error and the log, and can retry.
     ({page, srv, errors} = await open(browser, 0, null, s => {
       s.status = () => ({ok: true, running: false, state: 'failed', phase: 'install', version: '0.5.83', owner: true, csrf_token: 'tok',
-        update: info({state: 'failed', phase: 'install', message: 'Die Installation meldet Fehler. Details im Update-Protokoll.'}),
+        update: info({state: 'failed', phase: 'install', failure_kind: 'preflight', message: 'Die Installation meldet Fehler. Details im Update-Protokoll.'}),
         log: ['[CoreAI Update] FEHLER in Phase install']});
     }));
     await page.waitForSelector('.cu-window');
     assert.equal(await page.textContent('#cuTitle'), 'Update fehlgeschlagen');
     assert.equal(await page.textContent('.cu-window > .cu-error'), 'Die Installation meldet Fehler. Details im Update-Protokoll.');
     assert.equal(await page.textContent('.cu-log pre'), '[CoreAI Update] FEHLER in Phase install');
-    assert.equal(await page.textContent('.cu-start'), 'Erneut versuchen');
+    assert.equal(await page.textContent('.cu-start'), 'Wiederholen');
+    assert.equal(await page.locator('.cu-start svg.cu-retry-icon').count(), 1,
+      'the retry action contains a circular-arrow icon');
+    assert.match(await page.textContent('.cu-retry-hint'), /Preflight.*ein paar Minuten erneut/,
+      'a Preflight failure gets a friendly but factual retry explanation');
     assert.match(await page.textContent('#updateCardState'), /^Letztes Update fehlgeschlagen/);
     assert.deepEqual(errors, []);
     await page.close();

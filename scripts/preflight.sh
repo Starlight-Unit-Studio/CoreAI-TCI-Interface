@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.92: Test-Fixture mit doppelt markierter Tag-Version korrigiert.
+# CoreAI: TCI Interface 0.6.93: optionales Auto-Update, Spaeter-Pause und Preflight-Retry.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -311,6 +311,7 @@ UI_FILES=(
   docker/image-spike/Dockerfile
   scripts/update-ui-selftest.cjs
   tests/update-runner-selftest.sh
+  tests/update-auto-selftest.py
   config/systemd/coreai-update.service.template
   config/systemd/coreai-update.path.template
   config/systemd/coreai-update-check.service.template
@@ -470,6 +471,13 @@ if [[ "${EUID:-$(id -u)}" -eq 0 ]]; then
   else
     fail 'Update-Dienst: Host-Updater-Selbsttest fehlgeschlagen.'
   fi
+fi
+
+# 0.6.93: automatic updates require opt-in, survive page reloads and respect Later.
+if python3 "$PROJECT_ROOT/tests/update-auto-selftest.py" >/dev/null 2>&1; then
+  ok 'Auto-Update: Opt-in, einstuendige Pause, Vorlauf, einmal pro Commit und Preflight-Fehlererkennung geprueft.'
+else
+  fail 'Auto-Update-/Preflight-Retry-Selbsttest fehlgeschlagen.'
 fi
 
 if COREAI_BROWSE_LIVE=0 python3 "$PROJECT_ROOT/scripts/browse-worker-selftest.py" >/dev/null 2>&1; then
