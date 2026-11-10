@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.92: Test-Fixture mit doppelt markierter Tag-Version korrigiert.
+# CoreAI: TCI Interface 0.6.93: optionales Auto-Update, Spaeter-Pause und Preflight-Retry.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
