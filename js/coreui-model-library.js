@@ -60,7 +60,7 @@
       var tag = installedVariant();
       state.confirming = '';
       if (!tag) {
-        text(el.Hint, 'Für dieses Modell sind derzeit keine lokalen Downloadvarianten erkennbar.');
+        text(el.Hint, 'Für dieses LLM sind derzeit keine lokalen Downloadvarianten erkennbar.');
         el.Install.disabled = true;
         text(el.Install, 'Nicht verfügbar');
         return;
@@ -75,7 +75,7 @@
       state.confirming = '';
       show(el.Detail, true);
       text(el.ModelTitle, detail.name);
-      text(el.ModelDescription, detail.description || 'Details aus Ollamas offizieller Modellbibliothek.');
+      text(el.ModelDescription, detail.description || 'Details aus der offiziellen Ollama-Bibliothek.');
       el.ModelLink.href = detail.url;
       clear(el.Tag);
       (detail.tags || []).forEach(function (tag) {
@@ -87,20 +87,20 @@
     }
     function loadDetail(name) {
       var sequence = ++state.request;
-      fail('Lädt die offiziellen Modelldetails …');
+      fail('Lädt die Ollama-Details …');
       return request('ollama_detail=' + encodeURIComponent(name)).then(function (data) {
         if (!state.open || sequence !== state.request) return;
         renderDetail(data.detail || {name: name, tags: []});
         sourceStatus('Lokale Varianten und Downloadgrößen werden von Ollama angezeigt.');
       }).catch(function () {
         if (!state.open || sequence !== state.request) return;
-        fail('Modelldetails konnten nicht geladen werden. Bitte die offizielle Ollama-Seite verwenden.');
+        fail('Ollama-Details konnten nicht geladen werden. Bitte die offizielle Ollama-Seite verwenden.');
       });
     }
     function renderSearch(models) {
       clear(el.Results);
       if (!models.length) {
-        item(el.Results, 'p', 'core-library-empty', 'Keine lokal installierbaren Modelle gefunden. Du kannst auch einen exakten Modellnamen eingeben.');
+        item(el.Results, 'p', 'core-library-empty', 'Keine lokal installierbaren LLMs gefunden. Du kannst auch einen exakten Namen eingeben.');
         return;
       }
       models.forEach(function (model) {
@@ -117,7 +117,7 @@
       var sequence = ++state.request;
       state.loading = true;
       show(el.Detail, false);
-      fail('Sucht in Ollamas offizieller Modellbibliothek …');
+      fail('Sucht in Ollamas offizieller Bibliothek …');
       return request('ollama_search=' + encodeURIComponent(query)).then(function (data) {
         if (!state.open || sequence !== state.request) return;
         var models = Array.isArray(data.models) ? data.models : [];
@@ -126,7 +126,7 @@
       }).catch(function () {
         if (!state.open || sequence !== state.request) return;
         clear(el.Results);
-        fail('Ollamas Suchseite konnte nicht eingelesen werden. Öffne die offizielle Suche oder gib den exakten Modellnamen ein.');
+        fail('Ollamas Suchseite konnte nicht eingelesen werden. Öffne die offizielle Suche oder gib den exakten LLM-Namen ein.');
         // If parsing the public search page fails, individual detail pages
         // can still be loaded safely from a typed official model ID.
         if (/^[A-Za-z0-9][A-Za-z0-9._-]*(?:\/[A-Za-z0-9][A-Za-z0-9._-]*)?$/.test(query)) {
@@ -153,7 +153,7 @@
         var job = data.install || null;
         if (!job || job.kind !== 'library' || job.core !== state.installing) {
           state.polling = false;
-          fail('Der Downloadstatus ist nicht mehr verfügbar. Bitte die lokale Modellliste prüfen.');
+          fail('Der Downloadstatus ist nicht mehr verfügbar. Bitte die lokale LLM-Liste prüfen.');
           return;
         }
         renderProgress(job);
@@ -165,7 +165,7 @@
         state.installing = '';
         if (job.phase === 'done') {
           state.finished = true;
-          sourceStatus('Das Modell ' + job.core + ' ist jetzt lokal installiert.');
+          sourceStatus('Das LLM ' + job.core + ' ist jetzt lokal installiert.');
           if (window.CoreUICoreMode && window.CoreUICoreMode.instance
               && typeof window.CoreUICoreMode.instance.refresh === 'function') {
             window.CoreUICoreMode.instance.refresh();
@@ -187,7 +187,7 @@
         state.confirming = tag.name;
         text(el.Install, 'Wirklich installieren?');
         text(el.Hint, tag.name + ' benötigt laut Ollama etwa ' + tag.size
-          + ' für den Download. Der Server lädt das Modell lokal herunter.');
+          + ' für den Download. Der Server lädt das LLM lokal herunter.');
         return;
       }
       state.confirming = '';
@@ -204,7 +204,7 @@
         state.installing = '';
         el.Install.disabled = false;
         renderVariant();
-        var messages = {already_installed: 'Dieses Modell ist bereits installiert.',
+        var messages = {already_installed: 'Dieses LLM ist bereits installiert.',
           install_running: 'Eine andere Installation oder ein Core-Update läuft bereits.',
           not_local_model: 'Ollama bestätigt keine lokal installierbare Variante.',
           registry_unavailable: 'Die offizielle Ollama-Seite ist derzeit nicht erreichbar.'};
