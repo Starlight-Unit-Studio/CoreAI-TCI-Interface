@@ -11,6 +11,9 @@ scripts/coreai-updater.sh calls this helper for everything that is JSON:
   get FILE KEY                          prints one field
   request FILE                          reads the request of the update window
                                         (no symlinks, small, strict fields)
+  auto-queue POLICY AVAILABLE STATUS REQUEST ATTEMPT LOCAL_COMMIT
+                                        queues official main only when the
+                                        owner explicitly enabled auto-updates
   follow FILE                           passes the installer output through
                                         (stdin to stdout, the update log) and
                                         turns its milestones into progress
@@ -25,6 +28,7 @@ import os
 import re
 import stat
 import sys
+import time
 import tempfile
 from datetime import datetime, timezone
 
@@ -35,7 +39,7 @@ COMMIT_RE = re.compile(r'^[0-9a-f]{40}$')
 STATUS_KEYS = {
     'state', 'phase', 'message', 'started_at', 'finished_at', 'from_version',
     'to_version', 'commit', 'restart_ollama', 'requested_by', 'backup',
-    'percent', 'step',
+    'percent', 'step', 'failure_kind', 'attempted_commit', 'automatic',
 }
 
 # The installation (phase install) runs from 10 to 90 percent. Each milestone is
@@ -168,7 +172,7 @@ def cmd_status(path, pairs):
             raise SystemExit('invalid status field: ' + key)
         if key == 'state' and value not in STATES:
             raise SystemExit('invalid state: ' + value)
-        if key in ('restart_ollama',):
+        if key in ('restart_ollama', 'automatic'):
             data[key] = value == '1'
         elif key in ('requested_by', 'percent'):
             data[key] = int(value) if value.isdigit() else 0
@@ -210,6 +214,83 @@ def cmd_request(path):
         return 2
     print('restart_ollama=' + ('1' if restart else '0'))
     print('requested_by=' + str(by))
+    print('automatic=' + ('1' if data.get('automatic') is True else '0'))
+    return 0
+
+
+def safe_policy(path):
+    """Read owner-supplied preferences without following symlinks or giant files."""
+    try:
+        flags = os.O_RDONLY | os.O_NOFOLLOW | getattr(os, 'O_NONBLOCK', 0)
+        fd = os.open(path, flags)
+        try:
+            info = os.fstat(fd)
+            if not stat.S_ISREG(info.st_mode) or info.st_size > REQUEST_MAX:
+                return {}
+            raw = os.read(fd, REQUEST_MAX + 1)
+        finally:
+            os.close(fd)
+        data = json.loads(raw.decode('utf-8'))
+        return data if isinstance(data, dict) else {}
+    except (OSError, UnicodeDecodeError, ValueError):
+        return {}
+
+
+def cmd_auto_queue(policy_path, available_path, status_path, request_path, attempt_path, local_commit):
+    """Server timer only: one opt-in automatic update per new official commit.
+
+    Never start a failed commit again automatically. A newer merge is a new
+    candidate. 'Later' is a server-side 60-minute hold, independent of the
+    browser and of how many new merges arrive during that hour.
+    """
+    policy = safe_policy(policy_path)
+    uid = policy.get('requested_by')
+    until = policy.get('snooze_until', 0)
+    if policy.get('enabled') is not True or type(uid) is not int or uid <= 0:
+        return 0
+    if type(until) is not int or until > int(time.time()):
+        return 0
+    available = read_json(available_path)
+    commit = available.get('latest_commit', '')
+    if not isinstance(commit, str) or not COMMIT_RE.fullmatch(commit):
+        return 0
+    if available.get('error') or commit == local_commit:
+        return 0
+    status = read_json(status_path)
+    if status.get('state') in ('running', 'queued'):
+        return 0
+    if status.get('state') == 'failed' and status.get('attempted_commit') == commit:
+        return 0
+    attempt = read_json(attempt_path)
+    if attempt.get('commit') == commit:
+        return 0
+    request = {
+        'action': 'update',
+        'requested_by': uid,
+        'restart_ollama': policy.get('restart_ollama') is True,
+        'automatic': True,
+        'requested_at': now(),
+    }
+    try:
+        fd = os.open(request_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o640)
+    except FileExistsError:
+        return 0  # a manually requested update takes priority
+    except OSError:
+        return 0
+    try:
+        with os.fdopen(fd, 'w', encoding='utf-8') as handle:
+            json.dump(request, handle)
+            handle.write('\n')
+        if os.geteuid() == 0:
+            os.chown(request_path, 0, 33)
+        write_json(attempt_path, {'commit': commit, 'queued_at': now()})
+    except BaseException:
+        try:
+            os.unlink(request_path)
+        except OSError:
+            pass
+        raise
+    print('Automatisches CoreAI-Update vorgemerkt: ' + commit[:12])
     return 0
 
 
@@ -238,6 +319,11 @@ def cmd_follow(path):
         try:
             line = raw.decode('utf-8', 'replace').strip()
             text = re.sub(r'^\[[^\]]*\]\s*', '', line)
+            if 'Preflight fehlgeschlagen:' in text:
+                data = read_json(path)
+                data['failure_kind'] = 'preflight'
+                data['updated_at'] = now()
+                write_json(path, data)
             new_percent, new_step = percent, step
             for marker, mark, label in MILESTONES:
                 if marker in text:
@@ -292,6 +378,8 @@ def main(argv):
         return 0
     if command == 'request' and len(argv) == 3:
         return cmd_request(argv[2])
+    if command == 'auto-queue' and len(argv) == 8:
+        return cmd_auto_queue(*argv[2:])
     if command == 'follow' and len(argv) == 3:
         return cmd_follow(argv[2])
     raise SystemExit(__doc__)
