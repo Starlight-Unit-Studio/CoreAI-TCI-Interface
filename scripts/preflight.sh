@@ -1024,6 +1024,13 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail "Ollama-Modellsuche-Selbsttest: ${library_test:-Unbekannter Fehler}"
   fi
 
+  # 0.6.96: the PHP-FPM user must be able to queue a request on the host.
+  if compose exec -T -u 33:33 php php -r 'exit(is_writable("/var/www/coreui/var/uninstall-request") ? 0 : 1);' >/dev/null 2>&1; then
+    ok 'Deinstallation: PHP-Hostanfragen im eigenen beschreibbaren Bind-Mount verfuegbar.'
+  else
+    fail 'Deinstallation: var/uninstall-request fuer PHP (UID 33) nicht beschreibbar.'
+  fi
+
   uninstall_store_test=''
   if uninstall_store_test="$(compose exec -T php php scripts/uninstall-store-selftest.php 2>&1)"; then
     ok 'Deinstallation: sichere Eigentumeranfrage, Archiv-Modus und atomare Queue geprueft.'
