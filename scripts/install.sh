@@ -420,6 +420,42 @@ ensure_update_service() {
   log 'Update-Dienst aktiv: Pruefung auf neue Merges alle 10 Minuten, Start aus dem Update-Fenster.'
 }
 
+# 0.6.96: independent owner-only uninstall runner; no PHP shell execution.
+ensure_uninstall_service() {
+  local dir="$PROJECT_ROOT/var/uninstall-request"
+  local marker="$dir/runner.json"
+  local unit tmp
+  [[ "$PROJECT_ROOT" == '/opt/ember-coreui' ]] || {
+    warn 'Uninstall-Hostdienst nur fuer den offiziellen Standardpfad unterstuetzt.'; return 0;
+  }
+  [[ ! -L "$dir" && ! -L "$marker" ]] || die 'Unsicherer Uninstall-Anfragepfad.'
+  install -d -m 0770 -o 33 -g 33 "$dir"
+  if ! command -v systemctl >/dev/null 2>&1 || [[ ! -d /run/systemd/system ]]; then
+    warn 'Kein systemd: CoreAI kann ueber den SSH-Deinstallations-One-Liner entfernt werden.'
+    return 0
+  fi
+  if [[ -e "$dir/request.json" || -L "$dir/request.json" ]]; then
+    warn 'Alte Deinstallationsanfrage gefunden; Hostdienst aus Sicherheitsgruenden nicht aktiviert.'
+    return 0
+  fi
+  chmod 0750 "$PROJECT_ROOT/scripts/uninstall.sh"
+  for unit in coreai-uninstall.service coreai-uninstall.path; do
+    tmp="$(mktemp)"
+    TEMP_FILES+=("$tmp")
+    sed "s|@@PROJECT_ROOT@@|$PROJECT_ROOT|g" "$PROJECT_ROOT/config/systemd/$unit.template" > "$tmp"
+    install -m 0644 -o root -g root "$tmp" "/etc/systemd/system/$unit"
+  done
+  systemctl daemon-reload
+  if ! systemctl enable --now coreai-uninstall.path >/dev/null 2>&1; then
+    warn 'Uninstall-Hostdienst konnte nicht aktiviert werden; SSH-Fallback bleibt nutzbar.'
+    return 0
+  fi
+  printf '{"installed":true,"version":"%s"}\n' "$COREUI_VERSION" > "$marker"
+  chown root:33 "$marker"
+  chmod 0640 "$marker"
+  log 'Uninstall-Hostdienst aktiv; nur Inhaber mit CSRF, Passwort und Bestaetigung.'
+}
+
 ensure_ollama_model() {
   local install_tmp
   local owned_model=''
@@ -829,6 +865,7 @@ chmod 0750 "$PROJECT_ROOT/scripts/install.sh" "$PROJECT_ROOT/scripts/preflight.s
   "$PROJECT_ROOT/scripts/coreai-updater.sh" 2>/dev/null || true
 
 ensure_update_service
+ensure_uninstall_service
 
 log "Installation erfolgreich. Lokaler Endpunkt: http://127.0.0.1:$HTTP_PORT/"
 # Optional host safeguard after successful stack start; no existing swap is changed.

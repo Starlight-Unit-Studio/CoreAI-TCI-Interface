@@ -1,0 +1,11 @@
+# Root-only uninstall runner. The PHP process never executes shell commands.
+[Unit]
+Description=CoreAI: TCI Interface Uninstall (bestaetigte Inhaber-Anfrage)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=@@PROJECT_ROOT@@/scripts/uninstall.sh --request
+Environment=HOME=/root
+TimeoutStartSec=15min

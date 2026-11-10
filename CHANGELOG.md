@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.6.96 - 10.11.2026
+
+- **Dedicated CoreAI uninstaller:** Added `scripts/uninstall.sh` with a dry-run preview, interactive archive-preserving uninstall and a separate strongly confirmed SSH-only data purge. It targets the official `/opt/ember-coreui` Docker stack exclusively: no global Docker prune, no shared Ollama, model, Apache/Nginx, other apps or host swap changes. Safe archive mode preserves all existing accounts, MariaDB files, uploads and backups under a private `/opt/ember-coreui.uninstalled.*` folder.
+- **Owner-only Admin Core flow:** Admin Core → Operations adds a separately authenticated uninstall form. The POST endpoint requires owner role, the existing CSRF token, the current owner password and a typed confirmation; a fixed archive request is atomically queued. An independent root systemd path/service handles it. The web application cannot execute shell commands or request arbitrary file paths/purge mode.
+- **Safety guards and tests:** Shell runner enforces fixed installation markers, rejects symlinks/mounts and stale/forged requests, shares the existing updater lock, checks its systemd units and consumes the one-time request before archiving. Added PHP queue selftest and root-only isolated Docker/systemd fixture. Both standard and native preflights check the new source and tests. No actual live uninstall has been executed.
+- **SSH fallback documented:** Added the standalone, interactive, officially hosted uninstaller one-liner to README alongside the admin route, preserving the 24 KB documentation size limit.
+- **Version rule:** One merge equals one new version (0.6.96), including all six HTML version markers, JavaScript bootstrap, numeric SHA-256 asset fingerprints, changelogs, handover and branding.
+
 ## 0.6.95 - 10.11.2026
 
 - **Installed-Cores Preflight fix:** Two PHP source-contract strings in `scripts/installed-cores-selftest.php` interpolated the undefined `$lock` variable instead of looking for the literal source code. Masking `$lock` fixes both exact-match assertions.
