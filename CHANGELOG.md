@@ -1,5 +1,10 @@
 # CoreAI: TCI Interface
 
+## 0.6.88 - 10.11.2026
+
+- New rule in `CLAUDE.md` for future work: the settings pages are built after the operator's reference screenshots, referenced and not copied; the CoreAI theme is applied over all settings at the end. PR titles, PR descriptions, commit messages and new changelog entries describe them neutrally ("after the reference") instead of naming the reference product. Older, merged texts stay as they are.
+- Documentation only: no change to code, Cores, Modelfile, FIFO, prompts or account rights.
+
 ## 0.6.87 - 10.11.2026
 
 - **Settings > Archivierte Chats is a real page now**, after the ChatGPT screenshots: "Keine archivierten Chats" when there are none; otherwise the search "Archivierte Chats durchsuchen" (titles) and the two menus of the reference: **"Alle Chats"** with *Typ* (Alle Chats; **Cloud**: chats in which a cloud Core answered, marked with a cloud) and *Sortieren nach* (**Aktualisiert**, **Erstellt**, **Alphabetisch**, real), and **"Alle Projekte"** (Chats; **Geplante Aufgaben** In Vorbereitung). The group "Kein Projekt" with its count, and each chat with title, date, **Dearchivieren** and **Löschen** (with a confirmation). Projects are planned, so every chat stands under "Kein Projekt" and the page says so.

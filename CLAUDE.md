@@ -29,3 +29,9 @@ CoreAI is a **Terran interface**: its UI connects through **Terra-Net**, never A
 - Spoken chat messages are called **Stimmsequenzen** in German UI and Mara's ordinary answers. Generic uploaded audio files keep a distinct label. Technical Ollama model identifiers, persisted event titles and the existing `Sprachnachricht-` filename prefix must not be renamed.
 - **der Core**, **den Core**, **dem Core**, **des Cores**; plural **die Cores**. Use "Modell" only where technically accurate, not for Mara's identity.
 - The operator Modelfile is authoritative and must not be rewritten by UI-copy tasks. Respect the user's actual existing SYSTEM prompts; never silently replace them. Before release run `node scripts/tci-language-selftest.cjs` in addition to existing checks.
+
+## Einstellungsseiten nach Referenz, neutrale PR-Texte (10.11.2026)
+
+- Die Einstellungsseiten entstehen nach Referenz-Screenshots des Betreibers. Es wird **referenziert, nicht kopiert**; das CoreAI-Theme kommt am Ende über alle Einstellungen, wenn sie fertig sind.
+- In PR-Titeln, PR-Beschreibungen, Commit-Messages und neuen Changelog-Einträgen nicht "wie ChatGPT", "kopiert von ChatGPT", "ChatGPT-Seite" oder Ähnliches schreiben. Neutral formulieren: "nach der Referenz", "nach den Referenz-Screenshots", "wie in der Vorlage".
+- Ältere, bereits gemergte Texte bleiben unverändert, solange der Betreiber nichts anderes sagt.
