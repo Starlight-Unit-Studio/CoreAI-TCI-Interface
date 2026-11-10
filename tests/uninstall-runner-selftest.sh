@@ -10,7 +10,7 @@ bash -n "$ORIGINAL"
 WORK="$(mktemp -d /tmp/coreai-uninstall-selftest.XXXXXX)"
 trap 'rm -rf -- "$WORK"' EXIT
 mkdir -p "$WORK/bin" "$WORK/units" "$WORK/opt"
-printf "# CoreAI test unit\n" > "$WORK/units/coreai-update.path"
+printf "Description=CoreAI: TCI Interface Test unit\n" > "$WORK/units/coreai-update.path"
 printf "# Foreign unit\n" > "$WORK/units/foreign-app.service"
 cat > "$WORK/bin/docker" <<'MOCK'
 #!/usr/bin/env bash

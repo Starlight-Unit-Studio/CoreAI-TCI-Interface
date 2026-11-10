@@ -430,6 +430,10 @@ ensure_uninstall_service() {
   }
   [[ ! -L "$dir" && ! -L "$marker" ]] || die 'Unsicherer Uninstall-Anfragepfad.'
   install -d -m 0770 -o 33 -g 33 "$dir"
+  # An old positive marker must never falsely advertise a disabled host service.
+  printf '{"installed":false,"version":"%s"}\n' "$COREUI_VERSION" > "$marker"
+  chown root:33 "$marker"
+  chmod 0640 "$marker"
   if ! command -v systemctl >/dev/null 2>&1 || [[ ! -d /run/systemd/system ]]; then
     warn 'Kein systemd: CoreAI kann ueber den SSH-Deinstallations-One-Liner entfernt werden.'
     return 0

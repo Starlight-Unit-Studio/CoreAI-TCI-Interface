@@ -95,7 +95,7 @@ check_units() {
     path="$SYSTEMD_DIR/$unit"
     [[ -e "$path" || -L "$path" ]] || continue
     [[ -f "$path" && ! -L "$path" ]] || die "Systemd-Unit ist nicht regulaer: $path"
-    grep -q 'CoreAI' "$path" || die "Systemd-Unit ist nicht CoreAI zugeordnet: $path"
+    grep -q '^Description=CoreAI: TCI Interface ' "$path" || die "Systemd-Unit ist nicht CoreAI zugeordnet: $path"
   done
 }
 
@@ -132,13 +132,12 @@ stop_containers() {
 }
 
 check_data_mounts() {
-  if command -v findmnt >/dev/null 2>&1; then
-    local point
-    while IFS= read -r point; do
-      [[ "$point" != "$PROJECT_ROOT" && "$point" != "$PROJECT_ROOT"/* ]] \
-        || die "Datenbereinigung verweigert: eingebundenes Dateisystem unter $point"
-    done < <(findmnt -rn -o TARGET || true)
-  fi
+  command -v findmnt >/dev/null 2>&1 || die 'findmnt fehlt. Mounts koennen nicht sicher geprueft werden.'
+  local point
+  while IFS= read -r point; do
+    [[ "$point" != "$PROJECT_ROOT" && "$point" != "$PROJECT_ROOT"/* ]] \
+      || die "Datenbereinigung verweigert: eingebundenes Dateisystem unter $point"
+  done < <(findmnt -rn -o TARGET || true)
 }
 
 validate_root
