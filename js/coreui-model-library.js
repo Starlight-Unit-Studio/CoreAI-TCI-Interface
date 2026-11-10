@@ -9,11 +9,13 @@
     schedule = schedule || function (fn, delay) { return window.setTimeout(fn, delay); };
     var ids = ['Close', 'SearchForm', 'Query', 'Status', 'Results', 'Detail', 'Back',
       'ModelTitle', 'ModelDescription', 'ModelLink', 'Tag', 'Hint', 'Install', 'Progress',
-      'ProgressText', 'ProgressBar', 'ProgressFill'];
+      'ProgressText', 'ProgressBar', 'ProgressFill', 'Browser', 'Installed',
+      'InstalledStatus', 'InstalledList', 'OllamaProvider', 'InstalledProvider'];
     var el = {};
     ids.forEach(function (id) { el[id] = doc.getElementById('coreLibrary' + id); });
-    var state = {open: false, loading: false, detail: null, csrf: '', request: 0,
-      confirming: '', installing: '', polling: false, finished: false};
+    var state = {open: false, tab: 'ollama', loading: false, detail: null, csrf: '', request: 0,
+      confirming: '', installing: '', polling: false, finished: false, installedRequest: 0,
+      installedCores: [], pendingRemoval: '', removing: ''};
     function show(node, visible) { if (node) node.hidden = !visible; }
     function text(node, value) { if (node) node.textContent = value || ''; }
     function clear(node) { while (node && node.firstChild) node.removeChild(node.firstChild); }
@@ -51,6 +53,112 @@
     function sourceStatus(message) {
       text(el.Status, message);
       if (el.Status) el.Status.setAttribute('data-state', 'ok');
+    }
+    // The installed tab only reads Ollama's local inventory. No registry
+    // connection, Hugging Face account or external search is required.
+    function installedInfo(core) {
+      var size = Number(core.size_bytes) || 0;
+      var amount = size > 0 ? ' · ' + (size / 1073741824).toFixed(1).replace('.', ',') + ' GB' : '';
+      var params = core.parameter_size ? ' · ' + core.parameter_size : '';
+      var type = core.kind === 'tci' ? 'TCI Core'
+        : core.kind === 'cloud' ? 'Cloud-Verknüpfung' : 'Lokales LLM';
+      return type + params + amount;
+    }
+    function renderInstalled() {
+      clear(el.InstalledList);
+      if (!state.installedCores.length) {
+        item(el.InstalledList, 'p', 'core-library-empty', 'Keine installierten Cores gefunden.');
+        return;
+      }
+      state.installedCores.forEach(function (core) {
+        var card = item(el.InstalledList, 'article', 'core-library-installed-item');
+        var info = item(card, 'div', 'core-library-installed-copy');
+        item(info, 'strong', '', core.label || core.name);
+        if (core.label && core.label !== core.name) item(info, 'small', '', core.name);
+        item(info, 'small', '', installedInfo(core));
+        if (!core.removable) {
+          item(card, 'span', 'core-library-protected', core.protected_reason || 'Geschützter Core');
+          return;
+        }
+        var confirmation = state.pendingRemoval === core.name;
+        var button = item(card, 'button', 'core-install-btn core-library-remove',
+          state.removing === core.name ? 'Wird entfernt …'
+            : confirmation ? 'Wirklich entfernen?' : 'Deinstallieren');
+        button.type = 'button';
+        button.disabled = !!state.removing || !!state.installing;
+        button.addEventListener('click', function () { return removeInstalled(core.name); });
+        if (confirmation) item(card, 'small', 'core-library-remove-note',
+          'Entfernt nur diesen Core. Betroffene Konten wechseln zum Standard-Core.');
+      });
+    }
+    function loadInstalled() {
+      var serial = ++state.installedRequest;
+      text(el.InstalledStatus, 'Liest die installierten Cores von Ollama …');
+      return request('core_installed=1').then(function (data) {
+        if (!state.open || state.tab !== 'installed' || serial !== state.installedRequest) return;
+        state.installedCores = Array.isArray(data.cores) ? data.cores : [];
+        renderInstalled();
+        text(el.InstalledStatus, state.installedCores.length + ' installierte Cores im lokalen Ollama-Dienst.');
+      }).catch(function () {
+        if (!state.open || state.tab !== 'installed' || serial !== state.installedRequest) return;
+        text(el.InstalledStatus, 'Installierte Cores sind gerade nicht erreichbar. Bitte erneut öffnen.');
+      });
+    }
+    function updateCoreLists() {
+      var chat = window.CoreUICoreMode && window.CoreUICoreMode.instance;
+      if (chat && typeof chat.refresh === 'function') chat.refresh();
+      var manager = window.CoreUICoreInstall && window.CoreUICoreInstall.instance;
+      if (manager && typeof manager.refreshManage === 'function') manager.refreshManage();
+    }
+    function removeInstalled(name) {
+      if (state.removing || state.installing || !state.csrf || !state.open || state.tab !== 'installed') return Promise.resolve();
+      var row = state.installedCores.filter(function (core) { return core.name === name; })[0];
+      if (!row || !row.removable) return Promise.resolve();
+      if (state.pendingRemoval !== name) {
+        state.pendingRemoval = name;
+        renderInstalled();
+        return Promise.resolve();
+      }
+      state.pendingRemoval = '';
+      state.removing = name;
+      renderInstalled();
+      text(el.InstalledStatus, 'Entfernt ' + name + ' aus Ollama …');
+      return request('', {action: 'installed_core_uninstall', model: name}).then(function (data) {
+        var removed = Array.isArray(data.removed) ? data.removed : [];
+        if (!removed.length) throw new Error('Kein Core wurde entfernt.');
+        updateCoreLists();
+        return loadInstalled().then(function () {
+          text(el.InstalledStatus, removed.join(', ') + ' entfernt. Gespeicherte Auswahlen wurden zurückgesetzt.');
+        });
+      }).catch(function (error) {
+        var notes = {core_protected: 'Dieser Core ist geschützt und kann nicht gelöscht werden.',
+          install_running: 'Ein Installer oder Core-Update läuft noch. Bitte danach erneut versuchen.',
+          model_not_installed: 'Der Core ist bereits nicht mehr installiert.',
+          uninstall_partial: 'Ollama konnte den Core nicht vollständig entfernen.'};
+        text(el.InstalledStatus, notes[error.code] || 'Das Deinstallieren ist fehlgeschlagen. Bitte erneut versuchen.');
+      }).then(function () {
+        state.removing = '';
+        if (state.open && state.tab === 'installed') renderInstalled();
+      });
+    }
+    function switchTab(tab) {
+      if (!state.open || (tab !== 'ollama' && tab !== 'installed')) return Promise.resolve();
+      state.tab = tab;
+      state.request++;
+      state.installedRequest++;
+      state.pendingRemoval = '';
+      show(el.Browser, tab === 'ollama');
+      show(el.Installed, tab === 'installed');
+      show(el.Detail, false);
+      if (el.OllamaProvider) {
+        el.OllamaProvider.className = 'core-library-provider' + (tab === 'ollama' ? ' core-library-provider--active' : '');
+        el.OllamaProvider.setAttribute('aria-selected', tab === 'ollama' ? 'true' : 'false');
+      }
+      if (el.InstalledProvider) {
+        el.InstalledProvider.className = 'core-library-provider' + (tab === 'installed' ? ' core-library-provider--active' : '');
+        el.InstalledProvider.setAttribute('aria-selected', tab === 'installed' ? 'true' : 'false');
+      }
+      return tab === 'installed' ? loadInstalled() : search();
     }
     function installedVariant() {
       var tags = state.detail && state.detail.tags || [];
@@ -220,7 +328,7 @@
       show(el.Detail, false);
       show(el.Progress, false);
       if (el.Close && typeof el.Close.focus === 'function') el.Close.focus();
-      search();
+      switchTab('ollama');
       request('core_install_status=1').then(function (data) {
         var job = data.install;
         if (state.open && job && job.kind === 'library' && job.running) {
@@ -234,12 +342,16 @@
     function close() {
       state.open = false;
       state.request++;
+      state.installedRequest++;
       state.polling = false;
+      state.pendingRemoval = '';
       state.confirming = '';
       root.hidden = true;
       if (typeof openButton.focus === 'function') openButton.focus();
     }
     openButton.addEventListener('click', open);
+    el.OllamaProvider.addEventListener('click', function () { return switchTab('ollama'); });
+    el.InstalledProvider.addEventListener('click', function () { return switchTab('installed'); });
     el.Close.addEventListener('click', close);
     el.Back.addEventListener('click', function () { show(el.Detail, false); state.request++; });
     el.Tag.addEventListener('change', renderVariant);
@@ -255,7 +367,9 @@
       else close();
     });
     return {open: open, close: close, search: search, loadDetail: loadDetail,
-      state: function () { return {open: state.open, installing: state.installing, selected: state.detail && state.detail.name}; }};
+      switchTab: switchTab, loadInstalled: loadInstalled,
+      state: function () { return {open: state.open, tab: state.tab, installing: state.installing,
+        removing: state.removing, selected: state.detail && state.detail.name}; }};
   }
   window.CoreUIModelLibrary = {create: create};
   if (window.document && typeof window.fetch === 'function') {
