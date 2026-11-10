@@ -95,8 +95,8 @@ installed_test(str_contains($api, "=== 'installed_core_uninstall'")
   && str_contains($api, 'coreui_core_uninstall($pdo, [$target])')
   && str_contains($api, "'installed_core_update'")
   && str_contains($api, 'coreui_installed_cores_update_selection(')
-  && str_contains($api, "coreui_core_job_run($lock, 'coreui_core_update_run'")
-  && str_contains($api, "coreui_core_job_run($lock, 'coreui_library_run'")
+  && str_contains($api, "coreui_core_job_run(\$lock, 'coreui_core_update_run'")
+  && str_contains($api, "coreui_core_job_run(\$lock, 'coreui_library_run'")
   && str_contains($api, 'stu_require_permission_at_most(COREUI_CORE_INSTALL_PERMISSION_MAX, $pdo)'),
   'inventory, deletion and update must share the existing permission, lock and worker paths');
 echo "CoreAI installed Cores: inventory, protected defaults, exact deletion targets, reusable uninstall flow OK\n";
