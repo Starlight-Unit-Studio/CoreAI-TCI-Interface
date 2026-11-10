@@ -1,0 +1,28 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.91
+10.11.2026
+
+- Der bisher im Ollama-Kontobereich sitzende Button "Cores verwalten"
+  wird durch einen allgemeinen Einstieg "LLMs & Cores verwalten"
+  im Core-Verwaltungsfenster ersetzt.
+- Eigenes Popup mit drei nebeneinander angeordneten Reitern:
+  Ollama (offizielle Suche und lokaler Installer),
+  Hugging Face (In Vorbereitung), Installiert (echte Ollama-Liste).
+- Reiter "Installiert": zeigt lokale und TCI Cores, weitere LLMs,
+  bestehende Cloud-Stubs und vorhandene HF-Importnamen im Ollama-Dienst,
+  inklusive Groessen-/Parameterinformation soweit vorhanden.
+- Pro Core "Deinstallieren" mit zweiter Bestaetigung. Der
+  Standard-Core und seine benoetigte Basis bleiben geschuetzt.
+  Nur Admins duerfen entfernen. Der Server prueft vor dem Loeschen
+  unter dem vorhandenen Installer-Lock den exakten Ollama-Namen.
+- Entfernen verwendet die bereits vorhandene CoreAI-Routine:
+  Ollama entladen, den ausgewaehlten Namen loeschen und gespeicherte
+  Konto-Auswahlen auf den Standard-Core zuruecksetzen.
+- Neues Sicherheits-Selbsttestskript fuer installierte Cores sowie
+  erweiterter Oberflaechen-Selbsttest. Beide Preflight-Varianten
+  enthalten die neue PHP-Pruefung.
+- Die Ollama-Kontoanbindung bleibt optional und unveraendert. Keine
+  Werbung fuer Cloudanbieter/Tarife und keine aktiv behauptete
+  Hugging-Face-Installation.
+- Version 0.6.91 gemaess bestehendem Merge-Schema vorbereitet.
+- Isolierte UI-Tests und PHP-Helper-Test bestanden. Vollstaendiger
+  Server-PHP-/Ollama-Integrationstest steht noch aus.
