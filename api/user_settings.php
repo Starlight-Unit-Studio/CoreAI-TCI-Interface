@@ -371,7 +371,7 @@ if (($body['action'] ?? '') === 'installed_core_uninstall') {
   require_once __DIR__ . '/installed_cores.php';
   stu_require_permission_at_most(COREUI_CORE_INSTALL_PERMISSION_MAX, $pdo);
   $requested = trim((string)($body['model'] ?? ''));
-  if (!coreui_model_name_valid($requested)) stu_json(['ok'=>false, 'error'=>'invalid_model_name'], 400);
+  if (!coreui_installed_cores_name_valid($requested)) stu_json(['ok'=>false, 'error'=>'invalid_model_name'], 400);
   if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
   try {
     $lock = coreui_core_install_lock();
