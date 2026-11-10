@@ -8,6 +8,7 @@ require_once __DIR__ . '/profile_store.php';
 require_once __DIR__ . '/console_artifact_store.php';
 require_once __DIR__ . '/notifications_store.php';
 require_once __DIR__ . '/usage_store.php';
+require_once __DIR__ . '/account_page_store.php';
 
 $pdo = stu_pdo();
 $uid = stu_require_user_id();
@@ -147,6 +148,8 @@ try {
     // 0.6.84: tokens per day, Core and thinking level, counted for Settings > Profil (numbers only).
     'usage_daily' => coreui_usage_ready($pdo) ? coreui_export_rows($pdo,
       'SELECT day,model,thinking,calls,prompt_tokens,output_tokens FROM stu_usage_daily WHERE user_id=? ORDER BY day,model,thinking', [$uid]) : [],
+    // 0.6.86: Settings > Konto: the @handle and the plan an Inhaber or Admin chose.
+    'account_page' => ['username' => coreui_username_get($pdo, $uid), 'plan' => coreui_plan_get($pdo, $uid)],
     'security_notice' => [
       'password_hashes_exported' => false,
       'login_tokens_exported' => false,

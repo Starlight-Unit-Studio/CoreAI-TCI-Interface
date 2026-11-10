@@ -10,6 +10,7 @@ require_once __DIR__ . '/profile_store.php';
 require_once __DIR__ . '/model_access.php';
 require_once __DIR__ . '/account_delete.php';
 require_once __DIR__ . '/account_admin.php';
+require_once __DIR__ . '/account_page_store.php';
 require_once __DIR__ . '/tts_spike_store.php';
 require_once __DIR__ . '/image_spike_store.php';
 require_once __DIR__ . '/mailer.php';
@@ -148,7 +149,10 @@ if ($method === 'GET') {
     }
     stu_json(['ok' => true, 'items' => $st->fetchAll(PDO::FETCH_ASSOC) ?: [], 'policies' => $policies,
       'tools' => coreui_operator_runtime_load($pdo), 'policy_ready' => coreui_user_policy_ready($pdo),
-      'ctx_choices' => coreui_ai_num_ctx_choices()]);
+      'ctx_choices' => coreui_ai_num_ctx_choices(),
+      // 0.6.86: plans (Free, Go, Plus, Pro) per account and what each template writes.
+      'plans' => (object)coreui_plan_all($pdo), 'plan_ready' => coreui_plan_ready($pdo),
+      'plan_catalog' => coreui_plan_catalog(coreui_ai_num_ctx_choices())]);
   }
 
   // 0.5.83: models outside CoreAI and who may use them. Only the Inhaber
@@ -478,6 +482,31 @@ if ($action === 'user_policy') {
   }
   coreui_admin_audit($pdo, $actorId, 'user_policy', 'user', (string)$targetId, $policy);
   stu_json(['ok' => true, 'policy' => $policy]);
+}
+
+// 0.6.86: a plan for an account (Free, Go, Plus, Pro or none). The template writes the same
+// rules as the Werkzeuge and Limits sections; the same accounts may be changed as there.
+if ($action === 'user_plan') {
+  $targetId = (int)($body['user_id'] ?? 0);
+  $target = $targetId > 0 ? coreui_account_admin_target($pdo, $targetId) : null;
+  if ($target === null) stu_json(['ok' => false, 'error' => 'user_not_found'], 404);
+  $refusal = coreui_account_manage_refusal($actorId, $actorLevel, $target, false);
+  if ($refusal === 'use_account_settings') $refusal = 'own_policy';
+  if ($refusal !== '') stu_json(['ok' => false, 'error' => $refusal], $refusal === 'invalid_user' ? 400 : 403);
+  if ((int)($target['is_guest'] ?? 0) === 1) stu_json(['ok' => false, 'error' => 'guest_account'], 400);
+  $plan = $body['plan'] ?? null;
+  if ($plan === '') $plan = null;
+  if ($plan !== null && !is_string($plan)) stu_json(['ok' => false, 'error' => 'invalid_plan'], 400);
+  try {
+    $result = coreui_plan_apply($pdo, $targetId, $plan, $actorId, coreui_ai_num_ctx_choices());
+  } catch (InvalidArgumentException $e) {
+    stu_json(['ok' => false, 'error' => $e->getMessage()], 400);
+  } catch (RuntimeException $e) {
+    $code = $e->getMessage();
+    stu_json(['ok' => false, 'error' => in_array($code, ['missing_schema_021', 'missing_schema_026', 'missing_schema_031'], true) ? $code : 'user_settings_failed'], 503);
+  }
+  coreui_admin_audit($pdo, $actorId, 'user_plan', 'user', (string)$targetId, $result);
+  stu_json(['ok' => true, 'plan' => $result['plan'], 'policy' => $result['policy']]);
 }
 
 if ($action === 'model_access_save') {

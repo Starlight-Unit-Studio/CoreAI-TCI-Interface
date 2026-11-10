@@ -1,0 +1,68 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.86
+Datum: 10.11.2026
+Basis: main 0.6.85 nach PR #237 (1c2d2c0)
+Branch: claude/bold-galileo-myoyi0
+
+AUFTRAG
+Betreiber: Screenshot der ChatGPT-Seite Konto > Allgemein (Name, Benutzername, E-Mail,
+Plan, GPT-Erstellerprofil) und des Dialogs "Benutzernamen bearbeiten": "naechste seite,
+umsetzung machen wir wenn wir das einstellungen menue fertig haben da coreai live ist
+fuer alle".
+Entscheidungen (Rueckfrage):
+- Jetzt bauen und als PR stellen; wann gemergt und live eingespielt wird, entscheidet der
+  Betreiber (zum Beispiel erst, wenn das Einstellungsmenue fertig ist).
+- Benutzername echt umsetzen.
+- Plan: "der admin kann vier plaene auswaehlen also fertige vorlagen: free, go, plus und
+  pro. natuerlich ohne echte geldpreise". Die Beschreibung der ChatGPT-Plaene diente als
+  Vorlage; umgesetzt ist, was CoreAI pro Konto wirklich durchsetzen kann.
+- GPT-Erstellerprofil: In Vorbereitung und in die Roadmap fuer Workspace (Unternehmen
+  nutzen CoreAI intern wie ein Intranet, Konferenzschaltung mit mehreren Nutzern; laut
+  Betreiber ist der Chat bereits ein MMO-Chat).
+
+UMGESETZT
+- database/migrations/031_account_page.sql: stu_usernames (user_id PK, handle UNIQUE
+  ascii_bin, changed_at, FK CASCADE); stu_user_policies.plan (ADD COLUMN IF NOT EXISTS).
+- api/account_page_store.php (neu; api/account_store.php mit der Kontoanlage bleibt
+  unveraendert): Benutzername (Regeln, reservierte Namen, setzen, Vorschlag), Plaene
+  (Vorlagen an die Kontextfenster des Servers angepasst, Text, angepasst, Zusammenfassung).
+- Plaene schreiben ueber coreui_user_policy_save dieselben Regeln wie Werkzeuge und Limits
+  in Admin Core. Free: Websuche, 8K. Go: Websuche und Bilder, 16K. Plus: alle Werkzeuge,
+  64K. Pro: alle Werkzeuge, groesstes Fenster. Nachrichten pro Tag: bei allen ohne Grenze
+  (wie "unbegrenzte Textchats" der Vorlage). Datei-Uploads, Sprachchats und Denkaufwand
+  lassen sich pro Konto noch nicht begrenzen und stehen deshalb in keinem Plan.
+- api/profile.php: GET ?view=account; POST display_name (nur der eigene Name) und username
+  (keine Gaeste, 10 pro Stunde). api/admin.php: plans, plan_ready, plan_catalog in users;
+  user_plan mit denselben Rechten wie user_policy, Audit.
+- js/admin.js: Abschnitt Plan vor Werkzeuge und Limits, setzt beide sofort.
+- settings.html, js/coreui-account-settings.js, css/settings.css: Kontoseite, Dialoge,
+  Planseite. js/settings.js: gespeicherter Name geht an Profil. Profilkopf zeigt @name
+  (api/profile_stats.php, js/coreui-profile-stats.js). Kontoexport: account_page.
+- ROADMAP.md: P30 Workspace und Intranet-Betrieb (30 Pakete).
+
+TESTS (hier ausgefuehrt)
+- php scripts/account-page-selftest.php, auch mit COREUI_SELFTEST_DB=1 gegen MariaDB
+  (Migration 031 zweimal eingespielt, idempotent).
+- node scripts/account-ui-selftest.cjs (Bildschirmfotos Desktop, Dialog, Planseite, Handy
+  angesehen); node scripts/settings-tabs-ui-selftest.cjs (Admin Core: Plan Go setzt
+  Werkzeuge und Limits).
+- Echter HTTP-Lauf (php -S, MariaDB): Kontoseite laden (Vorschlag aus der E-Mail),
+  Benutzername speichern, reserviert abgewiesen, ohne CSRF abgewiesen, Name speichern
+  (Maras Name bleibt), leerer Name abgewiesen, Admin vergibt Go, Konto sieht Go mit den
+  echten Regeln, Profilkopf mit @name.
+- php -l der geaenderten PHP-Dateien, cache-bust --verify, version-merge-check
+  --base-version 0.6.85 (PASS).
+- Volle Testreihe mit MariaDB (COREUI_SELFTEST_DB=1): 120 bestanden, 7 fehlgeschlagen,
+  dieselben 7 wie auf main (chat-navigation-recovery, composer-menu-ui, core-install-ui,
+  send-shortcut, voice-live, voice-samples-ui, tests/test_preflight_http.py).
+- settings-tabs-ui-selftest.cjs nachgezogen, keine Pruefung abgeschaltet: der neue
+  Abschnitt Plan steht in der Liste der Abschnitte, und die Kontextfenster-Auswahl wird
+  jetzt gezielt angesprochen (select:not(.user-plan-select)).
+
+NICHT HIER GEPRUEFT
+- Ein Chat mit echtem Ollama unter einem Plan (die Regeln greifen ueber den vorhandenen
+  Weg in coreui_ai_runtime_apply, im Selbsttest gegen MariaDB nachgewiesen).
+
+NACH DEM MERGE (Betreiber)
+1. Update einspielen (Migration 031 laeuft mit).
+2. Admin Core > Benutzer > BEARBEITEN > Plan: Vorlage waehlen, PLAN UEBERNEHMEN.
+3. Einstellungen > Konto: Benutzernamen festlegen.

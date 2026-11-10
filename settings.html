@@ -6,16 +6,16 @@
   <meta name="language" content="de-DE" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#f0f4fa" />
-  <meta name="application-version" content="0.6.85" />
+  <meta name="application-version" content="0.6.86" />
   <meta name="application-name" content="CoreAI: TCI Interface" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface - Einstellungen</title>
   <link rel="stylesheet" href="./css/console.css?v=0217541490576697992638625" />
-  <link rel="stylesheet" href="./css/settings.css?v=0244256510896484531266575" />
+  <link rel="stylesheet" href="./css/settings.css?v=1015262157408743796190911" />
   <link rel="stylesheet" href="./css/coreui-profile-crop.css?v=0852949496159567452926853" />
   <link rel="stylesheet" href="./css/coreui-update.css?v=1027839363176318351849490" />
   <link rel="stylesheet" href="./css/coreui-theme.css?v=0697431397907702126637895" />
-  <script src="./js/console-gate.js?v=0907289211908403186501148"></script>
+  <script src="./js/console-gate.js?v=0685751382488372962046742"></script>
   <script src="./js/coreui-preferences.js?v=0004145186774094057353830"></script>
   <script src="./js/coreui-ui-language.js?v=0850224961537363286304733"></script>
 </head>
@@ -83,7 +83,7 @@
           <h1>EINSTELLUNGEN</h1>
         </div>
       </div>
-      <div class="settings-version">COREAI: TCI INTERFACE // v0.6.85</div>
+      <div class="settings-version">COREAI: TCI INTERFACE // v0.6.86</div>
       <div class="cfg-header-actions" aria-label="Schnellzugriffe Einstellungen">
         <label class="cfg-header-expert" for="settingsExpertToggle" title="Technische Einstellungen in allen Kategorien anzeigen oder ausblenden">
           <span>EXPERTENMODUS</span>
@@ -689,26 +689,69 @@
         <!-- KONTO -->
         <section class="cfg-view" id="view-konto" role="tabpanel" aria-labelledby="tab-konto" tabindex="-1" hidden>
           <header class="cfg-view-head">
-            <div><span class="cfg-kicker">KONTO UND ZUGRIFF</span><h2 id="accountTitle">Konto</h2><p>Dein Konto und die Abmeldung. Passwort und Geräte findest du unter Sicherheit, den Export unter Datenkontrollen.</p></div>
+            <div><span class="cfg-kicker">KONTO UND ZUGRIFF</span><h2 id="accountTitle">Konto</h2><p>Name, Benutzername, E-Mail und dein Plan. Passwort und Geräte findest du unter Sicherheit, den Export unter Datenkontrollen.</p></div>
             <button class="settings-action danger" id="settingsLogout" type="button">ABMELDEN</button>
           </header>
-          <div class="cfg-cards">
-            <section class="settings-panel cfg-card wide violet settings-panel-account" aria-labelledby="accountIdentTitle">
-              <header class="settings-panel-head">
-                <span class="settings-panel-glyph violet" aria-hidden="true">⌬</span>
-                <div><span>ANGEMELDET</span><h3 id="accountIdentTitle">Dein Konto</h3></div>
-              </header>
-              <div class="account-ident">
-                <span class="account-avatar" id="accountAvatar" aria-hidden="true">OP</span>
-                <div><span id="accountDisplayName">ANGEMELDETER OPERATOR</span><strong id="accountMail">WIRD GEPRÜFT...</strong></div>
-                <span class="account-level" id="accountLevel">LV.-</span>
+          <p class="sec-status" id="acctStatus" role="status" aria-live="polite"></p>
+          <!-- 0.6.86: modeled on the ChatGPT account page (js/coreui-account-settings.js, api/profile.php?view=account). -->
+          <div class="acct-main" id="acctMain">
+            <h3 class="sec-heading">Allgemein</h3>
+            <section class="settings-panel cfg-card wide sec-group acct-group" aria-label="Allgemein">
+              <div class="sec-row acct-row" id="acctRow-name">
+                <div class="sec-copy"><strong>Name</strong></div>
+                <div class="acct-value"><span id="acctName">...</span><button class="acct-edit" id="acctNameEdit" type="button" aria-label="Name bearbeiten" title="Name bearbeiten"><svg aria-hidden="true"><use href="#i-pencil" /></svg></button></div>
               </div>
-
+              <div class="sec-row acct-row" id="acctRow-username">
+                <div class="sec-copy"><strong>Benutzername</strong></div>
+                <div class="acct-value"><span id="acctUsername">...</span><button class="acct-edit" id="acctUsernameEdit" type="button" aria-label="Benutzernamen bearbeiten" title="Benutzernamen bearbeiten"><svg aria-hidden="true"><use href="#i-pencil" /></svg></button></div>
+              </div>
+              <div class="sec-row acct-row" id="acctRow-email">
+                <div class="sec-copy"><strong>E-Mail</strong></div>
+                <div class="acct-value"><span id="acctEmail">...</span></div>
+              </div>
+              <div class="sec-row acct-row" id="acctRow-plan">
+                <div class="sec-copy"><strong>Plan</strong></div>
+                <button class="sec-open" id="acctPlanOpen" type="button"><span id="acctPlan">...</span><svg aria-hidden="true"><use href="#i-chevron" /></svg></button>
+              </div>
+              <div class="sec-row acct-row is-planned" id="acctRow-creator">
+                <div class="sec-copy"><strong>Erstellerprofil</strong><small>Der Name, unter dem du später Skills und Agenten in einem gemeinsamen Workspace teilst.</small><span class="notify-planned">IN VORBEREITUNG</span></div>
+                <div class="acct-value"><button class="acct-edit" type="button" disabled aria-label="Erstellerprofil bearbeiten (in Vorbereitung)"><svg aria-hidden="true"><use href="#i-pencil" /></svg></button></div>
+              </div>
             </section>
+          </div>
 
+          <div class="acct-sub" id="acctSub-plan" hidden>
+            <button class="sec-back" id="acctPlanBack" type="button"><svg aria-hidden="true"><use href="#i-back" /></svg>Zurück</button>
+            <div class="sec-sub-head"><div><h3>Dein Plan</h3><p id="acctPlanNote"></p></div></div>
+            <section class="settings-panel cfg-card wide acct-plan-now" aria-labelledby="acctPlanName">
+              <span class="cfg-kicker">AKTUELL</span>
+              <strong class="acct-plan-name" id="acctPlanName">...</strong>
+              <ul class="acct-features" id="acctPlanFeatures"></ul>
+              <p class="sec-hint" id="acctPlanUsage" hidden></p>
+              <p class="sec-hint" id="acctPlanServerOff" hidden></p>
+            </section>
+            <h3 class="sec-heading">Pläne</h3>
+            <p class="sec-hint">Der Inhaber oder ein Admin vergibt die Pläne in Admin Core unter Benutzer. Alle Pläne sind kostenlos.</p>
+            <div class="acct-plans" id="acctPlans"></div>
+          </div>
 
-
-
+          <!-- 0.6.86: edit dialogs like the reference ("Benutzernamen bearbeiten") -->
+          <div class="sec-confirm acct-dialog" id="acctNameDialog" hidden role="dialog" aria-modal="true" aria-labelledby="acctNameTitle">
+            <div class="sec-confirm-box">
+              <div class="acct-dialog-head"><h3 id="acctNameTitle">Namen bearbeiten</h3><button class="acct-close" type="button" data-acct-close aria-label="Schließen">×</button></div>
+              <label class="settings-field" for="acctNameInput"><span><strong>NAME</strong><small>So nennt dich Mara, und so erscheinst du in CoreAI. Deine Login-E-Mail bleibt gleich.</small></span><input id="acctNameInput" type="text" maxlength="64" autocomplete="name" /></label>
+              <p class="sec-confirm-error" id="acctNameError" role="alert"></p>
+              <div class="sec-actions acct-dialog-actions"><button class="settings-action compact" type="button" data-acct-close>ABBRECHEN</button><button class="settings-action" id="acctNameSave" type="button" disabled>NAMEN ÄNDERN</button></div>
+            </div>
+          </div>
+          <div class="sec-confirm acct-dialog" id="acctUsernameDialog" hidden role="dialog" aria-modal="true" aria-labelledby="acctUsernameTitle">
+            <div class="sec-confirm-box">
+              <div class="acct-dialog-head"><h3 id="acctUsernameTitle">Benutzernamen bearbeiten</h3><button class="acct-close" type="button" data-acct-close aria-label="Schließen">×</button></div>
+              <p class="acct-note">Dein Benutzername ist auf diesem CoreAI-Server einmalig und erscheint in deinem Profil. Ein öffentliches Profil mit eigenem Link ist in Vorbereitung; ändert sich dein Benutzername später, ändert sich auch dieser Link.</p>
+              <label class="settings-field" for="acctUsernameInput"><span><strong>BENUTZERNAME</strong><small>Verwende 3 bis 20 Kleinbuchstaben, Zahlen, Punkte, Unterstriche oder Bindestriche.</small></span><span class="acct-at"><b aria-hidden="true">@</b><input id="acctUsernameInput" type="text" maxlength="21" autocomplete="username" autocapitalize="none" spellcheck="false" /></span></label>
+              <p class="sec-confirm-error" id="acctUsernameError" role="alert"></p>
+              <div class="sec-actions acct-dialog-actions"><button class="settings-action compact" type="button" data-acct-close>ABBRECHEN</button><button class="settings-action" id="acctUsernameSave" type="button" disabled>BENUTZERNAMEN ÄNDERN</button></div>
+            </div>
           </div>
         </section>
 
@@ -1297,15 +1340,16 @@
   <script src="./js/coreui-settings-menu.js?v=0905731306422182746103357"></script>
   <script src="./js/coreui-settings-tabs.js?v=0131180580469642779294886"></script>
   <script src="./js/coreui-context-slider.js?v=1058131433773441189843644"></script>
-  <script src="./js/settings.js?v=0997531900799399182916275"></script>
+  <script src="./js/settings.js?v=0852343420877549898637525"></script>
   <script src="./js/coreui-personalization-settings.js?v=0293012758263273966658748"></script>
   <script src="./js/coreui-voice-read.js?v=0478836976425824839668688"></script>
   <script src="./js/coreui-voice-terms.js?v=0470347751915481307845714"></script>
   <script src="./js/coreui-notify.js?v=1002976330424203629675926"></script>
   <script src="./js/coreui-notify-settings.js?v=0180900766828442110480559"></script>
-  <script src="./js/coreui-profile-stats.js?v=0455317875090572215591977"></script>
+  <script src="./js/coreui-profile-stats.js?v=0127785684761467082142579"></script>
   <script src="./js/coreui-qr.js?v=1096443357821968405236433"></script>
   <script src="./js/coreui-security-settings.js?v=0672521003500890646963337"></script>
+  <script src="./js/coreui-account-settings.js?v=0506515246827297684927059"></script>
   <script src="./js/coreui-update.js?v=0294648939860149727532714"></script>
 </body>
 </html>

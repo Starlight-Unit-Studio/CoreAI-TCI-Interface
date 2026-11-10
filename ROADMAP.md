@@ -6,7 +6,7 @@ Stand: 28.10.2026. Planungsbasis: [`383bd28`](https://github.com/Starlight-Unit-
 
 **Aktueller Stand 0.5.71: Downloads (M1) und der Agentenkern (M2) laufen live; Projekt-ZIPs entstehen lokal und in der Cloud. Als Nächstes folgt die Medien-Etappe mit Sprache (Mara hört und spricht, auch im Live-Gespräch), danach Bildgenerierung und der Projekt-Workspace. Details zur Sprache stehen im [Sprachplan](docs/COREUI_VOICE_PLAN.md).**
 
-Diese Roadmap ordnet die Anforderungen in **29 abschließbare Arbeitspakete** und nutzbare Lieferungen. Der [Masterplan](docs/COREUI_MASTERPLAN.md) hält Ziel und Architektur fest; die [Funktionsmatrix](docs/COREUI_FEATURE_MATRIX.md) führt Referenzen, bestehenden Teilbestand und Einzelabnahmen. Alle 82 derzeitigen Matrix-IDs sind einem Paket primär zugeordnet. Das bedeutet vollständige Zuordnung des erfassten Startbestands; die Tiefeninventur von **OpenClaw, Open WebUI, CrewAI, LangGraph und Microsoft AutoGen** läuft weiter.
+Diese Roadmap ordnet die Anforderungen in **30 abschließbare Arbeitspakete** und nutzbare Lieferungen. Der [Masterplan](docs/COREUI_MASTERPLAN.md) hält Ziel und Architektur fest; die [Funktionsmatrix](docs/COREUI_FEATURE_MATRIX.md) führt Referenzen, bestehenden Teilbestand und Einzelabnahmen. Alle 82 derzeitigen Matrix-IDs sind einem Paket primär zugeordnet. Das bedeutet vollständige Zuordnung des erfassten Startbestands; die Tiefeninventur von **OpenClaw, Open WebUI, CrewAI, LangGraph und Microsoft AutoGen** läuft weiter.
 
 ## Aktueller Stand (0.5.71, 28.10.2026)
 
@@ -19,7 +19,7 @@ Diese Roadmap ordnet die Anforderungen in **29 abschließbare Arbeitspakete** un
 | **M4 Skills** (P12 bis P14) | Teilweise: Skills mit Pflicht-Skill "werkzeuge" und eigene Skills; seit 0.5.80 ohne Schalter, Mara waehlt selbst aus ihrer Skill-Bibliothek und laedt mit [SKILL: kennung] nach. Offen: Versionen, Import/Export, Plugins; Sprachskill #119. | Migration 014 |
 | **M5 Browser, Wissen, Gedächtnis** (P15 bis P17) | Teilweise: seit 0.5.77 füllt der Browser Formulare aus (Suchfelder, Auswahl, Haken, Absenden) mit festen Regeln gegen Logins, Käufe, Nachrichten und Zahlungsdaten, mit Live-Ansicht ohne Einfrieren; seit 0.5.79 mit Notizen je Quelle, neuer Suche und mindestens zwei Webseiten je Recherche; Logins mit Übergabe an den Menschen, Entwürfe und Uploads aus #25 offen; RAG-Lite mit Namen und Rückfragen brauchbar, aber ohne Quellenangaben und Texterkennung; Gedächtnis ohne Herkunftsangabe. | 0.5.71 |
 | **M6 Medien** (P20) | Bild-, Video- und PDF-Analyse vorhanden, seit 0.5.71 mit derselben Mara wie im Text. Hören über Ollama am 28.10.2026 auf dem Server gemessen (P20.0: 25 Tokens je Sekunde Audio, Abschnitte bis 60 Sekunden). Hören im Chat, Sprechen, Live-Gespräch und Bildgenerierung offen und als nächste Etappe geplant. | [Sprachplan](docs/COREUI_VOICE_PLAN.md), [Bildplan](docs/COREUI_IMAGE_ENGINE_PLAN.md) |
-| **M6 übrige Breite** | P19 teilweise (robuste WebUI, Handy, 0.5.70); P18, P21 bis P24, P29 offen. | |
+| **M6 übrige Breite** | P19 teilweise (robuste WebUI, Handy, 0.5.70); P18, P21 bis P24, P29 und P30 (Workspace, seit 10.11.2026) offen. | |
 | **Laufzeit** | #51 und #52 (Hänger, Modellwechsel) seit Warteschlange, Kontextfenster-Erkennung und num_ctx vermutlich entschärft; live nachprüfen. | |
 | **GitHub Actions** | Wegen ausgeschöpften Kontingents auf Nutzerwunsch ausgelassen; Prüfung über Preflights und lokale Selbsttests. | |
 
@@ -152,7 +152,7 @@ P15 bis P17 machen Recherche, Browseraktionen und dauerhaften Kontext zu nachvol
 
 ### M6: Weitere Lieferungen: Funktionsbreite
 
-P18 bis P24 und P29 werden als getrennte Erweiterungen geliefert. Ihre Paketabhängigkeiten bestimmen die Reihenfolge innerhalb dieser Phase.
+P18 bis P24, P29 und P30 werden als getrennte Erweiterungen geliefert. Ihre Paketabhängigkeiten bestimmen die Reihenfolge innerhalb dieser Phase.
 
 | Paket | Voraussetzung | Ergebnis und Abnahme | Matrix-IDs |
 |---|---|---|---|
@@ -164,10 +164,11 @@ P18 bis P24 und P29 werden als getrennte Erweiterungen geliefert. Ihre Paketabh�
 | **P23: Zusammenarbeit und Austausch** | P08, P09, P18 | Gesprächsimport/-export, kontrollierte Freigaben, Notizen und gemeinsame Channels mit Antworten, Reaktionen und Pins ausbauen. **Abnahme:** Ein Gespräch lässt sich mit ausgewählten Ressourcen übertragen. Gemeinsame Arbeit beachtet Mitgliedschaft und widerrufene Freigaben. | `CF-014`, `CF-015`, `CF-016` |
 | **P24: Gesonderte Produktvorhaben** | Bestehende Regeln aus #23/#24 | Die bestehenden Vorhaben #23 und #24 in ihrer eigenen Begrenzung weiterführen: festgelegte Branding-Integrität und optionale Installationserfassung. Sie erhalten getrennte Umsetzung und Aktivierung. **Abnahme:** Nur bezeichnete Branding-Dateien werden geprüft. Die Installationserfassung bleibt ohne Opt-in aus und beeinflusst die Nutzbarkeit nicht. | `CF-070`, `CF-071` |
 | **P29: Abläufe visuell bauen und erproben** | P04, P09, P14, P18, P28 | Visuellen Team-/Ablaufeditor, gleichwertige deklarative Ansicht und wiederverwendbare Komponenten mit einem zugeordneten Playground verbinden. Reale Schritte, Zustand, Reviews, Fehler und Ergebnisse untersuchen. **Abnahme:** Ein Ablauf lässt sich auch auf dem Handy ohne Drag-and-drop bearbeiten, in beiden Ansichten verlustfrei wechseln und kontrolliert ausführen. Import startet keinen Code; Downloads und serielle Vergleichsläufe verwenden die vorhandenen gemeinsamen Verträge. | `CF-081`, `CF-082` |
+| **P30: Workspace und Intranet-Betrieb** | P18, P22, P23 | Betreiberentscheidung 10.11.2026: Ein Unternehmen nutzt CoreAI intern wie ein Intranet. Gemeinsame Räume und Konferenzschaltungen mit mehreren Konten und Mara im selben Gespräch, aufbauend auf dem Chat, den der Betreiber bereits als Mehrbenutzer-Chat (MMO-Chat) angelegt hat. Dazu Workspace-Mitgliedschaft und -Rollen, das **Erstellerprofil** unter Einstellungen > Konto (der Name, unter dem Mitglieder Skills und Agenten im Workspace teilen; seit 0.6.86 als In Vorbereitung sichtbar), Workspace-Anfragen und die zugehörigen Benachrichtigungen (seit 0.6.83 als In Vorbereitung sichtbar). **Abnahme:** Mehrere Konten arbeiten gleichzeitig im selben Raum mit Mara; Mitgliedschaft und Rechte greifen serverseitig; geteilte Skills tragen das Erstellerprofil; ein Konto außerhalb des Workspace sieht nichts davon. | neu |
 
 ### M7: Abnahme und Veröffentlichung
 
-P25 begleitet jede Teilveröffentlichung. Die abschließende Gesamtprüfung folgt auf die vollständige Einzelinventur aller fünf Referenzen und die zugehörigen Implementierungen, einschließlich der ergänzten Pakete P26 bis P29. Eine nützliche Teilveröffentlichung benötigt nur ihre tatsächlich betroffenen und abgenommenen Funktionen.
+P25 begleitet jede Teilveröffentlichung. Die abschließende Gesamtprüfung folgt auf die vollständige Einzelinventur aller fünf Referenzen und die zugehörigen Implementierungen, einschließlich der ergänzten Pakete P26 bis P30. Eine nützliche Teilveröffentlichung benötigt nur ihre tatsächlich betroffenen und abgenommenen Funktionen.
 
 | Paket | Voraussetzung | Ergebnis und Abnahme | Matrix-IDs |
 |---|---|---|---|

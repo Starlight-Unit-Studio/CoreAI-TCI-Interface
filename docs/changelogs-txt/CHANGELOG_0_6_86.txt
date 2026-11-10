@@ -1,0 +1,22 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.86
+10.11.2026
+
+- Einstellungen > Konto folgt der ChatGPT-Kontoseite ("Allgemein"): Name, Benutzername,
+  E-Mail, Plan und Erstellerprofil in einer Karte. ABMELDEN bleibt oben.
+- Name: Dialog "Namen bearbeiten"; Maras Name bleibt, Profil und Profilkopf folgen sofort.
+- Benutzername (echt, neu): @name, 3 bis 20 Kleinbuchstaben, Zahlen, Punkte, Unterstriche
+  oder Bindestriche, eindeutig auf dem Server, reservierte Namen (admin, mara, coreai ...)
+  gesperrt, Vorschlag aus der E-Mail. Erscheint im Profilkopf. Oeffentliches Profil mit
+  Link bleibt geplant. Keine Gaeste, hoechstens 10 Aenderungen pro Stunde.
+- E-Mail: angezeigt (Aendern wie bisher in Admin Core).
+- Plan (echt, neu): vier Vorlagen, die Inhaber oder Admin pro Konto in Admin Core >
+  Benutzer > BEARBEITEN > Plan waehlt: Free (Websuche, 8K), Go (dazu Bilder, 16K), Plus
+  (alle Werkzeuge, 64K), Pro (alle Werkzeuge, groesstes Kontextfenster). Keine Preise.
+  Ein Plan setzt echte Werkzeuge und Limits; spaetere Einzelaenderung zeigt "angepasst".
+  Die Kontoseite zeigt "Dein Plan" mit Regeln, Tagesstand, serverweit abgeschalteten
+  Werkzeugen und alle vier Plaene nebeneinander.
+- Erstellerprofil: In Vorbereitung. Neues Roadmap-Paket P30 Workspace und Intranet-Betrieb.
+- Migration 031 (stu_usernames, stu_user_policies.plan). api/account_page_store.php,
+  profile.php ?view=account, admin.php user_plan, Kontoexport mit Benutzername und Plan.
+- Tests: account-page-selftest.php (auch MariaDB), account-ui-selftest.cjs, Admin-Plan in
+  settings-tabs-ui-selftest.cjs. Keine Aenderung an Cores, Modelfile, FIFO, Prompts, Rechten.

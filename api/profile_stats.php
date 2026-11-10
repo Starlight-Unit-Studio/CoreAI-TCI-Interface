@@ -12,6 +12,7 @@ require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/profile_store.php';
 require_once __DIR__ . '/usage_store.php';
+require_once __DIR__ . '/account_page_store.php';
 
 header('Cache-Control: private, no-store');
 header('X-Content-Type-Options: nosniff');
@@ -40,6 +41,8 @@ stu_json([
     'avatar' => $profile['avatars']['user'] ?? null,
     'role' => coreui_role_name((int)($account['permission_level'] ?? 4), false),
     'member_since' => substr((string)($account['created_at'] ?? ''), 0, 10),
+    // 0.6.86: the @handle from Settings > Konto (null until the account picks one).
+    'username' => coreui_username_get($pdo, $uid),
   ],
   'stats' => coreui_profile_stats($pdo, $uid, $assistantId),
 ]);
