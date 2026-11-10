@@ -27,7 +27,7 @@ function coreui_installed_cores_rows(array $models, string $default, string $sou
     if (!coreui_installed_cores_name_valid($name)) continue;
     $standard = coreui_core_same($name, $default);
     $source = $sourceBase !== '' && coreui_core_same($name, $sourceBase);
-    $mara = coreui_core_is_mara($name);
+    $mara = $standard || coreui_core_is_mara($name);
     $cloud = preg_match('~(?:^|[:._-])cloud(?:$|[:._-])~i', $name) === 1;
     $reason = $standard ? 'Der Standard-Core muss installiert bleiben.'
       : ($source ? 'Die Basis des Standard-Cores bleibt geschützt.' : '');
