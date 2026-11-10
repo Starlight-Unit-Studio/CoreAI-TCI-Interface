@@ -456,7 +456,7 @@
             <thead><tr><th scope="col">TCI-Name</th><th scope="col">Core</th><th scope="col">Status</th></tr></thead>
             <tbody id="coreLegendRows"></tbody>
           </table>
-          <p class="core-legend-note">Jede Stufe antwortet als deine CoreAI. Die Punkte im Core-Menü: grün ist der Core, mit dem deine CoreAI dir gerade antwortet, gelb ein installierter Core in Bereitschaft, rot ein Core, der fehlt oder gerade nicht erreichbar ist; golden pulsiert der Core, der gerade geladen wird. Eine ausgegraute Stufe fehlt noch und lässt sich dort installieren (nur Admins). Zusätzliche Modelle lassen sich unter „Cores verwalten“ im Ollama-Bereich lokal installieren. Die Ollama-Kontoverbindung ist optional und für lokale Modelle nicht nötig.</p>
+          <p class="core-legend-note">Jede Stufe antwortet als deine CoreAI. Die Punkte im Core-Menü: grün ist der Core, mit dem deine CoreAI dir gerade antwortet, gelb ein installierter Core in Bereitschaft, rot ein Core, der fehlt oder gerade nicht erreichbar ist; golden pulsiert der Core, der gerade geladen wird. Eine ausgegraute Stufe fehlt noch und lässt sich dort installieren (nur Admins). Zusätzliche LLMs lassen sich unter „Cores verwalten“ im Ollama-Bereich lokal installieren. Die Ollama-Kontoverbindung ist dafür nicht nötig.</p>
         </section>
         <section class="core-legend-section" aria-labelledby="coreLegendFormat">
           <h3 id="coreLegendFormat">FORMATIERUNG</h3>
@@ -563,43 +563,43 @@
     <div class="core-library-panel" role="dialog" aria-modal="true" aria-labelledby="coreLibraryTitle" tabindex="-1">
       <header class="core-library-head">
         <div>
-          <span class="core-library-kicker">LOKALE MODELLVERWALTUNG</span>
+          <span class="core-library-kicker">LOKALE LLM-VERWALTUNG</span>
           <h2 id="coreLibraryTitle">Cores verwalten</h2>
-          <p>Ergänze lokale Modelle, ohne bestehende TCI Cores oder ihre Einstellungen zu verändern.</p>
+          <p>Ergänze lokale LLMs, ohne bestehende TCI Cores oder ihre Einstellungen zu verändern.</p>
         </div>
-        <button type="button" class="core-library-close" id="coreLibraryClose" aria-label="Modellverwaltung schließen">×</button>
+        <button type="button" class="core-library-close" id="coreLibraryClose" aria-label="LLM-Verwaltung schließen">×</button>
       </header>
-      <div class="core-library-providers" aria-label="Modellquellen">
+      <div class="core-library-providers" aria-label="LLM-Quellen">
         <div class="core-library-provider core-library-provider--active" id="coreLibraryOllamaProvider">
           <strong>OLLAMA</strong>
-          <span>Offizielle Modellsuche und lokaler Download</span>
+          <span>Offizielle Ollama-Suche und lokaler Download</span>
         </div>
         <div class="core-library-provider core-library-provider--future" aria-disabled="true">
           <strong>HUGGING FACE</strong>
-          <span>Modellverwaltung in Vorbereitung</span>
+          <span>LLM-Verwaltung in Vorbereitung</span>
         </div>
       </div>
-      <section class="core-library-browser" aria-label="Ollama-Modellsuche">
+      <section class="core-library-browser" aria-label="Ollama-Suche">
         <form class="core-library-search" id="coreLibrarySearchForm">
-          <label for="coreLibraryQuery">MODELL SUCHEN</label>
+          <label for="coreLibraryQuery">LLM SUCHEN</label>
           <div class="core-library-search-controls">
             <input id="coreLibraryQuery" type="search" maxlength="80" placeholder="z. B. qwen3.5, llama, gemma" autocomplete="off" />
             <button class="core-install-btn core-install-btn--go" type="submit">Suchen</button>
           </div>
           <a href="https://ollama.com/search" target="_blank" rel="noopener noreferrer" id="coreLibraryOfficialSearch">Offizielle Ollama-Suche öffnen</a>
         </form>
-        <p class="core-library-feedback" id="coreLibraryStatus" role="status" aria-live="polite">Die Modelle werden aus der offiziellen Ollama-Suche geladen.</p>
+        <p class="core-library-feedback" id="coreLibraryStatus" role="status" aria-live="polite">Die Einträge werden aus der offiziellen Ollama-Suche geladen.</p>
         <div class="core-library-results" id="coreLibraryResults" role="list"></div>
       </section>
       <section class="core-library-detail" id="coreLibraryDetail" hidden aria-labelledby="coreLibraryModelTitle">
-        <button type="button" class="core-library-back" id="coreLibraryBack">← Zur Modellsuche</button>
+        <button type="button" class="core-library-back" id="coreLibraryBack">← Zur Suche</button>
         <h3 id="coreLibraryModelTitle"></h3>
         <p class="core-library-description" id="coreLibraryModelDescription"></p>
         <label class="core-library-tag-label" for="coreLibraryTag">LOKAL VERFÜGBARE VERSION</label>
         <select id="coreLibraryTag"></select>
         <p class="core-library-hint" id="coreLibraryHint"></p>
         <div class="core-library-detail-actions">
-          <a id="coreLibraryModelLink" href="https://ollama.com/search" target="_blank" rel="noopener noreferrer">Modell auf Ollama ansehen</a>
+          <a id="coreLibraryModelLink" href="https://ollama.com/search" target="_blank" rel="noopener noreferrer">Auf Ollama ansehen</a>
           <button class="core-install-btn core-install-btn--go" id="coreLibraryInstall" type="button" disabled>Installieren</button>
         </div>
       </section>
