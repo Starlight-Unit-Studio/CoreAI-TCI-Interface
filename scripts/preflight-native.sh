@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.95: PHP-Literalpruefung im Installed-Cores-Selbsttest.
+# CoreAI: TCI Interface 0.6.96: Deinstaller, Owner-Handshake und isolierte Regressionstests.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -41,6 +41,13 @@ read_constant() {
 printf 'CoreAI: TCI Interface Native-Preflight, Version %s\n' "$VERSION"
 
 UI_FILES=(
+  scripts/uninstall.sh
+  tests/uninstall-runner-selftest.sh
+  scripts/uninstall-store-selftest.php
+  api/uninstall_store.php
+  js/coreui-uninstall-admin.js
+  config/systemd/coreai-uninstall.path.template
+  config/systemd/coreai-uninstall.service.template
   LICENSE.de.md
   LICENSE.md
   LICENSE_HISTORY.md
@@ -442,6 +449,19 @@ if host_updater_syntax="$(bash -n "$PROJECT_ROOT/scripts/coreai-updater.sh" 2>&1
   fi
 else
   fail "Update-Dienst: Bash-Syntaxfehler in scripts/coreai-updater.sh: $host_updater_syntax"
+fi
+
+uninstall_store_test=''
+if uninstall_store_test="$(php "$PROJECT_ROOT/scripts/uninstall-store-selftest.php" 2>&1)"; then
+  ok 'Deinstallation: sichere Eigentumeranfrage, Archiv-Modus und atomare Queue geprueft.'
+else
+  fail "Deinstallation: Queue-Selbsttest fehlgeschlagen. Details: $uninstall_store_test"
+fi
+uninstall_runner_test=''
+if uninstall_runner_test="$(bash "$PROJECT_ROOT/tests/uninstall-runner-selftest.sh" 2>&1)"; then
+  ok 'Deinstallation: Preview, Anfragepruefung, isolierter Docker-Stopp und Archiv-Backup geprueft.'
+else
+  fail "Deinstallation: Host-Runner-Selbsttest fehlgeschlagen. Details: $uninstall_runner_test"
 fi
 
 # 0.6.93: automatic updates require opt-in, survive page reloads and respect Later.

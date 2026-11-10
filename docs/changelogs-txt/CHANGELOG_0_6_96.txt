@@ -1,0 +1,21 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.96
+10.11.2026
+
+- Eigener Deinstaller scripts/uninstall.sh fuer den offiziellen Docker-
+  Standardpfad /opt/ember-coreui. Vorschau, interaktive Archiv-
+  Deinstallation sowie separat und stark bestaetigte Datenloeschung.
+- Deinstallation beendet nur das Docker-Compose-Projekt ember-coreui
+  und die ihm zugehoerigen systemd Update-/Uninstall-Dienste.
+- Ohne --purge-data werden alle Daten, Backups, Konten, Uploads und
+  Dateien nach /opt/ember-coreui.uninstalled.<Datum> verschoben.
+  Globale Docker-/Ollama-/Webserver-Dienste und fremde Apps bleiben.
+- Im Admin Core unter Betrieb nur fuer Inhaber: erneutes Passwort,
+  CSRF und bestaetigende Texteingabe, dann eine feste Archiv-Anfrage.
+  Ein separater Root-systemd-Dienst fuehrt diese spaeter aus.
+- Eigener SSH-One-Liner in der englischen README, unabhaengig
+  von kaputtem CoreAI-Webzugang und Host-Updater.
+- PHP-Queue- und Shell-Runner-Fixturetests pruefen atomare Anfragen,
+  Freigaben, Vorschau und nur isoliert nachgebildete Docker-Aufrufe.
+  Kein echter Produktivhost wurde deinstalliert.
+- VERSION, sechs HTML-Seiten, Bootstrap, Cache, Preflight, Branding,
+  Changelog und Uebergabe auf 0.6.96 aktualisiert.

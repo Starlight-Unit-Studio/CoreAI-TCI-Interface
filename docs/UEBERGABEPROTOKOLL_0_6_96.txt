@@ -1,0 +1,59 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.96
+Datum: 10.11.2026
+Basis: main 0.6.95 (PR #247 gemergt)
+Branch: feat/0.6.96-uninstaller-admin-oneliner
+Status: implementiert im PR-Branch; Live-Deinstallation NICHT ausgefuehrt
+
+ZIEL
+Eigenstaendiger, isolierter und sicherer CoreAI-Deinstaller fuer
+offizielle Docker-Installationen /opt/ember-coreui. Zugang auch dann,
+wenn der Update- oder Webzugang des CoreAI nicht mehr funktioniert.
+
+CLI
+- scripts/uninstall.sh --dry-run (nur Vorschau)
+- scripts/uninstall.sh --execute (ausdrueckliche interaktive
+  Bestaetigung COREAI ENTFERNEN, komplette Installation als Archiv)
+- scripts/uninstall.sh --purge-data (nur SSH, separate staerkere
+  Texteingabe, geloeschte Daten sind endgueltig weg)
+- Einzelausfuehrung ueber temporaer heruntergeladenes GitHub-Skript
+  direkt aus README dokumentiert.
+
+ADMIN CORE > BETRIEB
+- Owner-only Karte, initial verborgen; GET uninstall_status
+  zeigt Hostdienst und CSRF nur beim Inhaber.
+- POST uninstall_request erfordert Owner-Recht, CSRF, aktuelles
+  Passwort und korrekte Zeichenfolge COREAI ENTFERNEN.
+- Feste Anfrage ohne Shellkommando und ohne frei waehlbare Pfade.
+  Im Web nur Archiv-Deinstallation, niemals --purge-data.
+- Der Host bekommt die Anfrage per atomic rename, schliesst
+  doppelte Anfragen aus und fuehrt sie als root per systemd aus.
+- Dienst wird von scripts/install.sh eingerichtet und besitzt
+  eigenen *.path + *.service; bei fehlendem systemd bleibt CLI.
+
+SICHERHEIT
+- Fester Standardpfad und Datei-Marker, keine Symlink-/Mount-Pfade.
+- Gemeinsames Update-Lock und Sperre bei anstehendem Update.
+- Nur docker compose --project-name ember-coreui down (keine Volumes).
+- Nur explizite CoreAI-systemd-Units entfernen, keine globalen Dienste.
+- Ollama-Modellbestande, Docker, Apache/Nginx, Swap und fremde Apps
+  werden nicht angefasst. Betreiber-Konfigurationen fuer Reverse
+  Proxies muessen separat entfernt werden.
+- Browser-Anfrage wird vor dem Archivieren verbraucht, damit eine
+  Wiederherstellung keine neue Deinstallation ausloest.
+
+PRUEFUNGEN
+- Bash-Syntax des Uninstall-Runners und der Test-Fixture lokal PASS.
+- Isolierte Fixture mit Mock-Docker/systemctl testet Vorschau,
+  verweigerte Aufrufe und erfolgreichen Archivlauf: PASS.
+- PHP-Lint und PHP-Queue-Selbsttest mit temporarem Verzeichnis: PASS.
+- JavaScript-Parsepruefung von js/coreui-uninstall-admin.js: PASS.
+- Kein realer Docker-/Systemd-/Ollama-Dienst gestoppt.
+- Auf Zielhost/PR vor Merge beide Preflight-Varianten und
+  python3 scripts/version-merge-check.py --base-version 0.6.95
+  ausfuehren. Kein Live-PASS behaupten.
+
+VERSION
+Ein Merge = eine neue Versionsnummer 0.6.96.
+Sechs Seiten, Bootstrap, numerische Asset-Fingerprints, README,
+Changelog, TXT-Archiv, Branding und Preflight synchronisiert.
+Merge nur nach Betreiberabnahme.

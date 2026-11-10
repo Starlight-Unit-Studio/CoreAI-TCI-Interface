@@ -1,0 +1,10 @@
+# CoreAI: TCI Interface: a validated owner request is queued by the web API.
+[Unit]
+Description=CoreAI: TCI Interface Uninstall-Anfrage aus dem Admin Core
+
+[Path]
+PathExists=@@PROJECT_ROOT@@/var/uninstall-request/request.json
+Unit=coreai-uninstall.service
+
+[Install]
+WantedBy=multi-user.target

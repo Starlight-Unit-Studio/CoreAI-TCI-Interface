@@ -14,6 +14,8 @@ require_once __DIR__ . '/account_page_store.php';
 require_once __DIR__ . '/tts_spike_store.php';
 require_once __DIR__ . '/image_spike_store.php';
 require_once __DIR__ . '/mailer.php';
+require_once __DIR__ . '/uninstall_store.php';
+require_once __DIR__ . '/update_store.php';
 
 $pdo = stu_pdo();
 $actorId = stu_require_user_id();
@@ -119,6 +121,13 @@ function coreui_admin_get_overview(PDO $pdo, int $actorLevel): void {
 
 if ($method === 'GET') {
   if ($action === 'overview') coreui_admin_get_overview($pdo, $actorLevel);
+  // Host uninstall is a separate root runner, never a PHP shell command.
+  if ($action === 'uninstall_status') {
+    if ($actorLevel !== 0) stu_json(['ok'=>false, 'error'=>'owner_only'], 403);
+    $root = dirname(__DIR__);
+    stu_json(['ok'=>true, 'owner'=>true, 'available'=>coreui_uninstall_available($root),
+      'queued'=>coreui_uninstall_pending($root), 'csrf_token'=>stu_csrf_token()]);
+  }
 
   if ($action === 'users') {
     $q = trim((string)($_GET['q'] ?? ''));
@@ -301,6 +310,43 @@ if ($method === 'GET') {
 if ($method !== 'POST') stu_json(['ok' => false, 'error' => 'method_not_allowed'], 405);
 stu_require_csrf();
 $body = stu_read_json_body();
+
+if ($action === 'uninstall_request') {
+  if ($actorLevel !== 0) stu_json(['ok'=>false, 'error'=>'owner_only'], 403);
+  if (($body['confirmation'] ?? '') !== 'COREAI ENTFERNEN') {
+    stu_json(['ok'=>false, 'error'=>'uninstall_confirmation_required'], 400);
+  }
+  $password = (string)($body['password'] ?? '');
+  if ($password === '' || strlen($password) > 1024) stu_json(['ok'=>false, 'error'=>'password_required'], 400);
+  // Rate-limit password retries even for a previously authenticated owner session.
+  stu_start_session();
+  $now = time();
+  if ((int)($_SESSION['coreai_uninstall_retry_after'] ?? 0) > $now) {
+    stu_json(['ok'=>false, 'error'=>'uninstall_rate_limited'], 429);
+  }
+  $_SESSION['coreai_uninstall_retry_after'] = $now + 4;
+  $st = $pdo->prepare('SELECT password_hash FROM stu_users WHERE id=? AND permission_level=0 AND is_guest=0 LIMIT 1');
+  $st->execute([$actorId]);
+  $storedHash = (string)($st->fetchColumn() ?: '');
+  if ($storedHash === '' || !password_verify($password, $storedHash)) {
+    stu_json(['ok'=>false, 'error'=>'password_invalid'], 403);
+  }
+  $root = dirname(__DIR__);
+  if (coreui_update_state($root)['running']) stu_json(['ok'=>false, 'error'=>'update_running'], 409);
+  if (!coreui_uninstall_available($root)) stu_json(['ok'=>false, 'error'=>'uninstaller_unavailable'], 503);
+  // Record explicit consent before the host runner can stop the database.
+  coreui_admin_audit($pdo, $actorId, 'coreai_uninstall_confirmed', 'system', 'coreai', ['mode'=>'archive']);
+  try {
+    coreui_uninstall_queue($root, (int)$actorId);
+  } catch (RuntimeException $e) {
+    $known = ['uninstall_pending','uninstall_request_busy','uninstall_request_unavailable',
+      'uninstaller_unavailable','uninstall_request_unsafe'];
+    $code = $e->getMessage();
+    stu_json(['ok'=>false, 'error'=>in_array($code, $known, true) ? $code : 'uninstall_request_failed'],
+      $code === 'uninstall_pending' ? 409 : 503);
+  }
+  stu_json(['ok'=>true, 'queued'=>true, 'mode'=>'archive'], 202);
+}
 
 if ($action === 'user_create') {
   $email = coreui_account_clean_email((string)($body['username'] ?? ''));

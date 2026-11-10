@@ -53,6 +53,8 @@ services:
       # window drops its request here (var/update itself stays read-only).
       - ./var/php_sessions:/var/www/coreui/var/php_sessions
       - ./var/update-request:/var/www/coreui/var/update-request
+      # 0.6.96: only the authenticated owner can queue a host uninstall.
+      - ./var/uninstall-request:/var/www/coreui/var/uninstall-request
       # 0.6.1: read-aloud audio per account, kept 7 days.
       - ./var/voice_cache:/var/www/coreui/var/voice_cache
       - ./uploads/ember_browse:/var/www/coreui/uploads/ember_browse
