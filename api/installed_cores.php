@@ -12,12 +12,19 @@ declare(strict_types=1);
  */
 require_once __DIR__ . '/core_install.php';
 
+function coreui_installed_cores_name_valid(string $name): bool {
+  // Keep existing Ollama and hf.co/owner/model names, but never URLs or
+  // malformed paths. Validate again after reading the live inventory.
+  return coreui_model_name_valid($name)
+    && preg_match('~^[A-Za-z0-9][A-Za-z0-9._-]*(?:/[A-Za-z0-9][A-Za-z0-9._-]*){0,4}(?::[A-Za-z0-9][A-Za-z0-9._-]*)?$~D', $name) === 1;
+}
+
 function coreui_installed_cores_rows(array $models, string $default, string $sourceBase): array {
   $rows = [];
   foreach ($models as $model) {
     if (!is_array($model)) continue;
     $name = trim((string)($model['name'] ?? ''));
-    if (!coreui_model_name_valid($name)) continue;
+    if (!coreui_installed_cores_name_valid($name)) continue;
     $standard = coreui_core_same($name, $default);
     $source = $sourceBase !== '' && coreui_core_same($name, $sourceBase);
     $mara = coreui_core_is_mara($name);
@@ -48,7 +55,7 @@ function coreui_installed_cores_rows(array $models, string $default, string $sou
  * different model. The default Core and its template base are protected.
  */
 function coreui_installed_cores_target(array $models, string $requested, string $default, string $sourceBase): string {
-  if (!coreui_model_name_valid($requested)) throw new RuntimeException('invalid_model_name');
+  if (!coreui_installed_cores_name_valid($requested)) throw new RuntimeException('invalid_model_name');
   foreach (coreui_installed_cores_rows($models, $default, $sourceBase) as $row) {
     if (!hash_equals((string)$row['name'], $requested)) continue;
     if (!$row['removable']) throw new RuntimeException('core_protected');
