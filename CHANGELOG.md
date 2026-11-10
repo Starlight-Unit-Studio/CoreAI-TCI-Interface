@@ -1,5 +1,12 @@
 # CoreAI: TCI Interface
 
+## 0.6.94 - 10.11.2026
+
+- **Critical host-updater syntax fix:** Corrected the unbalanced quote in the nested command substitution for `attempted_commit` in `scripts/coreai-updater.sh`. The old script failed Bash parsing at the end of `do_run()` and therefore could not check for or install updates.
+- **Regression protection:** `tests/update-runner-selftest.sh` now runs `bash -n` against the host updater before any simulated GitHub, backup or installation scenario. Docker and native preflights also require valid Bash syntax and report the actual test failure output instead of suppressing it.
+- **Recovery:** CoreAI 0.6.93 installations running the affected host script need a one-time local syntax repair or the official setup fallback before the built-in updater can resume. No model files, account data, database schemas or automatic-update policy were changed.
+- Version 0.6.94 follows the one-merge-one-version policy. The fixed command was validated with Bash 5.2 in an isolated reproduction; the full host-updater test still requires a complete CoreAI checkout.
+
 ## 0.6.93 - 10.11.2026
 
 - **Preflight retry UI:** Failed update jobs now carry a specific `failure_kind=preflight` marker when the installer emits a real `Preflight fehlgeschlagen` line. Only this error gets a friendly retry explanation; the existing detailed update log stays visible. The action becomes **Wiederholen** with a circular-arrow icon. Even a failed Preflight that has already written the newest commit can be retried by the owner through the same built-in updater.
