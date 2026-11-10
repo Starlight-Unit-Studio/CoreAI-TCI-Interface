@@ -1,5 +1,12 @@
 # CoreAI: TCI Interface
 
+## 0.6.95 - 10.11.2026
+
+- **Installed-Cores Preflight fix:** Two PHP source-contract strings in `scripts/installed-cores-selftest.php` interpolated the undefined `$lock` variable instead of looking for the literal source code. Masking `$lock` fixes both exact-match assertions.
+- **Security and behavior unchanged:** All existing permission, inventory, uninstall, lock and Core-update/pull-worker checks remain active. No production API, installed Core, database or user setting is changed.
+- **Evidence:** Direct CoreAI 0.6.94 PHP selftest reproduced the single failure with identical Git, host and container source files. A PHP CLI reproduction confirmed interpolation caused the mismatch. The complete 0.6.95 server Preflight still needs to run after deployment.
+- **Version synchronization:** One merge, one version. Six HTML pages, bootstrap, content-fingerprint, README, changelogs, branding and both Preflight version markers updated.
+
 ## 0.6.94 - 10.11.2026
 
 - **Critical host-updater syntax fix:** Corrected the unbalanced quote in the nested command substitution for `attempted_commit` in `scripts/coreai-updater.sh`. The old script failed Bash parsing at the end of `do_run()` and therefore could not check for or install updates.

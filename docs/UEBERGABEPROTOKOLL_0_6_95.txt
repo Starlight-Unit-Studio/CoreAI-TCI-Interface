@@ -1,0 +1,39 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.95
+Datum: 10.11.2026
+Basis: main 0.6.94, PR #246
+Branch: fix/0.6.95-installed-cores-preflight-literal-lock
+
+BELEGTER FEHLER
+- CoreAI 0.6.94 Preflight: ein Fehler im Installed-Cores-Selbsttest,
+  bei Update-Fortschritt 89 Prozent; Status phase=install, state=failed.
+- Im Live-System waren Datenbank, PHP, Web healthy und lokale
+  HTTP-Aufrufe an /app.html und /api/health.php erfolgreich.
+- Die Nginx-Default-Site-Meldung war nur WARN.
+- Host- und Container-Dateien sind SHA-256-identisch und beide
+  Git-Blob-IDs entsprechen main 0.6.94.
+- Der Offline-Selbsttest scheitert weiterhin reproduzierbar.
+
+URSACHE UND FIX
+- Zwei doppelt gequotete PHP-Strings in
+  scripts/installed-cores-selftest.php enthielten $lock unmaskiert.
+- Die PHP-Interpolation entfernt den gesuchten Variablennamen
+  aus der Source-Contract-Pruefung.
+- Nur die beiden Vorkommen als \$lock maskiert, damit die Suche
+  den tatsaechlichen Code prueft.
+- Kein Abschalten eines Checks, keine Aenderung von
+  Berechtigungen, Locks, Worker, Cores oder Konten.
+
+VALIDIERUNG
+- Altes und korrigiertes PHP-Stringverhalten unter PHP-CLI
+  reproduziert; korrekte Literalsuche erfolgreich.
+- Voller Preflight auf dem Betreiber-Server nach 0.6.95
+  weiterhin auszufuehren, kein PASS behauptet.
+- GitHub-PR nur vorbereiten, Merge durch Betreiber.
+- Vor Merge PHP-Syntax, Installed-Cores-Selftest,
+  Versions- und Cache-Guards kontrollieren.
+
+VERSION
+- Ein Merge = eine neue Version: 0.6.95.
+- VERSION, sechs UI-Seiten, JS-Bootstrap, numerische SHA-256-
+  Cache-Fingerprints, README, Changelog, TXT-Archiv, Index,
+  Branding und beide Preflight-Kopfzeilen angepasst.

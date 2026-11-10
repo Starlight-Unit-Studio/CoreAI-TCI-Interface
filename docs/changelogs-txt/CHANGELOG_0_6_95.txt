@@ -1,0 +1,13 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.95
+10.11.2026
+
+- Zwei PHP-Quelltext-Suchstrings im Installed-Cores-Selbsttest
+  interpolierten $lock statt den literal vorkommenden Code zu suchen.
+- Beide Strings maskieren das Dollarzeichen (\$lock); alle bisherigen
+  Berechtigungs-, Lock-, Inventar- und Worker-Assertions bleiben erhalten.
+- Der produktive Core-Installer, Ollama, Konten und die Datenbank
+  sind unveraendert.
+- Die bisherige Live-Reproduktion 0.6.94 und das isolierte PHP-CLI-
+  Verhalten belegen die Ursache; 0.6.95 Live-Preflight noch offen.
+- Ein Merge, eine Version: Marker, Cache, Changelog, Archiv, README,
+  Branding und Preflight auf 0.6.95 abgestimmt.

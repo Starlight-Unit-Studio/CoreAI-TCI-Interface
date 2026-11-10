@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.94: Host-Updater Bash-Syntax und sichtbare Selbsttestfehler.
+# CoreAI: TCI Interface 0.6.95: PHP-Literalpruefung im Installed-Cores-Selbsttest.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
