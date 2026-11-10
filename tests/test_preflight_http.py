@@ -23,7 +23,7 @@ fail() { failures=$((failures + 1)); }
 curl() {
   local url="${!#}"
   if [[ "$FAIL_TRANSFER" != 0 ]]; then
-    printf 'EINSTELLUNGEN id="adminNavGroup" ADMIN CORE'
+    printf 'EINSTELLUNGEN id="adminSettingsLink" ADMIN CORE'
     return "$FAIL_TRANSFER"
   fi
   command curl -fsS "file://$FIXTURE_DIR/${url##*/}"
@@ -34,8 +34,8 @@ curl() {
             return result
 
     def test_large_responses_are_drained(self):
-        result = self.check_pages('EINSTELLUNGEN id="adminNavGroup"\n' + 'x' * 2_000_000,
-                                  'ADMIN CORE\n' + 'y' * 2_000_000)
+        result = self.check_pages('EINSTELLUNGEN id="adminSettingsLink"\n' + 'x' * 2_000_000,
+                                  'id="adminAccessGate"\n' + 'y' * 2_000_000)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stderr, '')
 
@@ -49,10 +49,10 @@ curl() {
 
     def test_original_quiet_grep_reproduces_curl_23(self):
         source = (ROOT / 'scripts/preflight.sh').read_text()
-        for marker in ('EINSTELLUNGEN', 'id="adminNavGroup"', 'ADMIN CORE'):
+        for marker in ('EINSTELLUNGEN', 'id="adminSettingsLink"', 'id="adminAccessGate"'):
             source = source.replace("grep -F '" + marker + "' >/dev/null", "grep -Fq '" + marker + "'")
-        result = self.check_pages('EINSTELLUNGEN id="adminNavGroup"\n' + 'x' * 2_000_000,
-                                  'ADMIN CORE\n' + 'y' * 2_000_000, source=source)
+        result = self.check_pages('EINSTELLUNGEN id="adminSettingsLink"\n' + 'x' * 2_000_000,
+                                  'id="adminAccessGate"\n' + 'y' * 2_000_000, source=source)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn('curl: (23)', result.stderr)
 
