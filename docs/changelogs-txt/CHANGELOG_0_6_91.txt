@@ -2,12 +2,12 @@ COREAI: TCI INTERFACE // CHANGELOG 0.6.91
 10.11.2026
 
 - Der bisher im Ollama-Kontobereich sitzende Button "Cores verwalten"
-  wird durch einen allgemeinen Einstieg "LLMs & Cores verwalten"
+  wird durch einen allgemeinen Einstieg "Cores verwalten"
   im Core-Verwaltungsfenster ersetzt.
 - Eigenes Popup mit drei nebeneinander angeordneten Reitern:
   Ollama (offizielle Suche und lokaler Installer),
   Hugging Face (In Vorbereitung), Installiert (echte Ollama-Liste).
-- Reiter "Installiert": zeigt lokale und TCI Cores, weitere LLMs,
+- Reiter "Installiert": zeigt lokale und TCI Cores, weitere Cores,
   bestehende Cloud-Stubs und vorhandene HF-Importnamen im Ollama-Dienst,
   inklusive Groessen-/Parameterinformation soweit vorhanden.
 - Pro Core "Deinstallieren" mit zweiter Bestaetigung. Der
@@ -17,6 +17,19 @@ COREAI: TCI INTERFACE // CHANGELOG 0.6.91
 - Entfernen verwendet die bereits vorhandene CoreAI-Routine:
   Ollama entladen, den ausgewaehlten Namen loeschen und gespeicherte
   Konto-Auswahlen auf den Standard-Core zuruecksetzen.
+- Jeder lokal installierte Core zeigt zusaetzlich "Aktualisieren".
+  TCI-Cores werden durch den vorhandenen Tier-Updater mit Modelfile
+  neu aufgebaut; weitere lokale Ollama-Cores erhalten einen erneuten
+  Pull ueber denselben Installationsworker. Reine Cloud-Verknuepfungen
+  haben keinen lokalen Update-Button.
+- Der Standard-Core und seine geschuetzte Basis bleiben installierbar
+  und aktualisierbar, duerfen aber weiterhin nicht geloescht werden.
+  Adminrechte, CSRF, Sperre und Fortschrittsabfrage werden wiederverwendet.
+- Die Startseite hat keine zusaetzliche Leiste CORE/KONTEXT/
+  WERKZEUGE/PROJEKT mehr. Begruessung, Beispielkarten und
+  Nachrichteneingabe bleiben unveraendert.
+- Der Chip "DENKAUFWAND" heisst jetzt "DENKEN". Sichtbare
+  "LLM"-Bezeichnungen der Core-Bibliothek wurden entfernt.
 - Neues Sicherheits-Selbsttestskript fuer installierte Cores sowie
   erweiterter Oberflaechen-Selbsttest. Beide Preflight-Varianten
   enthalten die neue PHP-Pruefung.
