@@ -56,7 +56,7 @@ for (const [id, fields] of Object.entries({
   benachrichtigungen: ['notifyPushEnable', 'notifyPushTest', 'notifyDevices', 'notifyMailStatus', 'notify-answers', 'notify-security', 'notify-updates'],
   stimme: ['voiceAutoRead', 'voiceTerms'],
   memory: ['aiMemoryEnabled', 'aiMemoryLimit', 'saveMemoryAiSettings'],
-  'archivierte-chats': ['arcSearch', 'arcFilter', 'arcProject', 'arcGroups', 'arcEmpty', 'arcConfirm'],
+  'archivierte-chats': ['arcSearch', 'arcTypeBtn', 'arcTypeMenu', 'arcProjectBtn', 'arcProjectMenu', 'arcGroups', 'arcEmpty', 'arcConfirm'],
 })) {
   const html = section(id);
   assert.ok(!html.includes('cfg-view-planned'), id + ' is a real page');

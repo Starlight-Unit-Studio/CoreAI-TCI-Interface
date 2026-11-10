@@ -11,7 +11,7 @@
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface - Einstellungen</title>
   <link rel="stylesheet" href="./css/console.css?v=0199825349881090882906478" />
-  <link rel="stylesheet" href="./css/settings.css?v=0384723910112681194386177" />
+  <link rel="stylesheet" href="./css/settings.css?v=0565474812539450126926744" />
   <link rel="stylesheet" href="./css/coreui-profile-crop.css?v=0852949496159567452926853" />
   <link rel="stylesheet" href="./css/coreui-update.css?v=1027839363176318351849490" />
   <link rel="stylesheet" href="./css/coreui-theme.css?v=0697431397907702126637895" />
@@ -55,6 +55,8 @@
     <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11.5" height="11.5" rx="2"/><path d="M15.5 8.5V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v9.5a1 1 0 0 0 1 1h3.5"/></symbol>
     <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5M4.5 15.5V20h15v-4.5"/></symbol>
     <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-bubble" viewBox="0 0 24 24"><path d="M12 4c4.7 0 8.5 3.1 8.5 7s-3.8 7-8.5 7c-1 0-2-.1-2.9-.4L4.5 20l1.2-3.8C4.3 14.9 3.5 13 3.5 11c0-3.9 3.8-7 8.5-7z"/></symbol>
     <symbol id="i-back" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></symbol>
     <symbol id="i-clock" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5l3 3"/></symbol>
     <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></symbol>
@@ -1087,11 +1089,33 @@
           <div class="arc-tools">
             <label class="arc-search" for="arcSearch"><svg aria-hidden="true"><use href="#i-search" /></svg><input id="arcSearch" type="search" placeholder="Archivierte Chats durchsuchen" aria-label="Archivierte Chats durchsuchen" autocomplete="off" /></label>
             <div class="arc-filters">
-              <label class="arc-select" for="arcFilter"><svg aria-hidden="true"><use href="#i-sliders" /></svg><select id="arcFilter" aria-label="Chats filtern"><option value="all">Alle Chats</option><option value="files">Mit hochgeladenen Dateien</option><option value="images">Mit Bildern von Mara</option></select></label>
-              <label class="arc-select" for="arcProject"><svg aria-hidden="true"><use href="#i-folder" /></svg><select id="arcProject" aria-label="Projekt"><option value="all">Alle Projekte</option><option value="none">Kein Projekt</option></select></label>
+              <div class="arc-drop">
+                <button class="arc-select" id="arcTypeBtn" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="arcTypeMenu"><svg aria-hidden="true"><use href="#i-sliders" /></svg><span id="arcTypeLabel">Alle Chats</span><svg class="arc-caret" aria-hidden="true"><use href="#i-chevron" /></svg></button>
+                <div class="arc-menu" id="arcTypeMenu" role="menu" aria-labelledby="arcTypeBtn" hidden>
+                  <div class="arc-menu-head">Typ</div>
+                  <button class="arc-option" type="button" role="menuitemradio" data-arc-type="all" aria-checked="true"><span>Alle Chats</span><svg aria-hidden="true"><use href="#i-check" /></svg></button>
+                  <button class="arc-option is-planned" type="button" role="menuitemradio" data-arc-type="cloud" aria-checked="false" aria-disabled="true"><span>Cloud</span><em>IN VORBEREITUNG</em></button>
+                  <hr class="arc-menu-line" />
+                  <div class="arc-menu-head">Sortieren nach</div>
+                  <button class="arc-option" type="button" role="menuitemradio" data-arc-sort="updated" aria-checked="true"><span>Aktualisiert</span><svg aria-hidden="true"><use href="#i-check" /></svg></button>
+                  <button class="arc-option" type="button" role="menuitemradio" data-arc-sort="created" aria-checked="false"><span>Erstellt</span><svg aria-hidden="true"><use href="#i-check" /></svg></button>
+                  <button class="arc-option" type="button" role="menuitemradio" data-arc-sort="alpha" aria-checked="false"><span>Alphabetisch</span><svg aria-hidden="true"><use href="#i-check" /></svg></button>
+                </div>
+              </div>
+              <div class="arc-drop">
+                <button class="arc-select" id="arcProjectBtn" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="arcProjectMenu"><svg aria-hidden="true"><use href="#i-folder" /></svg><span id="arcProjectLabel">Alle Projekte</span><svg class="arc-caret" aria-hidden="true"><use href="#i-chevron" /></svg></button>
+                <div class="arc-menu" id="arcProjectMenu" role="menu" aria-labelledby="arcProjectBtn" hidden>
+                  <button class="arc-option" type="button" role="menuitemradio" data-arc-project="all" aria-checked="true"><span>Alle Projekte</span><svg aria-hidden="true"><use href="#i-check" /></svg></button>
+                  <hr class="arc-menu-line" />
+                  <p class="arc-menu-note">Projekte sind in Vorbereitung.</p>
+                  <hr class="arc-menu-line" />
+                  <button class="arc-option" type="button" role="menuitemradio" data-arc-project="chats" aria-checked="false"><svg class="arc-lead" aria-hidden="true"><use href="#i-bubble" /></svg><span>Chats</span><svg aria-hidden="true"><use href="#i-check" /></svg></button>
+                  <button class="arc-option is-planned" type="button" role="menuitemradio" data-arc-project="tasks" aria-checked="false" aria-disabled="true"><svg class="arc-lead" aria-hidden="true"><use href="#i-clock" /></svg><span>Geplante Aufgaben</span><em>IN VORBEREITUNG</em></button>
+                </div>
+              </div>
             </div>
           </div>
-          <p class="sec-hint arc-hint">Projekte sind in Vorbereitung; bis dahin stehen alle Chats unter „Kein Projekt“.</p>
+          <p class="sec-hint arc-hint">Projekte, Cloud-Computer und geplante Aufgaben sind in Vorbereitung; bis dahin stehen alle Chats unter „Kein Projekt“.</p>
           <div class="arc-groups" id="arcGroups"></div>
           <section class="settings-panel cfg-card wide arc-empty" id="arcEmpty" hidden><p id="arcEmptyText">Keine archivierten Chats</p></section>
 
@@ -1361,7 +1385,7 @@
   <script src="./js/coreui-qr.js?v=1096443357821968405236433"></script>
   <script src="./js/coreui-security-settings.js?v=0672521003500890646963337"></script>
   <script src="./js/coreui-account-settings.js?v=0506515246827297684927059"></script>
-  <script src="./js/coreui-archived-chats.js?v=1084976927289192735714397"></script>
+  <script src="./js/coreui-archived-chats.js?v=1190154646248591388503698"></script>
   <script src="./js/coreui-update.js?v=0294648939860149727532714"></script>
 </body>
 </html>

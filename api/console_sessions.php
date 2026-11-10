@@ -38,12 +38,13 @@ try {
     stu_json(['ok'=>true, 'sessions'=>$rows, 'count'=>count($rows)]);
   }
 
-  // 0.6.87: Settings > Archivierte Chats (search by title, filter by files or images).
+  // 0.6.87: Settings > Archivierte Chats (search by title; sorted updated, created or alpha).
+  // "Cloud" (the Cloud-Computer), projects and scheduled tasks are planned.
   if ($action === 'archived') {
-    $filter = (string)($_GET['filter'] ?? 'all');
-    if (!in_array($filter, ['all', 'files', 'images'], true)) $filter = 'all';
-    $rows = coreui_chat_archived($pdo, (int)$uid, mb_substr((string)($_GET['q'] ?? ''), 0, 120, 'UTF-8'), $filter);
-    stu_json(['ok'=>true, 'sessions'=>$rows, 'count'=>count($rows), 'projects_ready'=>false]);
+    $sort = (string)($_GET['sort'] ?? 'updated');
+    if (!in_array($sort, ['updated', 'created', 'alpha'], true)) $sort = 'updated';
+    $rows = coreui_chat_archived($pdo, (int)$uid, mb_substr((string)($_GET['q'] ?? ''), 0, 120, 'UTF-8'), $sort);
+    stu_json(['ok'=>true, 'sessions'=>$rows, 'count'=>count($rows), 'cloud_ready'=>false, 'projects_ready'=>false, 'tasks_ready'=>false]);
   }
 
   // 0.6.87: the chat menu: uploaded files, search inside the chat, the chat as Markdown.

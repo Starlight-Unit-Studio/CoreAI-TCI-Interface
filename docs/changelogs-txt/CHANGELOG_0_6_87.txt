@@ -2,9 +2,11 @@ COREAI: TCI INTERFACE // CHANGELOG 0.6.87
 10.11.2026
 
 - Einstellungen > Archivierte Chats ist eine echte Seite wie in den ChatGPT-Screenshots:
-  "Keine archivierten Chats", Suche nach Titeln, Filter "Alle Chats" (mit hochgeladenen
-  Dateien, mit Maras Bildern) und "Alle Projekte", Gruppe "Kein Projekt" mit Anzahl, je
-  Chat Titel, Datum, Dearchivieren und Loeschen mit Bestaetigung. Projekte geplant.
+  "Keine archivierten Chats", Suche nach Titeln, Menue "Alle Chats" mit Typ (Alle Chats;
+  Cloud in Vorbereitung fuer den Cloud-Computer) und Sortieren nach (Aktualisiert,
+  Erstellt, Alphabetisch), Menue "Alle Projekte" (Chats; Geplante Aufgaben in
+  Vorbereitung), Gruppe "Kein Projekt" mit Anzahl, je Chat Titel, Datum, Dearchivieren
+  und Loeschen mit Bestaetigung. Projekte geplant.
 - Jeder Chat hat das Menue der Vorlage (oben rechts):
   Teilen (Chat als Markdown-Datei, kein oeffentlicher Link), Anpinnen (Migration 032,
   bleibt oben in der Liste), Chat sperren und Zum Projekt hinzufuegen (In Vorbereitung),
@@ -12,7 +14,7 @@ COREAI: TCI INTERFACE // CHANGELOG 0.6.87
   Startbildschirm hinzufuegen (Direktlink), Archivieren (Dialog der Vorlage), Loeschen.
 - Behoben: ein Link app.html?session=... oeffnete den leeren Start statt des Chats
   (Benachrichtigungen seit 0.6.81). Ohne Link startet die App weiter mit leerem Entwurf.
-- api/console_chat_tools.php; console_sessions.php: archived, files, search, export, pin,
+- api/console_chat_tools.php; console_sessions.php: archived (sort), files, search, export, pin,
   Loeschen mit archive_first (bei Fehler wieder hergestellt).
 - Tests: chat-menu-selftest.php (auch MariaDB), chat-menu-ui-selftest.cjs,
   archived-chats-ui-selftest.cjs. Keine Aenderung an Cores, Modelfile, FIFO, Prompts, Rechten.

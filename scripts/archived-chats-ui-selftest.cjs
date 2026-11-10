@@ -1,10 +1,11 @@
 // CoreAI 0.6.87: Settings > Archivierte Chats in a real browser (Playwright), like the ChatGPT reference.
 //   node scripts/archived-chats-ui-selftest.cjs
 // A stand-in for api/console_sessions.php keeps the archive. Checks: "Keine archivierten Chats";
-// the search field and the two filters ("Alle Chats", "Alle Projekte"); the group "Kein Projekt"
-// with its count; each chat with title, date, "Dearchivieren" and "Löschen"; a search and a
-// filter go to the server; Dearchivieren (the chat leaves the list); Löschen with a confirmation
-// (cancel, an error, then deleted); a phone without sideways scrolling and no text under 11px.
+// the search field and the two menus of the reference ("Alle Chats": Typ with Alle Chats and Cloud
+// planned, Sortieren nach Aktualisiert, Erstellt, Alphabetisch; "Alle Projekte": Chats, Geplante
+// Aufgaben planned); the group "Kein Projekt" with its count; each chat with title, date,
+// "Dearchivieren" and "Löschen"; search and sort go to the server; Dearchivieren; Löschen with a
+// confirmation (cancel, an error, then deleted); a phone without sideways scrolling, no text under 11px.
 const {chromium} = require('playwright');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -18,10 +19,11 @@ function archiveServer(sessions) {
   function handle(method, url, body) {
     if (method === 'GET') {
       const q = (url.searchParams.get('q') || '').toLowerCase();
-      const filter = url.searchParams.get('filter') || 'all';
-      st.gets.push({action: url.searchParams.get('action'), q, filter});
-      const list = st.sessions.filter(s => (!q || s.title.toLowerCase().includes(q))
-        && (filter === 'all' || (filter === 'files' && s.has_files) || (filter === 'images' && s.has_images)));
+      const sort = url.searchParams.get('sort') || 'updated';
+      st.gets.push({action: url.searchParams.get('action'), q, sort});
+      const key = {updated: s => s.updated_at, created: s => s.created_at}[sort];
+      const list = st.sessions.filter(s => !q || s.title.toLowerCase().includes(q))
+        .sort((a, b) => key ? (key(a) < key(b) ? 1 : -1) : a.title.localeCompare(b.title, 'de'));
       return {status: 200, json: {ok: true, sessions: list, count: list.length, projects_ready: false}};
     }
     st.posts.push(body);
@@ -37,10 +39,10 @@ function archiveServer(sessions) {
 }
 
 const SESSIONS = [
-  {id: 'cs_aaaaaaaa1', title: 'CoreAI-TCI-Interface einrichten und alle Dienste prüfen', updated_at: '2026-11-09T07:45:00+01:00', archived_at: '2026-11-09T08:00:00+01:00',
-    message_count: 12, has_files: true, has_images: false, project: null},
-  {id: 'cs_bbbbbbbb2', title: 'Research zu Mara Thorne', updated_at: '2026-02-03T13:10:00+01:00', archived_at: '2026-11-08T08:00:00+01:00',
-    message_count: 4, has_files: false, has_images: true, project: null},
+  {id: 'cs_aaaaaaaa1', title: 'CoreAI-TCI-Interface einrichten und alle Dienste prüfen', created_at: '2026-01-05T09:00:00+01:00',
+    updated_at: '2026-11-09T07:45:00+01:00', archived_at: '2026-11-09T08:00:00+01:00', message_count: 12, project: null},
+  {id: 'cs_bbbbbbbb2', title: 'Research zu Mara Thorne', created_at: '2026-02-03T13:00:00+01:00',
+    updated_at: '2026-02-03T13:10:00+01:00', archived_at: '2026-11-08T08:00:00+01:00', message_count: 4, project: null},
 ];
 
 const api = {
@@ -95,8 +97,8 @@ async function open(browser, srv, viewport) {
     ({context, page, errors} = await open(browser, srv));
     await page.waitForSelector('#arcGroups .arc-row');
     assert.equal(await page.getAttribute('#arcSearch', 'placeholder'), 'Archivierte Chats durchsuchen');
-    assert.deepEqual(await page.$$eval('#arcFilter option', o => o.map(x => x.textContent)), ['Alle Chats', 'Mit hochgeladenen Dateien', 'Mit Bildern von Mara']);
-    assert.deepEqual(await page.$$eval('#arcProject option', o => o.map(x => x.textContent)), ['Alle Projekte', 'Kein Projekt']);
+    assert.equal(await page.textContent('#arcTypeLabel'), 'Alle Chats');
+    assert.equal(await page.textContent('#arcProjectLabel'), 'Alle Projekte');
     assert.equal(await page.textContent('.arc-group-head h3'), 'Kein Projekt');
     assert.equal(await page.textContent('.arc-count'), '2 Chats');
     assert.deepEqual(await page.$$eval('.arc-row .arc-copy strong', l => l.map(x => x.textContent)), SESSIONS.map(s => s.title));
@@ -109,17 +111,58 @@ async function open(browser, srv, viewport) {
     // Search and filter go to the server.
     await page.fill('#arcSearch', 'mara');
     await page.waitForFunction(() => document.querySelectorAll('.arc-row').length === 1);
-    assert.deepEqual(srv.st.gets.pop(), {action: 'archived', q: 'mara', filter: 'all'});
+    assert.deepEqual(srv.st.gets.pop(), {action: 'archived', q: 'mara', sort: 'updated'});
     await page.fill('#arcSearch', 'gibt es nicht');
     await page.waitForSelector('#arcEmpty:not([hidden])');
     assert.equal(await page.textContent('#arcEmptyText'), 'Keine passenden archivierten Chats');
     await page.fill('#arcSearch', '');
-    await page.selectOption('#arcFilter', 'files');
-    await page.waitForFunction(() => document.querySelectorAll('.arc-row').length === 1
-      && document.querySelector('.arc-row strong').textContent.startsWith('CoreAI-TCI'));
-    assert.deepEqual(srv.st.gets.pop(), {action: 'archived', q: '', filter: 'files'});
-    await page.selectOption('#arcFilter', 'all');
     await page.waitForFunction(() => document.querySelectorAll('.arc-row').length === 2);
+
+    // The menu "Alle Chats": Typ and Sortieren nach, like the reference.
+    await page.click('#arcTypeBtn');
+    await page.waitForSelector('#arcTypeMenu:not([hidden])');
+    assert.equal(await page.getAttribute('#arcTypeBtn', 'aria-expanded'), 'true');
+    assert.deepEqual(await page.$$eval('#arcTypeMenu .arc-menu-head', l => l.map(x => x.textContent)), ['Typ', 'Sortieren nach']);
+    assert.deepEqual(await page.$$eval('#arcTypeMenu .arc-option span', l => l.map(x => x.textContent)),
+      ['Alle Chats', 'Cloud', 'Aktualisiert', 'Erstellt', 'Alphabetisch']);
+    assert.deepEqual(await page.$$eval('#arcTypeMenu [aria-checked="true"] span', l => l.map(x => x.textContent)), ['Alle Chats', 'Aktualisiert']);
+    assert.match(await page.textContent('#arcTypeMenu [data-arc-type="cloud"]'), /IN VORBEREITUNG/);
+    if (shots) await page.locator('#view-archivierte-chats').screenshot({path: path.join(shots, 'archive-type-menu.png')});
+    const gets = srv.st.gets.length;
+    await page.click('#arcTypeMenu [data-arc-type="cloud"]', {force: true});
+    await page.waitForFunction(() => /Cloud ist in Vorbereitung/.test(document.getElementById('arcStatus').textContent));
+    assert.equal(srv.st.gets.length, gets, 'the planned Cloud asks nothing');
+    await page.click('#arcTypeBtn');
+    await page.click('#arcTypeMenu [data-arc-sort="alpha"]');
+    await page.waitForFunction(() => document.querySelector('.arc-row strong').textContent.startsWith('CoreAI-TCI'));
+    assert.deepEqual(srv.st.gets.pop(), {action: 'archived', q: '', sort: 'alpha'});
+    await page.click('#arcTypeBtn');
+    await page.click('#arcTypeMenu [data-arc-sort="created"]');
+    await page.waitForFunction(() => document.querySelector('.arc-row strong').textContent === 'Research zu Mara Thorne');
+    assert.deepEqual(srv.st.gets.pop(), {action: 'archived', q: '', sort: 'created'});
+    await page.click('#arcTypeBtn');
+    assert.deepEqual(await page.$$eval('#arcTypeMenu [aria-checked="true"] span', l => l.map(x => x.textContent)), ['Alle Chats', 'Erstellt']);
+    await page.keyboard.press('Escape');
+    await page.waitForSelector('#arcTypeMenu', {state: 'hidden'});
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'arcTypeBtn');
+    await page.click('#arcTypeBtn');
+    await page.click('#arcTypeMenu [data-arc-sort="updated"]');
+    await page.waitForFunction(() => document.querySelector('.arc-row strong').textContent.startsWith('CoreAI-TCI'));
+
+    // The menu "Alle Projekte": Chats; Geplante Aufgaben planned.
+    await page.click('#arcProjectBtn');
+    await page.waitForSelector('#arcProjectMenu:not([hidden])');
+    assert.deepEqual(await page.$$eval('#arcProjectMenu .arc-option span', l => l.map(x => x.textContent)), ['Alle Projekte', 'Chats', 'Geplante Aufgaben']);
+    assert.match(await page.textContent('#arcProjectMenu [data-arc-project="tasks"]'), /IN VORBEREITUNG/);
+    if (shots) await page.locator('#view-archivierte-chats').screenshot({path: path.join(shots, 'archive-project-menu.png')});
+    await page.click('#arcProjectMenu [data-arc-project="chats"]');
+    await page.waitForSelector('#arcProjectMenu', {state: 'hidden'});
+    assert.equal(await page.textContent('#arcProjectLabel'), 'Chats');
+    assert.equal(await page.$$eval('.arc-row', l => l.length), 2, 'every chat is a chat without a project');
+    await page.click('#arcProjectBtn');
+    await page.click('#arcProjectMenu [data-arc-project="tasks"]', {force: true});
+    await page.waitForFunction(() => /Geplante Aufgaben sind in Vorbereitung/.test(document.getElementById('arcStatus').textContent));
+    await page.mouse.click(5, 5);
 
     // Dearchivieren.
     await page.click('.arc-row[data-session-id="cs_bbbbbbbb2"] .arc-btn:not(.danger)');
@@ -163,6 +206,6 @@ async function open(browser, srv, viewport) {
   } finally {
     await browser.close();
   }
-  console.log('CoreAI archived chats: empty state, search and both filters like the reference, Kein Projekt with count, title, date, '
-    + 'Dearchivieren, Löschen with confirmation (cancel, error, deleted), phone OK');
+  console.log('CoreAI archived chats: empty state, search, menus like the reference (Typ with Cloud planned, Sortieren nach, Projekte with '
+    + 'Geplante Aufgaben planned), Kein Projekt with count, title, date, Dearchivieren, Löschen with confirmation (cancel, error, deleted), phone OK');
 })().catch(error => { console.error(error); process.exit(1); });

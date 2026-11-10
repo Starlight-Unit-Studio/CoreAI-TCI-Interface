@@ -4,7 +4,7 @@ declare(strict_types=1);
 /*
  * CoreAI 0.6.87: the chat menu and Settings > Archivierte Chats (like the ChatGPT reference).
  *   - pin and unpin a chat (migration 032), archiving releases the pin
- *   - the archived chats, searchable by title, filtered by files or images
+ *   - the archived chats, searchable by title, sorted like the reference
  *   - the files the person uploaded in one chat ("Hochgeladene Dateien")
  *   - search inside one chat ("Im Chat suchen"), every message, not only the loaded ones
  *   - the chat as Markdown ("Teilen": the person decides where it goes; no public link)
@@ -56,39 +56,24 @@ function coreui_chat_unpin_archived(PDO $pdo, int $uid, string $sessionId): void
 // --- Archived chats ---------------------------------------------------------------------------------
 
 /**
- * The account's archived chats, newest archive first. $query searches the titles; $filter is
- * 'all', 'files' (the person uploaded files) or 'images' (Mara made images).
+ * The account's archived chats, sorted like the reference's "Sortieren nach": $sort 'updated'
+ * (newest activity), 'created' (newest chat) or 'alpha' (title). $query searches the titles.
  */
-function coreui_chat_archived(PDO $pdo, int $uid, string $query = '', string $filter = 'all', int $limit = 500): array {
-  $assistant = coreui_chat_assistant_id();
-  $files = "EXISTS (SELECT 1 FROM stu_chat_messages m
-       WHERE m.channel = 'console' AND m.user_id = s.user_id AND m.session_id = s.id AND m.deleted_at IS NULL
-         AND LOWER(m.character_id) <> ?
-         AND ((m.file_uuid IS NOT NULL AND m.file_uuid <> '')
-           OR EXISTS (SELECT 1 FROM stu_console_message_attachments a WHERE a.message_id = m.id)))";
-  $images = "EXISTS (SELECT 1 FROM stu_chat_messages m
-       JOIN stu_console_message_attachments a ON a.message_id = m.id
-       JOIN stu_console_media cm ON cm.uuid = a.media_uuid
-       WHERE m.channel = 'console' AND m.user_id = s.user_id AND m.session_id = s.id AND m.deleted_at IS NULL
-         AND cm.rel_path LIKE '" . COREUI_CHAT_GENERATED_PREFIX . "%')";
+function coreui_chat_archived(PDO $pdo, int $uid, string $query = '', string $sort = 'updated', int $limit = 500): array {
   $sql = "SELECT s.id, s.title, s.created_at, s.updated_at, s.archived_at,
                  (SELECT COUNT(*) FROM stu_chat_messages m
-                   WHERE m.channel = 'console' AND m.user_id = s.user_id AND m.session_id = s.id AND m.deleted_at IS NULL) AS message_count,
-                 $files AS has_files, $images AS has_images
+                   WHERE m.channel = 'console' AND m.user_id = s.user_id AND m.session_id = s.id AND m.deleted_at IS NULL) AS message_count
             FROM stu_console_sessions s
            WHERE s.user_id = ? AND s.archived_at IS NOT NULL";
-  $params = [$assistant, $uid];
+  $params = [$uid];
   $query = trim($query);
   if ($query !== '') {
     $sql .= " AND s.title LIKE ? ESCAPE '!'";
     $params[] = coreui_chat_like($query);
   }
-  if ($filter === 'files') {
-    $sql .= ' AND ' . $files;
-    $params[] = $assistant;
-  }
-  if ($filter === 'images') $sql .= ' AND ' . $images;
-  $sql .= ' ORDER BY s.archived_at DESC, s.updated_at DESC LIMIT ' . max(1, min(1000, $limit));
+  $order = ['updated' => 's.updated_at DESC, s.created_at DESC', 'created' => 's.created_at DESC, s.updated_at DESC',
+    'alpha' => 's.title ASC, s.created_at DESC'];
+  $sql .= ' ORDER BY ' . ($order[$sort] ?? $order['updated']) . ' LIMIT ' . max(1, min(1000, $limit));
   $st = $pdo->prepare($sql);
   $st->execute($params);
   $out = [];
@@ -100,8 +85,6 @@ function coreui_chat_archived(PDO $pdo, int $uid, string $query = '', string $fi
       'updated_at' => coreui_chat_iso($row['updated_at'] ?? null),
       'archived_at' => coreui_chat_iso($row['archived_at'] ?? null),
       'message_count' => (int)($row['message_count'] ?? 0),
-      'has_files' => (bool)(int)($row['has_files'] ?? 0),
-      'has_images' => (bool)(int)($row['has_images'] ?? 0),
       'project' => null,
     ];
   }

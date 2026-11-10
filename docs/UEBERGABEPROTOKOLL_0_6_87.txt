@@ -15,12 +15,16 @@ In Vorbereitung):
 - Chat sperren: In Vorbereitung (braucht zuerst die Konto-PIN, die der Betreiber nach
   dem Einstellungsmenue umsetzen will).
 - Zum Projekt hinzufuegen und der Projektfilter: In Vorbereitung (keine Projekte).
-- Filter "Alle Chats": die Optionen der Vorlage waren nicht sichtbar; umgesetzt sind
-  "Alle Chats", "Mit hochgeladenen Dateien", "Mit Bildern von Mara".
+- Menues der Archivseite nach den nachgereichten Screenshots: "Alle Chats" mit Typ (Alle
+  Chats, Cloud) und Sortieren nach (Aktualisiert, Erstellt, Alphabetisch); "Alle Projekte"
+  mit Chats und Geplante Aufgaben. Sortieren ist echt. "Cloud" ist In Vorbereitung
+  (Cloud-Computer): der Betreiber entfernt alles zu Ollama-Cloud-Modellen, weil Ollama
+  auf kostenpflichtige Pakete umgestellt hat; 31b nur noch lokal (eigene Version danach).
+  "Geplante Aufgaben" ist In Vorbereitung (Automationen, Roadmap P21).
 
 UMGESETZT
 - database/migrations/032_chat_menu.sql: stu_console_sessions.pinned_at.
-- api/console_chat_tools.php: Anpinnen, Archivliste (Titelsuche, Filter), Dateien eines
+- api/console_chat_tools.php: Anpinnen, Archivliste (Titelsuche, drei Sortierungen), Dateien eines
   Chats (nur Uploads, nicht Maras Bilder), Suche im Chat (alle Nachrichten, Ausschnitt),
   Export als Markdown (nutzt coreui_compact_messages und coreui_compact_markdown).
 - api/console_session_store.php: Liste mit angepinnten Chats oben (wenn Migration 032 da).

@@ -1,8 +1,10 @@
 /* CoreAI: TCI Interface 0.6.87: Settings > Archivierte Chats, modeled on the ChatGPT reference.
-   Search over the titles, filters "Alle Chats" (or with uploaded files, or with Mara's images) and
-   "Alle Projekte" (projects are planned: every chat stands under "Kein Projekt"), the chats grouped
-   with their count, each with its date, "Dearchivieren" and "Löschen" (with a confirmation);
-   "Keine archivierten Chats" when there are none. Data: api/console_sessions.php. */
+   Search over the titles; the menu "Alle Chats" with Typ (Alle Chats; Cloud for the planned
+   Cloud-Computer) and Sortieren nach (Aktualisiert, Erstellt, Alphabetisch); the menu "Alle
+   Projekte" (projects are planned, so every chat stands under "Kein Projekt"; Chats; Geplante
+   Aufgaben planned). The
+   chats grouped with their count, each with its date, "Dearchivieren" and "Löschen" (with a
+   confirmation); "Keine archivierten Chats" when there are none. Data: api/console_sessions.php. */
 (function () {
   'use strict';
 
@@ -10,7 +12,8 @@
   if (!view || !document.getElementById('arcGroups')) return;
   var $ = function (id) { return document.getElementById(id); };
   var API = './api/console_sessions.php';
-  var state = {sessions: [], loaded: false, seq: 0, timer: null, pending: null};
+  var state = {sessions: [], loaded: false, seq: 0, timer: null, pending: null, sort: 'updated', project: 'all', menu: null};
+  var PROJECT_LABEL = {all: 'Alle Projekte', chats: 'Chats'};
 
   var ERRORS = {
     session_busy: 'Der Chat hat noch eine laufende Browser-Recherche und lässt sich erst danach löschen.',
@@ -47,7 +50,7 @@
 
   function load() {
     var seq = ++state.seq;
-    var params = new URLSearchParams({action: 'archived', q: $('arcSearch').value.trim(), filter: $('arcFilter').value});
+    var params = new URLSearchParams({action: 'archived', q: $('arcSearch').value.trim(), sort: state.sort});
     return request(API + '?' + params.toString()).then(function (d) {
       if (seq !== state.seq) return;
       state.sessions = d.sessions || [];
@@ -62,7 +65,7 @@
   function render() {
     var groups = $('arcGroups');
     groups.textContent = '';
-    var searching = $('arcSearch').value.trim() !== '' || $('arcFilter').value !== 'all';
+    var searching = $('arcSearch').value.trim() !== '';
     var list = state.sessions.filter(function (s) { return !s.project; });
     $('arcEmpty').hidden = list.length > 0;
     $('arcEmptyText').textContent = searching ? 'Keine passenden archivierten Chats' : 'Keine archivierten Chats';
@@ -163,12 +166,54 @@
     if (state.timer) clearTimeout(state.timer);
     state.timer = setTimeout(load, 250);
   });
-  $('arcFilter').addEventListener('change', load);
-  $('arcProject').addEventListener('change', render);
+  // --- The two menus of the reference ------------------------------------------------------------
+  function closeMenu() {
+    if (!state.menu) return;
+    $(state.menu).hidden = true;
+    $(state.menu === 'arcTypeMenu' ? 'arcTypeBtn' : 'arcProjectBtn').setAttribute('aria-expanded', 'false');
+    state.menu = null;
+  }
+  function openMenu(id, btn) {
+    var again = state.menu === id;
+    closeMenu();
+    if (again) return;
+    state.menu = id;
+    $(id).hidden = false;
+    btn.setAttribute('aria-expanded', 'true');
+    var checked = $(id).querySelector('[aria-checked="true"]');
+    if (checked) checked.focus();
+  }
+  function mark(attr, value) {
+    Array.prototype.forEach.call(view.querySelectorAll('[' + attr + ']'), function (el) {
+      el.setAttribute('aria-checked', el.getAttribute(attr) === value ? 'true' : 'false');
+    });
+  }
+  $('arcTypeBtn').addEventListener('click', function (e) { e.stopPropagation(); openMenu('arcTypeMenu', $('arcTypeBtn')); });
+  $('arcProjectBtn').addEventListener('click', function (e) { e.stopPropagation(); openMenu('arcProjectMenu', $('arcProjectBtn')); });
+  Array.prototype.forEach.call(view.querySelectorAll('.arc-option'), function (opt) {
+    opt.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var type = opt.getAttribute('data-arc-type');
+      var sort = opt.getAttribute('data-arc-sort');
+      var project = opt.getAttribute('data-arc-project');
+      closeMenu();
+      if (project === 'tasks') { status('Geplante Aufgaben sind in Vorbereitung.'); return; }
+      if (type === 'cloud') { status('Cloud ist in Vorbereitung: dafür kommt der Cloud-Computer.'); return; }
+      if (sort) { state.sort = sort; mark('data-arc-sort', sort); load(); }
+      if (project) { state.project = project; mark('data-arc-project', project); $('arcProjectLabel').textContent = PROJECT_LABEL[project]; render(); }
+    });
+  });
+  document.addEventListener('click', function (e) {
+    if (state.menu && !$(state.menu).contains(e.target)) closeMenu();
+  });
   $('arcConfirmOk').addEventListener('click', deleteNow);
   $('arcConfirmCancel').addEventListener('click', closeConfirm);
   $('arcConfirm').addEventListener('click', function (e) { if (e.target === $('arcConfirm')) closeConfirm(); });
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('arcConfirm').hidden) closeConfirm(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    if (!$('arcConfirm').hidden) closeConfirm();
+    else if (state.menu) { var btn = state.menu === 'arcTypeMenu' ? $('arcTypeBtn') : $('arcProjectBtn'); closeMenu(); btn.focus(); }
+  });
 
   document.addEventListener('coreai:view', function (event) {
     var name = event && event.detail ? event.detail.view : '';

@@ -4,7 +4,7 @@ declare(strict_types=1);
 //   php scripts/chat-menu-selftest.php
 // Pure parts: LIKE patterns with %, _ and ! taken literally, snippets around a hit (umlauts),
 // file names for "Teilen". With COREUI_SELFTEST_DB=1 on MariaDB (migration 032): pinned chats on
-// top, archiving releases the pin, the archive searched by title and filtered by files or images,
+// top, archiving releases the pin, the archive searched by title and sorted three ways,
 // "Hochgeladene Dateien" without Mara's images, "Im Chat suchen" over every message, "Teilen" as
 // Markdown, other accounts never seen. Then the wiring of the API, the app, the page, the
 // settings and the preflights.
@@ -92,12 +92,17 @@ if (getenv('COREUI_SELFTEST_DB') === '1') {
     $arch = coreui_chat_archived($my, $ua);
     c_test(count($arch) === 3 && !in_array($other['id'], array_column($arch, 'id'), true), 'MariaDB: own archive only');
     $byTitle = array_column($arch, null, 'title');
-    c_test($byTitle['Rezept 100% vegan']['has_files'] && !$byTitle['Rezept 100% vegan']['has_images'] && $byTitle['Bilder']['has_images']
-      && !$byTitle['Bilder']['has_files'] && $byTitle['Wetter in Köln']['message_count'] === 2 && $byTitle['Bilder']['project'] === null, 'MariaDB: flags and counts');
+    c_test($byTitle['Wetter in Köln']['message_count'] === 2 && $byTitle['Bilder']['project'] === null, 'MariaDB: counts, no project');
+    // Sortieren nach: Aktualisiert, Erstellt, Alphabetisch.
+    $touch = $my->prepare('UPDATE stu_console_sessions SET created_at = ?, updated_at = ? WHERE id = ?');
+    $touch->execute(['2026-01-01 10:00:00', '2026-03-01 10:00:00', $a['id']]);
+    $touch->execute(['2026-02-01 10:00:00', '2026-02-02 10:00:00', $b['id']]);
+    $touch->execute(['2026-01-15 10:00:00', '2026-01-16 10:00:00', $c['id']]);
+    c_test(array_column(coreui_chat_archived($my, $ua, '', 'updated'), 'title') === ['Wetter in Köln', 'Rezept 100% vegan', 'Bilder'], 'MariaDB: sorted by update');
+    c_test(array_column(coreui_chat_archived($my, $ua, '', 'created'), 'title') === ['Rezept 100% vegan', 'Bilder', 'Wetter in Köln'], 'MariaDB: sorted by creation');
+    c_test(array_column(coreui_chat_archived($my, $ua, '', 'alpha'), 'title') === ['Bilder', 'Rezept 100% vegan', 'Wetter in Köln'], 'MariaDB: sorted by title');
     c_test(array_column(coreui_chat_archived($my, $ua, '100%'), 'title') === ['Rezept 100% vegan'] && coreui_chat_archived($my, $ua, '_') === []
       && array_column(coreui_chat_archived($my, $ua, 'köln'), 'title') === ['Wetter in Köln'], 'MariaDB: search by title');
-    c_test(array_column(coreui_chat_archived($my, $ua, '', 'files'), 'title') === ['Rezept 100% vegan']
-      && array_column(coreui_chat_archived($my, $ua, '', 'images'), 'title') === ['Bilder'], 'MariaDB: filters');
     c_test(c_code(fn() => coreui_chat_pin($my, $ua, $a['id'], true)) === 'session_not_found', 'MariaDB: an archived chat cannot be pinned');
     $dbChecked = true;
   } finally {
@@ -134,8 +139,11 @@ c_test((bool)preg_match('~<script src="\./js/coreui-chat-menu\.js\?v=\d{25}"></s
 c_test(str_contains($app, 'Möchtest du diesen Chat wirklich archivieren?<br />Du kannst archivierte Chats in den Einstellungen anzeigen.'), 'archive text of the reference');
 $settings = $read('settings.html');
 c_test(str_contains($settings, 'id="view-archivierte-chats"') && !str_contains($settings, 'class="cfg-view cfg-view-planned" id="view-archivierte-chats"')
-  && str_contains($settings, 'placeholder="Archivierte Chats durchsuchen"') && str_contains($settings, '<option value="all">Alle Chats</option>')
-  && str_contains($settings, '<option value="all">Alle Projekte</option>') && str_contains($settings, '>Keine archivierten Chats<'), 'settings: Archivierte Chats');
+  && str_contains($settings, 'placeholder="Archivierte Chats durchsuchen"') && str_contains($settings, '<div class="arc-menu-head">Typ</div>')
+  && str_contains($settings, '<div class="arc-menu-head">Sortieren nach</div>') && str_contains($settings, 'data-arc-sort="alpha"')
+  && str_contains($settings, '<span id="arcProjectLabel">Alle Projekte</span>') && str_contains($settings, '<span>Geplante Aufgaben</span><em>IN VORBEREITUNG</em>')
+  && str_contains($settings, '>Keine archivierten Chats<'), 'settings: Archivierte Chats with the menus of the reference');
+c_test(str_contains($api, "if (!in_array(\$sort, ['updated', 'created', 'alpha'], true)) \$sort = 'updated';"), 'API: the three sort orders');
 c_test((bool)preg_match('~<script src="\./js/coreui-archived-chats\.js\?v=\d{25}"></script>~', $settings), 'archive script with version');
 foreach (['scripts/preflight.sh', 'scripts/preflight-native.sh'] as $pf) {
   $text = $read($pf);
@@ -145,4 +153,4 @@ foreach (['scripts/preflight.sh', 'scripts/preflight-native.sh'] as $pf) {
 }
 
 echo "CoreAI chat menu: LIKE escaping, snippets, file names, wiring OK"
-  . ($dbChecked ? ', MariaDB (pin order, archive, filters, files, search, Markdown, other accounts) OK' : ', MariaDB part skipped (COREUI_SELFTEST_DB not set)') . "\n";
+  . ($dbChecked ? ', MariaDB (pin order, archive search and sort, files, search, Markdown, other accounts) OK' : ', MariaDB part skipped (COREUI_SELFTEST_DB not set)') . "\n";
