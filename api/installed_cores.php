@@ -34,7 +34,8 @@ function coreui_installed_cores_rows(array $models, string $default, string $sou
     $rows[] = [
       'name' => $name,
       'label' => $mara ? coreui_core_label($name) : $name,
-      'kind' => $mara ? 'tci' : ($cloud ? 'cloud' : 'local'),
+      'kind' => $cloud ? 'cloud' : ($mara ? 'tci' : 'local'),
+      'updatable' => !$cloud,
       'size_bytes' => max(0, (int)($model['size'] ?? 0)),
       'parameter_size' => (string)($model['parameter_size'] ?? ''),
       'family' => (string)($model['family'] ?? ''),
@@ -60,6 +61,39 @@ function coreui_installed_cores_target(array $models, string $requested, string 
     if (!hash_equals((string)$row['name'], $requested)) continue;
     if (!$row['removable']) throw new RuntimeException('core_protected');
     return $requested;
+  }
+  throw new RuntimeException('model_not_installed');
+}
+
+/**
+ * Decide an update from a fresh Ollama inventory, without relying on a
+ * caller-supplied tier. A TCI Core must be rebuilt using its Modelfile,
+ * whereas an ordinary Ollama Core is refreshed by re-pulling its tag.
+ * Updating the standard Core's base also rebuilds its dependent TCI Core.
+ * Never treat a cloud stub as a locally refreshable Core.
+ */
+function coreui_installed_cores_update_selection(
+  array $models, string $requested, string $default, string $sourceBase, array $plan
+): array {
+  if (!coreui_installed_cores_name_valid($requested)) throw new RuntimeException('invalid_model_name');
+  foreach (coreui_installed_cores_rows($models, $default, $sourceBase) as $row) {
+    if (!hash_equals((string)$row['name'], $requested)) continue;
+    if (!$row['updatable']) throw new RuntimeException('update_not_supported');
+    if ($row['kind'] === 'tci' || ($sourceBase !== '' && coreui_core_same($requested, $sourceBase))) {
+      foreach ($plan as $item) {
+        if (!is_array($item)) continue;
+        if ($row['kind'] !== 'tci' && coreui_core_same((string)($item['base'] ?? ''), $requested)) {
+          return ['kind'=>'tci', 'plan'=>[$item]];
+        }
+        foreach ((array)($item['cores'] ?? []) as $core) {
+          if (is_array($core) && coreui_core_same((string)($core['name'] ?? ''), $requested)) {
+            return ['kind'=>'tci', 'plan'=>[$item]];
+          }
+        }
+      }
+      throw new RuntimeException('update_not_supported');
+    }
+    return ['kind'=>'pull', 'model'=>$requested];
   }
   throw new RuntimeException('model_not_installed');
 }
