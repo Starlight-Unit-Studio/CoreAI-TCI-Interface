@@ -10,6 +10,19 @@ COREAI: TCI INTERFACE // CHANGELOG 0.6.89
   Rueckkehr aus Ollama wird der Status automatisch neu gelesen.
 - Lokale TCI Cores funktionieren ohne Ollama-Konto. Bereits installierte Cloud
   Cores bleiben unberuehrt; es wird keine neue 31B-Cloud-Installation angeboten.
+- Ein eigenes Popup "Cores verwalten" im Ollama-Bereich eingefuegt:
+  zwei nebeneinander angeordnete Quellenkarten, Ollama-Suche, Modelldetails,
+  lokal ladbare Tags und Groessen, Bestaetigung vor Installation sowie
+  Fortschritt und Abschlussstatus. Hugging Face als "In Vorbereitung".
+- Modellliste und Tags werden serverseitig von ollama.com (feste HTTPS-Quelle)
+  gelesen. Kein fremder Suchdienst und keine neue Konto-/Tarifpflicht.
+  Bei fehlender HTML-Suche bleibt ein Link zur offiziellen Ollama-Seite.
+- Neue lokale Modelle verwenden denselben sicheren Installations-Lock und
+  /api/pull-Worker wie die TCI Core-Updates; keine Modelfile-Aenderung,
+  kein Modell-Loeschen und keine Modellausfuehrung beim Download.
+- Neues Offline-Testpaar fuer Parser-/Installationsschutz und UI-Ablauf
+  in beiden Preflights aufgenommen. Simulierter UI-Test bestanden;
+  PHP-/Integrationstest sowie Live-Abruf stehen noch aus.
 - Version 0.6.89 nach dem Schema ein Merge gleich eine neue Version vorbereitet.
 - Status: Entwurfs-PR #241. Ausgefuehrte Runtime-Selbsttests sind noch offen,
   insbesondere Playwright und Live-Sprache mit Datenbank/HTTP. Keine Behauptung
