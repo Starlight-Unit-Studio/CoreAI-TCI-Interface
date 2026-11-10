@@ -93,7 +93,19 @@ if ($method === 'GET' && (array_key_exists('ollama_search', $_GET) || array_key_
       stu_json(['ok'=>true, 'models'=>coreui_library_search($query), 'csrf_token'=>$csrf]);
     }
     $name = trim((string)$_GET['ollama_detail']);
-    stu_json(['ok'=>true, 'detail'=>coreui_library_detail($name), 'csrf_token'=>$csrf]);
+    $detail = coreui_library_detail($name);
+    // Installed is observed from Ollama, not inferred from the registry.
+    try {
+      $local = array_map(static fn(array $item): string => (string)$item['name'], coreui_ollama_models());
+    } catch (RuntimeException $e) {
+      $local = [];
+    }
+    foreach ($detail['tags'] as &$variant) {
+      $variant['installed'] = in_array($variant['name'], $local, true)
+        || in_array($variant['name'] . ':latest', $local, true);
+    }
+    unset($variant);
+    stu_json(['ok'=>true, 'detail'=>$detail, 'csrf_token'=>$csrf]);
   } catch (RuntimeException $e) {
     $invalid = in_array($e->getMessage(), ['invalid_model_name', 'invalid_search'], true);
     stu_json(['ok'=>false, 'error'=>$e->getMessage()], $invalid ? 400 : 503);
