@@ -15,6 +15,8 @@ COREAI: TCI INTERFACE // CHANGELOG 0.6.87
 - Premium (gemma4:31b) nur noch lokal: der Installer bietet gemma4:31b-cloud nicht mehr an
   (Ollama-Cloud kostenpflichtig). Ollama-Konto, andere Cloud-Modelle und installierte
   Cloud-Cores bleiben fuer Nutzer mit Ollama-Abo.
+- Behoben: eine langsame erste Profil-Antwort konnte nach dem Speichern unter Konto den
+  alten Namen zurueckholen (0.6.86); eine Antwort von vor dem Speichern zaehlt nicht mehr.
 - Behoben: ein Link app.html?session=... oeffnete den leeren Start statt des Chats
   (Benachrichtigungen seit 0.6.81). Ohne Link startet die App weiter mit leerem Entwurf.
 - api/console_chat_tools.php; console_sessions.php: archived (sort), files, search, export, pin,

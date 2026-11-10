@@ -42,6 +42,10 @@ UMGESETZT
 - Fehler behoben: init oeffnete immer den leeren Entwurf, auch mit ?session= (Benach-
   richtigungen seit 0.6.81). Jetzt oeffnet ein Link seinen Chat (takeLinkedSession).
 - settings.html, js/coreui-archived-chats.js, css/settings.css: Archivierte Chats.
+- js/settings.js: loadProfile verwirft eine Antwort, wenn inzwischen gespeichert wurde
+  (Zaehler profileWrites). Gefunden, weil account-ui-selftest.cjs in einer vollen
+  Testreihe einmal scheiterte; mit erzwungener Reihenfolge nachgestellt, ohne Fix rot,
+  mit Fix gruen. Der Test erzwingt diese Reihenfolge jetzt immer.
 
 TESTS (hier ausgefuehrt)
 - php scripts/chat-menu-selftest.php, auch mit COREUI_SELFTEST_DB=1 gegen MariaDB
