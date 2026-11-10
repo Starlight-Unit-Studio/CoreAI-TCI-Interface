@@ -101,8 +101,13 @@ if ($method === 'GET' && (array_key_exists('ollama_search', $_GET) || array_key_
       $local = [];
     }
     foreach ($detail['tags'] as &$variant) {
-      $variant['installed'] = in_array($variant['name'], $local, true)
-        || in_array($variant['name'] . ':latest', $local, true);
+      $variant['installed'] = false;
+      foreach ($local as $installedModel) {
+        if (coreui_core_same((string)$variant['name'], $installedModel)) {
+          $variant['installed'] = true;
+          break;
+        }
+      }
     }
     unset($variant);
     stu_json(['ok'=>true, 'detail'=>$detail, 'csrf_token'=>$csrf]);
