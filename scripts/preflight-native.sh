@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.93: optionales Auto-Update, Spaeter-Pause und Preflight-Retry.
+# CoreAI: TCI Interface 0.6.94: Host-Updater Bash-Syntax und sichtbare Selbsttestfehler.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
