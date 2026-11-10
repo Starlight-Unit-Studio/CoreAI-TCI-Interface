@@ -1,0 +1,50 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.92
+Datum: 10.11.2026
+Basis: main 0.6.91 nach PR #243
+Branch: fix/0.6.92-installed-cores-test-expectation
+
+ANLASS
+Der Betreiber hat auf seinem CoreAI-Host den Preflight ausgefuehrt.
+Ein einziger Fehler blieb uebrig:
+"Installierte-Cores-Selbsttest: Installed Cores FAIL:
+ deletion guard for qwen3:8b:latest"
+Die Nginx-Meldung ist weiterhin nur eine WARNUNG.
+
+URSACHE
+Im Offline-Test scripts/installed-cores-selftest.php wurde ein
+absichtlich ungueltiger Name "qwen3:8b:latest" als Testfall benutzt.
+Die CoreAI-Namenspruefung erlaubt nur einen Tag-Doppelpunkt.
+Folglich wirft der echte Schutzcode "invalid_model_name".
+Die Testdatei erwartete faelschlich "model_not_installed".
+Der Test scheiterte deshalb an der falschen Erwartung und NICHT
+an der Schutzpruefung.
+
+LOESUNG
+- Im Test wird fuer genau diesen absichtlich ungueltigen Namen
+  nun "invalid_model_name" erwartet, inklusive Kommentar.
+- Bereits vorhandene Tests fuer gueltige aber nicht vorhandene
+  Core-Tags pruefen weiterhin "model_not_installed".
+- Keine Produktions-API, Datenbank, installierten Ollama-Cores,
+  Modelfiles, Nutzerkonten oder Installationssperren geaendert.
+- Qwen ist nur ein synthetischer Testeintrag. Es wurde kein
+  Qwen-Core durch den Selbsttest installiert oder geloescht.
+
+VERSION / RELEASE
+- VERSION 0.6.91 -> 0.6.92 nach "ein Merge = eine Version".
+- Sechs Seiten, README, JS-Versionsmarker, Branding- und
+  Preflight-Versionen, Changelog, Archiv und aktuelle
+  Uebergabe aktualisiert; JS-Asset-Fingerprint korrigiert.
+- Main bleibt bis zu einem Betreiber-Merge auf 0.6.91.
+- Kein neues Deploy-Verfahren. Der bisherige GitHub-Updater
+  bleibt der normale Weg.
+- Nach einem Merge sollen CoreAI-Updater und kompletter
+  Preflight erneut laufen.
+
+PRUEFSTATUS
+- Screenshot-Ausgabe und Quelltext des Tests gegen die
+  Validierungsfunktion abgeglichen; die falsche Erwartung
+  ist damit klar begruendet.
+- PHP-8.4-CLI-RegEx prueft den absichtlich ungueltigen
+  Namen separat. Der volle Preflight des realen CoreAI-
+  Servers ist nach dem Update erneut durch den Betreiber
+  auszufuehren; kein pauschaler PASS behauptet.
