@@ -2,7 +2,7 @@
    verdict, admins only, confirmation when advised against, progress while
    the server installs, "Jetzt nutzen" at the end. Cores verwalten: tiers
    with second names, weekly switch, update now with results, Ollama Cloud
-   connect link and adding a cloud Core. */
+   connect link, optional cloud accounts, and Premium installed only locally. */
 'use strict';
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -382,39 +382,32 @@ assert.equal(api.gb(20 * 1073741824), '20 GB');
   assert.equal(els.coreInstallAuto.checked, false);
   assert.match(els.coreInstallNote.textContent, /nicht gespeichert/);
 
-  // Ollama Cloud: not connected -> steps and Ollama's connect link; after
-  // confirming there, "Verbindung prüfen" shows the account and a cloud Core can be added.
+  // 0.6.87: Premium (31b) is offered only locally. Ollama accounts remain
+  // optional for other cloud Cores; a 31b cloud install cannot be requested.
   ({els, doc} = page());
-  const missingPremium = TIERS.map(t => t.tier === 'premium' ? Object.assign({}, t, {cloud: [], cloud_missing: true, status: 'missing'}) : t);
-  const cloudTicks = [];
+  const missingPremium = TIERS.map(t => t.tier === 'premium'
+    ? Object.assign({}, t, {cloud: [], cloud_missing: false, status: 'missing'}) : t);
   srv = server({tiers: missingPremium, cloudAfter: {version: '0.40.6', version_ok: true, min_version: '0.12.0',
-    account: {state: 'connected', name: 'mara-ops', plan: 'free'}},
-    statuses: [{kind: 'install', cloud: true, tier: 'premium', label: 'TCI Core Premium', core: 'gemma4:31b-cloud', phase: 'done',
-      step: 'Fertig: TCI Core Premium (Cloud) ist bereit.', percent: 100, running: false}]});
-  win = api.create(doc, srv.fetch, fn => cloudTicks.push(fn), {});
+    account: {state: 'connected', name: 'mara-ops', plan: 'free'}}});
+  win = api.create(doc, srv.fetch, () => {}, {});
   await win.manage();
-  assert.equal(els.coreInstallCloud.hidden, false);
+  assert.equal(els.coreInstallCloud.hidden, false, 'optional Ollama account controls remain available');
   assert.equal(els.coreInstallCloudState.textContent, 'Noch nicht mit einem Ollama-Konto verbunden.');
   assert.equal(els.coreInstallCloudState.getAttribute('data-state'), 'warn');
   assert.equal(els.coreInstallCloudSteps.hidden, false);
   assert.equal(els.coreInstallCloudLink.hidden, false);
   assert.equal(els.coreInstallCloudLink.getAttribute('href'), SIGNIN, 'Ollama\'s own connect link');
-  let premiumItem = els.coreInstallTierList.children[4];
-  let cloudBtn = premiumItem.children.find(c => c.className === 'core-install-tier-actions').children.find(b => b.textContent === 'Cloud hinzufügen');
-  assert.equal(cloudBtn.disabled, true, 'adding a cloud Core waits for the account');
+  const premiumActions = () => els.coreInstallTierList.children[4].children
+    .find(c => c.className === 'core-install-tier-actions').children.map(b => b.textContent);
+  assert.deepEqual(premiumActions(), ['Installieren'], 'Premium offers local installation only');
   await els.coreInstallCloudCheck.handlers.click();
   assert.equal(els.coreInstallCloudState.textContent, 'Verbunden als mara-ops (Plan: free).');
   assert.equal(els.coreInstallCloudLink.hidden, true);
   assert.equal(els.coreInstallCloudSteps.hidden, true);
   assert.equal(els.coreInstallCloudCheck.textContent, 'Erneut prüfen');
-  premiumItem = els.coreInstallTierList.children[4];
-  cloudBtn = premiumItem.children.find(c => c.className === 'core-install-tier-actions').children.find(b => b.textContent === 'Cloud hinzufügen');
-  assert.equal(cloudBtn.disabled, false);
-  await cloudBtn.handlers.click();
-  assert.deepEqual(JSON.parse(srv.calls.filter(c => c.init.method === 'POST').pop().init.body), {action: 'core_cloud_add', tier: 'premium'});
-  assert.equal(els.coreInstallProgress.hidden, false, 'the overview follows the cloud Core it added');
-  await cloudTicks.shift()();
-  assert.equal(els.coreInstallNote.textContent, 'Fertig: TCI Core Premium (Cloud) ist bereit.');
+  assert.deepEqual(premiumActions(), ['Installieren'], 'signing in never unlocks Premium Cloud');
+  assert.equal(srv.calls.some(c => c.init && c.init.method === 'POST'), false,
+    'opening and checking the account never starts a cloud install');
 
   // Old Ollama: a clear note instead of a link.
   ({els, doc} = page());
@@ -427,13 +420,14 @@ assert.equal(api.gb(20 * 1073741824), '20 GB');
   // Install view for admins: switch and update there too, a way to Cores
   // verwalten, and the cloud hint for a tier that also runs in the cloud.
   ({els, doc} = page());
-  srv = server({check: {tier: 'premium', label: 'TCI Core Premium', base: 'gemma4:31b', cloud_base: 'gemma4:31b-cloud'}});
+  srv = server({check: {tier: 'premium', label: 'TCI Core Premium', base: 'gemma4:31b', cloud_base: null}});
   win = api.create(doc, srv.fetch, () => {}, {});
   await win.open('premium');
   assert.equal(els.coreInstallMaint.hidden, false);
   assert.equal(els.coreInstallToManage.hidden, false);
   assert.equal(els.coreInstallCloud.hidden, true, 'the cloud section lives in the overview');
-  assert.match(els.coreInstallLead.textContent, /auch als Cloud-Core ohne Download \(Ollama-Konto nötig\): unter Cores verwalten/);
+  assert.doesNotMatch(els.coreInstallLead.textContent, /auch als Cloud-Core ohne Download/,
+    'Premium installer does not advertise a retired cloud variant');
   await els.coreInstallToManage.handlers.click();
   assert.equal(win.state().mode, 'manage');
   assert.equal(els.coreInstallTitle.textContent, 'Cores verwalten');
