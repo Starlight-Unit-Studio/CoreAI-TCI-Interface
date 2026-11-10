@@ -95,6 +95,10 @@ UPD="$APP/scripts/coreai-updater.sh"
 json() { python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get(sys.argv[2], ""))' "$1" "$2"; }
 fail() { echo "FAIL: $*" >&2; exit 1; }
 
+# Fail early with the precise Bash error instead of hiding it behind the
+# generic Preflight result. The real host updater must parse before use.
+bash -n "$UPD" || fail 'host updater Bash syntax'
+
 # Check: newest main, its version and the changelog above the installed version.
 "$UPD" check > /dev/null
 AV="$APP/var/update/available.json"
