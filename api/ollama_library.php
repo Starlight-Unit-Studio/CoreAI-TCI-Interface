@@ -85,6 +85,22 @@ function coreui_library_text(string $value, int $limit = 220): string {
   return mb_substr(is_string($flat) ? $flat : '', 0, $limit);
 }
 
+/**
+ * DOMDocument joins neighbouring block text without a separator. For
+ * example, a name heading followed by "Cloud only" becomes "nameCloud".
+ * Preserve text-node boundaries before checking local/cloud metadata.
+ */
+function coreui_library_link_label(DOMXPath $xpath, DOMNode $link, int $limit = 260): string {
+  $parts = [];
+  $nodes = $xpath->query('.//text()', $link);
+  if ($nodes === false) return '';
+  foreach ($nodes as $node) {
+    $piece = trim((string)$node->nodeValue);
+    if ($piece !== '') $parts[] = $piece;
+  }
+  return coreui_library_text(implode(' ', $parts), $limit);
+}
+
 /** Pure parser for fixture tests. Only official model profile links are kept. */
 function coreui_library_search_parse(string $html): array {
   $xpath = coreui_library_dom($html);
@@ -101,7 +117,10 @@ function coreui_library_search_parse(string $html): array {
         || in_array(strtolower($name), ['search', 'download', 'blog', 'models', 'pricing', 'login', 'library'], true)) continue;
     // Only accept /library/model or /namespace/model, not arbitrary site links.
     if (!str_starts_with($path, '/library/') && !str_contains($name, '/')) continue;
-    $label = coreui_library_text((string)$link->textContent, 260);
+    $label = coreui_library_link_label($xpath, $link);
+    // Explicit cloud-only cards must be excluded even when sizes occur
+    // in their title. Mixed listings can still offer their local tags.
+    if (preg_match('~\bcloud[\s-]*only\b|\bonly[\s-]*cloud\b~i', $label) === 1) continue;
     // Cloud-only cards have no local tags or parameter sizes; mixed cards remain.
     if (preg_match('~(?:^|[._/-])cloud(?:$|[._/-])~i', $name) === 1) continue;
     if (preg_match('~\bcloud\b~i', $label) === 1
@@ -142,7 +161,8 @@ function coreui_library_detail_parse(string $html, string $name): array {
     if (!str_starts_with($path, $prefix)) continue;
     $tag = substr($path, strlen($prefix));
     if (!coreui_library_tag_valid($tag)) continue;
-    $title = coreui_library_text((string)$link->textContent, 180);
+    $title = coreui_library_link_label($xpath, $link, 180);
+    if (preg_match('~\bcloud[\s-]*only\b|\bonly[\s-]*cloud\b~i', $title) === 1) continue;
     // Ollama's local variants show an actual download size in MB/GB.
     if (preg_match('~\b([0-9]+(?:\.[0-9]+)?\s*(?:MB|GB|TB))\b~i', $title, $size) !== 1) continue;
     $model = $name . ':' . $tag;
