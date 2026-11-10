@@ -215,6 +215,11 @@ def cmd_request(path):
     print('restart_ollama=' + ('1' if restart else '0'))
     print('requested_by=' + str(by))
     print('automatic=' + ('1' if data.get('automatic') is True else '0'))
+    if data.get('automatic') is True:
+        commit = data.get('automatic_commit', '')
+        if not isinstance(commit, str) or not COMMIT_RE.fullmatch(commit):
+            return 2
+        print('automatic_commit=' + commit)
     return 0
 
 
@@ -234,6 +239,27 @@ def safe_policy(path):
         return data if isinstance(data, dict) else {}
     except (OSError, UnicodeDecodeError, ValueError):
         return {}
+
+
+def cmd_auto_allowed(policy_path):
+    """Called by the worker before backup: a late click on 'Später' wins."""
+    policy = safe_policy(policy_path)
+    until = policy.get('snooze_until', 0)
+    uid = policy.get('requested_by')
+    return 0 if (policy.get('enabled') is True
+                 and type(uid) is int and uid > 0
+                 and type(until) is int and until <= int(time.time())) else 1
+
+
+def cmd_auto_mark(path, commit):
+    """Mark a commit as attempted only once the worker really starts."""
+    if not COMMIT_RE.fullmatch(commit):
+        raise SystemExit('invalid automatic update commit')
+    previous = read_json(path)
+    previous['commit'] = commit
+    previous['started_at'] = now()
+    write_json(path, previous)
+    return 0
 
 
 def cmd_auto_queue(policy_path, available_path, status_path, request_path, attempt_path, local_commit):
@@ -278,6 +304,7 @@ def cmd_auto_queue(policy_path, available_path, status_path, request_path, attem
         'requested_by': uid,
         'restart_ollama': policy.get('restart_ollama') is True,
         'automatic': True,
+        'automatic_commit': commit,
         'requested_at': now(),
     }
     try:
@@ -292,7 +319,7 @@ def cmd_auto_queue(policy_path, available_path, status_path, request_path, attem
             handle.write('\n')
         if os.geteuid() == 0:
             os.chown(request_path, 0, 33)
-        attempt.update({'commit': commit, 'queued_at': now()})
+        attempt.update({'queued_commit': commit, 'queued_at': now()})
         write_json(attempt_path, attempt)
     except BaseException:
         try:
@@ -388,6 +415,10 @@ def main(argv):
         return 0
     if command == 'request' and len(argv) == 3:
         return cmd_request(argv[2])
+    if command == 'auto-allowed' and len(argv) == 3:
+        return cmd_auto_allowed(argv[2])
+    if command == 'auto-mark' and len(argv) == 4:
+        return cmd_auto_mark(argv[2], argv[3])
     if command == 'auto-queue' and len(argv) == 8:
         return cmd_auto_queue(*argv[2:])
     if command == 'follow' and len(argv) == 3:
