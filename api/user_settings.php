@@ -79,6 +79,44 @@ if ($method === 'GET' && array_key_exists('core_cloud', $_GET)) {
   stu_json(['ok'=>true, 'cloud'=>coreui_ollama_cloud_status()]);
 }
 
+// 0.6.89: optional official Ollama registry browser, owner/admin only.
+// No public registry search endpoint is assumed: the server parses Ollama's
+// official HTML and never accepts a user-supplied URL or network host.
+if ($method === 'GET' && (array_key_exists('ollama_search', $_GET) || array_key_exists('ollama_detail', $_GET))) {
+  require_once __DIR__ . '/ollama_library.php';
+  stu_require_permission_at_most(COREUI_CORE_INSTALL_PERMISSION_MAX, $pdo);
+  $csrf = stu_csrf_token();
+  if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
+  try {
+    if (array_key_exists('ollama_search', $_GET)) {
+      $query = trim((string)$_GET['ollama_search']);
+      stu_json(['ok'=>true, 'models'=>coreui_library_search($query), 'csrf_token'=>$csrf]);
+    }
+    $name = trim((string)$_GET['ollama_detail']);
+    $detail = coreui_library_detail($name);
+    // Installed is observed from Ollama, not inferred from the registry.
+    try {
+      $local = array_map(static fn(array $item): string => (string)$item['name'], coreui_ollama_models());
+    } catch (RuntimeException $e) {
+      $local = [];
+    }
+    foreach ($detail['tags'] as &$variant) {
+      $variant['installed'] = false;
+      foreach ($local as $installedModel) {
+        if (coreui_core_same((string)$variant['name'], $installedModel)) {
+          $variant['installed'] = true;
+          break;
+        }
+      }
+    }
+    unset($variant);
+    stu_json(['ok'=>true, 'detail'=>$detail, 'csrf_token'=>$csrf]);
+  } catch (RuntimeException $e) {
+    $invalid = in_array($e->getMessage(), ['invalid_model_name', 'invalid_search'], true);
+    stu_json(['ok'=>false, 'error'=>$e->getMessage()], $invalid ? 400 : 503);
+  }
+}
+
 if ($method === 'GET' && array_key_exists('general', $_GET)) {
   $general = coreui_general_load($pdo, (int)$uid);
   $model = coreui_general_effective_model($pdo, (int)$uid);
@@ -220,6 +258,37 @@ if (($body['action'] ?? '') === 'core') {
   } catch (Throwable $e) {
     if (function_exists('stu__log_error')) stu__log_error(['type'=>'core_preload_failed', 'uid'=>$uid, 'message'=>$e->getMessage()]);
   }
+  exit;
+}
+// 0.6.89: install an explicitly selected local variant from Ollama's official
+// model page. Uses the same install lock, detached worker and status as TCI tiers.
+if (($body['action'] ?? '') === 'ollama_library_install') {
+  require_once __DIR__ . '/ollama_library.php';
+  stu_require_permission_at_most(COREUI_CORE_INSTALL_PERMISSION_MAX, $pdo);
+  $model = trim((string)($body['model'] ?? ''));
+  if (preg_match('~^([A-Za-z0-9][A-Za-z0-9._-]*(?:/[A-Za-z0-9][A-Za-z0-9._-]*)?):([A-Za-z0-9][A-Za-z0-9._-]*)$~D', $model, $m) !== 1
+      || !coreui_library_name_valid($m[1] ?? '')
+      || !coreui_library_tag_valid($m[2] ?? '')) {
+    stu_json(['ok'=>false, 'error'=>'invalid_model_name'], 400);
+  }
+  if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
+  try {
+    $detail = coreui_library_detail($m[1]);
+    if (!coreui_library_install_allowed($model, $detail)) {
+      stu_json(['ok'=>false, 'error'=>'not_local_model'], 400);
+    }
+    if (coreui_ollama_model_exists($model)) stu_json(['ok'=>false, 'error'=>'already_installed'], 409);
+    $lock = coreui_core_install_lock();
+  } catch (RuntimeException $e) {
+    $code = $e->getMessage();
+    stu_json(['ok'=>false, 'error'=>$code], $code === 'invalid_model_name' ? 400 : 503);
+  }
+  if ($lock === false) {
+    stu_json(['ok'=>false, 'error'=>'install_running', 'install'=>coreui_core_install_status()], 409);
+  }
+  $state = coreui_library_begin($model);
+  coreui_core_job_detach(['ok'=>true, 'install'=>['running'=>true] + array_diff_key($state, ['layers'=>true])]);
+  coreui_core_job_run($lock, 'coreui_library_run', $state, $uid);
   exit;
 }
 // 0.5.76: install a missing tier from the chat. Admins only, one job at a

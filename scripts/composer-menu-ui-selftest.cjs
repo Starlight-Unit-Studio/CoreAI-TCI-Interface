@@ -19,8 +19,10 @@ const read = f => fs.readFileSync(path.join(root, f), 'utf8');
 
 // --- Wiring --------------------------------------------------------------------------------
 const html = read('app.html');
-assert(/<script src="\.\/js\/coreui-composer-menu\.js\?v=\d+"><\/script>\n  <script src="\.\/js\/console-app\.js\?v=\d+"><\/script>/.test(html),
-  'app.html loads the menu right before the chat');
+const composerModule = html.search(/<script src="\.\/js\/coreui-composer-menu\.js\?v=\d+"><\/script>/);
+const chatModule = html.search(/<script src="\.\/js\/console-app\.js\?v=\d+"><\/script>/);
+assert(composerModule >= 0 && chatModule > composerModule,
+  'app.html loads the composer menu before the chat, allowing shared scripts in between');
 assert(html.includes('id="btnAttach" type="button" aria-label="Anhängen und Werkzeuge" aria-haspopup="menu" aria-expanded="false" aria-controls="composerMenu"'),
   'the + button announces its menu');
 assert(!html.includes('Bis zu zehn Dateien oder Bilder anhängen'), 'the paperclip label is gone');

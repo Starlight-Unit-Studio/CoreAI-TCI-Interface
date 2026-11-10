@@ -42,7 +42,8 @@ assert.ok(prefs.includes("sendKey: source.sendKey === 'mod-enter' ? 'mod-enter' 
   'local storage normalizes shortcut modes');
 assert.ok(settings.includes("generalSendKey.addEventListener('change', saveLocal)"),
   'General control uses the real preference store');
-assert.ok(settings.includes('sendKey: oldSendKey'), 'resetting Appearance preserves the shortcut');
+assert.ok(settings.includes('sendKey: prior.sendKey, uiLanguage: prior.uiLanguage'),
+  'resetting Appearance preserves the keyboard shortcut and interface language');
 assert.ok(app.includes('window.CoreUISendKeys.shouldSend(e, prefs)'),
   'the composer uses the selected keyboard behavior');
 assert.ok(chat.includes('id="composerSendKeyHint"'), 'composer announces the active shortcut');

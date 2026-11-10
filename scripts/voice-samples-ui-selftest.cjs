@@ -119,7 +119,8 @@ async function open(browser, level, viewport, state) {
     let {page, srv, errors} = await open(browser, 0);
     await page.waitForSelector('#ttsSamplesCard:not([hidden]) .tts-voice');
     assert.equal(await page.isVisible('#view-admin-betrieb'), true, 'Betrieb is open');
-    assert.equal(await page.textContent('#adminTtsTitle'), 'Maras Stimme');
+    assert.equal(await page.textContent('#adminTtsTitle'), 'Stimme der TCI',
+      'the dedicated Admin Core heading uses the unified TCI wording');
     assert.equal(await page.textContent('#ttsMeta'),
       'Lauf vom 04.11.2026, 15:30 Uhr: 3 von 4 Stimmen gesprochen, Hörproben mit 4 Kernen, 1 Fehler (siehe report.md).');
     assert.deepEqual(await page.$$eval('#ttsSentences li', l => l.map(x => x.textContent)),

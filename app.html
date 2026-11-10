@@ -11,16 +11,16 @@
   />
   <meta name="theme-color" content="#f0f4fa" />
   <meta name="color-scheme" content="light" />
-  <meta name="application-version" content="0.6.88" />
+  <meta name="application-version" content="0.6.89" />
   <meta name="application-name" content="CoreAI: TCI Interface" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface | Quantum Software</title>
-  <link rel="stylesheet" href="./css/console.css?v=0199825349881090882906478" />
+  <link rel="stylesheet" href="./css/console.css?v=0119426965189165062280352" />
   <link rel="stylesheet" href="./css/artifacts.css?v=1070189041187187332898493" />
   <link rel="stylesheet" href="./css/coreui-update.css?v=1027839363176318351849490" />
   <link rel="stylesheet" href="./css/coreui-theme.css?v=0697431397907702126637895" />
   <link rel="stylesheet" href="./css/coreui-image-viewer.css?v=0041889774580256723673713" />
-  <script src="./js/console-gate.js?v=0011735191233126049760110"></script>
+  <script src="./js/console-gate.js?v=0524562147011556828560982"></script>
   <script src="./js/coreui-preferences.js?v=0004145186774094057353830"></script>
   <script src="./js/coreui-ui-language.js?v=0850224961537363286304733"></script>
 </head>
@@ -139,7 +139,7 @@
         <div class="brand-copy">
           <div class="brand-kicker">QUANTUM SOFTWARE</div>
           <div class="brand-title">COREAI:<span class="brand-product-part">TCI INTERFACE</span></div>
-          <div class="brand-signature">TERRA-NET MATRIX // N-73 // v0.6.88</div>
+          <div class="brand-signature">TERRA-NET MATRIX // N-73 // v0.6.89</div>
         </div>
       </div>
 
@@ -456,7 +456,7 @@
             <thead><tr><th scope="col">TCI-Name</th><th scope="col">Core</th><th scope="col">Status</th></tr></thead>
             <tbody id="coreLegendRows"></tbody>
           </table>
-          <p class="core-legend-note">Jede Stufe antwortet als deine CoreAI. Die Punkte im Core-Menü: grün ist der Core, mit dem deine CoreAI dir gerade antwortet, gelb ein installierter Core in Bereitschaft, rot ein Core, der fehlt oder gerade nicht erreichbar ist; golden pulsiert der Core, der gerade geladen wird. Eine ausgegraute Stufe fehlt noch und lässt sich dort installieren (nur Admins). Gibt es eine Stufe auch in der Cloud, wählst du in ihrer Zeile Lokal oder Cloud. Cloud-Cores laufen über Ollama in der Cloud und brauchen auf dem Server ein Ollama-Konto; Admins verbinden es unter "Cores verwalten".</p>
+          <p class="core-legend-note">Jede Stufe antwortet als deine CoreAI. Die Punkte im Core-Menü: grün ist der Core, mit dem deine CoreAI dir gerade antwortet, gelb ein installierter Core in Bereitschaft, rot ein Core, der fehlt oder gerade nicht erreichbar ist; golden pulsiert der Core, der gerade geladen wird. Eine ausgegraute Stufe fehlt noch und lässt sich dort installieren (nur Admins). Zusätzliche Modelle lassen sich unter „Cores verwalten“ im Ollama-Bereich lokal installieren. Die Ollama-Kontoverbindung ist optional und für lokale Modelle nicht nötig.</p>
         </section>
         <section class="core-legend-section" aria-labelledby="coreLegendFormat">
           <h3 id="coreLegendFormat">FORMATIERUNG</h3>
@@ -535,20 +535,20 @@
         </div>
       </section>
       <section class="core-install-cloud" id="coreInstallCloud" aria-labelledby="coreInstallCloudTitle" hidden>
-        <h4 id="coreInstallCloudTitle">OLLAMA CLOUD</h4>
-        <p class="core-install-update-info">Cloud-Cores laufen auf Ollamas Servern: kein Download, keine Grafikkarte, dafür Internet
-          und ein Ollama-Konto auf diesem Server. Die Registrierung auf ollama.com ist kostenlos; wie viel du nutzen kannst,
-          hängt vom Ollama-Plan ab.</p>
+        <h4 id="coreInstallCloudTitle">OLLAMA-VERBINDUNG <span class="core-install-optional">(OPTIONAL)</span></h4>
+        <p class="core-install-update-info">Du hast bereits ein Ollama-Abonnement? Dann kannst du dein bestehendes Konto
+          mit dieser CoreAI-Installation verbinden und deine vorhandenen Freigaben nutzen. Die Verbindung ist freiwillig:
+          Lokale TCI Cores funktionieren ohne Ollama-Konto und ohne Cloud-Dienst.</p>
         <p class="core-install-cloud-state" id="coreInstallCloudState" data-state="" role="status" aria-live="polite"></p>
         <ol class="core-install-cloud-steps" id="coreInstallCloudSteps" hidden>
-          <li>Auf ollama.com ein Konto anlegen, falls du noch keins hast.</li>
-          <li>"Bei Ollama anmelden" öffnen, einloggen und diesen Server verbinden.</li>
-          <li>Hierher zurückkommen und "Verbindung prüfen" tippen.</li>
+          <li>„Ollama verbinden“ öffnen und die Verbindung mit deinem bestehenden Konto bestätigen.</li>
+          <li>Zu CoreAI zurückkehren. Der Verbindungsstatus wird automatisch erneut geprüft.</li>
         </ol>
         <div class="core-install-actions core-install-actions--start">
           <a class="core-install-btn core-install-btn--go" id="coreInstallCloudLink" href="https://ollama.com" target="_blank"
-            rel="noopener noreferrer" hidden>Bei Ollama anmelden</a>
-          <button class="core-install-btn" id="coreInstallCloudCheck" type="button">Verbindung prüfen</button>
+            rel="noopener noreferrer" hidden>Ollama verbinden</a>
+          <button class="core-install-btn" id="coreInstallCloudCheck" type="button">Status prüfen</button>
+          <button class="core-install-btn core-install-btn--go" id="coreInstallLibraryOpen" type="button">Cores verwalten</button>
         </div>
       </section>
       <p class="core-install-note" id="coreInstallNote" role="status" aria-live="polite"></p>
@@ -556,6 +556,58 @@
         <button class="core-install-btn" id="coreInstallCancel" type="button">Abbrechen</button>
         <button class="core-install-btn core-install-btn--go" id="coreInstallGo" type="button">Installieren</button>
       </div>
+    </div>
+  </div>
+
+  <div class="core-library" id="coreLibrary" hidden>
+    <div class="core-library-panel" role="dialog" aria-modal="true" aria-labelledby="coreLibraryTitle" tabindex="-1">
+      <header class="core-library-head">
+        <div>
+          <span class="core-library-kicker">LOKALE MODELLVERWALTUNG</span>
+          <h2 id="coreLibraryTitle">Cores verwalten</h2>
+          <p>Ergänze lokale Modelle, ohne bestehende TCI Cores oder ihre Einstellungen zu verändern.</p>
+        </div>
+        <button type="button" class="core-library-close" id="coreLibraryClose" aria-label="Modellverwaltung schließen">×</button>
+      </header>
+      <div class="core-library-providers" aria-label="Modellquellen">
+        <div class="core-library-provider core-library-provider--active" id="coreLibraryOllamaProvider">
+          <strong>OLLAMA</strong>
+          <span>Offizielle Modellsuche und lokaler Download</span>
+        </div>
+        <div class="core-library-provider core-library-provider--future" aria-disabled="true">
+          <strong>HUGGING FACE</strong>
+          <span>Modellverwaltung in Vorbereitung</span>
+        </div>
+      </div>
+      <section class="core-library-browser" aria-label="Ollama-Modellsuche">
+        <form class="core-library-search" id="coreLibrarySearchForm">
+          <label for="coreLibraryQuery">MODELL SUCHEN</label>
+          <div class="core-library-search-controls">
+            <input id="coreLibraryQuery" type="search" maxlength="80" placeholder="z. B. qwen3.5, llama, gemma" autocomplete="off" />
+            <button class="core-install-btn core-install-btn--go" type="submit">Suchen</button>
+          </div>
+          <a href="https://ollama.com/search" target="_blank" rel="noopener noreferrer" id="coreLibraryOfficialSearch">Offizielle Ollama-Suche öffnen</a>
+        </form>
+        <p class="core-library-feedback" id="coreLibraryStatus" role="status" aria-live="polite">Die Modelle werden aus der offiziellen Ollama-Suche geladen.</p>
+        <div class="core-library-results" id="coreLibraryResults" role="list"></div>
+      </section>
+      <section class="core-library-detail" id="coreLibraryDetail" hidden aria-labelledby="coreLibraryModelTitle">
+        <button type="button" class="core-library-back" id="coreLibraryBack">← Zur Modellsuche</button>
+        <h3 id="coreLibraryModelTitle"></h3>
+        <p class="core-library-description" id="coreLibraryModelDescription"></p>
+        <label class="core-library-tag-label" for="coreLibraryTag">LOKAL VERFÜGBARE VERSION</label>
+        <select id="coreLibraryTag"></select>
+        <p class="core-library-hint" id="coreLibraryHint"></p>
+        <div class="core-library-detail-actions">
+          <a id="coreLibraryModelLink" href="https://ollama.com/search" target="_blank" rel="noopener noreferrer">Modell auf Ollama ansehen</a>
+          <button class="core-install-btn core-install-btn--go" id="coreLibraryInstall" type="button" disabled>Installieren</button>
+        </div>
+      </section>
+      <section class="core-library-progress" id="coreLibraryProgress" hidden aria-label="Installationsfortschritt">
+        <p id="coreLibraryProgressText" role="status" aria-live="polite">Installation wird vorbereitet …</p>
+        <div class="core-library-track" role="progressbar" id="coreLibraryProgressBar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="coreLibraryProgressFill"></span></div>
+        <p>Der Download läuft auf dem Server weiter, auch wenn du dieses Fenster schließt.</p>
+      </section>
     </div>
   </div>
 
@@ -578,7 +630,8 @@
   <script src="./js/console-app.js?v=0606167468513135928485501"></script>
   <script src="./js/coreui-core-mode.js?v=0354958960097784091410083"></script>
   <script src="./js/coreui-reasoning-effort.js?v=0177930745250416045111436"></script>
-  <script src="./js/coreui-core-install.js?v=0294816904878640254887997"></script>
+  <script src="./js/coreui-core-install.js?v=0870519490453683691573034"></script>
+  <script src="./js/coreui-model-library.js?v=0040045657744889795658070"></script>
   <script src="./js/coreui-artifacts.js?v=1069339270452640197429799"></script>
 
   <!-- 0.6.87: chat menu, dialogs and the search inside a chat (js/coreui-chat-menu.js) -->

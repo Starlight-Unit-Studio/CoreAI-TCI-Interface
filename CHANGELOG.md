@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.6.89 - 10.11.2026
+
+- Six existing regression test files have been updated to match established code behavior: chat-run recovery state, composer script loading order, local-only Premium Core availability, keyboard shortcut persistence, voice-sample heading and HTTP preflight page markers. The Live Voice database/HTTP investigation remains open.
+- Settings > Manage Cores now presents an **optional Ollama account connection** for existing Ollama subscribers, without sign-up recommendations, cloud-model promotion or pricing/plan advertising. A valid connection link still opens Ollama; CoreAI checks the status when users return. Local TCI Cores remain available without an Ollama account, and previously installed cloud Cores are untouched.
+- **Local model library:** The Ollama section now opens a separate **Cores verwalten** popup with an official Ollama search view, model detail overlay, local variant/size selection, two-step install confirmation and progress. The existing serialized download worker and single install lock are shared; no TCI Modelfile is created or changed and pre-existing models are preserved. The adjacent Hugging Face tile is explicitly marked **In preparation**.
+- Registry browsing is performed server-side from Ollama's fixed HTTPS origin, with strict identifiers and owner/admin-only access; a direct official-search link is available if public HTML parsing fails. Remote installs require a currently listed local variant; cloud-only variants are rejected. An offline mock UI regression passed, while the PHP registry and full host preflights still await execution.
+- Release preparation: version metadata, numeric content-based asset cache keys, update documentation and the standard version archive follow the one-version-per-merge policy.
+- **Draft / verification pending:** Test sources were checked against current code, but automated Node/PHP/Playwright/HTTP tests could not be executed in this development session. No production deployment or completed test run is claimed. Merge only after running the required regression, version and cache checks.
+
 ## 0.6.88 - 10.11.2026
 
 - New rule in `CLAUDE.md` for future work: the settings pages are built after the operator's reference screenshots, referenced and not copied; the CoreAI theme is applied over all settings at the end. PR titles, PR descriptions, commit messages and new changelog entries describe them neutrally ("after the reference") instead of naming the reference product. Older, merged texts stay as they are.

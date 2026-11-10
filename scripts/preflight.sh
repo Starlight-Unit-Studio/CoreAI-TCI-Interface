@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.88: Regel fuer neutrale PR-Texte (Einstellungsseiten nach Referenz, nicht kopiert).
+# CoreAI: TCI Interface 0.6.89: Regressionstests und optionale Ollama-Kontoverbindung.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -337,6 +337,10 @@ UI_FILES=(
   scripts/core-tiers-selftest.php
   scripts/core-install-selftest.php
   scripts/core-install-ui-selftest.cjs
+  scripts/model-library-ui-selftest.cjs
+  scripts/ollama-library-selftest.php
+  api/ollama_library.php
+  js/coreui-model-library.js
   scripts/registration-ui-selftest.cjs
   scripts/guest-access-selftest.php
   api/guest_access.php
@@ -982,6 +986,13 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail "Core-Installer-Selbsttest: ${install_test:-Unbekannter Fehler}"
   fi
 
+  library_test=''
+  if library_test="$(compose exec -T php php scripts/ollama-library-selftest.php 2>&1)"; then
+    ok 'Ollama-Modellsuche: lokale Varianten, sichere Herkunft und gemeinsamer Installationsstatus geprueft.'
+  else
+    fail "Ollama-Modellsuche-Selbsttest: ${library_test:-Unbekannter Fehler}"
+  fi
+
   guest_test=''
   if guest_test="$(compose exec -T php php scripts/guest-access-selftest.php 2>&1)"; then
     ok 'Gast-Zugang: Limit, Zaehlung bei jeder Antwort, nur privater Chat, Stundenlimit, Login und Admin geprueft.'
@@ -1288,6 +1299,11 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       ok 'Chat: Install-Fenster mit Hardware-Check, Bestaetigung, Fortschritt und Jetzt nutzen geprueft.'
     else
       fail 'Chat: Install-Fenster-Oberflaechentest fehlgeschlagen.'
+    fi
+    if node "$PROJECT_ROOT/scripts/model-library-ui-selftest.cjs" >/dev/null 2>&1; then
+      ok 'Ollama-Modellfenster: Suche, Detailansicht, Downloadbestaetigung und Fortschritt geprueft.'
+    else
+      fail 'Ollama-Modellfenster: Offline-Oberflaechentest fehlgeschlagen.'
     fi
     # 0.6.59: touch cropper must preserve originals, per-account re-edit and
     # user-square / assistant-portrait behavior.
