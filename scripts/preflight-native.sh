@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.87: Archivierte Chats und Chat-Menue wie ChatGPT (Teilen, Anpinnen, Dateien, Suche, Startbildschirm, Archivieren, Loeschen).
+# CoreAI: TCI Interface 0.6.88: Regel fuer neutrale PR-Texte (Einstellungsseiten nach Referenz, nicht kopiert).
 set -Eeuo pipefail
 IFS=$'\n\t'
 

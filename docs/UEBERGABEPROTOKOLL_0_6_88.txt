@@ -1,0 +1,23 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.88
+Datum: 10.11.2026
+Basis: main 0.6.87 nach PR #239 (c683ba4)
+Branch: claude/bold-galileo-myoyi0
+
+AUFTRAG
+Betreiber: "kannste für dich erstmal abspeichern in rp's nicht mehr zu schreiben 'kopiert
+von chatgpt' und sowas? wir referenzieren nur und am ende wird es eh ins coreai theme
+gebracht wenn alle Einstellungen fertig sind."
+
+UMGESETZT
+- CLAUDE.md, neuer Abschnitt "Einstellungsseiten nach Referenz, neutrale PR-Texte
+  (10.11.2026)": referenzieren statt kopieren, CoreAI-Theme am Ende; PR-Titel, PR-Texte,
+  Commit-Messages und neue Changelog-Eintraege neutral ("nach der Referenz"); aeltere,
+  gemergte Texte bleiben, solange der Betreiber nichts anderes sagt.
+- Version 0.6.88 (jeder Merge bekommt eine neue Nummer), Doku.
+
+TESTS (hier ausgefuehrt)
+- version-merge-check --base-version 0.6.87, branding-license-selftest.py,
+  cache-bust --verify, tci-language und terran-terminology.
+
+KEINE AENDERUNG
+- Code, Cores, Modelfile, FIFO, Prompts und Rechte bleiben unveraendert.

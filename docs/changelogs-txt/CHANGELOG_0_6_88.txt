@@ -1,0 +1,9 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.88
+10.11.2026
+
+- Neue Regel in CLAUDE.md: Einstellungsseiten entstehen nach Referenz-Screenshots, sie
+  werden referenziert, nicht kopiert; das CoreAI-Theme kommt am Ende ueber alle
+  Einstellungen. PR-Titel, PR-Beschreibungen, Commit-Messages und neue Changelog-Eintraege
+  nennen das Referenzprodukt nicht mehr, sondern schreiben neutral "nach der Referenz".
+  Aeltere, gemergte Texte bleiben.
+- Nur Dokumentation: keine Aenderung an Code, Cores, Modelfile, FIFO, Prompts oder Rechten.
