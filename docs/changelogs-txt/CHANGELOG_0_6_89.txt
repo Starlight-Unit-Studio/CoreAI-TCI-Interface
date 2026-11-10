@@ -1,0 +1,16 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.89
+10.11.2026
+
+- Sechs vorhandene Regressionstests an die aktuelle Implementierung angepasst:
+  Chat-Wiederaufnahme, Eingabemenue-Reihenfolge, Premium nur lokal,
+  Sendetastenkuerzel, Stimmproben-Ueberschrift und HTTP-Preflight.
+- Cores verwalten: Ollama-Konto nur als freiwillige Verbindung fuer Betreiber,
+  die bereits ein Ollama-Abonnement haben. Keine Registrierungsempfehlung,
+  Cloud-Angebote oder Tarifwerbung. Vorhandener Verbindungslink bleibt; bei
+  Rueckkehr aus Ollama wird der Status automatisch neu gelesen.
+- Lokale TCI Cores funktionieren ohne Ollama-Konto. Bereits installierte Cloud
+  Cores bleiben unberuehrt; es wird keine neue 31B-Cloud-Installation angeboten.
+- Version 0.6.89 nach dem Schema ein Merge gleich eine neue Version vorbereitet.
+- Status: Entwurfs-PR #241. Ausgefuehrte Runtime-Selbsttests sind noch offen,
+  insbesondere Playwright und Live-Sprache mit Datenbank/HTTP. Keine Behauptung
+  einer vollstaendigen Fehlerbehebung oder einer Live-Auslieferung.
