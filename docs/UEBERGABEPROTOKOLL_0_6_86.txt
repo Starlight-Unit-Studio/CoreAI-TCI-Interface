@@ -49,6 +49,14 @@ TESTS (hier ausgefuehrt)
   Benutzername speichern, reserviert abgewiesen, ohne CSRF abgewiesen, Name speichern
   (Maras Name bleibt), leerer Name abgewiesen, Admin vergibt Go, Konto sieht Go mit den
   echten Regeln, Profilkopf mit @name.
+- php -l der geaenderten PHP-Dateien, cache-bust --verify, version-merge-check
+  --base-version 0.6.85 (PASS).
+- Volle Testreihe mit MariaDB (COREUI_SELFTEST_DB=1): 120 bestanden, 7 fehlgeschlagen,
+  dieselben 7 wie auf main (chat-navigation-recovery, composer-menu-ui, core-install-ui,
+  send-shortcut, voice-live, voice-samples-ui, tests/test_preflight_http.py).
+- settings-tabs-ui-selftest.cjs nachgezogen, keine Pruefung abgeschaltet: der neue
+  Abschnitt Plan steht in der Liste der Abschnitte, und die Kontextfenster-Auswahl wird
+  jetzt gezielt angesprochen (select:not(.user-plan-select)).
 
 NICHT HIER GEPRUEFT
 - Ein Chat mit echtem Ollama unter einem Plan (die Regeln greifen ueber den vorhandenen
