@@ -208,7 +208,7 @@
       var tag = installedVariant();
       state.confirming = '';
       if (!tag) {
-        text(el.Hint, 'Für dieses LLM sind derzeit keine lokalen Downloadvarianten erkennbar.');
+        text(el.Hint, 'Für diesen Core sind derzeit keine lokalen Downloadvarianten erkennbar.');
         el.Install.disabled = true;
         text(el.Install, 'Nicht verfügbar');
         return;
