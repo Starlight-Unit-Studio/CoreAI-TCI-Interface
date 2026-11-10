@@ -1,9 +1,10 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
 Stand: 10.11.2026
-Repository-Version: 0.6.90 (Fix-Branch, noch NICHT auf main)
-BASIS: main 0.6.89 nach Merge PR #241; Ollama-HTML-Parser und Frontend-Terminologie nach zwei realen Preflight-Fehlern korrigiert.
+Repository-Version: 0.6.91 (Entwicklungsbranch, noch NICHT auf main)
+BASIS: main 0.6.90 nach Merge PR #242; allgemeine LLM-Bibliothek mit drei Reitern und gesicherter Einzel-Deinstallation installierter Cores.
 NEUE ARBEIT ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_6_91.txt
   docs/UEBERGABEPROTOKOLL_0_6_90.txt
   docs/UEBERGABEPROTOKOLL_0_6_89.txt
   docs/UEBERGABEPROTOKOLL_0_6_88.txt
