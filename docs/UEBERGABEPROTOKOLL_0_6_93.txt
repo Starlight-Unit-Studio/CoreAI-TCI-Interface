@@ -1,0 +1,88 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.93
+Datum: 10.11.2026
+Basis: main 0.6.92 nach PR #244
+Branch: feat/0.6.93-updater-preflight-retry-snooze
+
+AUFTRAG
+1. Nach einem fehlgeschlagenen Preflight im eingebauten Updater
+   konkrete Hilfen anzeigen und den Startknopf mit dem
+   Kreis-Pfeil als "Wiederholen" beschriften.
+2. "Spaeter" darf den Inhaber nicht bei jeder Seite mit dem
+   Update-Popup erneut stoeren. Dauer: 60 Minuten.
+3. Die 60 Minuten muessen vor allem fuer echte, kuenftig
+   optionale automatische Updates gelten. Auto-Updates deshalb
+   ebenfalls implementieren, aber ausschliesslich Opt-in.
+
+UMSETZUNG
+- scripts/lib/coreai_update_state.py: markiert "failure_kind=preflight"
+  nur beim echten Fehlertext "Preflight fehlgeschlagen:" und
+  transportiert ihn in die status.json.
+- api/update_store.php und api/update.php: owner-only und
+  CSRF-geschuetzte POST-Aktionen auto und later. Die Datei
+  var/update-request/auto.json speichert enabled (Default false),
+  requested_by und den Unix-Zeitpunkt snooze_until.
+- "Spaeter" sperrt das automatische Popup und den automatischen
+  Host-Update-Start fuer genau 3600 Sekunden. Die Sperre gilt auch
+  nach Reload und wenn weitere Merges erscheinen.
+- js/coreui-update.js / css/coreui-update.css: Preflight-Hinweis,
+  Button "Wiederholen" mit Kreis-Pfeil-SVG, Fehlerprotokoll weiterhin
+  sichtbar, serverseitiges Speichern von SPAETER, neue Checkbox
+  AUTOMATISCHE UPDATES auf der vorhandenen Systemseite.
+- api/update_store.php: manueller Retry ist auch bei state=failed
+  moeglich, wenn setup.sh main bereits geschrieben hat und die
+  Versionsvergleichsfunktion deshalb keinen neuen Commit findet.
+- scripts/coreai-updater.sh: der vorhandene Systemd-Check (alle
+  10 Minuten) prueft nach Freigabe der Lockdatei die Auto-Policy
+  und erzeugt nur mit expliziter Inhaber-Freigabe einen Auftrag.
+  Installation erfolgt wieder allein ueber coreai-updater.sh run.
+- scripts/lib/coreai_update_state.py: neue Auto-Queue mit
+  fester Quelle main, exaktem Commit, erstem Erkennungsfenster
+  und einer zusaetzlichen 10-Minuten-Frist fuer "Spaeter".
+  Der Auto-Auftrag wird unmittelbar vor der Datensicherung
+  erneut gegen die Policy geprueft. AUTO AUS oder SPAETER
+  verwirft einen noch nicht begonnenen Auftrag.
+- Ein bereits gestartetes Update wird weder durch AUTO AUS
+  noch durch SPAETER unterbrochen. Manuelle Auftraege sind
+  von diesen Aktionen nicht betroffen.
+- Auto-Updates versuchen denselben Commit hoechstens einmal.
+  Ein neuer Merge startet ein neues Erkennungsfenster.
+  Ein storniertes, noch nicht gestartetes Update verbraucht
+  keinen Versuch. Es gibt keinerlei Cloudpflicht.
+- Automatisches Update verwendet standardmaessig keinen
+  zusaetzlichen Ollama-Neustart (restart_ollama=false);
+  notwendige CoreAI-Dienste werden wie bisher neu gestartet.
+- Versions-/Cache-Marker, Changelog und Archiv auf 0.6.93
+  nach Schema ein Merge gleich eine Version vorbereitet.
+
+TESTS
+- scripts/update-selftest.php: Opt-in, 60-Minuten-Sperre,
+  nur automatische Warteschlange abbrechen, manueller Retry
+  bei fehlgeschlagenem Preflight trotz gleichem Commit.
+- scripts/update-ui-selftest.cjs: Default AUS, Umschalten,
+  serverseitiges SPAETER und Reload, Wiederholen-Icon und
+  Preflight-Information.
+- tests/update-auto-selftest.py: Offline-Simulation mit
+  Uhr und Fake-JSON fuer 10-Minuten-Frist, eine Stunde,
+  einmal pro Commit, manual first, nofollow, Preflight-Flag.
+- tests/update-runner-selftest.sh: Auto-Queue und spaetes
+  SPAETER vor Backup mit simuliertem Git, Systemd und Setup.
+- Beide Preflights registrieren den neuen Python-Test.
+- Der vollstaendige Server-/PHP-/Playwright-/Root-Preflight
+  und der reale Systemd-Integrationslauf stehen NOCH AUS.
+  Bis dahin ist keine vollstaendige Live-Freigabe behauptet.
+
+WICHTIGE GRENZEN
+- Das Frontend behauptet NICHT, dass ein Fehler automatisch
+  gefixt wird. Es informiert ueber Fehlerprotokoll und
+  moeglichen Retry nach korrigierter GitHub-Version.
+- Wenn der Installationsdienst bereits laeuft, kann SPAETER
+  ihn nicht abbrechen. Das gilt unabhaengig vom UI-Zustand.
+- Ohne aktivierten Schalter installiert das System niemals
+  automatisch. Die normale 10-Minuten-GitHub-Pruefung bleibt.
+
+ABLAUF
+PR pruefen; Merge ausschliesslich durch Betreiber.
+Anschliessend CoreAI ueber den bereits vorhandenen
+GitHub-Updater aktualisieren, Preflight auf dem Host testen.
+Kein extra Preview, kein anderer Installer und keine
+Hintergrundarbeit durch ChatGPT.
