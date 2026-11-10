@@ -15,6 +15,7 @@ $search = <<<'HTML'
 <html><body>
   <a href="/library/qwen3.5"><h2>qwen3.5</h2><p>Vision, tools, 9b, 27b, cloud</p></a>
   <a href="/library/glm-5.3"><h2>glm-5.3</h2><p>Cloud only, remote access</p></a>
+  <a href="/library/remote-llm"><h2>remote-llm</h2><p>Cloud only, 9b, 5 GB</p></a>
   <a href="/library/gemma4"><h2>gemma4</h2><p>Local 12b 31b and cloud</p></a>
   <a href="/some_user/LoRA-test"><h2>LoRA-test</h2>Custom local model, 8b</a>
   <a href="https://evil.test/library/trap"><h2>trap</h2>1b</a>
@@ -28,6 +29,12 @@ library_test(array_column($found, 'name') === ['qwen3.5', 'gemma4', 'some_user/L
 library_test($found[0]['url'] === 'https://ollama.com/library/qwen3.5'
   && $found[2]['url'] === 'https://ollama.com/some_user/LoRA-test',
   'model URLs always use Ollama origin');
+library_test(str_contains($found[0]['summary'], 'qwen3.5 Vision')
+  && str_contains($found[1]['summary'], 'gemma4 Local'),
+  'headings and descriptions must have word boundaries in HTML text');
+library_test(!in_array('glm-5.3', array_column($found, 'name'), true)
+  && !in_array('remote-llm', array_column($found, 'name'), true),
+  'cloud-only cards must not pass even when they advertise parameter and download sizes');
 
 $detail = <<<'HTML'
 <html><head><meta name="description" content="Local Qwen family with vision"></head><body>
@@ -35,6 +42,7 @@ $detail = <<<'HTML'
   <a href="/library/qwen3.5:9b">qwen3.5:9b 7.6GB, 256K context</a>
   <a href="/library/qwen3.5:cloud">qwen3.5:cloud remote 1M</a>
   <a href="/library/qwen3.5:1b">qwen3.5:1b Cloud only</a>
+  <a href="/library/qwen3.5:2b"><strong>qwen3.5:2b</strong><span>Cloud only, 2 GB</span></a>
   <a href="https://evil.test/library/qwen3.5:8b">qwen3.5:8b 4GB</a>
   <a href="/library/another:3b">another:3b 2GB</a>
 </body></html>
@@ -44,6 +52,8 @@ library_test($parsed['name'] === 'qwen3.5' && $parsed['description'] === 'Local 
   'local model page summary');
 library_test(array_column($parsed['tags'], 'name') === ['qwen3.5:latest', 'qwen3.5:9b'],
   'size-confirmed local tags only; cloud, foreign hosts and unrelated models refused');
+library_test(!coreui_library_install_allowed('qwen3.5:2b', $parsed),
+  'cloud-only detail must never become installable merely from a displayed download size');
 library_test(coreui_library_install_allowed('qwen3.5:9b', $parsed)
   && !coreui_library_install_allowed('qwen3.5:cloud', $parsed)
   && !coreui_library_install_allowed('qwen3.5:1b', $parsed)
