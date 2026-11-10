@@ -1,0 +1,21 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.90
+10.11.2026
+
+- Ollama-Bibliothek: Der Parser verbindet die Textknoten aus HTML-
+  Ueberschriften und Beschreibungen jetzt mit Leerzeichen. Dadurch
+  erkennt er "Cloud only" auch nach einem direkt vorangestellten
+  Namen und blendet reine Cloud-Angebote aus.
+- Eintraege und Varianten mit ausdruecklicher Kennzeichnung
+  "Cloud only" sind auch dann nicht lokal installierbar, wenn
+  Groessenangaben oder Parameterzahlen im Text vorkommen.
+- Regressions-Testfaelle um fehlende Trennzeichen, Cloud-only mit
+  Groessenangaben und stabile lokale Ollama-Eintraege erweitert.
+- Sichtbare Texte in der Ollama-Bibliothek verwenden nun "LLM"
+  statt "Modell". Bestehende Bezeichnungen und Identifikatoren der
+  TCI Cores sowie APIs werden dabei nicht umbenannt.
+- Keine Aenderungen an Update-Workflow, produktiven Modelfiles,
+  Core-Routing, Berechtigungen, Datenbank oder Nutzerkonten.
+- Offline geprueft: libxml-kompatible HTML-Fixture und PHP-RegEx
+  erkennen die gemeldeten Fehlfaelle korrekt. Der PHP-DOM-Selbsttest
+  und der vollstaendige Preflight auf dem CoreAI-Host bleiben offen.
+- Ein Merge ist gemaess bestehendem Schema Version 0.6.90.
