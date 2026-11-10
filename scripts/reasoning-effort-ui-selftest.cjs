@@ -22,6 +22,10 @@ assert.ok(footer.indexOf('id="reasonEffortChip"') < footer.indexOf('id="coreMode
   'Denkaufwand stands immediately left of the Core chip');
 assert.match(footer, /id="reasonEffortChip"[\s\S]*id="coreModeChip"/,
   'Core remains the far-right selector');
+assert.match(footer, /id="reasonEffortChip"[\s\S]*<span>DENKEN<\/span>/,
+  'thinking chip uses short DENKEN label');
+assert.doesNotMatch(footer, /DENKAUFWAND/,
+  'composer no longer uses the long thinking label');
 const css = read('css/console.css');
 function rule(selector) {
   const marker = selector + ' {';
@@ -99,6 +103,8 @@ async function run(){
   const control=win.CoreUIReasoningEffort.create(doc,fetchFn,mode);
   await control.reload();
   assert.equal(ids.reasonEffortLabel.textContent,'Aus');
+  assert.match(ids.reasonEffortChip.getAttribute('aria-label') || '', /^Denken:/,
+    'accessibility label follows the short Denken wording');
   assert.deepEqual(ids.reasonEffortOptions.children.map(x=>x.getAttribute('data-level')),['off','','low','high']);
   assert.equal(ids.reasonEffortOptions.children.some(x=>x.getAttribute('data-level')==='medium'),false,
     'unknown effort must not appear');

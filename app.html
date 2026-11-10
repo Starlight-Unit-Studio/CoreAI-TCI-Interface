@@ -11,16 +11,16 @@
   />
   <meta name="theme-color" content="#f0f4fa" />
   <meta name="color-scheme" content="light" />
-  <meta name="application-version" content="0.6.90" />
+  <meta name="application-version" content="0.6.91" />
   <meta name="application-name" content="CoreAI: TCI Interface" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface | Quantum Software</title>
-  <link rel="stylesheet" href="./css/console.css?v=0119426965189165062280352" />
+  <link rel="stylesheet" href="./css/console.css?v=0045460422899686983365633" />
   <link rel="stylesheet" href="./css/artifacts.css?v=1070189041187187332898493" />
   <link rel="stylesheet" href="./css/coreui-update.css?v=1027839363176318351849490" />
   <link rel="stylesheet" href="./css/coreui-theme.css?v=0697431397907702126637895" />
   <link rel="stylesheet" href="./css/coreui-image-viewer.css?v=0041889774580256723673713" />
-  <script src="./js/console-gate.js?v=1067040838211958065272930"></script>
+  <script src="./js/console-gate.js?v=0330022338850222442512872"></script>
   <script src="./js/coreui-preferences.js?v=0004145186774094057353830"></script>
   <script src="./js/coreui-ui-language.js?v=0850224961537363286304733"></script>
 </head>
@@ -139,7 +139,7 @@
         <div class="brand-copy">
           <div class="brand-kicker">QUANTUM SOFTWARE</div>
           <div class="brand-title">COREAI:<span class="brand-product-part">TCI INTERFACE</span></div>
-          <div class="brand-signature">TERRA-NET MATRIX // N-73 // v0.6.90</div>
+          <div class="brand-signature">TERRA-NET MATRIX // N-73 // v0.6.91</div>
         </div>
       </div>
 
@@ -295,7 +295,6 @@
           </button>
         </div>
       </section>
-      <div class="insight-chips" id="insightChips" aria-label="Core-Informationen"></div>
       <div class="feed-vector feed-vector-a" aria-hidden="true"></div>
       <div class="feed-vector feed-vector-b" aria-hidden="true"></div>
 
@@ -401,8 +400,8 @@
           aria-controls="coreLegend" aria-label="Legende: Core-Stufen, Formatierung und Befehle" title="Legende">?</button>
         <button class="reason-effort-chip" id="reasonEffortChip" type="button"
           aria-haspopup="dialog" aria-expanded="false" aria-controls="reasonEffortMenu"
-          aria-label="Denkaufwand auswählen" disabled>
-          <span>DENKAUFWAND</span>
+          aria-label="Denken auswählen" disabled>
+          <span>DENKEN</span>
           <strong id="reasonEffortLabel">LÄDT</strong>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
         </button>
@@ -428,7 +427,7 @@
       <div class="core-mode-menu reason-effort-menu" id="reasonEffortMenu" role="dialog"
         aria-labelledby="reasonEffortTitle" aria-describedby="reasonEffortIntro" hidden>
         <div class="reason-effort-head">
-          <strong id="reasonEffortTitle">DENKAUFWAND</strong>
+          <strong id="reasonEffortTitle">DENKEN</strong>
           <small>Für die nächste Antwort</small>
         </div>
         <p class="reason-effort-intro" id="reasonEffortIntro">Deine CoreAI denkt vor der Antwort nach: gründlicher, aber langsamer. Gilt ab der nächsten Nachricht, für alle deine Chats.</p>
@@ -456,7 +455,7 @@
             <thead><tr><th scope="col">TCI-Name</th><th scope="col">Core</th><th scope="col">Status</th></tr></thead>
             <tbody id="coreLegendRows"></tbody>
           </table>
-          <p class="core-legend-note">Jede Stufe antwortet als deine CoreAI. Die Punkte im Core-Menü: grün ist der Core, mit dem deine CoreAI dir gerade antwortet, gelb ein installierter Core in Bereitschaft, rot ein Core, der fehlt oder gerade nicht erreichbar ist; golden pulsiert der Core, der gerade geladen wird. Eine ausgegraute Stufe fehlt noch und lässt sich dort installieren (nur Admins). Zusätzliche LLMs lassen sich unter „Cores verwalten“ im Ollama-Bereich lokal installieren. Die Ollama-Kontoverbindung ist dafür nicht nötig.</p>
+          <p class="core-legend-note">Jede Stufe antwortet als deine CoreAI. Die Punkte im Core-Menü: grün ist der Core, mit dem deine CoreAI dir gerade antwortet, gelb ein installierter Core in Bereitschaft, rot ein Core, der fehlt oder gerade nicht erreichbar ist; golden pulsiert der Core, der gerade geladen wird. Eine ausgegraute Stufe fehlt noch und lässt sich dort installieren (nur Admins). Zusätzliche Cores lassen sich unter „Cores verwalten“ im Ollama-Bereich lokal installieren. Die Ollama-Kontoverbindung ist dafür nicht nötig.</p>
         </section>
         <section class="core-legend-section" aria-labelledby="coreLegendFormat">
           <h3 id="coreLegendFormat">FORMATIERUNG</h3>
@@ -484,7 +483,7 @@
             <dt>+</dt><dd>Fotos, Kamera oder bis zu zehn Dateien anhängen, oder ein Werkzeug wählen: Bild erstellen, Websuche, Recherche</dd>
             <dt>Langer Text</dt><dd>Ab 8000 Zeichen automatisch als <code>.md</code>-Anhang</dd>
             <dt>Core-Chip</dt><dd>Core-Stufe wählen</dd>
-            <dt>Denkaufwand</dt><dd>Denken an- oder ausschalten und unterstützte Denkstufen wählen</dd>
+            <dt>Denken</dt><dd>Denken an- oder ausschalten und unterstützte Denkstufen wählen</dd>
             <dt><code>/komprimieren</code> oder ⇊</dt><dd>Älteren Verlauf zusammenfassen; die Mitschrift bleibt als .md-Archiv im Chat</dd>
           </dl>
         </section>
@@ -504,6 +503,11 @@
       <section class="core-install-tiers" id="coreInstallTiers" aria-labelledby="coreInstallTiersTitle" hidden>
         <h4 id="coreInstallTiersTitle">STUFEN</h4>
         <ul class="core-install-tierlist" id="coreInstallTierList"></ul>
+      </section>
+      <section class="core-install-library" id="coreInstallLibraryEntry" hidden>
+        <h4>CORE-BIBLIOTHEK</h4>
+        <p class="core-install-update-info">Ollama durchsuchen, später Hugging Face nutzen und bereits installierte Cores verwalten.</p>
+        <button class="core-install-btn core-install-btn--go" id="coreInstallLibraryOpen" type="button">Cores verwalten</button>
       </section>
       <section class="core-install-check" id="coreInstallCheck" aria-labelledby="coreInstallCheckTitle">
         <h4 id="coreInstallCheckTitle">HARDWARE-CHECK</h4>
@@ -548,7 +552,6 @@
           <a class="core-install-btn core-install-btn--go" id="coreInstallCloudLink" href="https://ollama.com" target="_blank"
             rel="noopener noreferrer" hidden>Ollama verbinden</a>
           <button class="core-install-btn" id="coreInstallCloudCheck" type="button">Status prüfen</button>
-          <button class="core-install-btn core-install-btn--go" id="coreInstallLibraryOpen" type="button">Cores verwalten</button>
         </div>
       </section>
       <p class="core-install-note" id="coreInstallNote" role="status" aria-live="polite"></p>
@@ -563,25 +566,33 @@
     <div class="core-library-panel" role="dialog" aria-modal="true" aria-labelledby="coreLibraryTitle" tabindex="-1">
       <header class="core-library-head">
         <div>
-          <span class="core-library-kicker">LOKALE LLM-VERWALTUNG</span>
+          <span class="core-library-kicker">CORE-BIBLIOTHEK</span>
           <h2 id="coreLibraryTitle">Cores verwalten</h2>
-          <p>Ergänze lokale LLMs, ohne bestehende TCI Cores oder ihre Einstellungen zu verändern.</p>
+          <p>Weitere Cores entdecken, installierte Cores prüfen und bei Bedarf sicher entfernen.</p>
         </div>
-        <button type="button" class="core-library-close" id="coreLibraryClose" aria-label="LLM-Verwaltung schließen">×</button>
+        <button type="button" class="core-library-close" id="coreLibraryClose" aria-label="Core-Verwaltung schließen">×</button>
       </header>
-      <div class="core-library-providers" aria-label="LLM-Quellen">
-        <div class="core-library-provider core-library-provider--active" id="coreLibraryOllamaProvider">
+      <div class="core-library-providers" role="tablist" aria-label="Core-Bibliothek und installierte Cores">
+        <button type="button" class="core-library-provider core-library-provider--active" id="coreLibraryOllamaProvider"
+          role="tab" aria-selected="true" aria-controls="coreLibraryBrowser">
           <strong>OLLAMA</strong>
-          <span>Offizielle Ollama-Suche und lokaler Download</span>
-        </div>
-        <div class="core-library-provider core-library-provider--future" aria-disabled="true">
+          <span>Offizielle Suche</span>
+        </button>
+        <button type="button" class="core-library-provider core-library-provider--future" id="coreLibraryHfProvider"
+          role="tab" aria-selected="false" aria-disabled="true" disabled>
           <strong>HUGGING FACE</strong>
-          <span>LLM-Verwaltung in Vorbereitung</span>
-        </div>
+          <span>In Vorbereitung</span>
+        </button>
+        <button type="button" class="core-library-provider" id="coreLibraryInstalledProvider"
+          role="tab" aria-selected="false" aria-controls="coreLibraryInstalled">
+          <strong>INSTALLIERT</strong>
+          <span>Alle Cores</span>
+        </button>
       </div>
-      <section class="core-library-browser" aria-label="Ollama-Suche">
+      <section class="core-library-browser" id="coreLibraryBrowser" role="tabpanel"
+        aria-labelledby="coreLibraryOllamaProvider" aria-label="Ollama-Suche">
         <form class="core-library-search" id="coreLibrarySearchForm">
-          <label for="coreLibraryQuery">LLM SUCHEN</label>
+          <label for="coreLibraryQuery">CORE SUCHEN</label>
           <div class="core-library-search-controls">
             <input id="coreLibraryQuery" type="search" maxlength="80" placeholder="z. B. qwen3.5, llama, gemma" autocomplete="off" />
             <button class="core-install-btn core-install-btn--go" type="submit">Suchen</button>
@@ -590,6 +601,12 @@
         </form>
         <p class="core-library-feedback" id="coreLibraryStatus" role="status" aria-live="polite">Die Einträge werden aus der offiziellen Ollama-Suche geladen.</p>
         <div class="core-library-results" id="coreLibraryResults" role="list"></div>
+      </section>
+      <section class="core-library-installed" id="coreLibraryInstalled" role="tabpanel"
+        aria-labelledby="coreLibraryInstalledProvider" hidden>
+        <p class="core-library-installed-lead">Alle im lokalen Ollama-Dienst vorhandenen Cores, einschließlich TCI-Cores und weiterer Cores. Der Standard-Core bleibt geschützt.</p>
+        <p class="core-library-feedback" id="coreLibraryInstalledStatus" role="status" aria-live="polite"></p>
+        <div class="core-library-installed-list" id="coreLibraryInstalledList"></div>
       </section>
       <section class="core-library-detail" id="coreLibraryDetail" hidden aria-labelledby="coreLibraryModelTitle">
         <button type="button" class="core-library-back" id="coreLibraryBack">← Zur Suche</button>
@@ -629,9 +646,9 @@
   <script src="./js/coreui-send-keys.js?v=0380580655333207340875842"></script>
   <script src="./js/console-app.js?v=0606167468513135928485501"></script>
   <script src="./js/coreui-core-mode.js?v=0354958960097784091410083"></script>
-  <script src="./js/coreui-reasoning-effort.js?v=0177930745250416045111436"></script>
-  <script src="./js/coreui-core-install.js?v=0870519490453683691573034"></script>
-  <script src="./js/coreui-model-library.js?v=0142608699348562679651258"></script>
+  <script src="./js/coreui-reasoning-effort.js?v=0077634127457640393019216"></script>
+  <script src="./js/coreui-core-install.js?v=0220003641459915669630984"></script>
+  <script src="./js/coreui-model-library.js?v=0462424467087605919462233"></script>
   <script src="./js/coreui-artifacts.js?v=1069339270452640197429799"></script>
 
   <!-- 0.6.87: chat menu, dialogs and the search inside a chat (js/coreui-chat-menu.js) -->

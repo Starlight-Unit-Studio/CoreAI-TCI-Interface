@@ -65,8 +65,8 @@ foreach (['config/nginx.conf.template','config/runtime/nginx.conf.template'] as 
 }
 $app = (string)file_get_contents($root . '/app.html');
 $js = (string)file_get_contents($root . '/js/console-app.js');
-insights_test(str_contains($app, 'id="coreInsights"') && str_contains($app, 'id="insightChips"')
-  && str_contains($app, './js/coreui-insights.js?v='), 'info box containers and script are loaded');
+insights_test(str_contains($app, 'id="coreInsights"') && !str_contains($app, 'id="insightChips"')
+  && str_contains($app, './js/coreui-insights.js?v='), 'desktop info boxes stay available; the redundant mobile toolbar is removed');
 insights_test(str_contains($js, 'insights.refresh(ses.id)') && str_contains($js, 'insights.observe(event)')
   && substr_count($js, 'insights.refresh(sessionId)') === 2, 'boxes refresh per session, live and after a reply');
 

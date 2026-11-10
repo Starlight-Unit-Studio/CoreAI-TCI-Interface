@@ -71,6 +71,23 @@ if ($method === 'GET' && array_key_exists('core_manage', $_GET)) {
     'auto'=>coreui_core_auto_update($pdo), 'install'=>coreui_core_install_status(), 'csrf_token'=>$csrf]);
 }
 
+// 0.6.91: One inventory for the installed-Cores tab, including TCI
+// Cores, local third-party LLMs and existing cloud stubs. Admins only.
+if ($method === 'GET' && array_key_exists('core_installed', $_GET)) {
+  require_once __DIR__ . '/installed_cores.php';
+  stu_require_permission_at_most(COREUI_CORE_INSTALL_PERMISSION_MAX, $pdo);
+  $csrf = stu_csrf_token();
+  if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
+  try {
+    $models = coreui_ollama_models();
+    $default = defined('STU_EMBER_MODEL') ? (string)STU_EMBER_MODEL : 'ember-coreui:latest';
+    $rows = coreui_installed_cores_rows($models, $default, coreui_core_mara_base());
+  } catch (RuntimeException $e) {
+    stu_json(['ok'=>false, 'error'=>'model_catalog_unavailable'], 503);
+  }
+  stu_json(['ok'=>true, 'cores'=>$rows, 'csrf_token'=>$csrf]);
+}
+
 // 0.5.76: Ollama Cloud account of the server (admins), like `ollama signin`.
 if ($method === 'GET' && array_key_exists('core_cloud', $_GET)) {
   require_once __DIR__ . '/core_install.php';
@@ -346,6 +363,88 @@ if (($body['action'] ?? '') === 'core_cloud_add') {
   coreui_core_job_run($lock, 'coreui_core_install_run', $state, $uid);
   exit;
 }
+// 0.6.91: Refresh a selected locally installed Core. Mara/TCI Cores
+// use the existing tier Modelfile rebuild, third-party Ollama tags use
+// /api/pull. All updates use the same installation lock and worker.
+if (($body['action'] ?? '') === 'installed_core_update') {
+  require_once __DIR__ . '/installed_cores.php';
+  require_once __DIR__ . '/ollama_library.php';
+  stu_require_permission_at_most(COREUI_CORE_INSTALL_PERMISSION_MAX, $pdo);
+  $requested = trim((string)($body['model'] ?? ''));
+  if (!coreui_installed_cores_name_valid($requested)) stu_json(['ok'=>false, 'error'=>'invalid_model_name'], 400);
+  if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
+  try {
+    $models = coreui_ollama_models();
+    $default = defined('STU_EMBER_MODEL') ? (string)STU_EMBER_MODEL : 'ember-coreui:latest';
+    $selection = coreui_installed_cores_update_selection(
+      $models, $requested, $default, coreui_core_mara_base(), coreui_core_update_plan($models));
+    $lock = coreui_core_install_lock();
+  } catch (RuntimeException $e) {
+    $code = $e->getMessage();
+    $http = $code === 'invalid_model_name' ? 400
+      : ($code === 'model_not_installed' ? 404
+        : ($code === 'update_not_supported' ? 409 : 503));
+    stu_json(['ok'=>false, 'error'=>$code], $http);
+  }
+  if ($lock === false) {
+    stu_json(['ok'=>false, 'error'=>'install_running', 'install'=>coreui_core_install_status()], 409);
+  }
+  if ($selection['kind'] === 'tci') {
+    $state = coreui_core_update_begin($selection['plan']);
+    stu_app_setting_set($pdo, 'core_update_last', (string)time());
+    coreui_core_job_detach(['ok'=>true, 'install'=>['running'=>true]
+      + array_diff_key($state, ['layers'=>true, 'plan'=>true])]);
+    coreui_core_job_run($lock, 'coreui_core_update_run', $state, $uid);
+  } else {
+    $state = coreui_library_begin($selection['model']);
+    coreui_core_job_detach(['ok'=>true, 'install'=>['running'=>true]
+      + array_diff_key($state, ['layers'=>true])]);
+    coreui_core_job_run($lock, 'coreui_library_run', $state, $uid);
+  }
+  exit;
+}
+
+// 0.6.91: Deinstall one explicitly selected installed Core. This reuses
+// the existing TCI uninstall routine and its account-selection fallback.
+// The standard Core and its template source are never eligible. Validation
+// occurs under the shared install/update lock against a fresh Ollama list.
+if (($body['action'] ?? '') === 'installed_core_uninstall') {
+  require_once __DIR__ . '/installed_cores.php';
+  stu_require_permission_at_most(COREUI_CORE_INSTALL_PERMISSION_MAX, $pdo);
+  $requested = trim((string)($body['model'] ?? ''));
+  if (!coreui_installed_cores_name_valid($requested)) stu_json(['ok'=>false, 'error'=>'invalid_model_name'], 400);
+  if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
+  try {
+    $lock = coreui_core_install_lock();
+  } catch (RuntimeException $e) {
+    stu_json(['ok'=>false, 'error'=>$e->getMessage()], 503);
+  }
+  if ($lock === false) {
+    stu_json(['ok'=>false, 'error'=>'install_running', 'install'=>coreui_core_install_status()], 409);
+  }
+  $problem = null;
+  $result = null;
+  try {
+    $models = coreui_ollama_models();
+    $default = defined('STU_EMBER_MODEL') ? (string)STU_EMBER_MODEL : 'ember-coreui:latest';
+    $target = coreui_installed_cores_target($models, $requested, $default, coreui_core_mara_base());
+    $result = coreui_core_uninstall($pdo, [$target]);
+  } catch (RuntimeException $e) {
+    $problem = $e->getMessage();
+  } finally {
+    flock($lock, LOCK_UN);
+    fclose($lock);
+  }
+  if ($problem !== null) {
+    $status = $problem === 'invalid_model_name' ? 400
+      : ($problem === 'model_not_installed' ? 404
+        : ($problem === 'core_protected' ? 409 : 503));
+    stu_json(['ok'=>false, 'error'=>$problem], $status);
+  }
+  stu_json(['ok'=>$result['failed'] === [], 'error'=>$result['failed'] === [] ? null : 'uninstall_partial'] + $result,
+    $result['failed'] === [] ? 200 : 502);
+}
+
 // 0.5.77: "Deinstallieren" in Cores verwalten (admins): the local Cores of a
 // tier (never Mara's own Core) or its cloud Cores.
 if (($body['action'] ?? '') === 'core_uninstall') {

@@ -6,7 +6,7 @@
 
 CoreAI combines Ollama-based models with private conversations, browser research, personal knowledge, file tools and an administration interface. Its standard deployment runs an isolated Nginx, PHP-FPM, MariaDB and worker stack on a Linux server. CoreAI is an application, **not a standalone operating system**.
 
-**Current source version: `0.6.90`** | [Changelog](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Documentation policy](docs/VERSIONING_POLICY.md) | [License](LICENSE.md)
+**Current source version: `0.6.91`** | [Changelog](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Documentation policy](docs/VERSIONING_POLICY.md) | [License](LICENSE.md)
 
 > **Development status:** The features below describe the current source code, not guaranteed capabilities of every model or cloud provider. A merged commit does not by itself prove a successful production deployment.
 
@@ -114,7 +114,7 @@ An existing installation's settings are not silently overwritten. `COREUI_FORCE_
 
 ## Current capabilities
 
-- **Mara and models:** The chat Core selector chooses a Core; the separate Denkaufwand control handles Thinking. Audio and Live support are marked in the Core list. In **Cores verwalten**, admins manage local TCI tiers and can search the official Ollama registry, inspect local variants and install them through the shared download worker. Ollama accounts are optional; the Hugging Face module is **In preparation**. Inference stays serialized.
+- **Mara and Cores:** The chat Core selector and Thinking effort are separate. In **Cores verwalten**, admins can search Ollama, install additional local Cores, inspect installed Cores, update individual local Cores and safely remove nonprotected Cores. The default Core and its base are deletion-protected; Ollama accounts are optional. Hugging Face browsing is **In preparation**. Inference stays serialized.
 - **Local time awareness:** Mara uses the browser's IANA time zone to calculate date and time for private chats. No location permission is needed; invalid or unavailable values fall back to the configured server time zone.
 - **Conversations and accounts:** The chat opens on an unsaved welcome screen with a personalized greeting and four tappable example questions. A new chat is saved only on its first submitted text, attachment or spoken turn; prior conversations remain in the sidebar. Persistent history, follow-up suggestions, context management and distinct owner, admin, user and optional guest roles remain available.
 - **Chat menu:** The ⋮ menu of a chat shares it as a Markdown file, pins it on top, lists its uploaded files, searches all its messages, gives a direct link for the home screen, archives or deletes it; locking chats and projects are **In preparation**. **Settings → Archived chats** searches, filters, restores and deletes archived chats.

@@ -1,5 +1,15 @@
 # CoreAI: TCI Interface
 
+## 0.6.91 - 10.11.2026
+
+- **Unified Core management:** The optional Ollama-account section no longer owns the library button. A dedicated **Cores verwalten** entry in admin Core management now opens the shared library with three mobile-friendly tabs: **Ollama**, **Hugging Face** (clearly marked *In preparation*) and **Installed**.
+- **Installed Cores:** The third tab lists actual entries reported by the local Ollama service, including Mara's TCI Cores, additional Cores, existing cloud stubs and manually imported namespaced models. Local disk size, parameters and protection status are shown where available.
+- **Per-Core updates:** A dedicated Update button is available in the installed-Core list, including protected default and source tags. TCI Cores use the existing tier Modelfile rebuild, while ordinary Ollama Cores use the existing pull worker. Cloud-only stubs cannot be locally updated. Both paths share the existing admin permissions, CSRF checks, exclusivity lock, status polling and Core-menu refresh.
+- **Safe per-Core removal:** Admins can remove one selected Core after a two-tap confirmation. The existing serialized install/update lock, unload/delete routine and account fallback are reused. The default Core and its template-source tag remain protected, even if a forged API request tries to remove them; exact installed names are revalidated on the server.
+- **Core Channel:** Removed only the redundant Core/Kontext/Werkzeuge/Projekt chip toolbar. The welcome greeting, example prompts and composer are unchanged. Renamed the Denkaufwand chip to **Denken** and removed visible `LLM` labels from the new Core library.
+- **Regression coverage:** New PHP inventory/authorization self-test and extended Node UI test check three tabs, protected default/base tags, CSRF, double confirmation, installed-list refresh and updated Core selection. Docker and native preflights include these checks.
+- The usual one-merge-one-version policy is preserved. Local and external provider settings, Mara's Modelfile and the existing GitHub updater remain unchanged. Full server PHP and Ollama integration checks are pending before approval.
+
 ## 0.6.90 - 10.11.2026
 
 - **Ollama registry filter:** Fixed the HTML text-node boundary handling. Adjacent heading and description text no longer merges into `nameCloud only`, so the search excludes cloud-only results reliably. Cloud-only model variants remain non-installable even when a page lists parameter counts or download sizes.

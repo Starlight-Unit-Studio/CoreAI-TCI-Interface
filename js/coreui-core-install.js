@@ -53,7 +53,7 @@
     hooks = hooks || {};
     var el = {};
     ['Kicker', 'Title', 'Lead', 'Tech', 'Tiers', 'TierList', 'Check', 'Rows', 'Verdict', 'VerdictTitle', 'VerdictText',
-      'Progress', 'BarWrap', 'Bar', 'Step', 'Maint', 'Auto', 'UpdateInfo', 'UpdateNow', 'ToManage', 'Results',
+      'Progress', 'BarWrap', 'Bar', 'Step', 'Maint', 'Auto', 'UpdateInfo', 'UpdateNow', 'ToManage', 'Results', 'LibraryEntry',
       'Cloud', 'CloudState', 'CloudSteps', 'CloudLink', 'CloudCheck', 'Note', 'Go', 'Cancel', 'Close'].forEach(function (key) { el[key] = doc.getElementById('coreInstall' + key); });
     var state = {mode: 'tier', tier: '', check: null, canInstall: false, install: null, confirm: false, busy: false,
       csrf: '', polling: false, error: '', auto: null, tiers: null, plan: null, cloud: null, cloudBusy: false,
@@ -267,6 +267,7 @@
       var failed = mine && !running && j.phase === 'error';
       text(el.Kicker, manage ? 'CORES VERWALTEN' : 'CORE INSTALLIEREN');
       show(el.Tiers, manage && !!state.tiers);
+      show(el.LibraryEntry, manage && !!state.tiers);
       show(el.Tech, !manage);
       if (manage) {
         text(el.Title, 'Cores verwalten');
@@ -531,6 +532,9 @@
     doc.addEventListener('keydown', function (event) { if (event.key === 'Escape' && isOpen()) close(); });
 
     return {open: open, manage: manage, close: close, install: install, updateNow: updateNow, setAuto: setAuto,
+      refreshManage: function () { return state.mode === 'manage'
+        ? refreshManage().then(render).catch(function () { /* next manual refresh can retry */ })
+        : Promise.resolve(); },
       poll: poll, isOpen: isOpen,
       state: function () {
         return {mode: state.mode, tier: state.tier, check: state.check, install: state.install, confirm: state.confirm,

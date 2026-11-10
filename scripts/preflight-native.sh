@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.90: Ollama-Bibliothek Filterfix und Core-Terminologie.
+# CoreAI: TCI Interface 0.6.91: Gemeinsame LLM-Verwaltung und sichere Core-Deinstallation.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -305,6 +305,8 @@ UI_FILES=(
   scripts/core-install-ui-selftest.cjs
   scripts/model-library-ui-selftest.cjs
   scripts/ollama-library-selftest.php
+  scripts/installed-cores-selftest.php
+  api/installed_cores.php
   api/ollama_library.php
   js/coreui-model-library.js
   scripts/registration-ui-selftest.cjs
@@ -795,6 +797,13 @@ if command -v php >/dev/null 2>&1; then
     ok 'Ollama-Modellsuche: lokale Varianten, sichere Herkunft und gemeinsamer Installationsstatus geprueft.'
   else
     fail "Ollama-Modellsuche-Selbsttest: ${library_test:-Unbekannter Fehler}"
+  fi
+
+  installed_cores_test=''
+  if installed_cores_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/installed-cores-selftest.php" 2>&1)"; then
+    ok 'Installierte Cores: Standard und Basis geschützt, Einzel-Deinstallation und Rollenpfad geprüft.'
+  else
+    fail "Installierte-Cores-Selbsttest: ${installed_cores_test:-Unbekannter Fehler}"
   fi
 
   guest_test=''

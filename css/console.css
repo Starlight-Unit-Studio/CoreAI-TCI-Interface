@@ -9667,7 +9667,7 @@ a.insight-file-name:hover { text-decoration: underline; }
 }
 .core-library-providers {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
   margin: 14px 0;
 }
@@ -9678,11 +9678,48 @@ a.insight-file-name:hover { text-decoration: underline; }
   border: 1px solid var(--line-strong);
   padding: 12px;
   background: var(--panel-cx);
+  color: var(--txt);
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
 }
 .core-library-provider strong { font-size: 13px; letter-spacing: .08em; }
 .core-library-provider span { font-size: 12px; color: var(--muted); }
 .core-library-provider--active { border-color: var(--green); }
-.core-library-provider--future { opacity: .55; border-style: dashed; }
+.core-library-provider--future { opacity: .55; border-style: dashed; cursor: not-allowed; }
+.core-library-provider:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+.core-install-library { margin: 12px 0; padding: 12px 0; border-top: 1px solid var(--line); }
+.core-install-library h4 {
+  margin: 0 0 7px;
+  color: var(--muted);
+  font: 11px "Share Tech Mono", monospace;
+  letter-spacing: .12em;
+}
+.core-install-library .core-install-btn { margin-top: 8px; }
+.core-library-installed-lead { margin: 5px 0 12px; font-size: 12px; line-height: 1.5; color: var(--muted); }
+.core-library-installed-list {
+  display: grid;
+  gap: 8px;
+  max-height: min(49dvh, 475px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.core-library-installed-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 11px;
+  border: 1px solid var(--line);
+  background: var(--panel-cx);
+}
+.core-library-installed-copy { display: grid; gap: 4px; flex: 1 1 180px; min-width: 0; }
+.core-library-installed-copy strong { font-size: 13px; overflow-wrap: anywhere; }
+.core-library-installed-copy small { color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
+.core-library-protected { color: var(--green); font-size: 12px; }
+.core-library-remove { color: var(--red, #d65968); border-color: var(--red, #d65968); flex: none; }
+.core-library-remove-note { width: 100%; font-size: 11px; line-height: 1.5; color: var(--amb); }
 .core-library-search-controls { display: flex; gap: 9px; }
 .core-library-search input, .core-library-detail select {
   min-width: 0;
@@ -9773,10 +9810,12 @@ a.insight-file-name:hover { text-decoration: underline; }
     padding: 12px;
   }
   .core-library-head h2 { font-size: 18px; }
-  .core-library-providers { gap: 6px; margin: 10px 0; }
-  .core-library-provider { padding: 9px; }
-  .core-library-provider strong { font-size: 11px; }
-  .core-library-provider span { font-size: 11px; }
+  .core-library-providers { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 10px 0; }
+  .core-library-provider { padding: 8px; }
+  .core-library-provider strong { font-size: 10px; }
+  .core-library-provider span { font-size: 10px; line-height: 1.35; }
+  .core-library-installed-list { max-height: 46dvh; }
+  .core-library-installed-item .core-install-btn { min-height: 36px; }
   .core-library-results { max-height: 36dvh; }
   .core-library-detail { inset: 90px 0 0; padding: 12px; }
   .core-library-search-controls input { font-size: 16px; }
