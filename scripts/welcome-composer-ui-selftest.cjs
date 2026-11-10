@@ -12,7 +12,8 @@ const css=fs.readFileSync(path.join(root,'css/console.css'),'utf8');
 new vm.Script(source);new vm.Script(voice);
 assert.match(html,/id="welcomeScreen"/);
 assert.equal((html.match(/data-welcome-prompt=/g)||[]).length,4);
-assert.ok(source.includes('.then(showDraftChat)'),'login starts with unsaved draft');
+// 0.6.87: login still starts with the unsaved draft; only a chat link (?session=) opens its chat.
+{const init=source.slice(source.indexOf('  function init() {'));assert.ok(init.includes('var linked = takeLinkedSession();')&&init.includes('if (target && !target.archived) return selectSession(target.id);')&&init.includes('return showDraftChat();'),'login starts with unsaved draft');}
 assert.ok(!source.slice(source.indexOf('function init()')).includes('dbCreateSession('),'login must not create a session');
 assert.ok(voice.includes('composer.ensureLiveSession'),'first Live utterance creates a chat');
 assert.ok(voice.includes('var warmed = ctx.sessionId'),'opening Live alone must not create a chat');

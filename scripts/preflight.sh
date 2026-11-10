@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.86: Konto wie die ChatGPT-Kontoseite (Name, Benutzername, E-Mail, Plaene Free/Go/Plus/Pro, Erstellerprofil geplant).
+# CoreAI: TCI Interface 0.6.87: Archivierte Chats und Chat-Menue wie ChatGPT (Teilen, Anpinnen, Dateien, Suche, Startbildschirm, Archivieren, Loeschen).
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -138,6 +138,13 @@ UI_FILES=(
   js/coreui-account-settings.js
   scripts/account-page-selftest.php
   scripts/account-ui-selftest.cjs
+  database/migrations/032_chat_menu.sql
+  api/console_chat_tools.php
+  js/coreui-chat-menu.js
+  js/coreui-archived-chats.js
+  scripts/chat-menu-selftest.php
+  scripts/chat-menu-ui-selftest.cjs
+  scripts/archived-chats-ui-selftest.cjs
   scripts/terran-terminology-selftest.cjs
   scripts/tci-language-selftest.cjs
   js/console-app.js
@@ -1124,6 +1131,14 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail "Konto-Selbsttest: ${account_page_test:-Unbekannter Fehler}"
   fi
 
+  # 0.6.87: chat menu and Archivierte Chats: pin order, archive search and filters, files, search, Markdown.
+  chat_menu_test=''
+  if chat_menu_test="$(compose exec -T php php scripts/chat-menu-selftest.php 2>&1)"; then
+    ok 'Chat-Menue: Anpinnen, Archivsuche und Filter, Dateien, Suche im Chat und Teilen als Markdown geprueft.'
+  else
+    fail "Chat-Menue-Selbsttest: ${chat_menu_test:-Unbekannter Fehler}"
+  fi
+
   profile_reference_test=''
   if profile_reference_test="$(compose exec -T php php scripts/profile-reference-selftest.php 2>&1)"; then
     if [[ "$profile_reference_test" == PARTIAL:* ]]; then
@@ -1369,6 +1384,16 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       fi
     else
       warn 'Sicherheit: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+    fi
+    # 0.6.87: chat menu (⋮) and Settings > Archivierte Chats; needs Playwright for Node.
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/chat-menu-ui-selftest.cjs" >/dev/null 2>&1 && node "$PROJECT_ROOT/scripts/archived-chats-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'Chat-Menue und Archivierte Chats im Browser geprueft.'
+      else
+        fail 'Chat-Menue oder Archivierte Chats: Oberflaechentest fehlgeschlagen.'
+      fi
+    else
+      warn 'Chat-Menue: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
     fi
     # 0.6.86: Konto (name, Benutzername dialog, e-mail, plan page, Erstellerprofil planned); needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then

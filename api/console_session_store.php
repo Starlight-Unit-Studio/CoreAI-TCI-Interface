@@ -30,6 +30,21 @@ function coreui_console_session_schema_ready(PDO $pdo): bool {
   }
 }
 
+/** 0.6.87: migration 032 (pinned chats); without it nothing is pinned and nothing breaks. */
+function coreui_console_session_pin_ready(PDO $pdo): bool {
+  static $ready = [];
+  $key = spl_object_id($pdo);
+  if (!array_key_exists($key, $ready)) {
+    try {
+      $pdo->query('SELECT pinned_at FROM stu_console_sessions LIMIT 0');
+      $ready[$key] = true;
+    } catch (Throwable $e) {
+      $ready[$key] = false;
+    }
+  }
+  return $ready[$key];
+}
+
 function coreui_console_session_require(
   PDO $pdo,
   int $uid,
@@ -53,8 +68,10 @@ function coreui_console_session_require(
 }
 
 function coreui_console_session_list(PDO $pdo, int $uid, bool $includeArchived = false): array {
+  // 0.6.87: pinned chats first (migration 032), newest pin on top.
+  $pinReady = coreui_console_session_pin_ready($pdo);
   $sql = "SELECT s.id, s.title, s.since_id, s.last_message_id, s.last_read_message_id,
-                 s.created_at, s.updated_at, s.archived_at,
+                 s.created_at, s.updated_at, s.archived_at, " . ($pinReady ? 's.pinned_at' : 'NULL AS pinned_at') . ",
                  UNIX_TIMESTAMP(s.created_at) AS created_ts, UNIX_TIMESTAMP(s.updated_at) AS updated_ts,
                  UNIX_TIMESTAMP(s.archived_at) AS archived_ts,
                  (SELECT COUNT(*) FROM stu_chat_messages m
@@ -67,7 +84,7 @@ function coreui_console_session_list(PDO $pdo, int $uid, bool $includeArchived =
             FROM stu_console_sessions s
            WHERE s.user_id = ?";
   if (!$includeArchived) $sql .= ' AND s.archived_at IS NULL';
-  $sql .= ' ORDER BY s.updated_at DESC, s.created_at DESC LIMIT 100';
+  $sql .= ' ORDER BY ' . ($pinReady ? '(s.pinned_at IS NULL), s.pinned_at DESC, ' : '') . 's.updated_at DESC, s.created_at DESC LIMIT 100';
   $st = $pdo->prepare($sql);
   $st->execute([$uid]);
   $rows = $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -78,6 +95,8 @@ function coreui_console_session_list(PDO $pdo, int $uid, bool $includeArchived =
     $row['message_count'] = (int)($row['message_count'] ?? 0);
     $row['unread_count'] = (int)($row['unread_count'] ?? 0);
     $row['archived'] = !empty($row['archived_at']);
+    $row['pinned'] = !empty($row['pinned_at']) && empty($row['archived_at']);
+    unset($row['pinned_at']);
     // 0.6.24: times with their zone (see coreui_db_time_iso).
     foreach (['created', 'updated', 'archived'] as $key) {
       if ($row[$key . '_at'] !== null) $row[$key . '_at'] = coreui_db_time_iso($row[$key . '_ts'] ?? null, $row[$key . '_at']);
