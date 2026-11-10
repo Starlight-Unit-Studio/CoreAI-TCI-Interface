@@ -9611,3 +9611,174 @@ a.insight-file-name:hover { text-decoration: underline; }
   .chat-menu { right: 8px; }
   .chat-dialog-box h2 { font-size: 22px; }
 }
+
+/* 0.6.89: dedicated local Ollama registry browser; independent of TCI tier dialog. */
+.core-install-optional { color: var(--green); font-weight: 600; letter-spacing: 0.06em; }
+.core-library {
+  position: fixed;
+  inset: 0;
+  z-index: 75;
+  display: grid;
+  place-items: center;
+  padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+  background: rgba(9, 15, 29, .7);
+}
+.core-library[hidden], .core-library-detail[hidden], .core-library-progress[hidden] { display: none; }
+.core-library-panel {
+  position: relative;
+  width: min(760px, 100%);
+  max-height: calc(100dvh - 24px);
+  min-height: 420px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 18px;
+  background: var(--panel-solid);
+  color: var(--txt);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow-soft);
+}
+.core-library-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 12px;
+}
+.core-library-kicker, .core-library-search label, .core-library-tag-label {
+  display: block;
+  margin: 0 0 6px;
+  font: 11px "Share Tech Mono", monospace;
+  letter-spacing: .11em;
+  color: var(--muted);
+}
+.core-library-head h2 { margin: 0 0 5px; font-size: 21px; }
+.core-library-head p { margin: 0; font-size: 13px; color: var(--muted); }
+.core-library-close {
+  flex: none;
+  border: 1px solid var(--line-strong);
+  background: var(--panel-cx);
+  color: var(--txt);
+  font-size: 23px;
+  line-height: 1;
+  min-width: 38px;
+  min-height: 38px;
+  cursor: pointer;
+}
+.core-library-providers {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 14px 0;
+}
+.core-library-provider {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+  border: 1px solid var(--line-strong);
+  padding: 12px;
+  background: var(--panel-cx);
+}
+.core-library-provider strong { font-size: 13px; letter-spacing: .08em; }
+.core-library-provider span { font-size: 12px; color: var(--muted); }
+.core-library-provider--active { border-color: var(--green); }
+.core-library-provider--future { opacity: .55; border-style: dashed; }
+.core-library-search-controls { display: flex; gap: 9px; }
+.core-library-search input, .core-library-detail select {
+  min-width: 0;
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 11px;
+  border: 1px solid var(--line-strong);
+  background: var(--panel-cx);
+  color: var(--txt);
+  font: inherit;
+}
+.core-library-search .core-install-btn { flex: none; }
+.core-library-search a, .core-library-detail-actions a {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.core-library-feedback { margin: 12px 0; font-size: 12px; color: var(--muted); }
+.core-library-feedback[data-state="warn"] { color: var(--amb); }
+.core-library-results {
+  display: grid;
+  gap: 8px;
+  max-height: min(39dvh, 390px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 1px;
+}
+.core-library-result {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  background: var(--panel-cx);
+  color: var(--txt);
+  text-align: left;
+  cursor: pointer;
+}
+.core-library-result:hover, .core-library-result:focus-visible { border-color: var(--line-strong); outline-offset: 1px; }
+.core-library-result strong { font-size: 14px; overflow-wrap: anywhere; }
+.core-library-result small { color: var(--muted); font-size: 12px; line-height: 1.45; max-height: 3em; overflow: hidden; }
+.core-library-empty { font-size: 13px; color: var(--muted); }
+.core-library-detail {
+  position: absolute;
+  z-index: 2;
+  inset: 85px 0 0;
+  min-height: 340px;
+  padding: 18px;
+  overflow-y: auto;
+  background: var(--panel-solid);
+  border-top: 1px solid var(--line);
+}
+.core-library-back {
+  padding: 5px 0;
+  border: 0;
+  background: transparent;
+  color: var(--txt);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+}
+.core-library-detail h3 { margin: 16px 0 10px; font-size: 20px; overflow-wrap: anywhere; }
+.core-library-description, .core-library-hint { color: var(--muted); font-size: 13px; line-height: 1.55; }
+.core-library-tag-label { margin-top: 17px; }
+.core-library-detail-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 15px; }
+.core-library-detail-actions a { margin-top: 0; }
+.core-library-progress {
+  position: relative;
+  z-index: 4;
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--line-strong);
+  background: var(--panel-cx);
+}
+.core-library-progress p { margin: 0 0 8px; font-size: 12px; }
+.core-library-progress p:last-child { margin: 8px 0 0; color: var(--muted); }
+.core-library-track { height: 7px; overflow: hidden; background: var(--line); }
+.core-library-track span { display: block; height: 100%; width: 0; background: var(--green); transition: width 180ms ease; }
+@media (max-width: 520px) {
+  .core-library { padding: 6px; }
+  .core-library-panel {
+    width: 100%;
+    min-height: 0;
+    max-height: calc(100dvh - 12px);
+    padding: 12px;
+  }
+  .core-library-head h2 { font-size: 18px; }
+  .core-library-providers { gap: 6px; margin: 10px 0; }
+  .core-library-provider { padding: 9px; }
+  .core-library-provider strong { font-size: 11px; }
+  .core-library-provider span { font-size: 11px; }
+  .core-library-results { max-height: 36dvh; }
+  .core-library-detail { inset: 90px 0 0; padding: 12px; }
+  .core-library-search-controls input { font-size: 16px; }
+  .core-library-search-controls .core-install-btn { padding: 8px 10px; }
+}
