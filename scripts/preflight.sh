@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.88: Regel fuer neutrale PR-Texte (Einstellungsseiten nach Referenz, nicht kopiert).
+# CoreAI: TCI Interface 0.6.89: Regressionstests und optionale Ollama-Kontoverbindung.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
