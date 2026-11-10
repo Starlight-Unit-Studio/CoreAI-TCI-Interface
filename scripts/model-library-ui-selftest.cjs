@@ -20,7 +20,7 @@ assert(html.includes('id="coreLibraryInstalledProvider"')
   && html.includes('id="coreLibraryInstalled"') && html.includes('role="tablist"'),
   'three proper source/inventory tabs are present');
 assert(html.includes('id="coreLibrary"') && html.includes('id="coreLibraryDetail"'), 'search and overlay exist');
-assert(html.includes('HUGGING FACE') && html.includes('in Vorbereitung'), 'unfinished source is clearly marked');
+assert(html.includes('HUGGING FACE') && html.includes('In Vorbereitung'), 'unfinished source is clearly marked');
 assert(html.includes('href="https://ollama.com/search"'), 'official fallback link is retained');
 assert(html.indexOf('js/coreui-core-install.js') < html.indexOf('js/coreui-model-library.js'),
   'library controller starts after the TCI install controller');
