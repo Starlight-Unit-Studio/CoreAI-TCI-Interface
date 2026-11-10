@@ -82,6 +82,14 @@ async function serve(context, server) {
     const url = new URL(req.url());
     const rel = decodeURIComponent(url.pathname.replace(/^\//, ''));
     if (rel === 'api/profile.php') {
+      // The page's first profile load answers only after the name was saved (a slow line):
+      // the older answer must not put the old name back.
+      if (server.st.holdProfile && req.method() === 'GET' && url.searchParams.get('view') !== 'account') {
+        const early = server.handle('GET', null, url);
+        for (let i = 0; i < 150 && !server.st.posts.some(p => p.action === 'display_name'); i++) await new Promise(r => setTimeout(r, 100));
+        await new Promise(r => setTimeout(r, 80));
+        return route.fulfill({status: early.status || 200, json: early.json});
+      }
       const out = server.handle(req.method(), req.method() === 'POST' ? JSON.parse(req.postData() || '{}') : null, url);
       return route.fulfill({status: out.status || 200, json: out.json});
     }
@@ -106,7 +114,7 @@ async function openKonto(browser, server, viewport) {
   const browser = await chromium.launch({headless: true, executablePath: process.env.PW_CHROMIUM_PATH || undefined, args: ['--no-sandbox']});
   try {
     // --- Overview --------------------------------------------------------------------------------------------
-    let server = accountServer();
+    let server = accountServer({holdProfile: true});
     let {context, page, errors} = await openKonto(browser, server);
     await page.waitForFunction(() => document.getElementById('acctName').textContent === 'Lena Berg');
     assert.deepEqual(await page.$$eval('#acctMain .sec-heading', l => l.map(x => x.textContent)), ['Allgemein']);
@@ -133,6 +141,8 @@ async function openKonto(browser, server, viewport) {
     assert.deepEqual(server.st.posts.pop(), {action: 'display_name', display_name: 'Lena Maria Berg'});
     assert.equal(await page.textContent('#acctName'), 'Lena Maria Berg');
     assert.equal(await page.textContent('#acctStatus'), 'Name gespeichert.');
+    await page.waitForTimeout(300); // the held first profile load arrives now
+    assert.equal(await page.textContent('#acctName'), 'Lena Maria Berg', 'a slower older load does not put the old name back');
     assert.equal(await page.inputValue('#profileDisplayName'), 'Lena Maria Berg', 'Profil follows');
     assert.equal(await page.inputValue('#assistantDisplayName'), 'Mara', 'the CoreAI keeps its name');
 

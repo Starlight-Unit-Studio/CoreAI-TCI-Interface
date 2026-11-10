@@ -568,7 +568,10 @@
         }));
       }
       metaBits.push(String(Number(s.message_count) || 0) + ' NACHRICHTEN');
+      // 0.6.87: pinned chats (chat menu > Anpinnen) stay on top and say so.
+      if (s.pinned && !s.archived) metaBits.unshift('ANGEPINNT');
       metaEl.textContent = metaBits.join(' // ');
+      if (s.pinned && !s.archived) li.classList.add('pinned');
 
       if ((Number(s.unread_count) || 0) > 0) {
         var unread = document.createElement('span');
@@ -700,6 +703,8 @@
       });
       sessionListEl.appendChild(li);
     });
+    // 0.6.87: the chat menu (js/coreui-chat-menu.js) follows the active chat.
+    if (window.CoreAIChatMenu && typeof window.CoreAIChatMenu.sync === 'function') window.CoreAIChatMenu.sync();
   }
 
   // 0.6.19: a spinner in the chat list while Mara works in a chat: at once for a
@@ -4106,6 +4111,69 @@
     }
   });
 
+  // 0.6.87: "Im Chat suchen" jumps to a hit, also one that is not loaded yet: older pages are
+  // shown or fetched until the message is there (at most 30 steps).
+  function revealMessage(messageId) {
+    var ses = activeSession();
+    var id = Number(messageId) || 0;
+    if (!ses || id <= 0) return Promise.resolve(false);
+    var selector = '[data-message-id="' + String(id) + '"]';
+    var steps = 0;
+    function attempt() {
+      if (!isActiveSession(ses.id)) return Promise.resolve(false);
+      var row = messagesInner.querySelector(selector);
+      if (row) {
+        if (chatFollow && chatFollow.release) chatFollow.release();
+        if (row.scrollIntoView) row.scrollIntoView({block: 'center'});
+        row.classList.add('chat-search-hit');
+        setTimeout(function () { row.classList.remove('chat-search-hit'); }, 2400);
+        return Promise.resolve(true);
+      }
+      if (steps++ >= 30) return Promise.resolve(false);
+      if (chatFollow && chatFollow.release) chatFollow.release();
+      if (hiddenRecordCount(ses) > 0) {
+        state.renderLimitBySession[ses.id] = visibleRecords(ses).length + RENDER_STEP;
+        renderHistoryKeepingAnchor(ses);
+        return attempt();
+      }
+      if (!state.historyHasMoreBySession[ses.id]) return Promise.resolve(false);
+      return loadChatHistory(ses, state.historyOldestBySession[ses.id] || 0, true).then(attempt);
+    }
+    return attempt();
+  }
+
+  // 0.6.87: what the chat menu needs from the app, nothing more.
+  window.CoreAIChatApp = {
+    apiBase: API_BASE,
+    active: function () {
+      var s = activeSession();
+      return s && !s.archived ? {id: String(s.id), title: String(s.title || ''), pinned: !!s.pinned, busy: !!state.pendingBySession[s.id],
+        assistant: String(state.assistantName || 'Mara')} : null;
+    },
+    refresh: function () { return dbLoadSessions().then(renderSessionList); },
+    removed: function (sessionId) {
+      var id = String(sessionId || '');
+      clearSessionRuntime(id);
+      delete state.messageCacheBySession[id];
+      return dbLoadSessions().then(function () {
+        if (String(state.activeSessionId || '') === id || !activeSession()) showDraftChat();
+        else renderSessionList();
+      });
+    },
+    reveal: revealMessage
+  };
+
+  // 0.6.87: app.html?session=cs_... (a notification, a home screen link) opens that chat
+  // instead of the empty start; the address is cleaned afterwards.
+  function takeLinkedSession() {
+    try {
+      var linked = new URLSearchParams(location.search).get('session') || '';
+      if (!/^cs_[A-Za-z0-9]{6,64}$/.test(linked)) return '';
+      history.replaceState(null, '', location.pathname + location.hash);
+      return linked;
+    } catch (e) { return ''; }
+  }
+
   // ── Init ─────────────────────────────────────────────────
   function init() {
     // Button sofort freischalten - nie durch einen Fehler blockiert lassen
@@ -4121,8 +4189,14 @@
           return;
         }
         // Login starts with an unsaved draft; older conversations remain in the drawer.
+        // 0.6.87: a linked chat (?session=) opens directly.
+        var linked = takeLinkedSession();
         return dbLoadSessions()
-          .then(showDraftChat)
+          .then(function () {
+            var target = linked ? sessionById(linked) : null;
+            if (target && !target.archived) return selectSession(target.id);
+            return showDraftChat();
+          })
           .catch(function() {
             appendMessageEl('system', '\u26a0 Sitzungsdienst nicht verfuegbar. Bitte Migration 003 und Preflight pruefen.');
             scrollToBottom();

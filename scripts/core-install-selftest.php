@@ -194,8 +194,9 @@ install_test($rows['plus']['status'] === 'installed' && $rows['plus']['alias_of'
 install_test($rows['premium']['status'] === 'cloud' && $rows['premium']['cloud'] === ['gemma4:31b-cloud'] && $rows['premium']['cloud_missing'] === false,
   'cloud only Premium');
 $bare = array_column(coreui_core_manage_rows([['name'=>$default]]), null, 'tier');
-install_test($bare['premium']['status'] === 'missing' && $bare['premium']['cloud_missing'] === true && $bare['plus']['cloud_base'] === null,
-  'missing Premium can be added from the cloud, Plus has no cloud variant');
+// 0.6.87: Premium is offered locally only; no tier offers a cloud variant any more.
+install_test($bare['premium']['status'] === 'missing' && $bare['premium']['cloud_missing'] === false && $bare['premium']['cloud_base'] === null
+  && $bare['plus']['cloud_base'] === null, 'missing Premium is offered locally only, no tier offers the cloud');
 
 // Summary and weekly due date.
 install_test(coreui_core_update_summary([]) !== '' && coreui_core_update_summary([['result'=>'current'], ['result'=>'rebuilt']]) === 'Alle Stufen sind aktuell.',
@@ -221,10 +222,11 @@ install_test(coreui_ollama_cloud_account_from(200, [])['state'] === 'unavailable
   && coreui_ollama_cloud_account_from(404, [])['state'] === 'unsupported', 'other answers');
 install_test(coreui_ollama_version_at_least('0.40.6', '0.12.0') && coreui_ollama_version_at_least('0.12.0-rc1', '0.12.0')
   && !coreui_ollama_version_at_least('0.11.10', '0.12.0') && !coreui_ollama_version_at_least(null, '0.12.0'), 'cloud needs Ollama 0.12');
-install_test(COREUI_CORE_CLOUD_CATALOG === ['premium'=>'gemma4:31b-cloud'] && coreui_core_tier('gemma4:31b-cloud') === 'premium', 'cloud catalog');
+install_test(COREUI_CORE_CLOUD_CATALOG === [] && coreui_core_tier('gemma4:31b-cloud') === 'premium', 'no cloud catalog; an installed cloud Core still finds its tier');
 install_test(str_contains($lib, "coreui_core_install_post('me', [], 15)"), 'account read like ollama signin (POST /api/me)');
-$cloudBegin = coreui_core_cloud_begin('premium');
-install_test($cloudBegin['cloud'] === true && $cloudBegin['base'] === 'gemma4:31b-cloud' && $cloudBegin['core'] === 'gemma4:31b-cloud', 'cloud job pulls the tag only');
+$cloudRefused = '';
+try { coreui_core_cloud_begin('premium'); } catch (RuntimeException $e) { $cloudRefused = $e->getMessage(); }
+install_test($cloudRefused === 'unknown_tier', 'Premium is no longer added from the cloud');
 install_test(str_contains($lib, "if (\$state['phase'] !== 'error' && !empty(\$state['cloud'])) {"), 'no Modelfile build for cloud Cores');
 
 // 0.5.77: removing a tier keeps Mara's own Core; per tier update; unload before a switch.

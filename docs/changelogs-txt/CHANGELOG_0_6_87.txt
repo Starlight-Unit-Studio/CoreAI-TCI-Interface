@@ -1,0 +1,25 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.87
+10.11.2026
+
+- Einstellungen > Archivierte Chats ist eine echte Seite wie in den ChatGPT-Screenshots:
+  "Keine archivierten Chats", Suche nach Titeln, Menue "Alle Chats" mit Typ (Alle Chats;
+  Cloud: Chats, in denen ein Cloud-Core geantwortet hat) und Sortieren nach (Aktualisiert,
+  Erstellt, Alphabetisch), Menue "Alle Projekte" (Chats; Geplante Aufgaben in
+  Vorbereitung), Gruppe "Kein Projekt" mit Anzahl, je Chat Titel, Datum, Dearchivieren
+  und Loeschen mit Bestaetigung. Projekte geplant.
+- Jeder Chat hat das Menue der Vorlage (oben rechts):
+  Teilen (Chat als Markdown-Datei, kein oeffentlicher Link), Anpinnen (Migration 032,
+  bleibt oben in der Liste), Chat sperren und Zum Projekt hinzufuegen (In Vorbereitung),
+  Hochgeladene Dateien, Im Chat suchen (alle Nachrichten, Sprung zum Treffer), Zum
+  Startbildschirm hinzufuegen (Direktlink), Archivieren (Dialog der Vorlage), Loeschen.
+- Premium (gemma4:31b) nur noch lokal: der Installer bietet gemma4:31b-cloud nicht mehr an
+  (Ollama-Cloud kostenpflichtig). Ollama-Konto, andere Cloud-Modelle und installierte
+  Cloud-Cores bleiben fuer Nutzer mit Ollama-Abo.
+- Behoben: eine langsame erste Profil-Antwort konnte nach dem Speichern unter Konto den
+  alten Namen zurueckholen (0.6.86); eine Antwort von vor dem Speichern zaehlt nicht mehr.
+- Behoben: ein Link app.html?session=... oeffnete den leeren Start statt des Chats
+  (Benachrichtigungen seit 0.6.81). Ohne Link startet die App weiter mit leerem Entwurf.
+- api/console_chat_tools.php; console_sessions.php: archived (sort), files, search, export, pin,
+  Loeschen mit archive_first (bei Fehler wieder hergestellt).
+- Tests: chat-menu-selftest.php (auch MariaDB), chat-menu-ui-selftest.cjs,
+  archived-chats-ui-selftest.cjs. Keine Aenderung an Cores, Modelfile, FIFO, Prompts, Rechten.

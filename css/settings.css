@@ -2808,3 +2808,84 @@ html[data-coreui-theme="dark"] .settings-body .notify-planned { color: var(--amb
 
 /* 0.6.86: Admin Core > Benutzer: the plan under the account name. */
 .user-plan { color: var(--cx); font-weight: 700; letter-spacing: .08em; }
+
+/* 0.6.87: Settings > Archivierte Chats, modeled on the ChatGPT reference (js/coreui-archived-chats.js). */
+.settings-body .arc-tools { display: grid; gap: 12px; margin: 0 0 8px; }
+.settings-body .arc-search {
+  display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 16px;
+  border: 1px solid var(--line-strong); border-radius: 999px; background: var(--panel-soft);
+}
+.settings-body .arc-search svg, .settings-body .arc-select svg, .settings-body .arc-group-head svg {
+  width: 20px; height: 20px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+}
+.settings-body .arc-search svg { color: var(--muted); }
+.settings-body .arc-search input {
+  flex: 1 1 auto; min-width: 0; min-height: 44px; border: 0; background: transparent; color: var(--txt); font-size: 16px; outline: none;
+}
+.settings-body .arc-filters { display: flex; flex-wrap: wrap; gap: 10px; }
+.settings-body .arc-drop { position: relative; }
+.settings-body .arc-select {
+  display: inline-flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 16px;
+  border: 1px solid var(--line-strong); border-radius: 999px; background: var(--panel-soft); color: var(--txt);
+  cursor: pointer; font-size: 16px; font-weight: 600;
+}
+.settings-body .arc-select .arc-caret { width: 16px; height: 16px; transform: rotate(90deg); color: var(--muted); }
+.settings-body .arc-select[aria-expanded="true"] { border-color: var(--cx); }
+.settings-body .arc-menu {
+  position: absolute; top: calc(100% + 8px); left: 0; z-index: 30; display: grid; min-width: 250px; max-width: calc(100vw - 32px);
+  padding: 10px; border: 1px solid var(--line-strong); border-radius: 18px; background: var(--panel-solid, #ffffff);
+  box-shadow: 0 22px 56px rgba(8, 14, 30, .28);
+}
+.settings-body .arc-menu[hidden] { display: none; }
+.settings-body .arc-menu-head { padding: 8px 12px 6px; color: var(--muted); font-size: 15px; }
+.settings-body .arc-menu-line { width: 100%; margin: 6px 0; border: 0; border-top: 1px solid var(--line); }
+.settings-body .arc-menu-note { margin: 0; padding: 6px 12px; color: var(--muted); font-size: 14px; }
+.settings-body .arc-option {
+  display: flex; align-items: center; gap: 12px; min-height: 46px; padding: 6px 12px; border: 0; border-radius: 12px;
+  background: transparent; color: var(--txt); cursor: pointer; font-size: 17px; text-align: left;
+}
+.settings-body .arc-option span { flex: 1 1 auto; }
+.settings-body .arc-option svg {
+  width: 20px; height: 20px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+}
+.settings-body .arc-option > svg:last-child { visibility: hidden; }
+.settings-body .arc-option[aria-checked="true"] > svg:last-child { visibility: visible; }
+.settings-body .arc-option .arc-lead { visibility: visible; color: var(--muted); }
+.settings-body .arc-option em {
+  flex: 0 0 auto; padding: 2px 7px; border: 1px solid var(--amb); border-radius: 999px; color: var(--amb);
+  font-size: 11px; font-style: normal; font-weight: 700; letter-spacing: .06em;
+}
+.settings-body .arc-option.is-planned span, .settings-body .arc-option.is-planned .arc-lead { opacity: .6; }
+.settings-body .arc-option:hover, .settings-body .arc-option:focus-visible { background: var(--panel-soft); outline: none; }
+.settings-body .arc-hint { margin: 4px 0 14px; }
+.settings-body .arc-group { display: grid; gap: 10px; }
+.settings-body .arc-group-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.settings-body .arc-group-head h3 { display: flex; align-items: center; gap: 10px; margin: 0; color: var(--txt); font-size: 20px; }
+.settings-body .arc-count { color: var(--muted); font-size: 16px; }
+.settings-body .arc-card { display: grid; padding: 4px 22px; }
+.settings-body .arc-row {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 0; border-bottom: 1px solid var(--line);
+}
+.settings-body .arc-row:last-child { border-bottom: 0; }
+.settings-body .arc-cloud { display: inline-grid; place-items: center; flex: 0 0 auto; width: 26px; color: var(--muted); }
+.settings-body .arc-cloud svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
+.settings-body .arc-row.is-cloud .arc-copy strong { color: var(--green); }
+.settings-body .arc-copy { display: grid; gap: 4px; flex: 1 1 200px; min-width: 0; }
+.settings-body .arc-copy strong { overflow: hidden; color: var(--txt); font-size: 17px; text-overflow: ellipsis; white-space: nowrap; }
+.settings-body .arc-copy small { color: var(--muted); font-size: 15px; }
+.settings-body .arc-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.settings-body .arc-btn {
+  min-height: 44px; padding: 8px 18px; border: 1px solid var(--line-strong); border-radius: 999px;
+  background: var(--panel-soft); color: var(--txt); cursor: pointer; font-size: 16px; font-weight: 600;
+}
+.settings-body .arc-btn:hover:not(:disabled) { border-color: var(--cx); }
+.settings-body .arc-btn.danger { border-color: rgba(220, 60, 60, .35); background: rgba(220, 60, 60, .12); color: var(--red); }
+.settings-body .arc-btn:disabled { opacity: .55; cursor: wait; }
+.settings-body .arc-empty { display: grid; place-items: center; min-height: 92px; }
+.settings-body .arc-empty[hidden] { display: none; }
+.settings-body .arc-empty p { margin: 0; color: var(--txt); font-size: 17px; }
+@media (max-width: 600px) {
+  .settings-body .arc-card { padding: 2px 16px; }
+  .settings-body .arc-actions { width: 100%; }
+  .settings-body .arc-btn { flex: 1 1 auto; }
+}

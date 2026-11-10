@@ -1,0 +1,78 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.87
+Datum: 10.11.2026
+Basis: main 0.6.86 nach PR #238 (c86d12c)
+Branch: claude/bold-galileo-myoyi0
+
+AUFTRAG
+Betreiber: zwei Screenshots von ChatGPT Einstellungen > Archivierte Chats (leer und mit zwei
+Chats), Screenshots des Chat-Menues (oben rechts) und des Dialogs "Chat archivieren": "dann
+die naechste seite und die chats sollten jetzt auch das menue bekommen das die gpt Referenz
+bilder zeigen".
+Ohne Rueckfrage festgelegt (wie bei den frueheren Seiten: echt, wo CoreAI es kann, sonst
+In Vorbereitung):
+- Teilen: Chat als Markdown-Datei (Teilen-Menue des Geraets oder Download). Keine
+  oeffentlichen Links, CoreAI bleibt privat.
+- Chat sperren: In Vorbereitung (braucht zuerst die Konto-PIN, die der Betreiber nach
+  dem Einstellungsmenue umsetzen will).
+- Zum Projekt hinzufuegen und der Projektfilter: In Vorbereitung (keine Projekte).
+- Menues der Archivseite nach den nachgereichten Screenshots: "Alle Chats" mit Typ (Alle
+  Chats, Cloud) und Sortieren nach (Aktualisiert, Erstellt, Alphabetisch); "Alle Projekte"
+  mit Chats und Geplante Aufgaben. Sortieren ist echt. "Cloud" ist echt: Chats, in denen
+  ein Cloud-Core geantwortet hat (Arbeitsweg-Ereignis kind=model mit einem Tag auf -cloud
+  oder :cloud), in der Liste mit Wolke markiert.
+  "Geplante Aufgaben" ist In Vorbereitung (Automationen, Roadmap P21).
+- Betreiber: "wir entfernen eh alles was mit ollama cloud modellen zu tun hat da ollama
+  auf kostenpflichtige pakete umgestellt hat. 31b bieten wir nur noch lokal an", dann
+  praezisiert: "ich rede jetzt nur von den gemma4:31b cloud sachen alles andere kann
+  bleiben fuer user die ollama abo haben". Umgesetzt: COREUI_CORE_CLOUD_CATALOG ist leer,
+  der Installer bietet gemma4:31b-cloud nicht mehr an. Ollama-Konto verbinden, andere
+  Cloud-Modelle und installierte Cloud-Cores bleiben.
+
+UMGESETZT
+- database/migrations/032_chat_menu.sql: stu_console_sessions.pinned_at.
+- api/console_chat_tools.php: Anpinnen, Archivliste (Titelsuche, drei Sortierungen), Dateien eines
+  Chats (nur Uploads, nicht Maras Bilder), Suche im Chat (alle Nachrichten, Ausschnitt),
+  Export als Markdown (nutzt coreui_compact_messages und coreui_compact_markdown).
+- api/console_session_store.php: Liste mit angepinnten Chats oben (wenn Migration 032 da).
+- api/console_sessions.php: archived, files, search, export (GET), pin (POST), Loeschen mit
+  archive_first (archiviert, loescht, stellt bei Fehler wieder her). Archivieren loest Pin.
+- app.html, js/coreui-chat-menu.js, css/console.css: Menue, Dialoge, Suchleiste, Hinweis.
+- js/console-app.js: window.CoreAIChatApp (active, refresh, removed, reveal), Markierung
+  ANGEPINNT in der Liste, revealMessage laedt aeltere Seiten bis zum Treffer.
+- Fehler behoben: init oeffnete immer den leeren Entwurf, auch mit ?session= (Benach-
+  richtigungen seit 0.6.81). Jetzt oeffnet ein Link seinen Chat (takeLinkedSession).
+- settings.html, js/coreui-archived-chats.js, css/settings.css: Archivierte Chats.
+- js/settings.js: loadProfile verwirft eine Antwort, wenn inzwischen gespeichert wurde
+  (Zaehler profileWrites). Gefunden, weil account-ui-selftest.cjs in einer vollen
+  Testreihe einmal scheiterte; mit erzwungener Reihenfolge nachgestellt, ohne Fix rot,
+  mit Fix gruen. Der Test erzwingt diese Reihenfolge jetzt immer.
+
+TESTS (hier ausgefuehrt)
+- php scripts/chat-menu-selftest.php, auch mit COREUI_SELFTEST_DB=1 gegen MariaDB
+  (Migration 032 zweimal eingespielt, idempotent).
+- node scripts/chat-menu-ui-selftest.cjs und node scripts/archived-chats-ui-selftest.cjs
+  (Bildschirmfotos von Menue, Suche, Archivieren-Dialog, Archivseite, Handy angesehen).
+- php scripts/core-install-selftest.php (Premium nicht mehr aus der Cloud angeboten,
+  installierter Cloud-Core findet seine Stufe).
+- Echter HTTP-Lauf (php -S, MariaDB): Anpinnen (Liste oben), Suche mit Umlaut und Gross-
+  schreibung, Export (wetter-in-koeln.md), Dateien, fremder Chat abgewiesen, Archiv mit
+  Suche, aktives Loeschen ohne archive_first abgewiesen, mit archive_first geloescht
+  (Chat und Nachrichten weg).
+- php -l, cache-bust --verify, version-merge-check --base-version 0.6.86 (PASS).
+- Volle Testreihe mit MariaDB (COREUI_SELFTEST_DB=1), letzter Stand mit Archivmenues,
+  Typ Cloud, Premium nur lokal und Profil-Fix: 123 bestanden, 7 fehlgeschlagen,
+  dieselben 7 wie auf main (chat-navigation-recovery, composer-menu-ui, core-install-ui,
+  send-shortcut, voice-live, voice-samples-ui, tests/test_preflight_http.py).
+- Nachgezogen, keine Pruefung abgeschaltet: settings-navigation-foundation-selftest.cjs
+  (10 statt 11 geplante Seiten, Felder der Archivseite), welcome-composer-ui-selftest.cjs
+  (Start mit Entwurf, ein Chat-Link oeffnet seinen Chat).
+
+NICHT HIER GEPRUEFT
+- Teilen-Menue echter Handys (navigator.share mit Datei); im Testbrowser greift der
+  Download.
+- "Zum Startbildschirm hinzufuegen" auf echten Geraeten (der Browser legt die aktuelle
+  Adresse ab, die jetzt ?session=... enthaelt).
+
+NACH DEM MERGE (Betreiber)
+1. Update einspielen (Migration 032 laeuft mit).
+2. Im Chat oben rechts das Menue oeffnen; Einstellungen > Archivierte Chats.

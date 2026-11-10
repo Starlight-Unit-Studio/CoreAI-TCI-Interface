@@ -417,7 +417,11 @@
     element.style.backgroundImage = url ? ('url("' + String(url).replace(/"/g, '%22') + '")') : '';
   }
 
+  // 0.6.86: every applied profile counts; a load that started before a save must not undo it.
+  var profileWrites = 0;
+
   function applyProfile(profile) {
+    profileWrites++;
     profile = profile || {};
     if (profileDisplayName) profileDisplayName.value = profile.display_name || '';
     if (assistantDisplayName) assistantDisplayName.value = profile.assistant_name || 'Mara';
@@ -436,8 +440,11 @@
   }
 
   function loadProfile() {
+    var seen = profileWrites;
     return api('./api/profile.php').then(function (data) {
       csrfToken = data.csrf_token || csrfToken;
+      // A name or picture saved meanwhile (here or under Konto) is newer than this answer.
+      if (profileWrites !== seen) return;
       applyProfile(data.profile || {});
     }).catch(function (error) {
       announceSaved(error.message === 'missing_schema_004' ? 'MIGRATION 004 FEHLT' : 'PROFILE NICHT ERREICHBAR', true);
