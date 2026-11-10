@@ -39,7 +39,13 @@ function server(level) {
         {id: 3, username: 'lena@example.test', display_name: 'Lena', permission_level: 4, is_guest: 0, session_count: 2, login_count: 2}],
         // 0.5.85: own rules (Python blocked for Lena) and the global switches (browser off for everyone).
         policies: {3: {tools: {web: true, browse: true, python: false}, daily_messages: 40, max_num_ctx: 16384, used_today: 12}},
-        tools: {web: true, browse: false, python: true}, policy_ready: true, ctx_choices: [4096, 8192, 16384, 32768, 65536, 131072]};
+        tools: {web: true, browse: false, python: true}, policy_ready: true, ctx_choices: [4096, 8192, 16384, 32768, 65536, 131072],
+        // 0.6.86: plans per account (Lena has none yet) and what each template writes.
+        plans: {}, plan_ready: true, plan_catalog: {
+          free: {label: 'Free', policy: {tools: {web: true, browse: false, python: false, image: false}, daily_messages: null, max_num_ctx: 8192}},
+          go: {label: 'Go', policy: {tools: {web: true, browse: false, python: false, image: true}, daily_messages: null, max_num_ctx: 16384}},
+          plus: {label: 'Plus', policy: {tools: {web: true, browse: true, python: true, image: true}, daily_messages: null, max_num_ctx: 65536}},
+          pro: {label: 'Pro', policy: {tools: {web: true, browse: true, python: true, image: true}, daily_messages: null, max_num_ctx: null}}}};
       // 0.5.83: models outside CoreAI and their releases (Inhaber only).
       if (action === 'model_access') return level === 0 ? {ok: true, models: ['gpt-oss:120b-cloud', 'llama3.2:latest'], grants: {}, ollama: true}
         : {ok: false, error: 'owner_only'};
@@ -76,6 +82,10 @@ function server(level) {
         const sent = JSON.parse(post);
         return route.fulfill({json: {ok: true, policy: {tools: Object.assign({web: true, browse: true, python: true}, sent.tools || {}),
           daily_messages: 'daily_messages' in sent ? sent.daily_messages : 40, max_num_ctx: 'max_num_ctx' in sent ? sent.max_num_ctx : 16384}}});
+      }
+      if (key === 'admin.php' && post && url.searchParams.get('action') === 'user_plan') {
+        const sent = JSON.parse(post);
+        return route.fulfill({json: {ok: true, plan: sent.plan, policy: {tools: {web: true, browse: false, python: false, image: true}, daily_messages: null, max_num_ctx: 16384}}});
       }
       if (key === 'admin.php' && post && url.searchParams.get('action') === 'user_identity') {
         const sent = JSON.parse(post);
@@ -350,15 +360,15 @@ const smallText = page => page.evaluate(() => {
     assert.deepEqual(await page.$$eval('#userRows > tr', rows => rows.map(r => !!r.querySelector('.user-edit-toggle'))), [true, true, true],
       'BEARBEITEN for everyone the Inhaber manages, and for himself');
     await page.click('#userRows tr:nth-child(3) .user-edit-toggle');
-    assert.deepEqual(await page.$$eval('.user-edit-section h4', h => h.map(x => x.textContent)), ['Name und E-Mail', 'Passwort und Anmeldungen', 'Werkzeuge', 'Limits']);
+    assert.deepEqual(await page.$$eval('.user-edit-section h4', h => h.map(x => x.textContent)), ['Name und E-Mail', 'Passwort und Anmeldungen', 'Plan', 'Werkzeuge', 'Limits']);
     // Limits: 40 messages a day (12 sent today), window up to 16K.
     assert.match(await page.textContent('.user-edit-row'), /Heute gesendet: 12 von 40\./);
     assert.equal(await page.inputValue('.user-edit-row input[type="number"]'), '40');
-    assert.equal(await page.inputValue('.user-edit-row select'), '16384');
-    assert.deepEqual(await page.$$eval('.user-edit-row select option', o => o.map(x => x.textContent)),
+    assert.equal(await page.inputValue('.user-edit-row select:not(.user-plan-select)'), '16384');
+    assert.deepEqual(await page.$$eval('.user-edit-row select:not(.user-plan-select) option', o => o.map(x => x.textContent)),
       ['ohne Grenze', 'bis 4K', 'bis 8K', 'bis 16K', 'bis 32K', 'bis 64K', 'bis 128K']);
     await page.fill('.user-edit-row input[type="number"]', '');
-    await page.selectOption('.user-edit-row select', '32768');
+    await page.selectOption('.user-edit-row select:not(.user-plan-select)', '32768');
     await page.click('.user-edit-row button:has-text("LIMITS SPEICHERN")');
     await page.waitForFunction(() => /kein Tageslimit, Kontextfenster bis 32K\./.test(document.getElementById('adminFlash').textContent));
     assert.deepEqual(srv.calls.filter(c => c.action === 'user_policy').pop().post, {user_id: 3, daily_messages: null, max_num_ctx: 32768});
@@ -369,6 +379,17 @@ const smallText = page => page.evaluate(() => {
     await page.click('.user-edit-row button:has-text("WERKZEUGE SPEICHERN")');
     await page.waitForFunction(() => /gesperrt: Websuche, Python\./.test(document.getElementById('adminFlash').textContent));
     assert.deepEqual(srv.calls.find(c => c.action === 'user_policy' && c.post.tools).post, {user_id: 3, tools: {web: false, browse: true, python: false, image: true}});
+    // 0.6.86: Plan: four templates (no prices); Go fills Werkzeuge and Limits in place.
+    assert.deepEqual(await page.$$eval('.user-plan-select option', o => o.map(x => x.textContent)), ['Kein Plan', 'Free', 'Go', 'Plus', 'Pro']);
+    assert.equal(await page.inputValue('.user-plan-select'), '');
+    await page.selectOption('.user-plan-select', 'go');
+    assert.match(await page.textContent('.user-edit-row'), /Go: Websuche, Bilder; Nachrichten ohne Grenze; Kontextfenster bis 16K\./);
+    await page.click('.user-edit-row button:has-text("PLAN ÜBERNEHMEN")');
+    await page.waitForFunction(() => /Plan Go übernommen, Werkzeuge und Limits gesetzt\./.test(document.getElementById('adminFlash').textContent));
+    assert.deepEqual(srv.calls.find(c => c.action === 'user_plan').post, {user_id: 3, plan: 'go'});
+    assert.deepEqual(await page.$$eval('.user-tool-choice input', l => l.map(x => x.checked)), [true, false, false, true], 'the plan set the tool boxes');
+    assert.equal(await page.inputValue('.user-edit-row select:not(.user-plan-select)'), '16384', 'the plan set the window');
+    assert.equal(await page.inputValue('.user-edit-row input[type="number"]'), '', 'the plan set no daily limit');
     assert.match(await page.textContent('.user-edit-row'), /Aktive Anmeldungen: 2\./);
     assert.equal(await page.inputValue('.user-edit-row input[type="email"]'), 'lena@example.test');
     await page.fill('.user-edit-row input[type="text"]', 'Lena Berg');

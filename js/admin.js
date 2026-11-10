@@ -215,6 +215,11 @@
   var policyReady = true;
   var TOOL_LABELS = [['web', 'Websuche'], ['browse', 'Browser'], ['python', 'Python'], ['image', 'Bilder']];
   var ctxChoices = [];
+  // 0.6.86: plans (Free, Go, Plus, Pro) per account and what each template writes.
+  var userPlans = {};
+  var planCatalog = {};
+  var planReady = true;
+  var PLAN_OPTIONS = [['', 'Kein Plan'], ['free', 'Free'], ['go', 'Go'], ['plus', 'Plus'], ['pro', 'Pro']];
 
   function ctxLabel(n) {
     return Math.round(Number(n) / 1024) + 'K';
@@ -235,8 +240,21 @@
     own_policy: 'Für das eigene Konto gelten die globalen Schalter unter Betrieb.',
     invalid_daily_messages: 'Nachrichten pro Tag: eine Zahl von 1 bis 100000, oder leer für ohne Grenze.',
     invalid_max_num_ctx: 'Dieses Kontextfenster gibt es nicht.',
-    missing_schema_021: 'Migration 021 fehlt noch. Bitte das Update einspielen.'
+    missing_schema_021: 'Migration 021 fehlt noch. Bitte das Update einspielen.',
+    missing_schema_031: 'Migration 031 fehlt noch. Bitte das Update einspielen.',
+    invalid_plan: 'Diesen Plan gibt es nicht.'
   };
+
+  // 0.6.86: what a plan template writes, in one line for Admin Core.
+  function planText(key) {
+    var def = planCatalog[key];
+    if (!key || !def) return 'Kein Plan: Werkzeuge und Limits bleiben, wie sie sind.';
+    var p = def.policy || {};
+    var on = TOOL_LABELS.filter(function (tool) { return p.tools && p.tools[tool[0]]; }).map(function (tool) { return tool[1]; });
+    return def.label + ': ' + (on.length ? on.join(', ') : 'keine Werkzeuge') + '; '
+      + (p.daily_messages ? p.daily_messages + ' Nachrichten pro Tag' : 'Nachrichten ohne Grenze') + '; '
+      + (p.max_num_ctx ? 'Kontextfenster bis ' + ctxLabel(p.max_num_ctx) : 'größtes Kontextfenster') + '.';
+  }
 
   function manageError(prefix, error) {
     show(prefix + ': ' + (MANAGE_ERRORS[error.message] || error.message), true);
@@ -409,6 +427,43 @@
       });
       limits.appendChild(saveLimits);
       grid.appendChild(limits);
+
+      // 0.6.86: Plan: a template that fills Werkzeuge and Limits above (Settings > Konto shows it).
+      if (!guest) {
+        var planBox = editSection('Plan', planReady
+          ? 'Eine Vorlage setzt Werkzeuge und Limits. Einzelne Änderungen danach bleiben möglich, der Plan heißt dann "angepasst". Alle Pläne sind kostenlos.'
+          : MANAGE_ERRORS.missing_schema_031);
+        var planSelect = document.createElement('select');
+        planSelect.className = 'user-plan-select';
+        PLAN_OPTIONS.forEach(function (choice) {
+          var option = el('option', '', choice[1]);
+          option.value = choice[0];
+          if ((userPlans[String(user.id)] || '') === choice[0]) option.selected = true;
+          planSelect.appendChild(option);
+        });
+        planSelect.disabled = !planReady || !policyReady;
+        editField(planBox, 'PLAN', planSelect);
+        var planInfo = el('p', 'model-access-note', planText(planSelect.value));
+        planSelect.addEventListener('change', function () { planInfo.textContent = planText(planSelect.value); });
+        planBox.appendChild(planInfo);
+        var savePlan = el('button', 'settings-action compact', 'PLAN ÜBERNEHMEN');
+        savePlan.type = 'button';
+        savePlan.disabled = planSelect.disabled;
+        savePlan.addEventListener('click', function () {
+          savePlan.disabled = true;
+          post('user_plan', { user_id: Number(user.id), plan: planSelect.value || null }).then(function (data) {
+            userPlans[String(user.id)] = data.plan || '';
+            userPolicies[String(user.id)] = data.policy;
+            var p = data.policy || {};
+            TOOL_LABELS.forEach(function (tool) { if (boxes[tool[0]]) boxes[tool[0]].checked = !!(p.tools && p.tools[tool[0]]); });
+            daily.value = p.daily_messages != null ? String(p.daily_messages) : '';
+            ctx.value = p.max_num_ctx != null ? String(p.max_num_ctx) : '';
+            show('Konto ' + user.id + ': ' + (data.plan ? 'Plan ' + planCatalog[data.plan].label + ' übernommen, Werkzeuge und Limits gesetzt.' : 'kein Plan mehr, Werkzeuge und Limits bleiben.'));
+          }).catch(function (error) { manageError('Plan', error); }).finally(function () { savePlan.disabled = planSelect.disabled; });
+        });
+        planBox.appendChild(savePlan);
+        grid.insertBefore(planBox, tools);
+      }
     }
 
     td.appendChild(grid);
@@ -543,6 +598,9 @@
       globalTools = data.tools || {};
       ctxChoices = Array.isArray(data.ctx_choices) ? data.ctx_choices : [];
       policyReady = data.policy_ready !== false;
+      userPlans = data.plans && !Array.isArray(data.plans) ? data.plans : {};
+      planCatalog = data.plan_catalog && !Array.isArray(data.plan_catalog) ? data.plan_catalog : {};
+      planReady = data.plan_ready !== false;
       var tbody = document.getElementById('userRows');
       tbody.innerHTML = '';
       (data.items || []).forEach(function (user) {
@@ -551,6 +609,8 @@
         var account = el('td');
         account.appendChild(el('strong', '', user.display_name || user.username || 'ohne E-Mail'));
         account.appendChild(el('small', '', (user.username || '') + (user.character_name ? (' // ' + user.character_name) : '')));
+        var planKey = userPlans[String(user.id)];
+        if (planKey && planCatalog[planKey]) account.appendChild(el('small', 'user-plan', 'PLAN ' + String(planCatalog[planKey].label).toUpperCase()));
         row.appendChild(account);
 
         var levelCell = el('td');

@@ -775,6 +775,10 @@
   function shareAccountSecurity(data) {
     try { document.dispatchEvent(new CustomEvent('coreai:security', {detail: data})); } catch (e) { /* old browser */ }
   }
+  // 0.6.86: a name saved under Konto (js/coreui-account-settings.js) fills Profil and the overview head.
+  document.addEventListener('coreai:profile-saved', function (event) {
+    if (event && event.detail && event.detail.display_name) applyProfile(event.detail);
+  });
   document.addEventListener('coreai:security-sessions', function (event) {
     var detail = event && event.detail ? event.detail : {};
     if (detail.csrf_token) csrfToken = detail.csrf_token;

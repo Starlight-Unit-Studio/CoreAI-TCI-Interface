@@ -84,7 +84,8 @@
     avatar.classList.toggle('has-image', !!profile.avatar);
     avatar.style.backgroundImage = profile.avatar ? 'url("' + String(profile.avatar).replace(/"/g, '%22') + '")' : '';
     var since = profile.member_since ? parseDay(profile.member_since) : null;
-    var sub = [profile.role || ''];
+    // 0.6.86: the @handle from Settings > Konto comes first, like the reference.
+    var sub = [profile.username ? '@' + profile.username : '', profile.role || ''];
     if (since && !isNaN(since.getTime())) sub.push('dabei seit ' + since.toLocaleDateString('de-DE', {month: 'long', year: 'numeric'}));
     $('profileOverviewSub').textContent = sub.filter(Boolean).join(' · ');
     var assistant = profile.assistant_name || 'Mara';
@@ -303,6 +304,12 @@
     if (!p || !data) return;
     data.profile = Object.assign({}, data.profile, {display_name: p.display_name || data.profile.display_name,
       assistant_name: p.assistant_name || data.profile.assistant_name, avatar: p.avatars ? p.avatars.user : data.profile.avatar});
+    renderHead(data.profile);
+  });
+  // 0.6.86: a Benutzername saved under Konto shows up in the head at once.
+  document.addEventListener('coreai:username', function (event) {
+    if (!data || !event || !event.detail) return;
+    data.profile = Object.assign({}, data.profile, {username: event.detail.username || null});
     renderHead(data.profile);
   });
   document.addEventListener('coreai:view', function (event) {

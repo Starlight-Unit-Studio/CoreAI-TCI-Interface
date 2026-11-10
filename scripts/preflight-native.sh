@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.85: Sicherheit und Anmeldung (Passkeys, Authenticator-App, E-Mail-Code, Wiederherstellungscodes, Lockdown, erweiterte Kontosicherheit, Verlauf).
+# CoreAI: TCI Interface 0.6.86: Konto wie die ChatGPT-Kontoseite (Name, Benutzername, E-Mail, Plaene Free/Go/Plus/Pro, Erstellerprofil geplant).
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -112,6 +112,11 @@ UI_FILES=(
   scripts/sign-in-security-selftest.php
   scripts/security-ui-selftest.cjs
   scripts/security-reset.php
+  database/migrations/031_account_page.sql
+  api/account_page_store.php
+  js/coreui-account-settings.js
+  scripts/account-page-selftest.php
+  scripts/account-ui-selftest.cjs
   scripts/terran-terminology-selftest.cjs
   scripts/tci-language-selftest.cjs
   setup.sh
@@ -915,6 +920,14 @@ if command -v php >/dev/null 2>&1; then
     fail "Sicherheits-Selbsttest: ${sign_in_security_test:-Unbekannter Fehler}"
   fi
 
+  # 0.6.86: Konto: Benutzername (unique, reserved names), plans Free/Go/Plus/Pro as real rules.
+  account_page_test=''
+  if account_page_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/account-page-selftest.php" 2>&1)"; then
+    ok 'Konto: Benutzername (eindeutig, reservierte Namen) und Plaene (Free, Go, Plus, Pro als echte Regeln) geprueft.'
+  else
+    fail "Konto-Selbsttest: ${account_page_test:-Unbekannter Fehler}"
+  fi
+
   profile_reference_test=''
   if profile_reference_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/profile-reference-selftest.php" 2>&1)"; then
     if [[ "$profile_reference_test" == PARTIAL:* ]]; then
@@ -1164,6 +1177,16 @@ if command -v php >/dev/null 2>&1; then
       fi
     else
       ok 'Sicherheit: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+    fi
+    # 0.6.86: Konto (name, Benutzername dialog, e-mail, plan page, Erstellerprofil planned); needs Playwright for Node.
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/account-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'Konto: Name, Benutzername, E-Mail, Plan und Erstellerprofil im Browser geprueft.'
+      else
+        fail 'Konto: Oberflaechentest fehlgeschlagen.'
+      fi
+    else
+      ok 'Konto: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
     fi
     # 0.5.83: update window (Inhaber) and "Bitte auf Neustart warten"; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
