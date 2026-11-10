@@ -264,6 +264,15 @@ def cmd_auto_queue(policy_path, available_path, status_path, request_path, attem
     attempt = read_json(attempt_path)
     if attempt.get('commit') == commit:
         return 0
+    # Give the owner one full 10-minute check interval to choose 'Später'
+    # before the first unattended install of each new merge.
+    observed = int(attempt.get('observed_at') or 0)
+    if attempt.get('observed_commit') != commit or observed <= 0:
+        attempt.update({'observed_commit': commit, 'observed_at': int(time.time())})
+        write_json(attempt_path, attempt)
+        return 0
+    if int(time.time()) - observed < 600:
+        return 0
     request = {
         'action': 'update',
         'requested_by': uid,
@@ -283,7 +292,8 @@ def cmd_auto_queue(policy_path, available_path, status_path, request_path, attem
             handle.write('\n')
         if os.geteuid() == 0:
             os.chown(request_path, 0, 33)
-        write_json(attempt_path, {'commit': commit, 'queued_at': now()})
+        attempt.update({'commit': commit, 'queued_at': now()})
+        write_json(attempt_path, attempt)
     except BaseException:
         try:
             os.unlink(request_path)
