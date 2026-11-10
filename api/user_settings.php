@@ -363,6 +363,47 @@ if (($body['action'] ?? '') === 'core_cloud_add') {
   coreui_core_job_run($lock, 'coreui_core_install_run', $state, $uid);
   exit;
 }
+// 0.6.91: Refresh a selected locally installed Core. Mara/TCI Cores
+// use the existing tier Modelfile rebuild, third-party Ollama tags use
+// /api/pull. All updates use the same installation lock and worker.
+if (($body['action'] ?? '') === 'installed_core_update') {
+  require_once __DIR__ . '/installed_cores.php';
+  require_once __DIR__ . '/ollama_library.php';
+  stu_require_permission_at_most(COREUI_CORE_INSTALL_PERMISSION_MAX, $pdo);
+  $requested = trim((string)($body['model'] ?? ''));
+  if (!coreui_installed_cores_name_valid($requested)) stu_json(['ok'=>false, 'error'=>'invalid_model_name'], 400);
+  if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
+  try {
+    $models = coreui_ollama_models();
+    $default = defined('STU_EMBER_MODEL') ? (string)STU_EMBER_MODEL : 'ember-coreui:latest';
+    $selection = coreui_installed_cores_update_selection(
+      $models, $requested, $default, coreui_core_mara_base(), coreui_core_update_plan($models));
+    $lock = coreui_core_install_lock();
+  } catch (RuntimeException $e) {
+    $code = $e->getMessage();
+    $http = $code === 'invalid_model_name' ? 400
+      : ($code === 'model_not_installed' ? 404
+        : ($code === 'update_not_supported' ? 409 : 503));
+    stu_json(['ok'=>false, 'error'=>$code], $http);
+  }
+  if ($lock === false) {
+    stu_json(['ok'=>false, 'error'=>'install_running', 'install'=>coreui_core_install_status()], 409);
+  }
+  if ($selection['kind'] === 'tci') {
+    $state = coreui_core_update_begin($selection['plan']);
+    stu_app_setting_set($pdo, 'core_update_last', (string)time());
+    coreui_core_job_detach(['ok'=>true, 'install'=>['running'=>true]
+      + array_diff_key($state, ['layers'=>true, 'plan'=>true])]);
+    coreui_core_job_run($lock, 'coreui_core_update_run', $state, $uid);
+  } else {
+    $state = coreui_library_begin($selection['model']);
+    coreui_core_job_detach(['ok'=>true, 'install'=>['running'=>true]
+      + array_diff_key($state, ['layers'=>true])]);
+    coreui_core_job_run($lock, 'coreui_library_run', $state, $uid);
+  }
+  exit;
+}
+
 // 0.6.91: Deinstall one explicitly selected installed Core. This reuses
 // the existing TCI uninstall routine and its account-selection fallback.
 // The standard Core and its template source are never eligible. Validation
