@@ -14,11 +14,15 @@ $models = [
   ['name'=>$standard,'size'=>5600000000],
   ['name'=>$base,'size'=>18400000000],
   ['name'=>'gemma4:31b-cloud','size'=>0],
+  ['name'=>'hf.co/owner/llm:Q4_K_M','size'=>2900000000],
   ['name'=>'broken name!','size'=>44],
 ];
 $rows = coreui_installed_cores_rows($models, $standard, $base);
 $byName = array_column($rows, null, 'name');
-installed_test(count($rows) === 5 && !isset($byName['broken name!']), 'only installed valid Ollama tags are listed');
+installed_test(count($rows) === 6 && !isset($byName['broken name!']), 'only installed valid Ollama tags are listed');
+installed_test($byName['hf.co/owner/llm:Q4_K_M']['kind'] === 'local'
+  && $byName['hf.co/owner/llm:Q4_K_M']['removable'],
+  'already imported HF namespaced LLMs appear without adding an HF installer');
 installed_test($byName[$standard]['kind'] === 'tci' && !$byName[$standard]['removable']
   && str_contains($byName[$standard]['protected_reason'], 'Standard-Core'),
   'default TCI Core must be protected');
@@ -43,6 +47,7 @@ foreach ([
   ['qwen3:8b:latest', 'model_not_installed'],
   ['qwen3:7b', 'model_not_installed'],
   ['http://127.0.0.1', 'invalid_model_name'],
+  ['https://evil.test', 'invalid_model_name'],
 ] as [$target, $expected]) {
   try {
     coreui_installed_cores_target($models, $target, $standard, $base);
