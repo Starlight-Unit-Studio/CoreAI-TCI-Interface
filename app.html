@@ -548,6 +548,7 @@
           <a class="core-install-btn core-install-btn--go" id="coreInstallCloudLink" href="https://ollama.com" target="_blank"
             rel="noopener noreferrer" hidden>Ollama verbinden</a>
           <button class="core-install-btn" id="coreInstallCloudCheck" type="button">Status prüfen</button>
+          <button class="core-install-btn core-install-btn--go" id="coreInstallLibraryOpen" type="button">Cores verwalten</button>
         </div>
       </section>
       <p class="core-install-note" id="coreInstallNote" role="status" aria-live="polite"></p>
@@ -555,6 +556,58 @@
         <button class="core-install-btn" id="coreInstallCancel" type="button">Abbrechen</button>
         <button class="core-install-btn core-install-btn--go" id="coreInstallGo" type="button">Installieren</button>
       </div>
+    </div>
+  </div>
+
+  <div class="core-library" id="coreLibrary" hidden>
+    <div class="core-library-panel" role="dialog" aria-modal="true" aria-labelledby="coreLibraryTitle" tabindex="-1">
+      <header class="core-library-head">
+        <div>
+          <span class="core-library-kicker">LOKALE MODELLVERWALTUNG</span>
+          <h2 id="coreLibraryTitle">Cores verwalten</h2>
+          <p>Ergänze lokale Modelle, ohne bestehende TCI Cores oder ihre Einstellungen zu verändern.</p>
+        </div>
+        <button type="button" class="core-library-close" id="coreLibraryClose" aria-label="Modellverwaltung schließen">×</button>
+      </header>
+      <div class="core-library-providers" aria-label="Modellquellen">
+        <div class="core-library-provider core-library-provider--active" id="coreLibraryOllamaProvider">
+          <strong>OLLAMA</strong>
+          <span>Offizielle Modellsuche und lokaler Download</span>
+        </div>
+        <div class="core-library-provider core-library-provider--future" aria-disabled="true">
+          <strong>HUGGING FACE</strong>
+          <span>Modellverwaltung in Vorbereitung</span>
+        </div>
+      </div>
+      <section class="core-library-browser" aria-label="Ollama-Modellsuche">
+        <form class="core-library-search" id="coreLibrarySearchForm">
+          <label for="coreLibraryQuery">MODELL SUCHEN</label>
+          <div class="core-library-search-controls">
+            <input id="coreLibraryQuery" type="search" maxlength="80" placeholder="z. B. qwen3.5, llama, gemma" autocomplete="off" />
+            <button class="core-install-btn core-install-btn--go" type="submit">Suchen</button>
+          </div>
+          <a href="https://ollama.com/search" target="_blank" rel="noopener noreferrer" id="coreLibraryOfficialSearch">Offizielle Ollama-Suche öffnen</a>
+        </form>
+        <p class="core-library-feedback" id="coreLibraryStatus" role="status" aria-live="polite">Die Modelle werden aus der offiziellen Ollama-Suche geladen.</p>
+        <div class="core-library-results" id="coreLibraryResults" role="list"></div>
+      </section>
+      <section class="core-library-detail" id="coreLibraryDetail" hidden aria-labelledby="coreLibraryModelTitle">
+        <button type="button" class="core-library-back" id="coreLibraryBack">← Zur Modellsuche</button>
+        <h3 id="coreLibraryModelTitle"></h3>
+        <p class="core-library-description" id="coreLibraryModelDescription"></p>
+        <label class="core-library-tag-label" for="coreLibraryTag">LOKAL VERFÜGBARE VERSION</label>
+        <select id="coreLibraryTag"></select>
+        <p class="core-library-hint" id="coreLibraryHint"></p>
+        <div class="core-library-detail-actions">
+          <a id="coreLibraryModelLink" href="https://ollama.com/search" target="_blank" rel="noopener noreferrer">Modell auf Ollama ansehen</a>
+          <button class="core-install-btn core-install-btn--go" id="coreLibraryInstall" type="button" disabled>Installieren</button>
+        </div>
+      </section>
+      <section class="core-library-progress" id="coreLibraryProgress" hidden aria-label="Installationsfortschritt">
+        <p id="coreLibraryProgressText" role="status" aria-live="polite">Installation wird vorbereitet …</p>
+        <div class="core-library-track" role="progressbar" id="coreLibraryProgressBar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="coreLibraryProgressFill"></span></div>
+        <p>Der Download läuft auf dem Server weiter, auch wenn du dieses Fenster schließt.</p>
+      </section>
     </div>
   </div>
 
