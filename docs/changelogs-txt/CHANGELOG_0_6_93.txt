@@ -1,0 +1,36 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.93
+10.11.2026
+
+- Gescheiterter Preflight wird aus dem echten Installer-Protokoll
+  als eigener Fehlertyp erkannt. Das Updatefenster zeigt eine
+  verstaendliche Empfehlung zum erneuten Versuch sowie weiterhin
+  die letzten Zeilen des Protokolls.
+- Der Update-Button heisst im Fehlerfall WIEDERHOLEN mit einem
+  Kreis-Pfeil-Icon. Auch wenn das Setup die aktuelle Version bereits
+  auf die Festplatte geschrieben hat, ist ein erneuter Versuch
+  durch den Inhaber moeglich.
+- SPAETER pausiert das automatische Erinnerungsfenster genau
+  eine Stunde und speichert diese Pause serverseitig; dadurch
+  bleibt sie auch nach Seitenwechsel, Reload und neuen Merges aktiv.
+- Ein echter Schalter AUTOMATISCHE UPDATES in Einstellungen/System
+  kann nur durch den Inhaber eingeschaltet werden. Anfangs AUS.
+  Der Host prueft main alle zehn Minuten und wartet einen weiteren
+  Prueflauf, damit SPAETER vor dem automatischen Start moeglich ist.
+- Ist Auto-Update aktiv und die Stunde abgelaufen, laeuft derselbe
+  sichere Updater mit vorheriger Datenbanksicherung und
+  Neustart der benoetigten Dienste. Manuelle Updates haben Vorrang.
+- SPAETER oder Schalter AUS kann einen noch nicht gestarteten
+  automatischen Updateauftrag entfernen. Laufende Updates werden
+  niemals abgebrochen.
+- Derselbe Commit wird bei fehlgeschlagener automatischer
+  Installation nicht endlos neu versucht; nach einem weiteren
+  Merge ist eine neue Pruefung moeglich.
+- Neue Tests: Python-Scheduler-/Preflight-Parser-Selbsttest,
+  erweiterte PHP-Status- und Host-Runner-Selbsttests sowie
+  Playwright-Oberflaechenpruefungen. Docker und native Preflight
+  nehmen den neuen Python-Test auf.
+- Keine neue Update-Infrastruktur. Bestehender GitHub-Updater
+  bleibt die einzige Installationsroute. Automatische Updates
+  sind rein freiwillig und stehen ausschliesslich dem Inhaber offen.
+- Version 0.6.93 ist nach dem Schema ein Merge gleich eine neue
+  Version vorbereitet; vollstaendige Serverabnahme steht noch aus.
