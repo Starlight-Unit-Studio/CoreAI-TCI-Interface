@@ -532,6 +532,7 @@
     doc.addEventListener('keydown', function (event) { if (event.key === 'Escape' && isOpen()) close(); });
 
     return {open: open, manage: manage, close: close, install: install, updateNow: updateNow, setAuto: setAuto,
+      refreshManage: function () { return state.mode === 'manage' ? refreshManage().then(render) : Promise.resolve(); },
       poll: poll, isOpen: isOpen,
       state: function () {
         return {mode: state.mode, tier: state.tier, check: state.check, install: state.install, confirm: state.confirm,
