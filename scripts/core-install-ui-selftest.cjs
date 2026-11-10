@@ -135,7 +135,8 @@ function server(opts) {
 
 const source = fs.readFileSync(path.join(__dirname, '../js/coreui-core-install.js'), 'utf8');
 assert(!/innerHTML|insertAdjacentHTML|outerHTML/.test(source), 'the window never injects HTML');
-assert(!/Modell(?!file)/.test(source.replace(/\/\*[\s\S]*?\*\//g, '')), 'lore: visible text says Core');
+assert(!/Modell(?!file|-Layer)/.test(source.replace(/\/\*[\s\S]*?\*\//g, '')),
+  'lore: Core is the identity; the technical term Modell-Layer is valid');
 const windowEvents = {};
 const sandbox = {window: {addEventListener: (name, fn) => { windowEvents[name] = fn; }},
   Promise, JSON, Array, Math, Number, String, isFinite, encodeURIComponent, Date};
