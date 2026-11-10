@@ -35,7 +35,7 @@
       var active = selected();
       label.textContent = state.loading ? 'Lädt …' : title(active);
       trigger.disabled = !state.ready || state.busy;
-      trigger.setAttribute('aria-label', 'Denkaufwand: ' + label.textContent + '. Stufe auswählen');
+      trigger.setAttribute('aria-label', 'Denken: ' + label.textContent + '. Stufe auswählen');
       while (list.firstChild) list.removeChild(list.firstChild);
       var choices = state.available && state.levels.length
         ? ['off', ''].concat(ORDER.filter(function (x) { return state.levels.indexOf(x) !== -1; }))
@@ -145,7 +145,7 @@
       }).catch(function (error) {
         state.error = error && error.message === 'thinking_level_not_supported'
           ? 'Diese Stufe unterstützt dein aktueller Core nicht.'
-          : 'Denkaufwand konnte nicht gespeichert werden.';
+          : 'Die Denkstufe konnte nicht gespeichert werden.';
         return reload().then(function () { state.error = 'Bitte erneut versuchen.'; return false; });
       }).then(function (ok) {
         state.busy = false;
