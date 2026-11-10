@@ -42,6 +42,10 @@ TESTS (hier ausgefuehrt)
   schreibung, Export (wetter-in-koeln.md), Dateien, fremder Chat abgewiesen, Archiv mit
   Suche, aktives Loeschen ohne archive_first abgewiesen, mit archive_first geloescht
   (Chat und Nachrichten weg).
+- php -l, cache-bust --verify, version-merge-check --base-version 0.6.86 (PASS).
+- Volle Testreihe mit MariaDB (COREUI_SELFTEST_DB=1): 123 bestanden, 7 fehlgeschlagen,
+  dieselben 7 wie auf main (chat-navigation-recovery, composer-menu-ui, core-install-ui,
+  send-shortcut, voice-live, voice-samples-ui, tests/test_preflight_http.py).
 - Nachgezogen, keine Pruefung abgeschaltet: settings-navigation-foundation-selftest.cjs
   (10 statt 11 geplante Seiten, Felder der Archivseite), welcome-composer-ui-selftest.cjs
   (Start mit Entwurf, ein Chat-Link oeffnet seinen Chat).
