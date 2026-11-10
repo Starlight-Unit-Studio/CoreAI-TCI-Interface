@@ -150,8 +150,8 @@ const flush = async () => { for(let i=0;i<24;i++) await Promise.resolve(); };
   assert.equal(els.coreLibraryInstalled.hidden, false);
   assert.equal(els.coreLibraryInstalledProvider.attributes['aria-selected'], 'true');
   assert.equal(els.coreLibraryInstalledList.children.length, 4, 'all local and TCI Cores appear');
-  const cards = els.coreLibraryInstalledList.children;
-  const cardByName = name => cards.find(card=>card.textContent.includes(name));
+  const cardByName = name => els.coreLibraryInstalledList.children
+    .find(card=>card.textContent.includes(name));
   const standardRow = cardByName('ember-coreui:latest');
   const baseRow = cardByName('gemma4:26b');
   assert(standardRow && baseRow, 'default Core and its source are visible');
@@ -166,9 +166,10 @@ const flush = async () => { for(let i=0;i<24;i++) await Promise.resolve(); };
     && JSON.parse(c.body).action==='installed_core_uninstall');
   await removeButton.handlers.click();
   assert.equal(removals().length, 0, 'first tap only asks to confirm');
-  assert(removable.textContent.includes('Betroffene Konten wechseln zum Standard-Core'),
+  const confirmedRow = cardByName('qwen3.5:4b');
+  assert(confirmedRow.textContent.includes('Betroffene Konten wechseln zum Standard-Core'),
     'the consequences are explained before deletion');
-  const confirm = removable.children.find(c=>c.tagName === 'BUTTON');
+  const confirm = confirmedRow.children.find(c=>c.tagName === 'BUTTON');
   await confirm.handlers.click();
   await flush();
   assert.equal(removals().length, 1, 'second tap sends one removal');
