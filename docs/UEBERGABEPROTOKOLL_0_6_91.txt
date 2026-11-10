@@ -53,6 +53,37 @@ DATEIEN
 - VERSION, UI-Version, Asset-Caches, README, CHANGELOG,
   Archiv und Branding nach Regeln auf 0.6.91 nachgezogen.
 
+ERGÄNZUNG NACH UI-ABNAHME (GLEICHER PR, VERSION 0.6.91)
+- Die vier Info-Chips CORE/KONTEXT/WERKZEUGE/PROJEKT unterhalb
+  der Startseiten-Beispielfragen wurden ENTFERNT, NICHT verschoben.
+  Der Begruessungstext, die vier Beispielfragen und die gesamte
+  Nachrichteneingabe bleiben vorhanden und funktionsfaehig.
+  Desktop-Informationsansichten bleiben unabhaengig davon erhalten.
+- Der Composer-Button DENKAUFWAND traegt jetzt die kurze
+  Beschriftung DENKEN, inklusive zutreffender Accessibility-Texte.
+  Die bestehenden Denkstufen und General-Einstellungen bleiben.
+- Die allgemeine Core-Bibliothek zeigt nirgendwo das Wort LLM.
+  Sichtbarer Einstieg und alle Texte nennen die Elemente Cores.
+  Keine Umbenennung von API-Feldern und HTML-IDs.
+- Der Reiter INSTALLIERT besitzt nun zusaetzlich pro lokalem
+  Core den Button AKTUALISIEREN. Fuer TCI/Mara-Cores wird
+  der bestehende Core-Rebuild mit unveraendertem Modelfile
+  verwendet. Andere lokale Ollama-Cores werden mit /api/pull
+  und demselben Lock/Progress-Worker aufgefrischt.
+  Cloud-only-Stubs koennen nicht lokal aktualisiert werden.
+  Geschuetzte Standard-/Basis-Cores DUERFEN aktualisiert,
+  aber weiterhin NICHT deinstalliert werden.
+- Neue API-Aktion installed_core_update ist admin- und
+  CSRF-geschuetzt, verifiziert den bestehenden Ollama-Eintrag
+  erneut und nutzt nur existierende Update-Worker.
+- UI-Mock mit realen GitHub-JavaScriptdateien geprueft:
+  Ollama-Installation, Updates eines lokalen und eines TCI-Cores,
+  Einzel-Deinstallation, Sicherungen und Core-Listen-Refresh PASS.
+- scripts/insights-selftest.php erwartet nun die Abwesenheit
+  der redundanten mobilen Info-Leiste und weiter den
+  Informations-Endpunkt. Vollstaendiger Server-Preflight
+  steht noch aus. Es wurden keine Modelle produktiv geaendert.
+
 BISHER PRUEFBAR
 - Die tatsaechlichen GitHub-JavaScript-Dateien wurden in einem
   isolierten Node-aehnlichen VM-/DOM-Mock ausgefuehrt: PASS.
