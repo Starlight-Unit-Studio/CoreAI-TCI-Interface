@@ -109,6 +109,29 @@ FAKE_GIT_FAIL=1 "$UPD" check > /dev/null
 [[ "$(json "$AV" error)" == 'github_unreachable' && "$(json "$AV" latest_commit)" == "$B" ]] || fail 'error keeps last result'
 [[ ! -e "$APP/var/update-request/check" ]] || fail 'check request not consumed'
 
+# Automatic updates are server-side and disabled by default. Even when
+# enabled, a one-hour Later pause prevents queueing; after the grace period
+# a new official commit may queue, but a late pause still wins before backup.
+POL="$APP/var/update-request/auto.json"
+ATT="$APP/var/update/auto-attempt.json"
+printf '{"enabled":true,"requested_by":7,"restart_ollama":false,"snooze_until":2147483647}\n' > "$POL"
+"$UPD" check > /dev/null
+[[ ! -e "$APP/var/update-request/request.json" ]] || fail 'auto update ignored the Later pause'
+printf '{"observed_commit":"%s","observed_at":1}\n' "$B" > "$ATT"
+printf '{"enabled":true,"requested_by":7,"restart_ollama":false,"snooze_until":0}\n' > "$POL"
+"$UPD" check > /dev/null
+auto="$APP/var/update-request/request.json"
+[[ -f "$auto" && "$(json "$auto" automatic)" == 'True' ]] || fail 'auto update not queued after grace'
+[[ "$(json "$auto" automatic_commit)" == "$B" ]] || fail 'auto update not pinned to checked commit'
+# The Inhaber presses 'Später' before the host begins a queued auto update.
+printf '{"enabled":true,"requested_by":7,"restart_ollama":false,"snooze_until":2147483647}\n' > "$POL"
+: > "$LOG"
+"$UPD" run > /dev/null
+[[ ! -e "$auto" && ! -e "$APP/var/update/status.json" ]] || fail 'late Later did not cancel unstarted automatic update'
+! grep -q '^setup\|^stack' "$LOG" || fail 'auto update executed despite Later pause'
+[[ "$(json "$ATT" commit)" == '' ]] || fail 'cancelled auto request marked as attempted'
+printf '{"enabled":false,"requested_by":7,"restart_ollama":false,"snooze_until":0}\n' > "$POL"
+
 # Run without a request: nothing happens.
 "$UPD" run > /dev/null
 [[ ! -e "$APP/var/update/status.json" ]] || fail 'run without request'
