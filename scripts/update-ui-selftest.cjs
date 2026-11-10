@@ -122,12 +122,18 @@ async function advance(page, ms) {
     assert.equal(await page.$eval('.cu-notes li strong', e => e.textContent), 'Neue Stimme:', 'bold stays bold, no HTML from the changelog');
     assert.equal(await page.isChecked('#cuOllama'), true, 'Ollama restart is preselected');
     assert.equal(await page.evaluate(() => document.activeElement.className), 'cu-start', 'focus on Update starten');
-    // Auto-updates are opt-in and the owner explicitly activates them.
+    // The modal covers settings, so the owner first chooses Later,
+    // then enables optional auto-updates through the regular settings UI.
     assert.equal(await page.isChecked('#updateAutoEnable'), false, 'automatic updates are disabled by default');
+    await page.click('.cu-later');
+    await page.waitForSelector('#coreaiUpdate', {state:'detached'});
     await page.check('#updateAutoEnable');
     await page.waitForFunction(() => !document.querySelector('#updateAutoEnable').disabled);
     assert(srv.calls.some(c=>c.key==='update.php' && c.action==='auto' && c.post.enabled===true),
       'the opt-in is an authenticated server action');
+    // The settings card must still allow manual opening during the snooze.
+    await page.click('#updateCardOpen');
+    await page.waitForSelector('.cu-window');
     // 'Später' persists for 60 min, suppressing the popup AND automatic start.
     await page.click('.cu-later');
     await page.waitForSelector('#coreaiUpdate', {state:'detached'});
