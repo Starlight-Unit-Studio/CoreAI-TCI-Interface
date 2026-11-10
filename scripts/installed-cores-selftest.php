@@ -56,11 +56,46 @@ foreach ([
     installed_test($e->getMessage() === $expected, 'deletion guard for ' . $target);
   }
 }
+installed_test($byName[$standard]['updatable'] && $byName[$base]['updatable']
+  && !$byName['gemma4:31b-cloud']['updatable'],
+  'protected local Cores can update while Cloud stubs cannot be pulled');
+$plans = [
+  ['base'=>$base, 'tier'=>'pro', 'cores'=>[['name'=>$standard, 'source'=>'mara']]],
+  ['base'=>'gemma4:12b', 'tier'=>'plus', 'cores'=>[['name'=>'ember-core:12b', 'source'=>'template']]],
+];
+$selected = coreui_installed_cores_update_selection($models, $standard, $standard, $base, $plans);
+installed_test($selected['kind'] === 'tci' && $selected['plan'][0]['base'] === $base,
+  'standard Core update rebuilds from its verified base');
+$selected = coreui_installed_cores_update_selection($models, $base, $standard, $base, $plans);
+installed_test($selected['kind'] === 'tci' && $selected['plan'][0]['base'] === $base,
+  'updating the protected default source rebuilds Mara with it');
+$selected = coreui_installed_cores_update_selection($models, 'ember-core:12b', $standard, $base, $plans);
+installed_test($selected['kind'] === 'tci' && $selected['plan'][0]['tier'] === 'plus',
+  'Mara tier updates use the existing Core rebuild rather than an invalid Ollama pull');
+$selected = coreui_installed_cores_update_selection($models, 'qwen3:8b', $standard, $base, $plans);
+installed_test($selected === ['kind'=>'pull','model'=>'qwen3:8b'],
+  'ordinary local Ollama tags update via the shared pull worker');
+foreach ([
+  ['gemma4:31b-cloud', 'update_not_supported'],
+  ['qwen3:7b', 'model_not_installed'],
+  ['https://evil.test', 'invalid_model_name'],
+] as [$name, $reason]) {
+  try {
+    coreui_installed_cores_update_selection($models, $name, $standard, $base, $plans);
+    installed_test(false, 'unsafe installed Core update allowed: ' . $name);
+  } catch (RuntimeException $e) {
+    installed_test($e->getMessage() === $reason, 'update validation: ' . $name);
+  }
+}
 $api = (string)file_get_contents(dirname(__DIR__) . '/api/user_settings.php');
 installed_test(str_contains($api, "=== 'installed_core_uninstall'")
   && str_contains($api, "array_key_exists('core_installed',")
   && str_contains($api, 'coreui_core_install_lock()')
   && str_contains($api, 'coreui_core_uninstall($pdo, [$target])')
+  && str_contains($api, "'installed_core_update'")
+  && str_contains($api, 'coreui_installed_cores_update_selection(')
+  && str_contains($api, "coreui_core_job_run($lock, 'coreui_core_update_run'")
+  && str_contains($api, "coreui_core_job_run($lock, 'coreui_library_run'")
   && str_contains($api, 'stu_require_permission_at_most(COREUI_CORE_INSTALL_PERMISSION_MAX, $pdo)'),
-  'inventory and deletion must use existing administrative lock and uninstall path');
+  'inventory, deletion and update must share the existing permission, lock and worker paths');
 echo "CoreAI installed Cores: inventory, protected defaults, exact deletion targets, reusable uninstall flow OK\n";
