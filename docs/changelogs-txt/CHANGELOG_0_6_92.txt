@@ -1,0 +1,17 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.92
+10.11.2026
+
+- Korrektur des Installed-Cores-Selbsttests.
+- Der kuenstliche Testname "qwen3:8b:latest" hat zwei Doppelpunkte
+  und ist als Ollama-Core-Name ungueltig. Die bestehende
+  Namensvalidierung lehnt ihn korrekt mit "invalid_model_name" ab.
+- Der Selbsttest erwartete zuvor faelschlich "model_not_installed".
+  Dies ist nun richtiggestellt.
+- Qwen ist hier ausschliesslich ein synthetischer Testeintrag;
+  der Test installiert, laedt oder loescht keine echten Cores.
+- Schutz von Standard-Core, Basis, Rollen, CSRF und der gemeinsame
+  Installer-Lock bleiben unveraendert.
+- Keine Produktivlogik geaendert. VERSION und erforderliche
+  Release-Markierungen nach dem Schema 1 Merge = 1 Version
+  auf 0.6.92 aktualisiert. Vollstaendigen Server-Preflight
+  nach dem regulären Updater erneut ausfuehren.

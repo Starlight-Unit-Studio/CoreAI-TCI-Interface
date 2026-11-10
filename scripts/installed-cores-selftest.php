@@ -44,7 +44,8 @@ installed_test(coreui_installed_cores_target($models, 'ember-core:12b', $standar
 foreach ([
   [$standard, 'core_protected'],
   [$base, 'core_protected'],
-  ['qwen3:8b:latest', 'model_not_installed'],
+  // A double-colon tag is malformed and must be rejected before inventory lookup.
+  ['qwen3:8b:latest', 'invalid_model_name'],
   ['qwen3:7b', 'model_not_installed'],
   ['http://127.0.0.1', 'invalid_model_name'],
   ['https://evil.test', 'invalid_model_name'],

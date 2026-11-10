@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.91: Gemeinsame LLM-Verwaltung und sichere Core-Deinstallation.
+# CoreAI: TCI Interface 0.6.92: Test-Fixture mit doppelt markierter Tag-Version korrigiert.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
