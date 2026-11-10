@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.90: Ollama-Bibliothek Filterfix und Core-Terminologie.
+# CoreAI: TCI Interface 0.6.91: Gemeinsame LLM-Verwaltung und sichere Core-Deinstallation.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
