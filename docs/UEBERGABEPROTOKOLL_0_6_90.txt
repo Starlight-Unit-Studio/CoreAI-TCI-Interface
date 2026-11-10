@@ -1,0 +1,67 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.90
+Datum: 10.11.2026
+Basis: main 0.6.89 nach Merge PR #241
+Branch: fix/0.6.90-ollama-parser-frontend-preflight
+
+ANLASS / BEFUND
+Preflight auf der installierten CoreAI 0.6.89 laut Betreiber-Screenshots:
+1. [FEHLER] Ollama-Modellsuche-Selbsttest:
+   "Ollama library FAIL: only valid, deduplicated local model
+   cards from the official origin"
+2. [FEHLER] Frontend-Regressions-Selftest:
+   Sichtbarer Text "Modell" in app.html.
+   Preflight endet mit 2 Problem(en).
+Die Warnung "Keine Nginx-Default-Site gefunden" ist eine
+separate WARNUNG und gehoert nicht zu diesen zwei Fehlern.
+
+URSACHE
+1. DOMDocument::textContent verbindet direkt benachbarte
+   Ueberschrift/Beschreibung ohne Trennzeichen, zum Beispiel
+   "glm-5.3Cloud only". Der bisherige Cloud-only-Filter suchte
+   nach einer Wortgrenze vor "Cloud" und uebersah diese Karte.
+2. Die neue Ollama-Verwaltung brachte sichtbare Texte mit
+   "Modell" in app.html ein. Die vorhandene CoreAI-Lore-
+   Regressionspruefung verbietet genau diese Bezeichnung.
+
+FIX
+- api/ollama_library.php: Textknoten eines HTML-Links per XPath
+  separat lesen und mit Leerzeichen verbinden; ausdruecklich
+  als "Cloud only" markierte Treffer und Varianten ausschliessen,
+  selbst wenn deren Text Parameter-/Downloadgroessen enthaelt.
+- scripts/ollama-library-selftest.php: reproduzierbare HTML-
+  Testfaelle mit verschachtelten Ueberschriften, Cloud-only
+  mit Groessenangaben, lokalen Eintraegen, Fremd-Links und
+  verifizierten lokalen Versionen.
+- app.html: Nur die sichtbaren Namen der externen Ollama-
+  Bibliothek von "Modell" in "LLM" bzw. "Suche" geaendert.
+  Interne Element-IDs und TCI Core Identitaet bleiben gleich.
+- js/coreui-model-library.js: Benutzertexte ebenfalls "LLM";
+  keine Aenderung der API-Logik oder des Installationswegs.
+- VERSION und vorgeschriebene Release-Metadaten, Archiv,
+  Cache-Hashes, README, Branding und Preflight auf 0.6.90
+  nachgezogen.
+
+VERIFIKATION
+- Lokale isolierte HTML-Reproduktion mit lxml/libxml-Verhalten:
+  erkannte lokale Eintraege qwen3.5, gemma4, some_user/LoRA-test;
+  Cloud-only glm-5.3 und remote-llm ausgesperrt (PASS).
+- PHP-RegEx-CLI: Cloud-only inkl. angezeigter 9b/5 GB sowie
+  gemischte lokale Angebote unterschieden (PASS).
+- JS-Oberflaechentexte statisch abgeglichen.
+- Vollstaendiger CoreAI-PHP-DOM-/Preflight-Test auf dieser
+  Entwicklungsumgebung noch NICHT ausgefuehrt (PHP-DOM-
+  Erweiterung fehlt hier). Betriebstest im Zielhost steht aus.
+- Kein CoreAI-Server, bestehendes Modell, Nutzerkonto oder
+  GitHub main durch den Branch veraendert.
+
+ARBEITSREGEL
+Merges erfolgen ausschliesslich durch den Betreiber.
+Jeder Merge ist eine neue Version, hier 0.6.90.
+Der integrierte GitHub-Updater ist der normale Auslieferungsweg.
+Kein neuer Preview- oder Staging-Workflow.
+
+NAECHSTER SCHRITT
+PR pruefen und durch Betreiber mergen, danach den bestehenden
+CoreAI-Updater verwenden und preflight.sh erneut ausfuehren.
+Falls Fehler bleiben, exakte Terminalausgabe fuer weiteren
+Fix-PR notieren. Keine Test-Erfolgsmeldung vor echtem PASS.

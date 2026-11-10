@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.89: Regressionstests und optionale Ollama-Kontoverbindung.
+# CoreAI: TCI Interface 0.6.90: Ollama-Bibliothek Filterfix und Core-Terminologie.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

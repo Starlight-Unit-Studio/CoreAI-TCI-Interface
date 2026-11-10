@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.6.90 - 10.11.2026
+
+- **Ollama registry filter:** Fixed the HTML text-node boundary handling. Adjacent heading and description text no longer merges into `nameCloud only`, so the search excludes cloud-only results reliably. Cloud-only model variants remain non-installable even when a page lists parameter counts or download sizes.
+- **CoreAI interface terminology:** The Ollama library's visible labels and feedback now use `LLM` instead of `Modell`, in line with CoreAI's existing user-facing terminology guard. Stable internal IDs, API fields and the TCI Core implementation are unchanged.
+- **Regression coverage:** Expanded `ollama-library-selftest.php` with mixed/local, nested heading, explicit cloud-only with size metadata, foreign-host and installed-variant cases. The existing frontend regression remains strict.
+- **Verification:** A local fixture reproduction using libxml-compatible HTML parsing and PHP regular-expression checks passed. The actual PHP DOM integration, full server preflight and real Ollama registry/download workflow must still be verified on a host with the required PHP extensions. No installed Cores, databases or accounts are modified by these code changes.
+- Version 0.6.90 follows the one-merge-one-version policy; no alternative deployment or updater mechanism introduced.
+
 ## 0.6.89 - 10.11.2026
 
 - Six existing regression test files have been updated to match established code behavior: chat-run recovery state, composer script loading order, local-only Premium Core availability, keyboard shortcut persistence, voice-sample heading and HTTP preflight page markers. The Live Voice database/HTTP investigation remains open.
