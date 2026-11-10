@@ -151,7 +151,12 @@ esac
 (( EUID == 0 )) || die 'Deinstallation erfordert root (sudo).'
 check_units
 if [[ "$ACTION" == 'request' ]]; then
-  validate_web_request
+  [[ -d "$PROJECT_ROOT/var/uninstall-request" && ! -L "$PROJECT_ROOT/var/uninstall-request" ]] \
+    || die 'Unsicheres Uninstall-Anfrageverzeichnis.'
+  if ! validate_web_request; then
+    rm -f -- "$REQUEST"
+    die 'Ungueltige Uninstall-Anfrage sicher verworfen.'
+  fi
   ACTION='archive'
 else
   [[ -r /dev/tty && -w /dev/tty ]] || die 'Eine interaktive Terminalbestaetigung wird benoetigt.'

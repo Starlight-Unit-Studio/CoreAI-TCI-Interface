@@ -60,6 +60,15 @@ if bash "$first/scripts/uninstall.sh" --purge-data </dev/null >"$WORK/purge.txt"
   echo 'Runner accepted noninteractive purge' >&2; exit 1
 fi
 [[ -f "$first/var/important-data.txt" ]] || { echo 'Invalid request touched data' >&2; exit 1; }
+if (( EUID == 0 )); then
+  printf '{"action":"uninstall","mode":"purge"}\n' > "$first/var/uninstall-request/request.json"
+  chown 33:33 "$first/var/uninstall-request/request.json"
+  chmod 0600 "$first/var/uninstall-request/request.json"
+  if bash "$first/scripts/uninstall.sh" --request >"$WORK/rejected.txt" 2>&1; then
+    echo 'Runner accepted unsafe purge request' >&2; exit 1
+  fi
+  [[ ! -e "$first/var/uninstall-request/request.json" ]] || { echo 'Invalid request not consumed' >&2; exit 1; }
+fi
 
 new_fixture second
 second="$WORK/opt/second"
