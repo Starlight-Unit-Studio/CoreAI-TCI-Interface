@@ -14,7 +14,7 @@ const validRun = {
 };
 const state = {
   messageCacheBySession:{[sessionId]:[{id:41,message:'Testfrage',character_id:'user'}]},
-  pendingBySession:{},activeAgentRunsBySession:{},liveWorkEventsBySession:{},
+  pendingBySession:{},pendingCancelBySession:{},activeAgentRunsBySession:{},liveWorkEventsBySession:{},
   thinkingPanelEl:null
 };
 let updates = 0, added = 0, outbound = 0;
