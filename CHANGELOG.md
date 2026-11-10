@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.6.91 - 10.11.2026
+
+- **Unified LLM/Core management:** The optional Ollama-account section no longer owns the library button. A dedicated **LLMs & Cores** entry in admin Core management now opens the shared library with three mobile-friendly tabs: **Ollama**, **Hugging Face** (clearly marked *In preparation*) and **Installed**.
+- **Installed Cores:** The third tab lists actual entries reported by the local Ollama service, including Mara's TCI Cores, third-party LLMs, existing cloud stubs and manually imported namespaced models. Local disk size, parameters and protection status are shown where available.
+- **Safe per-Core removal:** Admins can remove one selected Core after a two-tap confirmation. The existing serialized install/update lock, unload/delete routine and account fallback are reused. The default Core and its template-source tag remain protected, even if a forged API request tries to remove them; exact installed names are revalidated on the server.
+- **Regression coverage:** New PHP inventory/authorization self-test and extended Node UI test check three tabs, protected default/base tags, CSRF, double confirmation, installed-list refresh and updated Core selection. Docker and native preflights include these checks.
+- The usual one-merge-one-version policy is preserved. Local and external provider settings, Mara's Modelfile and the existing GitHub updater remain unchanged. Full server PHP and Ollama integration checks are pending before approval.
+
 ## 0.6.90 - 10.11.2026
 
 - **Ollama registry filter:** Fixed the HTML text-node boundary handling. Adjacent heading and description text no longer merges into `nameCloud only`, so the search excludes cloud-only results reliably. Cloud-only model variants remain non-installable even when a page lists parameter counts or download sizes.
