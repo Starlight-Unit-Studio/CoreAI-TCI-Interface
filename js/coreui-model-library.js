@@ -101,6 +101,8 @@
         text(el.InstalledStatus, state.installedCores.length + ' installierte Cores im lokalen Ollama-Dienst.');
       }).catch(function () {
         if (!state.open || state.tab !== 'installed' || serial !== state.installedRequest) return;
+        state.installedCores = [];
+        clear(el.InstalledList);
         text(el.InstalledStatus, 'Installierte Cores sind gerade nicht erreichbar. Bitte erneut öffnen.');
       });
     }
