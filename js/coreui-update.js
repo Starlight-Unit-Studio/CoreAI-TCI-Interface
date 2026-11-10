@@ -129,6 +129,11 @@
   }
 
   function snoozed(info) {
+    // The host decides the time window. Use its remaining seconds so a
+    // phone with an incorrect wall clock cannot defeat or extend the pause.
+    if (info && Number.isFinite(Number(info.snooze_seconds))) {
+      return Number(info.snooze_seconds) > 0 || dismissedUntil > Date.now();
+    }
     var serverUntil = Number(info && info.snooze_until) * 1000 || 0;
     return Math.max(serverUntil, dismissedUntil) > Date.now();
   }
@@ -214,10 +219,13 @@
       start.disabled = true;
       error.hidden = true;
       request('POST', 'later', {}).then(function (data) {
-        var until = Number(data.snooze_until) * 1000;
-        dismissedUntil = Number.isFinite(until) && until > Date.now()
-          ? until : Date.now() + SNOOZE_MS;
-        if (last && last.update) last.update.snooze_until = Math.floor(dismissedUntil / 1000);
+        var remaining = Number(data.snooze_seconds);
+        dismissedUntil = Date.now() + (Number.isFinite(remaining) && remaining > 0
+          ? remaining * 1000 : SNOOZE_MS);
+        if (last && last.update) {
+          last.update.snooze_until = Number(data.snooze_until) || 0;
+          last.update.snooze_seconds = Math.max(0, Number(data.snooze_seconds) || 3600);
+        }
         close();
         renderCard();
       }).catch(function () {
