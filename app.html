@@ -505,6 +505,11 @@
         <h4 id="coreInstallTiersTitle">STUFEN</h4>
         <ul class="core-install-tierlist" id="coreInstallTierList"></ul>
       </section>
+      <section class="core-install-library" id="coreInstallLibraryEntry" hidden>
+        <h4>LLM-BIBLIOTHEK</h4>
+        <p class="core-install-update-info">Ollama durchsuchen, später Hugging Face nutzen und bereits installierte Cores verwalten.</p>
+        <button class="core-install-btn core-install-btn--go" id="coreInstallLibraryOpen" type="button">LLMs &amp; Cores verwalten</button>
+      </section>
       <section class="core-install-check" id="coreInstallCheck" aria-labelledby="coreInstallCheckTitle">
         <h4 id="coreInstallCheckTitle">HARDWARE-CHECK</h4>
         <dl class="core-install-rows" id="coreInstallRows"></dl>
@@ -548,7 +553,6 @@
           <a class="core-install-btn core-install-btn--go" id="coreInstallCloudLink" href="https://ollama.com" target="_blank"
             rel="noopener noreferrer" hidden>Ollama verbinden</a>
           <button class="core-install-btn" id="coreInstallCloudCheck" type="button">Status prüfen</button>
-          <button class="core-install-btn core-install-btn--go" id="coreInstallLibraryOpen" type="button">Cores verwalten</button>
         </div>
       </section>
       <p class="core-install-note" id="coreInstallNote" role="status" aria-live="polite"></p>
@@ -564,22 +568,30 @@
       <header class="core-library-head">
         <div>
           <span class="core-library-kicker">LOKALE LLM-VERWALTUNG</span>
-          <h2 id="coreLibraryTitle">Cores verwalten</h2>
-          <p>Ergänze lokale LLMs, ohne bestehende TCI Cores oder ihre Einstellungen zu verändern.</p>
+          <h2 id="coreLibraryTitle">LLMs &amp; Cores verwalten</h2>
+          <p>Neue LLMs entdecken, installierte Cores prüfen und bei Bedarf sicher entfernen.</p>
         </div>
         <button type="button" class="core-library-close" id="coreLibraryClose" aria-label="LLM-Verwaltung schließen">×</button>
       </header>
-      <div class="core-library-providers" aria-label="LLM-Quellen">
-        <div class="core-library-provider core-library-provider--active" id="coreLibraryOllamaProvider">
+      <div class="core-library-providers" role="tablist" aria-label="LLM-Bibliothek und installierte Cores">
+        <button type="button" class="core-library-provider core-library-provider--active" id="coreLibraryOllamaProvider"
+          role="tab" aria-selected="true" aria-controls="coreLibraryBrowser">
           <strong>OLLAMA</strong>
-          <span>Offizielle Ollama-Suche und lokaler Download</span>
-        </div>
-        <div class="core-library-provider core-library-provider--future" aria-disabled="true">
+          <span>Offizielle Suche</span>
+        </button>
+        <button type="button" class="core-library-provider core-library-provider--future" id="coreLibraryHfProvider"
+          role="tab" aria-selected="false" aria-disabled="true" disabled>
           <strong>HUGGING FACE</strong>
-          <span>LLM-Verwaltung in Vorbereitung</span>
-        </div>
+          <span>In Vorbereitung</span>
+        </button>
+        <button type="button" class="core-library-provider" id="coreLibraryInstalledProvider"
+          role="tab" aria-selected="false" aria-controls="coreLibraryInstalled">
+          <strong>INSTALLIERT</strong>
+          <span>Alle Cores</span>
+        </button>
       </div>
-      <section class="core-library-browser" aria-label="Ollama-Suche">
+      <section class="core-library-browser" id="coreLibraryBrowser" role="tabpanel"
+        aria-labelledby="coreLibraryOllamaProvider" aria-label="Ollama-Suche">
         <form class="core-library-search" id="coreLibrarySearchForm">
           <label for="coreLibraryQuery">LLM SUCHEN</label>
           <div class="core-library-search-controls">
@@ -590,6 +602,12 @@
         </form>
         <p class="core-library-feedback" id="coreLibraryStatus" role="status" aria-live="polite">Die Einträge werden aus der offiziellen Ollama-Suche geladen.</p>
         <div class="core-library-results" id="coreLibraryResults" role="list"></div>
+      </section>
+      <section class="core-library-installed" id="coreLibraryInstalled" role="tabpanel"
+        aria-labelledby="coreLibraryInstalledProvider" hidden>
+        <p class="core-library-installed-lead">Alle im lokalen Ollama-Dienst vorhandenen Cores, einschließlich TCI-Cores und weiterer LLMs. Der Standard-Core bleibt geschützt.</p>
+        <p class="core-library-feedback" id="coreLibraryInstalledStatus" role="status" aria-live="polite"></p>
+        <div class="core-library-installed-list" id="coreLibraryInstalledList"></div>
       </section>
       <section class="core-library-detail" id="coreLibraryDetail" hidden aria-labelledby="coreLibraryModelTitle">
         <button type="button" class="core-library-back" id="coreLibraryBack">← Zur Suche</button>
