@@ -16,6 +16,9 @@ $tmp = sys_get_temp_dir() . '/coreai-image-gen-' . bin2hex(random_bytes(4));
 mkdir($tmp . '/images', 0700, true);
 define('COREUI_IMAGE_DIR', $tmp . '/images');
 require_once $root . '/api/image_gen.php';
+// The real chat entrypoint loads compaction before invoking the agent loop.
+// This test must do likewise because its archive-marker check is not guarded.
+require_once $root . '/api/console_compaction.php';
 require_once $root . '/api/console_agent_loop.php';
 require_once $root . '/api/console_model_queue.php';
 
