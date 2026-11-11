@@ -1,0 +1,14 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.5
+Datum: 11.11.2026
+
+- Die urspruenglichen Groessen von Core, Kontext, Werkzeuge und Projekt im Handy-Chat sind wiederhergestellt.
+- Ursache: Ein Mobile-CSS-Override aus 0.7.4 verkleinerte Schrift, Innenabstaende und Symbole und verteilte die Knopfe kuenstlich ueber die gesamte Zeile.
+- Die fuer 0.7.4 hinzugefuegten Miniaturisierungsregeln wurden entfernt, nicht durch neue Spezialgroessen ersetzt.
+- Wieder gilt die Originaldarstellung aus css/console.css: 11 px Share Tech Mono, 13 px horizontaler Innenabstand, 6 px Symbolabstand und 8 px zwischen den Bloecken.
+- Auf zu schmalen Displays bleibt die Navigationsleiste horizontal wischbar, statt die vier Bereiche zu verkleinern.
+- Die vorhandenen Informationskarten (mobil und Desktop) und ihr Inhalt bleiben unveraendert. Die Startseite bleibt ohne Informationsbloecke.
+- Der Playwright-Test prueft wieder originale Abmessungen und Erreichbarkeit nach horizontalem Scrollen statt alle Knopfe auf genau 390 px zu erzwingen.
+- Offline-Regression verhindert kuenftige Schrumpfregeln. Keine Datenbank-, KI-, Modell-, Installer- oder Pet-Aenderungen.
+- Umfangreiche Browser- und Server-Preflight-Tests stehen vor dem Merge weiterhin aus.
+
+Version: 0.7.5
