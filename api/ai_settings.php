@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/model_access.php';
 require_once __DIR__ . '/user_policy.php';
+require_once __DIR__ . '/guest_access.php';
 
 function coreui_ai_settings_schema_ready(PDO $pdo): bool {
   try {
