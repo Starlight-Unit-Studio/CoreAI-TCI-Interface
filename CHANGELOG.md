@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.7.9 - 11.11.2026
+
+- **Guest images:** Guest accounts may generate **3 saved images per server calendar day** by default, configurable between 0 and 100 under Admin Core > Zugang und Schutz. Every completed image in a batch counts individually; failed or cancelled image work releases its reservation.
+- **Guest tool switches:** Separate controls for guest web search, browser research, Python and image generation, with existing guest message, network and day caps retained. Global tool restrictions still take precedence.
+- **Server-side quotas:** The existing user-scoped, atomic `stu_abuse_counters` records enforce the per-guest daily image budget; new server-date keys avoid browser-side clock manipulation. Missing quota storage fails closed.
+- **Composer:** Guests can now select images in the + menu when allowed; available credits are displayed and guest tool availability is refreshed every time the menu is opened.
+- **No new tables:** Reuses existing persisted app settings and the abuse counter table. Normal accounts, global model queue, installed models, pets and installer remain unchanged.
+- **Regression:** Updated guest access, image generation and composer intent selftests. Full target-server PHP/preflight validation is required before merging.
+
 ## 0.7.8 - 11.11.2026
 
 - **Explicit like/dislike event:** Mara now receives the actual UI event, "DAUMEN HOCH / LIKE" or "DAUMEN RUNTER / DISLIKE", including the selected response and preceding user question, instead of generic sentiment.

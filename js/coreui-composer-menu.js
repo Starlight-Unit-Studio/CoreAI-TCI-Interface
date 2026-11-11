@@ -141,7 +141,9 @@
   btn.setAttribute('aria-expanded', 'false');
 
   function loadTools(force) {
-    if (!force && tools && Date.now() - toolsAt < 60000) return Promise.resolve(tools);
+    // Guest image credits can change after every generated picture. Do not
+    // reuse a stale tool menu that still offers image generation at zero left.
+    if (!force && tools && !tools.guest && Date.now() - toolsAt < 60000) return Promise.resolve(tools);
     return fetch('./api/composer_tools.php', { credentials: 'include', cache: 'no-store', headers: { Accept: 'application/json' } })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (data) {
@@ -153,7 +155,9 @@
   function toolState(id) {
     // Unknown (older server, no answer): offered; the server checks anyway.
     var entry = tools && tools.tools ? tools.tools[id] : null;
-    return entry ? { on: !!entry.on, why: String(entry.why || '') } : { on: true, why: '' };
+    return entry
+      ? { on: !!entry.on, why: String(entry.why || ''), limit: Number(entry.limit), left: Number(entry.left) }
+      : { on: true, why: '' };
   }
   function hasCamera() {
     try {
@@ -213,7 +217,10 @@
     attach.push({ id: 'files', icon: 'file', label: 'Dateien', detail: filesAvailable ? 'PDF, Audio, Video, Dokumente' : 'Zehn Anhänge sind schon gewählt',
       disabled: !filesAvailable, run: function () { pick(DEFAULT_ACCEPT, null); } });
     var work = [
-      { id: 'image', tool: 'image', icon: 'image', label: 'Bild erstellen', detail: image.on ? 'Deine CoreAI malt ein Bild zu deiner Nachricht' : image.why,
+      { id: 'image', tool: 'image', icon: 'image', label: 'Bild erstellen',
+        detail: image.on && Number.isFinite(image.left) && Number.isFinite(image.limit)
+          ? 'Gastbilder heute: noch ' + Math.max(0, image.left) + ' von ' + Math.max(0, image.limit)
+          : image.on ? 'Deine CoreAI malt ein Bild zu deiner Nachricht' : image.why,
         disabled: !image.on, run: function () { choose('image'); } },
       { id: 'web', tool: 'web', icon: 'web', label: 'Websuche', detail: web.on ? 'Aktuelles aus dem Netz' : web.why,
         disabled: !web.on, run: function () { choose('web'); } },

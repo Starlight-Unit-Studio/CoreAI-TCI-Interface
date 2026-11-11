@@ -5312,6 +5312,36 @@ function ember_image_unlease($slot): void {
 
 /** One image step of the work loop: makes the image, shows its progress, returns the structured result. */
 function ember_image_run_tool(PDO $pdo, int $uid, string $input): array {
+  // Check and reserve ONE image, not one chat turn or one image batch.
+  // Every 2/4 image request therefore stops exactly at the guest's daily cap.
+  if (!coreui_image_tool_allowed($pdo, $uid)) {
+    $quota = coreui_guest_image_quota($pdo, $uid);
+    $err = 'image_unavailable';
+    if (is_array($quota)) {
+      if ((int)$quota['limit'] < 1 || !coreui_guest_tool_enabled($pdo, 'image')) {
+        $err = 'guest_image_disabled';
+      } elseif (empty($quota['enabled'])) {
+        $err = 'guest_image_quota_unavailable';
+      } elseif ((int)$quota['left'] < 1) {
+        $err = 'guest_image_limit_reached';
+      }
+    }
+    return ['ok'=>false, 'error'=>$err, 'detail'=>''];
+  }
+  $reservation = coreui_guest_image_reserve($pdo, $uid);
+  if (empty($reservation['ok'])) {
+    return ['ok'=>false, 'error'=>(string)($reservation['error'] ?? 'guest_image_quota_unavailable'), 'detail'=>''];
+  }
+  $saved = false;
+  try {
+    return ember_image_run_tool_reserved($pdo, $uid, $input, $saved);
+  } finally {
+    if (!$saved) coreui_guest_image_release($pdo, $reservation);
+  }
+}
+
+/** The image worker is called only after the per-image quota has been reserved. */
+function ember_image_run_tool_reserved(PDO $pdo, int $uid, string $input, bool &$saved): array {
   coreui_work_record($pdo, 'tool', 'running', 'Bild wird vorbereitet', ['source'=>'image', 'reason'=>'image_start']);
   $request = coreui_image_parse_input($input);
   $reference = !empty($request['self_reference']) ? coreui_profile_image_reference($pdo, $uid) : null;
@@ -5355,6 +5385,8 @@ function ember_image_run_tool(PDO $pdo, int $uid, string $input): array {
     }, $reference, $references,
     !empty($GLOBALS['COREUI_TURN_IMAGE_STYLE_ONLY']) ? 'style' : null);
   if (!empty($result['ok'])) {
+    // A persisted image consumes one daily image; failures/cancel refund it.
+    $saved = true;
     coreui_image_pending_add((string)$result['uuid']);
     coreui_work_record($pdo, 'artifact', 'success', 'Bild erzeugt',
       ['source'=>'image', 'elapsed_ms'=>(int)round(1000 * (float)$result['seconds']),

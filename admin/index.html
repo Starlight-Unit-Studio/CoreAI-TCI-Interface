@@ -5,7 +5,7 @@
   <meta http-equiv="Content-Language" content="de-DE" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#f0f4fa" />
-  <meta name="application-version" content="0.7.8" />
+  <meta name="application-version" content="0.7.9" />
   <meta name="application-name" content="CoreAI: TCI Interface" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface - Admin Core</title>
@@ -60,7 +60,7 @@
       <div class="settings-title-block"><span class="settings-rune" aria-hidden="true">⌬</span>
         <div><div class="settings-kicker">TERRANISCHE SYSTEMKONFIGURATION</div><h1>ADMIN CORE</h1></div>
       </div>
-      <div class="settings-version">COREAI: TCI INTERFACE // v0.7.8</div>
+      <div class="settings-version">COREAI: TCI INTERFACE // v0.7.9</div>
     </header>
     <section class="cfg-admin-auth-gate settings-panel" id="adminAccessGate" role="status" aria-live="polite">
       <h2 id="adminAccessMessage">Berechtigung wird geprüft ...</h2>
@@ -184,6 +184,33 @@
               <label class="setting-row" for="captchaEnabled">
                 <span class="setting-copy"><strong>CAPTCHA</strong><small>Kurze Rechenaufgabe im Browser bei Gast-Zugang und Registrierung. Selbst gehostet, ohne Dritte.</small></span>
                 <span class="settings-switch"><input id="captchaEnabled" type="checkbox" /><i aria-hidden="true"></i></span>
+              </label>
+            </section>
+            <section class="settings-panel cfg-card" aria-labelledby="adminGuestToolsTitle">
+              <header class="settings-panel-head">
+                <span class="settings-panel-glyph" aria-hidden="true">◇</span>
+                <div><span>GASTRECHTE</span><h3 id="adminGuestToolsTitle">Funktionen für Gäste</h3></div>
+              </header>
+              <p>Die globalen Werkzeugschalter unter Betrieb bleiben die Obergrenze. Diese Schalter gelten zusätzlich nur für Gastkonten.</p>
+              <label class="setting-row" for="guestToolWebEnabled">
+                <span class="setting-copy"><strong>WEBSUCHE</strong><small>Gastkonten dürfen normale Websuchen ausführen.</small></span>
+                <span class="settings-switch"><input id="guestToolWebEnabled" type="checkbox" /><i aria-hidden="true"></i></span>
+              </label>
+              <label class="setting-row" for="guestToolBrowseEnabled">
+                <span class="setting-copy"><strong>BROWSER</strong><small>Gastkonten dürfen Webseiten im Recherche-Werkzeug besuchen.</small></span>
+                <span class="settings-switch"><input id="guestToolBrowseEnabled" type="checkbox" /><i aria-hidden="true"></i></span>
+              </label>
+              <label class="setting-row" for="guestToolPythonEnabled">
+                <span class="setting-copy"><strong>PYTHON</strong><small>Gastkonten dürfen die vorhandene geschützte Berechnungsumgebung verwenden.</small></span>
+                <span class="settings-switch"><input id="guestToolPythonEnabled" type="checkbox" /><i aria-hidden="true"></i></span>
+              </label>
+              <label class="setting-row" for="guestToolImageEnabled">
+                <span class="setting-copy"><strong>BILDER GENERIEREN</strong><small>Gastkonten dürfen Bilder erzeugen, sofern die globale Bildgenerierung eingeschaltet ist.</small></span>
+                <span class="settings-switch"><input id="guestToolImageEnabled" type="checkbox" /><i aria-hidden="true"></i></span>
+              </label>
+              <label class="settings-field" for="guestImageDailyLimit">
+                <span><strong>BILDER PRO GAST UND TAG</strong><small>Standard: 3 erfolgreich gespeicherte Bilder pro Server-Kalendertag. 0 deaktiviert. Mehrfachaufträge zählen jedes Bild einzeln.</small></span>
+                <input id="guestImageDailyLimit" type="number" min="0" max="100" step="1" />
               </label>
             </section>
             <div class="admin-callout wide" id="guestGuardNote" hidden><b id="guestGuardTitle">SCHUTZ VOR MEHRFACH-GÄSTEN</b><p id="guestGuardText"></p></div>
@@ -440,7 +467,7 @@
   </div>
   <script src="../js/coreui-settings-menu.js?v=0905731306422182746103357"></script>
   <script src="../js/coreui-settings-tabs.js?v=0131180580469642779294886"></script>
-  <script src="../js/admin.js?v=1176698811371758609358260"></script>
+  <script src="../js/admin.js?v=4387616586924579077461802"></script>
   <script src="../js/coreui-uninstall-admin.js?v=0374348787167562905928813"></script>
   <script src="../js/coreui-image-samples.js?v=0039842433260514192405892"></script>
   <script src="../js/coreui-admin-mail.js?v=0629149284541751668734734"></script>

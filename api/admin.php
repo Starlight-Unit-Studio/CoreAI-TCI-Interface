@@ -74,6 +74,11 @@ function coreui_admin_setting_rows(PDO $pdo): array {
     'guest_message_limit' => '5',
     'guest_network_guests' => '1',
     'guest_daily_messages' => '200',
+    'guest_tool_web_enabled' => '1',
+    'guest_tool_browse_enabled' => '1',
+    'guest_tool_python_enabled' => '1',
+    'guest_tool_image_enabled' => '1',
+    'guest_image_daily_limit' => (string)COREUI_GUEST_IMAGES_DAILY_DEFAULT,
     'captcha_enabled' => '1',
     'maintenance_enabled' => '0',
     'maintenance_message' => '',
@@ -625,6 +630,7 @@ if ($action === 'memory_delete') {
 if ($action === 'settings_save') {
   $whitelist = [
     'registration_enabled', 'guest_enabled', 'guest_message_limit', 'guest_network_guests', 'guest_daily_messages',
+    'guest_tool_web_enabled', 'guest_tool_browse_enabled', 'guest_tool_python_enabled', 'guest_tool_image_enabled', 'guest_image_daily_limit',
     'captcha_enabled', 'maintenance_enabled', 'maintenance_message',
     'memory_default_enabled', 'user_system_prompt_max_chars',
     'tool_web_enabled', 'tool_browse_enabled', 'tool_python_enabled', 'tool_image_enabled',
@@ -641,6 +647,7 @@ if ($action === 'settings_save') {
     if ($key === 'guest_message_limit') $value = (string)coreui_guest_limit_normalise($value);
     if ($key === 'guest_network_guests') $value = (string)coreui_guest_network_normalise($value);
     if ($key === 'guest_daily_messages') $value = (string)coreui_guest_daily_normalise($value);
+    if ($key === 'guest_image_daily_limit') $value = (string)coreui_guest_image_limit_normalise($value);
     if ($key === 'maintenance_message') {
       if (function_exists('mb_substr')) $value = mb_substr($value, 0, 520, 'UTF-8');
       else $value = substr($value, 0, 520);

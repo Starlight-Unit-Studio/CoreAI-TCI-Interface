@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/model_access.php';
 require_once __DIR__ . '/user_policy.php';
+require_once __DIR__ . '/guest_access.php';
 
 function coreui_ai_settings_schema_ready(PDO $pdo): bool {
   try {
@@ -329,6 +330,15 @@ function coreui_ai_runtime_apply(PDO $pdo, int $uid): array {
   // 0.5.85: tools the Inhaber or an Admin blocked for this account are off
   // for it, everywhere (prompt, work loop, file tasks); global off stays off.
   $GLOBALS['COREUI_OPERATOR_RUNTIME_SETTINGS'] = coreui_user_policy_tools(coreui_operator_runtime_load($pdo), $policy);
+  // Guest-only feature switches are an additional upper bound. Owner-level
+  // global switches and account policies can never be bypassed by guests.
+  if (coreui_ai_account_is_guest($pdo, $uid)) {
+    foreach (COREUI_GUEST_TOOL_NAMES as $tool) {
+      if (!coreui_guest_tool_enabled($pdo, $tool)) {
+        $GLOBALS['COREUI_OPERATOR_RUNTIME_SETTINGS'][$tool] = false;
+      }
+    }
+  }
   // 0.6.85: Lockdown-Modus (Settings > Sicherheit): no web search and no research in the
   // browser for this account, so no foreign page can slip instructions to Mara.
   if (function_exists('coreui_security_lockdown') && coreui_security_lockdown($pdo, $uid)) {

@@ -39,6 +39,12 @@ const COREUI_GUEST_DAILY_MAX = 100000;
 const COREUI_GUEST_WINDOW = 86400;
 const COREUI_GUEST_DEVICE_COOKIE = 'coreui_guest_device';
 const COREUI_GUEST_DEVICE_DAYS = 30;
+/** Image quota is separate from the lifetime guest message allowance. */
+const COREUI_GUEST_IMAGES_DAILY_DEFAULT = 3;
+const COREUI_GUEST_IMAGES_DAILY_MAX = 100;
+const COREUI_GUEST_IMAGES_DAY_SECONDS = 86400;
+const COREUI_GUEST_TOOL_NAMES = ['web', 'browse', 'python', 'image'];
+
 
 function coreui_guest_enabled(PDO $pdo): bool {
   try {
@@ -93,6 +99,104 @@ function coreui_guest_daily_cap(PDO $pdo): int {
   }
 }
 
+/**
+ * Admin-configured guest tools. These are additional restrictions: global
+ * switches and account policies may always disable a tool as well.
+ */
+function coreui_guest_tool_enabled(PDO $pdo, string $tool): bool {
+  if (!in_array($tool, COREUI_GUEST_TOOL_NAMES, true)) return false;
+  try {
+    return stu_app_setting_get($pdo, 'guest_tool_' . $tool . '_enabled', '1') === '1';
+  } catch (Throwable $e) {
+    // Preserve legacy non-image tools, but fail closed for guest image jobs
+    // if the permission settings cannot be read from the server.
+    return $tool !== 'image';
+  }
+}
+
+/** Whole successful images per guest per server calendar day, 0 = disabled. */
+function coreui_guest_image_limit_normalise(mixed $value): int {
+  $v = trim((string)$value);
+  if (preg_match('~^\\d{1,4}$~D', $v) !== 1) return COREUI_GUEST_IMAGES_DAILY_DEFAULT;
+  return max(0, min(COREUI_GUEST_IMAGES_DAILY_MAX, (int)$v));
+}
+
+function coreui_guest_image_limit(PDO $pdo): int {
+  try {
+    return coreui_guest_image_limit_normalise(
+      stu_app_setting_get($pdo, 'guest_image_daily_limit', (string)COREUI_GUEST_IMAGES_DAILY_DEFAULT));
+  } catch (Throwable $e) {
+    return COREUI_GUEST_IMAGES_DAILY_DEFAULT;
+  }
+}
+
+/** Date is calculated on the server, never from a browser-provided timezone. */
+function coreui_guest_image_day(int $now): string {
+  return date('Y-m-d', $now);
+}
+function coreui_guest_image_counter_key(PDO $pdo, int $uid, int $now): string {
+  return coreui_abuse_key($pdo, 'guest_image_daily',
+    (string)$uid . '|' . coreui_guest_image_day($now));
+}
+function coreui_guest_image_next_day(int $now): int {
+  return (int)strtotime('tomorrow 00:00:00', $now);
+}
+
+/** Remaining images of an authenticated guest; never changes the counter. */
+function coreui_guest_image_quota(PDO $pdo, int $uid, ?int $now = null): ?array {
+  if (!coreui_guest_is($pdo, $uid)) return null;
+  $now = $now ?? time();
+  $limit = coreui_guest_image_limit($pdo);
+  $enabled = coreui_guest_tool_enabled($pdo, 'image') && $limit > 0;
+  $state = coreui_abuse_count($pdo,
+    coreui_guest_image_counter_key($pdo, $uid, $now),
+    COREUI_GUEST_IMAGES_DAY_SECONDS, 0, $now);
+  $used = max(0, (int)$state['n']);
+  $ready = (bool)$state['ok'];
+  return ['enabled'=>$enabled && $ready, 'limit'=>$limit,
+    'used'=>min($limit, $used),
+    'left'=>$enabled && $ready ? max(0, $limit - $used) : 0,
+    'retry_at'=>coreui_guest_image_next_day($now)];
+}
+
+/**
+ * Atomically reserve ONE guest image before starting the expensive image job.
+ * A failed, cancelled or unsaved image must call coreui_guest_image_release().
+ * Existing registered users bypass this quota.
+ */
+function coreui_guest_image_reserve(PDO $pdo, int $uid, ?int $now = null): array {
+  if (!coreui_guest_is($pdo, $uid)) return ['ok'=>true, 'guest'=>false];
+  $now = $now ?? time();
+  $limit = coreui_guest_image_limit($pdo);
+  if (!coreui_guest_tool_enabled($pdo, 'image') || $limit <= 0) {
+    return ['ok'=>false, 'error'=>'guest_image_disabled', 'limit'=>$limit,
+      'retry_at'=>null];
+  }
+  $key = coreui_guest_image_counter_key($pdo, $uid, $now);
+  $count = coreui_abuse_count($pdo, $key, COREUI_GUEST_IMAGES_DAY_SECONDS, 1, $now);
+  if (empty($count['ok'])) {
+    // A missing counter table must never grant guests unlimited image jobs.
+    return ['ok'=>false, 'error'=>'guest_image_quota_unavailable',
+      'limit'=>$limit, 'retry_at'=>null];
+  }
+  if ((int)$count['n'] > $limit) {
+    coreui_abuse_give_back($pdo, $key);
+    return ['ok'=>false, 'error'=>'guest_image_limit_reached', 'limit'=>$limit,
+      'retry_at'=>coreui_guest_image_next_day($now)];
+  }
+  return ['ok'=>true, 'guest'=>true, 'key'=>$key, 'limit'=>$limit,
+    'left'=>max(0, $limit - (int)$count['n'])];
+}
+
+/** Refund exactly one reservation when no usable image was saved. */
+function coreui_guest_image_release(PDO $pdo, array $reservation): void {
+  if (!empty($reservation['ok']) && !empty($reservation['guest'])
+      && is_string($reservation['key'] ?? null)
+      && preg_match('~^[a-f0-9]{64}$~D', $reservation['key']) === 1) {
+    coreui_abuse_give_back($pdo, $reservation['key']);
+  }
+}
+
 /** Counters shared by guests: their network (null if unknown) and the whole day. */
 function coreui_guest_shared_keys(PDO $pdo, ?string $network): array {
   return [
@@ -143,6 +247,7 @@ function coreui_guest_quota(PDO $pdo, int $uid, ?array $client = null): ?array {
   $dailyUsed = $daily > 0 ? coreui_abuse_count($pdo, $keys['daily'], COREUI_GUEST_WINDOW, 0)['n'] : 0;
   $shared = coreui_guest_shared_left($netBudget, $netUsed, $daily, $dailyUsed);
   $out = ['limit'=>$limit, 'used'=>$used, 'left'=>$left];
+  $out['images'] = coreui_guest_image_quota($pdo, $uid);
   if ($shared !== null && $shared < $left) {
     $out['left'] = $shared;
     $out['shared'] = ($netBudget !== null && max(0, $netBudget - $netUsed) === $shared) ? 'network' : 'daily';
