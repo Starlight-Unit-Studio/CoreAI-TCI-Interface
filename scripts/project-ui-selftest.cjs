@@ -11,6 +11,8 @@ const store=read('api/console_project_store.php');
 const knowledge=read('api/knowledge_store.php');
 const prompts=read('api/chat.php');
 const migration=read('database/migrations/037_chat_projects.sql');
+assert(!html.includes('project-mode-switch') && !html.includes('Work wird separat entwickelt'), 'CoreAI chat already is the work area');
+assert(!css.includes('project-mode-switch'), 'no dead separate mode CSS remains');
 for (const id of ['projectsCreateBtn','projectsNavList','coreuiProjectHome','projectTabChats',
   'projectTabSources','projectSourceFile','projectModalSettings','projectSettingsInstructions',
   'projectSettingsMode','projectHomeChatForm','projectModalShare','projectHomeDrawerToggle']) {
