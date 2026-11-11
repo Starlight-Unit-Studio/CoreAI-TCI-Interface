@@ -1,0 +1,18 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.11
+Datum: 11.11.2026
+Ausgangslage: CoreAI 0.7.10 - Preflight bis auf einen Fehler gruen.
+Fehler: Feedback: ./scripts/preflight.sh: Zeile 1799: node: Kommando nicht gefunden.
+Ursache: Die meisten optionalen Node-Selbsttests werden hinter command -v node ausgefuehrt. Der neue Feedback-Test lag ausserhalb dieser Abfrage und verursachte auch auf korrekten Node-freien Hosts einen falschen Preflight-Fehler.
+
+BEHEBUNG
+- scripts/feedback-ui-selftest.php: unabhaengiger, CLI-basierter PHP-Vertragstest fuer die bestehenden Daumen-Icons, gruen/rot, persistierte Auswahl, CSRF, Folgeantwort ohne Thinking/Tools und Event-DB.
+- scripts/preflight.sh: der PHP-Vertragstest laeuft im laufenden PHP-Container mit den bestehenden Benutzerrechten; Node-Test nur wenn Node installiert.
+- scripts/preflight-native.sh: PHP-Vertragstest laeuft unter www-data; optionaler Node-Test unveraendert fuer Node-Hosts.
+- PHP- und Node-Fehler werden weiter einzeln und ausfuehrlich ausgegeben.
+- Keine neue Pflicht fuer Node.js im Installer. Keine Aenderungen an produktiven Accounts oder Chat-Logik.
+
+VALIDIERUNG
+- GitHub Actions mit PHP 8.3 und Node: php -l scripts/feedback-ui-selftest.php, php scripts/feedback-ui-selftest.php, node scripts/feedback-ui-selftest.cjs, bash -n beider Preflights.
+- GitHub Actions ohne Node im PATH: pruefen, dass beide Preflights korrekte Node-Gates besitzen (kein Aufruf ausserhalb der Abfrage).
+- Nach Merge auf dem Produktivserver den offiziellen Preflight erneut durchfuehren. Er soll mit Node-fehlt-Hinweis, aber ohne falschen Feedback-Fehler beenden.
+- Das getrennte JSON 'server_error' stammt von einem PHP-Prozess; bei Wiederholung die zugehoerigen Fehlerlogs pruefen, nicht unbesehen als Feedback-Fehler einordnen.
