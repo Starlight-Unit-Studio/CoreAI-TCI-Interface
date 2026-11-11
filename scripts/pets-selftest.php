@@ -36,7 +36,7 @@ pet_test(array_keys($catalog) === ['nova', 'komet', 'orbi', 'luna', 'quanti', 'g
 foreach ($catalog as $id => [$name, $description]) {
   $file = $root . '/images/pets/' . $id . '.png';
   pet_test(is_file($file), "sprite sheet of $id");
-  pet_test(coreui_pet_sheet_check((string)file_get_contents($file)) === ['mime' => 'image/png', 'frames' => 6, 'frame_px' => 32], "$id: six transparent 32 px frames");
+  pet_test(coreui_pet_sheet_check((string)file_get_contents($file)) === ['mime' => 'image/png', 'frames' => 6, 'frame_px' => 32, 'sprite_version' => 0], "$id: six transparent 32 px frames");
   pet_test($name !== '' && mb_strlen($description) > 10 && !preg_match('~codex|chatgpt|openai~i', $name . $description), "$id: own name and description");
 }
 foreach (['codex', 'dewey', 'fireball', 'hoots', 'rocky', 'seedy', 'stacky', 'bsod', 'null'] as $foreign) {
@@ -55,7 +55,7 @@ foreach ($expect as $name => [$mime, $alpha]) {
   pet_test($info === ['mime' => $mime, 'width' => 32, 'height' => 16, 'alpha' => $alpha], "sheet info $name: " . json_encode($info));
   pet_test(getimagesizefromstring($bytes[$name])[0] === 32, "getimagesize agrees for $name");
 }
-pet_test(coreui_pet_sheet_check($bytes['lossless']) === ['mime' => 'image/webp', 'frames' => 2, 'frame_px' => 16], 'two frames of 16 px');
+pet_test(coreui_pet_sheet_check($bytes['lossless']) === ['mime' => 'image/webp', 'frames' => 2, 'frame_px' => 16, 'sprite_version' => 0], 'two frames of 16 px');
 pet_test(pet_code(fn() => coreui_pet_sheet_check($bytes['lossy'])) === 'not_transparent'
   && pet_code(fn() => coreui_pet_sheet_check($bytes['pngrgb'])) === 'not_transparent', 'a sheet without transparency is refused');
 pet_test(pet_code(fn() => coreui_pet_sheet_check('GIF89a' . str_repeat("\0", 40))) === 'invalid_file_type'
@@ -72,7 +72,10 @@ pet_test(pet_code(fn() => coreui_pet_sheet_check($png(100, 32))) === 'invalid_sh
   && pet_code(fn() => coreui_pet_sheet_check($png(25 * 16, 16))) === 'invalid_frame_count'
   && coreui_pet_sheet_check($png(24 * 16, 16))['frames'] === 24, 'square frames in one row, 2 to 24, 16 to 512 px');
 
-// --- MariaDB (COREUI_SELFTEST_DB=1, never the live database) --------------------------------------------------
+pet_test(coreui_pet_sheet_check($png(1536, 1872)) === ['mime' => 'image/png', 'frames' => 8, 'frame_px' => 192, 'sprite_version' => 1], '9-row atlas');
+pet_test(coreui_pet_sheet_check($png(1536, 2288)) === ['mime' => 'image/png', 'frames' => 8, 'frame_px' => 192, 'sprite_version' => 2], '11-row atlas');
+pet_test(pet_code(fn() => coreui_pet_sheet_check($png(1536, 1871))) === 'invalid_sheet_size', 'invalid atlas rejected');
+\n// --- MariaDB (COREUI_SELFTEST_DB=1, never the live database) --------------------------------------------------
 $dbChecked = false;
 if (getenv('COREUI_SELFTEST_DB') === '1') {
   require_once $root . '/api/config.php';
@@ -144,7 +147,8 @@ pet_test(str_contains($view, '<h2>Pet auswählen</h2>') && str_contains($view, '
 pet_test((bool)preg_match('~<script src="\./js/coreui-pets\.js\?v=\d{25}"></script>\s*<script src="\./js/coreui-pets-settings\.js\?v=\d{25}"></script>~', $html), 'settings scripts');
 pet_test((bool)preg_match('~<script src="\./js/coreui-pets\.js\?v=\d{25}"></script>\s*<script src="\./js/coreui-work-events\.js~', $read('app.html')), 'chat loads the pets');
 $work = $read('js/coreui-work-events.js');
-pet_test(str_contains($work, "petNode = pets.make(pet, 32, 'work-status-pet');") && str_contains($work, 'var pet = petLead();'), 'the pet starts the work line');
+pet_test(!str_contains($work, 'petLead()') && str_contains($read('js/coreui-pet-dock.js'), 'coreai-pet-dock'), 'pet lives in persistent dock');
+pet_test(str_contains($read('app.html'), './js/coreui-pet-dock.js?v=1') && str_contains($read('app.html'), './css/coreui-pet-dock.css?v=1'), 'chat loads dock');
 pet_test(str_contains($read('js/console-app.js'), 'window.CoreAIPets.loadCurrent();'), 'the chat loads the chosen pet');
 pet_test(str_contains($read('scripts/build-pet-sprites.py'), "PETS = {'nova': nova, 'komet': komet,"), 'sprites come from the generator');
 foreach (['scripts/preflight.sh', 'scripts/preflight-native.sh'] as $pf) {
