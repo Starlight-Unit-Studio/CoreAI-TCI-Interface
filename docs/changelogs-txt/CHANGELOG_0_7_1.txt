@@ -1,0 +1,22 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.1
+11.11.2026
+
+- Einstellungen > Pets nach den Referenz-Screenshots: Pet
+  auswaehlen, Pet hochladen, Pet mit Mara erstellen, Pet nicht
+  anzeigen. Das gewaehlte Pet steht animiert am Anfang von Maras
+  Arbeitszeile im Chat, solange sie arbeitet. Nova ist
+  vorausgewaehlt.
+- Acht eigene CoreAI-Pets (Nova, Komet, Orbi, Luna, Quanti,
+  Glimm, Raki, Sputni), Pixel-Art aus scripts/build-pet-sprites.py.
+  Nichts aus dem Referenzprodukt uebernommen.
+- Eigene Pets hochladen: transparentes PNG oder WebP, quadratische
+  Einzelbilder in einer Reihe (2 bis 24), 16 bis 512 Pixel, bis
+  5 MB, Vorschau vor dem Hochladen, Pruefung ueber die Dateikoepfe.
+  Hoechstens 12 je Konto (Migration 034), loeschbar.
+- Pet mit Mara erstellen oeffnet einen neuen Chat mit Entwurf.
+- Codex Cloud entfernt: Zeile in der Personalisierung, geplanter
+  Menueeintrag und Planungsseite (24 Seiten, 8 davon geplant).
+  Hauptknoepfe in Einstellungsfenstern behalten ihre Fuellung.
+- Neue Selbsttests, Preflights, Nginx-Freigabe, Export, Loeschung.
+- VERSION, sechs Seiten, Bootstrap, Cache-Schluessel, README,
+  Branding, Changelog, Preflight und Uebergabe auf 0.7.1.

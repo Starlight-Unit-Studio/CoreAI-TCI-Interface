@@ -1,0 +1,56 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.1
+Stand: 11.11.2026
+Basis: main 0.7.0 nach Merge von PR #252
+Branch: claude/bold-galileo-myoyi0
+
+AUFTRAG
+- Naechste Einstellungsseite nach den Referenz-Screenshots: Pets
+  (Liste, Pet hochladen, Pet mit Mara erstellen). Pets sind
+  animierte Icons am Satzanfang, die sich dauernd bewegen.
+- Zeile Codex Cloud in der Personalisierung entfernen (der Chat
+  vereint Alltag und Code bereits); danach auch Menueeintrag und
+  Planungsseite Codex Cloud entfernen.
+- Ein Pet soll vorausgewaehlt sein: Nova.
+
+UMSETZUNG
+- Pets: Maras Arbeitszeile im Chat (js/coreui-work-events.js,
+  renderStatus) beginnt mit dem gewaehlten Pet statt der drei
+  Punkte; ein Knoten je Zeile, die Animation laeuft weiter.
+- js/coreui-pets.js: Sprite-Sheet in Einzelbildern, gemeinsamer
+  Takt (140 ms), still bei prefers-reduced-motion; loadCurrent()
+  aus js/console-app.js.
+- Eigene Pets: images/pets/*.png aus scripts/build-pet-sprites.py
+  (6 Bilder je 32 px, automatische Kontur). Keine Namen oder
+  Grafiken des Referenzprodukts.
+- api/pets_store.php: Katalog, Pruefung PNG/WebP ueber Dateikoepfe
+  (Docker-GD ohne WebP), eigene Pets (Migration 034,
+  var/console_media/pet_<hex>.png|webp), Auswahl in den
+  Personalisierungs-Einstellungen (Schluessel pet).
+- api/pets.php: Liste, current, sprite (nur Besitzer), Upload
+  (multipart, CSRF), select, delete. Nginx-Freigabe pets.
+- api/account_delete.php: Pet-Dateien mit dem Konto entfernt;
+  api/account_export.php: eigene Pets im Export.
+- settings.html + js/coreui-pets-settings.js + css: Seite, Upload-
+  Fenster mit Vorschau, Loeschabfrage; Menue Pets ohne GEPLANT.
+- Personalisierung: Zeile Codex Cloud entfernt; arc-btn.pz-primary
+  mit hoeherer Gewichtung (vorher von arc-btn ueberschrieben).
+- Nova ist vorausgewaehlt (Standard 'nova' in den Personalisierungs-
+  Einstellungen); "Pet nicht anzeigen" ist eine bewusste Wahl. Ein
+  geloeschtes oder fehlendes eigenes Pet faellt auf Nova zurueck.
+- Codex Cloud: Menueeintrag und Planungsseite entfernt; Navigation
+  hat 24 Seiten, 8 davon geplant.
+
+TESTSTAND (in dieser Sitzung ausgefuehrt)
+- php -l fuer alle geaenderten PHP-Dateien.
+- scripts/pets-selftest.php mit und ohne MariaDB: OK.
+- scripts/pets-ui-selftest.cjs (Playwright): OK.
+- scripts/personalization-page-selftest.php und
+  scripts/personalization-ui-selftest.cjs, Navigation und Tabs
+  angepasst.
+- Echter HTTP-Lauf mit php -S und MariaDB: Liste, Auswahl,
+  Upload WebP, Ablehnung ohne Transparenz, Abruf nur mit
+  Anmeldung, Loeschen samt Datei.
+- Vollstaendige Suite und Versions-Guard: siehe PR.
+
+OFFEN / SPAETER
+- Konto-PIN, gesperrte Chats, CoreAI-Theme ueber alle Einstellungen.

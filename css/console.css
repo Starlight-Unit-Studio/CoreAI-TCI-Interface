@@ -8919,6 +8919,10 @@ a.core-install-btn {
 }
 .msg-row.ember .work-panel.work-flow .work-status-dots i:nth-child(2) { background: var(--violet); animation-delay: .16s; }
 .msg-row.ember .work-panel.work-flow .work-status-dots i:nth-child(3) { background: var(--cx); animation-delay: .32s; }
+/* 0.7.1: pets (Settings > Pets, js/coreui-pets.js): a sprite sheet stepped frame by frame. */
+.coreai-pet { display: inline-block; flex: 0 0 auto; background-repeat: no-repeat; vertical-align: middle; }
+.coreai-pet.is-pixel { image-rendering: pixelated; }
+.msg-row.ember .work-panel.work-flow .work-status-pet { margin: 0; }
 /* The status line already shows that Mara works; no second dot bubble. */
 .msg-row.ember .work-panel.work-flow ~ .msg-bubble .typing-dots { display: none; }
 @media (prefers-reduced-motion: reduce) {

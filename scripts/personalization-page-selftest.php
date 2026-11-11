@@ -221,8 +221,10 @@ foreach (['pzMain', 'personaMemoryEnabled', 'pzSummaryOpen', 'pzSummaryDialog', 
 pz_test(!str_contains($html, 'id="personalizationSave"') && str_contains($html, '<h3 class="sec-heading">Mara-Erinnerung</h3>')
   && str_contains($html, '<h3 class="sec-heading">Weitere Mara-Einstellungen</h3>') && str_contains($html, '<strong id="pzLabel-voice">Frühere Stimmsequenzen berücksichtigen</strong>')
   && str_contains($html, '<span>Erinnerung löschen und ausschalten</span>') && str_contains($html, 'placeholder="Fragen oder ergänzen"'), 'page after the reference, no save button');
-pz_test(substr_count($html, '<span class="notify-planned">IN VORBEREITUNG</span>', strpos($html, 'id="view-personalisierung"'), strpos($html, '<!-- WISSEN -->') - strpos($html, 'id="view-personalisierung"')) === 2,
-  'exactly Codex Cloud and Konnektorsuche are planned');
+pz_test(substr_count($html, '<span class="notify-planned">IN VORBEREITUNG</span>', strpos($html, 'id="view-personalisierung"'), strpos($html, '<!-- WISSEN -->') - strpos($html, 'id="view-personalisierung"')) === 1,
+  'only Konnektorsuche is planned (0.7.1: the Codex Cloud row is gone)');
+$pzView = substr($html, strpos($html, 'id="view-personalisierung"'), strpos($html, '<!-- WISSEN -->') - strpos($html, 'id="view-personalisierung"'));
+pz_test(!str_contains($pzView, 'Codex'), 'no Codex Cloud row in Personalisierung');
 pz_test(!str_contains($html, '<button class="cfg-tab is-planned" type="button" role="tab" id="tab-archivierte-chats"'), 'Archivierte Chats is no longer marked planned in the menu');
 $js = $read('js/coreui-personalization-settings.js');
 pz_test(str_contains($js, "request(API, 'POST', {action: 'save', settings: changes})") && str_contains($js, "{action: 'reference', slot: slot, uuid: uuid}")

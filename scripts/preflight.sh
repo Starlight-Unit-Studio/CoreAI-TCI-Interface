@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.0: Settings > Personalisierung after the reference screenshots (migration 033, memory summary, reference photos).
+# CoreAI: TCI Interface 0.7.1: Settings > Pets after the reference screenshots (migration 034, own CoreAI pets, work line).
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -157,6 +157,14 @@ UI_FILES=(
   api/memory_summary.php
   scripts/personalization-page-selftest.php
   scripts/personalization-ui-selftest.cjs
+  database/migrations/034_user_pets.sql
+  api/pets_store.php
+  api/pets.php
+  js/coreui-pets.js
+  js/coreui-pets-settings.js
+  scripts/build-pet-sprites.py
+  scripts/pets-selftest.php
+  scripts/pets-ui-selftest.cjs
   scripts/terran-terminology-selftest.cjs
   scripts/tci-language-selftest.cjs
   js/console-app.js
@@ -1225,6 +1233,14 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail "Personalisierung-Selbsttest: ${personalization_page_test:-Unbekannter Fehler}"
   fi
 
+  # 0.7.1: Settings > Pets: built-in sheets, uploads (PNG, WebP), choice, the chat work line.
+  pets_test=''
+  if pets_test="$(compose exec -T php php scripts/pets-selftest.php 2>&1)"; then
+    ok 'Pets: eigene CoreAI-Pets, Sprite-Sheets, Auswahl und Hochladen geprueft.'
+  else
+    fail "Pets-Selbsttest: ${pets_test:-Unbekannter Fehler}"
+  fi
+
   profile_reference_test=''
   if profile_reference_test="$(compose exec -T php php scripts/profile-reference-selftest.php 2>&1)"; then
     if [[ "$profile_reference_test" == PARTIAL:* ]]; then
@@ -1485,6 +1501,16 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       fi
     else
       warn 'Chat-Menue: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+    fi
+    # 0.7.1: Settings > Pets and the pet in Mara's work line; needs Playwright for Node.
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/pets-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'Pets im Browser geprueft.'
+      else
+        fail 'Pets: Oberflaechentest fehlgeschlagen.'
+      fi
+    else
+      warn 'Pets: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
     fi
     # 0.7.0: Settings > Personalisierung after the reference; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then

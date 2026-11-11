@@ -1,5 +1,15 @@
 # CoreAI: TCI Interface
 
+## 0.7.1 - 11.11.2026
+
+- **Settings > Pets after the reference screenshots:** "Pet auswählen" with "Pet hochladen", "Pet mit Mara erstellen", the pets and "Pet nicht anzeigen". A pet is an animated companion that stands at the start of Mara's work line in the chat (instead of the three dots) while she works on a request. Nova is preselected; the choice saves at once, and "Pet nicht anzeigen" brings the three dots back.
+- **Own CoreAI pets:** Eight original pixel-art companions in the Terran space style (Nova, Komet, Orbi, Luna, Quanti, Glimm, Raki, Sputni), six frames of 32 px each, drawn reproducibly by `scripts/build-pet-sprites.py` (`--check` compares the committed sheets). No pet, name or art of the reference product is used.
+- **Pet hochladen:** Name, optional description (up to 500 characters) and a sprite sheet: a transparent PNG or WebP with square frames in one row (2 to 24), 16 to 512 px high, up to 5 MB, with a live preview before uploading. The server checks format, transparency and size from the file's own bytes (PNG and WebP headers), so it also works where GD has no WebP. At most 12 own pets per account (migration 034); own pets can be deleted, a chosen one then falls back to Nova. Sprite files are served to their owner only and are removed with the account; the export lists the own pets.
+- **Pet mit Mara erstellen:** opens a new chat with a draft that explains the sprite sheet format; nothing is sent until the person sends it.
+- **Codex Cloud removed:** The row in Personalisierung, the planned entry under Programmierung and its planning page are gone, because the chat already covers everyday and code work (24 settings pages, 8 of them planned). Primary buttons in settings dialogs now keep their filled style.
+- **Tests:** New `scripts/pets-selftest.php` (pure parts, MariaDB, wiring) and `scripts/pets-ui-selftest.cjs` (Playwright, including the pet in the work line); navigation, tabs and personalization tests updated for the real Pets page and the removed row. Both Preflights list and run them; `api/pets.php` is in both nginx allowlists.
+- **Version:** One merge = 0.7.1. All six HTML pages, bootstrap, content-based cache keys, README, changelogs, handover, branding and both Preflight headers synchronized.
+
 ## 0.7.0 - 11.11.2026
 
 - **Settings > Personalisierung rebuilt after the reference screenshots:** Sections Mara-Erinnerung, Schreibstil, Referenzfotos, the style menus, Benutzerdefinierte Anweisungen and Weitere Mara-Einstellungen. Every switch and menu saves on its own (only the changed key is sent; a refused save switches back); the old save button is gone.

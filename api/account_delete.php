@@ -118,6 +118,10 @@ function coreui_account_delete_tx(PDO $pdo, int $uid): array {
     'SELECT storage_key FROM stu_console_artifacts WHERE user_id = ?', [$uid]));
   coreui_account_delete_rows($pdo, 'DELETE FROM stu_ember_py_jobs WHERE recipient_uid = ?', [$uid]);
 
+  // 0.7.1: own pets (Settings > Pets); the rows go with the account (foreign key).
+  $mediaPaths = array_merge($mediaPaths, coreui_account_delete_column($pdo,
+    "SELECT CONCAT('var/console_media/', stored_name) FROM stu_user_pets WHERE user_id = ?", [$uid]));
+  coreui_account_delete_rows($pdo, 'DELETE FROM stu_user_pets WHERE user_id = ?', [$uid]);
   // Uploads that never reached a chat, knowledge, avatars, old profile photos.
   $mediaPaths = array_merge($mediaPaths, coreui_account_delete_column($pdo, 'SELECT rel_path FROM stu_console_media WHERE user_id = ?', [$uid]));
   coreui_account_delete_rows($pdo, 'DELETE FROM stu_console_media WHERE user_id = ?', [$uid]);
