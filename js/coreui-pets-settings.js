@@ -14,10 +14,10 @@
 
   var ERRORS = {
     name_required: 'Bitte gib deinem Pet einen Namen.',
-    no_file_uploaded: 'Bitte wähle ein Sprite-Sheet aus.',
+    no_file_uploaded: 'Bitte wähle ein Pet-Paket oder Sprite-Sheet aus.',
     empty_file: 'Die Datei ist leer.',
-    file_too_large: 'Das Sprite-Sheet ist größer als 5 MB.',
-    invalid_file_type: 'Bitte wähle ein PNG oder WebP.',
+    file_too_large: 'Die Datei ist zu groß (maximal 6 MB ZIP oder 5 MB Bild).',
+    invalid_file_type: 'Bitte wähle ein PNG, WebP oder OpenPet-ZIP.',
     not_transparent: 'Das Sprite-Sheet braucht einen transparenten Hintergrund.',
     invalid_sheet_size: 'Erlaubt sind 2 bis 24 quadratische Frames in einer Zeile oder OpenPet v1/v2 (1536 × 1872/2288).',
     invalid_frame_count: 'Ein Sprite-Sheet braucht 2 bis 24 Einzelbilder.',
@@ -128,7 +128,6 @@
       radio.checked = radio.value === state.selected;
       radio.disabled = !state.loaded;
     });
-    $('petLibraryAdmin').hidden = !state.canManageLibrary;
     $('petUploadOpen').disabled = !state.ready;
     $('petUploadOpen').title = state.ready ? '' : 'Das Update ist noch nicht vollständig eingespielt (Migration 034).';
   }
@@ -187,7 +186,17 @@
     $('petPreviewSprite').textContent = '';
   }
   function updateSubmit() {
-    $('petUploadSubmit').disabled = !$('petName').value.trim() || !($('petFile').files && $('petFile').files[0]);
+    var file = $('petFile').files && $('petFile').files[0];
+    var zip = file && /\.zip$/i.test(file.name);
+    $('petUploadSubmit').disabled = !file || (!zip && !$('petName').value.trim());
+  }
+  function updateFileMode(file) {
+    var zip = !!(file && /\\.zip$/i.test(file.name));
+    $('petManualFields').hidden = zip;
+    $('petImageHint').hidden = zip;
+    $('petZipHint').hidden = !zip;
+    updateSubmit();
+    return zip;
   }
   function openUpload() {
     if (!state.ready) return;
@@ -195,7 +204,7 @@
     $('petFileName').textContent = 'Keine ausgewählt';
     $('petUploadError').textContent = '';
     clearPreview();
-    updateSubmit();
+    updateFileMode(null);
     $('petUploadDialog').hidden = false;
     $('petName').focus();
   }
@@ -213,8 +222,16 @@
     $('petUploadError').textContent = '';
     clearPreview();
     $('petFileName').textContent = file ? file.name : 'Keine ausgewählt';
-    updateSubmit();
+    var zip = updateFileMode(file);
     if (!file) return;
+    if (zip) {
+      if (file.size > 6 * 1024 * 1024) $('petUploadError').textContent = ERRORS.file_too_large;
+      else {
+        $('petPreviewInfo').textContent = 'OpenPet-ZIP: Name und Animation werden beim Import geprüft.';
+        $('petPreview').hidden = false;
+      }
+      return;
+    }
     if (['image/png', 'image/webp'].indexOf(file.type) < 0) { $('petUploadError').textContent = ERRORS.invalid_file_type; return; }
     if (file.size > 5 * 1024 * 1024) { $('petUploadError').textContent = ERRORS.file_too_large; return; }
     state.previewUrl = URL.createObjectURL(file);
@@ -238,8 +255,10 @@
   $('petUploadForm').addEventListener('submit', function (e) {
     e.preventDefault();
     var file = $('petFile').files && $('petFile').files[0];
-    if (!$('petName').value.trim()) { $('petUploadError').textContent = ERRORS.name_required; return; }
     if (!file) { $('petUploadError').textContent = ERRORS.no_file_uploaded; return; }
+    var zip = /\\.zip$/i.test(file.name);
+    if (!zip && !$('petName').value.trim()) { $('petUploadError').textContent = ERRORS.name_required; return; }
+    if (file.size > (zip ? 6 : 5) * 1024 * 1024) { $('petUploadError').textContent = ERRORS.file_too_large; return; }
     var form = new FormData();
     form.append('name', $('petName').value);
     form.append('description', $('petDescription').value);
@@ -254,42 +273,6 @@
       $('petUploadError').textContent = errText(err, 'Das Pet konnte nicht hochgeladen werden.');
       updateSubmit();
     });
-  });
-
-  // Only the server-verified owner can publish system-wide presets.
-  // Merely downloading a sprite from a community gallery is not a license.
-  $('petLibraryForm').addEventListener('submit', function (event) {
-    event.preventDefault();
-    if (!state.canManageLibrary) return;
-    var formEl = $('petLibraryForm');
-    var file = $('petLibraryFile').files && $('petLibraryFile').files[0];
-    var errorEl = $('petLibraryError');
-    errorEl.textContent = '';
-    if (!file || file.size > 6 * 1024 * 1024) {
-      errorEl.textContent = 'Bitte ein vollständiges .openpet.zip bis 6 MB auswählen.';
-      return;
-    }
-    if (!$('petLibraryConfirm').checked || !formEl.checkValidity()) {
-      errorEl.textContent = 'Lizenz, Urheber, Originalquelle und konkreten Rechtebeleg prüfen und bestätigen.';
-      return;
-    }
-    var payload = new FormData();
-    payload.append('action', 'library_import');
-    payload.append('file', file);
-    payload.append('license', $('petLibraryLicense').value);
-    payload.append('rights_holder', $('petLibraryHolder').value);
-    payload.append('source_url', $('petLibrarySource').value);
-    payload.append('evidence_url', $('petLibraryEvidence').value);
-    payload.append('rights_confirmed', 'yes');
-    var button = $('petLibrarySubmit');
-    button.disabled = true;
-    request('POST', payload, true).then(function (data) {
-      apply(data);
-      formEl.reset();
-      status('„' + data.pet.name + '“ steht jetzt als freigegebenes Standard-Pet allen Konten zur Verfügung.');
-    }).catch(function (err) {
-      errorEl.textContent = errText(err, 'Das Pet konnte nicht veröffentlicht werden.');
-    }).then(function () { button.disabled = false; });
   });
 
   // --- Delete ---------------------------------------------------------------------------------------------
