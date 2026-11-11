@@ -133,8 +133,13 @@ function coreui_composer_tools_answer(bool $guest, bool $image, bool $web, bool 
       && (int)($imageQuota['left'] ?? 0) < 1 && !empty($imageQuota['enabled'])) {
     $imageOff = 'Bildlimit für heute erreicht';
   }
+  $imageTool = ['on' => $image, 'why' => $image ? '' : $imageOff];
+  if ($guest && is_array($imageQuota)) {
+    $imageTool['limit'] = max(0, (int)($imageQuota['limit'] ?? 0));
+    $imageTool['left'] = max(0, (int)($imageQuota['left'] ?? 0));
+  }
   return ['ok' => true, 'guest' => $guest, 'tools' => [
-    'image' => ['on' => $image, 'why' => $image ? '' : $imageOff],
+    'image' => $imageTool,
     'web' => ['on' => $web, 'why' => $web ? '' : $off],
     'browse' => ['on' => $browse, 'why' => $browse ? '' : $off],
   ], 'planned' => ['deep_research', 'connectors']];
