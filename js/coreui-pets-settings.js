@@ -191,7 +191,7 @@
     $('petUploadSubmit').disabled = !file || (!zip && !$('petName').value.trim());
   }
   function updateFileMode(file) {
-    var zip = !!(file && /\\.zip$/i.test(file.name));
+    var zip = !!(file && /\.zip$/i.test(file.name));
     $('petManualFields').hidden = zip;
     $('petImageHint').hidden = zip;
     $('petZipHint').hidden = !zip;
@@ -256,7 +256,7 @@
     e.preventDefault();
     var file = $('petFile').files && $('petFile').files[0];
     if (!file) { $('petUploadError').textContent = ERRORS.no_file_uploaded; return; }
-    var zip = /\\.zip$/i.test(file.name);
+    var zip = /\.zip$/i.test(file.name);
     if (!zip && !$('petName').value.trim()) { $('petUploadError').textContent = ERRORS.name_required; return; }
     if (file.size > (zip ? 6 : 5) * 1024 * 1024) { $('petUploadError').textContent = ERRORS.file_too_large; return; }
     var form = new FormData();
