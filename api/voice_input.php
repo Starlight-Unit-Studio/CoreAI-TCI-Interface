@@ -9,8 +9,8 @@ declare(strict_types=1);
  *                                    terms, terms_ready (0.6.22)
  *   GET ?action=transcript&uuid=..   state: done (text), pending, silent, failed or none
  *   POST ?action=terms {terms}       KI-Profil: names and terms for voice messages (0.6.22)
- *   0.7.14: also dictation (on unless switched off) and the key of the account's recordings on
- *   this device; dictation itself is api/voice_dictate.php.
+ *   0.7.15: also "dictation" (Settings > Stimme > Diktierfunktion aktivieren: the microphone
+ *   button, on unless switched off) and the key of the account's recordings on this device.
  *
  * A voice message itself is an ordinary attachment (api/console_upload.php)
  * that is sent at once; Mara hears the WAV in her own call (api/chat.php).

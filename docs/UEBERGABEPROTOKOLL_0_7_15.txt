@@ -1,0 +1,40 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.15
+Datum: 11.11.2026
+Basis: main 0.7.14 nach Merge von PR #267
+Branch: claude/bold-galileo-myoyi0
+Thema: Diktierfunktion ist der vorhandene Mikrofonknopf
+
+AUSGANGSLAGE
+0.7.14 hatte "Diktierfunktion aktivieren" als zweiten Knopf im
+Eingabefeld gebaut (Text ins Feld). Der Betreiber: Diktieren gibt es
+laengst, das ist der Mikrofonknopf neben Senden; der Schalter in
+Einstellungen > Stimme ist dazu da, diesen Knopf bzw. die Funktion
+zu deaktivieren.
+
+UMSETZUNG
+- js/coreui-voice-input.js: zweiter Knopf (btnDictate), Diktat-Upload
+  und Einfuegen ins Feld entfernt. "dictation" aus dem Status zeigt
+  den Mikrofonknopf (an) oder entfernt ihn (aus); eine laufende oder
+  wartende Stimmsequenz wird vorher abgeschlossen. Mitschriften unter
+  Stimmsequenzen bleiben auch ohne Knopf sichtbar. Jede Stimmsequenz
+  bleibt wie in 0.7.14 auf dem Geraet gespeichert.
+- api/voice_dictate.php entfernt, COREUI_VOICE_DICTATION_MAX_BYTES
+  entfernt, nginx-Freigabe voice_dictate in beiden Vorlagen entfernt,
+  CSS has-dictate entfernt.
+- settings.html: Texte ohne Diktate; Diktieren-Zeile: "Verwende die
+  Diktierfunktion im Chat-Eingabefeld: den Mikrofonknopf neben Senden
+  fuer Stimmsequenzen."
+- Server: stu_user_voice_settings.dictation (Migration 036) bleibt und
+  schaltet jetzt den Mikrofonknopf (NULL = an).
+
+TESTS (in diesem Container ausgefuehrt)
+- php -l fuer die geaenderten PHP-Dateien.
+- scripts/voice-input-selftest.php: Seitenpruefung wieder wie vor
+  0.7.14 (das Mikrofon schreibt nie ins Eingabefeld).
+- scripts/voice-settings-selftest.php (mit Datenbank): kein
+  Diktat-Endpunkt, nginx wie in 0.7.13, Status mit dictation.
+- scripts/voice-recordings-ui-selftest.cjs (neu, ersetzt
+  voice-dictation-ui-selftest.cjs), voice-settings-ui-selftest.cjs,
+  voice-input-ui-selftest.cjs.
+- python3 scripts/version-merge-check.py --base-version 0.7.14
+Version: 0.7.15

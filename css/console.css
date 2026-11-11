@@ -3637,11 +3637,6 @@ audio.msg-image {
   grid-template-columns: 52px minmax(0, 1fr) 46px 56px;
 }
 
-/* 0.7.14: dictation (Settings > Stimme), a second button before the microphone. */
-.composer-inner.has-mic.has-dictate {
-  grid-template-columns: 52px minmax(0, 1fr) 46px 46px 56px;
-}
-
 .composer-mic-btn {
   position: relative;
   display: grid;
@@ -5429,10 +5424,6 @@ a.core-install-btn {
 
   .composer-inner.has-mic {
     grid-template-columns: 46px minmax(0, 1fr) 42px 50px;
-  }
-
-  .composer-inner.has-mic.has-dictate {
-    grid-template-columns: 46px minmax(0, 1fr) 40px 40px 50px;
   }
 
 

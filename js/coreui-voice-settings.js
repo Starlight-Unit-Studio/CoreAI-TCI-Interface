@@ -2,9 +2,9 @@
    Stimme: a dialog grouped by language (Deutsch, Englisch) with every voice CoreAI offers
    (config/voice/mara-voice.json "choices", free licenses only); a tap plays Mara's short
    sentence in that voice (api/voice.php?action=preview), "Fertig" saves, "Abbrechen" keeps the
-   old choice. Sprache: the language of Stimmsequenzen and dictations ("Automatisch erkennen" or
-   a fixed language; unset = the account's main language). Diktieren: the dictation button in
-   the chat input field. Zuletzt verwendete Aufnahmen: the last 20 recordings in this browser
+   old choice. Sprache: the language of Stimmsequenzen ("Automatisch erkennen" or a fixed
+   language; unset = the account's main language). Diktieren: 0.7.15 the microphone button in
+   the chat input field, shown or hidden. Zuletzt verwendete Aufnahmen: the last 20 recordings in this browser
    (js/coreui-recordings.js), to play, save as a file or delete. Automatic reading aloud and the
    list of names and terms keep their own scripts (coreui-voice-read.js, coreui-voice-terms.js). */
 (function () {

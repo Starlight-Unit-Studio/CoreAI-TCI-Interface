@@ -21,7 +21,7 @@ server {
         return 404;
     }
 
-    location ~ ^/api/(?:auth|chat|console_stream|console_work_events|console_sessions|console_messages|console_actions|console_browse_stream|console_upload|console_media|console_artifact|console_artifacts|console_plan|console_insights|composer_tools|notifications|voice_input|voice_live|voice_dictate|storage|memories|user_settings|personalization|memory_summary|pets|profile|profile_media|profile_stats|knowledge|account_security|account_export|models|admin|update|voice|health)\.php$ {
+    location ~ ^/api/(?:auth|chat|console_stream|console_work_events|console_sessions|console_messages|console_actions|console_browse_stream|console_upload|console_media|console_artifact|console_artifacts|console_plan|console_insights|composer_tools|notifications|voice_input|voice_live|storage|memories|user_settings|personalization|memory_summary|pets|profile|profile_media|profile_stats|knowledge|account_security|account_export|models|admin|update|voice|health)\.php$ {
         try_files $uri =404;
         include fastcgi_params;
         fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;

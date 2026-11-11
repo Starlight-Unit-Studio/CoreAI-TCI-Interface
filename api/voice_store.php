@@ -177,7 +177,7 @@ function coreui_voice_speak(array $request): string {
 // --- 0.7.14: Settings > Stimme (voices, language of Stimmsequenzen, dictation) -----------
 
 const COREUI_VOICE_NAME_RE = '/^[a-z][a-z_]{1,31}$/';
-/** Languages of Stimmsequenzen and dictations (the Core writes the transcript); '' = the account's main language. */
+/** Languages of Stimmsequenzen (the Core writes the transcript); '' = the account's main language. */
 const COREUI_VOICE_INPUT_LANGUAGES = ['de', 'en', 'fr', 'it', 'pt', 'es'];
 /** What Mara says when a voice is heard before it is chosen. */
 const COREUI_VOICE_PREVIEW_TEXT = [

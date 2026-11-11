@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.14: Settings > Stimme (voice choice, language of Stimmsequenzen, dictation, recordings on the device).
+# CoreAI: TCI Interface 0.7.15: Settings > Stimme: "Diktierfunktion aktivieren" is the microphone button (no second dictation button).
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -145,12 +145,11 @@ UI_FILES=(
   scripts/pets-selftest.php
   scripts/pets-ui-selftest.cjs
   database/migrations/036_voice_choice.sql
-  api/voice_dictate.php
   js/coreui-recordings.js
   js/coreui-voice-settings.js
   scripts/voice-settings-selftest.php
   scripts/voice-settings-ui-selftest.cjs
-  scripts/voice-dictation-ui-selftest.cjs
+  scripts/voice-recordings-ui-selftest.cjs
   scripts/terran-terminology-selftest.cjs
   scripts/tci-language-selftest.cjs
   css/coreui-chat-tci-layout.css
@@ -1053,10 +1052,10 @@ if command -v php >/dev/null 2>&1; then
     fail "Pets-Selbsttest: ${pets_test:-Unbekannter Fehler}"
   fi
 
-  # 0.7.14: Settings > Stimme: voices to choose (free licenses), the chosen voice in plans and parts, preview, transcript language, dictation wiring.
+  # 0.7.14: Settings > Stimme: voices to choose (free licenses), the chosen voice in plans and parts, preview, transcript language; 0.7.15 the microphone switch.
   voice_settings_test=''
   if voice_settings_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/voice-settings-selftest.php" 2>&1)"; then
-    ok 'Stimme: Stimmenauswahl, Vorhoeren, Sprache der Stimmsequenzen und Diktieren geprueft.'
+    ok 'Stimme: Stimmenauswahl, Vorhoeren, Sprache der Stimmsequenzen und Mikrofon-Schalter geprueft.'
   else
     fail "Stimme-Selbsttest: ${voice_settings_test:-Unbekannter Fehler}"
   fi
@@ -1351,10 +1350,10 @@ if command -v php >/dev/null 2>&1; then
     else
       ok 'TCI CORE: Layout-Browsertest uebersprungen (Playwright nicht installiert).'
     fi
-    # 0.7.14: Settings > Stimme and dictation in the input field; needs Playwright for Node.
+    # 0.7.14/0.7.15: Settings > Stimme, the microphone switch and the recordings; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
-      if node "$PROJECT_ROOT/scripts/voice-settings-ui-selftest.cjs" >/dev/null 2>&1 && node "$PROJECT_ROOT/scripts/voice-dictation-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Stimme und Diktieren im Browser geprueft.'
+      if node "$PROJECT_ROOT/scripts/voice-settings-ui-selftest.cjs" >/dev/null 2>&1 && node "$PROJECT_ROOT/scripts/voice-recordings-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'Stimme, Mikrofon-Schalter und Aufnahmen im Browser geprueft.'
       else
         fail 'Stimme: Oberflaechentest fehlgeschlagen.'
       fi
