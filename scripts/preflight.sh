@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.97: account language selftest never writes to production DB.
+# CoreAI: TCI Interface 0.6.98: preflight fixture must never request interactive data purge.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

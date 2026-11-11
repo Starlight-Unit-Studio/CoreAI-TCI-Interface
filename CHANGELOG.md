@@ -1,5 +1,12 @@
 # CoreAI: TCI Interface
 
+## 0.6.98 - 11.11.2026
+
+- **Fix the CoreAI uninstall Preflight false failure and unintended prompt:** The isolated shell fixture executed `uninstall.sh --purge-data` under a redirected stdin and wrongly assumed it was noninteractive. The uninstall runner explicitly reads `/dev/tty`, so a live SSH terminal remained usable, displayed `COREAI DATEN ENDGUELTIG LOESCHEN` during installation, and could let the mock fixture complete. The test then falsely reported `Runner accepted noninteractive purge`, blocking the installer.
+- **Never exercise destructive mode from Preflight:** The fixture no longer executes `--purge-data`. It verifies the unchanged root runner's TTY check, exact purge confirmation phrase and exact-match confirmation guard as a non-destructive source contract. Existing dry-run, rejected fake web requests, root-only archive simulation and foreign-service preservation tests remain active.
+- **Production guard remains unchanged:** The actual uninstaller still requires explicit interactive confirmation for `--purge-data`; the installed CoreAI project is never deleted by Preflight. No production data, DB, model or user setting has been modified by this patch.
+- **Version rule:** One merge = 0.6.98. Version markers for six HTML pages, bootstrap, SHA-256 asset fingerprint, README, TXT changelog, handover, branding and both Preflight headers synchronized.
+
 ## 0.6.97 - 11.11.2026
 
 - **Stop synthetic users in production:** The per-account language selftest formerly wrote to the live MariaDB whenever `api/config.local.php` was present. It inserted `lang-xxxxxxxx@coreui.invalid` accounts and relied on a rollback that did not reliably prevent leftover accounts on some installations. Both Docker and native Preflight now explicitly force `COREUI_SELFTEST_DB=0` and verify that the language test reports the live database untouched.

@@ -1,0 +1,22 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.98
+11.11.2026
+
+- Host-Deinstaller-Selbsttest korrigiert.
+- Bisher rief die isolierte Test-Fixure uninstall.sh --purge-data
+  mit stdin aus /dev/null auf und erwartete eine Ablehnung.
+- Der produktive Deinstaller liest seine Bestaetigung jedoch
+  aus /dev/tty. Bei SSH war die Konsole deshalb weiterhin
+  interaktiv und zeigte COREAI DATEN ENDGUELTIG LOESCHEN.
+- Nach Texteingabe konnte die temporaere Test-Fixure
+  beendet werden; der Test meldete dann faelschlich
+  Runner accepted noninteractive purge und blockierte
+  das Installations-Preflight.
+- Der Preflight ruft --purge-data nun nie mehr auf.
+  Stattdessen testet er nicht-destruktiv die vorhandene
+  TTY-Sperre, die exakte Texteingabe und die Pruefung
+  auf Uebereinstimmung mit der Bestaetigung.
+- Dry-Run, fehlerhafte Web-Anfragen, isolierte Archiv-
+  Simulation und Schutz anderer Services bleiben getestet.
+- Produktive Deinstallationsbedingungen unveraendert.
+- VERSION, sechs HTML-Seiten, SHA-Cache-Key, Branding,
+  Preflights, README, Changelog und Uebergabe aktualisiert.
