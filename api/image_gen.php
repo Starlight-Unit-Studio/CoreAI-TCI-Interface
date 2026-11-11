@@ -15,8 +15,10 @@ require_once __DIR__ . '/image_png_metadata.php';
  * entry of the account and is attached to Mara's answer: it shows in the chat, survives a
  * reload, is served only to its owner (console_media.php) and is deleted with its chat or
  * account. Next to it a small JSON keeps the description, size, seed and time, so Mara knows
- * later what she made. Guests never make images; the Inhaber can switch them off for
- * everyone (Betrieb) or per account (Benutzer). The exported image carries
+ * later what she made. Guests have their own configurable, server-enforced daily
+ * image budget (default 3) and tool switch in Admin Core > Zugang und Schutz.
+ * The Inhaber can still switch off images for everyone (Betrieb) or by account.
+ * The exported image carries
  * only the subtle Quantum CoreAI logo at bottom-right; copyright, generator,
  * model and creation details are embedded in PNG/XMP metadata, not drawn as text.
  */
@@ -243,15 +245,21 @@ function coreui_image_registry_pinned(array $registry): bool {
 }
 
 /**
- * Whether Mara may make images for this account: not a guest, the switch under Betrieb
- * and the account's own rule allow it, the image service is installed and the registry
- * is pinned. The service itself is asked only when an image is made.
+ * Guest images obey the same global and per-account tool restrictions as normal
+ * users, plus the owner's guest switch and server-side daily image budget.
+ * Rechecked before starting every image, including each item of a 2/4 batch.
  */
 function coreui_image_tool_allowed(PDO $pdo, int $uid): bool {
   if ($uid <= 0 || !coreui_image_registry_pinned(coreui_image_registry())) return false;
-  if (function_exists('coreui_ai_account_is_guest') && coreui_ai_account_is_guest($pdo, $uid)) return false;
   $configured = defined('STU_IMAGE_ENABLED') ? (bool)STU_IMAGE_ENABLED : true;
-  return function_exists('coreui_runtime_tool_enabled') ? coreui_runtime_tool_enabled('image', $configured) : $configured;
+  $runtimeOn = function_exists('coreui_runtime_tool_enabled')
+    ? coreui_runtime_tool_enabled('image', $configured) : $configured;
+  if (!$runtimeOn) return false;
+  if (function_exists('coreui_guest_is') && coreui_guest_is($pdo, $uid)) {
+    $quota = coreui_guest_image_quota($pdo, $uid);
+    return is_array($quota) && !empty($quota['enabled']) && (int)$quota['left'] > 0;
+  }
+  return true;
 }
 
 /** One HTTP call to the image service: [status, json or null, raw body]. */
@@ -591,6 +599,9 @@ function coreui_image_error_text(array $result): string {
     'image_loading' => 'Der Bilddienst laedt gerade noch seine Gewichte'
       . (($result['detail'] ?? '') !== '' ? ' (' . (int)$result['detail'] . ' Prozent)' : '') . '. Bitte in ein paar Minuten noch einmal.',
     'image_unreachable', 'image_unavailable' => 'Der Bilddienst ist gerade nicht bereit.',
+    'guest_image_limit_reached' => 'Du hast dein Tageslimit fuer Gastbilder erreicht. Weitere Bilder sind ab morgen (Serverzeit) wieder moeglich.',
+    'guest_image_disabled' => 'Die Bildgenerierung ist fuer Gastkonten im Admin Core deaktiviert.',
+    'guest_image_quota_unavailable' => 'Das Gast-Bildkontingent ist momentan nicht erreichbar. Es wurde kein Bild gestartet.',
     'image_busy', 'model_queue_timeout' => 'Gerade laeuft schon eine andere Arbeit; das Bild konnte nicht starten.',
     'image_memory' => 'Fuer das Bild ist gerade nicht genug Arbeitsspeicher frei.',
     'image_timeout' => 'Das Bild hat zu lange gedauert und wurde abgebrochen.',
