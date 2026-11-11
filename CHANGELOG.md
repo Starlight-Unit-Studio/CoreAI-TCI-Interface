@@ -1,5 +1,12 @@
 # CoreAI: TCI Interface
 
+## 0.7.11 - 11.11.2026
+
+- **Node.js-optional feedback checks:** Both Compose and native preflights now always verify feedback icons, persisted votes, authenticated events and Mara's no-thinking follow-up using the PHP-only contract test. The existing Node.js test runs additionally only when the optional Node runtime is installed.
+- **No false red preflight:** Missing Node.js on a correctly installed CoreAI host now emits a clear warning, not a failing feedback check. Real PHP and Node contract failures still cause a failing preflight with the error details.
+- **No new installer requirement:** Normal chat servers do not need Node.js installed. User accounts, feedback business logic, Ollama, guest quotas and database schemas remain unchanged.
+- **Outstanding separate issue:** A PHP JSON `server_error` observed in another selftest must be investigated independently if it persists.
+
 ## 0.7.10 - 11.11.2026
 
 - **Correct outdated preflight assumptions:** Restore the expected four mobile insight buttons in active chats, accept fingerprinted assets for the permanent pet dock, and recognize the additional Vision callback behind both NRW weather routing callbacks.

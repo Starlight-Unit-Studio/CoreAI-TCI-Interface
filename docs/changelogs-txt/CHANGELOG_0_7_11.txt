@@ -1,0 +1,10 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.11
+Datum: 11.11.2026
+
+- Feedback-Preflight: Node.js ist fuer den normalen CoreAI-Serverbetrieb optional. Der Feedback-Test laeuft nun bei jeder Preflight-Pruefung ueber einen eigenstaendigen PHP-Vertragstest.
+- Wenn Node.js installiert ist, wird der bisherige erweiterte JavaScript-Selbsttest weiterhin ausgefuehrt. Fehlt Node.js, gibt der Preflight einen Hinweis statt eines falschen Fehlers aus.
+- Die Fehlerausgaben bleiben sichtbar und ein tatsaechlicher Fehler in der Daumenbewertung oder ihrem Backend fuehrt weiterhin zu einem Preflight-Fehler.
+- Docker- und native Preflights verwenden denselben Sicherheitsvertrag. Kein zusaetzliches Pflichtpaket oder unnötige Installer-Abhaengigkeit.
+- Das separate JSON-Ergebnis {"ok":false,"error":"server_error"} aus der PHP-Selbsttest-Ausgabe wird nicht als identisch mit dem Node-Problem eingestuft; bei erneutem Auftreten Server-Logs untersuchen.
+- Feedback, Datenbank, Gastkonten, Pet-System, Ollama-Einstellungen und produktive Toolfunktionen unveraendert.
+Version: 0.7.11
