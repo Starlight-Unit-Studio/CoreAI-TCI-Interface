@@ -1,0 +1,15 @@
+COREAI: TCI INTERFACE // HISTORICAL CHANGELOG RECONSTRUCTION 0.7.18
+Date: 12.11.2026
+Historical source merge: PR #272 on 11.11.2026, commit 15448295ffcef9069ae2c59842601427ce01d6c7.
+
+- Project navigation and project landing page with Chats and Sources.
+- Separate project files, private project-level RAG and standard/isolated project memory scope.
+- Project instructions, context selection, pinning, moving chats to projects.
+- Authenticated project file upload, download, delete and server-side project scope checks.
+- Explicit limitations: sharing/invites and separate sandbox runner were NOT provided.
+- PHP/JS/SQLite project validation included.
+
+AUDIT: PR #272 was actually merged with VERSION still 0.7.17.
+0.7.18 is the retrospectively allocated historical version slot, NOT a claim
+that the 0.7.18 VERSION file or release ZIP existed at the original merge.
+Live acceptance was not established at merge time.
