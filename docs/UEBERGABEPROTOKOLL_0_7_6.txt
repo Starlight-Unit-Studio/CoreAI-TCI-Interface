@@ -1,0 +1,27 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.6
+Datum: 11.11.2026
+Thema: Mara kann ihre gerade erzeugten Bilder nachträglich betrachten
+
+AUSGANGSLAGE
+- main 0.7.5.
+- 0.7.3 ermoeglichte bereits eine Modell-Antwort nach der Bildgenerierung, uebergab aber nur das Werkzeugergebnis als Text. Mara behauptete in Folge, ihre fertigen Pixel nicht sehen zu koennen.
+
+AENDERUNGEN
+- api/image_gen.php: coreui_image_pending_vision_paths identifiziert die intern erzeugten, nur diesem Konto zugeordneten und noch nicht an die Antwort gebundenen Bilder anhand ihrer UUID. Abgleich gegen private DB-Medienzeile und gespeicherte PNG-Datei.
+- api/chat.php: Ember Call kann die exakt fuer einen Modellaufruf serverseitig freigegebenen Bildpfade lesen; bei anderen Pfaden bleibt die bestehende Sicherheitsgrenze. ember_image_followup_vision_reply nutzt den aktiven Core, sein Persona-Systemprompt und die globale serielle Ollama-Warteschlange mit echtem Bildpayload.
+- api/console_agent_loop.php: Nach Bildabschluss zunaechst Pixel-Folgeantwort; ist Vision nicht moeglich, eine ehrlich formulierte Textantwort. Kein rekursiver Tool-Aufruf.
+- api/image_gen.php: Werkzeugresultat widerspricht dem neuen Vision-Modus nicht mehr.
+- scripts/image-gen-selftest.php: neue Tests fuer die beiden Pfade sowie Kontoeigentum, Dateipfad und Anhangserhalt.
+
+SICHERHEIT
+- Kein Bild wird anhand eines vom Client gelieferten Pfads freigegeben.
+- Nur verifizierte private Medien dieses angemeldeten Kontos sind fuer den einen Bild-Vision-Call zulaessig. Whitelist wird danach entfernt.
+- Nicht-Vision-Cores erhalten den textlichen Fallback; kein erzwungener Provider-/Modellwechsel.
+- Kein Modelfile, Provider, Datenbankschema, Pet, UI-Layout oder bestehender Auftrags-Scheduler angepasst.
+
+ABNAHME VOR MERGE
+- php -l api/chat.php api/image_gen.php api/console_agent_loop.php (einzeln).
+- php scripts/image-gen-selftest.php und php scripts/agent-loop-selftest.php.
+- python3 scripts/version-merge-check.py --base-version 0.7.5
+- Vollstaendige Preflights inkl. Bild- und Textantwort am Smartphone, mit Vision-Core und ohne Vision-Core.
+- Keine Behauptung ueber erfolgreiche Live-Testdurchfuehrung ohne bestaetigte Tests.
