@@ -487,6 +487,11 @@
       var selected = String(state.activeSessionId || rememberedActiveSession());
       state.sessions = d.sessions;
       if (selected && sessionById(selected)) state.activeSessionId = selected;
+      // Project navigation loads after login and whenever the session list
+      // refreshes. The project's first pre-auth request may have failed.
+      if (window.CoreAIProjects && typeof window.CoreAIProjects.refresh === 'function') {
+        window.CoreAIProjects.refresh().catch(function () {});
+      }
     });
   }
 
