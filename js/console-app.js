@@ -242,7 +242,7 @@
     var current = pets.getActivity();
     if (type === 'waiting' && /ANTWORTET/.test(label || '')) pets.setActivity('running');
     else if (type === 'error') pets.setActivity('failed');
-    else if (type === 'online' && current === 'running') pets.setActivity('review');
+    else if (type === 'online' && (current === 'running' || current === 'waiting')) pets.setActivity('review');
   }
 
   // ── Session-Zugriff ──────────────────────────────────────
@@ -393,7 +393,7 @@
     state.waitingEmber = !!(ses && state.pendingBySession[ses.id]);
     if (window.CoreAIPets && typeof window.CoreAIPets.setActivity === 'function') {
       if (state.waitingEmber) window.CoreAIPets.setActivity('running');
-      else if (window.CoreAIPets.getActivity() === 'running') window.CoreAIPets.setActivity('review');
+      else if (['running', 'waiting'].indexOf(window.CoreAIPets.getActivity()) >= 0) window.CoreAIPets.setActivity('review');
     }
     updateAgentCancelControl();
     if (chatFollow) chatFollow.refresh();
