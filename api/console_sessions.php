@@ -82,7 +82,7 @@ try {
   if ($method !== 'POST') stu_json(['ok'=>false, 'error'=>'method_not_allowed'], 405);
 
   if ($action === 'create') {
-    $session = coreui_console_session_create($pdo, (int)$uid, (string)($body['title'] ?? ''));
+    $session = coreui_console_session_create($pdo, (int)$uid, (string)($body['title'] ?? ''), (string)($body['project_id'] ?? ''));
     stu_json(['ok'=>true, 'session'=>$session] + $session, 201);
   }
 
