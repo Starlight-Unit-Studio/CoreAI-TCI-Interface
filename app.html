@@ -297,6 +297,8 @@
           </button>
         </div>
       </section>
+      <!-- Only shown in a saved/active chat, never on the unsaved welcome screen. -->
+      <div class="insight-chips" id="insightChips" aria-label="Core, Kontext, Werkzeuge und Projekt" hidden></div>
       <div class="feed-vector feed-vector-a" aria-hidden="true"></div>
       <div class="feed-vector feed-vector-b" aria-hidden="true"></div>
 
@@ -326,7 +328,7 @@
       </button>
     </main>
 
-    <aside class="core-insights" id="coreInsights" aria-label="Core-Informationen"></aside>
+    <aside class="core-insights" id="coreInsights" aria-label="Core-Informationen" hidden></aside>
 
     <footer class="composer">
       <div class="composer-attachments" id="attachList" hidden aria-label="Ausgewählte Anhänge"></div>
