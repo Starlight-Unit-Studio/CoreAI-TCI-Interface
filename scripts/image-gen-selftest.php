@@ -226,6 +226,17 @@ img_gen_test($reviewCalls === 0 && $loop['out'] === 'Bild fertig',
   'cancel skips the image-review callback');
 
 
+// Runtime wiring: both normal chat and the existing attachment/voice route must
+// pass the completed images through the existing native Ollama Vision path.
+$chatSource = (string)file_get_contents($root . '/api/chat.php');
+img_gen_test(str_contains($chatSource, 'function ember_generated_image_review(')
+  && substr_count($chatSource, 'static fn(string $prompt): ?string => ember_generated_image_review(') === 2
+  && str_contains($chatSource, "function_exists('coreui_image_dir') ? coreui_image_dir() : ''"),
+  'normal and vision/voice agent loops wire a private generated PNG into native Ollama Vision');
+img_gen_test(str_contains($chatSource, '$options, $paths, $think, false)')
+  && str_contains($chatSource, "image_vision_unavailable"),
+  'Vision image bytes reach the selected Core, with a truthful fallback for text-only Cores');
+
 // --- Registry ---------------------------------------------------------------------------
 $registry = coreui_image_registry();
 img_gen_test(($registry['model']['id'] ?? '') === 'flux2-klein-4b' && coreui_image_size_label('normal') === '512 × 512'
