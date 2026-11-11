@@ -1,0 +1,14 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.3
+Datum: 11.11.2026
+
+- Mara-Nachrichten zeigen jetzt zwei Zeilen: unterstrichenes TCI CORE: und darunter den tatsaechlich konfigurierten TCI-Anzeigenamen.
+- Maras Antworten, Arbeitsprotokolle und Browserstatus beginnen unter dem Profilbild und nutzen die ganze Chatbreite. Benutzer-Nachrichten bleiben unveraendert.
+- Erzeugte Bilder werden in Maras finaler Antwort vor dem begleitenden Text angezeigt, auch nach einem Chat-Neuladen.
+- Nach einem bestaetigten Bildwerkzeug-Schritt kann Mara genau eine zusaetzliche natuerliche Antwort selbst schreiben, ohne neue Personennachricht.
+- Vorhandene globale serielle Modellwarteschlange bleibt massgeblich; keine automatische Bild-Wiederholung, kein Modellzugriff nach Abbruch und ehrlicher Werkzeug-Fallback bei Modellfehler.
+- Eine 24/7-Nachrichtenerzeugung ohne aktiven Auftrag benoetigt einen separaten serverseitigen Trigger und ist durch diesen Merge NICHT eingefuehrt.
+- Neue Regressionstests fuer TCI-Namensanzeige, Bild-Reihenfolge, Bild-Folgeantwort, Abbruch und Werkzeug-Sicherheit vorbereitet.
+- Kein Eingriff in Modelfiles, Modellwahl, Ollama, Account-Datenbank oder Installer.
+- Vollstaendige PHP-/UI-/Preflight-Abnahme auf dem Zielsystem steht noch aus.
+
+Version: 0.7.3
