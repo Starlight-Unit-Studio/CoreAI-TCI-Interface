@@ -65,8 +65,14 @@ foreach (['config/nginx.conf.template','config/runtime/nginx.conf.template'] as 
 }
 $app = (string)file_get_contents($root . '/app.html');
 $js = (string)file_get_contents($root . '/js/console-app.js');
-insights_test(str_contains($app, 'id="coreInsights"') && !str_contains($app, 'id="insightChips"')
-  && str_contains($app, './js/coreui-insights.js?v='), 'desktop info boxes stay available; the redundant mobile toolbar is removed');
+// 0.7.4 restored the four mobile session chips. They belong only to the
+// active chat, while the welcome screen stays clean; desktop cards remain.
+insights_test(str_contains($app, 'id="coreInsights"') && str_contains($app, 'id="insightChips"')
+  && str_contains($app, './js/coreui-insights.js?v=')
+  && str_contains($app, 'class="insight-chips" id="insightChips" aria-label="Core, Kontext, Werkzeuge und Projekt" hidden')
+  && str_contains($js, 'showSessionInsights(false);')
+  && str_contains($js, 'showSessionInsights(true);'),
+  'desktop insight cards and four mobile chips remain available in chats, hidden on welcome');
 insights_test(str_contains($js, 'insights.refresh(ses.id)') && str_contains($js, 'insights.observe(event)')
   && substr_count($js, 'insights.refresh(sessionId)') === 2, 'boxes refresh per session, live and after a reply');
 

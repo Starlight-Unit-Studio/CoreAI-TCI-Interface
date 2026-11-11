@@ -1,0 +1,31 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.10
+Datum: 11.11.2026
+Ziel: vier im Preflight gezeigte Fehler beseitigen, ohne vorhandene Funktionsbausteine zu deaktivieren.
+
+BEFUNDE AUS DEN SCREENSHOTS
+1. Infokaesten: "desktop info boxes stay available; the redundant mobile toolbar is removed".
+2. Pets: "chat loads dock".
+3. Wetter: "both work loops (typed and voice messages) route NRW weather; the operator can switch it off".
+4. Feedback: "UI-/Backend-Vertrag fuer Bewertungen fehlerhaft" und separater Chat-JSON-Ausdruck {"ok":false,"error":"server_error"}.
+Die Screenshots allein belegen nicht, dass die vier Produktfunktionen defekt sind.
+
+ROOT CAUSES
+1. scripts/insights-selftest.php pruefte den frueheren gewollten Wegfall der mobilen Buttons. Version 0.7.4 stellte diese fuer aktive Chats wieder her.
+2. scripts/pets-selftest.php pruefte die obsolete feste Zeichenkette "coreui-pet-dock.js?v=1", obwohl aktuelle Assets einen numerischen Cache-Fingerprint verwenden.
+3. scripts/weather-live-selftest.php erwartete als letztes Funktionsargument den Wetter-Router mit ");"; seit 0.7.6 folgt als weiteres Argument die Bildanalyse-Rueckruffunktion.
+4. scripts/preflight.sh und scripts/preflight-native.sh unterdrueckten jeden Node-Fehler mit "> /dev/null 2>&1", daher keine Diagnose. Der aktuelle Hauptzweig enthaelt den angefragten Feedback-Code mit Like/Dislike-Markierungen; ob der Live-Server dieselben Dateien laedt, muss erst mit dem neu aussagekraeftigen Test geprueft werden. Der JSON-"server_error" ist nicht zweifelsfrei dem Feedback-Selbsttest zuzuordnen.
+
+AENDERUNGEN
+- Nur veraltete Assertions in den drei obigen Tests korrigiert.
+- Feedback-Testausgabe in beiden Preflights erhalten, ohne Checks zu ueberspringen.
+- Neue GitHub-Action "Four Preflight Regression Guards" zur Wiederholung der vier Regressionstests.
+- Versions- und Changelog-Metadaten auf 0.7.10 angehoben.
+
+VALIDIERUNG
+- GitHub-Action muss gruen sein.
+- Auf dem Root-Server nach Merge die echten Preflights erneut ausfuehren.
+- Bei verbleibendem Feedbackfehler den exakten Assertion-Text bzw. JS-Syntaxfehler der neuen Preflight-Ausgabe untersuchen.
+- Den separaten JSON-server_error anhand des Fehlerzeitpunkts in den PHP-Logs genauer zuordnen.
+- Gasttest erst nach erfolgreichem realem Preflight wiederholen.
+
+KEINE AENDERUNGEN AN PRODUKTIVER GESCHAEFTSLOGIK ODER NUTZERDATEN.

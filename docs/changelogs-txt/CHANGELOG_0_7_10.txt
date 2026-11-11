@@ -1,0 +1,12 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.10
+Datum: 11.11.2026
+
+- Preflight: vier Regressionen bei Infokaesten, Pets, Wetter und Feedback im aktuellen CoreAI-Stand repariert bzw. nachvollziehbar gemacht.
+- Infokaesten: Offline-Test verlangt wieder die im aktiven Chat gewollten vier Handy-Schaltflaechen und die erhaltene Desktop-Seitenleiste; Startansicht ohne Buttons bleibt richtig.
+- Pets: Test akzeptiert release-versionierte Asset-Fingerprints des persistenten Pet-Docks statt veralteter "?v=1"-Verweise.
+- Wetter: Test beruecksichtigt den zusaetzlichen Vision-Callback hinter dem Wetter-Router in beiden Arbeits-Schleifen (Text und Stimme), ohne das Wetterrouting zu aendern.
+- Feedback: Preflight verschluckt den Originalfehler des Node-Selbsttests nicht mehr, sondern zeigt die konkrete Assertion bzw. den Node-Fehler an. Das Bewertungssystem und seine Datenbank bleiben unveraendert.
+- GitHub Actions: eigene gezielte Offline-Teststrecke fuer die vier Regressionsfaelle mit PHP, Node, Versions-Gate und Syntaxpruefung.
+- Keine Aenderungen am Ollama-Modell, Pet-Funktionen, Feedback-Datenbank, Wetterfunktion, produktiven Nutzerkonten oder deren Daten.
+- Die echten Docker-/Server-Preflights muessen nach dem Merge noch auf dem Zielsystem geprueft werden.
+Version: 0.7.10

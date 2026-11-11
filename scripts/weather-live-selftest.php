@@ -213,10 +213,14 @@ wx_test(str_contains($chat, "require_once __DIR__ . '/weather_live.php';")
   && strpos($chat, '$weather = ember_weather_live_sources($query);') < strpos($chat, '$rows = ember_web_search($query, ember_web_limit(), ember_web_timeout());')
   && str_contains($chat, "ember_cache_set('wxwdr:text', \$text);") && str_contains($chat, 'function ember_http_get_html('),
   'wired into the web step, before the search');
-wx_test(str_contains($chat, "static fn(array \$tool): array => ember_weather_route_tool(\$tool, \$loopAllowed));")
-  && str_contains($chat, "static fn(array \$tool): array => ember_weather_route_tool(\$tool, \$voiceTools));")
-  && str_contains($chat, "if (!(bool)ember_cfg('STU_EMBER_WEATHER_NRW_BROWSE', true)) return \$tool;"),
-  'both work loops (typed and voice messages) route NRW weather; the operator can switch it off');
+// 0.7.6 added an image-review callback AFTER the weather router.
+ // The weather route itself is unchanged; avoid matching the obsolete
+ // final ");" when the agent loop now has another optional argument.
+wx_test(str_contains($chat, "static fn(array \$tool): array => ember_weather_route_tool(\$tool, \$loopAllowed),")
+  && str_contains($chat, "static fn(array \$tool): array => ember_weather_route_tool(\$tool, \$voiceTools),")
+  && str_contains($chat, "if (!(bool)ember_cfg('STU_EMBER_WEATHER_NRW_BROWSE', true)) return \$tool;")
+  && substr_count($chat, 'static fn(string $prompt): ?string => ember_generated_image_review(') === 2,
+  'both work loops route NRW weather and pass optional Vision review, operator toggle remains');
 wx_test(substr_count($chat, 'coreui_weather_browse_hint()') === 2 && str_contains($chat, '$startUrl = coreui_browse_goal_start_url($goal);')
   && str_contains($chat, '$st->execute([$goal, $startUrl, $ch,'), 'Mara knows the WDR place search; the browser starts at the address of its goal');
 $voiceSrc = (string)file_get_contents($root . '/api/voice_transcribe.php');

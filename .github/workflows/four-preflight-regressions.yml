@@ -1,0 +1,57 @@
+name: Four Preflight Regression Guards
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/insights-selftest.php'
+      - 'scripts/pets-selftest.php'
+      - 'scripts/weather-live-selftest.php'
+      - 'scripts/feedback-ui-selftest.cjs'
+      - 'scripts/preflight.sh'
+      - 'scripts/preflight-native.sh'
+      - 'api/chat.php'
+      - 'app.html'
+      - '.github/workflows/four-preflight-regressions.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/insights-selftest.php'
+      - 'scripts/pets-selftest.php'
+      - 'scripts/weather-live-selftest.php'
+      - 'scripts/feedback-ui-selftest.cjs'
+      - '.github/workflows/four-preflight-regressions.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  targeted-preflight-regressions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_sqlite, gd, curl
+          coverage: none
+      - name: Validate syntax
+        run: |
+          php -l scripts/insights-selftest.php
+          php -l scripts/pets-selftest.php
+          php -l scripts/weather-live-selftest.php
+          bash -n scripts/preflight.sh
+          bash -n scripts/preflight-native.sh
+          node --check scripts/feedback-ui-selftest.cjs
+      - name: Infokasten regressions
+        run: |
+          php scripts/insights-selftest.php
+          node scripts/insights-ui-selftest.cjs
+      - name: Pet regression
+        run: php scripts/pets-selftest.php
+      - name: Offline weather regression
+        run: php scripts/weather-live-selftest.php
+      - name: Feedback UI and backend contract
+        run: node scripts/feedback-ui-selftest.cjs
+      - name: CoreAI version gate
+        run: python3 scripts/version-merge-check.py --base-version 0.7.9

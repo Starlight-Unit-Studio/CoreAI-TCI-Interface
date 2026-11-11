@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.9: Persistent red/green feedback thumbs and Mara replies.
+# CoreAI: TCI Interface 0.7.10: Persistent red/green feedback thumbs and Mara replies.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -1795,10 +1795,11 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail "$message_actions_selftest"
   fi
 
-  if node "$PROJECT_ROOT/scripts/feedback-ui-selftest.cjs" >/dev/null 2>&1; then
+  feedback_ui_selftest=''
+  if feedback_ui_selftest="$(node "$PROJECT_ROOT/scripts/feedback-ui-selftest.cjs" 2>&1)"; then
     ok 'Feedback: Daumenfarben, Speicherung, Mara-Reaktion ohne Thinking geprueft.'
   else
-    fail 'Feedback: UI-/Backend-Vertrag fuer Bewertungen fehlerhaft.'
+    fail "Feedback: UI-/Backend-Vertrag fuer Bewertungen fehlerhaft: ${feedback_ui_selftest:-Unbekannter Fehler}"
   fi
 
   if is_enabled "${COREUI_INSTALL_BROWSE:-0}"; then

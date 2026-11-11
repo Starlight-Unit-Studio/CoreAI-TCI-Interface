@@ -155,7 +155,11 @@ pet_test((bool)preg_match('~<script src="\./js/coreui-pets\.js\?v=\d{25}"></scri
 pet_test((bool)preg_match('~<script src="\./js/coreui-pets\.js\?v=\d{25}"></script>\s*<script src="\./js/coreui-work-events\.js~', $read('app.html')), 'chat loads the pets');
 $work = $read('js/coreui-work-events.js');
 pet_test(!str_contains($work, 'petLead()') && str_contains($read('js/coreui-pet-dock.js'), 'coreai-pet-dock'), 'pet lives in persistent dock');
-pet_test(str_contains($read('app.html'), './js/coreui-pet-dock.js?v=1') && str_contains($read('app.html'), './css/coreui-pet-dock.css?v=1'), 'chat loads dock');
+// Asset fingerprints are generated during releases; do not require a stale
+// literal v=1 when the functional pet-dock script and style are still loaded.
+pet_test((bool)preg_match('~\\./js/coreui-pet-dock\\.js\\?v=\\d{25}~', $read('app.html'))
+  && (bool)preg_match('~\\./css/coreui-pet-dock\\.css\\?v=\\d{25}~', $read('app.html')),
+  'chat loads the versioned persistent pet dock JS and CSS');
 pet_test(str_contains($read('js/console-app.js'), 'window.CoreAIPets.loadCurrent();'), 'the chat loads the chosen pet');
 pet_test(str_contains($read('scripts/build-pet-sprites.py'), "PETS = {'nova': nova, 'komet': komet,"), 'sprites come from the generator');
 foreach (['scripts/preflight.sh', 'scripts/preflight-native.sh'] as $pf) {

@@ -1,5 +1,12 @@
 # CoreAI: TCI Interface
 
+## 0.7.10 - 11.11.2026
+
+- **Correct outdated preflight assumptions:** Restore the expected four mobile insight buttons in active chats, accept fingerprinted assets for the permanent pet dock, and recognize the additional Vision callback behind both NRW weather routing callbacks.
+- **Diagnose feedback accurately:** Both Compose and native preflights now report the original feedback UI selftest error instead of silently discarding its output. Existing persisted thumbs, Like/Dislike prompts and one no-thinking follow-up remain unchanged.
+- **Test before deployment:** Add a focused GitHub Actions workflow for PHP/Node offline checks of all four cases, including the mandatory numeric version gate.
+- **Release:** Version 0.7.10 follows main 0.7.9. Production server preflight and the separate displayed JSON `server_error` require independent runtime verification.
+
 ## 0.7.9 - 11.11.2026
 
 - **Guest images:** Guest accounts may generate **3 saved images per server calendar day** by default, configurable between 0 and 100 under Admin Core > Zugang und Schutz. Every completed image in a batch counts individually; failed or cancelled image work releases its reservation.
