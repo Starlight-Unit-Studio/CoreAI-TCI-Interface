@@ -1,0 +1,14 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.17
+Datum: 11.11.2026
+
+- Gemeinsame Pet-Bibliothek fuer vorab rechtsgepruefte OpenPet-v1/v2-Archive implementiert.
+- Ausschliesslich der Inhaber darf ein Standard-Pet mit Urheber, konkreter Lizenz, Originalquelle und Rechtebeleg freigeben und wieder entfernen.
+- Freigegebene Pets erscheinen im Pet-Auswahlmenue aller Nutzer, mit Namensschild, Urheber-/Lizenzangabe und Quellverweis.
+- Originalspritedaten werden im privaten Verzeichnis var/console_media/pet_library gespeichert und nur ueber den authentifizierten Pet-Endpunkt ausgeliefert.
+- Sichere ZIP-Verarbeitung: genau pet.json und spritesheet.webp; Groessen-, Bildformat-, ID- und Lizenzpruefung; keine Extraktion fremder Pfade; atomare Manifest-Verwaltung.
+- Bestehende neun CoreAI-Standard-Pets, Pet-Uploads pro Nutzer, Anmeldung, bestehende Chat-Animationen und Mara als Voreinstellung bleiben erhalten.
+- Entzogene Pets sind nicht mehr auswaehlbar. Bei zuvor gewaehlten, nicht mehr vorhandenen Bibliotheks-Pets wird Mara verwendet.
+- Ein Rechte- und Herkunftsaudit des vom Nutzer bereitgestellten 56-Pakete-Archivs zeigt keine individuellen Weitergabelizenzen. Deshalb werden keine OpenPet-Galerie-Sprites ungeprueft im oeffentlichen GitHub-Release ausgeliefert.
+- Neue PHP- und JavaScript-Selbsttests sowie verpflichtender PHP-Bibliotheks-Test in beiden Preflights.
+- Keine neue Datenbanktabelle, kein Ollama-Eingriff.
+Version: 0.7.17
