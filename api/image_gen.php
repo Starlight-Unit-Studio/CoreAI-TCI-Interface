@@ -576,8 +576,8 @@ function coreui_image_result_text(array $result): string {
   if (!empty($result['ok'])) {
     return 'Das Bild ist fertig (' . (int)$result['width'] . ' × ' . (int)$result['height'] . ' Pixel, '
       . (int)round((float)$result['seconds']) . ' Sekunden) und ist als Bildanhang deiner Antwort gespeichert. '
-      . 'Sag kurz, dass es da ist, und beschreibe in ein, zwei Saetzen, was du gemalt hast. '
-      . 'Du kannst es nicht sehen; erfinde keine Einzelheiten, die nicht in deiner Beschreibung standen. '
+      . 'Wenn dir die echten Bildpixel im folgenden Vision-Schritt vorliegen, kommentiere die '
+      . 'sichtbaren Details. Sonst nutze nur die bestaetigte Beschreibung und erfinde keine Pixel. '
       . 'Schreibe keinen Platzhalter wie "(Hier erscheint das Bild)"; das Bild haengt schon an deiner Antwort. '
       . 'Kein weiteres [BILD:], ausser die Person will ausdruecklich noch ein Bild.';
   }
