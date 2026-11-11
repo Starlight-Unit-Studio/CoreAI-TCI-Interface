@@ -69,6 +69,13 @@
       var app=chatApp();
       if(app && app.getSessions) sessions=app.getSessions();
       if(current && !selected()) closeHome();
+      if(!current) {
+        var linkedProject='';
+        try {linkedProject=new URLSearchParams(location.search).get('project')||'';}catch(e){}
+        if(linkedProject && projects.some(function(p){return p.id===linkedProject;})) {
+          openProject(linkedProject);
+        }
+      }
       renderSidebar();
       if(current) {renderHeader();renderChats();}
     });
@@ -325,8 +332,5 @@
   });
   window.CoreAIProjects={refresh:refresh,openProject:openProject,closeHome:closeHome,
     updateSessions:updateSessions,assignChat:assignChat};
-  refresh().then(function(){
-    var linked='';try{linked=new URLSearchParams(location.search).get('project')||'';}catch(e){}
-    if(linked)openProject(linked);
-  }).catch(function(e){console.warn('[CoreAI] Projects deferred until sign-in:',e.message);});
+  refresh().catch(function(e){console.warn('[CoreAI] Projects deferred until sign-in:',e.message);});
 })();
