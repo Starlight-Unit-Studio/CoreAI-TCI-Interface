@@ -23,6 +23,11 @@ assert(css.includes('body.project-home-active .drawer') && css.includes('.projec
 assert(js.includes('chatAction(\'Chat umbenennen\'') && js.includes('chatAction(\'Chat löschen\''),
   'project chat ellipsis menu is actionable');
 assert(app.includes('window.CoreAIProjects.refresh().catch'), 'project list reloads after authentication');
+assert(css.includes('.project-drawer-brand {display:none;}'),
+  'reference-only brand must stay hidden in normal chat');
+assert(js.includes("linkedProject && projects.some"),
+  'project deep links reopen after authentication');
+
 assert(js.includes('startProjectChat(current,msg)'), 'project chat should invoke original chat');
 assert(app.includes('state.draftProjectId') && app.includes('project_id: projectId'), 'new chat must have a server-owned project ID');
 assert(api.includes("stu_require_csrf()"), 'mutations require CSRF');
