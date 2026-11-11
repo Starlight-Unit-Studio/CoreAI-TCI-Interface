@@ -23,6 +23,7 @@ $body = [];
 if ($method === 'POST') {
   $body = stu_read_json_body();
   $action = strtolower(trim((string)($body['action'] ?? $action)));
+  if (str_starts_with($action,'project_')) stu_require_csrf();
 }
 
 try {
@@ -41,7 +42,7 @@ try {
   }
 
   if ($action === 'projects' && $method === 'GET') {
-    stu_json(['ok'=>true,'projects'=>coreui_project_list($pdo,(int)$uid)]);
+    stu_json(['ok'=>true,'projects'=>coreui_project_list($pdo,(int)$uid),'csrf_token'=>stu_csrf_token()]);
   }
 
   if ($method === 'POST' && $action === 'project_create') {
