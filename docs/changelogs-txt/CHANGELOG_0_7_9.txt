@@ -1,0 +1,14 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.9
+Datum: 11.11.2026
+
+- Gastkonten duerfen nun standardmaessig bis zu 3 erfolgreich gespeicherte Bilder pro Server-Kalendertag erzeugen. Der Wert ist unter Admin Core > Zugang und Schutz einstellbar (0 bis 100).
+- Im Admin Core stehen zusaetzliche einzelne Gast-Schalter fuer Websuche, Browser-Recherche, Python und Bilderzeugung zur Verfuegung. Die bestehenden Schalter fuer Registrierung, Gastzugang, Nachrichten, Netzwerkbudgets, Tagesgesamtlimit und CAPTCHA bleiben unveraendert.
+- Gastfreigaben unterliegen weiterhin den globalen Betriebsschaltern und vorhandenen Benutzerregeln. Gaeste duerfen keine Betreiber- oder Modellparameter aendern.
+- Der Bildzaehler wird serverseitig und kontogebunden in stu_abuse_counters gefuehrt (bereits vorhandene Tabelle). Der Zaehler verwendet das Serverdatum; Gutschriften beginnen am naechsten Kalendertag neu.
+- Jeder Bildauftrag reserviert genau einen Platz; mehrteilige Auftraege 2/4 zaehlen jedes Bild einzeln. Fehlgeschlagene oder abgebrochene Bilder geben ihre Reservierung zurueck. Fehlt die Zaehler-Tabelle, wird kein Gastbild erzeugt.
+- Der ehemals fest gesperrte Bild-Button im Plus-Menue ist bei Gaesten freigeschaltet, wenn Kontingent, globaler Bildschalter und Gastrechte es erlauben. Das Menue zeigt die verbleibenden Tagesbilder und laedt fuer Gaeste den Status neu.
+- Keine Datenbankmigration: vorhandene App-Settings und Abuse-Counter werden verwendet.
+- Offlinetests fuer Grenzwerte, Server-Tageswechsel, Admin-Speichern, Bildzaehler-Integrationspunkte, Toolmenue und Gastrechte angepasst.
+- Keine Aenderungen an Ollama-Modellen, lokalem Betreiber-Modelfile, Nutzerkonten, Installer, Pet-System oder Chat-Nachrichten.
+
+Version: 0.7.9
