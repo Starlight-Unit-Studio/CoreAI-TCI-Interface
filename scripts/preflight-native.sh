@@ -1566,10 +1566,223 @@ if command -v php >/dev/null 2>&1; then
     fail "$message_actions_selftest"
   fi
 
-  if node "$PROJECT_ROOT/scripts/feedback-ui-selftest.cjs" >/dev/null 2>&1; then
+  feedback_ui_selftest=''
+  if feedback_ui_selftest="$(node "$PROJECT_ROOT/scripts/feedback-ui-selftest.cjs" 2>&1)"; then
     ok 'Feedback: Daumenfarben, Speicherung, Mara-Reaktion ohne Thinking geprueft.'
   else
-    fail 'Feedback: UI-/Backend-Vertrag fuer Bewertungen fehlerhaft.'
+    feedback_ui_selftest="${feedback_ui_selftest//
+
+  if [[ -f "$CONFIG_FILE" ]]; then
+    if php -r "require '$PROJECT_ROOT/api/db.php'; require '$PROJECT_ROOT/api/console_plan_store.php'; exit(coreui_plan_schema_ready(stu_pdo()) ? 0 : 1);" >/dev/null 2>&1; then
+      ok 'Migration 016: dauerhafte Markdown-Planungen bereit.'
+    else
+      fail 'Migration 016 fehlt: Markdown-Projektplanung nicht bereit.'
+    fi
+
+    if php -r "require '$PROJECT_ROOT/api/db.php'; require '$PROJECT_ROOT/api/console_agent_runs.php'; exit(coreui_agent_run_schema_ready(stu_pdo()) ? 0 : 1);" >/dev/null 2>&1; then
+      ok 'Migration 013: dauerhafte Agentenlaeufe bereit.'
+    else
+      fail 'Migration 013: Agentenlauf-Tabelle fehlt.'
+    fi
+
+    if php -r "require '$PROJECT_ROOT/api/db.php'; require '$PROJECT_ROOT/api/console_model_queue.php'; exit(coreui_model_queue_schema_ready(stu_pdo()) ? 0 : 1);" >/dev/null 2>&1; then
+      ok 'Migration 013: FIFO-Modellwarteschlange bereit.'
+    else
+      fail 'Migration 013: Modellwarteschlange fehlt.'
+    fi
+
+    if php -r "require '$PROJECT_ROOT/api/db.php'; require '$PROJECT_ROOT/api/console_work_store.php'; exit(coreui_work_schema_ready(stu_pdo()) ? 0 : 1);" >/dev/null 2>&1; then
+      ok 'Migration 012: persistente Arbeitsereignisse bereit.'
+    else
+      fail 'Migration 012: Ereignistabelle fehlt.'
+    fi
+
+    # Since 0.5.81 skills use the repository library, not per-account DB switches.
+    # Keep migration 014 as history; skills-selftest.php checks the current path.
+
+    if COREUI_PREFLIGHT_ROOT="$PROJECT_ROOT" php -r '
+      require getenv("COREUI_PREFLIGHT_ROOT") . "/api/db.php";
+      $p=stu_pdo();
+      $t=$p->query("SELECT DATA_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=\"stu_chat_messages\" AND COLUMN_NAME=\"message\"")->fetchColumn();
+      exit(strtolower((string)$t)==="longtext" ? 0 : 1);' >/dev/null 2>&1; then
+      ok 'Migration 015: lange Chat-Antworten dauerhaft speicherbar.'
+    else
+      fail 'Migration 015 fehlt: stu_chat_messages.message ist nicht LONGTEXT.'
+    fi
+
+    if php -r "require '$PROJECT_ROOT/api/db.php'; echo (int)stu_pdo()->query('SELECT COUNT(*) FROM stu_schema_migrations')->fetchColumn();" >/dev/null 2>&1; then
+      ok 'MariaDB-Verbindung und Core-Schema funktionieren.'
+    else
+      fail 'MariaDB-Verbindung oder Core-Schema fehlgeschlagen.'
+    fi
+
+    if php -r "require '$PROJECT_ROOT/api/db.php'; \$p=stu_pdo(); \$p->query('SELECT user_id FROM stu_user_ai_settings LIMIT 1'); \$p->query('SELECT id FROM stu_admin_audit LIMIT 1');" >/dev/null 2>&1; then
+      ok 'Migration 002: Nutzer-KI-Einstellungen und Admin-Audit sind bereit.'
+    else
+      fail 'Migration 002 fehlt.'
+    fi
+
+    if php -r "require '$PROJECT_ROOT/api/db.php'; \$p=stu_pdo(); \$p->query('SELECT last_message_id,last_read_message_id,archived_at FROM stu_console_sessions LIMIT 0'); \$p->query('SELECT session_id,reply_to_id FROM stu_chat_messages LIMIT 0'); \$p->query('SELECT session_id,trigger_message_id FROM stu_ember_browse_jobs LIMIT 0');" >/dev/null 2>&1; then
+      ok 'Migration 003: echte Sitzungen und Turn-Zuordnung sind bereit.'
+    else
+      fail 'Migration 003 fehlt.'
+    fi
+
+    if php -r "require '$PROJECT_ROOT/api/db.php'; \$p=stu_pdo(); \$p->query('SELECT user_id,display_name,assistant_name FROM stu_coreui_profiles LIMIT 0'); \$p->query('SELECT user_id,slot FROM stu_coreui_profile_media LIMIT 0'); \$p->query('SELECT uuid,user_id,status FROM stu_user_knowledge_sources LIMIT 0'); \$p->query('SELECT source_uuid,user_id,chunk_text FROM stu_user_knowledge_chunks LIMIT 0');" >/dev/null 2>&1; then
+      ok 'Migration 004: Profile, CoreAI-Identitaet und privates RAG-Lite sind bereit.'
+    else
+      fail 'Migration 004 fehlt.'
+    fi
+
+    if php -r "require '$PROJECT_ROOT/api/db.php'; \$p=stu_pdo(); \$p->query('SELECT thinking_enabled FROM stu_user_ai_settings LIMIT 0'); \$p->query('SELECT message_id,media_uuid,user_id,position FROM stu_console_message_attachments LIMIT 0');" >/dev/null 2>&1; then
+      ok 'Migration 005: Thinking-Wahl und persistente Mehrfachanhaenge sind bereit.'
+    else
+      fail 'Migration 005 fehlt.'
+    fi
+
+    if php -r "require '$PROJECT_ROOT/api/db.php'; \$p=stu_pdo(); \$p->query('SELECT password_changed_at,last_login_at FROM stu_users LIMIT 0'); \$p->query('SELECT token_hash,expires_at,revoked_at FROM stu_auth_sessions LIMIT 0');" >/dev/null 2>&1; then
+      ok 'Migration 006: widerrufbare Anmeldungen und Passwortzeitpunkte sind bereit.'
+    else
+      fail 'Migration 006 fehlt.'
+    fi
+
+    if php -r "require '$PROJECT_ROOT/api/db.php'; \$p=stu_pdo(); \$s=\$p->prepare('SELECT COUNT(*) FROM ember_knowledge_chunks WHERE source IN (?,?)'); \$s->execute(['bibel_v10_4','kompendium_v6']); exit((int)\$s->fetchColumn() === 0 ? 0 : 1);" >/dev/null 2>&1; then
+      ok 'Migration 007: versehentlich importiertes privates Studio-Lore ist entfernt.'
+    else
+      fail 'Migration 007 fehlt oder privates Studio-Lore liegt noch in der Datenbank.'
+    fi
+
+    if php -r "require '$PROJECT_ROOT/api/db.php'; \$p=stu_pdo(); \$p->query('SELECT response_floor_id,mode,status,response_message_id,browse_job_id FROM stu_console_generation_requests LIMIT 0');" >/dev/null 2>&1; then
+      ok 'Migration 008: Feedback, Alternativen und Fortsetzungen sind bereit.'
+    else
+      fail 'Migration 008 fehlt.'
+    fi
+
+    if php -r "require '$PROJECT_ROOT/api/db.php'; \$p=stu_pdo(); \$p->query('SELECT revision_no,superseded_message_count FROM stu_console_message_revisions LIMIT 0'); \$m=\$p->query(\"SELECT COLUMN_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='stu_console_generation_requests' AND COLUMN_NAME='mode'\")->fetchColumn(); exit(str_contains((string)\$m,\"'edit'\") ? 0 : 1);" >/dev/null 2>&1; then
+      ok 'Migration 009: echte Nachrichtenbearbeitung und Kontext-Neustart sind bereit.'
+    else
+      fail 'Migration 009 fehlt.'
+    fi
+
+    if php -r "require '$PROJECT_ROOT/api/db.php'; require '$PROJECT_ROOT/api/console_artifact_store.php'; exit(coreui_console_artifact_schema_ready(stu_pdo()) ? 0 : 1);" >/dev/null 2>&1; then
+      ok 'Migration 011: dauerhafte Chat-Dateiausgaben sind bereit.'
+    else
+      fail 'Migration 011 fehlt.'
+    fi
+
+    if systemctl is-active --quiet ember-coreui-python.service; then
+      ok 'CoreAI: TCI Interface-Python-Worker ist aktiv.'
+    else
+      fail 'CoreAI: TCI Interface-Python-Worker ist nicht aktiv.'
+    fi
+
+    MODEL_NAME="$(read_constant STU_EMBER_MODEL || true)"
+    if [[ -n "$MODEL_NAME" ]] && command -v ollama >/dev/null 2>&1 && ollama show "$MODEL_NAME" >/dev/null 2>&1; then
+      ok "Ollama-Modell vorhanden: $MODEL_NAME"
+      model_audit=''
+      if model_audit="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/model-live-audit.php" "$MODEL_NAME" 2>&1)"; then
+        ok "$model_audit"
+      else
+        fail "${model_audit:-Ollama-Modelfile nicht verifizierbar.}"
+      fi
+    else
+      fail "Ollama-Modell fehlt oder Ollama ist nicht erreichbar: ${MODEL_NAME:-unbekannt}"
+    fi
+
+    WEB_ENABLED="$(read_constant STU_EMBER_WEB_ENABLED || printf '0')"
+    WEB_URL="$(read_constant STU_EMBER_WEB_URL || true)"
+    if [[ "$WEB_ENABLED" == '1' ]]; then
+      WEB_TEST_URL="$WEB_URL"
+      if [[ "$WEB_TEST_URL" == *\?* ]]; then
+        WEB_TEST_URL+='&q=ember&format=json'
+      else
+        WEB_TEST_URL+='?q=ember&format=json'
+      fi
+      if curl -fsS --max-time 8 "$WEB_TEST_URL" >/dev/null; then
+        ok 'SearXNG JSON-Suche erreichbar.'
+      else
+        fail 'SearXNG JSON-Suche nicht erreichbar.'
+      fi
+    fi
+
+    BROWSE_ENABLED="$(read_constant STU_EMBER_BROWSE_ENABLED || printf '0')"
+    if [[ "$BROWSE_ENABLED" == '1' ]]; then
+      if systemctl is-active --quiet ember-coreui-browse.service; then
+        ok 'Browse-Worker ist aktiv.'
+      else
+        fail 'Browse-Worker ist nicht aktiv.'
+      fi
+      frame_table_ready=0
+      for _frame_try in {1..15}; do
+        if php -r "require '$PROJECT_ROOT/api/db.php'; stu_pdo()->query('SELECT id FROM stu_ember_browse_frames LIMIT 1');" >/dev/null 2>&1; then
+          frame_table_ready=1
+          break
+        fi
+        sleep 1
+      done
+      if (( frame_table_ready == 1 )); then
+        ok 'Private Live-Browser-Frame-Tabelle ist bereit.'
+      else
+        fail 'Private Live-Browser-Frame-Tabelle fehlt. Browse-Worker neu starten.'
+      fi
+      if [[ -x "$PROJECT_ROOT/var/venv/bin/python" ]]; then
+        browse_live=''
+        if browse_live="$(runuser -u www-data -- env COREAI_BROWSE_LIVE=1 TMPDIR=/tmp \
+            PLAYWRIGHT_BROWSERS_PATH="$PROJECT_ROOT/var/playwright" HOME="$PROJECT_ROOT/var/worker-home" \
+            "$PROJECT_ROOT/var/venv/bin/python" "$PROJECT_ROOT/scripts/browse-worker-selftest.py" 2>&1)"; then
+          ok 'Browser (echter Chromium-Lauf): Formular ausgefuellt, Bilder beim Ueberlegen, Login und Kontakt blockiert, lokales Netz gesperrt.'
+        else
+          fail "Browser-Livetest: ${browse_live:-Unbekannter Fehler}"
+        fi
+      fi
+    fi
+  fi
+fi
+
+if nginx -t >/dev/null 2>&1; then
+  ok 'Nginx-Konfiguration ist gueltig.'
+else
+  fail 'Nginx-Konfiguration ist ungueltig.'
+fi
+
+for writable_dir in \
+  "$PROJECT_ROOT/logs" \
+  "$PROJECT_ROOT/var/console_media" \
+  "$PROJECT_ROOT/var/profile_media" \
+  "$PROJECT_ROOT/var/knowledge_uploads" \
+  "$PROJECT_ROOT/var/ember_py" \
+  "$PROJECT_ROOT/var/ember_frames" \
+  "$PROJECT_ROOT/var/pdf_pages" \
+  "$PROJECT_ROOT/uploads/ember_browse" \
+  "$PROJECT_ROOT/assets/chat_media" \
+  "$PROJECT_ROOT/assets/profile_photos/pending" \
+  "$PROJECT_ROOT/assets/profile_photos/approved"; do
+  if [[ -d "$writable_dir" ]] && runuser -u www-data -- test -w "$writable_dir"; then
+    ok "PHP-Schreibpfad bereit: ${writable_dir#"$PROJECT_ROOT"/}"
+  else
+    fail "PHP-Schreibpfad nicht bereit: ${writable_dir#"$PROJECT_ROOT"/}"
+  fi
+done
+
+if command -v php >/dev/null 2>&1; then
+  pdf_selftest=''
+  if pdf_selftest="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/pdf-selftest.php" 2>&1)"; then
+    pdf_selftest="${pdf_selftest//$'\r'/}"
+    ok "$pdf_selftest"
+  else
+    pdf_selftest="${pdf_selftest//$'\r'/}"
+    fail "$pdf_selftest"
+  fi
+fi
+
+if (( FAILURES > 0 )); then
+  printf '\nPreflight fehlgeschlagen: %d Problem(e).\n' "$FAILURES" >&2
+  exit 1
+fi
+
+printf '\nPreflight erfolgreich. CoreAI: TCI Interface ist betriebsbereit.\n'
+\r'/}"
+    fail "Feedback: UI-/Backend-Vertrag fuer Bewertungen fehlerhaft: ${feedback_ui_selftest:-Unbekannter Fehler}"
   fi
 
   if [[ -f "$CONFIG_FILE" ]]; then
