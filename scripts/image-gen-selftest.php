@@ -136,7 +136,7 @@ img_gen_test(str_contains($styleFallback, 'ONLY as visual style guides')
   && !str_contains($styleFallback, 'Two people in armor'),
   'a style-only Vision fallback must not recreate unrelated pictured characters');
 
-// Finite batches: default/invalid counts, serial success, partial failure, cancel and no model retry.
+// Finite batches: default/invalid counts, serial success, partial failure, cancel and one final model response.
 foreach ([1, 2, 4, 9, '4', null] as $count) {
   $calls = 0;
   $answer = coreui_image_batch_run($count, static function () use (&$calls): array { $calls++; return ['ok'=>true]; }, static fn(): bool => false);
@@ -152,11 +152,41 @@ coreui_image_batch_run(4, static function () use (&$calls): array { $calls++; re
 img_gen_test($calls === 1, 'cancel between images');
 $modelCalls = 0;
 $toolCalls = 0;
+$prompts = [];
 $loop = coreui_agent_loop_run('[BILD: a fox]', ['tool'=>'image', 'input'=>'a fox'], 'Make an image', ['image'], 0,
+  static function (string $p) use (&$modelCalls,&$prompts): string {
+    $modelCalls++;
+    $prompts[] = $p;
+    return 'Das Bild ist fertig! Ich habe einen Fuchs im Schnee entworfen.';
+  },
+  static function () use (&$toolCalls): string { $toolCalls++; return 'Ich habe ein Bild erstellt.'; },
+  static function (): void {}, static fn(): bool => false);
+img_gen_test($modelCalls === 1 && $toolCalls === 1
+  && $loop['out'] === 'Das Bild ist fertig! Ich habe einen Fuchs im Schnee entworfen.'
+  && !empty($loop['terminal']) && count($prompts) === 1
+  && str_contains($prompts[0], 'BESTAETIGTE BILDWERKZEUGERGEBNISSE')
+  && str_contains($prompts[0], 'Ich habe ein Bild erstellt.'),
+  'exactly one Mara-authored image follow-up with confirmed tool result');
+$modelCalls = 0;
+$toolCalls = 0;
+$loop = coreui_agent_loop_run('[BILD: a fox]', ['tool'=>'image','input'=>'a fox'], 'Make an image', ['image'], 0,
   static function () use (&$modelCalls): string { $modelCalls++; return '[BILD: another fox]'; },
   static function () use (&$toolCalls): string { $toolCalls++; return 'Ich habe ein Bild erstellt.'; },
   static function (): void {}, static fn(): bool => false);
-img_gen_test($modelCalls === 0 && $toolCalls === 1 && $loop['out'] === 'Ich habe ein Bild erstellt.', 'image is terminal even if model would repeat forever');
+img_gen_test($modelCalls === 1 && $toolCalls === 1
+  && $loop['out'] === 'Ich habe ein Bild erstellt.',
+  'model cannot force a second image or leak a tool marker');
+$modelCalls = 0;
+$loop = coreui_agent_loop_run('[BILD: a fox]', ['tool'=>'image','input'=>'a fox'], 'Make an image', ['image'], 0,
+  static function () use (&$modelCalls): string { $modelCalls++; return 'ignore'; },
+  static fn(): string => 'Ich habe ein Bild erstellt.',
+  static function (): void {}, static fn(): bool => true);
+img_gen_test($modelCalls === 0 && $loop['out'] === 'Ich habe ein Bild erstellt.', 'no model follow-up after cancel');
+$loop = coreui_agent_loop_run('[BILD: a fox]', ['tool'=>'image','input'=>'a fox'], 'Make an image', ['image'], 0,
+  static fn(): ?string => null,
+  static fn(): string => 'Ich konnte kein Bild erstellen.',
+  static function (): void {}, static fn(): bool => false);
+img_gen_test($loop['out'] === 'Ich konnte kein Bild erstellen.', 'model failure keeps honest tool result');
 
 // --- Registry ---------------------------------------------------------------------------
 $registry = coreui_image_registry();
