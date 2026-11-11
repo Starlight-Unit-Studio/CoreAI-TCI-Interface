@@ -138,7 +138,7 @@ function coreui_agent_step_prompt(string $base, array $steps, int $used, int $ma
 /**
  * One bounded, model-authored message after a confirmed image tool result.
  * The tool result is server-controlled and can never request another image.
- * We keep the original user turn as context and never pretend to see pixels.
+ * The caller can provide a private Vision reviewer for actual generated PNGs.
  */
 function coreui_agent_image_followup_prompt(string $base, array $steps): string {
   $results = [];
@@ -156,8 +156,10 @@ function coreui_agent_image_followup_prompt(string $base, array $steps): string 
     . "Formuliere JETZT selbststaendig eine kurze, persoenliche Antwort als Mara, "
     . "ohne dass die Person erneut schreiben muss. Beziehe dich auf die urspruengliche Anfrage. "
     . "Bei einem Fehler sage ehrlich, dass kein Bild entstanden ist; bei teilweise erzeugten Bildern "
-    . "nenne nur bestaetigte Ergebnisse. Du siehst die fertigen Pixel nicht: erfinde deshalb "
-    . "keine nicht belegten Bilddetails. Kein Platzhalter, kein weiterer Werkzeugaufruf, "
+    . "nenne nur bestaetigte Ergebnisse. Die Bilder koennen dir anschliessend als echte Vision-Eingabe "
+    . "uebergeben werden. Kommentiere nur visuell erkennbare Details, wenn die Bilder wirklich "
+    . "als Bildinput angekommen sind. Ohne Bildinput keine erfundenen Einzelheiten. "
+    . "Kein Platzhalter, kein weiterer Werkzeugaufruf, "
     . "kein [BILD:]- oder anderer Werkzeugmarker. Antworte direkt:";
 }
 
@@ -186,7 +188,8 @@ function coreui_agent_loop_hint(bool $compact, bool $archive): string {
  *   $cancelled(): bool
  */
 function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $allowed, int $used,
-    callable $callModel, callable $runTool, callable $record, callable $cancelled, ?callable $route = null): array {
+    callable $callModel, callable $runTool, callable $record, callable $cancelled, ?callable $route = null,
+    ?callable $imageReview = null): array {
   $steps = [];
   $prompt = null;
   // 0.6.22: $route(array $tool): array may send a step another way (a weather question about
@@ -218,7 +221,9 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
       $prompt = coreui_agent_image_followup_prompt($base, $steps);
       $record('model', 'running', 'Bildabschluss wird formuliert',
         ['reason'=>'image_followup', 'step'=>$used]);
-      $text = $callModel($prompt);
+      // The generated-image callback reads the validated PNGs through the
+      // existing Vision path. Offline/selftest consumers keep the text fallback.
+      $text = $imageReview !== null ? $imageReview($prompt) : $callModel($prompt);
       $final = is_string($text) ? trim($text) : '';
       // This path returns before the outer reply sanitizer. Apply the exact
       // same public-output filter here, never expose raw thinking or tools.
