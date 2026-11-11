@@ -45,18 +45,51 @@
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
 }
-/* The human identity mirrors the TCI heading with inverted theme accents.
-   Preserve the user's original right-aligned bubble, avatar and action layout. */
+/* The human row mirrors Mara's actual message structure, not just typography.
+   Reserve the avatar only in the heading; let the bubble, actions and time
+   reach the right chat edge underneath the avatar. */
+.msg-row.user {
+  --operator-avatar-size: 44px;
+  display: block;
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+.msg-row.user > .msg-avatar {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+.msg-row.user > .msg-content {
+  display: flex;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin: 0;
+  flex-direction: column;
+  align-items: flex-end;
+}
 .msg-row.user .msg-name-operator {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   justify-content: flex-start;
+  min-height: var(--operator-avatar-size);
   gap: 4px;
-  margin: 0 7px 5px;
+  margin: 0 calc(var(--operator-avatar-size) + 13px) 9px 0;
   max-width: 100%;
   overflow-wrap: anywhere;
   text-align: right;
+}
+.msg-row.user > .msg-content > .msg-bubble {
+  align-self: flex-end;
+  width: fit-content;
+  max-width: min(92%, 820px);
+  margin-right: 0;
+}
+.msg-row.user > .msg-content > .msg-actions,
+.msg-row.user > .msg-content > .msg-time {
+  align-self: flex-end;
 }
 .msg-row.user .msg-operator-role,
 .msg-row.user .msg-operator-persona {
@@ -86,12 +119,20 @@
   .msg-row.ember .msg-name-tci {
     margin-left: calc(var(--tci-avatar-size) + 9px);
   }
+  .msg-row.user { --operator-avatar-size: 38px; }
+  .msg-row.user .msg-name-operator {
+    margin-right: calc(var(--operator-avatar-size) + 9px);
+  }
 }
 @media (max-width: 420px) {
   .msg-row.ember { --tci-avatar-size: 34px; }
+  .msg-row.user { --operator-avatar-size: 34px; }
 }
 .pref-compact-feed .msg-row.ember {
   --tci-avatar-size: 36px;
+}
+.pref-compact-feed .msg-row.user {
+  --operator-avatar-size: 36px;
 }
 
 /* The Core/Kontext/Werkzeuge/Projekt controls are chat-only.
