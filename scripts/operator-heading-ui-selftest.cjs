@@ -17,7 +17,7 @@ const shell = '<!doctype html><html lang="de"><head><meta charset="utf-8">'
   + '<link rel="stylesheet" href="/css/coreui-chat-tci-layout.css"></head>'
   + '<body style="margin:0"><section class="feed-shell"><div class="messages-inner">'
   + '<div class="msg-row user" id="user"><div class="msg-avatar" id="userAvatar">R</div>'
-  + '<div class="msg-content" id="userContent"><div class="msg-bubble" id="userBubble">Nachricht</div></div></div>'
+  + '<div class="msg-content" id="userContent"><div class="msg-bubble" id="userBubble">Eine Nachricht mit ausreichend Text für den Umbruch auf kleinen Displays.</div><div class="msg-actions" id="userActions">Aktionen</div><div class="msg-time" id="userTime">Heute</div></div></div>'
   + '<div class="msg-row ember" id="assistant"><div class="msg-avatar">M</div>'
   + '<div class="msg-content" id="assistantContent"><div class="msg-bubble">Antwort</div></div></div>'
   + '</div></section></body></html>';
@@ -46,6 +46,8 @@ async function inspect(browser, width) {
       const name = document.querySelector('.msg-operator-persona');
       const assistantName = document.querySelector('.msg-core-persona');
       const heading = document.querySelector('.msg-name-operator');
+      const assistantHeading = document.querySelector('.msg-name-tci');
+      const assistantAvatar = document.querySelector('#assistant .msg-avatar');
       const blueProbe=document.createElement('span');
       blueProbe.style.color='var(--cx, #5b92ff)';document.body.append(blueProbe);
       const blue=getComputedStyle(blueProbe).color;blueProbe.remove();
@@ -58,6 +60,10 @@ async function inspect(browser, width) {
         bubble:rect(document.getElementById('userBubble')),
         avatar:rect(document.getElementById('userAvatar')),
         row:rect(document.getElementById('user')),
+        actions:rect(document.getElementById('userActions')),
+        time:rect(document.getElementById('userTime')),
+        assistantHeading:rect(assistantHeading),
+        assistantAvatar:rect(assistantAvatar),
         roleColor:getComputedStyle(role).color,nameColor:getComputedStyle(name).color,
         nameType:type(name),operatorType:type(role),maraType:type(assistantName),
         underline:getComputedStyle(role).textDecorationLine,
@@ -67,8 +73,20 @@ async function inspect(browser, width) {
     assert.equal(data.roleText,'OPERATOR:');
     assert.equal(data.nameText,'RICK');
     assert(data.role.bottom<=data.name.y+2,'operator heading and name occupy separate lines');
-    assert(data.heading.right<=data.avatar.x+2,'right-aligned heading stays left of avatar');
-    assert(data.bubble.right<=data.row.right+2,'user bubble remains in its own row');
+    const operatorGap = data.avatar.x - data.heading.right;
+    const maraGap = data.assistantHeading.x - data.assistantAvatar.right;
+    assert(Math.abs(operatorGap - maraGap) <= 2,
+      'OPERATOR must sit as close to the avatar as Mara: ' + JSON.stringify({operatorGap,maraGap}));
+    assert(Math.abs(data.avatar.right - data.row.right) <= 2,
+      'human avatar stays pinned at the right edge of the chat row');
+    assert(data.bubble.y >= data.avatar.bottom - 2,
+      'the user bubble starts underneath the avatar and the two-line header');
+    assert(Math.abs(data.bubble.right - data.row.right) <= 2,
+      'the user bubble must end at the right chat edge, under the avatar rather than left of it');
+    assert(data.actions.right >= data.row.right - 7,
+      'user actions remain at the right edge below the bubble');
+    assert(data.time.right >= data.row.right - 10,
+      'message timestamp stays right-aligned beneath the bubble');
     assert.deepEqual(data.operatorType,data.nameType,'operator and user name have identical typography');
     assert.deepEqual(data.nameType,data.maraType,'operator and Mara headings share the same typography');
     assert.equal(data.roleColor,data.gold,'operator label is gold');
@@ -81,8 +99,9 @@ async function inspect(browser, width) {
 (async()=>{
   const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
   try {
+    await inspect(browser,340);
     await inspect(browser,390);
     await inspect(browser,1024);
-    console.log('CoreAI mirrored OPERATOR heading: phone/desktop alignment, colors, full chat layout OK');
+    console.log('CoreAI OPERATOR layout: avatar gaps, right-edge bubbles/actions, phone/desktop OK');
   } finally { await browser.close(); }
 })().catch(e=>{console.error('OPERATOR heading UI FAIL:',e);process.exit(1);});
