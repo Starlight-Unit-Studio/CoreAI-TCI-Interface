@@ -1,0 +1,62 @@
+name: Guest Image Quota Regression
+
+on:
+  pull_request:
+    paths:
+      - 'api/guest_access.php'
+      - 'api/image_gen.php'
+      - 'api/chat.php'
+      - 'api/ai_settings.php'
+      - 'api/admin.php'
+      - 'api/composer_tools.php'
+      - 'api/console_composer_intent.php'
+      - 'admin/index.html'
+      - 'js/admin.js'
+      - 'js/coreui-composer-menu.js'
+      - 'scripts/guest-access-selftest.php'
+      - 'scripts/composer-intent-selftest.php'
+      - 'scripts/image-gen-selftest.php'
+      - '.github/workflows/guest-image-quota.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'api/guest_access.php'
+      - 'api/image_gen.php'
+      - 'api/chat.php'
+      - 'api/ai_settings.php'
+      - 'api/admin.php'
+      - 'api/composer_tools.php'
+      - 'api/console_composer_intent.php'
+      - '.github/workflows/guest-image-quota.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  guest-image-quota:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+      - name: Install PHP test environment
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_sqlite, gd, curl
+          coverage: none
+      - name: PHP syntax check
+        run: |
+          for file in api/guest_access.php api/image_gen.php api/chat.php api/ai_settings.php api/admin.php api/composer_tools.php api/console_composer_intent.php scripts/guest-access-selftest.php scripts/composer-intent-selftest.php scripts/image-gen-selftest.php; do
+            php -l "$file" || exit 1
+          done
+      - name: JavaScript syntax check
+        run: |
+          node --check js/admin.js
+          node --check js/coreui-composer-menu.js
+      - name: Guest and composer regression
+        run: |
+          php scripts/guest-access-selftest.php
+          php scripts/composer-intent-selftest.php
+      - name: Image generation regression
+        run: php scripts/image-gen-selftest.php
