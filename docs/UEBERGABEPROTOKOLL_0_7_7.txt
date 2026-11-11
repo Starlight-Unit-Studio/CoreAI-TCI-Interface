@@ -1,0 +1,35 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.7
+Datum: 11.11.2026
+Thema: Persistente Daumen-Bewertung mit eigenstaendiger Mara-Reaktion ohne Thinking
+
+AUSGANGSLAGE
+- Main 0.7.6. Feedback-API und stu_chat_reactions bereits vorhanden, ebenso Antwortverlauf-Feedback.
+- Die im UI mit up/down bezeichneten Aktionen zeichneten aber Pfeile und die alte Toggle-Funktion loeschte eine wiederholte Auswahl.
+- Die Bewertung wurde Mara nicht als Ereignis zur autonomen Folgeantwort uebergeben.
+
+NEUE FUNKTIONEN
+- js/console-app.js: sichtbare Daumen-Icons in Originalgroesse, neue CSS-Klassen, asynchrone zweite Anfrage fuer Maras Feedback-Reaktion nach sofortiger DB-Speicherung.
+- css/coreui-feedback.css: aktiver Daumen hoch gruen, Daumen runter rot; beide bleiben bei Verlauf-Neuladen aktiv.
+- api/console_action_store.php: idempotente Bewertung (gleicher Daumen bleibt gewaehlt), atomare Event-Erstellung bei Wertwechsel.
+- database/migrations/035_feedback_followups.sql: stu_console_feedback_events mit Eigentuermer, Sitzungs-ID, bewerteter Nachricht, Status, Versuchen und erzeugter Antwort-ID.
+- api/console_feedback_store.php: Kontoberechtigungen, atomare Event-Claims, Zustand und idempotentes Speichern genau einer Mara-Nachricht.
+- api/console_feedback.php: Prompt mit Originalantwort + Bewertung; ein Ollama-Modellaufruf mit think=false, ohne Skills und ohne Werkzeug-Routing; Antwort-Sanitizer und Fehlerbehandlung.
+- api/console_actions.php: Authentifizierte, CSRF-geschuetzte feedback- und feedback_reply-Aktionen.
+- scripts/message-actions-selftest.php: echte DB-Tests fuer Up/Down, dauerhaft aktive Auswahl, positives/negatives Feedback, die einmalige Mara-Nachricht und NULL im Thinking-Feld.
+- scripts/feedback-ui-selftest.cjs: CSS-/Icon-/Frontend-Vertraege.
+- Preflights und Versionsdateien aktualisiert.
+
+SICHERHEIT UND VERHALTEN
+- Feedback allein veraendert keine alten Nachrichten oder den Modellzustand.
+- Die neue Nachricht wird mit NULL reply_to_id gespeichert, damit sie als additive Reaktion sichtbar ist und weder Antwortvariante noch Endlosschleife erzeugt.
+- Die Modellwarteschlange des Servers bleibt massgeblich. Bei bereits laufendem Modell kann die Reaktion warten.
+- Keine Aenderung am Modelfile, kein stilles Thinking, keine neue Bildgenerierung, keine DB-Cross-User-Zugriffe.
+- Bei einem Netzabbruch kann die gespeicherte Bewertung bestehen bleiben, selbst wenn Maras Reaktion noch nicht erfolgreich abgeschlossen ist; die Event-Tabelle protokolliert den Status.
+
+ABNAHME VOR MERGE
+- php -l fuer geaenderte PHP-Dateien.
+- node scripts/feedback-ui-selftest.cjs.
+- php scripts/message-actions-selftest.php in vorhandener Testdatenbank (mit Rollback).
+- python3 scripts/version-merge-check.py --base-version 0.7.6.
+- Offizielle CoreAI Docker- und Native-Preflights.
+- Handyetest: Gruen/Rot nach Reload, Wechsel, Doppelklick, Feedback bei laufender Antwort und Reaktion ohne Thinking.
