@@ -56,6 +56,12 @@ assert(css.includes('min-height: var(--tci-avatar-size)') && css.includes('margi
   'assistant body is below the avatar');
 assert(css.includes('max-width: 100%') && css.includes('@media (max-width: 420px)'),
   'assistant uses the full available column, including on phones');
+assert(css.includes('.msg-row.ember .msg-core-role,\n.msg-row.ember .msg-core-persona {')
+  && css.includes('color: var(--cx, #5b92ff);')
+  && css.includes('font: 700 12px/1.35'),
+  'TCI CORE and Mara name share the exact font, size, weight and blue color');
+assert(css.includes('text-decoration-color: var(--amb, #e29b39);'),
+  'TCI CORE underline uses the theme gold rather than blue/grey');
 assert(/coreui-chat-tci-layout\.css\?v=\d{25}/.test(html), 'chat loads its cache-keyed layout style');
 assert(app.includes("item.kind === 'image' && item.generated === true")
   && app.includes('content.appendChild(bubble);\n      if (suggestionRow) content.appendChild(suggestionRow);'),
