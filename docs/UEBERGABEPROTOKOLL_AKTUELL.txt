@@ -1,9 +1,10 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
 Stand: 11.11.2026
-Repository-Version: 0.6.99 (Fix-Branch, main bei Erstellung 0.6.98)
-BASIS: main 0.6.98 nach PR #250; sichtbare Denkaufwand-Standardstufe nur im UI auf Normal gekuerzt.
+Repository-Version: 0.7.0 (Branch claude/bold-galileo-myoyi0, main bei Erstellung 0.6.99)
+BASIS: main 0.6.99 nach PR #251; Einstellungen > Personalisierung nach den Referenz-Screenshots (Migration 033).
 NEUE ARBEIT ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_7_0.txt
   docs/UEBERGABEPROTOKOLL_0_6_99.txt
   docs/UEBERGABEPROTOKOLL_0_6_98.txt
   docs/UEBERGABEPROTOKOLL_0_6_97.txt

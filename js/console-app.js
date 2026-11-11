@@ -4174,6 +4174,17 @@
     } catch (e) { return ''; }
   }
 
+  // 0.7.0: app.html?draft=... (Settings > Personalisierung > Erinnerungszusammenfassung) opens
+  // a new chat with the text in the input row; nothing is sent until the person sends it.
+  function takeLinkedDraft() {
+    try {
+      var draft = new URLSearchParams(location.search).get('draft') || '';
+      if (!draft.trim()) return '';
+      history.replaceState(null, '', location.pathname + location.hash);
+      return draft.slice(0, 4000);
+    } catch (e) { return ''; }
+  }
+
   // ── Init ─────────────────────────────────────────────────
   function init() {
     // Button sofort freischalten - nie durch einen Fehler blockiert lassen
@@ -4191,10 +4202,17 @@
         // Login starts with an unsaved draft; older conversations remain in the drawer.
         // 0.6.87: a linked chat (?session=) opens directly.
         var linked = takeLinkedSession();
+        var draft = takeLinkedDraft();
         return dbLoadSessions()
           .then(function () {
             var target = linked ? sessionById(linked) : null;
             if (target && !target.archived) return selectSession(target.id);
+            if (draft) {
+              showDraftChat();
+              setComposerText(draft);
+              if (inputEl) inputEl.focus();
+              return;
+            }
             return showDraftChat();
           })
           .catch(function() {

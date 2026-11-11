@@ -4966,8 +4966,10 @@ function ember_build_context(
   // 0.6.17 (P20.1): what was said in voice messages and audio files of earlier
   // turns (the transcript written after each answer); without it a voice-only
   // message would be an empty line and drop out of the history.
+  // 0.7.0: "Fruehere Stimmsequenzen beruecksichtigen" off keeps only the mark, not the words.
+  $voiceHistory = (($GLOBALS['COREUI_PERSONALIZATION_CONTEXT']['voice_history'] ?? true) !== false);
   $audioNotes = ($channel === 'console' && $consoleUid > 0 && function_exists('ember_attach_audio_history_notes'))
-    ? ember_attach_audio_history_notes($pdo, $consoleUid, array_map(static fn($r): int => (int)($r['id'] ?? 0), $rows))
+    ? ember_attach_audio_history_notes($pdo, $consoleUid, array_map(static fn($r): int => (int)($r['id'] ?? 0), $rows), $voiceHistory)
     : [];
   // 0.6.39 (P20.5): what Mara painted in earlier answers (the description she wrote).
   $imageNotes = ($channel === 'console' && $consoleUid > 0)
@@ -5059,6 +5061,8 @@ function ember_build_chat_prompt(
   }
   $GLOBALS['COREUI_PERSONALIZATION_CONTEXT'] = $channel === 'console'
     ? coreui_personalization_load($pdo,$uid) : null;
+  // 0.7.0: the person's own words of this turn decide whether their reference photos apply.
+  $GLOBALS['COREUI_TURN_USER_TEXT'] = $channel === 'console' ? (string)$userMsg : '';
   // #113: the KI-Profil window belongs to the private console; the global
   // channel and its queue keep the Core default.
   if ($channel !== 'console') $GLOBALS['COREUI_AI_RUNTIME_SETTINGS']['num_ctx'] = null;
@@ -5316,6 +5320,18 @@ function ember_image_run_tool(PDO $pdo, int $uid, string $input): array {
     coreui_work_record($pdo, 'tool', 'info', count($references) . ' Referenzbilder fuer die Generierung erkannt',
       ['source'=>'image','reference_count'=>count($references),'reference_kind'=>'attachments']);
   }
+  // 0.7.0 (Settings > Personalisierung): an image of the person uses their reference photos,
+  // unless the uploaded pictures of this turn are a style guide only.
+  $personalization = $GLOBALS['COREUI_PERSONALIZATION_CONTEXT'] ?? null;
+  if (is_array($personalization) && empty($GLOBALS['COREUI_TURN_IMAGE_STYLE_ONLY'])) {
+    $personRefs = coreui_personalization_image_references($pdo, $uid, $personalization,
+      (string)($GLOBALS['COREUI_TURN_USER_TEXT'] ?? ''));
+    if ($personRefs !== []) {
+      $references = array_slice(array_values(array_unique(array_merge($personRefs, $references))), 0, COREUI_IMAGE_MAX_REFERENCES);
+      coreui_work_record($pdo, 'tool', 'info', count($personRefs) === 1 ? 'Dein Referenzfoto ausgewaehlt' : 'Deine Referenzfotos ausgewaehlt',
+        ['source'=>'image', 'reference_kind'=>'person', 'reference_count'=>count($personRefs)]);
+    }
+  }
   if ($reference !== null) {
     // Only disclose the source type, never an account's private media UUID.
     coreui_work_record($pdo, 'tool', 'info', 'Portraet-Referenz ausgewaehlt',
@@ -5451,6 +5467,8 @@ function ember_generate_reply(
   }
   $GLOBALS['COREUI_PERSONALIZATION_CONTEXT'] = $channel === 'console'
     ? coreui_personalization_load($pdo,$uid) : null;
+  // 0.7.0: the person's own words of this turn decide whether their reference photos apply.
+  $GLOBALS['COREUI_TURN_USER_TEXT'] = $channel === 'console' ? (string)$userMsg : '';
   if ($channel !== 'console') $GLOBALS['COREUI_AI_RUNTIME_SETTINGS']['num_ctx'] = null;
   // 0.5.75: the thinking switch belongs to the private chat; the global
   // channel keeps thinking as it did when the Modelfile forced it.
@@ -5787,6 +5805,8 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
           $voiceRequest .= ' ' . (string)($clip['transcript'] ?? '');
         }
       }
+      // 0.7.0: a spoken "mal mich als ..." uses the reference photos like a typed one.
+      $GLOBALS['COREUI_TURN_USER_TEXT'] = $voiceRequest;
       $voiceTool = coreui_image_tool_for_request(
         $voiceTool, $voiceRequest, coreui_profile_assistant_name($pdo, $consoleUid));
       $voiceBase = $visionPrompt . ($hasAudio

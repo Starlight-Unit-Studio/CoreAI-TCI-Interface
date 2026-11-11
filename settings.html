@@ -6,16 +6,16 @@
   <meta name="language" content="de-DE" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#f0f4fa" />
-  <meta name="application-version" content="0.6.99" />
+  <meta name="application-version" content="0.7.0" />
   <meta name="application-name" content="CoreAI: TCI Interface" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface - Einstellungen</title>
   <link rel="stylesheet" href="./css/console.css?v=0045460422899686983365633" />
-  <link rel="stylesheet" href="./css/settings.css?v=1037501155837054320789569" />
+  <link rel="stylesheet" href="./css/settings.css?v=1173759681066830103511598" />
   <link rel="stylesheet" href="./css/coreui-profile-crop.css?v=0852949496159567452926853" />
   <link rel="stylesheet" href="./css/coreui-update.css?v=0362480532788383300048352" />
   <link rel="stylesheet" href="./css/coreui-theme.css?v=0697431397907702126637895" />
-  <script src="./js/console-gate.js?v=0124604155300743260291800"></script>
+  <script src="./js/console-gate.js?v=0167146108145238844667849"></script>
   <script src="./js/coreui-preferences.js?v=0004145186774094057353830"></script>
   <script src="./js/coreui-ui-language.js?v=0850224961537363286304733"></script>
 </head>
@@ -59,6 +59,12 @@
     <symbol id="i-bubble" viewBox="0 0 24 24"><path d="M12 4c4.7 0 8.5 3.1 8.5 7s-3.8 7-8.5 7c-1 0-2-.1-2.9-.4L4.5 20l1.2-3.8C4.3 14.9 3.5 13 3.5 11c0-3.9 3.8-7 8.5-7z"/></symbol>
     <symbol id="i-back" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></symbol>
     <symbol id="i-clock" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5l3 3"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 11v6M12 7.5v.5"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><path d="M5 12h.01M12 12h.01M19 12h.01"/></symbol>
+    <symbol id="i-arrow-up" viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></symbol>
+    <symbol id="i-reply" viewBox="0 0 24 24"><path d="M5 5v6a4 4 0 0 0 4 4h10M15 11l4 4-4 4"/></symbol>
     <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></symbol>
     <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4"/></symbol>
     <symbol id="i-globe" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.5 2.7 3.6 5.6 3.6 9s-1.1 6.3-3.6 9c-2.5-2.7-3.6-5.6-3.6-9S9.5 5.7 12 3z"/></symbol>
@@ -85,7 +91,7 @@
           <h1>EINSTELLUNGEN</h1>
         </div>
       </div>
-      <div class="settings-version">COREAI: TCI INTERFACE // v0.6.99</div>
+      <div class="settings-version">COREAI: TCI INTERFACE // v0.7.0</div>
       <div class="cfg-header-actions" aria-label="Schnellzugriffe Einstellungen">
         <label class="cfg-header-expert" for="settingsExpertToggle" title="Technische Einstellungen in allen Kategorien anzeigen oder ausblenden">
           <span>EXPERTENMODUS</span>
@@ -118,7 +124,7 @@
                   <button class="cfg-tab" type="button" role="tab" id="tab-profil" data-view="profil" aria-controls="view-profil" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-profile" /></svg><span>Profil</span></button>
                   <button class="cfg-tab" type="button" role="tab" id="tab-sicherheit" data-view="sicherheit" aria-controls="view-sicherheit" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-shield" /></svg><span>Sicherheit und Anmeldung</span></button>
                   <button class="cfg-tab" type="button" role="tab" id="tab-konto" data-view="konto" aria-controls="view-konto" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-account" /></svg><span>Konto</span></button>
-                  <button class="cfg-tab is-planned" type="button" role="tab" id="tab-archivierte-chats" data-view="archivierte-chats" aria-controls="view-archivierte-chats" aria-selected="false" tabindex="-1" title="In Vorbereitung"><svg aria-hidden="true"><use href="#i-archive" /></svg><span>Archivierte Chats</span><small class="cfg-nav-state">GEPLANT</small></button>
+                  <button class="cfg-tab" type="button" role="tab" id="tab-archivierte-chats" data-view="archivierte-chats" aria-controls="view-archivierte-chats" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-archive" /></svg><span>Archivierte Chats</span></button>
                   <button class="cfg-tab" type="button" role="tab" id="tab-stimme" data-view="stimme" aria-controls="view-stimme" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-mic" /></svg><span>Stimme</span></button>
                   <button class="cfg-tab is-planned" type="button" role="tab" id="tab-speicher" data-view="speicher" aria-controls="view-speicher" aria-selected="false" tabindex="-1" title="In Vorbereitung"><svg aria-hidden="true"><use href="#i-folder" /></svg><span>Speicher</span><small class="cfg-nav-state">GEPLANT</small></button>
                   <button class="cfg-tab" type="button" role="tab" id="tab-personalisierung" data-view="personalisierung" aria-controls="view-personalisierung" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-sliders" /></svg><span>Personalisierung</span></button>
@@ -597,9 +603,160 @@
 
         <!-- PERSONALISIERUNG -->
         <section class="cfg-view" id="view-personalisierung" role="tabpanel" aria-labelledby="tab-personalisierung" tabindex="-1" hidden>
-          <header class="cfg-view-head"><div><span class="cfg-kicker">MEIN COREAI</span><h2>Personalisierung</h2><p>Gestalte den Antwortstil deiner CoreAI für dein Konto, ohne das Betreiber-Modelfile oder die Sicherheitsregeln zu verändern.</p></div><button class="settings-action" id="personalizationSave" type="button">SPEICHERN</button></header>
-          <div class="cfg-cards persona-cards"><section class="settings-panel cfg-card wide " aria-label="Erinnerungen und Schreibstil"><header class="settings-panel-head"><span class="settings-panel-glyph" aria-hidden="true">✧</span><div><span>MEIN KONTEXT</span><h3>Erinnerungen und Schreibstil</h3></div></header><label class="setting-row" for="personaMemoryEnabled"><span class="setting-copy"><strong>ERINNERUNG AKTIVIEREN</strong><small>Derselbe serverseitige Schalter wie im KI-Profil. Gespeicherte Fakten bleiben erhalten, wenn er ausgeschaltet ist.</small></span><span class="settings-switch"><input id="personaMemoryEnabled" type="checkbox" /><i aria-hidden="true"></i></span></label><label class="setting-row" for="personaAdaptStyle"><span class="setting-copy"><strong>MEINEN SCHREIBSTIL BERÜCKSICHTIGEN</strong><small>Mara orientiert sich an deinem Stil in dieser Unterhaltung, nicht automatisch an allen Dateien und Apps.</small></span><span class="settings-switch"><input id="personaAdaptStyle" data-personalization="adapt_style" type="checkbox" /><i aria-hidden="true"></i></span></label><div class="persona-links"><button class="settings-action compact" type="button" data-goto="memory">ERINNERUNGEN VERWALTEN</button><button class="settings-action compact" type="button" data-goto="wissen">MEIN WISSEN</button></div></section><section class="settings-panel cfg-card wide amber" aria-label="Tonfall und Ausdruck"><header class="settings-panel-head"><span class="settings-panel-glyph" aria-hidden="true">✧</span><div><span>MARAS STIMME</span><h3>Tonfall und Ausdruck</h3></div></header><label class="setting-row persona-select-row" for="personaTone"><span class="setting-copy"><strong>BASISSTIL UND TONFALL</strong><small>Maras Grundcharakter bleibt erhalten.</small></span><select id="personaTone" data-personalization="tone"><option value="standard">Standard</option><option value="freundlich">Freundlich</option><option value="professionell">Professionell</option><option value="locker">Locker</option><option value="kreativ">Kreativ</option><option value="praezise">Präzise</option></select></label><label class="setting-row persona-select-row" for="personaWarmth"><span class="setting-copy"><strong>HERZLICHKEIT</strong><small></small></span><select id="personaWarmth" data-personalization="warmth"><option value="weniger">Weniger</option><option value="standard">Standard</option><option value="mehr">Mehr</option></select></label><label class="setting-row persona-select-row" for="personaEnthusiasm"><span class="setting-copy"><strong>BEGEISTERUNG</strong><small></small></span><select id="personaEnthusiasm" data-personalization="enthusiasm"><option value="weniger">Weniger</option><option value="standard">Standard</option><option value="mehr">Mehr</option></select></label><label class="setting-row persona-select-row" for="personaEmoji"><span class="setting-copy"><strong>EMOJI</strong><small>Bei ernsten Themen angemessen zurückhaltend.</small></span><select id="personaEmoji" data-personalization="emoji"><option value="keine">Keine</option><option value="weniger">Weniger</option><option value="standard">Standard</option><option value="mehr">Mehr</option></select></label><label class="setting-row persona-select-row" for="personaVisual"><span class="setting-copy"><strong>VISUELLE ANTWORTEN</strong><small>Betonung, Tabellen und Beispiele; keine automatische Bildgenerierung.</small></span><select id="personaVisual" data-personalization="visual_answers"><option value="weniger">Weniger</option><option value="standard">Standard</option><option value="mehr">Mehr</option></select></label><label class="setting-row persona-select-row" for="personaHeadings"><span class="setting-copy"><strong>ÜBERSCHRIFTEN UND LISTEN</strong><small>Mehr Struktur bei längeren Antworten.</small></span><select id="personaHeadings" data-personalization="headings_lists"><option value="weniger">Weniger</option><option value="standard">Standard</option><option value="mehr">Mehr</option></select></label></section><section class="settings-panel cfg-card wide violet" aria-label="Benutzerdefinierte Anweisungen"><header class="settings-panel-head"><span class="settings-panel-glyph" aria-hidden="true">✧</span><div><span>PERSÖNLICH</span><h3>Benutzerdefinierte Anweisungen</h3></div></header><label class="settings-field wide" for="personaInstructions"><span><strong>WIE SOLL MARA DIR ANTWORTEN?</strong><small>Persönliche Stilwünsche getrennt vom technischen System-Prompt.</small></span><textarea id="personaInstructions" data-personalization="custom_instructions" rows="5" maxlength="2400" placeholder="Zum Beispiel: Humor ist willkommen, bei Programmierfehlern bitte präzise analysieren."></textarea></label><div class="persona-links"><span class="persona-counter" id="personaInstructionsCount">0 / 2400</span><button class="settings-action compact" type="button" data-goto="ki-profil">ERWEITERTES KI-PROFIL</button></div></section><section class="settings-panel cfg-card wide green" aria-label="Antworten und Werkzeuge"><header class="settings-panel-head"><span class="settings-panel-glyph" aria-hidden="true">✧</span><div><span>OPTIONEN</span><h3>Antworten und Werkzeuge</h3></div></header><label class="setting-row" for="personaQuick"><span class="setting-copy"><strong>SCHNELLE DIREKTANTWORTEN</strong><small>Kurze Antworten auf einfache Fragen bevorzugen. Keine Garantie für geringere Wartezeit.</small></span><span class="settings-switch"><input id="personaQuick" data-personalization="quick_answers" type="checkbox" /><i aria-hidden="true"></i></span></label><label class="setting-row" for="personaSuggestions"><span class="setting-copy"><strong>VORGESCHLAGENE PROMPTS</strong><small>Vorhandene Antwortvorschläge unter Maras Nachrichten ein- oder ausblenden.</small></span><span class="settings-switch"><input id="personaSuggestions" data-personalization="suggested_prompts" type="checkbox" /><i aria-hidden="true"></i></span></label><label class="setting-row" for="personaWeb"><span class="setting-copy"><strong>WEBSUCHE</strong><small>Erlaubt die normale WEB-Suche, soweit der Betreiber sie freigegeben hat.</small></span><span class="settings-switch"><input id="personaWeb" data-personalization="web_search" type="checkbox" /><i aria-hidden="true"></i></span></label><label class="setting-row" for="personaBrowse"><span class="setting-copy"><strong>BROWSER-RECHERCHE</strong><small>Erlaubt tiefe Playwright-Recherchen. Die Fensterdarstellung stellst du unter Anzeige ein.</small></span><span class="settings-switch"><input id="personaBrowse" data-personalization="browse_search" type="checkbox" /><i aria-hidden="true"></i></span></label><label class="setting-row" for="personaKnowledge"><span class="setting-copy"><strong>SUCHE IN MEINEM WISSEN</strong><small>Mara darf automatisch in deinen RAG-Lite-Dokumenten nachschlagen.</small></span><span class="settings-switch"><input id="personaKnowledge" data-personalization="knowledge_search" type="checkbox" /><i aria-hidden="true"></i></span></label></section><section class="settings-panel cfg-card wide " aria-label="Medien und Integrationen"><header class="settings-panel-head"><span class="settings-panel-glyph" aria-hidden="true">✧</span><div><span>TRANSPARENZ</span><h3>Medien und Integrationen</h3></div></header><p class="persona-limit"><strong>Referenzfotos und Ganzkörperfotos:</strong> Als Profilbild sind Fotos bereits möglich. Eine Referenzfoto-Funktion für KI-Bildgenerierung ist derzeit nicht vorhanden.</p><p class="persona-limit"><strong>Frühere Sprachaufnahmen und Live-Sprachchat:</strong> Audioverarbeitung ist nicht dasselbe wie ein durchgehender Live-Sprachchat. Für die fehlenden Funktionen gibt es bewusst keine Schalter ohne Wirkung.</p><p class="persona-limit"><strong>Suche in verbundenen Apps:</strong> Erst nach einer unterstützten, authentifizierten Integration möglich. Eigene Dateien stehen unter Wissen bereit.</p><div class="persona-links"><button class="settings-action compact" type="button" data-goto="profil">PROFILFOTOS</button><button class="settings-action compact" type="button" data-goto="anzeige">ANZEIGE UND LIVE-BROWSER</button></div></section></div>
-          <p class="persona-status" id="personalizationStatus" role="status" aria-live="polite">Einstellungen werden geladen …</p>
+          <header class="cfg-view-head"><div><span class="cfg-kicker">MEIN COREAI</span><h2>Personalisierung</h2><p>Wie Mara sich an dich erinnert, wie sie dir schreibt und was sie dabei nutzen darf. Alles gilt nur für dein Konto; das Betreiber-Modelfile und die Sicherheitsregeln bleiben unverändert.</p></div></header>
+          <p class="sec-status" id="personalizationStatus" role="status" aria-live="polite">Einstellungen werden geladen …</p>
+          <!-- 0.7.0: after the reference screenshots; every switch and menu saves on its own (js/coreui-personalization-settings.js, api/personalization.php). -->
+          <div class="pz-main" id="pzMain">
+            <h3 class="sec-heading">Mara-Erinnerung</h3>
+            <p class="pz-lead">Lege fest, wie Mara Erinnerungen verwaltet.</p>
+            <section class="settings-panel cfg-card wide sec-group" aria-label="Mara-Erinnerung">
+              <div class="sec-row">
+                <div class="sec-copy"><strong id="pzLabel-memory">Erinnerung aktivieren</strong><small>Lass Mara sich Wichtiges aus deinen Chats merken und in neue Antworten einbeziehen. Die Erinnerung kann sensible Informationen enthalten, die du teilst. Ausgeschaltet merkt sich Mara nichts Neues und nutzt Gespeichertes nicht; es bleibt aber erhalten.</small></div>
+                <label class="settings-switch sec-switch" for="personaMemoryEnabled"><input id="personaMemoryEnabled" type="checkbox" aria-labelledby="pzLabel-memory" /><i aria-hidden="true"></i></label>
+              </div>
+              <div class="sec-row">
+                <div class="sec-copy"><strong>Erinnerungszusammenfassung</strong><small>Lass dir eine Übersicht darüber anzeigen, was Mara über dich gelernt hat. Nutze <button class="pz-link" type="button" data-pz-open="instructions">benutzerdefinierte Anweisungen</button> für Informationen, die Mara immer berücksichtigen soll. Du kannst deine <button class="pz-link" type="button" data-goto="memory">gespeicherten Erinnerungen</button> weiterhin verwalten.</small></div>
+                <button class="arc-btn pz-btn" id="pzSummaryOpen" type="button">Verwalten</button>
+              </div>
+              <p class="pz-note">Mara kann Erinnerungen verwenden, um Suchanfragen an die Websuche zu personalisieren.</p>
+            </section>
+
+            <h3 class="sec-heading">Schreibstil</h3>
+            <section class="settings-panel cfg-card wide sec-group" aria-label="Schreibstil">
+              <div class="sec-row">
+                <div class="sec-copy"><strong id="pzLabel-adapt">Meinen Schreibstil berücksichtigen</strong><small>Lass Mara deine Nachrichten im aktuellen Chat nutzen, um in deinem Stil zu schreiben, ohne fremde Texte nachzuahmen.</small></div>
+                <label class="settings-switch sec-switch" for="personaAdaptStyle"><input id="personaAdaptStyle" data-personalization="adapt_style" type="checkbox" aria-labelledby="pzLabel-adapt" /><i aria-hidden="true"></i></label>
+              </div>
+            </section>
+
+            <h3 class="sec-heading">Referenzfotos</h3>
+            <section class="settings-panel cfg-card wide sec-group" id="pzReferences" aria-label="Referenzfotos">
+              <div class="sec-row pz-ref" data-pz-ref="portrait">
+                <div class="sec-copy"><strong>Referenzfoto</strong><small>Mara verwendet dieses Foto als Referenz, wenn du dir ein Bild von dir selbst erstellen lässt.</small></div>
+                <div class="pz-ref-side"><img class="pz-ref-thumb" alt="Dein Referenzfoto" hidden /><button class="pz-link pz-ref-remove" type="button" hidden>Entfernen</button><button class="sec-open pz-ref-add" type="button"><span>Hinzufügen</span><svg aria-hidden="true"><use href="#i-chevron" /></svg></button></div>
+              </div>
+              <div class="sec-row pz-ref" data-pz-ref="body">
+                <div class="sec-copy"><strong>Ganzkörper-Referenzfoto</strong><small>Mara verwendet dieses Foto, um zu zeigen, wie Kleidung und Accessoires an dir aussehen.</small></div>
+                <div class="pz-ref-side"><img class="pz-ref-thumb" alt="Dein Ganzkörper-Referenzfoto" hidden /><button class="pz-link pz-ref-remove" type="button" hidden>Entfernen</button><button class="sec-open pz-ref-add" type="button"><span>Hinzufügen</span><svg aria-hidden="true"><use href="#i-chevron" /></svg></button></div>
+              </div>
+              <p class="pz-note" id="pzRefNote">Die Fotos bleiben in deinem Konto und gehen nur in Bilder, um die du für dich selbst bittest. PNG, JPEG oder WebP bis 8 MB.</p>
+              <input class="visually-hidden" id="pzRefFile" type="file" accept="image/png,image/jpeg,image/webp" tabindex="-1" aria-hidden="true" />
+            </section>
+
+            <section class="settings-panel cfg-card wide sec-group pz-style" aria-label="Stil und Tonfall">
+              <div class="sec-row"><div class="sec-copy"><strong id="pzLabel-tone">Basisstil und -tonfall</strong></div><div class="pz-drop"><button class="arc-select pz-select" id="personaTone" data-personalization="tone" type="button" aria-haspopup="menu" aria-expanded="false" aria-describedby="pzLabel-tone"><span>Standard</span><svg class="arc-caret" aria-hidden="true"><use href="#i-chevron" /></svg></button></div></div>
+              <div class="sec-row"><div class="sec-copy"><strong id="pzLabel-warmth">Herzlichkeit</strong></div><div class="pz-drop"><button class="arc-select pz-select" id="personaWarmth" data-personalization="warmth" type="button" aria-haspopup="menu" aria-expanded="false" aria-describedby="pzLabel-warmth"><span>Standard</span><svg class="arc-caret" aria-hidden="true"><use href="#i-chevron" /></svg></button></div></div>
+              <div class="sec-row"><div class="sec-copy"><strong id="pzLabel-enthusiasm">Begeisterung</strong></div><div class="pz-drop"><button class="arc-select pz-select" id="personaEnthusiasm" data-personalization="enthusiasm" type="button" aria-haspopup="menu" aria-expanded="false" aria-describedby="pzLabel-enthusiasm"><span>Standard</span><svg class="arc-caret" aria-hidden="true"><use href="#i-chevron" /></svg></button></div></div>
+              <div class="sec-row"><div class="sec-copy"><strong id="pzLabel-emoji">Emoji</strong></div><div class="pz-drop"><button class="arc-select pz-select" id="personaEmoji" data-personalization="emoji" type="button" aria-haspopup="menu" aria-expanded="false" aria-describedby="pzLabel-emoji"><span>Standard</span><svg class="arc-caret" aria-hidden="true"><use href="#i-chevron" /></svg></button></div></div>
+              <div class="sec-row"><div class="sec-copy"><strong id="pzLabel-visual">Visuelle Antworten</strong></div><div class="pz-drop"><button class="arc-select pz-select" id="personaVisual" data-personalization="visual_answers" type="button" aria-haspopup="menu" aria-expanded="false" aria-describedby="pzLabel-visual"><span>Standard</span><svg class="arc-caret" aria-hidden="true"><use href="#i-chevron" /></svg></button></div></div>
+              <div class="sec-row"><div class="sec-copy"><strong id="pzLabel-headings">Überschriften und Listen</strong></div><div class="pz-drop"><button class="arc-select pz-select" id="personaHeadings" data-personalization="headings_lists" type="button" aria-haspopup="menu" aria-expanded="false" aria-describedby="pzLabel-headings"><span>Standard</span><svg class="arc-caret" aria-hidden="true"><use href="#i-chevron" /></svg></button></div></div>
+            </section>
+            <div class="arc-menu pz-menu" id="pzMenu" role="menu" hidden></div>
+
+            <h3 class="sec-heading">Benutzerdefinierte Anweisungen</h3>
+            <section class="settings-panel cfg-card wide sec-group" aria-label="Benutzerdefinierte Anweisungen">
+              <div class="sec-row pz-nav" data-pz-open="instructions">
+                <div class="sec-copy"><strong>Mara</strong><small>Gib Mara zusätzliche Anweisungen und Kontext für alle Chats.</small><span class="pz-preview" id="pzInstructionsPreview" hidden></span></div>
+                <button class="sec-open" type="button" data-pz-open="instructions" aria-label="Anweisungen für Mara bearbeiten"><svg aria-hidden="true"><use href="#i-chevron" /></svg></button>
+              </div>
+              <div class="sec-row is-planned">
+                <div class="sec-copy"><strong>Codex Cloud</strong><small>Gilt für Chats in Codex Cloud.</small><span class="notify-planned">IN VORBEREITUNG</span></div>
+                <button class="sec-open" type="button" disabled aria-label="Codex Cloud: In Vorbereitung"><svg aria-hidden="true"><use href="#i-chevron" /></svg></button>
+              </div>
+            </section>
+
+            <h3 class="sec-heading">Weitere Mara-Einstellungen</h3>
+            <section class="settings-panel cfg-card wide sec-group" aria-label="Weitere Mara-Einstellungen">
+              <div class="sec-row">
+                <div class="sec-copy"><strong id="pzLabel-quick">Schnelle Antworten</strong><small>Mara beantwortet einfache Fragen knapp und direkt. Nötige Werkzeuge, Tests und Sicherheitsprüfungen lässt sie dabei nicht aus.</small></div>
+                <label class="settings-switch sec-switch" for="personaQuick"><input id="personaQuick" data-personalization="quick_answers" type="checkbox" aria-labelledby="pzLabel-quick" /><i aria-hidden="true"></i></label>
+              </div>
+              <div class="sec-row">
+                <div class="sec-copy"><strong id="pzLabel-suggestions">Vorgeschlagene Prompts</strong><small>Mara zeigt unter ihren Antworten Vorschläge für deine nächste Nachricht.</small></div>
+                <label class="settings-switch sec-switch" for="personaSuggestions"><input id="personaSuggestions" data-personalization="suggested_prompts" type="checkbox" aria-labelledby="pzLabel-suggestions" /><i aria-hidden="true"></i></label>
+              </div>
+              <div class="sec-row">
+                <div class="sec-copy"><strong id="pzLabel-voice">Frühere Stimmsequenzen berücksichtigen</strong><small>Erlaube, dass Mara beim Antworten im Chat die Mitschriften deiner früheren Stimmsequenzen berücksichtigt. Ausgeschaltet hört sie nur die aktuelle; das Live-Gespräch ist davon ausgenommen.</small></div>
+                <label class="settings-switch sec-switch" for="personaVoiceHistory"><input id="personaVoiceHistory" data-personalization="voice_history" type="checkbox" aria-labelledby="pzLabel-voice" /><i aria-hidden="true"></i></label>
+              </div>
+              <div class="sec-row" data-pz-tool="web">
+                <div class="sec-copy"><strong id="pzLabel-web">Websuche</strong><small>Erlaube, dass Mara automatisch im Internet nach Antworten sucht.</small><span class="pz-blocked" hidden></span></div>
+                <label class="settings-switch sec-switch" for="personaWeb"><input id="personaWeb" data-personalization="web_search" type="checkbox" aria-labelledby="pzLabel-web" /><i aria-hidden="true"></i></label>
+              </div>
+              <div class="sec-row" data-pz-tool="browse">
+                <div class="sec-copy"><strong id="pzLabel-browse">Browser-Recherche</strong><small>Erlaube, dass Mara für gründliche Recherchen Webseiten im Browser öffnet und liest. Das Live-Fenster stellst du unter Darstellung ein.</small><span class="pz-blocked" hidden></span></div>
+                <label class="settings-switch sec-switch" for="personaBrowse"><input id="personaBrowse" data-personalization="browse_search" type="checkbox" aria-labelledby="pzLabel-browse" /><i aria-hidden="true"></i></label>
+              </div>
+              <div class="sec-row">
+                <div class="sec-copy"><strong id="pzLabel-live">Live-Gespräch</strong><small>Aktiviere das Live-Gespräch mit Mara. Ist das Eingabefeld leer, wird der Senden-Knopf zum Live-Knopf.</small></div>
+                <label class="settings-switch sec-switch" for="personaLive"><input id="personaLive" data-personalization="live_voice" type="checkbox" aria-labelledby="pzLabel-live" /><i aria-hidden="true"></i></label>
+              </div>
+              <div class="sec-row">
+                <div class="sec-copy"><strong id="pzLabel-knowledge">Suche in meinem Wissen</strong><small>Erlaube, dass Mara automatisch in deinen Dokumenten unter Wissen nach Antworten sucht.</small></div>
+                <label class="settings-switch sec-switch" for="personaKnowledge"><input id="personaKnowledge" data-personalization="knowledge_search" type="checkbox" aria-labelledby="pzLabel-knowledge" /><i aria-hidden="true"></i></label>
+              </div>
+              <div class="sec-row is-planned">
+                <div class="sec-copy"><strong id="pzLabel-connectors">Konnektorsuche</strong><small>Erlaube, dass Mara automatisch in verbundenen Quellen nach Antworten sucht.</small><span class="notify-planned">IN VORBEREITUNG</span></div>
+                <label class="settings-switch sec-switch" for="personaConnectors"><input id="personaConnectors" type="checkbox" disabled aria-labelledby="pzLabel-connectors" /><i aria-hidden="true"></i></label>
+              </div>
+            </section>
+          </div>
+
+          <div class="sec-sub pz-sub" id="pzSub-instructions" hidden>
+            <div class="pz-sub-bar">
+              <button class="sec-back" id="pzInstructionsBack" type="button"><svg aria-hidden="true"><use href="#i-back" /></svg>Zurück</button>
+              <div class="pz-sub-actions"><button class="arc-btn" id="pzInstructionsCancel" type="button">Abbrechen</button><button class="arc-btn pz-primary" id="pzInstructionsSave" type="button" disabled>Speichern</button></div>
+            </div>
+            <header class="sec-sub-head"><div><h3 id="pzInstructionsTitle">Benutzerdefinierte Anweisungen für Mara</h3><p>Gib Mara zusätzliche Anweisungen und Kontext für alle Chats. Sie ergänzen deinen Antwortstil; Werkzeug-, Datenschutz- und Systemregeln ändern sie nicht.</p></div></header>
+            <label class="visually-hidden" for="personaInstructions">Anweisungen für Mara</label>
+            <textarea class="pz-textarea" id="personaInstructions" rows="9" maxlength="2400" placeholder="Zum Beispiel: Humor ist willkommen, bei Programmierfehlern bitte präzise analysieren."></textarea>
+            <span class="persona-counter" id="personaInstructionsCount">0 / 2400</span>
+            <label class="pz-field" for="personaNickname"><strong>Spitzname</strong><input id="personaNickname" type="text" maxlength="60" placeholder="Wie soll Mara dich nennen?" autocomplete="nickname" /></label>
+            <label class="pz-field" for="personaOccupation"><strong>Beruf</strong><input id="personaOccupation" type="text" maxlength="160" placeholder="Zum Beispiel: Entwicklerin" autocomplete="organization-title" /></label>
+            <label class="pz-field" for="personaAbout"><strong>Mehr über dich</strong><textarea id="personaAbout" rows="3" maxlength="1500" placeholder="Interessen, Werte oder Vorlieben, die berücksichtigt werden sollen"></textarea></label>
+            <label class="pz-field" for="personaRole"><strong>Rolle</strong><select id="personaRole"><option value="">Keine Angabe</option><option value="entwicklung">Softwareentwicklung</option><option value="design">Design</option><option value="produkt">Produktmanagement</option><option value="marketing">Marketing</option><option value="vertrieb">Vertrieb</option><option value="forschung">Forschung und Wissenschaft</option><option value="bildung">Bildung und Lehre</option><option value="studium">Studium oder Schule</option><option value="medien">Schreiben und Medien</option><option value="gesundheit">Gesundheit und Pflege</option><option value="recht">Recht</option><option value="finanzen">Finanzen</option><option value="handwerk">Handwerk und Technik</option><option value="sonstiges">Sonstiges</option></select></label>
+            <p class="sec-confirm-error" id="pzInstructionsError" role="alert"></p>
+          </div>
+
+          <div class="sec-confirm pz-dialog" id="pzSummaryDialog" hidden role="dialog" aria-modal="true" aria-labelledby="pzSummaryTitle">
+            <div class="pz-sheet">
+              <header class="pz-sheet-head">
+                <h3 id="pzSummaryTitle">Erinnerungszusammenfassung</h3>
+                <div class="pz-sheet-tools">
+                  <button class="pz-icon" id="pzSummaryMore" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="pzSummaryMenu" aria-label="Weitere Optionen"><svg aria-hidden="true"><use href="#i-more" /></svg></button>
+                  <button class="pz-icon" id="pzSummaryClose" type="button" aria-label="Schließen"><svg aria-hidden="true"><use href="#i-close" /></svg></button>
+                  <div class="arc-menu pz-summary-menu" id="pzSummaryMenu" role="menu" aria-labelledby="pzSummaryMore" hidden>
+                    <button class="arc-option" id="pzSummaryInfo" type="button" role="menuitem"><svg class="arc-lead" aria-hidden="true"><use href="#i-info" /></svg><span>Info zur Erinnerung</span></button>
+                    <hr class="arc-menu-line" />
+                    <button class="arc-option pz-danger" id="pzSummaryWipe" type="button" role="menuitem"><svg class="arc-lead" aria-hidden="true"><use href="#i-trash" /></svg><span>Erinnerung löschen und ausschalten</span></button>
+                  </div>
+                </div>
+              </header>
+              <div class="pz-sheet-body">
+                <p class="pz-sheet-state" id="pzSummaryState" role="status" aria-live="polite"></p>
+                <div class="pz-summary-text" id="pzSummaryText"></div>
+                <div class="pz-summary-retry" id="pzSummaryRetryBox" hidden><button class="arc-btn" id="pzSummaryRetry" type="button">Erneut versuchen</button></div>
+                <ul class="pz-summary" id="pzSummaryList" hidden></ul>
+              </div>
+              <form class="pz-ask" id="pzAskForm"><label class="visually-hidden" for="pzAsk">Frage an Mara</label><input id="pzAsk" type="text" maxlength="2000" placeholder="Fragen oder ergänzen" autocomplete="off" /><button class="pz-ask-send" id="pzAskSend" type="submit" aria-label="In einem neuen Chat an Mara" disabled><svg aria-hidden="true"><use href="#i-arrow-up" /></svg></button></form>
+              <p class="pz-ask-hint">Öffnet einen neuen Chat mit Mara. Einzelne Erinnerungen löschst du unter <button class="pz-link" type="button" data-goto="memory" data-pz-close-summary>Memory</button>.</p>
+              <div class="pz-info" id="pzInfo" hidden role="dialog" aria-modal="true" aria-labelledby="pzInfoTitle">
+                <button class="pz-icon pz-info-close" id="pzInfoClose" type="button" aria-label="Schließen"><svg aria-hidden="true"><use href="#i-close" /></svg></button>
+                <h4 id="pzInfoTitle">Info zur Erinnerung</h4>
+                <p>Mara merkt sich automatisch wichtige Informationen aus euren Chats. Diese Zusammenfassung gibt einen kurzen Überblick über die gespeicherten Erinnerungen, keine vollständige Liste. Mara schreibt sie mit deinem Core neu, sobald sich die Erinnerungen ändern.</p>
+                <button class="pz-link" type="button" data-goto="memory" data-pz-close-summary>Alle Erinnerungen unter Memory</button>
+                <button class="pz-wide" id="pzInfoOk" type="button">Verstanden</button>
+              </div>
+            </div>
+          </div>
+          <div class="sec-confirm" id="pzWipeConfirm" hidden role="dialog" aria-modal="true" aria-labelledby="pzWipeTitle">
+            <div class="sec-confirm-box">
+              <h3 id="pzWipeTitle">Erinnerung löschen und ausschalten?</h3>
+              <p id="pzWipeText">Alle Erinnerungen, die Mara über dich gespeichert hat, werden endgültig gelöscht, und die Erinnerung wird ausgeschaltet. Globale Fakten der Verwaltung bleiben erhalten. Das lässt sich nicht rückgängig machen.</p>
+              <p class="sec-confirm-error" id="pzWipeError" role="alert"></p>
+              <div class="sec-actions"><button class="settings-action danger" id="pzWipeOk" type="button">LÖSCHEN UND AUSSCHALTEN</button><button class="settings-action compact" id="pzWipeCancel" type="button">ABBRECHEN</button></div>
+            </div>
+          </div>
         </section>
 
         <!-- WISSEN -->
@@ -1383,7 +1540,7 @@
   <script src="./js/coreui-settings-tabs.js?v=0131180580469642779294886"></script>
   <script src="./js/coreui-context-slider.js?v=1058131433773441189843644"></script>
   <script src="./js/settings.js?v=0848098337266772199606115"></script>
-  <script src="./js/coreui-personalization-settings.js?v=0293012758263273966658748"></script>
+  <script src="./js/coreui-personalization-settings.js?v=0837679013113818508067852"></script>
   <script src="./js/coreui-voice-read.js?v=0478836976425824839668688"></script>
   <script src="./js/coreui-voice-terms.js?v=0470347751915481307845714"></script>
   <script src="./js/coreui-notify.js?v=1002976330424203629675926"></script>
