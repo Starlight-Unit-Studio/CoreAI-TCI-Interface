@@ -10,7 +10,7 @@
   if (!view || !document.getElementById('petRows')) return;
   var $ = function (id) { return document.getElementById(id); };
   var API = './api/pets.php';
-  var state = {csrf: '', builtin: [], own: [], selected: 'mara', ready: false, loaded: false, previewUrl: '', pendingDelete: null};
+  var state = {csrf: '', builtin: [], library: [], own: [], selected: 'mara', ready: false, loaded: false, previewUrl: '', pendingDelete: null, canManageLibrary: false};
 
   var ERRORS = {
     name_required: 'Bitte gib deinem Pet einen Namen.',
@@ -48,7 +48,7 @@
     });
   }
   function petById(id) {
-    return state.builtin.concat(state.own).filter(function (p) { return p.id === id; })[0] || null;
+    return state.builtin.concat(state.library, state.own).filter(function (p) { return p.id === id; })[0] || null;
   }
 
   // --- The list -------------------------------------------------------------------------------------
@@ -65,23 +65,28 @@
     copy.className = 'sec-copy';
     var name = document.createElement('strong');
     name.textContent = pet.name;
-    if (pet.own) {
+    if (pet.own || pet.library) {
       var tag = document.createElement('em');
       tag.className = 'pet-own-tag';
-      tag.textContent = 'EIGENES PET';
+      tag.textContent = pet.own ? 'EIGENES PET' : 'FREIGEGEBENES PET';
       name.appendChild(tag);
     }
     var small = document.createElement('small');
     small.textContent = pet.description || '';
     copy.appendChild(name);
     if (pet.description) copy.appendChild(small);
+    if (pet.library) {
+      var credit = document.createElement('small');
+      credit.textContent = '© ' + (pet.attribution || 'Urheber unbekannt') + ' · ' + (pet.license || 'Lizenz ungeklärt');
+      copy.appendChild(credit);
+    }
     label.appendChild(sprite);
     label.appendChild(copy);
-    if (pet.own) {
+    if (pet.own || (pet.library && state.canManageLibrary)) {
       var del = document.createElement('button');
       del.type = 'button';
       del.className = 'pz-icon pet-delete';
-      del.setAttribute('aria-label', 'Pet „' + pet.name + '“ löschen');
+      del.setAttribute('aria-label', pet.library ? 'System-Pet „' + pet.name + '“ entfernen' : 'Pet „' + pet.name + '“ löschen');
       del.innerHTML = '<svg aria-hidden="true"><use href="#i-trash" /></svg>';
       del.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); askDelete(pet); });
       label.appendChild(del);
@@ -98,18 +103,21 @@
   function render() {
     var rows = $('petRows');
     rows.textContent = '';
-    state.own.concat(state.builtin).forEach(function (pet) { rows.appendChild(row(pet)); });
+    state.own.concat(state.library, state.builtin).forEach(function (pet) { rows.appendChild(row(pet)); });
     Array.prototype.forEach.call(view.querySelectorAll('input[name="petChoice"]'), function (radio) {
       radio.checked = radio.value === state.selected;
       radio.disabled = !state.loaded;
     });
+    $('petLibraryAdmin').hidden = !state.canManageLibrary;
     $('petUploadOpen').disabled = !state.ready;
     $('petUploadOpen').title = state.ready ? '' : 'Das Update ist noch nicht vollständig eingespielt (Migration 034).';
   }
   function apply(data) {
     state.csrf = data.csrf_token || state.csrf;
     state.builtin = data.builtin || [];
+    state.library = data.library || [];
     state.own = data.own || [];
+    state.canManageLibrary = data.can_manage_library === true;
     state.selected = data.selected || 'none';
     state.ready = data.upload_ready === true;
     state.loaded = true;
@@ -131,6 +139,7 @@
     state.selected = choice;
     request('POST', {action: 'select', pet: choice}).then(function (data) {
       state.csrf = data.csrf_token || state.csrf;
+      state.library = data.library || state.library;
       state.own = data.own || state.own;
       state.selected = data.selected || 'none';
       var pet = petById(state.selected);
@@ -227,10 +236,48 @@
     });
   });
 
+  // Only the server-verified owner can publish system-wide presets.
+  // Merely downloading a sprite from a community gallery is not a license.
+  $('petLibraryForm').addEventListener('submit', function (event) {
+    event.preventDefault();
+    if (!state.canManageLibrary) return;
+    var formEl = $('petLibraryForm');
+    var file = $('petLibraryFile').files && $('petLibraryFile').files[0];
+    var errorEl = $('petLibraryError');
+    errorEl.textContent = '';
+    if (!file || file.size > 6 * 1024 * 1024) {
+      errorEl.textContent = 'Bitte ein vollständiges .openpet.zip bis 6 MB auswählen.';
+      return;
+    }
+    if (!$('petLibraryConfirm').checked || !formEl.checkValidity()) {
+      errorEl.textContent = 'Lizenz, Urheber, Originalquelle und konkreten Rechtebeleg prüfen und bestätigen.';
+      return;
+    }
+    var payload = new FormData();
+    payload.append('action', 'library_import');
+    payload.append('file', file);
+    payload.append('license', $('petLibraryLicense').value);
+    payload.append('rights_holder', $('petLibraryHolder').value);
+    payload.append('source_url', $('petLibrarySource').value);
+    payload.append('evidence_url', $('petLibraryEvidence').value);
+    payload.append('rights_confirmed', 'yes');
+    var button = $('petLibrarySubmit');
+    button.disabled = true;
+    request('POST', payload, true).then(function (data) {
+      apply(data);
+      formEl.reset();
+      status('„' + data.pet.name + '“ steht jetzt als freigegebenes Standard-Pet allen Konten zur Verfügung.');
+    }).catch(function (err) {
+      errorEl.textContent = errText(err, 'Das Pet konnte nicht veröffentlicht werden.');
+    }).then(function () { button.disabled = false; });
+  });
+
   // --- Delete ---------------------------------------------------------------------------------------------
   function askDelete(pet) {
     state.pendingDelete = pet;
-    $('petDeleteText').textContent = '„' + pet.name + '“ wird mit seinem Sprite-Sheet gelöscht.'
+    $('petDeleteText').textContent = pet.library
+      ? '„' + pet.name + '“ wird aus der öffentlichen Standardauswahl entfernt. Die Lizenzdaten werden nicht mehr angezeigt.'
+      : '„' + pet.name + '“ wird mit seinem Sprite-Sheet gelöscht.'
       + (state.selected === pet.id ? ' Danach begleitet dich wieder Mara.' : '');
     $('petDeleteError').textContent = '';
     $('petDeleteConfirm').hidden = false;
@@ -242,7 +289,7 @@
     var pet = state.pendingDelete;
     if (!pet) return;
     $('petDeleteOk').disabled = true;
-    request('POST', {action: 'delete', id: pet.id}).then(function (data) {
+    request('POST', {action: pet.library ? 'library_remove' : 'delete', id: pet.id}).then(function (data) {
       closeDelete();
       apply(data);
       status('„' + pet.name + '“ wurde gelöscht.');
