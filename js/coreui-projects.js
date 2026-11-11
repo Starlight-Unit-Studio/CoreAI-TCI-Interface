@@ -218,6 +218,8 @@
   function runAction(task) {
     var p=selected();if(!p)return;
     $('projectHomePopover').hidden=true;
+    if(task==='home'){openProject(p.id);return;}
+    if(task==='share'){openModal('share');return;}
     if(task==='settings'||task==='rename'){openModal('settings');return;}
     if(task==='pin') {
       post({action:'project_pin',project_id:p.id,pinned:!p.pinned}).then(refresh).catch(function(e){alert(fail(e));});
