@@ -432,6 +432,11 @@ UI_FILES=(
   scripts/chat-follow-selftest.cjs
   js/coreui-chat-follow.js
   scripts/message-actions-selftest.php
+  database/migrations/035_feedback_followups.sql
+  api/console_feedback_store.php
+  api/console_feedback.php
+  css/coreui-feedback.css
+  scripts/feedback-ui-selftest.cjs
   scripts/markdown-selftest.js
   scripts/personalization-selftest.php
   js/coreui-personalization-settings.js
@@ -1788,6 +1793,12 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   else
     message_actions_selftest="${message_actions_selftest//$'\r'/}"
     fail "$message_actions_selftest"
+  fi
+
+  if node "$PROJECT_ROOT/scripts/feedback-ui-selftest.cjs" >/dev/null 2>&1; then
+    ok 'Feedback: Daumenfarben, Speicherung, Mara-Reaktion ohne Thinking geprueft.'
+  else
+    fail 'Feedback: UI-/Backend-Vertrag fuer Bewertungen fehlerhaft.'
   fi
 
   if is_enabled "${COREUI_INSTALL_BROWSE:-0}"; then
