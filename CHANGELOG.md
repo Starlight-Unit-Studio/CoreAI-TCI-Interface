@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.7.3 - 11.11.2026
+
+- **Mara's message identity:** Live and persisted chat messages, including browser progress, show an underlined "TCI CORE:" label above the account's custom assistant name. User messages retain their layout.
+- **Full-width chat responses:** Assistant text, code blocks and tool results start below the avatar and fill the available chat column on smartphones and larger screens.
+- **Autonomous image follow-up:** After confirmed image generation, Mara performs one bounded model call to write a natural closing response in the same assistant turn. The generated image is rendered before her text. No second image or tool loop is allowed; cancellation and model failure keep the confirmed tool result.
+- **Scope:** Model-driven follow-up is event-based within an active request. Unsolicited background conversation initiation is not enabled; it requires a separate server-side, opt-in event scheduler with cooldowns.
+- **Regression:** Updated image selftests and added an offline TCI header/layout contract; complete PHP, Playwright and preflight execution remains required before release.
+- **Version:** One merge = 0.7.3. The repository's original model settings and existing accounts are untouched.
+
 ## 0.7.2 - 11.11.2026
 
 - **Mara Thorne is the built-in default Pet:** Added the original, transparent OpenPet v2 spritesheet in `images/pets/mara.webp` (1536 × 2288 pixels, 11 state rows, eight columns). The asset is byte-identical to the submitted `mara.openpet.zip` and is served as a static file.

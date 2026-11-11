@@ -1430,6 +1430,22 @@
     return wrapper;
   }
 
+  // Same TCI identity in live, saved and browser work messages.
+  // The display name remains account-specific, never hardcoded into HTML.
+  function buildTciMessageHeading() {
+    var heading = document.createElement('div');
+    heading.className = 'msg-name msg-name-tci';
+    var role = document.createElement('span');
+    role.className = 'msg-core-role';
+    role.textContent = 'TCI CORE:';
+    var name = document.createElement('span');
+    name.className = 'msg-core-persona';
+    name.textContent = (state.assistantName || 'Mara').toUpperCase();
+    heading.appendChild(role);
+    heading.appendChild(name);
+    return heading;
+  }
+
   // ── DOM: Nachricht einfügen ──────────────────────────────
   function appendMessageEl(role, text, name, thinkingText, attachment, createdAt, record) {
     var row = document.createElement('div');
@@ -1490,11 +1506,11 @@
       workTimeline = window.CoreUIWorkEvents.create({events: record.work_events});
     }
 
-    var nameEl = document.createElement('div');
-    nameEl.className = 'msg-name';
-    nameEl.textContent = role === 'user'
-      ? (name || state.userDisplayName || state.charName || 'DU').toUpperCase()
-      : (state.assistantName || 'Mara').toUpperCase();
+    var nameEl = role === 'ember' ? buildTciMessageHeading() : document.createElement('div');
+    if (role !== 'ember') {
+      nameEl.className = 'msg-name';
+      nameEl.textContent = (name || state.userDisplayName || state.charName || 'DU').toUpperCase();
+    }
     content.appendChild(nameEl);
     if (intentChip) content.appendChild(intentChip);
     if (workTimeline) content.appendChild(workTimeline);
@@ -1529,6 +1545,15 @@
     attachments.slice(0, MAX_MESSAGE_ATTACHMENTS).forEach(function (item) {
       content.appendChild(buildAttachmentEl(item));
     });
+    // The image is the result of Mara's work. Her own final prose belongs
+    // *after* the confirmed generated image, not above the image card.
+    // Ordinary user attachments and non-image messages keep their old order.
+    if (role === 'ember' && attachments.some(function (item) {
+      return item && item.kind === 'image' && item.generated === true;
+    }) && bubble.parentNode === content) {
+      content.appendChild(bubble);
+      if (suggestionRow) content.appendChild(suggestionRow);
+    }
 
     if (record && record.queued === true) {
       var queuedLabel = document.createElement('div');
@@ -2103,10 +2128,7 @@
 
     var content = document.createElement('div');
     content.className = 'msg-content';
-    var nameEl = document.createElement('div');
-    nameEl.className = 'msg-name';
-    nameEl.textContent = (state.assistantName || 'Mara').toUpperCase();
-    content.appendChild(nameEl);
+    content.appendChild(buildTciMessageHeading());
 
     var session = activeSession();
     var bucket = session && state.liveWorkEventsBySession[String(session.id)];
@@ -3673,6 +3695,7 @@
 
     var content = document.createElement('div');
     content.className = 'msg-content';
+    content.appendChild(buildTciMessageHeading());
 
     var panel = document.createElement('div');
     panel.className = 'browse-live running';
