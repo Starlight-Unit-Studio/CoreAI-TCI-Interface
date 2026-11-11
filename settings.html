@@ -1394,6 +1394,35 @@
             <label class="sec-row pet-row pet-none" for="petNone"><span class="sec-copy"><strong>Pet nicht anzeigen</strong></span><input class="pet-radio" id="petNone" type="radio" name="petChoice" value="none" /></label>
           </section>
 
+          <section class="settings-panel cfg-card wide sec-group" id="petLibraryAdmin" hidden aria-label="Systemweite Pet-Bibliothek">
+            <div class="sec-copy">
+              <strong>SYSTEM-PETS // FREIGEGEBENE OPENPET-PAKETE</strong>
+              <p>Nur für den Inhaber. Ein Galerie-Download ist keine Weitergabelizenz. Importiere ausschließlich eigene oder nachweislich zur öffentlichen Weitergabe freigegebene Sprites.</p>
+            </div>
+            <form id="petLibraryForm" novalidate>
+              <label class="pz-field" for="petLibraryFile"><strong>OpenPet-Paket (.openpet.zip)</strong>
+                <input id="petLibraryFile" type="file" accept=".zip,.openpet.zip,application/zip" required /></label>
+              <label class="pz-field" for="petLibraryLicense"><strong>Lizenz für die Sprite-Grafik</strong>
+                <select id="petLibraryLicense" required>
+                  <option value="">Lizenz wählen</option><option value="CC0-1.0">CC0 1.0</option>
+                  <option value="CC-BY-4.0">CC BY 4.0</option><option value="CC-BY-SA-4.0">CC BY-SA 4.0</option>
+                  <option value="MIT">MIT</option><option value="APACHE-2.0">Apache 2.0</option>
+                  <option value="BSD-3-CLAUSE">BSD-3-Clause</option>
+                </select></label>
+              <label class="pz-field" for="petLibraryHolder"><strong>Rechteinhaber / Urheber</strong>
+                <input id="petLibraryHolder" type="text" maxlength="120" required /></label>
+              <label class="pz-field" for="petLibrarySource"><strong>Originalquelle (HTTPS)</strong>
+                <input id="petLibrarySource" type="url" maxlength="500" placeholder="https://..." required /></label>
+              <label class="pz-field" for="petLibraryEvidence"><strong>Beleg der Weitergabeerlaubnis (HTTPS)</strong>
+                <input id="petLibraryEvidence" type="url" maxlength="500" placeholder="https://..." required /></label>
+              <label class="pz-field" for="petLibraryConfirm">
+                <span><input id="petLibraryConfirm" type="checkbox" required />
+                Ich habe die Rechte an den Sprites geprüft und bestätige die Weitergabeberechtigung einschließlich etwaiger abgebildeter Figuren.</span>
+              </label>
+              <p class="sec-confirm-error" id="petLibraryError" role="alert"></p>
+              <button class="arc-btn pz-primary" type="submit" id="petLibrarySubmit">Freigegebenes Pet veröffentlichen</button>
+            </form>
+          </section>
           <div class="sec-confirm" id="petUploadDialog" hidden role="dialog" aria-modal="true" aria-labelledby="petUploadTitle">
             <form class="sec-confirm-box pet-upload-box" id="petUploadForm" novalidate>
               <div class="pet-upload-head"><h3 id="petUploadTitle">Pet hochladen</h3><button class="pz-icon" id="petUploadClose" type="button" aria-label="Schließen"><svg aria-hidden="true"><use href="#i-close" /></svg></button></div>
