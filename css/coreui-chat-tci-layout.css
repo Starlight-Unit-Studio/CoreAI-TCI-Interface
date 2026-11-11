@@ -79,3 +79,20 @@
   /* The unsaved welcome view does not reserve space for a hidden right rail. */
   .app-shell .messages-area.is-welcome { margin-right: 0; }
 }
+
+/* Keep all four insight shortcuts visible on an ordinary phone screen.
+   Ultra-narrow screens still inherit the safe horizontal-scroll fallback. */
+@media (max-width: 620px) {
+  .insight-chip-row { gap: 6px; justify-content: space-between; }
+  .insight-chip {
+    gap: 4px;
+    padding: 8px 9px;
+    font-size: 10px;
+    letter-spacing: .035em;
+  }
+  .insight-chip .insight-icon { font-size: 12px; }
+}
+@media (max-width: 360px) {
+  .insight-chip { padding-inline: 6px; font-size: 9px; }
+  .insight-chip-row { gap: 4px; }
+}
