@@ -3788,6 +3788,10 @@
       recoverActiveRun(ses, d);
       var waitingTool = d.active_run && d.active_run.status === 'waiting_tool'
         && Number(d.active_run.turn_id) === Number(userMsgId);
+      if (isActiveSession(sessionId) && window.CoreAIPets) {
+        if (waitingTool) window.CoreAIPets.setActivity('waiting');
+        else if (window.CoreAIPets.getActivity() === 'waiting') window.CoreAIPets.setActivity('running');
+      }
 
       if (found && !waitingTool) {
         delete state.liveWorkEventsBySession[sessionId];
@@ -3871,6 +3875,10 @@
       }
       var waitingTool = d.active_run && d.active_run.status === 'waiting_tool'
         && Number(d.active_run.turn_id) === pendingTurnId;
+      if (isActiveSession(sessionId) && window.CoreAIPets) {
+        if (waitingTool) window.CoreAIPets.setActivity('waiting');
+        else if (window.CoreAIPets.getActivity() === 'waiting') window.CoreAIPets.setActivity('running');
+      }
       if (receivedReply && !waitingTool && state.pendingBySession[sessionId]) {
         delete state.liveWorkEventsBySession[sessionId];
         clearAgentRun(sessionId);
