@@ -1,0 +1,10 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.12
+Datum: 11.11.2026
+
+- Benutzer-Nachrichten erhalten ein zweizeiliges Namensfeld: OPERATOR: und darunter den konfigurierten Profilnamen, wie beim TCI CORE von Mara.
+- OPERATOR: und der Name erscheinen in der bisherigen goldenen Benutzerfarbe, mit identischer Typografie zu Maras blauem Namensblock.
+- Die Unterstreichung von OPERATOR: verwendet umgekehrt zu TCI CORE das Theme-Blau. Das Layout bleibt rechtsbuendig und die vorhandene Nachrichtenblase bleibt rechts vor dem Avatar.
+- Funktioniert fuer gespeicherte, neu gesendete und erneut geladene Chatnachrichten ohne neue Datenbankfelder. Profilnamen werden als reiner Text eingefuegt.
+- Bestehende TCI-Header, Antwortbreite, Bilder, Pet-System, Nachrichtentasten und die mobile Navigation bleiben unveraendert.
+- Bestehende DOM-Vertragstests erweitert; neuer responsiver Browser-Selbsttest fuer 390px und Desktop.
+Version: 0.7.12
