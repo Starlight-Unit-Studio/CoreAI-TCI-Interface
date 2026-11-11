@@ -141,7 +141,9 @@
   btn.setAttribute('aria-expanded', 'false');
 
   function loadTools(force) {
-    if (!force && tools && Date.now() - toolsAt < 60000) return Promise.resolve(tools);
+    // Guest image credits can change after every generated picture. Do not
+    // reuse a stale tool menu that still offers image generation at zero left.
+    if (!force && tools && !tools.guest && Date.now() - toolsAt < 60000) return Promise.resolve(tools);
     return fetch('./api/composer_tools.php', { credentials: 'include', cache: 'no-store', headers: { Accept: 'application/json' } })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (data) {
