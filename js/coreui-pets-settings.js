@@ -10,7 +10,7 @@
   if (!view || !document.getElementById('petRows')) return;
   var $ = function (id) { return document.getElementById(id); };
   var API = './api/pets.php';
-  var state = {csrf: '', builtin: [], own: [], selected: 'nova', ready: false, loaded: false, previewUrl: '', pendingDelete: null};
+  var state = {csrf: '', builtin: [], own: [], selected: 'mara', ready: false, loaded: false, previewUrl: '', pendingDelete: null};
 
   var ERRORS = {
     name_required: 'Bitte gib deinem Pet einen Namen.',
@@ -231,7 +231,7 @@
   function askDelete(pet) {
     state.pendingDelete = pet;
     $('petDeleteText').textContent = '„' + pet.name + '“ wird mit seinem Sprite-Sheet gelöscht.'
-      + (state.selected === pet.id ? ' Danach begleitet dich wieder Nova.' : '');
+      + (state.selected === pet.id ? ' Danach begleitet dich wieder Mara.' : '');
     $('petDeleteError').textContent = '';
     $('petDeleteConfirm').hidden = false;
     $('petDeleteCancel').focus();
