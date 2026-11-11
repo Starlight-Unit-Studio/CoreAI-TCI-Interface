@@ -186,6 +186,33 @@
                 <span class="settings-switch"><input id="captchaEnabled" type="checkbox" /><i aria-hidden="true"></i></span>
               </label>
             </section>
+            <section class="settings-panel cfg-card" aria-labelledby="adminGuestToolsTitle">
+              <header class="settings-panel-head">
+                <span class="settings-panel-glyph" aria-hidden="true">◇</span>
+                <div><span>GASTRECHTE</span><h3 id="adminGuestToolsTitle">Funktionen für Gäste</h3></div>
+              </header>
+              <p>Die globalen Werkzeugschalter unter Betrieb bleiben die Obergrenze. Diese Schalter gelten zusätzlich nur für Gastkonten.</p>
+              <label class="setting-row" for="guestToolWebEnabled">
+                <span class="setting-copy"><strong>WEBSUCHE</strong><small>Gastkonten dürfen normale Websuchen ausführen.</small></span>
+                <span class="settings-switch"><input id="guestToolWebEnabled" type="checkbox" /><i aria-hidden="true"></i></span>
+              </label>
+              <label class="setting-row" for="guestToolBrowseEnabled">
+                <span class="setting-copy"><strong>BROWSER</strong><small>Gastkonten dürfen Webseiten im Recherche-Werkzeug besuchen.</small></span>
+                <span class="settings-switch"><input id="guestToolBrowseEnabled" type="checkbox" /><i aria-hidden="true"></i></span>
+              </label>
+              <label class="setting-row" for="guestToolPythonEnabled">
+                <span class="setting-copy"><strong>PYTHON</strong><small>Gastkonten dürfen die vorhandene geschützte Berechnungsumgebung verwenden.</small></span>
+                <span class="settings-switch"><input id="guestToolPythonEnabled" type="checkbox" /><i aria-hidden="true"></i></span>
+              </label>
+              <label class="setting-row" for="guestToolImageEnabled">
+                <span class="setting-copy"><strong>BILDER GENERIEREN</strong><small>Gastkonten dürfen Bilder erzeugen, sofern die globale Bildgenerierung eingeschaltet ist.</small></span>
+                <span class="settings-switch"><input id="guestToolImageEnabled" type="checkbox" /><i aria-hidden="true"></i></span>
+              </label>
+              <label class="settings-field" for="guestImageDailyLimit">
+                <span><strong>BILDER PRO GAST UND TAG</strong><small>Standard: 3 erfolgreich gespeicherte Bilder pro Server-Kalendertag. 0 deaktiviert. Mehrfachaufträge zählen jedes Bild einzeln.</small></span>
+                <input id="guestImageDailyLimit" type="number" min="0" max="100" step="1" />
+              </label>
+            </section>
             <div class="admin-callout wide" id="guestGuardNote" hidden><b id="guestGuardTitle">SCHUTZ VOR MEHRFACH-GÄSTEN</b><p id="guestGuardText"></p></div>
           </div>
         </section>
