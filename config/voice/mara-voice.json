@@ -125,5 +125,513 @@
         "note": "Ohne parallele Core-Anfrage gemessen. Zum Vergleich 24 Schichten: RTF 0,47, 3014 MB."
       }
     }
+  },
+  "choices": {
+    "note": "CoreAI 0.7.14: Stimmen zur Auswahl unter Einstellungen > Stimme, je Sprache eine. Nur Stimmen mit freier Lizenz (CC BY 4.0 oder CC0) laut kyutai/tts-voices; ausgelassen sind Stimmen mit NC-Lizenz (cosette, jean) und solche ohne dokumentierte Quelle. Eine Stimme ist nur ein Stimmzustand zum vorhandenen Modell: sie wird beim ersten Gebrauch geladen und gegen ihren SHA-256 geprueft.",
+    "decided_at": "2026-11-11",
+    "default": "eve",
+    "attribution": "Stimmen aus Pocket TTS von Kyutai. VCTK-Stimmen: CSTR, University of Edinburgh (CC BY 4.0). Alba: Alba MacKenna (CC BY 4.0). Voice-Zero, Unmute Voice Donation und Kyutais eigene Aufnahmen: CC0.",
+    "voices": [
+      {
+        "name": "eve",
+        "label": "Eve",
+        "gender": "weiblich",
+        "license": "CC BY 4.0",
+        "origin": "VCTK-Sprecherin p361 (kyutai/tts-voices vctk/p361_023_enhanced.wav), Stimmzustand von Kyutai",
+        "files": {
+          "de": {
+            "repo": "kyutai/pocket-tts-without-voice-cloning",
+            "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+            "path": "languages/german_24l/embeddings/eve.safetensors",
+            "sha256": "b734cfed90bfb86494f7f892b219bf9c85be1bc7dd3dde1ac6b997cd2a69cba7",
+            "size": 24583512,
+            "license": "CC BY 4.0 (VCTK p361, Kyutai)"
+          },
+          "en": {
+            "repo": "kyutai/pocket-tts-without-voice-cloning",
+            "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+            "path": "languages/english/embeddings/eve.safetensors",
+            "sha256": "4444e6c2671a068ce385bba95fa6dd079e6432e51979ad1bfccd48d618363412",
+            "size": 6145848,
+            "license": "CC BY 4.0 (VCTK p361, Kyutai)"
+          }
+        }
+      },
+      {
+        "name": "anna",
+        "label": "Anna",
+        "gender": "weiblich",
+        "license": "CC BY 4.0",
+        "origin": "VCTK-Sprecherin p228 (kyutai/tts-voices vctk/p228_023_enhanced.wav), Stimmzustand von Kyutai",
+        "files": {
+          "de": {
+            "repo": "kyutai/pocket-tts-without-voice-cloning",
+            "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+            "path": "languages/german_24l/embeddings/anna.safetensors",
+            "sha256": "331272c9027cac45762a152832178d8963e411849d13dc4f235c76d421202e24",
+            "size": 30481760,
+            "license": "CC BY 4.0 (VCTK p228, Kyutai)"
+          },
+          "en": {
+            "repo": "kyutai/pocket-tts-without-voice-cloning",
+            "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+            "path": "languages/english/embeddings/anna.safetensors",
+            "sha256": "626a19a37e3cbf5cac1e6893748c3f0dd2081b26b1ce787ae0deb42cb1ddb7f6",
+            "size": 7620408,
+            "license": "CC BY 4.0 (VCTK p228, Kyutai)"
+          }
+        }
+      },
+      {
+        "name": "vera",
+        "label": "Vera",
+        "gender": "weiblich",
+        "license": "CC BY 4.0",
+        "origin": "VCTK-Sprecherin p229 (kyutai/tts-voices vctk/p229_023_enhanced.wav), Stimmzustand von Kyutai",
+        "files": {
+          "de": {
+            "repo": "kyutai/pocket-tts-without-voice-cloning",
+            "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+            "path": "languages/german_24l/embeddings/vera.safetensors",
+            "sha256": "98dcdff9f51b6e8e087121dcb586ce9466637b4fd4708cb3834f19af58959abe",
+            "size": 26746208,
+            "license": "CC BY 4.0 (VCTK p229, Kyutai)"
+          },
+          "en": {
+            "repo": "kyutai/pocket-tts-without-voice-cloning",
+            "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+            "path": "languages/english/embeddings/vera.safetensors",
+            "sha256": "fe136ebb9c88b65803e73ab8fc04fcc7faaa5aa790559bdab3d2382826eea44a",
+            "size": 6686520,
+            "license": "CC BY 4.0 (VCTK p229, Kyutai)"
+          }
+        }
+      },
+      {
+        "name": "fantine",
+        "label": "Fantine",
+        "gender": "weiblich",
+        "license": "CC BY 4.0",
+        "origin": "VCTK-Sprecherin p244 (kyutai/tts-voices vctk/p244_023_enhanced.wav), Stimmzustand von Kyutai",
+        "files": {
+          "de": {
+            "repo": "kyutai/pocket-tts-without-voice-cloning",
+            "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+            "path": "languages/german_24l/embeddings/fantine.safetensors",
+            "sha256": "20aa560b847646490af3958a25740e57cee891155702bcfa04569edffcc193cf",
+            "size": 25763160,
+            "license": "CC BY 4.0 (VCTK p244, Kyutai)"
+          },
+          "en": {
+            "repo": "kyutai/pocket-tts-without-voice-cloning",
+            "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+            "path": "languages/english/embeddings/fantine.safetensors",
+            "sha256": "2c3cde0d2324a9bf4d77dc28f9bfb9fe78e8e1f8c29a412f035fb4855b09fda3",
+            "size": 6440760,
+            "license": "CC BY 4.0 (VCTK p244, Kyutai)"
+          }
+        }
+      },
+      {
+        "name": "eponine",
+        "label": "Eponine",
+        "gender": "weiblich",
+        "license": "CC BY 4.0",
+        "origin": "VCTK-Sprecherin p262 (kyutai/tts-voices vctk/p262_023_enhanced.wav), Stimmzustand von Kyutai",
+        "files": {
+          "de": {
+            "repo": "kyutai/pocket-tts-without-voice-cloning",
+            "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+            "path": "languages/german_24l/embeddings/eponine.safetensors",
+            "sha256": "91caf7f5984097a4c68a816d6005450cac342b33ee6e633e9e494c505c58ef74",
+            "size": 27729248,
+            "license": "CC BY 4.0 (VCTK p262, Kyutai)"
+          },
+          "en": {
+            "repo": "kyutai/pocket-tts-without-voice-cloning",
+            "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+            "path": "languages/english/embeddings/eponine.safetensors",
+            "sha256": "ea923ff050147966af1c7ebd0978fd16f099ead813dfcd1fd2f927d709307f50",
+            "size": 6932280,
+            "license": "CC BY 4.0 (VCTK p262, Kyutai)"
+          }
+        }
+      },
+      {
+        "name": "azelma",
+        "label": "Azelma",
+        "gender": "weiblich",
+        "license": "CC BY 4.0",
+        "origin": "VCTK-Sprecherin p303 (kyutai/tts-voices vctk/p303_023_enhanced.wav), Stimmzustand von Kyutai",
+        "files": {
+          "de": {
+            "repo": "kyutai/pocket-tts-without-voice-cloning",
+            "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+            "path": "languages/german_24l/embeddings/azelma.safetensors",
+            "sha256": "ff254408cd713f0e518f11899a79a4ccde58b04e30dbf7e4cf4d5caecef1da24",
+            "size": 28712288,
+            "license": "CC BY 4.0 (VCTK p303, Kyutai)"
+          },
+          "en": {
+            "repo": "kyutai/pocket-tts-without-voice-cloning",
+            "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+            "path": "languages/english/embeddings/azelma.safetensors",
+            "sha256": "3073cbb90cd659fbfe15aa38449ddd4588c6d6c1a1de64fa36422bbb95f96b4e",
+            "size": 7178040,
+            "license": "CC BY 4.0 (VCTK p303, Kyutai)"
+          }
+        }
+      },
+      {
+        "name": "mary",
+        "label": "Mary",
+        "gender": "weiblich",
+        "license": "CC BY 4.0",
+        "origin": "VCTK-Sprecherin p333 (kyutai/tts-voices vctk/p333_023_enhanced.wav), Stimmzustand von Kyutai",
+        "files": {
+          "de": {
+            "repo": "kyutai/pocket-tts-without-voice-cloning",
+            "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+            "path": "languages/german_24l/embeddings/mary.safetensors",
+            "sha256": "7334fc1c997b77344f5d134d5b1182b801d46f26158d066cb4a47b6398a20391",
+            "size": 23797080,
+            "license": "CC BY 4.0 (VCTK p333, Kyutai)"
+          },
+          "en": {
+            "repo": "kyutai/pocket-tts-without-voice-cloning",
+            "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+            "path": "languages/english/embeddings/mary.safetensors",
+            "sha256": "fc75f7c7cefa8c0b1957ac564037dfaac053dd067ceeffff27982f87314b5a35",
+            "size": 5949240,
+            "license": "CC BY 4.0 (VCTK p333, Kyutai)"
+          }
+        }
+      },
+      {
+        "name": "jane",
+        "label": "Jane",
+        "gender": "weiblich",
+        "license": "CC BY 4.0",
+        "origin": "VCTK-Sprecherin p339 (kyutai/tts-voices vctk/p339_023_enhanced.wav), Stimmzustand von Kyutai",
+        "files": {
+          "de": {
+            "repo": "kyutai/pocket-tts-without-voice-cloning",
+            "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+            "path": "languages/german_24l/embeddings/jane.safetensors",
+            "sha256": "e159b02199a76e44623fd8e7a80f59ae6c0ada1af1cc30dff2f8aa45ea0f66c6",
+            "size": 29302112,
+            "license": "CC BY 4.0 (VCTK p339, Kyutai)"
+          },
+          "en": {
+            "repo": "kyutai/pocket-tts-without-voice-cloning",
+            "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+            "path": "languages/english/embeddings/jane.safetensors",
+            "sha256": "f802b7b0ce91578dc5448e1cdf4827695e64a34cc6b2f95989dc335082522887",
+            "size": 7325496,
+            "license": "CC BY 4.0 (VCTK p339, Kyutai)"
+          }
+        }
+      },
+      {
+        "name": "alba",
+        "label": "Alba",
+        "gender": "weiblich",
+        "license": "CC BY 4.0",
+        "origin": "Alba MacKenna (kyutai/tts-voices alba-mackenna/casual.wav), Stimmzustand von Kyutai",
+        "files": {
+          "de": {
+            "repo": "kyutai/pocket-tts-without-voice-cloning",
+            "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+            "path": "languages/german_24l/embeddings/alba.safetensors",
+            "sha256": "d625caeb4cf50dc6b16239801a92e437a4fbcd5f85026c3206a5eb90c56db583",
+            "size": 24976728,
+            "license": "CC BY 4.0 (Alba MacKenna, Kyutai)"
+          },
+          "en": {
+            "repo": "kyutai/pocket-tts-without-voice-cloning",
+            "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+            "path": "languages/english/embeddings/alba.safetensors",
+            "sha256": "5850f417028fb2bf6de31e5e395e56ee7a21ac0e52ef31aebd4a6a2847d72e9c",
+            "size": 6244152,
+            "license": "CC BY 4.0 (Alba MacKenna, Kyutai)"
+          }
+        }
+      },
+      {
+        "name": "caro_davy",
+        "label": "Caro",
+        "gender": "weiblich",
+        "license": "CC0 1.0",
+        "origin": "Voice-Zero, Caro Davy (kyutai/tts-voices voice-zero/caro_davy.wav), Stimmzustand von Kyutai",
+        "files": {
+          "de": {
+            "repo": "kyutai/pocket-tts-without-voice-cloning",
+            "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+            "path": "languages/german_24l/embeddings/caro_davy.safetensors",
+            "sha256": "19cf2360ffcd67cd68a9ada5105b4ffc697cc61d4df6542a6be6e65b3d02dd18",
+            "size": 20258136,
+            "license": "CC0 1.0 (Voice-Zero, Kyutai)"
+          },
+          "en": {
+            "repo": "kyutai/pocket-tts-without-voice-cloning",
+            "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+            "path": "languages/english/embeddings/caro_davy.safetensors",
+            "sha256": "90309a130521328aa79f33b5ccc6008ba26163f621967455c0ed5c7b9e2854fd",
+            "size": 5064504,
+            "license": "CC0 1.0 (Voice-Zero, Kyutai)"
+          }
+        }
+      },
+      {
+        "name": "estelle",
+        "label": "Estelle",
+        "gender": "weiblich",
+        "license": "CC0 1.0",
+        "origin": "Eigene Aufnahme von Kyutai (kyutai/tts-voices unmute-prod-website/developpeuse-3.wav), Stimmzustand von Kyutai",
+        "files": {
+          "de": {
+            "repo": "kyutai/pocket-tts-without-voice-cloning",
+            "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+            "path": "languages/german_24l/embeddings/estelle.safetensors",
+            "sha256": "a9bf861ee468ff0e78cc7103afb14e472b4260e112f180a165fee419561d463a",
+            "size": 30285152,
+            "license": "CC0 1.0 (Kyutai, Kyutai)"
+          },
+          "en": {
+            "repo": "kyutai/pocket-tts-without-voice-cloning",
+            "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+            "path": "languages/english/embeddings/estelle.safetensors",
+            "sha256": "20c008682e0ffff57fc642fa8c61f711b1789bd0f42c50d0d0c5e55ae09fbc67",
+            "size": 7571256,
+            "license": "CC0 1.0 (Kyutai, Kyutai)"
+          }
+        }
+      },
+      {
+        "name": "charles",
+        "label": "Charles",
+        "gender": "männlich",
+        "license": "CC BY 4.0",
+        "origin": "VCTK-Sprecher p254 (kyutai/tts-voices vctk/p254_023_enhanced.wav), Stimmzustand von Kyutai",
+        "files": {
+          "de": {
+            "repo": "kyutai/pocket-tts-without-voice-cloning",
+            "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+            "path": "languages/german_24l/embeddings/charles.safetensors",
+            "sha256": "af523af0bbc1e6f8c87ec4385f245adaf79b0d603a00c01da6b1de6987d8aa83",
+            "size": 24780120,
+            "license": "CC BY 4.0 (VCTK p254, Kyutai)"
+          },
+          "en": {
+            "repo": "kyutai/pocket-tts-without-voice-cloning",
+            "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+            "path": "languages/english/embeddings/charles.safetensors",
+            "sha256": "007c66f069aa3a564139974e5d4e1e1902ae95d91e76963bee64f4309a75cf8f",
+            "size": 6195000,
+            "license": "CC BY 4.0 (VCTK p254, Kyutai)"
+          }
+        }
+      },
+      {
+        "name": "paul",
+        "label": "Paul",
+        "gender": "männlich",
+        "license": "CC BY 4.0",
+        "origin": "VCTK-Sprecher p259 (kyutai/tts-voices vctk/p259_023_enhanced.wav), Stimmzustand von Kyutai",
+        "files": {
+          "de": {
+            "repo": "kyutai/pocket-tts-without-voice-cloning",
+            "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+            "path": "languages/german_24l/embeddings/paul.safetensors",
+            "sha256": "fd84ba4049bf2f6da4d2c11580527789c912a0d06fee2ed88f356ed584cc6d52",
+            "size": 27336032,
+            "license": "CC BY 4.0 (VCTK p259, Kyutai)"
+          },
+          "en": {
+            "repo": "kyutai/pocket-tts-without-voice-cloning",
+            "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+            "path": "languages/english/embeddings/paul.safetensors",
+            "sha256": "940ebd4c051aec0a9f7802f5ba36f3265be68029f5ae01c4b1322d50cfb4e03d",
+            "size": 6833976,
+            "license": "CC BY 4.0 (VCTK p259, Kyutai)"
+          }
+        }
+      },
+      {
+        "name": "george",
+        "label": "George",
+        "gender": "männlich",
+        "license": "CC BY 4.0",
+        "origin": "VCTK-Sprecher p315 (kyutai/tts-voices vctk/p315_023_enhanced.wav), Stimmzustand von Kyutai",
+        "files": {
+          "de": {
+            "repo": "kyutai/pocket-tts-without-voice-cloning",
+            "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+            "path": "languages/german_24l/embeddings/george.safetensors",
+            "sha256": "5a75006ce98936656c66d0450978ed20c44da5d26ad1674613faa6ed7d685531",
+            "size": 23600472,
+            "license": "CC BY 4.0 (VCTK p315, Kyutai)"
+          },
+          "en": {
+            "repo": "kyutai/pocket-tts-without-voice-cloning",
+            "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+            "path": "languages/english/embeddings/george.safetensors",
+            "sha256": "566330f66e20f95efd4fbea1e399e26dd84cf8e3ab1606e0114604e473dbc9fd",
+            "size": 5900088,
+            "license": "CC BY 4.0 (VCTK p315, Kyutai)"
+          }
+        }
+      },
+      {
+        "name": "michael",
+        "label": "Michael",
+        "gender": "männlich",
+        "license": "CC BY 4.0",
+        "origin": "VCTK-Sprecher p360 (kyutai/tts-voices vctk/p360_023_enhanced.wav), Stimmzustand von Kyutai",
+        "files": {
+          "de": {
+            "repo": "kyutai/pocket-tts-without-voice-cloning",
+            "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+            "path": "languages/german_24l/embeddings/michael.safetensors",
+            "sha256": "3275ac3995f71261c13b114dd1ef57565982020638281778125428336d1d3896",
+            "size": 28515680,
+            "license": "CC BY 4.0 (VCTK p360, Kyutai)"
+          },
+          "en": {
+            "repo": "kyutai/pocket-tts-without-voice-cloning",
+            "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+            "path": "languages/english/embeddings/michael.safetensors",
+            "sha256": "9f6538650ed3b664ab847d05244f51f04db22ce7ea00e2b285f51d91d6308ce0",
+            "size": 7128888,
+            "license": "CC BY 4.0 (VCTK p360, Kyutai)"
+          }
+        }
+      },
+      {
+        "name": "bill_boerst",
+        "label": "Bill",
+        "gender": "männlich",
+        "license": "CC0 1.0",
+        "origin": "Voice-Zero, Bill Boerst (kyutai/tts-voices voice-zero/bill_boerst.wav), Stimmzustand von Kyutai",
+        "files": {
+          "de": {
+            "repo": "kyutai/pocket-tts-without-voice-cloning",
+            "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+            "path": "languages/german_24l/embeddings/bill_boerst.safetensors",
+            "sha256": "f1a0b36a39c8fb34cf9674552953934c0410ba1242f4b6ef9a7f6cd253729230",
+            "size": 26156376,
+            "license": "CC0 1.0 (Voice-Zero, Kyutai)"
+          },
+          "en": {
+            "repo": "kyutai/pocket-tts-without-voice-cloning",
+            "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+            "path": "languages/english/embeddings/bill_boerst.safetensors",
+            "sha256": "a4510681c5ca6ac978b9fee83fc8a0d6569f7627b380caab0c5d23c53e4c0607",
+            "size": 6539064,
+            "license": "CC0 1.0 (Voice-Zero, Kyutai)"
+          }
+        }
+      },
+      {
+        "name": "peter_yearsley",
+        "label": "Peter",
+        "gender": "männlich",
+        "license": "CC0 1.0",
+        "origin": "Voice-Zero, Peter Yearsley (kyutai/tts-voices voice-zero/peter_yearsley.wav), Stimmzustand von Kyutai",
+        "files": {
+          "de": {
+            "repo": "kyutai/pocket-tts-without-voice-cloning",
+            "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+            "path": "languages/german_24l/embeddings/peter_yearsley.safetensors",
+            "sha256": "d8e6b03a3bb44b94fba94291f8ab59604bb2d50453ef29a0b85950beae1b27f7",
+            "size": 14556464,
+            "license": "CC0 1.0 (Voice-Zero, Kyutai)"
+          },
+          "en": {
+            "repo": "kyutai/pocket-tts-without-voice-cloning",
+            "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+            "path": "languages/english/embeddings/peter_yearsley.safetensors",
+            "sha256": "f0eb3f23bb8e2ce5203a27ee4369ebeba07eda564cecebd84ccbdb4d9507cbca",
+            "size": 3639088,
+            "license": "CC0 1.0 (Voice-Zero, Kyutai)"
+          }
+        }
+      },
+      {
+        "name": "stuart_bell",
+        "label": "Stuart",
+        "gender": "männlich",
+        "license": "CC0 1.0",
+        "origin": "Voice-Zero, Stuart Bell (kyutai/tts-voices voice-zero/stuart_bell.wav), Stimmzustand von Kyutai",
+        "files": {
+          "de": {
+            "repo": "kyutai/pocket-tts-without-voice-cloning",
+            "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+            "path": "languages/german_24l/embeddings/stuart_bell.safetensors",
+            "sha256": "e844be6174d18fb8b4f098b44b7005bd1700146923dee4c4630fe977904e227c",
+            "size": 20258136,
+            "license": "CC0 1.0 (Voice-Zero, Kyutai)"
+          },
+          "en": {
+            "repo": "kyutai/pocket-tts-without-voice-cloning",
+            "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+            "path": "languages/english/embeddings/stuart_bell.safetensors",
+            "sha256": "5f1131db588c711127179a65f9eaaeb23b1ff0f5d460352e066c447858abdeb8",
+            "size": 5064504,
+            "license": "CC0 1.0 (Voice-Zero, Kyutai)"
+          }
+        }
+      },
+      {
+        "name": "javert",
+        "label": "Javert",
+        "gender": "männlich",
+        "license": "CC0 1.0",
+        "origin": "Unmute Voice Donation (kyutai/tts-voices voice-donations/Butter.wav), Stimmzustand von Kyutai",
+        "files": {
+          "de": {
+            "repo": "kyutai/pocket-tts-without-voice-cloning",
+            "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+            "path": "languages/german_24l/embeddings/javert.safetensors",
+            "sha256": "ad3f3cc68cd7e22a062559eeffcb4b0006aac63e89ac31cb815a9405d7ccdae3",
+            "size": 24583512,
+            "license": "CC0 1.0 (Unmute Voice Donation, Kyutai)"
+          },
+          "en": {
+            "repo": "kyutai/pocket-tts-without-voice-cloning",
+            "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+            "path": "languages/english/embeddings/javert.safetensors",
+            "sha256": "2bfe465c053195e9650cbdee889de3c941971ced3f2c69f71ad3e91cde202948",
+            "size": 6145848,
+            "license": "CC0 1.0 (Unmute Voice Donation, Kyutai)"
+          }
+        }
+      },
+      {
+        "name": "marius",
+        "label": "Marius",
+        "gender": "männlich",
+        "license": "CC0 1.0",
+        "origin": "Unmute Voice Donation (kyutai/tts-voices voice-donations/Selfie.wav), Stimmzustand von Kyutai",
+        "files": {
+          "de": {
+            "repo": "kyutai/pocket-tts-without-voice-cloning",
+            "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+            "path": "languages/german_24l/embeddings/marius.safetensors",
+            "sha256": "ed4c2ae81d3bd9775fb3acea73600a26b8ce7f3a438fd35bea5071a3d18eec2f",
+            "size": 24976728,
+            "license": "CC0 1.0 (Unmute Voice Donation, Kyutai)"
+          },
+          "en": {
+            "repo": "kyutai/pocket-tts-without-voice-cloning",
+            "revision": "a7056f505a4a8ca72d8b5fb1440071d6f1a35739",
+            "path": "languages/english/embeddings/marius.safetensors",
+            "sha256": "05621a1fa88bfe110063dd6fd206d0262891e374a36a04edc309317e961f14c9",
+            "size": 6244152,
+            "license": "CC0 1.0 (Unmute Voice Donation, Kyutai)"
+          }
+        }
+      }
+    ]
   }
 }

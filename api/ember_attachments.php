@@ -348,7 +348,8 @@ function ember_attach_audio_transcribe_now(PDO $pdo, int $uid, string $uuid, str
   $known = coreui_voice_transcript_load($uid, $uuid);
   if (is_array($known) && ($known['state'] ?? '') === 'done') return trim((string)($known['text'] ?? ''));
   $runtime = function_exists('coreui_ai_runtime_settings') ? coreui_ai_runtime_settings() : [];
-  $language = coreui_voice_language_name((string)(is_array($runtime) ? ($runtime['main_language'] ?? 'de') : 'de'));
+  // 0.7.14: the language set under Settings > Stimme > Sprache, else the account's main language.
+  $language = coreui_voice_language_name(coreui_voice_input_code($pdo, $uid, (string)(is_array($runtime) ? ($runtime['main_language'] ?? 'de') : 'de')));
   $model = ember_model();
   $paths = (array)($prepared['paths'] ?? []);
   $ranges = (array)($prepared['ranges'] ?? []);
@@ -440,7 +441,7 @@ function ember_attach_audio_transcribe_after(PDO $pdo, int $uid, array $uuids, ?
     if (!is_file($path)) continue;
     if ($language === null) {
       $runtime = function_exists('coreui_ai_runtime_settings') ? coreui_ai_runtime_settings() : [];
-      $language = (string)(is_array($runtime) ? ($runtime['main_language'] ?? 'de') : 'de');
+      $language = coreui_voice_input_code($pdo, $uid, (string)(is_array($runtime) ? ($runtime['main_language'] ?? 'de') : 'de'));
     }
     coreui_voice_transcript_save($uid, $uuid, ['state' => 'pending', 'started' => time()]);
     $model = ember_model();

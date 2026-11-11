@@ -81,7 +81,16 @@ vi_test(coreui_voice_native_budget(null) === 600 && coreui_voice_native_budget(6
 vi_test(coreui_voice_is_voice_message('Sprachnachricht-2026-11-05_10-00-00.webm') && !coreui_voice_is_voice_message('besprechung.webm'),
   'a recording from the microphone is a voice message');
 vi_test(coreui_voice_language_name('de') === 'German' && coreui_voice_language_name('en') === 'English'
-  && coreui_voice_language_name('fr') === 'German', 'the account language picks the template language');
+  && coreui_voice_language_name('xx') === 'German', 'the account language picks the template language');
+// 0.7.14: Settings > Stimme > Sprache: more fixed languages and "Automatisch erkennen".
+vi_test(coreui_voice_language_name('fr') === 'French' && coreui_voice_language_name('es') === 'Spanish'
+  && coreui_voice_language_name('auto:de') === 'auto:German' && coreui_voice_language_name('auto:en') === 'auto:English'
+  && coreui_voice_language_name('auto:xx') === 'auto:German', 'fixed languages and automatic detection with the main language as fallback');
+$auto = coreui_voice_transcribe_prompt('auto:German', ['Bergisch Gladbach']);
+vi_test(str_starts_with($auto, "Transcribe the following speech segment into text in the language in which it is spoken. Do not translate it. If the language is unclear, assume German.\n\n")
+  && str_contains($auto, 'spell it exactly like this: Bergisch Gladbach.') && str_contains($auto, '* Only output the transcription, with no newlines.')
+  && str_starts_with(coreui_voice_transcribe_prompt('French'), 'Transcribe the following speech segment in French into French text.'),
+  'automatic detection keeps the template instructions and the terms');
 vi_test(coreui_voice_core_hears(['capabilities' => ['completion', 'vision', 'audio']]) === true
   && coreui_voice_core_hears(['capabilities' => ['completion', 'vision']]) === false
   && coreui_voice_core_hears(null) === null && coreui_voice_core_hears(['details' => []]) === null,
@@ -328,9 +337,15 @@ vi_test(!str_contains($api, '$_FILES') && !str_contains($api, "'transcribe'")
   && strpos($api, "if (\$guest) stu_json(['ok' => false, 'error' => 'guests_not_allowed'], 403);") < strpos($api, "if (\$action === 'transcript') {")
   && str_contains($api, "WHERE uuid = ? AND user_id = ? AND kind IN (?, ?) LIMIT 1"), 'endpoint: status and the own transcript only, no guests');
 $js = $read('js/coreui-voice-input.js');
+// 0.7.14: a Stimmsequenz still puts no text into the field; only a dictation (its own button, Settings > Stimme)
+// writes the Core's text there, in one place (insert), and a Stimmsequenz never reaches that place.
+$insertAt = strpos($js, 'function insert(text)');
 vi_test(str_contains($js, 'composer.sendVoice(file)') && str_contains($js, "var name = 'Sprachnachricht-'")
-  && !str_contains($js, "getElementById('inputMessage')") && str_contains($js, 'VOICED_MIN_MS') && str_contains($js, 'if (!state.allowed) return;'),
-  'page: sends the recording, no text in the field, silence check, nothing for guests');
+  && substr_count($js, "getElementById('inputMessage')") === 1 && $insertAt !== false
+  && strpos($js, "getElementById('inputMessage')") > $insertAt && substr_count($js, 'insert(') === 2
+  && str_contains($js, "if (current.mode === 'dictate') {\n      keep({ blob: blob, kind: 'diktat', seconds: seconds }).then(function (id) { dictate(blob, id); });\n      return;\n    }")
+  && str_contains($js, 'VOICED_MIN_MS') && str_contains($js, 'if (!state.allowed) return;'),
+  'page: sends the recording, no text in the field (only a dictation writes there), silence check, nothing for guests');
 vi_test(str_contains($read('js/coreui-core-mode.js'), "new CustomEvent('coreui:core'"), 'a Core change re-checks the microphone');
 $page = $read('app.html');
 vi_test(strpos($page, 'js/coreui-voice-input.js') !== false && strpos($page, 'js/coreui-voice-input.js') < strpos($page, 'js/console-app.js'),

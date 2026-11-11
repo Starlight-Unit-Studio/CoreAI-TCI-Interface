@@ -6,10 +6,14 @@ only and keeps Eve loaded:
 
   GET  /health  {"ok", "ready", "loading", "error", "voice", "cores"}
   POST /plan    {"text": answer, "language"?: hint}  -> {"ok", "parts": [...], "language", "textprep"}
-  POST /speak   {"text": part, "language"?: "de"|"en"} -> audio/wav (16 bit mono)
+  POST /speak   {"text": part, "language"?: "de"|"en", "voice"?: name} -> audio/wav (16 bit mono)
 
 0.6.8: German and English. The language of an answer is detected from its words
 (the hint decides when unclear); English loads on first use.
+
+0.7.14: the account chooses a voice per language (Settings > Stimme). Every choice
+is a voice state from the registry ("choices"); it is fetched on first use, checked
+against its SHA-256 and kept in memory (the few used last, Eve always).
 
 The voice is exactly the one in config/voice/mara-voice.json: every file is
 fetched at its pinned revision and checked against its SHA-256 before the
@@ -60,15 +64,31 @@ TEXTPREP_VERSION = {'de': TEXTPREP.VERSION, 'en': TEXTPREP_EN.VERSION}
 WARMUP = {'de': 'Hallo.', 'en': 'Hello.'}
 # RAM the voices may use together (the container has 6 GB); measured values from the registry.
 MEM_MB = float(os.environ.get('COREAI_VOICE_MEM_MB', '5600'))
+# 0.7.14: chosen voices kept in memory per language besides the main voice (a German state is 15 to 30 MB).
+VOICE_STATES = max(1, int(os.environ.get('COREAI_VOICE_STATES', '4')))
 
 
 def voice_entries(registry: dict) -> dict:
-    """0.6.8: the main language (German) stands at the top of the registry, more under "languages"."""
+    """0.6.8: the main language (German) stands at the top of the registry, more under "languages".
+    0.7.14: every language also gets the voices that may be chosen for it (name -> file)."""
     entries = {'de': {key: registry[key] for key in ('model', 'voice', 'files', 'textprep', 'measured') if key in registry}}
     for language, entry in (registry.get('languages') or {}).items():
         if language in PREPARE and language != 'de':
-            entries[language] = entry
+            entries[language] = dict(entry)
+    for language, entry in entries.items():
+        entry['choices'] = voice_choices(registry, language, entry['voice']['name'])
     return entries
+
+
+def voice_choices(registry: dict, language: str, main: str) -> dict:
+    """The voices of a language: name -> registered file (the main voice has none here, it is in "files")."""
+    choices = {main: None}
+    for voice in (registry.get('choices') or {}).get('voices') or []:
+        name = voice.get('name')
+        file = (voice.get('files') or {}).get(language)
+        if isinstance(name, str) and name and name != main and isinstance(file, dict):
+            choices[name] = dict(file, key='voice:' + name, label=voice.get('label') or name)
+    return choices
 
 
 def entry_label(entry: dict) -> str:
@@ -165,13 +185,20 @@ class ProbeEngine:
     def load(self) -> None:
         time.sleep(float(os.environ.get('COREAI_VOICE_PROBE_LOAD_' + self.language.upper(), os.environ.get('COREAI_VOICE_PROBE_LOAD', '0'))))
 
-    def synth(self, text: str, limit: float) -> tuple[list[float], int]:
+    def synth(self, text: str, limit: float, voice: str | None = None) -> tuple[list[float], int]:
         if 'TIMEOUT' in text:
             raise TimeoutError('time limit')
         time.sleep(self.delay)
         count = int(self.rate * max(0.2, 0.02 * len(text)))
-        tone = 330 if self.language == 'de' else 440
+        tone = (330 if self.language == 'de' else 440) + probe_offset(voice)
         return [0.2 * math.sin(2 * math.pi * tone * i / self.rate) for i in range(count)], self.rate
+
+
+def probe_offset(voice: str | None) -> int:
+    """0.7.14: another chosen voice, another test tone (Eve keeps 330 / 440 Hz)."""
+    if not voice or voice == 'eve':
+        return 0
+    return 20 + sum(ord(c) for c in voice) % 200
 
 
 class PocketEngine:
@@ -182,13 +209,19 @@ class PocketEngine:
         self.cores = cores
         self.language = language
         self.label = entry_label(entry)
+        self.states: dict = {}   # 0.7.14: chosen voices, the one used longest ago first
+
+    @staticmethod
+    def _verified(entry: dict) -> Path:
+        from huggingface_hub import hf_hub_download
+        path = Path(hf_hub_download(repo_id=entry['repo'], filename=entry['path'], revision=entry['revision']))
+        if sha256_file(path) != entry['sha256']:
+            raise RuntimeError('SHA-256 weicht ab: ' + entry['path'])
+        return path
 
     def _fetch_and_verify(self) -> None:
-        from huggingface_hub import hf_hub_download
         for entry in self.registry['files']:
-            path = Path(hf_hub_download(repo_id=entry['repo'], filename=entry['path'], revision=entry['revision']))
-            if sha256_file(path) != entry['sha256']:
-                raise RuntimeError('SHA-256 weicht ab: ' + entry['path'])
+            self._verified(entry)
 
     def _check_pins(self) -> None:
         """Pocket loads its files from its own pins; they must be the registered ones."""
@@ -205,6 +238,10 @@ class PocketEngine:
             expected = f"hf://{entry['repo']}/{entry['path']}@{entry['revision']}"
             if pins.get(entry['key']) != expected:
                 raise RuntimeError(f"Pocket laedt fuer {entry['key']} eine andere Datei als registriert")
+        # 0.7.14: every voice offered for choice is the file Pocket itself names for it.
+        for name, entry in (self.registry.get('choices') or {}).items():
+            if entry is not None and get_predefined_voice(model['language'], name) != f"hf://{entry['repo']}/{entry['path']}@{entry['revision']}":
+                raise RuntimeError(f"Pocket laedt fuer die Stimme {name} eine andere Datei als registriert")
 
     def load(self) -> None:
         import torch
@@ -224,14 +261,31 @@ class PocketEngine:
         self.rate = int(self.model.sample_rate)
         self.synth(PREPARE[self.language](WARMUP[self.language]), 30.0)
 
-    def synth(self, text: str, limit: float) -> tuple[Any, int]:
+    def voice_state(self, voice: str | None) -> Any:
+        """0.7.14: the state of a chosen voice: the verified file, loaded once and kept while used."""
+        if not voice or voice == self.registry['voice']['name']:
+            return self.state
+        entry = (self.registry.get('choices') or {}).get(voice)
+        if entry is None:
+            raise KeyError(voice)
+        if voice in self.states:
+            self.states[voice] = self.states.pop(voice)
+            return self.states[voice]
+        state = self.model.get_state_for_audio_prompt(self._verified(entry))
+        while len(self.states) >= VOICE_STATES:
+            self.states.pop(next(iter(self.states)))
+        self.states[voice] = state
+        return state
+
+    def synth(self, text: str, limit: float, voice: str | None = None) -> tuple[Any, int]:
         import numpy as np
+        state = self.voice_state(voice)
         stop = threading.Event()
         timer = threading.Timer(limit, stop.set)
         timer.start()
         chunks = []
         try:
-            for chunk in self.model.generate_audio_stream(self.state, text, stop=stop):
+            for chunk in self.model.generate_audio_stream(state, text, stop=stop):
                 chunks.append(chunk.detach().cpu().numpy().reshape(-1))
         finally:
             timer.cancel()
@@ -357,7 +411,8 @@ class Service:
         threading.Thread(target=run, daemon=True).start()
 
     def health(self) -> dict:
-        languages = {lang: {'ready': st['ready'], 'loading': st['loading'], 'error': st['error'], 'voice': self.label(lang)}
+        languages = {lang: {'ready': st['ready'], 'loading': st['loading'], 'error': st['error'], 'voice': self.label(lang),
+                            'voices': len(self.voices(lang))}
                      for lang, st in self.status.items()}
         return {'ok': True, 'ready': self.ready, 'loading': self.loading, 'error': self.error,
                 'voice': self.label(self.default), 'cores': self.cores, 'textprep': TEXTPREP.VERSION, 'languages': languages}
@@ -377,7 +432,13 @@ class Service:
             language = self.default
         return SPEAKABLE.plan(text, PREPARE[language], language), language
 
-    def speak(self, text: str, language: str = 'de') -> bytes:
+    def voices(self, language: str) -> list[str]:
+        """0.7.14: the voices that may be chosen for a language (the main voice first)."""
+        return list((self.entries.get(language) or {}).get('choices') or {})
+
+    def speak(self, text: str, language: str = 'de', voice: str | None = None) -> bytes:
+        if voice is not None and voice not in self.voices(language):
+            raise KeyError(voice)
         if not self.lock.acquire(timeout=QUEUE_WAIT_S):
             raise BlockingIOError('busy')
         try:
@@ -385,7 +446,7 @@ class Service:
             if engine is None:
                 raise LookupError('not loaded')
             self.status[language]['used'] = time.monotonic()
-            samples, rate = engine.synth(text, time_limit(text))
+            samples, rate = engine.synth(text, time_limit(text), voice)
         finally:
             self.lock.release()
         return wav_from_pcm(tighten_pcm(pcm16(samples), rate), rate)
@@ -436,11 +497,16 @@ def make_handler(service: Service):
             text = data['text'].strip()
             if not text or len(text) > MAX_PART_CHARS:
                 return self._json(400, {'ok': False, 'error': 'bad_part'})
+            voice = data.get('voice')
+            if voice is not None and (not isinstance(voice, str) or voice not in service.voices(language)):
+                return self._json(400, {'ok': False, 'error': 'bad_voice'})
             state = service.ensure(language)
             if state != 'ready':
                 return self._json(503, {'ok': False, 'error': 'voice_loading' if state == 'loading' else 'voice_unavailable'})
             try:
-                audio = service.speak(text, language)
+                audio = service.speak(text, language, voice)
+            except KeyError:
+                return self._json(400, {'ok': False, 'error': 'bad_voice'})
             except LookupError:
                 # Unloaded for another language in the meantime: load again.
                 service.ensure(language)
@@ -454,6 +520,7 @@ def make_handler(service: Service):
             self.send_response(200)
             self.send_header('Content-Type', 'audio/wav')
             self.send_header('X-CoreAI-Voice-Language', language)
+            self.send_header('X-CoreAI-Voice', voice or service.entries[language]['voice']['name'])
             self.send_header('Content-Length', str(len(audio)))
             self.end_headers()
             self.wfile.write(audio)

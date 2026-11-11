@@ -7,19 +7,29 @@
    level check in the browser). After Mara's answer the server writes a
    transcript for the history; it appears small under the voice message.
    Signed-in accounts only; guests never see the button. A Core that cannot
-   hear keeps the button visible but switched off, with the reason. */
+   hear keeps the button visible but switched off, with the reason.
+   0.7.14 (Settings > Stimme): a second button for dictation (on unless switched off there):
+   the Core writes what was said and the text goes into the input field to be checked
+   before sending. Every recording is also kept in this browser (the last 20, see
+   js/coreui-recordings.js), so a Stimmsequenz that could not be sent is not lost. */
 (function () {
   'use strict';
 
   var API = './api/voice_input.php';
+  var DICTATE_API = './api/voice_dictate.php';
   var MIC = 'M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z M6 11a6 6 0 0 0 12 0 M12 17v4 M9 21h6';
   var STOP = 'M7 7h10v10H7z';
+  // 0.7.14: lines of text with a small microphone: dictation into the input field.
+  var DICTATE = 'M4 6h8 M4 11h6 M4 16h5 M17 4.5a2.5 2.5 0 0 0-2.5 2.5v4a2.5 2.5 0 0 0 5 0V7a2.5 2.5 0 0 0-2.5-2.5z M13 11a4 4 0 0 0 8 0 M17 15v4 M15 19h4';
+  var WHERE = 'Sie liegt unter Einstellungen > Stimme > Zuletzt verwendete Aufnahmen.';
   var LEVEL_MIN = 0.012;     // RMS above this (and above the noise floor) counts as sound
   var VOICED_MIN_MS = 300;   // less sound than this in a whole recording: nothing is sent
-  var state = { allowed: false, hears: null, ready: true, maxSeconds: 120, csrf: '', checkedAt: 0 };
+  var state = { allowed: false, hears: null, ready: true, maxSeconds: 120, csrf: '', checkedAt: 0, dictation: false, owner: '' };
   var rec = null;            // the running recording
   var job = null;            // a finished recording that waits until Mara has answered
   var button = null;
+  var dictateButton = null;  // 0.7.14
+  var dictating = null;      // 0.7.14: a dictation the Core is writing ({controller})
   var transcripts = {};      // uuid -> answer of the transcript endpoint
   var strip = null;
   var messageTimer = 0;
@@ -36,8 +46,8 @@
     return '';
   }
 
-  function icon(path) {
-    var node = button && button.querySelector('path');
+  function icon(target, path) {
+    var node = target && target.querySelector('path');
     if (node) node.setAttribute('d', path);
   }
 
@@ -50,14 +60,25 @@
     if (!button) return;
     var off = reason();
     var busy = !!job;
-    var text = rec ? 'Stimmsequenz beenden und senden' : (busy ? 'Stimmsequenz wartet auf deine CoreAI' : (off || 'Stimmsequenz aufnehmen'));
-    button.classList.toggle('recording', !!rec);
+    var voiceRec = !!rec && rec.mode !== 'dictate';
+    var dictRec = !!rec && rec.mode === 'dictate';
+    var text = voiceRec ? 'Stimmsequenz beenden und senden' : (busy ? 'Stimmsequenz wartet auf deine CoreAI' : (off || 'Stimmsequenz aufnehmen'));
+    button.classList.toggle('recording', voiceRec);
     button.classList.toggle('working', busy);
-    button.setAttribute('aria-disabled', off && !rec ? 'true' : 'false');
-    button.setAttribute('aria-pressed', rec ? 'true' : 'false');
+    button.setAttribute('aria-disabled', (off && !voiceRec) || dictRec ? 'true' : 'false');
+    button.setAttribute('aria-pressed', voiceRec ? 'true' : 'false');
     button.title = text;
     button.setAttribute('aria-label', text);
-    icon(rec ? STOP : MIC);
+    icon(button, voiceRec ? STOP : MIC);
+    if (!dictateButton) return;
+    var dtext = dictRec ? 'Diktat beenden' : (dictating ? 'Ich schreibe dein Diktat mit' : (off || 'Diktieren: Text ins Eingabefeld sprechen'));
+    dictateButton.classList.toggle('recording', dictRec);
+    dictateButton.classList.toggle('working', !!dictating);
+    dictateButton.setAttribute('aria-disabled', (off && !dictRec) || voiceRec ? 'true' : 'false');
+    dictateButton.setAttribute('aria-pressed', dictRec ? 'true' : 'false');
+    dictateButton.title = dtext;
+    dictateButton.setAttribute('aria-label', dtext);
+    icon(dictateButton, dictRec ? STOP : DICTATE);
   }
 
   // The strip above the input field: recording time, transcript state or a short message.
@@ -101,26 +122,47 @@
     strip.querySelector('.voice-input-close').addEventListener('click', hide);
   }
 
+  function iconButton(id, className, path) {
+    var node = document.createElement('button');
+    node.type = 'button';
+    node.id = id;
+    node.className = className;
+    var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('aria-hidden', 'true');
+    var line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    line.setAttribute('d', path);
+    svg.appendChild(line);
+    node.appendChild(svg);
+    return node;
+  }
+
   function makeButton() {
     var send = document.getElementById('btnSend');
     var inner = send && send.parentNode;
     var frame = document.querySelector('.composer-frame');
     if (!send || !inner || !frame || document.getElementById('btnMic')) return;
-    button = document.createElement('button');
-    button.type = 'button';
-    button.id = 'btnMic';
-    button.className = 'composer-mic-btn';
-    var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('viewBox', '0 0 24 24');
-    svg.setAttribute('aria-hidden', 'true');
-    var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('d', MIC);
-    svg.appendChild(path);
-    button.appendChild(svg);
+    button = iconButton('btnMic', 'composer-mic-btn', MIC);
     inner.insertBefore(button, send);
     inner.classList.add('has-mic');
     makeStrip(frame);
-    button.addEventListener('click', toggle);
+    button.addEventListener('click', function () { toggle('voice'); });
+    render();
+  }
+
+  // 0.7.14: the dictation button, before the microphone; only while dictation is on (Settings > Stimme).
+  function syncDictateButton() {
+    var inner = button && button.parentNode;
+    if (!inner) return;
+    if (state.dictation && !dictateButton) {
+      dictateButton = iconButton('btnDictate', 'composer-mic-btn composer-dictate-btn', DICTATE);
+      inner.insertBefore(dictateButton, button);
+      dictateButton.addEventListener('click', function () { toggle('dictate'); });
+    } else if (!state.dictation && dictateButton && !(rec && rec.mode === 'dictate') && !dictating) {
+      dictateButton.remove();
+      dictateButton = null;
+    }
+    inner.classList.toggle('has-dictate', !!dictateButton);
     render();
   }
 
@@ -139,7 +181,10 @@
         state.ready = data.ready !== false;
         state.maxSeconds = Math.max(10, Math.min(600, parseInt(data.max_seconds, 10) || 120));
         state.csrf = data.csrf_token || state.csrf;
+        state.dictation = data.dictation !== false;
+        state.owner = typeof data.recordings_key === 'string' ? data.recordings_key : '';
         makeButton();
+        syncDictateButton();
         render();
         bindTranscripts(document);
       })
@@ -164,13 +209,18 @@
     return '';
   }
 
-  function toggle() {
-    if (rec) { stop(true); return; }
-    if (job) { say('Deine letzte Stimmsequenz wartet noch, bis deine CoreAI ihre Antwort beendet hat.'); return; }
+  function toggle(mode) {
+    if (rec) {
+      if (rec.mode === mode) stop(true);
+      else say(rec.mode === 'dictate' ? 'Beende zuerst dein Diktat.' : 'Beende zuerst deine Stimmsequenz.');
+      return;
+    }
+    if (mode === 'dictate' && dictating) { say('Ich schreibe dein letztes Diktat noch mit.'); return; }
+    if (mode !== 'dictate' && job) { say('Deine letzte Stimmsequenz wartet noch, bis deine CoreAI ihre Antwort beendet hat.'); return; }
     var off = reason();
     if (off) { say(off); return; }
     if (Date.now() - state.checkedAt > 60000) loadStatus();
-    start();
+    start(mode === 'dictate' ? 'dictate' : 'voice');
   }
 
   /* 0.6.22: the speech as it is, for Core's ear. The browser's noise suppression can
@@ -181,7 +231,7 @@
   var CAPTURE = { echoCancellation: true, noiseSuppression: false, autoGainControl: true, channelCount: 1 };
   var BITRATE = 64000;
 
-  function start() {
+  function start(mode) {
     navigator.mediaDevices.getUserMedia({ audio: CAPTURE })
       .then(function (stream) {
         var type = pickType();
@@ -196,7 +246,7 @@
           return;
         }
         var current = { stream: stream, recorder: recorder, chunks: [], started: Date.now(), voicedMs: 0, floor: 1, send: false,
-          type: recorder.mimeType || type || 'audio/webm', timer: 0, audio: null };
+          type: recorder.mimeType || type || 'audio/webm', timer: 0, audio: null, mode: mode };
         rec = current;
         recorder.addEventListener('dataavailable', function (event) { if (event.data && event.data.size) current.chunks.push(event.data); });
         recorder.addEventListener('stop', finish);
@@ -249,8 +299,13 @@
     if (!rec) return;
     var seconds = (Date.now() - rec.started) / 1000;
     var rms = level(rec);
-    show('recording', 'STIMMSEQUENZ ' + clock(seconds) + ' / ' + clock(state.maxSeconds),
-      'Sprich jetzt. Mit „Fertig“ oder dem Mikrofonknopf beendest du die Stimmsequenz.');
+    if (rec.mode === 'dictate') {
+      show('recording', 'DIKTAT ' + clock(seconds) + ' / ' + clock(state.maxSeconds),
+        'Sprich jetzt. Mit „Fertig“ schreibe ich deine Worte ins Eingabefeld.');
+    } else {
+      show('recording', 'STIMMSEQUENZ ' + clock(seconds) + ' / ' + clock(state.maxSeconds),
+        'Sprich jetzt. Mit „Fertig“ oder dem Mikrofonknopf beendest du die Stimmsequenz.');
+    }
     var bar = strip && strip.querySelector('.voice-input-level i');
     if (bar) bar.style.width = Math.min(100, Math.round(rms * 600)) + '%';
     if (seconds >= state.maxSeconds) stop(true);
@@ -281,7 +336,12 @@
       return;
     }
     var blob = new Blob(current.chunks, { type: current.type });
-    if (!blob.size) { say('Die Stimmsequenz ist leer.'); return; }
+    if (!blob.size) { say(current.mode === 'dictate' ? 'Das Diktat ist leer.' : 'Die Stimmsequenz ist leer.'); return; }
+    var seconds = Math.round((Date.now() - current.started) / 1000);
+    if (current.mode === 'dictate') {
+      keep({ blob: blob, kind: 'diktat', seconds: seconds }).then(function (id) { dictate(blob, id); });
+      return;
+    }
     var ext = current.type.indexOf('mp4') >= 0 ? 'm4a' : (current.type.indexOf('ogg') >= 0 ? 'ogg' : 'webm');
     var stamp = new Date();
     var pad = function (n) { return ('0' + n).slice(-2); };
@@ -289,27 +349,95 @@
       + '_' + pad(stamp.getHours()) + '-' + pad(stamp.getMinutes()) + '-' + pad(stamp.getSeconds()) + '.' + ext;
     var file;
     try { file = new File([blob], name, { type: current.type.split(';')[0] }); } catch (e) { file = blob; file.name = name; }
-    send(file, 0);
+    keep({ blob: blob, kind: 'stimmsequenz', seconds: seconds }).then(function (id) { send(file, 0, id); });
+  }
+
+  // 0.7.14: every recording stays in this browser (the last 20); a failure never loses it.
+  function keep(item) {
+    var store = window.CoreAIRecordings;
+    if (!store || !state.owner) return Promise.resolve('');
+    return store.add(state.owner, item).then(function (record) { return record ? record.id : ''; }).catch(function () { return ''; });
+  }
+
+  function note(id, changes) {
+    if (id && window.CoreAIRecordings && state.owner) window.CoreAIRecordings.update(state.owner, id, changes).catch(function () {});
+  }
+
+  // 0.7.14: dictation. The Core writes what was said; the text goes into the input field at the caret.
+  function dictate(blob, id) {
+    var controller = window.AbortController ? new AbortController() : null;
+    dictating = { controller: controller };
+    render();
+    show('waiting', 'DIKTAT WIRD MITGESCHRIEBEN', 'Ich schreibe deine Worte mit. Das dauert einen Moment.');
+    var form = new FormData();
+    form.append('audio', blob, 'diktat.' + (blob.type.indexOf('mp4') >= 0 ? 'm4a' : (blob.type.indexOf('ogg') >= 0 ? 'ogg' : 'webm')));
+    fetch(DICTATE_API, { method: 'POST', credentials: 'include', cache: 'no-store', body: form,
+      headers: { 'Accept': 'application/json', 'X-CoreUI-CSRF': state.csrf }, signal: controller ? controller.signal : undefined })
+      .then(function (response) { return response.json().catch(function () { return {}; }); })
+      .then(function (data) {
+        dictating = null;
+        render();
+        if (data && data.ok && String(data.text || '').trim()) {
+          insert(String(data.text).trim());
+          note(id, { text: String(data.text).trim(), state: 'mitgeschrieben' });
+          hide();
+          return;
+        }
+        var code = data && data.error;
+        note(id, { state: 'nicht mitgeschrieben' });
+        say(code === 'no_speech' || code === 'empty_audio' || code === 'missed' || (data && data.ok)
+          ? 'Ich habe im Diktat keine Worte erkannt. ' + WHERE
+          : (code === 'core_without_audio' ? 'Dieser Core kann nicht hören. Wähle im Core-Menü einen Core mit Audio.'
+          : (code === 'dictation_off' ? 'Die Diktierfunktion ist unter Einstellungen > Stimme ausgeschaltet.'
+          : (code === 'queue_timeout' ? 'Ich bin gerade zu beschäftigt, um dein Diktat mitzuschreiben. ' + WHERE
+          : 'Ich konnte dein Diktat nicht mitschreiben. ' + WHERE))));
+      })
+      .catch(function (error) {
+        dictating = null;
+        render();
+        note(id, { state: 'nicht mitgeschrieben' });
+        if (error && error.name === 'AbortError') { hide(); return; }
+        say('Ich konnte dein Diktat nicht mitschreiben. ' + WHERE);
+      });
+  }
+
+  function insert(text) {
+    var field = document.getElementById('inputMessage');
+    if (!field) return;
+    var value = String(field.value || '');
+    // The field keeps its caret while the dictation button has the focus: the text goes where the caret was.
+    var at = typeof field.selectionStart === 'number' ? Math.min(field.selectionStart, value.length) : value.length;
+    var end = typeof field.selectionEnd === 'number' ? Math.max(at, Math.min(field.selectionEnd, value.length)) : at;
+    var before = value.slice(0, at);
+    var after = value.slice(end);
+    var piece = (before && !/\s$/.test(before) ? ' ' : '') + text + (after && !/^\s/.test(after) ? ' ' : '');
+    field.value = before + piece + after;
+    var caret = (before + piece).length;
+    field.focus();
+    try { field.setSelectionRange(caret, caret); } catch (e) { /* not every input type */ }
+    field.dispatchEvent(new Event('input', { bubbles: true }));
   }
 
   // Into the chat as a voice message. While Mara is still answering, the
   // recording waits (up to five minutes) instead of being thrown away.
-  function send(file, tries) {
+  function send(file, tries, id) {
     var composer = window.CoreUIComposer;
     var result = composer && composer.sendVoice ? composer.sendVoice(file) : 'unavailable';
-    if (result === 'ok') { job = null; render(); hide(); return; }
+    if (result === 'ok') { job = null; render(); hide(); note(id, { state: 'gesendet' }); return; }
     if (result === 'busy' && tries < 300) {
-      job = { file: file, timer: setTimeout(function () { send(file, tries + 1); }, 1000) };
+      job = { file: file, id: id, timer: setTimeout(function () { send(file, tries + 1, id); }, 1000) };
       render();
       if (tries === 0) show('waiting', 'STIMMSEQUENZ WARTET', 'Ich sende sie, sobald ich meine vorherige Antwort abgeschlossen habe.');
       return;
     }
     job = null;
     render();
-    say(result === 'full' ? 'Es sind schon zehn Anhänge ausgewählt. Bitte erst einen entfernen.'
-      : (result === 'editing' ? 'Während du eine Nachricht bearbeitest, kannst du keine Stimmsequenz senden.'
-      : (result === 'busy' ? 'Ich bin noch mit einer Antwort beschäftigt. Deine Stimmsequenz wurde nicht gesendet.'
-      : 'Die Stimmsequenz ließ sich nicht senden.')));
+    note(id, { state: 'nicht gesendet' });
+    var kept = id ? ' ' + WHERE : '';
+    say(result === 'full' ? 'Es sind schon zehn Anhänge ausgewählt. Bitte erst einen entfernen.' + kept
+      : (result === 'editing' ? 'Während du eine Nachricht bearbeitest, kannst du keine Stimmsequenz senden.' + kept
+      : (result === 'busy' ? 'Ich bin noch mit einer Antwort beschäftigt. Deine Stimmsequenz wurde nicht gesendet.' + kept
+      : 'Die Stimmsequenz ließ sich nicht senden.' + kept)));
   }
 
   // The transcript, written on the server after Mara's answer, small under the
@@ -365,7 +493,12 @@
 
   function cancel() {
     if (rec) { stop(false); return; }
+    if (dictating) {
+      if (dictating.controller) dictating.controller.abort();
+      return;
+    }
     if (job && job.timer) clearTimeout(job.timer);
+    if (job) note(job.id, { state: 'nicht gesendet' });
     job = null;
     render();
     hide();
@@ -385,7 +518,7 @@
     }).observe(document.documentElement, { childList: true, subtree: true });
   }
   document.addEventListener('keydown', function (event) {
-    if (event.key === 'Escape' && (rec || job)) cancel();
+    if (event.key === 'Escape' && (rec || job || dictating)) cancel();
   });
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', loadStatus);

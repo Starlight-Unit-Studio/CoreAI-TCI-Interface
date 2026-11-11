@@ -311,7 +311,7 @@ async function open(browser, srv, viewport) {
     await page.keyboard.press('Escape');
     await page.click('#pzSummaryOpen');
     await page.waitForSelector('.pz-suggestion');
-    const sheet = await page.locator('.pz-sheet').boundingBox();
+    const sheet = await page.locator('#pzSummaryDialog .pz-sheet').boundingBox();
     assert.ok(sheet.x >= 0 && sheet.x + sheet.width <= 390 && sheet.height <= 844, 'sheet fits the phone');
     if (shots) await page.screenshot({path: path.join(shots, 'personalization-phone-summary.png')});
     await page.keyboard.press('Escape');

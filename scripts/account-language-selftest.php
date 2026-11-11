@@ -56,7 +56,9 @@ language_test(str_contains($settingsApi, "if (!array_key_exists('main_language',
 $aiSettings = $read('api/ai_settings.php');
 language_test(str_contains($aiSettings, "throw new RuntimeException('missing_schema_024');"), 'English is never dropped silently without migration 024');
 $voiceApi = $read('api/voice.php');
-language_test(str_contains($voiceApi, "coreui_ai_settings_load(\$pdo, \$uid)['main_language']") && str_contains($voiceApi, 'coreui_voice_plan($dir, (string)$row[\'message\'], $hint);'),
+// 0.7.14: the plan also carries the voices chosen under Settings > Stimme.
+language_test(str_contains($voiceApi, "coreui_ai_settings_load(\$pdo, \$uid)['main_language']")
+  && str_contains($voiceApi, 'coreui_voice_plan($dir, (string)$row[\'message\'], $hint, coreui_voice_prefs($pdo, $uid)[\'voices\']);'),
   'read aloud uses the account language as hint');
 language_test(str_contains($read('api/voice_store.php'), "['text' => \$text, 'language' => \$hint]"), 'the hint goes to the voice service');
 $migration = $read('database/migrations/024_account_language.sql');

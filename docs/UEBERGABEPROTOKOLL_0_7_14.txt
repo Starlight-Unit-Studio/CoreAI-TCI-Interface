@@ -1,0 +1,95 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.14
+Datum: 11.11.2026
+Basis: main 0.7.13 nach Merge von PR #266
+Branch: claude/bold-galileo-myoyi0
+Thema: Einstellungen > Stimme nach den Referenz-Screenshots
+
+AUFTRAG
+- Naechste Einstellungsseite nach den Referenz-Screenshots des
+  Betreibers: Stimme (Stimmenauswahl mit Fenster, Sprache mit
+  "Automatisch erkennen", Diktieren, Zuletzt verwendete Aufnahmen).
+- Referenziert, nicht kopiert: keine Stimmennamen der Vorlage; die
+  Stimmen heissen wie bei Kyutai. Vom Betreiber freigegeben: Deutsch
+  und Englisch, nur freie Lizenzen, weiblich und maennlich, Eve
+  bleibt Standard, Diktieren und die letzten 20 Aufnahmen auf dem
+  Geraet. Weitere Vorlese-Sprachen erst spaeter (Arbeitsspeicher).
+
+UMSETZUNG
+- config/voice/mara-voice.json: neuer Schluessel "choices" mit 20
+  Stimmen (11 weiblich, 9 maennlich), je Sprache Datei mit Revision
+  a7056f5, Groesse und SHA-256 (abgerufen ueber die Hugging-Face-API
+  am 11.11.2026; Eves Werte stimmen mit den seit 0.6.0 registrierten
+  ueberein). Lizenzen laut kyutai/tts-voices README: VCTK CC BY 4.0,
+  Alba MacKenna CC BY 4.0, Voice-Zero CC0, Unmute Voice Donation CC0,
+  Kyutais eigene Aufnahmen (estelle) CC0. Nicht aufgenommen: cosette
+  (Expresso, CC BY-NC), jean (EARS, CC BY-NC), juergen, giovanni,
+  lola, rafael, daan (Quelle in tts-voices nicht dokumentiert).
+- tools/voice/voice_service.py: /speak nimmt "voice"; jede Stimme
+  wird beim ersten Gebrauch geladen, gegen ihren SHA-256 geprueft und
+  gegen Pockets eigenen Pfad (get_predefined_voice); bis zu 4 Zustaende
+  je Sprache im Speicher (COREAI_VOICE_STATES), Eve immer. Unbekannte
+  Stimme: 400 bad_voice. Testton je Stimme verschieden (Selbsttest).
+- api/voice_store.php: Auswahl (coreui_voice_choices), Konto-
+  Einstellungen (coreui_voice_prefs, _prefs_save), Plan-ID mit den
+  gewaehlten Stimmen (mit Eve unveraendert), Teile mit "voice" an den
+  Dienst, Hoerprobe (coreui_voice_preview, gemeinsam fuer alle Konten,
+  var/voice_cache/preview, 30 Tage), Sprache der Mitschrift
+  (coreui_voice_input_code), Schluessel fuer die Aufnahmen auf dem
+  Geraet (coreui_voice_recordings_key, ohne Nutzer-ID im Klartext).
+- Migration 036: stu_user_voice_settings um voice_de, voice_en,
+  input_language, dictation (alle NULL = Standard: Eve,
+  Hauptsprache, Diktieren an).
+- api/voice.php: GET prefs, GET preview, POST settings (zusaetzlich zu
+  auto_read). Vorlesen im Chat mit den gewaehlten Stimmen.
+- api/voice_live.php: "say" mit den gewaehlten Stimmen, Live-Runden
+  in der gewaehlten Sprache.
+- api/voice_core.php + api/voice_transcribe.php: Sprachen de, en, fr,
+  it, pt, es; "auto:<Hauptsprache>" schreibt in der gesprochenen
+  Sprache mit (nicht uebersetzen, im Zweifel die Hauptsprache). Feste
+  Sprachen nutzen weiter Googles Vorlage unveraendert.
+- api/ember_attachments.php: Stimmsequenzen vor und nach der Antwort
+  in der gewaehlten Sprache.
+- api/voice_dictate.php (neu): Diktat hochladen, Core schreibt mit,
+  Text zurueck; keine Gaeste, CSRF, nur wenn Diktieren an ist, bis 16
+  MB, Upload wird sofort geloescht. nginx-Freigabe voice_dictate in
+  beiden Vorlagen (der Updater rendert nginx neu).
+- api/voice_input.php: Status liefert dictation und recordings_key.
+- api/account_export.php: Export enthaelt die Stimme-Einstellungen.
+- js/coreui-recordings.js (neu): letzte 20 Aufnahmen je Konto in
+  IndexedDB, nur auf dem Geraet.
+- js/coreui-voice-input.js: Diktier-Knopf vor dem Mikrofon, Text an
+  der Schreibmarke, jede Aufnahme mit Ergebnis gespeichert; eine
+  nicht gesendete Stimmsequenz verweist auf die Aufnahmen.
+- js/coreui-voice-settings.js (neu), settings.html, css/settings.css,
+  css/console.css: Seite, Stimmenfenster mit Vorhoeren (laedt die
+  Stimme noch: fragt erneut), Sprachmenue, Schalter, Aufnahmen-Fenster.
+  Automatisches Vorlesen und Begriffsliste bleiben unter "Vorlesen
+  und Mitschrift" (ids unveraendert).
+
+TESTS (in diesem Container ausgefuehrt)
+- php -l fuer alle geaenderten PHP-Dateien.
+- scripts/voice-service-selftest.py (Testton, 20 Stimmen je Sprache,
+  bad_voice, Pins und SHA-256 im Register), scripts/tts-spike-selftest.py.
+- scripts/voice-settings-selftest.php (neu), mit Datenbank.
+- scripts/voice-settings-ui-selftest.cjs, scripts/voice-dictation-ui-
+  selftest.cjs (neu, Playwright).
+- Angepasst (woertliche Vergleiche): voice-input-selftest.php (fr ist
+  jetzt Franzoesisch, unbekannter Code bleibt Deutsch; Seite schreibt
+  nur beim Diktat ins Feld), account-language-selftest.php (Planaufruf
+  mit Stimmen), branding-license-selftest.py (Version).
+- Ende-zu-Ende gegen einen lokalen PHP-Server mit MariaDB, dem
+  Sprachdienst im Testton-Modus und einem Ersatz-Core: Einstellungen,
+  Hoerprobe, Vorlesen in Anna, Diktat (Deutsch und Automatisch), Seite
+  und Diktier-Knopf im Browser (Desktop und Smartphone).
+- Gesamtlauf aller Selbsttests gegen main 0.7.13: siehe PR.
+- Nicht moeglich hier: echte Sprachausgabe der neuen Stimmen (Gewichte
+  und Dienst laufen nur auf dem Server). Nach dem Update bitte die
+  Stimmen im Fenster probehoeren; der erste Abruf je Stimme laedt
+  15 bis 30 MB (Deutsch) bzw. 4 bis 8 MB (Englisch).
+
+OFFEN
+- Weitere Vorlese-Sprachen (Pocket kann Franzoesisch, Italienisch,
+  Spanisch, Portugiesisch, Niederlaendisch) erst nach Planung des
+  Arbeitsspeichers.
+- Konto-PIN / gesperrte Chats; CoreAI-Theme ueber alle Einstellungen.
+Version: 0.7.14

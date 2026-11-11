@@ -216,6 +216,21 @@ try:
     check(german.headers['X-CoreAI-Voice-Language'] == 'de', 'without a language: German')
     check(call('POST', '/speak', {'text': 'x', 'language': 'fr'})[0] == 400 and call('POST', '/plan', {'text': 'x', 'language': 7})[0] == 400,
           'unknown languages refused')
+    # 0.7.14: a chosen voice per request; only registered voices.
+    health = json.loads(call('GET', '/health')[2])
+    check(health['languages']['de']['voices'] == 20 and health['languages']['en']['voices'] == 20, 'twenty voices per language')
+    eve_wav = call('POST', '/speak', {'text': 'Hallo, ich bin Mara.'})[2]
+    anna = urllib.request.urlopen(urllib.request.Request(f'http://127.0.0.1:{port}/speak', method='POST',
+                                  data=json.dumps({'text': 'Hallo, ich bin Mara.', 'voice': 'anna'}).encode(),
+                                  headers={'Content-Type': 'application/json'}), timeout=10)
+    anna_wav = anna.read()
+    check(anna.status == 200 and anna.headers['X-CoreAI-Voice'] == 'anna' and anna_wav[:4] == b'RIFF' and anna_wav != eve_wav,
+          'Anna speaks instead of Eve')
+    check(call('POST', '/speak', {'text': 'Hallo.', 'voice': 'eve'})[2] == call('POST', '/speak', {'text': 'Hallo.'})[2],
+          'Eve by name is the main voice')
+    for bad in ('cosette', 'jean', 'juergen', '../eve', 7, ''):
+        status, _, body = call('POST', '/speak', {'text': 'Hallo.', 'voice': bad})
+        check(status == 400 and json.loads(body)['error'] == 'bad_voice', f'voice {bad!r} refused')
 finally:
     service.terminate()
     output = service.communicate(timeout=10)[0]
@@ -290,6 +305,27 @@ with tempfile.TemporaryDirectory() as tmp:
     check(code == 0 and 'Sprachdienst startet neu' in log, 'a changed file ends the service cleanly, Docker starts it again')
 check('COREAI_VOICE_WATCH_S: "20"' in (ROOT / 'compose.yaml').read_text(encoding='utf-8'), 'compose turns the watcher on')
 
+# --- 0.7.14: the voices that may be chosen ------------------------------------------------------
+registry = json.loads((ROOT / 'config' / 'voice' / 'mara-voice.json').read_text(encoding='utf-8'))
+entries = service_module.voice_entries(registry)
+for language, folder in (('de', 'german_24l'), ('en', 'english')):
+    choices = entries[language]['choices']
+    check(list(choices)[0] == 'eve' and choices['eve'] is None and len(choices) == 20, language + ': Eve first, twenty voices')
+    for name, file in list(choices.items())[1:]:
+        check(file['path'] == f'languages/{folder}/embeddings/{name}.safetensors' and re.fullmatch(r'[0-9a-f]{64}', file['sha256']) is not None
+              and file['revision'] == 'a7056f505a4a8ca72d8b5fb1440071d6f1a35739' and file['size'] > 0
+              and file['repo'] == 'kyutai/pocket-tts-without-voice-cloning', f'{language} {name}: pinned file with SHA-256')
+names = [v['name'] for v in registry['choices']['voices']]
+check(registry['choices']['default'] == 'eve' and names[0] == 'eve' and len(set(names)) == 20, 'Eve is the default')
+check(not {'cosette', 'jean', 'juergen', 'giovanni', 'lola', 'rafael', 'daan'} & set(names), 'no NC voices, none without a documented source')
+check(all(v['license'] in ('CC BY 4.0', 'CC0 1.0') for v in registry['choices']['voices']), 'only free licenses')
+genders = [v['gender'] for v in registry['choices']['voices']]
+check(genders.count('weiblich') == 11 and genders.count('männlich') == 9, 'female and male voices')
+eve = registry['choices']['voices'][0]['files']
+check(eve['de']['sha256'] == registry['files'][2]['sha256'] and eve['en']['sha256'] == registry['languages']['en']['files'][2]['sha256'],
+      "Eve's files are the ones registered since 0.6.0")
+check(service_module.probe_offset(None) == service_module.probe_offset('eve') == 0 and service_module.probe_offset('anna') > 0, 'test tone per voice')
+
 # --- Wiring ------------------------------------------------------------------------------------
 source = (ROOT / 'tools' / 'voice' / 'voice_service.py').read_text(encoding='utf-8')
 check("ThreadingHTTPServer(('127.0.0.1', port)" in source, 'bound to 127.0.0.1')
@@ -297,6 +333,9 @@ check('self._check_pins()\n        self._fetch_and_verify()' in source and "rais
       'pins and SHA-256 checked before the model loads')
 check("quantize=bool(model.get('quantize'))" in source and "get_state_for_audio_prompt(self.registry['voice']['name'])" in source,
       'Eve with int8 as registered')
+check("state = self.model.get_state_for_audio_prompt(self._verified(entry))" in source
+      and 'get_predefined_voice(model[\'language\'], name) != f"hf://{entry[\'repo\']}/{entry[\'path\']}@{entry[\'revision\']}"' in source,
+      'a chosen voice: the pinned file, checked against its SHA-256 before it is loaded')
 dockerfile = (ROOT / 'docker' / 'voice' / 'Dockerfile').read_text(encoding='utf-8')
 check('COPY docker/tts-spike/constraints-pocket.txt /tmp/constraints.txt' in dockerfile and 'torch==2.6.0' in dockerfile
       and 'download.pytorch.org/whl/cpu' in dockerfile and 'USER 33:33' in dockerfile, 'image: same pins as the voice test, CPU torch, not root')
