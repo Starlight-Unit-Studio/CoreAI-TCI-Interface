@@ -192,9 +192,12 @@ if (str_contains($clientSource, "'&msg='")) {
   reply_test_fail('Der Browser schreibt die Nachricht weiterhin in die EventSource-URL.');
 }
 $appHtml = (string)file_get_contents(dirname(__DIR__) . '/app.html');
-if (!str_contains($appHtml, '<textarea')
-    || !str_contains($appHtml, 'id="inputMessage"')
-    || str_contains($appHtml, 'maxlength="12000"')) {
+// The project settings have an independent 12,000-character limit. Only
+// the real chat composer must accept multiline, unbounded text and convert
+// long pasted content into durable Markdown attachments.
+preg_match('~<textarea\\b(?=[^>]*\\bid="inputMessage")[^>]*>~s', $appHtml, $composerMatch);
+$composerTag = (string)($composerMatch[0] ?? '');
+if ($composerTag === '' || preg_match('~\\bmaxlength\\s*=~i', $composerTag)) {
   reply_test_fail('Der private CoreUI-Composer erlaubt kein mehrzeiliges, langes Einfuegen.');
 }
 if (!str_contains($clientSource, 'function queueAutoTextAttachment(text, reportUnavailable)')
