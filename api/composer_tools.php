@@ -21,4 +21,5 @@ if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
 if (function_exists('coreui_ai_runtime_apply')) coreui_ai_runtime_apply($pdo, $uid);
 $guest = function_exists('coreui_ai_account_is_guest') && coreui_ai_account_is_guest($pdo, $uid);
 
-stu_json(coreui_composer_tools_answer($guest, ember_image_allowed($uid), ember_web_enabled(), ember_browse_enabled()));
+stu_json(coreui_composer_tools_answer($guest, ember_image_allowed($uid), ember_web_enabled(), ember_browse_enabled(),
+  $guest ? coreui_guest_image_quota($pdo, $uid) : null));
