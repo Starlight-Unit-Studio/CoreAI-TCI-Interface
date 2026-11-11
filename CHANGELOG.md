@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.7.2 - 11.11.2026
+
+- **Mara Thorne is the built-in default Pet:** Added the original, transparent OpenPet v2 spritesheet in `images/pets/mara.webp` (1536 × 2288 pixels, 11 state rows, eight columns). The asset is byte-identical to the submitted `mara.openpet.zip` and is served as a static file.
+- **Preset and compatibility:** New accounts preselect Mara Thorne, the ninth built-in companion; existing saved choices, including Nova and "Pet nicht anzeigen", remain unchanged. Deleting an active user-uploaded Pet now falls back to Mara. The eight existing original CoreAI sprites and the custom Pet upload system remain intact.
+- **Real stateful animation:** Mara's built-in uses `sprite_version = 2`, so the existing persistent chat Pet dock can play idle, active work, waiting, review, failure, wave and movement states.
+- **Regression coverage:** Extended Pet PHP and Playwright tests for the nine built-ins, the original atlas checksum, default selection, fallback, V2 renderer, and browser image dimensions. The full target-host Preflight remains required before deployment.
+- **Version:** One merge = 0.7.2. Required version markers, metadata, documentation and cache keys synchronized.
+
 ## 0.7.1 - 11.11.2026
 
 - **Settings > Pets after the reference screenshots:** "Pet auswählen" with "Pet hochladen", "Pet mit Mara erstellen", the pets and "Pet nicht anzeigen". A pet is an animated companion that stands at the start of Mara's work line in the chat (instead of the three dots) while she works on a request. Nova is preselected; the choice saves at once, and "Pet nicht anzeigen" brings the three dots back.
