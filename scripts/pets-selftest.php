@@ -2,11 +2,11 @@
 declare(strict_types=1);
 // CoreAI 0.7.1: Settings > Pets, offline.
 //   php scripts/pets-selftest.php
-// Pure parts: the eight built-in CoreAI pets and their sheets, the stored choice, sprite sheets read
+// Pure parts: the nine built-in CoreAI pets and their sheets, the stored choice, sprite sheets read
 // from their own bytes (PNG with alpha or tRNS, WebP lossless, lossy with and without alpha) and the
-// upload rules; Nova is preselected. With COREUI_SELFTEST_DB=1 on MariaDB (migration 034): upload, the
+// upload rules; Mara is preselected. With COREUI_SELFTEST_DB=1 on MariaDB (migration 034): upload, the
 // own list, other accounts never see a pet, choosing, the pet for the chat, deleting with the file
-// (Nova takes over), the limit of 12.
+// (Mara takes over), the limit of 12.
 // Then the wiring of the API, the page, the chat work line, the account deletion and the preflights.
 if (PHP_SAPI !== 'cli') exit(1);
 $root = dirname(__DIR__);
@@ -32,20 +32,27 @@ $bytes = array_map('base64_decode', $fixtures);
 
 // --- Pure ---------------------------------------------------------------------------------------------------
 $catalog = coreui_pet_catalog();
-pet_test(array_keys($catalog) === ['nova', 'komet', 'orbi', 'luna', 'quanti', 'glimm', 'raki', 'sputni'], 'eight built-in CoreAI pets');
+pet_test(array_keys($catalog) === ['mara', 'nova', 'komet', 'orbi', 'luna', 'quanti', 'glimm', 'raki', 'sputni'], 'nine built-in CoreAI pets');
 foreach ($catalog as $id => [$name, $description]) {
-  $file = $root . '/images/pets/' . $id . '.png';
+  $file = $root . '/images/pets/' . $id . ($id === 'mara' ? '.webp' : '.png');
   pet_test(is_file($file), "sprite sheet of $id");
-  pet_test(coreui_pet_sheet_check((string)file_get_contents($file)) === ['mime' => 'image/png', 'frames' => 6, 'frame_px' => 32, 'sprite_version' => 0], "$id: six transparent 32 px frames");
+  $expected = $id === 'mara'
+    ? ['mime' => 'image/webp', 'frames' => 8, 'frame_px' => 192, 'sprite_version' => 2]
+    : ['mime' => 'image/png', 'frames' => 6, 'frame_px' => 32, 'sprite_version' => 0];
+  pet_test(coreui_pet_sheet_check((string)file_get_contents($file)) === $expected, "$id: validated sheet");
   pet_test($name !== '' && mb_strlen($description) > 10 && !preg_match('~codex|chatgpt|openai~i', $name . $description), "$id: own name and description");
 }
+pet_test(hash_file('sha256', $root . '/images/pets/mara.webp') === '0b86744a172f2515c030b28a3f989ff824040b3ceb8e2221014c36aed0c5efd0',
+  'Mara sprite atlas is the unchanged original upload');
+pet_test(coreui_pet_builtin_view()[0]['id'] === 'mara' && coreui_pet_builtin_view()[0]['url'] === './images/pets/mara.webp'
+  && coreui_pet_builtin_view()[0]['sprite_version'] === 2, 'Mara is the first builtin and uses the v2 renderer');
 foreach (['codex', 'dewey', 'fireball', 'hoots', 'rocky', 'seedy', 'stacky', 'bsod', 'null'] as $foreign) {
   pet_test(!isset($catalog[$foreign]), 'no pet of the reference product: ' . $foreign);
 }
-foreach (['nova' => 'nova', ' Komet ' => 'komet', 'u12' => 'u12', 'none' => 'none', 'u0' => 'none', 'gibtsnicht' => 'none', '' => 'none'] as $in => $out) {
+foreach (['mara' => 'mara', 'nova' => 'nova', ' Komet ' => 'komet', 'u12' => 'u12', 'none' => 'none', 'u0' => 'none', 'gibtsnicht' => 'none', '' => 'none'] as $in => $out) {
   pet_test(coreui_pet_choice_normalise($in) === $out, "choice '$in'");
 }
-pet_test(coreui_personalization_defaults()['pet'] === 'nova' && coreui_pet_default() === 'nova', 'Nova is preselected');
+pet_test(coreui_personalization_defaults()['pet'] === 'mara' && coreui_pet_default() === 'mara', 'Mara is preselected');
 pet_test(coreui_personalization_normalise(['pet' => 'u7'])['pet'] === 'u7' && coreui_personalization_normalise(['pet' => '../x'])['pet'] === 'none'
   && in_array('pet', coreui_personalization_client_keys(), true), 'the choice is kept with the personalization');
 $expect = ['png' => ['image/png', true], 'pngrgb' => ['image/png', false], 'pngtrns' => ['image/png', true],
@@ -75,7 +82,7 @@ pet_test(pet_code(fn() => coreui_pet_sheet_check($png(100, 32))) === 'invalid_sh
 pet_test(coreui_pet_sheet_check($png(1536, 1872)) === ['mime' => 'image/png', 'frames' => 8, 'frame_px' => 192, 'sprite_version' => 1], '9-row atlas');
 pet_test(coreui_pet_sheet_check($png(1536, 2288)) === ['mime' => 'image/png', 'frames' => 8, 'frame_px' => 192, 'sprite_version' => 2], '11-row atlas');
 pet_test(pet_code(fn() => coreui_pet_sheet_check($png(1536, 1871))) === 'invalid_sheet_size', 'invalid atlas rejected');
-\n// --- MariaDB (COREUI_SELFTEST_DB=1, never the live database) --------------------------------------------------
+// --- MariaDB (COREUI_SELFTEST_DB=1, never the live database) --------------------------------------------------
 $dbChecked = false;
 if (getenv('COREUI_SELFTEST_DB') === '1') {
   require_once $root . '/api/config.php';
@@ -89,7 +96,7 @@ if (getenv('COREUI_SELFTEST_DB') === '1') {
   $ins->execute(["pet-b-$tag@example.test"]);
   $ub = (int)$my->lastInsertId();
   try {
-    pet_test(coreui_pet_current($my, $ua)['id'] === 'nova' && coreui_pet_choice($my, $ua) === 'nova', 'MariaDB: Nova is preselected');
+    pet_test(coreui_pet_current($my, $ua)['id'] === 'mara' && coreui_pet_choice($my, $ua) === 'mara', 'MariaDB: Mara is preselected');
     pet_test(coreui_pet_choose($my, $ua, 'none') === 'none' && coreui_pet_current($my, $ua) === null, 'MariaDB: "Pet nicht anzeigen"');
     pet_test(coreui_pet_choose($my, $ua, 'luna') === 'luna' && coreui_pet_current($my, $ua)['url'] === './images/pets/luna.png', 'MariaDB: a built-in pet');
     pet_test(pet_code(fn() => coreui_pet_add($my, $ua, '  ', '', $bytes['png'])) === 'name_required'
@@ -105,10 +112,10 @@ if (getenv('COREUI_SELFTEST_DB') === '1') {
       && pet_code(fn() => coreui_pet_choose($my, $ub, 'u' . $id)) === 'pet_not_found', 'MariaDB: other accounts never see it');
     pet_test(coreui_pet_choose($my, $ua, 'u' . $id) === 'u' . $id && coreui_pet_current($my, $ua)['name'] === 'Mein Testpet', 'MariaDB: the own pet in the chat');
     pet_test(coreui_pet_files($my, $ua) === ['var/console_media/' . $row['stored_name']], 'MariaDB: files for the account deletion');
-    pet_test(coreui_pet_delete($my, $ua, $id) && !is_file($file) && coreui_pet_choice($my, $ua) === 'nova' && coreui_pet_current($my, $ua)['id'] === 'nova'
-      && !coreui_pet_delete($my, $ua, $id), 'MariaDB: deleted with its file, Nova takes over');
+    pet_test(coreui_pet_delete($my, $ua, $id) && !is_file($file) && coreui_pet_choice($my, $ua) === 'mara' && coreui_pet_current($my, $ua)['id'] === 'mara'
+      && !coreui_pet_delete($my, $ua, $id), 'MariaDB: deleted with its file, Mara takes over');
     $my->prepare('UPDATE stu_user_personalization SET preferences_json = JSON_SET(preferences_json, \'$.pet\', \'u999999\') WHERE user_id = ?')->execute([$ua]);
-    pet_test(coreui_pet_current($my, $ua)['id'] === 'nova', 'MariaDB: a missing own pet shows Nova');
+    pet_test(coreui_pet_current($my, $ua)['id'] === 'mara', 'MariaDB: a missing own pet shows Mara');
     for ($i = 0; $i < COREUI_PET_MAX_OWN; $i++) coreui_pet_add($my, $ub, 'Pet ' . $i, '', $bytes['png']);
     pet_test(pet_code(fn() => coreui_pet_add($my, $ub, 'Eins zu viel', '', $bytes['png'])) === 'too_many_pets' && count(coreui_pet_own($my, $ub)) === 12, 'MariaDB: at most 12 own pets');
     $dbChecked = true;
