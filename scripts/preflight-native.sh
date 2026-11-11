@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.5: Restore original mobile insight block sizes and scrolling.
+# CoreAI: TCI Interface 0.7.6: Restore original mobile insight block sizes and scrolling.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
