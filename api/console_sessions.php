@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/console_session_store.php';
+require_once __DIR__ . '/console_project_store.php';
 require_once __DIR__ . '/console_agent_runs.php';
 require_once __DIR__ . '/console_chat_tools.php';
 
@@ -36,6 +37,23 @@ try {
     foreach ($rows as &$row) $row['working'] = isset($working[(string)$row['id']]);
     unset($row);
     stu_json(['ok'=>true, 'sessions'=>$rows, 'count'=>count($rows)]);
+  }
+
+  if ($action === 'projects' && $method === 'GET') {
+    stu_json(['ok'=>true,'projects'=>coreui_project_list($pdo,(int)$uid)]);
+  }
+
+  if ($method === 'POST' && $action === 'project_create') {
+    $project = coreui_project_create($pdo,(int)$uid,(string)($body['name'] ?? ''),
+      (string)($body['context_mode'] ?? 'open'));
+    stu_json(['ok'=>true,'project'=>$project],201);
+  }
+
+  if ($method === 'POST' && $action === 'project_assign') {
+    $id = coreui_console_session_normalize_id($body['id'] ?? '');
+    if ($id === '') throw new InvalidArgumentException('invalid_session');
+    $project = coreui_project_assign($pdo,(int)$uid,$id,(string)($body['project_id'] ?? ''));
+    stu_json(['ok'=>true,'id'=>$id,'project'=>$project]);
   }
 
   // 0.6.87: Settings > Archivierte Chats (search by title; type all or cloud; sorted updated, created or alpha).
@@ -129,9 +147,9 @@ try {
   stu_json(['ok'=>false, 'error'=>$e->getMessage()], 400);
 } catch (RuntimeException $e) {
   $code = $e->getMessage();
-  $status = ($code === 'session_not_found') ? 404
+  $status = (in_array($code,['session_not_found','project_not_found'],true)) ? 404
     : (in_array($code, ['session_limit_reached', 'session_must_be_archived', 'session_busy', 'session_delete_conflict'], true) ? 409
-      : ($code === 'missing_schema_032' ? 503 : 400));
+      : (in_array($code,['missing_schema_032','project_migration_required'],true) ? 503 : 400));
   stu_json(['ok'=>false, 'error'=>$code], $status);
 } catch (Throwable $e) {
   if (function_exists('stu__log_error')) {
