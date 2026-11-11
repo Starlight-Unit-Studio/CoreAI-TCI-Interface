@@ -1,0 +1,56 @@
+name: Licensed OpenPet Library
+
+on:
+  pull_request:
+    paths:
+      - 'api/pets_store.php'
+      - 'api/pet_library_store.php'
+      - 'api/pets.php'
+      - 'api/console_personalization_store.php'
+      - 'js/coreui-pets-settings.js'
+      - 'settings.html'
+      - 'scripts/openpet-library-selftest.php'
+      - 'scripts/openpet-library-ui-selftest.cjs'
+      - 'scripts/pets-selftest.php'
+      - 'scripts/preflight.sh'
+      - 'scripts/preflight-native.sh'
+      - '.github/workflows/approved-openpet-library.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'api/pet_library_store.php'
+      - 'api/pets_store.php'
+      - 'api/pets.php'
+      - 'scripts/openpet-library-selftest.php'
+      - '.github/workflows/approved-openpet-library.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  approved-openpets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: zip, mbstring, gd, pdo_mysql, pdo_sqlite
+          coverage: none
+      - name: Check PHP, JavaScript and preflight syntax
+        run: |
+          for file in api/pets_store.php api/pet_library_store.php api/pets.php api/console_personalization_store.php scripts/openpet-library-selftest.php; do
+            php -l "$file"
+          done
+          node --check js/coreui-pets-settings.js
+          node --check scripts/openpet-library-ui-selftest.cjs
+          bash -n scripts/preflight.sh
+          bash -n scripts/preflight-native.sh
+      - name: Check original and shared pet libraries
+        run: |
+          php scripts/pets-selftest.php
+          php scripts/openpet-library-selftest.php
+          node scripts/openpet-library-ui-selftest.cjs
+      - name: Verify version and archive
+        run: python3 scripts/version-merge-check.py --base-version 0.7.16
