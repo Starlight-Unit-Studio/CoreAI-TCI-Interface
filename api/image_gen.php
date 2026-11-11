@@ -641,6 +641,48 @@ function coreui_image_pending_take(): array {
   return is_array($list) ? array_values(array_filter($list, static fn($u): bool => is_string($u) && preg_match('~^[a-f0-9]{32}$~D', $u) === 1)) : [];
 }
 
+/**
+ * Resolve only images generated in THIS turn and owned by THIS account.
+ * The returned absolute paths are never accepted from the browser or a model.
+ * Does not consume COREUI_PENDING_IMAGES: saving the final reply still attaches them.
+ */
+function coreui_image_pending_vision_paths(PDO $pdo, int $uid): array {
+  if ($uid <= 0) return [];
+  $pending = $GLOBALS['COREUI_PENDING_IMAGES'] ?? [];
+  if (!is_array($pending) || $pending === []) return [];
+  $dir = realpath(coreui_image_dir());
+  if (!is_string($dir) || !is_dir($dir)) return [];
+  try {
+    $find = $pdo->prepare('SELECT stored_name, rel_path, mime_type, file_size '
+      . 'FROM stu_console_media WHERE uuid = ? AND user_id = ? AND kind = ? LIMIT 1');
+  } catch (Throwable $e) {
+    return [];
+  }
+  $paths = [];
+  foreach (array_slice(array_values(array_unique($pending)), 0, 4) as $uuid) {
+    if (!is_string($uuid) || preg_match('~^[a-f0-9]{32}$~D', $uuid) !== 1) continue;
+    try {
+      $find->execute([$uuid, $uid, 'image']);
+      $row = $find->fetch(PDO::FETCH_ASSOC);
+    } catch (Throwable $e) {
+      continue;
+    }
+    if (!is_array($row)
+        || (string)($row['stored_name'] ?? '') !== $uuid . '.png'
+        || (string)($row['rel_path'] ?? '') !== 'var/console_media/images/' . $uuid . '.png'
+        || (string)($row['mime_type'] ?? '') !== 'image/png'
+        || (int)($row['file_size'] ?? 0) < 100
+        || (int)($row['file_size'] ?? 0) > COREUI_IMAGE_MAX_BYTES) continue;
+    $path = realpath($dir . '/' . $uuid . '.png');
+    if (!is_string($path) || $path !== $dir . '/' . $uuid . '.png'
+        || !is_file($path) || !is_readable($path)) continue;
+    $bytes = filesize($path);
+    if ($bytes === false || $bytes < 100 || $bytes > COREUI_IMAGE_MAX_BYTES) continue;
+    $paths[] = $path;
+  }
+  return $paths;
+}
+
 /** Lines for the history: what Mara painted in earlier answers ([message_id => line]). */
 function coreui_image_history_notes(PDO $pdo, int $uid, array $messageIds): array {
   $messageIds = array_values(array_filter(array_map('intval', $messageIds), static fn(int $id): bool => $id > 0));
