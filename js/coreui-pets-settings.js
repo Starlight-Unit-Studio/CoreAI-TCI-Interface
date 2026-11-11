@@ -79,6 +79,15 @@
       var credit = document.createElement('small');
       credit.textContent = '© ' + (pet.attribution || 'Urheber unbekannt') + ' · ' + (pet.license || 'Lizenz ungeklärt');
       copy.appendChild(credit);
+      if (/^https:\/\//.test(String(pet.source_url || ''))) {
+        var source = document.createElement('a');
+        source.textContent = 'Originalquelle und Lizenznachweis';
+        source.href = pet.evidence_url || pet.source_url;
+        source.target = '_blank';
+        source.rel = 'noopener noreferrer';
+        source.addEventListener('click', function (event) { event.stopPropagation(); });
+        copy.appendChild(source);
+      }
     }
     label.appendChild(sprite);
     label.appendChild(copy);
