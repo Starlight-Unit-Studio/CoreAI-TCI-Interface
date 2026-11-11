@@ -691,8 +691,23 @@ foreach (["require_once __DIR__ . '/image_gen.php';", "if (\$sessionId !== '' &&
   img_gen_test(str_contains($chat, $needle), 'chat.php: ' . $needle);
 }
 img_gen_test(substr_count($chat, "   . (\$imageHint !== '' ? (\$imageHint . \"\\n\\n\") : \"\")") === 2, 'the hint in both prompts');
-$guest = strpos($read('api/image_gen.php'), "coreui_ai_account_is_guest(\$pdo, \$uid)) return false;");
-img_gen_test($guest !== false, 'guests never make images');
+$sourceImage = $read('api/image_gen.php');
+$sourceGuest = $read('api/guest_access.php');
+img_gen_test(str_contains($sourceImage, 'coreui_guest_image_quota($pdo, $uid)')
+  && !str_contains($sourceImage, "coreui_ai_account_is_guest(\$pdo, \$uid)) return false;"),
+  'guests may generate images when the daily budget permits');
+img_gen_test(str_contains($sourceGuest, 'const COREUI_GUEST_IMAGES_DAILY_DEFAULT = 3;')
+  && str_contains($sourceGuest, 'coreui_guest_image_counter_key($pdo, $uid, $now)')
+  && str_contains($sourceGuest, 'coreui_abuse_count($pdo, $key, COREUI_GUEST_IMAGES_DAY_SECONDS, 1, $now)'),
+  'each guest image is counted with a persistent per-account server-day key');
+img_gen_test(str_contains($chat, 'coreui_guest_image_reserve($pdo, $uid)')
+  && str_contains($chat, 'if (!$saved) coreui_guest_image_release($pdo, $reservation);')
+  && str_contains($chat, 'function ember_image_run_tool_reserved('),
+  'every batch slot reserves before starting and refunds failures or cancellation');
+foreach (['guest_image_limit_reached', 'guest_image_disabled', 'guest_image_quota_unavailable'] as $err) {
+  img_gen_test(coreui_image_error_text(['error'=>$err]) !== 'Das Bild konnte nicht erzeugt werden.',
+    'guest image errors provide clear explanations: ' . $err);
+}
 img_gen_test(str_contains($chat, "  \$content = coreui_image_strip_placeholders(\$content);\n")
   && strpos($chat, '$content = coreui_image_strip_placeholders($content);') > strpos($chat, 'function ember_sanitize_public_reply('),
   'every public answer (and Mara\'s lines in the history) loses placeholders');
