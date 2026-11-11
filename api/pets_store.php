@@ -37,7 +37,7 @@ function coreui_pet_builtin_view(): array {
   $out = [];
   foreach (coreui_pet_catalog() as $id => [$name, $description]) {
     $out[] = ['id' => $id, 'name' => $name, 'description' => $description, 'url' => './images/pets/' . $id . '.png',
-      'frames' => 6, 'frame_px' => 32, 'own' => false];
+      'frames' => 6, 'frame_px' => 32, 'sprite_version' => 0, 'own' => false];
   }
   return $out;
 }
@@ -103,10 +103,14 @@ function coreui_pet_sheet_check(string $bytes): array {
   if (!$info['alpha']) throw new InvalidArgumentException('not_transparent');
   $h = $info['height'];
   $w = $info['width'];
+  // 8 columns x 9/11 rows, 192x208 cells. Legacy strips stay backward compatible.
+  if ($w === 1536 && ($h === 1872 || $h === 2288)) {
+    return ['mime' => $info['mime'], 'frames' => 8, 'frame_px' => 192, 'sprite_version' => $h === 2288 ? 2 : 1];
+  }
   if ($h < COREUI_PET_MIN_PX || $h > COREUI_PET_MAX_PX || $w % $h !== 0) throw new InvalidArgumentException('invalid_sheet_size');
   $frames = intdiv($w, $h);
   if ($frames < 2 || $frames > COREUI_PET_MAX_FRAMES) throw new InvalidArgumentException('invalid_frame_count');
-  return ['mime' => $info['mime'], 'frames' => $frames, 'frame_px' => $h];
+  return ['mime' => $info['mime'], 'frames' => $frames, 'frame_px' => $h, 'sprite_version' => 0];
 }
 
 function coreui_pet_text($value, int $max): string {
@@ -136,10 +140,21 @@ function coreui_pet_own(PDO $pdo, int $uid): array {
   return $out;
 }
 
+function coreui_pet_stored_sprite_version(string $storedName): int {
+  if (preg_match('~^pet_[a-f0-9]{32}\\.(png|webp)$~D', $storedName) !== 1) return 0;
+  $path = coreui_pet_dir() . '/' . $storedName;
+  if (!is_file($path)) return 0;
+  $header = @file_get_contents($path, false, null, 0, 64);
+  if (!is_string($header)) return 0;
+  $info = coreui_pet_sheet_info($header);
+  if (!$info || (int)$info['width'] !== 1536) return 0;
+  return (int)$info['height'] === 2288 ? 2 : ((int)$info['height'] === 1872 ? 1 : 0);
+}
+
 function coreui_pet_own_view(array $row): array {
   $id = (int)$row['id'];
   return ['id' => 'u' . $id, 'name' => (string)$row['name'], 'description' => (string)$row['description'],
-    'url' => './api/pets.php?action=sprite&id=' . $id, 'frames' => (int)$row['frames'], 'frame_px' => (int)$row['frame_px'], 'own' => true];
+    'url' => './api/pets.php?action=sprite&id=' . $id, 'frames' => (int)$row['frames'], 'frame_px' => (int)$row['frame_px'], 'sprite_version' => coreui_pet_stored_sprite_version((string)$row['stored_name']), 'own' => true];
 }
 
 function coreui_pet_own_row(PDO $pdo, int $uid, int $id): ?array {
