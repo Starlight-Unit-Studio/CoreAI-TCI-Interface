@@ -1,0 +1,25 @@
+/* Same footprint as the original message-action arrows. Only the active color
+   changes. Color remains after history reload because feedback is in the DB. */
+.msg-action.is-feedback-up.active,
+.msg-action.is-feedback-up.active:hover,
+.msg-action.is-feedback-up.active:focus-visible {
+  color: #188c49;
+  border-color: rgba(24, 140, 73, .48);
+  background: rgba(24, 140, 73, .13);
+}
+.msg-action.is-feedback-down.active,
+.msg-action.is-feedback-down.active:hover,
+.msg-action.is-feedback-down.active:focus-visible {
+  color: #c43a40;
+  border-color: rgba(196, 58, 64, .50);
+  background: rgba(196, 58, 64, .13);
+}
+.msg-feedback-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 6px;
+  max-width: min(90vw, 400px);
+  color: var(--muted, #77859b);
+  font: 11px/1.35 "Share Tech Mono", monospace;
+  overflow-wrap: anywhere;
+}
