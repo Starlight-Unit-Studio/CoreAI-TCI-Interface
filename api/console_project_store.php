@@ -7,7 +7,7 @@ declare(strict_types=1);
  */
 function coreui_project_schema_ready(PDO $pdo): bool {
   try {
-    $pdo->query('SELECT id, user_id, name, context_mode FROM stu_console_projects LIMIT 0');
+    $pdo->query('SELECT id, user_id, name, context_mode, instructions_md, pinned_at FROM stu_console_projects LIMIT 0');
     $pdo->query('SELECT project_id FROM stu_console_sessions LIMIT 0');
     return true;
   } catch (Throwable $e) { return false; }
@@ -31,7 +31,7 @@ function coreui_project_require(PDO $pdo, int $uid, string $projectId): array {
   if (!coreui_project_schema_ready($pdo)) throw new RuntimeException('project_migration_required');
   $projectId = coreui_project_id($projectId);
   if ($projectId === '' || $uid <= 0) throw new InvalidArgumentException('invalid_project');
-  $st = $pdo->prepare('SELECT id, name, context_mode, created_at FROM stu_console_projects WHERE user_id=? AND id=? LIMIT 1');
+  $st = $pdo->prepare('SELECT id, name, context_mode, instructions_md, pinned_at, created_at FROM stu_console_projects WHERE user_id=? AND id=? LIMIT 1');
   $st->execute([$uid, $projectId]);
   $row = $st->fetch(PDO::FETCH_ASSOC);
   if (!is_array($row)) throw new RuntimeException('project_not_found');
@@ -40,13 +40,15 @@ function coreui_project_require(PDO $pdo, int $uid, string $projectId): array {
 
 function coreui_project_list(PDO $pdo, int $uid): array {
   if (!coreui_project_schema_ready($pdo)) throw new RuntimeException('project_migration_required');
-  $st = $pdo->prepare('SELECT p.id, p.name, p.context_mode, p.created_at, COUNT(s.id) AS chat_count '
+  $st = $pdo->prepare('SELECT p.id, p.name, p.context_mode, p.instructions_md, p.pinned_at, p.created_at, COUNT(s.id) AS chat_count '
     . 'FROM stu_console_projects p LEFT JOIN stu_console_sessions s '
     . 'ON s.project_id=p.id AND s.user_id=p.user_id AND s.archived_at IS NULL '
-    . 'WHERE p.user_id=? GROUP BY p.id, p.name, p.context_mode, p.created_at ORDER BY p.created_at DESC');
+    . 'WHERE p.user_id=? GROUP BY p.id, p.name, p.context_mode, p.instructions_md, p.pinned_at, p.created_at ORDER BY (p.pinned_at IS NULL), p.pinned_at DESC, p.created_at DESC');
   $st->execute([$uid]);
   return array_map(static function (array $row): array {
     $row['chat_count'] = (int)$row['chat_count'];
+    $row['pinned'] = $row['pinned_at'] !== null;
+    unset($row['pinned_at']);
     return $row;
   }, $st->fetchAll(PDO::FETCH_ASSOC) ?: []);
 }
@@ -61,6 +63,40 @@ function coreui_project_create(PDO $pdo, int $uid, string $name, string $mode): 
   $st->execute([$id,$uid,$name,$mode]);
   return coreui_project_require($pdo,$uid,$id);
 }
+
+function coreui_project_update(PDO $pdo, int $uid, string $projectId, string $name, string $instructions): array {
+  coreui_project_require($pdo,$uid,$projectId);
+  $name = coreui_project_name($name);
+  if (mb_strlen($instructions,'UTF-8') > 12000) throw new InvalidArgumentException('project_instructions_too_long');
+  $st = $pdo->prepare('UPDATE stu_console_projects SET name=?,instructions_md=? WHERE id=? AND user_id=?');
+  $st->execute([$name,$instructions,$projectId,$uid]);
+  return coreui_project_require($pdo,$uid,$projectId);
+}
+
+function coreui_project_pin(PDO $pdo, int $uid, string $projectId, bool $pinned): array {
+  coreui_project_require($pdo,$uid,$projectId);
+  $st=$pdo->prepare('UPDATE stu_console_projects SET pinned_at=' . ($pinned?'NOW()':'NULL') . ' WHERE id=? AND user_id=?');
+  $st->execute([$projectId,$uid]);
+  return coreui_project_require($pdo,$uid,$projectId);
+}
+
+function coreui_project_delete(PDO $pdo, int $uid, string $projectId): array {
+  coreui_project_require($pdo,$uid,$projectId);
+  // Conversations survive project deletion and return to the standalone list.
+  $st=$pdo->prepare('UPDATE stu_console_sessions SET project_id=NULL WHERE user_id=? AND project_id=?');
+  $st->execute([$uid,$projectId]);
+  // RAG sources remain owned by the account but cannot leak into global knowledge.
+  // Delete through the existing verified store so files and chunks are removed.
+  if (function_exists('coreui_knowledge_delete')) {
+    $s=$pdo->prepare('SELECT uuid FROM stu_user_knowledge_sources WHERE user_id=? AND project_id=?');
+    $s->execute([$uid,$projectId]);
+    foreach ($s->fetchAll(PDO::FETCH_COLUMN) ?: [] as $uuid) coreui_knowledge_delete($pdo,$uid,(string)$uuid);
+  }
+  $del=$pdo->prepare('DELETE FROM stu_console_projects WHERE id=? AND user_id=?');
+  $del->execute([$projectId,$uid]);
+  return ['deleted'=>($del->rowCount()===1),'chats_kept'=>(int)$st->rowCount()];
+}
+
 
 function coreui_project_assign(PDO $pdo, int $uid, string $sessionId, string $projectId): ?array {
   if (!coreui_project_schema_ready($pdo)) throw new RuntimeException('project_migration_required');
