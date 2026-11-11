@@ -188,6 +188,47 @@ $loop = coreui_agent_loop_run('[BILD: a fox]', ['tool'=>'image','input'=>'a fox'
   static function (): void {}, static fn(): bool => false);
 img_gen_test($loop['out'] === 'Ich konnte kein Bild erstellen.', 'model failure keeps honest tool result');
 
+// The generated pixel payload goes only to the one image follow-up.
+$visionPrompts = [];
+$textFallbackCalls = 0;
+$visionCalls = 0;
+$loop = coreui_agent_loop_run('[BILD: a fox]', ['tool'=>'image','input'=>'a fox'],
+  'Make an image', ['image'], 0,
+  static function () use (&$textFallbackCalls): string {
+    $textFallbackCalls++;
+    return 'Ich konnte die Pixel nicht sehen.';
+  },
+  static fn(): string => 'Ich habe ein Bild erstellt.',
+  static function (): void {}, static fn(): bool => false, null,
+  static function (string $p) use (&$visionPrompts,&$visionCalls): string {
+    $visionPrompts[] = $p;
+    $visionCalls++;
+    return 'Ich erkenne einen Fuchs im Schnee und mag die Lichtstimmung.';
+  });
+img_gen_test($visionCalls === 1 && $textFallbackCalls === 0
+  && str_contains($visionPrompts[0], 'DIREKT als visuelle Eingabe')
+  && $loop['out'] === 'Ich erkenne einen Fuchs im Schnee und mag die Lichtstimmung.',
+  'real image vision is passed once; no second, blind text completion');
+$visionCalls = $textFallbackCalls = 0;
+$textPrompts = [];
+$loop = coreui_agent_loop_run('[BILD: a fox]', ['tool'=>'image','input'=>'a fox'],
+  'Make an image', ['image'], 0,
+  static function (string $p) use (&$textPrompts,&$textFallbackCalls): string {
+    $textPrompts[] = $p;
+    $textFallbackCalls++;
+    return 'Bild gespeichert. Ich konnte es nicht visuell auswerten.';
+  },
+  static fn(): string => 'Ich habe ein Bild erstellt.',
+  static function (): void {}, static fn(): bool => false, null,
+  static function (string $p) use (&$visionCalls): ?string { $visionCalls++; return null; });
+img_gen_test($visionCalls === 1 && $textFallbackCalls === 1
+  && str_contains($textPrompts[0], 'KEINE auswertbare Bilddatei')
+  && $loop['out'] === 'Bild gespeichert. Ich konnte es nicht visuell auswerten.',
+  'Vision unavailable: retry only a truthful text fallback');
+img_gen_test(str_contains(coreui_agent_image_followup_prompt('Auftrag', [], true), 'DIREKT als visuelle Eingabe')
+  && str_contains(coreui_agent_image_followup_prompt('Auftrag', [], false), 'KEINE auswertbare Bilddatei'),
+  'Vision and no-Vision prompts are explicitly different');
+
 // --- Registry ---------------------------------------------------------------------------
 $registry = coreui_image_registry();
 img_gen_test(($registry['model']['id'] ?? '') === 'flux2-klein-4b' && coreui_image_size_label('normal') === '512 × 512'
@@ -243,8 +284,9 @@ foreach (['load', 'text', 'sampling', 'decode', 'x'] as $phase) {
     'the work store accepts the title of ' . $phase);
 }
 $ok = coreui_image_result_text(['ok' => true, 'width' => 512, 'height' => 512, 'seconds' => 62.6]);
-img_gen_test(str_contains($ok, 'Das Bild ist fertig (512 × 512 Pixel, 63 Sekunden) und erscheint direkt unter deiner Antwort')
-  && str_contains($ok, 'Du kannst es nicht sehen'), 'success: Mara says it is there and invents nothing');
+img_gen_test(str_contains($ok, 'Das Bild ist fertig (512 × 512 Pixel, 63 Sekunden) und ist als Bildanhang deiner Antwort gespeichert')
+  && str_contains($ok, 'echten Bildpixel')
+  && !str_contains($ok, 'Du kannst es nicht sehen'), 'success: do not deny a possible Vision follow-up');
 $failed = coreui_image_result_text(['ok' => false, 'error' => 'image_loading', 'detail' => '42']);
 img_gen_test(str_starts_with($failed, 'Es gibt KEIN Bild:') && str_contains($failed, '(42 Prozent)')
   && str_contains($failed, 'behaupte nicht, dass ein Bild da ist'), 'failure: no claimed image');
@@ -567,7 +609,17 @@ $uuid = (string)$row['uuid'];
 coreui_image_pending_add($uuid);
 coreui_image_pending_add($uuid);
 coreui_image_pending_add('../../etc/passwd');
-img_gen_test(coreui_image_pending_take() === [$uuid] && coreui_image_pending_take() === [], 'pending images: once, valid ids only');
+$visionPaths = coreui_image_pending_vision_paths($pdo, 5);
+img_gen_test(count($visionPaths) === 1
+  && $visionPaths[0] === realpath($tmp . '/images/' . $uuid . '.png'),
+  'only the current user\'s confirmed generated PNG is passed to native Vision');
+img_gen_test(coreui_image_pending_vision_paths($pdo, 6) === []
+  && coreui_image_pending_vision_paths($pdo, 0) === [],
+  'other accounts and unauthenticated calls cannot obtain generated image pixels');
+img_gen_test(coreui_image_pending_take() === [$uuid] && coreui_image_pending_take() === [],
+  'Vision preview does not consume attachments: they still attach to Mara\'s answer');
+img_gen_test(coreui_image_pending_vision_paths($pdo, 5) === [],
+  'after the image is attached, stale generated pixels cannot be sent again');
 $pdo->prepare('INSERT INTO stu_console_message_attachments (message_id, media_uuid, user_id, position) VALUES (?,?,?,0)')->execute([77, $uuid, 5]);
 $attachments = coreui_image_message_attachments($pdo, 5, 77);
 img_gen_test(count($attachments) === 1 && $attachments[0]['uuid'] === $uuid && $attachments[0]['kind'] === 'image'
