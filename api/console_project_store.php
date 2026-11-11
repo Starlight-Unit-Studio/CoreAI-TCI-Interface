@@ -40,10 +40,10 @@ function coreui_project_require(PDO $pdo, int $uid, string $projectId): array {
 
 function coreui_project_list(PDO $pdo, int $uid): array {
   if (!coreui_project_schema_ready($pdo)) throw new RuntimeException('project_migration_required');
-  $st = $pdo->prepare('SELECT p.id, p.name, p.context_mode, p.instructions_md, p.pinned_at, p.created_at, COUNT(s.id) AS chat_count '
-    . 'FROM stu_console_projects p LEFT JOIN stu_console_sessions s '
-    . 'ON s.project_id=p.id AND s.user_id=p.user_id AND s.archived_at IS NULL '
-    . 'WHERE p.user_id=? GROUP BY p.id, p.name, p.context_mode, p.instructions_md, p.pinned_at, p.created_at ORDER BY (p.pinned_at IS NULL), p.pinned_at DESC, p.created_at DESC');
+  $st = $pdo->prepare('SELECT p.id, p.name, p.context_mode, p.instructions_md, p.pinned_at, p.created_at, '
+    . '(SELECT COUNT(*) FROM stu_console_sessions s WHERE s.project_id=p.id AND s.user_id=p.user_id '
+    . 'AND s.archived_at IS NULL) AS chat_count FROM stu_console_projects p '
+    . 'WHERE p.user_id=? ORDER BY (p.pinned_at IS NULL), p.pinned_at DESC, p.created_at DESC');
   $st->execute([$uid]);
   return array_map(static function (array $row): array {
     $row['chat_count'] = (int)$row['chat_count'];
