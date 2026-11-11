@@ -838,6 +838,11 @@
     document.getElementById('guestMessageLimit').value = settings.guest_message_limit || '5';
     document.getElementById('guestNetworkGuests').value = settings.guest_network_guests || '1';
     document.getElementById('guestDailyMessages').value = settings.guest_daily_messages != null ? settings.guest_daily_messages : '200';
+    document.getElementById('guestToolWebEnabled').checked = settings.guest_tool_web_enabled == null ? true : boolSetting(settings.guest_tool_web_enabled);
+    document.getElementById('guestToolBrowseEnabled').checked = settings.guest_tool_browse_enabled == null ? true : boolSetting(settings.guest_tool_browse_enabled);
+    document.getElementById('guestToolPythonEnabled').checked = settings.guest_tool_python_enabled == null ? true : boolSetting(settings.guest_tool_python_enabled);
+    document.getElementById('guestToolImageEnabled').checked = settings.guest_tool_image_enabled == null ? true : boolSetting(settings.guest_tool_image_enabled);
+    document.getElementById('guestImageDailyLimit').value = settings.guest_image_daily_limit != null ? settings.guest_image_daily_limit : '3';
     document.getElementById('captchaEnabled').checked = settings.captcha_enabled == null ? true : boolSetting(settings.captcha_enabled);
     document.getElementById('maintenanceEnabled').checked = boolSetting(settings.maintenance_enabled);
     document.getElementById('memoryDefaultEnabled').checked = boolSetting(settings.memory_default_enabled);
@@ -860,6 +865,11 @@
       guest_message_limit: document.getElementById('guestMessageLimit').value,
       guest_network_guests: document.getElementById('guestNetworkGuests').value,
       guest_daily_messages: document.getElementById('guestDailyMessages').value,
+      guest_tool_web_enabled: document.getElementById('guestToolWebEnabled').checked ? '1' : '0',
+      guest_tool_browse_enabled: document.getElementById('guestToolBrowseEnabled').checked ? '1' : '0',
+      guest_tool_python_enabled: document.getElementById('guestToolPythonEnabled').checked ? '1' : '0',
+      guest_tool_image_enabled: document.getElementById('guestToolImageEnabled').checked ? '1' : '0',
+      guest_image_daily_limit: document.getElementById('guestImageDailyLimit').value,
       captcha_enabled: document.getElementById('captchaEnabled').checked ? '1' : '0',
       maintenance_enabled: document.getElementById('maintenanceEnabled').checked ? '1' : '0',
       memory_default_enabled: document.getElementById('memoryDefaultEnabled').checked ? '1' : '0',
