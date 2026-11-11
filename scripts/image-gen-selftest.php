@@ -188,6 +188,44 @@ $loop = coreui_agent_loop_run('[BILD: a fox]', ['tool'=>'image','input'=>'a fox'
   static function (): void {}, static fn(): bool => false);
 img_gen_test($loop['out'] === 'Ich konnte kein Bild erstellen.', 'model failure keeps honest tool result');
 
+// The after-image review is a single Vision-aware call, not an independent
+// model trigger or a second chance to generate another image.
+$textCalls = 0; $reviewCalls = 0; $toolCalls = 0;
+$loop = coreui_agent_loop_run('[BILD: a fox]', ['tool'=>'image', 'input'=>'a fox'],
+  'Make an image', ['image'], 0,
+  static function () use (&$textCalls): string { $textCalls++; return 'Blindtext'; },
+  static function () use (&$toolCalls): string { $toolCalls++; return 'Ich habe ein Bild erstellt.'; },
+  static function (): void {}, static fn(): bool => false, null,
+  static function (string $prompt) use (&$reviewCalls): string {
+    $reviewCalls++;
+    img_gen_test(str_contains($prompt, 'BESTAETIGTE BILDWERKZEUGERGEBNISSE')
+      && str_contains($prompt, 'Vision-Eingabe'), 'review keeps confirmed result and vision instruction');
+    return 'Ich sehe einen roten Fuchs im Schnee.';
+  });
+img_gen_test($reviewCalls === 1 && $textCalls === 0 && $toolCalls === 1
+  && $loop['out'] === 'Ich sehe einen roten Fuchs im Schnee.' && !empty($loop['terminal']),
+  'exactly one image-review callback, no blind text model or repeated image generation');
+$textCalls = 0; $reviewCalls = 0; $toolCalls = 0;
+$loop = coreui_agent_loop_run('[BILD: a fox]', ['tool'=>'image','input'=>'a fox'],
+  'Make an image', ['image'], 0,
+  static function () use (&$textCalls): string { $textCalls++; return 'Blindtext'; },
+  static function () use (&$toolCalls): string { $toolCalls++; return 'Bild fertig'; },
+  static function (): void {}, static fn(): bool => false, null,
+  static function () use (&$reviewCalls): string { $reviewCalls++; return '[BILD: again and again]'; });
+img_gen_test($reviewCalls === 1 && $textCalls === 0 && $toolCalls === 1
+  && $loop['out'] === 'Bild fertig',
+  'a malicious or confused Vision response cannot start another image tool');
+$reviewCalls = 0;
+$loop = coreui_agent_loop_run('[BILD: a fox]', ['tool'=>'image', 'input'=>'a fox'],
+  'Make an image', ['image'], 0,
+  static fn(): string => 'Text',
+  static fn(): string => 'Bild fertig',
+  static function (): void {}, static fn(): bool => true, null,
+  static function () use (&$reviewCalls): string { $reviewCalls++; return 'Should not run'; });
+img_gen_test($reviewCalls === 0 && $loop['out'] === 'Bild fertig',
+  'cancel skips the image-review callback');
+
+
 // --- Registry ---------------------------------------------------------------------------
 $registry = coreui_image_registry();
 img_gen_test(($registry['model']['id'] ?? '') === 'flux2-klein-4b' && coreui_image_size_label('normal') === '512 × 512'
@@ -243,8 +281,9 @@ foreach (['load', 'text', 'sampling', 'decode', 'x'] as $phase) {
     'the work store accepts the title of ' . $phase);
 }
 $ok = coreui_image_result_text(['ok' => true, 'width' => 512, 'height' => 512, 'seconds' => 62.6]);
-img_gen_test(str_contains($ok, 'Das Bild ist fertig (512 × 512 Pixel, 63 Sekunden) und erscheint direkt unter deiner Antwort')
-  && str_contains($ok, 'Du kannst es nicht sehen'), 'success: Mara says it is there and invents nothing');
+img_gen_test(str_contains($ok, 'Das Bild ist fertig (512 × 512 Pixel, 63 Sekunden) und ist als Bildanhang deiner Antwort gespeichert')
+  && str_contains($ok, 'echten Vision-Input') && str_contains($ok, 'keine Einzelheiten'),
+  'success: Mara can see actual generated pixels when Vision is available');
 $failed = coreui_image_result_text(['ok' => false, 'error' => 'image_loading', 'detail' => '42']);
 img_gen_test(str_starts_with($failed, 'Es gibt KEIN Bild:') && str_contains($failed, '(42 Prozent)')
   && str_contains($failed, 'behaupte nicht, dass ein Bild da ist'), 'failure: no claimed image');
@@ -401,6 +440,21 @@ img_gen_test($row['uuid'] === $r['uuid'] && (int)$row['user_id'] === 5 && $row['
 $kept = (string)file_get_contents($tmp . '/images/' . $r['uuid'] . '.png');
 img_gen_test(coreui_image_png_size($kept) === [512, 512] && $kept !== $png && (int)$row['file_size'] === strlen($kept)
   && substr(sprintf('%o', fileperms($tmp . '/images/' . $r['uuid'] . '.png')), -4) === '0640', 'the PNG on disk with logo only and provenance, 0640');
+$visionPath = coreui_image_followup_paths($pdo, 5, [$r['uuid']]);
+img_gen_test($visionPath === [realpath($tmp . '/images/' . $r['uuid'] . '.png')],
+  'Vision can resolve the actual, verified PNG generated for the current account');
+img_gen_test(coreui_image_followup_paths($pdo, 9, [$r['uuid']]) === []
+  && coreui_image_followup_paths($pdo, 0, [$r['uuid']]) === [],
+  'another user and unauthenticated users cannot inspect generated image files');
+img_gen_test(coreui_image_followup_paths($pdo, 5, ['../../config', str_repeat('x',32), $r['uuid'], $r['uuid']]) === $visionPath,
+  'only valid existing UUIDs; duplicate and path traversal inputs cannot affect image access');
+$pdo->prepare('UPDATE stu_console_media SET rel_path = ? WHERE uuid = ?')
+  ->execute(['var/console_media/images/another.png', $r['uuid']]);
+img_gen_test(coreui_image_followup_paths($pdo, 5, [$r['uuid']]) === [],
+  'tampered or displaced media rows are never passed to Ollama Vision');
+$pdo->prepare('UPDATE stu_console_media SET rel_path = ? WHERE uuid = ?')
+  ->execute(['var/console_media/images/' . $r['uuid'] . '.png', $r['uuid']]);
+
 $meta = coreui_image_meta($r['uuid']);
 img_gen_test(($meta['prompt'] ?? '') === 'A red fox, sitting in snow' && ($meta['seconds'] ?? 0) == 61.8 && ($meta['model'] ?? '') === 'FLUX.2-klein 4B (Q8_0)'
   && ($meta['watermark'] ?? null) === true && ($meta['metadata_embedded'] ?? null) === true,
