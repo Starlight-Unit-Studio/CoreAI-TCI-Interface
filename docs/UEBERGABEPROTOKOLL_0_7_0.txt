@@ -1,0 +1,64 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.0
+Stand: 11.11.2026
+Basis: main 0.6.99 nach Merge von PR #251
+Branch: claude/bold-galileo-myoyi0
+
+AUFTRAG
+- Naechste Einstellungsseite nach den Referenz-Screenshots des
+  Betreibers: Personalisierung, inklusive Untermenues
+  (Erinnerungszusammenfassung mit Menue und Info, Basisstil-Menue,
+  Unterseite Benutzerdefinierte Anweisungen).
+- Echt, wo CoreAI es kann; sonst In Vorbereitung. Das CoreAI-Theme
+  kommt am Ende ueber alle Einstellungen.
+
+UMSETZUNG
+- settings.html: neue Seite ohne Speichern-Knopf; Unterseite
+  pzSub-instructions; Fenster pzSummaryDialog mit Menue, Info und
+  Bestaetigung pzWipeConfirm. Neue Symbole i-info, i-trash,
+  i-close, i-more, i-arrow-up, i-reply.
+- js/coreui-personalization-settings.js: Sofortspeichern je Schalter
+  (nur der geaenderte Schluessel), Stilmenues (position: fixed),
+  Unterseite, Zusammenfassung, Referenzfotos.
+- api/console_personalization_store.php: sieben Stile mit
+  Umrechnung alter Werte, Felder nickname/occupation/about/role,
+  voice_history, live_voice, Referenzfotos (reference_set,
+  Aufraeumen, image_references), coreui_personalization_update.
+- api/personalization.php: available (Werkzeuge, Lockdown, Bild),
+  Aktion reference.
+- api/memory_summary_store.php + api/memory_summary.php +
+  Migration 033: Zusammenfassung mit dem Core des Kontos in der
+  Warteschlange, Cache per Fingerabdruck, Loeschen und Ausschalten.
+  Nginx-Freigabe memory_summary in beiden Vorlagen.
+- api/console_answer_style.php: Stiltexte, Block UEBER DIE PERSON,
+  Hinweis Referenzfoto (nur wenn Bilder erlaubt).
+- api/image_gen.php: coreui_image_is_person_self_request,
+  coreui_image_mentions_outfit.
+- api/chat.php: COREUI_TURN_USER_TEXT, Referenzfotos im
+  Bildwerkzeug, voice_history im Verlauf.
+  api/ember_attachments.php: Stimmsequenz ohne Wortlaut.
+- api/voice_live.php: Schalter Live-Gespraech (personal_off,
+  live_off; end laeuft weiter).
+- js/console-app.js: app.html?draft= oeffnet einen neuen Chat mit
+  dem Text im Eingabefeld (nichts wird gesendet).
+- api/account_export.php: memory_summary im Export.
+- settings.html: Menueeintrag Archivierte Chats ohne GEPLANT.
+
+DATENSCHUTZ
+- Screenshots enthielten echte Daten des Betreibers; nichts davon
+  in Code, Tests, Commits oder PR. Testdaten nur example.test.
+
+TESTSTAND (in dieser Sitzung ausgefuehrt)
+- php -l fuer alle geaenderten PHP-Dateien.
+- scripts/personalization-page-selftest.php mit MariaDB
+  (COREUI_SELFTEST_DB=1) und ohne: OK.
+- scripts/personalization-ui-selftest.cjs (Playwright): OK.
+- scripts/personalization-selftest.php: OK.
+- Echter HTTP-Lauf mit php -S, MariaDB und Ersatz-Ollama:
+  Teilspeichern, Stilumrechnung, Referenzfoto-Upload, Zusammen-
+  fassung (Cache, veraltet, neu), Live aus, Loeschen.
+- Vollstaendige Suite und Versions-Guard: siehe PR.
+
+OFFEN / SPAETER
+- Konto-PIN und gesperrte Chats, CoreAI-Theme ueber alle
+  Einstellungen (nach Fertigstellung des Einstellungsmenues).
+- Konnektorsuche und Codex Cloud bleiben In Vorbereitung.

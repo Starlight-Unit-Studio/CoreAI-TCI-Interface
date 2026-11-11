@@ -109,6 +109,40 @@ function coreui_image_is_self_request(string $message, string $assistantName = '
 }
 
 /**
+ * 0.7.0: the PERSON asks for an image of themselves ("ein Bild von mir", "zeichne mich als
+ * Astronaut", "ein Foto von uns beiden", "a picture of me"), so their reference photos from
+ * Settings > Personalisierung apply (pure). "Für mich" or "zeig mir" is no image of the person.
+ */
+function coreui_image_is_person_self_request(string $message): bool {
+  $text = trim((string)preg_replace('~\\s+~u', ' ', $message));
+  if ($text === '') return false;
+  $images = '(?:bild\\w*|foto\\w*|portr(?:ae|ä|a)t\\w*|selfie\\w*|zeichnung\\w*|illustration\\w*|avatar\\w*|gem(?:ä|ae)lde\\w*'
+    . '|skizze\\w*|comic\\w*|image\\w*|picture\\w*|photo\\w*|drawing\\w*|painting\\w*)';
+  // "ein Bild von mir", "ein Bild im Comicstil von uns beiden" (no other "von" between: "ein Bild
+  // von einem Hund fuer einen Freund von mir" is no image of the person).
+  if (preg_match('~\\b' . $images . '\\b(?:(?!\\bvon\\b)[^.!?]){0,40}\\b(?:von|mit)\\s+(?:mir|uns)\\b~iu', $text) === 1) return true;
+  if (preg_match('~\\b' . $images . '\\b(?:(?!\\bof\\b)[^.!?]){0,40}\\b(?:of|with)\\s+(?:me|myself|us)\\b~iu', $text) === 1) return true;
+  // "zeichne mich", "mal mich als Ritter", "stell mich als Pilotin dar", "verwandle mich in ..."
+  if (preg_match('~\\b(?:zeichn\\w*|male?|malst|malt|stell\\w*|zeig\\w*|generier\\w*|erstell\\w*|erzeug\\w*|render\\w*'
+      . '|verwandl\\w*|verwandel\\w*|portr(?:ae|ä)tier\\w*|fotografier\\w*)\\s+(?:(?:bitte|mal|doch|noch\\s*mal)\\s+)?mich\\b'
+      . '(?=[^.!?]{0,80}(?:\\b(?:als|in|im|am|auf|mit|beim|vor|dar)\\b|[.!?]|$))~iu', $text) === 1) return true;
+  // "kannst du mich als Astronautin zeichnen?"
+  if (preg_match('~\\bmich\\b[^.!?]{0,60}\\b(?:zeichnen|malen|darstellen|fotografieren|rendern|portr(?:ae|ä)tieren|generieren|erstellen|verwandeln)\\b~iu', $text) === 1) return true;
+  // "Bild: ich als Pirat"
+  if (preg_match('~\\b' . $images . '\\b[^.!?]{0,40}\\bich\\s+als\\b~iu', $text) === 1) return true;
+  return preg_match('~\\b(?:draw|paint|render|show|turn|imagine|picture)\\s+me\\s+(?:as|in|like|into)\\b~iu', $text) === 1;
+}
+
+/** The request is about clothing or accessories, so the full-body reference photo helps (pure). */
+function coreui_image_mentions_outfit(string $message): bool {
+  return preg_match('~\\b(?:kleid\\w*|outfit\\w*|anz(?:u|ü|ue)g\\w*|jacke\\w*|mantel|hose\\w*|rock|shirt\\w*|pullover|pulli|schuh\\w*'
+    . '|stiefel\\w*|hut|m(?:ü|ue)tze|kappe|brille\\w*|schmuck|kette\\w*|ohrring\\w*|tasche\\w*|accessoire\\w*|kost(?:ü|ue)m\\w*'
+    . '|uniform\\w*|r(?:ü|ue)stung\\w*|tracht\\w*|trag(?:e|en|end)|tr(?:ä|ae)gt|angezogen|anprobier\\w*|ganzk(?:ö|oe)rper\\w*'
+    . '|ganze[nrm]?\\s+k(?:ö|oe)rper|von\\s+kopf\\s+bis\\s+fu(?:ß|ss)|full[\\s-]?body|dress\\w*|suit|clothes|clothing|wearing'
+    . '|jacket|shoes|hat|glasses|accessor\\w*|costume|armou?r)\\b~iu', $message) === 1;
+}
+
+/**
  * A short continuation may refer to a self-portrait in the current chat.
  * This never turns a generic image into a self-portrait. It only keeps an
  * explicit ICH marker already chosen from the current conversational context.

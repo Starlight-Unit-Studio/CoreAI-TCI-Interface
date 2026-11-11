@@ -5,6 +5,7 @@ declare(strict_types=1);
  * CoreAI 0.6.31 (P20.4): the live conversation. Signed-in accounts only, never guests.
  *
  *   GET  ?action=status                       allowed, core, core_label, hears, ready, voice, name
+ *        (0.7.0: allowed false with reason personal_off when the account switched it off)
  *   POST ?action=warm  {session_id, character_id, since_id}
  *        loads the live Core with the opening of the conversation (cache)
  *   POST ?action=turn  {session_id, character_id, since_id, uuid}
@@ -91,8 +92,12 @@ function coreui_live_call_messages(PDO $pdo, int $uid, array $char, string $sess
   return coreui_live_messages($context, $history, coreui_voice_system_without_think(ember_persona_system_for($core)));
 }
 
+// 0.7.0: Settings > Personalisierung > Live-Gespraech off hides the button and refuses new rounds.
+$liveOn = (coreui_personalization_load($pdo, $uid)['live_voice'] ?? true) !== false;
+
 if ($method === 'GET' && $action === 'status') {
   if ($guest) stu_json(['ok' => true, 'allowed' => false]);
+  if (!$liveOn) stu_json(['ok' => true, 'allowed' => false, 'reason' => 'personal_off']);
   coreui_ai_runtime_apply($pdo, $uid);
   $core = coreui_live_core($pdo, $uid);
   $voice = coreui_voice_health();
@@ -104,6 +109,8 @@ if ($method === 'GET' && $action === 'status') {
 
 if ($guest) stu_json(['ok' => false, 'error' => 'guests_not_allowed'], 403);
 if ($method !== 'POST') stu_json(['ok' => false, 'error' => 'method_not_allowed'], 405);
+// "end" still runs: Mara's reflection of a conversation that was already held.
+if (!$liveOn && $action !== 'end') stu_json(['ok' => false, 'error' => 'live_off'], 403);
 stu_require_csrf();
 $body = stu_read_json_body();
 coreui_ai_runtime_apply($pdo, $uid);

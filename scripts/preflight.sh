@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.99: Denkaufwand UI-Literal Normal; backend standard key remains unchanged.
+# CoreAI: TCI Interface 0.7.0: Settings > Personalisierung after the reference screenshots (migration 033, memory summary, reference photos).
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -152,6 +152,11 @@ UI_FILES=(
   scripts/chat-menu-selftest.php
   scripts/chat-menu-ui-selftest.cjs
   scripts/archived-chats-ui-selftest.cjs
+  database/migrations/033_memory_summary.sql
+  api/memory_summary_store.php
+  api/memory_summary.php
+  scripts/personalization-page-selftest.php
+  scripts/personalization-ui-selftest.cjs
   scripts/terran-terminology-selftest.cjs
   scripts/tci-language-selftest.cjs
   js/console-app.js
@@ -1212,6 +1217,14 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail "Chat-Menue-Selbsttest: ${chat_menu_test:-Unbekannter Fehler}"
   fi
 
+  # 0.7.0: Settings > Personalisierung: styles, instructions, reference photos, memory summary, wipe.
+  personalization_page_test=''
+  if personalization_page_test="$(compose exec -T php php scripts/personalization-page-selftest.php 2>&1)"; then
+    ok 'Personalisierung: Stile, Anweisungen, Referenzfotos, Erinnerungszusammenfassung und Loeschen geprueft.'
+  else
+    fail "Personalisierung-Selbsttest: ${personalization_page_test:-Unbekannter Fehler}"
+  fi
+
   profile_reference_test=''
   if profile_reference_test="$(compose exec -T php php scripts/profile-reference-selftest.php 2>&1)"; then
     if [[ "$profile_reference_test" == PARTIAL:* ]]; then
@@ -1472,6 +1485,16 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       fi
     else
       warn 'Chat-Menue: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+    fi
+    # 0.7.0: Settings > Personalisierung after the reference; needs Playwright for Node.
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/personalization-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'Personalisierung im Browser geprueft.'
+      else
+        fail 'Personalisierung: Oberflaechentest fehlgeschlagen.'
+      fi
+    else
+      warn 'Personalisierung: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
     fi
     # 0.6.86: Konto (name, Benutzername dialog, e-mail, plan page, Erstellerprofil planned); needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then

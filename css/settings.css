@@ -1410,67 +1410,135 @@
   accent-color: var(--cx);
 }
 
-/* 0.5.91: original CoreAI personalization controls, mobile-first. */
-.settings-body .persona-cards .setting-row {
-  gap: 15px;
+/* 0.7.0: Settings > Personalisierung after the reference screenshots (js/coreui-personalization-settings.js). */
+.settings-body .pz-lead { margin: -4px 0 12px; color: var(--muted); font-size: 16px; line-height: 1.45; }
+.settings-body .pz-note { margin: 0; padding: 14px 0 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 15px; line-height: 1.45; }
+.settings-body .pz-note[hidden], .settings-body .pz-preview[hidden], .settings-body .pz-blocked[hidden],
+.settings-body .pz-ref-thumb[hidden], .settings-body .pz-ref-remove[hidden], .settings-body .pz-menu[hidden] { display: none; }
+.settings-body .pz-link {
+  display: inline; padding: 0; border: 0; background: none; color: var(--green); cursor: pointer; font: inherit; text-align: left;
 }
-.settings-body .persona-select-row select {
-  min-width: 112px;
-  width: min(34%, 168px);
-  max-width: 100%;
-  border: 1px solid rgba(72, 119, 180, .28);
-  border-radius: 9px;
-  background: rgba(242, 246, 252, .9);
-  color: #23395b;
-  font: 600 13px/1.35 var(--coreui-font, "Rajdhani"), sans-serif;
-  padding: 8px 10px;
-  cursor: pointer;
+.settings-body .pz-link:hover, .settings-body .pz-link:focus-visible { text-decoration: underline; outline: none; }
+.settings-body .pz-btn { flex: 0 0 auto; }
+.settings-body .pz-drop { flex: 0 0 auto; }
+.settings-body .pz-select { min-height: 44px; white-space: nowrap; }
+.settings-body .pz-style .sec-row { align-items: center; }
+.settings-body .arc-menu.pz-menu { position: fixed; top: 0; left: 0; z-index: 70; min-width: 260px; max-height: 70vh; overflow-y: auto; }
+.settings-body .pz-option span { display: grid; gap: 2px; }
+.settings-body .pz-option b { font-weight: 600; }
+.settings-body .pz-option small { color: var(--muted); font-size: 14px; line-height: 1.35; }
+.settings-body .pz-ref-side { display: flex; align-items: center; gap: 12px; flex: 0 0 auto; }
+.settings-body .pz-ref-thumb { width: 52px; height: 52px; border: 1px solid var(--line); border-radius: 12px; object-fit: cover; }
+.settings-body .pz-ref .sec-open span { color: var(--muted); font-weight: 600; }
+.settings-body .pz-ref.is-unavailable .sec-copy { opacity: .65; }
+.settings-body .pz-ref .sec-open:disabled { cursor: not-allowed; opacity: .55; }
+.settings-body .pz-nav { cursor: pointer; }
+.settings-body .pz-nav .sec-open { padding-left: 4px; }
+.settings-body .pz-preview {
+  overflow: hidden; color: var(--txt); font-size: 14px; opacity: .8; text-overflow: ellipsis; white-space: nowrap;
 }
-.settings-body .persona-select-row select:focus-visible {
-  outline: 2px solid #3975ca;
-  outline-offset: 2px;
+.settings-body .pz-blocked { color: var(--amb); font-size: 13px; font-weight: 700; letter-spacing: .04em; }
+.settings-body .pz-dialog-box { width: min(560px, 100%); max-height: calc(100vh - 32px); overflow-y: auto; }
+.settings-body .pz-textarea {
+  width: 100%; min-height: 190px; padding: 12px 14px; border: 1px solid var(--line-strong); border-radius: 12px;
+  background: var(--panel-soft); color: var(--txt); font: inherit; font-size: 16px; line-height: 1.45; resize: vertical;
 }
-.settings-body .persona-cards .setting-copy {
-  min-width: 0;
+.settings-body .pz-textarea:focus-visible { border-color: var(--cx); outline: none; }
+.settings-body .persona-counter { color: var(--muted); font-size: 13px; justify-self: end; }
+.settings-body .pz-summary {
+  display: grid; gap: 8px; max-height: 48vh; margin: 0; padding: 0 0 0 20px; overflow-y: auto; color: var(--txt); font-size: 15px; line-height: 1.45;
 }
-.settings-body .persona-cards .setting-copy strong {
-  overflow-wrap: anywhere;
+/* Sub page "Benutzerdefinierte Anweisungen fuer Mara" (Zurueck, Abbrechen, Speichern). */
+.settings-body .pz-sub { display: grid; gap: 12px; }
+.settings-body .pz-sub-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.settings-body .pz-sub-bar .sec-back { margin: 0; }
+.settings-body .pz-sub-actions { display: flex; gap: 10px; }
+.settings-body .pz-primary { border-color: var(--txt); background: var(--txt); color: var(--panel-solid, #ffffff); }
+.settings-body .pz-primary:disabled { border-color: var(--line-strong); background: var(--panel-soft); color: var(--muted); cursor: default; opacity: .7; }
+.settings-body .pz-field { display: grid; gap: 8px; margin-top: 8px; }
+.settings-body .pz-field strong { color: var(--txt); font-size: 17px; }
+.settings-body .pz-field input, .settings-body .pz-field textarea, .settings-body .pz-field select {
+  width: 100%; min-height: 50px; padding: 12px 16px; border: 1px solid var(--line-strong); border-radius: 14px;
+  background: transparent; color: var(--txt); font: inherit; font-size: 16px; line-height: 1.4;
 }
-.settings-body .persona-links {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 9px;
-  padding: 14px 0 0;
+.settings-body .pz-field textarea { resize: vertical; }
+.settings-body .pz-field select { border-radius: 999px; background: var(--panel-soft); cursor: pointer; }
+.settings-body .pz-field input:focus-visible, .settings-body .pz-field textarea:focus-visible, .settings-body .pz-field select:focus-visible {
+  border-color: var(--cx); outline: none;
 }
-.settings-body .persona-counter {
-  color: #657996;
-  font: 12px/1.45 "Share Tech Mono", monospace;
-  margin-right: auto;
+/* Erinnerungszusammenfassung: a sheet with a menu, Mara's overview and the question row. */
+.settings-body .pz-sheet {
+  position: relative; display: flex; flex-direction: column; width: min(680px, 100%); height: min(860px, calc(100vh - 32px));
+  border: 1px solid var(--line-strong); border-radius: 22px; background: var(--panel-solid, #ffffff); box-shadow: 0 20px 60px rgba(0, 0, 0, .3);
 }
-.settings-body .persona-limit {
-  margin: 8px 0;
-  line-height: 1.6;
-  color: #4e637e;
-  font-size: 13px;
+.settings-body .pz-sheet-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px 14px 24px; border-bottom: 1px solid var(--line);
 }
-.settings-body .persona-limit strong { color: #254474; }
-.settings-body .persona-status {
-  margin-top: 16px;
-  font: 600 12px/1.6 var(--coreui-font, "Rajdhani"), sans-serif;
-  color: #2d7464;
+.settings-body .sec-confirm.pz-dialog { grid-template-columns: minmax(0, 1fr); justify-items: center; }
+.settings-body .pz-sheet-head h3 {
+  flex: 1 1 auto; min-width: 0; margin: 0; color: var(--txt); font-size: 20px; font-weight: 600; overflow-wrap: anywhere; hyphens: auto;
 }
-.settings-body .persona-status.error { color: #a34842; }
-@media (max-width: 500px) {
-  .settings-body .persona-select-row { align-items: center; }
-  .settings-body .persona-select-row select {
-    min-width: 94px;
-    width: 102px;
-    padding: 7px 6px;
-    flex: 0 0 102px;
-    font-size: 12px;
-  }
-  .settings-body .persona-links .settings-action { font-size: 10px; }
+.settings-body .pz-sheet-tools { position: relative; display: flex; gap: 6px; }
+.settings-body .pz-icon {
+  display: inline-grid; place-items: center; width: 42px; height: 42px; border: 0; border-radius: 999px; background: transparent;
+  color: var(--txt); cursor: pointer;
+}
+.settings-body .pz-icon svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.settings-body #pzSummaryMore svg { stroke-width: 3.2; }
+.settings-body .pz-icon:hover, .settings-body .pz-icon:focus-visible, .settings-body .pz-icon[aria-expanded="true"] { background: var(--panel-soft); outline: none; }
+.settings-body .arc-menu.pz-summary-menu { top: calc(100% + 6px); right: 0; left: auto; min-width: 290px; }
+.settings-body .pz-danger, .settings-body .pz-danger .arc-lead { color: var(--red); }
+.settings-body .pz-sheet-body { flex: 1 1 auto; min-height: 0; padding: 6px 24px 16px; overflow-y: auto; }
+.settings-body .pz-sheet-state { margin: 14px 0 0; color: var(--muted); font-size: 15px; line-height: 1.45; }
+.settings-body .pz-sheet-state:empty { display: none; }
+.settings-body .pz-summary-text h4 { margin: 22px 0 8px; color: var(--txt); font-size: 19px; }
+.settings-body .pz-summary-text p { margin: 0 0 10px; color: var(--txt); font-size: 16px; line-height: 1.6; }
+.settings-body .pz-suggestions { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.settings-body .pz-suggestion {
+  display: flex; gap: 10px; padding: 0; border: 0; background: none; color: var(--txt); cursor: pointer; font: inherit; font-size: 16px;
+  line-height: 1.5; text-align: left;
+}
+.settings-body .pz-suggestion svg { width: 22px; height: 22px; flex: 0 0 auto; margin-top: 1px; fill: none; stroke: var(--muted); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.settings-body .pz-suggestion span { text-decoration: underline dotted; text-underline-offset: 5px; }
+.settings-body .pz-suggestion:hover span, .settings-body .pz-suggestion:focus-visible span { text-decoration-style: solid; }
+.settings-body .pz-summary-retry { margin: 12px 0; }
+.settings-body .pz-summary-retry[hidden], .settings-body .pz-summary[hidden], .settings-body .pz-info[hidden] { display: none; }
+.settings-body .pz-summary { margin-top: 6px; }
+.settings-body .pz-ask {
+  display: flex; align-items: center; gap: 10px; margin: 0 18px; padding: 6px 6px 6px 20px; border: 1px solid var(--line-strong);
+  border-radius: 999px; background: var(--panel-soft);
+}
+.settings-body .pz-ask input { flex: 1 1 auto; min-width: 0; min-height: 46px; border: 0; background: transparent; color: var(--txt); font: inherit; font-size: 16px; outline: none; }
+.settings-body .pz-ask-send {
+  display: inline-grid; place-items: center; width: 46px; height: 46px; flex: 0 0 auto; border: 0; border-radius: 999px;
+  background: var(--txt); color: var(--panel-solid, #ffffff); cursor: pointer;
+}
+.settings-body .pz-ask-send:disabled { background: var(--line-strong); cursor: default; }
+.settings-body .pz-ask-send svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.settings-body .pz-ask-hint { margin: 8px 24px 16px; color: var(--muted); font-size: 13px; line-height: 1.4; }
+.settings-body .pz-info {
+  position: absolute; right: 0; bottom: 0; left: 0; display: grid; gap: 14px; padding: 26px 24px 24px; border-top: 1px solid var(--line-strong);
+  border-radius: 22px; background: var(--panel-solid, #ffffff); box-shadow: 0 -16px 40px rgba(0, 0, 0, .25);
+}
+.settings-body .pz-info h4 { margin: 0; padding-right: 44px; color: var(--txt); font-size: 22px; }
+.settings-body .pz-info p { margin: 0; color: var(--muted); font-size: 16px; line-height: 1.55; }
+.settings-body .pz-info-close { position: absolute; top: 16px; right: 16px; }
+.settings-body .pz-wide {
+  min-height: 48px; border: 0; border-radius: 999px; background: var(--txt); color: var(--panel-solid, #ffffff); cursor: pointer;
+  font: inherit; font-size: 17px; font-weight: 600;
+}
+@media (max-width: 600px) {
+  .settings-body .pz-select { min-height: 42px; padding: 0 14px; font-size: 15px; }
+  .settings-body .pz-ref-thumb { width: 44px; height: 44px; }
+  .settings-body .sec-confirm.pz-dialog { padding: 8px; }
+  .settings-body .pz-sheet { height: calc(100vh - 16px); border-radius: 18px; }
+  .settings-body .pz-sheet-head { gap: 6px; padding: 12px 10px 12px 18px; }
+  .settings-body .pz-sheet-head h3 { font-size: 18px; }
+  .settings-body .pz-sheet-tools { gap: 0; }
+  .settings-body .pz-icon { width: 40px; height: 40px; }
+  .settings-body .pz-sheet-body { padding: 4px 18px 14px; }
+  .settings-body .pz-ask { margin: 0 12px; }
+  .settings-body .pz-ask-hint { margin: 8px 18px 14px; }
 }
 
 /* 0.6.37: Admin Core > Betrieb > Bildproben (image test P20.5 A, Inhaber only). */

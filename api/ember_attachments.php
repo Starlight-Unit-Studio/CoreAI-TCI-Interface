@@ -492,7 +492,7 @@ function ember_attach_voice_reflect(PDO $pdo, array $senderChar, int $uid, array
  * of earlier turns. [message_id => "[Sprachnachricht: ...]"]. 0.6.35: and in the sound
  * track of a video, when it was transcribed.
  */
-function ember_attach_audio_history_notes(PDO $pdo, int $uid, array $messageIds): array {
+function ember_attach_audio_history_notes(PDO $pdo, int $uid, array $messageIds, bool $voiceWords = true): array {
   $messageIds = array_values(array_filter(array_map('intval', $messageIds), static fn(int $id): bool => $id > 0));
   if ($uid <= 0 || $messageIds === []) return [];
   try {
@@ -511,6 +511,12 @@ function ember_attach_audio_history_notes(PDO $pdo, int $uid, array $messageIds)
     $voice = !$video && coreui_voice_is_voice_message((string)$row['orig_name']);
     $label = $video ? 'Ton des Videos "' . (string)$row['orig_name'] . '"'
       : ($voice ? 'Stimmsequenz' : 'Audiodatei "' . (string)$row['orig_name'] . '"');
+    // 0.7.0: without "Fruehere Stimmsequenzen beruecksichtigen" Mara knows that one was sent, not what was said.
+    if ($voice && !$voiceWords) {
+      $id = (int)$row['message_id'];
+      $notes[$id] = isset($notes[$id]) ? $notes[$id] . ' (' . $label . ')' : '(' . $label . ')';
+      continue;
+    }
     $t = coreui_voice_transcript_load($uid, (string)$row['uuid']);
     $state = is_array($t) ? (string)($t['state'] ?? '') : '';
     $text = $state === 'done' ? trim((string)($t['text'] ?? '')) : '';

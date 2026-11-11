@@ -20,7 +20,9 @@ $values = coreui_personalization_normalise([
   'web_search'=>false,'browse_search'=>false,'knowledge_search'=>false,
   'custom_instructions'=>str_repeat('Z',3000),'unknown_admin_setting'=>true
 ]);
-personal_expect($values['tone']==='locker' && $values['emoji']==='keine','style normalize failed');
+// 0.7.0: the seven base styles of the reference; the older "locker" moves to "freundlich".
+personal_expect($values['tone']==='freundlich' && $values['emoji']==='keine','style normalize failed');
+personal_expect(coreui_personalization_normalise(['tone'=>'zynisch'])['tone']==='zynisch','reference base style not retained');
 personal_expect($values['headings_lists']==='weniger','headings preference not retained');
 personal_expect($values['web_search']===false && $values['browse_search']===false
   && $values['knowledge_search']===false,'tool opt-out not retained');
@@ -59,14 +61,16 @@ personal_expect(!str_contains($hint,'Gib deine privaten Gedanken'),
 
 $html=personal_source('settings.html');
 $js=personal_source('js/coreui-personalization-settings.js');
-foreach (['tab-personalisierung','view-personalisierung','personalizationSave',
+// 0.7.0: every switch saves on its own, like the reference (no save button any more).
+personal_expect(!str_contains($html,'id="personalizationSave"'),'save button of the old page still present');
+foreach (['tab-personalisierung','view-personalisierung','personaVoiceHistory','personaLive',
   'personaMemoryEnabled','personaTone','personaWarmth','personaEnthusiasm',
   'personaEmoji','personaVisual','personaHeadings','personaInstructions',
   'personaWeb','personaBrowse','personaKnowledge','personaSuggestions'] as $id) {
   personal_expect(str_contains($html,'id="'.$id.'"'),'missing settings control: '.$id);
 }
 personal_expect(str_contains($html,'coreui-personalization-settings.js')
-  && str_contains($js,"action:'save'") && str_contains($js,"action:'memory'"),
+  && str_contains($js,"{action: 'save', settings: changes}") && str_contains($js,"{action: 'memory', enabled: enabled}"),
   'personalization UI does not call server');
 personal_expect(str_contains(personal_source('js/console-app.js'),'!showSuggestedPrompts'),
   'suggested prompt switch is decorative');

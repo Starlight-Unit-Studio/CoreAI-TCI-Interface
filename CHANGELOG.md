@@ -1,5 +1,17 @@
 # CoreAI: TCI Interface
 
+## 0.7.0 - 11.11.2026
+
+- **Settings > Personalisierung rebuilt after the reference screenshots:** Sections Mara-Erinnerung, Schreibstil, Referenzfotos, the style menus, Benutzerdefinierte Anweisungen and Weitere Mara-Einstellungen. Every switch and menu saves on its own (only the changed key is sent; a refused save switches back); the old save button is gone.
+- **Seven base styles like in the template:** Standard, Professionell, Freundlich, Aufrichtig, Skurril, Effizient and Zynisch, each with a short description in the menu. Stored older values move to the closest style (locker to Freundlich, kreativ to Skurril, praezise to Effizient).
+- **Benutzerdefinierte Anweisungen für Mara as a sub page:** Zurück, Abbrechen and Speichern, the instructions plus Spitzname, Beruf, Mehr über dich and Rolle. Mara reads these details as context in her answer style; tool, privacy and system rules stay unchanged.
+- **Erinnerungszusammenfassung:** Mara writes an overview of her memories about the person with the account's Core (in the normal model queue) and keeps it until the memories change (migration 033). "Tiefer eintauchen" suggestions and the question row open a new chat with the text in the input row (`app.html?draft=`). The "…" menu offers "Info zur Erinnerung" and "Erinnerung löschen und ausschalten" (deletes only the account's own memories and the overview, then switches memory off; global facts stay). A busy or unreachable Core shows the saved memories instead.
+- **Referenzfotos:** A portrait and a full-body photo, uploaded like a chat image. When the person asks for an image of themselves ("ein Bild von mir", "zeichne mich als ..."), the image tool receives the portrait as a reference, plus the full-body photo for clothing and accessories. Replaced or removed photos are deleted unless a chat already uses them. Without image creation the rows are disabled.
+- **Real switches:** "Frühere Stimmsequenzen berücksichtigen" keeps only the mark of earlier Stimmsequenzen in the chat history when off (the live conversation keeps its own rounds); "Live-Gespräch" hides the live button and the server refuses new rounds; Websuche and Browser-Recherche show when Lockdown-Modus or the account's tool rules switch them off. Konnektorsuche and Codex Cloud are marked as planned.
+- **Fix:** The menu entry Archivierte Chats no longer shows GEPLANT (the page has been real since 0.6.87).
+- **Tests:** New `scripts/personalization-page-selftest.php` (pure parts, MariaDB, wiring) and `scripts/personalization-ui-selftest.cjs` (Playwright); `scripts/personalization-selftest.php` literals updated. Both Preflights list and run them. New endpoint `api/memory_summary.php` is in both nginx allowlists; the account export contains the overview.
+- **Version:** One merge = 0.7.0. All six HTML pages, bootstrap, content-based cache keys, README, changelogs, handover, branding and both Preflight headers synchronized.
+
 ## 0.6.99 - 11.11.2026
 
 - **Shorter thinking-effort label:** The composer Denkaufwand control now displays `Normal` instead of the lengthy `Core-Standard`, both in its selection list and on the button after selection. The label is defined in one place in `js/coreui-reasoning-effort.js`.

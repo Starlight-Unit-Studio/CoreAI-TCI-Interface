@@ -1,0 +1,23 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.0
+11.11.2026
+
+- Einstellungen > Personalisierung nach den Referenz-Screenshots
+  neu aufgebaut: Mara-Erinnerung, Schreibstil, Referenzfotos,
+  Stilmenues, Benutzerdefinierte Anweisungen und Weitere
+  Mara-Einstellungen. Jeder Schalter speichert sofort.
+- Sieben Basisstile wie in der Vorlage (Standard, Professionell,
+  Freundlich, Aufrichtig, Skurril, Effizient, Zynisch); alte
+  Werte werden umgerechnet.
+- Benutzerdefinierte Anweisungen als Unterseite mit Spitzname,
+  Beruf, Mehr ueber dich und Rolle; Mara liest sie als Kontext.
+- Erinnerungszusammenfassung: Mara schreibt sie mit dem Core
+  des Kontos (Migration 033, Cache bis sich die Erinnerungen
+  aendern), Tiefer eintauchen, Fragefeld (neuer Chat),
+  Info zur Erinnerung, Erinnerung loeschen und ausschalten.
+- Referenzfotos (Portraet, Ganzkoerper) fuer Bilder von dir.
+- Fruehere Stimmsequenzen und Live-Gespraech als echte
+  Schalter; Konnektorsuche und Codex Cloud geplant.
+- Menueeintrag Archivierte Chats ohne GEPLANT.
+- Neue Selbsttests, Preflights, Nginx-Freigabe, Export.
+- VERSION, sechs Seiten, Bootstrap, Cache-Schluessel, README,
+  Branding, Changelog, Preflight und Uebergabe auf 0.7.0.
