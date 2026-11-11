@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.2: Mara Thorne is the built-in default OpenPet v2 companion.
+# CoreAI: TCI Interface 0.7.3: TCI chat header, full-width replies and image follow-up.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -146,6 +146,8 @@ UI_FILES=(
   scripts/pets-ui-selftest.cjs
   scripts/terran-terminology-selftest.cjs
   scripts/tci-language-selftest.cjs
+  css/coreui-chat-tci-layout.css
+  scripts/tci-chat-message-selftest.cjs
   setup.sh
   api/rag_lite.php
   api/ai_settings.php
@@ -1130,6 +1132,11 @@ if command -v php >/dev/null 2>&1; then
       ok 'Mara-TCI-Sprache und Stimmsequenz-Terminologie geprueft.'
     else
       fail 'Mara-TCI-Sprache: Terminologie-Selbsttest fehlgeschlagen.'
+    fi
+    if node "$PROJECT_ROOT/scripts/tci-chat-message-selftest.cjs" >/dev/null 2>&1; then
+      ok 'TCI CORE: Chat-Kopf, breite Antwortspalte und Bildabschluss-Reihenfolge geprueft.'
+    else
+      fail 'TCI CORE: Chat-Kopf-/Bildabschluss-Selbsttest fehlgeschlagen.'
     fi
     if php "$PROJECT_ROOT/scripts/general-controls-selftest.php" >/dev/null 2>&1; then
       ok 'Allgemein: Core-Routing, gespeicherte Einstellungen und echte Denkstufen verifiziert.'
