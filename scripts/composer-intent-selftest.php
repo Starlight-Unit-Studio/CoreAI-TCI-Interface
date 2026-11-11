@@ -115,8 +115,16 @@ $a = coreui_composer_tools_answer(false, true, true, false);
 intent_test($a['ok'] === true && $a['guest'] === false && $a['tools']['image'] === ['on' => true, 'why' => '']
   && $a['tools']['browse'] === ['on' => false, 'why' => 'Für dein Konto gerade nicht freigegeben']
   && $a['planned'] === ['deep_research', 'connectors'], 'account answer');
-$g = coreui_composer_tools_answer(true, true, true, true);
-intent_test($g['tools']['image'] === ['on' => false, 'why' => 'Für Gäste nicht verfügbar'] && $g['tools']['web']['on'] === true, 'guests paint no images');
+$g = coreui_composer_tools_answer(true, true, true, true, ['enabled'=>true, 'limit'=>3, 'used'=>0, 'left'=>3]);
+intent_test($g['tools']['image'] === ['on' => true, 'why' => '']
+  && $g['tools']['web']['on'] === true, 'guests may paint within the owner-approved image budget');
+$gFull = coreui_composer_tools_answer(true, false, true, false, ['enabled'=>true, 'limit'=>3, 'used'=>3, 'left'=>0]);
+intent_test($gFull['tools']['image'] === ['on'=>false, 'why'=>'Bildlimit für heute erreicht']
+  && $gFull['tools']['browse']['on'] === false, 'guest image menu reports the daily limit');
+$gOff = coreui_composer_tools_answer(true, false, false, false, ['enabled'=>false, 'limit'=>0, 'left'=>0]);
+intent_test($gOff['tools']['image']['on'] === false
+  && $gOff['tools']['web']['why'] === 'Im Admin Core für Gäste deaktiviert',
+  'guest image switch and web tools can be disabled independently');
 
 // --- Archive and summary (SQLite) -----------------------------------------------------------
 $pdo = new PDO('sqlite::memory:');
