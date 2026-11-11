@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.7.17 - 11.11.2026
+
+- **Licensed shared OpenPet library:** The CoreAI owner can review, validate and publish individual `.openpet.zip` sprite atlases as standard pets for all accounts. The nine existing built-ins and personal pets remain unchanged; Mara stays the default.
+- **No automatic copyrighted sprites:** Audited 56 nested OpenPet downloads. Many are recognizable third-party characters and none contained a sprite-specific redistribution license. Therefore **zero** supplied sprites were bundled or automatically made public.
+- **Private licensed media:** Approved atlases live in `var/console_media/pet_library` with an atomic manifest; authenticated pet API serves them. Owner-only publication requires creator/rights-holder, approved redistribution license, source URL, license proof and rights confirmation.
+- **User experience:** All accounts see approved pets with source/attribution in Settings > Pets, choose one as usual and automatically fall back to Mara if an entry is unpublished. No new database migration or Core/renderer changes.
+- **Regression:** New real ZIP/import/selection rights checks, UI contract test and GitHub Actions CI, plus a required PHP check in both production preflights.
+- **Release:** 0.7.17 follows main 0.7.16; target-server preflight and final human licensing review remain mandatory.
+
 ## 0.7.16 - 11.11.2026
 
 - **Updates remove the retired dictation endpoint:** The installer copies new files but deliberately keeps local ones, so `api/voice_dictate.php` from 0.7.14 stayed on servers after the update to 0.7.15 and the preflight reported "Stimme-Selbsttest: no separate dictation endpoint". `setup.sh` (used by Settings > System > CoreAI Update) and the developer update now remove it and its old browser test as retired source files, only when main no longer contains them; operator files and data stay untouched.
