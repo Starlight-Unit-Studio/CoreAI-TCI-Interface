@@ -1,0 +1,7 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.16
+Datum: 11.11.2026
+
+- Updates entfernen den ausgemusterten Diktat-Endpunkt: Das Setup kopiert neue Dateien, behaelt aber bewusst lokale. Dadurch blieb api/voice_dictate.php aus 0.7.14 nach dem Update auf 0.7.15 auf dem Server liegen, und der Preflight meldete "Stimme-Selbsttest: no separate dictation endpoint".
+- setup.sh (genutzt von Einstellungen > System > CoreAI Update) und das Entwickler-Update entfernen die Datei und ihren alten Browsertest jetzt als ausgemusterte Quelldateien, nur wenn main sie nicht mehr enthaelt. Betreiberdateien und Daten bleiben unberuehrt.
+- Tests: Der Setup-Selbsttest legt beide Dateien vor einem Update an und prueft, dass sie danach weg sind.
+Version: 0.7.16

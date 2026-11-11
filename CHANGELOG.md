@@ -1,5 +1,10 @@
 # CoreAI: TCI Interface
 
+## 0.7.16 - 11.11.2026
+
+- **Updates remove the retired dictation endpoint:** The installer copies new files but deliberately keeps local ones, so `api/voice_dictate.php` from 0.7.14 stayed on servers after the update to 0.7.15 and the preflight reported "Stimme-Selbsttest: no separate dictation endpoint". `setup.sh` (used by Settings > System > CoreAI Update) and the developer update now remove it and its old browser test as retired source files, only when main no longer contains them; operator files and data stay untouched.
+- **Tests:** The setup one-liner selftest places both retired files before an update and checks they are gone afterwards.
+
 ## 0.7.15 - 11.11.2026
 
 - **One microphone, no second dictation button:** "Diktierfunktion aktivieren" under Settings > Voice is the existing microphone button next to Send. Switched off, the button disappears from the chat input field and with it the function; transcripts under earlier Stimmsequenzen stay. The extra dictation button from 0.7.14 and its endpoint `api/voice_dictate.php` are removed, so nginx allows exactly the endpoints of 0.7.13 again.

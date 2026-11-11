@@ -159,8 +159,10 @@ rsync -a \
 # rsync deliberately preserves local files. Remove only these retired source
 # files, and only when absent from the selected checkout (also on repeated runs).
 # Never use --delete here: operator files and persistent data must survive.
+# 0.7.16: the dictation endpoint of 0.7.14 and its browser test (removed in 0.7.15).
 for obsolete in api/user_skills.php js/skills-settings.js \
-    scripts/skills-ui-selftest.cjs css/admin.css; do
+    scripts/skills-ui-selftest.cjs css/admin.css \
+    api/voice_dictate.php scripts/voice-dictation-ui-selftest.cjs; do
   if [[ ! -e "$SOURCE_DIR/$obsolete" && ! -L "$SOURCE_DIR/$obsolete" ]]; then
     rm -f -- "$TARGET_DIR/$obsolete"
   fi

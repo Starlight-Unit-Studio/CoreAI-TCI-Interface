@@ -123,13 +123,15 @@ printf '%s\n' 'operator data' > "$TARGET/uploads/user.txt"
 printf '%s\n' 'older code' > "$TARGET/api/chat.php"
 printf '%s\n' 'file creation fixed' > "$WORK/fixture/api/chat.php"
 mkdir -p "$TARGET/js" "$TARGET/css" "$TARGET/skills/operator-skill"
-for obsolete in api/user_skills.php js/skills-settings.js scripts/skills-ui-selftest.cjs css/admin.css; do
+for obsolete in api/user_skills.php js/skills-settings.js scripts/skills-ui-selftest.cjs css/admin.css \
+    api/voice_dictate.php scripts/voice-dictation-ui-selftest.cjs; do
   printf '%s\n' 'obsolete source from previous version' > "$TARGET/$obsolete"
 done
 printf '%s\n' 'operator extension' > "$TARGET/api/operator.php"
 printf '%s\n' 'operator skill' > "$TARGET/skills/operator-skill/SKILL.md"
 "$WORK/setup.sh" > "$WORK/update.log"
-for obsolete in api/user_skills.php js/skills-settings.js scripts/skills-ui-selftest.cjs css/admin.css; do
+for obsolete in api/user_skills.php js/skills-settings.js scripts/skills-ui-selftest.cjs css/admin.css \
+    api/voice_dictate.php scripts/voice-dictation-ui-selftest.cjs; do
   [[ ! -e "$TARGET/$obsolete" ]]
 done
 [[ "$(cat "$TARGET/api/operator.php")" == 'operator extension' ]]

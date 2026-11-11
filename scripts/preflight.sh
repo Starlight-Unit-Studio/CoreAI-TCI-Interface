@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.15: Settings > Stimme: "Diktierfunktion aktivieren" is the microphone button (no second dictation button).
+# CoreAI: TCI Interface 0.7.16: updates remove the retired dictation endpoint of 0.7.14 (setup.sh retired files).
 set -Eeuo pipefail
 IFS=$'\n\t'
 
