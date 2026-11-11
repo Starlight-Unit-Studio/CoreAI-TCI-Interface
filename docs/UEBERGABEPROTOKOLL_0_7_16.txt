@@ -1,0 +1,34 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.16
+Datum: 11.11.2026
+Basis: main 0.7.15 nach Merge von PR #268
+Branch: claude/bold-galileo-myoyi0
+Thema: Ausgemusterten Diktat-Endpunkt beim Update entfernen
+
+AUSGANGSLAGE
+Nach dem Update auf 0.7.15 meldete der Preflight auf dem Server:
+"[FEHLER] Stimme-Selbsttest: Voice settings FAIL: no separate dictation
+endpoint". setup.sh kopiert per rsync ohne --delete (gewollt, damit
+Betreiberdateien und Daten bleiben). api/voice_dictate.php aus 0.7.14
+blieb deshalb liegen. nginx liefert die Datei seit 0.7.15 nicht mehr aus
+(Freigabe entfernt); sie war nur noch ein toter Rest.
+
+UMSETZUNG
+- setup.sh: api/voice_dictate.php und scripts/voice-dictation-ui-
+  selftest.cjs in der vorhandenen Liste ausgemusterter Quelldateien;
+  geloescht nur, wenn der Quellstand sie nicht mehr enthaelt.
+- scripts/update-from-main.sh: dieselbe Liste auch fuer das
+  Entwickler-Update (bisher ohne Aufraeumen).
+- tests/setup-oneliner-selftest.sh: beide Dateien vor dem Update
+  angelegt, danach geprueft, dass sie weg sind.
+
+SOFORTHILFE OHNE UPDATE
+  sudo rm -f /opt/ember-coreui/api/voice_dictate.php \
+    /opt/ember-coreui/scripts/voice-dictation-ui-selftest.cjs
+Danach den Preflight erneut ausfuehren.
+
+TESTS (in diesem Container ausgefuehrt)
+- bash tests/setup-oneliner-selftest.sh (auch Gegenprobe: ohne Eintrag
+  schlaegt er fehl), bash tests/migration-permissions-selftest.sh,
+  bash -n fuer setup.sh und update-from-main.sh.
+- python3 scripts/version-merge-check.py --base-version 0.7.15
+Version: 0.7.16

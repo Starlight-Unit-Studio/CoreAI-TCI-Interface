@@ -45,6 +45,14 @@ rsync -a \
   --exclude='assets/chat_media/' \
   --exclude='assets/profile_photos/' \
   "$SOURCE/" "$TARGET_DIR/"
+# rsync keeps local files; remove only retired source files that main no longer has
+# (the same list as setup.sh; 0.7.16: the dictation endpoint of 0.7.14).
+for obsolete in api/user_skills.php js/skills-settings.js scripts/skills-ui-selftest.cjs css/admin.css \
+    api/voice_dictate.php scripts/voice-dictation-ui-selftest.cjs; do
+  if [[ ! -e "$SOURCE/$obsolete" && ! -L "$SOURCE/$obsolete" ]]; then
+    rm -f -- "$TARGET_DIR/$obsolete"
+  fi
+done
 # Source updates also need executable installer/preflight/migration scripts.
 chmod 0750 "$TARGET_DIR/scripts/install.sh" "$TARGET_DIR/scripts/preflight.sh" \
   "$TARGET_DIR/scripts/migrate.sh"
