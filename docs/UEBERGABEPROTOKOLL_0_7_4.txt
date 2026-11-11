@@ -13,6 +13,16 @@ AENDERUNG
 - scripts/tci-chat-layout-ui-selftest.cjs: berechnete Typografie und Goldfarbe im Browser vergleichen.
 - VERSION, sechs Oberflaechen, Bootstrap, README, Changelog, TXT-Archiv, Branding und Preflight-Versionsmarkierungen synchronisiert.
 
+WEITERE REPARATUR: INSIGHTS IM AKTIVEN CHAT
+- Root cause: js/console-app.js referenzierte #insightChips bereits, app.html enthielt jedoch keinen solchen Container.
+- app.html: Mobiler insightChips-Mount und Desktop-CoreInsights mit initialem hidden zurueckgebracht.
+- js/console-app.js: showSessionInsights(active) steuert beide Ansichten; Draft versteckt sie und schliesst geoeffnete Schubladen, aktive Sitzung zeigt sie.
+- css/coreui-chat-tci-layout.css: CSS-Hidden hat Prioritaet, Startseite gibt bei grossen Monitoren die volle Breite frei, 390px-Layout bietet alle vier Schaltflaechen ohne horizontales Scrollen.
+- scripts/insights-ui-selftest.cjs: prueft DOM-Mount und beide Zustandswechsel.
+- scripts/insights-chat-visibility-ui-selftest.cjs: Playwright-Selbsttest bei 390px und 1600px mit interaktiven Chips und echtem CoreUIInsights-Modul.
+- scripts/preflight.sh und scripts/preflight-native.sh: neue Regression in Pflichtdateien und UI-Testphase eingetragen.
+- Diese Reparatur stellt nur entfernte Sichtbarkeit wieder her, kein API- oder Datenmodell geaendert.
+
 NICHT VERAENDERT
 - Eigener TCI-Anzeigename, die volle Nachrichtenbreite und Bildabschluss nach Bildgenerierung (0.7.3).
 - Installer, Modelfile, Core-Auswahl, DB und lokale Serverkonfiguration.
