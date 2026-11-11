@@ -6,8 +6,9 @@ declare(strict_types=1);
 // in the language a person writes in) and decides the read-aloud voice when the
 // language of an answer is unclear. The interface locale is a separate
 // browser preference (DE/EN beta). Offline: rules, prompt and wiring. With a
-// database (api/config.local.php, or COREUI_SELFTEST_DB=1 with COREUI_DB_* set):
-// saving and loading inside a transaction that is rolled back.
+// an isolated test database only (COREUI_SELFTEST_DB=1 and dedicated
+// COREUI_SELFTEST_DB_DSN, _USER and _PASS): transaction rolled back.
+// Regular production Preflight NEVER inserts into live stu_users.
 if (PHP_SAPI !== 'cli') exit(1);
 $root = dirname(__DIR__);
 require_once $root . '/api/ai_settings.php';
@@ -67,15 +68,42 @@ language_test(str_contains($page, '<select id="aiLanguage"><option value="de">DE
 $script = $read('js/settings.js');
 language_test(str_contains($script, "main_language: aiLanguage && aiLanguage.value === 'en' ? 'en' : 'de'"), 'the KI-Profil saves the language');
 
-$dbWanted = is_file($root . '/api/config.local.php') || getenv('COREUI_SELFTEST_DB') === '1';
+// The prior default tested against the LIVE production database whenever
+// config.local.php existed. It produced lang-<random>@coreui.invalid rows on
+// some installations despite the intended transaction rollback. Never write
+// test records to any real account database during routine Preflight.
+$dbWanted = getenv('COREUI_SELFTEST_DB') === '1';
 if (!$dbWanted) {
-  echo "CoreAI account language: German or English, prompt, read-aloud hint and wiring OK (no database here)\n";
+  echo "CoreAI account language: German or English, prompt, read-aloud hint and wiring OK (live database untouched)\n";
   exit(0);
 }
+// Integration testing is an explicit separate task, not a production Preflight.
+// Require dedicated credentials and an unmistakably named _selftest database.
 require_once $root . '/api/config.php';
 require_once $root . '/api/helpers.php';
-require_once $root . '/api/db.php';
-$pdo = stu_pdo();
+$dsn = (string)(getenv('COREUI_SELFTEST_DB_DSN') ?: '');
+$user = (string)(getenv('COREUI_SELFTEST_DB_USER') ?: '');
+$pass = getenv('COREUI_SELFTEST_DB_PASS');
+if (!str_starts_with($dsn, 'mysql:') || $user === '' || $pass === false) {
+  fwrite(STDERR, "Account language FAIL: isolated COREUI_SELFTEST_DB_DSN, _USER and _PASS required\n");
+  exit(1);
+}
+try {
+  $pdo = new PDO($dsn, $user, (string)$pass, [
+    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    PDO::ATTR_EMULATE_PREPARES => false,
+  ]);
+  $dbName = (string)$pdo->query('SELECT DATABASE()')->fetchColumn();
+  if (!preg_match('/^[a-zA-Z0-9_]+_selftest$/D', $dbName)
+      || strcasecmp($dbName, (string)STU_DB_NAME) === 0) {
+    fwrite(STDERR, "Account language FAIL: dedicated *_selftest database required; production refused\n");
+    exit(1);
+  }
+} catch (PDOException $e) {
+  fwrite(STDERR, "Account language FAIL: isolated database unavailable\n");
+  exit(1);
+}
 language_test(coreui_ai_language_schema_ready($pdo), 'migration 024 applied');
 $pdo->beginTransaction();
 try {

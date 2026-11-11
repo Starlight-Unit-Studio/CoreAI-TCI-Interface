@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.6.97 - 11.11.2026
+
+- **Stop synthetic users in production:** The per-account language selftest formerly wrote to the live MariaDB whenever `api/config.local.php` was present. It inserted `lang-xxxxxxxx@coreui.invalid` accounts and relied on a rollback that did not reliably prevent leftover accounts on some installations. Both Docker and native Preflight now explicitly force `COREUI_SELFTEST_DB=0` and verify that the language test reports the live database untouched.
+- **Preserve isolated DB integration testing:** It is available only via opt-in `COREUI_SELFTEST_DB=1` with separate `COREUI_SELFTEST_DB_DSN`, `COREUI_SELFTEST_DB_USER`, and `COREUI_SELFTEST_DB_PASS`. The target must be an explicitly named `*_selftest` MariaDB database distinct from the configured production DB.
+- **Manual, safe cleanup:** `scripts/cleanup-language-test-users.php` previews exact unused synthetic names within the selftest ID range, excludes accounts with passwords, other roles or linked account data, and only deletes after operator confirmation, a fresh transactional check and a guarded row-by-row delete. Installers and Preflights never automatically delete accounts.
+- **Regression checks:** Added an offline production-DB isolation contract to Docker and native Preflight, with README, handover and version-sync updates.
+- **Release:** One merge = version 0.6.97. Six HTML markers, content-fingerprint cache key, bootstrap, branding, README, changelog and both Preflight headers updated.
+
 ## 0.6.96 - 10.11.2026
 
 - **Dedicated CoreAI uninstaller:** Added `scripts/uninstall.sh` with a dry-run preview, interactive archive-preserving uninstall and a separate strongly confirmed SSH-only data purge. It targets the official `/opt/ember-coreui` Docker stack exclusively: no global Docker prune, no shared Ollama, model, Apache/Nginx, other apps or host swap changes. Safe archive mode preserves all existing accounts, MariaDB files, uploads and backups under a private `/opt/ember-coreui.uninstalled.*` folder.

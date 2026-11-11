@@ -1,0 +1,44 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.97
+Datum: 11.11.2026
+Basis: main 0.6.96
+Branch: fix/0.6.97-language-selftest-production-accounts
+
+SYMPTOM
+- Admin Core zeigt sehr viele lang-xxxxxxxx@coreui.invalid-Nutzer.
+- Gleiche synthetischen IDs 1.5-1.9 Mrd. wie im Account-Sprach-Selbsttest.
+- scripts/account-language-selftest.php erzeugt exakt diese Muster.
+- Vorherige Auto-DB-Aktivierung per api/config.local.php bedeutet
+  Preflight-Ausfuehrung auf der produktiven Datenbank.
+- Rollback war im Code vorgesehen; warum er bei diesen alten
+  Datensaetzen nicht wirkte, wurde noch nicht am Host verifiziert.
+
+KORREKTUR
+- Standard-Test prueft Logik, Prompts, Sprachwahl und Verdrahtung
+  ohne Datenbank-Schreibzugriffe.
+- Docker- und Native-Preflight erzwingen COREUI_SELFTEST_DB=0
+  und pruefen explizit auf live database untouched.
+- DB-Integration nur bei COREUI_SELFTEST_DB=1 mit eigener
+  COREUI_SELFTEST_DB_DSN, USER, PASS und namengeschuetzter
+  *_selftest-Datenbank, ungleich STU_DB_NAME.
+- Sicherheits-Selbsttest prueft diesen Kontrakt.
+
+OPTIONALE MANUELLE ALTDATEN-BEREINIGUNG
+- scripts/cleanup-language-test-users.php --dry-run
+  beschraenkt Treffer auf ^lang-[a-f0-9]{8}@coreui.invalid$,
+  ID 1.5-1.9 Mrd, normale Nutzerrolle, keine Gaeste, kein Passwort.
+- Accounts mit anderen Benutzer-Referenzen werden geschuetzt.
+- --execute nur interaktiv mit LANG TESTKONTEN LOESCHEN;
+  erneute Sperrpruefung und transaktionale SQL-Loeschung.
+- Betreiber sollte zuvor ein aktuelles DB-Backup sichern.
+- Update oder Preflight fuehren niemals die Bereinigung aus.
+
+VALIDIERUNGSSTAND
+- Code ist im PR-Branch, kein produktiver DB-Zugriff erfolgt.
+- PHP-Lint, Container-Preflight, Native-Preflight, Versionierungs-
+  und Cache-Checks vor Merge ausfuehren.
+- Keine alten User automatisch geloescht oder Datenbank migriert.
+
+VERSION
+- Ein Merge = 0.6.97, keine zusaetzliche Versionsstelle.
+- Sechs Seiten, Console-Gate, SHA-256 Fingerprint, README,
+  CHANGELOG, TXT-Archiv, Branding und Preflight synchron.

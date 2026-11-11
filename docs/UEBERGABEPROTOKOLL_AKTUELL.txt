@@ -1,9 +1,10 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
 Stand: 10.11.2026
-Repository-Version: 0.6.96 (Uninstall-Fix-Branch, main bei Erstellung 0.6.95)
-BASIS: main 0.6.95 nach PR #247; eigenstaendiger Deinstaller, Owner-Admin-Anfrage und README-One-Liner.
+Repository-Version: 0.6.97 (Fix-Branch; main bei Erstellung 0.6.96)
+BASIS: main 0.6.96; Sprach-Selbsttest darf keine produktiven lang-xxxxxxxx@coreui.invalid-Konten mehr anlegen.
 NEUE ARBEIT ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_6_97.txt
   docs/UEBERGABEPROTOKOLL_0_6_96.txt
   docs/UEBERGABEPROTOKOLL_0_6_95.txt
   docs/UEBERGABEPROTOKOLL_0_6_94.txt

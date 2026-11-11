@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.96: Deinstaller, Owner-Handshake und isolierte Regressionstests.
+# CoreAI: TCI Interface 0.6.97: account language selftest never writes to production DB.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -389,6 +389,8 @@ UI_FILES=(
   scripts/agent-runs-selftest.php
   scripts/agent-run-liveness-selftest.php
   scripts/account-language-selftest.php
+  scripts/account-language-safety-selftest.php
+  scripts/cleanup-language-test-users.php
   scripts/model-queue-selftest.php
   scripts/workspace-output-selftest.py
   scripts/python-input-selftest.py
@@ -861,10 +863,18 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail 'Selbsttest fuer verlorene Agentenlaeufe fehlgeschlagen.'
   fi
 
-  if compose exec -T php php scripts/account-language-selftest.php >/dev/null 2>&1; then
-    ok '0.6.13: Hauptsprache pro Konto (Antworten und Vorlesen) geprueft.'
+  # 0.6.97: no production DB writes from language selftests, even after an update.
+  account_language_safety=''
+  if account_language_safety="$(compose exec -T php php scripts/account-language-safety-selftest.php 2>&1)"; then
+    ok 'KI-Profil: Sprach-Selbsttest isoliert und Testkonto-Bereinigung geprueft.'
   else
-    fail 'Selbsttest fuer die Hauptsprache pro Konto fehlgeschlagen.'
+    fail "KI-Profil: Sicherheitsregression: ${account_language_safety:-Unbekannt}"
+  fi
+  account_language_output=''
+  if account_language_output="$(compose exec -T php env COREUI_SELFTEST_DB=0 php scripts/account-language-selftest.php 2>&1)" && [[ "$account_language_output" == *'live database untouched'* ]]; then
+    ok 'KI-Profil: Hauptsprache, Prompt und Vorlesen ohne produktive Datenbankschreibzugriffe.'
+  else
+    fail "KI-Profil: Sprach-Selbsttest beruehrt moeglicherweise Produktivdaten: ${account_language_output:-Unbekannt}"
   fi
 
   time_test=''
