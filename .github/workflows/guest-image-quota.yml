@@ -13,6 +13,7 @@ on:
       - 'admin/index.html'
       - 'js/admin.js'
       - 'js/coreui-composer-menu.js'
+      - 'scripts/guest-image-quota-selftest.php'
       - 'scripts/guest-access-selftest.php'
       - 'scripts/composer-intent-selftest.php'
       - 'scripts/image-gen-selftest.php'
@@ -47,7 +48,7 @@ jobs:
           coverage: none
       - name: PHP syntax check
         run: |
-          for file in api/guest_access.php api/image_gen.php api/chat.php api/ai_settings.php api/admin.php api/composer_tools.php api/console_composer_intent.php scripts/guest-access-selftest.php scripts/composer-intent-selftest.php scripts/image-gen-selftest.php; do
+          for file in api/guest_access.php api/image_gen.php api/chat.php api/ai_settings.php api/admin.php api/composer_tools.php api/console_composer_intent.php scripts/guest-image-quota-selftest.php scripts/guest-access-selftest.php scripts/composer-intent-selftest.php scripts/image-gen-selftest.php; do
             php -l "$file" || exit 1
           done
       - name: JavaScript syntax check
@@ -57,6 +58,9 @@ jobs:
       - name: Guest and composer regression
         run: |
           php scripts/guest-access-selftest.php
+          php scripts/guest-image-quota-selftest.php
           php scripts/composer-intent-selftest.php
       - name: Image generation regression
         run: php scripts/image-gen-selftest.php
+      - name: Version and archive contract
+        run: python3 scripts/version-merge-check.py --base-version 0.7.8
