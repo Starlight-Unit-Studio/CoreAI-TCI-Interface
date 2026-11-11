@@ -138,11 +138,14 @@ UI_FILES=(
   scripts/personalization-ui-selftest.cjs
   database/migrations/034_user_pets.sql
   api/pets_store.php
+  api/pet_library_store.php
   api/pets.php
   js/coreui-pets.js
   js/coreui-pets-settings.js
   scripts/build-pet-sprites.py
   scripts/pets-selftest.php
+  scripts/openpet-library-selftest.php
+  scripts/openpet-library-ui-selftest.cjs
   scripts/pets-ui-selftest.cjs
   database/migrations/036_voice_choice.sql
   js/coreui-recordings.js
@@ -1050,6 +1053,15 @@ if command -v php >/dev/null 2>&1; then
     ok 'Pets: eigene CoreAI-Pets, Sprite-Sheets, Auswahl und Hochladen geprueft.'
   else
     fail "Pets-Selbsttest: ${pets_test:-Unbekannter Fehler}"
+  fi
+
+  # Optional community library assets are NOT shipped unless explicitly
+  # imported with a confirmed creator license by the CoreAI owner.
+  openpet_library_test=''
+  if openpet_library_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/openpet-library-selftest.php" 2>&1)"; then
+    ok 'OpenPet: geprüfte Standard-Pet-Bibliothek, private Ablage und Rechteprüfung OK.'
+  else
+    fail "OpenPet-Bibliothek: ${openpet_library_test:-Unbekannter Fehler}"
   fi
 
   # 0.7.14: Settings > Stimme: voices to choose (free licenses), the chosen voice in plans and parts, preview, transcript language; 0.7.15 the microphone switch.
