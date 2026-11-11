@@ -12,6 +12,7 @@ declare(strict_types=1);
  */
 
 require_once __DIR__ . '/console_personalization_store.php';
+require_once __DIR__ . '/pet_library_store.php';
 
 const COREUI_PET_MAX_BYTES = 5 * 1024 * 1024;
 const COREUI_PET_MAX_FRAMES = 24;
@@ -50,6 +51,7 @@ function coreui_pet_builtin_view(): array {
 function coreui_pet_choice_normalise($value): string {
   $value = is_string($value) ? strtolower(trim($value)) : '';
   if (isset(coreui_pet_catalog()[$value])) return $value;
+  if (str_starts_with($value, 'op-') && isset(coreui_openpet_library_catalog()[$value])) return $value;
   if (preg_match('~^u([1-9][0-9]{0,18})$~D', $value) === 1) return $value;
   return 'none';
 }
@@ -232,6 +234,11 @@ function coreui_pet_current(PDO $pdo, int $uid): ?array {
     $choice = coreui_pet_default();
   }
   foreach (coreui_pet_builtin_view() as $pet) if ($pet['id'] === $choice) return $pet;
+  foreach (coreui_openpet_library_view() as $pet) if ($pet['id'] === $choice) return $pet;
+  // A previously approved library pet may later be unpublished.
+  if (str_starts_with($choice, 'op-')) {
+    foreach (coreui_pet_builtin_view() as $pet) if ($pet['id'] === coreui_pet_default()) return $pet;
+  }
   return null;
 }
 
