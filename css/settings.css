@@ -1453,8 +1453,8 @@
 .settings-body .pz-sub-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
 .settings-body .pz-sub-bar .sec-back { margin: 0; }
 .settings-body .pz-sub-actions { display: flex; gap: 10px; }
-.settings-body .pz-primary { border-color: var(--txt); background: var(--txt); color: var(--panel-solid, #ffffff); }
-.settings-body .pz-primary:disabled { border-color: var(--line-strong); background: var(--panel-soft); color: var(--muted); cursor: default; opacity: .7; }
+.settings-body .arc-btn.pz-primary { border-color: var(--txt); background: var(--txt); color: var(--panel-solid, #ffffff); }
+.settings-body .arc-btn.pz-primary:disabled { border-color: var(--line-strong); background: var(--panel-soft); color: var(--muted); cursor: default; opacity: .7; }
 .settings-body .pz-field { display: grid; gap: 8px; margin-top: 8px; }
 .settings-body .pz-field strong { color: var(--txt); font-size: 17px; }
 .settings-body .pz-field input, .settings-body .pz-field textarea, .settings-body .pz-field select {
@@ -1539,6 +1539,66 @@
   .settings-body .pz-sheet-body { padding: 4px 18px 14px; }
   .settings-body .pz-ask { margin: 0 12px; }
   .settings-body .pz-ask-hint { margin: 8px 18px 14px; }
+}
+
+/* 0.7.1: Settings > Pets after the reference screenshots (js/coreui-pets-settings.js). */
+.settings-body .pet-upload-open { display: inline-flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+.settings-body .pet-upload-open svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.settings-body .pet-upload-open:disabled { cursor: not-allowed; opacity: .55; }
+.settings-body .pet-list { padding-top: 2px; padding-bottom: 2px; }
+.settings-body .pet-create {
+  width: 100%; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: inherit; cursor: pointer; font: inherit; text-align: left;
+  justify-content: flex-start;
+}
+.settings-body .pet-egg { display: inline-grid; place-items: center; width: 56px; height: 56px; flex: 0 0 auto; color: var(--txt); }
+.settings-body .pet-egg svg { width: 40px; height: 40px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.settings-body .pet-create:hover strong, .settings-body .pet-create:focus-visible strong { text-decoration: underline; }
+.settings-body .pet-create:focus-visible { outline: 2px solid var(--cx); outline-offset: 2px; }
+.settings-body .pet-rows { display: grid; }
+.settings-body .pet-row { cursor: pointer; justify-content: flex-start; }
+.settings-body .pet-rows .pet-row { border-bottom: 1px solid var(--line); }
+.settings-body .pet-row .sec-copy { flex: 1 1 auto; }
+.settings-body .pet-sprite { display: inline-grid; place-items: center; width: 56px; height: 56px; flex: 0 0 auto; }
+.settings-body .pet-own-tag {
+  margin-left: 10px; padding: 2px 7px; border: 1px solid var(--cx); border-radius: 999px; color: var(--cx);
+  font-size: 11px; font-style: normal; font-weight: 700; letter-spacing: .06em; vertical-align: middle;
+}
+.settings-body .pet-delete { flex: 0 0 auto; color: var(--muted); }
+.settings-body .pet-delete:hover { color: var(--red); }
+.settings-body .pet-radio {
+  appearance: none; -webkit-appearance: none; position: relative; flex: 0 0 auto; width: 30px; height: 30px; margin: 0 4px 0 8px;
+  border: 2px solid var(--line-strong); border-radius: 50%; background: transparent; cursor: pointer;
+}
+.settings-body .pet-radio:checked { border-color: var(--txt); background: var(--txt); }
+.settings-body .pet-radio:checked::after {
+  content: ""; position: absolute; left: 9px; top: 5px; width: 7px; height: 13px;
+  border: solid var(--panel-solid, #ffffff); border-width: 0 2.5px 2.5px 0; transform: rotate(45deg);
+}
+.settings-body .pet-radio:focus-visible { outline: 2px solid var(--cx); outline-offset: 3px; }
+.settings-body .pet-radio:disabled { cursor: default; opacity: .5; }
+.settings-body .pet-none { min-height: 76px; }
+.settings-body .sec-confirm-box.pet-upload-box { width: min(560px, 100%); max-height: calc(100vh - 32px); overflow-y: auto; background: var(--panel-solid, #ffffff); }
+.settings-body .pet-upload-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.settings-body .pet-upload-head h3 { margin: 0; font-size: 24px; }
+.settings-body .pet-upload-box .pz-field { margin-top: 4px; }
+.settings-body .pet-hint { color: var(--muted); font-size: 14px; line-height: 1.45; }
+.settings-body .pet-file {
+  display: flex; align-items: center; gap: 14px; min-height: 58px; padding: 6px; border: 1px solid var(--line-strong); border-radius: 14px;
+}
+.settings-body .pet-file-btn {
+  display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 10px; background: var(--txt);
+  color: var(--panel-solid, #ffffff); cursor: pointer; font-weight: 600; white-space: nowrap;
+}
+.settings-body .pet-file span { overflow: hidden; color: var(--txt); text-overflow: ellipsis; white-space: nowrap; }
+.settings-body .pet-file:focus-within { border-color: var(--cx); }
+.settings-body .pet-preview { display: flex; align-items: center; gap: 14px; padding: 10px 12px; border-radius: 14px; background: var(--panel-soft); }
+.settings-body .pet-preview[hidden] { display: none; }
+.settings-body .pet-preview small { color: var(--muted); font-size: 14px; }
+.settings-body .pet-upload-actions { justify-content: flex-end; }
+@media (max-width: 600px) {
+  .settings-body .pet-sprite, .settings-body .pet-egg { width: 48px; height: 48px; }
+  .settings-body .pet-sprite .coreai-pet { width: 48px !important; height: 48px !important; }
+  .settings-body #view-pets .cfg-view-head { flex-wrap: wrap; }
 }
 
 /* 0.6.37: Admin Core > Betrieb > Bildproben (image test P20.5 A, Inhaber only). */

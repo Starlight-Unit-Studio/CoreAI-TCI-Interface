@@ -5,6 +5,7 @@ require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/ai_settings.php';
 require_once __DIR__ . '/console_personalization_store.php';
 require_once __DIR__ . '/memory_summary_store.php';
+require_once __DIR__ . '/pets_store.php';
 require_once __DIR__ . '/profile_store.php';
 require_once __DIR__ . '/console_artifact_store.php';
 require_once __DIR__ . '/notifications_store.php';
@@ -87,6 +88,8 @@ try {
     'personalization' => coreui_personalization_load($pdo,(int)$uid),
     // 0.7.0: Mara's overview of the memories (Settings > Personalisierung > Erinnerungszusammenfassung).
     'memory_summary' => coreui_memory_summary_export($pdo, (int)$uid),
+    // 0.7.1: own pets (Settings > Pets), without the sprite files.
+    'pets' => coreui_pet_own($pdo, (int)$uid),
     'characters' => coreui_export_rows(
       $pdo,
       'SELECT id,name,world_id,portrait_index,portrait_path,gender,created_at FROM stu_characters WHERE user_id=? ORDER BY created_at,id',

@@ -931,6 +931,16 @@
     tasks.hidden = true;
     var status = live ? el('div','work-status') : null;
     var startedAt = Number(options.startedAt) || 0;
+    // 0.7.1: the pet of Settings > Pets stands at the start of the work line instead of the dots;
+    // one node per line, so its animation runs on while the line text updates.
+    var petNode = null;
+    function petLead() {
+      var pets = window.CoreAIPets;
+      var pet = pets && pets.current;
+      if (!pet || typeof pets.make !== 'function') return null;
+      if (!petNode || petNode.getAttribute('data-pet') !== String(pet.id)) petNode = pets.make(pet, 32, 'work-status-pet');
+      return petNode;
+    }
 
     function renderTasks() {
       var list = taskList(events);
@@ -959,11 +969,16 @@
       }, 0);
       var start = startedAt || eventMs(events[0]) || Date.now();
       status.textContent = '';
-      var dots = el('span','work-status-dots');
-      dots.appendChild(el('i',''));
-      dots.appendChild(el('i',''));
-      dots.appendChild(el('i',''));
-      status.appendChild(dots);
+      var pet = petLead();
+      if (pet) {
+        status.appendChild(pet);
+      } else {
+        var dots = el('span','work-status-dots');
+        dots.appendChild(el('i',''));
+        dots.appendChild(el('i',''));
+        dots.appendChild(el('i',''));
+        status.appendChild(dots);
+      }
       status.appendChild(el('span','work-status-text',
         activity(events[events.length - 1]) + ' · ' + formatDuration(Date.now() - start)
         + (tokens > 0 ? ' · ' + formatTokens(tokens) : '')));

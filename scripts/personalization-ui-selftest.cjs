@@ -7,7 +7,7 @@
 // Anweisungen für Mara" (Zurück, Abbrechen, Speichern, Spitzname, Beruf, Mehr über dich, Rolle);
 // the Erinnerungszusammenfassung (Mara writes it, "Tiefer eintauchen" and the question row open a
 // new chat, "…" menu with Info and "Erinnerung löschen und ausschalten", a busy Core with the
-// saved memories instead); reference photos; Codex Cloud and Konnektorsuche planned; a phone
+// saved memories instead); reference photos; Konnektorsuche planned (0.7.1: no Codex Cloud row); a phone
 // without sideways scrolling.
 const {chromium} = require('playwright');
 const fs = require('node:fs');
@@ -117,7 +117,9 @@ async function open(browser, srv, viewport) {
     assert.equal(await page.isChecked('#personaVoiceHistory'), true);
     assert.equal(await page.isChecked('#personaLive'), true);
     assert.equal(await page.isChecked('#personaAdaptStyle'), false);
-    assert.deepEqual(await page.$$eval('#view-personalisierung .sec-row.is-planned strong', l => l.map(x => x.textContent)), ['Codex Cloud', 'Konnektorsuche']);
+    // 0.7.1: the chat already covers code, so the Codex Cloud row is gone; only Konnektorsuche is planned.
+    assert.deepEqual(await page.$$eval('#view-personalisierung .sec-row.is-planned strong', l => l.map(x => x.textContent)), ['Konnektorsuche']);
+    assert.equal(await page.$$eval('#view-personalisierung .sec-row strong', l => l.filter(x => /Codex/.test(x.textContent)).length), 0);
     assert.equal(await page.isDisabled('#personaConnectors'), true);
     assert.equal(await page.textContent('#personaEmoji span'), 'Mehr');
     if (shots) await page.locator('#view-personalisierung').screenshot({path: path.join(shots, 'personalization-page.png')});

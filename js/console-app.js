@@ -4189,6 +4189,8 @@
   function init() {
     // Button sofort freischalten - nie durch einen Fehler blockiert lassen
     btnSend.disabled = false;
+    // 0.7.1: the pet of Settings > Pets for Mara's work line (js/coreui-pets.js).
+    if (window.CoreAIPets && typeof window.CoreAIPets.loadCurrent === 'function') window.CoreAIPets.loadCurrent();
 
     checkAuth()
       .then(loadCharacter)

@@ -28,6 +28,8 @@ function coreui_personalization_defaults(): array {
     'occupation' => '',
     'about' => '',
     'role' => '',
+    // 0.7.1: Settings > Pets: 'none', a built-in pet or 'u<id>' for an own pet (api/pets_store.php).
+    'pet' => 'none',
     // Reference photos of the person for images of themselves (stu_console_media uuids, set by the server only).
     'reference_portrait' => '',
     'reference_body' => ''
@@ -92,6 +94,8 @@ function coreui_personalization_normalise(array $input): array {
   $values['nickname'] = coreui_personalization_text($input['nickname'] ?? '',60,false);
   $values['occupation'] = coreui_personalization_text($input['occupation'] ?? '',160,false);
   $values['about'] = coreui_personalization_text($input['about'] ?? '',1500,true);
+  $pet = is_string($input['pet'] ?? null) ? strtolower(trim($input['pet'])) : 'none';
+  $values['pet'] = preg_match('~^(?:none|[a-z]{2,20}|u[1-9][0-9]{0,18})$~D', $pet) === 1 ? $pet : 'none';
   $role = (string)($input['role'] ?? '');
   $values['role'] = isset(COREUI_PERSONALIZATION_ROLES[$role]) ? $role : '';
   return $values;

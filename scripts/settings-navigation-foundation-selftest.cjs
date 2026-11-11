@@ -32,8 +32,8 @@ for(const entry of entries) {
   assert.ok(settings.includes('aria-controls="view-' + entry + '"'), entry + ' linked view');
 }
 const planned = [...settings.matchAll(/class="cfg-view cfg-view-planned"/g)];
-// 0.6.81: Benachrichtigungen became a real page; 0.6.87: Archivierte Chats too (10 planned remain).
-assert.equal(planned.length, 10, 'only genuinely unimplemented settings remain planned');
+// 0.6.81: Benachrichtigungen became a real page; 0.6.87: Archivierte Chats too; 0.7.1: Pets (9 planned remain).
+assert.equal(planned.length, 9, 'only genuinely unimplemented settings remain planned');
 assert.ok(settings.includes('id="settingsExpertToggle"'));
 assert.ok(settings.includes('class="cfg-header-expert"') &&
   settings.indexOf('id="settingsExpertToggle"') < settings.indexOf('<div class="cfg-shell">'),
@@ -57,6 +57,7 @@ for (const [id, fields] of Object.entries({
   stimme: ['voiceAutoRead', 'voiceTerms'],
   memory: ['aiMemoryEnabled', 'aiMemoryLimit', 'saveMemoryAiSettings'],
   'archivierte-chats': ['arcSearch', 'arcTypeBtn', 'arcTypeMenu', 'arcProjectBtn', 'arcProjectMenu', 'arcGroups', 'arcEmpty', 'arcConfirm'],
+  pets: ['petUploadOpen', 'petCreate', 'petRows', 'petNone', 'petUploadDialog', 'petFile', 'petDeleteConfirm'],
 })) {
   const html = section(id);
   assert.ok(!html.includes('cfg-view-planned'), id + ' is a real page');
@@ -149,4 +150,4 @@ assert.ok(css.includes('cfg-nav-collapsed') && css.includes('cfg-header-expert')
 assert.ok(read('js/coreui-settings-menu.js').includes("doc.addEventListener('touchstart'") &&
   read('js/coreui-settings-menu.js').includes("doc.addEventListener('touchend'"),
   'swipe navigation is implemented alongside keyboard and button access');
-console.log('CoreAI settings: 25 categories, 10 honest planning pages, migrated live controls, header Expert/Admin, responsive swipe navigation OK');
+console.log('CoreAI settings: 25 categories, 9 honest planning pages, migrated live controls, header Expert/Admin, responsive swipe navigation OK');

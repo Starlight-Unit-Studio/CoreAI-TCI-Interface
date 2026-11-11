@@ -6,7 +6,7 @@
 
 CoreAI combines Ollama-based models with private conversations, browser research, personal knowledge, file tools and an administration interface. Its standard deployment runs an isolated Nginx, PHP-FPM, MariaDB and worker stack on a Linux server. CoreAI is an application, **not a standalone operating system**.
 
-**Current source version: `0.7.0`** | [Changelog](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Documentation policy](docs/VERSIONING_POLICY.md) | [License](LICENSE.md)
+**Current source version: `0.7.1`** | [Changelog](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Documentation policy](docs/VERSIONING_POLICY.md) | [License](LICENSE.md)
 
 > **Development status:** The features below describe the current source code, not guaranteed capabilities of every model or cloud provider. A merged commit does not by itself prove a successful production deployment.
 
@@ -137,7 +137,7 @@ An existing installation's settings are not silently overwritten. `COREUI_FORCE_
 - **Sign-in and security:** **Settings → Security** offers passkeys and security keys, an authenticator app, E-Mail codes, ten one-time recovery codes, Lockdown mode (no web or browser), advanced account security (passkey-only sign-in, no reset by E-Mail, 24-hour sessions), sign-out everywhere, security history. Account PIN, push approval and CSP are **In preparation**. Host-side reset: `php scripts/security-reset.php <email> [--passkeys]`.
 - **Appearance:** **Settings → Appearance** offers System, Light or Dark, motif, accent, font, hex colors, separate light/dark looks, motif export/copy/import, font sizes, contrast, motion, full width, diff markers and opt-in smart punctuation for the chat (code and pasted text unchanged). Saved in this browser.
 - **Settings navigation:** 25 pages with a swipe drawer and header Expert/Admin. ChatGPT-style settings, Denkaufwand, smart context sliders and simple visual switches are normal. **Expert** is only raw technical tuning such as token budget, temperature, provider internals or numeric memory weights.
-- **Personalization:** Saved instantly per account: seven base styles, formatting, instructions with nickname and role, tool switches, a Mara-written memory summary and reference photos for images of you. Avatars: **Settings > Profile**.
+- **Personalization:** Saved instantly per account: seven base styles, formatting, instructions, tool switches, a Mara-written memory summary, reference photos for images of you and an animated pet in Mara's work line. Avatars: **Settings > Profile**.
 - **Account:** **Settings → Account** shows name, a unique @username, e-mail and plan. Plans (Free, Go, Plus, Pro) are templates the owner or admins assign in **Admin Core → Users**; they set real tools, daily messages and context window, no prices. Creator profile is **In preparation**.
 - **Profile overview:** **Settings → Profile** shows tokens (counted since 0.6.84), peak day, longest task, streaks, a 53-week raster, what Mara made, top tools and insights; public profile and sharing are **In preparation**.
 - **Main language:** In the AI profile, each account independently chooses German or English for Mara's default replies and optional read-aloud. The app interface language is separate.
