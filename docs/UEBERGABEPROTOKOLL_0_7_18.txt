@@ -1,0 +1,13 @@
+COREAI: TCI INTERFACE // HISTORICAL HANDOVER 0.7.18
+Reconstructed 12.11.2026; source merged on 11.11.2026.
+
+PR #272: https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface/pull/272
+Original merge SHA: 15448295ffcef9069ae2c59842601427ce01d6c7
+
+Project landing, chats/sources, scoped uploads and RAG, immutable open/isolated
+context mode, project instructions, sidebar and chat association introduced.
+No separate work executor, no real collaboration/sharing at this stage.
+
+Versioning incident: PR was merged while main still declared 0.7.17.
+0.7.18 exists ONLY as this retroactive accounting slot; no historic source
+VERSION 0.7.18 or official release ZIP is claimed.
