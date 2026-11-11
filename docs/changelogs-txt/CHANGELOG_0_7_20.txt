@@ -1,0 +1,16 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.20
+Date: 12.11.2026
+Base VERSION in main: 0.7.17; two unversioned source merges #272 and #273.
+
+- Regression correction: multiline/long-paste chat composer selftest checks
+  the actual #inputMessage textarea, not unrelated project settings inputs.
+- Retains 12000-character limit for project instructions without falsely
+  blocking the chat's long Markdown attachment handling.
+- Restores a consistent numeric source version after #272 and #273.
+- Historical slots 0.7.18 and 0.7.19 documented with original merge SHAs;
+  no fake historical ZIP artifacts or release claims.
+- VERSION, six public HTML pages, JS bootstrap, README, release metadata,
+  changelog index, version guards and preflights synchronized.
+- Validation and live Preflight on the target server remain required before
+  claiming that the installed software is corrected.
+Version: 0.7.20
