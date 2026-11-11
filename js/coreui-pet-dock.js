@@ -108,6 +108,9 @@
     if (Math.hypot(dx, dy) > 7) gesture.moved = true;
     if (!gesture.moved) return;
     dock.classList.add('is-moving');
+    if (sprite && pets.setState && Number(sprite.getAttribute('data-sprite-version')) > 0) {
+      pets.setState(sprite, dx >= 0 ? 'running-right' : 'running-left');
+    }
     at(gesture.originLeft + dx, gesture.originTop + dy);
     event.preventDefault();
   });
@@ -117,8 +120,10 @@
     gesture = null;
     dock.classList.remove('is-moving');
     if (dock.hasPointerCapture(event.pointerId)) dock.releasePointerCapture(event.pointerId);
-    if (moved) savePosition();
-    else if (event.type === 'pointerup' && pets.playTemporary) pets.playTemporary(sprite, 'waving', 1100);
+    if (moved) {
+      savePosition();
+      if (sprite && pets.setState) pets.setState(sprite, pets.getActivity ? pets.getActivity() : 'idle');
+    } else if (event.type === 'pointerup' && pets.playTemporary) pets.playTemporary(sprite, 'waving', 1100);
   }
   dock.addEventListener('pointerup', endPointer);
   dock.addEventListener('pointercancel', endPointer);
