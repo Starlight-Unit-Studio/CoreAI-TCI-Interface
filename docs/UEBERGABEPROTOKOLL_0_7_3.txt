@@ -1,0 +1,32 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.3
+Datum: 11.11.2026
+Thema: TCI-Nachrichtenlayout und von Mara geschriebene Bildabschlussantwort
+
+BESTEHENDE BASIS
+- Ausgangsversion main: 0.7.2.
+- Das neue Pet-System und Mara als Standard-Pet bleiben unberuehrt.
+- Der Benutzer arbeitet am Smartphone; kleine Ansichtsbreiten sind zwingend zu testen.
+
+UMSETZUNG
+- js/console-app.js: dieselbe zweizeilige TCI-Kopfzeile im Verlauf, beim laufenden Antworten und beim Browser.
+- css/coreui-chat-tci-layout.css: assistentenspezifisches Layout mit Avatar links oben und voller Breite ab der Zeile darunter.
+- app.html: Stylesheet mit cachebasiertem Fingerprint eingebunden.
+- js/console-app.js: bestaetigte generierte Bilder erscheinen vor Maras abschliessendem Text.
+- api/console_agent_loop.php: Nach Image-Tool folgt genau ein Modellaufruf fuer Maras Abschlussantwort, keine erneute Werkzeugentscheidung.
+- api/image_gen.php: kein Widerspruch mehr zwischen Tooltext und neuer Bild-Reihenfolge.
+- scripts/image-gen-selftest.php und scripts/tci-chat-message-selftest.cjs: Regressionen fuer Folgeantwort, Marker-Verbot, Cancel, Fallback und Chat-Kopfzeile.
+
+BEGRENZUNG / SICHERHEIT
+- Autonome Folgeantwort gilt fuer bereits begonnene Bildauftraege. Echte spontane Nachrichten im Leerlauf (ohne Auftrag) erfordern einen eigenen, serverseitig berechtigten Event-Scheduler mit Cooldowns und expliziter Einwilligung; noch NICHT implementiert.
+- Kein ungebremster Modell-Loop oder wiederholter Bildauftrag.
+- Keine Aenderung an fremden Konten, Modellparametern, Ollama oder der globalen Modellwarteschlange.
+- Nutzername im Header ausschliesslich als textContent, kein HTML.
+- Falls das Modell keine gueltige Antwort liefert, wird nur das bestaetigte Werkzeugergebnis gemeldet.
+
+ABNAHME VOR MERGE
+- php -l fuer api/console_agent_loop.php und api/image_gen.php.
+- php scripts/image-gen-selftest.php und scripts/agent-loop-selftest.php.
+- node scripts/tci-chat-message-selftest.cjs sowie betroffene Chat-/Bildtests.
+- Browser-/Playwright-Test auf 390 px Android-Ansicht und Desktop/DeX, inkl. langer Namen, Codebloecken und Bildanhang.
+- python3 scripts/version-merge-check.py --base-version 0.7.2.
+- Beide Preflights nach Repo-Vorschrift. Ohne diese Pruefungen Draft belassen.
