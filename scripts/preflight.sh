@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.1: Settings > Pets after the reference screenshots (migration 034, own CoreAI pets, work line).
+# CoreAI: TCI Interface 0.7.2: Mara Thorne is the built-in default OpenPet v2 companion.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
