@@ -1,0 +1,11 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.4
+Datum: 11.11.2026
+
+- Die beiden Zeilen TCI CORE: und Mara bzw. der individuelle TCI-Name haben nun identische Schriftfamilie, Schriftgroesse, Strichstaerke, Zeilenhoehe, Laufweite und blaue Themenfarbe.
+- Die Unterstreichung von TCI CORE: nutzt nur die goldene Akzentfarbe (--amb), unabhaengig vom aktiven hellen/dunklen Design.
+- Kein Aendern von Chat-Nachrichten, Datenbank, Avataren, Modellen, Bildgenerator, Pet-System oder Installer.
+- Regressionstests vergleichen die berechnete Typografie und Unterstrichfarbe auf 390-px-Smartphones und im Desktop-Browser.
+- Der bestehende Bootstrap setup.sh ruft den Preflight bereits auf; fuer einen Installerfix wird erst eine konkret reproduzierte neue Fehlermeldung benoetigt.
+- PHP-/Browser-/Preflight-Tests am Zielserver muessen vor einem Merge ausgefuehrt werden.
+
+Version: 0.7.4
