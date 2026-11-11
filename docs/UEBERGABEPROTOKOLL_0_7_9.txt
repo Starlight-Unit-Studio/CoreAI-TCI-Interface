@@ -1,0 +1,38 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.9
+Datum: 11.11.2026
+Thema: Gastbilder 3 pro Kalendertag und im Admin Core verwaltbare Gastrechte
+
+KONZEPT
+- Der globale Werkzeugschalter Betrieb bleibt die Obergrenze, darunter gelten zusaetzliche Gastfreigaben und tatsaechliche Nutzerberechtigungen.
+- Standard: Websuche, Browser, Python und Bilder als Gast-Werkzeuge freigegeben, sofern global erlaubt; Bildlimit = 3 pro Gastkonto und Server-Kalendertag.
+- Bisherige Gastnachrichten-Grenze ist ein eigenes, kumulatives Konto-Kontingent. Das neue taegliche Bildlimit ersetzt oder verlaengert sie nicht.
+
+IMPLEMENTIERUNG
+- api/guest_access.php: Gast-Werkzeugschalter, Bildlimit-Normalisierung 0..100, signierter serverseitiger Tageszaehler und Reserve/Refund.
+- api/ai_settings.php: Gastwerkzeuge werden im autorisierten Laufzeitprofil zusaetzlich auf globale Berechtigungen gefiltert.
+- api/image_gen.php: Bilder fuer Gastkonten bei positivem Restkontingent gestattet, aber globale Schalter und Kontorichtlinien bleiben wirksam; klarer Fehler bei aufgebrauchtem/ausgeschaltetem Kontingent.
+- api/chat.php: Eine Reservierung je Bild direkt vor dem Bildauftrag, Rueckgabe bei Fehler/Abbruch, Erfolg erst nach Persistierung des Bildes.
+- api/admin.php, admin/index.html, js/admin.js: fuenf neue Einstellungen unter Zugang und Schutz (vier Werkzeugschalter, ein Zahlenfeld), korrekt geladen, validiert und gespeichert.
+- api/console_composer_intent.php, api/composer_tools.php, js/coreui-composer-menu.js: Gastbild-Schaltflaeche bei Freigabe aktiv; sichtbarer Rest und konkrete Fehlermeldung; fuer Gaeste kein altes 60-Sekunden-Caching.
+- Vorhandene Filter fuer Referenzbilder und Selbstportraets bleiben erhalten.
+
+DATENSCHUTZ UND ABSICHERUNG
+- Keine Nutzung der Browseruhr oder lokaler Browser-Speicherung fuer den Bildzaehler.
+- Zaehler bleibt nach Chatloeschung bestehen und ist an serverseitig bestaetigten account_id / is_guest gebunden.
+- Bereits bestehender Geraete-/Netzwerk-Gastschutz bleibt erhalten. Gleichzeitige Reservierungen werden ueber den Datenbankzaehler begrenzt.
+- Die globale Modellwarteschlange wird unveraendert verwendet.
+- Keine neue Tabelle oder Migration.
+
+TESTS VOR MERGE
+- php -l der geaenderten PHP-Dateien und Tests.
+- php scripts/guest-access-selftest.php
+- php scripts/image-gen-selftest.php
+- php scripts/composer-intent-selftest.php
+- node --check js/admin.js und js/coreui-composer-menu.js
+- python3 scripts/version-merge-check.py --base-version 0.7.8
+- Beide offiziellen Preflights, einschliesslich Admin und Composer.
+- Realer Gast-Test: 3 Bilder erfolgreich, 4. Bild abgelehnt; Mehrfachauftrag begrenzt; Fehlerfall gibt Kredit zurueck; naechster Server-Kalendertag neuer Zaehler.
+- Test mit globalem Bildwerkzeug AUS und Gastwerkzeug AUS, normales Konto bleibt unberuehrt.
+
+WICHTIG
+- Noch kein Merge und keine Installation; Laufzeittests erst nach Bestätigung.
