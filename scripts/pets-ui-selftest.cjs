@@ -160,9 +160,17 @@ async function open(browser, srv, viewport, url) {
     await page.click('#petUploadOpen');
     await page.fill('#petName', 'Kaputt');
     await page.setInputFiles('#petFile', {name: 'kaputt.gif', mimeType: 'image/gif', buffer: NOVA});
-    assert.equal(await page.textContent('#petUploadError'), 'Bitte wähle ein PNG oder WebP.');
+    assert.equal(await page.textContent('#petUploadError'), 'Bitte wähle ein PNG, WebP oder OpenPet-ZIP.');
     await page.click('#petUploadCancel');
     await page.waitForSelector('#petUploadDialog', {state: 'hidden'});
+
+    // One upload dialog supports downloaded OpenPet ZIPs without manual metadata.
+    await page.click('#petUploadOpen');
+    await page.setInputFiles('#petFile', {name: 'custom.openpet.zip', mimeType: 'application/zip', buffer: Buffer.from('PK\\x03\\x04')});
+    assert.equal(await page.isHidden('#petManualFields'), true);
+    assert.equal(await page.isDisabled('#petUploadSubmit'), false);
+    assert.match(await page.textContent('#petZipHint'), /automatisch aus pet.json/);
+    await page.click('#petUploadCancel');
 
     // Deleting an own pet asks first.
     await page.click('#petRows .pet-row[data-pet="u1"]');

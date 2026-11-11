@@ -91,9 +91,17 @@ try {
       $code = is_array($file) ? (int)($file['error'] ?? UPLOAD_ERR_NO_FILE) : UPLOAD_ERR_NO_FILE;
       stu_json(['ok' => false, 'error' => in_array($code, [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true) ? 'file_too_large' : 'no_file_uploaded'], 400);
     }
-    if ((int)$file['size'] > COREUI_PET_MAX_BYTES) stu_json(['ok' => false, 'error' => 'file_too_large'], 400);
-    $bytes = (string)file_get_contents((string)$file['tmp_name']);
-    $pet = coreui_pet_add($pdo, $uid, (string)($_POST['name'] ?? ''), (string)($_POST['description'] ?? ''), $bytes);
+    $filename = strtolower((string)($file['name'] ?? ''));
+    $isZip = str_ends_with($filename, '.zip');
+    $maxBytes = $isZip ? COREUI_OPENPET_ZIP_MAX_BYTES : COREUI_PET_MAX_BYTES;
+    if ((int)$file['size'] > $maxBytes) stu_json(['ok' => false, 'error' => 'file_too_large'], 400);
+    if ($isZip) {
+      $import = coreui_pet_personal_openpet_read((string)$file['tmp_name'], (int)$file['size']);
+      $pet = coreui_pet_add($pdo, $uid, $import['name'], $import['description'], $import['bytes']);
+    } else {
+      $bytes = (string)file_get_contents((string)$file['tmp_name']);
+      $pet = coreui_pet_add($pdo, $uid, (string)($_POST['name'] ?? ''), (string)($_POST['description'] ?? ''), $bytes);
+    }
     stu_json(['ok' => true, 'pet' => $pet] + coreui_pets_payload($pdo, $uid));
   }
 

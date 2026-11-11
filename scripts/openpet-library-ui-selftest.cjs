@@ -11,17 +11,15 @@ new Function(app);
 assert(app.includes('state.library = data.library || []') &&
   app.includes('state.own.concat(state.library, state.builtin)'),
   'shared presets appear alongside original and personal pets');
-assert(app.includes('can_manage_library') && app.includes('state.canManageLibrary') &&
-  app.includes("state.canManageLibrary = data.can_manage_library === true"),
-  'owner-only import controls are gated by authenticated server role');
-for(const id of ['petLibraryAdmin','petLibraryForm','petLibraryFile','petLibraryLicense',
-  'petLibraryHolder','petLibrarySource','petLibraryEvidence','petLibraryConfirm','petLibrarySubmit']){
-  assert(settings.includes('id="'+id+'"'), 'missing import control '+id);
-}
-assert(app.includes("payload.append('action', 'library_import')") &&
-  app.includes("payload.append('rights_confirmed', 'yes')") &&
-  app.includes("action: pet.library ? 'library_remove' : 'delete'"),
-  'owner-controlled publication/removal have distinct API actions');
+assert(!settings.includes('id="petLibraryForm"') && !settings.includes('id="petLibraryFile"'),
+  'duplicate system publication upload form is removed');
+assert(settings.includes('https://openpets.sh/') && settings.includes('.openpet.zip,.zip,image/png,image/webp'),
+  'the single personal upload accepts OpenPet downloads and existing sprites');
+assert(settings.includes('id="petManualFields"') && settings.includes('id="petZipHint"'),
+  'ZIP gets automatic name/description without extra input');
+assert(app.includes('updateFileMode(file)') &&
+  app.includes("form.append('file', file)"),
+  'ZIP and raw images use the same upload form');
 assert(api.includes("if (stu_permission_level_for_user($pdo, $uid) !== COREUI_ROLE_OWNER)") &&
   api.includes('stu_require_csrf();') &&
   api.includes("is_uploaded_file("),
@@ -40,4 +38,4 @@ assert(library.includes("return dirname(__DIR__) . '/var/console_media/pet_libra
   'approved sprites are privately stored and authenticated');
 assert(!fs.existsSync(path.join(root,'images/pets/openpets')),
   'unlicensed gallery bundle must not be silently copied to public assets');
-console.log('CoreAI OpenPet library UI: rights gate, private asset, owner role and presets OK');
+console.log('CoreAI OpenPet: unified personal ZIP import, separate secure library backend, presets OK');
