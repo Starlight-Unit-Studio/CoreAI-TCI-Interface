@@ -1799,7 +1799,8 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if feedback_ui_selftest="$(node "$PROJECT_ROOT/scripts/feedback-ui-selftest.cjs" 2>&1)"; then
     ok 'Feedback: Daumenfarben, Speicherung, Mara-Reaktion ohne Thinking geprueft.'
   else
-    feedback_ui_selftest="${feedback_ui_selftest//
+    fail "Feedback: UI-/Backend-Vertrag fuer Bewertungen fehlerhaft: ${feedback_ui_selftest:-Unbekannter Fehler}"
+  fi
 
   if is_enabled "${COREUI_INSTALL_BROWSE:-0}"; then
     frame_table_ready=0
