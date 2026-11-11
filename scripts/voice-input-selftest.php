@@ -337,15 +337,9 @@ vi_test(!str_contains($api, '$_FILES') && !str_contains($api, "'transcribe'")
   && strpos($api, "if (\$guest) stu_json(['ok' => false, 'error' => 'guests_not_allowed'], 403);") < strpos($api, "if (\$action === 'transcript') {")
   && str_contains($api, "WHERE uuid = ? AND user_id = ? AND kind IN (?, ?) LIMIT 1"), 'endpoint: status and the own transcript only, no guests');
 $js = $read('js/coreui-voice-input.js');
-// 0.7.14: a Stimmsequenz still puts no text into the field; only a dictation (its own button, Settings > Stimme)
-// writes the Core's text there, in one place (insert), and a Stimmsequenz never reaches that place.
-$insertAt = strpos($js, 'function insert(text)');
 vi_test(str_contains($js, 'composer.sendVoice(file)') && str_contains($js, "var name = 'Sprachnachricht-'")
-  && substr_count($js, "getElementById('inputMessage')") === 1 && $insertAt !== false
-  && strpos($js, "getElementById('inputMessage')") > $insertAt && substr_count($js, 'insert(') === 2
-  && str_contains($js, "if (current.mode === 'dictate') {\n      keep({ blob: blob, kind: 'diktat', seconds: seconds }).then(function (id) { dictate(blob, id); });\n      return;\n    }")
-  && str_contains($js, 'VOICED_MIN_MS') && str_contains($js, 'if (!state.allowed) return;'),
-  'page: sends the recording, no text in the field (only a dictation writes there), silence check, nothing for guests');
+  && !str_contains($js, "getElementById('inputMessage')") && str_contains($js, 'VOICED_MIN_MS') && str_contains($js, 'if (!state.allowed) return;'),
+  'page: sends the recording, no text in the field, silence check, nothing for guests');
 vi_test(str_contains($read('js/coreui-core-mode.js'), "new CustomEvent('coreui:core'"), 'a Core change re-checks the microphone');
 $page = $read('app.html');
 vi_test(strpos($page, 'js/coreui-voice-input.js') !== false && strpos($page, 'js/coreui-voice-input.js') < strpos($page, 'js/console-app.js'),

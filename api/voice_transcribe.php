@@ -33,8 +33,6 @@ require_once __DIR__ . '/voice_core.php';
 require_once __DIR__ . '/voice_store.php';
 
 const COREUI_VOICE_INPUT_MAX_SECONDS = 120;
-/** 0.7.14: a dictation upload (two minutes of Opus are about 1 MB; other browsers record larger). */
-const COREUI_VOICE_DICTATION_MAX_BYTES = 16 * 1024 * 1024;
 const COREUI_VOICE_FILE_MAX_SECONDS = 600;
 const COREUI_VOICE_PART_MAX_SECONDS = 60;
 /** A pause earlier than this is not used for a cut; parts stay long enough to carry context. */

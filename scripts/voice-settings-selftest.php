@@ -6,7 +6,8 @@ declare(strict_types=1);
 // and every spoken part in the chosen voice (Eve keeps the old ids and asks for no voice),
 // the preview sentence (shared, cached), the transcript language ("Automatisch erkennen"),
 // the recordings key, the wiring (endpoints, guests, CSRF, nginx, migration 036, export,
-// dictation endpoint) and, with a database, the account's choices (rolled back).
+// 0.7.15: the dictation switch is the microphone button) and, with a database, the account's
+// choices (rolled back).
 if (PHP_SAPI !== 'cli') exit(1);
 $root = dirname(__DIR__);
 require_once $root . '/api/voice_store.php';
@@ -136,16 +137,18 @@ vs_test(str_contains($read('api/voice_live.php'), "coreui_voice_plan(\$dir, \$te
   && str_contains($read('api/voice_live.php'), "coreui_voice_language_name(coreui_voice_input_code(\$pdo, \$uid, "), 'live: the chosen voices and the transcript language');
 $attachments = $read('api/ember_attachments.php');
 vs_test(substr_count($attachments, 'coreui_voice_input_code($pdo, $uid, ') === 2, 'Stimmsequenzen: before the answer and afterwards in the chosen language');
-$dictate = $read('api/voice_dictate.php');
-vs_test(strpos($dictate, "if (coreui_guest_is(\$pdo, \$uid)) stu_json(['ok' => false, 'error' => 'guests_not_allowed'], 403);") < strpos($dictate, 'stu_require_csrf();')
-  && strpos($dictate, 'stu_require_csrf();') < strpos($dictate, "\$_FILES['audio']")
-  && strpos($dictate, "['dictation']) stu_json(['ok' => false, 'error' => 'dictation_off'], 403);") < strpos($dictate, "\$_FILES['audio']")
-  && str_contains($dictate, "@unlink((string)\$upload['tmp_name']);") && str_contains($dictate, 'COREUI_VOICE_DICTATION_MAX_BYTES')
-  && str_contains($dictate, "'language' => coreui_voice_input_code(\$pdo, \$uid, ") && str_contains($dictate, "'terms' => coreui_voice_terms_load(\$pdo, \$uid),"),
-  'dictation: no guests, CSRF, only while on, size limit, the chosen language and terms, nothing kept');
+// 0.7.15: "Diktierfunktion aktivieren" is the microphone button in the input field (there is no second
+// dictation button and no dictation endpoint); the status tells the page whether to show it.
+vs_test(!is_file($root . '/api/voice_dictate.php'), 'no separate dictation endpoint');
 foreach (['config/nginx.conf.template', 'config/runtime/nginx.conf.template'] as $template) {
-  vs_test(str_contains($read($template), '|voice_input|voice_live|voice_dictate|storage|'), "nginx allows dictation: $template");
+  vs_test(str_contains($read($template), '|voice_input|voice_live|storage|') && !str_contains($read($template), 'voice_dictate'), "nginx as before: $template");
 }
+$inputApi = $read('api/voice_input.php');
+vs_test(str_contains($inputApi, "'dictation' => coreui_voice_prefs(\$pdo, \$uid)['dictation'],")
+  && str_contains($inputApi, "'recordings_key' => coreui_voice_recordings_key(\$uid),"), 'the status says whether the microphone shows, and the recordings key');
+$inputJs = $read('js/coreui-voice-input.js');
+vs_test(str_contains($inputJs, 'if (state.dictation) makeButton(); else dropButton();') && !str_contains($inputJs, 'btnDictate')
+  && !str_contains($inputJs, "getElementById('inputMessage')"), 'the switch shows or hides the one microphone button');
 $migration = $read('database/migrations/036_voice_choice.sql');
 vs_test(str_contains($migration, 'ADD COLUMN IF NOT EXISTS voice_de VARCHAR(32) NULL') && str_contains($migration, 'ADD COLUMN IF NOT EXISTS input_language VARCHAR(8) NULL')
   && str_contains($migration, 'ADD COLUMN IF NOT EXISTS dictation TINYINT(1) NULL') && str_contains($migration, "VALUES ('036_voice_choice')"), 'migration 036');

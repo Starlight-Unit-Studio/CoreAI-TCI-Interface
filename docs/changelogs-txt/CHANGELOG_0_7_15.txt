@@ -1,0 +1,9 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.15
+Datum: 11.11.2026
+
+- Ein Mikrofon statt zwei: "Diktierfunktion aktivieren" unter Einstellungen > Stimme ist der vorhandene Mikrofonknopf neben Senden. Ausgeschaltet verschwindet der Knopf aus dem Eingabefeld und damit die Funktion; die Mitschriften unter frueheren Stimmsequenzen bleiben.
+- Der zusaetzliche Diktier-Knopf aus 0.7.14 und sein Endpunkt api/voice_dictate.php sind entfernt; nginx erlaubt wieder genau die Endpunkte von 0.7.13.
+- Texte: Die Stimme-Seite spricht nur noch von Stimmsequenzen (Sprache, Zuletzt verwendete Aufnahmen); die Zeile Diktieren sagt, dass sie den Mikrofonknopf schaltet.
+- Unveraendert aus 0.7.14: Stimmenauswahl mit Hoerprobe, "Automatisch erkennen", die letzten 20 Aufnahmen auf dem Geraet (jede Stimmsequenz mit "gesendet" oder "nicht gesendet"), Migration 036.
+- Tests: voice-recordings-ui-selftest.cjs ersetzt den Diktat-Browsertest (ein Mikrofon, der Schalter, die Aufnahmen); der Spracheingabe-Selbsttest prueft wieder, dass das Mikrofon nie ins Eingabefeld schreibt.
+Version: 0.7.15

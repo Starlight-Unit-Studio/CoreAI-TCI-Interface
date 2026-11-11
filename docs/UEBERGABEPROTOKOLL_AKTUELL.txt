@@ -1,9 +1,10 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
 Stand: 11.11.2026
-Repository-Version: 0.7.14 (Branch claude/bold-galileo-myoyi0, main bei Erstellung 0.7.13)
-BASIS: main 0.7.13 nach PR #266; Einstellungen > Stimme nach den Referenz-Screenshots (Migration 036).
+Repository-Version: 0.7.15 (Branch claude/bold-galileo-myoyi0, main bei Erstellung 0.7.14)
+BASIS: main 0.7.14 nach PR #267; Diktierfunktion = vorhandener Mikrofonknopf (Schalter in Einstellungen > Stimme).
 NEUE ARBEIT ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_7_15.txt
   docs/UEBERGABEPROTOKOLL_0_7_14.txt
   docs/UEBERGABEPROTOKOLL_0_7_13.txt
   docs/UEBERGABEPROTOKOLL_0_7_12.txt

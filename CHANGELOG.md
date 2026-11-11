@@ -1,5 +1,12 @@
 # CoreAI: TCI Interface
 
+## 0.7.15 - 11.11.2026
+
+- **One microphone, no second dictation button:** "Diktierfunktion aktivieren" under Settings > Voice is the existing microphone button next to Send. Switched off, the button disappears from the chat input field and with it the function; transcripts under earlier Stimmsequenzen stay. The extra dictation button from 0.7.14 and its endpoint `api/voice_dictate.php` are removed, so nginx allows exactly the endpoints of 0.7.13 again.
+- **Texts:** The Voice page now speaks of Stimmsequenzen only ("Sprache", "Zuletzt verwendete Aufnahmen"); the dictation row says that it switches the microphone button.
+- **Unchanged from 0.7.14:** voice choice with preview, "Automatisch erkennen", the last 20 recordings on the device (each Stimmsequenz with "gesendet" or "nicht gesendet"), migration 036.
+- **Tests:** `voice-recordings-ui-selftest.cjs` replaces the dictation browser test (one microphone, the switch, recordings); the voice input selftest checks again that the microphone never writes into the input field.
+
 ## 0.7.14 - 11.11.2026
 
 - **Settings > Voice after the reference screenshots:** "Stimme" with the chosen voice, "Sprache", "Diktieren" with "Diktierfunktion aktivieren" and "Zuletzt verwendete Aufnahmen". Automatic read-aloud and the names and terms for Stimmsequenzen stay on the page below. Every change saves at once (migration 036).
