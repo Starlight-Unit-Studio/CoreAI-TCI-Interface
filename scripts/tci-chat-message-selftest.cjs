@@ -47,6 +47,26 @@ state.assistantName = 'Mara Thorne';
 assert.deepEqual(shape(context.buildTciMessageHeading()), expected('MARA THORNE'), 'the custom profile name is used');
 state.assistantName = '<script>alert(1)</script>';
 assert.deepEqual(shape(context.buildTciMessageHeading()), expected('<SCRIPT>ALERT(1)</SCRIPT>'), 'custom names are inert text nodes, never HTML');
+const operatorExpected = value => ({element:'DIV',cls:'msg-name msg-name-operator',children:[
+  {cls:'msg-operator-role',text:'OPERATOR:'},
+  {cls:'msg-operator-persona',text:value}
+]});
+assert.deepEqual(shape(context.buildOperatorMessageHeading('Rick')),operatorExpected('RICK'),
+  'user label matches the two-line assistant identity, with OPERATOR above the actual display name');
+assert.deepEqual(shape(context.buildOperatorMessageHeading('<img src=x onerror=alert(1)>')),
+  operatorExpected('<IMG SRC=X ONERROR=ALERT(1)>'),
+  'user profile names are text nodes rather than HTML');
+assert(app.includes("role === 'ember' ? buildTciMessageHeading() : buildOperatorMessageHeading(name)"),
+  'user and assistant use separate, shared heading builders in every message path');
+assert(css.includes('.msg-row.user .msg-name-operator {')
+  && css.includes('align-items: flex-end;') && css.includes('text-align: right;'),
+  'operator heading stays right aligned above the existing user bubble');
+assert(css.includes('.msg-row.user .msg-operator-role,\n.msg-row.user .msg-operator-persona {')
+  && css.includes('color: #9b651e;') && css.includes('font: 700 12px/1.35'),
+  'operator role and name have the original Rick gold with Mara-equivalent font');
+assert(css.includes('.msg-row.user .msg-operator-role {')
+  && css.includes('text-decoration-color: var(--cx, #5b92ff);'),
+  'operator underline uses Mara blue, inverse of the gold TCI CORE underline');
 assert.equal((app.match(/buildTciMessageHeading\(\)/g) || []).length, 4,
   'helper, saved message, live working response and browser status use the same heading');
 assert(app.includes("role === 'ember' ? buildTciMessageHeading()"), 'only assistant messages receive TCI CORE label');
@@ -66,4 +86,4 @@ assert(/coreui-chat-tci-layout\.css\?v=\d{25}/.test(html), 'chat loads its cache
 assert(app.includes("item.kind === 'image' && item.generated === true")
   && app.includes('content.appendChild(bubble);\n      if (suggestionRow) content.appendChild(suggestionRow);'),
   'generated images precede Mara\'s final written reply and suggestion buttons');
-console.log('CoreAI TCI message layout: shared custom header, safe names, full-width mobile flow, image-first reply OK');
+console.log('CoreAI TCI message layout: mirrored operator header, safe names, full-width mobile flow, image-first reply OK');
