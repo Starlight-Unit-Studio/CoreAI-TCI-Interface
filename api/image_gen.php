@@ -575,7 +575,7 @@ function coreui_image_meta(string $uuid): ?array {
 function coreui_image_result_text(array $result): string {
   if (!empty($result['ok'])) {
     return 'Das Bild ist fertig (' . (int)$result['width'] . ' × ' . (int)$result['height'] . ' Pixel, '
-      . (int)round((float)$result['seconds']) . ' Sekunden) und erscheint direkt unter deiner Antwort. '
+      . (int)round((float)$result['seconds']) . ' Sekunden) und ist als Bildanhang deiner Antwort gespeichert. '
       . 'Sag kurz, dass es da ist, und beschreibe in ein, zwei Saetzen, was du gemalt hast. '
       . 'Du kannst es nicht sehen; erfinde keine Einzelheiten, die nicht in deiner Beschreibung standen. '
       . 'Schreibe keinen Platzhalter wie "(Hier erscheint das Bild)"; das Bild haengt schon an deiner Antwort. '
