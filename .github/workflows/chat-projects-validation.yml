@@ -15,6 +15,7 @@ on:
       - 'js/coreui-chat-menu.js'
       - 'js/console-app.js'
       - 'scripts/project-ui-selftest.cjs'
+      - 'scripts/project-isolation-selftest.php'
       - '.github/workflows/chat-projects-validation.yml'
   push:
     branches: ['feat/chat-project-context-scope-20261111']
@@ -34,3 +35,4 @@ jobs:
           node --check js/console-app.js
           node --check js/coreui-chat-menu.js
           node scripts/project-ui-selftest.cjs
+          php scripts/project-isolation-selftest.php
