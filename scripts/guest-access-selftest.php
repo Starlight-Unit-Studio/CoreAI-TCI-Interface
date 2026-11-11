@@ -17,6 +17,21 @@ function guest_test(bool $ok, string $why): void {
 foreach (['' => 5, '5' => 5, '0' => 1, '1' => 1, '7' => 7, '100' => 100, '500' => 100, 'abc' => 5, '-3' => 5, ' 12 ' => 12, '3.5' => 5]
   as $in => $out) guest_test(coreui_guest_limit_normalise((string)$in) === $out, "limit from '{$in}'");
 guest_test(COREUI_GUEST_LIMIT_DEFAULT === 5 && COREUI_GUEST_LIMIT_MAX === 100, 'default 5, at most 100');
+guest_test(COREUI_GUEST_IMAGES_DAILY_DEFAULT === 3 && COREUI_GUEST_IMAGES_DAILY_MAX === 100,
+  'guests may generate three images per server day by default');
+foreach (['3'=>3, '0'=>0, '1'=>1, '100'=>100, '500'=>100,
+         'bad'=>3, '-2'=>3, ''=>3] as $input=>$expected) {
+  guest_test(coreui_guest_image_limit_normalise((string)$input) === $expected,
+    'guest image daily limit normalises: ' . $input);
+}
+$today = strtotime('2026-11-11 23:58:00');
+guest_test(coreui_guest_image_day($today) === date('Y-m-d', $today)
+  && date('H:i:s', coreui_guest_image_next_day($today)) === '00:00:00'
+  && coreui_guest_image_day(coreui_guest_image_next_day($today)) !== coreui_guest_image_day($today),
+  'guest image limits reset at the server calendar-day boundary, not client time');
+guest_test(COREUI_GUEST_TOOL_NAMES === ['web', 'browse', 'python', 'image'],
+  'all existing CoreAI model tools can be controlled separately for guests');
+
 guest_test(coreui_guest_turn_allowed(5, 5) && !coreui_guest_turn_allowed(6, 5) && coreui_guest_turn_allowed(1, 1), 'the turn past the limit is refused');
 
 $lib = (string)file_get_contents($root . '/api/guest_access.php');
@@ -66,6 +81,40 @@ guest_test(strpos($adminHtml, 'id="registrationEnabled"') < strpos($adminHtml, '
   'guest controls exist only in the protected standalone Admin Core');
 guest_test(str_contains($adminJs, "guest_enabled: document.getElementById('guestEnabled').checked ? '1' : '0',")
   && str_contains($adminJs, "guest_message_limit: document.getElementById('guestMessageLimit').value,"), 'admin page sends both');
+
+// Existing guest access, message and network protections remain active. The
+// additional guest tools and image limits are real backend settings, not UI-only.
+guest_test(str_contains($admin, "'guest_tool_web_enabled', 'guest_tool_browse_enabled', 'guest_tool_python_enabled', 'guest_tool_image_enabled', 'guest_image_daily_limit'")
+  && str_contains($admin, "if (\$key === 'guest_image_daily_limit') \$value = (string)coreui_guest_image_limit_normalise(\$value);")
+  && str_contains($admin, "'guest_image_daily_limit' => (string)COREUI_GUEST_IMAGES_DAILY_DEFAULT,"),
+  'admin settings whitelist, validation and default guest image limit are persisted');
+foreach (['guestToolWebEnabled', 'guestToolBrowseEnabled', 'guestToolPythonEnabled',
+          'guestToolImageEnabled', 'guestImageDailyLimit'] as $id) {
+  guest_test(str_contains($adminHtml, 'id="' . $id . '"')
+    && str_contains($adminJs, "document.getElementById('" . $id . "')"),
+    'protected Admin Core includes guest feature option ' . $id);
+}
+guest_test(str_contains($adminHtml, 'id="guestImageDailyLimit" type="number" min="0" max="100"')
+  && str_contains($adminJs, "guest_image_daily_limit: document.getElementById('guestImageDailyLimit').value,"),
+  'daily guest image quota is an editable numeric setting');
+$runtime = (string)file_get_contents($root . '/api/ai_settings.php');
+guest_test(str_contains($runtime, 'foreach (COREUI_GUEST_TOOL_NAMES as $tool)')
+  && str_contains($runtime, "!coreui_guest_tool_enabled(\$pdo, \$tool)"),
+  'guest tool restrictions are enforced by the runtime, not just visual toggles');
+$imageSource = (string)file_get_contents($root . '/api/image_gen.php');
+guest_test(!str_contains($imageSource, "coreui_ai_account_is_guest(\$pdo, \$uid)) return false;")
+  && str_contains($imageSource, 'coreui_guest_image_quota($pdo, $uid)')
+  && str_contains($imageSource, "return is_array(\$quota) && !empty(\$quota['enabled']) && (int)\$quota['left'] > 0;"),
+  'guests can generate only while their live server-side image quota allows it');
+guest_test(str_contains($chat, '$reservation = coreui_guest_image_reserve($pdo, $uid);')
+  && str_contains($chat, 'if (!$saved) coreui_guest_image_release($pdo, $reservation);')
+  && str_contains($chat, '$saved = true;'),
+  'each successful image counts individually, failed or cancelled jobs are refunded');
+guest_test(str_contains($lib, 'coreui_abuse_count($pdo, $key, COREUI_GUEST_IMAGES_DAY_SECONDS, 1, $now)')
+  && str_contains($lib, "if (empty(\$count['ok']))")
+  && str_contains($lib, 'coreui_abuse_give_back($pdo, $key)'),
+  'server counts guest image jobs atomically and fails closed if quota storage is missing');
+
 
 // Chat: what is left, and a clear note at the end.
 $app = (string)file_get_contents($root . '/js/console-app.js');
