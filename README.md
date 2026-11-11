@@ -6,7 +6,7 @@
 
 CoreAI combines Ollama-based models with private conversations, browser research, personal knowledge, file tools and an administration interface. Its standard deployment runs an isolated Nginx, PHP-FPM, MariaDB and worker stack on a Linux server. CoreAI is an application, **not a standalone operating system**.
 
-**Current source version: `0.7.2`** | [Changelog](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Documentation policy](docs/VERSIONING_POLICY.md) | [License](LICENSE.md)
+**Current source version: `0.7.3`** | [Changelog](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Documentation policy](docs/VERSIONING_POLICY.md) | [License](LICENSE.md)
 
 > **Development status:** Features reflect the source, not every model or provider. A merge does not prove live deployment.
 
@@ -128,7 +128,7 @@ An existing installation's settings are not silently overwritten. `COREUI_FORCE_
 
 - **Mara and Cores:** The chat Core selector and Thinking effort are separate. In **Cores verwalten**, admins can search Ollama, install additional local Cores, inspect installed Cores, update individual local Cores and safely remove nonprotected Cores. The default Core and its base are deletion-protected; Ollama accounts are optional. Hugging Face browsing is **In preparation**. Inference stays serialized.
 - **Local time awareness:** Mara uses the browser's IANA time zone to calculate date and time for private chats. No location permission is needed; invalid or unavailable values fall back to the configured server time zone.
-- **Conversations and accounts:** The chat opens on an unsaved welcome screen with a personalized greeting and four tappable example questions. A new chat is saved only on its first submitted text, attachment or spoken turn; prior conversations remain in the sidebar. Persistent history, follow-up suggestions, context management and distinct owner, admin, user and optional guest roles remain available.
+- **Conversations and accounts:** The chat opens on an unsaved welcome screen with a personalized greeting and four tappable example questions. A new chat is saved only on its first submitted text, attachment or spoken turn; prior conversations remain in the sidebar. Persistent history, follow-up suggestions, context management and distinct owner, admin, user and optional guest roles remain available. Mara's TCI header sits beside her avatar; her reply starts below it at full chat width.
 - **Chat menu:** The ⋮ menu of a chat shares it as a Markdown file, pins it on top, lists its uploaded files, searches all its messages, gives a direct link for the home screen, archives or deletes it; locking chats and projects are **In preparation**. **Settings → Archived chats** searches, filters, restores and deletes archived chats.
 - **Research:** SearXNG search and a Playwright browser display research activity and sources. NRW weather uses WDR place search in browser mode; other locations get current Open-Meteo data. Without browser mode, WDR overview is used only when current. Search is a fallback. The free Open-Meteo API is for non-commercial use.
 - **Input row (+ menu):** **Attach** Photos, Camera or Files (up to ten). **Tools** Create image, Web search or Research; the chosen tool shows as a chip and stays on your message. Unavailable tools are greyed with the reason; Deep Research and Connectors are marked **In preparation**.
