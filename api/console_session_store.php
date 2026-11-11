@@ -76,6 +76,10 @@ function coreui_console_session_list(PDO $pdo, int $uid, bool $includeArchived =
                  s.created_at, s.updated_at, s.archived_at, " . ($pinReady ? 's.pinned_at' : 'NULL AS pinned_at') . ",
                  UNIX_TIMESTAMP(s.created_at) AS created_ts, UNIX_TIMESTAMP(s.updated_at) AS updated_ts,
                  UNIX_TIMESTAMP(s.archived_at) AS archived_ts,
+                 (SELECT LEFT(m.message,180) FROM stu_chat_messages m
+                   WHERE m.channel='console' AND m.user_id=s.user_id
+                     AND m.session_id=s.id AND m.deleted_at IS NULL
+                   ORDER BY m.id DESC LIMIT 1) AS last_message_preview,
                  (SELECT COUNT(*) FROM stu_chat_messages m
                    WHERE m.channel='console' AND m.user_id=s.user_id
                      AND m.session_id=s.id AND m.deleted_at IS NULL) AS message_count,
