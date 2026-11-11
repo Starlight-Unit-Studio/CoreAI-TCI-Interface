@@ -220,6 +220,12 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
         ['reason'=>'image_followup', 'step'=>$used]);
       $text = $callModel($prompt);
       $final = is_string($text) ? trim($text) : '';
+      // This path returns before the outer reply sanitizer. Apply the exact
+      // same public-output filter here, never expose raw thinking or tools.
+      if ($final !== '' && function_exists('ember_sanitize_public_reply')) {
+        $final = trim((string)ember_sanitize_public_reply($final,
+          (string)($GLOBALS['STU_EMBER_LAST_THINKING'] ?? '')));
+      }
       // No unverified second tool, no broken marker leaked as public prose.
       if ($final === '' || coreui_agent_next_tool($final,
           ['web','browse','python','archive','skill','image']) !== null
