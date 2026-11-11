@@ -26,6 +26,7 @@
   <script src="./js/console-gate.js?v=0484297471444245971558612"></script>
   <script src="./js/coreui-preferences.js?v=0004145186774094057353830"></script>
   <script src="./js/coreui-ui-language.js?v=0850224961537363286304733"></script>
+  <link rel="stylesheet" href="./css/coreui-projects.css?v=1" />
 </head>
 <body class="app-body coreui-body">
   <input
@@ -176,6 +177,14 @@
         </span>
       </button>
 
+      <section class="projects-nav" id="projectsNav" aria-labelledby="projectsNavTitle">
+        <div class="projects-nav-heading">
+          <span id="projectsNavTitle">Projekte</span>
+          <button id="projectsCreateBtn" type="button" aria-label="Neues Projekt">＋</button>
+        </div>
+        <div class="projects-nav-list" id="projectsNavList"></div>
+      </section>
+
       <section class="session-zone" aria-labelledby="sessionZoneTitle">
         <div class="section-label" id="sessionZoneTitle">
           <span class="section-rune" aria-hidden="true">⟐</span>
@@ -296,6 +305,53 @@
           <button type="button" class="welcome-prompt" data-welcome-prompt="Kannst du einen Text von mir sprachlich überarbeiten?">
             <span class="welcome-prompt-icon" aria-hidden="true">≋</span><span>Kannst du einen Text von mir überarbeiten?</span>
           </button>
+        </div>
+      </section>
+      <section class="project-home" id="coreuiProjectHome" hidden aria-label="Projektstartseite">
+        <div class="project-home-content">
+          <div class="project-mode-switch" aria-label="Arbeitsmodus">
+            <button type="button" class="selected">Chat</button>
+            <button type="button" disabled title="Work wird separat entwickelt">Work</button>
+          </div>
+          <header class="project-home-header">
+            <div class="project-home-title"><span aria-hidden="true">▱</span><h2 id="projectHomeName"></h2></div>
+            <div class="project-home-header-actions">
+              <button type="button" id="projectHomeShare" aria-label="Projekt teilen" title="Projekt teilen">⇧</button>
+              <button type="button" id="projectHomeMore" aria-label="Projektmenü" aria-expanded="false">•••</button>
+            </div>
+            <div class="project-home-popover" id="projectHomePopover" hidden>
+              <button type="button" data-project-action="settings">Projekteinstellungen</button>
+              <button type="button" data-project-action="pin" id="projectHomePin">Projekt anpinnen</button>
+              <button type="button" data-project-action="rename">Projekt umbenennen</button>
+              <button type="button" data-project-action="delete" class="danger">Projekt löschen</button>
+            </div>
+          </header>
+          <form class="project-new-chat" id="projectHomeChatForm">
+            <textarea id="projectHomeChatInput" rows="2" aria-label="Neuer Chat in diesem Projekt" placeholder="Neuer Chat in diesem Projekt"></textarea>
+            <div class="project-new-chat-actions">
+              <button type="button" id="projectHomeAttach" title="Projektquellen anzeigen">＋</button>
+              <span class="project-chat-effort">Normal <span aria-hidden="true">⌄</span></span>
+              <button type="submit" id="projectHomeChatSend" aria-label="Nachricht senden">↑</button>
+            </div>
+          </form>
+          <nav class="project-home-tabs" aria-label="Projektansicht">
+            <button type="button" id="projectTabChats" class="active" aria-selected="true">Chats</button>
+            <button type="button" id="projectTabSources" aria-selected="false">Quellen</button>
+          </nav>
+          <section class="project-chat-results" id="projectChatsPanel" aria-label="Projektchats">
+            <div id="projectHomeChatList"></div>
+          </section>
+          <section class="project-source-results" id="projectSourcesPanel" aria-label="Projektquellen" hidden>
+            <div class="project-source-controls">
+              <label>Sortieren <select id="projectSourceSort"><option value="newest">Neueste zuerst</option><option value="oldest">Älteste zuerst</option><option value="name">Name</option></select></label>
+              <label>Filter <select id="projectSourceFilter"><option value="all">Alle</option><option value="text">Dokumente</option><option value="image">Bilder</option></select></label>
+            </div>
+            <label class="project-source-upload" for="projectSourceFile">＋ <span>Quellen hinzufügen</span>
+              <input type="file" id="projectSourceFile" hidden multiple accept=".pdf,.docx,.txt,.md,.csv,.json,.xml,.yml,.yaml,.ini,.py,.php,.js,.html,.css,.sql,.png,.jpg,.jpeg,.gif,.webp" />
+            </label>
+            <p class="project-upload-progress" id="projectSourceStatus" role="status" aria-live="polite"></p>
+            <div id="projectHomeSourceList"></div>
+          </section>
         </div>
       </section>
       <!-- Only shown in a saved/active chat, never on the unsaved welcome screen. -->
@@ -653,11 +709,41 @@
   <script src="./js/coreui-send-keys.js?v=0380580655333207340875842"></script>
   <script src="./js/coreui-pet-dock.js?v=0260621331298689472398963"></script>
   <script src="./js/console-app.js?v=0996263078763357508129012"></script>
+  <script src="./js/coreui-projects.js?v=1"></script>
   <script src="./js/coreui-core-mode.js?v=0354958960097784091410083"></script>
   <script src="./js/coreui-reasoning-effort.js?v=0460931670262011947396865"></script>
   <script src="./js/coreui-core-install.js?v=0220003641459915669630984"></script>
   <script src="./js/coreui-model-library.js?v=0462424467087605919462233"></script>
   <script src="./js/coreui-artifacts.js?v=1069339270452640197429799"></script>
+
+  <div class="project-modal-scrim" id="projectModalScrim" hidden>
+    <section class="project-modal" role="dialog" aria-modal="true" aria-labelledby="projectModalTitle">
+      <header><h2 id="projectModalTitle">Projekt</h2><button type="button" id="projectModalClose" aria-label="Schließen">✕</button></header>
+      <div id="projectModalCreate" hidden>
+        <label>Projektname <input type="text" id="projectCreateName" maxlength="80" placeholder="Projektname"/></label>
+        <label>Erinnerung <select id="projectCreateMode"><option value="open">Standard</option><option value="isolated">Nur projektbezogen</option></select></label>
+        <p class="project-modal-hint" id="projectCreateModeHint">Standard: normale Erinnerungen sind verfügbar. Isoliert: nur Inhalte dieses Projekts.</p>
+        <button class="project-modal-primary" id="projectCreateConfirm" type="button">Projekt erstellen</button>
+      </div>
+      <div id="projectModalSettings" hidden>
+        <label>Projektname <input type="text" id="projectSettingsName" maxlength="80"/></label>
+        <label>Anweisungen <small>Lege den Kontext fest und passe an, wie Mara in diesem Projekt antwortet.</small>
+          <textarea id="projectSettingsInstructions" maxlength="12000" rows="5"></textarea>
+        </label>
+        <label>Erinnerung <select id="projectSettingsMode" disabled><option value="open">Standard</option><option value="isolated">Nur projektbezogen</option></select></label>
+        <p class="project-modal-hint" id="projectSettingsModeHint"></p>
+        <label>Zugriff auf den Space <select disabled><option>Deaktiviert</option></select></label>
+        <p class="project-modal-hint">Eine Space-Anbindung kann später eingerichtet werden.</p>
+        <button class="project-modal-primary" id="projectSettingsSave" type="button">Änderungen speichern</button>
+        <button class="project-modal-danger" id="projectSettingsDelete" type="button">Projekt löschen</button>
+      </div>
+      <div id="projectModalShare" hidden>
+        <p class="project-modal-hint">Nur du hast derzeit Zugriff auf dieses Projekt. Zusammenarbeit und Einladungslinks benötigen eine gesicherte Rechteverwaltung.</p>
+        <label>Wer hat Zugriff <select disabled><option>Nur der Eigentümer</option></select></label>
+      </div>
+      <p class="project-modal-error" id="projectModalError" role="alert"></p>
+    </section>
+  </div>
 
   <!-- 0.6.87: chat menu, dialogs and the search inside a chat (js/coreui-chat-menu.js) -->
   <div class="chat-menu" id="chatMenu" role="menu" aria-labelledby="chatMenuTitle" hidden>
