@@ -1,0 +1,28 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.4
+Datum: 11.11.2026
+Thema: Identische TCI-Kopf-Typografie, goldener Unterstrich
+
+MAIN-BASIS
+- main: 0.7.3, PR #256 bereits gemergt.
+- Angezeigte mobile Ansicht: TCI CORE: grau und kleiner, Mara blau und groesser.
+
+AENDERUNG
+- css/coreui-chat-tci-layout.css: font/color gemeinsam fuer msg-core-role und msg-core-persona gesetzt; nur msg-core-role traegt text-decoration-color: var(--amb).
+- app.html: neuer contentbasierter CSS-Cache-Fingerprint.
+- scripts/tci-chat-message-selftest.cjs: gemeinsames Schriftformat und Goldfarbe als verbindliche Assertions.
+- scripts/tci-chat-layout-ui-selftest.cjs: berechnete Typografie und Goldfarbe im Browser vergleichen.
+- VERSION, sechs Oberflaechen, Bootstrap, README, Changelog, TXT-Archiv, Branding und Preflight-Versionsmarkierungen synchronisiert.
+
+NICHT VERAENDERT
+- Eigener TCI-Anzeigename, die volle Nachrichtenbreite und Bildabschluss nach Bildgenerierung (0.7.3).
+- Installer, Modelfile, Core-Auswahl, DB und lokale Serverkonfiguration.
+
+NAECHSTE THEMEN
+- Eigenstaendig von Mara initiierte Nachrichten: Events/Erlaubnis/Cooldown getrennt von bereits implementierter Bildabschlussantwort planen und testen.
+- Installer/Preflight: setup.sh ruft scripts/preflight.sh nach install.sh auf. Konkreten Fehler aus dem aktuellen Lauf feststellen und nur den verursachenden Pfad korrigieren. Historische Selbsttestfehler wurden bereits in frueheren Versionen korrigiert.
+
+ABNAHME OFFEN
+- node scripts/tci-chat-message-selftest.cjs
+- node scripts/tci-chat-layout-ui-selftest.cjs
+- python3 scripts/version-merge-check.py --base-version 0.7.3
+- Offizielle Preflights auf dem Zielsystem; erst danach Merge.
