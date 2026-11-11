@@ -148,6 +148,7 @@ UI_FILES=(
   scripts/tci-language-selftest.cjs
   css/coreui-chat-tci-layout.css
   scripts/tci-chat-message-selftest.cjs
+  scripts/tci-chat-layout-ui-selftest.cjs
   setup.sh
   api/rag_lite.php
   api/ai_settings.php
@@ -1308,6 +1309,16 @@ if command -v php >/dev/null 2>&1; then
       fi
     else
       ok 'Chat-Menue: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+    fi
+    # 0.7.3: TCI identity and full-width assistant replies at phone and desktop widths.
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/tci-chat-layout-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'TCI CORE: Avatar, Namenszeilen und volle Antwortbreite im Browser geprueft.'
+      else
+        fail 'TCI CORE: Responsiver Chat-Layouttest fehlgeschlagen.'
+      fi
+    else
+      ok 'TCI CORE: Layout-Browsertest uebersprungen (Playwright nicht installiert).'
     fi
     # 0.7.1: Settings > Pets and the pet in Mara's work line; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
