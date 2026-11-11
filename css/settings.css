@@ -1598,6 +1598,8 @@
 @media (max-width: 600px) {
   .settings-body .pet-sprite, .settings-body .pet-egg { width: 48px; height: 48px; }
   .settings-body .pet-sprite .coreai-pet { width: 48px !important; height: 48px !important; }
+  .settings-body .pet-sprite .coreai-pet[data-sprite-version="1"],
+  .settings-body .pet-sprite .coreai-pet[data-sprite-version="2"] { height: 52px !important; }
   .settings-body #view-pets .cfg-view-head { flex-wrap: wrap; }
 }
 
