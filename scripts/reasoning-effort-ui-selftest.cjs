@@ -106,6 +106,8 @@ async function run(){
   assert.match(ids.reasonEffortChip.getAttribute('aria-label') || '', /^Denken:/,
     'accessibility label follows the short Denken wording');
   assert.deepEqual(ids.reasonEffortOptions.children.map(x=>x.getAttribute('data-level')),['off','','low','high']);
+  assert.equal(ids.reasonEffortOptions.children[1].children[1].textContent,'Normal',
+    'empty effort key must appear as Normal, not Core-Standard');
   assert.equal(ids.reasonEffortOptions.children.some(x=>x.getAttribute('data-level')==='medium'),false,
     'unknown effort must not appear');
   await control.choose('low');
@@ -113,6 +115,12 @@ async function run(){
   assert.equal(selected,'low');
   assert.equal(ids.reasonEffortLabel.textContent,'Gering');
   assert.ok(calls.some(x=>x.action==='general'&&x.settings.thinking_level==='low'));
+  await control.choose('');
+  assert.equal(ids.reasonEffortLabel.textContent,'Normal',
+    'choosing Core default keeps its empty backend key but renders Normal');
+  assert.equal(selected,'');
+  assert.equal(think,true);
+  await control.choose('low');
   await control.choose('off');
   assert.equal(ids.reasonEffortLabel.textContent,'Aus');
   assert.equal(selected,'low','turning thinking off must not erase effort');

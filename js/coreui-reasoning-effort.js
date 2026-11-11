@@ -29,7 +29,7 @@
     }
     function title(key) {
       return key === 'off' ? 'Aus' : key === 'on' ? 'An'
-        : key === '' ? 'Core-Standard' : (LABEL[key] || 'Core-Standard');
+        : key === '' ? 'Normal' : (LABEL[key] || 'Normal');
     }
     function render() {
       var active = selected();

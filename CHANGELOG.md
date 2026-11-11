@@ -1,5 +1,12 @@
 # CoreAI: TCI Interface
 
+## 0.6.99 - 11.11.2026
+
+- **Shorter thinking-effort label:** The composer Denkaufwand control now displays `Normal` instead of the lengthy `Core-Standard`, both in its selection list and on the button after selection. The label is defined in one place in `js/coreui-reasoning-effort.js`.
+- **Behavior unchanged:** The underlying empty `thinking_level` value continues to mean the current Core's own default; `Aus`, `Gering`, `Mittel`, `Hoch` and other supported levels retain their meaning. No Core settings, permissions, models, API schema, defaults or persisted account values are modified.
+- **Regression coverage:** The Denkaufwand UI selftest now checks that the empty-key radio option is labeled `Normal` and that selecting it persists the same empty string while thinking remains enabled.
+- **Version and cache:** One merge = 0.6.99. The changed reasoning-effort script and version bootstrap receive new content-derived SHA-256 cache keys; all six HTML page versions, README, changelogs, handover, branding and Preflight headers are synchronized.
+
 ## 0.6.98 - 11.11.2026
 
 - **Fix the CoreAI uninstall Preflight false failure and unintended prompt:** The isolated shell fixture executed `uninstall.sh --purge-data` under a redirected stdin and wrongly assumed it was noninteractive. The uninstall runner explicitly reads `/dev/tty`, so a live SSH terminal remained usable, displayed `COREAI DATEN ENDGUELTIG LOESCHEN` during installation, and could let the mock fixture complete. The test then falsely reported `Runner accepted noninteractive purge`, blocking the installer.
