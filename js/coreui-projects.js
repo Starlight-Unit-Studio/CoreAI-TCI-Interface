@@ -87,7 +87,7 @@
     chats.forEach(function(s){
       var btn=action('',function(){var a=chatApp();if(a&&a.select)a.select(s.id);},'project-chat-result');
       btn.appendChild(el('strong','',s.title||'Chat'));
-      btn.appendChild(el('small','',(s.last_message_preview||(''+(s.message_count||0)+' Nachrichten')).replace(/\\s+/g,' ').slice(0,200)));
+      btn.appendChild(el('small','',(s.last_message_preview||(''+(s.message_count||0)+' Nachrichten')).replace(/\s+/g,' ').slice(0,200)));
       list.appendChild(btn);
     });
   }
@@ -170,7 +170,7 @@
     setTab('chats');renderHeader();renderSidebar();renderChats();
     document.getElementById('messagesArea').scrollTop=0;
     try {history.replaceState(null,'',location.pathname+'?project='+encodeURIComponent(id));}catch(e){}
-    var drawer=document.getElementById('sidebarControl');if(drawer&&innerWidth<800)drawer.checked=false;
+    var app=chatApp();if(app&&app.closeDrawer)app.closeDrawer();
   }
   function closeHome() {
     if(!current && $('coreuiProjectHome').hidden)return;
@@ -210,7 +210,7 @@
         : 'Dieses Projekt kann zusätzlich auf die normalen Erinnerungen zugreifen. Der Erinnerungsmodus bleibt unverändert.';
     }
     $('projectModalScrim').hidden=false;
-    var focus=which==='create'?$ ('projectCreateName'):which==='settings'?$ ('projectSettingsName'):$('projectModalClose');
+    var focus=which==='create'?$('projectCreateName'):which==='settings'?$('projectSettingsName'):$('projectModalClose');
     if(focus)focus.focus();
   }
   function closeModal() {$('projectModalScrim').hidden=true;}
@@ -246,6 +246,7 @@
     }).then(refresh).catch(function(e){alert(fail(e));});
   }
   $('projectsCreateBtn').addEventListener('click',function(){openModal('create');});
+  $('projectHomeDrawerToggle').addEventListener('click',function(){var app=chatApp();if(app&&app.openDrawer)app.openDrawer();});
   $('projectModalClose').addEventListener('click',closeModal);
   $('projectModalScrim').addEventListener('click',function(e){if(e.target===this)closeModal();});
   document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeModal();$('projectHomePopover').hidden=true;}});
