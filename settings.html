@@ -1324,7 +1324,7 @@
 
         <!-- PETS -->
         <section class="cfg-view" id="view-pets" role="tabpanel" aria-labelledby="tab-pets" tabindex="-1" hidden>
-          <header class="cfg-view-head"><div><span class="cfg-kicker">PERSÖNLICH // PETS</span><h2>Pet auswählen</h2><p>Ein animierter Begleiter am Anfang von Maras Arbeitszeile im Chat, solange sie an deiner Anfrage arbeitet.</p></div><button class="arc-btn pet-upload-open" id="petUploadOpen" type="button"><svg aria-hidden="true"><use href="#i-upload" /></svg>Pet hochladen</button></header>
+          <header class="cfg-view-head"><div><span class="cfg-kicker">PERSÖNLICH // PETS</span><h2>Pet auswählen</h2><p>Dein animierter Begleiter bleibt im Chat sichtbar, reagiert auf Maras Aktivität und lässt sich mit dem Finger verschieben.</p></div><button class="arc-btn pet-upload-open" id="petUploadOpen" type="button"><svg aria-hidden="true"><use href="#i-upload" /></svg>Pet hochladen</button></header>
           <p class="sec-status" id="petStatus" role="status" aria-live="polite">Pets werden geladen …</p>
           <!-- 0.7.1: after the reference screenshots; original CoreAI pets (js/coreui-pets-settings.js, api/pets.php). -->
           <section class="settings-panel cfg-card wide sec-group pet-list" aria-label="Pets">
@@ -1340,7 +1340,7 @@
               <label class="pz-field" for="petName"><strong>Pet-Name</strong><input id="petName" type="text" maxlength="40" placeholder="Benenne dein Pet" autocomplete="off" /></label>
               <label class="pz-field" for="petDescription"><strong>Pet-Beschreibung (optional)</strong><textarea id="petDescription" rows="3" maxlength="500" placeholder="Beschreibe dein Pet"></textarea></label>
               <small class="pet-hint">Bis zu 500 Zeichen</small>
-              <div class="pz-field"><strong id="petFileLabel">Sprite-Sheet</strong><div class="pet-file"><label class="pet-file-btn" for="petFile">Datei auswählen</label><span id="petFileName">Keine ausgewählt</span><input class="visually-hidden" id="petFile" type="file" accept="image/png,image/webp" aria-labelledby="petFileLabel" /></div></div>
+              <div class="pz-field"><strong id="petFileLabel">Sprite-Sheet (eine Reihe oder OpenPet v1/v2)</strong><div class="pet-file"><label class="pet-file-btn" for="petFile">Datei auswählen</label><span id="petFileName">Keine ausgewählt</span><input class="visually-hidden" id="petFile" type="file" accept="image/png,image/webp" aria-labelledby="petFileLabel" /></div></div>
               <small class="pet-hint">Transparentes PNG oder WebP: quadratische Einzelbilder nebeneinander in einer Reihe (2 bis 24), 16 bis 512 Pixel hoch, bis zu 5 MB.</small>
               <div class="pet-preview" id="petPreview" hidden><span id="petPreviewSprite"></span><small id="petPreviewInfo"></small></div>
               <p class="sec-confirm-error" id="petUploadError" role="alert"></p>
