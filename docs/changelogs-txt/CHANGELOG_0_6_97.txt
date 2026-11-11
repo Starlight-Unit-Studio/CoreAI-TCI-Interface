@@ -1,0 +1,21 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.97
+11.11.2026
+
+- Fuer die in der Admin-Nutzerliste sichtbaren lang-xxxxxxxx@coreui.invalid
+  ist scripts/account-language-selftest.php verantwortlich.
+  Er erzeugte Test-IDs zwischen 1,5 und 1,9 Mrd und schrieb beim
+  normalen Preflight in die Produktivdatenbank.
+- Das beabsichtigte Transaktions-Rollback verhinderte auf einigen
+  Systemen nicht, dass Testkonten zurueckblieben. Der genaue Grund
+  ist ohne DB-Forensik nicht belegt.
+- Docker und Native Preflight erzwingen COREUI_SELFTEST_DB=0,
+  bestaetigen die unterbleibenden produktiven DB-Zugriffe.
+- Echte MariaDB-Integrationstests nur noch mit expliziter getrennter
+  DSN, Credentials und *_selftest-Datenbank; Produktions-DB
+  wird zurueckgewiesen.
+- Manueller Cleanup mit Vorschau, exakter Test-Namenssignatur,
+  passenden IDs, ungesetztem Passwort, Schutz fuer verknuepfte
+  Daten und ausdruecklicher interaktiver Bestaetigung.
+- Keine automatische Konto-Loeschung bei Installation oder Upgrade.
+- PHP-Sicherheits-Selbsttest, UI-Version, Asset-Cache, Branding,
+  Changelog, README und Preflight entsprechend synchronisiert.
