@@ -9,6 +9,7 @@ if (PHP_SAPI !== 'cli') {
 define('STU_CHAT_LIB', 1);
 require dirname(__DIR__) . '/api/chat.php';
 require_once dirname(__DIR__) . '/api/console_action_store.php';
+require_once dirname(__DIR__) . '/api/console_feedback.php';
 
 function actions_test_expect(bool $condition, string $message): void {
   if (!$condition) throw new RuntimeException($message);
@@ -29,6 +30,13 @@ actions_test_expect(str_contains($migration, 'browse_job_id'), 'Exakte Browserjo
 actions_test_expect(str_contains($editMigration, 'stu_console_message_revisions'), 'Migration 009 besitzt keine Revisionshistorie.');
 actions_test_expect(str_contains($editMigration, "'edit'"), 'Migration 009 erweitert den Generierungsmodus nicht um Bearbeitung.');
 actions_test_expect(str_contains($endpoint, 'stu_require_csrf()'), 'Schreibende Nachrichtenaktionen besitzen keinen CSRF-Schutz.');
+actions_test_expect(str_contains($endpoint, "action === 'feedback_reply'")
+  && str_contains($endpoint, "'event_id'=>$eventId")
+  && str_contains($client, "action: 'feedback_reply'"),
+  'Persistentes Feedback startet eine eigene, authentifizierte Mara-Reaktion.');
+actions_test_expect(str_contains($client, "is-feedback-up")
+  && str_contains($client, "is-feedback-down")
+  && str_contains($client, "Mara"), 'Beide Bewertungsdaumen haben eigene UI-Zustaende.');
 actions_test_expect(str_contains($stream, '$generationRequestId'), 'Stream kann keine bestaetigte Nachrichtenaktion ausfuehren.');
 actions_test_expect(str_contains($stream, '$excludeReplyToId = $afterId'), 'Alternative Antwort schliesst die alte Antwort nicht aus dem Kontext aus.');
 actions_test_expect(str_contains($stream, 'coreui_console_generation_attach_browse'), 'Browserjob wird nicht exakt mit der Aktion verbunden.');
@@ -43,6 +51,7 @@ actions_test_expect(!str_contains($markdown, '.innerHTML'), 'Markdown-Renderer v
 $pdo = stu_pdo();
 actions_test_expect(coreui_console_actions_schema_ready($pdo), 'Migration 008 ist nicht aktiv.');
 actions_test_expect(coreui_console_edits_schema_ready($pdo), 'Migration 009 ist nicht aktiv.');
+actions_test_expect(coreui_feedback_events_ready($pdo), 'Migration 035 fuer Maras Feedback-Reaktionen fehlt.');
 
 $suffix = bin2hex(random_bytes(6));
 $sessionId = 'actions_' . $suffix;
@@ -97,6 +106,73 @@ try {
   $stFeedbackToken = $pdo->prepare('SELECT emoji FROM stu_chat_reactions WHERE message_id=? AND user_id=? LIMIT 1');
   $stFeedbackToken->execute([$responseId, $uid]);
   actions_test_expect((string)$stFeedbackToken->fetchColumn() === 'coreui_down', 'Feedback verwendet nicht den altkompatiblen ASCII-Token.');
+
+  // 0.7.7: Pressing the selected thumb again keeps the DB vote and the color.
+  $feedback = coreui_console_feedback_toggle($pdo, $uid, $sessionId, $responseId, 'down', $characterId);
+  actions_test_expect($feedback === 'down'
+    && (coreui_console_feedback_map($pdo, $uid, [$responseId])[$responseId] ?? null) === 'down',
+    'Eine wiederholte negative Bewertung muss dauerhaft aktiv bleiben.');
+
+  // A changed rating atomically creates an event to be delivered to Mara.
+  $feedbackEvent = null;
+  $feedback = coreui_console_feedback_toggle($pdo, $uid, $sessionId, $responseId,
+    'up', $characterId, $feedbackEvent);
+  actions_test_expect($feedback === 'up' && (int)$feedbackEvent > 0,
+    'Der positive Daumen bleibt gespeichert und erzeugt ein Feedback-Event.');
+
+  $modelCalls = 0;
+  $reply = coreui_feedback_reply_run($pdo, $uid, $sessionId, (int)$feedbackEvent,
+    'Action Test', static function (string $prompt) use (&$modelCalls): string {
+      $modelCalls++;
+      actions_test_expect(str_contains($prompt, 'POSITIV:')
+        && str_contains($prompt, 'Erste Antwort.')
+        && str_contains($prompt, 'Action Test'),
+        'Mara bekommt die konkrete Antwort, den Absender und das positive Feedback.');
+      return 'Danke, das freut mich! Ich mache so weiter.';
+    });
+  $newId = (int)($reply['response_message_id'] ?? 0);
+  actions_test_expect($reply['status'] === 'done' && $newId > 0 && $modelCalls === 1,
+    'Mara antwortet einmal nach einer positiven Bewertung.');
+  $stResponse = $pdo->prepare('SELECT message,reply_to_id,thinking_content FROM stu_chat_messages WHERE id=?');
+  $stResponse->execute([$newId]);
+  $saved = $stResponse->fetch(PDO::FETCH_ASSOC);
+  actions_test_expect(is_array($saved) && $saved['message'] === 'Danke, das freut mich! Ich mache so weiter.'
+    && $saved['reply_to_id'] === null && $saved['thinking_content'] === null,
+    'Die Reaktion ist eine echte, eigenstaendige Chat-Nachricht OHNE Thinking.');
+
+  $again = coreui_feedback_reply_run($pdo, $uid, $sessionId, (int)$feedbackEvent,
+    'Action Test', static function () use (&$modelCalls): string {
+      $modelCalls++; return 'Zweite unerlaubte Antwort.';
+    });
+  actions_test_expect($again['status'] === 'done' && $modelCalls === 1
+    && (int)$again['response_message_id'] === $newId,
+    'Doppelte HTTP-Anfragen koennen keine zweite Reaktion erzeugen.');
+
+  $secondEvent = null;
+  coreui_console_feedback_toggle($pdo, $uid, $sessionId, $responseId, 'down',
+    $characterId, $secondEvent);
+  actions_test_expect((int)$secondEvent > (int)$feedbackEvent,
+    'Wechsel von gruen zu rot loest eine neue Bewertung aus.');
+  $negative = coreui_feedback_reply_run($pdo, $uid, $sessionId, (int)$secondEvent,
+    'Action Test', static function (string $prompt): string {
+      actions_test_expect(str_contains($prompt, 'NEGATIV:'),
+        'Mara erkennt eine negative Bewertung als negativ.');
+      return 'Danke fuer die Rueckmeldung. Ich kann das besser erklaeren.';
+    });
+  actions_test_expect($negative['status'] === 'done' && (int)$negative['response_message_id'] > $newId,
+    'Negativer Daumen bewirkt eine neue persoenliche Rueckmeldung.');
+  $sameEvent = null;
+  coreui_console_feedback_toggle($pdo, $uid, $sessionId, $responseId, 'down',
+    $characterId, $sameEvent);
+  actions_test_expect($sameEvent === null, 'Derselbe Daumen erzeugt kein drittes Event.');
+
+  $foreignEventDenied = false;
+  try {
+    coreui_feedback_event_claim($pdo, $uid + 1, $sessionId, (int)$secondEvent);
+  } catch (Throwable $e) {
+    $foreignEventDenied = true;
+  }
+  actions_test_expect($foreignEventDenied, 'Ein fremder Account darf den Event nicht lesen.');
 
   $edit = coreui_console_edit_prepare(
     $pdo,

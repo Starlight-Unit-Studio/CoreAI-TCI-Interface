@@ -1651,8 +1651,9 @@
     var paths = {
       copy: 'M8 8h11v13H8z M5 3h11v3H6v11H3V3z',
       edit: 'M4 17.2V21h3.8L19 9.8 14.2 5 3 16.2z M20.7 7.1c.4-.4.4-1 0-1.4l-2.4-2.4a1 1 0 0 0-1.4 0L15 5.2 19.8 10z',
-      up: 'M12 4 4 13h5v7h6v-7h5z',
-      down: 'M12 20 4 11h5V4h6v7h5z',
+      // Filled thumb silhouettes preserve the original 15px action sizing.
+      up: 'M1 21h4V9H1v12z M23 10c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z',
+      down: 'M1 3h4v12H1V3zm22 8c0 1.1-.9 2-2 2h-6.31l.95 4.57.03.32c0 .41-.17.79-.44 1.06L14.17 23l-6.58-6.59C7.22 16.05 7 15.55 7 15V5c0-1.1.9-2 2-2h9c.83 0 1.54.5 1.84 1.22l3.02 7.05c.09.23.14.47.14.73v-2z',
       retry: 'M18.4 5.6A9 9 0 1 0 21 12h-2.4a6.6 6.6 0 1 1-1.9-4.6L13 11h8V3z',
       more: 'M11 3h2v2h-2z M11 8h2v13h-2z',
       continue: 'M7 4l11 8L7 20z',
@@ -1737,6 +1738,36 @@
         var otherActive = !!record.feedback && record.feedback !== value;
         otherButton.classList.toggle('active', otherActive);
         otherButton.setAttribute('aria-pressed', otherActive ? 'true' : 'false');
+      }
+      // The vote is already saved. React separately to avoid a long-running
+      // model call holding the button or its green/red state hostage.
+      var eventId = Number(data.event_id) || 0;
+      if (eventId > 0) {
+        var notice = document.createElement('span');
+        notice.className = 'msg-feedback-status';
+        notice.setAttribute('role', 'status');
+        notice.textContent = (state.assistantName || 'Mara') + ' reagiert…';
+        var actions = button.closest('.msg-actions');
+        if (actions) actions.appendChild(notice);
+        postConsoleAction({
+          action: 'feedback_reply',
+          session_id: String(ses.id),
+          event_id: eventId,
+          character_id: state.characterId
+        }).then(function (outcome) {
+          if (outcome.status === 'done' && isActiveSession(ses.id)) {
+            return loadChatHistory(ses).then(function () { scrollToBottom(); });
+          }
+          if (outcome.status === 'failed') {
+            notice.textContent = 'Reaktion nicht moeglich. Bewertung bleibt gespeichert. Erneut tippen zum Wiederholen.';
+            return;
+          }
+          notice.remove();
+        }).catch(function () {
+          notice.textContent = 'Mara konnte noch nicht reagieren. Deine Bewertung ist gespeichert.';
+        }).finally(function () {
+          if (!notice.textContent.includes('nicht')) notice.remove();
+        });
       }
     }).catch(function (error) {
       button.classList.add('error');
@@ -1929,6 +1960,8 @@
 
     var up = createActionButton('up', 'Antwort hilfreich');
     var down = createActionButton('down', 'Antwort nicht hilfreich');
+    up.classList.add('is-feedback-up');
+    down.classList.add('is-feedback-down');
     up.classList.toggle('active', record && record.feedback === 'up');
     down.classList.toggle('active', record && record.feedback === 'down');
     up.setAttribute('aria-pressed', record && record.feedback === 'up' ? 'true' : 'false');

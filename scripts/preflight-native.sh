@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.6: Restore original mobile insight block sizes and scrolling.
+# CoreAI: TCI Interface 0.7.7: Persistent red/green feedback thumbs and Mara replies.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -398,6 +398,11 @@ UI_FILES=(
   scripts/chat-follow-selftest.cjs
   js/coreui-chat-follow.js
   scripts/message-actions-selftest.php
+  database/migrations/035_feedback_followups.sql
+  api/console_feedback_store.php
+  api/console_feedback.php
+  css/coreui-feedback.css
+  scripts/feedback-ui-selftest.cjs
   scripts/markdown-selftest.js
   scripts/personalization-selftest.php
   js/coreui-personalization-settings.js
@@ -1559,6 +1564,12 @@ if command -v php >/dev/null 2>&1; then
   else
     message_actions_selftest="${message_actions_selftest//$'\r'/}"
     fail "$message_actions_selftest"
+  fi
+
+  if node "$PROJECT_ROOT/scripts/feedback-ui-selftest.cjs" >/dev/null 2>&1; then
+    ok 'Feedback: Daumenfarben, Speicherung, Mara-Reaktion ohne Thinking geprueft.'
+  else
+    fail 'Feedback: UI-/Backend-Vertrag fuer Bewertungen fehlerhaft.'
   fi
 
   if [[ -f "$CONFIG_FILE" ]]; then

@@ -63,8 +63,11 @@ function coreui_console_feedback_toggle(
   string $sessionId,
   int $messageId,
   string $value,
-  string $characterId
+  string $characterId,
+  ?int &$eventId = null
 ): ?string {
+  $enqueueEvent = func_num_args() >= 7;
+  $eventId = null;
   // ASCII-Tokens funktionieren auch auf aelteren STU-Datenbanken, deren bereits
   // vorhandene Reaktionstabelle noch nicht mit utf8mb4 angelegt wurde. Genau
   // dort schlug das Speichern der eigentlichen Emoji-Zeichen mit einem SQL-
@@ -97,23 +100,30 @@ function coreui_console_feedback_toggle(
       if ($reactionValue === $token || $reactionValue === $sameLegacy) $existing = $reactionId;
     }
 
-    // Pro Benutzer und Ember-Antwort existiert hoechstens eine der beiden
-    // CoreUI-Bewertungen. Auch Altwerte aus 0.5.0 werden mit entfernt.
-    if ($feedbackIds !== []) {
-      $deletePlaceholders = implode(',', array_fill(0, count($feedbackIds), '?'));
+    // An already selected thumb must stay selected. Clean legacy duplicates
+    // without unselecting the vote or firing another model response.
+    $deleteIds = $existing > 0
+      ? array_values(array_diff($feedbackIds, [$existing]))
+      : $feedbackIds;
+    if ($deleteIds !== []) {
+      $deletePlaceholders = implode(',', array_fill(0, count($deleteIds), '?'));
       $pdo->prepare("DELETE FROM stu_chat_reactions WHERE id IN ($deletePlaceholders)")
-        ->execute($feedbackIds);
+        ->execute($deleteIds);
     }
-    if ($existing > 0) {
-      $selected = null;
-    } else {
+    if ($existing === 0) {
       $pdo->prepare(
         "INSERT INTO stu_chat_reactions
           (message_id,channel,alliance_id,user_id,character_id,emoji,created_at)
          VALUES (?,'console',NULL,?,?,?,NOW())"
       )->execute([$messageId, $uid, $characterId, $token]);
-      $selected = $value;
+      // The new event and reaction are one atomic database transaction.
+      if ($enqueueEvent) {
+        $eventId = coreui_feedback_event_append($pdo, $uid, $sessionId, $messageId, $value);
+      }
+    } elseif ($enqueueEvent) {
+      $eventId = coreui_feedback_latest_retry($pdo, $uid, $sessionId, $messageId, $value);
     }
+    $selected = $value;
     if ($ownsTransaction) $pdo->commit();
     return $selected;
   } catch (Throwable $e) {

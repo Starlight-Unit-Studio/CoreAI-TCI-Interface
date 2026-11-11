@@ -7,6 +7,7 @@ require_once __DIR__ . '/console_action_store.php';
 require_once __DIR__ . '/guest_access.php';
 require_once __DIR__ . '/user_policy.php';
 require_once __DIR__ . '/console_agent_runs.php';
+require_once __DIR__ . '/console_feedback.php';
 
 $pdo = stu_pdo();
 $uid = stu_require_user_id();
@@ -113,19 +114,37 @@ try {
   }
 
   if ($action === 'feedback') {
+    if (!coreui_feedback_events_ready($pdo)) {
+      stu_json(['ok'=>false, 'error'=>'feedback_events_migration_required'], 503);
+    }
     $messageId = (int)($body['message_id'] ?? 0);
     $value = strtolower(trim((string)($body['value'] ?? '')));
     $characterId = trim((string)($body['character_id'] ?? ''));
     chat_require_character($pdo, (int)$uid, $characterId);
+    $eventId = null;
     $selected = coreui_console_feedback_toggle(
-      $pdo,
-      (int)$uid,
-      $sessionId,
-      $messageId,
-      $value,
-      $characterId
+      $pdo, (int)$uid, $sessionId, $messageId, $value, $characterId, $eventId
     );
-    stu_json(['ok'=>true, 'message_id'=>$messageId, 'feedback'=>$selected]);
+    // Persist the rating immediately. The browser requests the model reaction
+    // separately, so slow Cores never delay the green/red thumb state.
+    stu_json(['ok'=>true, 'message_id'=>$messageId, 'feedback'=>$selected,
+      'event_id'=>$eventId]);
+  }
+
+  if ($action === 'feedback_reply') {
+    if (!coreui_feedback_events_ready($pdo)) {
+      stu_json(['ok'=>false, 'error'=>'feedback_events_migration_required'], 503);
+    }
+    $eventId = (int)($body['event_id'] ?? 0);
+    $characterId = trim((string)($body['character_id'] ?? ''));
+    $char = chat_require_character($pdo, (int)$uid, $characterId);
+    if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
+    ember_prepare_background_runtime();
+    $done = coreui_feedback_reply_run($pdo, (int)$uid, $sessionId, $eventId,
+      (string)($char['name'] ?? 'Du'));
+    stu_json(['ok'=>true, 'event_id'=>$eventId,
+      'status'=>(string)($done['status'] ?? 'failed'),
+      'response_message_id'=>(int)($done['response_message_id'] ?? 0)]);
   }
 
   if ($action === 'prepare_generation') {
@@ -195,7 +214,7 @@ try {
   $error = $e->getMessage();
   $status = str_contains($error, 'not_found') ? 404
     : (in_array($error, ['generation_busy', 'session_busy'], true) ? 409
-      : (in_array($error, ['message_actions_migration_required', 'message_editing_migration_required', 'agent_runs_migration_required'], true) ? 503 : 400));
+      : (in_array($error, ['message_actions_migration_required', 'message_editing_migration_required', 'agent_runs_migration_required', 'feedback_events_migration_required'], true) ? 503 : 400));
   stu_json(['ok'=>false, 'error'=>$error], $status);
 } catch (Throwable $e) {
   if (function_exists('stu__log_error')) {

@@ -1,0 +1,15 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.7
+Datum: 11.11.2026
+
+- Die Pfeil-Symbole unter Maras Antworten sind durch echte Daumen hoch und runter im gleichen 30x29px-Aktionsformat ersetzt.
+- Eine positive Bewertung wird gruen, eine negative rot. Die farbige Auswahl stammt aus stu_chat_reactions und bleibt dauerhaft auch nach einem Chat-Neuladen sichtbar.
+- Wiederholtes Antippen derselben Bewertung entfernt sie nicht mehr. Ein Wechsel von positiv zu negativ aktualisiert den bestehenden DB-Eintrag.
+- Bei jeder geaenderten Bewertung wird ein neues Feedback-Ereignis atomar in stu_console_feedback_events (Migration 035) gespeichert.
+- Mara bekommt die betroffene Antwort, den urspruenglichen User-Turn und die positive oder negative Rueckmeldung als Kontext. Sie schreibt automatisch eine kurze eigene Chat-Nachricht ohne Thinking, ohne Tools und ueber die bestehende serielle Ollama-Warteschlange.
+- Maras Feedback-Antwort wird ohne thinking_content und ohne reply_to_id gespeichert und ist dadurch eine eigene Nachricht, keine Alternative zur bewerteten Antwort. Das verhindert rekursive Bewertungs-Loops.
+- Gleichzeitige Requests duerfen ein Feedback-Ereignis nur einmal ausfuehren; veraltete Ereignisse werden bei zwischenzeitlichem Bewertungswechsel uebersprungen.
+- Neue Tests fuer dauerhafte Bewertung, Kontotrennung, positive und negative Rueckmeldung, keine doppelten Antworten, fehlendes Thinking und UI-Farben in beide Preflights aufgenommen.
+- Bei Modellfehler bleibt die Bewertung bestehen; eine erneute Auswahl kann die ausstehende Antwort erneut versuchen.
+- Alle Tests auf dem Zielsystem und die Versionspruefung sind vor dem Merge erforderlich.
+
+Version: 0.7.7

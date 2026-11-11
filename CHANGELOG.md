@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.7.7 - 11.11.2026
+
+- **Persistent feedback thumbs:** Replace the assistant answer's up/down arrows with proper thumb icons in the same small action-button footprint. A selected thumbs-up remains green, a thumbs-down red, including after chat reload. Tapping the same selected thumb no longer clears the reaction; changing from up to down replaces it atomically in the existing `stu_chat_reactions` table.
+- **Mara reacts autonomously:** Every changed vote creates a durable feedback event (migration 035). A separate authenticated API request triggers one short, natural model-authored message about the rated response and its original question. This inference uses the current model's existing global serial queue, with **thinking explicitly off**, no skills and no tool dispatch.
+- **No feedback loops:** One stored response per claimed event, with duplicate-request protection, user/session isolation and stale-event checks. Mara's feedback reaction is a separate assistant message with NULL thinking and no response-variant linkage.
+- **Regression and rollout:** Added database and UI tests, extended both Docker and native preflight manifests. A model error does not erase the vote. Full server preflight remains required before merge.
+- **Version:** 0.7.7 follows main 0.7.6.
+
 ## 0.7.6 - 11.11.2026
 
 - **Mara sees her generated images:** The image-generation follow-up now receives the actual completed private PNG(s) through CoreAI's existing Ollama vision input, instead of just a textual "image created" summary.
