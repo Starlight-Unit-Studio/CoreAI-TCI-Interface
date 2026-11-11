@@ -87,3 +87,9 @@ body.project-home-active .messages-area:before,body.project-home-active .message
   .project-new-chat {border-radius:26px;padding:14px 16px}
   .project-modal {padding:22px 17px}
 }
+
+.project-home-content {position:relative}
+.project-home-nav-toggle {position:absolute;left:clamp(16px,5vw,46px);top:24px;background:transparent;border:0;color:#d8d8da;font-size:23px;width:42px;height:42px;cursor:pointer}
+.project-source-download {display:flex;align-items:center;justify-content:center;min-width:36px;min-height:38px;color:#ddd;font:22px system-ui;text-decoration:none}
+.project-source-download:focus-visible,.project-source-download:hover {color:#fff;background:#303033;border-radius:8px}
+@media(max-width:620px){.project-home-nav-toggle{top:16px;left:14px}.project-mode-switch{margin-left:50px;margin-right:auto}}
