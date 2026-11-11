@@ -1795,10 +1795,189 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail "$message_actions_selftest"
   fi
 
-  if node "$PROJECT_ROOT/scripts/feedback-ui-selftest.cjs" >/dev/null 2>&1; then
+  feedback_ui_selftest=''
+  if feedback_ui_selftest="$(node "$PROJECT_ROOT/scripts/feedback-ui-selftest.cjs" 2>&1)"; then
     ok 'Feedback: Daumenfarben, Speicherung, Mara-Reaktion ohne Thinking geprueft.'
   else
-    fail 'Feedback: UI-/Backend-Vertrag fuer Bewertungen fehlerhaft.'
+    feedback_ui_selftest="${feedback_ui_selftest//
+
+  if is_enabled "${COREUI_INSTALL_BROWSE:-0}"; then
+    frame_table_ready=0
+    for _frame_try in {1..15}; do
+      if compose exec -T php php -r \
+          'require "/var/www/coreui/api/db.php"; stu_pdo()->query("SELECT id FROM stu_ember_browse_frames LIMIT 1");' \
+          >/dev/null 2>&1; then
+        frame_table_ready=1
+        break
+      fi
+      sleep 1
+    done
+    if (( frame_table_ready == 1 )); then
+      ok 'Private Live-Browser-Frame-Tabelle ist bereit.'
+    else
+      fail 'Private Live-Browser-Frame-Tabelle fehlt. Browse-Worker neu starten.'
+    fi
+  fi
+
+  # 0.6.1: Mara's voice. Optional: missing or still loading is a hint, never a failure.
+  if is_enabled "${COREUI_INSTALL_VOICE:-1}"; then
+    if service_running voice; then
+      voice_health="$(curl -fsS --max-time 5 "http://127.0.0.1:${COREUI_VOICE_PORT:-18790}/health" 2>/dev/null || true)"
+      if [[ "$voice_health" == *'"ready": true'* ]]; then
+        ok 'Sprachdienst bereit: Mara kann mit Eve vorlesen.'
+      elif [[ "$voice_health" == *'"loading": true'* ]]; then
+        warn 'Sprachdienst laedt Eve noch (beim ersten Start etwa 0,7 GB); Vorlesen folgt von selbst.'
+      else
+        warn 'Sprachdienst laeuft, ist aber nicht bereit. Protokoll: scripts/stack.sh logs voice'
+      fi
+    else
+      warn 'Sprachdienst laeuft nicht; CoreAI arbeitet ohne Vorlesen. Start: scripts/stack.sh up -d voice'
+    fi
+  fi
+
+  LOCK_NAMESPACE="$(compose exec -T php php -r \
+    'require "/var/www/coreui/api/config.php"; echo STU_EMBER_LOCK_NAMESPACE;' 2>/dev/null || true)"
+  LOCK_NAMESPACE="${LOCK_NAMESPACE//$'\r'/}"
+  if [[ -n "$LOCK_NAMESPACE" && "$LOCK_NAMESPACE" != 'ember' && "$LOCK_NAMESPACE" != 'stu' ]]; then
+    ok "Eigener MariaDB-Lock-Namespace aktiv: $LOCK_NAMESPACE"
+  else
+    fail 'Kein sicherer CoreAI: TCI Interface-Lock-Namespace aktiv.'
+  fi
+
+  for writable_dir in \
+    /var/www/coreui/logs \
+    /var/www/coreui/var/cache \
+    /var/www/coreui/var/console_media \
+    /var/www/coreui/var/profile_media \
+    /var/www/coreui/var/knowledge_uploads \
+    /var/www/coreui/var/ember_frames \
+    /var/www/coreui/var/pdf_pages \
+    /var/www/coreui/var/php_sessions \
+    /var/www/coreui/var/update-request \
+    /var/www/coreui/uploads/ember_browse \
+    /var/www/coreui/assets/chat_media \
+    /var/www/coreui/assets/profile_photos/pending \
+    /var/www/coreui/assets/profile_photos/approved; do
+    if compose exec -T -u 33:33 php test -w "$writable_dir" >/dev/null 2>&1; then
+      ok "Container-Schreibpfad bereit: ${writable_dir#/var/www/coreui/}"
+    else
+      fail "Container-Schreibpfad nicht bereit: ${writable_dir#/var/www/coreui/}"
+    fi
+  done
+
+  # 0.5.83: the update window needs the host units (installed by scripts/install.sh).
+  if command -v systemctl >/dev/null 2>&1 && [[ -d /run/systemd/system ]]; then
+    if systemctl is-active --quiet coreai-update.path && systemctl is-active --quiet coreai-update-check.timer; then
+      ok 'Update-Dienst aktiv: Pruefung auf neue Merges alle 10 Minuten, Start aus dem Update-Fenster.'
+    else
+      fail 'Update-Dienst nicht aktiv (coreai-update.path oder coreai-update-check.timer). scripts/install.sh erneut ausfuehren.'
+    fi
+  else
+    warn 'Kein systemd: das Update-Fenster bleibt ohne Host-Dienst.'
+  fi
+
+  video_selftest=''
+  if video_selftest="$(compose exec -T -u 33:33 php php scripts/video-selftest.php 2>&1)"; then
+    video_selftest="${video_selftest//$'\r'/}"
+    ok "$video_selftest"
+  else
+    video_selftest="${video_selftest//$'\r'/}"
+    fail "$video_selftest"
+  fi
+
+  pdf_selftest=''
+  if pdf_selftest="$(compose exec -T -u 33:33 php php scripts/pdf-selftest.php 2>&1)"; then
+    pdf_selftest="${pdf_selftest//$'\r'/}"
+    ok "$pdf_selftest"
+  else
+    pdf_selftest="${pdf_selftest//$'\r'/}"
+    fail "$pdf_selftest"
+  fi
+fi
+
+if curl -fsS --max-time 10 "http://127.0.0.1:${COREUI_HTTP_PORT}/api/health.php" >/dev/null 2>&1; then
+  ok "CoreAI: TCI Interface-Healthcheck antwortet auf Loopback-Port ${COREUI_HTTP_PORT}."
+else
+  fail "CoreAI: TCI Interface-Healthcheck antwortet nicht auf Port ${COREUI_HTTP_PORT}."
+fi
+
+# Drain each HTTP body completely: grep -q closes early and makes curl fail under pipefail.
+if curl -fsS --max-time 10 "http://127.0.0.1:${COREUI_HTTP_PORT}/settings.html" \
+    | grep -F 'EINSTELLUNGEN' >/dev/null; then
+  ok 'CoreAI: TCI Interface-Einstellungen werden vom isolierten Webserver ausgeliefert.'
+else
+  fail 'CoreAI: TCI Interface-Einstellungen sind nicht erreichbar. Fuehre scripts/stack.sh refresh-runtime und danach scripts/stack.sh restart web aus.'
+fi
+
+# 0.6.71: Admin Core is a separate page, authorized per account and server-side API.
+if curl -fsS --max-time 10 "http://127.0.0.1:${COREUI_HTTP_PORT}/settings.html" | grep -F 'id="adminSettingsLink"' >/dev/null \
+    && curl -fsS --max-time 10 "http://127.0.0.1:${COREUI_HTTP_PORT}/admin/index.html" | grep -F 'id="adminAccessGate"' >/dev/null; then
+  ok 'Einstellungen mit Rollen-Link und eigenstaendige, zugangsgeschuetzte Admin-Core-Seite ausgeliefert.'
+else
+  fail 'Admin-Core-Seite oder getrennte Einstellungen sind nicht erreichbar.'
+fi
+
+SESSION_ROUTE_STATUS="$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' \
+  "http://127.0.0.1:${COREUI_HTTP_PORT}/api/console_messages.php" 2>/dev/null || true)"
+if [[ "$SESSION_ROUTE_STATUS" == '401' || "$SESSION_ROUTE_STATUS" == '400' ]]; then
+  ok 'Der authentifizierte Sitzungs-History-Endpunkt wird vom CoreAI: TCI Interface-Webserver erreicht.'
+else
+  fail "Sitzungs-History-Endpunkt nicht korrekt geroutet (HTTP ${SESSION_ROUTE_STATUS:-000})."
+fi
+
+for private_route in profile knowledge profile_media account_security account_export models; do
+  route_status="$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' \
+    "http://127.0.0.1:${COREUI_HTTP_PORT}/api/${private_route}.php" 2>/dev/null || true)"
+  if [[ "$route_status" == '401' ]]; then
+    ok "Privater CoreAI: TCI Interface-Endpunkt korrekt geroutet: ${private_route}.php"
+  else
+    fail "CoreAI: TCI Interface-Endpunkt ${private_route}.php nicht korrekt geroutet (HTTP ${route_status:-000})."
+  fi
+done
+
+if command -v ollama >/dev/null 2>&1 \
+    && ollama show "${COREUI_MODEL_NAME}" >/dev/null 2>&1; then
+  ok "Getrenntes Ollama-Modell vorhanden: ${COREUI_MODEL_NAME}"
+  model_audit=''
+  if model_audit="$(compose exec -T php php scripts/model-live-audit.php "${COREUI_MODEL_NAME}" 2>&1)"; then
+    ok "$model_audit"
+  else
+    fail "${model_audit:-Ollama-Modelfile nicht verifizierbar.}"
+  fi
+else
+  fail "CoreAI: TCI Interface-Ollama-Modell fehlt: ${COREUI_MODEL_NAME}"
+fi
+
+if is_enabled "${COREUI_INSTALL_SEARXNG:-0}"; then
+  if curl -fsS --max-time 10 \
+      "http://127.0.0.1:${COREUI_SEARXNG_PORT}/search?q=ember&format=json" >/dev/null 2>&1; then
+    ok "Eigene SearXNG-JSON-Suche antwortet auf Port ${COREUI_SEARXNG_PORT}."
+  else
+    fail "Eigene SearXNG-JSON-Suche antwortet nicht auf Port ${COREUI_SEARXNG_PORT}."
+  fi
+fi
+
+if [[ "${COREUI_BIND_ADDRESS:-127.0.0.1}" == '127.0.0.1' ]]; then
+  ok 'Webzugriff ist standardmaessig auf Loopback begrenzt.'
+else
+  warn 'CoreAI: TCI Interface lauscht bewusst auf 0.0.0.0. Firewall und TLS muessen separat geprueft werden.'
+fi
+
+if [[ -L /etc/nginx/sites-enabled/default || -e /etc/nginx/sites-enabled/default ]]; then
+  ok 'Eine bestehende Nginx-Default-Site wurde nicht entfernt.'
+else
+  warn 'Keine Nginx-Default-Site gefunden. CoreAI: TCI Interface veraendert diesen Zustand nicht.'
+fi
+
+if (( FAILURES > 0 )); then
+  printf '\nPreflight fehlgeschlagen: %d Problem(e).\n' "$FAILURES" >&2
+  exit 1
+fi
+
+printf '\nPreflight erfolgreich. CoreAI: TCI Interface laeuft im isolierten Parallelmodus.\n'
+
+\r'/}"
+    fail "Feedback: UI-/Backend-Vertrag fuer Bewertungen fehlerhaft: ${feedback_ui_selftest:-Unbekannter Fehler}"
   fi
 
   if is_enabled "${COREUI_INSTALL_BROWSE:-0}"; then
