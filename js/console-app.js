@@ -236,6 +236,13 @@
   function setStatus(type, label) {
     statusDot.className = 'status-dot' + (type ? ' ' + type : '');
     statusLabel.textContent = label || '';
+    // The companion has its own lifecycle, independent of typing rows.
+    var pets = window.CoreAIPets;
+    if (!pets || typeof pets.setActivity !== 'function') return;
+    var current = pets.getActivity();
+    if (type === 'waiting' && /ANTWORTET/.test(label || '')) pets.setActivity('running');
+    else if (type === 'error') pets.setActivity('failed');
+    else if (type === 'online' && current === 'running') pets.setActivity('review');
   }
 
   // ── Session-Zugriff ──────────────────────────────────────
@@ -384,6 +391,10 @@
   function updateActivePendingUi() {
     var ses = activeSession();
     state.waitingEmber = !!(ses && state.pendingBySession[ses.id]);
+    if (window.CoreAIPets && typeof window.CoreAIPets.setActivity === 'function') {
+      if (state.waitingEmber) window.CoreAIPets.setActivity('running');
+      else if (window.CoreAIPets.getActivity() === 'running') window.CoreAIPets.setActivity('review');
+    }
     updateAgentCancelControl();
     if (chatFollow) chatFollow.refresh();
   }
