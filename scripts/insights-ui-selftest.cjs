@@ -80,6 +80,15 @@ assert(!/innerHTML|insertAdjacentHTML|outerHTML/.test(source), 'info boxes never
 const pageHtml = fs.readFileSync(path.join(__dirname, '../app.html'), 'utf8');
 const chatSource = fs.readFileSync(path.join(__dirname, '../js/console-app.js'), 'utf8');
 const chatStyle = fs.readFileSync(path.join(__dirname, '../css/coreui-chat-tci-layout.css'), 'utf8');
+const baseStyle = fs.readFileSync(path.join(__dirname, '../css/console.css'), 'utf8');
+assert(baseStyle.includes('gap: 8px;\n    overflow-x: auto;')
+  || baseStyle.includes('gap: 8px;\n    overflow-x: auto;\n'),
+  'the session chip row keeps its original horizontal scroll fallback');
+assert(baseStyle.includes('font: 400 11px/1 "Share Tech Mono", monospace;'),
+  'the original readable 11px chip type remains');
+assert(!/\.insight-chip\s*\{[^}]*font-size:\s*(?:9|10)px/.test(chatStyle)
+  && !/\.insight-chip-row\s*\{[^}]*justify-content:\s*space-between/.test(chatStyle),
+  'do not compress the four session chips into mini blocks');
 assert.equal((pageHtml.match(/id="insightChips"/g) || []).length, 1,
   "the phone's insight buttons have exactly one HTML mount");
 assert(pageHtml.indexOf('id="insightChips"') > pageHtml.indexOf('id="welcomeScreen"')

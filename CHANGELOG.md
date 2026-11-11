@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.7.5 - 11.11.2026
+
+- **Restore original mobile insight blocks:** Undo the smaller 0.7.4 CSS overrides for Core, Kontext, Werkzeuge and Projekt in active chats.
+- **No more squeezed controls:** Keep the original 11px monospaced labels, 13px horizontal padding, natural width, icon spacing and original 8px gaps from `css/console.css`. Allow the existing horizontal scrolling on narrower phone screens rather than shrinking the buttons.
+- **Keep all four functions:** Active chats retain all four interactive information panels, the unsaved welcome screen remains clear, and the desktop right-hand information cards are unaffected.
+- **Regression:** Update the phone Playwright test to assert original computed sizes and accessible scrolling. Add an offline guard against reintroducing miniature overrides.
+- **Release:** One merge means version 0.7.5; full browser/server preflight remains required before merge.
+
 ## 0.7.4 - 11.11.2026
 
 - **TCI CORE matches Mara:** The underlined role label now shares Mara's configured-name typography (font family, 12px size, bold weight, line height and letter spacing) and its theme-blue text color.

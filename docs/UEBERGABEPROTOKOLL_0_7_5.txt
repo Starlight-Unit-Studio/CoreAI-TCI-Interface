@@ -1,0 +1,29 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.5
+Datum: 11.11.2026
+Thema: Originalgroesse der vier Chat-Infobloecke wiederherstellen
+
+AUSGANGSLAGE
+- main bei Arbeitsbeginn: 0.7.4.
+- 0.7.4 hatte die vier mobilen Eintraege Core/Kontext/Werkzeuge/Projekt in den Chat zurueckgebracht, sie dabei aber zu kleinen Buttons umgestaltet.
+- Nutzerreferenz: voriger Zustand mit deutlich groesseren sichtbaren Bloecken auf Mobilgeraeten und vollwertigen Info-Karten auf dem Desktop.
+
+URSACHE
+- css/coreui-chat-tci-layout.css enthielt mobile Overrides mit 10/9 px Schrift, 9/6 px Padding, geringerem Abstand und justify-content:space-between.
+- Das ueberschrieb das Originaldesign aus css/console.css.
+
+REPARATUR
+- Ueberschreibende Miniaturisierungsregeln entfernt. Original-CSS bleibt die einzige Groessenquelle.
+- Bei Bedarf nutzt die Zeile ihr bereits vorhandenes overflow-x:auto, ohne Text oder Icons zu schrumpfen.
+- scripts/insights-chat-visibility-ui-selftest.cjs prueft Originaltypografie, Padding und Scrollbarkeit bei 390 px.
+- scripts/insights-ui-selftest.cjs verhindert zusaetzliche Miniaturisierungsregeln.
+
+UNVERAENDERT
+- Bestehender Chat zeigt vier Bereiche, leere Startseite nicht.
+- Die geoeffneten Informationskarten und die 1400px-Desktop-Seitenleiste bleiben wie zuvor.
+- Keine Aenderung an Backend, Tabellen, Rechten, CoreAI-Installer, Ollama oder bestehenden Benutzerdaten.
+
+OFFENE ABNAHME
+- node scripts/insights-ui-selftest.cjs
+- node scripts/insights-chat-visibility-ui-selftest.cjs (Playwright 390px und Desktop)
+- python3 scripts/version-merge-check.py --base-version 0.7.4
+- Offizielle Preflights und reale Smartphone-Pruefung vor dem Merge.
