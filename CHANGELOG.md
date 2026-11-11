@@ -1,5 +1,22 @@
 # CoreAI: TCI Interface
 
+## 0.7.20 - 12.11.2026
+
+- **Preflight repaired:** The multiline and lossless Markdown-attachment regression check now inspects the real chat textarea `#inputMessage` rather than mistaking the independently limited project instructions field for the chat composer. The actual chat long-paste path and upload checks remain enforced.
+- **Version recovery:** The two unversioned merges #272 and #273 are documented with retroactive sequence slots 0.7.18 and 0.7.19. Those historical commits still contained VERSION 0.7.17, and no historical ZIP or deployment is claimed. This new source release uses 0.7.20.
+- **Release consistency:** VERSION, all six HTML entry points, JS bootstrap, README, changelog TXT archive, handovers, branding checks and production preflights are synchronized. Production preflight must be rerun after actual deployment.
+
+## 0.7.19 - historical reconstruction of PR #273 (merged 11.11.2026)
+
+- Removed the artificial Chat/Work switch in the project home because the normal CoreAI chat is already the integrated workspace. Claude Code is the reference for agentic execution, while ChatGPT Projects is the reference for project organization.
+- **Audit:** PR #273 merged as commit `8eec82a4c4f0c58d79c3ab405592928bb6f44fe3` while VERSION still read 0.7.17. Version 0.7.19 is a retroactive accounting slot, not an originally published artifact.
+
+## 0.7.18 - historical reconstruction of PR #272 (merged 11.11.2026)
+
+- Introduced chat-native projects with open/isolated context, project instructions, project chat grouping, private source uploads and project-scoped RAG-Lite. Project collaboration and a standalone sandbox were not yet implemented.
+- **Audit:** PR #272 merged as commit `15448295ffcef9069ae2c59842601427ce01d6c7` while VERSION still read 0.7.17. Version 0.7.18 is a retroactive accounting slot, not an originally published artifact.
+
+
 ## 0.7.17 - 11.11.2026
 
 - **Licensed shared OpenPet library:** The CoreAI owner can review, validate and publish individual `.openpet.zip` sprite atlases as standard pets for all accounts. The nine existing built-ins and personal pets remain unchanged; Mara stays the default.
