@@ -116,10 +116,10 @@ intent_test($a['ok'] === true && $a['guest'] === false && $a['tools']['image'] =
   && $a['tools']['browse'] === ['on' => false, 'why' => 'Für dein Konto gerade nicht freigegeben']
   && $a['planned'] === ['deep_research', 'connectors'], 'account answer');
 $g = coreui_composer_tools_answer(true, true, true, true, ['enabled'=>true, 'limit'=>3, 'used'=>0, 'left'=>3]);
-intent_test($g['tools']['image'] === ['on' => true, 'why' => '']
+intent_test($g['tools']['image'] === ['on' => true, 'why' => '', 'limit'=>3, 'left'=>3]
   && $g['tools']['web']['on'] === true, 'guests may paint within the owner-approved image budget');
 $gFull = coreui_composer_tools_answer(true, false, true, false, ['enabled'=>true, 'limit'=>3, 'used'=>3, 'left'=>0]);
-intent_test($gFull['tools']['image'] === ['on'=>false, 'why'=>'Bildlimit für heute erreicht']
+intent_test($gFull['tools']['image'] === ['on'=>false, 'why'=>'Bildlimit für heute erreicht', 'limit'=>3, 'left'=>0]
   && $gFull['tools']['browse']['on'] === false, 'guest image menu reports the daily limit');
 $gOff = coreui_composer_tools_answer(true, false, false, false, ['enabled'=>false, 'limit'=>0, 'left'=>0]);
 intent_test($gOff['tools']['image']['on'] === false
