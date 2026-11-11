@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.6.98: preflight fixture must never request interactive data purge.
+# CoreAI: TCI Interface 0.6.99: Denkaufwand UI-Literal Normal; backend standard key remains unchanged.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

@@ -1,0 +1,15 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.6.99
+11.11.2026
+
+- Im Denkaufwand-Menue und im dazugehoerigen Button wird
+  Core-Standard kuenftig als Normal angezeigt.
+- Ausschliesslich die Benutzeroberflaechen-Bezeichnung in
+  js/coreui-reasoning-effort.js geaendert, keine Logikaenderung.
+- thinking_level='' bleibt exakt dieselbe Core-Standard-Stufe.
+  Aus, Gering, Mittel, Hoch, Max und An bleiben unveraendert.
+- UI-Selbsttest auf sichtbare Beschriftung und Speicherung
+  des unveraenderten leeren Backend-Keys erweitert.
+- SHA-256-basierte Cache-Schluessel der geaenderten JS-Datei
+  und des Bootstrap aktualisiert, alle sechs Seiten angepasst.
+- VERSION, README, Branding, Changelog, Preflight und
+  Uebergabe auf 0.6.99 synchronisiert.

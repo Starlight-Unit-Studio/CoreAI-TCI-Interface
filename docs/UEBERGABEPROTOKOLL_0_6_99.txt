@@ -1,0 +1,33 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.99
+Stand: 11.11.2026
+Basis: main 0.6.98 nach Merge von PR #250
+Branch: fix/0.6.99-reasoning-effort-normal-label
+
+AUFTRAG
+- Screenshot der Smartphone-Oberflaeche: Denkaufwand bietet
+  Aus / Core-Standard / Gering / Mittel / Hoch.
+- Core-Standard ist auf kleinen Handybildschirmen zu lang.
+- In der sichtbaren UI wird die Beschriftung zu Normal.
+
+UMSETZUNG
+- js/coreui-reasoning-effort.js title(key): zwei Ausgaben
+  Core-Standard -> Normal (default und Fallback).
+- Der Empty-Key '' bleibt dieselbe vom Core definierte
+  Standard-Reasoning-Stufe. Kein Eingriff in API / Datenbank.
+- scripts/reasoning-effort-ui-selftest.cjs kontrolliert die
+  neue Beschriftung und weiterhin gespeicherten Empty-Key.
+- Alle anderen Denkstufen unveraendert.
+
+CACHE / VERSION
+- Version genau einen Schritt 0.6.98 -> 0.6.99.
+- Gate- und Reasoning-JS erhalten neue numerische SHA-256-
+  Asset-Fingerprints. Sechs UI-Seiten sowie README,
+  Branding, Changelog, Preflight und Handover angepasst.
+- README bleibt unter 24 KB.
+
+TESTSTAND
+- GitHub-Quellcode verglichen, genau zwei Labelliterale
+  ersetzt und kein Backend-Wert geaendert.
+- Isolierter kompletter Node-UI-Test und produktiver
+  Preflight vor einem Merge ausfuehren.
+- Nichts auf dem Betreiber-Server direkt geaendert.

@@ -1,9 +1,10 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
 Stand: 11.11.2026
-Repository-Version: 0.6.98 (Fix-Branch; main bei Erstellung 0.6.97)
-BASIS: main 0.6.97; Deinstaller-Preflight rief versehentlich purge per /dev/tty auf, nun nur nicht-destruktive Guard-Pruefung.
+Repository-Version: 0.6.99 (Fix-Branch, main bei Erstellung 0.6.98)
+BASIS: main 0.6.98 nach PR #250; sichtbare Denkaufwand-Standardstufe nur im UI auf Normal gekuerzt.
 NEUE ARBEIT ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_6_99.txt
   docs/UEBERGABEPROTOKOLL_0_6_98.txt
   docs/UEBERGABEPROTOKOLL_0_6_97.txt
   docs/UEBERGABEPROTOKOLL_0_6_96.txt
