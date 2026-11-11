@@ -30,7 +30,7 @@ export COREAI_UNINSTALL_TEST_LOG="$WORK/calls.log"
 new_fixture() {
   local label="$1" root="$WORK/opt/$1"
   mkdir -p "$root/scripts" "$root/var/update" "$root/var/update-request" "$root/var/uninstall-request" "$root/api"
-  printf '0.6.96\n' > "$root/VERSION"
+  printf '0.6.98\n' > "$root/VERSION"
   printf 'services: {}\n' > "$root/compose.yaml"
   printf 'COREUI_HTTP_PORT=9080\n' > "$root/var/compose.env"
   printf '<?php\n' > "$root/api/config.local.php"
@@ -56,8 +56,14 @@ bash "$first/scripts/uninstall.sh" --dry-run > "$WORK/dry.txt"
 if bash "$first/scripts/uninstall.sh" --request >"$WORK/invalid.txt" 2>&1; then
   echo 'Runner accepted nonexistent request' >&2; exit 1
 fi
-if bash "$first/scripts/uninstall.sh" --purge-data </dev/null >"$WORK/purge.txt" 2>&1; then
-  echo 'Runner accepted noninteractive purge' >&2; exit 1
+# Never run the destructive --purge-data mode during Preflight.
+# Redirecting stdin does NOT disconnect /dev/tty. On an SSH terminal
+# this would still prompt the operator and could purge the fixture.
+# Check the guard contract without executing the destructive branch.
+if ! grep -Fq "expected='COREAI DATEN ENDGUELTIG LOESCHEN'" "$ORIGINAL" \
+   || ! grep -Fq '[[ -r /dev/tty && -w /dev/tty ]] || die' "$ORIGINAL" \
+   || ! grep -Fq '[[ "$typed" == "$expected" ]] || die' "$ORIGINAL"; then
+  echo 'Runner missing interactive purge confirmation guards' >&2; exit 1
 fi
 [[ -f "$first/var/important-data.txt" ]] || { echo 'Invalid request touched data' >&2; exit 1; }
 if (( EUID == 0 )); then

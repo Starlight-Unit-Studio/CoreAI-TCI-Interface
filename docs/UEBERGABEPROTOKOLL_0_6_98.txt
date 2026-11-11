@@ -1,0 +1,46 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.6.98
+Stand: 11.11.2026
+Basis: main 0.6.97 nach gemergtem PR #249
+Branch: fix/0.6.98-uninstall-preflight-no-tty-prompt
+PR: neu, Merge ausstehend
+
+BEOBACHTETER FEHLER
+- Frischer Installer auf CoreAI 0.6.97 endet mit einem
+  Preflight-Problem:
+  Deinstallation: Host-Runner-Selbsttest fehlgeschlagen.
+  Details: Runner accepted noninteractive purge
+- Waehrend des Preflight erscheint die Aufforderung
+  COREAI DATEN ENDGUELTIG LOESCHEN.
+- Die Tests laufen in /tmp mit nachgebildeten Docker-
+  und systemd-Befehlen und temporaren Installation-Dateien.
+
+URSACHE
+- tests/uninstall-runner-selftest.sh Zeile mit:
+  bash "$first/scripts/uninstall.sh" --purge-data </dev/null
+- Das Installationsskript ist interaktiv an /dev/tty
+  gebunden. Stdin-Umleitung schliesst /dev/tty NICHT.
+- Wer den Bestaetigungssatz eingibt, loest daher den
+  temporaeren Testmodus aus; der negative Test wird
+  faelschlich zum 'accepted' und der Preflight wird rot.
+
+FIX
+- Kein --purge-data-Aufruf mehr im Preflight-Selbsttest.
+- Nicht-destruktive pruefbare Quelltext-Assertions fuer
+  die TTY-Bedingung, den Satz und die exakte Pruefung.
+- Bestehende Mock- und Archiv-Tests bleiben unveraendert.
+- Kein Abschalten einer produktiven Sicherheitspruefung.
+- Die echte --purge-data-Ausfuehrung bleibt nur auf
+  ausdruecklichen interaktiven Betreiberwunsch moeglich.
+
+VALIDIERUNG
+- GitHub-Code und Screenshot belegen die Ursache.
+- Cache-Key mit SHA-256 aus neuer Bootstrap-Datei berechnet.
+- Quellstand und Versionmarker im PR verifizieren.
+- Vollstaendigen Preflight auf einem Zielserver laufen
+  lassen. Kein produktiver Uninstall zum Testen!
+- Kein Live-PASS vor erfolgreichem Preflight behaupten.
+
+VERSION
+- Genau ein Merge fuehrt zu 0.6.98.
+- README und TXT-Changelog synchronisiert;
+  sechs HTML-Versionen, Bootstrap und Cache-Key neu.
