@@ -98,3 +98,180 @@ body.project-home-active .messages-area:before,body.project-home-active .message
 .project-owner-row span:first-child {display:flex;align-items:center;justify-content:center;background:#e5b51f;border-radius:50%;width:38px;height:38px;color:#111}
 .project-owner-row span:last-child {margin-left:auto;color:#b6b6b6;font-size:14px}
 .project-modal-primary:disabled {opacity:.48;cursor:not-allowed}
+
+/* Reference QA: hidden must override the authored display rules, especially
+   the modal backdrop's flex layout. Otherwise the modal covers every chat. */
+.project-modal-scrim[hidden],
+.project-home[hidden],
+.project-home-popover[hidden],
+.project-chat-menu[hidden],
+#projectChatsPanel[hidden],
+#projectSourcesPanel[hidden],
+#projectModalCreate[hidden],
+#projectModalSettings[hidden],
+#projectModalShare[hidden] { display:none !important; }
+
+body.project-home-active .messages-area.is-welcome { display:block !important; }
+
+/* Reference view only: preserve the existing CoreAI navigation in normal chats. */
+body.project-home-active .drawer {
+  background:#151515 !important;
+  border-right:1px solid #333 !important;
+  box-shadow:14px 0 40px #0005 !important;
+  color:#f4f4f4;
+  font-family:system-ui,-apple-system,Roboto,Arial,sans-serif;
+}
+body.project-home-active .drawer::before,
+body.project-home-active .drawer::after,
+body.project-home-active .drawer-vector-field,
+body.project-home-active .core-ticker,
+body.project-home-active .ren-matrix,
+body.project-home-active .brand-copy {display:none !important}
+body.project-home-active .drawer-header {
+  flex:0 0 66px !important;
+  min-height:66px !important;
+  height:66px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:10px 17px !important;
+  border-bottom:0;
+  background:#151515 !important;
+}
+body.project-home-active .drawer-header .brand-lockup {display:none !important}
+body.project-home-active .project-drawer-brand {
+  display:block !important;
+  color:#f5f5f6;
+  font:650 20px/1.4 system-ui,sans-serif;
+  letter-spacing:-.02em;
+}
+body.project-home-active .drawer-close {
+  position:static;
+  width:37px;height:37px;
+  min-width:37px;min-height:37px;
+  color:#eee;
+  border:0;
+  background:none;
+  display:flex !important;
+  align-items:center;justify-content:center;
+}
+body.project-home-active .drawer-close span {display:none}
+body.project-home-active .drawer-close:after {content:"×";font:28px/1 system-ui,sans-serif}
+body.project-home-active .drawer-content {
+  padding:8px 13px 14px !important;
+  gap:15px;
+  font:14px system-ui,sans-serif;
+}
+body.project-home-active .drawer-content .btn-new-session {
+  min-height:52px;
+  background:transparent;
+  border:0;
+  box-shadow:none;
+  border-radius:10px;
+  color:#f4f4f4;
+  clip-path:none;
+  font:500 15px system-ui;
+  letter-spacing:normal;
+  padding:8px 12px;
+}
+body.project-home-active .btn-new-session::before,
+body.project-home-active .btn-new-session::after {display:none}
+body.project-home-active .btn-new-session .hud-button-glyph {font-size:22px;color:#ddd}
+body.project-home-active .btn-new-session .hud-button-copy strong {font:500 16px system-ui;letter-spacing:normal}
+body.project-home-active .btn-new-session .hud-button-copy small {display:none}
+body.project-home-active .drawer .section-label {
+  font:600 13px system-ui,sans-serif;
+  letter-spacing:normal;
+  color:#a6a6a9;
+  border:0;
+}
+body.project-home-active .session-item {
+  min-height:41px;
+  border:0;border-radius:9px;
+  clip-path:none;
+  padding:9px 10px;
+  background:transparent;
+  color:#f1f1f1;
+  box-shadow:none;
+}
+body.project-home-active .session-item::before {display:none}
+body.project-home-active .session-item:hover,
+body.project-home-active .session-item.active {background:#2a2a2d;transform:none}
+body.project-home-active .session-item-title {font:500 14px system-ui;color:#e9e9eb;letter-spacing:normal}
+body.project-home-active .session-item-meta {display:none}
+body.project-home-active .projects-nav {
+  margin-top:auto;
+  border-top:1px solid #343434;
+  padding-top:14px;
+}
+body.project-home-active .projects-nav-heading,
+body.project-home-active .project-nav-row {color:#e9e9eb}
+body.project-home-active .projects-nav-heading {padding:0 8px}
+body.project-home-active .project-nav-chat {color:#ccc}
+body.project-home-active .project-nav-row.active,
+body.project-home-active .project-nav-row:hover {background:#303033}
+body.project-home-active .drawer-footer {
+  background:#151515;
+  border-top:1px solid #303033;
+}
+body.project-home-active .drawer-footer button {color:#ddd}
+body.project-home-active .drawer-footer .drawer-copyright {color:#888}
+
+/* Reference chat cards: long titles wrap, the independent ellipsis opens
+   the existing CoreAI session operations without nesting a button in a button. */
+.project-chat-result {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:15px 14px;
+  border-radius:14px;
+  min-height:95px;
+  border-bottom:1px solid #242426;
+}
+.project-chat-result-main {
+  min-width:0;flex:1;
+  text-align:left;
+  background:none;border:0;
+  color:#f3f3f5;
+  padding:2px;
+  cursor:pointer;
+}
+.project-chat-result-main strong {
+  display:-webkit-box;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:3;
+  line-clamp:3;
+  white-space:normal;
+  overflow:hidden;
+  font:600 16px/1.5 system-ui;
+  overflow-wrap:anywhere;
+}
+.project-chat-result-main small {
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  color:#aaa;font:14px/1.5 system-ui;
+  display:block;margin-top:6px;
+}
+.project-chat-result-options {position:relative;flex-shrink:0;align-self:center}
+.project-chat-result-more {
+  width:42px;height:42px;
+  background:transparent;border:0;border-radius:50%;
+  color:#d7d7d9;cursor:pointer;font:23px system-ui;
+}
+.project-chat-result-more:hover {background:#353538}
+.project-chat-menu {
+  position:absolute;z-index:7;right:0;top:44px;
+  min-width:215px;
+  background:#2a2a2d;border:1px solid #444;
+  border-radius:12px;padding:7px;
+  box-shadow:0 14px 40px #0009;
+}
+.project-chat-menu button {
+  display:block;width:100%;
+  padding:11px 12px;text-align:left;
+  border:0;border-radius:7px;
+  font:14px system-ui;
+  color:#f2f2f3;background:transparent;
+  cursor:pointer;
+}
+.project-chat-menu button:hover {background:#404043}
+.project-chat-menu button.danger {color:#ff8893}
