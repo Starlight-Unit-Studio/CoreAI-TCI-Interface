@@ -4256,6 +4256,8 @@
         assistant: String(state.assistantName || 'Mara')} : null;
     },
     getSessions: function () { return state.sessions.slice(); },
+    openDrawer: openDrawer,
+    closeDrawer: closeDrawer,
     select: function (sessionId) { return selectSession(sessionId).then(function () { closeDrawer(); }); },
     startProjectChat: function (projectId, message) {
       if (!/^([a-f0-9]{32})$/.test(String(projectId || '')) || !String(message || '').trim()) return;
