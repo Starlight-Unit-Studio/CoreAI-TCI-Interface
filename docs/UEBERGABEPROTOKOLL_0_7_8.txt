@@ -1,0 +1,23 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.8
+Datum: 11.11.2026
+
+PROBLEM
+Ein geliktes Bild/Chat-Ergebnis wurde korrekt als gruener Daumen dauerhaft gespeichert und Mara antwortete ohne Thinking. Maras Antwort 'Das freut mich zu hoeren' offenbarte aber, dass das positive Rating wie eine neue sprachliche Rueckmeldung interpretiert wurde.
+
+URSACHE
+api/console_feedback.php uebergab 'POSITIV: Die Person fand deine Antwort hilfreich', nicht die eindeutige Information 'Daumen hoch / Like-Button auf deine Antwort'. Dadurch konnte das Modell eine nicht erfolgte sprachliche Aeusserung unterstellen.
+
+BEHEBUNG
+api/console_feedback.php unterscheidet explizite Ereignistypen und beschreibt konkret, ob der Nutzer den LIKE-/DISLIKE-Button gedrueckt hat. Der Prompt macht deutlich, dass der Nutzer nichts gesagt oder geschrieben hat und Mara sich auf das angeklickte Feedback beziehen soll.
+scripts/message-actions-selftest.php prueft bei beiden Ratings die explizite Button-Information und den Originalnachrichten-Kontext.
+
+UNVERAENDERT
+DB-Reaktionen und Feedback-Event-Queue seit 0.7.7, Zustandsfarben und Dauerhaftigkeit, Message-Rendering, Modellwahl, serielle Warteschlange, Thinking aus, Tools aus, Idempotenz und Einmalantwort.
+
+VOR MERGE
+- php -l api/console_feedback.php
+- php -l scripts/message-actions-selftest.php
+- php scripts/message-actions-selftest.php
+- node scripts/feedback-ui-selftest.cjs
+- python3 scripts/version-merge-check.py --base-version 0.7.7
+- Offizielle Preflights und reale Bewertung im Smartphone-Chat testen.
