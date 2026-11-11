@@ -70,6 +70,7 @@
 
 /* The Core/Kontext/Werkzeuge/Projekt controls are chat-only.
    Their internal DOM remains mounted so settings and live data survive toggles. */
+.welcome-screen[hidden] { display: none !important; }
 .core-insights[hidden],
 .insight-chips[hidden],
 .messages-area.is-welcome .insight-chips {
