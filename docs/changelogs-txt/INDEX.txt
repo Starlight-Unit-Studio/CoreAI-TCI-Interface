@@ -280,3 +280,4 @@ Jede Version liegt als eigenstaendige UTF-8-TXT-Datei vor.
 * CHANGELOG_0_7_3.txt
 * CHANGELOG_0_7_4.txt
 * CHANGELOG_0_7_5.txt
+* CHANGELOG_0_7_6.txt

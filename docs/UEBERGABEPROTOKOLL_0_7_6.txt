@@ -1,0 +1,30 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.6
+Datum: 11.11.2026
+Thema: Bild nach Generierung auch von Mara wirklich sehen lassen
+
+AUSGANGSLAGE
+- Ausgangsversion main: 0.7.5.
+- Nach dem Tool-Befehl [BILD:] schrieb Mara seit 0.7.3 eigenstaendig eine Folgeantwort.
+- Ihr Abschluss bekam aber nur die textuelle Bestaetigung der Bildgenerierung und nicht die gespeicherten Bildpixel.
+
+LOESUNG
+- api/image_gen.php: coreui_image_followup_paths() ermittelt aus den aktuell generierten UUIDs nur bestaetigte PNG-Dateien des angemeldeten Benutzerkontos. Keine direkten Benutzerpfade, keine fremden Medien.
+- api/chat.php: ember_generated_image_review() sendet die Dateien an denselben bestehenden Ollama-Vision-Pfad wie die anderen Bilder, Videos und PDF-Seiten. Vorhandene Modellwarteschlange und Core-Konfiguration gelten unveraendert.
+- api/console_agent_loop.php: optionaler Bildpruefungs-Callback fuer exakt eine visuelle Folgeantwort; bisherige Aufrufer ohne Callback bleiben kompatibel.
+- api/chat.php: sowohl Text-/Chat-Loop als auch der vorhandene Vision-/Stimmsequenz-Loop verwenden das Bildreview.
+- api/image_gen.php: Ergebnishinweis widerspricht dem tatsaechlich sichtbaren Bild nicht mehr.
+- scripts/image-gen-selftest.php: Tests fuer Einzel- und Folgebilder, Kontotrennung, korrupte Pfade, Abbruch und verbotene Wiederholungsmarker.
+
+SICHERHEIT
+- Bilddatei wird anhand von user_id/Medien-UUID im bestehenden Datenbankeintrag autorisiert; der reale Pfad muss unter dem privaten Bilderordner liegen.
+- Ein Core ohne Bildverstehen bekommt keine vorgetaeuschte Bildbeschreibung, sondern bei Ablehnung des Vision-Payloads eine ehrliche Textantwort.
+- Keine zusaetzliche Bildgenerierung, keine autonome Dauer-Schleife. Im Fall einer abgebrochenen Anfrage wird keine weitere Bildanalyse gestartet.
+- Keine Datenbankmigration und kein Eingriff in Modellparameter, Betreiber-Modelfile, Nutzerrechte oder Installer.
+
+ABNAHME VOR MERGE
+- php -l api/image_gen.php api/chat.php api/console_agent_loop.php (Dateien einzeln).
+- php scripts/image-gen-selftest.php und php scripts/agent-loop-selftest.php
+- Weitere Bild- und Vision-Selbsttests sowie beide offiziellen Preflights.
+- Bildgenerierung auf echtem Vision-Core (z.B. Gemma4) live pruefen; pruefen, dass Mara nur bestaetigte sichtbare Details benennt.
+- Text-only Core: ehrliche Rueckmeldung und keine Endlosschleife.
+- python3 scripts/version-merge-check.py --base-version 0.7.5

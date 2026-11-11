@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.7.6 - 11.11.2026
+
+- **Mara sees her generated images:** The image-generation follow-up now receives the actual completed private PNG(s) through CoreAI's existing Ollama vision input, instead of just a textual "image created" summary.
+- **Keep the same Core:** The existing serial inference queue, account-selected model, vision transport and normal answer UI remain unchanged. A text-only model that rejects images gets an honest fallback rather than fabricated visual observations.
+- **Private media isolation:** Only images verified in the current account's generated media records and real protected image directory are eligible. No public URL or client-provided filesystem path is accepted.
+- **Safe bounded follow-up:** Exactly one agent-loop vision review per completed image batch. Cancel still stops review and additional tool/image markers cannot start further generation.
+- **Regression:** Added account isolation, invalid-path, verified PNG and image reviewer/cancellation tests to the existing image generation suite.
+- **Release:** 0.7.6 follows main 0.7.5. Full test and preflight verification remains required before merge.
+
 ## 0.7.5 - 11.11.2026
 
 - **Restore original mobile insight blocks:** Undo the smaller 0.7.4 CSS overrides for Core, Kontext, Werkzeuge and Projekt in active chats.
