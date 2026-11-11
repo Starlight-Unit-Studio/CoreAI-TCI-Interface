@@ -57,9 +57,11 @@ const api = {
   'health.php': {ok: true, version: '0.7.1', model: 'ember-core:e4b', checks: {database: true, schema: true, ollama: true, storage: true}},
 };
 
-const HARNESS = '<!doctype html><html lang="de"><head><meta charset="utf-8"><link rel="stylesheet" href="css/console.css"></head>'
-  + '<body><div class="msg-row ember"><div class="msg-content" id="out"></div></div>'
-  + '<script src="js/coreui-pets.js"></script><script src="js/coreui-work-events.js"></script></body></html>';
+const HARNESS = '<!doctype html><html lang="de"><head><meta charset="utf-8"><link rel="stylesheet" href="css/console.css"><link rel="stylesheet" href="css/coreui-pet-dock.css"></head>'
+  + '<body><main id="messagesArea" style="position:absolute;top:35px;left:0;right:0;bottom:80px;overflow:auto">'
+  + '<div class="msg-row ember"><div class="msg-content" id="out"></div></div></main>'
+  + '<script src="js/coreui-pets.js"></script><script src="js/coreui-work-events.js"></script>'
+  + '<script src="js/coreui-pet-dock.js"></script></body></html>';
 
 async function open(browser, srv, viewport, url) {
   const context = await browser.newContext({viewport: viewport || {width: 1200, height: 900}, locale: 'de-DE', timezoneId: 'Europe/Berlin'});
@@ -172,27 +174,28 @@ async function open(browser, srv, viewport, url) {
     assert.deepEqual(errors, []);
     await context.close();
 
-    // The work line in the chat: the chosen pet first, moving on while the line updates.
+    // Chat pet stays in one persistent dock after the work timeline is replaced.
     ({context, page, errors} = await open(browser, srv, {width: 900, height: 400}, 'https://coreui.test/harness.html'));
     await page.evaluate(() => {
       window.CoreAIPets.current = {id: 'nova', name: 'Nova', url: './images/pets/nova.png', frames: 6, frame_px: 32};
+      document.dispatchEvent(new CustomEvent('coreai:pet'));
+      window.CoreAIPets.setActivity('running');
       document.getElementById('out').appendChild(window.CoreUIWorkEvents.create({live: true, expanded: true, events: []}));
     });
-    const lead = page.locator('.work-status > :first-child');
-    assert.equal(await lead.getAttribute('class'), 'coreai-pet work-status-pet is-pixel');
-    await page.evaluate(() => { window.firstPet = document.querySelector('.work-status-pet'); });
-    await page.waitForTimeout(1300);
-    assert.equal(await page.evaluate(() => document.querySelector('.work-status > :first-child') === window.firstPet), true, 'one pet node across updates');
-    assert.notEqual(await page.getAttribute('.work-status-pet', 'data-frame'), null);
-    const box = await page.locator('.work-status-pet').boundingBox();
-    assert.equal(Math.round(box.width), 32);
-    if (shots) await page.locator('.work-status').screenshot({path: path.join(shots, 'pets-work-line.png')});
+    const dock = page.locator('.coreai-pet-dock');
+    await dock.waitFor({state:'visible'});
+    assert.equal(await page.getAttribute('.coreai-pet-dock .coreai-pet', 'data-state'), 'running');
     await page.evaluate(() => {
-      window.CoreAIPets.current = null;
-      document.getElementById('out').textContent = '';
-      document.getElementById('out').appendChild(window.CoreUIWorkEvents.create({live: true, expanded: true, events: []}));
+      document.getElementById('out').textContent = 'Mara hat geantwortet.';
+      window.CoreAIPets.setActivity('review');
     });
-    assert.equal(await page.$$eval('.work-status .work-status-dots i', l => l.length), 3, 'without a pet the dots stay');
+    assert.equal(await dock.isVisible(), true, 'pet survives replacement of work timeline');
+    await page.waitForFunction(() => document.querySelector('.coreai-pet-dock .coreai-pet').getAttribute('data-state') === 'idle', null, {timeout:3500});
+    const box = await dock.boundingBox();
+    assert.equal(Math.round(box.width), 72);
+    if (shots) await dock.screenshot({path: path.join(shots, 'pets-persistent-dock.png')});
+    await page.evaluate(() => { window.CoreAIPets.current = null; document.dispatchEvent(new CustomEvent('coreai:pet')); });
+    assert.equal(await dock.isVisible(), false, 'pet can be explicitly hidden');
     assert.deepEqual(errors, []);
     await context.close();
 
@@ -208,7 +211,7 @@ async function open(browser, srv, viewport, url) {
     if (shots) await page.screenshot({path: path.join(shots, 'pets-phone-upload.png')});
     assert.deepEqual(errors, []);
     await context.close();
-    console.log('CoreAI Pets UI: Auswahl, Animation, Hochladen, Löschen, Entwurf, Arbeitszeile, Telefon OK');
+    console.log('CoreAI Pets UI: Auswahl, Animation, Hochladen, Löschen, Entwurf, permanentes Pet-Dock, Telefon OK');
   } finally {
     await browser.close();
   }

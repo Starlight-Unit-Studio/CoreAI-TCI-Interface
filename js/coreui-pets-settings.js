@@ -19,7 +19,7 @@
     file_too_large: 'Das Sprite-Sheet ist größer als 5 MB.',
     invalid_file_type: 'Bitte wähle ein PNG oder WebP.',
     not_transparent: 'Das Sprite-Sheet braucht einen transparenten Hintergrund.',
-    invalid_sheet_size: 'Die Einzelbilder müssen quadratisch nebeneinander liegen und 16 bis 512 Pixel hoch sein.',
+    invalid_sheet_size: 'Erlaubt sind 2 bis 24 quadratische Frames in einer Zeile oder OpenPet v1/v2 (1536 × 1872/2288).',
     invalid_frame_count: 'Ein Sprite-Sheet braucht 2 bis 24 Einzelbilder.',
     too_many_pets: 'Du hast schon 12 eigene Pets. Lösche erst eines.',
     pet_not_found: 'Dieses Pet gibt es nicht mehr.',
@@ -146,8 +146,8 @@
   // "Pet mit Mara erstellen": a new chat with a draft; nothing is sent yet.
   $('petCreate').addEventListener('click', function () {
     location.href = './app.html?draft=' + encodeURIComponent('Hilf mir, ein eigenes Pet für CoreAI zu entwerfen. '
-      + 'Ein Pet ist ein Sprite-Sheet: ein transparentes PNG mit quadratischen Einzelbildern nebeneinander in einer Reihe, '
-      + 'zum Beispiel 6 Bilder mit je 32 Pixeln. Mein Pet soll so aussehen: ');
+      + 'Ein Pet kann ein transparenter Streifen mit quadratischen Frames oder ein OpenPet v1/v2 Atlas mit 9 oder 11 Zustandszeilen sein. '
+      + 'Ein OpenPet-Atlas hat 8 Spalten mit je 192 × 208 Pixeln. Mein Pet soll so aussehen: ');
   });
 
   // --- Upload ---------------------------------------------------------------------------------------------
@@ -192,12 +192,15 @@
     var img = new Image();
     img.onload = function () {
       var h = img.naturalHeight, w = img.naturalWidth;
-      if (h < 16 || h > 512 || w % h !== 0) { $('petUploadError').textContent = ERRORS.invalid_sheet_size; return; }
-      var frames = w / h;
-      if (frames < 2 || frames > 24) { $('petUploadError').textContent = ERRORS.invalid_frame_count; return; }
-      var node = window.CoreAIPets ? window.CoreAIPets.make({id: 'preview', url: state.previewUrl, frames: frames, frame_px: h}, 64) : null;
+      var version = w === 1536 && (h === 1872 || h === 2288) ? (h === 2288 ? 2 : 1) : 0;
+      if (!version && (h < 16 || h > 512 || w % h !== 0)) { $('petUploadError').textContent = ERRORS.invalid_sheet_size; return; }
+      var frames = version ? 8 : w / h;
+      if (!version && (frames < 2 || frames > 24)) { $('petUploadError').textContent = ERRORS.invalid_frame_count; return; }
+      var node = window.CoreAIPets ? window.CoreAIPets.make({id: 'preview', url: state.previewUrl,
+        frames: frames, frame_px: version ? 192 : h, sprite_version: version}, 64) : null;
       if (node) $('petPreviewSprite').appendChild(node);
-      $('petPreviewInfo').textContent = frames + ' Bilder mit je ' + h + ' Pixeln';
+      $('petPreviewInfo').textContent = version ? 'OpenPet v' + version + ': 8 Spalten, ' + (version === 2 ? 11 : 9) + ' Zustandszeilen'
+        : frames + ' Bilder mit je ' + h + ' Pixeln';
       $('petPreview').hidden = false;
     };
     img.onerror = function () { $('petUploadError').textContent = ERRORS.invalid_file_type; };

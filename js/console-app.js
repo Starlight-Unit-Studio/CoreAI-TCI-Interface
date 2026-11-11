@@ -236,6 +236,13 @@
   function setStatus(type, label) {
     statusDot.className = 'status-dot' + (type ? ' ' + type : '');
     statusLabel.textContent = label || '';
+    // The companion has its own lifecycle, independent of typing rows.
+    var pets = window.CoreAIPets;
+    if (!pets || typeof pets.setActivity !== 'function') return;
+    var current = pets.getActivity();
+    if (type === 'waiting' && /ANTWORTET/.test(label || '')) pets.setActivity('running');
+    else if (type === 'error') pets.setActivity('failed');
+    else if (type === 'online' && (current === 'running' || current === 'waiting')) pets.setActivity('review');
   }
 
   // ── Session-Zugriff ──────────────────────────────────────
@@ -384,6 +391,10 @@
   function updateActivePendingUi() {
     var ses = activeSession();
     state.waitingEmber = !!(ses && state.pendingBySession[ses.id]);
+    if (window.CoreAIPets && typeof window.CoreAIPets.setActivity === 'function') {
+      if (state.waitingEmber) window.CoreAIPets.setActivity('running');
+      else if (['running', 'waiting'].indexOf(window.CoreAIPets.getActivity()) >= 0) window.CoreAIPets.setActivity('review');
+    }
     updateAgentCancelControl();
     if (chatFollow) chatFollow.refresh();
   }
@@ -3777,6 +3788,10 @@
       recoverActiveRun(ses, d);
       var waitingTool = d.active_run && d.active_run.status === 'waiting_tool'
         && Number(d.active_run.turn_id) === Number(userMsgId);
+      if (isActiveSession(sessionId) && window.CoreAIPets) {
+        if (waitingTool) window.CoreAIPets.setActivity('waiting');
+        else if (window.CoreAIPets.getActivity() === 'waiting') window.CoreAIPets.setActivity('running');
+      }
 
       if (found && !waitingTool) {
         delete state.liveWorkEventsBySession[sessionId];
@@ -3860,6 +3875,10 @@
       }
       var waitingTool = d.active_run && d.active_run.status === 'waiting_tool'
         && Number(d.active_run.turn_id) === pendingTurnId;
+      if (isActiveSession(sessionId) && window.CoreAIPets) {
+        if (waitingTool) window.CoreAIPets.setActivity('waiting');
+        else if (window.CoreAIPets.getActivity() === 'waiting') window.CoreAIPets.setActivity('running');
+      }
       if (receivedReply && !waitingTool && state.pendingBySession[sessionId]) {
         delete state.liveWorkEventsBySession[sessionId];
         clearAgentRun(sessionId);
