@@ -1,0 +1,11 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.8
+Datum: 11.11.2026
+
+- Feedback-Ereignisse werden Mara als ausdrueckliche UI-Interaktion uebergeben: DAUMEN HOCH / LIKE oder DAUMEN RUNTER / DISLIKE, nicht als gesprochenes Kompliment.
+- Der Prompt nennt die konkret bewertete Antwort, die vorangehende Frage und betont, dass der Nutzer beim Button-Klick nichts gesagt oder geschrieben hat.
+- Mara soll den Like/Dislike in der natuerlichen Folgeantwort direkt benennen, statt Formulierungen wie 'freut mich zu hoeren' zu benutzen.
+- Die bereits implementierte dauerhafte Datenbankbewertung, gruen/rot Darstellung, Einmal-Ereignisse und Modellantwort ohne Thinking und Tools bleiben unveraendert.
+- Bestehende Sicherheits- und Isolationstests wurden um die genaue UI-Ereignisbedeutung fuer beide Bewertungen erweitert.
+- Vollstaendige PHP-/Preflight-Tests sind vor dem Merge erforderlich.
+
+Version: 0.7.8
