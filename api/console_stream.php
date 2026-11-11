@@ -152,6 +152,8 @@ if ($afterId <= 0 || trim($character_id) === '' || $sessionId === '') {
 }
 try {
   coreui_console_session_require($pdo, (int)$uid, $sessionId, true);
+  $projectScope = coreui_project_session_scope($pdo,(int)$uid,$sessionId);
+  $GLOBALS['COREUI_PROJECT_ISOLATED'] = (($projectScope['mode'] ?? '') === 'isolated' && !empty($projectScope['id']));
   $stTurn = $pdo->prepare(
     "SELECT id, message, file_uuid, image_url,
        (SELECT COALESCE(MAX(r.revision_no),0) FROM stu_console_message_revisions r WHERE r.message_id=stu_chat_messages.id) AS trigger_revision
@@ -918,7 +920,7 @@ try {
       ember_attach_audio_transcribe_after($pdo, (int)$uid, $attachmentIds);
       // 0.6.19: Mara decides herself what of the spoken words goes into her long-term
       // memory, with the same reflection as for text (and the relationship value).
-      if (!empty($voiceTurn) && is_string($replyFinal ?? null)) {
+      if (!empty($voiceTurn) && empty($GLOBALS['COREUI_PROJECT_ISOLATED']) && is_string($replyFinal ?? null)) {
         ember_attach_voice_reflect($pdo, $char, (int)$uid, $attachmentIds, ember_attach_strip_marker($message), $replyFinal);
       }
     } catch (Throwable $eTranscript) {
