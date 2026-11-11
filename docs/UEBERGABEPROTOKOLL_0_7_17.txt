@@ -1,0 +1,29 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.17
+Datum: 11.11.2026
+
+AUFTRAG
+OpenPet-Galerie-Downloads als systemweite Standard-Pets anbieten, aber erkennbare urheberrechtliche/markenrechtliche Problemfiguren und ungepruefte Drittgrafiken ausschliessen.
+
+BESTAND
+OPENPETS.zip: 56 verschachtelte .openpet.zip Dateien, jeweils pet.json und spritesheet.webp; 47 Atlas-v2 und 9 Atlas-v1; ein Archiv nutzt RGB ohne Alpha. Keine individuelle Lizenzdatei, kein Rechtebeleg. Fremdfiguren u.a. Naruto, Dragon Ball, Zelda, Simpsons, Mass Effect. Kein Asset mit belegten Weitergaberechten in der ersten Charge.
+
+UMSETZUNG
+- api/pet_library_store.php: separate, nur fuer gepruefte Pakete freigegebene Bibliothek; ZIP-Validierung, private Ablage, Lizenznachweis, Manifest-Locking.
+- api/pets_store.php: Auswahl und aktuelles Pet enthalten die erlaubten Bibliotheks-Eintraege; Rueckfall auf Mara nach Deaktivierung.
+- api/pets.php: authentifizierter Bildzugang, Inhaber-Import, Inhaber-Entfernung, normaler Pet-API-Vertrag bleibt erhalten.
+- api/console_personalization_store.php: op-IDs werden in Kontopraeferenzen gespeichert.
+- settings.html, js/coreui-pets-settings.js: rechtspruefungsgebundene Uploadmaske nur fuer den Inhaber; Standard-Pets mit Copyright-Verweis fuer alle.
+- tests: scripts/openpet-library-selftest.php, scripts/openpet-library-ui-selftest.cjs, GitHub-Action, beide Produktions-Preflights.
+- Keine Assets aus dem ZIP wurden ungeprueft ins Repo kopiert.
+
+BETRIEB
+In Einstellungen > Pets sieht nur der Inhaber das Freigabeformular. Ein Paket aus OPENPETS.zip einzeln auswaehlen, die tatsaechliche Berechtigung der Sprites bestaetigen und konkrete Quelle, Lizenz und Urheber nachweisen.
+Es duerfen nur selbst erstellte oder unmissverstaendlich zur Weitergabe freigegebene Originalgrafiken als systemweite Presets importiert werden. Ein OpenPet-Upload oder App-Quellcode unter Open-Source-Lizenz ist kein Nachweis fuer die Figuren- und Spriterechte.
+Bereits genehmigte Pets erscheinen automatisch als Standard-Pets aller Nutzer; bestehende individuelle Pet-Wahl bleibt erhalten.
+
+TESTS
+php scripts/pets-selftest.php
+php scripts/openpet-library-selftest.php
+node scripts/openpet-library-ui-selftest.cjs
+python3 scripts/version-merge-check.py --base-version 0.7.16
+Beide offiziellen Preflights nach Release auf dem Root-Server ausfuehren.
