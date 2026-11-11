@@ -3,11 +3,11 @@ declare(strict_types=1);
 
 /*
  * CoreAI 0.7.1: Settings > Pets (after the reference screenshots). A pet is an animated companion
- * at the start of Mara's work line in the chat while she works on a request.
+ * in the chat, with animation states and a persistent movable dock.
  *   - the built-in CoreAI pets (original art, images/pets/<id>.png from scripts/build-pet-sprites.py)
  *   - pets a person uploads: one sprite sheet, a row of square frames (migration 034)
  *   - the choice per account (a built-in id, 'u<id>' or 'none'), kept with the personalization;
- *     Nova is preselected, and a deleted own pet falls back to it
+ *     Mara Thorne is preselected, and a deleted own pet falls back to her
  * The sprite sheet is checked from its own bytes (PNG or WebP header), so no image library decides.
  */
 
@@ -19,9 +19,10 @@ const COREUI_PET_MIN_PX = 16;
 const COREUI_PET_MAX_PX = 512;
 const COREUI_PET_MAX_OWN = 12;
 
-/** The built-in pets: id => [name, description]; every sheet has six 32 px frames. */
+/** Built-in pets: Mara uses the OpenPet v2 atlas; existing pets use six 32px frames. */
 function coreui_pet_catalog(): array {
   return [
+    'mara' => ['Mara Thorne', 'Mara begleitet dich im Chat als animierte terranische TCI.'],
     'nova' => ['Nova', 'Ein kleiner Stern, der vor Ideen funkelt.'],
     'komet' => ['Komet', 'Saust mit dir durch lange Aufgaben.'],
     'orbi' => ['Orbi', 'Ein Mini-Planet, der um deine Fragen kreist.'],
@@ -36,8 +37,11 @@ function coreui_pet_catalog(): array {
 function coreui_pet_builtin_view(): array {
   $out = [];
   foreach (coreui_pet_catalog() as $id => [$name, $description]) {
-    $out[] = ['id' => $id, 'name' => $name, 'description' => $description, 'url' => './images/pets/' . $id . '.png',
-      'frames' => 6, 'frame_px' => 32, 'sprite_version' => 0, 'own' => false];
+    $isMara = $id === 'mara';
+    $out[] = ['id' => $id, 'name' => $name, 'description' => $description,
+      'url' => './images/pets/' . $id . ($isMara ? '.webp' : '.png'),
+      'frames' => $isMara ? 8 : 6, 'frame_px' => $isMara ? 192 : 32,
+      'sprite_version' => $isMara ? 2 : 0, 'own' => false];
   }
   return $out;
 }
@@ -189,7 +193,7 @@ function coreui_pet_add(PDO $pdo, int $uid, string $name, string $description, s
   return coreui_pet_own_view(coreui_pet_own_row($pdo, $uid, (int)$pdo->lastInsertId()) ?? []);
 }
 
-/** The preselected pet (Nova). */
+/** The preselected pet (Mara Thorne). */
 function coreui_pet_default(): string {
   return (string)coreui_personalization_defaults()['pet'];
 }
