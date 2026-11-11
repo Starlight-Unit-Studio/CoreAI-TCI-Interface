@@ -576,8 +576,9 @@ function coreui_image_result_text(array $result): string {
   if (!empty($result['ok'])) {
     return 'Das Bild ist fertig (' . (int)$result['width'] . ' × ' . (int)$result['height'] . ' Pixel, '
       . (int)round((float)$result['seconds']) . ' Sekunden) und ist als Bildanhang deiner Antwort gespeichert. '
-      . 'Sag kurz, dass es da ist, und beschreibe in ein, zwei Saetzen, was du gemalt hast. '
-      . 'Du kannst es nicht sehen; erfinde keine Einzelheiten, die nicht in deiner Beschreibung standen. '
+      . 'Du bekommst das fertige Bild anschliessend nach Moeglichkeit als echten Vision-Input. '
+      . 'Erst wenn du die Pixel tatsaechlich erhalten hast, darfst du konkrete sichtbare Details kommentieren. '
+      . 'Falls kein Bildinput verfuegbar ist, sage das offen und erfinde keine Einzelheiten. '
       . 'Schreibe keinen Platzhalter wie "(Hier erscheint das Bild)"; das Bild haengt schon an deiner Antwort. '
       . 'Kein weiteres [BILD:], ausser die Person will ausdruecklich noch ein Bild.';
   }
@@ -639,6 +640,53 @@ function coreui_image_pending_take(): array {
   $list = $GLOBALS['COREUI_PENDING_IMAGES'] ?? [];
   unset($GLOBALS['COREUI_PENDING_IMAGES']);
   return is_array($list) ? array_values(array_filter($list, static fn($u): bool => is_string($u) && preg_match('~^[a-f0-9]{32}$~D', $u) === 1)) : [];
+}
+
+/**
+ * Resolve only this turn's generated image UUIDs, scoped to the authenticated
+ * account and the private generated-image media registry. No user-controlled
+ * path or media URL is ever used as a filesystem locator.
+ */
+function coreui_image_followup_paths(PDO $pdo, int $uid, array $uuids): array {
+  if ($uid <= 0 || $uuids === []) return [];
+  $wanted = [];
+  foreach ($uuids as $uuid) {
+    if (is_string($uuid) && preg_match('~^[a-f0-9]{32}$~D', $uuid) === 1
+        && !in_array($uuid, $wanted, true)) $wanted[] = $uuid;
+  }
+  if ($wanted === []) return [];
+  $dir = (string)(realpath(coreui_image_dir()) ?: '');
+  if ($dir === '' || !is_dir($dir)) return [];
+  $dir = rtrim($dir, '/');
+  try {
+    $q = implode(',', array_fill(0, count($wanted), '?'));
+    $stmt = $pdo->prepare('SELECT uuid, stored_name, rel_path, mime_type, file_size '
+      . 'FROM stu_console_media WHERE user_id = ? AND kind = ? AND uuid IN (' . $q . ')');
+    $stmt->execute(array_merge([$uid, 'image'], $wanted));
+    $rows = [];
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+      $rows[(string)$row['uuid']] = $row;
+    }
+  } catch (Throwable $e) {
+    return [];
+  }
+  $resolved = [];
+  foreach ($wanted as $uuid) {
+    $row = $rows[$uuid] ?? null;
+    if (!is_array($row)
+        || (string)$row['stored_name'] !== $uuid . '.png'
+        || (string)$row['rel_path'] !== 'var/console_media/images/' . $uuid . '.png'
+        || (string)$row['mime_type'] !== 'image/png') continue;
+    $path = (string)(realpath($dir . '/' . $uuid . '.png') ?: '');
+    if ($path === '' || !str_starts_with($path, $dir . '/')
+        || !is_file($path) || !is_readable($path)) continue;
+    $size = @filesize($path);
+    if (!is_int($size) || $size < 100 || $size > COREUI_IMAGE_MAX_BYTES
+        || $size !== (int)$row['file_size']) continue;
+    if (@file_get_contents($path, false, null, 0, 8) !== "\x89PNG\r\n\x1a\n") continue;
+    $resolved[] = $path;
+  }
+  return $resolved;
 }
 
 /** Lines for the history: what Mara painted in earlier answers ([message_id => line]). */
