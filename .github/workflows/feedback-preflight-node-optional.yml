@@ -1,0 +1,59 @@
+name: Feedback Preflight Without Node
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/feedback-ui-selftest.php'
+      - 'scripts/feedback-ui-selftest.cjs'
+      - 'scripts/preflight.sh'
+      - 'scripts/preflight-native.sh'
+      - '.github/workflows/feedback-preflight-node-optional.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/feedback-ui-selftest.php'
+      - 'scripts/preflight.sh'
+      - 'scripts/preflight-native.sh'
+
+permissions:
+  contents: read
+
+jobs:
+  php-feedback-and-optional-node:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_sqlite
+          coverage: none
+      - name: Validate PHP and Bash
+        run: |
+          php -l scripts/feedback-ui-selftest.php
+          bash -n scripts/preflight.sh
+          bash -n scripts/preflight-native.sh
+      - name: Feedback contract with PHP only
+        run: php scripts/feedback-ui-selftest.php
+      - name: Existing optional Node feedback contract
+        run: node scripts/feedback-ui-selftest.cjs
+      - name: Both preflights gate Node and always run PHP
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          for name in ('scripts/preflight.sh', 'scripts/preflight-native.sh'):
+              src = Path(name).read_text()
+              start = src.index("  feedback_ui_selftest=''")
+              end = src.index("\n  fi\n", start) + len("\n  fi\n")
+              # The first outer fi closes the optional Node block only after its nested test.
+              block = src[start:start + 1500]
+              assert 'feedback-ui-selftest.php' in block, name
+              assert 'if command -v node >/dev/null 2>&1; then' in block, name
+              assert 'feedback-ui-selftest.cjs' in block, name
+              assert block.index('feedback-ui-selftest.php') < block.index('if command -v node'), name
+              assert 'Node.js optional und nicht installiert' in block, name
+          print('Node is optional, the PHP feedback contract is mandatory in both modes')
+          PY
+      - name: Mandatory version gate
+        run: python3 scripts/version-merge-check.py --base-version 0.7.10
