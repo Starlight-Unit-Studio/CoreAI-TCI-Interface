@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.7.8 - 11.11.2026
+
+- **Explicit like/dislike event:** Mara now receives the actual UI event, "DAUMEN HOCH / LIKE" or "DAUMEN RUNTER / DISLIKE", including the selected response and preceding user question, instead of generic sentiment.
+- **No invented spoken praise:** The feedback prompt explicitly says the user clicked a thumb without writing or speaking anything. Mara is instructed to acknowledge the selected rating directly rather than say "Glad to hear that."
+- **Unchanged feedback infrastructure:** Persistent red/green thumbs, database records, idempotent single follow-up, no-thinking model call, existing core selection, and no tools remain unchanged.
+- **Regression:** Existing message-action tests now check that both the positive and negative prompts carry the explicit UI-event semantics. Full PHP and preflight verification remain required before merge.
+- **Version:** 0.7.8 follows main 0.7.7.
+
 ## 0.7.7 - 11.11.2026
 
 - **Persistent feedback thumbs:** Replace the assistant answer's up/down arrows with proper thumb icons in the same small action-button footprint. A selected thumbs-up remains green, a thumbs-down red, including after chat reload. Tapping the same selected thumb no longer clears the reaction; changing from up to down replaces it atomically in the existing `stu_chat_reactions` table.
