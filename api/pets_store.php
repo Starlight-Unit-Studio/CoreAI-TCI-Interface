@@ -171,6 +171,54 @@ function coreui_pet_own_row(PDO $pdo, int $uid, int $id): ?array {
   return is_array($row) ? $row : null;
 }
 
+/**
+ * Read a downloaded OpenPet archive as a private personal sprite.
+ * Never extract ZIP paths. Only the two documented entries are accepted.
+ * Publication rights are not implied by a personal import.
+ */
+function coreui_pet_personal_openpet_read(string $zipPath, int $size): array {
+  if ($size <= 0 || $size > COREUI_OPENPET_ZIP_MAX_BYTES || !is_file($zipPath)) {
+    throw new InvalidArgumentException('file_too_large');
+  }
+  if (!class_exists(ZipArchive::class)) throw new RuntimeException('zip_extension_missing');
+  $zip = new ZipArchive();
+  if ($zip->open($zipPath) !== true) throw new InvalidArgumentException('invalid_openpet_zip');
+  try {
+    if ($zip->numFiles !== 2) throw new InvalidArgumentException('invalid_openpet_zip');
+    $seen = [];
+    for ($i = 0; $i < $zip->numFiles; $i++) {
+      $stat = $zip->statIndex($i);
+      $entry = is_array($stat) ? (string)($stat['name'] ?? '') : '';
+      if (!in_array($entry, ['pet.json', 'spritesheet.webp'], true) || in_array($entry, $seen, true)) {
+        throw new InvalidArgumentException('invalid_openpet_zip');
+      }
+      $limit = $entry === 'pet.json' ? 65536 : COREUI_PET_MAX_BYTES;
+      if (!is_array($stat) || (int)$stat['size'] <= 0 || (int)$stat['size'] > $limit) {
+        throw new InvalidArgumentException('invalid_openpet_zip');
+      }
+      $seen[] = $entry;
+    }
+    $manifest = $zip->getFromName('pet.json');
+    $sprite = $zip->getFromName('spritesheet.webp');
+    if (!is_string($manifest) || !is_string($sprite) || strlen($manifest) > 65536
+        || strlen($sprite) > COREUI_PET_MAX_BYTES) throw new InvalidArgumentException('invalid_openpet_zip');
+  } finally {
+    $zip->close();
+  }
+  $pet = json_decode($manifest, true);
+  if (!is_array($pet) || !isset($pet['displayName']) || !is_string($pet['displayName'])) {
+    throw new InvalidArgumentException('invalid_openpet_manifest');
+  }
+  $name = coreui_pet_text($pet['displayName'], 40);
+  $description = coreui_pet_text($pet['description'] ?? '', 500);
+  if ($name === '') throw new InvalidArgumentException('invalid_openpet_manifest');
+  $sheet = coreui_pet_sheet_check($sprite);
+  if ($sheet['mime'] !== 'image/webp' || !in_array($sheet['sprite_version'], [1, 2], true)) {
+    throw new InvalidArgumentException('invalid_openpet_atlas');
+  }
+  return ['name' => $name, 'description' => $description, 'bytes' => $sprite];
+}
+
 /** Stores an uploaded pet (bytes already read from the upload); returns the pet for the page. */
 function coreui_pet_add(PDO $pdo, int $uid, string $name, string $description, string $bytes): array {
   if (!coreui_pet_schema_ready($pdo)) throw new RuntimeException('missing_schema_034');
