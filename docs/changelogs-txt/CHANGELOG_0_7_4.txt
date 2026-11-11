@@ -1,0 +1,15 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.4
+Datum: 11.11.2026
+
+- Die beiden Zeilen TCI CORE: und Mara bzw. der individuelle TCI-Name haben nun identische Schriftfamilie, Schriftgroesse, Strichstaerke, Zeilenhoehe, Laufweite und blaue Themenfarbe.
+- Die Unterstreichung von TCI CORE: nutzt nur die goldene Akzentfarbe (--amb), unabhaengig vom aktiven hellen/dunklen Design.
+- Fehlerbehebung Chat: Die vier Infobereiche Core, Kontext, Werkzeuge und Projekt fehlten auf Smartphones, weil der insightChips-Container aus app.html entfernt worden war.
+- Mobile Chat-Schaltflaechen wieder eingebaut. Die bestehende Desktop-Seitenleiste bleibt erhalten; beide sind auf der leeren Startseite ausdruecklich verborgen und werden beim Aufruf einer Sitzung wieder eingeblendet.
+- Smartphone-Abstaende der vier Chips so angepasst, dass bei 390 px alle vier sichtbar sind. Das vorhandene CoreUIInsights-Modul und die serverseitigen Daten bleiben unveraendert.
+- Neue Offline- und Playwright-Regressionstests fuer Startseite, Chat, vier Chips, geoeffnete Werkzeuganzeige und Desktop-Seitenleiste in beide Preflights integriert.
+- Kein Aendern von Chat-Nachrichten, Datenbank, Avataren, Modellen, Bildgenerator, Pet-System oder Installer.
+- Regressionstests vergleichen die berechnete Typografie und Unterstrichfarbe auf 390-px-Smartphones und im Desktop-Browser.
+- Der bestehende Bootstrap setup.sh ruft den Preflight bereits auf; fuer einen Installerfix wird erst eine konkret reproduzierte neue Fehlermeldung benoetigt.
+- PHP-/Browser-/Preflight-Tests am Zielserver muessen vor einem Merge ausgefuehrt werden.
+
+Version: 0.7.4

@@ -32,18 +32,18 @@
   gap: 4px;
   overflow-wrap: anywhere;
 }
-.msg-row.ember .msg-core-role {
-  color: var(--muted, #77859b);
-  font: 600 10px/1.25 "Share Tech Mono", monospace;
-  letter-spacing: .10em;
-  text-decoration-line: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 3px;
-}
+/* Role and configurable TCI name form one visual identity. */
+.msg-row.ember .msg-core-role,
 .msg-row.ember .msg-core-persona {
   color: var(--cx, #5b92ff);
   font: 700 12px/1.35 var(--coreui-font, "Rajdhani"), sans-serif;
   letter-spacing: .12em;
+}
+.msg-row.ember .msg-core-role {
+  text-decoration-line: underline;
+  text-decoration-color: var(--amb, #e29b39);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
 }
 .msg-row.ember .work-panel,
 .msg-row.ember .msg-bubble,
@@ -66,4 +66,34 @@
 }
 .pref-compact-feed .msg-row.ember {
   --tci-avatar-size: 36px;
+}
+
+/* The Core/Kontext/Werkzeuge/Projekt controls are chat-only.
+   Their internal DOM remains mounted so settings and live data survive toggles. */
+.welcome-screen[hidden] { display: none !important; }
+.core-insights[hidden],
+.insight-chips[hidden],
+.messages-area.is-welcome .insight-chips {
+  display: none !important;
+}
+@media (min-width: 1400px) {
+  /* The unsaved welcome view does not reserve space for a hidden right rail. */
+  .app-shell .messages-area.is-welcome { margin-right: 0; }
+}
+
+/* Keep all four insight shortcuts visible on an ordinary phone screen.
+   Ultra-narrow screens still inherit the safe horizontal-scroll fallback. */
+@media (max-width: 620px) {
+  .insight-chip-row { gap: 6px; justify-content: space-between; }
+  .insight-chip {
+    gap: 4px;
+    padding: 8px 9px;
+    font-size: 10px;
+    letter-spacing: .035em;
+  }
+  .insight-chip .insight-icon { font-size: 12px; }
+}
+@media (max-width: 360px) {
+  .insight-chip { padding-inline: 6px; font-size: 9px; }
+  .insight-chip-row { gap: 4px; }
 }

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.3: TCI chat header, full-width replies and image follow-up.
+# CoreAI: TCI Interface 0.7.4: TCI chat header, full-width replies and image follow-up.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -194,6 +194,7 @@ UI_FILES=(
   scripts/context-budget-selftest.php
   scripts/insights-selftest.php
   scripts/insights-ui-selftest.cjs
+  scripts/insights-chat-visibility-ui-selftest.cjs
   scripts/ai-context-selftest.php
   scripts/context-slider-ui-selftest.cjs
   api/ai_context_estimate.php
@@ -1310,7 +1311,17 @@ if command -v php >/dev/null 2>&1; then
     else
       ok 'Chat-Menue: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
     fi
-    # 0.7.3: TCI identity and full-width assistant replies at phone and desktop widths.
+    # 0.7.4: four insight panels must exist in saved chats, not on the welcome page.
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/insights-chat-visibility-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'Infokaesten: vier Schaltflaechen im Handy-Chat, Desktop-Seitenleiste und leere Startseite geprueft.'
+      else
+        fail 'Infokaesten: Chat-/Startseiten-Umschaltung oder mobile Schaltflaechen fehlerhaft.'
+      fi
+    else
+      ok 'Infokaesten: Browser-Smoke-Test uebersprungen (Playwright nicht installiert); Offline-DOM-Vertrag bleibt Pflicht.'
+    fi
+    # 0.7.4: TCI identity and full-width assistant replies at phone and desktop widths.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/tci-chat-layout-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'TCI CORE: Avatar, Namenszeilen und volle Antwortbreite im Browser geprueft.'

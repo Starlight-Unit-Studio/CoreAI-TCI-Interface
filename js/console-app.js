@@ -192,14 +192,22 @@
         function () { return state.typingEl || (messagesInner && messagesInner.lastElementChild); },
         messagesInner)
     : null;
-  // Core, Kontext, Werkzeuge and Projekt of the active session.
-  var insights      = window.CoreUIInsights
+  // The four session insight controls exist only for an active conversation.
+  // On the unsaved welcome screen they are hidden, not removed from the chat.
+  var insightAside = document.getElementById('coreInsights');
+  var insightChips = document.getElementById('insightChips');
+  var insights = window.CoreUIInsights
     ? window.CoreUIInsights.create({
-        aside: document.getElementById('coreInsights'),
-        chips: document.getElementById('insightChips'),
+        aside: insightAside,
+        chips: insightChips,
         apiBase: API_BASE
       })
     : null;
+  function showSessionInsights(active) {
+    if (insightAside) insightAside.hidden = !active;
+    if (insightChips) insightChips.hidden = !active;
+    if (!active && insights && typeof insights.setChip === 'function') insights.setChip('');
+  }
   var inputEl       = document.getElementById('inputMessage');
   var btnSend       = document.getElementById('btnSend');
   // v1.1.1.89 - Anhang
@@ -426,6 +434,7 @@
     if (chatFollow) chatFollow.reset();
     if (jumpLatest) jumpLatest.hidden = true;
     messagesArea.classList.add('is-welcome');
+    showSessionInsights(false);
     if (welcomeScreen) welcomeScreen.hidden = false;
     if (welcomeError) { welcomeError.textContent = ''; welcomeError.hidden = true; }
     updateWelcomeGreeting();
@@ -825,8 +834,9 @@
     trimSessionCaches(state.activeSessionId);
     if (chatFollow) chatFollow.reset();
     var ses = activeSession();
-    if (!ses) return Promise.resolve();
+    if (!ses) { showSessionInsights(false); return Promise.resolve(); }
     messagesArea.classList.remove('is-welcome');
+    showSessionInsights(true);
     if (welcomeScreen) welcomeScreen.hidden = true;
     if (state.editingMessage && String(state.editingMessage.session_id) !== String(ses.id)) {
       clearMessageEdit(false);
