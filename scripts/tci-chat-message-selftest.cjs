@@ -67,6 +67,22 @@ assert(css.includes('.msg-row.user .msg-operator-role,\n.msg-row.user .msg-opera
 assert(css.includes('.msg-row.user .msg-operator-role {')
   && css.includes('text-decoration-color: var(--cx, #5b92ff);'),
   'operator underline uses Mara blue, inverse of the gold TCI CORE underline');
+assert(css.includes('.msg-row.user {\n  --operator-avatar-size: 44px;\n  display: block;')
+  && css.includes('.msg-row.user > .msg-avatar {\n  position: absolute;')
+  && css.includes('right: 0;'),
+  'user avatar is right-anchored, with the human row filling the chat width');
+assert(css.includes('.msg-row.user > .msg-content {')
+  && css.includes('width: 100%;')
+  && css.includes('align-items: flex-end;'),
+  'user message content spans the chat, allowing bubbles to sit below the avatar');
+assert(css.includes('margin: 0 calc(var(--operator-avatar-size) + 13px) 9px 0;')
+  && css.includes('margin-right: calc(var(--operator-avatar-size) + 9px);'),
+  'OPERATOR uses Mara-equivalent avatar spacing on desktop and phones');
+assert(css.includes('.msg-row.user > .msg-content > .msg-bubble {')
+  && css.includes('align-self: flex-end;')
+  && css.includes('max-width: min(92%, 820px);'),
+  'the user bubble may reach the chat right edge, independent of avatar width');
+
 assert.equal((app.match(/buildTciMessageHeading\(\)/g) || []).length, 4,
   'helper, saved message, live working response and browser status use the same heading');
 assert(app.includes("role === 'ember' ? buildTciMessageHeading()"), 'only assistant messages receive TCI CORE label');
