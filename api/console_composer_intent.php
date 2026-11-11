@@ -126,10 +126,15 @@ function coreui_composer_intent_ensure(array $intent, string $reply, string $use
 }
 
 /** The answer of api/composer_tools.php (pure). */
-function coreui_composer_tools_answer(bool $guest, bool $image, bool $web, bool $browse): array {
-  $off = $guest ? 'Für Gäste nicht verfügbar' : 'Für dein Konto gerade nicht freigegeben';
+function coreui_composer_tools_answer(bool $guest, bool $image, bool $web, bool $browse, ?array $imageQuota = null): array {
+  $off = $guest ? 'Im Admin Core für Gäste deaktiviert' : 'Für dein Konto gerade nicht freigegeben';
+  $imageOff = $off;
+  if ($guest && is_array($imageQuota) && (int)($imageQuota['limit'] ?? 0) > 0
+      && (int)($imageQuota['left'] ?? 0) < 1 && !empty($imageQuota['enabled'])) {
+    $imageOff = 'Bildlimit für heute erreicht';
+  }
   return ['ok' => true, 'guest' => $guest, 'tools' => [
-    'image' => ['on' => $image && !$guest, 'why' => $image && !$guest ? '' : $off],
+    'image' => ['on' => $image, 'why' => $image ? '' : $imageOff],
     'web' => ['on' => $web, 'why' => $web ? '' : $off],
     'browse' => ['on' => $browse, 'why' => $browse ? '' : $off],
   ], 'planned' => ['deep_research', 'connectors']];
