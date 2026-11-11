@@ -122,7 +122,8 @@ if ($action === 'say') {
   if ($dir === null) stu_json(['ok' => false, 'error' => 'voice_cache_failed'], 500);
   coreui_voice_cleanup($dir);
   try {
-    $plan = coreui_voice_plan($dir, $text, (string)(coreui_ai_runtime_settings()['main_language'] ?? 'de'));
+    // 0.7.14: in the voices chosen under Settings > Stimme.
+    $plan = coreui_voice_plan($dir, $text, (string)(coreui_ai_runtime_settings()['main_language'] ?? 'de'), coreui_voice_prefs($pdo, $uid)['voices']);
   } catch (RuntimeException $e) {
     $code = $e->getMessage();
     stu_json(['ok' => false, 'error' => $code], $code === 'nothing_to_read' ? 422 : 503);
@@ -261,7 +262,7 @@ $wavs = $work !== null ? coreui_voice_prepare_native($source, $work, COREUI_VOIC
 if (empty($wavs['ok'])) {
   $failure = ($wavs['error'] ?? '') === 'no_speech' ? 'silence' : 'convert_failed';
 } else {
-  $language = coreui_voice_language_name((string)(coreui_ai_runtime_settings()['main_language'] ?? 'de'));
+  $language = coreui_voice_language_name(coreui_voice_input_code($pdo, $uid, (string)(coreui_ai_runtime_settings()['main_language'] ?? 'de')));
   $terms = function_exists('ember_attach_voice_terms') ? ember_attach_voice_terms($pdo, $uid) : [];
   foreach ((array)$wavs['paths'] as $i => $path) {
     $h = coreui_voice_transcribe_part(ember_url(), $core, (string)@file_get_contents($path), $language, 600,

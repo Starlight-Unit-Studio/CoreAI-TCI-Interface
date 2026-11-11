@@ -33,6 +33,8 @@ require_once __DIR__ . '/voice_core.php';
 require_once __DIR__ . '/voice_store.php';
 
 const COREUI_VOICE_INPUT_MAX_SECONDS = 120;
+/** 0.7.14: a dictation upload (two minutes of Opus are about 1 MB; other browsers record larger). */
+const COREUI_VOICE_DICTATION_MAX_BYTES = 16 * 1024 * 1024;
 const COREUI_VOICE_FILE_MAX_SECONDS = 600;
 const COREUI_VOICE_PART_MAX_SECONDS = 60;
 /** A pause earlier than this is not used for a cut; parts stay long enough to carry context. */
@@ -47,10 +49,13 @@ const COREUI_VOICE_TOKENS_PER_SECOND = 25;
 const COREUI_VOICE_MESSAGE_PREFIX = 'Sprachnachricht-';
 /** A transcript that is still being written counts as pending this long. */
 const COREUI_VOICE_TRANSCRIPT_PENDING_SECONDS = 1200;
-/** Account language -> language name in the template. */
-const COREUI_VOICE_TRANSCRIBE_LANGUAGES = ['de' => 'German', 'en' => 'English'];
+/** Account language -> language name in the template. 0.7.14: the languages of Settings > Stimme > Sprache. */
+const COREUI_VOICE_TRANSCRIBE_LANGUAGES = ['de' => 'German', 'en' => 'English', 'fr' => 'French', 'it' => 'Italian',
+  'pt' => 'Portuguese', 'es' => 'Spanish'];
 
+/** 'de' -> 'German'; 0.7.14: 'auto:de' ("Automatisch erkennen", German most likely) -> 'auto:German'. */
 function coreui_voice_language_name(string $code): string {
+  if (str_starts_with($code, 'auto:')) return 'auto:' . coreui_voice_language_name(substr($code, 5));
   return COREUI_VOICE_TRANSCRIBE_LANGUAGES[$code] ?? 'German';
 }
 

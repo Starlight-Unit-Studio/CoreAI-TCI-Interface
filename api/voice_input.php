@@ -9,6 +9,8 @@ declare(strict_types=1);
  *                                    terms, terms_ready (0.6.22)
  *   GET ?action=transcript&uuid=..   state: done (text), pending, silent, failed or none
  *   POST ?action=terms {terms}       KI-Profil: names and terms for voice messages (0.6.22)
+ *   0.7.14: also dictation (on unless switched off) and the key of the account's recordings on
+ *   this device; dictation itself is api/voice_dictate.php.
  *
  * A voice message itself is an ordinary attachment (api/console_upload.php)
  * that is sent at once; Mara hears the WAV in her own call (api/chat.php).
@@ -34,7 +36,8 @@ if ($method === 'GET' && $action === 'status') {
   stu_json(['ok' => true, 'allowed' => true, 'hears' => coreui_voice_core_hears(ember_ollama_show_json(ember_model())),
     'ready' => coreui_voice_bin('ffmpeg') !== null, 'max_seconds' => COREUI_VOICE_INPUT_MAX_SECONDS,
     'terms' => coreui_voice_terms_load($pdo, $uid), 'terms_ready' => coreui_voice_terms_ready($pdo),
-    'terms_max' => COREUI_VOICE_TERMS_MAX, 'csrf_token' => stu_csrf_token()]);
+    'terms_max' => COREUI_VOICE_TERMS_MAX, 'dictation' => coreui_voice_prefs($pdo, $uid)['dictation'],
+    'recordings_key' => coreui_voice_recordings_key($uid), 'csrf_token' => stu_csrf_token()]);
 }
 
 if ($guest) stu_json(['ok' => false, 'error' => 'guests_not_allowed'], 403);

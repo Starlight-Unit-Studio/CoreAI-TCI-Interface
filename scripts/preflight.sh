@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.13: Persistent red/green feedback thumbs and Mara replies.
+# CoreAI: TCI Interface 0.7.14: Settings > Stimme (voice choice, language of Stimmsequenzen, dictation, recordings on the device).
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -165,6 +165,13 @@ UI_FILES=(
   scripts/build-pet-sprites.py
   scripts/pets-selftest.php
   scripts/pets-ui-selftest.cjs
+  database/migrations/036_voice_choice.sql
+  api/voice_dictate.php
+  js/coreui-recordings.js
+  js/coreui-voice-settings.js
+  scripts/voice-settings-selftest.php
+  scripts/voice-settings-ui-selftest.cjs
+  scripts/voice-dictation-ui-selftest.cjs
   scripts/terran-terminology-selftest.cjs
   scripts/tci-language-selftest.cjs
   css/coreui-chat-tci-layout.css
@@ -1250,6 +1257,14 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail "Pets-Selbsttest: ${pets_test:-Unbekannter Fehler}"
   fi
 
+  # 0.7.14: Settings > Stimme: voices to choose (free licenses), the chosen voice in plans and parts, preview, transcript language, dictation wiring.
+  voice_settings_test=''
+  if voice_settings_test="$(compose exec -T php php scripts/voice-settings-selftest.php 2>&1)"; then
+    ok 'Stimme: Stimmenauswahl, Vorhoeren, Sprache der Stimmsequenzen und Diktieren geprueft.'
+  else
+    fail "Stimme-Selbsttest: ${voice_settings_test:-Unbekannter Fehler}"
+  fi
+
   profile_reference_test=''
   if profile_reference_test="$(compose exec -T php php scripts/profile-reference-selftest.php 2>&1)"; then
     if [[ "$profile_reference_test" == PARTIAL:* ]]; then
@@ -1535,6 +1550,16 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       fi
     else
       warn 'TCI CORE: Layout-Browsertest uebersprungen (Playwright nicht installiert).'
+    fi
+    # 0.7.14: Settings > Stimme and dictation in the input field; needs Playwright for Node.
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/voice-settings-ui-selftest.cjs" >/dev/null 2>&1 && node "$PROJECT_ROOT/scripts/voice-dictation-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'Stimme und Diktieren im Browser geprueft.'
+      else
+        fail 'Stimme: Oberflaechentest fehlgeschlagen.'
+      fi
+    else
+      warn 'Stimme: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
     fi
     # 0.7.1: Settings > Pets and the pet in Mara's work line; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then

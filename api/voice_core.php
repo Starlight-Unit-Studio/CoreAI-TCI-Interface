@@ -21,7 +21,13 @@ function coreui_voice_attachment_hint(float $seconds): string {
  * clips that did contain speech.
  */
 function coreui_voice_transcribe_prompt(string $language = 'German', array $terms = []): string {
-  $prompt = "Transcribe the following speech segment in {$language} into {$language} text.\n\n"
+  // 0.7.14: "Automatisch erkennen" (Settings > Stimme > Sprache): the speech stays in the language it is spoken in;
+  // the account's main language only decides when that is unclear.
+  $head = str_starts_with($language, 'auto:')
+    ? 'Transcribe the following speech segment into text in the language in which it is spoken. Do not translate it. '
+      . 'If the language is unclear, assume ' . substr($language, 5) . ".\n\n"
+    : "Transcribe the following speech segment in {$language} into {$language} text.\n\n";
+  $prompt = $head
     . "Follow these specific instructions for formatting the answer:\n"
     . "* Only output the transcription, with no newlines.\n"
     . "* When transcribing numbers, write the digits, i.e. write 1.7 and not one point seven, and write 3 instead of three.";

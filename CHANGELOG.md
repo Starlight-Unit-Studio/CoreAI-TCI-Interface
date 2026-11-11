@@ -1,5 +1,15 @@
 # CoreAI: TCI Interface
 
+## 0.7.14 - 11.11.2026
+
+- **Settings > Voice after the reference screenshots:** "Stimme" with the chosen voice, "Sprache", "Diktieren" with "Diktierfunktion aktivieren" and "Zuletzt verwendete Aufnahmen". Automatic read-aloud and the names and terms for Stimmsequenzen stay on the page below. Every change saves at once (migration 036).
+- **Voice choice per language:** A dialog grouped by language (German, English) offers 20 Pocket TTS voices with a free license only (CC BY 4.0 or CC0 per kyutai/tts-voices), 11 female and 9 male; voices with a non-commercial license or without a documented source are left out. Tapping a voice plays a short sentence of Mara in that voice; "Fertig" saves, "Abbrechen" keeps the old choice. Eve stays the default. Read-aloud in the chat and in the live conversation uses the chosen voices.
+- **Pinned and checked:** Every voice is registered in `config/voice/mara-voice.json` ("choices") with revision, size and SHA-256; the voice service loads a voice state on first use, checks it against its SHA-256 and that Pocket names the same file, and keeps the few used last in memory (Eve always). With Eve the read-aloud cache stays as before.
+- **Language of Stimmsequenzen:** "Automatisch erkennen" or a fixed language (German, English, French, Italian, Portuguese, Spanish) for the transcript the Core writes of Stimmsequenzen, dictations and live turns. Unset, the account's main language applies as before.
+- **Dictation:** A second button in the chat input field records, the Core writes what was said and the text lands at the caret to be checked before sending (`api/voice_dictate.php`, nothing is kept on the server). On by default, switched off under Settings > Voice.
+- **Recent recordings on the device:** The last 20 Stimmsequenzen and dictations stay in the browser only (IndexedDB, per account), with their outcome ("gesendet", "nicht gesendet", "mitgeschrieben"); they can be played, saved as a file or deleted. A Stimmsequenz that could not be sent is no longer lost.
+- **Tests:** New `voice-settings-selftest.php`, `voice-settings-ui-selftest.cjs` and `voice-dictation-ui-selftest.cjs`; the voice service selftest covers the choices. Real speech with the new voices can only be heard on a server with the voice service; tested here with the service's test tone.
+
 ## 0.7.13 - 11.11.2026
 
 - **Right-edge user bubbles:** The operator message row uses a mirrored full-width layout, with its avatar at the top right and the text bubble ending directly at the right edge of the chat below it, instead of reserving the avatar column for all message content.

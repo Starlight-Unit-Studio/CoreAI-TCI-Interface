@@ -1,9 +1,22 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
 Stand: 11.11.2026
-Repository-Version: 0.7.1 (Branch claude/bold-galileo-myoyi0, main bei Erstellung 0.7.0)
-BASIS: main 0.7.0 nach PR #252; Einstellungen > Pets nach den Referenz-Screenshots (Migration 034).
+Repository-Version: 0.7.14 (Branch claude/bold-galileo-myoyi0, main bei Erstellung 0.7.13)
+BASIS: main 0.7.13 nach PR #266; Einstellungen > Stimme nach den Referenz-Screenshots (Migration 036).
 NEUE ARBEIT ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_7_14.txt
+  docs/UEBERGABEPROTOKOLL_0_7_13.txt
+  docs/UEBERGABEPROTOKOLL_0_7_12.txt
+  docs/UEBERGABEPROTOKOLL_0_7_11.txt
+  docs/UEBERGABEPROTOKOLL_0_7_10.txt
+  docs/UEBERGABEPROTOKOLL_0_7_9.txt
+  docs/UEBERGABEPROTOKOLL_0_7_8.txt
+  docs/UEBERGABEPROTOKOLL_0_7_7.txt
+  docs/UEBERGABEPROTOKOLL_0_7_6.txt
+  docs/UEBERGABEPROTOKOLL_0_7_5.txt
+  docs/UEBERGABEPROTOKOLL_0_7_4.txt
+  docs/UEBERGABEPROTOKOLL_0_7_3.txt
+  docs/UEBERGABEPROTOKOLL_0_7_2.txt
   docs/UEBERGABEPROTOKOLL_0_7_1.txt
   docs/UEBERGABEPROTOKOLL_0_7_0.txt
   docs/UEBERGABEPROTOKOLL_0_6_99.txt
