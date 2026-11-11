@@ -257,10 +257,14 @@ try {
       'Mehrdateien-/Cloud-Lokal-Regression: ' . $feature);
   }
 
+  // Test the actual chat composer, not every textarea in app.html.
+  // Project settings legitimately cap their own instructions at 12,000
+  // characters; that must never be confused with chat paste truncation.
+  preg_match('~<textarea\\b(?=[^>]*\\bid="inputMessage")[^>]*>~s', $appHtml, $composerMatch);
+  $composerTag = (string)($composerMatch[0] ?? '');
   frontend_test_assert(
-    str_contains($appHtml, '<textarea')
-      && str_contains($appHtml, 'id="inputMessage"')
-      && !str_contains($appHtml, 'maxlength="12000"')
+    $composerTag !== ''
+      && !preg_match('~\\bmaxlength\\s*=~i', $composerTag)
       && str_contains($console, 'function makeAutoPasteFile(text)')
       && str_contains($console, 'function queueAutoTextAttachment(text, reportUnavailable)')
       && str_contains($console, 'function restoreFailedAutoPaste(file)')
