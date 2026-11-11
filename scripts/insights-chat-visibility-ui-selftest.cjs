@@ -87,14 +87,26 @@ async function run(browser,width,height) {
       assert.equal(await aside.isVisible(),false,'no desktop rail on phone');
       const labels = await page.locator('.insight-chip-label').allTextContents();
       assert.deepEqual(labels,['Core','Kontext','Werkzeuge','Projekt']);
-      const max = await page.locator('#insightChips .insight-chip-row').evaluate(node=>{
-        const rects = [...node.querySelectorAll('button')].map(x=>x.getBoundingClientRect());
-        return {left:Math.min(...rects.map(x=>x.left)),
-          right:Math.max(...rects.map(x=>x.right)),
-          viewport:document.documentElement.clientWidth};
+      // Never shrink the original 11px / 13px-padded buttons just to fit
+      // all four into a fixed width. The row may scroll horizontally.
+      const geometry = await page.locator('#insightChips .insight-chip-row').evaluate(node=>{
+        const chip = node.querySelector('button');
+        const style = getComputedStyle(chip), bar = getComputedStyle(node);
+        return {font:style.fontSize, leftPadding:style.paddingLeft,
+          rightPadding:style.paddingRight, spacing:style.letterSpacing,
+          labelGap:style.gap, rowGap:bar.gap, overflowX:bar.overflowX,
+          scrollWidth:node.scrollWidth, clientWidth:node.clientWidth};
       });
-      assert(max.left>=-1 && max.right<=max.viewport+1,
-        'all four phone buttons on screen: '+JSON.stringify(max));
+      assert.equal(geometry.font,'11px','restore the original readable chip font');
+      assert.equal(geometry.leftPadding,'13px','restore original left padding');
+      assert.equal(geometry.rightPadding,'13px','restore original right padding');
+      assert.equal(geometry.labelGap,'6px','restore original icon/label spacing');
+      assert.equal(geometry.rowGap,'8px','restore original gap between blocks');
+      assert.equal(geometry.overflowX,'auto','overflow should scroll, not shrink');
+      assert(geometry.scrollWidth>=geometry.clientWidth,'row remains scrollable');
+      await page.locator('#insightChips .insight-chip').last().scrollIntoViewIfNeeded();
+      assert.equal(await page.locator('#insightChips .insight-chip').last().isVisible(),true,
+        'Projekt stays reachable even on a narrow phone');
       await page.locator('#insightChips .insight-chip').nth(1).click();
       assert.equal(await page.locator('.insight-sheet').isVisible(),true,
         'Kontext panel opens in active chat');
