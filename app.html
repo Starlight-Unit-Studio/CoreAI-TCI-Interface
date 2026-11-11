@@ -177,14 +177,6 @@
         </span>
       </button>
 
-      <section class="projects-nav" id="projectsNav" aria-labelledby="projectsNavTitle">
-        <div class="projects-nav-heading">
-          <span id="projectsNavTitle">Projekte</span>
-          <button id="projectsCreateBtn" type="button" aria-label="Neues Projekt">＋</button>
-        </div>
-        <div class="projects-nav-list" id="projectsNavList"></div>
-      </section>
-
       <section class="session-zone" aria-labelledby="sessionZoneTitle">
         <div class="section-label" id="sessionZoneTitle">
           <span class="section-rune" aria-hidden="true">⟐</span>
@@ -193,6 +185,14 @@
           <button class="session-archive-toggle" id="sessionArchiveToggle" type="button">ARCHIV</button>
         </div>
         <ul class="session-list" id="sessionList" aria-live="polite"></ul>
+      </section>
+
+      <section class="projects-nav" id="projectsNav" aria-labelledby="projectsNavTitle">
+        <div class="projects-nav-heading">
+          <span id="projectsNavTitle">Projekte</span>
+          <button id="projectsCreateBtn" type="button" aria-label="Neues Projekt">＋</button>
+        </div>
+        <div class="projects-nav-list" id="projectsNavList"></div>
       </section>
     </div>
 
@@ -321,9 +321,11 @@
               <button type="button" id="projectHomeMore" aria-label="Projektmenü" aria-expanded="false">•••</button>
             </div>
             <div class="project-home-popover" id="projectHomePopover" hidden>
-              <button type="button" data-project-action="settings">Projekteinstellungen</button>
-              <button type="button" data-project-action="pin" id="projectHomePin">Projekt anpinnen</button>
+              <button type="button" data-project-action="share">Projekt teilen</button>
               <button type="button" data-project-action="rename">Projekt umbenennen</button>
+              <button type="button" data-project-action="settings">Projekteinstellungen</button>
+              <button type="button" data-project-action="home">Projektstartseite</button>
+              <button type="button" data-project-action="pin" id="projectHomePin">Projekt anpinnen</button>
               <button type="button" data-project-action="delete" class="danger">Projekt löschen</button>
             </div>
           </header>
@@ -738,8 +740,13 @@
         <button class="project-modal-danger" id="projectSettingsDelete" type="button">Projekt löschen</button>
       </div>
       <div id="projectModalShare" hidden>
-        <p class="project-modal-hint">Nur du hast derzeit Zugriff auf dieses Projekt. Zusammenarbeit und Einladungslinks benötigen eine gesicherte Rechteverwaltung.</p>
-        <label>Wer hat Zugriff <select disabled><option>Nur der Eigentümer</option></select></label>
+        <label>Personen oder Gruppen suchen oder E-Mail-Adresse eingeben
+          <input disabled placeholder="Personen oder Gruppen suchen oder E-Mail-Adresse"/>
+        </label>
+        <label>Wer hat Zugriff <select disabled><option>Nur eingeladene Personen</option></select></label>
+        <div class="project-owner-row"><span>◉</span><strong>Du</strong><span>Eigentümer</span></div>
+        <p class="project-modal-hint">Nur du hast derzeit Zugriff. Gemeinsame Projekte benötigen eine sichere Einladung und getrennte Nutzerrechte; diese Funktion ist noch nicht freigeschaltet.</p>
+        <button class="project-modal-primary" type="button" disabled>Link kopieren</button>
       </div>
       <p class="project-modal-error" id="projectModalError" role="alert"></p>
     </section>
