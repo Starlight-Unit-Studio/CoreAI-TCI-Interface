@@ -81,7 +81,7 @@ const pageHtml = fs.readFileSync(path.join(__dirname, '../app.html'), 'utf8');
 const chatSource = fs.readFileSync(path.join(__dirname, '../js/console-app.js'), 'utf8');
 const chatStyle = fs.readFileSync(path.join(__dirname, '../css/coreui-chat-tci-layout.css'), 'utf8');
 assert.equal((pageHtml.match(/id="insightChips"/g) || []).length, 1,
-  'the phone's insight buttons have exactly one HTML mount');
+  "the phone's insight buttons have exactly one HTML mount");
 assert(pageHtml.indexOf('id="insightChips"') > pageHtml.indexOf('id="welcomeScreen"')
   && pageHtml.indexOf('id="insightChips"') < pageHtml.indexOf('class="feed-shell"'),
   'four insight chips mount above the conversation, not on the welcome screen');
