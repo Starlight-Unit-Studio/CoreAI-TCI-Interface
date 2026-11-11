@@ -1,0 +1,14 @@
+COREAI: TCI INTERFACE // HISTORICAL CHANGELOG RECONSTRUCTION 0.7.19
+Date: 12.11.2026
+Historical source merge: PR #273 on 11.11.2026, commit 8eec82a4c4f0c58d79c3ab405592928bb6f44fe3.
+
+- Removed the misleading Chat / Work mode selector from the project home.
+- The regular CoreAI chat remains the one integrated workspace, with
+  Claude Code as a reference for agentic work and ChatGPT Projects as
+  a reference for project organization.
+- Removed unused switch styles and added a project UI regression assertion.
+
+AUDIT: PR #273 was actually merged with VERSION still 0.7.17.
+0.7.19 is the retrospectively allocated historical version slot, NOT a claim
+that the 0.7.19 VERSION file or release ZIP existed at the original merge.
+Live acceptance was not established at merge time.
