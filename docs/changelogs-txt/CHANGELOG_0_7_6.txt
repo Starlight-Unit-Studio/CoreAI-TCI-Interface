@@ -1,0 +1,15 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.6
+Datum: 11.11.2026
+
+- Mara bekommt nach der Bildgenerierung das tatsaechlich erzeugte, bestaetigt gespeicherte Bild als nativen Ollama-Vision-Input fuer ihre eigene Folgeantwort.
+- Bereits vorhandener Bildspeicher und der Agent-Loop werden erweitert, es gibt keine neuen API-Endpunkte oder Datenbankmigration.
+- Mehrere in einer Bildanfrage erzeugte Bilder werden in Produktionsreihenfolge uebergeben; maximal die schon bestehende Batch-Grenze, keine neue Limiterfindung.
+- Die Image-UUIDs werden strikt mit dem eingeloggten Konto gegen stu_console_media abgeglichen. Nur gespeicherte Original-PNGs aus dem aktuellen Anfragekontext erhalten eine zeitlich auf den Vision-Aufruf begrenzte Lesefreigabe.
+- Ein Core, dessen Ollama-Metadaten ausdruecklich KEINE Vision-Unterstuetzung melden, bekommt keinen Bildpayload.
+- Bei nicht verfuegbarem Vision-Modus bleibt eine ehrliche reine Textantwort auf Grundlage der gesicherten Bildgenerierung statt erfundener visueller Details.
+- Folgeantwort nur einmal im bestaetigten Bildauftrag; keine rekursiven Bild-/Tool-Aufrufe. Die globale serielle Modellwarteschlange bleibt unveraendert.
+- Sprach-/Referenzbildpfad und normaler Text-Chat nutzen dieselbe neue Image-Vision-Folgefunktion.
+- Regressionstests fuer Pixel-Folgeantwort, echten Dateipfad, kontobezogene Zugriffsgrenzen, Nichtverbrauch von Anhaengen, Abbruch und ehrlichen Fallback erweitert.
+- Vollstaendiger Preflight, PHP-Lint und Server-Integrationstest vor Merge notwendig.
+
+Version: 0.7.6
