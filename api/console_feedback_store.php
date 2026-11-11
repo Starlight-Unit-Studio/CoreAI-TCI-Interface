@@ -14,6 +14,26 @@ function coreui_feedback_events_ready(PDO $pdo): bool {
   }
 }
 
+/** Selftests use an outer rollback transaction; use savepoints in that case. */
+function coreui_feedback_tx_begin(PDO $pdo, string $name): bool {
+  $own = !$pdo->inTransaction();
+  if ($own) $pdo->beginTransaction();
+  else $pdo->exec('SAVEPOINT ' . $name);
+  return $own;
+}
+function coreui_feedback_tx_commit(PDO $pdo, string $name, bool $own): void {
+  if ($own) $pdo->commit();
+  else $pdo->exec('RELEASE SAVEPOINT ' . $name);
+}
+function coreui_feedback_tx_rollback(PDO $pdo, string $name, bool $own): void {
+  if (!$pdo->inTransaction()) return;
+  if ($own) $pdo->rollBack();
+  else {
+    $pdo->exec('ROLLBACK TO SAVEPOINT ' . $name);
+    $pdo->exec('RELEASE SAVEPOINT ' . $name);
+  }
+}
+
 /** Called INSIDE the reaction transaction, so a rating and its event never diverge. */
 function coreui_feedback_event_append(PDO $pdo, int $uid, string $sessionId,
                                       int $messageId, string $rating): int {
@@ -46,7 +66,7 @@ function coreui_feedback_event_claim(PDO $pdo, int $uid, string $sessionId,
                                      int $eventId): array {
   if ($uid <= 0 || $eventId <= 0) throw new InvalidArgumentException('invalid_feedback_event');
   coreui_console_session_require($pdo, $uid, $sessionId);
-  $pdo->beginTransaction();
+  $ownTransaction = coreui_feedback_tx_begin($pdo, 'coreui_feedback_claim');
   try {
     $st = $pdo->prepare("SELECT id,user_id,session_id,message_id,rating,status,attempts,response_message_id
       FROM stu_console_feedback_events WHERE id=? AND user_id=? AND session_id=? FOR UPDATE");
@@ -55,7 +75,7 @@ function coreui_feedback_event_claim(PDO $pdo, int $uid, string $sessionId,
     if (!$row) throw new RuntimeException('feedback_event_not_found');
     $status = (string)$row['status'];
     if (!in_array($status, ['pending','failed'], true) || (int)$row['attempts'] >= 2) {
-      $pdo->commit();
+      coreui_feedback_tx_commit($pdo, 'coreui_feedback_claim', $ownTransaction);
       return ['status'=>$status, 'response_message_id'=>(int)($row['response_message_id'] ?? 0)];
     }
     $messageId = (int)$row['message_id'];
@@ -65,19 +85,19 @@ function coreui_feedback_event_claim(PDO $pdo, int $uid, string $sessionId,
     if ((int)$latest->fetchColumn() !== $eventId || $selected !== $row['rating']) {
       $pdo->prepare("UPDATE stu_console_feedback_events
         SET status='skipped',finished_at=NOW() WHERE id=?")->execute([$eventId]);
-      $pdo->commit();
+      coreui_feedback_tx_commit($pdo, 'coreui_feedback_claim', $ownTransaction);
       return ['status'=>'skipped','response_message_id'=>0];
     }
     $source = coreui_console_action_message($pdo, $uid, $sessionId, $messageId, true);
     $pdo->prepare("UPDATE stu_console_feedback_events
       SET status='running',attempts=attempts+1,started_at=NOW() WHERE id=?")->execute([$eventId]);
-    $pdo->commit();
+    coreui_feedback_tx_commit($pdo, 'coreui_feedback_claim', $ownTransaction);
     return [
       'status'=>'claimed', 'id'=>$eventId, 'message_id'=>$messageId,
       'rating'=>(string)$row['rating'], 'source'=>$source,
     ];
   } catch (Throwable $e) {
-    if ($pdo->inTransaction()) $pdo->rollBack();
+    coreui_feedback_tx_rollback($pdo, 'coreui_feedback_claim', $ownTransaction);
     throw $e;
   }
 }
@@ -87,7 +107,7 @@ function coreui_feedback_event_complete(PDO $pdo, int $uid, string $sessionId,
                                         int $eventId, string $text): array {
   $text = trim($text);
   if ($text === '') throw new InvalidArgumentException('feedback_reply_empty');
-  $pdo->beginTransaction();
+  $ownTransaction = coreui_feedback_tx_begin($pdo, 'coreui_feedback_complete');
   try {
     $st = $pdo->prepare("SELECT message_id,rating,status,response_message_id
       FROM stu_console_feedback_events WHERE id=? AND user_id=? AND session_id=? FOR UPDATE");
@@ -95,7 +115,7 @@ function coreui_feedback_event_complete(PDO $pdo, int $uid, string $sessionId,
     $event = $st->fetch(PDO::FETCH_ASSOC);
     if (!$event) throw new RuntimeException('feedback_event_not_found');
     if ((string)$event['status'] !== 'running') {
-      $pdo->commit();
+      coreui_feedback_tx_commit($pdo, 'coreui_feedback_complete', $ownTransaction);
       return ['status'=>(string)$event['status'],
         'response_message_id'=>(int)($event['response_message_id'] ?? 0)];
     }
@@ -110,7 +130,7 @@ function coreui_feedback_event_complete(PDO $pdo, int $uid, string $sessionId,
         || $actual !== $event['rating']) {
       $pdo->prepare("UPDATE stu_console_feedback_events
         SET status='skipped',finished_at=NOW() WHERE id=?")->execute([$eventId]);
-      $pdo->commit();
+      coreui_feedback_tx_commit($pdo, 'coreui_feedback_complete', $ownTransaction);
       return ['status'=>'skipped','response_message_id'=>0];
     }
     // reply_to_id NULL: this is an actual new chat message, not a competing
@@ -124,10 +144,10 @@ function coreui_feedback_event_complete(PDO $pdo, int $uid, string $sessionId,
     $pdo->prepare("UPDATE stu_console_feedback_events SET status='done',
       response_message_id=?,finished_at=NOW() WHERE id=?")->execute([$responseId,$eventId]);
     coreui_console_session_touch($pdo, $uid, $sessionId, $responseId);
-    $pdo->commit();
+    coreui_feedback_tx_commit($pdo, 'coreui_feedback_complete', $ownTransaction);
     return ['status'=>'done','response_message_id'=>$responseId];
   } catch (Throwable $e) {
-    if ($pdo->inTransaction()) $pdo->rollBack();
+    coreui_feedback_tx_rollback($pdo, 'coreui_feedback_complete', $ownTransaction);
     throw $e;
   }
 }
