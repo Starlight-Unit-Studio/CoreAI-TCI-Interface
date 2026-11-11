@@ -1795,11 +1795,24 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail "$message_actions_selftest"
   fi
 
+  # Runtime hosts do not require Node.js to operate CoreAI. Keep a real
+  # PHP feedback contract check on every install; run the fuller JavaScript
+  # contract as well whenever the optional Node toolchain is available.
   feedback_ui_selftest=''
-  if feedback_ui_selftest="$(node "$PROJECT_ROOT/scripts/feedback-ui-selftest.cjs" 2>&1)"; then
-    ok 'Feedback: Daumenfarben, Speicherung, Mara-Reaktion ohne Thinking geprueft.'
+  if feedback_ui_selftest="$(compose exec -T -u 33:33 php php scripts/feedback-ui-selftest.php 2>&1)"; then
+    ok 'Feedback: Daumenfarben, Speicherung, Mara-Reaktion ohne Thinking (PHP-Vertrag) geprueft.'
   else
-    fail "Feedback: UI-/Backend-Vertrag fuer Bewertungen fehlerhaft: ${feedback_ui_selftest:-Unbekannter Fehler}"
+    fail "Feedback: UI-/Backend-Vertrag (PHP) fehlerhaft: ${feedback_ui_selftest:-Unbekannter Fehler}"
+  fi
+  if command -v node >/dev/null 2>&1; then
+    feedback_node_selftest=''
+    if feedback_node_selftest="$(node "$PROJECT_ROOT/scripts/feedback-ui-selftest.cjs" 2>&1)"; then
+      ok 'Feedback: erweiterter Node.js-UI-/Backend-Vertrag geprueft.'
+    else
+      fail "Feedback: Node.js-UI-/Backend-Vertrag fehlerhaft: ${feedback_node_selftest:-Unbekannter Fehler}"
+    fi
+  else
+    warn 'Node.js optional und nicht installiert: Feedback-PHP-Vertrag geprueft, Node.js-Zusatztest uebersprungen.'
   fi
 
   if is_enabled "${COREUI_INSTALL_BROWSE:-0}"; then
