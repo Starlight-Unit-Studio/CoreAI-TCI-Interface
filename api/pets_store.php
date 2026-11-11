@@ -212,7 +212,12 @@ function coreui_pet_delete(PDO $pdo, int $uid, int $id): bool {
 }
 
 function coreui_pet_choice(PDO $pdo, int $uid): string {
-  return coreui_pet_choice_normalise(coreui_personalization_load($pdo, $uid)['pet'] ?? 'none');
+  $stored = (string)(coreui_personalization_load($pdo, $uid)['pet'] ?? 'none');
+  // Unpublishing a shared pet must not break a person's chat companion.
+  if (str_starts_with($stored, 'op-') && !isset(coreui_openpet_library_catalog()[$stored])) {
+    return coreui_pet_default();
+  }
+  return coreui_pet_choice_normalise($stored);
 }
 
 /** Chooses a pet ('none', a built-in id or an own pet); returns the stored choice. */
