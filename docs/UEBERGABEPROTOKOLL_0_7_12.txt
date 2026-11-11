@@ -1,0 +1,26 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.12
+Datum: 11.11.2026
+Thema: OPERATOR:-Namensfeld als gespiegeltes Gegenstueck zu Maras TCI CORE.
+
+ANFORDERUNG
+- Statt nur RICK ueber der menschlichen Chatblase: zweizeilig OPERATOR: (unterstrichen), RICK.
+- Beide Beschriftungen golden wie der bisherige User-Name.
+- Unterstreichung blau wie Maras Schrift; bei Mara bleibt es blau mit Gold-Unterstreichung.
+- Das bestehende Profilbild und die Chatblase bleiben rechtsbuendig, mit dem gewohnten Abstand.
+
+IMPLEMENTIERUNG
+- js/console-app.js: buildOperatorMessageHeading() erzeugt sichere Textknoten und verwendet den frei konfigurierbaren Anzeigenamen, nie innerHTML.
+- Nachrichtendarstellung verwendet diesen Builder fuer menschliche Nachrichten, waehrend Mara ihren unveraenderten buildTciMessageHeading() behaelt.
+- css/coreui-chat-tci-layout.css: nur an .msg-row.user gebundene Klassen, rechte Ausrichtung, passende Schriftstaerke und Groesse, vertauschtes Farbthema.
+- scripts/tci-chat-message-selftest.cjs: prueft Struktur, sichere Profilnamen, Stil und unveraenderte Mara-Header.
+- scripts/operator-heading-ui-selftest.cjs: browserbasierter Geometrievertrag fuer Smartphone und Desktop.
+
+ABNAHME
+- node scripts/tci-chat-message-selftest.cjs
+- node scripts/operator-heading-ui-selftest.cjs (mit Playwright-Browser)
+- node --check js/console-app.js
+- python3 scripts/version-merge-check.py --base-version 0.7.11
+- Beide offiziellen Preflights vor produktivem Rollout.
+- Chatansicht auf dem Smartphone pruefen: OPERATOR: direkt ueber RICK, rechts vor dem Avatar, die Blase bleibt daneben rechtsbuendig.
+
+Keine Aenderungen an Rechten, Datenbank, Installer, Ollama, Haustier oder Bildverarbeitung.
