@@ -3643,6 +3643,19 @@ function ember_call_ollama(string $model, string $systemPrompt, string $userProm
             break;
           }
         }
+        // Generated images are private account media, not normal upload URLs.
+        // Accept them ONLY when the server has verified ownership of this
+        // turn's UUIDs and whitelisted exact realpaths for this one call.
+        if ($runtimeImagePath === '') {
+          $allow = $GLOBALS['COREUI_IMAGE_FOLLOWUP_VISION_ALLOWLIST'] ?? [];
+          $mediaDir = function_exists('coreui_image_dir') ? realpath(coreui_image_dir()) : false;
+          if (is_array($allow) && is_string($mediaDir)
+              && $candidateReal !== ''
+              && str_starts_with($candidateReal, rtrim($mediaDir, '/') . '/')
+              && in_array($candidateReal, $allow, true)) {
+            $runtimeImagePath = $candidateReal;
+          }
+        }
       }
       if ($runtimeImagePath !== '') {
         // Nur serverseitig erzeugte Dateien aus den beiden CoreAI: TCI Interface-Runtime-Pfaden.
@@ -5362,6 +5375,45 @@ function ember_image_run_tool(PDO $pdo, int $uid, string $input): array {
   return $result;
 }
 
+/**
+ * Use the existing native Ollama Vision call after a generated image is saved.
+ * Only account-owned PNGs from COREUI_PENDING_IMAGES are passed; the global
+ * whitelist lasts for this call only. The existing model queue stays serial.
+ */
+function ember_image_followup_vision_reply(PDO $pdo, int $uid, string $model,
+    string $system, string $prompt): ?string {
+  if ($uid <= 0 || ember_agent_cancel_requested(true)) return null;
+  $paths = coreui_image_pending_vision_paths($pdo, $uid);
+  if ($paths === []) return null;
+  // Ollama /api/show explicitly reports capabilities when available. Do not
+  // try to send images to a Core that says it is text-only.
+  $show = ember_ollama_show_json($model);
+  if (is_array($show) && is_array($show['capabilities'] ?? null)
+      && !in_array('vision', $show['capabilities'], true)) {
+    coreui_work_record($pdo, 'model', 'info', 'Aktiver Core kann Bilder nicht sehen',
+      ['reason'=>'image_vision_unsupported']);
+    return null;
+  }
+  $previous = $GLOBALS['COREUI_IMAGE_FOLLOWUP_VISION_ALLOWLIST'] ?? null;
+  $GLOBALS['COREUI_IMAGE_FOLLOWUP_VISION_ALLOWLIST'] = $paths;
+  try {
+    $reply = ember_call_ollama($model, $system, $prompt,
+      ember_timeout_for_model($model), ['__skills'=>'none'], $paths, false, false);
+  } finally {
+    // No path is whitelisted for any unrelated message or tool call.
+    if ($previous === null) unset($GLOBALS['COREUI_IMAGE_FOLLOWUP_VISION_ALLOWLIST']);
+    else $GLOBALS['COREUI_IMAGE_FOLLOWUP_VISION_ALLOWLIST'] = $previous;
+  }
+  if (!is_string($reply) || trim($reply) === '') {
+    coreui_work_record($pdo, 'model', 'info', 'Bildauswertung nicht verfuegbar',
+      ['reason'=>'image_vision_unavailable','images'=>count($paths)]);
+    return null;
+  }
+  coreui_work_record($pdo, 'model', 'success', 'Mara hat das Bild betrachtet',
+    ['reason'=>'image_vision_seen','images'=>count($paths)]);
+  return $reply;
+}
+
 /** Tools of the work loop for this chat. */
 function ember_agent_allowed_tools(int $uid, string $sessionId): array {
   $tools = [];
@@ -5821,7 +5873,9 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
           coreui_work_record($pdo, $kind, $state, $title, $meta);
         },
         static fn(): bool => ember_agent_cancel_requested(true),
-        static fn(array $tool): array => ember_weather_route_tool($tool, $voiceTools));
+        static fn(array $tool): array => ember_weather_route_tool($tool, $voiceTools),
+        static fn(string $prompt): ?string => ember_image_followup_vision_reply(
+          $pdo, $consoleUid, $primaryModel, $visionSys, $prompt));
       if ($voiceLoop['browse'] !== null) {
         $GLOBALS['STU_EMBER_BROWSE_REQUEST'] = $voiceLoop['browse'];
         return null;
@@ -6642,7 +6696,9 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
           coreui_work_record($pdo, $kind, $state, $title, $meta);
         },
         static fn(): bool => ember_agent_cancel_requested(true),
-        static fn(array $tool): array => ember_weather_route_tool($tool, $loopAllowed));
+        static fn(array $tool): array => ember_weather_route_tool($tool, $loopAllowed),
+        static fn(string $prompt): ?string => ember_image_followup_vision_reply(
+          $pdo, $consoleUid, $primaryModel, $sys, $prompt));
       if ($loop['browse'] !== null) {
         $GLOBALS['STU_EMBER_BROWSE_REQUEST'] = $loop['browse'];
         return null;
