@@ -1456,6 +1456,23 @@
     return heading;
   }
 
+  // Mirror the TCI heading for the human side of the conversation.
+  // OPERATOR is the chat-side participant label, not an account permission.
+  // The display name comes from the existing account/profile, never HTML.
+  function buildOperatorMessageHeading(displayName) {
+    var heading = document.createElement('div');
+    heading.className = 'msg-name msg-name-operator';
+    var role = document.createElement('span');
+    role.className = 'msg-operator-role';
+    role.textContent = 'OPERATOR:';
+    var name = document.createElement('span');
+    name.className = 'msg-operator-persona';
+    name.textContent = String(displayName || state.userDisplayName || state.charName || 'DU').toUpperCase();
+    heading.appendChild(role);
+    heading.appendChild(name);
+    return heading;
+  }
+
   // ── DOM: Nachricht einfügen ──────────────────────────────
   function appendMessageEl(role, text, name, thinkingText, attachment, createdAt, record) {
     var row = document.createElement('div');
@@ -1516,11 +1533,7 @@
       workTimeline = window.CoreUIWorkEvents.create({events: record.work_events});
     }
 
-    var nameEl = role === 'ember' ? buildTciMessageHeading() : document.createElement('div');
-    if (role !== 'ember') {
-      nameEl.className = 'msg-name';
-      nameEl.textContent = (name || state.userDisplayName || state.charName || 'DU').toUpperCase();
-    }
+    var nameEl = role === 'ember' ? buildTciMessageHeading() : buildOperatorMessageHeading(name);
     content.appendChild(nameEl);
     if (intentChip) content.appendChild(intentChip);
     if (workTimeline) content.appendChild(workTimeline);

@@ -1,0 +1,46 @@
+name: Mirrored Operator Chat Heading
+
+on:
+  pull_request:
+    paths:
+      - 'js/console-app.js'
+      - 'css/coreui-chat-tci-layout.css'
+      - 'scripts/tci-chat-message-selftest.cjs'
+      - 'scripts/operator-heading-ui-selftest.cjs'
+      - 'app.html'
+      - '.github/workflows/operator-chat-heading.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'js/console-app.js'
+      - 'css/coreui-chat-tci-layout.css'
+      - 'scripts/tci-chat-message-selftest.cjs'
+      - 'scripts/operator-heading-ui-selftest.cjs'
+
+permissions:
+  contents: read
+
+jobs:
+  operator-heading:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate JavaScript
+        run: |
+          node --check js/console-app.js
+          node --check scripts/tci-chat-message-selftest.cjs
+          node --check scripts/operator-heading-ui-selftest.cjs
+      - name: Offline chat identity contract
+        run: node scripts/tci-chat-message-selftest.cjs
+      - name: Install browser test
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Verify smartphone and desktop identity layout
+        run: node scripts/operator-heading-ui-selftest.cjs
+      - name: Validate version
+        run: python3 scripts/version-merge-check.py --base-version 0.7.11

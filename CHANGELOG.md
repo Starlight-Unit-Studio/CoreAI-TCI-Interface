@@ -1,5 +1,12 @@
 # CoreAI: TCI Interface
 
+## 0.7.12 - 11.11.2026
+
+- **Mirrored human message heading:** User messages show OPERATOR: over the configurable profile name, using the same font and size as Mara's TCI CORE: heading with inverted gold and blue underline accents.
+- **Right-aligned bubbles unchanged:** The existing human message content column remains right-aligned next to its profile avatar; no bubble width, markdown, edit/copy actions, or chat scroll behavior changed.
+- **Safe profile display names:** Both historic messages and new turns use the same DOM text-node builder; markup in user-entered names is not interpreted.
+- **Regression:** DOM and browser-layout tests cover the two-line identity, exact fonts and colors, mobile and desktop geometry. Server preflight remains required.
+
 ## 0.7.11 - 11.11.2026
 
 - **Node.js-optional feedback checks:** Both Compose and native preflights now always verify feedback icons, persisted votes, authenticated events and Mara's no-thinking follow-up using the PHP-only contract test. The existing Node.js test runs additionally only when the optional Node runtime is installed.

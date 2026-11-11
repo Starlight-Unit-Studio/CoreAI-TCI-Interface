@@ -45,6 +45,32 @@
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
 }
+/* The human identity mirrors the TCI heading with inverted theme accents.
+   Preserve the user's original right-aligned bubble, avatar and action layout. */
+.msg-row.user .msg-name-operator {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-start;
+  gap: 4px;
+  margin: 0 7px 5px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+.msg-row.user .msg-operator-role,
+.msg-row.user .msg-operator-persona {
+  color: #9b651e;
+  font: 700 12px/1.35 var(--coreui-font, "Rajdhani"), sans-serif;
+  letter-spacing: .12em;
+}
+.msg-row.user .msg-operator-role {
+  text-decoration-line: underline;
+  text-decoration-color: var(--cx, #5b92ff);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
 .msg-row.ember .work-panel,
 .msg-row.ember .msg-bubble,
 .msg-row.ember .msg-markdown,
