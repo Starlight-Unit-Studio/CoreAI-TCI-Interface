@@ -6,7 +6,7 @@
   <meta name="language" content="de-DE" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#f0f4fa" />
-  <meta name="application-version" content="0.7.16" />
+  <meta name="application-version" content="0.7.17" />
   <meta name="application-name" content="CoreAI: TCI Interface" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface - Einstellungen</title>
@@ -94,7 +94,7 @@
           <h1>EINSTELLUNGEN</h1>
         </div>
       </div>
-      <div class="settings-version">COREAI: TCI INTERFACE // v0.7.16</div>
+      <div class="settings-version">COREAI: TCI INTERFACE // v0.7.17</div>
       <div class="cfg-header-actions" aria-label="Schnellzugriffe Einstellungen">
         <label class="cfg-header-expert" for="settingsExpertToggle" title="Technische Einstellungen in allen Kategorien anzeigen oder ausblenden">
           <span>EXPERTENMODUS</span>
@@ -1394,6 +1394,35 @@
             <label class="sec-row pet-row pet-none" for="petNone"><span class="sec-copy"><strong>Pet nicht anzeigen</strong></span><input class="pet-radio" id="petNone" type="radio" name="petChoice" value="none" /></label>
           </section>
 
+          <section class="settings-panel cfg-card wide sec-group" id="petLibraryAdmin" hidden aria-label="Systemweite Pet-Bibliothek">
+            <div class="sec-copy">
+              <strong>SYSTEM-PETS // FREIGEGEBENE OPENPET-PAKETE</strong>
+              <p>Nur für den Inhaber. Ein Galerie-Download ist keine Weitergabelizenz. Importiere ausschließlich eigene oder nachweislich zur öffentlichen Weitergabe freigegebene Sprites.</p>
+            </div>
+            <form id="petLibraryForm" novalidate>
+              <label class="pz-field" for="petLibraryFile"><strong>OpenPet-Paket (.openpet.zip)</strong>
+                <input id="petLibraryFile" type="file" accept=".zip,.openpet.zip,application/zip" required /></label>
+              <label class="pz-field" for="petLibraryLicense"><strong>Lizenz für die Sprite-Grafik</strong>
+                <select id="petLibraryLicense" required>
+                  <option value="">Lizenz wählen</option><option value="CC0-1.0">CC0 1.0</option>
+                  <option value="CC-BY-4.0">CC BY 4.0</option><option value="CC-BY-SA-4.0">CC BY-SA 4.0</option>
+                  <option value="MIT">MIT</option><option value="APACHE-2.0">Apache 2.0</option>
+                  <option value="BSD-3-CLAUSE">BSD-3-Clause</option>
+                </select></label>
+              <label class="pz-field" for="petLibraryHolder"><strong>Rechteinhaber / Urheber</strong>
+                <input id="petLibraryHolder" type="text" maxlength="120" required /></label>
+              <label class="pz-field" for="petLibrarySource"><strong>Originalquelle (HTTPS)</strong>
+                <input id="petLibrarySource" type="url" maxlength="500" placeholder="https://..." required /></label>
+              <label class="pz-field" for="petLibraryEvidence"><strong>Beleg der Weitergabeerlaubnis (HTTPS)</strong>
+                <input id="petLibraryEvidence" type="url" maxlength="500" placeholder="https://..." required /></label>
+              <label class="pz-field" for="petLibraryConfirm">
+                <span><input id="petLibraryConfirm" type="checkbox" required />
+                Ich habe die Rechte an den Sprites geprüft und bestätige die Weitergabeberechtigung einschließlich etwaiger abgebildeter Figuren.</span>
+              </label>
+              <p class="sec-confirm-error" id="petLibraryError" role="alert"></p>
+              <button class="arc-btn pz-primary" type="submit" id="petLibrarySubmit">Freigegebenes Pet veröffentlichen</button>
+            </form>
+          </section>
           <div class="sec-confirm" id="petUploadDialog" hidden role="dialog" aria-modal="true" aria-labelledby="petUploadTitle">
             <form class="sec-confirm-box pet-upload-box" id="petUploadForm" novalidate>
               <div class="pet-upload-head"><h3 id="petUploadTitle">Pet hochladen</h3><button class="pz-icon" id="petUploadClose" type="button" aria-label="Schließen"><svg aria-hidden="true"><use href="#i-close" /></svg></button></div>
@@ -1609,7 +1638,7 @@
   <script src="./js/settings.js?v=0848098337266772199606115"></script>
   <script src="./js/coreui-personalization-settings.js?v=0244791164211857764278165"></script>
   <script src="./js/coreui-pets.js?v=0221326546368683531249868"></script>
-  <script src="./js/coreui-pets-settings.js?v=0470981188608688485670023"></script>
+  <script src="./js/coreui-pets-settings.js?v=8050297024211533582050632"></script>
   <script src="./js/coreui-voice-read.js?v=0478836976425824839668688"></script>
   <script src="./js/coreui-voice-terms.js?v=0470347751915481307845714"></script>
   <script src="./js/coreui-recordings.js?v=1017337787241714945048880"></script>

@@ -95,7 +95,7 @@ function coreui_personalization_normalise(array $input): array {
   $values['occupation'] = coreui_personalization_text($input['occupation'] ?? '',160,false);
   $values['about'] = coreui_personalization_text($input['about'] ?? '',1500,true);
   $pet = is_string($input['pet'] ?? null) ? strtolower(trim($input['pet'])) : 'none';
-  $values['pet'] = preg_match('~^(?:none|[a-z]{2,20}|u[1-9][0-9]{0,18})$~D', $pet) === 1 ? $pet : 'none';
+  $values['pet'] = preg_match('~^(?:none|[a-z]{2,20}|op-[a-z0-9]+(?:-[a-z0-9]+)*|u[1-9][0-9]{0,18})$~D', $pet) === 1 ? $pet : 'none';
   $role = (string)($input['role'] ?? '');
   $values['role'] = isset(COREUI_PERSONALIZATION_ROLES[$role]) ? $role : '';
   return $values;
