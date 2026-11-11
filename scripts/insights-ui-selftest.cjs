@@ -74,6 +74,41 @@ const snapshot = {
 
 const source = fs.readFileSync(path.join(__dirname, '../js/coreui-insights.js'), 'utf8');
 assert(!/innerHTML|insertAdjacentHTML|outerHTML/.test(source), 'info boxes never inject HTML');
+
+// Regression 0.7.4: "remove from the welcome screen" must never remove
+// the four tools/status buttons from an actual chat on phones.
+const pageHtml = fs.readFileSync(path.join(__dirname, '../app.html'), 'utf8');
+const chatSource = fs.readFileSync(path.join(__dirname, '../js/console-app.js'), 'utf8');
+const chatStyle = fs.readFileSync(path.join(__dirname, '../css/coreui-chat-tci-layout.css'), 'utf8');
+assert.equal((pageHtml.match(/id="insightChips"/g) || []).length, 1,
+  'the phone's insight buttons have exactly one HTML mount');
+assert(pageHtml.indexOf('id="insightChips"') > pageHtml.indexOf('id="welcomeScreen"')
+  && pageHtml.indexOf('id="insightChips"') < pageHtml.indexOf('class="feed-shell"'),
+  'four insight chips mount above the conversation, not on the welcome screen');
+assert(pageHtml.includes('class="core-insights" id="coreInsights" aria-label="Core-Informationen" hidden'),
+  'desktop sidebar is hidden until a chat is selected');
+assert(chatStyle.includes('.core-insights[hidden],')
+  && chatStyle.includes('.insight-chips[hidden],')
+  && chatStyle.includes('.messages-area.is-welcome .insight-chips'),
+  'welcome and explicit hidden state take precedence over responsive display rules');
+assert(chatSource.includes('showSessionInsights(false);')
+  && chatSource.includes('showSessionInsights(true);'),
+  'view transitions restore controls for active chats and hide them on welcome');
+const visibilityStart = chatSource.indexOf('  function showSessionInsights(active) {');
+const visibilityEnd = chatSource.indexOf('\n  }', visibilityStart) + 4;
+assert(visibilityStart > 0 && visibilityEnd > visibilityStart,
+  'one shared session-only visibility helper');
+const panel = {hidden:true}, chipMount = {hidden:true}, closed = [];
+const toggleVisibility = new Function('insightAside', 'insightChips', 'insights',
+  chatSource.slice(visibilityStart, visibilityEnd) + '\nreturn showSessionInsights;')(
+  panel, chipMount, {setChip: id => closed.push(id)});
+toggleVisibility(true);
+assert.equal(panel.hidden, false, 'desktop rail comes back in an active chat');
+assert.equal(chipMount.hidden, false, 'phone buttons come back in an active chat');
+toggleVisibility(false);
+assert.equal(panel.hidden, true, 'desktop rail leaves the welcome screen');
+assert.equal(chipMount.hidden, true, 'phone buttons leave the welcome screen');
+assert.deepEqual(closed, [''], 'previously open sheet closes on welcome transition');
 vm.runInNewContext(source, sandbox);
 
 (async () => {
