@@ -108,8 +108,9 @@ function coreui_guest_tool_enabled(PDO $pdo, string $tool): bool {
   try {
     return stu_app_setting_get($pdo, 'guest_tool_' . $tool . '_enabled', '1') === '1';
   } catch (Throwable $e) {
-    // Keep pre-0.7.9 installations' tool behaviour when settings are missing.
-    return true;
+    // Preserve legacy non-image tools, but fail closed for guest image jobs
+    // if the permission settings cannot be read from the server.
+    return $tool !== 'image';
   }
 }
 
