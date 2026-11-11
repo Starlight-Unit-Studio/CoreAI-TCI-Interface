@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.7.4 - 11.11.2026
+
+- **TCI CORE matches Mara:** The underlined role label now shares Mara's configured-name typography (font family, 12px size, bold weight, line height and letter spacing) and its theme-blue text color.
+- **Gold underline:** Only the label's underline uses the theme's amber/gold accent, in both light and dark display modes.
+- **Regression:** DOM text checks and the 390px/mobile and desktop Playwright test now assert matching computed fonts/color and gold underline.
+- **No change to chat behavior:** Full-width replies, custom name, image follow-up and persistent pets remain as in 0.7.3.
+- **Installer audit:** setup.sh already starts the official scripts/preflight.sh after scripts/install.sh. No installer logic changed without a new reproduced failure.
+- **Version:** Every merge increments to 0.7.4. Full target server preflight remains required.
+
 ## 0.7.3 - 11.11.2026
 
 - **Mara's message identity:** Live and persisted chat messages, including browser progress, show an underlined "TCI CORE:" label above the account's custom assistant name. User messages retain their layout.
