@@ -1,0 +1,14 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.6
+Datum: 11.11.2026
+
+- Mara bekommt nach einer erfolgreich abgeschlossenen Bildgenerierung das tatsaechlich gespeicherte PNG ueber den bereits vorhandenen Ollama-Vision-Pfad als Eingabe fuer ihre abschliessende Antwort.
+- Bei mehreren generierten Bildern der aktuellen Anfrage werden alle bestaetigten Bilder gemeinsam uebergeben.
+- Es werden ausschliesslich Medien der authentifizierten Person aus der privaten Datenbank verwendet. UUID, Medienpfad, MIME-Typ, Dateigroesse, PNG-Signatur und reales Verzeichnis werden kontrolliert.
+- Die Modelleinbindung verwendet weiterhin denselben konfigurierten Core und die globale serielle Ollama-Warteschlange; keine Aenderung am Betreiber-Modelfile oder der Core-Auswahl.
+- Kann der gewaehlte Core keine Bilddaten verarbeiten, erfolgt eine ehrliche textuelle Abschlussantwort ohne erfundene Bilddetails.
+- Keine neue Bilderzeugung durch die Folgeantwort; Abbruch respektiert, Toolmarker werden weiterhin abgewiesen.
+- Bestehender Chat-Verlauf und das Bild zuerst, Text danach bleiben erhalten.
+- Regressionstests fuer sichtbaren Bildinput, Dateirechte, ungueltige UUIDs, Toolmarker und Abbruch.
+- GitHub-Verbindung erlaubte Codepruefung; vollstaendige PHP-/Playwright-/Preflight-Laufzeitabnahme ist vor dem Merge erforderlich.
+
+Version: 0.7.6
