@@ -1,5 +1,12 @@
 # CoreAI: TCI Interface
 
+## 0.7.13 - 11.11.2026
+
+- **Right-edge user bubbles:** The operator message row uses a mirrored full-width layout, with its avatar at the top right and the text bubble ending directly at the right edge of the chat below it, instead of reserving the avatar column for all message content.
+- **Mirrored avatar spacing:** OPERATOR and the user name sit 13px from the profile avatar on desktop and 9px away on phones, matching Mara's TCI CORE heading. Preserve gold operator text, blue underline and custom profile names.
+- **Mobile-safe:** User bubbles remain natural-width with a max-width and wrapping, actions and timestamps stay right-aligned, no horizontal overflow. Mara's full-width replies, pets, tools and other message types remain unchanged.
+- **Regression:** Stronger DOM and Playwright geometry tests at 340px, 390px and 1024px assert avatar gaps and right-aligned bubble/controls. Real-server preflight still required before deployment.
+
 ## 0.7.12 - 11.11.2026
 
 - **Mirrored human message heading:** User messages show OPERATOR: over the configurable profile name, using the same font and size as Mara's TCI CORE: heading with inverted gold and blue underline accents.
