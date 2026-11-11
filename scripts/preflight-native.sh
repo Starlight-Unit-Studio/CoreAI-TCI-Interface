@@ -1570,7 +1570,8 @@ if command -v php >/dev/null 2>&1; then
   if feedback_ui_selftest="$(node "$PROJECT_ROOT/scripts/feedback-ui-selftest.cjs" 2>&1)"; then
     ok 'Feedback: Daumenfarben, Speicherung, Mara-Reaktion ohne Thinking geprueft.'
   else
-    feedback_ui_selftest="${feedback_ui_selftest//
+    fail "Feedback: UI-/Backend-Vertrag fuer Bewertungen fehlerhaft: ${feedback_ui_selftest:-Unbekannter Fehler}"
+  fi
 
   if [[ -f "$CONFIG_FILE" ]]; then
     if php -r "require '$PROJECT_ROOT/api/db.php'; require '$PROJECT_ROOT/api/console_plan_store.php'; exit(coreui_plan_schema_ready(stu_pdo()) ? 0 : 1);" >/dev/null 2>&1; then
