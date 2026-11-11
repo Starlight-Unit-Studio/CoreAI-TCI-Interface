@@ -287,3 +287,4 @@ Jede Version liegt als eigenstaendige UTF-8-TXT-Datei vor.
 * CHANGELOG_0_7_10.txt
 * CHANGELOG_0_7_11.txt
 * CHANGELOG_0_7_12.txt
+* CHANGELOG_0_7_13.txt

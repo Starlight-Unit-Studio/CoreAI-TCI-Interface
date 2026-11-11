@@ -1,0 +1,11 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.13
+Datum: 11.11.2026
+
+- Benutzer-Nachrichten bekommen eine zur Mara-Seite gespiegelte, vollbreite Zeilenstruktur. Avatar oben rechts, OPERATOR und Profilname direkt links davon, Nachrichtenblase darunter.
+- Die Benutzerblase endet jetzt rechtsbuendig am Chatrand, statt wegen des zuvor reservierten Avatarplatzes links vom Profilbild zu enden.
+- OPERATOR-Abstand zum Avatar entspricht nun dem TCI-CORE-Abstand auf Desktop und Smartphone: 13 px bei voller Breite und 9 px mobil.
+- Nachrichtentext bleibt nach Bedarf begrenzt und umbricht; es entsteht kein horizontaler Seitenscroll.
+- Aktionen und Zeitstempel bleiben rechtsbuendig unter der eigenen Nachricht.
+- Korrektur betrifft ausschliesslich die Nutzerseite des Chats; Maras TCI-Header und vollbreite Antworten, Bildausgaben, Pets, Tools und sonstige Einstellungen bleiben unveraendert.
+- Der Browser-Test kontrolliert Mobilbreiten 340/390 px und Desktop 1024 px, die Abstaende, die Chatblasenposition und die Bedienelemente.
+Version: 0.7.13

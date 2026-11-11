@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.12: Persistent red/green feedback thumbs and Mara replies.
+# CoreAI: TCI Interface 0.7.13: Persistent red/green feedback thumbs and Mara replies.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

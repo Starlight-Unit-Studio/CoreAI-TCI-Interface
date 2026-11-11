@@ -1,0 +1,26 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.13
+Datum: 11.11.2026
+Thema: Nutzer-Avatar-Abstand und rechtsbuendige Chatblasen reparieren
+
+AUSGANGSLAGE
+Nach der Einfuehrung des OPERATOR-Zweizeilers (0.7.12) stand der Labelblock weiter weg vom Avatar als Maras TCI-Label. Der Benutzertext endete links neben dem Avatar und sah im Smartphone-Chat mittig aus, obwohl der Wunsch rechtsbuendige Chatblasen unterhalb des Profilbildes war.
+
+URSACHE
+In css/console.css verwendet .msg-row.user flex-direction:row-reverse und .msg-content max-width:min(78%,820px). Dadurch muss die gesamte Nutzer-Textspalte links vom Avatar bleiben. Die zuletzt ergaenzte OPERATOR-Ueberschrift aenderte nur Schrift und Textausrichtung, nicht dieses Zeilenmodell.
+
+REPARATUR
+- css/coreui-chat-tci-layout.css: Nutzer-Nachrichtenzeile nun als volle Blockbreite analog zu Maras strukturellem Layout.
+- Benutzer-Avatar ist oben rechts absolut positioniert; nur die Namenszeile reserviert seinen Platz.
+- OPERATOR und Profilname schliessen rechts mit 13px Abstand am Avatar ab, mobil mit 9px wie bei Mara.
+- Nachrichtentext wird darunter rechts am Chatrand ausgerichtet, mit sinnvoller maximaler Breite und ohne Zwang zur Vollbreite.
+- Aktionen und Zeitstempel bleiben direkt unter der Blase rechts ausgerichtet.
+- Die vorhandenen Farben und die blaue OPERATOR-Unterstreichung bleiben erhalten.
+
+TESTS
+- scripts/tci-chat-message-selftest.cjs: strukturelle Abstaende und vollbreite Nutzerzeile.
+- scripts/operator-heading-ui-selftest.cjs: echte Browser-Geometrie auf 340px, 390px und 1024px, links/rechts Spiegelabstand, Avatar, Chatblase, Aktionen, Zeitstempel, typografische Farbtreue und Scrollbreite.
+- Bestehender Workflow operator-chat-heading.yml fuehrt diese Tests im PR aus.
+- python3 scripts/version-merge-check.py --base-version 0.7.12
+- Auf Zielsystem danach die offiziellen Preflights und reale Smartphone-Darstellung kontrollieren.
+
+Keine Datenbankmigration, kein Installer- oder Backend-Eingriff, keine Modellaenderungen.
