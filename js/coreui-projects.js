@@ -84,11 +84,50 @@
     var chats=sessions.filter(function(s){return !s.archived && s.project_id===current;});
     if(!chats.length) {list.appendChild(el('p','project-empty','Noch keine Chats. Beginne oben ein Gespräch mit Mara.'));return;}
     chats.sort(function(a,b){return new Date(b.updated_at||0)-new Date(a.updated_at||0);});
-    chats.forEach(function(s){
-      var btn=action('',function(){var a=chatApp();if(a&&a.select)a.select(s.id);},'project-chat-result');
-      btn.appendChild(el('strong','',s.title||'Chat'));
-      btn.appendChild(el('small','',(s.last_message_preview||(''+(s.message_count||0)+' Nachrichten')).replace(/\s+/g,' ').slice(0,200)));
-      list.appendChild(btn);
+    chats.forEach(function(chat){
+      var row=el('article','project-chat-result');
+      var btn=action('',function(){var a=chatApp();if(a&&a.select)a.select(chat.id);},'project-chat-result-main');
+      btn.appendChild(el('strong','',chat.title||'Chat'));
+      btn.appendChild(el('small','',(chat.last_message_preview||(''+(chat.message_count||0)+' Nachrichten')).replace(/\s+/g,' ').slice(0,200)));
+      row.appendChild(btn);
+      var options=el('div','project-chat-result-options');
+      var menu=el('div','project-chat-menu');menu.hidden=true;
+      options.appendChild(action('···',function(){
+        document.querySelectorAll('.project-chat-menu').forEach(function(m){if(m!==menu)m.hidden=true;});
+        menu.hidden=!menu.hidden;
+      },'project-chat-result-more'));
+      function chatAction(title,operation,danger){
+        var item=action(title,function(){
+          menu.hidden=true;
+          operation();
+        },danger?'danger':'');
+        menu.appendChild(item);
+      }
+      chatAction('Chat öffnen',function(){var a=chatApp();if(a&&a.select)a.select(chat.id);});
+      chatAction('Chat umbenennen',function(){
+        var title=prompt('Chat umbenennen',chat.title||'');
+        if(title===null||!title.trim())return;
+        post({action:'rename',id:chat.id,title:title.trim()}).then(function(){
+          var a=chatApp();return a&&a.refresh?a.refresh():null;
+        }).then(refresh).catch(function(e){alert(fail(e));});
+      });
+      chatAction('Aus Projekt entfernen',function(){
+        post({action:'project_assign',id:chat.id,project_id:''}).then(function(){
+          var a=chatApp();return a&&a.refresh?a.refresh():null;
+        }).then(refresh).catch(function(e){alert(fail(e));});
+      });
+      chatAction('Chat archivieren',function(){
+        post({action:'archive',id:chat.id}).then(function(){
+          var a=chatApp();return a&&a.refresh?a.refresh():null;
+        }).then(refresh).catch(function(e){alert(fail(e));});
+      });
+      chatAction('Chat löschen',function(){
+        if(!confirm('Chat "'+(chat.title||'Chat')+'" unwiderruflich löschen?'))return;
+        post({action:'delete',id:chat.id,archive_first:true,confirmation:'DELETE:'+chat.id}).then(function(){
+          var a=chatApp();return a&&a.removed?a.removed(chat.id):null;
+        }).then(refresh).catch(function(e){alert(fail(e));});
+      },true);
+      options.appendChild(menu);row.appendChild(options);list.appendChild(row);
     });
   }
   function sourceHref(id,view) {
@@ -289,5 +328,5 @@
   refresh().then(function(){
     var linked='';try{linked=new URLSearchParams(location.search).get('project')||'';}catch(e){}
     if(linked)openProject(linked);
-  }).catch(function(e){console.warn('[CoreAI] Projects not available:',e.message);});
+  }).catch(function(e){console.warn('[CoreAI] Projects deferred until sign-in:',e.message);});
 })();
