@@ -1,0 +1,14 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.2
+Datum: 11.11.2026
+
+- Mara Thorne ist das neue integrierte Standard-Pet (ID mara).
+- Das vom Projektinhaber bereitgestellte Original-Sprite-Sheet aus mara.openpet.zip ist unveraendert als images/pets/mara.webp hinterlegt.
+  Dateiformat: WebP mit Alpha, OpenPet v2, 1536 x 2288 Pixel, 8 Spalten und 11 Animationszeilen.
+  SHA-256: 0b86744a172f2515c030b28a3f989ff824040b3ceb8e2221014c36aed0c5efd0
+- Neue Konten erhalten Mara als Vorauswahl. Bereits gespeicherte Entscheidungen bleiben erhalten; bei Loeschung eines aktiv gewaehlten eigenen Pets gilt Mara als Ersatz.
+- Nova, Komet, Orbi, Luna, Quanti, Glimm, Raki und Sputni bleiben erhalten und waehlen sich wie bisher.
+- PHP- und Playwright-Tests pruefen Katalog, Atlas, Bildabmessungen, Standardwahl und Fallback.
+- Kein Eingriff in Modelle, Ollama, Modelfile, bestehende Accounts oder Serverdaten.
+- Vollstaendige Preflight-Abnahme auf dem Zielsystem bleibt erforderlich.
+
+Version: 0.7.2
