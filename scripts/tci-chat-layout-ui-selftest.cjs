@@ -53,6 +53,16 @@ async function inspect(browser, width, height, name) {
       const rect = el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,right:r.right,bottom:r.bottom,width:r.width,height:r.height};};
       const role = document.querySelector('.msg-core-role');
       const persona = document.querySelector('.msg-core-persona');
+      const typography = element => {
+        const cs = getComputedStyle(element);
+        return {color: cs.color, fontSize: cs.fontSize, fontWeight: cs.fontWeight,
+          fontFamily: cs.fontFamily, lineHeight: cs.lineHeight, letterSpacing: cs.letterSpacing};
+      };
+      const goldProbe = document.createElement('span');
+      goldProbe.style.color = 'var(--amb, #e29b39)';
+      document.body.appendChild(goldProbe);
+      const gold = getComputedStyle(goldProbe).color;
+      goldProbe.remove();
       return {
         row:rect(document.getElementById('assistant')),
         avatar:rect(document.getElementById('avatar')),
@@ -62,13 +72,21 @@ async function inspect(browser, width, height, name) {
         body:rect(document.getElementById('body')),
         roleText:role.textContent,
         personaText:persona.textContent,
+        roleType:typography(role),
+        personaType:typography(persona),
         underlined:getComputedStyle(role).textDecorationLine,
+        underlineColor:getComputedStyle(role).textDecorationColor,
+        gold,
         overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth
       };
     },{builder,name});
     assert.equal(measurement.roleText,'TCI CORE:');
     assert.equal(measurement.personaText,name.toUpperCase());
     assert(measurement.underlined.includes('underline'), 'label is actually underlined');
+    assert.deepEqual(measurement.roleType, measurement.personaType,
+      'TCI CORE and Mara share computed font, size, weight and blue color');
+    assert.equal(measurement.underlineColor, measurement.gold,
+      'the underline uses the theme gold');
     assert(measurement.role.bottom<=measurement.persona.y+2,'name goes to second line');
     assert(measurement.body.y>=measurement.avatar.bottom-2,'answer starts below avatar');
     assert(Math.abs(measurement.body.x-measurement.row.x)<=2,
