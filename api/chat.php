@@ -5682,7 +5682,7 @@ function ember_generate_reply(
   $projectKnowledgeBlock = ($channel === 'console' && ($projectScope['id'] ?? '') !== '')
     ? coreui_project_knowledge_block($pdo,$uid,(string)$projectScope['id'],
         $cleanLoreQuestion,$promptProfile['compact'] ? 1500 : 3600) : '';
-  $u = "[SERVERZEIT (nur dein Hintergrundwissen - Datum/Uhrzeit im Gespraech NUR nennen, wenn in der NEU-Nachricht danach gefragt wird; fuer erzeugte Inhalte wie Copyright-Jahr oder Stand-Angaben gilt dieses Datum, nicht das Jahr aus deinem Trainingswissen): {$emberZeit}]{$memBlock}{$repBlock}{$playerStateBlock}{$attachBlock}{$userPromptBlock}{$profilePromptBlock}{$privateKnowledgeBlock}\n" . "Kontext (letzte Zeilen - Zeilen mit (du) sind DEINE eigenen, bereits gesendeten Antworten; beantworte sie NICHT erneut):\n" . ($ctx !== '' ? $ctx : "(leer)")
+  $u = "[SERVERZEIT (nur dein Hintergrundwissen - Datum/Uhrzeit im Gespraech NUR nennen, wenn in der NEU-Nachricht danach gefragt wird; fuer erzeugte Inhalte wie Copyright-Jahr oder Stand-Angaben gilt dieses Datum, nicht das Jahr aus deinem Trainingswissen): {$emberZeit}]{$memBlock}{$repBlock}{$playerStateBlock}{$attachBlock}{$userPromptBlock}{$profilePromptBlock}{$privateKnowledgeBlock}{$projectPromptBlock}{$projectChatBlock}{$projectKnowledgeBlock}\n" . "Kontext (letzte Zeilen - Zeilen mit (du) sind DEINE eigenen, bereits gesendeten Antworten; beantworte sie NICHT erneut):\n" . ($ctx !== '' ? $ctx : "(leer)")
    . $loreBlock
    . "
 
