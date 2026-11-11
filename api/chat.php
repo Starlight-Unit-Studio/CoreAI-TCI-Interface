@@ -5316,8 +5316,16 @@ function ember_image_run_tool(PDO $pdo, int $uid, string $input): array {
   // Every 2/4 image request therefore stops exactly at the guest's daily cap.
   if (!coreui_image_tool_allowed($pdo, $uid)) {
     $quota = coreui_guest_image_quota($pdo, $uid);
-    $err = is_array($quota) && (int)($quota['left'] ?? 0) < 1
-      ? 'guest_image_limit_reached' : 'image_unavailable';
+    $err = 'image_unavailable';
+    if (is_array($quota)) {
+      if ((int)$quota['limit'] < 1 || !coreui_guest_tool_enabled($pdo, 'image')) {
+        $err = 'guest_image_disabled';
+      } elseif (empty($quota['enabled'])) {
+        $err = 'guest_image_quota_unavailable';
+      } elseif ((int)$quota['left'] < 1) {
+        $err = 'guest_image_limit_reached';
+      }
+    }
     return ['ok'=>false, 'error'=>$err, 'detail'=>''];
   }
   $reservation = coreui_guest_image_reserve($pdo, $uid);
