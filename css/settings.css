@@ -1582,6 +1582,20 @@
 .settings-body .pet-upload-head h3 { margin: 0; font-size: 24px; }
 .settings-body .pet-upload-box .pz-field { margin-top: 4px; }
 .settings-body .pet-hint { color: var(--muted); font-size: 14px; line-height: 1.45; }
+.settings-body .pet-import-guide,
+.settings-body .pet-upload-guide {
+  color: var(--muted);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.settings-body .pet-import-guide { margin: 0 0 18px; font-size: 14px; }
+.settings-body .pet-upload-guide { margin: 8px 0; font-size: 14px; }
+.settings-body .pet-import-guide a,
+.settings-body .pet-upload-guide a { color: var(--cx); text-decoration: underline; text-underline-offset: 3px; }
+.settings-body #petManualFields[hidden],
+.settings-body #petZipHint[hidden],
+.settings-body #petImageHint[hidden] { display: none; }
+
 .settings-body .pet-file {
   display: flex; align-items: center; gap: 14px; min-height: 58px; padding: 6px; border: 1px solid var(--line-strong); border-radius: 14px;
 }
