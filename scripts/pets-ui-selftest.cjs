@@ -1,7 +1,7 @@
 // CoreAI 0.7.1: Settings > Pets and the pet in Mara's work line, in a real browser (Playwright).
 //   node scripts/pets-ui-selftest.cjs
 // A stand-in for api/pets.php keeps the pets. Checks: "Pet auswählen" with the eight CoreAI pets,
-// animated (the frames move), and "Pet nicht anzeigen"; a choice saves at once and goes back when
+// animated (the frames move), Nova preselected, and "Pet nicht anzeigen"; a choice saves at once and goes back when
 // refused; "Pet mit Mara erstellen" opens a new chat with a draft; "Pet hochladen" with name,
 // description, a live preview of the sheet and the server's reasons; deleting an own pet with a
 // confirmation. In the chat's work line the chosen pet stands first and keeps moving while the line
@@ -18,7 +18,7 @@ const NAMES = ['Nova', 'Komet', 'Orbi', 'Luna', 'Quanti', 'Glimm', 'Raki', 'Sput
 
 function petServer() {
   const ids = ['nova', 'komet', 'orbi', 'luna', 'quanti', 'glimm', 'raki', 'sputni'];
-  const st = {selected: 'none', own: [], posts: [], uploads: [], failNext: '', uploadError: 'not_transparent', next: 1};
+  const st = {selected: 'nova', own: [], posts: [], uploads: [], failNext: '', uploadError: 'not_transparent', next: 1};
   const builtin = ids.map((id, i) => ({id, name: NAMES[i], description: 'Beschreibung von ' + NAMES[i] + '.', url: './images/pets/' + id + '.png', frames: 6, frame_px: 32, own: false}));
   const payload = () => ({ok: true, builtin, own: st.own, selected: st.selected, upload_ready: true, csrf_token: 'tok'});
   function handle(method, url, body, multipart) {
@@ -36,7 +36,7 @@ function petServer() {
     if (body.action === 'select') { st.selected = body.pet; return {status: 200, json: payload()}; }
     if (body.action === 'delete') {
       st.own = st.own.filter(p => p.id !== body.id);
-      if (st.selected === body.id) st.selected = 'none';
+      if (st.selected === body.id) st.selected = 'nova';
       return {status: 200, json: payload()};
     }
     return {status: 400, json: {ok: false, error: 'invalid_action'}};
@@ -100,7 +100,7 @@ async function open(browser, srv, viewport, url) {
     assert.match(await page.textContent('#petUploadOpen'), /Pet hochladen/);
     assert.deepEqual(await page.$$eval('#petRows .pet-row strong', l => l.map(x => x.textContent)), NAMES);
     assert.equal(await page.$$eval('#petRows .coreai-pet', l => l.length), 8);
-    assert.equal(await page.isChecked('#petNone'), true, 'no pet until one is chosen');
+    assert.equal(await page.isChecked('#pet-nova'), true, 'Nova is preselected');
     assert.equal(await page.textContent('#petStatus'), '');
     const first = await page.getAttribute('#petRows .coreai-pet >> nth=0', 'data-frame');
     await page.waitForFunction(f => document.querySelector('#petRows .coreai-pet').getAttribute('data-frame') !== f, first);
@@ -155,14 +155,14 @@ async function open(browser, srv, viewport, url) {
     await page.waitForFunction(() => /Mein Pet begleitet dich/.test(document.getElementById('petStatus').textContent));
     await page.click('#petRows .pet-row.is-own .pet-delete');
     await page.waitForSelector('#petDeleteConfirm:not([hidden])');
-    assert.match(await page.textContent('#petDeleteText'), /Danach wird im Chat kein Pet angezeigt/);
+    assert.match(await page.textContent('#petDeleteText'), /Danach begleitet dich wieder Nova/);
     assert.equal(srv.st.selected, 'u1', 'the delete button does not choose the pet again');
     await page.click('#petDeleteCancel');
     await page.click('#petRows .pet-row.is-own .pet-delete');
     await page.click('#petDeleteOk');
     await page.waitForSelector('#petDeleteConfirm', {state: 'hidden'});
     assert.deepEqual(srv.st.posts.pop(), {action: 'delete', id: 'u1'});
-    assert.equal(await page.isChecked('#petNone'), true);
+    assert.equal(await page.isChecked('#pet-nova'), true, 'Nova takes over from a deleted own pet');
     assert.equal(await page.$$eval('#petRows .pet-row.is-own', l => l.length), 0);
 
     // "Pet mit Mara erstellen": a new chat with a draft.

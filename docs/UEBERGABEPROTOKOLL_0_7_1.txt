@@ -8,7 +8,9 @@ AUFTRAG
   (Liste, Pet hochladen, Pet mit Mara erstellen). Pets sind
   animierte Icons am Satzanfang, die sich dauernd bewegen.
 - Zeile Codex Cloud in der Personalisierung entfernen (der Chat
-  vereint Alltag und Code bereits).
+  vereint Alltag und Code bereits); danach auch Menueeintrag und
+  Planungsseite Codex Cloud entfernen.
+- Ein Pet soll vorausgewaehlt sein: Nova.
 
 UMSETZUNG
 - Pets: Maras Arbeitszeile im Chat (js/coreui-work-events.js,
@@ -32,8 +34,11 @@ UMSETZUNG
   Fenster mit Vorschau, Loeschabfrage; Menue Pets ohne GEPLANT.
 - Personalisierung: Zeile Codex Cloud entfernt; arc-btn.pz-primary
   mit hoeherer Gewichtung (vorher von arc-btn ueberschrieben).
-- Standard bleibt "Pet nicht anzeigen" (Opt-in), damit sich der
-  Chat fuer niemanden ungefragt aendert.
+- Nova ist vorausgewaehlt (Standard 'nova' in den Personalisierungs-
+  Einstellungen); "Pet nicht anzeigen" ist eine bewusste Wahl. Ein
+  geloeschtes oder fehlendes eigenes Pet faellt auf Nova zurueck.
+- Codex Cloud: Menueeintrag und Planungsseite entfernt; Navigation
+  hat 24 Seiten, 8 davon geplant.
 
 TESTSTAND (in dieser Sitzung ausgefuehrt)
 - php -l fuer alle geaenderten PHP-Dateien.
@@ -48,6 +53,4 @@ TESTSTAND (in dieser Sitzung ausgefuehrt)
 - Vollstaendige Suite und Versions-Guard: siehe PR.
 
 OFFEN / SPAETER
-- Menueeintrag Codex Cloud (geplant) besteht weiter; nur die Zeile
-  in der Personalisierung ist entfernt.
 - Konto-PIN, gesperrte Chats, CoreAI-Theme ueber alle Einstellungen.

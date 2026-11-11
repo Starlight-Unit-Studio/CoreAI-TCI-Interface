@@ -18,12 +18,14 @@ const sections = {
     'nutzung','datenkontrollen'],
   teams: ['teams-start','teams-erstellen'],
   integrations: ['plugins','passwoerter','cloud-computer'],
-  programming: ['codex-cloud','code-review'],
+  programming: ['code-review'],
   system: ['system'],
   expert: ['ki-profil','wissen','memory']
 };
 const entries = Object.values(sections).flat();
-assert.equal(entries.length, 25);
+// 0.7.1: Codex Cloud is gone (the chat already covers code work).
+assert.equal(entries.length, 24);
+assert.ok(!settings.includes('codex-cloud'), 'no Codex Cloud entry or page');
 const ids = [...settings.matchAll(/\bid="([^"]+)"/g)].map(x => x[1]);
 assert.equal(new Set(ids).size, ids.length, 'no duplicate IDs');
 for(const entry of entries) {
@@ -32,8 +34,9 @@ for(const entry of entries) {
   assert.ok(settings.includes('aria-controls="view-' + entry + '"'), entry + ' linked view');
 }
 const planned = [...settings.matchAll(/class="cfg-view cfg-view-planned"/g)];
-// 0.6.81: Benachrichtigungen became a real page; 0.6.87: Archivierte Chats too; 0.7.1: Pets (9 planned remain).
-assert.equal(planned.length, 9, 'only genuinely unimplemented settings remain planned');
+// 0.6.81: Benachrichtigungen became a real page; 0.6.87: Archivierte Chats too; 0.7.1: Pets, and Codex Cloud
+// was removed (8 planned remain).
+assert.equal(planned.length, 8, 'only genuinely unimplemented settings remain planned');
 assert.ok(settings.includes('id="settingsExpertToggle"'));
 assert.ok(settings.includes('class="cfg-header-expert"') &&
   settings.indexOf('id="settingsExpertToggle"') < settings.indexOf('<div class="cfg-shell">'),
@@ -150,4 +153,4 @@ assert.ok(css.includes('cfg-nav-collapsed') && css.includes('cfg-header-expert')
 assert.ok(read('js/coreui-settings-menu.js').includes("doc.addEventListener('touchstart'") &&
   read('js/coreui-settings-menu.js').includes("doc.addEventListener('touchend'"),
   'swipe navigation is implemented alongside keyboard and button access');
-console.log('CoreAI settings: 25 categories, 9 honest planning pages, migrated live controls, header Expert/Admin, responsive swipe navigation OK');
+console.log('CoreAI settings: 24 categories, 8 honest planning pages, migrated live controls, header Expert/Admin, responsive swipe navigation OK');

@@ -6,7 +6,8 @@ declare(strict_types=1);
  * at the start of Mara's work line in the chat while she works on a request.
  *   - the built-in CoreAI pets (original art, images/pets/<id>.png from scripts/build-pet-sprites.py)
  *   - pets a person uploads: one sprite sheet, a row of square frames (migration 034)
- *   - the choice per account ('none', a built-in id or 'u<id>'), kept with the personalization
+ *   - the choice per account (a built-in id, 'u<id>' or 'none'), kept with the personalization;
+ *     Nova is preselected, and a deleted own pet falls back to it
  * The sprite sheet is checked from its own bytes (PNG or WebP header), so no image library decides.
  */
 
@@ -173,14 +174,19 @@ function coreui_pet_add(PDO $pdo, int $uid, string $name, string $description, s
   return coreui_pet_own_view(coreui_pet_own_row($pdo, $uid, (int)$pdo->lastInsertId()) ?? []);
 }
 
-/** Deletes an own pet with its file; a chosen pet falls back to "Pet nicht anzeigen". */
+/** The preselected pet (Nova). */
+function coreui_pet_default(): string {
+  return (string)coreui_personalization_defaults()['pet'];
+}
+
+/** Deletes an own pet with its file; if it was chosen, the preselected pet takes over. */
 function coreui_pet_delete(PDO $pdo, int $uid, int $id): bool {
   $row = coreui_pet_own_row($pdo, $uid, $id);
   if ($row === null) return false;
   $pdo->prepare('DELETE FROM stu_user_pets WHERE id = ? AND user_id = ?')->execute([$id, $uid]);
   $stored = (string)$row['stored_name'];
   if (preg_match('~^pet_[a-f0-9]{32}\.(png|webp)$~D', $stored) === 1) @unlink(coreui_pet_dir() . '/' . $stored);
-  if (coreui_pet_choice($pdo, $uid) === 'u' . $id) coreui_personalization_update($pdo, $uid, ['pet' => 'none']);
+  if (coreui_pet_choice($pdo, $uid) === 'u' . $id) coreui_personalization_update($pdo, $uid, ['pet' => coreui_pet_default()]);
   return true;
 }
 
@@ -197,13 +203,14 @@ function coreui_pet_choose(PDO $pdo, int $uid, string $choice): string {
   return coreui_pet_choice_normalise(coreui_personalization_update($pdo, $uid, ['pet' => $choice])['pet'] ?? 'none');
 }
 
-/** The pet for the chat, or null for "Pet nicht anzeigen" (also when an own pet no longer exists). */
+/** The pet for the chat, or null for "Pet nicht anzeigen"; an own pet that is gone gives the preselected one. */
 function coreui_pet_current(PDO $pdo, int $uid): ?array {
   $choice = coreui_pet_choice($pdo, $uid);
   if ($choice === 'none') return null;
   if (str_starts_with($choice, 'u')) {
     $row = coreui_pet_own_row($pdo, $uid, (int)substr($choice, 1));
-    return $row !== null ? coreui_pet_own_view($row) : null;
+    if ($row !== null) return coreui_pet_own_view($row);
+    $choice = coreui_pet_default();
   }
   foreach (coreui_pet_builtin_view() as $pet) if ($pet['id'] === $choice) return $pet;
   return null;

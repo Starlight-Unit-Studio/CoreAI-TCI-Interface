@@ -6,8 +6,8 @@
    question row that opens a new chat (app.html?draft=). Schreibstil. Referenzfotos: uploaded like a
    chat image (api/console_upload.php) and used when the person asks for an image of themselves.
    The style menus, the sub page "Benutzerdefinierte Anweisungen für Mara" (instructions, nickname,
-   job, more about the person, role) and Weitere Mara-Einstellungen. Konnektorsuche and Codex Cloud
-   are planned. Never changes the operator Modelfile. */
+   job, more about the person, role) and Weitere Mara-Einstellungen. Konnektorsuche is planned
+   (0.7.1: no Codex Cloud row). Never changes the operator Modelfile. */
 (function () {
   'use strict';
 

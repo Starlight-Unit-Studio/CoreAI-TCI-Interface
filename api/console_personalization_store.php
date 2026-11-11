@@ -28,8 +28,8 @@ function coreui_personalization_defaults(): array {
     'occupation' => '',
     'about' => '',
     'role' => '',
-    // 0.7.1: Settings > Pets: 'none', a built-in pet or 'u<id>' for an own pet (api/pets_store.php).
-    'pet' => 'none',
+    // 0.7.1: Settings > Pets: a built-in pet (Nova is preselected), 'u<id>' for an own pet or 'none'.
+    'pet' => 'nova',
     // Reference photos of the person for images of themselves (stu_console_media uuids, set by the server only).
     'reference_portrait' => '',
     'reference_body' => ''

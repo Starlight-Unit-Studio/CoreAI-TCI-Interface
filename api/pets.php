@@ -22,7 +22,7 @@ $action = (string)($_GET['action'] ?? '');
 
 function coreui_pets_payload(PDO $pdo, int $uid): array {
   return ['ok' => true, 'builtin' => coreui_pet_builtin_view(), 'own' => coreui_pet_own($pdo, $uid),
-    'selected' => coreui_pet_current($pdo, $uid) !== null ? coreui_pet_choice($pdo, $uid) : 'none',
+    'selected' => (string)(coreui_pet_current($pdo, $uid)['id'] ?? 'none'),
     'upload_ready' => coreui_pet_schema_ready($pdo), 'csrf_token' => stu_csrf_token()];
 }
 

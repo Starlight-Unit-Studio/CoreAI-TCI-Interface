@@ -4,8 +4,9 @@ declare(strict_types=1);
 //   php scripts/pets-selftest.php
 // Pure parts: the eight built-in CoreAI pets and their sheets, the stored choice, sprite sheets read
 // from their own bytes (PNG with alpha or tRNS, WebP lossless, lossy with and without alpha) and the
-// upload rules. With COREUI_SELFTEST_DB=1 on MariaDB (migration 034): upload, the own list, other
-// accounts never see a pet, choosing, the pet for the chat, deleting with the file, the limit of 12.
+// upload rules; Nova is preselected. With COREUI_SELFTEST_DB=1 on MariaDB (migration 034): upload, the
+// own list, other accounts never see a pet, choosing, the pet for the chat, deleting with the file
+// (Nova takes over), the limit of 12.
 // Then the wiring of the API, the page, the chat work line, the account deletion and the preflights.
 if (PHP_SAPI !== 'cli') exit(1);
 $root = dirname(__DIR__);
@@ -44,6 +45,7 @@ foreach (['codex', 'dewey', 'fireball', 'hoots', 'rocky', 'seedy', 'stacky', 'bs
 foreach (['nova' => 'nova', ' Komet ' => 'komet', 'u12' => 'u12', 'none' => 'none', 'u0' => 'none', 'gibtsnicht' => 'none', '' => 'none'] as $in => $out) {
   pet_test(coreui_pet_choice_normalise($in) === $out, "choice '$in'");
 }
+pet_test(coreui_personalization_defaults()['pet'] === 'nova' && coreui_pet_default() === 'nova', 'Nova is preselected');
 pet_test(coreui_personalization_normalise(['pet' => 'u7'])['pet'] === 'u7' && coreui_personalization_normalise(['pet' => '../x'])['pet'] === 'none'
   && in_array('pet', coreui_personalization_client_keys(), true), 'the choice is kept with the personalization');
 $expect = ['png' => ['image/png', true], 'pngrgb' => ['image/png', false], 'pngtrns' => ['image/png', true],
@@ -84,7 +86,8 @@ if (getenv('COREUI_SELFTEST_DB') === '1') {
   $ins->execute(["pet-b-$tag@example.test"]);
   $ub = (int)$my->lastInsertId();
   try {
-    pet_test(coreui_pet_current($my, $ua) === null && coreui_pet_choice($my, $ua) === 'none', 'MariaDB: no pet until one is chosen');
+    pet_test(coreui_pet_current($my, $ua)['id'] === 'nova' && coreui_pet_choice($my, $ua) === 'nova', 'MariaDB: Nova is preselected');
+    pet_test(coreui_pet_choose($my, $ua, 'none') === 'none' && coreui_pet_current($my, $ua) === null, 'MariaDB: "Pet nicht anzeigen"');
     pet_test(coreui_pet_choose($my, $ua, 'luna') === 'luna' && coreui_pet_current($my, $ua)['url'] === './images/pets/luna.png', 'MariaDB: a built-in pet');
     pet_test(pet_code(fn() => coreui_pet_add($my, $ua, '  ', '', $bytes['png'])) === 'name_required'
       && pet_code(fn() => coreui_pet_add($my, $ua, 'Opak', '', $bytes['pngrgb'])) === 'not_transparent', 'MariaDB: name and transparency');
@@ -99,8 +102,10 @@ if (getenv('COREUI_SELFTEST_DB') === '1') {
       && pet_code(fn() => coreui_pet_choose($my, $ub, 'u' . $id)) === 'pet_not_found', 'MariaDB: other accounts never see it');
     pet_test(coreui_pet_choose($my, $ua, 'u' . $id) === 'u' . $id && coreui_pet_current($my, $ua)['name'] === 'Mein Testpet', 'MariaDB: the own pet in the chat');
     pet_test(coreui_pet_files($my, $ua) === ['var/console_media/' . $row['stored_name']], 'MariaDB: files for the account deletion');
-    pet_test(coreui_pet_delete($my, $ua, $id) && !is_file($file) && coreui_pet_choice($my, $ua) === 'none' && coreui_pet_current($my, $ua) === null
-      && !coreui_pet_delete($my, $ua, $id), 'MariaDB: deleted with its file, the chat shows no pet');
+    pet_test(coreui_pet_delete($my, $ua, $id) && !is_file($file) && coreui_pet_choice($my, $ua) === 'nova' && coreui_pet_current($my, $ua)['id'] === 'nova'
+      && !coreui_pet_delete($my, $ua, $id), 'MariaDB: deleted with its file, Nova takes over');
+    $my->prepare('UPDATE stu_user_personalization SET preferences_json = JSON_SET(preferences_json, \'$.pet\', \'u999999\') WHERE user_id = ?')->execute([$ua]);
+    pet_test(coreui_pet_current($my, $ua)['id'] === 'nova', 'MariaDB: a missing own pet shows Nova');
     for ($i = 0; $i < COREUI_PET_MAX_OWN; $i++) coreui_pet_add($my, $ub, 'Pet ' . $i, '', $bytes['png']);
     pet_test(pet_code(fn() => coreui_pet_add($my, $ub, 'Eins zu viel', '', $bytes['png'])) === 'too_many_pets' && count(coreui_pet_own($my, $ub)) === 12, 'MariaDB: at most 12 own pets');
     $dbChecked = true;
