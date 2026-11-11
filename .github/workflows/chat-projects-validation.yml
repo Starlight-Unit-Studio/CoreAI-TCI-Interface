@@ -1,0 +1,36 @@
+name: Project UI and context validation
+on:
+  pull_request:
+    paths:
+      - 'api/console_project_store.php'
+      - 'api/console_project_sources.php'
+      - 'api/console_sessions.php'
+      - 'api/console_session_store.php'
+      - 'api/knowledge_store.php'
+      - 'api/chat.php'
+      - 'api/console_stream.php'
+      - 'database/migrations/037_chat_projects.sql'
+      - 'app.html'
+      - 'js/coreui-projects.js'
+      - 'js/coreui-chat-menu.js'
+      - 'js/console-app.js'
+      - 'scripts/project-ui-selftest.cjs'
+      - '.github/workflows/chat-projects-validation.yml'
+  push:
+    branches: ['feat/chat-project-context-scope-20261111']
+jobs:
+  syntax-and-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: PHP syntax
+        run: |
+          for f in api/console_project_store.php api/console_project_sources.php api/console_sessions.php api/console_session_store.php api/knowledge_store.php api/chat.php api/console_stream.php; do
+            php -l "$f"
+          done
+      - name: JavaScript syntax and project UI contract
+        run: |
+          node --check js/coreui-projects.js
+          node --check js/console-app.js
+          node --check js/coreui-chat-menu.js
+          node scripts/project-ui-selftest.cjs
