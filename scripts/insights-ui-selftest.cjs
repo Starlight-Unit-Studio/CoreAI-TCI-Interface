@@ -87,7 +87,8 @@ assert(pageHtml.indexOf('id="insightChips"') > pageHtml.indexOf('id="welcomeScre
   'four insight chips mount above the conversation, not on the welcome screen');
 assert(pageHtml.includes('class="core-insights" id="coreInsights" aria-label="Core-Informationen" hidden'),
   'desktop sidebar is hidden until a chat is selected');
-assert(chatStyle.includes('.core-insights[hidden],')
+assert(chatStyle.includes('.welcome-screen[hidden]')
+  && chatStyle.includes('.core-insights[hidden],')
   && chatStyle.includes('.insight-chips[hidden],')
   && chatStyle.includes('.messages-area.is-welcome .insight-chips'),
   'welcome and explicit hidden state take precedence over responsive display rules');
