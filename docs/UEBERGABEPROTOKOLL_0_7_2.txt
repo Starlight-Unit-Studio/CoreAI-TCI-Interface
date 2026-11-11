@@ -1,0 +1,33 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.2
+Datum: 11.11.2026
+Thema: Mara Thorne als integriertes Standard-Pet
+
+STATUS
+- Originalgrafik: images/pets/mara.webp (WebP, Alpha, 1536 x 2288, OpenPet v2).
+- Asset-SHA-256: 0b86744a172f2515c030b28a3f989ff824040b3ceb8e2221014c36aed0c5efd0
+- Git-Blob-SHA: 129b9c6c091a35912a671d4069dfae9165944363
+- Eingebaut als festes Pet mit id mara, sprite_version 2, frame_px 192, frames 8.
+- Standard fuer neue Konten: mara. Vorherige Kontoeinstellungen bleiben ausdruecklich erhalten.
+- Fallback nach Loeschung eines gewaehlten eigenen Pets: mara.
+- Vorhandene acht CoreAI-Pets und eigene Uploads bleiben kompatibel.
+
+AENDERUNGEN
+- images/pets/mara.webp
+- api/pets_store.php
+- api/console_personalization_store.php
+- js/coreui-pets-settings.js
+- scripts/pets-selftest.php
+- scripts/pets-ui-selftest.cjs
+- README.md, CHANGELOG.md, VERSION und zugehoerige Release-Metadaten.
+
+SICHERHEIT / KOMPATIBILITAET
+- Keine Datenbankmigration fuer den Built-in-Katalog erforderlich.
+- Kein Ruecksetzen bestehender Pet-Wahlen.
+- Kein Zugriff auf fremde Nutzerdaten; unveraenderte API-Berechtigungen.
+- Kein Eingriff in Ollama, Modelfiles, Installer oder Live-Server.
+
+ABNAHME
+- Vor dem Merge PHP-Lint und Pet-Selftest ausfuehren.
+- Playwright UI-Test inklusive 390px-Smartphone, 1536x2288 WebP und persistentem Pet-Dock.
+- Cache-Fingerprint-Check, Versionscheck mit Basis 0.7.1 und beide Preflights auf dem Zielsystem.
+- Ein Merge entspricht exakt einer neuen Version 0.7.2.
