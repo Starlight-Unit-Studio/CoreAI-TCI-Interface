@@ -67,3 +67,15 @@
 .pref-compact-feed .msg-row.ember {
   --tci-avatar-size: 36px;
 }
+
+/* The Core/Kontext/Werkzeuge/Projekt controls are chat-only.
+   Their internal DOM remains mounted so settings and live data survive toggles. */
+.core-insights[hidden],
+.insight-chips[hidden],
+.messages-area.is-welcome .insight-chips {
+  display: none !important;
+}
+@media (min-width: 1400px) {
+  /* The unsaved welcome view does not reserve space for a hidden right rail. */
+  .app-shell .messages-area.is-welcome { margin-right: 0; }
+}
