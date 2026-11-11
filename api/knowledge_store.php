@@ -18,6 +18,17 @@ function coreui_knowledge_schema_ready(PDO $pdo): bool {
   }
 }
 
+/** Migration 037: account-wide sources have NULL project_id. */
+function coreui_knowledge_project_ready(PDO $pdo): bool {
+  static $cache = [];
+  $key = spl_object_id($pdo);
+  if (!array_key_exists($key,$cache)) {
+    try { $pdo->query('SELECT project_id FROM stu_user_knowledge_sources LIMIT 0'); $cache[$key] = true; }
+    catch (Throwable $e) { $cache[$key] = false; }
+  }
+  return $cache[$key];
+}
+
 function coreui_knowledge_setting_int(PDO $pdo, string $key, int $default, int $min, int $max): int {
   $value = function_exists('stu_app_setting_get')
     ? (int)stu_app_setting_get($pdo, $key, (string)$default)
@@ -137,12 +148,18 @@ function coreui_knowledge_validate_upload(array $file, array $limits): array {
   return ['tmp' => $tmp, 'size' => $size, 'name' => $name, 'extension' => $extension, 'mime' => $mime ?: 'application/octet-stream'];
 }
 
-function coreui_knowledge_list(PDO $pdo, int $uid): array {
+function coreui_knowledge_list(PDO $pdo, int $uid, ?string $projectId = null): array {
+  $projectReady = coreui_knowledge_project_ready($pdo);
+  if ($projectId !== null) {
+    if (!$projectReady || !function_exists('coreui_project_require')) throw new RuntimeException('project_migration_required');
+    coreui_project_require($pdo,$uid,$projectId);
+  }
+  $filter = $projectReady ? ($projectId === null ? ' AND project_id IS NULL' : ' AND project_id=?') : '';
   $st = $pdo->prepare(
     'SELECT uuid, title, original_name, mime_type, file_size, char_count, chunk_count, status, error_message, created_at, updated_at '
-    . 'FROM stu_user_knowledge_sources WHERE user_id = ? ORDER BY updated_at DESC, created_at DESC'
+    . 'FROM stu_user_knowledge_sources WHERE user_id = ?' . $filter . ' ORDER BY updated_at DESC, created_at DESC'
   );
-  $st->execute([$uid]);
+  $st->execute($projectId !== null ? [$uid,$projectId] : [$uid]);
   return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
 }
 
@@ -163,20 +180,34 @@ function coreui_knowledge_totals(PDO $pdo, int $uid): array {
   ];
 }
 
-function coreui_knowledge_ingest(PDO $pdo, int $uid, array $file, string $requestedTitle = ''): array {
+function coreui_knowledge_ingest(PDO $pdo, int $uid, array $file, string $requestedTitle = '', ?string $projectId = null): array {
   if (!coreui_knowledge_schema_ready($pdo)) throw new RuntimeException('missing_schema_004');
+  if ($projectId !== null) {
+    if (!coreui_knowledge_project_ready($pdo) || !function_exists('coreui_project_require')) throw new RuntimeException('project_migration_required');
+    coreui_project_require($pdo,$uid,$projectId);
+  }
   $limits = coreui_knowledge_limits($pdo);
-  $upload = coreui_knowledge_validate_upload($file, $limits);
-  $text = coreui_knowledge_extract($upload['tmp'], $upload['extension'], (int)$limits['max_extracted_chars']);
-  $charCount = mb_strlen($text, 'UTF-8');
-  if ($charCount < 40) throw new RuntimeException('knowledge_text_too_short');
-  $chunks = coreui_knowledge_chunks(
-    $text,
-    (int)$limits['chunk_chars'],
-    (int)$limits['chunk_overlap'],
-    (int)$limits['max_chunks']
-  );
-  if (!$chunks) throw new RuntimeException('knowledge_no_chunks');
+  $rawName = coreui_knowledge_clean_filename((string)($file['name'] ?? ''));
+  $ext = strtolower((string)pathinfo($rawName, PATHINFO_EXTENSION));
+  $isImage = $projectId !== null && in_array($ext,['png','jpg','jpeg','webp','gif'],true);
+  if ($isImage) {
+    $size = (int)($file['size'] ?? 0);
+    $tmp = (string)($file['tmp_name'] ?? '');
+    $mime = $tmp !== '' && is_uploaded_file($tmp) ? (string)(new finfo(FILEINFO_MIME_TYPE))->file($tmp) : '';
+    $allowed = ['png'=>'image/png','jpg'=>'image/jpeg','jpeg'=>'image/jpeg','webp'=>'image/webp','gif'=>'image/gif'];
+    if ((int)($file['error'] ?? -1) !== UPLOAD_ERR_OK || $size<=0 || $size>$limits['max_file_bytes'] ||
+       $mime !== $allowed[$ext]) throw new InvalidArgumentException('knowledge_mime_mismatch');
+    $upload=['tmp'=>$tmp,'size'=>$size,'name'=>$rawName,'extension'=>$ext,'mime'=>$mime];
+    $text=''; $chunks=[]; $charCount=0;
+  } else {
+    $upload = coreui_knowledge_validate_upload($file, $limits);
+    $text = coreui_knowledge_extract($upload['tmp'], $upload['extension'], (int)$limits['max_extracted_chars']);
+    $charCount = mb_strlen($text, 'UTF-8');
+    if ($charCount < 40) throw new RuntimeException('knowledge_text_too_short');
+    $chunks = coreui_knowledge_chunks($text,(int)$limits['chunk_chars'],
+      (int)$limits['chunk_overlap'],(int)$limits['max_chunks']);
+    if (!$chunks) throw new RuntimeException('knowledge_no_chunks');
+  }
 
   $uuid = bin2hex(random_bytes(16));
   $storedName = $uuid . '.' . $upload['extension'];
@@ -204,14 +235,20 @@ function coreui_knowledge_ingest(PDO $pdo, int $uid, array $file, string $reques
     @chmod($dest, 0640);
 
     $pdo->beginTransaction();
+    $withProject = coreui_knowledge_project_ready($pdo);
     $stSource = $pdo->prepare(
       'INSERT INTO stu_user_knowledge_sources '
-      . '(uuid, user_id, title, original_name, stored_name, mime_type, file_size, char_count, chunk_count, status, created_at, updated_at) '
-      . "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'ready', NOW(), NOW())"
+      . ($withProject
+        ? '(uuid, user_id, project_id, title, original_name, stored_name, mime_type, file_size, char_count, chunk_count, status, created_at, updated_at) '
+        : '(uuid, user_id, title, original_name, stored_name, mime_type, file_size, char_count, chunk_count, status, created_at, updated_at) ')
+      . ($withProject ? "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ready', NOW(), NOW())"
+                      : "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'ready', NOW(), NOW())")
     );
-    $stSource->execute([
-      $uuid, $uid, $title, $upload['name'], $storedName, $upload['mime'], $upload['size'], $charCount, count($chunks),
-    ]);
+    $params = [$uuid, $uid];
+    if ($withProject) $params[]=$projectId;
+    $stSource->execute(array_merge($params,[
+      $title, $upload['name'], $storedName, $upload['mime'], $upload['size'], $charCount, count($chunks),
+    ]));
     $stChunk = $pdo->prepare(
       'INSERT INTO stu_user_knowledge_chunks (source_uuid, user_id, title, chunk_no, chunk_text, created_at) '
       . 'VALUES (?, ?, ?, ?, ?, NOW())'
@@ -262,7 +299,7 @@ function coreui_private_knowledge_rank(PDO $pdo, int $uid, array $terms, string 
   if (!$terms) return [];
   $from = "FROM stu_user_knowledge_chunks c
       JOIN stu_user_knowledge_sources s ON s.uuid = c.source_uuid AND s.user_id = c.user_id
-     WHERE c.user_id = ? AND s.status = 'ready'";
+     WHERE c.user_id = ? AND s.status = 'ready'" . (coreui_knowledge_project_ready($pdo) ? ' AND s.project_id IS NULL' : '');
   // Document frequency of every term in ONE pass over the account's chunks.
   $sums = [];
   $params = [];
@@ -385,10 +422,10 @@ function coreui_private_knowledge_search(PDO $pdo, int $uid, string $query, int 
       "SELECT c.source_uuid, c.title, c.chunk_no, c.chunk_text, 0.25 AS score
          FROM stu_user_knowledge_chunks c
          JOIN stu_user_knowledge_sources s ON s.uuid = c.source_uuid AND s.user_id = c.user_id
-        WHERE c.user_id = ? AND s.status = 'ready'
+        WHERE c.user_id = ? AND s.status = 'ready'" . (coreui_knowledge_project_ready($pdo) ? ' AND s.project_id IS NULL' : '') . "
           AND s.uuid = (
             SELECT s2.uuid FROM stu_user_knowledge_sources s2
-             WHERE s2.user_id = ? AND s2.status = 'ready'
+             WHERE s2.user_id = ? AND s2.status = 'ready'" . (coreui_knowledge_project_ready($pdo) ? ' AND s2.project_id IS NULL' : '') . "
              ORDER BY s2.updated_at DESC, s2.created_at DESC LIMIT 1
           )
         ORDER BY c.chunk_no ASC LIMIT " . $limit
@@ -396,7 +433,7 @@ function coreui_private_knowledge_search(PDO $pdo, int $uid, string $query, int 
     $st->execute([$uid, $uid]);
     return $done($st->fetchAll(PDO::FETCH_ASSOC) ?: []);
   }
-  $total = $pdo->prepare('SELECT COUNT(*) FROM stu_user_knowledge_chunks WHERE user_id = ?');
+  $total = $pdo->prepare('SELECT COUNT(*) FROM stu_user_knowledge_chunks c JOIN stu_user_knowledge_sources s ON s.uuid=c.source_uuid WHERE c.user_id = ?' . (coreui_knowledge_project_ready($pdo) ? ' AND s.project_id IS NULL' : ''));
   $total->execute([$uid]);
   return (int)$total->fetchColumn() > 0 ? $done([]) : [];
 }
