@@ -6,9 +6,9 @@
 
 CoreAI combines Ollama-based models with private conversations, browser research, personal knowledge, file tools and an administration interface. Its standard deployment runs an isolated Nginx, PHP-FPM, MariaDB and worker stack on a Linux server. CoreAI is an application, **not a standalone operating system**.
 
-**Current source version: `0.7.1`** | [Changelog](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Documentation policy](docs/VERSIONING_POLICY.md) | [License](LICENSE.md)
+**Current source version: `0.7.2`** | [Changelog](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Documentation policy](docs/VERSIONING_POLICY.md) | [License](LICENSE.md)
 
-> **Development status:** The features below describe the current source code, not guaranteed capabilities of every model or cloud provider. A merged commit does not by itself prove a successful production deployment.
+> **Development status:** Features reflect the source, not every model or provider. A merge does not prove live deployment.
 
 ## Quick start: install CoreAI
 
@@ -24,7 +24,7 @@ This command downloads the setup launcher to a temporary file, executes it with 
 
 On first installation, the setup prompts for an administrator email and a password of at least 12 characters at the terminal. Its default installation path is `/opt/ember-coreui`; that historical directory name remains unchanged for compatibility.
 
-The launcher installs the latest merged commit from `main` and runs the installer and preflight. An existing installation retains its local configuration, database, user accounts, uploads and logs. Complete the installation by checking the application in your browser.
+The launcher installs the latest `main` commit and runs preflight. Updates preserve settings, accounts, database, uploads and logs. Verify the application in your browser.
 
 An archived, separately checksum-verified historical `0.5.3-alpha` ZIP can still be selected explicitly through `COREUI_SETUP_SOURCE=release`. It is **not** the current source version. A `main` source checkout must not be represented as a newly verified ZIP release.
 
@@ -137,7 +137,7 @@ An existing installation's settings are not silently overwritten. `COREUI_FORCE_
 - **Sign-in and security:** **Settings → Security** offers passkeys and security keys, an authenticator app, E-Mail codes, ten one-time recovery codes, Lockdown mode (no web or browser), advanced account security (passkey-only sign-in, no reset by E-Mail, 24-hour sessions), sign-out everywhere, security history. Account PIN, push approval and CSP are **In preparation**. Host-side reset: `php scripts/security-reset.php <email> [--passkeys]`.
 - **Appearance:** **Settings → Appearance** offers System, Light or Dark, motif, accent, font, hex colors, separate light/dark looks, motif export/copy/import, font sizes, contrast, motion, full width, diff markers and opt-in smart punctuation for the chat (code and pasted text unchanged). Saved in this browser.
 - **Settings navigation:** 24 pages with a swipe drawer and header Expert/Admin. ChatGPT-style settings, Denkaufwand, smart context sliders and simple visual switches are normal. **Expert** is only raw technical tuning such as token budget, temperature, provider internals or numeric memory weights.
-- **Personalization:** Saved instantly per account: seven base styles, formatting, instructions, tool switches, a Mara-written memory summary, reference photos for images of you and an animated pet that stays visible in the chat, with position saved locally. Mara Thorne is the default companion for new accounts; other built-in and custom pets remain selectable. Avatars: **Settings > Profile**.
+- **Personalization:** Seven styles, formatting, instructions, tools, memory summary, image references and a persistent, movable chat pet. Mara Thorne is the default; other pets stay selectable. Avatars: **Settings > Profile**.
 - **Account:** **Settings → Account** shows name, a unique @username, e-mail and plan. Plans (Free, Go, Plus, Pro) are templates the owner or admins assign in **Admin Core → Users**; they set real tools, daily messages and context window, no prices. Creator profile is **In preparation**.
 - **Profile overview:** **Settings → Profile** shows tokens (counted since 0.6.84), peak day, longest task, streaks, a 53-week raster, what Mara made, top tools and insights; public profile and sharing are **In preparation**.
 - **Main language:** In the AI profile, each account independently chooses German or English for Mara's default replies and optional read-aloud. The app interface language is separate.
