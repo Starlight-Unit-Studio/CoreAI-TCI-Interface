@@ -125,9 +125,12 @@ try {
     'Action Test', static function (string $prompt) use (&$modelCalls): string {
       $modelCalls++;
       actions_test_expect(str_contains($prompt, 'POSITIV:')
+        && str_contains($prompt, 'DAUMEN HOCH / LIKE')
+        && str_contains($prompt, 'REAKTION_PER_BUTTON')
+        && str_contains($prompt, 'NICHTS gesagt oder geschrieben')
         && str_contains($prompt, 'Erste Antwort.')
         && str_contains($prompt, 'Action Test'),
-        'Mara bekommt die konkrete Antwort, den Absender und das positive Feedback.');
+        'Mara erfährt ausdrücklich, dass eine konkrete Antwort per Daumen hoch gelikt wurde, nicht mündlich gelobt.');
       return 'Danke, das freut mich! Ich mache so weiter.';
     });
   $newId = (int)($reply['response_message_id'] ?? 0);
@@ -155,8 +158,10 @@ try {
     'Wechsel von gruen zu rot loest eine neue Bewertung aus.');
   $negative = coreui_feedback_reply_run($pdo, $uid, $sessionId, (int)$secondEvent,
     'Action Test', static function (string $prompt): string {
-      actions_test_expect(str_contains($prompt, 'NEGATIV:'),
-        'Mara erkennt eine negative Bewertung als negativ.');
+      actions_test_expect(str_contains($prompt, 'NEGATIV:')
+        && str_contains($prompt, 'DAUMEN RUNTER / DISLIKE')
+        && str_contains($prompt, 'REAKTION_PER_BUTTON'),
+        'Mara erkennt den Daumen runter als Button-Ereignis, nicht als gesprochene Kritik.');
       return 'Danke fuer die Rueckmeldung. Ich kann das besser erklaeren.';
     });
   actions_test_expect($negative['status'] === 'done' && (int)$negative['response_message_id'] > $newId,
