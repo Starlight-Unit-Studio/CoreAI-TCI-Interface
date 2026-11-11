@@ -169,7 +169,8 @@
     queuedTurnsBySession: {},
     variantSelectionBySession: {},
     editingMessage: null,
-    showArchived: false
+    showArchived: false,
+    draftProjectId: null
   };
 
   // ── DOM refs ─────────────────────────────────────────────
@@ -417,6 +418,8 @@
 
   // A new chat is a view-only draft until the first real user turn.
   function showDraftChat() {
+    state.draftProjectId = null;
+    if (window.CoreAIProjects && window.CoreAIProjects.closeHome) window.CoreAIProjects.closeHome();
     if (state.draftSessionPromise) return;
     if (state.bgTimer) clearTimeout(state.bgTimer);
     if (state.historyAbort) state.historyAbort.abort();
@@ -452,7 +455,7 @@
     if (!state.characterId) return Promise.reject(new Error('character_missing'));
     if (state.draftSessionPromise) return state.draftSessionPromise;
     var epoch = state.viewEpoch;
-    state.draftSessionPromise = dbCreateSession('SITZUNG ' + (state.sessions.length + 1))
+    state.draftSessionPromise = dbCreateSession('SITZUNG ' + (state.sessions.length + 1), state.draftProjectId || '')
       .then(function(created) {
         if (state.viewEpoch !== epoch || activeSession()) throw new Error('draft_view_changed');
         return Promise.resolve(selectSession(created.id)).then(function() { return created; });
@@ -484,16 +487,21 @@
       var selected = String(state.activeSessionId || rememberedActiveSession());
       state.sessions = d.sessions;
       if (selected && sessionById(selected)) state.activeSessionId = selected;
+      // Project navigation loads after login and whenever the session list
+      // refreshes. The project's first pre-auth request may have failed.
+      if (window.CoreAIProjects && typeof window.CoreAIProjects.refresh === 'function') {
+        window.CoreAIProjects.refresh().catch(function () {});
+      }
     });
   }
 
   // ── DB: Neue Session anlegen ─────────────────────────────
-  function dbCreateSession(title) {
+  function dbCreateSession(title, projectId) {
     return fetch(API_BASE + '/console_sessions.php', {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'create', title: title || '' })
+      body: JSON.stringify({ action: 'create', title: title || '', project_id: projectId || '' })
     })
     .then(function(r) { return r.json(); })
     .then(function(d) {
@@ -571,6 +579,7 @@
       sessionArchiveToggle.textContent = state.showArchived ? 'ARCHIV AUS' : 'ARCHIV';
     }
     state.sessions.forEach(function(s) {
+      if (s.project_id && !s.archived) return;
       var li = document.createElement('li');
       li.className = 'session-item' + (isActiveSession(s.id) ? ' active' : '') + (s.archived ? ' archived' : '');
       li.setAttribute('data-session-id', String(s.id));
@@ -723,6 +732,7 @@
       });
       sessionListEl.appendChild(li);
     });
+    if (window.CoreAIProjects && window.CoreAIProjects.updateSessions) window.CoreAIProjects.updateSessions(state.sessions);
     // 0.6.87: the chat menu (js/coreui-chat-menu.js) follows the active chat.
     if (window.CoreAIChatMenu && typeof window.CoreAIChatMenu.sync === 'function') window.CoreAIChatMenu.sync();
   }
@@ -822,6 +832,8 @@
   }
 
   function selectSession(sessionId) {
+    state.draftProjectId = null;
+    if (window.CoreAIProjects && window.CoreAIProjects.closeHome) window.CoreAIProjects.closeHome();
     if (state.bgTimer) clearTimeout(state.bgTimer);
     // #112: a session switch cancels the previous history request and its retry.
     if (state.historyAbort) state.historyAbort.abort();
@@ -4247,6 +4259,17 @@
       var s = activeSession();
       return s && !s.archived ? {id: String(s.id), title: String(s.title || ''), pinned: !!s.pinned, busy: !!state.pendingBySession[s.id],
         assistant: String(state.assistantName || 'Mara')} : null;
+    },
+    getSessions: function () { return state.sessions.slice(); },
+    openDrawer: openDrawer,
+    closeDrawer: closeDrawer,
+    select: function (sessionId) { return selectSession(sessionId).then(function () { closeDrawer(); }); },
+    startProjectChat: function (projectId, message) {
+      if (!/^([a-f0-9]{32})$/.test(String(projectId || '')) || !String(message || '').trim()) return;
+      showDraftChat();
+      state.draftProjectId=String(projectId);
+      closeDrawer();
+      sendMessage(String(message));
     },
     refresh: function () { return dbLoadSessions().then(renderSessionList); },
     removed: function (sessionId) {

@@ -1,7 +1,7 @@
 /* CoreAI: TCI Interface 0.6.87: the chat menu (⋮ in the header), modeled on the ChatGPT reference.
    Title of the chat, then: Teilen (the chat as a Markdown file through the device's share sheet, or
    a download; CoreAI makes no public links), Anpinnen, Chat sperren (planned, needs the Konto-PIN),
-   Zum Projekt hinzufügen (planned, CoreAI has no projects yet), Hochgeladene Dateien, Im Chat
+   Zum Projekt hinzufügen (project-aware chat association), Hochgeladene Dateien, Im Chat
    suchen (every message on the server, a hit that is not loaded yet is loaded), Zum Startbildschirm
    hinzufügen (the address leads straight to this chat), Archivieren and Löschen (each with its own
    confirmation). Data: api/console_sessions.php; the app hands over window.CoreAIChatApp. */
@@ -316,7 +316,7 @@
   // --- Wiring -------------------------------------------------------------------------------------------------
   var ACTIONS = {share: share, pin: pin, files: files, search: function () { openSearch(); }, home: home, archive: archive, delete: remove,
     lock: function () { toast('Chat sperren ist in Vorbereitung: dafür kommt zuerst die Konto-PIN.'); },
-    project: function () { toast('Projekte sind in Vorbereitung.'); }};
+    project: function (chat) { if (window.CoreAIProjects && window.CoreAIProjects.assignChat) window.CoreAIProjects.assignChat(chat.id); else toast('Projektverwaltung nicht verfügbar.'); }};
 
   btn.addEventListener('click', function (e) {
     e.stopPropagation();

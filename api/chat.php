@@ -11,6 +11,7 @@ require_once __DIR__ . '/console_data_link_bridge.php';
 require_once __DIR__ . '/console_project_handoff.php';
 require_once __DIR__ . '/console_native_tools.php';
 require_once __DIR__ . '/console_session_store.php';
+require_once __DIR__ . '/console_project_store.php';
 require_once __DIR__ . '/profile_store.php';
 require_once __DIR__ . '/knowledge_store.php';
 require_once __DIR__ . '/guest_access.php';
@@ -5064,6 +5065,12 @@ function ember_build_chat_prompt(
   }
   $GLOBALS['COREUI_PERSONALIZATION_CONTEXT'] = $channel === 'console'
     ? coreui_personalization_load($pdo,$uid) : null;
+  $projectScope = ($channel === 'console' && $consoleSessionId !== null)
+    ? coreui_project_session_scope($pdo, $uid, (string)$consoleSessionId)
+    : ['mode'=>'none','id'=>'','available'=>true];
+  $projectIsolated = (($projectScope['mode'] ?? 'none') === 'isolated'
+    && ($projectScope['id'] ?? '') !== '');
+  $GLOBALS['COREUI_PROJECT_ISOLATED'] = $projectIsolated;
   // 0.7.0: the person's own words of this turn decide whether their reference photos apply.
   $GLOBALS['COREUI_TURN_USER_TEXT'] = $channel === 'console' ? (string)$userMsg : '';
   // #113: the KI-Profil window belongs to the private console; the global
@@ -5095,13 +5102,13 @@ function ember_build_chat_prompt(
     }
   } catch (Throwable $e) {}
   $memLimit = $useLore ? min(2, ember_memory_limit()) : ember_memory_limit();
-  $mem = $memLimit > 0 ? ember_mem_block($pdo, $uid, $cid, $memLimit, $userMsg, $profile['memory']) : '';
+  $mem = (!$projectIsolated && $memLimit > 0) ? ember_mem_block($pdo, $uid, $cid, $memLimit, $userMsg, $profile['memory']) : '';
 
   $lore = '';
   $loreQuery = '';
   $cleanLoreQuestion = trim(ember_strip_direct_ember_address($userMsg));
   if ($cleanLoreQuestion === '') $cleanLoreQuestion = trim($userMsg);
-  if ($useLore && ember_msg_len($cleanLoreQuestion) > 6) {
+  if (!$projectIsolated && $useLore && ember_msg_len($cleanLoreQuestion) > 6) {
     $loreQuery = ember_lore_query_from_message($cleanLoreQuestion);
     if ($loreQuery !== '') {
       $lore = ember_lore_block($pdo, $loreQuery, ember_lore_limit_for_runtime());
@@ -5109,7 +5116,7 @@ function ember_build_chat_prompt(
   }
   // 0.5.70: a follow-up ("durchsuch nochmal") falls back to the recent
   // conversation; a large window gets more and longer passages.
-  $privateKnowledgeBlock = $channel === 'console'
+  $privateKnowledgeBlock = !$projectIsolated && $channel === 'console'
     && (($GLOBALS['COREUI_PERSONALIZATION_CONTEXT']['knowledge_search'] ?? true) === true)
     && function_exists('coreui_private_knowledge_block')
     ? coreui_private_knowledge_block($pdo, $uid, $cleanLoreQuestion, $profile['compact'] ? 4 : 6,
@@ -5148,7 +5155,7 @@ function ember_build_chat_prompt(
   $memBlock = (is_string($mem) && trim($mem) !== '') ? ("\n\n" . trim($mem)) : '';
   // v1.1.1.43: Reputations-Hint separat vom LZG-Memory-Block -- eigener, klar abgegrenzter
   // Zusatz, der nur den Ton beeinflusst und niemals mit ember_memories vermischt wird.
-  $repHint = ember_reputation_prompt_hint($pdo, (int)($senderChar['user_id'] ?? 0), ember_character_id());
+  $repHint = $projectIsolated ? '' : ember_reputation_prompt_hint($pdo, (int)($senderChar['user_id'] ?? 0), ember_character_id());
   $repBlock = ($repHint !== '') ? ("\n\n" . trim($repHint)) : '';
   // v1.1.1.65: Spielerstatus (Level/Planet/letzte Spielaktivitaet) nur fuer echte
   // Absender einblenden, nicht fuer Maras eigene interne Dummy-Sender-Aufrufe.
@@ -5160,12 +5167,20 @@ function ember_build_chat_prompt(
     }
   }
   $playerStateBlock = ($playerStateHint !== '') ? ("\n\n" . trim($playerStateHint)) : '';
-  $userPromptBlock = function_exists('coreui_ai_user_prompt_block') ? coreui_ai_user_prompt_block() : '';
-  $profilePromptBlock = function_exists('coreui_profile_prompt_block') ? coreui_profile_prompt_block($pdo, $uid) : '';
+  $userPromptBlock = !$projectIsolated && function_exists('coreui_ai_user_prompt_block') ? coreui_ai_user_prompt_block() : '';
+  $profilePromptBlock = !$projectIsolated && function_exists('coreui_profile_prompt_block') ? coreui_profile_prompt_block($pdo, $uid) : '';
   $nativeToolHint = $nativeProjects ? coreui_native_tools_prompt($profile['compact']) : '';
+  $projectPromptBlock = ($channel === 'console' && ($projectScope['id'] ?? '') !== '')
+    ? coreui_project_prompt_block($pdo,$uid,(string)$consoleSessionId) : '';
+  $projectChatBlock = ($channel === 'console' && ($projectScope['id'] ?? '') !== '')
+    ? coreui_project_context_block($pdo,$uid,(string)$consoleSessionId,
+        $profile['compact'] ? 900 : 1900) : '';
+  $projectKnowledgeBlock = ($channel === 'console' && ($projectScope['id'] ?? '') !== '')
+    ? coreui_project_knowledge_block($pdo,$uid,(string)$projectScope['id'],
+        $cleanLoreQuestion,$profile['compact'] ? 1500 : 3600) : '';
   $savedPlanBlock = ($channel === 'console' && $consoleSessionId !== null)
     ? coreui_plan_prompt_block($pdo,$uid,(string)$consoleSessionId,$profile['plan']) : '';
-  $u = "[SERVERZEIT (nur dein Hintergrundwissen - Datum/Uhrzeit im Gespraech NUR nennen, wenn in der NEU-Nachricht danach gefragt wird; fuer erzeugte Inhalte wie Copyright-Jahr oder Stand-Angaben gilt dieses Datum, nicht das Jahr aus deinem Trainingswissen): {$emberZeit}]{$memBlock}{$repBlock}{$playerStateBlock}{$attachBlock}{$userPromptBlock}{$profilePromptBlock}{$privateKnowledgeBlock}{$savedPlanBlock}\n" . "Kontext (letzte Zeilen - Zeilen mit (du) sind DEINE eigenen, bereits gesendeten Antworten; beantworte sie NICHT erneut):\n" . ($ctx !== '' ? $ctx : "(leer)")
+  $u = "[SERVERZEIT (nur dein Hintergrundwissen - Datum/Uhrzeit im Gespraech NUR nennen, wenn in der NEU-Nachricht danach gefragt wird; fuer erzeugte Inhalte wie Copyright-Jahr oder Stand-Angaben gilt dieses Datum, nicht das Jahr aus deinem Trainingswissen): {$emberZeit}]{$memBlock}{$repBlock}{$playerStateBlock}{$attachBlock}{$userPromptBlock}{$profilePromptBlock}{$privateKnowledgeBlock}{$projectPromptBlock}{$projectChatBlock}{$projectKnowledgeBlock}{$savedPlanBlock}\n" . "Kontext (letzte Zeilen - Zeilen mit (du) sind DEINE eigenen, bereits gesendeten Antworten; beantworte sie NICHT erneut):\n" . ($ctx !== '' ? $ctx : "(leer)")
    . $loreBlock
    . "
 
@@ -5573,8 +5588,14 @@ function ember_generate_reply(
       $senderChar['name'] = (string)($profile['display_name'] ?? $senderChar['name']);
     }
   } catch (Throwable $e) {}
+  $projectScope = ($channel === 'console' && $consoleSessionId !== null)
+    ? coreui_project_session_scope($pdo,$uid,(string)$consoleSessionId)
+    : ['mode'=>'none','id'=>'','available'=>true];
+  $projectIsolated = (($projectScope['mode'] ?? 'none') === 'isolated'
+    && ($projectScope['id'] ?? '') !== '');
+  $GLOBALS['COREUI_PROJECT_ISOLATED'] = $projectIsolated;
   $memLimit = $useLore ? min(2, ember_memory_limit()) : ember_memory_limit();
-  $mem = $memLimit > 0 ? ember_mem_block($pdo, $uid, $cid, $memLimit, $userMsg, $promptProfile['memory']) : '';
+  $mem = (!$projectIsolated && $memLimit > 0) ? ember_mem_block($pdo, $uid, $cid, $memLimit, $userMsg, $promptProfile['memory']) : '';
 
 
 
@@ -5592,7 +5613,7 @@ function ember_generate_reply(
       $lore = ember_lore_block($pdo, $loreQuery, ember_lore_limit_for_runtime());
     }
   }
-  $privateKnowledgeBlock = $channel === 'console'
+  $privateKnowledgeBlock = !$projectIsolated && $channel === 'console'
     && (($GLOBALS['COREUI_PERSONALIZATION_CONTEXT']['knowledge_search'] ?? true) === true)
     && function_exists('coreui_private_knowledge_block')
     ? coreui_private_knowledge_block($pdo, $uid, $cleanLoreQuestion, $promptProfile['compact'] ? 4 : 6,
@@ -5639,7 +5660,7 @@ function ember_generate_reply(
   $memBlock = (is_string($mem) && trim($mem) !== '') ? ("\n\n" . trim($mem)) : '';
   // v1.1.1.43: Reputations-Hint separat vom LZG-Memory-Block -- eigener, klar abgegrenzter
   // Zusatz, der nur den Ton beeinflusst und niemals mit ember_memories vermischt wird.
-  $repHint = ember_reputation_prompt_hint($pdo, (int)($senderChar['user_id'] ?? 0), ember_character_id());
+  $repHint = $projectIsolated ? '' : ember_reputation_prompt_hint($pdo, (int)($senderChar['user_id'] ?? 0), ember_character_id());
   $repBlock = ($repHint !== '') ? ("\n\n" . trim($repHint)) : '';
   // v1.1.1.65: Spielerstatus (Level/Planet/letzte Spielaktivitaet) nur fuer echte
   // Absender einblenden, nicht fuer Maras eigene interne Dummy-Sender-Aufrufe.
@@ -5651,9 +5672,17 @@ function ember_generate_reply(
     }
   }
   $playerStateBlock = ($playerStateHint !== '') ? ("\n\n" . trim($playerStateHint)) : '';
-  $userPromptBlock = function_exists('coreui_ai_user_prompt_block') ? coreui_ai_user_prompt_block() : '';
-  $profilePromptBlock = function_exists('coreui_profile_prompt_block') ? coreui_profile_prompt_block($pdo, $uid) : '';
-  $u = "[SERVERZEIT (nur dein Hintergrundwissen - Datum/Uhrzeit im Gespraech NUR nennen, wenn in der NEU-Nachricht danach gefragt wird; fuer erzeugte Inhalte wie Copyright-Jahr oder Stand-Angaben gilt dieses Datum, nicht das Jahr aus deinem Trainingswissen): {$emberZeit}]{$memBlock}{$repBlock}{$playerStateBlock}{$attachBlock}{$userPromptBlock}{$profilePromptBlock}{$privateKnowledgeBlock}\n" . "Kontext (letzte Zeilen - Zeilen mit (du) sind DEINE eigenen, bereits gesendeten Antworten; beantworte sie NICHT erneut):\n" . ($ctx !== '' ? $ctx : "(leer)")
+  $userPromptBlock = !$projectIsolated && function_exists('coreui_ai_user_prompt_block') ? coreui_ai_user_prompt_block() : '';
+  $profilePromptBlock = !$projectIsolated && function_exists('coreui_profile_prompt_block') ? coreui_profile_prompt_block($pdo, $uid) : '';
+  $projectPromptBlock = ($channel === 'console' && ($projectScope['id'] ?? '') !== '')
+    ? coreui_project_prompt_block($pdo,$uid,(string)$consoleSessionId) : '';
+  $projectChatBlock = ($channel === 'console' && ($projectScope['id'] ?? '') !== '')
+    ? coreui_project_context_block($pdo,$uid,(string)$consoleSessionId,
+        $promptProfile['compact'] ? 900 : 1900) : '';
+  $projectKnowledgeBlock = ($channel === 'console' && ($projectScope['id'] ?? '') !== '')
+    ? coreui_project_knowledge_block($pdo,$uid,(string)$projectScope['id'],
+        $cleanLoreQuestion,$promptProfile['compact'] ? 1500 : 3600) : '';
+  $u = "[SERVERZEIT (nur dein Hintergrundwissen - Datum/Uhrzeit im Gespraech NUR nennen, wenn in der NEU-Nachricht danach gefragt wird; fuer erzeugte Inhalte wie Copyright-Jahr oder Stand-Angaben gilt dieses Datum, nicht das Jahr aus deinem Trainingswissen): {$emberZeit}]{$memBlock}{$repBlock}{$playerStateBlock}{$attachBlock}{$userPromptBlock}{$profilePromptBlock}{$privateKnowledgeBlock}{$projectPromptBlock}{$projectChatBlock}{$projectKnowledgeBlock}\n" . "Kontext (letzte Zeilen - Zeilen mit (du) sind DEINE eigenen, bereits gesendeten Antworten; beantworte sie NICHT erneut):\n" . ($ctx !== '' ? $ctx : "(leer)")
    . $loreBlock
    . "
 
@@ -6962,6 +6991,9 @@ function ember_should_reflect_exchange(string $userMsg, string $emberReply): boo
 }
 
 function ember_after_insert_tasks(PDO $pdo, array $senderChar, string $userMsg, string $emberReply): void {
+  // An isolated project must not write facts or reflection into the
+  // account-wide long-term memory or relationship profile.
+  if (!empty($GLOBALS['COREUI_PROJECT_ISOLATED'])) return;
   unset($GLOBALS['COREUI_SKILLS_BLOCK']); // Do not influence memory/reflection jobs.
   $uid = (int)($senderChar['user_id'] ?? 0);
   $cid = (string)($senderChar['id'] ?? '');

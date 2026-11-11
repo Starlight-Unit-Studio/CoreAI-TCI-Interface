@@ -5,6 +5,7 @@ require_once __DIR__ . '/console_compaction.php';
 require_once __DIR__ . '/console_attachment_store.php';
 require_once __DIR__ . '/console_artifact_store.php';
 require_once __DIR__ . '/console_agent_runs.php';
+require_once __DIR__ . '/console_project_store.php';
 
 /**
  * Persistente CoreAI: TCI Interface-Sitzungslogik.
@@ -69,11 +70,16 @@ function coreui_console_session_require(
 
 function coreui_console_session_list(PDO $pdo, int $uid, bool $includeArchived = false): array {
   // 0.6.87: pinned chats first (migration 032), newest pin on top.
+  $projectsReady = coreui_project_schema_ready($pdo);
   $pinReady = coreui_console_session_pin_ready($pdo);
-  $sql = "SELECT s.id, s.title, s.since_id, s.last_message_id, s.last_read_message_id,
+  $sql = "SELECT s.id, s.title, s.since_id, s.last_message_id, s.last_read_message_id, " . ($projectsReady ? 's.project_id' : 'NULL AS project_id') . ",
                  s.created_at, s.updated_at, s.archived_at, " . ($pinReady ? 's.pinned_at' : 'NULL AS pinned_at') . ",
                  UNIX_TIMESTAMP(s.created_at) AS created_ts, UNIX_TIMESTAMP(s.updated_at) AS updated_ts,
                  UNIX_TIMESTAMP(s.archived_at) AS archived_ts,
+                 (SELECT LEFT(m.message,180) FROM stu_chat_messages m
+                   WHERE m.channel='console' AND m.user_id=s.user_id
+                     AND m.session_id=s.id AND m.deleted_at IS NULL
+                   ORDER BY m.id DESC LIMIT 1) AS last_message_preview,
                  (SELECT COUNT(*) FROM stu_chat_messages m
                    WHERE m.channel='console' AND m.user_id=s.user_id
                      AND m.session_id=s.id AND m.deleted_at IS NULL) AS message_count,
@@ -118,7 +124,7 @@ function coreui_db_time_iso($ts, $fallback = null): ?string {
   return $fallback === null ? null : (string)$fallback;
 }
 
-function coreui_console_session_create(PDO $pdo, int $uid, string $title = ''): array {
+function coreui_console_session_create(PDO $pdo, int $uid, string $title = '', string $projectId = ''): array {
   $stCount = $pdo->prepare('SELECT COUNT(*) FROM stu_console_sessions WHERE user_id=? AND archived_at IS NULL');
   $stCount->execute([$uid]);
   $count = (int)$stCount->fetchColumn();
@@ -129,6 +135,7 @@ function coreui_console_session_create(PDO $pdo, int $uid, string $title = ''): 
   if (function_exists('mb_substr')) $title = mb_substr($title, 0, 64, 'UTF-8');
   else $title = substr($title, 0, 64);
 
+  $project = $projectId !== '' ? coreui_project_require($pdo,$uid,$projectId) : null;
   $id = 'cs_' . bin2hex(random_bytes(12));
   $st = $pdo->prepare(
     'INSERT INTO stu_console_sessions '
@@ -136,9 +143,14 @@ function coreui_console_session_create(PDO $pdo, int $uid, string $title = ''): 
     . 'VALUES (?, ?, ?, 0, NULL, NULL, NOW(), NOW(), NULL)'
   );
   $st->execute([$id, $uid, $title]);
+  if ($project !== null) {
+    $stProject = $pdo->prepare('UPDATE stu_console_sessions SET project_id=? WHERE id=? AND user_id=?');
+    $stProject->execute([$project['id'],$id,$uid]);
+  }
   return [
     'id' => $id,
     'title' => $title,
+    'project_id' => $project['id'] ?? null,
     'since_id' => 0,
     'last_message_id' => 0,
     'last_read_message_id' => 0,
