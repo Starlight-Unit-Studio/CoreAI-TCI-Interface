@@ -7,6 +7,7 @@ require_once __DIR__ . '/console_session_store.php';
 require_once __DIR__ . '/console_project_store.php';
 require_once __DIR__ . '/console_agent_runs.php';
 require_once __DIR__ . '/console_chat_tools.php';
+require_once __DIR__ . '/knowledge_store.php';
 
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 $pdo = stu_pdo();
@@ -56,15 +57,34 @@ try {
     stu_json(['ok'=>true,'id'=>$id,'project'=>$project]);
   }
 
+  if ($method === 'POST' && $action === 'project_update') {
+    $project = coreui_project_update($pdo,(int)$uid,(string)($body['project_id'] ?? ''),
+      (string)($body['name'] ?? ''),(string)($body['instructions_md'] ?? ''));
+    stu_json(['ok'=>true,'project'=>$project]);
+  }
+
+  if ($method === 'POST' && $action === 'project_pin') {
+    $project = coreui_project_pin($pdo,(int)$uid,(string)($body['project_id'] ?? ''),
+      !empty($body['pinned']));
+    stu_json(['ok'=>true,'project'=>$project]);
+  }
+
+  if ($method === 'POST' && $action === 'project_delete') {
+    $id = coreui_project_id($body['project_id'] ?? '');
+    if ($id === '' || !hash_equals('DELETE:'.$id,(string)($body['confirmation'] ?? '')))
+      throw new InvalidArgumentException('delete_confirmation_required');
+    stu_json(['ok'=>true] + coreui_project_delete($pdo,(int)$uid,$id));
+  }
+
   // 0.6.87: Settings > Archivierte Chats (search by title; type all or cloud; sorted updated, created or alpha).
-  // Projects and scheduled tasks are planned.
+  // Scheduled tasks are planned.
   if ($action === 'archived') {
     $type = (string)($_GET['type'] ?? 'all');
     if (!in_array($type, ['all', 'cloud'], true)) $type = 'all';
     $sort = (string)($_GET['sort'] ?? 'updated');
     if (!in_array($sort, ['updated', 'created', 'alpha'], true)) $sort = 'updated';
     $rows = coreui_chat_archived($pdo, (int)$uid, mb_substr((string)($_GET['q'] ?? ''), 0, 120, 'UTF-8'), $type, $sort);
-    stu_json(['ok'=>true, 'sessions'=>$rows, 'count'=>count($rows), 'projects_ready'=>false, 'tasks_ready'=>false]);
+    stu_json(['ok'=>true, 'sessions'=>$rows, 'count'=>count($rows), 'projects_ready'=>coreui_project_schema_ready($pdo), 'tasks_ready'=>false]);
   }
 
   // 0.6.87: the chat menu: uploaded files, search inside the chat, the chat as Markdown.
