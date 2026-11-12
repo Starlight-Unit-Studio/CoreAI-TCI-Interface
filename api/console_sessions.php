@@ -7,6 +7,7 @@ require_once __DIR__ . '/console_session_store.php';
 require_once __DIR__ . '/console_project_store.php';
 require_once __DIR__ . '/console_agent_runs.php';
 require_once __DIR__ . '/console_chat_tools.php';
+require_once __DIR__ . '/console_chat_lock_store.php';
 require_once __DIR__ . '/knowledge_store.php';
 
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
@@ -23,7 +24,7 @@ $body = [];
 if ($method === 'POST') {
   $body = stu_read_json_body();
   $action = strtolower(trim((string)($body['action'] ?? $action)));
-  if (str_starts_with($action,'project_')) stu_require_csrf();
+  if (str_starts_with($action,'project_') || str_starts_with($action,'chat_lock') || $action === 'chat_unlock') stu_require_csrf();
 }
 
 try {
@@ -39,6 +40,18 @@ try {
     foreach ($rows as &$row) $row['working'] = isset($working[(string)$row['id']]);
     unset($row);
     stu_json(['ok'=>true, 'sessions'=>$rows, 'count'=>count($rows)]);
+  }
+
+  // Locked chat titles are visible only in the owner's special folder.
+  // Chat content, files, project context and normal session list stay blocked.
+  if ($action === 'chat_lock_status' && $method === 'GET') {
+    $ready=coreui_chat_lock_schema_ready($pdo);
+    stu_json(['ok'=>true,'ready'=>$ready,
+      'has_pin'=>$ready ? coreui_chat_lock_has_pin($pdo,(int)$uid) : false,
+      'csrf_token'=>stu_csrf_token()]);
+  }
+  if ($action === 'chat_locked_list' && $method === 'GET') {
+    stu_json(['ok'=>true,'sessions'=>coreui_chat_lock_list($pdo,(int)$uid)]);
   }
 
   if ($action === 'projects' && $method === 'GET') {
@@ -101,6 +114,29 @@ try {
   }
 
   if ($method !== 'POST') stu_json(['ok'=>false, 'error'=>'method_not_allowed'], 405);
+
+  if (in_array($action,['chat_lock_setup','chat_lock','chat_unlock','chat_lock_pin_change'],true)) {
+    $guest=$pdo->prepare('SELECT is_guest FROM stu_users WHERE id=? LIMIT 1');
+    $guest->execute([(int)$uid]);
+    if ((int)$guest->fetchColumn() !== 0) throw new RuntimeException('guest_not_allowed');
+    if ($action==='chat_lock_setup') {
+      coreui_chat_lock_setup($pdo,(int)$uid,(string)($body['pin']??''),(string)($body['confirmation']??''));
+      stu_json(['ok'=>true,'has_pin'=>true]);
+    }
+    if ($action==='chat_lock_pin_change') {
+      coreui_chat_lock_change($pdo,(int)$uid,(string)($body['old_pin']??''),
+        (string)($body['pin']??''),(string)($body['confirmation']??''));
+      stu_json(['ok'=>true,'has_pin'=>true]);
+    }
+    $lockedId=coreui_console_session_normalize_id($body['id']??'');
+    if ($lockedId==='') throw new InvalidArgumentException('invalid_session');
+    if ($action==='chat_lock') {
+      coreui_chat_lock_set($pdo,(int)$uid,$lockedId);
+      stu_json(['ok'=>true,'id'=>$lockedId,'locked'=>true]);
+    }
+    coreui_chat_lock_unset($pdo,(int)$uid,$lockedId,(string)($body['pin']??''));
+    stu_json(['ok'=>true,'id'=>$lockedId,'locked'=>false]);
+  }
 
   if ($action === 'create') {
     $session = coreui_console_session_create($pdo, (int)$uid, (string)($body['title'] ?? ''), (string)($body['project_id'] ?? ''));
@@ -170,7 +206,8 @@ try {
   $code = $e->getMessage();
   $status = (in_array($code,['session_not_found','project_not_found'],true)) ? 404
     : (in_array($code, ['session_limit_reached', 'session_must_be_archived', 'session_busy', 'session_delete_conflict'], true) ? 409
-      : (in_array($code,['missing_schema_032','project_migration_required'],true) ? 503 : 400));
+      : (in_array($code,['missing_schema_032','project_migration_required','chat_lock_migration_required'],true) ? 503
+        : ($code==='chat_pin_temporarily_blocked' ? 429 : 400)));
   stu_json(['ok'=>false, 'error'=>$code], $status);
 } catch (Throwable $e) {
   if (function_exists('stu__log_error')) {

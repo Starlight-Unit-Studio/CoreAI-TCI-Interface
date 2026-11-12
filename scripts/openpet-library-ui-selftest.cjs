@@ -33,8 +33,9 @@ assert(library.includes("if (($metadata['rights_confirmed'] ?? '') !== 'yes')") 
   library.includes("if ($zip->numFiles !== 2)") &&
   library.includes('flock($lock, LOCK_EX)'),
   'license proof, ZIP shape and atomic manifest are required');
-assert(library.includes("return dirname(__DIR__) . '/var/console_media/pet_library'") &&
-  library.includes("'url'=>'./api/pets.php?action=library_sprite&id='"),
+assert(library.includes("dirname(__DIR__) . '/var/console_media/pet_library'") &&
+  library.includes("'url'=>'./api/pets.php?action=library_sprite&id='") &&
+  library.includes("getenv('COREUI_PET_LIBRARY_DIR')"),
   'approved sprites are privately stored and authenticated');
 assert(!fs.existsSync(path.join(root,'images/pets/openpets')),
   'unlicensed gallery bundle must not be silently copied to public assets');

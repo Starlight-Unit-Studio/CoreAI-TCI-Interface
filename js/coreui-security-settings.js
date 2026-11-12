@@ -29,7 +29,13 @@
     advanced_needs_passkey: 'Für die erweiterte Kontosicherheit brauchst du mindestens einen Passkey.',
     security_migration_required: 'Das Update ist noch nicht vollständig eingespielt (Datenbank-Migration 030).',
     rate_limited: 'Zu viele Versuche. Bitte später noch einmal.',
-    guest_not_allowed: 'Gäste haben keine Sicherheitseinstellungen.'
+    guest_not_allowed: 'Gäste haben keine Sicherheitseinstellungen.',
+    chat_lock_migration_required: 'Die Datenbankmigration 038 ist noch nicht eingespielt.',
+    chat_pin_incorrect: 'Die bisherige PIN ist falsch.',
+    chat_pin_temporarily_blocked: 'Zu viele falsche PINs. Bitte nach 15 Minuten erneut versuchen.',
+    chat_pin_already_set: 'Die Konto-PIN ist bereits eingerichtet.',
+    invalid_pin: 'Bitte genau vier Ziffern eingeben.',
+    invalid_pin_confirmation: 'PIN und Bestätigung stimmen nicht überein.'
   };
 
   function status(text, error) {
@@ -137,6 +143,14 @@
     var sec = state.security || {};
     var m = sec.methods || {};
     $('secPasskeyCount').textContent = String(m.passkeys || 0);
+    var hasPin=!!sec.chat_pin_set;
+    var ready=sec.chat_pin_ready!==false;
+    $('secPinState').textContent=ready?(hasPin?'Eingerichtet':'Einrichten'):'Update nötig';
+    $('secPinTitle').textContent=hasPin?'Konto-PIN ändern':'Konto-PIN erstellen';
+    $('secPinOldRow').hidden=!hasPin;
+    $('secPinSave').textContent=hasPin?'KONTO-PIN ÄNDERN':'KONTO-PIN ERSTELLEN';
+    $('secPinSave').disabled=!ready;
+
     $('secSessionCount').textContent = String((state.sessions || []).length);
     $('secTotp').checked = !!m.totp;
     $('secEmail').checked = !!m.email;
@@ -408,6 +422,53 @@
       apply(d);
       status('Erweiterte Kontosicherheit beendet.');
     });
+  });
+
+  // The regular account PIN belongs to the existing security settings page.
+  function saveChatPin() {
+    var next=$('secPinNew').value.trim();
+    var confirmation=$('secPinConfirm').value.trim();
+    var old=$('secPinOld').value.trim();
+    var box=$('secPinMessage');
+    box.textContent='';
+    if(!/^[0-9]{4}$/.test(next)||!/^[0-9]{4}$/.test(confirmation)) {
+      box.textContent='Bitte genau vier Ziffern eingeben.';
+      box.setAttribute('data-state','error');
+      return;
+    }
+    if(next!==confirmation) {
+      box.textContent='Die eingegebenen PINs stimmen nicht überein.';
+      box.setAttribute('data-state','error');
+      return;
+    }
+    var changing=!!(state.security && state.security.chat_pin_set);
+    if(changing&&!/^[0-9]{4}$/.test(old)) {
+      box.textContent='Zum Ändern brauchst du die bisherige Konto-PIN.';
+      box.setAttribute('data-state','error');
+      return;
+    }
+    $('secPinSave').disabled=true;
+    post(changing?'chat_pin_change':'chat_pin_setup',{
+      old_pin:changing?old:'',
+      pin:next,
+      confirmation:confirmation
+    }).then(function(d) {
+      $('secPinOld').value='';
+      $('secPinNew').value='';
+      $('secPinConfirm').value='';
+      apply(d);
+      box.textContent=changing?'Konto-PIN sicher geändert.':'Konto-PIN erfolgreich eingerichtet.';
+      box.setAttribute('data-state','ok');
+    }).catch(function(err){
+      box.textContent=errText(err);
+      box.setAttribute('data-state','error');
+    }).finally(function(){
+      $('secPinSave').disabled=state.security&&state.security.chat_pin_ready===false;
+    });
+  }
+  $('secPinSave').addEventListener('click',saveChatPin);
+  ['secPinNew','secPinConfirm','secPinOld'].forEach(function(id){
+    $(id).addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();saveChatPin();}});
   });
 
   Array.prototype.forEach.call(view.querySelectorAll('[data-sec-open]'), function (btn) {

@@ -1,0 +1,28 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.22
+Date: 12.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Base version: 0.7.21
+
+SCOPE
+Finish interrupted CoreAI account PIN/chat lock implementation, without inventing another UI system.
+
+UI
+- Settings > Sicherheit und Anmeldung > Konto-PIN.
+- First lock: create and confirm four-digit PIN. Later lock: confirm action.
+- Unlock locked chat via PIN from Projekte > Gesperrte Chats.
+- Protected folder is absent when no chats are locked and present when >=1.
+- The project folder and modal use existing CoreAI colors and cuts.
+
+BACKEND
+- Migration 038 adds account PIN records and session lock timestamps.
+- Owner-scoped actions: chat_lock_status, chat_lock_setup, chat_lock, chat_unlock, chat_locked_list.
+- PIN hashes via password_hash, 15-minute delay after five wrong attempts.
+- Normal session reads block locked sessions; project list shows titles only.
+- This is a PIN-controlled visibility lock, not encryption.
+
+VALIDATION
+- Review all session/message/media/project read paths for ID-based leaks.
+- Run GitHub Actions and live-server preflight with migration 038.
+- Test PIN setup/confirm/change/unlock, mistakes and rate limit on mobile and desktop.
+
+Version: 0.7.22
