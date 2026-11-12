@@ -1,0 +1,44 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.36
+Datum: 12.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Basis bei Erstellung: Main 0.7.34 (PR #290)
+Verbindliche Versionsvorgabe: UEBERGABEPROTOKOLL_0_7_33.txt, Abschnitt
+"NAECHSTE VERBINDLICHE VERSION / FORTSETZUNG".
+
+URSACHE UND KORREKTUR
+- Das Protokoll 0.7.33 dokumentierte, dass die Main-Merge-Chronik bereits bis
+  0.7.35 nachgezaehlt worden war und die naechste numerische Version 0.7.36 ist.
+- PR #290 wurde trotzdem irrtuemlich mit VERSION 0.7.34 gemergt.
+- Historische Git-Commits, Merge-Titel und 0.7.34-Changelog bleiben
+  als tatsaechlich erfolgte Aenderungen nachvollziehbar.
+- Dieser NEUE Merge hebt den aktiven Quellstand auf 0.7.36.
+- 0.7.35 erhaelt kein erfundenes Changelog, ZIP oder Release-Asset.
+
+ERHALTENE FUNKTION
+- Die Projekt-Ordner- und Projektstartseiten-Menues aus PR #290 bleiben
+  unveraendert; das ist eine Versionskorrektur, kein Funktions-Rollback.
+
+ANGEGLICHENE DATEIEN
+- VERSION, sechs HTML-Metadaten und die sichtbare Ren-Matrix,
+  JS-Bootstrap, README, CHANGELOG und TXT-Index, Preflight-Markierung,
+  aktuelle Versions-Selbsttests und SHA256-Content-Fingerprints.
+- docs/UEBERGABEPROTOKOLL_AKTUELL.txt nennt den neuen Stand und die
+  naechsten zu lesenden Protokolle.
+- Keine DB-Migration; bestehender CoreAI-Updater bleibt der Ausrollweg.
+
+REGEL FUER DIE FORTSETZUNG
+- Naechste Versionsnummer nach diesem Merge: 0.7.37, sofern die
+  GitHub-Historie keine weiteren Main-Merges zwischenzeitlich enthaelt.
+- Vor dem naechsten Merge sowohl VERSION als auch das neueste
+  Uebergabeprotokoll und die Main-Merge-Chronik pruefen.
+- Nicht mehr ausschliesslich den alten VERSION-Wert fortzaehlen, wenn
+  das Uebergabeprotokoll bereits eine abweichende verbindliche Nummer nennt.
+
+ABNAHME
+- GitHub Version-Guard mit Base 0.7.34, Branding, Cache-Verify und
+  bestehenden UI-/Preflight-Regressionstests.
+- Nach Serverupdate VERSION und sichtbare Ren-Matrix gegen 0.7.36
+  kontrollieren; Projekt-Menues auf dem Smartphone durchklicken.
+- Bis dahin keinen erfolgreichen Live-Server-Test behaupten.
+
+Version: 0.7.36
