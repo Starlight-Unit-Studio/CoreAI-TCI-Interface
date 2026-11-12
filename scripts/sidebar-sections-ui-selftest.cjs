@@ -33,7 +33,7 @@ assert(chat.includes('pinnedChats.concat(recentChats)') &&
 assert(chat.includes("dbSessionAction({action:'pin'") &&
   chat.includes('session-row-more'), 'pin/unpin reachable without opening chat');
 assert(chat.includes('dbArchiveSession(s.id)') &&
-  chat.includes('dbDeleteSession(s.id)') &&
+  chat.includes('dbDeleteSession(s.id, !s.archived)') &&
   chat.includes('dbRenameSession(s.id'), 'existing chat management still reachable');
 for(const name of ['pinned','projects','recent']){
   assert(folding.includes(name+': document.')||folding.includes(name+': document.querySelector'),
