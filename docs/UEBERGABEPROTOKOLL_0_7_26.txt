@@ -1,0 +1,16 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.26
+Date: 12.11.2026
+Base version: 0.7.25
+
+CAUSE
+The installed preflight reported: Loeschschaltflaeche fehlt in der Archivansicht.
+The selftest expected an obsolete exact static JS assignment.
+Since 0.7.25 the JS uses a conditional label for active and archived chats.
+
+FIX
+- Updated scripts/session-selftest.php to validate both labels and confirm button insertion.
+- Verify the existing archive_first client-to-server path.
+- No database migrations or API changes.
+- Run all CI and installed server preflight after applying update.
+
+Version: 0.7.26
