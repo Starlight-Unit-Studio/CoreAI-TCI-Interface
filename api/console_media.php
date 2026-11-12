@@ -40,6 +40,32 @@ if (!is_array($row)) console_media_fail(404, 'not found');
 // auch wenn jemand eine gueltige UUID errät oder mitliest.
 if ((int)$row['user_id'] !== (int)$uid) console_media_fail(403, 'forbidden');
 
+// A known media UUID must not bypass the account's locked-chat visibility
+// protection. Both legacy file_uuid and the normalized attachments table are
+// checked. Prefer denying access if the lock migration/schema is inconsistent.
+try {
+  $lockColumns = $pdo->query('SELECT locked_at FROM stu_console_sessions LIMIT 0');
+  $lockedRefs = $pdo->prepare("
+    SELECT 1 FROM stu_chat_messages m
+    INNER JOIN stu_console_sessions s
+      ON s.id=m.session_id AND s.user_id=m.user_id
+    WHERE m.user_id=? AND m.channel='console' AND s.locked_at IS NOT NULL
+      AND (
+        m.file_uuid=?
+        OR EXISTS (
+          SELECT 1 FROM stu_console_message_attachments a
+          WHERE a.message_id=m.id AND a.media_uuid=?
+        )
+      )
+    LIMIT 1
+  ");
+  $lockedRefs->execute([(int)$uid, $uuid, $uuid]);
+  if ($lockedRefs->fetchColumn()) console_media_fail(403, 'chat locked');
+} catch (Throwable $e) {
+  console_media_fail(503, 'media lock verification unavailable');
+}
+
+
 $projectRoot = dirname(__DIR__);
 $path = $projectRoot . '/' . ltrim((string)$row['rel_path'], '/');
 
