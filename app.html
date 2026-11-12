@@ -28,6 +28,7 @@
   <script src="./js/coreui-ui-language.js?v=0850224961537363286304733"></script>
   <link rel="stylesheet" href="./css/coreui-projects.css?v=1116790663620733322439367" />
   <link rel="stylesheet" href="./css/coreui-sidebar-refresh.css?v=1" />
+  <link rel="stylesheet" href="./css/coreui-project-theme.css?v=1" />
 </head>
 <body class="app-body coreui-body">
   <input
@@ -182,7 +183,7 @@
 
       <section class="pinned-zone" id="pinnedZone" aria-labelledby="pinnedZoneTitle" hidden>
         <div class="section-label" id="pinnedZoneTitle">
-          <span>Angeheftet</span>
+          <button id="sidebarPinnedToggle" class="sidebar-section-toggle" type="button" data-sidebar-fold="pinned" aria-expanded="true" aria-controls="pinnedSessionList"><svg class="sidebar-chevron-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg><span>Angeheftet</span></button>
           <span class="section-count" id="pinnedCount">0</span>
         </div>
         <ul class="session-list pinned-session-list" id="pinnedSessionList" aria-live="polite"></ul>
@@ -190,7 +191,7 @@
 
       <section class="projects-nav" id="projectsNav" aria-labelledby="projectsNavTitle">
         <div class="projects-nav-heading">
-          <span id="projectsNavTitle">Projekte</span>
+          <button id="sidebarProjectsToggle" class="sidebar-section-toggle" type="button" data-sidebar-fold="projects" aria-expanded="true" aria-controls="projectsNavList"><svg class="sidebar-chevron-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg><span id="projectsNavTitle">Projekte</span></button>
           <button id="projectsCreateBtn" type="button" aria-label="Neues Projekt" title="Neues Projekt"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v16M4 12h16"/></svg></button>
         </div>
         <div class="projects-nav-list" id="projectsNavList"></div>
@@ -198,7 +199,7 @@
 
       <section class="session-zone" aria-labelledby="sessionZoneTitle">
         <div class="section-label" id="sessionZoneTitle">
-          <span id="sessionZoneLabel">Letzte</span>
+          <button id="sidebarRecentToggle" class="sidebar-section-toggle" type="button" data-sidebar-fold="recent" aria-expanded="true" aria-controls="sessionList"><svg class="sidebar-chevron-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg><span id="sessionZoneLabel">Letzte</span></button>
           <span class="section-count" id="sessionCount">00</span>
           <button class="session-archive-toggle" id="sessionArchiveToggle" type="button" title="Archivierte Chats anzeigen" aria-label="Archivierte Chats anzeigen" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v11h14V9M10 13h4"/></svg></button>
         </div>
@@ -805,6 +806,7 @@
   </div>
   <script src="./js/coreui-update.js?v=0027007356017747916079807"></script>
   <script src="./js/coreui-projects.js?v=1027448887745420905484969"></script>
+  <script src="./js/coreui-sidebar-fold.js?v=1"></script>
   <script src="./js/coreui-chat-menu.js?v=1104241070462714448618957"></script>
 </body>
 </html>
