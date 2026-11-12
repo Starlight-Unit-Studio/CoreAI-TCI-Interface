@@ -44,6 +44,7 @@ Stand: 04.11.2026
 
 ## Verpflichtender Check VOR jedem Merge
 
+- **Auch das neueste `docs/UEBERGABEPROTOKOLL_*.txt` und die Main-Merge-Chronik lesen.** Wenn das Protokoll eine aufgrund bereits nachgezaehlter Merges verbindliche naechste Version nennt, diese nicht durch blindes Fortschreiben von `VERSION` ignorieren. Historische Schritte nie als erfundene ZIP-Releases oder nachtraeglich umbenannte PRs ausgeben.
 - Zuerst `VERSION` aus dem zu diesem Zeitpunkt aktuellen `main` lesen.
 - Im PR-Branch die Version erhoehen und alle zugehoerigen Stellen nachziehen.
 - Lokal aus dem Branch ausfuehren:
