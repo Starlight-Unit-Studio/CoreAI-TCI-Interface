@@ -55,5 +55,5 @@ assert(themeCSS.includes('var(--cx)') &&
 assert(project.includes('coreui_project')===false || project.includes('project-nav-folder'),
   'project list remains available');
 const version=read('VERSION').trim();
-assert.equal(version,'0.7.21','single merge advances version 0.7.21');
-console.log('PASS: CoreAI sidebar sections and project theme 0.7.21');
+assert.equal(version,'0.7.22','single merge advances version 0.7.22');
+console.log('PASS: CoreAI sidebar sections and project theme 0.7.22');
