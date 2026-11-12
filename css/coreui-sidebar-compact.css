@@ -1,0 +1,514 @@
+/* CoreAI compact sidebar, 0.7.21. App-only, keeps the existing light/dark theme.
+   The chat remains the working area; navigation should not eat the screen. */
+.app-body .drawer {
+  font-family: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+.app-body .drawer .drawer-header,
+.app-body #sidebarControl:not(:checked) ~ .drawer .drawer-header {
+  position: relative;
+  flex: 0 0 134px;
+  height: 134px;
+  min-height: 134px;
+  justify-content: center;
+  align-items: center;
+  padding: 10px 68px 8px;
+}
+.app-body .drawer .brand-lockup {
+  justify-content: center;
+  width: 100%;
+}
+.app-body .drawer .ren-matrix,
+.app-body #sidebarControl:not(:checked) ~ .drawer .ren-matrix {
+  width: 72px;
+  height: 72px;
+  flex-basis: 72px;
+}
+.app-body .drawer .brand-copy {
+  margin-top: 0;
+}
+.app-body .drawer .brand-kicker,
+.app-body .drawer .brand-signature { display: none; }
+.app-body .drawer .brand-title {
+  font-size: 18px;
+  line-height: 1.2;
+  letter-spacing: .045em;
+  white-space: nowrap;
+}
+.app-body .drawer .brand-title .brand-product-part {
+  display: none;
+}
+.app-body .drawer .core-ticker { display: none !important; }
+.app-body .drawer .drawer-vector-field { opacity: .32; }
+
+.app-body .drawer .sidebar-search-toggle,
+.app-body .drawer .drawer-close,
+.app-body #sidebarControl:not(:checked) ~ .drawer .drawer-close {
+  position: absolute;
+  top: 37px;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  min-height: 46px;
+  min-width: 46px;
+  padding: 10px;
+  border: 1px solid rgba(91,146,255,.18);
+  border-radius: 12px;
+  clip-path: none;
+  box-shadow: none;
+  background: rgba(255,255,255,.56);
+  color: var(--txt);
+  cursor: pointer;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.app-body .drawer .sidebar-search-toggle { left: 17px; z-index: 9; }
+.app-body .drawer .drawer-close,
+.app-body #sidebarControl:not(:checked) ~ .drawer .drawer-close { right: 17px; z-index: 9; }
+.app-body .drawer .sidebar-search-toggle svg,
+.app-body .drawer .drawer-close svg,
+.app-body .drawer .hud-button-glyph svg,
+.app-body .drawer .hud-button-quiet svg,
+.app-body .drawer .session-archive-toggle svg,
+.app-body .drawer .projects-nav-heading svg {
+  display: block;
+  width: 22px;
+  height: 22px;
+  color: inherit;
+  flex: 0 0 auto;
+}
+.app-body .drawer .sidebar-search-toggle:hover,
+.app-body .drawer .drawer-close:hover,
+.app-body .drawer .sidebar-search-toggle:focus-visible,
+.app-body .drawer .drawer-close:focus-visible {
+  background: rgba(91,146,255,.13);
+  border-color: var(--cx);
+  color: var(--cx-deep);
+  outline: 2px solid transparent;
+}
+.app-body .drawer .drawer-close::after { content: none !important; }
+
+.app-body .drawer .sidebar-search-panel {
+  position: relative;
+  z-index: 3;
+  flex: 0 0 auto;
+  padding: 12px 15px 14px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line-strong);
+}
+.app-body .drawer .sidebar-search-panel[hidden] { display: none !important; }
+.app-body .drawer .sidebar-search-panel label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 7px;
+  color: var(--muted);
+}
+.app-body .drawer .sidebar-search-panel input {
+  width: 100%;
+  min-height: 44px;
+  background: var(--panel);
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font: 15px system-ui,sans-serif;
+  color: var(--txt);
+  outline-offset: 2px;
+}
+.app-body .drawer .sidebar-search-results {
+  max-height: min(32dvh,240px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  margin-top: 6px;
+}
+.app-body .drawer .sidebar-search-hit {
+  display: flex;
+  width: 100%;
+  gap: 9px;
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 9px;
+  padding: 11px 7px;
+  min-height: 42px;
+  text-align: left;
+  color: var(--txt);
+  font: 14px system-ui,sans-serif;
+  cursor: pointer;
+}
+.app-body .drawer .sidebar-search-hit:hover,
+.app-body .drawer .sidebar-search-hit:focus-visible { background: rgba(91,146,255,.12); }
+.app-body .drawer .sidebar-search-hit span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.app-body .drawer .sidebar-search-empty {
+  padding: 10px 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.app-body .drawer .drawer-content,
+.app-body #sidebarControl:not(:checked) ~ .drawer .drawer-content {
+  min-height: 0;
+  flex: 1 1 auto;
+  gap: 4px;
+  padding: 9px 13px 5px;
+  overflow: hidden;
+}
+.app-body .drawer .btn-new-session {
+  width: 100%;
+  min-height: 48px;
+  gap: 13px;
+  flex: 0 0 auto;
+  padding: 7px 11px;
+  clip-path: none;
+  border: 0;
+  border-radius: 11px;
+  box-shadow: none;
+  background: transparent;
+  color: var(--txt);
+  font: 600 15px system-ui,sans-serif;
+  letter-spacing: normal;
+  transform: none;
+}
+.app-body .drawer .btn-new-session::before,
+.app-body .drawer .btn-new-session::after { content: none; display: none; }
+.app-body .drawer .btn-new-session:hover,
+.app-body .drawer .btn-new-session:focus-visible {
+  background: rgba(91,146,255,.12);
+  box-shadow: none;
+  transform: none;
+}
+.app-body .drawer .btn-new-session .hud-button-glyph {
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 26px;
+  border: 0;
+  clip-path: none;
+  background: transparent;
+  color: var(--txt);
+}
+.app-body .drawer .btn-new-session .hud-button-copy strong {
+  font: 600 16px system-ui,sans-serif;
+  letter-spacing: 0;
+  color: inherit;
+}
+.app-body .drawer .btn-new-session .hud-button-copy small { display: none; }
+
+.app-body .drawer .projects-nav {
+  flex: 0 0 auto;
+  min-height: 0;
+  margin: 4px 0 12px;
+  padding: 12px 3px 0;
+  border-top: 1px solid rgba(91,146,255,.18);
+}
+.app-body .drawer .projects-nav-heading,
+.app-body .drawer .section-label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 38px;
+  margin: 0 0 4px;
+  padding: 4px 6px;
+  border: 0;
+  font: 650 15px system-ui,sans-serif;
+  color: var(--muted);
+  letter-spacing: 0;
+}
+.app-body .drawer .projects-nav-heading span:first-child,
+.app-body .drawer .section-label span:first-child { flex: 1 1 auto; }
+.app-body .drawer #projectsCreateBtn,
+.app-body .drawer .session-archive-toggle {
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 10px;
+  box-shadow: none;
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  min-height: 42px;
+  padding: 10px;
+  color: var(--muted);
+  cursor: pointer;
+  margin: 0;
+}
+.app-body .drawer #projectsCreateBtn:hover,
+.app-body .drawer .session-archive-toggle:hover,
+.app-body .drawer .session-archive-toggle.active {
+  background: rgba(91,146,255,.12);
+  color: var(--cx-deep);
+}
+.app-body .drawer .section-count {
+  font: 12px system-ui,sans-serif;
+  min-width: auto;
+  border: 0;
+  padding: 0 5px;
+  color: var(--muted-soft);
+  background: transparent;
+}
+.app-body .drawer .projects-nav-list {
+  display: flex;
+  flex-direction: column;
+  max-height: 26dvh;
+  gap: 1px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.app-body .drawer .project-nav-row {
+  min-height: 42px;
+  border-radius: 10px;
+  padding: 2px 5px 2px 10px;
+  color: var(--txt);
+  font: 500 14px system-ui,sans-serif;
+}
+.app-body .drawer .project-nav-open { color: inherit; font: inherit; }
+.app-body .drawer .project-nav-folder {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+}
+.app-body .drawer .project-nav-folder svg { width: 21px; height: 21px; }
+.app-body .drawer .project-nav-row.active,
+.app-body .drawer .project-nav-row:hover { background: rgba(91,146,255,.09); }
+.app-body .drawer .project-nav-menu {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 42px;
+  font: 22px system-ui,sans-serif;
+}
+.app-body .drawer .session-zone {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0;
+  border-top: 1px solid rgba(91,146,255,.18);
+  padding: 8px 0 0;
+}
+.app-body .drawer .session-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  gap: 1px;
+  padding: 0 2px 10px;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+.app-body .drawer .session-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0,1fr) 40px;
+  align-items: center;
+  gap: 1px 5px;
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 2px 4px 2px 13px;
+  border: 0;
+  border-radius: 10px;
+  clip-path: none;
+  background: transparent;
+  color: var(--txt);
+  box-shadow: none;
+  transform: none;
+  font: 500 14px system-ui,sans-serif;
+}
+.app-body .drawer .session-item::before { display:none; }
+.app-body .drawer .session-item.active,
+.app-body .drawer .session-item:hover { background: rgba(91,146,255,.1); transform:none; }
+.app-body .drawer .session-item-title {
+  grid-column: 1;
+  min-width: 0;
+  font: 500 14px/1.35 system-ui,sans-serif;
+  letter-spacing: 0;
+  color: var(--txt);
+  white-space: nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.app-body .drawer .session-item-meta { display:none; }
+.app-body .drawer .session-row-more {
+  grid-column:2;
+  grid-row:1;
+  display:grid;
+  place-items:center;
+  width:40px;
+  min-height:42px;
+  border:0;
+  border-radius:10px;
+  background:transparent;
+  color:var(--muted);
+  cursor:pointer;
+  font:22px system-ui,sans-serif;
+}
+.app-body .drawer .session-row-more:hover,
+.app-body .drawer .session-row-more[aria-expanded="true"] {
+  background:rgba(91,146,255,.14);
+}
+.app-body .drawer .session-item-actions {
+  display:none;
+  position:relative;
+  grid-column:1 / -1;
+  grid-row:2;
+  width:100%;
+  max-height:none;
+  margin:0 0 5px;
+  padding:5px;
+  flex-wrap:wrap;
+  gap:4px;
+  border:1px solid var(--line-strong);
+  border-radius:10px;
+  background:var(--panel);
+  opacity:1;
+  visibility:visible;
+  pointer-events:auto;
+}
+.app-body .drawer .session-item.actions-open .session-item-actions { display:flex; }
+.app-body .drawer .session-action {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  flex:1 1 40%;
+  min-height:40px;
+  padding:7px 9px;
+  border-radius:8px;
+  font:600 12px system-ui,sans-serif;
+  letter-spacing:0;
+  background:transparent;
+  color:var(--txt);
+}
+.app-body .drawer .session-action:hover { background:rgba(91,146,255,.12); }
+.app-body .drawer .session-item.pinned .session-item-title::before {
+  content: "📌";
+  font: 12px system-ui,sans-serif;
+  margin-right: 7px;
+}
+
+.app-body .drawer .drawer-footer,
+.app-body #sidebarControl:not(:checked) ~ .drawer .drawer-footer {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:5px 7px;
+  flex:0 0 auto;
+  padding:8px 13px max(12px,env(safe-area-inset-bottom));
+  border-top:1px solid rgba(91,146,255,.16);
+  background:var(--panel);
+}
+.app-body .drawer .drawer-system-line,
+.app-body .drawer #btnProtocols { display:none !important; }
+.app-body .drawer .hud-button-quiet,
+.app-body #sidebarControl:not(:checked) ~ .drawer .hud-button-quiet {
+  display:flex;
+  justify-content:center;
+  gap:7px;
+  width:100%;
+  min-height:44px;
+  padding:8px;
+  border:0;
+  border-radius:11px;
+  background:transparent;
+  box-shadow:none;
+  color:var(--muted);
+  clip-path:none;
+  font:500 13px system-ui,sans-serif;
+  letter-spacing:0;
+}
+.app-body .drawer .hud-button-quiet:hover {
+  background:rgba(91,146,255,.12);
+  color:var(--txt);
+}
+.app-body .drawer .hud-button-quiet span:first-child { display:grid;place-items:center; }
+.app-body .drawer .hud-button-quiet svg {width:19px;height:19px;}
+.app-body .drawer .drawer-copyright {
+  grid-column:1/-1;
+  padding:4px 0 0;
+  text-align:center;
+  font:10px/1.25 system-ui,sans-serif;
+  letter-spacing:0;
+  color:var(--muted-soft);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+/* On a phone the normal navigation behaves like a slide-over menu. */
+@media (max-width:899px) {
+  .app-body .drawer,
+  .app-body #sidebarControl:not(:checked) ~ .drawer {
+    width:min(88vw,380px);
+  }
+  .app-body .drawer .drawer-header,
+  .app-body #sidebarControl:not(:checked) ~ .drawer .drawer-header {
+    height:124px;
+    min-height:124px;
+    flex-basis:124px;
+    padding:8px 61px 5px;
+  }
+  .app-body .drawer .ren-matrix,
+  .app-body #sidebarControl:not(:checked) ~ .drawer .ren-matrix {
+    width:62px;height:62px;flex-basis:62px;
+  }
+  .app-body .drawer .sidebar-search-toggle,
+  .app-body .drawer .drawer-close,
+  .app-body #sidebarControl:not(:checked) ~ .drawer .drawer-close {
+    top:30px;
+  }
+  .app-body .drawer .drawer-content,
+  .app-body #sidebarControl:not(:checked) ~ .drawer .drawer-content {
+    display:flex;
+    visibility:visible;
+    height:auto;
+    opacity:1;
+    overflow:hidden;
+    pointer-events:auto;
+    gap:4px;
+    padding:9px 12px 6px;
+  }
+  .app-body .drawer .drawer-footer,
+  .app-body #sidebarControl:not(:checked) ~ .drawer .drawer-footer {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    padding:8px 12px max(10px,env(safe-area-inset-bottom));
+  }
+  .app-body #sidebarControl:not(:checked) ~ .drawer .hud-button-quiet span:last-child {
+    display:inline;
+  }
+  .app-body .drawer .brand-copy,
+  .app-body #sidebarControl:not(:checked) ~ .drawer .brand-copy {
+    display:flex;
+    visibility:visible;
+    height:auto;
+    opacity:1;
+    margin-top:0;
+  }
+}
+/* The project-home theme keeps its own header treatment but uses the same
+   compact footer and navigation actions, not a separate Work menu. */
+body.project-home-active .drawer .sidebar-search-toggle,
+body.project-home-active .drawer .drawer-close {
+  background:#242427;
+  color:#f0f0f1;
+  border-color:#3b3b3e;
+}
+body.project-home-active .drawer .sidebar-search-panel {
+  background:#202022;
+  border-bottom-color:#39393b;
+}
+body.project-home-active .drawer .sidebar-search-panel input,
+body.project-home-active .drawer .session-item-actions {
+  background:#29292b;
+  color:#f0f0f1;
+  border-color:#424244;
+}
+body.project-home-active .drawer .sidebar-search-hit,
+body.project-home-active .drawer .sidebar-search-panel label,
+body.project-home-active .drawer .session-item,
+body.project-home-active .drawer .session-item-title {
+  color:#f3f3f4;
+}
+body.project-home-active .drawer .drawer-footer { background:#151515; }
