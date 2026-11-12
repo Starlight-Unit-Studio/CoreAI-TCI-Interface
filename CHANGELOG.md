@@ -1,5 +1,15 @@
 # CoreAI: TCI Interface
 
+## 0.7.32 - 12.11.2026
+
+- **Settings > Data controls after the reference screenshot:** One card with Shared links and Merge personal data (both marked In preparation: CoreAI shares chats as Markdown files and has no import yet), Export data (the existing JSON export), Archived chats (count and link), Archive all chats and Delete all chats. The rows the operator crossed out (model training, network access and reset of the reference's workspace product) are not part of CoreAI.
+- **Archive all chats:** After a confirmation, every active chat goes to the archive and loses its pin; it can be restored under Archived chats.
+- **Delete all chats:** After a confirmation and the typed word LÖSCHEN, every active and archived chat is deleted for good with its messages and files, through the same delete as the chat menu. A chat Mara is still working in stays (an active one comes back from the archive), and the result says so.
+- **Locked chats** (PIN) are never archived or deleted by these actions and are counted separately.
+- **Server:** `api/console_sessions.php` gets `data_summary` (GET), `archive_all` and `delete_all` (POST, CSRF, each with its own confirmation value), implemented in `api/data_controls_store.php`.
+- **Tests:** `scripts/data-controls-selftest.php` (with and without database; own accounts, removed afterwards) and `scripts/data-controls-ui-selftest.cjs` (Playwright) in both preflights.
+
+
 ## 0.7.31 - 12.11.2026
 
 - **Preflight fix for 0.7.30:** `scripts/storage-selftest.php` checked the nginx allowlist for the literal neighbours `|pets|files|profile|`. Since 0.7.30 lists `usage` after `files`, that check failed and an update to 0.7.30 stopped in the preflight ("nginx allows the storage endpoint"). The selftest now only requires `files` in the API allowlist, whatever stands next to it, and fails without it.

@@ -318,3 +318,5 @@ Jede Version liegt als eigenstaendige UTF-8-TXT-Datei vor.
 * CHANGELOG_0_7_30.txt
 
 * CHANGELOG_0_7_31.txt
+
+* CHANGELOG_0_7_32.txt

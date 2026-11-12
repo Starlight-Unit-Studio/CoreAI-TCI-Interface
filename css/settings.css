@@ -3311,3 +3311,23 @@ html[data-coreui-theme="dark"] .settings-body .notify-planned { color: var(--amb
   .settings-body .nu-rangebar { justify-content: stretch; }
   .settings-body .nu-range { flex: 1 1 auto; justify-content: space-between; }
 }
+
+/* 0.7.32: Settings > Datenkontrollen after the reference screenshot (js/coreui-data-controls.js). */
+.settings-body .dc-row { gap: 14px; }
+.settings-body .dc-row.is-planned .sec-copy strong { color: var(--muted); }
+.settings-body .dc-btn { flex: 0 0 auto; min-width: 128px; white-space: nowrap; }
+.settings-body .dc-btn.dc-danger { border-color: rgba(214, 69, 69, 0.45); color: var(--red); }
+.settings-body .dc-btn.dc-danger:hover:not(:disabled) { background: rgba(214, 69, 69, 0.08); }
+.settings-body .dc-btn:disabled { opacity: 0.5; cursor: default; }
+.settings-body .dc-typed { display: grid; gap: 8px; color: var(--muted); font-size: 15px; }
+.settings-body .dc-typed b { color: var(--txt); }
+.settings-body .dc-typed input {
+  min-height: 46px; padding: 8px 12px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--panel-soft);
+  color: var(--txt); font: inherit; font-size: 16px; letter-spacing: 0.08em;
+}
+.settings-body .dc-typed input:focus { border-color: var(--red); outline: none; box-shadow: 0 0 0 3px rgba(214, 69, 69, 0.15); }
+@media (max-width: 620px) {
+  .settings-body .dc-row { flex-wrap: wrap; }
+  .settings-body .dc-row .sec-copy { flex: 1 1 200px; }
+  .settings-body .dc-btn { min-width: 0; }
+}

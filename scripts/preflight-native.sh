@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.31: storage selftest checks the nginx allowlist by pattern (preflight fix for 0.7.30).
+# CoreAI: TCI Interface 0.7.32: Settings > Datenkontrollen (archive or delete all chats, export, archived chats).
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -169,6 +169,10 @@ UI_FILES=(
   js/coreui-usage-settings.js
   scripts/usage-page-selftest.php
   scripts/usage-ui-selftest.cjs
+  api/data_controls_store.php
+  js/coreui-data-controls.js
+  scripts/data-controls-selftest.php
+  scripts/data-controls-ui-selftest.cjs
   scripts/terran-terminology-selftest.cjs
   scripts/tci-language-selftest.cjs
   css/coreui-chat-tci-layout.css
@@ -1104,6 +1108,14 @@ if command -v php >/dev/null 2>&1; then
     fail "Nutzung-Selbsttest: ${usage_page_test:-Unbekannter Fehler}"
   fi
 
+  # 0.7.32: Settings > Datenkontrollen: archive and delete all chats (never locked or busy ones), the page.
+  data_controls_test=''
+  if data_controls_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/data-controls-selftest.php" 2>&1)"; then
+    ok "$data_controls_test"
+  else
+    fail "Datenkontrollen-Selbsttest: ${data_controls_test:-Unbekannter Fehler}"
+  fi
+
   profile_reference_test=''
   if profile_reference_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/profile-reference-selftest.php" 2>&1)"; then
     if [[ "$profile_reference_test" == PARTIAL:* ]]; then
@@ -1433,6 +1445,16 @@ if command -v php >/dev/null 2>&1; then
       fi
     else
       ok 'Nutzung: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+    fi
+    # 0.7.32: Settings > Datenkontrollen (confirmations, typed word, results); needs Playwright for Node.
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/data-controls-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'Datenkontrollen: Archivieren, Loeschen und Export im Browser geprueft.'
+      else
+        fail 'Datenkontrollen: Oberflaechentest fehlgeschlagen.'
+      fi
+    else
+      ok 'Datenkontrollen: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
     fi
     # 0.7.1: Settings > Pets and the pet in Mara's work line; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then

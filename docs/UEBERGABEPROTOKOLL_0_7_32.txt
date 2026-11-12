@@ -1,0 +1,43 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.32
+Date: 12.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Base version: 0.7.31
+
+AUFTRAG
+Einstellungen > Datenkontrollen nach dem letzten Referenz-Screenshot des Betreibers. Durchgestrichen und
+damit nicht uebernommen: "Das Modell fuer alle verbessern", "Netzwerkzugriff fuer Work", "Work zuruecksetzen".
+
+UMSETZUNG
+- settings.html view-datenkontrollen: eine Karte mit Geteilte Links und Persoenliche Daten zusammenfuehren
+  (beide ehrlich In Vorbereitung: CoreAI teilt Chats als Markdown-Datei und hat noch keinen Import), Daten
+  exportieren (vorhandener JSON-Export, ID exportAccountData und Handler in js/settings.js unveraendert),
+  Archivierte Chats (Anzahl, Sprung zur Seite), Alle Chats archivieren, Alle Chats loeschen.
+- api/data_controls_store.php: Zaehlen (aktiv, archiviert, gesperrt), alle archivieren (ohne gesperrte, Pins
+  weg), alle loeschen (aktive und archivierte, ueber coreui_console_session_delete wie das Chat-Menue; ein
+  Chat, in dem Mara noch arbeitet (session_busy), bleibt; ein aktiver kommt dann aus dem Archiv zurueck).
+  Gesperrte Chats (locked_at) werden nie angefasst.
+- api/console_sessions.php: data_summary (GET), archive_all und delete_all (POST, CSRF, eigene
+  Bestaetigungswerte ARCHIVE_ALL_CHATS und DELETE_ALL_CHATS). archive_all meldet die Anzahl als
+  archived_now, damit die Archivzahl archived nicht verdeckt wird (der Browsertest hat das gefunden).
+- js/coreui-data-controls.js: Dialoge (Esc, Klick daneben), Loeschen erst nach dem Wort LOESCHEN (auch
+  klein geschrieben), Ergebnis mit verbliebenen Chats, Fehler bleiben im Dialog.
+
+TESTS (in dieser Sitzung ausgefuehrt)
+- php -l fuer die geaenderten PHP-Dateien.
+- scripts/data-controls-selftest.php ohne Datenbank und gegen MariaDB: Zaehlen, Bestaetigungen, alle
+  archivieren (Pins, gesperrt, fremdes Konto), alle loeschen (Nachrichten und Datei weg, zwei laufende Chats
+  bleiben, einer davon zurueck aktiv, gesperrt und fremdes Konto bleiben). Eigene Testkonten, danach entfernt.
+- scripts/data-controls-ui-selftest.cjs (Playwright): Zeilen, Export, Archivierte Chats, Archivieren mit
+  Abbrechen und Bestaetigen, Loeschen mit Wort, Esc, Ergebnis, Serverfehler, nichts zu tun, Telefon.
+- Gesamte Selbsttest-Reihe (scripts/*selftest*, model-live-audit, tests/*) nacheinander gegen MariaDB:
+  Branch 153 bestanden, 12 fehlgeschlagen; main 0.7.31 152 bestanden, 11 fehlgeschlagen. Die 11
+  Fehlschlaege sind auf beiden Staenden dieselben und schon auf main vorhanden (browse-live, chat-menu,
+  composer-menu, core-install, long-chat, model-library, pets, security, session-list, settings-tabs,
+  update). Der zwoelfte, storage-ui-selftest, lief in der Reihe parallel zu Bildschirmfotos fuer die
+  naechste Version und fiel dabei einmal aus; einzeln danach viermal hintereinander bestanden. Er ist
+  von dieser Version nicht beruehrt (keine Aenderung an Speicher-Dateien).
+
+NACH DEM UPDATE
+- Keine Migration. Einstellungen > Datenkontrollen oeffnen.
+
+Version: 0.7.32
