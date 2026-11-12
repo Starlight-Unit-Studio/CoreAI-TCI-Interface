@@ -1,5 +1,15 @@
 # CoreAI: TCI Interface
 
+## 0.7.28 - 12.11.2026
+
+- **Settings > Storage after the reference screenshots:** The page is no longer planned. The overview shows the used space against the account's limit with a bar (or, without a limit, the server's free disk space), and opens Files and Images with their sizes and counts.
+- **Files:** Tabs Suggested, Favorites and Own items; project folders with a breadcrumb back to all files; type filter (documents, audio, video, made by Mara); search; list or grid. Each item opens, downloads, opens its chat, becomes a favorite or is deleted after a confirmation that names the chat which then no longer shows it. Uploading goes through the same upload as the chat.
+- **Images:** Mara's creations and uploads in a grid, plus the reference images from Personalization with a link there.
+- **Limit for all accounts and per account:** Admin Core > Operations > New accounts sets one storage limit in GB that applies at once to every account except the owner (empty or 0 is no limit). Admin Core > Users > Limits can set a different value for a single account (empty is the common value, 0 is no limit). Uploads and new images are refused with a clear message once the storage is full.
+- **Server:** New endpoint `api/files.php` (summary, list, favorite, delete; never for guests, only the account's own items) and migration 039 (`storage_mb` per account, file favorites). Deleting removes the file, its sidecar of generated images and artifacts through the existing delete helpers.
+- **Tests:** `scripts/storage-selftest.php` (limits, usage, lists, folders, favorites, deleting; with and without database) and `scripts/storage-ui-selftest.cjs` (Playwright) are part of both preflights.
+
+
 ## 0.7.27 - 12.11.2026
 
 - **Project navigation:** Clicking the project name expands/collapses the folder instead of opening its homepage. The project actions menu explicitly contains Projektstartseite, rename, settings, share, pin and delete. Creating a new project opens its folder, not a second page.

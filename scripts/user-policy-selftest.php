@@ -24,7 +24,9 @@ policy_test(coreui_user_policy_tools($all, $policy) === ['web' => true, 'browse'
 policy_test(coreui_user_policy_tools(['web' => false, 'browse' => true, 'python' => true], coreui_user_policy_default())['web'] === false,
   'global off stays off');
 $row = coreui_user_policy_from_row(['tool_web' => '0', 'tool_browse' => '1', 'tool_python' => '1', 'daily_messages' => '40', 'max_num_ctx' => '16384']);
-policy_test($row === ['tools' => ['web' => false, 'browse' => true, 'python' => true, 'image' => true], 'daily_messages' => 40, 'max_num_ctx' => 16384], 'row read back');
+// 0.7.28: storage_mb (migration 039): null follows the limit for all accounts.
+policy_test($row === ['tools' => ['web' => false, 'browse' => true, 'python' => true, 'image' => true], 'daily_messages' => 40, 'max_num_ctx' => 16384,
+  'storage_mb' => null], 'row read back');
 // 0.6.39 (P20.5): images are a tool of their own; a row without the column (before migration 026) keeps them.
 $row = coreui_user_policy_from_row(['tool_web' => '1', 'tool_browse' => '1', 'tool_python' => '1', 'tool_image' => '0']);
 policy_test($row['tools']['image'] === false, 'images blocked for the account read back');
@@ -46,7 +48,9 @@ policy_test(str_contains($settingsApi, "'num_ctx_choices' => coreui_user_policy_
   && str_contains($settingsApi, "stu_json(['ok'=>false, 'error'=>'num_ctx_not_allowed'], 403);"), 'KI-Profil: slider and saving respect the limit');
 policy_test(str_contains($read('api/ai_settings.php'), "\$settings['num_ctx'] = coreui_user_policy_ctx_clamp(\$settings['num_ctx'], \$policy);"), 'runtime cuts the window');
 policy_test(str_contains($read('js/console-app.js'), "daily_message_limit: 'Dein Tageslimit an Nachrichten ist erreicht.") , 'the chat explains the limit');
-policy_test(str_contains($read('js/admin.js'), "post('user_policy', { user_id: Number(user.id), daily_messages: dailyValue, max_num_ctx: ctx.value === '' ? null : Number(ctx.value) })"),
+// 0.7.28: the limits save also carries the storage field (Settings > Speicher).
+policy_test(str_contains($read('js/admin.js'), "var payload = { user_id: Number(user.id), daily_messages: dailyValue, max_num_ctx: ctx.value === '' ? null : Number(ctx.value) };")
+  && str_contains($read('js/admin.js'), "post('user_policy', payload)"),
   'Admin Core: limits section');
 policy_test(str_contains($read('api/ai_settings.php'), "\$policy = coreui_user_policy_load(\$pdo, \$uid);")
   && str_contains($read('api/ai_settings.php'), "\$GLOBALS['COREUI_OPERATOR_RUNTIME_SETTINGS'] = coreui_user_policy_tools(coreui_operator_runtime_load(\$pdo), \$policy);"),

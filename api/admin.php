@@ -16,6 +16,7 @@ require_once __DIR__ . '/image_spike_store.php';
 require_once __DIR__ . '/mailer.php';
 require_once __DIR__ . '/uninstall_store.php';
 require_once __DIR__ . '/update_store.php';
+require_once __DIR__ . '/files_store.php';
 
 $pdo = stu_pdo();
 $actorId = stu_require_user_id();
@@ -92,6 +93,8 @@ function coreui_admin_setting_rows(PDO $pdo): array {
     'external_api_label' => 'OpenAI-kompatibel',
     'external_api_base_url' => '',
     'external_api_model' => '',
+    // 0.7.28: storage per account in MiB for all accounts ('' = no limit); Admin Core > Betrieb.
+    'storage_limit_mb' => '',
   ];
   $out = [];
   foreach ($defaults as $key => $default) {
@@ -166,7 +169,10 @@ if ($method === 'GET') {
       'ctx_choices' => coreui_ai_num_ctx_choices(),
       // 0.6.86: plans (Free, Go, Plus, Pro) per account and what each template writes.
       'plans' => (object)coreui_plan_all($pdo), 'plan_ready' => coreui_plan_ready($pdo),
-      'plan_catalog' => coreui_plan_catalog(coreui_ai_num_ctx_choices())]);
+      'plan_catalog' => coreui_plan_catalog(coreui_ai_num_ctx_choices()),
+      // 0.7.28: bytes each account keeps (Settings > Speicher), the limit for all and whether a single one can differ.
+      'storage_used' => (object)coreui_files_usage_all($pdo), 'storage_limit_mb' => coreui_files_global_limit_mb($pdo),
+      'storage_ready' => coreui_user_policy_storage_ready($pdo)]);
   }
 
   // 0.5.83: models outside CoreAI and who may use them. Only the Inhaber
@@ -521,7 +527,7 @@ if ($action === 'user_policy') {
   if ($refusal === 'use_account_settings') $refusal = 'own_policy';
   if ($refusal !== '') stu_json(['ok' => false, 'error' => $refusal], $refusal === 'invalid_user' ? 400 : 403);
   $patch = [];
-  foreach (['tools', 'daily_messages', 'max_num_ctx'] as $key) {
+  foreach (['tools', 'daily_messages', 'max_num_ctx', 'storage_mb'] as $key) {
     if (array_key_exists($key, $body)) $patch[$key] = $body[$key];
   }
   try {
@@ -529,7 +535,7 @@ if ($action === 'user_policy') {
   } catch (InvalidArgumentException $e) {
     stu_json(['ok' => false, 'error' => $e->getMessage()], 400);
   } catch (RuntimeException $e) {
-    stu_json(['ok' => false, 'error' => $e->getMessage() === 'missing_schema_021' ? 'missing_schema_021' : 'user_settings_failed'], 503);
+    stu_json(['ok' => false, 'error' => in_array($e->getMessage(), ['missing_schema_021', 'missing_schema_039'], true) ? $e->getMessage() : 'user_settings_failed'], 503);
   }
   coreui_admin_audit($pdo, $actorId, 'user_policy', 'user', (string)$targetId, $policy);
   stu_json(['ok' => true, 'policy' => $policy]);
@@ -635,6 +641,7 @@ if ($action === 'settings_save') {
     'memory_default_enabled', 'user_system_prompt_max_chars',
     'tool_web_enabled', 'tool_browse_enabled', 'tool_python_enabled', 'tool_image_enabled',
     'external_api_enabled', 'external_api_label', 'external_api_base_url', 'external_api_model',
+    'storage_limit_mb',
   ];
   $incoming = $body['settings'] ?? [];
   if (!is_array($incoming)) stu_json(['ok' => false, 'error' => 'invalid_settings'], 400);
@@ -648,6 +655,7 @@ if ($action === 'settings_save') {
     if ($key === 'guest_network_guests') $value = (string)coreui_guest_network_normalise($value);
     if ($key === 'guest_daily_messages') $value = (string)coreui_guest_daily_normalise($value);
     if ($key === 'guest_image_daily_limit') $value = (string)coreui_guest_image_limit_normalise($value);
+    if ($key === 'storage_limit_mb') $value = coreui_files_limit_normalise($value);
     if ($key === 'maintenance_message') {
       if (function_exists('mb_substr')) $value = mb_substr($value, 0, 520, 'UTF-8');
       else $value = substr($value, 0, 520);

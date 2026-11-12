@@ -1,0 +1,57 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.28
+Date: 12.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Base version: 0.7.27
+
+AUFTRAG
+Einstellungen > Speicher nach den Referenz-Screenshots des Betreibers (Uebersicht, Dateien, Bilder).
+Betreiber: "wieviel gb die user nutzen duerfen Entscheidet letztendlich der admin ueber Admin core" und
+"nicht nur einzeln der admin sollte die Einstellung so vornehmen koennen das es direkt auf alle user greift".
+
+UMSETZUNG
+- settings.html: view-speicher ist keine geplante Seite mehr. Uebersicht mit Balken ("X von Y verwendet",
+  ohne Grenze der freie Platz des Servers) und der Karte "Speicherplatz verwalten" (Dateien, Bilder).
+- Dateien: Vorgeschlagen (die 12 neuesten), Favoriten, Deine Elemente mit Projektordnern ("Alle / Projekt"),
+  Typfilter (Dokumente, Audio, Video, Von Mara erstellt), Suche, Liste oder Raster (im Browser gemerkt).
+  Menue je Eintrag: Oeffnen, Herunterladen, Im Chat oeffnen (app.html?session=), Favorit, Loeschen mit
+  Bestaetigung, die den Chat nennt. "+" laedt ueber api/console_upload.php hoch wie der Chat.
+- Bilder: Deine Kreationen (Maras Bilder aus var/console_media/images) und Uploads im Raster,
+  Referenzbilder aus der Personalisierung mit Sprung dorthin. Favoriten gibt es nur fuer Dateien.
+- Was zaehlt: Medien in stu_console_media (Bilder, Dokumente, Audio, Video) und Artefakte von Mara
+  (stu_console_artifacts). Loeschen nutzt die vorhandenen Helfer (coreui_console_session_delete_media_files,
+  coreui_console_artifact_delete_files) und entfernt bei Maras Bildern auch die .json daneben.
+- Grenze: App-Einstellung storage_limit_mb (Admin Core > Betrieb > Neue Konten, Feld in GB) gilt sofort
+  fuer alle Konten ausser dem Inhaber; leer oder 0 = ohne Grenze. Je Konto stu_user_policies.storage_mb
+  (Admin Core > Benutzer > Limits): leer = gemeinsamer Wert, 0 = ohne Grenze, sonst MiB.
+- Voller Speicher: console_upload.php antwortet 413 storage_full (mit used_label/limit_label), die
+  Bildgenerierung bricht mit storage_full und einem klaren Satz ab. Plaene schreiben storage_mb nicht.
+- Neu: api/files.php (summary, list, favorite, delete; Gaeste 403, nur eigene Eintraege, CSRF),
+  api/files_store.php, js/coreui-storage-settings.js, database/migrations/039_storage.sql
+  (storage_mb, stu_user_file_favorites), nginx-Freigabe "files" in beiden Vorlagen.
+
+TESTS (in dieser Sitzung ausgefuehrt)
+- php -l fuer alle geaenderten PHP-Dateien.
+- scripts/storage-selftest.php ohne Datenbank und gegen MariaDB (Grenzen fuer alle, je Konto, Inhaber,
+  Belegung, Listen, Ordner, Favoriten, Loeschen; zurueckgerollt).
+- scripts/storage-ui-selftest.cjs (Playwright): Uebersicht mit, ohne und bei voller Grenze, Tabs,
+  Projektordner, Typfilter, Suche, Raster, Menue, Favorit, Loeschen mit Bestaetigung, Bilder, Upload mit
+  Grund, Telefon ohne seitliches Scrollen, Gaeste.
+- Ende-zu-Ende gegen PHP-Server und MariaDB: Upload, Grenze 1 MiB global verweigert, je Konto 0 erlaubt,
+  je Konto 1 MiB verweigert, Loeschen gibt Platz frei, Maras Bild samt .json entfernt, Artefakt geloescht.
+- Angepasste Wortlaut-Tests: user-policy-selftest.php, settings-navigation-foundation-selftest.cjs
+  (7 geplante Seiten), sidebar-sections-ui-selftest.cjs (Versionsstand 0.7.28),
+  settings-tabs-ui-selftest.cjs (Nutzung als geplantes Beispiel, Speicherfeld in Benutzer > Limits mit
+  Belegt-Hinweis und storage_mb in der Anfrage, genaue Liste der Laufzeit-Schluessel statt der alten Zahl 18).
+- Gesamte Selbsttest-Reihe (scripts/*selftest*, tests/) auf dem Branch und auf main 0.7.27 ausgefuehrt:
+  dieselben 11 Tests scheitern auf beiden Staenden schon vorher (browse-live, chat-menu, composer-menu,
+  core-install, long-chat, model-library, pets, security, session-list, settings-tabs, update; nicht Teil
+  dieser Version). settings-tabs scheitert auf beiden an derselben Stelle
+  ("denied without any admin API request"); die Zahl 18 der Laufzeit-Schluessel war auf main schon veraltet (23).
+  Alle uebrigen Tests bestehen, dazu die beiden neuen Speicher-Tests.
+
+NACH DEM UPDATE
+- Migration 039 laeuft ueber scripts/migrate.sh. Ohne sie zeigt Admin Core beim Speichern einer
+  Konto-Grenze missing_schema_039, die gemeinsame Grenze und die Seite funktionieren trotzdem.
+- Preflight laufen lassen, Einstellungen > Speicher oeffnen, in Admin Core eine Grenze setzen.
+
+Version: 0.7.28
