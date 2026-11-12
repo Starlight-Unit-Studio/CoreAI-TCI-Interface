@@ -1,0 +1,20 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.23
+Date: 12.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Base version: 0.7.22
+
+ISSUE
+Previous 0.7.22 implementation completed chat locking, but the original visual redesign request was incomplete. Existing theme still had many round corners and the collapsed desktop rail hid existing actions.
+
+SOLUTION
+- Reuse already installed CoreAI theme palette and geometric clipping.
+- Reinstate blue and gold accents and cut corners throughout chat menus, dialogs and projects.
+- Position existing Settings/Logout buttons under sidebar fold control and expose them on desktop collapsed rail.
+- Correct page version and invalidate browser caches for changed assets.
+
+NEXT STEPS
+- Run existing updater on the actual CoreAI installation.
+- Run the server preflight and validate light/dark themes, mobile drawer, desktop collapsed rail and PIN lock end-to-end.
+- Do not claim live-server deployment until verified.
+
+Version: 0.7.23
