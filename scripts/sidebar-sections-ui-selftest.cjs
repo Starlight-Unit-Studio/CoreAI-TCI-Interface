@@ -54,6 +54,22 @@ assert(themeCSS.includes('var(--cx)') &&
   'project home, sources, settings and sidebar adopt native CoreAI theme');
 assert(project.includes('coreui_project')===false || project.includes('project-nav-folder'),
   'project list remains available');
+
+// 0.7.23: Native CoreAI shape, accents and collapsed desktop controls.
+assert(themeCSS.includes('.app-body .chat-menu') &&
+  themeCSS.includes('.app-body .chat-dialog-box') &&
+  themeCSS.includes('linear-gradient(90deg,var(--cx),var(--amb),transparent)'),
+  'chat menu/dialogs must retain CoreAI geometric accents');
+assert(themeCSS.includes('.app-body #sidebarControl:not(:checked) ~ .drawer #btnSettings') &&
+  themeCSS.includes('.app-body #sidebarControl:not(:checked) ~ .drawer #btnLogout') &&
+  themeCSS.includes('.app-body #sidebarControl:not(:checked) ~ .drawer .drawer-close'),
+  'collapsed desktop sidebar must expose fold, settings and logout buttons');
+assert(themeCSS.includes('body.project-home-active .project-chat-result') &&
+  themeCSS.includes('clip-path:polygon('),
+  'projects and chat controls retain angular CoreAI geometry');
+assert(h.includes('N-73 // v0.7.23'),
+  'Ren matrix must display the same current application version');
+
 const version=read('VERSION').trim();
 assert.equal(version,'0.7.23','single merge advances version 0.7.23');
 console.log('PASS: CoreAI sidebar sections and project theme 0.7.23');
