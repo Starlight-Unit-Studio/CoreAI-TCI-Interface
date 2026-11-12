@@ -43,7 +43,13 @@ TESTS (in dieser Sitzung ausgefuehrt)
   Werkzeuge, Skills, Nachrichten nach Art, 30 Tage, frueher, leer), Gaeste, Telefon.
 - Angepasste Wortlaut-Tests: settings-navigation-foundation-selftest.cjs (6 geplante Seiten, Felder der
   Nutzung), settings-tabs-ui-selftest.cjs (geplantes Beispiel jetzt Passwoerter), sidebar-sections (0.7.30).
-- Gesamte Selbsttest-Reihe auf dem Branch und auf main 0.7.29: laeuft noch, Ergebnis wird nachgetragen.
+- storage-selftest.php prueft die nginx-Freigabe von files.php jetzt per Muster statt mit den Nachbarn
+  ("|pets|files|profile|" galt nicht mehr, weil usage hinter files steht); Gegenprobe ohne files schlaegt an.
+- Gesamte Selbsttest-Reihe (scripts/*selftest*, tests/) nacheinander auf dem Branch und auf main 0.7.29:
+  dieselben 11 Tests scheitern auf beiden Staenden schon vorher (browse-live, chat-menu, composer-menu,
+  core-install, long-chat, model-library, pets, security, session-list, settings-tabs, update; nicht Teil
+  dieser Version; settings-tabs auf beiden an derselben Stelle). Der zusaetzliche Fehler auf dem Branch war
+  storage-selftest.php (siehe oben), danach gruen. Alle uebrigen Tests bestehen, dazu die beiden neuen.
 
 NACH DEM UPDATE
 - Keine Migration. Einstellungen > Nutzung oeffnen.

@@ -1,5 +1,11 @@
 # CoreAI: TCI Interface
 
+## 0.7.31 - 12.11.2026
+
+- **Preflight fix for 0.7.30:** `scripts/storage-selftest.php` checked the nginx allowlist for the literal neighbours `|pets|files|profile|`. Since 0.7.30 lists `usage` after `files`, that check failed and an update to 0.7.30 stopped in the preflight ("nginx allows the storage endpoint"). The selftest now only requires `files` in the API allowlist, whatever stands next to it, and fails without it.
+- **Scope:** Test change only; Settings > Usage and the storage endpoint are unchanged.
+
+
 ## 0.7.30 - 12.11.2026
 
 - **Settings > Usage after the reference screenshots:** The page is no longer planned. Two tabs: Overview and Analytics. Only the account's own figures, numbers only, never chat content.

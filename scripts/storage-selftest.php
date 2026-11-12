@@ -31,7 +31,8 @@ st_test(strpos($api, "if (coreui_guest_is(\$pdo, \$uid)) stu_json(['ok' => false
   && strpos($api, 'stu_require_csrf();') < strpos($api, "if (\$action === 'favorite')") && strpos($api, 'stu_require_csrf();') < strpos($api, "if (\$action === 'delete')"),
   'endpoint: no guests, changes only with CSRF');
 foreach (['config/nginx.conf.template', 'config/runtime/nginx.conf.template'] as $template) {
-  st_test(str_contains($read($template), '|memory_summary|pets|files|profile|'), "nginx allows the storage endpoint: $template");
+  // The allowlist names api/files.php, whatever stands next to it (0.7.30 added usage after files).
+  st_test(preg_match('~location \~ \^/api/\(\?:[a-z_|]*\|files\|[a-z_|]*\)\\\\\.php\$~', $read($template)) === 1, "nginx allows the storage endpoint: $template");
 }
 $migration = $read('database/migrations/039_storage.sql');
 st_test(str_contains($migration, 'ADD COLUMN IF NOT EXISTS storage_mb INT UNSIGNED NULL') && str_contains($migration, 'CREATE TABLE IF NOT EXISTS stu_user_file_favorites')

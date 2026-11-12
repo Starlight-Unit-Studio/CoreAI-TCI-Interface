@@ -1,0 +1,10 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.31
+Date: 12.11.2026
+Base version: 0.7.30
+
+- Preflight fix: scripts/storage-selftest.php checked the nginx allowlist for "|memory_summary|pets|files|profile|". 0.7.30 put "usage" after "files", so the check failed and an update to 0.7.30 stopped in the preflight ("Speicher-Selbsttest: Storage FAIL: nginx allows the storage endpoint").
+- The selftest now requires "files" anywhere in the api allowlist of both nginx templates (a pattern); a template without "files" still fails it.
+- Test change only; Settings > Nutzung and api/files.php are unchanged.
+- A self-hosted installation must be updated separately; GitHub merge alone is not deployment.
+
+Version: 0.7.31
