@@ -65,7 +65,7 @@ async function openSettings(browser, viewport) {
   page.on('pageerror', error => errors.push(error.message));
   await page.route('https://coreui.test/**', route);
   await page.goto('https://coreui.test/settings.html#anzeige');
-  await page.waitForFunction(() => document.getElementById('startHealth').getAttribute('data-state') !== 'checking');
+  await page.waitForFunction(() => !document.getElementById('healthSummary').classList.contains('checking'));
   await page.waitForFunction(() => !document.getElementById('view-anzeige').hidden);
   return {context, page, errors};
 }
@@ -241,7 +241,7 @@ const segment = (page, group, value) => page.click('#' + group + ' label:has(inp
     ({context, page, errors} = await openSettings(browser, {width: 390, height: 844}));
     await page.evaluate(k => localStorage.setItem(k, JSON.stringify({theme: 'dark', separateModes: true})), KEY);
     await page.reload();
-    await page.waitForFunction(() => document.getElementById('startHealth').getAttribute('data-state') !== 'checking');
+    await page.waitForFunction(() => !document.getElementById('healthSummary').classList.contains('checking'));
     await page.click('#motifImport');
     const fit = await page.evaluate(() => {
       const view = document.getElementById('view-anzeige');

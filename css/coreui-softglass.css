@@ -255,7 +255,7 @@ html[data-coreui-skin="softglass"] .project-modal :is(input,textarea,select){
 }
 /* CoreAI settings, admin, account and ancillary views. */
 html[data-coreui-skin="softglass"] :is(
-  .cfg-card,.cfg-tile,.cfg-nav,.cfg-nav-item,.cfg-view-head,
+  .cfg-card,.cfg-nav,.cfg-nav-item,.cfg-view-head,
   .settings-panel,.settings-action,.settings-field,
   .sec-row,.sec-open,.sec-sub-head,.pz-field,
   .settings-body input,.settings-body select,.settings-body textarea,
@@ -267,7 +267,7 @@ html[data-coreui-skin="softglass"] :is(
   border-radius:var(--sg-radius)!important;
 }
 html[data-coreui-skin="softglass"] :is(
-  .cfg-card,.settings-panel,.cfg-tile,.login-card,.protocols-wrap
+  .cfg-card,.settings-panel,.login-card,.protocols-wrap
 ){
   background:var(--sg-sheet)!important;
   box-shadow:var(--sg-highlight),var(--sg-shadow)!important;

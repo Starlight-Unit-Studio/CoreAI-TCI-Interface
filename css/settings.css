@@ -106,8 +106,7 @@
   transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
 }
 
-.cfg-tab svg,
-.cfg-tile svg {
+.cfg-tab svg {
   width: 22px;
   height: 22px;
   fill: none;
@@ -143,9 +142,7 @@
   box-shadow: inset 3px 0 0 var(--amb);
 }
 
-.cfg-tab:focus-visible,
-.cfg-tile:focus-visible,
-.cfg-stat:focus-visible {
+.cfg-tab:focus-visible {
   outline: 2px solid var(--amb);
   outline-offset: 2px;
 }
@@ -522,192 +519,6 @@
 
 .settings-body .settings-footer {
   width: min(1360px, calc(100% - 40px));
-}
-
-/* --- Start view ---------------------------------------------------------- */
-
-.cfg-hero {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 22px;
-}
-
-.cfg-hero .settings-profile-avatar {
-  width: 92px;
-  height: 92px;
-}
-
-.cfg-hero-copy h2 {
-  margin: 4px 0 6px;
-  color: var(--txt);
-  font-size: clamp(26px, 3vw, 36px);
-  letter-spacing: 0.04em;
-  line-height: 1.05;
-}
-
-.cfg-hero-copy p {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-  margin: 0;
-  color: var(--cfg-soft);
-  font-family: "Share Tech Mono", monospace;
-  font-size: 14px;
-  overflow-wrap: anywhere;
-}
-
-.cfg-role {
-  padding: 3px 9px;
-  border: 1px solid rgba(138, 111, 242, 0.34);
-  background: rgba(138, 111, 242, 0.08);
-  color: var(--violet);
-  font-size: 12px;
-  letter-spacing: 0.12em;
-}
-
-.cfg-stats {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
-  margin-top: 18px;
-}
-
-.cfg-stat {
-  position: relative;
-  display: flex;
-  min-width: 0;
-  min-height: 112px;
-  cursor: pointer;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-  padding: 16px 18px;
-  overflow: hidden;
-  border: 1px solid rgba(91, 146, 255, 0.22);
-  background: linear-gradient(145deg, rgba(91, 146, 255, 0.08), rgba(255, 255, 255, 0.78));
-  box-shadow: var(--shadow-tight);
-  color: var(--txt);
-  text-align: left;
-  transition: border-color 160ms ease, transform 160ms ease;
-}
-
-.cfg-stat::after {
-  position: absolute;
-  right: -26px;
-  bottom: -26px;
-  width: 74px;
-  height: 74px;
-  border: 1px solid rgba(91, 146, 255, 0.14);
-  content: "";
-  transform: rotate(45deg);
-}
-
-.cfg-stat:hover {
-  border-color: var(--cx);
-  transform: translateY(-1px);
-}
-
-.cfg-stat strong {
-  max-width: 100%;
-  overflow: hidden;
-  color: var(--cx);
-  font-size: 22px;
-  letter-spacing: 0.03em;
-  line-height: 1.15;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.cfg-stat strong[data-state="ok"] {
-  color: #1f8c5d;
-}
-
-.cfg-stat strong[data-state="error"] {
-  color: var(--red);
-}
-
-.cfg-stat small {
-  color: var(--cfg-soft);
-  font-size: 15px;
-  font-weight: 500;
-}
-
-.cfg-section-title {
-  margin: 30px 4px 12px;
-  color: var(--muted);
-  font-family: "Share Tech Mono", monospace;
-  font-size: 12px;
-  font-weight: 400;
-  letter-spacing: 0.18em;
-}
-
-.cfg-section-title.amber {
-  color: #a8681a;
-}
-
-.cfg-tiles {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
-  gap: 12px;
-}
-
-.cfg-tile {
-  display: grid;
-  min-height: 96px;
-  cursor: pointer;
-  grid-template-columns: 40px minmax(0, 1fr);
-  grid-template-rows: auto auto;
-  align-content: start;
-  column-gap: 12px;
-  row-gap: 4px;
-  padding: 15px 16px;
-  border: 1px solid rgba(91, 146, 255, 0.2);
-  background: rgba(255, 255, 255, 0.78);
-  box-shadow: var(--shadow-tight);
-  color: var(--txt);
-  text-align: left;
-  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
-  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
-}
-
-.cfg-tile svg {
-  width: 40px;
-  height: 40px;
-  grid-row: 1 / span 2;
-  padding: 8px;
-  border: 1px solid rgba(91, 146, 255, 0.28);
-  background: var(--panel-cx);
-  color: var(--cx);
-}
-
-.cfg-tile.admin svg {
-  border-color: rgba(226, 155, 57, 0.34);
-  background: var(--panel-amb);
-  color: var(--amb);
-}
-
-.cfg-tile strong {
-  font-size: 17.5px;
-  letter-spacing: 0.03em;
-}
-
-.cfg-tile small {
-  color: var(--cfg-soft);
-  font-size: 15px;
-  font-weight: 500;
-  line-height: 1.35;
-}
-
-.cfg-tile:hover {
-  border-color: var(--cx);
-  background: #fff;
-  transform: translateY(-1px);
-}
-
-.cfg-tile.admin:hover {
-  border-color: var(--amb);
 }
 
 /* --- Admin Core ---------------------------------------------------------- */
@@ -1091,10 +902,6 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .cfg-stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .admin-form {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1198,37 +1005,6 @@
   .settings-body .profile-editor-card,
   .settings-body .account-security-card {
     padding: 18px 16px;
-  }
-
-  .cfg-hero {
-    grid-template-columns: auto minmax(0, 1fr);
-    gap: 14px;
-  }
-
-  .cfg-hero .settings-profile-avatar {
-    width: 68px;
-    height: 68px;
-  }
-
-  .cfg-hero-action {
-    grid-column: 1 / -1;
-  }
-
-  .cfg-stats {
-    gap: 10px;
-  }
-
-  .cfg-stat {
-    min-height: 96px;
-    padding: 13px 14px;
-  }
-
-  .cfg-stat strong {
-    font-size: 18px;
-  }
-
-  .cfg-tiles {
-    grid-template-columns: minmax(0, 1fr);
   }
 
   .toolbar,
@@ -3330,4 +3106,23 @@ html[data-coreui-theme="dark"] .settings-body .notify-planned { color: var(--amb
   .settings-body .dc-row { flex-wrap: wrap; }
   .settings-body .dc-row .sec-copy { flex: 1 1 200px; }
   .settings-body .dc-btn { min-width: 0; }
+}
+
+/* --- Expert settings (0.7.33) ---------------------------------------------------------------------------
+   Every setting behind the EXPERTENMODUS switch says "(Expert)" after its title. Without Expert mode it is
+   hidden ([hidden] is display: none) and the next setting takes its place; the last visible row of a card
+   loses its separator line even when hidden Expert rows follow it. */
+.cfg-expert-tag {
+  margin-left: 0.35em;
+  color: var(--amb);
+  font-family: "Share Tech Mono", monospace;
+  font-size: 0.82em;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.settings-body .setting-row:not([hidden]):not(:has(~ .setting-row:not([hidden]))) {
+  border-bottom: 0;
 }

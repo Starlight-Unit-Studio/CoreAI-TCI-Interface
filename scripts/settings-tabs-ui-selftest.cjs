@@ -113,7 +113,7 @@ async function open(browser, level, hash, viewport) {
   page.on('pageerror', error => errors.push(error.message));
   await page.route('http://coreui.test/**', route => srv.route(route));
   await page.goto('http://coreui.test/settings.html' + (hash || ''));
-  await page.waitForFunction(() => document.getElementById('startHealth').getAttribute('data-state') !== 'checking');
+  await page.waitForFunction(() => !document.getElementById('healthSummary').classList.contains('checking'));
   return {page, srv, errors};
 }
 
@@ -201,18 +201,19 @@ const smallText = page => page.evaluate(() => {
     assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('emberCoreUI.preferences.v1')).sendKey),
       'mod-enter', 'the real send shortcut is saved browser-locally');
     await page.reload();
-    await page.waitForFunction(() => document.getElementById('startHealth').getAttribute('data-state') !== 'checking');
+    await page.waitForFunction(() => !document.getElementById('healthSummary').classList.contains('checking'));
     assert.equal(await page.textContent('#kbKeys-send'), 'Strg+Enter', 'send shortcut survives reload');
     await page.click('#tab-start');
     assert.equal(srv.calls.filter(c => c.key === 'admin.php').length, 0, 'a Nutzer never asks the admin API');
-    // Start view sums up the categories.
-    assert.equal(await page.textContent('#startCore'), 'Mara Normal');
-    assert.equal(await page.textContent('#startThinking'), 'Denken an · Standard-Core');
-    assert.equal(await page.textContent('#startHealth'), 'Alles bereit');
-    assert.equal(await page.textContent('#startKnowledge'), '1 Quelle');
-    assert.equal(await page.textContent('#startKnowledgeChunks'), '42 Abschnitte');
-    assert.equal(await page.textContent('#startMemory'), '2 Fakten');
-    assert.equal(await page.textContent('#startRole'), 'NUTZER');
+    // 0.7.33: Allgemein keeps only its own settings. The overview, the key figures and the shortcut tiles
+    // repeated the navigation and other pages and are gone; the figures live on their own pages.
+    assert.deepEqual(await page.$$eval('#view-start .cfg-general-copy label', l => l.map(x => x.textContent.trim())),
+      ['Sprache', 'Höhere Intelligenz', 'Denkaufwand']);
+    assert.equal(await page.locator('#view-start [data-goto], #view-start .cfg-hero, #view-start .cfg-stats, #view-start .cfg-tiles').count(), 0,
+      'no overview, key figures or shortcut tiles on Allgemein');
+    assert.equal(await page.textContent('#healthSummary'), 'ALLE KERNMODULE BEREIT');
+    assert.equal(await page.textContent('#knowledgeSourceCount'), '1');
+    assert.equal(await page.textContent('#knowledgeChunkCount'), '42');
     // Existing controls live in their actual settings categories.
     await page.click('#tab-sicherheit');
     assert.deepEqual(await visibleViews(page), ['view-sicherheit']);
@@ -301,8 +302,8 @@ const smallText = page => page.evaluate(() => {
     assert.equal(await page.locator('#tab-skills').count(), 0, 'no Skills tab: Mara picks her skills herself');
     await page.keyboard.press('Home');
     assert.deepEqual(await visibleViews(page), ['view-start']);
-    await page.click('.cfg-tile[data-goto="wissen"]');
-    assert.deepEqual(await visibleViews(page), ['view-wissen'], 'a tile opens its category');
+    await page.click('#tab-wissen');
+    assert.deepEqual(await visibleViews(page), ['view-wissen'], 'the navigation opens its category');
     await page.click('#tab-system');
     assert.deepEqual(await visibleViews(page), ['view-system']);
     await page.evaluate(() => { location.hash = 'about'; });

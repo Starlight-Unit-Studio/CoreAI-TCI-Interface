@@ -6,19 +6,20 @@
   <meta name="language" content="de-DE" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#f0f4fa" />
-  <meta name="application-version" content="0.7.32" />
+  <meta name="application-version" content="0.7.33" />
   <meta name="application-name" content="CoreAI: TCI Interface" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface - Einstellungen</title>
   <link rel="stylesheet" href="./css/console.css?v=0732355389840978237790247" />
-  <link rel="stylesheet" href="./css/settings.css?v=0881729190710598109371079" />
+  <link rel="stylesheet" href="./css/settings.css?v=1195119044604178274683151" />
   <link rel="stylesheet" href="./css/coreui-profile-crop.css?v=0852949496159567452926853" />
   <link rel="stylesheet" href="./css/coreui-update.css?v=0362480532788383300048352" />
-  <link rel="stylesheet" href="./css/coreui-theme.css?v=0697431397907702126637895" />
-  <script src="./js/console-gate.js?v=0580114264001554460816351"></script>
+  <link rel="stylesheet" href="./css/coreui-theme.css?v=0680794913330935617275553" />
+  <link rel="stylesheet" href="./css/coreui-settings-theme.css?v=1142906450847234350551167" />
+  <script src="./js/console-gate.js?v=0123255815457023082322653"></script>
   <script src="./js/coreui-preferences.js?v=1098190863602852320697527"></script>
-  <script src="./js/coreui-ui-language.js?v=0850224961537363286304733"></script>
-  <link rel="stylesheet" href="./css/coreui-softglass.css?v=1088656458787114546518505" />
+  <script src="./js/coreui-ui-language.js?v=0139468212041427447470901"></script>
+  <link rel="stylesheet" href="./css/coreui-softglass.css?v=0628592918051344087306671" />
 </head>
 <body class="settings-body">
   <svg class="cfg-sprite" aria-hidden="true" focusable="false">
@@ -99,7 +100,7 @@
           <h1>EINSTELLUNGEN</h1>
         </div>
       </div>
-      <div class="settings-version">COREAI: TCI INTERFACE // v0.7.32</div>
+      <div class="settings-version">COREAI: TCI INTERFACE // v0.7.33</div>
       <div class="cfg-header-actions" aria-label="Schnellzugriffe Einstellungen">
         <label class="cfg-header-expert" for="settingsExpertToggle" title="Technische Einstellungen in allen Kategorien anzeigen oder ausblenden">
           <span>EXPERTENMODUS</span>
@@ -111,7 +112,8 @@
 
     <!-- 0.6.71: all categories remain navigable. Expert mode toggles
          data-expert controls within each category; it never hides tabs or
-         changes authorization. Admin Core remains on a separate page. -->
+         changes authorization. Admin Core remains on a separate page.
+         0.7.33: every Expert setting says "(Expert)" after its title (.cfg-expert-tag); hidden, it leaves no gap. -->
     <div class="cfg-shell">
       <nav class="cfg-nav" id="cfgNav" aria-label="Einstellungen">
         <div class="cfg-menu-head">
@@ -179,7 +181,7 @@
 
         <!-- START -->
         <section class="cfg-view" id="view-start" role="tabpanel" aria-labelledby="tab-start" tabindex="-1">
-          <!-- GENERAL: settings from the reference UI, preserving the previous overview below. -->
+          <!-- GENERAL: only the settings that live nowhere else (0.7.33: the overview, the key figures and the shortcut tiles repeated the navigation, Profil, System, Wissen and Memory and are gone). -->
           <header class="cfg-view-head cfg-general-head">
             <div><span class="cfg-kicker">PERSÖNLICH</span><h2 id="generalHeading">Allgemein</h2><p>Grundlegende Bedienung deiner CoreAI. Technische Optionen bleiben in ihrer jeweiligen Kategorie.</p></div>
           </header>
@@ -221,56 +223,6 @@
               </div>
             </div>
           </section>
-
-          <h3 class="cfg-section-title">DEIN COREAI IM ÜBERBLICK</h3>
-          <div class="settings-panel cfg-hero">
-            <span class="settings-profile-avatar" id="startAvatar" aria-hidden="true">OP</span>
-            <div class="cfg-hero-copy">
-              <span class="cfg-kicker">WILLKOMMEN ZURÜCK</span>
-              <h2 id="startName">Operator</h2>
-              <p><span id="startMail">wird geprüft …</span> <span class="cfg-role" id="startRole">NUTZER</span></p>
-            </div>
-            <a class="settings-action cfg-hero-action" href="./app.html">ZUM CORE CHANNEL</a>
-          </div>
-
-          <div class="cfg-stats" aria-label="Kurzüberblick">
-            <button class="cfg-stat" type="button" data-goto="ki-profil">
-              <span class="cfg-kicker">CORE</span>
-              <strong id="startCore">…</strong>
-              <small id="startThinking">wird geladen</small>
-            </button>
-            <button class="cfg-stat" type="button" data-goto="system">
-              <span class="cfg-kicker">SYSTEM</span>
-              <strong id="startHealth" data-state="checking">wird geprüft</strong>
-              <small id="startVersion">Version …</small>
-            </button>
-            <button class="cfg-stat" type="button" data-goto="wissen">
-              <span class="cfg-kicker">WISSEN</span>
-              <strong id="startKnowledge">0 Quellen</strong>
-              <small id="startKnowledgeChunks">0 Abschnitte</small>
-            </button>
-            <button class="cfg-stat" type="button" data-goto="memory">
-              <span class="cfg-kicker">MEMORY</span>
-              <strong id="startMemory">0 Fakten</strong>
-              <small>persönlich und global</small>
-            </button>
-          </div>
-
-          <h3 class="cfg-section-title">DIREKT ZU EINSTELLUNGEN</h3>
-          <div class="cfg-tiles">
-            <button class="cfg-tile" type="button" data-goto="anzeige"><svg aria-hidden="true"><use href="#i-display" /></svg><strong>Anzeige</strong><small>Tag-/Nachtmodus, Bewegung, kompakter Chat und Live-Browser.</small></button>
-            <button class="cfg-tile" type="button" data-goto="profil"><svg aria-hidden="true"><use href="#i-profile" /></svg><strong>Profil</strong><small>Dein Name und Bild, Name und Bild deiner CoreAI.</small></button>
-            <button class="cfg-tile" type="button" data-goto="ki-profil"><svg aria-hidden="true"><use href="#i-core" /></svg><strong>KI-Profil</strong><small>System-Prompt, Antwortbudget, Temperatur und Kontextfenster.</small></button>
-            <button class="cfg-tile" type="button" data-goto="personalisierung"><svg aria-hidden="true"><use href="#i-sliders" /></svg><strong>Personalisierung</strong><small>Stil, Emojis, Erinnerungen, eigene Anweisungen und Werkzeuge.</small></button>
-            <button class="cfg-tile" type="button" data-goto="wissen"><svg aria-hidden="true"><use href="#i-knowledge" /></svg><strong>Wissen</strong><small>Eigene Dokumente, in denen deine CoreAI nachschlägt.</small></button>
-            <button class="cfg-tile" type="button" data-goto="memory"><svg aria-hidden="true"><use href="#i-memory" /></svg><strong>Memory</strong><small>Fakten, die deine CoreAI sich über dich merken darf.</small></button>
-            <button class="cfg-tile" type="button" data-goto="konto"><svg aria-hidden="true"><use href="#i-account" /></svg><strong>Konto</strong><small>Kontodaten und Abmelden.</small></button>
-            <button class="cfg-tile" type="button" data-goto="sicherheit"><svg aria-hidden="true"><use href="#i-shield" /></svg><strong>Sicherheit</strong><small>Passwort, Geräte und aktive Anmeldungen.</small></button>
-            <button class="cfg-tile" type="button" data-goto="datenkontrollen"><svg aria-hidden="true"><use href="#i-data" /></svg><strong>Datenkontrollen</strong><small>Persönliche Kontodaten exportieren.</small></button>
-            <button class="cfg-tile" type="button" data-goto="tastatur"><svg aria-hidden="true"><use href="#i-keyboard" /></svg><strong>Tastatur</strong><small>Tastenkürzel für den Chat.</small></button>
-            <button class="cfg-tile" type="button" data-goto="system"><svg aria-hidden="true"><use href="#i-system" /></svg><strong>System</strong><small>Status der Kernmodule und Informationen zu CoreAI.</small></button>
-          </div>
-
         </section>
 
         <!-- ANZEIGE -->
@@ -558,7 +510,7 @@
             <section class="settings-panel cfg-card wide violet" aria-labelledby="aiPromptTitle" data-expert hidden>
               <header class="settings-panel-head">
                 <span class="settings-panel-glyph violet" aria-hidden="true">⌬</span>
-                <div><span>PERSÖNLICHKEIT</span><h3 id="aiPromptTitle">Eigener System-Prompt</h3></div>
+                <div><span>PERSÖNLICHKEIT</span><h3 id="aiPromptTitle">Eigener System-Prompt <span class="cfg-expert-tag">(Expert)</span></h3></div>
               </header>
               <label class="settings-field" for="aiSystemPrompt">
                 <span><small>Ergänzt Embers feste Kernidentität um deinen Stil und deine Arbeitsweise. Sicherheitsregeln und Werkzeuggrenzen bleiben serverseitig aktiv.</small></span>
@@ -575,11 +527,11 @@
               <div class="settings-tuning-grid">
 
                 <label class="settings-field" for="aiNumPredict" data-expert hidden>
-                  <span><strong>ANTWORTBUDGET</strong><small>Tokenbudget für Thinking plus Antwort. Gemma 4: 6500 empfohlen.</small></span>
+                  <span><strong>ANTWORTBUDGET <span class="cfg-expert-tag">(Expert)</span></strong><small>Tokenbudget für Thinking plus Antwort. Gemma 4: 6500 empfohlen.</small></span>
                   <input id="aiNumPredict" type="number" min="256" max="16384" step="128" value="6500" />
                 </label>
                 <label class="settings-field" for="aiTemperature" data-expert hidden>
-                  <span><strong>TEMPERATUR</strong><small>0,1 präziser, 1,5 freier. Standard: 1,0.</small></span>
+                  <span><strong>TEMPERATUR <span class="cfg-expert-tag">(Expert)</span></strong><small>0,1 präziser, 1,5 freier. Standard: 1,0.</small></span>
                   <input id="aiTemperature" type="number" min="0.1" max="1.5" step="0.05" value="1.0" />
                 </label>
                 <label class="settings-field" for="aiLanguage">
@@ -587,7 +539,7 @@
                   <select id="aiLanguage"><option value="de">DEUTSCH</option><option value="en">ENGLISH</option></select>
                 </label>
                 <label class="settings-field" for="aiProvider" data-expert hidden>
-                  <span><strong>CORE-PFAD</strong><small>CoreAI: TCI Interface ist für lokale Gemma-4-Cores ausgelegt.</small></span>
+                  <span><strong>CORE-PFAD <span class="cfg-expert-tag">(Expert)</span></strong><small>CoreAI: TCI Interface ist für lokale Gemma-4-Cores ausgelegt.</small></span>
                   <select id="aiProvider"><option value="local">LOKAL // OLLAMA + GEMMA 4</option><option value="external" disabled>EXTERNE API // VORBEREITET</option></select>
                 </label>
               </div>
@@ -598,7 +550,7 @@
                 <span aria-hidden="true">◇</span>
                 <p>Den Core wählst du im Chat über den Core-Chip. Denken an/aus und den Denkaufwand stellst du direkt daneben über DENKAUFWAND ein. Die Wahl gilt ab der nächsten Nachricht für alle deine Chats.</p>
               </div>
-              <div class="settings-local-note" id="externalProviderNote">
+              <div class="settings-local-note" id="externalProviderNote" data-expert hidden>
                 <span aria-hidden="true">◇</span>
                 <p>Externe OpenAI-kompatible APIs sind als optionaler Adapter vorbereitet, standardmäßig aber deaktiviert. Es gibt keine Kompatibilitätszusage außerhalb der Gemma-4-Reihe.</p>
               </div>
@@ -842,7 +794,7 @@
                 <span class="settings-switch"><input id="aiMemoryEnabled" type="checkbox" /><i aria-hidden="true"></i></span>
               </label>
                 <label class="settings-field" for="aiMemoryLimit" data-expert hidden>
-                  <span><strong>MEMORY-KONTEXT</strong><small>Maximale Zahl passender Fakten pro Antwort.</small></span>
+                  <span><strong>MEMORY-KONTEXT <span class="cfg-expert-tag">(Expert)</span></strong><small>Maximale Zahl passender Fakten pro Antwort.</small></span>
                   <input id="aiMemoryLimit" type="number" min="0" max="60" step="1" value="16" />
                 </label>
             <button class="settings-action" type="button" id="saveMemoryAiSettings" disabled>MEMORY-EINSTELLUNGEN SPEICHERN</button>
@@ -856,7 +808,7 @@
               </header>
               <div class="memory-editor">
                 <textarea id="memoryFact" rows="3" maxlength="8000" placeholder="Fakt, Präferenz oder Arbeitskontext, den Ember behalten darf..."></textarea>
-                <label data-expert hidden>RELEVANZ <input id="memoryRelevance" type="number" min="1" max="10" value="5" /></label>
+                <label data-expert hidden>RELEVANZ <span class="cfg-expert-tag">(Expert)</span> <input id="memoryRelevance" type="number" min="1" max="10" value="5" /></label>
                 <button class="settings-action" id="addMemory" type="button">FAKT SPEICHERN</button>
               </div>
             </section>
@@ -1415,7 +1367,7 @@
         </section>
 
         <!-- CATEGORY FOUNDATION: speicher (no fake settings) -->
-        <!-- 0.7.32: Speicher after the reference screenshots (js/coreui-storage-settings.js, api/files.php). -->
+        <!-- 0.7.28: Speicher after the reference screenshots (js/coreui-storage-settings.js, api/files.php). -->
         <section class="cfg-view" id="view-speicher" role="tabpanel" aria-labelledby="tab-speicher" tabindex="-1" hidden>
           <header class="cfg-view-head"><div><span class="cfg-kicker">PERSÖNLICH // SPEICHER</span><h2>Speicher</h2><p>Was deine CoreAI für dich aufbewahrt: deine Uploads, Maras Bilder und die Dateien, die Mara für dich erstellt hat.</p></div></header>
           <p class="sec-status" id="stStatus" role="status" aria-live="polite">Speicher wird geladen …</p>
@@ -1517,10 +1469,8 @@
             </div>
           </div>
         </section>
-          </div>
-        </section>
 
-        <!-- 0.7.32: Tastatur after the reference screenshots (js/coreui-shortcuts.js, js/coreui-keyboard-settings.js). -->
+        <!-- 0.7.29: Tastatur after the reference screenshots (js/coreui-shortcuts.js, js/coreui-keyboard-settings.js). -->
         <section class="cfg-view" id="view-tastatur" role="tabpanel" aria-labelledby="tab-tastatur" tabindex="-1" hidden>
           <header class="cfg-view-head"><div><span class="cfg-kicker">PERSÖNLICH // EINGABE</span><h2>Tastatur</h2><p>Um ein Tastenkürzel zu ändern, wähle die Tastenkombination aus und drücke dann die neuen Tasten.</p></div></header>
           <p class="sec-status" id="kbStatus" role="status" aria-live="polite"></p>
@@ -1529,7 +1479,7 @@
           <div class="kb-foot"><button class="arc-btn kb-reset" id="kbReset" type="button">Standardeinstellungen wiederherstellen</button></div>
         </section>
 
-        <!-- 0.7.32: Nutzung after the reference screenshots (js/coreui-usage-settings.js, api/usage.php). -->
+        <!-- 0.7.30: Nutzung after the reference screenshots (js/coreui-usage-settings.js, api/usage.php). -->
         <section class="cfg-view" id="view-nutzung" role="tabpanel" aria-labelledby="tab-nutzung" tabindex="-1" hidden>
           <header class="cfg-view-head"><div><span class="cfg-kicker">PERSÖNLICH // NUTZUNG</span><h2>Nutzung</h2><p>Was dein Plan erlaubt und wie du CoreAI nutzt. Nur deine eigenen Zahlen, nie Inhalte deiner Chats.</p></div></header>
           <p class="sec-status" id="nuStatus" role="status" aria-live="polite">Nutzung wird geladen …</p>
@@ -1752,9 +1702,6 @@
           </div>
         </section>
 
-          </div>
-        </section>
-
         <!-- CATEGORY FOUNDATION: code-review (no fake settings) -->
         <section class="cfg-view cfg-view-planned" id="view-code-review" role="tabpanel" aria-labelledby="tab-code-review" tabindex="-1" hidden>
           <header class="cfg-view-head"><div><span class="cfg-kicker">PROGRAMMIERUNG // AUSBAUPLAN</span><h2>Code Review</h2><p>Code-Änderungen und Pull Requests strukturiert prüfen.</p></div></header>
@@ -1816,7 +1763,7 @@
   <script src="./js/coreui-settings-tabs.js?v=0131180580469642779294886"></script>
   <script src="./js/coreui-context-slider.js?v=1058131433773441189843644"></script>
   <script src="./js/coreui-shortcuts.js?v=0482832987385640130925630"></script>
-  <script src="./js/settings.js?v=0305340797161304177222587"></script>
+  <script src="./js/settings.js?v=0060270769777558050187290"></script>
   <script src="./js/coreui-personalization-settings.js?v=0244791164211857764278165"></script>
   <script src="./js/coreui-pets.js?v=0221326546368683531249868"></script>
   <script src="./js/coreui-pets-settings.js?v=0189374306291011128432570"></script>

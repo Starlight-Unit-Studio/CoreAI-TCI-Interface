@@ -1,0 +1,148 @@
+/* CoreAI 0.7.33: the CoreAI theme over every settings page and Admin Core.
+   The pages built after the reference screenshots used rounded pills, chips and sheets. This file gives
+   them the CoreAI HUD geometry the rest of the interface already uses (css/coreui-project-theme.css):
+   no rounding, cut corners, the thin blue edge, "Share Tech Mono" capitals on buttons, tabs and badges.
+   Real circles stay round (colour swatches, radio dots, status dots, photos). Only the default skin:
+   SoftGlass (html[data-coreui-skin="softglass"]) keeps its own rounded look. Colours come from the
+   existing light/dark variables, so both modes follow. */
+
+/* --- Shared values --------------------------------------------------------------------------------------- */
+html:not([data-coreui-skin="softglass"]) .settings-body {
+  --coreai-cut-btn: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+  --coreai-cut-icon: polygon(0 0, 76% 0, 100% 24%, 100% 100%, 24% 100%, 0 76%);
+  --coreai-cut-box: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
+  --coreai-btn-bg: rgba(255, 255, 255, 0.72);
+  --coreai-btn-edge: rgba(91, 146, 255, 0.28);
+  --coreai-btn-text: var(--cx);
+  --coreai-mono: "Share Tech Mono", monospace;
+}
+html[data-coreui-theme="dark"]:not([data-coreui-skin="softglass"]) .settings-body {
+  --coreai-btn-bg: rgba(26, 42, 67, 0.94);
+  --coreai-btn-edge: var(--line);
+  --coreai-btn-text: var(--txt);
+}
+
+/* --- No rounding on controls and surfaces --------------------------------------------------------------- */
+html:not([data-coreui-skin="softglass"]) .settings-body :is(
+  .cfg-nav, .cfg-search-field, .cfg-expert-toggle, .cfg-tab, .cfg-menu-open, .cfg-menu-close, .cfg-admin-auth-gate,
+  .cfg-general-card, .cfg-general-control select, .cfg-header-expert, .cfg-admin-shortcut,
+  .pz-textarea, .pz-field input, .pz-field textarea, .pz-field select, .pz-info, .pz-ref-thumb, .pz-sheet, .pz-icon,
+  .pz-ask, .pz-ask-send, .pz-wide,
+  .pet-file, .pet-file-btn, .pet-preview, .pet-own-tag,
+  .img-open, .img-missing, .img-host,
+  .tts-run-pick select, .tts-empty, .tts-empty code, .tts-voice, .tts-badge, .tts-metric, .tts-play,
+  .appearance-form-row select, .appearance-number input, .appearance-segment, .appearance-segment span,
+  .appearance-icon-btn, .appearance-import, .appearance-import textarea, .appearance-hex:focus-visible,
+  .notify-device, .notify-select,
+  .po-stats, .po-highlight-stack span, .po-made-item a, .po-made-item img, .po-tool, .po-icon,
+  .sec-item, .sec-qr, .sec-qr svg, .sec-confirm-box,
+  .acct-edit, .acct-close, .acct-note, .acct-plan-badge,
+  .arc-search, .arc-select, .arc-menu, .arc-option, .arc-option em, .arc-btn,
+  .vs-list, .vs-play, .vs-rec,
+  .st-bar, .st-bar i, .st-search, .st-add, .st-tab, .st-chip, .st-crumb, .st-icon, .st-thumb, .st-more-btn, .st-item,
+  .kb-keys, .kb-planned,
+  .nu-seg, .nu-seg button, .nu-bar, .nu-bar i, .nu-features li, .nu-tip, .nu-step,
+  .dc-typed input
+) {
+  border-radius: 0 !important;
+}
+
+/* --- Boxes: two cut corners, like the cards and the chat dialogs ---------------------------------------- */
+html:not([data-coreui-skin="softglass"]) .settings-body :is(
+  .cfg-nav, .cfg-admin-auth-gate, .sec-confirm-box, .pz-sheet, .pz-info, .arc-menu, .nu-tip, .po-stats, .po-tool, .vs-list, .sec-item
+) {
+  clip-path: var(--coreai-cut-box);
+}
+
+/* --- Text buttons: the native .settings-action look --------------------------------------------------------- */
+html:not([data-coreui-skin="softglass"]) .settings-body :is(.arc-btn, .dc-btn, .pz-wide, .pet-file-btn, .acct-edit, .tts-play) {
+  border: 1px solid var(--coreai-btn-edge);
+  background: var(--coreai-btn-bg);
+  color: var(--coreai-btn-text);
+  font-family: var(--coreai-mono);
+  font-size: 12.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  clip-path: var(--coreai-cut-btn);
+}
+html:not([data-coreui-skin="softglass"]) .settings-body :is(.arc-btn, .dc-btn, .pz-wide, .pet-file-btn, .acct-edit, .tts-play):hover:not(:disabled) {
+  border-color: var(--line-strong);
+  background: var(--panel-cx);
+}
+html:not([data-coreui-skin="softglass"]) .settings-body .arc-btn.pz-primary {
+  border-color: var(--cx);
+  background: var(--cx);
+  color: #ffffff;
+}
+html:not([data-coreui-skin="softglass"]) .settings-body .dc-btn.dc-danger {
+  border-color: rgba(212, 80, 93, 0.36);
+  color: var(--red);
+}
+
+/* Dropdowns that look like buttons ("Standard ⌄", "Alle Cores ⌄"). */
+html:not([data-coreui-skin="softglass"]) .settings-body :is(.arc-select, .notify-select) {
+  border: 1px solid var(--coreai-btn-edge);
+  background: var(--coreai-btn-bg);
+  clip-path: var(--coreai-cut-btn);
+}
+
+/* Small square buttons with an icon: the cut of the drawer icons. */
+html:not([data-coreui-skin="softglass"]) .settings-body :is(.st-add, .st-icon, .pz-icon, .vs-play, .po-icon, .acct-close, .cfg-menu-close, .nu-step, .appearance-icon-btn) {
+  clip-path: var(--coreai-cut-icon);
+}
+
+/* Header controls, the KATEGORIEN button on small screens and the key combinations. */
+html:not([data-coreui-skin="softglass"]) .settings-body :is(.cfg-header-expert, .cfg-admin-shortcut, .cfg-expert-toggle, .cfg-menu-open, .kb-keys, .st-crumb) {
+  clip-path: var(--coreai-cut-btn);
+}
+
+/* --- Tabs and segments: capitals, the active one underlined in the accent ---------------------------------- */
+html:not([data-coreui-skin="softglass"]) .settings-body :is(.st-tabs, .nu-seg) {
+  gap: 2px;
+  border-bottom: 1px solid var(--line);
+}
+html:not([data-coreui-skin="softglass"]) .settings-body .nu-seg { padding: 0; border: 1px solid var(--line); }
+html:not([data-coreui-skin="softglass"]) .settings-body :is(.st-tab, .nu-seg button) {
+  font-family: var(--coreai-mono);
+  font-size: 12.5px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+html:not([data-coreui-skin="softglass"]) .settings-body :is(.st-tab[aria-selected="true"], .nu-seg button[aria-pressed="true"]) {
+  background: var(--panel-cx);
+  color: var(--cx);
+  box-shadow: inset 0 -2px 0 var(--cx);
+}
+
+/* --- Badges: like "IN VORBEREITUNG" on the planned pages ----------------------------------------------------- */
+html:not([data-coreui-skin="softglass"]) .settings-body :is(.kb-planned, .acct-plan-badge, .pet-own-tag, .arc-option em, .tts-badge) {
+  font-family: var(--coreai-mono);
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+html:not([data-coreui-skin="softglass"]) .settings-body .nu-features li {
+  border-left: 2px solid var(--cx);
+}
+html:not([data-coreui-skin="softglass"]) .settings-body .nu-features li.is-off { border-left-color: var(--amb); }
+
+/* --- Bars: square, with the fine HUD segments ---------------------------------------------------------------- */
+html:not([data-coreui-skin="softglass"]) .settings-body :is(.st-bar i, .nu-bar i) {
+  background-image: repeating-linear-gradient(90deg, transparent 0 10px, rgba(255, 255, 255, 0.22) 10px 11px);
+}
+
+/* --- Navigation: the active category gets the accent edge instead of a rounded pill ------------------------- */
+html:not([data-coreui-skin="softglass"]) .settings-body .cfg-tab[aria-selected="true"] {
+  box-shadow: inset 3px 0 0 var(--cx);
+}
+
+/* --- Focus: clipped elements cannot show an outline outside their box, so it goes inside ------------------- */
+html:not([data-coreui-skin="softglass"]) .settings-body :is(
+  .arc-btn, .dc-btn, .pz-wide, .pet-file-btn, .acct-edit, .tts-play, .arc-select, .notify-select, .st-add, .st-icon, .pz-icon,
+  .vs-play, .po-icon, .acct-close, .cfg-menu-open, .cfg-menu-close, .nu-step, .appearance-icon-btn, .cfg-header-expert,
+  .cfg-admin-shortcut, .cfg-expert-toggle, .kb-keys, .st-crumb
+):focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--cx);
+}

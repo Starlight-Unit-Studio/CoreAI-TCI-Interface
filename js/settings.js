@@ -116,20 +116,6 @@
   var loginSessionList = document.getElementById('loginSessionList');
   var revokeOtherSessionsButton = document.getElementById('revokeOtherSessions');
   var exportAccountDataButton = document.getElementById('exportAccountData');
-  // 0.5.79: the start view sums up the categories.
-  var start = {
-    name: document.getElementById('startName'),
-    mail: document.getElementById('startMail'),
-    role: document.getElementById('startRole'),
-    avatar: document.getElementById('startAvatar'),
-    core: document.getElementById('startCore'),
-    thinking: document.getElementById('startThinking'),
-    health: document.getElementById('startHealth'),
-    version: document.getElementById('startVersion'),
-    knowledge: document.getElementById('startKnowledge'),
-    knowledgeChunks: document.getElementById('startKnowledgeChunks'),
-    memory: document.getElementById('startMemory')
-  };
   var saveTimer = 0;
   var csrfToken = '';
   var promptMax = 6000;
@@ -280,15 +266,6 @@
     saveTimer = setTimeout(function () { saveState.classList.remove('visible'); }, 2600);
   }
 
-  function startText(key, text) {
-    if (start[key]) start[key].textContent = text;
-  }
-
-  function count(value, one, many) {
-    var n = Number(value) || 0;
-    return n + ' ' + (n === 1 ? one : many);
-  }
-
   function saveLocal() {
     if (!preferences) return;
     var stored = preferences.save(collect());
@@ -344,9 +321,6 @@
         if (healthVersion) healthVersion.textContent = data.version || 'UNBEKANNT';
         if (healthModel) healthModel.textContent = data.model || 'NICHT GEMELDET';
         renderChecks(data.checks || {});
-        startText('health', data.ok ? 'Alles bereit' : 'Mit Abweichungen');
-        if (start.health) start.health.setAttribute('data-state', data.ok ? 'ok' : 'error');
-        startText('version', 'Version ' + (data.version || 'unbekannt'));
       })
       .catch(function () {
         if (healthSummary) {
@@ -354,8 +328,6 @@
           healthSummary.textContent = 'HEALTH-ENDPUNKT NICHT ERREICHBAR';
         }
         renderChecks({});
-        startText('health', 'Nicht erreichbar');
-        if (start.health) start.health.setAttribute('data-state', 'error');
       })
       .finally(function () { if (refreshButton) refreshButton.disabled = false; });
   }
@@ -394,10 +366,6 @@
           location.replace('./admin/index.html#' + encodeURIComponent(oldAdmin));
           return;
         }
-        startText('role', role);
-        startText('mail', data.username || '');
-        startText('name', data.display_name || data.username || 'Operator');
-        setAvatarPreview(start.avatar, data.avatars && data.avatars.user, data.display_name || data.username || 'OP');
       })
       .catch(function () {
         if (accountMail) accountMail.textContent = 'STATUS NICHT ERREICHBAR';
@@ -434,8 +402,6 @@
     setAvatarPreview(userAvatarPreview, avatars.user, profile.display_name || 'Operator');
     setAvatarPreview(assistantAvatarPreview, avatars.assistant, profile.assistant_name || 'Mara');
     setAvatarPreview(accountAvatar, avatars.user, profile.display_name || 'Operator');
-    setAvatarPreview(start.avatar, avatars.user, profile.display_name || 'Operator');
-    if (profile.display_name) startText('name', profile.display_name);
     if (accountDisplayName) accountDisplayName.textContent = (profile.display_name || 'ANGEMELDETER OPERATOR').toUpperCase();
     // 0.6.84: the profile overview head follows a saved name or picture (js/coreui-profile-stats.js).
     try { document.dispatchEvent(new CustomEvent('coreai:profile', {detail: profile})); } catch (e) { /* old browser */ }
@@ -645,10 +611,6 @@
       }
       // 0.5.79: the Core is chosen in the chat menu; the window estimate follows it.
       selectedModelOverride = s.model_override || '';
-      startText('core', String(data.core_label || data.default_label || selectedModelOverride || defaultModel || 'Core')
-        .replace(/^TCI(?::\s*|\s+)/, ''));
-      startText('thinking', 'Denken ' + (s.thinking_enabled === false ? 'aus' : 'an')
-        + (selectedModelOverride ? '' : ' · Standard-Core'));
       var externalConfigured = data.external && data.external.configured === true;
       if (aiProvider) {
         var externalOption = aiProvider.querySelector('option[value="external"]');
@@ -911,7 +873,6 @@
   }
 
   function renderMemories(items) {
-    startText('memory', count((items || []).length, 'Fakt', 'Fakten'));
     if (!memoryList) return;
     memoryList.innerHTML = '';
     if (!items || !items.length) {
@@ -997,8 +958,6 @@
     if (knowledgeSourceCount) knowledgeSourceCount.textContent = String(totals.sources || 0);
     if (knowledgeChunkCount) knowledgeChunkCount.textContent = String(totals.chunks || 0);
     if (knowledgeGlobalCount) knowledgeGlobalCount.textContent = String(totals.global_chunks || 0) + ' CHUNKS';
-    startText('knowledge', count(totals.sources, 'Quelle', 'Quellen'));
-    startText('knowledgeChunks', count(totals.chunks, 'Abschnitt', 'Abschnitte'));
     if (!knowledgeList) return;
     knowledgeList.innerHTML = '';
     var sources = data.sources || [];
