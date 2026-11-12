@@ -43,7 +43,12 @@ TESTS (in dieser Sitzung ausgefuehrt)
 - Angepasste Wortlaut-Tests: send-shortcut-selftest.cjs, settings-navigation-foundation-selftest.cjs,
   settings-tabs-ui-selftest.cjs (Sendetaste per Aufnahme), sidebar-sections-ui-selftest.cjs (0.7.29).
 - terran-terminology-selftest.cjs und tci-language-selftest.cjs gruen.
-- Gesamte Selbsttest-Reihe auf dem Branch und auf main 0.7.28: laeuft noch, Ergebnis wird nachgetragen.
+- Gesamte Selbsttest-Reihe (scripts/*selftest*, tests/) auf dem Branch und auf main 0.7.28: dieselben
+  11 Tests scheitern auf beiden Staenden schon vorher (browse-live, chat-menu, composer-menu, core-install,
+  long-chat, model-library, pets, security, session-list, settings-tabs, update; nicht Teil dieser Version).
+  settings-tabs scheitert auf beiden an derselben Stelle ("denied without any admin API request").
+  voice-input-selftest.php schlug im parallelen Lauf beider Reihen auf beiden Staenden fehl ("no temporary
+  files left") und besteht einzeln auf beiden. Alle uebrigen Tests bestehen, dazu der neue Tastatur-Test.
 
 NACH DEM UPDATE
 - Keine Migration. Einstellungen > Tastatur oeffnen; im Chat Strg+/ zeigt die Liste.
