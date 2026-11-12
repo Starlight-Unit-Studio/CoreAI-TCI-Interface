@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.7.34 - 12.11.2026
+
+- **Projektmenüs:** Die Drei-Punkte-Buttons neben Projektordnern und in der Projektstartseite verwenden dieselbe echte Aktionsliste und dieselbe Floating-Menü-Implementierung.
+- **Mobil:** Das Menü wird innerhalb des sichtbaren Viewports positioniert und bei einem Scroll-Ereignis nachgeführt, statt unmittelbar zu verschwinden.
+- **Robustheit:** Gewöhnliche Aktualisierungen der Projektliste schließen das Menü der Projektstartseite nicht mehr; ein verlassenes oder außerhalb des Bildschirms liegendes Menü wird weiterhin sicher geschlossen.
+- **Regression:** Der Projekt-UI-Test prüft nun beide Drei-Punkte-Auslöser, das Projektstartseiten-Ziel und die mobile Menüsteuerung.
+- **Design:** Das vorhandene CoreAI Holo und das optionale SoftGlass UI bleiben unverändert.
+
+
 ## 0.7.33 - 12.11.2026
 
 - **CoreAI theme over every settings page and Admin Core:** The pages built after the reference screenshots get the CoreAI look the rest of the interface already uses: no rounded pills, cut corners on boxes, buttons and icon buttons, the thin blue edge, monospace capitals on buttons, tabs and badges, the active tab underlined in the accent, segmented bars. Light and dark follow the existing colour variables. New file `css/coreui-settings-theme.css`, loaded after `css/coreui-theme.css`. The SoftGlass skin keeps its own rounded look; real circles (colour marks, status dots, photos) stay round.
