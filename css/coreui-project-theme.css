@@ -266,3 +266,9 @@ body.project-home-active .drawer .project-nav-row:hover,
 body.project-home-active .drawer .project-nav-row.active {
   background:var(--panel-cx)!important;
 }
+
+body.project-home-active .drawer .drawer-footer {
+  background:var(--panel)!important;
+  border-top:1px solid var(--line)!important;
+}
+body.project-home-active .drawer .drawer-copyright {color:var(--muted-soft)!important;}
