@@ -201,20 +201,12 @@ html[data-coreui-theme="dark"] .settings-body {
 html[data-coreui-theme="dark"] .settings-header,
 html[data-coreui-theme="dark"] .cfg-nav,
 html[data-coreui-theme="dark"] .settings-panel,
-html[data-coreui-theme="dark"] .cfg-tile,
-html[data-coreui-theme="dark"] .cfg-stat,
 html[data-coreui-theme="dark"] .stat-grid article,
-html[data-coreui-theme="dark"] .cfg-hero,
 html[data-coreui-theme="dark"] .user-edit-section {
   color: var(--txt);
   background: linear-gradient(145deg, rgba(29, 43, 66, .98), rgba(18, 30, 51, .96));
   border-color: var(--line);
   box-shadow: var(--shadow-soft);
-}
-html[data-coreui-theme="dark"] .cfg-tile:hover,
-html[data-coreui-theme="dark"] .cfg-stat:hover {
-  background: #263b5b;
-  border-color: var(--cx);
 }
 html[data-coreui-theme="dark"] .cfg-tab[aria-selected="true"] {
   color: var(--txt);

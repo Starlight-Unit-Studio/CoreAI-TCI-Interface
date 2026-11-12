@@ -1,0 +1,61 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.33
+Date: 12.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Base version: 0.7.32
+
+AUFTRAG
+1. Das CoreAI-Theme kommt am Ende ueber alle Einstellungen (Betreiber: "ja machen wir das").
+2. "und die seite allgemein direkt mit Aufraeumen und weg mit dopplungen".
+3. Experten-Einstellungen hinter dem Titel mit "(Expert)" versehen, mit dem Expertenmodus-Schalter verbinden;
+   ohne Expertenmodus unsichtbar, die Einstellung darunter nimmt den Platz ein.
+
+UMSETZUNG
+- css/coreui-settings-theme.css (neu, nach css/coreui-theme.css in settings.html und admin/index.html):
+  keine Rundungen, Schnittecken fuer Kaesten (Navigation, Dialoge, Menues, Blaetter, Tipps), Knoepfe und
+  Symbolknoepfe; Textknoepfe im Stil von .settings-action (Share Tech Mono, Grossbuchstaben, duenne blaue
+  Kante); Tabs und Segmente in Grossbuchstaben, der aktive mit Akzent-Unterstrich; Abzeichen wie
+  IN VORBEREITUNG; Balken mit feinen HUD-Segmenten; Fokus innen, weil Schnittecken einen Rahmen aussen
+  abschneiden. Hell und Dunkel ueber die vorhandenen Variablen (--cx, --line, --panel-cx, --txt).
+- Jede Regel beginnt mit html:not([data-coreui-skin="softglass"]) .settings-body: SoftGlass bleibt rund.
+  Echte Kreise (Farbmarken, Statuspunkte, Fotos) bleiben rund.
+- Allgemein: nur noch Sprache, Hoehere Intelligenz und Denkaufwand. Entfernt, weil doppelt:
+  "DEIN COREAI IM UEBERBLICK" (Name, E-Mail, Rolle: Profil/Konto; "ZUM CORE CHANNEL": Kopfzeile),
+  Kennzahlen Core/System/Wissen/Memory (KI-Profil, System, Wissen, Memory) und "DIREKT ZU EINSTELLUNGEN"
+  mit 11 Kacheln (Navigation). js/settings.js fuellt die Felder nicht mehr (start-Objekt, startText,
+  count entfernt); Stile in css/settings.css, css/coreui-theme.css, css/coreui-softglass.css und die
+  drei englischen Uebersetzungen entfernt.
+- Expert-Einstellungen: Der Schalter EXPERTENMODUS blendete schon seit 0.6.71 alles mit data-expert aus
+  (js/coreui-settings-menu.js). Neu: "(Expert)" hinter dem Titel (span.cfg-expert-tag, Share Tech Mono, Amber,
+  nie in Grossbuchstaben umgewandelt) bei Eigener System-Prompt, ANTWORTBUDGET, TEMPERATUR, CORE-PFAD,
+  MEMORY-KONTEXT und RELEVANZ. Der Hinweis zu externen APIs (externalProviderNote) verschwindet mit dem
+  Core-Pfad. Ausgeblendet gilt [hidden] { display: none !important } aus css/console.css: die naechste
+  Einstellung rueckt nach; die letzte sichtbare Zeile einer Karte verliert ihre Trennlinie (:has in
+  css/settings.css). Die Auswahl der Expert-Einstellungen bleibt wie festgelegt (settings-navigation-
+  foundation-selftest): nur technische Rohwerte. Kontextfenster-Slider, Kerntelemetrie und
+  Live-Browser-Bildfolge bleiben normale Einstellungen. Neue Expert-Einstellungen bekommen data-expert
+  hidden und das Kennzeichen; der Strukturtest zaehlt beides.
+- Seitenaufbau repariert: Zwei verwaiste Schliess-Tags (nach view-pets seit dem Pets-Umbau 0.7.1 und nach
+  view-cloud-computer) schlossen main#cfgMain zu frueh. Auf breiten Bildschirmen standen Tastatur, Nutzung,
+  Datenkontrollen, Teams, Plugins, Passwoerter, Cloud-Computer und Code Review deshalb unter der
+  Navigation statt daneben. Jetzt liegen alle 24 Seiten in der Hauptspalte (HTML ohne offene Tags).
+- Kommentare ueber Speicher, Tastatur und Nutzung in settings.html tragen wieder ihre echten Versionen
+  (0.7.28, 0.7.29, 0.7.30); fruehere Versionsspruenge hatten sie mitgezogen. Beim naechsten Sprung nur
+  die Versionszeilen aendern, nie Kommentare.
+
+TESTS (in dieser Sitzung ausgefuehrt)
+- scripts/settings-theme-ui-selftest.cjs (neu, Playwright, beide Preflights): Ladereihenfolge, jede Seite
+  in der Hauptspalte und neben der Navigation, Allgemein ohne Dopplungen, CoreAI-Geometrie hell und
+  dunkel, SoftGlass unberuehrt, Kreise rund, Expert-Kennzeichen, Ausblenden ohne Luecke (KI-Profil: Sprache
+  rueckt nach oben; Memory: Speichern-Knopf direkt unter dem Fakt), Trennlinie, Telefon ohne
+  Seitwaertsscrollen. Gegenprobe: mit den verwaisten Tags, ohne die Theme-Datei und ohne die
+  Trennlinien-Regel schlaegt er an.
+- settings-navigation-foundation-selftest.cjs: 7 Expert-Knoten, davon 6 Einstellungen mit "(Expert)".
+- settings-tabs-ui-selftest.cjs und appearance-ui-selftest.cjs warten auf #healthSummary statt auf die
+  entfernte Uebersicht; settings-tabs prueft, dass Allgemein nur die drei Einstellungen hat und die Zahlen
+  auf Wissen und System stehen.
+- Gesamte Selbsttest-Reihe: wird nach dem Lauf eingetragen.
+
+NACH DEM UPDATE
+- Keine Migration. Einstellungen oeffnen; Browser-Cache wird ueber die ?v=-Parameter erneuert.
+
+Version: 0.7.33

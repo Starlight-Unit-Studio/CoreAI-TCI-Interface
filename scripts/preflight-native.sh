@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.32: Settings > Datenkontrollen (archive or delete all chats, export, archived chats).
+# CoreAI: TCI Interface 0.7.33: CoreAI theme over every settings page, Allgemein without duplicates, settings markup repaired.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -173,6 +173,8 @@ UI_FILES=(
   js/coreui-data-controls.js
   scripts/data-controls-selftest.php
   scripts/data-controls-ui-selftest.cjs
+  css/coreui-settings-theme.css
+  scripts/settings-theme-ui-selftest.cjs
   scripts/terran-terminology-selftest.cjs
   scripts/tci-language-selftest.cjs
   css/coreui-chat-tci-layout.css
@@ -1455,6 +1457,17 @@ if command -v php >/dev/null 2>&1; then
       fi
     else
       ok 'Datenkontrollen: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+    fi
+    # 0.7.33: the CoreAI theme over every settings page, every page in the main column, Allgemein without
+    # duplicates, SoftGlass untouched; needs Playwright for Node.
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/settings-theme-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'Einstellungen: CoreAI-Theme und Seitenaufbau im Browser geprueft.'
+      else
+        fail 'Einstellungen: Theme-Oberflaechentest fehlgeschlagen.'
+      fi
+    else
+      ok 'Einstellungen: Theme-Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
     fi
     # 0.7.1: Settings > Pets and the pet in Mara's work line; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then

@@ -1,0 +1,14 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.33
+Date: 12.11.2026
+Base version: 0.7.32
+
+- CoreAI theme over every settings page and Admin Core: new css/coreui-settings-theme.css after css/coreui-theme.css. No rounding, cut corners on boxes (navigation, dialogs, menus, sheets), buttons and icon buttons, the native settings button look with monospace capitals, tabs and segments in capitals with the active one underlined, badges like IN VORBEREITUNG, segmented bars. Light and dark through the existing variables.
+- Every rule is scoped to html:not([data-coreui-skin="softglass"]) .settings-body: SoftGlass keeps its rounded look. Real circles stay round.
+- Settings > Allgemein without duplicates: only Sprache, Hoehere Intelligenz and Denkaufwand remain. Removed: "DEIN COREAI IM UEBERBLICK" (name, e-mail, role, link to the Core Channel), the key figures Core, System, Wissen, Memory and "DIREKT ZU EINSTELLUNGEN" with 11 tiles. All of it repeated the navigation or the pages Profil, KI-Profil, System, Wissen and Memory. js/settings.js no longer fills the removed fields; their styles (settings.css, coreui-theme.css, coreui-softglass.css) and English translations are gone.
+- Expert settings marked: "(Expert)" after the title (span.cfg-expert-tag) for Eigener System-Prompt, ANTWORTBUDGET, TEMPERATUR, CORE-PFAD (KI-Profil), MEMORY-KONTEXT and RELEVANZ (Memory). Without Expert mode they are hidden ([hidden] is display: none) and the next setting moves up; the last visible row of a card has no separator line. The note about external APIs (externalProviderNote) is Expert-only with the Core path. Same set of Expert settings as before; context slider, telemetry and live-browser switches stay ordinary.
+- Layout fix: two stray closing tags (after view-pets and after view-cloud-computer) closed main#cfgMain early; Tastatur, Nutzung, Datenkontrollen, Teams, Plugins, Passwoerter, Cloud-Computer and Code Review were placed below the navigation on wide screens. All 24 pages are in the main column again.
+- Comments over Speicher, Tastatur and Nutzung in settings.html carry their real versions (0.7.28, 0.7.29, 0.7.30) again; earlier version bumps had changed them.
+- Tests: new scripts/settings-theme-ui-selftest.cjs in both preflights (also Expert marks, hiding without a gap, separator); settings-navigation-foundation-selftest.cjs counts 7 Expert nodes, 6 of them tagged; settings-tabs-ui-selftest.cjs and appearance-ui-selftest.cjs wait for the System status (#healthSummary) and check that the figures live on their own pages.
+- A self-hosted installation must be updated separately; GitHub merge alone is not deployment.
+
+Version: 0.7.33
