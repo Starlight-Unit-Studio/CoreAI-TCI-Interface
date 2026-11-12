@@ -29,7 +29,13 @@ TESTS (in dieser Sitzung ausgefuehrt)
   bleiben, einer davon zurueck aktiv, gesperrt und fremdes Konto bleiben). Eigene Testkonten, danach entfernt.
 - scripts/data-controls-ui-selftest.cjs (Playwright): Zeilen, Export, Archivierte Chats, Archivieren mit
   Abbrechen und Bestaetigen, Loeschen mit Wort, Esc, Ergebnis, Serverfehler, nichts zu tun, Telefon.
-- Gesamte Selbsttest-Reihe auf dem Branch und auf main 0.7.31: laeuft noch, Ergebnis wird nachgetragen.
+- Gesamte Selbsttest-Reihe (scripts/*selftest*, model-live-audit, tests/*) nacheinander gegen MariaDB:
+  Branch 153 bestanden, 12 fehlgeschlagen; main 0.7.31 152 bestanden, 11 fehlgeschlagen. Die 11
+  Fehlschlaege sind auf beiden Staenden dieselben und schon auf main vorhanden (browse-live, chat-menu,
+  composer-menu, core-install, long-chat, model-library, pets, security, session-list, settings-tabs,
+  update). Der zwoelfte, storage-ui-selftest, lief in der Reihe parallel zu Bildschirmfotos fuer die
+  naechste Version und fiel dabei einmal aus; einzeln danach viermal hintereinander bestanden. Er ist
+  von dieser Version nicht beruehrt (keine Aenderung an Speicher-Dateien).
 
 NACH DEM UPDATE
 - Keine Migration. Einstellungen > Datenkontrollen oeffnen.
