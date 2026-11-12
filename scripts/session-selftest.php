@@ -84,7 +84,18 @@ session_test_expect(
 session_test_expect(str_contains($client, 'sessionArchiveToggle'), 'Archivansicht fehlt im Client.');
 session_test_expect(str_contains($client, "action: 'restore'"), 'Wiederherstellung archivierter Sitzungen fehlt.');
 session_test_expect(str_contains($client, "action: 'delete_permanently'"), 'Endgueltige Loeschaktion fehlt im Client.');
-session_test_expect(str_contains($client, "permanentlyDelete.textContent = 'ENDGÜLTIG LÖSCHEN'"), 'Loeschschaltflaeche fehlt in der Archivansicht.');
+// 0.7.25: Both active and archived chats have a delete action. Active chats
+// use the existing archive-first server pathway, archived chats delete directly.
+session_test_expect(
+  str_contains($client, "permanentlyDelete.textContent = s.archived ? 'ENDGÜLTIG LÖSCHEN' : 'LÖSCHEN'")
+    && str_contains($client, 'actions.appendChild(permanentlyDelete)'),
+  'Loeschschaltflaeche fuer aktive oder archivierte Chats fehlt im Client.'
+);
+session_test_expect(
+  str_contains($client, 'dbDeleteSession(s.id, !s.archived)')
+    && str_contains($client, 'archive_first: archiveFirst === true'),
+  'Aktive Chats verwenden die sichere Archivieren-vor-Loeschen-Logik nicht.'
+);
 session_test_expect(str_contains($client, "proof !== 'LÖSCHEN' && proof !== 'LOESCHEN'"), 'Zweite Loeschbestaetigung fehlt im Client.');
 session_test_expect(str_contains($worker, 'trigger_message_id'), 'Browse-Worker verliert die Turn-Referenz.');
 session_test_expect(str_contains($worker, 'session_id=session_id'), 'Browse-Worker verliert die Sitzungs-ID.');
