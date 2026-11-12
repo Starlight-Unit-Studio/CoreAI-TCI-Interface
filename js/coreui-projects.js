@@ -7,6 +7,60 @@
   var projects = [], sessions = [], lockedChats = [], lockedExpanded = false, current = null, tab = 'chats', sources = [];
   var csrf = '', busy = false;
   var api = './api';
+  var modalProjectId = '';
+  var composer = document.querySelector('.app-shell > .composer');
+  var composerMarker = document.createComment('Original CoreAI composer position');
+  if (composer && composer.parentNode) composer.parentNode.insertBefore(composerMarker, composer);
+  function mountComposer() {
+    var slot = $('projectComposerSlot');
+    if (slot && composer) slot.appendChild(composer);
+  }
+  function restoreComposer() {
+    if (composer && composerMarker.parentNode) composerMarker.parentNode.insertBefore(composer, composerMarker.nextSibling);
+  }
+  var floatingMenu = null, floatingAnchor = null;
+  function dismissFloatingMenu() {
+    if (floatingAnchor) floatingAnchor.setAttribute('aria-expanded','false');
+    if (floatingMenu) floatingMenu.hidden = true;
+    floatingAnchor = null;
+  }
+  function placeFloatingMenu(menu,trigger) {
+    var bounds = trigger.getBoundingClientRect();
+    var w = menu.offsetWidth || 240, h = menu.offsetHeight || 250;
+    var left = Math.max(8, Math.min(window.innerWidth - w - 8, bounds.right - w));
+    var below = bounds.bottom + 6;
+    var top = below + h < window.innerHeight - 8 ? below : Math.max(8, bounds.top - h - 6);
+    menu.style.left = left + 'px'; menu.style.top = top + 'px';
+    menu.style.maxHeight = Math.max(120, window.innerHeight - 16) + 'px';
+  }
+  function showFloatingMenu(trigger,kind,actions) {
+    if (floatingMenu && !floatingMenu.hidden && floatingAnchor === trigger) {dismissFloatingMenu();return;}
+    dismissFloatingMenu();
+    if (!floatingMenu) {
+      floatingMenu = el('div','project-floating-menu');
+      floatingMenu.id='projectFloatingMenu';
+      floatingMenu.setAttribute('role','menu');
+      document.body.appendChild(floatingMenu);
+    }
+    floatingMenu.className='project-floating-menu '+(kind==='chat'?'project-chat-menu':'project-folder-menu');
+    floatingMenu.replaceChildren();
+    actions.forEach(function(item){
+      var control=action(item.label,function(event){event.stopPropagation();dismissFloatingMenu();item.run();},item.danger?'danger':'');
+      control.setAttribute('role','menuitem');
+      floatingMenu.appendChild(control);
+    });
+    floatingMenu.hidden=false;
+    floatingAnchor=trigger;
+    trigger.setAttribute('aria-expanded','true');
+    placeFloatingMenu(floatingMenu,trigger);
+  }
+  document.addEventListener('click',function(e) {
+    if (floatingMenu && !floatingMenu.hidden &&
+        !floatingMenu.contains(e.target) && e.target !== floatingAnchor) dismissFloatingMenu();
+  });
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')dismissFloatingMenu();});
+  window.addEventListener('resize',dismissFloatingMenu);
+  document.addEventListener('scroll',dismissFloatingMenu,true);
   // Sidebar folding is a local UI preference, never server-side project state.
   var FOLDER_STATE_KEY = 'coreai.project-folder-folded.v1';
   var folderState = Object.create(null);
@@ -60,6 +114,7 @@
     var b=el('button',cl||'',labelText);b.type='button';b.addEventListener('click',handler);return b;
   }
   function renderSidebar() {
+    dismissFloatingMenu();
     var list = $('projectsNavList');
     var scrollTop = list.scrollTop;
     list.replaceChildren();
@@ -86,16 +141,31 @@
       icon.innerHTML = expanded ? ICON_FOLDER_OPEN : ICON_FOLDER_CLOSED;
       toggle.appendChild(icon);
       row.appendChild(toggle);
-      // The name keeps its existing behavior: opening the project workspace.
-      var open = action('', function() {openProject(p.id);}, 'project-nav-open');
+      // The folder and its title both fold; only the project actions
+      // expose a deliberate entry to the separate project start page.
+      var open = action('',function(){
+        setFolderExpanded(p.id,!folderIsExpanded(p.id));
+        renderSidebar();
+      },'project-nav-open');
       open.appendChild(label(p.name, 'project-nav-label'));
-      open.setAttribute('aria-label', 'Projekt öffnen: ' + p.name);
+      open.setAttribute('aria-expanded',String(expanded));
+      open.setAttribute('aria-controls',childrenId);
+      open.setAttribute('aria-label',(expanded?'Projektordner zuklappen: ':'Projektordner aufklappen: ')+p.name);
       row.appendChild(open);
-      var options = action('···', function() {
-        openProject(p.id);
-        openPopover();
+      var options = action('···', function(e) {
+        e.stopPropagation();
+        showFloatingMenu(options,'project',[
+          {label:'Projektstartseite',run:function(){openProject(p.id);}},
+          {label:'Projekt umbenennen',run:function(){openModal('settings',p.id);}},
+          {label:'Projekteinstellungen',run:function(){openModal('settings',p.id);}},
+          {label:'Projekt teilen',run:function(){openModal('share',p.id);}},
+          {label:p.pinned?'Projekt nicht mehr anpinnen':'Projekt anpinnen',run:function(){runAction('pin',p.id);}},
+          {label:'Projekt löschen',danger:true,run:function(){deleteProject(p.id);}}
+        ]);
       }, 'project-nav-menu');
       options.setAttribute('aria-label', 'Projektaktionen: ' + p.name);
+      options.setAttribute('aria-haspopup','menu');
+      options.setAttribute('aria-expanded','false');
       row.appendChild(options);
       list.appendChild(row);
 
@@ -114,7 +184,7 @@
           children.appendChild(entry);
         });
         if (chats.length > 8) {
-          children.appendChild(action('Mehr anzeigen', function() {
+          children.appendChild(action('Weitere Chats in der Projektstartseite', function() {
             openProject(p.id);
           }, 'project-nav-chat project-nav-more'));
         }
@@ -187,58 +257,65 @@
     $('projectHomeName').textContent=p.name;
     $('projectHomeMode').textContent=p.context_mode==='isolated'?'KONTEXT // ISOLIERT':'KONTEXT // STANDARD';
     $('projectHomeMode').title=p.context_mode==='isolated'?'Nur Projektwissen verwenden':'Normale Erinnerungen können verwendet werden';
-    $('projectHomeChatInput').placeholder='Neuer Chat in '+p.name;
+    // The real composer is reused; no second project-only input exists.
     $('projectHomePin').textContent=p.pinned?'Projekt nicht mehr anpinnen':'Projekt anpinnen';
   }
   function renderChats() {
-    var list=$('projectHomeChatList');list.replaceChildren();if(!current)return;
+    dismissFloatingMenu();
+    var list=$('projectHomeChatList');
+    list.replaceChildren();
+    if(!current)return;
     var chats=sessions.filter(function(s){return !s.archived && s.project_id===current;});
-    if(!chats.length) {list.appendChild(el('p','project-empty','Noch keine Chats. Beginne oben ein Gespräch mit Mara.'));return;}
+    if(!chats.length) {
+      var empty=el('div','project-empty project-empty-state');
+      empty.appendChild(el('strong','project-empty-title','Noch keine Chats'));
+      empty.appendChild(el('p','', 'Starte oben deinen ersten Projektchat. Der vollständige CoreAI-Composer steht bereit.'));
+      list.appendChild(empty);
+      return;
+    }
     chats.sort(function(a,b){return new Date(b.updated_at||0)-new Date(a.updated_at||0);});
-    chats.forEach(function(chat){
+    chats.forEach(function(chat) {
       var row=el('article','project-chat-result');
       var btn=action('',function(){var a=chatApp();if(a&&a.select)a.select(chat.id);},'project-chat-result-main');
       btn.appendChild(el('strong','',chat.title||'Chat'));
       btn.appendChild(el('small','',(chat.last_message_preview||(''+(chat.message_count||0)+' Nachrichten')).replace(/\s+/g,' ').slice(0,200)));
       row.appendChild(btn);
       var options=el('div','project-chat-result-options');
-      var menu=el('div','project-chat-menu');menu.hidden=true;
-      options.appendChild(action('···',function(){
-        document.querySelectorAll('.project-chat-menu').forEach(function(m){if(m!==menu)m.hidden=true;});
-        menu.hidden=!menu.hidden;
-      },'project-chat-result-more'));
-      function chatAction(title,operation,danger){
-        var item=action(title,function(){
-          menu.hidden=true;
-          operation();
-        },danger?'danger':'');
-        menu.appendChild(item);
-      }
-      chatAction('Chat öffnen',function(){var a=chatApp();if(a&&a.select)a.select(chat.id);});
-      chatAction('Chat umbenennen',function(){
-        var title=prompt('Chat umbenennen',chat.title||'');
-        if(title===null||!title.trim())return;
-        post({action:'rename',id:chat.id,title:title.trim()}).then(function(){
-          var a=chatApp();return a&&a.refresh?a.refresh():null;
-        }).then(refresh).catch(function(e){alert(fail(e));});
-      });
-      chatAction('Aus Projekt entfernen',function(){
-        post({action:'project_assign',id:chat.id,project_id:''}).then(function(){
-          var a=chatApp();return a&&a.refresh?a.refresh():null;
-        }).then(refresh).catch(function(e){alert(fail(e));});
-      });
-      chatAction('Chat archivieren',function(){
-        post({action:'archive',id:chat.id}).then(function(){
-          var a=chatApp();return a&&a.refresh?a.refresh():null;
-        }).then(refresh).catch(function(e){alert(fail(e));});
-      });
-      chatAction('Chat löschen',function(){
-        if(!confirm('Chat "'+(chat.title||'Chat')+'" unwiderruflich löschen?'))return;
-        post({action:'delete',id:chat.id,archive_first:true,confirmation:'DELETE:'+chat.id}).then(function(){
-          var a=chatApp();return a&&a.removed?a.removed(chat.id):null;
-        }).then(refresh).catch(function(e){alert(fail(e));});
-      },true);
-      options.appendChild(menu);row.appendChild(options);list.appendChild(row);
+      var trigger=action('···',function(e){
+        e.stopPropagation();
+        showFloatingMenu(trigger,'chat',[
+          {label:'Chat öffnen',run:function(){var a=chatApp();if(a&&a.select)a.select(chat.id);}},
+          {label:'Chat umbenennen',run:function(){
+            var title=prompt('Chat umbenennen',chat.title||'');
+            if(title===null||!title.trim())return;
+            post({action:'rename',id:chat.id,title:title.trim()}).then(function(){
+              var a=chatApp();return a&&a.refresh?a.refresh():null;
+            }).then(refresh).catch(function(e){alert(fail(e));});
+          }},
+          {label:'Aus Projekt entfernen',run:function(){
+            post({action:'project_assign',id:chat.id,project_id:''}).then(function(){
+              var a=chatApp();return a&&a.refresh?a.refresh():null;
+            }).then(refresh).catch(function(e){alert(fail(e));});
+          }},
+          {label:'Chat archivieren',run:function(){
+            post({action:'archive',id:chat.id}).then(function(){
+              var a=chatApp();return a&&a.refresh?a.refresh():null;
+            }).then(refresh).catch(function(e){alert(fail(e));});
+          }},
+          {label:'Chat löschen',danger:true,run:function(){
+            if(!confirm('Chat "'+(chat.title||'Chat')+'" unwiderruflich löschen?'))return;
+            var proof=prompt('Zum endgültigen Löschen LÖSCHEN eingeben:','');
+            if(proof!=='LÖSCHEN'&&proof!=='LOESCHEN')return;
+            post({action:'delete_permanently',id:chat.id,archive_first:true,confirmation:'DELETE:'+chat.id}).then(function(){
+              var a=chatApp();return a&&a.removed?a.removed(chat.id):null;
+            }).then(refresh).catch(function(e){alert(fail(e));});
+          }}
+        ]);
+      },'project-chat-result-more');
+      trigger.setAttribute('aria-label','Chataktionen: '+(chat.title||'Chat'));
+      trigger.setAttribute('aria-haspopup','menu');
+      trigger.setAttribute('aria-expanded','false');
+      options.appendChild(trigger);row.appendChild(options);list.appendChild(row);
     });
   }
   function sourceHref(id,view) {
