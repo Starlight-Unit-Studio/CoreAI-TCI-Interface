@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/console_compaction.php';
+require_once __DIR__ . '/deep_research_store.php';
 require_once __DIR__ . '/console_attachment_store.php';
 require_once __DIR__ . '/console_artifact_store.php';
 require_once __DIR__ . '/console_agent_runs.php';
@@ -293,6 +294,15 @@ function coreui_console_session_delete_tx(PDO $pdo, int $uid, string $sessionId)
     }
     $jobId = (int)($job['id'] ?? 0);
     if ($jobId > 0) $browseScreenshotPaths[] = 'uploads/ember_browse/job_' . $jobId . '.png';
+  }
+  // 0.7.38: Deep Research runs of this chat. A run the worker is on keeps the chat like a browse
+  // job does; the others go with their sources and activity (rolled back with everything else).
+  if (coreui_dr_ready($pdo)) {
+    $stDeep = $pdo->prepare("SELECT COUNT(*) FROM stu_deep_research_runs
+                              WHERE user_id=? AND session_id=? AND status IN ('queued','running','writing')");
+    $stDeep->execute([$uid, $sessionId]);
+    if ((int)$stDeep->fetchColumn() > 0) throw new RuntimeException('session_busy');
+    coreui_dr_delete_session($pdo, $uid, $sessionId);
   }
 
   $artifactKeys = [];

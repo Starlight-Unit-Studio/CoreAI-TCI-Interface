@@ -36,7 +36,7 @@ async function open(browser, opts, viewport) {
       if (req.method() === 'POST') {
         const body = JSON.parse(req.postData() || '{}');
         st.posts.push({body, csrf: req.headers()['x-coreui-csrf']});
-        if (opts.fail) return route.fulfill({status: 403, json: {ok: false, error: 'csrf_invalid'}});
+        if (opts.fail) return route.fulfill({status: 403, json: {ok: false, error: 'csrf_failed'}});  // what stu_require_csrf answers
         if (body.action === 'archive_all') {
           const n = st.summary.active;
           st.summary = {active: 0, archived: st.summary.archived + n, locked: st.summary.locked};

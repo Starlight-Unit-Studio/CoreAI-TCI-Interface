@@ -36,7 +36,8 @@ $api = $read('api/usage.php');
 up_test(strpos($api, "stu_json(['ok' => false, 'error' => 'guests_not_allowed'], 403);") < strpos($api, "\$action === 'overview'")
   && str_contains($api, 'stu_require_user_id()') && str_contains($api, "header('Allow: GET');"), 'signed-in accounts only, GET only');
 foreach (['config/nginx.conf.template', 'config/runtime/nginx.conf.template'] as $conf) {
-  up_test(str_contains($read($conf), '|files|usage|profile|'), $conf . ' lets api/usage.php through');
+  // 0.7.38: by pattern, whatever stands next to usage in the allowlist (deep_research came after it).
+  up_test(preg_match('~location \~ \^/api/\(\?:[a-z_|]*\|usage\|[a-z_|]*\)\\\\\.php\$~', $read($conf)) === 1, $conf . ' lets api/usage.php through');
 }
 $store = $read('api/usage_page_store.php');
 up_test(!preg_match('~SELECT[^;]*\bm?\.?message\b[^_]~', str_replace(['stu_chat_messages', 'message_id'], '', $store)), 'no message text is read');

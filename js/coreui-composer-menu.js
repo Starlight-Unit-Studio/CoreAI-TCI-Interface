@@ -19,9 +19,10 @@
   var frame = btn ? btn.closest('.composer-frame') : null;
   if (!btn || !input || !field || !frame) return;
 
-  var MARK_RE = /^\s*\[\[(bild(?::gross)?(?::[124])?|websuche|recherche)\]\]\s*/;
-  var MARKS = { image: '[[bild]]', imageLarge: '[[bild:gross]]', web: '[[websuche]]', browse: '[[recherche]]' };
-  var LABEL = { image: 'Bild erstellen', web: 'Websuche', browse: 'Recherche' };
+  // 0.7.38: [[deep-research]], and [[deep-research-edit:ID]] for a change to plan ID.
+  var MARK_RE = /^\s*\[\[(bild(?::gross)?(?::[124])?|websuche|recherche|deep-research(?:-edit:\d{1,18})?)\]\]\s*/;
+  var MARKS = { image: '[[bild]]', imageLarge: '[[bild:gross]]', web: '[[websuche]]', browse: '[[recherche]]', deep: '[[deep-research]]' };
+  var LABEL = { image: 'Bild erstellen', web: 'Websuche', browse: 'Recherche', deep: 'Deep Research' };
   var DEFAULT_ACCEPT = input.getAttribute('accept') || '';
   var ICONS = {
     photo: '<rect x="3.5" y="4.5" width="17" height="15" rx="1"/><circle cx="9" cy="10" r="1.8"/><path d="M4 18l5.5-5.5 4 4 2.5-2.5 4.5 4.5"/>',
@@ -58,6 +59,12 @@
     var value = String(text == null ? '' : text);
     var m = MARK_RE.exec(value);
     if (!m) return { intent: null, text: value, label: '' };
+    var deepMatch = /^deep-research(?:-edit:(\d+))?$/.exec(m[1]);
+    if (deepMatch) {
+      var deepIntent = { tool: 'deep', size: 'normal' };
+      if (deepMatch[1]) deepIntent.edit = Number(deepMatch[1]);
+      return { intent: deepIntent, text: value.slice(m[0].length), label: label(deepIntent) };
+    }
     var intent = m[1] === 'bild' ? { tool: 'image', size: 'normal' }
       : m[1] === 'bild:gross' ? { tool: 'image', size: 'large' }
       : m[1] === 'websuche' ? { tool: 'web', size: 'normal' } : { tool: 'browse', size: 'normal' };
@@ -70,12 +77,14 @@
   }
   function label(intent) {
     if (!intent) return '';
+    if (intent.tool === 'deep' && intent.edit) return 'Deep Research · Plan ändern';
     if (intent.tool === 'image' && intent.count) return 'Bild erstellen · ' + intent.count + (intent.count === 1 ? ' Bild' : ' Bilder') + (intent.size === 'large' ? ' · Groß' : '');
     return intent.tool === 'image' && intent.size === 'large' ? 'Bild erstellen · Groß' : LABEL[intent.tool];
   }
   function mark(intent) {
     if (!intent) return '';
     if (intent.tool === 'image') return '[[bild' + (intent.size === 'large' ? ':gross' : '') + (intent.count ? ':' + intent.count : '') + ']]';
+    if (intent.tool === 'deep' && intent.edit) return '[[deep-research-edit:' + intent.edit + ']]';
     return MARKS[intent.tool] || '';
   }
 
@@ -117,16 +126,20 @@
     chip.hidden = !current;
     if (!current) return;
     chip.setAttribute('data-tool', current.tool);
-    chipLabel.innerHTML = svg(current.tool === 'image' ? 'image' : current.tool) + '<span>' + LABEL[current.tool] + '</span>';
+    chipLabel.innerHTML = svg(current.tool === 'image' ? 'image' : current.tool) + '<span></span>';
+    chipLabel.lastChild.textContent = current.tool === 'deep' && current.edit ? (current.title || 'Plan ändern') : LABEL[current.tool];
+    chip.setAttribute('data-edit', current.edit ? 'true' : 'false');
     sizeBox.hidden = current.tool !== 'image';
     countBox.hidden = current.tool !== 'image';
     countButtons.forEach(function (b, i) { b.setAttribute('aria-pressed', (current.count || 1) === [1, 2, 4][i] ? 'true' : 'false'); });
     sizeNormal.setAttribute('aria-pressed', current.size === 'large' ? 'false' : 'true');
     sizeLarge.setAttribute('aria-pressed', current.size === 'large' ? 'true' : 'false');
   }
-  function setIntent(tool, size, count) {
+  function setIntent(tool, size, count, deepEdit) {
     current = tool ? { tool: tool, size: size === 'large' ? 'large' : 'normal' } : null;
     if (current && tool === 'image' && [1, 2, 4].indexOf(count) !== -1) current.count = count;
+    // 0.7.38: Bearbeiten on a Deep Research plan: the chip names the plan, the message changes it.
+    if (current && tool === 'deep' && deepEdit && deepEdit.id) { current.edit = Number(deepEdit.id); current.title = String(deepEdit.title || ''); }
     renderChip();
   }
   sizeNormal.addEventListener('click', function () { if (current) { current.size = 'normal'; renderChip(); } });
@@ -205,7 +218,7 @@
   }
 
   function build() {
-    var image = toolState('image'), web = toolState('web'), browse = toolState('browse');
+    var image = toolState('image'), web = toolState('web'), browse = toolState('browse'), deep = toolState('deep');
     var attach = [
       { id: 'photos', icon: 'photo', label: 'Fotos', detail: 'Bilder aus deiner Galerie', disabled: !filesAvailable,
         run: function () { pick('image/*', null); } }
@@ -226,8 +239,8 @@
         disabled: !web.on, run: function () { choose('web'); } },
       { id: 'browse', tool: 'browse', icon: 'browse', label: 'Recherche', detail: browse.on ? 'Deine CoreAI liest selbst Webseiten' : browse.why,
         disabled: !browse.on, run: function () { choose('browse'); } },
-      { id: 'deep', icon: 'deep', label: 'Deep Research', detail: 'Bericht aus vielen Quellen', badge: 'In Vorbereitung',
-        disabled: true, run: function () {} }
+      { id: 'deep', tool: 'deep', icon: 'deep', label: 'Deep Research', detail: deep.on ? 'Ein Bericht aus vielen Quellen, mit Plan vorab' : deep.why,
+        disabled: !deep.on, run: function () { choose('deep'); } }
     ];
     var links = connectors.length ? connectors.map(function (c) {
       return { id: 'connector-' + c.id, icon: 'plug', label: c.label, detail: c.detail || '', disabled: !!c.disabled,
@@ -335,6 +348,8 @@
       return parse(text).text;
     },
     current: function () { return current ? Object.assign({}, current) : null; },
+    /** Bearbeiten on a Deep Research plan (js/coreui-deep-research.js): the chip names the plan. */
+    editDeep: function (id, title) { setIntent('deep', 'normal', null, { id: id, title: title }); textarea.focus(); },
     set: setIntent,
     clear: function () { setIntent(null); },
     open: open,

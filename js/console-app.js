@@ -1612,7 +1612,12 @@
 
     var bubble = document.createElement('div');
     bubble.className = 'msg-bubble msg-markdown';
-    if (window.CoreUIMarkdown && typeof window.CoreUIMarkdown.render === 'function') {
+    // 0.7.38: a Deep Research plan is a card (js/coreui-deep-research.js), not text.
+    var deepCard = role === 'ember' && window.CoreAIDeepResearch ? window.CoreAIDeepResearch.card(text) : null;
+    if (deepCard) {
+      bubble.className = 'msg-bubble msg-deep-research';
+      bubble.appendChild(deepCard);
+    } else if (window.CoreUIMarkdown && typeof window.CoreUIMarkdown.render === 'function') {
       window.CoreUIMarkdown.render(bubble, text);
     } else {
       bubble.textContent = text;
@@ -1630,7 +1635,7 @@
       window.CoreUIWorkEvents.tuckCode(workTimeline,bubble);
       if (!bubble.textContent.trim() && bubble.parentNode) bubble.parentNode.removeChild(bubble);
     }
-    if (role === 'ember' && messageId > 0 && record && Number(record.reply_to_id) > 0) {
+    if (role === 'ember' && !deepCard && messageId > 0 && record && Number(record.reply_to_id) > 0) {
       var suggestionRow = buildSuggestedReplyButtons(text, String(record.session_id || (activeSession() && activeSession().id) || ''));
       if (suggestionRow) content.appendChild(suggestionRow);
     }

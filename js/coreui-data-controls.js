@@ -20,6 +20,8 @@
   var ERRORS = {
     archive_all_confirmation_required: 'Das Archivieren wurde nicht bestätigt.',
     delete_all_confirmation_required: 'Das Löschen wurde nicht bestätigt.',
+    // 0.7.38: the server answers csrf_failed (api/helpers.php stu_require_csrf); csrf_invalid stays for older answers.
+    csrf_failed: 'Die Sitzung ist abgelaufen. Bitte lade die Seite neu.',
     csrf_invalid: 'Die Sitzung ist abgelaufen. Bitte lade die Seite neu.',
     session_migration_required: 'Die Chats sind auf diesem Server noch nicht eingerichtet.'
   };
