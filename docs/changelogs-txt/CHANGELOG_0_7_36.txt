@@ -1,0 +1,18 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.36
+Date: 12.11.2026
+Basis: Main 0.7.34, PR #290 (bereits gemergt)
+Verbindliche naechste Version laut UEBERGABEPROTOKOLL_0_7_33.txt: 0.7.36
+
+- Die Projekt-Drei-Punkte-Menue-Korrektur von PR #290 bleibt unveraendert erhalten.
+- Versehentlich verwendete aktive Versionsangaben 0.7.34 wurden mit diesem NEUEN Merge auf den
+  bereits im Uebergabeprotokoll festgelegten naechsten Stand 0.7.36 ausgerichtet.
+- Aktualisiert: VERSION, alle sechs HTML-Ansichten, JS-Bootstrap, README, CHANGELOG, TXT-Index,
+  Preflight-Kommentare, Versions-/UI-Selbsttests und die SHA256-basierten Browser-Cache-Schluessel.
+- Keine Datenbankmigration, keine Umbenennung historischer Commits, keine Verhaltensaenderung am
+  Projektmenue ueber PR #290 hinaus.
+- 0.7.35 wird nicht nachtraeglich als Release oder Download fingiert. Der historische
+  Merge-Zaehlstand ist im UEBERGABEPROTOKOLL_0_7_33.txt erklaert.
+- GitHub-Quellstand ist erst nach den CI-Checks gemaess VERSION konsistent. Eine produktive
+  Installation wird separat ueber den CoreAI-Updater aktualisiert und auf dem Server getestet.
+
+Version: 0.7.36
