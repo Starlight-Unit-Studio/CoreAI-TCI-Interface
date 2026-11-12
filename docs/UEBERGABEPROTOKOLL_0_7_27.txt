@@ -1,0 +1,24 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.27
+Date: 12.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Base version: 0.7.26
+
+PROBLEM
+Project folder title accidentally launched a separate project home; initial project composer was a limited duplicate; contextual menu got clipped by cards and chat list. Empty project styling showed placeholder-like cards.
+
+SOLUTION
+- Clicking project folder/title only folds/unfolds. Homepage via dedicated project actions.
+- On project creation, expand the new folder instead of forcing navigation.
+- Mount existing .composer footer into #projectComposerSlot while visiting the project home, restore on exit.
+- CoreAIChatApp.prepareProjectDraft stores server-owned project ID before the first send. All existing composer controls are reused.
+- One portal menu in document.body handles project and chat operations, with viewport clamping and keyboard dismissal.
+- Explicit empty-state cards and conditional empty-folder copy.
+- No new model stack, database schema, or duplicate send pipeline.
+
+VALIDATION
+- Node syntax, project regression tests, preflight, cache-bust and GitHub Actions.
+- In self-hosted Android/desktop: project click vs menu, folder empty/expanded, context isolation, tools, file upload, voice, active chat switching, empty project, modal actions and menu above/below viewport.
+- Verify CoreAI Holo and SoftGlass UI day/night modes separately.
+- Run preflight after using the built-in CoreAI updater.
+
+Version: 0.7.27
