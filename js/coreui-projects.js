@@ -52,6 +52,7 @@
     floatingMenu.hidden=false;
     floatingAnchor=trigger;
     trigger.setAttribute('aria-expanded','true');
+    trigger.setAttribute('aria-controls',floatingMenu.id);
     placeFloatingMenu(floatingMenu,trigger);
   }
   document.addEventListener('click',function(e) {
@@ -176,6 +177,9 @@
         var chats = sessions.filter(function(s) {
           return s.project_id === p.id && !s.archived;
         });
+        if(!chats.length) {
+          children.appendChild(el('span','project-nav-empty','Keine Chats'));
+        }
         chats.slice(0, 8).forEach(function(s) {
           var entry = action('◯  ' + (s.title || 'Chat'), function() {
             var app = chatApp(); if (app && app.select) app.select(s.id);
