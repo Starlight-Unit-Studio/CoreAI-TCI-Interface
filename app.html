@@ -27,6 +27,7 @@
   <script src="./js/coreui-preferences.js?v=0004145186774094057353830"></script>
   <script src="./js/coreui-ui-language.js?v=0850224961537363286304733"></script>
   <link rel="stylesheet" href="./css/coreui-projects.css?v=1116790663620733322439367" />
+  <link rel="stylesheet" href="./css/coreui-sidebar-compact.css?v=1" />
 </head>
 <body class="app-body coreui-body">
   <input
@@ -46,6 +47,7 @@
     </div>
 
     <header class="drawer-header">
+      <button class="sidebar-search-toggle" id="sidebarSearchToggle" type="button" title="Chats und Projekte suchen" aria-label="Chats und Projekte suchen" aria-controls="sidebarSearchPanel" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="7.2"/><path d="m16.2 16.2 5 5"/></svg></button>
       <strong class="project-drawer-brand" aria-hidden="true">CoreAI</strong>
       <div class="brand-lockup">
         <div class="ren-matrix" aria-label="Ren Sternenmatrix, Kernsignatur 73">
@@ -154,9 +156,10 @@
         for="sidebarControl"
         role="button"
         tabindex="0"
-        aria-label="Sidebar einklappen"
+        aria-label="Navigation schließen"
+        title="Navigation schließen"
       >
-        <span aria-hidden="true">‹</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
       </label>
     </header>
 
@@ -169,51 +172,47 @@
       </div>
     </div>
 
+    <section class="sidebar-search-panel" id="sidebarSearchPanel" aria-label="Chats und Projekte durchsuchen" hidden>
+      <label for="sidebarSearchInput">Chats und Projekte suchen</label>
+      <input id="sidebarSearchInput" type="search" autocomplete="off" placeholder="Suchen ..." maxlength="120" />
+      <div id="sidebarSearchResults" class="sidebar-search-results" aria-live="polite"></div>
+    </section>
+
     <div class="drawer-content">
       <button class="btn-new-session hud-button hud-button-primary" id="btnNewSession" type="button">
-        <span class="hud-button-glyph" aria-hidden="true">⌬</span>
+        <span class="hud-button-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><path d="M15.5 5.5 18.5 8.5M13 11l7-7a2.12 2.12 0 0 0-3-3l-7 7-1 4z"/></svg></span>
         <span class="hud-button-copy">
-          <strong>NEUE VERBINDUNG</strong>
+          <strong>Neuer Chat</strong>
           <small>Privaten Kernkanal öffnen</small>
         </span>
       </button>
 
-      <section class="session-zone" aria-labelledby="sessionZoneTitle">
-        <div class="section-label" id="sessionZoneTitle">
-          <span class="section-rune" aria-hidden="true">⟐</span>
-          <span>SITZUNGSMATRIX</span>
-          <span class="section-count" id="sessionCount">00</span>
-          <button class="session-archive-toggle" id="sessionArchiveToggle" type="button">ARCHIV</button>
-        </div>
-        <ul class="session-list" id="sessionList" aria-live="polite"></ul>
-      </section>
-
       <section class="projects-nav" id="projectsNav" aria-labelledby="projectsNavTitle">
         <div class="projects-nav-heading">
           <span id="projectsNavTitle">Projekte</span>
-          <button id="projectsCreateBtn" type="button" aria-label="Neues Projekt">＋</button>
+          <button id="projectsCreateBtn" type="button" aria-label="Neues Projekt" title="Neues Projekt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
         </div>
         <div class="projects-nav-list" id="projectsNavList"></div>
+      </section>
+
+      <section class="session-zone" aria-labelledby="sessionZoneTitle">
+        <div class="section-label" id="sessionZoneTitle">
+          <span>Chats</span>
+          <span class="section-count" id="sessionCount">00</span>
+          <button class="session-archive-toggle" id="sessionArchiveToggle" type="button" aria-label="Archivierte Chats anzeigen" title="Archivierte Chats" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="5" rx="1.5"/><path d="M5 9v11h14V9M10 13h4"/></svg></button>
+        </div>
+        <ul class="session-list" id="sessionList" aria-live="polite"></ul>
       </section>
     </div>
 
     <footer class="drawer-footer">
-      <div class="drawer-system-line" aria-hidden="true">
-        <span>SUVARU</span>
-        <i></i>
-        <span>CORE LINK</span>
-      </div>
       <button class="btn-settings hud-button hud-button-quiet" id="btnSettings" type="button">
-        <span aria-hidden="true">⌬</span>
-        <span>EINSTELLUNGEN</span>
-      </button>
-      <button class="btn-protocols hud-button hud-button-quiet" id="btnProtocols" type="button">
-        <span aria-hidden="true">⌁</span>
-        <span>PROTOKOLLE</span>
+        <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.9l.1.1-2 2-.1-.1a1.7 1.7 0 0 0-1.9-.34 1.7 1.7 0 0 0-1.1 1.56V21h-2.8v-.2A1.7 1.7 0 0 0 10.8 19a1.7 1.7 0 0 0-1.9.35l-.1.1-2-2 .1-.1A1.7 1.7 0 0 0 7.3 15a1.7 1.7 0 0 0-1.5-1.1H5v-2.8h.8A1.7 1.7 0 0 0 7.3 10a1.7 1.7 0 0 0-.34-1.9l-.1-.1 2-2 .1.1A1.7 1.7 0 0 0 10.8 6a1.7 1.7 0 0 0 1.1-1.56V4h2.8v.4A1.7 1.7 0 0 0 15.8 6a1.7 1.7 0 0 0 1.9-.34l.1-.1 2 2-.1.1A1.7 1.7 0 0 0 19.4 10a1.7 1.7 0 0 0 1.5 1.1h.1v2.8h-.1a1.7 1.7 0 0 0-1.5 1.1Z"/></svg></span>
+        <span>Einstellungen</span>
       </button>
       <button class="btn-logout hud-button hud-button-quiet" id="btnLogout" type="button">
-        <span aria-hidden="true">⏻</span>
-        <span>ABMELDEN</span>
+        <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7"/></svg></span>
+        <span>Abmelden</span>
       </button>
       <div class="drawer-copyright">© 2023-2026 Patrick Schildgen · Starlight Unit Studios</div>
     </footer>
@@ -812,6 +811,7 @@
   </div>
   <script src="./js/coreui-update.js?v=0027007356017747916079807"></script>
   <script src="./js/coreui-projects.js?v=1027448887745420905484969"></script>
+  <script src="./js/coreui-sidebar-search.js?v=1"></script>
   <script src="./js/coreui-chat-menu.js?v=1104241070462714448618957"></script>
 </body>
 </html>
