@@ -6,6 +6,7 @@ require_once __DIR__ . '/notifications_store.php';
 require_once __DIR__ . '/mailer.php';
 require_once __DIR__ . '/security_store.php';
 require_once __DIR__ . '/profile_store.php';
+require_once __DIR__ . '/console_chat_lock_store.php';
 
 $pdo = stu_pdo();
 $uid = stu_require_user_id();
@@ -52,6 +53,8 @@ function coreui_account_security_state(PDO $pdo, int $uid): array {
     'passkey_rp_id' => coreui_webauthn_rp_id(),
     'email_available' => filter_var($email, FILTER_VALIDATE_EMAIL) !== false && coreui_notify_mail_available($pdo),
     'email_hint' => coreui_security_mask_email($email),
+    'chat_pin_ready' => coreui_chat_lock_schema_ready($pdo),
+    'chat_pin_set' => coreui_chat_lock_schema_ready($pdo) ? coreui_chat_lock_has_pin($pdo,$uid) : false,
     'history' => coreui_security_history($pdo, $uid, 60),
   ];
 }
@@ -181,6 +184,33 @@ $reply = static function (array $extra = []) use ($pdo, $uid): void {
   stu_json(['ok'=>true, 'security'=>coreui_account_security_state($pdo, $uid), 'sessions'=>coreui_auth_session_list($pdo, $uid),
     'csrf_token'=>stu_csrf_token()] + $extra);
 };
+
+if ($action === 'chat_pin_setup') {
+  coreui_security_rate_limit('chat_pin_setup',8,900);
+  try {
+    coreui_chat_lock_setup($pdo,(int)$uid,(string)($body['pin']??''),(string)($body['confirmation']??''));
+    coreui_security_audit($pdo,(int)$uid,'account.chat_pin_setup');
+    $reply();
+  } catch (InvalidArgumentException $e) {
+    stu_json(['ok'=>false,'error'=>$e->getMessage()],400);
+  } catch (RuntimeException $e) {
+    stu_json(['ok'=>false,'error'=>$e->getMessage()],409);
+  }
+}
+if ($action === 'chat_pin_change') {
+  coreui_security_rate_limit('chat_pin_change',8,900);
+  try {
+    coreui_chat_lock_change($pdo,(int)$uid,(string)($body['old_pin']??''),
+      (string)($body['pin']??''),(string)($body['confirmation']??''));
+    coreui_security_audit($pdo,(int)$uid,'account.chat_pin_change');
+    $reply();
+  } catch (InvalidArgumentException $e) {
+    stu_json(['ok'=>false,'error'=>$e->getMessage()],400);
+  } catch (RuntimeException $e) {
+    stu_json(['ok'=>false,'error'=>$e->getMessage()],
+      $e->getMessage()==='chat_pin_temporarily_blocked'?429:409);
+  }
+}
 
 if ($action === 'sessions_revoke_all') {
   coreui_security_rate_limit('session_revoke_all', 10, 300);
