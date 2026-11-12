@@ -1,0 +1,77 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.38
+Date: 12.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Base version: 0.7.37
+
+AUFTRAG
+Deep Research (Roadmap P15) nach den Referenz-Screenshots des Betreibers: Plan-Karte mit Bearbeiten,
+Abbrechen und Starten (Countdown), Bearbeiten als Chip im Eingabefeld, Fortschritt mit Schrittstatus und
+Suchvorgaengen, Ergebnis "Recherche abgeschlossen in ... · Zitationen · Suchen", Berichtskarte mit Download
+und Vollansicht, Inhaltsverzeichnis, Quellen und Aktivitaet. Referenziert, nicht kopiert: CoreAI-Optik.
+
+ABLAUF
+1. + Menue > Deep Research (nur mit Websuche, nicht fuer Gaeste) setzt [[deep-research]] vor die Nachricht.
+2. ember_generate_reply (api/chat.php) erkennt die Marke vor allem anderen und ruft coreui_dr_reply
+   (api/deep_research_store.php): ein Core-Aufruf schreibt den Plan als JSON (Titel, 4 bis 6 Schritte); ohne
+   brauchbare Antwort ein ehrlicher Ersatzplan. Maras Antwort: "[[deep-research:ID]] Ich habe einen
+   Rechercheplan erstellt: <Titel>." (die Seite zeigt dafuer die Karte, der Verlauf bleibt lesbar).
+3. Lauf status planned mit autostart_at = jetzt + 45 s. Starten (POST start) oder der Countdown (der Worker
+   setzt faellige Plaene auf queued) gibt ihn dem Worker. Bearbeiten (POST edit) haelt den Countdown an und
+   legt [[deep-research-edit:ID]] als Chip ins Eingabefeld; die naechste Nachricht ergibt einen neuen Plan,
+   der alte wird replaced. Abbrechen beendet einen wartenden Lauf, Stopp setzt cancel_requested.
+4. tools/ember_browse_worker.py holt einen Lauf, wenn kein Browse-Auftrag wartet, und ruft
+   tools/coreai_deep_research.py: Suchanfragen je Schritt (ein Core-Aufruf), SearXNG, bis zu 3 neue Seiten je
+   Schritt (requests, jede Weiterleitung gegen lokale Adressen geprueft, nur HTML/Text, max. 2 MB),
+   Notizen je Schritt mit [n], Bericht in Markdown. Unbekannte Quellennummern werden entfernt, zitierte
+   Quellen markiert. Core-Sperre je Aufruf (der Chat bleibt nutzbar), Lebenszeichen alle 15 s, Stopp
+   zwischen allen Schritten, Zeitrahmen STU_DEEP_RESEARCH_MAX_MINUTES (Standard 30).
+5. js/coreui-deep-research.js zeigt Plan, Lauf und Bericht (Abfrage alle 2,5 s, im Hintergrund 10 s);
+   Vollansicht mit Zitaten als Knoepfe, Inhaltsverzeichnis, Quellen nach Domain, Aktivitaet, Download
+   (api/deep_research.php?action=download, .md mit nummerierten Quellen).
+
+DATEN
+- Migration 040: stu_deep_research_runs (Plan, Status, Fortschritt, Zaehler, Bericht), _sources (n, url,
+  title, domain, cited), _events (step, search, read, note, info). Keine Prompts, kein Core-Denken.
+- Ein Chat nimmt seine Laeufe beim Loeschen mit; ein Chat mit wartender oder laufender Recherche ist busy.
+- Ein Worker ohne Lebenszeichen seit 10 Minuten: der Lauf endet mit worker_lost (Karte sagt es ehrlich).
+
+EINSTELLUNGEN (api/config.local.php, optional)
+STU_DEEP_RESEARCH_QUERIES_PER_STEP (3), _PAGES_PER_STEP (3), _MAX_MINUTES (30), _CORE_TIMEOUT (420 s).
+
+KORREKTUREN NEBENBEI
+- Datenkontrollen: der Server antwortet bei abgelaufener Sitzung csrf_failed; 0.7.32 kannte nur
+  csrf_invalid und zeigte deshalb die allgemeine Meldung. Beide werden jetzt erkannt.
+- Ein Update startete einen laufenden Browse-Worker nicht neu (systemctl enable --now, compose up -d), neue
+  Worker-Funktionen liefen erst nach einem manuellen Neustart. install-native.sh startet ihn jetzt neu,
+  install.sh erstellt ihn neu (--force-recreate browse).
+- Versionskommentare in settings.html (0.7.33) wieder richtig; fremde Versionsspruenge hatten sie auf
+  0.7.37 gezogen. Beim Versionssprung nur Versionszeilen aendern, nie Kommentare.
+- usage-page-selftest und composer-menu-ui-selftest pruefen die nginx-Allowlist nach Muster statt nach
+  woertlichen Nachbarn. composer-menu-ui-selftest scheiterte auf main an drei veralteten Woertlich-Pruefungen
+  (Allowlist, fuenftes Argument von coreui_composer_tools_answer, Argument von coreui_composer_intent_ensure)
+  und besteht jetzt.
+
+TESTS (in dieser Sitzung ausgefuehrt)
+- php -l fuer alle geaenderten PHP-Dateien; python3 -m py_compile fuer Worker und Modul.
+- scripts/deep-research-selftest.php ohne Datenbank und gegen MariaDB (Migration 040 eingespielt): Plan,
+  Gaeste, ohne Websuche, Starten, Bearbeiten mit neuem Plan, Abbrechen, Stopp, verlorener Worker, Quellen,
+  Aktivitaet, Download, anderes Konto, Loeschen mit dem Chat. Eigene Testkonten, danach entfernt.
+- scripts/deep-research-worker-selftest.py: Seitentext, Suchanfragen, Notizen, Bericht nur mit echten
+  Quellen, Seitenwahl, Budget, ganzer Lauf mit Attrappen, Stopp, Core-Fehler, Zeitrahmen, Seitenabruf mit
+  Sperre fuer lokale Adressen und Weiterleitungen dorthin.
+- scripts/deep-research-ui-selftest.cjs (Playwright): + Menue und Chip, Plan mit Countdown, Starten, Lauf,
+  Stopp, Abbrechen, Bearbeiten ins Eingabefeld, beendeter Lauf, Berichtskarte, Vollansicht (Zitate,
+  Inhaltsverzeichnis, Quellen nach Domain, Aktivitaet, Download, Esc), Dunkel, Telefon.
+- Angepasst und bestanden: composer-intent-selftest.php, composer-menu-ui-selftest.cjs,
+  data-controls-ui-selftest.cjs, usage-page-selftest.php, browse-worker-selftest.py.
+- Gesamte Selbsttest-Reihe: wird nach dem Lauf eingetragen.
+
+NICHT GETESTET
+- Ein echter Lauf gegen SearXNG, oeffentliche Seiten und einen lokalen Gemma-Core (hier nicht vorhanden).
+  Nach dem Update: eine Deep Research starten, Worker-Log (journalctl -u ember-coreui-browse oder
+  docker compose logs browse) auf "[research N] done" pruefen.
+
+NACH DEM UPDATE
+- Migration 040 laeuft mit dem Update. Der Browse-Worker wird neu gestartet.
+
+Version: 0.7.38

@@ -6,7 +6,7 @@
 
 CoreAI combines Ollama-based models with private conversations, browser research, personal knowledge, file tools and an administration interface. Its standard deployment runs an isolated Nginx, PHP-FPM, MariaDB and worker stack on a Linux server. CoreAI is an application, **not a standalone operating system**.
 
-**Current source version: `0.7.37`** | [Changelog](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Documentation policy](docs/VERSIONING_POLICY.md) | [License](LICENSE.md)
+**Current source version: `0.7.38`** | [Changelog](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Documentation policy](docs/VERSIONING_POLICY.md) | [License](LICENSE.md)
 
 > **Development status:** Features reflect the source, not every model or provider. A merge does not prove live deployment.
 
@@ -130,8 +130,9 @@ An existing installation's settings are not silently overwritten. `COREUI_FORCE_
 - **Local time awareness:** Mara uses the browser's IANA time zone to calculate date and time for private chats. No location permission is needed; invalid or unavailable values fall back to the configured server time zone.
 - **Conversations and accounts:** The chat opens on an unsaved welcome screen with a personal greeting and four example questions. A new chat is saved only on its first text, attachment or spoken turn; earlier chats stay in the sidebar. History, follow-up suggestions, context management and owner, admin, user and optional guest roles remain. Mara's TCI header sits beside her avatar; her reply starts below it at full chat width.
 - **Chat menu:** The ⋮ menu of a chat shares it as a Markdown file, pins it on top, lists its uploaded files, searches all its messages, gives a direct link for the home screen, locks it with the account PIN, adds it to a project, archives or deletes it. **Settings → Archived chats** searches, filters, restores and deletes them; **Settings → Data controls** exports the account and archives or deletes all chats (never locked or busy ones).
-- **Research:** SearXNG search and a Playwright browser show research activity and sources. NRW weather uses WDR place search in browser mode, else the WDR overview when current; other places get Open-Meteo data. Search is a fallback. Open-Meteo's free API is non-commercial only.
-- **Input row (+ menu):** **Attach** Photos, Camera or Files (up to ten). **Tools** Create image, Web search or Research; the chosen tool shows as a chip on your message. Unavailable tools are greyed with the reason; Deep Research and Connectors are marked **In preparation**.
+- **Research:** SearXNG and a Playwright browser show activity and sources. NRW weather: WDR; elsewhere Open-Meteo (free API: non-commercial only).
+- **Deep Research:** Mara plans first (starts after a countdown, Edit changes it); the browse worker searches, reads pages and writes a report with numbered sources (Markdown download).
+- **Input row (+ menu):** **Attach** Photos, Camera or Files (up to ten). **Tools** Create image, Web search, Research or Deep Research, shown as a chip. Unavailable tools are greyed with the reason; Connectors are **In preparation**.
 - **Knowledge and tools:** Account-scoped RAG-Lite, memory, skill selection, file uploads and isolated Python tasks with registered outputs. Media handling depends on the selected Core and tools.
 - **Notifications:** **Settings → Notifications** sends Push (Web Push, also when CoreAI is closed; iPhone/iPad from the Home screen) or E-Mail for long answers, sign-ins and password changes, new features after an installed update, and new CoreAI versions (owner). Planned categories show **In preparation**. The owner sets up E-Mail sending under **Admin Core → Operations → E-Mail sending** (STARTTLS, SSL/TLS, or plain only to a local relay; encrypted password, test mail); SMTP values in `api/config.local.php` or `COREUI_SMTP_*` take precedence.
 - **Sign-in and security:** **Settings → Security** offers passkeys and security keys, an authenticator app, E-Mail codes, ten one-time recovery codes, Lockdown mode (no web or browser), advanced account security (passkey-only sign-in, no reset by E-Mail, 24-hour sessions), sign-out everywhere, security history. Account PIN, push approval and CSP are **In preparation**. Host-side reset: `php scripts/security-reset.php <email> [--passkeys]`.
@@ -151,7 +152,7 @@ An existing installation's settings are not silently overwritten. `COREUI_FORCE_
 - **Images:** Signed-in users can generate one, two or four images with the optional CPU-only FLUX.2-klein 4B engine, save originals, view progress and edit with guidance shapes or text (not pixel-exact inpainting). Exports carry Quantum provenance without private prompts. Mara portraits may use reference photos from `images/mara_references/` for a stable identity; holograms add style only. Custom portraits override the gallery. The owner can disable image generation in Admin Core.
 - **Admin Core:** The separate, role-protected **/admin/** page manages users, permissions, audit, runtime and owner-only voice/image samples. Authorized accounts see it in the header and category drawer; server checks still apply.
 
-**Not yet a completed feature:** A selectable English/German interface localization, Deep Research and Connectors are planned and must not be presented as implemented. See the [Roadmap](ROADMAP.md), [Feature matrix](docs/COREUI_FEATURE_MATRIX.md) and [Voice plan](docs/COREUI_VOICE_PLAN.md) for scope and status.
+**Not yet a completed feature:** A selectable English/German interface localization and Connectors are planned and must not be presented as implemented. See the [Roadmap](ROADMAP.md), [Feature matrix](docs/COREUI_FEATURE_MATRIX.md) and [Voice plan](docs/COREUI_VOICE_PLAN.md) for scope and status.
 
 ## Operations and diagnostics
 

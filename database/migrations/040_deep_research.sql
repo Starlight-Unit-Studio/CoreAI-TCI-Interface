@@ -56,3 +56,6 @@ CREATE TABLE IF NOT EXISTS stu_deep_research_events (
   PRIMARY KEY (id),
   KEY idx_dr_events_run (run_id, id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO stu_schema_migrations (version) VALUES ('040_deep_research')
+ON DUPLICATE KEY UPDATE applied_at=applied_at;

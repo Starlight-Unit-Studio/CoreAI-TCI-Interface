@@ -1,5 +1,16 @@
 # CoreAI: TCI Interface
 
+## 0.7.38 - 12.11.2026
+
+- **Deep Research (roadmap P15), after the operator's reference screenshots:** Deep Research in the + menu is a real tool now (it needs the web search and is not for guests). Instead of an answer, Mara writes a plan: a short title and four to six steps. The plan card offers Bearbeiten, Abbrechen and Starten; without a click it starts after a 45-second countdown. Bearbeiten puts the plan into the input field as a chip; the next message changes it into a new plan.
+- **The research runs in the background** in the existing browse worker: one Core call turns the steps into search queries, then per step the searches (SearXNG), the best new pages (plain HTTP, every redirect checked against local addresses, no JavaScript) and notes with the number of each source, then the report in Markdown. Citations that name no real source are removed. Mara's Core lock is taken per call, so the chat stays usable while she researches. Time and size limits can be set in `api/config.local.php` (`STU_DEEP_RESEARCH_*`).
+- **While it runs** the card shows each step (open, active, done), "Ich recherchiere …", the number of searches, a progress bar and Stopp. A run whose worker went silent (an update or restart) ends with an honest message instead of turning for ever.
+- **The report:** "Recherche abgeschlossen in … · N Quellenangaben · M Suchen" and a report card with a preview, download (Markdown with the numbered sources) and a full view with clickable citations, a table of contents and a sheet with the sources (by domain) and the activity (searches with their domains, pages read, Mara's short notes).
+- **Data:** migration 040 (`stu_deep_research_runs`, `_sources`, `_events`), endpoint `api/deep_research.php` (status, download; start, edit, cancel with CSRF). The runs of a chat are deleted with it; a chat whose research is still running counts as busy.
+- **Fixes:** the Data controls page now shows "Die Sitzung ist abgelaufen" for the server's real `csrf_failed` answer (0.7.32 only knew `csrf_invalid`). Version comments in settings.html carry their real versions again. The usage and + menu selftests read the nginx allowlist by pattern; the + menu UI selftest, failing on main before because of three outdated literal checks, passes again.
+- **Tests:** `scripts/deep-research-selftest.php` (with and without database), `scripts/deep-research-worker-selftest.py` and `scripts/deep-research-ui-selftest.cjs` (Playwright) in both preflights.
+
+
 ## 0.7.37 - 12.11.2026
 
 - **Mobile Projektmenues sichtbar:** Das ausserhalb der Seitenleiste gerenderte Drei-Punkte-Menue lag auf Ebene 180, waehrend die mobile Seitenleiste Ebene 999 und ihr Hintergrund Ebene 998 verwenden. Deshalb wurde ein funktionierendes Popup hinter beiden Ebenen verdeckt.

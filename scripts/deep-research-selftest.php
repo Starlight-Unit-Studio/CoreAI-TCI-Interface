@@ -77,10 +77,13 @@ dr_test(str_contains($sessions, "status IN ('queued','running','writing')") && s
 $worker = $read('tools/ember_browse_worker.py');
 dr_test(str_contains($worker, 'def claim_next_research(conn):') && str_contains($worker, 'process_research(conn, cfg, research, log)')
   && is_file($root . '/tools/coreai_deep_research.py'), 'the browse worker runs Deep Research');
+dr_test(str_contains($read('scripts/install.sh'), 'compose up -d --force-recreate browse')
+  && str_contains($read('scripts/install-native.sh'), 'systemctl restart ember-coreui-browse.service'), 'an update restarts the browse worker with the new code');
 $migration = $read('database/migrations/040_deep_research.sql');
 foreach (['stu_deep_research_runs', 'stu_deep_research_sources', 'stu_deep_research_events'] as $table) {
   dr_test(str_contains($migration, "CREATE TABLE IF NOT EXISTS $table"), "migration creates $table");
 }
+dr_test(str_contains($migration, "VALUES ('040_deep_research')"), 'migration 040 records itself');
 
 $dbWanted = is_file($root . '/api/config.local.php') || getenv('COREUI_SELFTEST_DB') === '1';
 if (!$dbWanted) {
