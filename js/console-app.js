@@ -733,8 +733,29 @@
       actions.appendChild(archive);
       if (permanentlyDelete) actions.appendChild(permanentlyDelete);
 
+      var optionsToggle = document.createElement('button');
+      optionsToggle.className = 'session-row-more';
+      optionsToggle.type = 'button';
+      optionsToggle.textContent = '···';
+      optionsToggle.title = 'Chataktionen';
+      optionsToggle.setAttribute('aria-label', 'Aktionen für '+String(s.title || 'Chat'));
+      optionsToggle.setAttribute('aria-expanded', 'false');
+      optionsToggle.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        var opening = !li.classList.contains('actions-open');
+        document.querySelectorAll('.drawer .session-item.actions-open').forEach(function(other) {
+          if (other !== li) {
+            other.classList.remove('actions-open');
+            var otherToggle=other.querySelector('.session-row-more');
+            if (otherToggle) otherToggle.setAttribute('aria-expanded','false');
+          }
+        });
+        li.classList.toggle('actions-open',opening);
+        optionsToggle.setAttribute('aria-expanded',String(opening));
+      });
       li.appendChild(titleEl);
       li.appendChild(metaEl);
+      li.appendChild(optionsToggle);
       li.appendChild(actions);
       markSessionWorking(li, sessionIsWorking(s));
 
