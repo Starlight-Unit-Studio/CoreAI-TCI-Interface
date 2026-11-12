@@ -1,0 +1,56 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.29
+Date: 12.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Base version: 0.7.28
+
+AUFTRAG
+Einstellungen > Tastatur nach den zwei Referenz-Screenshots des Betreibers (Nachrichteneditor, Chat, App;
+je Kuerzel Schalter und Tastenkombination; "Standardeinstellungen wiederherstellen").
+
+UMSETZUNG
+- js/coreui-shortcuts.js (CoreAIShortcuts): Aktionen mit Standardtasten, Aufnehmen (fromEvent), Pruefen
+  (check), Speichern im Browser (localStorage coreai.shortcuts.v1, nur Abweichungen plus Sendetaste),
+  Abgleich (match, isSend), Hinweis unter dem Eingabefeld (sendHint). Schreibweise "Mod+Shift+O":
+  Mod = Strg (Windows/Linux) bzw. Cmd (Mac), Meta = Super/Win bzw. Ctrl auf dem Mac.
+- Standard: Eingabefeld fokussieren Shift+Esc, Nachricht senden Enter, Denken auswaehlen Strg+Shift+M,
+  Diktierfunktion ein-/ausschalten Keine, Dateien anhaengen Strg+U, Chat loeschen Strg+Shift+Ruecktaste,
+  Im Chat suchen Strg+Shift+F, Neuer Chat Strg+Shift+O, Tastenkuerzel anzeigen Strg+/, Chat wechseln Strg+K,
+  Seitenleiste ein/aus Strg+Shift+S. "Nachricht im Hintergrund senden" und "Anmerkungen senden" stehen als
+  In Vorbereitung da (CoreAI kann das noch nicht), ohne Taste und ohne Schalter.
+- Abgelehnt mit Grund: Kombination schon vergeben (nennt das andere Kuerzel), Tasten ohne Strg/Alt/Super
+  (stoert beim Schreiben), Esc allein, Browser-Tasten (Strg+W, Strg+T ...), Bearbeiten (Strg+C, Strg+V ...).
+  Symbole zaehlen ohne Shift (Strg+/ auf deutscher Tastatur ist Strg+Shift+7). Alt/Option nimmt die Taste.
+- js/coreui-keyboard-settings.js + settings.html view-tastatur: Zeilen aus derselben Liste, Aufnehmen per
+  Klick, Esc bricht ab, Ruecktaste allein entfernt, Schalter, Zuruecksetzen. Auf Touch-Geraeten ein Hinweis
+  auf eine angeschlossene Tastatur. Die alte Auswahl generalSendKey ist entfernt.
+- js/coreui-shortcuts-app.js (app.html): jede Aktion ueber den vorhandenen Knopf (Neuer Chat, DENKEN,
+  Mikrofon, Datei-Eingabe, Chat-Menue Loeschen/Suchen mit Bestaetigung wie bisher, Seitenleiste: breit
+  die Checkbox sidebarControl, schmal die Schublade). Neue Fenster "Tastenkuerzel" und "Chat wechseln"
+  (Titel-Suche, angepinnte zuerst, Pfeiltasten, Enter). Ist ein anderes Fenster offen (Bestaetigung, PIN),
+  tun Kuerzel nichts. css/coreui-shortcuts.css fuer die beiden Fenster.
+- Sendetaste: CoreUISendKeys fragt CoreAIShortcuts (Rueckfall auf den alten Modus ohne das Modul).
+  Eine alte Wahl "Strg/Cmd + Enter sendet" (CoreUIPreferences.sendKey) wird uebernommen, und sendKey
+  wird bei Aenderungen nachgefuehrt. console-app.js aktualisiert den Hinweis bei "coreai:shortcuts".
+- README: Punkt Keyboard; beim Chat-Menue stand noch, Chats sperren und Projekte seien in Vorbereitung,
+  beides gibt es (Konto-PIN, Projekte), der Satz ist korrigiert.
+
+TESTS (in dieser Sitzung ausgefuehrt)
+- scripts/keyboard-shortcuts-ui-selftest.cjs (Playwright): Einstellungen (Gruppen, Standardtasten,
+  In Vorbereitung, Aufnehmen, Kollision, abgelehnte Tasten, Ruecktaste, Esc, Schalter, Sendetaste und
+  alte sendKey-Wahl, Zuruecksetzen, Telefon ohne seitliches Scrollen) und Chat (jede Aktion, Tastenkuerzel,
+  Chat wechseln, Sendetaste, anderes Fenster offen). Dazu ein Abgleich, dass app.html die IDs und die
+  Skript-Reihenfolge hat.
+- Angepasste Wortlaut-Tests: send-shortcut-selftest.cjs, settings-navigation-foundation-selftest.cjs,
+  settings-tabs-ui-selftest.cjs (Sendetaste per Aufnahme), sidebar-sections-ui-selftest.cjs (0.7.29).
+- terran-terminology-selftest.cjs und tci-language-selftest.cjs gruen.
+- Gesamte Selbsttest-Reihe (scripts/*selftest*, tests/) auf dem Branch und auf main 0.7.28: dieselben
+  11 Tests scheitern auf beiden Staenden schon vorher (browse-live, chat-menu, composer-menu, core-install,
+  long-chat, model-library, pets, security, session-list, settings-tabs, update; nicht Teil dieser Version).
+  settings-tabs scheitert auf beiden an derselben Stelle ("denied without any admin API request").
+  voice-input-selftest.php schlug im parallelen Lauf beider Reihen auf beiden Staenden fehl ("no temporary
+  files left") und besteht einzeln auf beiden. Alle uebrigen Tests bestehen, dazu der neue Tastatur-Test.
+
+NACH DEM UPDATE
+- Keine Migration. Einstellungen > Tastatur oeffnen; im Chat Strg+/ zeigt die Liste.
+
+Version: 0.7.29

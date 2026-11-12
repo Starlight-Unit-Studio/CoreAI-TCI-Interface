@@ -192,13 +192,17 @@ const smallText = page => page.evaluate(() => {
     await page.click('#tab-tastatur');
     assert.deepEqual(await visibleViews(page), ['view-tastatur'],
       'the actual keyboard shortcut moved to its own settings page');
-    assert.equal(await page.inputValue('#generalSendKey'), 'enter', 'Enter remains the legacy default');
-    await page.selectOption('#generalSendKey', 'mod-enter');
+    // 0.7.29: the send key is a shortcut of Settings > Tastatur, recorded by pressing the new keys.
+    await page.waitForSelector('#kbKeys-send');
+    assert.equal(await page.textContent('#kbKeys-send'), 'Enter', 'Enter remains the default');
+    await page.click('#kbKeys-send');
+    await page.keyboard.press('Control+Enter');
+    assert.equal(await page.textContent('#kbKeys-send'), 'Strg+Enter');
     assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('emberCoreUI.preferences.v1')).sendKey),
       'mod-enter', 'the real send shortcut is saved browser-locally');
     await page.reload();
     await page.waitForFunction(() => document.getElementById('startHealth').getAttribute('data-state') !== 'checking');
-    assert.equal(await page.inputValue('#generalSendKey'), 'mod-enter', 'send shortcut survives reload');
+    assert.equal(await page.textContent('#kbKeys-send'), 'Strg+Enter', 'send shortcut survives reload');
     await page.click('#tab-start');
     assert.equal(srv.calls.filter(c => c.key === 'admin.php').length, 0, 'a Nutzer never asks the admin API');
     // Start view sums up the categories.

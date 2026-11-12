@@ -1,5 +1,15 @@
 # CoreAI: TCI Interface
 
+## 0.7.29 - 12.11.2026
+
+- **Settings > Keyboard after the reference screenshots:** Three groups (message editor, chat, app) list the shortcuts of the chat. Each one has a switch and its key combination; choosing the combination records the next key press. Esc cancels, Backspace alone removes a shortcut, Restore defaults brings back the defaults.
+- **Shortcuts:** focus the chat input (Shift+Esc), send (Enter), choose thinking (Ctrl+Shift+M), dictation on/off (no key by default), attach files (Ctrl+U), delete the chat (Ctrl+Shift+Backspace), search in the chat (Ctrl+Shift+F), new chat (Ctrl+Shift+O), show shortcuts (Ctrl+/), switch chat (Ctrl+K), sidebar on/off (Ctrl+Shift+S); ⌘ on a Mac. Every action uses the existing control, so deleting still asks for confirmation. Sending in the background and sending annotations are shown as In preparation.
+- **Checks:** A combination that another shortcut already uses is refused with its name, as are keys that would disturb typing (no Ctrl, Alt or Super), Esc alone, the browser's own keys (for example Ctrl+W) and the text editing keys (for example Ctrl+C).
+- **In the chat:** Two new windows: the shortcut list and Switch chat (search by title, pinned chats first, arrow keys and Enter). While another window such as a confirmation is open, shortcuts do nothing. The hint under the chat input follows the send key.
+- **Send key:** Replaces the two modes "Enter sends" and "Ctrl/⌘ + Enter sends"; a choice made with the old setting carries over, and the old setting is kept in step. Shortcuts are kept in this browser.
+- **Tests:** New `scripts/keyboard-shortcuts-ui-selftest.cjs` (Playwright) in both preflights; literal tests for the send key, the settings navigation, the settings tabs and the version pin updated. README: the chat menu no longer calls locking chats and projects "In preparation", both exist.
+
+
 ## 0.7.28 - 12.11.2026
 
 - **Settings > Storage after the reference screenshots:** The page is no longer planned. The overview shows the used space against the account's limit with a bar (or, without a limit, the server's free disk space), and opens Files and Images with their sizes and counts.

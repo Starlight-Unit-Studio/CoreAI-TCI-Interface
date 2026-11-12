@@ -4261,6 +4261,7 @@
   }
   refreshComposerShortcutHint();
   window.addEventListener('coreui:preferences', refreshComposerShortcutHint);
+  window.addEventListener('coreai:shortcuts', refreshComposerShortcutHint); // 0.7.29: Settings > Tastatur
 
   inputEl.addEventListener('keydown', function(e) {
     var prefs = window.CoreUIPreferences ? window.CoreUIPreferences.load() : {sendKey: 'enter'};

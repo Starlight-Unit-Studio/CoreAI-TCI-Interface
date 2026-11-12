@@ -3188,3 +3188,30 @@ html[data-coreui-theme="dark"] .settings-body .notify-planned { color: var(--amb
   .settings-body .st-tab { padding: 0 14px; font-size: 15px; }
   .settings-body .st-search { min-height: 46px; }
 }
+
+/* 0.7.29: Settings > Tastatur after the reference screenshots (js/coreui-keyboard-settings.js). */
+.settings-body .kb-note { margin: 0 0 4px; padding-top: 0; border-top: 0; }
+.settings-body .kb-groups { display: grid; gap: 12px; }
+.settings-body .kb-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 14px; }
+.settings-body .kb-row .sec-copy strong { overflow-wrap: anywhere; }
+.settings-body .kb-keys {
+  min-width: 96px; min-height: 40px; padding: 0 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel-soft);
+  color: var(--txt); cursor: pointer; font-family: "Share Tech Mono", monospace; font-size: 15px; letter-spacing: 0.02em; white-space: nowrap;
+}
+.settings-body .kb-keys:hover:not(:disabled) { border-color: var(--line-strong); }
+.settings-body .kb-keys:focus-visible { outline: 2px solid var(--cx); outline-offset: 2px; }
+.settings-body .kb-keys.is-none { color: var(--muted); }
+.settings-body .kb-keys.is-recording { border-color: var(--cx); color: var(--cx); box-shadow: 0 0 0 3px var(--panel-cx); font-family: inherit; }
+.settings-body .kb-keys:disabled { opacity: 0.5; cursor: default; }
+.settings-body .kb-planned {
+  padding: 4px 10px; border: 1px solid var(--line-amber, var(--amb)); border-radius: 999px; color: var(--amb);
+  font-size: 12px; font-weight: 700; letter-spacing: 0.06em; white-space: nowrap;
+}
+.settings-body .kb-row.is-planned .sec-copy strong { color: var(--muted); }
+.settings-body .kb-foot { display: flex; justify-content: flex-end; margin-top: 18px; }
+@media (max-width: 620px) {
+  .settings-body .kb-row { gap: 10px; }
+  .settings-body .kb-keys { min-width: 0; padding: 0 10px; font-size: 14px; }
+  .settings-body .kb-foot { justify-content: stretch; }
+  .settings-body .kb-reset { width: 100%; }
+}

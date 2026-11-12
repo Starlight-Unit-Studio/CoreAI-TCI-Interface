@@ -1,9 +1,10 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
 Stand: 12.11.2026
-Repository-Version: 0.7.28 (Branch claude/bold-galileo-myoyi0, main bei Erstellung 0.7.27)
-BASIS: main 0.7.27 nach PR #283; Einstellungen > Speicher mit Grenze fuer alle Konten und je Konto (Admin Core).
+Repository-Version: 0.7.29 (Branch claude/bold-galileo-myoyi0, main bei Erstellung 0.7.28)
+BASIS: main 0.7.28 nach PR #284; Einstellungen > Tastatur mit Tastenkuerzeln im Chat.
 NEUE ARBEIT ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_7_29.txt
   docs/UEBERGABEPROTOKOLL_0_7_28.txt
   docs/UEBERGABEPROTOKOLL_0_7_27.txt
   docs/UEBERGABEPROTOKOLL_0_7_26.txt

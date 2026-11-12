@@ -40,8 +40,22 @@ for (const file of ['js/coreui-send-keys.js','js/coreui-preferences.js','js/sett
   new vm.Script(read(file), {filename:file});
 assert.ok(prefs.includes("sendKey: source.sendKey === 'mod-enter' ? 'mod-enter' : 'enter'"),
   'local storage normalizes shortcut modes');
-assert.ok(settings.includes("generalSendKey.addEventListener('change', saveLocal)"),
-  'General control uses the real preference store');
+// 0.7.29: Settings > Tastatur replaces the two-mode select; the send key is recorded like every shortcut
+// (js/coreui-shortcuts.js) and keeps sendKey in step, so this fallback stays valid for older pages.
+assert.ok(!settings.includes('generalSendKey'), 'no leftover of the old select in settings.js');
+const shortcuts = read('js/coreui-shortcuts.js');
+assert.ok(shortcuts.includes("var wanted = map.send && map.send.on && map.send.keys === 'Mod+Enter' ? 'mod-enter' : 'enter';"),
+  'the shortcuts keep the old sendKey in step');
+// With the shortcuts module present, CoreUISendKeys asks it.
+const calls = [];
+const withShortcuts = {window: {CoreAIShortcuts: {isSend: e => { calls.push(e.key); return e.key === 'Enter' && !!e.ctrlKey; },
+  sendHint: () => 'STRG+ENTER SENDEN · ENTER ZEILENUMBRUCH · LANGER TEXT ALS .MD'}}};
+vm.runInNewContext(source, withShortcuts, {filename: 'coreui-send-keys.js'});
+const delegated = withShortcuts.window.CoreUISendKeys;
+assert.equal(delegated.shouldSend(key(), {sendKey: 'enter'}), false, 'the shortcut decides, not the old mode');
+assert.equal(delegated.shouldSend(key({ctrlKey: true}), {sendKey: 'enter'}), true);
+assert.equal(delegated.hint({sendKey: 'enter'}), 'STRG+ENTER SENDEN · ENTER ZEILENUMBRUCH · LANGER TEXT ALS .MD');
+assert.deepEqual(calls, ['Enter', 'Enter']);
 assert.ok(settings.includes('sendKey: prior.sendKey, uiLanguage: prior.uiLanguage'),
   'resetting Appearance preserves the keyboard shortcut and interface language');
 assert.ok(app.includes('window.CoreUISendKeys.shouldSend(e, prefs)'),
@@ -49,5 +63,7 @@ assert.ok(app.includes('window.CoreUISendKeys.shouldSend(e, prefs)'),
 assert.ok(chat.includes('id="composerSendKeyHint"'), 'composer announces the active shortcut');
 assert.ok(chat.indexOf('js/coreui-send-keys.js') < chat.indexOf('js/console-app.js'),
   'keyboard module is loaded before the composer');
-assert.ok(page.includes('id="generalSendKey"'), 'General includes send-key setting');
-console.log('CoreAI General send shortcut: Enter, Ctrl/Command+Enter, IME, Shift, persistence and wiring OK');
+assert.ok(page.includes('id="kbGroups"') && !page.includes('id="generalSendKey"'), 'Settings > Tastatur holds the send key');
+assert.ok(chat.indexOf('js/coreui-shortcuts.js') > chat.indexOf('js/coreui-send-keys.js') && chat.indexOf('js/coreui-shortcuts.js') < chat.indexOf('src="./js/console-app.js'),
+  'the shortcuts are loaded before the composer');
+console.log('CoreAI send shortcut: Enter, Ctrl/Command+Enter, IME, Shift, persistence, Settings > Tastatur and wiring OK');
