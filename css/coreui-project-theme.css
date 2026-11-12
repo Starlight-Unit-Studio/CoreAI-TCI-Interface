@@ -1058,3 +1058,137 @@ body.project-home-active .project-chat-result-main {
   outline:2px solid var(--amb);
   outline-offset:-2px;
 }
+
+/* Project composer is the original CoreAI composer, not a limited replica.
+   All uploads, tools, voice, thinking, model selection and sends use its
+   existing handlers. This override beats the old project-home hide rule. */
+body.project-home-active .project-composer-slot {
+  position:relative;
+  display:block;
+  margin:18px 0 20px;
+  min-width:0;
+}
+body.project-home-active .project-composer-slot > .composer {
+  display:flex!important;
+  position:relative;
+  width:100%;
+  padding:10px 12px 12px;
+  border:1px solid var(--line-strong);
+  border-radius:0;
+  background:var(--panel)!important;
+  color:var(--txt);
+  box-shadow:var(--shadow-tight);
+  clip-path:none;
+  overflow:visible;
+}
+body.project-home-active .project-composer-slot > .composer::before {
+  width:100px;
+  left:0;
+  background:linear-gradient(90deg,var(--cx),var(--amb),transparent);
+}
+body.project-home-active .project-composer-slot .composer-frame {
+  width:100%;
+  max-width:none;
+  min-width:0;
+}
+body.project-home-active .project-composer-slot .composer-attachments,
+body.project-home-active .project-composer-slot .composer-edit-state {
+  max-width:none;
+}
+body.project-home-active .project-composer-slot .composer-footer-line {
+  width:100%;
+  max-width:none;
+}
+body.project-home-active .project-composer-slot .composer-menu {
+  z-index:135;
+  top:calc(100% + 8px);
+  bottom:auto;
+}
+body.project-home-active .project-composer-slot .core-mode-menu,
+body.project-home-active .project-composer-slot .reason-effort-menu {
+  z-index:135;
+  top:calc(100% + 8px);
+  bottom:auto;
+}
+body.project-home-active .project-composer-slot .composer-inner {
+  min-height:64px;
+}
+body.project-home-active .project-composer-slot .composer-input {
+  color:var(--txt);
+}
+body.project-home-active .project-composer-slot:focus-within {
+  border-color:var(--cx);
+}
+body.project-home-active .project-empty-state {
+  display:flex;
+  flex-direction:column;
+  min-height:134px;
+  justify-content:center;
+  gap:6px;
+  margin-top:8px;
+  padding:24px 20px;
+  border:1px dashed var(--line-strong)!important;
+  border-left:2px solid var(--cx)!important;
+  clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,12px 100%,0 calc(100% - 12px));
+}
+body.project-home-active .project-empty-state .project-empty-title {
+  color:var(--txt);
+  font:700 18px var(--coreui-font,"Rajdhani"),sans-serif;
+}
+body.project-home-active .project-empty-state p {
+  margin:0;
+  color:var(--muted);
+  font:500 15px/1.4 var(--coreui-font,"Rajdhani"),sans-serif;
+}
+/* The contextual menus are body-level portals. They must NOT inherit a clipped
+   polygon from a chat card or scroll with the project list. */
+.project-floating-menu,
+body.project-home-active .project-floating-menu {
+  position:fixed!important;
+  right:auto!important;
+  bottom:auto!important;
+  z-index:180!important;
+  box-sizing:border-box;
+  width:min(258px,calc(100vw - 16px));
+  min-width:0;
+  max-width:calc(100vw - 16px);
+  overflow-x:hidden;
+  overflow-y:auto;
+  padding:7px;
+  border:1px solid var(--line-strong);
+  border-radius:0;
+  background:var(--panel-solid)!important;
+  color:var(--txt);
+  box-shadow:var(--shadow-soft);
+  clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px));
+}
+.project-floating-menu[hidden] {display:none!important;}
+.project-floating-menu button {
+  display:block;
+  width:100%;
+  min-height:43px;
+  padding:9px 12px;
+  border:0;
+  background:transparent;
+  color:var(--txt);
+  text-align:left;
+  font:600 14px var(--coreui-font,"Rajdhani"),sans-serif;
+  cursor:pointer;
+}
+.project-floating-menu button:hover,
+.project-floating-menu button:focus-visible {
+  background:var(--panel-cx);
+  color:var(--cx);
+}
+.project-floating-menu button.danger {color:var(--red);}
+@media(max-width:620px) {
+  body.project-home-active .project-composer-slot > .composer {
+    padding:8px 7px 10px;
+  }
+  body.project-home-active .project-composer-slot .composer-frame {
+    padding:0 8px;
+  }
+  body.project-home-active .project-composer-slot .composer-footer-line {
+    flex-wrap:wrap;
+  }
+}

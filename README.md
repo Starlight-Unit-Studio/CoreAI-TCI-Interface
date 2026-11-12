@@ -6,7 +6,7 @@
 
 CoreAI combines Ollama-based models with private conversations, browser research, personal knowledge, file tools and an administration interface. Its standard deployment runs an isolated Nginx, PHP-FPM, MariaDB and worker stack on a Linux server. CoreAI is an application, **not a standalone operating system**.
 
-**Current source version: `0.7.26`** | [Changelog](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Documentation policy](docs/VERSIONING_POLICY.md) | [License](LICENSE.md)
+**Current source version: `0.7.27`** | [Changelog](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Documentation policy](docs/VERSIONING_POLICY.md) | [License](LICENSE.md)
 
 > **Development status:** Features reflect the source, not every model or provider. A merge does not prove live deployment.
 

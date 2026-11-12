@@ -1,0 +1,17 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.27
+Date: 12.11.2026
+Base version: 0.7.26
+
+- Project folder name now expands/collapses the chat list instead of opening the project home.
+- Folder ellipsis opens a dedicated menu with explicit Projektstartseite and existing actions.
+- Creating a project expands its folder; project homepage is a deliberate navigation choice.
+- Project homepage mounts the real native CoreAI composer, retaining uploads, tools, voice, thinking, model selector and the same send pipeline as the main chat.
+- The project draft is created in the exact selected server-owned project scope; no duplicate demo composer.
+- When leaving the project or starting a conversation, the same composer is restored to its normal place.
+- Per-chat ellipsis menu escapes clipped cards via a single body-level floating menu. Menus follow viewport bounds and close on Escape, scroll and outside click.
+- Empty projects show an intentional empty state and folder text.
+- Destructive chat deletion retains server-side confirmation.
+- Native CoreAI Holo and SoftGlass UI styles remain independent and intact.
+- A self-hosted installation must be updated separately; GitHub merge alone is not deployment.
+
+Version: 0.7.27

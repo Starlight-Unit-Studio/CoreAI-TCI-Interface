@@ -289,3 +289,25 @@ html[data-coreui-skin="softglass"] :is(button,input,select,textarea):focus-visib
   html[data-coreui-skin="softglass"] *,html[data-coreui-skin="softglass"] *::before,
   html[data-coreui-skin="softglass"] *::after{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
 }
+
+/* The genuine CoreAI input is also shared by project start pages. */
+html[data-coreui-skin="softglass"] body.project-home-active .project-composer-slot > .composer {
+  clip-path:none!important;
+  border-radius:var(--sg-radius-large)!important;
+  background:var(--sg-sheet)!important;
+  border:1px solid var(--sg-edge)!important;
+  box-shadow:var(--sg-highlight),var(--sg-shadow)!important;
+}
+html[data-coreui-skin="softglass"] .project-floating-menu {
+  clip-path:none!important;
+  border-radius:var(--sg-radius)!important;
+  background:var(--sg-raised)!important;
+  border:1px solid var(--sg-edge)!important;
+  box-shadow:var(--sg-shadow-float)!important;
+  backdrop-filter:blur(20px);
+}
+html[data-coreui-skin="softglass"] .project-empty-state {
+  clip-path:none!important;
+  border-radius:var(--sg-radius)!important;
+  background:var(--sg-pane)!important;
+}
