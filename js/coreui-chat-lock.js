@@ -40,6 +40,7 @@
     $('chatLockTitle').textContent=setup?'Konto-PIN einrichten':mode==='unlock'?'Chat entsperren?':'Diesen Chat sperren?';
     $('chatLockDescription').textContent=setup?'Lege eine vierstellige Konto-PIN fest. Sie gilt für alle gesperrten Chats und muss bestätigt werden.':mode==='unlock'?'Mit deiner Konto-PIN wird dieser Chat wieder freigegeben.':'Der Chat wird aus den normalen Chatlisten entfernt. Zum Entsperren benötigst du deine Konto-PIN.';
     $('chatLockConfirm').textContent=setup?'PIN weiter':mode==='unlock'?'Entsperren':'Chat sperren';
+    root.querySelector('.chat-lock-field').hidden=mode==='lock';
     $('chatLockPin').value='';root.hidden=false;$('chatLockPin').focus();
   }
   function refresh(){
@@ -61,7 +62,7 @@
     if(busy||!activeTarget)return;
     var pin=$('chatLockPin').value.trim();
     $('chatLockError').textContent='';
-    if(!/^[0-9]{4}$/.test(pin)){$('chatLockError').textContent=messages.invalid_pin;return;}
+    if(mode!=='lock'&&!/^[0-9]{4}$/.test(pin)){$('chatLockError').textContent=messages.invalid_pin;return;}
     if(mode==='setup'&&stage===0){
       firstPin=pin;stage=1;$('chatLockTitle').textContent='Konto-PIN bestätigen';
       $('chatLockDescription').textContent='Gib dieselbe vierstellige PIN erneut ein.';
