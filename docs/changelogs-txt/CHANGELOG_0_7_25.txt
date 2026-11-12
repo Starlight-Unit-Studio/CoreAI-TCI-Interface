@@ -1,0 +1,16 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.25
+Date: 12.11.2026
+Base version: 0.7.24 (one merge, one version)
+
+- Added SoftGlass UI as a selectable independent interface skin alongside original CoreAI.
+- SoftGlass is an original rounded, blurred glass style inspired by classic Aero-era Ubuntu/Windows desktops and modern chat interfaces. Does not reuse third-party logos or artwork.
+- Choose Einstellungen > Anzeige > Oberflächenstil: CoreAI (default) or SoftGlass UI.
+- Light, dark and automatic system modes remain independent of the chosen skin.
+- Existing browser-local preferences persist the skin and follow between CoreAI pages. Reset restores classic CoreAI.
+- Added a full-width red LÖSCHEN action below Archivieren in open sidebar chat menus for active chats.
+- Reused existing backend delete_permanently with archive_first for active chats, two-step confirmation, live-session cleanup and normal chat list refresh.
+- Chat menu delete and archived chat deletion continue using existing server checks.
+- Native CoreAI design, themes and other controls stay unchanged by default.
+- Self-hosted instances need built-in update and server preflight after merge.
+
+Version: 0.7.25

@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.7.25 - 12.11.2026
+
+- **SoftGlass UI:** An optional, original rounded translucent design inspired by classic Aero-era Linux/Windows glass themes. It is selectable under Einstellungen > Anzeige > Oberflächenstil and supports light, dark and system color schemes.
+- **CoreAI remains default:** The angular Terra-Net design is unchanged when SoftGlass is not selected. User-selected styles are local browser preferences, not AI model parameters.
+- **Sidebar chat deletion:** Every active chat now offers a red, full-width Löschen button below Archivieren; the existing server-side archive-then-delete transaction and two-step destructive confirmation are reused. Deleted active sessions return to the welcome view.
+- **Compatibility:** Project folders, PIN-protected chats, project context isolation, login and model/agent settings are preserved.
+- **Legal distinction:** SoftGlass is our own CoreAI skin. No third-party logos, graphics or branded UI assets are copied.
+
+
 ## 0.7.24 - 12.11.2026
 
 - **Individual project folders:** Project navigation now has independent open/close toggles with matching open/closed folder SVGs, accessible expansion states and locally persisted fold preferences. Project names still open their actual workspaces.

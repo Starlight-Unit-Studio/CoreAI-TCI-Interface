@@ -344,3 +344,23 @@ body.project-home-active .drawer .drawer-footer {background:var(--panel)!importa
 @media(prefers-reduced-motion:reduce) {
   .app-body .drawer .sidebar-chevron-icon {transition:none;}
 }
+
+/* Active and archived chats share the same destructive server deletion.
+   Keep this action last, full-width and visually separate on touch devices. */
+.app-body .drawer .session-item.actions-open .session-action.permanent-danger{
+  flex:1 1 100%;
+  width:100%;
+  min-height:44px;
+  margin-top:4px;
+  color:var(--red);
+  border:1px solid color-mix(in srgb,var(--red) 48%,transparent);
+  background:color-mix(in srgb,var(--red) 9%,var(--panel));
+  font:700 12px/1.25 var(--coreui-font,"Rajdhani"),sans-serif;
+  letter-spacing:.03em;
+}
+.app-body .drawer .session-item.actions-open .session-action.permanent-danger:hover,
+.app-body .drawer .session-item.actions-open .session-action.permanent-danger:focus-visible{
+  color:var(--red);
+  border-color:var(--red);
+  background:color-mix(in srgb,var(--red) 16%,var(--panel));
+}

@@ -6,7 +6,7 @@
   <meta name="language" content="de-DE" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#f0f4fa" />
-  <meta name="application-version" content="0.7.24" />
+  <meta name="application-version" content="0.7.25" />
   <meta name="application-name" content="CoreAI: TCI Interface" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface - Einstellungen</title>
@@ -15,9 +15,10 @@
   <link rel="stylesheet" href="./css/coreui-profile-crop.css?v=0852949496159567452926853" />
   <link rel="stylesheet" href="./css/coreui-update.css?v=0362480532788383300048352" />
   <link rel="stylesheet" href="./css/coreui-theme.css?v=0697431397907702126637895" />
-  <script src="./js/console-gate.js?v=0689552524510448600999898"></script>
-  <script src="./js/coreui-preferences.js?v=0004145186774094057353830"></script>
+  <script src="./js/console-gate.js?v=0151225167648158772889613"></script>
+  <script src="./js/coreui-preferences.js?v=1098190863602852320697527"></script>
   <script src="./js/coreui-ui-language.js?v=0850224961537363286304733"></script>
+  <link rel="stylesheet" href="./css/coreui-softglass.css?v=0905828754521609358040889" />
 </head>
 <body class="settings-body">
   <svg class="cfg-sprite" aria-hidden="true" focusable="false">
@@ -94,7 +95,7 @@
           <h1>EINSTELLUNGEN</h1>
         </div>
       </div>
-      <div class="settings-version">COREAI: TCI INTERFACE // v0.7.24</div>
+      <div class="settings-version">COREAI: TCI INTERFACE // v0.7.25</div>
       <div class="cfg-header-actions" aria-label="Schnellzugriffe Einstellungen">
         <label class="cfg-header-expert" for="settingsExpertToggle" title="Technische Einstellungen in allen Kategorien anzeigen oder ausblenden">
           <span>EXPERTENMODUS</span>
@@ -301,6 +302,28 @@
                 </div>
               </fieldset>
               <p class="theme-mode-help" id="themeModeHelp">Der Wechsel gilt sofort für Chat, Einstellungen, Anmeldung und Protokolle. Die Auswahl bleibt in diesem Browser gespeichert. Im Systemmodus folgt CoreAI automatisch dem Tag-/Nachtmodus deines Geräts.</p>
+            </section>
+            <section class="settings-panel cfg-card wide settings-panel-skin" aria-labelledby="skinTitle">
+              <header class="settings-panel-head">
+                <span class="settings-panel-glyph" aria-hidden="true">◈</span>
+                <div><span>OBERFLÄCHENSTIL</span><h3 id="skinTitle">Design auswählen</h3></div>
+              </header>
+              <fieldset class="skin-mode-fieldset" aria-describedby="skinModeHelp">
+                <legend>THEME</legend>
+                <div class="skin-mode-choices">
+                  <label class="skin-mode-choice">
+                    <input type="radio" name="coreuiSkin" value="coreai" checked />
+                    <span class="skin-mode-preview skin-preview-coreai" aria-hidden="true"><i></i><b></b><em></em></span>
+                    <span class="skin-mode-caption"><strong>CoreAI</strong><small>Kantiges Terra-Net-Holo-Interface</small></span>
+                  </label>
+                  <label class="skin-mode-choice">
+                    <input type="radio" name="coreuiSkin" value="softglass" />
+                    <span class="skin-mode-preview skin-preview-softglass" aria-hidden="true"><i></i><b></b><em></em></span>
+                    <span class="skin-mode-caption"><strong>SoftGlass UI</strong><small>Weiche Glasflächen im Aero-Stil</small></span>
+                  </label>
+                </div>
+              </fieldset>
+              <p class="theme-mode-help" id="skinModeHelp">Der Oberflächenstil ist unabhängig vom Farbschema. SoftGlass UI ist eine eigenständige CoreAI-Gestaltung im klassischen Glas-Look, keine offizielle Oberfläche eines anderen Anbieters.</p>
             </section>
             <section class="settings-panel cfg-card wide appearance-motif-card" aria-labelledby="appearanceMotifTitle">
               <header class="settings-panel-head"><span class="settings-panel-glyph" aria-hidden="true">✧</span><div><span>GESTALTUNG</span><h3 id="appearanceMotifTitle">Motiv und Farben</h3></div></header>
@@ -1630,7 +1653,7 @@
   <script src="./js/coreui-settings-menu.js?v=0905731306422182746103357"></script>
   <script src="./js/coreui-settings-tabs.js?v=0131180580469642779294886"></script>
   <script src="./js/coreui-context-slider.js?v=1058131433773441189843644"></script>
-  <script src="./js/settings.js?v=0848098337266772199606115"></script>
+  <script src="./js/settings.js?v=0386322068323594530283564"></script>
   <script src="./js/coreui-personalization-settings.js?v=0244791164211857764278165"></script>
   <script src="./js/coreui-pets.js?v=0221326546368683531249868"></script>
   <script src="./js/coreui-pets-settings.js?v=0189374306291011128432570"></script>

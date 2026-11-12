@@ -6,6 +6,7 @@
   var STORAGE_KEY = 'emberCoreUI.preferences.v1';
   var defaults = {
     theme: 'system',
+    uiSkin: 'coreai', // Independent of the light/dark colour scheme.
     uiLanguage: 'auto',
     // Keyboard behavior is a local presentation preference, not a model setting.
     sendKey: 'enter',
@@ -63,6 +64,7 @@
     var fontFamily = pickFont(source.fontFamily, 'coreai');
     return {
       theme: source.theme === 'light' || source.theme === 'dark' ? source.theme : 'system',
+      uiSkin: source.uiSkin === 'softglass' ? 'softglass' : 'coreai',
       uiLanguage: source.uiLanguage === 'de' || source.uiLanguage === 'en' ? source.uiLanguage : 'auto',
       sendKey: source.sendKey === 'mod-enter' ? 'mod-enter' : 'enter',
       reduceMotion: source.reduceMotion === true,
@@ -184,6 +186,7 @@
 
     var activeTheme = resolvedTheme(prefs.theme);
     root.setAttribute('data-coreui-theme', activeTheme);
+    root.setAttribute('data-coreui-skin', prefs.uiSkin);
     // Only a supported interface locale is used; independent of Mara's answer language.
     var browserLang = (window.navigator && window.navigator.language) || 'de';
     var interfaceLang = prefs.uiLanguage === 'auto'
