@@ -1,0 +1,31 @@
+COREAI: TCI INTERFACE // HANDOVER 0.7.20
+Date: 12.11.2026
+Previous recorded main VERSION: 0.7.17
+Unversioned historical merges: #272 and #273.
+Historical accounting: #272 -> 0.7.18 slot, #273 -> 0.7.19 slot.
+Current actual source increment: 0.7.20 (only after this PR's merge).
+
+PRE-FLIGHT ROOT CAUSE
+The frontend selftest originally searched for maxlength="12000" anywhere
+in app.html. Project settings introduced precisely this legitimate limit
+on #projectSettingsInstructions. The chat composer #inputMessage was never
+limited; make the test select that actual textarea and keep all file/paste
+assertions in place.
+
+CHANGE SCOPE
+- Improve frontend-regression selftest selector without weakening security.
+- Correct version contract across source files and published documentation.
+- Backfill historical change records without rewriting Git history.
+
+DO NOT CLAIM
+The merge itself is not a deployed release, a verified live fix or a
+published ZIP. Run the normal update and both production preflights on the
+server after merging; manually test mobile long-paste, project instructions
+and account isolation.
+
+VALIDATION
+php -l scripts/frontend-regression-selftest.php
+php scripts/frontend-regression-selftest.php
+python3 scripts/version-merge-check.py --base-version 0.7.17
+python3 scripts/branding-license-selftest.py
+The checks must be executed; listing them here is not proof of success.

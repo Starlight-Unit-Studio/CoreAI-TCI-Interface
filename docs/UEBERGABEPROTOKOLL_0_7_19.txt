@@ -1,0 +1,13 @@
+COREAI: TCI INTERFACE // HISTORICAL HANDOVER 0.7.19
+Reconstructed 12.11.2026; source merged on 11.11.2026.
+
+PR #273: https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface/pull/273
+Original merge SHA: 8eec82a4c4f0c58d79c3ab405592928bb6f44fe3
+
+Removed redundant Chat/Work selector. The ordinary chat is the integrated
+workspace. ChatGPT Projects are organizational reference; Claude Code is the
+agentic-work reference. No separate Work mode or executor was introduced.
+
+Versioning incident: PR was merged while main still declared 0.7.17.
+0.7.19 exists ONLY as this retroactive accounting slot; no historic source
+VERSION 0.7.19 or official release ZIP is claimed.
