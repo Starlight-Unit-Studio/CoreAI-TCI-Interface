@@ -1101,10 +1101,14 @@ body.project-home-active .project-composer-slot .composer-footer-line {
 }
 body.project-home-active .project-composer-slot .composer-menu {
   z-index:135;
+  top:calc(100% + 8px);
+  bottom:auto;
 }
 body.project-home-active .project-composer-slot .core-mode-menu,
 body.project-home-active .project-composer-slot .reason-effort-menu {
   z-index:135;
+  top:calc(100% + 8px);
+  bottom:auto;
 }
 body.project-home-active .project-composer-slot .composer-inner {
   min-height:64px;
