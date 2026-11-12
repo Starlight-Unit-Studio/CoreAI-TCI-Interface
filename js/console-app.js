@@ -422,6 +422,7 @@
   // A new chat is a view-only draft until the first real user turn.
   function showDraftChat() {
     state.draftProjectId = null;
+    inputEl.placeholder = 'Nachricht an CoreAI…';
     if (window.CoreAIProjects && window.CoreAIProjects.closeHome) window.CoreAIProjects.closeHome();
     if (state.draftSessionPromise) return;
     if (state.bgTimer) clearTimeout(state.bgTimer);
@@ -4318,8 +4319,17 @@
     openDrawer: openDrawer,
     closeDrawer: closeDrawer,
     select: function (sessionId) { return selectSession(sessionId).then(function () { closeDrawer(); }); },
+    // Project overview mounts this very same composer. Prepare a real draft
+    // before showing it so attachments, voice, tools and send share one pipeline.
+    prepareProjectDraft: function (projectId) {
+      if (!/^[a-f0-9]{32}$/.test(String(projectId || '')) || state.draftSessionPromise) return false;
+      showDraftChat();
+      state.draftProjectId = String(projectId);
+      inputEl.placeholder = 'Nachricht im Projekt…';
+      return true;
+    },
     startProjectChat: function (projectId, message) {
-      if (!/^([a-f0-9]{32})$/.test(String(projectId || '')) || !String(message || '').trim()) return;
+      if (!/^[a-f0-9]{32}$/.test(String(projectId || '')) || !String(message || '').trim()) return;
       showDraftChat();
       state.draftProjectId=String(projectId);
       closeDrawer();
