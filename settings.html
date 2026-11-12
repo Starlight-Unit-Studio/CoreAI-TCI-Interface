@@ -302,6 +302,28 @@
               </fieldset>
               <p class="theme-mode-help" id="themeModeHelp">Der Wechsel gilt sofort für Chat, Einstellungen, Anmeldung und Protokolle. Die Auswahl bleibt in diesem Browser gespeichert. Im Systemmodus folgt CoreAI automatisch dem Tag-/Nachtmodus deines Geräts.</p>
             </section>
+            <section class="settings-panel cfg-card wide settings-panel-skin" aria-labelledby="skinTitle">
+              <header class="settings-panel-head">
+                <span class="settings-panel-glyph" aria-hidden="true">◈</span>
+                <div><span>OBERFLÄCHENSTIL</span><h3 id="skinTitle">Design auswählen</h3></div>
+              </header>
+              <fieldset class="skin-mode-fieldset" aria-describedby="skinModeHelp">
+                <legend>THEME</legend>
+                <div class="skin-mode-choices">
+                  <label class="skin-mode-choice">
+                    <input type="radio" name="coreuiSkin" value="coreai" checked />
+                    <span class="skin-mode-preview skin-preview-coreai" aria-hidden="true"><i></i><b></b><em></em></span>
+                    <span class="skin-mode-caption"><strong>CoreAI</strong><small>Kantiges Terra-Net-Holo-Interface</small></span>
+                  </label>
+                  <label class="skin-mode-choice">
+                    <input type="radio" name="coreuiSkin" value="softglass" />
+                    <span class="skin-mode-preview skin-preview-softglass" aria-hidden="true"><i></i><b></b><em></em></span>
+                    <span class="skin-mode-caption"><strong>SoftGlass UI</strong><small>Weiche Glasflächen im Aero-Stil</small></span>
+                  </label>
+                </div>
+              </fieldset>
+              <p class="theme-mode-help" id="skinModeHelp">Der Oberflächenstil ist unabhängig vom Farbschema. SoftGlass UI ist eine eigenständige CoreAI-Gestaltung im klassischen Glas-Look, keine offizielle Oberfläche eines anderen Anbieters.</p>
+            </section>
             <section class="settings-panel cfg-card wide appearance-motif-card" aria-labelledby="appearanceMotifTitle">
               <header class="settings-panel-head"><span class="settings-panel-glyph" aria-hidden="true">✧</span><div><span>GESTALTUNG</span><h3 id="appearanceMotifTitle">Motiv und Farben</h3></div></header>
               <div class="appearance-form-row appearance-edit-mode" id="prefEditModeRow" hidden>
