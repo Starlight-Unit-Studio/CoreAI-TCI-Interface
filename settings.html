@@ -6,16 +6,16 @@
   <meta name="language" content="de-DE" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#f0f4fa" />
-  <meta name="application-version" content="0.7.31" />
+  <meta name="application-version" content="0.7.32" />
   <meta name="application-name" content="CoreAI: TCI Interface" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface - Einstellungen</title>
   <link rel="stylesheet" href="./css/console.css?v=0732355389840978237790247" />
-  <link rel="stylesheet" href="./css/settings.css?v=0779129027905637733858066" />
+  <link rel="stylesheet" href="./css/settings.css?v=0881729190710598109371079" />
   <link rel="stylesheet" href="./css/coreui-profile-crop.css?v=0852949496159567452926853" />
   <link rel="stylesheet" href="./css/coreui-update.css?v=0362480532788383300048352" />
   <link rel="stylesheet" href="./css/coreui-theme.css?v=0697431397907702126637895" />
-  <script src="./js/console-gate.js?v=0062704455401961709134498"></script>
+  <script src="./js/console-gate.js?v=0580114264001554460816351"></script>
   <script src="./js/coreui-preferences.js?v=1098190863602852320697527"></script>
   <script src="./js/coreui-ui-language.js?v=0850224961537363286304733"></script>
   <link rel="stylesheet" href="./css/coreui-softglass.css?v=1088656458787114546518505" />
@@ -99,7 +99,7 @@
           <h1>EINSTELLUNGEN</h1>
         </div>
       </div>
-      <div class="settings-version">COREAI: TCI INTERFACE // v0.7.31</div>
+      <div class="settings-version">COREAI: TCI INTERFACE // v0.7.32</div>
       <div class="cfg-header-actions" aria-label="Schnellzugriffe Einstellungen">
         <label class="cfg-header-expert" for="settingsExpertToggle" title="Technische Einstellungen in allen Kategorien anzeigen oder ausblenden">
           <span>EXPERTENMODUS</span>
@@ -1415,7 +1415,7 @@
         </section>
 
         <!-- CATEGORY FOUNDATION: speicher (no fake settings) -->
-        <!-- 0.7.31: Speicher after the reference screenshots (js/coreui-storage-settings.js, api/files.php). -->
+        <!-- 0.7.32: Speicher after the reference screenshots (js/coreui-storage-settings.js, api/files.php). -->
         <section class="cfg-view" id="view-speicher" role="tabpanel" aria-labelledby="tab-speicher" tabindex="-1" hidden>
           <header class="cfg-view-head"><div><span class="cfg-kicker">PERSÖNLICH // SPEICHER</span><h2>Speicher</h2><p>Was deine CoreAI für dich aufbewahrt: deine Uploads, Maras Bilder und die Dateien, die Mara für dich erstellt hat.</p></div></header>
           <p class="sec-status" id="stStatus" role="status" aria-live="polite">Speicher wird geladen …</p>
@@ -1520,7 +1520,7 @@
           </div>
         </section>
 
-        <!-- 0.7.31: Tastatur after the reference screenshots (js/coreui-shortcuts.js, js/coreui-keyboard-settings.js). -->
+        <!-- 0.7.32: Tastatur after the reference screenshots (js/coreui-shortcuts.js, js/coreui-keyboard-settings.js). -->
         <section class="cfg-view" id="view-tastatur" role="tabpanel" aria-labelledby="tab-tastatur" tabindex="-1" hidden>
           <header class="cfg-view-head"><div><span class="cfg-kicker">PERSÖNLICH // EINGABE</span><h2>Tastatur</h2><p>Um ein Tastenkürzel zu ändern, wähle die Tastenkombination aus und drücke dann die neuen Tasten.</p></div></header>
           <p class="sec-status" id="kbStatus" role="status" aria-live="polite"></p>
@@ -1529,7 +1529,7 @@
           <div class="kb-foot"><button class="arc-btn kb-reset" id="kbReset" type="button">Standardeinstellungen wiederherstellen</button></div>
         </section>
 
-        <!-- 0.7.31: Nutzung after the reference screenshots (js/coreui-usage-settings.js, api/usage.php). -->
+        <!-- 0.7.32: Nutzung after the reference screenshots (js/coreui-usage-settings.js, api/usage.php). -->
         <section class="cfg-view" id="view-nutzung" role="tabpanel" aria-labelledby="tab-nutzung" tabindex="-1" hidden>
           <header class="cfg-view-head"><div><span class="cfg-kicker">PERSÖNLICH // NUTZUNG</span><h2>Nutzung</h2><p>Was dein Plan erlaubt und wie du CoreAI nutzt. Nur deine eigenen Zahlen, nie Inhalte deiner Chats.</p></div></header>
           <p class="sec-status" id="nuStatus" role="status" aria-live="polite">Nutzung wird geladen …</p>
@@ -1628,14 +1628,53 @@
 
         <!-- CATEGORY FOUNDATION: datenkontrollen (no fake settings) -->
         <section class="cfg-view" id="view-datenkontrollen" role="tabpanel" aria-labelledby="tab-datenkontrollen" tabindex="-1" hidden>
-          <header class="cfg-view-head"><div><span class="cfg-kicker">PERSÖNLICH // DATEN</span><h2>Datenkontrollen</h2><p>Deine persönlichen Daten exportieren, ohne andere Konten oder interne Core-Daten offenzulegen.</p></div></header>
-          <section class="settings-panel cfg-card wide" aria-label="Kontodaten exportieren">
-              <div class="account-export-row">
-                <div><strong>MEINE DATEN EXPORTIEREN</strong><small>Erzeugt eine private JSON-Datei mit Profil, Einstellungen, Memories, RAG-Chunks und Unterhaltungen. Geheimnisse und interne Thinking-Daten bleiben ausgeschlossen.</small></div>
-                <button class="settings-action" id="exportAccountData" type="button">JSON-EXPORT ERSTELLEN</button>
-              </div>
+          <header class="cfg-view-head"><div><span class="cfg-kicker">PERSÖNLICH // DATEN</span><h2>Datenkontrollen</h2><p>Deine Chats und Daten verwalten: exportieren, archivieren oder löschen. Nur dein eigenes Konto.</p></div></header>
+          <p class="sec-status" id="dcStatus" role="status" aria-live="polite"></p>
+          <!-- 0.7.32: after the reference screenshot (js/coreui-data-controls.js, api/console_sessions.php). -->
+          <section class="settings-panel cfg-card wide sec-group dc-group" aria-label="Datenkontrollen">
+            <div class="sec-row dc-row is-planned">
+              <div class="sec-copy"><strong>Geteilte Links</strong><small>Chats teilst du bisher über ⋮ &gt; Teilen als Markdown-Datei. Links zum Teilen gibt es noch nicht.</small></div>
+              <span class="kb-planned">In Vorbereitung</span>
+            </div>
+            <div class="sec-row dc-row is-planned">
+              <div class="sec-copy"><strong>Persönliche Daten zusammenführen</strong><small>Daten aus einem CoreAI-Export in dieses Konto übernehmen.</small></div>
+              <span class="kb-planned">In Vorbereitung</span>
+            </div>
+            <div class="sec-row dc-row">
+              <div class="sec-copy"><strong id="dcLabel-export">Daten exportieren</strong><small>Eine private JSON-Datei mit Profil, Einstellungen, Memories, RAG-Chunks und Unterhaltungen. Geheimnisse und interne Thinking-Daten bleiben draußen.</small></div>
+              <button class="arc-btn dc-btn" id="exportAccountData" type="button" aria-describedby="dcLabel-export">Exportieren</button>
+            </div>
+            <div class="sec-row dc-row pz-nav">
+              <div class="sec-copy"><strong>Archivierte Chats</strong><small id="dcArchivedNote">Wird geladen …</small></div>
+              <button class="sec-open" type="button" data-goto="archivierte-chats" aria-label="Archivierte Chats öffnen"><svg aria-hidden="true"><use href="#i-chevron" /></svg></button>
+            </div>
+            <div class="sec-row dc-row">
+              <div class="sec-copy"><strong id="dcLabel-archive">Alle Chats archivieren</strong><small id="dcActiveNote"></small></div>
+              <button class="arc-btn dc-btn" id="dcArchiveAll" type="button" aria-describedby="dcLabel-archive" disabled>Alle archivieren</button>
+            </div>
+            <div class="sec-row dc-row">
+              <div class="sec-copy"><strong id="dcLabel-delete">Alle Chats löschen</strong><small id="dcDeleteNote"></small></div>
+              <button class="arc-btn dc-btn dc-danger" id="dcDeleteAll" type="button" aria-describedby="dcLabel-delete" disabled>Alle löschen</button>
+            </div>
           </section>
-          <p class="cfg-card-note">Weitere Datenaufbewahrungs- und Löschoptionen sind noch in Vorbereitung. Dieser Export verwendet die bereits vorhandene geschützte Funktion.</p>
+
+          <div class="sec-confirm" id="dcArchiveConfirm" hidden role="dialog" aria-modal="true" aria-labelledby="dcArchiveTitle">
+            <div class="sec-confirm-box">
+              <h3 id="dcArchiveTitle">Alle Chats archivieren?</h3>
+              <p id="dcArchiveText"></p>
+              <p class="sec-confirm-error" id="dcArchiveError" role="alert"></p>
+              <div class="sec-actions"><button class="settings-action" id="dcArchiveOk" type="button">ALLE ARCHIVIEREN</button><button class="settings-action compact" id="dcArchiveCancel" type="button">ABBRECHEN</button></div>
+            </div>
+          </div>
+          <div class="sec-confirm" id="dcDeleteConfirm" hidden role="dialog" aria-modal="true" aria-labelledby="dcDeleteTitle">
+            <div class="sec-confirm-box">
+              <h3 id="dcDeleteTitle">Alle Chats löschen?</h3>
+              <p id="dcDeleteText"></p>
+              <label class="dc-typed" for="dcDeleteWord"><span>Gib zum Bestätigen <b>LÖSCHEN</b> ein.</span><input id="dcDeleteWord" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" /></label>
+              <p class="sec-confirm-error" id="dcDeleteError" role="alert"></p>
+              <div class="sec-actions"><button class="settings-action danger" id="dcDeleteOk" type="button" disabled>ALLE LÖSCHEN</button><button class="settings-action compact" id="dcDeleteCancel" type="button">ABBRECHEN</button></div>
+            </div>
+          </div>
         </section>
 
         <!-- CATEGORY FOUNDATION: teams-start (no fake settings) -->
@@ -1788,6 +1827,7 @@
   <script src="./js/coreui-storage-settings.js?v=0115231023762448267674285"></script>
   <script src="./js/coreui-keyboard-settings.js?v=0462958741389577493789578"></script>
   <script src="./js/coreui-usage-settings.js?v=0648388245073259716193645"></script>
+  <script src="./js/coreui-data-controls.js?v=0525102523501818226888803"></script>
   <script src="./js/coreui-notify.js?v=1002976330424203629675926"></script>
   <script src="./js/coreui-notify-settings.js?v=0180900766828442110480559"></script>
   <script src="./js/coreui-profile-stats.js?v=0127785684761467082142579"></script>

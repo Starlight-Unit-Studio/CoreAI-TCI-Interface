@@ -1,0 +1,14 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.32
+Date: 12.11.2026
+Base version: 0.7.31
+
+- Settings > Datenkontrollen after the reference screenshot. Rows: Geteilte Links (In Vorbereitung), Persoenliche Daten zusammenfuehren (In Vorbereitung), Daten exportieren (existing JSON export), Archivierte Chats (count, link), Alle Chats archivieren, Alle Chats loeschen.
+- Not taken over (crossed out by the operator): model training switch, network access, reset of the reference's workspace product.
+- Alle Chats archivieren: confirmation dialog with the count; active chats are archived and unpinned; restorable under Archivierte Chats.
+- Alle Chats loeschen: confirmation dialog plus the typed word LOESCHEN; active and archived chats are deleted with messages and files through coreui_console_session_delete (the chat menu's delete). Busy chats (Mara still working) stay; an active busy chat is put back from the archive. Result: "X Chats geloescht. Y Chats, in denen ich noch arbeite, bleiben."
+- Locked chats (PIN) are never touched and are counted separately.
+- api/console_sessions.php: data_summary (GET), archive_all (POST, confirm ARCHIVE_ALL_CHATS), delete_all (POST, confirm DELETE_ALL_CHATS), both POSTs with CSRF. New api/data_controls_store.php, js/coreui-data-controls.js.
+- Tests: scripts/data-controls-selftest.php and scripts/data-controls-ui-selftest.cjs in both preflights.
+- A self-hosted installation must be updated separately; GitHub merge alone is not deployment.
+
+Version: 0.7.32

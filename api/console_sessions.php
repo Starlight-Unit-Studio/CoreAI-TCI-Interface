@@ -9,6 +9,7 @@ require_once __DIR__ . '/console_agent_runs.php';
 require_once __DIR__ . '/console_chat_tools.php';
 require_once __DIR__ . '/console_chat_lock_store.php';
 require_once __DIR__ . '/knowledge_store.php';
+require_once __DIR__ . '/data_controls_store.php';
 
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 $pdo = stu_pdo();
@@ -24,10 +25,25 @@ $body = [];
 if ($method === 'POST') {
   $body = stu_read_json_body();
   $action = strtolower(trim((string)($body['action'] ?? $action)));
-  if (str_starts_with($action,'project_') || str_starts_with($action,'chat_lock') || $action === 'chat_unlock') stu_require_csrf();
+  if (str_starts_with($action,'project_') || str_starts_with($action,'chat_lock') || $action === 'chat_unlock'
+    || in_array($action, ['archive_all', 'delete_all'], true)) stu_require_csrf();
 }
 
 try {
+  // 0.7.32: Settings > Datenkontrollen. Counts, and every chat at once (never the locked ones).
+  if ($action === 'data_summary' && $method === 'GET') {
+    stu_json(['ok'=>true] + coreui_data_controls_summary($pdo, (int)$uid) + ['csrf_token'=>stu_csrf_token()]);
+  }
+  if ($method === 'POST' && $action === 'archive_all') {
+    $archived = coreui_data_controls_archive_all($pdo, (int)$uid, (string)($body['confirm'] ?? ''));
+    // archived_now: how many were archived just now; active/archived/locked: the counts afterwards.
+    stu_json(['ok'=>true, 'archived_now'=>$archived] + coreui_data_controls_summary($pdo, (int)$uid));
+  }
+  if ($method === 'POST' && $action === 'delete_all') {
+    $result = coreui_data_controls_delete_all($pdo, (int)$uid, (string)($body['confirm'] ?? ''));
+    stu_json(['ok'=>true] + $result + ['summary'=>coreui_data_controls_summary($pdo, (int)$uid)]);
+  }
+
   if ($action === 'list') {
     $includeArchived = !empty($_GET['include_archived']);
     $rows = coreui_console_session_list($pdo, (int)$uid, $includeArchived);
