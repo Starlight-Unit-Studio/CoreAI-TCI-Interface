@@ -67,9 +67,9 @@ assert(themeCSS.includes('.app-body #sidebarControl:not(:checked) ~ .drawer #btn
 assert(themeCSS.includes('body.project-home-active .project-chat-result') &&
   themeCSS.includes('clip-path:polygon('),
   'projects and chat controls retain angular CoreAI geometry');
-assert(h.includes('N-73 // v0.7.34'),
+assert(h.includes('N-73 // v0.7.36'),
   'Ren matrix must display the same current application version');
 
 const version=read('VERSION').trim();
-assert.equal(version,'0.7.34','single merge advances version 0.7.34');
-console.log('PASS: CoreAI sidebar sections and project theme 0.7.34');
+assert.equal(version,'0.7.36','single merge advances version 0.7.36');
+console.log('PASS: CoreAI sidebar sections and project theme 0.7.36');
