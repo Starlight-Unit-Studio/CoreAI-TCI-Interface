@@ -1,0 +1,16 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.24
+Date: 12.11.2026
+Base version: 0.7.23 (one merge, one version)
+
+- Each existing project has an independent expand/collapse control.
+- Folder SVG changes between closed and open, and the state is stored locally.
+- The separate project-name button still opens the workspace; project ellipsis stays functional.
+- Project chat lists are compact and include a More button when there are over eight chats.
+- Pinned and Recent chat rows use denser layout without overlapping the options menu.
+- Removed the old hard-coded GPT-style project drawer, retaining the original Ren matrix, ticker and CoreAI navigation.
+- The project home uses native CoreAI typography, active project memory mode, angular panels, and blue/gold accents.
+- Create/Edit project modal uses CoreAI cut corners, compact controls, light/dark palette and native action buttons.
+- Existing project CRUD, sources, session APIs, PIN security, local CPU deployment and model flow unchanged.
+- A GitHub merge alone does not update an existing self-hosted server; use the built-in updater and preflight.
+
+Version: 0.7.24

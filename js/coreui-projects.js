@@ -7,6 +7,29 @@
   var projects = [], sessions = [], lockedChats = [], lockedExpanded = false, current = null, tab = 'chats', sources = [];
   var csrf = '', busy = false;
   var api = './api';
+  // Sidebar folding is a local UI preference, never server-side project state.
+  var FOLDER_STATE_KEY = 'coreai.project-folder-folded.v1';
+  var folderState = Object.create(null);
+  try {
+    var savedFolderState = JSON.parse(localStorage.getItem(FOLDER_STATE_KEY) || '{}');
+    if (savedFolderState && typeof savedFolderState === 'object' && !Array.isArray(savedFolderState)) {
+      Object.keys(savedFolderState).forEach(function(id) {
+        if (/^[a-f0-9]{32}$/.test(id) && typeof savedFolderState[id] === 'boolean') {
+          folderState[id] = savedFolderState[id];
+        }
+      });
+    }
+  } catch (e) {}
+  function folderIsExpanded(id) {
+    return Object.prototype.hasOwnProperty.call(folderState, id) ? folderState[id] : id === current;
+  }
+  function setFolderExpanded(id, expanded) {
+    folderState[id] = !!expanded;
+    try { localStorage.setItem(FOLDER_STATE_KEY, JSON.stringify(folderState)); } catch (e) {}
+  }
+  var ICON_FOLDER_CLOSED = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10H3V7Z"/></svg>';
+  var ICON_FOLDER_OPEN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11V6a2 2 0 0 1 2-2h5l2 3h6a2 2 0 0 1 2 2v2"/><path d="M5 11h16l-2 9H3l2-9Z"/></svg>';
+  var ICON_FOLDER_CHEVRON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>';
   var ERR = {
     project_name_required:'Bitte einen Projektnamen eingeben.',
     project_not_found:'Das Projekt wurde nicht gefunden.',
@@ -37,51 +60,96 @@
     var b=el('button',cl||'',labelText);b.type='button';b.addEventListener('click',handler);return b;
   }
   function renderSidebar() {
-    var list=$('projectsNavList');list.replaceChildren();
-    projects.forEach(function(p){
-      var row=el('div','project-nav-row'+(p.id===current?' active':''));
-      var open=action('',function(){openProject(p.id);},'project-nav-open');
-      var folderIcon=el('span','project-nav-folder');
-      // Universal folder outline, no special CoreAI-only glyphs.
-      folderIcon.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10H3V7Z"/></svg>';
-      open.appendChild(folderIcon);
-      open.appendChild(label(p.name,'project-nav-label'));
+    var list = $('projectsNavList');
+    var scrollTop = list.scrollTop;
+    list.replaceChildren();
+    projects.forEach(function(p) {
+      var expanded = folderIsExpanded(p.id);
+      var row = el('div', 'project-nav-row project-nav-folder-row' +
+        (p.id === current ? ' active' : '') + (expanded ? ' is-expanded' : ''));
+      var childrenId = 'project-nav-children-' + p.id;
+      var toggle = action('', function() {
+        setFolderExpanded(p.id, !folderIsExpanded(p.id));
+        renderSidebar();
+        var replacement = document.getElementById('project-nav-toggle-' + p.id);
+        if (replacement) replacement.focus({preventScroll:true});
+      }, 'project-nav-folder-toggle');
+      toggle.id = 'project-nav-toggle-' + p.id;
+      toggle.setAttribute('aria-expanded', String(expanded));
+      toggle.setAttribute('aria-controls', childrenId);
+      toggle.setAttribute('aria-label', (expanded ? 'Projektordner zuklappen: ' : 'Projektordner aufklappen: ') + p.name);
+      toggle.title = expanded ? 'Ordner zuklappen' : 'Ordner aufklappen';
+      var chevron = el('span', 'project-nav-chevron');
+      chevron.innerHTML = ICON_FOLDER_CHEVRON;
+      toggle.appendChild(chevron);
+      var icon = el('span', 'project-nav-folder');
+      icon.innerHTML = expanded ? ICON_FOLDER_OPEN : ICON_FOLDER_CLOSED;
+      toggle.appendChild(icon);
+      row.appendChild(toggle);
+      // The name keeps its existing behavior: opening the project workspace.
+      var open = action('', function() {openProject(p.id);}, 'project-nav-open');
+      open.appendChild(label(p.name, 'project-nav-label'));
+      open.setAttribute('aria-label', 'Projekt öffnen: ' + p.name);
       row.appendChild(open);
-      row.appendChild(action('···',function(){
-        openProject(p.id);openPopover();
-      },'project-nav-menu'));
+      var options = action('···', function() {
+        openProject(p.id);
+        openPopover();
+      }, 'project-nav-menu');
+      options.setAttribute('aria-label', 'Projektaktionen: ' + p.name);
+      row.appendChild(options);
       list.appendChild(row);
-      if (p.id===current) {
-        sessions.filter(function(s){return s.project_id===p.id && !s.archived;})
-          .slice(0,8).forEach(function(s){
-            list.appendChild(action('◯  '+(s.title||'Chat'),function(){
-              var app=chatApp();if(app&&app.select)app.select(s.id);
-            },'project-nav-chat'));
-          });
+
+      var children = el('div', 'project-nav-children');
+      children.id = childrenId;
+      children.hidden = !expanded;
+      if (expanded) {
+        var chats = sessions.filter(function(s) {
+          return s.project_id === p.id && !s.archived;
+        });
+        chats.slice(0, 8).forEach(function(s) {
+          var entry = action('◯  ' + (s.title || 'Chat'), function() {
+            var app = chatApp(); if (app && app.select) app.select(s.id);
+          }, 'project-nav-chat');
+          entry.title = s.title || 'Chat';
+          children.appendChild(entry);
+        });
+        if (chats.length > 8) {
+          children.appendChild(action('Mehr anzeigen', function() {
+            openProject(p.id);
+          }, 'project-nav-chat project-nav-more'));
+        }
       }
+      list.appendChild(children);
     });
-    // This is the existing Projects navigation, not a second chat system.
-    // Never show the protected folder if there are no locked chats.
+    // The protected folder remains conditional: zero locked chats means no row.
     if (lockedChats.length) {
-      var lockedRow=el('div','project-nav-row project-nav-locked');
-      var lockedToggle=action('',function(){lockedExpanded=!lockedExpanded;renderSidebar();},'project-nav-open');
-      lockedToggle.setAttribute('aria-expanded',String(lockedExpanded));
-      lockedToggle.setAttribute('aria-label','Gesperrte Chats ('+lockedChats.length+')');
-      var lockIcon=el('span','project-nav-folder');
-      lockIcon.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10" width="14" height="11"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>';
+      var lockedRow = el('div', 'project-nav-row project-nav-locked');
+      var lockedToggle = action('', function() {
+        lockedExpanded = !lockedExpanded;
+        renderSidebar();
+      }, 'project-nav-open');
+      lockedToggle.setAttribute('aria-expanded', String(lockedExpanded));
+      lockedToggle.setAttribute('aria-label', 'Gesperrte Chats (' + lockedChats.length + ')');
+      var lockIcon = el('span', 'project-nav-folder');
+      lockIcon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10" width="14" height="11"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>';
       lockedToggle.appendChild(lockIcon);
-      lockedToggle.appendChild(label('Gesperrte Chats','project-nav-label'));
-      lockedToggle.appendChild(label(String(lockedChats.length),'project-nav-count'));
+      lockedToggle.appendChild(label('Gesperrte Chats', 'project-nav-label'));
+      lockedToggle.appendChild(label(String(lockedChats.length), 'project-nav-count'));
       lockedRow.appendChild(lockedToggle);
       list.appendChild(lockedRow);
-      if (lockedExpanded) lockedChats.forEach(function(chat) {
-        var entry=action('◈  '+String(chat.title||'Chat'),function(){
-          if (window.CoreAIChatLock && window.CoreAIChatLock.unlockChat) window.CoreAIChatLock.unlockChat(chat);
-        },'project-nav-chat project-nav-locked-chat');
-        entry.title='Mit Konto-PIN entsperren';
-        list.appendChild(entry);
-      });
+      if (lockedExpanded) {
+        var lockedChildren = el('div', 'project-nav-children project-nav-locked-children');
+        lockedChats.forEach(function(chat) {
+          var entry = action('◈  ' + String(chat.title || 'Chat'), function() {
+            if (window.CoreAIChatLock && window.CoreAIChatLock.unlockChat) window.CoreAIChatLock.unlockChat(chat);
+          }, 'project-nav-chat project-nav-locked-chat');
+          entry.title = 'Mit Konto-PIN entsperren';
+          lockedChildren.appendChild(entry);
+        });
+        list.appendChild(lockedChildren);
+      }
     }
+    list.scrollTop = scrollTop;
   }
   function refreshLocked() {
     return getJson(api+'/console_sessions.php?action=chat_locked_list').then(function(d){
@@ -117,6 +185,8 @@
   function renderHeader() {
     var p=selected();if(!p)return;
     $('projectHomeName').textContent=p.name;
+    $('projectHomeMode').textContent=p.context_mode==='isolated'?'KONTEXT // ISOLIERT':'KONTEXT // STANDARD';
+    $('projectHomeMode').title=p.context_mode==='isolated'?'Nur Projektwissen verwenden':'Normale Erinnerungen können verwendet werden';
     $('projectHomeChatInput').placeholder='Neuer Chat in '+p.name;
     $('projectHomePin').textContent=p.pinned?'Projekt nicht mehr anpinnen':'Projekt anpinnen';
   }

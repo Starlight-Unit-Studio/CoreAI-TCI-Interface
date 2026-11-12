@@ -1,0 +1,23 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.24
+Date: 12.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Base version: 0.7.23
+
+GOALS
+1. Independent project folder folding, opened/closed icons, accessible controls.
+2. Compact chats in sidebar on a phone.
+3. Remove leftover GPT-only project styling, repair the project homepage and create modal using the existing CoreAI theme.
+
+CHANGES
+- js/coreui-projects.js: local per-project folder expansion, distinct fold and open-workspace actions, open/closed vector icons, project mode in homepage header.
+- app.html: native SVG actions and CoreAI project status header, plus static cache update.
+- css/coreui-projects.css: removed obsolete alternate dark drawer.
+- css/coreui-project-theme.css: applied existing tokens, angular panel shape, blue/gold accents, compact lists and CoreAI project modal.
+- Project isolation, account ownership, chat locking and backend APIs remain unchanged.
+
+CHECKS
+- Run GitHub Actions, project UI and sidebar contract tests, CSS cache verification and release/version checks.
+- Test in the installed CoreAI: open/close independently, reload persistence, chat navigation, project settings, mobile and desktop, dark and light palettes, account PIN.
+- Update the self-hosted CoreAI installation after merge before claiming that the change is live.
+
+Version: 0.7.24

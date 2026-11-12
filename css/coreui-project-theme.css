@@ -566,3 +566,495 @@ body.project-home-active .project-chat-result:hover {
 body.project-home-active .project-new-chat:focus-within {
   border-color:var(--cx)!important;
 }
+
+/* 0.7.24: Project navigation, chat-list density and workspace share one CoreAI HUD. */
+.app-body .drawer .session-zone .session-list,
+.app-body .drawer .pinned-zone .session-list {
+  gap:0!important;
+  align-content:flex-start;
+  justify-content:flex-start;
+  padding-top:0;
+  padding-bottom:4px;
+}
+.app-body .drawer .session-zone .session-item,
+.app-body .drawer .pinned-zone .session-item {
+  min-height:40px;
+  padding:2px 7px;
+  margin:0;
+  gap:0 5px;
+  align-items:center;
+  box-shadow:none;
+}
+.app-body .drawer .session-item .session-row-more {
+  width:38px;
+  height:38px;
+  min-width:38px;
+  min-height:38px;
+  margin:0;
+}
+.app-body .drawer .session-item-title {
+  line-height:1.25;
+  font-weight:600;
+}
+.app-body .drawer .session-item.actions-open {
+  min-height:44px;
+  padding-bottom:6px;
+}
+.app-body .drawer .project-nav-row.project-nav-folder-row {
+  display:flex;
+  align-items:center;
+  gap:3px;
+  padding:1px 2px;
+  min-height:42px;
+}
+.app-body .drawer .project-nav-folder-toggle {
+  display:flex;
+  flex:0 0 49px;
+  align-items:center;
+  justify-content:center;
+  gap:2px;
+  height:40px;
+  min-width:49px;
+  padding:0 2px;
+  border:0;
+  color:var(--cx);
+  background:transparent;
+  cursor:pointer;
+}
+.app-body .drawer .project-nav-folder-toggle:hover,
+.app-body .drawer .project-nav-folder-toggle:focus-visible {
+  background:var(--panel-cx);
+  outline:2px solid var(--line-strong);
+  outline-offset:-2px;
+}
+.app-body .drawer .project-nav-chevron {
+  display:grid;
+  flex:0 0 15px;
+  place-items:center;
+  color:var(--muted);
+  transition:transform 150ms ease;
+}
+.app-body .drawer .project-nav-chevron svg {width:15px;height:15px;display:block;}
+.app-body .drawer .project-nav-row.is-expanded .project-nav-chevron {transform:rotate(90deg);}
+.app-body .drawer .project-nav-folder {display:grid;place-items:center;flex:0 0 22px;color:var(--cx);}
+.app-body .drawer .project-nav-folder svg {display:block;width:22px;height:22px;}
+.app-body .drawer .project-nav-folder-row .project-nav-open {
+  flex:1 1 auto;
+  min-width:0;
+  min-height:40px;
+  padding:4px 0;
+  color:var(--txt);
+  font:600 14px var(--coreui-font,"Rajdhani"),sans-serif;
+}
+.app-body .drawer .project-nav-folder-row .project-nav-menu {
+  flex:0 0 38px;
+  height:40px;
+  color:var(--muted);
+}
+.app-body .drawer .project-nav-children[hidden] {display:none!important;}
+.app-body .drawer .project-nav-children {
+  display:flex;
+  flex-direction:column;
+  gap:0;
+  min-width:0;
+  padding:0 0 3px 35px;
+}
+.app-body .drawer .project-nav-children .project-nav-chat {
+  width:100%;
+  max-width:100%;
+  min-height:36px;
+  margin:0;
+  padding:5px 8px;
+  border:0;
+  border-radius:0;
+  clip-path:polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,0 100%);
+  font:500 13px/1.35 var(--coreui-font,"Rajdhani"),sans-serif;
+  color:var(--muted);
+}
+.app-body .drawer .project-nav-children .project-nav-chat:hover,
+.app-body .drawer .project-nav-children .project-nav-chat:focus-visible {
+  background:var(--panel-cx);
+  color:var(--cx);
+}
+.app-body .drawer .projects-nav-list {
+  max-height:min(33dvh,310px);
+}
+@media (prefers-reduced-motion:reduce) {
+  .app-body .drawer .project-nav-chevron {transition:none;}
+}
+
+/* CoreAI project workspace: restore the same vector accents and framing as
+   settings and the chat console, with no duplicate project shell. */
+body.project-home-active .project-home {
+  position:relative;
+  overflow-x:hidden;
+  background:
+    linear-gradient(115deg,transparent 0 43%,var(--panel-cx) 43.1% 43.3%,transparent 43.4%),
+    radial-gradient(circle at 4% 4%,var(--panel-cx),transparent 27rem),
+    radial-gradient(circle at 92% 80%,var(--panel-amb),transparent 30rem),
+    var(--bg)!important;
+  color:var(--txt)!important;
+}
+body.project-home-active .project-home-content {
+  position:relative;
+  padding-bottom:65px;
+}
+body.project-home-active .project-home-header {
+  display:flex;
+  align-items:center;
+  min-width:0;
+  gap:12px;
+  margin:62px 0 20px;
+  padding:0 0 15px;
+  border-bottom:1px solid var(--line-strong);
+}
+body.project-home-active .project-home-header::after {
+  position:absolute;
+  right:0;
+  bottom:-1px;
+  width:80px;
+  height:2px;
+  content:"";
+  background:linear-gradient(90deg,var(--cx),var(--amb));
+  pointer-events:none;
+}
+body.project-home-active .project-home-title {
+  display:grid;
+  min-width:0;
+  flex:1;
+  grid-template-columns:27px minmax(0,1fr);
+  grid-template-rows:auto auto auto;
+  align-items:center;
+  column-gap:9px;
+  row-gap:2px;
+}
+body.project-home-active .project-home-kicker {
+  grid-column:1/-1;
+  color:var(--amb);
+  font:11px/1.5 "Share Tech Mono",monospace;
+  letter-spacing:.12em;
+}
+body.project-home-active .project-home-title>span[aria-hidden] {
+  display:grid;
+  grid-row:2;
+  grid-column:1;
+  place-items:center;
+  color:var(--cx);
+}
+body.project-home-active .project-home-title>span[aria-hidden] svg {
+  width:25px;
+  height:25px;
+  display:block;
+}
+body.project-home-active .project-home-title h2 {
+  grid-row:2;
+  grid-column:2;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font:700 clamp(21px,4vw,27px)/1.2 var(--coreui-font,"Rajdhani"),sans-serif;
+  color:var(--txt);
+}
+body.project-home-active .project-home-mode {
+  grid-column:1/-1;
+  grid-row:3;
+  font:10px/1.4 "Share Tech Mono",monospace;
+  letter-spacing:.07em;
+  color:var(--muted);
+}
+body.project-home-active .project-home-header-actions button,
+body.project-home-active .project-home-nav-toggle {
+  display:grid;
+  place-items:center;
+  width:42px;
+  height:42px;
+  min-width:42px;
+  min-height:42px;
+  border:1px solid var(--line-strong);
+  border-radius:0!important;
+  background:var(--panel);
+  color:var(--cx);
+  clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,0 100%);
+}
+body.project-home-active .project-home-header-actions svg,
+body.project-home-active .project-home-nav-toggle svg {
+  display:block;
+  width:22px;
+  height:22px;
+}
+body.project-home-active .project-home-nav-toggle {
+  top:16px;
+}
+body.project-home-active .project-new-chat {
+  position:relative;
+  margin:0 0 18px;
+  padding:18px 16px 12px;
+  background:var(--panel)!important;
+  border:1px solid var(--line-strong)!important;
+  box-shadow:var(--shadow-tight);
+}
+body.project-home-active .project-new-chat::before {
+  position:absolute;
+  z-index:1;
+  content:"";
+  top:0;
+  left:0;
+  width:90px;
+  height:2px;
+  background:linear-gradient(90deg,var(--cx),var(--amb));
+  pointer-events:none;
+}
+body.project-home-active .project-new-chat textarea {
+  display:block;
+  width:100%;
+  min-height:53px;
+  resize:vertical;
+  font:500 17px/1.45 var(--coreui-font,"Rajdhani"),sans-serif;
+  background:transparent;
+  color:var(--txt);
+}
+body.project-home-active .project-new-chat textarea::placeholder {color:var(--muted);}
+body.project-home-active .project-new-chat-actions {
+  gap:10px;
+  min-height:42px;
+}
+body.project-home-active .project-new-chat-actions button {
+  display:grid;
+  place-items:center;
+  min-height:42px;
+  min-width:42px;
+}
+body.project-home-active .project-chat-effort {
+  margin-left:auto;
+  color:var(--muted);
+  font:11px/1.4 "Share Tech Mono",monospace;
+  letter-spacing:.06em;
+}
+body.project-home-active #projectHomeChatSend {
+  display:grid;
+  place-items:center;
+  width:44px;
+  height:44px;
+  min-width:44px;
+  border:1px solid var(--cx);
+  background:var(--cx);
+  color:#fff;
+}
+body.project-home-active .project-home-tabs {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin:16px 0 15px;
+  padding:0 0 10px;
+  border-bottom:1px solid var(--line);
+}
+body.project-home-active .project-home-tabs button {
+  min-height:42px;
+  border-radius:0;
+  clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%);
+}
+body.project-home-active .project-home-tabs button.active {
+  background:var(--panel-cx);
+  border:1px solid var(--line-strong);
+  color:var(--cx);
+}
+body.project-home-active .project-chat-result {
+  margin:0 0 9px;
+  min-height:76px;
+  padding:12px 14px;
+  border:1px solid var(--line-strong)!important;
+  border-left:2px solid var(--cx)!important;
+  background:var(--panel)!important;
+  box-shadow:var(--shadow-tight);
+}
+body.project-home-active .project-chat-result:hover {
+  background:var(--panel-cx)!important;
+}
+body.project-home-active .project-chat-result-main,
+body.project-home-active .project-chat-result-main strong {
+  color:var(--txt)!important;
+}
+body.project-home-active .project-chat-result-main small {
+  color:var(--muted)!important;
+}
+body.project-home-active .project-chat-result-more {
+  color:var(--cx);
+}
+body.project-home-active .project-home-popover,
+body.project-home-active .project-chat-menu {
+  color:var(--txt)!important;
+  background:var(--panel-solid)!important;
+  border:1px solid var(--line-strong)!important;
+  box-shadow:var(--shadow-soft);
+}
+body.project-home-active .project-home-popover button,
+body.project-home-active .project-chat-menu button {
+  color:var(--txt);
+}
+body.project-home-active .project-home-popover button:hover,
+body.project-home-active .project-chat-menu button:hover {
+  background:var(--panel-cx);
+}
+body.project-home-active .project-source-upload,
+body.project-home-active .project-source-row,
+body.project-home-active .project-empty {
+  border:1px solid var(--line)!important;
+  background:var(--panel)!important;
+  color:var(--txt)!important;
+}
+body.project-home-active .project-source-controls select,
+body.project-home-active .project-source-filetext strong {
+  color:var(--txt);
+}
+body.project-home-active .project-source-filetext small {color:var(--muted);}
+
+/* Project creation and settings use the same angular security/dialog language. */
+.project-modal-scrim {
+  background:rgba(5,12,27,.64);
+  backdrop-filter:blur(6px);
+}
+.project-modal {
+  position:relative;
+  width:min(100%,520px);
+  max-height:min(90dvh,690px);
+  padding:22px 22px 20px;
+  color:var(--txt)!important;
+  background:var(--panel-solid)!important;
+  border:1px solid var(--line-strong)!important;
+  border-radius:0!important;
+  clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,18px 100%,0 calc(100% - 18px));
+  box-shadow:var(--shadow-soft);
+  font:500 15px/1.35 var(--coreui-font,"Rajdhani"),sans-serif;
+}
+.project-modal::before {
+  display:block;
+  content:"";
+  height:3px;
+  width:100%;
+  margin:0 0 10px;
+  background:linear-gradient(90deg,var(--cx),var(--amb),transparent);
+}
+.project-modal header {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  justify-content:space-between;
+  margin-bottom:16px;
+  padding-bottom:12px;
+  border-bottom:1px solid var(--line);
+}
+.project-modal h2 {
+  margin:0;
+  font:700 24px/1.15 var(--coreui-font,"Rajdhani"),sans-serif;
+  color:var(--txt);
+}
+.project-modal h2::before {
+  display:block;
+  content:"COREAI // PROJEKTE";
+  color:var(--amb);
+  margin:0 0 5px;
+  font:10px/1.4 "Share Tech Mono",monospace;
+  letter-spacing:.12em;
+}
+.project-modal header button {
+  width:40px;
+  height:40px;
+  min-width:40px;
+  min-height:40px;
+  border:1px solid var(--line);
+  background:var(--panel);
+  color:var(--cx);
+  border-radius:0;
+  clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%);
+}
+.project-modal label {
+  display:block;
+  color:var(--txt);
+  margin:0 0 16px;
+  font:700 15px/1.3 var(--coreui-font,"Rajdhani"),sans-serif;
+}
+.project-modal input,
+.project-modal select,
+.project-modal textarea {
+  display:block;
+  width:100%;
+  min-height:45px;
+  margin-top:7px;
+  padding:10px 12px;
+  border:1px solid var(--line-strong)!important;
+  background:var(--panel)!important;
+  color:var(--txt)!important;
+  border-radius:0!important;
+  clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,0 100%);
+  font:500 16px var(--coreui-font,"Rajdhani"),sans-serif;
+}
+.project-modal select {
+  appearance:auto;
+  color-scheme:normal;
+}
+html[data-coreui-theme="dark"] .project-modal select {color-scheme:dark;}
+.project-modal input:focus-visible,
+.project-modal select:focus-visible,
+.project-modal textarea:focus-visible {
+  outline:2px solid var(--cx);
+  outline-offset:2px;
+}
+.project-modal-hint {
+  margin:0 0 16px;
+  color:var(--muted);
+  font:13px/1.45 var(--coreui-font,"Rajdhani"),sans-serif;
+}
+.project-modal-primary,
+.project-modal-danger {
+  min-height:44px;
+  padding:10px 18px;
+  margin:0 5px 0 0;
+  border-radius:0!important;
+  clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,0 100%);
+  font:700 15px var(--coreui-font,"Rajdhani"),sans-serif;
+}
+.project-modal-primary {
+  border:1px solid var(--cx)!important;
+  color:#fff!important;
+  background:var(--cx)!important;
+  box-shadow:var(--glow-cx);
+}
+.project-modal-danger {
+  border:1px solid var(--red)!important;
+  color:var(--red)!important;
+  background:var(--panel)!important;
+}
+.project-modal button:focus-visible,
+body.project-home-active .project-home button:focus-visible {
+  outline:2px solid var(--amb);
+  outline-offset:2px;
+}
+@media(max-width:620px) {
+  body.project-home-active .project-home-header {margin-top:58px;}
+  body.project-home-active .project-home-content {padding:15px 14px 55px;}
+  body.project-home-active .project-home-nav-toggle {top:10px;left:14px;}
+  body.project-home-active .project-new-chat {padding:14px 13px 9px;}
+  body.project-home-active .project-home-title h2 {font-size:21px;}
+  .project-modal {padding:17px 16px 18px;max-height:calc(100dvh - 24px);}
+}
+
+body.project-home-active .project-new-chat-actions button svg,
+body.project-home-active #projectHomeChatSend svg {
+  display:block;
+  width:23px;
+  height:23px;
+}
+body.project-home-active .project-new-chat-actions #projectHomeAttach {
+  color:var(--cx);
+}
+body.project-home-active .project-new-chat-actions #projectHomeAttach:hover {
+  background:var(--panel-cx);
+}
+body.project-home-active .project-chat-result-main {
+  min-height:44px;
+}
+.app-body .drawer .project-nav-folder-row .project-nav-open:focus-visible,
+.app-body .drawer .project-nav-folder-row .project-nav-menu:focus-visible {
+  outline:2px solid var(--amb);
+  outline-offset:-2px;
+}

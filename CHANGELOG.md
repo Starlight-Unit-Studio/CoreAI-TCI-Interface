@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.7.24 - 12.11.2026
+
+- **Individual project folders:** Project navigation now has independent open/close toggles with matching open/closed folder SVGs, accessible expansion states and locally persisted fold preferences. Project names still open their actual workspaces.
+- **Compact history:** Reduced vertical spacing of Recent and Pinned chat rows while keeping separate menu controls.
+- **Native project workspace:** Removed obsolete ChatGPT-only drawer overrides, restored original CoreAI status framing, typography, blue/gold accents and original SVG controls. The header displays the project's real memory mode.
+- **Native project creation:** Project create/settings dialog uses the established cut-corner CoreAI frame, compact fields and themed buttons in light and dark mode.
+- **Compatibility:** Existing project CRUD, sources, PIN-protected chats, model/composer flow and server ownership rules are preserved.
+
+
 ## 0.7.23 - 12.11.2026
 
 - **Native CoreAI interface:** Restored angular, cut-corner geometry and existing blue/gold accent lines in chat menus, chat dialogs, project home, cards and sidebar. No new visual system introduced.
