@@ -1,0 +1,20 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.34
+Date: 12.11.2026
+Base version: 0.7.33
+
+OBSERVATION
+The project three-dot button was reported as nonfunctional after 0.7.27. The project homepage popup was in a separately styled region and could be obscured by the native composer. Project sidebar and homepage were using inconsistent popup logic.
+
+FIX
+- Route both folder and homepage project ellipsis to the same body-level floating menu and shared projectActions(p).
+- Clamp popup to VisualViewport; follow scroll/resize instead of dismissing for small motion.
+- Keep the homepage menu alive during unrelated sidebar re-renders, but dismiss orphaned/out-of-screen menus.
+- Regression check verifies both triggers and their shared action handlers.
+- No project database or API changes.
+
+VERIFICATION
+- CI syntax, project selftest, sidebar selftest, cache/branding and release checks.
+- After deployment, click the project folder three dots and project homepage three dots on Android and desktop. Check at different scroll positions, with drawer open/closed, and across CoreAI/SoftGlass.
+- Do not call a live server test complete until the self-hosted installation is updated and the physical browser behavior is checked.
+
+Version: 0.7.34
