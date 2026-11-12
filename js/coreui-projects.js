@@ -4,7 +4,7 @@
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
   if (!$('coreuiProjectHome') || !$('projectsNavList')) return;
-  var projects = [], sessions = [], current = null, tab = 'chats', sources = [];
+  var projects = [], sessions = [], lockedChats = [], lockedExpanded = false, current = null, tab = 'chats', sources = [];
   var csrf = '', busy = false;
   var api = './api';
   var ERR = {
@@ -60,6 +60,36 @@
           });
       }
     });
+    // This is the existing Projects navigation, not a second chat system.
+    // Never show the protected folder if there are no locked chats.
+    if (lockedChats.length) {
+      var lockedRow=el('div','project-nav-row project-nav-locked');
+      var lockedToggle=action('',function(){lockedExpanded=!lockedExpanded;renderSidebar();},'project-nav-open');
+      lockedToggle.setAttribute('aria-expanded',String(lockedExpanded));
+      lockedToggle.setAttribute('aria-label','Gesperrte Chats ('+lockedChats.length+')');
+      var lockIcon=el('span','project-nav-folder');
+      lockIcon.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10" width="14" height="11"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>';
+      lockedToggle.appendChild(lockIcon);
+      lockedToggle.appendChild(label('Gesperrte Chats','project-nav-label'));
+      lockedToggle.appendChild(label(String(lockedChats.length),'project-nav-count'));
+      lockedRow.appendChild(lockedToggle);
+      list.appendChild(lockedRow);
+      if (lockedExpanded) lockedChats.forEach(function(chat) {
+        var entry=action('◈  '+String(chat.title||'Chat'),function(){
+          if (window.CoreAIChatLock && window.CoreAIChatLock.unlockChat) window.CoreAIChatLock.unlockChat(chat);
+        },'project-nav-chat project-nav-locked-chat');
+        entry.title='Mit Konto-PIN entsperren';
+        list.appendChild(entry);
+      });
+    }
+  }
+  function refreshLocked() {
+    return getJson(api+'/console_sessions.php?action=chat_locked_list').then(function(d){
+      lockedChats=Array.isArray(d.sessions)?d.sessions:[];
+      if(!lockedChats.length) lockedExpanded=false;
+      renderSidebar();
+      return lockedChats.length;
+    });
   }
   function updateSessions(rows) {
     sessions=Array.isArray(rows)?rows.slice():[];
@@ -81,6 +111,7 @@
       }
       renderSidebar();
       if(current) {renderHeader();renderChats();}
+      return refreshLocked();
     });
   }
   function renderHeader() {
@@ -334,6 +365,6 @@
     app.startProjectChat(current,msg);
   });
   window.CoreAIProjects={refresh:refresh,openProject:openProject,closeHome:closeHome,
-    updateSessions:updateSessions,assignChat:assignChat};
+    updateSessions:updateSessions,assignChat:assignChat,refreshLocked:refreshLocked};
   refresh().catch(function(e){console.warn('[CoreAI] Projects deferred until sign-in:',e.message);});
 })();
