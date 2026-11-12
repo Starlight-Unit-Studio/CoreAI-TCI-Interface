@@ -1,0 +1,12 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.23
+Date: 12.11.2026
+Base version: 0.7.22
+
+- Restore native CoreAI angular styling instead of generic rounded ChatGPT reference shapes.
+- Apply existing CoreAI color variables, golden and blue accent lines and cut corners to project pages, chat menus and modal dialogs.
+- Align existing settings and logout actions beneath the sidebar fold control; collapsed desktop rail keeps all controls visible and clickable.
+- Correct stale version marker in the Ren matrix and update page metadata to 0.7.23.
+- Keep chat PIN backend and existing settings navigation unchanged.
+- Self-hosted deployments require CoreAI Updater and server preflight; GitHub merge alone is not deployment.
+
+Version: 0.7.23
