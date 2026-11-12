@@ -38,9 +38,16 @@ TESTS (in dieser Sitzung ausgefuehrt)
   Grund, Telefon ohne seitliches Scrollen, Gaeste.
 - Ende-zu-Ende gegen PHP-Server und MariaDB: Upload, Grenze 1 MiB global verweigert, je Konto 0 erlaubt,
   je Konto 1 MiB verweigert, Loeschen gibt Platz frei, Maras Bild samt .json entfernt, Artefakt geloescht.
-- Angepasste Wortlaut-Tests: user-policy-selftest.php, settings-tabs-ui-selftest.cjs,
-  settings-navigation-foundation-selftest.cjs (7 geplante Seiten).
-- Gesamte Selbsttest-Reihe gegen den Stand von main 0.7.27 verglichen.
+- Angepasste Wortlaut-Tests: user-policy-selftest.php, settings-navigation-foundation-selftest.cjs
+  (7 geplante Seiten), sidebar-sections-ui-selftest.cjs (Versionsstand 0.7.28),
+  settings-tabs-ui-selftest.cjs (Nutzung als geplantes Beispiel, Speicherfeld in Benutzer > Limits mit
+  Belegt-Hinweis und storage_mb in der Anfrage, genaue Liste der Laufzeit-Schluessel statt der alten Zahl 18).
+- Gesamte Selbsttest-Reihe (scripts/*selftest*, tests/) auf dem Branch und auf main 0.7.27 ausgefuehrt:
+  dieselben 11 Tests scheitern auf beiden Staenden schon vorher (browse-live, chat-menu, composer-menu,
+  core-install, long-chat, model-library, pets, security, session-list, settings-tabs, update; nicht Teil
+  dieser Version). settings-tabs scheitert auf beiden an derselben Stelle
+  ("denied without any admin API request"); die Zahl 18 der Laufzeit-Schluessel war auf main schon veraltet (23).
+  Alle uebrigen Tests bestehen, dazu die beiden neuen Speicher-Tests.
 
 NACH DEM UPDATE
 - Migration 039 laeuft ueber scripts/migrate.sh. Ohne sie zeigt Admin Core beim Speichern einer

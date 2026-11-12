@@ -38,7 +38,9 @@ function server(level) {
         {id: 2, username: 'gast-7f3a', display_name: 'Gast', permission_level: 4, is_guest: 1, session_count: 1},
         {id: 3, username: 'lena@example.test', display_name: 'Lena', permission_level: 4, is_guest: 0, session_count: 2, login_count: 2}],
         // 0.5.85: own rules (Python blocked for Lena) and the global switches (browser off for everyone).
-        policies: {3: {tools: {web: true, browse: true, python: false}, daily_messages: 40, max_num_ctx: 16384, used_today: 12}},
+        policies: {3: {tools: {web: true, browse: true, python: false}, daily_messages: 40, max_num_ctx: 16384, used_today: 12, storage_mb: null}},
+        // 0.7.28: storage: Lena uses 1,5 GB, the limit for all accounts is 20 GB.
+        storage_used: {3: 1610612736}, storage_limit_mb: 20480, storage_ready: true,
         tools: {web: true, browse: false, python: true}, policy_ready: true, ctx_choices: [4096, 8192, 16384, 32768, 65536, 131072],
         // 0.6.86: plans per account (Lena has none yet) and what each template writes.
         plans: {}, plan_ready: true, plan_catalog: {
@@ -81,7 +83,8 @@ function server(level) {
       if (key === 'admin.php' && post && url.searchParams.get('action') === 'user_policy') {
         const sent = JSON.parse(post);
         return route.fulfill({json: {ok: true, policy: {tools: Object.assign({web: true, browse: true, python: true}, sent.tools || {}),
-          daily_messages: 'daily_messages' in sent ? sent.daily_messages : 40, max_num_ctx: 'max_num_ctx' in sent ? sent.max_num_ctx : 16384}}});
+          daily_messages: 'daily_messages' in sent ? sent.daily_messages : 40, max_num_ctx: 'max_num_ctx' in sent ? sent.max_num_ctx : 16384,
+          storage_mb: 'storage_mb' in sent ? sent.storage_mb : null}}});
       }
       if (key === 'admin.php' && post && url.searchParams.get('action') === 'user_plan') {
         const sent = JSON.parse(post);
@@ -367,11 +370,20 @@ const smallText = page => page.evaluate(() => {
     assert.equal(await page.inputValue('.user-edit-row select:not(.user-plan-select)'), '16384');
     assert.deepEqual(await page.$$eval('.user-edit-row select:not(.user-plan-select) option', o => o.map(x => x.textContent)),
       ['ohne Grenze', 'bis 4K', 'bis 8K', 'bis 16K', 'bis 32K', 'bis 64K', 'bis 128K']);
+    // 0.7.28: Speicher (GB): empty follows the limit for all accounts, the used space is shown.
+    const storageField = '.user-edit-row input[type="number"][max="10240"]';
+    assert.equal(await page.inputValue(storageField), '');
+    assert.equal(await page.getAttribute(storageField, 'placeholder'), 'Standard: 20 GB');
+    assert.equal(await page.textContent('.admin-storage-note'), 'Belegt: 1,5 GB. Leer: Standard aller Konten. 0: ohne Grenze.');
     await page.fill('.user-edit-row input[type="number"]', '');
     await page.selectOption('.user-edit-row select:not(.user-plan-select)', '32768');
     await page.click('.user-edit-row button:has-text("LIMITS SPEICHERN")');
-    await page.waitForFunction(() => /kein Tageslimit, Kontextfenster bis 32K\./.test(document.getElementById('adminFlash').textContent));
-    assert.deepEqual(srv.calls.filter(c => c.action === 'user_policy').pop().post, {user_id: 3, daily_messages: null, max_num_ctx: 32768});
+    await page.waitForFunction(() => /kein Tageslimit, Kontextfenster bis 32K, Speicher wie alle Konten\./.test(document.getElementById('adminFlash').textContent));
+    assert.deepEqual(srv.calls.filter(c => c.action === 'user_policy').pop().post, {user_id: 3, daily_messages: null, max_num_ctx: 32768, storage_mb: null});
+    await page.fill(storageField, '2');
+    await page.click('.user-edit-row button:has-text("LIMITS SPEICHERN")');
+    await page.waitForFunction(() => /Kontextfenster bis 32K, Speicher 2 GB\./.test(document.getElementById('adminFlash').textContent));
+    assert.deepEqual(srv.calls.filter(c => c.action === 'user_policy').pop().post, {user_id: 3, daily_messages: null, max_num_ctx: 32768, storage_mb: 2048});
     // Werkzeuge: Python blocked for Lena, the browser is off for everyone.
     assert.deepEqual(await page.$$eval('.user-tool-choice', l => l.map(x => [x.textContent, x.querySelector('input').checked, x.querySelector('input').disabled])),
       [['Websuche', true, false], ['Browser (global aus)', true, true], ['Python', false, false], ['Bilder', true, false]]);
@@ -452,7 +464,12 @@ const smallText = page => page.evaluate(() => {
     assert(save, 'Zugang und Schutz saves');
     assert.equal(save.post.settings.captcha_enabled, '0');
     assert.equal(save.post.settings.tool_python_enabled, '0', 'the Betrieb values travel along');
-    assert.equal(Object.keys(save.post.settings).length, 18);
+    // Every runtime key travels along (0.7.28: storage_limit_mb, the storage limit for all accounts).
+    assert.deepEqual(Object.keys(save.post.settings).sort(), ['captcha_enabled', 'external_api_base_url', 'external_api_enabled', 'external_api_label',
+      'external_api_model', 'guest_daily_messages', 'guest_enabled', 'guest_image_daily_limit', 'guest_message_limit', 'guest_network_guests',
+      'guest_tool_browse_enabled', 'guest_tool_image_enabled', 'guest_tool_python_enabled', 'guest_tool_web_enabled', 'maintenance_enabled',
+      'maintenance_message', 'memory_default_enabled', 'registration_enabled', 'storage_limit_mb', 'tool_browse_enabled', 'tool_image_enabled',
+      'tool_python_enabled', 'tool_web_enabled', 'user_system_prompt_max_chars']);
     // Every admin category loads its data when its tab opens.
     await page.click('#tab-admin-audit');
     await page.waitForFunction(() => document.querySelectorAll('#auditRows .audit-item').length === 1);
