@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.34: CoreAI theme over every settings page, Allgemein without duplicates, settings markup repaired.
+# CoreAI: TCI Interface 0.7.36: CoreAI theme over every settings page, Allgemein without duplicates, settings markup repaired.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
