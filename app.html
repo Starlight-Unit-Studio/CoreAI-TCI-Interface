@@ -321,14 +321,9 @@
               <button type="button" data-project-action="delete" class="danger">Projekt löschen</button>
             </div>
           </header>
-          <form class="project-new-chat" id="projectHomeChatForm">
-            <textarea id="projectHomeChatInput" rows="2" aria-label="Neuer Chat in diesem Projekt" placeholder="Neuer Chat in diesem Projekt"></textarea>
-            <div class="project-new-chat-actions">
-              <button type="button" id="projectHomeAttach" aria-label="Projektquellen anzeigen" title="Projektquellen anzeigen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg></button>
-              <span class="project-chat-effort">Normal <span aria-hidden="true">⌄</span></span>
-              <button type="submit" id="projectHomeChatSend" aria-label="Nachricht senden"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20V4m-7 7 7-7 7 7"/></svg></button>
-            </div>
-          </form>
+          <!-- The actual main chat composer is mounted here while viewing a project.
+               No separate demo input; attachments, tools, voice and thinking stay live. -->
+          <div class="project-composer-slot" id="projectComposerSlot" aria-label="Neuer Projektchat"></div>
           <nav class="project-home-tabs" aria-label="Projektansicht">
             <button type="button" id="projectTabChats" class="active" aria-selected="true">Chats</button>
             <button type="button" id="projectTabSources" aria-selected="false">Quellen</button>
