@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.7.22 - 12.11.2026
+
+- **Chat lock:** One four-digit account PIN for locked chats, created twice at first use, verified server-side on unlock. Failed PIN attempts are rate-limited and password-hashed; chats remain stored, not encrypted.
+- **Navigation:** A protected chat folder appears under Projekte only while locked chats exist. The normal chat lists and project previews exclude locked sessions.
+- **Interface:** CoreAI native cut-corner PIN dialog and account security settings, with server-controlled APIs and migration 038.
+- **Compatibility:** Existing project navigation, model settings and local CPU deployment retained.
+
+
+
 ## 0.7.21 - 12.11.2026
 
 - **Navigation:** Original CoreAI logo and ticker stay intact. Settings and logout become familiar header icons in the free space beside the logo; redundant Protocols sidebar button removed, protocols page retained.
