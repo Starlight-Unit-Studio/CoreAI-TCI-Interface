@@ -31,6 +31,19 @@ function coreui_console_session_schema_ready(PDO $pdo): bool {
   }
 }
 
+/** Independent, fail-closed lock visibility with migration 038. */
+function coreui_console_chat_lock_ready(PDO $pdo): bool {
+  static $memo = [];
+  $key=spl_object_id($pdo);
+  if (!array_key_exists($key,$memo)) {
+    try {
+      $pdo->query('SELECT locked_at FROM stu_console_sessions LIMIT 0');
+      $memo[$key]=true;
+    } catch (Throwable $e) { $memo[$key]=false; }
+  }
+  return $memo[$key];
+}
+
 /** 0.6.87: migration 032 (pinned chats); without it nothing is pinned and nothing breaks. */
 function coreui_console_session_pin_ready(PDO $pdo): bool {
   static $ready = [];
@@ -60,6 +73,9 @@ function coreui_console_session_require(
     . 'created_at, updated_at, archived_at FROM stu_console_sessions '
     . 'WHERE id = ? AND user_id = ?';
   if (!$allowArchived) $sql .= ' AND archived_at IS NULL';
+  // All ordinary chat read/write APIs go through this owner-scoped guard.
+  // A known ID, direct link or active browser tab must not bypass PIN lock.
+  if (coreui_console_chat_lock_ready($pdo)) $sql .= ' AND locked_at IS NULL';
   $sql .= ' LIMIT 1';
   $st = $pdo->prepare($sql);
   $st->execute([$sessionId, $uid]);
@@ -90,6 +106,7 @@ function coreui_console_session_list(PDO $pdo, int $uid, bool $includeArchived =
             FROM stu_console_sessions s
            WHERE s.user_id = ?";
   if (!$includeArchived) $sql .= ' AND s.archived_at IS NULL';
+  if (coreui_console_chat_lock_ready($pdo)) $sql .= ' AND s.locked_at IS NULL';
   $sql .= ' ORDER BY ' . ($pinReady ? '(s.pinned_at IS NULL), s.pinned_at DESC, ' : '') . 's.updated_at DESC, s.created_at DESC LIMIT 100';
   $st = $pdo->prepare($sql);
   $st->execute([$uid]);
