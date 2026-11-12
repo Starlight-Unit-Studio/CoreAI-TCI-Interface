@@ -6,7 +6,7 @@
 
 CoreAI combines Ollama-based models with private conversations, browser research, personal knowledge, file tools and an administration interface. Its standard deployment runs an isolated Nginx, PHP-FPM, MariaDB and worker stack on a Linux server. CoreAI is an application, **not a standalone operating system**.
 
-**Current source version: `0.7.29`** | [Changelog](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Documentation policy](docs/VERSIONING_POLICY.md) | [License](LICENSE.md)
+**Current source version: `0.7.30`** | [Changelog](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Documentation policy](docs/VERSIONING_POLICY.md) | [License](LICENSE.md)
 
 > **Development status:** Features reflect the source, not every model or provider. A merge does not prove live deployment.
 
@@ -18,7 +18,7 @@ Run the **official one-line installer** on the target server over an interactive
 ( setup_file="$(mktemp)" && trap 'rm -f -- "$setup_file"' EXIT && curl -fsSL https://raw.githubusercontent.com/Starlight-Unit-Studio/CoreAI-TCI-Interface/main/setup.sh -o "$setup_file" && sudo bash "$setup_file" )
 ```
 
-This command downloads the setup launcher to a temporary file, executes it with root privileges and removes the temporary file afterwards. The same command can also update an existing installation, although the **built-in updater is the preferred day-to-day update method** after initial setup.
+This command downloads the setup launcher to a temporary file, runs it as root and removes it afterwards. It can also update an existing installation, but after initial setup the **built-in updater is the preferred day-to-day method**.
 
 **Requirements:** Debian 12+ or Ubuntu 24.04+, root or `sudo` access, internet connectivity and sufficient CPU, RAM and storage for the chosen Ollama model. The installer can provision necessary host tools, Docker/Compose and Ollama. Downloads and model builds require additional disk space and bandwidth.
 
@@ -44,7 +44,7 @@ Once the initial setup has installed the host-side update service, **the owner c
 
 > **Interface language:** General offers German, English (beta) and browser-auto detection. Core UI labels have English translations; some strings remain German. Light/dark mode is under **Settings → Appearance**.
 
-The updater is implemented by `scripts/coreai-updater.sh` and host-side systemd services; the web UI submits requests, not shell commands. Backups are stored under `/opt/ember-coreui/var/backups`, with the updater retaining the five most recent automatic SQL backups. The built-in updater follows the same official `main` setup path as the one-liner.
+The updater is `scripts/coreai-updater.sh` with host-side systemd services; the web UI submits requests, not shell commands. Backups are stored under `/opt/ember-coreui/var/backups`, with the updater retaining the five most recent automatic SQL backups. The built-in updater follows the same official `main` setup path as the one-liner.
 
 ### Alternative: update over SSH
 
@@ -61,7 +61,7 @@ The last command reads the updater's log; if no update has run, the log may not 
 
 ## Uninstalling CoreAI
 
-The **owner** can request a safe uninstall from **Admin Core → Operations**. Enter the current owner password and type `COREAI ENTFERNEN` to confirm. The independent host service stops only the `ember-coreui` Docker Compose project and CoreAI's own systemd services. It archives the whole installation (MariaDB data, accounts, uploads, settings, backups) under `/opt/ember-coreui.uninstalled.*`. Other Docker apps, web servers and Ollama with its models stay untouched. A separate reverse-proxy route may need manual removal afterwards.
+The **owner** can request a safe uninstall from **Admin Core → Operations**. Confirm with the owner password and `COREAI ENTFERNEN`. A host service stops only the `ember-coreui` Compose project and CoreAI's own systemd services. It archives the whole installation (MariaDB data, accounts, uploads, settings, backups) under `/opt/ember-coreui.uninstalled.*`. Other Docker apps, web servers and Ollama with its models stay untouched. A separate reverse-proxy route may need manual removal.
 
 If the web UI or updater is broken, run this **standalone SSH one-liner** on the CoreAI server:
 
@@ -69,7 +69,7 @@ If the web UI or updater is broken, run this **standalone SSH one-liner** on the
 ( uninstall_file="$(mktemp)" && trap 'rm -f -- "$uninstall_file"' EXIT && curl -fsSL https://raw.githubusercontent.com/Starlight-Unit-Studio/CoreAI-TCI-Interface/main/scripts/uninstall.sh -o "$uninstall_file" && sudo bash "$uninstall_file" --execute )
 ```
 
-The interactive script requires the exact confirmation `COREAI ENTFERNEN`. Preview actions without changes using `sudo bash /opt/ember-coreui/scripts/uninstall.sh --dry-run`. **Permanent data deletion** is available only through interactive SSH via `--purge-data` and a second, stronger typed phrase; it is intentionally unavailable from the admin UI. These commands support the standard Docker installation in `/opt/ember-coreui`, not native or custom installations.
+The interactive script also asks for `COREAI ENTFERNEN`. Preview without changes: `sudo bash /opt/ember-coreui/scripts/uninstall.sh --dry-run`. **Permanent data deletion** is available only through interactive SSH via `--purge-data` and a second, stronger typed phrase; it is intentionally unavailable from the admin UI. These commands support the standard Docker installation in `/opt/ember-coreui`, not native or custom installations.
 
 ## Hardware requirements
 
@@ -87,13 +87,13 @@ These configurations are **planning guidelines, not benchmarks or guarantees**. 
 
 **Model memory is not server memory.** Google's [Gemma 4 model documentation](https://ai.google.dev/gemma/docs/core) gives approximate Q4 model memory figures of 2.9 GB (E2B), 4.5 GB (E4B), 6.7 GB (12B), 14.4 GB (26B A4B) and 17.5 GB (31B). They cover model loading only and **are not total server RAM requirements**: add memory for the KV cache, context, Ollama, Linux, containers, MariaDB, search and workers.
 
-**Optional voice service:** Eve's measured voice configuration used about 2.5 GB RAM and up to four CPU cores; the container has a 6 GB memory limit. On small servers, consider disabling voice at first installation with `COREUI_INSTALL_VOICE=0`. Changes to an existing installation's settings require a deliberate configuration review and backup.
+**Optional voice service:** Eve's measured voice configuration used about 2.5 GB RAM and up to four CPU cores; the container has a 6 GB memory limit. On small servers, consider `COREUI_INSTALL_VOICE=0` at first installation; changing an existing installation needs a configuration review and backup.
 
 **Optional image service:** FLUX.2-klein 4B needs about 9.4 GB RAM for a 512 × 512 image and about 14.4 GB for 1024 × 1024 (20-thread AVX-512 CPU: about 1 and 3.5 minutes); the container has a 20 GB memory limit, and the weights take about 9 GB of disk space. It is installed by default on servers with 32 GB RAM or more; `COREUI_INSTALL_IMAGE=0` leaves it out, `COREUI_INSTALL_IMAGE=1` forces it. The first installation compiles stable-diffusion.cpp for the CPU (10 to 20 minutes).
 
 ### Optional high performance: GPU and VRAM
 
-A compatible GPU or vGPU with sufficient VRAM **may substantially accelerate Ollama model inference**, but is **not required to run CoreAI**. Benefits depend on drivers, model support, quantization and how much model data and KV cache fit in VRAM. GPU offloading may need additional host configuration and does not automatically speed up every CoreAI tool.
+A compatible GPU or vGPU with enough VRAM **may substantially accelerate Ollama inference**, but is **not required**. Benefits depend on drivers, model support, quantization and how much model data and KV cache fit in VRAM; offloading may need host configuration and does not speed up every CoreAI tool.
 
 ### Example CPU root-server configurations
 
@@ -141,6 +141,7 @@ An existing installation's settings are not silently overwritten. `COREUI_FORCE_
 - **Account:** **Settings → Account** shows name, a unique @username, e-mail and plan. Plans (Free, Go, Plus, Pro) are templates the owner or admins assign in **Admin Core → Users**; they set real tools, daily messages and context window, no prices. Creator profile is **In preparation**.
 - **Storage:** **Settings → Storage** shows used space and limit, Files (favorites, project folders, type filter, search, list or grid) and Images (Mara's creations, uploads, references); items open, download, go to their chat or are deleted. The owner sets one limit for all accounts in **Admin Core → Operations**; single accounts in **Users → Limits**. Full storage stops uploads and new images.
 - **Keyboard:** **Settings → Keyboard** lists the chat shortcuts (send, focus, thinking, dictation, attach, delete or search a chat, new or switch chat, sidebar, shortcut list). Each can be switched off or re-recorded; clashes are refused. Kept per browser.
+- **Usage:** **Settings → Usage** shows the plan, the daily message limit (24 hours from the first message) with time to reset, storage and today's messages. Analytics show tokens per day by Core or thinking level, top chats, tools, skills and messages by kind; only counts, never chat content.
 - **Profile overview:** **Settings → Profile** shows tokens (counted since 0.6.84), peak day, longest task, streaks, a 53-week raster, what Mara made, top tools and insights; public profile and sharing are **In preparation**.
 - **Main language:** In the AI profile, each account chooses German or English for Mara's default replies and read-aloud; the interface language is separate.
 - **Read aloud:** Mara reads answers in German and English with a voice chosen per language under **Settings → Voice**: Eve (default) or 19 other freely licensed Pocket TTS voices, with preview. The language is detected per answer. Numbers, dates, times, versions and abbreviations such as E.M.B.E.R. are spoken as words; code blocks and tables are only named. Automatic read-aloud is optional and off by default; CoreAI works without the optional voice service.
@@ -166,7 +167,7 @@ sudo ./scripts/stack.sh logs --tail=100
 curl -fsS http://127.0.0.1:9080/api/health.php
 ```
 
-Local TCI tiers appear as **TCI Core Schnell, Normal, Plus, Pro and Premium**; newly built Ollama models use `ember-core:e2b`, `:e4b`, `:12b`, `:26b` and `:31b`. After a verified install/update, only newly pulled temporary Gemma source tags are deleted. Pre-existing tags and older defaults remain intact for compatibility; Ollama shares identical weight blobs across tags. Cloud tags are unchanged.
+Local TCI tiers appear as **TCI Core Schnell, Normal, Plus, Pro and Premium**; newly built Ollama models use `ember-core:e2b`, `:e4b`, `:12b`, `:26b` and `:31b`. After a verified install or update only newly pulled temporary Gemma source tags are deleted; existing tags and older defaults stay (Ollama shares identical weight blobs). Cloud tags are unchanged.
 
 In Settings > Profile, photo uploads open a touch crop editor (square for the user, free/portrait for the assistant). Originals and crop coordinates are kept, so uploads can be cropped again. Image generation uses the 1024px reference.
 
@@ -203,7 +204,7 @@ Use `sudo ./scripts/stack.sh restart` for a normal stack restart or `sudo ./scri
 | `skills/`, `tools/` | Skill instructions and executable tools |
 | `var/`, `uploads/` | Local runtime and user data; do not commit to Git |
 
-**Documentation policy:** This English-language `README.md` explains the product **as it exists today** and is **not a changelog**. Release history belongs in [CHANGELOG.md](CHANGELOG.md) and the [per-version TXT archive](docs/changelogs-txt/INDEX.txt). Developer rules are maintained in [AGENTS.md](AGENTS.md), [CLAUDE.md](CLAUDE.md) and [docs/VERSIONING_POLICY.md](docs/VERSIONING_POLICY.md). Historical records and the authoritative German license are preserved.
+**Documentation policy:** This English-language `README.md` explains the product **as it exists today** and is **not a changelog**. Release history belongs in [CHANGELOG.md](CHANGELOG.md) and the [per-version TXT archive](docs/changelogs-txt/INDEX.txt). Developer rules: [AGENTS.md](AGENTS.md), [CLAUDE.md](CLAUDE.md) and [docs/VERSIONING_POLICY.md](docs/VERSIONING_POLICY.md). Historical records and the authoritative German license are preserved.
 
 ## License, privacy and limitations
 

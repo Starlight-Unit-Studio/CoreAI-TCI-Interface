@@ -35,8 +35,8 @@ for(const entry of entries) {
 }
 const planned = [...settings.matchAll(/class="cfg-view cfg-view-planned"/g)];
 // 0.6.81: Benachrichtigungen became a real page; 0.6.87: Archivierte Chats too; 0.7.1: Pets, and Codex Cloud
-// was removed; 0.7.28: Speicher (7 planned remain).
-assert.equal(planned.length, 7, 'only genuinely unimplemented settings remain planned');
+// was removed; 0.7.28: Speicher; 0.7.30: Nutzung (6 planned remain).
+assert.equal(planned.length, 6, 'only genuinely unimplemented settings remain planned');
 assert.ok(settings.includes('id="settingsExpertToggle"'));
 assert.ok(settings.includes('class="cfg-header-expert"') &&
   settings.indexOf('id="settingsExpertToggle"') < settings.indexOf('<div class="cfg-shell">'),
@@ -62,6 +62,7 @@ for (const [id, fields] of Object.entries({
   'archivierte-chats': ['arcSearch', 'arcTypeBtn', 'arcTypeMenu', 'arcProjectBtn', 'arcProjectMenu', 'arcGroups', 'arcEmpty', 'arcConfirm'],
   pets: ['petUploadOpen', 'petCreate', 'petRows', 'petNone', 'petUploadDialog', 'petFile', 'petDeleteConfirm'],
   speicher: ['stUsage', 'stBar', 'stFilesMeta', 'stImagesMeta', 'stSub', 'stSearch', 'stAdd', 'stTabs', 'stRefs', 'stFilter', 'stList', 'stDeleteConfirm'],
+  nutzung: ['nuStatus', 'nuTabs', 'nuLimits', 'nuNowChart', 'nuTokenBars', 'nuChats', 'nuDays', 'nuCoreLines', 'nuToolLines', 'nuMsgLines'],
 })) {
   const html = section(id);
   assert.ok(!html.includes('cfg-view-planned'), id + ' is a real page');
@@ -155,4 +156,4 @@ assert.ok(css.includes('cfg-nav-collapsed') && css.includes('cfg-header-expert')
 assert.ok(read('js/coreui-settings-menu.js').includes("doc.addEventListener('touchstart'") &&
   read('js/coreui-settings-menu.js').includes("doc.addEventListener('touchend'"),
   'swipe navigation is implemented alongside keyboard and button access');
-console.log('CoreAI settings: 24 categories, 7 honest planning pages, migrated live controls, header Expert/Admin, responsive swipe navigation OK');
+console.log('CoreAI settings: 24 categories, 6 honest planning pages, migrated live controls, header Expert/Admin, responsive swipe navigation OK');

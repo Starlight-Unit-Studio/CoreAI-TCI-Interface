@@ -3215,3 +3215,99 @@ html[data-coreui-theme="dark"] .settings-body .notify-planned { color: var(--amb
   .settings-body .kb-foot { justify-content: stretch; }
   .settings-body .kb-reset { width: 100%; }
 }
+
+/* 0.7.30: Settings > Nutzung after the reference screenshots (js/coreui-usage-settings.js). */
+.settings-body .nu-main[hidden], .settings-body .nu-pane[hidden] { display: none; }
+.settings-body .nu-tabs { margin: 4px 0 18px; }
+.settings-body .nu-intro { margin: -4px 0 12px; color: var(--muted); font-size: 15px; line-height: 1.45; }
+.settings-body .nu-card { display: grid; gap: 10px; margin-bottom: 18px; padding: 18px 20px; }
+.settings-body .nu-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 16px; margin-top: 8px; }
+.settings-body .nu-head > div:first-child { min-width: 0; flex: 1 1 260px; }
+.settings-body .nu-head .nu-intro { margin-bottom: 0; }
+.settings-body .nu-head + .nu-card, .settings-body .nu-head + .nu-menu + .nu-card { margin-top: 12px; }
+.settings-body .nu-seg { display: inline-flex; gap: 4px; padding: 3px; border: 1px solid var(--line); border-radius: 999px; }
+.settings-body .nu-seg button {
+  min-height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: transparent; color: var(--muted);
+  cursor: pointer; font: inherit; font-size: 14px; font-weight: 600; white-space: nowrap;
+}
+.settings-body .nu-seg button[aria-pressed="true"] { background: var(--panel-soft); color: var(--txt); box-shadow: inset 0 0 0 1px var(--line); }
+.settings-body .nu-seg button:focus-visible, .settings-body .nu-step:focus-visible, .settings-body .nu-day-head:focus-visible { outline: 2px solid var(--cx); outline-offset: 2px; }
+.settings-body .nu-limit { display: grid; gap: 8px; padding: 6px 0 14px; }
+.settings-body .nu-limit + .nu-limit { padding-top: 16px; border-top: 1px solid var(--line); }
+.settings-body .nu-limit-head strong { color: var(--txt); font-size: 17px; }
+.settings-body .nu-limit-line { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; color: var(--muted); font-size: 15px; }
+.settings-body .nu-limit-line b { color: var(--txt); font-weight: 600; }
+.settings-body .nu-limit-foot { margin: 0; color: var(--muted); font-size: 14px; }
+.settings-body .nu-limit-foot .nu-go { margin-left: 0; }
+.settings-body .nu-bar { height: 8px; overflow: hidden; border-radius: 999px; background: var(--line); }
+.settings-body .nu-bar i { display: block; height: 100%; border-radius: inherit; background: var(--cx); transition: width 0.3s ease; }
+.settings-body .nu-bar.is-low i { background: var(--red); }
+.settings-body .nu-features { display: flex; flex-wrap: wrap; gap: 8px; margin: -6px 0 18px; padding: 0; list-style: none; }
+.settings-body .nu-features li { padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: 13px; }
+.settings-body .nu-features li.is-off { border-color: var(--line-amber, var(--amb)); color: var(--amb); }
+.settings-body .nu-kicker { margin: 0; color: var(--muted); font-size: 14px; }
+.settings-body .nu-big { margin: 0; color: var(--txt); font-size: 32px; font-weight: 700; line-height: 1.1; }
+.settings-body .nu-sub { margin: 0; color: var(--muted); font-size: 14px; }
+.settings-body .nu-chart { position: relative; min-height: 120px; }
+.settings-body .nu-chart svg { display: block; width: 100%; height: auto; touch-action: pan-y; }
+.settings-body .nu-chart .nu-grid { stroke: var(--line); stroke-width: 1; }
+.settings-body .nu-chart .nu-guide { stroke: var(--line-strong); stroke-width: 1; }
+.settings-body .nu-chart .nu-axis { fill: var(--muted); font-size: 12px; font-family: inherit; }
+.settings-body .nu-chart-empty { display: grid; place-items: center; min-height: 150px; margin: 0; color: var(--muted); font-size: 15px; text-align: center; }
+.settings-body .nu-tip {
+  position: absolute; top: 4px; z-index: 2; display: grid; gap: 4px; min-width: 150px; max-width: 260px; padding: 10px 12px;
+  border: 1px solid var(--line-strong); border-radius: 12px; background: var(--panel-solid, var(--bg)); box-shadow: 0 12px 30px rgba(8, 14, 30, 0.22);
+  color: var(--txt); font-size: 13px; pointer-events: none;
+}
+.settings-body .nu-tip[hidden] { display: none; }
+.settings-body .nu-tip small { color: var(--muted); }
+.settings-body .nu-tip-row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; }
+.settings-body .nu-tip-row i { width: 9px; height: 9px; border-radius: 999px; }
+.settings-body .nu-legend { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px 18px; }
+.settings-body .nu-legend:empty { display: none; }
+.settings-body .nu-legend-item { display: grid; gap: 2px; padding-left: 12px; border-left: 4px solid var(--nu-color); }
+.settings-body .nu-legend-item span { color: var(--muted); font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.settings-body .nu-legend-item b { color: var(--txt); font-size: 20px; }
+.settings-body .nu-rangebar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+.settings-body .nu-range { display: inline-flex; align-items: center; gap: 6px; color: var(--txt); font-size: 15px; font-weight: 600; }
+.settings-body .nu-step { display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 10px; background: transparent; color: var(--txt); cursor: pointer; }
+.settings-body .nu-step svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.settings-body .nu-step:disabled { opacity: 0.35; cursor: default; }
+.settings-body .nu-table-card { padding: 6px 0; }
+.settings-body .nu-table-wrap { overflow-x: auto; }
+.settings-body .nu-table { width: 100%; border-collapse: collapse; font-size: 15px; }
+.settings-body .nu-table[hidden] { display: none; }
+.settings-body .nu-table th, .settings-body .nu-table td { padding: 12px 20px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+.settings-body .nu-table th:first-child { max-width: 260px; overflow: hidden; text-align: left; text-overflow: ellipsis; }
+.settings-body .nu-table thead th { color: var(--muted); font-size: 13px; font-weight: 600; }
+.settings-body .nu-table tbody tr:last-child th, .settings-body .nu-table tbody tr:last-child td { border-bottom: 0; }
+.settings-body .nu-table a { color: var(--txt); font-weight: 600; text-decoration: none; }
+.settings-body .nu-table a:hover { color: var(--cx); text-decoration: underline; }
+.settings-body .nu-table small { color: var(--muted); font-weight: 400; }
+.settings-body .nu-locked { color: var(--muted); font-style: italic; }
+.settings-body .nu-empty { margin: 0; padding: 18px 20px; color: var(--muted); font-size: 15px; }
+.settings-body .nu-empty[hidden] { display: none; }
+.settings-body .nu-more { margin: -6px 0 22px; }
+.settings-body .nu-more[hidden] { display: none; }
+.settings-body .nu-day + .nu-day { border-top: 1px solid var(--line); }
+.settings-body .nu-day-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 52px; padding: 10px 20px;
+  border: 0; background: transparent; color: var(--txt); cursor: pointer; font: inherit; font-size: 15px; text-align: left;
+}
+.settings-body .nu-day-name { display: inline-flex; align-items: center; gap: 8px; }
+.settings-body .nu-day-name svg { width: 16px; height: 16px; fill: none; stroke: var(--muted); stroke-width: 2; transform: rotate(90deg); transition: transform 0.15s ease; }
+.settings-body .nu-day-head[aria-expanded="true"] .nu-day-name svg { transform: rotate(-90deg); }
+.settings-body .nu-day-body { display: grid; gap: 6px; padding: 0 20px 14px 44px; }
+.settings-body .nu-day-body[hidden] { display: none; }
+.settings-body .nu-day-line { display: flex; justify-content: space-between; gap: 12px; margin: 0; color: var(--muted); font-size: 14px; }
+.settings-body .nu-day-line b { color: var(--txt); font-weight: 600; }
+@media (max-width: 620px) {
+  .settings-body .nu-card { padding: 16px 14px; }
+  .settings-body .nu-big { font-size: 28px; }
+  .settings-body .nu-table th, .settings-body .nu-table td { padding: 10px 12px; }
+  .settings-body .nu-table th:first-child { max-width: 150px; }
+  .settings-body .nu-day-head { padding: 10px 14px; }
+  .settings-body .nu-day-body { padding: 0 14px 12px 38px; }
+  .settings-body .nu-rangebar { justify-content: stretch; }
+  .settings-body .nu-range { flex: 1 1 auto; justify-content: space-between; }
+}

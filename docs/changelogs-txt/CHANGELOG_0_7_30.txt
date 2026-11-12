@@ -1,0 +1,14 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.30
+Date: 12.11.2026
+Base version: 0.7.29
+
+- Settings > Nutzung is built after the reference screenshots (no longer planned): tabs Uebersicht and Analysen.
+- Uebersicht: plan (as in Settings > Konto), Tageslimit as a 24-hour window from the first message ("Bis zum Zuruecksetzen", "% uebrig", bar, "X Nachrichten von Y verwendet"), Speicher against its limit with "Speicher verwalten", the plan's features; "Aktuelle Nutzung" today by hour or the last 7 days.
+- Analysen, 7 T or 30 T with earlier ranges: Tokenverlauf stacked by Core or by Denken with shares; Top-Chats by own messages (link to the chat, locked chats without title, "Mehr anzeigen"); Tage im Ueberblick (messages, tokens per Core, tools, skills); Tokens nach Core with a Core menu; Werkzeug-Aktivitaet (Websuche, Browser, Python, Bilder) and Verwendete Skills; Nachrichten all or by kind (Text, Stimmsequenzen including live turns, Mit Anhang).
+- Charts are drawn as SVG on the page, with a tooltip on hover or tap and a description for screen readers.
+- No 5-hour or weekly limits and no history of past daily-limit windows: CoreAI has neither, so nothing is shown for them. Tokens are counted since migration 029 ("Gezaehlt seit").
+- New: api/usage.php (GET overview, analytics, chats; guests 403), api/usage_page_store.php, js/coreui-usage-settings.js, nginx allowlist "usage". Reading the daily limit never counts a message; no message text is read.
+- Tests: scripts/usage-page-selftest.php and scripts/usage-ui-selftest.cjs in both preflights; literal tests settings-navigation-foundation (6 planned pages), settings-tabs (planned example Passwoerter), sidebar-sections (version pin) updated.
+- A self-hosted installation must be updated separately; GitHub merge alone is not deployment.
+
+Version: 0.7.30
