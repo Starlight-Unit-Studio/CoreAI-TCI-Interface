@@ -41,7 +41,10 @@
     projects.forEach(function(p){
       var row=el('div','project-nav-row'+(p.id===current?' active':''));
       var open=action('',function(){openProject(p.id);},'project-nav-open');
-      open.appendChild(label('▱','project-nav-folder'));
+      var folderIcon=el('span','project-nav-folder');
+      // Universal folder outline, no special CoreAI-only glyphs.
+      folderIcon.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10H3V7Z"/></svg>';
+      open.appendChild(folderIcon);
       open.appendChild(label(p.name,'project-nav-label'));
       row.appendChild(open);
       row.appendChild(action('···',function(){
