@@ -390,20 +390,29 @@
   }
   function openProject(id) {
     if(!projects.some(function(p){return p.id===id;}))return;
+    // The native composer is the only composer. Never send a project prompt
+    // into whichever unrelated session happened to be active before opening.
+    var app=chatApp();
+    if(!app||!app.prepareProjectDraft||!app.prepareProjectDraft(id))return;
     current=id;tab='chats';sourceStatus('');
+    mountComposer();
     $('coreuiProjectHome').hidden=false;
     document.body.classList.add('project-home-active');
     $('projectHomePopover').hidden=true;
     setTab('chats');renderHeader();renderSidebar();renderChats();
     document.getElementById('messagesArea').scrollTop=0;
     try {history.replaceState(null,'',location.pathname+'?project='+encodeURIComponent(id));}catch(e){}
-    var app=chatApp();if(app&&app.closeDrawer)app.closeDrawer();
+    if(app.closeDrawer)app.closeDrawer();
   }
   function closeHome() {
     if(!current && $('coreuiProjectHome').hidden)return;
+    dismissFloatingMenu();
+    restoreComposer();
     current=null;$('coreuiProjectHome').hidden=true;
     document.body.classList.remove('project-home-active');
-    $('projectHomePopover').hidden=true;renderSidebar();
+    $('projectHomePopover').hidden=true;
+    $('projectHomeMore').setAttribute('aria-expanded','false');
+    renderSidebar();
     try {if(new URLSearchParams(location.search).has('project'))history.replaceState(null,'',location.pathname);}catch(e){}
   }
   function setTab(next) {
@@ -420,13 +429,14 @@
     var menu=$('projectHomePopover');menu.hidden=!menu.hidden;
     $('projectHomeMore').setAttribute('aria-expanded',String(!menu.hidden));
   }
-  function openModal(which) {
+  function openModal(which, projectId) {
+    modalProjectId = String(projectId || current || '');
     $('projectModalError').textContent='';
     $('projectModalCreate').hidden=which!=='create';
     $('projectModalSettings').hidden=which!=='settings';
     $('projectModalShare').hidden=which!=='share';
     $('projectModalTitle').textContent=which==='create'?'Neues Projekt':which==='share'?'Projekt teilen':'Projekteinstellungen';
-    var p=selected();
+    var p=projects.find(function(item){return item.id===modalProjectId;})||null;
     if(which==='create') {$('projectCreateName').value='';$('projectCreateMode').value='open';}
     if(which==='settings' && p) {
       $('projectSettingsName').value=p.name;
@@ -440,27 +450,34 @@
     var focus=which==='create'?$('projectCreateName'):which==='settings'?$('projectSettingsName'):$('projectModalClose');
     if(focus)focus.focus();
   }
-  function closeModal() {$('projectModalScrim').hidden=true;}
+  function closeModal() {$('projectModalScrim').hidden=true;modalProjectId='';}
   function modalError(e) {$('projectModalError').textContent=fail(e);}
-  function runAction(task) {
-    var p=selected();if(!p)return;
+  function runAction(task, projectId) {
+    var id=String(projectId||current||'');
+    var p=projects.find(function(item){return item.id===id;});
+    if(!p)return;
+    dismissFloatingMenu();
     $('projectHomePopover').hidden=true;
+    $('projectHomeMore').setAttribute('aria-expanded','false');
     if(task==='home'){openProject(p.id);return;}
-    if(task==='share'){openModal('share');return;}
-    if(task==='settings'||task==='rename'){openModal('settings');return;}
+    if(task==='share'){openModal('share',p.id);return;}
+    if(task==='settings'||task==='rename'){openModal('settings',p.id);return;}
     if(task==='pin') {
       post({action:'project_pin',project_id:p.id,pinned:!p.pinned}).then(refresh).catch(function(e){alert(fail(e));});
       return;
     }
-    if(task==='delete')deleteProject();
+    if(task==='delete')deleteProject(p.id);
   }
-  function deleteProject() {
-    var p=selected();if(!p)return;
+  function deleteProject(projectId) {
+    var id=String(projectId||modalProjectId||current||'');
+    var p=projects.find(function(item){return item.id===id;});
+    if(!p)return;
     if(!confirm('Projekt "'+p.name+'" löschen? Projektquellen und Anweisungen werden gelöscht. Die Chats bleiben erhalten und werden aus dem Projekt gelöst.'))return;
     post({action:'project_delete',project_id:p.id,confirmation:'DELETE:'+p.id}).then(function(){
-      closeModal();closeHome();
+      if(!$('projectModalScrim').hidden)closeModal();
+      if(current===id)closeHome();
       var a=chatApp();return a&&a.refresh?a.refresh():null;
-    }).then(refresh).catch(modalError);
+    }).then(refresh).catch(function(e){alert(fail(e));});
   }
   function assignChat(chatId) {
     if(!projects.length){openModal('create');return;}
@@ -487,7 +504,8 @@
     }).catch(modalError);
   });
   $('projectSettingsSave').addEventListener('click',function(){
-    var p=selected();if(!p)return;
+    var p=projects.find(function(item){return item.id===modalProjectId;});
+    if(!p)return;
     post({action:'project_update',project_id:p.id,name:$('projectSettingsName').value,
       instructions_md:$('projectSettingsInstructions').value}).then(refresh).then(function(){closeModal();})
       .catch(modalError);
@@ -500,17 +518,12 @@
   });
   $('projectTabChats').addEventListener('click',function(){setTab('chats');});
   $('projectTabSources').addEventListener('click',function(){setTab('sources');});
-  $('projectHomeAttach').addEventListener('click',function(){setTab('sources');});
+  // Attachments and tools belong to the single native CoreAI composer.
   $('projectSourceSort').addEventListener('change',renderSources);
   $('projectSourceFilter').addEventListener('change',renderSources);
   $('projectSourceFile').addEventListener('change',function(){uploadFiles(Array.from(this.files||[]));});
-  $('projectHomeChatForm').addEventListener('submit',function(e){
-    e.preventDefault();var msg=$('projectHomeChatInput').value.trim();
-    if(!msg || !current)return;
-    var app=chatApp();if(!app||!app.startProjectChat)return;
-    $('projectHomeChatInput').value='';
-    app.startProjectChat(current,msg);
-  });
+  // The shared CoreAI composer sends via CoreAIChatApp.sendMessage with the
+  // project ID bound in prepareProjectDraft; no parallel event listener.
   window.CoreAIProjects={refresh:refresh,openProject:openProject,closeHome:closeHome,
     updateSessions:updateSessions,assignChat:assignChat,refreshLocked:refreshLocked};
   refresh().catch(function(e){console.warn('[CoreAI] Projects deferred until sign-in:',e.message);});
