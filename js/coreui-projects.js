@@ -504,7 +504,9 @@
     var name=$('projectCreateName').value.trim(),mode=$('projectCreateMode').value;
     if(!name){modalError(new Error('project_name_required'));return;}
     post({action:'project_create',name:name,context_mode:mode}).then(function(d){
-      closeModal();return refresh().then(function(){openProject(d.project.id);});
+      closeModal();
+      setFolderExpanded(d.project.id,true);
+      return refresh().then(function(){renderSidebar();});
     }).catch(modalError);
   });
   $('projectSettingsSave').addEventListener('click',function(){
