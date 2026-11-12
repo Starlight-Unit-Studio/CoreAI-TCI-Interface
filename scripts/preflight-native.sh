@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.30: Settings > Nutzung (plan limits, tokens by Core, tools, skills, messages, top chats).
+# CoreAI: TCI Interface 0.7.31: storage selftest checks the nginx allowlist by pattern (preflight fix for 0.7.30).
 set -Eeuo pipefail
 IFS=$'\n\t'
 

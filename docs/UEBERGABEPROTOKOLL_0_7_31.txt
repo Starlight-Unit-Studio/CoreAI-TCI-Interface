@@ -1,0 +1,29 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.31
+Date: 12.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Base version: 0.7.30
+
+PROBLEM
+PR #286 (0.7.30, Einstellungen > Nutzung) wurde gemergt, bevor der Korrektur-Commit fuer den Speicher-
+Selbsttest im PR war. scripts/storage-selftest.php prueft die nginx-Freigabe von api/files.php mit dem
+woertlichen Ausschnitt "|memory_summary|pets|files|profile|"; 0.7.30 traegt "usage" hinter "files" ein.
+Der Test scheitert deshalb ("Storage FAIL: nginx allows the storage endpoint"), und weil er in beiden
+Preflights laeuft, bricht ein Update auf 0.7.30 im Preflight ab.
+
+LOESUNG
+- Der Test verlangt nur noch "files" irgendwo in der API-Freigabeliste beider nginx-Vorlagen (Muster).
+  Gegenprobe: mit files 1 Treffer, ohne files 0, mit umbenanntem Eintrag 0.
+- Keine Aenderung an Nutzung, files.php oder nginx selbst.
+- docs/UEBERGABEPROTOKOLL_0_7_30.txt enthaelt jetzt auch die Ergebnisse der Gesamtreihe fuer 0.7.30.
+
+TESTS (in dieser Sitzung ausgefuehrt)
+- php scripts/storage-selftest.php ohne Datenbank und gegen MariaDB: gruen.
+- Gesamte Selbsttest-Reihe auf 0.7.30-Stand plus diese Korrektur und auf main 0.7.29 verglichen: dieselben
+  11 vorher schon scheiternden Tests auf beiden Staenden, der Speicher-Test nach der Korrektur gruen.
+- version-merge-check.py --base-version 0.7.30, cache-bust.py --verify.
+
+NACH DEM UPDATE
+- Wer schon auf 0.7.30 aktualisieren wollte und am Preflight gescheitert ist: mit 0.7.31 erneut
+  aktualisieren (Einstellungen > System > CoreAI Update). Keine Migration.
+
+Version: 0.7.31
