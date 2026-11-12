@@ -1037,3 +1037,24 @@ body.project-home-active .project-home button:focus-visible {
   body.project-home-active .project-home-title h2 {font-size:21px;}
   .project-modal {padding:17px 16px 18px;max-height:calc(100dvh - 24px);}
 }
+
+body.project-home-active .project-new-chat-actions button svg,
+body.project-home-active #projectHomeChatSend svg {
+  display:block;
+  width:23px;
+  height:23px;
+}
+body.project-home-active .project-new-chat-actions #projectHomeAttach {
+  color:var(--cx);
+}
+body.project-home-active .project-new-chat-actions #projectHomeAttach:hover {
+  background:var(--panel-cx);
+}
+body.project-home-active .project-chat-result-main {
+  min-height:44px;
+}
+.app-body .drawer .project-nav-folder-row .project-nav-open:focus-visible,
+.app-body .drawer .project-nav-folder-row .project-nav-menu:focus-visible {
+  outline:2px solid var(--amb);
+  outline-offset:-2px;
+}
