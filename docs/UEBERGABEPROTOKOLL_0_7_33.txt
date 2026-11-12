@@ -66,3 +66,14 @@ NACH DEM UPDATE
 - Keine Migration. Einstellungen oeffnen; Browser-Cache wird ueber die ?v=-Parameter erneuert.
 
 Version: 0.7.33
+
+NAECHSTE VERBINDLICHE VERSION / FORTSETZUNG (12.11.2026)
+- Naechste zu vergebende numerische CoreAI-Version: 0.7.36.
+- Die tatsaechlichen Main-Merges wurden nachgezaehlt. Die oeffentliche Merge-Chronik reicht bis
+  0.7.35; im CoreAI-Quellrepository steht VERSION derzeit noch auf 0.7.33.
+- Die historischen Zaehlschritte 0.7.34 und 0.7.35 duerfen nicht als nachtraeglich erstellte
+  Releases oder ZIP-Downloads ausgegeben werden. Sie sind bei der naechsten Version zu beruecksichtigen.
+- Beim naechsten in main zu integrierenden Release VERSION, die sechs HTML-Versionsmarker,
+  JS-Bootstrap, README, CHANGELOG, TXT-Changelog-Index, Cache-Fingerprints, Versions- und
+  Preflight-Selbsttests sowie ein neues UEBERGABEPROTOKOLL_0_7_36.txt auf 0.7.36 abstimmen.
+- Diese Dokumentation ist KEIN Release: bestehende VERSION 0.7.33 und Laufzeit bleiben unveraendert.
