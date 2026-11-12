@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.36: authoritative version reconciliation per handover; runtime selftests retained.
+# CoreAI: TCI Interface 0.7.37: authoritative version reconciliation per handover; runtime selftests retained.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
