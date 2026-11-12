@@ -4,6 +4,7 @@
 
   var preferences = window.CoreUIPreferences;
   var themeOptions = Array.prototype.slice.call(document.querySelectorAll('input[name="coreuiTheme"]'));
+  var skinOptions = Array.prototype.slice.call(document.querySelectorAll('input[name="coreuiSkin"]'));
   var fields = {
     compactFeed: document.getElementById('prefCompactFeed'),
     thinkingExpanded: document.getElementById('prefThinkingExpanded'),
@@ -215,6 +216,7 @@
     });
     var selectedTheme = value.theme || 'system';
     themeOptions.forEach(function (option) { option.checked = option.value === selectedTheme; });
+    skinOptions.forEach(function (option) { option.checked = option.value === (value.uiSkin || 'coreai'); });
     var target = appearanceTarget(value);
     var suffix = value.separateModes && target === 'dark' ? 'Dark' : '';
     Object.keys(appearanceFields).forEach(function (key) {
@@ -240,6 +242,8 @@
     });
     var selected = themeOptions.filter(function (option) { return option.checked; })[0];
     value.theme = selected ? selected.value : (preferences ? preferences.load().theme : 'system');
+    var selectedSkin = skinOptions.filter(function (option) { return option.checked; })[0];
+    value.uiSkin = selectedSkin ? selectedSkin.value : (preferences ? preferences.load().uiSkin : 'coreai');
     value.sendKey = generalSendKey ? generalSendKey.value
       : (preferences ? preferences.load().sendKey : 'enter');
     value.uiLanguage = generalUiLanguage ? generalUiLanguage.value
@@ -1105,6 +1109,14 @@
         syncFields(preferences.load());
         announceSaved('LOKAL GESPEICHERT');
       }
+    });
+  });
+  skinOptions.forEach(function (option) {
+    option.addEventListener('change', function () {
+      if (!preferences || !option.checked) return;
+      var next = Object.assign({}, preferences.load(), {uiSkin: option.value});
+      syncFields(preferences.save(next));
+      announceSaved('OBERFLÄCHENSTIL GESPEICHERT');
     });
   });
   Object.keys(appearanceFields).forEach(function (key) {
