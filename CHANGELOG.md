@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.7.36 - 12.11.2026
+
+- **Verbindliche Versionskorrektur:** Das Uebergabeprotokoll `UEBERGABEPROTOKOLL_0_7_33.txt` legte nach Abgleich der tatsaechlichen Main-Merges 0.7.36 als naechsten Versionsstand fest. PR #290 wurde irrtuemlich mit 0.7.34 bezeichnet und gemergt. Dieser historische Merge bleibt unveraendert dokumentiert; die vorgegebene Fortsetzung ist jetzt 0.7.36.
+- **Projektmenues:** Die bereits in PR #290 gemergte Korrektur fuer beide Drei-Punkte-Menues bleibt enthalten. Es gibt keinen Rueckbau der Funktion.
+- **Keine erfundenen Artefakte:** 0.7.35 wird nicht nachtraeglich als veroeffentlichtes Paket oder ZIP dargestellt. Die Zaehlschritte 0.7.34/0.7.35 werden nur wie im frueheren Uebergabeprotokoll erlaeutert beruecksichtigt.
+- **Release-Konsistenz:** Aktive Versionsmarker in sechs HTML-Oberflaechen, JS-Bootstrap, README, Preflights, Versionstests, Changelog und Browser-Cache-Fingerprints synchronisiert. Keine Datenbank- oder Laufzeitaenderungen.
+
+
 ## 0.7.34 - 12.11.2026
 
 - **Projektmenüs:** Die Drei-Punkte-Buttons neben Projektordnern und in der Projektstartseite verwenden dieselbe echte Aktionsliste und dieselbe Floating-Menü-Implementierung.
