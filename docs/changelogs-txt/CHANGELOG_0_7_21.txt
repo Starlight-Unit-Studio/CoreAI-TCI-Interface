@@ -1,0 +1,20 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.21
+Date: 12.11.2026
+Version base: 0.7.20 (one merge, one version)
+
+- Sidebar now lists Angeheftet, Projekte and Letzte as three independently
+  collapsible sections. Disclosure state is stored as a UI preference only.
+- Pinned chats appear separately above projects; pin/unpin is accessible
+  from a chat's own actions menu without opening it.
+- Original CoreAI logo, animated matrix and ticker remain intact. Familiar
+  settings and logout icons move to the free space beside the logo.
+- Oversized footer controls are removed; the redundant Protocols shortcut
+  is removed from the drawer, but the underlying protocols page is preserved.
+- Shorter chat rows and familiar new-chat, folder, plus and archive icons
+  increase usable mobile vertical space.
+- Project landing page, sources, menus and project settings adopt native
+  CoreAI palette, typography, light/dark theme variables and UI framing.
+- Existing chat creation, project sources, permissions and RAG unchanged.
+- UI regression contract and version check included.
+
+Version: 0.7.21

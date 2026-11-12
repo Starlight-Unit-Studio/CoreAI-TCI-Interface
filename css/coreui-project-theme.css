@@ -1,0 +1,274 @@
+/* CoreAI project styling. One visual system for chats, projects and settings.
+   Retains the established CoreAI palette, dark-mode variables and matrix. */
+body.project-home-active .app-shell {
+  background:var(--bg)!important;
+  color:var(--txt)!important;
+}
+body.project-home-active .messages-area,
+body.project-home-active .messages-area.is-welcome {
+  background:transparent!important;
+  color:var(--txt)!important;
+}
+body.project-home-active .project-home {
+  background:
+    radial-gradient(circle at 8% 7%,rgba(91,146,255,.11),transparent 30rem),
+    radial-gradient(circle at 97% 85%,rgba(138,111,242,.08),transparent 33rem),
+    var(--bg)!important;
+  color:var(--txt)!important;
+  font-family:var(--coreui-font,"Rajdhani"),"Segoe UI",sans-serif;
+}
+body.project-home-active .project-home-content {
+  max-width:850px;
+  min-height:100%;
+  padding-top:24px;
+}
+body.project-home-active .project-home-header {
+  margin-top:57px;
+  margin-bottom:22px;
+  padding-bottom:12px;
+  border-bottom:1px solid var(--line);
+}
+body.project-home-active .project-home-title>span {
+  color:var(--cx);filter:drop-shadow(0 0 10px rgba(91,146,255,.25));
+}
+body.project-home-active .project-home-title h2 {
+  color:var(--txt);
+  font:700 clamp(20px,3vw,28px)/1.3 var(--coreui-font,"Rajdhani"),sans-serif;
+  letter-spacing:.015em;
+}
+body.project-home-active .project-home-header-actions button,
+body.project-home-active .project-home-nav-toggle {
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:12px;
+  color:var(--cx);
+  box-shadow:var(--shadow-tight);
+  cursor:pointer;
+}
+body.project-home-active .project-home-header-actions button:hover,
+body.project-home-active .project-home-nav-toggle:hover {
+  background:var(--panel-cx);border-color:var(--cx);
+}
+body.project-home-active .project-home-nav-toggle {
+  display:grid;place-items:center;
+  top:20px;left:clamp(16px,5vw,46px);
+  width:43px;height:43px;
+  font-size:23px;
+}
+body.project-home-active .project-new-chat {
+  border:1px solid var(--line-strong);
+  border-radius:15px;
+  background:var(--panel);
+  box-shadow:var(--shadow-soft);
+  padding:16px 17px 12px;
+}
+body.project-home-active .project-new-chat:focus-within {
+  border-color:var(--cx);
+  box-shadow:var(--shadow-tight),var(--glow-cx);
+}
+body.project-home-active .project-new-chat textarea {
+  color:var(--txt);
+  font:500 18px/1.5 var(--coreui-font,"Rajdhani"),sans-serif;
+  min-height:52px;
+}
+body.project-home-active .project-new-chat textarea::placeholder {color:var(--muted);}
+body.project-home-active .project-new-chat-actions {color:var(--muted);}
+body.project-home-active .project-chat-effort {color:var(--muted);}
+body.project-home-active #projectHomeChatSend {
+  background:var(--cx);
+  color:#fff;
+  border:1px solid var(--cx);
+  box-shadow:var(--glow-cx);
+}
+body.project-home-active .project-home-tabs {
+  gap:6px;padding:0 0 12px;
+  margin:22px 0 15px;
+  border-bottom:1px solid var(--line);
+}
+body.project-home-active .project-home-tabs button {
+  border:1px solid transparent;
+  border-radius:10px;
+  padding:9px 18px;
+  color:var(--muted);
+  font:700 15px var(--coreui-font,"Rajdhani"),sans-serif;
+  letter-spacing:.02em;
+}
+body.project-home-active .project-home-tabs button.active {
+  color:var(--cx-deep,var(--cx));
+  background:var(--panel-cx);
+  border-color:var(--line-strong);
+}
+body.project-home-active .project-chat-result {
+  min-height:76px;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:11px;
+  margin:0 0 8px;
+  box-shadow:var(--shadow-tight);
+}
+body.project-home-active .project-chat-result:hover {
+  background:var(--panel-cx);
+  border-color:var(--line-strong);
+}
+body.project-home-active .project-chat-result-main {
+  color:var(--txt);
+}
+body.project-home-active .project-chat-result-main strong {
+  color:var(--txt);
+  font:700 16px/1.35 var(--coreui-font,"Rajdhani"),sans-serif;
+}
+body.project-home-active .project-chat-result-main small {
+  color:var(--muted);
+  font:13px/1.45 var(--coreui-font,"Rajdhani"),sans-serif;
+}
+body.project-home-active .project-empty {
+  color:var(--muted);
+  background:var(--panel-soft);
+  border:1px dashed var(--line);
+  border-radius:12px;
+  padding:24px 18px;
+}
+body.project-home-active .project-chat-result-more {
+  color:var(--muted);
+}
+body.project-home-active .project-chat-result-more:hover {
+  color:var(--cx);
+  background:var(--panel-cx);
+}
+body.project-home-active .project-chat-menu,
+body.project-home-active .project-home-popover {
+  background:var(--panel-solid);
+  border:1px solid var(--line-strong);
+  border-radius:12px;
+  color:var(--txt);
+  box-shadow:var(--shadow-soft);
+}
+body.project-home-active .project-chat-menu button,
+body.project-home-active .project-home-popover button {
+  color:var(--txt);
+  font:600 14px var(--coreui-font,"Rajdhani"),sans-serif;
+}
+body.project-home-active .project-chat-menu button:hover,
+body.project-home-active .project-home-popover button:hover {background:var(--panel-cx);}
+body.project-home-active .project-chat-menu button.danger,
+body.project-home-active .project-home-popover button.danger {color:var(--red);}
+body.project-home-active .project-source-controls label,
+body.project-home-active .project-source-filetext small,
+body.project-home-active .project-upload-progress {color:var(--muted);}
+body.project-home-active .project-source-controls select {
+  color:var(--txt);
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:9px;
+  padding:8px 9px;
+}
+body.project-home-active .project-source-upload,
+body.project-home-active .project-source-row {
+  color:var(--txt);
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:11px;
+  padding:13px 15px;
+  margin-bottom:8px;
+}
+body.project-home-active .project-source-upload:hover {
+  background:var(--panel-cx);border-color:var(--line-strong);
+}
+body.project-home-active .project-source-thumb {
+  border:1px solid var(--line);
+  background:var(--panel-cx);
+  color:var(--cx);
+}
+body.project-home-active .project-source-filetext strong {color:var(--txt);}
+body.project-home-active .project-source-actions button,
+body.project-home-active .project-source-download {color:var(--cx);}
+body.project-home-active .project-source-download:hover,
+body.project-home-active .project-source-actions button:hover {
+  color:var(--cx-deep,var(--cx));
+  background:var(--panel-cx);
+}
+.project-modal-scrim {backdrop-filter:blur(5px);}
+.project-modal {
+  background:var(--panel-solid)!important;
+  color:var(--txt)!important;
+  border:1px solid var(--line-strong)!important;
+  box-shadow:var(--shadow-soft),var(--glow-cx)!important;
+  border-radius:16px!important;
+  font-family:var(--coreui-font,"Rajdhani"),sans-serif!important;
+}
+.project-modal header {border-bottom:1px solid var(--line);padding-bottom:15px;}
+.project-modal h2 {font:700 23px var(--coreui-font,"Rajdhani"),sans-serif;color:var(--txt);}
+.project-modal header button {color:var(--muted);}
+.project-modal label {color:var(--txt);font:650 15px var(--coreui-font,"Rajdhani"),sans-serif;}
+.project-modal label small,
+.project-modal-hint,
+.project-owner-row span:last-child {color:var(--muted);}
+.project-modal input,
+.project-modal textarea,
+.project-modal select {
+  background:var(--panel)!important;
+  color:var(--txt)!important;
+  border:1px solid var(--line-strong)!important;
+  border-radius:9px!important;
+  font:500 16px var(--coreui-font,"Rajdhani"),sans-serif;
+}
+.project-modal input:focus,
+.project-modal textarea:focus {outline:2px solid var(--cx);}
+.project-modal-primary {
+  border:1px solid var(--cx)!important;
+  border-radius:10px!important;
+  background:var(--cx)!important;
+  color:#fff!important;
+  box-shadow:var(--glow-cx);
+}
+.project-modal-danger {
+  background:rgba(212,80,93,.12)!important;
+  border:1px solid rgba(212,80,93,.4)!important;
+  border-radius:10px!important;
+  color:var(--red)!important;
+}
+.project-modal-error {color:var(--red);}
+.project-owner-row {color:var(--txt);}
+.project-owner-row span:first-child {background:var(--panel-cx);color:var(--cx);}
+@media(max-width:620px) {
+  body.project-home-active .project-home-content {
+    padding:14px 14px 52px;
+  }
+  body.project-home-active .project-home-header {margin-top:60px;}
+  body.project-home-active .project-home-nav-toggle {top:14px;left:14px;}
+  body.project-home-active .project-new-chat {padding:14px 14px 10px;}
+}
+
+/* The former ChatGPT reference styling forced the whole project drawer dark.
+   Override that too so the existing CoreAI daylight/nightlight theme applies. */
+body.project-home-active .drawer {
+  background:linear-gradient(165deg,var(--panel),var(--panel-soft))!important;
+  color:var(--txt)!important;
+  border-right:1px solid var(--line-strong)!important;
+  box-shadow:var(--shadow-soft)!important;
+}
+body.project-home-active .drawer .sidebar-header-action {
+  background:var(--panel);
+  color:var(--txt);
+}
+body.project-home-active .drawer .project-nav-row,
+body.project-home-active .drawer .project-nav-open,
+body.project-home-active .drawer .project-nav-chat,
+body.project-home-active .drawer .projects-nav-heading,
+body.project-home-active .drawer .sidebar-section-toggle {
+  color:var(--txt)!important;
+}
+body.project-home-active .drawer .drawer-close {
+  color:var(--cx)!important;
+  background:var(--panel)!important;
+}
+body.project-home-active .drawer .project-nav-row:hover,
+body.project-home-active .drawer .project-nav-row.active {
+  background:var(--panel-cx)!important;
+}
+
+body.project-home-active .drawer .drawer-footer {
+  background:var(--panel)!important;
+  border-top:1px solid var(--line)!important;
+}
+body.project-home-active .drawer .drawer-copyright {color:var(--muted-soft)!important;}

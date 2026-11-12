@@ -1,0 +1,38 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.21
+Date: 12.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Base version: 0.7.20
+
+PURPOSE
+Improve the phone sidebar without shrinking or removing the original
+Ren logo, matrix and ticker. Use the ChatGPT layout as a functional
+reference while retaining the distinct CoreAI visual identity.
+
+UI CONTRACT
+- Free space left and right of the logo: Settings (gear) and Logout
+  (exit icon), reusing existing button IDs and event handlers.
+- Under the unchanged ticker: New Chat, Angeheftet, Projekte, Letzte.
+- Angeheftet, Projekte, Letzte each fold independently. State is a
+  persistent UI preference, not chat content.
+- Pinned chats are an independent list, not duplicated in Letzte.
+- Side-bar chat actions allow pin/unpin, rename, archive and delete.
+- Footer only retains copyright; redundant Protocols button removed.
+- The existing protocols.html remains available to other code.
+- Project home, sources, modal dialogs use CoreAI theme variables.
+- Project RAG, user/project ACL and server APIs are unchanged.
+
+SAFETY
+No change to model files, Ollama parameters, production databases, RAG
+ingestion, or server host access. No extra Work mode created.
+
+VALIDATION REQUIRED
+php scripts/frontend-regression-selftest.php
+php scripts/reply-pipeline-selftest.php
+node scripts/sidebar-sections-ui-selftest.cjs
+node scripts/project-ui-selftest.cjs
+python3 scripts/version-merge-check.py --base-version 0.7.20
+python3 scripts/branding-license-selftest.py
+python3 scripts/cache-bust.py --verify
+
+Mobile live testing and server Preflight must follow deployment.
+No live success or publish claims before actual verification.

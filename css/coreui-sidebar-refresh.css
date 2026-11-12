@@ -1,0 +1,346 @@
+/* CoreAI sidebar density refresh. Original logo/matrix and ticker remain intact. */
+.app-body .drawer .sidebar-header-actions {
+  position:absolute;
+  z-index:9;
+  inset:0;
+  pointer-events:none;
+}
+.app-body .drawer .sidebar-header-action {
+  position:absolute;
+  top:78px;
+  display:grid;
+  place-items:center;
+  width:44px;
+  height:44px;
+  padding:9px;
+  border:1px solid rgba(91,146,255,.24);
+  border-radius:10px;
+  background:var(--panel);
+  color:var(--txt);
+  box-shadow:var(--shadow-tight);
+  cursor:pointer;
+  pointer-events:auto;
+  -webkit-tap-highlight-color:transparent;
+}
+.app-body .drawer #btnSettings {left:14px;}
+.app-body .drawer #btnLogout {right:14px;}
+.app-body .drawer .sidebar-header-action svg,
+.app-body .drawer .hud-button-glyph svg,
+.app-body .drawer #projectsCreateBtn svg,
+.app-body .drawer #sessionArchiveToggle svg,
+.app-body .drawer .sidebar-chevron-icon {
+  display:block;width:22px;height:22px;stroke:currentColor;
+}
+.app-body .drawer .sidebar-header-action:hover,
+.app-body .drawer .sidebar-header-action:focus-visible {
+  color:var(--cx-deep);
+  border-color:var(--cx);
+  background:rgba(91,146,255,.13);
+}
+.app-body .drawer #btnLogout:hover {color:var(--red);border-color:var(--red);}
+.app-body .drawer .drawer-header {
+  flex-shrink:0;
+}
+/* Below the ticker: ChatGPT-like content density in CoreAI colors. */
+.app-body .drawer .drawer-content {
+  flex:1 1 auto;
+  min-height:0;
+  gap:5px;
+  padding:8px 13px 5px;
+  overflow:hidden;
+}
+.app-body .drawer .btn-new-session {
+  flex:0 0 auto;
+  min-height:49px;
+  padding:9px 11px;
+  gap:10px;
+  border:0;
+  border-radius:10px;
+  clip-path:none;
+  box-shadow:none;
+  background:transparent;
+  color:var(--txt);
+  font:600 15px system-ui,sans-serif;
+  letter-spacing:normal;
+  transform:none;
+}
+.app-body .drawer .btn-new-session::before,
+.app-body .drawer .btn-new-session::after {content:none;display:none}
+.app-body .drawer .btn-new-session:hover,
+.app-body .drawer .btn-new-session:focus-visible {
+  background:rgba(91,146,255,.12);
+  box-shadow:none;
+  transform:none;
+}
+.app-body .drawer .hud-button-glyph {
+  display:grid;
+  place-items:center;
+  flex:0 0 26px;
+  width:26px;height:26px;
+  background:transparent;border:0;clip-path:none;
+  color:var(--cx);
+}
+.app-body .drawer .btn-new-session .hud-button-copy strong {
+  color:var(--txt);font:600 15px system-ui,sans-serif;
+  letter-spacing:0;
+}
+.app-body .drawer .btn-new-session .hud-button-copy small {display:none}
+.app-body .drawer .pinned-zone,
+.app-body .drawer .projects-nav,
+.app-body .drawer .session-zone {
+  min-height:0;
+  margin:0;
+  padding:0;
+  border:0;
+  display:flex;
+  flex-direction:column;
+}
+.app-body .drawer .pinned-zone[hidden] {display:none!important;}
+.app-body .drawer .pinned-zone,
+.app-body .drawer .projects-nav {flex:0 0 auto;}
+.app-body .drawer .session-zone {flex:1 1 auto;}
+.app-body .drawer .section-label,
+.app-body .drawer .projects-nav-heading {
+  display:flex;
+  flex:0 0 auto;
+  align-items:center;
+  min-height:39px;
+  gap:5px;
+  margin:0;
+  padding:0 2px;
+  border:0;
+  font:600 14px/1.35 system-ui,sans-serif;
+  color:var(--muted);
+  letter-spacing:0;
+}
+.app-body .drawer .sidebar-section-toggle {
+  display:flex;
+  flex:1 1 auto;
+  min-width:0;
+  align-items:center;
+  gap:8px;
+  height:39px;
+  padding:4px 5px;
+  border:0;
+  background:transparent;
+  border-radius:8px;
+  color:inherit;
+  text-align:left;
+  font:inherit;
+  cursor:pointer;
+}
+.app-body .drawer .sidebar-section-toggle:hover,
+.app-body .drawer .sidebar-section-toggle:focus-visible {
+  background:rgba(91,146,255,.08);
+}
+.app-body .drawer .sidebar-chevron-icon {
+  flex:0 0 16px;
+  width:16px;height:16px;
+  transition:transform 150ms ease;
+}
+.app-body .drawer .sidebar-section-folded .sidebar-chevron-icon {transform:rotate(-90deg);}
+.app-body .drawer .sidebar-section-folded > .session-list,
+.app-body .drawer .sidebar-section-folded > .projects-nav-list {display:none!important;}
+.app-body .drawer .section-count {
+  border:0;min-width:0;
+  padding:1px 4px;
+  font:12px system-ui,sans-serif;
+  color:var(--muted-soft);
+  background:transparent;
+}
+.app-body .drawer #projectsCreateBtn,
+.app-body .drawer #sessionArchiveToggle {
+  display:grid;
+  place-items:center;
+  flex:0 0 39px;
+  width:39px;height:39px;
+  min-height:39px;
+  margin:0;
+  padding:8px;
+  border:0;border-radius:9px;
+  background:transparent;
+  color:var(--muted);
+  box-shadow:none;
+  cursor:pointer;
+}
+.app-body .drawer #projectsCreateBtn:hover,
+.app-body .drawer #sessionArchiveToggle:hover,
+.app-body .drawer #sessionArchiveToggle.active {color:var(--cx);background:rgba(91,146,255,.1);}
+.app-body .drawer #projectsCreateBtn svg,
+.app-body .drawer #sessionArchiveToggle svg {width:20px;height:20px;}
+.app-body .drawer .pinned-session-list {
+  flex:0 1 auto;
+  max-height:min(23dvh,200px);
+  padding-bottom:3px;
+}
+.app-body .drawer .projects-nav-list {
+  flex:0 1 auto;
+  max-height:min(24dvh,225px);
+  overflow-x:hidden;
+  overflow-y:auto;
+  gap:0;
+  scrollbar-width:thin;
+  padding:0 1px 5px;
+}
+.app-body .drawer .project-nav-row {
+  min-height:42px;
+  padding:2px 4px;
+  border-radius:9px;
+  font:500 14px system-ui,sans-serif;
+  color:var(--txt);
+}
+.app-body .drawer .project-nav-row.active,
+.app-body .drawer .project-nav-row:hover {background:rgba(91,146,255,.1);}
+.app-body .drawer .project-nav-menu {min-width:38px;min-height:38px;}
+.app-body .drawer .project-nav-chat {color:var(--muted);font:13px system-ui,sans-serif;}
+.app-body .drawer .session-list {
+  gap:1px;
+  padding:0 1px 6px;
+  min-height:0;
+  overflow-x:hidden;
+  overflow-y:auto;
+}
+.app-body .drawer .session-item {
+  display:grid;
+  flex:0 0 auto;
+  min-height:45px;
+  padding:7px 10px;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:3px 7px;
+  border:0;
+  border-radius:9px;
+  clip-path:none;
+  background:transparent;
+  box-shadow:none;
+  transform:none;
+}
+.app-body .drawer .session-item::before {display:none;}
+.app-body .drawer .session-item.active,
+.app-body .drawer .session-item:hover {background:rgba(91,146,255,.11);transform:none;}
+.app-body .drawer .session-item-title {
+  font:500 14px/1.4 system-ui,sans-serif;
+  letter-spacing:0;
+  color:var(--txt);
+}
+.app-body .drawer .session-item-meta {display:none;}
+.app-body .drawer .session-item-actions {
+  display:none;
+  grid-column:1/-1;
+  max-height:none;
+  margin:4px 0 0;
+  opacity:1;
+  visibility:visible;
+  pointer-events:auto;
+}
+.app-body .drawer .session-item.actions-open .session-item-actions {display:flex;flex-wrap:wrap;gap:5px;}
+.app-body .drawer .session-item .session-row-more {
+  display:grid;
+  grid-column:2;
+  grid-row:1;
+  align-self:center;
+  place-items:center;
+  width:40px;height:40px;
+  border:0;border-radius:9px;
+  color:var(--muted);
+  background:transparent;
+  cursor:pointer;
+  font:22px/1 system-ui,sans-serif;
+}
+.app-body .drawer .session-item .session-row-more:hover {background:rgba(91,146,255,.12);}
+.app-body .drawer .session-action {
+  flex:1 1 42%;
+  min-height:39px;
+  padding:8px;
+  border-radius:8px;
+  background:var(--panel);
+  font:600 11px system-ui,sans-serif;
+  letter-spacing:0;
+}
+.app-body .drawer .drawer-footer {
+  flex:0 0 auto;
+  display:block;
+  padding:5px 12px max(8px,env(safe-area-inset-bottom));
+  border-top:1px solid rgba(91,146,255,.12);
+}
+.app-body .drawer .drawer-copyright {
+  font:10px/1.3 system-ui,sans-serif;
+  letter-spacing:0;
+  text-align:center;
+  color:var(--muted-soft);
+}
+.app-body .drawer .drawer-system-line {display:none!important;}
+/* Legacy project view hides the logo/ticker. Restore those for one consistent
+   CoreAI drawer, including the project-start screen. */
+body.project-home-active .drawer .drawer-header,
+body.project-home-active #sidebarControl:not(:checked) ~ .drawer .drawer-header {
+  flex:0 0 auto!important;
+  min-height:270px!important;
+  height:auto!important;
+  padding:18px 26px 12px!important;
+  justify-content:center!important;
+  align-items:flex-start!important;
+  background:radial-gradient(circle at 50% 33%,rgba(91,146,255,.16),transparent 46%),
+    linear-gradient(180deg,rgba(255,255,255,.72),transparent)!important;
+}
+body.project-home-active .drawer .brand-lockup {display:flex!important;}
+body.project-home-active .drawer .ren-matrix,
+body.project-home-active .drawer .brand-copy,
+body.project-home-active .drawer .core-ticker {display:block!important;}
+body.project-home-active .drawer .brand-copy {display:flex!important;}
+body.project-home-active .drawer .project-drawer-brand {display:none!important;}
+body.project-home-active .drawer .drawer-close {
+  position:absolute!important;
+  top:18px!important;
+  right:15px!important;
+  width:32px!important;height:32px!important;
+  border:1px solid rgba(91,146,255,.38)!important;
+  background:var(--panel)!important;
+  clip-path:polygon(0 0,76% 0,100% 24%,100% 100%,24% 100%,0 76%)!important;
+  color:var(--cx)!important;
+}
+body.project-home-active .drawer .drawer-close span {display:block!important;}
+body.project-home-active .drawer .drawer-close:after {display:none!important;content:none!important;}
+body.project-home-active .drawer .drawer-content,
+body.project-home-active #sidebarControl:not(:checked) ~ .drawer .drawer-content {
+  padding:8px 13px 5px!important;
+  gap:5px!important;
+}
+body.project-home-active .drawer .projects-nav {margin:0!important;padding:0!important;border:0!important;}
+body.project-home-active .drawer .btn-new-session,
+body.project-home-active .drawer .session-item,
+body.project-home-active .drawer .project-nav-row {
+  color:var(--txt)!important;
+  background:transparent!important;
+}
+body.project-home-active .drawer .session-item.active,
+body.project-home-active .drawer .session-item:hover,
+body.project-home-active .drawer .project-nav-row.active {background:rgba(91,146,255,.1)!important;}
+body.project-home-active .drawer .session-item-title,
+body.project-home-active .drawer .projects-nav-heading,
+body.project-home-active .drawer .section-label {color:var(--txt)!important;}
+body.project-home-active .drawer .drawer-footer {background:var(--panel)!important;}
+@media(max-width:899px) {
+  .app-body .drawer .drawer-header,
+  .app-body #sidebarControl:not(:checked) ~ .drawer .drawer-header,
+  body.project-home-active .drawer .drawer-header,
+  body.project-home-active #sidebarControl:not(:checked) ~ .drawer .drawer-header {
+    min-height:248px!important;
+    padding:14px 24px 10px!important;
+  }
+  .app-body .drawer .drawer-content,
+  .app-body #sidebarControl:not(:checked) ~ .drawer .drawer-content {
+    visibility:visible;
+    height:auto;
+    opacity:1;
+    overflow:hidden;
+    pointer-events:auto;
+  }
+  .app-body .drawer .drawer-footer,
+  .app-body #sidebarControl:not(:checked) ~ .drawer .drawer-footer {
+    display:block;
+    padding:5px 12px max(8px,env(safe-area-inset-bottom));
+  }
+}
+@media(prefers-reduced-motion:reduce) {
+  .app-body .drawer .sidebar-chevron-icon {transition:none;}
+}

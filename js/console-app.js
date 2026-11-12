@@ -235,7 +235,10 @@
   var uploadXhr     = null;
   var btnNewSession = document.getElementById('btnNewSession');
   var btnSettings   = document.getElementById('btnSettings');
-  var btnProtocols  = document.getElementById('btnProtocols');
+  var pinnedZone = document.getElementById('pinnedZone');
+  var pinnedCountEl = document.getElementById('pinnedCount');
+  var pinnedSessionListEl = document.getElementById('pinnedSessionList');
+  var sessionZoneLabel = document.getElementById('sessionZoneLabel');
   var btnLogout     = document.getElementById('btnLogout');
   var headerSessionName = document.getElementById('headerSessionName');
   var statusDot     = document.getElementById('statusDot');
@@ -572,14 +575,24 @@
   // ── Session-Liste rendern ────────────────────────────────
   function renderSessionList() {
     sessionListEl.innerHTML = '';
-    var activeCount = state.sessions.filter(function(s) { return !s.archived; }).length;
-    if (sessionCountEl) sessionCountEl.textContent = String(activeCount).padStart(2, '0');
+    if (pinnedSessionListEl) pinnedSessionListEl.replaceChildren();
+    var standalone = state.sessions.filter(function(s) { return !s.project_id || !!s.archived; });
+    var pinnedChats = standalone.filter(function(s) { return !!s.pinned && !s.archived; });
+    var recentChats = standalone.filter(function(s) { return !s.pinned && !s.archived; });
+    var archiveChats = standalone.filter(function(s) { return !!s.archived; });
+    var activeCount = recentChats.length;
+    if (sessionCountEl) sessionCountEl.textContent = String(state.showArchived ? archiveChats.length : activeCount).padStart(2, '0');
+    if (pinnedZone) pinnedZone.hidden = state.showArchived || pinnedChats.length === 0;
+    if (pinnedCountEl) pinnedCountEl.textContent = String(pinnedChats.length);
+    if (sessionZoneLabel) sessionZoneLabel.textContent = state.showArchived ? 'Archiviert' : 'Letzte';
     if (sessionArchiveToggle) {
       sessionArchiveToggle.classList.toggle('active', state.showArchived);
-      sessionArchiveToggle.textContent = state.showArchived ? 'ARCHIV AUS' : 'ARCHIV';
+      sessionArchiveToggle.setAttribute('aria-pressed', String(state.showArchived));
+      sessionArchiveToggle.setAttribute('aria-label', state.showArchived ? 'Letzte Chats anzeigen' : 'Archivierte Chats anzeigen');
+      sessionArchiveToggle.title = state.showArchived ? 'Letzte Chats anzeigen' : 'Archivierte Chats anzeigen';
     }
-    state.sessions.forEach(function(s) {
-      if (s.project_id && !s.archived) return;
+    var shownSessions = state.showArchived ? archiveChats : pinnedChats.concat(recentChats);
+    shownSessions.forEach(function(s) {
       var li = document.createElement('li');
       li.className = 'session-item' + (isActiveSession(s.id) ? ' active' : '') + (s.archived ? ' archived' : '');
       li.setAttribute('data-session-id', String(s.id));
@@ -628,6 +641,20 @@
         }).catch(function() {
           if (isActiveSession(s.id)) appendMessageEl('system', '\u26a0 Sitzung konnte nicht umbenannt werden.');
         });
+      });
+      var togglePin = document.createElement('button');
+      togglePin.type = 'button';
+      togglePin.className = 'session-action';
+      togglePin.textContent = s.pinned ? 'LÖSEN' : 'ANPINNEN';
+      togglePin.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        togglePin.disabled = true;
+        dbSessionAction({action:'pin', id:s.id, pinned:!s.pinned}).then(function(d) {
+          if (!d || !d.ok) throw new Error((d && d.error)||'pin_failed');
+          return dbLoadSessions();
+        }).then(renderSessionList).catch(function() {
+          window.alert('Chat konnte nicht angepinnt oder gelöst werden.');
+        }).finally(function() {togglePin.disabled=false;});
       });
       var archive = document.createElement('button');
       archive.type = 'button';
@@ -716,12 +743,36 @@
           });
         });
       }
-      if (!s.archived) actions.appendChild(rename);
+      if (!s.archived) {
+        actions.appendChild(togglePin);
+        actions.appendChild(rename);
+      }
       actions.appendChild(archive);
       if (permanentlyDelete) actions.appendChild(permanentlyDelete);
 
+      var optionsToggle = document.createElement('button');
+      optionsToggle.className = 'session-row-more';
+      optionsToggle.type = 'button';
+      optionsToggle.textContent = '···';
+      optionsToggle.title = 'Chataktionen';
+      optionsToggle.setAttribute('aria-label', 'Aktionen für '+String(s.title || 'Chat'));
+      optionsToggle.setAttribute('aria-expanded', 'false');
+      optionsToggle.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        var opening = !li.classList.contains('actions-open');
+        document.querySelectorAll('.drawer .session-item.actions-open').forEach(function(other) {
+          if (other !== li) {
+            other.classList.remove('actions-open');
+            var otherToggle=other.querySelector('.session-row-more');
+            if (otherToggle) otherToggle.setAttribute('aria-expanded','false');
+          }
+        });
+        li.classList.toggle('actions-open',opening);
+        optionsToggle.setAttribute('aria-expanded',String(opening));
+      });
       li.appendChild(titleEl);
       li.appendChild(metaEl);
+      li.appendChild(optionsToggle);
       li.appendChild(actions);
       markSessionWorking(li, sessionIsWorking(s));
 
@@ -730,7 +781,8 @@
         selectSession(s.id);
         closeDrawer();
       });
-      sessionListEl.appendChild(li);
+      var target = !!s.pinned && !s.archived && pinnedSessionListEl && !state.showArchived ? pinnedSessionListEl : sessionListEl;
+      target.appendChild(li);
     });
     if (window.CoreAIProjects && window.CoreAIProjects.updateSessions) window.CoreAIProjects.updateSessions(state.sessions);
     // 0.6.87: the chat menu (js/coreui-chat-menu.js) follows the active chat.
@@ -4164,11 +4216,6 @@
       if (state.draftSessionPromise || state.draftSendRequested) return;
       sendMessage(button.getAttribute('data-welcome-prompt'));
     });
-  });
-
-  btnProtocols.addEventListener('click', function() {
-    closeDrawer();
-    location.href = 'protocols.html';
   });
 
   if (btnSettings) {

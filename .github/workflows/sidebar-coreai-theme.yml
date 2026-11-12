@@ -1,0 +1,48 @@
+name: CoreAI Sidebar and Project Theme
+on:
+  pull_request:
+    paths:
+      - 'VERSION'
+      - 'app.html'
+      - 'js/console-app.js'
+      - 'js/coreui-projects.js'
+      - 'js/coreui-sidebar-fold.js'
+      - 'css/coreui-sidebar-refresh.css'
+      - 'css/coreui-project-theme.css'
+      - 'scripts/sidebar-sections-ui-selftest.cjs'
+      - 'scripts/project-ui-selftest.cjs'
+      - 'docs/changelogs-txt/**'
+      - '.github/workflows/sidebar-coreai-theme.yml'
+  push:
+    branches: ['feat/sidebar-pinned-sections-0-7-21']
+permissions:
+  contents: read
+jobs:
+  ui-and-version:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate JavaScript
+        run: |
+          node --check js/console-app.js
+          node --check js/coreui-projects.js
+          node --check js/coreui-sidebar-fold.js
+          node scripts/sidebar-sections-ui-selftest.cjs
+          node scripts/project-ui-selftest.cjs
+      - name: Version and release contract
+        run: |
+          python3 scripts/version-merge-check.py --base-version 0.7.20
+          python3 scripts/branding-license-selftest.py
+          python3 scripts/cache-bust.py --verify || { python3 scripts/cache-bust.py; git diff -- index.html login.html app.html settings.html protocols.html admin/index.html; exit 1; }
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_sqlite, gd, curl
+          coverage: none
+      - name: Existing composer regression tests
+        run: |
+          php -l scripts/reply-pipeline-selftest.php
+          php -l scripts/frontend-regression-selftest.php
+          php scripts/reply-pipeline-selftest.php
+          php scripts/frontend-regression-selftest.php
