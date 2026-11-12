@@ -642,6 +642,20 @@
           if (isActiveSession(s.id)) appendMessageEl('system', '\u26a0 Sitzung konnte nicht umbenannt werden.');
         });
       });
+      var togglePin = document.createElement('button');
+      togglePin.type = 'button';
+      togglePin.className = 'session-action';
+      togglePin.textContent = s.pinned ? 'LÖSEN' : 'ANPINNEN';
+      togglePin.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        togglePin.disabled = true;
+        dbSessionAction({action:'pin', id:s.id, pinned:!s.pinned}).then(function(d) {
+          if (!d || !d.ok) throw new Error((d && d.error)||'pin_failed');
+          return dbLoadSessions();
+        }).then(renderSessionList).catch(function() {
+          window.alert('Chat konnte nicht angepinnt oder gelöst werden.');
+        }).finally(function() {togglePin.disabled=false;});
+      });
       var archive = document.createElement('button');
       archive.type = 'button';
       archive.className = 'session-action' + (s.archived ? '' : ' danger');
@@ -729,7 +743,10 @@
           });
         });
       }
-      if (!s.archived) actions.appendChild(rename);
+      if (!s.archived) {
+        actions.appendChild(togglePin);
+        actions.appendChild(rename);
+      }
       actions.appendChild(archive);
       if (permanentlyDelete) actions.appendChild(permanentlyDelete);
 
