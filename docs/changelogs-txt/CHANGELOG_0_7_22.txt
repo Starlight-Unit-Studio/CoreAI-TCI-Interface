@@ -1,0 +1,15 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.22
+Date: 12.11.2026
+Version base: 0.7.21 (one merge, one version)
+
+- Konto-PIN is now available through the existing security settings.
+- First PIN setup asks for four digits and confirmation; subsequent changes require the previous PIN.
+- Chat menu integrates PIN setup and chat lock; locked chats are removed from normal lists and normal reads.
+- Protected chats appear under Projekte only if at least one chat is locked.
+- Unlock requires the account PIN and reloads the existing chat/project navigation.
+- PIN is hashed and bad attempts are rate-limited (five attempts, 15 minutes).
+- Native CoreAI colors, responsive UI and cut-corner dialog, not a new theme.
+- Database migration 038 required; locked messages remain stored, not encrypted.
+- GitHub Actions, security and end-to-end preflight must pass before release.
+
+Version: 0.7.22
