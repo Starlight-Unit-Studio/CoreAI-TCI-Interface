@@ -315,7 +315,7 @@
 
   // --- Wiring -------------------------------------------------------------------------------------------------
   var ACTIONS = {share: share, pin: pin, files: files, search: function () { openSearch(); }, home: home, archive: archive, delete: remove,
-    lock: function () { toast('Chat sperren ist in Vorbereitung: dafür kommt zuerst die Konto-PIN.'); },
+    lock: function (chat) { if (window.CoreAIChatLock && window.CoreAIChatLock.lockChat) window.CoreAIChatLock.lockChat(chat); else toast('Chat-Sperre ist nicht verfügbar.'); },
     project: function (chat) { if (window.CoreAIProjects && window.CoreAIProjects.assignChat) window.CoreAIProjects.assignChat(chat.id); else toast('Projektverwaltung nicht verfügbar.'); }};
 
   btn.addEventListener('click', function (e) {
