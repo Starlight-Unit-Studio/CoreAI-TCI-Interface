@@ -238,3 +238,31 @@ body.project-home-active .project-source-actions button:hover {
   body.project-home-active .project-home-nav-toggle {top:14px;left:14px;}
   body.project-home-active .project-new-chat {padding:14px 14px 10px;}
 }
+
+/* The former ChatGPT reference styling forced the whole project drawer dark.
+   Override that too so the existing CoreAI daylight/nightlight theme applies. */
+body.project-home-active .drawer {
+  background:linear-gradient(165deg,var(--panel),var(--panel-soft))!important;
+  color:var(--txt)!important;
+  border-right:1px solid var(--line-strong)!important;
+  box-shadow:var(--shadow-soft)!important;
+}
+body.project-home-active .drawer .sidebar-header-action {
+  background:var(--panel);
+  color:var(--txt);
+}
+body.project-home-active .drawer .project-nav-row,
+body.project-home-active .drawer .project-nav-open,
+body.project-home-active .drawer .project-nav-chat,
+body.project-home-active .drawer .projects-nav-heading,
+body.project-home-active .drawer .sidebar-section-toggle {
+  color:var(--txt)!important;
+}
+body.project-home-active .drawer .drawer-close {
+  color:var(--cx)!important;
+  background:var(--panel)!important;
+}
+body.project-home-active .drawer .project-nav-row:hover,
+body.project-home-active .drawer .project-nav-row.active {
+  background:var(--panel-cx)!important;
+}
