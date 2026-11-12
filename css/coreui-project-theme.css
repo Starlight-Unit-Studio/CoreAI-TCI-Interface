@@ -1141,6 +1141,8 @@ body.project-home-active .project-empty-state p {
 .project-floating-menu,
 body.project-home-active .project-floating-menu {
   position:fixed!important;
+  right:auto!important;
+  bottom:auto!important;
   z-index:180!important;
   box-sizing:border-box;
   width:min(258px,calc(100vw - 16px));
