@@ -1,9 +1,13 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
 Stand: 12.11.2026
-Repository-Version: 0.7.33 (Branch claude/bold-galileo-myoyi0, main bei Erstellung 0.7.32)
-BASIS: main 0.7.32 nach PR #288; CoreAI-Theme ueber alle Einstellungen, Allgemein ohne Dopplungen, Seitenaufbau repariert.
+Repository-Version: 0.7.36 (nach Versionskorrektur; historischer Ausgangsstand dieses Dokuments: 0.7.33)
+BASIS: Main 0.7.34 nach PR #290 hatte die fortgeschriebene Version 0.7.36 aus dem Protokoll 0.7.33 uebersehen. Die Versionskorrektur stellt 0.7.36 wieder her, ohne historische PRs umzuschreiben.
+NAECHSTE VERBINDLICHE VERSION: 0.7.37, sofern keine weiteren Main-Merges vorab erfolgen. Vor jeder Arbeit den aktuellen Main-Stand und das neueste Uebergabeprotokoll pruefen.
+WICHTIG: Kein nachtraeglich erfundenes Release/ZIP fuer 0.7.35. Bereits gemergte PR #290 nicht umnummerieren.
 NEUE ARBEIT ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_7_36.txt
+  docs/UEBERGABEPROTOKOLL_0_7_34.txt
   docs/UEBERGABEPROTOKOLL_0_7_33.txt
   docs/UEBERGABEPROTOKOLL_0_7_32.txt
   docs/UEBERGABEPROTOKOLL_0_7_31.txt
