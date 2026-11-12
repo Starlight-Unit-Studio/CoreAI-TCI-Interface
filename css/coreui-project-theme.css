@@ -329,3 +329,240 @@ body.project-home-active .drawer .drawer-copyright {color:var(--muted-soft)!impo
 }
 
 .chat-lock-dialog .chat-lock-field[hidden] {display:none!important;}
+
+/* 0.7.23: original CoreAI HUD geometry for chat, projects and navigation.
+   Keep the established palette and corner cut; do not create another theme. */
+.app-body .drawer .drawer-close,
+body.project-home-active .drawer .drawer-close {
+  z-index:11;
+  background:var(--panel)!important;
+  color:var(--cx)!important;
+  border:1px solid var(--line-strong)!important;
+  border-radius:0!important;
+  clip-path:polygon(0 0,76% 0,100% 24%,100% 100%,24% 100%,0 76%)!important;
+}
+.app-body .drawer .sidebar-header-actions {z-index:10;}
+.app-body .drawer .sidebar-header-action {
+  width:34px;
+  height:34px;
+  min-height:34px;
+  padding:6px;
+  right:15px;
+  left:auto;
+  border:1px solid var(--line-strong);
+  border-radius:0;
+  background:var(--panel);
+  color:var(--cx);
+  box-shadow:var(--shadow-tight);
+  clip-path:polygon(0 0,76% 0,100% 24%,100% 100%,24% 100%,0 76%);
+}
+.app-body .drawer #btnSettings {top:60px;right:15px;left:auto;}
+.app-body .drawer #btnLogout {top:102px;right:15px;left:auto;color:var(--muted);}
+.app-body .drawer #btnSettings svg,
+.app-body .drawer #btnLogout svg {width:20px;height:20px;}
+/* On desktop, the collapsed drawer is a visible, clickable three-button rail.
+   Mobile keeps the normal off-canvas drawer, with the same vertical ordering. */
+@media (min-width:900px) {
+  .app-body #sidebarControl:not(:checked) ~ .drawer {overflow:visible;}
+  .app-body #sidebarControl:not(:checked) ~ .drawer .drawer-header,
+  body.project-home-active #sidebarControl:not(:checked) ~ .drawer .drawer-header {
+    min-height:190px!important;
+    height:190px!important;
+    padding:0!important;
+    overflow:visible!important;
+  }
+  .app-body #sidebarControl:not(:checked) ~ .drawer .brand-lockup,
+  .app-body #sidebarControl:not(:checked) ~ .drawer .ren-matrix,
+  .app-body #sidebarControl:not(:checked) ~ .drawer .brand-copy,
+  .app-body #sidebarControl:not(:checked) ~ .drawer .core-ticker,
+  body.project-home-active #sidebarControl:not(:checked) ~ .drawer .brand-lockup,
+  body.project-home-active #sidebarControl:not(:checked) ~ .drawer .ren-matrix,
+  body.project-home-active #sidebarControl:not(:checked) ~ .drawer .brand-copy,
+  body.project-home-active #sidebarControl:not(:checked) ~ .drawer .core-ticker {
+    display:none!important;
+  }
+  .app-body #sidebarControl:not(:checked) ~ .drawer .drawer-close,
+  body.project-home-active #sidebarControl:not(:checked) ~ .drawer .drawer-close {
+    top:13px!important;
+    right:-9px!important;
+    width:44px!important;
+    height:44px!important;
+  }
+  .app-body #sidebarControl:not(:checked) ~ .drawer .drawer-close span,
+  body.project-home-active #sidebarControl:not(:checked) ~ .drawer .drawer-close span {
+    display:block!important;
+  }
+  .app-body #sidebarControl:not(:checked) ~ .drawer .sidebar-header-actions {
+    display:block!important;
+    overflow:visible!important;
+    visibility:visible!important;
+    height:auto!important;
+    opacity:1!important;
+    pointer-events:none!important;
+  }
+  .app-body #sidebarControl:not(:checked) ~ .drawer #btnSettings,
+  body.project-home-active #sidebarControl:not(:checked) ~ .drawer #btnSettings {
+    top:65px!important;
+    right:-9px!important;
+    left:auto!important;
+    width:44px!important;
+    height:44px!important;
+  }
+  .app-body #sidebarControl:not(:checked) ~ .drawer #btnLogout,
+  body.project-home-active #sidebarControl:not(:checked) ~ .drawer #btnLogout {
+    top:117px!important;
+    right:-9px!important;
+    left:auto!important;
+    width:44px!important;
+    height:44px!important;
+  }
+  .app-body #sidebarControl:not(:checked) ~ .drawer .drawer-content,
+  body.project-home-active #sidebarControl:not(:checked) ~ .drawer .drawer-content {
+    display:none!important;
+    visibility:hidden!important;
+    height:0!important;
+    padding:0!important;
+    pointer-events:none!important;
+  }
+}
+/* The stock chat menus and dialogs used generic rounded ChatGPT shapes.
+   Reuse the same cut-corner HUD framing and blue/gold lines as CoreAI. */
+.app-body .chat-menu-btn,
+.app-body .chat-menu,
+.app-body .chat-search,
+.app-body .chat-dialog-box,
+.app-body .chat-files li,
+.app-body .chat-home-link input,
+.app-body .chat-menu-toast {
+  border-radius:0;
+  color:var(--txt);
+  font-family:var(--coreui-font,"Rajdhani"),"Segoe UI",sans-serif;
+}
+.app-body .chat-menu-btn {
+  background:var(--panel);
+  border:1px solid var(--line-strong);
+  clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%);
+}
+.app-body .chat-menu,
+.app-body .chat-search {
+  background:var(--panel-solid);
+  border:1px solid var(--line-strong);
+  clip-path:polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,16px 100%,0 calc(100% - 16px));
+  box-shadow:var(--shadow-soft);
+}
+.app-body .chat-menu::before {
+  content:"";
+  display:block;
+  height:2px;
+  margin:0 12px 4px;
+  background:linear-gradient(90deg,var(--cx),var(--amb),transparent);
+}
+.app-body .chat-menu-title {
+  font:600 14px var(--coreui-font,"Rajdhani"),sans-serif;
+  color:var(--muted);
+  border-bottom:1px solid var(--line);
+}
+.app-body .chat-menu-item {
+  border-radius:0;
+  font:600 15px var(--coreui-font,"Rajdhani"),sans-serif;
+  letter-spacing:.015em;
+}
+.app-body .chat-menu-item:hover,
+.app-body .chat-menu-item:focus-visible {
+  background:var(--panel-cx);
+  color:var(--cx);
+}
+.app-body .chat-dialog-box {
+  position:relative;
+  background:var(--panel-solid);
+  border:1px solid var(--line-strong);
+  clip-path:polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,16px 100%,0 calc(100% - 16px));
+  box-shadow:var(--shadow-soft);
+}
+.app-body .chat-dialog-box::before {
+  content:"";
+  display:block;
+  width:100%;
+  height:2px;
+  background:linear-gradient(90deg,var(--cx),var(--amb),transparent);
+}
+.app-body .chat-dialog-box h2 {font:700 23px var(--coreui-font,"Rajdhani"),sans-serif;}
+.app-body .chat-dialog-primary,
+.app-body .chat-dialog-secondary,
+.app-body .chat-dialog-danger,
+.app-body .chat-dialog-close,
+.app-body .chat-search-close {
+  border-radius:0;
+  font-family:var(--coreui-font,"Rajdhani"),sans-serif;
+  clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%);
+}
+.app-body .chat-dialog-primary {
+  background:var(--cx);
+  color:#fff;
+  border-color:var(--cx);
+}
+.app-body .chat-dialog-secondary {
+  background:var(--panel);
+  color:var(--txt);
+  border-color:var(--line-strong);
+}
+.app-body .chat-dialog-primary:focus-visible,
+.app-body .chat-dialog-secondary:focus-visible,
+.app-body .chat-menu-btn:focus-visible,
+.app-body .drawer .sidebar-header-action:focus-visible {
+  outline:2px solid var(--cx);
+  outline-offset:2px;
+}
+body.project-home-active .project-new-chat,
+body.project-home-active .project-chat-result,
+body.project-home-active .project-home-popover,
+body.project-home-active .project-chat-menu,
+body.project-home-active .project-empty,
+body.project-home-active .project-source-upload,
+body.project-home-active .project-source-row,
+body.project-home-active .project-modal,
+body.project-home-active .project-modal input,
+body.project-home-active .project-modal select,
+body.project-home-active .project-modal textarea {
+  border-radius:0!important;
+  clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,12px 100%,0 calc(100% - 12px));
+}
+body.project-home-active .project-new-chat,
+body.project-home-active .project-chat-result,
+body.project-home-active .project-modal,
+body.project-home-active .project-home-popover {
+  border-color:var(--line-strong)!important;
+}
+body.project-home-active .project-home-header-actions button,
+body.project-home-active .project-home-nav-toggle,
+body.project-home-active .project-home-tabs button,
+body.project-home-active #projectHomeChatSend,
+body.project-home-active .project-modal-primary,
+body.project-home-active .project-modal-danger,
+body.project-home-active .project-chat-result-more,
+body.project-home-active .project-nav-row,
+body.project-home-active .project-chat-menu button,
+body.project-home-active .project-home-popover button,
+.app-body .drawer .btn-new-session,
+.app-body .drawer .session-item,
+.app-body .drawer .session-row-more,
+.app-body .drawer #projectsCreateBtn,
+.app-body .drawer #sessionArchiveToggle {
+  border-radius:0!important;
+  clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,0 100%);
+}
+.app-body .drawer .btn-new-session,
+.app-body .drawer .session-item.active,
+.app-body .drawer .project-nav-row.active,
+body.project-home-active .project-chat-result:hover {
+  border-left:2px solid var(--cx)!important;
+}
+.app-body .drawer .sidebar-section-toggle,
+.app-body .drawer .project-nav-row,
+.app-body .drawer .session-item,
+.app-body .drawer .btn-new-session {
+  font-family:var(--coreui-font,"Rajdhani"),sans-serif!important;
+}
+body.project-home-active .project-new-chat:focus-within {
+  border-color:var(--cx)!important;
+}
