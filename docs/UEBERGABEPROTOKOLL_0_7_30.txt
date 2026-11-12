@@ -1,0 +1,51 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.30
+Date: 12.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Base version: 0.7.29
+
+AUFTRAG
+Einstellungen > Nutzung nach den Referenz-Screenshots des Betreibers (Uebersicht mit Planlimits und aktueller
+Nutzung; Analysen mit Nutzungsverlauf, Top-Chats, Limit-Verlauf, Tokens nach Modell, Tool-Aktivitaet, Nachrichten).
+
+UMSETZUNG
+- Nur was CoreAI wirklich zaehlt. Die Vorlage hat 5-Stunden- und Wochenlimits; CoreAI hat ein Tageslimit
+  (24-Stunden-Fenster ab der ersten Nachricht, api/user_policy.php) und eine Speichergrenze. Einen Verlauf
+  vergangener Limit-Fenster speichert CoreAI nicht, deshalb gibt es statt der Limit-Verlaufstabellen
+  "Tage im Ueberblick" aus echten Tageszahlen.
+- api/usage_page_store.php:
+  overview: Plan (coreui_account_plan_summary wie Settings > Konto), Tageslimit gelesen mit
+  coreui_abuse_count(..., 0) ohne zu zaehlen, Speicher (files_store), eigene Nachrichten je Stunde heute
+  und je Tag der letzten 7 Tage, Tokens heute.
+  analytics (7/30 Tage, back = Zeitraeume zurueck, hoechstens 52): Tokens je Tag nach Core (coreui_core_label)
+  und Denkstufe aus stu_usage_daily, Werkzeuge je Tag aus stu_console_work_events (Websuche gestartet,
+  Browserauftrag eingereiht, Python-Job eingereiht, Bild erzeugt), Skills je Tag (einmal je Turn), eigene
+  Nachrichten je Tag nach Art (Stimmsequenz = Audio "Sprachnachricht-..." als Anhang oder file_uuid, also
+  auch Live-Runden; mit Anhang; Text).
+  chats: Chats nach eigenen Nachrichten im Zeitraum, Anteil, Werkzeuge; gesperrte Chats (locked_at) ohne
+  Titel und ohne Link.
+  Eigene Nachrichten: channel console, eigener user_id, nicht Maras character_id, nicht geloescht.
+  Es wird kein Nachrichtentext gelesen.
+- api/usage.php: nur GET, Gaeste 403, nur eigene Daten. nginx-Freigabe "usage" in beiden Vorlagen.
+- settings.html view-nutzung + js/coreui-usage-settings.js: Reiter, Grenzen mit Countdown (jede Minute neu),
+  Diagramme als SVG (Balken gestapelt, Linien, Tooltip, aria-label), Core-Menue wie die anderen Menues
+  (klappt nach oben, folgt beim Scrollen), "Mehr anzeigen" fuer Chats und Tage, Telefon ohne seitliches
+  Scrollen. Achsen nur mit ganzen Zahlen.
+
+TESTS (in dieser Sitzung ausgefuehrt)
+- php -l fuer api/usage.php, api/usage_page_store.php, scripts/usage-page-selftest.php.
+- scripts/usage-page-selftest.php ohne Datenbank und gegen MariaDB (Tageslimit-Fenster ohne Zaehlen, Plan,
+  Speicher, heute, 7 Tage, Tokens nach Core und Denken, Werkzeuge, Skills, Nachrichten nach Art, Top-Chats mit
+  gesperrtem Chat, Inhaber ohne Grenzen; zurueckgerollt). Hinweis: stu_app_setting_get legt seine Tabelle
+  beim ersten Aufruf je Prozess an (CREATE TABLE IF NOT EXISTS beendet in MariaDB eine Transaktion); der Test
+  ruft es deshalb vor beginTransaction auf und rollt bei einem Fehlschlag vor exit zurueck.
+- scripts/usage-ui-selftest.cjs (Playwright): Uebersicht mit und ohne Grenzen, Analysen (Zeitraum und
+  Schritte, Tokens nach Core/Denken mit Tooltip, Top-Chats mit Link und "Mehr anzeigen", Tage, Core-Menue,
+  Werkzeuge, Skills, Nachrichten nach Art, 30 Tage, frueher, leer), Gaeste, Telefon.
+- Angepasste Wortlaut-Tests: settings-navigation-foundation-selftest.cjs (6 geplante Seiten, Felder der
+  Nutzung), settings-tabs-ui-selftest.cjs (geplantes Beispiel jetzt Passwoerter), sidebar-sections (0.7.30).
+- Gesamte Selbsttest-Reihe auf dem Branch und auf main 0.7.29: laeuft noch, Ergebnis wird nachgetragen.
+
+NACH DEM UPDATE
+- Keine Migration. Einstellungen > Nutzung oeffnen.
+
+Version: 0.7.30

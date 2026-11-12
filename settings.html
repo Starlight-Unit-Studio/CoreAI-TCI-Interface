@@ -6,16 +6,16 @@
   <meta name="language" content="de-DE" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#f0f4fa" />
-  <meta name="application-version" content="0.7.29" />
+  <meta name="application-version" content="0.7.30" />
   <meta name="application-name" content="CoreAI: TCI Interface" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface - Einstellungen</title>
   <link rel="stylesheet" href="./css/console.css?v=0732355389840978237790247" />
-  <link rel="stylesheet" href="./css/settings.css?v=0866150527739495316951258" />
+  <link rel="stylesheet" href="./css/settings.css?v=0779129027905637733858066" />
   <link rel="stylesheet" href="./css/coreui-profile-crop.css?v=0852949496159567452926853" />
   <link rel="stylesheet" href="./css/coreui-update.css?v=0362480532788383300048352" />
   <link rel="stylesheet" href="./css/coreui-theme.css?v=0697431397907702126637895" />
-  <script src="./js/console-gate.js?v=0185115523256050535499627"></script>
+  <script src="./js/console-gate.js?v=0377709220303363958930126"></script>
   <script src="./js/coreui-preferences.js?v=1098190863602852320697527"></script>
   <script src="./js/coreui-ui-language.js?v=0850224961537363286304733"></script>
   <link rel="stylesheet" href="./css/coreui-softglass.css?v=1088656458787114546518505" />
@@ -99,7 +99,7 @@
           <h1>EINSTELLUNGEN</h1>
         </div>
       </div>
-      <div class="settings-version">COREAI: TCI INTERFACE // v0.7.29</div>
+      <div class="settings-version">COREAI: TCI INTERFACE // v0.7.30</div>
       <div class="cfg-header-actions" aria-label="Schnellzugriffe Einstellungen">
         <label class="cfg-header-expert" for="settingsExpertToggle" title="Technische Einstellungen in allen Kategorien anzeigen oder ausblenden">
           <span>EXPERTENMODUS</span>
@@ -138,7 +138,7 @@
                   <button class="cfg-tab" type="button" role="tab" id="tab-personalisierung" data-view="personalisierung" aria-controls="view-personalisierung" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-sliders" /></svg><span>Personalisierung</span></button>
                   <button class="cfg-tab" type="button" role="tab" id="tab-pets" data-view="pets" aria-controls="view-pets" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-spark" /></svg><span>Pets</span></button>
                   <button class="cfg-tab" type="button" role="tab" id="tab-tastatur" data-view="tastatur" aria-controls="view-tastatur" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-keyboard" /></svg><span>Tastatur</span></button>
-                  <button class="cfg-tab is-planned" type="button" role="tab" id="tab-nutzung" data-view="nutzung" aria-controls="view-nutzung" aria-selected="false" tabindex="-1" title="In Vorbereitung"><svg aria-hidden="true"><use href="#i-chart" /></svg><span>Nutzung</span><small class="cfg-nav-state">GEPLANT</small></button>
+                  <button class="cfg-tab" type="button" role="tab" id="tab-nutzung" data-view="nutzung" aria-controls="view-nutzung" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-chart" /></svg><span>Nutzung</span></button>
                   <button class="cfg-tab" type="button" role="tab" id="tab-datenkontrollen" data-view="datenkontrollen" aria-controls="view-datenkontrollen" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-data" /></svg><span>Datenkontrollen</span></button>
                 </div>
         <div class="cfg-nav-group" role="tablist" aria-orientation="vertical" aria-label="Teams">
@@ -1415,7 +1415,7 @@
         </section>
 
         <!-- CATEGORY FOUNDATION: speicher (no fake settings) -->
-        <!-- 0.7.29: Speicher after the reference screenshots (js/coreui-storage-settings.js, api/files.php). -->
+        <!-- 0.7.30: Speicher after the reference screenshots (js/coreui-storage-settings.js, api/files.php). -->
         <section class="cfg-view" id="view-speicher" role="tabpanel" aria-labelledby="tab-speicher" tabindex="-1" hidden>
           <header class="cfg-view-head"><div><span class="cfg-kicker">PERSÖNLICH // SPEICHER</span><h2>Speicher</h2><p>Was deine CoreAI für dich aufbewahrt: deine Uploads, Maras Bilder und die Dateien, die Mara für dich erstellt hat.</p></div></header>
           <p class="sec-status" id="stStatus" role="status" aria-live="polite">Speicher wird geladen …</p>
@@ -1520,7 +1520,7 @@
           </div>
         </section>
 
-        <!-- 0.7.29: Tastatur after the reference screenshots (js/coreui-shortcuts.js, js/coreui-keyboard-settings.js). -->
+        <!-- 0.7.30: Tastatur after the reference screenshots (js/coreui-shortcuts.js, js/coreui-keyboard-settings.js). -->
         <section class="cfg-view" id="view-tastatur" role="tabpanel" aria-labelledby="tab-tastatur" tabindex="-1" hidden>
           <header class="cfg-view-head"><div><span class="cfg-kicker">PERSÖNLICH // EINGABE</span><h2>Tastatur</h2><p>Um ein Tastenkürzel zu ändern, wähle die Tastenkombination aus und drücke dann die neuen Tasten.</p></div></header>
           <p class="sec-status" id="kbStatus" role="status" aria-live="polite"></p>
@@ -1529,18 +1529,100 @@
           <div class="kb-foot"><button class="arc-btn kb-reset" id="kbReset" type="button">Standardeinstellungen wiederherstellen</button></div>
         </section>
 
-        <!-- CATEGORY FOUNDATION: nutzung (no fake settings) -->
-        <section class="cfg-view cfg-view-planned" id="view-nutzung" role="tabpanel" aria-labelledby="tab-nutzung" tabindex="-1" hidden>
-          <header class="cfg-view-head"><div><span class="cfg-kicker">PERSÖNLICH // AUSBAUPLAN</span><h2>Nutzung</h2><p>Nutzungsübersicht, lokale Verarbeitungszeiten und Kontingente transparent darstellen.</p></div></header>
-          <div class="cfg-cards">
-            <section class="settings-panel cfg-card wide cfg-planned-card">
-              <span class="cfg-planned-state">IN VORBEREITUNG</span>
-              <h3>Diese Unterseite ist vorbereitet</h3>
-              <p>Eine zentrale nutzerseitige Nutzungsansicht ist noch nicht verfügbar.</p>
-              <p class="cfg-planned-hint">Es werden hier noch keine neuen Kontodaten gespeichert und keine zusätzlichen Dienste aktiviert.</p>
-              
-              
-            </section>
+        <!-- 0.7.30: Nutzung after the reference screenshots (js/coreui-usage-settings.js, api/usage.php). -->
+        <section class="cfg-view" id="view-nutzung" role="tabpanel" aria-labelledby="tab-nutzung" tabindex="-1" hidden>
+          <header class="cfg-view-head"><div><span class="cfg-kicker">PERSÖNLICH // NUTZUNG</span><h2>Nutzung</h2><p>Was dein Plan erlaubt und wie du CoreAI nutzt. Nur deine eigenen Zahlen, nie Inhalte deiner Chats.</p></div></header>
+          <p class="sec-status" id="nuStatus" role="status" aria-live="polite">Nutzung wird geladen …</p>
+          <div class="nu-main" id="nuMain" hidden>
+            <div class="st-tabs nu-tabs" id="nuTabs" role="tablist" aria-label="Nutzung">
+              <button class="st-tab" type="button" role="tab" id="nuTab-overview" data-nu-tab="overview" aria-selected="true" aria-controls="nuOverview">Übersicht</button>
+              <button class="st-tab" type="button" role="tab" id="nuTab-analytics" data-nu-tab="analytics" aria-selected="false" aria-controls="nuAnalytics">Analysen</button>
+            </div>
+
+            <div class="nu-pane" id="nuOverview" role="tabpanel" aria-labelledby="nuTab-overview">
+              <h3 class="sec-heading">Planlimits</h3>
+              <p class="nu-intro" id="nuPlanIntro"></p>
+              <section class="settings-panel cfg-card wide nu-card nu-limits" id="nuLimits" aria-label="Planlimits"></section>
+              <ul class="nu-features" id="nuFeatures" aria-label="Was dein Plan enthält"></ul>
+              <div class="nu-head">
+                <div><h3 class="sec-heading">Aktuelle Nutzung</h3><p class="nu-intro">So viele Nachrichten hast du Mara geschrieben.</p></div>
+                <div class="nu-seg" role="group" aria-label="Zeitraum"><button type="button" data-nu-now="today" aria-pressed="true">Heute</button><button type="button" data-nu-now="week" aria-pressed="false">7 Tage</button></div>
+              </div>
+              <section class="settings-panel cfg-card wide nu-card" aria-label="Aktuelle Nutzung">
+                <p class="nu-big" id="nuNowBig"></p>
+                <p class="nu-sub" id="nuNowSub"></p>
+                <div class="nu-chart" id="nuNowChart"></div>
+              </section>
+            </div>
+
+            <div class="nu-pane" id="nuAnalytics" role="tabpanel" aria-labelledby="nuTab-analytics" hidden>
+              <div class="nu-rangebar">
+                <div class="nu-seg" role="group" aria-label="Zeitraum"><button type="button" data-nu-days="7" aria-pressed="true">7 T</button><button type="button" data-nu-days="30" aria-pressed="false">30 T</button></div>
+                <div class="nu-range"><button class="nu-step" type="button" id="nuPrev" aria-label="Früherer Zeitraum"><svg aria-hidden="true"><use href="#i-back" /></svg></button><span id="nuRangeLabel"></span><button class="nu-step nu-next" type="button" id="nuNext" aria-label="Späterer Zeitraum"><svg aria-hidden="true"><use href="#i-chevron" /></svg></button></div>
+              </div>
+
+              <div class="nu-head">
+                <div><h3 class="sec-heading">Tokenverlauf</h3><p class="nu-intro" id="nuTokensIntro">So viele Tokens haben deine Cores gelesen und geschrieben.</p></div>
+                <div class="nu-seg" role="group" aria-label="Aufteilung"><button type="button" data-nu-split="core" aria-pressed="true">Nach Core</button><button type="button" data-nu-split="thinking" aria-pressed="false">Nach Denken</button></div>
+              </div>
+              <section class="settings-panel cfg-card wide nu-card" aria-label="Tokenverlauf">
+                <div class="nu-chart" id="nuTokenBars"></div>
+                <div class="nu-legend" id="nuTokenLegend"></div>
+              </section>
+
+              <h3 class="sec-heading">Top-Chats</h3>
+              <p class="nu-intro">Die Chats, in denen du in diesem Zeitraum am meisten geschrieben hast.</p>
+              <section class="settings-panel cfg-card wide nu-card nu-table-card" aria-label="Top-Chats">
+                <div class="nu-table-wrap"><table class="nu-table" id="nuChats"><thead><tr><th scope="col">Chat</th><th scope="col">Nachrichten</th><th scope="col">Anteil</th><th scope="col">Werkzeuge</th></tr></thead><tbody></tbody></table></div>
+                <p class="nu-empty" id="nuChatsEmpty" hidden>In diesem Zeitraum hast du nichts geschrieben.</p>
+              </section>
+              <button class="arc-btn nu-more" id="nuChatsMore" type="button" hidden>Mehr anzeigen</button>
+
+              <h3 class="sec-heading">Tage im Überblick</h3>
+              <section class="settings-panel cfg-card wide nu-card nu-table-card" aria-label="Tage im Überblick">
+                <div class="nu-days" id="nuDays"></div>
+                <p class="nu-empty" id="nuDaysEmpty" hidden>In diesem Zeitraum gab es keine Nutzung.</p>
+              </section>
+              <button class="arc-btn nu-more" id="nuDaysMore" type="button" hidden>Mehr anzeigen</button>
+
+              <div class="nu-head">
+                <div><h3 class="sec-heading">Tokens nach Core</h3><p class="nu-intro" id="nuCoreIntro"></p></div>
+                <div class="pz-drop"><button class="arc-select pz-select" id="nuCoreSelect" type="button" aria-haspopup="menu" aria-expanded="false"><span>Alle Cores</span><svg class="arc-caret" aria-hidden="true"><use href="#i-chevron" /></svg></button></div>
+              </div>
+              <div class="arc-menu pz-menu nu-menu" id="nuCoreMenu" role="menu" aria-label="Core" hidden></div>
+              <section class="settings-panel cfg-card wide nu-card" aria-label="Tokens nach Core">
+                <p class="nu-kicker">Tokens insgesamt</p>
+                <p class="nu-big" id="nuCoreTotal"></p>
+                <div class="nu-chart" id="nuCoreLines"></div>
+                <div class="nu-legend" id="nuCoreLegend"></div>
+              </section>
+
+              <h3 class="sec-heading">Werkzeug-Aktivität</h3>
+              <p class="nu-intro">Welche Werkzeuge und Skills Mara für dich genutzt hat.</p>
+              <section class="settings-panel cfg-card wide nu-card" aria-label="Werkzeuge aufgerufen">
+                <p class="nu-kicker">Werkzeuge aufgerufen</p>
+                <p class="nu-big" id="nuToolsTotal"></p>
+                <div class="nu-chart" id="nuToolLines"></div>
+                <div class="nu-legend" id="nuToolLegend"></div>
+              </section>
+              <section class="settings-panel cfg-card wide nu-card" aria-label="Verwendete Skills">
+                <p class="nu-kicker">Verwendete Skills</p>
+                <p class="nu-big" id="nuSkillsTotal"></p>
+                <div class="nu-chart" id="nuSkillLines"></div>
+                <p class="nu-sub" id="nuSkillNames"></p>
+              </section>
+
+              <div class="nu-head">
+                <div><h3 class="sec-heading">Nachrichten</h3><p class="nu-intro">So viele Nachrichten hast du über die Zeit gesendet.</p></div>
+                <div class="nu-seg" role="group" aria-label="Aufteilung"><button type="button" data-nu-msg="all" aria-pressed="true">Gesamt</button><button type="button" data-nu-msg="kind" aria-pressed="false">Nach Art</button></div>
+              </div>
+              <section class="settings-panel cfg-card wide nu-card" aria-label="Nachrichten">
+                <p class="nu-kicker">Nachrichten</p>
+                <p class="nu-big" id="nuMsgTotal"></p>
+                <div class="nu-chart" id="nuMsgLines"></div>
+                <div class="nu-legend" id="nuMsgLegend"></div>
+              </section>
+            </div>
           </div>
         </section>
 
@@ -1705,6 +1787,7 @@
   <script src="./js/coreui-voice-settings.js?v=0153288903194027999711245"></script>
   <script src="./js/coreui-storage-settings.js?v=0115231023762448267674285"></script>
   <script src="./js/coreui-keyboard-settings.js?v=0462958741389577493789578"></script>
+  <script src="./js/coreui-usage-settings.js?v=0648388245073259716193645"></script>
   <script src="./js/coreui-notify.js?v=1002976330424203629675926"></script>
   <script src="./js/coreui-notify-settings.js?v=0180900766828442110480559"></script>
   <script src="./js/coreui-profile-stats.js?v=0127785684761467082142579"></script>

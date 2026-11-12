@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.29: Settings > Tastatur (shortcuts to record, switch off and reset; they work in the chat).
+# CoreAI: TCI Interface 0.7.30: Settings > Nutzung (plan limits, tokens by Core, tools, skills, messages, top chats).
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -185,6 +185,11 @@ UI_FILES=(
   js/coreui-keyboard-settings.js
   css/coreui-shortcuts.css
   scripts/keyboard-shortcuts-ui-selftest.cjs
+  api/usage.php
+  api/usage_page_store.php
+  js/coreui-usage-settings.js
+  scripts/usage-page-selftest.php
+  scripts/usage-ui-selftest.cjs
   scripts/terran-terminology-selftest.cjs
   scripts/tci-language-selftest.cjs
   css/coreui-chat-tci-layout.css
@@ -1295,6 +1300,14 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail "Speicher-Selbsttest: ${storage_test:-Unbekannter Fehler}"
   fi
 
+  # 0.7.30: Settings > Nutzung: plan and daily limit window, tokens by Core, tools, skills, messages by kind, top chats.
+  usage_page_test=''
+  if usage_page_test="$(compose exec -T php php scripts/usage-page-selftest.php 2>&1)"; then
+    ok "$usage_page_test"
+  else
+    fail "Nutzung-Selbsttest: ${usage_page_test:-Unbekannter Fehler}"
+  fi
+
   profile_reference_test=''
   if profile_reference_test="$(compose exec -T php php scripts/profile-reference-selftest.php 2>&1)"; then
     if [[ "$profile_reference_test" == PARTIAL:* ]]; then
@@ -1610,6 +1623,16 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       fi
     else
       warn 'Tastatur: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+    fi
+    # 0.7.30: Settings > Nutzung (Uebersicht, Analysen, charts); needs Playwright for Node.
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/usage-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'Nutzung: Uebersicht und Analysen im Browser geprueft.'
+      else
+        fail 'Nutzung: Oberflaechentest fehlgeschlagen.'
+      fi
+    else
+      warn 'Nutzung: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
     fi
     # 0.7.1: Settings > Pets and the pet in Mara's work line; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then

@@ -1,5 +1,15 @@
 # CoreAI: TCI Interface
 
+## 0.7.30 - 12.11.2026
+
+- **Settings > Usage after the reference screenshots:** The page is no longer planned. Two tabs: Overview and Analytics. Only the account's own figures, numbers only, never chat content.
+- **Overview:** The plan (as in Settings > Account) with its limits: the daily message limit as a 24-hour window from the first message, with the time until it resets, messages used and a bar; storage against its limit with a link to Settings > Storage; the plan's features. Below, today's messages by hour or the last 7 days.
+- **Analytics (7 or 30 days, earlier ranges step by step):** tokens per day stacked by Core or by thinking level with shares; the chats with the most own messages (link to the chat; locked chats without title or link; more on request); the days with messages, tokens per Core, tools and skills; tokens by Core as lines with a Core menu; tools (web search, browser, Python, images) and skills per day; messages, all or by kind (text, voice messages and live turns, with attachment).
+- **Honest scope:** CoreAI has no 5-hour or weekly limits and keeps no history of past daily-limit windows, so none are shown. Tokens are counted since migration 029 and the page says since when.
+- **Server:** New read-only endpoint `api/usage.php` (overview, analytics, chats; guests 403) and `api/usage_page_store.php`; reading the daily limit never counts a message. nginx allowlist entry.
+- **Tests:** `scripts/usage-page-selftest.php` (with and without database, rolled back) and `scripts/usage-ui-selftest.cjs` (Playwright) in both preflights; literal tests for the settings navigation (6 planned pages), the settings tabs (planned example) and the version pin updated.
+
+
 ## 0.7.29 - 12.11.2026
 
 - **Settings > Keyboard after the reference screenshots:** Three groups (message editor, chat, app) list the shortcuts of the chat. Each one has a switch and its key combination; choosing the combination records the next key press. Esc cancels, Backspace alone removes a shortcut, Restore defaults brings back the defaults.
