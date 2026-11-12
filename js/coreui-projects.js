@@ -185,6 +185,8 @@
   function renderHeader() {
     var p=selected();if(!p)return;
     $('projectHomeName').textContent=p.name;
+    $('projectHomeMode').textContent=p.context_mode==='isolated'?'KONTEXT // ISOLIERT':'KONTEXT // STANDARD';
+    $('projectHomeMode').title=p.context_mode==='isolated'?'Nur Projektwissen verwenden':'Normale Erinnerungen können verwendet werden';
     $('projectHomeChatInput').placeholder='Neuer Chat in '+p.name;
     $('projectHomePin').textContent=p.pinned?'Projekt nicht mehr anpinnen':'Projekt anpinnen';
   }
