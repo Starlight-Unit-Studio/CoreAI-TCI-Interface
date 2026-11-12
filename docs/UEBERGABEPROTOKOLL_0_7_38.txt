@@ -64,7 +64,11 @@ TESTS (in dieser Sitzung ausgefuehrt)
   Inhaltsverzeichnis, Quellen nach Domain, Aktivitaet, Download, Esc), Dunkel, Telefon.
 - Angepasst und bestanden: composer-intent-selftest.php, composer-menu-ui-selftest.cjs,
   data-controls-ui-selftest.cjs, usage-page-selftest.php, browse-worker-selftest.py.
-- Gesamte Selbsttest-Reihe: wird nach dem Lauf eingetragen.
+- Gesamte Selbsttest-Reihe (scripts/*selftest*, model-live-audit, tests/*) nacheinander, Branch und main:
+  Branch 0.7.38: 159 bestanden, 10 fehlgeschlagen. main 0.7.37: 155 bestanden, 11 fehlgeschlagen.
+  Die 10 Fehlschlaege des Branches gibt es alle auch auf main (browse-live, chat-menu, core-install,
+  long-chat, model-library, pets, security, session-list, settings-tabs, update). composer-menu-ui scheitert
+  auf main und besteht auf dem Branch. Dazu kommen die drei neuen Deep-Research-Tests (bestanden).
 
 NICHT GETESTET
 - Ein echter Lauf gegen SearXNG, oeffentliche Seiten und einen lokalen Gemma-Core (hier nicht vorhanden).
