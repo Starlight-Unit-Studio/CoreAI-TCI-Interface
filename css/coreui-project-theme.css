@@ -272,3 +272,58 @@ body.project-home-active .drawer .drawer-footer {
   border-top:1px solid var(--line)!important;
 }
 body.project-home-active .drawer .drawer-copyright {color:var(--muted-soft)!important;}
+
+/* Protected chats extend the existing Projects drawer. No independent theme. */
+.app-body .drawer .project-nav-locked .project-nav-open {
+  color:var(--cx)!important;
+}
+.app-body .drawer .project-nav-locked .project-nav-folder {
+  color:var(--cx);
+}
+.app-body .drawer .project-nav-count {
+  margin-left:auto;
+  color:var(--muted);
+  font:12px var(--coreui-font,"Rajdhani"),sans-serif;
+}
+.app-body .drawer .project-nav-locked-chat {
+  color:var(--muted);
+  cursor:pointer;
+}
+.app-body .drawer .project-nav-locked-chat:hover,
+.app-body .drawer .project-nav-locked-chat:focus-visible {
+  background:var(--panel-cx);
+  color:var(--cx);
+}
+.chat-lock-dialog[hidden] {display:none!important;}
+.chat-lock-dialog .chat-dialog-box {
+  background:var(--panel-solid);
+  color:var(--txt);
+  border:1px solid var(--line-strong);
+  border-radius:0;
+  clip-path:polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,16px 100%,0 calc(100% - 16px));
+  box-shadow:var(--shadow-soft);
+  font-family:var(--coreui-font,"Rajdhani"),sans-serif;
+}
+.chat-lock-dialog .chat-dialog-box h2 {color:var(--txt);}
+.chat-lock-dialog .chat-lock-field {
+  display:grid;gap:7px;margin:16px 0;
+  color:var(--cx);
+  font:700 12px var(--coreui-font,"Rajdhani"),sans-serif;
+  letter-spacing:.06em;
+}
+.chat-lock-dialog .chat-lock-field input {
+  width:100%;min-height:45px;padding:10px 12px;
+  color:var(--txt);background:var(--panel);
+  border:1px solid var(--line-strong);border-radius:0;
+  font:600 21px var(--coreui-font,"Rajdhani"),sans-serif;
+  letter-spacing:.3em;
+}
+.chat-lock-dialog .chat-lock-field input:focus-visible {outline:2px solid var(--cx);outline-offset:2px;}
+.chat-lock-dialog .chat-dialog-primary {
+  color:#fff;background:var(--cx);border:1px solid var(--cx);border-radius:0;
+  clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,0 100%);
+}
+.chat-lock-dialog .chat-dialog-secondary {
+  color:var(--txt);background:var(--panel);border:1px solid var(--line-strong);border-radius:0;
+  clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,0 100%);
+}
