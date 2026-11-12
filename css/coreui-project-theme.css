@@ -1147,7 +1147,10 @@ body.project-home-active .project-floating-menu {
   position:fixed!important;
   right:auto!important;
   bottom:auto!important;
-  z-index:180!important;
+  /* console.css raises the mobile drawer to 999 and its overlay to 998.
+     This body-mounted menu must be ABOVE both or the three-dot actions
+     remain invisible despite having a working click handler. */
+  z-index:1100!important;
   box-sizing:border-box;
   width:min(258px,calc(100vw - 16px));
   min-width:0;
