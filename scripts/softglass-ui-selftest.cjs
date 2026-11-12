@@ -72,7 +72,8 @@ const window={
     removeItem:k=>saved.delete(k)
   },
   matchMedia:()=>({matches:false,addEventListener(){}}),
-  dispatchEvent(){}
+  dispatchEvent(){},
+  addEventListener(){}
 };
 vm.runInNewContext(prefsCode,{window,document:doc,CustomEvent:function(){}},
   {filename:'coreui-preferences.js'});
