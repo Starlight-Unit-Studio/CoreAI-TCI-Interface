@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.7.23 - 12.11.2026
+
+- **Native CoreAI interface:** Restored angular, cut-corner geometry and existing blue/gold accent lines in chat menus, chat dialogs, project home, cards and sidebar. No new visual system introduced.
+- **Ren-matrix controls:** Existing settings and logout actions align vertically below the fold control, with all three accessible on collapsed desktop rail.
+- **Release consistency:** Bump all application version strings and browser asset cache fingerprints so installed clients can see the update.
+- **Upgrade note:** Merging a GitHub pull request does not deploy a self-hosted installation. The operator must run the existing CoreAI update workflow and preflight.
+
+
 ## 0.7.22 - 12.11.2026
 
 - **Chat lock:** One four-digit account PIN for locked chats, created twice at first use, verified server-side on unlock. Failed PIN attempts are rate-limited and password-hashed; chats remain stored, not encrypted.
