@@ -1,0 +1,11 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.26
+Date: 12.11.2026
+Base version: 0.7.25
+
+- Session selftest now recognizes the active vs archived deletion button labels.
+- Checks that both chat types expose the delete button.
+- Ensures active sessions still use existing archive-first deletion, with server confirmation.
+- This is a test-only functional correction: backend and UI behavior preserved.
+- Node optional checks and Nginx default site warning unchanged.
+
+Version: 0.7.26

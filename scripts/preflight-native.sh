@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.25: updates remove the retired dictation endpoint of 0.7.14 (setup.sh retired files).
+# CoreAI: TCI Interface 0.7.26: updates remove the retired dictation endpoint of 0.7.14 (setup.sh retired files).
 set -Eeuo pipefail
 IFS=$'\n\t'
 

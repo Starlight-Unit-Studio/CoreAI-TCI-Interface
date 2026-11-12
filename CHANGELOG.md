@@ -1,5 +1,12 @@
 # CoreAI: TCI Interface
 
+## 0.7.26 - 12.11.2026
+
+- **Preflight repair:** Updated the session selftest to recognize the 0.7.25 chat delete button for both active and archived chats.
+- **Safety checks retained:** Explicit deletion confirmation, safe archive-first transaction and archived-session restrictions remain enforced by existing server code.
+- **Scope:** The chat deletion and archive interfaces have not been redesigned or functionally changed. Node and Nginx optional warnings are unaffected.
+
+
 ## 0.7.25 - 12.11.2026
 
 - **SoftGlass UI:** An optional, original rounded translucent design inspired by classic Aero-era Linux/Windows glass themes. It is selectable under Einstellungen > Anzeige > Oberflächenstil and supports light, dark and system color schemes.
