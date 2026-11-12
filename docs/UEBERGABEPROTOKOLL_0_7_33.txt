@@ -53,7 +53,14 @@ TESTS (in dieser Sitzung ausgefuehrt)
 - settings-tabs-ui-selftest.cjs und appearance-ui-selftest.cjs warten auf #healthSummary statt auf die
   entfernte Uebersicht; settings-tabs prueft, dass Allgemein nur die drei Einstellungen hat und die Zahlen
   auf Wissen und System stehen.
-- Gesamte Selbsttest-Reihe: wird nach dem Lauf eingetragen.
+- Gesamte Selbsttest-Reihe (scripts/*selftest*, model-live-audit, tests/*) nacheinander, wie bei 0.7.32:
+  155 bestanden, 11 fehlgeschlagen. Die 11 sind dieselben wie auf main (browse-live, chat-menu,
+  composer-menu, core-install, long-chat, model-library, pets, security, session-list, settings-tabs,
+  update); pets (Zeile 109) und settings-tabs ("denied without any admin API request") scheitern auf main
+  0.7.32 und auf dem Branch an derselben Stelle. Neu hinzu kommt settings-theme-ui-selftest (bestanden).
+- Hinweis: Mit gesetzten DB-Variablen (COREUI_SELFTEST_DB=1 ...) scheitern zusaetzlich
+  account-language-selftest.php (verlangt eigene COREUI_SELFTEST_DB_DSN/_USER/_PASS) und
+  voice-live-selftest.php; ohne die Variablen bestehen beide, auf main wie auf dem Branch.
 
 NACH DEM UPDATE
 - Keine Migration. Einstellungen oeffnen; Browser-Cache wird ueber die ?v=-Parameter erneuert.
