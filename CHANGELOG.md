@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.7.37 - 12.11.2026
+
+- **Mobile Projektmenues sichtbar:** Das ausserhalb der Seitenleiste gerenderte Drei-Punkte-Menue lag auf Ebene 180, waehrend die mobile Seitenleiste Ebene 999 und ihr Hintergrund Ebene 998 verwenden. Deshalb wurde ein funktionierendes Popup hinter beiden Ebenen verdeckt.
+- **Direkter CSS-Fix:** Das bestehende Projekt-Popup wird jetzt auf Ebene 1100 angezeigt. Keine zweite Menue-Implementierung und keine Aenderung der Projekt-Aktionen oder API.
+- **Regressionstest:** Der Projekt-UI-Selbsttest vergleicht ab sofort die tatsaechlich deklarierten Ebenen von mobilem Drawer, Overlay und Projekt-Popup. Er scheitert, wenn das Menue wieder dahinter geraten kann.
+- **Bestehende Designs:** CoreAI Holo und SoftGlass behalten ihre Styles; nur die Menue-Ebene wird korrigiert.
+- **Abnahme:** Browser-Rendering auf dem produktiven Smartphone nach Aktualisierung und Preflight pruefen.
+
+
 ## 0.7.36 - 12.11.2026
 
 - **Verbindliche Versionskorrektur:** Das Uebergabeprotokoll `UEBERGABEPROTOKOLL_0_7_33.txt` legte nach Abgleich der tatsaechlichen Main-Merges 0.7.36 als naechsten Versionsstand fest. PR #290 wurde irrtuemlich mit 0.7.34 bezeichnet und gemergt. Dieser historische Merge bleibt unveraendert dokumentiert; die vorgegebene Fortsetzung ist jetzt 0.7.36.

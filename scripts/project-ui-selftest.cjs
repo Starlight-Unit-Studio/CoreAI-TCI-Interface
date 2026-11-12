@@ -7,6 +7,7 @@ const js=read('js/coreui-projects.js');
 const app=read('js/console-app.js');
 const css=read('css/coreui-projects.css');
 const theme=read('css/coreui-project-theme.css');
+const consoleCss=read('css/console.css');
 const api=read('api/console_sessions.php');
 const store=read('api/console_project_store.php');
 const knowledge=read('api/knowledge_store.php');
@@ -85,6 +86,29 @@ assert(theme.includes('.project-composer-slot > .composer') &&
   theme.includes('.project-floating-menu') &&
   theme.includes('position:fixed!important'),
   'native composer, empty-state and non-clipping floating menus must be styled');
+// Regression: On phones, the drawer is deliberately elevated to z=999 and
+// its backdrop to z=998. The popup is portalled to document.body, outside
+// the clipped drawer, so it MUST live above both layers to be tappable.
+// Previously it was z=180: the menu opened invisibly behind the drawer.
+const mobileCss = consoleCss.slice(consoleCss.indexOf('CRITICAL MOBILE VIEWPORT FIX'));
+const layer = (source, pattern, label) => {
+  const match = source.match(pattern);
+  assert(match, 'missing stacking rule: ' + label);
+  return Number(match[1]);
+};
+const drawerLayer = layer(mobileCss,
+  /\.drawer\s*\{[^}]*z-index:\s*(\d+)\s*!important\s*;/, 'mobile drawer');
+const overlayLayer = layer(mobileCss,
+  /\.drawer-overlay\s*\{[^}]*z-index:\s*(\d+)\s*!important\s*;/, 'mobile backdrop');
+const popupLayer = layer(theme,
+  /\.project-floating-menu,\s*body\.project-home-active \.project-floating-menu\s*\{[^}]*z-index:\s*(\d+)\s*!important\s*;/,
+  'body-level project popup');
+assert(popupLayer > drawerLayer && popupLayer > overlayLayer,
+  'project three-dot popup must render ABOVE mobile drawer and backdrop: popup=' +
+  popupLayer + ', drawer=' + drawerLayer + ', backdrop=' + overlayLayer);
+assert(js.includes('document.body.appendChild(floatingMenu)') &&
+  js.includes("showFloatingMenu(options,'project',projectActions(p))"),
+  'menu remains portalled to body and reachable from project folder ellipsis');
 assert(js.includes('delete_permanently') &&
   js.includes("proof!=='LÖSCHEN'") &&
   js.includes('archive_first:true'),

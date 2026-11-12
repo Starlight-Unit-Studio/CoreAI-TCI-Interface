@@ -1,0 +1,37 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.37
+Datum: 12.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Basis: Main 0.7.36 nach PR #291
+
+PROBLEM
+Das Projekt-Drei-Punkte-Menue ist in der Android-Sidebar auch nach dem
+Popup-Handler-Refactoring aus PR #290 nicht sichtbar (Screenshots Betreiber).
+JS ruft das korrekte Popup auf und haengt es an document.body an.
+
+TECHNISCHE URSACHE
+css/console.css enthaelt weiter unten eine separate @media(max-width:899px)
+Regel: .drawer {z-index:999!important} und .drawer-overlay {z-index:998!important}.
+css/coreui-project-theme.css definierte fuer das Projekt-Floating-Menue
+z-index:180!important. Das Popup war unterhalb des Drawers und der
+abgedunkelten Overlay-Ebene, obwohl der Click-Handler korrekt arbeitete.
+Vorige Tests prueften nur Eventhandler/Position und uebersahen die Ebenen.
+
+BEHEBUNG
+- Bestehendes .project-floating-menu auf z-index:1100!important gehoben.
+- Kein DOM-Duplikat und keine Aenderung an Backend, Projektmenue-Aktionen,
+  Designerkennung oder Projekt-Isolierung.
+- scripts/project-ui-selftest.cjs extrahiert die echten z-index Werte beider
+  mobilen Layer und des Popups aus den Quell-CSS-Dateien und sichert
+  popup > drawer und popup > overlay ab.
+
+TESTS UND DEPLOYMENT
+- Projekt-UI-Selbsttest, JavaScript-Parser, Version/Branding, Cache-Verify,
+  GitHub-Actions und ggf. optionale lokale Browserpruefung.
+- Auf dem installierten CoreAI Smartphone: Version 0.7.37 aktualisieren,
+  Sidebar aufklappen, beim Projektordner auf ... tippen und pruefen,
+  ob das Menue oberhalb der Sidebar erscheint und Aktionen anklickbar sind.
+- Auch Projektstartseite und SoftGlass separat pruefen.
+- Ohne Live-Zugriff keine produktive UI-Abnahme behaupten.
+
+NAECHSTE VERBINDLICHE VERSION: 0.7.38, vorbehaltlich weiterer Merges.
+Version: 0.7.37
