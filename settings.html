@@ -1063,9 +1063,9 @@
               </div>
             </section>
             <section class="settings-panel cfg-card wide sec-group">
-              <div class="sec-row is-planned" id="secRow-pin">
-                <div class="sec-copy"><strong>Konto-PIN</strong><small>Lege fest, wie du auf deine gesperrten Chats zugreifst.</small><span class="notify-planned">IN VORBEREITUNG</span></div>
-                <button class="sec-open" type="button" data-sec-open="pin"><span></span><svg aria-hidden="true"><use href="#i-chevron" /></svg></button>
+              <div class="sec-row" id="secRow-pin">
+                <div class="sec-copy"><strong>Konto-PIN</strong><small>Lege fest, wie du auf deine gesperrten Chats zugreifst.</small></div>
+                <button class="sec-open" type="button" data-sec-open="pin" aria-label="Konto-PIN verwalten"><span id="secPinState">Einrichten</span><svg aria-hidden="true"><use href="#i-chevron" /></svg></button>
               </div>
             </section>
             <h3 class="sec-heading">Multi-Faktor-Authentifizierung (MFA)</h3>
@@ -1156,9 +1156,28 @@
           <div class="sec-sub" id="secSub-pin" hidden>
             <button class="sec-back" type="button" data-sec-back><svg aria-hidden="true"><use href="#i-back" /></svg>Zurück</button>
             <header class="sec-sub-head"><div><h3>Konto-PIN</h3><p>Schütze deine gesperrten Chats geräteübergreifend mit deiner Konto-PIN.</p></div></header>
-            <section class="settings-panel cfg-card wide sec-group is-planned">
-              <div class="sec-row"><div class="sec-copy"><strong>Konto-PIN erstellen</strong><small>Erstelle eine PIN, um Chats deiner Wahl zu sperren und auszublenden. Sobald ein Chat gesperrt ist, fließen neue Nachrichten darin nicht in die Erinnerung ein.</small><span class="notify-planned">IN VORBEREITUNG</span></div>
-              <button class="settings-action compact" type="button" disabled>PIN ERSTELLEN</button></div>
+            <section class="settings-panel cfg-card wide account-security-card" aria-labelledby="secPinTitle">
+              <header class="settings-panel-head">
+                <span class="settings-panel-glyph" aria-hidden="true">⚿</span>
+                <div><span>PRIVATER KERNKANAL</span><h3 id="secPinTitle">Konto-PIN erstellen</h3></div>
+              </header>
+              <p class="cfg-card-note">Eine vierstellige PIN für alle gesperrten Chats dieses Kontos. Sie wird sicher als Hash gespeichert und beim Entsperren abgefragt. Gesperrte Chats sind ausgeblendet, nicht verschlüsselt.</p>
+              <label class="settings-field" for="secPinOld" id="secPinOldRow" hidden>
+                <span><strong>AKTUELLE PIN</strong></span>
+                <input id="secPinOld" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" autocomplete="off" />
+              </label>
+              <div class="password-fields">
+                <label class="settings-field" for="secPinNew">
+                  <span><strong>NEUE PIN (4 ZIFFERN)</strong></span>
+                  <input id="secPinNew" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" autocomplete="off" />
+                </label>
+                <label class="settings-field" for="secPinConfirm">
+                  <span><strong>PIN BESTÄTIGEN</strong></span>
+                  <input id="secPinConfirm" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" autocomplete="off" />
+                </label>
+              </div>
+              <p id="secPinMessage" class="sec-status" role="status" aria-live="polite"></p>
+              <button class="settings-action" id="secPinSave" type="button">KONTO-PIN ERSTELLEN</button>
             </section>
           </div>
           <div class="sec-sub" id="secSub-totp" hidden>
