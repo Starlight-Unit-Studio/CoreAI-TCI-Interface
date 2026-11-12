@@ -1,5 +1,15 @@
 # CoreAI: TCI Interface
 
+## 0.7.21 - 12.11.2026
+
+- **Navigation:** Original CoreAI logo and ticker stay intact. Settings and logout become familiar header icons in the free space beside the logo; redundant Protocols sidebar button removed, protocols page retained.
+- **Pinned chats:** Separate "Angeheftet" list above Projects and Recent; no duplicate entries. Chat actions can pin or unpin without opening the conversation.
+- **Three collapsible areas:** Angeheftet, Projekte, Letzte have separate accessible fold toggles with persisted UI preference (not chat state).
+- **Compact phone layout:** Decreased oversized navigation spacing and footer, normal touch targets remain. No artificial Work mode or second chat layout.
+- **CoreAI project theme:** Project landing, files, chat cards, actions, and settings use CoreAI palette, typography and theme variables, replacing temporary ChatGPT-like dark styling.
+- **Compatibility:** Project files/RAG, chat session APIs, ownership constraints and server behavior unchanged. CSS/UI tests and version gate required before merging.
+
+
 ## 0.7.20 - 12.11.2026
 
 - **Preflight repaired:** The multiline and lossless Markdown-attachment regression check now inspects the real chat textarea `#inputMessage` rather than mistaking the independently limited project instructions field for the chat composer. The actual chat long-paste path and upload checks remain enforced.
