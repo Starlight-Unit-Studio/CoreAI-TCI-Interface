@@ -1,0 +1,29 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.25
+Date: 12.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Base version: 0.7.24
+
+OBJECTIVES
+- Rescue the rounded, soft glass chat interface as SoftGlass UI; CoreAI remains the default.
+- Provide an additional destructive delete action directly from expanded sidebar chat actions.
+
+DESIGN
+- uiSkin = coreai | softglass; persisted with other browser preferences.
+- Independent of theme = system | light | dark and existing motifs.
+- css/coreui-softglass.css is a wholly original set of overrides scoped to data-coreui-skin=softglass.
+- Loaded by all six existing CoreAI HTML entrypoints, including nested admin.
+- No separate functional chat system; existing DOM and backends remain the source of truth.
+
+DELETE
+- Active chat deletion uses delete_permanently with archive_first=true and exact server confirmation.
+- Requires the two-stage confirmation already used for archived chat deletes, and checks active processing before deletion.
+- Returns deleted active session to blank welcome UI, clears runtime cache, reloads list.
+- Destructive button is red, full width, below Archivieren and has a phone-friendly minimum target.
+
+VALIDATE
+- Run JS parser tests, theme contract, full GitHub Actions and cache fingerprints.
+- Inspect soft glass light/dark/system and default CoreAI separately on Android and desktop.
+- Test active chat deletion, archived deletion, cancellation, busy task, project folders, PIN chat access and chat reloading.
+- Update on self-hosted server and run preflight before calling the deployment complete.
+
+Version: 0.7.25
