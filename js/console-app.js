@@ -544,11 +544,12 @@
     return dbSessionAction({ action: 'restore', id: sessionId });
   }
 
-  function dbDeleteSession(sessionId) {
+  function dbDeleteSession(sessionId, archiveFirst) {
     return dbSessionAction({
       action: 'delete_permanently',
       id: sessionId,
-      confirmation: 'DELETE:' + String(sessionId || '')
+      confirmation: 'DELETE:' + String(sessionId || ''),
+      archive_first: archiveFirst === true
     });
   }
 
@@ -658,7 +659,7 @@
       });
       var archive = document.createElement('button');
       archive.type = 'button';
-      archive.className = 'session-action' + (s.archived ? '' : ' danger');
+      archive.className = 'session-action';
       archive.textContent = s.archived ? 'WIEDERHERSTELLEN' : 'ARCHIVIEREN';
       archive.addEventListener('click', function(ev) {
         ev.stopPropagation();
@@ -694,12 +695,13 @@
         });
       });
 
-      var permanentlyDelete = null;
-      if (s.archived) {
-        permanentlyDelete = document.createElement('button');
+      // Active chats use the existing server-owned archive-first delete path;
+      // archived chats follow exactly the same confirmation and cleanup.
+      var permanentlyDelete = document.createElement('button');
+      {
         permanentlyDelete.type = 'button';
         permanentlyDelete.className = 'session-action permanent-danger';
-        permanentlyDelete.textContent = 'ENDGÜLTIG LÖSCHEN';
+        permanentlyDelete.textContent = s.archived ? 'ENDGÜLTIG LÖSCHEN' : 'LÖSCHEN';
         permanentlyDelete.addEventListener('click', function(ev) {
           ev.stopPropagation();
           var title = String(s.title || 'Sitzung');
@@ -713,12 +715,17 @@
             return;
           }
 
+          if (state.pendingBySession[s.id] || s.working) {
+            window.alert('Dieser Chat verarbeitet noch eine Antwort und kann momentan nicht gelöscht werden.');
+            return;
+          }
           permanentlyDelete.disabled = true;
-          dbDeleteSession(s.id).then(function(d) {
+          dbDeleteSession(s.id, !s.archived).then(function(d) {
             if (!d.ok || !d.deleted) throw new Error(d.error || 'delete_failed');
             clearSessionRuntime(s.id);
             return dbLoadSessions().then(function() {
-              renderSessionList();
+              if (isActiveSession(s.id)) showDraftChat();
+              else renderSessionList();
               var counts = d.counts || {};
               var fileWarning = (Number(counts.files_failed) || 0) > 0
                 ? ' Hinweis: ' + String(Number(counts.files_failed)) + ' Datei(en) konnten nicht entfernt werden; bitte den Server-Preflight prüfen.'
@@ -748,7 +755,7 @@
         actions.appendChild(rename);
       }
       actions.appendChild(archive);
-      if (permanentlyDelete) actions.appendChild(permanentlyDelete);
+      actions.appendChild(permanentlyDelete);
 
       var optionsToggle = document.createElement('button');
       optionsToggle.className = 'session-row-more';
