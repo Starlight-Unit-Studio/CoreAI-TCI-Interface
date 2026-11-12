@@ -220,6 +220,20 @@
   var planCatalog = {};
   var planReady = true;
   var PLAN_OPTIONS = [['', 'Kein Plan'], ['free', 'Free'], ['go', 'Go'], ['plus', 'Plus'], ['pro', 'Pro']];
+  // 0.7.28: storage (Settings > Speicher): bytes per account, the limit for all accounts (MiB, null = none).
+  var storageUsed = {};
+  var storageLimitMb = null;
+  var storageReady = true;
+
+  function gbLabel(bytes) {
+    var gb = Number(bytes || 0) / 1073741824;
+    return (gb >= 10 ? Math.round(gb) : Math.round(gb * 100) / 100).toString().replace('.', ',') + ' GB';
+  }
+  // GB in a field -> MiB for the server; '' for empty, 0 or nonsense.
+  function gbToMb(value) {
+    var gb = parseFloat(String(value || '').replace(',', '.'));
+    return isFinite(gb) && gb > 0 ? String(Math.round(gb * 1024)) : '';
+  }
 
   function ctxLabel(n) {
     return Math.round(Number(n) / 1024) + 'K';
@@ -241,6 +255,8 @@
     invalid_daily_messages: 'Nachrichten pro Tag: eine Zahl von 1 bis 100000, oder leer für ohne Grenze.',
     invalid_max_num_ctx: 'Dieses Kontextfenster gibt es nicht.',
     missing_schema_021: 'Migration 021 fehlt noch. Bitte das Update einspielen.',
+    missing_schema_039: 'Migration 039 fehlt noch. Bitte das Update einspielen.',
+    invalid_storage_mb: 'Speicher: eine Zahl in GB (bis 10240), 0 für ohne Grenze, oder leer für den Standard aller Konten.',
     missing_schema_031: 'Migration 031 fehlt noch. Bitte das Update einspielen.',
     invalid_plan: 'Diesen Plan gibt es nicht.'
   };
@@ -412,17 +428,36 @@
       });
       ctx.disabled = !policyReady;
       editField(limits, 'GRÖSSTES KONTEXTFENSTER', ctx);
+      // 0.7.28: storage: empty = the limit for all accounts (Betrieb), 0 = no limit, otherwise GB.
+      var storage = document.createElement('input');
+      storage.type = 'number';
+      storage.min = '0';
+      storage.max = '10240';
+      storage.step = '0.5';
+      storage.placeholder = storageLimitMb ? 'Standard: ' + gbLabel(storageLimitMb * 1048576) : 'Standard: ohne Grenze';
+      storage.value = policy.storage_mb == null ? '' : (Number(policy.storage_mb) === 0 ? '0' : String(Math.round(Number(policy.storage_mb) / 1024 * 100) / 100));
+      storage.disabled = !policyReady || !storageReady;
+      editField(limits, 'SPEICHER (GB)', storage);
+      var storageNote = el('p', 'admin-storage-note', 'Belegt: ' + gbLabel(storageUsed[String(user.id)] || 0)
+        + '. Leer: Standard aller Konten. 0: ohne Grenze.' + (storageReady ? '' : ' ' + MANAGE_ERRORS.missing_schema_039));
+      limits.appendChild(storageNote);
       var saveLimits = el('button', 'settings-action compact', 'LIMITS SPEICHERN');
       saveLimits.type = 'button';
       saveLimits.disabled = !policyReady;
       saveLimits.addEventListener('click', function () {
         var dailyValue = daily.value.trim() === '' ? null : Number(daily.value);
+        var payload = { user_id: Number(user.id), daily_messages: dailyValue, max_num_ctx: ctx.value === '' ? null : Number(ctx.value) };
+        if (storageReady) {
+          var gbText = storage.value.trim();
+          payload.storage_mb = gbText === '' ? null : (Number(gbText) === 0 ? 0 : Math.round(Number(gbText) * 1024));
+        }
         saveLimits.disabled = true;
-        post('user_policy', { user_id: Number(user.id), daily_messages: dailyValue, max_num_ctx: ctx.value === '' ? null : Number(ctx.value) }).then(function (data) {
+        post('user_policy', payload).then(function (data) {
           userPolicies[String(user.id)] = data.policy;
           var p = data.policy;
+          var storageText = p.storage_mb == null ? 'Speicher wie alle Konten' : (Number(p.storage_mb) === 0 ? 'Speicher ohne Grenze' : 'Speicher ' + gbLabel(Number(p.storage_mb) * 1048576));
           show('Konto ' + user.id + ': ' + (p.daily_messages ? p.daily_messages + ' Nachrichten pro Tag' : 'kein Tageslimit') + ', '
-            + (p.max_num_ctx ? 'Kontextfenster bis ' + ctxLabel(p.max_num_ctx) : 'Kontextfenster ohne Grenze') + '.');
+            + (p.max_num_ctx ? 'Kontextfenster bis ' + ctxLabel(p.max_num_ctx) : 'Kontextfenster ohne Grenze') + ', ' + storageText + '.');
         }).catch(function (error) { manageError('Limits', error); }).finally(function () { saveLimits.disabled = !policyReady; });
       });
       limits.appendChild(saveLimits);
@@ -601,6 +636,9 @@
       userPlans = data.plans && !Array.isArray(data.plans) ? data.plans : {};
       planCatalog = data.plan_catalog && !Array.isArray(data.plan_catalog) ? data.plan_catalog : {};
       planReady = data.plan_ready !== false;
+      storageUsed = data.storage_used && !Array.isArray(data.storage_used) ? data.storage_used : {};
+      storageLimitMb = data.storage_limit_mb != null ? Number(data.storage_limit_mb) : null;
+      storageReady = data.storage_ready !== false;
       var tbody = document.getElementById('userRows');
       tbody.innerHTML = '';
       (data.items || []).forEach(function (user) {
@@ -847,6 +885,9 @@
     document.getElementById('maintenanceEnabled').checked = boolSetting(settings.maintenance_enabled);
     document.getElementById('memoryDefaultEnabled').checked = boolSetting(settings.memory_default_enabled);
     document.getElementById('promptLimit').value = settings.user_system_prompt_max_chars || '6000';
+    // 0.7.28: storage for all accounts, kept in MiB, shown in GB.
+    var storageMb = Number(settings.storage_limit_mb || 0);
+    document.getElementById('storageLimitGb').value = storageMb > 0 ? String(Math.round(storageMb / 1024 * 100) / 100) : '';
     document.getElementById('maintenanceMessage').value = settings.maintenance_message || '';
     document.getElementById('toolWebEnabled').checked = boolSetting(settings.tool_web_enabled);
     document.getElementById('toolBrowseEnabled').checked = boolSetting(settings.tool_browse_enabled);
@@ -874,6 +915,7 @@
       maintenance_enabled: document.getElementById('maintenanceEnabled').checked ? '1' : '0',
       memory_default_enabled: document.getElementById('memoryDefaultEnabled').checked ? '1' : '0',
       user_system_prompt_max_chars: document.getElementById('promptLimit').value,
+      storage_limit_mb: gbToMb(document.getElementById('storageLimitGb').value),
       maintenance_message: document.getElementById('maintenanceMessage').value,
       tool_web_enabled: document.getElementById('toolWebEnabled').checked ? '1' : '0',
       tool_browse_enabled: document.getElementById('toolBrowseEnabled').checked ? '1' : '0',

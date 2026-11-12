@@ -186,6 +186,14 @@ if ($size > $limit) {
 
 console_media_ensure_schema($pdo);
 
+// 0.7.28: the account's storage limit (Settings > Speicher, set in Admin Core).
+require_once __DIR__ . '/files_store.php';
+$room = coreui_files_room($pdo, (int)$uid, $size);
+if ($room !== null) {
+  stu_json(['ok'=>false, 'error'=>'storage_full', 'used'=>$room['used'], 'limit'=>$room['limit'],
+    'used_label'=>coreui_files_size_label($room['used']), 'limit_label'=>coreui_files_size_label($room['limit'])], 413);
+}
+
 $uuid = bin2hex(random_bytes(16));
 $imageExtensions = [
   'image/jpeg' => 'jpg',

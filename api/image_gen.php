@@ -417,6 +417,9 @@ function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $
     callable $lease, callable $unlease, callable $progress, callable $cancelled, ?callable $http = null,
     ?callable $preview = null, ?string $reference = null, array $references = [], ?string $userReferenceMode = null): array {
   $http = $http ?? 'coreui_image_http';
+  // 0.7.28: a full storage (Settings > Speicher) starts no image.
+  require_once __DIR__ . '/files_store.php';
+  if (coreui_files_room($pdo, $uid, 1) !== null) return ['ok' => false, 'error' => 'storage_full', 'detail' => ''];
   $previews = 0; // 0.6.42: $preview(string $dataUrl, array $job) gets every new step preview
   $registry = coreui_image_registry();
   $limit = (int)($registry['limits']['prompt_chars'] ?? 1200);
@@ -541,6 +544,8 @@ function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $
 
 /** Keeps a made image as a media entry of the account (and its description next to it). */
 function coreui_image_store(PDO $pdo, int $uid, string $characterId, string $png, array $meta): array {
+  require_once __DIR__ . '/files_store.php';
+  if (coreui_files_room($pdo, $uid, strlen($png)) !== null) return ['ok' => false, 'error' => 'storage_full', 'detail' => ''];
   $dir = coreui_image_dir();
   if (!is_dir($dir) && !@mkdir($dir, 0750, true)) return ['ok' => false, 'error' => 'storage_failed', 'detail' => ''];
   $uuid = bin2hex(random_bytes(16));
@@ -608,6 +613,7 @@ function coreui_image_error_text(array $result): string {
     'cancelled' => 'Das Bild wurde abgebrochen.',
     'bad_prompt' => 'Die Bildbeschreibung war leer oder zu lang.',
     'bad_reference', 'reference_unavailable' => 'Mindestens ein Referenzbild ist ungueltig oder nicht mehr verfuegbar.',
+    'storage_full' => 'Dein Speicher ist voll. Unter Einstellungen > Speicher kannst du Dateien oder Bilder loeschen, dann geht es wieder.',
     default => 'Das Bild konnte nicht erzeugt werden.',
   };
 }

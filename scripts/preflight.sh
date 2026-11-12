@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.27: updates remove the retired dictation endpoint of 0.7.14 (setup.sh retired files).
+# CoreAI: TCI Interface 0.7.28: Settings > Speicher (Dateien, Bilder, storage limit for all accounts and per account in Admin Core).
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -174,6 +174,12 @@ UI_FILES=(
   scripts/voice-settings-selftest.php
   scripts/voice-settings-ui-selftest.cjs
   scripts/voice-recordings-ui-selftest.cjs
+  database/migrations/039_storage.sql
+  api/files.php
+  api/files_store.php
+  js/coreui-storage-settings.js
+  scripts/storage-selftest.php
+  scripts/storage-ui-selftest.cjs
   scripts/terran-terminology-selftest.cjs
   scripts/tci-language-selftest.cjs
   css/coreui-chat-tci-layout.css
@@ -1276,6 +1282,14 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail "Stimme-Selbsttest: ${voice_settings_test:-Unbekannter Fehler}"
   fi
 
+  # 0.7.28: Settings > Speicher: the limit for all accounts and per account, usage, Dateien and Bilder, favourites, deleting.
+  storage_test=''
+  if storage_test="$(compose exec -T php php scripts/storage-selftest.php 2>&1)"; then
+    ok "$storage_test"
+  else
+    fail "Speicher-Selbsttest: ${storage_test:-Unbekannter Fehler}"
+  fi
+
   profile_reference_test=''
   if profile_reference_test="$(compose exec -T php php scripts/profile-reference-selftest.php 2>&1)"; then
     if [[ "$profile_reference_test" == PARTIAL:* ]]; then
@@ -1571,6 +1585,16 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       fi
     else
       warn 'Stimme: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+    fi
+    # 0.7.28: Settings > Speicher (overview, Dateien with project folders, Bilder, menu, deleting, full storage); needs Playwright for Node.
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/storage-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'Speicher: Uebersicht, Dateien, Bilder und Loeschen im Browser geprueft.'
+      else
+        fail 'Speicher: Oberflaechentest fehlgeschlagen.'
+      fi
+    else
+      warn 'Speicher: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
     fi
     # 0.7.1: Settings > Pets and the pet in Mara's work line; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then

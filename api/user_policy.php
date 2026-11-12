@@ -10,10 +10,14 @@ declare(strict_types=1);
  * is off for everyone). Limits: messages per day and the largest context
  * window; null means the account has no own limit. Without migration 021
  * every account has the defaults, and nothing breaks.
+ * 0.7.28: storage (migration 039, column storage_mb in MiB): null follows the limit for all
+ * accounts (Admin Core > Betrieb), 0 means no limit for this account.
  */
 
 const COREUI_USER_POLICY_TOOLS = ['web', 'browse', 'python', 'image'];
 const COREUI_USER_POLICY_DAILY_MAX = 100000;
+/** 0.7.28: the largest storage limit an account can get, in MiB (10 TiB). */
+const COREUI_USER_POLICY_STORAGE_MAX_MB = 10485760;
 
 function coreui_user_policy_ready(PDO $pdo): bool {
   try {
@@ -33,8 +37,18 @@ function coreui_user_policy_image_ready(PDO $pdo): bool {
   }
 }
 
+function coreui_user_policy_storage_ready(PDO $pdo): bool {
+  try {
+    $pdo->query('SELECT storage_mb FROM stu_user_policies LIMIT 0');
+    return true;
+  } catch (Throwable $e) {
+    return false;
+  }
+}
+
 function coreui_user_policy_default(): array {
-  return ['tools' => ['web' => true, 'browse' => true, 'python' => true, 'image' => true], 'daily_messages' => null, 'max_num_ctx' => null];
+  return ['tools' => ['web' => true, 'browse' => true, 'python' => true, 'image' => true], 'daily_messages' => null, 'max_num_ctx' => null,
+    'storage_mb' => null];
 }
 
 function coreui_user_policy_from_row(array $row): array {
@@ -44,6 +58,8 @@ function coreui_user_policy_from_row(array $row): array {
   $policy['daily_messages'] = $daily === null ? null : max(1, (int)$daily);
   $ctx = $row['max_num_ctx'] ?? null;
   $policy['max_num_ctx'] = $ctx === null ? null : (int)$ctx;
+  $storage = $row['storage_mb'] ?? null;
+  $policy['storage_mb'] = $storage === null ? null : max(0, (int)$storage);
   return $policy;
 }
 
@@ -101,6 +117,15 @@ function coreui_user_policy_save(PDO $pdo, int $uid, array $patch, int $actorId,
     elseif (is_int($ctx) && in_array($ctx, $ctxChoices, true)) $policy['max_num_ctx'] = $ctx;
     else throw new InvalidArgumentException('invalid_max_num_ctx');
   }
+  // 0.7.28: null or '' = the limit for all accounts, 0 = no limit, otherwise MiB.
+  $storageChanged = array_key_exists('storage_mb', $patch);
+  if ($storageChanged) {
+    $mb = $patch['storage_mb'];
+    if ($mb === null || $mb === '') $policy['storage_mb'] = null;
+    elseif (is_int($mb) && $mb >= 0 && $mb <= COREUI_USER_POLICY_STORAGE_MAX_MB) $policy['storage_mb'] = $mb;
+    else throw new InvalidArgumentException('invalid_storage_mb');
+    if ($policy['storage_mb'] !== null && !coreui_user_policy_storage_ready($pdo)) throw new RuntimeException('missing_schema_039');
+  }
   $pdo->prepare(
     'INSERT INTO stu_user_policies (user_id, tool_web, tool_browse, tool_python, daily_messages, max_num_ctx, updated_by) '
     . 'VALUES (?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE tool_web = VALUES(tool_web), tool_browse = VALUES(tool_browse), '
@@ -115,6 +140,9 @@ function coreui_user_policy_save(PDO $pdo, int $uid, array $patch, int $actorId,
       ->execute([$policy['tools']['image'] ? 1 : 0, $uid]);
   } elseif (empty($policy['tools']['image'])) {
     throw new RuntimeException('missing_schema_026');
+  }
+  if ($storageChanged && coreui_user_policy_storage_ready($pdo)) {
+    $pdo->prepare('UPDATE stu_user_policies SET storage_mb = ? WHERE user_id = ?')->execute([$policy['storage_mb'], $uid]);
   }
   return coreui_user_policy_load($pdo, $uid);
 }

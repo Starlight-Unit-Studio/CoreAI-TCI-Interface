@@ -3084,3 +3084,107 @@ html[data-coreui-theme="dark"] .settings-body .notify-planned { color: var(--amb
   .settings-body .vs-voice { min-height: 54px; padding: 8px 12px; gap: 10px; }
   .settings-body .sec-row .vs-voice-btn { max-width: 62%; padding-right: 14px; padding-left: 14px; }
 }
+
+/* 0.7.28: Settings > Speicher after the reference screenshots (js/coreui-storage-settings.js). */
+.settings-body .st-main[hidden], .settings-body .st-sub[hidden], .settings-body .st-refs[hidden], .settings-body .st-toolbar[hidden],
+.settings-body .st-list-head[hidden], .settings-body .st-empty[hidden], .settings-body .st-more[hidden], .settings-body .st-crumb[hidden],
+.settings-body .st-bar[hidden] { display: none; }
+.settings-body .st-usage { display: grid; gap: 14px; margin: 4px 0 26px; }
+.settings-body .st-usage strong { color: var(--txt); font-size: 18px; font-weight: 600; }
+.settings-body .st-usage small { color: var(--muted); font-size: 14px; line-height: 1.45; }
+.settings-body .st-usage small:empty { display: none; }
+.settings-body .st-bar { height: 12px; overflow: hidden; border-radius: 999px; background: var(--panel-soft); box-shadow: inset 0 0 0 1px var(--line); }
+.settings-body .st-bar i { display: block; height: 100%; width: 0; border-radius: inherit; background: var(--txt); transition: width .3s ease; }
+.settings-body .st-bar.is-full i { background: var(--red); }
+.settings-body .st-sub { display: grid; gap: 14px; }
+.settings-body .st-sub-title { margin: 4px 0 0; color: var(--txt); font-size: 24px; font-weight: 600; }
+.settings-body .st-tools { display: flex; align-items: center; gap: 12px; }
+.settings-body .st-search {
+  display: flex; flex: 1 1 auto; align-items: center; gap: 10px; min-width: 0; min-height: 48px; padding: 0 18px;
+  border: 1px solid var(--line-strong); border-radius: 999px; background: transparent;
+}
+.settings-body .st-search svg { width: 20px; height: 20px; flex: 0 0 auto; fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; }
+.settings-body .st-search input { flex: 1 1 auto; min-width: 0; border: 0; background: transparent; color: var(--txt); font: inherit; font-size: 16px; outline: none; }
+.settings-body .st-search:focus-within { border-color: var(--cx); }
+.settings-body .st-add {
+  display: inline-grid; place-items: center; width: 48px; height: 48px; flex: 0 0 auto; border: 0; border-radius: 999px;
+  background: var(--txt); color: var(--panel-solid, #ffffff); cursor: pointer;
+}
+.settings-body .st-add svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
+.settings-body .st-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.settings-body .st-tab {
+  min-height: 42px; padding: 0 18px; border: 0; border-radius: 999px; background: transparent; color: var(--muted);
+  cursor: pointer; font: inherit; font-size: 16px; font-weight: 600;
+}
+.settings-body .st-tab[aria-selected="true"] { background: var(--panel-soft); color: var(--txt); box-shadow: inset 0 0 0 1px var(--line); }
+.settings-body .st-tab:focus-visible, .settings-body .st-icon:focus-visible, .settings-body .st-more-btn:focus-visible { outline: 2px solid var(--cx); outline-offset: 2px; }
+.settings-body .st-refs { display: grid; gap: 10px; margin-top: 6px; }
+.settings-body .st-refs strong { color: var(--txt); font-size: 16px; }
+.settings-body .st-ref-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.settings-body .st-ref-chips { display: contents; }
+.settings-body .st-chip {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px 0 12px; border: 1px solid var(--line-strong);
+  border-radius: 999px; background: transparent; color: var(--txt); cursor: pointer; font: inherit; font-size: 15px; font-weight: 600; text-decoration: none;
+}
+.settings-body .st-chip svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.settings-body .st-chip.st-ref { padding-left: 6px; background: var(--panel-soft); }
+.settings-body .st-chip img { width: 32px; height: 32px; border-radius: 999px; object-fit: cover; }
+.settings-body .st-toolbar { display: flex; align-items: center; gap: 6px; }
+.settings-body .st-toolbar-gap { flex: 1 1 auto; }
+.settings-body .st-crumb {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 10px; border: 0; border-radius: 10px;
+  background: transparent; color: var(--txt); cursor: pointer; font: inherit; font-size: 15px; font-weight: 600;
+}
+.settings-body .st-crumb svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.settings-body .st-icon {
+  display: inline-grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 999px; background: transparent;
+  color: var(--txt); cursor: pointer;
+}
+.settings-body .st-icon svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.settings-body .st-icon[aria-pressed="true"], .settings-body .st-icon[aria-expanded="true"], .settings-body .st-icon.is-active { background: var(--panel-soft); box-shadow: inset 0 0 0 1px var(--line); }
+.settings-body .st-sep { width: 1px; height: 24px; margin: 0 4px; background: var(--line-strong); }
+.settings-body .st-list-head { padding: 10px 16px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 15px; }
+.settings-body .st-list[data-layout="list"] { display: grid; }
+.settings-body .st-list[data-layout="grid"] { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px; }
+.settings-body .st-item { position: relative; display: flex; align-items: center; gap: 8px; min-width: 0; }
+.settings-body .st-list[data-layout="list"] .st-item { border-bottom: 1px solid var(--line); }
+.settings-body .st-item-main {
+  display: flex; flex: 1 1 auto; align-items: center; gap: 14px; min-width: 0; padding: 12px 8px 12px 12px; border: 0; background: transparent;
+  color: var(--txt); cursor: pointer; font: inherit; text-align: left; text-decoration: none;
+}
+.settings-body .st-item-main:hover, .settings-body .st-item-main:focus-visible { background: var(--panel-soft); outline: none; }
+.settings-body .st-thumb {
+  display: inline-grid; place-items: center; width: 48px; height: 48px; flex: 0 0 auto; overflow: hidden; border: 1px solid var(--line);
+  border-radius: 12px; background: var(--panel-soft); color: var(--muted);
+}
+.settings-body .st-thumb svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.settings-body .st-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.settings-body .st-kind-mara { color: var(--cx); }
+.settings-body .st-copy { display: grid; gap: 3px; min-width: 0; }
+.settings-body .st-copy b { display: flex; align-items: center; gap: 6px; overflow: hidden; font-size: 16px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+.settings-body .st-copy small { overflow: hidden; color: var(--muted); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.settings-body .st-fav { width: 15px; height: 15px; flex: 0 0 auto; fill: var(--amb, #d9a400); stroke: none; }
+.settings-body .st-more-btn {
+  display: inline-grid; place-items: center; width: 40px; height: 40px; flex: 0 0 auto; margin-right: 6px; border: 0; border-radius: 999px;
+  background: transparent; color: var(--txt); cursor: pointer;
+}
+.settings-body .st-more-btn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; }
+.settings-body .st-more-btn:hover, .settings-body .st-more-btn[aria-expanded="true"] { background: var(--panel-soft); }
+/* Grid: cards with a square picture; the "…" sits on the picture like in the reference. */
+.settings-body .st-list[data-layout="grid"] .st-item { display: block; overflow: hidden; border: 1px solid var(--line); border-radius: 18px; background: var(--panel-soft); }
+.settings-body .st-list[data-layout="grid"] .st-item-main { display: grid; gap: 8px; padding: 0 0 12px; }
+.settings-body .st-list[data-layout="grid"] .st-thumb { width: 100%; height: auto; aspect-ratio: 1 / 1; border: 0; border-radius: 0; }
+.settings-body .st-list[data-layout="grid"] .st-thumb svg { width: 40px; height: 40px; }
+.settings-body .st-list[data-layout="grid"] .st-copy { padding: 0 12px; }
+.settings-body .st-list[data-layout="grid"] .st-more-btn {
+  position: absolute; top: 10px; right: 10px; margin: 0; background: rgba(20, 20, 24, .55); color: #ffffff; backdrop-filter: blur(6px);
+}
+.settings-body .st-empty { margin: 18px 0; color: var(--muted); font-size: 15px; text-align: center; }
+.settings-body .st-more { justify-self: center; }
+.settings-body .arc-menu.st-item-menu { min-width: 230px; }
+@media (max-width: 600px) {
+  .settings-body .st-list[data-layout="grid"] { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .settings-body #view-speicher .st-list[data-layout="grid"]:has(.st-kind-image) { grid-template-columns: minmax(0, 1fr); }
+  .settings-body .st-tab { padding: 0 14px; font-size: 15px; }
+  .settings-body .st-search { min-height: 46px; }
+}

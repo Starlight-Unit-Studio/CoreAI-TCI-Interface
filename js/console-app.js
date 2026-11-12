@@ -2610,6 +2610,9 @@
       var code = (d && d.error) || ('HTTP_' + xhr.status);
       var msg = UPLOAD_ERRORS[code] || ('Upload fehlgeschlagen (' + code + ')');
       if (code === 'file_too_large' && d && d.max_mb) msg = 'Datei ist zu gross (max. ' + d.max_mb + ' MB).';
+      // 0.7.28: the account's storage limit (Settings > Speicher).
+      if (code === 'storage_full') msg = 'Dein Speicher ist voll' + (d && d.used_label && d.limit_label ? ' (' + d.used_label + ' von ' + d.limit_label + ')' : '')
+        + '. Unter Einstellungen > Speicher kannst du Dateien oder Bilder löschen.';
       appendMessageEl('system', '\u26a0 ' + msg);
       scrollToBottom();
       renderAttachmentList();

@@ -1,9 +1,21 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
-Stand: 11.11.2026
-Repository-Version: 0.7.16 (Branch claude/bold-galileo-myoyi0, main bei Erstellung 0.7.15)
-BASIS: main 0.7.15 nach PR #268; Update entfernt den ausgemusterten Diktat-Endpunkt (setup.sh).
+Stand: 12.11.2026
+Repository-Version: 0.7.28 (Branch claude/bold-galileo-myoyi0, main bei Erstellung 0.7.27)
+BASIS: main 0.7.27 nach PR #283; Einstellungen > Speicher mit Grenze fuer alle Konten und je Konto (Admin Core).
 NEUE ARBEIT ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_7_28.txt
+  docs/UEBERGABEPROTOKOLL_0_7_27.txt
+  docs/UEBERGABEPROTOKOLL_0_7_26.txt
+  docs/UEBERGABEPROTOKOLL_0_7_25.txt
+  docs/UEBERGABEPROTOKOLL_0_7_24.txt
+  docs/UEBERGABEPROTOKOLL_0_7_23.txt
+  docs/UEBERGABEPROTOKOLL_0_7_22.txt
+  docs/UEBERGABEPROTOKOLL_0_7_21.txt
+  docs/UEBERGABEPROTOKOLL_0_7_20.txt
+  docs/UEBERGABEPROTOKOLL_0_7_19.txt
+  docs/UEBERGABEPROTOKOLL_0_7_18.txt
+  docs/UEBERGABEPROTOKOLL_0_7_17.txt
   docs/UEBERGABEPROTOKOLL_0_7_16.txt
   docs/UEBERGABEPROTOKOLL_0_7_15.txt
   docs/UEBERGABEPROTOKOLL_0_7_14.txt

@@ -6,16 +6,16 @@
   <meta name="language" content="de-DE" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#f0f4fa" />
-  <meta name="application-version" content="0.7.27" />
+  <meta name="application-version" content="0.7.28" />
   <meta name="application-name" content="CoreAI: TCI Interface" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface - Einstellungen</title>
   <link rel="stylesheet" href="./css/console.css?v=0732355389840978237790247" />
-  <link rel="stylesheet" href="./css/settings.css?v=0170285904582330330465507" />
+  <link rel="stylesheet" href="./css/settings.css?v=0949466518360270761622071" />
   <link rel="stylesheet" href="./css/coreui-profile-crop.css?v=0852949496159567452926853" />
   <link rel="stylesheet" href="./css/coreui-update.css?v=0362480532788383300048352" />
   <link rel="stylesheet" href="./css/coreui-theme.css?v=0697431397907702126637895" />
-  <script src="./js/console-gate.js?v=0459144572488420527703742"></script>
+  <script src="./js/console-gate.js?v=0944830722159200844058562"></script>
   <script src="./js/coreui-preferences.js?v=1098190863602852320697527"></script>
   <script src="./js/coreui-ui-language.js?v=0850224961537363286304733"></script>
   <link rel="stylesheet" href="./css/coreui-softglass.css?v=1088656458787114546518505" />
@@ -64,6 +64,10 @@
     <symbol id="i-info" viewBox="0 0 24 24"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 11v6M12 7.5v.5"/></symbol>
     <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
     <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-filter" viewBox="0 0 24 24"><path d="M4 7h16M7 12h10M10 17h4"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.8z"/></symbol>
     <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z"/></symbol>
     <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8.5 5.5v13M15.5 5.5v13"/></symbol>
     <symbol id="i-more" viewBox="0 0 24 24"><path d="M5 12h.01M12 12h.01M19 12h.01"/></symbol>
@@ -95,7 +99,7 @@
           <h1>EINSTELLUNGEN</h1>
         </div>
       </div>
-      <div class="settings-version">COREAI: TCI INTERFACE // v0.7.27</div>
+      <div class="settings-version">COREAI: TCI INTERFACE // v0.7.28</div>
       <div class="cfg-header-actions" aria-label="Schnellzugriffe Einstellungen">
         <label class="cfg-header-expert" for="settingsExpertToggle" title="Technische Einstellungen in allen Kategorien anzeigen oder ausblenden">
           <span>EXPERTENMODUS</span>
@@ -130,7 +134,7 @@
                   <button class="cfg-tab" type="button" role="tab" id="tab-konto" data-view="konto" aria-controls="view-konto" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-account" /></svg><span>Konto</span></button>
                   <button class="cfg-tab" type="button" role="tab" id="tab-archivierte-chats" data-view="archivierte-chats" aria-controls="view-archivierte-chats" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-archive" /></svg><span>Archivierte Chats</span></button>
                   <button class="cfg-tab" type="button" role="tab" id="tab-stimme" data-view="stimme" aria-controls="view-stimme" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-mic" /></svg><span>Stimme</span></button>
-                  <button class="cfg-tab is-planned" type="button" role="tab" id="tab-speicher" data-view="speicher" aria-controls="view-speicher" aria-selected="false" tabindex="-1" title="In Vorbereitung"><svg aria-hidden="true"><use href="#i-folder" /></svg><span>Speicher</span><small class="cfg-nav-state">GEPLANT</small></button>
+                  <button class="cfg-tab" type="button" role="tab" id="tab-speicher" data-view="speicher" aria-controls="view-speicher" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-folder" /></svg><span>Speicher</span></button>
                   <button class="cfg-tab" type="button" role="tab" id="tab-personalisierung" data-view="personalisierung" aria-controls="view-personalisierung" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-sliders" /></svg><span>Personalisierung</span></button>
                   <button class="cfg-tab" type="button" role="tab" id="tab-pets" data-view="pets" aria-controls="view-pets" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-spark" /></svg><span>Pets</span></button>
                   <button class="cfg-tab" type="button" role="tab" id="tab-tastatur" data-view="tastatur" aria-controls="view-tastatur" aria-selected="false" tabindex="-1"><svg aria-hidden="true"><use href="#i-keyboard" /></svg><span>Tastatur</span></button>
@@ -1411,17 +1415,66 @@
         </section>
 
         <!-- CATEGORY FOUNDATION: speicher (no fake settings) -->
-        <section class="cfg-view cfg-view-planned" id="view-speicher" role="tabpanel" aria-labelledby="tab-speicher" tabindex="-1" hidden>
-          <header class="cfg-view-head"><div><span class="cfg-kicker">PERSÖNLICH // AUSBAUPLAN</span><h2>Speicher</h2><p>Wissensdateien, Langzeitgedächtnis und künftig Speicherübersichten zusammenführen.</p></div></header>
-          <div class="cfg-cards">
-            <section class="settings-panel cfg-card wide cfg-planned-card">
-              <span class="cfg-planned-state">IN VORBEREITUNG</span>
-              <h3>Diese Unterseite ist vorbereitet</h3>
-              <p>Private Wissensquellen und Memory existieren bereits in den erweiterten CoreAI-Einstellungen.</p>
-              <p class="cfg-planned-hint">Es werden hier noch keine neuen Kontodaten gespeichert und keine zusätzlichen Dienste aktiviert.</p>
-              
-              
+        <!-- 0.7.28: Speicher after the reference screenshots (js/coreui-storage-settings.js, api/files.php). -->
+        <section class="cfg-view" id="view-speicher" role="tabpanel" aria-labelledby="tab-speicher" tabindex="-1" hidden>
+          <header class="cfg-view-head"><div><span class="cfg-kicker">PERSÖNLICH // SPEICHER</span><h2>Speicher</h2><p>Was deine CoreAI für dich aufbewahrt: deine Uploads, Maras Bilder und die Dateien, die Mara für dich erstellt hat.</p></div></header>
+          <p class="sec-status" id="stStatus" role="status" aria-live="polite">Speicher wird geladen …</p>
+          <div class="st-main" id="stMain">
+            <section class="st-usage" aria-label="Speicherbelegung">
+              <strong id="stUsage"></strong>
+              <div class="st-bar" id="stBar" role="progressbar" aria-labelledby="stUsage" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i></i></div>
+              <small id="stUsageNote"></small>
             </section>
+            <h3 class="sec-heading">Speicherplatz verwalten</h3>
+            <p class="pz-lead">Verwalte deinen Speicher, um Platz zu schaffen.</p>
+            <section class="settings-panel cfg-card wide sec-group" aria-label="Speicherplatz verwalten">
+              <div class="sec-row pz-nav" data-st-open="files">
+                <div class="sec-copy"><strong>Dateien</strong><small id="stFilesMeta"></small></div>
+                <button class="sec-open" type="button" data-st-open="files" aria-label="Dateien anzeigen"><svg aria-hidden="true"><use href="#i-chevron" /></svg></button>
+              </div>
+              <div class="sec-row pz-nav" data-st-open="images">
+                <div class="sec-copy"><strong>Bilder</strong><small id="stImagesMeta"></small></div>
+                <button class="sec-open" type="button" data-st-open="images" aria-label="Bilder anzeigen"><svg aria-hidden="true"><use href="#i-chevron" /></svg></button>
+              </div>
+            </section>
+          </div>
+
+          <div class="st-sub" id="stSub" hidden>
+            <div class="pz-sub-bar"><button class="sec-back" id="stBack" type="button"><svg aria-hidden="true"><use href="#i-back" /></svg>Speicher</button></div>
+            <h3 class="st-sub-title" id="stSubTitle">Alle</h3>
+            <div class="st-tools">
+              <label class="st-search" for="stSearch"><svg aria-hidden="true"><use href="#i-search" /></svg><span class="visually-hidden">Suche</span><input id="stSearch" type="search" placeholder="Suche" autocomplete="off" maxlength="120" /></label>
+              <button class="st-add" id="stAdd" type="button" aria-label="Hochladen" title="Hochladen"><svg aria-hidden="true"><use href="#i-plus" /></svg></button>
+              <input class="visually-hidden" id="stFile" type="file" multiple tabindex="-1" aria-hidden="true" />
+            </div>
+            <div class="st-tabs" id="stTabs" role="tablist" aria-label="Ansicht"></div>
+            <div class="st-refs" id="stRefs" hidden>
+              <strong>Referenzbilder</strong>
+              <div class="st-ref-row"><button class="st-chip" type="button" data-goto="personalisierung"><svg aria-hidden="true"><use href="#i-plus" /></svg>Hinzufügen</button><span class="st-ref-chips" id="stRefChips"></span></div>
+            </div>
+            <div class="st-toolbar" id="stToolbar">
+              <button class="st-crumb" id="stCrumb" type="button" hidden><svg aria-hidden="true"><use href="#i-back" /></svg><span></span></button>
+              <span class="st-toolbar-gap"></span>
+              <button class="st-icon" id="stFilter" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Nach Typ filtern" title="Nach Typ filtern"><svg aria-hidden="true"><use href="#i-filter" /></svg></button>
+              <span class="st-sep" aria-hidden="true"></span>
+              <button class="st-icon" id="stViewGrid" type="button" aria-pressed="false" aria-label="Rasteransicht" title="Rasteransicht"><svg aria-hidden="true"><use href="#i-grid" /></svg></button>
+              <button class="st-icon" id="stViewList" type="button" aria-pressed="true" aria-label="Listenansicht" title="Listenansicht"><svg aria-hidden="true"><use href="#i-list" /></svg></button>
+            </div>
+            <div class="st-list-head" id="stListHead">Name</div>
+            <div class="st-list" id="stList" data-layout="list"></div>
+            <p class="st-empty" id="stEmpty" hidden></p>
+            <button class="arc-btn st-more" id="stMore" type="button" hidden>Mehr laden</button>
+          </div>
+          <div class="arc-menu pz-menu" id="stTypeMenu" role="menu" aria-label="Typ" hidden></div>
+          <div class="arc-menu pz-menu st-item-menu" id="stItemMenu" role="menu" aria-label="Aktionen" hidden></div>
+
+          <div class="sec-confirm" id="stDeleteConfirm" hidden role="dialog" aria-modal="true" aria-labelledby="stDeleteTitle">
+            <div class="sec-confirm-box">
+              <h3 id="stDeleteTitle">Datei löschen?</h3>
+              <p id="stDeleteText"></p>
+              <p class="sec-confirm-error" id="stDeleteError" role="alert"></p>
+              <div class="sec-actions"><button class="settings-action danger" id="stDeleteOk" type="button">LÖSCHEN</button><button class="settings-action compact" id="stDeleteCancel" type="button">ABBRECHEN</button></div>
+            </div>
           </div>
         </section>
 
@@ -1661,6 +1714,7 @@
   <script src="./js/coreui-voice-terms.js?v=0470347751915481307845714"></script>
   <script src="./js/coreui-recordings.js?v=1017337787241714945048880"></script>
   <script src="./js/coreui-voice-settings.js?v=0153288903194027999711245"></script>
+  <script src="./js/coreui-storage-settings.js?v=0115231023762448267674285"></script>
   <script src="./js/coreui-notify.js?v=1002976330424203629675926"></script>
   <script src="./js/coreui-notify-settings.js?v=0180900766828442110480559"></script>
   <script src="./js/coreui-profile-stats.js?v=0127785684761467082142579"></script>

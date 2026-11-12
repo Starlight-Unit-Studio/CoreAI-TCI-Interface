@@ -1,0 +1,18 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.28
+Date: 12.11.2026
+Base version: 0.7.27
+
+- Settings > Speicher is a real page after the reference screenshots (no longer planned).
+- Overview: "X von Y verwendet" with a bar; without a limit the server's free disk space. Notes when the storage is almost or completely full.
+- Dateien: tabs Vorgeschlagen, Favoriten, Deine Elemente; project folders with "Alle / Projekt" and back; type filter (Dokumente, Audio, Video, Von Mara erstellt); search; list or grid.
+- Item menu: Oeffnen, Herunterladen, Im Chat oeffnen, Zu Favoriten hinzufuegen, Loeschen with a confirmation that names the chat.
+- Bilder: Deine Kreationen and Uploads in a grid, Referenzbilder from Personalisierung.
+- Upload through "+" uses api/console_upload.php like the chat.
+- Admin Core > Betrieb > Neue Konten: SPEICHER PRO KONTO (GB), applies at once to all accounts except the Inhaber; empty or 0 is no limit.
+- Admin Core > Benutzer > Limits: SPEICHER (GB) per account; empty is the common value, 0 is no limit.
+- Uploads (413 storage_full) and image generation stop with a clear message once the storage is full.
+- New: api/files.php, api/files_store.php, js/coreui-storage-settings.js, migration 039_storage.sql (stu_user_policies.storage_mb, stu_user_file_favorites), nginx allowlist entry "files".
+- Tests: scripts/storage-selftest.php and scripts/storage-ui-selftest.cjs in both preflights; literal tests for the settings navigation, tabs and user policy updated.
+- A self-hosted installation must be updated separately; GitHub merge alone is not deployment.
+
+Version: 0.7.28
