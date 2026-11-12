@@ -25,13 +25,28 @@
     floatingAnchor = null;
   }
   function placeFloatingMenu(menu,trigger) {
+    // A single body-level menu is used by the sidebar AND the project homepage.
+    // Clamp it to the usable phone viewport, above or below its trigger.
     var bounds = trigger.getBoundingClientRect();
-    var w = menu.offsetWidth || 240, h = menu.offsetHeight || 250;
-    var left = Math.max(8, Math.min(window.innerWidth - w - 8, bounds.right - w));
-    var below = bounds.bottom + 6;
-    var top = below + h < window.innerHeight - 8 ? below : Math.max(8, bounds.top - h - 6);
-    menu.style.left = left + 'px'; menu.style.top = top + 'px';
-    menu.style.maxHeight = Math.max(120, window.innerHeight - 16) + 'px';
+    var viewport = window.visualViewport;
+    var vw = viewport ? viewport.width : window.innerWidth;
+    var vh = viewport ? viewport.height : window.innerHeight;
+    var offsetX = viewport ? viewport.offsetLeft : 0;
+    var offsetY = viewport ? viewport.offsetTop : 0;
+    var edge = 8;
+    menu.style.maxHeight = Math.max(80,Math.min(410,vh - edge * 2)) + 'px';
+    var width = Math.min(menu.offsetWidth || 258,vw - edge * 2);
+    var height = Math.min(menu.scrollHeight || menu.offsetHeight || 260,parseFloat(menu.style.maxHeight));
+    var availableBelow = offsetY + vh - bounds.bottom - edge - 6;
+    var availableAbove = bounds.top - offsetY - edge - 6;
+    var openBelow = availableBelow >= height || availableBelow >= availableAbove;
+    var available = Math.max(80,openBelow ? availableBelow : availableAbove);
+    menu.style.maxHeight = Math.min(height,available) + 'px';
+    var visibleHeight = Math.min(height,available);
+    var top = openBelow ? bounds.bottom + 6 : bounds.top - visibleHeight - 6;
+    var left = bounds.right - width;
+    menu.style.left = Math.max(offsetX + edge,Math.min(offsetX + vw - width - edge,left)) + 'px';
+    menu.style.top = Math.max(offsetY + edge,Math.min(offsetY + vh - visibleHeight - edge,top)) + 'px';
   }
   function showFloatingMenu(trigger,kind,actions) {
     if (floatingMenu && !floatingMenu.hidden && floatingAnchor === trigger) {dismissFloatingMenu();return;}
@@ -57,11 +72,21 @@
   }
   document.addEventListener('click',function(e) {
     if (floatingMenu && !floatingMenu.hidden &&
-        !floatingMenu.contains(e.target) && e.target !== floatingAnchor) dismissFloatingMenu();
+        !floatingMenu.contains(e.target) && !(floatingAnchor && floatingAnchor.contains(e.target))) dismissFloatingMenu();
   });
   document.addEventListener('keydown',function(e){if(e.key==='Escape')dismissFloatingMenu();});
-  window.addEventListener('resize',dismissFloatingMenu);
-  document.addEventListener('scroll',dismissFloatingMenu,true);
+  function updateFloatingMenuPosition() {
+    if (!floatingAnchor || !floatingMenu || floatingMenu.hidden) return;
+    if (!floatingAnchor.isConnected) {dismissFloatingMenu();return;}
+    var b=floatingAnchor.getBoundingClientRect();
+    if (b.bottom < 0 || b.top > window.innerHeight ||
+        b.right < 0 || b.left > window.innerWidth) {dismissFloatingMenu();return;}
+    placeFloatingMenu(floatingMenu,floatingAnchor);
+  }
+  // Mobile browsers can scroll a little after a tap. Reposition the popup
+  // rather than immediately making the project ellipsis appear broken.
+  window.addEventListener('resize',updateFloatingMenuPosition);
+  document.addEventListener('scroll',updateFloatingMenuPosition,true);
   // Sidebar folding is a local UI preference, never server-side project state.
   var FOLDER_STATE_KEY = 'coreai.project-folder-folded.v1';
   var folderState = Object.create(null);
@@ -115,8 +140,9 @@
     var b=el('button',cl||'',labelText);b.type='button';b.addEventListener('click',handler);return b;
   }
   function renderSidebar() {
-    dismissFloatingMenu();
     var list = $('projectsNavList');
+    // A background sidebar refresh must not close a menu on the project page.
+    if (floatingAnchor && list.contains(floatingAnchor)) dismissFloatingMenu();
     var scrollTop = list.scrollTop;
     list.replaceChildren();
     projects.forEach(function(p) {
@@ -155,14 +181,7 @@
       row.appendChild(open);
       var options = action('···', function(e) {
         e.stopPropagation();
-        showFloatingMenu(options,'project',[
-          {label:'Projektstartseite',run:function(){openProject(p.id);}},
-          {label:'Projekt umbenennen',run:function(){openModal('settings',p.id);}},
-          {label:'Projekteinstellungen',run:function(){openModal('settings',p.id);}},
-          {label:'Projekt teilen',run:function(){openModal('share',p.id);}},
-          {label:p.pinned?'Projekt nicht mehr anpinnen':'Projekt anpinnen',run:function(){runAction('pin',p.id);}},
-          {label:'Projekt löschen',danger:true,run:function(){deleteProject(p.id);}}
-        ]);
+        showFloatingMenu(options,'project',projectActions(p));
       }, 'project-nav-menu');
       options.setAttribute('aria-label', 'Projektaktionen: ' + p.name);
       options.setAttribute('aria-haspopup','menu');
@@ -429,9 +448,24 @@
     $('projectTabSources').setAttribute('aria-selected',next==='sources');
     if(next==='sources')loadSources();else renderChats();
   }
-  function openPopover() {
-    var menu=$('projectHomePopover');menu.hidden=!menu.hidden;
-    $('projectHomeMore').setAttribute('aria-expanded',String(!menu.hidden));
+  function projectActions(p) {
+    return [
+      {label:'Projektstartseite',run:function(){if(current!==p.id)openProject(p.id);}},
+      {label:'Projekt umbenennen',run:function(){openModal('settings',p.id);}},
+      {label:'Projekteinstellungen',run:function(){openModal('settings',p.id);}},
+      {label:'Projekt teilen',run:function(){openModal('share',p.id);}},
+      {label:p.pinned?'Projekt nicht mehr anpinnen':'Projekt anpinnen',run:function(){runAction('pin',p.id);}},
+      {label:'Projekt löschen',danger:true,run:function(){deleteProject(p.id);}}
+    ];
+  }
+  function openPopover(e) {
+    if(e)e.stopPropagation();
+    var p=selected();
+    if(!p)return;
+    // Previously this menu sat behind the composer (z-index 15) and was
+    // clipped by the project page. Reuse the body-level, touch-safe menu.
+    $('projectHomePopover').hidden=true;
+    showFloatingMenu($('projectHomeMore'),'project',projectActions(p));
   }
   function openModal(which, projectId) {
     modalProjectId = String(projectId || current || '');
@@ -519,9 +553,8 @@
   $('projectSettingsDelete').addEventListener('click',deleteProject);
   $('projectHomeShare').addEventListener('click',function(){openModal('share');});
   $('projectHomeMore').addEventListener('click',openPopover);
-  $('projectHomePopover').querySelectorAll('[data-project-action]').forEach(function(b){
-    b.addEventListener('click',function(){runAction(b.getAttribute('data-project-action'));});
-  });
+  // The original in-page popover remains a hidden markup fallback;
+  // its items are handled by the shared body-level project menu instead.
   $('projectTabChats').addEventListener('click',function(){setTab('chats');});
   $('projectTabSources').addEventListener('click',function(){setTab('sources');});
   // Attachments and tools belong to the single native CoreAI composer.

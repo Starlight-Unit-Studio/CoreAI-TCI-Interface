@@ -60,9 +60,16 @@ assert(js.includes('localStorage.setItem(FOLDER_STATE_KEY') &&
   'fold status must persist as an accessible local UI preference');
 assert(js.includes('setFolderExpanded(p.id,!folderIsExpanded(p.id))') &&
   js.includes("label:'Projektstartseite'") &&
-  js.includes("showFloatingMenu(options,'project'") &&
+  js.includes("showFloatingMenu(options,'project',projectActions(p))") &&
+  js.includes("showFloatingMenu($('projectHomeMore'),'project',projectActions(p))") &&
   js.includes("chatApp(); if (app && app.select) app.select(s.id);"),
-  'folder title must fold chats, while project homepage opens only by explicit menu action');
+  'folder title must fold chats and both project ellipsis buttons must open real actions');
+assert(js.includes("var viewport = window.visualViewport") &&
+  js.includes("floatingAnchor.contains(e.target)") &&
+  js.includes("document.addEventListener('scroll',updateFloatingMenuPosition,true)") &&
+  js.includes("if (floatingAnchor && list.contains(floatingAnchor)) dismissFloatingMenu()") &&
+  js.includes("floatingMenu.setAttribute('role','menu')"),
+  'project menu must remain touch accessible, viewport-clamped and protected from unrelated refresh');
 assert(js.includes('if (lockedChats.length)') &&
   js.includes("CoreAIChatLock.unlockChat(chat)"),
   'protected chat folder and PIN unlock must remain available');

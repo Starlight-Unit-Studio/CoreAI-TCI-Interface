@@ -1,0 +1,13 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.34
+Date: 12.11.2026
+Base version: 0.7.33
+
+- Both three-dot menus in Projects now use the same action list and body-level popup: the project folder ellipsis and the project homepage ellipsis.
+- Common project actions retain explicit project start page, rename, project settings, sharing, pinning and deletion.
+- A viewport-aware menu is positioned within visible phone boundaries.
+- Ordinary mobile scrolls reposition the open popup instead of dismissing it immediately.
+- Background sidebar refreshes no longer dismiss an open project homepage menu.
+- Regression tests protect both project ellipsis triggers and mobile popup behavior.
+- Holo and SoftGlass UI themes are preserved.
+
+Version: 0.7.34
