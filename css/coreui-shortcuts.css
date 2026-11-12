@@ -1,0 +1,37 @@
+/* CoreAI 0.7.29: the two windows of the keyboard shortcuts in the chat (js/coreui-shortcuts-app.js).
+   They reuse .chat-dialog and .chat-menu-toast from css/console.css; only the lists are new. */
+.sc-help-box { width: min(520px, 100%); gap: 18px; }
+.sc-help-group { display: grid; gap: 8px; }
+.sc-help-group h3 {
+  margin: 0; color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+}
+.sc-help-group dl {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px 16px; margin: 0;
+}
+.sc-help-group dt { color: var(--txt); font-size: 16px; overflow-wrap: anywhere; }
+.sc-help-group dd { margin: 0; }
+.sc-help-group kbd {
+  display: inline-block; padding: 3px 9px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--panel-soft);
+  color: var(--txt); font-family: "Share Tech Mono", monospace; font-size: 14px; white-space: nowrap;
+}
+.sc-help-foot { margin: 0; }
+.sc-help-foot a { color: var(--cx); font-size: 15px; font-weight: 600; }
+.sc-switch-box { width: min(560px, 100%); align-content: start; }
+.sc-switch-input {
+  width: 100%; min-height: 48px; padding: 8px 14px; border: 1px solid var(--line-strong); border-radius: 14px;
+  background: var(--panel-soft); color: var(--txt); font: inherit; font-size: 17px; outline: none;
+}
+.sc-switch-input:focus { border-color: var(--cx); box-shadow: 0 0 0 3px var(--panel-cx); }
+.sc-switch-input::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; display: none; }
+.sc-switch-list { display: grid; gap: 4px; max-height: min(52vh, 420px); margin: 0; padding: 0; overflow-y: auto; list-style: none; }
+.sc-switch-item {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 46px; padding: 8px 12px;
+  border: 0; border-radius: 12px; background: transparent; color: var(--txt); cursor: pointer; font: inherit; font-size: 16px; text-align: left;
+}
+.sc-switch-item span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sc-switch-item small { flex: 0 0 auto; color: var(--muted); font-size: 12px; }
+.sc-switch-item.is-current, .sc-switch-item:focus-visible { background: var(--panel-cx, rgba(0, 120, 255, 0.08)); outline: none; }
+.sc-dialog .chat-dialog-box { align-self: start; margin-top: min(12vh, 96px); }
+@media (max-width: 620px) {
+  .sc-dialog .chat-dialog-box { margin-top: 8px; padding: 20px 16px 18px; }
+}

@@ -63,7 +63,6 @@
   var healthChecks = document.getElementById('healthChecks');
   var refreshButton = document.getElementById('refreshHealth');
   var resetButton = document.getElementById('resetPreferences');
-  var generalSendKey = document.getElementById('generalSendKey');
   var generalUiLanguage = document.getElementById('generalUiLanguage');
   var generalHigherIntelligence = document.getElementById('generalHigherIntelligence');
   var generalHigherNote = document.getElementById('generalHigherNote');
@@ -208,7 +207,6 @@
 
   function syncFields(value) {
     value = value || {};
-    if (generalSendKey) generalSendKey.value = value.sendKey === 'mod-enter' ? 'mod-enter' : 'enter';
     if (generalUiLanguage) generalUiLanguage.value = ['auto','de','en'].indexOf(value.uiLanguage) >= 0
       ? value.uiLanguage : 'auto';
     Object.keys(fields).forEach(function (key) {
@@ -244,8 +242,8 @@
     value.theme = selected ? selected.value : (preferences ? preferences.load().theme : 'system');
     var selectedSkin = skinOptions.filter(function (option) { return option.checked; })[0];
     value.uiSkin = selectedSkin ? selectedSkin.value : (preferences ? preferences.load().uiSkin : 'coreai');
-    value.sendKey = generalSendKey ? generalSendKey.value
-      : (preferences ? preferences.load().sendKey : 'enter');
+    // 0.7.29: the send key lives in Settings > Tastatur (js/coreui-shortcuts.js), which keeps sendKey in step.
+    value.sendKey = preferences ? preferences.load().sendKey : 'enter';
     value.uiLanguage = generalUiLanguage ? generalUiLanguage.value
       : (preferences ? preferences.load().uiLanguage : 'auto');
     // Local appearance preferences preserve the inactive theme's palette and look.
@@ -1261,7 +1259,6 @@
       setImportStatus('Die Datei konnte nicht gelesen werden.', true);
     });
   });
-  if (generalSendKey) generalSendKey.addEventListener('change', saveLocal);
   if (generalUiLanguage) generalUiLanguage.addEventListener('change', saveLocal);
   if (generalHigherIntelligence) generalHigherIntelligence.addEventListener('change', function () {
     saveGeneralControl('auto_higher_core', generalHigherIntelligence.checked, generalHigherIntelligence);

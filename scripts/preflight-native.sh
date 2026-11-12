@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.28: Settings > Speicher (Dateien, Bilder, storage limit for all accounts and per account in Admin Core).
+# CoreAI: TCI Interface 0.7.29: Settings > Tastatur (shortcuts to record, switch off and reset; they work in the chat).
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -159,6 +159,11 @@ UI_FILES=(
   js/coreui-storage-settings.js
   scripts/storage-selftest.php
   scripts/storage-ui-selftest.cjs
+  js/coreui-shortcuts.js
+  js/coreui-shortcuts-app.js
+  js/coreui-keyboard-settings.js
+  css/coreui-shortcuts.css
+  scripts/keyboard-shortcuts-ui-selftest.cjs
   scripts/terran-terminology-selftest.cjs
   scripts/tci-language-selftest.cjs
   css/coreui-chat-tci-layout.css
@@ -1395,6 +1400,16 @@ if command -v php >/dev/null 2>&1; then
       fi
     else
       ok 'Speicher: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+    fi
+    # 0.7.29: Settings > Tastatur (recording, clashes, reset) and the shortcuts in the chat; needs Playwright for Node.
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/keyboard-shortcuts-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'Tastatur: Tastenkuerzel aufnehmen, pruefen, zuruecksetzen und im Chat ausfuehren im Browser geprueft.'
+      else
+        fail 'Tastatur: Oberflaechentest fehlgeschlagen.'
+      fi
+    else
+      ok 'Tastatur: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
     fi
     # 0.7.1: Settings > Pets and the pet in Mara's work line; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then

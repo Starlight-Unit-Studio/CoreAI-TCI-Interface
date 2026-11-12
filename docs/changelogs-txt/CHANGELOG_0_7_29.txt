@@ -1,0 +1,18 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.29
+Date: 12.11.2026
+Base version: 0.7.28
+
+- Settings > Tastatur is built after the reference screenshots: groups Nachrichteneditor, Chat and App.
+- Each shortcut has a switch and its key combination. Choosing the combination records the next key press; Esc cancels, the Backspace key alone removes the shortcut ("Keine"). "Standardeinstellungen wiederherstellen" brings back the defaults.
+- Defaults (Strg on Windows/Linux, Cmd on a Mac): Eingabefeld fokussieren Shift+Esc, Nachricht senden Enter, Denken auswaehlen Strg+Shift+M, Diktierfunktion ein-/ausschalten Keine, Dateien anhaengen Strg+U, Chat loeschen Strg+Shift+Ruecktaste, Im Chat suchen Strg+Shift+F, Neuer Chat Strg+Shift+O, Tastenkuerzel anzeigen Strg+/, Chat wechseln Strg+K, Seitenleiste ein/aus Strg+Shift+S.
+- "Nachricht im Hintergrund senden" and "Anmerkungen senden" are shown as In Vorbereitung (no key, no switch).
+- Refused with a reason: a combination another shortcut uses (names it), keys without Strg/Alt/Super, Esc alone, browser keys (e.g. Strg+W), editing keys (e.g. Strg+C).
+- Chat: every action uses the existing control (Chat loeschen asks for confirmation as before). New windows "Tastenkuerzel" and "Chat wechseln" (search by title, pinned first, arrows and Enter). While another window is open, shortcuts do nothing. The hint under the input follows the send key.
+- The send key replaces the select "Enter sendet / Strg/Cmd + Enter sendet"; an old choice carries over and CoreUIPreferences.sendKey stays in step.
+- Kept per browser (localStorage coreai.shortcuts.v1), like the other display preferences.
+- New: js/coreui-shortcuts.js, js/coreui-shortcuts-app.js, js/coreui-keyboard-settings.js, css/coreui-shortcuts.css, scripts/keyboard-shortcuts-ui-selftest.cjs (both preflights).
+- Literal tests updated: send-shortcut-selftest, settings-navigation-foundation-selftest, settings-tabs-ui-selftest, sidebar-sections-ui-selftest (version pin).
+- README: Keyboard bullet; the chat menu no longer calls chat locking and projects "In preparation".
+- A self-hosted installation must be updated separately; GitHub merge alone is not deployment.
+
+Version: 0.7.29

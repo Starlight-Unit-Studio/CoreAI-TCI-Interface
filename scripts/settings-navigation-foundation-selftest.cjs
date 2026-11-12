@@ -54,7 +54,7 @@ const section = id => {
 };
 for (const [id, fields] of Object.entries({
   sicherheit: ['changePassword', 'currentPassword', 'loginSessionList', 'revokeOtherSessions'],
-  tastatur: ['generalSendKey'],
+  tastatur: ['kbStatus', 'kbGroups', 'kbReset'], // 0.7.29: the shortcuts are drawn by js/coreui-keyboard-settings.js
   datenkontrollen: ['exportAccountData'],
   benachrichtigungen: ['notifyPushEnable', 'notifyPushTest', 'notifyDevices', 'notifyMailStatus', 'notify-answers', 'notify-security', 'notify-updates'],
   stimme: ['voiceAutoRead', 'voiceTerms'],
@@ -98,7 +98,8 @@ assert.ok(/<section[^>]*aria-labelledby="aiCtxTitle">/.test(settings) &&
   'smart context slider remains ordinary; raw numeric context inputs would be Expert-only');
 assert.ok(settings.includes('id="aiNumCtx"') && settings.includes('id="aiNumPredict"'),
   'prior Core settings are retained');
-for(const field of ['generalUiLanguage','generalSendKey','generalHigherIntelligence','generalReasoningLevels']) {
+// 0.7.29: the send key moved from the two-mode select (generalSendKey) to Settings > Tastatur.
+for(const field of ['generalUiLanguage','generalHigherIntelligence','generalReasoningLevels']) {
   assert.ok(settings.includes('id="' + field + '"'), 'General field: ' + field);
 }
 assert.ok(settings.includes('id="generalHigherIntelligence" type="checkbox" disabled'),
