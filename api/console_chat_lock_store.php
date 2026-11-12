@@ -79,6 +79,18 @@ function coreui_chat_lock_verify(PDO $pdo, int $uid, string $pin): void {
   }
 }
 
+/** Change an established PIN only after proving the previous value. */
+function coreui_chat_lock_change(PDO $pdo, int $uid, string $old, string $next, string $confirm): void {
+  if (!coreui_chat_lock_pin_valid($next) || !hash_equals($next,$confirm)) {
+    throw new InvalidArgumentException('invalid_pin_confirmation');
+  }
+  coreui_chat_lock_verify($pdo,$uid,$old);
+  $hash=password_hash($next,PASSWORD_DEFAULT);
+  if (!is_string($hash) || $hash==='') throw new RuntimeException('pin_hash_failed');
+  $st=$pdo->prepare('UPDATE stu_console_chat_lock_pins SET pin_hash=?,failed_attempts=0,blocked_until=NULL WHERE user_id=?');
+  $st->execute([$hash,$uid]);
+}
+
 /** The protected list contains only titles and IDs, never private messages. */
 function coreui_chat_lock_list(PDO $pdo, int $uid): array {
   coreui_chat_lock_require_schema($pdo);
@@ -93,6 +105,10 @@ function coreui_chat_lock_set(PDO $pdo, int $uid, string $id): void {
   if (!coreui_chat_lock_has_pin($pdo,$uid)) throw new RuntimeException('chat_pin_not_set');
   // The existing owner-scoped session guard excludes archived and locked rows.
   coreui_console_session_require($pdo,$uid,$id);
+  if (function_exists('coreui_agent_run_working_sessions')) {
+    $working=coreui_agent_run_working_sessions($pdo,$uid);
+    if (isset($working[$id])) throw new RuntimeException('session_busy');
+  }
   $st=$pdo->prepare('UPDATE stu_console_sessions SET locked_at=NOW(),pinned_at=NULL '
     . 'WHERE id=? AND user_id=? AND locked_at IS NULL AND archived_at IS NULL');
   $st->execute([$id,$uid]);
