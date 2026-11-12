@@ -235,7 +235,10 @@
   var uploadXhr     = null;
   var btnNewSession = document.getElementById('btnNewSession');
   var btnSettings   = document.getElementById('btnSettings');
-  var btnProtocols  = document.getElementById('btnProtocols');
+  var pinnedZone = document.getElementById('pinnedZone');
+  var pinnedCountEl = document.getElementById('pinnedCount');
+  var pinnedSessionListEl = document.getElementById('pinnedSessionList');
+  var sessionZoneLabel = document.getElementById('sessionZoneLabel');
   var btnLogout     = document.getElementById('btnLogout');
   var headerSessionName = document.getElementById('headerSessionName');
   var statusDot     = document.getElementById('statusDot');
@@ -572,14 +575,24 @@
   // ── Session-Liste rendern ────────────────────────────────
   function renderSessionList() {
     sessionListEl.innerHTML = '';
-    var activeCount = state.sessions.filter(function(s) { return !s.archived; }).length;
-    if (sessionCountEl) sessionCountEl.textContent = String(activeCount).padStart(2, '0');
+    if (pinnedSessionListEl) pinnedSessionListEl.replaceChildren();
+    var standalone = state.sessions.filter(function(s) { return !s.project_id || !!s.archived; });
+    var pinnedChats = standalone.filter(function(s) { return !!s.pinned && !s.archived; });
+    var recentChats = standalone.filter(function(s) { return !s.pinned && !s.archived; });
+    var archiveChats = standalone.filter(function(s) { return !!s.archived; });
+    var activeCount = recentChats.length;
+    if (sessionCountEl) sessionCountEl.textContent = String(state.showArchived ? archiveChats.length : activeCount).padStart(2, '0');
+    if (pinnedZone) pinnedZone.hidden = state.showArchived || pinnedChats.length === 0;
+    if (pinnedCountEl) pinnedCountEl.textContent = String(pinnedChats.length);
+    if (sessionZoneLabel) sessionZoneLabel.textContent = state.showArchived ? 'Archiviert' : 'Letzte';
     if (sessionArchiveToggle) {
       sessionArchiveToggle.classList.toggle('active', state.showArchived);
-      sessionArchiveToggle.textContent = state.showArchived ? 'ARCHIV AUS' : 'ARCHIV';
+      sessionArchiveToggle.setAttribute('aria-pressed', String(state.showArchived));
+      sessionArchiveToggle.setAttribute('aria-label', state.showArchived ? 'Letzte Chats anzeigen' : 'Archivierte Chats anzeigen');
+      sessionArchiveToggle.title = state.showArchived ? 'Letzte Chats anzeigen' : 'Archivierte Chats anzeigen';
     }
-    state.sessions.forEach(function(s) {
-      if (s.project_id && !s.archived) return;
+    var shownSessions = state.showArchived ? archiveChats : pinnedChats.concat(recentChats);
+    shownSessions.forEach(function(s) {
       var li = document.createElement('li');
       li.className = 'session-item' + (isActiveSession(s.id) ? ' active' : '') + (s.archived ? ' archived' : '');
       li.setAttribute('data-session-id', String(s.id));
@@ -730,7 +743,8 @@
         selectSession(s.id);
         closeDrawer();
       });
-      sessionListEl.appendChild(li);
+      var target = !!s.pinned && !s.archived && pinnedSessionListEl && !state.showArchived ? pinnedSessionListEl : sessionListEl;
+      target.appendChild(li);
     });
     if (window.CoreAIProjects && window.CoreAIProjects.updateSessions) window.CoreAIProjects.updateSessions(state.sessions);
     // 0.6.87: the chat menu (js/coreui-chat-menu.js) follows the active chat.
@@ -4164,11 +4178,6 @@
       if (state.draftSessionPromise || state.draftSendRequested) return;
       sendMessage(button.getAttribute('data-welcome-prompt'));
     });
-  });
-
-  btnProtocols.addEventListener('click', function() {
-    closeDrawer();
-    location.href = 'protocols.html';
   });
 
   if (btnSettings) {
