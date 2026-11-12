@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.7.27 - 12.11.2026
+
+- **Project navigation:** Clicking the project name expands/collapses the folder instead of opening its homepage. The project actions menu explicitly contains Projektstartseite, rename, settings, share, pin and delete. Creating a new project opens its folder, not a second page.
+- **Real chat composer:** Project overview now mounts the actual CoreAI composer and all of its existing attachment, tool, voice, model and thinking controls. The previous duplicate text-only mock form is removed. Starting a project chat binds the real project ID before creating the conversation and restores the composer to the ordinary chat when the project page closes.
+- **Non-clipped menus:** Project chat and project folder actions use one keyboard-accessible floating menu attached to the document body, avoiding the old clipped/hidden popups.
+- **Empty projects:** Project list and folder use explicit empty states; protected chats and isolated project memory remain unchanged.
+- **Theme compatibility:** Native Holo and optional SoftGlass skin retain their established appearance.
+
+
 ## 0.7.26 - 12.11.2026
 
 - **Preflight repair:** Updated the session selftest to recognize the 0.7.25 chat delete button for both active and archived chats.
