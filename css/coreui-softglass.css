@@ -54,12 +54,17 @@ html[data-coreui-skin="softglass"] body{
 }
 html[data-coreui-skin="softglass"] body::before,
 html[data-coreui-skin="softglass"] body::after{display:none!important}
-html[data-coreui-skin="softglass"] :is(
-  .drawer-vector-field,.drawer::before,.drawer::after,.feed-vector,
-  .feed-shell::before,.feed-shell::after,.core-ticker,.hud-button-primary::before,
-  .hud-button-primary::after,.msg-bubble::before,.header-menu-btn::before,
-  .header-menu-btn::after,.project-modal::before
-){display:none!important;content:none!important}
+html[data-coreui-skin="softglass"] :is(.drawer-vector-field,.feed-vector,.core-ticker){display:none!important}
+html[data-coreui-skin="softglass"] .drawer::before,
+html[data-coreui-skin="softglass"] .drawer::after,
+html[data-coreui-skin="softglass"] .feed-shell::before,
+html[data-coreui-skin="softglass"] .feed-shell::after,
+html[data-coreui-skin="softglass"] .hud-button-primary::before,
+html[data-coreui-skin="softglass"] .hud-button-primary::after,
+html[data-coreui-skin="softglass"] .msg-bubble::before,
+html[data-coreui-skin="softglass"] .header-menu-btn::before,
+html[data-coreui-skin="softglass"] .header-menu-btn::after,
+html[data-coreui-skin="softglass"] .project-modal::before{display:none!important;content:none!important}
 html[data-coreui-skin="softglass"] .messages-area::before{display:none!important}
 /* Keep real controls and operational data, soften their surrounding surfaces. */
 html[data-coreui-skin="softglass"] .drawer{
