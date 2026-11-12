@@ -27,6 +27,7 @@
   <script src="./js/coreui-preferences.js?v=0004145186774094057353830"></script>
   <script src="./js/coreui-ui-language.js?v=0850224961537363286304733"></script>
   <link rel="stylesheet" href="./css/coreui-projects.css?v=1116790663620733322439367" />
+  <link rel="stylesheet" href="./css/coreui-sidebar-refresh.css?v=1" />
 </head>
 <body class="app-body coreui-body">
   <input
@@ -47,6 +48,10 @@
 
     <header class="drawer-header">
       <strong class="project-drawer-brand" aria-hidden="true">CoreAI</strong>
+      <div class="sidebar-header-actions" aria-label="Navigation">
+        <button class="sidebar-header-action" id="btnSettings" type="button" title="Einstellungen" aria-label="Einstellungen"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2a2 2 0 0 1 2 1.2l.5 1.1 1.2.5 1.2-.4a2 2 0 0 1 2.2.7l.7 1.1-.8 1.1.1 1.5 1 1a2 2 0 0 1 0 2.4l-1 1-.1 1.5.8 1.1-.7 1.1a2 2 0 0 1-2.2.7l-1.2-.4-1.2.5-.5 1.1a2 2 0 0 1-2 1.2 2 2 0 0 1-2-1.2l-.5-1.1-1.2-.5-1.2.4a2 2 0 0 1-2.2-.7l-.7-1.1.8-1.1-.1-1.5-1-1a2 2 0 0 1 0-2.4l1-1 .1-1.5-.8-1.1.7-1.1a2 2 0 0 1 2.2-.7l1.2.4 1.2-.5.5-1.1a2 2 0 0 1 2-1.2Z"/><circle cx="12" cy="12" r="3"/></svg></button>
+        <button class="sidebar-header-action" id="btnLogout" type="button" title="Abmelden" aria-label="Abmelden"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4"/><path d="M13 8l4 4-4 4M8 12h9"/></svg></button>
+      </div>
       <div class="brand-lockup">
         <div class="ren-matrix" aria-label="Ren Sternenmatrix, Kernsignatur 73">
           <svg
@@ -171,50 +176,38 @@
 
     <div class="drawer-content">
       <button class="btn-new-session hud-button hud-button-primary" id="btnNewSession" type="button">
-        <span class="hud-button-glyph" aria-hidden="true">⌬</span>
-        <span class="hud-button-copy">
-          <strong>NEUE VERBINDUNG</strong>
-          <small>Privaten Kernkanal öffnen</small>
-        </span>
+        <span class="hud-button-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><path d="m15 5 4 4M11 13l8-8a2.12 2.12 0 0 0-3-3l-8 8-1 5z"/></svg></span>
+        <span class="hud-button-copy"><strong>Neuer Chat</strong></span>
       </button>
 
-      <section class="session-zone" aria-labelledby="sessionZoneTitle">
-        <div class="section-label" id="sessionZoneTitle">
-          <span class="section-rune" aria-hidden="true">⟐</span>
-          <span>SITZUNGSMATRIX</span>
-          <span class="section-count" id="sessionCount">00</span>
-          <button class="session-archive-toggle" id="sessionArchiveToggle" type="button">ARCHIV</button>
+      <section class="pinned-zone" id="pinnedZone" aria-labelledby="pinnedZoneTitle" hidden>
+        <div class="section-label" id="pinnedZoneTitle">
+          <span>Angeheftet</span>
+          <span class="section-count" id="pinnedCount">0</span>
         </div>
-        <ul class="session-list" id="sessionList" aria-live="polite"></ul>
+        <ul class="session-list pinned-session-list" id="pinnedSessionList" aria-live="polite"></ul>
       </section>
 
       <section class="projects-nav" id="projectsNav" aria-labelledby="projectsNavTitle">
         <div class="projects-nav-heading">
           <span id="projectsNavTitle">Projekte</span>
-          <button id="projectsCreateBtn" type="button" aria-label="Neues Projekt">＋</button>
+          <button id="projectsCreateBtn" type="button" aria-label="Neues Projekt" title="Neues Projekt"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v16M4 12h16"/></svg></button>
         </div>
         <div class="projects-nav-list" id="projectsNavList"></div>
+      </section>
+
+      <section class="session-zone" aria-labelledby="sessionZoneTitle">
+        <div class="section-label" id="sessionZoneTitle">
+          <span id="sessionZoneLabel">Letzte</span>
+          <span class="section-count" id="sessionCount">00</span>
+          <button class="session-archive-toggle" id="sessionArchiveToggle" type="button" title="Archivierte Chats anzeigen" aria-label="Archivierte Chats anzeigen" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v11h14V9M10 13h4"/></svg></button>
+        </div>
+        <ul class="session-list" id="sessionList" aria-live="polite"></ul>
       </section>
     </div>
 
     <footer class="drawer-footer">
-      <div class="drawer-system-line" aria-hidden="true">
-        <span>SUVARU</span>
-        <i></i>
-        <span>CORE LINK</span>
-      </div>
-      <button class="btn-settings hud-button hud-button-quiet" id="btnSettings" type="button">
-        <span aria-hidden="true">⌬</span>
-        <span>EINSTELLUNGEN</span>
-      </button>
-      <button class="btn-protocols hud-button hud-button-quiet" id="btnProtocols" type="button">
-        <span aria-hidden="true">⌁</span>
-        <span>PROTOKOLLE</span>
-      </button>
-      <button class="btn-logout hud-button hud-button-quiet" id="btnLogout" type="button">
-        <span aria-hidden="true">⏻</span>
-        <span>ABMELDEN</span>
-      </button>
+
       <div class="drawer-copyright">© 2023-2026 Patrick Schildgen · Starlight Unit Studios</div>
     </footer>
   </nav>
