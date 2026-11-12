@@ -65,5 +65,7 @@ jobs:
           php -l api/account_security.php
           php -l scripts/reply-pipeline-selftest.php
           php -l scripts/frontend-regression-selftest.php
+          php -l scripts/session-selftest.php
+          php scripts/session-selftest.php
           php scripts/reply-pipeline-selftest.php
           php scripts/frontend-regression-selftest.php
