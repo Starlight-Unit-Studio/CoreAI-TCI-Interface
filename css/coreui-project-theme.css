@@ -327,3 +327,5 @@ body.project-home-active .drawer .drawer-copyright {color:var(--muted-soft)!impo
   color:var(--txt);background:var(--panel);border:1px solid var(--line-strong);border-radius:0;
   clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,0 100%);
 }
+
+.chat-lock-dialog .chat-lock-field[hidden] {display:none!important;}
