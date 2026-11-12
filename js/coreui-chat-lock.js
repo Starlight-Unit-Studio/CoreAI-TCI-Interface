@@ -41,7 +41,7 @@
     $('chatLockDescription').textContent=setup?'Lege eine vierstellige Konto-PIN fest. Sie gilt für alle gesperrten Chats und muss bestätigt werden.':mode==='unlock'?'Mit deiner Konto-PIN wird dieser Chat wieder freigegeben.':'Der Chat wird aus den normalen Chatlisten entfernt. Zum Entsperren benötigst du deine Konto-PIN.';
     $('chatLockConfirm').textContent=setup?'PIN weiter':mode==='unlock'?'Entsperren':'Chat sperren';
     root.querySelector('.chat-lock-field').hidden=mode==='lock';
-    $('chatLockPin').value='';root.hidden=false;$('chatLockPin').focus();
+    $('chatLockPin').value='';root.hidden=false;(mode==='lock'?$('chatLockConfirm'):$('chatLockPin')).focus();
   }
   function refresh(){
     var a=window.CoreAIChatApp,p=window.CoreAIProjects;
