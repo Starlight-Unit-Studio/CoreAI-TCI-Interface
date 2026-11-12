@@ -1,0 +1,22 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.37
+Datum: 12.11.2026
+Basis: Main 0.7.36 (PR #291)
+
+- Endlich die Ursache des unsichtbaren Drei-Punkte-Menues auf Mobilgeraeten:
+  css/console.css legt fuer den mobilen Drawer z-index:999!important und fuer
+  das abdunkelnde Overlay z-index:998!important fest.
+  Das body-level Projekt-Popup hatte in css/coreui-project-theme.css nur
+  z-index:180!important. Es wurde deshalb hinter der sichtbaren Sidebar angezeigt.
+- Das vorhandene gemeinsame Projekt-Popup wird jetzt auf z-index:1100!important
+  ueber beiden Ebenen angezeigt. Kein zweites Popup-System und keine Aenderung
+  an Projekt-APIs, PIN, Kontexttrennung oder Chatdaten.
+- scripts/project-ui-selftest.cjs kontrolliert die tatsaechlichen mobilen
+  Stacking-Layer und prueft, dass die Projektordner-Aktion weiterhin das
+  body-level Popup oeffnet. Dieser Fehler war von bisherigen statischen
+  UI-Tests nicht erkannt worden.
+- HTML- und Bootstrap-Versionen, Cache-Fingerprints, README, Preflight- und
+  Versionstests sowie Changelog und Uebergabe auf 0.7.37 aktualisiert.
+- CoreAI Holo und SoftGlass UI bleiben mit unveraendertem Erscheinungsbild.
+- Produktiven Android-Browser nach CoreAI-Update und Preflight verifizieren.
+
+Version: 0.7.37
