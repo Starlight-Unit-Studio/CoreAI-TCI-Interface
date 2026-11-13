@@ -85,7 +85,7 @@ def visual_action(raw):
     return action, obs
 
 
-def is_safe_research_action(action, page, api, elements):
+def is_safe_research_action(action, page, api, elements, query):
     """Use the browse worker's same form protections, with a tighter read-only scope."""
     kind = action.get("action")
     if kind == "scroll":
@@ -104,7 +104,7 @@ def is_safe_research_action(action, page, api, elements):
             return not api.blocked_click_reason(name, info)
         if kind == "type":
             return bool(action.get("text")) and info.get("form") == "search" and not api.blocked_type_reason(
-                info, action.get("text"), action.get("text"), submit=bool(action.get("submit")))
+                info, action.get("text"), query, submit=bool(action.get("submit")))
         if kind == "select" or kind == "check":
             return info.get("form") in {"search", "free"}
     except Exception:
@@ -156,7 +156,7 @@ class ResearchBrowserSession:
         page = self.context.new_page()
         try:
             page.goto(url, wait_until="domcontentloaded", timeout=24000)
-            page.wait_for_timeout(250)
+            page.wait_for_timeout(700)
             self.api.dismiss_consent(page, self.log)
             raw = self.api.page_full_text(page)
             frames = [frame.url for frame in page.frames]
@@ -188,7 +188,7 @@ class ResearchBrowserSession:
                     action, observation = visual_action(response)
                     if observation:
                         observations.append(observation)
-                    if action and is_safe_research_action(action, page, self.api, elements):
+                    if action and is_safe_research_action(action, page, self.api, elements, query):
                         env = {"cfg": self.cfg, "goal": query, "forms": True,
                                "elements": {e["ref"]: e for e in elements},
                                "say": lambda *_: None, "frame": lambda *_: None}
