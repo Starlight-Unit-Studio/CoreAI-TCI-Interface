@@ -239,12 +239,16 @@ def enforce_queries(proposed, query, step, count, hosts=()):
             text = text[:140].rsplit(" ", 1)[0]
         if text.casefold() not in {x.casefold() for x in chosen}:
             chosen.append(text)
-        if len(chosen) >= count:
+        if len(chosen) >= max(1, count - 1):
             break
-    if len(chosen) < count and len(anchors) > 1:
-        alternative = '"' + anchors[-1] + '" ' + " ".join(str(step or "").split()[:4])
-        if alternative.casefold() not in {x.casefold() for x in chosen}:
-            chosen.append(alternative[:140])
+    # One unquoted variant for engines that do not return enough indexed
+    # results for exact-phrase searches. Still keep the subject intact.
+    if count > 1:
+        broad = (anchors[0] + (" " + focus if focus else ""))[:140]
+        if broad.casefold() not in {x.casefold() for x in chosen}:
+            chosen.append(broad)
+        elif len(chosen) < count and len(anchors) > 1:
+            chosen.append((anchors[-1] + (" " + focus if focus else ""))[:140])
     return chosen[:count]
 
 
