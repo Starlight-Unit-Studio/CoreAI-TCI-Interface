@@ -54,6 +54,13 @@ def budget_from(cfg):
         "browser_pages_per_step": num("STU_DEEP_RESEARCH_BROWSER_PAGES_PER_STEP", 2, 0, 6),
         "max_minutes": num("STU_DEEP_RESEARCH_MAX_MINUTES", 30, 3, 120),
         "core_timeout": num("STU_DEEP_RESEARCH_CORE_TIMEOUT", 420, 60, 1800),
+        # Hybrid orchestration uses the SAME serial model queue. Only web I/O
+        # overlaps; model calls never run in a parallel thread.
+        "hybrid_enabled": num("STU_DEEP_RESEARCH_HYBRID", 1, 0, 1),
+        "io_workers": num("STU_DEEP_RESEARCH_IO_WORKERS", 3, 1, 8),
+        "depth_rounds": num("STU_DEEP_RESEARCH_DEPTH_ROUNDS", 2, 1, 5),
+        "extra_workers": num("STU_DEEP_RESEARCH_EXTRA_WORKERS", 2, 0, 8),
+        "report_chars": num("STU_DEEP_RESEARCH_REPORT_CHARS", 14000, 5000, 30000),
     }
 
 
@@ -271,7 +278,16 @@ def page_chars(num_ctx, pages):
 
 
 def run_deep_research(run, io, budget, log=lambda *_: None, clock=time.monotonic):
-    """One run, start to end. Rank and verify evidence before citing any page."""
+    """Run the hybrid orchestrator when durable memory is provisioned.
+
+    Existing tests, old deployments and disabled hybrid mode retain the
+    proven sequential research pipeline as a compatibility fallback.
+    """
+    if (int(budget.get("hybrid_enabled", 1)) == 1 and
+            callable(getattr(io, "checkpoint", None)) and
+            callable(getattr(io, "hybrid_ready", None)) and io.hybrid_ready()):
+        import coreai_research_hybrid as hybrid
+        return hybrid.run_hybrid_research(run, io, budget, log=log, clock=clock)
     started = clock()
     query = str(run.get("query") or "")
     title = str(run.get("title") or "Recherche")
