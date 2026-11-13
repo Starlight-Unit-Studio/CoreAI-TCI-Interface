@@ -174,9 +174,14 @@ UI_FILES=(
   scripts/data-controls-selftest.php
   scripts/data-controls-ui-selftest.cjs
   database/migrations/040_deep_research.sql
+  database/migrations/041_deep_research_hybrid.sql
   api/deep_research.php
   api/deep_research_store.php
   tools/coreai_deep_research.py
+  tools/coreai_research_hybrid.py
+  tools/coreai_research_documents.py
+  tools/coreai_research_mcp.py
+  scripts/deep-research-hybrid-selftest.py
   js/coreui-deep-research.js
   css/coreui-deep-research.css
   scripts/deep-research-selftest.php
@@ -546,6 +551,14 @@ if python3 "$PROJECT_ROOT/scripts/deep-research-worker-selftest.py" >/dev/null 2
   ok 'Deep Research: Suche, Seiten, Notizen, Bericht mit Quellen, Stopp und Schutz vor lokalen Adressen geprueft.'
 else
   fail 'Deep-Research-Worker-Selbsttest fehlgeschlagen.'
+fi
+
+# 0.7.42: hybrid Lead/Worker/Citation agent, checkpoints and secure document tools.
+hybrid_research_test=''
+if hybrid_research_test="$(python3 "$PROJECT_ROOT/scripts/deep-research-hybrid-selftest.py" 2>&1)"; then
+  ok 'Hybrid Deep Research: Orchestrator/Worker, Parallel-I/O, Speicher und Citation Agent geprueft.'
+else
+  fail "Hybrid-Deep-Research-Selbsttest fehlgeschlagen: ${hybrid_research_test:-Unbekannter Fehler}"
 fi
 
 if python3 "$PROJECT_ROOT/scripts/workspace-output-selftest.py" >/dev/null 2>&1; then
