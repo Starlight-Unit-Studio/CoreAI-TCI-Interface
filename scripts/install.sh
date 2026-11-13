@@ -834,6 +834,16 @@ if ! wait_http "http://127.0.0.1:$HTTP_PORT/api/health.php" 45; then
   die 'Der CoreAI: TCI Interface-Healthcheck ist fehlgeschlagen.'
 fi
 
+# 0.7.47: an existing Nginx installation silently returned 404 for the
+# newly shipped Vision Core endpoint despite passing image-worker selftests.
+# An anonymous request MUST reach PHP and return the bridge's JSON 401,
+# without accessing the image worker or the administrator's session.
+vision_route_status="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 10 "http://127.0.0.1:$HTTP_PORT/api/vision_cores.php" 2>/dev/null || true)"
+if [[ "$vision_route_status" != '401' ]]; then
+  compose logs --tail=80 web php >&2 || true
+  die "Vision Core Nginx-Routing fehlerhaft: erwartet PHP 401 (ohne Anmeldung), erhalten ${vision_route_status:-keinen HTTP-Status}."
+fi
+
 if is_enabled "$INSTALL_BROWSE"; then
   # 0.7.38: recreated like php and web, so an update's worker code (Deep Research) runs at once.
   compose up -d --force-recreate browse
