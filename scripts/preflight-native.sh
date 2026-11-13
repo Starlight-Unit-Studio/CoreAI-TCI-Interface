@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.40: Deep Research browser and vision fallback.
+# CoreAI: TCI Interface 0.7.41: Deep Research selftest progress monotonicity fix.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

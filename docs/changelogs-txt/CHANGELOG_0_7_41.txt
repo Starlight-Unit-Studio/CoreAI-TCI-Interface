@@ -1,0 +1,21 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.41
+Datum: 13.11.2026
+Basis: main 0.7.40, Merge PR #295
+
+DEEP-RESEARCH-WORKER-PREFLIGHT: REGRESSION BEHOBEN
+
+- Symptom: Preflight meldet [FEHLER] Deep-Research-Worker-Selbsttest
+  fehlgeschlagen, waehrend die anderen Kompositionspruefungen OK melden.
+- Reproduziert in GitHub Actions: Der Fortschritt fiel in der Ausweichsuche
+  von 20 auf 13 Prozent zurueck und verletzte den Monotonie-Vertrag.
+- tools/coreai_deep_research.py: Fortschritt ueber alle Phasen hinweg
+  monoton halten, auch bei autonomen zusaetzlichen Suchanfragen.
+- .github/workflows/deep-research-worker.yml: eigenstaendiger CI-Test
+  fuer Python-Syntax, Worker-Selbsttest und Release-Versionierungspruefung.
+- Keine neue DB-Migration, keine Aenderung an Maras Cores, Vision oder
+  Benutzeroberflaeche. CPU-only-Betrieb unveraendert.
+
+VERIFIKATION
+Der Worker-Selbsttest und Python-Syntaxcheck haben unter GitHub Actions
+im Branch nach dem Fix bestanden (Run 43393508494). Der vollstaendige
+Server-Preflight und Live-Research sind noch separat zu bestaetigen.
