@@ -227,11 +227,19 @@
     var ending = d.status === 'cancelled' ? 'Recherche abgebrochen.'
       : d.status === 'replaced' ? 'Diesen Plan habe ich durch einen neuen ersetzt.'
       : d.error === 'worker_lost' ? 'Die Recherche ist nicht fertig geworden: Mein Hintergrunddienst wurde unterbrochen.'
+      : d.error === 'research_search_backend_unavailable'
+        ? 'Die Recherche konnte nicht durchgeführt werden: Der Suchdienst ist nicht erreichbar. Ich habe keine Quellen erfunden.'
+      : d.error === 'research_no_search_results'
+        ? 'Die Suchdienste haben keine Treffer geliefert. Bitte prüfe SearXNG und versuche die Recherche erneut.'
+      : d.error === 'research_no_verifiable_sources'
+        ? 'Ich habe gesucht, konnte aber keine passenden Webseiten vollständig lesen und überprüfen. Die Recherche wurde nicht als erfolgreich gewertet.'
+      : d.error === 'research_no_verified_claims'
+        ? 'Die gefundenen Seiten reichen nicht aus, um die Aussagen im Bericht verlässlich zu belegen.'
       : 'Die Recherche ist nicht fertig geworden.';
     node.appendChild(el('p', 'dr-ended', ending));
   }
   function renderDone(id, node, d) {
-    node.appendChild(el('p', 'dr-summary', 'Recherche abgeschlossen in ' + duration(d.elapsed) + ' · '
+    node.appendChild(el('p', 'dr-summary', (Number(d.citations || 0) ? 'Recherche abgeschlossen in ' : 'Nicht belegbare Recherche aus ') + duration(d.elapsed) + ' · '
       + plural(d.citations, 'Quellenangabe', 'Quellenangaben') + ' · ' + plural(d.searches, 'Suche', 'Suchen')));
     var report = el('article', 'dr-report-card');
     var bar = el('header', 'dr-report-head');
