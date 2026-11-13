@@ -161,10 +161,16 @@ def enforce_queries(proposed, query, step, count, hosts=()):
         return list(dict.fromkeys(str(q).strip()[:140] for q in proposed if str(q).strip()))[:count]
     marker = '"' + anchors[0] + '"'
     chosen = []
+    # The discovery query changes with the research step; avoid repeating the
+    # same bare name query at every step and throwing away already seen URLs.
+    subject_words = set(fold(" ".join(anchors)).split())
+    generic = {"quelle", "quellen", "webseite", "webseiten", "seiten", "fakten", "vergleiche", "suche", "lies", "berichte"}
+    focus = next((w for w in topic_terms(step) if w not in subject_words and w not in generic), "")
     if hosts:
-        chosen.append(marker + " site:" + hosts[0])
+        chosen.append((marker + " site:" + hosts[0] + (" " + focus if focus else ""))[:140])
     else:
-        chosen.append(marker + (' "' + anchors[1] + '"' if len(anchors) > 1 else ""))
+        chosen.append((marker + (' "' + anchors[1] + '"' if len(anchors) > 1 else "")
+                       + (" " + focus if focus else ""))[:140])
     for i, raw in enumerate(proposed):
         text = " ".join(str(raw or "").replace("“", '"').replace("”", '"').split())
         if not text:
