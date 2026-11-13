@@ -410,8 +410,10 @@ def _analyze_with_sandbox(io, decision, state):
         if not isinstance(outcome, dict) or not isinstance(outcome.get("value"), (int, float)):
             return
         source_markers = "".join(f"[{n}]" for n in spec["sources"])
+        chart = str(outcome.get("sparkline") or "")[:100]
         result = (f"Isolierte Python-Berechnung ({spec['operation']}) aus "
-                  f"{len(spec['values'])} belegten Zahlen: {outcome['value']} {source_markers}")
+                  f"{len(spec['values'])} belegten Zahlen: {outcome['value']} "
+                  f"{source_markers}" + (f"\nDatenverlauf (Sparkline): {chart}" if chart else ""))
         state.setdefault("analysis", []).append(result[:500])
         _record(io, "info", "Datenanalyse im isolierten Python-Worker abgeschlossen.")
     except dr.Cancelled:
