@@ -51,6 +51,7 @@ def budget_from(cfg):
         "queries_per_step": num("STU_DEEP_RESEARCH_QUERIES_PER_STEP", 4, 1, 8),
         "pages_per_step": num("STU_DEEP_RESEARCH_PAGES_PER_STEP", 4, 1, 10),
         "results_per_query": num("STU_DEEP_RESEARCH_RESULTS_PER_QUERY", 10, 1, 10),
+        "browser_pages_per_step": num("STU_DEEP_RESEARCH_BROWSER_PAGES_PER_STEP", 2, 0, 6),
         "max_minutes": num("STU_DEEP_RESEARCH_MAX_MINUTES", 30, 3, 120),
         "core_timeout": num("STU_DEEP_RESEARCH_CORE_TIMEOUT", 420, 60, 1800),
     }
@@ -321,11 +322,12 @@ def run_deep_research(run, io, budget, log=lambda *_: None, clock=time.monotonic
 
             pages = []
             candidates = quality.rank_results(results, query, seen, trusted_hosts)
-            # The search summary is only for discovery: evidence requires a
-            # readable full page. Probe enough candidates to recover from
-            # blocked sites, bounded proportionally to the page budget.
+            # The search summary is discovery only, never a numbered source.
+            # Browser/Vision is a bounded fallback for JavaScript, blocked
+            # HTTP fetches and pages whose HTML omits the visible main content.
             max_attempts = max(8, budget["pages_per_step"] * 4)
-            attempted = failed = rejected = 0
+            visual_limit = int(budget.get("browser_pages_per_step", 2))
+            visual_attempts = attempted = failed = rejected = 0
             for r in candidates:
                 if (len(pages) >= budget["pages_per_step"] or
                         attempted >= max_attempts or
@@ -335,15 +337,36 @@ def run_deep_research(run, io, budget, log=lambda *_: None, clock=time.monotonic
                 url = r["url"]
                 seen.add(url)
                 attempted += 1
+                page_title = text = ""
                 try:
                     page_title, text = io.fetch(url)
+                except Cancelled:
+                    raise
                 except Exception as exc:
                     failed += 1
-                    log(f"  deep research: {url} nicht gelesen ({str(exc)[:80]})")
-                    continue
-                # Do not substitute SearXNG's title when verifying a fetched
-                # document: a misleading snippet must never validate a source.
-                if not quality.fetched_page_is_relevant(query, url, page_title, text, trusted_hosts):
+                    log(f"  deep research: HTTP {url} nicht gelesen ({str(exc)[:80]})")
+                valid = quality.fetched_page_is_relevant(query, url, page_title, text, trusted_hosts)
+                if (not valid and visual_attempts < visual_limit and
+                        callable(getattr(io, "fetch_visual", None))):
+                    check()
+                    visual_attempts += 1
+                    io.event("info", "Öffne einen Suchtreffer mit Playwright und prüfe die sichtbare Seite.", [])
+                    try:
+                        page_title, text, resolved_url = io.fetch_visual(url, query, step)
+                        url = resolved_url or url
+                        valid = quality.fetched_page_is_relevant(
+                            query, url, page_title, text, trusted_hosts)
+                        if valid:
+                            io.event("info", "Die Seite wurde im Browser geöffnet und visuell geprüft.", [])
+                    except Cancelled:
+                        raise
+                    except Exception as exc:
+                        # A CAPTCHA is an access obstacle, not a challenge for
+                        # autonomous bypass or guessed source information.
+                        log(f"  deep research: Browser {url} nicht lesbar ({str(exc)[:120]})")
+                        if "CAPTCHA" in str(exc).upper() or "ANTI-BOT" in str(exc).upper():
+                            io.event("info", "Die Seite verlangt eine menschliche CAPTCHA-Freigabe; übersprungen.", [])
+                if not valid:
                     rejected += 1
                     continue
                 n = len(sources) + 1
@@ -358,8 +381,8 @@ def run_deep_research(run, io, budget, log=lambda *_: None, clock=time.monotonic
                 progress("read", i + 0.6)
             if not pages:
                 io.event("info", (f"{len(results)} Suchtreffer, {len(candidates)} Kandidaten, "
-                                  f"{attempted} Seiten geprüft: {failed} nicht lesbar, "
-                                  f"{rejected} ohne ausreichenden Themenbezug."), [])
+                                  f"{attempted} Seiten geprüft, davon {visual_attempts} im Browser: "
+                                  f"{failed} HTTP-Fehler, {rejected} ohne belegbaren Themenbezug."), [])
             if pages:
                 check()
                 raw_notes = io.core(*notes_prompts(query, step, pages), False, budget["core_timeout"])
