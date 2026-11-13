@@ -12,6 +12,7 @@ from urllib.parse import urlsplit
 
 CHALLENGE_RE = re.compile(
     r"(?:\bcaptcha\b|hcaptcha|recaptcha|cf-chl|cf-turnstile|"
+    r"i.?m\s+not\s+a\s+robot|not\s+a\s+robot|kein\s+roboter|"
     r"verify\s+(?:you\s+are|you.re)\s+human|"
     r"checking\s+your\s+browser|"
     r"unusual\s+traffic|"
@@ -98,7 +99,7 @@ def is_safe_research_action(action, page, api, elements, query):
         if info.get("protected") or info.get("form") in {"login", "payment", "upload", "message"}:
             return False
         name = str(known.get("name") or "")
-        if CHALLENGE_RE.search(name):
+        if CHALLENGE_RE.search(name) or CHALLENGE_RE.search(str(info)):
             return False
         if kind == "click":
             return not api.blocked_click_reason(name, info)
