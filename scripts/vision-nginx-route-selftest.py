@@ -67,6 +67,9 @@ require('"$PROJECT_ROOT/config/runtime/nginx.conf.template" > "$nginx_tmp"' in i
         "installer must render the updated Compose Nginx template")
 require("compose up -d --force-recreate php web" in installer,
         "installer must apply updated Nginx route to the web container")
+require("vision_route_status" in installer and "api/vision_cores.php" in installer
+        and "!= '401'" in installer,
+        "installer must smoke-test the actual anonymous HTTP 401, not Nginx 404")
 stack = (ROOT / "scripts/stack.sh").read_text(encoding="utf-8")
 require('RUNTIME_NGINX_TEMPLATE="$PROJECT_ROOT/config/runtime/nginx.conf.template"' in stack
         and "render_runtime_files" in stack, "stack must support Nginx template refresh")
