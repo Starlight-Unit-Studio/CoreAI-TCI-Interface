@@ -1,0 +1,35 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.44
+Datum: 13.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Ausgangsbasis: main 0.7.43 (PR #298 bereits gemergt)
+Nach Merge naechste verbindliche Version 0.7.45 bei unveraendertem main.
+
+FEHLER / REPRODUKTION
+Deep Research "Patrick Schildgen": nach dem Hybrid-Ausbau 24 Suchen in
+10 Sekunden, 0 Quellenangaben und trotzdem Status DONE mit leerem
+Bericht. Der Research-Worker erhoehte die Zahl "searches" unabhaengig
+von Suchresultaten und ignorierte Fehler bzw. komplett leere Suchlisten.
+Das sind keine Beweise, dass das Internet keine passenden Quellen hat.
+Offizielle Studioseite und oeffentliche Buchhaendlereintraege existieren.
+
+REPARATUR
+- tools/coreai_research_search.py: optionaler begrenzter
+  Public-Search-Fallback, Parser mit Private-Network-Guard und ohne
+  fremde Credentials/CAPTCHA-Umgehung.
+- tools/ember_browse_worker.py: echte Fehler der SearXNG-Anbindung
+  erfassen und ein begrenztes Ersatz-Discovery versuchen.
+- tools/coreai_research_hybrid.py: Treffer-/Seiten-/Fehlerzaehlung,
+  fehlende Belege = Status ERROR statt faelschlich DONE.
+- js/coreui-deep-research.js: klare Fehlertexte und 0-Quellen-Warnung.
+- Fehlerabschluss ist auch ohne offenem Chat nach Wiederkehr sichtbar.
+- scripts/deep-research-zero-source-selftest.py und Worker-/Preflight-
+  Regressionen. Compose-Preflight prueft SearXNG-JSON im echten Container.
+- STD-Budgets und globaler Core-Lock, CPU-only und Server-Hintergrundmodus
+  bleiben unveraendert; keine DB-Migration.
+
+ABNAHME
+GitHub CI prueft Syntax, Research-Tests, Release und Cache.
+Was noch nicht im Repo getestet ist: echte Netzwerkverbindung von
+Netcup-Browse zu SearXNG, echter Suchprovider, Webseiten-Zugriff mit
+Mara und Qualitaet eines vollstaendigen Berichts. Diese Punkte nach
+Update anhand der Aktivitaet und des Preflights nachpruefen.

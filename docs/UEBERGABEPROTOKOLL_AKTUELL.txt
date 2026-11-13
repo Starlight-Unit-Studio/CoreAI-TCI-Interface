@@ -1,14 +1,14 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
-PR-Stand: 0.7.43 auf main 0.7.42 (Browse Playwright libatomic1).
+PR-Stand: 0.7.44 auf main 0.7.43 (Deep Research: Search- und Quellenregression).
 Stand: 13.11.2026
-Repository-Version: 0.7.43 (Branch fix/browse-libatomic1-0-7-43, main 0.7.42)
-BASIS: main 0.7.42, Hybrid Deep Research PR #297 gemergt.
-NAECHSTE VERBINDLICHE VERSION: 0.7.43 fuer diesen PR (danach 0.7.44), sofern keine weiteren Main-Merges vorab erfolgen.
-Build-Problem: Node/Playwright hatte libatomic.so.1 im Browse-Image nicht gefunden.
+Repository-Version: 0.7.44 (Branch fix/deep-research-zero-source-0-7-44, main 0.7.43)
+BASIS: main 0.7.43 nach PR #298; Browse-Image libatomic1 repariert.
+NAECHSTE VERBINDLICHE VERSION: 0.7.44 fuer diesen PR (danach 0.7.45), sofern keine weiteren Main-Merges vorab erfolgen.
+WICHTIG: 24 Suchen/0 Quellen waren kein Rechercheerfolg. Erst echten Provider-Treffer und Volltext verifizieren.
 NEUE ARBEIT ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_7_44.txt
   docs/UEBERGABEPROTOKOLL_0_7_43.txt
-  docs/UEBERGABEPROTOKOLL_0_7_42.txt
 
 WICHTIG: Kein nachtraeglich erfundenes Release/ZIP fuer 0.7.35. Bereits gemergte PR #290 nicht umnummerieren.
 NEUE ARBEIT ZUERST LESEN:

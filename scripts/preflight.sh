@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.43: Browse Playwright libatomic1 image fix.
+# CoreAI: TCI Interface 0.7.44: Deep Research search and source integrity.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

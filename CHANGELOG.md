@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.7.44 - 13.11.2026
+
+- **Deep Research: no more false zero-source successes.** Reported 24 searches in 10 seconds with zero citations even when public sources were available. The hybrid worker previously counted every attempted SearXNG query as a search and silently turned backend failures or empty results into a completed report. It now tracks actual hits, candidate pages, fetch errors and verified sources and stops with an explicit error when nothing is sourced. It also refuses to publish a final report without a valid citation.
+- **Search provider recovery:** SearXNG errors are now exposed in the research worker (without changing normal chat browsing). When SearXNG yields no hits, Deep Research can attempt a small, operator-configurable number of requests against an independent public HTML search index. Returned URLs are public-only discovery candidates: every source still requires a safe full-page fetch and verification; no CAPTCHA solver, account, new cloud model or proxy is used.
+- **Visible diagnostics, unattended status:** The Research activity records search-hit and provider-failure counts. The card distinguishes search backend failures, truly empty results, unreadable sources and reports without verifiable citations. Both successful completions and failed background runs leave their correct result in the same chat. Existing historical zero-source reports display a warning instead of a misleading normal success label.
+- **Preflight and regression coverage:** Both preflights now require a synthetic search-outage/source-integrity test; the Compose preflight additionally probes whether the running SearXNG returns a real JSON search result from inside the Browse container. Failure of that probe is a warning, as a transient external search outage does not imply broken local software.
+- **Compatibility:** Preserves CPU-only operation, the serial global Core lock, persistent hybrid checkpoints, Vision, Playwright, DB schema, permissions and existing installer behavior.
+
 ## 0.7.43 - 13.11.2026
 
 - **Fix: Browse Docker image could not install Playwright Chromium.** On `python:3.12-slim-bookworm`, Playwright's bundled Node executable required `libatomic.so.1`, but the runtime package was absent. This failed the build during `python -m playwright install --with-deps chromium` after Python packages were already installed.
