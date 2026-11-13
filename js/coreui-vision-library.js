@@ -145,12 +145,22 @@
       state.tab = tab;
       el.searchPanel.hidden = tab !== 'search';
       el.installedPanel.hidden = tab !== 'installed';
+      var ollamaTab = byId('OllamaTab');
+      var ollamaPanel = byId('OllamaPanel');
+      if (ollamaPanel) ollamaPanel.hidden = tab !== 'ollama';
       el.searchTab.classList.toggle('core-library-provider--active', tab === 'search');
       el.installedTab.classList.toggle('core-library-provider--active', tab === 'installed');
+      if (ollamaTab) {
+        ollamaTab.classList.toggle('core-library-provider--active', tab === 'ollama');
+        ollamaTab.setAttribute('aria-selected', String(tab === 'ollama'));
+      }
       el.searchTab.setAttribute('aria-selected', String(tab === 'search'));
       el.installedTab.setAttribute('aria-selected', String(tab === 'installed'));
       if (tab === 'search') search();
-      else refresh(true);
+      else if (tab === 'ollama') {
+        var adapter = window.CoreUIVisionOllama && window.CoreUIVisionOllama.instance;
+        if (adapter) adapter.refresh();
+      } else refresh(true);
     }
     function open() {
       if (state.open) return;
@@ -170,6 +180,7 @@
     opener.addEventListener('click', open);
     el.close.addEventListener('click', close);
     el.searchTab.addEventListener('click', function () { switchTab('search'); });
+    if (byId('OllamaTab')) byId('OllamaTab').addEventListener('click', function () { switchTab('ollama'); });
     el.installedTab.addEventListener('click', function () { switchTab('installed'); });
     el.searchForm.addEventListener('submit', function (event) { event.preventDefault(); search(); });
     dialog.addEventListener('click', function (event) { if (event.target === dialog) close(); });
