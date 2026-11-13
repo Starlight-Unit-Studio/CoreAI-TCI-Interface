@@ -277,6 +277,16 @@ function coreui_dr_delete_session(PDO $pdo, int $uid, string $sessionId): int {
   $in = implode(',', array_fill(0, count($ids), '?'));
   $pdo->prepare("DELETE FROM stu_deep_research_events WHERE run_id IN ($in)")->execute($ids);
   $pdo->prepare("DELETE FROM stu_deep_research_sources WHERE run_id IN ($in)")->execute($ids);
+  // Hybrid 0.7.42: delete the independently stored per-run worker state and
+  // evidence excerpts with the chat. Never leave abandoned research memory.
+  try {
+    $pdo->prepare("DELETE FROM stu_deep_research_evidence WHERE run_id IN ($in)")->execute($ids);
+    $pdo->prepare("DELETE FROM stu_deep_research_memory WHERE run_id IN ($in)")->execute($ids);
+  } catch (PDOException $e) {
+    // Old installations may still be applying migration 041. Do not mask
+    // real DB failures: only "table not found" (42S02) is backward compatible.
+    if ((string)$e->getCode() !== '42S02') throw $e;
+  }
   $pdo->prepare("DELETE FROM stu_deep_research_runs WHERE id IN ($in) AND user_id = ?")->execute([...$ids, $uid]);
   return count($ids);
 }

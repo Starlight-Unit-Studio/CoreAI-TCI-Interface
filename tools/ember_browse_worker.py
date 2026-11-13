@@ -478,6 +478,8 @@ if os.path.dirname(os.path.abspath(__file__)) not in sys.path:
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import coreai_deep_research as deep_research  # noqa: E402  (same folder)
 import coreai_research_browser as research_browser  # noqa: E402
+import coreai_research_documents as research_documents  # noqa: E402
+import coreai_research_mcp as research_mcp  # noqa: E402
 
 FETCH_MAX_BYTES = 2_000_000
 
@@ -487,7 +489,18 @@ def claim_next_research(conn):
     with conn.cursor() as cur:
         cur.execute("UPDATE stu_deep_research_runs SET status='queued', autostart_at=NULL "
                     "WHERE status='planned' AND autostart_at IS NOT NULL AND autostart_at <= NOW()")
-        # A run whose worker died long ago (update, restart) is ended honestly.
+        # 0.7.42: a stale run with a checkpoint is resumed from saved evidence
+        # instead of being marked as lost and restarted from zero. The lease
+        # interval prevents a second worker from stealing a still-live run.
+        try:
+            cur.execute(
+                "UPDATE stu_deep_research_runs r "
+                "INNER JOIN stu_deep_research_memory m ON m.run_id=r.id "
+                "SET r.status='queued', r.worker_pid=NULL, r.error=NULL "
+                "WHERE r.status IN ('running','writing') "
+                "AND COALESCE(r.heartbeat_at,r.started_at) < NOW() - INTERVAL 10 MINUTE")
+        except pymysql.err.ProgrammingError:
+            pass  # migration 041 not provisioned; keep the older safe behavior
         cur.execute("UPDATE stu_deep_research_runs SET status='error', error='worker_lost', finished_at=NOW() "
                     "WHERE status IN ('running','writing') AND COALESCE(heartbeat_at, started_at) < NOW() - INTERVAL 10 MINUTE")
         cur.execute("SELECT id FROM stu_deep_research_runs WHERE status='queued' ORDER BY id ASC LIMIT 1")
@@ -547,6 +560,114 @@ class DbResearchIO:
         self.id = int(run["id"])
         self._research_browser = None
 
+    def hybrid_ready(self):
+        try:
+            self._exec("SELECT run_id FROM stu_deep_research_memory LIMIT 0")
+            self._exec("SELECT run_id,n FROM stu_deep_research_evidence LIMIT 0")
+            return True
+        except Exception:
+            return False
+
+    def load_checkpoint(self):
+        result = self._exec(
+            "SELECT state_json FROM stu_deep_research_memory WHERE run_id=%s", (self.id,))
+        row = result.fetchone() or {}
+        try:
+            return json.loads(row.get("state_json") or "null")
+        except (TypeError, ValueError):
+            return None
+
+    def checkpoint(self, state):
+        payload = json.dumps(state, ensure_ascii=False, separators=(",", ":"))
+        if len(payload.encode("utf-8")) > 1_500_000:
+            raise ValueError("research_checkpoint_too_large")
+        self._exec(
+            "INSERT INTO stu_deep_research_memory (run_id,schema_version,state_json,revision) "
+            "VALUES (%s,1,%s,1) ON DUPLICATE KEY UPDATE "
+            "state_json=VALUES(state_json),revision=revision+1",
+            (self.id, payload))
+        self.beat()
+
+    def store_evidence(self, number, excerpt, checksum):
+        self._exec(
+            "INSERT INTO stu_deep_research_evidence (run_id,n,excerpt,content_sha256) "
+            "VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE "
+            "excerpt=VALUES(excerpt),content_sha256=VALUES(content_sha256)",
+            (self.id, int(number), str(excerpt)[:5500], str(checksum)[:64]))
+
+    def python_analysis(self, spec):
+        """Run ONLY server-generated arithmetic in the existing Docker sandbox.
+
+        No model-authored Python or untrusted web text is executed here. Source
+        numbers are validated by the Lead before reaching this method.
+        """
+        if not cfg_bool(self.cfg, "STU_DEEP_RESEARCH_PYTHON_ENABLED", True):
+            return None
+        if not isinstance(spec, dict):
+            return None
+        operation = str(spec.get("operation") or "")
+        if operation not in ("sum", "mean", "median", "min", "max", "stdev"):
+            return None
+        values = spec.get("values")
+        if not isinstance(values, list) or not 2 <= len(values) <= 100:
+            return None
+        if any(type(n) not in (float, int) or not -1e12 < float(n) < 1e12 for n in values):
+            return None
+        # Every byte of the program is fixed by CoreAI. The only model input
+        # is a bounded JSON list of validated numbers and an allowed operation.
+        code = (
+            "import statistics, json, math\n"
+            "values = " + json.dumps([float(n) for n in values]) + "\n"
+            "operation = " + json.dumps(operation) + "\n"
+            "functions = {'sum':sum,'mean':statistics.mean,'median':statistics.median,"
+            "'min':min,'max':max,'stdev':statistics.stdev}\n"
+            "result = functions[operation](values)\n"
+            "assert math.isfinite(result)\n"
+            "levels = '▁▂▃▄▅▆▇█'\n"
+            "bottom,spread = min(values), max(values)-min(values)\n"
+            "sparkline = ''.join(levels[max(0,min(7,int((v-bottom)/spread*7)))] "
+            "if spread else levels[3] for v in values)\n"
+            "print(json.dumps({'operation':operation,'value':round(float(result),8),"
+            "'sparkline':sparkline},ensure_ascii=False))\n"
+        )
+        try:
+            row = self._exec(
+                "INSERT INTO stu_ember_py_jobs "
+                "(status,code,channel,trigger_user_id,recipient_uid) "
+                "VALUES ('queued',%s,'research',%s,%s)",
+                (code, int(self.run.get("user_id") or 0), int(self.run.get("user_id") or 0)))
+            job_id = int(row.lastrowid or 0)
+        except Exception as exc:
+            self.log("research-python: sandbox unavailable (" + str(exc)[:100] + ")")
+            return None
+        if job_id <= 0:
+            return None
+        duration = cfg_int(self.cfg, "STU_DEEP_RESEARCH_PYTHON_WAIT", 35, 5, 90)
+        deadline = time.monotonic() + duration
+        while time.monotonic() < deadline:
+            if self.cancelled():
+                self._exec(
+                    "UPDATE stu_ember_py_jobs SET status='error',error='research_cancelled' "
+                    "WHERE id=%s AND status='queued'", (job_id,))
+                raise deep_research.Cancelled()
+            self.beat()
+            row = self._exec(
+                "SELECT status,stdout,error FROM stu_ember_py_jobs WHERE id=%s",
+                (job_id,)).fetchone() or {}
+            if row.get("status") == "done":
+                try:
+                    data = json.loads(str(row.get("stdout") or "").strip())
+                    return data if isinstance(data, dict) else None
+                except (TypeError, ValueError):
+                    return None
+            if row.get("status") == "error":
+                return None
+            time.sleep(2)
+        self._exec(
+            "UPDATE stu_ember_py_jobs SET status='error',error='research_timeout' "
+            "WHERE id=%s AND status='queued'", (job_id,))
+        return None
+
     def close_research_browser(self):
         if self._research_browser is not None:
             self._research_browser.close()
@@ -592,24 +713,50 @@ class DbResearchIO:
                    (json.dumps({"states": states, "phase": phase, "percent": percent}), int(searches), self.id))
 
     def source(self, entry):
-        self._exec("INSERT INTO stu_deep_research_sources (run_id, n, url, title, domain) VALUES (%s,%s,%s,%s,%s)",
+        self._exec("INSERT INTO stu_deep_research_sources (run_id, n, url, title, domain) "
+                   "VALUES (%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE "
+                   "url=VALUES(url),title=VALUES(title),domain=VALUES(domain)",
                    (self.id, entry["n"], entry["url"][:2048], entry["title"][:300], entry["domain"][:255]))
 
     def write_phase(self):
         self._exec("UPDATE stu_deep_research_runs SET status='writing', heartbeat_at=NOW() WHERE id=%s AND status='running'", (self.id,))
 
     def search(self, query):
-        # Research ranks candidates itself: retrieve up to ten search hits
-        # rather than applying the ordinary chat's five-result display limit.
+        # Network discovery is parallelizable, but every retrieved document
+        # must later pass the same source-identity and content checks.
         search_cfg = dict(self.cfg)
         search_cfg["STU_EMBER_WEB_LIMIT"] = str(
             deep_research.budget_from(self.cfg)["results_per_query"])
-        return searxng_search(search_cfg, query, log=self.log)
+        matches = searxng_search(search_cfg, query, log=self.log)
+        if cfg_bool(self.cfg, "STU_DEEP_RESEARCH_MCP_ENABLED", False):
+            try:
+                matches.extend(research_mcp.search_public_mcp(
+                    self.cfg, query, navigation_block_reason))
+            except Exception as exc:
+                self.log("research: optional public MCP discovery unavailable: " + str(exc)[:100])
+        return matches
 
     def fetch(self, url):
         return fetch_page(self.cfg, url)
 
-    def core(self, system, user, want_json, timeout, images=None):
+    def fetch_document(self, url):
+        """Read public HTML normally, or PDFs/CSV/JSON via the safe document reader."""
+        path = urlsplit(str(url or "")).path.lower()
+        if path.endswith((".pdf", ".csv", ".json")):
+            return research_documents.fetch_document(
+                self.cfg, url, navigation_block_reason)
+        title, text = self.fetch(url)
+        return title, text, url
+
+    def research_core(self, role, system, user, want_json, timeout):
+        """Optional distinct Lead/Worker/Citation models, same global lock."""
+        keys = {"lead": "STU_DEEP_RESEARCH_LEAD_MODEL",
+                "worker": "STU_DEEP_RESEARCH_WORKER_MODEL",
+                "citation": "STU_DEEP_RESEARCH_CITATION_MODEL"}
+        override = str(self.cfg.get(keys.get(str(role), ""), "") or "").strip()
+        return self.core(system, user, want_json, timeout, model_override=override or None)
+
+    def core(self, system, user, want_json, timeout, images=None, model_override=None):
         """One text or native-vision Core call under Mara's global serial lock."""
         name = lock_name(self.cfg, "global_ollama")
         with self.conn.cursor() as cur:
@@ -617,8 +764,13 @@ class DbResearchIO:
             if int((cur.fetchone() or {}).get("got") or 0) != 1:
                 raise RuntimeError("core_busy")
         try:
+            chosen_cfg = dict(self.cfg)
+            if model_override:
+                # Only an explicit admin setting changes the model. Do not
+                # create Ollama accounts or silently enable cloud providers.
+                chosen_cfg["STU_EMBER_MODEL"] = str(model_override)[:160]
             return call_with_heartbeat(
-                lambda: ollama_chat(self.cfg, system, user, want_json, think=False, timeout=timeout,
+                lambda: ollama_chat(chosen_cfg, system, user, want_json, think=False, timeout=timeout,
                                     images=images),
                 lambda _s: self.beat(), interval=15.0)
         finally:
@@ -630,7 +782,8 @@ class DbResearchIO:
             self._exec(f"UPDATE stu_deep_research_sources SET cited=1 WHERE run_id=%s AND n IN ({marks})", (self.id, *cited))
         updated = self._exec(
             "UPDATE stu_deep_research_runs SET status=%s, report_md=%s, citations=%s, error=%s, "
-            "cancel_requested=0, finished_at=NOW(), heartbeat_at=NOW() WHERE id=%s",
+            "cancel_requested=0, finished_at=NOW(), heartbeat_at=NOW() "
+            "WHERE id=%s AND status IN ('running','writing')",
             (status, report, len(cited or []), (error or None) and str(error)[:400], self.id))
         # Completion is announced by the SERVER, not by browser-side polling.
         # The latest Mara message therefore exists even if the user closed the

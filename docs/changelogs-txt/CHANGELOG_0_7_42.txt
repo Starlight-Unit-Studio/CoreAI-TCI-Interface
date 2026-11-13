@@ -1,0 +1,36 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.42
+Datum: 13.11.2026
+Basis: main 0.7.41 (nach PR #296)
+
+DEEP RESEARCH: HYBRIDISIERUNG
+
+- Lead Reasoning (Plan/Act/Observe/Pivot) mit dynamischer Nachrecherche.
+- Isolierte Worker-Subtasks, parallelisierte Websuche/HTTP-Dateizugriffe,
+  anschliessende Map-Notizen und Reduce-Zusammenfuehrung.
+- Globale serielle Ollama-Modellwarteschlange bleibt unveraendert.
+- Rollen Lead, Worker, Citation koennen explizit eigene vorhandene lokale
+  Modelle nutzen; ohne Konfiguration bleibt der aktive Core erhalten.
+- Migration 041: Checkpoint-Tabelle und Originalauszuege als Quellenbelege.
+  Wiederaufnahme abgestuerzter Jobs nach 10-Minuten-Lease, geloescht
+  mit dem urspruenglichen Chat.
+- Research: gemessene Quellenabdeckung, Lead-Pivoting, neue Tasks, spaetere
+  eigene Citation-Agent-Modellpruefung plus Quellen-Nummern- und Wortabgleich.
+- Werkzeuge: bestehende Browser-Vision, PDF-/CSV-/JSON-Reader, begrenzter
+  sicherer Python-Job fuer belegte Zahlen mit Sparkline, optionaler
+  freigegebener oeffentlicher MCP-Leseadapter.
+- Keine ungepruefte Ausfuehrung modellgenerierten Codes im Browse-Worker,
+  kein Speichern privater Denkprotokolle, keine Cloudpflicht.
+- Konfiguration/Architektur: docs/DEEP_RESEARCH_HYBRID_ARCHITECTURE.md.
+- Hybrid- und Legacy-Regressionen sowie Preflight pruefen den Umbau.
+
+NICHT EINGEBAUT / BEWUSSTE GRENZEN
+- Kein eigenes RL-Training der Modellgewichte.
+- Keine parallelen lokalen Modellaufrufe auf CPU-only.
+- Keine automatische Anmeldung an nutzerspezifischen Enterprise-MCP-Konten,
+  sondern nur der ausdruecklich konfigurierte Public-Read-Only-Pfad.
+- Kein Android-Push; Abschluss erfolgt wie bisher per Chat-Nachricht.
+
+TESTSTAND
+Synthetische GitHub-Regressionen fuer Hybridmodul bestanden. Finale
+Versions- und Cachetests werden in der Release-PR validiert. Produktive
+Netcup-Installation und echter langlaufender Modell-/Browser-Run offen.
