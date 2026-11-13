@@ -92,6 +92,12 @@ forced = quality.enforce_queries(["Johannes Solberg Professor", "Aurora Express 
 check(forced[0].startswith('"Mira Solberg"') and all(
     any(quality.contains_phrase(q, name) for name in quality.identity_phrases(case))
     for q in forced), "all search queries retain a subject anchor")
+check(not any("Johannes" in q or "Express" in q for q in forced),
+      "planner drift to a different person or product must not survive query repair")
+first_step = quality.enforce_queries([], "Finde Details zu Mira Solberg", "Suche nach Romanen", 3)[0]
+other_step = quality.enforce_queries([], "Finde Details zu Mira Solberg", "Analysiere Software", 3)[0]
+check(first_step != other_step and "romanen" in first_step and "software" in other_step,
+      "exact-name discovery queries must vary across research steps")
 check(not quality.fetched_page_is_relevant(case, noise[0]["url"], noise[0]["title"],
                                            "Andere Shows und Veranstaltungen sind hier aufgelistet. " * 3),
       "an unrelated readable page is still not evidence")
