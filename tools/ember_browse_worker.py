@@ -115,6 +115,8 @@ DEFAULTS = {
     "STU_EMBER_WEB_TIMEOUT": "12",
     # Deep Research may inspect more candidates than a single chat search.
     "STU_DEEP_RESEARCH_RESULTS_PER_QUERY": "10",
+    "STU_DEEP_RESEARCH_BACKUP_SEARCH": "1",
+    "STU_DEEP_RESEARCH_BACKUP_SEARCHES": "4",
     "STU_DEEP_RESEARCH_BROWSER_PAGES_PER_STEP": "2",
     "STU_DEEP_RESEARCH_VISUAL_ENABLED": "1",
     "STU_DEEP_RESEARCH_BROWSER_ACTIONS": "2",
@@ -480,6 +482,7 @@ import coreai_deep_research as deep_research  # noqa: E402  (same folder)
 import coreai_research_browser as research_browser  # noqa: E402
 import coreai_research_documents as research_documents  # noqa: E402
 import coreai_research_mcp as research_mcp  # noqa: E402
+import coreai_research_search as research_search  # noqa: E402
 
 FETCH_MAX_BYTES = 2_000_000
 
@@ -559,6 +562,12 @@ class DbResearchIO:
         self.conn, self.cfg, self.run, self.log = conn, cfg, run, log
         self.id = int(run["id"])
         self._research_browser = None
+        # Public fallback calls are bounded across parallel search threads.
+        self._research_search_lock = threading.Lock()
+        self._research_backup_uses = 0
+        self._research_search_attempts = 0
+        self._research_primary_failures = 0
+        self._research_backup_hits = 0
 
     def hybrid_ready(self):
         try:
@@ -722,18 +731,58 @@ class DbResearchIO:
         self._exec("UPDATE stu_deep_research_runs SET status='writing', heartbeat_at=NOW() WHERE id=%s AND status='running'", (self.id,))
 
     def search(self, query):
-        # Network discovery is parallelizable, but every retrieved document
-        # must later pass the same source-identity and content checks.
+        """Discover sources, report upstream errors, and fail over responsibly.
+
+        Both configured SearXNG and optional fallback return candidates only;
+        the actual public page still must be independently read and verified.
+        """
         search_cfg = dict(self.cfg)
         search_cfg["STU_EMBER_WEB_LIMIT"] = str(
             deep_research.budget_from(self.cfg)["results_per_query"])
-        matches = searxng_search(search_cfg, query, log=self.log)
+        primary_error = ""
+        with self._research_search_lock:
+            self._research_search_attempts += 1
+        try:
+            matches = searxng_search(search_cfg, query, log=self.log, raise_errors=True)
+        except Exception as exc:
+            matches = []
+            primary_error = type(exc).__name__ + ": " + str(exc)[:100]
+            with self._research_search_lock:
+                self._research_primary_failures += 1
+            self.log("research: SearXNG unavailable (" + primary_error + ")")
+        if not matches and cfg_bool(self.cfg, "STU_DEEP_RESEARCH_BACKUP_SEARCH", True):
+            # Avoid 24 parallel fallback attempts on a downed search service.
+            maximum = cfg_int(self.cfg, "STU_DEEP_RESEARCH_BACKUP_SEARCHES", 4, 0, 12)
+            with self._research_search_lock:
+                use_backup = self._research_backup_uses < maximum
+                if use_backup:
+                    self._research_backup_uses += 1
+            if use_backup:
+                try:
+                    # The public index is searched for the real subject, not
+                    # an overconstrained query emitted by a small local Core.
+                    from coreai_research_quality import identity_phrases
+                    subject = (identity_phrases(self.run.get("query") or "") or [query])[0]
+                    matches = research_search.public_search(
+                        subject, self.cfg, navigation_block_reason,
+                        timeout=cfg_int(self.cfg, "STU_EMBER_WEB_TIMEOUT", 12, 3, 20),
+                        limit=deep_research.budget_from(self.cfg)["results_per_query"])
+                    if matches:
+                        with self._research_search_lock:
+                            self._research_backup_hits += len(matches)
+                        self.log(f"research: independent public search discovered {len(matches)} candidates")
+                except Exception as exc:
+                    self.log("research: independent public search unavailable (" +
+                             str(exc)[:120] + ")")
         if cfg_bool(self.cfg, "STU_DEEP_RESEARCH_MCP_ENABLED", False):
             try:
                 matches.extend(research_mcp.search_public_mcp(
                     self.cfg, query, navigation_block_reason))
             except Exception as exc:
                 self.log("research: optional public MCP discovery unavailable: " + str(exc)[:100])
+        # Preserve a backend failure rather than silently reporting zero hits.
+        if not matches and primary_error:
+            raise RuntimeError("research_search_backend_unavailable: " + primary_error)
         return matches
 
     def fetch(self, url):
@@ -1690,7 +1739,7 @@ def clean_results(items, limit):
     return out
 
 
-def searxng_search(cfg, query, log=None):
+def searxng_search(cfg, query, log=None, raise_errors=False):
     """Lokale SearXNG-JSON-Suche (dieselbe Instanz wie chat.php, Key STU_EMBER_WEB_URL).
     Laeuft serverseitig gegen 127.0.0.1 -> kein Bot-CAPTCHA. Gibt Liste [{title,url,content}] zurueck."""
     base = (cfg.get("STU_EMBER_WEB_URL") or "http://127.0.0.1:18889/search").strip()
@@ -1712,7 +1761,11 @@ def searxng_search(cfg, query, log=None):
         except Exception as exc:
             if log:
                 log(f"  searxng-fehler: {exc}")
+            if raise_errors:
+                raise
             return []
+        if raise_errors and not isinstance(data, dict):
+            raise ValueError("SearXNG returned invalid JSON response")
         out = clean_results(data.get("results") if isinstance(data, dict) else [], limit)
         if out:
             if variant != query and log:
