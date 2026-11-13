@@ -9,7 +9,7 @@
     if (typeof name !== 'string') return false;
     var family = name.split(':')[0].split('/').pop().toLowerCase();
     return /^flux2[-_]klein(?:[-_][a-z0-9_-]+)?$/.test(family)
-      || /^z[-_]image(?:[-_][a-z0-9_-]+)?$/.test(family);
+      || /^z[-_]image[-_]turbo(?:[-_][a-z0-9_-]+)?$/.test(family);
   }
 
   function create(doc, fetchFn, scheduleFn) {
