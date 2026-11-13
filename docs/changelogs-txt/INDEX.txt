@@ -345,3 +345,4 @@ Jede Version liegt als eigenstaendige UTF-8-TXT-Datei vor.
 * CHANGELOG_0_7_45.txt
 * CHANGELOG_0_7_46.txt
 * CHANGELOG_0_7_47.txt
+* CHANGELOG_0_7_48.txt
