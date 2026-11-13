@@ -68,7 +68,7 @@ check(picked == ["https://a.test/1", "https://b.test/1", "https://a.test/2"], "d
 check(dr.page_chars(4096, 3) == 2252 and dr.page_chars(None, 3) == 2252 and dr.page_chars(100, 3) == 900 and dr.page_chars(65536, 3) == 5000,
       "page size follows the window within bounds")
 b = dr.budget_from({"STU_DEEP_RESEARCH_PAGES_PER_STEP": "99", "STU_DEEP_RESEARCH_MAX_MINUTES": "x"})
-check(b["pages_per_step"] == 10 and b["max_minutes"] == 30 and b["queries_per_step"] == 4 and b["results_per_query"] == 10, "budget bounds: %r" % b)
+check(b["pages_per_step"] == 10 and b["max_minutes"] == 30 and b["queries_per_step"] == 4 and b["results_per_query"] == 10 and b["browser_pages_per_step"] == 2, "budget bounds: %r" % b)
 
 
 
@@ -129,6 +129,26 @@ prompt_sys, prompt_user = dr.report_prompts("Thema", "Titel", ["Eins", "Zwei"],
                                            {"n": 2, "title": "B", "domain": "b.example", "url": "https://b.example"}], 1400)
 check("QUELLENREGISTER" in prompt_user and "[2] B" in prompt_user and "### Zwei" in prompt_user,
       "source register and later steps survive context allocation")
+
+
+# Visual browser checks: CAPTCHA detection, bounded action and screenshot response.
+import coreai_research_browser as browser_research
+
+check(browser_research.is_challenge("Please verify you are human before continuing"),
+      "anti-bot challenge detected")
+check(browser_research.is_challenge("More news", ("https://www.google.com/recaptcha/api2/anchor",)),
+      "CAPTCHA frame detected")
+check(not browser_research.is_challenge("A regular biography and publication page."),
+      "ordinary public pages remain readable")
+action, observation = browser_research.visual_action(
+    '{"observation":"Visible studio details", "action":"type","ref":2,'
+    '"text":"Mira Solberg","submit":true}')
+check(action == {"action": "type", "ref": 2, "text": "Mira Solberg", "submit": True}
+      and observation == "Visible studio details", "vision JSON is bounded")
+check(browser_research.visual_action('{"action":"goto","url":"http://127.0.0.1/admin"}')[0] == {},
+      "vision cannot navigate to arbitrary URLs")
+check(browser_research.visual_action('{"action":"click","ref":999}')[0] == {},
+      "vision cannot choose arbitrary missing elements")
 
 # --- A whole run with a fake IO -------------------------------------------------------------------
 class FakeIO:
@@ -231,6 +251,32 @@ check(len(realistic.sources) == 1 and realistic.sources[0]["domain"] == "studio.
 check(any("Mira Solberg" in event[1] for event in realistic.log if event[0] == "note") or
       realistic.finished[2] == [1], "the run can cite the genuinely matching source")
 
+
+# Deep Research must fall back to a Playwright-verified page when HTTP sees a JS shell.
+class BrowserFallbackIO(RelevantBodyIO):
+    def __init__(self):
+        super().__init__()
+        self.visual_calls = []
+
+    def fetch(self, url):
+        return "Loading...", "JavaScript is needed to show the actual profile. " * 3
+
+    def fetch_visual(self, url, query, step):
+        self.visual_calls.append((url, query, step))
+        return ("Mira Solberg | Profile", "Mira Solberg writes fiction and builds software. " * 7,
+                "https://studio.example/biography")
+
+visual_io = BrowserFallbackIO()
+check(dr.run_deep_research(research_case, visual_io, dr.budget_from({})) == "done",
+      "Playwright fallback finishes")
+check(len(visual_io.visual_calls) == 1 and len(visual_io.sources) == 1,
+      "one rendered page verified and cited, not a generic JavaScript snippet")
+check(visual_io.sources[0]["url"] == "https://studio.example/biography",
+      "final resolved URL is cited")
+check(any(k == "info" and "Playwright" in t for k, t, _ in visual_io.log),
+      "the browser step is visible in research activity")
+
+
 # --- The worker's page fetch ----------------------------------------------------------------------
 def have(module):
     try:
@@ -293,6 +339,17 @@ for url, why in (("http://intern.test/", "local address"), ("https://jump.test/"
         check(False, why + " must not be read")
     except Exception as exc:  # noqa: PERF203
         check(isinstance(exc, (w.BrowseBlocked, ValueError)), why + ": %r" % exc)
+
+payload = w.ollama_payload({"STU_EMBER_MODEL": "mara-vision", "STU_EMBER_KEEP_ALIVE": ""},
+                            "Vision", "Read this page.", False, images=["jpeg_b64"])
+check(payload["messages"][-1]["images"] == ["jpeg_b64"] and payload["model"] == "mara-vision",
+      "browser screenshot reaches the same native multimodal Core")
+plain = w.ollama_payload({"STU_EMBER_MODEL": "mara-vision", "STU_EMBER_KEEP_ALIVE": ""},
+                          "Prompt", "Ordinary call", False)
+check("images" not in plain["messages"][-1], "normal text calls remain unchanged")
+check(w.DEFAULTS.get("STU_DEEP_RESEARCH_VISUAL_ENABLED") == "1",
+      "visual browser fallback defaults on but remains configurable")
+
 check(callable(w.claim_next_research) and callable(w.process_research), "the worker claims and runs research")
 
 print("CoreAI deep research worker: page text, queries, notes, report citations, page choice, budget, a whole run, "
