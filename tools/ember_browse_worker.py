@@ -473,6 +473,7 @@ def finish_job(conn, job_id, status, result=None, steps=None, error=None, shot=N
 if os.path.dirname(os.path.abspath(__file__)) not in sys.path:
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import coreai_deep_research as deep_research  # noqa: E402  (same folder)
+import coreai_research_browser as research_browser  # noqa: E402
 
 FETCH_MAX_BYTES = 2_000_000
 
@@ -540,6 +541,28 @@ class DbResearchIO:
     def __init__(self, conn, cfg, run, log):
         self.conn, self.cfg, self.run, self.log = conn, cfg, run, log
         self.id = int(run["id"])
+        self._research_browser = None
+
+    def close_research_browser(self):
+        if self._research_browser is not None:
+            self._research_browser.close()
+            self._research_browser = None
+
+    def fetch_visual(self, url, query, step):
+        """Browser fallback with the same public-address guard and Core lock."""
+        if self._research_browser is None:
+            self._research_browser = research_browser.ResearchBrowserSession(
+                self.cfg, api=sys.modules[__name__], vision=self.vision,
+                log=self.log)
+        return self._research_browser.read(url, query, step, cancelled=self.cancelled)
+
+    def vision(self, system, prompt, image_b64):
+        """Native screenshot vision in the currently selected Core (no extra model)."""
+        if not image_b64:
+            return ""
+        return self.core(system, prompt, False,
+                         deep_research.budget_from(self.cfg)["core_timeout"],
+                         images=[image_b64])
 
     def _exec(self, sql, args=()):
         with self.conn.cursor() as cur:
@@ -581,8 +604,8 @@ class DbResearchIO:
     def fetch(self, url):
         return fetch_page(self.cfg, url)
 
-    def core(self, system, user, want_json, timeout):
-        """One Core call under Mara's lock; the run's heartbeat goes on while the Core thinks."""
+    def core(self, system, user, want_json, timeout, images=None):
+        """One text or native-vision Core call under Mara's global serial lock."""
         name = lock_name(self.cfg, "global_ollama")
         with self.conn.cursor() as cur:
             cur.execute("SELECT GET_LOCK(%s, 900) AS got", (name,))
@@ -590,7 +613,8 @@ class DbResearchIO:
                 raise RuntimeError("core_busy")
         try:
             return call_with_heartbeat(
-                lambda: ollama_chat(self.cfg, system, user, want_json, think=False, timeout=timeout),
+                lambda: ollama_chat(self.cfg, system, user, want_json, think=False, timeout=timeout,
+                                    images=images),
                 lambda _s: self.beat(), interval=15.0)
         finally:
             lock_release(self.conn, self.cfg)
@@ -610,10 +634,14 @@ def process_research(conn, cfg, run, log):
     payload = {"query": run.get("query") or "", "title": run.get("title") or "", "steps": plan,
                "num_ctx": run.get("num_ctx")}
     log(f"[research {run['id']}] {payload['title']!r}: {len(plan)} Schritte, Core={job_cfg['STU_EMBER_MODEL']}")
-    result = deep_research.run_deep_research(payload, DbResearchIO(conn, job_cfg, run, log),
-                                             deep_research.budget_from(cfg), log=log)
-    log(f"[research {run['id']}] {result}")
-    return result
+    research_io = DbResearchIO(conn, job_cfg, run, log)
+    try:
+        result = deep_research.run_deep_research(
+            payload, research_io, deep_research.budget_from(cfg), log=log)
+        log(f"[research {run['id']}] {result}")
+        return result
+    finally:
+        research_io.close_research_browser()
 
 
 # --- Lock auf der EIGENEN Session ------------------------------------------------
@@ -820,13 +848,18 @@ def fallback_report(summary, notes, sources, console):
     return "\n".join(parts)
 
 
-def ollama_payload(cfg, system, user, want_json, think=None):
+def ollama_payload(cfg, system, user, want_json, think=None, images=None):
     """Request an Ollama (rein). Parameterfrei wie chat.php: kein temperature, kein num_predict;
     einzig num_ctx aus dem KI-Profil, damit Ollama den geladenen Core nicht neu laedt."""
     messages = []
     if str(system or "").strip():
         messages.append({"role": "system", "content": system})
-    messages.append({"role": "user", "content": user})
+    user_msg = {"role": "user", "content": user}
+    if images:
+        # Ollama native multimodal API: real browser JPEG frames, not text
+        # descriptions or extra image generation. Same selected Core and lock.
+        user_msg["images"] = list(images[:2])
+    messages.append(user_msg)
     payload = {
         "model": cfg["STU_EMBER_MODEL"],
         "messages": messages,
@@ -847,8 +880,8 @@ def ollama_payload(cfg, system, user, want_json, think=None):
     return payload
 
 
-def ollama_chat(cfg, system, user, want_json, think=None, timeout=120):
-    payload = ollama_payload(cfg, system, user, want_json, think=think)
+def ollama_chat(cfg, system, user, want_json, think=None, timeout=120, images=None):
+    payload = ollama_payload(cfg, system, user, want_json, think=think, images=images)
     # Kurze, getrennte Verbindungsfrist plus konfigurierbare Lesefrist. So ist ein
     # nicht erreichbarer Dienst schnell erkennbar, waehrend laufende Inferenz nicht
     # faelschlich als Browserfehler abgebrochen wird.
