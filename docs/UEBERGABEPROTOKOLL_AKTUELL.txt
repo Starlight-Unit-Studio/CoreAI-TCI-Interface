@@ -1,13 +1,17 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
-PR-Stand: 0.7.45 auf main 0.7.44 (Vision-Core-Bibliothek, Entwurf).
+PR-Stand: 0.7.46 auf main 0.7.45 (Fix nach fehlerhaftem Vision-Core-Update).
 Stand: 13.11.2026
-Repository-Version: 0.7.45 (Branch feature/vision-core-library-0-7-45, main 0.7.44)
-BASIS: main 0.7.44 nach PR #299; Deep-Research-Suchfehler repariert.
-NAECHSTE VERBINDLICHE VERSION: 0.7.45 fuer diesen PR (danach 0.7.46), sofern keine weiteren Main-Merges vorab erfolgen.
-WICHTIG: 24 Suchen/0 Quellen waren kein Rechercheerfolg. Erst echten Provider-Treffer und Volltext verifizieren.
+Repository-Version: 0.7.46 (Branch fix/vision-core-image-service-0-7-46, main 0.7.45)
+BASIS: main 0.7.45 nach PR #300; Vision Core war bereits gemergt, Preflight schlug auf dem Live-Server fehl.
+NAECHSTE VERBINDLICHE VERSION: 0.7.46 fuer den Fix-PR (danach 0.7.47), sofern keine neuen Main-Merges erfolgen.
+KRITISCH: Bilddienst-Selbsttest - ModuleNotFoundError vision_cores. Image worker im Python-Start -I nutzt keine impliziten lokalen Imports.
+KORREKTUR: Lokalpfad-Lader in image_service.py, import copy, Watcher, HTTP-/vision-Selbsttests, Mobile-CSS, SHA-256-Cache-Keys.
+WICHTIG: Kein Merge vor bestandenen lokalen Preflights und realem Image-Service-Test. Bisher kein erfolgreicher Server-Nachweis.
 NEUE ARBEIT ZUERST LESEN:
-  docs/UEBERGABEPROTOKOLL_0_7_45.txt\n  docs/UEBERGABEPROTOKOLL_0_7_44.txt
+  docs/UEBERGABEPROTOKOLL_0_7_46.txt
+  docs/UEBERGABEPROTOKOLL_0_7_45.txt
+  docs/UEBERGABEPROTOKOLL_0_7_44.txt
   docs/UEBERGABEPROTOKOLL_0_7_43.txt
 
 WICHTIG: Kein nachtraeglich erfundenes Release/ZIP fuer 0.7.35. Bereits gemergte PR #290 nicht umnummerieren.
