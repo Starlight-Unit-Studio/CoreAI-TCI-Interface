@@ -8,7 +8,6 @@ User-account or enterprise credentials are deliberately NOT inferred here.
 import json
 import re
 
-import requests
 
 PROTOCOL = "2025-06-18"
 READ_NAMES = re.compile(r"^(?:search|find|list|get|read)_[a-z0-9_]{1,70}$", re.I)
@@ -31,7 +30,9 @@ def _json_result(response):
 
 
 def _call(endpoint, message, session="", post=None):
-    post = post or requests.post
+    if post is None:
+        import requests  # optional public MCP provider only
+        post = requests.post
     headers = {"Content-Type": "application/json",
                "Accept": "application/json, text/event-stream"}
     if session:
