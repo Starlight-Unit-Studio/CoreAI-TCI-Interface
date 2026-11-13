@@ -52,6 +52,7 @@ import argparse
 import ipaddress
 import threading
 import traceback
+from types import SimpleNamespace
 from datetime import datetime
 from urllib.parse import urlsplit
 
@@ -112,6 +113,11 @@ DEFAULTS = {
     "STU_EMBER_WEB_URL": "http://127.0.0.1:18889/search",
     "STU_EMBER_WEB_LIMIT": "5",
     "STU_EMBER_WEB_TIMEOUT": "12",
+    # Deep Research may inspect more candidates than a single chat search.
+    "STU_DEEP_RESEARCH_RESULTS_PER_QUERY": "10",
+    "STU_DEEP_RESEARCH_BROWSER_PAGES_PER_STEP": "2",
+    "STU_DEEP_RESEARCH_VISUAL_ENABLED": "1",
+    "STU_DEEP_RESEARCH_BROWSER_ACTIONS": "2",
 }
 
 
@@ -471,6 +477,7 @@ def finish_job(conn, job_id, status, result=None, steps=None, error=None, shot=N
 if os.path.dirname(os.path.abspath(__file__)) not in sys.path:
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import coreai_deep_research as deep_research  # noqa: E402  (same folder)
+import coreai_research_browser as research_browser  # noqa: E402
 
 FETCH_MAX_BYTES = 2_000_000
 
@@ -506,7 +513,9 @@ def fetch_page(cfg, url, guard=None, get=None):
         if reason:
             raise BrowseBlocked(reason)
         resp = get(target, timeout=(6, 15), allow_redirects=False, stream=True,
-                   headers={"User-Agent": "Mozilla/5.0 (CoreAI Deep Research)", "Accept": "text/html,text/plain;q=0.9"})
+                   headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+                            "Accept": "text/html,application/xhtml+xml,text/plain;q=0.9",
+                            "Accept-Language": "de-DE,de;q=0.9,en;q=0.7"})
         if resp.status_code in (301, 302, 303, 307, 308) and resp.headers.get("Location"):
             from urllib.parse import urljoin
             target = urljoin(target, resp.headers["Location"])
@@ -526,7 +535,7 @@ def fetch_page(cfg, url, guard=None, get=None):
         raw = body.decode(resp.encoding or "utf-8", errors="replace")
         if "html" in kind:
             return deep_research.html_title(raw), deep_research.html_to_text(raw)
-        return "", deep_research.clean_space(raw)[:20000]
+        return "", deep_research.clean_space(raw)[:50000]
     raise ValueError("zu viele Weiterleitungen")
 
 
@@ -536,6 +545,29 @@ class DbResearchIO:
     def __init__(self, conn, cfg, run, log):
         self.conn, self.cfg, self.run, self.log = conn, cfg, run, log
         self.id = int(run["id"])
+        self._research_browser = None
+
+    def close_research_browser(self):
+        if self._research_browser is not None:
+            self._research_browser.close()
+            self._research_browser = None
+
+    def fetch_visual(self, url, query, step):
+        """Browser fallback with the same public-address guard and Core lock."""
+        if self._research_browser is None:
+            self._research_browser = research_browser.ResearchBrowserSession(
+                self.cfg, api=SimpleNamespace(**globals()),
+                vision=self.vision if cfg_bool(self.cfg, "STU_DEEP_RESEARCH_VISUAL_ENABLED", True) else None,
+                log=self.log)
+        return self._research_browser.read(url, query, step, cancelled=self.cancelled)
+
+    def vision(self, system, prompt, image_b64):
+        """Native screenshot vision in the currently selected Core (no extra model)."""
+        if not image_b64:
+            return ""
+        return self.core(system, prompt, False,
+                         deep_research.budget_from(self.cfg)["core_timeout"],
+                         images=[image_b64])
 
     def _exec(self, sql, args=()):
         with self.conn.cursor() as cur:
@@ -567,13 +599,18 @@ class DbResearchIO:
         self._exec("UPDATE stu_deep_research_runs SET status='writing', heartbeat_at=NOW() WHERE id=%s AND status='running'", (self.id,))
 
     def search(self, query):
-        return searxng_search(self.cfg, query, log=self.log)
+        # Research ranks candidates itself: retrieve up to ten search hits
+        # rather than applying the ordinary chat's five-result display limit.
+        search_cfg = dict(self.cfg)
+        search_cfg["STU_EMBER_WEB_LIMIT"] = str(
+            deep_research.budget_from(self.cfg)["results_per_query"])
+        return searxng_search(search_cfg, query, log=self.log)
 
     def fetch(self, url):
         return fetch_page(self.cfg, url)
 
-    def core(self, system, user, want_json, timeout):
-        """One Core call under Mara's lock; the run's heartbeat goes on while the Core thinks."""
+    def core(self, system, user, want_json, timeout, images=None):
+        """One text or native-vision Core call under Mara's global serial lock."""
         name = lock_name(self.cfg, "global_ollama")
         with self.conn.cursor() as cur:
             cur.execute("SELECT GET_LOCK(%s, 900) AS got", (name,))
@@ -581,7 +618,8 @@ class DbResearchIO:
                 raise RuntimeError("core_busy")
         try:
             return call_with_heartbeat(
-                lambda: ollama_chat(self.cfg, system, user, want_json, think=False, timeout=timeout),
+                lambda: ollama_chat(self.cfg, system, user, want_json, think=False, timeout=timeout,
+                                    images=images),
                 lambda _s: self.beat(), interval=15.0)
         finally:
             lock_release(self.conn, self.cfg)
@@ -590,9 +628,29 @@ class DbResearchIO:
         if cited:
             marks = ",".join(["%s"] * len(cited))
             self._exec(f"UPDATE stu_deep_research_sources SET cited=1 WHERE run_id=%s AND n IN ({marks})", (self.id, *cited))
-        self._exec("UPDATE stu_deep_research_runs SET status=%s, report_md=%s, citations=%s, error=%s, "
-                   "cancel_requested=0, finished_at=NOW(), heartbeat_at=NOW() WHERE id=%s",
-                   (status, report, len(cited or []), (error or None) and str(error)[:400], self.id))
+        updated = self._exec(
+            "UPDATE stu_deep_research_runs SET status=%s, report_md=%s, citations=%s, error=%s, "
+            "cancel_requested=0, finished_at=NOW(), heartbeat_at=NOW() WHERE id=%s",
+            (status, report, len(cited or []), (error or None) and str(error)[:400], self.id))
+        # Completion is announced by the SERVER, not by browser-side polling.
+        # The latest Mara message therefore exists even if the user closed the
+        # tab/smartphone while the research was running. The marker reuses the
+        # existing report card renderer; there is no new notification service.
+        uid = int(self.run.get("user_id") or 0)
+        session_id = str(self.run.get("session_id") or "")
+        if status == "done" and report and updated.rowcount and uid > 0 and session_id:
+            title = " ".join(str(self.run.get("title") or "Deep Research").split())[:80]
+            try:
+                insert_ember_message(
+                    self.conn, self.cfg,
+                    f"[[deep-research:{self.id}]]\nRecherche abgeschlossen: {title}",
+                    thinking="browse", channel="console",
+                    recipient_uid=uid, session_id=session_id)
+                self.log(f"  research {self.id}: Abschlussnachricht im Chat gespeichert")
+            except Exception as exc:
+                # Never turn a successfully completed research run into an
+                # error just because the optional chat notification failed.
+                self.log(f"  research {self.id}: Chat-Abschlussmeldung fehlgeschlagen ({str(exc)[:100]})")
 
 
 def process_research(conn, cfg, run, log):
@@ -601,10 +659,14 @@ def process_research(conn, cfg, run, log):
     payload = {"query": run.get("query") or "", "title": run.get("title") or "", "steps": plan,
                "num_ctx": run.get("num_ctx")}
     log(f"[research {run['id']}] {payload['title']!r}: {len(plan)} Schritte, Core={job_cfg['STU_EMBER_MODEL']}")
-    result = deep_research.run_deep_research(payload, DbResearchIO(conn, job_cfg, run, log),
-                                             deep_research.budget_from(cfg), log=log)
-    log(f"[research {run['id']}] {result}")
-    return result
+    research_io = DbResearchIO(conn, job_cfg, run, log)
+    try:
+        result = deep_research.run_deep_research(
+            payload, research_io, deep_research.budget_from(cfg), log=log)
+        log(f"[research {run['id']}] {result}")
+        return result
+    finally:
+        research_io.close_research_browser()
 
 
 # --- Lock auf der EIGENEN Session ------------------------------------------------
@@ -811,13 +873,18 @@ def fallback_report(summary, notes, sources, console):
     return "\n".join(parts)
 
 
-def ollama_payload(cfg, system, user, want_json, think=None):
+def ollama_payload(cfg, system, user, want_json, think=None, images=None):
     """Request an Ollama (rein). Parameterfrei wie chat.php: kein temperature, kein num_predict;
     einzig num_ctx aus dem KI-Profil, damit Ollama den geladenen Core nicht neu laedt."""
     messages = []
     if str(system or "").strip():
         messages.append({"role": "system", "content": system})
-    messages.append({"role": "user", "content": user})
+    user_msg = {"role": "user", "content": user}
+    if images:
+        # Ollama native multimodal API: real browser JPEG frames, not text
+        # descriptions or extra image generation. Same selected Core and lock.
+        user_msg["images"] = list(images[:2])
+    messages.append(user_msg)
     payload = {
         "model": cfg["STU_EMBER_MODEL"],
         "messages": messages,
@@ -838,8 +905,8 @@ def ollama_payload(cfg, system, user, want_json, think=None):
     return payload
 
 
-def ollama_chat(cfg, system, user, want_json, think=None, timeout=120):
-    payload = ollama_payload(cfg, system, user, want_json, think=think)
+def ollama_chat(cfg, system, user, want_json, think=None, timeout=120, images=None):
+    payload = ollama_payload(cfg, system, user, want_json, think=think, images=images)
     # Kurze, getrennte Verbindungsfrist plus konfigurierbare Lesefrist. So ist ein
     # nicht erreichbarer Dienst schnell erkennbar, waehrend laufende Inferenz nicht
     # faelschlich als Browserfehler abgebrochen wird.

@@ -123,16 +123,47 @@ def relevance(result, query, hosts=()):
     return score
 
 
+def candidate_relevance(result, query, hosts=()):
+    """Loose discovery score only. Search snippets are NOT verified evidence.
+
+    Crucially, an exact name can occur deep in a relevant webpage even when
+    the result title and summary do not mention it. Let such candidates be read
+    at lower priority instead of discarding them before inspecting the page.
+    """
+    exact = relevance(result, query, hosts)
+    if exact is not None:
+        return exact + 100
+    url = str(result.get("url") or "")
+    if not url.lower().startswith(("https://", "http://")):
+        return None
+    summary = fold(str(result.get("title") or "") + " " +
+                   str(result.get("content") or result.get("snippet") or "") + " " + url)
+    words = set(summary.split())
+    # Partial-name matches are worth opening, but never enough to cite.
+    identity_terms = {part for phrase in identity_phrases(query) for part in fold(phrase).split()
+                      if len(part) >= 5 and part not in STOP_WORDS}
+    overlap = len(words.intersection(identity_terms))
+    if overlap:
+        return overlap * 4
+    # Low-confidence SearXNG hits are still eligible for a bounded full-text
+    # check. Only the fetched document can prove the actual person's identity.
+    return -1
+
+
 def rank_results(results, query, seen=(), hosts=()):
-    """Deduplicate and rank by evidence, *not* by artificial domain variety."""
-    seen = set(seen)
+    """Relevance-first discovery, followed by strict checking after fetch.
+
+    The old implementation returned ONLY snippet-exact results, which caused
+    0-source reports when useful websites mentioned the name in the body.
+    """
+    seen = {str(u).split("#", 1)[0].rstrip("/").casefold() for u in seen}
     ranked, urls = [], set()
     for index, item in enumerate(results):
         url = str(item.get("url") or "")
         key = url.split("#", 1)[0].rstrip("/").casefold()
-        if url in seen or key in urls:
+        if not key or key in seen or key in urls:
             continue
-        score = relevance(item, query, hosts)
+        score = candidate_relevance(item, query, hosts)
         if score is None:
             continue
         urls.add(key)
@@ -142,16 +173,37 @@ def rank_results(results, query, seen=(), hosts=()):
 
 
 def fetched_page_is_relevant(query, url, title, body, hosts=()):
-    """A source must be actually readable and must pass the identity check."""
-    if len(" ".join(str(body or "").split())) < 80:
+    """Strict citation gate using fetched text, NEVER a search-engine snippet."""
+    text = " ".join(str(body or "").split())
+    if len(text) < 40:
         return False
     anchors = identity_phrases(query)
-    if anchors and not any(contains_phrase(str(title or "") + " " + str(body or ""), p) for p in anchors):
-        # The search URL alone is not proof that the fetched (possibly redirected)
-        # page really discusses the named subject.
+    if anchors and not any(contains_phrase(str(title or "") + " " + text, p) for p in anchors):
+        # Explicit user-provided URLs may be authoritative about their subject.
         if not any(on_host(url, h) for h in explicit_hosts(query)):
             return False
-    return relevance({"url": url, "title": title, "content": body[:12000]}, query, hosts) is not None
+    if not anchors:
+        terms = set(topic_terms(query))
+        if terms and not terms.intersection(set(fold(str(title or "") + " " + text).split())):
+            if not any(on_host(url, h) for h in explicit_hosts(query)):
+                return False
+    return True
+
+
+def focused_excerpt(query, body, limit):
+    """Keep relevant middle/end passages of long pages in small Core contexts."""
+    body = str(body or "")
+    limit = max(160, int(limit))
+    if len(body) <= limit:
+        return body
+    positions = [body.casefold().find(phrase.casefold()) for phrase in identity_phrases(query)]
+    positions = [p for p in positions if p >= 0]
+    if not positions:
+        return body[:limit]
+    pos = min(positions)
+    start = max(0, min(len(body) - limit, pos - 180))
+    result = body[start:start + limit]
+    return ("[...]\n" if start else "") + result + ("\n[...]" if start + limit < len(body) else "")
 
 
 def enforce_queries(proposed, query, step, count, hosts=()):
@@ -172,6 +224,8 @@ def enforce_queries(proposed, query, step, count, hosts=()):
         chosen.append((marker + (' "' + anchors[1] + '"' if len(anchors) > 1 else "")
                        + (" " + focus if focus else ""))[:140])
     for i, raw in enumerate(proposed):
+        if len(chosen) >= max(1, count - 1):
+            break
         text = " ".join(str(raw or "").replace("“", '"').replace("”", '"').split())
         if not text:
             continue
@@ -187,13 +241,55 @@ def enforce_queries(proposed, query, step, count, hosts=()):
             text = text[:140].rsplit(" ", 1)[0]
         if text.casefold() not in {x.casefold() for x in chosen}:
             chosen.append(text)
-        if len(chosen) >= count:
-            break
-    if len(chosen) < count and len(anchors) > 1:
-        alternative = '"' + anchors[-1] + '" ' + " ".join(str(step or "").split()[:4])
-        if alternative.casefold() not in {x.casefold() for x in chosen}:
-            chosen.append(alternative[:140])
+    # One unquoted variant for engines that do not return enough indexed
+    # results for exact-phrase searches. Still keep the subject intact.
+    if count > 1:
+        broad = (anchors[0] + (" " + focus if focus else ""))[:140]
+        if broad.casefold() not in {x.casefold() for x in chosen}:
+            chosen.append(broad)
+        elif len(chosen) < count and len(anchors) > 1:
+            chosen.append((anchors[-1] + (" " + focus if focus else ""))[:140])
     return chosen[:count]
+
+
+
+def alternative_queries(query, step, blocked_hosts=(), limit=2):
+    """Find corroborating public sources without retrying an access-gated host.
+
+    An unavailable website is a reason to broaden discovery, not to interrupt
+    an unattended Deep Research run or treat a search snippet as evidence.
+    No private provider, proxy rotation, CAPTCHA automation or account access.
+    """
+    names = identity_phrases(query)
+    subject = names[0] if names else " ".join(topic_terms(query)[:4])
+    if not subject:
+        return []
+    subjects = [subject]
+    if len(names) > 1:
+        subjects.append(names[1])
+    subjects.append(subject)
+    ignored = set(fold(" ".join(names)).split())
+    step_terms = [term for term in topic_terms(step)
+                  if term not in ignored and term not in STOP_WORDS]
+    focus = " ".join(step_terms[:2])
+    excluded = []
+    for domain in blocked_hosts:
+        host_name = host("https://" + str(domain).strip().lstrip("."))
+        if host_name and re.fullmatch(r"[a-z0-9.-]{4,100}", host_name):
+            excluded.append("-site:" + host_name)
+    exclusion = " ".join(dict.fromkeys(excluded[:2]))
+    proposed = []
+    for pos, name in enumerate(subjects):
+        anchor = '"' + name + '"' if pos == 0 and len(name.split()) > 1 else name
+        # Alternate quoted and unquoted variants for smaller search indexes.
+        query_text = " ".join(part for part in (
+            anchor, focus, ("publikationen" if pos == 1 and not focus else ""),
+            exclusion) if part).strip()[:140]
+        if query_text and query_text.casefold() not in {v.casefold() for v in proposed}:
+            proposed.append(query_text)
+        if len(proposed) >= max(0, int(limit)):
+            break
+    return proposed[:max(0, int(limit))]
 
 
 def supported_notes(text, source_numbers):
