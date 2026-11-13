@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.47: Vision Core Nginx allowlist and access regression.
+# CoreAI: TCI Interface 0.7.48: Ollama Vision catalog and serialized installation.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -297,6 +297,8 @@ UI_FILES=(
   database/migrations/026_image_tool.sql
   scripts/image-service-selftest.py
   scripts/vision-nginx-route-selftest.py
+  scripts/vision-ollama-ui-selftest.cjs
+  js/coreui-vision-ollama.js
   scripts/image-gen-selftest.php
   scripts/image-reference-consistency-selftest.php
   scripts/image-chat-ui-selftest.cjs
@@ -636,6 +638,19 @@ if vision_nginx_route_test="$(python3 "$PROJECT_ROOT/scripts/vision-nginx-route-
   ok 'Vision Core: sichere PHP-Route in beiden Nginx-Konfigurationen geprueft.'
 else
   fail "Vision Core Nginx-Routing: ${vision_nginx_route_test:-Unbekannter Fehler}"
+fi
+
+# 0.7.48: Ollama Vision tab must reuse the existing serialized installer and
+# never masquerade as a native Linux image-generation engine.
+ollama_vision_test=''
+if command -v node >/dev/null 2>&1; then
+  if ollama_vision_test="$(node "$PROJECT_ROOT/scripts/vision-ollama-ui-selftest.cjs" 2>&1)"; then
+    ok 'Ollama Vision: Suche, Inventar, Schutz, Download und Statusanzeige geprueft.'
+  else
+    fail "Ollama-Vision-Selbsttest: ${ollama_vision_test:-Unbekannter Fehler}"
+  fi
+else
+  printf '[WARN] %s\n' 'Node.js fehlt; Ollama-Vision-Oberflaechentest im Host-Preflight uebersprungen.' >&2
 fi
 
 image_service_test=''
