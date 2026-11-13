@@ -623,7 +623,12 @@ class DbResearchIO:
             "'min':min,'max':max,'stdev':statistics.stdev}\n"
             "result = functions[operation](values)\n"
             "assert math.isfinite(result)\n"
-            "print(json.dumps({'operation':operation,'value':round(float(result),8)}))\n"
+            "levels = '▁▂▃▄▅▆▇█'\n"
+            "bottom,spread = min(values), max(values)-min(values)\n"
+            "sparkline = ''.join(levels[max(0,min(7,int((v-bottom)/spread*7)))] "
+            "if spread else levels[3] for v in values)\n"
+            "print(json.dumps({'operation':operation,'value':round(float(result),8),"
+            "'sparkline':sparkline},ensure_ascii=False))\n"
         )
         try:
             row = self._exec(
