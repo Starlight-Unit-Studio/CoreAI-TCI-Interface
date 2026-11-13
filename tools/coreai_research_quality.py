@@ -252,6 +252,46 @@ def enforce_queries(proposed, query, step, count, hosts=()):
     return chosen[:count]
 
 
+
+def alternative_queries(query, step, blocked_hosts=(), limit=2):
+    """Find corroborating public sources without retrying an access-gated host.
+
+    An unavailable website is a reason to broaden discovery, not to interrupt
+    an unattended Deep Research run or treat a search snippet as evidence.
+    No private provider, proxy rotation, CAPTCHA automation or account access.
+    """
+    names = identity_phrases(query)
+    subject = names[0] if names else " ".join(topic_terms(query)[:4])
+    if not subject:
+        return []
+    subjects = [subject]
+    if len(names) > 1:
+        subjects.append(names[1])
+    subjects.append(subject)
+    ignored = set(fold(" ".join(names)).split())
+    step_terms = [term for term in topic_terms(step)
+                  if term not in ignored and term not in STOP_WORDS]
+    focus = " ".join(step_terms[:2])
+    excluded = []
+    for domain in blocked_hosts:
+        host_name = host("https://" + str(domain).strip().lstrip("."))
+        if host_name and re.fullmatch(r"[a-z0-9.-]{4,100}", host_name):
+            excluded.append("-site:" + host_name)
+    exclusion = " ".join(dict.fromkeys(excluded[:2]))
+    proposed = []
+    for pos, name in enumerate(subjects):
+        anchor = '"' + name + '"' if pos == 0 and len(name.split()) > 1 else name
+        # Alternate quoted and unquoted variants for smaller search indexes.
+        query_text = " ".join(part for part in (
+            anchor, focus, ("publikationen" if pos == 1 and not focus else ""),
+            exclusion) if part).strip()[:140]
+        if query_text and query_text.casefold() not in {v.casefold() for v in proposed}:
+            proposed.append(query_text)
+        if len(proposed) >= max(0, int(limit)):
+            break
+    return proposed[:max(0, int(limit))]
+
+
 def supported_notes(text, source_numbers):
     """Discard uncited notes and bogus source numbers before the final report prompt."""
     allowed = {int(n) for n in source_numbers}
