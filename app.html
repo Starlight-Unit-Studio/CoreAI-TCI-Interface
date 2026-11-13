@@ -621,12 +621,13 @@
       <header class="vision-library-head">
         <div><span class="core-mode-kicker">VISION CORE-BIBLIOTHEK</span>
           <h2 id="visionLibraryTitle">Vision Cores verwalten</h2>
-          <p>Lokale Bildgeneratoren über Hugging Face installieren und auswählen. Der mitgelieferte FLUX-Standard-Core bleibt geschützt.</p>
+          <p>Bildgeneratoren über Hugging Face verwalten und Ollama-Bild-Cores separat installieren. Der mitgelieferte FLUX-Standard-Core bleibt geschützt.</p>
         </div>
         <button class="core-library-close" id="visionLibraryClose" type="button" aria-label="Vision Core schließen">×</button>
       </header>
       <div class="core-library-providers" role="tablist" aria-label="Vision Core-Verwaltung">
         <button type="button" class="core-library-provider" id="visionLibrarySearchTab" role="tab" aria-controls="visionLibrarySearchPanel" aria-selected="false">HUGGING FACE</button>
+        <button type="button" class="core-library-provider" id="visionLibraryOllamaTab" role="tab" aria-controls="visionLibraryOllamaPanel" aria-selected="false">OLLAMA</button>
         <button type="button" class="core-library-provider core-library-provider--active" id="visionLibraryInstalledTab" role="tab" aria-controls="visionLibraryInstalledPanel" aria-selected="true">INSTALLIERT</button>
       </div>
       <section id="visionLibrarySearchPanel" role="tabpanel" aria-labelledby="visionLibrarySearchTab" hidden>
@@ -637,6 +638,33 @@
         </form>
         <p>Angeboten werden nur mit unserer Bild-Engine kompatible und kryptografisch prüfbare Vision Cores.</p>
         <div class="vision-library-list" id="visionLibraryResults"></div>
+      </section>
+      <section id="visionLibraryOllamaPanel" role="tabpanel" aria-labelledby="visionLibraryOllamaTab" hidden>
+        <p>Ollama-Bild-Cores lokal suchen, herunterladen und verwalten. Auf Linux ist direkte Bildgenerierung mit Ollama derzeit nicht verfügbar. Diese Cores werden nicht als aktiver Bildgenerator ausgewählt; unsere FLUX-Engine bleibt zuständig.</p>
+        <form class="core-library-search" id="visionLibraryOllamaForm">
+          <label for="visionLibraryOllamaQuery">OLLAMA VISION CORE SUCHEN</label>
+          <div><input type="search" id="visionLibraryOllamaQuery" maxlength="80" placeholder="z. B. flux2-klein oder z-image" autocomplete="off" value="flux">
+            <button type="submit" class="core-install-btn core-install-btn--go">Suchen</button></div>
+        </form>
+        <div class="vision-library-list" id="visionLibraryOllamaResults"></div>
+        <section id="visionLibraryOllamaDetail" class="vision-library-ollama-detail" hidden>
+          <button type="button" id="visionLibraryOllamaBack" class="core-library-back">← Zur Suche</button>
+          <h3 id="visionLibraryOllamaTitle"></h3>
+          <p id="visionLibraryOllamaDescription"></p>
+          <label for="visionLibraryOllamaVariant" class="core-library-tag-label">OLLAMA VARIANTE</label>
+          <select id="visionLibraryOllamaVariant"></select>
+          <div class="vision-library-actions">
+            <button type="button" id="visionLibraryOllamaInstall" class="core-install-btn core-install-btn--go" disabled>Installieren</button>
+            <a id="visionLibraryOllamaLink" href="https://ollama.com/search" target="_blank" rel="noopener noreferrer">Bei Ollama ansehen</a>
+          </div>
+        </section>
+        <p class="core-library-tag-label">BEREITS BEI OLLAMA INSTALLIERT</p>
+        <div class="vision-library-list" id="visionLibraryOllamaInstalled"></div>
+        <div id="visionLibraryOllamaProgress" class="core-library-progress" hidden>
+          <p id="visionLibraryOllamaProgressText"></p>
+          <div class="core-library-track"><span id="visionLibraryOllamaProgressFill"></span></div>
+        </div>
+        <p class="vision-library-status" id="visionLibraryOllamaStatus" role="status" aria-live="polite"></p>
       </section>
       <section id="visionLibraryInstalledPanel" role="tabpanel" aria-labelledby="visionLibraryInstalledTab">
         <p>Der aktive Vision Core erzeugt alle neuen Bilder in CoreAI. Für den Core-Wechsel muss die Bildgenerierung frei sein.</p>
@@ -739,6 +767,7 @@
   <script src="./js/coreui-core-install.js?v=0220003641459915669630984"></script>
   <script src="./js/coreui-model-library.js?v=0462424467087605919462233"></script>
   <script src="./js/coreui-vision-library.js?v=1208276090036783753795614"></script>
+  <script src="./js/coreui-vision-ollama.js?v=0000000000000000000000000"></script>
   <script src="./js/coreui-artifacts.js?v=1069339270452640197429799"></script>
 
   <div class="project-modal-scrim" id="projectModalScrim" hidden>
