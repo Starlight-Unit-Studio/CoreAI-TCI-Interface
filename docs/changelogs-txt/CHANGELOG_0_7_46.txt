@@ -1,0 +1,15 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.46
+Datum: 13.11.2026
+
+Reparatur nach fehlgeschlagenem Update 0.7.45
+- Bilddienst-Python-Import fuer vision_cores.py erfolgt ueber geprueften lokalen Pfad statt das globale Modul-Suchverzeichnis. Auch bei Python -I und dem Import-basierten Selbsttest.
+- Fehlenden Standardbibliothek-Import copy ergaenzt, damit Bildauftraege das verwendete Modellregister speichern koennen.
+- Bilddienst-Watcher beruecksichtigt nun vision_cores.py und startet nach Codeaenderungen neu.
+- Offline-Bilddienst-Selbsttest testet den Vision-Katalog, die Suche, die Standardmodell-Auswahl und den Schutz vor Loeschung des Standardmodells ueber echte HTTP-Routen.
+- Vision-Bibliothek: undurchsichtiger CoreAI-Hintergrund, normal grosser Schliessen-Button, aktualisierte Content-Cache-Schluessel fuer CSS und JS.
+- Fehlerhafte literale Zeilenumbrueche (\\n) im Changelog 0.7.45 korrigiert.
+- Standardmodell und globale serielle Modellwarteschlange bleiben unberuehrt. Kein direkter Ollama-Bildgenerator neu eingefuehrt.
+
+STATUS
+- Code im Fix-Branch; ohne reale Server-Pruefung keine Behauptung einer erfolgreichen Live-Installation.
+- Vor Merge auszufuehren: Bilddienst-Selbsttest, PHP/JS/Python Syntax, version-merge-check, Preflights und Server-Bildgenerierung.
