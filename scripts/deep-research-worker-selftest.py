@@ -550,7 +550,10 @@ try:
           sent[0][1]["session_id"] == "session-8",
           "worker emits a same-chat completion card without UI polling")
     fake_research_io.finish("error", None, [], "fetch failed")
-    check(len(sent) == 1, "error does not falsely announce a finished report")
+    check(len(sent) == 2 and
+          "nicht abgeschlossen" in sent[-1][0][2] and
+          sent[-1][0][2].startswith("[[deep-research:42]]"),
+          "a failed unattended research run reports failure, never completion")
 finally:
     w.insert_ember_message = original_insert
 
