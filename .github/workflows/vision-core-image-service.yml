@@ -1,0 +1,44 @@
+name: Vision Core Image Service Regression
+
+on:
+  pull_request:
+    paths:
+      - 'tools/image/image_service.py'
+      - 'tools/image/vision_cores.py'
+      - 'scripts/image-service-selftest.py'
+      - 'api/vision_cores.php'
+      - 'api/image_gen.php'
+      - 'js/coreui-vision-library.js'
+      - 'css/console.css'
+      - '.github/workflows/vision-core-image-service.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/image/image_service.py'
+      - 'tools/image/vision_cores.py'
+      - 'scripts/image-service-selftest.py'
+      - 'api/vision_cores.php'
+      - '.github/workflows/vision-core-image-service.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  vision-image-service:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+      - name: Check Python syntax
+        run: python3 -m py_compile tools/image/image_service.py tools/image/vision_cores.py scripts/image-service-selftest.py
+      - name: Exercise isolated image worker and Vision Core endpoints
+        run: python3 -I scripts/image-service-selftest.py
+      - name: Check PHP bridge syntax
+        run: |
+          php -l api/vision_cores.php
+          php -l api/image_gen.php
+      - name: Check browser library syntax
+        run: node --check js/coreui-vision-library.js
+      - name: Verify SHA-256 asset cache keys
+        run: python3 scripts/cache-bust.py --verify
