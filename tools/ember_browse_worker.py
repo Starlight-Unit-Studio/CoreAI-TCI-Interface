@@ -478,6 +478,7 @@ if os.path.dirname(os.path.abspath(__file__)) not in sys.path:
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import coreai_deep_research as deep_research  # noqa: E402  (same folder)
 import coreai_research_browser as research_browser  # noqa: E402
+import coreai_research_documents as research_documents  # noqa: E402
 
 FETCH_MAX_BYTES = 2_000_000
 
@@ -656,6 +657,15 @@ class DbResearchIO:
 
     def fetch(self, url):
         return fetch_page(self.cfg, url)
+
+    def fetch_document(self, url):
+        """Read public HTML normally, or PDFs/CSV/JSON via the safe document reader."""
+        path = urlsplit(str(url or "")).path.lower()
+        if path.endswith((".pdf", ".csv", ".json")):
+            return research_documents.fetch_document(
+                self.cfg, url, navigation_block_reason)
+        title, text = self.fetch(url)
+        return title, text, url
 
     def core(self, system, user, want_json, timeout, images=None):
         """One text or native-vision Core call under Mara's global serial lock."""
