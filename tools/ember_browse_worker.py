@@ -112,6 +112,8 @@ DEFAULTS = {
     "STU_EMBER_WEB_URL": "http://127.0.0.1:18889/search",
     "STU_EMBER_WEB_LIMIT": "5",
     "STU_EMBER_WEB_TIMEOUT": "12",
+    # Deep Research may inspect more candidates than a single chat search.
+    "STU_DEEP_RESEARCH_RESULTS_PER_QUERY": "10",
 }
 
 
@@ -506,7 +508,9 @@ def fetch_page(cfg, url, guard=None, get=None):
         if reason:
             raise BrowseBlocked(reason)
         resp = get(target, timeout=(6, 15), allow_redirects=False, stream=True,
-                   headers={"User-Agent": "Mozilla/5.0 (CoreAI Deep Research)", "Accept": "text/html,text/plain;q=0.9"})
+                   headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+                            "Accept": "text/html,application/xhtml+xml,text/plain;q=0.9",
+                            "Accept-Language": "de-DE,de;q=0.9,en;q=0.7"})
         if resp.status_code in (301, 302, 303, 307, 308) and resp.headers.get("Location"):
             from urllib.parse import urljoin
             target = urljoin(target, resp.headers["Location"])
@@ -526,7 +530,7 @@ def fetch_page(cfg, url, guard=None, get=None):
         raw = body.decode(resp.encoding or "utf-8", errors="replace")
         if "html" in kind:
             return deep_research.html_title(raw), deep_research.html_to_text(raw)
-        return "", deep_research.clean_space(raw)[:20000]
+        return "", deep_research.clean_space(raw)[:50000]
     raise ValueError("zu viele Weiterleitungen")
 
 
@@ -567,7 +571,12 @@ class DbResearchIO:
         self._exec("UPDATE stu_deep_research_runs SET status='writing', heartbeat_at=NOW() WHERE id=%s AND status='running'", (self.id,))
 
     def search(self, query):
-        return searxng_search(self.cfg, query, log=self.log)
+        # Research ranks candidates itself: retrieve up to ten search hits
+        # rather than applying the ordinary chat's five-result display limit.
+        search_cfg = dict(self.cfg)
+        search_cfg["STU_EMBER_WEB_LIMIT"] = str(
+            deep_research.budget_from(self.cfg)["results_per_query"])
+        return searxng_search(search_cfg, query, log=self.log)
 
     def fetch(self, url):
         return fetch_page(self.cfg, url)
