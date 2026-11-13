@@ -1,0 +1,23 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.43
+Datum: 13.11.2026
+Basis: main 0.7.42 nach PR #297
+
+BROWSE-IMAGE: PLAYWRIGHT-BUILD-FEHLER BEHOBEN
+
+- Installer schlug beim Docker-Build des Browse-Dienstes fehl.
+- Trace: /usr/local/lib/python3.12/site-packages/playwright/driver/node:
+  error while loading shared libraries: libatomic.so.1: cannot open
+  shared object file: No such file or directory.
+- Ursache: Debian-slim-Image ohne libatomic1. pip hatte die Bibliotheken
+  erfolgreich installiert; erst der nachfolgende Playwright-Node-Aufruf brach ab.
+- Dockerfile installiert jetzt apt-Paket libatomic1 VOR dem Playwright-CLI.
+- Neuer GitHub-Workflow baut den echten Docker-Container und prueft offline:
+  libatomic laden, Node/Playwright starten, Chromium headless benutzen,
+  PDF-Abhaengigkeit importieren. Ausfuehrung als Nicht-Root-User.
+- Keine Aenderung an Deep Research, Datenbank, Rechten, lokalen Modellen,
+  Chat-Oberflaeche oder der globalen Ollama-Modellwarteschlange.
+
+TESTSTAND
+Python-Regressionssuite deckt OS-Bibliotheken nicht ab. Der neue
+Docker-Build und Smoke-Test werden im PR gegen den echten Image-Build
+ausgefuehrt. Nach Merge auf dem Server erneut installieren/aktualisieren.

@@ -2,7 +2,7 @@ name: Deep Research Worker Preflight
 on:
   push:
     branches:
-      - feature/deep-research-hybrid-0-7-42
+      - fix/browse-libatomic1-0-7-43
   pull_request:
     paths:
       - 'tools/coreai_deep_research.py'

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.42: Hybrid Deep Research Lead/Worker and citations.
+# CoreAI: TCI Interface 0.7.43: Browse Playwright libatomic1 image fix.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
