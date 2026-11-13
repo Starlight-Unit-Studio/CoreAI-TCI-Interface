@@ -1,0 +1,25 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.39
+Datum: 13.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Ausgangsbasis: main 0.7.38
+Naechste verbindliche Version nach Merge: 0.7.40, sofern main unveraendert.
+
+AUFTRAG
+Deep Research brachte trotz vorhandener offizieller Quellen zahlreiche
+Namensvetter, gleichnamige Fremdprodukte und kaum belastbare Resultate.
+
+UMSETZUNG
+- tools/coreai_research_quality.py: deterministische Erkennung von
+  Subjektankern, Quellenranking, Textrelevanz und belegten Notizen.
+- tools/coreai_deep_research.py: exakte Suchanfragen, lesbare Quellen
+  statt SearXNG-Snippets, Abbruch/Zeitrahmen unveraendert, Quellenregister
+  vor Textnotizen und fair verteiltes Prompt-Budget.
+- scripts/deep-research-worker-selftest.py: Regressionen fuer mehrdeutige
+  Namen, noetige Quellennummern und Quellenabdeckung.
+- CPU-only als Standard, lokale Cores und globale serielle Modellwarteschlange;
+  Modelfile, DB, Migrationen, Gastrechte und UI bleiben unveraendert.
+
+STATUS
+Pure-Helper und synthetische lokale Tests bestanden; vollstaendiger
+integrierter Worker-Test, Preflight und Live-Recherche noch offen.
+Vor Merge abnehmen; PR nicht ohne Tests mergen.

@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.7.39 - 13.11.2026
+
+- **Deep Research: subject identity and better evidence.** Search ranking now favors exact people, projects and organizations over unrelated similar names, products or places, instead of maximizing domain variety.
+- **More targeted queries.** Quoted names survive the query parser; planner drift is corrected by deterministic topic anchors. Operator-configurable defaults increase to four searches and four readable pages per step.
+- **Verified citations.** Unreadable/blocked URLs and search snippets no longer become numbered sources. The worker tries additional ranked results to reach its page budget; fabricated or missing step-note citations are removed.
+- **Balanced synthesis.** Every step and source register survives prompt truncation on smaller local Cores. The prompts distinguish first-party from independent claims and explicitly prohibit unsupported conclusions that profiles do not exist.
+- **Honest gaps.** If no readable evidence is found, the report states the limits instead of filling space with off-topic findings.
+- **Tests.** The worker selftest now contains synthetic name-collision cases and checks for prompt/query/source quality. The standalone pure helper was syntax-checked and locally exercised; complete worker integration, preflight and live SearXNG are not yet verified.
+
 ## 0.7.38 - 12.11.2026
 
 - **Deep Research (roadmap P15), after the operator's reference screenshots:** Deep Research in the + menu is a real tool now (it needs the web search and is not for guests). Instead of an answer, Mara writes a plan: a short title and four to six steps. The plan card offers Bearbeiten, Abbrechen and Starten; without a click it starts after a 45-second countdown. Bearbeiten puts the plan into the input field as a chip; the next message changes it into a new plan.

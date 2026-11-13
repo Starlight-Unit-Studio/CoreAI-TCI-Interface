@@ -1,0 +1,20 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.39
+Datum: 13.11.2026
+Basis: main 0.7.38
+
+Deep Research: Identitaetspruefung und belastbare Quellen
+- Modellunabhaengige Erkennung mehrteiliger Personen- und Organisationsnamen.
+- Suchanfragen mit exakten Ankern statt verwischter Themen oder verlorener Zitate.
+- Ranking nach Relevanz; themenfremde Namensvetter/Produkte ausschliessen.
+- Nur lesbare, wirklich passende Volltextseiten als zitierbare Quelle aufnehmen.
+- Weiter unten gerankte Quellen nach Fetch-Fehlern pruefen.
+- Nur Schrittnotizen mit wirklich vorhandenen Quellenziffern uebernehmen.
+- Quellenregister vor Berichtnotizen, Kontext fair ueber alle Schritte aufteilen.
+- Negativaussagen ohne Belege vermeiden; fehlende Recherchebelege ehrlich nennen.
+- Standardbudget 4 Suchanfragen und 4 gelesene Seiten je Schritt; Betreiberlimits bleiben wirksam.
+- Regressionstest fuer Verwechslungen, Quellenzitate und Promptverteilung ergaenzt.
+
+TESTSTAND
+Reiner Helper: lokaler Syntaxcheck + synthetische Beispielfaelle bestanden.
+Gesamter Worker, Preflight und produktiver Web-/Modelllauf nicht durchgefuehrt.
+Kein Merge und kein Live-Deployment bestaetigt.

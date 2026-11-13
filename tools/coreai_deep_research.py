@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-CoreAI 0.7.38: Deep Research in the browse worker (roadmap P15).
+CoreAI 0.7.39: Deep Research in the browse worker (roadmap P15).
 
 A run (stu_deep_research_runs) has a plan: a title and four to six steps; the last step usually
 asks for the report. The worker (tools/ember_browse_worker.py) claims a run that was started or
@@ -27,6 +27,8 @@ import re
 import time
 from urllib.parse import urlsplit
 
+import coreai_research_quality as quality
+
 REPORT_RE = re.compile(r"\b(bericht|zusammen(fass|stell)|übersicht|uebersicht|empfehlung)", re.I)
 CITE_RE = re.compile(r"\[(\d{1,3}(?:\s*[,;]\s*\d{1,3})*)\]")
 SKIP_BLOCKS_RE = re.compile(r"<(head|script|style|noscript|svg|template|iframe|nav|footer|form|header)\b[^>]*>.*?</\1\s*>", re.I | re.S)
@@ -46,8 +48,8 @@ def budget_from(cfg):
             value = default
         return max(low, min(high, value))
     return {
-        "queries_per_step": num("STU_DEEP_RESEARCH_QUERIES_PER_STEP", 3, 1, 5),
-        "pages_per_step": num("STU_DEEP_RESEARCH_PAGES_PER_STEP", 3, 1, 6),
+        "queries_per_step": num("STU_DEEP_RESEARCH_QUERIES_PER_STEP", 4, 1, 8),
+        "pages_per_step": num("STU_DEEP_RESEARCH_PAGES_PER_STEP", 4, 1, 10),
         "max_minutes": num("STU_DEEP_RESEARCH_MAX_MINUTES", 30, 3, 120),
         "core_timeout": num("STU_DEEP_RESEARCH_CORE_TIMEOUT", 420, 60, 1800),
     }
@@ -141,7 +143,7 @@ def parse_queries(raw, query, steps, per_step):
         if isinstance(item, str):
             item = [item]
         for q in item if isinstance(item, list) else []:
-            q = clean_space(str(q).replace('"', ""))[:120]
+            q = clean_space(str(q).replace("“", '"').replace("”", '"'))[:140]
             if len(q) >= 3 and q.lower() not in (x.lower() for x in found):
                 found.append(q)
         out.append(found[:per_step] or fallback_queries(query, step, per_step))
@@ -152,6 +154,8 @@ def notes_prompts(query, step, pages, name="Mara"):
     system = ("Du recherchierst gruendlich und haeltst Fakten fest. Nutze NUR die gelieferten Seiten. "
               "Erste Zeile: KURZ: ein Satz in der Ich-Form, was du zu diesem Schritt herausgefunden hast. "
               "Danach 3 bis 10 Stichpunkte mit Fakten, jeder endet mit der Quellennummer in eckigen Klammern, z. B. [2]. "
+              "Ignoriere Seiten ueber aehnlich benannte, aber andere Personen, Marken oder Orte. "
+              "Nenne keine nicht belegten Negativaussagen (z. B. es gebe keine offiziellen Profile). "
               "Erfinde nichts; steht etwas nicht in den Seiten, lass es weg.")
     blocks = []
     for n, title, url, text in pages:
@@ -174,20 +178,27 @@ def split_notes(raw):
 
 def report_prompts(query, title, steps, notes, sources, chars):
     system = ("Du schreibst einen gruendlichen Recherchebericht auf Deutsch in Markdown. Aufbau: "
-              "'# Titel', dann '## Zusammenfassung' (ein kurzer Absatz), dann 3 bis 6 Abschnitte mit '##' "
-              "(Unterabschnitte mit '###' wo es hilft), am Ende '## Empfehlungen' wenn der Auftrag danach fragt. "
-              "Belege jede Aussage mit der Quellennummer in eckigen Klammern, z. B. [3]. Nutze NUR die Notizen; "
-              "erfinde keine Fakten und keine Quellen. Keine Quellenliste am Ende, die zeigt die Oberflaeche.")
-    lines = [f"Auftrag: {query}", f"Titel: {title}", "", "NOTIZEN JE SCHRITT:"]
+              "'# Titel', '## Zusammenfassung', dann sachlich gegliederte Abschnitte und bei Bedarf '## Recherchegrenzen'. "
+              "Belege jede Tatsachenbehauptung unmittelbar mit gueltigen Quellennummern wie [3]. "
+              "Nutze AUSSCHLIESSLICH die belegten Notizen. Keine eigenen Annahmen, keine erfundenen Quellen. "
+              "Quellen zu Namensvettern, aehnlich benannten Orten/Produkten und themenfremden Treffern weglassen. "
+              "Trenne Selbstdarstellungen von unabhaengigen externen Belegen; keine vermeintliche unabhaengige "
+              "Bestaetigung durch eine Eigenquelle. Behaupte nie, etwas existiere nicht, nur weil du es nicht "
+              "gefunden hast. Markiere stattdessen Recherchegrenzen. "
+              "Keine Quellenliste am Ende, die zeigt die Oberflaeche.")
+    header = [f"Auftrag: {query}", f"Titel: {title}", "", "QUELLENREGISTER (nur lesbare, gepruefte Seiten):"]
+    header.extend(f"[{s['n']}] {s['title'] or s['url']} ({s['domain']})" for s in sources)
+    header += ["", "BELEGTE NOTIZEN JE SCHRITT:"]
+    head = "\n".join(header)
+    # Reserve room for every step: never truncate away the last research steps or source map.
+    remaining = max(500, int(chars) - len(head) - 120)
+    per_step = max(120, remaining // max(1, len(notes)))
+    body = []
     for i, step in enumerate(steps):
         if notes.get(i):
-            lines.append(f"\n### {step}\n{notes[i]}")
-    lines.append("\nQUELLEN:")
-    for s in sources:
-        lines.append(f"[{s['n']}] {s['title'] or s['url']} ({s['domain']})")
-    user = "\n".join(lines)
-    return system, user[:chars]
-
+            body.append(f"\n### {step}\n{notes[i][:per_step]}")
+    user = (head + "\n" + "\n".join(body))[:chars]
+    return system, user
 
 def clean_report(raw, title, valid):
     """The report (pure): no code fences, a title line, only citations of known sources.
@@ -258,7 +269,7 @@ def page_chars(num_ctx, pages):
 
 
 def run_deep_research(run, io, budget, log=lambda *_: None, clock=time.monotonic):
-    """One run, start to end. io: search, fetch, core, cancelled, event, progress, source, finish."""
+    """One run, start to end. Rank and verify evidence before citing any page."""
     started = clock()
     query = str(run.get("query") or "")
     title = str(run.get("title") or "Recherche")
@@ -267,10 +278,12 @@ def run_deep_research(run, io, budget, log=lambda *_: None, clock=time.monotonic
     states = ["todo"] * len(plan)
     total = len(steps) + 1
     searches = 0
-    sources = []          # [{n, url, title, domain}]
+    sources = []
     seen = set()
     notes, shorts = {}, {}
     num_ctx = run.get("num_ctx")
+    # Explicit user-provided domains can include subpages without repeating the full title.
+    trusted_hosts = quality.explicit_hosts(query)
 
     def check():
         if io.cancelled():
@@ -283,7 +296,7 @@ def run_deep_research(run, io, budget, log=lambda *_: None, clock=time.monotonic
         check()
         progress("plan", 0)
         raw = io.core(*queries_prompts(query, steps, budget["queries_per_step"]), True, budget["core_timeout"])
-        queries = parse_queries(raw, query, steps, budget["queries_per_step"])
+        proposed = parse_queries(raw, query, steps, budget["queries_per_step"])
         for i, step in enumerate(steps):
             if clock() - started > budget["max_minutes"] * 60:
                 io.event("info", "Mein Zeitrahmen für diese Recherche ist erreicht; ich schreibe den Bericht mit dem, was ich habe.", [])
@@ -293,28 +306,38 @@ def run_deep_research(run, io, budget, log=lambda *_: None, clock=time.monotonic
             io.event("step", step, [])
             progress("search", i)
             results = []
-            for q in queries[i]:
+            step_queries = quality.enforce_queries(
+                proposed[i], query, step, budget["queries_per_step"], hosts=trusted_hosts)
+            for q in step_queries:
                 check()
+                if clock() - started > budget["max_minutes"] * 60:
+                    break
                 found = io.search(q) or []
                 searches += 1
-                results += found
+                results.extend(found)
                 io.event("search", q, list(dict.fromkeys(domain_of(r.get("url")) for r in found if r.get("url")))[:8])
                 progress("search", i + 0.3)
+
             pages = []
-            for r in pick_pages(results, seen, budget["pages_per_step"]):
+            # Try multiple ranked candidates so blocked/unreadable pages do not consume
+            # the real source budget. Search snippets alone never become numbered sources.
+            for r in quality.rank_results(results, query, seen, trusted_hosts):
+                if len(pages) >= budget["pages_per_step"] or clock() - started > budget["max_minutes"] * 60:
+                    break
                 check()
                 url = r["url"]
                 seen.add(url)
                 try:
                     page_title, text = io.fetch(url)
-                except Exception as exc:  # unreachable, blocked or no text: the search snippet still counts
+                except Exception as exc:
                     log(f"  deep research: {url} nicht gelesen ({str(exc)[:80]})")
-                    page_title, text = "", ""
-                text = text or r.get("content") or ""
-                if len(clean_space(text)) < 40:
+                    continue
+                if not quality.fetched_page_is_relevant(query, url, page_title or r.get("title"), text, trusted_hosts):
                     continue
                 n = len(sources) + 1
-                entry = {"n": n, "url": url, "title": (page_title or r.get("title") or url)[:300], "domain": domain_of(url)}
+                entry = {"n": n, "url": url,
+                         "title": (page_title or r.get("title") or url)[:300],
+                         "domain": domain_of(url)}
                 sources.append(entry)
                 io.source(entry)
                 io.event("read", entry["title"], [entry["domain"]])
@@ -323,9 +346,17 @@ def run_deep_research(run, io, budget, log=lambda *_: None, clock=time.monotonic
             if pages:
                 check()
                 raw_notes = io.core(*notes_prompts(query, step, pages), False, budget["core_timeout"])
-                shorts[i], notes[i] = split_notes(raw_notes)
-                if shorts[i]:
-                    io.event("note", shorts[i], [])
+                short, drafted = split_notes(raw_notes)
+                # A source number is only usable when this step really read the page.
+                notes[i] = quality.supported_notes(drafted, {page[0] for page in pages})
+                if notes[i]:
+                    shorts[i] = short
+                    if short:
+                        io.event("note", short, [])
+                else:
+                    io.event("info", "Dieser Schritt lieferte keine ausreichend belegten Notizen.", [])
+            else:
+                io.event("info", "Kein passender, lesbarer Volltext für diesen Schritt gefunden.", [])
             states[i] = "done"
             progress("search", i + 1)
         check()
@@ -336,11 +367,22 @@ def run_deep_research(run, io, budget, log=lambda *_: None, clock=time.monotonic
         valid = {s["n"] for s in sources}
         chars = 6000 if int(num_ctx or 4096) <= 4096 else 14000
         report, cited = "", []
-        if notes:
-            raw_report = io.core(*report_prompts(query, title, steps, notes, sources, chars), False, budget["core_timeout"])
+        if any(notes.values()):
+            raw_report = io.core(*report_prompts(query, title, steps, notes, sources, chars),
+                                 False, budget["core_timeout"])
             report, cited = clean_report(raw_report, title, valid)
         if len(report) < 200:
-            report, cited = clean_report(fallback_report(title, query, steps, notes, shorts), title, valid)
+            if any(notes.values()):
+                report, cited = clean_report(fallback_report(title, query, steps, notes, shorts),
+                                             title, valid)
+            else:
+                report = (f"# {title}\n\n## Zusammenfassung\n\n"
+                          "Ich konnte bei dieser Recherche keine ausreichend passenden, "
+                          "lesbaren und belegbaren Quellen ermitteln.\n\n"
+                          "## Recherchegrenzen\n\n"
+                          "Themenfremde Suchtreffer, Namensverwechslungen und nicht "
+                          "abrufbare Webseiten wurden bewusst nicht als Belege verwendet.")
+                cited = []
         states = ["done"] * len(plan)
         io.progress(states, "done", 100, searches)
         io.finish("done", report, cited, None)
