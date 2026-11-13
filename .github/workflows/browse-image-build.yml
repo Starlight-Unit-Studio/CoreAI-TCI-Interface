@@ -1,0 +1,26 @@
+name: Browse Image Build and Chromium Smoke
+on:
+  push:
+    branches:
+      - fix/browse-libatomic1-0-7-43
+  pull_request:
+    paths:
+      - 'docker/browse/Dockerfile'
+      - 'tools/requirements-browse.txt'
+      - 'scripts/browse-image-selftest.py'
+      - '.github/workflows/browse-image-build.yml'
+jobs:
+  browse-image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the exact production Browse image
+        run: docker build --progress=plain -f docker/browse/Dockerfile -t coreai-browse-smoke .
+      - name: Start Playwright Node and Chromium as the image's non-root user
+        run: |
+          docker run --rm --network none --shm-size=256m \
+            -v "$PWD/scripts/browse-image-selftest.py:/tmp/browse-image-selftest.py:ro" \
+            --entrypoint python3 coreai-browse-smoke /tmp/browse-image-selftest.py

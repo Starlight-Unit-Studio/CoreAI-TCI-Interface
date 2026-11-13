@@ -1,5 +1,12 @@
 # CoreAI: TCI Interface
 
+## 0.7.43 - 13.11.2026
+
+- **Fix: Browse Docker image could not install Playwright Chromium.** On `python:3.12-slim-bookworm`, Playwright's bundled Node executable required `libatomic.so.1`, but the runtime package was absent. This failed the build during `python -m playwright install --with-deps chromium` after Python packages were already installed.
+- **Image fix:** `docker/browse/Dockerfile` now installs Debian `libatomic1` via apt before running Playwright. No host package installation and no changes to the local Cores are required.
+- **Docker-level regression test:** New GitHub Actions workflow builds the actual Browse image and launches Playwright Node plus headless Chromium as the image's unprivileged user, offline. This catches missing shared libraries that pure Python syntax/selftests cannot detect.
+- **Unchanged:** Deep Research hybrid architecture (0.7.42), native Vision, model lock, persistent memory, CAPTCHA behavior, permissions, MariaDB schema and interfaces.
+
 ## 0.7.42 - 13.11.2026
 
 - **Hybrid Deep Research:** A single Lead Reasoning trajectory coordinates isolated Map workers, reviews their evidence, pivots to new searches and synthesizes a report. This combines iterative depth-first reasoning with breadth-first worker delegation while retaining the single global Ollama lock for CPU-only use.

@@ -1,0 +1,25 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.43
+Datum: 13.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Main-Basis: 0.7.42 nach gemergtem PR #297
+Naechste verbindliche Version nach Merge: 0.7.44 (wenn main unveraendert).
+
+AUSGANGSLAGE
+Der Betreiber meldete einen Build-Abbruch bei der Installation von 0.7.42,
+Browse Dockerfile 3/4 (python -m playwright install --with-deps chromium).
+Pip-Installation war erfolgreich, dann fehlte:
+libatomic.so.1 beim Start von playwright/driver/node (exit 127).
+
+FIX
+- docker/browse/Dockerfile: Debian libatomic1 vor Playwright installieren.
+- scripts/browse-image-selftest.py: echte Startpruefung von Node, Chromium
+  (als unprivilegierter User) und pypdf, ohne externes Netzwerk.
+- .github/workflows/browse-image-build.yml: zusaetzlicher Release-Test mit
+  Docker-Build des Produktionsimages und Smoke-Start.
+- Keine Core-, Rechte-, Datenbank- oder Deep-Research-Architektur-Aenderung.
+
+PR-ABNAHME
+- Den Browse-Image-Test in GitHub Actions sowie bestehenden Versions-,
+  Python-, PHP-/Preflight-/Cachevertrag erfolgreich ausfuehren.
+- Danach kann der Betreiber den Server aktualisieren und seinen Preflight
+  erneut ausfuehren. Produktions-Deployment hier nicht bestaetigt.
