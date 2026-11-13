@@ -190,6 +190,22 @@ def fetched_page_is_relevant(query, url, title, body, hosts=()):
     return True
 
 
+def focused_excerpt(query, body, limit):
+    """Keep relevant middle/end passages of long pages in small Core contexts."""
+    body = str(body or "")
+    limit = max(160, int(limit))
+    if len(body) <= limit:
+        return body
+    positions = [body.casefold().find(phrase.casefold()) for phrase in identity_phrases(query)]
+    positions = [p for p in positions if p >= 0]
+    if not positions:
+        return body[:limit]
+    pos = min(positions)
+    start = max(0, min(len(body) - limit, pos - 180))
+    result = body[start:start + limit]
+    return ("[...]\n" if start else "") + result + ("\n[...]" if start + limit < len(body) else "")
+
+
 def enforce_queries(proposed, query, step, count, hosts=()):
     """Keep operator's search budget, but prevent the Core from losing proper names."""
     anchors = identity_phrases(query)
