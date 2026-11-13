@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.7.48 - 13.11.2026
+
+- **Ollama in Vision Core library:** A third `OLLAMA` tab beside Hugging Face and Installed offers real searches through the existing official Ollama registry browser, variant details and sizes, explicit two-click local installs, live shared-installer progress and a filtered list of already installed FLUX.2 Klein/Z-Image Cores. A two-step uninstall delegates to the existing protected Core removal route.
+- **No false image-engine support:** Current Ollama releases no longer support native image generation, and stock Linux Ollama has not provided a compatible rendering path. Ollama packages are **not** selectable as CoreAI image renderers. The existing protected CPU-based FLUX.2 Klein via stable-diffusion.cpp stays active and independent. A separate, proven backend adapter would be needed for direct Ollama generation.
+- **Preserve isolation and permissions:** Reuses the existing `user_settings.php` admin-only registry, locally installed inventory, CSRF-guarded writes and the global serialized Ollama download worker. Does not add a new public PHP endpoint, arbitrary model URL, cloud dependency, image worker, duplicate copy or unprotected delete mechanism.
+- **Regression tests:** Node fixture checks known image model families, excludes ordinary chat/vision-understanding Cores, exercises official catalog search, installed inventory, 2-step confirmation, shared install status/CSRF, and guarded deletion. Included in both preflights and the targeted Vision Core Actions workflow.
+- **Validation still required:** The public registry parser can change, remote model metadata can be incomplete, and no Ollama GPU/Linux image generator is claimed. Test the actual mobile Ollama tab and model installation on the operator's server after updating.
+
 ## 0.7.47 - 13.11.2026
 
 - **Fix Vision Core HTTP 404:** The browser's `api/vision_cores.php` endpoint was missing from Nginx's strict allowlist. The web server returned 404 before PHP, so both the installed list and Hugging Face search failed despite passing image worker tests. Explicitly permit only the authenticated Vision Core bridge in both Compose and native Nginx templates, keeping the default-deny rule for other PHP files.
