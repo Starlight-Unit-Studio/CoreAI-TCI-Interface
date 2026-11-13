@@ -487,7 +487,18 @@ def claim_next_research(conn):
     with conn.cursor() as cur:
         cur.execute("UPDATE stu_deep_research_runs SET status='queued', autostart_at=NULL "
                     "WHERE status='planned' AND autostart_at IS NOT NULL AND autostart_at <= NOW()")
-        # A run whose worker died long ago (update, restart) is ended honestly.
+        # 0.7.42: a stale run with a checkpoint is resumed from saved evidence
+        # instead of being marked as lost and restarted from zero. The lease
+        # interval prevents a second worker from stealing a still-live run.
+        try:
+            cur.execute(
+                "UPDATE stu_deep_research_runs r "
+                "INNER JOIN stu_deep_research_memory m ON m.run_id=r.id "
+                "SET r.status='queued', r.worker_pid=NULL, r.error=NULL "
+                "WHERE r.status IN ('running','writing') "
+                "AND COALESCE(r.heartbeat_at,r.started_at) < NOW() - INTERVAL 10 MINUTE")
+        except pymysql.err.ProgrammingError:
+            pass  # migration 041 not provisioned; keep the older safe behavior
         cur.execute("UPDATE stu_deep_research_runs SET status='error', error='worker_lost', finished_at=NOW() "
                     "WHERE status IN ('running','writing') AND COALESCE(heartbeat_at, started_at) < NOW() - INTERVAL 10 MINUTE")
         cur.execute("SELECT id FROM stu_deep_research_runs WHERE status='queued' ORDER BY id ASC LIMIT 1")
@@ -547,6 +558,41 @@ class DbResearchIO:
         self.id = int(run["id"])
         self._research_browser = None
 
+    def hybrid_ready(self):
+        try:
+            self._exec("SELECT run_id FROM stu_deep_research_memory LIMIT 0")
+            self._exec("SELECT run_id,n FROM stu_deep_research_evidence LIMIT 0")
+            return True
+        except Exception:
+            return False
+
+    def load_checkpoint(self):
+        result = self._exec(
+            "SELECT state_json FROM stu_deep_research_memory WHERE run_id=%s", (self.id,))
+        row = result.fetchone() or {}
+        try:
+            return json.loads(row.get("state_json") or "null")
+        except (TypeError, ValueError):
+            return None
+
+    def checkpoint(self, state):
+        payload = json.dumps(state, ensure_ascii=False, separators=(",", ":"))
+        if len(payload.encode("utf-8")) > 1_500_000:
+            raise ValueError("research_checkpoint_too_large")
+        self._exec(
+            "INSERT INTO stu_deep_research_memory (run_id,schema_version,state_json,revision) "
+            "VALUES (%s,1,%s,1) ON DUPLICATE KEY UPDATE "
+            "state_json=VALUES(state_json),revision=revision+1",
+            (self.id, payload))
+        self.beat()
+
+    def store_evidence(self, number, excerpt, checksum):
+        self._exec(
+            "INSERT INTO stu_deep_research_evidence (run_id,n,excerpt,content_sha256) "
+            "VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE "
+            "excerpt=VALUES(excerpt),content_sha256=VALUES(content_sha256)",
+            (self.id, int(number), str(excerpt)[:5500], str(checksum)[:64]))
+
     def close_research_browser(self):
         if self._research_browser is not None:
             self._research_browser.close()
@@ -592,7 +638,9 @@ class DbResearchIO:
                    (json.dumps({"states": states, "phase": phase, "percent": percent}), int(searches), self.id))
 
     def source(self, entry):
-        self._exec("INSERT INTO stu_deep_research_sources (run_id, n, url, title, domain) VALUES (%s,%s,%s,%s,%s)",
+        self._exec("INSERT INTO stu_deep_research_sources (run_id, n, url, title, domain) "
+                   "VALUES (%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE "
+                   "url=VALUES(url),title=VALUES(title),domain=VALUES(domain)",
                    (self.id, entry["n"], entry["url"][:2048], entry["title"][:300], entry["domain"][:255]))
 
     def write_phase(self):
@@ -630,7 +678,8 @@ class DbResearchIO:
             self._exec(f"UPDATE stu_deep_research_sources SET cited=1 WHERE run_id=%s AND n IN ({marks})", (self.id, *cited))
         updated = self._exec(
             "UPDATE stu_deep_research_runs SET status=%s, report_md=%s, citations=%s, error=%s, "
-            "cancel_requested=0, finished_at=NOW(), heartbeat_at=NOW() WHERE id=%s",
+            "cancel_requested=0, finished_at=NOW(), heartbeat_at=NOW() "
+            "WHERE id=%s AND status IN ('running','writing')",
             (status, report, len(cited or []), (error or None) and str(error)[:400], self.id))
         # Completion is announced by the SERVER, not by browser-side polling.
         # The latest Mara message therefore exists even if the user closed the
