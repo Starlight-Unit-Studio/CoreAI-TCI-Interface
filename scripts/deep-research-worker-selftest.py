@@ -353,6 +353,47 @@ w = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(w)
 
 
+# A disabled or broken local SearXNG must trigger one bounded real
+# alternative discovery path instead of silently returning zero sources.
+backup_events = []
+backup_calls = []
+research_io = object.__new__(w.DbResearchIO)
+research_io.cfg = {"STU_DEEP_RESEARCH_BACKUP_SEARCH": "1",
+                   "STU_DEEP_RESEARCH_BACKUP_SEARCHES": "2"}
+research_io.run = {"query": "Mira Solberg"}
+research_io.log = lambda message: backup_events.append(message)
+research_io._research_search_lock = w.threading.Lock()
+research_io._research_backup_uses = 0
+research_io._research_search_attempts = 0
+research_io._research_primary_failures = 0
+research_io._research_backup_hits = 0
+orig_searx = w.searxng_search
+orig_public = w.research_search.public_search
+try:
+    w.searxng_search = lambda cfg, query, log=None, raise_errors=False: []
+    w.research_search.public_search = lambda query, *args, **kwargs: (
+        backup_calls.append(query) or
+        [{"url": "https://publisher.example/mira", "title": "Mira Solberg",
+          "content": "Independent book publisher"}])
+    for _ in range(3):
+        research_io.search('"Mira Solberg" biography')
+    check(backup_calls == ["Mira Solberg", "Mira Solberg"] and
+          research_io._research_backup_uses == 2 and research_io._research_backup_hits == 2,
+          "public search fallback is bounded across all research searches")
+    w.searxng_search = lambda cfg, query, log=None, raise_errors=False: (
+        (_ for _ in ()).throw(OSError("connection refused")))
+    w.research_search.public_search = lambda *a, **kw: []
+    research_io._research_backup_uses = 0
+    try:
+        research_io.search("Mira Solberg")
+        check(False, "a failed SearXNG cannot silently look like zero results")
+    except RuntimeError as exc:
+        check("research_search_backend_unavailable" in str(exc),
+              "backend failure remains distinguishable from valid empty results")
+finally:
+    w.searxng_search = orig_searx
+    w.research_search.public_search = orig_public
+
 class Resp:
     def __init__(self, status=200, headers=None, body=b"", encoding="utf-8"):
         self.status_code, self.headers, self.body, self.encoding = status, headers or {}, body, encoding
