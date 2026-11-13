@@ -2,12 +2,13 @@ name: Deep Research Worker Preflight
 on:
   push:
     branches:
-      - fix/browse-libatomic1-0-7-43
+      - fix/deep-research-zero-source-0-7-44
   pull_request:
     paths:
       - 'tools/coreai_deep_research.py'
       - 'tools/coreai_research_hybrid.py'
       - 'tools/coreai_research_documents.py'
+      - 'tools/coreai_research_search.py'
       - 'tools/coreai_research_mcp.py'
       - 'database/migrations/041_deep_research_hybrid.sql'
       - 'tools/coreai_research_quality.py'
@@ -15,6 +16,7 @@ on:
       - 'tools/ember_browse_worker.py'
       - 'scripts/deep-research-worker-selftest.py'
       - 'scripts/deep-research-hybrid-selftest.py'
+      - 'scripts/deep-research-zero-source-selftest.py'
       - 'VERSION'
       - '.github/workflows/deep-research-worker.yml'
 jobs:
@@ -28,7 +30,11 @@ jobs:
         with:
           fetch-depth: 0
       - name: Check Python syntax
-        run: python3 -m py_compile tools/coreai_deep_research.py tools/coreai_research_quality.py tools/coreai_research_browser.py tools/coreai_research_hybrid.py tools/coreai_research_documents.py tools/coreai_research_mcp.py tools/ember_browse_worker.py scripts/deep-research-worker-selftest.py scripts/deep-research-hybrid-selftest.py
+        run: python3 -m py_compile tools/coreai_deep_research.py tools/coreai_research_quality.py tools/coreai_research_browser.py tools/coreai_research_hybrid.py tools/coreai_research_documents.py tools/coreai_research_mcp.py tools/coreai_research_search.py tools/ember_browse_worker.py scripts/deep-research-worker-selftest.py scripts/deep-research-hybrid-selftest.py scripts/deep-research-zero-source-selftest.py
+      - name: Check preflight shells and research UI syntax
+        run: |
+          bash -n scripts/preflight.sh scripts/preflight-native.sh
+          node --check js/coreui-deep-research.js
       - name: Run Deep Research worker selftest (show failure details)
         run: python3 scripts/deep-research-worker-selftest.py
       - name: Run hybrid Deep Research regression
@@ -39,6 +45,8 @@ jobs:
           coverage: none
       - name: Check hybrid PHP storage syntax
         run: php -l api/deep_research_store.php
+      - name: Reject false zero-source research reports
+        run: python3 scripts/deep-research-zero-source-selftest.py
       - name: Validate release contract
         run: |
           BASE_VERSION="$(git show origin/main:VERSION | tr -d '\r\n')"

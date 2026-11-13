@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.43: Browse Playwright libatomic1 image fix.
+# CoreAI: TCI Interface 0.7.44: Deep Research search and source integrity.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -181,7 +181,9 @@ UI_FILES=(
   tools/coreai_research_hybrid.py
   tools/coreai_research_documents.py
   tools/coreai_research_mcp.py
+  tools/coreai_research_search.py
   scripts/deep-research-hybrid-selftest.py
+  scripts/deep-research-zero-source-selftest.py
   js/coreui-deep-research.js
   css/coreui-deep-research.css
   scripts/deep-research-selftest.php
@@ -559,6 +561,14 @@ if hybrid_research_test="$(python3 "$PROJECT_ROOT/scripts/deep-research-hybrid-s
   ok 'Hybrid Deep Research: Orchestrator/Worker, Parallel-I/O, Speicher und Citation Agent geprueft.'
 else
   fail "Hybrid-Deep-Research-Selbsttest fehlgeschlagen: ${hybrid_research_test:-Unbekannter Fehler}"
+fi
+
+# 0.7.44: broken search backend must never produce a false completed report.
+search_regression=''
+if search_regression="$(python3 "$PROJECT_ROOT/scripts/deep-research-zero-source-selftest.py" 2>&1)"; then
+  ok 'Deep Research: Suchausfall, Null-Quellen und Ersatzsuche geprueft.'
+else
+  fail "Deep-Research-Suchausfall-Selbsttest fehlgeschlagen: ${search_regression:-Unbekannter Fehler}"
 fi
 
 if python3 "$PROJECT_ROOT/scripts/workspace-output-selftest.py" >/dev/null 2>&1; then

@@ -1,0 +1,32 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.44
+Datum: 13.11.2026
+Basis: main 0.7.43 nach PR #298
+
+DEEP RESEARCH: NULL-QUELLEN-REGRESSION
+
+- Meldung: 24 Suchen, 10 Sekunden, 0 Quellenangaben. Ein angeblich
+  abgeschlossener Bericht bestand nur aus einem Hinweis auf fehlende Quellen.
+- Codeursache: Hybrid-Worker zaehlte alle Suchanfragen auch bei leeren
+  Treffern/Backendfehlern, betrachtete fehlende Belege aber als Erfolg.
+- SearXNG-Ausnahmen werden Deep Research nicht mehr still verschwiegen.
+- Begrenzte oeffentliche Ersatzsuche bei leeren SearXNG-Ergebnissen.
+  Verwendet den Namen/das Thema, nicht einen stark eingeengten Modellprompt.
+- Der Ersatzprovider liefert nur Kandidaten und keine zitierten Quellen.
+  Alle Websites muessen weiterhin vollstaendig gelesen und bewertet werden.
+- Hybride Recherche verfolgt Suchanfragen, Backendfehler, Treffer,
+  Seitenkandidaten, Lesefehler und tatsaechlich bestaetigte Quellen.
+- Ohne verifizierte Quellen gibt es keinen angeblichen erfolgreichen
+  Bericht mehr. Fehler werden als konkrete Fehlerkategorien persistiert.
+- Abschlussstatus auch bei einem gescheiterten Hintergrundjob im Chat.
+  UI benennt die Ursache und kennzeichnet alte 0-Quellen-Berichte.
+- Compose-Preflight prueft SearXNG via HTTP-JSON im echten Browse-Dienst;
+  falls leer, Warnung statt blindem Gruen.
+- Neue synthetische Regressionen fuer Suchfehler, Ersatztreffer, Source-Guard,
+  HTML-Parsing, Worker-Suchadapter und keine erfundenen Erfolge.
+- Kein Eingriff in globale Modellwarteschlange, Datenbank-Migrationen,
+  Chat-Permissions, Vision, Browser, Python-Worker oder fremde Konten.
+
+TESTS
+CI und lokal verifizierte Provider-Verfuegbarkeit sind zu unterscheiden:
+synthetische Tests pruefen Fehlerbehandlung; eine erfolgreiche echte Suche
+aus dem Server muss nach dem Deployment separat bestaetigt werden.

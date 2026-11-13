@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.43: Browse Playwright libatomic1 image fix.
+# CoreAI: TCI Interface 0.7.44: Deep Research search and source integrity.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -202,7 +202,9 @@ UI_FILES=(
   tools/coreai_research_hybrid.py
   tools/coreai_research_documents.py
   tools/coreai_research_mcp.py
+  tools/coreai_research_search.py
   scripts/deep-research-hybrid-selftest.py
+  scripts/deep-research-zero-source-selftest.py
   js/coreui-deep-research.js
   css/coreui-deep-research.css
   scripts/deep-research-selftest.php
@@ -591,6 +593,14 @@ else
   fail "Hybrid-Deep-Research-Selbsttest fehlgeschlagen: ${hybrid_research_test:-Unbekannter Fehler}"
 fi
 
+# 0.7.44: broken search backend must never produce a false completed report.
+search_regression=''
+if search_regression="$(python3 "$PROJECT_ROOT/scripts/deep-research-zero-source-selftest.py" 2>&1)"; then
+  ok 'Deep Research: Suchausfall, Null-Quellen und Ersatzsuche geprueft.'
+else
+  fail "Deep-Research-Suchausfall-Selbsttest fehlgeschlagen: ${search_regression:-Unbekannter Fehler}"
+fi
+
 if python3 "$PROJECT_ROOT/scripts/workspace-output-selftest.py" >/dev/null 2>&1; then
   ok 'Python-Worker: gerettete HTML/ZIP-Dateien und sichere Ausgabepfade geprueft.'
 else
@@ -807,6 +817,19 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   fi
   if is_enabled "${COREUI_INSTALL_BROWSE:-0}"; then
     check_service browse 'CoreAI: TCI Interface-Browse-Worker'
+  fi
+
+  # A running search container need not produce usable search results.
+  # Probe from the same host-network worker and warn if its backend is empty.
+  if is_enabled "${COREUI_INSTALL_SEARXNG:-0}" && is_enabled "${COREUI_INSTALL_BROWSE:-0}" \
+    && service_running searxng && service_running browse; then
+    if compose exec -T browse python3 -c \
+       'import sys;sys.path.insert(0,"/var/www/coreui/tools");import ember_browse_worker as w;c=w.parse_php_config("/var/www/coreui/api/config.local.php");r=w.searxng_search(c,"Wikipedia",raise_errors=True);sys.exit(0 if r else 1)' \
+       >/dev/null 2>&1; then
+      ok 'Deep Research: SearXNG liefert im Browse-Container echte Suchtreffer.'
+    else
+      warn 'Deep Research: SearXNG liefert keine Suchtreffer oder ist nicht erreichbar. Die Ersatzsuche kann eingreifen.'
+    fi
   fi
 
   if compose exec -T php php -r \
