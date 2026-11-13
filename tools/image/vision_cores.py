@@ -22,11 +22,7 @@ SOURCES = {
     "leejet/FLUX.2-klein-4B-GGUF": {
         "prefix": "flux-2-klein-4b-", "label": "FLUX.2 Klein 4B",
         "steps": 4, "cfg_scale": 1.0,
-    },
-    "leejet/FLUX.2-klein-base-4B-GGUF": {
-        "prefix": "flux-2-klein-base-4b-", "label": "FLUX.2 Klein Base 4B",
-        "steps": 20, "cfg_scale": 4.0,
-    },
+    }
 }
 HEX40 = re.compile(r"[0-9a-f]{40}")
 HEX64 = re.compile(r"[0-9a-f]{64}")
@@ -129,6 +125,8 @@ class VisionCores:
                 continue
             if reg.get("origin", {}).get("model_id") != key:
                 continue
+            if any(item.get('repo') not in SOURCES for item in reg['files'] if item['role'] == 'diffusion_model'):
+                continue
             self.records[key] = row
         chosen = raw.get("active")
         if chosen in self.records:
@@ -183,7 +181,8 @@ class VisionCores:
             self.service.vision_busy = True
         with self.guard:
             if self.installing:
-                self.service.vision_busy = False
+                with self.service.state_lock:
+                    self.service.vision_busy = False
                 raise BlockingIOError("install_running")
             self.installing = ident
             self.install_error = ""
