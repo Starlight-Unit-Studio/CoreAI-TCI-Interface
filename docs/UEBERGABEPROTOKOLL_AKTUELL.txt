@@ -1,18 +1,20 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
-PR-Stand: 0.7.46 auf main 0.7.45 (Fix nach fehlerhaftem Vision-Core-Update).
+PR-Stand: 0.7.47 auf main 0.7.46 (Vision Core Nginx-Routing).
 Stand: 13.11.2026
-Repository-Version: 0.7.46 (Branch fix/vision-core-image-service-0-7-46, main 0.7.45)
-BASIS: main 0.7.45 nach PR #300; Vision Core war bereits gemergt, Preflight schlug auf dem Live-Server fehl.
-NAECHSTE VERBINDLICHE VERSION: 0.7.46 fuer den Fix-PR (danach 0.7.47), sofern keine neuen Main-Merges erfolgen.
-KRITISCH: Bilddienst-Selbsttest - ModuleNotFoundError vision_cores. Image worker im Python-Start -I nutzt keine impliziten lokalen Imports.
-KORREKTUR: Lokalpfad-Lader in image_service.py, import copy, Watcher, HTTP-/vision-Selbsttests, Mobile-CSS, SHA-256-Cache-Keys.
-WICHTIG: Kein Merge vor bestandenen lokalen Preflights und realem Image-Service-Test. Bisher kein erfolgreicher Server-Nachweis.
+Repository-Version: 0.7.47 (Branch fix/vision-core-nginx-route-0-7-47, main 0.7.46)
+BASIS: main 0.7.46 nach PR #301; Bilddienst-Import ist repariert, aber PHP-API wird extern von Nginx mit 404 blockiert.
+NAECHSTE VERBINDLICHE VERSION: 0.7.47 fuer den Fix-PR (danach 0.7.48), falls kein Main-Merge vorab erfolgt.
+KRITISCHER FEHLER: /api/vision_cores.php fehlte in der Nginx-PHP-Freigabeliste fuer Compose UND native Installation.
+KORREKTUR: Exakte Freigabe in beiden Nginx-Templates; keine andere PHP-API freigegeben.
+REGRESSION: scripts/vision-nginx-route-selftest.py in beiden Preflights und GitHub-Check.
+LIVE-SCHUTZ: Installer prueft anonym HTTP 401 fuer Vision Core nach dem Web-Restart. 404 ist jetzt ein Installationsfehler.
+WICHTIG: 0.7.47 noch nicht live bestaetigt; vorherige Image-Service-Tests deckten die PHP-Webroute nicht ab.
 NEUE ARBEIT ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_7_47.txt
   docs/UEBERGABEPROTOKOLL_0_7_46.txt
   docs/UEBERGABEPROTOKOLL_0_7_45.txt
   docs/UEBERGABEPROTOKOLL_0_7_44.txt
-  docs/UEBERGABEPROTOKOLL_0_7_43.txt
 
 WICHTIG: Kein nachtraeglich erfundenes Release/ZIP fuer 0.7.35. Bereits gemergte PR #290 nicht umnummerieren.
 NEUE ARBEIT ZUERST LESEN:
