@@ -34,7 +34,8 @@ def _call(endpoint, message, session="", post=None):
         import requests  # optional public MCP provider only
         post = requests.post
     headers = {"Content-Type": "application/json",
-               "Accept": "application/json, text/event-stream"}
+               "Accept": "application/json, text/event-stream",
+               "MCP-Protocol-Version": PROTOCOL}
     if session:
         headers["Mcp-Session-Id"] = session
     result = post(endpoint, json=message, headers=headers, timeout=(4, 16),
@@ -61,6 +62,20 @@ def search_public_mcp(cfg, query, guard, post=None):
                        "clientInfo": {"name": "CoreAI Research", "version": "0.7.42"}}}
     data, session = _call(endpoint, init, post=post)
     if data.get("error"):
+        return []
+    # Required MCP initialized notification; a 202/204 empty response is
+    # normal, so do not try to decode it as a tool result.
+    notify = {"jsonrpc": "2.0", "method": "notifications/initialized"}
+    sender = post
+    if sender is None:
+        import requests
+        sender = requests.post
+    headers = {"Content-Type": "application/json", "Accept": "application/json, text/event-stream",
+               "MCP-Protocol-Version": PROTOCOL}
+    if session:
+        headers["Mcp-Session-Id"] = session
+    ack = sender(endpoint, json=notify, headers=headers, timeout=(4, 12), allow_redirects=False)
+    if ack.status_code >= 300:
         return []
     method = str(cfg.get("STU_DEEP_RESEARCH_MCP_QUERY_FIELD") or "query")
     if method not in ("query", "q", "text", "search_query"):
