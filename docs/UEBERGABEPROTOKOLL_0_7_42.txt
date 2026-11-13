@@ -1,0 +1,38 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.42
+Datum: 13.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Main-Basis: 0.7.41 (PR #296 bereits gemergt)
+Naechste verbindliche Version: 0.7.43 nach Merge, falls main unveraendert.
+
+AUFTRAG
+OpenAI-typische dynamische einheitliche Reasoning-Trajektorie (Plan,
+Act/Observe, Backtracking, Pivoting, Tool- und Sandboxnutzung) und
+Anthropic-typische Lead/Subagent-Orchestrierung mit Map/Reduce,
+Context-Isolation, Shared Memory, paralleler Arbeit und
+dediziertem Citation Agent zu einer Hybridarchitektur verbinden.
+
+IMPLEMENTIERT
+- tools/coreai_research_hybrid.py: Lead/Worker, parallel I/O, isolierte
+  Prompts, source-backed Notizen, Reflexion/Pivots, neue Aufgaben,
+  Quellenabdeckung, finaler Citation Agent und deterministische Audit-Phase.
+- Migration 041: persistente State-Snapshots und gecachte Quellenauszuege.
+  Alte verlassene Research-Jobs werden mit Checkpoint wieder gequeued,
+  Quellen und Checkpoints werden beim Chat-Loeschen entfernt.
+- tools/coreai_research_documents.py und pypdf im Browse-Image: HTTP/
+  SSL/public redirect guard und PDF-, CSV-, JSON-Dokumente.
+- tools/coreai_research_mcp.py: optionaler Public/Read-only MCP-Suchadapter.
+  Nutzergebundene Enterprise-Verknuepfung noch nicht vorhanden.
+- tools/ember_browse_worker.py: optionale Modellrollen und Python-Sandbox
+  fuer belegte Statistik plus Sparkline, gleicher globaler Core-Lock.
+- Legacy Research bleibt moeglich per STU_DEEP_RESEARCH_HYBRID=0.
+- Bestehende Browser-/CAPTCHA-/Gast- und Berechtigungsregeln bleiben.
+- scripts/deep-research-hybrid-selftest.py, Hybrid-CI und zwei Preflights
+  fuer alle neu eingebauten Komponenten.
+- Dokumentiert: docs/DEEP_RESEARCH_HYBRID_ARCHITECTURE.md.
+
+GRENZEN
+RL-Training wird nicht vorgetaeuscht. Lokal keine parallelen Modell-Calls.
+Die dedizierte Citation-Pruefung ist zusaetzlich zur deterministischen
+Ziffern-/Evidenz-Pruefung, keine absolute Wahrheitsgarantie.
+Produktiver Browser-/PDF-/MCP-/Python-Job und Crash-Resume noch auf
+Netcup zu testen. Vor Merge Versionsguard plus Preflight abnehmen.

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.41: Deep Research selftest progress monotonicity fix.
+# CoreAI: TCI Interface 0.7.42: Hybrid Deep Research Lead/Worker and citations.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

@@ -1,15 +1,15 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
-PR-Stand: 0.7.41 auf main 0.7.40 (Deep-Research-Preflight-Fix).
-GitHub Actions hat den Worker-Selbsttest nach der Korrektur bestanden.
+PR-Stand: 0.7.42 auf main 0.7.41 (Hybrid Deep Research).
 Stand: 13.11.2026
-Repository-Version: 0.7.41 (Branch fix/deep-research-worker-selftest-0-7-41, main 0.7.40)
-BASIS: main 0.7.40, PR #295 gemergt.
-NAECHSTE VERBINDLICHE VERSION: 0.7.41 fuer diesen PR (danach 0.7.42), sofern keine weiteren Main-Merges vorab erfolgen.
+Repository-Version: 0.7.42 (Branch feature/deep-research-hybrid-0-7-42, main 0.7.41)
+BASIS: main 0.7.41 nach PR #296; Worker-Preflight erfolgreich.
+NAECHSTE VERBINDLICHE VERSION: 0.7.42 fuer diesen PR (danach 0.7.43), sofern keine weiteren Main-Merges vorab erfolgen.
+Neue Hybrid-Architektur: docs/DEEP_RESEARCH_HYBRID_ARCHITECTURE.md
 NEUE ARBEIT ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_7_42.txt
   docs/UEBERGABEPROTOKOLL_0_7_41.txt
 
- Vor jeder Arbeit aktuellen Main-Stand, Merge-Chronik und neuestes Uebergabeprotokoll pruefen.
 WICHTIG: Kein nachtraeglich erfundenes Release/ZIP fuer 0.7.35. Bereits gemergte PR #290 nicht umnummerieren.
 NEUE ARBEIT ZUERST LESEN:
   docs/UEBERGABEPROTOKOLL_0_7_40.txt

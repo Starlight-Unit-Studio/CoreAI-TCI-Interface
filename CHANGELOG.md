@@ -1,5 +1,15 @@
 # CoreAI: TCI Interface
 
+## 0.7.42 - 13.11.2026
+
+- **Hybrid Deep Research:** A single Lead Reasoning trajectory coordinates isolated Map workers, reviews their evidence, pivots to new searches and synthesizes a report. This combines iterative depth-first reasoning with breadth-first worker delegation while retaining the single global Ollama lock for CPU-only use.
+- **Parallel reading and context engineering:** Independent SearXNG/document network I/O runs concurrently; Worker prompts stay isolated to their own source pages, and only source-backed summaries reach the Lead. Optional configured Lead, Worker and Citation models use that same serial lock.
+- **Durable state:** Migration 041 adds per-run checkpoints and retained source excerpts. A stale run with a checkpoint is returned to the queue for recovery rather than being discarded; all research state is deleted with its owning chat.
+- **Iterative quality:** Evidence coverage is tracked per Worker, the Lead can add subtasks or focus follow-up queries, and weakly sourced topics get another bounded search round. Report synthesis uses the existing budget and an additional dedicated Citation Agent with deterministic source-reference checks.
+- **Research tools:** Existing Playwright and native Vision remain; public PDF, CSV and JSON are now read through a redirect-guarded, bounded document adapter. The existing isolated Python job service can compute source-validated numeric summaries and Unicode sparklines. A public read-only MCP discovery adapter is available only when an operator explicitly configures and enables it.
+- **Security and rollout:** No private chain-of-thought is stored, no proprietary RL training is claimed, no cloud-model requirement is added and no unapproved authenticated connector access is enabled. A backward-compatible legacy research path remains when the hybrid migration is absent or hybrid mode is disabled.
+- **Verification:** New hybrid selftest, permanent CI workflow and both preflights cover the hybrid pipeline; production Playwright/Ollama/PDF and long-run DB-resume behavior must still be validated on a real deployment. See [architecture and limitations](docs/DEEP_RESEARCH_HYBRID_ARCHITECTURE.md).
+
 ## 0.7.41 - 13.11.2026
 
 - **Fix: Deep Research preflight regression after 0.7.40.** Extra unattended source searches could move the reported progress backwards (e.g. 20% → 13%), causing the existing worker selftest and installation preflight to fail. Progress is now monotonically increasing, even when an additional search revisits an earlier phase.
