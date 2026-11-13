@@ -840,15 +840,17 @@ class DbResearchIO:
         # existing report card renderer; there is no new notification service.
         uid = int(self.run.get("user_id") or 0)
         session_id = str(self.run.get("session_id") or "")
-        if status == "done" and report and updated.rowcount and uid > 0 and session_id:
+        if status in ("done", "error") and updated.rowcount and uid > 0 and session_id:
             title = " ".join(str(self.run.get("title") or "Deep Research").split())[:80]
+            notice = ("Recherche abgeschlossen: " if status == "done" else
+                      "Recherche konnte nicht abgeschlossen werden: ") + title
             try:
                 insert_ember_message(
                     self.conn, self.cfg,
-                    f"[[deep-research:{self.id}]]\nRecherche abgeschlossen: {title}",
+                    f"[[deep-research:{self.id}]]\n{notice}",
                     thinking="browse", channel="console",
                     recipient_uid=uid, session_id=session_id)
-                self.log(f"  research {self.id}: Abschlussnachricht im Chat gespeichert")
+                self.log(f"  research {self.id}: Abschlussstatus im Chat gespeichert")
             except Exception as exc:
                 # Never turn a successfully completed research run into an
                 # error just because the optional chat notification failed.
