@@ -594,6 +594,74 @@ class DbResearchIO:
             "excerpt=VALUES(excerpt),content_sha256=VALUES(content_sha256)",
             (self.id, int(number), str(excerpt)[:5500], str(checksum)[:64]))
 
+    def python_analysis(self, spec):
+        """Run ONLY server-generated arithmetic in the existing Docker sandbox.
+
+        No model-authored Python or untrusted web text is executed here. Source
+        numbers are validated by the Lead before reaching this method.
+        """
+        if not cfg_bool(self.cfg, "STU_DEEP_RESEARCH_PYTHON_ENABLED", True):
+            return None
+        if not isinstance(spec, dict):
+            return None
+        operation = str(spec.get("operation") or "")
+        if operation not in ("sum", "mean", "median", "min", "max", "stdev"):
+            return None
+        values = spec.get("values")
+        if not isinstance(values, list) or not 2 <= len(values) <= 100:
+            return None
+        if any(type(n) not in (float, int) or not -1e12 < float(n) < 1e12 for n in values):
+            return None
+        # Every byte of the program is fixed by CoreAI. The only model input
+        # is a bounded JSON list of validated numbers and an allowed operation.
+        code = (
+            "import statistics, json, math\n"
+            "values = " + json.dumps([float(n) for n in values]) + "\n"
+            "operation = " + json.dumps(operation) + "\n"
+            "functions = {'sum':sum,'mean':statistics.mean,'median':statistics.median,"
+            "'min':min,'max':max,'stdev':statistics.stdev}\n"
+            "result = functions[operation](values)\n"
+            "assert math.isfinite(result)\n"
+            "print(json.dumps({'operation':operation,'value':round(float(result),8)}))\n"
+        )
+        try:
+            row = self._exec(
+                "INSERT INTO stu_ember_py_jobs "
+                "(status,code,channel,trigger_user_id,recipient_uid) "
+                "VALUES ('queued',%s,'research',%s,%s)",
+                (code, int(self.run.get("user_id") or 0), int(self.run.get("user_id") or 0)))
+            job_id = int(row.lastrowid or 0)
+        except Exception as exc:
+            self.log("research-python: sandbox unavailable (" + str(exc)[:100] + ")")
+            return None
+        if job_id <= 0:
+            return None
+        duration = cfg_int(self.cfg, "STU_DEEP_RESEARCH_PYTHON_WAIT", 35, 5, 90)
+        deadline = time.monotonic() + duration
+        while time.monotonic() < deadline:
+            if self.cancelled():
+                self._exec(
+                    "UPDATE stu_ember_py_jobs SET status='error',error='research_cancelled' "
+                    "WHERE id=%s AND status='queued'", (job_id,))
+                raise deep_research.Cancelled()
+            self.beat()
+            row = self._exec(
+                "SELECT status,stdout,error FROM stu_ember_py_jobs WHERE id=%s",
+                (job_id,)).fetchone() or {}
+            if row.get("status") == "done":
+                try:
+                    data = json.loads(str(row.get("stdout") or "").strip())
+                    return data if isinstance(data, dict) else None
+                except (TypeError, ValueError):
+                    return None
+            if row.get("status") == "error":
+                return None
+            time.sleep(2)
+        self._exec(
+            "UPDATE stu_ember_py_jobs SET status='error',error='research_timeout' "
+            "WHERE id=%s AND status='queued'", (job_id,))
+        return None
+
     def close_research_browser(self):
         if self._research_browser is not None:
             self._research_browser.close()
