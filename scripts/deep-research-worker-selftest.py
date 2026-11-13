@@ -350,6 +350,136 @@ check("images" not in plain["messages"][-1], "normal text calls remain unchanged
 check(w.DEFAULTS.get("STU_DEEP_RESEARCH_VISUAL_ENABLED") == "1",
       "visual browser fallback defaults on but remains configurable")
 
+
+# Deterministic visual browser session, without Chromium or network.
+class DemoPage:
+    def __init__(self, captcha=False):
+        self.url = "https://studio.example/"
+        self.text = ("Verify you are human" if captcha else "Search this studio and its public projects.")
+        self.frames, self.closed = [], False
+
+    def goto(self, url, **kwargs):
+        self.url = url
+
+    def wait_for_timeout(self, milliseconds):
+        pass
+
+    def locator(self, selector):
+        return types.SimpleNamespace(count=lambda: 0)
+
+    def screenshot(self, **kwargs):
+        return b"JPEG_VISUAL_TEST_FRAME"
+
+    def title(self):
+        return "Studio profile"
+
+    def close(self):
+        self.closed = True
+
+
+class DemoContext:
+    def __init__(self, captcha=False):
+        self.page = DemoPage(captcha)
+        self.closed = False
+
+    def new_page(self):
+        return self.page
+
+    def close(self):
+        self.closed = True
+
+
+class DemoBrowser:
+    def __init__(self, captcha=False):
+        self.context = DemoContext(captcha)
+        self.closed = False
+
+    def new_context(self, **kwargs):
+        return self.context
+
+    def close(self):
+        self.closed = True
+
+
+class DemoPlaywright:
+    def __init__(self, captcha=False):
+        self.browser = DemoBrowser(captcha)
+        self.chromium = types.SimpleNamespace(launch=lambda **kwargs: self.browser)
+
+    def stop(self):
+        pass
+
+
+class DemoProvider:
+    def __init__(self, captcha=False):
+        self.pw = DemoPlaywright(captcha)
+
+    def start(self):
+        return self.pw
+
+
+def demo_api(provider):
+    def demo_action(page, act, env):
+        check(act["action"] == "type" and act["text"] == "Mira Solberg", "safe search action")
+        page.text = "Mira Solberg writes speculative fiction and develops software. " * 5
+        page.url = "https://studio.example/search?q=Mira"
+        return "type", False, None
+
+    return types.SimpleNamespace(
+        sync_playwright=lambda: provider,
+        install_network_guard=lambda *args: None,
+        navigation_block_reason=lambda *args: None,
+        BrowseBlocked=w.BrowseBlocked, deep_research=dr,
+        dismiss_consent=lambda *args: False,
+        page_full_text=lambda page: page.text,
+        collect_elements=lambda page: [{"ref": 1, "name": "Search", "role": "searchbox"}],
+        render_elements=lambda els: "[1] Suchfeld Search",
+        element_for=lambda page, act, env: (object(), {"name": "Search"}),
+        inspect_element=lambda loc: {"protected": False, "form": "search"},
+        blocked_type_reason=w.blocked_type_reason,
+        blocked_click_reason=w.blocked_click_reason,
+        cfg_int=w.cfg_int,
+        do_action=demo_action,
+    )
+
+
+vision_calls = []
+def demo_vision(system, user, screenshot):
+    vision_calls.append((user, screenshot))
+    if len(vision_calls) == 1:
+        return json.dumps({"observation": "Studio search field", "action": "type", "ref": 1,
+                           "text": "Mira Solberg", "submit": True})
+    return json.dumps({"observation": "Mira Solberg writes books and develops software.",
+                       "action": "none"})
+
+provider = DemoProvider()
+session = browser_research.ResearchBrowserSession(
+    {"STU_DEEP_RESEARCH_BROWSER_ACTIONS": "2"}, demo_api(provider), vision=demo_vision)
+try:
+    title, body, final_url = session.read("https://studio.example/", "Mira Solberg", "Recherchiere Bücher")
+finally:
+    session.close()
+check(final_url.startswith("https://studio.example/search?") and "Mira Solberg" in body,
+      "visual search changes the real page and captures verified content")
+check(len(vision_calls) == 2 and all(image for _, image in vision_calls),
+      "the active Core sees a fresh screenshot per allowed UI step")
+check(provider.pw.browser.closed and provider.pw.browser.context.closed,
+      "browser session closes resources after research")
+
+captcha_provider = DemoProvider(captcha=True)
+captcha_calls = []
+captcha_session = browser_research.ResearchBrowserSession(
+    {}, demo_api(captcha_provider), vision=lambda *args: captcha_calls.append(args))
+try:
+    try:
+        captcha_session.read("https://studio.example/", "Mira Solberg", "Read biography")
+        check(False, "CAPTCHA must stop browsing")
+    except browser_research.ResearchChallenge:
+        pass
+finally:
+    captcha_session.close()
+check(captcha_calls == [], "CAPTCHA is detected before image-guided automation")
+
 check(callable(w.claim_next_research) and callable(w.process_research), "the worker claims and runs research")
 
 print("CoreAI deep research worker: page text, queries, notes, report citations, page choice, budget, a whole run, "
