@@ -21,6 +21,19 @@ CITE = re.compile(r"\[(\d{1,3})\]")
 WORD = re.compile(r"[\wÀ-ÿ]{4,}", re.UNICODE)
 
 
+
+def _core(io, role, system, prompt, want_json, timeout):
+    """Role-specific context, but always through the same locked Core queue.
+
+    An operator may choose a faster Worker or a specialist Citation model.
+    With no override all roles use Mara's existing selected local Core.
+    """
+    specialized = getattr(io, "research_core", None)
+    if callable(specialized):
+        return specialized(role, system, prompt, want_json, timeout)
+    return io.core(system, prompt, want_json, timeout)
+
+
 def _budget(budget, key, default, low, high):
     try:
         value = int(budget.get(key, default))
@@ -271,8 +284,8 @@ def _worker_notes(io, state, wi, pages, budget, check):
     check()
     # Independent prompt per worker: no other worker's HTML, thoughts or
     # full history enters this context. Only its own task and its own pages.
-    raw = io.core(*dr.notes_prompts(state["query"], w["goal"], pages), False,
-                  budget["core_timeout"])
+    raw = _core(io, "worker", *dr.notes_prompts(state["query"], w["goal"], pages), False,
+                budget["core_timeout"])
     short, summary = dr.split_notes(raw)
     allowed = {p[0] for p in pages}
     filtered = _supported_notes(summary, allowed, state["evidence"])
@@ -305,7 +318,7 @@ def _lead_decide(io, state, budget):
         "Wenn alle wichtigen Aspekte abgedeckt sind, stop=true. "
         "Kein internes Thinking oder Behauptungen ohne Quellen.")
     user = "Auftrag: " + state["query"] + "\n" + "\n\n".join(coverage)
-    raw = io.core(system, user[:9500], True, budget["core_timeout"])
+    raw = _core(io, "lead", system, user[:9500], True, budget["core_timeout"])
     result = dr.parse_json_object(raw)
     return result if isinstance(result, dict) else {}
 
@@ -423,7 +436,7 @@ def _report_review(io, state, candidate, budget):
     user = ("BERICHT:\n" + candidate[:8500] + "\n\nORIGINALAUSZÜGE:\n" +
             "\n\n".join(source_lines))[:15000]
     try:
-        result = io.core(system, user, False, budget["core_timeout"])
+        result = _core(io, "citation", system, user, False, budget["core_timeout"])
         return result if len(str(result or "").strip()) >= 180 else candidate
     except dr.Cancelled:
         raise
@@ -492,7 +505,7 @@ def _synthesize(io, state, budget, check):
         ), []
     system, prompt = dr.report_prompts(state["query"], title, steps, notes,
                                        state["sources"], _budget(budget, "report_chars", 14000, 5000, 30000))
-    generated = io.core(system, prompt, False, budget["core_timeout"])
+    generated = _core(io, "lead", system, prompt, False, budget["core_timeout"])
     candidate, _ = dr.clean_report(generated, title, {s["n"] for s in state["sources"]})
     candidate = _report_review(io, state, candidate, budget)
     candidate, _ = dr.clean_report(candidate, title, {s["n"] for s in state["sources"]})
@@ -527,7 +540,7 @@ def run_hybrid_research(run, io, budget, log=lambda *_: None, clock=time.monoton
         if not state["planner_queries"]:
             system, prompt = dr.queries_prompts(
                 state["query"], state["steps"], _budget(budget, "queries_per_step", 4, 1, 8))
-            raw = io.core(system, prompt, True, budget["core_timeout"])
+            raw = _core(io, "lead", system, prompt, True, budget["core_timeout"])
             state["planner_queries"] = dr.parse_queries(
                 raw, state["query"], state["steps"], budget["queries_per_step"])
             state["phase"] = "map"
