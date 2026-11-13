@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.44: Deep Research search and source integrity.
+# CoreAI: TCI Interface 0.7.45: Deep Research search and source integrity.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

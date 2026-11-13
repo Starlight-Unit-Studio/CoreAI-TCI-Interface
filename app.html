@@ -11,7 +11,7 @@
   />
   <meta name="theme-color" content="#f0f4fa" />
   <meta name="color-scheme" content="light" />
-  <meta name="application-version" content="0.7.44" />
+  <meta name="application-version" content="0.7.45" />
   <meta name="application-name" content="CoreAI: TCI Interface" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface | Quantum Software</title>
@@ -153,7 +153,7 @@
         <div class="brand-copy">
           <div class="brand-kicker">QUANTUM SOFTWARE</div>
           <div class="brand-title">COREAI:<span class="brand-product-part">TCI INTERFACE</span></div>
-          <div class="brand-signature">TERRA-NET MATRIX // N-73 // v0.7.44</div>
+          <div class="brand-signature">TERRA-NET MATRIX // N-73 // v0.7.45</div>
         </div>
       </div>
 
@@ -561,6 +561,7 @@
         <h4>CORE-BIBLIOTHEK</h4>
         <p class="core-install-update-info">Ollama durchsuchen, später Hugging Face nutzen und bereits installierte Cores verwalten.</p>
         <button class="core-install-btn core-install-btn--go" id="coreInstallLibraryOpen" type="button">Cores verwalten</button>
+        <button class="core-install-btn" id="coreInstallVisionOpen" type="button">Vision Core</button>
       </section>
       <section class="core-install-check" id="coreInstallCheck" aria-labelledby="coreInstallCheckTitle">
         <h4 id="coreInstallCheckTitle">HARDWARE-CHECK</h4>
@@ -613,6 +614,36 @@
         <button class="core-install-btn core-install-btn--go" id="coreInstallGo" type="button">Installieren</button>
       </div>
     </div>
+  </div>
+
+  <div class="vision-library" id="visionLibrary" hidden>
+    <section class="vision-library-panel" role="dialog" aria-modal="true" aria-labelledby="visionLibraryTitle" tabindex="-1">
+      <header class="vision-library-head">
+        <div><span class="core-mode-kicker">VISION CORE-BIBLIOTHEK</span>
+          <h2 id="visionLibraryTitle">Vision Cores verwalten</h2>
+          <p>Lokale Bildgeneratoren über Hugging Face installieren und auswählen. Das mitgelieferte FLUX-Standardmodell bleibt geschützt.</p>
+        </div>
+        <button class="core-library-close" id="visionLibraryClose" type="button" aria-label="Vision Core schließen">×</button>
+      </header>
+      <div class="core-library-providers" role="tablist" aria-label="Vision Core-Verwaltung">
+        <button type="button" class="core-library-provider" id="visionLibrarySearchTab" role="tab" aria-controls="visionLibrarySearchPanel" aria-selected="false">HUGGING FACE</button>
+        <button type="button" class="core-library-provider core-library-provider--active" id="visionLibraryInstalledTab" role="tab" aria-controls="visionLibraryInstalledPanel" aria-selected="true">INSTALLIERT</button>
+      </div>
+      <section id="visionLibrarySearchPanel" role="tabpanel" aria-labelledby="visionLibrarySearchTab" hidden>
+        <form class="core-library-search" id="visionLibrarySearchForm">
+          <label for="visionLibraryQuery">BILDMODELL SUCHEN</label>
+          <div><input type="search" id="visionLibraryQuery" maxlength="80" placeholder="z. B. FLUX.2, Q8_0" autocomplete="off">
+            <button type="submit" class="core-install-btn core-install-btn--go">Suchen</button></div>
+        </form>
+        <p>Nur mit der lokalen Bild-Engine kompatible und kryptografisch prüfbare Modellpakete werden angeboten.</p>
+        <div class="vision-library-list" id="visionLibraryResults"></div>
+      </section>
+      <section id="visionLibraryInstalledPanel" role="tabpanel" aria-labelledby="visionLibraryInstalledTab">
+        <p>Das aktive Modell erzeugt alle neuen Bilder in CoreAI. Für den Modellwechsel muss die Bildgenerierung frei sein.</p>
+        <div class="vision-library-list" id="visionLibraryInstalledList"></div>
+      </section>
+      <p class="vision-library-status" id="visionLibraryStatus" role="status" aria-live="polite"></p>
+    </section>
   </div>
 
   <div class="core-library" id="coreLibrary" hidden>
@@ -707,6 +738,7 @@
   <script src="./js/coreui-reasoning-effort.js?v=0460931670262011947396865"></script>
   <script src="./js/coreui-core-install.js?v=0220003641459915669630984"></script>
   <script src="./js/coreui-model-library.js?v=0462424467087605919462233"></script>
+  <script src="./js/coreui-vision-library.js?v=0000000000000000000000001"></script>
   <script src="./js/coreui-artifacts.js?v=1069339270452640197429799"></script>
 
   <div class="project-modal-scrim" id="projectModalScrim" hidden>

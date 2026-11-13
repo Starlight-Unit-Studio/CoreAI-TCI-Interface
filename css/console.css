@@ -9825,3 +9825,43 @@ a.insight-file-name:hover { text-decoration: underline; }
   .core-library-search-controls input { font-size: 16px; }
   .core-library-search-controls .core-install-btn { padding: 8px 10px; }
 }
+
+/* Vision Core library: reuse the angular CoreAI modal vocabulary. */
+.vision-library { position: fixed; inset: 0; z-index: 11020; display: flex;
+  align-items: center; justify-content: center; padding: 16px;
+  background: rgba(7, 14, 28, .72); }
+.vision-library[hidden], .vision-library [hidden] { display: none !important; }
+.vision-library-panel { width: min(760px, 100%); max-height: min(85dvh, 850px);
+  overflow: auto; padding: 22px; background: var(--panel, #f9fbff);
+  border: 1px solid var(--line-strong, #a9c5f5); color: var(--text, #172033);
+  box-shadow: 0 18px 60px rgba(0,0,0,.26); border-radius: 0;
+  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%); }
+.vision-library-head { display: flex; gap: 12px; justify-content: space-between; }
+.vision-library-head h2 { font-size: 21px; margin: 8px 0; }
+.vision-library-head p, .vision-library-panel section > p { font-size: 13px;
+  line-height: 1.5; color: var(--muted); margin: 6px 0 13px; }
+.vision-library-panel .core-library-providers { grid-template-columns: repeat(2, minmax(0,1fr)); }
+.vision-library-panel .core-library-search > div { display: flex; gap: 8px; }
+.vision-library-panel .core-library-search input { flex: 1 1 auto; min-width: 0; }
+.vision-library-list { display: grid; gap: 10px; margin-top: 12px; max-height: 48dvh; overflow-y: auto; }
+.vision-library-model { display: flex; justify-content: space-between; gap: 12px;
+  align-items: center; flex-wrap: wrap; padding: 13px; border: 1px solid var(--line-strong, #a9c5f5);
+  background: var(--panel-soft, rgba(80,135,230,.08)); }
+.vision-library-model-copy { display: grid; gap: 5px; flex: 1 1 190px; min-width: 0; }
+.vision-library-model-copy strong, .vision-library-model-copy small { overflow-wrap: anywhere; }
+.vision-library-model-copy small { color: var(--muted); font-size: 12px; }
+.vision-library-safe { color: var(--green, #12ae7d) !important; }
+.vision-library-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.vision-library-actions .core-install-btn { white-space: normal; }
+.vision-library-status { min-height: 20px; font-size: 13px; margin: 14px 0 0;
+  color: var(--muted); overflow-wrap: anywhere; }
+.vision-library-status[data-error="true"] { color: var(--amb, #d88b15); }
+@media (max-width: 600px) {
+  .vision-library { padding: 7px; }
+  .vision-library-panel { padding: 14px; max-height: 83dvh; }
+  .vision-library-head h2 { font-size: 19px; }
+  .vision-library-model { align-items: stretch; }
+  .vision-library-actions { width: 100%; }
+  .vision-library-actions .core-install-btn { flex: 1 1 auto; min-height: 38px; }
+  .vision-library-panel .core-library-search input { font-size: 16px; }
+}

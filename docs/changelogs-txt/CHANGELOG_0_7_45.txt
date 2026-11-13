@@ -1,0 +1,12 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.45
+Datum: 13.11.2026
+
+Vision Core (erste Hugging-Face-Anbindung)
+- Separater Button Vision Core neben der Core-Bibliothek.
+- Eigenständiges, mobil nutzbares Verwaltungsfenster mit Hugging-Face-Suche und installierten Bildgeneratoren.
+- Nur zur vorhandenen stable-diffusion.cpp-Bildengine passende FLUX.2-Klein-GGUF-Varianten werden angeboten.
+- Auswahl, Installieren, Schutz des mitgelieferten Standardmodells und Deinstallation nicht aktiver Zusatzmodelle.
+- Fest gepinnte Hub-Revisionen und SHA-256-Prüfung vor Verwendung.
+- Serielle Bildaufträge bleiben erhalten. Kein Modellwechsel während laufender Bilder.
+- Ollama-Chat-Cores bleiben davon unberührt; die direkte Ollama-Bildpipeline ist nicht Teil dieses ersten Adapters.
+- Noch keine geprüften lokalen PHP-/Python-/JavaScript-Selbsttests und keine Live-Abnahme. PR bleibt Entwurf.
