@@ -1,0 +1,30 @@
+name: Hybrid Deep Research Regression
+on:
+  push:
+    branches:
+      - feature/deep-research-hybrid-0-7-42
+  pull_request:
+    paths:
+      - 'tools/coreai_research_hybrid.py'
+      - 'tools/coreai_research_documents.py'
+      - 'tools/coreai_research_quality.py'
+      - 'tools/coreai_deep_research.py'
+      - 'tools/ember_browse_worker.py'
+      - 'scripts/deep-research-hybrid-selftest.py'
+      - 'scripts/deep-research-worker-selftest.py'
+      - '.github/workflows/hybrid-deep-research.yml'
+jobs:
+  hybrid-research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check syntax of worker and hybrid components
+        run: |
+          python3 -m py_compile tools/coreai_deep_research.py tools/coreai_research_hybrid.py tools/coreai_research_documents.py tools/coreai_research_quality.py tools/ember_browse_worker.py scripts/deep-research-hybrid-selftest.py scripts/deep-research-worker-selftest.py
+      - name: Run existing Deep Research regression
+        run: python3 scripts/deep-research-worker-selftest.py
+      - name: Run hybrid orchestrator and source verification regressions
+        run: python3 scripts/deep-research-hybrid-selftest.py
