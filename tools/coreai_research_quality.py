@@ -123,16 +123,47 @@ def relevance(result, query, hosts=()):
     return score
 
 
+def candidate_relevance(result, query, hosts=()):
+    """Loose discovery score only. Search snippets are NOT verified evidence.
+
+    Crucially, an exact name can occur deep in a relevant webpage even when
+    the result title and summary do not mention it. Let such candidates be read
+    at lower priority instead of discarding them before inspecting the page.
+    """
+    exact = relevance(result, query, hosts)
+    if exact is not None:
+        return exact + 100
+    url = str(result.get("url") or "")
+    if not url.lower().startswith(("https://", "http://")):
+        return None
+    summary = fold(str(result.get("title") or "") + " " +
+                   str(result.get("content") or result.get("snippet") or "") + " " + url)
+    words = set(summary.split())
+    # Partial-name matches are worth opening, but never enough to cite.
+    identity_terms = {part for phrase in identity_phrases(query) for part in fold(phrase).split()
+                      if len(part) >= 5 and part not in STOP_WORDS}
+    overlap = len(words.intersection(identity_terms))
+    if overlap:
+        return overlap * 4
+    # Low-confidence SearXNG hits are still eligible for a bounded full-text
+    # check. Only the fetched document can prove the actual person's identity.
+    return -1
+
+
 def rank_results(results, query, seen=(), hosts=()):
-    """Deduplicate and rank by evidence, *not* by artificial domain variety."""
-    seen = set(seen)
+    """Relevance-first discovery, followed by strict checking after fetch.
+
+    The old implementation returned ONLY snippet-exact results, which caused
+    0-source reports when useful websites mentioned the name in the body.
+    """
+    seen = {str(u).split("#", 1)[0].rstrip("/").casefold() for u in seen}
     ranked, urls = [], set()
     for index, item in enumerate(results):
         url = str(item.get("url") or "")
         key = url.split("#", 1)[0].rstrip("/").casefold()
-        if url in seen or key in urls:
+        if not key or key in seen or key in urls:
             continue
-        score = relevance(item, query, hosts)
+        score = candidate_relevance(item, query, hosts)
         if score is None:
             continue
         urls.add(key)
@@ -142,16 +173,21 @@ def rank_results(results, query, seen=(), hosts=()):
 
 
 def fetched_page_is_relevant(query, url, title, body, hosts=()):
-    """A source must be actually readable and must pass the identity check."""
-    if len(" ".join(str(body or "").split())) < 80:
+    """Strict citation gate using fetched text, NEVER a search-engine snippet."""
+    text = " ".join(str(body or "").split())
+    if len(text) < 40:
         return False
     anchors = identity_phrases(query)
-    if anchors and not any(contains_phrase(str(title or "") + " " + str(body or ""), p) for p in anchors):
-        # The search URL alone is not proof that the fetched (possibly redirected)
-        # page really discusses the named subject.
+    if anchors and not any(contains_phrase(str(title or "") + " " + text, p) for p in anchors):
+        # Explicit user-provided URLs may be authoritative about their subject.
         if not any(on_host(url, h) for h in explicit_hosts(query)):
             return False
-    return relevance({"url": url, "title": title, "content": body[:12000]}, query, hosts) is not None
+    if not anchors:
+        terms = set(topic_terms(query))
+        if terms and not terms.intersection(set(fold(str(title or "") + " " + text).split())):
+            if not any(on_host(url, h) for h in explicit_hosts(query)):
+                return False
+    return True
 
 
 def enforce_queries(proposed, query, step, count, hosts=()):
