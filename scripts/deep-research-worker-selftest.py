@@ -44,7 +44,7 @@ check(not writing2 and len(steps2) == 2, "no report step: all steps search")
 
 q = dr.parse_queries('{"steps": [{"queries": ["site:example.test angebote", "\\"example test\\" produkte", "x"]}, '
                      '{"queries": "example test bewertung"}]}', "https://www.example.test", ["A", "B", "C"], 3)
-check(q[0] == ["site:example.test angebote", "example test produkte"], "queries of step 1: %r" % q[0])
+check(q[0] == ["site:example.test angebote", '"example test" produkte'], "queries preserve quoted names: %r" % q[0])
 check(q[1] == ["example test bewertung"], "a single string counts")
 check(q[2] and q[2][0].startswith("example.test"), "a step without queries gets its own words: %r" % q[2])
 check(dr.parse_queries("kein json", "Solarstrom Balkon", ["Suche nach Förderprogrammen."], 2)[0][0].startswith("Solarstrom Balkon"),
@@ -68,8 +68,44 @@ check(picked == ["https://a.test/1", "https://b.test/1", "https://a.test/2"], "d
 check(dr.page_chars(4096, 3) == 2252 and dr.page_chars(None, 3) == 2252 and dr.page_chars(100, 3) == 900 and dr.page_chars(65536, 3) == 5000,
       "page size follows the window within bounds")
 b = dr.budget_from({"STU_DEEP_RESEARCH_PAGES_PER_STEP": "99", "STU_DEEP_RESEARCH_MAX_MINUTES": "x"})
-check(b["pages_per_step"] == 6 and b["max_minutes"] == 30 and b["queries_per_step"] == 3, "budget bounds: %r" % b)
+check(b["pages_per_step"] == 10 and b["max_minutes"] == 30 and b["queries_per_step"] == 4, "budget bounds: %r" % b)
 
+
+
+# Real-world failure classes reproduced with synthetic organizations and names.
+quality = dr.quality
+case = "Recherchiere Mira Solberg und Aurora Unit Studios"
+good = [
+    {"url": "https://www.aurora-unit.example/", "title": "Aurora Unit Studios | Mira Solberg", "content": "Bücher und Apps"},
+    {"url": "https://books.aurora-unit.example/author", "title": "Mira Solberg | Autorin", "content": "Aurora Unit"},
+]
+noise = [
+    {"url": "https://news.example/music", "title": "Aurora Express Musical", "content": "Musiktheater"},
+    {"url": "https://science.example/prof", "title": "Johannes Solberg, Professor", "content": "Datenbanken"},
+    {"url": "https://store.example/audio", "title": "Aurora 8 Audiokabel", "content": "Audio"},
+]
+check(quality.identity_phrases(case) == ["Mira Solberg", "Aurora Unit Studios"], "two named entities")
+check(quality.rank_results(noise + good, case) == good, "same-name noise must lose to relevant sources")
+check(quality.relevance(noise[0], case) is None, "a near-match is not an identity match")
+forced = quality.enforce_queries(["Johannes Solberg Professor", "Aurora Express Musical"],
+                                 case, "Suche Autoren und Studios", 3)
+check(forced[0].startswith('"Mira Solberg"') and all(
+    any(quality.contains_phrase(q, name) for name in quality.identity_phrases(case))
+    for q in forced), "all search queries retain a subject anchor")
+check(not quality.fetched_page_is_relevant(case, noise[0]["url"], noise[0]["title"],
+                                           "Andere Shows und Veranstaltungen sind hier aufgelistet. " * 3),
+      "an unrelated readable page is still not evidence")
+check(quality.fetched_page_is_relevant(case, good[0]["url"], good[0]["title"],
+                                      "Mira Solberg gruendete Aurora Unit Studios und publiziert Romane. " * 3),
+      "relevant full text accepted")
+check(quality.supported_notes("- Buch [1, 2]\n- Produkt [7]\n- ohne Beleg", {1, 2}) == "- Buch [1, 2]",
+      "only factual notes with valid source numbers survive")
+prompt_sys, prompt_user = dr.report_prompts("Thema", "Titel", ["Eins", "Zwei"],
+                                          {0: "- A [1]" * 120, 1: "- B [2]" * 120},
+                                          [{"n": 1, "title": "A", "domain": "a.example", "url": "https://a.example"},
+                                           {"n": 2, "title": "B", "domain": "b.example", "url": "https://b.example"}], 1400)
+check("QUELLENREGISTER" in prompt_user and "[2] B" in prompt_user and "### Zwei" in prompt_user,
+      "source register and later steps survive context allocation")
 
 # --- A whole run with a fake IO -------------------------------------------------------------------
 class FakeIO:
@@ -127,15 +163,15 @@ check(dr.run_deep_research(run, io, dr.budget_from({})) == "done", "the run fini
 kinds = [k for k, _, _ in io.log]
 check(kinds[0] == "step" and kinds.count("step") == 2 and kinds.count("search") == 3 and "note" in kinds, "events: %r" % kinds)
 check(io.log[1] == ("search", "site:example.test angebote", ["example.test", "blocked.test"]), "a search names its domains: %r" % (io.log[1],))
-check([s["n"] for s in io.sources] == list(range(1, len(io.sources) + 1)) and len(io.sources) == 3, "sources numbered, a page seen in step 1 is not read again: %r" % io.sources)
-check(any(s["domain"] == "blocked.test" for s in io.sources), "a page that does not load still counts with its search snippet")
-check(io.writing and io.finished[0] == "done" and "[42]" not in io.finished[1] and io.finished[2] == [1, 2], "report: %r" % (io.finished[:1] + io.finished[2:],))
+check([s["n"] for s in io.sources] == [1] and len(io.sources) == 1, "only genuinely read, relevant pages become sources: %r" % io.sources)
+check(not any(s["domain"] == "blocked.test" for s in io.sources), "failed fetches and snippets are not evidence")
+check(io.writing and io.finished[0] == "done" and "[42]" not in io.finished[1] and io.finished[2] == [1], "report: %r" % (io.finished[:1] + io.finished[2:],))
 percents = [p for _, _, p, _ in io.progresses]
 check(percents == sorted(percents) and percents[-1] == 100, "progress only grows and ends at 100: %r" % percents)
 check(io.progresses[-1][0] == ["done", "done", "done"] and io.progresses[-1][3] == 3, "all steps done, three searches")
 active = [s for s, phase, _, _ in io.progresses if phase == "write"][0]
 check(active == ["done", "done", "active"], "the report step is active while writing: %r" % active)
-check([c[0] for c in io.core_calls] == [True, False, False, False], "one query call, a notes call per step, one report call")
+check([c[0] for c in io.core_calls] == [True, False, False], "one query call, only sourced notes, one report call")
 
 io = FakeIO(cancel_after=3)
 check(dr.run_deep_research(run, io, dr.budget_from({})) == "cancelled" and io.finished[0] == "cancelled", "Stopp ends the run")
