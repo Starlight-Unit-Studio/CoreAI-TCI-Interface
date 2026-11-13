@@ -7,7 +7,12 @@ ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
 
 COPY tools/requirements-browse.txt /tmp/requirements-browse.txt
 
-RUN python -m pip install --no-cache-dir -r /tmp/requirements-browse.txt \
+# Playwright's bundled Node binary needs libatomic.so.1 on slim-bookworm.
+# Install it BEFORE invoking Playwright's dependency/browser installer.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libatomic1 \
+    && rm -rf /var/lib/apt/lists/* \
+    && python -m pip install --no-cache-dir -r /tmp/requirements-browse.txt \
     && python -m playwright install --with-deps chromium \
     && chmod -R a+rX /ms-playwright \
     && rm -f /tmp/requirements-browse.txt
