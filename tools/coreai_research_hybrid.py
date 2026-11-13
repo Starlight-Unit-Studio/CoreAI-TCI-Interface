@@ -302,9 +302,12 @@ def _worker_notes(io, state, wi, pages, budget, check):
 def _lead_decide(io, state, budget):
     """One shared reasoning trajectory decides what needs depth, not raw CoT."""
     coverage = []
+    summary = _coverage_score(state)
     for idx, w in enumerate(state["workers"]):
         coverage.append(f"{idx}: {w['goal']}\n"
-                        f"Gefundene Belege: {len(w['source_ids'])}, Notizen: {w['notes'][:800]}")
+                        f"Belege: {len(w['source_ids'])}, unabhängige Domains: "
+                        f"{summary[str(idx)]['independent_domains']}, "
+                        f"Notizen: {w['notes'][:800]}")
     system = (
         "Du bist Lead Researcher. Prüfe nach der parallelen Recherche "
         "Unklarheiten, Widersprüche und fehlende Belege. Vertraue nur den "
@@ -323,6 +326,20 @@ def _lead_decide(io, state, budget):
     return result if isinstance(result, dict) else {}
 
 
+def _coverage_score(state):
+    """Conservative coverage metric, not model confidence or invented facts."""
+    registry = {s["n"]: s["domain"] for s in state["sources"]}
+    coverage = {}
+    for idx, worker in enumerate(state["workers"]):
+        domains = sorted({registry[n] for n in worker["source_ids"] if n in registry})
+        coverage[str(idx)] = {
+            "sources": len(worker["source_ids"]), "independent_domains": len(domains),
+            "has_cited_notes": bool(worker["notes"]), "domains": domains[:10],
+        }
+    state["coverage"] = coverage
+    return coverage
+
+
 def _followup_queries(decision, state, budget):
     focus = {}
     workers = state["workers"]
@@ -336,12 +353,16 @@ def _followup_queries(decision, state, budget):
         if not query:
             continue
         focus.setdefault(idx, []).append(query)
-    # Backtracking to a different public domain when current sources are
-    # missing is deterministic, even if a small local Core returns no JSON.
+    # Backtracking when evidence is missing OR all hits come from one
+    # provenance. The model may recommend stopping; independent source
+    # coverage still gets a bounded chance for verification.
+    coverage = _coverage_score(state)
     for idx, w in enumerate(workers):
-        if not w["notes"]:
+        if not w["notes"] or coverage[str(idx)]["independent_domains"] < 2:
+            excluded = coverage[str(idx)]["domains"]
             focus.setdefault(idx, []).extend(
-                quality.alternative_queries(state["query"], w["goal"], limit=2))
+                quality.alternative_queries(state["query"], w["goal"],
+                                            blocked_hosts=excluded, limit=2))
     for idx, value in list(focus.items()):
         focus[idx] = quality.enforce_queries(value, state["query"],
                                              workers[idx]["goal"], 2)
@@ -579,6 +600,7 @@ def run_hybrid_research(run, io, budget, log=lambda *_: None, clock=time.monoton
                     continue
                 _worker_notes(io, state, wi, pages.get(wi, []), budget, check)
                 w["status"] = "done"
+                _coverage_score(state)
                 _progress(io, state, "map", wi)
                 _checkpoint(io, state)
             state["depth"] += 1
@@ -591,7 +613,9 @@ def run_hybrid_research(run, io, budget, log=lambda *_: None, clock=time.monoton
             _analyze_with_sandbox(io, decision, state)
             _append_tasks(decision, state, budget)
             next_queries = _followup_queries(decision, state, budget)
-            if decision.get("stop") is True and all(w["notes"] for w in state["workers"]):
+            source_domains = {source["domain"] for source in state["sources"]}
+            if (decision.get("stop") is True and len(source_domains) >= 2 and
+                    all(w["notes"] for w in state["workers"])):
                 break
             if not next_queries and all(w["notes"] for w in state["workers"]):
                 break
