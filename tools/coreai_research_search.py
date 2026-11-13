@@ -41,7 +41,10 @@ class ResultParser(HTMLParser):
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
         if self.active is not None:
-            self.depth += 1
+            # Void elements (img/br/etc.) do not have closing tags.
+            if tag not in ("area", "base", "br", "col", "embed", "hr",
+                           "img", "input", "link", "meta", "param", "source", "wbr"):
+                self.depth += 1
             return
         if tag != "a":
             return
