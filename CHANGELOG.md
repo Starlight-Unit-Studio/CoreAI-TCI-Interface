@@ -1,5 +1,12 @@
 # CoreAI: TCI Interface
 
+## 0.7.47 - 13.11.2026
+
+- **Fix Vision Core HTTP 404:** The browser's `api/vision_cores.php` endpoint was missing from Nginx's strict allowlist. The web server returned 404 before PHP, so both the installed list and Hugging Face search failed despite passing image worker tests. Explicitly permit only the authenticated Vision Core bridge in both Compose and native Nginx templates, keeping the default-deny rule for other PHP files.
+- **End-to-end update gate:** After web recreation, the installer now probes `/api/vision_cores.php` anonymously and requires the PHP bridge's 401 status, rather than Nginx's 404. The probe does not need administrator credentials or the running image generator.
+- **Regression coverage:** New `scripts/vision-nginx-route-selftest.py` validates the browser bridge, role/CSRF requirements, both Nginx route allowlists, denied PHP paths and the installer probe. Both preflights and the Vision Core GitHub regression check now require it.
+- **Scope:** No changes to image weights, Ollama Cores, engine processes, user data, quotas, or serial scheduling. Live verification of image generation and Hugging Face downloads remains necessary.
+
 ## 0.7.46 - 13.11.2026
 
 - **Urgent fix for 0.7.45:** The image service failed preflight with `ModuleNotFoundError: No module named 'vision_cores'`. Load the Vision Core module by absolute file path so import succeeds in both isolated Python (`-I`) and the offline selftest.
