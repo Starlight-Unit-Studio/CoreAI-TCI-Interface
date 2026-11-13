@@ -1,0 +1,26 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.48
+Datum: 13.11.2026
+
+OLLAMA ALS DRITTER VISION-CORE-ANBIETER
+- Vision-Core-Bibliothek hat jetzt HUGGING FACE, OLLAMA und INSTALLIERT.
+- Ollama-Reiter nutzt die bestehende offizielle Registry-Suche aus dem Core-Manager;
+  relevante FLUX.2-Klein- und Z-Image-Familien werden angezeigt.
+- Suchergebnisse lassen sich als Detail mit Ollama-Tags und Downloadgroessen oeffnen.
+- Auswahl einer Tag-Variante und explizite Zweifachbestaetigung installieren den
+  Ollama-Core ueber den existierenden serialisierten Core-Installer.
+- Downloadstatus aus derselben persistenten Ollama-Installationswarteschlange.
+- Bei Ollama lokal vorhandene Bild-Cores werden angezeigt. Deinstallation laeuft
+  nach zweifacher Bestaetigung ueber die geschuetzte vorhandene Core-Verwaltung.
+- Der mitgelieferte lokale FLUX.2-Klein-Bildgenerator und die bestehende HF-Auswahl
+  bleiben unveraendert. Ollama-Pakete koennen auf diesem Linux-Server NICHT einfach
+  als Bildgenerator ausgewaehlt werden: Ollama hat die experimentelle native
+  Bildgenerierung 2026 entfernt. Keine unwahre Aktivierungsfunktion.
+- Kein neuer Nginx-/PHP-Endpunkt, keine Cloudpflicht, kein zweiter Ollama-Downloadprozess.
+- Neuer JS-UI-Selbsttest prueft Filter, Registry-Anbindung, Download, CSRF, Status und
+  die zweistufige Entfernung; beide Preflights und GitHub-Image-Workflow enthalten ihn.
+- Browser-Cache-Fingerprints fuer die geaenderten CSS- und JS-Dateien aktualisiert.
+
+Noch zu verifizieren:
+- Node-UI-Test, Python-/PHP-Regressionen, Bash-Preflights und Version-Guard.
+- Echter Ollama-Registry-Abruf, Download und UI am laufenden CoreAI auf Netcup.
+- Direkte native Ollama-Bilder sind nicht Bestandteil dieses Releases.

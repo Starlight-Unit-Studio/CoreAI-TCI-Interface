@@ -7,6 +7,9 @@ on:
       - 'tools/image/vision_cores.py'
       - 'scripts/image-service-selftest.py'
       - 'scripts/vision-nginx-route-selftest.py'
+      - 'scripts/vision-ollama-ui-selftest.cjs'
+      - 'js/coreui-vision-ollama.js'
+      - 'app.html'
       - 'config/runtime/nginx.conf.template'
       - 'config/nginx.conf.template'
       - 'api/vision_cores.php'
@@ -21,6 +24,9 @@ on:
       - 'tools/image/vision_cores.py'
       - 'scripts/image-service-selftest.py'
       - 'scripts/vision-nginx-route-selftest.py'
+      - 'scripts/vision-ollama-ui-selftest.cjs'
+      - 'js/coreui-vision-ollama.js'
+      - 'app.html'
       - 'config/runtime/nginx.conf.template'
       - 'config/nginx.conf.template'
       - 'api/vision_cores.php'
@@ -46,7 +52,10 @@ jobs:
         run: |
           php -l api/vision_cores.php
           php -l api/image_gen.php
-      - name: Check browser library syntax
-        run: node --check js/coreui-vision-library.js
+      - name: Check browser libraries and Ollama Vision integration
+        run: |
+          node --check js/coreui-vision-library.js
+          node --check js/coreui-vision-ollama.js
+          node scripts/vision-ollama-ui-selftest.cjs
       - name: Verify SHA-256 asset cache keys
         run: python3 scripts/cache-bust.py --verify

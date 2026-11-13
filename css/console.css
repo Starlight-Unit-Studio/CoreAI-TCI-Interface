@@ -9842,7 +9842,7 @@ a.insight-file-name:hover { text-decoration: underline; }
 .vision-library-head h2 { font-size: 21px; margin: 8px 0; }
 .vision-library-head p, .vision-library-panel section > p { font-size: 13px;
   line-height: 1.5; color: var(--muted); margin: 6px 0 13px; }
-.vision-library-panel .core-library-providers { grid-template-columns: repeat(2, minmax(0,1fr)); }
+.vision-library-panel .core-library-providers { grid-template-columns: repeat(3, minmax(0,1fr)); }
 .vision-library-panel .core-library-search > div { display: flex; gap: 8px; }
 .vision-library-panel .core-library-search input { flex: 1 1 auto; min-width: 0; }
 .vision-library-list { display: grid; gap: 10px; margin-top: 12px; max-height: 48dvh; overflow-y: auto; }
@@ -9867,3 +9867,18 @@ a.insight-file-name:hover { text-decoration: underline; }
   .vision-library-actions .core-install-btn { flex: 1 1 auto; min-height: 38px; }
   .vision-library-panel .core-library-search input { font-size: 16px; }
 }
+
+/* Ollama's image families are managed via the shared Ollama pull worker.
+   A local Ollama image package is not automatically a usable Linux renderer. */
+.vision-library-ollama-detail {
+  margin: 12px 0 16px; padding: 12px; border: 1px solid var(--line-strong);
+  background: var(--panel-soft);
+}
+.vision-library-ollama-detail h3 { margin: 7px 0; font-size: 17px; overflow-wrap: anywhere; }
+.vision-library-ollama-detail p { color: var(--muted); font-size: 13px; }
+.vision-library-ollama-detail select {
+  width: 100%; min-height: 40px; margin: 8px 0 12px; padding: 8px;
+  background: var(--panel-solid); color: var(--txt); border: 1px solid var(--line-strong);
+}
+.vision-library-ollama-detail a { color: var(--cx); font-size: 12px; }
+.vision-library-panel .vision-library-ollama-detail[hidden] { display: none !important; }

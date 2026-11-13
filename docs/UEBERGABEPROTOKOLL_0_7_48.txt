@@ -1,0 +1,44 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.48
+Datum: 13.11.2026
+Basis: main 0.7.47 (Vision Core Nginx-Fix PR #302 gemergt)
+Branch: feature/vision-core-ollama-catalog-0-7-48
+Naechste Version nach Merge: 0.7.49, sofern main unveraendert bleibt.
+
+ZIEL
+- Nach Hugging Face und Installed sollte Ollama als dritter Vision-Core-Provider
+  im bestehenden CoreAI-Themedialog folgen, auf dem Smartphone bedienbar.
+- Nur echte Werkzeuge statt eines funktionslosen Angebots.
+
+VERIFIZIERTE OLLAMA-EINSCHRAENKUNG
+- Ollama hatte 2026 experimentelle Bildgenerierung auf macOS; nach v0.32.5
+  wurde diese entfernt. Die standardmaessige Linux-Ollama-Installation kann
+  derzeit ein x/flux2-klein-Bildpaket als Core im Inventar halten, ohne Bilder
+  durch eine native API zu generieren.
+- Bildpaket und Bildgenerator sind nicht austauschbar. Existing sd.cpp FLUX.2
+  Klein Q8_0 ist weiterhin der einzig aktivierbare Standard-Renderer.
+- Die Ollama-Quelle zeigt und installiert nur Bild-Core-Familien, die Auswahl
+  als aktiver Renderer bleibt ohne nachgewiesene Engine blockiert.
+
+IMPLEMENTIERUNG
+- app.html: zusaetzlicher Tab OLLAMA mit Suche, Tags/Download, Installiert-Liste
+  und uebernommener Statusanzeige.
+- js/coreui-vision-ollama.js: isolierter Adapter; kein Umbau von HF-Backend.
+- js/coreui-vision-library.js: dritter Tab mit Adapter-Lifecycle.
+- css/console.css: 3-Spalten-Tab-Leiste, CoreAI-Formlayout mobil/desktop.
+- GET/POST ueber vorhandene api/user_settings.php: ollama_search, ollama_detail,
+  ollama_library_install, core_installed, core_install_status und
+  installed_core_uninstall. Bestehender Admin-Guard, CSRF, gesicherter
+  Modellname, Ollama-Worker, Installations-Lock und Schutz vor Loeschung.
+- scripts/vision-ollama-ui-selftest.cjs: Parserfamilien und UI-API-/Status-Test.
+- Version und Cache-Key werden an sechs HTML-Seiten synchronisiert.
+
+TEST GATES
+- node --check js/coreui-vision-ollama.js js/coreui-vision-library.js
+- node scripts/vision-ollama-ui-selftest.cjs
+- python3 scripts/version-merge-check.py --base-version 0.7.47
+- python3 scripts/cache-bust.py --verify
+- Vorhandene PHP/Node/Python-Selbsttests, Preflights und Repository-UI-Gates
+- Kein Merge bei Fehlern. Keine Behauptung einer Live-Installation.
+
+STATUS
+Implementierung auf Feature-Branch, Live-Abnahme noch ausstehend.

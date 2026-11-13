@@ -1,20 +1,21 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
-PR-Stand: 0.7.47 auf main 0.7.46 (Vision Core Nginx-Routing).
+PR-Stand: 0.7.48 auf main 0.7.47 (Ollama in der Vision-Core-Bibliothek).
 Stand: 13.11.2026
-Repository-Version: 0.7.47 (Branch fix/vision-core-nginx-route-0-7-47, main 0.7.46)
-BASIS: main 0.7.46 nach PR #301; Bilddienst-Import ist repariert, aber PHP-API wird extern von Nginx mit 404 blockiert.
-NAECHSTE VERBINDLICHE VERSION: 0.7.47 fuer den Fix-PR (danach 0.7.48), falls kein Main-Merge vorab erfolgt.
-KRITISCHER FEHLER: /api/vision_cores.php fehlte in der Nginx-PHP-Freigabeliste fuer Compose UND native Installation.
-KORREKTUR: Exakte Freigabe in beiden Nginx-Templates; keine andere PHP-API freigegeben.
-REGRESSION: scripts/vision-nginx-route-selftest.py in beiden Preflights und GitHub-Check.
-LIVE-SCHUTZ: Installer prueft anonym HTTP 401 fuer Vision Core nach dem Web-Restart. 404 ist jetzt ein Installationsfehler.
-WICHTIG: 0.7.47 noch nicht live bestaetigt; vorherige Image-Service-Tests deckten die PHP-Webroute nicht ab.
+Repository-Version: 0.7.48 (Branch feature/vision-core-ollama-catalog-0-7-48, main 0.7.47)
+BASIS: main 0.7.47 nach PR #302; Vision-Core-Nginx-Routing ist gemergt.
+NAECHSTE VERBINDLICHE VERSION: 0.7.48 fuer den Ollama-PR (danach 0.7.49), sofern main unveraendert bleibt.
+ZIEL: OLLAMA als dritter Tab (HUGGING FACE, OLLAMA, INSTALLIERT) in Vision Core.
+NUTZBAR: Ollama-Registry-Suche, Modelldetails, Ollama-Pull ueber bestehende Core-Warteschlange, lokal installierte Bild-Cores und geschuetzte Deinstallation.
+WICHTIG: Aktuelle Ollama-Linux-Versionen koennen x/flux2-klein herunterladen, aber nicht nativ Bilder generieren. KEINE falsche Aktivierung; unsere FLUX.2-Klein 4B sd.cpp bleibt Renderer.
+WICHTIG: Wir nutzen vorhandene API user_settings.php, kein neues Nginx-Routing und keine neuen ungeprueften Endpunkte.
+REGRESSION: scripts/vision-ollama-ui-selftest.cjs in beiden Preflights und GitHub-Checks.
+VOR MERGE: Tests, aktuelles VERSION, Cache-Schluessel und Fluss durch die gemeinsame Core-Warteschlange pruefen; kein ungepruefter Merge.
 NEUE ARBEIT ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_7_48.txt
   docs/UEBERGABEPROTOKOLL_0_7_47.txt
   docs/UEBERGABEPROTOKOLL_0_7_46.txt
   docs/UEBERGABEPROTOKOLL_0_7_45.txt
-  docs/UEBERGABEPROTOKOLL_0_7_44.txt
 
 WICHTIG: Kein nachtraeglich erfundenes Release/ZIP fuer 0.7.35. Bereits gemergte PR #290 nicht umnummerieren.
 NEUE ARBEIT ZUERST LESEN:
