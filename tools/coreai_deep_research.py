@@ -328,12 +328,43 @@ def run_deep_research(run, io, budget, log=lambda *_: None, clock=time.monotonic
             max_attempts = max(8, budget["pages_per_step"] * 4)
             visual_limit = int(budget.get("browser_pages_per_step", 2))
             visual_attempts = attempted = failed = rejected = 0
-            for r in candidates:
-                if (len(pages) >= budget["pages_per_step"] or
-                        attempted >= max_attempts or
-                        clock() - started > budget["max_minutes"] * 60):
-                    break
+            blocked_hosts = set()
+            candidate_index = 0
+            rescue_done = False
+            while (len(pages) < budget["pages_per_step"] and
+                   clock() - started <= budget["max_minutes"] * 60):
                 check()
+                if candidate_index >= len(candidates) or attempted >= max_attempts:
+                    if rescue_done:
+                        break
+                    rescue_done = True
+                    # Research remains completely unattended. When the indexed
+                    # sites are inaccessible, search other sources instead of
+                    # waiting for the user to reopen the chat or solve a CAPTCHA.
+                    extra_queries = quality.alternative_queries(
+                        query, step, sorted(blocked_hosts), limit=2)
+                    if not extra_queries:
+                        break
+                    io.event("info", "Nicht genügend zugängliche Belege. Suche eigenständig nach weiteren Quellen.", [])
+                    for alternative in extra_queries:
+                        check()
+                        if clock() - started > budget["max_minutes"] * 60:
+                            break
+                        found = io.search(alternative) or []
+                        searches += 1
+                        results.extend(found)
+                        io.event("search", alternative,
+                                 list(dict.fromkeys(domain_of(x.get("url")) for x in found
+                                                    if x.get("url")))[:8])
+                        progress("search", i + 0.4)
+                    candidates = quality.rank_results(results, query, seen, trusted_hosts)
+                    candidate_index = 0
+                    max_attempts += max(4, budget["pages_per_step"] * 2)
+                    if not candidates:
+                        break
+                    continue
+                r = candidates[candidate_index]
+                candidate_index += 1
                 url = r["url"]
                 seen.add(url)
                 attempted += 1
@@ -345,6 +376,9 @@ def run_deep_research(run, io, budget, log=lambda *_: None, clock=time.monotonic
                 except Exception as exc:
                     failed += 1
                     log(f"  deep research: HTTP {url} nicht gelesen ({str(exc)[:80]})")
+                    if any(marker in str(exc).lower()
+                           for marker in ("403", "429", "captcha", "challenge", "too many requests")):
+                        blocked_hosts.add(domain_of(url))
                 valid = quality.fetched_page_is_relevant(query, url, page_title, text, trusted_hosts)
                 if (not valid and visual_attempts < visual_limit and
                         callable(getattr(io, "fetch_visual", None))):
@@ -361,11 +395,12 @@ def run_deep_research(run, io, budget, log=lambda *_: None, clock=time.monotonic
                     except Cancelled:
                         raise
                     except Exception as exc:
-                        # A CAPTCHA is an access obstacle, not a challenge for
-                        # autonomous bypass or guessed source information.
+                        # A CAPTCHA blocks this source, never the research run.
+                        # No UI/foreground handoff or timer is required.
                         log(f"  deep research: Browser {url} nicht lesbar ({str(exc)[:120]})")
                         if "CAPTCHA" in str(exc).upper() or "ANTI-BOT" in str(exc).upper():
-                            io.event("info", "Die Seite verlangt eine menschliche CAPTCHA-Freigabe; übersprungen.", [])
+                            blocked_hosts.add(domain_of(url))
+                            io.event("info", "Zugangssperre erkannt. Mara setzt die Recherche mit anderen Quellen fort.", [])
                 if not valid:
                     rejected += 1
                     continue
@@ -382,7 +417,8 @@ def run_deep_research(run, io, budget, log=lambda *_: None, clock=time.monotonic
             if not pages:
                 io.event("info", (f"{len(results)} Suchtreffer, {len(candidates)} Kandidaten, "
                                   f"{attempted} Seiten geprüft, davon {visual_attempts} im Browser: "
-                                  f"{failed} HTTP-Fehler, {rejected} ohne belegbaren Themenbezug."), [])
+                                  f"{failed} HTTP-Fehler, {rejected} ohne belegbaren Themenbezug, "
+                                  f"{len(blocked_hosts)} gesperrte Domains. Recherche läuft ohne Rückfrage weiter."), [])
             if pages:
                 check()
                 raw_notes = io.core(*notes_prompts(query, step, pages), False, budget["core_timeout"])
