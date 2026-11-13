@@ -382,7 +382,7 @@ class Service:
                    'preview_png': str(self.work / (job_id + '-preview.png')), 'preview': 0, 'preview_stamp': None,
                    'pid': 0, 'cancel': False, 'limit': int(size['time_limit_s']),
                    'reference_path': reference_path, 'reference_paths': reference_paths,
-                   'reference_count': len(reference_paths), 'curated_mara_count': len(curated)}
+                   'reference_count': len(reference_paths), 'curated_mara_count': len(curated),\n                   'model_label': self.reg['model']['label'], 'model_registry': copy.deepcopy(self.reg)}
             self.jobs[job_id] = job
         threading.Thread(target=self._run, args=(job, prompt), daemon=True).start()
         return job
@@ -490,7 +490,7 @@ class Service:
             return job
 
     def public(self, job: dict) -> dict:
-        keys = ('id', 'state', 'phase', 'step', 'steps', 'error', 'size', 'width', 'height', 'seed', 'seconds', 'peak_rss_mb', 'preview', 'reference_count', 'curated_mara_count')
+        keys = ('id', 'state', 'phase', 'step', 'steps', 'error', 'size', 'width', 'height', 'seed', 'seconds', 'peak_rss_mb', 'preview', 'reference_count', 'curated_mara_count', 'model_label', 'model_registry')
         return {key: job[key] for key in keys}
 
     def health(self) -> dict:
