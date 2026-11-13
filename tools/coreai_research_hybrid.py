@@ -536,6 +536,12 @@ def run_hybrid_research(run, io, budget, log=lambda *_: None, clock=time.monoton
     try:
         if not check():
             raise dr.Cancelled()
+        if state.get("phase") == "done" and state.get("report"):
+            # Recovered after saving the final checkpoint but before the DB
+            # completion transaction; never repeat expensive model synthesis.
+            _progress(io, state, "done", done=True)
+            io.finish("done", state["report"], state.get("citations") or [], None)
+            return "done"
         _progress(io, state, "plan")
         if not state["planner_queries"]:
             system, prompt = dr.queries_prompts(
@@ -549,7 +555,7 @@ def run_hybrid_research(run, io, budget, log=lambda *_: None, clock=time.monoton
             round_number = state["depth"]
             queries = {}
             for i, w in enumerate(state["workers"]):
-                if w["status"] == "done" and round_number == 0:
+                if w["status"] == "done":
                     continue
                 if round_number == 0 and i < len(state["planner_queries"]):
                     suggested = state["planner_queries"][i]
