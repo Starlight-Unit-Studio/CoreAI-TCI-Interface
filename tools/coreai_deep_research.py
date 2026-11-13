@@ -50,6 +50,7 @@ def budget_from(cfg):
     return {
         "queries_per_step": num("STU_DEEP_RESEARCH_QUERIES_PER_STEP", 4, 1, 8),
         "pages_per_step": num("STU_DEEP_RESEARCH_PAGES_PER_STEP", 4, 1, 10),
+        "results_per_query": num("STU_DEEP_RESEARCH_RESULTS_PER_QUERY", 10, 1, 10),
         "max_minutes": num("STU_DEEP_RESEARCH_MAX_MINUTES", 30, 3, 120),
         "core_timeout": num("STU_DEEP_RESEARCH_CORE_TIMEOUT", 420, 60, 1800),
     }
@@ -69,7 +70,7 @@ def html_title(raw):
     return clean_space(html.unescape(re.sub(r"<[^>]+>", " ", m.group(1))))[:300] if m else ""
 
 
-def html_to_text(raw, limit=20000):
+def html_to_text(raw, limit=50000):
     """Readable text of a page (pure): no scripts, menus, footers or forms; paragraphs kept."""
     text = SKIP_BLOCKS_RE.sub(" ", str(raw or ""))
     text = re.sub(r"<!--.*?-->", " ", text, flags=re.S)
@@ -319,20 +320,31 @@ def run_deep_research(run, io, budget, log=lambda *_: None, clock=time.monotonic
                 progress("search", i + 0.3)
 
             pages = []
-            # Try multiple ranked candidates so blocked/unreadable pages do not consume
-            # the real source budget. Search snippets alone never become numbered sources.
-            for r in quality.rank_results(results, query, seen, trusted_hosts):
-                if len(pages) >= budget["pages_per_step"] or clock() - started > budget["max_minutes"] * 60:
+            candidates = quality.rank_results(results, query, seen, trusted_hosts)
+            # The search summary is only for discovery: evidence requires a
+            # readable full page. Probe enough candidates to recover from
+            # blocked sites, bounded proportionally to the page budget.
+            max_attempts = max(8, budget["pages_per_step"] * 4)
+            attempted = failed = rejected = 0
+            for r in candidates:
+                if (len(pages) >= budget["pages_per_step"] or
+                        attempted >= max_attempts or
+                        clock() - started > budget["max_minutes"] * 60):
                     break
                 check()
                 url = r["url"]
                 seen.add(url)
+                attempted += 1
                 try:
                     page_title, text = io.fetch(url)
                 except Exception as exc:
+                    failed += 1
                     log(f"  deep research: {url} nicht gelesen ({str(exc)[:80]})")
                     continue
-                if not quality.fetched_page_is_relevant(query, url, page_title or r.get("title"), text, trusted_hosts):
+                # Do not substitute SearXNG's title when verifying a fetched
+                # document: a misleading snippet must never validate a source.
+                if not quality.fetched_page_is_relevant(query, url, page_title, text, trusted_hosts):
+                    rejected += 1
                     continue
                 n = len(sources) + 1
                 entry = {"n": n, "url": url,
@@ -341,8 +353,13 @@ def run_deep_research(run, io, budget, log=lambda *_: None, clock=time.monotonic
                 sources.append(entry)
                 io.source(entry)
                 io.event("read", entry["title"], [entry["domain"]])
-                pages.append((n, entry["title"], url, text[:page_chars(num_ctx, budget["pages_per_step"])]))
+                excerpt = quality.focused_excerpt(query, text, page_chars(num_ctx, budget["pages_per_step"]))
+                pages.append((n, entry["title"], url, excerpt))
                 progress("read", i + 0.6)
+            if not pages:
+                io.event("info", (f"{len(results)} Suchtreffer, {len(candidates)} Kandidaten, "
+                                  f"{attempted} Seiten geprüft: {failed} nicht lesbar, "
+                                  f"{rejected} ohne ausreichenden Themenbezug."), [])
             if pages:
                 check()
                 raw_notes = io.core(*notes_prompts(query, step, pages), False, budget["core_timeout"])
@@ -356,7 +373,8 @@ def run_deep_research(run, io, budget, log=lambda *_: None, clock=time.monotonic
                 else:
                     io.event("info", "Dieser Schritt lieferte keine ausreichend belegten Notizen.", [])
             else:
-                io.event("info", "Kein passender, lesbarer Volltext für diesen Schritt gefunden.", [])
+                # Reasons are already emitted above (search count, fetch errors, relevance).
+                log(f"  deep research: Schritt {i + 1} ohne verifizierte Quelle")
             states[i] = "done"
             progress("search", i + 1)
         check()
