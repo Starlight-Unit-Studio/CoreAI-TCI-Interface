@@ -144,7 +144,7 @@ class ResearchBrowserSession:
         self.context = self.browser = self.playwright = None
 
     def read(self, url, query, step, cancelled=lambda: False):
-        """Read the rendered page; optionally perform ONE safe, vision-guided UI action.
+        """Read the rendered page; optionally perform bounded vision-guided actions.
 
         Returns title, readable/visual text, final URL. Nothing is persisted here.
         The caller independently verifies relevance and assigns source numbers.
@@ -170,38 +170,59 @@ class ResearchBrowserSession:
                 raise ResearchChallenge("CAPTCHA oder Anti-Bot-Abfrage erkannt; menschliche Freigabe erforderlich")
 
             observations = []
-            elements = self.api.collect_elements(page)
-            # One screenshot -> one vision inference; no independent model,
-            # no extra model queue, and no invented screenshot summaries.
+            # Several actions may be needed to open a public site-search field,
+            # type the research term, then read the resulting page. Each new
+            # decision uses a fresh screenshot and the same serial Core queue.
+            try:
+                max_actions = self.api.cfg_int(
+                    self.cfg, "STU_DEEP_RESEARCH_BROWSER_ACTIONS", 2, 1, 4)
+            except Exception:
+                max_actions = 2
             if callable(self.vision):
-                try:
-                    image_b64 = __import__("base64").b64encode(
-                        page.screenshot(type="jpeg", quality=63, animations="disabled", timeout=8000)
-                    ).decode("ascii")
-                    user = (f"RECHERCHEAUFTRAG: {query[:300]}\n"
-                            f"AKTUELLE SEITE: {page.url}\n"
-                            f"ARBEITSSCHRITT: {step[:160]}\n"
-                            f"ELEMENTE:\n{self.api.render_elements(elements)}\n"
-                            f"SEITENTEXT (kurz):\n{raw[:1600]}\n"
-                            "Schau auf den Screenshot: Nenne erkennbare Fakten und "
-                            "hoechstens eine sichere Aktion, um die Recherche zu verbessern.")
-                    response = self.vision(VISUAL_SYSTEM, user, image_b64)
+                for turn in range(max_actions):
+                    if cancelled():
+                        raise self.api.deep_research.Cancelled()
+                    raw = self.api.page_full_text(page)
+                    elements = self.api.collect_elements(page)
+                    try:
+                        image_b64 = __import__("base64").b64encode(
+                            page.screenshot(type="jpeg", quality=63, animations="disabled", timeout=8000)
+                        ).decode("ascii")
+                        user = (f"RECHERCHEAUFTRAG: {query[:300]}\n"
+                                f"AKTUELLE SEITE: {page.url}\n"
+                                f"ARBEITSSCHRITT: {step[:160]}\n"
+                                f"ELEMENTE:\n{self.api.render_elements(elements)}\n"
+                                f"SEITENTEXT (kurz):\n{raw[:1600]}\n"
+                                "Schau auf den Screenshot: Nenne erkennbare Fakten und "
+                                "hoechstens eine sichere Aktion, um die Recherche zu verbessern.")
+                        response = self.vision(VISUAL_SYSTEM, user, image_b64)
+                    except self.api.deep_research.Cancelled:
+                        raise
+                    except Exception as exc:
+                        self.log("  research-browser: Vision nicht verfuegbar (" + str(exc)[:100] + ")")
+                        break
                     action, observation = visual_action(response)
-                    if observation:
+                    if observation and observation not in observations:
                         observations.append(observation)
-                    if action and is_safe_research_action(action, page, self.api, elements, query):
-                        env = {"cfg": self.cfg, "goal": query, "forms": True,
-                               "elements": {e["ref"]: e for e in elements},
-                               "say": lambda *_: None, "frame": lambda *_: None}
-                        try:
-                            self.api.do_action(page, action, env)
-                            self.log("  research-browser: sichere Aktion " + action["action"])
-                        except Exception as exc:
-                            self.log("  research-browser: UI-Aktion nicht moeglich " + str(exc)[:80])
-                    elif action:
+                    if not action:
+                        break
+                    if not is_safe_research_action(action, page, self.api, elements, query):
                         self.log("  research-browser: unsichere/ungeeignete Aktion verworfen")
-                except Exception as exc:
-                    self.log("  research-browser: Vision nicht verfuegbar (" + str(exc)[:100] + ")")
+                        break
+                    env = {"cfg": self.cfg, "goal": query, "forms": True,
+                           "elements": {e["ref"]: e for e in elements},
+                           "say": lambda *_: None, "frame": lambda *_: None}
+                    try:
+                        self.api.do_action(page, action, env)
+                        self.log("  research-browser: sichere Aktion " + action["action"])
+                    except Exception as exc:
+                        self.log("  research-browser: UI-Aktion nicht moeglich " + str(exc)[:80])
+                        break
+                    page.wait_for_timeout(500)
+                    raw = self.api.page_full_text(page)
+                    if is_challenge(raw, [frame.url for frame in page.frames],
+                                    page.locator(CHALLENGE_SELECTORS).count() > 0):
+                        raise ResearchChallenge("CAPTCHA nach Browser-Aktion erkannt")
             if cancelled():
                 raise self.api.deep_research.Cancelled()
             raw = self.api.page_full_text(page)
