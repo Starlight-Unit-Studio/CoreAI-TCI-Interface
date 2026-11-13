@@ -15,8 +15,12 @@ DEEP RESEARCH: QUELLEN UND VISUELLER BROWSER
 - Sichere UI-Aktionen aus dem vorhandenen Browse-Agenten: Lesen,
   Links anklicken, oeffentliche Suchformulare bedienen. Begrenzte Schritte,
   Netzwerkwache und Formulardatenschutz bleiben aktiv.
-- CAPTCHA / Anti-Bot: erkennen, protokollieren und nicht umgehen.
-  Menschliches Uebernahme-/Fortsetzen-UI ist NICHT implementiert.
+- Vollstaendig unbeaufsichtigte Recherche: CAPTCHA/Anti-Bot-Sperren werden
+  protokolliert, blockierte Domains nach Moeglichkeit ausgeschlossen und bis
+  zu zwei alternative Suchanfragen pro Schritt gestartet. Keine Nachfrage,
+  keine Chatfenster-Abhaengigkeit, kein CAPTCHA-Bypass.
+- Berichte und Fortschritt bleiben in MariaDB und sind nach Rueckkehr
+  in den Chat abrufbar. Keine Smartphone-Pushbenachrichtigung implementiert.
 - Konfiguration: STU_DEEP_RESEARCH_BROWSER_PAGES_PER_STEP (2),
   STU_DEEP_RESEARCH_BROWSER_ACTIONS (2),
   STU_DEEP_RESEARCH_VISUAL_ENABLED (1) sowie
