@@ -52,6 +52,7 @@ import argparse
 import ipaddress
 import threading
 import traceback
+from types import SimpleNamespace
 from datetime import datetime
 from urllib.parse import urlsplit
 
@@ -114,6 +115,8 @@ DEFAULTS = {
     "STU_EMBER_WEB_TIMEOUT": "12",
     # Deep Research may inspect more candidates than a single chat search.
     "STU_DEEP_RESEARCH_RESULTS_PER_QUERY": "10",
+    "STU_DEEP_RESEARCH_BROWSER_PAGES_PER_STEP": "2",
+    "STU_DEEP_RESEARCH_VISUAL_ENABLED": "1",
 }
 
 
@@ -552,7 +555,8 @@ class DbResearchIO:
         """Browser fallback with the same public-address guard and Core lock."""
         if self._research_browser is None:
             self._research_browser = research_browser.ResearchBrowserSession(
-                self.cfg, api=sys.modules[__name__], vision=self.vision,
+                self.cfg, api=SimpleNamespace(**globals()),
+                vision=self.vision if cfg_bool(self.cfg, "STU_DEEP_RESEARCH_VISUAL_ENABLED", True) else None,
                 log=self.log)
         return self._research_browser.read(url, query, step, cancelled=self.cancelled)
 
