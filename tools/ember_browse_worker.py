@@ -479,6 +479,7 @@ if os.path.dirname(os.path.abspath(__file__)) not in sys.path:
 import coreai_deep_research as deep_research  # noqa: E402  (same folder)
 import coreai_research_browser as research_browser  # noqa: E402
 import coreai_research_documents as research_documents  # noqa: E402
+import coreai_research_mcp as research_mcp  # noqa: E402
 
 FETCH_MAX_BYTES = 2_000_000
 
@@ -716,12 +717,19 @@ class DbResearchIO:
         self._exec("UPDATE stu_deep_research_runs SET status='writing', heartbeat_at=NOW() WHERE id=%s AND status='running'", (self.id,))
 
     def search(self, query):
-        # Research ranks candidates itself: retrieve up to ten search hits
-        # rather than applying the ordinary chat's five-result display limit.
+        # Network discovery is parallelizable, but every retrieved document
+        # must later pass the same source-identity and content checks.
         search_cfg = dict(self.cfg)
         search_cfg["STU_EMBER_WEB_LIMIT"] = str(
             deep_research.budget_from(self.cfg)["results_per_query"])
-        return searxng_search(search_cfg, query, log=self.log)
+        matches = searxng_search(search_cfg, query, log=self.log)
+        if cfg_bool(self.cfg, "STU_DEEP_RESEARCH_MCP_ENABLED", False):
+            try:
+                matches.extend(research_mcp.search_public_mcp(
+                    self.cfg, query, navigation_block_reason))
+            except Exception as exc:
+                self.log("research: optional public MCP discovery unavailable: " + str(exc)[:100])
+        return matches
 
     def fetch(self, url):
         return fetch_page(self.cfg, url)
