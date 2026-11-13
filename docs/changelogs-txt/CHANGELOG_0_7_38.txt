@@ -1,0 +1,16 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.38
+Date: 12.11.2026
+Base version: 0.7.37
+
+- Deep Research (roadmap P15) after the operator's reference screenshots. + menu entry active (needs web search, not for guests); mark [[deep-research]], a changed plan [[deep-research-edit:ID]].
+- Mara answers with a plan instead of an answer: title and 4 to 6 steps from one Core call (JSON), honest fallback plan when the Core gives none. Her reply is "[[deep-research:ID]] Ich habe einen Rechercheplan erstellt: <Titel>." The page shows the plan card for it.
+- Plan card: Bearbeiten (plan as a chip in the input field, the next message makes a new plan, the old one is replaced), Abbrechen, Starten with a 45-second countdown from the server.
+- Research in the browse worker (tools/coreai_deep_research.py, called from tools/ember_browse_worker.py when no browse job waits): queries per step (one Core call), SearXNG searches, up to 3 new pages per step (requests, redirects checked against local addresses, HTML or text only, at most 2 MB), notes per step with [n], report in Markdown; unknown citations removed, cited sources marked. Core lock per call, heartbeat every 15 s, Stopp checked between all operations, time budget (STU_DEEP_RESEARCH_MAX_MINUTES, default 30).
+- Card while running: step states, "Ich recherchiere ..." / "Ich schreibe den Bericht ...", searches, progress bar, Stopp. A silent worker (10 minutes) ends the run with "Mein Hintergrunddienst wurde unterbrochen".
+- Done: summary line, report card with preview, download (.md with numbered sources) and full view: citations as buttons, table of contents, sources by domain (cited ones), activity (searches with domains, pages read, notes).
+- Migration 040: stu_deep_research_runs, stu_deep_research_sources, stu_deep_research_events. Endpoint api/deep_research.php (nginx allowlist). Runs are deleted with their chat; a queued or running research keeps the chat busy.
+- Fixes: data controls map csrf_failed (the server's real answer); version comments in settings.html restored (0.7.33); usage and composer menu selftests check the nginx allowlist by pattern; composer menu UI selftest (failing on main) passes again.
+- Tests: scripts/deep-research-selftest.php, scripts/deep-research-worker-selftest.py, scripts/deep-research-ui-selftest.cjs in both preflights.
+- A self-hosted installation must be updated separately; GitHub merge alone is not deployment. The browse worker has to be restarted to run Deep Research (the update does this).
+
+Version: 0.7.38

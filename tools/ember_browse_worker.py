@@ -462,6 +462,151 @@ def finish_job(conn, job_id, status, result=None, steps=None, error=None, shot=N
         )
 
 
+# --- Deep Research (0.7.38) ------------------------------------------------------
+# The run itself is tools/coreai_deep_research.py; here: claiming, the real IO and the Core lock.
+# The Core lock is taken per call (not for the whole run, which takes minutes), so the person can
+# keep chatting while Mara researches.
+
+# The worker may be loaded from its path (the selftest does), so its own folder goes on the path.
+if os.path.dirname(os.path.abspath(__file__)) not in sys.path:
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import coreai_deep_research as deep_research  # noqa: E402  (same folder)
+
+FETCH_MAX_BYTES = 2_000_000
+
+
+def claim_next_research(conn):
+    """Due plans start; then exactly one started run is set to running and returned (or None)."""
+    with conn.cursor() as cur:
+        cur.execute("UPDATE stu_deep_research_runs SET status='queued', autostart_at=NULL "
+                    "WHERE status='planned' AND autostart_at IS NOT NULL AND autostart_at <= NOW()")
+        # A run whose worker died long ago (update, restart) is ended honestly.
+        cur.execute("UPDATE stu_deep_research_runs SET status='error', error='worker_lost', finished_at=NOW() "
+                    "WHERE status IN ('running','writing') AND COALESCE(heartbeat_at, started_at) < NOW() - INTERVAL 10 MINUTE")
+        cur.execute("SELECT id FROM stu_deep_research_runs WHERE status='queued' ORDER BY id ASC LIMIT 1")
+        row = cur.fetchone()
+        if not row:
+            return None
+        cur.execute("UPDATE stu_deep_research_runs SET status='running', started_at=NOW(), heartbeat_at=NOW(), worker_pid=%s "
+                    "WHERE id=%s AND status='queued'", (os.getpid(), row["id"]))
+        if cur.rowcount != 1:
+            return None
+        cur.execute("SELECT * FROM stu_deep_research_runs WHERE id=%s", (row["id"],))
+        return cur.fetchone()
+
+
+def fetch_page(cfg, url, guard=None, get=None):
+    """(title, text) of a public page. Every redirect is checked against local addresses; only
+    HTML or plain text, at most FETCH_MAX_BYTES, no JavaScript."""
+    guard = guard or (lambda target: navigation_block_reason(target, cfg))
+    get = get or requests.get
+    target = url
+    for _ in range(5):
+        reason = guard(target)
+        if reason:
+            raise BrowseBlocked(reason)
+        resp = get(target, timeout=(6, 15), allow_redirects=False, stream=True,
+                   headers={"User-Agent": "Mozilla/5.0 (CoreAI Deep Research)", "Accept": "text/html,text/plain;q=0.9"})
+        if resp.status_code in (301, 302, 303, 307, 308) and resp.headers.get("Location"):
+            from urllib.parse import urljoin
+            target = urljoin(target, resp.headers["Location"])
+            resp.close()
+            continue
+        resp.raise_for_status()
+        kind = (resp.headers.get("Content-Type") or "").lower()
+        if "html" not in kind and "text/plain" not in kind:
+            resp.close()
+            raise ValueError("kein Text: " + (kind or "unbekannt"))
+        body = b""
+        for chunk in resp.iter_content(65536):
+            body += chunk
+            if len(body) > FETCH_MAX_BYTES:
+                break
+        resp.close()
+        raw = body.decode(resp.encoding or "utf-8", errors="replace")
+        if "html" in kind:
+            return deep_research.html_title(raw), deep_research.html_to_text(raw)
+        return "", deep_research.clean_space(raw)[:20000]
+    raise ValueError("zu viele Weiterleitungen")
+
+
+class DbResearchIO:
+    """The real IO of a run: database, SearXNG, pages, the Core."""
+
+    def __init__(self, conn, cfg, run, log):
+        self.conn, self.cfg, self.run, self.log = conn, cfg, run, log
+        self.id = int(run["id"])
+
+    def _exec(self, sql, args=()):
+        with self.conn.cursor() as cur:
+            cur.execute(sql, args)
+            return cur
+
+    def beat(self):
+        self._exec("UPDATE stu_deep_research_runs SET heartbeat_at=NOW() WHERE id=%s", (self.id,))
+
+    def cancelled(self):
+        cur = self._exec("SELECT cancel_requested FROM stu_deep_research_runs WHERE id=%s", (self.id,))
+        row = cur.fetchone() or {}
+        return int(row.get("cancel_requested") or 0) == 1
+
+    def event(self, kind, text, domains):
+        self._exec("INSERT INTO stu_deep_research_events (run_id, kind, text, domains) VALUES (%s,%s,%s,%s)",
+                   (self.id, kind, str(text or "")[:600], json.dumps(list(domains or [])[:12], ensure_ascii=False)[:1000]))
+        self.beat()
+
+    def progress(self, states, phase, percent, searches):
+        self._exec("UPDATE stu_deep_research_runs SET progress_json=%s, searches=%s, heartbeat_at=NOW() WHERE id=%s",
+                   (json.dumps({"states": states, "phase": phase, "percent": percent}), int(searches), self.id))
+
+    def source(self, entry):
+        self._exec("INSERT INTO stu_deep_research_sources (run_id, n, url, title, domain) VALUES (%s,%s,%s,%s,%s)",
+                   (self.id, entry["n"], entry["url"][:2048], entry["title"][:300], entry["domain"][:255]))
+
+    def write_phase(self):
+        self._exec("UPDATE stu_deep_research_runs SET status='writing', heartbeat_at=NOW() WHERE id=%s AND status='running'", (self.id,))
+
+    def search(self, query):
+        return searxng_search(self.cfg, query, log=self.log)
+
+    def fetch(self, url):
+        return fetch_page(self.cfg, url)
+
+    def core(self, system, user, want_json, timeout):
+        """One Core call under Mara's lock; the run's heartbeat goes on while the Core thinks."""
+        name = lock_name(self.cfg, "global_ollama")
+        with self.conn.cursor() as cur:
+            cur.execute("SELECT GET_LOCK(%s, 900) AS got", (name,))
+            if int((cur.fetchone() or {}).get("got") or 0) != 1:
+                raise RuntimeError("core_busy")
+        try:
+            return call_with_heartbeat(
+                lambda: ollama_chat(self.cfg, system, user, want_json, think=False, timeout=timeout),
+                lambda _s: self.beat(), interval=15.0)
+        finally:
+            lock_release(self.conn, self.cfg)
+
+    def finish(self, status, report, cited, error):
+        if cited:
+            marks = ",".join(["%s"] * len(cited))
+            self._exec(f"UPDATE stu_deep_research_sources SET cited=1 WHERE run_id=%s AND n IN ({marks})", (self.id, *cited))
+        self._exec("UPDATE stu_deep_research_runs SET status=%s, report_md=%s, citations=%s, error=%s, "
+                   "cancel_requested=0, finished_at=NOW(), heartbeat_at=NOW() WHERE id=%s",
+                   (status, report, len(cited or []), (error or None) and str(error)[:400], self.id))
+
+
+def process_research(conn, cfg, run, log):
+    job_cfg = config_for_job(cfg, run)
+    plan = json.loads(run.get("plan_json") or "[]")
+    payload = {"query": run.get("query") or "", "title": run.get("title") or "", "steps": plan,
+               "num_ctx": run.get("num_ctx")}
+    log(f"[research {run['id']}] {payload['title']!r}: {len(plan)} Schritte, Core={job_cfg['STU_EMBER_MODEL']}")
+    result = deep_research.run_deep_research(payload, DbResearchIO(conn, job_cfg, run, log),
+                                             deep_research.budget_from(cfg), log=log)
+    log(f"[research {run['id']}] {result}")
+    return result
+
+
 # --- Lock auf der EIGENEN Session ------------------------------------------------
 
 
@@ -2340,6 +2485,23 @@ def main():
                     conn = db_connect(cfg, autocommit=True)
 
             if not job:
+                # 0.7.38: no browse job waiting, so a Deep Research run may go (it takes the Core
+                # lock per call; a table that does not exist yet just means migration 040 is missing).
+                research = None
+                try:
+                    research = claim_next_research(conn)
+                except pymysql.err.ProgrammingError:
+                    research = None
+                except Exception as exc:
+                    log(f"Deep Research: Claim fehlgeschlagen ({exc})")
+                if research:
+                    try:
+                        process_research(conn, cfg, research, log)
+                    except Exception as exc:
+                        log(f"[research {research['id']}] Abbruch: {exc}")
+                    if args.once:
+                        break
+                    continue
                 if args.once:
                     log("Keine Jobs in der Queue.")
                     break

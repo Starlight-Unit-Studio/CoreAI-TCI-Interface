@@ -12,7 +12,7 @@ declare(strict_types=1);
  * account may not use is not forced: Mara is told it is not available and says so.
  */
 
-const COREUI_COMPOSER_INTENT_RE = '~^\s*\[\[(bild(?::gross)?(?::[124])?|websuche|recherche)\]\]\s*~u';
+const COREUI_COMPOSER_INTENT_RE = '~^\s*\[\[(bild(?::gross)?(?::[124])?|websuche|recherche|deep-research(?:-edit:\d{1,18})?)\]\]\s*~u';
 
 /** The tool chosen for a message (pure): ['tool' => image|web|browse, 'size' => normal|large] or null. */
 function coreui_composer_intent_peek(string $message): ?array {
@@ -21,6 +21,10 @@ function coreui_composer_intent_peek(string $message): ?array {
     $intent = ['tool' => 'image', 'size' => str_contains($m[1], ':gross') ? 'large' : 'normal'];
     if (isset($count[1])) $intent['count'] = (int)$count[1];
     return $intent;
+  }
+  // 0.7.38: Deep Research; [[deep-research-edit:ID]] changes the plan of run ID.
+  if (preg_match('~^deep-research(?:-edit:(\d+))?$~', $m[1], $deep) === 1) {
+    return ['tool' => 'deep', 'size' => 'normal'] + (isset($deep[1]) ? ['edit' => (int)$deep[1]] : []);
   }
   return match ($m[1]) {
     'bild' => ['tool' => 'image', 'size' => 'normal'],
@@ -57,6 +61,7 @@ function coreui_composer_intent_label(array $intent): string {
       . (isset($intent['count']) ? ' · ' . (int)$intent['count'] . ((int)$intent['count'] === 1 ? ' Bild' : ' Bilder') : ''),
     'web' => 'Websuche',
     'browse' => 'Recherche',
+    'deep' => isset($intent['edit']) ? 'Deep Research · Plan ändern' : 'Deep Research',
     default => '',
   };
 }
@@ -65,7 +70,7 @@ function coreui_composer_intent_label(array $intent): string {
 function coreui_composer_intent_hint(array $intent, bool $allowed): string {
   $tool = (string)($intent['tool'] ?? '');
   if (!$allowed) {
-    $what = $tool === 'image' ? 'Bilder zu malen' : ($tool === 'web' ? 'im Netz zu suchen' : 'Webseiten zu recherchieren');
+    $what = $tool === 'image' ? 'Bilder zu malen' : ($tool === 'web' || $tool === 'deep' ? 'im Netz zu suchen' : 'Webseiten zu recherchieren');
     return "AUSWAHL IM MENUE: Die Person moechte, dass du ein Werkzeug nutzt, das fuer dieses Konto gerade nicht freigegeben ist ("
       . $what . "). Sag das kurz und freundlich und hilf, so gut es ohne geht.";
   }
@@ -74,6 +79,8 @@ function coreui_composer_intent_hint(array $intent, bool $allowed): string {
       . (($intent['size'] ?? '') === 'large' ? '[BILD GROSS: ...] oder [BILD GROSS ICH: ...]' : '[BILD: ...] oder [BILD ICH: ...]')
       . " und sonst nichts.",
     'web' => "AUSWAHL IM MENUE: Die Person hat \"Websuche\" gewaehlt. Suche zuerst im Netz: antworte NUR mit [WEB: genaue Suchbegriffe] und sonst nichts.",
+    // Deep Research never reaches the prompt (coreui_dr_reply answers with a plan); this is a safe default.
+    'deep' => "AUSWAHL IM MENUE: Die Person hat \"Deep Research\" gewaehlt. Antworte kurz, dass du einen Rechercheplan erstellst.",
     default => "AUSWAHL IM MENUE: Die Person hat \"Recherche\" gewaehlt. Lies selbst Webseiten: antworte NUR mit "
       . "[BROWSE: was du herausfinden sollst] und sonst nichts.",
   };
@@ -138,9 +145,12 @@ function coreui_composer_tools_answer(bool $guest, bool $image, bool $web, bool 
     $imageTool['limit'] = max(0, (int)($imageQuota['limit'] ?? 0));
     $imageTool['left'] = max(0, (int)($imageQuota['left'] ?? 0));
   }
+  // 0.7.38: Deep Research needs the web search and is not for guests.
+  $deep = $web && !$guest;
   return ['ok' => true, 'guest' => $guest, 'tools' => [
     'image' => $imageTool,
     'web' => ['on' => $web, 'why' => $web ? '' : $off],
     'browse' => ['on' => $browse, 'why' => $browse ? '' : $off],
-  ], 'planned' => ['deep_research', 'connectors']];
+    'deep' => ['on' => $deep, 'why' => $deep ? '' : ($guest ? 'Nicht für Gäste' : 'Braucht die Websuche, die für dein Konto gerade nicht freigegeben ist')],
+  ], 'planned' => ['connectors']];
 }

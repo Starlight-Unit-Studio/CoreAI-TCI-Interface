@@ -835,7 +835,8 @@ if ! wait_http "http://127.0.0.1:$HTTP_PORT/api/health.php" 45; then
 fi
 
 if is_enabled "$INSTALL_BROWSE"; then
-  compose up -d browse
+  # 0.7.38: recreated like php and web, so an update's worker code (Deep Research) runs at once.
+  compose up -d --force-recreate browse
 else
   compose stop browse >/dev/null 2>&1 || true
 fi

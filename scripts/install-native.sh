@@ -518,6 +518,9 @@ systemctl daemon-reload
 systemctl enable --now ember-coreui-python.service
 if is_enabled "$INSTALL_BROWSE"; then
   systemctl enable --now ember-coreui-browse.service
+  # 0.7.38: an update brings new worker code (Deep Research); a running worker keeps the old code
+  # until it restarts, so it is restarted here (enable --now alone leaves it as it is).
+  systemctl restart ember-coreui-browse.service
 fi
 
 log 'Konfiguriere Nginx.'

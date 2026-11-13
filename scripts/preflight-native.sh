@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.37: authoritative version reconciliation per handover; runtime selftests retained.
+# CoreAI: TCI Interface 0.7.38: Deep Research (plan, research in the browse worker, report with sources).
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -173,6 +173,15 @@ UI_FILES=(
   js/coreui-data-controls.js
   scripts/data-controls-selftest.php
   scripts/data-controls-ui-selftest.cjs
+  database/migrations/040_deep_research.sql
+  api/deep_research.php
+  api/deep_research_store.php
+  tools/coreai_deep_research.py
+  js/coreui-deep-research.js
+  css/coreui-deep-research.css
+  scripts/deep-research-selftest.php
+  scripts/deep-research-worker-selftest.py
+  scripts/deep-research-ui-selftest.cjs
   css/coreui-settings-theme.css
   scripts/settings-theme-ui-selftest.cjs
   scripts/terran-terminology-selftest.cjs
@@ -530,6 +539,13 @@ if COREAI_BROWSE_LIVE=0 python3 "$PROJECT_ROOT/scripts/browse-worker-selftest.py
   ok 'Browser-Regeln: geschuetzte Felder, Kaeufe, Logins, Nachrichten, lokales Netz, Core des Nutzers und Herzschlag geprueft.'
 else
   fail 'Browser-Regeln-Selbsttest fehlgeschlagen.'
+fi
+
+# 0.7.38: Deep Research in the browse worker (search, read, notes, report with only real sources, Stopp).
+if python3 "$PROJECT_ROOT/scripts/deep-research-worker-selftest.py" >/dev/null 2>&1; then
+  ok 'Deep Research: Suche, Seiten, Notizen, Bericht mit Quellen, Stopp und Schutz vor lokalen Adressen geprueft.'
+else
+  fail 'Deep-Research-Worker-Selbsttest fehlgeschlagen.'
 fi
 
 if python3 "$PROJECT_ROOT/scripts/workspace-output-selftest.py" >/dev/null 2>&1; then
@@ -1118,6 +1134,14 @@ if command -v php >/dev/null 2>&1; then
     fail "Datenkontrollen-Selbsttest: ${data_controls_test:-Unbekannter Fehler}"
   fi
 
+  # 0.7.38: Deep Research runs: plan, Starten, Bearbeiten, Abbrechen, Stopp, sources, chat deletion.
+  deep_research_test=''
+  if deep_research_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/deep-research-selftest.php" 2>&1)"; then
+    ok "$deep_research_test"
+  else
+    fail "Deep-Research-Selbsttest: ${deep_research_test:-Unbekannter Fehler}"
+  fi
+
   profile_reference_test=''
   if profile_reference_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/profile-reference-selftest.php" 2>&1)"; then
     if [[ "$profile_reference_test" == PARTIAL:* ]]; then
@@ -1468,6 +1492,16 @@ if command -v php >/dev/null 2>&1; then
       fi
     else
       ok 'Einstellungen: Theme-Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+    fi
+    # 0.7.38: Deep Research in the chat (plan card, countdown, running, report view); needs Playwright for Node.
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/deep-research-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'Deep Research: Plan, Fortschritt und Bericht im Browser geprueft.'
+      else
+        fail 'Deep Research: Oberflaechentest fehlgeschlagen.'
+      fi
+    else
+      ok 'Deep Research: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
     fi
     # 0.7.1: Settings > Pets and the pet in Mara's work line; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then

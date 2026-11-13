@@ -114,10 +114,11 @@ intent_test(mb_strlen(coreui_composer_intent_ensure($img, 'x', $long, true)) <= 
 $a = coreui_composer_tools_answer(false, true, true, false);
 intent_test($a['ok'] === true && $a['guest'] === false && $a['tools']['image'] === ['on' => true, 'why' => '']
   && $a['tools']['browse'] === ['on' => false, 'why' => 'Für dein Konto gerade nicht freigegeben']
-  && $a['planned'] === ['deep_research', 'connectors'], 'account answer');
+  && $a['tools']['deep'] === ['on' => true, 'why' => '']
+  && $a['planned'] === ['connectors'], 'account answer (0.7.38: Deep Research is a real tool, only connectors are planned)');
 $g = coreui_composer_tools_answer(true, true, true, true, ['enabled'=>true, 'limit'=>3, 'used'=>0, 'left'=>3]);
 intent_test($g['tools']['image'] === ['on' => true, 'why' => '', 'limit'=>3, 'left'=>3]
-  && $g['tools']['web']['on'] === true, 'guests may paint within the owner-approved image budget');
+  && $g['tools']['web']['on'] === true && $g['tools']['deep']['on'] === false, 'guests may paint within the owner-approved image budget, no Deep Research');
 $gFull = coreui_composer_tools_answer(true, false, true, false, ['enabled'=>true, 'limit'=>3, 'used'=>3, 'left'=>0]);
 intent_test($gFull['tools']['image'] === ['on'=>false, 'why'=>'Bildlimit für heute erreicht', 'limit'=>3, 'left'=>0]
   && $gFull['tools']['browse']['on'] === false, 'guest image menu reports the daily limit');

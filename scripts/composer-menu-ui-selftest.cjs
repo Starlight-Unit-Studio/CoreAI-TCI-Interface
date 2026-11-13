@@ -5,7 +5,7 @@
 // Konnektoren) opens and closes by click, Escape, a click outside and the arrow keys; Fotos,
 // Kamera (devices with a camera) and Dateien open the file picker with the right types and the
 // picker is reset afterwards; tools the account may not use stay visible, greyed, with the
-// reason; Deep Research and Konnektoren are marked "In Vorbereitung" and do nothing; a chosen
+// reason; Konnektoren are marked "In Vorbereitung" and do nothing (Deep Research is a real tool since 0.7.38); a chosen
 // tool shows as a chip (Normal / Groß for images) and goes in front of the sent text once; an
 // edit brings the chip back; a registered connector appears; full attachment slots grey out the
 // file entries only; a phone gets a sheet from the bottom edge without sideways scrolling; and
@@ -41,17 +41,18 @@ assert(app.includes("if (btnAttach && !window.CoreAIComposerMenu) btnAttach.addE
 assert(app.includes('setFilesAvailable(attachmentSlotsUsed() < MAX_MESSAGE_ATTACHMENTS);') && app.includes('    setFilesAvailable(false);')
   && !/btnAttach\.disabled = attachmentSlotsUsed\(\)/.test(app), 'full slots grey out the file entries, not the tools');
 for (const f of ['config/nginx.conf.template', 'config/runtime/nginx.conf.template']) {
-  assert(read(f).includes('|console_insights|composer_tools|voice_input|'), f + ' lets the endpoint through');
+  // 0.7.38: by pattern, whatever stands next to composer_tools in the allowlist.
+  assert(/location ~ \^\/api\/\(\?:[a-z_|]*\|composer_tools\|[a-z_|]*\)\\\.php\$/.test(read(f)), f + ' lets the endpoint through');
 }
 const endpoint = read('api/composer_tools.php');
 assert(endpoint.includes("stu_require_user_id()") && endpoint.includes("header('Allow: GET');")
-  && endpoint.includes('coreui_composer_tools_answer($guest, ember_image_allowed($uid), ember_web_enabled(), ember_browse_enabled())'),
+  && endpoint.includes('coreui_composer_tools_answer($guest, ember_image_allowed($uid), ember_web_enabled(), ember_browse_enabled(),'),
   'the endpoint: signed in, GET only, the same switches as the work loop');
 const chat = read('api/chat.php');
 assert((chat.match(/\$composerIntent = \$channel === 'console' \? coreui_composer_intent_take\(\$userMsg\) : null;/g) || []).length === 2,
   'both prompt builders take the mark out of the text');
 assert((chat.match(/\. \(\$intentHint !== '' \? \(\$intentHint \. "\\n\\n"\) : ""\)/g) || []).length === 2, 'both prompts carry the instruction');
-assert(chat.includes("$out = coreui_composer_intent_ensure($composerIntent, $out, $userMsg, ember_composer_intent_allowed($composerIntent, $consoleUid));"),
+assert(chat.includes("$out = coreui_composer_intent_ensure($composerIntent, $out, $userMsg, ember_composer_intent_allowed($composerIntent, $consoleUid),"),
   'a chosen tool is not left to chance');
 assert(chat.includes("if ($channel === 'console' && !$isEmberRow) $msg = trim(coreui_composer_intent_strip($msg));"), 'history lines without the mark');
 const stream = read('api/console_stream.php');
@@ -69,9 +70,9 @@ const HARNESS = theme => `<!doctype html><html lang="de" data-coreui-theme="${th
 <body style="margin:0"><div class="app-layout" style="height:100vh;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end">
 <main class="messages" style="flex:1"><div class="messages-inner" id="rows"></div></main>${footer}</div>
 <script src="/js/coreui-composer-menu.js"></script></body></html>`;
-const ALL_ON = {ok: true, guest: false, tools: {image: {on: true, why: ''}, web: {on: true, why: ''}, browse: {on: true, why: ''}}, planned: ['deep_research', 'connectors']};
+const ALL_ON = {ok: true, guest: false, tools: {image: {on: true, why: ''}, web: {on: true, why: ''}, browse: {on: true, why: ''}, deep: {on: true, why: ''}}, planned: ['connectors']};
 const IMAGE_OFF = {ok: true, guest: false, tools: {image: {on: false, why: 'Für dein Konto gerade nicht freigegeben'}, web: {on: true, why: ''},
-  browse: {on: false, why: 'Für dein Konto gerade nicht freigegeben'}}, planned: ['deep_research', 'connectors']};
+  browse: {on: false, why: 'Für dein Konto gerade nicht freigegeben'}, deep: {on: false, why: 'Nicht für Gäste'}}, planned: ['connectors']};
 
 async function open(browser, options = {}) {
   const context = await browser.newContext({viewport: options.viewport || {width: 1000, height: 820}, hasTouch: !!options.touch,
@@ -186,18 +187,18 @@ const item = (page, id, force = false) => page.click('#composerMenu .cm-item[dat
     assert.equal(by('files').detail, 'PDF, Audio, Video, Dokumente');
     assert.equal(by('image').detail, 'Deine CoreAI malt ein Bild zu deiner Nachricht');
     assert.equal(by('image').off, false);
-    assert.deepEqual([by('deep').off, by('deep').aria, by('deep').badge], [true, 'true', 'In Vorbereitung'], 'Deep Research is planned, not offered');
+    assert.deepEqual([by('deep').off, by('deep').badge], [false, ''], '0.7.38: Deep Research is offered');
     assert.deepEqual([by('connectors').off, by('connectors').aria, by('connectors').badge], [true, 'true', 'In Vorbereitung'], 'connectors are planned');
     assert.equal(m.focus, 'photos', 'the first entry has the focus');
     assert.deepEqual(calls, ['GET'], 'the menu asks which tools this account may use');
     // Arrow keys walk the usable entries only, around the end.
     await page.keyboard.press('ArrowUp');
-    assert.equal((await menuState(page)).focus, 'browse', 'ArrowUp from the first goes to the last usable entry');
+    assert.equal((await menuState(page)).focus, 'deep', 'ArrowUp from the first goes to the last usable entry');
     await page.keyboard.press('ArrowDown');
     assert.equal((await menuState(page)).focus, 'photos');
     // A planned entry does nothing.
-    await item(page, 'deep', true);
-    assert.equal((await menuState(page)).open, true, 'Deep Research does nothing');
+    await item(page, 'connectors', true);
+    assert.equal((await menuState(page)).open, true, 'Konnektoren do nothing');
     assert.equal((await chipState(page)).hidden, true);
     // Escape closes and gives the focus back.
     await page.keyboard.press('Escape');
@@ -416,6 +417,6 @@ const item = (page, id, force = false) => page.click('#composerMenu .cm-item[dat
     await browser.close();
   }
   console.log('CoreAI composer menu UI: marks, + button, menu by click/Enter/Escape/outside/arrows, Fotos/Kamera/Dateien pickers, '
-    + 'tools off with reason, Deep Research and Konnektoren in Vorbereitung, chip with Normal/Groß, mark once in front, edit, '
+    + 'tools off with reason, Deep Research offered, Konnektoren in Vorbereitung, chip with Normal/Groß, mark once in front, edit, '
     + 'full slots, registered connector, light/dark, phone sheet OK');
 })().catch(error => { console.error('CoreAI composer menu UI FAIL: ' + (error && error.stack || error)); process.exit(1); });

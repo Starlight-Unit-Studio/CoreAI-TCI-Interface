@@ -22,6 +22,7 @@ require_once __DIR__ . '/console_timezone.php';
 require_once __DIR__ . '/weather_live.php';
 require_once __DIR__ . '/image_gen.php';
 require_once __DIR__ . '/console_composer_intent.php';
+require_once __DIR__ . '/deep_research_store.php';
 require_once __DIR__ . '/notifications_store.php';
 require_once __DIR__ . '/usage_store.php';
 
@@ -5501,6 +5502,12 @@ function ember_generate_reply(
   unset($GLOBALS['COREUI_TURN_IMAGE_STYLE_ONLY']);
   // 0.6.43: a tool chosen in the + menu ([[bild]], [[websuche]], [[recherche]]) leaves the text.
   $composerIntent = $channel === 'console' ? coreui_composer_intent_take($userMsg) : null;
+  // 0.7.38: Deep Research answers with a plan (api/deep_research_store.php); the browse worker
+  // does the research after the countdown or Starten. Nothing else is prepared for this turn.
+  if ($composerIntent !== null && ($composerIntent['tool'] ?? '') === 'deep' && $consoleUid > 0) {
+    $guestDeep = function_exists('coreui_ai_account_is_guest') && coreui_ai_account_is_guest($pdo, $consoleUid);
+    return coreui_dr_reply($pdo, $consoleUid, (string)$consoleSessionId, $userMsg, $composerIntent, $guestDeep, ember_web_enabled());
+  }
   $attachBlock = ember_attachment_block($pdo, $userMsg, (int)($senderChar['user_id'] ?? 0));
   // The user's explicit style-only request outranks a Vision model paraphrase.
   if ($channel === 'console' && coreui_image_reference_mode($userMsg, false, true) === 'style') {
