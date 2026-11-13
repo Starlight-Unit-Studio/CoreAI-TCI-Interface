@@ -628,9 +628,29 @@ class DbResearchIO:
         if cited:
             marks = ",".join(["%s"] * len(cited))
             self._exec(f"UPDATE stu_deep_research_sources SET cited=1 WHERE run_id=%s AND n IN ({marks})", (self.id, *cited))
-        self._exec("UPDATE stu_deep_research_runs SET status=%s, report_md=%s, citations=%s, error=%s, "
-                   "cancel_requested=0, finished_at=NOW(), heartbeat_at=NOW() WHERE id=%s",
-                   (status, report, len(cited or []), (error or None) and str(error)[:400], self.id))
+        updated = self._exec(
+            "UPDATE stu_deep_research_runs SET status=%s, report_md=%s, citations=%s, error=%s, "
+            "cancel_requested=0, finished_at=NOW(), heartbeat_at=NOW() WHERE id=%s",
+            (status, report, len(cited or []), (error or None) and str(error)[:400], self.id))
+        # Completion is announced by the SERVER, not by browser-side polling.
+        # The latest Mara message therefore exists even if the user closed the
+        # tab/smartphone while the research was running. The marker reuses the
+        # existing report card renderer; there is no new notification service.
+        uid = int(self.run.get("user_id") or 0)
+        session_id = str(self.run.get("session_id") or "")
+        if status == "done" and report and updated.rowcount and uid > 0 and session_id:
+            title = " ".join(str(self.run.get("title") or "Deep Research").split())[:80]
+            try:
+                insert_ember_message(
+                    self.conn, self.cfg,
+                    f"[[deep-research:{self.id}]]\nRecherche abgeschlossen: {title}",
+                    thinking="browse", channel="console",
+                    recipient_uid=uid, session_id=session_id)
+                self.log(f"  research {self.id}: Abschlussnachricht im Chat gespeichert")
+            except Exception as exc:
+                # Never turn a successfully completed research run into an
+                # error just because the optional chat notification failed.
+                self.log(f"  research {self.id}: Chat-Abschlussmeldung fehlgeschlagen ({str(exc)[:100]})")
 
 
 def process_research(conn, cfg, run, log):
