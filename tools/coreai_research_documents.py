@@ -9,7 +9,6 @@ import io
 import json
 from urllib.parse import urljoin, urlsplit
 
-import requests
 import coreai_deep_research as dr
 
 MAX_BYTES = 6_000_000
@@ -18,7 +17,9 @@ MAX_PDF_PAGES = 36
 
 
 def fetch_document(cfg, url, navigation_guard, get=None):
-    get = get or requests.get
+    if get is None:
+        import requests  # only the real browse container needs this dependency
+        get = requests.get
     target = str(url or "")
     data = b""
     kind = ""
