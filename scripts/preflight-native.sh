@@ -284,12 +284,14 @@ UI_FILES=(
   tools/image_spike/run.py
   tools/image_spike/models.json
   tools/image/image_service.py
+  tools/image/vision_cores.py
   tools/image/mara_references.py
   config/image/mara-references.json
   images/mara_references/.gitkeep
   tools/image/adopt_spike.py
   config/image/mara-image.json
   api/image_gen.php
+  api/vision_cores.php
   api/image_reference_consistency.php
   docker/image/Dockerfile
   database/migrations/026_image_tool.sql
@@ -302,6 +304,7 @@ UI_FILES=(
   js/coreui-image-editor.js
   css/coreui-image-viewer.css
   js/coreui-image-progress.js
+  js/coreui-vision-library.js
   scripts/image-progress-ui-selftest.cjs
   api/console_composer_intent.php
   api/composer_tools.php
