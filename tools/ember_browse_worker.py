@@ -743,7 +743,15 @@ class DbResearchIO:
         title, text = self.fetch(url)
         return title, text, url
 
-    def core(self, system, user, want_json, timeout, images=None):
+    def research_core(self, role, system, user, want_json, timeout):
+        """Optional distinct Lead/Worker/Citation models, same global lock."""
+        keys = {"lead": "STU_DEEP_RESEARCH_LEAD_MODEL",
+                "worker": "STU_DEEP_RESEARCH_WORKER_MODEL",
+                "citation": "STU_DEEP_RESEARCH_CITATION_MODEL"}
+        override = str(self.cfg.get(keys.get(str(role), ""), "") or "").strip()
+        return self.core(system, user, want_json, timeout, model_override=override or None)
+
+    def core(self, system, user, want_json, timeout, images=None, model_override=None):
         """One text or native-vision Core call under Mara's global serial lock."""
         name = lock_name(self.cfg, "global_ollama")
         with self.conn.cursor() as cur:
@@ -751,8 +759,13 @@ class DbResearchIO:
             if int((cur.fetchone() or {}).get("got") or 0) != 1:
                 raise RuntimeError("core_busy")
         try:
+            chosen_cfg = dict(self.cfg)
+            if model_override:
+                # Only an explicit admin setting changes the model. Do not
+                # create Ollama accounts or silently enable cloud providers.
+                chosen_cfg["STU_EMBER_MODEL"] = str(model_override)[:160]
             return call_with_heartbeat(
-                lambda: ollama_chat(self.cfg, system, user, want_json, think=False, timeout=timeout,
+                lambda: ollama_chat(chosen_cfg, system, user, want_json, think=False, timeout=timeout,
                                     images=images),
                 lambda _s: self.beat(), interval=15.0)
         finally:
