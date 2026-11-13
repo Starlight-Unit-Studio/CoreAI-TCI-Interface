@@ -145,6 +145,12 @@ def fetched_page_is_relevant(query, url, title, body, hosts=()):
     """A source must be actually readable and must pass the identity check."""
     if len(" ".join(str(body or "").split())) < 80:
         return False
+    anchors = identity_phrases(query)
+    if anchors and not any(contains_phrase(str(title or "") + " " + str(body or ""), p) for p in anchors):
+        # The search URL alone is not proof that the fetched (possibly redirected)
+        # page really discusses the named subject.
+        if not any(on_host(url, h) for h in explicit_hosts(query)):
+            return False
     return relevance({"url": url, "title": title, "content": body[:12000]}, query, hosts) is not None
 
 
