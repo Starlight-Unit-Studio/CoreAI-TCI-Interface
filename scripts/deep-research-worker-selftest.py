@@ -530,6 +530,31 @@ finally:
     captcha_session.close()
 check(captcha_calls == [], "CAPTCHA is detected before image-guided automation")
 
+
+# Completion message is written server-side even when no browser is connected.
+sent = []
+fake_research_io = object.__new__(w.DbResearchIO)
+fake_research_io.id = 42
+fake_research_io.run = {"user_id": 8, "session_id": "session-8", "title": "Profil Mira Solberg"}
+fake_research_io.conn = object()
+fake_research_io.cfg = {}
+fake_research_io.log = lambda *_: None
+fake_research_io._exec = lambda *_: types.SimpleNamespace(rowcount=1)
+original_insert = w.insert_ember_message
+w.insert_ember_message = lambda *args, **kwargs: sent.append((args, kwargs))
+try:
+    fake_research_io.finish("done", "# Verifizierter Bericht", [1], None)
+    check(len(sent) == 1 and
+          sent[0][0][2].startswith("[[deep-research:42]]") and
+          sent[0][1]["recipient_uid"] == 8 and
+          sent[0][1]["session_id"] == "session-8",
+          "worker emits a same-chat completion card without UI polling")
+    fake_research_io.finish("error", None, [], "fetch failed")
+    check(len(sent) == 1, "error does not falsely announce a finished report")
+finally:
+    w.insert_ember_message = original_insert
+
+
 check(callable(w.claim_next_research) and callable(w.process_research), "the worker claims and runs research")
 
 print("CoreAI deep research worker: page text, queries, notes, report citations, page choice, budget, a whole run, "
