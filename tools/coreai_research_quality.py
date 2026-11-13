@@ -14,7 +14,7 @@ URL = re.compile(r"https?://[^\s<>\"']+", re.I)
 SKIP_ENTITIES = {"deep research", "deep recherche", "deep search", "bitte suche", "bitte recherchiere"}
 ACTION_WORDS = {"recherche", "recherchiere", "analysiere", "durchsuche", "suche", "bitte", "untersuche", "finde"}
 ENTITY_ENDINGS = {"studios", "studio", "labs", "laboratories", "systems", "solutions", "software", "institute", "institut", "foundation", "gmbh", "ag", "inc", "ltd", "universität", "university"}
-STOP_WORDS = {"bitte", "recherche", "recherchiere", "recherchieren", "suche", "nach", "über", "ueber", "der", "die", "das", "den", "dem", "des", "eine", "einer", "einem", "einen", "mit", "und", "oder", "von", "vom", "aus", "bei", "zum", "zur", "dazu", "alle", "alles", "aktuelle", "aktuell", "wer", "was", "wie", "ist", "sind", "ein", "für", "fur", "mich", "ihn", "sie", "seine", "ihre", "an", "im", "am", "in", "zu", "deep", "research", "bericht", "informationen", "finde", "darüber", "offiziell"}
+STOP_WORDS = {"bitte", "recherche", "recherchiere", "recherchieren", "suche", "nach", "über", "ueber", "der", "die", "das", "den", "dem", "des", "eine", "einer", "einem", "einen", "mit", "und", "oder", "von", "vom", "aus", "bei", "zum", "zur", "dazu", "alle", "alles", "aktuelle", "aktuell", "wer", "was", "wie", "ist", "sind", "ein", "für", "fur", "mich", "ihn", "sie", "seine", "ihre", "an", "im", "am", "in", "zu", "deep", "research", "bericht", "informationen", "finde", "darüber", "offiziell", "analysiere", "vergleiche", "durchsuche", "untersuche", "dokumentiere", "lese", "lies", "ergaenze", "ergänze"}
 
 
 def fold(value):
