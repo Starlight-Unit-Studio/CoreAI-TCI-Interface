@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.46: Vision Core image service import and endpoint regression.
+# CoreAI: TCI Interface 0.7.47: Vision Core Nginx allowlist and access regression.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -296,6 +296,7 @@ UI_FILES=(
   docker/image/Dockerfile
   database/migrations/026_image_tool.sql
   scripts/image-service-selftest.py
+  scripts/vision-nginx-route-selftest.py
   scripts/image-gen-selftest.php
   scripts/image-reference-consistency-selftest.php
   scripts/image-chat-ui-selftest.cjs
@@ -626,6 +627,15 @@ if (( mara_missing == 0 )); then
   ok 'Maras sieben Referenzbilder sind im Repository vorhanden.'
 else
   printf '[WARN] %s\n' "Maras Bildset noch unvollstaendig ($mara_missing von 7 fehlen); fehlende Bilder werden uebersprungen." >&2
+fi
+
+# 0.7.47: the Vision Core PHP bridge must pass Nginx's strict whitelist.
+# Tests both Compose and native configs, retaining deny-by-default for other PHP.
+vision_nginx_route_test=''
+if vision_nginx_route_test="$(python3 "$PROJECT_ROOT/scripts/vision-nginx-route-selftest.py" 2>&1)"; then
+  ok 'Vision Core: sichere PHP-Route in beiden Nginx-Konfigurationen geprueft.'
+else
+  fail "Vision Core Nginx-Routing: ${vision_nginx_route_test:-Unbekannter Fehler}"
 fi
 
 image_service_test=''
