@@ -9832,11 +9832,13 @@ a.insight-file-name:hover { text-decoration: underline; }
   background: rgba(7, 14, 28, .72); }
 .vision-library[hidden], .vision-library [hidden] { display: none !important; }
 .vision-library-panel { width: min(760px, 100%); max-height: min(85dvh, 850px);
-  overflow: auto; padding: 22px; background: var(--panel, #f9fbff);
-  border: 1px solid var(--line-strong, #a9c5f5); color: var(--text, #172033);
+  overflow: auto; padding: 22px; background: var(--panel-solid, #f9fbff);
+  border: 1px solid var(--line-strong, #a9c5f5); color: var(--txt, #172033);
   box-shadow: 0 18px 60px rgba(0,0,0,.26); border-radius: 0;
   clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%); }
-.vision-library-head { display: flex; gap: 12px; justify-content: space-between; }
+.vision-library-head { display: flex; gap: 12px; justify-content: space-between; align-items: flex-start; }
+.vision-library-head > div { flex: 1 1 auto; min-width: 0; }
+.vision-library-head .core-library-close { flex: 0 0 40px; width: 40px; height: 40px; min-height: 40px; padding: 0; }
 .vision-library-head h2 { font-size: 21px; margin: 8px 0; }
 .vision-library-head p, .vision-library-panel section > p { font-size: 13px;
   line-height: 1.5; color: var(--muted); margin: 6px 0 13px; }
