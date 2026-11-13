@@ -25,14 +25,23 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Check Python syntax
         run: python3 -m py_compile tools/coreai_deep_research.py tools/coreai_research_quality.py tools/coreai_research_browser.py tools/coreai_research_hybrid.py tools/coreai_research_documents.py tools/coreai_research_mcp.py tools/ember_browse_worker.py scripts/deep-research-worker-selftest.py scripts/deep-research-hybrid-selftest.py
       - name: Run Deep Research worker selftest (show failure details)
         run: python3 scripts/deep-research-worker-selftest.py
       - name: Run hybrid Deep Research regression
         run: python3 scripts/deep-research-hybrid-selftest.py
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+      - name: Check hybrid PHP storage syntax
+        run: php -l api/deep_research_store.php
       - name: Validate release contract
         run: |
-          python3 scripts/version-merge-check.py --base-version 0.7.41
+          BASE_VERSION="$(git show origin/main:VERSION | tr -d '\r\n')"
+          python3 scripts/version-merge-check.py --base-version "$BASE_VERSION"
           python3 scripts/branding-license-selftest.py
           python3 scripts/cache-bust.py --verify || { python3 scripts/cache-bust.py; git diff -- index.html login.html app.html settings.html protocols.html admin/index.html; exit 1; }
