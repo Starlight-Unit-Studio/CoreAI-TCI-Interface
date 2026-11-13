@@ -66,6 +66,8 @@ def _new_state(run):
         "sources": [], "evidence": {}, "seen": [], "searches": 0,
         "depth": 0, "report": "", "citations": [], "progress": 0,
         "planner_queries": [], "coverage": {}, "analysis": [],
+        "discovery": {"queries": 0, "backend_errors": 0, "hits": 0, "candidates": 0,
+                      "fetch_failures": 0, "verified": 0},
     }
 
 
@@ -181,15 +183,28 @@ def _search_batch(io, state, query_map, parallel, check):
     check()
     matches = _parallel_jobs(requests, lambda v: io.search(v[1]) or [], parallel)
     found = {}
+    counters = state.setdefault("discovery", {})
+    counters.setdefault("queries", 0)
+    counters.setdefault("backend_errors", 0)
+    counters.setdefault("hits", 0)
     for (idx, query), (response, error) in zip(requests, matches):
         check()
         state["searches"] += 1
+        counters["queries"] += 1
+        counters["hits"] += len(response or [])
         found.setdefault(idx, []).extend(response or [])
         domains = [dr.domain_of(item.get("url")) for item in (response or [])
                    if item.get("url")]
         _record(io, "search", query, list(dict.fromkeys(domains))[:8])
         if error:
-            _record(io, "info", "Suche nicht verfügbar: " + error)
+            counters["backend_errors"] += 1
+            # Internal HTTP details remain in the server log. The public
+            # research activity only shows the class of the failure.
+            _record(io, "info", "Suchdienst nicht erreichbar; Mara versucht weitere Quellen.")
+    if not any(found.values()):
+        _record(io, "info", "Alle Suchanfragen dieser Runde ohne Treffer. "
+                f"Anfragen: {len(requests)}, Suchdienstfehler: "
+                f"{sum(bool(error) for _, error in matches)}.")
     return found
 
 
@@ -220,6 +235,8 @@ def _candidate_tasks(state, hits, budget):
 
 def _read_batch(io, state, hits, budget, parallel, check, log):
     targets = _candidate_tasks(state, hits, budget)
+    stats = state.setdefault("discovery", {})
+    stats["candidates"] = int(stats.get("candidates", 0)) + len(targets)
     if not targets:
         return {}
     outcomes = _parallel_jobs(targets, lambda v: _fetch(io, v[1]["url"]), parallel)
@@ -241,6 +258,7 @@ def _read_batch(io, state, hits, budget, parallel, check, log):
                 state["seen"].append(key)
             title, body, url = response if response and len(response) == 3 else ("", "", original_url)
             if error:
+                stats["fetch_failures"] = int(stats.get("fetch_failures", 0)) + 1
                 log("research: HTTP read failed (" + error + ")")
             valid = quality.fetched_page_is_relevant(state["query"], url, title, body)
             if (not valid and "browser_read" in state["workers"][wi].get("permissions", []) and
@@ -269,6 +287,7 @@ def _read_batch(io, state, hits, budget, parallel, check, log):
             excerpt = _source_excerpt(state["query"], body, dr.page_chars(
                 budget.get("num_ctx") or 4096, max_pages))
             state["sources"].append(entry)
+            stats["verified"] = int(stats.get("verified", 0)) + 1
             state["evidence"][str(number)] = excerpt[:5500]
             state["workers"][wi]["source_ids"].append(number)
             io.source(entry)
@@ -641,11 +660,45 @@ def run_hybrid_research(run, io, budget, log=lambda *_: None, clock=time.monoton
             _record(io, "info", "Das Zeitbudget ist erreicht; Mara führt die belegten Funde zusammen.")
         if io.cancelled():
             raise dr.Cancelled()
+        if not state["sources"]:
+            counters = state.get("discovery") or {}
+            total = int(counters.get("queries") or 0)
+            failed = int(counters.get("backend_errors") or 0)
+            hits = int(counters.get("hits") or 0)
+            attempted = int(counters.get("candidates") or 0)
+            if total and failed >= total:
+                reason = "research_search_backend_unavailable"
+                explanation = "Der Suchdienst war nicht erreichbar; deshalb konnte Mara keine Quellen suchen."
+            elif hits == 0:
+                reason = "research_no_search_results"
+                explanation = "Die verfügbaren Suchdienste lieferten keine Treffer."
+            else:
+                reason = "research_no_verifiable_sources"
+                explanation = ("Es gab Suchtreffer, aber keine der Seiten konnte als "
+                               "lesbare und passende Quelle bestätigt werden.")
+            _record(io, "info", explanation +
+                    f" Suchanfragen: {total}, Treffer: {hits}, "
+                    f"Seitenkandidaten: {attempted}, Suchdienstfehler: {failed}.")
+            state["phase"] = "error"
+            state["error"] = reason
+            _checkpoint(io, state)
+            # No evidence is not a completed research report.
+            io.finish("error", None, [], reason)
+            return "error"
         state["phase"] = "verify"
         _progress(io, state, "verify")
         io.write_phase()
         _checkpoint(io, state)
         report, cited = _synthesize(io, state, budget, lambda: io.cancelled() and (_ for _ in ()).throw(dr.Cancelled()))
+        if not cited:
+            # Even fetched documents are not proof that the model produced a
+            # genuinely sourced report. Do not announce an empty success.
+            reason = "research_no_verified_claims"
+            _record(io, "info", "Der Bericht konnte nicht ausreichend durch die gefundenen Quellen belegt werden.")
+            state["phase"], state["error"] = "error", reason
+            _checkpoint(io, state)
+            io.finish("error", None, [], reason)
+            return "error"
         state["report"], state["citations"] = report, cited
         state["phase"] = "done"
         _checkpoint(io, state)
