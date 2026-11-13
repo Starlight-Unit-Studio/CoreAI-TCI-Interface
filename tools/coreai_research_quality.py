@@ -183,7 +183,8 @@ def supported_notes(text, source_numbers):
     allowed = {int(n) for n in source_numbers}
     cleaned = []
     for line in str(text or "").splitlines():
-        nums = [int(n) for n in re.findall(r"\[(\d{1,3})\]", line)]
+        groups = re.findall(r"\[(\d{1,3}(?:\s*[,;]\s*\d{1,3})*)\]", line)
+        nums = [int(n) for group in groups for n in re.split(r"\s*[,;]\s*", group)]
         if nums and all(n in allowed for n in nums):
             cleaned.append(line.strip())
     return "\n".join(cleaned)[:3000]
