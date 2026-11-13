@@ -4,7 +4,7 @@
 
 **CoreAI: TCI Interface** is a free, self-hosted chat and work interface developed by **Starlight Unit Studios** as part of the Quantum software family. **Mara Thorne** is its TCI assistant; **E.M.B.E.R.** is the underlying framework.
 
-CoreAI combines Ollama-based models with private conversations, browser research, personal knowledge, file tools and an administration interface. Its separate local image engine can load a protected FLUX.2 Klein default or selected, compatible and hash-verified Hugging Face quantizations. Its standard deployment runs an isolated Nginx, PHP-FPM, MariaDB and worker stack on a Linux server. CoreAI is an application, **not a standalone operating system**.
+CoreAI combines Ollama-based models with private conversations, browser research, personal knowledge, file tools and an administration interface. Its standard deployment runs an isolated Nginx, PHP-FPM, MariaDB and worker stack on a Linux server. CoreAI is an application, **not a standalone operating system**.
 
 **Current source version: `0.7.45`** | [Changelog](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Documentation policy](docs/VERSIONING_POLICY.md) | [License](LICENSE.md)
 
