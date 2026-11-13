@@ -535,7 +535,10 @@ function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $
     'created_at' => gmdate('Y-m-d\\TH:i:s+00:00'),
   ];
   $image = $marked ?? $png;
-  // A selected Vision Core supplies its actual pinned registry for provenance.\n  $usedRegistry = is_array($job['model_registry'] ?? null) && coreui_image_registry_pinned($job['model_registry'])\n    ? $job['model_registry'] : $registry;\n  $embedded = coreui_image_png_embed_provenance($image, $meta, $usedRegistry);
+  // Selected Vision Core sends its pinned registry for image provenance.
+  $usedRegistry = is_array($job['model_registry'] ?? null) && coreui_image_registry_pinned($job['model_registry'])
+    ? $job['model_registry'] : $registry;
+  $embedded = coreui_image_png_embed_provenance($image, $meta, $usedRegistry);
   if ($embedded === null) error_log('[CoreAI] PNG metadata embedding failed; the generated image is still usable');
   else $image = $embedded;
   $meta['metadata_embedded'] = $embedded !== null;
