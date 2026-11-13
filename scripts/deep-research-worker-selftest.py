@@ -204,14 +204,15 @@ run = {"query": "https://www.example.test", "title": "Analyse example.test", "nu
 io = FakeIO()
 check(dr.run_deep_research(run, io, dr.budget_from({})) == "done", "the run finishes")
 kinds = [k for k, _, _ in io.log]
-check(kinds[0] == "step" and kinds.count("step") == 2 and kinds.count("search") == 3 and "note" in kinds, "events: %r" % kinds)
+check(kinds[0] == "step" and kinds.count("step") == 2 and kinds.count("search") >= 3 and "note" in kinds, "events: %r" % kinds)
+check(kinds.count("search") == io.progresses[-1][3], "reported count includes unattended source-recovery searches")
 check(io.log[1] == ("search", "site:example.test angebote", ["example.test", "blocked.test"]), "a search names its domains: %r" % (io.log[1],))
 check([s["n"] for s in io.sources] == [1] and len(io.sources) == 1, "only genuinely read, relevant pages become sources: %r" % io.sources)
 check(not any(s["domain"] == "blocked.test" for s in io.sources), "failed fetches and snippets are not evidence")
 check(io.writing and io.finished[0] == "done" and "[42]" not in io.finished[1] and io.finished[2] == [1], "report: %r" % (io.finished[:1] + io.finished[2:],))
 percents = [p for _, _, p, _ in io.progresses]
 check(percents == sorted(percents) and percents[-1] == 100, "progress only grows and ends at 100: %r" % percents)
-check(io.progresses[-1][0] == ["done", "done", "done"] and io.progresses[-1][3] == 3, "all steps done, three searches")
+check(io.progresses[-1][0] == ["done", "done", "done"] and io.progresses[-1][3] >= 3, "all steps done, additional evidence searches allowed")
 active = [s for s, phase, _, _ in io.progresses if phase == "write"][0]
 check(active == ["done", "done", "active"], "the report step is active while writing: %r" % active)
 check([c[0] for c in io.core_calls] == [True, False, False], "one query call, only sourced notes, one report call")
@@ -276,6 +277,55 @@ check(visual_io.sources[0]["url"] == "https://studio.example/biography",
 check(any(k == "info" and "Playwright" in t for k, t, _ in visual_io.log),
       "the browser step is visible in research activity")
 
+
+
+# Blocked pages do not pause a background run or require an opened chat.
+# Mara must search for independent accessible sources and finish the report.
+class ChallengeRecoveryIO(FakeIO):
+    def __init__(self):
+        super().__init__()
+        self.queries = []
+        self.browser_attempts = 0
+
+    def search(self, query):
+        self.queries.append(query)
+        if "-site:guarded.example" in query:
+            return [{"url": "https://public.example/profile",
+                     "title": "Mira Solberg author profile",
+                     "content": "Books, studio and software projects."}]
+        return [{"url": "https://guarded.example/profile",
+                 "title": "Mira Solberg author profile",
+                 "content": "An article behind a CAPTCHA."}]
+
+    def fetch(self, url):
+        if "guarded.example" in url:
+            raise RuntimeError("HTTP 403: access denied")
+        return "Mira Solberg publications", (
+            "Mira Solberg wrote books and maintains a software studio. " * 5)
+
+    def fetch_visual(self, url, query, step):
+        self.browser_attempts += 1
+        raise RuntimeError("CAPTCHA: verification required")
+
+recovery = ChallengeRecoveryIO()
+result = dr.run_deep_research(research_case, recovery, dr.budget_from({}))
+check(result == "done" and recovery.finished[0] == "done",
+      "Deep Research finishes autonomously despite an inaccessible site")
+check(recovery.browser_attempts == 1 and
+      any("-site:guarded.example" in query for query in recovery.queries),
+      "challenge triggers an alternative search avoiding the protected website")
+check(len(recovery.sources) == 1 and recovery.sources[0]["url"] ==
+      "https://public.example/profile", "only accessible verified evidence is cited")
+check(not any("warte auf" in msg.lower() for _, msg, _ in recovery.log),
+      "no interactive handoff or foreground waiting")
+check(any("Zugangssperre" in msg for _, msg, _ in recovery.log),
+      "the blocked source is visible in the activity log")
+
+alternative = quality.alternative_queries(
+    "Mira Solberg", "Suche Biografie und Veröffentlichungen",
+    ["guarded.example"], limit=2)
+check(alternative and all("-site:guarded.example" in q for q in alternative),
+      "autonomous recovery excludes the access-gated domain")
 
 # --- The worker's page fetch ----------------------------------------------------------------------
 def have(module):
