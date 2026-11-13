@@ -1,6 +1,6 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
-PR-Stand: 0.7.40 auf main 0.7.39 (Deep Research: Quellenqualitaet, Browser, Vision und unbeaufsichtigte Ausweichsuche).
+PR-Stand: 0.7.40 auf main 0.7.39 (Deep Research: Quellenqualitaet, Browser, Vision, Ausweichsuche und serverseitige Abschlussnachricht).
 Vollstaendige Worker-/Live-Tests noch offen, daher PR als Draft.
 Stand: 13.11.2026
 Repository-Version: 0.7.40 (Branch fix/deep-research-source-discovery-0-7-40, main 0.7.39)
