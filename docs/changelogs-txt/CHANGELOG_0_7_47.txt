@@ -1,0 +1,25 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.47
+Datum: 13.11.2026
+
+Vision Core HTTP-404-Fehler beim Server behoben
+- Die neue API /api/vision_cores.php wurde im Nginx-Whitelist-Routing vergessen.
+  Dadurch blockierte Nginx die Anfrage mit HTTP 404 noch vor der PHP-Authentifizierung.
+- In config/runtime/nginx.conf.template (Compose) und config/nginx.conf.template
+  (native Installation) ist der genau benannte Endpunkt nun erlaubt.
+  Alle sonstigen nicht freigegebenen PHP-Dateien bleiben grundsaetzlich gesperrt.
+- Installationspruefung: Nach der Neuerstellung der Web-/PHP-Dienste muss ein
+  anonymer HTTP-Aufruf der Vision-Core-API den PHP-Status 401 liefern, nicht 404.
+- Neuer Offline-Test scripts/vision-nginx-route-selftest.py verifiziert fuer
+  beide Nginx-Betriebsarten die Freigabe, den Deny-by-default-Schutz,
+  das PHP-Rechtemodell und den Update-Livetest.
+- Der Test laeuft in beiden Preflights und dem gezielten GitHub-Prueflauf.
+- Keine Aenderungen an den Bildgewichten, der Ollama-Modellwarteschlange,
+  Standard-Bildgenerierung, Gastlimits oder gesicherten Daten.
+
+Pruefung vor Merge
+- python3 -I scripts/vision-nginx-route-selftest.py
+- python3 scripts/version-merge-check.py --base-version 0.7.46
+- python3 scripts/cache-bust.py --verify
+- Vorhandene Python-/PHP-/JS- und Image-Service-Regressionen
+- Erst beim echten Hostupdate: Nginx anonyme 401-Pruefung, danach Funktionstest
+  von Installiert und Hugging Face in der geschuetzten Admin-Oberflaeche.

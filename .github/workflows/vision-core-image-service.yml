@@ -6,6 +6,9 @@ on:
       - 'tools/image/image_service.py'
       - 'tools/image/vision_cores.py'
       - 'scripts/image-service-selftest.py'
+      - 'scripts/vision-nginx-route-selftest.py'
+      - 'config/runtime/nginx.conf.template'
+      - 'config/nginx.conf.template'
       - 'api/vision_cores.php'
       - 'api/image_gen.php'
       - 'js/coreui-vision-library.js'
@@ -17,6 +20,9 @@ on:
       - 'tools/image/image_service.py'
       - 'tools/image/vision_cores.py'
       - 'scripts/image-service-selftest.py'
+      - 'scripts/vision-nginx-route-selftest.py'
+      - 'config/runtime/nginx.conf.template'
+      - 'config/nginx.conf.template'
       - 'api/vision_cores.php'
       - '.github/workflows/vision-core-image-service.yml'
 
@@ -31,9 +37,11 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v4
       - name: Check Python syntax
-        run: python3 -m py_compile tools/image/image_service.py tools/image/vision_cores.py scripts/image-service-selftest.py
+        run: python3 -m py_compile tools/image/image_service.py tools/image/vision_cores.py scripts/image-service-selftest.py scripts/vision-nginx-route-selftest.py
       - name: Exercise isolated image worker and Vision Core endpoints
         run: python3 -I scripts/image-service-selftest.py
+      - name: Enforce external Vision Core Nginx route and default-deny policy
+        run: python3 -I scripts/vision-nginx-route-selftest.py
       - name: Check PHP bridge syntax
         run: |
           php -l api/vision_cores.php

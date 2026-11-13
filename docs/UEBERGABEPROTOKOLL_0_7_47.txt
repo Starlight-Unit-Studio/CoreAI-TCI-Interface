@@ -1,0 +1,41 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.47
+Datum: 13.11.2026
+Basis: main 0.7.46 (PR #301 gemergt)
+Branch: fix/vision-core-nginx-route-0-7-47
+Naechste Version nach Merge: 0.7.48, sofern main unveraendert bleibt.
+
+STAND
+- Nach erfolgreichem 0.7.46 Update ist die Vision Core-Bibliothek optisch behoben,
+  zeigt aber bei Installiert und Hugging Face weiterhin HTTP 404.
+- Ursache im GitHub-Quelltext nachgewiesen: Web-Endpunkt
+  /api/vision_cores.php fehlt in beiden Nginx-PHP-Freigabelisten.
+  Statt PHP-Antwort wird Nginx 404 ausgeliefert.
+- Die vorige 0.7.46-Regression hat ausschliesslich den internen Bilddienst
+  und nicht den ueber den Webserver erreichbaren API-Pfad getestet.
+
+KORREKTUR
+- Beide Nginx-Templates erlauben nur /api/vision_cores.php zusätzlich
+  zu den bereits freigegebenen PHP-Routen. Restliche PHP-API bleibt gesperrt.
+- scripts/install.sh testet nach compose up --force-recreate php web
+  den echten anonymen GET auf /api/vision_cores.php; er muss PHP 401 liefern.
+- scripts/vision-nginx-route-selftest.py testet Routing, Auth/CSRF,
+  verbotene Pfade, Installer und Stack-Runtime.
+- Test in scripts/preflight.sh und scripts/preflight-native.sh eingebunden.
+- GitHub Vision Core Regression prueft beide Nginx-Templates und Tests.
+
+VOR MERGE
+- Beide Nginx-Templates und Whitelist-Verhalten durch Offline-Test pruefen.
+- Alle bestehenden automatisierten Tests gruen, numerische 0.7.47 gegen main 0.7.46.
+- Installer, PHP und Nginx Syntax. Keine ungetestete Live-Freigabe behaupten.
+
+NACH MERGE
+- Integrierten CoreAI-Updater auf Server ausfuehren. Webdienste werden
+  mit neuem Runtime-Nginx-Template recreated.
+- Der Installer selbst bricht ab, falls die anonyme Vision Core API
+  kein 401 liefert. Danach im angemeldeten Admin-Account Installiert/Suche
+  pruefen und echte Bildgenerierung separat testen.
+- Keine Shellbefehle auf dem Smartphone erforderlich, sofern Owner-Updater
+  funktioniert.
+
+STATUS
+Arbeit auf Feature-Branch, nicht bereits live.
