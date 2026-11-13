@@ -60,7 +60,9 @@ def _new_state(run):
         "version": STATE_VERSION, "query": str(run.get("query") or ""),
         "phase": "plan", "steps": steps,
         "workers": [{"goal": step, "status": "todo", "notes": "", "brief": "",
-                     "source_ids": [], "queries": [], "attempts": 0} for step in steps],
+                     "source_ids": [], "queries": [], "attempts": 0,
+                     "permissions": ["public_search", "public_read", "document_read",
+                                     "browser_read"]} for step in steps],
         "sources": [], "evidence": {}, "seen": [], "searches": 0,
         "depth": 0, "report": "", "citations": [], "progress": 0,
         "planner_queries": [], "coverage": {}, "analysis": [],
@@ -172,7 +174,8 @@ def _supported_notes(notes, allowed, evidence):
 
 
 def _search_batch(io, state, query_map, parallel, check):
-    requests = [(wi, q) for wi, values in sorted(query_map.items()) for q in values if q]
+    requests = [(wi, q) for wi, values in sorted(query_map.items()) for q in values if q
+                and "public_search" in state["workers"][wi].get("permissions", ["public_search"])]
     if not requests:
         return {}
     check()
@@ -200,7 +203,13 @@ def _candidate_tasks(state, hits, budget):
         if w["status"] == "done":
             continue
         ranked = quality.rank_results(results, state["query"], assigned)
+        if "public_read" not in w.get("permissions", ["public_read"]):
+            continue
         for result in ranked[:maximum]:
+            path = urlsplit(str(result.get("url") or "")).path.lower()
+            if path.endswith((".pdf", ".csv", ".json")) and (
+                    "document_read" not in w.get("permissions", [])):
+                continue
             key = _normalize_ref(result.get("url"))
             if key in assigned:
                 continue
@@ -234,7 +243,8 @@ def _read_batch(io, state, hits, budget, parallel, check, log):
             if error:
                 log("research: HTTP read failed (" + error + ")")
             valid = quality.fetched_page_is_relevant(state["query"], url, title, body)
-            if not valid and browser_uses < _budget(budget, "browser_pages_per_step", 2, 0, 6):
+            if (not valid and "browser_read" in state["workers"][wi].get("permissions", []) and
+                    browser_uses < _budget(budget, "browser_pages_per_step", 2, 0, 6)):
                 browser = getattr(io, "fetch_visual", None)
                 if callable(browser):
                     browser_uses += 1
@@ -434,7 +444,9 @@ def _append_tasks(decision, state, budget):
         if len(task) < 12 or quality.fold(task) in existing:
             continue
         state["workers"].append({"goal": task, "status": "todo", "notes": "",
-                                 "brief": "", "source_ids": [], "queries": [], "attempts": 0})
+                                 "brief": "", "source_ids": [], "queries": [], "attempts": 0,
+                                 "permissions": ["public_search", "public_read",
+                                                 "document_read", "browser_read"]})
         existing.add(quality.fold(task))
 
 
