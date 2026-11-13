@@ -68,7 +68,7 @@ check(picked == ["https://a.test/1", "https://b.test/1", "https://a.test/2"], "d
 check(dr.page_chars(4096, 3) == 2252 and dr.page_chars(None, 3) == 2252 and dr.page_chars(100, 3) == 900 and dr.page_chars(65536, 3) == 5000,
       "page size follows the window within bounds")
 b = dr.budget_from({"STU_DEEP_RESEARCH_PAGES_PER_STEP": "99", "STU_DEEP_RESEARCH_MAX_MINUTES": "x"})
-check(b["pages_per_step"] == 10 and b["max_minutes"] == 30 and b["queries_per_step"] == 4, "budget bounds: %r" % b)
+check(b["pages_per_step"] == 10 and b["max_minutes"] == 30 and b["queries_per_step"] == 4 and b["results_per_query"] == 10, "budget bounds: %r" % b)
 
 
 
@@ -85,7 +85,8 @@ noise = [
     {"url": "https://store.example/audio", "title": "Aurora 8 Audiokabel", "content": "Audio"},
 ]
 check(quality.identity_phrases(case) == ["Mira Solberg", "Aurora Unit Studios"], "two named entities")
-check(quality.rank_results(noise + good, case) == good, "same-name noise must lose to relevant sources")
+check(quality.rank_results(noise + good, case)[:2] == good, "exact-name hits outrank weak discovery candidates")
+check(len(quality.rank_results(noise + good, case)) == 5, "discovery does not reject candidates before reading pages")
 check(quality.relevance(noise[0], case) is None, "a near-match is not an identity match")
 forced = quality.enforce_queries(["Johannes Solberg Professor", "Aurora Express Musical"],
                                  case, "Suche Autoren und Studios", 3)
@@ -106,6 +107,22 @@ check(quality.fetched_page_is_relevant(case, good[0]["url"], good[0]["title"],
       "relevant full text accepted")
 check(quality.supported_notes("- Buch [1, 2]\n- Produkt [7]\n- ohne Beleg", {1, 2}) == "- Buch [1, 2]",
       "only factual notes with valid source numbers survive")
+# Regression: a real answer page may hide the exact subject below a generic search snippet.
+summary_only = {"url": "https://profiles.example/about", "title": "About the creative studio",
+                "content": "Read the complete biography on this page."}
+check(summary_only in quality.rank_results([summary_only], "Mira Solberg"),
+      "a generic snippet must not prevent inspecting the full page")
+long_page = ("Overview of the creative workshop and project updates. " * 500
+             + "Mira Solberg founded the studio and wrote the novel series. " * 3)
+check(quality.fetched_page_is_relevant("Mira Solberg", summary_only["url"], "About the creative studio", long_page),
+      "a verified subject mention after the introduction makes a real source")
+excerpt = quality.focused_excerpt("Mira Solberg", long_page, 900)
+check("Mira Solberg" in excerpt and len(excerpt) < 950,
+      "the local Core reads the relevant part rather than the long page's introduction")
+check(not quality.fetched_page_is_relevant("Mira Solberg", summary_only["url"],
+                                          "", "Unrelated news about a different person and local events. " * 8),
+      "a search snippet cannot verify an unrelated fetched page")
+
 prompt_sys, prompt_user = dr.report_prompts("Thema", "Titel", ["Eins", "Zwei"],
                                           {0: "- A [1]" * 120, 1: "- B [2]" * 120},
                                           [{"n": 1, "title": "A", "domain": "a.example", "url": "https://a.example"},
@@ -189,6 +206,30 @@ io = FakeIO()
 dr.run_deep_research(run, io, dr.budget_from({"STU_DEEP_RESEARCH_MAX_MINUTES": 3}), clock=lambda: next(ticks, 10_000))
 check(any(k == "info" and "Zeitrahmen" in t for k, t, _ in io.log) and io.finished[0] == "done", "time budget: the report still comes")
 
+
+
+# A complete run with a generic snippet but an exact match inside the read page.
+class RelevantBodyIO(FakeIO):
+    def search(self, query):
+        return [{"url": "https://studio.example/biography",
+                 "title": "Studio biography and projects",
+                 "content": "Creative work, publications and software projects."}]
+
+    def fetch(self, url):
+        return "Studio biography", (
+            "Overview of the workshop and current developments. " * 300
+            + "Mira Solberg writes speculative fiction and builds the studio software. " * 5
+        )
+
+realistic = RelevantBodyIO()
+research_case = {"query": "Mira Solberg", "title": "Profil Mira Solberg", "num_ctx": 4096,
+                 "steps": ["Finde offizielle Informationen.", "Fasse die Ergebnisse in einem Bericht zusammen."]}
+check(dr.run_deep_research(research_case, realistic, dr.budget_from({})) == "done",
+      "subject run finishes even with a generic search result")
+check(len(realistic.sources) == 1 and realistic.sources[0]["domain"] == "studio.example",
+      "source is created only after verifying the fetched page")
+check(any("Mira Solberg" in event[1] for event in realistic.log if event[0] == "note") or
+      realistic.finished[2] == [1], "the run can cite the genuinely matching source")
 
 # --- The worker's page fetch ----------------------------------------------------------------------
 def have(module):
