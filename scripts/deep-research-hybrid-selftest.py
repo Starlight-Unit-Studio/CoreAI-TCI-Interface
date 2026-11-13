@@ -206,4 +206,94 @@ try:
 except ValueError:
     pass
 
+
+# The numeric Python adapter never runs model-authored code. Every supplied
+# input must appear verbatim in cached source evidence.
+numeric = hybrid._new_state(run)
+numeric["sources"] = [{"n": 1, "url": "https://data.example/stats.csv",
+                       "title": "Statistics", "domain": "data.example"}]
+numeric["evidence"] = {"1": "Month,Value\nJanuary,10\nFebruary,20\n"}
+plan = {"analysis": {"operation": "mean", "values": [10, 20], "sources": [1]}}
+check(hybrid._analysis_values(plan, numeric)["values"] == [10.0, 20.0],
+      "numeric inputs must be sourced to the cached document")
+check(hybrid._analysis_values(
+    {"analysis": {"operation": "mean", "values": [10, 999999], "sources": [1]}},
+    numeric) is None, "unsourced values are not executed")
+check(hybrid._analysis_values(
+    {"analysis": {"operation": "exec", "values": [10, 20], "sources": [1]}},
+    numeric) is None, "arbitrary Python code is not an analysis operation")
+
+
+class Sandbox:
+    def __init__(self):
+        self.calls, self.events = [], []
+    def python_analysis(self, spec):
+        self.calls.append(spec)
+        return {"value": 15.0, "sparkline": "▁█"}
+    def event(self, kind, text, domains):
+        self.events.append((kind, text, domains))
+
+
+sandbox = Sandbox()
+hybrid._analyze_with_sandbox(sandbox, plan, numeric)
+check(len(sandbox.calls) == 1 and "[1]" in numeric["analysis"][0] and "▁█" in numeric["analysis"][0],
+      "only the isolated code worker computes statistics and a data sparkline")
+
+# MCP is optional, public-only, explicitly allowlisted and never an automatic
+# way to access credentials or introduce an unverified numbered citation.
+import coreai_research_mcp as mcp
+
+
+class MCPResponse:
+    def __init__(self, text, status=200, headers=None):
+        self.text = text
+        self.status_code = status
+        self.headers = headers or {}
+
+
+mcp_calls = []
+def fake_post(endpoint, **kwargs):
+    request = kwargs["json"]
+    mcp_calls.append(request["method"])
+    if request["method"] == "initialize":
+        return MCPResponse(json.dumps({"jsonrpc": "2.0", "id": 1, "result": {
+            "protocolVersion": "2025-06-18", "capabilities": {}}}),
+            headers={"Mcp-Session-Id": "public-session"})
+    if request["method"] == "notifications/initialized":
+        return MCPResponse("", status=202)
+    return MCPResponse(json.dumps({"jsonrpc": "2.0", "id": 2, "result": {"content": [
+        {"type": "text", "text": json.dumps([
+            {"url": "https://research.example/mira", "title": "Mira Solberg's site",
+             "snippet": "Biographical sources"},
+            {"url": "http://127.0.0.1/admin", "title": "Local address"}
+        ])}
+    ]}}))
+
+
+config = {"STU_DEEP_RESEARCH_MCP_URL": "https://mcp.example/rpc",
+          "STU_DEEP_RESEARCH_MCP_READ_TOOL": "search_articles"}
+data = mcp.search_public_mcp(config, "Mira Solberg", public_guard, post=fake_post)
+check(len(data) == 1 and data[0]["url"] == "https://research.example/mira",
+      "MCP output is discovery-only and must reject non-public URLs")
+check(mcp_calls == ["initialize", "notifications/initialized", "tools/call"],
+      "real MCP handshake includes initialized notification before tool use")
+check(mcp.search_public_mcp({**config, "STU_DEEP_RESEARCH_MCP_READ_TOOL": "delete_user"},
+                            "Mira Solberg", public_guard, post=fake_post) == [],
+      "write-like MCP tools are never invoked")
+check(mcp.search_public_mcp({**config, "STU_DEEP_RESEARCH_MCP_URL": "http://127.0.0.1/mcp"},
+                            "Mira Solberg", public_guard, post=fake_post) == [],
+      "private/internal MCP URLs are off by default")
+
+# Fresh reports and a crash-after-final-checkpoint both complete idempotently.
+finished_state = copy.deepcopy(io.saved)
+finished_state["phase"] = "done"
+finished_state["report"] = io.finished[1]
+finished_state["citations"] = io.finished[2]
+recovered = IO()
+recovered.saved = finished_state
+check(hybrid.run_hybrid_research(run, recovered, budget) == "done" and
+      recovered.model_calls == 0 and recovered.finished[2] == io.finished[2],
+      "final checkpoint resumes without repeating model work")
+
+
 print("CoreAI hybrid Deep Research: Lead, Map/Reduce, IO concurrency, memory, citation audit and documents OK")
