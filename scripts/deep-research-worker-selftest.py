@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""CoreAI 0.7.38: Deep Research in the browse worker, without database, network or Core.
+"""CoreAI 0.7.39: Deep Research in the browse worker, without database, network or Core.
 
     python3 scripts/deep-research-worker-selftest.py
 

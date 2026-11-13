@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-CoreAI 0.7.38: Deep Research in the browse worker (roadmap P15).
+CoreAI 0.7.39: Deep Research in the browse worker (roadmap P15).
 
 A run (stu_deep_research_runs) has a plan: a title and four to six steps; the last step usually
 asks for the report. The worker (tools/ember_browse_worker.py) claims a run that was started or
