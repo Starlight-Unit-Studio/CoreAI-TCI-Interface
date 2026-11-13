@@ -1,0 +1,34 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.46
+Datum: 13.11.2026
+Basis: main 0.7.45 (PR #300 bereits gemergt)
+Branch: fix/vision-core-image-service-0-7-46
+Naechste Version nach Merge: 0.7.47, sofern main unveraendert bleibt.
+
+VORFALL
+- Integrierter Updater meldet Update fehlgeschlagen 0.7.45 auf 0.7.45.
+- Preflight: Bilddienst-Selbsttest -> ModuleNotFoundError: No module named 'vision_cores'.
+- Vision-Core-Bibliothek: Installiert und Hugging-Face-Suche liefern HTTP 404.
+- Vision-Fenster auf Smartphone durchsichtig, Schliessen-Button unnatuerlich hoch.
+- Changelog 0.7.45 zeigt literal Backslash-n.
+
+URSACHEN UND FIX
+- tools/image/image_service.py importierte vision_cores als regulaeres Modul. Der Selbsttest laedt image_service.py mit spec_from_file_location, der Docker-Image-Dienst startet Python -I. Darum keinen lokalen Modul-Suchpfad voraussetzen: VisionCores ueber bestehenden absoluten _load-Pfad laden.
+- In Service.create fehlte import copy fuer copy.deepcopy des Modellregisters.
+- Bilddienst-Watcher erfasst nun auch die Vision-Library-Datei.
+- Image-Service-Selbsttest prueft GET /vision, GET /vision/search, POST select(default), Loeschschutz und ungueltige IDs.
+- Vision-Modal verwendet var(--panel-solid), var(--txt), und Close-Button 40x40 mit align-items flex-start.
+- SHA-256-Content-Key von css/console.css und js/coreui-vision-library.js wird im HTML aktualisiert.
+
+OFFENE TESTS
+- python3 scripts/image-service-selftest.py auf vollstaendigem Repo ohne Netzwerkabhaengigkeiten.
+- python3 -m py_compile tools/image/image_service.py tools/image/vision_cores.py scripts/image-service-selftest.py
+- php -l api/vision_cores.php und php -l api/image_gen.php
+- node --check js/coreui-vision-library.js
+- python3 scripts/cache-bust.py --verify
+- python3 scripts/version-merge-check.py --base-version 0.7.45
+- Preflight in Docker und native Variante, anschliessend echte Bildgenerierung auf dem Host.
+- Keine weiteren 0.7.46-Freigaben bei gescheiterten Tests.
+- Bei 404 im Web UI zuerst Version/Laufzeit des image worker auf dem Host pruefen.
+
+STATUS
+Fix-Branch vorbereitet. Kein Merge, kein erfolgreiches Server-Update, kein nachgewiesenes ZIP/Release.
