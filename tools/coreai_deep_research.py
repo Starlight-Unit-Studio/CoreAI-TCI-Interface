@@ -291,8 +291,15 @@ def run_deep_research(run, io, budget, log=lambda *_: None, clock=time.monotonic
         if io.cancelled():
             raise Cancelled()
 
+    last_percent = 0
+
     def progress(phase, done_fraction):
-        io.progress(states, phase, int(round(min(99, 100 * done_fraction / total))), searches)
+        nonlocal last_percent
+        # Supplemental source searches may revisit an earlier phase within
+        # the same step. Progress is still a monotonic completed-work measure.
+        next_percent = max(0, min(99, int(round(100 * done_fraction / total))))
+        last_percent = max(last_percent, next_percent)
+        io.progress(states, phase, last_percent, searches)
 
     try:
         check()
