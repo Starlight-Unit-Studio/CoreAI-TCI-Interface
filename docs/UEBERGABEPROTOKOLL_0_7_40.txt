@@ -23,8 +23,12 @@ ERGEBNIS
   unpassenden HTTP-Texten, begrenzt je Schritt; Quellenverifikation bleibt.
 - scripts/deep-research-worker-selftest.py: zusaetzliche Regressionen mit
   Testdoubles fuer Browser, native Bilder, CAPTCHA, Suchformulare.
-- CAPTCHA wird erkannt; KEINE autonome Loesung/Umgehung. Manuelle
-  Uebernahme und Fortsetzen derselben Browser-Sitzung noch NICHT vorhanden.
+- Nutzeranforderung: Deep Research muss unattended weiterlaufen, selbst wenn
+  der Browser/Chat auf dem Smartphone geschlossen ist. Keine CAPTCHA-Rueckfrage.
+- Bei CAPTCHA/HTTP-Sperren alternative Suchanfragen gegen andere oeffentliche
+  Quellen. Zugangssperren nicht umgangen. Volltextquellen weiter verifizieren.
+- DB-Report wird beim erneuten Aufruf der Chatkarte geladen; kein Pushdienst
+  und keine serverseitige neue Chatnachricht implementiert.
 - Unveraendert: Modelfile, lokale Cores, DB, Installer, Rechte, UI, globaler Lock.
 
 TEST- UND PR-STATUS
