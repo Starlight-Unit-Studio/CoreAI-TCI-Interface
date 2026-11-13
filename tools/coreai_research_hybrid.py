@@ -50,7 +50,7 @@ def _new_state(run):
                      "source_ids": [], "queries": [], "attempts": 0} for step in steps],
         "sources": [], "evidence": {}, "seen": [], "searches": 0,
         "depth": 0, "report": "", "citations": [], "progress": 0,
-        "planner_queries": [], "coverage": {},
+        "planner_queries": [], "coverage": {}, "analysis": [],
     }
 
 
@@ -297,7 +297,11 @@ def _lead_decide(io, state, budget):
         "Unklarheiten, Widersprüche und fehlende Belege. Vertraue nur den "
         "angegebenen belegten Notizen. Gib NUR JSON aus: "
         '{"stop":true,"followups":[{"worker":0,"query":"konkrete Suchanfrage"}],'
-        '"new_tasks":["zusätzliches unabhängiges Teilthema"]}. '
+        '"new_tasks":["zusätzliches unabhängiges Teilthema"],'
+        '"analysis":{"operation":"sum|mean|median|min|max|stdev",'
+        '"values":[2,4],"sources":[1,2]}}. '
+        "analysis nur wenn die Zahlen EXAKT aus den Belegen stammen und "
+        "die Berechnung wirklich zur Forschungsfrage gehört. "
         "Wenn alle wichtigen Aspekte abgedeckt sind, stop=true. "
         "Kein internes Thinking oder Behauptungen ohne Quellen.")
     user = "Auftrag: " + state["query"] + "\n" + "\n\n".join(coverage)
@@ -329,6 +333,57 @@ def _followup_queries(decision, state, budget):
         focus[idx] = quality.enforce_queries(value, state["query"],
                                              workers[idx]["goal"], 2)
     return focus
+
+
+
+def _analysis_values(decision, state):
+    """Only cached, source-backed numeric inputs are eligible for the sandbox."""
+    spec = decision.get("analysis")
+    if not isinstance(spec, dict):
+        return None
+    allowed = {"sum", "mean", "median", "min", "max", "stdev"}
+    operation = str(spec.get("operation") or "").lower()
+    if operation not in allowed:
+        return None
+    sources = spec.get("sources")
+    numbers = spec.get("values")
+    if not isinstance(sources, list) or not isinstance(numbers, list):
+        return None
+    sources = [x for x in sources if type(x) is int and 0 < x <= len(state["sources"])]
+    if not sources or not 2 <= len(numbers) <= 100:
+        return None
+    validated = []
+    evidence = "\n".join(state["evidence"].get(str(n), "") for n in sources)
+    for number in numbers:
+        if isinstance(number, bool) or not isinstance(number, (float, int)):
+            return None
+        value = float(number)
+        if not -1e12 < value < 1e12:
+            return None
+        plain = str(number)
+        if not re.search(r"(?<!\d)" + re.escape(plain).replace(r"\.", r"[.,]") + r"(?!\d)", evidence):
+            return None
+        validated.append(value)
+    return {"operation": operation, "values": validated, "sources": sorted(set(sources))}
+
+
+def _analyze_with_sandbox(io, decision, state):
+    spec = _analysis_values(decision, state)
+    if not spec or not callable(getattr(io, "python_analysis", None)):
+        return
+    try:
+        outcome = io.python_analysis(spec)
+        if not isinstance(outcome, dict) or not isinstance(outcome.get("value"), (int, float)):
+            return
+        source_markers = "".join(f"[{n}]" for n in spec["sources"])
+        result = (f"Isolierte Python-Berechnung ({spec['operation']}) aus "
+                  f"{len(spec['values'])} belegten Zahlen: {outcome['value']} {source_markers}")
+        state.setdefault("analysis", []).append(result[:500])
+        _record(io, "info", "Datenanalyse im isolierten Python-Worker abgeschlossen.")
+    except dr.Cancelled:
+        raise
+    except Exception:
+        _record(io, "info", "Python-Auswertung nicht verfügbar; Recherche läuft ohne Unterbrechung weiter.")
 
 
 def _append_tasks(decision, state, budget):
@@ -424,6 +479,9 @@ def _synthesize(io, state, budget, check):
             notes[i] = w["notes"]
             shorts[i] = w.get("brief", "")
     steps = [w["goal"] for w in state["workers"]]
+    if state.get("analysis"):
+        steps.append("Quellengebundene Datenanalyse")
+        notes[len(steps) - 1] = "\n".join(state["analysis"])[:2000]
     title = str(budget.get("title") or "Deep Research")
     if not notes:
         return (
@@ -511,6 +569,7 @@ def run_hybrid_research(run, io, budget, log=lambda *_: None, clock=time.monoton
                 break
             decision = _lead_decide(io, state, budget)
             _record(io, "info", "Lead Researcher prüft Widersprüche und offene Belege.")
+            _analyze_with_sandbox(io, decision, state)
             _append_tasks(decision, state, budget)
             next_queries = _followup_queries(decision, state, budget)
             if decision.get("stop") is True and all(w["notes"] for w in state["workers"]):
