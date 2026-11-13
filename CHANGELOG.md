@@ -1,5 +1,15 @@
 # CoreAI: TCI Interface
 
+## 0.7.40 - 13.11.2026
+
+- **Deep Research source discovery fixed:** The previous exact-name filter wrongly rejected useful search summaries before visiting their pages. Candidate search is now broader; source acceptance still depends on the actually fetched document, never a search snippet. Relevant text deep inside long pages is prioritized for the local Core.
+- **More search coverage and diagnostics:** Up to ten SearXNG results per query are ranked and evaluated, with bounded retries after blocked HTTP downloads. Each failed research step reports how many pages were checked and why they were rejected instead of silently finishing after a few seconds.
+- **Optional visual Playwright fallback:** The existing browse worker can open a JavaScript-rendered public page when plain HTTP fails or provides no relevant text, retaining network restrictions and a browser context per research run.
+- **Native Core vision:** A real JPEG browser screenshot is passed to the currently selected Ollama Core via the native `messages[].images` field under the same global serial lock. The Core can choose up to two bounded, safe UI actions per page, including reading, clicking public links and entering queries in public search forms. If image support is unavailable, rendered DOM text remains usable.
+- **CAPTCHA safeguards:** Anti-bot challenges are detected, never autonomously answered or bypassed. The activity log makes this obstacle visible; an interactive human handoff is not yet implemented.
+- **Configuration:** `STU_DEEP_RESEARCH_BROWSER_PAGES_PER_STEP` (default 2, 0 disables browser), `STU_DEEP_RESEARCH_BROWSER_ACTIONS` (default 2), `STU_DEEP_RESEARCH_VISUAL_ENABLED` (default 1) and `STU_DEEP_RESEARCH_RESULTS_PER_QUERY` (default 10). All calls keep CPU-only compatibility and the existing model queue.
+- **Tests:** Mocked browser and pure regression cases cover screenshots, constrained search-form actions, challenge detection and the JavaScript-page fallback. Complete worker suite, Playwright runtime, PHP preflight and live research still need verification.
+
 ## 0.7.39 - 13.11.2026
 
 - **Deep Research: subject identity and better evidence.** Search ranking now favors exact people, projects and organizations over unrelated similar names, products or places, instead of maximizing domain variety.

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.39: Deep Research relevance and source verification.
+# CoreAI: TCI Interface 0.7.40: Deep Research browser and vision fallback.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

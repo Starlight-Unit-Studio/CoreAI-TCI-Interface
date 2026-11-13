@@ -1,0 +1,33 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.40
+Datum: 13.11.2026
+Repo: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Main-Basis: 0.7.39 (PR #294 ist bereits gemergt)
+Naechste verbindliche Version nach Merge: 0.7.41, falls keine neuen Merges.
+
+AUFTRAG
+Der Benutzer meldete 16 Suchen, 0 Quellen, Laufzeit ca. 20 Sekunden.
+Anschliessend Auftrag: Deep Research soll vorhandene Playwright-/Maus-/
+Formularfaehigkeiten und Maras native Bildwahrnehmung nutzen.
+
+ERGEBNIS
+- CoreAI 0.7.39 sortierte zu frueh auf Basis der Treffer-Vorschau aus.
+  Die Auswahl der Kandidaten wurde gelockert; echte Volltext-Pruefung bleibt.
+- Tiefe Textabschnitte langer Webseiten gezielt an den Core weitergeben.
+- SearXNG-Limit fuer Deep Research auf bis zu 10 Treffer pro Abfrage,
+  nicht das Chat-Displaylimit. Diagnostik fuer gescheiterte Quellen.
+- tools/coreai_research_browser.py: optionaler Playwright-Fallback mit
+  echter Screenshot-Vision, sicherer Navigation und oeffentlichen Suchfeldern.
+- tools/ember_browse_worker.py: Integration mit Ollamas messages[].images,
+  vorhandener globaler Modellwarteschlange und bestehenden Browser-Guards.
+- tools/coreai_deep_research.py: Browser-Fallback nur bei leeren oder
+  unpassenden HTTP-Texten, begrenzt je Schritt; Quellenverifikation bleibt.
+- scripts/deep-research-worker-selftest.py: zusaetzliche Regressionen mit
+  Testdoubles fuer Browser, native Bilder, CAPTCHA, Suchformulare.
+- CAPTCHA wird erkannt; KEINE autonome Loesung/Umgehung. Manuelle
+  Uebernahme und Fortsetzen derselben Browser-Sitzung noch NICHT vorhanden.
+- Unveraendert: Modelfile, lokale Cores, DB, Installer, Rechte, UI, globaler Lock.
+
+TEST- UND PR-STATUS
+Standalone-Code und GitHub-Diff vorbereitet, statische Marker geprueft.
+Python-Tests, PHP-Preflight, echter Modellaufruf und Playwright-Serverlauf
+sind in dieser Umgebung NICHT ausgefuehrt. PR bis Abnahme Draft lassen.
