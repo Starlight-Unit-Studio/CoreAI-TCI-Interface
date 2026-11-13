@@ -1,0 +1,34 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.45
+Datum: 13.11.2026
+Basis: main 0.7.44
+Branch: feature/vision-core-library-0-7-45
+Naechste Version nach Merge: 0.7.46, falls main bis dahin unveraendert bleibt.
+
+AUFTRAG
+Separate Vision-Core-Verwaltung in der bestehenden Cores-verwalten-Ansicht.
+Bildmodelle suchen, lokal installieren, als aktiven Generator auswaehlen und entfernen.
+Das mitgelieferte FLUX.2-Klein-Modell darf nie geloescht werden.
+
+TECHNIK
+- Backend fuer Bildgewichte bleibt der vorhandene stable-diffusion.cpp Image-Service.
+- Hugging Face ist die Quelle fuer verifizierte, kompatible Quantisierungen.
+- Keine unkontrollierte Weitergabe beliebiger HF-/Ollama-Modelle an sd-cli.
+- Speicherung in var/image-models/vision-cores.json, atomisch.
+- Admin-API /api/vision_cores.php mit Session, Rollenpruefung und CSRF.
+- Ollama-Cores bleiben unveraendert, auch wenn ein Ollama-FLUX-Tag als Chat-Core geladen ist.
+- Betreiber beobachtete bessere Gesichtskonsistenz mit einem FLUX-bezogenen Ollama-Core.
+  Nicht nachgewiesen ist, ob dessen Lauf Bildausgabe oder bessere Prompt-Steuerung verursachte.
+- Der erste Adapter bietet noch keine native Ollama-Bildgenerierung.
+
+PRUEFUNGEN VOR MERGE
+- python3 -m py_compile tools/image/image_service.py tools/image/vision_cores.py
+- php -l api/vision_cores.php
+- node --check js/coreui-vision-library.js
+- python3 scripts/version-merge-check.py --base-version 0.7.44
+- Bestehende Bild-Selbsttests, Regressionen, Frontend- und Preflight-Checks.
+- Auf Netcup Installieren, Aktivieren, Rueckwechsel, Schutz, Download-Abbruch und SHA-256-Fail testen.
+- Ollama-basierte Bildgenerierung getrennt durch echten API-Test pruefen, nicht aus Modellnamen ableiten.
+
+STATUS
+Implementierung auf Feature-Branch. Nicht gemergt oder live installiert.
+Ohne ausfuehrbare Testumgebung bleibt der PR Draft.
