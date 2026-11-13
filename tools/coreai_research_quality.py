@@ -176,7 +176,13 @@ def enforce_queries(proposed, query, step, count, hosts=()):
         if not text:
             continue
         if not any(contains_phrase(text, a) for a in anchors):
-            text = '"' + anchors[i % len(anchors)] + '" ' + text
+            if CAP_RUN.search(text):
+                # The model may propose a different person's/company's full name.
+                # Do not keep those conflicting names after adding the right one.
+                terms = [w for w in topic_terms(step) if w not in subject_words and w not in generic][:2]
+                text = '"' + anchors[i % len(anchors)] + '"' + (" " + " ".join(terms) if terms else "")
+            else:
+                text = '"' + anchors[i % len(anchors)] + '" ' + text
         if len(text) > 140:
             text = text[:140].rsplit(" ", 1)[0]
         if text.casefold() not in {x.casefold() for x in chosen}:
