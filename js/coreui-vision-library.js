@@ -46,7 +46,7 @@
       add(info, 'small', '', installed ? (item.active ? 'Aktiver Vision Core' : 'Lokal installiert')
         : item.repo + ' / ' + item.path);
       if (item.size) add(info, 'small', '', (item.size / 1073741824).toFixed(1).replace('.', ',') + ' GB · ' + item.license);
-      if (item.protected) add(info, 'small', 'vision-library-safe', 'Standardmodell · dauerhaft geschützt');
+      if (item.protected) add(info, 'small', 'vision-library-safe', 'Standard-Core · dauerhaft geschützt');
       var actions = add(box, 'div', 'vision-library-actions');
       if (!installed) {
         var install = add(actions, 'button', 'core-install-btn', state.confirm === item.id
@@ -80,7 +80,7 @@
     function render() {
       clear(el.results);
       clear(el.installedList);
-      if (!state.found.length) add(el.results, 'p', '', 'Keine kompatiblen Bildmodelle gefunden.');
+      if (!state.found.length) add(el.results, 'p', '', 'Keine kompatiblen Vision Cores gefunden.');
       state.found.forEach(function (item) { drawModel(el.results, item, false); });
       state.installed.forEach(function (item) { drawModel(el.installedList, item, true); });
     }
@@ -99,7 +99,7 @@
         } else if (data.install_error) {
           status('Installation fehlgeschlagen: ' + data.install_error, true);
         } else if (!silent) {
-          status('Vision-Cores bereit. Das aktive Modell gilt für neue Bildgenerierungen.');
+          status('Vision Cores bereit. Der aktive Vision Core gilt für neue Bildgenerierungen.');
         }
       }).catch(function (error) { if (state.open) status('Vision Core nicht erreichbar: ' + error.message, true); });
     }
@@ -118,7 +118,7 @@
         if (!state.open || serial !== state.requestId) return;
         state.found = Array.isArray(data.models) ? data.models : [];
         render();
-        status(state.found.length + ' kompatible Modellvarianten gefunden.');
+        status(state.found.length + ' kompatible Vision-Core-Varianten gefunden.');
       }).catch(function (error) { if (state.open) status('Suche fehlgeschlagen: ' + error.message, true); });
     }
     function mutate(action, id) {
@@ -127,13 +127,13 @@
       state.busy = true;
       render();
       status(action === 'install' ? 'Download wird gestartet …'
-        : action === 'select' ? 'Vision Core wird aktiviert …' : 'Bildmodell wird entfernt …');
+        : action === 'select' ? 'Vision Core wird aktiviert …' : 'Vision Core wird entfernt …');
       request('', {action:action, id:id}).then(function () {
         state.busy = false;
         return refresh(false).then(function () {
           if (action === 'install') { switchTab('installed'); schedule(); }
           else status(action === 'select' ? 'Vision Core erfolgreich gewechselt.'
-            : 'Bildmodell deinstalliert.');
+            : 'Vision Core deinstalliert.');
         });
       }).catch(function (error) {
         state.busy = false;
