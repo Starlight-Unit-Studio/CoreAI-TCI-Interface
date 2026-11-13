@@ -1,0 +1,28 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.41
+Datum: 13.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Main-Basis: 0.7.40 nach PR #295
+Naechste verbindliche Version nach Merge: 0.7.42, sofern main unveraendert.
+
+AUSGANGSLAGE
+Nach Installation von 0.7.40 meldete der Compose-Preflight
+[FEHLER] Deep-Research-Worker-Selbsttest fehlgeschlagen.
+Die eigentliche Ursache war zuvor verdeckt, weil das Preflight-Skript
+den Python-Fehlerausgang in /dev/null umleitet.
+
+REPRODUKTION UND FIX
+- Eigenes CI-Workflow fuehrt den identischen Worker-Selbsttest aus und
+  macht Fehlermeldungen sichtbar.
+- Fehler: Fortschritt [0,0,10,20,13,33,...] fiel nach der
+  autonomen Ausweichsuche von 20 auf 13 Prozent zurueck.
+- Reparatur in tools/coreai_deep_research.py:
+  letzter gemeldeter Prozentwert wird monoton weitergefuehrt.
+- Nach dem Fix: Syntax und kompletter Worker-Selbsttest unter
+  GitHub Actions bestanden, Run 43393508494.
+- Der CI-Workflow bleibt als langfristige Regressionserkennung erhalten.
+
+RESTRIKTIONEN
+- Keine Aenderung an Modellwahl/Modelfiles, Browser-Sicherheit,
+  Captcha-Verhalten, DB, Installation, Projekten oder dem Core-Lock.
+- Stand GitHub CI verifiziert. Live-Server-Preflight nach Merge und
+  Deployment noch nicht bestaetigt.

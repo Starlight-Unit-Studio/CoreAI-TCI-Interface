@@ -1,5 +1,11 @@
 # CoreAI: TCI Interface
 
+## 0.7.41 - 13.11.2026
+
+- **Fix: Deep Research preflight regression after 0.7.40.** Extra unattended source searches could move the reported progress backwards (e.g. 20% → 13%), causing the existing worker selftest and installation preflight to fail. Progress is now monotonically increasing, even when an additional search revisits an earlier phase.
+- **Permanent regression guard:** Added GitHub Actions `Deep Research Worker Preflight` to run Python syntax, the complete existing `scripts/deep-research-worker-selftest.py`, and the release contract with visible failure diagnostics on affected PRs. The worker test passed after the fix in GitHub Actions (run 43393508494).
+- **No unrelated changes:** Research search strategy, native Vision, Playwright, DB schema, user settings, Ollama lock and UI behavior remain unchanged.
+
 ## 0.7.40 - 13.11.2026
 
 - **Deep Research source discovery fixed:** The previous exact-name filter wrongly rejected useful search summaries before visiting their pages. Candidate search is now broader; source acceptance still depends on the actually fetched document, never a search snippet. Relevant text deep inside long pages is prioritized for the local Core.
