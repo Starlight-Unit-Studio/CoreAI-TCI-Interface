@@ -167,7 +167,7 @@ class ResearchBrowserSession:
             except Exception:
                 pass
             if is_challenge(raw, frames, has_widget):
-                raise ResearchChallenge("CAPTCHA oder Anti-Bot-Abfrage erkannt; menschliche Freigabe erforderlich")
+                raise ResearchChallenge("CAPTCHA oder Anti-Bot-Abfrage erkannt; Quelle nicht zugänglich")
 
             observations = []
             # Several actions may be needed to open a public site-search field,
