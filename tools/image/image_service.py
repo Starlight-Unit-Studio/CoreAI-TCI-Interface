@@ -26,6 +26,7 @@ one argument, never shell text. COREAI_IMAGE_SD_CLI points to a stand-in in the 
 """
 from __future__ import annotations
 
+import copy
 import importlib.util
 import json
 import os
@@ -68,7 +69,7 @@ def _load(name: str, path: Path):
 # Loading from Hugging Face is the code of the image test (redirects, resume, SHA-256).
 SPIKE = _load('coreai_image_spike_run', ROOT / 'tools' / 'image_spike' / 'run.py')
 MARA_REFS = _load('coreai_mara_references', HERE / 'mara_references.py')
-from vision_cores import VisionCores
+VisionCores = _load('coreai_vision_cores', HERE / 'vision_cores.py').VisionCores
 if os.environ.get('COREAI_IMAGE_HF'):
     SPIKE.HF = os.environ['COREAI_IMAGE_HF'].rstrip('/')
 
@@ -508,7 +509,7 @@ class Service:
         process ends and Docker starts it again with the new code (as Eve's service)."""
         if interval <= 0:
             return
-        paths = [HERE / 'image_service.py', HERE / 'mara_references.py', ROOT / 'tools' / 'image_spike' / 'run.py',
+        paths = [HERE / 'image_service.py', HERE / 'vision_cores.py', HERE / 'mara_references.py', ROOT / 'tools' / 'image_spike' / 'run.py',
                  ROOT / 'config' / 'image' / 'mara-references.json', REGISTRY]
 
         def stamp() -> list[int]:
