@@ -181,9 +181,13 @@ function coreui_core_audio_flags(array $models, callable $show): array {
   return $out;
 }
 
-/** The existing local FLUX.2 prompt Core uses a CoreAI display alias; no second model is installed. */
+/** A dedicated local Ollama tag for the existing FLUX.2 prompt Core. */
+const COREUI_CORE_GENERATOR_NAME = 'ember-coreui:gen';
+const COREUI_CORE_GENERATOR_BASE = 'fegdxus/flux2-klein-9b-uncensored:Q8_0';
+const COREUI_CORE_GENERATOR_LABEL = 'TCI Core Generator';
+
 function coreui_core_is_generator(string $model): bool {
-  return preg_match('~^fegdxus/flux2-klein-9b-uncensored(?::[A-Za-z0-9_.-]+)?$~i', trim($model)) === 1;
+  return coreui_core_same($model, COREUI_CORE_GENERATOR_NAME);
 }
 
 /** Name shown in the chat: the TCI tier, the Generator alias, or the Core's own name. */
@@ -199,7 +203,8 @@ function coreui_core_is_mara(string $model): bool {
   $normalized = strtolower(trim($model));
   return coreui_core_same($model, $default)
     || str_starts_with($normalized, 'ember-core:')
-    || str_starts_with($normalized, 'ember-coreui:');
+    || str_starts_with($normalized, 'ember-coreui:')
+    || coreui_core_is_generator($model);
 }
 
 /**
