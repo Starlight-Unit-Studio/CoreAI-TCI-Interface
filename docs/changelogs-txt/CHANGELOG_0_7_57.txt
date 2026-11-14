@@ -1,0 +1,41 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.57
+Datum: 15.11.2026
+
+SU-LOGO UND BILDTRANSPARENZ
+- Bestehendes SU-Chiplogo bleibt als sichtbares Markenwasserzeichen
+  unten rechts erhalten, nun 13 % statt 11,5 % Bildbreite und
+  deutlich besser sichtbar (85 % statt 50 % eingestellte Deckkraft).
+- Normale generierte Bilder bleiben ohne zusätzliches sichtbares
+  AI-Label. Ein Referenzbild erzeugt nicht automatisch eine Modifikation.
+- Echte Bildbearbeitung aus dem eingebauten Bildeditor erhaelt
+  die kleine CoreAI-Kennzeichnung KI BEARBEITET.
+- Auf ausdrueckliche KI-/Deepfake-Offenlegungsaufforderung folgen
+  neu generierte Bilder mit KI GENERIERT.
+- Die Hinweise werden direkt im exportierten PNG eingebrannt.
+- Offizielle EU-Icons werden weder kopiert noch veraendert;
+  stattdessen nutzt CoreAI eigene Klartext-Hinweise.
+
+MASCHINENLESBARE HERKUNFT
+- Bestehende PNG iTXt/XMP-Herkunftsinformationen werden erweitert.
+- IPTC-DigitalSourceType fuer KI-Neugenerierung:
+  trainedAlgorithmicMedia.
+- IPTC-DigitalSourceType fuer KI-Bearbeitungen:
+  compositeWithTrainedAlgorithmicMedia.
+- CoreAI ContentKind und VisibleDisclosure werden strukturiert
+  in XMP und PNG iTXt geschrieben.
+- Keine Prompts, Benutzerkonten, privaten Referenzpfade oder
+  vertraulichen Dateinamen gelangen in oeffentliche Metadaten.
+- Keine irrefuehrende Behauptung ueber C2PA: vorhandene PNG- und
+  XMP-Metadaten sind editierbar und nicht kryptografisch signiert.
+
+TESTS UND KOMPATIBILITAET
+- Selbsttest prueft normale SU-Marken und gesonderte KI-Bearbeitungslabels
+  fuer 512 und 1024 Pixel.
+- Referenzbilder im neuen Motiv bleiben Neugenerierung.
+- Metadatenpruefung umfasst beide IPTC-Kategorien.
+- Bildengine, Queue, Dateiformat, Modellverwaltung und Lizenzpfade
+  bleiben unveraendert.
+- Eine automatische Erkennung aller juristisch relevanten Deepfakes
+  ist dadurch nicht garantiert; die Publizierenden bleiben verantwortlich.
+
+Version: 0.7.57
