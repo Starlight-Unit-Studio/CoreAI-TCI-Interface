@@ -142,7 +142,7 @@
         state.licenseAccepted = license.accepted === true;
         text(licenseEl.Text, license.text);
         text(licenseEl.Note, state.licenseAccepted
-          ? 'Diese Lizenzfassung wurde auf dem Server bereits akzeptiert.'
+          ? 'Diese Lizenzfassung hast du für dein Benutzerkonto bereits akzeptiert.'
           : 'Bitte lies den Originaltext und bestätige anschließend die Zustimmung.');
         if (licenseEl.Check) licenseEl.Check.disabled = state.licenseAccepted;
         if (licenseEl.Accept) {
@@ -167,6 +167,8 @@
         if (!data.license || data.license.accepted !== true) throw new Error('license_accept_failed');
         state.licenseAccepted = true;
         closeLicense();
+        var mode = window.CoreUICoreMode && window.CoreUICoreMode.instance;
+        if (mode && typeof mode.refresh === 'function') mode.refresh();
         if (state.mode === 'manage') {
           return Promise.all([refreshManage(), refreshPgen()]).then(function () {
             render();
@@ -825,7 +827,8 @@
       else if (isOpen()) close();
     });
 
-    return {open: open, manage: manage, close: close, install: install, updateNow: updateNow, setAuto: setAuto,
+    return {open: open, manage: manage, close: close, openLicense: openLicense,
+      install: install, updateNow: updateNow, setAuto: setAuto,
       refreshManage: function () { return state.mode === 'manage'
         ? Promise.all([refreshManage(), refreshPgen()]).then(render)
           .catch(function () { /* next manual refresh can retry */ })
