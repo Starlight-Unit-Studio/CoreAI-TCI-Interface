@@ -601,7 +601,7 @@ function coreui_core_update_plan(array $models): array {
   $order = array_flip(array_keys(COREUI_CORE_INSTALL_CATALOG));
   uasort($plan, static fn(array $a, array $b): int => ($order[$a['tier']] ?? 99) <=> ($order[$b['tier']] ?? 99));
   $ordered = array_values($plan);
-  if ($has(COREUI_CORE_GENERATOR_NAME)) {
+  if ($has(COREUI_CORE_GENERATOR_NAME) && coreui_generator_license_accepted()) {
     $ordered[] = ['base'=>COREUI_CORE_GENERATOR_BASE, 'tier'=>'generator',
       'label'=>COREUI_CORE_GENERATOR_LABEL,
       'cores'=>[['name'=>COREUI_CORE_GENERATOR_NAME, 'source'=>'generator']]];
