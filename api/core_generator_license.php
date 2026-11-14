@@ -74,3 +74,41 @@ function coreui_generator_license_accept(int $uid, string $claimedHash): void {
     if (is_file($temp)) @unlink($temp);
   }
 }
+
+// Individual consent is mandatory for every CoreAI account. The legacy host
+// receipt remains provisioning metadata only, never a user authorization.
+function coreui_generator_license_user_accepted(PDO $pdo, int $uid): bool {
+  if ($uid <= 0) return false;
+  try {
+    $sha = coreui_generator_license_hash();
+    $st = $pdo->prepare('SELECT license_sha256 FROM stu_coreui_pgen_user_licenses WHERE user_id = ? LIMIT 1');
+    $st->execute([$uid]);
+    $stored = $st->fetchColumn();
+    return is_string($stored) && hash_equals($sha, $stored);
+  } catch (Throwable $e) {
+    // Migration missing or unavailable: fail closed, never inherit other users' consent.
+    return false;
+  }
+}
+
+function coreui_generator_license_user_accept(PDO $pdo, int $uid, string $claimedHash): void {
+  if ($uid <= 0) throw new RuntimeException('license_accept_required');
+  $sha = coreui_generator_license_hash();
+  if (!preg_match('~^[0-9a-f]{64}$~D', $claimedHash) || !hash_equals($sha, $claimedHash))
+    throw new RuntimeException('generator_license_version_changed');
+  try {
+    $st = $pdo->prepare('INSERT INTO stu_coreui_pgen_user_licenses (user_id,license_sha256,accepted_at)'
+      . ' VALUES (?,?,UTC_TIMESTAMP()) ON DUPLICATE KEY UPDATE'
+      . ' license_sha256=VALUES(license_sha256),accepted_at=UTC_TIMESTAMP()');
+    $st->execute([$uid, $sha]);
+  } catch (PDOException $e) {
+    throw new RuntimeException('generator_license_unwritable', 0, $e);
+  }
+}
+
+function coreui_generator_license_user_info(PDO $pdo, int $uid, bool $includeText = false): array {
+  $info = coreui_generator_license_info($includeText);
+  $info['accepted'] = coreui_generator_license_user_accepted($pdo, $uid);
+  unset($info['accepted_by']);
+  return $info;
+}
