@@ -64,6 +64,7 @@ with tempfile.TemporaryDirectory(prefix='pgen-selftest-') as name:
     # Do not launch sd-cli: inspect the exact job the running image service would execute.
     svc._run = lambda job, prompt: None
     job9 = svc.create('a photograph', 'normal', 42, model_id=profiles.QUALITY)
+    job9['state'] = 'done'
     job4 = svc.create('a drawing', 'normal', 42, model_id=profiles.STANDARD)
     nine_args = svc.command(job9, 'a photograph')
     four_args = svc.command(job4, 'a drawing')
