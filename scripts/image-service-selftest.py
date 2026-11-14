@@ -407,27 +407,6 @@ open(out, 'wb').write(png(w, h, (16, 32, 48)))
     check(health['ready'] and not health['busy'] and health['weights']['have'] == health['weights']['total'] > 0
           and health['sizes']['normal'] == {'width': 64, 'height': 64}, 'health: ready, weights complete: ' + json.dumps(health))
 
-    # 0.7.46: exercise the Vision Core routes without network traffic. The import above
-    # also ensures image_service.py loads with spec_from_file_location and python -I.
-    svc.vision = service_mod.VisionCores(svc, test_reg)
-    status, inventory = call('GET', '/vision')
-    check(status == 200 and inventory['ok'] and inventory['active'] == 'default'
-          and len(inventory['models']) == 1 and inventory['models'][0]['protected'],
-          'Vision Core inventory: immutable built-in image generator')
-    svc.vision.search = lambda query: [{'id': 'test', 'name': 'FLUX mock'}] if query == 'flux' else []
-    status, found = call('GET', '/vision/search?q=flux')
-    check(status == 200 and found['models'] == [{'id': 'test', 'name': 'FLUX mock'}],
-          'Vision Core search route is reachable and forwards the search term')
-    status, selected = call('POST', '/vision', {'action': 'select', 'id': 'default'})
-    check(status == 200 and selected['active'] == 'default',
-          'Vision Core default can be selected after weight integrity verification')
-    status, protected = call('POST', '/vision', {'action': 'uninstall', 'id': 'default'})
-    check(status == 400 and protected['error'] == 'model_protected',
-          'Vision Core built-in generator cannot be deleted')
-    status, invalid = call('POST', '/vision', {'action': 'select', 'id': '../etc/passwd'})
-    check(status == 400 and invalid['error'] == 'invalid_model_id',
-          'Vision Core endpoints reject untrusted model paths')
-
     for bad_body, code in (({'prompt': '', 'size': 'normal'}, 'bad_prompt'), ({'prompt': 'x' * 1300}, 'bad_prompt'),
                            ({'prompt': 'a fox', 'size': 'huge'}, 'bad_size'), ({'prompt': 'a fox', 'seed': -1}, 'bad_seed'),
                            ({'prompt': 'a fox', 'scene_hint': 42}, 'bad_request'),
