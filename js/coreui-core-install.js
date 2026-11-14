@@ -470,6 +470,7 @@
       var failed = mine && !running && j.phase === 'error';
       text(el.Kicker, manage ? 'CORES VERWALTEN' : 'CORE INSTALLIEREN');
       show(el.Tiers, manage && !!state.tiers);
+      renderPgen();
       show(el.LibraryEntry, manage && !!state.tiers);
       show(el.Tech, !manage);
       show(el.GeneratorLicense, !manage && !!check && check.tier === 'generator');
@@ -642,19 +643,26 @@
       state.tiers = null;
       state.plan = null;
       reset('manage');
+      state.pgen = null;
+      state.pgenChoice = '';
+      state.pgenPoll = false;
+      var pgen = refreshPgen().catch(function (error) {
+        state.pgenMessage = ERRORS[error.code] || 'pGen-Status nicht erreichbar.';
+      }).then(renderPgen);
       var overview = refreshManage().catch(function (error) {
         state.error = ERRORS[error.code] || 'Die Übersicht ist gerade nicht erreichbar.';
       }).then(function () {
         render();
         follow();
       });
-      return Promise.all([overview, loadCloud()]);
+      return Promise.all([overview, loadCloud(), pgen]);
     }
 
     function close() {
       if (!isOpen()) return;
       root.hidden = true;
       state.polling = false;
+      state.pgenPoll = false;
       state.awaitingOllama = false;
       state.confirm = false;
       if (typeof hooks.closed === 'function') hooks.closed();
@@ -741,6 +749,16 @@
     if (licenseEl.Root) licenseEl.Root.addEventListener('click', function (event) {
       if (event && event.target === licenseEl.Root) closeLicense();
     });
+    if (el.PgenModel) el.PgenModel.addEventListener('change', function () {
+      state.pgenChoice = el.PgenModel.value;
+      state.pgenMessage = '';
+      renderPgen();
+    });
+    if (el.PgenApply) el.PgenApply.addEventListener('click', savePgen);
+    if (el.PgenInstall) el.PgenInstall.addEventListener('click', installPgen);
+    if (el.PgenLicense) el.PgenLicense.addEventListener('click', function () {
+      return openLicense(el.PgenLicense);
+    });
     if (el.Go) el.Go.addEventListener('click', function () { return install(); });
     if (el.UpdateNow) el.UpdateNow.addEventListener('click', function () { return updateNow(); });
     if (el.ToManage) el.ToManage.addEventListener('click', function () { return manage(); });
@@ -769,7 +787,8 @@
 
     return {open: open, manage: manage, close: close, install: install, updateNow: updateNow, setAuto: setAuto,
       refreshManage: function () { return state.mode === 'manage'
-        ? refreshManage().then(render).catch(function () { /* next manual refresh can retry */ })
+        ? Promise.all([refreshManage(), refreshPgen()]).then(render)
+          .catch(function () { /* next manual refresh can retry */ })
         : Promise.resolve(); },
       poll: poll, isOpen: isOpen,
       state: function () {
