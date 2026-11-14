@@ -5386,6 +5386,12 @@ function ember_image_run_tool_reserved(PDO $pdo, int $uid, string $input, bool &
     coreui_work_record($pdo, 'tool', 'info', 'Portraet-Referenz ausgewaehlt',
       ['source'=>'image', 'reference_kind'=>$reference === 'default' ? 'canonical' : 'personal']);
   }
+  // Only the explicit image-editor workflow is classified as modification.
+  // Ordinary identity or style references still generate NEW images.
+  $sourceRequest = (string)($GLOBALS['COREUI_TURN_USER_TEXT'] ?? '');
+  $editorFlow = $references !== []
+    && str_contains($sourceRequest, 'Erzeuge eine bearbeitete Version von Referenzbild 1, kein neues unabhängiges Motiv.');
+  $disclosure = coreui_image_disclosure_for_request($sourceRequest, $editorFlow);
   $result = coreui_image_generate($pdo, $uid, ember_character_id(), $request['prompt'], $request['size'],
     'ember_image_lease', 'ember_image_unlease',
     static function (array $job) use ($pdo): void {
@@ -5399,7 +5405,7 @@ function ember_image_run_tool_reserved(PDO $pdo, int $uid, string $input, bool &
         sse_send('image_preview', ['image' => $image, 'step' => (int)($job['step'] ?? 0), 'steps' => (int)($job['steps'] ?? 0)]);
       }
     }, $reference, $references,
-    !empty($GLOBALS['COREUI_TURN_IMAGE_STYLE_ONLY']) ? 'style' : null);
+    !empty($GLOBALS['COREUI_TURN_IMAGE_STYLE_ONLY']) ? 'style' : null, $disclosure);
   if (!empty($result['ok'])) {
     // A persisted image consumes one daily image; failures/cancel refund it.
     $saved = true;

@@ -1,0 +1,44 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.57
+Datum: 15.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Branch: feature/image-provenance-disclosure-20261115
+Basis: 0.7.56
+
+BETREIBERENTSCHEIDUNG
+Das SU-Chiplogo bleibt bei normalen Quantum-Gen-Bildern erhalten,
+soll aber deutlich erkennbar sein. Kein generelles sichtbares
+AI-GENERATED-Label fuer jedes Bild. Stattdessen nachvollziehbare
+Metadaten und eine situative Offenlegung im exportierten Bild.
+
+GEAENDERTE BESTEHENDE DATEIEN
+- api/image_gen.php:
+  SU-Logo mit 13 % Bildbreite, 85 % Deckkraft, unveraenderter
+  rechter unterer Position; ein kleiner abgeschnittener CoreAI-
+  Klartextchip erscheint bei sichtbar offengelegten Bildern.
+  Bildmetadaten dokumentieren den tatsaechlichen ContentKind.
+- api/image_png_metadata.php:
+  separate Werte generated/modified, offizielle IPTC-
+  DigitalSourceType-Kategorien und begleitendes XMP/iTXt.
+- api/chat.php:
+  nur der explizite editorbasierte Bearbeitungsweg setzt modified.
+  Reine Identitaets-, Stil- oder Motivvorlagen bleiben generated.
+  Explizite KI-Offenlegungs- oder Deepfake-Auftraege koennen
+  den sichtbaren KI GENERIERT Chip ausloesen.
+- scripts/image-gen-selftest.php:
+  Logo, PNG-Groessen, Bearbeitungshinweise und Metadaten getestet.
+
+RECHTLICHE/TECHNISCHE GRENZEN
+- EU-Symbole sind optional und wurden bewusst nicht modifiziert.
+- Eigenes SU-Branding ist keine automatische Erfuellung der
+  Offenlegungspflichten in allen Veroeffentlichungsfaellen.
+- PNG iTXt und XMP sind maschinenlesbar, aber weder C2PA-signiert
+  noch robuste unsichtbare Pixel-Wasserzeichen.
+- Die Regel basiert auf bekannten Arbeitsablaeufen und ausdruecklichen
+  Anforderungen, nicht auf einer universellen Deepfake-Klassifizierung.
+- Bilddateien bleiben kontogebunden; private Prompt-/Kontodaten
+  werden nicht in oeffentliche Metadaten uebernommen.
+
+RELEASE
+VERSION 0.7.57 (naechster Merge nach 0.7.56).
+GitHub Actions: Image-Service-Regression + bestehende Checks.
+Realer Server-Rollout erst nach Merge/Update pruefen.

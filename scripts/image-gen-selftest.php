@@ -502,10 +502,10 @@ img_gen_test(($meta['prompt'] ?? '') === 'A red fox, sitting in snow' && ($meta[
   && ($meta['watermark'] ?? null) === true && ($meta['metadata_embedded'] ?? null) === true,
   'Private description and successful public PNG/XMP metadata next to it');
 
-// Logo-only design: 11.5% of the width, 50% logo opacity, zero visible text.
-img_gen_test(abs(COREUI_IMAGE_LOGO_WIDTH - 0.115) < 0.000001
-  && COREUI_IMAGE_MARK_OPACITY === 0.5,
-  'The only visible watermark stays 11.5% wide and 50% opaque');
+// SU mark is always present with stronger visibility; AI labels appear only in explicit disclosure modes.
+img_gen_test(abs(COREUI_IMAGE_LOGO_WIDTH - 0.13) < 0.000001
+  && COREUI_IMAGE_MARK_OPACITY === 0.85,
+  'SU logo stays 13% wide at 85% native opacity');
 $logoPath = $root . '/images/watermark_logo.png';
 $logoDims = @getimagesize($logoPath);
 img_gen_test(is_array($logoDims) && $logoDims[0] > 0 && $logoDims[1] > 0,
@@ -524,7 +524,7 @@ foreach ([512, 1024] as $n) {
   ob_start(); imagepng($gray); $plain = (string)ob_get_clean();
   $marked = coreui_image_watermark($plain);
   img_gen_test(is_string($marked) && coreui_image_png_size($marked) === [$n, $n],
-    "logo-only watermark {$n}: dimensions stay identical");
+    "SU watermark {$n}: dimensions stay identical");
   $im = imagecreatefromstring($marked);
   $margin = max(4, (int)round($n * COREUI_IMAGE_MARK_MARGIN));
   $logoW = (int)round($n * COREUI_IMAGE_LOGO_WIDTH);
@@ -542,11 +542,15 @@ foreach ([512, 1024] as $n) {
     }
   }
   img_gen_test($right >= 30, "logo-only watermark {$n}: visible logo in lower-right");
-  img_gen_test($outside === 0, "logo-only watermark {$n}: no visible text or altered pixels elsewhere");
+  img_gen_test($outside === 0, "logo-only watermark {$n}: no label for ordinary generation");
   $corner = imagecolorat($im, $logoX + 1, $logoY + 1);
   $delta = max(abs((($corner >> 16) & 255) - 128), abs((($corner >> 8) & 255) - 128),
     abs(($corner & 255) - 128));
   img_gen_test($delta <= 8, "logo-only watermark {$n}: no black rectangle");
+  $disclosed = coreui_image_watermark($plain, 'modified');
+  img_gen_test(is_string($disclosed) && $disclosed !== $marked
+    && coreui_image_png_size($disclosed) === [$n, $n],
+    "AI modified disclosure is visibly rendered at {$n}px");
   imagedestroy($gray);
   imagedestroy($im);
 }
@@ -558,6 +562,33 @@ img_gen_test(str_contains($markSource, "'/images/watermark_logo.png'")
   && !str_contains($markSource, 'removeDarkBackdrop')
   && !str_contains($markSource, 'cornerBright'),
   'Only the transparent Quantum logo is drawn, with no visible credit text');
+
+// A reference photo alone never means that the original was manipulated.
+img_gen_test(coreui_image_disclosure_for_request('same face in a new cafe') === 'none'
+  && coreui_image_disclosure_for_request('Deepfake video frame with a politician') === 'generated'
+  && coreui_image_disclosure_for_request('Any message', true) === 'modified',
+  'Visible disclosure is conditional on actual editor route or explicit deepfake label');
+
+$edited = coreui_image_provenance(['content_kind'=>'modified','visible_disclosure'=>'modified',
+  'width'=>512, 'height'=>512], $registry);
+img_gen_test(($edited['content_kind'] ?? '') === 'modified'
+  && ($edited['ai_modified'] ?? false) === true
+  && ($edited['ai_generated'] ?? true) === false
+  && ($edited['digital_source_type'] ?? '') === COREUI_IMAGE_AI_EDITED_SOURCE_TYPE
+  && ($edited['visible_disclosure'] ?? '') === 'modified',
+  'Edited images carry the official IPTC composite-with-generative-AI category');
+$ordinary = coreui_image_provenance(['content_kind'=>'generated', 'reference_count'=>1], $registry);
+img_gen_test(($ordinary['content_kind'] ?? '') === 'generated'
+  && ($ordinary['digital_source_type'] ?? '') === COREUI_IMAGE_AI_SOURCE_TYPE
+  && ($ordinary['visible_disclosure'] ?? '') === 'none',
+  'New image with reference stays generated, without blanket edited label');
+$editedChunk = coreui_image_png_embed_provenance(img_gen_png(64,64),
+  ['content_kind'=>'modified','visible_disclosure'=>'modified'], $registry);
+img_gen_test(is_string($editedChunk)
+  && str_contains($editedChunk, COREUI_IMAGE_AI_EDITED_SOURCE_TYPE)
+  && str_contains($editedChunk, '<coreai:ContentKind>modified</coreai:ContentKind>')
+  && str_contains($editedChunk, 'AI Disclosure'),
+  'Edited image exports contain standardized source type and CoreAI XMP disclosure');
 
 // Standard PNG iTXt + XMP encode the provenance and Quantum CoreAI brand.
 $public = coreui_image_provenance([

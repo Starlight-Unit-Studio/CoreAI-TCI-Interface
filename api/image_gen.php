@@ -19,16 +19,16 @@ require_once __DIR__ . '/image_png_metadata.php';
  * image budget (default 3) and tool switch in Admin Core > Zugang und Schutz.
  * The Inhaber can still switch off images for everyone (Betrieb) or by account.
  * The exported image carries
- * only the subtle Quantum CoreAI logo at bottom-right; copyright, generator,
- * model and creation details are embedded in PNG/XMP metadata, not drawn as text.
+ * a clearly visible SU logo at bottom-right. Explicit editing/deepfake requests
+ * additionally receive a legible AI disclosure. Generation details live in PNG/XMP.
  */
 
 const COREUI_IMAGE_DEFAULT_PORT = 18791;
 const COREUI_IMAGE_MAX_BYTES = 25 * 1024 * 1024;
 const COREUI_IMAGE_MAX_REFERENCES = 10; // Same limit as attached files per turn.
-const COREUI_IMAGE_LOGO_WIDTH = 0.115; // 11.5%, down slightly from 12%
+const COREUI_IMAGE_LOGO_WIDTH = 0.13; // SU chip remains visible on 512 and 1024 exports
 const COREUI_IMAGE_MARK_MARGIN = 0.025; // relative to image width
-const COREUI_IMAGE_MARK_OPACITY = 0.5;  // 50% opacity, unchanged
+const COREUI_IMAGE_MARK_OPACITY = 0.85; // stronger SU mark without a large opaque block
 
 function coreui_image_service_url(): string {
   $port = (int)(getenv('COREUI_IMAGE_PORT') ?: COREUI_IMAGE_DEFAULT_PORT);
@@ -300,10 +300,10 @@ function coreui_image_http(string $method, string $path, ?array $body = null, in
 }
 
 /**
- * The visible mark is only our existing transparent RGBA logo at bottom-right.
- * All author, creation and model details live in PNG metadata instead.
+ * Preserve the official SU chip as branding. In explicitly disclosed cases,
+ * add a compact CoreAI-style text label, not a modified official EU emblem.
  */
-function coreui_image_watermark(string $png): ?string {
+function coreui_image_watermark(string $png, string $disclosure = 'none'): ?string {
   $logoPath = dirname(__DIR__) . '/images/watermark_logo.png';
   if (!function_exists('imagecreatefromstring') || !function_exists('imagecreatefrompng')
       || !function_exists('imagecopyresampled') || !is_file($logoPath)) return null;
@@ -344,6 +344,23 @@ function coreui_image_watermark(string $png): ?string {
   imagealphablending($base, true);
   imagecopy($base, $mark, $width - $logoWidth - $margin, $height - $logoHeight - $margin,
     0, 0, $logoWidth, $logoHeight);
+  if (in_array($disclosure, ['generated', 'modified'], true)) {
+    $caption = $disclosure === 'modified' ? 'KI BEARBEITET' : 'KI GENERIERT';
+    // The built-in font is available without system fonts, on CPU-only hosts.
+    $font = $width >= 768 ? 4 : 3;
+    $padding = max(6, (int)round($width * 0.012));
+    $badgeWidth = imagefontwidth($font) * strlen($caption) + 2 * $padding;
+    $badgeHeight = imagefontheight($font) + 2 * $padding;
+    $right = $width - $margin;
+    $left = max($margin, $right - $badgeWidth);
+    $top = max($margin, $height - $logoHeight - $margin - $badgeHeight - $padding);
+    $bottom = $top + $badgeHeight;
+    $bg = imagecolorallocatealpha($base, 10, 16, 31, 10);
+    $fg = imagecolorallocate($base, 255, 255, 255);
+    imagefilledrectangle($base, $left + 5, $top, $right, $bottom - 5, $bg);
+    imagefilledrectangle($base, $left, $top + 5, $right - 5, $bottom, $bg);
+    imagestring($base, $font, $left + $padding, $top + $padding, $caption, $fg);
+  }
   imagesavealpha($base, false);
   ob_start();
   $ok = imagepng($base, null, 6);
@@ -427,7 +444,8 @@ function coreui_image_progress_title(array $job): string {
  */
 function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $prompt, string $size,
     callable $lease, callable $unlease, callable $progress, callable $cancelled, ?callable $http = null,
-    ?callable $preview = null, ?string $reference = null, array $references = [], ?string $userReferenceMode = null): array {
+    ?callable $preview = null, ?string $reference = null, array $references = [], ?string $userReferenceMode = null,
+    string $disclosure = 'none'): array {
   $http = $http ?? 'coreui_image_http';
   // 0.7.28: a full storage (Settings > Speicher) starts no image.
   require_once __DIR__ . '/files_store.php';
@@ -555,10 +573,13 @@ function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $
       || $dims !== [(int)$job['width'], (int)$job['height']]) {
     return ['ok' => false, 'error' => 'image_failed', 'detail' => 'kein gueltiges PNG'];
   }
-  $marked = coreui_image_watermark($png);
+  $disclosure = in_array($disclosure, ['none', 'generated', 'modified'], true) ? $disclosure : 'none';
+  $kind = $disclosure === 'modified' ? 'modified' : 'generated';
+  $marked = coreui_image_watermark($png, $disclosure);
   if ($marked === null) error_log('[CoreAI] Image saved without logo (GD or logo asset unavailable)');
   $meta = [
     'watermark' => $marked !== null,
+    'content_kind' => $kind, 'visible_disclosure' => $disclosure,
     'prompt' => $prompt, 'size' => $size, 'width' => $dims[0], 'height' => $dims[1],
     'seed' => (int)($job['seed'] ?? 0), 'seconds' => round((float)($job['seconds'] ?? 0), 1),
     'model' => (string)($job['model_label'] ?? ($registry['model']['label'] ?? '')),
