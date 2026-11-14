@@ -386,7 +386,8 @@
       var locked = state.pgen.license_accepted !== true;
       show(el.PgenLicenseGuard, locked);
       if (el.PgenModel) {
-        var nineOption = el.PgenModel.querySelector('option[value="flux2-klein-9b"]');
+        var nineOption = typeof el.PgenModel.querySelector === 'function'
+          ? el.PgenModel.querySelector('option[value="flux2-klein-9b"]') : null;
         if (nineOption) nineOption.disabled = locked;
         if (locked && model.id === 'flux2-klein-9b') {
           state.pgenChoice = 'flux2-klein-4b';
