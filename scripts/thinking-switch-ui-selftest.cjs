@@ -78,7 +78,8 @@ function server(opts) {
       return opts.failModels ? reply(503, {ok: false, error: 'model_catalog_unavailable'})
         : reply(200, {ok: true, models, default_model: 'ember-coreui:latest', default_label: 'TCI Core Normal',
           missing_tiers: opts.missing || MISSING, install: opts.install || null,
-          generator_engine: opts.generatorEngine || null});
+          generator_engine: opts.generatorEngine || null,
+          generator_license_accepted: opts.generatorLicensed === true});
     }
     if (url === './api/user_settings.php?core_status=1') return reply(200, {ok: true, loaded: st.loaded});
     if (init.method === 'POST') {
@@ -390,7 +391,7 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
     const p = page();
     const models = MODELS.concat([{name: 'ember-coreui:gen', label: 'TCI Core Generator',
       parameter_size: '8.2B', mara: true, image_generation: true}]);
-    const st = server({models, generatorEngine: {ready: true, state: 'ready', message: ''}});
+    const st = server({models, generatorLicensed: true, generatorEngine: {ready: true, state: 'ready', message: ''}});
     const m = api.create(p.doc, st.fetch, () => {});
     await m.ready;
     await m.open();
@@ -399,6 +400,30 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
     await gen.handlers.click({stopPropagation() {}});
     assert.equal(JSON.parse(st.calls.filter(x => x.init.method === 'POST').pop().init.body).model_override,
       'ember-coreui:gen');
+  }
+
+  // Account A accepting the license must never make it selectable for account B.
+  {
+    const p = page();
+    const models = MODELS.concat([{name: 'ember-coreui:gen', label: 'TCI Core Generator',
+      parameter_size: '8.2B', mara: true, image_generation: true}]);
+    const opened = [];
+    const st = server({models, generatorLicensed: false,
+      generatorEngine: {ready: true, state: 'ready', message: ''}});
+    const m = api.create(p.doc, st.fetch, () => {},
+      {installer: () => ({openLicense: () => opened.push('license')})});
+    await m.ready;
+    await m.open();
+    const locked = entries(p.els.coreModeList).find(o => o.children[0].textContent === 'TCI Core Generator');
+    assert(locked && locked.className.includes('core-mode-option--engine-missing'),
+      'unlicensed account sees a disabled-looking generator option');
+    assert.match(locked.textContent, /Lizenz bitte zustimmen/,
+      'license required notice is visible for this account');
+    await locked.handlers.click({stopPropagation() {}});
+    assert.deepEqual(opened, ['license'], 'locked generator opens individual license dialog');
+    assert.equal(st.st.override, '', 'unlicensed account cannot select the shared generator');
+    assert.equal(st.calls.some(x => x.init.method === 'POST'), false,
+      'unlicensed generator selection never reaches the save API');
   }
 
   // The separate Denkaufwand UI uses this same authenticated save method.
