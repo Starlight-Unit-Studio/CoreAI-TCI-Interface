@@ -330,6 +330,11 @@ class Service:
             # Reuse tested pGen 9B files if the installer already adopted them.
             if self.pgen_lock.is_file() and not self.pgen_lock.is_symlink():
                 self._prepare_quality()
+            else:
+                # Updates/first installs automatically provision 9B as soon as
+                # the exact non-commercial license is accepted and hardware fits.
+                # No consent means no download; 4B stays ready for everyone.
+                self.install_quality()
         except Exception as error:  # reported by /health; the service stays up
             self.error = f'{type(error).__name__}: {error}'[:400]
             log('nicht bereit: ' + self.error)
@@ -376,7 +381,35 @@ class Service:
                     continue
         return {'have': have, 'total': total}
 
+    def quality_hardware_ready(self) -> bool:
+        # Match PHP's existing 31 GiB minimum and measured 9B 1024 peak.
+        # A GPU remains optional. Missing stats fail closed for auto-download.
+        try:
+            mem = (Path('/proc/meminfo').read_text(encoding='ascii'))
+            stats = {}
+            for line in mem.splitlines():
+                if ':' in line:
+                    k, v = line.split(':', 1)
+                    if k in ('MemTotal', 'MemAvailable'):
+                        stats[k] = int(v.strip().split()[0]) * 1024
+            if stats.get('MemTotal', 0) < 31 * (1024 ** 3):
+                return False
+            if stats.get('MemAvailable', 0) < (22605 + 1024) * (1024 ** 2):
+                return False
+            import shutil
+            manifest = json.loads((ROOT / 'tools' / 'image_spike' / 'models.json').read_text(encoding='utf-8'))
+            specs = manifest['groups'][PGEN.QUALITY]['files']
+            missing = sum(max(0, int(x['size']) -
+                (file_path(self.models, x).stat().st_size if file_path(self.models, x).exists() else 0))
+                for x in specs)
+            return shutil.disk_usage(self.models).free >= missing + 2 * 1024 ** 3
+        except (OSError, ValueError, KeyError, TypeError):
+            return False
+
     def install_quality(self) -> bool:
+        if not self.quality_hardware_ready():
+            log('9B bleibt sichtbar: Mindesthardware/Platz nicht verfuegbar.')
+            return False
         if self.pgen_installing or self.pgen_loading or PGEN.QUALITY in self.profile_paths:
             return False
         license_file = ROOT / 'licenses' / 'FLUX-NON-COMMERCIAL-v2.1.txt'
