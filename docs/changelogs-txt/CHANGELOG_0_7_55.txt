@@ -1,0 +1,40 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.55
+Datum: 14.11.2026
+
+PGEN CORE / QUANTUM GEN ENGINE
+- Neuer eigener pGen-Core-Bereich in Cores verwalten.
+- Kompaktes Dropdown mit genau zwei echten Bildprofilen:
+  FLUX.2 Standard (4B) und FLUX.2 9B.
+- Status: installiert/bereit, aktive Wahl, Groessen, Lizenz,
+  Hardware und Installationsfortschritt.
+- Die Bildprofile sind KEINE zusaetzlichen Ollama-Text-Cores.
+- Systemweite Auswahl bleibt unter var/cache/pgen-profile.json gespeichert.
+- Bildauftraege reichen die Auswahl an den lokalen sd-cli-Worker weiter.
+- Im Bild-Metadatensatz steht der wirklich genutzte Generator.
+
+INSTALLATION UND GEWICHTE
+- 4B bleibt Standard und behalt sein bestehendes SHA-gepinntes Register.
+- 9B hat eigene FLUX-9B- und Qwen3-8B-Gewichte; die VAE wird geteilt.
+- Erfolgreiche Bildtest-Gewichte koennen beim CoreAI-Update geprueft und
+  ohne Duplikate in die Bildengine uebernommen werden (Hardlinks).
+- Falls die Gewichte fehlen, installiert der Bilddienst 9B nach
+  Lizenzannahme ueber den pGen-Button aus dem offiziellen Modellregister.
+- Revision und SHA-256 werden festgehalten und spaeter nachgeprueft.
+- 9B wurde am 14.11.2026 auf dem Server gemessen: bei 1024x1024
+  rund 22.6 GB RAM und ca. 426 Sekunden bei 20 CPU-Threads.
+- Das bisherige Bildcontainer-Limit von 20 GB wurde auf 30 GB erhoeht.
+
+SICHERHEIT
+- pGen installieren und umstellen nur mit Admin-Rechten und CSRF.
+- 9B benoetigt die vorhandene FLUX Non-Commercial License v2.1.
+- Schwaecherer Server: Hardwarepruefung kann 9B verweigern.
+- Unbekannte Modell-IDs werden abgelehnt, keine externen URLs.
+- Fehlendes 9B blockiert nur dieses Profil, nicht den 4B-Standard.
+
+TESTS
+- PHP: erlaubte Profile, persistente Auswahl, Lizenz, Hardware.
+- Python: 9B-Metadaten, SHA/Revision, Pfadpruefung und Worker-Argumente.
+- JavaScript: Dropdown, Installation, Lizenz und tatsaechliches Speichern.
+- Version 0.7.55, ein Release pro Merge.
+
+Version: 0.7.55

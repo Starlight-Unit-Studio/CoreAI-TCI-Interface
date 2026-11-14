@@ -472,7 +472,7 @@ img_gen_test($r['ok'] === true && preg_match('~^[a-f0-9]{32}$~', $r['uuid']) ===
 img_gen_test($titles === ['Bild: Gewichte werden geladen', 'Bild: Schritt 2 von 4', 'Bild: Schritt 4 von 4', 'Bild wird erzeugt'],
   'every change of phase and step is shown once: ' . json_encode($titles));
 img_gen_test($leases === 1 && $unleases === 1, 'the queue is held for the job and given back');
-img_gen_test($GLOBALS['img_calls'][1][2] === ['prompt' => 'A red fox, sitting in snow', 'size' => 'normal'],
+img_gen_test($GLOBALS['img_calls'][1][2] === ['prompt' => 'A red fox, sitting in snow', 'size' => 'normal', 'model' => 'flux2-klein-4b'],
   'generic image tasks do not send Mara identity, scene selection or reference data');
 $row = $pdo->query('SELECT * FROM stu_console_media')->fetch(PDO::FETCH_ASSOC);
 img_gen_test($row['uuid'] === $r['uuid'] && (int)$row['user_id'] === 5 && $row['kind'] === 'image' && $row['public_url'] === null

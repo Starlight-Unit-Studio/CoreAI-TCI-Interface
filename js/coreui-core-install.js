@@ -31,6 +31,11 @@
     generator_license_version_changed: 'Die Lizenz hat sich geändert. Bitte erneut öffnen und prüfen.',
     generator_license_unavailable: 'Der Original-Lizenztext ist nicht erreichbar.',
     generator_license_unwritable: 'Die Zustimmung konnte auf dem Server nicht gespeichert werden.',
+    pgen_hardware_insufficient: 'Die Quantum Gen Engine meldet zu wenig freien RAM oder Speicherplatz für 9B.',
+    pgen_engine_unavailable: 'Quantum Gen Engine nicht bereit.',
+    pgen_model_unavailable: 'Dieses Bildmodell ist noch nicht installiert oder nicht bereit.',
+    pgen_install_unavailable: 'Die 9B-Installation konnte nicht gestartet werden.',
+    pgen_save_unavailable: 'Die pGen-Auswahl konnte nicht gespeichert werden.',
     nothing_to_update: 'Es ist noch keine lokale Stufe installiert, es gibt nichts zu aktualisieren.',
     cloud_signin_required: 'Für diese optionale Funktion zuerst ein bestehendes Ollama-Konto verbinden (Ollama-Verbindung, unten).',
     nothing_to_remove: 'Hier gibt es nichts zu entfernen; Der Standard-Core bleibt immer installiert.',
@@ -59,7 +64,8 @@
     ['Kicker', 'Title', 'Lead', 'Tech', 'Tiers', 'TierList', 'Check', 'Rows', 'Verdict', 'VerdictTitle', 'VerdictText',
       'Progress', 'BarWrap', 'Bar', 'Step', 'Maint', 'Auto', 'UpdateInfo', 'UpdateNow', 'ToManage', 'Results', 'LibraryEntry',
       'Cloud', 'CloudState', 'CloudSteps', 'CloudLink', 'CloudCheck', 'Note', 'Go', 'Cancel', 'Close',
-      'GeneratorLicense', 'GeneratorLicenseOpen', 'GeneratorLicenseState'].forEach(function (key) { el[key] = doc.getElementById('coreInstall' + key); });
+      'GeneratorLicense', 'GeneratorLicenseOpen', 'GeneratorLicenseState', 'Pgen', 'PgenModel', 'PgenInfo',
+      'PgenFeedback', 'PgenApply', 'PgenInstall', 'PgenLicense'].forEach(function (key) { el[key] = doc.getElementById('coreInstall' + key); });
     var licenseEl = {};
     ['Root', 'Panel', 'Text', 'Check', 'Note', 'Accept', 'Cancel', 'Close'].forEach(function (key) {
       licenseEl[key] = doc.getElementById(key === 'Root' ? 'coreGeneratorLicense' :
@@ -68,7 +74,8 @@
     var state = {mode: 'tier', tier: '', check: null, canInstall: false, install: null, confirm: false, busy: false,
       csrf: '', polling: false, error: '', auto: null, tiers: null, plan: null, cloud: null, cloudBusy: false,
       confirmRemove: null, notice: '', awaitingOllama: false, licenseAccepted: false,
-      licenseHash: '', licenseLoaded: false, licenseBusy: false, licenseTrigger: null};
+      licenseHash: '', licenseLoaded: false, licenseBusy: false, licenseTrigger: null,
+      pgen: null, pgenChoice: '', pgenBusy: false, pgenPoll: false, pgenMessage: ''};
 
     function isOpen() { return !root.hidden; }
     function clear(node) { while (node && node.firstChild) node.removeChild(node.firstChild); }
@@ -159,7 +166,7 @@
         if (!data.license || data.license.accepted !== true) throw new Error('license_accept_failed');
         state.licenseAccepted = true;
         closeLicense();
-        if (state.mode === 'manage') return refreshManage().then(render);
+        if (state.mode === 'manage') return Promise.all([refreshManage(), refreshPgen()]).then(render);
         if (state.mode === 'tier' && state.tier === 'generator') {
           return request(API + '?core_install=generator', 'GET').then(function (result) {
             state.check = result.check || state.check;
@@ -314,6 +321,119 @@
       }
     }
 
+    // pGen Core: exactly two image profiles. This is independent of Ollama's
+    // text-Core dropdown and uses the same admin, license and hardware checks.
+    function refreshPgen() {
+      return request(API + '?pgen=1', 'GET').then(function (data) {
+        state.pgen = data.pgen || null;
+        if (!state.pgenChoice || !state.pgen || !state.pgen.models.some(function (m) {
+          return m.id === state.pgenChoice;
+        })) state.pgenChoice = state.pgen ? state.pgen.active : 'flux2-klein-4b';
+        if (data.csrf_token) state.csrf = String(data.csrf_token);
+      });
+    }
+    function renderPgen() {
+      var visible = state.mode === 'manage';
+      show(el.Pgen, visible);
+      if (!visible || !el.Pgen) return;
+      if (!state.pgen || !Array.isArray(state.pgen.models)) {
+        text(el.PgenInfo, 'Lädt die Quantum Gen Engine …');
+        if (el.PgenApply) el.PgenApply.disabled = true;
+        show(el.PgenInstall, false);
+        show(el.PgenLicense, false);
+        return;
+      }
+      var model = state.pgen.models.filter(function (m) { return m.id === state.pgenChoice; })[0];
+      if (!model) model = state.pgen.models[0];
+      if (!model) return;
+      if (el.PgenModel) {
+        el.PgenModel.value = model.id;
+        el.PgenModel.disabled = state.pgenBusy;
+      }
+      var active = state.pgen.active === model.id;
+      var engine = state.pgen.engine_ready;
+      var license = model.id === 'flux2-klein-9b';
+      var authorized = !license || state.pgen.license_accepted === true;
+      var loading = model.loading || state.pgenBusy;
+      var label = model.ready ? 'installiert und bereit' : loading ? 'Installation/Prüfung läuft'
+        : model.installed ? 'installiert, noch nicht bereit' : 'nicht installiert';
+      var report = model.label + ' · ' + label
+        + (active ? ' · AKTIV' : '')
+        + ' · 512 × 512 ca. ' + model.seconds_512 + ' s'
+        + ' · RAM 1024 ca. ' + String(model.ram_1024_gb).replace('.', ',') + ' GB'
+        + ' · ' + model.license;
+      if (!engine) report += ' · Quantum Gen Engine nicht bereit';
+      if (license && state.pgen.can_install_9b === false)
+        report += ' · Hardware reicht für 9B nicht aus';
+      if (model.error) report += ' · ' + model.error;
+      text(el.PgenInfo, report);
+      text(el.PgenFeedback, state.pgenMessage);
+      if (el.PgenFeedback) el.PgenFeedback.setAttribute('data-tone',
+        /Fehler|fehl|nicht |gescheitert/i.test(state.pgenMessage) ? 'bad' : state.pgenMessage ? 'ok' : '');
+      show(el.PgenLicense, license);
+      if (el.PgenLicense) text(el.PgenLicense, authorized ? '9B-Lizenz ansehen ✓' : '9B-Lizenz ansehen');
+      show(el.PgenInstall, license && !model.ready);
+      if (el.PgenInstall) {
+        el.PgenInstall.textContent = loading ? '9B wird vorbereitet …' : '9B installieren';
+        el.PgenInstall.disabled = loading || !engine || !authorized || state.pgenBusy
+          || state.pgen.can_install_9b === false;
+      }
+      if (el.PgenApply) el.PgenApply.disabled = state.pgenBusy || !model.ready
+        || !engine || !authorized || active
+        || (license && state.pgen.can_install_9b === false);
+    }
+    function savePgen() {
+      if (!state.pgen || state.pgenBusy) return Promise.resolve();
+      var choice = state.pgenChoice;
+      var model = state.pgen.models.filter(function (m) { return m.id === choice; })[0];
+      if (!model || !model.ready || !state.pgen.engine_ready ||
+          (choice === 'flux2-klein-9b' && (!state.pgen.license_accepted ||
+            state.pgen.can_install_9b === false))) return Promise.resolve();
+      state.pgenBusy = true;
+      state.pgenMessage = '';
+      renderPgen();
+      return request(API, 'POST', {action: 'pgen_select', model: choice}).then(function (data) {
+        state.pgen = data.pgen;
+        state.pgenMessage = 'pGen Core gespeichert. Neue Bilder werden mit ' + model.label + ' erzeugt.';
+      }).catch(function (error) {
+        state.pgenMessage = ERRORS[error.code] || 'pGen-Auswahl konnte nicht gespeichert werden.';
+      }).then(function () { state.pgenBusy = false; renderPgen(); });
+    }
+    function pollPgen() {
+      if (!state.pgenPoll || !isOpen() || state.mode !== 'manage') {
+        state.pgenPoll = false;
+        return Promise.resolve();
+      }
+      return refreshPgen().catch(function () { state.pgenMessage = 'Bildmodell-Status nicht erreichbar.'; })
+        .then(function () {
+          renderPgen();
+          var nine = state.pgen && state.pgen.models &&
+            state.pgen.models.filter(function (m) { return m.id === 'flux2-klein-9b'; })[0];
+          if (!nine || nine.ready || nine.error || !nine.loading) {
+            state.pgenPoll = false;
+            if (nine && nine.ready) state.pgenMessage = 'FLUX.2 9B ist installiert und bereit.';
+            renderPgen();
+          } else schedule(pollPgen, 2000);
+        });
+    }
+    function installPgen() {
+      if (!state.pgen || !state.pgen.engine_ready || !state.pgen.license_accepted ||
+          state.pgen.can_install_9b === false ||
+          state.pgenBusy) return Promise.resolve();
+      state.pgenBusy = true;
+      state.pgenMessage = '';
+      renderPgen();
+      return request(API, 'POST', {action: 'pgen_install', model: 'flux2-klein-9b'})
+        .then(function (data) {
+          state.pgen = data.pgen || state.pgen;
+          state.pgenMessage = '9B-Gewichte werden im Hintergrund geladen und geprüft.';
+          state.pgenPoll = true;
+          schedule(pollPgen, 2000);
+        }).catch(function (error) {
+          state.pgenMessage = ERRORS[error.code] || '9B-Installation konnte nicht gestartet werden.';
+        }).then(function () { state.pgenBusy = false; renderPgen(); });
+    }
+
     function renderMaint() {
       var j = job();
       var running = !!(j && j.running);
@@ -361,6 +481,7 @@
       var failed = mine && !running && j.phase === 'error';
       text(el.Kicker, manage ? 'CORES VERWALTEN' : 'CORE INSTALLIEREN');
       show(el.Tiers, manage && !!state.tiers);
+      renderPgen();
       show(el.LibraryEntry, manage && !!state.tiers);
       show(el.Tech, !manage);
       show(el.GeneratorLicense, !manage && !!check && check.tier === 'generator');
@@ -533,19 +654,26 @@
       state.tiers = null;
       state.plan = null;
       reset('manage');
+      state.pgen = null;
+      state.pgenChoice = '';
+      state.pgenPoll = false;
+      var pgen = refreshPgen().catch(function (error) {
+        state.pgenMessage = ERRORS[error.code] || 'pGen-Status nicht erreichbar.';
+      }).then(renderPgen);
       var overview = refreshManage().catch(function (error) {
         state.error = ERRORS[error.code] || 'Die Übersicht ist gerade nicht erreichbar.';
       }).then(function () {
         render();
         follow();
       });
-      return Promise.all([overview, loadCloud()]);
+      return Promise.all([overview, loadCloud(), pgen]);
     }
 
     function close() {
       if (!isOpen()) return;
       root.hidden = true;
       state.polling = false;
+      state.pgenPoll = false;
       state.awaitingOllama = false;
       state.confirm = false;
       if (typeof hooks.closed === 'function') hooks.closed();
@@ -632,6 +760,16 @@
     if (licenseEl.Root) licenseEl.Root.addEventListener('click', function (event) {
       if (event && event.target === licenseEl.Root) closeLicense();
     });
+    if (el.PgenModel) el.PgenModel.addEventListener('change', function () {
+      state.pgenChoice = el.PgenModel.value;
+      state.pgenMessage = '';
+      renderPgen();
+    });
+    if (el.PgenApply) el.PgenApply.addEventListener('click', savePgen);
+    if (el.PgenInstall) el.PgenInstall.addEventListener('click', installPgen);
+    if (el.PgenLicense) el.PgenLicense.addEventListener('click', function () {
+      return openLicense(el.PgenLicense);
+    });
     if (el.Go) el.Go.addEventListener('click', function () { return install(); });
     if (el.UpdateNow) el.UpdateNow.addEventListener('click', function () { return updateNow(); });
     if (el.ToManage) el.ToManage.addEventListener('click', function () { return manage(); });
@@ -660,7 +798,8 @@
 
     return {open: open, manage: manage, close: close, install: install, updateNow: updateNow, setAuto: setAuto,
       refreshManage: function () { return state.mode === 'manage'
-        ? refreshManage().then(render).catch(function () { /* next manual refresh can retry */ })
+        ? Promise.all([refreshManage(), refreshPgen()]).then(render)
+          .catch(function () { /* next manual refresh can retry */ })
         : Promise.resolve(); },
       poll: poll, isOpen: isOpen,
       state: function () {

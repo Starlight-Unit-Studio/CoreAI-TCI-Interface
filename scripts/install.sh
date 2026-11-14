@@ -863,6 +863,10 @@ if [[ "$IMAGE_READY" == '1' ]]; then
   python3 -I "$PROJECT_ROOT/tools/image/adopt_spike.py" "$PROJECT_ROOT/config/image/mara-image.json" \
     "$PROJECT_ROOT/var/image-spike/models" "$PROJECT_ROOT/var/image-models" \
     || warn 'Gewichte aus dem Bildtest konnten nicht uebernommen werden; der Bilddienst laedt sie selbst.'
+  # Reuse the successful 9B picture-generator benchmark when available.
+  # The optional 9B profile is license-bound, SHA-256 checked and hardlinked.
+  python3 -I "$PROJECT_ROOT/tools/image/adopt_pgen.py" \
+    || warn 'pGen 9B konnte nicht aus dem Bildtest uebernommen werden; 4B bleibt Standard.'
   log 'Starte den Bilddienst (Maras Bilder).'
   compose up -d image || warn 'Bilddienst startet nicht; CoreAI laeuft ohne Bilder weiter.'
 else

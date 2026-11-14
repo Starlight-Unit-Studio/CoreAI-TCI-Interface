@@ -70,6 +70,16 @@ if ($method === 'GET' && (array_key_exists('core_install', $_GET) || array_key_e
     'auto'=>$admin ? coreui_core_auto_update($pdo) : null, 'csrf_token'=>$csrf]);
 }
 
+// pGen image models are managed independently of the Ollama Core tiers.
+if ($method === 'GET' && array_key_exists('pgen', $_GET)) {
+  require_once __DIR__ . '/core_install.php';
+  require_once __DIR__ . '/pgen.php';
+  stu_require_permission_at_most(COREUI_CORE_INSTALL_PERMISSION_MAX, $pdo);
+  $csrf = stu_csrf_token();
+  if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
+  stu_json(['ok'=>true, 'pgen'=>coreui_pgen_status(), 'csrf_token'=>$csrf]);
+}
+
 // 0.5.76: Cores verwalten (admins): every tier with its Cores, what an
 // update would touch, the weekly switch and the last job.
 if ($method === 'GET' && array_key_exists('core_manage', $_GET)) {
@@ -219,6 +229,32 @@ if ($method !== 'POST') stu_json(['ok' => false, 'error' => 'method_not_allowed'
 stu_require_csrf();
 
 $body = stu_read_json_body();
+
+if (in_array(($body['action'] ?? ''), ['pgen_select', 'pgen_install'], true)) {
+  require_once __DIR__ . '/core_install.php';
+  require_once __DIR__ . '/pgen.php';
+  stu_require_permission_at_most(COREUI_CORE_INSTALL_PERMISSION_MAX, $pdo);
+  $status = coreui_pgen_status();
+  if ($body['action'] === 'pgen_install') {
+    if (($body['model'] ?? '') !== COREUI_PGEN_QUALITY) stu_json(['ok'=>false, 'error'=>'pgen_invalid_model'], 400);
+    if (!$status['license_accepted']) stu_json(['ok'=>false, 'error'=>'license_accept_required'], 409);
+    if (!$status['can_install_9b']) stu_json(['ok'=>false, 'error'=>'pgen_hardware_insufficient'], 409);
+    if (!$status['engine_ready']) stu_json(['ok'=>false, 'error'=>'pgen_engine_unavailable'], 409);
+    [$code, $result] = coreui_image_http('POST', '/pgen/install', [], 6);
+    if ($code !== 202 || !is_array($result) || ($result['ok'] ?? false) !== true)
+      stu_json(['ok'=>false, 'error'=>(string)($result['error'] ?? 'pgen_install_unavailable')], 409);
+    stu_json(['ok'=>true, 'pgen'=>coreui_pgen_status()]);
+  }
+  $model = (string)($body['model'] ?? '');
+  try {
+    coreui_pgen_save($model, $status, (int)$uid);
+    stu_json(['ok'=>true, 'pgen'=>coreui_pgen_status()]);
+  } catch (InvalidArgumentException $e) {
+    stu_json(['ok'=>false, 'error'=>$e->getMessage()], 400);
+  } catch (RuntimeException $e) {
+    stu_json(['ok'=>false, 'error'=>$e->getMessage()], 409);
+  }
+}
 
 if (($body['action'] ?? '') === 'core_generator_license_accept') {
   require_once __DIR__ . '/core_install.php';

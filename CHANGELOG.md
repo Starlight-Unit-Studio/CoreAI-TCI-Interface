@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.7.55 - 14.11.2026
+
+- **pGen Core in „Cores verwalten“:** Eigener, kompakter Bereich unter den Text-Core-Stufen mit genau zwei Bildmodellen: **FLUX.2 Standard (4B)** und **FLUX.2 9B**. Dropdown, aktiver Status, Lizenzhinweis, Hardware-Messwerte sowie „Als pGen verwenden“ und 9B-Installation. Die Ollama-Text-Core-Liste bleibt unverändert.
+- **Echter Bildmodellwechsel:** Admin-API speichert die serverweite pGen-Auswahl unter `var/cache/pgen-profile.json` mit Operator und UTC-Zeit. Neue Bildaufträge senden die festgelegte Modell-ID direkt an die Quantum Gen Engine; der Worker nutzt die jeweiligen FLUX-GGUF- und Qwen-Encoder-Dateien. Im PNG wird das tatsächlich verwendete Modell protokolliert. Keine Text-Core-Umbenennung oder zusätzliche Prompt-Pipeline.
+- **Sichere 9B-Installation:** Bereits erfolgreich getestete Dateien aus `var/image-spike/models` werden durch den regulären Installer nach Prüfung der SHA-256-Prüfsummen und Revisionen hardverlinkt, ohne eine zweite 19-GB-Kopie anzulegen. Ist der Bildtest nicht vorhanden, kann ein Administrator 9B über das neue Menü installieren. Der Download verwendet die vorhandene Hugging-Face- und SHA-256-Pipeline und pinnt die Ergebnisse.
+- **Lizenz- und Hardwarepflicht:** 9B wird nur nach akzeptierter FLUX Non-Commercial License v2.1 angeboten. Die vorhandene Mindesthardware-Erkennung der Bildengine sowie der gemessene Spitzen-RAM-Bedarf von rund 22,6 GB werden berücksichtigt. Der Bildcontainer erhält 30 GB Speicherlimit, damit 1024er-9B-Bilder nicht am alten 20-GB-Limit scheitern. 4B bleibt unverändert Standard.
+- **Rückwärtskompatibilität:** Bei fehlendem 9B-Modell bleibt die 4B-Engine einsatzfähig. Ein Bildauftrag mit nicht bereitem 9B wird mit Fehler gemeldet, niemals stillschweigend mit dem falschen Profil ausgeführt. Bestehende Modellqueues, Bildreferenzen, Preview-, Zeitlimit- und Berechtigungslogik bleiben erhalten.
+- **Tests:** Offline-Python-Tests für die strikte 9B-Manifestvalidierung und reale sd-cli-Befehlszusammenstellung, PHP-Tests für Auswahl, Persistenz, Lizenz und Hardware, UI-Tests für Dropdown, Installieren und Status.
+
 ## 0.7.54 - 14.11.2026
 
 - **Quantum Gen Engine als verbindliche Abhängigkeit:** Der TCI Core Generator bleibt stets in der Core-Auswahl sichtbar. Ohne einsatzbereite Bildengine ist er ausgegraut und nicht auswählbar. Fehlt die Engine aufgrund zu geringer Hardware, erscheint die gewünschte Meldung: „Quantum Gen Engine nicht installiert da die Mindesthardwareanforderungen nicht erfüllt werden“.

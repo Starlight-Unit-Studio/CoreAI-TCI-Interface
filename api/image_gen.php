@@ -472,7 +472,8 @@ function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $
   $jobId = '';
   try {
     if ($cancelled()) return ['ok' => false, 'error' => 'cancelled', 'detail' => ''];
-    $body = ['prompt' => $prompt, 'size' => $size];
+    require_once __DIR__ . '/pgen.php';
+    $body = ['prompt' => $prompt, 'size' => $size, 'model' => coreui_pgen_selected()];
     if ($reference !== null) $body['reference'] = $reference;
     if ($reference === 'default') $body['scene_hint'] = $sceneHint;
     if ($references !== []) $body['references'] = $references;
@@ -541,7 +542,7 @@ function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $
     'watermark' => $marked !== null,
     'prompt' => $prompt, 'size' => $size, 'width' => $dims[0], 'height' => $dims[1],
     'seed' => (int)($job['seed'] ?? 0), 'seconds' => round((float)($job['seconds'] ?? 0), 1),
-    'model' => (string)($registry['model']['label'] ?? ''),
+    'model' => (string)($job['model_label'] ?? ($registry['model']['label'] ?? '')),
     // The worker also counts the extra built-in Mara photos it actually used.
     'reference_count' => (int)($job['reference_count'] ?? (count($references) + ($reference !== null ? 1 : 0))),
     'created_at' => gmdate('Y-m-d\\TH:i:s+00:00'),

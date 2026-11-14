@@ -1,0 +1,50 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.55
+Datum: 14.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Basis: 0.7.54
+Branch: feature/pgen-core-model-selector-20261114
+
+ENTSCHEIDUNG DES BETREIBERS
+Neben der vorhandenen Text-Core-Verwaltung soll ein eigener, kleiner
+pGen (picture generator) Core-Bereich entstehen. Nur zwei Auswahlen:
+FLUX.2 Standard 4B und FLUX.2 9B. Keine dritte Modelloption.
+Nicht bloss visuelle Umbenennung, sondern echte Auswahl des Workermodells.
+
+UMSETZUNG
+- app.html und js/coreui-core-install.js: separates pGen-Menue, Dropdown,
+  Status/Hardware-Hinweis, Lizenzbutton, 9B-Installieren und Auswaehlen.
+- css/console.css: im bestehenden kantigen CoreAI-Design fuer Smartphone
+  und Desktop. Kein neues generisches Designsystem.
+- api/pgen.php und api/user_settings.php: Admin-Rechte, CSRF,
+  Modell-Whitelist und dauerhaftes Profil im var/cache-Bereich.
+- api/image_gen.php: bei neuen Bildjobs Modell-ID an den Bilddienst
+  uebergeben und echten Modellnamen in PNG-Metadaten festhalten.
+- tools/image/image_service.py: zwei getrennte Modellregister und
+  RAM-Messwerte; sd-cli erhaelt die echten 4B- oder 9B-Gewichte.
+  Kein paralleles Ausfuehren von zwei Bildjobs. Original-Preview-,
+  Referenz- und Abbruchlogik bleibt erhalten.
+- tools/image/pgen_profiles.py: 9B-Register nur aus verifizierbarem
+  Bildtest-Lock; SHA256, Revision, Rollen und exakte Dateien validieren.
+- tools/image/adopt_pgen.py und scripts/install.sh: beim Update gepruefte
+  9B-Bildtest-Gewichte ohne zweite Datei uebernehmen, wenn vorhanden.
+- 9B-Download ueber den laufenden Bilddienst nach Lizenzannahme,
+  bei fehlender vorhandener Benchmarkdatei.
+- compose.yaml: RAM-Limit Bildcontainer von 20g auf 30g.
+- 4B Apache-2.0; 9B FLUX Non-Commercial License v2.1.
+  Die bereits vorliegende Lizenzfreigabe wird auf dem Server geprueft.
+
+QUALITAET UND BETRIEB
+Bildtests 14.11.2026 (4 Schritte, CPU, 20 Threads):
+4B: ca. 67 s bei 512, 217 s bei 1024, 14.4 GB Peak bei 1024.
+9B: ca. 137 s bei 512, 426 s bei 1024, 22.6 GB Peak bei 1024.
+Die reale Bildengine-Installation und Auswahl wird nach Merge
+durch den Betreiber auf dem eigenen Server bestaetigt.
+Bei 9B-Problemen bleibt 4B verfuegbar.
+
+TESTS
+scripts/pgen-selftest.py, scripts/pgen-selftest.php,
+scripts/core-install-ui-selftest.cjs,
+.github/workflows/image-service-regression.yml.
+Versionierung: 0.7.55, nur ein Versionsschritt fuer diesen Merge.
+
+Version: 0.7.55

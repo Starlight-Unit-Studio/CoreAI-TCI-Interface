@@ -68,6 +68,7 @@ def _load(name: str, path: Path):
 # Loading from Hugging Face is the code of the image test (redirects, resume, SHA-256).
 SPIKE = _load('coreai_image_spike_run', ROOT / 'tools' / 'image_spike' / 'run.py')
 MARA_REFS = _load('coreai_mara_references', HERE / 'mara_references.py')
+PGEN = _load('coreai_pgen_profiles', HERE / 'pgen_profiles.py')
 if os.environ.get('COREAI_IMAGE_HF'):
     SPIKE.HF = os.environ['COREAI_IMAGE_HF'].rstrip('/')
 
@@ -231,6 +232,14 @@ class Service:
         self.jobs: dict[str, dict] = {}
         self.lock = threading.Lock()        # one job at a time
         self.state_lock = threading.Lock()
+        self.pgen_lock = self.models / 'pgen-9b.json'
+        self.profiles: dict[str, dict] = {PGEN.STANDARD: registry}
+        # Keep the 4B profile available to existing unit-level reference logic.
+        # The HTTP handler still requires self.ready before accepting any image job.
+        self.profile_paths: dict[str, dict] = {PGEN.STANDARD: self.paths}
+        self.pgen_loading = False
+        self.pgen_error = ''
+        self.pgen_installing = False
 
     # Weights ---------------------------------------------------------------
     def _verified(self) -> dict:
@@ -246,14 +255,15 @@ class Service:
         except OSError:
             pass  # only saves a check at the next start
 
-    def ensure_weights(self) -> dict:
+    def ensure_weights(self, registry: dict | None = None) -> dict:
         """Every registered file at its place and checked; returns the paths by role."""
-        errors = registry_errors(self.reg)
+        reg = registry if registry is not None else self.reg
+        errors = registry_errors(reg)
         if errors:
             raise RuntimeError('Register unvollstaendig: ' + '; '.join(errors))
         verified = self._verified()
         paths = {}
-        for spec in self.reg['files']:
+        for spec in reg['files']:
             target = file_path(self.models, spec)
             key = str(target.relative_to(self.models))
             stat = target.stat() if target.is_file() else None
@@ -314,13 +324,92 @@ class Service:
             self.work.mkdir(parents=True, exist_ok=True)
             self.preview = supports_preview(self.sd_cli)
             self.paths = self.ensure_weights()
+            self.profile_paths[PGEN.STANDARD] = self.paths
             self.ready = True
             log('bereit: ' + self.reg['model']['label'])
+            # Reuse tested pGen 9B files if the installer already adopted them.
+            if self.pgen_lock.is_file() and not self.pgen_lock.is_symlink():
+                self._prepare_quality()
         except Exception as error:  # reported by /health; the service stays up
             self.error = f'{type(error).__name__}: {error}'[:400]
             log('nicht bereit: ' + self.error)
         finally:
             self.loading = False
+
+    # pGen Quality: opt-in 9B with the same pinned-download and SHA-256 rules.
+    def _prepare_quality(self) -> None:
+        self.pgen_loading = True
+        self.pgen_error = ''
+        try:
+            spike = json.loads((ROOT / 'tools' / 'image_spike' / 'models.json').read_text(encoding='utf-8'))
+            quality = PGEN.load_registry(self.pgen_lock, self.reg, spike)
+            if quality is None:
+                return
+            paths = self.ensure_weights(quality)
+            with self.state_lock:
+                self.profiles[PGEN.QUALITY] = quality
+                self.profile_paths[PGEN.QUALITY] = paths
+            log('bereit: ' + quality['model']['label'])
+        except Exception as error:
+            self.pgen_error = f'{type(error).__name__}: {error}'[:250]
+            log('pGen 9B nicht bereit: ' + self.pgen_error)
+        finally:
+            self.pgen_loading = False
+
+    def quality_progress(self) -> dict:
+        try:
+            spike = json.loads((ROOT / 'tools' / 'image_spike' / 'models.json').read_text(encoding='utf-8'))
+            specs = spike['groups'][PGEN.QUALITY]['files']
+        except (OSError, ValueError, KeyError):
+            return {'have': 0, 'total': 0}
+        have = 0
+        total = 0
+        for spec in specs:
+            size = spec['size']
+            total += size
+            target = file_path(self.models, spec)
+            for location in (target, target.with_name(target.name + '.part')):
+                try:
+                    have += min(location.stat().st_size, size)
+                    break
+                except OSError:
+                    continue
+        return {'have': have, 'total': total}
+
+    def install_quality(self) -> bool:
+        if self.pgen_installing or self.pgen_loading or PGEN.QUALITY in self.profile_paths:
+            return False
+        license_file = ROOT / 'licenses' / 'FLUX-NON-COMMERCIAL-v2.1.txt'
+        receipt = ROOT / 'var' / 'cache' / 'generator-license.json'
+        try:
+            import hashlib
+            accepted = json.loads(receipt.read_text(encoding='utf-8'))
+            sha = hashlib.sha256(license_file.read_bytes()).hexdigest()
+            if accepted.get('accepted') is not True or accepted.get('license_sha256') != sha:
+                return False
+        except (OSError, ValueError, AttributeError):
+            return False
+        self.pgen_installing = True
+        self.pgen_error = ''
+        threading.Thread(target=self._install_quality, daemon=True).start()
+        return True
+
+    def _install_quality(self) -> None:
+        try:
+            spike = json.loads((ROOT / 'tools' / 'image_spike' / 'models.json').read_text(encoding='utf-8'))
+            SPIKE.fetch(spike, PGEN.QUALITY, self.models)
+            paths, entries, error = SPIKE.verify(self.models, PGEN.QUALITY)
+            if error or len(paths) != 3:
+                raise RuntimeError(error or '9B-Gewichte nicht verifiziert')
+            lock = {'format': 1, 'group': PGEN.QUALITY, 'files': entries}
+            PGEN.registry_from_lock(self.reg, spike, lock)
+            PGEN.save_lock(self.pgen_lock, lock)
+            self._prepare_quality()
+        except Exception as error:
+            self.pgen_error = f'{type(error).__name__}: {error}'[:250]
+            log('pGen 9B Installation fehlgeschlagen: ' + self.pgen_error)
+        finally:
+            self.pgen_installing = False
 
     # Jobs -------------------------------------------------------------------
     def busy(self) -> bool:
@@ -336,7 +425,11 @@ class Service:
                     Path(job[key]).unlink(missing_ok=True)
 
     def create(self, prompt: str, size_key: str, seed: int | None, reference: str | None = None,
-               references: list[str] | None = None, scene_hint: str | None = None) -> dict:
+               references: list[str] | None = None, scene_hint: str | None = None,
+               model_id: str = PGEN.STANDARD) -> dict:
+        if model_id not in self.profile_paths or model_id not in self.profiles:
+            raise ValueError('pgen_unavailable')
+        profile = self.profiles[model_id]
         # Tokens are already account-checked by PHP. No arbitrary paths are accepted here.
         reference_path = resolve_reference(reference)
         if references is None:
@@ -356,8 +449,8 @@ class Service:
         extra_paths = [item['path'] for item in curated[1:]]
         reference_paths = ([reference_path] if reference_path else []) + extra_paths + uploaded_paths
         self._clean()
-        size = self.reg['sizes'][size_key]
-        need = float(((self.reg.get('measured') or {}).get(size_key) or {}).get('peak_rss_mb') or 0)
+        size = profile['sizes'][size_key]
+        need = float(((profile.get('measured') or {}).get(size_key) or {}).get('peak_rss_mb') or 0)
         available = mem_available_mb()
         if need and available is not None and available < need + 1024:
             raise MemoryError(f'{int(available)} MB frei, gebraucht etwa {int(need)} MB')
@@ -365,7 +458,8 @@ class Service:
             if any(job['state'] in ('queued', 'running') for job in self.jobs.values()):
                 raise BlockingIOError('busy')
             job_id = secrets.token_hex(16)
-            job = {'id': job_id, 'state': 'queued', 'phase': 'load', 'step': 0, 'steps': int(self.reg['model']['steps']),
+            job = {'id': job_id, 'state': 'queued', 'phase': 'load', 'step': 0, 'steps': int(profile['model']['steps']), 'model': model_id,
+                   'model_label': profile['model']['label'],
                    'error': '', 'size': size_key, 'width': size['width'], 'height': size['height'],
                    'seed': seed if seed is not None else secrets.randbelow(2 ** 31 - 1),
                    'seconds': None, 'peak_rss_mb': None, 'started': time.monotonic(), 'finished': None,
@@ -379,15 +473,17 @@ class Service:
         return job
 
     def command(self, job: dict, prompt: str) -> list[str]:
-        model = self.reg['model']
+        profile = self.profiles[job.get('model', PGEN.STANDARD)]
+        model = profile['model']
+        paths = self.profile_paths.get(job.get('model', PGEN.STANDARD), self.paths)
         ref_paths = job.get('reference_paths')
         if ref_paths is None:
             ref_paths = [job['reference_path']] if job.get('reference_path') else []
         reference_args: list[str] = []
         for path in ref_paths:
             reference_args.extend(['-r', path])
-        return [self.sd_cli, '--diffusion-model', self.paths['diffusion_model'], '--llm', self.paths['llm'],
-                '--vae', self.paths['vae'], '-p', prompt, '--cfg-scale', str(float(model['cfg_scale'])), '--steps', str(model['steps']),
+        return [self.sd_cli, '--diffusion-model', paths['diffusion_model'], '--llm', paths['llm'],
+                '--vae', paths['vae'], '-p', prompt, '--cfg-scale', str(float(model['cfg_scale'])), '--steps', str(model['steps']),
                 '-W', str(job['width']), '-H', str(job['height']), '-s', str(job['seed']), '-t', str(self.threads),
                 '-o', job['png'], '-v'] + reference_args + (['--preview', 'proj', '--preview-path', job['preview_png'], '--preview-interval', '1']
                                            if self.preview else [])
@@ -481,7 +577,7 @@ class Service:
             return job
 
     def public(self, job: dict) -> dict:
-        keys = ('id', 'state', 'phase', 'step', 'steps', 'error', 'size', 'width', 'height', 'seed', 'seconds', 'peak_rss_mb', 'preview', 'reference_count', 'curated_mara_count')
+        keys = ('id', 'state', 'phase', 'step', 'steps', 'model', 'model_label', 'error', 'size', 'width', 'height', 'seed', 'seconds', 'peak_rss_mb', 'preview', 'reference_count', 'curated_mara_count')
         return {key: job[key] for key in keys}
 
     def health(self) -> dict:
@@ -490,7 +586,14 @@ class Service:
                 'model': model.get('label', ''), 'license': model.get('license', ''), 'threads': self.threads,
                 'preview': self.preview,
                 'sizes': {key: {'width': s['width'], 'height': s['height']} for key, s in (self.reg.get('sizes') or {}).items()},
-                'weights': self.weights_progress()}
+                'weights': self.weights_progress(),
+                'pgen': {
+                    PGEN.STANDARD: {'installed': self.ready, 'ready': self.ready, 'loading': self.loading},
+                    PGEN.QUALITY: {'installed': self.pgen_lock.is_file(),
+                        'ready': PGEN.QUALITY in self.profile_paths,
+                        'loading': self.pgen_loading or self.pgen_installing,
+                        'error': self.pgen_error, 'weights': self.quality_progress()},
+                }}
 
     def watch(self, interval: float) -> None:
         """After an update the mounted code changes; the running job ends first, then the
@@ -498,7 +601,8 @@ class Service:
         if interval <= 0:
             return
         paths = [HERE / 'image_service.py', HERE / 'mara_references.py', ROOT / 'tools' / 'image_spike' / 'run.py',
-                 ROOT / 'config' / 'image' / 'mara-references.json', REGISTRY]
+                 ROOT / 'config' / 'image' / 'mara-references.json', REGISTRY,
+                 HERE / 'pgen_profiles.py']
 
         def stamp() -> list[int]:
             out = []
@@ -586,6 +690,10 @@ def make_handler(service: Service):
             return self._json(200, {'ok': True, 'job': service.public(job)})
 
         def do_POST(self) -> None:
+            if self.path == '/pgen/install':
+                started = service.install_quality()
+                return self._json(202 if started else 409, {'ok': started,
+                    'error': '' if started else 'pgen_install_unavailable', 'pgen': service.health()['pgen']})
             if self.path != '/jobs':
                 return self._json(404, {'ok': False, 'error': 'not_found'})
             length = int(self.headers.get('Content-Length') or 0)
@@ -602,6 +710,12 @@ def make_handler(service: Service):
             reference = data.get('reference') if isinstance(data, dict) else None
             references = data.get('references', []) if isinstance(data, dict) else []
             scene_hint = data.get('scene_hint') if isinstance(data, dict) else None
+            model_id = data.get('model', PGEN.STANDARD) if isinstance(data, dict) else PGEN.STANDARD
+            if model_id not in (PGEN.STANDARD, PGEN.QUALITY):
+                return self._json(400, {'ok': False, 'error': 'bad_model'})
+            if model_id not in service.profile_paths:
+                return self._json(503, {'ok': False, 'error': 'pgen_loading' if
+                    (service.pgen_loading or service.pgen_installing) else 'pgen_unavailable'})
             if (scene_hint is not None and
                 (not isinstance(scene_hint, str) or len(scene_hint) > limit or '\x00' in scene_hint)):
                 return self._json(400, {'ok': False, 'error': 'bad_request'})
@@ -622,7 +736,7 @@ def make_handler(service: Service):
                 return self._json(503, {'ok': False, 'error': 'image_loading' if service.loading else 'image_unavailable',
                                         'detail': service.error})
             try:
-                job = service.create(prompt.strip(), size, seed, reference, references, scene_hint)
+                job = service.create(prompt.strip(), size, seed, reference, references, scene_hint, model_id)
             except BlockingIOError:
                 return self._json(503, {'ok': False, 'error': 'image_busy'})
             except MemoryError as error:

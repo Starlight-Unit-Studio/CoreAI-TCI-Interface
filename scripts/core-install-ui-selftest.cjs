@@ -38,7 +38,8 @@ function page() {
   const ids = ['coreInstall', 'Kicker', 'Title', 'Lead', 'Tech', 'Tiers', 'TierList', 'Check', 'Rows', 'Verdict', 'VerdictTitle',
     'VerdictText', 'Progress', 'BarWrap', 'Bar', 'Step', 'Maint', 'Auto', 'UpdateInfo', 'UpdateNow', 'ToManage', 'Results',
     'Cloud', 'CloudState', 'CloudSteps', 'CloudLink', 'CloudCheck', 'Note', 'Go', 'Cancel', 'Close',
-    'GeneratorLicense', 'GeneratorLicenseOpen', 'GeneratorLicenseState']
+    'GeneratorLicense', 'GeneratorLicenseOpen', 'GeneratorLicenseState', 'Pgen', 'PgenModel',
+    'PgenInfo', 'PgenFeedback', 'PgenApply', 'PgenInstall', 'PgenLicense']
     .map(k => k === 'coreInstall' ? k : 'coreInstall' + k)
     .concat(['coreGeneratorLicense', 'coreGeneratorLicensePanel', 'coreGeneratorLicenseText',
       'coreGeneratorLicenseCheck', 'coreGeneratorLicenseNote', 'coreGeneratorLicenseAccept',
@@ -46,7 +47,7 @@ function page() {
   const els = Object.fromEntries(ids.map(id => [id, new Element('div', id)]));
   ['coreInstall', 'coreInstallProgress', 'coreInstallTiers', 'coreInstallMaint', 'coreInstallResults', 'coreInstallCloud',
     'coreInstallCloudSteps', 'coreInstallCloudLink', 'coreInstallToManage', 'coreInstallGeneratorLicense',
-    'coreGeneratorLicense'].forEach(id => { els[id].hidden = true; });
+    'coreGeneratorLicense', 'coreInstallPgen', 'coreInstallPgenInstall', 'coreInstallPgenLicense'].forEach(id => { els[id].hidden = true; });
   els.coreInstallAuto.checked = false;
   els.coreGeneratorLicenseCheck.checked = false;
   const doc = {
@@ -88,11 +89,24 @@ function server(opts) {
   const calls = [];
   const st = {install: opts.install || null, statuses: (opts.statuses || []).slice(), auto: opts.auto || {enabled: false, last: null, next: null},
     cloud: opts.cloud || {version: '0.40.6', version_ok: true, min_version: '0.12.0', account: {state: 'signed_out', signin_url: SIGNIN}},
-    tiers: opts.tiers || TIERS, licenseAccepted: opts.licenseAccepted === true};
+    tiers: opts.tiers || TIERS, licenseAccepted: opts.licenseAccepted === true,
+    pgenActive: 'flux2-klein-4b', pgenNineReady: opts.pgenNineReady === true,
+    pgenNineLoading: false};
+  const pgen = () => ({active: st.pgenActive, engine_ready: true,
+    license_accepted: st.licenseAccepted, models: [
+      {id: 'flux2-klein-4b', label: 'FLUX.2 Standard (4B)', license: 'Apache-2.0',
+        ready: true, installed: true, loading: false, seconds_512: 67, ram_1024_gb: 14.4},
+      {id: 'flux2-klein-9b', label: 'FLUX.2 9B', license: 'FLUX Non-Commercial License v2.1',
+        ready: st.pgenNineReady && st.licenseAccepted, installed: st.pgenNineReady,
+        loading: st.pgenNineLoading, seconds_512: 137, ram_1024_gb: 22.6}
+    ]});
   const reply = (status, body) => Promise.resolve({ok: status < 400, status, json: () => Promise.resolve(body)});
   const fetch = (url, init) => {
     calls.push({url, init});
     if (opts.offline) return Promise.reject(new Error('offline'));
+    if (url === './api/user_settings.php?pgen=1') {
+      return reply(200, {ok: true, pgen: pgen(), csrf_token: 'tokPgen'});
+    }
     if (url === './api/user_settings.php?core_generator_license=1') {
       return reply(200, {ok: true, license: {name: 'FLUX Non-Commercial License v2.1',
         text: 'FLUX Non-Commercial License v2.1\nBlack Forest Labs: original license text in offline fixture.',
@@ -120,6 +134,15 @@ function server(opts) {
     if (init.method === 'POST') {
       if (opts.refuse) return reply(409, {ok: false, error: opts.refuse});
       const body = JSON.parse(init.body);
+      if (body.action === 'pgen_select') {
+        st.pgenActive = body.model;
+        return reply(200, {ok: true, pgen: pgen()});
+      }
+      if (body.action === 'pgen_install') {
+        if (!st.licenseAccepted) return reply(409, {ok: false, error: 'license_accept_required'});
+        st.pgenNineLoading = true;
+        return reply(200, {ok: true, pgen: pgen()});
+      }
       if (body.action === 'core_generator_license_accept') {
         assert.equal(body.sha256, 'a'.repeat(64));
         assert.equal(body.accepted, true);
@@ -320,7 +343,7 @@ assert.equal(api.gb(20 * 1073741824), '20 GB');
   win = api.create(doc, srv.fetch, fn => ticks.push(fn), {installed: core => refreshed.push(core || '')});
   await win.manage();
   assert.equal(els.coreInstall.hidden, false);
-  assert.deepEqual(srv.calls.map(c => c.url), ['./api/user_settings.php?core_manage=1', './api/user_settings.php?core_cloud=1']);
+  assert.deepEqual(srv.calls.map(c => c.url), ['./api/user_settings.php?pgen=1', './api/user_settings.php?core_manage=1', './api/user_settings.php?core_cloud=1']);
   assert.equal(els.coreInstallKicker.textContent, 'CORES VERWALTEN');
   assert.equal(els.coreInstallTitle.textContent, 'Cores verwalten');
   assert.match(els.coreInstallLead.textContent, /unregelmäßigen Abständen/);
@@ -548,6 +571,48 @@ assert.equal(api.gb(20 * 1073741824), '20 GB');
   win = api.create(doc, server({admin: false}).fetch, () => {}, {});
   await win.open('plus');
   assert.equal(els.coreInstallMaint.hidden, true, 'updates are for admins');
+
+  // pGen Core is separate from Ollama Cores: two fixed image models, actual
+  // selection, mandatory 9B license and background image-weight installation.
+  ({els, doc} = page());
+  srv = server();
+  win = api.create(doc, srv.fetch, () => {}, {});
+  await win.manage();
+  assert.equal(els.coreInstallPgen.hidden, false, 'pGen stays visible in Core management');
+  assert.equal(els.coreInstallPgenModel.value, 'flux2-klein-4b', 'existing 4B is standard');
+  assert.match(els.coreInstallPgenInfo.textContent, /FLUX.2 Standard \(4B\).*AKTIV/);
+  assert.equal(els.coreInstallPgenApply.disabled, true, 'active pGen cannot be applied twice');
+  els.coreInstallPgenModel.value = 'flux2-klein-9b';
+  els.coreInstallPgenModel.handlers.change();
+  assert.match(els.coreInstallPgenInfo.textContent, /FLUX.2 9B.*nicht installiert/);
+  assert.equal(els.coreInstallPgenInstall.hidden, false);
+  assert.equal(els.coreInstallPgenInstall.disabled, true, '9B cannot install before license acceptance');
+  await els.coreInstallPgenLicense.handlers.click();
+  els.coreGeneratorLicenseCheck.checked = true;
+  els.coreGeneratorLicenseCheck.handlers.change();
+  await els.coreGeneratorLicenseAccept.handlers.click();
+  assert.equal(srv.st.licenseAccepted, true);
+  assert.equal(els.coreInstallPgenInstall.disabled, false, 'license unlocks 9B installation');
+  await els.coreInstallPgenInstall.handlers.click();
+  assert.deepEqual(JSON.parse(srv.calls.filter(x => x.init.method === 'POST').pop().init.body),
+    {action: 'pgen_install', model: 'flux2-klein-9b'});
+  srv.st.pgenNineLoading = false;
+  srv.st.pgenNineReady = true;
+  await win.refreshManage();
+  assert.equal(els.coreInstallPgenApply.disabled, false, 'verified 9B can be activated');
+  await els.coreInstallPgenApply.handlers.click();
+  assert.equal(srv.st.pgenActive, 'flux2-klein-9b', 'actual worker selection stored server-side');
+  assert.deepEqual(JSON.parse(srv.calls.filter(x => x.init.method === 'POST').pop().init.body),
+    {action: 'pgen_select', model: 'flux2-klein-9b'});
+  assert.match(els.coreInstallPgenInfo.textContent, /FLUX.2 9B.*AKTIV/);
+  for (const id of ['coreInstallPgen', 'coreInstallPgenModel', 'coreInstallPgenApply',
+    'coreInstallPgenInstall', 'coreInstallPgenLicense', 'coreInstallPgenInfo']) {
+    assert(fs.readFileSync(path.join(__dirname, '../app.html'), 'utf8').includes('id="' + id + '"'),
+      'app.html contains functional pGen control ' + id);
+  }
+  assert.equal((fs.readFileSync(path.join(__dirname, '../app.html'), 'utf8')
+    .match(/<option value="flux2-klein-(?:4b|9b)">/g) || []).length, 2,
+  'pGen offers exactly 4B and 9B, never arbitrary third-party models');
 
   // Markup and wiring.
   const html = fs.readFileSync(path.join(__dirname, '../app.html'), 'utf8');
