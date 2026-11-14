@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.49: Ollama Vision result tap and mobile detail navigation.
+# CoreAI: TCI Interface 0.7.50: Deep Research search and source integrity.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -318,21 +318,16 @@ UI_FILES=(
   tools/image_spike/run.py
   tools/image_spike/models.json
   tools/image/image_service.py
-  tools/image/vision_cores.py
   tools/image/mara_references.py
   config/image/mara-references.json
   images/mara_references/.gitkeep
   tools/image/adopt_spike.py
   config/image/mara-image.json
   api/image_gen.php
-  api/vision_cores.php
   api/image_reference_consistency.php
   docker/image/Dockerfile
   database/migrations/026_image_tool.sql
   scripts/image-service-selftest.py
-  scripts/vision-nginx-route-selftest.py
-  scripts/vision-ollama-ui-selftest.cjs
-  js/coreui-vision-ollama.js
   scripts/image-gen-selftest.php
   scripts/image-reference-consistency-selftest.php
   scripts/image-chat-ui-selftest.cjs
@@ -341,7 +336,6 @@ UI_FILES=(
   js/coreui-image-editor.js
   css/coreui-image-viewer.css
   js/coreui-image-progress.js
-  js/coreui-vision-library.js
   scripts/image-progress-ui-selftest.cjs
   api/console_composer_intent.php
   api/composer_tools.php
@@ -599,7 +593,7 @@ else
   fail "Hybrid-Deep-Research-Selbsttest fehlgeschlagen: ${hybrid_research_test:-Unbekannter Fehler}"
 fi
 
-# 0.7.44: broken search backend must never produce a false completed report.
+# 0.7.50: broken search backend must never produce a false completed report.
 search_regression=''
 if search_regression="$(python3 "$PROJECT_ROOT/scripts/deep-research-zero-source-selftest.py" 2>&1)"; then
   ok 'Deep Research: Suchausfall, Null-Quellen und Ersatzsuche geprueft.'
@@ -659,28 +653,6 @@ if (( mara_missing == 0 )); then
   ok 'Maras sieben Referenzbilder sind im Repository vorhanden.'
 else
   printf '[WARN] %s\n' "Maras Bildset noch unvollstaendig ($mara_missing von 7 fehlen); fehlende Bilder werden uebersprungen." >&2
-fi
-
-# 0.7.47: the Vision Core PHP bridge must pass Nginx's strict whitelist.
-# Tests both Compose and native configs, retaining deny-by-default for other PHP.
-vision_nginx_route_test=''
-if vision_nginx_route_test="$(python3 "$PROJECT_ROOT/scripts/vision-nginx-route-selftest.py" 2>&1)"; then
-  ok 'Vision Core: sichere PHP-Route in beiden Nginx-Konfigurationen geprueft.'
-else
-  fail "Vision Core Nginx-Routing: ${vision_nginx_route_test:-Unbekannter Fehler}"
-fi
-
-# 0.7.48: Ollama Vision tab must reuse the existing serialized installer and
-# never masquerade as a native Linux image-generation engine.
-ollama_vision_test=''
-if command -v node >/dev/null 2>&1; then
-  if ollama_vision_test="$(node "$PROJECT_ROOT/scripts/vision-ollama-ui-selftest.cjs" 2>&1)"; then
-    ok 'Ollama Vision: Suche, Inventar, Schutz, Download und Statusanzeige geprueft.'
-  else
-    fail "Ollama-Vision-Selbsttest: ${ollama_vision_test:-Unbekannter Fehler}"
-  fi
-else
-  printf '[WARN] %s\n' 'Node.js fehlt; Ollama-Vision-Oberflaechentest im Host-Preflight uebersprungen.' >&2
 fi
 
 image_service_test=''
