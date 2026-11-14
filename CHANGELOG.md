@@ -1,5 +1,12 @@
 # CoreAI: TCI Interface
 
+## 0.7.49 - 14.11.2026
+
+- **Ollama Vision results respond visibly on mobile:** Tapping a search card now opens its model-detail screen immediately, rather than silently putting details below a long scrollable results list. The results collapse, the dialog scrolls the selected details into view, and focus moves to its Back control.
+- **Clear loading and error states:** Ollama variant loading and registry/network failures render inside the now-visible details area, not solely in a status message below the long list. An inaccessible detail can always return to the search results without losing them.
+- **Race and accessibility guards:** New searches cancel pending detail responses; the panel exposes an accessible busy state and a live loading description. Search cards identify their target details. The existing protected Ollama installer, two-step confirmation, CSRF, serial queue and FLUX renderer remain unchanged.
+- **Mobile regression coverage:** `scripts/vision-ollama-ui-selftest.cjs` now asserts the first-tap transition *before* async completion, visible loading, scroll/focus, verified variants, Back navigation, and immediate error visibility. This runs through the existing both-preflight and Vision Core GitHub CI gates.
+
 ## 0.7.48 - 13.11.2026
 
 - **Ollama in Vision Core library:** A third `OLLAMA` tab beside Hugging Face and Installed offers real searches through the existing official Ollama registry browser, variant details and sizes, explicit two-click local installs, live shared-installer progress and a filtered list of already installed FLUX.2 Klein/Z-Image Cores. A two-step uninstall delegates to the existing protected Core removal route.
