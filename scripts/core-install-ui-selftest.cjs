@@ -407,6 +407,24 @@ assert.equal(api.gb(20 * 1073741824), '20 GB');
   const genInstalledActions = genInstalledItem.children.find(c => c.className === 'core-install-tier-actions').children;
   assert.deepEqual(genInstalledActions.map(b => b.textContent), ['Aktualisieren', 'Deinstallieren']);
 
+  // A genuinely missing non-commercial FLUX base requires an explicit two-tap licence acknowledgement.
+  ({els, doc} = page());
+  srv = server({check: check({tier: 'generator', label: 'TCI Core Generator',
+    base: 'fegdxus/flux2-klein-9b-uncensored:Q8_0',
+    core: 'ember-coreui:gen', source_present: false, requires_license: true,
+    download_gb: 8.2, verdict: 'gut', blocked: false})});
+  win = api.create(doc, srv.fetch, () => {}, {});
+  await win.open('generator');
+  assert.match(els.coreInstallLead.textContent, /Non-Commercial License v2\.1/);
+  assert.equal(els.coreInstallGo.textContent, 'Lizenz prüfen');
+  await els.coreInstallGo.handlers.click();
+  assert.equal(els.coreInstallGo.textContent, 'Lizenz akzeptieren und installieren');
+  assert.equal(srv.calls.some(c => c.init.method === 'POST'), false, 'first click is confirmation only');
+  await els.coreInstallGo.handlers.click();
+  assert.deepEqual(JSON.parse(srv.calls.filter(c => c.init.method === 'POST').pop().init.body),
+    {action: 'core_install', tier: 'generator', confirm: true, accept_license: true},
+    'the explicit licence acceptance is sent only after confirmation');
+
   // A failed switch is put back.
   ({els, doc} = page());
   srv = server({failAuto: true});
