@@ -529,16 +529,13 @@ function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $
     'watermark' => $marked !== null,
     'prompt' => $prompt, 'size' => $size, 'width' => $dims[0], 'height' => $dims[1],
     'seed' => (int)($job['seed'] ?? 0), 'seconds' => round((float)($job['seconds'] ?? 0), 1),
-    'model' => (string)($job['model_label'] ?? $registry['model']['label'] ?? ''),
+    'model' => (string)($registry['model']['label'] ?? ''),
     // The worker also counts the extra built-in Mara photos it actually used.
     'reference_count' => (int)($job['reference_count'] ?? (count($references) + ($reference !== null ? 1 : 0))),
     'created_at' => gmdate('Y-m-d\\TH:i:s+00:00'),
   ];
   $image = $marked ?? $png;
-  // Selected Vision Core sends its pinned registry for image provenance.
-  $usedRegistry = is_array($job['model_registry'] ?? null) && coreui_image_registry_pinned($job['model_registry'])
-    ? $job['model_registry'] : $registry;
-  $embedded = coreui_image_png_embed_provenance($image, $meta, $usedRegistry);
+  $embedded = coreui_image_png_embed_provenance($image, $meta, $registry);
   if ($embedded === null) error_log('[CoreAI] PNG metadata embedding failed; the generated image is still usable');
   else $image = $embedded;
   $meta['metadata_embedded'] = $embedded !== null;
