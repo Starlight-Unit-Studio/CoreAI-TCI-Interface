@@ -27,6 +27,7 @@
     install_blocked: 'Ollama ist nicht erreichbar, so kann nichts installiert werden.',
     install_running: 'Gerade läuft schon eine Installation oder ein Update.',
     install_confirm_required: 'Der Check rät ab. Bitte bestätige die Installation noch einmal.',
+    license_accept_required: 'Vor dem Erstdownload muss die FLUX Non-Commercial License akzeptiert werden.',
     nothing_to_update: 'Es ist noch keine lokale Stufe installiert, es gibt nichts zu aktualisieren.',
     cloud_signin_required: 'Für diese optionale Funktion zuerst ein bestehendes Ollama-Konto verbinden (Ollama-Verbindung, unten).',
     nothing_to_remove: 'Hier gibt es nichts zu entfernen; Der Standard-Core bleibt immer installiert.',
@@ -288,7 +289,9 @@
         } else {
           text(el.Lead, done ? 'Der TCI Core ist fertig und steht im Core-Menü.'
             : check.tier === 'generator'
-              ? 'TCI Core Generator wird aus deinem bereits installierten FLUX.2-Ollama-Core als ember-coreui:gen angelegt. Keine zweite Modellkopie und kein Download. Die Mara-Persona wird übernommen, Gemma-spezifische Parser-Einstellungen nicht.'
+              ? (check.source_present
+                ? 'Aus dem vorhandenen FLUX.2-Core wird ember-coreui:gen angelegt. Ein vorher vorhandener Basistag bleibt zum Schutz anderer Ollama-Clients erhalten.'
+                : 'FLUX.2-klein 9B wird unter der FLUX Non-Commercial License v2.1 geladen und nach dem Aufbau von ember-coreui:gen als temporaerer Basistag entfernt. Lizenz: https://github.com/black-forest-labs/flux2/blob/main/model_licenses/LICENSE-FLUX-NON-COMMERICAL')
               : 'Diese Stufe ist auf dem Server noch nicht installiert. Ollama lädt dafür ca. '
               + String(check.download_gb).replace('.', ',') + ' GB herunter, danach baut CoreAI daraus den TCI Core mit dem Modelfile.'
               + (check.cloud_base && state.canInstall ? ' Diese Stufe gibt es auch als Cloud-Core ohne Download (Ollama-Konto nötig): unter Cores verwalten.' : ''));
@@ -323,14 +326,16 @@
       } else if (failed) {
         note = j.message || (j.kind === 'update' ? 'Das Update ist fehlgeschlagen.' : 'Die Installation ist fehlgeschlagen.');
       }
-      if (!manage && check && check.tier === 'generator' && check.blocked && !done)
-        note = 'Das FLUX.2-Ausgangsmodell fehlt. Installiere zuerst fegdxus/flux2-klein-9b-uncensored:Q8_0 über die Core-Bibliothek.';
+      if (!manage && check && check.requires_license && !done && !running)
+        note = 'Der erste FLUX.2-klein 9B Download erfordert die ausdrueckliche Annahme der Non-Commercial-Lizenz. Bitte Lizenz vor dem Fortfahren pruefen.';
       if (state.error && (check || manage)) note = state.error;
       else if (manage && !running && state.notice) note = state.notice;
       if (!manage && !running && !done && check) {
         if (!state.canInstall) note = note || 'Installieren dürfen nur Admins. Bitte deinen Admin, diese Stufe hier im Chat zu installieren.';
         else if (check.installed) note = note || 'Diese Stufe ist bereits installiert.';
-        else go = state.confirm ? 'Wirklich installieren?' : failed ? 'Erneut versuchen'
+        else go = state.confirm && check.requires_license ? 'Lizenz akzeptieren und installieren'
+          : state.confirm ? 'Wirklich installieren?' : check.requires_license ? 'Lizenz prüfen'
+          : failed ? 'Erneut versuchen'
           : check.verdict === 'abraten' ? 'Trotzdem installieren' : 'Installieren';
       }
       text(el.Note, note);
@@ -456,13 +461,16 @@
         return Promise.resolve(typeof hooks.choose === 'function' ? hooks.choose(j.core) : null);
       }
       if (!check || state.busy || !state.canInstall || check.installed || check.blocked || (j && j.running)) return Promise.resolve();
-      if (check.verdict === 'abraten' && !state.confirm) {
+      if ((check.verdict === 'abraten' || check.requires_license) && !state.confirm) {
         state.confirm = true;
         render();
         return Promise.resolve();
       }
       var body = {action: 'core_install', tier: state.tier};
-      if (state.confirm) body.confirm = true;
+      if (state.confirm) {
+        body.confirm = true;
+        if (check.requires_license) body.accept_license = true;
+      }
       return start(body);
     }
 
