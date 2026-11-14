@@ -18,6 +18,10 @@ fail() {
   FAILURES=$((FAILURES + 1))
 }
 
+warn() {
+  printf '[WARN]   %s\n' "$*" >&2
+}
+
 check_command() {
   if command -v "$1" >/dev/null 2>&1; then
     ok "Befehl vorhanden: $1"
@@ -41,6 +45,7 @@ read_constant() {
 printf 'CoreAI: TCI Interface Native-Preflight, Version %s\n' "$VERSION"
 
 UI_FILES=(
+  scripts/ensure-generator-core.py
   scripts/uninstall.sh
   tests/uninstall-runner-selftest.sh
   scripts/uninstall-store-selftest.php
@@ -1891,6 +1896,18 @@ if command -v php >/dev/null 2>&1; then
       fi
     else
       fail "Ollama-Modell fehlt oder Ollama ist nicht erreichbar: ${MODEL_NAME:-unbekannt}"
+    fi
+
+    generator_audit=''
+    if generator_audit="$(python3 -I "$PROJECT_ROOT/scripts/ensure-generator-core.py" --check 2>&1)"; then
+      ok "$generator_audit"
+    else
+      generator_code=$?
+      if (( generator_code == 3 )); then
+        warn "$generator_audit"
+      else
+        fail "$generator_audit"
+      fi
     fi
 
     WEB_ENABLED="$(read_constant STU_EMBER_WEB_ENABLED || printf '0')"
