@@ -338,6 +338,7 @@
           row('', null);
         }
         shown[modelKey(generator)] = true;
+        if (sameCore(state.override, generator)) found = true;
       }
 
       names.forEach(function (n) {
@@ -442,7 +443,11 @@
             if (m && m.name) state.caps[modelKey(m.name)] = {vision: m.vision === true, audio: m.audio === true, live: m.live === true,
               imageGeneration: m.image_generation === true || isGenerator(m.name)};
           });
-          if (state.generatorEngine) state.caps[modelKey('ember-coreui:gen')] = {imageGeneration: true};
+          if (state.generatorEngine) {
+            var oldCaps = state.caps[modelKey('ember-coreui:gen')] || {};
+            oldCaps.imageGeneration = true;
+            state.caps[modelKey('ember-coreui:gen')] = oldCaps;
+          }
           state.missing = (Array.isArray(both[0].missing_tiers) ? both[0].missing_tiers : []).filter(function (m) {
             return m && m.tier && m.label;
           });
