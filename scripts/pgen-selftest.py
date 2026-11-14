@@ -93,8 +93,8 @@ with tempfile.TemporaryDirectory(prefix='pgen-selftest-') as name:
     svc.profile_paths[profiles.QUALITY] = existing_paths
     import inspect
     handler_source = inspect.getsource(worker.make_handler)
-    assert "model_id == PGEN.QUALITY and not service.quality_license_accepted()" in handler_source, (
-        '9B jobs must be rejected without recorded license acceptance')
+    assert "model_id == PGEN.QUALITY and data.get('user_license_accepted') is not True" in handler_source, (
+        '9B jobs must reject requests lacking the requesting user account consent flag')
     try:
         svc.create('bad model', 'normal', 1, model_id='arbitrary')
     except ValueError as error:
