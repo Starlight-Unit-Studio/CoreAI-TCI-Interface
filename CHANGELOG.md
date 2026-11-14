@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.7.52 - 14.11.2026
+
+- **TCI Core Generator ist ein echter Ollama-Core:** Das vorhandene lokale `fegdxus/flux2-klein-9b-uncensored:Q8_0` kann im Admin-Fenster **Cores verwalten** als `ember-coreui:gen` angelegt werden. Der eigene TCI-Tag erscheint danach neben Schnell, Normal, Plus, Pro und Premium.
+- **Keine zweite Modellkopie und keine vorgeschaltete Pipeline:** Ollama erstellt den neuen Tag mit demselben lokalen FLUX.2-Basismodell. Mara erhält den bestehenden Persona-SYSTEM-Text, ohne unpassende Gemma-4-Renderer-, Parser- oder Parameter-Vorgaben zu übernehmen.
+- **Bildgenerierung erkennbar:** Die Core-Auswahl zeigt den Namen **TCI Core Generator** und ein eigenes Icon für Bildgenerierungs-Aufträge, getrennt vom bisherigen Symbol für Bildverständnis.
+- **Vollständige Verwaltung:** Installieren, Aktualisieren und Deinstallieren benutzen die bestehenden Admin-Rechte und den gemeinsamen Installations-Lock. Das Basismodell bleibt unangetastet; bei fehlender FLUX.2-Basis erklärt die UI den benötigten Installationsschritt. Status und Updater behandeln den neuen TCI-Core getrennt von den Gemma-Stufen.
+- **Tests:** Zusätzliche Selbsttests für Zuordnung, Modelfile-Kompatibilität, Verwaltung und Core-Auswahl. Der reale Ollama-Create auf dem Betreiber-Server wird erst nach Installation im Admin-Menü bestätigt.
+
 ## 0.7.51 - 14.11.2026
 
 - **Image test can measure FLUX.2-klein 9B:** `scripts/image-spike.sh` knows a third group, `flux2-klein-9b` (Q8_0 GGUF, Qwen3-8B text encoder, FLUX.2 VAE, about 19 GB of weights). It is optional and never runs on its own: it needs `--groups flux2-klein-9b` and `--accept-license flux-non-commercial`. Without the confirmation the script names the licence, its conditions and the link to the full text and stops before anything is built or downloaded.
