@@ -6,6 +6,7 @@
 - **Licence stated honestly:** FLUX.2-klein 9B is under the FLUX Non-Commercial License v2.1: private, non-commercial use only, not for other users of the server, and outputs have to be checked before they are passed on. The two default groups stay Apache-2.0. Each downloaded file still gets its revision and SHA-256 written to the lock file on the server.
 - **Face prompt with a reference image:** New prompt `p4` renders "the same woman as in the reference image" from Mara's own portrait (`images/mara_references/mara_identity_primary.png`, mounted read-only) for the FLUX.2-klein groups, so the operator can compare how closely 4B and 9B keep a face. Reference names are restricted to Mara's tracked portraits; symlinks and oversized files are refused. Z-Image-Turbo skips this prompt.
 - **Unchanged on purpose:** The live image generator stays on the pinned FLUX.2-klein 4B. No Vision Core management, no Ollama weight import and no model switch in the interface are added; that decision follows the measurement on the server.
+- **Selftest follows the configured prompt limit:** `scripts/image-service-selftest.py` sent a fixed 1300 characters as "too long" and failed once the operator raised `prompt_chars` to 4096. It now takes the limit from `config/image/mara-image.json` plus one character.
 - **Not tested here:** A real 9B run (time, memory, face fidelity) needs the server. The selftest covers the register, the licence gate, the reference handling, the fixed arguments and the dry run.
 
 ## 0.7.50 - 14.11.2026

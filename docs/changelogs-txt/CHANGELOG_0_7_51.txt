@@ -27,6 +27,12 @@ BEWUSST NICHT GEAENDERT
 - Keine Vision-Core-Verwaltung, kein Ollama-Gewichtsimport, kein Umschalter in
   der Oberflaeche. Das entscheidet sich nach der Messung auf dem Server.
 
+ABGLEICH MIT MAIN
+- Drei direkte Aenderungen des Betreibers auf main unveraendert uebernommen
+  (Bildhinweis, Modelfile-Zeile, prompt_chars 4096).
+- scripts/image-service-selftest.py nimmt die Prompt-Grenze jetzt aus
+  config/image/mara-image.json statt fest 1300 Zeichen.
+
 TESTS
 - python3 -I scripts/image-spike-selftest.py (Register, Lizenzsperre,
   Referenzbild, feste Argumente, Trockenlauf)
