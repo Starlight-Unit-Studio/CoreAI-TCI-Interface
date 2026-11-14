@@ -68,6 +68,7 @@ def _load(name: str, path: Path):
 # Loading from Hugging Face is the code of the image test (redirects, resume, SHA-256).
 SPIKE = _load('coreai_image_spike_run', ROOT / 'tools' / 'image_spike' / 'run.py')
 MARA_REFS = _load('coreai_mara_references', HERE / 'mara_references.py')
+PGEN = _load('coreai_pgen_profiles', HERE / 'pgen_profiles.py')
 if os.environ.get('COREAI_IMAGE_HF'):
     SPIKE.HF = os.environ['COREAI_IMAGE_HF'].rstrip('/')
 
@@ -231,6 +232,12 @@ class Service:
         self.jobs: dict[str, dict] = {}
         self.lock = threading.Lock()        # one job at a time
         self.state_lock = threading.Lock()
+        self.pgen_lock = self.models / 'pgen-9b.json'
+        self.profiles: dict[str, dict] = {PGEN.STANDARD: registry}
+        self.profile_paths: dict[str, dict] = {}
+        self.pgen_loading = False
+        self.pgen_error = ''
+        self.pgen_installing = False
 
     # Weights ---------------------------------------------------------------
     def _verified(self) -> dict:
@@ -246,14 +253,15 @@ class Service:
         except OSError:
             pass  # only saves a check at the next start
 
-    def ensure_weights(self) -> dict:
+    def ensure_weights(self, registry: dict | None = None) -> dict:
         """Every registered file at its place and checked; returns the paths by role."""
-        errors = registry_errors(self.reg)
+        reg = registry if registry is not None else self.reg
+        errors = registry_errors(reg)
         if errors:
             raise RuntimeError('Register unvollstaendig: ' + '; '.join(errors))
         verified = self._verified()
         paths = {}
-        for spec in self.reg['files']:
+        for spec in reg['files']:
             target = file_path(self.models, spec)
             key = str(target.relative_to(self.models))
             stat = target.stat() if target.is_file() else None
@@ -314,8 +322,12 @@ class Service:
             self.work.mkdir(parents=True, exist_ok=True)
             self.preview = supports_preview(self.sd_cli)
             self.paths = self.ensure_weights()
+            self.profile_paths[PGEN.STANDARD] = self.paths
             self.ready = True
             log('bereit: ' + self.reg['model']['label'])
+            # Reuse tested pGen 9B files if the installer already adopted them.
+            if self.pgen_lock.is_file() and not self.pgen_lock.is_symlink():
+                self._prepare_quality()
         except Exception as error:  # reported by /health; the service stays up
             self.error = f'{type(error).__name__}: {error}'[:400]
             log('nicht bereit: ' + self.error)
