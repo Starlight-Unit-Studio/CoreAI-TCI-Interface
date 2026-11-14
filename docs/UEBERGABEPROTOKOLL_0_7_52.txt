@@ -16,7 +16,7 @@ UMSETZUNG
 - Bildgenerierungs-Kennzeichnung ist von Ollama-Vision-, Audio- und Live-Caps getrennt.
 - Der neue Eintrag in Cores verwalten bietet dieselben Admin-Befehle wie lokale TCI-Cores.
 - Installation prueft den vorhandenen Originaltag
-  fegdxus/flux2-klein-9b-uncensored:Q8_0. Ist er nicht vorhanden, wird
+  feadxus/flux2-klein-9b-uncensored:Q8_0. Ist er nicht vorhanden, wird
   der Aufbau blockiert statt einen anderen FLUX-Core zu erfinden.
 - /api/create baut aus diesem Original einen lokalen TCI-Tag. Die bestehende
   Mara-SYSTEM-Anweisung wird dabei aus config/Modelfile.template entnommen.
