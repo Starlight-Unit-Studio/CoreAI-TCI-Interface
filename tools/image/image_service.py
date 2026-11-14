@@ -331,9 +331,9 @@ class Service:
             if self.pgen_lock.is_file() and not self.pgen_lock.is_symlink():
                 self._prepare_quality()
             else:
-                # Updates/first installs automatically provision 9B as soon as
-                # the exact non-commercial license is accepted and hardware fits.
-                # No consent means no download; 4B stays ready for everyone.
+                # Provision 9B whenever the hardware allows it, independently of
+                # explicit license acknowledgement in the UI. The license is still
+                # required for any 9B image generation or profile selection.
                 self.install_quality()
         except Exception as error:  # reported by /health; the service stays up
             self.error = f'{type(error).__name__}: {error}'[:400]
@@ -406,22 +406,28 @@ class Service:
         except (OSError, ValueError, KeyError, TypeError):
             return False
 
+    def quality_license_accepted(self) -> bool:
+        """Explicit operator acknowledgement gates 9B inference, not downloading."""
+        license_file = ROOT / 'licenses' / 'FLUX-NON-COMMERCIAL-v2.1.txt'
+        receipt = ROOT / 'var' / 'cache' / 'generator-license.json'
+        try:
+            import hashlib
+            if license_file.is_symlink() or receipt.is_symlink():
+                return False
+            accepted = json.loads(receipt.read_text(encoding='utf-8'))
+            sha = hashlib.sha256(license_file.read_bytes()).hexdigest()
+            return accepted.get('accepted') is True and accepted.get('license_sha256') == sha
+        except (OSError, ValueError, AttributeError):
+            return False
+
     def install_quality(self) -> bool:
         if not self.quality_hardware_ready():
             log('9B bleibt sichtbar: Mindesthardware/Platz nicht verfuegbar.')
             return False
         if self.pgen_installing or self.pgen_loading or PGEN.QUALITY in self.profile_paths:
             return False
-        license_file = ROOT / 'licenses' / 'FLUX-NON-COMMERCIAL-v2.1.txt'
-        receipt = ROOT / 'var' / 'cache' / 'generator-license.json'
-        try:
-            import hashlib
-            accepted = json.loads(receipt.read_text(encoding='utf-8'))
-            sha = hashlib.sha256(license_file.read_bytes()).hexdigest()
-            if accepted.get('accepted') is not True or accepted.get('license_sha256') != sha:
-                return False
-        except (OSError, ValueError, AttributeError):
-            return False
+        # Deliberately no checkbox prerequisite here. 4B remains the default,
+        # and /jobs still rejects 9B until the license has been accepted.
         self.pgen_installing = True
         self.pgen_error = ''
         threading.Thread(target=self._install_quality, daemon=True).start()
@@ -761,6 +767,8 @@ def make_handler(service: Service):
             model_id = data.get('model', PGEN.STANDARD) if isinstance(data, dict) else PGEN.STANDARD
             if model_id not in (PGEN.STANDARD, PGEN.QUALITY):
                 return self._json(400, {'ok': False, 'error': 'bad_model'})
+            if model_id == PGEN.QUALITY and not service.quality_license_accepted():
+                return self._json(403, {'ok': False, 'error': 'license_accept_required'})
             if model_id not in service.profile_paths:
                 return self._json(503, {'ok': False, 'error': 'pgen_loading' if
                     (service.pgen_loading or service.pgen_installing) else 'pgen_unavailable'})
