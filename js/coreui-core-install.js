@@ -124,7 +124,8 @@
         add(head, 'strong', '', tier.label);
         add(head, 'span', 'core-install-tier-status', STATUS[tier.status] || tier.status);
         var cores = (tier.local || []).concat(tier.cloud || []);
-        add(li, 'small', 'core-install-tier-cores', cores.length ? cores.join(', ') : tier.base);
+        add(li, 'small', 'core-install-tier-cores', cores.length ? cores.join(', ')
+          : tier.tier === 'generator' ? 'ember-coreui:gen (aus ' + tier.base + ')' : tier.base);
         if (tier.alias_of) {
           add(li, 'small', 'core-install-tier-alias', 'Achtung: ' + tier.base + ' ist nur ein zweiter Name für ' + tier.alias_of
             + '. Ein Update lädt das echte ' + tier.base.replace(/^.*:/, '') + ' (ca. ' + String(tier.download_gb).replace('.', ',') + ' GB).');
@@ -285,8 +286,10 @@
           show(el.Check, !state.error);
           show(el.Verdict, false);
         } else {
-          text(el.Lead, done ? 'Der TCI Core dieser Stufe ist fertig und steht im Core-Menü.'
-            : 'Diese Stufe ist auf dem Server noch nicht installiert. Ollama lädt dafür ca. '
+          text(el.Lead, done ? 'Der TCI Core ist fertig und steht im Core-Menü.'
+            : check.tier === 'generator'
+              ? 'TCI Core Generator wird aus deinem bereits installierten FLUX.2-Ollama-Core als ember-coreui:gen angelegt. Keine zweite Modellkopie und kein Download. Die Mara-Persona wird übernommen, Gemma-spezifische Parser-Einstellungen nicht.'
+              : 'Diese Stufe ist auf dem Server noch nicht installiert. Ollama lädt dafür ca. '
               + String(check.download_gb).replace('.', ',') + ' GB herunter, danach baut CoreAI daraus den TCI Core mit dem Modelfile.'
               + (check.cloud_base && state.canInstall ? ' Diese Stufe gibt es auch als Cloud-Core ohne Download (Ollama-Konto nötig): unter Cores verwalten.' : ''));
           text(el.Tech, 'Technisch: ' + check.base + ', angelegt als ' + check.core);
@@ -320,6 +323,8 @@
       } else if (failed) {
         note = j.message || (j.kind === 'update' ? 'Das Update ist fehlgeschlagen.' : 'Die Installation ist fehlgeschlagen.');
       }
+      if (!manage && check && check.tier === 'generator' && check.blocked && !done)
+        note = 'Das FLUX.2-Ausgangsmodell fehlt. Installiere zuerst fegdxus/flux2-klein-9b-uncensored:Q8_0 über die Core-Bibliothek.';
       if (state.error && (check || manage)) note = state.error;
       else if (manage && !running && state.notice) note = state.notice;
       if (!manage && !running && !done && check) {
