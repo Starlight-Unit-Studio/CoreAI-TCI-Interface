@@ -77,7 +77,8 @@ function server(opts) {
     if (url === './api/models.php') {
       return opts.failModels ? reply(503, {ok: false, error: 'model_catalog_unavailable'})
         : reply(200, {ok: true, models, default_model: 'ember-coreui:latest', default_label: 'TCI Core Normal',
-          missing_tiers: opts.missing || MISSING, install: opts.install || null});
+          missing_tiers: opts.missing || MISSING, install: opts.install || null,
+          generator_engine: opts.generatorEngine || null});
     }
     if (url === './api/user_settings.php?core_status=1') return reply(200, {ok: true, loaded: st.loaded});
     if (init.method === 'POST') {
@@ -333,6 +334,71 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
     await m2.openLegend();
     const plusRow = p.els.coreLegendRows.children[2].children.map(c => c.textContent);
     assert.deepEqual(plusRow, ['TCI Core Plus', 'gemma4:12b, ember-core:12b (TCI Modelfile)', 'installiert']);
+  }
+
+  // The Generator is ALWAYS visible when the API reports the Quantum Gen Engine state.
+  // If the engine is not installed because hardware is below its image-engine minimum,
+  // its row remains greyed with the operator's exact explanation.
+  {
+    const p = page();
+    const reason = 'Quantum Gen Engine nicht installiert da die Mindesthardwareanforderungen nicht erfüllt werden';
+    const st = server({generatorEngine: {ready: false, state: 'hardware_insufficient', message: reason}});
+    const m = api.create(p.doc, st.fetch, () => {});
+    await m.ready;
+    await m.open();
+    const generator = entries(p.els.coreModeList).find(o => o.children[0].textContent === 'TCI Core Generator');
+    assert(generator, 'Generator appears even without an Ollama tag');
+    assert.equal(generator.disabled, true, 'missing Engine blocks selection');
+    assert(generator.className.includes('core-mode-option--engine-missing'));
+    assert.equal(generator.children[1].textContent, reason, 'exact small hardware message');
+    const icon = generator.children.find(x => x.className === 'core-mode-caps');
+    assert(icon && icon.children.some(x => x.className === 'core-mode-cap core-mode-cap--generate'),
+      'Generator placeholder retains its image-generation icon');
+    assert.equal(await m.choose('ember-coreui:gen'), '', 'programmatic choice also blocked');
+    assert.equal(st.calls.some(x => x.init.method === 'POST'), false, 'no invalid server choice');
+  }
+  {
+    const p = page();
+    const withGenerator = MODELS.concat([{name: 'ember-coreui:gen', label: 'TCI Core Generator',
+      parameter_size: '8.2B', mara: true, image_generation: true}]);
+    const st = server({models: withGenerator, generatorEngine: {ready: false, state: 'unavailable',
+      message: 'Quantum Gen Engine nicht installiert oder nicht erreichbar.'}});
+    const m = api.create(p.doc, st.fetch, () => {});
+    await m.ready;
+    await m.open();
+    const generator = entries(p.els.coreModeList).filter(o => o.children[0].textContent === 'TCI Core Generator');
+    assert.equal(generator.length, 1, 'installed Generator shown exactly once even without the Engine');
+    assert.equal(generator[0].disabled, true);
+    assert.match(generator[0].textContent, /nicht installiert oder nicht erreichbar/);
+  }
+  {
+    const p = page();
+    const installed = [];
+    const st = server({generatorEngine: {ready: true, state: 'ready', message: ''}});
+    const m = api.create(p.doc, st.fetch, () => {},
+      {installer: () => ({open: tier => installed.push(tier)})});
+    await m.ready;
+    await m.open();
+    const generator = entries(p.els.coreModeList).find(o => o.children[0].textContent === 'TCI Core Generator');
+    assert(generator && generator.className.includes('core-mode-option--missing'),
+      'Engine ready but Generator tag missing opens normal TCI installer');
+    assert.equal(generator.disabled, false);
+    await generator.handlers.click({stopPropagation() {}});
+    assert.deepEqual(installed, ['generator']);
+  }
+  {
+    const p = page();
+    const models = MODELS.concat([{name: 'ember-coreui:gen', label: 'TCI Core Generator',
+      parameter_size: '8.2B', mara: true, image_generation: true}]);
+    const st = server({models, generatorEngine: {ready: true, state: 'ready', message: ''}});
+    const m = api.create(p.doc, st.fetch, () => {});
+    await m.ready;
+    await m.open();
+    const gen = entries(p.els.coreModeList).find(o => o.children[0].textContent === 'TCI Core Generator');
+    assert(gen && !gen.disabled, 'Generator selectable only when both its tag and image engine are ready');
+    await gen.handlers.click({stopPropagation() {}});
+    assert.equal(JSON.parse(st.calls.filter(x => x.init.method === 'POST').pop().init.body).model_override,
+      'ember-coreui:gen');
   }
 
   // The separate Denkaufwand UI uses this same authenticated save method.
