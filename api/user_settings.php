@@ -262,7 +262,21 @@ if (($body['action'] ?? '') === 'core_generator_license_accept') {
   if (($body['accepted'] ?? false) !== true) stu_json(['ok'=>false, 'error'=>'license_accept_required'], 400);
   try {
     coreui_generator_license_accept((int)$uid, trim((string)($body['sha256'] ?? '')));
-    stu_json(['ok'=>true, 'license'=>coreui_generator_license_info(false)]);
+    // Consent is a durable server setting. If 9B was blocked only by its
+    // license, let the existing image worker begin the verified download now;
+    // hardware and duplication locks are enforced by the worker as well.
+    require_once __DIR__ . '/pgen.php';
+    $pgen = coreui_pgen_status();
+    $quality = $pgen['models'][1] ?? [];
+    $automatic = false;
+    if ($pgen['engine_ready'] && $pgen['can_install_9b']
+        && empty($quality['ready']) && empty($quality['loading'])) {
+      [$installCode, $installResult] = coreui_image_http('POST', '/pgen/install', [], 6);
+      $automatic = $installCode === 202 && is_array($installResult)
+        && ($installResult['ok'] ?? false) === true;
+    }
+    stu_json(['ok'=>true, 'license'=>coreui_generator_license_info(false),
+      'pgen_auto_install_started'=>$automatic]);
   } catch (RuntimeException $e) {
     $code = $e->getMessage();
     stu_json(['ok'=>false, 'error'=>$code], $code === 'generator_license_version_changed' ? 409 : 503);
