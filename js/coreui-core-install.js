@@ -59,7 +59,8 @@
     ['Kicker', 'Title', 'Lead', 'Tech', 'Tiers', 'TierList', 'Check', 'Rows', 'Verdict', 'VerdictTitle', 'VerdictText',
       'Progress', 'BarWrap', 'Bar', 'Step', 'Maint', 'Auto', 'UpdateInfo', 'UpdateNow', 'ToManage', 'Results', 'LibraryEntry',
       'Cloud', 'CloudState', 'CloudSteps', 'CloudLink', 'CloudCheck', 'Note', 'Go', 'Cancel', 'Close',
-      'GeneratorLicense', 'GeneratorLicenseOpen', 'GeneratorLicenseState'].forEach(function (key) { el[key] = doc.getElementById('coreInstall' + key); });
+      'GeneratorLicense', 'GeneratorLicenseOpen', 'GeneratorLicenseState', 'Pgen', 'PgenModel', 'PgenInfo',
+      'PgenFeedback', 'PgenApply', 'PgenInstall', 'PgenLicense'].forEach(function (key) { el[key] = doc.getElementById('coreInstall' + key); });
     var licenseEl = {};
     ['Root', 'Panel', 'Text', 'Check', 'Note', 'Accept', 'Cancel', 'Close'].forEach(function (key) {
       licenseEl[key] = doc.getElementById(key === 'Root' ? 'coreGeneratorLicense' :
@@ -68,7 +69,8 @@
     var state = {mode: 'tier', tier: '', check: null, canInstall: false, install: null, confirm: false, busy: false,
       csrf: '', polling: false, error: '', auto: null, tiers: null, plan: null, cloud: null, cloudBusy: false,
       confirmRemove: null, notice: '', awaitingOllama: false, licenseAccepted: false,
-      licenseHash: '', licenseLoaded: false, licenseBusy: false, licenseTrigger: null};
+      licenseHash: '', licenseLoaded: false, licenseBusy: false, licenseTrigger: null,
+      pgen: null, pgenChoice: '', pgenBusy: false, pgenPoll: false, pgenMessage: ''};
 
     function isOpen() { return !root.hidden; }
     function clear(node) { while (node && node.firstChild) node.removeChild(node.firstChild); }
@@ -159,7 +161,7 @@
         if (!data.license || data.license.accepted !== true) throw new Error('license_accept_failed');
         state.licenseAccepted = true;
         closeLicense();
-        if (state.mode === 'manage') return refreshManage().then(render);
+        if (state.mode === 'manage') return Promise.all([refreshManage(), refreshPgen()]).then(render);
         if (state.mode === 'tier' && state.tier === 'generator') {
           return request(API + '?core_install=generator', 'GET').then(function (result) {
             state.check = result.check || state.check;
