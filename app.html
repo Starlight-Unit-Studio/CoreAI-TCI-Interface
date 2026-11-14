@@ -646,11 +646,10 @@
           <div><input type="search" id="visionLibraryOllamaQuery" maxlength="80" placeholder="z. B. flux2-klein oder z-image" autocomplete="off" value="flux">
             <button type="submit" class="core-install-btn core-install-btn--go">Suchen</button></div>
         </form>
-        <div class="vision-library-list" id="visionLibraryOllamaResults"></div>
         <section id="visionLibraryOllamaDetail" class="vision-library-ollama-detail" hidden>
           <button type="button" id="visionLibraryOllamaBack" class="core-library-back">← Zur Suche</button>
           <h3 id="visionLibraryOllamaTitle"></h3>
-          <p id="visionLibraryOllamaDescription"></p>
+          <p id="visionLibraryOllamaDescription" role="status" aria-live="polite"></p>
           <label for="visionLibraryOllamaVariant" class="core-library-tag-label">OLLAMA VARIANTE</label>
           <select id="visionLibraryOllamaVariant"></select>
           <div class="vision-library-actions">
@@ -658,6 +657,7 @@
             <a id="visionLibraryOllamaLink" href="https://ollama.com/search" target="_blank" rel="noopener noreferrer">Bei Ollama ansehen</a>
           </div>
         </section>
+        <div class="vision-library-list" id="visionLibraryOllamaResults"></div>
         <p class="core-library-tag-label">BEREITS BEI OLLAMA INSTALLIERT</p>
         <div class="vision-library-list" id="visionLibraryOllamaInstalled"></div>
         <div id="visionLibraryOllamaProgress" class="core-library-progress" hidden>
