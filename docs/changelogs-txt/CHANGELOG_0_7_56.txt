@@ -20,6 +20,19 @@ PGEN CORE: AUTOMATISCHE INSTALLATION
   Herunterladen als Zustimmung. Die explizite CoreAI-Auswahl bleibt
   trotzdem bis zum separaten Bestaetigen gesperrt.
 
+PGEN-LIZENZ: KONTEN STRENG GETRENNT
+- Migration 043 speichert pro user_id die ausdrueckliche Zustimmung mit
+  Lizenz-SHA-256 und Zeitstempel. Beim Kontoloeschen wird sie geloescht.
+- Alte serverweite Lizenzquittungen erlauben nur Serververwaltung und
+  geben keinem anderen Benutzer eine Nutzungserlaubnis.
+- Jeder Benutzer muss selbst zustimmen, auch wenn der Inhaber schon
+  akzeptiert hat. Der TCI Generator ist sichtbar aber gesperrt und
+  oeffnet fuer jedes Konto das Original-Lizenzmodal.
+- Die API verweigert Text-Generator-Auswahl und 9B-Bildauftraege ohne
+  Zustimmung der angemeldeten User-ID. Auch alte gespeicherte Auswahlen
+  werden in der Runtime abgefangen.
+- 9B wird trotzdem genau einmal pro Server installiert und geteilt.
+
 PROFIL-EDITOR: MODALS
 - Der Benutzer-Profil-Editor hängt nicht mehr unten an der Seite.
   Der Stift in der Profilübersicht öffnet ein modales Bearbeitungsfenster.
