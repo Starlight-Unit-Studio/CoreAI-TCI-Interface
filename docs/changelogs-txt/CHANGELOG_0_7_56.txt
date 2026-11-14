@@ -1,0 +1,65 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.56
+Datum: 14.11.2026
+
+PGEN CORE: AUTOMATISCHE INSTALLATION
+- 4B bleibt als Apache-2.0-Standardprofil verfügbar.
+- FLUX.2-klein 9B wird beim Engine-Start und somit auch nach einem
+  Update automatisch vorbereitet, sobald genügend RAM und Speicherplatz
+  vorhanden sind, unabhaengig von der expliziten Lizenzannahme im UI.
+- Wenn die Lizenz noch nicht explizit bestaetigt wurde, darf der
+  verifizierte Download trotzdem starten. 9B bleibt sichtbar, die
+  Auswahl und Bilderzeugung sind jedoch deaktiviert.
+- Sichtbarer Hinweis mittig in der pGen-Karte: "Lizenz bitte zustimmen".
+- Nach Lizenzbestaetigung wird das bereits installierte Profil zur Nutzung
+  freigegeben. Ein fehlender Download kann automatisch fortgesetzt werden.
+  Die Auswahl als aktives pGen-Profil bleibt bewusst separat.
+- Download und Gewichte verwenden die vorhandene SHA-256-Validierung.
+  Der erfolgreiche Bildtest wird bei Updates weiterhin übernommen.
+- CPU-only und Mindesthardwarepruefung bleiben unveraendert.
+- Rechtlicher Hinweis: Der FLUX-Lizenztext betrachtet bereits das
+  Herunterladen als Zustimmung. Die explizite CoreAI-Auswahl bleibt
+  trotzdem bis zum separaten Bestaetigen gesperrt.
+
+PGEN-LIZENZ: KONTEN STRENG GETRENNT
+- Migration 043 speichert pro user_id die ausdrueckliche Zustimmung mit
+  Lizenz-SHA-256 und Zeitstempel. Beim Kontoloeschen wird sie geloescht.
+- Alte serverweite Lizenzquittungen erlauben nur Serververwaltung und
+  geben keinem anderen Benutzer eine Nutzungserlaubnis.
+- Jeder Benutzer muss selbst zustimmen, auch wenn der Inhaber schon
+  akzeptiert hat. Der TCI Generator ist sichtbar aber gesperrt und
+  oeffnet fuer jedes Konto das Original-Lizenzmodal.
+- Die API verweigert Text-Generator-Auswahl und 9B-Bildauftraege ohne
+  Zustimmung der angemeldeten User-ID. Auch alte gespeicherte Auswahlen
+  werden in der Runtime abgefangen.
+- 9B wird trotzdem genau einmal pro Server installiert und geteilt.
+
+PROFIL-EDITOR: MODALS
+- Der Benutzer-Profil-Editor hängt nicht mehr unten an der Seite.
+  Der Stift in der Profilübersicht öffnet ein modales Bearbeitungsfenster.
+- Mara erhält eine eigene gut sichtbare Profilkarte direkt bei der
+  Übersicht, mit Bearbeiten-Button und eigenem Modal.
+- Das bisherige Zuschneidefenster öffnet weiterhin darüber.
+- Benutzer-Anzeigename und Mara-Rufname werden unabhängig gespeichert,
+  ohne ungesicherte Änderungen der anderen Karte mitzuschreiben.
+- Handy-Tauglichkeit: Scroll-Lock, Tastatur-Fokus, Escape,
+  Schließen-Button und Klick auf den Hintergrund.
+
+VIER ZUSÄTZLICHE MARA-REFERENZEN
+- Das Hauptprofilbild bleibt visuelle Referenz 1.
+- Vier kleinere Referenzslots neben dem Hauptbild, leere Slots zeigen
+  ein Plus zum Hochladen; vorhandene Bilder lassen sich ersetzen/löschen.
+- Kontobezogene Speicherung in der bestehenden privaten Profil-Medien-
+  verwaltung mit Original, Crop-Daten, Größen-/Dateiprüfung.
+- Datenbankmigration 042 ergänzt ENUM-Slots assistant_ref_1 bis _4.
+- Bei Maras Selbstporträts werden zusätzlich hochgeladene Referenzen
+  account-geprüft an den echten Bildworker gereicht, als EIN UND DIESELBE
+  Mara Thorne, nicht als andere Personen oder nur UI-Vorschauen.
+- Andere Konten dürfen diese Referenzdateien nicht lesen oder auswählen.
+- Keine zusätzliche Modell- oder Cloud-Pflicht.
+
+REGRESSIONEN
+- PHP-Profilreferenzen, SQL-Migration und private Medien-Slots.
+- JavaScript-Modalbedienung und vollständiger 4-Slot-Aufbau.
+- GitHub-Prüfungen für Worker, pGen und Cache-Fingerprints.
+
+Version: 0.7.56

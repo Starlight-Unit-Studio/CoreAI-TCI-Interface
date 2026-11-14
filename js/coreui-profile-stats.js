@@ -292,12 +292,8 @@
       renderRaster();
     });
   });
-  $('profileEditJump').addEventListener('click', function () {
-    var target = $('profileEditorStart');
-    if (target && target.scrollIntoView) target.scrollIntoView({behavior: 'smooth', block: 'start'});
-    var name = $('profileDisplayName');
-    if (name) window.setTimeout(function () { name.focus({preventScroll: true}); }, 250);
-  });
+  // The pencil now opens the real profile modal via coreui-profile-editors.js.
+  // No scrolling to an editor card at the bottom of the page.
   // A saved name or picture shows up in the head at once (js/settings.js).
   document.addEventListener('coreai:profile', function (event) {
     var p = event && event.detail ? event.detail : null;

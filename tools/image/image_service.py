@@ -330,6 +330,11 @@ class Service:
             # Reuse tested pGen 9B files if the installer already adopted them.
             if self.pgen_lock.is_file() and not self.pgen_lock.is_symlink():
                 self._prepare_quality()
+            else:
+                # Provision 9B whenever the hardware allows it, independently of
+                # explicit license acknowledgement in the UI. The license is still
+                # required for any 9B image generation or profile selection.
+                self.install_quality()
         except Exception as error:  # reported by /health; the service stays up
             self.error = f'{type(error).__name__}: {error}'[:400]
             log('nicht bereit: ' + self.error)
@@ -376,19 +381,53 @@ class Service:
                     continue
         return {'have': have, 'total': total}
 
-    def install_quality(self) -> bool:
-        if self.pgen_installing or self.pgen_loading or PGEN.QUALITY in self.profile_paths:
+    def quality_hardware_ready(self) -> bool:
+        # Match PHP's existing 31 GiB minimum and measured 9B 1024 peak.
+        # A GPU remains optional. Missing stats fail closed for auto-download.
+        try:
+            mem = (Path('/proc/meminfo').read_text(encoding='ascii'))
+            stats = {}
+            for line in mem.splitlines():
+                if ':' in line:
+                    k, v = line.split(':', 1)
+                    if k in ('MemTotal', 'MemAvailable'):
+                        stats[k] = int(v.strip().split()[0]) * 1024
+            if stats.get('MemTotal', 0) < 31 * (1024 ** 3):
+                return False
+            if stats.get('MemAvailable', 0) < (22605 + 1024) * (1024 ** 2):
+                return False
+            import shutil
+            manifest = json.loads((ROOT / 'tools' / 'image_spike' / 'models.json').read_text(encoding='utf-8'))
+            specs = manifest['groups'][PGEN.QUALITY]['files']
+            missing = sum(max(0, int(x['size']) -
+                (file_path(self.models, x).stat().st_size if file_path(self.models, x).exists() else 0))
+                for x in specs)
+            return shutil.disk_usage(self.models).free >= missing + 2 * 1024 ** 3
+        except (OSError, ValueError, KeyError, TypeError):
             return False
+
+    def quality_license_accepted(self) -> bool:
+        """Explicit operator acknowledgement gates 9B inference, not downloading."""
         license_file = ROOT / 'licenses' / 'FLUX-NON-COMMERCIAL-v2.1.txt'
         receipt = ROOT / 'var' / 'cache' / 'generator-license.json'
         try:
             import hashlib
+            if license_file.is_symlink() or receipt.is_symlink():
+                return False
             accepted = json.loads(receipt.read_text(encoding='utf-8'))
             sha = hashlib.sha256(license_file.read_bytes()).hexdigest()
-            if accepted.get('accepted') is not True or accepted.get('license_sha256') != sha:
-                return False
+            return accepted.get('accepted') is True and accepted.get('license_sha256') == sha
         except (OSError, ValueError, AttributeError):
             return False
+
+    def install_quality(self) -> bool:
+        if not self.quality_hardware_ready():
+            log('9B bleibt sichtbar: Mindesthardware/Platz nicht verfuegbar.')
+            return False
+        if self.pgen_installing or self.pgen_loading or PGEN.QUALITY in self.profile_paths:
+            return False
+        # Deliberately no checkbox prerequisite here. 4B remains the default,
+        # and /jobs still rejects 9B until the license has been accepted.
         self.pgen_installing = True
         self.pgen_error = ''
         threading.Thread(target=self._install_quality, daemon=True).start()
@@ -426,7 +465,7 @@ class Service:
 
     def create(self, prompt: str, size_key: str, seed: int | None, reference: str | None = None,
                references: list[str] | None = None, scene_hint: str | None = None,
-               model_id: str = PGEN.STANDARD) -> dict:
+               model_id: str = PGEN.STANDARD, profile_references: list[str] | None = None) -> dict:
         if model_id not in self.profile_paths or model_id not in self.profiles:
             raise ValueError('pgen_unavailable')
         profile = self.profiles[model_id]
@@ -437,6 +476,20 @@ class Service:
         if len(references) > MAX_UPLOAD_REFERENCES or len(references) != len(set(references)):
             raise ValueError('bad_reference')
         uploaded_paths = [resolve_uploaded_reference(token) for token in references]
+        if profile_references is None:
+            profile_references = []
+        if (not reference or not isinstance(reference, str) or
+                not reference.startswith('custom:')) and profile_references:
+            raise ValueError('bad_reference')
+        if (not isinstance(profile_references, list) or len(profile_references) > 4
+                or len(profile_references) != len(set(profile_references))
+                or any(not isinstance(token, str) or not CUSTOM_REFERENCE.fullmatch(token)
+                       for token in profile_references)):
+            raise ValueError('bad_reference')
+        if reference in profile_references:
+            raise ValueError('bad_reference')
+        # PHP has checked that all account photo UUIDs belong to this user.
+        account_paths = [resolve_reference(token) for token in profile_references]
         curated = []
         if reference == 'default':
             # ONLY the built-in canonical Mara image may be expanded into the
@@ -447,7 +500,7 @@ class Service:
             if curated:
                 reference_path = curated[0]['path']
         extra_paths = [item['path'] for item in curated[1:]]
-        reference_paths = ([reference_path] if reference_path else []) + extra_paths + uploaded_paths
+        reference_paths = ([reference_path] if reference_path else []) + account_paths + extra_paths + uploaded_paths
         self._clean()
         size = profile['sizes'][size_key]
         need = float(((profile.get('measured') or {}).get(size_key) or {}).get('peak_rss_mb') or 0)
@@ -709,10 +762,16 @@ def make_handler(service: Service):
             seed = data.get('seed') if isinstance(data, dict) else None
             reference = data.get('reference') if isinstance(data, dict) else None
             references = data.get('references', []) if isinstance(data, dict) else []
+            profile_references = data.get('profile_references', []) if isinstance(data, dict) else []
             scene_hint = data.get('scene_hint') if isinstance(data, dict) else None
             model_id = data.get('model', PGEN.STANDARD) if isinstance(data, dict) else PGEN.STANDARD
             if model_id not in (PGEN.STANDARD, PGEN.QUALITY):
                 return self._json(400, {'ok': False, 'error': 'bad_model'})
+            # The PHP API checks the authenticated caller's user_id against
+            # their own DB receipt before creating this internal worker job.
+            # A host-wide file must NEVER authorize other users' image jobs.
+            if model_id == PGEN.QUALITY and data.get('user_license_accepted') is not True:
+                return self._json(403, {'ok': False, 'error': 'license_accept_required'})
             if model_id not in service.profile_paths:
                 return self._json(503, {'ok': False, 'error': 'pgen_loading' if
                     (service.pgen_loading or service.pgen_installing) else 'pgen_unavailable'})
@@ -732,11 +791,18 @@ def make_handler(service: Service):
                     any(not isinstance(token, str) or not UPLOAD_REFERENCE.fullmatch(token) for token in references) or
                     len(references) != len(set(references))):
                 return self._json(400, {'ok': False, 'error': 'bad_reference'})
+            if (not isinstance(profile_references, list) or len(profile_references) > 4 or
+                    len(profile_references) != len(set(profile_references)) or
+                    any(not isinstance(token, str) or not CUSTOM_REFERENCE.fullmatch(token)
+                        for token in profile_references) or
+                    (profile_references and not (isinstance(reference, str) and
+                        reference.startswith('custom:')))):
+                return self._json(400, {'ok': False, 'error': 'bad_reference'})
             if not service.ready:
                 return self._json(503, {'ok': False, 'error': 'image_loading' if service.loading else 'image_unavailable',
                                         'detail': service.error})
             try:
-                job = service.create(prompt.strip(), size, seed, reference, references, scene_hint, model_id)
+                job = service.create(prompt.strip(), size, seed, reference, references, scene_hint, model_id, profile_references)
             except BlockingIOError:
                 return self._json(503, {'ok': False, 'error': 'image_busy'})
             except MemoryError as error:

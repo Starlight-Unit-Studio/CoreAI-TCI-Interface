@@ -1,5 +1,15 @@
 # CoreAI: TCI Interface
 
+## 0.7.56 - 14.11.2026
+
+- **pGen 9B automatisch installieren:** Bei Updates und Engine-Neustarts wird 9B nach bestandener RAM- und Speicherplatzprüfung ohne weiteren Klick heruntergeladen und per SHA-256 verifiziert, auch wenn die Lizenz im CoreAI-Dialog noch nicht bestätigt wurde. **Ohne explizite Zustimmung bleiben Auswahl und Bilderzeugung gesperrt**, der Download jedoch nicht. Hinweis: Die FLUX Non-Commercial License wertet bereits das Herunterladen als rechtliche Annahme ihrer Bedingungen.
+- **9B sichtbar, aber gesperrt:** Die Option bleibt im pGen-Bereich auch während und nach der automatischen Installation sichtbar, ist jedoch bis zur ausdrücklichen Lizenzannahme nicht auswählbar. Ein kleiner Hinweis über der 9B-Karte lautet „Lizenz bitte zustimmen“. Nach Bestätigung wird das bereits installierte Modell freigegeben.
+- **FLUX-Lizenz pro Benutzer statt global:** Die 9B-Gewichte werden weiterhin einmalig je Server installiert. Migration 043 speichert die ausdrückliche Zustimmung dagegen separat für jede Benutzer-ID samt Hash der Lizenzfassung. Betreiberannahmen und vorherige serverweite Belege schalten andere Benutzer niemals frei. Der TCI Core Generator bleibt für unbestätigte Konten sichtbar, aber nicht auswählbar; sein Lizenzbutton öffnet das bekannte Modal auch für reguläre Konten. Die Backend-APIs und der Bildworker verweigern 9B-Bildaufträge ohne individuelle Freigabe. Bereits gespeicherte, nicht freigegebene Generator-Auswahlen fallen beim Chat-Runtime-Start auf den Standard-Core zurück.
+- **Benutzer-Profil-Editor als Modal:** Der Stift in der Profilübersicht öffnet den bestehenden Editor in einem mobilen Dialog; die bislang unten angehängte Karte entfällt. Schließen, Hintergrundklick, Escape und Fokussteuerung sind integriert.
+- **Mara-Profil neu zugeordnet:** Direkt unter der Profilübersicht erscheint eine separate Mara-Karte als Einstieg in ihr eigenes Bearbeitungsmodal. Der Mara-Rufname wird unabhängig vom Benutzer-Anzeigenamen gespeichert.
+- **Vier zusätzliche Mara-Referenzbilder:** Neben dem Hauptprofilbild (Referenz 1) erscheinen vier kleinere Slots mit Plus-Symbol für leere Plätze, Upload, Zuschneiden, Ersetzen und Entfernen. Migration 042 ergänzt die bestehenden privaten, pro Benutzer isolierten Medien-Slots. Bei Maras Selbstporträts verarbeitet die Quantum Gen Engine diese Bilder als weitere Perspektiven **derselben Person**, nicht bloß als Vorschauen.
+- **Regressionen:** PHP, Python und JavaScript schützen Lizenz- und Hardwarepflicht, Bildreferenzen, Kontotrennung, UI und Modalbedienung.
+
 ## 0.7.55 - 14.11.2026
 
 - **pGen Core in „Cores verwalten“:** Eigener, kompakter Bereich unter den Text-Core-Stufen mit genau zwei Bildmodellen: **FLUX.2 Standard (4B)** und **FLUX.2 9B**. Dropdown, aktiver Status, Lizenzhinweis, Hardware-Messwerte sowie „Als pGen verwenden“ und 9B-Installation. Die Ollama-Text-Core-Liste bleibt unverändert.

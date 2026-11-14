@@ -30,6 +30,8 @@ try {
   $models = array_map(static fn(array $m): array => $m + ['image_generation' => coreui_core_is_generator((string)$m['name'])], $models);
   // The generator stays visible in the picker even if Ollama or the image engine lacks it.
   // Only this small readiness summary is visible to regular accounts (not hardware details).
+  require_once __DIR__ . '/core_generator_license.php';
+  $generatorLicensed = coreui_generator_license_user_accepted(stu_pdo(), (int)$uid);
   $generatorEngine = coreui_generator_engine_public(coreui_generator_engine_status());
   $default = defined('STU_EMBER_MODEL') ? (string)STU_EMBER_MODEL : '';
   if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
@@ -37,6 +39,7 @@ try {
     'ok'=>true,
     'models'=>$models,
     'generator_engine'=>$generatorEngine,
+    'generator_license_accepted'=>$generatorLicensed,
     'default_model'=>$default,
     'default_label'=>$default !== '' ? coreui_core_label($default) : '',
     'missing_tiers'=>coreui_core_missing_tiers($models),

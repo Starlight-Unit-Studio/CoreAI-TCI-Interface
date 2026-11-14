@@ -78,7 +78,8 @@
     var manageBtn = doc.getElementById('coreModeManage');
     var state = {thinking: true, override: '', defaultModel: '', defaultLabel: '', labels: {}, csrf: '',
       loaded: false, saving: false, models: null, inMemory: [], loading: '', polls: 0, listError: false,
-      missing: [], install: null, mara: {}, admin: false, caps: {}, generatorEngine: null};
+      missing: [], install: null, mara: {}, admin: false, caps: {}, generatorEngine: null,
+      generatorLicensed: false};
 
     function effective() { return state.override || state.defaultModel; }
     function labelOf(name) {
@@ -324,7 +325,21 @@
         var generator = names.filter(isGenerator)[0] || 'ember-coreui:gen';
         var generatorInstalled = names.some(isGenerator);
         var engineReady = state.generatorEngine.ready === true;
-        if (!engineReady) {
+        if (engineReady && !state.generatorLicensed && generatorInstalled) {
+          var locked = entry('TCI Core Generator', 'Lizenz bitte zustimmen', 'gone');
+          locked.className += ' core-mode-option--engine-missing';
+          locked.setAttribute('aria-label', 'TCI Core Generator: Lizenz bitte zustimmen. Lizenz öffnen.');
+          locked.addEventListener('click', function (event) {
+            if (event && typeof event.stopPropagation === 'function') event.stopPropagation();
+            var dialog = installer();
+            if (dialog && typeof dialog.openLicense === 'function') {
+              close(false);
+              return dialog.openLicense(locked);
+            }
+            say('Bitte zuerst die FLUX-Lizenz bestätigen.');
+          });
+          list.appendChild(item(locked));
+        } else if (!engineReady) {
           var explanation = state.generatorEngine.message || 'Quantum Gen Engine derzeit nicht erreichbar.';
           var disabledGenerator = option(generator, 'TCI Core Generator', explanation, true);
           disabledGenerator.className += ' core-mode-option--engine-missing';
@@ -435,6 +450,7 @@
           if (both[0].default_label) state.defaultLabel = String(both[0].default_label);
           state.mara = {};
           state.caps = {};
+          state.generatorLicensed = both[0].generator_license_accepted === true;
           state.generatorEngine = both[0].generator_engine && typeof both[0].generator_engine === 'object'
             ? both[0].generator_engine : null;
           state.models.forEach(function (m) {
@@ -479,6 +495,12 @@
 
     function choose(value) {
       value = String(value || '');
+      if (isGenerator(value) && !state.generatorLicensed) {
+        var modal = installer();
+        if (modal && typeof modal.openLicense === 'function') return modal.openLicense(chip);
+        say('Lizenz bitte zustimmen');
+        return Promise.resolve(state.override);
+      }
       if (isGenerator(value) && state.generatorEngine && state.generatorEngine.ready !== true) {
         say(state.generatorEngine.message || 'Quantum Gen Engine nicht bereit.');
         return Promise.resolve(state.override);

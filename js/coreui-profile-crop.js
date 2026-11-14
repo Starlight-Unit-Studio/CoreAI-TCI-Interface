@@ -155,7 +155,7 @@
     function open(options) {
       options = options || {};
       if (!options.file && !options.url) return false;
-      if (options.slot !== 'user' && options.slot !== 'assistant') return false;
+      if (options.slot !== 'user' && options.slot !== 'assistant' && !/^assistant_ref_[1-4]$/.test(options.slot)) return false;
       if (busy) return false;
       if (!modal.hidden) close();
       generation++;

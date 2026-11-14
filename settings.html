@@ -6,17 +6,17 @@
   <meta name="language" content="de-DE" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#f0f4fa" />
-  <meta name="application-version" content="0.7.55" />
+  <meta name="application-version" content="0.7.56" />
   <meta name="application-name" content="CoreAI: TCI Interface" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface - Einstellungen</title>
-  <link rel="stylesheet" href="./css/console.css?v=0224605469087914972336231" />
-  <link rel="stylesheet" href="./css/settings.css?v=1195119044604178274683151" />
+  <link rel="stylesheet" href="./css/console.css?v=0013889458890017084596075" />
+  <link rel="stylesheet" href="./css/settings.css?v=0388375336475518457930032" />
   <link rel="stylesheet" href="./css/coreui-profile-crop.css?v=0852949496159567452926853" />
   <link rel="stylesheet" href="./css/coreui-update.css?v=0362480532788383300048352" />
   <link rel="stylesheet" href="./css/coreui-theme.css?v=0680794913330935617275553" />
   <link rel="stylesheet" href="./css/coreui-settings-theme.css?v=1142906450847234350551167" />
-  <script src="./js/console-gate.js?v=0554373584603618424858340"></script>
+  <script src="./js/console-gate.js?v=0938851591022629862151712"></script>
   <script src="./js/coreui-preferences.js?v=1098190863602852320697527"></script>
   <script src="./js/coreui-ui-language.js?v=0139468212041427447470901"></script>
   <link rel="stylesheet" href="./css/coreui-softglass.css?v=0628592918051344087306671" />
@@ -100,7 +100,7 @@
           <h1>EINSTELLUNGEN</h1>
         </div>
       </div>
-      <div class="settings-version">COREAI: TCI INTERFACE // v0.7.55</div>
+      <div class="settings-version">COREAI: TCI INTERFACE // v0.7.56</div>
       <div class="cfg-header-actions" aria-label="Schnellzugriffe Einstellungen">
         <label class="cfg-header-expert" for="settingsExpertToggle" title="Technische Einstellungen in allen Kategorien anzeigen oder ausblenden">
           <span>EXPERTENMODUS</span>
@@ -390,7 +390,7 @@
         <section class="cfg-view" id="view-profil" role="tabpanel" aria-labelledby="tab-profil" tabindex="-1" hidden>
           <header class="cfg-view-head">
             <div><span class="cfg-kicker">MEIN COREAI</span><h2 id="profileTitle">Profil</h2><p>So erscheinen du und deine CoreAI im Chat. Login, Identität und Datenzuordnung bleiben unverändert.</p></div>
-            <button class="settings-action" id="saveProfile" type="button">PROFILE SPEICHERN</button>
+
           </header>
           <div class="cfg-cards">
             <!-- 0.6.84: overview modeled on the ChatGPT profile page (api/profile_stats.php). -->
@@ -413,6 +413,16 @@
                 <div class="po-stat wide" role="listitem"><strong id="poStreakCurrent">-</strong><span>Aktuelle Serie</span></div>
               </div>
               <p class="po-note" id="poTokensNote"></p>
+            </section>
+            <section class="settings-panel cfg-card wide profile-mara-summary" id="assistantProfileSummary" aria-labelledby="assistantSummaryName">
+              <div class="profile-mara-summary-info">
+                <span class="settings-profile-avatar assistant" id="assistantSummaryAvatar" aria-hidden="true">MA</span>
+                <div><span class="cfg-kicker">DEINE COREAI</span><h3 id="assistantSummaryName">Mara</h3>
+                  <p>Persönliches Erscheinungsbild und bis zu fünf Referenzbilder. Die Identität Mara Thorne bleibt erhalten.</p></div>
+              </div>
+              <button class="settings-action compact profile-mara-edit" id="assistantProfileEdit" type="button" aria-haspopup="dialog" aria-controls="assistantProfileModal">
+                <svg aria-hidden="true"><use href="#i-pencil" /></svg> MARA-PROFIL BEARBEITEN
+              </button>
             </section>
             <section class="settings-panel cfg-card wide profile-highlights is-planned" aria-labelledby="poHighlightsTitle">
               <header class="po-section-head"><h3 id="poHighlightsTitle">Highlights</h3><span class="notify-planned">IN VORBEREITUNG</span></header>
@@ -450,6 +460,11 @@
               <header class="po-section-head"><h3 id="poInsightsTitle">Einblicke</h3></header>
               <dl class="po-insights" id="poInsights"></dl>
             </section>
+          </div>
+          <div id="profileEditorModal" class="profile-edit-backdrop" role="dialog" aria-modal="true" aria-labelledby="profileEditorTitle" tabindex="-1" hidden>
+            <div class="profile-edit-panel">
+              <header class="profile-edit-modal-head"><div><span class="cfg-kicker">OPERATOR</span><h3 id="profileEditorTitle">Dein Profil bearbeiten</h3></div>
+                <button type="button" class="profile-edit-close" data-profile-close="user" aria-label="Schließen">×</button></header>
             <article class="settings-panel cfg-card profile-editor-card" id="profileEditorStart">
               <header class="settings-panel-head">
                 <span class="settings-panel-glyph" aria-hidden="true">◈</span>
@@ -474,16 +489,40 @@
               </label>
             </article>
 
+
+              <div class="profile-edit-modal-actions"><button class="settings-action" id="saveProfile" type="button">PROFIL SPEICHERN</button></div>
+            </div>
+          </div>
+          <div id="assistantProfileModal" class="profile-edit-backdrop" role="dialog" aria-modal="true" aria-labelledby="assistantProfileTitle" tabindex="-1" hidden>
+            <div class="profile-edit-panel profile-edit-panel--mara">
+              <header class="profile-edit-modal-head"><div><span class="cfg-kicker">TCI CORE</span><h3 id="assistantProfileTitle">Mara bearbeiten</h3></div>
+                <button type="button" class="profile-edit-close" data-profile-close="assistant" aria-label="Schließen">×</button></header>
             <article class="settings-panel cfg-card violet profile-editor-card assistant">
               <header class="settings-panel-head">
                 <span class="settings-panel-glyph violet" aria-hidden="true">⌬</span>
                 <div><span>COREAI</span><h3>Profil deiner CoreAI</h3></div>
               </header>
               <div class="profile-avatar-editor">
-                <span class="settings-profile-avatar assistant" id="assistantAvatarPreview" aria-label="Vorschau CoreAI-Bild">MA</span>
+                <div class="mara-reference-gallery"><span class="settings-profile-avatar assistant" id="assistantAvatarPreview" aria-label="Vorschau CoreAI-Bild">MA</span><div class="mara-mini-grid" id="maraExtraGallery" aria-label="Vier zusätzliche Referenzbilder von Mara"><div class="mara-mini-cell" data-mara-slot="assistant_ref_1">
+  <button type="button" class="mara-mini-upload" data-mara-upload="assistant_ref_1" aria-label="Referenzbild 1 hochladen"><span class="mara-mini-icon">+</span></button>
+  <button type="button" class="mara-mini-remove" data-mara-remove="assistant_ref_1" aria-label="Referenzbild 1 entfernen" hidden>×</button>
+  <input type="file" id="maraExtraFile1" data-mara-file="assistant_ref_1" class="visually-hidden" accept="image/png,image/jpeg" />
+</div><div class="mara-mini-cell" data-mara-slot="assistant_ref_2">
+  <button type="button" class="mara-mini-upload" data-mara-upload="assistant_ref_2" aria-label="Referenzbild 2 hochladen"><span class="mara-mini-icon">+</span></button>
+  <button type="button" class="mara-mini-remove" data-mara-remove="assistant_ref_2" aria-label="Referenzbild 2 entfernen" hidden>×</button>
+  <input type="file" id="maraExtraFile2" data-mara-file="assistant_ref_2" class="visually-hidden" accept="image/png,image/jpeg" />
+</div><div class="mara-mini-cell" data-mara-slot="assistant_ref_3">
+  <button type="button" class="mara-mini-upload" data-mara-upload="assistant_ref_3" aria-label="Referenzbild 3 hochladen"><span class="mara-mini-icon">+</span></button>
+  <button type="button" class="mara-mini-remove" data-mara-remove="assistant_ref_3" aria-label="Referenzbild 3 entfernen" hidden>×</button>
+  <input type="file" id="maraExtraFile3" data-mara-file="assistant_ref_3" class="visually-hidden" accept="image/png,image/jpeg" />
+</div><div class="mara-mini-cell" data-mara-slot="assistant_ref_4">
+  <button type="button" class="mara-mini-upload" data-mara-upload="assistant_ref_4" aria-label="Referenzbild 4 hochladen"><span class="mara-mini-icon">+</span></button>
+  <button type="button" class="mara-mini-remove" data-mara-remove="assistant_ref_4" aria-label="Referenzbild 4 entfernen" hidden>×</button>
+  <input type="file" id="maraExtraFile4" data-mara-file="assistant_ref_4" class="visually-hidden" accept="image/png,image/jpeg" />
+</div></div></div>
                 <div>
-                  <strong>COREAI PROFILBILD</strong>
-                  <small>Persönliche Darstellung deiner CoreAI und Vorlage für Selbstporträts. Die interne Identität bleibt bestehen.</small>
+                  <strong>MARAS PROFIL UND REFERENZBILDER</strong>
+                  <small>Das große Bild ist Referenz 1. Vier zusätzliche Aufnahmen helfen Mara, ihr Gesicht aus unterschiedlichen Perspektiven zu bewahren. Leere Slots zeigen ein Plus zum Hochladen. Alles bleibt privat.</small>
                   <div class="profile-avatar-actions">
                     <label class="settings-action compact" for="assistantAvatarFile">BILD WÄHLEN</label>
                     <button class="settings-action compact" id="editAssistantAvatar" type="button" hidden>ZUSCHNEIDEN</button>
@@ -497,6 +536,9 @@
                 <input id="assistantDisplayName" type="text" maxlength="64" value="Mara" />
               </label>
             </article>
+
+              <div class="profile-edit-modal-actions"><button class="settings-action" id="saveAssistantProfile" type="button">MARA-PROFIL SPEICHERN</button></div>
+            </div>
           </div>
         </section>
 
@@ -1758,12 +1800,13 @@
     </section>
   </div>
 
-  <script src="./js/coreui-profile-crop.js?v=0895108609815630699003960"></script>
+  <script src="./js/coreui-profile-editors.js?v=0834101877547675447455454"></script>
+  <script src="./js/coreui-profile-crop.js?v=1076353039773468765118234"></script>
   <script src="./js/coreui-settings-menu.js?v=0905731306422182746103357"></script>
   <script src="./js/coreui-settings-tabs.js?v=0131180580469642779294886"></script>
   <script src="./js/coreui-context-slider.js?v=1058131433773441189843644"></script>
   <script src="./js/coreui-shortcuts.js?v=0482832987385640130925630"></script>
-  <script src="./js/settings.js?v=0060270769777558050187290"></script>
+  <script src="./js/settings.js?v=0836387454800285755115599"></script>
   <script src="./js/coreui-personalization-settings.js?v=0244791164211857764278165"></script>
   <script src="./js/coreui-pets.js?v=0221326546368683531249868"></script>
   <script src="./js/coreui-pets-settings.js?v=0189374306291011128432570"></script>
@@ -1777,7 +1820,7 @@
   <script src="./js/coreui-data-controls.js?v=1166361519104893881241691"></script>
   <script src="./js/coreui-notify.js?v=1002976330424203629675926"></script>
   <script src="./js/coreui-notify-settings.js?v=0180900766828442110480559"></script>
-  <script src="./js/coreui-profile-stats.js?v=0127785684761467082142579"></script>
+  <script src="./js/coreui-profile-stats.js?v=1000787433436832654873915"></script>
   <script src="./js/coreui-qr.js?v=1096443357821968405236433"></script>
   <script src="./js/coreui-security-settings.js?v=0797435167152059142030374"></script>
   <script src="./js/coreui-account-settings.js?v=0506515246827297684927059"></script>

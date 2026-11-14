@@ -443,7 +443,17 @@ function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $
   // The original scene is used ONLY to choose canonical Mara angles/styles.
   // The image service never selects from its own policy/prompt boilerplate.
   $sceneHint = $prompt;
-  $prompt = coreui_image_reference_prompt($prompt, $reference, $references, $limit, $userReferenceMode);
+  // Only an authenticated self-portrait may attach additional private Mara
+  // reference slots. The browser cannot choose their UUIDs or another account.
+  $accountReferences = [];
+  if ($reference !== null && str_starts_with($reference, 'custom:')
+      && $uid > 0) require_once __DIR__ . '/profile_store.php';
+  if ($reference !== null && str_starts_with($reference, 'custom:')
+      && function_exists('coreui_profile_assistant_extra_references')) {
+    $accountReferences = coreui_profile_assistant_extra_references($pdo, $uid);
+  }
+  $prompt = coreui_image_reference_prompt($prompt, $reference, $references, $limit,
+    $userReferenceMode, count($accountReferences));
   if (count($references) > COREUI_IMAGE_MAX_REFERENCES) {
     return ['ok'=>false, 'error'=>'bad_reference', 'detail'=>''];
   }
@@ -473,10 +483,19 @@ function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $
   try {
     if ($cancelled()) return ['ok' => false, 'error' => 'cancelled', 'detail' => ''];
     require_once __DIR__ . '/pgen.php';
-    $body = ['prompt' => $prompt, 'size' => $size, 'model' => coreui_pgen_selected()];
+    $selectedPgen = coreui_pgen_selected();
+    $userLicensed = coreui_generator_license_user_accepted($pdo, $uid);
+    // Shared 9B weights never grant another user permission. Fail closed
+    // before creating the job and do not silently fall back to 4B.
+    if ($selectedPgen === COREUI_PGEN_QUALITY && !$userLicensed) {
+      return ['ok'=>false, 'error'=>'license_accept_required', 'detail'=>''];
+    }
+    $body = ['prompt' => $prompt, 'size' => $size, 'model' => $selectedPgen];
+    if ($selectedPgen === COREUI_PGEN_QUALITY) $body['user_license_accepted'] = $userLicensed;
     if ($reference !== null) $body['reference'] = $reference;
     if ($reference === 'default') $body['scene_hint'] = $sceneHint;
     if ($references !== []) $body['references'] = $references;
+    if ($accountReferences !== []) $body['profile_references'] = $accountReferences;
     [$code, $answer] = $http('POST', '/jobs', $body, 10);
     if ($code !== 202 || !is_array($answer) || !is_array($answer['job'] ?? null)) {
       return ['ok' => false, 'error' => (string)($answer['error'] ?? 'image_failed'), 'detail' => (string)($answer['detail'] ?? '')];
@@ -487,7 +506,7 @@ function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $
     // Fail closed if an outdated/partial worker silently ignores references:
     // otherwise a self portrait is text-to-image and FLUX invents a stranger.
     // The worker reports actual resolved -r files (including canonical angles).
-    $requiredReferences = count($references) + ($reference !== null ? 1 : 0);
+    $requiredReferences = count($references) + count($accountReferences) + ($reference !== null ? 1 : 0);
     // If this deployment ships Mara's canonical primary photo, an older
     // worker must not silently fall back to mara_winter.jpg. The selected
     // custom account portrait never inherits the canonical gallery.

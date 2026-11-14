@@ -317,6 +317,14 @@ function coreui_ai_runtime_apply(PDO $pdo, int $uid): array {
   // 0.5.83: a model outside CoreAI whose release was withdrawn falls back to
   // the default Core from the next message on.
   if (!coreui_model_access_allowed($pdo, $uid, (string)$settings['model_override'])) $settings['model_override'] = '';
+  // Previously selected Generator Cores must not survive the account-scoped
+  // consent migration for a user who has not personally accepted the license.
+  require_once __DIR__ . '/core_generator_license.php';
+  if (function_exists('coreui_core_is_generator')
+      && coreui_core_is_generator((string)$settings['model_override'])
+      && !coreui_generator_license_user_accepted($pdo, $uid)) {
+    $settings['model_override'] = '';
+  }
   // #113: the context window is fixed once per request, which is one run. A
   // value saved while an agent job works applies from the next job on, so a
   // running job never reloads the Core half way through.

@@ -3126,3 +3126,182 @@ html[data-coreui-theme="dark"] .settings-body .notify-planned { color: var(--amb
 .settings-body .setting-row:not([hidden]):not(:has(~ .setting-row:not([hidden]))) {
   border-bottom: 0;
 }
+
+
+/* 0.7.56: Profile editors live in their own CoreAI modals, not as bottom cards. */
+.settings-body .profile-mara-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  border-color: var(--violet);
+  background: var(--panel-soft);
+}
+.settings-body .profile-mara-summary-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  min-width: 0;
+  flex: 1 1 280px;
+}
+.settings-body .profile-mara-summary-info .settings-profile-avatar {
+  flex: 0 0 84px;
+  width: 84px;
+  height: 84px;
+}
+.settings-body .profile-mara-summary h3 {
+  margin: 4px 0;
+  color: var(--txt);
+  font-size: 23px;
+  overflow-wrap: anywhere;
+}
+.settings-body .profile-mara-summary p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.35;
+}
+.settings-body .profile-mara-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.settings-body .profile-mara-edit svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+}
+.settings-body .profile-edit-backdrop[hidden] { display: none !important; }
+.settings-body .profile-edit-backdrop {
+  position: fixed;
+  z-index: 11500; /* the existing crop dialog remains above at 12500 */
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+  background: rgba(4, 11, 26, .79);
+  overscroll-behavior: contain;
+}
+.settings-body .profile-edit-panel {
+  width: min(580px, 100%);
+  max-height: calc(100dvh - 28px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  box-sizing: border-box;
+  border: 1px solid var(--line-strong);
+  background: var(--panel-solid);
+  color: var(--txt);
+  padding: 16px;
+  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
+  box-shadow: 0 20px 65px rgba(0,0,0,.42);
+}
+.settings-body .profile-edit-panel--mara { border-color: var(--violet); }
+.settings-body .profile-edit-modal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 12px;
+}
+.settings-body .profile-edit-modal-head h3 {
+  font-size: 23px;
+  margin: 3px 0 0;
+}
+.settings-body .profile-edit-close {
+  min-width: 42px; min-height: 42px;
+  border: 1px solid var(--line-strong);
+  background: var(--panel-soft);
+  color: var(--txt);
+  font-size: 26px;
+  cursor: pointer;
+}
+.settings-body .profile-edit-panel > .profile-editor-card {
+  background: transparent;
+  box-shadow: none;
+  border: 0;
+  padding: 4px 0;
+  width: 100%;
+  margin: 0;
+}
+.settings-body .profile-edit-panel > .profile-editor-card::before { display: none; }
+.settings-body .profile-edit-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid var(--line);
+  margin-top: 15px;
+  padding-top: 13px;
+}
+.settings-body .profile-edit-modal-actions .settings-action { flex: 1 1 auto; }
+.settings-body .profile-edit-backdrop :focus-visible {
+  outline: 2px solid var(--cx);
+  outline-offset: 3px;
+}
+.settings-body .mara-reference-gallery {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.settings-body .mara-reference-gallery > .settings-profile-avatar {
+  width: 134px;
+  height: 134px;
+  flex: 0 0 134px;
+}
+.settings-body .mara-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 64px));
+  gap: 7px;
+}
+.settings-body .mara-mini-cell {
+  width: 64px;
+  height: 64px;
+  position: relative;
+}
+.settings-body .mara-mini-upload {
+  width: 100%;
+  height: 100%;
+  color: var(--cx);
+  background: var(--panel-soft) center / cover no-repeat;
+  border: 1px dashed var(--line-strong);
+  display: grid;
+  place-items: center;
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+  cursor: pointer;
+}
+.settings-body .mara-mini-upload:hover { border-color: var(--cx); }
+.settings-body .mara-mini-upload.has-image {
+  border: 1px solid var(--violet);
+}
+.settings-body .mara-mini-icon {
+  font: 28px/1 "Share Tech Mono", monospace;
+}
+.settings-body .mara-mini-upload.has-image .mara-mini-icon { display: none; }
+.settings-body .mara-mini-remove[hidden] { display: none !important; }
+.settings-body .mara-mini-remove {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--line-strong);
+  background: rgba(8,18,36,.92);
+  color: #ffadad;
+  font: 20px/1 "Share Tech Mono", monospace;
+  cursor: pointer;
+}
+@media (max-width: 590px) {
+  .settings-body .profile-mara-summary { align-items: stretch; }
+  .settings-body .profile-mara-edit { justify-content: center; width: 100%; }
+  .settings-body .profile-edit-panel { padding: 12px; }
+  .settings-body .profile-edit-panel > .profile-editor-card { padding: 2px 0; }
+  .settings-body .profile-edit-panel .profile-avatar-editor { grid-template-columns: minmax(0, 1fr); }
+  .settings-body .mara-reference-gallery { flex-wrap: nowrap; }
+  .settings-body .mara-reference-gallery > .settings-profile-avatar { width: 110px; height: 110px; flex-basis: 110px; }
+  .settings-body .mara-mini-grid { grid-template-columns: repeat(2, minmax(0, 52px)); }
+  .settings-body .mara-mini-cell { width: 52px; height: 52px; }
+}

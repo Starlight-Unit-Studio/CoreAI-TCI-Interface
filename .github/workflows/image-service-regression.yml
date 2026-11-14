@@ -14,6 +14,22 @@ on:
       - 'tools/image_spike/models.json'
       - 'compose.yaml'
       - 'api/image_gen.php'
+      - 'api/profile.php'
+      - 'api/profile_store.php'
+      - 'api/profile_media.php'
+      - 'api/image_reference_consistency.php'
+      - 'database/migrations/042_mara_profile_references.sql'
+      - 'database/migrations/043_pgen_user_license.sql'
+      - 'api/core_generator_license.php'
+      - 'api/ai_settings.php'
+      - 'scripts/profile-reference-selftest.php'
+      - 'scripts/profile-modals-ui-selftest.cjs'
+      - 'js/coreui-profile-editors.js'
+      - 'js/coreui-profile-crop.js'
+      - 'js/coreui-profile-stats.js'
+      - 'js/settings.js'
+      - 'settings.html'
+      - 'css/settings.css'
       - 'api/core_generator_engine.php'
       - 'api/models.php'
       - 'js/coreui-core-mode.js'
@@ -70,10 +86,29 @@ jobs:
           python3 -I scripts/generator-core-selftest.py
       - name: Verify removal and retained standard generator
         run: python3 -I scripts/vision-management-removal-selftest.py
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_sqlite, gd, curl
+          coverage: none
+      - name: Profile reference migrations and modal tests
+        run: |
+          php -l api/profile_store.php
+          php -l api/profile.php
+          php -l api/profile_media.php
+          php -l api/image_reference_consistency.php
+          php scripts/profile-reference-selftest.php
+          node --check js/coreui-profile-editors.js
+          node --check js/coreui-profile-crop.js
+          node --check js/coreui-profile-stats.js
+          node --check js/settings.js
+          node scripts/profile-modals-ui-selftest.cjs
       - name: PHP, JavaScript, Bash syntax
         run: |
           php -l api/image_gen.php
           php -l api/pgen.php
+          php -l api/core_generator_license.php
+          php -l api/ai_settings.php
           php scripts/pgen-selftest.php
           php -l api/core_install.php
           php -l api/core_generator_engine.php

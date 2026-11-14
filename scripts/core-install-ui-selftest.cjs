@@ -39,7 +39,8 @@ function page() {
     'VerdictText', 'Progress', 'BarWrap', 'Bar', 'Step', 'Maint', 'Auto', 'UpdateInfo', 'UpdateNow', 'ToManage', 'Results',
     'Cloud', 'CloudState', 'CloudSteps', 'CloudLink', 'CloudCheck', 'Note', 'Go', 'Cancel', 'Close',
     'GeneratorLicense', 'GeneratorLicenseOpen', 'GeneratorLicenseState', 'Pgen', 'PgenModel',
-    'PgenInfo', 'PgenFeedback', 'PgenApply', 'PgenInstall', 'PgenLicense']
+    'PgenInfo', 'PgenFeedback', 'PgenApply', 'PgenInstall', 'PgenLicense',
+    'PgenLicenseGuard', 'PgenGuardOpen']
     .map(k => k === 'coreInstall' ? k : 'coreInstall' + k)
     .concat(['coreGeneratorLicense', 'coreGeneratorLicensePanel', 'coreGeneratorLicenseText',
       'coreGeneratorLicenseCheck', 'coreGeneratorLicenseNote', 'coreGeneratorLicenseAccept',
@@ -47,7 +48,8 @@ function page() {
   const els = Object.fromEntries(ids.map(id => [id, new Element('div', id)]));
   ['coreInstall', 'coreInstallProgress', 'coreInstallTiers', 'coreInstallMaint', 'coreInstallResults', 'coreInstallCloud',
     'coreInstallCloudSteps', 'coreInstallCloudLink', 'coreInstallToManage', 'coreInstallGeneratorLicense',
-    'coreGeneratorLicense', 'coreInstallPgen', 'coreInstallPgenInstall', 'coreInstallPgenLicense'].forEach(id => { els[id].hidden = true; });
+    'coreGeneratorLicense', 'coreInstallPgen', 'coreInstallPgenInstall', 'coreInstallPgenLicense',
+    'coreInstallPgenLicenseGuard'].forEach(id => { els[id].hidden = true; });
   els.coreInstallAuto.checked = false;
   els.coreGeneratorLicenseCheck.checked = false;
   const doc = {
@@ -139,7 +141,7 @@ function server(opts) {
         return reply(200, {ok: true, pgen: pgen()});
       }
       if (body.action === 'pgen_install') {
-        if (!st.licenseAccepted) return reply(409, {ok: false, error: 'license_accept_required'});
+        // Download is independent of explicit consent; activating 9B is not.
         st.pgenNineLoading = true;
         return reply(200, {ok: true, pgen: pgen()});
       }
@@ -584,15 +586,30 @@ assert.equal(api.gb(20 * 1073741824), '20 GB');
   assert.equal(els.coreInstallPgenApply.disabled, true, 'active pGen cannot be applied twice');
   els.coreInstallPgenModel.value = 'flux2-klein-9b';
   els.coreInstallPgenModel.handlers.change();
-  assert.match(els.coreInstallPgenInfo.textContent, /FLUX.2 9B.*nicht installiert/);
-  assert.equal(els.coreInstallPgenInstall.hidden, false);
-  assert.equal(els.coreInstallPgenInstall.disabled, true, '9B cannot install before license acceptance');
-  await els.coreInstallPgenLicense.handlers.click();
+  assert.equal(els.coreInstallPgenModel.value, 'flux2-klein-4b',
+    '9B is visible but unselectable before license acceptance');
+  assert.equal(els.coreInstallPgenLicenseGuard.hidden, false);
+  assert.equal(els.coreInstallPgenInstall.hidden, true,
+    'locked 9B option keeps the standard 4B selection active');
+  // Server can begin its hardware-approved auto-download without license UI consent.
+  const beforeLicense = await srv.fetch('./api/user_settings.php', {
+    method: 'POST', body: JSON.stringify({action: 'pgen_install', model: 'flux2-klein-9b'})
+  });
+  assert.equal(beforeLicense.ok, true, '9B download is allowed before explicit UI consent');
+  assert.equal(srv.st.licenseAccepted, false, 'downloading does not mark the license accepted');
+  srv.st.pgenNineLoading = false;
+  await els.coreInstallPgenGuardOpen.handlers.click();
   els.coreGeneratorLicenseCheck.checked = true;
   els.coreGeneratorLicenseCheck.handlers.change();
   await els.coreGeneratorLicenseAccept.handlers.click();
   assert.equal(srv.st.licenseAccepted, true);
-  assert.equal(els.coreInstallPgenInstall.disabled, false, 'license unlocks 9B installation');
+  assert.equal(els.coreInstallPgenLicenseGuard.hidden, true,
+    'license notice disappears after server-confirmed acceptance');
+  els.coreInstallPgenModel.value = 'flux2-klein-9b';
+  els.coreInstallPgenModel.handlers.change();
+  assert.match(els.coreInstallPgenInfo.textContent, /FLUX.2 9B.*nicht installiert/);
+  assert.equal(els.coreInstallPgenInstall.hidden, false);
+  assert.equal(els.coreInstallPgenInstall.disabled, false, 'manual retry available after acceptance');
   await els.coreInstallPgenInstall.handlers.click();
   assert.deepEqual(JSON.parse(srv.calls.filter(x => x.init.method === 'POST').pop().init.body),
     {action: 'pgen_install', model: 'flux2-klein-9b'});

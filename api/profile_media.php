@@ -8,7 +8,7 @@ require_once __DIR__ . '/profile_store.php';
 $pdo = stu_pdo();
 $uid = stu_require_user_id();
 $slot = strtolower(trim((string)($_GET['slot'] ?? '')));
-if (!in_array($slot, ['user', 'assistant'], true)) {
+if (!coreui_profile_media_slot($slot)) {
   http_response_code(404);
   exit;
 }

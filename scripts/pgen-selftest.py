@@ -78,6 +78,23 @@ with tempfile.TemporaryDirectory(prefix='pgen-selftest-') as name:
     assert svc.public(job9)['model'] == profiles.QUALITY
     assert svc.public(job4)['model'] == profiles.STANDARD
     assert svc.health()['pgen'][profiles.QUALITY]['ready']
+    # Regression: installing weights requires suitable hardware but does not
+    # require an explicit CoreAI license-checkbox receipt. 9B inference does.
+    assert not svc.quality_license_accepted()
+    from unittest.mock import patch
+    existing_paths = svc.profile_paths.pop(profiles.QUALITY)
+    svc.quality_hardware_ready = lambda: True
+    with patch.object(worker.threading, 'Thread') as thread:
+        assert svc.install_quality(), '9B installation must start before UI consent'
+        thread.assert_called_once()
+        thread.return_value.start.assert_called_once()
+    assert not svc.quality_license_accepted(), 'download must not silently record consent'
+    svc.pgen_installing = False
+    svc.profile_paths[profiles.QUALITY] = existing_paths
+    import inspect
+    handler_source = inspect.getsource(worker.make_handler)
+    assert "model_id == PGEN.QUALITY and data.get('user_license_accepted') is not True" in handler_source, (
+        '9B jobs must reject requests lacking the requesting user account consent flag')
     try:
         svc.create('bad model', 'normal', 1, model_id='arbitrary')
     except ValueError as error:
