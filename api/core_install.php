@@ -34,6 +34,7 @@ declare(strict_types=1);
  */
 
 require_once __DIR__ . '/model_catalog.php';
+require_once __DIR__ . '/core_generator_license.php';
 require_once __DIR__ . '/ai_context_estimate.php';
 
 const COREUI_CORE_INSTALL_PERMISSION_MAX = 1; // admin and system admin
@@ -280,14 +281,16 @@ function coreui_core_install_check(string $tier, bool $hardware = true): array {
       ? coreui_core_install_verdict(coreui_core_install_hardware(),
         ['download_gb'=>$hasSource ? 0.0 : 8.2, 'active_b'=>9.0])
       : ['verdict'=>null, 'blocked'=>false, 'rows'=>[], 'ram_need'=>null];
+    $accepted = coreui_generator_license_accepted();
     $check['rows'][] = ['key'=>'license', 'label'=>'Lizenz',
-      'value'=>'FLUX Non-Commercial License v2.1: nur lizenzkonforme Nutzung.',
-      'state'=>'warn'];
+      'value'=>$accepted ? 'FLUX Non-Commercial License v2.1 akzeptiert.'
+        : 'FLUX Non-Commercial License v2.1 muss vor der Installation gelesen und akzeptiert werden.',
+      'state'=>$accepted ? 'ok' : 'warn'];
     return ['tier'=>'generator', 'label'=>COREUI_CORE_GENERATOR_LABEL,
       'base'=>COREUI_CORE_GENERATOR_BASE, 'core'=>COREUI_CORE_GENERATOR_NAME,
       'download_gb'=>$hasSource ? 0.0 : 8.2, 'installed'=>$installed,
       'cloud_base'=>null, 'source_present'=>$hasSource,
-      'requires_license'=>!$hasSource]
+      'license_accepted'=>$accepted, 'requires_license'=>!$accepted]
       + $check;
   }
   $entry = COREUI_CORE_INSTALL_CATALOG[$tier] ?? null;
@@ -364,7 +367,7 @@ function coreui_core_install_status(): ?array {
 function coreui_core_install_begin(array $check): array {
   $generator = $check['tier'] === 'generator';
   $state = ['kind'=>'install', 'tier'=>$check['tier'], 'label'=>$check['label'], 'base'=>$check['base'], 'core'=>$check['core'],
-    'phase'=>$generator ? 'create' : 'pull', 'step'=>'Startet …', 'completed'=>0, 'total'=>0, 'percent'=>0, 'layers'=>[],
+    'phase'=>'pull', 'step'=>'Startet …', 'completed'=>0, 'total'=>0, 'percent'=>0, 'layers'=>[],
     'started_at'=>time()];
   coreui_core_install_write($state);
   return $state;
@@ -475,6 +478,13 @@ function coreui_core_install_post(string $endpoint, array $body, int $timeout): 
 /** The whole job: pull, create from the template, check the result. A cloud Core is only pulled. */
 function coreui_core_install_run(array $state): array {
   $generator = ($state['tier'] ?? '') === 'generator';
+  if ($generator && !coreui_generator_license_accepted()) {
+    $state['phase'] = 'error';
+    $state['error'] = 'license_accept_required';
+    $state['message'] = 'FLUX-Lizenz nicht akzeptiert. Die Installation wurde nicht begonnen.';
+    coreui_core_install_write($state);
+    return $state;
+  }
   $basePreexisting = !empty($state['cloud']) || coreui_core_base_was_present((string)$state['base']);
   // Both TCI families share pull, verified create and temporary source cleanup.
   $state = coreui_core_install_pull($state);
@@ -642,7 +652,8 @@ function coreui_core_manage_rows(array $models): array {
     'local'=>$generator !== null ? [$generator] : [], 'cloud'=>[], 'alias_of'=>null,
     'removable'=>$generator !== null && !coreui_core_same($generator, $default) ? [$generator] : [],
     'cloud_base'=>null, 'cloud_missing'=>false,
-    'status'=>$generator !== null ? 'installed' : 'missing'];
+    'status'=>$generator !== null ? 'installed' : 'missing',
+    'license_accepted'=>coreui_generator_license_accepted()];
   return $rows;
 }
 
