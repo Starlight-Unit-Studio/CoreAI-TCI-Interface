@@ -34,6 +34,13 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check version rule against current main on this PR
+        if: github.event_name == 'pull_request'
+        run: |
+          base_version="$(git show origin/main:VERSION | tr -d '\\r\\n')"
+          python3 scripts/version-merge-check.py --base-version "$base_version"
       - name: Python syntax and offline image worker
         run: |
           python3 -m py_compile tools/image/image_service.py scripts/image-service-selftest.py scripts/vision-management-removal-selftest.py
