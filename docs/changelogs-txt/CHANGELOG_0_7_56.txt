@@ -1,0 +1,49 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.56
+Datum: 14.11.2026
+
+PGEN CORE: AUTOMATISCHE INSTALLATION
+- 4B bleibt als Apache-2.0-Standardprofil verfügbar.
+- FLUX.2-klein 9B wird beim Engine-Start und somit auch nach einem
+  Update automatisch vorbereitet, sobald genügend RAM und Speicherplatz
+  vorhanden sind und die passende FLUX Non-Commercial License v2.1
+  bereits angenommen wurde.
+- Wenn die Lizenz fehlt, beginnt KEIN Download. Der pGen-Bereich
+  bleibt sichtbar, die 9B-Option ist deaktiviert.
+- Sichtbarer Hinweis mittig in der pGen-Karte: "Lizenz bitte zustimmen".
+- Nach bestätigter Lizenz wird der bestehende lokale Bildworker
+  automatisch zum Download aufgefordert; kein erneuter Admin-Installations-
+  klick nötig. Die Auswahl als aktives pGen-Profil bleibt bewusst separat.
+- Download und Gewichte verwenden die vorhandene SHA-256-Validierung.
+  Der erfolgreiche Bildtest wird bei Updates weiterhin übernommen.
+- CPU-only und Mindesthardwareprüfung bleiben unverändert.
+
+PROFIL-EDITOR: MODALS
+- Der Benutzer-Profil-Editor hängt nicht mehr unten an der Seite.
+  Der Stift in der Profilübersicht öffnet ein modales Bearbeitungsfenster.
+- Mara erhält eine eigene gut sichtbare Profilkarte direkt bei der
+  Übersicht, mit Bearbeiten-Button und eigenem Modal.
+- Das bisherige Zuschneidefenster öffnet weiterhin darüber.
+- Benutzer-Anzeigename und Mara-Rufname werden unabhängig gespeichert,
+  ohne ungesicherte Änderungen der anderen Karte mitzuschreiben.
+- Handy-Tauglichkeit: Scroll-Lock, Tastatur-Fokus, Escape,
+  Schließen-Button und Klick auf den Hintergrund.
+
+VIER ZUSÄTZLICHE MARA-REFERENZEN
+- Das Hauptprofilbild bleibt visuelle Referenz 1.
+- Vier kleinere Referenzslots neben dem Hauptbild, leere Slots zeigen
+  ein Plus zum Hochladen; vorhandene Bilder lassen sich ersetzen/löschen.
+- Kontobezogene Speicherung in der bestehenden privaten Profil-Medien-
+  verwaltung mit Original, Crop-Daten, Größen-/Dateiprüfung.
+- Datenbankmigration 042 ergänzt ENUM-Slots assistant_ref_1 bis _4.
+- Bei Maras Selbstporträts werden zusätzlich hochgeladene Referenzen
+  account-geprüft an den echten Bildworker gereicht, als EIN UND DIESELBE
+  Mara Thorne, nicht als andere Personen oder nur UI-Vorschauen.
+- Andere Konten dürfen diese Referenzdateien nicht lesen oder auswählen.
+- Keine zusätzliche Modell- oder Cloud-Pflicht.
+
+REGRESSIONEN
+- PHP-Profilreferenzen, SQL-Migration und private Medien-Slots.
+- JavaScript-Modalbedienung und vollständiger 4-Slot-Aufbau.
+- GitHub-Prüfungen für Worker, pGen und Cache-Fingerprints.
+
+Version: 0.7.56
