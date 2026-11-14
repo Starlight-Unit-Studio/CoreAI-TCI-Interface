@@ -483,7 +483,15 @@ function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $
   try {
     if ($cancelled()) return ['ok' => false, 'error' => 'cancelled', 'detail' => ''];
     require_once __DIR__ . '/pgen.php';
-    $body = ['prompt' => $prompt, 'size' => $size, 'model' => coreui_pgen_selected()];
+    $selectedPgen = coreui_pgen_selected();
+    $userLicensed = coreui_generator_license_user_accepted($pdo, $uid);
+    // Shared 9B weights never grant another user permission. Fail closed
+    // before creating the job and do not silently fall back to 4B.
+    if ($selectedPgen === COREUI_PGEN_QUALITY && !$userLicensed) {
+      return ['ok'=>false, 'error'=>'license_accept_required', 'detail'=>''];
+    }
+    $body = ['prompt' => $prompt, 'size' => $size, 'model' => $selectedPgen];
+    if ($selectedPgen === COREUI_PGEN_QUALITY) $body['user_license_accepted'] = $userLicensed;
     if ($reference !== null) $body['reference'] = $reference;
     if ($reference === 'default') $body['scene_hint'] = $sceneHint;
     if ($references !== []) $body['references'] = $references;
