@@ -130,7 +130,7 @@ function coreui_image_reference_prompt(string $scene, ?string $selfReference, ar
 
   $block = coreui_image_reference_block($mode, $multiple)
     . ($styleOverlay ? $styleFull : '')
-    . ($accountPortrait ? $portraitFull : '')
+    . ($accountPortrait ? $portraitFull : '') . $gallery
     . ($defaultPortrait ? $defaultFull : '');
   // Prefer the complete 1:1 facial/anatomy lock with a SHORT Mara-gallery
   // note over a shortened identity lock with verbose gallery wording.
@@ -146,6 +146,7 @@ function coreui_image_reference_prompt(string $scene, ?string $selfReference, ar
     $block = coreui_image_reference_block($mode, $multiple, true)
       . ($styleOverlay ? $styleFull : '')
       . ($accountPortrait ? $portraitFull : '')
+      . ($accountExtras > 0 ? ' ACCOUNT GALLERY: All account photos show the SAME Mara, never different people.' : '')
       . ($defaultPortrait ? $defaultFull : '');
   }
   if (mb_strlen($block) + 1 + mb_strlen($scene) > $limit) {
@@ -166,6 +167,7 @@ function coreui_image_reference_prompt(string $scene, ?string $selfReference, ar
     if ($multiple) $block .= ' MULTI-REFERENCE: Keep all sources separate.';
     if ($styleOverlay) $block .= ' OTHER REFERENCES (STYLE ONLY): Copy styling only.';
     if ($accountPortrait) $block .= ' ACCOUNT PORTRAIT: The pictured person IS TCI: Mara Thorne herself, EXACT SAME identity.';
+    if ($accountExtras > 0) $block .= ' ACCOUNT GALLERY: SAME Mara in all pictures.';
     if ($defaultPortrait) $block .= ' TCI SELF-PORTRAIT: The pictured person IS TCI: Mara Thorne herself. Other canonical Mara portraits are SAME woman, holograms are STYLE ONLY.';
   }
   if (mb_strlen($block) + 1 >= $limit) {
