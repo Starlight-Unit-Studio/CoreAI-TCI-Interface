@@ -1,0 +1,62 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.56
+Datum: 14.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Ausgangsbasis: 0.7.55, PR #311 gemerged
+Branch: feature/pgen-auto-profile-modals-mara-references-20261114
+
+BETREIBERWUNSCH
+1. Beim Update 9B automatisch installieren, sofern die Hardware passt.
+   Vor Lizenzannahme darf 9B nicht gewaehlt werden, die pGen-Karte soll
+   sichtbar bleiben mit kleiner Nachricht "Lizenz bitte zustimmen".
+2. Benutzer-Profil-Editor nicht mehr unten auf der Profilseite, sondern
+   als Modal beim Klick auf den Stift der Profiluebersicht.
+3. Maras Profil-Editor sinnvoll zuordnen und neben dem grossen
+   Hauptreferenzbild vier kleinere benutzerdefinierte Referenzbilder
+   anzeigen. Leerer Slot zeigt ein Plus fuer Upload.
+
+UMSETZUNG
+- Bildworker: Nach 4B-Start prueft er 9B-Pins und bei fehlendem 9B-Lock
+  RAM (31 GiB gesamt und 22.605 MB Peak + Sicherheitsreserve),
+  Speicherplatz und einen hashgebundenen Lizenzbeleg. Er startet dann
+  den bestehenden validierten 9B-Download asynchron.
+- API bei Lizenzannahme: Wenn Engine und Hardware bereit sind, startet
+  sie denselben pGen-Installationsweg sofort.
+- Vor Lizenz: die 9B-Option bleibt im Dropdown sichtbar, aber
+  disabled; mittiger Kasten "Lizenz bitte zustimmen" mit Lizenzbutton.
+  Ein bloesser API-Boolean reicht nicht. Keine lizenzfreie 9B-Installation.
+- settings.html: Benutzer-Modal und getrenntes Mara-Modal,
+  Mara-Info-Karte direkt neben/unter dem Profil-Header; bisherige
+  Editor-Karten aus dem Seitenschluss entfernt.
+- js/coreui-profile-editors.js: Fokus, Esc, Overlay, Scroll-Lock,
+  Close/Open. Das vorhandene Crop-Modal liegt darueber.
+- js/settings.js: getrennte Formularspeicherung; vier Extra-Slots
+  mit Upload, Zuschnitt, Wechsel und Entfernen.
+- api/profile.php: nur der Mara-Rufname kann jetzt isoliert gespeichert
+  werden, ohne andere Einstellungen mitzuschreiben.
+- database/migrations/042_mara_profile_references.sql: die bestehende
+  ENUM-Spalte um assistant_ref_1..4 erweitert.
+- api/profile_store.php und api/profile_media.php: dieselbe private
+  Medienablage, Bildvalidierung und Kontozuordnung auch fuer die vier Slots.
+- api/image_gen.php und tools/image/image_service.py: accountgepruefte
+  zusaetzliche Mara-Portrait-UUIDs in echte Bildauftraege uebertragen.
+  Referenzen zeigen immer DIESELBE TCI Mara Thorne (fuenf Ansichten),
+  keine fuenf fremden Personen. Nutzer-Uploads bleiben getrennt.
+
+SICHERHEIT UND BETRIEB
+- Beim Update ohne Lizenz werden keine 9B-Gewichte gezogen.
+  Nach spaeterer Lizenzannahme startet die Installation automatisch,
+  sofern Hardware und Bilddienst bereit sind.
+- Alte 4B-Auswahl bleibt Default und funktioniert unabhaengig von 9B.
+- Medienslots lassen sich nur mit Session, CSRF, Account-ID, eigenen
+  Originaldateien und Media-UUIDs verwenden. Keine fremden Medien.
+- Ein reales Update auf dem Betreiber-Server und ein echter GPU/CPU
+  End-to-End-Bildauftrag sind nicht durch die GitHub-Tests ersetzt.
+- Version 0.7.56 (ein Merge = eine neue Versionsnummer).
+
+TESTS
+scripts/profile-reference-selftest.php
+scripts/profile-modals-ui-selftest.cjs
+.github/workflows/image-service-regression.yml
+Weitere bestehende Core- und Bildtests laufen im GitHub-PR.
+
+VERSION 0.7.56
