@@ -5,17 +5,20 @@ PGEN CORE: AUTOMATISCHE INSTALLATION
 - 4B bleibt als Apache-2.0-Standardprofil verfügbar.
 - FLUX.2-klein 9B wird beim Engine-Start und somit auch nach einem
   Update automatisch vorbereitet, sobald genügend RAM und Speicherplatz
-  vorhanden sind und die passende FLUX Non-Commercial License v2.1
-  bereits angenommen wurde.
-- Wenn die Lizenz fehlt, beginnt KEIN Download. Der pGen-Bereich
-  bleibt sichtbar, die 9B-Option ist deaktiviert.
+  vorhanden sind, unabhaengig von der expliziten Lizenzannahme im UI.
+- Wenn die Lizenz noch nicht explizit bestaetigt wurde, darf der
+  verifizierte Download trotzdem starten. 9B bleibt sichtbar, die
+  Auswahl und Bilderzeugung sind jedoch deaktiviert.
 - Sichtbarer Hinweis mittig in der pGen-Karte: "Lizenz bitte zustimmen".
-- Nach bestätigter Lizenz wird der bestehende lokale Bildworker
-  automatisch zum Download aufgefordert; kein erneuter Admin-Installations-
-  klick nötig. Die Auswahl als aktives pGen-Profil bleibt bewusst separat.
+- Nach Lizenzbestaetigung wird das bereits installierte Profil zur Nutzung
+  freigegeben. Ein fehlender Download kann automatisch fortgesetzt werden.
+  Die Auswahl als aktives pGen-Profil bleibt bewusst separat.
 - Download und Gewichte verwenden die vorhandene SHA-256-Validierung.
   Der erfolgreiche Bildtest wird bei Updates weiterhin übernommen.
-- CPU-only und Mindesthardwareprüfung bleiben unverändert.
+- CPU-only und Mindesthardwarepruefung bleiben unveraendert.
+- Rechtlicher Hinweis: Der FLUX-Lizenztext betrachtet bereits das
+  Herunterladen als Zustimmung. Die explizite CoreAI-Auswahl bleibt
+  trotzdem bis zum separaten Bestaetigen gesperrt.
 
 PROFIL-EDITOR: MODALS
 - Der Benutzer-Profil-Editor hängt nicht mehr unten an der Seite.
