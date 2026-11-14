@@ -38,7 +38,8 @@ function page() {
   const ids = ['coreInstall', 'Kicker', 'Title', 'Lead', 'Tech', 'Tiers', 'TierList', 'Check', 'Rows', 'Verdict', 'VerdictTitle',
     'VerdictText', 'Progress', 'BarWrap', 'Bar', 'Step', 'Maint', 'Auto', 'UpdateInfo', 'UpdateNow', 'ToManage', 'Results',
     'Cloud', 'CloudState', 'CloudSteps', 'CloudLink', 'CloudCheck', 'Note', 'Go', 'Cancel', 'Close',
-    'GeneratorLicense', 'GeneratorLicenseOpen', 'GeneratorLicenseState']
+    'GeneratorLicense', 'GeneratorLicenseOpen', 'GeneratorLicenseState', 'Pgen', 'PgenModel',
+    'PgenInfo', 'PgenFeedback', 'PgenApply', 'PgenInstall', 'PgenLicense']
     .map(k => k === 'coreInstall' ? k : 'coreInstall' + k)
     .concat(['coreGeneratorLicense', 'coreGeneratorLicensePanel', 'coreGeneratorLicenseText',
       'coreGeneratorLicenseCheck', 'coreGeneratorLicenseNote', 'coreGeneratorLicenseAccept',
@@ -46,7 +47,7 @@ function page() {
   const els = Object.fromEntries(ids.map(id => [id, new Element('div', id)]));
   ['coreInstall', 'coreInstallProgress', 'coreInstallTiers', 'coreInstallMaint', 'coreInstallResults', 'coreInstallCloud',
     'coreInstallCloudSteps', 'coreInstallCloudLink', 'coreInstallToManage', 'coreInstallGeneratorLicense',
-    'coreGeneratorLicense'].forEach(id => { els[id].hidden = true; });
+    'coreGeneratorLicense', 'coreInstallPgen', 'coreInstallPgenInstall', 'coreInstallPgenLicense'].forEach(id => { els[id].hidden = true; });
   els.coreInstallAuto.checked = false;
   els.coreGeneratorLicenseCheck.checked = false;
   const doc = {
@@ -88,11 +89,24 @@ function server(opts) {
   const calls = [];
   const st = {install: opts.install || null, statuses: (opts.statuses || []).slice(), auto: opts.auto || {enabled: false, last: null, next: null},
     cloud: opts.cloud || {version: '0.40.6', version_ok: true, min_version: '0.12.0', account: {state: 'signed_out', signin_url: SIGNIN}},
-    tiers: opts.tiers || TIERS, licenseAccepted: opts.licenseAccepted === true};
+    tiers: opts.tiers || TIERS, licenseAccepted: opts.licenseAccepted === true,
+    pgenActive: 'flux2-klein-4b', pgenNineReady: opts.pgenNineReady === true,
+    pgenNineLoading: false};
+  const pgen = () => ({active: st.pgenActive, engine_ready: true,
+    license_accepted: st.licenseAccepted, models: [
+      {id: 'flux2-klein-4b', label: 'FLUX.2 Standard (4B)', license: 'Apache-2.0',
+        ready: true, installed: true, loading: false, seconds_512: 67, ram_1024_gb: 14.4},
+      {id: 'flux2-klein-9b', label: 'FLUX.2 9B', license: 'FLUX Non-Commercial License v2.1',
+        ready: st.pgenNineReady && st.licenseAccepted, installed: st.pgenNineReady,
+        loading: st.pgenNineLoading, seconds_512: 137, ram_1024_gb: 22.6}
+    ]});
   const reply = (status, body) => Promise.resolve({ok: status < 400, status, json: () => Promise.resolve(body)});
   const fetch = (url, init) => {
     calls.push({url, init});
     if (opts.offline) return Promise.reject(new Error('offline'));
+    if (url === './api/user_settings.php?pgen=1') {
+      return reply(200, {ok: true, pgen: pgen(), csrf_token: 'tokPgen'});
+    }
     if (url === './api/user_settings.php?core_generator_license=1') {
       return reply(200, {ok: true, license: {name: 'FLUX Non-Commercial License v2.1',
         text: 'FLUX Non-Commercial License v2.1\nBlack Forest Labs: original license text in offline fixture.',
@@ -120,6 +134,15 @@ function server(opts) {
     if (init.method === 'POST') {
       if (opts.refuse) return reply(409, {ok: false, error: opts.refuse});
       const body = JSON.parse(init.body);
+      if (body.action === 'pgen_select') {
+        st.pgenActive = body.model;
+        return reply(200, {ok: true, pgen: pgen()});
+      }
+      if (body.action === 'pgen_install') {
+        if (!st.licenseAccepted) return reply(409, {ok: false, error: 'license_accept_required'});
+        st.pgenNineLoading = true;
+        return reply(200, {ok: true, pgen: pgen()});
+      }
       if (body.action === 'core_generator_license_accept') {
         assert.equal(body.sha256, 'a'.repeat(64));
         assert.equal(body.accepted, true);
