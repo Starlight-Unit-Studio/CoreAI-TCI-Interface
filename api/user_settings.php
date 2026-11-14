@@ -452,7 +452,7 @@ if (($body['action'] ?? '') === 'core_uninstall') {
   stu_require_permission_at_most(COREUI_CORE_INSTALL_PERMISSION_MAX, $pdo);
   if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
   $tier = trim((string)($body['tier'] ?? ''));
-  if (!isset(COREUI_CORE_INSTALL_CATALOG[$tier])) stu_json(['ok'=>false, 'error'=>'unknown_tier'], 400);
+  if ($tier !== 'generator' && !isset(COREUI_CORE_INSTALL_CATALOG[$tier])) stu_json(['ok'=>false, 'error'=>'unknown_tier'], 400);
   try {
     $rows = array_column(coreui_core_manage_rows(coreui_ollama_models()), null, 'tier');
     $lock = coreui_core_install_lock();
@@ -490,7 +490,7 @@ if (($body['action'] ?? '') === 'core_update') {
   stu_require_permission_at_most(COREUI_CORE_INSTALL_PERMISSION_MAX, $pdo);
   if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
   $onlyTier = trim((string)($body['tier'] ?? ''));
-  if ($onlyTier !== '' && !isset(COREUI_CORE_INSTALL_CATALOG[$onlyTier])) stu_json(['ok'=>false, 'error'=>'unknown_tier'], 400);
+  if ($onlyTier !== '' && $onlyTier !== 'generator' && !isset(COREUI_CORE_INSTALL_CATALOG[$onlyTier])) stu_json(['ok'=>false, 'error'=>'unknown_tier'], 400);
   try {
     $plan = array_values(array_filter(coreui_core_update_plan(coreui_ollama_models()),
       static fn(array $item): bool => $onlyTier === '' || $item['tier'] === $onlyTier));
