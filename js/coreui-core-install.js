@@ -619,6 +619,19 @@
       });
     }
 
+    if (el.GeneratorLicenseOpen) el.GeneratorLicenseOpen.addEventListener('click', function () {
+      return openLicense(el.GeneratorLicenseOpen);
+    });
+    if (licenseEl.Check) licenseEl.Check.addEventListener('change', function () {
+      if (licenseEl.Accept) licenseEl.Accept.disabled = !licenseEl.Check.checked ||
+        !state.licenseLoaded || state.licenseBusy || state.licenseAccepted;
+    });
+    if (licenseEl.Accept) licenseEl.Accept.addEventListener('click', acceptLicense);
+    if (licenseEl.Cancel) licenseEl.Cancel.addEventListener('click', closeLicense);
+    if (licenseEl.Close) licenseEl.Close.addEventListener('click', closeLicense);
+    if (licenseEl.Root) licenseEl.Root.addEventListener('click', function (event) {
+      if (event && event.target === licenseEl.Root) closeLicense();
+    });
     if (el.Go) el.Go.addEventListener('click', function () { return install(); });
     if (el.UpdateNow) el.UpdateNow.addEventListener('click', function () { return updateNow(); });
     if (el.ToManage) el.ToManage.addEventListener('click', function () { return manage(); });
@@ -639,7 +652,11 @@
     if (el.Cancel) el.Cancel.addEventListener('click', function () { close(); });
     if (el.Close) el.Close.addEventListener('click', function () { close(); });
     root.addEventListener('click', function (event) { if (event && event.target === root) close(); });
-    doc.addEventListener('keydown', function (event) { if (event.key === 'Escape' && isOpen()) close(); });
+    doc.addEventListener('keydown', function (event) {
+      if (event.key !== 'Escape') return;
+      if (licenseEl.Root && !licenseEl.Root.hidden) closeLicense();
+      else if (isOpen()) close();
+    });
 
     return {open: open, manage: manage, close: close, install: install, updateNow: updateNow, setAuto: setAuto,
       refreshManage: function () { return state.mode === 'manage'
