@@ -184,7 +184,7 @@ services:
     read_only: true
     tmpfs:
       - /tmp:size=2g
-    mem_limit: 20g
+    mem_limit: 30g
     environment:
       COREAI_IMAGE_PORT: ${COREUI_IMAGE_PORT:-18791}
       COREAI_IMAGE_THREADS: ${COREUI_IMAGE_THREADS:-0}
