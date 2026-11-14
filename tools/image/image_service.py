@@ -234,7 +234,9 @@ class Service:
         self.state_lock = threading.Lock()
         self.pgen_lock = self.models / 'pgen-9b.json'
         self.profiles: dict[str, dict] = {PGEN.STANDARD: registry}
-        self.profile_paths: dict[str, dict] = {}
+        # Keep the 4B profile available to existing unit-level reference logic.
+        # The HTTP handler still requires self.ready before accepting any image job.
+        self.profile_paths: dict[str, dict] = {PGEN.STANDARD: self.paths}
         self.pgen_loading = False
         self.pgen_error = ''
         self.pgen_installing = False
