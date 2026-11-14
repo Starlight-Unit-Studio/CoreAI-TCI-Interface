@@ -25,7 +25,7 @@ for (let n = 1; n <= 4; n++) {
 }
 assert(!html.includes('>PROFILE SPEICHERN</button>\n          </header>'),
   'old page-level profile save button is gone');
-assert(html.indexOf('id="profileEditorModal"') > html.indexOf('</div>\n          </div>'),
+assert(/<\/section>\s*<\/div>\s*<div id="profileEditorModal"/.test(html),
   'user editor stays outside the visible profile card grid');
 assert(styles.includes('.profile-edit-backdrop') && styles.includes('.mara-mini-grid'));
 assert(settings.includes("openAvatarCrop(slot, file)") && settings.includes("deleteAvatar(slot)"));
