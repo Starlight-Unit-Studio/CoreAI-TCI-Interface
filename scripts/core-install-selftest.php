@@ -200,6 +200,7 @@ install_test(str_starts_with($license['text'], 'FLUX Non-Commercial License v2.1
   && !$license['accepted'], 'original license text is bundled and initially unaccepted');
 install_test(install_throws(fn() => coreui_generator_license_accept(7, str_repeat('0', 64)),
     'generator_license_version_changed'), 'stale or forged license hash is rejected');
+@mkdir($cache, 0775, true);
 coreui_generator_license_accept(7, $license['sha256']);
 install_test(coreui_generator_license_accepted()
   && coreui_generator_license_info(false)['accepted'], 'hash-bound server receipt is persisted');
