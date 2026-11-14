@@ -553,6 +553,10 @@
       <h3 class="core-install-title" id="coreInstallTitle">Core installieren</h3>
       <p class="core-install-lead" id="coreInstallLead"></p>
       <p class="core-install-tech" id="coreInstallTech"></p>
+      <section class="core-install-generator-license" id="coreInstallGeneratorLicense" hidden>
+        <button class="core-install-btn core-install-license-open" type="button" id="coreInstallGeneratorLicenseOpen">FLUX.2-Lizenz ansehen</button>
+        <span class="core-install-license-state" id="coreInstallGeneratorLicenseState">Zustimmung erforderlich</span>
+      </section>
       <section class="core-install-tiers" id="coreInstallTiers" aria-labelledby="coreInstallTiersTitle" hidden>
         <h4 id="coreInstallTiersTitle">STUFEN</h4>
         <ul class="core-install-tierlist" id="coreInstallTierList"></ul>
@@ -613,6 +617,28 @@
         <button class="core-install-btn core-install-btn--go" id="coreInstallGo" type="button">Installieren</button>
       </div>
     </div>
+  </div>
+
+  <div class="core-generator-license" id="coreGeneratorLicense" hidden>
+    <section class="core-generator-license-panel" role="dialog" aria-modal="true" aria-labelledby="coreGeneratorLicenseTitle" aria-describedby="coreGeneratorLicenseIntro" tabindex="-1">
+      <div class="core-install-head">
+        <span class="core-mode-kicker">MODELLLIZENZ // FLUX.2</span>
+        <button class="core-install-x" id="coreGeneratorLicenseClose" type="button" aria-label="Lizenzfenster schließen">×</button>
+      </div>
+      <h3 class="core-install-title" id="coreGeneratorLicenseTitle">FLUX Non-Commercial License v2.1</h3>
+      <p class="core-install-lead" id="coreGeneratorLicenseIntro">Original-Lizenztext von Black Forest Labs. Bitte vollständig prüfen, bevor du den TCI Core Generator installierst.</p>
+      <p class="core-generator-license-source"><a href="https://github.com/black-forest-labs/flux2/blob/main/model_licenses/LICENSE-FLUX-NON-COMMERICAL" target="_blank" rel="noopener noreferrer">Offizielle Lizenz auf GitHub öffnen</a></p>
+      <pre class="core-generator-license-text" id="coreGeneratorLicenseText" tabindex="0" aria-label="Vollständiger Lizenztext">Lädt die Lizenz …</pre>
+      <label class="core-generator-license-consent">
+        <input id="coreGeneratorLicenseCheck" type="checkbox" />
+        <span>Ich habe die FLUX Non-Commercial License v2.1 gelesen, verstanden und akzeptiere sie für den Betrieb dieses Modells auf diesem Server.</span>
+      </label>
+      <p class="core-install-note" id="coreGeneratorLicenseNote" role="status" aria-live="polite"></p>
+      <div class="core-install-actions">
+        <button class="core-install-btn" id="coreGeneratorLicenseCancel" type="button">Schließen</button>
+        <button class="core-install-btn core-install-btn--go" id="coreGeneratorLicenseAccept" type="button" disabled>Lizenz akzeptieren</button>
+      </div>
+    </section>
   </div>
 
   <div class="core-library" id="coreLibrary" hidden>
