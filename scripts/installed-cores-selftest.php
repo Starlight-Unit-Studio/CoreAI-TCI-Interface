@@ -2,6 +2,9 @@
 declare(strict_types=1);
 // Pure regression tests: never connect to Ollama, remove a tag or modify DB.
 if (PHP_SAPI !== 'cli') exit(1);
+$licenseCache = sys_get_temp_dir() . '/coreai-installed-license-' . getmypid();
+@mkdir($licenseCache, 0775, true);
+define('STU_EMBER_CACHE_DIR', $licenseCache);
 require_once dirname(__DIR__) . '/api/installed_cores.php';
 function installed_test(bool $ok, string $message): void {
   if (!$ok) { fwrite(STDERR, "Installed Cores FAIL: " . $message . "\n"); exit(1); }
@@ -106,6 +109,9 @@ installed_test($genRows['ember-coreui:gen']['kind'] === 'tci'
   && $genRows['ember-coreui:gen']['label'] === 'TCI Core Generator'
   && $genRows['ember-coreui:gen']['removable'] && $genRows['ember-coreui:gen']['updatable'],
   'Generator receives normal CoreAI management controls');
+installed_test(coreui_core_update_plan($genModels) === [],
+  'unlicensed Generator cannot enter installed-Core updater');
+coreui_generator_license_accept(1, coreui_generator_license_hash());
 $genSelected = coreui_installed_cores_update_selection($genModels, 'ember-coreui:gen', $standard, $base,
   coreui_core_update_plan($genModels));
 installed_test($genSelected['kind'] === 'tci' && $genSelected['plan'][0]['tier'] === 'generator',
