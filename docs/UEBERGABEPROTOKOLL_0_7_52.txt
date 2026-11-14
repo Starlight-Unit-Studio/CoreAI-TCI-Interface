@@ -1,0 +1,50 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.52
+Datum: 14.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Basis: main 0.7.51
+Pull Request: #308
+Branch: feature/tci-core-generator-menu-20261114
+
+AUFTRAG
+Der Betreiber moechte das bereits in Ollama vorhandene FLUX.2-klein-9B-Modell als
+regulaeren TCI-Core nutzen. Der technische Ollama-Tag muss ember-coreui:gen
+lauten. Im Chat soll der Name TCI Core Generator und ein separates Symbol fuer
+Bildgenerierung erscheinen. Der Core muss auch unter Cores verwalten erscheinen.
+
+UMSETZUNG
+- Die Core-Zuordnung erfasst ember-coreui:gen exakt als TCI Core Generator.
+- Bildgenerierungs-Kennzeichnung ist von Ollama-Vision-, Audio- und Live-Caps getrennt.
+- Der neue Eintrag in Cores verwalten bietet dieselben Admin-Befehle wie lokale TCI-Cores.
+- Installation prueft den vorhandenen Originaltag
+  fegdxus/flux2-klein-9b-uncensored:Q8_0. Ist er nicht vorhanden, wird
+  der Aufbau blockiert statt einen anderen FLUX-Core zu erfinden.
+- /api/create baut aus diesem Original einen lokalen TCI-Tag. Die bestehende
+  Mara-SYSTEM-Anweisung wird dabei aus config/Modelfile.template entnommen.
+- WICHTIG: Das Gemma-Modelfile enthaelt TEMPLATE, RENDERER, PARSER und
+  grosse num_ctx-Parameter; diese werden fuer den FLUX-Generator nicht kopiert.
+- Der Originaltag und dessen Gewichte werden nicht von der Installation oder
+  Deinstallation des Generator-Tags geloescht.
+- Updates und Deinstallation teilen die bestehende Admin-Sperre und die
+  Berechtigungspruefung, einschliesslich Ruecksetzen gewaehlter Core-Overrides.
+- Der Bild-Worker selbst und die bestehenden Core-Stufen bleiben unveraendert.
+
+DATEIEN
+api/model_catalog.php, api/models.php, api/core_install.php,
+api/user_settings.php, js/coreui-core-mode.js, js/coreui-core-install.js,
+css/console.css, app.html sowie zugehoerige Regressionstests.
+
+RELEASE
+VERSION 0.7.52 (ein neuer Versionsschritt fuer diesen PR).
+README, HTML-Seiten, Branding-Test, Changelog, Index und Preflight-Kommentare
+mit dem Release nachgezogen.
+
+PRUEFUNG UND GRENZEN
+- Selbsttests wurden erweitert. GitHub Actions muessen nach dem
+  aktuellen Commit erneut den Merge-Gate bestaetigen.
+- Eine echte Installation in der Ollama-Instanz des Betreibers wurde von
+  dieser GitHub-aenderung nicht ausgefuehrt; dafuer dient der Admin-Button.
+- Keine zweite vorgeschaltete Inferenzpipeline; der Generator wird als
+  waehlbarer Core verwendet. Die Bildgenerierung ueber den bestehenden
+  separaten Image-Worker bleibt unveraendert.
+
+Version: 0.7.52
