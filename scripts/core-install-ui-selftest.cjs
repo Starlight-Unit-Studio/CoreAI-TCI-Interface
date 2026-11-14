@@ -141,7 +141,7 @@ function server(opts) {
         return reply(200, {ok: true, pgen: pgen()});
       }
       if (body.action === 'pgen_install') {
-        if (!st.licenseAccepted) return reply(409, {ok: false, error: 'license_accept_required'});
+        // Download is independent of explicit consent; activating 9B is not.
         st.pgenNineLoading = true;
         return reply(200, {ok: true, pgen: pgen()});
       }
@@ -590,7 +590,14 @@ assert.equal(api.gb(20 * 1073741824), '20 GB');
     '9B is visible but unselectable before license acceptance');
   assert.equal(els.coreInstallPgenLicenseGuard.hidden, false);
   assert.equal(els.coreInstallPgenInstall.hidden, true,
-    '9B install control remains hidden before license acceptance');
+    'locked 9B option keeps the standard 4B selection active');
+  // Server can begin its hardware-approved auto-download without license UI consent.
+  const beforeLicense = await srv.fetch('./api/user_settings.php', {
+    method: 'POST', body: JSON.stringify({action: 'pgen_install', model: 'flux2-klein-9b'})
+  });
+  assert.equal(beforeLicense.ok, true, '9B download is allowed before explicit UI consent');
+  assert.equal(srv.st.licenseAccepted, false, 'downloading does not mark the license accepted');
+  srv.st.pgenNineLoading = false;
   await els.coreInstallPgenGuardOpen.handlers.click();
   els.coreGeneratorLicenseCheck.checked = true;
   els.coreGeneratorLicenseCheck.handlers.change();
@@ -602,7 +609,7 @@ assert.equal(api.gb(20 * 1073741824), '20 GB');
   els.coreInstallPgenModel.handlers.change();
   assert.match(els.coreInstallPgenInfo.textContent, /FLUX.2 9B.*nicht installiert/);
   assert.equal(els.coreInstallPgenInstall.hidden, false);
-  assert.equal(els.coreInstallPgenInstall.disabled, false, 'license unlocks 9B installation');
+  assert.equal(els.coreInstallPgenInstall.disabled, false, 'manual retry available after acceptance');
   await els.coreInstallPgenInstall.handlers.click();
   assert.deepEqual(JSON.parse(srv.calls.filter(x => x.init.method === 'POST').pop().init.body),
     {action: 'pgen_install', model: 'flux2-klein-9b'});
