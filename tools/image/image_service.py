@@ -334,6 +334,81 @@ class Service:
         finally:
             self.loading = False
 
+    # pGen Quality: opt-in 9B with the same pinned-download and SHA-256 rules.
+    def _prepare_quality(self) -> None:
+        self.pgen_loading = True
+        self.pgen_error = ''
+        try:
+            spike = json.loads((ROOT / 'tools' / 'image_spike' / 'models.json').read_text(encoding='utf-8'))
+            quality = PGEN.load_registry(self.pgen_lock, self.reg, spike)
+            if quality is None:
+                return
+            paths = self.ensure_weights(quality)
+            with self.state_lock:
+                self.profiles[PGEN.QUALITY] = quality
+                self.profile_paths[PGEN.QUALITY] = paths
+            log('bereit: ' + quality['model']['label'])
+        except Exception as error:
+            self.pgen_error = f'{type(error).__name__}: {error}'[:250]
+            log('pGen 9B nicht bereit: ' + self.pgen_error)
+        finally:
+            self.pgen_loading = False
+
+    def quality_progress(self) -> dict:
+        try:
+            spike = json.loads((ROOT / 'tools' / 'image_spike' / 'models.json').read_text(encoding='utf-8'))
+            specs = spike['groups'][PGEN.QUALITY]['files']
+        except (OSError, ValueError, KeyError):
+            return {'have': 0, 'total': 0}
+        have = 0
+        total = 0
+        for spec in specs:
+            size = spec['size']
+            total += size
+            target = file_path(self.models, spec)
+            for location in (target, target.with_name(target.name + '.part')):
+                try:
+                    have += min(location.stat().st_size, size)
+                    break
+                except OSError:
+                    continue
+        return {'have': have, 'total': total}
+
+    def install_quality(self) -> bool:
+        if self.pgen_installing or self.pgen_loading or PGEN.QUALITY in self.profile_paths:
+            return False
+        license_file = ROOT / 'licenses' / 'FLUX-NON-COMMERCIAL-v2.1.txt'
+        receipt = ROOT / 'var' / 'cache' / 'generator-license.json'
+        try:
+            import hashlib
+            accepted = json.loads(receipt.read_text(encoding='utf-8'))
+            sha = hashlib.sha256(license_file.read_bytes()).hexdigest()
+            if accepted.get('accepted') is not True or accepted.get('license_sha256') != sha:
+                return False
+        except (OSError, ValueError, AttributeError):
+            return False
+        self.pgen_installing = True
+        self.pgen_error = ''
+        threading.Thread(target=self._install_quality, daemon=True).start()
+        return True
+
+    def _install_quality(self) -> None:
+        try:
+            spike = json.loads((ROOT / 'tools' / 'image_spike' / 'models.json').read_text(encoding='utf-8'))
+            SPIKE.fetch(spike, PGEN.QUALITY, self.models)
+            paths, entries, error = SPIKE.verify(self.models, PGEN.QUALITY)
+            if error or len(paths) != 3:
+                raise RuntimeError(error or '9B-Gewichte nicht verifiziert')
+            lock = {'format': 1, 'group': PGEN.QUALITY, 'files': entries}
+            PGEN.registry_from_lock(self.reg, spike, lock)
+            PGEN.save_lock(self.pgen_lock, lock)
+            self._prepare_quality()
+        except Exception as error:
+            self.pgen_error = f'{type(error).__name__}: {error}'[:250]
+            log('pGen 9B Installation fehlgeschlagen: ' + self.pgen_error)
+        finally:
+            self.pgen_installing = False
+
     # Jobs -------------------------------------------------------------------
     def busy(self) -> bool:
         with self.state_lock:
