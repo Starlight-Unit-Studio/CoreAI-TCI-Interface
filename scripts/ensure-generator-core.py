@@ -95,6 +95,11 @@ def ensure() -> int:
     source_preexisting = present(BASE)
 
     if exists and current.get("model") == GENERATOR and current.get("system_sha256") == digest:
+        if source_preexisting and enabled("COREUI_GENERATOR_REMOVE_EXISTING_BASE"):
+            if ollama("rm", BASE).returncode != 0:
+                print("[CoreAI Generator] Vorhandenen Basistag konnte ich nicht entfernen.", file=sys.stderr)
+                return 1
+            print("[CoreAI Generator] Betreiberfreigabe: bereits vorhandenen Basistag entfernt.")
         print("[CoreAI Generator] ember-coreui:gen bereits aktuell.")
         return 0
 
@@ -137,14 +142,25 @@ def ensure() -> int:
     return 0
 
 
+def check() -> int:
+    if present(GENERATOR):
+        print("TCI Core Generator in Ollama vorhanden: " + GENERATOR)
+        return 0
+    if read_state() or present(BASE) or enabled("COREUI_ACCEPT_FLUX_NON_COMMERCIAL"):
+        print("TCI Core Generator fehlt; Installer/Update kann den fehlenden Core anlegen.")
+        return 2
+    print("TCI Core Generator optional nicht installiert; Erstdownload erfordert Non-Commercial-Lizenzannahme.")
+    return 3
+
+
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Install/upgrade CoreAI FLUX generator alias")
-    parser.add_argument("--ensure", action="store_true", help="Idempotent install or upgrade")
+    parser = argparse.ArgumentParser(description="Install/verify CoreAI FLUX generator alias")
+    actions = parser.add_mutually_exclusive_group(required=True)
+    actions.add_argument("--ensure", action="store_true", help="Idempotent install or update")
+    actions.add_argument("--check", action="store_true", help="Read-only preflight verification")
     args = parser.parse_args()
-    if not args.ensure:
-        parser.error("--ensure erforderlich")
     try:
-        return ensure()
+        return check() if args.check else ensure()
     except (OSError, ValueError) as error:
         print("[CoreAI Generator] " + str(error), file=sys.stderr)
         return 1
