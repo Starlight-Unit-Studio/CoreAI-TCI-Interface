@@ -183,7 +183,7 @@ function coreui_core_audio_flags(array $models, callable $show): array {
 
 /** A dedicated local Ollama tag for the existing FLUX.2 prompt Core. */
 const COREUI_CORE_GENERATOR_NAME = 'ember-coreui:gen';
-const COREUI_CORE_GENERATOR_BASE = 'fegdxus/flux2-klein-9b-uncensored:Q8_0';
+const COREUI_CORE_GENERATOR_BASE = 'feadxus/flux2-klein-9b-uncensored:Q8_0';
 const COREUI_CORE_GENERATOR_LABEL = 'TCI Core Generator';
 
 function coreui_core_is_generator(string $model): bool {
