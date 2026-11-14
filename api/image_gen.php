@@ -50,12 +50,24 @@ function coreui_image_dir(): string {
 }
 
 /**
- * The image Mara asks for in a reply (pure): the text inside the marker, with "GROSS: "
- * in front for a big one, or null. The description must be at least three characters
- * and may not contain brackets; at most 1200 characters.
+ * 0.7.51: the longest image description, from "limits.prompt_chars" in config/image/mara-image.json
+ * (1200 when the register names none). One number for Mara's marker, the request and the image
+ * service, so raising it in the register raises it everywhere.
  */
-function coreui_image_extract_marker(string $reply): ?string {
-  if (preg_match('~\[\s*BILD(\s+GRO(?:SS|ß))?(\s+ICH)?\s*:\s*([^\[\]]{3,1200}?)\s*\]~iu', $reply, $m) !== 1) return null;
+function coreui_image_prompt_limit(?array $registry = null): int {
+  $registry = $registry ?? coreui_image_registry();
+  $limit = (int)($registry['limits']['prompt_chars'] ?? 1200);
+  return max(3, min(20000, $limit));
+}
+
+/**
+ * The image Mara asks for in a reply: the text inside the marker, with "GROSS: "
+ * in front for a big one, or null. The description must be at least three characters
+ * and may not contain brackets; at most $limit characters (the register's limit by default).
+ */
+function coreui_image_extract_marker(string $reply, ?int $limit = null): ?string {
+  $limit = max(3, min(20000, $limit ?? coreui_image_prompt_limit()));
+  if (preg_match('~\[\s*BILD(\s+GRO(?:SS|ß))?(\s+ICH)?\s*:\s*([^\[\]]{3,' . $limit . '}?)\s*\]~iu', $reply, $m) !== 1) return null;
   $prompt = trim((string)preg_replace('~\s+~u', ' ', $m[3]));
   if (mb_strlen($prompt) < 3) return null;
   return (trim((string)$m[1]) !== '' ? 'GROSS: ' : '')
@@ -422,7 +434,7 @@ function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $
   if (coreui_files_room($pdo, $uid, 1) !== null) return ['ok' => false, 'error' => 'storage_full', 'detail' => ''];
   $previews = 0; // 0.6.42: $preview(string $dataUrl, array $job) gets every new step preview
   $registry = coreui_image_registry();
-  $limit = (int)($registry['limits']['prompt_chars'] ?? 1200);
+  $limit = coreui_image_prompt_limit($registry);
   $prompt = trim((string)preg_replace('~\s+~u', ' ', $prompt));
   if ($prompt === '' || mb_strlen($prompt) > $limit) return ['ok' => false, 'error' => 'bad_prompt', 'detail' => ''];
   if (!isset(($registry['sizes'] ?? [])[$size])) return ['ok' => false, 'error' => 'bad_size', 'detail' => ''];

@@ -6,6 +6,7 @@ Repository-Version: 0.7.51 (Branch claude/bold-galileo-myoyi0, main 0.7.50)
 BASIS: main 0.7.50 nach PR #306 (Vision-Core-Modellverwaltung vollstaendig entfernt).
 NAECHSTE VERBINDLICHE VERSION: 0.7.52, falls main unveraendert bleibt.
 NEU: scripts/image-spike.sh misst FLUX.2-klein 9B nur mit --groups flux2-klein-9b und --accept-license flux-non-commercial (FLUX Non-Commercial License v2.1: privat, nicht-kommerziell, nicht fuer andere Nutzer). Prompt p4 prueft Gesichter nach Maras Referenzbild fuer 4B und 9B.
+AUCH NEU: eine Prompt-Grenze fuer Marker, Anfrage und Bilddienst (limits.prompt_chars in config/image/mara-image.json, vom Betreiber auf 4096 gesetzt); Maras Marker [BILD: ...] nimmt damit bis 4096 Zeichen.
 UNVERAENDERT: der laufende Bildgenerator mit festem FLUX.2-klein 4B, Core-Verwaltung, Modelfile, SYSTEM-Prompts.
 STOPP (gilt weiter): Der experimentelle, ungemergte Ollama-Gewichtsimport PR #305 wurde geschlossen und darf nicht integriert werden. Keine Vision-Core-Modellverwaltung.
 OFFEN: Lauf auf dem Server (Zeit, Arbeitsspeicher, Gesichtstreue). Erst danach entscheidet sich, ob der Bildgenerator in der Core-Liste am Eingabefeld zwischen 4B und 9B umschaltbar wird (9B nur fuer den Inhaber).

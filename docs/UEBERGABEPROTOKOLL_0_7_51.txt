@@ -89,9 +89,17 @@ ABGLEICH MIT MAIN (14.11.2026, nach dem Oeffnen des PR)
 - Folge der neuen Grenze: scripts/image-service-selftest.py scheiterte auf main, weil es fest 1300
   Zeichen als "zu lang" schickte. Der Test nimmt jetzt die Grenze aus mara-image.json plus ein Zeichen
   (Prompt und scene_hint). Gegenprobe: Dienst ohne Laengenpruefung -> Test schlaegt fehl.
-- Hinweis fuer spaeter: Maras Marker [BILD: ...] in api/image_gen.php erkennt weiterhin hoechstens 1200
-  Zeichen Beschreibung. Die 4096 gelten fuer den zusammengesetzten Prompt (Beschreibung plus
-  Referenzhinweise) und im Bilddienst; der Marker wurde nicht angefasst.
+- Auftrag des Betreibers danach: auch Maras Marker [BILD: ...] soll 4096 Zeichen nehmen. Der Marker in
+  api/image_gen.php hatte fest 1200. Jetzt gibt es eine Zahl fuer alles: coreui_image_prompt_limit()
+  liest limits.prompt_chars aus config/image/mara-image.json (1200, wenn dort nichts steht; begrenzt auf
+  3 bis 20000). coreui_image_extract_marker und coreui_image_generate benutzen sie; der Bilddienst liest
+  dieselbe Zahl. Wer die Grenze im Register aendert, aendert sie damit ueberall.
+- scripts/image-gen-selftest.php: Marker mit genau der Grenze wird genommen, ein Zeichen mehr nicht;
+  Umlaute und Emoji bleiben vollstaendig; ein Marker ohne schliessende Klammer (200000 Zeichen) ergibt
+  keinen Marker und keinen PCRE-Fehler; die Anfrage lehnt Grenze plus eins ab. Gegenproben: Marker wieder
+  fest 1200 und Anfrage ohne Laengenpruefung lassen den Test jeweils scheitern.
+- Dazu bestanden: agent-loop, composer-intent, guest-access, notifications, tool-mention, voice-input,
+  storage, skills, personalization-page, local-file-tool, guest-image-quota, image-reference-consistency.
 
 NICHT GETESTET
 - Ein echter Lauf mit FLUX.2-klein 9B: Download, Zeit, Arbeitsspeicher und Gesichtstreue. Hier gibt es

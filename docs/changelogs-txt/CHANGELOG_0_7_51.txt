@@ -33,11 +33,20 @@ ABGLEICH MIT MAIN
 - scripts/image-service-selftest.py nimmt die Prompt-Grenze jetzt aus
   config/image/mara-image.json statt fest 1300 Zeichen.
 
+EINE PROMPT-GRENZE FUER MARKER, ANFRAGE UND BILDDIENST
+- Auftrag des Betreibers: der Marker soll ebenfalls 4096 Zeichen nehmen.
+- Maras Marker [BILD: ...] endete fest bei 1200 Zeichen. Er liest jetzt
+  dieselbe Zahl wie die Anfrage und der Bilddienst: limits.prompt_chars in
+  config/image/mara-image.json (derzeit 4096).
+- Eine spaetere Aenderung im Register gilt damit ueberall.
+
 TESTS
 - python3 -I scripts/image-spike-selftest.py (Register, Lizenzsperre,
   Referenzbild, feste Argumente, Trockenlauf)
 - php scripts/image-spike-store-selftest.php
 - python3 -I scripts/image-service-selftest.py
+- php scripts/image-gen-selftest.php (Marker an der Grenze, ein Zeichen mehr,
+  Umlaute und Emoji, Marker ohne Ende, Anfrage)
 - python3 -I scripts/vision-management-removal-selftest.py
 - Versions-Guard gegen main 0.7.50, Cache-Bust-Verify, gesamte Selbsttest-Reihe
   auf Branch und main (Ergebnis im Uebergabeprotokoll).
