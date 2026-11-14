@@ -53,7 +53,9 @@ with tempfile.TemporaryDirectory(prefix='pgen-selftest-') as name:
     assert profiles.load_registry(file, base, spike) is None
     profiles.save_lock(file, lock)
     assert profiles.load_registry(file, base, spike)['model']['id'] == profiles.QUALITY
-    svc = worker.Service(base, tmp / 'models', tmp / 'work', threads=3,
+    light_base = copy.deepcopy(base)
+    light_base['measured']['normal']['peak_rss_mb'] = 0  # CI has much less RAM than the production server
+    svc = worker.Service(light_base, tmp / 'models', tmp / 'work', threads=3,
                          sd_cli='/bin/false')
     svc.ready = True
     svc.work.mkdir()
