@@ -9796,6 +9796,65 @@ a.insight-file-name:hover { text-decoration: underline; }
 .core-library-provider--active { border-color: var(--green); }
 .core-library-provider--future { opacity: .55; border-style: dashed; cursor: not-allowed; }
 .core-library-provider:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+/* pGen Core: own model management, not part of the Ollama text Core list. */
+.core-install-pgen {
+  margin: 14px 0 8px;
+  padding: 16px 12px;
+  border: 1px solid var(--line);
+  background: var(--panel-cx);
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+}
+.core-install-pgen[hidden] { display: none; }
+.core-install-pgen-head {
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.core-install-pgen-head h4 { margin: 0; }
+.core-install-pgen-tag, .core-install-pgen-label {
+  font-family: "Share Tech Mono", monospace;
+  letter-spacing: .12em;
+  font-size: 11px;
+  color: var(--muted);
+}
+.core-install-pgen-label {
+  display: block;
+  margin: 12px 0 5px;
+}
+.core-install-pgen-select {
+  width: 100%;
+  min-height: 44px;
+  padding: 9px 12px;
+  background: var(--panel-solid);
+  border: 1px solid var(--line-strong);
+  color: var(--txt);
+  border-radius: 0;
+  font: inherit;
+}
+.core-install-pgen-select:focus-visible {
+  outline: 2px solid var(--cx);
+  outline-offset: 2px;
+}
+.core-install-pgen-info, .core-install-pgen-feedback {
+  margin: 8px 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.core-install-pgen-feedback[data-tone="bad"] { color: var(--red); }
+.core-install-pgen-feedback[data-tone="ok"] { color: var(--green); }
+.core-install-pgen-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.core-install-pgen-actions .core-install-btn {
+  min-height: 40px;
+  flex: 1 1 155px;
+}
+.core-install-pgen-actions .core-install-btn:disabled { opacity: .42; cursor: not-allowed; }
 .core-install-library { margin: 12px 0; padding: 12px 0; border-top: 1px solid var(--line); }
 .core-install-library h4 {
   margin: 0 0 7px;
