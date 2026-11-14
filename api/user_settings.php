@@ -6,6 +6,7 @@ require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/ai_settings.php';
 require_once __DIR__ . '/model_catalog.php';
 require_once __DIR__ . '/core_generator_engine.php';
+require_once __DIR__ . '/core_generator_license.php';
 require_once __DIR__ . '/ai_context_estimate.php';
 require_once __DIR__ . '/guest_access.php';
 require_once __DIR__ . '/model_access.php';
@@ -174,6 +175,9 @@ if ($method === 'GET') {
   $settings = coreui_ai_settings_load($pdo, $uid);
   // 0.5.83: a Core whose release was withdrawn no longer counts as chosen.
   if (!coreui_model_access_allowed($pdo, $uid, (string)$settings['model_override'])) $settings['model_override'] = '';
+  if (coreui_core_is_generator((string)$settings['model_override']) && !coreui_generator_license_user_accepted($pdo, (int)$uid)) {
+    $settings['model_override'] = '';
+  }
   // 0.5.85: a window above the account's limit shows as the limit.
   $settings['num_ctx'] = coreui_user_policy_ctx_clamp($settings['num_ctx'], coreui_user_policy_load($pdo, (int)$uid));
   $defaultModel = defined('STU_EMBER_MODEL') ? (string)STU_EMBER_MODEL : '';
