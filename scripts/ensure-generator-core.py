@@ -23,6 +23,8 @@ GENERATOR = "ember-coreui:gen"
 BASE = "fegdxus/flux2-klein-9b-uncensored:Q8_0"
 LICENSE = "https://github.com/black-forest-labs/flux2/blob/main/model_licenses/LICENSE-FLUX-NON-COMMERICAL"
 STATE = ROOT / "var" / "generator-core.json"
+LICENSE_PATH = ROOT / "licenses" / "FLUX-NON-COMMERCIAL-v2.1.txt"
+LICENSE_RECEIPT = ROOT / "var" / "cache" / "generator-license.json"
 
 
 def enabled(name: str) -> bool:
@@ -86,7 +88,24 @@ def save_state(digest: str) -> None:
             os.unlink(temp)
 
 
+def license_accepted() -> bool:
+    if LICENSE_PATH.is_symlink() or not LICENSE_PATH.is_file():
+        return False
+    if LICENSE_RECEIPT.is_symlink() or not LICENSE_RECEIPT.is_file():
+        return False
+    try:
+        accepted = json.loads(LICENSE_RECEIPT.read_text(encoding="utf-8"))
+        expected = hashlib.sha256(LICENSE_PATH.read_bytes()).hexdigest()
+    except (OSError, ValueError, json.JSONDecodeError):
+        return False
+    return (isinstance(accepted, dict) and accepted.get("accepted") is True
+            and accepted.get("license_sha256") == expected)
+
+
 def ensure() -> int:
+    if not license_accepted():
+        print("[CoreAI Generator] Lizenz nicht akzeptiert: erst den Lizenzdialog im Admin-Core öffnen.")
+        return 0
     template = (ROOT / "config" / "Modelfile.template").read_text(encoding="utf-8")
     system = persona_from_template(template)
     digest = state_hash(system)
@@ -109,11 +128,6 @@ def ensure() -> int:
         return 0
 
     if not source_preexisting:
-        if not exists and not enabled("COREUI_ACCEPT_FLUX_NON_COMMERCIAL"):
-            print("[CoreAI Generator] Uebersprungen: FLUX.2 9B ist nicht-kommerziell lizenziert."
-                  " Fuer einen Erstdownload COREUI_ACCEPT_FLUX_NON_COMMERCIAL=1 setzen."
-                  " Lizenz: " + LICENSE)
-            return 0
         print("[CoreAI Generator] Lade temporaere FLUX.2 9B-Basis.")
         if ollama("pull", BASE).returncode != 0:
             print("[CoreAI Generator] Download fehlgeschlagen. Kein fremdes Modell entfernt.", file=sys.stderr)
@@ -143,13 +157,16 @@ def ensure() -> int:
 
 
 def check() -> int:
+    if not license_accepted():
+        print("FLUX.2-Lizenz noch nicht akzeptiert. Generator erst nach Freigabe installierbar.")
+        return 3
     if present(GENERATOR):
         print("TCI Core Generator in Ollama vorhanden: " + GENERATOR)
         return 0
-    if read_state() or present(BASE) or enabled("COREUI_ACCEPT_FLUX_NON_COMMERCIAL"):
+    if read_state() or present(BASE) or license_accepted():
         print("TCI Core Generator fehlt; Installer/Update kann den fehlenden Core anlegen.")
         return 2
-    print("TCI Core Generator optional nicht installiert; Erstdownload erfordert Non-Commercial-Lizenzannahme.")
+    print("TCI Core Generator wird beim naechsten Installer-/Update-Lauf angelegt.")
     return 3
 
 
