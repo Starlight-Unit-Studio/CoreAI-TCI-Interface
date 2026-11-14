@@ -380,6 +380,8 @@
         + ' · RAM 1024 ca. ' + String(model.ram_1024_gb).replace('.', ',') + ' GB'
         + ' · ' + model.license;
       if (!engine) report += ' · Quantum Gen Engine nicht bereit';
+      if (license && !authorized && model.installed)
+        report += ' · Installiert, Freischaltung nach Lizenzzustimmung';
       if (license && state.pgen.can_install_9b === false)
         report += ' · Hardware reicht für 9B nicht aus';
       if (model.error) report += ' · ' + model.error;
@@ -396,10 +398,10 @@
       }
       show(el.PgenLicense, license && !locked);
       if (el.PgenLicense) text(el.PgenLicense, authorized ? '9B-Lizenz ansehen ✓' : '9B-Lizenz ansehen');
-      show(el.PgenInstall, license && !model.ready && authorized && !model.loading);
+      show(el.PgenInstall, license && !model.installed && !model.loading);
       if (el.PgenInstall) {
         el.PgenInstall.textContent = loading ? '9B wird vorbereitet …' : '9B installieren';
-        el.PgenInstall.disabled = loading || !engine || !authorized || state.pgenBusy
+        el.PgenInstall.disabled = loading || !engine || state.pgenBusy
           || state.pgen.can_install_9b === false;
       }
       if (el.PgenApply) el.PgenApply.disabled = state.pgenBusy || !model.ready
@@ -441,7 +443,7 @@
         });
     }
     function installPgen() {
-      if (!state.pgen || !state.pgen.engine_ready || !state.pgen.license_accepted ||
+      if (!state.pgen || !state.pgen.engine_ready ||
           state.pgen.can_install_9b === false ||
           state.pgenBusy) return Promise.resolve();
       state.pgenBusy = true;
