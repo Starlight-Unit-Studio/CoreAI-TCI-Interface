@@ -35,6 +35,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/model_catalog.php';
 require_once __DIR__ . '/core_generator_license.php';
+require_once __DIR__ . '/core_generator_engine.php';
 require_once __DIR__ . '/ai_context_estimate.php';
 
 const COREUI_CORE_INSTALL_PERMISSION_MAX = 1; // admin and system admin
@@ -277,10 +278,30 @@ function coreui_core_install_check(string $tier, bool $hardware = true): array {
     catch (RuntimeException $e) { $index = []; }
     $hasSource = isset($index[coreui_ollama_model_key(COREUI_CORE_GENERATOR_BASE)]);
     $installed = isset($index[coreui_ollama_model_key(COREUI_CORE_GENERATOR_NAME)]);
+    $hw = $hardware ? coreui_core_install_hardware() : null;
     $check = $hardware
-      ? coreui_core_install_verdict(coreui_core_install_hardware(),
+      ? coreui_core_install_verdict($hw,
         ['download_gb'=>$hasSource ? 0.0 : 8.2, 'active_b'=>9.0])
       : ['verdict'=>null, 'blocked'=>false, 'rows'=>[], 'ram_need'=>null];
+    $engine = $hardware ? coreui_generator_engine_status(['mem_total'=>$hw['mem_total']]) : null;
+    if ($engine !== null) {
+      $check['rows'][] = ['key'=>'quantum_engine', 'label'=>'Quantum Gen Engine',
+        'value'=>$engine['ready'] ? 'Installiert und bereit (Bildgenerierung auf CPU möglich)'
+          : $engine['message'],
+        'state'=>$engine['ready'] ? 'ok' : ($engine['hardware_eligible'] === false ? 'bad' : 'warn')];
+      $imagePeak = $engine['normal_peak_rss_mb'];
+      if ($imagePeak !== null) {
+        $largePeak = $engine['large_peak_rss_mb'];
+        $text = '512×512: gemessen ca. ' . round($imagePeak / 1024, 1) . ' GiB RAM';
+        if ($largePeak !== null) $text .= '; 1024×1024: ca. ' . round($largePeak / 1024, 1) . ' GiB';
+        $check['rows'][] = ['key'=>'image_ram', 'label'=>'Bild-Engine',
+          'value'=>$text . ' (Core und Engine arbeiten nacheinander)', 'state'=>'ok'];
+      }
+      if (!$engine['ready'] && $engine['hardware_eligible'] === false) {
+        $check['verdict'] = 'abraten';
+        $check['blocked'] = true;
+      }
+    }
     $accepted = coreui_generator_license_accepted();
     $check['rows'][] = ['key'=>'license', 'label'=>'Lizenz',
       'value'=>$accepted ? 'FLUX Non-Commercial License v2.1 akzeptiert.'
@@ -290,7 +311,9 @@ function coreui_core_install_check(string $tier, bool $hardware = true): array {
       'base'=>COREUI_CORE_GENERATOR_BASE, 'core'=>COREUI_CORE_GENERATOR_NAME,
       'download_gb'=>$hasSource ? 0.0 : 8.2, 'installed'=>$installed,
       'cloud_base'=>null, 'source_present'=>$hasSource,
-      'license_accepted'=>$accepted, 'requires_license'=>!$accepted]
+      'license_accepted'=>$accepted, 'requires_license'=>!$accepted,
+      'engine_ready'=>$engine['ready'] ?? false,
+      'engine_status'=>$engine['state'] ?? 'unknown']
       + $check;
   }
   $entry = COREUI_CORE_INSTALL_CATALOG[$tier] ?? null;
