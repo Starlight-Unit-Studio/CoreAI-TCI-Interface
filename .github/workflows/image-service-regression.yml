@@ -4,6 +4,15 @@ on:
   pull_request:
     paths:
       - 'tools/image/image_service.py'
+      - 'tools/image/pgen_profiles.py'
+      - 'tools/image/adopt_pgen.py'
+      - 'tools/image/adopt_spike.py'
+      - 'api/pgen.php'
+      - 'scripts/pgen-selftest.py'
+      - 'scripts/pgen-selftest.php'
+      - 'config/image/mara-image.json'
+      - 'tools/image_spike/models.json'
+      - 'compose.yaml'
       - 'api/image_gen.php'
       - 'api/core_generator_engine.php'
       - 'api/models.php'
@@ -55,14 +64,17 @@ jobs:
           python3 scripts/version-merge-check.py --base-version "$base_version"
       - name: Python syntax and offline image worker
         run: |
-          python3 -m py_compile tools/image/image_service.py scripts/image-service-selftest.py scripts/vision-management-removal-selftest.py scripts/ensure-generator-core.py scripts/generator-core-selftest.py
+          python3 -m py_compile tools/image/image_service.py tools/image/pgen_profiles.py tools/image/adopt_pgen.py scripts/pgen-selftest.py scripts/image-service-selftest.py scripts/vision-management-removal-selftest.py scripts/ensure-generator-core.py scripts/generator-core-selftest.py
           python3 -I scripts/image-service-selftest.py
+          python3 -I scripts/pgen-selftest.py
           python3 -I scripts/generator-core-selftest.py
       - name: Verify removal and retained standard generator
         run: python3 -I scripts/vision-management-removal-selftest.py
       - name: PHP, JavaScript, Bash syntax
         run: |
           php -l api/image_gen.php
+          php -l api/pgen.php
+          php scripts/pgen-selftest.php
           php -l api/core_install.php
           php -l api/core_generator_engine.php
           php -l api/models.php
