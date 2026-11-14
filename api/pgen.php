@@ -24,8 +24,7 @@ function coreui_pgen_selected(): string {
   $data = json_decode((string)@file_get_contents($file), true);
   $model = is_array($data) ? ($data['model'] ?? '') : '';
   if (!is_string($model) || !coreui_pgen_valid($model)) return COREUI_PGEN_STANDARD;
-  // A revoked/changed license must never leave 9B active for new image jobs.
-  if ($model === COREUI_PGEN_QUALITY && !coreui_generator_license_accepted()) return COREUI_PGEN_STANDARD;
+  // The server shares model weights; per-account consent is checked at each image job.
   return $model;
 }
 
@@ -50,7 +49,7 @@ function coreui_pgen_hardware(?array $hw = null): array {
     'required_ram_gib'=>31, 'observed_peak_1024_mb'=>22605];
 }
 
-function coreui_pgen_status(?array $health = null, ?array $hardware = null): array {
+function coreui_pgen_status(?array $health = null, ?array $hardware = null, ?PDO $pdo = null, int $uid = 0): array {
   if ($health === null) {
     [$code, $body] = coreui_image_http('GET', '/health', null, 3);
     $health = $code === 200 && is_array($body) ? $body : [];
@@ -59,7 +58,8 @@ function coreui_pgen_status(?array $health = null, ?array $hardware = null): arr
   $available = is_array($health['pgen'] ?? null) ? $health['pgen'] : [];
   $four = is_array($available[COREUI_PGEN_STANDARD] ?? null) ? $available[COREUI_PGEN_STANDARD] : [];
   $nine = is_array($available[COREUI_PGEN_QUALITY] ?? null) ? $available[COREUI_PGEN_QUALITY] : [];
-  $approved = coreui_generator_license_accepted();
+  $approved = $pdo instanceof PDO && $uid > 0
+    && coreui_generator_license_user_accepted($pdo, $uid);
   $hw = coreui_pgen_hardware($hardware);
   return [
     'active'=>coreui_pgen_selected(),
