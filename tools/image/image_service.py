@@ -475,9 +475,10 @@ class Service:
         if (not reference or not isinstance(reference, str) or
                 not reference.startswith('custom:')) and profile_references:
             raise ValueError('bad_reference')
-        if len(profile_references) > 4 or len(profile_references) != len(set(profile_references)) or
-                any(not isinstance(token, str) or not CUSTOM_REFERENCE.fullmatch(token)
-                    for token in profile_references):
+        if (not isinstance(profile_references, list) or len(profile_references) > 4
+                or len(profile_references) != len(set(profile_references))
+                or any(not isinstance(token, str) or not CUSTOM_REFERENCE.fullmatch(token)
+                       for token in profile_references)):
             raise ValueError('bad_reference')
         if reference in profile_references:
             raise ValueError('bad_reference')
