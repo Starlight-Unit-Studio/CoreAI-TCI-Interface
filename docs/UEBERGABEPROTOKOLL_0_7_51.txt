@@ -1,0 +1,108 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.51
+Datum: 14.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Basis: main 0.7.50 nach PR #306
+Branch: claude/bold-galileo-myoyi0
+
+AUFTRAG
+Der Betreiber moechte FLUX.2-klein 9B wegen der Gesichtstreue nutzen und spaeter zwischen 4B und 9B
+wechseln koennen, zuletzt als Eintrag "Bildgenerator" in der Core-Liste am Eingabefeld. Vorher muss
+feststehen, ob 9B auf dem Server ueberhaupt laeuft. Diese Version liefert nur diesen ersten Schritt:
+9B als zuschaltbare Gruppe im Bildtest und einen Gesichtstest mit Referenzbild.
+
+WAS GEPRUEFT WURDE (Recherche, Stand 14.11.2026)
+- Ollama rechnet auf Linux keine Bilder. Die Pakete flux2-klein-9b-uncensored und
+  flux2-klein-4b-uncensored auf ollama.com sind nur Textmodelle (Architektur qwen3), kein Bildmodell.
+  Ein "Prompt-Modell" aendert weder Gesichter noch Inhaltsgrenzen; die liegen im Bildmodell.
+- FLUX.2-klein 9B steht unter der FLUX Non-Commercial License v2.1: nur nicht-kommerziell, nicht fuer
+  andere Nutzer (Abschnitt 1c), Inhaltsfilter oder eigene Pruefung vor dem Weitergeben (2e),
+  Nutzungsgrenzen (4a). FLUX.2-klein 4B bleibt Apache 2.0.
+- Die festgelegte stable-diffusion.cpp-Fassung (Commit d30854463dbc75fb3671209b79016bb0d8ac321e) fuehrt
+  klein 9B in docs/flux2.md mit denselben Argumenten wie 4B: --diffusion-model, --vae, --llm (Qwen3-8B),
+  Referenzbild ueber -r.
+- Dateien: leejet/FLUX.2-klein-9B-GGUF flux-2-klein-9b-Q8_0.gguf (9978284192 Bytes),
+  unsloth/Qwen3-8B-GGUF Qwen3-8B-Q8_0.gguf (8709519168), Comfy-Org/Flux-2-Klein-4B
+  split_files/vae/flux2-vae.safetensors (336211292). Zusammen etwa 19 GB (4B: etwa 9 GB).
+
+UMSETZUNG
+- tools/image_spike/models.json: Gruppe flux2-klein-9b mit optional, accept "flux-non-commercial",
+  license_url, license_note, reference; flux2-klein-4b bekommt reference; Prompt p4 "Gesicht nach
+  Referenz" (Seed 2026, mara_identity_primary.png) im 512er Plan.
+- tools/image_spike/run.py: Register prueft die neuen Felder (accept nur mit optional, https-Link und
+  Hinweis; mindestens eine Standardgruppe; Referenzname nur mara_identity_*.png/jpg). default_groups,
+  reference_path (kein Symlink, hoechstens 8 MB), -r im Aufruf, Referenzprompts nur fuer Gruppen mit
+  reference, ehrlicher Fehler bei fehlendem Bild, neuer Befehl "groups" fuer das Skript.
+- scripts/image-spike.sh: --accept-license; ohne --groups nur Standardgruppen; eine Gruppe mit accept
+  bricht ohne Bestaetigung vor Bau und Download ab und nennt Lizenz, Hinweis und Link; images/
+  mara_references nur lesend im Messcontainer; Platz- und Speicherhinweis aus den gewaehlten Gewichten.
+- Revision und SHA-256 jeder Datei schreibt weiterhin der erste Download in
+  var/image-spike/models/lock-flux2-klein-9b.json; jeder Lauf prueft dagegen.
+- Nicht angefasst: tools/image/image_service.py, api/image_gen.php, config/image/mara-image.json,
+  Core-Verwaltung, Modelfile, SYSTEM-Prompts. Der STOPP aus 0.7.50 (kein Ollama-Gewichtsimport, keine
+  Vision-Core-Verwaltung) gilt weiter; scripts/vision-management-removal-selftest.py besteht.
+
+BEFEHL FUER DEN BETREIBER (nach dem Update, als root auf dem Server)
+  sudo bash /opt/ember-coreui/scripts/image-spike.sh --groups flux2-klein-4b,flux2-klein-9b --accept-license flux-non-commercial
+Laedt beim ersten Mal etwa 19 GB fuer 9B, misst 4B und 9B nacheinander (je vier Bilder in 512 und eines
+in 1024) und legt Bilder, Zeiten und Arbeitsspeicher in Admin Core > Betrieb > Bildproben ab. Der
+Messcontainer darf bis 48 GB nutzen; der Bericht zeigt den echten Hoechstwert.
+
+WORAUF BEIM ERGEBNIS ZU ACHTEN IST
+- Hoechster Arbeitsspeicher von 9B: der Bilddienst hat heute 20 GB Grenze (compose mem_limit).
+- Zeit je Bild gegen 4B (07.11.2026: 63 s bei 512, 211 s bei 1024).
+- Prompt p4: Gesicht von 4B und 9B neben Maras Referenzbild.
+
+NAECHSTER SCHRITT (nur wenn 9B laeuft und der Betreiber es will)
+- Bildgenerator als Eintrag in der Core-Liste am Eingabefeld, gekennzeichnet als Bildgenerator, mit
+  Wahl zwischen 4B und 9B. 9B wegen der Lizenz nur fuer den Inhaber, nicht fuer andere Konten.
+- Revision und SHA-256 aus der Lock-Datei des Servers fest in config/image/mara-image.json; Speicher-
+  und Zeitgrenzen aus der Messung. Keine "uncensored"-Uploads Dritter ohne Lizenz und Herkunft.
+- Bilder echter Personen: nur mit deren Einverstaendnis; explizite Bilder echter Personen werden nicht
+  eingebaut. Mara und das eigene Gesicht des Betreibers sind davon nicht betroffen.
+- Sonst weiter mit der Roadmap (P09 Projekt-Workspace).
+
+TESTS (in dieser Sitzung ausgefuehrt)
+- python3 -m py_compile tools/image_spike/run.py; bash -n scripts/image-spike.sh und beide Preflights.
+- python3 -I scripts/image-spike-selftest.py: drei Gruppen, Standard ohne 9B, 9B-Dateien und Lizenzfelder,
+  abgelehnte Register (accept ohne optional, ohne Link, nur optionale Gruppen, fremder Referenzname),
+  Gesichtsprompt mit -r nur bei p4 und nur fuer Gruppen mit reference, fehlendes Referenzbild, Symlink,
+  Trockenlauf: Standard, 9B ohne Bestaetigung (bricht vor Bau und Download ab), falsches Wort,
+  bestaetigt (4B und 9B), Projekt ohne Referenzordner (nichts eingebunden).
+  Gegenprobe: Lizenzsperre aus, Standard nimmt optionale Gruppe, -r weggelassen, Ordnerpruefung aus:
+  der Test schlaegt jeweils fehl; danach wiederhergestellt.
+- php scripts/image-spike-store-selftest.php, python3 -I scripts/image-service-selftest.py,
+  python3 -I scripts/vision-management-removal-selftest.py, scripts/branding-license-selftest.py,
+  scripts/terran-terminology-selftest.cjs, scripts/tci-language-selftest.cjs: bestanden.
+- python3 scripts/version-merge-check.py --base-version 0.7.50 und scripts/cache-bust.py --verify: bestanden.
+- Gesamte Selbsttest-Reihe (scripts/*selftest*, model-live-audit, tests/*) nacheinander, Branch und main:
+  Branch 0.7.51: 162 bestanden, 11 fehlgeschlagen. main 0.7.50: 162 bestanden, 11 fehlgeschlagen.
+  Es sind auf beiden Seiten dieselben 11 (browse-image: Python-Playwright fehlt in dieser Umgebung;
+  browse-live, chat-menu, core-install, long-chat, model-library, pets, security, session-list,
+  settings-tabs, update). Keiner davon beruehrt den Bildtest; durch 0.7.51 kommt kein Fehlschlag dazu.
+- GitHub-Pruefungen auf dem PR (9 Laeufe, darunter image-service und ui-and-version): alle bestanden.
+
+ABGLEICH MIT MAIN (14.11.2026, nach dem Oeffnen des PR)
+- main bekam drei direkte Aenderungen des Betreibers ohne Versionssprung (main bleibt 0.7.50):
+  api/image_gen.php (ein Satz aus Maras Bildhinweis entfernt), config/Modelfile.template (eine Zeile
+  ergaenzt), config/image/mara-image.json (prompt_chars 1200 -> 4096). Alle drei unveraendert
+  uebernommen (Merge ohne Konflikt); Modelfile und Hinweis sind Sache des Betreibers.
+- Folge der neuen Grenze: scripts/image-service-selftest.py scheiterte auf main, weil es fest 1300
+  Zeichen als "zu lang" schickte. Der Test nimmt jetzt die Grenze aus mara-image.json plus ein Zeichen
+  (Prompt und scene_hint). Gegenprobe: Dienst ohne Laengenpruefung -> Test schlaegt fehl.
+- Auftrag des Betreibers danach: auch Maras Marker [BILD: ...] soll 4096 Zeichen nehmen. Der Marker in
+  api/image_gen.php hatte fest 1200. Jetzt gibt es eine Zahl fuer alles: coreui_image_prompt_limit()
+  liest limits.prompt_chars aus config/image/mara-image.json (1200, wenn dort nichts steht; begrenzt auf
+  3 bis 20000). coreui_image_extract_marker und coreui_image_generate benutzen sie; der Bilddienst liest
+  dieselbe Zahl. Wer die Grenze im Register aendert, aendert sie damit ueberall.
+- scripts/image-gen-selftest.php: Marker mit genau der Grenze wird genommen, ein Zeichen mehr nicht;
+  Umlaute und Emoji bleiben vollstaendig; ein Marker ohne schliessende Klammer (200000 Zeichen) ergibt
+  keinen Marker und keinen PCRE-Fehler; die Anfrage lehnt Grenze plus eins ab. Gegenproben: Marker wieder
+  fest 1200 und Anfrage ohne Laengenpruefung lassen den Test jeweils scheitern.
+- Dazu bestanden: agent-loop, composer-intent, guest-access, notifications, tool-mention, voice-input,
+  storage, skills, personalization-page, local-file-tool, guest-image-quota, image-reference-consistency.
+
+NICHT GETESTET
+- Ein echter Lauf mit FLUX.2-klein 9B: Download, Zeit, Arbeitsspeicher und Gesichtstreue. Hier gibt es
+  weder Docker noch die Gewichte. Kein Deployment und kein ZIP wird behauptet.
+
+Version: 0.7.51

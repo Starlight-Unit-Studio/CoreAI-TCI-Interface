@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "note": "CoreAI 0.6.37 (P20.5 A), 0.6.38: Repository-Namen in der Schreibweise von Hugging Face. Bildtest auf dem echten Server. Entscheidung des Betreibers (07.11.2026): Z-Image-Turbo und FLUX.2-klein 4B, beide Apache 2.0. Die Gewichte werden beim ersten Laden mit Revision und SHA-256 registriert (var/image-spike/models/lock-GRUPPE.json) und vor jedem Lauf gegen diesen Eintrag geprueft.",
+  "note": "CoreAI 0.6.37 (P20.5 A), 0.6.38: Repository-Namen in der Schreibweise von Hugging Face. Bildtest auf dem echten Server. Entscheidung des Betreibers (07.11.2026): Z-Image-Turbo und FLUX.2-klein 4B, beide Apache 2.0. Die Gewichte werden beim ersten Laden mit Revision und SHA-256 registriert (var/image-spike/models/lock-GRUPPE.json) und vor jedem Lauf gegen diesen Eintrag geprueft. 0.7.51: FLUX.2-klein 9B (FLUX Non-Commercial License v2.1) als zuschaltbare Gruppe; sie laeuft nie von allein, nur mit --groups und --accept-license flux-non-commercial. Prompt p4 prueft Gesichter nach Maras Referenzbild (images/mara_references), nur bei Gruppen mit reference.",
   "runtime": {
     "name": "stable-diffusion.cpp",
     "repo": "https://github.com/leejet/stable-diffusion.cpp",
@@ -16,10 +16,12 @@
     {"id": "p2", "topic": "Schrift", "seed": 7,
      "text": "A cozy cafe interior in the evening, a chalkboard on the wall with the words \"CoreAI\" written in white chalk, warm light, detailed"},
     {"id": "p3", "topic": "Illustration", "seed": 1234,
-     "text": "A friendly robot gardener watering tomato plants on a balcony, colorful flat illustration, clean lines"}
+     "text": "A friendly robot gardener watering tomato plants on a balcony, colorful flat illustration, clean lines"},
+    {"id": "p4", "topic": "Gesicht nach Referenz", "seed": 2026, "reference": "mara_identity_primary.png",
+     "text": "A portrait photo of the same woman as in the reference image, sitting by the window of a cozy cafe, natural daylight, the same face and the same hairstyle, photorealistic"}
   ],
   "plan": [
-    {"size": "512x512", "prompts": ["p1", "p2", "p3"]},
+    {"size": "512x512", "prompts": ["p1", "p2", "p3", "p4"]},
     {"size": "1024x1024", "prompts": ["p1"]}
   ],
   "groups": {
@@ -39,11 +41,29 @@
       "label": "FLUX.2-klein 4B (Q8_0)",
       "origin": "Black Forest Labs; GGUF von leejet, dem Autor von stable-diffusion.cpp",
       "license": "Apache-2.0",
+      "reference": true,
       "steps": 4,
       "cfg_scale": 1.0,
       "files": [
         {"role": "diffusion_model", "repo": "leejet/FLUX.2-klein-4B-GGUF", "path": "flux-2-klein-4b-Q8_0.gguf", "size": 4300629440, "license": "Apache-2.0"},
         {"role": "llm", "repo": "unsloth/Qwen3-4B-GGUF", "path": "Qwen3-4B-Q8_0.gguf", "size": 4280405792, "license": "Apache-2.0"},
+        {"role": "vae", "repo": "Comfy-Org/Flux-2-Klein-4B", "path": "split_files/vae/flux2-vae.safetensors", "size": 336211292, "license": "Apache-2.0"}
+      ]
+    },
+    "flux2-klein-9b": {
+      "label": "FLUX.2-klein 9B (Q8_0)",
+      "origin": "Black Forest Labs; GGUF von leejet, dem Autor von stable-diffusion.cpp",
+      "license": "FLUX Non-Commercial License v2.1",
+      "license_url": "https://huggingface.co/black-forest-labs/FLUX.2-klein-9B/blob/main/LICENSE.md",
+      "license_note": "Nur private, nicht-kommerzielle Nutzung, nicht fuer andere Nutzer des Servers; Bilder vor dem Weitergeben pruefen (Lizenz 1c, 2e, 4a).",
+      "optional": true,
+      "accept": "flux-non-commercial",
+      "reference": true,
+      "steps": 4,
+      "cfg_scale": 1.0,
+      "files": [
+        {"role": "diffusion_model", "repo": "leejet/FLUX.2-klein-9B-GGUF", "path": "flux-2-klein-9b-Q8_0.gguf", "size": 9978284192, "license": "FLUX Non-Commercial License v2.1"},
+        {"role": "llm", "repo": "unsloth/Qwen3-8B-GGUF", "path": "Qwen3-8B-Q8_0.gguf", "size": 8709519168, "license": "Apache-2.0"},
         {"role": "vae", "repo": "Comfy-Org/Flux-2-Klein-4B", "path": "split_files/vae/flux2-vae.safetensors", "size": 336211292, "license": "Apache-2.0"}
       ]
     }

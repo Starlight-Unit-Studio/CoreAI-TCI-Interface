@@ -39,6 +39,27 @@ img_gen_test(coreui_image_extract_marker('[BILD ICH: Mara in winter]') === 'ICH:
   && coreui_image_extract_marker('[BILD GROSS ICH: Mara as a captain]') === 'GROSS: ICH: Mara as a captain'
   && coreui_image_parse_input('GROSS: ICH: Mara as a captain') === ['size' => 'large', 'prompt' => 'Mara as a captain', 'self_reference' => true],
   'self portrait marker selects account reference and allows roleplay');
+// 0.7.51: the marker takes as much as "limits.prompt_chars" in config/image/mara-image.json allows
+// (the operator raised it from 1200 to 4096), never more, and never less than the register says.
+$markerLimit = coreui_image_prompt_limit();
+$registryLimit = (int)(json_decode((string)file_get_contents($root . '/config/image/mara-image.json'), true)['limits']['prompt_chars'] ?? 0);
+img_gen_test($markerLimit === $registryLimit && $markerLimit >= 1200, 'the marker limit is the register limit: ' . $markerLimit . ' / ' . $registryLimit);
+img_gen_test(coreui_image_prompt_limit(['limits' => ['prompt_chars' => 4096]]) === 4096 && coreui_image_prompt_limit([]) === 1200
+  && coreui_image_prompt_limit(['limits' => ['prompt_chars' => 0]]) === 3 && coreui_image_prompt_limit(['limits' => ['prompt_chars' => 999999]]) === 20000,
+  'limit from the register, 1200 without one, kept inside sane bounds');
+$fullMarker = str_repeat('a', $markerLimit);
+img_gen_test(coreui_image_extract_marker('[BILD: ' . $fullMarker . ']') === $fullMarker && preg_last_error() === PREG_NO_ERROR,
+  'a description as long as the limit is taken');
+img_gen_test(coreui_image_extract_marker('[BILD: ' . $fullMarker . 'a]') === null && preg_last_error() === PREG_NO_ERROR,
+  'one character more than the limit is no marker');
+img_gen_test($markerLimit < 1300 || coreui_image_extract_marker('Gern! [BILD GROSS ICH: ' . str_repeat('ä🙂 ', 400) . 'ende] Fertig.')
+    === 'GROSS: ICH: ' . str_repeat('ä🙂 ', 400) . 'ende', 'a long description with umlauts and emoji (1204 characters) keeps every character');
+img_gen_test(coreui_image_extract_marker('[BILD: ' . str_repeat('a', 1200) . ']', 1200) === str_repeat('a', 1200)
+  && coreui_image_extract_marker('[BILD: ' . str_repeat('a', 1201) . ']', 1200) === null
+  && coreui_image_extract_marker('[BILD: ' . str_repeat('a', 1201) . ']', 4096) === str_repeat('a', 1201)
+  && coreui_image_extract_marker('[BILD: abc]', 0) === 'abc', 'an explicit limit decides; a senseless one still reads three characters');
+img_gen_test(coreui_image_extract_marker('[BILD: ' . str_repeat('x', 200000)) === null && preg_last_error() === PREG_NO_ERROR,
+  'a marker that never closes is no marker and no PCRE error');
 img_gen_test(coreui_image_is_self_request('Zeig dich als Superwoman')
   && coreui_image_is_self_request('Ein Bild von dir auf der Bruecke')
   && !coreui_image_is_self_request('Zeichne Superwoman')
@@ -352,6 +373,13 @@ $r = coreui_image_generate($pdo, 5, 'ember', 'a fox', 'normal', static fn() => f
 img_gen_test($r['error'] === 'model_queue_timeout' && count($GLOBALS['img_calls']) === 1, 'queue not free: no job started');
 $r = coreui_image_generate($pdo, 5, 'ember', '   ', 'normal', $lease, $unlease, static function (): void {}, $never, $http);
 img_gen_test($r['error'] === 'bad_prompt', 'empty description');
+// 0.7.51: the request takes the same limit as the marker.
+$r = coreui_image_generate($pdo, 5, 'ember', str_repeat('a', $markerLimit + 1), 'normal', $lease, $unlease, static function (): void {}, $never, $http);
+img_gen_test($r['error'] === 'bad_prompt', 'one character more than the limit is refused');
+$http = $fake([['GET', '/health', [200, ['ok' => true, 'ready' => false, 'loading' => true, 'weights' => ['have' => 1, 'total' => 2]], '']]]);
+$r = coreui_image_generate($pdo, 5, 'ember', str_repeat('a', $markerLimit), 'normal', $lease, $unlease, static function (): void {}, $never, $http);
+img_gen_test($r['error'] === 'image_loading', 'a description as long as the limit passes the length check: ' . $r['error']);
+$http = $fake([['GET', '/health', $ready]]);
 $r = coreui_image_generate($pdo, 5, 'ember', 'a fox', 'huge', $lease, $unlease, static function (): void {}, $never, $http);
 img_gen_test($r['error'] === 'bad_size', 'unknown size');
 

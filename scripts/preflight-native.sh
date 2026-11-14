@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.50: Deep Research search and source integrity.
+# CoreAI: TCI Interface 0.7.51: image test with FLUX.2-klein 9B as an optional group and a face prompt with a reference image.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -599,7 +599,7 @@ fi
 # resume and SHA-256 against a stand-in Hugging Face, lock check, a run with a stand-in sd-cli, report.
 image_spike_test=''
 if image_spike_test="$(python3 "$PROJECT_ROOT/scripts/image-spike-selftest.py" 2>&1)"; then
-  ok 'Bildtest: Register und Lizenzen, Laden mit Wiederaufnahme und SHA-256, Lock-Pruefung, Messlauf und Bericht geprueft.'
+  ok 'Bildtest: Register und Lizenzen (FLUX.2-klein 9B nur zugeschaltet), Laden mit SHA-256, Lock-Pruefung, Messlauf, Gesichtsprompt und Bericht geprueft.'
 else
   fail "Bildtest-Selbsttest: ${image_spike_test:-Unbekannter Fehler}"
 fi

@@ -1,0 +1,56 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.51
+Datum: 14.11.2026
+
+BILDTEST: FLUX.2-KLEIN 9B ZUSCHALTBAR, GESICHTSPROMPT MIT REFERENZBILD
+- Wunsch des Betreibers: FLUX.2-klein 9B wegen der Gesichtstreue pruefen und
+  spaeter zwischen 4B und 9B wechseln koennen.
+- scripts/image-spike.sh kennt eine dritte Gruppe flux2-klein-9b (Q8_0,
+  Textverstaendnis Qwen3-8B, FLUX.2-VAE, zusammen etwa 19 GB Gewichte).
+- Die Gruppe laeuft nie von allein. Sie braucht --groups flux2-klein-9b und
+  --accept-license flux-non-commercial. Ohne Bestaetigung nennt das Skript die
+  Lizenz, die Bedingungen und den Link zum Volltext und bricht ab, bevor etwas
+  gebaut oder geladen wird.
+- Lizenz: FLUX Non-Commercial License v2.1. Nur private, nicht-kommerzielle
+  Nutzung, nicht fuer andere Nutzer des Servers, Bilder vor dem Weitergeben
+  pruefen. Die beiden Standardgruppen bleiben Apache 2.0.
+- Neuer Prompt p4 "Gesicht nach Referenz": dieselbe Frau wie auf Maras
+  Referenzbild (images/mara_references/mara_identity_primary.png, nur lesend
+  eingebunden), fuer FLUX.2-klein 4B und 9B. So laesst sich die Gesichtstreue
+  beider Modelle nebeneinander ansehen. Z-Image-Turbo laesst p4 aus.
+- Referenznamen sind auf Maras Portraets im Repository begrenzt; Symlinks und
+  zu grosse Dateien werden abgelehnt.
+- Der Hinweis zu freiem Speicherplatz und Arbeitsspeicher rechnet jetzt mit den
+  Gewichten der gewaehlten Gruppen.
+
+BEWUSST NICHT GEAENDERT
+- Der laufende Bildgenerator bleibt beim festen FLUX.2-klein 4B.
+- Keine Vision-Core-Verwaltung, kein Ollama-Gewichtsimport, kein Umschalter in
+  der Oberflaeche. Das entscheidet sich nach der Messung auf dem Server.
+
+ABGLEICH MIT MAIN
+- Drei direkte Aenderungen des Betreibers auf main unveraendert uebernommen
+  (Bildhinweis, Modelfile-Zeile, prompt_chars 4096).
+- scripts/image-service-selftest.py nimmt die Prompt-Grenze jetzt aus
+  config/image/mara-image.json statt fest 1300 Zeichen.
+
+EINE PROMPT-GRENZE FUER MARKER, ANFRAGE UND BILDDIENST
+- Auftrag des Betreibers: der Marker soll ebenfalls 4096 Zeichen nehmen.
+- Maras Marker [BILD: ...] endete fest bei 1200 Zeichen. Er liest jetzt
+  dieselbe Zahl wie die Anfrage und der Bilddienst: limits.prompt_chars in
+  config/image/mara-image.json (derzeit 4096).
+- Eine spaetere Aenderung im Register gilt damit ueberall.
+
+TESTS
+- python3 -I scripts/image-spike-selftest.py (Register, Lizenzsperre,
+  Referenzbild, feste Argumente, Trockenlauf)
+- php scripts/image-spike-store-selftest.php
+- python3 -I scripts/image-service-selftest.py
+- php scripts/image-gen-selftest.php (Marker an der Grenze, ein Zeichen mehr,
+  Umlaute und Emoji, Marker ohne Ende, Anfrage)
+- python3 -I scripts/vision-management-removal-selftest.py
+- Versions-Guard gegen main 0.7.50, Cache-Bust-Verify, gesamte Selbsttest-Reihe
+  auf Branch und main (Ergebnis im Uebergabeprotokoll).
+
+NICHT GETESTET
+- Ein echter Lauf mit FLUX.2-klein 9B (Zeit, Arbeitsspeicher, Gesichtstreue).
+  Der gehoert auf den Server.

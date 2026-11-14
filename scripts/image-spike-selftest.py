@@ -17,6 +17,7 @@ import hashlib
 import http.server
 import json
 import os
+import shutil
 import struct
 import subprocess
 import sys
@@ -46,11 +47,36 @@ def png(width: int, height: int) -> bytes:
 
 # --- Registry and Dockerfile --------------------------------------------------------------
 reg = spike.load_registry()
-check(set(reg['groups']) == {'zimage-turbo', 'flux2-klein-4b'}, 'the two groups the operator chose: ' + ', '.join(reg['groups']))
-check(all(g['license'] == 'Apache-2.0' and all(f['license'] == 'Apache-2.0' for f in g['files']) for g in reg['groups'].values()),
-      'every model and file under Apache 2.0')
-check(reg['groups']['zimage-turbo']['steps'] == 8 and reg['groups']['flux2-klein-4b']['steps'] == 4
+# 0.7.51: FLUX.2-klein 9B is a third, optional group; a run without --groups still takes only the two Apache ones.
+check(list(reg['groups']) == ['zimage-turbo', 'flux2-klein-4b', 'flux2-klein-9b'], 'the groups: ' + ', '.join(reg['groups']))
+check(spike.default_groups(reg) == ['zimage-turbo', 'flux2-klein-4b'], 'the two groups the operator chose run by default')
+check(all(reg['groups'][gid]['license'] == 'Apache-2.0' and all(f['license'] == 'Apache-2.0' for f in reg['groups'][gid]['files'])
+          for gid in spike.default_groups(reg)), 'every default model and file under Apache 2.0')
+check(reg['groups']['zimage-turbo']['steps'] == 8 and reg['groups']['flux2-klein-4b']['steps'] == 4 and reg['groups']['flux2-klein-9b']['steps'] == 4
       and all(g['cfg_scale'] == 1.0 for g in reg['groups'].values()), 'steps and guidance as stable-diffusion.cpp documents them')
+nine = reg['groups']['flux2-klein-9b']
+nine_files = {f['role']: f for f in nine['files']}
+check(nine['optional'] is True and nine['accept'] == 'flux-non-commercial' and nine['license'] == 'FLUX Non-Commercial License v2.1'
+      and nine['license_url'] == 'https://huggingface.co/black-forest-labs/FLUX.2-klein-9B/blob/main/LICENSE.md'
+      and 'nicht-kommerzielle' in nine['license_note'] and len(nine['license']) <= 40,
+      'FLUX.2-klein 9B: optional, its licence named and to be accepted (the label fits Admin Core)')
+check(nine_files['diffusion_model']['repo'] == 'leejet/FLUX.2-klein-9B-GGUF' and nine_files['diffusion_model']['path'] == 'flux-2-klein-9b-Q8_0.gguf'
+      and nine_files['diffusion_model']['size'] == 9978284192 and nine_files['diffusion_model']['license'] == nine['license']
+      and nine_files['llm']['repo'] == 'unsloth/Qwen3-8B-GGUF' and nine_files['llm']['path'] == 'Qwen3-8B-Q8_0.gguf'
+      and nine_files['llm']['size'] == 8709519168 and nine_files['llm']['license'] == 'Apache-2.0'
+      and nine_files['vae'] == {f['role']: f for f in reg['groups']['flux2-klein-4b']['files']}['vae'],
+      '9B: the official GGUF of the author of stable-diffusion.cpp, the Qwen3-8B text encoder it needs, the VAE the 4B already has')
+check(reg['groups']['flux2-klein-4b'].get('reference') is True and nine.get('reference') is True
+      and not reg['groups']['zimage-turbo'].get('reference'), 'only FLUX.2-klein takes reference images')
+for change, why in ((lambda g: g.pop('optional'), 'optional'), (lambda g: g.update(license_url='http://x'), 'license_url'),
+                    (lambda g: g.update(accept='Nein!'), 'accept'), (lambda g: g.update(reference='ja'), 'reference')):
+    wrong = json.loads(json.dumps(reg))
+    change(wrong['groups']['flux2-klein-9b'])
+    check(any('flux2-klein-9b' in e for e in spike.registry_errors(wrong)), 'a licence group without ' + why + ' is refused')
+only_optional = json.loads(json.dumps(reg))
+for g in only_optional['groups'].values():
+    g['optional'] = True
+check(any('nicht optional' in e for e in spike.registry_errors(only_optional)), 'a registry where nothing runs by default is refused')
 docker = (ROOT / 'docker' / 'image-spike' / 'Dockerfile').read_text(encoding='utf-8')
 check(f'ARG SD_COMMIT={reg["runtime"]["commit"]}' in docker and f'ARG GGML_COMMIT={reg["runtime"]["ggml_commit"]}' in docker
       and '-DGGML_NATIVE=ON' in docker and '--target sd-cli' in docker and 'git checkout --detach "$SD_COMMIT"' in docker,
@@ -63,7 +89,15 @@ bad['plan'][0]['size'] = '500x500'
 errors = spike.registry_errors(bad)
 check(any('Pfad' in e for e in errors) and any('64' in e for e in errors), 'paths outside and odd sizes are refused: ' + '; '.join(errors))
 plan_sizes = [step['size'] for step in reg['plan']]
-check(plan_sizes == ['512x512', '1024x1024'] and reg['plan'][1]['prompts'] == ['p1'], 'three prompts at 512, one at 1024')
+check(plan_sizes == ['512x512', '1024x1024'] and reg['plan'][0]['prompts'] == ['p1', 'p2', 'p3', 'p4'] and reg['plan'][1]['prompts'] == ['p1'],
+      'three prompts and the face prompt at 512, one at 1024')
+face = {p['id']: p for p in reg['prompts']}['p4']
+check(face['reference'] == 'mara_identity_primary.png' and (ROOT / 'images' / 'mara_references' / face['reference']).is_file()
+      and 'reference image' in face['text'], 'p4 asks for the face of Mara\'s registered portrait, which is in the repository')
+for name in ('../etc/passwd', '/etc/passwd', 'foto.png', 'mara_style_hologram_seated.jpg'):
+    wrong = json.loads(json.dumps(reg))
+    wrong['prompts'][3]['reference'] = name
+    check(any('Referenzbild' in e for e in spike.registry_errors(wrong)), 'reference outside Mara\'s identity pictures refused: ' + name)
 
 # --- Parsing ------------------------------------------------------------------------------
 LOG = ('[INFO ] model.cpp:1426 - loading tensors completed, taking 21.40s (read: 3.1s)\n'
@@ -243,6 +277,33 @@ print({LOG!r})
     check(spike.FILE_RE.match(image['file']) and (out / 'logs' / 'mini-512x512-p1.log').is_file(), 'file name for Admin Core and the log kept')
     check(len(spike.run_group(test_reg, 'mini', models, out, 3, full=True, sd_cli=str(stub), timeout=60)['images']) == 6,
           '--full: every prompt at every size')
+    check(all(i['prompt'] != 'p4' for i in result['images']) and all('-r' not in c for c in calls),
+          'a model without reference support never gets the face prompt or a reference image')
+
+    # --- 0.7.51: the face prompt with a reference image, only for groups that take one -------------
+    ref_reg = json.loads(json.dumps(test_reg))
+    ref_reg['groups']['mini']['reference'] = True
+    refs = tmp / 'refs'
+    refs.mkdir()
+    (refs / 'mara_identity_primary.png').write_bytes(b'\x89PNG\r\n\x1a\n' + b'x' * 64)
+    args_log.unlink()
+    with_ref = spike.run_group(ref_reg, 'mini', models, out, 3, sd_cli=str(stub), timeout=60, refs=refs)
+    ref_calls = [json.loads(line) for line in args_log.read_text(encoding='utf-8').splitlines()]
+    check(with_ref['ok'] and [i['prompt'] + '@' + i['size'] for i in with_ref['images']] == ['p1@512x512', 'p2@512x512', 'p3@512x512', 'p4@512x512', 'p1@1024x1024']
+          and all(i['ok'] for i in with_ref['images']), 'five images, the face prompt among them: ' + json.dumps([i['error'] for i in with_ref['images']]))
+    check([c[c.index('-r') + 1] if '-r' in c else '' for c in ref_calls] == ['', '', '', str(refs / 'mara_identity_primary.png'), ''],
+          'only the face prompt carries the reference image, as "-r file" like Mara\'s image service')
+    check(ref_calls[3][ref_calls[3].index('-p') + 1] == face['text'] and ref_calls[3][ref_calls[3].index('-s') + 1] == '2026', 'face prompt and its seed')
+    no_ref = spike.run_group(ref_reg, 'mini', models, out, 3, sd_cli=str(stub), timeout=60, refs=tmp / 'no-refs')
+    missing = {i['prompt']: i for i in no_ref['images']}['p4']
+    check(no_ref['ok'] and not missing['ok'] and missing['file'] == '' and missing['error'].startswith('Referenzbild mara_identity_primary.png fehlt')
+          and sum(1 for i in no_ref['images'] if i['ok']) == 4, 'without the reference picture the face prompt says so, the others still run')
+    (refs / 'mara_identity_primary.png').unlink()
+    (refs / 'mara_identity_primary.png').symlink_to(stub)
+    linked = spike.run_group(ref_reg, 'mini', models, out, 3, sd_cli=str(stub), timeout=60, refs=refs)
+    check(not {i['prompt']: i for i in linked['images']}['p4']['ok'], 'a symbolic link is no reference picture')
+    check(spike.command({'diffusion_model': 'd', 'llm': 'l', 'vae': 'v'}, face, '512x512', ref_reg['groups']['mini'], 2, out / 'x.png', 'sd')[-2:] != ['-r', 'None'],
+          'no reference, no "-r"')
     broken = json.loads(json.dumps(test_reg))
     broken['prompts'][1]['text'] = 'FAIL please'
     broken['prompts'][2]['text'] = 'WRONG size'
@@ -284,10 +345,38 @@ print({LOG!r})
     one = subprocess.run(['bash', str(ROOT / 'scripts' / 'image-spike.sh'), '--dry-run', '--threads', '1', '--groups', 'flux2-klein-4b', '--full'],
                          capture_output=True, text=True, env=env, timeout=60)
     check(one.returncode == 0 and 'zimage-turbo' not in one.stdout and '--full' in one.stdout, 'one group, all sizes')
+    # 0.7.51: FLUX.2-klein 9B never runs by default and only after its licence was accepted.
+    check('flux2-klein-9b' not in text and '-v ' + str(ROOT / 'images' / 'mara_references') + ':/refs:ro' in text and '--refs /refs' in text,
+          'a default run leaves the 9B out; Mara\'s reference pictures are mounted read-only')
+    refused = subprocess.run(['bash', str(ROOT / 'scripts' / 'image-spike.sh'), '--dry-run', '--threads', '1', '--groups', 'flux2-klein-9b'],
+                             capture_output=True, text=True, env=env, timeout=60)
+    check(refused.returncode != 0 and 'FLUX Non-Commercial License v2.1' in refused.stderr and '--accept-license flux-non-commercial' in refused.stderr
+          and 'https://huggingface.co/black-forest-labs/FLUX.2-klein-9B/blob/main/LICENSE.md' in refused.stderr
+          and 'docker' not in refused.stdout, 'without acceptance: the licence is named and nothing is built or loaded: ' + refused.stderr[-300:])
+    wrong_word = subprocess.run(['bash', str(ROOT / 'scripts' / 'image-spike.sh'), '--dry-run', '--threads', '1', '--groups', 'flux2-klein-9b',
+                                 '--accept-license', 'apache'], capture_output=True, text=True, env=env, timeout=60)
+    check(wrong_word.returncode != 0, 'another word does not accept the licence')
+    accepted = subprocess.run(['bash', str(ROOT / 'scripts' / 'image-spike.sh'), '--dry-run', '--threads', '1', '--groups', 'flux2-klein-4b,flux2-klein-9b',
+                               '--accept-license', 'flux-non-commercial'], capture_output=True, text=True, env=env, timeout=60)
+    check(accepted.returncode == 0 and 'run.py fetch --group flux2-klein-9b' in accepted.stdout and 'run.py run --group flux2-klein-9b' in accepted.stdout
+          and 'run.py run --group flux2-klein-4b' in accepted.stdout and 'zimage-turbo' not in accepted.stdout,
+          'accepted: 4B and 9B side by side: ' + (accepted.stdout + accepted.stderr)[-300:])
+    # A copy of the project without Mara's reference pictures: nothing is mounted (Docker would create the folder).
+    bare = tmp / 'bare'
+    (bare / 'scripts').mkdir(parents=True)
+    shutil.copy(ROOT / 'scripts' / 'image-spike.sh', bare / 'scripts' / 'image-spike.sh')
+    shutil.copytree(ROOT / 'tools' / 'image_spike', bare / 'tools' / 'image_spike')
+    no_refs = subprocess.run(['bash', str(bare / 'scripts' / 'image-spike.sh'), '--dry-run', '--threads', '1', '--groups', 'flux2-klein-4b'],
+                             capture_output=True, text=True, env=env, timeout=60)
+    no_refs_text = no_refs.stdout + no_refs.stderr
+    check(no_refs.returncode == 0 and ':/refs:ro' not in no_refs_text and '--refs' not in no_refs_text
+          and 'der Gesichtsprompt laeuft ohne Referenzbild nicht' in no_refs_text and not (bare / 'images').exists(),
+          'without the reference folder nothing is mounted and the script says so: ' + no_refs_text[-300:])
     for bad_args in (['--groups', 'x;rm'], ['--threads', 'viele'], ['--groups', 'nichtda'], ['--unbekannt']):
         res = subprocess.run(['bash', str(ROOT / 'scripts' / 'image-spike.sh'), '--dry-run', *bad_args], capture_output=True, text=True,
                              env=env, timeout=60)
         check(res.returncode != 0, 'refused: ' + ' '.join(bad_args))
 
-print('CoreAI Bildtest: Register (Apache 2.0, Commit wie im Dockerfile), Zeiten, PNG, Laden mit Wiederaufnahme und SHA-256,'
-      ' Lock-Pruefung, Lauf mit festen Argumenten, Fehler, Bericht und Trockenlauf OK')
+print('CoreAI Bildtest: Register (Standard Apache 2.0, FLUX.2-klein 9B nur zugeschaltet mit Lizenzbestaetigung, Commit wie im Dockerfile),'
+      ' Zeiten, PNG, Laden mit Wiederaufnahme und SHA-256, Lock-Pruefung, Lauf mit festen Argumenten, Gesichtsprompt mit Referenzbild,'
+      ' Fehler, Bericht und Trockenlauf OK')

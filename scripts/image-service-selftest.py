@@ -407,10 +407,12 @@ open(out, 'wb').write(png(w, h, (16, 32, 48)))
     check(health['ready'] and not health['busy'] and health['weights']['have'] == health['weights']['total'] > 0
           and health['sizes']['normal'] == {'width': 64, 'height': 64}, 'health: ready, weights complete: ' + json.dumps(health))
 
-    for bad_body, code in (({'prompt': '', 'size': 'normal'}, 'bad_prompt'), ({'prompt': 'x' * 1300}, 'bad_prompt'),
+    # 0.7.51: one character more than the limit in config/image/mara-image.json (the operator raised it to 4096).
+    too_long = 'x' * (int(reg['limits']['prompt_chars']) + 1)
+    for bad_body, code in (({'prompt': '', 'size': 'normal'}, 'bad_prompt'), ({'prompt': too_long}, 'bad_prompt'),
                            ({'prompt': 'a fox', 'size': 'huge'}, 'bad_size'), ({'prompt': 'a fox', 'seed': -1}, 'bad_seed'),
                            ({'prompt': 'a fox', 'scene_hint': 42}, 'bad_request'),
-                           ({'prompt': 'a fox', 'scene_hint': 'x' * 1300}, 'bad_request'),
+                           ({'prompt': 'a fox', 'scene_hint': too_long}, 'bad_request'),
                            ({'prompt': 'a\x00b'}, 'bad_prompt'),
                            ({'prompt': 'a fox', 'reference': '../etc/passwd'}, 'bad_reference'),
                            ({'prompt': 'a fox', 'references': '/etc/passwd'}, 'bad_reference'),
@@ -418,7 +420,7 @@ open(out, 'wb').write(png(w, h, (16, 32, 48)))
                            ({'prompt': 'a fox', 'references': ['upload:' + 'a' * 32 + '.png'] * 2}, 'bad_reference'),
                            ({'prompt': 'a fox', 'references': ['upload:' + 'a' * 32 + '.png'] * 11}, 'bad_reference')):
         status, body = call('POST', '/jobs', bad_body)
-        check(status == 400 and body['error'] == code, f'refused: {bad_body!r} -> {body}')
+        check(status == 400 and body['error'] == code, f'refused: {str(bad_body)[:200]} -> {body}')
 
     prompt = 'A red fox; rm -rf / $(reboot) "quoted"'
     status, body = call('POST', '/jobs', {'prompt': prompt, 'size': 'normal', 'seed': 42})

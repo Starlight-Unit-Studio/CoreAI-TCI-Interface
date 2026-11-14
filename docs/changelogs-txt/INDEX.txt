@@ -348,3 +348,4 @@ Jede Version liegt als eigenstaendige UTF-8-TXT-Datei vor.
 * CHANGELOG_0_7_48.txt
 * CHANGELOG_0_7_49.txt
 * CHANGELOG_0_7_50.txt
+* CHANGELOG_0_7_51.txt
