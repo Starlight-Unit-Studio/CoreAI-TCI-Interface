@@ -74,8 +74,12 @@ TESTS (in dieser Sitzung ausgefuehrt)
   python3 -I scripts/vision-management-removal-selftest.py, scripts/branding-license-selftest.py,
   scripts/terran-terminology-selftest.cjs, scripts/tci-language-selftest.cjs: bestanden.
 - python3 scripts/version-merge-check.py --base-version 0.7.50 und scripts/cache-bust.py --verify: bestanden.
-- Gesamte Selbsttest-Reihe (scripts/*selftest*, model-live-audit, tests/*) auf Branch und main 0.7.50:
-  laeuft beim Oeffnen des PR; das Ergebnis steht im Folge-Commit. Bis dahin bleibt der PR ein Entwurf.
+- Gesamte Selbsttest-Reihe (scripts/*selftest*, model-live-audit, tests/*) nacheinander, Branch und main:
+  Branch 0.7.51: 162 bestanden, 11 fehlgeschlagen. main 0.7.50: 162 bestanden, 11 fehlgeschlagen.
+  Es sind auf beiden Seiten dieselben 11 (browse-image: Python-Playwright fehlt in dieser Umgebung;
+  browse-live, chat-menu, core-install, long-chat, model-library, pets, security, session-list,
+  settings-tabs, update). Keiner davon beruehrt den Bildtest; durch 0.7.51 kommt kein Fehlschlag dazu.
+- GitHub-Pruefungen auf dem PR (9 Laeufe, darunter image-service und ui-and-version): alle bestanden.
 
 NICHT GETESTET
 - Ein echter Lauf mit FLUX.2-klein 9B: Download, Zeit, Arbeitsspeicher und Gesichtstreue. Hier gibt es
