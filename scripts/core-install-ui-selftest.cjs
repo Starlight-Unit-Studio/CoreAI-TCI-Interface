@@ -395,55 +395,76 @@ assert.equal(api.gb(20 * 1073741824), '20 GB');
   assert.equal(srv.calls.filter(c => c.url === './api/user_settings.php?core_manage=1').length, manageReads + 1, 'the overview is read again');
   assert(menuRefresh.length >= 1, 'the Core menu is refreshed');
 
-  // Generator: listed as a real TCI Core, installed from the existing FLUX source without a Gemma renderer.
+  // Generator license: list and installer both show original text, and both block until consent.
   const genBase = 'fegdxus/flux2-klein-9b-uncensored:Q8_0';
-  const genMissing = {tier: 'generator', label: 'TCI Core Generator', base: genBase, download_gb: 0,
+  const genMissing = {tier: 'generator', label: 'TCI Core Generator', base: genBase, download_gb: 8.2,
     local: [], removable: [], cloud: [], alias_of: null, cloud_base: null, cloud_missing: false, status: 'missing'};
   ({els, doc} = page());
-  srv = server({tiers: TIERS.concat([genMissing]), check: check({
-    tier: 'generator', label: 'TCI Core Generator', base: genBase, core: 'ember-coreui:gen',
-    download_gb: 0, rows: [{key: 'source', label: 'Ausgangs-Core',
-      value: 'FLUX.2 ist bereits in Ollama installiert; kein weiterer Download.', state: 'ok'}]})});
+  srv = server({tiers: TIERS.concat([genMissing]), check: check({tier: 'generator',
+    label: 'TCI Core Generator', base: genBase, core: 'ember-coreui:gen',
+    source_present: false, download_gb: 8.2, verdict: 'gut', blocked: false})});
   win = api.create(doc, srv.fetch, () => {}, {});
   await win.manage();
   assert.equal(els.coreInstallTierList.children.length, 6, 'Generator has its own manage row');
-  const genItem = els.coreInstallTierList.children[5];
+  let genItem = els.coreInstallTierList.children[5];
   assert.match(genItem.textContent, /TCI Core Generator.*ember-coreui:gen/);
-  const genActions = genItem.children.find(c => c.className === 'core-install-tier-actions').children;
-  assert.equal(genActions[0].textContent, 'Installieren');
+  let genActions = genItem.children.find(c => c.className === 'core-install-tier-actions').children;
+  assert.deepEqual(genActions.map(b => b.textContent), ['Lizenz ansehen', 'Installieren']);
+  assert.equal(genActions[1].disabled, true, 'install from management is blocked before license acceptance');
   await genActions[0].handlers.click();
+  assert.equal(els.coreGeneratorLicense.hidden, false, 'in-app license modal opens');
+  assert.match(els.coreGeneratorLicenseText.textContent, /FLUX Non-Commercial License v2.1/);
+  assert.equal(els.coreGeneratorLicenseAccept.disabled, true, 'accept button requires checkbox');
+  els.coreGeneratorLicenseCheck.checked = true;
+  els.coreGeneratorLicenseCheck.handlers.change();
+  assert.equal(els.coreGeneratorLicenseAccept.disabled, false);
+  await els.coreGeneratorLicenseAccept.handlers.click();
+  assert.equal(srv.st.licenseAccepted, true, 'server records acceptance');
+  assert.equal(els.coreGeneratorLicense.hidden, true, 'modal closes after server success');
+  assert.equal(srv.calls.filter(c => c.init.method === 'POST').length, 1);
+  assert.deepEqual(JSON.parse(srv.calls.filter(c => c.init.method === 'POST')[0].init.body),
+    {action: 'core_generator_license_accept', accepted: true, sha256: 'a'.repeat(64)});
+  genItem = els.coreInstallTierList.children[5];
+  genActions = genItem.children.find(c => c.className === 'core-install-tier-actions').children;
+  assert.deepEqual(genActions.map(b => b.textContent), ['Lizenz ansehen ✓', 'Installieren']);
+  assert.equal(genActions[1].disabled, false, 'install unlocks after receipt');
+  await genActions[1].handlers.click();
   assert.equal(els.coreInstallTitle.textContent, 'TCI Core Generator');
-  assert.match(els.coreInstallLead.textContent, /Keine zweite Modellkopie und kein Download/);
+  assert.match(els.coreInstallLead.textContent, /CoreAI lädt FLUX.2-klein 9B selbst herunter/);
   assert.match(els.coreInstallTech.textContent, /ember-coreui:gen/);
+  assert.equal(els.coreInstallGeneratorLicense.hidden, false, 'installer has its own license button');
+  assert.equal(els.coreInstallGo.disabled, false);
+  await els.coreInstallGeneratorLicenseOpen.handlers.click();
+  assert.match(els.coreGeneratorLicenseNote.textContent, /bereits akzeptiert/);
+  await els.coreGeneratorLicenseCancel.handlers.click();
   await els.coreInstallGo.handlers.click();
-  assert.deepEqual(JSON.parse(srv.calls.filter(x => x.init.method === 'POST').pop().init.body),
-    {action: 'core_install', tier: 'generator'}, 'install uses existing tier action');
+  assert.deepEqual(JSON.parse(srv.calls.filter(c => c.init.method === 'POST').pop().init.body),
+    {action: 'core_install', tier: 'generator'}, 'install never fakes license consent in request');
+
+  // Direct entry from Core picker is blocked until consent as well.
   ({els, doc} = page());
-  srv = server({tiers: TIERS.concat([Object.assign({}, genMissing, {local: ['ember-coreui:gen'],
-    removable: ['ember-coreui:gen'], status: 'installed'})])});
+  srv = server({check: check({tier: 'generator', label: 'TCI Core Generator',
+    base: genBase, core: 'ember-coreui:gen', source_present: false,
+    download_gb: 8.2, verdict: 'gut', blocked: false})});
+  win = api.create(doc, srv.fetch, () => {}, {});
+  await win.open('generator');
+  assert.equal(els.coreInstallGo.disabled, true, 'install view is locked before consent');
+  assert.equal(els.coreInstallGeneratorLicense.hidden, false);
+  await els.coreInstallGeneratorLicenseOpen.handlers.click();
+  els.coreGeneratorLicenseCheck.checked = true;
+  els.coreGeneratorLicenseCheck.handlers.change();
+  await els.coreGeneratorLicenseAccept.handlers.click();
+  assert.equal(els.coreInstallGo.disabled, false, 'install view unlocks on saved license receipt');
+
+  ({els, doc} = page());
+  srv = server({licenseAccepted: true, tiers: TIERS.concat([Object.assign({}, genMissing,
+    {local: ['ember-coreui:gen'], removable: ['ember-coreui:gen'], status: 'installed'})])});
   win = api.create(doc, srv.fetch, () => {}, {});
   await win.manage();
   const genInstalledItem = els.coreInstallTierList.children[5];
   const genInstalledActions = genInstalledItem.children.find(c => c.className === 'core-install-tier-actions').children;
-  assert.deepEqual(genInstalledActions.map(b => b.textContent), ['Aktualisieren', 'Deinstallieren']);
-
-  // A genuinely missing non-commercial FLUX base requires an explicit two-tap licence acknowledgement.
-  ({els, doc} = page());
-  srv = server({check: check({tier: 'generator', label: 'TCI Core Generator',
-    base: 'fegdxus/flux2-klein-9b-uncensored:Q8_0',
-    core: 'ember-coreui:gen', source_present: false, requires_license: true,
-    download_gb: 8.2, verdict: 'gut', blocked: false})});
-  win = api.create(doc, srv.fetch, () => {}, {});
-  await win.open('generator');
-  assert.match(els.coreInstallLead.textContent, /Non-Commercial License v2\.1/);
-  assert.equal(els.coreInstallGo.textContent, 'Lizenz prüfen');
-  await els.coreInstallGo.handlers.click();
-  assert.equal(els.coreInstallGo.textContent, 'Lizenz akzeptieren und installieren');
-  assert.equal(srv.calls.some(c => c.init.method === 'POST'), false, 'first click is confirmation only');
-  await els.coreInstallGo.handlers.click();
-  assert.deepEqual(JSON.parse(srv.calls.filter(c => c.init.method === 'POST').pop().init.body),
-    {action: 'core_install', tier: 'generator', confirm: true, accept_license: true},
-    'the explicit licence acceptance is sent only after confirmation');
+  assert.deepEqual(genInstalledActions.map(b => b.textContent),
+    ['Lizenz ansehen ✓', 'Aktualisieren', 'Deinstallieren']);
 
   // A failed switch is put back.
   ({els, doc} = page());
