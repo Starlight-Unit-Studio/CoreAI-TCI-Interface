@@ -281,7 +281,7 @@ function coreui_core_install_check(string $tier, bool $hardware = true): array {
     $hw = $hardware ? coreui_core_install_hardware() : null;
     $check = $hardware
       ? coreui_core_install_verdict($hw,
-        ['download_gb'=>$hasSource ? 0.0 : 8.2, 'active_b'=>9.0])
+        ['download_gb'=>$hasSource ? 0.0 : 8.7, 'active_b'=>9.0])
       : ['verdict'=>null, 'blocked'=>false, 'rows'=>[], 'ram_need'=>null];
     $engine = $hardware ? coreui_generator_engine_status(['mem_total'=>$hw['mem_total']]) : null;
     if ($engine !== null) {
@@ -309,7 +309,7 @@ function coreui_core_install_check(string $tier, bool $hardware = true): array {
       'state'=>$accepted ? 'ok' : 'warn'];
     return ['tier'=>'generator', 'label'=>COREUI_CORE_GENERATOR_LABEL,
       'base'=>COREUI_CORE_GENERATOR_BASE, 'core'=>COREUI_CORE_GENERATOR_NAME,
-      'download_gb'=>$hasSource ? 0.0 : 8.2, 'installed'=>$installed,
+      'download_gb'=>$hasSource ? 0.0 : 8.7, 'installed'=>$installed,
       'cloud_base'=>null, 'source_present'=>$hasSource,
       'license_accepted'=>$accepted, 'requires_license'=>!$accepted,
       'engine_ready'=>$engine['ready'] ?? false,
