@@ -65,7 +65,8 @@
       'Progress', 'BarWrap', 'Bar', 'Step', 'Maint', 'Auto', 'UpdateInfo', 'UpdateNow', 'ToManage', 'Results', 'LibraryEntry',
       'Cloud', 'CloudState', 'CloudSteps', 'CloudLink', 'CloudCheck', 'Note', 'Go', 'Cancel', 'Close',
       'GeneratorLicense', 'GeneratorLicenseOpen', 'GeneratorLicenseState', 'Pgen', 'PgenModel', 'PgenInfo',
-      'PgenFeedback', 'PgenApply', 'PgenInstall', 'PgenLicense'].forEach(function (key) { el[key] = doc.getElementById('coreInstall' + key); });
+      'PgenFeedback', 'PgenApply', 'PgenInstall', 'PgenLicense',
+      'PgenLicenseGuard', 'PgenGuardOpen'].forEach(function (key) { el[key] = doc.getElementById('coreInstall' + key); });
     var licenseEl = {};
     ['Root', 'Panel', 'Text', 'Check', 'Note', 'Accept', 'Cancel', 'Close'].forEach(function (key) {
       licenseEl[key] = doc.getElementById(key === 'Root' ? 'coreGeneratorLicense' :
@@ -166,7 +167,17 @@
         if (!data.license || data.license.accepted !== true) throw new Error('license_accept_failed');
         state.licenseAccepted = true;
         closeLicense();
-        if (state.mode === 'manage') return Promise.all([refreshManage(), refreshPgen()]).then(render);
+        if (state.mode === 'manage') {
+          return Promise.all([refreshManage(), refreshPgen()]).then(function () {
+            render();
+            var quality = state.pgen && state.pgen.models &&
+              state.pgen.models.filter(function (m) { return m.id === 'flux2-klein-9b'; })[0];
+            if (quality && quality.loading) {
+              state.pgenPoll = true;
+              schedule(pollPgen, 2000);
+            }
+          });
+        }
         if (state.mode === 'tier' && state.tier === 'generator') {
           return request(API + '?core_install=generator', 'GET').then(function (result) {
             state.check = result.check || state.check;
@@ -330,6 +341,8 @@
           return m.id === state.pgenChoice;
         })) state.pgenChoice = state.pgen ? state.pgen.active : 'flux2-klein-4b';
         if (data.csrf_token) state.csrf = String(data.csrf_token);
+        if (state.pgen && !state.pgen.license_accepted && state.pgenChoice === 'flux2-klein-9b')
+          state.pgenChoice = 'flux2-klein-4b';
       });
     }
     function renderPgen() {
@@ -370,9 +383,19 @@
       text(el.PgenFeedback, state.pgenMessage);
       if (el.PgenFeedback) el.PgenFeedback.setAttribute('data-tone',
         /Fehler|fehl|nicht |gescheitert/i.test(state.pgenMessage) ? 'bad' : state.pgenMessage ? 'ok' : '');
-      show(el.PgenLicense, license);
+      var locked = state.pgen.license_accepted !== true;
+      show(el.PgenLicenseGuard, locked);
+      if (el.PgenModel) {
+        var nineOption = el.PgenModel.querySelector('option[value="flux2-klein-9b"]');
+        if (nineOption) nineOption.disabled = locked;
+        if (locked && model.id === 'flux2-klein-9b') {
+          state.pgenChoice = 'flux2-klein-4b';
+          el.PgenModel.value = state.pgenChoice;
+        }
+      }
+      show(el.PgenLicense, license && !locked);
       if (el.PgenLicense) text(el.PgenLicense, authorized ? '9B-Lizenz ansehen ✓' : '9B-Lizenz ansehen');
-      show(el.PgenInstall, license && !model.ready);
+      show(el.PgenInstall, license && !model.ready && authorized && !model.loading);
       if (el.PgenInstall) {
         el.PgenInstall.textContent = loading ? '9B wird vorbereitet …' : '9B installieren';
         el.PgenInstall.disabled = loading || !engine || !authorized || state.pgenBusy
@@ -769,6 +792,9 @@
     if (el.PgenInstall) el.PgenInstall.addEventListener('click', installPgen);
     if (el.PgenLicense) el.PgenLicense.addEventListener('click', function () {
       return openLicense(el.PgenLicense);
+    });
+    if (el.PgenGuardOpen) el.PgenGuardOpen.addEventListener('click', function () {
+      return openLicense(el.PgenGuardOpen);
     });
     if (el.Go) el.Go.addEventListener('click', function () { return install(); });
     if (el.UpdateNow) el.UpdateNow.addEventListener('click', function () { return updateNow(); });
