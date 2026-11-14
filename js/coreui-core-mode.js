@@ -38,6 +38,7 @@
   function isCloud(name) { return /(?:^|[:._-])cloud(?:$|[:._-])/i.test(String(name || '')); }
   function sameCore(a, b) { return !!modelKey(a) && modelKey(a) === modelKey(b); }
   function shortLabel(label) { return String(label || '').replace(/^TCI\s+/, '') || 'Core'; }
+  function isGenerator(name) { return /^fegdxus\/flux2-klein-9b-uncensored(?::[a-z0-9_.-]+)?$/i.test(String(name || '').trim()); }
 
   // Mirror of coreui_core_tier() for names the server has not labelled yet.
   var TIERS = [['e2b', 'TCI Core Schnell', 'Gemma 4 E2B'], ['e4b', 'TCI Core Normal', 'Gemma 4 E4B'],
@@ -81,6 +82,7 @@
 
     function effective() { return state.override || state.defaultModel; }
     function labelOf(name) {
+      if (isGenerator(name)) return 'TCI Core Generator';
       if (sameCore(name, state.defaultModel) && state.defaultLabel) return state.defaultLabel;
       return state.labels[modelKey(name)] || tierLabel(name) || shortCore(name);
     }
@@ -128,10 +130,11 @@
     // No symbol for capabilities that are absent or unknown.
     function capsOf(core) {
       var c = state.caps[modelKey(core)] || {};
-      if (!c.audio && !c.live && !c.vision) return null;
+      if (!c.audio && !c.live && !c.vision && !c.imageGeneration) return null;
       var wrap = doc.createElement('span');
       wrap.className = 'core-mode-caps';
       if (c.vision) wrap.appendChild(capIcon('vision', 'Bildverständnis: Bilder und Videoframes'));
+      if (c.imageGeneration) wrap.appendChild(capIcon('generate', 'Bildgenerierung: Bildaufträge vorbereiten'));
       if (c.audio) wrap.appendChild(capIcon('audio', 'Audioeingabe: Stimmsequenzen und Audiodateien'));
       if (c.live) wrap.appendChild(capIcon('live', 'Live-Gespräch möglich'));
       return wrap;
@@ -405,7 +408,8 @@
           state.models.forEach(function (m) {
             if (m && m.name && m.label) state.labels[modelKey(m.name)] = String(m.label);
             if (m && m.name && m.mara) state.mara[modelKey(m.name)] = true;
-            if (m && m.name) state.caps[modelKey(m.name)] = {vision: m.vision === true, audio: m.audio === true, live: m.live === true};
+            if (m && m.name) state.caps[modelKey(m.name)] = {vision: m.vision === true, audio: m.audio === true, live: m.live === true,
+              imageGeneration: m.image_generation === true || isGenerator(m.name)};
           });
           state.missing = (Array.isArray(both[0].missing_tiers) ? both[0].missing_tiers : []).filter(function (m) {
             return m && m.tier && m.label;
