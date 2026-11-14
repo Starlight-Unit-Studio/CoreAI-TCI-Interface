@@ -6,6 +6,13 @@ on:
       - 'tools/image/image_service.py'
       - 'api/image_gen.php'
       - 'scripts/image-service-selftest.py'
+      - 'scripts/ensure-generator-core.py'
+      - 'scripts/generator-core-selftest.py'
+      - 'scripts/install.sh'
+      - 'scripts/install-native.sh'
+      - 'api/core_install.php'
+      - 'api/user_settings.php'
+      - 'js/coreui-core-install.js'
       - 'scripts/vision-management-removal-selftest.py'
       - 'app.html'
       - 'css/console.css'
@@ -43,14 +50,20 @@ jobs:
           python3 scripts/version-merge-check.py --base-version "$base_version"
       - name: Python syntax and offline image worker
         run: |
-          python3 -m py_compile tools/image/image_service.py scripts/image-service-selftest.py scripts/vision-management-removal-selftest.py
+          python3 -m py_compile tools/image/image_service.py scripts/image-service-selftest.py scripts/vision-management-removal-selftest.py scripts/ensure-generator-core.py scripts/generator-core-selftest.py
           python3 -I scripts/image-service-selftest.py
+          python3 -I scripts/generator-core-selftest.py
       - name: Verify removal and retained standard generator
         run: python3 -I scripts/vision-management-removal-selftest.py
       - name: PHP, JavaScript, Bash syntax
         run: |
           php -l api/image_gen.php
+          php -l api/core_install.php
+          php -l api/user_settings.php
+          php scripts/core-install-selftest.php
           node --check js/coreui-model-library.js
-          bash -n scripts/install.sh scripts/preflight.sh scripts/preflight-native.sh
+          node --check js/coreui-core-install.js
+          node scripts/core-install-ui-selftest.cjs
+          bash -n scripts/install.sh scripts/install-native.sh scripts/preflight.sh scripts/preflight-native.sh
       - name: Static asset fingerprints and version metadata
         run: python3 scripts/cache-bust.py --verify
