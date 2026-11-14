@@ -26,7 +26,28 @@ function coreui_pgen_selected(): string {
   return is_string($model) && coreui_pgen_valid($model) ? $model : COREUI_PGEN_STANDARD;
 }
 
-function coreui_pgen_status(?array $health = null): array {
+function coreui_pgen_hardware(?array $hw = null): array {
+  if ($hw === null && function_exists('coreui_core_install_hardware')) {
+    $hw = coreui_core_install_hardware();
+  }
+  $hw ??= [];
+  $total = is_int($hw['mem_total'] ?? null) ? $hw['mem_total'] : null;
+  $available = is_int($hw['mem_available'] ?? null) ? $hw['mem_available'] : null;
+  $disk = is_int($hw['disk_free'] ?? null) ? $hw['disk_free'] : null;
+  $minTotal = 31 * 1073741824; // same default as the Quantum Gen Engine installer
+  $minAvailable = (22605 + 1024) * 1048576; // observed 9B 1024 peak + reserve
+  $group = json_decode((string)@file_get_contents(dirname(__DIR__) . '/tools/image_spike/models.json'), true);
+  $specs = $group['groups'][COREUI_PGEN_QUALITY]['files'] ?? [];
+  $weights = is_array($specs) ? array_sum(array_map(
+    static fn($f): int => is_array($f) ? (int)($f['size'] ?? 0) : 0, $specs)) : 0;
+  $minDisk = $weights + 2 * 1073741824;
+  return ['ok'=>($total === null || $total >= $minTotal)
+      && ($available === null || $available >= $minAvailable)
+      && ($disk === null || $disk >= $minDisk),
+    'required_ram_gib'=>31, 'observed_peak_1024_mb'=>22605];
+}
+
+function coreui_pgen_status(?array $health = null, ?array $hardware = null): array {
   if ($health === null) {
     [$code, $body] = coreui_image_http('GET', '/health', null, 3);
     $health = $code === 200 && is_array($body) ? $body : [];
@@ -36,10 +57,13 @@ function coreui_pgen_status(?array $health = null): array {
   $four = is_array($available[COREUI_PGEN_STANDARD] ?? null) ? $available[COREUI_PGEN_STANDARD] : [];
   $nine = is_array($available[COREUI_PGEN_QUALITY] ?? null) ? $available[COREUI_PGEN_QUALITY] : [];
   $approved = coreui_generator_license_accepted();
+  $hw = coreui_pgen_hardware($hardware);
   return [
     'active'=>coreui_pgen_selected(),
     'engine_ready'=>$ready,
     'license_accepted'=>$approved,
+    'can_install_9b'=>$hw['ok'],
+    'required_ram_gib'=>$hw['required_ram_gib'],
     'models'=>[
       ['id'=>COREUI_PGEN_STANDARD, 'label'=>'FLUX.2 Standard (4B)',
        'license'=>'Apache-2.0', 'ready'=>$ready && ($four['ready'] ?? false) === true,
@@ -62,6 +86,8 @@ function coreui_pgen_save(string $model, array $status, int $uid): void {
   if (!$status['engine_ready']) throw new RuntimeException('pgen_engine_unavailable');
   foreach ($status['models'] as $entry) {
     if ($entry['id'] !== $model) continue;
+    if ($model === COREUI_PGEN_QUALITY && !$status['can_install_9b'])
+      throw new RuntimeException('pgen_hardware_insufficient');
     if ($model === COREUI_PGEN_QUALITY && !$status['license_accepted'])
       throw new RuntimeException('license_accept_required');
     if (!$entry['ready']) throw new RuntimeException('pgen_model_unavailable');
