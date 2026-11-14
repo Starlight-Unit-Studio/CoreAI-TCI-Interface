@@ -39,7 +39,8 @@ function page() {
     'VerdictText', 'Progress', 'BarWrap', 'Bar', 'Step', 'Maint', 'Auto', 'UpdateInfo', 'UpdateNow', 'ToManage', 'Results',
     'Cloud', 'CloudState', 'CloudSteps', 'CloudLink', 'CloudCheck', 'Note', 'Go', 'Cancel', 'Close',
     'GeneratorLicense', 'GeneratorLicenseOpen', 'GeneratorLicenseState', 'Pgen', 'PgenModel',
-    'PgenInfo', 'PgenFeedback', 'PgenApply', 'PgenInstall', 'PgenLicense']
+    'PgenInfo', 'PgenFeedback', 'PgenApply', 'PgenInstall', 'PgenLicense',
+    'PgenLicenseGuard', 'PgenGuardOpen']
     .map(k => k === 'coreInstall' ? k : 'coreInstall' + k)
     .concat(['coreGeneratorLicense', 'coreGeneratorLicensePanel', 'coreGeneratorLicenseText',
       'coreGeneratorLicenseCheck', 'coreGeneratorLicenseNote', 'coreGeneratorLicenseAccept',
@@ -47,7 +48,8 @@ function page() {
   const els = Object.fromEntries(ids.map(id => [id, new Element('div', id)]));
   ['coreInstall', 'coreInstallProgress', 'coreInstallTiers', 'coreInstallMaint', 'coreInstallResults', 'coreInstallCloud',
     'coreInstallCloudSteps', 'coreInstallCloudLink', 'coreInstallToManage', 'coreInstallGeneratorLicense',
-    'coreGeneratorLicense', 'coreInstallPgen', 'coreInstallPgenInstall', 'coreInstallPgenLicense'].forEach(id => { els[id].hidden = true; });
+    'coreGeneratorLicense', 'coreInstallPgen', 'coreInstallPgenInstall', 'coreInstallPgenLicense',
+    'coreInstallPgenLicenseGuard'].forEach(id => { els[id].hidden = true; });
   els.coreInstallAuto.checked = false;
   els.coreGeneratorLicenseCheck.checked = false;
   const doc = {
@@ -584,14 +586,22 @@ assert.equal(api.gb(20 * 1073741824), '20 GB');
   assert.equal(els.coreInstallPgenApply.disabled, true, 'active pGen cannot be applied twice');
   els.coreInstallPgenModel.value = 'flux2-klein-9b';
   els.coreInstallPgenModel.handlers.change();
-  assert.match(els.coreInstallPgenInfo.textContent, /FLUX.2 9B.*nicht installiert/);
-  assert.equal(els.coreInstallPgenInstall.hidden, false);
-  assert.equal(els.coreInstallPgenInstall.disabled, true, '9B cannot install before license acceptance');
-  await els.coreInstallPgenLicense.handlers.click();
+  assert.equal(els.coreInstallPgenModel.value, 'flux2-klein-4b',
+    '9B is visible but unselectable before license acceptance');
+  assert.equal(els.coreInstallPgenLicenseGuard.hidden, false);
+  assert.equal(els.coreInstallPgenInstall.hidden, true,
+    '9B install control remains hidden before license acceptance');
+  await els.coreInstallPgenGuardOpen.handlers.click();
   els.coreGeneratorLicenseCheck.checked = true;
   els.coreGeneratorLicenseCheck.handlers.change();
   await els.coreGeneratorLicenseAccept.handlers.click();
   assert.equal(srv.st.licenseAccepted, true);
+  assert.equal(els.coreInstallPgenLicenseGuard.hidden, true,
+    'license notice disappears after server-confirmed acceptance');
+  els.coreInstallPgenModel.value = 'flux2-klein-9b';
+  els.coreInstallPgenModel.handlers.change();
+  assert.match(els.coreInstallPgenInfo.textContent, /FLUX.2 9B.*nicht installiert/);
+  assert.equal(els.coreInstallPgenInstall.hidden, false);
   assert.equal(els.coreInstallPgenInstall.disabled, false, 'license unlocks 9B installation');
   await els.coreInstallPgenInstall.handlers.click();
   assert.deepEqual(JSON.parse(srv.calls.filter(x => x.init.method === 'POST').pop().init.body),
