@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.7.57 - 15.11.2026
+
+- **SU-Logo bleibt unser sichtbares Branding:** Das vorhandene transparente SU-Chiplogo wird bei allen generierten Bildern rechts unten mit 13 % Bildbreite und 85 % Transparenzfaktor (statt 11,5 % / 50 %) eingebrannt. Es wird kein offizielles EU-Symbol verändert oder nachgezeichnet.
+- **Situationsabhängige Offenlegung:** Gewöhnliche, neu generierte Bilder und Referenzbild-Neuszenen erhalten weiterhin nur das SU-Logo. Der bestehende Bildeditor kennzeichnet echte Bearbeitungen mit einem kleinen, gut lesbaren CoreAI-Feld „KI BEARBEITET“; ausdrücklich als Deepfake oder KI-offenzulegen angefragte neu erzeugte Inhalte erhalten „KI GENERIERT“. Die Markierung ist Teil der PNG-Datei, nicht nur Browser-Overlay.
+- **Strukturierte Herkunftsangaben erweitert:** Neben den vorhandenen iTXt-/XMP-Metadaten kennzeichnet CoreAI den Unterschied zwischen KI-generierten und KI-modifizierten Inhalten mit den IPTC-DigitalSourceType-Kategorien `trainedAlgorithmicMedia` bzw. `compositeWithTrainedAlgorithmicMedia`; ContentKind und Disclosure sind zusätzlich in CoreAI-XMP und PNG-iTXt enthalten. Öffentliche Metadaten enthalten weiterhin weder Prompt noch Benutzerkennung oder private Referenzpfade.
+- **Keine falsche C2PA-Behauptung:** Die bestehenden editierbaren PNG-/XMP-Metadaten sind keine signierten C2PA-Credentials oder ein robustes unsichtbares Pixel-Wasserzeichen. Eine rechtliche Pflicht kann je nach Veröffentlichungsfall zusätzliche Offenlegung erfordern; die Klassifikation über bekannte Arbeitsabläufe ersetzt keine rechtliche Prüfung.
+- **Regressionen:** PNG-Größen und Referenzbild-Konsistenz bleiben erhalten; neue Tests prüfen SU-Deckkraft, sichtbare Bearbeitungsmarkierung sowie maschinenlesbare generierte/modifizierte Herkunft.
+
 ## 0.7.56 - 14.11.2026
 
 - **pGen 9B automatisch installieren:** Bei Updates und Engine-Neustarts wird 9B nach bestandener RAM- und Speicherplatzprüfung ohne weiteren Klick heruntergeladen und per SHA-256 verifiziert, auch wenn die Lizenz im CoreAI-Dialog noch nicht bestätigt wurde. **Ohne explizite Zustimmung bleiben Auswahl und Bilderzeugung gesperrt**, der Download jedoch nicht. Hinweis: Die FLUX Non-Commercial License wertet bereits das Herunterladen als rechtliche Annahme ihrer Bedingungen.
