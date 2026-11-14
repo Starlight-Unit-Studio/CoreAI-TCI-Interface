@@ -572,6 +572,48 @@ assert.equal(api.gb(20 * 1073741824), '20 GB');
   await win.open('plus');
   assert.equal(els.coreInstallMaint.hidden, true, 'updates are for admins');
 
+  // pGen Core is separate from Ollama Cores: two fixed image models, actual
+  // selection, mandatory 9B license and background image-weight installation.
+  ({els, doc} = page());
+  srv = server();
+  win = api.create(doc, srv.fetch, () => {}, {});
+  await win.manage();
+  assert.equal(els.coreInstallPgen.hidden, false, 'pGen stays visible in Core management');
+  assert.equal(els.coreInstallPgenModel.value, 'flux2-klein-4b', 'existing 4B is standard');
+  assert.match(els.coreInstallPgenInfo.textContent, /FLUX.2 Standard \(4B\).*AKTIV/);
+  assert.equal(els.coreInstallPgenApply.disabled, true, 'active pGen cannot be applied twice');
+  els.coreInstallPgenModel.value = 'flux2-klein-9b';
+  els.coreInstallPgenModel.handlers.change();
+  assert.match(els.coreInstallPgenInfo.textContent, /FLUX.2 9B.*nicht installiert/);
+  assert.equal(els.coreInstallPgenInstall.hidden, false);
+  assert.equal(els.coreInstallPgenInstall.disabled, true, '9B cannot install before license acceptance');
+  await els.coreInstallPgenLicense.handlers.click();
+  els.coreGeneratorLicenseCheck.checked = true;
+  els.coreGeneratorLicenseCheck.handlers.change();
+  await els.coreGeneratorLicenseAccept.handlers.click();
+  assert.equal(srv.st.licenseAccepted, true);
+  assert.equal(els.coreInstallPgenInstall.disabled, false, 'license unlocks 9B installation');
+  await els.coreInstallPgenInstall.handlers.click();
+  assert.deepEqual(JSON.parse(srv.calls.filter(x => x.init.method === 'POST').pop().init.body),
+    {action: 'pgen_install', model: 'flux2-klein-9b'});
+  srv.st.pgenNineLoading = false;
+  srv.st.pgenNineReady = true;
+  await win.refreshManage();
+  assert.equal(els.coreInstallPgenApply.disabled, false, 'verified 9B can be activated');
+  await els.coreInstallPgenApply.handlers.click();
+  assert.equal(srv.st.pgenActive, 'flux2-klein-9b', 'actual worker selection stored server-side');
+  assert.deepEqual(JSON.parse(srv.calls.filter(x => x.init.method === 'POST').pop().init.body),
+    {action: 'pgen_select', model: 'flux2-klein-9b'});
+  assert.match(els.coreInstallPgenInfo.textContent, /FLUX.2 9B.*AKTIV/);
+  for (const id of ['coreInstallPgen', 'coreInstallPgenModel', 'coreInstallPgenApply',
+    'coreInstallPgenInstall', 'coreInstallPgenLicense', 'coreInstallPgenInfo']) {
+    assert(fs.readFileSync(path.join(__dirname, '../app.html'), 'utf8').includes('id="' + id + '"'),
+      'app.html contains functional pGen control ' + id);
+  }
+  assert.equal((fs.readFileSync(path.join(__dirname, '../app.html'), 'utf8')
+    .match(/<option value="flux2-klein-(?:4b|9b)">/g) || []).length, 2,
+  'pGen offers exactly 4B and 9B, never arbitrary third-party models');
+
   // Markup and wiring.
   const html = fs.readFileSync(path.join(__dirname, '../app.html'), 'utf8');
   for (const id of ['coreInstall', 'coreInstallKicker', 'coreInstallTiers', 'coreInstallTierList', 'coreInstallMaint', 'coreInstallAuto',
