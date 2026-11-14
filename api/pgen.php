@@ -23,7 +23,10 @@ function coreui_pgen_selected(): string {
   if (is_link($file) || !is_file($file)) return COREUI_PGEN_STANDARD;
   $data = json_decode((string)@file_get_contents($file), true);
   $model = is_array($data) ? ($data['model'] ?? '') : '';
-  return is_string($model) && coreui_pgen_valid($model) ? $model : COREUI_PGEN_STANDARD;
+  if (!is_string($model) || !coreui_pgen_valid($model)) return COREUI_PGEN_STANDARD;
+  // A revoked/changed license must never leave 9B active for new image jobs.
+  if ($model === COREUI_PGEN_QUALITY && !coreui_generator_license_accepted()) return COREUI_PGEN_STANDARD;
+  return $model;
 }
 
 function coreui_pgen_hardware(?array $hw = null): array {
