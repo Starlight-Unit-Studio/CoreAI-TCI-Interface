@@ -116,7 +116,10 @@ function coreui_image_reference_prompt(string $scene, ?string $selfReference, ar
   $styleOverlay = $userMode === 'style' && $selfReference !== null && $uploads !== [];
   // When portraying Mara, her own photo remains the identity source; other
   // uploaded pictures can be requested as style only without copying faces.
-  $multiple = !$styleOverlay && count($uploads) + max(0, $accountExtras) + ($selfReference === null ? 0 : 1) > 1;
+  // The four account photos are alternative VIEWS of the same Mara, never
+  // four independent subjects. Only distinct uploaded subjects trigger
+  // the generic MULTI-REFERENCE "keep subjects separate" instruction.
+  $multiple = !$styleOverlay && count($uploads) + ($selfReference === null ? 0 : 1) > 1;
   $accountPortrait = $selfReference !== null && str_starts_with($selfReference, 'custom:');
   $defaultPortrait = $selfReference === 'default';
   $styleFull = ' OTHER REFERENCES (STYLE ONLY): Take palette, texture and lighting from uploads; do NOT copy their people or objects.';
