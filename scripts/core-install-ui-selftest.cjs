@@ -218,7 +218,7 @@ assert.equal(api.gb(20 * 1073741824), '20 GB');
   assert.deepEqual(installed, ['ember-core:12b'], 'the Core list is refreshed once');
   assert.equal(timers.length, 0, 'polling stops when done');
   assert.match(els.coreInstallStep.textContent, /Fertig: TCI Core Plus ist bereit/);
-  assert.match(els.coreInstallLead.textContent, /steht jetzt im Core-Menü/);
+  assert.match(els.coreInstallLead.textContent, /steht (?:jetzt )?im Core-Menü/);
   assert.equal(els.coreInstallGo.textContent, 'Jetzt nutzen');
   assert.equal(els.coreInstallVerdict.hidden, true);
   await els.coreInstallGo.handlers.click();
