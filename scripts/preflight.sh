@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.52: TCI Core Generator management and optional FLUX.2 image tests.
+# CoreAI: TCI Interface 0.7.53: automatic Generator provisioning and read-only verification.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
