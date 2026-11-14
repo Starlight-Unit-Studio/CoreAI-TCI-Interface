@@ -1,0 +1,38 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.50
+Datum: 14.11.2026
+Basis: main 0.7.49 nach PR #304
+Branch: revert/vision-core-management-0-7-50
+Naechste Version nach Merge: 0.7.51, sofern main unveraendert bleibt.
+
+AUFTRAG
+- Vision-Core-Modellverwaltung wieder komplett entfernen, inklusive
+  Button, Fenster, Hugging Face, Ollama und installierter Bild-Cores.
+- Urspruengliche Bildgenerierung mit lokalem FLUX.2 Klein 4B erhalten.
+- Normalen TCI-/Ollama-Core-Manager nicht antasten.
+
+UMSETZUNG
+- app.html auf inhaltlichen Vorkern 0.7.44 zurueckgesetzt, dann Version
+  und SHA-256-Cacheschluessel aktualisiert. Alle anderen Oberflaechen
+  behalten bestehende Funktionen und erhalten neue Versions-/Cachewerte.
+- tools/image/image_service.py, api/image_gen.php,
+  scripts/image-service-selftest.py auf den Vorkern 0.7.44 zurueckgesetzt.
+- css/console.css, scripts/install.sh, scripts/preflight.sh und
+  scripts/preflight-native.sh ebenfalls aus unveraendertem Vorkern 0.7.44,
+  Preflights dann auf neue 0.7.50 gehoben.
+- config/nginx.conf.template und config/runtime/nginx.conf.template
+  erhalten wieder die urspruengliche Nginx-PHP-Allowlist.
+- Gelöscht: tools/image/vision_cores.py, api/vision_cores.php,
+  js/coreui-vision-library.js, js/coreui-vision-ollama.js,
+  scripts/vision-nginx-route-selftest.py,
+  scripts/vision-ollama-ui-selftest.cjs und
+  .github/workflows/vision-core-image-service.yml.
+- Experimenteller PR #305 war nur Entwurf und ist ohne Merge geschlossen.
+- Kein automatischer Loeschvorgang fuer Ollama-Cores, Bilder, Accounts
+  oder bereits geladene image weights.
+
+VERIFIKATION
+- Vor Merge: Python-Image-Selftest, JS-/PHP-Lint,
+  Version 0.7.50 gegen main 0.7.49, Cache-Bust-Verify,
+  alle vorhandenen CI-/Preflight-Gates.
+- Nach Merge: Server-Update und echte Bildgenerierung testen.
+- Kein ZIP oder erfolgreiches Deployment behaupten, wenn ungetestet.
