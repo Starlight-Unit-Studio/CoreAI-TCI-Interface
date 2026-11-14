@@ -237,7 +237,7 @@ if (in_array(($body['action'] ?? ''), ['pgen_select', 'pgen_install'], true)) {
   $status = coreui_pgen_status();
   if ($body['action'] === 'pgen_install') {
     if (($body['model'] ?? '') !== COREUI_PGEN_QUALITY) stu_json(['ok'=>false, 'error'=>'pgen_invalid_model'], 400);
-    if (!$status['license_accepted']) stu_json(['ok'=>false, 'error'=>'license_accept_required'], 409);
+    // Download and installation are hardware-driven. License acceptance gates selection and use.
     if (!$status['can_install_9b']) stu_json(['ok'=>false, 'error'=>'pgen_hardware_insufficient'], 409);
     if (!$status['engine_ready']) stu_json(['ok'=>false, 'error'=>'pgen_engine_unavailable'], 409);
     [$code, $result] = coreui_image_http('POST', '/pgen/install', [], 6);
