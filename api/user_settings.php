@@ -62,6 +62,17 @@ if ($method === 'GET' && (array_key_exists('core_install', $_GET) || array_key_e
   $admin = $level <= COREUI_CORE_INSTALL_PERMISSION_MAX;
   try {
     $check = coreui_core_install_check(trim((string)$_GET['core_install']), $admin);
+    if (($check['tier'] ?? '') === 'generator') {
+      $userAccepted = coreui_generator_license_user_accepted($pdo, (int)$uid);
+      $check['license_accepted'] = $userAccepted;
+      $check['requires_license'] = !$userAccepted;
+      foreach ($check['rows'] as &$row) {
+        if (($row['key'] ?? '') !== 'license') continue;
+        $row['state'] = $userAccepted ? 'ok' : 'warn';
+        $row['value'] = $userAccepted ? 'Für dieses Konto akzeptiert.' : 'Lizenz bitte zustimmen';
+      }
+      unset($row);
+    }
   } catch (RuntimeException $e) {
     stu_json(['ok'=>false, 'error'=>$e->getMessage()], 400);
   }
@@ -91,7 +102,14 @@ if ($method === 'GET' && array_key_exists('core_manage', $_GET)) {
   } catch (RuntimeException $e) {
     stu_json(['ok'=>false, 'error'=>$e->getMessage()], 503);
   }
-  stu_json(['ok'=>true, 'tiers'=>coreui_core_manage_rows($models), 'plan'=>coreui_core_update_plan($models),
+  $tiers = coreui_core_manage_rows($models);
+  foreach ($tiers as &$tier) {
+    if (($tier['tier'] ?? '') === 'generator') {
+      $tier['license_accepted'] = coreui_generator_license_user_accepted($pdo, (int)$uid);
+    }
+  }
+  unset($tier);
+  stu_json(['ok'=>true, 'tiers'=>$tiers, 'plan'=>coreui_core_update_plan($models),
     'auto'=>coreui_core_auto_update($pdo), 'install'=>coreui_core_install_status(), 'csrf_token'=>$csrf]);
 }
 
