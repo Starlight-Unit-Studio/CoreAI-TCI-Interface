@@ -32,6 +32,14 @@ check(imagesx($cropped)===100 && imagesy($cropped)===150
 $square = coreui_profile_crop_pixels(['x'=>0.0,'y'=>0.4,'w'=>1.0,'h'=>1/3],100,300,'user');
 check($square['w']===$square['h'] && $square['w']===100, 'Square crop is enforced on server');
 check(coreui_profile_crop_pixels(null,100,300,'assistant')===null, 'Old uploads keep uncropped assistant behavior');
+check(coreui_profile_reference_slots() === ['assistant_ref_1','assistant_ref_2','assistant_ref_3','assistant_ref_4'],
+  'Four and only four additional Mara reference slots');
+check(coreui_profile_media_slot('assistant_ref_4') && !coreui_profile_media_slot('assistant_ref_5'),
+  'Extra media slots are strictly whitelisted');
+$extraPicture = coreui_profile_render_avatar($src, 'assistant_ref_1');
+check(imagesx($extraPicture)===100 && imagesy($extraPicture)===300,
+  'Additional Mara references preserve full portrait proportions');
+imagedestroy($extraPicture);
 foreach ([
   [['x'=>-0.1,'y'=>0,'w'=>1,'h'=>1], 'assistant'],
   [['x'=>0,'y'=>0,'w'=>1,'h'=>1.2], 'assistant'],
@@ -111,6 +119,32 @@ try {
    && str_contains((string)($loaded['media']['assistant']['source_url'] ?? ''), 'variant=source')
    && ($loaded['media']['assistant']['crop']['h'] ?? null) === 0.5,
    'Account profile exposes original URL and normalized crop only for its own media');
+ // Extra reference images belong to the same Mara identity and the same account.
+ $additional = [];
+ for ($n=1; $n<=4; $n++) {
+   $extraKey = bin2hex(random_bytes(16));
+   $extraSlot = 'assistant_ref_' . $n;
+   $extraPath = coreui_profile_media_dir() . '/' . $extraKey . '.png';
+   imagepng($portrait, $extraPath);
+   $pdo->prepare('INSERT INTO stu_coreui_profile_media VALUES (?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)')
+     ->execute([$extraKey,1,$extraSlot,$extraKey.'.png','image/png',filesize($extraPath),100,300]);
+   $additional[] = ['uuid'=>$extraKey, 'slot'=>$extraSlot];
+ }
+ $expected = array_map(static fn($x) => 'custom:' . $x['uuid'], $additional);
+ check(coreui_profile_assistant_extra_references($pdo,1) === $expected,
+   'All four Mara references are owner-scoped and stable in slot order');
+ check(coreui_profile_assistant_extra_references($pdo,2) === [],
+   'Other accounts do not receive Mara reference tokens');
+ $withGallery = coreui_image_reference_prompt('Mara in her cockpit','custom:'.$key,[],1200,null,4);
+ check(str_contains($withGallery,'ACCOUNT GALLERY') && str_contains($withGallery,'SAME Mara'),
+   'Prompt locks all five account pictures to one Mara identity');
+ $profileExtras = coreui_profile_load($pdo,1);
+ check(isset($profileExtras['media']['assistant_ref_4']['uuid'])
+   && $profileExtras['avatars']['assistant_ref_1'] !== null,
+   'Additional references are available in the private profile editor');
+ foreach ($additional as $extra) {
+   coreui_profile_media_cleanup($extra['uuid'] . '.png');
+ }
  check(!isset(coreui_profile_load($pdo,2)['media']['assistant']),
    'A second account never sees another account original or crop');
  check((int)$pdo->query('SELECT COUNT(*) FROM ember_memories')->fetchColumn()===0, 'Profile reads and references create no memories');
