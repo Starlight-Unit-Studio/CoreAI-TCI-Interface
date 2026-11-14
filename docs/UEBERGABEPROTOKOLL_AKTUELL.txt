@@ -1,20 +1,20 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
-PR-Stand: 0.7.49 auf main 0.7.48 (sichtbare Ollama-Treffer-Details auf Smartphone).
+PR-Stand: 0.7.50 auf main 0.7.49 (vollstaendiger Rueckbau Vision-Core-Modellverwaltung).
 Stand: 14.11.2026
-Repository-Version: 0.7.49 (Branch fix/ollama-vision-results-tap-0-7-49, main 0.7.48)
-BASIS: main 0.7.48 nach PR #303; Ollama-Bild-Core-Katalog zeigt Treffer, Detailnavigation ist aber auf Smartphone scheinbar tot.
-NAECHSTE VERBINDLICHE VERSION: 0.7.49 fuer den Fix-PR (danach 0.7.50), falls main unveraendert bleibt.
-URSACHE: Die Detailsektion ist unter der langen, scrollbareren Ergebnisliste und Netzwerkmeldung ganz unten. Kein fehlender Klick-Handler.
-KORREKTUR: Ein Tipp blendet Ergebnisse sofort aus und zeigt die Details oberhalb samt Ladehinweis, Fokus, Scroll und Fehlermeldungen. Zurueck funktioniert.
-TESTS: scripts/vision-ollama-ui-selftest.cjs prueft unmittelbare Anzeige vor API-Antwort, anschliessend Varianten, Zurueck, Fehler und unveraenderten gesicherten Ollama-Downloadpfad.
-TECHNISCHE GARANTIE: Kein Eingriff in Core-Queue, Ollama-Werkzeug, sd.cpp-Renderer, FLUX-Standard oder Login-Rechte.
-WICHTIG: Nach erfolgreichem GitHub-Merge noch realen Smartphone- und Netcup-Test durchfuehren. Keine Live-Abnahme vorher behaupten.
-NEUE ARBEIT ZUERST LESEN:
+Repository-Version: 0.7.50 (Branch revert/vision-core-management-0-7-50, main 0.7.49)
+BASIS: main 0.7.49 nach PR #304. Der Operator will die Vision-Core-Modellverwaltung komplett entfernen.
+NAECHSTE VERBINDLICHE VERSION: 0.7.50 fuer den Rueckbau-PR, danach 0.7.51, falls main unveraendert bleibt.
+ENTFERNT: Vision-Core-Button, modaler Manager, Hugging-Face/Ollama/Installiert-Tabs, PHP-Bridge, Python-Registry, JS/CSS und deren Nginx- und Installer-Sonderbehandlung.
+BEIBEHALTEN: die normale Bildgenerierung mit FLUX.2 Klein 4B (urspruenglicher Stand vor 0.7.45), normale TCI-/Ollama-Cores, Bilder, Nutzer, Quoten, Locks, Ollama-Core-Daten.
+STOPP: Der experimentelle, ungemergte Ollama-Gewichtsimport PR #305 wurde geschlossen und darf nicht integriert werden.
+WICHTIG: Auf Servern koennen frueher heruntergeladene Zusatzgewichte liegen; sie werden nicht destruktiv geloescht.
+TESTS: aktuelle Image-Service-Selftests, neuer Vision-Removal-Gate, Cache-Bust-Verify, Version-Guard, globale Preflights und nach Update echte Bildgenerierung.
+WEITERARBEIT ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_7_50.txt
   docs/UEBERGABEPROTOKOLL_0_7_49.txt
   docs/UEBERGABEPROTOKOLL_0_7_48.txt
   docs/UEBERGABEPROTOKOLL_0_7_47.txt
-  docs/UEBERGABEPROTOKOLL_0_7_46.txt
 
 WICHTIG: Kein nachtraeglich erfundenes Release/ZIP fuer 0.7.35. Bereits gemergte PR #290 nicht umnummerieren.
 NEUE ARBEIT ZUERST LESEN:

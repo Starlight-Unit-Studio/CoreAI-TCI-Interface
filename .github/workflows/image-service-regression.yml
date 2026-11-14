@@ -1,0 +1,56 @@
+name: Image Service and Core Management Regression
+
+on:
+  pull_request:
+    paths:
+      - 'tools/image/image_service.py'
+      - 'api/image_gen.php'
+      - 'scripts/image-service-selftest.py'
+      - 'scripts/vision-management-removal-selftest.py'
+      - 'app.html'
+      - 'css/console.css'
+      - 'js/console-gate.js'
+      - 'scripts/preflight.sh'
+      - 'scripts/preflight-native.sh'
+      - 'config/nginx.conf.template'
+      - 'config/runtime/nginx.conf.template'
+      - '.github/workflows/image-service-regression.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/image/image_service.py'
+      - 'api/image_gen.php'
+      - 'scripts/image-service-selftest.py'
+      - 'scripts/vision-management-removal-selftest.py'
+      - 'app.html'
+      - '.github/workflows/image-service-regression.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  image-service:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check version rule against current main on this PR
+        if: github.event_name == 'pull_request'
+        run: |
+          base_version="$(git show origin/main:VERSION | tr -d '\\r\\n')"
+          python3 scripts/version-merge-check.py --base-version "$base_version"
+      - name: Python syntax and offline image worker
+        run: |
+          python3 -m py_compile tools/image/image_service.py scripts/image-service-selftest.py scripts/vision-management-removal-selftest.py
+          python3 -I scripts/image-service-selftest.py
+      - name: Verify removal and retained standard generator
+        run: python3 -I scripts/vision-management-removal-selftest.py
+      - name: PHP, JavaScript, Bash syntax
+        run: |
+          php -l api/image_gen.php
+          node --check js/coreui-model-library.js
+          bash -n scripts/install.sh scripts/preflight.sh scripts/preflight-native.sh
+      - name: Static asset fingerprints and version metadata
+        run: python3 scripts/cache-bust.py --verify

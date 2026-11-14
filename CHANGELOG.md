@@ -1,5 +1,12 @@
 # CoreAI: TCI Interface
 
+## 0.7.50 - 14.11.2026
+
+- **Removed the complete Vision Core model-management feature at the operator's request:** The separate Vision Core button, modal and Hugging Face/Ollama/Installed provider tabs are no longer present. Removed the manager-only CSS/JS, owner PHP bridge, Python catalog and registry code, special Nginx allowlisting, updater probe, provider-specific tests and workflow.
+- **Restored the established local image generator:** Reverted `tools/image/image_service.py`, `api/image_gen.php` and the image-service selftest to the proven pre-Vision configuration (0.7.44). The original pinned FLUX.2 Klein 4B image pipeline, normal TCI/Ollama Core management, user accounts, quotas, shared model locks and unrelated UI are retained.
+- **No destructive user-data changes:** Existing local Ollama models, reference pictures and downloaded image weights are not deleted. Historical changelogs remain as an audit trail. The abandoned Ollama weight-import experiment PR #305 has been closed without merging.
+- **Regression gate:** Reassert absence of Vision manager routes and UI while retaining the image worker and original image-generation endpoints. Restore content-based asset cache keys and version metadata to 0.7.50. Production verification follows the regular integrated updater.
+
 ## 0.7.49 - 14.11.2026
 
 - **Ollama Vision results respond visibly on mobile:** Tapping a search card now opens its model-detail screen immediately, rather than silently putting details below a long scrollable results list. The results collapse, the dialog scrolls the selected details into view, and focus moves to its Back control.

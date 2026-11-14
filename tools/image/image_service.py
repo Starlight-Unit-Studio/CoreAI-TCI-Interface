@@ -26,7 +26,6 @@ one argument, never shell text. COREAI_IMAGE_SD_CLI points to a stand-in in the 
 """
 from __future__ import annotations
 
-import copy
 import importlib.util
 import json
 import os
@@ -69,7 +68,6 @@ def _load(name: str, path: Path):
 # Loading from Hugging Face is the code of the image test (redirects, resume, SHA-256).
 SPIKE = _load('coreai_image_spike_run', ROOT / 'tools' / 'image_spike' / 'run.py')
 MARA_REFS = _load('coreai_mara_references', HERE / 'mara_references.py')
-VisionCores = _load('coreai_vision_cores', HERE / 'vision_cores.py').VisionCores
 if os.environ.get('COREAI_IMAGE_HF'):
     SPIKE.HF = os.environ['COREAI_IMAGE_HF'].rstrip('/')
 
@@ -221,8 +219,6 @@ def resolve_uploaded_reference(token: str) -> str:
 class Service:
     def __init__(self, registry: dict, models: Path, work: Path, threads: int, sd_cli: str = SD_CLI):
         self.reg = registry
-        self.registry_errors = registry_errors
-        self.file_path = file_path
         self.models = models
         self.work = work
         self.threads = threads
@@ -235,8 +231,6 @@ class Service:
         self.jobs: dict[str, dict] = {}
         self.lock = threading.Lock()        # one job at a time
         self.state_lock = threading.Lock()
-        self.vision_busy = False
-        self.vision = None
 
     # Weights ---------------------------------------------------------------
     def _verified(self) -> dict:
@@ -252,15 +246,14 @@ class Service:
         except OSError:
             pass  # only saves a check at the next start
 
-    def ensure_weights(self, registry: dict | None = None) -> dict:
+    def ensure_weights(self) -> dict:
         """Every registered file at its place and checked; returns the paths by role."""
-        reg = self.reg if registry is None else registry
-        errors = registry_errors(reg)
+        errors = registry_errors(self.reg)
         if errors:
             raise RuntimeError('Register unvollstaendig: ' + '; '.join(errors))
         verified = self._verified()
         paths = {}
-        for spec in reg['files']:
+        for spec in self.reg['files']:
             target = file_path(self.models, spec)
             key = str(target.relative_to(self.models))
             stat = target.stat() if target.is_file() else None
@@ -293,10 +286,10 @@ class Service:
         SPIKE.download(info['url'], part, spec['size'])
         os.replace(part, target)
 
-    def weights_progress(self, registry: dict | None = None) -> dict:
+    def weights_progress(self) -> dict:
         have = 0
         total = 0
-        for spec in (self.reg if registry is None else registry).get('files') or []:
+        for spec in self.reg.get('files') or []:
             total += int(spec.get('size') or 0)
             try:
                 target = file_path(self.models, spec)
@@ -330,12 +323,9 @@ class Service:
             self.loading = False
 
     # Jobs -------------------------------------------------------------------
-    def busy_unlocked(self) -> bool:
-        return any(job['state'] in ('queued', 'running') for job in self.jobs.values())
-
     def busy(self) -> bool:
         with self.state_lock:
-            return self.vision_busy or self.busy_unlocked()
+            return any(job['state'] in ('queued', 'running') for job in self.jobs.values())
 
     def _clean(self) -> None:
         now = time.monotonic()
@@ -372,7 +362,7 @@ class Service:
         if need and available is not None and available < need + 1024:
             raise MemoryError(f'{int(available)} MB frei, gebraucht etwa {int(need)} MB')
         with self.state_lock:
-            if self.vision_busy or self.busy_unlocked():
+            if any(job['state'] in ('queued', 'running') for job in self.jobs.values()):
                 raise BlockingIOError('busy')
             job_id = secrets.token_hex(16)
             job = {'id': job_id, 'state': 'queued', 'phase': 'load', 'step': 0, 'steps': int(self.reg['model']['steps']),
@@ -383,8 +373,7 @@ class Service:
                    'preview_png': str(self.work / (job_id + '-preview.png')), 'preview': 0, 'preview_stamp': None,
                    'pid': 0, 'cancel': False, 'limit': int(size['time_limit_s']),
                    'reference_path': reference_path, 'reference_paths': reference_paths,
-                   'reference_count': len(reference_paths), 'curated_mara_count': len(curated),
-                   'model_label': self.reg['model']['label'], 'model_registry': copy.deepcopy(self.reg)}
+                   'reference_count': len(reference_paths), 'curated_mara_count': len(curated)}
             self.jobs[job_id] = job
         threading.Thread(target=self._run, args=(job, prompt), daemon=True).start()
         return job
@@ -492,14 +481,13 @@ class Service:
             return job
 
     def public(self, job: dict) -> dict:
-        keys = ('id', 'state', 'phase', 'step', 'steps', 'error', 'size', 'width', 'height', 'seed', 'seconds', 'peak_rss_mb', 'preview', 'reference_count', 'curated_mara_count', 'model_label', 'model_registry')
+        keys = ('id', 'state', 'phase', 'step', 'steps', 'error', 'size', 'width', 'height', 'seed', 'seconds', 'peak_rss_mb', 'preview', 'reference_count', 'curated_mara_count')
         return {key: job[key] for key in keys}
 
     def health(self) -> dict:
         model = self.reg.get('model') or {}
         return {'ok': True, 'ready': self.ready, 'loading': self.loading, 'error': self.error, 'busy': self.busy(),
-                'model': model.get('label', ''), 'model_id': self.vision.active if self.vision else 'default',
-                'license': model.get('license', ''), 'threads': self.threads,
+                'model': model.get('label', ''), 'license': model.get('license', ''), 'threads': self.threads,
                 'preview': self.preview,
                 'sizes': {key: {'width': s['width'], 'height': s['height']} for key, s in (self.reg.get('sizes') or {}).items()},
                 'weights': self.weights_progress()}
@@ -509,7 +497,7 @@ class Service:
         process ends and Docker starts it again with the new code (as Eve's service)."""
         if interval <= 0:
             return
-        paths = [HERE / 'image_service.py', HERE / 'vision_cores.py', HERE / 'mara_references.py', ROOT / 'tools' / 'image_spike' / 'run.py',
+        paths = [HERE / 'image_service.py', HERE / 'mara_references.py', ROOT / 'tools' / 'image_spike' / 'run.py',
                  ROOT / 'config' / 'image' / 'mara-references.json', REGISTRY]
 
         def stamp() -> list[int]:
@@ -559,16 +547,6 @@ def make_handler(service: Service):
         def do_GET(self) -> None:
             if self.path == '/health':
                 return self._json(200, service.health())
-            if self.path.startswith('/vision') and service.vision is not None:
-                try:
-                    if self.path == '/vision':
-                        return self._json(200, service.vision.list())
-                    if self.path.startswith('/vision/search?q='):
-                        from urllib.parse import parse_qs, urlsplit
-                        term = parse_qs(urlsplit(self.path).query).get('q', [''])[0]
-                        return self._json(200, {'ok': True, 'models': service.vision.search(term)})
-                except Exception as error:
-                    return self._json(503, {'ok': False, 'error': str(error)[:100]})
             job, rest = self._job()
             if job is None:
                 return self._json(404, {'ok': False, 'error': 'not_found'})
@@ -608,33 +586,6 @@ def make_handler(service: Service):
             return self._json(200, {'ok': True, 'job': service.public(job)})
 
         def do_POST(self) -> None:
-            if self.path == '/vision' and service.vision is not None:
-                length = int(self.headers.get('Content-Length') or 0)
-                if not 0 < length <= 2048:
-                    return self._json(400, {'ok': False, 'error': 'bad_request'})
-                try:
-                    data = json.loads(self.rfile.read(length))
-                    if not isinstance(data, dict):
-                        raise ValueError('bad_request')
-                    action = data.get('action')
-                    ident = data.get('id')
-                    if not isinstance(ident, str) or not re.fullmatch(r'default|[0-9a-f]{24}', ident):
-                        raise ValueError('invalid_model_id')
-                    if action == 'install' and ident != 'default':
-                        service.vision.install(ident)
-                    elif action == 'select':
-                        service.vision.select(ident)
-                    elif action == 'uninstall':
-                        service.vision.uninstall(ident)
-                    else:
-                        raise ValueError('bad_action')
-                    return self._json(200, service.vision.list())
-                except BlockingIOError as error:
-                    return self._json(409, {'ok': False, 'error': str(error)[:100]})
-                except ValueError as error:
-                    return self._json(400, {'ok': False, 'error': str(error)[:100]})
-                except Exception:
-                    return self._json(503, {'ok': False, 'error': 'image_unavailable'})
             if self.path != '/jobs':
                 return self._json(404, {'ok': False, 'error': 'not_found'})
             length = int(self.headers.get('Content-Length') or 0)
@@ -695,8 +646,6 @@ def main() -> int:
     port = int(os.environ.get('COREAI_IMAGE_PORT', '18791'))
     threads = int(os.environ.get('COREAI_IMAGE_THREADS') or 0) or default_threads()
     service = Service(registry, MODELS, WORK, threads)
-    service.vision = VisionCores(service, registry)
-    service.reg = service.vision.selected_registry()
     service.start()
     service.watch(WATCH_S)
     server = ThreadingHTTPServer(('127.0.0.1', port), make_handler(service))
