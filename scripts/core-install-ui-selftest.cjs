@@ -375,6 +375,38 @@ assert.equal(api.gb(20 * 1073741824), '20 GB');
   assert.equal(srv.calls.filter(c => c.url === './api/user_settings.php?core_manage=1').length, manageReads + 1, 'the overview is read again');
   assert(menuRefresh.length >= 1, 'the Core menu is refreshed');
 
+  // Generator: listed as a real TCI Core, installed from the existing FLUX source without a Gemma renderer.
+  const genBase = 'fegdxus/flux2-klein-9b-uncensored:Q8_0';
+  const genMissing = {tier: 'generator', label: 'TCI Core Generator', base: genBase, download_gb: 0,
+    local: [], removable: [], cloud: [], alias_of: null, cloud_base: null, cloud_missing: false, status: 'missing'};
+  ({els, doc} = page());
+  srv = server({tiers: TIERS.concat([genMissing]), check: check({
+    tier: 'generator', label: 'TCI Core Generator', base: genBase, core: 'ember-coreui:gen',
+    download_gb: 0, rows: [{key: 'source', label: 'Ausgangs-Core',
+      value: 'FLUX.2 ist bereits in Ollama installiert; kein weiterer Download.', state: 'ok'}]})});
+  win = api.create(doc, srv.fetch, () => {}, {});
+  await win.manage();
+  assert.equal(els.coreInstallTierList.children.length, 6, 'Generator has its own manage row');
+  const genItem = els.coreInstallTierList.children[5];
+  assert.match(genItem.textContent, /TCI Core Generator.*ember-coreui:gen/);
+  const genActions = genItem.children.find(c => c.className === 'core-install-tier-actions').children;
+  assert.equal(genActions[0].textContent, 'Installieren');
+  await genActions[0].handlers.click();
+  assert.equal(els.coreInstallTitle.textContent, 'TCI Core Generator');
+  assert.match(els.coreInstallLead.textContent, /Keine zweite Modellkopie und kein Download/);
+  assert.match(els.coreInstallTech.textContent, /ember-coreui:gen/);
+  await els.coreInstallGo.handlers.click();
+  assert.deepEqual(JSON.parse(srv.calls.filter(x => x.init.method === 'POST').pop().init.body),
+    {action: 'core_install', tier: 'generator'}, 'install uses existing tier action');
+  ({els, doc} = page());
+  srv = server({tiers: TIERS.concat([Object.assign({}, genMissing, {local: ['ember-coreui:gen'],
+    removable: ['ember-coreui:gen'], status: 'installed'})])});
+  win = api.create(doc, srv.fetch, () => {}, {});
+  await win.manage();
+  const genInstalledItem = els.coreInstallTierList.children[5];
+  const genInstalledActions = genInstalledItem.children.find(c => c.className === 'core-install-tier-actions').children;
+  assert.deepEqual(genInstalledActions.map(b => b.textContent), ['Aktualisieren', 'Deinstallieren']);
+
   // A failed switch is put back.
   ({els, doc} = page());
   srv = server({failAuto: true});
