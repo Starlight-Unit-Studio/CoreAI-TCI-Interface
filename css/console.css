@@ -9988,3 +9988,28 @@ a.insight-file-name:hover { text-decoration: underline; }
   .core-library-search-controls input { font-size: 16px; }
   .core-library-search-controls .core-install-btn { padding: 8px 10px; }
 }
+
+
+/* Centered license notice. 9B stays listed but unselectable until consent. */
+.core-install-pgen { position: relative; }
+.core-install-pgen-license-guard[hidden] { display: none !important; }
+.core-install-pgen-license-guard {
+  width: min(100%, 360px);
+  margin: 12px auto;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 14px;
+  text-align: center;
+  border: 1px solid var(--amb);
+  background: var(--panel-solid);
+  color: var(--txt);
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+}
+.core-install-pgen-license-guard strong {
+  font: 700 15px "Share Tech Mono", monospace;
+  letter-spacing: .06em;
+  color: var(--amb);
+}
+.core-install-pgen-license-guard small { font-size: 12px; line-height: 1.4; color: var(--muted); }
+.core-install-pgen-license-guard .core-install-btn { min-height: 38px; }
