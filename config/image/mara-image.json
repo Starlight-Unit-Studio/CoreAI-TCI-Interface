@@ -37,6 +37,6 @@
   },
   "limits": {
     "memory_note": "Container mit 20 GB Speichergrenze; 1024 x 1024 braucht etwa 14 GB.",
-    "prompt_chars": 1200
+    "prompt_chars": 4096
   }
 }
