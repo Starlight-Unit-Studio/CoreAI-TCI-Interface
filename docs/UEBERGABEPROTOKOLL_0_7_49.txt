@@ -1,0 +1,37 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.49
+Datum: 14.11.2026
+Basis: main 0.7.48 nach PR #303
+Branch: fix/ollama-vision-results-tap-0-7-49
+Naechste Version nach Merge: 0.7.50, sofern main unveraendert bleibt.
+
+FEHLERBILD
+- Screenshot zeigt Ollama-Suchergebnisse in der Vision-Core-Bibliothek,
+  die beim Antippen als tot erscheinen.
+- GitHub-Code zeigt die Ursache: loadDetail() fuegt Details erst unterhalb
+  der vollen, eigenstaendig scrollenden Ergebnisliste sichtbar ein.
+- Lademeldung und Netzwerkfehler liegen im Status ganz unten, ebenfalls
+  ausserhalb der mobilen Sicht.
+- Klick-Handler existieren. Es ist primär ein Sichtbarkeits-/Navigation-Bug,
+  nicht das Fehlen eines Event-Listeners.
+
+FIX
+- app.html: Ollama-Detailsektion vor die scrollende Ergebnisliste verlegt,
+  der Detailtext wird via aria-live angezeigt.
+- js/coreui-vision-ollama.js: Klick zeigt die Details umgehend, versteckt
+  Treffer, scrollt Detail in Sicht, setzt Fokus und aria-busy.
+- Antwort/Fehler aus Ollama stehen unmittelbar im Detailbereich.
+- Zurueck zeigt die vorhandene Ergebnisliste; veraltete Detailantworten
+  werden bei Zurueck/neuer Suche ignoriert.
+- scripts/vision-ollama-ui-selftest.cjs: prueft unverzueglichen Klick,
+  Ladehinweis, Fokus/Scroll, Varianten, Zurueck und Fehlermeldung.
+- Version 0.7.49 und JS-Cache-Fingerprint in sechs HTML-Seiten erneuert.
+- Kein neuer PHP-Endpunkt, keine Aenderung an Berechtigungen, Ollama-Worker,
+  Bildweights oder Standard-Renderer.
+
+OFFENE ABNAHME
+- Node UI-Selbsttest, PHP/JS-Check und GitHub-Preflights bestanden?
+  Ausfuehren/pruefen vor Merge. Version-Guard main 0.7.48.
+- Erst nach Merge im integrierten Updater 0.7.49 installieren.
+- In CoreAI auf Smartphone Ollama-Reiter: Treffer antippen, Detail sofort
+  sichtbar, Zurueck, Variantenauswahl, eventuellen Fehlerhinweis pruefen.
+- Kein ZIP oder Live-Update ohne verifizierten Nachweis behaupten.

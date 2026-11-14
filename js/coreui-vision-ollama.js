@@ -123,6 +123,8 @@
       candidates.forEach(function (model) {
         var button = add(el.Results, 'button', 'core-library-result');
         button.type = 'button';
+        button.setAttribute('aria-controls', 'visionLibraryOllamaDetail');
+        button.setAttribute('aria-label', 'Ollama-Varianten für ' + model.name + ' anzeigen');
         add(button, 'strong', '', model.name);
         add(button, 'small', '', model.summary || 'Ollama-Katalog');
         button.addEventListener('click', function () { loadDetail(model.name); });
@@ -131,7 +133,10 @@
     function search() {
       var query = String(el.Query.value || '').trim();
       var serial = ++state.querySerial;
+      ++state.detailSerial;
+      el.Results.hidden = false;
       el.Detail.hidden = true;
+      el.Detail.setAttribute('aria-busy', 'false');
       state.detail = null;
       state.confirming = '';
       status('Suche nach Bild-Cores in Ollamas offiziellem Katalog …');
@@ -164,13 +169,31 @@
     function loadDetail(name) {
       if (!isImageFamily(name)) return Promise.resolve();
       var serial = ++state.detailSerial;
-      status('Lädt lokale Ollama-Varianten …');
+      state.detail = null;
+      state.confirming = '';
+      // The old detail panel was below a long scrollable result list.
+      // Clicking appeared to do nothing because both loading and errors
+      // were below the fold on a phone. Swap views synchronously instead.
+      el.Results.hidden = true;
+      el.Detail.hidden = false;
+      el.Detail.setAttribute('aria-busy', 'true');
+      el.Title.textContent = name;
+      el.Description.textContent = 'Lädt die verfügbaren Ollama-Varianten …';
+      clear(el.Variant);
+      el.Variant.disabled = true;
+      el.Install.disabled = true;
+      el.Install.textContent = 'Lädt …';
+      el.Link.href = 'https://ollama.com/search';
+      if (typeof el.Detail.scrollIntoView === 'function')
+        el.Detail.scrollIntoView({block:'start'});
+      if (typeof el.Back.focus === 'function') el.Back.focus({preventScroll:true});
+      status('Lädt lokale Ollama-Varianten für ' + name + ' …');
       return api('ollama_detail=' + encodeURIComponent(name)).then(function (data) {
         if (!visible() || serial !== state.detailSerial) return;
         var detail = data.detail || {name:name, tags:[]};
         state.detail = detail;
         state.confirming = '';
-        el.Detail.hidden = false;
+        el.Detail.setAttribute('aria-busy', 'false');
         el.Title.textContent = detail.name;
         el.Description.textContent = detail.description || 'Varianten aus Ollamas offizieller Bibliothek.';
         if (/^https:\/\/ollama\.com\//.test(detail.url || '')) el.Link.href = detail.url;
@@ -182,10 +205,18 @@
         });
         el.Variant.disabled = !(detail.tags || []).length;
         renderVariant();
-        status('Wähle eine lokale Variante. Sie wird als Ollama-Core installiert, nicht als Bildgenerator aktiviert.');
+        if (!(detail.tags || []).length) {
+          el.Description.textContent += ' Keine lokal installierbare Ollama-Variante auf der Modellseite gefunden.';
+          status('Dieser Core hat momentan keine bestätigte lokale Downloadvariante.');
+        } else {
+          status('Wähle eine lokale Variante. Sie wird als Ollama-Core installiert, nicht als Bildgenerator aktiviert.');
+        }
       }).catch(function (error) {
-        if (visible() && serial === state.detailSerial)
-          status('Ollama-Details nicht erreichbar: ' + error.message, true);
+        if (!visible() || serial !== state.detailSerial) return;
+        el.Detail.setAttribute('aria-busy', 'false');
+        el.Description.textContent = 'Ollama-Details konnten nicht geladen werden: ' + error.message
+          + '. Zurück zur Suche und erneut versuchen.';
+        status('Ollama-Details nicht erreichbar: ' + error.message, true);
       });
     }
     function poll() {
@@ -273,7 +304,16 @@
       if (event && event.preventDefault) event.preventDefault();
       search();
     });
-    el.Back.addEventListener('click', function () { ++state.detailSerial; el.Detail.hidden = true; });
+    el.Back.addEventListener('click', function () {
+      ++state.detailSerial;
+      state.detail = null;
+      state.confirming = '';
+      el.Detail.hidden = true;
+      el.Detail.setAttribute('aria-busy', 'false');
+      el.Results.hidden = false;
+      if (typeof el.Results.scrollIntoView === 'function')
+        el.Results.scrollIntoView({block:'nearest'});
+    });
     el.Variant.addEventListener('change', function () { state.confirming = ''; renderVariant(); });
     el.Install.addEventListener('click', install);
     return {refresh:refresh, search:search, loadDetail:loadDetail, loadInstalled:loadInstalled,

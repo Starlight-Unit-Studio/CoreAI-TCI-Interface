@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.48: Ollama Vision catalog and serialized installation.
+# CoreAI: TCI Interface 0.7.49: Ollama Vision result tap and mobile detail navigation.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

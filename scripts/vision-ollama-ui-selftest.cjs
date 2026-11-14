@@ -20,6 +20,8 @@ for (const id of ['OllamaTab','OllamaPanel','OllamaForm','OllamaQuery',
   assert(app.includes('id="visionLibrary' + id + '"'), 'missing DOM control: ' + id);
 }
 assert(app.includes('coreui-vision-ollama.js?v='), 'Ollama adapter must be loaded');
+assert(app.indexOf('id="visionLibraryOllamaDetail"') < app.indexOf('id="visionLibraryOllamaResults"'),
+  'phone detail must be before the long result list so taps visibly navigate');
 assert(nginx.includes('|user_settings|'), 'existing authenticated PHP bridge must be allowed by Nginx');
 for (const token of ['ollama_search', 'ollama_detail','ollama_library_install',
   'core_installed', 'core_install_status', 'installed_core_uninstall']) {
@@ -48,12 +50,16 @@ class Element {
     this.tagName = tag; this.children = []; this.events = {}; this.hidden = false;
     this.style = {}; this.dataset = {}; this.value = ''; this.textContent = '';
     this.disabled = false; this.className = ''; this.firstChild = null;
+    this.attributes = {}; this.focused = false; this.scrolled = 0;
   }
   appendChild(item) { this.children.push(item); this.firstChild = this.children[0]; return item; }
   removeChild(item) { this.children.splice(this.children.indexOf(item),1);
     this.firstChild=this.children[0]||null; return item; }
   addEventListener(name,fn) { (this.events[name] ||= []).push(fn); }
   trigger(name) { (this.events[name]||[]).forEach(fn=>fn({preventDefault(){}})); }
+  setAttribute(name,value) { this.attributes[name]=String(value); }
+  scrollIntoView() { this.scrolled++; }
+  focus() { this.focused = true; }
 }
 const ids = ['Form','Query','Results','Installed','Detail','Back','Title','Description',
   'Variant','Install','Link','Progress','ProgressText','ProgressFill','Status'];
@@ -63,7 +69,7 @@ nodes.visionLibraryOllamaQuery.value='flux';
 nodes.visionLibraryOllamaDetail.hidden=true;
 nodes.visionLibraryOllamaProgress.hidden=true;
 const doc = {getElementById:id=>nodes[id]||null,createElement:tag=>new Element(tag)};
-let posts=[],calls=[],tasks=[];
+let posts=[],calls=[],tasks=[],failDetail=false;
 let installed=['x/flux2-klein:9b'];
 async function fetchMock(url,opts) {
   calls.push(url);
@@ -77,6 +83,7 @@ async function fetchMock(url,opts) {
     body.models=[{name:'x/flux2-klein',summary:'local diffusion'},
       {name:'flux-prompt',summary:'chat prompt model'}];
   } else if (url.includes('ollama_detail=')) {
+    if (failDetail) return {ok:false,status:503,json:async()=>({ok:false,error:'registry_unavailable'})};
     body.detail={name:'x/flux2-klein',url:'https://ollama.com/x/flux2-klein',
       description:'FLUX image generation family',tags:[
         {name:'x/flux2-klein:4b',size:'5.7 GB',installed:false}
@@ -103,8 +110,25 @@ async function flush() { for(let i=0;i<12;i++)await new Promise(resolve=>setImme
   assert.equal(nodes.visionLibraryOllamaInstalled.children.length,1,'installed Ollama image cores only');
   assert.equal(nodes.visionLibraryOllamaResults.children.length,1,'exclude unrelated chat models');
   const detailButton=nodes.visionLibraryOllamaResults.children[0];
-  detailButton.trigger('click'); await flush();
+  detailButton.trigger('click');
+  assert.equal(nodes.visionLibraryOllamaDetail.hidden,false,'immediate visible detail after tap');
+  assert.equal(nodes.visionLibraryOllamaResults.hidden,true,'hide long search list while detail is active');
+  assert(nodes.visionLibraryOllamaDescription.textContent.includes('Lädt'),
+    'loading feedback must be visible in detail before async reply');
+  assert.equal(nodes.visionLibraryOllamaDetail.attributes['aria-busy'],'true',
+    'accessible loading state on detail');
+  assert(nodes.visionLibraryOllamaDetail.scrolled > 0,
+    'scroll newly opened details into mobile viewport');
+  assert(nodes.visionLibraryOllamaBack.focused, 'move keyboard focus to visible back navigation');
+  await flush();
+  assert.equal(nodes.visionLibraryOllamaDetail.attributes['aria-busy'],'false',
+    'detail finishes loading');
   assert.equal(nodes.visionLibraryOllamaDetail.hidden,false,'open exact official tag list');
+  assert.equal(nodes.visionLibraryOllamaVariant.children.length,1,'real variant details are available');
+  nodes.visionLibraryOllamaBack.trigger('click'); await flush();
+  assert.equal(nodes.visionLibraryOllamaResults.hidden,false,'back makes result cards visible again');
+  assert.equal(nodes.visionLibraryOllamaDetail.hidden,true,'back hides the detail panel');
+  nodes.visionLibraryOllamaResults.children[0].trigger('click'); await flush();
   nodes.visionLibraryOllamaVariant.value='x/flux2-klein:4b';
   nodes.visionLibraryOllamaVariant.trigger('change');
   nodes.visionLibraryOllamaInstall.trigger('click');
@@ -124,5 +148,14 @@ async function flush() { for(let i=0;i<12;i++)await new Promise(resolve=>setImme
   again.trigger('click'); await flush();
   assert.equal(posts[1].action,'installed_core_uninstall','reuse protected Core uninstall route');
   assert.equal(posts[1].model,'x/flux2-klein:9b','remove only explicitly selected local tag');
-  console.log('PASS: Ollama Vision families, real catalog and installed inventory, confirmed pull, progress, CSRF and uninstall');
+  failDetail = true;
+  nodes.visionLibraryOllamaBack.trigger('click');
+  nodes.visionLibraryOllamaResults.children[0].trigger('click');
+  await flush();
+  assert.equal(nodes.visionLibraryOllamaDetail.hidden,false,'failure remains visible in detail');
+  assert(nodes.visionLibraryOllamaDescription.textContent.includes('registry_unavailable'),
+    'detail network failures must be visible without scrolling down results');
+  nodes.visionLibraryOllamaBack.trigger('click');
+  assert.equal(nodes.visionLibraryOllamaResults.hidden,false,'can return from detail error to search');
+  console.log('PASS: mobile result tap, immediate details, loading and errors, Back, verified Ollama catalog, pull, progress, CSRF and uninstall');
 })().catch(error=>{console.error(error);process.exitCode=1;});
