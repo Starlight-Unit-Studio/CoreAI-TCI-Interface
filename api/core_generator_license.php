@@ -97,9 +97,15 @@ function coreui_generator_license_user_accept(PDO $pdo, int $uid, string $claime
   if (!preg_match('~^[0-9a-f]{64}$~D', $claimedHash) || !hash_equals($sha, $claimedHash))
     throw new RuntimeException('generator_license_version_changed');
   try {
-    $st = $pdo->prepare('INSERT INTO stu_coreui_pgen_user_licenses (user_id,license_sha256,accepted_at)'
-      . ' VALUES (?,?,UTC_TIMESTAMP()) ON DUPLICATE KEY UPDATE'
-      . ' license_sha256=VALUES(license_sha256),accepted_at=UTC_TIMESTAMP()');
+    $sqlite = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite';
+    $sql = $sqlite
+      ? 'INSERT INTO stu_coreui_pgen_user_licenses (user_id,license_sha256,accepted_at)'
+        . ' VALUES (?,?,CURRENT_TIMESTAMP) ON CONFLICT(user_id) DO UPDATE SET'
+        . ' license_sha256=excluded.license_sha256,accepted_at=CURRENT_TIMESTAMP'
+      : 'INSERT INTO stu_coreui_pgen_user_licenses (user_id,license_sha256,accepted_at)'
+        . ' VALUES (?,?,UTC_TIMESTAMP()) ON DUPLICATE KEY UPDATE'
+        . ' license_sha256=VALUES(license_sha256),accepted_at=UTC_TIMESTAMP()';
+    $st = $pdo->prepare($sql);
     $st->execute([$uid, $sha]);
   } catch (PDOException $e) {
     throw new RuntimeException('generator_license_unwritable', 0, $e);
