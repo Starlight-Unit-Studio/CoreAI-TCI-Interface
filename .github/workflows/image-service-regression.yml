@@ -5,6 +5,11 @@ on:
     paths:
       - 'tools/image/image_service.py'
       - 'api/image_gen.php'
+      - 'api/core_generator_engine.php'
+      - 'api/models.php'
+      - 'js/coreui-core-mode.js'
+      - 'scripts/generator-engine-selftest.php'
+      - 'scripts/thinking-switch-ui-selftest.cjs'
       - 'scripts/image-service-selftest.py'
       - 'scripts/ensure-generator-core.py'
       - 'scripts/generator-core-selftest.py'
@@ -59,10 +64,15 @@ jobs:
         run: |
           php -l api/image_gen.php
           php -l api/core_install.php
+          php -l api/core_generator_engine.php
+          php -l api/models.php
+          php scripts/generator-engine-selftest.php
           php -l api/user_settings.php
           php scripts/core-install-selftest.php
           node --check js/coreui-model-library.js
           node --check js/coreui-core-install.js
+          node --check js/coreui-core-mode.js
+          node scripts/thinking-switch-ui-selftest.cjs
           node scripts/core-install-ui-selftest.cjs
           bash -n scripts/install.sh scripts/install-native.sh scripts/preflight.sh scripts/preflight-native.sh
       - name: Static asset fingerprints and version metadata
