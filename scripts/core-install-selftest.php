@@ -165,6 +165,16 @@ install_test(strpos($detach, 'echo json_encode') < strpos($detach, 'fastcgi_fini
 // FLUX prompt Core: a real Ollama alias, not a renamed source tag or a Gemma 4 runner.
 install_test(coreui_core_install_name('generator') === 'ember-coreui:gen',
   'generator installer uses the dedicated Ollama tag');
+install_test(coreui_core_may_cleanup_base(COREUI_CORE_GENERATOR_BASE, false,
+    [COREUI_CORE_GENERATOR_NAME])
+  && !coreui_core_may_cleanup_base(COREUI_CORE_GENERATOR_BASE, true, [COREUI_CORE_GENERATOR_NAME])
+  && !coreui_core_may_cleanup_base(COREUI_CORE_GENERATOR_BASE, false, ['unrelated:latest']),
+  'FLUX source is removed only if this job fetched it AND the intended Generator is verified');
+install_test(str_contains((string)file_get_contents($root . '/scripts/install.sh'),
+    'scripts/ensure-generator-core.py') &&
+  str_contains((string)file_get_contents($root . '/scripts/install-native.sh'),
+    'scripts/ensure-generator-core.py'), 'both source installers run Generator provisioning');
+
 $generatorRequest = coreui_core_generator_create_request((string)file_get_contents($root . '/config/Modelfile.template'));
 install_test($generatorRequest['model'] === COREUI_CORE_GENERATOR_NAME
   && $generatorRequest['from'] === COREUI_CORE_GENERATOR_BASE
