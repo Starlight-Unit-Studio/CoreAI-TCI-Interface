@@ -76,6 +76,8 @@ def save_lock(path: Path, lock: dict) -> None:
             json.dump(lock, output, ensure_ascii=False, indent=2)
             output.write('\n')
         os.chmod(tmp, 0o640)
+        if hasattr(os, 'geteuid') and os.geteuid() == 0:
+            os.chown(tmp, 33, 33)
         os.replace(tmp, path)
     finally:
         if os.path.exists(tmp):
