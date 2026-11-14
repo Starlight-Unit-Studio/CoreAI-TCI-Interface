@@ -51,20 +51,31 @@ class MockOllama:
 with tempfile.TemporaryDirectory(prefix="coreai-generator-test-") as path:
     root = Path(path)
     (root / "config").mkdir()
+    (root / "licenses").mkdir()
+    (root / "var" / "cache").mkdir(parents=True)
     template = root / "config" / "Modelfile.template"
     template.write_text('FROM gemma4:e4b\nSYSTEM """Du bist Mara Thorne.\nHilf bei Bildern.\n"""\n'
                         'RENDERER gemma4\nPARSER gemma4\nPARAMETER num_ctx 131072\n', encoding="utf-8")
     generator.ROOT = root
     generator.STATE = root / "var" / "generator-core.json"
+    generator.LICENSE_PATH = root / "licenses" / "FLUX-NON-COMMERCIAL-v2.1.txt"
+    generator.LICENSE_RECEIPT = root / "var" / "cache" / "generator-license.json"
+    generator.LICENSE_PATH.write_text("FLUX Non-Commercial License v2.1: offline test", encoding="utf-8")
     original = template.read_text(encoding="utf-8")
 
     empty = MockOllama()
     generator.ollama = empty
-    with patch.dict(os.environ, {"COREUI_ACCEPT_FLUX_NON_COMMERCIAL": "0"}, clear=True):
+    with patch.dict(os.environ, {}, clear=True):
         assert generator.ensure() == 0
         assert empty.calls.count(("pull", generator.BASE)) == 0
         assert generator.check() == 3
     assert not generator.STATE.exists()
+    assert not generator.license_accepted()
+    generator.LICENSE_RECEIPT.write_text(__import__("json").dumps({
+        "accepted": True,
+        "license_sha256": __import__("hashlib").sha256(generator.LICENSE_PATH.read_bytes()).hexdigest(),
+        "accepted_by": 1}) + "\n", encoding="utf-8")
+    assert generator.license_accepted()
 
     inherited = MockOllama([generator.BASE])
     generator.ollama = inherited
@@ -89,7 +100,7 @@ with tempfile.TemporaryDirectory(prefix="coreai-generator-test-") as path:
     generator.STATE.unlink()
     fresh = MockOllama()
     generator.ollama = fresh
-    with patch.dict(os.environ, {"COREUI_ACCEPT_FLUX_NON_COMMERCIAL": "1"}, clear=True):
+    with patch.dict(os.environ, {}, clear=True):
         assert generator.ensure() == 0
     assert generator.GENERATOR in fresh.models and generator.BASE not in fresh.models
     assert ("pull", generator.BASE) in fresh.calls and ("rm", generator.BASE) in fresh.calls
@@ -105,7 +116,7 @@ with tempfile.TemporaryDirectory(prefix="coreai-generator-test-") as path:
     generator.STATE.unlink()
     failing = MockOllama([], fail_create=True)
     generator.ollama = failing
-    with patch.dict(os.environ, {"COREUI_ACCEPT_FLUX_NON_COMMERCIAL": "1"}, clear=True):
+    with patch.dict(os.environ, {}, clear=True):
         assert generator.ensure() == 1
     assert generator.BASE in failing.models
     assert generator.GENERATOR not in failing.models
