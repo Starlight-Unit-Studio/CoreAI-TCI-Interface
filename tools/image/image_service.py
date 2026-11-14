@@ -767,7 +767,10 @@ def make_handler(service: Service):
             model_id = data.get('model', PGEN.STANDARD) if isinstance(data, dict) else PGEN.STANDARD
             if model_id not in (PGEN.STANDARD, PGEN.QUALITY):
                 return self._json(400, {'ok': False, 'error': 'bad_model'})
-            if model_id == PGEN.QUALITY and not service.quality_license_accepted():
+            # The PHP API checks the authenticated caller's user_id against
+            # their own DB receipt before creating this internal worker job.
+            # A host-wide file must NEVER authorize other users' image jobs.
+            if model_id == PGEN.QUALITY and data.get('user_license_accepted') is not True:
                 return self._json(403, {'ok': False, 'error': 'license_accept_required'})
             if model_id not in service.profile_paths:
                 return self._json(503, {'ok': False, 'error': 'pgen_loading' if
