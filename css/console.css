@@ -4390,6 +4390,24 @@ html.live-open body {
   background: transparent;
 }
 
+/* Quantum Gen Engine unavailable: keep the Generator visible and readable,
+   but do not make it selectable or pretend a missing engine is a missing Core. */
+.core-mode-option--engine-missing:disabled {
+  opacity: 0.72;
+  border: 1px dashed var(--line);
+  background: var(--panel-cx);
+  cursor: not-allowed;
+}
+.core-mode-option--engine-missing .core-mode-option-name {
+  color: var(--muted-soft);
+}
+.core-mode-option--engine-missing small {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4;
+  white-space: normal;
+}
+
 /* One row per tier; a tier that also runs in the cloud has a Lokal/Cloud switch. */
 .core-mode-item {
   display: grid;
