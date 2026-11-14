@@ -19,6 +19,9 @@ on:
       - 'api/profile_media.php'
       - 'api/image_reference_consistency.php'
       - 'database/migrations/042_mara_profile_references.sql'
+      - 'database/migrations/043_pgen_user_license.sql'
+      - 'api/core_generator_license.php'
+      - 'api/ai_settings.php'
       - 'scripts/profile-reference-selftest.php'
       - 'scripts/profile-modals-ui-selftest.cjs'
       - 'js/coreui-profile-editors.js'
@@ -104,6 +107,8 @@ jobs:
         run: |
           php -l api/image_gen.php
           php -l api/pgen.php
+          php -l api/core_generator_license.php
+          php -l api/ai_settings.php
           php scripts/pgen-selftest.php
           php -l api/core_install.php
           php -l api/core_generator_engine.php
