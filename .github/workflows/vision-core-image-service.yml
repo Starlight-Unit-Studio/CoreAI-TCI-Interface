@@ -5,6 +5,8 @@ on:
     paths:
       - 'tools/image/image_service.py'
       - 'tools/image/vision_cores.py'
+      - 'tools/image/ollama_weight_bridge.py'
+      - 'scripts/ollama-weight-bridge-selftest.py'
       - 'scripts/image-service-selftest.py'
       - 'scripts/vision-nginx-route-selftest.py'
       - 'scripts/vision-ollama-ui-selftest.cjs'
@@ -22,6 +24,8 @@ on:
     paths:
       - 'tools/image/image_service.py'
       - 'tools/image/vision_cores.py'
+      - 'tools/image/ollama_weight_bridge.py'
+      - 'scripts/ollama-weight-bridge-selftest.py'
       - 'scripts/image-service-selftest.py'
       - 'scripts/vision-nginx-route-selftest.py'
       - 'scripts/vision-ollama-ui-selftest.cjs'
@@ -48,6 +52,10 @@ jobs:
         run: python3 -I scripts/image-service-selftest.py
       - name: Enforce external Vision Core Nginx route and default-deny policy
         run: python3 -I scripts/vision-nginx-route-selftest.py
+      - name: Verify fail-closed Ollama real-image-weight adapter
+        run: |
+          python3 -I -m py_compile tools/image/ollama_weight_bridge.py scripts/ollama-weight-bridge-selftest.py
+          python3 -I scripts/ollama-weight-bridge-selftest.py
       - name: Check PHP bridge syntax
         run: |
           php -l api/vision_cores.php
