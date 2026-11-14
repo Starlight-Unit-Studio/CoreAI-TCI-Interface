@@ -37,12 +37,18 @@ class Element {
 function page() {
   const ids = ['coreInstall', 'Kicker', 'Title', 'Lead', 'Tech', 'Tiers', 'TierList', 'Check', 'Rows', 'Verdict', 'VerdictTitle',
     'VerdictText', 'Progress', 'BarWrap', 'Bar', 'Step', 'Maint', 'Auto', 'UpdateInfo', 'UpdateNow', 'ToManage', 'Results',
-    'Cloud', 'CloudState', 'CloudSteps', 'CloudLink', 'CloudCheck', 'Note', 'Go', 'Cancel', 'Close']
-    .map(k => k === 'coreInstall' ? k : 'coreInstall' + k);
+    'Cloud', 'CloudState', 'CloudSteps', 'CloudLink', 'CloudCheck', 'Note', 'Go', 'Cancel', 'Close',
+    'GeneratorLicense', 'GeneratorLicenseOpen', 'GeneratorLicenseState']
+    .map(k => k === 'coreInstall' ? k : 'coreInstall' + k)
+    .concat(['coreGeneratorLicense', 'coreGeneratorLicensePanel', 'coreGeneratorLicenseText',
+      'coreGeneratorLicenseCheck', 'coreGeneratorLicenseNote', 'coreGeneratorLicenseAccept',
+      'coreGeneratorLicenseCancel', 'coreGeneratorLicenseClose']);
   const els = Object.fromEntries(ids.map(id => [id, new Element('div', id)]));
   ['coreInstall', 'coreInstallProgress', 'coreInstallTiers', 'coreInstallMaint', 'coreInstallResults', 'coreInstallCloud',
-    'coreInstallCloudSteps', 'coreInstallCloudLink', 'coreInstallToManage'].forEach(id => { els[id].hidden = true; });
+    'coreInstallCloudSteps', 'coreInstallCloudLink', 'coreInstallToManage', 'coreInstallGeneratorLicense',
+    'coreGeneratorLicense'].forEach(id => { els[id].hidden = true; });
   els.coreInstallAuto.checked = false;
+  els.coreGeneratorLicenseCheck.checked = false;
   const doc = {
     handlers: {},
     getElementById: id => els[id] || null,
@@ -82,18 +88,26 @@ function server(opts) {
   const calls = [];
   const st = {install: opts.install || null, statuses: (opts.statuses || []).slice(), auto: opts.auto || {enabled: false, last: null, next: null},
     cloud: opts.cloud || {version: '0.40.6', version_ok: true, min_version: '0.12.0', account: {state: 'signed_out', signin_url: SIGNIN}},
-    tiers: opts.tiers || TIERS};
+    tiers: opts.tiers || TIERS, licenseAccepted: opts.licenseAccepted === true};
   const reply = (status, body) => Promise.resolve({ok: status < 400, status, json: () => Promise.resolve(body)});
   const fetch = (url, init) => {
     calls.push({url, init});
     if (opts.offline) return Promise.reject(new Error('offline'));
+    if (url === './api/user_settings.php?core_generator_license=1') {
+      return reply(200, {ok: true, license: {name: 'FLUX Non-Commercial License v2.1',
+        text: 'FLUX Non-Commercial License v2.1\nBlack Forest Labs: original license text in offline fixture.',
+        sha256: 'a'.repeat(64), accepted: st.licenseAccepted}, csrf_token: 'tokLicense'});
+    }
     if (url.startsWith('./api/user_settings.php?core_install=')) {
       const c = opts.admin === false ? check({verdict: null, rows: [], ram_need: null}) : check(opts.check);
+      if (c.tier === 'generator') { c.license_accepted = st.licenseAccepted; c.requires_license = !st.licenseAccepted; }
       return reply(200, {ok: true, check: c, can_install: opts.admin !== false, install: st.install, csrf_token: 'tok9',
         auto: opts.admin === false ? null : st.auto});
     }
     if (url === './api/user_settings.php?core_manage=1') {
-      return reply(200, {ok: true, tiers: st.tiers, plan: PLAN, auto: st.auto, install: st.install, csrf_token: 'tok7'});
+      return reply(200, {ok: true, tiers: st.tiers.map(t => t.tier === 'generator'
+        ? Object.assign({}, t, {license_accepted: st.licenseAccepted}) : t),
+        plan: PLAN, auto: st.auto, install: st.install, csrf_token: 'tok7'});
     }
     if (url === './api/user_settings.php?core_cloud=1') {
       if (opts.cloudAfter && calls.filter(c => c.url === url).length > 1) st.cloud = opts.cloudAfter;
@@ -106,6 +120,12 @@ function server(opts) {
     if (init.method === 'POST') {
       if (opts.refuse) return reply(409, {ok: false, error: opts.refuse});
       const body = JSON.parse(init.body);
+      if (body.action === 'core_generator_license_accept') {
+        assert.equal(body.sha256, 'a'.repeat(64));
+        assert.equal(body.accepted, true);
+        st.licenseAccepted = true;
+        return reply(200, {ok: true, license: {accepted: true, sha256: body.sha256}});
+      }
       if (body.action === 'core_auto_update') {
         if (opts.failAuto) return reply(503, {ok: false, error: 'save_failed'});
         st.auto = body.enabled ? {enabled: true, last: null, next: 1762300000} : {enabled: false, last: null, next: null};
