@@ -38,7 +38,7 @@
   function isCloud(name) { return /(?:^|[:._-])cloud(?:$|[:._-])/i.test(String(name || '')); }
   function sameCore(a, b) { return !!modelKey(a) && modelKey(a) === modelKey(b); }
   function shortLabel(label) { return String(label || '').replace(/^TCI\s+/, '') || 'Core'; }
-  function isGenerator(name) { return /^fegdxus\/flux2-klein-9b-uncensored(?::[a-z0-9_.-]+)?$/i.test(String(name || '').trim()); }
+  function isGenerator(name) { return /^ember-coreui:gen$/i.test(String(name || '').trim()); }
 
   // Mirror of coreui_core_tier() for names the server has not labelled yet.
   var TIERS = [['e2b', 'TCI Core Schnell', 'Gemma 4 E2B'], ['e4b', 'TCI Core Normal', 'Gemma 4 E4B'],
