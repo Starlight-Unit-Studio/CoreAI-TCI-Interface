@@ -181,8 +181,14 @@ function coreui_core_audio_flags(array $models, callable $show): array {
   return $out;
 }
 
-/** Name shown in the chat: the TCI tier name, or the Core's own name. */
+/** The existing local FLUX.2 prompt Core uses a CoreAI display alias; no second model is installed. */
+function coreui_core_is_generator(string $model): bool {
+  return preg_match('~^fegdxus/flux2-klein-9b-uncensored(?::[A-Za-z0-9_.-]+)?$~i', trim($model)) === 1;
+}
+
+/** Name shown in the chat: the TCI tier, the Generator alias, or the Core's own name. */
 function coreui_core_label(string $model): string {
+  if (coreui_core_is_generator($model)) return 'TCI Core Generator';
   $tier = coreui_core_tier_of($model);
   return $tier !== null ? COREUI_CORE_TIER_LABELS[$tier] : $model;
 }
