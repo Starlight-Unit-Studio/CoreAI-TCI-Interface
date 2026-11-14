@@ -547,7 +547,7 @@ open(out, 'wb').write(png(w, h, (16, 32, 48)))
 # --- Wiring -------------------------------------------------------------------------------
 compose = (ROOT / 'compose.yaml').read_text(encoding='utf-8')
 block = compose[compose.index('\n  image:\n'):compose.index('\n  pyworker:\n')]
-for needle in ('profiles: ["image"]', 'dockerfile: docker/image/Dockerfile', 'user: "33:33"', 'read_only: true', 'mem_limit: 20g',
+for needle in ('profiles: ["image"]', 'dockerfile: docker/image/Dockerfile', 'user: "33:33"', 'read_only: true', 'mem_limit: 30g',
                '- .:/var/www/coreui:ro', '- ./var/image-models:/models', 'COREAI_IMAGE_PORT: ${COREUI_IMAGE_PORT:-18791}'):
     check(needle in block, 'compose image service: ' + needle)
 install = (ROOT / 'scripts' / 'install.sh').read_text(encoding='utf-8')
