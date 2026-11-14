@@ -47,7 +47,9 @@ assert "stable-diffusion.cpp" in worker, "Original image service unexpectedly re
 api = source("api/image_gen.php")
 assert "function coreui_image_generate(" in api, "Image generation PHP entrypoint missing"
 assert "function coreui_image_http(" in api, "Image worker HTTP bridge missing"
-assert "model_registry" not in api and "model_label" not in api, "Alternate model selection still wired"
+assert "model_registry" not in api, "Removed Vision model registry remains wired"
+assert "coreui_pgen_selected()" in api and "'model_label'" in api, (
+    "Explicit picture-generator pGen selection is distinct from removed Vision management")
 
 assert "function coreui_library_search(" in source("api/ollama_library.php"), "Normal Ollama Core library lost"
 assert "ollama_library_install" in source("api/user_settings.php"), "Normal Ollama installer lost"
