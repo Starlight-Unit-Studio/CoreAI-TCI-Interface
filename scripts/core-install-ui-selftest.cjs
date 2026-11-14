@@ -343,7 +343,7 @@ assert.equal(api.gb(20 * 1073741824), '20 GB');
   win = api.create(doc, srv.fetch, fn => ticks.push(fn), {installed: core => refreshed.push(core || '')});
   await win.manage();
   assert.equal(els.coreInstall.hidden, false);
-  assert.deepEqual(srv.calls.map(c => c.url), ['./api/user_settings.php?core_manage=1', './api/user_settings.php?core_cloud=1']);
+  assert.deepEqual(srv.calls.map(c => c.url), ['./api/user_settings.php?pgen=1', './api/user_settings.php?core_manage=1', './api/user_settings.php?core_cloud=1']);
   assert.equal(els.coreInstallKicker.textContent, 'CORES VERWALTEN');
   assert.equal(els.coreInstallTitle.textContent, 'Cores verwalten');
   assert.match(els.coreInstallLead.textContent, /unregelmäßigen Abständen/);
