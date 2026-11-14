@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.7.56 - 14.11.2026
+
+- **pGen 9B automatisch installieren:** Bei Updates und Engine-Neustarts wird 9B nach vorhandener Lizenzannahme sowie bestandener RAM- und Plattenplatzprüfung ohne weiteren Installationsklick vorbereitet. Die Gewichte werden durch SHA-256 geprüft; bereits getestete Gewichte bleiben wiederverwendbar. **Ohne bestätigte Non-Commercial-Lizenz erfolgt weder Download noch Modellfreigabe.**
+- **9B sichtbar, aber gesperrt:** Die Option bleibt im pGen-Bereich sichtbar, ist jedoch bis zur Lizenzannahme deaktiviert. Ein kleiner Hinweis über der 9B-Karte lautet „Lizenz bitte zustimmen“. Nach Akzeptanz startet der bestehende Bildworker die Installation automatisch.
+- **Benutzer-Profil-Editor als Modal:** Der Stift in der Profilübersicht öffnet den bestehenden Editor in einem mobilen Dialog; die bislang unten angehängte Karte entfällt. Schließen, Hintergrundklick, Escape und Fokussteuerung sind integriert.
+- **Mara-Profil neu zugeordnet:** Direkt unter der Profilübersicht erscheint eine separate Mara-Karte als Einstieg in ihr eigenes Bearbeitungsmodal. Der Mara-Rufname wird unabhängig vom Benutzer-Anzeigenamen gespeichert.
+- **Vier zusätzliche Mara-Referenzbilder:** Neben dem Hauptprofilbild (Referenz 1) erscheinen vier kleinere Slots mit Plus-Symbol für leere Plätze, Upload, Zuschneiden, Ersetzen und Entfernen. Migration 042 ergänzt die bestehenden privaten, pro Benutzer isolierten Medien-Slots. Bei Maras Selbstporträts verarbeitet die Quantum Gen Engine diese Bilder als weitere Perspektiven **derselben Person**, nicht bloß als Vorschauen.
+- **Regressionen:** PHP, Python und JavaScript schützen Lizenz- und Hardwarepflicht, Bildreferenzen, Kontotrennung, UI und Modalbedienung.
+
 ## 0.7.55 - 14.11.2026
 
 - **pGen Core in „Cores verwalten“:** Eigener, kompakter Bereich unter den Text-Core-Stufen mit genau zwei Bildmodellen: **FLUX.2 Standard (4B)** und **FLUX.2 9B**. Dropdown, aktiver Status, Lizenzhinweis, Hardware-Messwerte sowie „Als pGen verwenden“ und 9B-Installation. Die Ollama-Text-Core-Liste bleibt unverändert.
