@@ -15,6 +15,12 @@ server's CPU at the commit in models.json):
   report --run-dir DIR                 report.json (Admin Core > Betrieb > Bildproben) and report.md.
   validate                             checks models.json.
 
+0.7.51: a group may be optional (it never runs unless it is named) and may need its licence
+accepted first (scripts/image-spike.sh --accept-license ...): FLUX.2-klein 9B, FLUX Non-Commercial
+License. A prompt may name a reference image (Mara's portrait in images/mara_references, mounted
+read-only as --refs); it runs only with groups that take reference images ("reference": true) and
+shows how exactly a model keeps a face.
+
 Nothing here touches CoreAI's Cores, Modelfile or database.
 """
 from __future__ import annotations
@@ -42,6 +48,9 @@ GROUP_RE = re.compile(r'^[a-z0-9][a-z0-9_-]{0,60}$')
 REPO_RE = re.compile(r'^[A-Za-z0-9][A-Za-z0-9._-]{0,95}/[A-Za-z0-9][A-Za-z0-9._-]{0,95}$')
 SIZE_RE = re.compile(r'^([0-9]{3,4})x([0-9]{3,4})$')
 PROMPT_RE = re.compile(r'^p[0-9]{1,2}$')
+# 0.7.51: reference images are Mara's own registered identity pictures, never a free path.
+REFERENCE_RE = re.compile(r'^mara_identity_[a-z0-9_]{1,40}\.(?:png|jpg)$')
+ACCEPT_RE = re.compile(r'^[a-z0-9][a-z0-9-]{0,40}$')
 ROLES = ('diffusion_model', 'llm', 'vae')
 FILE_RE = re.compile(r'^[a-z0-9][a-z0-9_-]{0,60}-[0-9]{3,4}x[0-9]{3,4}-p[0-9]{1,2}\.png$')
 CHUNK = 8 * 1024 * 1024
@@ -79,6 +88,8 @@ def registry_errors(reg: Any) -> list[str]:
             continue
         if not isinstance(prompt.get('seed'), int) or not str(prompt.get('text', '')).strip():
             errors.append('Prompt ' + prompt['id'] + ' ohne Seed oder Text')
+        if 'reference' in prompt and not REFERENCE_RE.match(str(prompt['reference'])):
+            errors.append('Prompt ' + prompt['id'] + ': Referenzbild nur aus Maras Referenzen (mara_identity_*.png/jpg)')
         ids.add(prompt['id'])
     if not ids:
         errors.append('keine Prompts')
@@ -116,7 +127,38 @@ def registry_errors(reg: Any) -> list[str]:
                 errors.append(gid + ': ' + path + ' ohne Lizenz')
         if sorted(roles) != sorted(ROLES):
             errors.append(gid + ': braucht genau diffusion_model, llm und vae')
+        for flag in ('optional', 'reference'):
+            if flag in group and not isinstance(group[flag], bool):
+                errors.append(gid + ': ' + flag + ' muss true oder false sein')
+        if 'accept' in group:
+            # A licence that has to be accepted never runs by default and says where its text is.
+            if not ACCEPT_RE.match(str(group['accept'])):
+                errors.append(gid + ': accept ist kein gueltiges Kennwort')
+            if group.get('optional') is not True:
+                errors.append(gid + ': eine Gruppe mit accept muss optional sein')
+            if not str(group.get('license_url', '')).startswith('https://') or not str(group.get('license_note', '')).strip():
+                errors.append(gid + ': accept braucht license_url (https) und license_note')
+    if groups and all(g.get('optional') for g in groups.values() if isinstance(g, dict)):
+        errors.append('mindestens eine Gruppe muss ohne --groups laufen (nicht optional)')
     return errors
+
+
+def default_groups(reg: dict) -> list[str]:
+    """The groups a run without --groups takes: never an optional one."""
+    return [gid for gid, group in reg['groups'].items() if not group.get('optional')]
+
+
+def reference_path(refs: Path | None, prompt: dict) -> Path | None:
+    """The reference image of a prompt inside the read-only reference folder, None when the prompt has none."""
+    name = str(prompt.get('reference') or '')
+    if not name:
+        return None
+    if refs is None or not REFERENCE_RE.match(name):
+        raise FileNotFoundError(name)
+    path = refs / name
+    if not path.is_file() or path.is_symlink() or not 0 < path.stat().st_size <= 8 * 1024 * 1024:
+        raise FileNotFoundError(name)
+    return path
 
 
 def load_registry(path: Path = REGISTRY) -> dict:
@@ -288,11 +330,14 @@ def png_size(path: Path) -> tuple[int, int] | None:
     return struct.unpack('>II', head[16:24])
 
 
-def command(files: dict, prompt: dict, size: str, group: dict, threads: int, out_png: Path, sd_cli: str = SD_CLI) -> list[str]:
+def command(files: dict, prompt: dict, size: str, group: dict, threads: int, out_png: Path, sd_cli: str = SD_CLI,
+            reference: Path | None = None) -> list[str]:
     width, height = SIZE_RE.match(size).groups()
-    return [sd_cli, '--diffusion-model', files['diffusion_model'], '--llm', files['llm'], '--vae', files['vae'],
-            '-p', prompt['text'], '--cfg-scale', str(float(group['cfg_scale'])), '--steps', str(group['steps']),
-            '-W', width, '-H', height, '-s', str(prompt['seed']), '-t', str(threads), '-o', str(out_png), '-v']
+    cmd = [sd_cli, '--diffusion-model', files['diffusion_model'], '--llm', files['llm'], '--vae', files['vae'],
+           '-p', prompt['text'], '--cfg-scale', str(float(group['cfg_scale'])), '--steps', str(group['steps']),
+           '-W', width, '-H', height, '-s', str(prompt['seed']), '-t', str(threads), '-o', str(out_png), '-v']
+    # 0.7.51: the same "-r" Mara's image service gives sd-cli for her own portrait.
+    return cmd + (['-r', str(reference)] if reference is not None else [])
 
 
 def run_measured(cmd: list[str], log_path: Path, timeout: int) -> tuple[int, float, float | None, bool]:
@@ -318,7 +363,7 @@ def run_measured(cmd: list[str], log_path: Path, timeout: int) -> tuple[int, flo
 
 
 def run_group(reg: dict, group_id: str, models: Path, out: Path, threads: int, full: bool = False,
-              sd_cli: str = SD_CLI, timeout: int = IMAGE_TIMEOUT) -> dict:
+              sd_cli: str = SD_CLI, timeout: int = IMAGE_TIMEOUT, refs: Path | None = None) -> dict:
     group = reg['groups'][group_id]
     prompts = {p['id']: p for p in reg['prompts']}
     result = {'id': group_id, 'label': group['label'], 'origin': group.get('origin', ''), 'license': group['license'],
@@ -337,13 +382,25 @@ def run_group(reg: dict, group_id: str, models: Path, out: Path, threads: int, f
     for step in reg['plan']:
         chosen = [p['id'] for p in reg['prompts']] if full else step['prompts']
         for prompt_id in chosen:
+            # A prompt with a reference image is only for models that take one (FLUX.2-klein).
+            if prompts[prompt_id].get('reference') and not group.get('reference'):
+                continue
             name = f'{group_id}-{step["size"]}-{prompt_id}.png'
             target = out / name
             target.unlink(missing_ok=True)
-            log(f'{group_id}: {step["size"]}, {prompt_id} ({group["steps"]} Schritte, {threads} Threads) ...')
+            try:
+                reference = reference_path(refs, prompts[prompt_id])
+            except (FileNotFoundError, OSError):
+                result['images'].append({'prompt': prompt_id, 'size': step['size'], 'file': '', 'seed': prompts[prompt_id]['seed'],
+                                         'wall_s': None, 'peak_rss_mb': None, **timings(''), 'ok': False,
+                                         'error': 'Referenzbild ' + str(prompts[prompt_id].get('reference')) + ' fehlt (images/mara_references)'})
+                log(f'{group_id}: {step["size"]}, {prompt_id}: Referenzbild fehlt, uebersprungen')
+                continue
+            log(f'{group_id}: {step["size"]}, {prompt_id} ({group["steps"]} Schritte, {threads} Threads'
+                + (', mit Referenzbild' if reference else '') + ') ...')
             log_path = logs / (name[:-4] + '.log')
-            code, seconds, rss, timed_out = run_measured(command(files, prompts[prompt_id], step['size'], group, threads, target, sd_cli),
-                                                         log_path, timeout)
+            code, seconds, rss, timed_out = run_measured(
+                command(files, prompts[prompt_id], step['size'], group, threads, target, sd_cli, reference), log_path, timeout)
             output = log_path.read_text(encoding='utf-8', errors='replace')
             image = {'prompt': prompt_id, 'size': step['size'], 'file': name, 'seed': prompts[prompt_id]['seed'],
                      'wall_s': seconds, 'peak_rss_mb': rss, **timings(output), 'ok': False, 'error': ''}
@@ -429,7 +486,8 @@ def report(run_dir: Path, reg: dict | None = None) -> dict:
                          f'{entry["size"]} Bytes, {entry["license"]}')
         lines.append('')
     for prompt in reg['prompts']:
-        lines.append(f'- {prompt["id"]} ({prompt["topic"]}, Seed {prompt["seed"]}): {prompt["text"]}')
+        lines.append(f'- {prompt["id"]} ({prompt["topic"]}, Seed {prompt["seed"]}'
+                     + (f', Referenzbild {prompt["reference"]}' if prompt.get('reference') else '') + f'): {prompt["text"]}')
     (run_dir / 'report.md').write_text('\n'.join(lines) + '\n', encoding='utf-8')
     return data
 
@@ -446,13 +504,22 @@ def main(argv: list[str] | None = None) -> int:
     run_p.add_argument('--out', required=True, type=Path)
     run_p.add_argument('--threads', required=True, type=int)
     run_p.add_argument('--full', action='store_true')
+    run_p.add_argument('--refs', type=Path, default=None)
     report_p = sub.add_parser('report')
     report_p.add_argument('--run-dir', required=True, type=Path)
     sub.add_parser('validate')
+    # 0.7.51: what scripts/image-spike.sh needs to know about the groups (one line each, tab separated).
+    sub.add_parser('groups')
     args = parser.parse_args(argv)
     reg = load_registry()
     if args.cmd == 'validate':
         print('models.json OK: ' + ', '.join(reg['groups']))
+        return 0
+    if args.cmd == 'groups':
+        for gid, group in reg['groups'].items():
+            print('\t'.join([gid, 'optional' if group.get('optional') else 'default', str(group.get('accept') or '-'),
+                             str(sum(f['size'] for f in group['files'])), group['license'],
+                             str(group.get('license_url') or '-'), str(group.get('license_note') or '-')]))
         return 0
     if args.cmd in ('fetch', 'run') and args.group not in reg['groups']:
         parser.error('unbekannte Gruppe ' + args.group)
@@ -469,7 +536,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == 'run':
         if not 1 <= args.threads <= 512:
             parser.error('--threads zwischen 1 und 512')
-        result = run_group(reg, args.group, args.models, args.out, args.threads, args.full)
+        result = run_group(reg, args.group, args.models, args.out, args.threads, args.full, refs=args.refs)
         write_json(args.out / f'{args.group}.json', result)
         return 0 if result['ok'] else 1
     report(args.run_dir, reg)

@@ -1,16 +1,17 @@
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
-PR-Stand: 0.7.50 auf main 0.7.49 (vollstaendiger Rueckbau Vision-Core-Modellverwaltung).
+PR-Stand: 0.7.51 auf main 0.7.50 (Bildtest: FLUX.2-klein 9B zuschaltbar, Gesichtsprompt mit Referenzbild).
 Stand: 14.11.2026
-Repository-Version: 0.7.50 (Branch revert/vision-core-management-0-7-50, main 0.7.49)
-BASIS: main 0.7.49 nach PR #304. Der Operator will die Vision-Core-Modellverwaltung komplett entfernen.
-NAECHSTE VERBINDLICHE VERSION: 0.7.50 fuer den Rueckbau-PR, danach 0.7.51, falls main unveraendert bleibt.
-ENTFERNT: Vision-Core-Button, modaler Manager, Hugging-Face/Ollama/Installiert-Tabs, PHP-Bridge, Python-Registry, JS/CSS und deren Nginx- und Installer-Sonderbehandlung.
-BEIBEHALTEN: die normale Bildgenerierung mit FLUX.2 Klein 4B (urspruenglicher Stand vor 0.7.45), normale TCI-/Ollama-Cores, Bilder, Nutzer, Quoten, Locks, Ollama-Core-Daten.
-STOPP: Der experimentelle, ungemergte Ollama-Gewichtsimport PR #305 wurde geschlossen und darf nicht integriert werden.
-WICHTIG: Auf Servern koennen frueher heruntergeladene Zusatzgewichte liegen; sie werden nicht destruktiv geloescht.
-TESTS: aktuelle Image-Service-Selftests, neuer Vision-Removal-Gate, Cache-Bust-Verify, Version-Guard, globale Preflights und nach Update echte Bildgenerierung.
+Repository-Version: 0.7.51 (Branch claude/bold-galileo-myoyi0, main 0.7.50)
+BASIS: main 0.7.50 nach PR #306 (Vision-Core-Modellverwaltung vollstaendig entfernt).
+NAECHSTE VERBINDLICHE VERSION: 0.7.52, falls main unveraendert bleibt.
+NEU: scripts/image-spike.sh misst FLUX.2-klein 9B nur mit --groups flux2-klein-9b und --accept-license flux-non-commercial (FLUX Non-Commercial License v2.1: privat, nicht-kommerziell, nicht fuer andere Nutzer). Prompt p4 prueft Gesichter nach Maras Referenzbild fuer 4B und 9B.
+UNVERAENDERT: der laufende Bildgenerator mit festem FLUX.2-klein 4B, Core-Verwaltung, Modelfile, SYSTEM-Prompts.
+STOPP (gilt weiter): Der experimentelle, ungemergte Ollama-Gewichtsimport PR #305 wurde geschlossen und darf nicht integriert werden. Keine Vision-Core-Modellverwaltung.
+OFFEN: Lauf auf dem Server (Zeit, Arbeitsspeicher, Gesichtstreue). Erst danach entscheidet sich, ob der Bildgenerator in der Core-Liste am Eingabefeld zwischen 4B und 9B umschaltbar wird (9B nur fuer den Inhaber).
+BEFEHL: sudo bash /opt/ember-coreui/scripts/image-spike.sh --groups flux2-klein-4b,flux2-klein-9b --accept-license flux-non-commercial
 WEITERARBEIT ZUERST LESEN:
+  docs/UEBERGABEPROTOKOLL_0_7_51.txt
   docs/UEBERGABEPROTOKOLL_0_7_50.txt
   docs/UEBERGABEPROTOKOLL_0_7_49.txt
   docs/UEBERGABEPROTOKOLL_0_7_48.txt

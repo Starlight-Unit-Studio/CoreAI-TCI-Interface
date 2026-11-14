@@ -6,6 +6,9 @@
 # Textverstaendnis, Rechenschritte, Dekodieren, die ganze Zeit je Bild und der hoechste
 # Arbeitsspeicher. Gemessen wird ohne Netz. Aendert keine Cores, kein Modelfile und keine
 # Datenbank; die Bilder stehen in Admin Core > Betrieb > Bildproben (nur Inhaber).
+# 0.7.51: FLUX.2-klein 9B als zuschaltbare Gruppe (FLUX Non-Commercial License v2.1): laeuft nur mit
+# --groups flux2-klein-9b und --accept-license flux-non-commercial. Prompt p4 prueft Gesichter nach
+# Maras Referenzbild (images/mara_references, nur lesend eingebunden).
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -28,6 +31,8 @@ DRY_RUN=''
 KEEP='5'
 TIME_LIMIT='14400'
 MEMORY='48g'
+ACCEPTED=''
+REFS="$PROJECT_ROOT/images/mara_references"
 
 usage() {
   cat <<'EOF'
@@ -37,9 +42,14 @@ CoreAI P20.5 A Bildtest (Bildgenerierung auf der CPU)
 
 Optionen:
   --groups LISTE    Nur diese Gruppen aus tools/image_spike/models.json
-                    (zimage-turbo, flux2-klein-4b; Standard: beide)
+                    (zimage-turbo, flux2-klein-4b; Standard: beide).
+                    Zuschaltbar, nie von allein: flux2-klein-9b (etwa 19 GB Gewichte).
+  --accept-license K  Noetig fuer flux2-klein-9b: --accept-license flux-non-commercial.
+                    Damit bestaetigst du, dass du die FLUX Non-Commercial License v2.1 gelesen
+                    hast und einhaeltst: nur private, nicht-kommerzielle Nutzung, nicht fuer
+                    andere Nutzer des Servers.
   --threads N       Rechenthreads (Standard: alle Kerne des Servers)
-  --full            Alle drei Prompts auch in 1024x1024 (Standard: drei in 512x512, einer in 1024x1024)
+  --full            Alle Prompts auch in 1024x1024 (Standard: alle in 512x512, einer in 1024x1024)
   --skip-build      Container nicht neu bauen (nur wenn er schon existiert)
   --refetch         Gewichte neu laden und neu registrieren
   --keep N          So viele Testlaeufe behalten (Standard: 5)
@@ -63,6 +73,7 @@ EOF
 while (($#)); do
   case "$1" in
     --groups) GROUP_FILTER="${2:-}"; shift 2 ;;
+    --accept-license) ACCEPTED="${2:-}"; shift 2 ;;
     --threads) THREADS="${2:-}"; shift 2 ;;
     --full) FULL='1'; shift ;;
     --skip-build) SKIP_BUILD='1'; shift ;;
@@ -78,6 +89,7 @@ log() { printf '[CoreAI Bildtest] %s\n' "$*"; }
 die() { printf '[CoreAI Bildtest] FEHLER: %s\n' "$*" >&2; exit 1; }
 
 [[ -z "$GROUP_FILTER" || "$GROUP_FILTER" =~ ^[a-z0-9_,-]+$ ]] || die 'Ungueltige --groups'
+[[ -z "$ACCEPTED" || "$ACCEPTED" =~ ^[a-z0-9,-]+$ ]] || die 'Ungueltiges --accept-license'
 [[ -z "$THREADS" || "$THREADS" =~ ^[0-9]+$ ]] || die 'Ungueltige --threads'
 [[ "$KEEP" =~ ^[0-9]+$ ]] && (( KEEP >= 1 )) || die 'Ungueltiges --keep'
 command -v python3 >/dev/null 2>&1 || die 'python3 fehlt auf dem Server'
@@ -99,15 +111,26 @@ run() {
   "$@"
 }
 
-mapfile -t SELECTED < <(python3 -I - "$REGISTRY" "$GROUP_FILTER" <<'PY'
-import json, sys
-reg = json.load(open(sys.argv[1], encoding='utf-8'))
-wanted = set(filter(None, sys.argv[2].split(',')))
-for gid in reg['groups']:
-    if not wanted or gid in wanted:
-        print(gid)
-PY
-)
+# 0.7.51: without --groups only the groups that are not optional; a group whose licence has to be
+# accepted (FLUX.2-klein 9B) stops here, before anything is built or loaded, unless --accept-license names it.
+SELECTED=()
+WEIGHT_BYTES=0
+while IFS=$'\t' read -r gid kind accept bytes license license_url license_note; do
+  [[ -n "$gid" ]] || continue
+  if [[ -n "$GROUP_FILTER" ]]; then
+    [[ ",$GROUP_FILTER," == *",$gid,"* ]] || continue
+  else
+    [[ "$kind" == 'default' ]] || continue
+  fi
+  if [[ "$accept" != '-' && ",$ACCEPTED," != *",$accept,"* ]]; then
+    printf '[CoreAI Bildtest] %s steht unter der %s.\n' "$gid" "$license" >&2
+    printf '[CoreAI Bildtest] %s\n' "$license_note" >&2
+    printf '[CoreAI Bildtest] Volltext: %s\n' "$license_url" >&2
+    die "Bitte erst lesen und dann mit --accept-license $accept bestaetigen."
+  fi
+  SELECTED+=("$gid")
+  WEIGHT_BYTES=$((WEIGHT_BYTES + bytes))
+done < <(python3 -I "$TOOLS/run.py" groups)
 ((${#SELECTED[@]})) || die 'Keine Gruppe ausgewaehlt (--groups pruefen).'
 NPROC="$(nproc 2>/dev/null || echo 4)"
 [[ -n "$THREADS" ]] || THREADS="$NPROC"
@@ -119,9 +142,13 @@ if [[ -z "$DRY_RUN" ]]; then
   install -d -m 0700 -o root -g root "$MODELS"
   install -d -m 0750 -o root -g 33 "$OUT"
   free_gb="$(df -Pk "$BASE" | awk 'NR==2 {printf "%d", $4/1048576}')"
-  (( free_gb >= 30 )) || log "Hinweis: nur ${free_gb} GB frei; Gewichte und Container brauchen beim ersten Mal etwa 25 GB."
+  # 0.7.51: from the weights of exactly this selection (FLUX.2-klein 9B alone is about 19 GB).
+  weights_gb=$(( (WEIGHT_BYTES + 1073741823) / 1073741824 ))
+  need_disk_gb=$(( weights_gb + 6 ))
+  need_ram_gb=$(( WEIGHT_BYTES / 1073741824 > 12 ? 32 : 24 ))
+  (( free_gb >= need_disk_gb )) || log "Hinweis: nur ${free_gb} GB frei; Gewichte (${weights_gb} GB) und Container brauchen beim ersten Mal etwa ${need_disk_gb} GB."
   avail_gb="$(awk '/^MemAvailable:/ {printf "%d", $2/1048576}' /proc/meminfo 2>/dev/null || echo 0)"
-  (( avail_gb >= 24 )) || log "Hinweis: nur ${avail_gb} GB Arbeitsspeicher frei; der Test braucht bis zu etwa 20 GB."
+  (( avail_gb >= need_ram_gb )) || log "Hinweis: nur ${avail_gb} GB Arbeitsspeicher frei; der Test braucht bis zu etwa $(( need_ram_gb - 4 )) GB."
   exec > >(tee -a "$OUT/run.log") 2>&1
 fi
 log "Lauf $STAMP: ${SELECTED[*]}, $THREADS Threads${FULL:+, alle Prompts in allen Groessen}"
@@ -168,12 +195,22 @@ done
 # --- 3. Bilder erzeugen ohne Netz -------------------------------------------------
 full_args=()
 [[ -z "$FULL" ]] || full_args=(--full)
+# 0.7.51: Mara's reference portraits, read-only. A missing folder is never created by Docker:
+# the face prompt then says honestly that its reference image is missing.
+ref_mount=()
+ref_args=()
+if [[ -d "$REFS" ]]; then
+  ref_mount=(-v "$REFS:/refs:ro")
+  ref_args=(--refs /refs)
+else
+  log "Hinweis: $REFS fehlt; der Gesichtsprompt laeuft ohne Referenzbild nicht."
+fi
 for group in "${SELECTED[@]}"; do
   log "Erzeuge Bilder mit $group ($THREADS Threads) ..."
   if ! run timeout --foreground "$TIME_LIMIT" docker run --rm --name "coreai-image-run-$group" "${SAFE[@]}" \
       --network none --memory "$MEMORY" --pids-limit 1024 \
-      -v "$MODELS:/models:ro" -v "$OUT:/out" \
-      "$IMAGE" python3 -I /app/run.py run --group "$group" --models /models --out /out --threads "$THREADS" "${full_args[@]}"; then
+      -v "$MODELS:/models:ro" -v "$OUT:/out" "${ref_mount[@]}" \
+      "$IMAGE" python3 -I /app/run.py run --group "$group" --models /models --out /out --threads "$THREADS" "${ref_args[@]}" "${full_args[@]}"; then
     docker rm -f "coreai-image-run-$group" >/dev/null 2>&1 || true
     log "  $group meldet einen Fehler (siehe Bericht)."
   fi
