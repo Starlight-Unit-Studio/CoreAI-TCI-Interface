@@ -20,7 +20,7 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 GENERATOR = "ember-coreui:gen"
-BASE = "fegdxus/flux2-klein-9b-uncensored:Q8_0"
+BASE = "feadxus/flux2-klein-9b-uncensored:Q8_0"
 LICENSE = "https://github.com/black-forest-labs/flux2/blob/main/model_licenses/LICENSE-FLUX-NON-COMMERICAL"
 STATE = ROOT / "var" / "generator-core.json"
 LICENSE_PATH = ROOT / "licenses" / "FLUX-NON-COMMERCIAL-v2.1.txt"
