@@ -321,6 +321,10 @@ if (($body['action'] ?? '') === 'core_install') {
     stu_json(['ok'=>false, 'error'=>$e->getMessage()], 400);
   }
   if ($check['installed']) stu_json(['ok'=>false, 'error'=>'already_installed'], 409);
+  // A new FLUX.2-klein 9B download requires an explicit licence acknowledgement.
+  if (!empty($check['requires_license']) && ($body['accept_license'] ?? false) !== true) {
+    stu_json(['ok'=>false, 'error'=>'license_accept_required', 'check'=>$check], 409);
+  }
   if ($check['blocked']) stu_json(['ok'=>false, 'error'=>'install_blocked', 'check'=>$check], 409);
   // Advised against: only with a second, explicit confirmation.
   if ($check['verdict'] === 'abraten' && ($body['confirm'] ?? false) !== true) {
