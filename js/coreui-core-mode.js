@@ -590,7 +590,7 @@
   window.CoreUICoreMode = {create: create, shortCore: shortCore, modelKey: modelKey, tierLabel: tierLabel,
     label: function (name) {
       var mode = window.CoreUICoreMode.instance;
-      return mode ? mode.label(name) : (tierLabel(name) || shortCore(name));
+      return mode ? mode.label(name) : (isGenerator(name) ? 'TCI Core Generator' : tierLabel(name) || shortCore(name));
     }};
   if (window.document && typeof window.fetch === 'function') {
     var start = function () { window.CoreUICoreMode.instance = create(window.document, window.fetch.bind(window)); };
