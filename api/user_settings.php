@@ -286,18 +286,9 @@ if (($body['action'] ?? '') === 'core_generator_license_accept') {
     if (stu_get_permission_level($pdo) <= COREUI_CORE_INSTALL_PERMISSION_MAX) {
       coreui_generator_license_accept((int)$uid, trim((string)($body['sha256'] ?? '')));
     }
-    require_once __DIR__ . '/pgen.php';
-    $pgen = coreui_pgen_status(null, null, $pdo, (int)$uid);
-    $quality = $pgen['models'][1] ?? [];
-    $automatic = false;
-    if ($pgen['engine_ready'] && $pgen['can_install_9b']
-        && empty($quality['ready']) && empty($quality['loading'])) {
-      [$installCode, $installResult] = coreui_image_http('POST', '/pgen/install', [], 6);
-      $automatic = $installCode === 202 && is_array($installResult)
-        && ($installResult['ok'] ?? false) === true;
-    }
-    stu_json(['ok'=>true, 'license'=>coreui_generator_license_user_info($pdo, (int)$uid, false),
-      'pgen_auto_install_started'=>$automatic]);
+    // 9B weights are provisioned automatically on eligible hardware.
+    // A normal account's consent must not start a privileged installation.
+    stu_json(['ok'=>true, 'license'=>coreui_generator_license_user_info($pdo, (int)$uid, false)]);
   } catch (RuntimeException $e) {
     $code = $e->getMessage();
     stu_json(['ok'=>false, 'error'=>$code], $code === 'generator_license_version_changed' ? 409 : 503);
