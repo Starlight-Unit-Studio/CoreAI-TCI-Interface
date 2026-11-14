@@ -316,6 +316,113 @@
       }
     }
 
+    // pGen Core: exactly two image profiles. This is independent of Ollama's
+    // text-Core dropdown and uses the same admin, license and hardware checks.
+    function refreshPgen() {
+      return request(API + '?pgen=1', 'GET').then(function (data) {
+        state.pgen = data.pgen || null;
+        if (!state.pgenChoice || !state.pgen || !state.pgen.models.some(function (m) {
+          return m.id === state.pgenChoice;
+        })) state.pgenChoice = state.pgen ? state.pgen.active : 'flux2-klein-4b';
+        if (data.csrf_token) state.csrf = String(data.csrf_token);
+      });
+    }
+    function renderPgen() {
+      var visible = state.mode === 'manage';
+      show(el.Pgen, visible);
+      if (!visible || !el.Pgen) return;
+      if (!state.pgen || !Array.isArray(state.pgen.models)) {
+        text(el.PgenInfo, 'Lädt die Quantum Gen Engine …');
+        if (el.PgenApply) el.PgenApply.disabled = true;
+        show(el.PgenInstall, false);
+        show(el.PgenLicense, false);
+        return;
+      }
+      var model = state.pgen.models.filter(function (m) { return m.id === state.pgenChoice; })[0];
+      if (!model) model = state.pgen.models[0];
+      if (!model) return;
+      if (el.PgenModel) {
+        el.PgenModel.value = model.id;
+        el.PgenModel.disabled = state.pgenBusy;
+      }
+      var active = state.pgen.active === model.id;
+      var engine = state.pgen.engine_ready;
+      var license = model.id === 'flux2-klein-9b';
+      var authorized = !license || state.pgen.license_accepted === true;
+      var loading = model.loading || state.pgenBusy;
+      var label = model.ready ? 'installiert und bereit' : loading ? 'Installation/Prüfung läuft'
+        : model.installed ? 'installiert, noch nicht bereit' : 'nicht installiert';
+      var report = model.label + ' · ' + label
+        + (active ? ' · AKTIV' : '')
+        + ' · 512 × 512 ca. ' + model.seconds_512 + ' s'
+        + ' · RAM 1024 ca. ' + String(model.ram_1024_gb).replace('.', ',') + ' GB'
+        + ' · ' + model.license;
+      if (!engine) report += ' · Quantum Gen Engine nicht bereit';
+      if (model.error) report += ' · ' + model.error;
+      text(el.PgenInfo, report);
+      text(el.PgenFeedback, state.pgenMessage);
+      if (el.PgenFeedback) el.PgenFeedback.setAttribute('data-tone',
+        /Fehler|fehl|nicht |gescheitert/i.test(state.pgenMessage) ? 'bad' : state.pgenMessage ? 'ok' : '');
+      show(el.PgenLicense, license);
+      if (el.PgenLicense) text(el.PgenLicense, authorized ? '9B-Lizenz ansehen ✓' : '9B-Lizenz ansehen');
+      show(el.PgenInstall, license && !model.ready);
+      if (el.PgenInstall) {
+        el.PgenInstall.textContent = loading ? '9B wird vorbereitet …' : '9B installieren';
+        el.PgenInstall.disabled = loading || !engine || !authorized || state.pgenBusy;
+      }
+      if (el.PgenApply) el.PgenApply.disabled = state.pgenBusy || !model.ready
+        || !engine || !authorized || active;
+    }
+    function savePgen() {
+      if (!state.pgen || state.pgenBusy) return Promise.resolve();
+      var choice = state.pgenChoice;
+      var model = state.pgen.models.filter(function (m) { return m.id === choice; })[0];
+      if (!model || !model.ready || !state.pgen.engine_ready ||
+          (choice === 'flux2-klein-9b' && !state.pgen.license_accepted)) return Promise.resolve();
+      state.pgenBusy = true;
+      state.pgenMessage = '';
+      renderPgen();
+      return request(API, 'POST', {action: 'pgen_select', model: choice}).then(function (data) {
+        state.pgen = data.pgen;
+        state.pgenMessage = 'pGen Core gespeichert. Neue Bilder werden mit ' + model.label + ' erzeugt.';
+      }).catch(function (error) {
+        state.pgenMessage = ERRORS[error.code] || 'pGen-Auswahl konnte nicht gespeichert werden.';
+      }).then(function () { state.pgenBusy = false; renderPgen(); });
+    }
+    function pollPgen() {
+      if (!state.pgenPoll || !isOpen() || state.mode !== 'manage') {
+        state.pgenPoll = false;
+        return Promise.resolve();
+      }
+      return refreshPgen().catch(function () { state.pgenMessage = 'Bildmodell-Status nicht erreichbar.'; })
+        .then(function () {
+          renderPgen();
+          var nine = state.pgen && state.pgen.models &&
+            state.pgen.models.filter(function (m) { return m.id === 'flux2-klein-9b'; })[0];
+          if (!nine || nine.ready || nine.error || !nine.loading) {
+            state.pgenPoll = false;
+            if (nine && nine.ready) state.pgenMessage = 'FLUX.2 9B ist installiert und bereit.';
+            renderPgen();
+          } else schedule(pollPgen, 2000);
+        });
+    }
+    function installPgen() {
+      if (!state.pgen || !state.pgen.engine_ready || !state.pgen.license_accepted ||
+          state.pgenBusy) return Promise.resolve();
+      state.pgenBusy = true;
+      state.pgenMessage = '';
+      renderPgen();
+      return request(API, 'POST', {action: 'pgen_install', model: 'flux2-klein-9b'})
+        .then(function (data) {
+          state.pgen = data.pgen || state.pgen;
+          state.pgenMessage = '9B-Gewichte werden im Hintergrund geladen und geprüft.';
+          state.pgenPoll = true;
+          schedule(pollPgen, 2000);
+        }).catch(function (error) {
+          state.pgenMessage = ERRORS[error.code] || '9B-Installation konnte nicht gestartet werden.';
+        }).then(function () { state.pgenBusy = false; renderPgen(); });
+    }
+
     function renderMaint() {
       var j = job();
       var running = !!(j && j.running);
