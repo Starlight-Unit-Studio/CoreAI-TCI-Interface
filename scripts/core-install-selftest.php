@@ -190,6 +190,19 @@ install_test($genInstalled['generator']['status'] === 'installed'
   && $genInstalled['generator']['local'] === [COREUI_CORE_GENERATOR_NAME]
   && $genInstalled['generator']['removable'] === [COREUI_CORE_GENERATOR_NAME],
   'generator is listed in Cores verwalten and can be removed safely');
+// The generator must not enter automatic updates until the exact bundled
+// license was accepted and the receipt was stored server-side.
+install_test(!coreui_generator_license_accepted(), 'no implicit generator license acceptance');
+install_test(coreui_core_update_plan([['name'=>COREUI_CORE_GENERATOR_NAME]]) === [],
+  'unlicensed generator is excluded from automatic updates');
+$license = coreui_generator_license_info(true);
+install_test(str_starts_with($license['text'], 'FLUX Non-Commercial License v2.1')
+  && !$license['accepted'], 'original license text is bundled and initially unaccepted');
+install_test(install_throws(fn() => coreui_generator_license_accept(7, str_repeat('0', 64)),
+    'generator_license_version_changed'), 'stale or forged license hash is rejected');
+coreui_generator_license_accept(7, $license['sha256']);
+install_test(coreui_generator_license_accepted()
+  && coreui_generator_license_info(false)['accepted'], 'hash-bound server receipt is persisted');
 $genPlan = coreui_core_update_plan([['name'=>COREUI_CORE_GENERATOR_NAME]]);
 install_test(count($genPlan) === 1 && $genPlan[0]['tier'] === 'generator'
   && $genPlan[0]['cores'] === [['name'=>COREUI_CORE_GENERATOR_NAME, 'source'=>'generator']],
