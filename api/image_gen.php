@@ -447,6 +447,8 @@ function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $
   // reference slots. The browser cannot choose their UUIDs or another account.
   $accountReferences = [];
   if ($reference !== null && str_starts_with($reference, 'custom:')
+      && $uid > 0) require_once __DIR__ . '/profile_store.php';
+  if ($reference !== null && str_starts_with($reference, 'custom:')
       && function_exists('coreui_profile_assistant_extra_references')) {
     $accountReferences = coreui_profile_assistant_extra_references($pdo, $uid);
   }
