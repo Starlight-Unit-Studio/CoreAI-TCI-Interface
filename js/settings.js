@@ -87,6 +87,9 @@
   var addMemoryButton = document.getElementById('addMemory');
   var reloadMemoriesButton = document.getElementById('reloadMemories');
   var saveProfileButton = document.getElementById('saveProfile');
+  var saveAssistantProfileButton = document.getElementById('saveAssistantProfile');
+  var assistantSummaryAvatar = document.getElementById('assistantSummaryAvatar');
+  var assistantSummaryName = document.getElementById('assistantSummaryName');
   var profileDisplayName = document.getElementById('profileDisplayName');
   var assistantDisplayName = document.getElementById('assistantDisplayName');
   var userAvatarPreview = document.getElementById('userAvatarPreview');
@@ -401,6 +404,22 @@
     if (editAssistantAvatar) editAssistantAvatar.hidden = !avatarMedia.assistant;
     setAvatarPreview(userAvatarPreview, avatars.user, profile.display_name || 'Operator');
     setAvatarPreview(assistantAvatarPreview, avatars.assistant, profile.assistant_name || 'Mara');
+    setAvatarPreview(assistantSummaryAvatar, avatars.assistant, profile.assistant_name || 'Mara');
+    if (assistantSummaryName) assistantSummaryName.textContent = profile.assistant_name || 'Mara';
+    for (var n = 1; n <= 4; n++) {
+      var slot = 'assistant_ref_' + n;
+      var cell = document.querySelector('[data-mara-slot="' + slot + '"]');
+      if (!cell) continue;
+      var photo = avatars[slot] || '';
+      var upload = cell.querySelector('[data-mara-upload]');
+      var remove = cell.querySelector('[data-mara-remove]');
+      if (upload) {
+        upload.classList.toggle('has-image', !!photo);
+        upload.style.backgroundImage = photo ? 'url("' + String(photo).replace(/"/g, '%22') + '")' : '';
+        upload.setAttribute('aria-label', photo ? 'Referenzbild ' + n + ' ersetzen' : 'Referenzbild ' + n + ' hochladen');
+      }
+      if (remove) remove.hidden = !photo;
+    }
     setAvatarPreview(accountAvatar, avatars.user, profile.display_name || 'Operator');
     if (accountDisplayName) accountDisplayName.textContent = (profile.display_name || 'ANGEMELDETER OPERATOR').toUpperCase();
     // 0.6.84: the profile overview head follows a saved name or picture (js/coreui-profile-stats.js).
@@ -419,22 +438,24 @@
     });
   }
 
-  function saveProfile() {
-    if (!saveProfileButton) return;
-    saveProfileButton.disabled = true;
-    api('./api/profile.php', {
-      method: 'POST',
-      body: JSON.stringify({
-        action: 'save',
-        display_name: profileDisplayName ? profileDisplayName.value : '',
-        assistant_name: assistantDisplayName ? assistantDisplayName.value : 'Mara'
-      })
+  function saveProfile(kind) {
+    var assistant = kind === 'assistant';
+    var button = assistant ? saveAssistantProfileButton : saveProfileButton;
+    if (!button || button.disabled) return Promise.resolve();
+    button.disabled = true;
+    var body = assistant
+      ? {action:'assistant_name', assistant_name:assistantDisplayName ? assistantDisplayName.value : 'Mara'}
+      : {action:'display_name', display_name:profileDisplayName ? profileDisplayName.value : ''};
+    return api('./api/profile.php', {
+      method: 'POST', body: JSON.stringify(body)
     }).then(function (data) {
       applyProfile(data.profile || {});
-      announceSaved('PROFILE SERVERSEITIG GESPEICHERT');
+      announceSaved(assistant ? 'MARA-PROFIL GESPEICHERT' : 'BENUTZERPROFIL GESPEICHERT');
+      if (window.CoreUIProfileEditors && window.CoreUIProfileEditors.instance)
+        window.CoreUIProfileEditors.instance.close();
     }).catch(function (error) {
       announceSaved('PROFILFEHLER: ' + error.message, true);
-    }).finally(function () { saveProfileButton.disabled = false; });
+    }).finally(function () { button.disabled = false; });
   }
 
   function uploadAvatar(slot, file, crop) {
@@ -493,7 +514,7 @@
   }
 
   function deleteAvatar(slot) {
-    if (!window.confirm((slot === 'assistant' ? 'Das CoreAI-Bild' : 'Dein Profilbild') + ' wirklich entfernen?')) return;
+    if (!window.confirm((slot.startsWith('assistant') ? 'Dieses Mara-Referenzbild' : 'Dein Profilbild') + ' wirklich entfernen?')) return;
     api('./api/profile.php', {
       method: 'POST',
       body: JSON.stringify({ action: 'avatar_delete', slot: slot })
@@ -1231,7 +1252,10 @@
   if (aiSystemPrompt) aiSystemPrompt.addEventListener('input', updatePromptCounter);
   if (aiSaveButton) aiSaveButton.addEventListener('click', saveAiSettings);
   if (memorySettingsSaveButton) memorySettingsSaveButton.addEventListener('click', saveAiSettings);
-  if (saveProfileButton) saveProfileButton.addEventListener('click', saveProfile);
+  if (saveProfileButton) saveProfileButton.addEventListener('click', function () { return saveProfile('user'); });
+  if (saveAssistantProfileButton) saveAssistantProfileButton.addEventListener('click', function () {
+    return saveProfile('assistant');
+  });
   if (userAvatarFile) userAvatarFile.addEventListener('change', function () {
     var file = userAvatarFile.files && userAvatarFile.files[0];
     userAvatarFile.value = '';
@@ -1242,6 +1266,21 @@
     assistantAvatarFile.value = '';
     if (file) openAvatarCrop('assistant', file);
   });
+  for (var refNumber = 1; refNumber <= 4; refNumber++) {
+    (function (number) {
+      var slot = 'assistant_ref_' + number;
+      var input = document.getElementById('maraExtraFile' + number);
+      var upload = document.querySelector('[data-mara-upload="' + slot + '"]');
+      var remove = document.querySelector('[data-mara-remove="' + slot + '"]');
+      if (upload && input) upload.addEventListener('click', function () { input.click(); });
+      if (input) input.addEventListener('change', function () {
+        var file = input.files && input.files[0];
+        input.value = '';
+        if (file) openAvatarCrop(slot, file);
+      });
+      if (remove) remove.addEventListener('click', function () { deleteAvatar(slot); });
+    })(refNumber);
+  }
   if (editUserAvatar) editUserAvatar.addEventListener('click', function () { openAvatarCrop('user', null); });
   if (editAssistantAvatar) editAssistantAvatar.addEventListener('click', function () { openAvatarCrop('assistant', null); });
   if (removeUserAvatar) removeUserAvatar.addEventListener('click', function () { deleteAvatar('user'); });
