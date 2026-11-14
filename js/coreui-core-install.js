@@ -31,6 +31,11 @@
     generator_license_version_changed: 'Die Lizenz hat sich geändert. Bitte erneut öffnen und prüfen.',
     generator_license_unavailable: 'Der Original-Lizenztext ist nicht erreichbar.',
     generator_license_unwritable: 'Die Zustimmung konnte auf dem Server nicht gespeichert werden.',
+    pgen_hardware_insufficient: 'Die Quantum Gen Engine meldet zu wenig freien RAM oder Speicherplatz für 9B.',
+    pgen_engine_unavailable: 'Quantum Gen Engine nicht bereit.',
+    pgen_model_unavailable: 'Dieses Bildmodell ist noch nicht installiert oder nicht bereit.',
+    pgen_install_unavailable: 'Die 9B-Installation konnte nicht gestartet werden.',
+    pgen_save_unavailable: 'Die pGen-Auswahl konnte nicht gespeichert werden.',
     nothing_to_update: 'Es ist noch keine lokale Stufe installiert, es gibt nichts zu aktualisieren.',
     cloud_signin_required: 'Für diese optionale Funktion zuerst ein bestehendes Ollama-Konto verbinden (Ollama-Verbindung, unten).',
     nothing_to_remove: 'Hier gibt es nichts zu entfernen; Der Standard-Core bleibt immer installiert.',
@@ -358,6 +363,8 @@
         + ' · RAM 1024 ca. ' + String(model.ram_1024_gb).replace('.', ',') + ' GB'
         + ' · ' + model.license;
       if (!engine) report += ' · Quantum Gen Engine nicht bereit';
+      if (license && state.pgen.can_install_9b === false)
+        report += ' · Hardware reicht für 9B nicht aus';
       if (model.error) report += ' · ' + model.error;
       text(el.PgenInfo, report);
       text(el.PgenFeedback, state.pgenMessage);
@@ -368,17 +375,20 @@
       show(el.PgenInstall, license && !model.ready);
       if (el.PgenInstall) {
         el.PgenInstall.textContent = loading ? '9B wird vorbereitet …' : '9B installieren';
-        el.PgenInstall.disabled = loading || !engine || !authorized || state.pgenBusy;
+        el.PgenInstall.disabled = loading || !engine || !authorized || state.pgenBusy
+          || state.pgen.can_install_9b === false;
       }
       if (el.PgenApply) el.PgenApply.disabled = state.pgenBusy || !model.ready
-        || !engine || !authorized || active;
+        || !engine || !authorized || active
+        || (license && state.pgen.can_install_9b === false);
     }
     function savePgen() {
       if (!state.pgen || state.pgenBusy) return Promise.resolve();
       var choice = state.pgenChoice;
       var model = state.pgen.models.filter(function (m) { return m.id === choice; })[0];
       if (!model || !model.ready || !state.pgen.engine_ready ||
-          (choice === 'flux2-klein-9b' && !state.pgen.license_accepted)) return Promise.resolve();
+          (choice === 'flux2-klein-9b' && (!state.pgen.license_accepted ||
+            state.pgen.can_install_9b === false))) return Promise.resolve();
       state.pgenBusy = true;
       state.pgenMessage = '';
       renderPgen();
@@ -408,6 +418,7 @@
     }
     function installPgen() {
       if (!state.pgen || !state.pgen.engine_ready || !state.pgen.license_accepted ||
+          state.pgen.can_install_9b === false ||
           state.pgenBusy) return Promise.resolve();
       state.pgenBusy = true;
       state.pgenMessage = '';
