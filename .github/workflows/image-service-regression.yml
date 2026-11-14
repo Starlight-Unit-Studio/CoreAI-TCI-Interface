@@ -14,6 +14,8 @@ on:
       - 'tools/image_spike/models.json'
       - 'compose.yaml'
       - 'api/image_gen.php'
+      - 'api/image_png_metadata.php'
+      - 'scripts/image-gen-selftest.php'
       - 'api/profile.php'
       - 'api/profile_store.php'
       - 'api/profile_media.php'
@@ -57,6 +59,8 @@ on:
     paths:
       - 'tools/image/image_service.py'
       - 'api/image_gen.php'
+      - 'api/image_png_metadata.php'
+      - 'scripts/image-gen-selftest.php'
       - 'scripts/image-service-selftest.py'
       - 'scripts/vision-management-removal-selftest.py'
       - 'app.html'
@@ -106,6 +110,8 @@ jobs:
       - name: PHP, JavaScript, Bash syntax
         run: |
           php -l api/image_gen.php
+          php -l api/image_png_metadata.php
+          php scripts/image-gen-selftest.php
           php -l api/pgen.php
           php -l api/core_generator_license.php
           php -l api/ai_settings.php
