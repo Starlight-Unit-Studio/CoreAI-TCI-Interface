@@ -34,6 +34,7 @@ declare(strict_types=1);
  */
 
 require_once __DIR__ . '/model_catalog.php';
+require_once __DIR__ . '/core_generator_license.php';
 require_once __DIR__ . '/ai_context_estimate.php';
 
 const COREUI_CORE_INSTALL_PERMISSION_MAX = 1; // admin and system admin
@@ -60,6 +61,11 @@ function coreui_core_install_name(string $tier): string {
  */
 function coreui_core_may_cleanup_base(string $base, bool $preexisting, array $verifiedCores): bool {
   if ($preexisting || $verifiedCores === []) return false;
+  // Same cleanup contract for FLUX: only a newly fetched source and a verified alias.
+  if (coreui_core_same($base, COREUI_CORE_GENERATOR_BASE)) {
+    return count($verifiedCores) === 1
+      && coreui_core_same((string)$verifiedCores[0], COREUI_CORE_GENERATOR_NAME);
+  }
   if (!in_array($base, array_column(COREUI_CORE_INSTALL_CATALOG, 'base'), true)) return false;
   $baseTier = coreui_core_tier($base);
   $default = defined('STU_EMBER_MODEL') ? (string)STU_EMBER_MODEL : 'ember-coreui:latest';
@@ -271,14 +277,21 @@ function coreui_core_install_check(string $tier, bool $hardware = true): array {
     catch (RuntimeException $e) { $index = []; }
     $hasSource = isset($index[coreui_ollama_model_key(COREUI_CORE_GENERATOR_BASE)]);
     $installed = isset($index[coreui_ollama_model_key(COREUI_CORE_GENERATOR_NAME)]);
+    $check = $hardware
+      ? coreui_core_install_verdict(coreui_core_install_hardware(),
+        ['download_gb'=>$hasSource ? 0.0 : 8.2, 'active_b'=>9.0])
+      : ['verdict'=>null, 'blocked'=>false, 'rows'=>[], 'ram_need'=>null];
+    $accepted = coreui_generator_license_accepted();
+    $check['rows'][] = ['key'=>'license', 'label'=>'Lizenz',
+      'value'=>$accepted ? 'FLUX Non-Commercial License v2.1 akzeptiert.'
+        : 'FLUX Non-Commercial License v2.1 muss vor der Installation gelesen und akzeptiert werden.',
+      'state'=>$accepted ? 'ok' : 'warn'];
     return ['tier'=>'generator', 'label'=>COREUI_CORE_GENERATOR_LABEL,
       'base'=>COREUI_CORE_GENERATOR_BASE, 'core'=>COREUI_CORE_GENERATOR_NAME,
-      'download_gb'=>0, 'installed'=>$installed, 'cloud_base'=>null,
-      'verdict'=>$hasSource ? 'gut' : 'abraten', 'blocked'=>!$hasSource,
-      'rows'=>$hardware ? [['key'=>'source', 'label'=>'Ausgangs-Core',
-        'value'=>$hasSource ? 'FLUX.2 ist bereits in Ollama installiert; kein weiterer Download.'
-          : 'FLUX.2-Basis fehlt in Ollama. Bitte zuerst das Ausgangsmodell installieren.',
-        'state'=>$hasSource ? 'ok' : 'bad']] : [], 'ram_need'=>0];
+      'download_gb'=>$hasSource ? 0.0 : 8.2, 'installed'=>$installed,
+      'cloud_base'=>null, 'source_present'=>$hasSource,
+      'license_accepted'=>$accepted, 'requires_license'=>!$accepted]
+      + $check;
   }
   $entry = COREUI_CORE_INSTALL_CATALOG[$tier] ?? null;
   if ($entry === null) throw new RuntimeException('unknown_tier');
@@ -354,7 +367,7 @@ function coreui_core_install_status(): ?array {
 function coreui_core_install_begin(array $check): array {
   $generator = $check['tier'] === 'generator';
   $state = ['kind'=>'install', 'tier'=>$check['tier'], 'label'=>$check['label'], 'base'=>$check['base'], 'core'=>$check['core'],
-    'phase'=>$generator ? 'create' : 'pull', 'step'=>'Startet …', 'completed'=>0, 'total'=>0, 'percent'=>0, 'layers'=>[],
+    'phase'=>'pull', 'step'=>'Startet …', 'completed'=>0, 'total'=>0, 'percent'=>0, 'layers'=>[],
     'started_at'=>time()];
   coreui_core_install_write($state);
   return $state;
@@ -465,20 +478,16 @@ function coreui_core_install_post(string $endpoint, array $body, int $timeout): 
 /** The whole job: pull, create from the template, check the result. A cloud Core is only pulled. */
 function coreui_core_install_run(array $state): array {
   $generator = ($state['tier'] ?? '') === 'generator';
-  $basePreexisting = $generator || !empty($state['cloud']) || coreui_core_base_was_present((string)$state['base']);
-  if ($generator) {
-    try { $sourceReady = coreui_ollama_model_exists(COREUI_CORE_GENERATOR_BASE); }
-    catch (RuntimeException $e) { $sourceReady = false; }
-    if (!$sourceReady) {
-      $state['phase'] = 'error';
-      $state['error'] = 'generator_base_missing';
-      $state['message'] = 'Der FLUX.2-Ausgangs-Core ist in Ollama nicht erreichbar; es wurde nichts angelegt.';
-      coreui_core_install_write($state);
-      return $state;
-    }
-  } else {
-    $state = coreui_core_install_pull($state);
+  if ($generator && !coreui_generator_license_accepted()) {
+    $state['phase'] = 'error';
+    $state['error'] = 'license_accept_required';
+    $state['message'] = 'FLUX-Lizenz nicht akzeptiert. Die Installation wurde nicht begonnen.';
+    coreui_core_install_write($state);
+    return $state;
   }
+  $basePreexisting = !empty($state['cloud']) || coreui_core_base_was_present((string)$state['base']);
+  // Both TCI families share pull, verified create and temporary source cleanup.
+  $state = coreui_core_install_pull($state);
   if ($state['phase'] !== 'error' && !empty($state['cloud'])) {
     $state['phase'] = 'done';
     $state['step'] = 'Fertig: ' . $state['label'] . ' (Cloud) ist bereit.';
@@ -515,13 +524,13 @@ function coreui_core_install_run(array $state): array {
       $state['message'] = 'Das Modelfile ließ sich nicht lesen (' . $e->getMessage() . ').';
     }
   }
-  if ($state['phase'] !== 'error' && !$generator && empty($state['cloud'])
+  if ($state['phase'] !== 'error' && empty($state['cloud'])
       && coreui_core_may_cleanup_base((string)$state['base'], $basePreexisting, [(string)$state['core']])) {
     $state['phase'] = 'cleanup';
-    $state['step'] = 'Entfernt den temporaeren Gemma-Basistag …';
+    $state['step'] = 'Entfernt den temporaeren Basistag …';
     coreui_core_install_write($state);
     if (!coreui_core_cleanup_base((string)$state['base'], false, [(string)$state['core']])) {
-      $state['message'] = 'Der TCI Core ist bereit; der temporaere Gemma-Basistag konnte nicht entfernt werden.';
+      $state['message'] = 'Der TCI Core ist bereit; der temporaere Basistag konnte nicht entfernt werden.';
     }
   }
   if ($state['phase'] !== 'error') {
@@ -592,7 +601,7 @@ function coreui_core_update_plan(array $models): array {
   $order = array_flip(array_keys(COREUI_CORE_INSTALL_CATALOG));
   uasort($plan, static fn(array $a, array $b): int => ($order[$a['tier']] ?? 99) <=> ($order[$b['tier']] ?? 99));
   $ordered = array_values($plan);
-  if ($has(COREUI_CORE_GENERATOR_NAME)) {
+  if ($has(COREUI_CORE_GENERATOR_NAME) && coreui_generator_license_accepted()) {
     $ordered[] = ['base'=>COREUI_CORE_GENERATOR_BASE, 'tier'=>'generator',
       'label'=>COREUI_CORE_GENERATOR_LABEL,
       'cores'=>[['name'=>COREUI_CORE_GENERATOR_NAME, 'source'=>'generator']]];
@@ -643,7 +652,8 @@ function coreui_core_manage_rows(array $models): array {
     'local'=>$generator !== null ? [$generator] : [], 'cloud'=>[], 'alias_of'=>null,
     'removable'=>$generator !== null && !coreui_core_same($generator, $default) ? [$generator] : [],
     'cloud_base'=>null, 'cloud_missing'=>false,
-    'status'=>$generator !== null ? 'installed' : 'missing'];
+    'status'=>$generator !== null ? 'installed' : 'missing',
+    'license_accepted'=>coreui_generator_license_accepted()];
   return $rows;
 }
 
@@ -742,7 +752,7 @@ function coreui_core_update_run(array $state): array {
     if ($failure === '' && count($item['cores']) > 0
         && coreui_core_may_cleanup_base((string)$item['base'], $basePreexisting, array_column($item['cores'], 'name'))) {
       $state['phase'] = 'cleanup';
-      $state['step'] = 'Entfernt den temporaeren Gemma-Basistag …';
+      $state['step'] = 'Entfernt den temporaeren Basistag …';
       coreui_core_install_write($state);
       if (!coreui_core_cleanup_base((string)$item['base'], false, array_column($item['cores'], 'name'))) {
         $cleanupWarning = 'Der neue TCI Core funktioniert, aber der temporaere Basistag blieb erhalten.';

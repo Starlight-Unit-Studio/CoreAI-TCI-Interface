@@ -11,19 +11,19 @@
   />
   <meta name="theme-color" content="#f0f4fa" />
   <meta name="color-scheme" content="light" />
-  <meta name="application-version" content="0.7.52" />
+  <meta name="application-version" content="0.7.53" />
   <meta name="application-name" content="CoreAI: TCI Interface" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface | Quantum Software</title>
   <link rel="stylesheet" href="./css/coreui-pet-dock.css?v=1199506425745626191060358" />
-  <link rel="stylesheet" href="./css/console.css?v=0578004275067223439421468" />
+  <link rel="stylesheet" href="./css/console.css?v=0822226105999574042086153" />
   <link rel="stylesheet" href="./css/artifacts.css?v=1070189041187187332898493" />
   <link rel="stylesheet" href="./css/coreui-update.css?v=0362480532788383300048352" />
   <link rel="stylesheet" href="./css/coreui-theme.css?v=0680794913330935617275553" />
   <link rel="stylesheet" href="./css/coreui-image-viewer.css?v=0041889774580256723673713" />
   <link rel="stylesheet" href="./css/coreui-chat-tci-layout.css?v=0692552423704018413771136" />
   <link rel="stylesheet" href="./css/coreui-feedback.css?v=0248446518621718122238802" />
-  <script src="./js/console-gate.js?v=0469719876081226585265017"></script>
+  <script src="./js/console-gate.js?v=0338269500297906730702714"></script>
   <script src="./js/coreui-preferences.js?v=1098190863602852320697527"></script>
   <script src="./js/coreui-ui-language.js?v=0139468212041427447470901"></script>
   <link rel="stylesheet" href="./css/coreui-projects.css?v=0920364122374990668779336" />
@@ -153,7 +153,7 @@
         <div class="brand-copy">
           <div class="brand-kicker">QUANTUM SOFTWARE</div>
           <div class="brand-title">COREAI:<span class="brand-product-part">TCI INTERFACE</span></div>
-          <div class="brand-signature">TERRA-NET MATRIX // N-73 // v0.7.52</div>
+          <div class="brand-signature">TERRA-NET MATRIX // N-73 // v0.7.53</div>
         </div>
       </div>
 
@@ -553,6 +553,10 @@
       <h3 class="core-install-title" id="coreInstallTitle">Core installieren</h3>
       <p class="core-install-lead" id="coreInstallLead"></p>
       <p class="core-install-tech" id="coreInstallTech"></p>
+      <section class="core-install-generator-license" id="coreInstallGeneratorLicense" hidden>
+        <button class="core-install-btn core-install-license-open" type="button" id="coreInstallGeneratorLicenseOpen">FLUX.2-Lizenz ansehen</button>
+        <span class="core-install-license-state" id="coreInstallGeneratorLicenseState">Zustimmung erforderlich</span>
+      </section>
       <section class="core-install-tiers" id="coreInstallTiers" aria-labelledby="coreInstallTiersTitle" hidden>
         <h4 id="coreInstallTiersTitle">STUFEN</h4>
         <ul class="core-install-tierlist" id="coreInstallTierList"></ul>
@@ -613,6 +617,28 @@
         <button class="core-install-btn core-install-btn--go" id="coreInstallGo" type="button">Installieren</button>
       </div>
     </div>
+  </div>
+
+  <div class="core-generator-license" id="coreGeneratorLicense" hidden>
+    <section class="core-generator-license-panel" id="coreGeneratorLicensePanel" role="dialog" aria-modal="true" aria-labelledby="coreGeneratorLicenseTitle" aria-describedby="coreGeneratorLicenseIntro" tabindex="-1">
+      <div class="core-install-head">
+        <span class="core-mode-kicker">CORE-LIZENZ // FLUX.2</span>
+        <button class="core-install-x" id="coreGeneratorLicenseClose" type="button" aria-label="Lizenzfenster schließen">×</button>
+      </div>
+      <h3 class="core-install-title" id="coreGeneratorLicenseTitle">FLUX Non-Commercial License v2.1</h3>
+      <p class="core-install-lead" id="coreGeneratorLicenseIntro">Original-Lizenztext von Black Forest Labs. Bitte vollständig prüfen, bevor du den TCI Core Generator installierst.</p>
+      <p class="core-generator-license-source"><a href="https://github.com/black-forest-labs/flux2/blob/main/model_licenses/LICENSE-FLUX-NON-COMMERICAL" target="_blank" rel="noopener noreferrer">Offizielle Lizenz auf GitHub öffnen</a></p>
+      <pre class="core-generator-license-text" id="coreGeneratorLicenseText" tabindex="0" aria-label="Vollständiger Lizenztext">Lädt die Lizenz …</pre>
+      <label class="core-generator-license-consent">
+        <input id="coreGeneratorLicenseCheck" type="checkbox" />
+        <span>Ich habe die FLUX Non-Commercial License v2.1 gelesen, verstanden und akzeptiere sie für den Betrieb dieses Cores auf diesem Server.</span>
+      </label>
+      <p class="core-install-note" id="coreGeneratorLicenseNote" role="status" aria-live="polite"></p>
+      <div class="core-install-actions">
+        <button class="core-install-btn" id="coreGeneratorLicenseCancel" type="button">Schließen</button>
+        <button class="core-install-btn core-install-btn--go" id="coreGeneratorLicenseAccept" type="button" disabled>Lizenz akzeptieren</button>
+      </div>
+    </section>
   </div>
 
   <div class="core-library" id="coreLibrary" hidden>
@@ -705,7 +731,7 @@
   <script src="./js/console-app.js?v=1029135120317298286499660"></script>
   <script src="./js/coreui-core-mode.js?v=0278172563385295776825710"></script>
   <script src="./js/coreui-reasoning-effort.js?v=0460931670262011947396865"></script>
-  <script src="./js/coreui-core-install.js?v=1173224082951725658511757"></script>
+  <script src="./js/coreui-core-install.js?v=0986415390861796684305101"></script>
   <script src="./js/coreui-model-library.js?v=0462424467087605919462233"></script>
   <script src="./js/coreui-artifacts.js?v=1069339270452640197429799"></script>
 

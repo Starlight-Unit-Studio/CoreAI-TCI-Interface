@@ -422,6 +422,11 @@ else
   warn 'COREUI_MODEL_NAME entspricht dem Basismodell. Das eigene Modelfile wird deshalb nicht erzeugt.'
 fi
 
+# Same managed generator as the Compose installer. Safe to rerun during a source update.
+if ! python3 -I "$PROJECT_ROOT/scripts/ensure-generator-core.py" --ensure; then
+  warn 'TCI Core Generator konnte nicht erstellt/aktualisiert werden. Preflight meldet den Zustand.'
+fi
+
 if is_enabled "$INSTALL_SEARXNG"; then
   command -v docker >/dev/null || die 'Docker fehlt fuer SearXNG.'
   systemctl enable --now docker

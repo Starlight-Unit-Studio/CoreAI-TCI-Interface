@@ -165,6 +165,16 @@ install_test(strpos($detach, 'echo json_encode') < strpos($detach, 'fastcgi_fini
 // FLUX prompt Core: a real Ollama alias, not a renamed source tag or a Gemma 4 runner.
 install_test(coreui_core_install_name('generator') === 'ember-coreui:gen',
   'generator installer uses the dedicated Ollama tag');
+install_test(coreui_core_may_cleanup_base(COREUI_CORE_GENERATOR_BASE, false,
+    [COREUI_CORE_GENERATOR_NAME])
+  && !coreui_core_may_cleanup_base(COREUI_CORE_GENERATOR_BASE, true, [COREUI_CORE_GENERATOR_NAME])
+  && !coreui_core_may_cleanup_base(COREUI_CORE_GENERATOR_BASE, false, ['unrelated:latest']),
+  'FLUX source is removed only if this job fetched it AND the intended Generator is verified');
+install_test(str_contains((string)file_get_contents($root . '/scripts/install.sh'),
+    'scripts/ensure-generator-core.py') &&
+  str_contains((string)file_get_contents($root . '/scripts/install-native.sh'),
+    'scripts/ensure-generator-core.py'), 'both source installers run Generator provisioning');
+
 $generatorRequest = coreui_core_generator_create_request((string)file_get_contents($root . '/config/Modelfile.template'));
 install_test($generatorRequest['model'] === COREUI_CORE_GENERATOR_NAME
   && $generatorRequest['from'] === COREUI_CORE_GENERATOR_BASE
@@ -180,6 +190,20 @@ install_test($genInstalled['generator']['status'] === 'installed'
   && $genInstalled['generator']['local'] === [COREUI_CORE_GENERATOR_NAME]
   && $genInstalled['generator']['removable'] === [COREUI_CORE_GENERATOR_NAME],
   'generator is listed in Cores verwalten and can be removed safely');
+// The generator must not enter automatic updates until the exact bundled
+// license was accepted and the receipt was stored server-side.
+install_test(!coreui_generator_license_accepted(), 'no implicit generator license acceptance');
+install_test(coreui_core_update_plan([['name'=>COREUI_CORE_GENERATOR_NAME]]) === [],
+  'unlicensed generator is excluded from automatic updates');
+$license = coreui_generator_license_info(true);
+install_test(str_starts_with($license['text'], 'FLUX Non-Commercial License v2.1')
+  && !$license['accepted'], 'original license text is bundled and initially unaccepted');
+install_test(install_throws(fn() => coreui_generator_license_accept(7, str_repeat('0', 64)),
+    'generator_license_version_changed'), 'stale or forged license hash is rejected');
+@mkdir($cache, 0775, true);
+coreui_generator_license_accept(7, $license['sha256']);
+install_test(coreui_generator_license_accepted()
+  && coreui_generator_license_info(false)['accepted'], 'hash-bound server receipt is persisted');
 $genPlan = coreui_core_update_plan([['name'=>COREUI_CORE_GENERATOR_NAME]]);
 install_test(count($genPlan) === 1 && $genPlan[0]['tier'] === 'generator'
   && $genPlan[0]['cores'] === [['name'=>COREUI_CORE_GENERATOR_NAME, 'source'=>'generator']],

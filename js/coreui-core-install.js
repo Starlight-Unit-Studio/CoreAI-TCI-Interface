@@ -27,6 +27,10 @@
     install_blocked: 'Ollama ist nicht erreichbar, so kann nichts installiert werden.',
     install_running: 'Gerade läuft schon eine Installation oder ein Update.',
     install_confirm_required: 'Der Check rät ab. Bitte bestätige die Installation noch einmal.',
+    license_accept_required: 'Bitte zuerst die FLUX Non-Commercial License im Lizenzfenster akzeptieren.',
+    generator_license_version_changed: 'Die Lizenz hat sich geändert. Bitte erneut öffnen und prüfen.',
+    generator_license_unavailable: 'Der Original-Lizenztext ist nicht erreichbar.',
+    generator_license_unwritable: 'Die Zustimmung konnte auf dem Server nicht gespeichert werden.',
     nothing_to_update: 'Es ist noch keine lokale Stufe installiert, es gibt nichts zu aktualisieren.',
     cloud_signin_required: 'Für diese optionale Funktion zuerst ein bestehendes Ollama-Konto verbinden (Ollama-Verbindung, unten).',
     nothing_to_remove: 'Hier gibt es nichts zu entfernen; Der Standard-Core bleibt immer installiert.',
@@ -54,10 +58,17 @@
     var el = {};
     ['Kicker', 'Title', 'Lead', 'Tech', 'Tiers', 'TierList', 'Check', 'Rows', 'Verdict', 'VerdictTitle', 'VerdictText',
       'Progress', 'BarWrap', 'Bar', 'Step', 'Maint', 'Auto', 'UpdateInfo', 'UpdateNow', 'ToManage', 'Results', 'LibraryEntry',
-      'Cloud', 'CloudState', 'CloudSteps', 'CloudLink', 'CloudCheck', 'Note', 'Go', 'Cancel', 'Close'].forEach(function (key) { el[key] = doc.getElementById('coreInstall' + key); });
+      'Cloud', 'CloudState', 'CloudSteps', 'CloudLink', 'CloudCheck', 'Note', 'Go', 'Cancel', 'Close',
+      'GeneratorLicense', 'GeneratorLicenseOpen', 'GeneratorLicenseState'].forEach(function (key) { el[key] = doc.getElementById('coreInstall' + key); });
+    var licenseEl = {};
+    ['Root', 'Panel', 'Text', 'Check', 'Note', 'Accept', 'Cancel', 'Close'].forEach(function (key) {
+      licenseEl[key] = doc.getElementById(key === 'Root' ? 'coreGeneratorLicense' :
+        key === 'Panel' ? 'coreGeneratorLicensePanel' : 'coreGeneratorLicense' + key);
+    });
     var state = {mode: 'tier', tier: '', check: null, canInstall: false, install: null, confirm: false, busy: false,
       csrf: '', polling: false, error: '', auto: null, tiers: null, plan: null, cloud: null, cloudBusy: false,
-      confirmRemove: null, notice: '', awaitingOllama: false};
+      confirmRemove: null, notice: '', awaitingOllama: false, licenseAccepted: false,
+      licenseHash: '', licenseLoaded: false, licenseBusy: false, licenseTrigger: null};
 
     function isOpen() { return !root.hidden; }
     function clear(node) { while (node && node.firstChild) node.removeChild(node.firstChild); }
@@ -89,6 +100,78 @@
           return data;
         });
       });
+    }
+
+    // The original license is fetched only when its dialog opens. Server-side
+    // acceptance is bound to that exact text via SHA-256.
+    function closeLicense() {
+      if (!licenseEl.Root || licenseEl.Root.hidden) return;
+      licenseEl.Root.hidden = true;
+      if (state.licenseTrigger && typeof state.licenseTrigger.focus === 'function') state.licenseTrigger.focus();
+      state.licenseTrigger = null;
+    }
+    function openLicense(trigger) {
+      if (!licenseEl.Root) return Promise.resolve();
+      state.licenseTrigger = trigger || null;
+      state.licenseHash = '';
+      state.licenseLoaded = false;
+      state.licenseBusy = true;
+      licenseEl.Root.hidden = false;
+      text(licenseEl.Text, 'Lädt den vollständigen Original-Lizenztext …');
+      text(licenseEl.Note, '');
+      if (licenseEl.Check) { licenseEl.Check.checked = false; licenseEl.Check.disabled = true; }
+      if (licenseEl.Accept) { licenseEl.Accept.disabled = true; licenseEl.Accept.textContent = 'Lizenz akzeptieren'; }
+      if (licenseEl.Panel && typeof licenseEl.Panel.focus === 'function') licenseEl.Panel.focus();
+      return request(API + '?core_generator_license=1', 'GET').then(function (data) {
+        var license = data.license || {};
+        if (typeof license.text !== 'string' || !license.text ||
+            typeof license.sha256 !== 'string' || license.sha256.length !== 64) {
+          throw new Error('Lizenztext unvollständig');
+        }
+        if (data.csrf_token) state.csrf = String(data.csrf_token);
+        state.licenseHash = license.sha256;
+        state.licenseLoaded = true;
+        state.licenseAccepted = license.accepted === true;
+        text(licenseEl.Text, license.text);
+        text(licenseEl.Note, state.licenseAccepted
+          ? 'Diese Lizenzfassung wurde auf dem Server bereits akzeptiert.'
+          : 'Bitte lies den Originaltext und bestätige anschließend die Zustimmung.');
+        if (licenseEl.Check) licenseEl.Check.disabled = state.licenseAccepted;
+        if (licenseEl.Accept) {
+          licenseEl.Accept.disabled = true;
+          licenseEl.Accept.textContent = state.licenseAccepted ? 'Bereits akzeptiert' : 'Lizenz akzeptieren';
+        }
+      }).catch(function (error) {
+        state.licenseLoaded = false;
+        text(licenseEl.Note, ERRORS[error.code] || 'Lizenz konnte nicht geladen werden. Bitte erneut öffnen.');
+        text(licenseEl.Text, 'Original-Lizenztext nicht verfügbar.');
+      }).then(function () { state.licenseBusy = false; });
+    }
+    function acceptLicense() {
+      if (!licenseEl.Check || !licenseEl.Check.checked || !state.licenseLoaded ||
+          !state.licenseHash || state.licenseBusy || state.licenseAccepted) return Promise.resolve();
+      state.licenseBusy = true;
+      licenseEl.Accept.disabled = true;
+      text(licenseEl.Note, 'Speichere die Zustimmung …');
+      return request(API, 'POST', {
+        action: 'core_generator_license_accept', accepted: true, sha256: state.licenseHash
+      }).then(function (data) {
+        if (!data.license || data.license.accepted !== true) throw new Error('license_accept_failed');
+        state.licenseAccepted = true;
+        closeLicense();
+        if (state.mode === 'manage') return refreshManage().then(render);
+        if (state.mode === 'tier' && state.tier === 'generator') {
+          return request(API + '?core_install=generator', 'GET').then(function (result) {
+            state.check = result.check || state.check;
+            state.canInstall = result.can_install === true;
+            render();
+          });
+        }
+        render();
+      }).catch(function (error) {
+        text(licenseEl.Note, ERRORS[error.code] || 'Zustimmung konnte nicht gespeichert werden.');
+        if (licenseEl.Accept) licenseEl.Accept.disabled = false;
+      }).then(function () { state.licenseBusy = false; });
     }
 
     // The job this view follows: an install of this tier, an update in the
@@ -132,11 +215,20 @@
         }
         var actions = add(li, 'div', 'core-install-tier-actions');
         var busy = state.busy || !!(job() && job().running);
+        if (tier.tier === 'generator') {
+          var license = add(actions, 'button', 'core-install-tier-btn',
+            tier.license_accepted ? 'Lizenz ansehen ✓' : 'Lizenz ansehen');
+          license.type = 'button';
+          license.addEventListener('click', function () { return openLicense(license); });
+          if (!tier.license_accepted) {
+            add(li, 'small', 'core-install-tier-alias', 'Vor Installation oder Aktualisierung muss die FLUX-Lizenz akzeptiert werden.');
+          }
+        }
         // 0.5.77: installed tiers can be updated one by one and removed (two taps).
         if (tier.status === 'installed') {
           var update = add(actions, 'button', 'core-install-tier-btn', 'Aktualisieren');
           update.type = 'button';
-          update.disabled = busy;
+          update.disabled = busy || (tier.tier === 'generator' && !tier.license_accepted);
           update.addEventListener('click', function () { return start({action: 'core_update', tier: tier.tier}); });
           if ((tier.removable || []).length) actions.appendChild(removeButton(tier, false, busy));
           else add(li, 'small', 'core-install-tier-keep', 'Der Standard-Core bleibt immer installiert.');
@@ -149,6 +241,7 @@
         if (tier.status !== 'installed') {
           var button = add(actions, 'button', 'core-install-tier-btn', tier.status === 'cloud' ? 'Lokal installieren' : 'Installieren');
           button.type = 'button';
+          button.disabled = busy || (tier.tier === 'generator' && !tier.license_accepted);
           button.addEventListener('click', function () { return open(tier.tier); });
         }
         if (tier.cloud_missing) {
@@ -270,6 +363,11 @@
       show(el.Tiers, manage && !!state.tiers);
       show(el.LibraryEntry, manage && !!state.tiers);
       show(el.Tech, !manage);
+      show(el.GeneratorLicense, !manage && !!check && check.tier === 'generator');
+      if (el.GeneratorLicenseState) {
+        text(el.GeneratorLicenseState, state.licenseAccepted ? 'Lizenz akzeptiert ✓' : 'Zustimmung erforderlich');
+        el.GeneratorLicenseState.setAttribute('data-accepted', state.licenseAccepted ? 'true' : 'false');
+      }
       if (manage) {
         text(el.Title, 'Cores verwalten');
         text(el.Lead, state.tiers ? 'Ollama bringt die Gemma-Stufen in unregelmäßigen Abständen in neuen Fassungen. '
@@ -288,7 +386,9 @@
         } else {
           text(el.Lead, done ? 'Der TCI Core ist fertig und steht im Core-Menü.'
             : check.tier === 'generator'
-              ? 'TCI Core Generator wird aus deinem bereits installierten FLUX.2-Ollama-Core als ember-coreui:gen angelegt. Keine zweite Modellkopie und kein Download. Die Mara-Persona wird übernommen, Gemma-spezifische Parser-Einstellungen nicht.'
+              ? (check.source_present
+                ? 'Aus dem vorhandenen FLUX.2-Core wird ember-coreui:gen angelegt. Ein vorher vorhandener Basistag bleibt zum Schutz anderer Ollama-Clients erhalten.'
+                : 'CoreAI lädt FLUX.2-klein 9B selbst herunter, erstellt ember-coreui:gen und entfernt den neu geladenen Basistag nach erfolgreicher Prüfung. Die vollständige Lizenz ist über den Lizenzbutton verfügbar.')
               : 'Diese Stufe ist auf dem Server noch nicht installiert. Ollama lädt dafür ca. '
               + String(check.download_gb).replace('.', ',') + ' GB herunter, danach baut CoreAI daraus den TCI Core mit dem Modelfile.'
               + (check.cloud_base && state.canInstall ? ' Diese Stufe gibt es auch als Cloud-Core ohne Download (Ollama-Konto nötig): unter Cores verwalten.' : ''));
@@ -323,8 +423,8 @@
       } else if (failed) {
         note = j.message || (j.kind === 'update' ? 'Das Update ist fehlgeschlagen.' : 'Die Installation ist fehlgeschlagen.');
       }
-      if (!manage && check && check.tier === 'generator' && check.blocked && !done)
-        note = 'Das FLUX.2-Ausgangsmodell fehlt. Installiere zuerst fegdxus/flux2-klein-9b-uncensored:Q8_0 über die Core-Bibliothek.';
+      if (!manage && check && check.tier === 'generator' && !state.licenseAccepted && !done && !running)
+        note = 'Vor der Installation bitte die vollständige FLUX Non-Commercial License im Lizenzfenster lesen und akzeptieren.';
       if (state.error && (check || manage)) note = state.error;
       else if (manage && !running && state.notice) note = state.notice;
       if (!manage && !running && !done && check) {
@@ -338,7 +438,8 @@
       if (el.Go) {
         show(el.Go, !!go);
         el.Go.textContent = go || 'Installieren';
-        el.Go.disabled = state.busy || !!(check && check.blocked && !done);
+        el.Go.disabled = state.busy || !!(check && check.blocked && !done)
+          || !!(check && check.tier === 'generator' && !state.licenseAccepted && !done);
         el.Go.setAttribute('data-tone', state.confirm || (check && check.verdict === 'abraten') ? 'warn' : '');
       }
       text(el.Cancel, running || done || manage ? 'Schließen' : 'Abbrechen');
@@ -388,6 +489,7 @@
       reset('tier');
       return request(API + '?core_install=' + encodeURIComponent(state.tier), 'GET').then(function (data) {
         state.check = data.check || null;
+        state.licenseAccepted = !!(state.check && state.check.license_accepted);
         state.canInstall = data.can_install === true;
         state.install = data.install || null;
         state.auto = data.auto || null;
@@ -403,6 +505,8 @@
     function refreshManage() {
       return request(API + '?core_manage=1', 'GET').then(function (data) {
         state.tiers = Array.isArray(data.tiers) ? data.tiers : [];
+        var generatorTier = state.tiers.find(function (tier) { return tier.tier === 'generator'; });
+        state.licenseAccepted = !!(generatorTier && generatorTier.license_accepted);
         state.plan = Array.isArray(data.plan) ? data.plan : [];
         state.auto = data.auto || null;
         state.install = data.install || null;
@@ -456,6 +560,7 @@
         return Promise.resolve(typeof hooks.choose === 'function' ? hooks.choose(j.core) : null);
       }
       if (!check || state.busy || !state.canInstall || check.installed || check.blocked || (j && j.running)) return Promise.resolve();
+      if (check.tier === 'generator' && !state.licenseAccepted) return Promise.resolve();
       if (check.verdict === 'abraten' && !state.confirm) {
         state.confirm = true;
         render();
@@ -514,6 +619,19 @@
       });
     }
 
+    if (el.GeneratorLicenseOpen) el.GeneratorLicenseOpen.addEventListener('click', function () {
+      return openLicense(el.GeneratorLicenseOpen);
+    });
+    if (licenseEl.Check) licenseEl.Check.addEventListener('change', function () {
+      if (licenseEl.Accept) licenseEl.Accept.disabled = !licenseEl.Check.checked ||
+        !state.licenseLoaded || state.licenseBusy || state.licenseAccepted;
+    });
+    if (licenseEl.Accept) licenseEl.Accept.addEventListener('click', acceptLicense);
+    if (licenseEl.Cancel) licenseEl.Cancel.addEventListener('click', closeLicense);
+    if (licenseEl.Close) licenseEl.Close.addEventListener('click', closeLicense);
+    if (licenseEl.Root) licenseEl.Root.addEventListener('click', function (event) {
+      if (event && event.target === licenseEl.Root) closeLicense();
+    });
     if (el.Go) el.Go.addEventListener('click', function () { return install(); });
     if (el.UpdateNow) el.UpdateNow.addEventListener('click', function () { return updateNow(); });
     if (el.ToManage) el.ToManage.addEventListener('click', function () { return manage(); });
@@ -534,7 +652,11 @@
     if (el.Cancel) el.Cancel.addEventListener('click', function () { close(); });
     if (el.Close) el.Close.addEventListener('click', function () { close(); });
     root.addEventListener('click', function (event) { if (event && event.target === root) close(); });
-    doc.addEventListener('keydown', function (event) { if (event.key === 'Escape' && isOpen()) close(); });
+    doc.addEventListener('keydown', function (event) {
+      if (event.key !== 'Escape') return;
+      if (licenseEl.Root && !licenseEl.Root.hidden) closeLicense();
+      else if (isOpen()) close();
+    });
 
     return {open: open, manage: manage, close: close, install: install, updateNow: updateNow, setAuto: setAuto,
       refreshManage: function () { return state.mode === 'manage'

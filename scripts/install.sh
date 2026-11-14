@@ -784,6 +784,11 @@ compose run -T --rm --no-deps php sh -ec '
 ' || die 'PHP-Syntaxpruefung fehlgeschlagen; Dateiname und Fehler stehen oben.'
 
 ensure_ollama_model
+# The FLUX.2 generator shares the normal installer/update lifecycle (not an admin-only step).
+# An already installed base is adapted automatically. A first download needs license acceptance.
+if ! python3 -I "$PROJECT_ROOT/scripts/ensure-generator-core.py" --ensure; then
+  warn 'TCI Core Generator konnte nicht erstellt/aktualisiert werden. Preflight meldet den Zustand.'
+fi
 
 log 'Starte die eigene CoreAI: TCI Interface-Datenbank auf dem geschuetzten Loopback-Port.'
 compose up -d database

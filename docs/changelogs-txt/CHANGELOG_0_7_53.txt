@@ -1,0 +1,33 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.53
+Datum: 14.11.2026
+
+GENERATOR-INSTALLATION WIE NORMALE TCI CORES
+- Vorheriger PR #308 (0.7.52) verlangte manuell vorhandenes FLUX.2 9B.
+- Installer/Updater holen jetzt nach Lizenzfreigabe fehlende Gewichte selbst:
+  source -> ember-coreui:gen -> verifizieren -> temporaeren Quelltag entfernen.
+- Eine fremd vorinstallierte FLUX.2-Basis wird nicht ungefragt entfernt.
+- Standard- und Native-Installer nutzen denselben Host-Provisioner.
+- Preflight prueft nur und laedt keine Modelle automatisch.
+
+FLUX-LIZENZ IN BEIDEN ADMIN-ANSICHTEN
+- Vollstaendiger Originaltext der FLUX Non-Commercial License v2.1
+  wird unveraendert unter licenses/ mitgeliefert.
+- In Cores verwalten und Core installieren erscheint ein Lizenzbutton.
+- Popup mit Originaltext, separater Checkbox und Akzeptieren-Button.
+- Vor Zustimmung bleiben Installationsbuttons gesperrt.
+- Der Server speichert den akzeptierten Lizenz-SHA-256, Konto und UTC-Zeit.
+- Ohne gespeicherte Freigabe kann der Generator weder ueber den
+  Installationsendpunkt noch ueber automatische Updates erzeugt werden.
+- Wenn sich der Lizenztext aendert, ist eine neue Annahme erforderlich.
+- Die Lizenz gilt nur fuer die von ihr erlaubte nicht-kommerzielle
+  Nutzung; CoreAI erweitert die Lizenzrechte nicht.
+
+REGRESSIONEN
+- Python-Hostprovisionierung: vorhandene/neue Basistags,
+  Wiederverwendung, Abbruch und Bereinigung.
+- PHP: Fingerprint und gespeicherte Zustimmung.
+- JavaScript: Verwaltungsliste und Einzelansicht, Popup,
+  gesperrte Buttons, Zustimmung und freigegebene Installation.
+- GitHub Actions pruefen Syntax und relevante Selftests.
+
+Version: 0.7.53

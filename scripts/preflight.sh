@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.52: TCI Core Generator management and optional FLUX.2 image tests.
+# CoreAI: TCI Interface 0.7.53: automatic Generator provisioning and read-only verification.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -72,6 +72,7 @@ if [[ ! -f "$COMPOSE_FILE" ]]; then
 fi
 
 UI_FILES=(
+  scripts/ensure-generator-core.py
   scripts/uninstall.sh
   tests/uninstall-runner-selftest.sh
   scripts/uninstall-store-selftest.php
@@ -2163,6 +2164,18 @@ if command -v ollama >/dev/null 2>&1 \
   fi
 else
   fail "CoreAI: TCI Interface-Ollama-Modell fehlt: ${COREUI_MODEL_NAME}"
+fi
+
+generator_audit=''
+if generator_audit="$(python3 -I "$PROJECT_ROOT/scripts/ensure-generator-core.py" --check 2>&1)"; then
+  ok "$generator_audit"
+else
+  generator_code=$?
+  if (( generator_code == 3 )); then
+    warn "$generator_audit"
+  else
+    fail "$generator_audit"
+  fi
 fi
 
 if is_enabled "${COREUI_INSTALL_SEARXNG:-0}"; then

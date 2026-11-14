@@ -1,0 +1,50 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.53
+Datum: 14.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Basis: main 0.7.52
+Branch: fix/tci-generator-automatic-lifecycle-20261114
+
+AUSGANGSLAGE
+PR #308 wurde gemergt. Der Generator erschien in der Core-Auswahl und unter
+Cores verwalten, verlangte jedoch einen bereits installierten
+fegdxus/flux2-klein-9b-uncensored:Q8_0-Basistag. Auf dem Screenshot
+war die Installationsseite blockiert ("Ausgangs-Core fehlt").
+Der Benutzer verlangte den normalen TCI-Installationsablauf und eine
+verbindliche FLUX-Lizenzannahme ueber einen Popup-Button in beiden Ansichten.
+
+ERGEBNIS
+- Der Generator nutzt wie andere TCI Cores den Download-, Build-,
+  Verifikations- und Temporaer-Basistag-Cleanup-Ablauf.
+- Die Standard- und Native-Installer integrieren eine idempotente
+  Generator-Provisionierung auf dem Host.
+- Der Preflight kontrolliert die Verfuegbarkeit nur lesend.
+- Ein erstmaliger Download ohne Lizenzfreigabe ist nicht gestattet.
+- Lizenztext aus Black Forest Labs' originalem
+  model_licenses/LICENSE-FLUX-NON-COMMERICAL (v2.1) unveraendert
+  in licenses/FLUX-NON-COMMERCIAL-v2.1.txt gespeichert.
+- Pop-up aus Core-Verwaltung und Core-Installationsseite erreichbar.
+  Checkbox, Originaltext, Akzeptieren, serverseitiger Hash-Beleg.
+- Ohne diesen Beleg bleiben Installationsbuttons gesperrt,
+  API-Installationsaufrufe werden zurueckgewiesen und automatisches
+  Neuerzeugen des Generator-Cores bleibt deaktiviert.
+- Bestehende TCI Cores und deren Updatefunktion bleiben unabhaengig.
+- Vorher vorhandene Ollama-Basistags werden nicht automatisch geloescht;
+  nur vom aktuellen Installationslauf heruntergeladene Tags werden
+  nach erfolgreicher Verifikation bereinigt.
+- Version 0.7.53, entsprechende Release-Metadaten und CI-Tests.
+
+BETRIEBSHINWEIS
+Nach Merge und CoreAI-Update kann der Administrator die Lizenz im
+Core-Verwaltungsfenster lesen und akzeptieren. Erst dann ist Installieren
+freigeschaltet. Der Installer kann auch bei einem folgenden Standard-Update
+den Generator auf Grundlage der dauerhaft gespeicherten Zustimmung anlegen.
+Ein echter FLUX-Download auf dem Betreiber-Server wurde nicht behauptet.
+
+DATEIEN
+scripts/ensure-generator-core.py, scripts/generator-core-selftest.py,
+scripts/install.sh, scripts/install-native.sh, scripts/preflight.sh,
+scripts/preflight-native.sh, api/core_install.php,
+api/core_generator_license.php, api/user_settings.php, app.html,
+js/coreui-core-install.js, css/console.css, licenses/ und Tests.
+
+Version: 0.7.53

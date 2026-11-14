@@ -37,6 +37,20 @@ if ($method === 'GET' && array_key_exists('core_status', $_GET)) {
   stu_json(['ok'=>true, 'loaded'=>coreui_ollama_loaded_names()]);
 }
 
+// Original FLUX license, shown in-app before any Generator install.
+// The endpoint is admin-only; the text is shipped verbatim with CoreAI.
+if ($method === 'GET' && array_key_exists('core_generator_license', $_GET)) {
+  require_once __DIR__ . '/core_install.php';
+  stu_require_permission_at_most(COREUI_CORE_INSTALL_PERMISSION_MAX, $pdo);
+  $csrf = stu_csrf_token();
+  if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
+  try {
+    stu_json(['ok'=>true, 'license'=>coreui_generator_license_info(true), 'csrf_token'=>$csrf]);
+  } catch (RuntimeException $e) {
+    stu_json(['ok'=>false, 'error'=>$e->getMessage()], 503);
+  }
+}
+
 // 0.5.76: chat installer for missing tiers. Every account sees what is
 // missing and the progress; the hardware check and installing are for admins.
 if ($method === 'GET' && (array_key_exists('core_install', $_GET) || array_key_exists('core_install_status', $_GET))) {
@@ -204,6 +218,20 @@ if ($method !== 'POST') stu_json(['ok' => false, 'error' => 'method_not_allowed'
 stu_require_csrf();
 
 $body = stu_read_json_body();
+
+if (($body['action'] ?? '') === 'core_generator_license_accept') {
+  require_once __DIR__ . '/core_install.php';
+  stu_require_permission_at_most(COREUI_CORE_INSTALL_PERMISSION_MAX, $pdo);
+  if (($body['accepted'] ?? false) !== true) stu_json(['ok'=>false, 'error'=>'license_accept_required'], 400);
+  try {
+    coreui_generator_license_accept((int)$uid, trim((string)($body['sha256'] ?? '')));
+    stu_json(['ok'=>true, 'license'=>coreui_generator_license_info(false)]);
+  } catch (RuntimeException $e) {
+    $code = $e->getMessage();
+    stu_json(['ok'=>false, 'error'=>$code], $code === 'generator_license_version_changed' ? 409 : 503);
+  }
+}
+
 // General switches are independent from KI-Profil persistence; a narrow
 // endpoint prevents changing the user's saved Core/num_ctx accidentally.
 if (($body['action'] ?? '') === 'general') {
@@ -321,6 +349,10 @@ if (($body['action'] ?? '') === 'core_install') {
     stu_json(['ok'=>false, 'error'=>$e->getMessage()], 400);
   }
   if ($check['installed']) stu_json(['ok'=>false, 'error'=>'already_installed'], 409);
+  // License must be accepted *through the in-app modal* and persisted; a request boolean is never enough.
+  if ($check['tier'] === 'generator' && !coreui_generator_license_accepted()) {
+    stu_json(['ok'=>false, 'error'=>'license_accept_required', 'check'=>$check], 409);
+  }
   if ($check['blocked']) stu_json(['ok'=>false, 'error'=>'install_blocked', 'check'=>$check], 409);
   // Advised against: only with a second, explicit confirmation.
   if ($check['verdict'] === 'abraten' && ($body['confirm'] ?? false) !== true) {
