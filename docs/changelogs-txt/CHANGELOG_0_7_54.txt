@@ -1,0 +1,43 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.54
+Datum: 14.11.2026
+
+QUANTUM GEN ENGINE / TCI CORE GENERATOR
+- Der Generator bleibt in der Chat-Coreliste sichtbar.
+- Ohne betriebsbereite Quantum Gen Engine ist der Generator grau und
+  nicht auswaehlbar, auch wenn der Ollama-Tag ember-coreui:gen existiert.
+- Wenn die Engine aufgrund der fehlenden Mindesthardware nicht
+  installiert werden kann, zeigt die kleine Beschreibung:
+  "Quantum Gen Engine nicht installiert da die Mindesthardwareanforderungen nicht erfüllt werden".
+- Bei ladender Engine oder temporaerer Nichterreichbarkeit nennt
+  der Text den jeweiligen Zustand. Es wird kein Hardwaremangel erfunden.
+- Sobald die Engine einsatzbereit und ember-coreui:gen vorhanden ist,
+  kann der Benutzer ihn normal waehlen. Fehlt nur der Generator-Tag,
+  bleibt die bisherige Core-Installationsansicht erreichbar.
+- Auch das Backend verhindert das direkte Waehlen eines nicht
+  einsatzbereiten Generators, statt nur den Button auszublenden.
+
+GEMEINSAMER HARDWARE-CHECK
+- 31 GiB RAM ist bereits die Default-Auto-Installationsschwelle der
+  Quantum Gen Engine, kein neu erfundenes GPU-Minimum.
+- Die im Bildengine-Register hinterlegten Messwerte werden angezeigt:
+  512x512 ca. 9372 MB und 1024x1024 ca. 14369 MB Peak RAM.
+- Auf CPU-only-Servern mit bewusst aktivierter und funktionierender
+  Engine bleibt die Funktion auch unter der Default-Schwelle erlaubt.
+- Der Chat erhaelt nur Status, keine privaten Maschinenangaben.
+
+OLLAMA QUELLNAME
+- Echter Herausgeber: feadxus, nicht fegdxus.
+- Korrekt: feadxus/flux2-klein-9b-uncensored:Q8_0, ca. 8.7 GB.
+- Zentralen Model-Katalog, Host-Installer, PHP-Install-Check,
+  zugehoerige Tests und neue Dokumentation korrigiert.
+- Ollama-Q8_0-Modell ist ein Qwen3-Textmodell fuer Prompts.
+  Die separate Bildengine ist fuer Bilddateien zustaendig.
+
+TESTS
+- Hardware-Schwelle, Engine-ready/loading/unreachable und
+  deaktivierte/re-aktivierte Generator-Auswahl.
+- Nochmalige Pruefung des exakten Basismodell-Tags.
+- GitHub Actions pruefen PHP, JS, Browser-Asset-Fingerprints
+  sowie den verpflichtenden Versionsschritt.
+
+Version: 0.7.54

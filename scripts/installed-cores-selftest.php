@@ -103,7 +103,7 @@ installed_test(str_contains($api, "=== 'installed_core_uninstall'")
   && str_contains($api, 'stu_require_permission_at_most(COREUI_CORE_INSTALL_PERMISSION_MAX, $pdo)'),
   'inventory, deletion and update must share the existing permission, lock and worker paths');
 // The generator alias is a managed TCI Core, not an independent third-party tag.
-$genModels = [['name'=>'ember-coreui:gen'], ['name'=>'fegdxus/flux2-klein-9b-uncensored:Q8_0']];
+$genModels = [['name'=>'ember-coreui:gen'], ['name'=>'feadxus/flux2-klein-9b-uncensored:Q8_0']];
 $genRows = array_column(coreui_installed_cores_rows($genModels, $standard, $base), null, 'name');
 installed_test($genRows['ember-coreui:gen']['kind'] === 'tci'
   && $genRows['ember-coreui:gen']['label'] === 'TCI Core Generator'

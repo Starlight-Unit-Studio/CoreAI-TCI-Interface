@@ -396,7 +396,7 @@ assert.equal(api.gb(20 * 1073741824), '20 GB');
   assert(menuRefresh.length >= 1, 'the Core menu is refreshed');
 
   // Generator license: list and installer both show original text, and both block until consent.
-  const genBase = 'fegdxus/flux2-klein-9b-uncensored:Q8_0';
+  const genBase = 'feadxus/flux2-klein-9b-uncensored:Q8_0';
   const genMissing = {tier: 'generator', label: 'TCI Core Generator', base: genBase, download_gb: 8.2,
     local: [], removable: [], cloud: [], alias_of: null, cloud_base: null, cloud_missing: false, status: 'missing'};
   ({els, doc} = page());

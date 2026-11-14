@@ -3,7 +3,7 @@ Datum: 14.11.2026
 
 TCI CORE GENERATOR
 - Neuer Ollama-Core mit dem technischen Tag ember-coreui:gen.
-- Ausgangsmodell: fegdxus/flux2-klein-9b-uncensored:Q8_0 (nur lokal, sofern bereits installiert).
+- Ausgangsmodell: feadxus/flux2-klein-9b-uncensored:Q8_0 (nur lokal, sofern bereits installiert).
 - Unter Cores verwalten neu als eigenstaendiger Eintrag sichtbar.
 - Beim Anlegen wird der vorhandene FLUX.2-Modellstand als Basis verwendet, ohne eine zweite Gewichtsdatei herunterzuladen.
 - Mara nutzt weiterhin die Persona aus dem aktiven CoreAI-Modelfile. Gemma-4-spezifische Renderer-, Parser- und numerische Modellparameter werden nicht uebernommen.

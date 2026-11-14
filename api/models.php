@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/model_catalog.php';
 require_once __DIR__ . '/core_install.php';
+require_once __DIR__ . '/core_generator_engine.php';
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/model_access.php';
 
@@ -27,11 +28,15 @@ try {
   $models = coreui_core_audio_flags($models, static fn(string $name): ?array => coreui_ollama_read_json('show', ['model' => $name]));
   // Generation is a CoreAI role of the existing local FLUX prompt Core, not an Ollama vision capability.
   $models = array_map(static fn(array $m): array => $m + ['image_generation' => coreui_core_is_generator((string)$m['name'])], $models);
+  // The generator stays visible in the picker even if Ollama or the image engine lacks it.
+  // Only this small readiness summary is visible to regular accounts (not hardware details).
+  $generatorEngine = coreui_generator_engine_public(coreui_generator_engine_status());
   $default = defined('STU_EMBER_MODEL') ? (string)STU_EMBER_MODEL : '';
   if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
   stu_json([
     'ok'=>true,
     'models'=>$models,
+    'generator_engine'=>$generatorEngine,
     'default_model'=>$default,
     'default_label'=>$default !== '' ? coreui_core_label($default) : '',
     'missing_tiers'=>coreui_core_missing_tiers($models),

@@ -37,7 +37,7 @@ foreach ([
   'gpt-oss:120b-cloud' => 'gpt-oss:120b-cloud',
   'gemma3:27b' => 'gemma3:27b',
   'ember-coreui:gen' => 'TCI Core Generator',
-  'fegdxus/flux2-klein-9b-uncensored:Q8_0' => 'fegdxus/flux2-klein-9b-uncensored:Q8_0',
+  'feadxus/flux2-klein-9b-uncensored:Q8_0' => 'feadxus/flux2-klein-9b-uncensored:Q8_0',
 ] as $model => $label) tier_test(coreui_core_label($model) === $label, "label of {$model}");
 
 // Mara's own Core is named after the base of her Modelfile.

@@ -7,7 +7,7 @@ Branch: fix/tci-generator-automatic-lifecycle-20261114
 AUSGANGSLAGE
 PR #308 wurde gemergt. Der Generator erschien in der Core-Auswahl und unter
 Cores verwalten, verlangte jedoch einen bereits installierten
-fegdxus/flux2-klein-9b-uncensored:Q8_0-Basistag. Auf dem Screenshot
+feadxus/flux2-klein-9b-uncensored:Q8_0-Basistag. Auf dem Screenshot
 war die Installationsseite blockiert ("Ausgangs-Core fehlt").
 Der Benutzer verlangte den normalen TCI-Installationsablauf und eine
 verbindliche FLUX-Lizenzannahme ueber einen Popup-Button in beiden Ansichten.

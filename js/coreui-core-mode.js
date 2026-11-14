@@ -78,7 +78,7 @@
     var manageBtn = doc.getElementById('coreModeManage');
     var state = {thinking: true, override: '', defaultModel: '', defaultLabel: '', labels: {}, csrf: '',
       loaded: false, saving: false, models: null, inMemory: [], loading: '', polls: 0, listError: false,
-      missing: [], install: null, mara: {}, admin: false, caps: {}};
+      missing: [], install: null, mara: {}, admin: false, caps: {}, generatorEngine: null};
 
     function effective() { return state.override || state.defaultModel; }
     function labelOf(name) {
@@ -179,6 +179,10 @@
       button.setAttribute('aria-checked', 'false');
       button.setAttribute('data-tier', miss.tier);
       button.setAttribute('aria-label', miss.label + ', ' + meta + '. Öffnet die Installation.');
+      if (miss.tier === 'generator') {
+        var genCap = capsOf('ember-coreui:gen');
+        if (genCap) button.appendChild(genCap);
+      }
       button.addEventListener('click', function (event) {
         if (event && typeof event.stopPropagation === 'function') event.stopPropagation();
         return openInstall(miss.tier);
@@ -311,8 +315,34 @@
           if (n === state.override && !shown[modelKey(n)]) row(n, null);
         });
       });
-      if (tierLabels.indexOf(standard) < 0) row('', null);
+      if (tierLabels.indexOf(standard) < 0 && !isGenerator(state.defaultModel)) row('', null);
+
+      // Generator is a permanent CoreAI slot. Unlike arbitrary Ollama Cores,
+      // it never disappears when the Quantum Gen Engine is not installed.
+      // Availability comes from the actual image service, not model tags alone.
+      if (state.generatorEngine) {
+        var generator = names.filter(isGenerator)[0] || 'ember-coreui:gen';
+        var generatorInstalled = names.some(isGenerator);
+        var engineReady = state.generatorEngine.ready === true;
+        if (!engineReady) {
+          var explanation = state.generatorEngine.message || 'Quantum Gen Engine derzeit nicht erreichbar.';
+          var disabledGenerator = option(generator, 'TCI Core Generator', explanation, true);
+          disabledGenerator.className += ' core-mode-option--engine-missing';
+          disabledGenerator.setAttribute('aria-label', 'TCI Core Generator nicht verfügbar. ' + explanation);
+          list.appendChild(item(disabledGenerator));
+        } else if (!generatorInstalled) {
+          list.appendChild(item(missingOption({tier: 'generator', label: 'TCI Core Generator'})));
+        } else if (!sameCore(generator, state.defaultModel)) {
+          row(generator, null);
+        } else {
+          row('', null);
+        }
+        shown[modelKey(generator)] = true;
+        if (sameCore(state.override, generator)) found = true;
+      }
+
       names.forEach(function (n) {
+        if (state.generatorEngine && isGenerator(n)) return;
         if (tierLabels.indexOf(labelOf(n)) < 0 && !shown[modelKey(n)] && !sameCore(n, state.defaultModel)) row(n, null);
       });
       if (!found && state.models !== null) list.appendChild(item(option(state.override, labelOf(state.override), 'nicht mehr installiert', true)));
@@ -405,19 +435,26 @@
           if (both[0].default_label) state.defaultLabel = String(both[0].default_label);
           state.mara = {};
           state.caps = {};
+          state.generatorEngine = both[0].generator_engine && typeof both[0].generator_engine === 'object'
+            ? both[0].generator_engine : null;
           state.models.forEach(function (m) {
             if (m && m.name && m.label) state.labels[modelKey(m.name)] = String(m.label);
             if (m && m.name && m.mara) state.mara[modelKey(m.name)] = true;
             if (m && m.name) state.caps[modelKey(m.name)] = {vision: m.vision === true, audio: m.audio === true, live: m.live === true,
               imageGeneration: m.image_generation === true || isGenerator(m.name)};
           });
+          if (state.generatorEngine) {
+            var oldCaps = state.caps[modelKey('ember-coreui:gen')] || {};
+            oldCaps.imageGeneration = true;
+            state.caps[modelKey('ember-coreui:gen')] = oldCaps;
+          }
           state.missing = (Array.isArray(both[0].missing_tiers) ? both[0].missing_tiers : []).filter(function (m) {
             return m && m.tier && m.label;
           });
           state.install = both[0].install && typeof both[0].install === 'object' ? both[0].install : null;
           state.inMemory = Array.isArray(both[1].loaded) ? both[1].loaded.map(modelKey) : [];
         })
-        .catch(function () { state.models = null; state.missing = []; state.listError = true; })
+        .catch(function () { state.models = null; state.missing = []; state.generatorEngine = null; state.listError = true; })
         .then(function () { renderList(); render(); });
     }
 
@@ -442,6 +479,10 @@
 
     function choose(value) {
       value = String(value || '');
+      if (isGenerator(value) && state.generatorEngine && state.generatorEngine.ready !== true) {
+        say(state.generatorEngine.message || 'Quantum Gen Engine nicht bereit.');
+        return Promise.resolve(state.override);
+      }
       if (state.guest && value !== state.override) {
         say('Als Gast chattest du mit dem Standard-Core. Mit einem eigenen Konto kannst du ihn wechseln.');
         return Promise.resolve(state.override);
@@ -466,7 +507,8 @@
           say(data.preload === 'cloud' ? 'Cloud-Core gewählt, er muss nicht geladen werden.' : 'Der Core ist bereits geladen.');
         }
       }).catch(function (error) {
-        say(error.code === 'model_not_available' ? 'Dieser Core ist nicht mehr installiert.'
+        say(error.code === 'generator_engine_unavailable' ? 'Quantum Gen Engine ist gerade nicht bereit.'
+          : error.code === 'model_not_available' ? 'Dieser Core ist nicht mehr installiert.'
           : error.code === 'model_not_allowed' ? 'Dieser Core ist für dein Konto nicht freigegeben.'
           : error.code === 'guest_core_locked' ? 'Als Gast chattest du mit dem Standard-Core.'
           : 'Nicht gespeichert. Bitte noch einmal versuchen.');

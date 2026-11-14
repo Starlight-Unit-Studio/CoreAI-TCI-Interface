@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.53: automatic Generator provisioning and read-only verification.
+# CoreAI: TCI Interface 0.7.54: Quantum Gen Engine readiness in Generator picker, corrected feadxus source.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

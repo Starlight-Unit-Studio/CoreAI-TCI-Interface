@@ -5,6 +5,7 @@ require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/ai_settings.php';
 require_once __DIR__ . '/model_catalog.php';
+require_once __DIR__ . '/core_generator_engine.php';
 require_once __DIR__ . '/ai_context_estimate.php';
 require_once __DIR__ . '/guest_access.php';
 require_once __DIR__ . '/model_access.php';
@@ -264,6 +265,11 @@ if (($body['action'] ?? '') === 'core') {
   if ($isGuest) stu_json(['ok'=>false, 'error'=>'guest_core_locked'], 403);
   $name = trim((string)($body['model_override'] ?? ''));
   if ($name !== '') {
+    // A locally installed FLUX prompt Core is not usable without the actual image engine.
+    // Enforce the same readiness condition on the server, not only in the Core menu.
+    if (coreui_core_is_generator($name) && !coreui_generator_engine_status()['ready']) {
+      stu_json(['ok'=>false, 'error'=>'generator_engine_unavailable'], 409);
+    }
     if (!coreui_model_name_valid($name)) stu_json(['ok'=>false, 'error'=>'invalid_model_name'], 400);
     try {
       if (!coreui_ollama_model_exists($name)) stu_json(['ok'=>false, 'error'=>'model_not_available'], 400);
@@ -576,6 +582,9 @@ if ($keepModel) {
 try {
   $requestedModel = trim((string)($body['model_override'] ?? ''));
   if ($requestedModel !== '' && !$keepModel) {
+    if (coreui_core_is_generator($requestedModel) && !coreui_generator_engine_status()['ready']) {
+      stu_json(['ok'=>false, 'error'=>'generator_engine_unavailable'], 409);
+    }
     if (!coreui_model_name_valid($requestedModel)) {
       stu_json(['ok'=>false, 'error'=>'invalid_model_name'], 400);
     }

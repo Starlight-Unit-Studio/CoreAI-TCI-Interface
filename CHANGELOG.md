@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.7.54 - 14.11.2026
+
+- **Quantum Gen Engine als verbindliche Abhängigkeit:** Der TCI Core Generator bleibt stets in der Core-Auswahl sichtbar. Ohne einsatzbereite Bildengine ist er ausgegraut und nicht auswählbar. Fehlt die Engine aufgrund zu geringer Hardware, erscheint die gewünschte Meldung: „Quantum Gen Engine nicht installiert da die Mindesthardwareanforderungen nicht erfüllt werden“.
+- **Unterscheidbare Engine-Zustände:** Laufende Gewichtsinitialisierung, temporäre Nichterreichbarkeit und fehlende Hardware werden nicht fälschlich gleichgesetzt. Auch ein bereits installierter Generator wird deaktiviert, solange die Bildengine nicht bereit ist. Sobald Engine und Core vorhanden sind, ist die Auswahl wieder aktiv.
+- **Gemeinsame Hardware-Erkennung:** Der Generator-Installationscheck nutzt die bereits in der Quantum Gen Engine hinterlegten Messwerte (512×512: 9372 MB, 1024×1024: 14369 MB Spitzenspeicher) und ihre bestehende automatische 31-GiB-Installationsschwelle. CPU-only bleibt möglich; eine GPU wird nicht pauschal vorausgesetzt.
+- **Serverseitige Core-Sperre:** Sowohl die Core-Auswahl als auch ein direktes Update der gespeicherten Core-Einstellungen verweigern `ember-coreui:gen`, wenn die Bildengine nicht betriebsbereit ist. Die Core-Liste veröffentlicht nur Status und Meldung, keine unnötigen Hardwaredetails.
+- **Ollama-Basismodell korrigiert:** Der Quellname laut offizieller Ollama-Seite lautet `feadxus/flux2-klein-9b-uncensored:Q8_0` (nicht `fegdxus`). Installer, Model-Katalog und Tests benutzen nun die korrekte Quelle. Der Text-Prompter ist ein Qwen3-Modell, nicht der separat laufende FLUX-Bildworker.
+- **Regressionstests:** Neue PHP-Tests für die Engine-/Hardwarezustände und JavaScript-Tests für das sichtbar bleibende, gesperrte Generator-Menü sowie den Reaktivierungsfall.
+
 ## 0.7.53 - 14.11.2026
 
 - **TCI Core Generator folgt dem regulären CoreAI-Lifecycle:** Der gemergte PR #308 setzte für `ember-coreui:gen` einen zuvor installierten FLUX.2-Basistag voraus. Jetzt laden der reguläre Installer und das Admin-Core-Installationsfenster das benötigte FLUX.2-klein-9B-Modell selbst, bauen anschließend den TCI-Core und entfernen einen während dieses Vorgangs neu heruntergeladenen Basistag nach erfolgreicher Verifikation. Bereits vorhandene fremde Basistags bleiben geschützt.
@@ -11,7 +20,7 @@
 
 ## 0.7.52 - 14.11.2026
 
-- **TCI Core Generator ist ein echter Ollama-Core:** Das vorhandene lokale `fegdxus/flux2-klein-9b-uncensored:Q8_0` kann im Admin-Fenster **Cores verwalten** als `ember-coreui:gen` angelegt werden. Der eigene TCI-Tag erscheint danach neben Schnell, Normal, Plus, Pro und Premium.
+- **TCI Core Generator ist ein echter Ollama-Core:** Das vorhandene lokale `feadxus/flux2-klein-9b-uncensored:Q8_0` kann im Admin-Fenster **Cores verwalten** als `ember-coreui:gen` angelegt werden. Der eigene TCI-Tag erscheint danach neben Schnell, Normal, Plus, Pro und Premium.
 - **Keine zweite Modellkopie und keine vorgeschaltete Pipeline:** Ollama erstellt den neuen Tag mit demselben lokalen FLUX.2-Basismodell. Mara erhält den bestehenden Persona-SYSTEM-Text, ohne unpassende Gemma-4-Renderer-, Parser- oder Parameter-Vorgaben zu übernehmen.
 - **Bildgenerierung erkennbar:** Die Core-Auswahl zeigt den Namen **TCI Core Generator** und ein eigenes Icon für Bildgenerierungs-Aufträge, getrennt vom bisherigen Symbol für Bildverständnis.
 - **Vollständige Verwaltung:** Installieren, Aktualisieren und Deinstallieren benutzen die bestehenden Admin-Rechte und den gemeinsamen Installations-Lock. Das Basismodell bleibt unangetastet; bei fehlender FLUX.2-Basis erklärt die UI den benötigten Installationsschritt. Status und Updater behandeln den neuen TCI-Core getrennt von den Gemma-Stufen.

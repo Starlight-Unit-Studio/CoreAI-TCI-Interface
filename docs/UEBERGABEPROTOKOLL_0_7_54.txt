@@ -1,0 +1,56 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.54
+Datum: 14.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Basis: 0.7.53
+Branch: feat/generator-hardware-image-engine-check-20261114
+
+AUFTRAG
+Der Nutzer fordert, dass die Hardware-Erkennung der vorhandenen
+Quantum Gen Engine direkt fuer den TCI Core Generator genutzt wird.
+Wenn diese Engine nicht installiert ist, soll der Generator grau,
+aber weiterhin sichtbar sein. Bei fehlenden Mindestanforderungen
+soll im Core-Menue die exakte Meldung stehen:
+"Quantum Gen Engine nicht installiert da die Mindesthardwareanforderungen nicht erfüllt werden".
+
+ZUSAETZLICH GEFUNDEN
+Das upstream Ollama-Modell wurde als fegdxus statt feadxus referenziert.
+Die tatsaechliche URL zeigt feadxus/flux2-klein-9b-uncensored:Q8_0.
+Der Fehler betrifft Pull, Core-Create und viele Tests. Saemtliche
+aktiven Stellen sind jetzt auf den richtigen Herausgeber korrigiert.
+
+UMSETZUNG
+- api/core_generator_engine.php stellt die Hardware- und
+  Bildengine-Verfuegbarkeit zentral bereit. Es nutzt /health der
+  laufenden Quantum Gen Engine und das unveraenderte Engine-Register.
+- Nicht installiert oder nicht bereit: der Generator wird in
+  js/coreui-core-mode.js ausgegraut, nie aus der Liste entfernt.
+- Genaue Gruende: RAM unter der bereits bestehenden 31-GiB-
+  Standardinstallationsschwelle; Engine laedt noch; Service
+  nicht erreichbar; unbekannte Hardware, ohne erfundenen Status.
+- Bildgenerierungsicon bleibt an der Zeile.
+- Bereits installierter ember-coreui:gen ist nur bei
+  einsatzbereiter Bildengine waehlbar.
+- Wenn die Engine bereit ist und nur der Generator fehlt, wird
+  die existierende Installationsseite aufgerufen.
+- api/models.php liefert nur die kleine lesbare Engine-Verfuegbarkeit.
+- api/user_settings.php verhindert ungueltige Core-Auswahl und
+  direkt geschriebene Core-Overrides serverseitig.
+- Hardwarecheck des Generators in api/core_install.php
+  nennt vorhandene Peak-RAM-Messwerte aus der Bildengine.
+- Originale FLUX-Lizenzannahme und bestehende
+  Installations-/Updateverfahren bleiben unveraendert.
+- VERSION auf 0.7.54 geaendert (ein Merge = eine neue Version).
+
+TESTS
+- scripts/generator-engine-selftest.php prueft Schwelle, bereit,
+  ladend, defekt, unbekannt und die exakte Meldung.
+- scripts/thinking-switch-ui-selftest.cjs prueft grau sichtbare
+  Eintraege, Icon, Sperre und spaetere Freischaltung.
+- Image-Service-Regression CI fuehrt diese Tests aus.
+
+WICHTIG
+Eine echte Ollama-Installation auf dem Betreiber-Server ist mit
+diesem PR noch nicht ausgefuehrt. GitHub-Code und lokale
+Hardware-Verfuegbarkeit sind unterschiedliche Dinge.
+
+Version: 0.7.54
