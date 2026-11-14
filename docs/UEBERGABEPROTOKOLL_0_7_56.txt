@@ -20,8 +20,9 @@ UMSETZUNG
   Speicherplatz. Die Gewichte werden unabhaengig von einer expliziten
   Lizenzbestaetigung im UI geladen. Der Worker startet dann
   den bestehenden validierten 9B-Download asynchron.
-- API bei Lizenzannahme: Wenn Engine und Hardware bereit sind, startet
-  sie denselben pGen-Installationsweg sofort.
+- Die 9B-Installation ist einmalig pro Server und erfolgt unabhängig
+  von einer kontobezogenen Zustimmung. Eine normale Benutzerzustimmung
+  startet keinen privilegierten Download.
 - Vor Lizenz: die 9B-Option bleibt im Dropdown sichtbar, aber
   disabled; mittiger Kasten "Lizenz bitte zustimmen" mit Lizenzbutton.
   Ein blosses API-Boolean reicht nicht. Auswahl und Bilderzeugung mit 9B
@@ -43,6 +44,17 @@ UMSETZUNG
   zusaetzliche Mara-Portrait-UUIDs in echte Bildauftraege uebertragen.
   Referenzen zeigen immer DIESELBE TCI Mara Thorne (fuenf Ansichten),
   keine fuenf fremden Personen. Nutzer-Uploads bleiben getrennt.
+
+LIZENZEN PRO KONTO (MIGRATION 043)
+- Neben der gemeinsamen 9B-Installation ist die Nutzung an die
+  angemeldete user_id gebunden. Ein Konto kann niemals die Zustimmung
+  eines anderen erben; jede Lizenzfassung ist gehasht.
+- Admin-Host-Receipt bleibt nur fuer den Installer, nicht fuer
+  Konto-Freigaben. CoreUI-API und Bildworker pruefen kontobezogen.
+- Normale User sehen den gesperrten Generator und koennen im Chat
+  das gleiche Original-Lizenzmodal oeffnen und selbst bestaetigen.
+- Migration 043 ON DELETE CASCADE; alte Host-Receipt gewaehrt
+  keiner User-ID automatisch Zustimmung.
 
 SICHERHEIT UND BETRIEB
 - Beim Update werden 9B-Gewichte bei geeigneter Hardware automatisch
