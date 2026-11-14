@@ -358,6 +358,10 @@
       }
       var model = state.pgen.models.filter(function (m) { return m.id === state.pgenChoice; })[0];
       if (!model) model = state.pgen.models[0];
+      if (!state.pgen.license_accepted && model && model.id === 'flux2-klein-9b') {
+        state.pgenChoice = 'flux2-klein-4b';
+        model = state.pgen.models.filter(function (m) { return m.id === state.pgenChoice; })[0];
+      }
       if (!model) return;
       if (el.PgenModel) {
         el.PgenModel.value = model.id;
@@ -389,10 +393,6 @@
         var nineOption = typeof el.PgenModel.querySelector === 'function'
           ? el.PgenModel.querySelector('option[value="flux2-klein-9b"]') : null;
         if (nineOption) nineOption.disabled = locked;
-        if (locked && model.id === 'flux2-klein-9b') {
-          state.pgenChoice = 'flux2-klein-4b';
-          el.PgenModel.value = state.pgenChoice;
-        }
       }
       show(el.PgenLicense, license && !locked);
       if (el.PgenLicense) text(el.PgenLicense, authorized ? '9B-Lizenz ansehen ✓' : '9B-Lizenz ansehen');
