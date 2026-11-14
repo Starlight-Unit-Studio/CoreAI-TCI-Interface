@@ -36,7 +36,8 @@ foreach ([
   'ember-core:test' => 'ember-core:test',
   'gpt-oss:120b-cloud' => 'gpt-oss:120b-cloud',
   'gemma3:27b' => 'gemma3:27b',
-  'fegdxus/flux2-klein-9b-uncensored:Q8_0' => 'TCI Core Generator',
+  'ember-coreui:gen' => 'TCI Core Generator',
+  'fegdxus/flux2-klein-9b-uncensored:Q8_0' => 'fegdxus/flux2-klein-9b-uncensored:Q8_0',
 ] as $model => $label) tier_test(coreui_core_label($model) === $label, "label of {$model}");
 
 // Mara's own Core is named after the base of her Modelfile.
@@ -44,8 +45,10 @@ $base = coreui_core_mara_base();
 tier_test($base !== '' && coreui_core_tier($base) !== null, 'base of Mara\'s Core is a Gemma 4 tier');
 $default = defined('STU_EMBER_MODEL') ? (string)STU_EMBER_MODEL : 'ember-coreui:latest';
 tier_test(coreui_core_label($default) === COREUI_CORE_TIER_LABELS[coreui_core_tier($base)], 'Mara\'s Core carries the tier of her base');
-tier_test(coreui_core_is_generator('fegdxus/flux2-klein-9b-uncensored:Q8_0')
-  && !coreui_core_is_generator('gemma4:12b'), 'only the explicit FLUX generator gets the generator role');
+tier_test(coreui_core_is_generator('ember-coreui:gen')
+  && !coreui_core_is_generator('gemma4:12b')
+  && !coreui_core_is_generator(COREUI_CORE_GENERATOR_BASE)
+  && coreui_core_is_mara(COREUI_CORE_GENERATOR_NAME), 'only the actual TCI Generator tag gets the generator role');
 tier_test(coreui_core_same('Ember-CoreUI', 'ember-coreui:latest') && !coreui_core_same('', ''), 'names compare like Ollama');
 tier_test(array_keys(COREUI_CORE_TIER_LABELS) === ['schnell', 'normal', 'plus', 'pro', 'premium']
   && array_values(array_unique(COREUI_CORE_TIER_SIZES)) === array_keys(COREUI_CORE_TIER_LABELS)
