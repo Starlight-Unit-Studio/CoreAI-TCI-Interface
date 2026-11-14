@@ -38,15 +38,13 @@ if ($method === 'GET' && array_key_exists('core_status', $_GET)) {
   stu_json(['ok'=>true, 'loaded'=>coreui_ollama_loaded_names()]);
 }
 
-// Original FLUX license, shown in-app before any Generator install.
-// The endpoint is admin-only; the text is shipped verbatim with CoreAI.
+// Original FLUX license for the current signed-in account (not globally accepted).
 if ($method === 'GET' && array_key_exists('core_generator_license', $_GET)) {
   require_once __DIR__ . '/core_install.php';
-  stu_require_permission_at_most(COREUI_CORE_INSTALL_PERMISSION_MAX, $pdo);
   $csrf = stu_csrf_token();
   if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
   try {
-    stu_json(['ok'=>true, 'license'=>coreui_generator_license_info(true), 'csrf_token'=>$csrf]);
+    stu_json(['ok'=>true, 'license'=>coreui_generator_license_user_info($pdo, (int)$uid, true), 'csrf_token'=>$csrf]);
   } catch (RuntimeException $e) {
     stu_json(['ok'=>false, 'error'=>$e->getMessage()], 503);
   }
@@ -77,7 +75,7 @@ if ($method === 'GET' && array_key_exists('pgen', $_GET)) {
   stu_require_permission_at_most(COREUI_CORE_INSTALL_PERMISSION_MAX, $pdo);
   $csrf = stu_csrf_token();
   if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
-  stu_json(['ok'=>true, 'pgen'=>coreui_pgen_status(), 'csrf_token'=>$csrf]);
+  stu_json(['ok'=>true, 'pgen'=>coreui_pgen_status(null, null, $pdo, (int)$uid), 'csrf_token'=>$csrf]);
 }
 
 // 0.5.76: Cores verwalten (admins): every tier with its Cores, what an
@@ -234,7 +232,7 @@ if (in_array(($body['action'] ?? ''), ['pgen_select', 'pgen_install'], true)) {
   require_once __DIR__ . '/core_install.php';
   require_once __DIR__ . '/pgen.php';
   stu_require_permission_at_most(COREUI_CORE_INSTALL_PERMISSION_MAX, $pdo);
-  $status = coreui_pgen_status();
+  $status = coreui_pgen_status(null, null, $pdo, (int)$uid);
   if ($body['action'] === 'pgen_install') {
     if (($body['model'] ?? '') !== COREUI_PGEN_QUALITY) stu_json(['ok'=>false, 'error'=>'pgen_invalid_model'], 400);
     // Download and installation are hardware-driven. License acceptance gates selection and use.
@@ -243,12 +241,12 @@ if (in_array(($body['action'] ?? ''), ['pgen_select', 'pgen_install'], true)) {
     [$code, $result] = coreui_image_http('POST', '/pgen/install', [], 6);
     if ($code !== 202 || !is_array($result) || ($result['ok'] ?? false) !== true)
       stu_json(['ok'=>false, 'error'=>(string)($result['error'] ?? 'pgen_install_unavailable')], 409);
-    stu_json(['ok'=>true, 'pgen'=>coreui_pgen_status()]);
+    stu_json(['ok'=>true, 'pgen'=>coreui_pgen_status(null, null, $pdo, (int)$uid)]);
   }
   $model = (string)($body['model'] ?? '');
   try {
     coreui_pgen_save($model, $status, (int)$uid);
-    stu_json(['ok'=>true, 'pgen'=>coreui_pgen_status()]);
+    stu_json(['ok'=>true, 'pgen'=>coreui_pgen_status(null, null, $pdo, (int)$uid)]);
   } catch (InvalidArgumentException $e) {
     stu_json(['ok'=>false, 'error'=>$e->getMessage()], 400);
   } catch (RuntimeException $e) {
@@ -258,15 +256,16 @@ if (in_array(($body['action'] ?? ''), ['pgen_select', 'pgen_install'], true)) {
 
 if (($body['action'] ?? '') === 'core_generator_license_accept') {
   require_once __DIR__ . '/core_install.php';
-  stu_require_permission_at_most(COREUI_CORE_INSTALL_PERMISSION_MAX, $pdo);
   if (($body['accepted'] ?? false) !== true) stu_json(['ok'=>false, 'error'=>'license_accept_required'], 400);
   try {
-    coreui_generator_license_accept((int)$uid, trim((string)($body['sha256'] ?? '')));
-    // Consent is a durable server setting. If 9B was blocked only by its
-    // license, let the existing image worker begin the verified download now;
-    // hardware and duplication locks are enforced by the worker as well.
+    coreui_generator_license_user_accept($pdo, (int)$uid, trim((string)($body['sha256'] ?? '')));
+    // Preserve the host installer receipt for admins, but it grants NO other
+    // account permission to select or use 9B.
+    if (stu_get_permission_level($pdo) <= COREUI_CORE_INSTALL_PERMISSION_MAX) {
+      coreui_generator_license_accept((int)$uid, trim((string)($body['sha256'] ?? '')));
+    }
     require_once __DIR__ . '/pgen.php';
-    $pgen = coreui_pgen_status();
+    $pgen = coreui_pgen_status(null, null, $pdo, (int)$uid);
     $quality = $pgen['models'][1] ?? [];
     $automatic = false;
     if ($pgen['engine_ready'] && $pgen['can_install_9b']
@@ -275,7 +274,7 @@ if (($body['action'] ?? '') === 'core_generator_license_accept') {
       $automatic = $installCode === 202 && is_array($installResult)
         && ($installResult['ok'] ?? false) === true;
     }
-    stu_json(['ok'=>true, 'license'=>coreui_generator_license_info(false),
+    stu_json(['ok'=>true, 'license'=>coreui_generator_license_user_info($pdo, (int)$uid, false),
       'pgen_auto_install_started'=>$automatic]);
   } catch (RuntimeException $e) {
     $code = $e->getMessage();
@@ -317,6 +316,9 @@ if (($body['action'] ?? '') === 'core') {
   if ($name !== '') {
     // A locally installed FLUX prompt Core is not usable without the actual image engine.
     // Enforce the same readiness condition on the server, not only in the Core menu.
+    if (coreui_core_is_generator($name) && !coreui_generator_license_user_accepted($pdo, (int)$uid)) {
+      stu_json(['ok'=>false, 'error'=>'license_accept_required'], 403);
+    }
     if (coreui_core_is_generator($name) && !coreui_generator_engine_status()['ready']) {
       stu_json(['ok'=>false, 'error'=>'generator_engine_unavailable'], 409);
     }
@@ -632,6 +634,9 @@ if ($keepModel) {
 try {
   $requestedModel = trim((string)($body['model_override'] ?? ''));
   if ($requestedModel !== '' && !$keepModel) {
+    if (coreui_core_is_generator($requestedModel) && !coreui_generator_license_user_accepted($pdo, (int)$uid)) {
+      stu_json(['ok'=>false, 'error'=>'license_accept_required'], 403);
+    }
     if (coreui_core_is_generator($requestedModel) && !coreui_generator_engine_status()['ready']) {
       stu_json(['ok'=>false, 'error'=>'generator_engine_unavailable'], 409);
     }
