@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.7.53 - 14.11.2026
+
+- **TCI Core Generator folgt dem regulären CoreAI-Lifecycle:** Der gemergte PR #308 setzte für `ember-coreui:gen` einen zuvor installierten FLUX.2-Basistag voraus. Jetzt laden der reguläre Installer und das Admin-Core-Installationsfenster das benötigte FLUX.2-klein-9B-Modell selbst, bauen anschließend den TCI-Core und entfernen einen während dieses Vorgangs neu heruntergeladenen Basistag nach erfolgreicher Verifikation. Bereits vorhandene fremde Basistags bleiben geschützt.
+- **Erstinstallation und Updates:** `scripts/install.sh` und `scripts/install-native.sh` verwenden dieselbe idempotente Host-Provisionierung. Der Preflight prüft den Generator nur lesend und kann einen fehlenden Core melden, startet aber niemals selbst einen Download. Ein automatischer Erstdownload beginnt erst nach ausdrücklicher Lizenzannahme durch einen berechtigten Admin.
+- **Vollständiger Original-Lizenztext:** Die unveränderte **FLUX Non-Commercial License v2.1** von Black Forest Labs ist lokal mitgeliefert. Unter „Cores verwalten“ und „Core installieren“ öffnet ein Lizenzbutton dasselbe mobile Popup. Der Akzeptieren-Button bleibt bis zur Bestätigung deaktiviert.
+- **Keine Installation ohne Zustimmung:** Der Generator-Installationsbutton bleibt auf beiden Seiten gesperrt, bis der Administrator die Lizenz geöffnet und über die Checkbox akzeptiert hat. Die Zustimmung wird serverseitig mit dem SHA-256-Fingerabdruck des ausgelieferten Originaltexts gespeichert und durch den PHP-Installer sowie den Host-Updater überprüft. Ein bloßer Boolean im Installationsaufruf ist kein Ersatz.
+- **Lizenzgebundene Aktualisierung:** Ohne gültige gespeicherte Zustimmung wird der Generator nicht automatisch neu gebaut. Andere TCI-Cores werden normal weiter aktualisiert. Nach Lizenzänderungen ist eine erneute Bestätigung erforderlich.
+- **Regressionstests:** Generator-Host-Lifecycle, gespeicherter Lizenzbeleg, Server-Guards, Core-Verwaltung und beide Popup-Aufrufe werden offline geprüft; ein echter Ollama-Download auf dem Betreiber-Server ist kein Bestandteil dieser Tests.
+
 ## 0.7.52 - 14.11.2026
 
 - **TCI Core Generator ist ein echter Ollama-Core:** Das vorhandene lokale `fegdxus/flux2-klein-9b-uncensored:Q8_0` kann im Admin-Fenster **Cores verwalten** als `ember-coreui:gen` angelegt werden. Der eigene TCI-Tag erscheint danach neben Schnell, Normal, Plus, Pro und Premium.
