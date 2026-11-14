@@ -3,6 +3,15 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/image_reference_consistency.php';
 
+/** Exactly four additional private Mara reference photos, never a public image gallery. */
+function coreui_profile_reference_slots(): array {
+  return ['assistant_ref_1', 'assistant_ref_2', 'assistant_ref_3', 'assistant_ref_4'];
+}
+
+function coreui_profile_media_slot(string $slot): bool {
+  return in_array($slot, ['user', 'assistant', ...coreui_profile_reference_slots()], true);
+}
+
 function coreui_profile_schema_ready(PDO $pdo): bool {
   try {
     $pdo->query('SELECT user_id, display_name, assistant_name FROM stu_coreui_profiles LIMIT 1');
@@ -52,6 +61,7 @@ function coreui_profile_load(PDO $pdo, int $uid): array {
 
   // The account avatar falls back to Mara's canonical portrait when no custom one exists.
   $avatars = ['user' => null, 'assistant' => stu_public_path('images/mara_winter.jpg')];
+  foreach (coreui_profile_reference_slots() as $slot) $avatars[$slot] = null;
   $mediaInfo = [];
   if (coreui_profile_schema_ready($pdo)) {
     $stMedia = $pdo->prepare('SELECT slot, uuid, stored_name, mime_type, created_at FROM stu_coreui_profile_media WHERE user_id = ?');
@@ -215,7 +225,7 @@ function coreui_profile_media_path(string $storedName): ?string {
 }
 
 function coreui_profile_media_record(PDO $pdo, int $uid, string $slot): ?array {
-  if ($uid <= 0 || !in_array($slot, ['user', 'assistant'], true)) return null;
+  if ($uid <= 0 || !coreui_profile_media_slot($slot)) return null;
   $st = $pdo->prepare(
     'SELECT uuid, stored_name, mime_type, file_size, width_px, height_px '
     . 'FROM stu_coreui_profile_media WHERE user_id = ? AND slot = ? LIMIT 1'
@@ -240,8 +250,27 @@ function coreui_profile_image_reference(PDO $pdo, int $uid): string {
   return 'custom:' . $uuid;
 }
 
+/** Owner-verified additional photo UUIDs for Mara self portraits only.
+ * These tokens are never accepted directly from the browser. The worker resolves
+ * their paths only after the PHP request has checked user_id and fixed slot.
+ */
+function coreui_profile_assistant_extra_references(PDO $pdo, int $uid): array {
+  if ($uid <= 0 || !coreui_profile_schema_ready($pdo)) return [];
+  $tokens = [];
+  foreach (coreui_profile_reference_slots() as $slot) {
+    $row = coreui_profile_media_record($pdo, $uid, $slot);
+    if (!is_array($row)) continue;
+    $uuid = (string)($row['uuid'] ?? '');
+    if (preg_match('~^[a-f0-9]{32}$~D', $uuid) === 1
+        && (string)($row['stored_name'] ?? '') === $uuid . '.png') {
+      $tokens[] = 'custom:' . $uuid;
+    }
+  }
+  return $tokens;
+}
+
 function coreui_profile_delete_avatar(PDO $pdo, int $uid, string $slot): bool {
-  if (!in_array($slot, ['user', 'assistant'], true)) throw new InvalidArgumentException('invalid_slot');
+  if (!coreui_profile_media_slot($slot)) throw new InvalidArgumentException('invalid_slot');
   if (!coreui_profile_schema_ready($pdo)) throw new RuntimeException('missing_schema_004');
   $st = $pdo->prepare('SELECT stored_name FROM stu_coreui_profile_media WHERE user_id = ? AND slot = ? LIMIT 1');
   $st->execute([$uid, $slot]);
@@ -261,7 +290,7 @@ function coreui_profile_render_avatar(GdImage $src, string $slot, ?array $crop =
     $srcY = (int)$crop['y'];
     $sourceWidth = (int)$crop['w'];
     $sourceHeight = (int)$crop['h'];
-  } elseif ($slot === 'assistant') {
+  } elseif ($slot !== 'user') {
     $srcX = $srcY = 0;
     $sourceWidth = $width;
     $sourceHeight = $height;
@@ -270,7 +299,7 @@ function coreui_profile_render_avatar(GdImage $src, string $slot, ?array $crop =
     $srcX = (int)floor(($width - $sourceWidth) / 2);
     $srcY = (int)floor(($height - $sourceHeight) / 2);
   }
-  if ($slot === 'assistant') {
+  if ($slot !== 'user') {
     // The existing image worker accepts a private PNG reference up to 4 MB.
     // Keep the current safe 1024px limit while retaining original source bytes.
     $scale = min(1, 1024 / max($sourceWidth, $sourceHeight));
@@ -295,7 +324,7 @@ function coreui_profile_render_avatar(GdImage $src, string $slot, ?array $crop =
  */
 function coreui_profile_store_avatar(PDO $pdo, int $uid, string $slot,
     ?array $file, mixed $cropRaw = null, ?string $expectedUuid = null): array {
-  if ($uid <= 0 || !in_array($slot, ['user', 'assistant'], true)) {
+  if ($uid <= 0 || !coreui_profile_media_slot($slot)) {
     throw new InvalidArgumentException('invalid_slot');
   }
   if (!coreui_profile_schema_ready($pdo)) throw new RuntimeException('missing_schema_004');
