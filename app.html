@@ -561,6 +561,25 @@
         <h4 id="coreInstallTiersTitle">STUFEN</h4>
         <ul class="core-install-tierlist" id="coreInstallTierList"></ul>
       </section>
+      <section class="core-install-pgen" id="coreInstallPgen" aria-labelledby="coreInstallPgenTitle" hidden>
+        <div class="core-install-pgen-head">
+          <h4 id="coreInstallPgenTitle">PGEN CORE</h4>
+          <span class="core-install-pgen-tag">QUANTUM GEN ENGINE</span>
+        </div>
+        <p class="core-install-update-info">Bildmodelle der Quantum Gen Engine getrennt von deinen Text-Cores verwalten.</p>
+        <label class="core-install-pgen-label" for="coreInstallPgenModel">BILDGENERATOR</label>
+        <select class="core-install-pgen-select" id="coreInstallPgenModel">
+          <option value="flux2-klein-4b">FLUX.2 Standard (4B)</option>
+          <option value="flux2-klein-9b">FLUX.2 9B</option>
+        </select>
+        <p class="core-install-pgen-info" id="coreInstallPgenInfo" aria-live="polite">Lädt die Bildmodelle …</p>
+        <div class="core-install-pgen-actions">
+          <button class="core-install-btn" id="coreInstallPgenLicense" type="button" hidden>9B-Lizenz ansehen</button>
+          <button class="core-install-btn" id="coreInstallPgenInstall" type="button" hidden>9B installieren</button>
+          <button class="core-install-btn core-install-btn--go" id="coreInstallPgenApply" type="button" disabled>Als pGen verwenden</button>
+        </div>
+        <p class="core-install-pgen-feedback" id="coreInstallPgenFeedback" role="status" aria-live="polite"></p>
+      </section>
       <section class="core-install-library" id="coreInstallLibraryEntry" hidden>
         <h4>CORE-BIBLIOTHEK</h4>
         <p class="core-install-update-info">Ollama durchsuchen, später Hugging Face nutzen und bereits installierte Cores verwalten.</p>
