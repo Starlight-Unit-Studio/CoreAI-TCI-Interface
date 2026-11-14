@@ -47,6 +47,7 @@ const COREUI_CORE_INSTALL_ACTIVE = ['pull', 'create', 'verify', 'cleanup'];
 
 /** Local tags mirror the precise upstream suffixes: e2b, e4b, 12b, 26b, 31b. */
 function coreui_core_install_name(string $tier): string {
+  if ($tier === 'generator') return COREUI_CORE_GENERATOR_NAME;
   $entry = COREUI_CORE_INSTALL_CATALOG[$tier] ?? null;
   if (!is_array($entry)) throw new RuntimeException('unknown_tier');
   return coreui_core_mara_family() . ':' . (string)$entry['tag'];
@@ -162,6 +163,17 @@ function coreui_core_create_request(string $modelfile, string $name, string $bas
   return $request;
 }
 
+/** Create the FLUX Core using the existing Mara persona, without Gemma-only TEMPLATE/RENDERER/PARSER. */
+function coreui_core_generator_create_request(string $modelfile): array {
+  $system = null;
+  foreach (coreui_modelfile_commands($modelfile) as [$command, $value]) {
+    if ($command === 'SYSTEM') $system = trim($value);
+  }
+  if ($system === null || $system === '') throw new RuntimeException('modelfile_system_missing');
+  return ['model'=>COREUI_CORE_GENERATOR_NAME, 'from'=>COREUI_CORE_GENERATOR_BASE,
+    'system'=>$system, 'stream'=>false];
+}
+
 /** What the PHP side can see of the server. Every value may be null when unreadable. */
 function coreui_core_install_hardware(): array {
   $meminfo = (string)@file_get_contents('/proc/meminfo');
@@ -254,6 +266,20 @@ function coreui_core_install_verdict(array $hw, array $entry): array {
  * memory, processor and Ollama version are not every account's business).
  */
 function coreui_core_install_check(string $tier, bool $hardware = true): array {
+  if ($tier === 'generator') {
+    try { $index = coreui_core_model_index(coreui_ollama_models()); }
+    catch (RuntimeException $e) { $index = []; }
+    $hasSource = isset($index[coreui_ollama_model_key(COREUI_CORE_GENERATOR_BASE)]);
+    $installed = isset($index[coreui_ollama_model_key(COREUI_CORE_GENERATOR_NAME)]);
+    return ['tier'=>'generator', 'label'=>COREUI_CORE_GENERATOR_LABEL,
+      'base'=>COREUI_CORE_GENERATOR_BASE, 'core'=>COREUI_CORE_GENERATOR_NAME,
+      'download_gb'=>0, 'installed'=>$installed, 'cloud_base'=>null,
+      'verdict'=>$hasSource ? 'gut' : 'abraten', 'blocked'=>!$hasSource,
+      'rows'=>$hardware ? [['key'=>'source', 'label'=>'Ausgangs-Core',
+        'value'=>$hasSource ? 'FLUX.2 ist bereits in Ollama installiert; kein weiterer Download.'
+          : 'FLUX.2-Basis fehlt in Ollama. Bitte zuerst das Ausgangsmodell installieren.',
+        'state'=>$hasSource ? 'ok' : 'bad']] : [], 'ram_need'=>0];
+  }
   $entry = COREUI_CORE_INSTALL_CATALOG[$tier] ?? null;
   if ($entry === null) throw new RuntimeException('unknown_tier');
   try {
@@ -326,8 +352,9 @@ function coreui_core_install_status(): ?array {
 }
 
 function coreui_core_install_begin(array $check): array {
+  $generator = $check['tier'] === 'generator';
   $state = ['kind'=>'install', 'tier'=>$check['tier'], 'label'=>$check['label'], 'base'=>$check['base'], 'core'=>$check['core'],
-    'phase'=>'pull', 'step'=>'Startet …', 'completed'=>0, 'total'=>0, 'percent'=>0, 'layers'=>[],
+    'phase'=>$generator ? 'create' : 'pull', 'step'=>'Startet …', 'completed'=>0, 'total'=>0, 'percent'=>0, 'layers'=>[],
     'started_at'=>time()];
   coreui_core_install_write($state);
   return $state;
@@ -437,8 +464,21 @@ function coreui_core_install_post(string $endpoint, array $body, int $timeout): 
 
 /** The whole job: pull, create from the template, check the result. A cloud Core is only pulled. */
 function coreui_core_install_run(array $state): array {
-  $basePreexisting = !empty($state['cloud']) || coreui_core_base_was_present((string)$state['base']);
-  $state = coreui_core_install_pull($state);
+  $generator = ($state['tier'] ?? '') === 'generator';
+  $basePreexisting = $generator || !empty($state['cloud']) || coreui_core_base_was_present((string)$state['base']);
+  if ($generator) {
+    try { $sourceReady = coreui_ollama_model_exists(COREUI_CORE_GENERATOR_BASE); }
+    catch (RuntimeException $e) { $sourceReady = false; }
+    if (!$sourceReady) {
+      $state['phase'] = 'error';
+      $state['error'] = 'generator_base_missing';
+      $state['message'] = 'Der FLUX.2-Ausgangs-Core ist in Ollama nicht erreichbar; es wurde nichts angelegt.';
+      coreui_core_install_write($state);
+      return $state;
+    }
+  } else {
+    $state = coreui_core_install_pull($state);
+  }
   if ($state['phase'] !== 'error' && !empty($state['cloud'])) {
     $state['phase'] = 'done';
     $state['step'] = 'Fertig: ' . $state['label'] . ' (Cloud) ist bereit.';
@@ -449,8 +489,9 @@ function coreui_core_install_run(array $state): array {
     $state['step'] = 'Baut den TCI Core aus dem Modelfile …';
     coreui_core_install_write($state);
     try {
-      $request = coreui_core_create_request((string)@file_get_contents(dirname(__DIR__) . '/config/Modelfile.template'),
-        (string)$state['core'], (string)$state['base']);
+      $modelfile = (string)@file_get_contents(dirname(__DIR__) . '/config/Modelfile.template');
+      $request = $generator ? coreui_core_generator_create_request($modelfile)
+        : coreui_core_create_request($modelfile, (string)$state['core'], (string)$state['base']);
       [$status, $reply] = coreui_core_install_post('create', $request, 600);
       if ($status < 200 || $status >= 300 || isset($reply['error'])) {
         $state['phase'] = 'error';
@@ -474,7 +515,7 @@ function coreui_core_install_run(array $state): array {
       $state['message'] = 'Das Modelfile ließ sich nicht lesen (' . $e->getMessage() . ').';
     }
   }
-  if ($state['phase'] !== 'error' && empty($state['cloud'])
+  if ($state['phase'] !== 'error' && !$generator && empty($state['cloud'])
       && coreui_core_may_cleanup_base((string)$state['base'], $basePreexisting, [(string)$state['core']])) {
     $state['phase'] = 'cleanup';
     $state['step'] = 'Entfernt den temporaeren Gemma-Basistag …';
@@ -550,7 +591,13 @@ function coreui_core_update_plan(array $models): array {
   }
   $order = array_flip(array_keys(COREUI_CORE_INSTALL_CATALOG));
   uasort($plan, static fn(array $a, array $b): int => ($order[$a['tier']] ?? 99) <=> ($order[$b['tier']] ?? 99));
-  return array_values($plan);
+  $ordered = array_values($plan);
+  if ($has(COREUI_CORE_GENERATOR_NAME)) {
+    $ordered[] = ['base'=>COREUI_CORE_GENERATOR_BASE, 'tier'=>'generator',
+      'label'=>COREUI_CORE_GENERATOR_LABEL,
+      'cores'=>[['name'=>COREUI_CORE_GENERATOR_NAME, 'source'=>'generator']]];
+  }
+  return $ordered;
 }
 
 /**
@@ -589,6 +636,14 @@ function coreui_core_manage_rows(array $models): array {
       'cloud_base'=>$cloudBase, 'cloud_missing'=>$cloudBase !== null && !isset($index[coreui_ollama_model_key($cloudBase)]),
       'status'=>$local !== [] ? 'installed' : ($cloud !== [] ? 'cloud' : 'missing')];
   }
+  $generator = $index[coreui_ollama_model_key(COREUI_CORE_GENERATOR_NAME)]['name'] ?? null;
+  $default = defined('STU_EMBER_MODEL') ? (string)STU_EMBER_MODEL : 'ember-coreui:latest';
+  $rows[] = ['tier'=>'generator', 'label'=>COREUI_CORE_GENERATOR_LABEL,
+    'base'=>COREUI_CORE_GENERATOR_BASE, 'download_gb'=>0,
+    'local'=>$generator !== null ? [$generator] : [], 'cloud'=>[], 'alias_of'=>null,
+    'removable'=>$generator !== null && !coreui_core_same($generator, $default) ? [$generator] : [],
+    'cloud_base'=>null, 'cloud_missing'=>false,
+    'status'=>$generator !== null ? 'installed' : 'missing'];
   return $rows;
 }
 
@@ -661,7 +716,9 @@ function coreui_core_update_run(array $state): array {
     foreach ($item['cores'] as $core) {
       try {
         $text = $core['source'] === 'mara' ? coreui_core_mara_modelfile() : $template;
-        $request = coreui_core_create_request($text, $core['name'], $item['base']);
+        $request = $core['source'] === 'generator'
+          ? coreui_core_generator_create_request($template)
+          : coreui_core_create_request($text, $core['name'], $item['base']);
       } catch (RuntimeException $e) {
         $failure = 'Das Modelfile ließ sich nicht lesen (' . $e->getMessage() . ').';
         continue;

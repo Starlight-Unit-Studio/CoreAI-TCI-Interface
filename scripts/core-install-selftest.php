@@ -162,6 +162,31 @@ $detach = substr($lib, (int)strpos($lib, 'function coreui_core_job_detach'));
 install_test(strpos($detach, 'echo json_encode') < strpos($detach, 'fastcgi_finish_request') && str_contains($lib, "finally {\n    flock(\$lock, LOCK_UN);"),
   'answer first, the lock is always released');
 
+// FLUX prompt Core: a real Ollama alias, not a renamed source tag or a Gemma 4 runner.
+install_test(coreui_core_install_name('generator') === 'ember-coreui:gen',
+  'generator installer uses the dedicated Ollama tag');
+$generatorRequest = coreui_core_generator_create_request((string)file_get_contents($root . '/config/Modelfile.template'));
+install_test($generatorRequest['model'] === COREUI_CORE_GENERATOR_NAME
+  && $generatorRequest['from'] === COREUI_CORE_GENERATOR_BASE
+  && str_contains($generatorRequest['system'], 'Du bist Mara Thorne')
+  && !isset($generatorRequest['renderer'], $generatorRequest['parser'], $generatorRequest['template'])
+  && !isset($generatorRequest['parameters']) && $generatorRequest['stream'] === false,
+  'generator preserves the Mara persona without incompatible Gemma renderer/parameters');
+$genRawOnly = array_column(coreui_core_manage_rows([['name'=>COREUI_CORE_GENERATOR_BASE]]), null, 'tier');
+install_test($genRawOnly['generator']['status'] === 'missing' && $genRawOnly['generator']['base'] === COREUI_CORE_GENERATOR_BASE,
+  'base model alone does not silently masquerade as installed generator');
+$genInstalled = array_column(coreui_core_manage_rows([['name'=>COREUI_CORE_GENERATOR_BASE], ['name'=>COREUI_CORE_GENERATOR_NAME]]), null, 'tier');
+install_test($genInstalled['generator']['status'] === 'installed'
+  && $genInstalled['generator']['local'] === [COREUI_CORE_GENERATOR_NAME]
+  && $genInstalled['generator']['removable'] === [COREUI_CORE_GENERATOR_NAME],
+  'generator is listed in Cores verwalten and can be removed safely');
+$genPlan = coreui_core_update_plan([['name'=>COREUI_CORE_GENERATOR_NAME]]);
+install_test(count($genPlan) === 1 && $genPlan[0]['tier'] === 'generator'
+  && $genPlan[0]['cores'] === [['name'=>COREUI_CORE_GENERATOR_NAME, 'source'=>'generator']],
+  'generator updates using its own compatible rebuild request');
+install_test(coreui_core_update_plan([['name'=>COREUI_CORE_GENERATOR_BASE]]) === [],
+  'weekly updates never auto-create the generator solely because its base exists');
+
 // Update plan: every local base in use once, in tier order, with Mara's Cores on it.
 $default = defined('STU_EMBER_MODEL') ? (string)STU_EMBER_MODEL : 'ember-coreui:latest';
 $maraBase = coreui_core_mara_base();

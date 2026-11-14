@@ -112,6 +112,8 @@ assert.equal(api.shortCore('ember-coreui:latest'), 'ember-coreui');
 assert.equal(api.shortCore(''), 'Core');
 assert.equal(api.modelKey('Ember-CoreUI'), 'ember-coreui:latest');
 assert.equal(api.modelKey('Ember-Core'), 'ember-core:latest');
+assert.equal(api.label('ember-coreui:gen'), 'TCI Core Generator');
+assert.equal(api.label('fegdxus/flux2-klein-9b-uncensored:Q8_0'), 'fegdxus/flux2-klein-9b-uncensored:Q8_0');
 // The client mirror of the TCI tiers (names the server has not labelled yet).
 [['ember-core:e2b', 'TCI Core Schnell'], ['ember-core:e4b', 'TCI Core Normal'], ['ember-coreui:e2b', 'TCI Core Schnell'], ['gemma4:e2b', 'TCI Core Schnell'], ['gemma4:e4b', 'TCI Core Normal'], ['gemma4:26b', 'TCI Core Pro'],
  ['gemma4:31b-cloud', 'TCI Core Premium'], ['hf.co/x/gemma-4-E4B-it-GGUF:Q8_0', 'TCI Core Normal'],

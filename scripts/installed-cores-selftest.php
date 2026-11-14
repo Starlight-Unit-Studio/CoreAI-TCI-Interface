@@ -99,4 +99,16 @@ installed_test(str_contains($api, "=== 'installed_core_uninstall'")
   && str_contains($api, "coreui_core_job_run(\$lock, 'coreui_library_run'")
   && str_contains($api, 'stu_require_permission_at_most(COREUI_CORE_INSTALL_PERMISSION_MAX, $pdo)'),
   'inventory, deletion and update must share the existing permission, lock and worker paths');
+// The generator alias is a managed TCI Core, not an independent third-party tag.
+$genModels = [['name'=>'ember-coreui:gen'], ['name'=>'fegdxus/flux2-klein-9b-uncensored:Q8_0']];
+$genRows = array_column(coreui_installed_cores_rows($genModels, $standard, $base), null, 'name');
+installed_test($genRows['ember-coreui:gen']['kind'] === 'tci'
+  && $genRows['ember-coreui:gen']['label'] === 'TCI Core Generator'
+  && $genRows['ember-coreui:gen']['removable'] && $genRows['ember-coreui:gen']['updatable'],
+  'Generator receives normal CoreAI management controls');
+$genSelected = coreui_installed_cores_update_selection($genModels, 'ember-coreui:gen', $standard, $base,
+  coreui_core_update_plan($genModels));
+installed_test($genSelected['kind'] === 'tci' && $genSelected['plan'][0]['tier'] === 'generator',
+  'updating generator rebuilds its Ollama alias instead of pulling ember-coreui:gen from the registry');
+
 echo "CoreAI installed Cores: inventory, protected defaults, exact deletion targets, reusable uninstall flow OK\n";

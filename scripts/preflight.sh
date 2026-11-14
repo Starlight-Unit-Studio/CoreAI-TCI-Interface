@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.51: image test with FLUX.2-klein 9B as an optional group and a face prompt with a reference image.
+# CoreAI: TCI Interface 0.7.52: TCI Core Generator management and optional FLUX.2 image tests.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
