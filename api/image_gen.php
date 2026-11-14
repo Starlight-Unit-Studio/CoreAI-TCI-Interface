@@ -779,7 +779,7 @@ function coreui_image_capability_hint(bool $compact): string {
     . "Fuer fremde Personen, Tiere oder Szenen benutze [BILD: ...] ohne ICH. "
     . "Standard sind 512 × 512 Pixel (etwa eine Minute). Nur wenn die Person ausdruecklich ein grosses oder hochaufloesendes "
     . "Bild will: [BILD GROSS: ...] bzw. [BILD GROSS ICH: ...] (1024 × 1024, drei bis vier Minuten). Ohne Bildwunsch malst du nichts; fuer Fragen "
-    . "ueber Bilder brauchst du keinen Marker. Personen des echten Lebens malst du nicht als Foto. "
+    . "ueber Bilder brauchst du keinen Marker. "
     . "Ohne den Marker entsteht kein Bild: schreibe nie, dass ein Bild erscheint, und keine Platzhalter wie \"(Hier erscheint das Bild)\".";
 }
 
