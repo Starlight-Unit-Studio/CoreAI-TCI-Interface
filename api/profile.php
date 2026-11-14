@@ -90,6 +90,17 @@ try {
     );
     stu_json(['ok' => true, 'profile' => $profile]);
   }
+  // The Mara editor has its own save action, so an unsaved Operator name
+  // is never silently committed when the assistant modal is saved.
+  if ($action === 'assistant_name') {
+    $name = trim((string)($body['assistant_name'] ?? ''));
+    if ($name === '' || coreui_profile_name($name, '') === '')
+      stu_json(['ok' => false, 'error' => 'invalid_assistant_name'], 400);
+    $current = coreui_profile_load($pdo, $uid);
+    $profile = coreui_profile_save($pdo, $uid,
+      (string)($current['display_name'] ?? 'Operator'), $name);
+    stu_json(['ok' => true, 'profile' => $profile]);
+  }
   // 0.6.86: Settings > Konto: only the own name (the CoreAI's name stays as it is).
   if ($action === 'display_name') {
     $name = trim((string)($body['display_name'] ?? ''));
