@@ -4624,6 +4624,88 @@ html.live-open body {
   font-size: 11px;
 }
 
+/* FLUX Non-Commercial License: one responsive CoreAI dialog shared by both generator views. */
+.core-install-generator-license {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0 12px;
+}
+.core-install-generator-license[hidden],
+.core-generator-license[hidden] { display: none; }
+.core-install-license-open { min-height: 34px; }
+.core-install-license-state {
+  color: var(--amb);
+  font-family: "Share Tech Mono", monospace;
+  font-size: 11px;
+}
+.core-install-license-state[data-accepted="true"] { color: var(--green); }
+.core-generator-license {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  background: rgba(10, 16, 32, 0.74);
+}
+.core-generator-license-panel {
+  display: flex;
+  flex-direction: column;
+  width: min(680px, 100%);
+  max-height: calc(100dvh - 24px);
+  min-height: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--line-strong);
+  background: var(--panel-solid);
+  box-shadow: var(--shadow-soft);
+  color: var(--txt);
+}
+.core-generator-license-text {
+  display: block;
+  overflow: auto;
+  flex: 1 1 auto;
+  min-height: 140px;
+  max-height: 46dvh;
+  padding: 12px;
+  margin: 8px 0 12px;
+  border: 1px solid var(--line-strong);
+  background: var(--panel-cx);
+  color: var(--txt);
+  font: 12px/1.5 "Share Tech Mono", monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  overscroll-behavior: contain;
+}
+.core-generator-license-source { margin: 6px 0 0; font-size: 12px; }
+.core-generator-license-source a { color: var(--cx); }
+.core-generator-license-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.core-generator-license-consent input {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: var(--cx);
+}
+.core-generator-license .core-install-note { margin: 8px 0 0; }
+.core-generator-license .core-install-actions { flex: 0 0 auto; }
+.core-generator-license :focus-visible,
+.core-install-license-open:focus-visible {
+  outline: 2px solid var(--amb);
+  outline-offset: 2px;
+}
+@media (max-width: 540px) {
+  .core-generator-license-panel { padding: 12px; }
+  .core-generator-license-text { max-height: 44dvh; font-size: 11px; }
+}
+
 /* 0.5.76: install window for a missing tier. */
 .core-install {
   position: fixed;
