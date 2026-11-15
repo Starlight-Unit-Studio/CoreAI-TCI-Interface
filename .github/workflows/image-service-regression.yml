@@ -16,6 +16,13 @@ on:
       - 'compose.yaml'
       - 'api/image_gen.php'
       - 'api/image_work_diagnostic.php'
+      - 'api/image_ab_diagnostic.php'
+      - 'admin/index.html'
+      - 'api/admin.php'
+      - 'js/coreui-image-ab.js'
+      - 'css/settings.css'
+      - 'scripts/image-ab-diagnostic-selftest.php'
+      - 'scripts/image-ab-ui-selftest.cjs'
       - 'api/console_work_store.php'
       - 'js/coreui-work-events.js'
       - 'scripts/image-work-diagnostic-selftest.php'
@@ -69,6 +76,13 @@ on:
       - 'tools/image/image_service.py'
       - 'api/image_gen.php'
       - 'api/image_work_diagnostic.php'
+      - 'api/image_ab_diagnostic.php'
+      - 'admin/index.html'
+      - 'api/admin.php'
+      - 'js/coreui-image-ab.js'
+      - 'css/settings.css'
+      - 'scripts/image-ab-diagnostic-selftest.php'
+      - 'scripts/image-ab-ui-selftest.cjs'
       - 'api/console_work_store.php'
       - 'js/coreui-work-events.js'
       - 'scripts/image-work-diagnostic-selftest.php'
@@ -132,6 +146,11 @@ jobs:
           php -l api/image_work_diagnostic.php
           php -l api/console_work_store.php
           php scripts/image-work-diagnostic-selftest.php
+          php -l api/image_ab_diagnostic.php
+          php -l api/admin.php
+          php scripts/image-ab-diagnostic-selftest.php
+          node --check js/coreui-image-ab.js
+          node scripts/image-ab-ui-selftest.cjs
           php scripts/work-events-selftest.php
           node --check js/coreui-work-events.js
           node scripts/work-events-ui-selftest.js
