@@ -5139,7 +5139,7 @@ function ember_build_chat_prompt(
     $webHint .= "\n" . coreui_agent_loop_hint($profile['compact'],
       in_array('archive', ember_agent_allowed_tools($consoleUid, (string)$consoleSessionId), true));
   }
-  $browseHint = (ember_browse_enabled() && $imageUrl === null)
+  $browseHint = ($channel === 'console' && coreui_agent_explicit_browse($composerIntent, ember_browse_enabled()) && $imageUrl === null)
     ? ($profile['compact'] ? ember_browse_capability_hint_compact() : ember_browse_capability_hint()) : '';
   $pyHint = (ember_py_enabled() && $imageUrl === null)
     ? ember_py_capability_hint(ember_model(), $profile['compact'], $nativeProjects) : '';
@@ -5467,10 +5467,10 @@ function ember_generated_image_review(PDO $pdo, int $uid, string $model, string 
 }
 
 /** Tools of the work loop for this chat. */
-function ember_agent_allowed_tools(int $uid, string $sessionId): array {
+function ember_agent_allowed_tools(int $uid, string $sessionId, bool $explicitBrowse = false): array {
   $tools = [];
   if (ember_web_enabled()) $tools[] = 'web';
-  if (ember_browse_enabled()) $tools[] = 'browse';
+  if ($explicitBrowse && ember_browse_enabled()) $tools[] = 'browse';
   if (ember_py_enabled()) $tools[] = 'python';
   if ($uid > 0 && $sessionId !== '' && is_file(coreui_compact_archive_path($uid, $sessionId))) $tools[] = 'archive';
   // 0.5.80: the skill library is offered in the prompt of this turn.
@@ -5656,7 +5656,7 @@ function ember_generate_reply(
     $webHint .= "\n" . coreui_agent_loop_hint($promptProfile['compact'],
       in_array('archive', ember_agent_allowed_tools($consoleUid, (string)$consoleSessionId), true));
   }
-  $browseHint = (ember_browse_enabled() && $imageUrl === null)
+  $browseHint = ($channel === 'console' && coreui_agent_explicit_browse($composerIntent, ember_browse_enabled()) && $imageUrl === null)
     ? ($promptProfile['compact'] ? ember_browse_capability_hint_compact() : ember_browse_capability_hint()) : '';
   // The synchronous prompt has no separate tool block, so the Python hint
   // itself names the checked project builder for small local models.
@@ -5771,7 +5771,8 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
     // 0.6.22: Mara may use her tools after a voice message too (operator's screenshot, 06.11.2026:
     // "[WEB: Wetter ...]" stood as her answer). Without skills: their index is not in this prompt.
     $voiceTools = ($hasAudio && $channel === 'console')
-      ? array_values(array_intersect(ember_agent_allowed_tools($consoleUid, (string)$consoleSessionId), ['web', 'browse', 'archive', 'image']))
+      ? array_values(array_intersect(ember_agent_allowed_tools($consoleUid, (string)$consoleSessionId,
+          coreui_agent_explicit_browse($composerIntent, ember_browse_enabled())), ['web', 'browse', 'archive', 'image']))
       : [];
     // A picture sent to Mara for editing is still a vision turn. Preserve the
     // same image tool after analysis rather than ending with an empty promise.
@@ -5919,6 +5920,11 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       // without emitting a marker. Run the image tool instead of making a false claim.
       $visionDescription = is_string($imgReply) ? $imgReply : '';
       $voiceTool = ['tool'=>'image', 'input'=>coreui_image_attachment_fallback_prompt($userMsg, $visionDescription)];
+    }
+    if ($voiceTool !== null) {
+      if ($voiceTool['tool'] === 'browse' && !coreui_agent_explicit_browse($composerIntent, ember_browse_enabled())) {
+        $voiceTool = ember_web_enabled() ? ['tool'=>'web', 'input'=>(string)$voiceTool['input']] : null;
+      }
     }
     if ($voiceTool !== null) {
       // Only a recorded Stimmsequenz belongs to the user; uploaded audio does
@@ -6449,7 +6455,12 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   // === Phase 2: Asynchroner Browse-Trigger ([BROWSE:]) - VOR der synchronen Websuche ===
   // Hat Ember [BROWSE:] gesetzt, gibt es keine sofortige Antwort: der Worker meldet sich
   // asynchron mit dem Ergebnis. Der Aufrufer reiht den Job via ember_browse_consume_request() ein.
-  if (!$fileTask && ember_browse_enabled() && $imageUrl === null && is_string($out)) {
+  if (!$fileTask && is_string($out) && $imageUrl === null) {
+    $out = coreui_agent_guard_browser_reply($out,
+      $channel === 'console' && coreui_agent_explicit_browse($composerIntent, ember_browse_enabled()), ember_web_enabled());
+  }
+  if (!$fileTask && $channel === 'console' && coreui_agent_explicit_browse($composerIntent, ember_browse_enabled())
+      && $imageUrl === null && is_string($out)) {
     $browseGoal = ember_extract_browse_marker($out);
     if ($browseGoal !== null) {
       ember_debug_log('ember_browse_trigger', ['goal' => $browseGoal]);
@@ -6745,7 +6756,8 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   // more tool. [BROWSE:] hands over to the browser worker as before.
   $agentLoopHandled = false;
   if ($channel === 'console' && $imageUrl === null && empty($fileTask) && is_string($out)) {
-    $loopAllowed = ember_agent_allowed_tools($consoleUid, (string)$consoleSessionId);
+    $loopAllowed = ember_agent_allowed_tools($consoleUid, (string)$consoleSessionId,
+      coreui_agent_explicit_browse($composerIntent, ember_browse_enabled()));
     $loopTool = coreui_agent_next_tool($out, array_values(array_intersect($loopAllowed, ['web', 'archive', 'skill', 'image'])));
     // A natural self-portrait question must use the account's visual reference,
     // even when the local Core emits the legacy generic [BILD: ...] marker.
@@ -7782,12 +7794,9 @@ function ember_exec_news_reaction(PDO $pdo, array $ctx): bool {
     stu__log_error(['type'=>'ember_news_check','stage'=>'decided','query'=>$query,'relevance'=>$relevance]);
   }
 
-  if ($relevance === 'deep') {
-    // Echte Recherche: bestehenden Browse-Worker nutzen, gleiche Pipeline wie bei einer
-    // normalen [BROWSE:]-Anfrage im Chat, nur selbst ausgeloest statt von einem Spieler.
-    $goal = "Mara ist von sich aus neugierig auf \"{$query}\" geworden und moechte mehr dazu erfahren. Recherchiere und fasse zusammen.";
-    return ember_browse_enqueue($pdo, $goal, 'global', null, null);
-  }
+  // Autonomous news never grants permission to start Playwright. An especially
+  // interesting find becomes a normal web-grounded reaction, not a browser job.
+  if ($relevance === 'deep') $relevance = 'mention';
 
   if ($relevance === 'mention') {
     $dummySender = [
