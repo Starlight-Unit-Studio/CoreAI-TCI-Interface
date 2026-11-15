@@ -650,7 +650,8 @@ assert.equal(api.gb(20 * 1073741824), '20 GB');
     {action: 'pgen_install', model: 'flux2-klein-9b'});
   srv.st.pgenNineLoading = false;
   srv.st.pgenNineReady = true;
-  await win.refreshManage();
+  assert(pgenTimers.length > 0, '9B installation is polled');
+  await pgenTimers.shift()();
   assert.equal(els.coreInstallPgenApply.disabled, false, 'verified licensed 9B Standard can be activated');
   await els.coreInstallPgenApply.handlers.click();
   assert.equal(srv.st.pgenActive, 'flux2-klein-9b-standard');
@@ -666,7 +667,7 @@ assert.equal(api.gb(20 * 1073741824), '20 GB');
     {action: 'pgen_prepare', model: 'flux2-klein-9b-magic'});
   srv.st.pgenNineMagicLoading = false;
   srv.st.pgenNineMagicReady = true;
-  await pgenTimers.pop()();
+  await pgenTimers.shift()();
   assert.equal(srv.st.pgenActive, 'flux2-klein-9b-magic');
   assert.match(els.coreInstallPgenInfo.textContent, /pGen Engine Magic \(9B\).*AKTIV/);
   assert(!/Qwen|Ponpoke|Encoder/.test(els.coreInstallPgenInfo.textContent),
