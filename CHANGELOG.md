@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.7.63 - 15.11.2026
+
+- **Referenzbilder im Chat erhalten reale CPU-Rechenzeit:** Der FLUX.2-Bildworker hat bisher alle 512-Pixel-Auftraege nach starren 300 Sekunden abgebrochen. Nach erfolgreichen 4B-/9B-Referenz-Benchmarks vom 15.11.2026 verwendet er fuer Bildauftraege mit Referenzen ein modell- und groessenabhaengiges Zeitbudget pro tatsaechlich aufgeloestem Bild. Ohne Referenzen bleiben die vorhandenen 300 s (512 Pixel) bzw. 720 s (1024 Pixel) unveraendert. Ein frueher fertiggestelltes Bild wird sofort ausgegeben.
+- **Ein gemeinsames Limit fuer Worker und PHP:** Der PHP-Chat liest das vom Bildworker bestaetigte `time_limit_s` und bricht Mehrfachreferenz-Auftraege nicht mehr wegen seines alten, starren 300-/720-Sekunden-Watchdogs ab. Der Stop-Button und die serielle Modellwarteschlange bleiben erhalten.
+- **Fehlerdiagnose mit echten Messwerten:** Arbeitsereignisse erhalten, soweit vom Worker bestaetigt, 4B/9B, Original-/Ponpoke-Text-Encoder, tatsaechliche Referenzanzahl, Bild-Zeitlimit, bisherige Laufzeit und nach Abschluss den RAM-Spitzenwert. Der terminale Worker-Status ersetzt gegebenenfalls einen veralteten Sampling-Schritt. Rohlogs, private Bildpfade und Prompts werden weiterhin ausgefiltert.
+- **Regressionen:** Offline-Selbsttests pruefen Auftraege ohne Referenzen, mit einer und fuenf privaten Profilreferenzen, 4B/9B-Grenzen und Datenschutzregeln; alle sechs HTML-Seiten, Versionsangaben und Asset-Fingerprints synchronisiert.
+- **Live-Abnahme ausstehend:** Ein echter Ponpoke-4B-Bildauftrag mit allen fuenf Konto-Referenzbildern muss nach dem Update noch gemessen werden. Mehr Rechenzeit allein beweist noch keinen fehlerfreien Mehrfachreferenzlauf.
+
+
 ## 0.7.62 - 15.11.2026
 
 - **9B-Bildtest nach Updates repariert:** `scripts/image-spike.sh` startet den weiterhin stark eingeschraenkten Testcontainer mit der zusaetzlichen Linux-Lesegruppe 33 (`--group-add 33`), damit gemeinsam genutzte, auf 33:33 und 0640 gesetzte 9B-Gewichte nach Hardlink-Uebernahme lesbar bleiben. Keine Docker-Sonderrechte, keine weltweiten Leserechte und kein erneuter Download erforderlich.
