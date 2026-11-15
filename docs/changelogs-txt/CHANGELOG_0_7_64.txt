@@ -1,0 +1,46 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.64
+Datum: 15.11.2026
+
+VIER KLARE pGen ENGINE PROFILE
+- CORE > Verwalten: pGen Engine Standard (4B), pGen Engine Magic (4B),
+  pGen Engine Standard (9B), pGen Engine Magic (9B).
+- Die Oberflaeche zeigt ausschliesslich diese vier Engine-Profile.
+  Qwen3 und Ponpoke erscheinen nicht als eigene auswaehlbare Modelle.
+- Physisch weiterhin zwei FLUX.2-Diffusionsmodelle, deren bestehende
+  GGUF-Gewichte unveraendert bleiben.
+- Standard waehlt explizit den originalen Qwen3-Encoder.
+- Magic waehlt explizit den jeweiligen verifizierten Ponpoke Q8_0.
+  Selbst eine alte Lizenzfreigabe stellt Standard NICHT auf Magic um.
+- Magic ohne verifizierte Komponente faellt nicht auf Standard zurueck.
+
+VORBEREITUNG IM HINTERGRUND
+- Bilddienst laedt/verifiziert die beiden Magic-Komponenten beim Start
+  wie bisher und ermoeglicht eine getrennte erneute Vorbereitung ueber
+  einen internen Worker-Endpunkt.
+- Auswahl Magic in CORE > Verwalten kann die Vorbereitung starten.
+  Erst nach erfolgreicher Bereitschaft wird das Profil aktiviert.
+- Bis dahin bleibt das zuletzt aktive Profil unveraendert.
+- Die bisherige 9B-Autoinstallation und der manuelle 9B-Installbutton
+  bleiben bestehen.
+
+LIZENZEN UND SICHERHEIT
+- Magic 4B/9B und Standard 9B erfordern je Nutzer dessen eigene
+  bestaetigte FLUX Non-Commercial License v2.1.
+- Betreiberakzeptanz oder heruntergeladene Gewichte autorisieren
+  keine anderen Konten.
+- 9B-Hardwaregrenzen bleiben erhalten.
+- Nur die vier erlaubten Profile sind im Speicher als Auswahl zulaessig.
+  Historisch gespeicherte nackte 4B-/9B-Werte werden als jeweiliges
+  Standard-Profil interpretiert.
+- Keine Aenderung am globalen Chat-/Ollama-Core, an Referenzbildern,
+  Quoten, RAM-Worker-Deadline oder sonstigen Modellgewichten.
+
+TESTS
+- Vier Profile und alte Speicherauswahl, individuelle Lizenzen.
+- Standard/Magic mit 4B und 9B jeweils der richtige Encoder.
+- Kein stiller Magic-Fallback, keine Encoder-Liste in der UI.
+- UI-Aktivierung nach erfolgreicher Hintergrundvorbereitung.
+- Vor Merge die GitHub-Regressionen und den Versions-Guard pruefen.
+- Echter Live-Wechsel auf dem Betreiber-Server ausstehend.
+
+VERSION: 0.7.64
