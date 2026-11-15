@@ -34,6 +34,7 @@
     pgen_hardware_insufficient: 'Die Quantum Gen Engine meldet zu wenig freien RAM oder Speicherplatz für 9B.',
     pgen_engine_unavailable: 'Quantum Gen Engine nicht bereit.',
     pgen_model_unavailable: 'Dieses Bildmodell ist noch nicht installiert oder nicht bereit.',
+    pgen_magic_unavailable: 'pGen Engine Magic ist noch nicht bereit. Bitte die Vorbereitung starten oder den Serverzugang prüfen.',
     pgen_install_unavailable: 'Die 9B-Installation konnte nicht gestartet werden.',
     pgen_save_unavailable: 'Die pGen-Auswahl konnte nicht gespeichert werden.',
     nothing_to_update: 'Es ist noch keine lokale Stufe installiert, es gibt nichts zu aktualisieren.',
@@ -172,9 +173,8 @@
         if (state.mode === 'manage') {
           return Promise.all([refreshManage(), refreshPgen()]).then(function () {
             render();
-            var quality = state.pgen && state.pgen.models &&
-              state.pgen.models.filter(function (m) { return m.id === 'flux2-klein-9b'; })[0];
-            if (quality && quality.loading) {
+            var selected = selectedPgen();
+            if (selected && selected.loading) {
               state.pgenPoll = true;
               schedule(pollPgen, 2000);
             }
@@ -711,7 +711,14 @@
       state.pgenPending = '';
       var pgen = refreshPgen().catch(function (error) {
         state.pgenMessage = ERRORS[error.code] || 'pGen-Status nicht erreichbar.';
-      }).then(renderPgen);
+      }).then(function () {
+        renderPgen();
+        var selected = selectedPgen();
+        if (selected && selected.loading && !state.pgenPoll) {
+          state.pgenPoll = true;
+          schedule(pollPgen, 2000);
+        }
+      });
       var overview = refreshManage().catch(function (error) {
         state.error = ERRORS[error.code] || 'Die Übersicht ist gerade nicht erreichbar.';
       }).then(function () {
