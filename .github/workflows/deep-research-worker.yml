@@ -14,6 +14,7 @@ on:
       - 'tools/coreai_research_quality.py'
       - 'tools/coreai_research_browser.py'
       - 'tools/ember_browse_worker.py'
+      - 'scripts/browse-worker-selftest.py'
       - 'scripts/deep-research-worker-selftest.py'
       - 'scripts/deep-research-hybrid-selftest.py'
       - 'scripts/deep-research-zero-source-selftest.py'
@@ -35,6 +36,8 @@ jobs:
         run: |
           bash -n scripts/preflight.sh scripts/preflight-native.sh
           node --check js/coreui-deep-research.js
+      - name: Run Browse conversation and privacy regression
+        run: COREAI_BROWSE_LIVE=0 python3 -I scripts/browse-worker-selftest.py
       - name: Run Deep Research worker selftest (show failure details)
         run: python3 scripts/deep-research-worker-selftest.py
       - name: Run hybrid Deep Research regression
