@@ -1450,6 +1450,12 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail "Websuche-Selbsttest: ${web_test:-Unbekannter Fehler}"
   fi
 
+  if progressive_web_test="$(compose exec -T php php scripts/progressive-web-search-selftest.php 2>&1)"; then
+    ok 'Websuche: fortlaufende Treffer ohne Dubletten, Paging und Quellenbelege geprueft.'
+  else
+    fail 'Websuche: progressive Treffer-/Paging-Regressionspruefung fehlgeschlagen.'
+  fi
+
   weather_test=''
   if weather_test="$(compose exec -T php php scripts/weather-live-selftest.php 2>&1)"; then
     ok '0.6.22: Live-Wetter im Websuche-Schritt (WDR fuer NRW, Live-Daten fuer jeden Ort, keine alten Suchtreffer) geprueft.'
@@ -1464,12 +1470,6 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     else
       fail "Browser-Livetest: ${browse_live:-Unbekannter Fehler}"
     fi
-    if progressive_web_test="$(compose exec -T php php scripts/progressive-web-search-selftest.php 2>&1)"; then
-      ok 'Websuche: fortlaufende Treffer ohne Dubletten, Paging und Quellenbelege geprueft.'
-    else
-      fail 'Websuche: progressive Treffer-/Paging-Regressionspruefung fehlgeschlagen.'
-    fi
-
   fi
 
   mention_test=''
