@@ -28,7 +28,24 @@ UMSETZUNG
 - Deep Research: eigener Plan-/Worker-/Hybrid-Forschungspfad,
   nicht mit normaler Browse-Queue vermischt, unveraendert.
 
+ZUSAETZLICHER NUTZERBEFUND (15.11.2026)
+Aus dem Game uebernommener Kopier-/Rechtsklickschutz war im CoreAI-Chat
+noch aktiv. Ursache nach Frontend-Audit: css/console.css hatte im body
+`user-select: none` und `-webkit-user-select: none`.
+Im CoreAI gibt es keinen Grund fuer eine globale Textmarkiersperre.
+Die beiden Body-Eintraege wurden entfernt; normale Textauswahl und
+native Kopier-/Kontextmenue-Funktionen sind damit wieder freigegeben.
+Andere JS-/CSS-Dateien enthielten bei der Pruefung keine globale
+contextmenu-, copy- oder selectstart-Unterdrueckung.
+Interaktive Drag-Flaechen (Pet-Dock, Crop-Canvas und Bildviewer) bleiben
+gezielt unveraendert. Das Game-Repo selbst wurde nicht geaendert.
+Der neue CSS-SHA-256-Cache-Schluessel ist in app.html hinterlegt.
+
 TEST
+- scripts/text-selection-ui-selftest.cjs gegen globale
+  Selection-/Kopier-Blockaden; in beiden Preflights und UI-Workflow.
+- Nach Merge live auf Android langes Gedrueckthalten an einer
+  TCI-Antwort, Text markieren/kopieren, Desktop-Rechtsklick testen.
 - scripts/browser-routing-selftest.php prueft Freigabe, Fallback,
   alten Marker, zweite Agentenschleife und Deaktivierung.
 - Beide Preflight-Listen enthalten den Test.
