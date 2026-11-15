@@ -1,0 +1,65 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.62
+Datum: 15.11.2026
+Basis: main 0.7.61
+Branch: fix/image-spike-9b-shared-weight-permissions-0762
+
+AUSLOESER
+Betreiber testet am 15.11.2026 Bildpipeline mit
+  sudo bash /opt/ember-coreui/scripts/image-spike.sh
+  --groups flux2-klein-4b,flux2-klein-9b
+  --accept-license flux-non-commercial
+
+Lauf 20261115-140513:
+- 4B 512x512 p1: 67,09 s, 9363,3 MB
+- 4B 512x512 p2: 63,83 s, 9370,7 MB
+- 4B 512x512 p3: 65,34 s, 9369,6 MB
+- 4B 512x512 p4 mit Referenzbild: 112,9 s, 9576,4 MB
+- 4B 1024x1024 p1: 217,79 s, 14379,9 MB
+- 9B bricht VOR Inferenz beim SHA-256-Lesen der GGUF mit
+  PermissionError: [Errno 13] Permission denied ab.
+  9B-Funktionsfaehigkeit ist damit weder bestaetigt noch verneint.
+
+VERIFIZIERTE TECHNISCHE URSACHE
+- tools/image/adopt_spike.py nutzt os.link(source, part)
+  und anschliessend os.chown(part, 33,33), os.chmod(part,0640).
+- Hardlink hat mit source denselben Inode. Der Installer
+  kann die Dateirechte der urspruenglichen 9B-Benchmarkdatei
+  daher nachtraeglich auf 33:33/0640 umstellen.
+- scripts/image-spike.sh startet root ohne Linux-Capabilities
+  via --cap-drop ALL, zuvor ohne GID 33 als Neben-Gruppe.
+- Bei genau dieser Kombination ist die 9B-Datei trotz
+  gueltigem SHA-/Lock-Eintrag fuer den Container unlesbar.
+- Linux-Reproduktion: root ohne DAC-Capabilities und ohne
+  Neben-Gruppe 33 -> Permission denied; mit Neben-Gruppe 33
+  -> Datei lesbar. Kein Gewicht musste dafuer veraendert werden.
+
+FIX
+- scripts/image-spike.sh: --group-add 33 mit unveraenderten
+  --cap-drop ALL, no-new-privileges, read-only, Offline-Inferenz.
+- tools/image_spike/run.py: PermissionError in verify()
+  geordnet als Dateizugriff verweigert in Bericht weitergeben.
+- scripts/image-spike-selftest.py prueft Sicherheitsflags,
+  alle Containeraufrufe und PermissionError-Verhalten.
+- Keine automatischen Downloads, keine chmod-777-Reparatur
+  und keine Aenderungen an Modell-Registrierung oder Lizenz.
+- Bestehende Lock-Dateien sollen weiter nutzbar bleiben.
+
+SEPARATER OFFENER FEHLER
+- CoreAI Chat-Mara: image_worker_timeout, zuletzt Sampling
+  3 von 4 bei 300 Sekunden. Kann von Mehrfachreferenzlast
+  oder anderen Chat-Workflows kommen. Dieser 9B-Lesefix
+  ist NICHT als Loesung des Chat-Timeouts zu bezeichnen.
+- A/B-Test 4B Qwen3 und Ponpoke ohne Referenzen war erfolgreich.
+- 4B mit einzelner Referenz war im Image-Spike ebenfalls
+  erfolgreich; 5 Referenzen wurden nicht gleichwertig gemessen.
+
+TEST UND LIVE-ABNAHME
+- Vor Merge image-spike-selftest.py, version-merge-check.py
+  --base-version 0.7.61, Bash-Syntax und relevante Preflights.
+- Nach Update Bildtest nur fuer 9B mit bestehendem Lock
+  erneut laufen lassen, ohne --refetch.
+- Pruefen, ob 9B-SHA-Verifikation und Bildberechnung durchgehen.
+- Keine Erfolgsbehauptung zu 9B vor dem Betreiber-Live-Test.
+
+NAECHSTE VERSION
+Nach Merge ist 0.7.63 erforderlich.
