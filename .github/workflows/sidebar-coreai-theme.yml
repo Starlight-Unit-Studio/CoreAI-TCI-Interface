@@ -14,6 +14,7 @@ on:
       - 'js/settings.js'
       - 'settings.html'
       - 'css/console.css'
+      - 'scripts/text-selection-ui-selftest.cjs'
       - 'scripts/softglass-ui-selftest.cjs'
       - 'scripts/sidebar-sections-ui-selftest.cjs'
       - 'scripts/project-ui-selftest.cjs'
@@ -41,6 +42,8 @@ jobs:
           node --check js/coreui-preferences.js
           node --check js/settings.js
           node --check js/coreui-sidebar-fold.js
+          node --check scripts/text-selection-ui-selftest.cjs
+          node scripts/text-selection-ui-selftest.cjs
           node scripts/sidebar-sections-ui-selftest.cjs
           node scripts/softglass-ui-selftest.cjs
           node scripts/project-ui-selftest.cjs

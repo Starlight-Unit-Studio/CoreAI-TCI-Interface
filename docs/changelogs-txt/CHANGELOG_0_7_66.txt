@@ -1,0 +1,16 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.66
+15.11.2026
+
+Websuche bleibt der Standard bei automatisch gestarteten Recherchen.
+Nur die ausdrueckliche Werkzeugauswahl Recherche oeffnet Playwright.
+Alte BROWSE-Marker werden ohne Browserfreigabe auf WEB umgeleitet.
+WDR und Maras autonome Newsreaktion starten dadurch nicht heimlich Playwright.
+Der Queue-Eintrag prueft die gespeicherte explizite Auswahl mit User-/Session-Scope.
+Der separate Deep-Research-Pfad und die personalisierte Browserantwort bleiben.
+Offline-Regressionspruefung: scripts/browser-routing-selftest.php.
+KOPIERFIX: Game-Rest `user-select: none` auf dem CoreAI-Body entfernt.
+Natuerliche Browser-Textmarkierung, Kopieren, Rechtsklick und Long-Press sind frei.
+Draggable Pet und Bild-Crop behalten ihre spezifischen Gestenregeln.
+CSS-Content-Cache-Key in app.html aktualisiert, damit Mobil-Browser neu laden.
+Neuer scripts/text-selection-ui-selftest.cjs in beiden Preflights und UI-Workflow.
+Live-Abnahme und Preflight vor Merge erforderlich.

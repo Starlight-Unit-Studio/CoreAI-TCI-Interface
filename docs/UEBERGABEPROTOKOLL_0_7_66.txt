@@ -1,0 +1,58 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.66
+Datum: 15.11.2026
+Basis: main 0.7.65
+Branch: fix/web-default-explicit-browser-0766
+
+BETREIBER-ENTSCHEIDUNG
+Playwright (Menuepunkt "Recherche") darf ausschliesslich bei der
+ausdruecklichen Werkzeugauswahl im + Menue gestartet werden.
+Sonst verwendet Mara/Ember die vorhandene Websuche. Die Nutzernachricht
+allein, ein Link und Modellmarker sind KEINE Browserfreigabe.
+
+UMSETZUNG
+- api/console_agent_loop.php: explizite Auswahl pruefen; alte
+  BROWSE-Modellmarker auf WEB umleiten, sofern Websuche freigegeben.
+- api/chat.php: in beiden Prompt-Bauern Browserhinweise nur fuer die
+  explizit markierte Recherche; Agentenschleife und Stimmsequenz
+  bekommen Browse nur bei dieser Auswahl; vor dem Async-Browse
+  serverseitige Dispatcher-Schranke.
+- Der WDR-Wetterpfad bekommt ohne explizite Freigabe keine
+  Browserfaehigkeit und nutzt den vorhandenen Live-Wetter/Web-Pfad.
+- Autonome Newsreaktion: auch bei hoher Relevanz aus WEB-Suchergebnissen
+  formulieren statt Playwright-Job einzureihen.
+- Zusaetzliche serverseitige Warteschlangensperre: ein Browserjob braucht
+  die echte gespeicherte [[recherche]]-Auswahl derselben Benutzer-ID,
+  Nachricht und Sitzung. Fehler oder fehlende Auswahl sperren Playwright.
+- Anhaenge, Websuche, Bildgenerator, Cores, Locking,
+  Browsersicherheit und die neue persoenliche Browser-Antwort bleiben.
+- Deep Research: eigener Plan-/Worker-/Hybrid-Forschungspfad,
+  nicht mit normaler Browse-Queue vermischt, unveraendert.
+
+ZUSAETZLICHER NUTZERBEFUND (15.11.2026)
+Aus dem Game uebernommener Kopier-/Rechtsklickschutz war im CoreAI-Chat
+noch aktiv. Ursache nach Frontend-Audit: css/console.css hatte im body
+`user-select: none` und `-webkit-user-select: none`.
+Im CoreAI gibt es keinen Grund fuer eine globale Textmarkiersperre.
+Die beiden Body-Eintraege wurden entfernt; normale Textauswahl und
+native Kopier-/Kontextmenue-Funktionen sind damit wieder freigegeben.
+Andere JS-/CSS-Dateien enthielten bei der Pruefung keine globale
+contextmenu-, copy- oder selectstart-Unterdrueckung.
+Interaktive Drag-Flaechen (Pet-Dock, Crop-Canvas und Bildviewer) bleiben
+gezielt unveraendert. Das Game-Repo selbst wurde nicht geaendert.
+Der neue CSS-SHA-256-Cache-Schluessel ist in app.html hinterlegt.
+
+TEST
+- scripts/text-selection-ui-selftest.cjs gegen globale
+  Selection-/Kopier-Blockaden; in beiden Preflights und UI-Workflow.
+- Nach Merge live auf Android langes Gedrueckthalten an einer
+  TCI-Antwort, Text markieren/kopieren, Desktop-Rechtsklick testen.
+- scripts/browser-routing-selftest.php prueft Freigabe, Fallback,
+  alten Marker, zweite Agentenschleife und Deaktivierung.
+- Beide Preflight-Listen enthalten den Test.
+- Nach Merge live pruefen: normale URL, normales "recherchiere mal",
+  Text/Voice, + Websuche, + Recherche, + Deep Research,
+  Newsreaktion und WDR-Wetter. Kein Erfolg nur aus CI ableiten.
+- Syntax-/Version-/Preflight-Pruefungen vor Merge sind Pflicht.
+
+VERSION
+0.7.66; nach Merge ist 0.7.67 die naechste Version.

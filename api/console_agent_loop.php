@@ -37,7 +37,27 @@ function coreui_agent_next_tool(string $reply, array $allowed): ?array {
     $input = $find($reply);
     if ($input !== null && trim($input) !== '') return ['tool'=>$tool, 'input'=>trim($input)];
   }
+  // An old model-authored browser marker does not authorize Playwright.
+  // Without an explicit + Recherche choice, use the normal Websuche instead.
+  if (!in_array('browse', $allowed, true) && in_array('web', $allowed, true)) {
+    $goal = $checks['browse']($reply);
+    if ($goal !== null && trim($goal) !== '') return ['tool'=>'web', 'input'=>trim($goal)];
+  }
   return null;
+}
+
+/** Only the explicit + menu selection authorizes Playwright for this turn. */
+function coreui_agent_explicit_browse(?array $intent, bool $enabled): bool {
+  return $enabled && is_array($intent) && ($intent['tool'] ?? '') === 'browse';
+}
+
+/** Fail closed for the browser; use Websuche instead if enabled. */
+function coreui_agent_guard_browser_reply(string $reply, bool $explicitBrowse, bool $webEnabled): string {
+  if ($explicitBrowse || !function_exists('ember_extract_browse_marker')) return $reply;
+  $goal = ember_extract_browse_marker($reply);
+  if ($goal === null || trim($goal) === '') return $reply;
+  return $webEnabled ? '[WEB: ' . trim($goal) . ']'
+    : 'Die Websuche ist fuer dieses Konto gerade nicht freigegeben. Ich kann nur aus meinem vorhandenen Wissen antworten.';
 }
 
 /**
@@ -173,7 +193,7 @@ function coreui_agent_loop_hint(bool $compact, bool $archive): string {
   return "ARBEITSWEISE (selbststaendig wie ein Agent): Dein Trainingswissen hat einen Stichtag; das heutige Datum steht oben. "
     . "Merkst du, dass dir fuer eine gute Antwort aktuelles, genaues oder ueberpruefbares Wissen fehlt (Neuigkeiten, Preise, "
     . "Versionen, Termine, dir unbekannte Namen, Zahlen, die du nicht sicher weisst), dann suche selbst, ohne vorher zu fragen. "
-    . "Nach jedem Ergebnis entscheidest du: antworten oder ein weiterer Schritt (genauere Suche, Webseiten mit [BROWSE:] lesen, "
+    . "Nach jedem Ergebnis entscheidest du: antworten oder ein weiterer Schritt (genauere Websuche, "
     . "mit [PY] rechnen" . ($archive ? ', mit [ARCHIV: Stichworte] in der Mitschrift dieses Chats nachsehen' : '') . "). "
     . "Hoechstens " . COREUI_AGENT_MAX_STEPS . " Schritte pro Antwort. Fuer Smalltalk, Meinungen und sicheres Wissen brauchst du keine Werkzeuge.";
 }
