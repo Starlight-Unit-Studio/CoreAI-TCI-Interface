@@ -8,6 +8,10 @@ PROGRESSIVE WEBSUCHE (SearXNG, KEIN PLAYWRIGHT)
   Ergebnisse derselben SearXNG-Seite werden zuerst aufgebraucht.
 - Erst wenn die vorige Seite aufgebraucht ist, folgt pageno=2, dann 3 usw.
   Die vorhandene Frage-zu-Stichworten-Ausweichsuche bleibt aktiv.
+- Quellen werden nur dann im UI gemeldet, wenn ihr Titel, ihre URL und
+  ihr Textauszug als vollstaendiger Eintrag in WEB_MAX_CHARS passen.
+  Bei langem Inhalt kommen entsprechend weniger Treffer pro Runde; alle
+  uebrigen bleiben fuer [WEB: WEITER] gepuffert, nicht einfach abgeschnitten.
 - Ein gemeinsam gefuehrtes URL-Ledger verhindert Dubletten auch ueber neue
   Suchbegriffe hinweg. Keine Aenderung an Web-Freigaben oder Nutzerdaten.
 - Vorherige Webauszuege werden in Folgeprompts gekuerzt, mit URL und Titel;
