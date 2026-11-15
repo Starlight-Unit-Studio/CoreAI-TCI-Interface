@@ -229,7 +229,7 @@ with tempfile.TemporaryDirectory(prefix='pgen-selftest-') as name:
     import inspect
     handler_source = inspect.getsource(worker.make_handler)
     assert "encoder_mode == 'magic'" in handler_source and "data.get('user_license_accepted') is not True" in handler_source, (
-        'Magic and 9B jobs reject requests without that user's account license')
+        "Magic and 9B jobs reject requests without that user's account license")
     try:
         svc.create('bad model', 'normal', 1, model_id='arbitrary')
     except ValueError as error:
