@@ -346,6 +346,7 @@ UI_FILES=(
   api/composer_tools.php
   js/coreui-composer-menu.js
   scripts/composer-intent-selftest.php
+  scripts/browser-routing-selftest.php
   scripts/composer-menu-ui-selftest.cjs
   assets/fonts/rajdhani_700.ttf
   config/voice/mara-voice.json
