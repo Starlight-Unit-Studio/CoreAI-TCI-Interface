@@ -457,6 +457,13 @@ function coreui_image_progress_title(array $job): string {
  * ['ok' => true, 'uuid', 'width', 'height', 'seed', 'seconds', 'size', 'prompt'] or
  * ['ok' => false, 'error' => code, 'detail' => text].
  */
+/** Give PHP the same bounded worker budget plus polling/transport headroom. */
+function coreui_image_wait_seconds(array $job, array $registry, string $size): int {
+  $base = (int)($registry['sizes'][$size]['time_limit_s'] ?? 300);
+  $worker = (int)($job['time_limit_s'] ?? 0);
+  return max($base, min(7200, $worker)) + 60;
+}
+
 function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $prompt, string $size,
     callable $lease, callable $unlease, callable $progress, callable $cancelled, ?callable $http = null,
     ?callable $preview = null, ?string $reference = null, array $references = [], ?string $userReferenceMode = null,
@@ -554,9 +561,7 @@ function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $
     // Worker resolves the actual reference count (including account photos)
     // and owns the job's timeout. Do not let PHP's old fixed 300/720s
     // watchdog cancel a healthy multi-reference job before its worker.
-    $baseLimit = (int)($registry['sizes'][$size]['time_limit_s'] ?? 300);
-    $workerLimit = (int)($job['time_limit_s'] ?? 0);
-    $deadline = microtime(true) + max($baseLimit, $workerLimit) + 60;
+    $deadline = microtime(true) + coreui_image_wait_seconds($job, $registry, $size);
     $seen = '';
     while (true) {
       $now = coreui_image_progress_title($job);
