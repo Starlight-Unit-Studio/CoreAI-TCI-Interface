@@ -71,8 +71,13 @@ TESTS (in dieser Sitzung ausgefuehrt)
   fehlgeschlagen; dieselben 9 scheitern auch auf main 0.7.68 (chat-menu-ui, image-progress-ui,
   long-chat, model-library-ui, pets-ui, profile-stats-ui, security-ui, session-list-ui, voice-input).
 - python3 scripts/version-merge-check.py --base-version 0.7.68 und scripts/cache-bust.py --verify.
-- Gesamte Selbsttest-Reihe auf Branch und main 0.7.68: laeuft beim Oeffnen des PR; das Ergebnis
-  steht im Folge-Commit. Bis dahin bleibt der PR ein Entwurf.
+- Gesamte Selbsttest-Reihe (scripts/*selftest*, model-live-audit, tests/*) nacheinander, Branch und main:
+  Branch 0.7.69: 172 bestanden, 15 fehlgeschlagen. main 0.7.68: 169 bestanden, 15 fehlgeschlagen.
+  Auf beiden Seiten dieselben 15 (browse-image: Python-Playwright fehlt hier; browse-live-ui, chat-menu-ui,
+  image-progress-ui, long-chat, model-library-ui, pets-ui, profile-stats-ui, progress-browser,
+  security-ui, session-list-ui, settings-tabs-ui, update-ui, voice-input, voice-samples-ui). Die drei
+  zusaetzlich bestandenen sind die neuen Tests. Durch 0.7.69 kommt kein Fehlschlag dazu.
+- GitHub-Pruefungen auf dem PR (10 Laeufe): alle bestanden.
 
 NICHT GETESTET
 - Ein echter Bau in einem Projekt-Chat auf dem Server (Python-Worker, Migration 044 auf der
