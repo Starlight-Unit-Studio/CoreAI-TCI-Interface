@@ -200,6 +200,7 @@ UI_FILES=(
   scripts/tci-language-selftest.cjs
   css/coreui-chat-tci-layout.css
   scripts/tci-chat-message-selftest.cjs
+  scripts/work-events-ui-selftest.js
   scripts/text-selection-ui-selftest.cjs
   scripts/tci-chat-layout-ui-selftest.cjs
   setup.sh
@@ -1289,6 +1290,11 @@ if command -v php >/dev/null 2>&1; then
       ok 'Chat: Textmarkierung, Kopieren und nativer Rechtsklick sind freigegeben.'
     else
       fail 'Chat: Textauswahl-/Kopierschutz aus dem Game ist noch aktiv.'
+    fi
+    if node "$PROJECT_ROOT/scripts/work-events-ui-selftest.js" >/dev/null 2>&1; then
+      ok 'Websuche: Quellenzeile folgt echten Ereignissen ohne rotierende Schein-Webseiten.'
+    else
+      fail 'Websuche: Quellen-Karussell zeigt falschen Ablauf oder ist kaputt.'
     fi
     if php "$PROJECT_ROOT/scripts/general-controls-selftest.php" >/dev/null 2>&1; then
       ok 'Allgemein: Core-Routing, gespeicherte Einstellungen und echte Denkstufen verifiziert.'
