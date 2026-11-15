@@ -175,7 +175,10 @@ else
   run docker build --pull -t "$IMAGE" -f "$DOCKER_DIR/Dockerfile" "$DOCKER_DIR"
 fi
 
-SAFE=(--cap-drop ALL --security-opt no-new-privileges --read-only --tmpfs /tmp:rw,size=1g
+# The installer can adopt 9B as a hardlink and chown the shared inode to
+# 33:33 (0640). Container root has NO DAC_OVERRIDE after --cap-drop ALL;
+# add only the existing service's read group, never privileged/DAC bypass.
+SAFE=(--cap-drop ALL --group-add 33 --security-opt no-new-privileges --read-only --tmpfs /tmp:rw,size=1g
       -e HOME=/tmp -v "$TOOLS:/app:ro")
 
 # --- 2. Gewichte laden und registrieren (mit Netz) -----------------------------
