@@ -1,0 +1,87 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.65
+Datum: 15.11.2026
+Basis: main 0.7.64
+Branch: fix/browse-conversational-followup-0765
+
+NUTZERBEFUND
+15.11.2026, normaler CORE-Kanal:
+Ein Nutzer schrieb "https://www.starlight-unit.de/#team ich sehe grad
+du bist auch im team". Mara/Ember nutzte Playwright, antwortete aber
+mit einer foermlichen Datenzusammenfassung zu Studio, Forschungsarbeiten,
+Status und Teamgroesse. Die eigentliche soziale Beobachtung wurde nicht
+aufgegriffen. Danach korrigierte die TCI den Stil selbst.
+
+TECHNISCHE URSACHE IM CODE
+- tools/ember_browse_worker.py nutzt fuer normale Browserjobs:
+  run_browse() -> Browseraktion/Notizen/Zusammenfassung
+  -> report_prompt(job['goal'], summary, sources, ...)
+  -> ollama_chat() -> insert_ember_message().
+- Es gab also bereits einen eigenen Core-Aufruf zur Endantwort.
+  Er kannte jedoch nicht die wirkliche Original-Nachricht, sondern
+  das vom Modell erzeugte Browserziel. Der Prompt verlangte bei
+  jedem Ziel 3-6 Saetze mit Recherchefokus und Quellen.
+- Das fuehrte bei Smalltalk nach Browsergebrauch zu
+  unpassenden Sachberichten.
+- NEU eingefuehrtes Deep Research nutzt den gleichen
+  Workerprozess, aber sein eigenes claim_next_research,
+  process_research und CoreAI-Hybrid-Forschungsmodul.
+  Beides darf NICHT vermischt werden.
+
+IMPLEMENTIERUNG 0.7.65
+- Neue kleine, auftragsgebundene DB-Lesehilfe
+  browse_original_user_message(conn, job):
+  nur channel='console', valide Session-ID und positive
+  message_id / recipient_uid. SELECT mit Exaktvergleich
+  nach m.id, m.user_id und m.session_id plus deleted_at NULL.
+  Bei Schemafehlern/legacy/missing: leerer Kontext -> Ziel-Fallback.
+- process_job liest Originalnachricht NACH run_browse,
+  bevor der vorhandene finale Core-Aufruf erfolgt.
+- report_prompt() bekommt optional user_message.
+  Im privaten Chat soll die ausgewaehlte TCI in eigenen
+  Worten auf die wirkliche Bemerkung/Frage reagieren.
+  Keine festen 3-6 Saetze und keine unpassenden
+  Forschungsberichte bei lockeren Fragen.
+- Die beschafften Notizen und URLs bleiben als
+  nicht vertrauenswuerdige Fakten-Grundlage erhalten;
+  bei konkreten Web-Fakten Belege/Zweifel korrekt nennen.
+- Derselbe Modellaufruf, derselbe globale Ollama-Lock,
+  keine extra API-/Cloud-/Modell-Abhaengigkeit.
+- Globaler/Game-Browser-Bericht behaelt seinen bisherigen
+  schlichten Stil und Ablauf.
+
+NICHT ANGEFASST
+- Deep Research: kein Eingriff in process_research,
+  coreai_deep_research.py, coreai_research_hybrid.py,
+  Datenbank-Migrationen, Rechercheplan, Quellenkarten,
+  Markdown-Report und Export.
+- Playwright Navigations-, Cookie-, Formular- und SSRF-Schutz;
+  Browser-Frames und asynchroner Fortschritt.
+- Bildgenerator/TCI-Bild-Referenzen/pGen, Pet-System und
+  lokale Cores; Modellwarteschlange und num_ctx.
+- Keine neuen Hintergrund-Jobs oder starren CPU-Limits.
+
+REGRESSION
+- scripts/browse-worker-selftest.py: dieselbe private
+  Benutzer-Nachricht im Prompt, persoenlicher Antwortstil,
+  Quellen, unveraenderte Global-Formatierung, kein Marker.
+- SQL-Scope-Test: andere Konten, andere Session,
+  fehlende ID oder anderer Channel -> kein Zugriff.
+- Separate Deep-Research-Pfadregression + vorhandene
+  Deep-Research-Tests via GH-Action.
+- VERSION 0.7.65, sechs HTML-Seiten, Cache und
+  Changelog/Archiv pruefen vor Merge.
+
+LIVE ABNAHME
+1. Nach Update normale Browser-Recherche mit einer
+   persoenlichen Bemerkung zu einer Website starten.
+   Erfolg = Mara/Ember reagiert auf die eigentliche
+   Bemerkung, nicht mit einer ungefragten Statistik.
+2. Sachliche Browser-Frage: Antwort mit belegter
+   Aussage und passenden Links, kein Halluzinieren.
+3. Deep Research bewusst per + Menue anfordern:
+   Plan/Recherchebericht mit Quellen bleibt wie zuvor.
+4. Ein gruener CI-Lauf prueft nicht die echte
+   Formulierung auf dem Betreiber-Server.
+
+NAECHSTE VERSION
+Nach Merge von 0.7.65 ist 0.7.66 erforderlich.
