@@ -53,7 +53,10 @@ with tempfile.TemporaryDirectory(prefix='pgen-selftest-') as name:
     assert profiles.load_registry(file, base, spike) is None
     profiles.save_lock(file, lock)
     assert profiles.load_registry(file, base, spike)['model']['id'] == profiles.QUALITY
-    # Both gated Ponpoke encoder sources are immutable and separately pinned.
+    # Public 9B Q8 is downloaded without operator HF credentials; a user
+    # license receipt remains a separate prerequisite for image inference.
+    # The original 4B Q8 stays gated until an authorized public Q8 exists.
+    # Original Ponpoke encoder sources are immutable and separately pinned.
     import hashlib
     ponpoke = worker.PONPOKE
     assert set(ponpoke.SOURCES) == {profiles.STANDARD, profiles.QUALITY}
@@ -80,6 +83,64 @@ with tempfile.TemporaryDirectory(prefix='pgen-selftest-') as name:
         record_path.write_text(json.dumps(record), encoding='utf-8')
         target.unlink()
         assert ponpoke.verified(tmp / 'models', profile) is None
+    # All installations first try a public Q8 source with an empty bearer
+    # token. Test without a network connection, never requiring HF secrets.
+    import unittest.mock as mock
+    model_dir = tmp / 'public-models'
+    model_dir.mkdir()
+    public_repo, public_name = ponpoke.PUBLIC_SOURCES[profiles.QUALITY][0]
+    public_bytes = b'public-9b-q8-placeholder'
+    public_info = {'size': len(public_bytes), 'sha256': hashlib.sha256(public_bytes).hexdigest(),
+                   'revision': 'a' * 40, 'url': 'https://cas-bridge.xethub.hf.co/dummy',
+                   'requires_token': False}
+    with mock.patch.object(ponpoke, '_head', return_value=public_info) as head, \\
+         mock.patch.object(ponpoke, '_download_verified', return_value=tmp / 'faux-9b.gguf') as download:
+        assert ponpoke.install(model_dir, profiles.QUALITY, token='') == tmp / 'faux-9b.gguf'
+        head.assert_called_once_with(public_repo, public_name, '')
+        download.assert_called_once_with(model_dir, profiles.QUALITY, public_repo, public_name,
+                                         public_info, '')
+    # 4B does NOT silently switch to 9B, Q4 or the operator's private token.
+    with mock.patch.object(ponpoke, '_head', side_effect=RuntimeError('gated')) as head:
+        try:
+            ponpoke.install(model_dir, profiles.STANDARD, token='')
+        except RuntimeError as error:
+            assert '4B Q8_0' in str(error)
+        else:
+            raise AssertionError('gated 4B must not be reported ready')
+        head.assert_called_once_with(*ponpoke.SOURCES[profiles.STANDARD], '')
+    # An existing legacy lock is verified and reused without network calls.
+    existing_dir = tmp / 'existing-models'
+    old_target, old_lock = ponpoke._paths(existing_dir, profiles.STANDARD)
+    old_target.parent.mkdir(parents=True)
+    old_target.write_bytes(b'previous-q8')
+    old_lock.write_text(json.dumps({
+        'repo': ponpoke.SOURCES[profiles.STANDARD][0],
+        'filename': ponpoke.SOURCES[profiles.STANDARD][1],
+        'license': ponpoke.LICENSE, 'sha256': hashlib.sha256(b'previous-q8').hexdigest(),
+        'revision': 'a' * 40, 'size': len(b'previous-q8')
+    }), encoding='utf-8')
+    with mock.patch.object(ponpoke, '_head') as head:
+        assert ponpoke.install(existing_dir, profiles.STANDARD, token='') == old_target
+        head.assert_not_called()
+    # Public locks are accepted only for allowlisted repo/file combinations.
+    target, record = ponpoke._paths(model_dir, profiles.QUALITY, public_repo, public_name)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(public_bytes)
+    record.write_text(json.dumps({
+        'repo': public_repo, 'filename': public_name, 'license': ponpoke.LICENSE,
+        'sha256': public_info['sha256'], 'revision': 'a' * 40,
+        'size': len(public_bytes)
+    }), encoding='utf-8')
+    assert ponpoke.verified(model_dir, profiles.QUALITY) == target
+    with mock.patch.object(ponpoke, '_head') as head:
+        assert ponpoke.install(model_dir, profiles.QUALITY, token='') == target
+        head.assert_not_called()
+    record.write_text(json.dumps({
+        'repo': 'untrusted/mirror', 'filename': public_name, 'license': ponpoke.LICENSE,
+        'sha256': public_info['sha256'], 'revision': 'a' * 40,
+        'size': len(public_bytes)
+    }), encoding='utf-8')
+    assert ponpoke.verified(model_dir, profiles.QUALITY) is None
     light_base = copy.deepcopy(base)
     light_base['measured']['normal']['peak_rss_mb'] = 0  # CI has much less RAM than the production server
     svc = worker.Service(light_base, tmp / 'models', tmp / 'work', threads=3,
