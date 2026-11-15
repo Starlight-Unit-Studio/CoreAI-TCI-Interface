@@ -584,6 +584,10 @@ function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $
     'prompt' => $prompt, 'size' => $size, 'width' => $dims[0], 'height' => $dims[1],
     'seed' => (int)($job['seed'] ?? 0), 'seconds' => round((float)($job['seconds'] ?? 0), 1),
     'model' => (string)($job['model_label'] ?? ($registry['model']['label'] ?? '')),
+    'text_encoder' => (string)($job['text_encoder'] ?? 'original'),
+    'encoder_source' => (string)($job['encoder_source'] ?? ''),
+    'encoder_revision' => (string)($job['encoder_revision'] ?? ''),
+    'encoder_sha256' => (string)($job['encoder_sha256'] ?? ''),
     // The worker also counts the extra built-in Mara photos it actually used.
     'reference_count' => (int)($job['reference_count'] ?? (count($references) + ($reference !== null ? 1 : 0))),
     'created_at' => gmdate('Y-m-d\\TH:i:s+00:00'),
