@@ -21,6 +21,7 @@ require_once __DIR__ . '/console_answer_style.php';
 require_once __DIR__ . '/console_timezone.php';
 require_once __DIR__ . '/weather_live.php';
 require_once __DIR__ . '/image_gen.php';
+require_once __DIR__ . '/image_work_diagnostic.php';
 require_once __DIR__ . '/console_composer_intent.php';
 require_once __DIR__ . '/deep_research_store.php';
 require_once __DIR__ . '/notifications_store.php';
@@ -5392,11 +5393,13 @@ function ember_image_run_tool_reserved(PDO $pdo, int $uid, string $input, bool &
   $editorFlow = $references !== []
     && str_contains($sourceRequest, 'Erzeuge eine bearbeitete Version von Referenzbild 1, kein neues unabhängiges Motiv.');
   $disclosure = coreui_image_disclosure_for_request($sourceRequest, $editorFlow);
+  $lastImageProgress = [];
   $result = coreui_image_generate($pdo, $uid, ember_character_id(), $request['prompt'], $request['size'],
     'ember_image_lease', 'ember_image_unlease',
-    static function (array $job) use ($pdo): void {
-      // 0.6.41: phase, steps and size for the progress card in the chat (js/coreui-image-progress.js).
-      coreui_work_record($pdo, 'tool', 'info', coreui_image_progress_title($job), coreui_image_progress_meta($job));
+    static function (array $job) use ($pdo, &$lastImageProgress): void {
+      // A confirmed worker phase survives failed jobs; the browser percentage is only an animation.
+      $lastImageProgress = coreui_image_progress_meta($job);
+      coreui_work_record($pdo, 'tool', 'info', coreui_image_progress_title($job), $lastImageProgress);
     },
     static fn(): bool => ember_agent_cancel_requested(true), null,
     // 0.6.42: every step preview goes live to the card in the chat (only this request's own stream).
@@ -5414,7 +5417,8 @@ function ember_image_run_tool_reserved(PDO $pdo, int $uid, string $input, bool &
       ['source'=>'image', 'elapsed_ms'=>(int)round(1000 * (float)$result['seconds']),
         'image_uuid'=>(string)$result['uuid'], 'image_px'=>(int)$result['width']]);
   } else {
-    coreui_work_record($pdo, 'tool', 'error', 'Bild nicht erzeugt', ['reason'=>(string)($result['error'] ?? 'image_failed')]);
+    coreui_work_record($pdo, 'tool', 'error', 'Bild nicht erzeugt',
+      coreui_image_failure_work_meta($result, $lastImageProgress));
   }
   return $result;
 }
