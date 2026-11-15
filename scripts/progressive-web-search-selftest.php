@@ -128,4 +128,19 @@ test(count($budgetNext) > 0
 test(count(array_filter($calls,static fn(array $c): bool => $c['q'] === 'lange Belege')) === 1,
   'adaptive batches reuse the same provider page without another network call');
 
+// The exact rows reported to the UI must be present in the actual model input.
+// A long tenth source must remain buffered, never just be shown on screen.
+$viaTool = [];
+$reported = null;
+$fullBlock = ember_web_results_block('lange Belege',
+  static function(array $rows) use (&$reported): void { $reported = $rows; }, $viaTool);
+test(is_array($reported) && count($reported) >= 1 && count($reported) < 10
+  && mb_strlen($fullBlock,'UTF-8') <= ember_web_max_chars(),
+  'real web tool never advertises more hits than complete model evidence');
+foreach ($reported as $row) {
+  test(str_contains($fullBlock, '[' . $row['url'] . ']'),
+    'each UI source URL occurs completely in the model-visible block');
+}
+
+
 echo "CoreAI progressive Websuche: chunks, no skip, pagination, dedup, fallback and SSE OK\n";
