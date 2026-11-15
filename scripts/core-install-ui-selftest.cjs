@@ -92,15 +92,32 @@ function server(opts) {
   const st = {install: opts.install || null, statuses: (opts.statuses || []).slice(), auto: opts.auto || {enabled: false, last: null, next: null},
     cloud: opts.cloud || {version: '0.40.6', version_ok: true, min_version: '0.12.0', account: {state: 'signed_out', signin_url: SIGNIN}},
     tiers: opts.tiers || TIERS, licenseAccepted: opts.licenseAccepted === true,
-    pgenActive: 'flux2-klein-4b', pgenNineReady: opts.pgenNineReady === true,
-    pgenNineLoading: false};
-  const pgen = () => ({active: st.pgenActive, engine_ready: true,
+    pgenActive: 'flux2-klein-4b-standard', pgenNineReady: opts.pgenNineReady === true,
+    pgenNineLoading: false, pgenFourMagicReady: false, pgenNineMagicReady: false,
+    pgenFourMagicLoading: false, pgenNineMagicLoading: false};
+  const pgen = () => ({active: st.pgenActive, engine_ready: true, can_install_9b: true,
     license_accepted: st.licenseAccepted, models: [
-      {id: 'flux2-klein-4b', label: 'FLUX.2 Standard (4B)', license: 'Apache-2.0',
-        ready: true, installed: true, loading: false, seconds_512: 67, ram_1024_gb: 14.4},
-      {id: 'flux2-klein-9b', label: 'FLUX.2 9B', license: 'FLUX Non-Commercial License v2.1',
+      {id: 'flux2-klein-4b-standard', label: 'pGen Engine Standard (4B)', base_model: 'flux2-klein-4b',
+        mode: 'standard', license_required: false, license: 'Apache-2.0',
+        ready: true, base_installed: true, base_ready: true, installed: true, loading: false,
+        prepare_required: false, seconds_512: 67, ram_1024_gb: 14.4},
+      {id: 'flux2-klein-4b-magic', label: 'pGen Engine Magic (4B)', base_model: 'flux2-klein-4b',
+        mode: 'magic', license_required: true, license: 'FLUX Non-Commercial License v2.1',
+        ready: st.pgenFourMagicReady && st.licenseAccepted, installed: st.pgenFourMagicReady,
+        base_installed: true, base_ready: true, loading: st.pgenFourMagicLoading,
+        prepare_required: !st.pgenFourMagicReady, seconds_512: 67, ram_1024_gb: 14.4},
+      {id: 'flux2-klein-9b-standard', label: 'pGen Engine Standard (9B)', base_model: 'flux2-klein-9b',
+        mode: 'standard', license_required: true, license: 'FLUX Non-Commercial License v2.1',
         ready: st.pgenNineReady && st.licenseAccepted, installed: st.pgenNineReady,
-        loading: st.pgenNineLoading, seconds_512: 137, ram_1024_gb: 22.6}
+        base_installed: st.pgenNineReady, base_ready: st.pgenNineReady, loading: st.pgenNineLoading,
+        prepare_required: false, seconds_512: 137, ram_1024_gb: 22.6},
+      {id: 'flux2-klein-9b-magic', label: 'pGen Engine Magic (9B)', base_model: 'flux2-klein-9b',
+        mode: 'magic', license_required: true, license: 'FLUX Non-Commercial License v2.1',
+        ready: st.pgenNineReady && st.pgenNineMagicReady && st.licenseAccepted,
+        installed: st.pgenNineReady && st.pgenNineMagicReady,
+        base_installed: st.pgenNineReady, base_ready: st.pgenNineReady,
+        loading: st.pgenNineLoading || st.pgenNineMagicLoading,
+        prepare_required: !st.pgenNineMagicReady, seconds_512: 137, ram_1024_gb: 22.6}
     ]});
   const reply = (status, body) => Promise.resolve({ok: status < 400, status, json: () => Promise.resolve(body)});
   const fetch = (url, init) => {
@@ -144,6 +161,13 @@ function server(opts) {
         // Download is independent of explicit consent; activating 9B is not.
         st.pgenNineLoading = true;
         return reply(200, {ok: true, pgen: pgen()});
+      }
+      if (body.action === 'pgen_prepare') {
+        assert(st.licenseAccepted, 'Magic preparation requires account consent');
+        if (body.model === 'flux2-klein-4b-magic') st.pgenFourMagicLoading = true;
+        else if (body.model === 'flux2-klein-9b-magic') st.pgenNineMagicLoading = true;
+        else return reply(400, {ok: false, error: 'pgen_invalid_model'});
+        return reply(202, {ok: true, pgen: pgen()});
       }
       if (body.action === 'core_generator_license_accept') {
         assert.equal(body.sha256, 'a'.repeat(64));
@@ -574,62 +598,90 @@ assert.equal(api.gb(20 * 1073741824), '20 GB');
   await win.open('plus');
   assert.equal(els.coreInstallMaint.hidden, true, 'updates are for admins');
 
-  // pGen Core is separate from Ollama Cores: two fixed image models, actual
-  // selection, mandatory 9B license and background image-weight installation.
+  // Four pGen Engine profiles share two installed diffusion models. Both
+  // modes are explicit; the hidden encoder must never appear in the menu.
   ({els, doc} = page());
   srv = server();
-  win = api.create(doc, srv.fetch, () => {}, {});
+  const pgenTimers = [];
+  win = api.create(doc, srv.fetch, fn => pgenTimers.push(fn), {});
   await win.manage();
   assert.equal(els.coreInstallPgen.hidden, false, 'pGen stays visible in Core management');
-  assert.equal(els.coreInstallPgenModel.value, 'flux2-klein-4b', 'existing 4B is standard');
-  assert.match(els.coreInstallPgenInfo.textContent, /FLUX.2 Standard \(4B\).*AKTIV/);
-  assert.equal(els.coreInstallPgenApply.disabled, true, 'active pGen cannot be applied twice');
-  els.coreInstallPgenModel.value = 'flux2-klein-9b';
+  assert.equal(els.coreInstallPgenModel.value, 'flux2-klein-4b-standard');
+  assert.match(els.coreInstallPgenInfo.textContent, /pGen Engine Standard \(4B\).*AKTIV/);
+  assert.equal(els.coreInstallPgenApply.disabled, true, 'already selected Standard is inactive');
+  assert(!/Qwen|Ponpoke|Encoder/.test(els.coreInstallPgenInfo.textContent),
+    'internal encoder models are absent from owner-facing status');
+
+  // Magic 4B is visible and can be selected, but not activated without consent.
+  els.coreInstallPgenModel.value = 'flux2-klein-4b-magic';
   els.coreInstallPgenModel.handlers.change();
-  assert.equal(els.coreInstallPgenModel.value, 'flux2-klein-4b',
-    '9B is visible but unselectable before license acceptance');
+  assert.equal(els.coreInstallPgenModel.value, 'flux2-klein-4b-magic');
+  assert.equal(els.coreInstallPgenApply.disabled, true);
   assert.equal(els.coreInstallPgenLicenseGuard.hidden, false);
-  assert.equal(els.coreInstallPgenInstall.hidden, true,
-    'locked 9B option keeps the standard 4B selection active');
-  // Server can begin its hardware-approved auto-download without license UI consent.
-  const beforeLicense = await srv.fetch('./api/user_settings.php', {
-    method: 'POST', body: JSON.stringify({action: 'pgen_install', model: 'flux2-klein-9b'})
-  });
-  assert.equal(beforeLicense.ok, true, '9B download is allowed before explicit UI consent');
-  assert.equal(srv.st.licenseAccepted, false, 'downloading does not mark the license accepted');
-  srv.st.pgenNineLoading = false;
   await els.coreInstallPgenGuardOpen.handlers.click();
   els.coreGeneratorLicenseCheck.checked = true;
   els.coreGeneratorLicenseCheck.handlers.change();
   await els.coreGeneratorLicenseAccept.handlers.click();
   assert.equal(srv.st.licenseAccepted, true);
-  assert.equal(els.coreInstallPgenLicenseGuard.hidden, true,
-    'license notice disappears after server-confirmed acceptance');
-  els.coreInstallPgenModel.value = 'flux2-klein-9b';
+  assert.equal(els.coreInstallPgenLicenseGuard.hidden, true);
+  assert.equal(els.coreInstallPgenApply.disabled, false);
+  assert.match(els.coreInstallPgenApply.textContent, /Magic vorbereiten und verwenden/);
+  await els.coreInstallPgenApply.handlers.click();
+  assert.deepEqual(JSON.parse(srv.calls.filter(x => x.init.method === 'POST').pop().init.body),
+    {action: 'pgen_prepare', model: 'flux2-klein-4b-magic'},
+    'switching to unprepared Magic starts verified background preparation');
+  assert.equal(srv.st.pgenActive, 'flux2-klein-4b-standard',
+    'Standard remains active until Magic is genuinely ready');
+  srv.st.pgenFourMagicLoading = false;
+  srv.st.pgenFourMagicReady = true;
+  assert(pgenTimers.length > 0, 'Magic readiness is polled');
+  await pgenTimers.shift()();
+  assert.equal(srv.st.pgenActive, 'flux2-klein-4b-magic',
+    'completed Magic preparation automatically activates requested profile');
+
+  // Existing 9B auto-download is still available before account consent.
+  els.coreInstallPgenModel.value = 'flux2-klein-9b-standard';
   els.coreInstallPgenModel.handlers.change();
-  assert.match(els.coreInstallPgenInfo.textContent, /FLUX.2 9B.*nicht installiert/);
+  assert.match(els.coreInstallPgenInfo.textContent, /pGen Engine Standard \(9B\).*nicht bereit/);
   assert.equal(els.coreInstallPgenInstall.hidden, false);
-  assert.equal(els.coreInstallPgenInstall.disabled, false, 'manual retry available after acceptance');
+  assert.equal(els.coreInstallPgenInstall.disabled, false);
   await els.coreInstallPgenInstall.handlers.click();
   assert.deepEqual(JSON.parse(srv.calls.filter(x => x.init.method === 'POST').pop().init.body),
     {action: 'pgen_install', model: 'flux2-klein-9b'});
   srv.st.pgenNineLoading = false;
   srv.st.pgenNineReady = true;
   await win.refreshManage();
-  assert.equal(els.coreInstallPgenApply.disabled, false, 'verified 9B can be activated');
+  assert.equal(els.coreInstallPgenApply.disabled, false, 'verified licensed 9B Standard can be activated');
   await els.coreInstallPgenApply.handlers.click();
-  assert.equal(srv.st.pgenActive, 'flux2-klein-9b', 'actual worker selection stored server-side');
+  assert.equal(srv.st.pgenActive, 'flux2-klein-9b-standard');
   assert.deepEqual(JSON.parse(srv.calls.filter(x => x.init.method === 'POST').pop().init.body),
-    {action: 'pgen_select', model: 'flux2-klein-9b'});
-  assert.match(els.coreInstallPgenInfo.textContent, /FLUX.2 9B.*AKTIV/);
+    {action: 'pgen_select', model: 'flux2-klein-9b-standard'});
+
+  // Magic 9B also prepares in the background and does not silently use Qwen.
+  els.coreInstallPgenModel.value = 'flux2-klein-9b-magic';
+  els.coreInstallPgenModel.handlers.change();
+  assert.equal(els.coreInstallPgenApply.disabled, false);
+  await els.coreInstallPgenApply.handlers.click();
+  assert.deepEqual(JSON.parse(srv.calls.filter(x => x.init.method === 'POST').pop().init.body),
+    {action: 'pgen_prepare', model: 'flux2-klein-9b-magic'});
+  srv.st.pgenNineMagicLoading = false;
+  srv.st.pgenNineMagicReady = true;
+  await pgenTimers.pop()();
+  assert.equal(srv.st.pgenActive, 'flux2-klein-9b-magic');
+  assert.match(els.coreInstallPgenInfo.textContent, /pGen Engine Magic \(9B\).*AKTIV/);
+  assert(!/Qwen|Ponpoke|Encoder/.test(els.coreInstallPgenInfo.textContent),
+    'no encoder name is exposed in the four-profile UI');
   for (const id of ['coreInstallPgen', 'coreInstallPgenModel', 'coreInstallPgenApply',
     'coreInstallPgenInstall', 'coreInstallPgenLicense', 'coreInstallPgenInfo']) {
     assert(fs.readFileSync(path.join(__dirname, '../app.html'), 'utf8').includes('id="' + id + '"'),
       'app.html contains functional pGen control ' + id);
   }
-  assert.equal((fs.readFileSync(path.join(__dirname, '../app.html'), 'utf8')
-    .match(/<option value="flux2-klein-(?:4b|9b)">/g) || []).length, 2,
-  'pGen offers exactly 4B and 9B, never arbitrary third-party models');
+  const pgenHtml = fs.readFileSync(path.join(__dirname, '../app.html'), 'utf8');
+  assert.equal((pgenHtml.match(/<option value="flux2-klein-(?:4b|9b)-(?:standard|magic)">/g) || []).length, 4,
+    'pGen exposes exactly four 4B/9B Standard/Magic profiles');
+  const opts = pgenHtml.match(/<option value="flux2-klein-(?:4b|9b)-(?:standard|magic)">[^<]+<\/option>/g) || [];
+  assert(opts.every(option => !/Qwen|Ponpoke|Encoder/.test(option)),
+    'no hidden text-encoder is an independently selectable model');
 
   // Markup and wiring.
   const html = fs.readFileSync(path.join(__dirname, '../app.html'), 'utf8');
