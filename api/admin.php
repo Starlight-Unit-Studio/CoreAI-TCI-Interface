@@ -13,6 +13,9 @@ require_once __DIR__ . '/account_admin.php';
 require_once __DIR__ . '/account_page_store.php';
 require_once __DIR__ . '/tts_spike_store.php';
 require_once __DIR__ . '/image_spike_store.php';
+require_once __DIR__ . '/image_gen.php';
+require_once __DIR__ . '/image_ab_diagnostic.php';
+require_once __DIR__ . '/core_generator_license.php';
 require_once __DIR__ . '/mailer.php';
 require_once __DIR__ . '/uninstall_store.php';
 require_once __DIR__ . '/update_store.php';
@@ -247,6 +250,16 @@ if ($method === 'GET') {
     stu_json(['ok' => true, 'runs' => $runs, 'run' => $report === null ? null : coreui_image_spike_public($report)]);
   }
 
+  if ($action === 'image_ab_status') {
+    if ($actorLevel !== 0) stu_json(['ok'=>false, 'error'=>'owner_only'], 403);
+    try {
+      $state = coreui_image_ab_locked(static fn(array $state): array => ['state'=>$state]);
+      stu_json($state + ['csrf_token'=>stu_csrf_token()]);
+    } catch (RuntimeException $e) {
+      stu_json(['ok'=>false, 'error'=>'diagnostic_state_unavailable'], 503);
+    }
+  }
+
   if ($action === 'image_sample') {
     if ($actorLevel !== 0) stu_json(['ok' => false, 'error' => 'owner_only'], 403);
     $path = coreui_image_spike_image_path(coreui_image_spike_root(), (string)($_GET['run'] ?? ''), (string)($_GET['file'] ?? ''));
@@ -321,6 +334,39 @@ if ($method === 'GET') {
 if ($method !== 'POST') stu_json(['ok' => false, 'error' => 'method_not_allowed'], 405);
 stu_require_csrf();
 $body = stu_read_json_body();
+
+// Operator-only, CSRF-protected A/B jobs. The client can drive short polls
+// without shell commands, changing the active pGen model or saving test PNGs.
+if (in_array($action, ['image_ab_start','image_ab_poll','image_ab_cancel'], true)) {
+  if ($actorLevel !== 0) stu_json(['ok'=>false, 'error'=>'owner_only'], 403);
+  $http = static fn(string $method, string $path, ?array $payload = null, int $timeout = 10): array
+    => coreui_image_http($method, $path, $payload, $timeout);
+  $licensed = coreui_generator_license_user_accepted($pdo, $actorId);
+  try {
+    $result = coreui_image_ab_locked(static function(array $state) use ($action, $licensed, $http): array {
+      $next = match ($action) {
+        'image_ab_start' => coreui_image_ab_start($state, $http),
+        'image_ab_poll' => coreui_image_ab_poll($state, $licensed, $http),
+        'image_ab_cancel' => coreui_image_ab_cancel($state, $http),
+      };
+      return ['state'=>$next];
+    });
+    if ($action === 'image_ab_start' || $action === 'image_ab_cancel') {
+      coreui_admin_audit($pdo, $actorId, $action, 'system', 'image_ab', [
+        'model'=>COREUI_IMAGE_AB_MODEL, 'state'=>$result['state'],
+      ]);
+    }
+    stu_json($result);
+  } catch (RuntimeException $e) {
+    $code = $e->getMessage();
+    $known = ['diagnostic_already_running', 'diagnostic_request_busy',
+      'image_busy', 'image_unavailable', 'diagnostic_storage_unavailable',
+      'diagnostic_storage_unsafe'];
+    if (!in_array($code, $known, true)) $code = 'diagnostic_failed';
+    stu_json(['ok'=>false, 'error'=>$code], in_array($code, [
+      'diagnostic_already_running','diagnostic_request_busy','image_busy'], true) ? 409 : 503);
+  }
+}
 
 if ($action === 'uninstall_request') {
   if ($actorLevel !== 0) stu_json(['ok'=>false, 'error'=>'owner_only'], 403);
