@@ -1,3 +1,18 @@
+COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 15.11.2026
+Version main: 0.7.67, Branch in Arbeit: fix/progressive-web-research-0768.
+ZIEL 0.7.68: progressive Websuche statt bloss vier Suchtreffern pro Suche.
+SearXNG bleibt; neue Treffergruppen auf [WEB: WEITER], per-Turn-Puffer,
+pageno und URL-Deduplizierung ueber Suchvarianten. Keine neue DB.
+Quellen im Kontext: neueste Treffergruppe voll, aeltere Belege komprimiert
+(Quellentitel/URL erhalten). Personen mit gleichem Namen nicht gleichsetzen,
+Biografien nur mit tatsaechlichen Quellenbelegen. Beschraenkte Agenten-
+Schleife bleibt bei sechs Schritten je Antwort, KEIN Playwright-Autostart.
+Text und Voice im privaten Chat; Deep Research/Global/Wetter unberuehrt.
+Regressionspruefung und neuer GitHub-Workflow, danach Server-Abnahme.
+Dokument: docs/UEBERGABEPROTOKOLL_0_7_68.txt.
+Nach Merge naechste Version 0.7.69.
+--- VORHERIGER STAND ---
+
 COREAI: TCI INTERFACE // NEUER ARBEITSSTAND 15.11.2026
 Basis: main 0.7.66, vorbereiteter PR-Branch fix/web-search-source-carousel-0767.
 DIESER CHAT: normales Websuche-Quellenkarussell zeigt irrefuehrend wechselnde
