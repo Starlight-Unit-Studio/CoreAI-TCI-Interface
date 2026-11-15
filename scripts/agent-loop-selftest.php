@@ -66,7 +66,7 @@ loop_test(str_contains($chain,'https://example.org/old')
   && !str_contains($chain,str_repeat('A',260))
   && str_contains($chain,str_repeat('B',260)),
   'older snippets compacted, new source evidence and URLs preserved');
-loop_test(str_contains($chain,'Namens') && str_contains($chain,'keine historischen Archive')
+loop_test(str_contains($chain,'Menschen mit gleichem Namen') && str_contains($chain,'keine historischen Archive')
   && str_contains($chain,'[WEB: WEITER]'),
   'sources must be verified and same-name individuals never conflated');
 
