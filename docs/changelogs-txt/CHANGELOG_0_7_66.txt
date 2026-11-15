@@ -1,0 +1,10 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.66
+15.11.2026
+
+Websuche bleibt der Standard bei automatisch gestarteten Recherchen.
+Nur die ausdrueckliche Werkzeugauswahl Recherche oeffnet Playwright.
+Alte BROWSE-Marker werden ohne Browserfreigabe auf WEB umgeleitet.
+WDR und Maras autonome Newsreaktion starten dadurch nicht heimlich Playwright.
+Der separate Deep-Research-Pfad und die personalisierte Browserantwort bleiben.
+Offline-Regressionspruefung: scripts/browser-routing-selftest.php.
+Live-Abnahme und Preflight vor Merge erforderlich.
