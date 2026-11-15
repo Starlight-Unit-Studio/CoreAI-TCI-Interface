@@ -75,7 +75,8 @@ test(count($state['seen']) === 17, 'ledger records 16 pages plus one fresh sourc
 $fresh = [];
 test(count(coreui_web_research_next('Gemma 4 Vergleich',$fresh,4,12)) === 4,
   'new chat response gets a fresh source ledger');
-test(coreui_web_research_next('WEITER',[],4,12) === [], 'WEITER without context does not invent a search');
+$noPrevious = [];
+test(coreui_web_research_next('WEITER',$noPrevious,4,12) === [], 'WEITER without context does not invent a search');
 $answers['Wer ist Nebelfalke?'][1] = ['results'=>[]];
 $answers['Nebelfalke'][1] = ['results'=>[hit(99)]];
 $retry = [];
