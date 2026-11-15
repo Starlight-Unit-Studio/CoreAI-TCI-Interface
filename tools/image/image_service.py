@@ -242,6 +242,7 @@ class Service:
         self.pgen_error = ''
         self.pgen_installing = False
         self.ponpoke_paths: dict[str, str] = {}
+        self.ponpoke_metadata: dict[str, dict] = {}
         self.ponpoke_loading = False
         self.ponpoke_error = ''
 
@@ -353,8 +354,11 @@ class Service:
             for model in (PGEN.STANDARD, PGEN.QUALITY):
                 try:
                     path = PONPOKE.install(self.models, model)
+                    _, locked = PONPOKE._paths(self.models, model)
+                    details = json.loads(locked.read_text(encoding='utf-8'))
                     with self.state_lock:
                         self.ponpoke_paths[model] = str(path)
+                        self.ponpoke_metadata[model] = details
                     log('Ponpoke Uncensored Text-Encoder verifiziert: ' + model)
                 except Exception as error:
                     self.ponpoke_error += ('; ' if self.ponpoke_error else '') + model + ': ' + str(error)[:150]
@@ -537,6 +541,9 @@ class Service:
                    'model_label': profile['model']['label'],
                    'llm_override': self.ponpoke_paths.get(model_id) if user_license_accepted is True else None,
                    'text_encoder': 'ponpoke-uncensored-q8_0' if user_license_accepted is True and model_id in self.ponpoke_paths else 'original',
+                   'encoder_source': self.ponpoke_metadata.get(model_id, {}).get('repo', '') if user_license_accepted else '',
+                   'encoder_revision': self.ponpoke_metadata.get(model_id, {}).get('revision', '') if user_license_accepted else '',
+                   'encoder_sha256': self.ponpoke_metadata.get(model_id, {}).get('sha256', '') if user_license_accepted else '',
                    'error': '', 'size': size_key, 'width': size['width'], 'height': size['height'],
                    'seed': seed if seed is not None else secrets.randbelow(2 ** 31 - 1),
                    'seconds': None, 'peak_rss_mb': None, 'started': time.monotonic(), 'finished': None,
@@ -656,7 +663,7 @@ class Service:
             return job
 
     def public(self, job: dict) -> dict:
-        keys = ('id', 'state', 'phase', 'step', 'steps', 'model', 'model_label', 'text_encoder', 'error', 'size', 'width', 'height', 'seed', 'seconds', 'peak_rss_mb', 'preview', 'reference_count', 'curated_mara_count')
+        keys = ('id', 'state', 'phase', 'step', 'steps', 'model', 'model_label', 'text_encoder', 'encoder_source', 'encoder_revision', 'encoder_sha256', 'error', 'size', 'width', 'height', 'seed', 'seconds', 'peak_rss_mb', 'preview', 'reference_count', 'curated_mara_count')
         return {key: job[key] for key in keys}
 
     def health(self) -> dict:
