@@ -9,6 +9,7 @@ on:
       - 'scripts/agent-loop-selftest.php'
       - 'scripts/web-search-selftest.php'
       - 'scripts/progressive-web-search-selftest.php'
+      - 'scripts/weather-live-selftest.php'
       - 'scripts/preflight.sh'
       - 'scripts/preflight-native.sh'
       - 'VERSION'
@@ -19,6 +20,7 @@ on:
       - 'api/console_web_research.php'
       - 'api/console_agent_loop.php'
       - 'scripts/progressive-web-search-selftest.php'
+      - 'scripts/weather-live-selftest.php'
       - '.github/workflows/web-research-regression.yml'
 
 permissions:
@@ -50,6 +52,7 @@ jobs:
         run: |
           php scripts/progressive-web-search-selftest.php
           php scripts/web-search-selftest.php
+          php scripts/weather-live-selftest.php
           php scripts/agent-loop-selftest.php
           php scripts/browser-routing-selftest.php
       - name: Release version and static asset fingerprints
