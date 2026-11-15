@@ -114,7 +114,7 @@ with tempfile.TemporaryDirectory(prefix='pgen-selftest-') as name:
         'other user must never inherit non-commercial Ponpoke encoder approval')
     unlicensed['state'] = 'done'
     assert svc.health()['ponpoke'][profiles.STANDARD]['ready']
-    assert svc.health()['ponpoke'][profiles.QUALITY]['ready'
+    assert svc.health()['ponpoke'][profiles.QUALITY]['ready']
     assert job9['model_label'] == 'FLUX.2-klein 9B (Q8_0)'
     assert svc.public(job9)['model'] == profiles.QUALITY
     assert svc.public(job4)['model'] == profiles.STANDARD
