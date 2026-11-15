@@ -605,6 +605,19 @@ img_gen_test(($public['generated_by'] ?? null) === 'Quantum CoreAI: TCI Interfac
   && ($public['generation']['reference_image_count'] ?? null) === 2
   && $public['digital_source_type'] === COREUI_IMAGE_AI_SOURCE_TYPE,
   'Public provenance includes exact Quantum CoreAI brand and technical generation details');
+$ponpokeDetails = coreui_image_provenance([
+  'text_encoder'=>'ponpoke-uncensored-q8_0',
+  'encoder_source'=>'ponpoke/flux2-klein-4b-uncensored-text-encoder',
+  'encoder_revision'=>str_repeat('a', 40),
+  'encoder_sha256'=>str_repeat('b', 64),
+], $registry);
+$llmDetails = array_values(array_filter($ponpokeDetails['model']['components'],
+  static fn(array $part): bool => $part['role'] === 'llm'));
+img_gen_test(count($llmDetails) === 1
+  && $llmDetails[0]['repository'] === 'ponpoke/flux2-klein-4b-uncensored-text-encoder'
+  && $llmDetails[0]['model_license'] === 'FLUX Non-Commercial License v2.1'
+  && $llmDetails[0]['sha256'] === str_repeat('b', 64),
+  'PNG provenance attributes licensed Ponpoke text encoder to correct source and SHA');
 $embedded = coreui_image_png_embed_provenance(img_gen_png(48, 48),
   ['width'=>48, 'height'=>48, 'seed'=>7,'seconds'=>61.8,
    'size'=>'normal','reference_count'=>2,'created_at'=>'2026-11-08T12:30:00+00:00',
