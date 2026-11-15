@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.60: pGen Core 4B/9B selection and image-worker hardware checks.
+# CoreAI: TCI Interface 0.7.61: pGen Core 4B/9B selection and image-worker hardware checks.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -330,6 +330,10 @@ UI_FILES=(
   database/migrations/026_image_tool.sql
   scripts/image-service-selftest.py
   scripts/image-gen-selftest.php
+  api/image_ab_diagnostic.php
+  js/coreui-image-ab.js
+  scripts/image-ab-diagnostic-selftest.php
+  scripts/image-ab-ui-selftest.cjs
   scripts/image-reference-consistency-selftest.php
   scripts/image-chat-ui-selftest.cjs
   scripts/image-editor-ui-selftest.cjs
@@ -1014,6 +1018,16 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     ok 'P06-Arbeitsereignisse und sichere Python-Fehlerklassen geprueft.'
   else
     fail 'P06-Arbeitsereignis-Selbsttest fehlgeschlagen.'
+  fi
+  if compose exec -T php php scripts/image-ab-diagnostic-selftest.php >/dev/null 2>&1; then
+    ok '4B Qwen/Ponpoke: serielle A/B-Diagnose, PNG und Lizenzen geprueft.'
+  else
+    fail '4B A/B-Diagnose-Selbsttest fehlgeschlagen.'
+  fi
+  if compose exec -T php php scripts/image-work-diagnostic-selftest.php >/dev/null 2>&1; then
+    ok 'Bildfehlerdiagnose: klassifizierte Ursachen ohne private Workerlogs geprueft.'
+  else
+    fail 'Bildfehlerdiagnose-Selbsttest fehlgeschlagen.'
   fi
   if compose exec -T php php scripts/work-events-persistence-selftest.php >/dev/null 2>&1; then
     ok 'P06: Arbeitsweg nach Antwort, Reload, Varianten und Kontotrennung geprueft.'

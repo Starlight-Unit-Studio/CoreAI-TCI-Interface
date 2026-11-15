@@ -66,6 +66,26 @@ check_work(!isset($unsafePublic['public_note']), 'Sensitive public note must fai
 
 echo "CoreUI P06 work events selftest: OK\n";
 
+$imageDiag = coreui_work_safe_meta([
+  'source'=>'image', 'reason'=>'image_worker_exit', 'exit_code'=>137,
+  'model'=>'flux2-klein-9b', 'image_phase'=>'sampling', 'image_encoder'=>'ponpoke-uncensored-q8_0',
+  'step'=>2, 'steps'=>4, 'image_px'=>1024, 'reference_count'=>3,
+  'raw_log'=>'Authorization: Bearer SECRET', 'prompt'=>'PRIVATE IMAGE PROMPT',
+]);
+check_work(($imageDiag['reason'] ?? '') === 'image_worker_exit'
+  && ($imageDiag['exit_code'] ?? 0) === 137
+  && ($imageDiag['image_phase'] ?? '') === 'sampling'
+  && ($imageDiag['image_encoder'] ?? '') === 'ponpoke-uncensored-q8_0'
+  && ($imageDiag['reference_count'] ?? 0) === 3
+  && ($imageDiag['model'] ?? '') === 'flux2-klein-9b',
+  'confirmed image model, phase and classified error are retained');
+check_work(!isset($imageDiag['raw_log']) && !isset($imageDiag['prompt'])
+  && !str_contains(json_encode($imageDiag), 'SECRET'), 'private image logs are discarded');
+$forgedImage = coreui_work_safe_meta(['source'=>'image','model'=>'secret-token',
+  'image_phase'=>'../../private', 'image_encoder'=>'untrusted-token']);
+check_work(!isset($forgedImage['model']) && !isset($forgedImage['image_phase'])
+  && !isset($forgedImage['image_encoder']), 'image enums are restricted');
+
 $research = coreui_work_safe_meta(['page_url'=>'https://example.org/news?token=SECRET#top','page_title'=>'News <b>title</b>']);
 check_work(($research['page_url'] ?? '') === 'https://example.org/news', 'research URL strips query and fragment');
 check_work(!str_contains(json_encode($research), 'SECRET'), 'no URL secrets in work metadata');

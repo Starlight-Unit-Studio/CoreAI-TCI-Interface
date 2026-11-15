@@ -1,0 +1,42 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.61
+Datum: 15.11.2026
+
+ARBEITSWEG UND BILDFEHLERDIAGNOSE
+- Bei Bildfehlern wird die konkrete klassifizierte Ursache gespeichert:
+  Zeitlimit, sd-cli-Exitcode, fehlendes/ungueltiges PNG, verlorener
+  Bildauftrag, bekannte Worker-Exception, Speicher und Warteschlange.
+- Letzte tatsaechlich bestaetigte Bildphase und erreichte Schritte
+  werden gezeigt, ohne die rein animierte Prozentanzeige als Messung
+  auszugeben.
+- Bildmodell, Text-Encoder, Breite und Referenzanzahl aus verifizierten
+  Workerfeldern werden zu technischen Arbeitsereignissen.
+- Generische Werkzeugfehler zeigen vorhandene begrenzte Fehlerkennungen
+  im Arbeitsweg statt pauschaler Erklaerung.
+- Rohlogs, Prompts, Private-Pfade und internes Modell-Thinking bleiben
+  aus dem oeffentlichen Arbeitsweg ausgeschlossen.
+
+PGEN 4B A/B-DIAGNOSE IM ADMIN CORE
+- Inhaber-only Bildtest ohne Terminal, zwei Jobs auf demselben
+  FLUX.2-klein-4B-Modell mit identischem Test-Prompt, Seed und 512 x 512.
+- Test A verlangt originalen Qwen3-4B-Q8_0-Encoder.
+- Test B verlangt Ponpoke Uncensored 4B Q8_0 mit Kontolizenz.
+  Ohne verifizierten Encoder/Lizenz zeigt der Test NICHT VERFUEGBAR.
+- Tatsaechliche Laufzeit, Peak-RAM, letzte Phase, Schrittzahl,
+  Worker-Exitcode und gueltiges PNG werden nachgewiesen.
+- Kein Modellwechsel, kein Download, kein Speichern in Benutzerbildern.
+- Private Statusdatei im Cache, Abbruch und Smartphone-Reload.
+- Admin-API authentifiziert Inhaber und prueft CSRF bei allen Writes.
+- Offline-Regression fuer A/B-Workflow und mobile UI.
+
+REGRESSION 4B/9B
+- Standard 4B meldet nach den juengsten pGen-Updates ebenfalls
+  Bildfehler. Ursache auf dem Betreiber-Server noch NICHT bestaetigt.
+- Auswertung der Fehlerklassifikation nach Liveversuch notwendig.
+- Kein unbelegter Eingriff in Modellgewichte, Encoder oder Runtime.
+
+VALIDIERUNG
+- Eigener Diagnostik-Selbsttest; Work-Event- und UI-Regressionen
+  erweitert; beide bestehenden Preflight-Varianten integrieren den Test.
+- PHP-Lint, Preflight und echte 4B/9B-Bilder vor Merge nachzuweisen.
+
+Version 0.7.61

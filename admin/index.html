@@ -5,15 +5,15 @@
   <meta http-equiv="Content-Language" content="de-DE" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#f0f4fa" />
-  <meta name="application-version" content="0.7.60" />
+  <meta name="application-version" content="0.7.61" />
   <meta name="application-name" content="CoreAI: TCI Interface" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface - Admin Core</title>
   <link rel="stylesheet" href="../css/console.css?v=0013889458890017084596075" />
-  <link rel="stylesheet" href="../css/settings.css?v=0388375336475518457930032" />
+  <link rel="stylesheet" href="../css/settings.css?v=0670859574855885436519465" />
   <link rel="stylesheet" href="../css/coreui-theme.css?v=0680794913330935617275553" />
   <link rel="stylesheet" href="../css/coreui-settings-theme.css?v=1142906450847234350551167" />
-  <script src="../js/console-gate.js?v=1127445262490890232979234"></script>
+  <script src="../js/console-gate.js?v=0134314838419526176197415"></script>
   <script src="../js/coreui-preferences.js?v=1098190863602852320697527"></script>
   <script src="../js/coreui-ui-language.js?v=0139468212041427447470901"></script>
   <link rel="stylesheet" href="../css/coreui-softglass.css?v=0628592918051344087306671" />
@@ -62,7 +62,7 @@
       <div class="settings-title-block"><span class="settings-rune" aria-hidden="true">⌬</span>
         <div><div class="settings-kicker">TERRANISCHE SYSTEMKONFIGURATION</div><h1>ADMIN CORE</h1></div>
       </div>
-      <div class="settings-version">COREAI: TCI INTERFACE // v0.7.60</div>
+      <div class="settings-version">COREAI: TCI INTERFACE // v0.7.61</div>
     </header>
     <section class="cfg-admin-auth-gate settings-panel" id="adminAccessGate" role="status" aria-live="polite">
       <h2 id="adminAccessMessage">Berechtigung wird geprüft ...</h2>
@@ -363,6 +363,30 @@
                 </details>
               </div>
             </section>
+            <section class="settings-panel cfg-card wide green image-ab-card" id="imageAbCard" aria-labelledby="imageAbTitle" hidden>
+              <header class="settings-panel-head">
+                <span class="settings-panel-glyph" aria-hidden="true">◈</span>
+                <div><span>DIAGNOSE · NUR INHABER</span><h3 id="imageAbTitle">4B-Encoder A/B-Test</h3></div>
+              </header>
+              <p class="cfg-card-note">Zwei echte Bildberechnungen auf diesem Server: zuerst Qwen3-4B Q8_0, danach Ponpoke Uncensored 4B Q8_0. Beide erhalten denselben festen Test-Prompt, Seed 420561 und 512 × 512 Pixel. Die globale Core-Auswahl bleibt unverändert, nichts neu heruntergeladen und kein Testbild im Benutzerkonto gespeichert. Währenddessen ist der Bilddienst belegt.</p>
+              <div class="form-actions wide">
+                <button class="settings-action" id="imageAbStart" type="button">A/B-TEST STARTEN</button>
+                <button class="settings-action compact danger" id="imageAbCancel" type="button" hidden>TEST ABBRECHEN</button>
+                <button class="settings-action compact" id="imageAbReload" type="button">STATUS LADEN</button>
+              </div>
+              <p class="cfg-card-note" id="imageAbStatus" role="status" aria-live="polite">Diagnose wird geprüft.</p>
+              <div class="tts-voices image-ab-results" id="imageAbResults" role="list" aria-label="Vergleich der Text-Encoder">
+                <article class="tts-voice image-ab-case" role="listitem" id="imageAbQwen">
+                  <div class="tts-voice-head"><div class="tts-voice-name"><strong>Test A · Qwen3-4B</strong><small>Originaler Text-Encoder</small></div></div>
+                  <p class="cfg-card-note" id="imageAbQwenState">Noch nicht gestartet</p>
+                </article>
+                <article class="tts-voice image-ab-case" role="listitem" id="imageAbPonpoke">
+                  <div class="tts-voice-head"><div class="tts-voice-name"><strong>Test B · Ponpoke Uncensored</strong><small>Q8_0 Text-Encoder, gleiche FLUX.2-4B-Gewichte</small></div></div>
+                  <p class="cfg-card-note" id="imageAbPonpokeState">Noch nicht gestartet</p>
+                </article>
+              </div>
+              <p class="cfg-card-note image-ab-verdict" id="imageAbVerdict" aria-live="polite"></p>
+            </section>
             <section class="settings-panel cfg-card wide" id="adminUninstallCard" aria-labelledby="adminUninstallTitle" hidden>
               <header class="settings-panel-head">
                 <span class="settings-panel-glyph" aria-hidden="true">!</span>
@@ -476,6 +500,7 @@
   <script src="../js/admin.js?v=0190445065919382355285377"></script>
   <script src="../js/coreui-uninstall-admin.js?v=0374348787167562905928813"></script>
   <script src="../js/coreui-image-samples.js?v=0039842433260514192405892"></script>
+  <script src="../js/coreui-image-ab.js?v=0935027726378517596425838"></script>
   <script src="../js/coreui-admin-mail.js?v=0629149284541751668734734"></script>
   <script src="../js/coreui-voice-samples.js?v=0351976589027105808587511"></script>
 </body>

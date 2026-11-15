@@ -417,9 +417,16 @@ function coreui_image_png_size(string $png): ?array {
 function coreui_image_progress_meta(array $job): array {
   $phase = (string)($job['phase'] ?? 'load');
   if (!in_array($phase, ['load', 'text', 'sampling', 'decode', 'save', 'done'], true)) $phase = 'load';
-  return ['source' => 'image', 'reason' => 'image_' . ($phase === 'save' ? 'decode' : $phase),
+  $meta = ['source' => 'image', 'reason' => 'image_' . ($phase === 'save' ? 'decode' : $phase),
     'step' => max(0, (int)($job['step'] ?? 0)), 'steps' => max(1, (int)($job['steps'] ?? 4)),
     'image_px' => max(64, (int)($job['width'] ?? 512))];
+  $model = (string)($job['model'] ?? '');
+  if (in_array($model, ['flux2-klein-4b','flux2-klein-9b'], true)) $meta['model'] = $model;
+  $encoder = (string)($job['text_encoder'] ?? '');
+  if (in_array($encoder, ['original','ponpoke-uncensored-q8_0'], true)) $meta['image_encoder'] = $encoder;
+  $refs = $job['reference_count'] ?? null;
+  if (is_numeric($refs)) $meta['reference_count'] = max(0, min(20, (int)$refs));
+  return $meta;
 }
 
 /** Work view title of a job's progress (pure, ASCII as the work store requires). */

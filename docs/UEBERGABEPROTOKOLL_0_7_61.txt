@@ -1,0 +1,85 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.61
+Datum: 15.11.2026
+Basis: main 0.7.60
+Branch: fix/work-trail-image-diagnostics-0761
+PR-Status: Diagnose implementiert; Live-Test und Merge noch offen.
+
+ANLASS
+Bei Bildern meldete der Arbeitsweg nur image_failed und hielt den
+echten Bilddienst-Fehlertext zurueck. Betreiber zeigt fehlgeschlagene
+9B- und Standard-4B-Bilder nach den letzten Bildgenerator-PRs.
+
+UMSETZUNG
+- api/image_work_diagnostic.php klassifiziert nur bekannte
+  Bildfehlertexte und gibt keine Rohmeldungen weiter.
+- api/chat.php merkt sich letzte bestaetigte Bildphase und schreibt
+  klassifizierte Ereignisse; zuvor wurde nur error=image_failed gespeichert.
+- api/image_gen.php uebergibt modellbezogene, begrenzte Jobinformationen
+  als Arbeitsereignisse. api/console_work_store.php whitelisted diese.
+- js/coreui-work-events.js nennt klare Ursachen bei Bildfehlern;
+  generische Werkzeugfehler bleiben ebenfalls aussagekraeftiger.
+- Offline-Selbsttests und Docker-/Native-Preflight erweitert.
+
+ZEITLICHE EINGRENZUNG (BETREIBER-SCREENSHOT)
+- Betreiber aktualisiert nach jedem Merge umgehend produktiv.
+- 14.11.2026 23:55 MEZ: Merge PR #312 / Version 0.7.56.
+- 14.11.2026 23:59 MEZ: letzter vom Betreiber gezeigter
+  erfolgreich generierter Bildanhang im Chat.
+- 15.11.2026 00:40 MEZ: Merge PR #313 / Version 0.7.57;
+  betrifft SU-Wasserzeichen, Offenlegung und PNG/XMP-Verarbeitung.
+- 15.11.2026 09:55 MEZ: Merge PR #314 / Version 0.7.58;
+  fuehrt optionalen Ponpoke-Text-Encoder fuer 4B und 9B ein.
+- 15.11.2026 10:25 MEZ: Merge PR #315 / Version 0.7.59.
+- 15.11.2026 12:15 MEZ: Merge PR #316 / Version 0.7.60.
+- Letzter nachgewiesener funktionierender Zeitraum: nach Merge
+  0.7.56, vor 0.7.57. Vergleiche 0.7.57, dann 0.7.58,
+  dann 0.7.59; Ponpoke-LLM-Routing und Ressourcen zuerst im Blick.
+- Erster vom Betreiber belegter Fehlversuch: 15.11.2026
+  10:34 MEZ (Nachricht/Kernauftrag), Abschluss 10:42 MEZ
+  (Bild nicht entstanden). Beleg: Chat-Screenshot vom 15.11.
+- Dieses Zeitfenster liegt NACH 0.7.59 (10:25 MEZ) und
+  VOR 0.7.60 (12:15 MEZ). 0.7.60 ist damit NICHT der
+  urspruengliche Ausloeser der 4B-Regressionsserie.
+- Erste Fehlerursache bleibt zwischen 0.7.57, 0.7.58 und
+  0.7.59 zu suchen, nicht im Screenshot exakt feststellbar.
+- 15.11.2026 12:38:22 MEZ: spaeterer dokumentierter Fehler.
+- Der Screenshot mit 23:59 belegt Erfolg, nicht exakt die aktive
+  deployed Commit-SHA, die nur der Server-Update-Log bestaetigt.
+
+A/B-DIAGNOSE OHNE TERMINAL IM ADMIN CORE
+- Neues Diagnosefeld in Admin Core > Betrieb, nur fuer Inhaber.
+- Fester harmloser Prompt, Seed 420561, 512 x 512; A/B ueber
+  normalen image_service-Jobpfad mit explizitem Modell flux2-klein-4b.
+- Test A original Qwen3; Test B Ponpoke 4B Q8_0.
+- Vergleicht erzeugtes gueltiges PNG, sd-cli-Exit, bestaetigte Phase,
+  Schritte, Sekunden und Peak-RAM. Tests laufen sequenziell.
+- Status per privater Datei in var/cache; mobile Seite darf neuladen;
+  erst der naechste autorisierte POST-Poll startet Teil B.
+- Require owner Level=0, CSRF bei Start/Poll/Stop, individuelle
+  Lizenzannahme fuer Ponpoke, kein stiller Qwen-Fallback.
+- Keine Modellinstallation, kein Umschalten des globalen pGen,
+  kein Speichern von Bildern, Prompts oder rohen Workerlogs.
+- Neue Tests scripts/image-ab-diagnostic-selftest.php und
+  scripts/image-ab-ui-selftest.cjs; image-service-CI und beide
+  Preflights ergaenzt.
+- Offen: reale 4B-Bildlaeufe auf Betreiberserver. Ein A/B-Test
+  mit PONPOKE NOT READY ersetzt keinen erfolgreichen B-Lauf.
+
+REGRESSION: UNGEKLAERT
+- Besonders relevante Aenderungen der letzten PRs:
+  0.7.58 aktiviert bei Kontolizenz optional Ponpoke-Encoder auch fuer 4B.
+  0.7.56/0.7.58 starten Hintergrundinstallation von 9B/Encoder.
+- Weder Encoderfehler noch Ressourcenproblem ist ohne Serverlogs
+  bewiesen. Keine Gewichtsaenderung oder ungepruefter Fallback.
+- Nach Freigabe Liveversuch mit 4B (512 Pixel) und 9B, danach
+  Arbeitsereignis-Grund, Exitcode, letzte Bildphase und Bildcontainer-
+  Logs vergleichen. Bei sd-cli Exit 137 Speichergrenzen/OOM pruefen.
+  Beim Exit != 0 zudem Worker-Prozesslog auf Modell-Kompatibilitaet
+  untersuchen. Keine Token oder Rohprompts veroeffentlichen.
+- VERSION 0.7.61 ist nur fuer diesen PR vorgesehen.
+- Vor Merge: PHP-Lint fuer alle geaenderten PHP-Dateien, Node- und
+  PHP-Selbsttests, version-merge-check.py --base-version 0.7.60.
+- Nicht mergen, wenn Tests nicht nachweislich erfolgreich sind.
+
+NAECHSTE VERSION
+Nach Merge von 0.7.61 ist 0.7.62 erforderlich.

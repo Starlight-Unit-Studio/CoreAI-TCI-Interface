@@ -33,8 +33,8 @@ function coreui_work_safe_meta(array $raw): array {
     'plan_version','step','content_chars','thinking_chars','continuation_segments',
     'response_bytes','discarded_tool_body_bytes','context_tokens','knowledge_hits','knowledge_sources',
     // 0.6.41 (P20.5): the image progress card (steps of the image, its width).
-    'steps','image_px'];
-  $allowedStrings = ['model','error_type','file_name','reason','source','done_reason'];
+    'steps','image_px','reference_count'];
+  $allowedStrings = ['model','error_type','file_name','reason','source','done_reason','image_phase','image_encoder'];
   $safe = [];
   $page = is_string($raw['page_url'] ?? null) ? coreui_work_page_url($raw['page_url']) : null;
   if ($page !== null) {
@@ -55,6 +55,14 @@ function coreui_work_safe_meta(array $raw): array {
     if ($key === 'file_name') $value = basename(str_replace('\\', '/', $value));
     if (preg_match('/^[a-zA-Z0-9._:\/-]{1,110}$/D', $value)) $safe[$key] = $value;
   }
+  // Phase and encoder are diagnostic enums, not arbitrary image prompt or worker output.
+  if (isset($safe['image_phase']) && !in_array($safe['image_phase'],
+      ['load','text','sampling','decode','done'], true)) unset($safe['image_phase']);
+  if (isset($safe['image_encoder']) && !in_array($safe['image_encoder'],
+      ['original','ponpoke-uncensored-q8_0'], true)) unset($safe['image_encoder']);
+  // Refuse forged arbitrary model names for image-specific events.
+  if (($safe['source'] ?? '') === 'image' && isset($safe['model'])
+      && !in_array($safe['model'], ['flux2-klein-4b','flux2-klein-9b'], true)) unset($safe['model']);
   // 0.6.41: the image Mara just made, so the card in the chat can show it at once (owner only).
   if (isset($raw['image_uuid']) && is_string($raw['image_uuid']) && preg_match('/^[a-f0-9]{32}$/D', $raw['image_uuid'])) {
     $safe['image_uuid'] = $raw['image_uuid'];

@@ -18,7 +18,10 @@
     discarded_tool_body_bytes:'Verworfener Marker (Bytes)',
     marker_incomplete:'Marker unvollständig',
     context_tokens:'Kontextfenster (Tokens)',
-    knowledge_hits:'Treffer', knowledge_sources:'Quellen'
+    knowledge_hits:'Treffer', knowledge_sources:'Quellen',
+    steps:'Bildschritte gesamt', image_px:'Bildbreite (Pixel)',
+    image_phase:'Letzte bestätigte Bildphase', image_encoder:'Text-Encoder',
+    reference_count:'Referenzbilder'
   };
 
   // Bounded shape reasons of an unreadable tool reply (never model text).
@@ -33,6 +36,61 @@
     tool_marker_without_block:'Marker ohne Werkzeugblock'
   };
 
+  var IMAGE_PHASES = {
+    load:'Modellgewichte laden', text:'Bildbeschreibung verarbeiten',
+    sampling:'Bild berechnen', decode:'Bildpixel dekodieren',
+    done:'Bild abgeschlossen'
+  };
+  var IMAGE_FAILURES = {
+    image_loading:'Die Bildgewichte werden noch geladen.',
+    image_unreachable:'Der Bilddienst ist nicht erreichbar.',
+    image_unavailable:'Der Bilddienst meldet sich nicht als bereit.',
+    image_busy:'Der Bilddienst war bereits beschäftigt.',
+    model_queue_timeout:'Die Warteschlange wurde nicht rechtzeitig frei.',
+    image_memory:'Der verfügbare Arbeitsspeicher reicht nicht aus.',
+    image_timeout:'Der Bildauftrag hat das erlaubte Zeitlimit überschritten.',
+    image_worker_timeout:'Der Bildprozess hat sein Zeitlimit erreicht.',
+    image_worker_exit:'Der Bildprozess wurde vorzeitig beendet.',
+    image_worker_exception:'Der Bildprozess hat einen technischen Ausnahmefehler gemeldet.',
+    image_png_missing:'Der Bildprozess endete ohne eine gültige Bilddatei.',
+    image_png_invalid:'Die gelieferte PNG-Datei hat die technische Prüfung nicht bestanden.',
+    image_job_lost:'Der Bildauftrag wurde beim Bilddienst nicht mehr gefunden.',
+    storage_full:'Für das Bild ist nicht genügend Speicherplatz im Benutzerkonto frei.',
+    storage_failed:'Das Bild konnte nicht dauerhaft gespeichert werden.',
+    bad_prompt:'Die Bildbeschreibung ist leer, zu lang oder ungültig.',
+    bad_size:'Die angeforderte Bildgröße ist nicht verfügbar.',
+    bad_reference:'Die Bildreferenz ist ungültig.',
+    reference_unavailable:'Mindestens ein benötigtes Referenzbild ist nicht verfügbar.',
+    license_accept_required:'Die erforderliche Modelllizenz wurde für dieses Konto noch nicht bestätigt.',
+    pgen_unavailable:'Das ausgewählte Bildmodell ist nicht verfügbar.',
+    guest_image_limit_reached:'Das tägliche Bildkontingent ist aufgebraucht.',
+    guest_image_disabled:'Die Bildgenerierung für Gäste ist deaktiviert.',
+    guest_image_quota_unavailable:'Das Gast-Bildkontingent konnte nicht geprüft werden.',
+    cancelled:'Der Bildauftrag wurde abgebrochen.'
+  };
+
+  function imageFailureNote(event) {
+    var meta = event.meta || {};
+    var code = String(meta.reason || '');
+    var note = IMAGE_FAILURES[code] || 'Der Bildauftrag ist fehlgeschlagen; der Dienst hat keinen genauer klassifizierbaren Grund geliefert.';
+    if (code === 'image_worker_exit' && /^\d{1,3}$/.test(String(meta.exit_code || ''))) {
+      note += ' Exitcode: ' + meta.exit_code + '.';
+    }
+    if (code === 'image_worker_exception' && meta.error_type) {
+      note += ' Fehlerklasse: ' + meta.error_type + '.';
+    }
+    var last = IMAGE_PHASES[meta.image_phase];
+    if (last) {
+      note += ' Zuletzt bestätigt: ' + last;
+      if (meta.image_phase === 'sampling' && Number(meta.steps) > 0) {
+        note += ' (Schritt ' + Math.max(0, Number(meta.step) || 0)
+          + ' von ' + Number(meta.steps) + ')';
+      }
+      note += '.';
+    }
+    return note + ' Ein fertiges Bild wurde nicht bestätigt.';
+  }
+
   // Das ist ein oeffentliches, aus bestaetigten Arbeitsereignissen
   // abgeleitetes Protokoll, nicht das private interne Modell-Reasoning.
   // Unbekannte Ereignisse erhalten keine erfundene Erklaerung.
@@ -44,6 +102,14 @@
         return 'Ich prüfe dazu aktuelle Quellen und gleiche die Ergebnisse ab.';
       }
       return note;
+    }
+    if (event.meta.source === 'image' && /^Bild: /.test(event.title)) {
+      var phase = String(event.meta.reason || '').replace(/^image_/, '');
+      var phaseName = IMAGE_PHASES[phase];
+      if (phaseName) return 'Ich bearbeite das Bild. Bestätigte Phase: ' + phaseName
+        + (phase === 'sampling' && Number(event.meta.steps) > 0
+          ? ', Schritt ' + Math.min(Number(event.meta.steps), Math.max(0, Number(event.meta.step) || 0))
+            + ' von ' + Number(event.meta.steps) : '') + '.';
     }
     var file = event.meta.file_name ? '„' + event.meta.file_name + '“' : 'die angeforderte Datei';
     var windowSize = Number(event.meta.context_tokens) > 0
@@ -208,7 +274,7 @@
       case 'Bild erzeugt':
         return 'Das Bild ist fertig und hängt an meiner Antwort.';
       case 'Bild nicht erzeugt':
-        return 'Ich konnte das Bild nicht erzeugen. Den Grund nenne ich in meiner Antwort.';
+        return imageFailureNote(event);
       default:
         // Future and plugin-defined work events also get a truthful note,
         // without shipping one dedicated model-specific UI workaround.
@@ -217,7 +283,10 @@
           return 'Ich führe gerade ' + step + ' aus. Der Abschluss steht noch aus.';
         }
         if (event.state === 'error') {
-          return 'Bei ' + step + ' wurde ein Fehler protokolliert. Die technischen Angaben zeigen, was tatsächlich bekannt ist.';
+          var reason = event.meta.reason ? ' (Grund: ' + event.meta.reason + ')' : '';
+          var type = event.meta.error_type ? ' (Fehlertyp: ' + event.meta.error_type + ')' : '';
+          return 'Der Schritt ' + step + ' ist fehlgeschlagen' + reason + type
+            + '. Der Abschluss ist nicht bestätigt; weitere technische Angaben stehen im Detail.';
         }
         if (event.state === 'success') {
           return 'Der Schritt ' + step + ' wurde erfolgreich abgeschlossen. Darauf kann der weitere Ablauf aufbauen.';
@@ -684,7 +753,8 @@
       details.appendChild(summary);
       var definition = el('dl','');
       keys.forEach(function (key) {
-        definition.appendChild(el('dt','',DETAIL_LABELS[key]));
+        definition.appendChild(el('dt','',event.meta.source === 'image' && key === 'step'
+          ? 'Bestätigter Bildschritt' : DETAIL_LABELS[key]));
         definition.appendChild(el('dd','',event.meta[key]));
       });
       if (event.time) {
