@@ -2,6 +2,10 @@
 
 ## 0.7.61 - 15.11.2026
 
+- **A/B-Encoder-Diagnose im Admin Core:** Inhaber können FLUX.2-klein 4B mit gleichem Prompt, Seed und 512×512-Pixeln nacheinander über Qwen3-4B Q8_0 und Ponpoke Uncensored 4B Q8_0 prüfen. Laufzeit, Peak-RAM, Bildphase, Fehlercodes/Exitcodes und PNG-Validierung werden getrennt gezeigt. Nicht installierte Ponpoke-Gewichte und fehlende individuelle Lizenz werden explizit als nicht testbar markiert.
+- **Nicht destruktiv und mobil nutzbar:** Keine Änderungen an globaler pGen-Auswahl, Gewichten oder Kontobildern; Diagnose ist nur für den Inhaber verfügbar, CSRF-geschützt, abbrechbar und nach Neuladen des Smartphones wieder aufrufbar. Die zwei Aufträge werden nacheinander gestartet, nicht parallel.
+- **A/B-Regressionen:** PHP-Zustandsautomat, Lizenzen, unveränderte Modellwahl, echte PNG-Prüfung, vertauschten Encoder und Browser-UI mit CSRF/Statusabruf im GitHub-CI und Preflight abgesichert.
+
 - **Bildfehler nachvollziehbar:** Der Arbeitsweg unterscheidet Worker-Exitcodes, Zeitlimits, Exceptions, fehlende/ungueltige PNGs, Warteschlangen- und Speicherprobleme. Statt nur `image_failed` zu melden, wird die letzte bestaetigte Bildphase mit den tatsaechlich erreichten Schritten angezeigt.
 - **Arbeitsweg informativer:** Bei sonstigen Werkzeugfehlern erscheinen vorhandene begrenzte Fehlercodes/Fehlerklassen; Bildmodell, Encoder, Groesse und Anzahl der Referenzen sind als technische Metadaten sichtbar, sofern vom Worker bestaetigt.
 - **Datenschutz:** Keine rohen Worker-Logs, Benutzerprompts, privaten Medienpfade oder Modell-Thinking-Ausgaben in der Timeline. Fehlerdiagnose klassifiziert nur bekannte Meldungen.
