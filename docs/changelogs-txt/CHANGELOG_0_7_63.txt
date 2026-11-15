@@ -1,0 +1,59 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.63
+Datum: 15.11.2026
+Thema: Referenzbasierte Bildzeitgrenzen und sichere Worker-Messwerte
+
+FEHLER
+- Normale FLUX.2 4B Bilder sind mit Qwen3 oder Ponpoke erfolgreich.
+- Letzter Mara-Bildauftrag endete bei Sampling 3/4 mit
+  image_worker_timeout, obwohl vier bis fuenf Referenzbilder
+  in den Kontoeinstellungen aktiviert sein koennen.
+- Der Worker hatte bisher fuer jeden 512x512-Auftrag die
+  gleiche harte Grenze von 300 Sekunden, unabhaengig von
+  Modellwahl und tatsaechlicher Anzahl der -r-Referenzen.
+- Ein eigenes PHP-Limit wartete nur 300 + 60 Sekunden.
+
+LOESUNG
+- tools/image/image_service.py: image_time_limit() legt nach
+  Modell, Bildgroesse und ANZAHL AUFGELOESTER REFERENZEN
+  ein groesseres Rechenbudget fest. 512 ohne Referenzen:
+  300 Sekunden unveraendert. 4B mit 5 Referenzen: 675 s.
+  9B mit 5 Referenzen: 1000 s. 1024x1024 erhaelt
+  entsprechend groessere Referenz-Zuschlaege.
+- Dieses Budget ist ein maximaler Sicherheitsrahmen;
+  fertige Bilder werden sofort ausgegeben. Stop/Cancel
+  ist weiterhin wirksam, keine Endlosschleifen ohne Schutz.
+- Worker /jobs meldet time_limit_s und elapsed_s.
+- api/image_gen.php benutzt den tatsaechlichen Worker-Limitwert,
+  statt den referenzblinden PHP-Zeitwaechter.
+- api/image_work_diagnostic.php verarbeitet die letzten
+  bestaetigten Worker-Messwerte fuer gescheiterte Auftraege.
+- api/console_work_store.php und js/coreui-work-events.js
+  zeigen nur begrenzte Zahlen (Sekunden, Peak-RAM,
+  Referenzanzahl) und erlaubte Modell-/Encoder-Kennungen.
+  Kein Prompt, privater Pfad, Rohlog oder Referenz-UUID.
+
+REGRESSION
+- Python: 0/1/5 Referenzen, 4B und 9B, Befehl
+  mit fuenf -r-Argumenten und sichere Statusfelder.
+- PHP: Progress/Fehler-Meta, Worker-Zeitgrenze,
+  abschliessende Phase und Speicherauslastung.
+- Versionsstand 0.7.63 synchronisiert.
+
+BETREIBERMESSWERTE VOR DEM FIX
+- 4B 512x512 ohne Referenz: ca. 63-67 s.
+- 4B 512x512 mit EINER Referenz: 112,9 s.
+- 9B 512x512 ohne Referenz: ca. 137-140 s.
+- 9B 512x512 mit EINER Referenz: 237,3 s.
+- 5 Referenzbilder unter Ponpoke sind noch nicht live
+  durchgemessen. Die Zuschlaege sind ein vorsichtiges
+  Modell aus diesen Messwerten, keine garantierte Laufzeit.
+
+LIVE-ABNAHME
+- Nach Merge/Update ein Bild von Mara mit allen
+  fuenf vorhandenen Referenzen erzeugen.
+- Im Arbeitsweg tatsaechlichen time_limit_s,
+  elapsed_s, Referenzanzahl, Modell und Encoder pruefen.
+- Nicht behaupten, der eigentliche Fehler sei behoben,
+  bevor ein echter Chat-Auftrag erfolgreich abschliesst.
+
+VERSION: 0.7.63
