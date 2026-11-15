@@ -509,7 +509,8 @@ function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $
       return ['ok'=>false, 'error'=>'license_accept_required', 'detail'=>''];
     }
     $body = ['prompt' => $prompt, 'size' => $size, 'model' => $selectedPgen];
-    if ($selectedPgen === COREUI_PGEN_QUALITY) $body['user_license_accepted'] = $userLicensed;
+    // Account-specific approval also gates the uncensored 4B text encoder.
+    $body['user_license_accepted'] = $userLicensed;
     if ($reference !== null) $body['reference'] = $reference;
     if ($reference === 'default') $body['scene_hint'] = $sceneHint;
     if ($references !== []) $body['references'] = $references;
