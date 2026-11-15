@@ -217,6 +217,7 @@ UI_FILES=(
   scripts/tci-language-selftest.cjs
   css/coreui-chat-tci-layout.css
   scripts/tci-chat-message-selftest.cjs
+  scripts/text-selection-ui-selftest.cjs
   scripts/tci-chat-layout-ui-selftest.cjs
   js/console-app.js
   js/coreui-markdown.js
@@ -1492,6 +1493,11 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       ok 'TCI CORE: Chat-Kopf, breite Antwortspalte und Bildabschluss-Reihenfolge geprueft.'
     else
       fail 'TCI CORE: Chat-Kopf-/Bildabschluss-Selbsttest fehlgeschlagen.'
+    fi
+    if node "$PROJECT_ROOT/scripts/text-selection-ui-selftest.cjs" >/dev/null 2>&1; then
+      ok 'Chat: Textmarkierung, Kopieren und nativer Rechtsklick sind freigegeben.'
+    else
+      fail 'Chat: Textauswahl-/Kopierschutz aus dem Game ist noch aktiv.'
     fi
     if compose exec -T php php /var/www/coreui/scripts/general-controls-selftest.php >/dev/null 2>&1; then
       ok 'Allgemein: Core-Routing, gespeicherte Einstellungen und echte Denkstufen verifiziert.'
