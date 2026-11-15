@@ -14,6 +14,10 @@ if (PHP_SAPI !== 'cli') exit(1);
 $root = dirname(__DIR__);
 $tmp = sys_get_temp_dir() . '/coreai-image-gen-' . bin2hex(random_bytes(4));
 mkdir($tmp . '/images', 0700, true);
+// The live host may have pGen 9B selected. Never use that server-level
+// selection in this offline test's fake-user/fake-service scenario.
+mkdir($tmp . '/cache', 0700, true);
+define('STU_EMBER_CACHE_DIR', $tmp . '/cache');
 define('COREUI_IMAGE_DIR', $tmp . '/images');
 require_once $root . '/api/image_gen.php';
 // The real chat entrypoint loads compaction before invoking the agent loop.
