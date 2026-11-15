@@ -523,16 +523,17 @@ function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $
   try {
     if ($cancelled()) return ['ok' => false, 'error' => 'cancelled', 'detail' => ''];
     require_once __DIR__ . '/pgen.php';
-    $selectedPgen = coreui_pgen_selected();
+    $selectedProfile = coreui_pgen_selected();
+    $selectedPgen = coreui_pgen_model($selectedProfile);
+    $selectedMode = coreui_pgen_mode($selectedProfile);
     $userLicensed = coreui_generator_license_user_accepted($pdo, $uid);
-    // Shared 9B weights never grant another user permission. Fail closed
-    // before creating the job and do not silently fall back to 4B.
-    if ($selectedPgen === COREUI_PGEN_QUALITY && !$userLicensed) {
+    // A global Magic/9B selection never grants another user's license.
+    // Do not silently substitute Standard or Qwen when Magic was selected.
+    if (($selectedPgen === COREUI_PGEN_QUALITY || $selectedMode === 'magic') && !$userLicensed) {
       return ['ok'=>false, 'error'=>'license_accept_required', 'detail'=>''];
     }
-    $body = ['prompt' => $prompt, 'size' => $size, 'model' => $selectedPgen];
-    // Account-specific approval also gates the uncensored 4B text encoder.
-    $body['user_license_accepted'] = $userLicensed;
+    $body = ['prompt' => $prompt, 'size' => $size, 'model' => $selectedPgen,
+      'mode' => $selectedMode, 'user_license_accepted' => $userLicensed];
     if ($reference !== null) $body['reference'] = $reference;
     if ($reference === 'default') $body['scene_hint'] = $sceneHint;
     if ($references !== []) $body['references'] = $references;
@@ -694,6 +695,7 @@ function coreui_image_error_text(array $result): string {
     'image_busy', 'model_queue_timeout' => 'Gerade laeuft schon eine andere Arbeit; das Bild konnte nicht starten.',
     'image_memory' => 'Fuer das Bild ist gerade nicht genug Arbeitsspeicher frei.',
     'image_timeout' => 'Das Bild hat zu lange gedauert und wurde abgebrochen.',
+    'pgen_magic_unavailable' => 'pGen Engine Magic wird im Hintergrund vorbereitet oder ist noch nicht bereit.',
     'cancelled' => 'Das Bild wurde abgebrochen.',
     'bad_prompt' => 'Die Bildbeschreibung war leer oder zu lang.',
     'bad_reference', 'reference_unavailable' => 'Mindestens ein Referenzbild ist ungueltig oder nicht mehr verfuegbar.',
