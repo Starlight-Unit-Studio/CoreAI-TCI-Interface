@@ -403,6 +403,7 @@ UI_FILES=(
   scripts/browse-worker-selftest.py
   scripts/browse-live-ui-selftest.cjs
   scripts/web-search-selftest.php
+  scripts/progressive-web-search-selftest.php
   tools/ember_browse_worker.py
   api/console_browse_stream.php
   api/core_install.php
@@ -1276,6 +1277,12 @@ if command -v php >/dev/null 2>&1; then
     else
       fail 'Terranische CoreAI-Bezeichnungen: Arch-Net/Ayalren-Rueckfall gefunden.'
     fi
+    if progressive_web_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/progressive-web-search-selftest.php" 2>&1)"; then
+      ok 'Websuche: fortlaufende Treffer ohne Dubletten, Paging und Quellenbelege geprueft.'
+    else
+      fail 'Websuche: progressive Treffer-/Paging-Regressionspruefung fehlgeschlagen.'
+    fi
+
     if node "$PROJECT_ROOT/scripts/tci-language-selftest.cjs" >/dev/null 2>&1; then
       ok 'Mara-TCI-Sprache und Stimmsequenz-Terminologie geprueft.'
     else
