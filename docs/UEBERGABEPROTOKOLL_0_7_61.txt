@@ -20,6 +20,25 @@ UMSETZUNG
   generische Werkzeugfehler bleiben ebenfalls aussagekraeftiger.
 - Offline-Selbsttests und Docker-/Native-Preflight erweitert.
 
+ZEITLICHE EINGRENZUNG (BETREIBER-SCREENSHOT)
+- Betreiber aktualisiert nach jedem Merge umgehend produktiv.
+- 14.11.2026 23:55 MEZ: Merge PR #312 / Version 0.7.56.
+- 14.11.2026 23:59 MEZ: letzter vom Betreiber gezeigter
+  erfolgreich generierter Bildanhang im Chat.
+- 15.11.2026 00:40 MEZ: Merge PR #313 / Version 0.7.57;
+  betrifft SU-Wasserzeichen, Offenlegung und PNG/XMP-Verarbeitung.
+- 15.11.2026 09:55 MEZ: Merge PR #314 / Version 0.7.58;
+  fuehrt optionalen Ponpoke-Text-Encoder fuer 4B und 9B ein.
+- 15.11.2026 10:25 MEZ: Merge PR #315 / Version 0.7.59.
+- 15.11.2026 12:15 MEZ: Merge PR #316 / Version 0.7.60.
+- Letzter nachgewiesener funktionierender Zeitraum: nach Merge
+  0.7.56, vor 0.7.57. 0.7.57 zuerst, 0.7.58 danach pruefen.
+- Ein genauer frueherer erster Fehlversuch benoetigt dessen
+  eigenen lesbaren Chat-Zeitstempel; 15.11.2026 12:38:22 MEZ
+  ist ein bereits dokumentierter spaeterer Fehlerzeitpunkt.
+- Der Screenshot mit 23:59 belegt Erfolg, nicht exakt die aktive
+  deployed Commit-SHA, die nur der Server-Update-Log bestaetigt.
+
 REGRESSION: UNGEKLAERT
 - Besonders relevante Aenderungen der letzten PRs:
   0.7.58 aktiviert bei Kontolizenz optional Ponpoke-Encoder auch fuer 4B.
