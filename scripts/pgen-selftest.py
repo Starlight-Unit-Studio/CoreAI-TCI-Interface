@@ -62,18 +62,32 @@ with tempfile.TemporaryDirectory(prefix='pgen-selftest-') as name:
     svc.profiles[profiles.QUALITY] = reg9
     svc.profile_paths[profiles.STANDARD] = {'diffusion_model':'4b.gguf','llm':'qwen4.gguf','vae':'vae.safetensors'}
     svc.profile_paths[profiles.QUALITY] = {'diffusion_model':'9b.gguf','llm':'qwen8.gguf','vae':'vae.safetensors'}
+    svc.ponpoke_paths[profiles.STANDARD] = 'ponpoke-4b-q8_0.gguf'
+    svc.ponpoke_paths[profiles.QUALITY] = 'ponpoke-9b-q8_0.gguf'
     reg9['measured']['normal']['peak_rss_mb'] = 0
     # Do not launch sd-cli: inspect the exact job the running image service would execute.
     svc._run = lambda job, prompt: None
-    job9 = svc.create('a photograph', 'normal', 42, model_id=profiles.QUALITY)
+    job9 = svc.create('a photograph', 'normal', 42, model_id=profiles.QUALITY,
+                      user_license_accepted=True)
     job9['state'] = 'done'
-    job4 = svc.create('a drawing', 'normal', 42, model_id=profiles.STANDARD)
+    job4 = svc.create('a drawing', 'normal', 42, model_id=profiles.STANDARD,
+                      user_license_accepted=True)
     nine_args = svc.command(job9, 'a photograph')
     four_args = svc.command(job4, 'a drawing')
     assert nine_args[nine_args.index('--diffusion-model')+1] == '9b.gguf'
-    assert nine_args[nine_args.index('--llm')+1] == 'qwen8.gguf'
+    assert nine_args[nine_args.index('--llm')+1] == 'ponpoke-9b-q8_0.gguf'
     assert four_args[four_args.index('--diffusion-model')+1] == '4b.gguf'
-    assert four_args[four_args.index('--llm')+1] == 'qwen4.gguf'
+    assert four_args[four_args.index('--llm')+1] == 'ponpoke-4b-q8_0.gguf'
+    assert job4['text_encoder'] == 'ponpoke-uncensored-q8_0'
+    assert job9['text_encoder'] == 'ponpoke-uncensored-q8_0'
+    job4['state'] = 'done'
+    unlicensed = svc.create('baseline', 'normal', 41, model_id=profiles.STANDARD,
+                           user_license_accepted=False)
+    assert svc.command(unlicensed, 'baseline')[svc.command(unlicensed, 'baseline').index('--llm') + 1] == 'qwen4.gguf', (
+        'other user must never inherit non-commercial Ponpoke encoder approval')
+    unlicensed['state'] = 'done'
+    assert svc.health()['ponpoke'][profiles.STANDARD]['ready']
+    assert svc.health()['ponpoke'][profiles.QUALITY]['ready'
     assert job9['model_label'] == 'FLUX.2-klein 9B (Q8_0)'
     assert svc.public(job9)['model'] == profiles.QUALITY
     assert svc.public(job4)['model'] == profiles.STANDARD
