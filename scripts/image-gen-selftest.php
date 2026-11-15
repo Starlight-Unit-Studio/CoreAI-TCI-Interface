@@ -315,6 +315,15 @@ img_gen_test(coreui_image_progress_meta(['phase' => 'sampling', 'step' => 2, 'st
   === ['source' => 'image', 'reason' => 'image_sampling', 'step' => 2, 'steps' => 4, 'image_px' => 1024]
   && coreui_image_progress_meta(['phase' => 'save', 'step' => 4, 'steps' => 4, 'width' => 512])['reason'] === 'image_decode'
   && coreui_image_progress_meta(['phase' => '<x>'])['reason'] === 'image_load', 'progress data for the card');
+$timeReg = coreui_image_registry();
+img_gen_test(coreui_image_wait_seconds([], $timeReg, 'normal') === 360
+  && coreui_image_wait_seconds(['time_limit_s'=>300], $timeReg, 'normal') === 360
+  && coreui_image_wait_seconds(['time_limit_s'=>375], $timeReg, 'normal') === 435
+  && coreui_image_wait_seconds(['time_limit_s'=>675], $timeReg, 'normal') === 735
+  && coreui_image_wait_seconds(['time_limit_s'=>1000], $timeReg, 'normal') === 1060
+  && coreui_image_wait_seconds([], $timeReg, 'large') === 780
+  && coreui_image_wait_seconds(['time_limit_s'=>500000], $timeReg, 'normal') === 7260,
+  'PHP uses the worker limit with bounded headroom, including 5 references');
 $timing = coreui_image_progress_meta([
   'phase'=>'sampling','step'=>3,'steps'=>4, 'model'=>'flux2-klein-4b',
   'text_encoder'=>'ponpoke-uncensored-q8_0', 'reference_count'=>5,
