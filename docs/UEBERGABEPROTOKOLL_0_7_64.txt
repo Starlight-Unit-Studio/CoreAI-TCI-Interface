@@ -1,0 +1,78 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.64
+Datum: 15.11.2026
+Basis: main 0.7.63
+Branch: feat/pgen-standard-magic-4b-9b-0764
+
+AUFTRAG
+Im Dialog CORE > Verwalten sollen genau vier pGen-Engine-Profile
+umschaltbar sein:
+  pGen Engine Standard (4B)
+  pGen Engine Magic (4B)
+  pGen Engine Standard (9B)
+  pGen Engine Magic (9B)
+Die eigentlichen Text-Encoder duerfen NICHT in der Liste erscheinen.
+Sie muessen nach Auswahl automatisch im Hintergrund zugeordnet
+und bei Bedarf vorbereitet werden.
+
+KERNARCHITEKTUR
+- Zwei Diffusionsmodelle: flux2-klein-4b, flux2-klein-9b.
+- Zwei explizite Encoder-Modi: standard (originaler Qwen3),
+  magic (Ponpoke Uncensored Q8_0 zum jeweiligen 4B/9B).
+- Vier stabile pGen-Auswahlkennungen:
+  flux2-klein-4b-standard, flux2-klein-4b-magic,
+  flux2-klein-9b-standard, flux2-klein-9b-magic.
+- api/pgen.php: serverweit gespeichertes pGen-Profil, Migration
+  alter flux2-klein-4b/9b-Dateien auf ihre Standard-Profile,
+  Bereitschaft des passenden Basis-/Magic-Pfads, HW und Lizenz.
+- api/image_gen.php: schickt den ausgewaehlten Basis-Modellwert
+  mit explizitem mode: standard|magic an den Bilddienst.
+  Die pro Konto angenommene Lizenz wird vor dem Auftrag geprueft.
+- tools/image/image_service.py: Standard laedt immer Qwen3
+  (auch bei akzeptierter Lizenz). Magic nutzt Ponpoke nur,
+  wenn die verifizierten Dateien bereit sind und der
+  anfragende Benutzer zugestimmt hat. Kein stiller Fallback.
+- Background: bereits vorhandene Ponpoke-Vorbereitung beim Start;
+  interner /pgen/prepare-Endpunkt fuer gezielten Neuversuch.
+- api/user_settings.php: neuer owner-/admin-gesicherter
+  pgen_prepare-Aktionspfad; Browser bestimmt weder Dateipfade,
+  Repository-IDs noch Encoder-Modelle.
+- js/coreui-core-install.js + app.html: vier Profile im
+  vorhandenen CoreAI-Design, kein zusaetzliches Modellformular.
+  Wenn Magic nicht bereit ist, Vorbereitung im Hintergrund.
+  Vorherige Auswahl bleibt bis zur Bereitschaft aktiv.
+  Bereitschaft fuehrt bei aktivem Dialog automatisch
+  zum Abschluss der Auswahl.
+
+BERECHTIGUNGEN
+- Standard 4B: Apache-2.0-Original, keine Non-Commercial-Freigabe
+  fuer das originale 4B erforderlich.
+- Magic 4B, Standard 9B, Magic 9B: Non-Commercial
+  v2.1 pro Benutzerkonto erforderlich. Keine Uebertragung
+  zwischen Konten durch globale Modellgewichtdateien.
+- 9B-Installations- und Ressourcenpruefung unveraendert.
+- Globaler pGen-Modus wirkt systemweit; die eigene Lizenz
+  ist pro Benutzerkonto trotzdem fuer jeden Auftrag notwendig.
+- Keine zusaetzlichen Modellgewichte, kein Cloud-Zwang.
+
+TESTBEREICHE
+- scripts/pgen-selftest.php: vier Optionen, Speichermigration,
+  Lizenzen, HW, nicht angezeigte Encoder.
+- scripts/pgen-selftest.py: Standard/ Magic und striktes
+  fail-closed bei Magic-Dateifehler bzw. Lizenzmangel.
+- scripts/image-gen-selftest.php: korrekter HTTP-Auftrag
+  mit basis-modell plus mode, getrennte Kontozustimmung.
+- scripts/core-install-ui-selftest.cjs: sichtbare vier
+  Optionen und automatische Hintergrundaktivierung.
+- image-service CI und Version-Guard vor Merge.
+- Nach Update: Profile nacheinander auswaehlen,
+  unter dem Bildarbeitsweg den tatsaechlichen
+  Text-Encoder pruefen. Keine 20-Minuten-Testreihe noetig.
+
+AUSDRUECKLICHE GRENZEN
+- Ein gruenes CI ist kein echter Lauf auf Betreiberhardware.
+- Kein Umbau des TCI-Cores oder der Quantum-Gen-Engine.
+- Keine zeit- oder RAM-Aufstockung des Bildworkers hier.
+- Bestehender 0.7.63 Fix fuer Referenzzeitlimits bleibt erhalten.
+
+NAECHSTE VERSION
+Nach Merge von 0.7.64 ist 0.7.65 erforderlich.
