@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="620" height="200" viewBox="0 0 620 200">
+  <defs>
+    <linearGradient id="border" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00E5C7"/>
+      <stop offset="38%" stop-color="#00B8FF"/>
+      <stop offset="68%" stop-color="#7A5CFF"/>
+      <stop offset="100%" stop-color="#FF2EB8"/>
+    </linearGradient>
+    <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#2EE6D6"/>
+      <stop offset="45%" stop-color="#3EC1FF"/>
+      <stop offset="75%" stop-color="#9A7BFF"/>
+      <stop offset="100%" stop-color="#FF4ED2"/>
+    </linearGradient>
+    <linearGradient id="fillDark" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#16233F"/>
+      <stop offset="100%" stop-color="#0C152B"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-40%" width="140%" height="180%">
+      <feGaussianBlur stdDeviation="10" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <!-- Dark-Mode-Version: Innenfüllung = euer Dark-Background #101A33 als Verlauf, damit der Button nahtlos sitzt -->
+  <!-- Outer glow copy -->
+  <rect x="22" y="38" width="576" height="124" rx="62" fill="none" stroke="url(#border)" stroke-width="7" opacity="0.35" filter="url(#glow)"/>
+  <!-- Main pill -->
+  <rect x="22" y="38" width="576" height="124" rx="62" fill="url(#fillDark)" stroke="url(#border)" stroke-width="7"/>
+  <!-- Sparkles -->
+  <g fill="#2EE6D6">
+    <path d="M108 78 L114 94 L130 100 L114 106 L108 122 L102 106 L86 100 L102 94 Z"/>
+    <path d="M158 92 L163 104 L175 109 L163 114 L158 126 L153 114 L141 109 L153 104 Z"/>
+    <path d="M92 124 L95 131 L102 134 L95 137 L92 144 L89 137 L82 134 L89 131 Z"/>
+  </g>
+  <!-- Text -->
+  <text x="205" y="124" font-family="Arial, Helvetica, sans-serif" font-size="72" font-weight="500" fill="url(#textGrad)" letter-spacing="0.5">Generate</text>
+</svg>
