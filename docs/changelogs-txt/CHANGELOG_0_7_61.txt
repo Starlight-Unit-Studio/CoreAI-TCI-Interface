@@ -1,0 +1,29 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.61
+Datum: 15.11.2026
+
+ARBEITSWEG UND BILDFEHLERDIAGNOSE
+- Bei Bildfehlern wird die konkrete klassifizierte Ursache gespeichert:
+  Zeitlimit, sd-cli-Exitcode, fehlendes/ungueltiges PNG, verlorener
+  Bildauftrag, bekannte Worker-Exception, Speicher und Warteschlange.
+- Letzte tatsaechlich bestaetigte Bildphase und erreichte Schritte
+  werden gezeigt, ohne die rein animierte Prozentanzeige als Messung
+  auszugeben.
+- Bildmodell, Text-Encoder, Breite und Referenzanzahl aus verifizierten
+  Workerfeldern werden zu technischen Arbeitsereignissen.
+- Generische Werkzeugfehler zeigen vorhandene begrenzte Fehlerkennungen
+  im Arbeitsweg statt pauschaler Erklaerung.
+- Rohlogs, Prompts, Private-Pfade und internes Modell-Thinking bleiben
+  aus dem oeffentlichen Arbeitsweg ausgeschlossen.
+
+REGRESSION 4B/9B
+- Standard 4B meldet nach den juengsten pGen-Updates ebenfalls
+  Bildfehler. Ursache auf dem Betreiber-Server noch NICHT bestaetigt.
+- Auswertung der Fehlerklassifikation nach Liveversuch notwendig.
+- Kein unbelegter Eingriff in Modellgewichte, Encoder oder Runtime.
+
+VALIDIERUNG
+- Eigener Diagnostik-Selbsttest; Work-Event- und UI-Regressionen
+  erweitert; beide bestehenden Preflight-Varianten integrieren den Test.
+- PHP-Lint, Preflight und echte 4B/9B-Bilder vor Merge nachzuweisen.
+
+Version 0.7.61
