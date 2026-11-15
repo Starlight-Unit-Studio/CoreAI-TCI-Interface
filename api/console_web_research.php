@@ -42,8 +42,12 @@ function coreui_web_research_fit_row(array &$row, int $index, int $remaining, in
   unset($row['_raw_content']);
   if ($raw === '' || $remaining - $length <= 4) return true;
   $usable = min($snipMax, $remaining - $length - 4);
+  $rawLength = function_exists('mb_strlen') ? mb_strlen($raw, 'UTF-8') : strlen($raw);
+  $clipped = $rawLength > $usable && $usable > 1;
+  $take = $clipped ? $usable - 1 : $usable;
   $row['content'] = function_exists('mb_substr')
-    ? mb_substr($raw, 0, $usable, 'UTF-8') : substr($raw, 0, $usable);
+    ? mb_substr($raw, 0, $take, 'UTF-8') : substr($raw, 0, $take);
+  if ($clipped) $row['content'] .= '…'; // Never suggest a cut-off excerpt was complete.
   return true;
 }
 
