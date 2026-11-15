@@ -63,6 +63,8 @@
     bad_reference:'Die Bildreferenz ist ungültig.',
     reference_unavailable:'Mindestens ein benötigtes Referenzbild ist nicht verfügbar.',
     license_accept_required:'Die erforderliche Modelllizenz wurde für dieses Konto noch nicht bestätigt.',
+    pgen_magic_unavailable:'pGen Engine Magic wird vorbereitet oder ist noch nicht bereit.',
+    pgen_loading:'Das ausgewählte pGen-Bildmodell wird gerade vorbereitet.',
     pgen_unavailable:'Das ausgewählte Bildmodell ist nicht verfügbar.',
     guest_image_limit_reached:'Das tägliche Bildkontingent ist aufgebraucht.',
     guest_image_disabled:'Die Bildgenerierung für Gäste ist deaktiviert.',

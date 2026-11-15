@@ -19,7 +19,7 @@ function coreui_image_failure_work_meta(array $result, array $progress = []): ar
     'image_busy', 'model_queue_timeout', 'image_memory', 'image_timeout',
     'cancelled', 'bad_prompt', 'bad_size', 'bad_reference',
     'reference_unavailable', 'storage_full', 'storage_failed',
-    'license_accept_required', 'pgen_unavailable',
+    'license_accept_required', 'pgen_unavailable', 'pgen_loading', 'pgen_magic_unavailable',
     'guest_image_limit_reached', 'guest_image_disabled',
     'guest_image_quota_unavailable',
   ];

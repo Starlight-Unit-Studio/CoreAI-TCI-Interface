@@ -7,6 +7,10 @@ require_once __DIR__ . '/core_generator_license.php';
 
 const COREUI_PGEN_STANDARD = 'flux2-klein-4b';
 const COREUI_PGEN_QUALITY = 'flux2-klein-9b';
+const COREUI_PGEN_4B_STANDARD = 'flux2-klein-4b-standard';
+const COREUI_PGEN_4B_MAGIC = 'flux2-klein-4b-magic';
+const COREUI_PGEN_9B_STANDARD = 'flux2-klein-9b-standard';
+const COREUI_PGEN_9B_MAGIC = 'flux2-klein-9b-magic';
 
 function coreui_pgen_file(): string {
   $cache = defined('STU_EMBER_CACHE_DIR') ? (string)STU_EMBER_CACHE_DIR
@@ -14,18 +18,35 @@ function coreui_pgen_file(): string {
   return rtrim($cache, '/') . '/pgen-profile.json';
 }
 
-function coreui_pgen_valid(string $model): bool {
-  return in_array($model, [COREUI_PGEN_STANDARD, COREUI_PGEN_QUALITY], true);
+/** Public choices are complete profiles. Encoders stay internal to the image worker. */
+function coreui_pgen_valid(string $profile): bool {
+  return in_array($profile, [
+    COREUI_PGEN_4B_STANDARD, COREUI_PGEN_4B_MAGIC,
+    COREUI_PGEN_9B_STANDARD, COREUI_PGEN_9B_MAGIC,
+  ], true);
+}
+
+function coreui_pgen_model(string $profile): string {
+  return in_array($profile, [COREUI_PGEN_9B_STANDARD, COREUI_PGEN_9B_MAGIC], true)
+    ? COREUI_PGEN_QUALITY : COREUI_PGEN_STANDARD;
+}
+
+function coreui_pgen_mode(string $profile): string {
+  return in_array($profile, [COREUI_PGEN_4B_MAGIC, COREUI_PGEN_9B_MAGIC], true)
+    ? 'magic' : 'standard';
 }
 
 function coreui_pgen_selected(): string {
   $file = coreui_pgen_file();
-  if (is_link($file) || !is_file($file)) return COREUI_PGEN_STANDARD;
+  if (is_link($file) || !is_file($file)) return COREUI_PGEN_4B_STANDARD;
   $data = json_decode((string)@file_get_contents($file), true);
-  $model = is_array($data) ? ($data['model'] ?? '') : '';
-  if (!is_string($model) || !coreui_pgen_valid($model)) return COREUI_PGEN_STANDARD;
-  // The server shares model weights; per-account consent is checked at each image job.
-  return $model;
+  $profile = is_array($data) ? ($data['model'] ?? '') : '';
+  if (!is_string($profile)) return COREUI_PGEN_4B_STANDARD;
+  // Existing installs only stored the diffusion size: migrate without
+  // silently turning a previously licensed auto-selected encoder into Magic.
+  if ($profile === COREUI_PGEN_STANDARD) return COREUI_PGEN_4B_STANDARD;
+  if ($profile === COREUI_PGEN_QUALITY) return COREUI_PGEN_9B_STANDARD;
+  return coreui_pgen_valid($profile) ? $profile : COREUI_PGEN_4B_STANDARD;
 }
 
 function coreui_pgen_hardware(?array $hw = null): array {
@@ -56,61 +77,68 @@ function coreui_pgen_status(?array $health = null, ?array $hardware = null, ?PDO
   }
   $ready = ($health['ok'] ?? false) === true && ($health['ready'] ?? false) === true;
   $available = is_array($health['pgen'] ?? null) ? $health['pgen'] : [];
-  $four = is_array($available[COREUI_PGEN_STANDARD] ?? null) ? $available[COREUI_PGEN_STANDARD] : [];
-  $nine = is_array($available[COREUI_PGEN_QUALITY] ?? null) ? $available[COREUI_PGEN_QUALITY] : [];
   $ponpoke = is_array($health['ponpoke'] ?? null) ? $health['ponpoke'] : [];
-  $fourEncoder = is_array($ponpoke[COREUI_PGEN_STANDARD] ?? null) ? $ponpoke[COREUI_PGEN_STANDARD] : [];
-  $nineEncoder = is_array($ponpoke[COREUI_PGEN_QUALITY] ?? null) ? $ponpoke[COREUI_PGEN_QUALITY] : [];
   $approved = $pdo instanceof PDO && $uid > 0
     && coreui_generator_license_user_accepted($pdo, $uid);
   $hw = coreui_pgen_hardware($hardware);
+  $models = [];
+  foreach ([
+    [COREUI_PGEN_4B_STANDARD, 'pGen Engine Standard (4B)', COREUI_PGEN_STANDARD, 'standard', false, 67, 14.4],
+    [COREUI_PGEN_4B_MAGIC, 'pGen Engine Magic (4B)', COREUI_PGEN_STANDARD, 'magic', true, 67, 14.4],
+    [COREUI_PGEN_9B_STANDARD, 'pGen Engine Standard (9B)', COREUI_PGEN_QUALITY, 'standard', true, 137, 22.6],
+    [COREUI_PGEN_9B_MAGIC, 'pGen Engine Magic (9B)', COREUI_PGEN_QUALITY, 'magic', true, 137, 22.6],
+  ] as [$id, $label, $base, $mode, $licenseRequired, $seconds, $ram]) {
+    $baseState = is_array($available[$base] ?? null) ? $available[$base] : [];
+    $magicState = is_array($ponpoke[$base] ?? null) ? $ponpoke[$base] : [];
+    $magicReady = ($magicState['ready'] ?? false) === true;
+    $physicalReady = $ready && ($baseState['ready'] ?? false) === true;
+    $modelReady = $physicalReady && ($mode === 'standard' || $magicReady);
+    $models[] = [
+      'id'=>$id, 'label'=>$label, 'base_model'=>$base, 'mode'=>$mode,
+      'license_required'=>$licenseRequired,
+      'license'=>$base === COREUI_PGEN_QUALITY || $mode === 'magic'
+        ? 'FLUX Non-Commercial License v2.1' : 'Apache-2.0',
+      'ready'=>$modelReady && (!$licenseRequired || $approved),
+      'base_installed'=>($baseState['installed'] ?? false) === true,
+      'base_ready'=>$physicalReady,
+      'installed'=>($baseState['installed'] ?? false) === true
+        && ($mode === 'standard' || $magicReady),
+      'loading'=>($baseState['loading'] ?? false) === true
+        || ($mode === 'magic' && !$magicReady && ($ponpoke['loading'] ?? false) === true),
+      'prepare_required'=>$mode === 'magic' && !$magicReady,
+      'error'=>mb_substr((string)($baseState['error'] ?? ''), 0, 180),
+      'seconds_512'=>$seconds, 'ram_1024_gb'=>$ram,
+    ];
+  }
   return [
     'active'=>coreui_pgen_selected(),
     'engine_ready'=>$ready,
     'license_accepted'=>$approved,
     'can_install_9b'=>$hw['ok'],
     'required_ram_gib'=>$hw['required_ram_gib'],
-    'models'=>[
-      ['id'=>COREUI_PGEN_STANDARD, 'label'=>'FLUX.2 Standard (4B)',
-       'license'=>'Apache-2.0 (Basis), FLUX Non-Commercial v2.1 (Ponpoke)',
-       'encoder'=>'ponpoke/flux2-klein-4b-uncensored-text-encoder:Q8_0',
-       'encoder_ready'=>($fourEncoder['ready'] ?? false) === true,
-       'encoder_error'=>mb_substr((string)($ponpoke['error'] ?? ''), 0, 180),
-       'ready'=>$ready && ($four['ready'] ?? false) === true,
-       'installed'=>$ready && ($four['installed'] ?? false) === true,
-       'loading'=>($four['loading'] ?? false) === true,
-       'seconds_512'=>67, 'ram_1024_gb'=>14.4],
-      ['id'=>COREUI_PGEN_QUALITY, 'label'=>'FLUX.2 9B',
-       'license'=>'FLUX Non-Commercial License v2.1',
-       'encoder'=>'ponpoke/flux2-klein-9b-uncensored-text-encoder:Q8_0',
-       'encoder_ready'=>($nineEncoder['ready'] ?? false) === true,
-       'encoder_error'=>mb_substr((string)($ponpoke['error'] ?? ''), 0, 180),
-       'ready'=>$ready && $approved && ($nine['ready'] ?? false) === true,
-       'installed'=>($nine['installed'] ?? false) === true,
-       'loading'=>($nine['loading'] ?? false) === true,
-       'error'=>mb_substr((string)($nine['error'] ?? ''), 0, 180),
-       'seconds_512'=>137, 'ram_1024_gb'=>22.6]
-    ],
+    'models'=>$models,
   ];
 }
 
-function coreui_pgen_save(string $model, array $status, int $uid): void {
-  if (!coreui_pgen_valid($model)) throw new InvalidArgumentException('pgen_invalid_model');
+function coreui_pgen_save(string $profile, array $status, int $uid): void {
+  if (!coreui_pgen_valid($profile)) throw new InvalidArgumentException('pgen_invalid_model');
   if (!$status['engine_ready']) throw new RuntimeException('pgen_engine_unavailable');
   foreach ($status['models'] as $entry) {
-    if ($entry['id'] !== $model) continue;
-    if ($model === COREUI_PGEN_QUALITY && !$status['can_install_9b'])
+    if ($entry['id'] !== $profile) continue;
+    if (coreui_pgen_model($profile) === COREUI_PGEN_QUALITY && !$status['can_install_9b'])
       throw new RuntimeException('pgen_hardware_insufficient');
-    if ($model === COREUI_PGEN_QUALITY && !$status['license_accepted'])
+    if (($entry['license_required'] ?? false) && !$status['license_accepted'])
       throw new RuntimeException('license_accept_required');
-    if (!$entry['ready']) throw new RuntimeException('pgen_model_unavailable');
+    if (!$entry['ready']) throw new RuntimeException(
+      coreui_pgen_mode($profile) === 'magic' && ($entry['prepare_required'] ?? false)
+        ? 'pgen_magic_unavailable' : 'pgen_model_unavailable');
     $file = coreui_pgen_file();
     $dir = dirname($file);
     if (!is_dir($dir) || is_link($dir) || is_link($file)) throw new RuntimeException('pgen_save_unavailable');
     $tmp = @tempnam($dir, '.pgen-profile-');
     if (!is_string($tmp)) throw new RuntimeException('pgen_save_unavailable');
     try {
-      $json = json_encode(['model'=>$model, 'changed_by'=>$uid,
+      $json = json_encode(['model'=>$profile, 'changed_by'=>$uid,
           'changed_at'=>gmdate('c')], JSON_UNESCAPED_SLASHES);
       if (@file_put_contents($tmp, $json . "\n", LOCK_EX) === false
           || !@chmod($tmp, 0640) || !@rename($tmp, $file))

@@ -351,7 +351,7 @@ class Service:
             self.profile_paths[PGEN.STANDARD] = self.paths
             self.ready = True
             log('bereit: ' + self.reg['model']['label'])
-            threading.Thread(target=self._prepare_ponpoke, daemon=True).start()
+            self.prepare_encoder()
             # Reuse tested pGen 9B files if the installer already adopted them.
             if self.pgen_lock.is_file() and not self.pgen_lock.is_symlink():
                 self._prepare_quality()
@@ -366,11 +366,23 @@ class Service:
         finally:
             self.loading = False
 
-    def _prepare_ponpoke(self) -> None:
-        self.ponpoke_loading = True
+    def prepare_encoder(self, model_id: str | None = None) -> bool:
+        """Prepare hidden Magic assets in the background, including after a failed startup attempt."""
+        if model_id is not None and model_id not in (PGEN.STANDARD, PGEN.QUALITY):
+            return False
+        with self.state_lock:
+            if self.ponpoke_loading:
+                return True
+            if model_id is not None and model_id in self.ponpoke_paths:
+                return True
+            self.ponpoke_loading = True
+        threading.Thread(target=self._prepare_ponpoke, args=(model_id,), daemon=True).start()
+        return True
+
+    def _prepare_ponpoke(self, model_id: str | None = None) -> None:
         self.ponpoke_error = ''
         try:
-            for model in (PGEN.STANDARD, PGEN.QUALITY):
+            for model in ((model_id,) if model_id is not None else (PGEN.STANDARD, PGEN.QUALITY)):
                 try:
                     path = PONPOKE.install(self.models, model)
                     _, locked = PONPOKE._paths(self.models, model)
@@ -510,10 +522,21 @@ class Service:
     def create(self, prompt: str, size_key: str, seed: int | None, reference: str | None = None,
                references: list[str] | None = None, scene_hint: str | None = None,
                model_id: str = PGEN.STANDARD, profile_references: list[str] | None = None,
-               user_license_accepted: bool = False) -> dict:
+               user_license_accepted: bool = False, encoder_mode: str = 'standard') -> dict:
+        if encoder_mode not in ('standard', 'magic'):
+            raise ValueError('bad_pgen_mode')
+        if (model_id == PGEN.QUALITY or encoder_mode == 'magic') and not user_license_accepted:
+            raise ValueError('license_accept_required')
         if model_id not in self.profile_paths or model_id not in self.profiles:
             raise ValueError('pgen_unavailable')
         profile = self.profiles[model_id]
+        # Selection determines the encoder, never the mere fact that a user
+        # previously accepted a license. Missing Magic assets MUST NOT fall back.
+        with self.state_lock:
+            magic_path = self.ponpoke_paths.get(model_id) if encoder_mode == 'magic' else None
+            magic_details = self.ponpoke_metadata.get(model_id, {}) if magic_path else {}
+        if encoder_mode == 'magic' and not magic_path:
+            raise ValueError('pgen_magic_unavailable')
         # Tokens are already account-checked by PHP. No arbitrary paths are accepted here.
         reference_path = resolve_reference(reference)
         if references is None:
@@ -558,11 +581,11 @@ class Service:
             job_id = secrets.token_hex(16)
             job = {'id': job_id, 'state': 'queued', 'phase': 'load', 'step': 0, 'steps': int(profile['model']['steps']), 'model': model_id,
                    'model_label': profile['model']['label'],
-                   'llm_override': self.ponpoke_paths.get(model_id) if user_license_accepted is True else None,
-                   'text_encoder': 'ponpoke-uncensored-q8_0' if user_license_accepted is True and model_id in self.ponpoke_paths else 'original',
-                   'encoder_source': self.ponpoke_metadata.get(model_id, {}).get('repo', '') if user_license_accepted else '',
-                   'encoder_revision': self.ponpoke_metadata.get(model_id, {}).get('revision', '') if user_license_accepted else '',
-                   'encoder_sha256': self.ponpoke_metadata.get(model_id, {}).get('sha256', '') if user_license_accepted else '',
+                   'llm_override': magic_path,
+                   'text_encoder': 'ponpoke-uncensored-q8_0' if magic_path else 'original',
+                   'encoder_source': magic_details.get('repo', ''),
+                   'encoder_revision': magic_details.get('revision', ''),
+                   'encoder_sha256': magic_details.get('sha256', ''),
                    'error': '', 'size': size_key, 'width': size['width'], 'height': size['height'],
                    'seed': seed if seed is not None else secrets.randbelow(2 ** 31 - 1),
                    'seconds': None, 'peak_rss_mb': None, 'started': time.monotonic(), 'finished': None,
@@ -804,6 +827,20 @@ def make_handler(service: Service):
             return self._json(200, {'ok': True, 'job': service.public(job)})
 
         def do_POST(self) -> None:
+            if self.path == '/pgen/prepare':
+                length = int(self.headers.get('Content-Length') or 0)
+                if length <= 0 or length > 256:
+                    return self._json(400, {'ok': False, 'error': 'bad_request'})
+                try:
+                    info = json.loads(self.rfile.read(length).decode('utf-8'))
+                except (ValueError, UnicodeDecodeError):
+                    return self._json(400, {'ok': False, 'error': 'bad_request'})
+                model = info.get('model') if isinstance(info, dict) else None
+                if model not in (PGEN.STANDARD, PGEN.QUALITY):
+                    return self._json(400, {'ok': False, 'error': 'bad_model'})
+                started = service.prepare_encoder(model)
+                return self._json(202 if started else 409, {'ok': started,
+                    'error': '' if started else 'pgen_magic_unavailable'})
             if self.path == '/pgen/install':
                 started = service.install_quality()
                 return self._json(202 if started else 409, {'ok': started,
@@ -826,13 +863,18 @@ def make_handler(service: Service):
             profile_references = data.get('profile_references', []) if isinstance(data, dict) else []
             scene_hint = data.get('scene_hint') if isinstance(data, dict) else None
             model_id = data.get('model', PGEN.STANDARD) if isinstance(data, dict) else PGEN.STANDARD
+            encoder_mode = data.get('mode', 'standard') if isinstance(data, dict) else 'standard'
+            if encoder_mode not in ('standard', 'magic'):
+                return self._json(400, {'ok': False, 'error': 'bad_pgen_mode'})
             if model_id not in (PGEN.STANDARD, PGEN.QUALITY):
                 return self._json(400, {'ok': False, 'error': 'bad_model'})
             # The PHP API checks the authenticated caller's user_id against
             # their own DB receipt before creating this internal worker job.
             # A host-wide file must NEVER authorize other users' image jobs.
-            if model_id == PGEN.QUALITY and data.get('user_license_accepted') is not True:
+            if (model_id == PGEN.QUALITY or encoder_mode == 'magic') and data.get('user_license_accepted') is not True:
                 return self._json(403, {'ok': False, 'error': 'license_accept_required'})
+            if encoder_mode == 'magic' and model_id not in service.ponpoke_paths:
+                return self._json(503, {'ok': False, 'error': 'pgen_magic_unavailable'})
             if model_id not in service.profile_paths:
                 return self._json(503, {'ok': False, 'error': 'pgen_loading' if
                     (service.pgen_loading or service.pgen_installing) else 'pgen_unavailable'})
@@ -864,7 +906,7 @@ def make_handler(service: Service):
                                         'detail': service.error})
             try:
                 job = service.create(prompt.strip(), size, seed, reference, references, scene_hint, model_id, profile_references,
-                                     data.get('user_license_accepted') is True)
+                                     data.get('user_license_accepted') is True, encoder_mode)
             except BlockingIOError:
                 return self._json(503, {'ok': False, 'error': 'image_busy'})
             except MemoryError as error:
