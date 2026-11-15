@@ -216,6 +216,25 @@ def resolve_uploaded_reference(token: str) -> str:
     return str(path)
 
 
+# --- Reference-aware runtime ------------------------------------------------------------
+
+def image_time_limit(base_seconds: int, model_id: str, size_key: str, reference_count: int) -> int:
+    """Keep unreferenced jobs unchanged; allow for measured CPU cost of each reference.
+
+    Operator's 15 Nov 2026 512x512 samples: 4B ~65 s text-to-image vs 113 s
+    with one reference; 9B ~138 s vs 237 s. The per-reference allowances
+    (75/140 s) include headroom for the five account portraits. 1024x1024
+    costs more per step, so reserve twice as much. These are deadlines, not
+    delays: completed images return immediately, and Stop still cancels.
+    """
+    if reference_count <= 0:
+        return base_seconds
+    per_reference = 140 if model_id == PGEN.QUALITY else 75
+    if size_key == 'large':
+        per_reference *= 2
+    return base_seconds + per_reference * reference_count
+
+
 # --- Service ---------------------------------------------------------------------------
 
 class Service:
@@ -549,7 +568,9 @@ class Service:
                    'seconds': None, 'peak_rss_mb': None, 'started': time.monotonic(), 'finished': None,
                    'png': str(self.work / (job_id + '.png')), 'log': str(self.work / (job_id + '.log')),
                    'preview_png': str(self.work / (job_id + '-preview.png')), 'preview': 0, 'preview_stamp': None,
-                   'pid': 0, 'cancel': False, 'limit': int(size['time_limit_s']),
+                   'pid': 0, 'cancel': False,
+                   'limit': image_time_limit(int(size['time_limit_s']), model_id, size_key,
+                                             len(reference_paths)),
                    'reference_path': reference_path, 'reference_paths': reference_paths,
                    'reference_count': len(reference_paths), 'curated_mara_count': len(curated)}
             self.jobs[job_id] = job
@@ -664,7 +685,11 @@ class Service:
 
     def public(self, job: dict) -> dict:
         keys = ('id', 'state', 'phase', 'step', 'steps', 'model', 'model_label', 'text_encoder', 'encoder_source', 'encoder_revision', 'encoder_sha256', 'error', 'size', 'width', 'height', 'seed', 'seconds', 'peak_rss_mb', 'preview', 'reference_count', 'curated_mara_count')
-        return {key: job[key] for key in keys}
+        result = {key: job[key] for key in keys}
+        result['time_limit_s'] = job['limit']
+        result['elapsed_s'] = job['seconds'] if job['seconds'] is not None else (
+            round(time.monotonic() - job['started'], 1) if job['state'] == 'running' else 0.0)
+        return result
 
     def health(self) -> dict:
         model = self.reg.get('model') or {}

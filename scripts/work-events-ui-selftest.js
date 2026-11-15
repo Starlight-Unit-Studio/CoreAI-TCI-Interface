@@ -266,6 +266,7 @@ const imageFailure = work.create({events:[{
   meta:{source:'image',reason:'image_worker_exit',exit_code:137,
     image_phase:'sampling',step:2,steps:4,model:'flux2-klein-9b',
     image_encoder:'ponpoke-uncensored-q8_0',image_px:1024,
+    reference_count:5,time_limit_s:1000,elapsed_s:999,peak_rss_mb:17792,
     raw_log:'SECRET-JOB-LOG',prompt:'SECRET-PROMPT'},
   time:'2026-11-15T12:38:22Z'
 }]});
@@ -276,6 +277,11 @@ assert(imageFailure.textContent.includes('Exitcode: 137')
 assert(imageFailure.textContent.includes('FLUX') === false
   && imageFailure.textContent.includes('ponpoke-uncensored-q8_0'),
   'technical model details are kept without inventing a prose model label');
+assert(imageFailure.textContent.includes('Referenzbilder5')
+  && imageFailure.textContent.includes('Bild-Zeitlimit (s)1000')
+  && imageFailure.textContent.includes('Bild-Laufzeit (s)999')
+  && imageFailure.textContent.includes('Maximaler Bild-RAM (MB)17792'),
+  'owner can read bounded worker runtime and 5 reference pictures');
 assert(!imageFailure.textContent.includes('SECRET'),
   'raw worker logs and image prompts must not appear in the work trail');
 const unknownImageFailure = work.create({events:[{

@@ -426,6 +426,14 @@ function coreui_image_progress_meta(array $job): array {
   if (in_array($encoder, ['original','ponpoke-uncensored-q8_0'], true)) $meta['image_encoder'] = $encoder;
   $refs = $job['reference_count'] ?? null;
   if (is_numeric($refs)) $meta['reference_count'] = max(0, min(20, (int)$refs));
+  // Only bounded measurements from the local worker. No log, prompt or private
+  // profile filenames may enter the work trail.
+  foreach (['time_limit_s'=>7200, 'elapsed_s'=>7200, 'peak_rss_mb'=>1048576] as $key=>$ceiling) {
+    $raw = $job[$key] ?? null;
+    if (is_numeric($raw) && is_finite((float)$raw) && (float)$raw >= 0) {
+      $meta[$key] = min($ceiling, (int)round((float)$raw));
+    }
+  }
   return $meta;
 }
 
@@ -449,6 +457,13 @@ function coreui_image_progress_title(array $job): string {
  * ['ok' => true, 'uuid', 'width', 'height', 'seed', 'seconds', 'size', 'prompt'] or
  * ['ok' => false, 'error' => code, 'detail' => text].
  */
+/** Give PHP the same bounded worker budget plus polling/transport headroom. */
+function coreui_image_wait_seconds(array $job, array $registry, string $size): int {
+  $base = (int)($registry['sizes'][$size]['time_limit_s'] ?? 300);
+  $worker = (int)($job['time_limit_s'] ?? 0);
+  return max($base, min(7200, $worker)) + 60;
+}
+
 function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $prompt, string $size,
     callable $lease, callable $unlease, callable $progress, callable $cancelled, ?callable $http = null,
     ?callable $preview = null, ?string $reference = null, array $references = [], ?string $userReferenceMode = null,
@@ -543,7 +558,10 @@ function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $
       $http('DELETE', '/jobs/' . $jobId, null, 5);
       return ['ok' => false, 'error' => 'reference_unavailable', 'detail' => ''];
     }
-    $deadline = microtime(true) + (int)($registry['sizes'][$size]['time_limit_s'] ?? 300) + 60;
+    // Worker resolves the actual reference count (including account photos)
+    // and owns the job's timeout. Do not let PHP's old fixed 300/720s
+    // watchdog cancel a healthy multi-reference job before its worker.
+    $deadline = microtime(true) + coreui_image_wait_seconds($job, $registry, $size);
     $seen = '';
     while (true) {
       $now = coreui_image_progress_title($job);
@@ -570,7 +588,8 @@ function coreui_image_generate(PDO $pdo, int $uid, string $characterId, string $
     }
     if (($job['state'] ?? '') !== 'done') {
       return ['ok' => false, 'error' => ($job['state'] ?? '') === 'cancelled' ? 'cancelled' : 'image_failed',
-        'detail' => mb_substr((string)($job['error'] ?? ''), 0, 200)];
+        'detail' => mb_substr((string)($job['error'] ?? ''), 0, 200),
+        'diagnostic' => coreui_image_progress_meta($job)];
     }
     [$code, , $png] = $http('GET', '/jobs/' . $jobId . '/image', null, 30);
   } finally {

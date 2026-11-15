@@ -44,4 +44,25 @@ image_diag_check(coreui_image_failure_work_meta(
   ['error'=>'image_failed','detail'=>'MyWeirdError: secret'])['reason'] === 'image_failed',
   'unrecognized classes cannot become public data');
 
+$terminal = coreui_image_failure_work_meta(
+  ['error'=>'image_failed', 'detail'=>'Zeitlimit von 675 s erreicht',
+   'diagnostic'=>[
+     'source'=>'image', 'reason'=>'image_sampling','step'=>3,'steps'=>4,
+     'model'=>'flux2-klein-4b','image_encoder'=>'ponpoke-uncensored-q8_0',
+     'reference_count'=>5,'elapsed_s'=>675,'time_limit_s'=>675,
+     'peak_rss_mb'=>9785, 'prompt'=>'SECRET', 'log'=>'/private/worker.log',
+   ]],
+  ['reason'=>'image_sampling','step'=>2,'steps'=>4]);
+image_diag_check(($terminal['reason'] ?? null) === 'image_worker_timeout'
+  && ($terminal['step'] ?? null) === 3
+  && ($terminal['reference_count'] ?? null) === 5
+  && ($terminal['time_limit_s'] ?? null) === 675
+  && ($terminal['elapsed_s'] ?? null) === 675
+  && ($terminal['peak_rss_mb'] ?? null) === 9785
+  && ($terminal['model'] ?? null) === 'flux2-klein-4b'
+  && ($terminal['image_encoder'] ?? null) === 'ponpoke-uncensored-q8_0',
+  'terminal worker timing and 5-reference metadata override stale progress');
+image_diag_check(!str_contains(json_encode($terminal), 'SECRET')
+  && !str_contains(json_encode($terminal), '/private/'), 'no worker secrets in terminal diagnosis');
+
 echo "CoreAI image work diagnostic selftest: OK\n";

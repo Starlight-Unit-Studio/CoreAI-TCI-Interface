@@ -1,0 +1,82 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.63
+Datum: 15.11.2026
+Basis: main 0.7.62
+Branch: fix/image-reference-aware-timeouts-0763
+
+BISHERIGE LIVE-ERGEBNISSE
+1. Erfolgreicher A/B-Encoder-Test (Admin Betrieb, 4B,
+   512x512, ohne Referenzen): Qwen3-4B Q8_0 ~68,2 s,
+   Ponpoke Uncensored 4B Q8_0 ~65,4 s. Beide erzeugten PNG.
+2. Live-Bildtest 20261115-140513, 4B mit Qwen3:
+   drei einfache 512-Bilder je ~63-67 s;
+   ein 512-Bild mit EINEM Referenzbild 112,9 s;
+   1024-Bild 217,79 s, alle ok.
+3. Live-Bildtest 20261115-153119, 9B mit Qwen3:
+   drei einfache 512-Bilder je ~137-140 s;
+   ein 512-Bild mit EINEM Referenzbild 237,3 s;
+   1024-Bild 435,34 s, alle ok.
+4. Seit Version 0.7.58 ist Ponpoke per Konto optional
+   eingebunden. Der Chat-Bildauftrag scheiterte
+   nach 300 s bei sampling step 3/4; im Nutzerprofil
+   sind ein Hauptbild plus vier weitere Bilder moeglich.
+5. Am 14.11.2026 23:59 gab es bereits eine erfolgreiche
+   Chat-Generierung mit fuenf Profilreferenzen.
+6. 9B-Hardlink-Rechteproblem wurde in 0.7.62 repariert
+   und live durch den kompletten 9B-Bildtest bestaetigt.
+
+SICHERE FEHLERANALYSE
+- Beide Diffusionsmodelle sind grundsaetzlich lauffaehig.
+- Beide 4B-Textencoder arbeiten ohne Referenzen.
+- Eine Referenz erhoeht gemessene CPU-Sampling-Dauer.
+- Fuenf Referenzen unter Ponpoke wurden noch NICHT
+  wirklich gemessen. Die genaue Fehlerursache ist nicht
+  abschliessend bewiesen. Modellwechsel ist kein Fix.
+
+ANGESCHLOSSENE AENDERUNGEN 0.7.63
+- tools/image/image_service.py: reine Funktion
+  image_time_limit(base, model, size, references).
+  4B: +75 s je Referenz bei 512x512, +150 s bei 1024;
+  9B: +140 s je Referenz bei 512x512, +280 s bei 1024.
+  Ohne Referenzen bleiben 300/720 s erhalten.
+  Das ist ein Deadline-Budget, kein verlaengerter
+  Schlaf oder kuenstliche Mindestlaufzeit.
+- Worker meldet tatsaechliche Zeitgrenze und Laufzeit,
+  gibt nach Abschluss Peak RSS bekannt.
+- api/image_gen.php: PHP wartet maximal Workerlimit + 60 s.
+  Bei Scheitern werden finale, sichere Worker-Metadaten
+  an die Arbeitsereignis-Klassifikation uebergeben.
+- api/image_work_diagnostic.php: finale Fortschrittsphase
+  gewinnt gegen veraltete Chat-Ereignisse. Modell,
+  Encoder, Anzahl, RAM und Zeit werden begrenzt uebergeben.
+- api/console_work_store.php: begrenzte Allowlist fuer
+  image-specific Metadaten, keine privaten Medien.
+- js/coreui-work-events.js: verstaendliche Anzeigen fuer
+  Zeitgrenze, Laufzeit und RAM-Spitzenwert.
+- scripts/image-service-selftest.py: Einheitstests 0/1/5
+  Referenzen, echte vier Extra-Slots im Mock, 4B/9B.
+- scripts/image-gen-selftest.php,
+  scripts/image-work-diagnostic-selftest.php,
+  scripts/work-events-selftest.php:
+  Sicherheit und Diagnose im Chat geprueft.
+
+REGELN
+- Keine Aenderung an GGUF-Gewichten, Modell-Registrierung,
+  Lizenzen, Prompt-Kanon, individuellen Referenzen,
+  Warteschlange, Modelfile, Datenbank oder Quoten.
+- Die bestehenden Guardrails fuer Endlosprozesse bleiben.
+- Ungetestete Live-Wirkung nicht als erledigt ausgeben.
+- Vor Merge: GitHub Workflows, Python/PHP/JS Syntax,
+  Selftests und Versions-Guard --base-version 0.7.62.
+
+LIVE-ABNAHME NACH UPDATE
+- Eine einzelne 4B-Ponpoke-Chat-Generierung mit fuenf
+  vorhandenen Profilreferenzen starten.
+- Im Arbeitsweg 'Bild' -> technische Details pruefen:
+  Modell, Encoder, Referenzanzahl, Zeitlimit,
+  elapsed_s und Ergebnis.
+- Bei weiterem Fehler: Phase/Schritt/Timeout/RAM
+  aufzeichnen. Kein full benchmark notwendig.
+- Mehrfachreferenz-Erfolg muss erst live bestaetigt sein.
+
+NAECHSTE VERSION
+Nach Merge von 0.7.63 ist 0.7.64 erforderlich.
