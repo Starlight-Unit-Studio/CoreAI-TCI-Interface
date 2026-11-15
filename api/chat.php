@@ -2684,13 +2684,27 @@ function ember_browse_enqueue(
 ): bool {
   $goal = trim($goal);
   if ($goal === '') return false;
+  // The queue itself checks provenance, not just the model dispatcher.
+  // Deep Research has a separate queue and is not affected by this guard.
+  if ($channel !== 'console' || !ember_browse_enabled()
+      || $recipientUid === null || $recipientUid <= 0
+      || $triggerMessageId === null || $triggerMessageId <= 0) return false;
+  $ch = 'console';
+  $sessionId = coreui_console_session_normalize_id($consoleSessionId ?? '');
+  if ($sessionId === '') return false;
+  try {
+    $selected = $pdo->prepare(
+      "SELECT message FROM stu_chat_messages
+        WHERE id=? AND user_id=? AND session_id=?
+          AND channel='console' AND deleted_at IS NULL LIMIT 1"
+    );
+    $selected->execute([$triggerMessageId, $recipientUid, $sessionId]);
+    $storedIntent = coreui_composer_intent_peek((string)($selected->fetchColumn() ?: ''));
+    if (!coreui_agent_explicit_browse($storedIntent, true)) return false;
+  } catch (Throwable $e) {
+    return false; // Missing/legacy schema or scope mismatch never opens Playwright.
+  }
   ember_browse_ensure_schema($pdo);
-  $ch = ($channel === 'console') ? 'console' : 'global';
-  $sessionId = ($ch === 'console')
-    ? coreui_console_session_normalize_id($consoleSessionId ?? '')
-    : null;
-  if ($ch === 'console' && $sessionId === '') return false;
-  if ($ch === 'global' && ember_browse_has_pending($pdo)) return true;
   if ($ch === 'console' && $triggerMessageId !== null && $triggerMessageId > 0) {
     try {
       $stExisting = $pdo->prepare(
