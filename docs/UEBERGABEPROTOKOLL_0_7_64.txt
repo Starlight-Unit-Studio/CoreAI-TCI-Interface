@@ -54,6 +54,15 @@ BERECHTIGUNGEN
   ist pro Benutzerkonto trotzdem fuer jeden Auftrag notwendig.
 - Keine zusaetzlichen Modellgewichte, kein Cloud-Zwang.
 
+ZUSAETZLICHER BETREIBER-LIVEBEFUND
+- Am 15.11.2026 meldet der Betreiber per Screenshot erneut einen
+  erfolgreich abgeschlossenen 9B-Bildlauf. Die 9B-Bilderzeugung
+  auf der aktuellen Serverhardware ist damit weiter bestaetigt.
+- Der Screenshot ist kein Nachweis fuer die neue 0.7.64
+  Standard/Magic-Umschaltung: Merge und Live-Wechsel fehlen noch.
+- Keine Aussage ueber den dabei verwendeten Text-Encoder
+  ohne den tatsaechlichen Worker-Metadatennachweis.
+
 TESTBEREICHE
 - scripts/pgen-selftest.php: vier Optionen, Speichermigration,
   Lizenzen, HW, nicht angezeigte Encoder.
