@@ -6,7 +6,7 @@
 
 CoreAI combines Ollama-based models with private conversations, browser research, personal knowledge, file tools and an administration interface. Its standard deployment runs an isolated Nginx, PHP-FPM, MariaDB and worker stack on a Linux server. CoreAI is an application, **not a standalone operating system**.
 
-**Current source version: `0.7.60`** | [Changelog](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Documentation policy](docs/VERSIONING_POLICY.md) | [License](LICENSE.md)
+**Current source version: `0.7.61`** | [Changelog](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Documentation policy](docs/VERSIONING_POLICY.md) | [License](LICENSE.md)
 
 > **Development status:** Features reflect the source, not every model or provider. A merge does not prove live deployment.
 
@@ -149,6 +149,7 @@ An existing installation's settings are not silently overwritten. `COREUI_FORCE_
 - **Voice messages:** Signed-in accounts can record two-minute clips or upload audio files (up to ten minutes, depending on context and model). The chosen audio-capable Core transcribes them in the serial queue before answering; transcripts appear in chat and can inform memory. Voice replies may still use tools. **Settings → Voice** holds pronunciation hints, the recording language (or auto-detect), a switch for the mic button and the last 20 recordings, kept on the device only. Requires HTTPS; guests and unsupported Cores cannot record.
 - **Videos:** Mara watches a video as frames with timestamps. For signed-in accounts with an audio-capable Core she also hears the sound track (WAV parts of at most 60 seconds within the context's audio budget), transcribed first; the transcript appears under the video and stays in history. Videos without sound, Cores without audio input and guests get an honest note; a shortened sound track is named.
 - **Live conversation:** Signed-in users can talk hands-free over HTTPS. The full-screen view has listening, thinking, speaking, mute and end states. A short pause ends a turn, and speaking interrupts Mara's audio. Each turn is transcribed and saved; answers stream sentence by sentence through Eve. Mara Normal is preferred if permitted, else the chat Core. It needs the optional voice service; CPU inference can take seconds.
+- **Work trail and image diagnostics:** Saved work steps report verified progress, recognized failure categories and the last confirmed image phase. The image engine records model and encoder selections when supplied by the worker; raw prompts, logs and private file paths remain hidden. An animated percentage is not evidence that an image has been saved.
 - **Images:** Signed-in users can generate one, two or four images with the optional CPU-only FLUX.2-klein 4B engine, save originals, view progress and edit with guidance shapes or text (not pixel-exact inpainting). Exports carry Quantum provenance without private prompts. Mara portraits may use reference photos from `images/mara_references/` for a stable identity; holograms add style only. Custom portraits override the gallery. The owner can disable image generation in Admin Core.
 - **Admin Core:** The separate, role-protected **/admin/** page manages users, permissions, audit, runtime and owner-only voice/image samples. Authorized accounts see it in the header and category drawer; server checks still apply.
 
