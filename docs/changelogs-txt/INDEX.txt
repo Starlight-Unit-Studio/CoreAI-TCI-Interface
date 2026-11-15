@@ -360,3 +360,4 @@ Jede Version liegt als eigenstaendige UTF-8-TXT-Datei vor.
 * CHANGELOG_0_7_60.txt
 * CHANGELOG_0_7_61.txt
 * CHANGELOG_0_7_62.txt
+* CHANGELOG_0_7_63.txt
