@@ -315,6 +315,19 @@ img_gen_test(coreui_image_progress_meta(['phase' => 'sampling', 'step' => 2, 'st
   === ['source' => 'image', 'reason' => 'image_sampling', 'step' => 2, 'steps' => 4, 'image_px' => 1024]
   && coreui_image_progress_meta(['phase' => 'save', 'step' => 4, 'steps' => 4, 'width' => 512])['reason'] === 'image_decode'
   && coreui_image_progress_meta(['phase' => '<x>'])['reason'] === 'image_load', 'progress data for the card');
+$timing = coreui_image_progress_meta([
+  'phase'=>'sampling','step'=>3,'steps'=>4, 'model'=>'flux2-klein-4b',
+  'text_encoder'=>'ponpoke-uncensored-q8_0', 'reference_count'=>5,
+  'time_limit_s'=>675, 'elapsed_s'=>312.4, 'peak_rss_mb'=>10240.9,
+  'log'=>'PRIVATE RAW WORKER LOG', 'prompt'=>'SECRET IMAGE PROMPT',
+]);
+img_gen_test(($timing['time_limit_s'] ?? null) === 675
+  && ($timing['elapsed_s'] ?? null) === 312
+  && ($timing['peak_rss_mb'] ?? null) === 10241
+  && ($timing['reference_count'] ?? null) === 5
+  && ($timing['image_encoder'] ?? null) === 'ponpoke-uncensored-q8_0'
+  && !isset($timing['log']) && !isset($timing['prompt']),
+  'reference-aware worker telemetry is numeric and cannot leak private data');
 foreach (['load', 'text', 'sampling', 'decode', 'x'] as $phase) {
   img_gen_test(preg_match('/^[a-zA-Z0-9 \-.,:()\/]{3,110}$/D', coreui_image_progress_title(['phase' => $phase, 'step' => 1, 'steps' => 4])) === 1,
     'the work store accepts the title of ' . $phase);
