@@ -45,6 +45,31 @@ loop_test(str_contains($prompt, "Schritt 1 (Websuche „a“):\nTreffer A") && s
   && str_contains($prompt, '[WEB: neue') && str_contains($prompt, '[ARCHIV:') && !str_contains($prompt, '[BROWSE:')
   && str_contains($prompt, 'UNGEPRUEFTE DATEN'), 'step prompt: results, choice, only allowed tools, injection warning');
 loop_test(str_contains(coreui_agent_step_prompt('B', [['label'=>'x', 'result'=>'y']], 6, 6, $all), 'Das war dein letzter Schritt'), 'last step forces an answer');
+
+// Progressive WEB is explicit but stays within the existing serial, bounded loop.
+$menu = coreui_agent_tool_menu(['web']);
+loop_test(str_contains($menu, '[WEB: WEITER]') && !str_contains($menu, '[BROWSE:'),
+  'WEB may request more results without unlocking Playwright');
+loop_test(str_contains(coreui_agent_loop_hint(false, false), '[WEB: WEITER]')
+  && str_contains(coreui_agent_loop_hint(true, false), 'Namensgleiche'),
+  'small and full models learn pagination and identity caution');
+$oldEvidence = "1. Alte Quelle [https://example.org/old]\n   "
+  . str_repeat('A',260);
+$newEvidence = "1. Neue Quelle [https://example.org/new]\n   "
+  . str_repeat('B',260);
+$chain = coreui_agent_step_prompt('BASIS',[
+  ['label'=>'Websuche: „Begriff“','result'=>$oldEvidence],
+  ['label'=>'Websuche: „WEITER“','result'=>$newEvidence],
+],2,6,['web']);
+loop_test(str_contains($chain,'https://example.org/old')
+  && str_contains($chain,'https://example.org/new')
+  && !str_contains($chain,str_repeat('A',260))
+  && str_contains($chain,str_repeat('B',260)),
+  'older snippets compacted, new source evidence and URLs preserved');
+loop_test(str_contains($chain,'Menschen mit gleichem Namen') && str_contains($chain,'keine historischen Archive')
+  && str_contains($chain,'[WEB: WEITER]'),
+  'sources must be verified and same-name individuals never conflated');
+
 loop_test(str_contains(coreui_agent_loop_hint(false, true), 'ohne vorher zu fragen') && str_contains(coreui_agent_loop_hint(false, true), '[ARCHIV:')
   && !str_contains(coreui_agent_loop_hint(true, false), '[ARCHIV:'), 'first prompt tells Mara to act on her own');
 

@@ -1,0 +1,31 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.68
+15.11.2026
+
+PROGRESSIVE WEBSUCHE (SearXNG, KEIN PLAYWRIGHT)
+- Mara/Ember kann bei unzureichenden Quellen [WEB: WEITER] anfordern.
+- Der Backend-Cursor verwaltet jede Suchanfrage ausschliesslich innerhalb
+  einer Antwort. Bei WEB_LIMIT=4 werden 4 Treffer geliefert; verbleibende
+  Ergebnisse derselben SearXNG-Seite werden zuerst aufgebraucht.
+- Erst wenn die vorige Seite aufgebraucht ist, folgt pageno=2, dann 3 usw.
+  Die vorhandene Frage-zu-Stichworten-Ausweichsuche bleibt aktiv.
+- Quellen werden nur dann im UI gemeldet, wenn ihr Titel, ihre URL und
+  ihr Textauszug als vollstaendiger Eintrag in WEB_MAX_CHARS passen.
+  Bei langem Inhalt kommen entsprechend weniger Treffer pro Runde; alle
+  uebrigen bleiben fuer [WEB: WEITER] gepuffert, nicht einfach abgeschnitten.
+- Ein gemeinsam gefuehrtes URL-Ledger verhindert Dubletten auch ueber neue
+  Suchbegriffe hinweg. Keine Aenderung an Web-Freigaben oder Nutzerdaten.
+- Vorherige Webauszuege werden in Folgeprompts gekuerzt, mit URL und Titel;
+  die neueste Treffergruppe bleibt detailliert. Bestehende max. 6
+  Arbeitsschritte und konfigurierbare Web-/Snippet-/Kontextgrenzen bleiben.
+- Maras Instruktionen verlangen Belege und unterscheiden namensgleiche
+  Personen, statt Identitaeten oder Biografien aus Snippets zu erfinden.
+- Die Quellenzeile zeigt weiterhin nur echte Web-Suchergebnisse; Treffer
+  sind keine nachgewiesenen Seitenbesuche.
+- Text- und Sprachanfragen nutzen dieselbe per-turn Suchsitzung.
+- Globaler Kanal, Playwright, Deep Research, andere Werkzeuge, Modell und
+  Web-Wetter bleiben unabhaengig vom neuen Paging.
+- Neuer Offline-Test scripts/progressive-web-search-selftest.php mit
+  SearXNG-Mock, Seitencursor, Quellendedup, Fallback und SSE-Quellen.
+- Agenten-Loop-Test erweitert; beide Preflights und separater
+  GitHub-Websuche-Workflow decken den neuen Vertrag ab.
+- Server-/Android-Liveabnahme nach Merge weiterhin erforderlich.

@@ -17,6 +17,7 @@ require_once __DIR__ . '/knowledge_store.php';
 require_once __DIR__ . '/guest_access.php';
 require_once __DIR__ . '/console_compaction.php';
 require_once __DIR__ . '/console_agent_loop.php';
+require_once __DIR__ . '/console_web_research.php';
 require_once __DIR__ . '/console_answer_style.php';
 require_once __DIR__ . '/console_timezone.php';
 require_once __DIR__ . '/weather_live.php';
@@ -2524,8 +2525,12 @@ function ember_attachment_prompt_note($imageUrl): string {
 }
 
 // Untrusted-Data-Block aus den Web-Treffern bauen (hart getruncated).
-function ember_web_results_block(string $query, ?callable $onResults = null): string {
+function ember_web_results_block(string $query, ?callable $onResults = null, ?array &$webSession = null): string {
   if (!ember_web_enabled()) return '';
+  if ($webSession !== null) {
+    $query = coreui_web_research_resolve_query($query, $webSession);
+    if ($query === '') return '';
+  }
   // 0.6.22: a weather question gets live data (WDR for NRW, Open-Meteo) instead of
   // old search snippets; the normal search runs only when neither answers.
   $weather = ember_weather_live_sources($query);
@@ -2533,7 +2538,9 @@ function ember_web_results_block(string $query, ?callable $onResults = null): st
     if ($onResults !== null) $onResults($weather);
     return coreui_weather_block($weather);
   }
-  $rows = ember_web_search($query, ember_web_limit(), ember_web_timeout());
+  $rows = $webSession !== null
+    ? coreui_web_research_next($query, $webSession, ember_web_limit(), ember_web_timeout())
+    : ember_web_search($query, ember_web_limit(), ember_web_timeout());
   if ($onResults !== null) $onResults($rows);
   if (empty($rows)) return '';
   $snipMax = ember_web_snippet_chars();
@@ -5251,7 +5258,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
  * for the next prompt. Python only calculates here; files keep their own path.
  */
 function ember_agent_run_tool(PDO $pdo, array $tool, string $channel, int $uid, string $sessionId,
-    int $triggerId, int $triggerRevision, int $imageCount = 1): string {
+    int $triggerId, int $triggerRevision, int $imageCount = 1, ?array &$webSession = null): string {
   if ($tool['tool'] === 'web') {
     coreui_work_record($pdo, 'tool', 'running', 'Websuche gestartet', ['source'=>'web']);
     $block = ember_web_results_block((string)$tool['input'], static function (array $rows) use ($pdo): void {
@@ -5260,8 +5267,10 @@ function ember_agent_run_tool(PDO $pdo, array $tool, string $channel, int $uid, 
           ['page_url'=>(string)$row['url'], 'page_title'=>(string)$row['title'], 'source'=>'search_result']);
       }
       coreui_work_record($pdo, 'tool', 'info', 'Websuche beendet', ['knowledge_hits'=>count($rows), 'source'=>'web']);
-    });
-    return $block !== '' ? $block : 'Die Websuche brachte keine Treffer, oder der Suchdienst war gerade nicht erreichbar.';
+    }, $webSession);
+    return $block !== '' ? $block : ($webSession !== null
+      ? 'In dieser Suchrunde gab es keine weiteren neuen, verwertbaren Treffer. Verfeinere die Suchbegriffe oder sage offen, was ungeklärt bleibt.'
+      : 'Die Websuche brachte keine Treffer, oder der Suchdienst war gerade nicht erreichbar.');
   }
   if ($tool['tool'] === 'archive') return coreui_compact_archive_block($uid, $sessionId, (string)$tool['input']);
   if ($tool['tool'] === 'skill') return coreui_skills_tool_result((string)$tool['input']);
@@ -5956,11 +5965,15 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       $voiceBase = $visionPrompt . ($hasAudio
         ? "\nDie Aufnahme hast du schon gehoert; die Mitschrift oben gibt sie wieder."
         : "\nDie Referenzbilder hast du gerade gesehen; fuer ein neues Bild nutze das Bildwerkzeug.");
+      $voiceWebSession = [];
       $voiceLoop = coreui_agent_loop_run($imgReply, $voiceTool, $voiceBase, $voiceTools, 0,
         static fn(string $prompt): ?string => ember_call_ollama($primaryModel, $visionSys, $prompt, $visionTimeout,
           $listenOptions, null, $listenThink),
-        static fn(array $tool): string => ember_agent_run_tool($pdo, $tool, $channel, $consoleUid, (string)$consoleSessionId,
-          $triggerMessageId, $triggerRevision, coreui_image_count($composerIntent['count'] ?? 1)),
+        static function (array $tool) use ($pdo, $channel, $consoleUid, $consoleSessionId,
+          $triggerMessageId, $triggerRevision, $composerIntent, &$voiceWebSession): string {
+          return ember_agent_run_tool($pdo, $tool, $channel, $consoleUid, (string)$consoleSessionId,
+            $triggerMessageId, $triggerRevision, coreui_image_count($composerIntent['count'] ?? 1), $voiceWebSession);
+        },
         static function (string $kind, string $state, string $title, array $meta) use ($pdo): void {
           coreui_work_record($pdo, $kind, $state, $title, $meta);
         },
@@ -6786,10 +6799,14 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       foreach ([$webHint ?? '', $browseHint ?? '', $pyHint ?? '', $imageHint ?? '', $intentHint ?? ''] as $hint) {
         if ($hint !== '') $uBase = str_replace($hint . "\n\n", '', $uBase);
       }
+      $agentWebSession = [];
       $loop = coreui_agent_loop_run($out, $loopTool, $uBase, $loopAllowed, $pyHandled ? 1 : 0,
         static fn(string $prompt): ?string => ember_call_ollama($primaryModel, $sys, $prompt, ember_timeout_for_model($primaryModel), []),
-        static fn(array $tool): string => ember_agent_run_tool($pdo, $tool, $channel, $consoleUid, (string)$consoleSessionId,
-          $triggerMessageId, $triggerRevision, coreui_image_count($composerIntent['count'] ?? 1)),
+        static function (array $tool) use ($pdo, $channel, $consoleUid, $consoleSessionId,
+          $triggerMessageId, $triggerRevision, $composerIntent, &$agentWebSession): string {
+          return ember_agent_run_tool($pdo, $tool, $channel, $consoleUid, (string)$consoleSessionId,
+            $triggerMessageId, $triggerRevision, coreui_image_count($composerIntent['count'] ?? 1), $agentWebSession);
+        },
         static function (string $kind, string $state, string $title, array $meta) use ($pdo): void {
           coreui_work_record($pdo, $kind, $state, $title, $meta);
         },

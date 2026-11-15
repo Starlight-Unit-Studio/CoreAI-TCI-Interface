@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.67: pGen Core 4B/9B selection and image-worker hardware checks.
+# CoreAI: TCI Interface 0.7.68: pGen Core 4B/9B selection and image-worker hardware checks.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -433,6 +433,7 @@ UI_FILES=(
   scripts/browse-worker-selftest.py
   scripts/browse-live-ui-selftest.cjs
   scripts/web-search-selftest.php
+  scripts/progressive-web-search-selftest.php
   tools/ember_browse_worker.py
   api/console_browse_stream.php
   api/core_install.php
@@ -1447,6 +1448,12 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     ok 'Websuche: Stichworte als zweiter Versuch, keine Doppelten, saubere Snippets und Datum geprueft.'
   else
     fail "Websuche-Selbsttest: ${web_test:-Unbekannter Fehler}"
+  fi
+
+  if progressive_web_test="$(compose exec -T php php scripts/progressive-web-search-selftest.php 2>&1)"; then
+    ok 'Websuche: fortlaufende Treffer ohne Dubletten, Paging und Quellenbelege geprueft.'
+  else
+    fail 'Websuche: progressive Treffer-/Paging-Regressionspruefung fehlgeschlagen.'
   fi
 
   weather_test=''

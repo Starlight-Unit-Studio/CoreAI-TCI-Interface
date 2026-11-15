@@ -210,7 +210,9 @@ wx_test(coreui_weather_block([]) === '', 'no sources, no block');
 $chat = (string)file_get_contents($root . '/api/chat.php');
 wx_test(str_contains($chat, "require_once __DIR__ . '/weather_live.php';")
   && str_contains($chat, '$weather = ember_weather_live_sources($query);')
-  && strpos($chat, '$weather = ember_weather_live_sources($query);') < strpos($chat, '$rows = ember_web_search($query, ember_web_limit(), ember_web_timeout());')
+  && strpos($chat, '$weather = ember_weather_live_sources($query);') < strpos($chat, '$rows = $webSession !== null')
+  && str_contains($chat, 'coreui_web_research_next($query, $webSession, ember_web_limit(), ember_web_timeout())')
+  && str_contains($chat, ': ember_web_search($query, ember_web_limit(), ember_web_timeout());')
   && str_contains($chat, "ember_cache_set('wxwdr:text', \$text);") && str_contains($chat, 'function ember_http_get_html('),
   'wired into the web step, before the search');
 // 0.7.6 added an image-review callback AFTER the weather router.

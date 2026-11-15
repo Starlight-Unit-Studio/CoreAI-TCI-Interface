@@ -1,0 +1,57 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.68
+Datum: 15.11.2026
+Basis: main 0.7.67 (nach Karussell-Fix)
+Branch: fix/progressive-web-research-0768
+
+AUFTRAG
+Bisher wurden standardmaessig nur 4 SearXNG-Treffer geliefert (max. 10).
+Der Agent konnte zwar die Suche mit neuen Begriffen wiederholen, aber keine
+naechste Treffergruppe derselben Suchanfrage abrufen. Zudem zeigte die
+Namenssuche nach Patrick Schildgen leicht verwechselbare Personen und der
+Core zog daraus ungesicherte Biografie-Schluesse.
+Gewuenscht: schrittweise vertiefen statt nur "Google-Treffer aufzaehlen".
+
+UMSETZUNG
+- api/console_web_research.php: neue getrennte per-Antwort-Recherche-Sitzung.
+  SearXNG mit pageno, Buffer fuer groessere Provider-Seiten, pro Schritt
+  maximal die vorhandene konfigurierte WEB_LIMIT-Anzahl. Kein Ueberspringen,
+  wenn SearXNG 10, CoreAI aber nur 4 Quellen pro Schritt zeigt.
+  Quellenschluessel aus ember_web_url_key; auch bei Suchbegriffwechsel
+  keine bereits gelieferten doppelten URLs. Keine DB-Speicherung.
+  Originale Kurzfrage kann einmalig auf bereinigte Stichworte wechseln.
+  Adaptive Ausgabe: WEB_MAX_CHARS begrenzt vollstaendige Quelle samt
+  URL und Auszug, nicht nur rohe String-Abschneidung. Nicht ausgegebene
+  Quellen bleiben im Turn-Puffer und gelangen erst in einer weiteren
+  angeforderten Runde zu Mara und in die UI.
+- api/chat.php: dritte optionale Referenz an ember_web_results_block und
+  ember_agent_run_tool. Nur die privaten Agenten-Loops Text und Voice
+  uebergeben eine frische per-Turn-Session; Global-Chat unveraendert.
+  Originale Wetter-Ausnahme bleibt erhalten. Fortsetzungsmarker
+  [WEB: WEITER] setzt letzte Suchanfrage auf deren naechster Seite fort.
+- api/console_agent_loop.php: Mara darf selbst entscheiden, ob weitere
+  Treffer notwendig sind, die Suche fokussieren oder antworten. Nachweise
+  wichtiger als Trefferanzahl. Personen mit gleichem Namen nur mit
+  belegten Identitaetsmerkmalen zuordnen. Keine erfundenen Archivfakten.
+  Vorherige WEB-Snippets werden kompakter gehalten (Titel/URL erhalten);
+  neueste Suchrunde ungekürzt. Der Core spricht weiter selbst.
+- Keine neue Tool-Hardware, keine Cloud/Account-Pflicht.
+- KEINE Veraenderung an Playwright, Deep Research, dem Pet-System,
+  Bildgenerator, Memory, bestehenden Core-Limits oder Server-Queue.
+
+TEST UND ABNAHME
+- scripts/progressive-web-search-selftest.php: Provider-Mock pageno1
+  mit 10 Treffern und Core-Limit4, danach pageno2; keine uebersprungenen
+  Quellen oder Duplikate, Session-Isolierung, leere Seiten, Suchwort-
+  Fallback, HTML-Reinigung und echte SSE-Quellen.
+- scripts/agent-loop-selftest.php: WEITER-Prompt, Quellennachweise,
+  namensgleiche Personen und Kontextkompaktierung.
+- scripts/preflight.sh und scripts/preflight-native.sh fuehren Tests aus.
+- .github/workflows/web-research-regression.yml: PHP-Lint,
+  Web- und Agent-Regression, Branding/Version/Cache-Pruefung.
+- Nach Merge: auf Android Websuche mit ca. 10 vorhandenen Quellen,
+  anschliessende weitere Treffer, keine Dopplungen, verlinkbare Quellen,
+  klare Unterscheidung verschiedener Personen.
+- Echte Server- und Modell-Liveabnahme steht getrennt von CI aus.
+
+VERSION: 0.7.68
+Naechste Version nach Merge: 0.7.69.
