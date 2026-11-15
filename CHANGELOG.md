@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.7.60 - 15.11.2026
+
+- **Ponpoke 9B Q8_0 ohne Betreiber-Token:** Der pGen-Bilddienst versucht zuerst öffentlich gelistete GGUF-Repositories `WANG-CC/flux2-klein-9b-uncensored-text-encoder-Q8_0-GGUF` und `KM445/flux2-klein-9b-uncensored-text-encoder-Q8_0-GGUF`, bevor er auf das gated Original zurückfällt. Für öffentliche Repositories wird nie ein privater HF-Token mitgesendet.
+- **SHA-geprüfte Wiederverwendung:** Bereits vorhandene Encoder-Locks der alten Ponpoke-Quelle bleiben nutzbar. Neue Locks binden Repository, Datei, Revision, Dateigröße und SHA-256 an die konkrete öffentliche Quelle. Falsche/ungeprüfte Quellen sind ausgeschlossen.
+- **4B Q8_0 bewusst nicht vorgetäuscht:** Für das zugriffsbeschränkte Ponpoke-Original ist noch kein verlässlich öffentliches Q8_0-Äquivalent bestätigt. 4B nutzt ohne berechtigten HF-Zugang weiterhin den ursprünglichen Encoder, statt automatisch zu Q4 zu wechseln.
+- **Nutzerzustimmung bleibt getrennt:** Der serverweite Modell-Download ersetzt weder die pro Konto gespeicherte Lizenzannahme noch die bestehende 9B-Hardwareprüfung.
+- **Testumfang:** pGen-Selbsttest mit simuliertem öffentlichem Download ohne Token, Bestands-Lock, unzulässiger Quelle und 4B-Fallback. Echter Hugging-Face-Download/Bildauftrag muss auf einem Betreiber-System geprüft werden.
+
 ## 0.7.59 - 15.11.2026
 
 - **pGen-Preflight bei aktivem 9B repariert:** Der Bilder-im-Chat-Selbsttest verwendet jetzt einen isolierten temporären Cache und greift nicht mehr auf das produktiv ausgewählte 9B-Profil zu. Die Testperson braucht dadurch keine echte Server-Bildmodell-Lizenz, und die Warteschlangenprüfung bleibt testbar.
