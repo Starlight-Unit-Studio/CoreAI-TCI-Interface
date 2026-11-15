@@ -105,4 +105,27 @@ test(count($seen) === 1 && $seen[0]['title'] === 'Wichtiger Treffer'
 $none = null;
 ember_web_results_block('WEITER',static function(array $rows) use (&$none): void { $none = $rows; },$web);
 test($none === [], 'no fabricated hits when next SearXNG page is empty');
+
+// The visible source count must never exceed what fits in the model's
+// configured WEB_MAX_CHARS budget, even when WEB_LIMIT is raised to ten.
+$answers['lange Belege'][1] = ['results'=>array_map(static function(int $n): array {
+  return ['title'=>"Detaillierter Eintrag {$n}",'url'=>"https://long.example/article-{$n}",
+    'content'=>str_repeat("Beleg fuer Aussage {$n}. ",40)];
+},range(1,10))];
+$budgetSession = [];
+$budgetRows = coreui_web_research_next('lange Belege',$budgetSession,10,12,430,260);
+$budgetText = implode("\n",array_map(static function(array $row): string {
+  static $i = 0;
+  return coreui_web_research_row_text($row, ++$i);
+},$budgetRows));
+test(count($budgetRows) >= 1 && count($budgetRows) < 10
+  && mb_strlen($budgetText,'UTF-8') <= 430,
+  'adaptive batch includes full URL+snippet rows and never overflows context');
+$budgetNext = coreui_web_research_next('WEITER',$budgetSession,10,12,430,260);
+test(count($budgetNext) > 0
+  && $budgetNext[0]['url'] === 'https://long.example/article-' . (count($budgetRows) + 1),
+  'context overflow queues undelivered sources without skipping or duplication');
+test(count(array_filter($calls,static fn(array $c): bool => $c['q'] === 'lange Belege')) === 1,
+  'adaptive batches reuse the same provider page without another network call');
+
 echo "CoreAI progressive Websuche: chunks, no skip, pagination, dedup, fallback and SSE OK\n";
