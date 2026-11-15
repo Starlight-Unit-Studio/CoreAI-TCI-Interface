@@ -1,0 +1,30 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.59
+Datum: 15.11.2026
+Branch: fix/pgen-hf-token-preflight-0759
+Basis: 0.7.58
+
+GRUND / REPRODUKTION
+Betreiber-Screenshots: Installiertes und aktives pGen 9B, beide Ponpoke
+Encoder nicht bereit wegen HF_TOKEN-Fehler. Preflight meldet
+'Image gen FAIL: busy: queue given back', bei sonst bestandenen Tests.
+
+BEHEBUNG
+1. scripts/image-gen-selftest.php:
+   Eigener temporärer STU_EMBER_CACHE_DIR vor dem Einbinden der
+   produktiven Image-/pGen-Dateien; der Test nutzt seine erwartete 4B
+   Auswahl und keinen produktiven 9B-Lizenzzustand.
+2. scripts/install.sh:
+   Speichert validierten HF_TOKEN in das vertrauliche compose.env, erhaelt
+   ihn beim naechsten Update und uebernimmt ihn notfalls aus bereits
+   vorhandenen CLI-Dateien unter /root/.cache/huggingface/token oder
+   /root/.huggingface/token. Keine Anzeige oder Protokollierung von Token.
+3. Version, Release-Eintraege und Browser-Cache-Verweise aktualisiert.
+
+BETREIBERHINWEIS
+Nach Merge/Update: Preflight erneut ausfuehren und in pGen nachsehen,
+ob Ponpoke Q8_0 fuer beide Profile bereit ist. Fehlt weiterhin ein
+Token, muss er einmal im vom Stack genutzten compose.env konfiguriert
+werden. Eine lokale CLI-Anmeldung kann nur uebernommen werden, wenn
+ihr Token dort noch gespeichert ist. Keine Tokenwerte in Chats posten.
+
+Release 0.7.59
