@@ -566,20 +566,22 @@
           <h4 id="coreInstallPgenTitle">PGEN CORE</h4>
           <span class="core-install-pgen-tag">QUANTUM GEN ENGINE</span>
         </div>
-        <p class="core-install-update-info">Bildmodelle der Quantum Gen Engine getrennt von deinen Text-Cores verwalten.</p>
+        <p class="core-install-update-info">Vier pGen-Profile der Quantum Gen Engine auswählen. Die passenden internen Komponenten werden automatisch zugeordnet.</p>
         <label class="core-install-pgen-label" for="coreInstallPgenModel">BILDGENERATOR</label>
         <select class="core-install-pgen-select" id="coreInstallPgenModel">
-          <option value="flux2-klein-4b">FLUX.2 Standard (4B)</option>
-          <option value="flux2-klein-9b">FLUX.2 9B</option>
+          <option value="flux2-klein-4b-standard">pGen Engine Standard (4B)</option>
+          <option value="flux2-klein-4b-magic">pGen Engine Magic (4B)</option>
+          <option value="flux2-klein-9b-standard">pGen Engine Standard (9B)</option>
+          <option value="flux2-klein-9b-magic">pGen Engine Magic (9B)</option>
         </select>
         <p class="core-install-pgen-info" id="coreInstallPgenInfo" aria-live="polite">Lädt die Bildmodelle …</p>
         <div class="core-install-pgen-license-guard" id="coreInstallPgenLicenseGuard" hidden>
           <strong>Lizenz bitte zustimmen</strong>
-          <small>FLUX.2 9B bleibt bis zur Annahme der Non-Commercial-Lizenz sichtbar, aber gesperrt.</small>
+          <small>pGen Engine Magic und beide 9B-Profile benötigen deine persönliche Annahme der FLUX Non-Commercial License. Die Profile bleiben bis dahin sichtbar, aber gesperrt.</small>
           <button class="core-install-btn" type="button" id="coreInstallPgenGuardOpen">Lizenz öffnen</button>
         </div>
         <div class="core-install-pgen-actions">
-          <button class="core-install-btn" id="coreInstallPgenLicense" type="button" hidden>9B-Lizenz ansehen</button>
+          <button class="core-install-btn" id="coreInstallPgenLicense" type="button" hidden>Lizenz ansehen</button>
           <button class="core-install-btn" id="coreInstallPgenInstall" type="button" hidden>9B installieren</button>
           <button class="core-install-btn core-install-btn--go" id="coreInstallPgenApply" type="button" disabled>Als pGen verwenden</button>
         </div>
