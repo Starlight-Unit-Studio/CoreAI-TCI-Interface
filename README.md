@@ -1,3 +1,6 @@
+<div align="center">
+  <img src="assets/Quantum-CoreAI-github-banner_20261115_212829.png" alt="Quantum CoreAI - TCI Interface" width="100%">
+</div>
 # CoreAI: TCI Interface
 
 [![DOI](https://zenodo.org/badge/1349352973.svg)](https://doi.org/10.5281/zenodo.22201310)
