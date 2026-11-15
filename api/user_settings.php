@@ -250,11 +250,27 @@ stu_require_csrf();
 
 $body = stu_read_json_body();
 
-if (in_array(($body['action'] ?? ''), ['pgen_select', 'pgen_install'], true)) {
+if (in_array(($body['action'] ?? ''), ['pgen_select', 'pgen_install', 'pgen_prepare'], true)) {
   require_once __DIR__ . '/core_install.php';
   require_once __DIR__ . '/pgen.php';
   stu_require_permission_at_most(COREUI_CORE_INSTALL_PERMISSION_MAX, $pdo);
   $status = coreui_pgen_status(null, null, $pdo, (int)$uid);
+  if ($body['action'] === 'pgen_prepare') {
+    $profile = (string)($body['model'] ?? '');
+    if (!coreui_pgen_valid($profile) || coreui_pgen_mode($profile) !== 'magic')
+      stu_json(['ok'=>false, 'error'=>'pgen_invalid_model'], 400);
+    if (!$status['license_accepted']) stu_json(['ok'=>false, 'error'=>'license_accept_required'], 403);
+    if (!$status['engine_ready']) stu_json(['ok'=>false, 'error'=>'pgen_engine_unavailable'], 409);
+    if (coreui_pgen_model($profile) === COREUI_PGEN_QUALITY && !$status['can_install_9b'])
+      stu_json(['ok'=>false, 'error'=>'pgen_hardware_insufficient'], 409);
+    // The worker downloads/verifies the appropriate background asset.
+    // No encoder names or tokens are accepted from the browser.
+    [$code, $result] = coreui_image_http('POST', '/pgen/prepare',
+      ['model'=>coreui_pgen_model($profile)], 6);
+    if ($code !== 202 || !is_array($result) || ($result['ok'] ?? false) !== true)
+      stu_json(['ok'=>false, 'error'=>'pgen_magic_unavailable'], 409);
+    stu_json(['ok'=>true, 'pgen'=>coreui_pgen_status(null, null, $pdo, (int)$uid)]);
+  }
   if ($body['action'] === 'pgen_install') {
     if (($body['model'] ?? '') !== COREUI_PGEN_QUALITY) stu_json(['ok'=>false, 'error'=>'pgen_invalid_model'], 400);
     // Download and installation are hardware-driven. License acceptance gates selection and use.
