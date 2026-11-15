@@ -19,7 +19,36 @@ function coreui_web_research_resolve_query(string $input, array $state): string 
   return $input;
 }
 
-function coreui_web_research_next(string $input, array &$state, int $limit, int $timeout): array {
+/** A single cited WEB row in the existing assistant result format. */
+function coreui_web_research_row_text(array $row, int $index): string {
+  $head = $index . '. ' . ((string)($row['title'] ?? '') !== ''
+    ? (string)$row['title'] : '(ohne Titel)');
+  if (!empty($row['date'])) $head .= ' (vom ' . $row['date'] . ')';
+  if (!empty($row['url'])) $head .= ' [' . $row['url'] . ']';
+  $snippet = (string)($row['content'] ?? '');
+  return $head . ($snippet !== '' ? "\n   " . $snippet : '');
+}
+
+/**
+ * Source URLs must fit inside what the Core actually receives. Keep rows
+ * beyond that context budget in the request-local cursor for [WEB: WEITER].
+ */
+function coreui_web_research_fit_row(array &$row, int $index, int $remaining, int $snipMax): bool {
+  $row['content'] = '';
+  $head = coreui_web_research_row_text($row, $index);
+  $length = function_exists('mb_strlen') ? mb_strlen($head, 'UTF-8') : strlen($head);
+  if ($length > $remaining) return false;
+  $raw = (string)($row['_raw_content'] ?? '');
+  unset($row['_raw_content']);
+  if ($raw === '' || $remaining - $length <= 4) return true;
+  $usable = min($snipMax, $remaining - $length - 4);
+  $row['content'] = function_exists('mb_substr')
+    ? mb_substr($raw, 0, $usable, 'UTF-8') : substr($raw, 0, $usable);
+  return true;
+}
+
+function coreui_web_research_next(string $input, array &$state, int $limit, int $timeout,
+    ?int $maxChars = null, ?int $snippetChars = null): array {
   $query = coreui_web_research_resolve_query($input, $state);
   if ($query === '') return [];
   $state['last_query'] = $query;
@@ -34,6 +63,9 @@ function coreui_web_research_next(string $input, array &$state, int $limit, int 
   }
   $cursor =& $state['queries'][$key];
   $limit = max(1, $limit);
+  $maxChars ??= ember_web_max_chars();
+  $snippetChars ??= ember_web_snippet_chars();
+  $usedChars = 0;
   $out = [];
   $requested = false;
   while (count($out) < $limit) {
@@ -45,8 +77,24 @@ function coreui_web_research_next(string $input, array &$state, int $limit, int 
       if ($url === '') continue;
       $urlKey = ember_web_url_key($url);
       if (isset($state['seen'][$urlKey])) continue;
+      // Make the on-screen source count match the *complete* rows in the
+      // model input, rather than announcing rows cut off by MAX_CHARS.
+      $candidate = $row;
+      $candidate['_raw_content'] = (string)($row['content'] ?? '');
+      $remaining = $maxChars - $usedChars - ($out !== [] ? 1 : 0);
+      if (!coreui_web_research_fit_row($candidate, count($out) + 1,
+          $remaining, $snippetChars)) {
+        if ($out !== []) {
+          array_unshift($cursor['buffer'], $row);
+          break; // Save this source for the next requested batch.
+        }
+        continue; // An excessively long header/URL cannot be cited safely.
+      }
+      $usedChars += ($out !== [] ? 1 : 0) + (function_exists('mb_strlen')
+        ? mb_strlen(coreui_web_research_row_text($candidate, count($out) + 1), 'UTF-8')
+        : strlen(coreui_web_research_row_text($candidate, count($out) + 1)));
       $state['seen'][$urlKey] = true;
-      $out[] = $row;
+      $out[] = $candidate;
       continue;
     }
     // A single tool step never crawls many pages. If its buffered page is
