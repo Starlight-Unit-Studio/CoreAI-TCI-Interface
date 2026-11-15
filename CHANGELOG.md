@@ -2,6 +2,7 @@
 
 ## 0.7.68 - 15.11.2026
 
+- **Kontextgerechte Treffergruppen:** Selbst bei einem Betreiberlimit von zehn Treffern werden nur vollständig in `STU_EMBER_WEB_MAX_CHARS` passende Quellen an Mara und die Quellenanzeige übergeben. Die restlichen Treffer bleiben bis zur nächsten angeforderten Runde im Seitenpuffer; keine abgeschnittenen Quellenbelege.
 - **Progressive SearXNG-Websuche:** Mara kann innerhalb der bestehenden Agenten-Arbeitsschleife per `[WEB: WEITER]` weitere Treffer derselben Anfrage anfordern. Der neue request-lokale Cursor puffert die vollständige SearXNG-Ergebnisseite, liefert nur die konfigurierte Zahl pro Schritt und ruft `pageno=2` erst nach dem Aufbrauchen der ersten Seite ab. Verfeinerte Suchanfragen bleiben möglich.
 - **Quellen statt Wiederholungen:** Ein turn-lokales URL-Ledger beseitigt Dopplungen über Seiten und neue Suchbegriffe hinweg. Nur echte sichere Treffer werden als Quellenereignisse an das bestehende Karussell übertragen. Keine behaupteten Seitenbesuche.
 - **Bessere Quellenhygiene:** Der Agent fordert bei unzureichenden Daten gezielt zusätzliche Belege an und führt Personen mit gleichem Namen nur mit konkreten Identitätsnachweisen zusammen. Ältere Webauszüge werden für den Kontext reduziert, Titel und URLs bleiben, die neueste Treffergruppe wird vollständig berücksichtigt. Die bestehende Grenze von sechs Arbeitsschritten bleibt.
