@@ -61,6 +61,19 @@ spike_files = {(f['repo'], f['path']): f['size'] for f in spike_reg['groups']['f
 check(all(spike_files.get((f['repo'], f['path'])) == f['size'] for f in reg['files']),
       'same files and sizes as in the image test (so its weights can be adopted)')
 check(reg['sizes']['normal']['width'] == 512 and reg['sizes']['large']['width'] == 1024, '512 normal, 1024 only large')
+# Static images keep their original deadline. Real owner benchmarks on
+# 15 Nov show extra CPU work for every referenced face; deadlines for
+# account galleries are longer but never skip cancellation.
+for model, seconds, large_seconds in (
+    ('flux2-klein-4b', 75, 150),
+    ('flux2-klein-9b', 140, 280),
+):
+    for count in (0, 1, 5):
+        expected = 300 + seconds * count
+        expected_large = 720 + large_seconds * count
+        check(service_mod.image_time_limit(300, model, 'normal', count) == expected
+              and service_mod.image_time_limit(720, model, 'large', count) == expected_large,
+              f'reference-aware deadline for {model}, refs={count}')
 pin_errors = service_mod.registry_errors(reg)
 check(pin_errors == [], 'the registry is complete and pinned (revision and SHA-256 per file): ' + '; '.join(pin_errors))
 # Pinned from the image test on the server (lock-flux2-klein-4b.json, 07.11.2026).
@@ -206,6 +219,30 @@ with tempfile.TemporaryDirectory(prefix='coreai-image-service-') as tmp_name:
               and custom_job['reference_paths'] == [
                   str(reference_root / 'var' / 'profile_media' / (custom_uuid + '.png'))],
               'custom assistant photos never mix in the default Mara gallery')
+        check(custom_job['limit'] == 375
+              and custom_mock.public(custom_job)['time_limit_s'] == 375,
+              'one account portrait extends the worker deadline only for that job')
+        extra_uuids = ['c' * 32, 'd' * 32, 'e' * 32, 'f' * 32]
+        for uid in extra_uuids:
+            (reference_root / 'var' / 'profile_media' / (uid + '.png')).write_bytes(png(64, 64))
+        five_mock = service_mod.Service(fake_reg, tmp / 'test-models', tmp / 'five-jobs', threads=1)
+        five_mock._run = lambda _job, _prompt: None
+        five_job = five_mock.create('Mara with five account portrait views', 'normal', 1,
+                                   'custom:' + custom_uuid, [], 'Mara in an office',
+                                   profile_references=['custom:' + uid for uid in extra_uuids])
+        five_public = five_mock.public(five_job)
+        five_command = five_mock.command(five_job, 'Mara in an office')
+        check(five_job['reference_count'] == 5 and five_job['limit'] == 675
+              and five_public['reference_count'] == 5 and five_public['time_limit_s'] == 675
+              and five_public['elapsed_s'] >= 0
+              and five_command.count('-r') == 5
+              and not any(token in json.dumps(five_public) for token in extra_uuids),
+              'one private profile picture plus four additional views, no UUID leaks')
+        no_ref_mock = service_mod.Service(fake_reg, tmp / 'test-models', tmp / 'no-ref-jobs', threads=1)
+        no_ref_mock._run = lambda _job, _prompt: None
+        generic_job = no_ref_mock.create('A plain apple', 'normal', 1)
+        check(generic_job['limit'] == 300 and no_ref_mock.public(generic_job)['time_limit_s'] == 300,
+              'a simple image retains the original timeout')
         joined_mock = service_mod.Service(fake_reg, tmp / 'test-models', tmp / 'join-jobs', threads=1)
         joined_mock._run = lambda _job, _prompt: None
         combined = joined_mock.create('Mara with a guest', 'normal', 1, 'default',
