@@ -1,0 +1,22 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.60
+Datum: 15.11.2026
+
+PGEN 9B Q8_0: AUTOMATISCHER OEFFENTLICHER DOWNLOAD
+- Neue oeffentliche 9B GGUF-Quelle als Erstwahl, ohne HF-Token.
+- Gated Ponpoke-Original bleibt optionaler Fallback nur bei Berechtigung.
+- Kein Betreiber-Token wird an oeffentliche Repack-Quellen weitergereicht.
+- SHA-256, Dateigroesse, HF-Commit sowie erlaubte Repo-/Dateikombination geprueft.
+- Bereits verifizierte Gewichte weiterverwendet, keine doppelten Modelle.
+
+PGEN 4B Q8_0: NOCH EINGESCHRAENKT
+- Ein allgemeiner oeffentlicher 4B Q8_0-Download ist nicht bestaetigt.
+- Kein heimlicher Q4-Ersatz, bisheriger 4B-Encoder bleibt betriebsbereit.
+- Bestehender berechtigter HF-Zugang zum Original bleibt moeglich.
+
+BESTEHENDE GARANTIEN
+- Modellwahl 4B/9B, CPU-only, Nutzer-Lizenzzustimmungen, Bilddienst,
+  Datei-Pins, Queue und Fallback bleiben erhalten.
+- Simulierte Regressionstests pruefen tokenfreien 9B-Weg und alte Locks.
+- Live-Download und reales Bild muessen nach Update geprueft werden.
+
+Version 0.7.60
