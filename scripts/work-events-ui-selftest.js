@@ -259,6 +259,39 @@ assert.equal(work.normalize({id:73,kind:'commentary',state:'info',
   title:'Mara meldet ihren naechsten Schritt',meta:{raw_thinking:'SECRET'}}),null);
 assert.equal(modelPublic.querySelector('.work-chevron'),null,'no outer disclosure arrow');
 
+// 0.7.61: image failures explain a recognized root category and their last
+// confirmed worker phase. They never echo raw job logs, prompts or private IDs.
+const imageFailure = work.create({events:[{
+  id: 280,kind:'tool',state:'error',title:'Bild nicht erzeugt',
+  meta:{source:'image',reason:'image_worker_exit',exit_code:137,
+    image_phase:'sampling',step:2,steps:4,model:'flux2-klein-9b',
+    image_encoder:'ponpoke-uncensored-q8_0',image_px:1024,
+    raw_log:'SECRET-JOB-LOG',prompt:'SECRET-PROMPT'},
+  time:'2026-11-15T12:38:22Z'
+}]});
+assert(imageFailure.textContent.includes('Exitcode: 137')
+  && imageFailure.textContent.includes('Zuletzt bestätigt: Bild berechnen')
+  && imageFailure.textContent.includes('Schritt 2 von 4'),
+  'image errors report a specific confirmed cause and phase');
+assert(imageFailure.textContent.includes('FLUX') === false
+  && imageFailure.textContent.includes('ponpoke-uncensored-q8_0'),
+  'technical model details are kept without inventing a prose model label');
+assert(!imageFailure.textContent.includes('SECRET'),
+  'raw worker logs and image prompts must not appear in the work trail');
+const unknownImageFailure = work.create({events:[{
+  id: 281,kind:'tool',state:'error',title:'Bild nicht erzeugt',
+  meta:{source:'image',reason:'image_failed'}
+}]});
+assert(unknownImageFailure.textContent.includes('keinen genauer klassifizierbaren Grund'),
+  'unknown image errors are never falsely classified');
+const genericFailure = work.create({events:[{
+  id: 282,kind:'tool',state:'error',title:'Unbekanntes Werkzeug fehlgeschlagen',
+  meta:{reason:'response_invalid',error_type:'ValueError'}
+}]});
+assert(genericFailure.textContent.includes('Grund: response_invalid')
+  && genericFailure.textContent.includes('Fehlertyp: ValueError'),
+  'generic errors show available verified metadata without inventing causes');
+
 // 0.5.62: actual source-code chunks display below the same live work
 // timeline. They are never loaded into saved events or rendered as HTML.
 const liveCode = work.create({live:true,expanded:true});
