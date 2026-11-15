@@ -53,6 +53,33 @@ with tempfile.TemporaryDirectory(prefix='pgen-selftest-') as name:
     assert profiles.load_registry(file, base, spike) is None
     profiles.save_lock(file, lock)
     assert profiles.load_registry(file, base, spike)['model']['id'] == profiles.QUALITY
+    # Both gated Ponpoke encoder sources are immutable and separately pinned.
+    import hashlib
+    ponpoke = worker.PONPOKE
+    assert set(ponpoke.SOURCES) == {profiles.STANDARD, profiles.QUALITY}
+    assert not ponpoke._trusted_url('http://huggingface.co/unsafe')
+    assert not ponpoke._trusted_url('https://evil.example/redirect')
+    assert ponpoke._trusted_url('https://cas-bridge.xethub.hf.co/file')
+    for profile in (profiles.STANDARD, profiles.QUALITY):
+        source, filename = ponpoke.SOURCES[profile]
+        assert source.startswith('ponpoke/flux2-klein-')
+        assert filename.endswith('-q8_0.gguf')
+        target, record_path = ponpoke._paths(tmp / 'models', profile)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        raw = ('test-encoder-' + profile).encode('ascii')
+        target.write_bytes(raw)
+        checksum = hashlib.sha256(raw).hexdigest()
+        record = {'repo': source, 'filename': filename, 'license': ponpoke.LICENSE,
+                  'sha256': checksum, 'revision': 'a' * 40, 'size': len(raw)}
+        record_path.write_text(json.dumps(record), encoding='utf-8')
+        assert ponpoke.verified(tmp / 'models', profile) == target
+        assert ponpoke.install(tmp / 'models', profile, token='') == target, (
+            'verified local encoder is reused without a new HF download')
+        record_path.write_text(json.dumps({**record, 'sha256': '0' * 64}), encoding='utf-8')
+        assert ponpoke.verified(tmp / 'models', profile) is None
+        record_path.write_text(json.dumps(record), encoding='utf-8')
+        target.unlink()
+        assert ponpoke.verified(tmp / 'models', profile) is None
     light_base = copy.deepcopy(base)
     light_base['measured']['normal']['peak_rss_mb'] = 0  # CI has much less RAM than the production server
     svc = worker.Service(light_base, tmp / 'models', tmp / 'work', threads=3,
