@@ -21,7 +21,8 @@
     knowledge_hits:'Treffer', knowledge_sources:'Quellen',
     steps:'Bildschritte gesamt', image_px:'Bildbreite (Pixel)',
     image_phase:'Letzte bestätigte Bildphase', image_encoder:'Text-Encoder',
-    reference_count:'Referenzbilder'
+    reference_count:'Referenzbilder', time_limit_s:'Bild-Zeitlimit (s)',
+    elapsed_s:'Bild-Laufzeit (s)', peak_rss_mb:'Maximaler Bild-RAM (MB)'
   };
 
   // Bounded shape reasons of an unreadable tool reply (never model text).
