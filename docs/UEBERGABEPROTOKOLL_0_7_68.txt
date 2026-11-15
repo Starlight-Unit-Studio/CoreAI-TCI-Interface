@@ -19,6 +19,10 @@ UMSETZUNG
   Quellenschluessel aus ember_web_url_key; auch bei Suchbegriffwechsel
   keine bereits gelieferten doppelten URLs. Keine DB-Speicherung.
   Originale Kurzfrage kann einmalig auf bereinigte Stichworte wechseln.
+  Adaptive Ausgabe: WEB_MAX_CHARS begrenzt vollstaendige Quelle samt
+  URL und Auszug, nicht nur rohe String-Abschneidung. Nicht ausgegebene
+  Quellen bleiben im Turn-Puffer und gelangen erst in einer weiteren
+  angeforderten Runde zu Mara und in die UI.
 - api/chat.php: dritte optionale Referenz an ember_web_results_block und
   ember_agent_run_tool. Nur die privaten Agenten-Loops Text und Voice
   uebergeben eine frische per-Turn-Session; Global-Chat unveraendert.
