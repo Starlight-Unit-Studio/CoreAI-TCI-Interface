@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """Verified, locally pinned Hugging Face replacements for pGen text encoders.
 
-The upstream ponpoke repositories are gated. Obtain a Hugging Face token only
-after accepting the publisher's access terms. No token is persisted here, and
-no unverifiable weight can become active. Existing canonical encoder weights
-are kept until replacements are verified, so installations stay recoverable.
+The upstream Ponpoke repositories are gated. Prefer verified public Q8_0
+repack sources where available, with no private HF token required. Keep old
+verified downloads and never silently downgrade to Q4.
 """
 from __future__ import annotations
 
@@ -28,6 +27,24 @@ SOURCES = {
         'flux2-klein-9b-uncensored-q8_0.gguf',
     ),
 }
+# Publicly listed Q8_0 repacks descended from the same 9B Ponpoke encoder.
+# No verified public 4B Q8_0 source is currently listed.
+PUBLIC_SOURCES = {
+    'flux2-klein-9b': (
+        ('WANG-CC/flux2-klein-9b-uncensored-text-encoder-Q8_0-GGUF',
+         'flux2-klein-9b-uncensored-text-encoder-q8_0.gguf'),
+        ('KM445/flux2-klein-9b-uncensored-text-encoder-Q8_0-GGUF',
+         'flux2-klein-9b-uncensored-text-encoder-q8_0.gguf'),
+    ),
+}
+
+
+def _sources(profile: str) -> tuple[tuple[str, str], ...]:
+    if profile not in SOURCES:
+        raise ValueError('invalid_pgen_profile')
+    return (*PUBLIC_SOURCES.get(profile, ()), SOURCES[profile])
+
+
 LICENSE = 'FLUX Non-Commercial License v2.1'
 SHA = re.compile(r'^[0-9a-f]{64}$')
 COMMIT = re.compile(r'^[0-9a-f]{40}$')
@@ -95,9 +112,15 @@ def _head(repo: str, filename: str, token: str, revision: str = 'main') -> dict:
     raise RuntimeError('Zu viele HF-Weiterleitungen')
 
 
-def _paths(models: Path, profile: str) -> tuple[Path, Path]:
-    repo, name = SOURCES[profile]
-    target = models / repo.replace('/', '__') / name
+def _paths(models: Path, profile: str, repo: str | None = None,
+           filename: str | None = None) -> tuple[Path, Path]:
+    if profile not in SOURCES:
+        raise ValueError('invalid_pgen_profile')
+    if repo is None or filename is None:
+        repo, filename = SOURCES[profile]
+    if (repo, filename) not in _sources(profile):
+        raise ValueError('untrusted_encoder_source')
+    target = models / repo.replace('/', '__') / filename
     lock = models / ('ponpoke-' + profile + '.json')
     return target, lock
 
@@ -105,13 +128,16 @@ def _paths(models: Path, profile: str) -> tuple[Path, Path]:
 def verified(models: Path, profile: str) -> Path | None:
     if profile not in SOURCES:
         raise ValueError('invalid_pgen_profile')
-    target, lock = _paths(models, profile)
-    if target.is_symlink() or lock.is_symlink():
+    _, lock = _paths(models, profile)
+    if lock.is_symlink():
         return None
     try:
         record = json.loads(lock.read_text(encoding='utf-8'))
-        repo, name = SOURCES[profile]
-        if (record.get('repo'), record.get('filename')) != (repo, name):
+        source = (record.get('repo'), record.get('filename'))
+        if source not in _sources(profile):
+            return None
+        target, _ = _paths(models, profile, *source)
+        if target.is_symlink():
             return None
         if record.get('license') != LICENSE or not COMMIT.fullmatch(record.get('revision', '')):
             return None
@@ -122,7 +148,6 @@ def verified(models: Path, profile: str) -> Path | None:
         return target if _sha_file(target) == record['sha256'] else None
     except (OSError, ValueError, TypeError, KeyError):
         return None
-
 
 def install(models: Path, profile: str, token: str | None = None) -> Path:
     if profile not in SOURCES:
