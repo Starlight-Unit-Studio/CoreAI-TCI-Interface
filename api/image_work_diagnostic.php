@@ -9,6 +9,11 @@ declare(strict_types=1);
 function coreui_image_failure_work_meta(array $result, array $progress = []): array {
   $error = (string)($result['error'] ?? 'image_failed');
   $detail = trim((string)($result['detail'] ?? ''));
+  // The terminal worker response can include a newer phase, deadline and
+  // RAM reading than the last displayed progress title.
+  if (is_array($result['diagnostic'] ?? null)) {
+    $progress = array_replace($progress, $result['diagnostic']);
+  }
   $known = [
     'image_loading', 'image_unreachable', 'image_unavailable',
     'image_busy', 'model_queue_timeout', 'image_memory', 'image_timeout',
@@ -57,6 +62,19 @@ function coreui_image_failure_work_meta(array $result, array $progress = []): ar
       $meta['steps'] = $steps;
       $meta['step'] = max(0, min($steps, (int)($progress['step'] ?? 0)));
     }
+  }
+  foreach (['reference_count'=>20, 'time_limit_s'=>7200,
+            'elapsed_s'=>7200, 'peak_rss_mb'=>1048576] as $key=>$max) {
+    if (isset($progress[$key]) && is_numeric($progress[$key])
+        && is_finite((float)$progress[$key]) && (float)$progress[$key] >= 0) {
+      $meta[$key] = min($max, (int)round((float)$progress[$key]));
+    }
+  }
+  if (in_array(($progress['model'] ?? ''), ['flux2-klein-4b', 'flux2-klein-9b'], true)) {
+    $meta['model'] = $progress['model'];
+  }
+  if (in_array(($progress['image_encoder'] ?? ''), ['original', 'ponpoke-uncensored-q8_0'], true)) {
+    $meta['image_encoder'] = $progress['image_encoder'];
   }
   return $meta;
 }
