@@ -386,6 +386,8 @@
         report += ' · Installiert, Freischaltung nach Lizenzzustimmung';
       if (license && state.pgen.can_install_9b === false)
         report += ' · Hardware reicht für 9B nicht aus';
+      report += model.encoder_ready ? ' · Ponpoke Uncensored Q8_0 bereit' : ' · Ponpoke Uncensored Q8_0 noch nicht bereit (bisheriger Encoder bleibt aktiv)';
+      if (model.encoder_error) report += ' · ' + model.encoder_error;
       if (model.error) report += ' · ' + model.error;
       text(el.PgenInfo, report);
       text(el.PgenFeedback, state.pgenMessage);

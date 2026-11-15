@@ -472,7 +472,7 @@ img_gen_test($r['ok'] === true && preg_match('~^[a-f0-9]{32}$~', $r['uuid']) ===
 img_gen_test($titles === ['Bild: Gewichte werden geladen', 'Bild: Schritt 2 von 4', 'Bild: Schritt 4 von 4', 'Bild wird erzeugt'],
   'every change of phase and step is shown once: ' . json_encode($titles));
 img_gen_test($leases === 1 && $unleases === 1, 'the queue is held for the job and given back');
-img_gen_test($GLOBALS['img_calls'][1][2] === ['prompt' => 'A red fox, sitting in snow', 'size' => 'normal', 'model' => 'flux2-klein-4b'],
+img_gen_test($GLOBALS['img_calls'][1][2] === ['prompt' => 'A red fox, sitting in snow', 'size' => 'normal', 'model' => 'flux2-klein-4b', 'user_license_accepted' => false],
   'generic image tasks do not send Mara identity, scene selection or reference data');
 $row = $pdo->query('SELECT * FROM stu_console_media')->fetch(PDO::FETCH_ASSOC);
 img_gen_test($row['uuid'] === $r['uuid'] && (int)$row['user_id'] === 5 && $row['kind'] === 'image' && $row['public_url'] === null
@@ -605,6 +605,19 @@ img_gen_test(($public['generated_by'] ?? null) === 'Quantum CoreAI: TCI Interfac
   && ($public['generation']['reference_image_count'] ?? null) === 2
   && $public['digital_source_type'] === COREUI_IMAGE_AI_SOURCE_TYPE,
   'Public provenance includes exact Quantum CoreAI brand and technical generation details');
+$ponpokeDetails = coreui_image_provenance([
+  'text_encoder'=>'ponpoke-uncensored-q8_0',
+  'encoder_source'=>'ponpoke/flux2-klein-4b-uncensored-text-encoder',
+  'encoder_revision'=>str_repeat('a', 40),
+  'encoder_sha256'=>str_repeat('b', 64),
+], $registry);
+$llmDetails = array_values(array_filter($ponpokeDetails['model']['components'],
+  static fn(array $part): bool => $part['role'] === 'llm'));
+img_gen_test(count($llmDetails) === 1
+  && $llmDetails[0]['repository'] === 'ponpoke/flux2-klein-4b-uncensored-text-encoder'
+  && $llmDetails[0]['model_license'] === 'FLUX Non-Commercial License v2.1'
+  && $llmDetails[0]['sha256'] === str_repeat('b', 64),
+  'PNG provenance attributes licensed Ponpoke text encoder to correct source and SHA');
 $embedded = coreui_image_png_embed_provenance(img_gen_png(48, 48),
   ['width'=>48, 'height'=>48, 'seed'=>7,'seconds'=>61.8,
    'size'=>'normal','reference_count'=>2,'created_at'=>'2026-11-08T12:30:00+00:00',

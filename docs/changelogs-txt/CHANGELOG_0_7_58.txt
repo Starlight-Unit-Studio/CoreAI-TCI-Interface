@@ -1,0 +1,30 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.58
+Datum: 15.11.2026
+
+PGEN: BEIDE PONPOKE UNCENSORED Q8_0 TEXT-ENCODER
+- pGen Standard 4B: ponpoke/flux2-klein-4b-uncensored-text-encoder
+  als Q8_0-GGUF direkt fuer das bestehende FLUX.2-klein-4B-DiT.
+- pGen Quality 9B: ponpoke/flux2-klein-9b-uncensored-text-encoder
+  als Q8_0-GGUF direkt fuer das bestehende FLUX.2-klein-9B-DiT.
+- Beide werden ueber die bestehende sd-cli --llm-Schnittstelle geladen.
+  Kein Ollama-Zwischenschritt, keine neuen Bildgeneratorprofile.
+- Hugging Face hat beide Repositories gated. Betreiber muss dort
+  die Bedingungen annehmen und einen berechtigten HF_TOKEN bereitstellen.
+- Die serverseitige Installation bleibt kontenuebergreifend, die
+  Verwendung der Non-Commercial-Encoder dagegen je Konto freigeschaltet.
+- Die vorhandenen Original-Encoder bleiben als Recovery-Fallback erhalten,
+  bis Ponpoke-Dateien verfuegbar und geprueft sind.
+- Download mit gesichertem Commit, SHA-256, Groesse und atomarem Lock;
+  einmal erfolgreich bezogene Dateien werden lokal wiederverwendet.
+- pGen-Verwaltung zeigt pro Profil Ponpoke-Bereitschaft/Fehler.
+- PNG-Herkunftsangaben geben bei aktivem Ponpoke dessen echte
+  Repositoryquelle, SHA-256, Revision und Lizenz wieder.
+- Vorhandene DiT-/VAE-Dateien, Cores, Chatrouting, Warteschlange,
+  CPU-first-Betrieb, Nutzerkonten und Freigabegrenzen bleiben erhalten.
+
+EINSCHRAENKUNGEN
+- Ohne genehmigten HuggingFace-Zugriff/HF_TOKEN kann keine Aktivierung
+  der gated Ponpoke-Gewichte behauptet werden.
+- CI prueft Logik offline; echte Bildqualitaet und Laufzeit sind
+  nach Download auf echter Hardware noch zu testen.
+Version: 0.7.58

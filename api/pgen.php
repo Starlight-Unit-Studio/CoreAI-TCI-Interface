@@ -58,6 +58,9 @@ function coreui_pgen_status(?array $health = null, ?array $hardware = null, ?PDO
   $available = is_array($health['pgen'] ?? null) ? $health['pgen'] : [];
   $four = is_array($available[COREUI_PGEN_STANDARD] ?? null) ? $available[COREUI_PGEN_STANDARD] : [];
   $nine = is_array($available[COREUI_PGEN_QUALITY] ?? null) ? $available[COREUI_PGEN_QUALITY] : [];
+  $ponpoke = is_array($health['ponpoke'] ?? null) ? $health['ponpoke'] : [];
+  $fourEncoder = is_array($ponpoke[COREUI_PGEN_STANDARD] ?? null) ? $ponpoke[COREUI_PGEN_STANDARD] : [];
+  $nineEncoder = is_array($ponpoke[COREUI_PGEN_QUALITY] ?? null) ? $ponpoke[COREUI_PGEN_QUALITY] : [];
   $approved = $pdo instanceof PDO && $uid > 0
     && coreui_generator_license_user_accepted($pdo, $uid);
   $hw = coreui_pgen_hardware($hardware);
@@ -69,12 +72,19 @@ function coreui_pgen_status(?array $health = null, ?array $hardware = null, ?PDO
     'required_ram_gib'=>$hw['required_ram_gib'],
     'models'=>[
       ['id'=>COREUI_PGEN_STANDARD, 'label'=>'FLUX.2 Standard (4B)',
-       'license'=>'Apache-2.0', 'ready'=>$ready && ($four['ready'] ?? false) === true,
+       'license'=>'Apache-2.0 (Basis), FLUX Non-Commercial v2.1 (Ponpoke)',
+       'encoder'=>'ponpoke/flux2-klein-4b-uncensored-text-encoder:Q8_0',
+       'encoder_ready'=>($fourEncoder['ready'] ?? false) === true,
+       'encoder_error'=>mb_substr((string)($ponpoke['error'] ?? ''), 0, 180),
+       'ready'=>$ready && ($four['ready'] ?? false) === true,
        'installed'=>$ready && ($four['installed'] ?? false) === true,
        'loading'=>($four['loading'] ?? false) === true,
        'seconds_512'=>67, 'ram_1024_gb'=>14.4],
       ['id'=>COREUI_PGEN_QUALITY, 'label'=>'FLUX.2 9B',
        'license'=>'FLUX Non-Commercial License v2.1',
+       'encoder'=>'ponpoke/flux2-klein-9b-uncensored-text-encoder:Q8_0',
+       'encoder_ready'=>($nineEncoder['ready'] ?? false) === true,
+       'encoder_error'=>mb_substr((string)($ponpoke['error'] ?? ''), 0, 180),
        'ready'=>$ready && $approved && ($nine['ready'] ?? false) === true,
        'installed'=>($nine['installed'] ?? false) === true,
        'loading'=>($nine['loading'] ?? false) === true,

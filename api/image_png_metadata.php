@@ -77,6 +77,21 @@ function coreui_image_provenance(array $meta, array $registry = []): array {
       'model_license'=>(string)($file['license'] ?? ''),
     ];
   }
+  $encoder = (string)($meta['text_encoder'] ?? 'original');
+  if ($encoder === 'ponpoke-uncensored-q8_0'
+      && preg_match('~^ponpoke/flux2-klein-(?:4b|9b)-uncensored-text-encoder$~D', (string)($meta['encoder_source'] ?? '')) === 1
+      && preg_match('~^[0-9a-f]{40}$~D', (string)($meta['encoder_revision'] ?? '')) === 1
+      && preg_match('~^[0-9a-f]{64}$~D', (string)($meta['encoder_sha256'] ?? '')) === 1) {
+    foreach ($components as &$component) {
+      if ($component['role'] === 'llm') {
+        $component['repository'] = (string)$meta['encoder_source'];
+        $component['revision'] = (string)$meta['encoder_revision'];
+        $component['sha256'] = (string)$meta['encoder_sha256'];
+        $component['model_license'] = 'FLUX Non-Commercial License v2.1';
+      }
+    }
+    unset($component);
+  }
   return [
     'format'=>COREUI_IMAGE_PROVENANCE_FORMAT,
     'generated_by'=>'Quantum CoreAI: TCI Interface',
@@ -113,6 +128,7 @@ function coreui_image_provenance(array $meta, array $registry = []): array {
       'duration_seconds'=>round(max(0, (float)($meta['seconds'] ?? 0)), 1),
       'size_preset'=>(string)($meta['size'] ?? ''),
       'reference_image_count'=>max(0, (int)($meta['reference_count'] ?? 0)),
+      'text_encoder'=>$encoder,
     ],
     'watermark'=>[
       'visible'=>$disclosure === 'none' ? 'su_logo_only' : 'su_logo_with_ai_disclosure',

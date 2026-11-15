@@ -1,0 +1,48 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.58
+Datum: 15.11.2026
+Branch: feature/pgen-ponpoke-encoders-20261115
+Basis: 0.7.57
+
+ENTSCHEIDUNG
+Nicht nur pGen 9B, sondern BEIDE Modelle erhalten die jeweiligen
+ponpoke uncensored Q8_0 Text-Encoder direkt von Hugging Face:
+- 4B: ponpoke/flux2-klein-4b-uncensored-text-encoder
+- 9B: ponpoke/flux2-klein-9b-uncensored-text-encoder
+Die DiT-, VAE- und sonstigen Generatorgewichte bleiben unangetastet.
+Ollama ist kein Zwischenschritt.
+
+IMPLEMENTIERUNG
+- tools/image/ponpoke_encoders.py:
+  feste Repository-/Q8-Dateinamen, verifizierte HF-Revision und SHA,
+  atomare lokale Pinfestlegung, begrenzte HTTPS-Redirects,
+  optionales HF_TOKEN aus dem Serverenvironment.
+- tools/image/image_service.py:
+  asynchrone Vorbereitung beider Encoder, kontobezogene Auswahl bei
+  Lizenzannahme, Rueckfall auf bisherige Encoder wenn noch nicht bereit.
+  Der tatsaechlich benutzte Encoder wird mit jedem Job ausgewiesen.
+- compose.yaml:
+  optionales HF_TOKEN wird an den internen Bildcontainer uebergeben.
+- api/image_gen.php, api/pgen.php, js/coreui-core-install.js:
+  kontobezogene Freigabe fuer beide Ponpoke-Encoder,
+  sichtbare Installations-/Fehlerstatusinformation.
+- api/image_png_metadata.php:
+  korrekte Herkunft und Lizenz des wirklich verwendeten Encoders.
+- scripts/pgen-selftest.py und scripts/image-gen-selftest.php:
+  Wiederverwendung, SHA-Lock, Profilzuordnung, Kontotrennung, Metadaten.
+
+WICHTIG
+Beide ponpoke HuggingFace-Repositories verlangen explizite Annahme
+ihrer Zugriffsbedingungen. CoreAI kann diesen Schritt nicht
+stellvertretend fuer einen Betreiber absolvieren; ein gueltiger
+HF_TOKEN und bestaetigter Accountzugriff sind vorausgesetzt.
+Das eigene Nichtkommerziell-Verbot ersetzt die upstream-Bedingungen
+nicht. Nach Freigabe werden bereits gepruefte Downloads reaktiviert.
+
+Der integrierte Standard-4B-Encoder bleibt fuer Benutzer ohne
+individuelle Non-Commercial-Zustimmung verfuegbar. Fuer den
+uncensored-4B-/9B-Encoder gilt die gespeicherte Einwilligung pro user_id.
+Beim Fehler einer Encoderinstallation bleiben die bestehenden
+Modelle und Chatausgaben lauffaehig.
+
+Release: 0.7.58, nach erfolgreichem PR-Check mergefaehig.
+Echte Bildgenerierung benoetigt Betriebsserver-Tests nach Update.
