@@ -1,5 +1,11 @@
 # CoreAI: TCI Interface
 
+## 0.7.59 - 15.11.2026
+
+- **pGen-Preflight bei aktivem 9B repariert:** Der Bilder-im-Chat-Selbsttest verwendet jetzt einen isolierten temporären Cache und greift nicht mehr auf das produktiv ausgewählte 9B-Profil zu. Die Testperson braucht dadurch keine echte Server-Bildmodell-Lizenz, und die Warteschlangenprüfung bleibt testbar.
+- **Hugging-Face-Zugang über Updates bewahren:** Der Installer schreibt einen bereits konfigurierten `HF_TOKEN` wieder in `var/compose.env` (nur Root lesbar), sodass der pGen-Bildcontainer bei Updates darauf zugreifen kann. Bei fehlender Konfiguration versucht er den bereits vorhandenen, lokalen CLI-Token des Betreibers aus dem üblichen Hugging-Face-Cache zu übernehmen. Es wird kein Token in Git oder in Logs gespeichert.
+- **Grenze:** Eine vorherige Lizenzbestätigung oder ein erfolgreicher Ollama-Download garantiert nicht, dass im Host-Cache ein gültiger Hugging-Face-Token liegt; bei fehlendem Zugriff auf die zugriffsgeschützten Ponpoke-Dateien zeigt pGen weiterhin einen konkreten Fehler.
+
 ## 0.7.58 - 15.11.2026
 
 - **pGen 4B und 9B mit Ponpoke Uncensored Q8_0:** Beide vorhandenen FLUX.2-klein-Profile können statt des ursprünglichen Qwen3-Encoders die zum jeweiligen DiT passenden GGUF-Text-Encoder von `ponpoke/flux2-klein-4b-uncensored-text-encoder` und `ponpoke/flux2-klein-9b-uncensored-text-encoder` über `sd-cli --llm` verwenden, ohne Ollama-Zwischenschritt.

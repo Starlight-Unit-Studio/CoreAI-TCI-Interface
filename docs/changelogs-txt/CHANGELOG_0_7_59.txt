@@ -1,0 +1,21 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.59
+Datum: 15.11.2026
+
+BILDER-IM-CHAT PREFLIGHT
+- Isolierter Cache in scripts/image-gen-selftest.php; ein produktiv
+  eingestelltes pGen 9B darf den Offline-Test nicht beeinflussen.
+- Warteschlange wird weiterhin mit einem simulierten Dienst geprueft,
+  nicht durch Anstoessen eines echten Bildgenerierungsjobs.
+
+HUGGING FACE / PONPOKE
+- scripts/install.sh uebernimmt einen bereits in var/compose.env
+  hinterlegten HF_TOKEN bei Updates in die neue Runtime-Konfiguration.
+- Wenn kein gespeicherter Token vorhanden ist, prueft der Installer die
+  bestehenden Hugging-Face-CLI-Zugangsdateien im Root-Benutzerprofil.
+- Token wird nicht in Code, Versionskontrolle oder Ausgaben geschrieben.
+- Image-Container liest den gespeicherten Token weiterhin aus
+  var/compose.env ueber compose.yaml.
+- Upstream-Hugging-Face-Freigaben bleiben Voraussetzung fuer Downloads;
+  fehlende Freigaben werden weiterhin als Fehler angezeigt.
+
+Version 0.7.59
