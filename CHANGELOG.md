@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.7.68 - 15.11.2026
+
+- **Progressive SearXNG-Websuche:** Mara kann innerhalb der bestehenden Agenten-Arbeitsschleife per `[WEB: WEITER]` weitere Treffer derselben Anfrage anfordern. Der neue request-lokale Cursor puffert die vollständige SearXNG-Ergebnisseite, liefert nur die konfigurierte Zahl pro Schritt und ruft `pageno=2` erst nach dem Aufbrauchen der ersten Seite ab. Verfeinerte Suchanfragen bleiben möglich.
+- **Quellen statt Wiederholungen:** Ein turn-lokales URL-Ledger beseitigt Dopplungen über Seiten und neue Suchbegriffe hinweg. Nur echte sichere Treffer werden als Quellenereignisse an das bestehende Karussell übertragen. Keine behaupteten Seitenbesuche.
+- **Bessere Quellenhygiene:** Der Agent fordert bei unzureichenden Daten gezielt zusätzliche Belege an und führt Personen mit gleichem Namen nur mit konkreten Identitätsnachweisen zusammen. Ältere Webauszüge werden für den Kontext reduziert, Titel und URLs bleiben, die neueste Treffergruppe wird vollständig berücksichtigt. Die bestehende Grenze von sechs Arbeitsschritten bleibt.
+- **Scope:** Text und Sprachanfragen im privaten Chat. Normaler globaler Kanal, Web-Wetter, Playwright, Deep Research, Bilder und Core-Einstellungen bleiben unverändert.
+- **Tests:** Neue deterministische `scripts/progressive-web-search-selftest.php` für Buffered-Paging, Deduplizierung, Suchwort-Fallback, Quellenausgabe und Sitzungsisolierung; erweiterte Agent-Tests, beide Preflights und dedizierter CI-Workflow. Versionsvertrag, Cache und Android-Livefunktion nach Merge prüfen.
+
 ## 0.7.67 - 15.11.2026
 
 - **WEB-Quellenanzeige zeigt keine erfundenen Seitenwechsel mehr:** Der 1,6-Sekunden-Timer in `js/coreui-work-events.js` hat bisher die Treffer unabhängig von der tatsächlichen Websuche zyklisch gewechselt. Diese automatische Rotation ist entfernt; die URL ändert sich ausschließlich bei einem neu gemeldeten Quellenereignis.
