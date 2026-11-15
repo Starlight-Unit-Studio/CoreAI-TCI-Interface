@@ -864,9 +864,10 @@ img_gen_test(str_contains($chat, "  \$content = coreui_image_strip_placeholders(
   'every public answer (and Mara\'s lines in the history) loses placeholders');
 img_gen_test(str_contains($chat, "\$imageBlock = coreui_image_history_block(\$imageNotes);")
   && !str_contains($chat, "\$msg = trim(\$msg . ' (' . \$imageNotes["), 'the image notes stand as one block, not in Mara\'s lines');
-img_gen_test(str_contains($chat, "(string)\$consoleSessionId), ['web', 'browse', 'archive', 'image']))")
+img_gen_test(str_contains($chat, "ember_agent_allowed_tools(\$consoleUid, (string)\$consoleSessionId,")
+  && str_contains($chat, "coreui_agent_explicit_browse(\$composerIntent, ember_browse_enabled())), ['web', 'browse', 'archive', 'image']))")
   && str_contains($chat, "coreui_agent_next_tool(\$imgReply, ['web', 'browse', 'archive', 'skill', 'image']) !== null"),
-  'after a voice message Mara may paint too');
+  'after a voice message Mara may paint too, with browser permission explicit');
 $stream = $read('api/console_stream.php');
 img_gen_test(str_contains($chat, "sse_send('image_preview', ['image' => \$image, 'step' => (int)(\$job['step'] ?? 0), 'steps' => (int)(\$job['steps'] ?? 0)]);"),
   '0.6.42: previews go to the live stream of this request');
