@@ -1237,6 +1237,12 @@ if command -v php >/dev/null 2>&1; then
     fail "Websuche-Selbsttest: ${web_test:-Unbekannter Fehler}"
   fi
 
+  if progressive_web_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/progressive-web-search-selftest.php" 2>&1)"; then
+    ok 'Websuche: fortlaufende Treffer ohne Dubletten, Paging und Quellenbelege geprueft.'
+  else
+    fail 'Websuche: progressive Treffer-/Paging-Regressionspruefung fehlgeschlagen.'
+  fi
+
   weather_test=''
   if weather_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/weather-live-selftest.php" 2>&1)"; then
     ok '0.6.22: Live-Wetter im Websuche-Schritt (WDR fuer NRW, Live-Daten fuer jeden Ort, keine alten Suchtreffer) geprueft.'
@@ -1277,12 +1283,6 @@ if command -v php >/dev/null 2>&1; then
     else
       fail 'Terranische CoreAI-Bezeichnungen: Arch-Net/Ayalren-Rueckfall gefunden.'
     fi
-    if progressive_web_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/progressive-web-search-selftest.php" 2>&1)"; then
-      ok 'Websuche: fortlaufende Treffer ohne Dubletten, Paging und Quellenbelege geprueft.'
-    else
-      fail 'Websuche: progressive Treffer-/Paging-Regressionspruefung fehlgeschlagen.'
-    fi
-
     if node "$PROJECT_ROOT/scripts/tci-language-selftest.cjs" >/dev/null 2>&1; then
       ok 'Mara-TCI-Sprache und Stimmsequenz-Terminologie geprueft.'
     else
